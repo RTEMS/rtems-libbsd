@@ -34,3 +34,6 @@ This file contains notes on various known outstanding issues.
 + ngroups_max variable referenced by rtems-bsd-prot.c.
   - What should it be set to?
 
++ freebsd-to-rtems.py
+  - modify to know revert versus generate
+  - modify to take source directory on generate

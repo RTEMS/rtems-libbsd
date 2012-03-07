@@ -1,3 +1,5 @@
+#! /usr/bin/python
+#
 #  Copyright (c) 2009-2011 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
@@ -5,6 +7,9 @@
 #   82178 Puchheim
 #   Germany
 #   <info@embedded-brains.de>
+#
+#  Copyright (c) 2012.
+#  Modifications by OAR Corporation. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
@@ -32,16 +37,18 @@
 import shutil
 import os
 import re
+import sys
 
 PREFIX = 'rtems/freebsd'
 
-OUTPUT_DIRECTORY = '/home/kirspelk/sandbox/opti_touch/libbsd-8.2'
+# the program name and the file name
+if len(sys.argv) != 2:
+  sys.exit("Must provide an output directory")
+
+OUTPUT_DIRECTORY = sys.argv[1]
+print "Generating into", OUTPUT_DIRECTORY
 
 REVERT_DIRECTORY = '.'
-
-BSP = '/home/kirspelk/sandbox/opti_touch/b_rtems_arm/arm-rtems/c/lpc3250/make'
-
-INSTALL_BASE = '/home/kirspelk/sandbox/opti_touch/b_rtems_arm/arm-rtems/lpc3250/lib'
 
 def mapContribPath(path):
 	m = re.match('(.*)(' + PREFIX + '/)(contrib/\\w+/)(.*)', path)
@@ -167,15 +174,13 @@ class ModuleManager:
 				revertSourceFile(f)
 
 	def createMakefile(self):
-		data = 'RTEMS_MAKEFILE_PATH = ' + BSP + '\n' \
-			'INSTALL_BASE = ' + INSTALL_BASE + '\n' \
+		data = 'include config.inc\n' \
 			'\n' \
 			'include $(RTEMS_MAKEFILE_PATH)/Makefile.inc\n' \
 			'include $(RTEMS_CUSTOM)\n' \
 			'include $(PROJECT_ROOT)/make/leaf.cfg\n' \
-			'include $(PROJECT_ROOT)/make/target.cfg\n' \
 			'\n' \
-			'CFLAGS += -ffreestanding -I . -I contrib/altq -I contrib/pf -B $(INSTALL_BASE) -w -std=gnu99\n' \
+			'CFLAGS += -ffreestanding -I . -I rtemsbsd -I contrib/altq -I contrib/pf -B $(INSTALL_BASE) -w -std=gnu99\n' \
 			'\n'
 		data += 'C_FILES ='
 		for m in self.modules:
@@ -183,6 +188,9 @@ class ModuleManager:
 				f = PREFIX + '/' + f
 				f = mapContribPath(f)
 				data += ' \\\n\t' + f
+		for f in rtems_sourceFiles:
+			f = 'rtemsbsd/src/' + f
+			data += ' \\\n\t' + f
 
 		data += '\nC_O_FILES = $(C_FILES:%.c=%.o)\n' \
 			'C_DEP_FILES = $(C_FILES:%.c=%.dep)\n' \
@@ -195,12 +203,12 @@ class ModuleManager:
 			'\t$(AR) rcu $@ $^\n' \
 			'\n' \
 			'lib_usb:\n' \
-			'\texport PATH=$(PATH):/usr/local/gcc-4.5.2/bin ; \\\n' \
 			'\tmake $(LIB)\n' \
 			'\n' \
 			'install: $(LIB)\n' \
             '\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
-            '\tfor i in `find . -name \'*.h\'` ; do install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+            '\tfor i in `find . -name \'*.h\'` ; do \\\n' \
+            '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\n' \
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
@@ -227,79 +235,77 @@ class Module:
 	def addDependency(self, dep):
 		self.dependencies.append(dep)
 
-print( "1\n" )
 mm = ModuleManager()
-print( "2\n" )
 
-rtems = Module('rtems')
-rtems.addHeaderFiles(
-	[
-		'rtems/machine/atomic.h',
+rtems_headerFiles = [
+	'rtems/machine/atomic.h',
         'rtems/machine/_bus.h',
-		'rtems/machine/bus.h',
-		'rtems/machine/bus_dma.h',
+	'rtems/machine/bus.h',
+	'rtems/machine/bus_dma.h',
         'rtems/machine/rtems-bsd-config.h',
         'rtems/machine/clock.h',
-		'rtems/machine/cpufunc.h',
-		'rtems/machine/endian.h',
-		'rtems/machine/_limits.h',
-		'rtems/machine/_align.h',
-		'rtems/machine/mutex.h',
-		'rtems/machine/param.h',
-		'rtems/machine/pcpu.h',
+	'rtems/machine/cpufunc.h',
+	'rtems/machine/endian.h',
+	'rtems/machine/_limits.h',
+	'rtems/machine/_align.h',
+	'rtems/machine/mutex.h',
+	'rtems/machine/param.h',
+	'rtems/machine/pcpu.h',
         #'rtems/machine/pmap.h',
-		'rtems/machine/proc.h',
-		'rtems/machine/resource.h',
-		'rtems/machine/runq.h',
-		'rtems/machine/signal.h',
-		'rtems/machine/stdarg.h',
-		'rtems/machine/_stdint.h',
-		'rtems/machine/_types.h',
-		'rtems/machine/ucontext.h',
-		'rtems/machine/rtems-bsd-symbols.h',
-		'rtems/machine/rtems-bsd-cache.h',
-		'rtems/machine/rtems-bsd-sysinit.h',
+	'rtems/machine/proc.h',
+	'rtems/machine/resource.h',
+	'rtems/machine/runq.h',
+	'rtems/machine/signal.h',
+	'rtems/machine/stdarg.h',
+	'rtems/machine/_stdint.h',
+	'rtems/machine/_types.h',
+	'rtems/machine/ucontext.h',
+	'rtems/machine/rtems-bsd-symbols.h',
+	'rtems/machine/rtems-bsd-cache.h',
+	'rtems/machine/rtems-bsd-sysinit.h',
         'rtems/machine/rtems-bsd-select.h',
         #'rtems/machine/vm.h',
-		'bsd.h',
+	'bsd.h',
 	]
-)
-rtems.addSourceFiles(
-	[
-		'rtems/rtems-bsd-cam.c',
-		'rtems/rtems-bsd-nexus.c',
-		'rtems/rtems-bsd-autoconf.c',
-        'rtems/rtems-bsd-delay.c',
-		'rtems/rtems-bsd-mutex.c',
-		'rtems/rtems-bsd-thread.c',
-		'rtems/rtems-bsd-condvar.c',
-        'rtems/rtems-bsd-lock.c',
-		'rtems/rtems-bsd-sx.c',
-        'rtems/rtems-bsd-rwlock.c',
-        'rtems/rtems-bsd-generic.c',
-        'rtems/rtems-bsd-panic.c',
-        'rtems/rtems-bsd-synch.c',
-		'rtems/rtems-bsd-signal.c',
-		'rtems/rtems-bsd-callout.c',
-		'rtems/rtems-bsd-init.c',
-        'rtems/rtems-bsd-init-with-irq.c',
-		'rtems/rtems-bsd-assert.c',
-        'rtems/rtems-bsd-prot.c',
-        'rtems/rtems-bsd-resource.c',
-        'rtems/rtems-bsd-jail.c',
-		'rtems/rtems-bsd-shell.c',
-        'rtems/rtems-bsd-syscalls.c',
-        #'rtems/rtems-bsd-socket.c',
-        #'rtems/rtems-bsd-mbuf.c',
-		'rtems/rtems-bsd-malloc.c',
-        'rtems/rtems-bsd-support.c',
-		'rtems/rtems-bsd-bus-dma.c',
-        'rtems/rtems-bsd-sysctl.c',
-        'rtems/rtems-bsd-sysctlbyname.c',
-        'rtems/rtems-bsd-sysctlnametomib.c',
-        'rtems/rtems-bsd-uma.c',
+rtems_sourceFiles = [
+	'rtems-bsd-cam.c',
+	'rtems-bsd-nexus.c',
+	'rtems-bsd-autoconf.c',
+        'rtems-bsd-delay.c',
+	'rtems-bsd-mutex.c',
+	'rtems-bsd-thread.c',
+	'rtems-bsd-condvar.c',
+        'rtems-bsd-lock.c',
+	'rtems-bsd-sx.c',
+        'rtems-bsd-rmlock.c',
+        'rtems-bsd-rwlock.c',
+        'rtems-bsd-generic.c',
+        'rtems-bsd-panic.c',
+        'rtems-bsd-synch.c',
+	'rtems-bsd-signal.c',
+	'rtems-bsd-callout.c',
+	'rtems-bsd-init.c',
+        'rtems-bsd-init-with-irq.c',
+	'rtems-bsd-assert.c',
+        'rtems-bsd-prot.c',
+        'rtems-bsd-resource.c',
+        'rtems-bsd-jail.c',
+	'rtems-bsd-shell.c',
+        'rtems-bsd-syscalls.c',
+        #rtems-bsd-socket.c',
+        #rtems-bsd-mbuf.c',
+	'rtems-bsd-malloc.c',
+        'rtems-bsd-support.c',
+	'rtems-bsd-bus-dma.c',
+        'rtems-bsd-sysctl.c',
+        'rtems-bsd-sysctlbyname.c',
+        'rtems-bsd-sysctlnametomib.c',
+        'rtems-bsd-uma.c',
 	]
-)
+# RTEMS files handled separately from modules
+# rtems = Module('rtems')
+# rtems.addHeaderFiles( rtems_headerFiles )
+# rtems.addSourceFiles( rtems_sourceFiles )
 
 local = Module('local')
 local.addHeaderFiles(
@@ -1548,7 +1554,7 @@ mm.addModule(altq)
 mm.addModule(pf)
 mm.addModule(devNet)
 
-mm.addModule(rtems)
+# mm.addModule(rtems)
 mm.addModule(local)
 mm.addModule(devUsbBase)
 mm.addModule(devUsb)
@@ -1563,3 +1569,4 @@ mm.addModule(devUsbStorage)
 #mm.revertFiles()
 mm.copyFiles()
 mm.createMakefile()
+

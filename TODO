@@ -3,5 +3,6 @@
   - Makefile: add include config.inc
   - Generate config.inc
   - Remove internal setting of $PATH to include gcc-4.5.2/bin
-  - Split install for loop line that wraps
+  - Fix line with "install for loop" wraps
+  - Do include include target.cfg
 

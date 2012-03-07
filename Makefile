@@ -3,7 +3,6 @@ include config.inc
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
-include $(PROJECT_ROOT)/make/target.cfg
 
 CFLAGS += -ffreestanding -I . -I contrib/altq -I contrib/pf -B $(INSTALL_BASE) -w -std=gnu99
 

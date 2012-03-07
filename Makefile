@@ -4,7 +4,7 @@ include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
-CFLAGS += -ffreestanding -I . -I contrib/altq -I contrib/pf -B $(INSTALL_BASE) -w -std=gnu99
+CFLAGS += -ffreestanding -I . -I rtemsbsd -I contrib/altq -I contrib/pf -B $(INSTALL_BASE) -w -std=gnu99
 
 C_FILES = \
 	rtems/freebsd/net/bridgestp.c \
@@ -256,37 +256,6 @@ C_FILES = \
 	rtems/freebsd/dev/mii/mii.c \
 	rtems/freebsd/dev/mii/mii_physubr.c \
 	rtems/freebsd/dev/mii/icsphy.c \
-	rtems/freebsd/rtems/rtems-bsd-cam.c \
-	rtems/freebsd/rtems/rtems-bsd-nexus.c \
-	rtems/freebsd/rtems/rtems-bsd-autoconf.c \
-	rtems/freebsd/rtems/rtems-bsd-delay.c \
-	rtems/freebsd/rtems/rtems-bsd-mutex.c \
-	rtems/freebsd/rtems/rtems-bsd-thread.c \
-	rtems/freebsd/rtems/rtems-bsd-condvar.c \
-	rtems/freebsd/rtems/rtems-bsd-lock.c \
-	rtems/freebsd/rtems/rtems-bsd-sx.c \
-	rtems/freebsd/rtems/rtems-bsd-rmlock.c \
-	rtems/freebsd/rtems/rtems-bsd-rwlock.c \
-	rtems/freebsd/rtems/rtems-bsd-generic.c \
-	rtems/freebsd/rtems/rtems-bsd-panic.c \
-	rtems/freebsd/rtems/rtems-bsd-synch.c \
-	rtems/freebsd/rtems/rtems-bsd-signal.c \
-	rtems/freebsd/rtems/rtems-bsd-callout.c \
-	rtems/freebsd/rtems/rtems-bsd-init.c \
-	rtems/freebsd/rtems/rtems-bsd-init-with-irq.c \
-	rtems/freebsd/rtems/rtems-bsd-assert.c \
-	rtems/freebsd/rtems/rtems-bsd-prot.c \
-	rtems/freebsd/rtems/rtems-bsd-resource.c \
-	rtems/freebsd/rtems/rtems-bsd-jail.c \
-	rtems/freebsd/rtems/rtems-bsd-shell.c \
-	rtems/freebsd/rtems/rtems-bsd-syscalls.c \
-	rtems/freebsd/rtems/rtems-bsd-malloc.c \
-	rtems/freebsd/rtems/rtems-bsd-support.c \
-	rtems/freebsd/rtems/rtems-bsd-bus-dma.c \
-	rtems/freebsd/rtems/rtems-bsd-sysctl.c \
-	rtems/freebsd/rtems/rtems-bsd-sysctlbyname.c \
-	rtems/freebsd/rtems/rtems-bsd-sysctlnametomib.c \
-	rtems/freebsd/rtems/rtems-bsd-uma.c \
 	rtems/freebsd/local/usb_if.c \
 	rtems/freebsd/local/bus_if.c \
 	rtems/freebsd/local/device_if.c \
@@ -327,7 +296,38 @@ C_FILES = \
 	rtems/freebsd/dev/usb/controller/ohci_lpc3250.c \
 	rtems/freebsd/cam/cam.c \
 	rtems/freebsd/cam/scsi/scsi_all.c \
-	rtems/freebsd/dev/usb/storage/umass.c
+	rtems/freebsd/dev/usb/storage/umass.c \
+	rtemsbsd/src/rtems-bsd-cam.c \
+	rtemsbsd/src/rtems-bsd-nexus.c \
+	rtemsbsd/src/rtems-bsd-autoconf.c \
+	rtemsbsd/src/rtems-bsd-delay.c \
+	rtemsbsd/src/rtems-bsd-mutex.c \
+	rtemsbsd/src/rtems-bsd-thread.c \
+	rtemsbsd/src/rtems-bsd-condvar.c \
+	rtemsbsd/src/rtems-bsd-lock.c \
+	rtemsbsd/src/rtems-bsd-sx.c \
+	rtemsbsd/src/rtems-bsd-rmlock.c \
+	rtemsbsd/src/rtems-bsd-rwlock.c \
+	rtemsbsd/src/rtems-bsd-generic.c \
+	rtemsbsd/src/rtems-bsd-panic.c \
+	rtemsbsd/src/rtems-bsd-synch.c \
+	rtemsbsd/src/rtems-bsd-signal.c \
+	rtemsbsd/src/rtems-bsd-callout.c \
+	rtemsbsd/src/rtems-bsd-init.c \
+	rtemsbsd/src/rtems-bsd-init-with-irq.c \
+	rtemsbsd/src/rtems-bsd-assert.c \
+	rtemsbsd/src/rtems-bsd-prot.c \
+	rtemsbsd/src/rtems-bsd-resource.c \
+	rtemsbsd/src/rtems-bsd-jail.c \
+	rtemsbsd/src/rtems-bsd-shell.c \
+	rtemsbsd/src/rtems-bsd-syscalls.c \
+	rtemsbsd/src/rtems-bsd-malloc.c \
+	rtemsbsd/src/rtems-bsd-support.c \
+	rtemsbsd/src/rtems-bsd-bus-dma.c \
+	rtemsbsd/src/rtems-bsd-sysctl.c \
+	rtemsbsd/src/rtems-bsd-sysctlbyname.c \
+	rtemsbsd/src/rtems-bsd-sysctlnametomib.c \
+	rtemsbsd/src/rtems-bsd-uma.c
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_DEP_FILES = $(C_FILES:%.c=%.dep)
 
@@ -344,7 +344,7 @@ lib_usb:
 install: $(LIB)
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 	for i in `find . -name '*.h'` ; do \
-	    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd

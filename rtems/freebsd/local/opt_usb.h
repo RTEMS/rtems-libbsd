@@ -1,0 +1,19 @@
+#define USB_HAVE_CONDVAR 1
+
+#define USB_HAVE_UGEN 0
+
+#define USB_HAVE_BUSDMA 1
+
+#define USB_HAVE_COMPAT_LINUX 0
+
+#define USB_HAVE_USER_IO 0
+
+#define USB_HAVE_MBUF 0
+
+#undef USB_VERBOSE
+
+#define USB_DEBUG 0
+
+#define USB_HAVE_TT_SUPPORT 1
+
+#define USB_HAVE_POWERD 1

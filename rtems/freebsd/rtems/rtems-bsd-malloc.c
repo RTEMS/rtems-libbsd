@@ -1,0 +1,77 @@
+/**
+ * @file
+ *
+ * @ingroup rtems_bsd_rtems
+ *
+ * @brief TODO.
+ */
+
+/*
+ * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Obere Lagerstr. 30
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
+ *
+ * The license and distribution terms for this file may be
+ * found in the file LICENSE in this distribution or at
+ * http://www.rtems.com/license/LICENSE.
+ */
+
+#include <rtems/freebsd/machine/rtems-bsd-config.h>
+
+#include <rtems/freebsd/sys/param.h>
+#include <rtems/freebsd/sys/types.h>
+#include <rtems/freebsd/sys/systm.h>
+#include <rtems/freebsd/sys/malloc.h>
+#include <rtems/freebsd/sys/kernel.h>
+
+MALLOC_DEFINE(M_DEVBUF, "devbuf", "device driver memory");
+
+MALLOC_DEFINE(M_TEMP, "temp", "misc temporary data buffers");
+
+void
+malloc_init(void *data)
+{
+	struct malloc_type *mtp = data;
+}
+
+void
+malloc_uninit(void *data)
+{
+	struct malloc_type *mtp = data;
+
+	BSD_PRINTF( "desc = %s\n", mtp->ks_shortdesc);
+}
+
+#undef malloc
+
+void *
+_bsd_malloc(unsigned long size, struct malloc_type *mtp, int flags)
+{
+	void *p = malloc(size);
+
+	if ((flags & M_ZERO) != 0 && p != NULL) {
+		memset(p, 0, size);
+	}
+
+	return p;
+}
+
+#undef free
+
+void
+_bsd_free(void *addr, struct malloc_type *mtp)
+{
+	free(addr);
+}
+
+#undef strdup
+
+char *
+_bsd_strdup(const char *__restrict s, struct malloc_type *type)
+{
+	return strdup(s);
+}

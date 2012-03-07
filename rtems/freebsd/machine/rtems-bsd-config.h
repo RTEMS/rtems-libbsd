@@ -1,0 +1,255 @@
+/**
+ * @file
+ *
+ * @ingroup rtems_bsd_machine
+ *
+ * @brief TODO.
+ */
+
+/*
+ * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Obere Lagerstr. 30
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
+ *
+ * The license and distribution terms for this file may be
+ * found in the file LICENSE in this distribution or at
+ * http://www.rtems.com/license/LICENSE.
+ */
+
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
+#define _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
+
+/* We compile for RTEMS and FreeBSD */
+#define __rtems__ 1
+#define __FreeBSD__ 1
+#define __BSD_VISIBLE 1
+
+/* Disable procedure call definitions */
+#undef __P
+#undef __strong_reference
+
+#ifndef _RTEMS_BSD_BSD_HH_
+/* General defines to activate BSD kernel parts */
+#define _KERNEL 1
+
+/* Disable standard system headers */
+#undef _SYS_UNISTD_H
+#define _SYS_UNISTD_H 1
+#undef _SYS_FEATURES_H
+#define _SYS_FEATURES_H 1
+#undef _SYS_TTYCOM_H_
+#define _SYS_TTYCOM_H_ 1
+
+/* Disable procedure call definitions */
+#undef __P
+#undef __strong_reference
+
+/* Disable some quirks in the standard headers */
+#define _POSIX_SOURCE 1
+
+/* We need POSIX threads */
+#define _POSIX_THREADS 1
+
+#endif /* !_RTEMS_BSD_BSD_HH_ */
+
+/* Type set from the C standard */
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <limits.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/types.h>
+
+/* Ensure that we are RTEMS compatible and can use RTEMS */
+#include <rtems.h>
+#include <rtems/error.h>
+#include <rtems/chain.h>
+#include <rtems/libio.h>
+
+#ifndef _RTEMS_BSD_BSD_HH_
+/* Ensure that we can use POSIX threads */
+#include <pthread.h>
+
+/* The BSD kernel is not a POSIX source */
+#undef _POSIX_SOURCE
+
+/* Symbol undefines */
+#undef MAXPATHLEN
+
+#endif /* !_RTEMS_BSD_BSD_HH_ */
+
+/* Networking */
+#define IPSEC 1
+#define INET  1
+#define INET6 1
+#define TCP_SIGNATURE 1
+
+/* Integer type definitions */
+
+#define __INT_MAX INT_MAX
+#define GID_MAX   UINT_MAX  /* max value for a gid_t */
+#define UID_MAX   UINT_MAX  /* max value for a uid_t */
+
+#define __int8_t int8_t
+#define __int16_t int16_t
+#define __int32_t int32_t
+#define __int64_t int64_t
+
+#define __int_least8_t int_least8_t
+#define __int_least16_t int_least16_t
+#define __int_least32_t int_least32_t
+#define __int_least64_t int_least64_t
+
+#define __int_fast8_t int_fast8_t
+#define __int_fast16_t int_fast16_t
+#define __int_fast32_t int_fast32_t
+#define __int_fast64_t int_fast64_t
+
+#define __uint8_t uint8_t
+#define __uint16_t uint16_t
+#define __uint32_t uint32_t
+#define __uint64_t uint64_t
+
+#define __uint_least8_t uint_least8_t
+#define __uint_least16_t uint_least16_t
+#define __uint_least32_t uint_least32_t
+#define __uint_least64_t uint_least64_t
+
+#define __uint_fast8_t uint_fast8_t
+#define __uint_fast16_t uint_fast16_t
+#define __uint_fast32_t uint_fast32_t
+#define __uint_fast64_t uint_fast64_t
+
+#define __intfptr_t intptr_t
+#define __uintfptr_t uintptr_t
+
+#define __intptr_t intptr_t
+#define __uintptr_t uintptr_t
+
+#define __intmax_t intmax_t
+#define __uintmax_t uintmax_t
+
+#define __register_t int
+#define __u_register_t unsigned int
+
+#define __float_t float
+#define __double_t double
+
+#define __vm_offset_t uintptr_t
+#define __vm_ooffset_t uint64_t
+#define __vm_paddr_t uintptr_t
+#define __vm_pindex_t uint64_t
+#define __vm_size_t uintptr_t
+
+#define __clock_t clock_t
+#define __cpumask_t unsigned int
+#define __critical_t intptr_t
+#define __ptrdiff_t ptrdiff_t
+#define __segsz_t intptr_t
+#define __time_t time_t
+
+#define __va_list va_list
+
+#undef __size_t
+#define __size_t size_t
+
+#define	_CLOCKID_T_DECLARED 1
+#define	_DEV_T_DECLARED 1
+#define	_GID_T_DECLARED 1
+#define	_MODE_T_DECLARED 1
+#define	_OFF_T_DECLARED 1
+#define	_PID_T_DECLARED 1
+#define	_SSIZE_T_DECLARED 1
+#define	_TIMER_T_DECLARED 1
+#define	_TIME_T_DECLARED 1
+#define	_UID_T_DECLARED 1
+#define	_USECONDS_T_DECLARED 1
+#define	_FSBLKCNT_T_DECLARED 1
+#define	_BLKSIZE_T_DECLARED 1
+#define	_BLKCNT_T_DECLARED 1
+
+#define	__dev_t	_bsd_dev_t
+#define	__gid_t	_bsd_gid_t
+#define	__off_t	_bsd_off_t
+#define	__pid_t	_bsd_pid_t
+#define	__uid_t	_bsd_uid_t
+
+/* Missing error number */
+//#define ENOIOCTL EINVAL
+
+#ifndef _RTEMS_BSD_BSD_HH_
+/* Symbol rename */
+
+#include <rtems/freebsd/machine/rtems-bsd-symbols.h>
+
+#define gets _bsd_gets
+#define realloc _bsd_realloc
+#define reallocf _bsd_reallocf
+#define setenv _bsd_setenv
+#define abs _bsd_abs
+#define labs _bsd_labs
+
+#define ticks _Watchdog_Ticks_since_boot
+
+/* Debug */
+
+void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);
+
+#define BSD_PRINTF(fmt, ...) printf("%s: " fmt, __func__, ##__VA_ARGS__)
+
+#define BSD_PANIC(fmt, ...) panic("%s: " fmt "\n",  __func__, ##__VA_ARGS__)
+
+#ifdef NDEBUG
+# define BSD_ASSERT(expr) ((void) 0)
+#else
+# define BSD_ASSERT(expr) ((expr) ? (void) 0 : rtems_bsd_assert_func(__FILE__, __LINE__, __func__, #expr))
+#endif
+
+#define BSD_ASSERT_SC(sc) BSD_ASSERT((sc) == RTEMS_SUCCESSFUL)
+
+#define BSD_ASSERT_RV(rv) BSD_ASSERT((rv) == 0)
+
+/* General definitions */
+
+#define BSD_TASK_PRIORITY_NORMAL 120
+
+#define BSD_TASK_PRIORITY_TIMER 110
+
+#define BSD_TASK_PRIORITY_INTERRUPT 100
+
+#define BSD_TASK_PRIORITY_RESOURCE_OWNER 100
+
+/* FIXME */
+#define BSD_MINIMUM_TASK_STACK_SIZE ((size_t) 32 * 1024)
+
+#define M_RTEMS_HEAP 0
+
+#define BSD_MAXIMUM_SLEEP_QUEUES 32
+
+extern rtems_chain_control rtems_bsd_lock_chain;
+
+extern rtems_chain_control rtems_bsd_mtx_chain;
+
+extern rtems_chain_control rtems_bsd_sx_chain;
+
+extern rtems_chain_control rtems_bsd_condvar_chain;
+
+extern rtems_chain_control rtems_bsd_callout_chain;
+
+extern rtems_chain_control rtems_bsd_thread_chain;
+
+extern rtems_chain_control rtems_bsd_malloc_chain;
+
+/* CPU definitions */
+#define cpu_spinwait()    /* nothing */
+
+#endif /* !_RTEMS_BSD_BSD_HH_ */
+
+#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_ */

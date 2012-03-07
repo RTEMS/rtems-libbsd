@@ -6,3 +6,14 @@
   - Fix line with "install for loop" wraps
   - Do include include target.cfg
 
++ Add the following (or similar) to the linkcmds any BSP used for testing:
+
+    /* sysinit section? */
+    . = ALIGN (16);
+    _bsd__start_set_sysinit_set = .;
+    *(set_sys_init_*);
+    _bsd__stop_set_sysinit_set = .;
+
+  It is unclear what to do about the older sysctl sections or how to ensure
+  these are initialized.
+

@@ -1,5 +1,4 @@
-RTEMS_MAKEFILE_PATH = /home/kirspelk/sandbox/opti_touch/b_rtems_arm/arm-rtems/c/lpc3250/make
-INSTALL_BASE = /home/kirspelk/sandbox/opti_touch/b_rtems_arm/arm-rtems/lpc3250/lib
+include config.inc
 
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)

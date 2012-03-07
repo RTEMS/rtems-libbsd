@@ -339,12 +339,12 @@ $(LIB): $(C_O_FILES)
 	$(AR) rcu $@ $^
 
 lib_usb:
-	export PATH=$(PATH):/usr/local/gcc-4.5.2/bin ; \
 	make $(LIB)
 
 install: $(LIB)
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
-	for i in `find . -name '*.h'` ; do install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	for i in `find . -name '*.h'` ; do \
+	    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd

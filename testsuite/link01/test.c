@@ -9,12 +9,17 @@
 #include <stdio.h>
 #include <rtems/freebsd/bsd.h>
 
+/* needed by rtems-bsd-resource.c */
 int maxproc;
+
+/* needed by rtems-bsd-prot.c */
 int ngroups_max;
 
+/* needed by rtems-bsd-prot.c */
 void prison_hold() {}
 void prison_free() {}
 
+/* needed by rtems-bsd-init-with-irq.c */
 void rtems_interrupt_server_initialize(void) { }
 
 rtems_task Init(

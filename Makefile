@@ -265,6 +265,7 @@ C_FILES = \
 	rtems/freebsd/rtems/rtems-bsd-condvar.c \
 	rtems/freebsd/rtems/rtems-bsd-lock.c \
 	rtems/freebsd/rtems/rtems-bsd-sx.c \
+	rtems/freebsd/rtems/rtems-bsd-rmlock.c \
 	rtems/freebsd/rtems/rtems-bsd-rwlock.c \
 	rtems/freebsd/rtems/rtems-bsd-generic.c \
 	rtems/freebsd/rtems/rtems-bsd-panic.c \

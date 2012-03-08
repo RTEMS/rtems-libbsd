@@ -37,21 +37,32 @@ import re
 import sys
 import getopt
 
-RTEMS_DIR = sys.argv[1]
-FreeBSD_DIR = '.'
-verbose = False
+RTEMS_DIR = "not_set"
+FreeBSD_DIR = "not_set"
+isVerbose = False
 isForward = True
+isDryRun = True
+isEarlyExit = False
 
 def usage():
-	print "Usage help here"
+  print "freebsd-to-rtems.py [args]"
+  print "  -?|-h|--help     print this and exit"
+  print "  -d|--dry-run     run program but no modifications"
+  print "  -e|--early-exit  evaluate arguments, print results, and exit"
+  print "  -R|--reverse     default FreeBSD -> RTEMS, reverse that"
+  print "  -r|--rtems       RTEMS directory"
+  print "  -f|--freebsd     FreeBSD directory"
+  print "  -v|--verbose     enable verbose output mode"
 
 # Parse the arguments
 def parseArguments():
-  global RTEMS_DIR, FreeBSD_DIR, verbose, isForward
+  global RTEMS_DIR, FreeBSD_DIR, isVerbose, isForward, isEarlyExit
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "?hRr:f:v",
+    opts, args = getopt.getopt(sys.argv[1:], "?hdeRr:f:v",
                  ["help",
                   "help",
+                  "dry-run"
+                  "early-exit"
                   "reverse"
                   "rtems="
                   "freebsd="
@@ -65,10 +76,14 @@ def parseArguments():
     sys.exit(2)
   for o, a in opts:
     if o == "-v":
-      verbose = True
+      isVerbose = True
     elif o in ("-h", "--help", "-?"):
       usage()
       sys.exit()
+    elif o in ("-d", "--dry-run"):
+      isForward = False
+    elif o in ("-e", "--early-exit"):
+      isEarlyExit = True
     elif o in ("-R", "--reverse"):
       isForward = False
     elif o in ("-r", "--rtems"):
@@ -81,19 +96,37 @@ def parseArguments():
        assert False, "unhandled option"
 
 parseArguments()
-print "Verbose:           " + ("no", "yes")[verbose]
+print "Verbose:           " + ("no", "yes")[isVerbose]
+print "Dry Run:           " + ("no", "yes")[isDryRun]
 print "RTEMS Directory:   " + RTEMS_DIR
 print "FreeBSD Directory: " + FreeBSD_DIR
 print "Direction:         " + ("reverse", "forward")[isForward]
 
-# test for existence of RTEMS and FreeBSD directories
-if os.path.isdir( RTEMS_DIR ) != True:
-    print "RTEMS Directory (" + RTEMS_DIR + ") does not exist"
-    sys.exit(2)
+# Check directory argument was set and exist
+def wasDirectorySet(desc, path):
+    if path == "not_set":
+        print desc + " Directory was not specified on command line"
+        sys.exit(2)
+
+    if os.path.isdir( path ) != True:
+        print desc + " Directory (" + path + ") does not exist"
+        sys.exit(2)
+
+# Were RTEMS and FreeBSD directories specified
+wasDirectorySet( "RTEMS", RTEMS_DIR )
+wasDirectorySet( "FreeBSD", FreeBSD_DIR )
  
 if os.path.isdir( FreeBSD_DIR ) != True:
     print "FreeBSD Directory (" + FreeBSD_DIR + ") does not exist"
     sys.exit(2)
+ 
+if FreeBSD_DIR == RTEMS_DIR:
+    print "FreeBSD and RTEMS Directories are the same"
+    sys.exit(2)
+
+if isEarlyExit == True:
+    print "Early exit at user request"
+    sys.exit(0)
  
 # Prefix added to FreeBSD files as they are copied into the RTEMS
 # build tree.
@@ -109,6 +142,10 @@ def mapContribPath(path):
 
 def installEmptyFile(src):
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + src.replace('rtems/', '')
+	if isVerbose == True:
+		print "Install empty - " + dst
+	if isDryRun == True:
+		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -135,6 +172,10 @@ def installHeaderFile(org):
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org # + org.replace('rtems/', '')
 	dst = mapContribPath(dst)
+	if isVerbose == True:
+		print "Install Header - " + src + " => " + dst
+	if isDryRun == True:
+		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -150,6 +191,10 @@ def installSourceFile(org):
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
 	dst = mapContribPath(dst)
+	if isVerbose == True:
+		print "Install Source - " + src + " => " + dst
+	if isDryRun == True:
+		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -166,6 +211,10 @@ def revertHeaderFile(org):
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org.replace('rtems/', '')
 	src = mapContribPath(src)
 	dst = FreeBSD_DIR + '/' + org
+	if isVerbose == True:
+		print "Revert Header - " + src + " => " + dst
+	if isDryRun == True:
+		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -181,6 +230,10 @@ def revertSourceFile(org):
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org
 	src = mapContribPath(src)
 	dst = FreeBSD_DIR + '/' + org
+	if isVerbose == True:
+		print "Revert Source - " + src + " => " + dst
+	if isDryRun == True:
+		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -194,6 +247,10 @@ def revertSourceFile(org):
 	out.close()
 
 def deleteOutputDirectory():
+	if isVerbose == True:
+		print "Delete Directory - " + RTEMS_DIR
+	if isDryRun == True:
+		return
 	try:
 		shutil.rmtree(RTEMS_DIR)
 	except OSError:
@@ -227,6 +284,10 @@ class ModuleManager:
 				revertSourceFile(f)
 
 	def createMakefile(self):
+		if isVerbose == True:
+			print "Create Makefile"
+		if isDryRun == True:
+			return
 		data = 'include config.inc\n' \
 			'\n' \
 			'include $(RTEMS_MAKEFILE_PATH)/Makefile.inc\n' \

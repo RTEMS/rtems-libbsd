@@ -394,9 +394,20 @@ class Module:
 
 	def addHeaderFiles(self, files):
 		self.headerFiles.extend(files)
+		for file in files:
+			if file[-2] != '.' or file[-1] != 'h':
+				print "*** " + file + " does not end in .h"
+				print "*** Move it to a C source file list"
+				sys.exit(2)
 
 	def addSourceFiles(self, files):
 		self.sourceFiles.extend(files)
+		for file in files:
+			if file[-2] != '.' or file[-1] != 'c':
+				print "*** " + file + " does not end in .c"
+				print "*** Move it to a header file list"
+				sys.exit(2)
+
 
 	def addDependency(self, dep):
 		self.dependencies.append(dep)
@@ -1420,7 +1431,6 @@ netipsec.addHeaderFiles(
 		'netipsec/ipcomp_var.h',
 		'netipsec/ipip_var.h',
 		'netipsec/ipsec6.h',
-		'netipsec/ipsec.c',
 		'netipsec/ipsec.h',
 		'netipsec/keydb.h',
 		'netipsec/key_debug.h',
@@ -1432,6 +1442,7 @@ netipsec.addHeaderFiles(
 )
 netipsec.addSourceFiles(
 	[
+		'netipsec/ipsec.c',
 		'netipsec/ipsec_input.c',
 		'netipsec/ipsec_mbuf.c',
 		'netipsec/ipsec_output.c',

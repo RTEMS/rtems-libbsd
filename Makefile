@@ -169,6 +169,7 @@ C_FILES = \
 	freebsd/netinet6/scope6.c \
 	freebsd/netinet6/sctp6_usrreq.c \
 	freebsd/netinet6/udp6_usrreq.c \
+	freebsd/netipsec/ipsec.c \
 	freebsd/netipsec/ipsec_input.c \
 	freebsd/netipsec/ipsec_mbuf.c \
 	freebsd/netipsec/ipsec_output.c \

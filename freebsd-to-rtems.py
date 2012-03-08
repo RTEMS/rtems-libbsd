@@ -41,14 +41,16 @@ RTEMS_DIR = "not_set"
 FreeBSD_DIR = "not_set"
 isVerbose = False
 isForward = True
-isDryRun = True
+isDryRun = False
 isEarlyExit = False
+isOnlyMakefile = False
 
 def usage():
   print "freebsd-to-rtems.py [args]"
   print "  -?|-h|--help     print this and exit"
   print "  -d|--dry-run     run program but no modifications"
   print "  -e|--early-exit  evaluate arguments, print results, and exit"
+  print "  -m|--makefile    just generate Makefile"
   print "  -R|--reverse     default FreeBSD -> RTEMS, reverse that"
   print "  -r|--rtems       RTEMS directory"
   print "  -f|--freebsd     FreeBSD directory"
@@ -56,13 +58,15 @@ def usage():
 
 # Parse the arguments
 def parseArguments():
-  global RTEMS_DIR, FreeBSD_DIR, isVerbose, isForward, isEarlyExit
+  global RTEMS_DIR, FreeBSD_DIR
+  global isVerbose, isForward, isEarlyExit, isOnlyMakefile
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "?hdeRr:f:v",
+    opts, args = getopt.getopt(sys.argv[1:], "?hdemRr:f:v",
                  ["help",
                   "help",
                   "dry-run"
                   "early-exit"
+                  "makefile"
                   "reverse"
                   "rtems="
                   "freebsd="
@@ -84,6 +88,8 @@ def parseArguments():
       isForward = False
     elif o in ("-e", "--early-exit"):
       isEarlyExit = True
+    elif o in ("-m", "--makefile"):
+      isOnlyMakefile = True
     elif o in ("-R", "--reverse"):
       isForward = False
     elif o in ("-r", "--rtems"):
@@ -96,11 +102,12 @@ def parseArguments():
        assert False, "unhandled option"
 
 parseArguments()
-print "Verbose:           " + ("no", "yes")[isVerbose]
-print "Dry Run:           " + ("no", "yes")[isDryRun]
-print "RTEMS Directory:   " + RTEMS_DIR
-print "FreeBSD Directory: " + FreeBSD_DIR
-print "Direction:         " + ("reverse", "forward")[isForward]
+print "Verbose:                " + ("no", "yes")[isVerbose]
+print "Dry Run:                " + ("no", "yes")[isDryRun]
+print "Only Generate Makefile: " + ("no", "yes")[isOnlyMakefile]
+print "RTEMS Directory:        " + RTEMS_DIR
+print "FreeBSD Directory:      " + FreeBSD_DIR
+print "Direction:              " + ("reverse", "forward")[isForward]
 
 # Check directory argument was set and exist
 def wasDirectorySet(desc, path):
@@ -116,19 +123,14 @@ def wasDirectorySet(desc, path):
 wasDirectorySet( "RTEMS", RTEMS_DIR )
 wasDirectorySet( "FreeBSD", FreeBSD_DIR )
  
-if os.path.isdir( FreeBSD_DIR ) != True:
-    print "FreeBSD Directory (" + FreeBSD_DIR + ") does not exist"
-    sys.exit(2)
- 
-if FreeBSD_DIR == RTEMS_DIR:
-    print "FreeBSD and RTEMS Directories are the same"
-    sys.exit(2)
-
 # Are we generating or reverting?
 if isForward == True:
     print "Generating into", RTEMS_DIR
 else:
     print "Reverting from", RTEMS_DIR
+    if isOnlyMakefile == True:
+        print "Only Makefile Mode and Reverse are contradictory"
+        sys.exit(2)
 
 if isEarlyExit == True:
     print "Early exit at user request"
@@ -323,7 +325,7 @@ class ModuleManager:
 				f = mapContribPath(f)
 				data += ' \\\n\t' + f
 		for f in rtems_sourceFiles:
-			f = 'rtemsbsd/src/' + f
+			f = 'rtemsbsd/' + f
 			data += ' \\\n\t' + f
 
 		data += '\nC_O_FILES = $(C_FILES:%.c=%.o)\n' \
@@ -409,39 +411,40 @@ rtems_headerFiles = [
 	'bsd.h',
 	]
 rtems_sourceFiles = [
-	'rtems-bsd-cam.c',
-	'rtems-bsd-nexus.c',
-	'rtems-bsd-autoconf.c',
-        'rtems-bsd-delay.c',
-	'rtems-bsd-mutex.c',
-	'rtems-bsd-thread.c',
-	'rtems-bsd-condvar.c',
-        'rtems-bsd-lock.c',
-	'rtems-bsd-sx.c',
-        'rtems-bsd-rmlock.c',
-        'rtems-bsd-rwlock.c',
-        'rtems-bsd-generic.c',
-        'rtems-bsd-panic.c',
-        'rtems-bsd-synch.c',
-	'rtems-bsd-signal.c',
-	'rtems-bsd-callout.c',
-	'rtems-bsd-init.c',
-        'rtems-bsd-init-with-irq.c',
-	'rtems-bsd-assert.c',
-        'rtems-bsd-prot.c',
-        'rtems-bsd-resource.c',
-        'rtems-bsd-jail.c',
-	'rtems-bsd-shell.c',
-        'rtems-bsd-syscalls.c',
-        #rtems-bsd-socket.c',
-        #rtems-bsd-mbuf.c',
-	'rtems-bsd-malloc.c',
-        'rtems-bsd-support.c',
-	'rtems-bsd-bus-dma.c',
-        'rtems-bsd-sysctl.c',
-        'rtems-bsd-sysctlbyname.c',
-        'rtems-bsd-sysctlnametomib.c',
-        'rtems-bsd-uma.c',
+	'dev/usb/controller/ohci_lpc3250.c',
+	'src/rtems-bsd-cam.c',
+	'src/rtems-bsd-nexus.c',
+	'src/rtems-bsd-autoconf.c',
+        'src/rtems-bsd-delay.c',
+	'src/rtems-bsd-mutex.c',
+	'src/rtems-bsd-thread.c',
+	'src/rtems-bsd-condvar.c',
+        'src/rtems-bsd-lock.c',
+	'src/rtems-bsd-sx.c',
+        'src/rtems-bsd-rmlock.c',
+        'src/rtems-bsd-rwlock.c',
+        'src/rtems-bsd-generic.c',
+        'src/rtems-bsd-panic.c',
+        'src/rtems-bsd-synch.c',
+	'src/rtems-bsd-signal.c',
+	'src/rtems-bsd-callout.c',
+	'src/rtems-bsd-init.c',
+        'src/rtems-bsd-init-with-irq.c',
+	'src/rtems-bsd-assert.c',
+        'src/rtems-bsd-prot.c',
+        'src/rtems-bsd-resource.c',
+        'src/rtems-bsd-jail.c',
+	'src/rtems-bsd-shell.c',
+        'src/rtems-bsd-syscalls.c',
+        #'src/rtems-bsd-socket.c',
+        #'src/rtems-bsd-mbuf.c',
+	'src/rtems-bsd-malloc.c',
+        'src/rtems-bsd-support.c',
+	'src/rtems-bsd-bus-dma.c',
+        'src/rtems-bsd-sysctl.c',
+        'src/rtems-bsd-sysctlbyname.c',
+        'src/rtems-bsd-sysctlnametomib.c',
+        'src/rtems-bsd-uma.c',
 	]
 # RTEMS files handled separately from modules
 # rtems = Module('rtems')
@@ -449,6 +452,7 @@ rtems_sourceFiles = [
 # rtems.addSourceFiles( rtems_sourceFiles )
 
 local = Module('local')
+# RTEMS has its own local/pmap.h
 local.addHeaderFiles(
 	[
 		'local/bus_if.h',
@@ -512,7 +516,6 @@ local.addHeaderFiles(
 		'local/opt_vlan.h',
 		'local/opt_wlan.h',
         	'local/opt_zero.h',
-        	'local/pmap.h',
 		'local/usbdevs_data.h',
 		'local/usbdevs.h',
 		'local/usb_if.h',
@@ -631,7 +634,6 @@ devUsbController.addSourceFiles(
 		'dev/usb/controller/ohci.c',
 		'dev/usb/controller/ehci.c',
 		'dev/usb/controller/usb_controller.c',
-		'dev/usb/controller/ohci_lpc3250.c',
 	]
 )
 
@@ -1710,7 +1712,8 @@ mm.addModule(devUsbStorage)
 
 # Perform the actual file manipulation
 if isForward == True:
-    mm.copyFiles()
+    if isOnlyMakefile == False:
+        mm.copyFiles()
     mm.createMakefile()
 else:
     mm.revertFiles()

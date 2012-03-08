@@ -300,10 +300,10 @@ C_FILES = \
 	freebsd/dev/usb/controller/ohci.c \
 	freebsd/dev/usb/controller/ehci.c \
 	freebsd/dev/usb/controller/usb_controller.c \
-	freebsd/dev/usb/controller/ohci_lpc3250.c \
 	freebsd/cam/cam.c \
 	freebsd/cam/scsi/scsi_all.c \
 	freebsd/dev/usb/storage/umass.c \
+	rtemsbsd/dev/usb/controller/ohci_lpc3250.c \
 	rtemsbsd/src/rtems-bsd-cam.c \
 	rtemsbsd/src/rtems-bsd-nexus.c \
 	rtemsbsd/src/rtems-bsd-autoconf.c \
@@ -349,7 +349,7 @@ lib_usb:
 	make $(LIB)
 
 install: $(LIB)
-	install -d "$(INSTALL_BASE)/include"
+	install -d $(INSTALL_BASE)/include
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 	cd rtemsbsd; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done

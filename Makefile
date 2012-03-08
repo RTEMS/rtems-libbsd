@@ -6,8 +6,7 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 
 CFLAGS += -ffreestanding 
 CFLAGS += -I . 
-# CFLAGS += -I rtemsbsd 
-CFLAGS += -I rtemsbsd/rtems
+CFLAGS += -I rtemsbsd 
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 
 CFLAGS += -B $(INSTALL_BASE) 
@@ -350,8 +349,11 @@ lib_usb:
 	make $(LIB)
 
 install: $(LIB)
+	install -d "$(INSTALL_BASE)/include"
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
-	for i in `find . -name '*.h'` ; do \
+	cd rtemsbsd; for i in `find . -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	for i in `find contrib freebsd -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 
 clean:

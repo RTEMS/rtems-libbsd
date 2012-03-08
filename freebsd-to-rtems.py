@@ -297,7 +297,6 @@ class ModuleManager:
 			'CFLAGS += -ffreestanding \n' \
 			'CFLAGS += -I . \n' \
 			'CFLAGS += -I rtemsbsd \n' \
-			'CFLAGS += -I rtemsbsd/rtems \n' \
 			'CFLAGS += -I contrib/altq \n' \
 			'CFLAGS += -I contrib/pf \n' \
 			'CFLAGS += -B $(INSTALL_BASE) \n' \
@@ -328,8 +327,11 @@ class ModuleManager:
 			'\tmake $(LIB)\n' \
 			'\n' \
 			'install: $(LIB)\n' \
+            '\tinstall -d $(INSTALL_BASE)/include\n' \
             '\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
-            '\tfor i in `find . -name \'*.h\'` ; do \\\n' \
+            '\tcd rtemsbsd; for i in `find . -name \'*.h\'` ; do \\\n' \
+            '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+            '\tfor i in `find contrib freebsd -name \'*.h\'` ; do \\\n' \
             '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\n' \
 			'clean:\n' \

@@ -27,8 +27,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
-#include <rtems/freebsd/machine/rtems-bsd-select.h>
+#include <freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-select.h>
 
 rtems_status_code rtems_bsd_initialize(void);
 

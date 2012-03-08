@@ -23,14 +23,14 @@
 /* Necessary to obtain some internal functions */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/proc.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/proc.h>
 
 static void assert_mtx(struct lock_object *lock, int what);
 static void lock_mtx(struct lock_object *lock, int how);

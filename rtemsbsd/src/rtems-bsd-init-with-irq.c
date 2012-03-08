@@ -20,11 +20,11 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 #include <rtems/irq-extension.h>
 
-#include <rtems/freebsd/bsd.h>
+#include <freebsd/bsd.h>
 
 rtems_status_code
 rtems_bsd_initialize_with_interrupt_server(void)

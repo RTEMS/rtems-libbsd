@@ -23,16 +23,16 @@
 /* Necessary to obtain some internal functions */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 #include <rtems/posix/cond.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/condvar.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/condvar.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_condvar_chain);
 

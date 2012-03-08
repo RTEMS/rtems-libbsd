@@ -20,38 +20,38 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-/*#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>*/
+/*#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>*/
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/sysproto.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/osd.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/taskqueue.h>
-#include <rtems/freebsd/sys/fcntl.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/sysent.h>
-#include <rtems/freebsd/sys/namei.h>
-#include <rtems/freebsd/sys/mount.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/syscallsubr.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/sysproto.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/osd.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/taskqueue.h>
+#include <freebsd/sys/fcntl.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/sysent.h>
+#include <freebsd/sys/namei.h>
+#include <freebsd/sys/mount.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/syscallsubr.h>
+#include <freebsd/sys/sysctl.h>
 
 #define DEFAULT_HOSTUUID  "00000000-0000-0000-0000-000000000000"
 

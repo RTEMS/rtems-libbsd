@@ -20,11 +20,11 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/signalvar.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/signalvar.h>
 
 void
 psignal(struct proc *p, int sig)

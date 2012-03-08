@@ -19,24 +19,24 @@
  * found in the file LICENSE in this distribution or at
  * http://www.rtems.com/license/LICENSE.
  */
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/fcntl.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/uio.h>
-#include <rtems/freebsd/machine/pcpu.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/fcntl.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/uio.h>
+#include <freebsd/machine/pcpu.h>
+#include <freebsd/net/vnet.h>
 
 #include <rtems/libio_.h>
 #include <rtems/seterr.h>

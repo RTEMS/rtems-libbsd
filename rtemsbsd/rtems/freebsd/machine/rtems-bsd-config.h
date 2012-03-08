@@ -187,7 +187,7 @@
 #ifndef _RTEMS_BSD_BSD_HH_
 /* Symbol rename */
 
-#include <rtems/freebsd/machine/rtems-bsd-symbols.h>
+#include <freebsd/machine/rtems-bsd-symbols.h>
 
 #define gets _bsd_gets
 #define realloc _bsd_realloc

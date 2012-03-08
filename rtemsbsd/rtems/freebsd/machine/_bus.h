@@ -1,1 +1,1 @@
-#include <rtems/freebsd/machine/bus.h>
+#include <freebsd/machine/bus.h>

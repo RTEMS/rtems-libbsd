@@ -24,7 +24,7 @@
 #define _RTEMS_BSD_MACHINE_PCPU_H_
 
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
-#error "the header file <rtems/freebsd/machine/rtems-bsd-config.h> must be included first"
+#error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
 #endif
 
 #define curthread (( struct thread * )(( RTEMS_API_Control * )_Thread_Executing->API_Extensions[THREAD_API_RTEMS] )->Notepads[RTEMS_NOTEPAD_0] )

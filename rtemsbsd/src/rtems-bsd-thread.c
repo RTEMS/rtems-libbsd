@@ -20,14 +20,14 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/kthread.h>
-#include <rtems/freebsd/sys/malloc.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/kthread.h>
+#include <freebsd/sys/malloc.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 

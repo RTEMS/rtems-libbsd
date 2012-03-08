@@ -20,19 +20,19 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/ktr.h>
-#include <rtems/freebsd/vm/uma.h>
-#include <rtems/freebsd/vm/uma_int.h>
-#include <rtems/freebsd/vm/uma_dbg.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/ktr.h>
+#include <freebsd/vm/uma.h>
+#include <freebsd/vm/uma_int.h>
+#include <freebsd/vm/uma_dbg.h>
 
 /*
  * This is the zone and keg from which all zones are spawned.  The idea is that

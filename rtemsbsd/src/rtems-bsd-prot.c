@@ -20,14 +20,14 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/vm/uma.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/ucred.h>
-#include <rtems/freebsd/sys/refcount.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/vm/uma.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/ucred.h>
+#include <freebsd/sys/refcount.h>
 
 static MALLOC_DEFINE(M_CRED, "cred", "credentials");
 

@@ -24,7 +24,7 @@
 #define _RTEMS_BSD_MACHINE_ATOMIC_H_
 
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
-#error "the header file <rtems/freebsd/machine/rtems-bsd-config.h> must be included first"
+#error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
 #endif
 
 #define mb() RTEMS_COMPILER_MEMORY_BARRIER()

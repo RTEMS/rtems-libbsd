@@ -6,7 +6,7 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 
 CFLAGS += -ffreestanding 
 CFLAGS += -I . 
-CFLAGS += -I rtemsbsd 
+# CFLAGS += -I rtemsbsd 
 CFLAGS += -I rtemsbsd/rtems
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 

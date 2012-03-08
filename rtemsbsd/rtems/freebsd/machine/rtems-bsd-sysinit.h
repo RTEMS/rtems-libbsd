@@ -23,9 +23,9 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSINIT_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSINIT_H_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/kernel.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/kernel.h>
 
 #define SYSINIT_NEED_FREEBSD_CORE \
 	SYSINIT_REFERENCE(configure1); \

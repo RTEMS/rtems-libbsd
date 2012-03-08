@@ -20,10 +20,10 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
 
 void
 rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr)

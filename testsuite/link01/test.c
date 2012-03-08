@@ -7,7 +7,7 @@
 #include <bsp.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <rtems/freebsd/bsd.h>
+#include <freebsd/bsd.h>
 
 /* needed by rtems-bsd-resource.c */
 int maxproc;

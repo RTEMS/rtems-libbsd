@@ -23,13 +23,13 @@
 /* Necessary to obtain some internal functions */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/sx.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/sx.h>
 
 #ifndef INVARIANTS
 #define _sx_assert(sx, what, file, line)

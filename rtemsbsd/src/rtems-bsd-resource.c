@@ -20,16 +20,16 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/resourcevar.h>
-#include <rtems/freebsd/sys/rwlock.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/resourcevar.h>
+#include <freebsd/sys/rwlock.h>
 
 static MALLOC_DEFINE(M_UIDINFO, "uidinfo", "uidinfo structures");
 

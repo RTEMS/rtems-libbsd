@@ -119,7 +119,7 @@
 #define _RTEMS_BSD_MACHINE_BUS_H_
 
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
-#error "the header file <rtems/freebsd/machine/rtems-bsd-config.h> must be included first"
+#error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
 #endif
 
 /*
@@ -776,6 +776,6 @@ bus_space_copy_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
 #define	bus_space_copy_region_stream_8(t, h1, o1, h2, o2, c)	\
 	bus_space_copy_region_8(t, h1, o1, h2, o2, c)
 
-#include <rtems/freebsd/machine/bus_dma.h>
+#include <freebsd/machine/bus_dma.h>
 
 #endif /* _RTEMS_BSD_MACHINE_BUS_H_ */

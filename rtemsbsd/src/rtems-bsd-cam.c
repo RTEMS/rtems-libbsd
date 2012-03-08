@@ -20,24 +20,24 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/condvar.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/condvar.h>
 
-#include <rtems/freebsd/cam/cam.h>
-#include <rtems/freebsd/cam/cam_ccb.h>
-#include <rtems/freebsd/cam/cam_sim.h>
-#include <rtems/freebsd/cam/cam_xpt.h>
-#include <rtems/freebsd/cam/cam_xpt_sim.h>
-#include <rtems/freebsd/cam/cam_debug.h>
+#include <freebsd/cam/cam.h>
+#include <freebsd/cam/cam_ccb.h>
+#include <freebsd/cam/cam_sim.h>
+#include <freebsd/cam/cam_xpt.h>
+#include <freebsd/cam/cam_xpt_sim.h>
+#include <freebsd/cam/cam_debug.h>
 
-#include <rtems/freebsd/cam/scsi/scsi_all.h>
+#include <freebsd/cam/scsi/scsi_all.h>
 
 #include <rtems/media.h>
 #include <rtems/libio.h>

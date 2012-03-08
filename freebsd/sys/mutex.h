@@ -131,12 +131,18 @@ void	_mtx_assert(struct mtx *m, int what, const char *file, int line);
 #endif
 void	_thread_lock_flags(struct thread *, int, const char *, int);
 
+#ifndef __rtems__
 #define	thread_lock(tdp)						\
     _thread_lock_flags((tdp), 0, __FILE__, __LINE__)
 #define	thread_lock_flags(tdp, opt)					\
     _thread_lock_flags((tdp), (opt), __FILE__, __LINE__)
 #define	thread_unlock(tdp)						\
        mtx_unlock_spin((tdp)->td_lock)
+#else
+#define	thread_lock(tdp)
+#define	thread_lock_flags(tdp, opt)
+#define	thread_unlock(tdp)
+#endif
 
 #define	mtx_recurse	lock_object.lo_data
 

@@ -152,18 +152,22 @@ def mapContribPath(path):
 
 # generate an empty file as a place holder
 def installEmptyFile(src):
+	global tempFile
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + src.replace('rtems/', '')
-	if isVerbose == True:
-		print "Install empty - " + dst
 	if isDryRun == True:
+		if isVerbose == True:
+			print "Install empty - " + dst
 		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
-	out = open(dst, 'w')
+	out = open(tempFile, 'w')
 	out.write('/* EMPTY */\n')
 	out.close()
+	if copyIfDifferent(tempFile, dst) == True:
+		if isVerbose == True:
+			print "Install empty - " + dst
 
 # fix include paths inside a C or .h file
 def fixIncludes(data):
@@ -981,6 +985,7 @@ devUsbBase.addSourceFiles(
 		#'kern/kern_mib.c',
 		'kern/kern_mbuf.c',
 		'kern/kern_module.c',
+		'kern/kern_subr.c',
 		'kern/kern_sysctl.c',
 		'kern/subr_bus.c',
 		'kern/subr_kobj.c',
@@ -1657,20 +1662,16 @@ mm.addEmptyFiles(
 		'machine/elf.h',
 		'machine/sf_buf.h',
 		#'machine/vmparam.h',
-		'net/vnet.h',
 		'security/audit/audit.h',
-		'security/mac/mac_framework.h',
 		'sys/bio.h',
 		'sys/copyright.h',
 		'sys/cpuset.h',
-		'sys/errno.h',
 		'sys/exec.h',
 		'sys/fail.h',
 		'sys/limits.h',
 		'sys/namei.h',
 		'sys/_pthreadtypes.h',
 		#'sys/resourcevar.h',
-		'sys/sbuf.h',
 		'sys/sched.h',
 		'sys/select.h',
 		'sys/syscallsubr.h',
@@ -1678,7 +1679,6 @@ mm.addEmptyFiles(
 		'sys/syslimits.h',
 		'sys/sysproto.h',
 		'sys/stat.h',
-		'sys/taskqueue.h',
 		#'sys/time.h',
 		'time.h',
 		'sys/timespec.h',

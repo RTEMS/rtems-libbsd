@@ -271,6 +271,7 @@ C_FILES = \
 	freebsd/kern/init_main.c \
 	freebsd/kern/kern_mbuf.c \
 	freebsd/kern/kern_module.c \
+	freebsd/kern/kern_subr.c \
 	freebsd/kern/kern_sysctl.c \
 	freebsd/kern/subr_bus.c \
 	freebsd/kern/subr_kobj.c \

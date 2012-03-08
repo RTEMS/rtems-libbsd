@@ -124,6 +124,12 @@ if FreeBSD_DIR == RTEMS_DIR:
     print "FreeBSD and RTEMS Directories are the same"
     sys.exit(2)
 
+# Are we generating or reverting?
+if isForward == True:
+    print "Generating into", RTEMS_DIR
+else:
+    print "Reverting from", RTEMS_DIR
+
 if isEarlyExit == True:
     print "Early exit at user request"
     sys.exit(0)
@@ -132,14 +138,13 @@ if isEarlyExit == True:
 # build tree.
 PREFIX = 'freebsd'
 
-print "Generating into", RTEMS_DIR
-
 def mapContribPath(path):
 	m = re.match('(.*)(' + PREFIX + '/)(contrib/\\w+/)(.*)', path)
 	if m:
 		path = m.group(1) + m.group(3) + m.group(2) + m.group(4)
 	return path
 
+# generate an empty file as a place holder
 def installEmptyFile(src):
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + src.replace('rtems/', '')
 	if isVerbose == True:
@@ -154,6 +159,7 @@ def installEmptyFile(src):
 	out.write('/* EMPTY */\n')
 	out.close()
 
+# fix include paths inside a C or .h file
 def fixIncludes(data):
 	data = re.sub('#([ \t]*)include <', '#\\1include <' + PREFIX + '/', data)
 	data = re.sub('#include <' + PREFIX + '/rtems', '#include <rtems', data)
@@ -162,12 +168,14 @@ def fixIncludes(data):
 	data = re.sub('_H_', '_HH_', data)
 	return data
 
+# revert fixing the include paths inside a C or .h file
 def revertFixIncludes(data):
 	data = re.sub('_HH_', '_H_', data)
 	data = re.sub('#include <' + PREFIX + '/local/([^>]*)>', '#include "\\1"', data)
 	data = re.sub('#([ \t]*)include <' + PREFIX + '/', '#\\1include <', data)
 	return data
 
+# Copy a header file from FreeBSD to the RTEMS BSD tree
 def installHeaderFile(org):
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org # + org.replace('rtems/', '')
@@ -187,6 +195,7 @@ def installHeaderFile(org):
 	out.write(data)
 	out.close()
 
+# Copy a source file from FreeBSD to the RTEMS BSD tree
 def installSourceFile(org):
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
@@ -207,6 +216,7 @@ def installSourceFile(org):
 	out.write(data)
 	out.close()
 
+# Revert a header file from the RTEMS BSD tree to the FreeBSD tree
 def revertHeaderFile(org):
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org.replace('rtems/', '')
 	src = mapContribPath(src)
@@ -226,6 +236,7 @@ def revertHeaderFile(org):
 	out.write(data)
 	out.close()
 
+# Revert a source file from the RTEMS BSD tree to the FreeBSD tree
 def revertSourceFile(org):
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org
 	src = mapContribPath(src)
@@ -246,6 +257,7 @@ def revertSourceFile(org):
 	out.write(data)
 	out.close()
 
+# Remove the output directory
 def deleteOutputDirectory():
 	if isVerbose == True:
 		print "Delete Directory - " + RTEMS_DIR
@@ -256,6 +268,7 @@ def deleteOutputDirectory():
 	except OSError:
 	    pass
 
+# Module Manager - Collection of Modules
 class ModuleManager:
 	def __init__(self):
 		self.modules = []
@@ -343,6 +356,7 @@ class ModuleManager:
 		out.write(data)
 		out.close()
 
+# Module - logical group of related files we can perform actions on
 class Module:
 	def __init__(self, name):
 		self.name = name
@@ -359,6 +373,8 @@ class Module:
 	def addDependency(self, dep):
 		self.dependencies.append(dep)
 
+# Create Module Manager and supporting Modules
+#  - initialize each module with set of files associated
 mm = ModuleManager()
 
 rtems_headerFiles = [
@@ -458,7 +474,7 @@ local.addHeaderFiles(
 		'local/opt_cam.h',
 		'local/opt_carp.h',
 		'local/opt_compat.h',
-        'local/opt_config.h',
+        	'local/opt_config.h',
 		'local/opt_cpu.h',
 		'local/opt_ddb.h',
 		'local/opt_device_polling.h',
@@ -484,8 +500,8 @@ local.addHeaderFiles(
 		'local/opt_natm.h',
 		'local/opt_netgraph.h',
 		'local/opt_param.h',
-        'local/opt_posix.h',
-        'local/opt_pf.h',
+        	'local/opt_posix.h',
+        	'local/opt_pf.h',
 		'local/opt_printf.h',
 		'local/opt_route.h',
 		'local/opt_scsi.h',
@@ -495,8 +511,8 @@ local.addHeaderFiles(
 		'local/opt_usb.h',
 		'local/opt_vlan.h',
 		'local/opt_wlan.h',
-        'local/opt_zero.h',
-        'local/pmap.h',
+        	'local/opt_zero.h',
+        	'local/pmap.h',
 		'local/usbdevs_data.h',
 		'local/usbdevs.h',
 		'local/usb_if.h',
@@ -505,7 +521,7 @@ local.addHeaderFiles(
 		'local/vnode_if_typedef.h',
 		'local/cryptodev_if.h',
 		'local/miibus_if.h',
-        'local/miidevs.h',
+		'local/miidevs.h',
 	]
 )
 local.addSourceFiles(
@@ -855,7 +871,7 @@ devUsbBase.addHeaderFiles(
 		#'sys/cpuset.h',
 		'sys/ctype.h',
 		'sys/endian.h',
-        'sys/errno.h',
+		'sys/errno.h',
 		'sys/event.h',
 		'sys/eventhandler.h',
 		'sys/fcntl.h',
@@ -894,18 +910,18 @@ devUsbBase.addHeaderFiles(
 		'sys/queue.h',
 		'sys/refcount.h',
 		'sys/resource.h',
-        'sys/resourcevar.h',
+		'sys/resourcevar.h',
 		'sys/rtprio.h',
 		'sys/runq.h',
 		'sys/_rwlock.h',
-        'sys/rwlock.h',
+		'sys/rwlock.h',
 		'sys/_semaphore.h',
 		'sys/selinfo.h',
 		'sys/sigio.h',
 		'sys/signal.h',
 		'sys/signalvar.h',
 		'sys/_sigset.h',
-        #'sys/sleepqueue.h',
+		#'sys/sleepqueue.h',
 		'sys/socket.h',
 		'sys/stddef.h',
 		'sys/stdint.h',
@@ -920,37 +936,37 @@ devUsbBase.addHeaderFiles(
 		'sys/ucred.h',
 		'sys/uio.h',
 		'sys/unistd.h',
-        #'sys/vmmeter.h',
-        #'sys/vnode.h',
+		#'sys/vmmeter.h',
+		#'sys/vnode.h',
 		'sys/rman.h',
 		'sys/reboot.h',
 		'sys/bitstring.h',
 		'sys/linker.h',
-        'vm/uma.h',
-        'vm/uma_int.h',
-        'vm/uma_dbg.h',
-        #'vm/vm.h',
-        #'vm/vm_page.h',
+		'vm/uma.h',
+		'vm/uma_int.h',
+		'vm/uma_dbg.h',
+		#'vm/vm.h',
+		#'vm/vm_page.h',
 		'fs/devfs/devfs_int.h',
 	]
 )
 devUsbBase.addSourceFiles(
 	[
 		'kern/init_main.c',
-        #'kern/kern_linker.c',
-        #'kern/kern_mib.c',
-        'kern/kern_mbuf.c',
+		#'kern/kern_linker.c',
+		#'kern/kern_mib.c',
+		'kern/kern_mbuf.c',
 		'kern/kern_module.c',
 		'kern/kern_sysctl.c',
 		'kern/subr_bus.c',
-        'kern/subr_kobj.c',
-        #'kern/subr_sleepqueue.c',
-        'kern/uipc_mbuf.c',
-        'kern/uipc_mbuf2.c',
-        'kern/uipc_socket.c',
-        #'kern/uipc_domain.c',
+		'kern/subr_kobj.c',
+		#'kern/subr_sleepqueue.c',
+		'kern/uipc_mbuf.c',
+		'kern/uipc_mbuf2.c',
+		'kern/uipc_socket.c',
+		#'kern/uipc_domain.c',
 		#'kern/uipc_syscalls.c',
-        #'vm/uma_core.c',
+		#'vm/uma_core.c',
 	]
 )
 
@@ -979,37 +995,37 @@ cam.addSourceFiles(
 
 devNet = Module('dev_net')
 devNet.addHeaderFiles(
-    [
-        'dev/mii/mii.h',
-        'dev/mii/miivar.h',
-        'dev/mii/icsphyreg.h',
-        'net/bpf.h',
-        'net/ethernet.h',
-        'net/if_arp.h',
-        'net/if_dl.h',
-        'net/if.h',
-        'net/if_media.h',
-        'net/if_types.h',
-        'net/if_var.h',
-        'net/vnet.h',
-    ]
+	[
+		'dev/mii/mii.h',
+		'dev/mii/miivar.h',
+		'dev/mii/icsphyreg.h',
+		'net/bpf.h',
+		'net/ethernet.h',
+		'net/if_arp.h',
+		'net/if_dl.h',
+		'net/if.h',
+		'net/if_media.h',
+		'net/if_types.h',
+		'net/if_var.h',
+		'net/vnet.h',
+	]
 )
 devNet.addSourceFiles(
-    [
-        'dev/mii/mii.c',
-        'dev/mii/mii_physubr.c',
-        'dev/mii/icsphy.c',
-    ]
+	[
+		'dev/mii/mii.c',
+		'dev/mii/mii_physubr.c',
+		'dev/mii/icsphy.c',
+	]
 )
 
 netDeps = Module('netDeps')
 # logically machine/in_cksum.h is part of this group but RTEMS provides its own
 netDeps.addHeaderFiles(
 	[
-        'security/mac/mac_framework.h',
-        'sys/cpu.h',
+		'security/mac/mac_framework.h',
+		'sys/cpu.h',
 		'sys/interrupt.h',
-        'sys/fnv_hash.h',
+		'sys/fnv_hash.h',
 		'sys/tree.h',
 		'sys/taskqueue.h',
 		'sys/buf_ring.h',
@@ -1022,19 +1038,19 @@ netDeps.addHeaderFiles(
 		'sys/smp.h',
 		'sys/syslog.h',
 		'sys/jail.h',
-        'sys/protosw.h',
+		'sys/protosw.h',
 		'sys/random.h',
 		'sys/rmlock.h',
 		'sys/hash.h',
-        #'sys/select.h',
+		#'sys/select.h',
 		'sys/sf_buf.h',
 		'sys/socketvar.h',
 		'sys/sockbuf.h',
 		#'sys/sysproto.h',
 		'sys/sockstate.h',
-        'sys/sockopt.h',
-        'sys/domain.h',
-        'sys/time.h',
+		'sys/sockopt.h',
+		'sys/domain.h',
+		'sys/time.h',
 	]
 )
 
@@ -1198,7 +1214,7 @@ netinet.addHeaderFiles(
 		'netinet/tcp_debug.h',
 		'netinet/tcp_fsm.h',
 		'netinet/tcp.h',
-        'netinet/tcp_hostcache.h',
+		'netinet/tcp_hostcache.h',
 		'netinet/tcpip.h',
 		'netinet/tcp_lro.h',
 		'netinet/tcp_offload.h',
@@ -1259,7 +1275,7 @@ netinet.addSourceFiles(
 		'netinet/sctp_usrreq.c',
 		'netinet/sctputil.c',
 		'netinet/tcp_debug.c',
-        #'netinet/tcp_hostcache.c',
+		#'netinet/tcp_hostcache.c',
 		'netinet/tcp_input.c',
 		'netinet/tcp_lro.c',
 		'netinet/tcp_offload.c',
@@ -1277,7 +1293,7 @@ netinet.addSourceFiles(
 		'netinet/ipfw/ip_fw_log.c',
 		'netinet/ipfw/dn_sched_qfq.c',
 		'netinet/ipfw/dn_sched_prio.c',
-        #'netinet/ipfw/ip_fw_dynamic.c',
+		#'netinet/ipfw/ip_fw_dynamic.c',
 		'netinet/ipfw/ip_dn_glue.c',
 		'netinet/ipfw/ip_fw2.c',
 		'netinet/ipfw/dn_heap.c',
@@ -1509,7 +1525,7 @@ opencrypto.addSourceFiles(
 crypto = Module('crypto')
 crypto.addHeaderFiles(
 	[
-        #'crypto/aesni/aesni.h',
+		#'crypto/aesni/aesni.h',
 		'crypto/sha1.h',
 		'crypto/sha2/sha2.h',
 		'crypto/rijndael/rijndael.h',
@@ -1524,14 +1540,14 @@ crypto.addHeaderFiles(
 		'crypto/blowfish/bf_locl.h',
 		'crypto/blowfish/blowfish.h',
 		'crypto/rc4/rc4.h',
-        #'crypto/via/padlock.h',
+		#'crypto/via/padlock.h',
 		'crypto/camellia/camellia.h',
 	]
 )
 crypto.addSourceFiles(
 	[
-        #'crypto/aesni/aesni.c',
-        #'crypto/aesni/aesni_wrap.c',
+		#'crypto/aesni/aesni.c',
+		#'crypto/aesni/aesni_wrap.c',
 		'crypto/sha1.c',
 		'crypto/sha2/sha2.c',
 		'crypto/rijndael/rijndael-alg-fst.c',
@@ -1544,9 +1560,9 @@ crypto.addSourceFiles(
 		'crypto/blowfish/bf_skey.c',
 		'crypto/blowfish/bf_ecb.c',
 		'crypto/rc4/rc4.c',
-        #'crypto/via/padlock.c',
-        #'crypto/via/padlock_cipher.c',
-        #'crypto/via/padlock_hash.c',
+		#'crypto/via/padlock.c',
+		#'crypto/via/padlock_cipher.c',
+		#'crypto/via/padlock_hash.c',
 		'crypto/camellia/camellia-api.c',
 		'crypto/camellia/camellia.c',
 	]
@@ -1616,7 +1632,7 @@ mm.addEmptyFiles(
 		'machine/cpu.h',
 		'machine/elf.h',
 		'machine/sf_buf.h',
-        #'machine/vmparam.h',
+		#'machine/vmparam.h',
 		'net/vnet.h',
 		'security/audit/audit.h',
 		'security/mac/mac_framework.h',
@@ -1629,32 +1645,32 @@ mm.addEmptyFiles(
 		'sys/limits.h',
 		'sys/namei.h',
 		'sys/_pthreadtypes.h',
-        #'sys/resourcevar.h',
+		#'sys/resourcevar.h',
 		'sys/sbuf.h',
 		'sys/sched.h',
-        'sys/select.h',
+		'sys/select.h',
 		'sys/syscallsubr.h',
 		'sys/sysent.h',
 		'sys/syslimits.h',
 		'sys/sysproto.h',
-        'sys/stat.h',
+		'sys/stat.h',
 		'sys/taskqueue.h',
-        #'sys/time.h',
+		#'sys/time.h',
 		'time.h',
 		'sys/timespec.h',
 		'sys/_timeval.h',
-        #'sys/vmmeter.h',
-        #'sys/vnode.h',
-        #'vm/pmap.h',
-        #'vm/uma_int.h',
-        #'vm/uma_dbg.h',
-        #'vm/vm_extern.h',
-        #'vm/vm_map.h',
-        #'vm/vm_object.h',
-        #'vm/vm_page.h',
-        #'vm/vm_pageout.h',
-        #'vm/vm_param.h',
-        #'vm/vm_kern.h',
+		#'sys/vmmeter.h',
+		#'sys/vnode.h',
+		#'vm/pmap.h',
+		#'vm/uma_int.h',
+		#'vm/uma_dbg.h',
+		#'vm/vm_extern.h',
+		#'vm/vm_map.h',
+		#'vm/vm_object.h',
+		#'vm/vm_page.h',
+		#'vm/vm_pageout.h',
+		#'vm/vm_param.h',
+		#'vm/vm_kern.h',
 		'dev/pci/pcireg.h',
 		'dev/pci/pcivar.h',
 		'geom/geom_disk.h',
@@ -1667,6 +1683,7 @@ mm.addEmptyFiles(
 	]
 )
 
+# Register all the Module instances with the Module Manager
 mm.addModule(netDeps)
 mm.addModule(net)
 mm.addModule(netinet)
@@ -1691,7 +1708,10 @@ mm.addModule(devUsbStorage)
 
 #mm.addModule(devUsbNet)
 
-#mm.revertFiles()
-mm.copyFiles()
-mm.createMakefile()
+# Perform the actual file manipulation
+if isForward == True:
+    mm.copyFiles()
+    mm.createMakefile()
+else:
+    mm.revertFiles()
 

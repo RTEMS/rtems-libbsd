@@ -33,7 +33,7 @@
 #ifndef _FS_DEVFS_DEVFS_INT_HH_
 #define	_FS_DEVFS_DEVFS_INT_HH_
 
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 #ifdef _KERNEL
 

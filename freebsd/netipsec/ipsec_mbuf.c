@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002, 2003 Sam Leffler, Errno Consulting
@@ -32,19 +32,19 @@
  * IPsec-specific mbuf routines.
  */
 
-#include <rtems/freebsd/local/opt_param.h>
+#include <freebsd/local/opt_param.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/netinet/in.h>
 
-#include <rtems/freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/ipsec.h>
 
 /*
  * Make space for a new header of length hlen at skip bytes

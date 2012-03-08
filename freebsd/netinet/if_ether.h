@@ -33,8 +33,8 @@
 #ifndef _NETINET_IF_ETHER_HH_
 #define _NETINET_IF_ETHER_HH_
 
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/if_arp.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/if_arp.h>
 
 /*
  * Macro to map an IP multicast address to an Ethernet multicast address.

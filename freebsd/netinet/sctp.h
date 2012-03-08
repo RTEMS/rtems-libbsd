@@ -29,13 +29,13 @@
  */
 /* $KAME: sctp.h,v 1.18 2005/03/06 16:04:16 itojun Exp $	 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef _NETINET_SCTP_HH_
 #define _NETINET_SCTP_HH_
 
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 
 
 #define SCTP_PACKED __attribute__((packed))
@@ -491,7 +491,7 @@ struct sctp_error_unrecognized_chunk {
 #define SCTP_SMALLEST_PMTU 512	/* smallest pmtu allowed when disabling PMTU
 				 * discovery */
 
-#include <rtems/freebsd/netinet/sctp_uio.h>
+#include <freebsd/netinet/sctp_uio.h>
 
 /* This dictates the size of the packet
  * collection buffer. This only applies

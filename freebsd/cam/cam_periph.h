@@ -31,8 +31,8 @@
 #ifndef _CAM_CAM_PERIPH_H
 #define _CAM_CAM_PERIPH_H 1
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/cam/cam_sim.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/cam/cam_sim.h>
 
 #ifdef _KERNEL
 
@@ -44,7 +44,7 @@ extern struct periph_driver **periph_drivers;
 void periphdriver_register(void *);
 void periphdriver_init(int level);
 
-#include <rtems/freebsd/sys/module.h>
+#include <freebsd/sys/module.h>
 #define PERIPHDRIVER_DECLARE(name, driver) \
 	static int name ## _modevent(module_t mod, int type, void *data) \
 	{ \

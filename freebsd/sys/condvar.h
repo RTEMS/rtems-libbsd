@@ -30,7 +30,7 @@
 #define	_SYS_CONDVAR_HH_
 
 #ifndef	LOCORE
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 struct lock_object;
 struct thread;

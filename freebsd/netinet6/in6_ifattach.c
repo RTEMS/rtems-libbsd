@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,43 +31,43 @@
  *	$KAME: in6_ifattach.c,v 1.118 2001/05/24 07:44:00 itojun Exp $
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/md5.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/md5.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/if_ether.h>
-#include <rtems/freebsd/netinet/in_pcb.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/udp.h>
-#include <rtems/freebsd/netinet/udp_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/udp.h>
+#include <freebsd/netinet/udp_var.h>
 
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet6/in6_pcb.h>
-#include <rtems/freebsd/netinet6/in6_ifattach.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/nd6.h>
-#include <rtems/freebsd/netinet6/mld6_var.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet6/in6_pcb.h>
+#include <freebsd/netinet6/in6_ifattach.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/nd6.h>
+#include <freebsd/netinet6/mld6_var.h>
+#include <freebsd/netinet6/scope6_var.h>
 
 VNET_DEFINE(unsigned long, in6_maxmtu) = 0;
 

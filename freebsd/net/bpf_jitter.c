@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 2002-2003 NetGroup, Politecnico di Torino (Italy)
@@ -31,25 +31,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifdef _KERNEL
-#include <rtems/freebsd/local/opt_bpf.h>
+#include <freebsd/local/opt_bpf.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/sysctl.h>
 #else
-#include <rtems/freebsd/stdlib.h>
-#include <rtems/freebsd/string.h>
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/stdlib.h>
+#include <freebsd/string.h>
+#include <freebsd/sys/types.h>
 #endif
 
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/bpf_jitter.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/bpf_jitter.h>
 
 bpf_filter_func	bpf_jit_compile(struct bpf_insn *, u_int, int *);
 

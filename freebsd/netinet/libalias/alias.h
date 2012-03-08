@@ -39,9 +39,9 @@
 #ifndef _ALIAS_HH_
 #define	_ALIAS_HH_
 
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>
 
 #define LIBALIAS_BUF_SIZE 128
 #ifdef	_KERNEL

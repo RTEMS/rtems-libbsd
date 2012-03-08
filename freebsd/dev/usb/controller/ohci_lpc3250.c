@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 #include <rtems/freebsd/machine/rtems-bsd-config.h>
 

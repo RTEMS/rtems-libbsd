@@ -124,9 +124,9 @@ struct mbuf;
  * gateway rather than the ultimate destination.
  */
 #ifndef RNF_NORMAL
-#include <rtems/freebsd/net/radix.h>
+#include <freebsd/net/radix.h>
 #ifdef RADIX_MPATH
-#include <rtems/freebsd/net/radix_mpath.h>
+#include <freebsd/net/radix_mpath.h>
 #endif
 #endif
 struct rtentry {
@@ -436,7 +436,7 @@ int	 rtrequest_fib(int, struct sockaddr *,
 	    struct sockaddr *, struct sockaddr *, int, struct rtentry **, u_int);
 int	 rtrequest1_fib(int, struct rt_addrinfo *, struct rtentry **, u_int);
 
-#include <rtems/freebsd/sys/eventhandler.h>
+#include <freebsd/sys/eventhandler.h>
 typedef void (*rtevent_arp_update_fn)(void *, struct rtentry *, uint8_t *, struct sockaddr *);
 typedef void (*rtevent_redirect_fn)(void *, struct rtentry *, struct rtentry *, struct sockaddr *);
 EVENTHANDLER_DECLARE(route_arp_update_event, rtevent_arp_update_fn);

@@ -32,7 +32,7 @@
 #define	_SYS__LOCKMGR_HH_
 
 #ifdef DEBUG_LOCKS
-#include <rtems/freebsd/sys/_stack.h>
+#include <freebsd/sys/_stack.h>
 #endif
 
 struct lock {

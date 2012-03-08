@@ -33,9 +33,9 @@
 #ifndef _SYS_RESOURCE_HH_
 #define	_SYS_RESOURCE_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_timeval.h>
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_timeval.h>
+#include <freebsd/sys/_types.h>
 
 /*
  * Process priority specifications to get/setpriority.

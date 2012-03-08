@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,34 +31,34 @@
  *	$KAME: frag6.c,v 1.33 2002/01/07 11:34:48 kjc Exp $
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/syslog.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/syslog.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet/icmp6.h>
-#include <rtems/freebsd/netinet/in_systm.h>	/* for ECN definitions */
-#include <rtems/freebsd/netinet/ip.h>		/* for ECN definitions */
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet/icmp6.h>
+#include <freebsd/netinet/in_systm.h>	/* for ECN definitions */
+#include <freebsd/netinet/ip.h>		/* for ECN definitions */
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 /*
  * Define it to get a correct behavior on per-interface statistics.

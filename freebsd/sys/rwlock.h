@@ -32,14 +32,14 @@
 #ifndef _SYS_RWLOCK_HH_
 #define _SYS_RWLOCK_HH_
 
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_rwlock.h>
-#include <rtems/freebsd/sys/lock_profile.h>
-#include <rtems/freebsd/sys/lockstat.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_rwlock.h>
+#include <freebsd/sys/lock_profile.h>
+#include <freebsd/sys/lockstat.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/pcpu.h>
-#include <rtems/freebsd/machine/atomic.h>
+#include <freebsd/sys/pcpu.h>
+#include <freebsd/machine/atomic.h>
 #endif
 
 #ifdef __rtems__

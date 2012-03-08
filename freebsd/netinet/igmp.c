@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2009 Bruce Simpson.
@@ -49,37 +49,37 @@
  * MULTICAST Revision: 3.5.1.4
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/ktr.h>
-#include <rtems/freebsd/sys/condvar.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/ktr.h>
+#include <freebsd/sys/condvar.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_options.h>
-#include <rtems/freebsd/netinet/igmp.h>
-#include <rtems/freebsd/netinet/igmp_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_options.h>
+#include <freebsd/netinet/igmp.h>
+#include <freebsd/netinet/igmp_var.h>
 
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/machine/in_cksum.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 #ifndef KTR_IGMPV3
 #define KTR_IGMPV3 KTR_INET

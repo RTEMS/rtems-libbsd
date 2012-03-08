@@ -50,33 +50,33 @@
 #ifndef _ALIAS_SCTP_HH_
 #define _ALIAS_SCTP_HH_
 
-#include <rtems/freebsd/sys/param.h>
+#include <freebsd/sys/param.h>
 #ifdef	_KERNEL
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/uio.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/syslog.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/uio.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/syslog.h>
 #endif // #ifdef	_KERNEL
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/time.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/time.h>
 
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>
 
 /**
  * These are defined in sctp_os_bsd.h, but it can't be included due to its local file
  * inclusion, so I'm defining them here.
  *
  */
-#include <rtems/freebsd/machine/cpufunc.h>
-#include <rtems/freebsd/machine/cpu.h>
+#include <freebsd/machine/cpufunc.h>
+#include <freebsd/machine/cpu.h>
 /* The packed define for 64 bit platforms */
 #ifndef SCTP_PACKED
 #define SCTP_PACKED __attribute__((packed))
@@ -86,14 +86,14 @@
 #endif //#ifndef SCTP_UNUSED
 
 
-#include <rtems/freebsd/netinet/sctp.h>
-//#include <rtems/freebsd/netinet/sctp_os_bsd.h> --might be needed later for mbuf stuff
-#include <rtems/freebsd/netinet/sctp_header.h>
+#include <freebsd/netinet/sctp.h>
+//#include <freebsd/netinet/sctp_os_bsd.h> --might be needed later for mbuf stuff
+#include <freebsd/netinet/sctp_header.h>
 
 #ifndef _KERNEL
-#include <rtems/freebsd/stdlib.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/curses.h>
+#include <freebsd/stdlib.h>
+#include <freebsd/stdio.h>
+#include <freebsd/curses.h>
 #endif //#ifdef _KERNEL
 
 

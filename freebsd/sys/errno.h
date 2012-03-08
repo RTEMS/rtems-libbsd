@@ -39,7 +39,7 @@
 #define _SYS_ERRNO_HH_
 
 #ifndef _KERNEL
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __BEGIN_DECLS
 int *	__error(void);
 __END_DECLS

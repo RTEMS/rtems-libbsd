@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: skipjack.c,v 1.3 2001/05/05 00:31:34 angelos Exp $	*/
 /*-
@@ -14,12 +14,12 @@
  * 29 May 1998
 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
+#include <freebsd/sys/param.h>
 
-#include <rtems/freebsd/opencrypto/skipjack.h>
+#include <freebsd/opencrypto/skipjack.h>
 
 static const u_int8_t ftable[0x100] =
 { 

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2010 Rui Paulo <rpaulo@FreeBSD.org>
@@ -25,19 +25,19 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_ratectl.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_ratectl.h>
 
 static const struct ieee80211_ratectl *ratectls[IEEE80211_RATECTL_MAX];
 

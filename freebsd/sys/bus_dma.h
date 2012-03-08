@@ -72,7 +72,7 @@
 #ifndef _BUS_DMA_HH_
 #define _BUS_DMA_HH_
 
-#include <rtems/freebsd/sys/_bus_dma.h>
+#include <freebsd/sys/_bus_dma.h>
 
 /*
  * Machine independent interface for mapping physical addresses to peripheral

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993
@@ -32,38 +32,38 @@
  *	@(#)in.c	8.4 (Berkeley) 1/9/95
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_mpath.h>
+#include <freebsd/local/opt_mpath.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/syslog.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/syslog.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_var.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_llatbl.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_var.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_llatbl.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/in_pcb.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/igmp_var.h>
-#include <rtems/freebsd/netinet/udp.h>
-#include <rtems/freebsd/netinet/udp_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/igmp_var.h>
+#include <freebsd/netinet/udp.h>
+#include <freebsd/netinet/udp_var.h>
 
 static int in_mask2len(struct in_addr *);
 static void in_len2mask(struct in_addr *, int);
@@ -1309,8 +1309,8 @@ in_purgemaddrs(struct ifnet *ifp)
 	IN_MULTI_UNLOCK();
 }
 
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/netinet/if_ether.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/netinet/if_ether.h>
 
 struct in_llentry {
 	struct llentry		base;

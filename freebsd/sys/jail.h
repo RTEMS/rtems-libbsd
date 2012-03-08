@@ -116,11 +116,11 @@ int jail_remove(int);
 
 #else /* _KERNEL */
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/_task.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/_task.h>
 
 #define JAIL_MAX	999999
 
@@ -131,7 +131,7 @@ MALLOC_DECLARE(M_PRISON);
 
 #if defined(_KERNEL) || defined(_WANT_PRISON)
 
-#include <rtems/freebsd/sys/osd.h>
+#include <freebsd/sys/osd.h>
 
 #define	HOSTUUIDLEN	64
 

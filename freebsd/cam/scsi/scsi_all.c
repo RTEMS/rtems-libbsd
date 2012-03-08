@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Implementation of Utility functions for all SCSI device types.
@@ -29,37 +29,37 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
+#include <freebsd/sys/param.h>
 
 #ifdef _KERNEL
 #ifndef __rtems__
-#include <rtems/freebsd/opt_scsi.h>
+#include <freebsd/opt_scsi.h>
 #else /* __rtems__ */
-#include <rtems/freebsd/local/opt_scsi.h>
+#include <freebsd/local/opt_scsi.h>
 #endif /* __rtems__ */
 
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/libkern.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/libkern.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
 #else
-#include <rtems/freebsd/errno.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/stdlib.h>
-#include <rtems/freebsd/string.h>
+#include <freebsd/errno.h>
+#include <freebsd/stdio.h>
+#include <freebsd/stdlib.h>
+#include <freebsd/string.h>
 #endif
 
-#include <rtems/freebsd/cam/cam.h>
-#include <rtems/freebsd/cam/cam_ccb.h>
-#include <rtems/freebsd/cam/cam_queue.h>
-#include <rtems/freebsd/cam/cam_xpt.h>
-#include <rtems/freebsd/cam/scsi/scsi_all.h>
-#include <rtems/freebsd/sys/sbuf.h>
+#include <freebsd/cam/cam.h>
+#include <freebsd/cam/cam_ccb.h>
+#include <freebsd/cam/cam_queue.h>
+#include <freebsd/cam/cam_xpt.h>
+#include <freebsd/cam/scsi/scsi_all.h>
+#include <freebsd/sys/sbuf.h>
 #ifndef _KERNEL
-#include <rtems/freebsd/camlib.h>
+#include <freebsd/camlib.h>
 
 #ifndef FALSE
 #define FALSE   0

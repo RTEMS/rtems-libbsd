@@ -25,10 +25,10 @@
 #ifndef _CRYPTO_XFORM_HH_
 #define _CRYPTO_XFORM_HH_
 
-#include <rtems/freebsd/sys/md5.h>
-#include <rtems/freebsd/crypto/sha1.h>
-#include <rtems/freebsd/crypto/sha2/sha2.h>
-#include <rtems/freebsd/opencrypto/rmd160.h>
+#include <freebsd/sys/md5.h>
+#include <freebsd/crypto/sha1.h>
+#include <freebsd/crypto/sha2/sha2.h>
+#include <freebsd/opencrypto/rmd160.h>
 
 /* Declarations */
 struct auth_hash {
@@ -98,7 +98,7 @@ extern struct auth_hash auth_hash_hmac_sha2_512;
 extern struct comp_algo comp_algo_deflate;
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/malloc.h>
+#include <freebsd/sys/malloc.h>
 MALLOC_DECLARE(M_XDATA);
 #endif
 #endif /* _CRYPTO_XFORM_HH_ */

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1980, 1986, 1993
@@ -32,26 +32,26 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/limits.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/limits.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_clone.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_clone.h>
 #if 0
-#include <rtems/freebsd/net/if_dl.h>
+#include <freebsd/net/if_dl.h>
 #endif
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/if_var.h>
-#include <rtems/freebsd/net/radix.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/if_var.h>
+#include <freebsd/net/radix.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
 static void	if_clone_free(struct if_clone *ifc);
 static int	if_clone_createif(struct if_clone *ifc, char *name, size_t len,

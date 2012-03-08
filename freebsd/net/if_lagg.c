@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: if_trunk.c,v 1.30 2007/01/31 06:20:19 reyk Exp $	*/
 
@@ -19,55 +19,55 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/hash.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/taskqueue.h>
-#include <rtems/freebsd/sys/eventhandler.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/hash.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/taskqueue.h>
+#include <freebsd/sys/eventhandler.h>
 
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_clone.h>
-#include <rtems/freebsd/net/if_arp.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/if_var.h>
-#include <rtems/freebsd/net/bpf.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_clone.h>
+#include <freebsd/net/if_arp.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/if_var.h>
+#include <freebsd/net/bpf.h>
 
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/if_ether.h>
-#include <rtems/freebsd/netinet/ip.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/ip.h>
 #endif
 
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
+#include <freebsd/netinet/ip6.h>
 #endif
 
-#include <rtems/freebsd/net/if_vlan_var.h>
-#include <rtems/freebsd/net/if_lagg.h>
-#include <rtems/freebsd/net/ieee8023ad_lacp.h>
+#include <freebsd/net/if_vlan_var.h>
+#include <freebsd/net/if_lagg.h>
+#include <freebsd/net/ieee8023ad_lacp.h>
 
 /* Special flags we should propagate to the lagg ports. */
 static struct {

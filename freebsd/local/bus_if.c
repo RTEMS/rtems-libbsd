@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*
  * This file is produced automatically.
@@ -12,14 +12,14 @@
  * See the source file for legal information
  */
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/kobj.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/local/bus_if.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/kobj.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/local/bus_if.h>
 
 
 static struct resource *

@@ -40,22 +40,22 @@
 #define	_USB_STANDARD_HH_
 
 #if defined(_KERNEL)
-#include <rtems/freebsd/local/opt_usb.h>
+#include <freebsd/local/opt_usb.h>
 
 /* Declare parent SYSCTL USB node. */
 #ifdef SYSCTL_DECL
 SYSCTL_DECL(_hw_usb);
 #endif
 
-#include <rtems/freebsd/sys/malloc.h>
+#include <freebsd/sys/malloc.h>
 
 MALLOC_DECLARE(M_USB);
 MALLOC_DECLARE(M_USBDEV);
 MALLOC_DECLARE(M_USBHC);
 #endif /* _KERNEL */
 
-#include <rtems/freebsd/dev/usb/usb_endian.h>
-#include <rtems/freebsd/dev/usb/usb_freebsd.h>
+#include <freebsd/dev/usb/usb_endian.h>
+#include <freebsd/dev/usb/usb_freebsd.h>
 
 #define	USB_STACK_VERSION 2000		/* 2.0 */
 

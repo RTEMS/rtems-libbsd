@@ -27,11 +27,11 @@
 #ifndef _USB_DEV_HH_
 #define	_USB_DEV_HH_
 
-#include <rtems/freebsd/sys/file.h>
-#include <rtems/freebsd/sys/selinfo.h>
-#include <rtems/freebsd/sys/poll.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/proc.h>
+#include <freebsd/sys/file.h>
+#include <freebsd/sys/selinfo.h>
+#include <freebsd/sys/poll.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/proc.h>
 
 struct usb_fifo;
 struct usb_mbuf;

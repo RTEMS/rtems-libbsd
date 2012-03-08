@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1980, 1986, 1993
@@ -33,23 +33,23 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/systm.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/raw_cb.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/raw_cb.h>
+#include <freebsd/net/vnet.h>
 
 MTX_SYSINIT(rawcb_mtx, &rawcb_mtx, "rawcb", MTX_DEF);
 

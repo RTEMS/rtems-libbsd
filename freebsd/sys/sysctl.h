@@ -36,7 +36,7 @@
 #ifndef _SYS_SYSCTL_HH_
 #define	_SYS_SYSCTL_HH_
 
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 struct thread;
 /*
@@ -750,7 +750,7 @@ int	sysctl_wire_old_buffer(struct sysctl_req *req, size_t len);
 #ifndef __rtems__
 #else	/* !_KERNEL */
 #endif /* __rtems__ */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 __BEGIN_DECLS
 int	sysctl(int *, u_int, void *, size_t *, void *, size_t);

@@ -38,13 +38,13 @@
 #ifndef _SYS_TYPES_HH_
 #define	_SYS_TYPES_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /* Machine type dependent parameters. */
-#include <rtems/freebsd/machine/endian.h>
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/machine/endian.h>
+#include <freebsd/sys/_types.h>
 
-#include <rtems/freebsd/sys/_pthreadtypes.h>
+#include <freebsd/sys/_pthreadtypes.h>
 
 #if __BSD_VISIBLE
 typedef	unsigned char	u_char;
@@ -318,7 +318,7 @@ typedef	struct vm_page	*vm_page_t;
  */
 #if __BSD_VISIBLE
 
-#include <rtems/freebsd/sys/select.h>
+#include <freebsd/sys/select.h>
 
 /*
  * minor() gives a cookie instead of an index since we don't want to

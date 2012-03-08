@@ -34,68 +34,68 @@
  * IPsec controller part.
  */
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipsec.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/proc.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/proc.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/udp.h>
-#include <rtems/freebsd/netinet/udp_var.h>
-#include <rtems/freebsd/netinet/tcp.h>
-#include <rtems/freebsd/netinet/udp.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/udp.h>
+#include <freebsd/netinet/udp_var.h>
+#include <freebsd/netinet/tcp.h>
+#include <freebsd/netinet/udp.h>
 
-#include <rtems/freebsd/netinet/ip6.h>
+#include <freebsd/netinet/ip6.h>
 #ifdef INET6
-#include <rtems/freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/ip6_var.h>
 #endif
-#include <rtems/freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/in_pcb.h>
 #ifdef INET6
-#include <rtems/freebsd/netinet/icmp6.h>
+#include <freebsd/netinet/icmp6.h>
 #endif
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/netipsec/ipsec.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/netipsec/ipsec.h>
 #ifdef INET6
-#include <rtems/freebsd/netipsec/ipsec6.h>
+#include <freebsd/netipsec/ipsec6.h>
 #endif
-#include <rtems/freebsd/netipsec/ah_var.h>
-#include <rtems/freebsd/netipsec/esp_var.h>
-#include <rtems/freebsd/netipsec/ipcomp.h>		/*XXX*/
-#include <rtems/freebsd/netipsec/ipcomp_var.h>
+#include <freebsd/netipsec/ah_var.h>
+#include <freebsd/netipsec/esp_var.h>
+#include <freebsd/netipsec/ipcomp.h>		/*XXX*/
+#include <freebsd/netipsec/ipcomp_var.h>
 
-#include <rtems/freebsd/netipsec/key.h>
-#include <rtems/freebsd/netipsec/keydb.h>
-#include <rtems/freebsd/netipsec/key_debug.h>
+#include <freebsd/netipsec/key.h>
+#include <freebsd/netipsec/keydb.h>
+#include <freebsd/netipsec/key_debug.h>
 
-#include <rtems/freebsd/netipsec/xform.h>
+#include <freebsd/netipsec/xform.h>
 
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/machine/in_cksum.h>
 
-#include <rtems/freebsd/opencrypto/cryptodev.h>
+#include <freebsd/opencrypto/cryptodev.h>
 
 #ifdef IPSEC_DEBUG
 VNET_DEFINE(int, ipsec_debug) = 1;

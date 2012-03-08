@@ -35,7 +35,7 @@
 #ifndef _DEV_MII_MIIVAR_HH_
 #define	_DEV_MII_MIIVAR_HH_
 
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 /*
  * Media Independent Interface configuration defintions.

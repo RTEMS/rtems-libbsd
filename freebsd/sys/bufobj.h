@@ -51,9 +51,9 @@
 
 #if defined(_KERNEL) || defined(_KVM_VNODE)
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
 
 struct bufobj;
 struct buf_ops;

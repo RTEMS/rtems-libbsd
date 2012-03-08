@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*      $NetBSD: if_atmsubr.c,v 1.10 1997/03/11 23:19:51 chuck Exp $       */
 
@@ -36,42 +36,42 @@
  * if_atmsubr.c
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_natm.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_natm.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/malloc.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/malloc.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/if_atm.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/if_atm.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/if_atm.h>
-#include <rtems/freebsd/netinet/if_ether.h> /* XXX: for ETHERTYPE_* */
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/if_atm.h>
+#include <freebsd/netinet/if_ether.h> /* XXX: for ETHERTYPE_* */
 #if defined(INET) || defined(INET6)
-#include <rtems/freebsd/netinet/in_var.h>
+#include <freebsd/netinet/in_var.h>
 #endif
 #ifdef NATM
-#include <rtems/freebsd/netnatm/natm.h>
+#include <freebsd/netnatm/natm.h>
 #endif
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 /*
  * Netgraph interface functions.

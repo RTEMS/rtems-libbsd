@@ -33,20 +33,20 @@
 #define _SYS_MUTEX_HH_
 
 #ifndef LOCORE
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/pcpu.h>
-#include <rtems/freebsd/sys/lock_profile.h>
-#include <rtems/freebsd/sys/lockstat.h>
-#include <rtems/freebsd/machine/atomic.h>
-#include <rtems/freebsd/machine/cpufunc.h>
+#include <freebsd/sys/pcpu.h>
+#include <freebsd/sys/lock_profile.h>
+#include <freebsd/sys/lockstat.h>
+#include <freebsd/machine/atomic.h>
+#include <freebsd/machine/cpufunc.h>
 #endif	/* _KERNEL_ */
 #endif	/* !LOCORE */
 
-#include <rtems/freebsd/machine/mutex.h>
+#include <freebsd/machine/mutex.h>
 
 #ifdef _KERNEL
 

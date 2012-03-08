@@ -35,12 +35,12 @@
 #define	_SYS_MBUF_HH_
 
 /* XXX: These includes suck. Sorry! */
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/vm/uma.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/vm/uma.h>
 #ifdef WITNESS
-#include <rtems/freebsd/sys/lock.h>
+#include <freebsd/sys/lock.h>
 #endif
 #endif
 

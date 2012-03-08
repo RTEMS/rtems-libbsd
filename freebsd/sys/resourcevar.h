@@ -33,11 +33,11 @@
 #ifndef	_SYS_RESOURCEVAR_HH_
 #define	_SYS_RESOURCEVAR_HH_
 
-#include <rtems/freebsd/sys/resource.h>
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/resource.h>
+#include <freebsd/sys/queue.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
 #endif
 
 /*

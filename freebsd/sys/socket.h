@@ -33,11 +33,11 @@
 #ifndef _SYS_SOCKET_HH_
 #define	_SYS_SOCKET_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
-#include <rtems/freebsd/sys/_iovec.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
+#include <freebsd/sys/_iovec.h>
 #define _NO_NAMESPACE_POLLUTION
-#include <rtems/freebsd/machine/param.h>
+#include <freebsd/machine/param.h>
 #undef _NO_NAMESPACE_POLLUTION
 
 /*
@@ -621,7 +621,7 @@ struct sf_hdtr {
 
 #ifndef	_KERNEL
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 __BEGIN_DECLS
 int	accept(int, struct sockaddr * __restrict, socklen_t * __restrict);

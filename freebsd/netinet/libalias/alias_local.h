@@ -46,21 +46,21 @@
 #ifndef _ALIAS_LOCAL_HH_
 #define	_ALIAS_LOCAL_HH_
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/sysctl.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
 
 /* XXX: LibAliasSetTarget() uses this constant. */
 #define	INADDR_NONE	0xffffffff
 
-#include <rtems/freebsd/netinet/libalias/alias_sctp.h>
+#include <freebsd/netinet/libalias/alias_sctp.h>
 #else
-#include <rtems/freebsd/local/alias_sctp.h>
+#include <freebsd/local/alias_sctp.h>
 #endif
 
 /* Sizes of input and output link tables */

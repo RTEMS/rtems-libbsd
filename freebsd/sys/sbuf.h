@@ -31,7 +31,7 @@
 #ifndef _SYS_SBUF_HH_
 #define	_SYS_SBUF_HH_
 
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/sys/_types.h>
 
 /*
  * Structure definition

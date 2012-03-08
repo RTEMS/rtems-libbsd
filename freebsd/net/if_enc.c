@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2006 The FreeBSD Project.
@@ -29,42 +29,42 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/machine/bus.h>
-#include <rtems/freebsd/sys/rman.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/machine/bus.h>
+#include <freebsd/sys/rman.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_clone.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/pfil.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_clone.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/pfil.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/local/opt_inet6.h>
 
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
 #endif
 
-#include <rtems/freebsd/local/opt_enc.h>
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/xform.h>
+#include <freebsd/local/opt_enc.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/xform.h>
 
 #define ENCMTU		(1024+512)
 

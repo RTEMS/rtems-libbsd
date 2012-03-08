@@ -38,7 +38,7 @@
 #ifndef	_SYS_TTYCOM_HH_
 #define	_SYS_TTYCOM_HH_
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 /*
  * Tty ioctl's except for those supported only for backwards compatibility

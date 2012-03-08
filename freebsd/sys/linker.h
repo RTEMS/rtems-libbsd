@@ -31,8 +31,8 @@
 
 #ifdef _KERNEL
 
-#include <rtems/freebsd/machine/elf.h>
-#include <rtems/freebsd/sys/kobj.h>
+#include <freebsd/machine/elf.h>
+#include <freebsd/sys/kobj.h>
 
 #ifdef MALLOC_DECLARE
 MALLOC_DECLARE(M_LINKER);
@@ -331,7 +331,7 @@ struct kld_sym_lookup {
 
 #ifndef _KERNEL
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 __BEGIN_DECLS
 int	kldload(const char* _file);

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: rijndael.c,v 1.3 2003/08/28 14:20:22 itojun Exp $	*/
 
@@ -28,15 +28,15 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #endif
 
-#include <rtems/freebsd/crypto/rijndael/rijndael.h>
+#include <freebsd/crypto/rijndael/rijndael.h>
 
 void
 rijndael_set_key(rijndael_ctx *ctx, const u_char *key, int bits)

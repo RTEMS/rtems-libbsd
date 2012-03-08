@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1989 Stephen Deering
@@ -68,55 +68,55 @@
  * TODO: Sync ip6_mroute.c with this file.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_mrouting.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_mrouting.h>
 
 #define _PIM_VT 1
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/stddef.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/ktr.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/time.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/stddef.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/ktr.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/time.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/igmp.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_encap.h>
-#include <rtems/freebsd/netinet/ip_mroute.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_options.h>
-#include <rtems/freebsd/netinet/pim.h>
-#include <rtems/freebsd/netinet/pim_var.h>
-#include <rtems/freebsd/netinet/udp.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/igmp.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_encap.h>
+#include <freebsd/netinet/ip_mroute.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_options.h>
+#include <freebsd/netinet/pim.h>
+#include <freebsd/netinet/pim_var.h>
+#include <freebsd/netinet/udp.h>
 
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/machine/in_cksum.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 #ifndef KTR_IPMF
 #define KTR_IPMF KTR_INET

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993, 1995
@@ -33,57 +33,57 @@
  *	@(#)in_pcb.c	8.4 (Berkeley) 5/24/95
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_ddb.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ddb.h>
+#include <freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
 
 #ifdef DDB
-#include <rtems/freebsd/ddb/ddb.h>
+#include <freebsd/ddb/ddb.h>
 #endif
 
-#include <rtems/freebsd/vm/uma.h>
+#include <freebsd/vm/uma.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_pcb.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/tcp_var.h>
-#include <rtems/freebsd/netinet/udp.h>
-#include <rtems/freebsd/netinet/udp_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet/udp.h>
+#include <freebsd/netinet/udp_var.h>
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
 #endif /* INET6 */
 
 
 #ifdef IPSEC
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/key.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/key.h>
 #endif /* IPSEC */
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 /*
  * These configure the range of local port addresses assigned to

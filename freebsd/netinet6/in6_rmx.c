@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -74,39 +74,39 @@
  *     indefinitely.  See in6_rtqtimo() below for the exact mechanism.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/callout.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/callout.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/in_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/in_var.h>
 
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
 
-#include <rtems/freebsd/netinet/icmp6.h>
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet/icmp6.h>
+#include <freebsd/netinet6/nd6.h>
 
-#include <rtems/freebsd/netinet/tcp.h>
-#include <rtems/freebsd/netinet/tcp_seq.h>
-#include <rtems/freebsd/netinet/tcp_timer.h>
-#include <rtems/freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet/tcp.h>
+#include <freebsd/netinet/tcp_seq.h>
+#include <freebsd/netinet/tcp_timer.h>
+#include <freebsd/netinet/tcp_var.h>
 
 extern int	in6_inithead(void **head, int off);
 #ifdef VIMAGE

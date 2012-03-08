@@ -74,24 +74,24 @@ struct	route;
 struct	vnet;
 #endif
 
-#include <rtems/freebsd/sys/queue.h>		/* get TAILQ macros */
+#include <freebsd/sys/queue.h>		/* get TAILQ macros */
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/eventhandler.h>
-#include <rtems/freebsd/sys/buf_ring.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/eventhandler.h>
+#include <freebsd/sys/buf_ring.h>
+#include <freebsd/net/vnet.h>
 #endif /* _KERNEL */
-#include <rtems/freebsd/sys/lock.h>		/* XXX */
-#include <rtems/freebsd/sys/mutex.h>		/* XXX */
-#include <rtems/freebsd/sys/rwlock.h>		/* XXX */
-#include <rtems/freebsd/sys/sx.h>		/* XXX */
-#include <rtems/freebsd/sys/event.h>		/* XXX */
-#include <rtems/freebsd/sys/_task.h>
+#include <freebsd/sys/lock.h>		/* XXX */
+#include <freebsd/sys/mutex.h>		/* XXX */
+#include <freebsd/sys/rwlock.h>		/* XXX */
+#include <freebsd/sys/sx.h>		/* XXX */
+#include <freebsd/sys/event.h>		/* XXX */
+#include <freebsd/sys/_task.h>
 
 #define	IF_DUNIT_NONE	-1
 
-#include <rtems/freebsd/altq/if_altq.h>
+#include <freebsd/altq/if_altq.h>
 
 TAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
 TAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */

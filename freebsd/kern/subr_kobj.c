@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2000,2003 Doug Rabson
@@ -26,22 +26,22 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/kobj.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/kobj.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/sysctl.h>
 #ifndef TEST
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #endif
 
 #ifdef TEST
-#include <rtems/freebsd/local/usertest.h>
+#include <freebsd/local/usertest.h>
 #endif
 
 static MALLOC_DEFINE(M_KOBJ, "kobj", "Kernel object structures");

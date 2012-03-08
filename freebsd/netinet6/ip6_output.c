@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -62,56 +62,56 @@
  *	@(#)ip_output.c	8.3 (Berkeley) 1/21/94
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
-#include <rtems/freebsd/local/opt_sctp.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_sctp.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/ucred.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/ucred.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/pfil.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/pfil.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet/icmp6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet/in_pcb.h>
-#include <rtems/freebsd/netinet/tcp_var.h>
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet/icmp6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet6/nd6.h>
 
 #ifdef IPSEC
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/ipsec6.h>
-#include <rtems/freebsd/netipsec/key.h>
-#include <rtems/freebsd/netinet6/ip6_ipsec.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/ipsec6.h>
+#include <freebsd/netipsec/key.h>
+#include <freebsd/netinet6/ip6_ipsec.h>
 #endif /* IPSEC */
 #ifdef SCTP
-#include <rtems/freebsd/netinet/sctp.h>
-#include <rtems/freebsd/netinet/sctp_crc32.h>
+#include <freebsd/netinet/sctp.h>
+#include <freebsd/netinet/sctp_crc32.h>
 #endif
 
-#include <rtems/freebsd/netinet6/ip6protosw.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet6/ip6protosw.h>
+#include <freebsd/netinet6/scope6_var.h>
 
 extern int in6_mcast_loop;
 

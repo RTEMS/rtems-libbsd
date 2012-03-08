@@ -27,10 +27,10 @@
 #ifndef _USB_BUSDMA_HH_
 #define	_USB_BUSDMA_HH_
 
-#include <rtems/freebsd/sys/uio.h>
-#include <rtems/freebsd/sys/mbuf.h>
+#include <freebsd/sys/uio.h>
+#include <freebsd/sys/mbuf.h>
 
-#include <rtems/freebsd/machine/bus.h>
+#include <freebsd/machine/bus.h>
 
 /* defines */
 

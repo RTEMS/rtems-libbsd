@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 #ifdef __FreeBSD__
 __FBSDID("$FreeBSD$");
 #endif
@@ -34,23 +34,23 @@ __FBSDID("$FreeBSD$");
  * IEEE 802.11n protocol support.
  */
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/systm.h> 
-#include <rtems/freebsd/sys/endian.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/systm.h> 
+#include <freebsd/sys/endian.h>
  
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/ethernet.h>
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_action.h>
-#include <rtems/freebsd/net80211/ieee80211_input.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_action.h>
+#include <freebsd/net80211/ieee80211_input.h>
 
 /* define here, used throughout file */
 #define	MS(_v, _f)	(((_v) & _f) >> _f##_S)

@@ -89,8 +89,8 @@ struct vattr;
 struct vnode;
 struct vop_setlabel_args;
 
-#include <rtems/freebsd/sys/acl.h>			/* XXX acl_type_t */
-#include <rtems/freebsd/sys/types.h>			/* accmode_t */
+#include <freebsd/sys/acl.h>			/* XXX acl_type_t */
+#include <freebsd/sys/types.h>			/* accmode_t */
 
 /*
  * Entry points to the TrustedBSD MAC Framework from the remainder of the

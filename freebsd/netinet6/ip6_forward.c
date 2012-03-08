@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,51 +31,51 @@
  *	$KAME: ip6_forward.c,v 1.69 2001/05/17 03:48:30 itojun Exp $
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
-#include <rtems/freebsd/local/opt_ipstealth.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_ipstealth.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/syslog.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/syslog.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/pfil.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/pfil.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
-#include <rtems/freebsd/netinet/icmp6.h>
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet/icmp6.h>
+#include <freebsd/netinet6/nd6.h>
 
-#include <rtems/freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/in_pcb.h>
 
 #ifdef IPSEC
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/ipsec6.h>
-#include <rtems/freebsd/netipsec/key.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/ipsec6.h>
+#include <freebsd/netipsec/key.h>
 #endif /* IPSEC */
 
-#include <rtems/freebsd/netinet6/ip6protosw.h>
+#include <freebsd/netinet6/ip6protosw.h>
 
 /*
  * Forward a packet.  If some error occurs return the sender

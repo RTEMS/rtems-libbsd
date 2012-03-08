@@ -38,8 +38,8 @@
 #define RTF_ANNOUNCE	RTF_PROTO2
 #endif
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/callout.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/callout.h>
 
 struct llentry;
 

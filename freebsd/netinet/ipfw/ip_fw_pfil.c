@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004 Andre Oppermann, Internet Business Solutions AG
@@ -26,44 +26,44 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #if !defined(KLD_MODULE)
-#include <rtems/freebsd/local/opt_ipfw.h>
-#include <rtems/freebsd/local/opt_ipdn.h>
-#include <rtems/freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_ipfw.h>
+#include <freebsd/local/opt_ipdn.h>
+#include <freebsd/local/opt_inet.h>
 #ifndef INET
 #error IPFIREWALL requires INET.
 #endif /* INET */
 #endif /* KLD_MODULE */
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/pfil.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/pfil.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_fw.h>
-#include <rtems/freebsd/netinet/ipfw/ip_fw_private.h>
-#include <rtems/freebsd/netgraph/ng_ipfw.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_fw.h>
+#include <freebsd/netinet/ipfw/ip_fw_private.h>
+#include <freebsd/netgraph/ng_ipfw.h>
 
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/machine/in_cksum.h>
 
 static VNET_DEFINE(int, fw_enable) = 1;
 #define V_fw_enable	VNET(fw_enable)

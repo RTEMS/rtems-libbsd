@@ -101,7 +101,7 @@ typedef void (usb_fifo_filter_t)(struct usb_fifo *fifo, struct usb_mbuf *m);
 
 
 /* USB events */
-#include <rtems/freebsd/sys/eventhandler.h>
+#include <freebsd/sys/eventhandler.h>
 typedef void (*usb_dev_configured_t)(void *, struct usb_device *,
     struct usb_attach_arg *);
 EVENTHANDLER_DECLARE(usb_dev_configured, usb_dev_configured_t);

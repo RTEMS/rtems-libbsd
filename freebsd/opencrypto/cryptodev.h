@@ -56,7 +56,7 @@
 #ifndef _CRYPTO_CRYPTO_HH_
 #define _CRYPTO_CRYPTO_HH_
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 /* Some initial values */
 #define CRYPTO_DRIVERS_INITIAL	4

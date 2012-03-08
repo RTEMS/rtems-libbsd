@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: rijndael-alg-fst.c,v 1.10 2003/07/15 10:47:16 itojun Exp $	*/
 /**
@@ -26,21 +26,21 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/types.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #else
-#include <rtems/freebsd/string.h>
-#include <rtems/freebsd/assert.h>
+#include <freebsd/string.h>
+#include <freebsd/assert.h>
 #define	KASSERT(exp, msg)	assert(exp)
 #endif
 
-#include <rtems/freebsd/crypto/rijndael/rijndael.h>
-#include <rtems/freebsd/crypto/rijndael/rijndael_local.h>
+#include <freebsd/crypto/rijndael/rijndael.h>
+#include <freebsd/crypto/rijndael/rijndael_local.h>
 
 /*
 Te0[x] = S [x].[02, 01, 01, 03];

@@ -64,10 +64,10 @@
 #ifndef _NETINET6_IN6_VAR_HH_
 #define _NETINET6_IN6_VAR_HH_
 
-#include <rtems/freebsd/sys/tree.h>
+#include <freebsd/sys/tree.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/libkern.h>
+#include <freebsd/sys/libkern.h>
 #endif
 
 /*

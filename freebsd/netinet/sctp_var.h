@@ -30,13 +30,13 @@
 
 /* $KAME: sctp_var.h,v 1.24 2005/03/06 16:04:19 itojun Exp $	 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef _NETINET_SCTP_VAR_HH_
 #define _NETINET_SCTP_VAR_HH_
 
-#include <rtems/freebsd/netinet/sctp_uio.h>
+#include <freebsd/netinet/sctp_uio.h>
 
 #if defined(_KERNEL) || defined(__Userspace__)
 

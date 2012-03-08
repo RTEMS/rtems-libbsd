@@ -24,7 +24,7 @@
 #ifndef	_SCSI_SCSI_ALL_H
 #define	_SCSI_SCSI_ALL_H 1
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 #ifdef _KERNEL
 /*

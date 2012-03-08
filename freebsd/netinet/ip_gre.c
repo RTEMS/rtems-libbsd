@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$NetBSD: ip_gre.c,v 1.29 2003/09/05 23:02:43 itojun Exp $ */
 
@@ -46,52 +46,52 @@
  * This currently handles IPPROTO_GRE, IPPROTO_MOBILE
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_atalk.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_atalk.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/raw_cb.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/raw_cb.h>
 
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_gre.h>
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_gre.h>
+#include <freebsd/machine/in_cksum.h>
 #else
 #error ip_gre input without IP?
 #endif
 
 #ifdef NETATALK
-#include <rtems/freebsd/netatalk/at.h>
-#include <rtems/freebsd/netatalk/at_var.h>
-#include <rtems/freebsd/netatalk/at_extern.h>
+#include <freebsd/netatalk/at.h>
+#include <freebsd/netatalk/at_var.h>
+#include <freebsd/netatalk/at_extern.h>
 #endif
 
 /* Needs IP headers. */
-#include <rtems/freebsd/net/if_gre.h>
+#include <freebsd/net/if_gre.h>
 
-#include <rtems/freebsd/machine/stdarg.h>
+#include <freebsd/machine/stdarg.h>
 
 #if 1
 void gre_inet_ntoa(struct in_addr in);	/* XXX */

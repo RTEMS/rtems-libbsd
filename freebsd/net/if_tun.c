@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$NetBSD: if_tun.c,v 1.14 1994/06/29 06:36:25 cgd Exp $	*/
 
@@ -18,50 +18,50 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/local/opt_atalk.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipx.h>
+#include <freebsd/local/opt_atalk.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipx.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/fcntl.h>
-#include <rtems/freebsd/sys/filio.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/ttycom.h>
-#include <rtems/freebsd/sys/poll.h>
-#include <rtems/freebsd/sys/selinfo.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/filedesc.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/conf.h>
-#include <rtems/freebsd/sys/uio.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/random.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/fcntl.h>
+#include <freebsd/sys/filio.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/ttycom.h>
+#include <freebsd/sys/poll.h>
+#include <freebsd/sys/selinfo.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/filedesc.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/conf.h>
+#include <freebsd/sys/uio.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/random.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_clone.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_clone.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/netinet/in.h>
 #endif
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/if_tun.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/if_tun.h>
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/condvar.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/condvar.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 /*
  * tun_list is protected by global tunmtx.  Other mutable fields are

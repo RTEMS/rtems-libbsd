@@ -31,8 +31,8 @@
 #ifndef _SYS_UCONTEXT_HH_
 #define	_SYS_UCONTEXT_HH_
 
-#include <rtems/freebsd/sys/signal.h>
-#include <rtems/freebsd/machine/ucontext.h>
+#include <freebsd/sys/signal.h>
+#include <freebsd/machine/ucontext.h>
 
 typedef struct __ucontext {
 	/*

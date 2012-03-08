@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: keysock.c,v 1.25 2001/08/13 20:07:41 itojun Exp $	*/
@@ -32,41 +32,41 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_ipsec.h>
 
 /* This code has derived from sys/net/rtsock.c on FreeBSD2.2.5 */
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/systm.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/raw_cb.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/raw_cb.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/netinet/in.h>
 
-#include <rtems/freebsd/net/pfkeyv2.h>
-#include <rtems/freebsd/netipsec/key.h>
-#include <rtems/freebsd/netipsec/keysock.h>
-#include <rtems/freebsd/netipsec/key_debug.h>
-#include <rtems/freebsd/netipsec/ipsec.h>
+#include <freebsd/net/pfkeyv2.h>
+#include <freebsd/netipsec/key.h>
+#include <freebsd/netipsec/keysock.h>
+#include <freebsd/netipsec/key_debug.h>
+#include <freebsd/netipsec/ipsec.h>
 
-#include <rtems/freebsd/machine/stdarg.h>
+#include <freebsd/machine/stdarg.h>
 
 struct key_cb {
 	int key_count;

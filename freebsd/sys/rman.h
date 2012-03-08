@@ -33,10 +33,10 @@
 #define	_SYS_RMAN_HH_	1
 
 #ifndef	_KERNEL
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 #else
-#include <rtems/freebsd/machine/_bus.h>
-#include <rtems/freebsd/machine/resource.h>
+#include <freebsd/machine/_bus.h>
+#include <freebsd/machine/resource.h>
 #endif
 
 #define	RF_ALLOCATED	0x0001	/* resource has been reserved */

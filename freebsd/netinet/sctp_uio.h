@@ -29,7 +29,7 @@
  */
 
 /* $KAME: sctp_uio.h,v 1.11 2005/03/06 16:04:18 itojun Exp $	 */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_uio_h__
@@ -37,11 +37,11 @@ __FBSDID("$FreeBSD$");
 
 
 #if ! defined(_KERNEL)
-#include <rtems/freebsd/stdint.h>
+#include <freebsd/stdint.h>
 #endif
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/netinet/in.h>
 
 typedef uint32_t sctp_assoc_t;
 
@@ -999,12 +999,12 @@ union sctp_sockstore {
 /***********************************/
 
 #ifndef ntohll
-#include <rtems/freebsd/sys/endian.h>
+#include <freebsd/sys/endian.h>
 #define ntohll(x) be64toh(x)
 #endif
 
 #ifndef htonll
-#include <rtems/freebsd/sys/endian.h>
+#include <freebsd/sys/endian.h>
 #define htonll(x) htobe64(x)
 #endif
 /***********************************/

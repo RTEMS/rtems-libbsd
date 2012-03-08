@@ -32,8 +32,8 @@
 #ifndef _SYS_LOCK_HH_
 #define _SYS_LOCK_HH_
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_lock.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_lock.h>
 
 struct lock_list_entry;
 struct thread;

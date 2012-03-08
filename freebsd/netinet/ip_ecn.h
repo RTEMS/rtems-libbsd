@@ -39,7 +39,7 @@
 #define _NETINET_IP_ECN_HH_
 
 #if defined(_KERNEL) && !defined(_LKM)
-#include <rtems/freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet.h>
 #endif
 
 #define ECN_ALLOWED	1	/* ECN allowed */

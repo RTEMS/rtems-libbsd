@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1995, 1996
@@ -38,60 +38,60 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/local/opt_atalk.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipx.h>
+#include <freebsd/local/opt_atalk.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipx.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/if_llatbl.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/if_llatbl.h>
 
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/fddi.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/fddi.h>
 
 #if defined(INET) || defined(INET6)
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/if_ether.h>
 #endif
 #ifdef INET6
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet6/nd6.h>
 #endif
 
 #ifdef IPX
-#include <rtems/freebsd/netipx/ipx.h> 
-#include <rtems/freebsd/netipx/ipx_if.h>
+#include <freebsd/netipx/ipx.h> 
+#include <freebsd/netipx/ipx_if.h>
 #endif
 
 #ifdef DECNET
-#include <rtems/freebsd/netdnet/dn.h>
+#include <freebsd/netdnet/dn.h>
 #endif
 
 #ifdef NETATALK
-#include <rtems/freebsd/netatalk/at.h>
-#include <rtems/freebsd/netatalk/at_var.h>
-#include <rtems/freebsd/netatalk/at_extern.h>
+#include <freebsd/netatalk/at.h>
+#include <freebsd/netatalk/at_var.h>
+#include <freebsd/netatalk/at_extern.h>
 
 extern u_char	at_org_code[ 3 ];
 extern u_char	aarp_org_code[ 3 ];
 #endif /* NETATALK */
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 static const u_char fddibroadcastaddr[FDDI_ADDR_LEN] =
 			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };

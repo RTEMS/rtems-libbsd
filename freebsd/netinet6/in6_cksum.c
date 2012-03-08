@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -62,15 +62,15 @@
  *	@(#)in_cksum.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/scope6_var.h>
 
 /*
  * Checksum routine for Internet Protocol family headers (Portable Version).

@@ -27,7 +27,7 @@
 #ifndef _USB_PROCESS_HH_
 #define	_USB_PROCESS_HH_
 
-#include <rtems/freebsd/sys/priority.h>
+#include <freebsd/sys/priority.h>
 
 /* defines */
 #define	USB_PRI_HIGH PI_NET

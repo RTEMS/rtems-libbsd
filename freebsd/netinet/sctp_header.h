@@ -30,15 +30,15 @@
 
 /* $KAME: sctp_header.h,v 1.14 2005/03/06 16:04:17 itojun Exp $	 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_header_h__
 #define __sctp_header_h__
 
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/netinet/sctp.h>
-#include <rtems/freebsd/netinet/sctp_constants.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/netinet/sctp.h>
+#include <freebsd/netinet/sctp_constants.h>
 
 #define SCTP_PACKED __attribute__((packed))
 

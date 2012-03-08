@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2009 Bruce Simpson.
@@ -65,39 +65,39 @@
  *	@(#)igmp.c	8.1 (Berkeley) 7/19/93
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/callout.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/ktr.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/callout.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/ktr.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
-#include <rtems/freebsd/netinet/icmp6.h>
-#include <rtems/freebsd/netinet6/mld6.h>
-#include <rtems/freebsd/netinet6/mld6_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet/icmp6.h>
+#include <freebsd/netinet6/mld6.h>
+#include <freebsd/netinet6/mld6_var.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 #ifndef KTR_MLD
 #define KTR_MLD KTR_INET6

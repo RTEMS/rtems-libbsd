@@ -33,9 +33,9 @@
 #ifndef _SYS_TIME_HH_
 #define _SYS_TIME_HH_
 
-#include <rtems/freebsd/sys/_timeval.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/timespec.h>
+#include <freebsd/sys/_timeval.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/timespec.h>
 
 #ifndef __rtems__
 struct timezone {
@@ -320,10 +320,10 @@ void	timevaladd(struct timeval *t1, const struct timeval *t2);
 void	timevalsub(struct timeval *t1, const struct timeval *t2);
 int	tvtohz(struct timeval *tv);
 #else /* !_KERNEL */
-#include <rtems/freebsd/time.h>
+#include <freebsd/time.h>
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/select.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/select.h>
 
 __BEGIN_DECLS
 int	setitimer(int, const struct itimerval *, struct itimerval *);

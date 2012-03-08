@@ -29,7 +29,7 @@
 #ifndef _SYS_KTHREAD_HH_
 #define	_SYS_KTHREAD_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*-
  * A kernel process descriptor; used to start "internal" daemons.

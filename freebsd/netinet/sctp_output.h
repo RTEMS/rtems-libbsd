@@ -30,13 +30,13 @@
 
 /* $KAME: sctp_output.h,v 1.14 2005/03/06 16:04:18 itojun Exp $	 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_output_h__
 #define __sctp_output_h__
 
-#include <rtems/freebsd/netinet/sctp_header.h>
+#include <freebsd/netinet/sctp_header.h>
 
 #if defined(_KERNEL) || defined(__Userspace__)
 

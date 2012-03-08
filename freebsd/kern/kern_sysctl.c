@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
@@ -41,35 +41,35 @@
 /* FIXME */
 #undef sysctl
 #endif /* __rtems__ */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_compat.h>
-#include <rtems/freebsd/local/opt_ktrace.h>
+#include <freebsd/local/opt_compat.h>
+#include <freebsd/local/opt_ktrace.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/sysproto.h>
-#include <rtems/freebsd/sys/uio.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/sysproto.h>
+#include <freebsd/sys/uio.h>
 #ifdef KTRACE
-#include <rtems/freebsd/sys/ktrace.h>
+#include <freebsd/sys/ktrace.h>
 #endif
 
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 #ifndef __rtems__
-#include <rtems/freebsd/vm/vm.h>
-#include <rtems/freebsd/vm/vm_extern.h>
+#include <freebsd/vm/vm.h>
+#include <freebsd/vm/vm_extern.h>
 #endif
 
 #ifdef __rtems__

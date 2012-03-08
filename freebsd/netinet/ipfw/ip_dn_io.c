@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2010 Luigi Rizzo, Riccardo Panicucci, Universita` di Pisa
@@ -29,40 +29,40 @@
 /*
  * Dummynet portions related to packet handling.
  */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>		/* ip_len, ip_off */
-#include <rtems/freebsd/netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
-#include <rtems/freebsd/netinet/ip_fw.h>
-#include <rtems/freebsd/netinet/ipfw/ip_fw_private.h>
-#include <rtems/freebsd/netinet/ipfw/dn_heap.h>
-#include <rtems/freebsd/netinet/ip_dummynet.h>
-#include <rtems/freebsd/netinet/ipfw/ip_dn_private.h>
-#include <rtems/freebsd/netinet/ipfw/dn_sched.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
+#include <freebsd/net/netisr.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>		/* ip_len, ip_off */
+#include <freebsd/netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
+#include <freebsd/netinet/ip_fw.h>
+#include <freebsd/netinet/ipfw/ip_fw_private.h>
+#include <freebsd/netinet/ipfw/dn_heap.h>
+#include <freebsd/netinet/ip_dummynet.h>
+#include <freebsd/netinet/ipfw/ip_dn_private.h>
+#include <freebsd/netinet/ipfw/dn_sched.h>
 
-#include <rtems/freebsd/netinet/if_ether.h> /* various ether_* routines */
+#include <freebsd/netinet/if_ether.h> /* various ether_* routines */
 
-#include <rtems/freebsd/netinet/ip6.h>       /* for ip6_input, ip6_output prototypes */
-#include <rtems/freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet/ip6.h>       /* for ip6_input, ip6_output prototypes */
+#include <freebsd/netinet6/ip6_var.h>
 
 /*
  * We keep a private variable for the simulation time, but we could

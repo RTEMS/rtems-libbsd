@@ -37,12 +37,12 @@
 #error "no assembler-serviceable parts inside"
 #endif
 
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 #ifndef __rtems__
-#include <rtems/freebsd/sys/vmmeter.h>
+#include <freebsd/sys/vmmeter.h>
 #endif
-#include <rtems/freebsd/sys/resource.h>
-#include <rtems/freebsd/machine/pcpu.h>
+#include <freebsd/sys/resource.h>
+#include <freebsd/machine/pcpu.h>
 
 /*
  * Define a set for pcpu data.

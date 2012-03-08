@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2009 Robert N. M. Watson
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -61,34 +61,34 @@ __FBSDID("$FreeBSD$");
  * detail in netisr.h.
  */
 
-#include <rtems/freebsd/local/opt_ddb.h>
-#include <rtems/freebsd/local/opt_device_polling.h>
+#include <freebsd/local/opt_ddb.h>
+#include <freebsd/local/opt_device_polling.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/kthread.h>
-#include <rtems/freebsd/sys/interrupt.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/pcpu.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/rmlock.h>
-#include <rtems/freebsd/sys/sched.h>
-#include <rtems/freebsd/sys/smp.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/kthread.h>
+#include <freebsd/sys/interrupt.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/pcpu.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/rmlock.h>
+#include <freebsd/sys/sched.h>
+#include <freebsd/sys/smp.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/systm.h>
 
 #ifdef DDB
-#include <rtems/freebsd/ddb/ddb.h>
+#include <freebsd/ddb/ddb.h>
 #endif
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_var.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_var.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/vnet.h>
 
 /*-
  * Synchronize use and modification of the registered netisr data structures;

@@ -32,7 +32,7 @@
 #ifndef _NETINET6_SCTP6_VAR_HH_
 #define _NETINET6_SCTP6_VAR_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /* TODO __Userspace__ IPv6 stuff... */

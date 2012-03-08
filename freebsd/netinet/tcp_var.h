@@ -33,10 +33,10 @@
 #ifndef _NETINET_TCP_VAR_HH_
 #define _NETINET_TCP_VAR_HH_
 
-#include <rtems/freebsd/netinet/tcp.h>
+#include <freebsd/netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/vnet.h>
 
 /*
  * Kernel variables for tcp.

@@ -29,12 +29,12 @@
 #ifndef _USB_IOCTL_HH_
 #define	_USB_IOCTL_HH_
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 /* Building "kdump" depends on these includes */
 
-#include <rtems/freebsd/dev/usb/usb_endian.h>
-#include <rtems/freebsd/dev/usb/usb.h>
+#include <freebsd/dev/usb/usb_endian.h>
+#include <freebsd/dev/usb/usb.h>
 
 #define	USB_DEVICE_NAME "usbctl"
 #define	USB_DEVICE_DIR "usb"

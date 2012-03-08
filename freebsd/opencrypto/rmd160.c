@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: rmd160.c,v 1.3 2001/09/26 21:40:13 markus Exp $	*/
 /*-
@@ -31,13 +31,13 @@
  * ftp://ftp.rsasecurity.com/pub/cryptobytes/crypto3n2.pdf
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/endian.h>
-#include <rtems/freebsd/opencrypto/rmd160.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/endian.h>
+#include <freebsd/opencrypto/rmd160.h>
 
 #define PUT_64BIT_LE(cp, value) do { \
 	(cp)[7] = (value) >> 56; \

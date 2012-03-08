@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1988, 1992, 1993
@@ -31,11 +31,11 @@
  *	@(#)in_cksum.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/mbuf.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/mbuf.h>
 
 /*
  * Checksum routine for Internet Protocol family headers (Portable Version).

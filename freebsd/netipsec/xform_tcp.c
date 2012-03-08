@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$ */
 
@@ -30,38 +30,38 @@
  */
 
 /* TCP MD5 Signature Option (RFC2385) */
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/tcp.h>
-#include <rtems/freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/tcp.h>
+#include <freebsd/netinet/tcp_var.h>
 
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/xform.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/xform.h>
 
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netipsec/ipsec6.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netipsec/ipsec6.h>
 #endif
 
-#include <rtems/freebsd/netipsec/key.h>
-#include <rtems/freebsd/netipsec/key_debug.h>
+#include <freebsd/netipsec/key.h>
+#include <freebsd/netipsec/key_debug.h>
 
 /*
  * Initialize a TCP-MD5 SA. Called when the SA is being set up.

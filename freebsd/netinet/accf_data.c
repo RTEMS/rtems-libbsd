@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2000 Alfred Perlstein <alfred@FreeBSD.org>
@@ -26,17 +26,17 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #define ACCEPT_FILTER_MOD
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/socketvar.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/socketvar.h>
 
 /* accept filter that holds a socket until data arrives */
 

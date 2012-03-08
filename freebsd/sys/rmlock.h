@@ -32,9 +32,9 @@
 #ifndef _SYS_RMLOCK_HH_
 #define _SYS_RMLOCK_HH_
 
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_rmlock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_rmlock.h>
 
 #ifdef _KERNEL
 

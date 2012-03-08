@@ -30,7 +30,7 @@
 
 /* $KAME: sctp_asconf.h,v 1.8 2005/03/06 16:04:16 itojun Exp $	 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef _NETINET_SCTP_ASCONF_HH_

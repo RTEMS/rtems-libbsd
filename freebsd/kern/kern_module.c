@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997 Doug Rabson
@@ -26,25 +26,25 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/local/opt_compat.h>
+#include <freebsd/local/opt_compat.h>
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/eventhandler.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/sysproto.h>
-#include <rtems/freebsd/sys/sysent.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/reboot.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/linker.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/eventhandler.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/sysproto.h>
+#include <freebsd/sys/sysent.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/reboot.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/linker.h>
 
 static MALLOC_DEFINE(M_MODULE, "module", "module data structures");
 
@@ -474,11 +474,11 @@ modfind(struct thread *td, struct modfind_args *uap)
 MODULE_VERSION(kernel, __FreeBSD_version);
 
 #ifdef COMPAT_FREEBSD32
-#include <rtems/freebsd/sys/mount.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/compat/freebsd32/freebsd32_util.h>
-#include <rtems/freebsd/compat/freebsd32/freebsd32.h>
-#include <rtems/freebsd/compat/freebsd32/freebsd32_proto.h>
+#include <freebsd/sys/mount.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/compat/freebsd32/freebsd32_util.h>
+#include <freebsd/compat/freebsd32/freebsd32.h>
+#include <freebsd/compat/freebsd32/freebsd32_proto.h>
 
 typedef union modspecific32 {
 	int		intval;

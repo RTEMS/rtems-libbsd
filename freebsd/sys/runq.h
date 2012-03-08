@@ -29,7 +29,7 @@
 #ifndef	_RUNQ_HH_
 #define	_RUNQ_HH_
 
-#include <rtems/freebsd/machine/runq.h>
+#include <freebsd/machine/runq.h>
 
 struct thread;
 

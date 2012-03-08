@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: in_gif.c,v 1.54 2001/05/14 14:02:16 itojun Exp $	*/
 
@@ -31,46 +31,46 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_mrouting.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_mrouting.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/malloc.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/malloc.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/in_gif.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/ip_encap.h>
-#include <rtems/freebsd/netinet/ip_ecn.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/in_gif.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/ip_encap.h>
+#include <freebsd/netinet/ip_ecn.h>
 
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
+#include <freebsd/netinet/ip6.h>
 #endif
 
 #ifdef MROUTING
-#include <rtems/freebsd/netinet/ip_mroute.h>
+#include <freebsd/netinet/ip_mroute.h>
 #endif /* MROUTING */
 
-#include <rtems/freebsd/net/if_gif.h>	
+#include <freebsd/net/if_gif.h>	
 
 static int gif_validate4(const struct ip *, struct gif_softc *,
 	struct ifnet *);

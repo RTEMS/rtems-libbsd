@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1988, 1991, 1993
@@ -31,42 +31,42 @@
  *	@(#)rtsock.c	8.7 (Berkeley) 10/12/95
  * $FreeBSD$
  */
-#include <rtems/freebsd/local/opt_compat.h>
-#include <rtems/freebsd/local/opt_sctp.h>
-#include <rtems/freebsd/local/opt_mpath.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_compat.h>
+#include <freebsd/local/opt_sctp.h>
+#include <freebsd/local/opt_mpath.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/systm.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_llatbl.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/raw_cb.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_llatbl.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/raw_cb.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/if_ether.h>
 #ifdef INET6
-#include <rtems/freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet6/scope6_var.h>
 #endif
 
 #if defined(INET) || defined(INET6)
@@ -76,8 +76,8 @@ extern void sctp_addr_change(struct ifaddr *ifa, int cmd);
 #endif
 
 #ifdef COMPAT_FREEBSD32
-#include <rtems/freebsd/sys/mount.h>
-#include <rtems/freebsd/compat/freebsd32/freebsd32.h>
+#include <freebsd/sys/mount.h>
+#include <freebsd/compat/freebsd32/freebsd32.h>
 
 struct if_data32 {
 	uint8_t	ifi_type;

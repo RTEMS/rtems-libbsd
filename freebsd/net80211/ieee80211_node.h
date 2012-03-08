@@ -28,8 +28,8 @@
 #ifndef _NET80211_IEEE80211_NODE_HH_
 #define _NET80211_IEEE80211_NODE_HH_
 
-#include <rtems/freebsd/net80211/ieee80211_ioctl.h>		/* for ieee80211_nodestats */
-#include <rtems/freebsd/net80211/ieee80211_ht.h>		/* for aggregation state */
+#include <freebsd/net80211/ieee80211_ioctl.h>		/* for ieee80211_nodestats */
+#include <freebsd/net80211/ieee80211_ht.h>		/* for aggregation state */
 
 /*
  * Each ieee80211com instance has a single timer that fires every

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
@@ -33,19 +33,19 @@
 
 /* $KAME: sctp_peeloff.c,v 1.13 2005/03/06 16:04:18 itojun Exp $	 */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
-#include <rtems/freebsd/netinet/sctp_os.h>
-#include <rtems/freebsd/netinet/sctp_pcb.h>
-#include <rtems/freebsd/netinet/sctputil.h>
-#include <rtems/freebsd/netinet/sctp_var.h>
-#include <rtems/freebsd/netinet/sctp_var.h>
-#include <rtems/freebsd/netinet/sctp_sysctl.h>
-#include <rtems/freebsd/netinet/sctp.h>
-#include <rtems/freebsd/netinet/sctp_uio.h>
-#include <rtems/freebsd/netinet/sctp_peeloff.h>
-#include <rtems/freebsd/netinet/sctputil.h>
-#include <rtems/freebsd/netinet/sctp_auth.h>
+#include <freebsd/netinet/sctp_os.h>
+#include <freebsd/netinet/sctp_pcb.h>
+#include <freebsd/netinet/sctputil.h>
+#include <freebsd/netinet/sctp_var.h>
+#include <freebsd/netinet/sctp_var.h>
+#include <freebsd/netinet/sctp_sysctl.h>
+#include <freebsd/netinet/sctp.h>
+#include <freebsd/netinet/sctp_uio.h>
+#include <freebsd/netinet/sctp_peeloff.h>
+#include <freebsd/netinet/sctputil.h>
+#include <freebsd/netinet/sctp_auth.h>
 
 
 int

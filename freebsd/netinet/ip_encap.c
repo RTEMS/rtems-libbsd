@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: ip_encap.c,v 1.41 2001/03/15 08:35:08 itojun Exp $	*/
 
@@ -58,41 +58,41 @@
  */
 /* XXX is M_NETADDR correct? */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_mrouting.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_mrouting.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/queue.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_encap.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_encap.h>
 
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/ip6protosw.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/ip6protosw.h>
 #endif
 
-#include <rtems/freebsd/machine/stdarg.h>
+#include <freebsd/machine/stdarg.h>
 
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
 static MALLOC_DEFINE(M_NETADDR, "encap_export_host", "Export host address structure");
 
 static void encap_add(struct encaptab *);

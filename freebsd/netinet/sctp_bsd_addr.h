@@ -28,12 +28,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_bsd_addr_h__
 #define __sctp_bsd_addr_h__
-#include <rtems/freebsd/netinet/sctp_pcb.h>
+#include <freebsd/netinet/sctp_pcb.h>
 
 #if defined(_KERNEL) || defined(__Userspace__)
 

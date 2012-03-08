@@ -37,8 +37,8 @@
 #ifndef _NETIPSEC_IPSEC6_HH_
 #define _NETIPSEC_IPSEC6_HH_
 
-#include <rtems/freebsd/net/pfkeyv2.h>
-#include <rtems/freebsd/netipsec/keydb.h>
+#include <freebsd/net/pfkeyv2.h>
+#include <freebsd/netipsec/keydb.h>
 
 #ifdef _KERNEL
 VNET_DECLARE(struct ipsecstat, ipsec6stat);

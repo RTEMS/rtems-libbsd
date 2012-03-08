@@ -32,10 +32,10 @@
  */
 #ifndef _SYS_SOCKBUF_HH_
 #define _SYS_SOCKBUF_HH_
-#include <rtems/freebsd/sys/selinfo.h>		/* for struct selinfo */
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
-#include <rtems/freebsd/sys/_sx.h>
+#include <freebsd/sys/selinfo.h>		/* for struct selinfo */
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
+#include <freebsd/sys/_sx.h>
 
 #define	SB_MAX		(256*1024)	/* default for max chars in sockbuf */
 

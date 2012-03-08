@@ -33,7 +33,7 @@
 #ifndef _SYS_SELINFO_HH_
 #define	_SYS_SELINFO_HH_
 
-#include <rtems/freebsd/sys/event.h>		/* for struct klist */
+#include <freebsd/sys/event.h>		/* for struct klist */
 
 struct selfd;
 TAILQ_HEAD(selfdlist, selfd);

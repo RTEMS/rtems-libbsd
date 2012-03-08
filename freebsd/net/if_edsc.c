@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1993
@@ -37,21 +37,21 @@
  * Mimics an Ethernet device so that VLANs can be attached to it etc.
  */
 
-#include <rtems/freebsd/sys/param.h>		/* types, important constants */
-#include <rtems/freebsd/sys/kernel.h>		/* SYSINIT for load-time initializations */
-#include <rtems/freebsd/sys/malloc.h>		/* malloc(9) */
-#include <rtems/freebsd/sys/module.h>		/* module(9) */
-#include <rtems/freebsd/sys/mbuf.h>		/* mbuf(9) */
-#include <rtems/freebsd/sys/socket.h>		/* struct ifreq */
-#include <rtems/freebsd/sys/sockio.h>		/* socket ioctl's */
-/* #include <rtems/freebsd/sys/systm.h> if you need printf(9) or other all-purpose globals */
+#include <freebsd/sys/param.h>		/* types, important constants */
+#include <freebsd/sys/kernel.h>		/* SYSINIT for load-time initializations */
+#include <freebsd/sys/malloc.h>		/* malloc(9) */
+#include <freebsd/sys/module.h>		/* module(9) */
+#include <freebsd/sys/mbuf.h>		/* mbuf(9) */
+#include <freebsd/sys/socket.h>		/* struct ifreq */
+#include <freebsd/sys/sockio.h>		/* socket ioctl's */
+/* #include <freebsd/sys/systm.h> if you need printf(9) or other all-purpose globals */
 
-#include <rtems/freebsd/net/bpf.h>		/* bpf(9) */
-#include <rtems/freebsd/net/ethernet.h>	/* Ethernet related constants and types */
-#include <rtems/freebsd/net/if.h>		/* basic part of ifnet(9) */
-#include <rtems/freebsd/net/if_clone.h>	/* network interface cloning */
-#include <rtems/freebsd/net/if_types.h>	/* IFT_ETHER and friends */
-#include <rtems/freebsd/net/if_var.h>		/* kernel-only part of ifnet(9) */
+#include <freebsd/net/bpf.h>		/* bpf(9) */
+#include <freebsd/net/ethernet.h>	/* Ethernet related constants and types */
+#include <freebsd/net/if.h>		/* basic part of ifnet(9) */
+#include <freebsd/net/if_clone.h>	/* network interface cloning */
+#include <freebsd/net/if_types.h>	/* IFT_ETHER and friends */
+#include <freebsd/net/if_var.h>		/* kernel-only part of ifnet(9) */
 
 /*
  * Software configuration of an interface specific to this device type.

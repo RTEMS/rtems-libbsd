@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * alias_skinny.c
@@ -33,26 +33,26 @@
  */
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
 #else
-#include <rtems/freebsd/errno.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/unistd.h>
+#include <freebsd/errno.h>
+#include <freebsd/stdio.h>
+#include <freebsd/unistd.h>
 #endif
 
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/tcp.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/netinet/libalias/alias_local.h>
-#include <rtems/freebsd/netinet/libalias/alias_mod.h>
+#include <freebsd/netinet/libalias/alias_local.h>
+#include <freebsd/netinet/libalias/alias_mod.h>
 #else
-#include <rtems/freebsd/local/alias_local.h>
-#include <rtems/freebsd/local/alias_mod.h>
+#include <freebsd/local/alias_local.h>
+#include <freebsd/local/alias_mod.h>
 #endif
 
 static void

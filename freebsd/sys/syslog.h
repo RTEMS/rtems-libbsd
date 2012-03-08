@@ -185,8 +185,8 @@ CODE facilitynames[] = {
  * for utilities to have to include one of them to include syslog.h, so we get
  * __va_list from <sys/_types.h> and use it.
  */
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
 
 __BEGIN_DECLS
 void	closelog(void);

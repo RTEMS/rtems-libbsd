@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2009 Robert N. M. Watson
@@ -33,15 +33,15 @@
  * returned.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_var.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_var.h>
 
 static int
 ifdead_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,

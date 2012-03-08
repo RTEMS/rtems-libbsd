@@ -31,16 +31,16 @@
 #ifndef _CAM_CAM_CCB_H
 #define _CAM_CAM_CCB_H 1
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/limits.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/limits.h>
 #ifndef _KERNEL
-#include <rtems/freebsd/sys/callout.h>
+#include <freebsd/sys/callout.h>
 #endif
-#include <rtems/freebsd/cam/cam_debug.h>
-#include <rtems/freebsd/cam/scsi/scsi_all.h>
-#include <rtems/freebsd/cam/ata/ata_all.h>
+#include <freebsd/cam/cam_debug.h>
+#include <freebsd/cam/scsi/scsi_all.h>
+#include <freebsd/cam/ata/ata_all.h>
 
 #ifdef __rtems__
 #include <rtems/blkdev.h>

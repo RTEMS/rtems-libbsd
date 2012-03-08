@@ -36,8 +36,8 @@ LIST_HEAD(lpohead, lock_profile_object);
 
 #ifdef _KERNEL
 #ifdef LOCK_PROFILING
-#include <rtems/freebsd/machine/cpufunc.h>
-#include <rtems/freebsd/sys/lock.h>
+#include <freebsd/machine/cpufunc.h>
+#include <freebsd/sys/lock.h>
 
 #ifndef USE_CPU_NANOSECONDS
 u_int64_t nanoseconds(void);

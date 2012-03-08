@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2005 Paolo Pisati <piso@FreeBSD.org>
@@ -26,31 +26,31 @@
  * SUCH DAMAGE.
  *
  */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/libkern.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/rwlock.h>
+#include <freebsd/sys/libkern.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/rwlock.h>
 #else
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/string.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/errno.h>
+#include <freebsd/stdio.h>
+#include <freebsd/string.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/errno.h>
 #endif
 
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/netinet/libalias/alias_local.h>
-#include <rtems/freebsd/netinet/libalias/alias_mod.h>
+#include <freebsd/netinet/libalias/alias_local.h>
+#include <freebsd/netinet/libalias/alias_mod.h>
 #else
-#include <rtems/freebsd/local/alias_local.h>
-#include <rtems/freebsd/local/alias_mod.h>
+#include <freebsd/local/alias_local.h>
+#include <freebsd/local/alias_mod.h>
 #endif
 
 /* Protocol and userland module handlers chains. */

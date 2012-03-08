@@ -29,7 +29,7 @@
 #ifndef _SYS_ATA_HH_
 #define _SYS_ATA_HH_
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 /* ATA/ATAPI device parameters */
 struct ata_params {

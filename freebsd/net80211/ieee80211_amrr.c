@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: ieee80211_amrr.c,v 1.1 2006/06/17 19:07:19 damien Exp $	*/
 
@@ -20,7 +20,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*-
@@ -31,25 +31,25 @@ __FBSDID("$FreeBSD$");
  *  INRIA Sophia - Projet Planete
  *  http://www-sop.inria.fr/rapports/sophia/RR-5208.html
  */
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
 
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/if_ether.h>
 #endif
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_amrr.h>
-#include <rtems/freebsd/net80211/ieee80211_ratectl.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_amrr.h>
+#include <freebsd/net80211/ieee80211_ratectl.h>
 
 #define is_success(amn)	\
 	((amn)->amn_retrycnt < (amn)->amn_txcnt / 10)

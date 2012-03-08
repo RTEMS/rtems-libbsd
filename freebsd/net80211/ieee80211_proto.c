@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,37 +26,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 protocol support.
  */
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/systm.h>
 
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/ethernet.h>		/* XXX for ether_sprintf */
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/ethernet.h>		/* XXX for ether_sprintf */
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_adhoc.h>
-#include <rtems/freebsd/net80211/ieee80211_sta.h>
-#include <rtems/freebsd/net80211/ieee80211_hostap.h>
-#include <rtems/freebsd/net80211/ieee80211_wds.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_adhoc.h>
+#include <freebsd/net80211/ieee80211_sta.h>
+#include <freebsd/net80211/ieee80211_hostap.h>
+#include <freebsd/net80211/ieee80211_wds.h>
 #ifdef IEEE80211_SUPPORT_MESH
-#include <rtems/freebsd/net80211/ieee80211_mesh.h>
+#include <freebsd/net80211/ieee80211_mesh.h>
 #endif
-#include <rtems/freebsd/net80211/ieee80211_monitor.h>
-#include <rtems/freebsd/net80211/ieee80211_input.h>
+#include <freebsd/net80211/ieee80211_monitor.h>
+#include <freebsd/net80211/ieee80211_input.h>
 
 /* XXX tunables */
 #define	AGGRESSIVE_MODE_SWITCH_HYSTERESIS	3	/* pkts / 100ms */

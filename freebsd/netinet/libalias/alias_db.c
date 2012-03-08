@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -145,34 +145,34 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <rtems/freebsd/machine/stdarg.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/syslog.h>
+#include <freebsd/machine/stdarg.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/syslog.h>
 #else
-#include <rtems/freebsd/stdarg.h>
-#include <rtems/freebsd/stdlib.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/unistd.h>
+#include <freebsd/stdarg.h>
+#include <freebsd/stdlib.h>
+#include <freebsd/stdio.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/unistd.h>
 #endif
 
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/netinet/tcp.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/netinet/libalias/alias.h>
-#include <rtems/freebsd/netinet/libalias/alias_local.h>
-#include <rtems/freebsd/netinet/libalias/alias_mod.h>
-#include <rtems/freebsd/net/if.h>
+#include <freebsd/netinet/libalias/alias.h>
+#include <freebsd/netinet/libalias/alias_local.h>
+#include <freebsd/netinet/libalias/alias_mod.h>
+#include <freebsd/net/if.h>
 #else
-#include <rtems/freebsd/local/alias.h>
-#include <rtems/freebsd/local/alias_local.h>
-#include <rtems/freebsd/local/alias_mod.h>
+#include <freebsd/local/alias.h>
+#include <freebsd/local/alias_local.h>
+#include <freebsd/local/alias_mod.h>
 #endif
 
 static		LIST_HEAD(, libalias) instancehead = LIST_HEAD_INITIALIZER(instancehead);
@@ -2646,10 +2646,10 @@ LibAliasCheckNewLink(struct libalias *la)
   ****************/
 
 /* Firewall include files */
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/netinet/ip_fw.h>
-#include <rtems/freebsd/string.h>
-#include <rtems/freebsd/err.h>
+#include <freebsd/net/if.h>
+#include <freebsd/netinet/ip_fw.h>
+#include <freebsd/string.h>
+#include <freebsd/err.h>
 
 /*
  * helper function, updates the pointer to cmd with the length

@@ -35,10 +35,10 @@
 #ifndef _SYS_MALLOC_HH_
 #define	_SYS_MALLOC_HH_
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
 
 #define	MINALLOCSIZE	UMA_SMALLEST_UNIT
 

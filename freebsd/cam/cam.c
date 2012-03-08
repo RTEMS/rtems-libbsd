@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Generic utility routines for the Common Access Method layer.
@@ -28,29 +28,29 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
+#include <freebsd/sys/param.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
 #else /* _KERNEL */
-#include <rtems/freebsd/stdlib.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/camlib.h>
+#include <freebsd/stdlib.h>
+#include <freebsd/stdio.h>
+#include <freebsd/camlib.h>
 #endif /* _KERNEL */
 
-#include <rtems/freebsd/cam/cam.h>
-#include <rtems/freebsd/cam/cam_ccb.h>
-#include <rtems/freebsd/cam/scsi/scsi_all.h>
-#include <rtems/freebsd/sys/sbuf.h>
+#include <freebsd/cam/cam.h>
+#include <freebsd/cam/cam_ccb.h>
+#include <freebsd/cam/scsi/scsi_all.h>
+#include <freebsd/sys/sbuf.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/libkern.h>
-#include <rtems/freebsd/cam/cam_queue.h>
-#include <rtems/freebsd/cam/cam_xpt.h>
+#include <freebsd/sys/libkern.h>
+#include <freebsd/cam/cam_queue.h>
+#include <freebsd/cam/cam_xpt.h>
 #endif
 
 static int	camstatusentrycomp(const void *key, const void *member);

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: cryptodev.c,v 1.52 2002/06/19 07:22:46 deraadt Exp $	*/
 
@@ -34,35 +34,35 @@
  * Materiel Command, USAF, under agreement number F30602-01-2-0537.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_compat.h>
+#include <freebsd/local/opt_compat.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/file.h>
-#include <rtems/freebsd/sys/filedesc.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/uio.h>
-#include <rtems/freebsd/sys/random.h>
-#include <rtems/freebsd/sys/conf.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/fcntl.h>
-#include <rtems/freebsd/sys/bus.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/file.h>
+#include <freebsd/sys/filedesc.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/uio.h>
+#include <freebsd/sys/random.h>
+#include <freebsd/sys/conf.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/fcntl.h>
+#include <freebsd/sys/bus.h>
 
-#include <rtems/freebsd/opencrypto/cryptodev.h>
-#include <rtems/freebsd/opencrypto/xform.h>
+#include <freebsd/opencrypto/cryptodev.h>
+#include <freebsd/opencrypto/xform.h>
 
 #ifdef COMPAT_FREEBSD32
-#include <rtems/freebsd/sys/mount.h>
-#include <rtems/freebsd/compat/freebsd32/freebsd32.h>
+#include <freebsd/sys/mount.h>
+#include <freebsd/compat/freebsd32/freebsd32.h>
 
 struct session_op32 {
 	u_int32_t	cipher;

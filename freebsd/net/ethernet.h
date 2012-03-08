@@ -385,7 +385,7 @@ struct mbuf  *ether_vlanencap(struct mbuf *, uint16_t);
 
 #else /* _KERNEL */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*
  * Ethernet address conversion/parsing routines.

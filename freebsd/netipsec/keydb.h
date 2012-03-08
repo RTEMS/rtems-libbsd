@@ -35,7 +35,7 @@
 
 #ifdef _KERNEL
 
-#include <rtems/freebsd/netipsec/key_var.h>
+#include <freebsd/netipsec/key_var.h>
 
 #ifndef _SOCKADDR_UNION_DEFINED
 #define	_SOCKADDR_UNION_DEFINED

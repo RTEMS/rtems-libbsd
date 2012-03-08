@@ -30,7 +30,7 @@
 
 /*  $FreeBSD$ */
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 #define	FM_SET_FREQ	_IOWR('U', 200, int)
 #define	FM_GET_FREQ	_IOWR('U', 201, int)

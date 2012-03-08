@@ -33,10 +33,10 @@
 #ifndef _SYS_LIBKERN_HH_
 #define	_SYS_LIBKERN_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/types.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #endif
 
 #ifndef __rtems__

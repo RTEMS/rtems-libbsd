@@ -34,15 +34,15 @@
 #ifndef _SYS_SOCKETVAR_HH_
 #define _SYS_SOCKETVAR_HH_
 
-#include <rtems/freebsd/sys/queue.h>			/* for TAILQ macros */
-#include <rtems/freebsd/sys/selinfo.h>		/* for struct selinfo */
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
-#include <rtems/freebsd/sys/_sx.h>
-#include <rtems/freebsd/sys/sockbuf.h>
-#include <rtems/freebsd/sys/sockstate.h>
+#include <freebsd/sys/queue.h>			/* for TAILQ macros */
+#include <freebsd/sys/selinfo.h>		/* for struct selinfo */
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
+#include <freebsd/sys/_sx.h>
+#include <freebsd/sys/sockbuf.h>
+#include <freebsd/sys/sockstate.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/sockopt.h>
+#include <freebsd/sys/sockopt.h>
 #endif
 
 struct vnet;

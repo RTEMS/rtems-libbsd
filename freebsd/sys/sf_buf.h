@@ -29,7 +29,7 @@
 #ifndef _SYS_SF_BUF_HH_
 #define _SYS_SF_BUF_HH_
 
-#include <rtems/freebsd/machine/sf_buf.h>
+#include <freebsd/machine/sf_buf.h>
 
 /*
  * Options to sf_buf_alloc() are specified through its flags argument.  This

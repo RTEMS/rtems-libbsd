@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: bf_skey.c,v 1.7 2002/02/27 01:33:59 itojun Exp $	*/
 
@@ -61,15 +61,15 @@
  * [including the GNU Public Licence.]
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/crypto/blowfish/blowfish.h>
-#include <rtems/freebsd/crypto/blowfish/bf_locl.h>
-#include <rtems/freebsd/crypto/blowfish/bf_pi.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/crypto/blowfish/blowfish.h>
+#include <freebsd/crypto/blowfish/bf_locl.h>
+#include <freebsd/crypto/blowfish/bf_pi.h>
 
 void
 BF_set_key(key, len, data)

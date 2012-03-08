@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*- 
  * Copyright (c) 2009 The FreeBSD Foundation 
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
  * SUCH DAMAGE. 
  */ 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 #ifdef __FreeBSD__
 __FBSDID("$FreeBSD$");
 #endif
@@ -38,33 +38,33 @@ __FBSDID("$FreeBSD$");
  * 
  * Based on March 2009, D3.0 802.11s draft spec.
  */
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h> 
-#include <rtems/freebsd/sys/mbuf.h>   
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/kernel.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h> 
+#include <freebsd/sys/mbuf.h>   
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/kernel.h>
 
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/endian.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/endian.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/ethernet.h>
 
-#include <rtems/freebsd/net/bpf.h>
+#include <freebsd/net/bpf.h>
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_action.h>
-#include <rtems/freebsd/net80211/ieee80211_input.h>
-#include <rtems/freebsd/net80211/ieee80211_mesh.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_action.h>
+#include <freebsd/net80211/ieee80211_input.h>
+#include <freebsd/net80211/ieee80211_mesh.h>
 
 static void	hwmp_vattach(struct ieee80211vap *);
 static void	hwmp_vdetach(struct ieee80211vap *);

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: bf_enc.c,v 1.7 2002/02/27 01:33:59 itojun Exp $	*/
 
@@ -61,12 +61,12 @@
  * [including the GNU Public Licence.]
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/crypto/blowfish/blowfish.h>
-#include <rtems/freebsd/crypto/blowfish/bf_locl.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/crypto/blowfish/blowfish.h>
+#include <freebsd/crypto/blowfish/bf_locl.h>
 
 /* Blowfish as implemented from 'Blowfish: Springer-Verlag paper'
  * (From LECTURE NOTES IN COIMPUTER SCIENCE 809, FAST SOFTWARE ENCRYPTION,

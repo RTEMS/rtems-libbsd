@@ -27,8 +27,8 @@
 #ifndef _USB_ENDIAN_HH_
 #define	_USB_ENDIAN_HH_
 
-#include <rtems/freebsd/sys/stdint.h>
-#include <rtems/freebsd/sys/endian.h>
+#include <freebsd/sys/stdint.h>
+#include <freebsd/sys/endian.h>
 
 /*
  * Declare the basic USB record types. USB records have an alignment

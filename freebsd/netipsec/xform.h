@@ -41,9 +41,9 @@
 #ifndef _NETIPSEC_XFORM_HH_
 #define _NETIPSEC_XFORM_HH_
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/opencrypto/xform.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/opencrypto/xform.h>
 
 #define	AH_HMAC_HASHLEN		12	/* 96 bits of authenticator */
 #define	AH_HMAC_INITIAL_RPL	1	/* replay counter initial value */

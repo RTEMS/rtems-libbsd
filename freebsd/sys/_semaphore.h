@@ -33,7 +33,7 @@ struct timespec;
 
 #ifndef _KERNEL
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*
  * Semaphore definitions.

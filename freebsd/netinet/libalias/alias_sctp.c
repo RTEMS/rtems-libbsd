@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2008
@@ -73,24 +73,24 @@
 /* $FreeBSD$ */
 
 #ifdef _KERNEL
-#include <rtems/freebsd/machine/stdarg.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/netinet/libalias/alias_sctp.h>
-#include <rtems/freebsd/netinet/libalias/alias.h>
-#include <rtems/freebsd/netinet/libalias/alias_local.h>
-#include <rtems/freebsd/netinet/sctp_crc32.h>
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/machine/stdarg.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/netinet/libalias/alias_sctp.h>
+#include <freebsd/netinet/libalias/alias.h>
+#include <freebsd/netinet/libalias/alias_local.h>
+#include <freebsd/netinet/sctp_crc32.h>
+#include <freebsd/machine/in_cksum.h>
 #else
-#include <rtems/freebsd/local/alias_sctp.h>
-#include <rtems/freebsd/arpa/inet.h>
-#include <rtems/freebsd/local/alias.h>
-#include <rtems/freebsd/local/alias_local.h>
-#include <rtems/freebsd/machine/in_cksum.h>
-#include <rtems/freebsd/sys/libkern.h>
+#include <freebsd/local/alias_sctp.h>
+#include <freebsd/arpa/inet.h>
+#include <freebsd/local/alias.h>
+#include <freebsd/local/alias_local.h>
+#include <freebsd/machine/in_cksum.h>
+#include <freebsd/sys/libkern.h>
 #endif //#ifdef _KERNEL
 
 /* ----------------------------------------------------------------------

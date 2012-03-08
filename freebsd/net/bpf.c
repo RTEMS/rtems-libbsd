@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1990, 1991, 1993
@@ -36,55 +36,55 @@
  *      @(#)bpf.c	8.4 (Berkeley) 1/9/95
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_bpf.h>
-#include <rtems/freebsd/local/opt_compat.h>
-#include <rtems/freebsd/local/opt_netgraph.h>
+#include <freebsd/local/opt_bpf.h>
+#include <freebsd/local/opt_compat.h>
+#include <freebsd/local/opt_netgraph.h>
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/conf.h>
-#include <rtems/freebsd/sys/fcntl.h>
-#include <rtems/freebsd/sys/jail.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/filio.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/ttycom.h>
-#include <rtems/freebsd/sys/uio.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/conf.h>
+#include <freebsd/sys/fcntl.h>
+#include <freebsd/sys/jail.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/filio.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/ttycom.h>
+#include <freebsd/sys/uio.h>
 
-#include <rtems/freebsd/sys/event.h>
-#include <rtems/freebsd/sys/file.h>
-#include <rtems/freebsd/sys/poll.h>
-#include <rtems/freebsd/sys/proc.h>
+#include <freebsd/sys/event.h>
+#include <freebsd/sys/file.h>
+#include <freebsd/sys/poll.h>
+#include <freebsd/sys/proc.h>
 
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/bpf_buffer.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/bpf_buffer.h>
 #ifdef BPF_JITTER
-#include <rtems/freebsd/net/bpf_jitter.h>
+#include <freebsd/net/bpf_jitter.h>
 #endif
-#include <rtems/freebsd/net/bpf_zerocopy.h>
-#include <rtems/freebsd/net/bpfdesc.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/bpf_zerocopy.h>
+#include <freebsd/net/bpfdesc.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/if_ether.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/if_ether.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net80211/ieee80211_freebsd.h>
+#include <freebsd/net80211/ieee80211_freebsd.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 MALLOC_DEFINE(M_BPF, "BPF", "BPF data");
 
@@ -93,8 +93,8 @@ MALLOC_DEFINE(M_BPF, "BPF", "BPF data");
 #define PRINET  26			/* interruptible */
 
 #ifdef COMPAT_FREEBSD32
-#include <rtems/freebsd/sys/mount.h>
-#include <rtems/freebsd/compat/freebsd32/freebsd32.h>
+#include <freebsd/sys/mount.h>
+#include <freebsd/compat/freebsd32/freebsd32.h>
 #define BPF_ALIGNMENT32 sizeof(int32_t)
 #define BPF_WORDALIGN32(x) (((x)+(BPF_ALIGNMENT32-1))&~(BPF_ALIGNMENT32-1))
 

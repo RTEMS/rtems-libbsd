@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: sha2.c,v 1.8 2001/11/08 01:07:52 itojun Exp $	*/
 
@@ -36,18 +36,18 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/time.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/time.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #else
-#include <rtems/freebsd/string.h>
+#include <freebsd/string.h>
 #endif
-#include <rtems/freebsd/machine/endian.h>
-#include <rtems/freebsd/crypto/sha2/sha2.h>
+#include <freebsd/machine/endian.h>
+#include <freebsd/crypto/sha2/sha2.h>
 
 /*
  * ASSERT NOTE:

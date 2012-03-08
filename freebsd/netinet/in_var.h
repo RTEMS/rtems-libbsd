@@ -33,9 +33,9 @@
 #ifndef _NETINET_IN_VAR_HH_
 #define _NETINET_IN_VAR_HH_
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/fnv_hash.h>
-#include <rtems/freebsd/sys/tree.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/fnv_hash.h>
+#include <freebsd/sys/tree.h>
 
 struct igmp_ifinfo;
 struct in_multi;
@@ -470,6 +470,6 @@ int	 in_rtrequest1(int, struct rt_addrinfo *, struct rtentry **, u_int);
 #endif /* _KERNEL */
 
 /* INET6 stuff */
-#include <rtems/freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet6/in6_var.h>
 
 #endif /* _NETINET_IN_VAR_HH_ */

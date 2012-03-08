@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,50 +26,50 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h> 
-#include <rtems/freebsd/sys/mbuf.h>   
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/endian.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h> 
+#include <freebsd/sys/mbuf.h>   
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/endian.h>
 
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/socket.h>
  
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/if_vlan_var.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/if_vlan_var.h>
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_regdomain.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_regdomain.h>
 #ifdef IEEE80211_SUPPORT_SUPERG
-#include <rtems/freebsd/net80211/ieee80211_superg.h>
+#include <freebsd/net80211/ieee80211_superg.h>
 #endif
 #ifdef IEEE80211_SUPPORT_TDMA
-#include <rtems/freebsd/net80211/ieee80211_tdma.h>
+#include <freebsd/net80211/ieee80211_tdma.h>
 #endif
-#include <rtems/freebsd/net80211/ieee80211_wds.h>
-#include <rtems/freebsd/net80211/ieee80211_mesh.h>
+#include <freebsd/net80211/ieee80211_wds.h>
+#include <freebsd/net80211/ieee80211_mesh.h>
 
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h> 
-#include <rtems/freebsd/netinet/if_ether.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
+#include <freebsd/netinet/in.h> 
+#include <freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
 #endif
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
+#include <freebsd/netinet/ip6.h>
 #endif
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 #define	ETHER_HEADER_COPY(dst, src) \
 	memcpy(dst, src, sizeof(struct ether_header))

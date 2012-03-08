@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002-2009 Sam Leffler, Errno Consulting
@@ -25,36 +25,36 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 station scanning support.
  */
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
 
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/ethernet.h>
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_input.h>
-#include <rtems/freebsd/net80211/ieee80211_regdomain.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_input.h>
+#include <freebsd/net80211/ieee80211_regdomain.h>
 #ifdef IEEE80211_SUPPORT_TDMA
-#include <rtems/freebsd/net80211/ieee80211_tdma.h>
+#include <freebsd/net80211/ieee80211_tdma.h>
 #endif
 #ifdef IEEE80211_SUPPORT_MESH
-#include <rtems/freebsd/net80211/ieee80211_mesh.h>
+#include <freebsd/net80211/ieee80211_mesh.h>
 #endif
 
-#include <rtems/freebsd/net/bpf.h>
+#include <freebsd/net/bpf.h>
 
 /*
  * Parameters for managing cache entries:

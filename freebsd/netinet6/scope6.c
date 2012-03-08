@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 2000 WIDE Project.
@@ -31,26 +31,26 @@
  *	$KAME: scope6.c,v 1.10 2000/07/24 13:29:31 itojun Exp $
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/syslog.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/syslog.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/netinet/in.h>
 
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/scope6_var.h>
 
 #ifdef ENABLE_DEFAULT_SCOPE
 VNET_DEFINE(int, ip6_use_defzone) = 1;

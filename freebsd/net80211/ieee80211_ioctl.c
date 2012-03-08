@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,44 +26,44 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 ioctl support (FreeBSD-specific)
  */
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_ipx.h>
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_ipx.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/endian.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/endian.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/systm.h>
  
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/ethernet.h>
 
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/if_ether.h>
 #endif
 
 #ifdef IPX
-#include <rtems/freebsd/netipx/ipx.h>
-#include <rtems/freebsd/netipx/ipx_if.h>
+#include <freebsd/netipx/ipx.h>
+#include <freebsd/netipx/ipx_if.h>
 #endif
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_ioctl.h>
-#include <rtems/freebsd/net80211/ieee80211_regdomain.h>
-#include <rtems/freebsd/net80211/ieee80211_input.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_ioctl.h>
+#include <freebsd/net80211/ieee80211_regdomain.h>
+#include <freebsd/net80211/ieee80211_input.h>
 
 #define	IS_UP_AUTO(_vap) \
 	(IFNET_IS_UP_RUNNING((_vap)->iv_ifp) && \

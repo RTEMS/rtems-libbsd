@@ -38,12 +38,12 @@
 #ifndef _SYS_SIGNAL_HH_
 #define	_SYS_SIGNAL_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
-#include <rtems/freebsd/sys/_sigset.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
+#include <freebsd/sys/_sigset.h>
 
-#include <rtems/freebsd/machine/_limits.h>	/* __MINSIGSTKSZ */
-#include <rtems/freebsd/machine/signal.h>	/* sig_atomic_t; trap codes; sigcontext */
+#include <freebsd/machine/_limits.h>	/* __MINSIGSTKSZ */
+#include <freebsd/machine/signal.h>	/* sig_atomic_t; trap codes; sigcontext */
 
 /*
  * System defined signals.

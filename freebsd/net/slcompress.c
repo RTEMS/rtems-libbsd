@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1989, 1993, 1994
@@ -41,16 +41,16 @@
  *
  */
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/systm.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/tcp.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/tcp.h>
 
-#include <rtems/freebsd/net/slcompress.h>
+#include <freebsd/net/slcompress.h>
 
 #ifndef SL_NO_STATS
 #define INCR(counter) ++comp->counter;

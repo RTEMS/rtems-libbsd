@@ -33,7 +33,7 @@
 #ifndef _SYS__IOVEC_HH_
 #define	_SYS__IOVEC_HH_
 
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/sys/_types.h>
 
 #ifndef _SIZE_T_DECLARED
 typedef	__size_t	size_t;

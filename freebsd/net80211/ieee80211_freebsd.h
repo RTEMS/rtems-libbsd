@@ -28,12 +28,12 @@
 #define _NET80211_IEEE80211_FREEBSD_HH_
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/taskqueue.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/taskqueue.h>
 
 /*
  * Common state locking definitions.
@@ -167,7 +167,7 @@ typedef struct mtx ieee80211_scan_table_lock_t;
  *				is the last reference, otherwise 0
  * ieee80211_node_refcnt	reference count for printing (only)
  */
-#include <rtems/freebsd/machine/atomic.h>
+#include <freebsd/machine/atomic.h>
 
 #define ieee80211_node_initref(_ni) \
 	do { ((_ni)->ni_refcnt = 1); } while (0)

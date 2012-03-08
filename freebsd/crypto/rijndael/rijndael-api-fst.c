@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$KAME: rijndael-api-fst.c,v 1.10 2001/05/27 09:34:18 itojun Exp $	*/
 
@@ -17,18 +17,18 @@
  * This code is placed in the public domain.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
+#include <freebsd/sys/param.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #else
-#include <rtems/freebsd/string.h>
+#include <freebsd/string.h>
 #endif
 
-#include <rtems/freebsd/crypto/rijndael/rijndael_local.h>
-#include <rtems/freebsd/crypto/rijndael/rijndael-api-fst.h>
+#include <freebsd/crypto/rijndael/rijndael_local.h>
+#include <freebsd/crypto/rijndael/rijndael-api-fst.h>
 
 #ifndef TRUE
 #define TRUE 1

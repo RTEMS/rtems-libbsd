@@ -42,7 +42,7 @@
  * Modified by Pavlin Radoslavov, USC/ISI, May 1998, October 2000.
  */
 
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 
 #ifndef _PIM_VT
 #ifndef BYTE_ORDER

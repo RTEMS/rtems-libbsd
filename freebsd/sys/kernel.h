@@ -45,12 +45,12 @@
 #ifndef _SYS_KERNEL_HH_
 #define	_SYS_KERNEL_HH_
 
-#include <rtems/freebsd/sys/linker_set.h>
+#include <freebsd/sys/linker_set.h>
 
 #ifdef _KERNEL
 
 /* for intrhook below */
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 /* Global variables for the kernel. */
 

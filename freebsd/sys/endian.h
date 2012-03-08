@@ -29,9 +29,9 @@
 #ifndef _SYS_ENDIAN_HH_
 #define _SYS_ENDIAN_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
-#include <rtems/freebsd/machine/endian.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
+#include <freebsd/machine/endian.h>
 
 #ifndef _UINT16_T_DECLARED
 typedef	__uint16_t	uint16_t;

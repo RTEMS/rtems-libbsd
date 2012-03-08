@@ -31,9 +31,9 @@
 /*
  * IEEE 802.11 ioctls.
  */
-#include <rtems/freebsd/net80211/_ieee80211.h>
-#include <rtems/freebsd/net80211/ieee80211.h>
-#include <rtems/freebsd/net80211/ieee80211_crypto.h>
+#include <freebsd/net80211/_ieee80211.h>
+#include <freebsd/net80211/ieee80211.h>
+#include <freebsd/net80211/ieee80211_crypto.h>
 
 /*
  * Per/node (station) statistics.

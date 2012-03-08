@@ -34,14 +34,14 @@
 #ifndef _NETINET_IN_PCB_HH_
 #define _NETINET_IN_PCB_HH_
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
-#include <rtems/freebsd/sys/_rwlock.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
+#include <freebsd/sys/_rwlock.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/net/vnet.h>
 #endif
 
 #define	in6pcb		inpcb	/* for KAME src sync over BSD*'s */

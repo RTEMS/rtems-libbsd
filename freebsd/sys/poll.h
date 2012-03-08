@@ -31,7 +31,7 @@
 #ifndef _SYS_POLL_HH_
 #define	_SYS_POLL_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*
  * This file is intended to be compatible with the traditional poll.h.

@@ -33,7 +33,7 @@
 #ifndef _SYS_QUEUE_HH_
 #define	_SYS_QUEUE_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*
  * This file defines four types of data structures: singly-linked lists,

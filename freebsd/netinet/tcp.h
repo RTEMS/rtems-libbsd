@@ -33,7 +33,7 @@
 #ifndef _NETINET_TCP_HH_
 #define _NETINET_TCP_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 #if __BSD_VISIBLE
 

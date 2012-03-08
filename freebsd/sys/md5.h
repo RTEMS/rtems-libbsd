@@ -39,7 +39,7 @@ typedef struct MD5Context {
   unsigned char buffer[64];	/* input buffer */
 } MD5_CTX;
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 __BEGIN_DECLS
 void   MD5Init (MD5_CTX *);

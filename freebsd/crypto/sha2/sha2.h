@@ -72,7 +72,7 @@ typedef unsigned long long u_int64_t;	/* 8-bytes (64-bits) */
  * uintXX_t types defined by very recent ANSI C standards and included
  * in the file:
  *
- *   #include <rtems/freebsd/inttypes.h>
+ *   #include <freebsd/inttypes.h>
  *
  * If you choose to use <inttypes.h> then please define: 
  *

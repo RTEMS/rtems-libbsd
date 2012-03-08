@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1989, 1993
@@ -32,57 +32,57 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/local/opt_atalk.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipx.h>
-#include <rtems/freebsd/local/opt_netgraph.h>
-#include <rtems/freebsd/local/opt_mbuf_profiling.h>
+#include <freebsd/local/opt_atalk.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipx.h>
+#include <freebsd/local/opt_netgraph.h>
+#include <freebsd/local/opt_mbuf_profiling.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/random.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/random.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_arp.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/if_bridgevar.h>
-#include <rtems/freebsd/net/if_vlan_var.h>
-#include <rtems/freebsd/net/if_llatbl.h>
-#include <rtems/freebsd/net/pf_mtag.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_arp.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/if_bridgevar.h>
+#include <freebsd/net/if_vlan_var.h>
+#include <freebsd/net/if_llatbl.h>
+#include <freebsd/net/pf_mtag.h>
+#include <freebsd/net/vnet.h>
 
 #if defined(INET) || defined(INET6)
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/if_ether.h>
-#include <rtems/freebsd/netinet/ip_carp.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_fw.h>
-#include <rtems/freebsd/netinet/ipfw/ip_fw_private.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/ip_carp.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_fw.h>
+#include <freebsd/netinet/ipfw/ip_fw_private.h>
 #endif
 #ifdef INET6
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet6/nd6.h>
 #endif
 
 #ifdef IPX
-#include <rtems/freebsd/netipx/ipx.h>
-#include <rtems/freebsd/netipx/ipx_if.h>
+#include <freebsd/netipx/ipx.h>
+#include <freebsd/netipx/ipx_if.h>
 #endif
 
 int (*ef_inputp)(struct ifnet*, struct ether_header *eh, struct mbuf *m);
@@ -90,9 +90,9 @@ int (*ef_outputp)(struct ifnet *ifp, struct mbuf **mp,
 		struct sockaddr *dst, short *tp, int *hlen);
 
 #ifdef NETATALK
-#include <rtems/freebsd/netatalk/at.h>
-#include <rtems/freebsd/netatalk/at_var.h>
-#include <rtems/freebsd/netatalk/at_extern.h>
+#include <freebsd/netatalk/at.h>
+#include <freebsd/netatalk/at_var.h>
+#include <freebsd/netatalk/at_extern.h>
 
 #define llc_snap_org_code llc_un.type_snap.org_code
 #define llc_snap_ether_type llc_un.type_snap.ether_type
@@ -101,7 +101,7 @@ extern u_char	at_org_code[3];
 extern u_char	aarp_org_code[3];
 #endif /* NETATALK */
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 #ifdef CTASSERT
 CTASSERT(sizeof (struct ether_header) == ETHER_ADDR_LEN * 2 + 2);

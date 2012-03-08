@@ -27,7 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #ifndef __sctp_os_h__
 #define __sctp_os_h__
@@ -56,7 +56,7 @@ __FBSDID("$FreeBSD$");
  * SCTP_ZONE_DESTROY(zone)
  */
 
-#include <rtems/freebsd/netinet/sctp_os_bsd.h>
+#include <freebsd/netinet/sctp_os_bsd.h>
 
 
 

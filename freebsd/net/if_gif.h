@@ -39,10 +39,10 @@
 
 
 #ifdef _KERNEL
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/netinet/in.h>
 /* xxx sigh, why route have struct route instead of pointer? */
 
 struct encaptab;

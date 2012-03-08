@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$NetBSD: icsphy.c,v 1.41 2006/11/16 21:24:07 christos Exp $	*/
 
@@ -56,7 +56,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -64,23 +64,23 @@ __FBSDID("$FreeBSD$");
  * datasheet from www.icst.com
  */
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/bus.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/bus.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_media.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_media.h>
 
-#include <rtems/freebsd/dev/mii/mii.h>
-#include <rtems/freebsd/dev/mii/miivar.h>
-#include <rtems/freebsd/local/miidevs.h>
+#include <freebsd/dev/mii/mii.h>
+#include <freebsd/dev/mii/miivar.h>
+#include <freebsd/local/miidevs.h>
 
-#include <rtems/freebsd/dev/mii/icsphyreg.h>
+#include <freebsd/dev/mii/icsphyreg.h>
 
-#include <rtems/freebsd/local/miibus_if.h>
+#include <freebsd/local/miibus_if.h>
 
 static int	icsphy_probe(device_t dev);
 static int	icsphy_attach(device_t dev);

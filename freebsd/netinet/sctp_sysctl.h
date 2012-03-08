@@ -28,14 +28,14 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_sysctl_h__
 #define __sctp_sysctl_h__
 
-#include <rtems/freebsd/netinet/sctp_os.h>
-#include <rtems/freebsd/netinet/sctp_constants.h>
+#include <freebsd/netinet/sctp_os.h>
+#include <freebsd/netinet/sctp_constants.h>
 
 struct sctp_sysctl {
 	uint32_t sctp_sendspace;

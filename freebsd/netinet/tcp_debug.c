@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1993
@@ -32,12 +32,12 @@
  *	@(#)tcp_debug.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_tcpdebug.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_tcpdebug.h>
 
 #ifdef TCPDEBUG
 /* load symbolic names */
@@ -47,28 +47,28 @@ __FBSDID("$FreeBSD$");
 #define	TANAMES
 #endif
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/socket.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/ip.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/ip.h>
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
+#include <freebsd/netinet/ip6.h>
 #endif
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/tcp.h>
-#include <rtems/freebsd/netinet/tcp_fsm.h>
-#include <rtems/freebsd/netinet/tcp_timer.h>
-#include <rtems/freebsd/netinet/tcp_var.h>
-#include <rtems/freebsd/netinet/tcpip.h>
-#include <rtems/freebsd/netinet/tcp_debug.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/tcp.h>
+#include <freebsd/netinet/tcp_fsm.h>
+#include <freebsd/netinet/tcp_timer.h>
+#include <freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet/tcpip.h>
+#include <freebsd/netinet/tcp_debug.h>
 
 #ifdef TCPDEBUG
 static int		tcpconsdebug = 0;

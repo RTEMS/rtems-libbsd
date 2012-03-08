@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*
  * Copyright (c) 2004 Luigi Rizzo, Alessandro Cerri. All rights reserved.
@@ -26,41 +26,41 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_ddb.h>
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ddb.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/rwlock.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/rwlock.h>
 
 #ifdef DDB
-#include <rtems/freebsd/ddb/ddb.h>
+#include <freebsd/ddb/ddb.h>
 #endif
 
-#include <rtems/freebsd/vm/uma.h>
+#include <freebsd/vm/uma.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/net/if_llatbl.h>
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_var.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
-#include <rtems/freebsd/netinet/if_ether.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/net/if_llatbl.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_var.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
+#include <freebsd/netinet/if_ether.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet6/nd6.h>
 
 MALLOC_DEFINE(M_LLTABLE, "lltable", "link level address tables");
 

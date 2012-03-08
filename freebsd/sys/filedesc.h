@@ -33,13 +33,13 @@
 #ifndef _SYS_FILEDESC_HH_
 #define	_SYS_FILEDESC_HH_
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/event.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/priority.h>
-#include <rtems/freebsd/sys/sx.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/event.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/priority.h>
+#include <freebsd/sys/sx.h>
 
-#include <rtems/freebsd/machine/_limits.h>
+#include <freebsd/machine/_limits.h>
 
 /*
  * This structure is used for the management of descriptors.  It may be

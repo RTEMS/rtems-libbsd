@@ -29,9 +29,9 @@
 #ifndef _SYS_STDDEF_HH_
 #define _SYS_STDDEF_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_null.h>
-#include <rtems/freebsd/machine/_types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_null.h>
+#include <freebsd/machine/_types.h>
 
 #ifndef __rtems__
 typedef	__ptrdiff_t	ptrdiff_t;

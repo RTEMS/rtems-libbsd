@@ -34,9 +34,9 @@
 #define	_RADIX_HH_
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
-#include <rtems/freebsd/sys/_rwlock.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
+#include <freebsd/sys/_rwlock.h>
 #endif
 
 #ifdef MALLOC_DECLARE

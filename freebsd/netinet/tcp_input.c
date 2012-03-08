@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1994, 1995
@@ -31,72 +31,72 @@
  *	@(#)tcp_input.c	8.12 (Berkeley) 5/24/95
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_ipfw.h>		/* for ipfw_fwd	*/
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
-#include <rtems/freebsd/local/opt_tcpdebug.h>
+#include <freebsd/local/opt_ipfw.h>		/* for ipfw_fwd	*/
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_tcpdebug.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/proc.h>		/* for proc0 declaration */
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/proc.h>		/* for proc0 declaration */
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/sys/systm.h>
 
-#include <rtems/freebsd/machine/cpu.h>	/* before tcp_seq.h, for tcp_random18() */
+#include <freebsd/machine/cpu.h>	/* before tcp_seq.h, for tcp_random18() */
 
-#include <rtems/freebsd/vm/uma.h>
+#include <freebsd/vm/uma.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
 #define TCPSTATES		/* for logging */
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_pcb.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_icmp.h>	/* required for icmp_var.h */
-#include <rtems/freebsd/netinet/icmp_var.h>	/* for ICMP_BANDLIM */
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_options.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet/icmp6.h>
-#include <rtems/freebsd/netinet6/in6_pcb.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/nd6.h>
-#include <rtems/freebsd/netinet/tcp.h>
-#include <rtems/freebsd/netinet/tcp_fsm.h>
-#include <rtems/freebsd/netinet/tcp_seq.h>
-#include <rtems/freebsd/netinet/tcp_timer.h>
-#include <rtems/freebsd/netinet/tcp_var.h>
-#include <rtems/freebsd/netinet6/tcp6_var.h>
-#include <rtems/freebsd/netinet/tcpip.h>
-#include <rtems/freebsd/netinet/tcp_syncache.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_pcb.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_icmp.h>	/* required for icmp_var.h */
+#include <freebsd/netinet/icmp_var.h>	/* for ICMP_BANDLIM */
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_options.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet/icmp6.h>
+#include <freebsd/netinet6/in6_pcb.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/nd6.h>
+#include <freebsd/netinet/tcp.h>
+#include <freebsd/netinet/tcp_fsm.h>
+#include <freebsd/netinet/tcp_seq.h>
+#include <freebsd/netinet/tcp_timer.h>
+#include <freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet6/tcp6_var.h>
+#include <freebsd/netinet/tcpip.h>
+#include <freebsd/netinet/tcp_syncache.h>
 #ifdef TCPDEBUG
-#include <rtems/freebsd/netinet/tcp_debug.h>
+#include <freebsd/netinet/tcp_debug.h>
 #endif /* TCPDEBUG */
 
 #ifdef IPSEC
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/ipsec6.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/ipsec6.h>
 #endif /*IPSEC*/
 
-#include <rtems/freebsd/machine/in_cksum.h>
+#include <freebsd/machine/in_cksum.h>
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 static const int tcprexmtthresh = 3;
 

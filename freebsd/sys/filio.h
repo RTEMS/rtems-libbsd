@@ -38,7 +38,7 @@
 #ifndef	_SYS_FILIO_HH_
 #define	_SYS_FILIO_HH_
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 /* Generic file-descriptor ioctl's. */
 #define	FIOCLEX		 _IO('f', 1)		/* set close on exec on fd */

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997,1998,2003 Doug Rabson
@@ -26,38 +26,38 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_bus.h>
+#include <freebsd/local/opt_bus.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/conf.h>
-#include <rtems/freebsd/sys/filio.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/kobj.h>
-#include <rtems/freebsd/sys/limits.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/poll.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/condvar.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/machine/bus.h>
-#include <rtems/freebsd/sys/rman.h>
-#include <rtems/freebsd/sys/selinfo.h>
-#include <rtems/freebsd/sys/signalvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/uio.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/sys/interrupt.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/conf.h>
+#include <freebsd/sys/filio.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/kobj.h>
+#include <freebsd/sys/limits.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/poll.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/condvar.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/machine/bus.h>
+#include <freebsd/sys/rman.h>
+#include <freebsd/sys/selinfo.h>
+#include <freebsd/sys/signalvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/uio.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/sys/interrupt.h>
 
-#include <rtems/freebsd/machine/stdarg.h>
+#include <freebsd/machine/stdarg.h>
 
-#include <rtems/freebsd/vm/uma.h>
+#include <freebsd/vm/uma.h>
 
 SYSCTL_NODE(_hw, OID_AUTO, bus, CTLFLAG_RW, NULL, NULL);
 SYSCTL_NODE(, OID_AUTO, dev, CTLFLAG_RW, NULL, NULL);

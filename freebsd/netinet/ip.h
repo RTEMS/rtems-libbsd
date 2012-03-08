@@ -34,7 +34,7 @@
 #ifndef _NETINET_IP_HH_
 #define	_NETINET_IP_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*
  * Definitions for internet protocol version 4.

@@ -24,14 +24,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef	_NET_IF_LLATBL_HH_
 #define	_NET_IF_LLATBL_HH_
 
-#include <rtems/freebsd/sys/_rwlock.h>
-#include <rtems/freebsd/netinet/in.h>
+#include <freebsd/sys/_rwlock.h>
+#include <freebsd/netinet/in.h>
 
 struct ifnet;
 struct sysctl_req;

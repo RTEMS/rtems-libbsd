@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /* $FreeBSD$ */
 /*-
@@ -26,33 +26,33 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/stdint.h>
-#include <rtems/freebsd/sys/stddef.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/sys/linker_set.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/condvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/unistd.h>
-#include <rtems/freebsd/sys/callout.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/priv.h>
+#include <freebsd/sys/stdint.h>
+#include <freebsd/sys/stddef.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/sys/linker_set.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/condvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/unistd.h>
+#include <freebsd/sys/callout.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/priv.h>
 
-#include <rtems/freebsd/dev/usb/usb.h>
-#include <rtems/freebsd/dev/usb/usbdi.h>
+#include <freebsd/dev/usb/usb.h>
+#include <freebsd/dev/usb/usbdi.h>
 
-#include <rtems/freebsd/dev/usb/usb_core.h>
-#include <rtems/freebsd/dev/usb/usb_process.h>
-#include <rtems/freebsd/dev/usb/usb_device.h>
-#include <rtems/freebsd/dev/usb/usb_dynamic.h>
+#include <freebsd/dev/usb/usb_core.h>
+#include <freebsd/dev/usb/usb_process.h>
+#include <freebsd/dev/usb/usb_device.h>
+#include <freebsd/dev/usb/usb_dynamic.h>
 
 /* function prototypes */
 static usb_handle_req_t usb_temp_get_desc_w;

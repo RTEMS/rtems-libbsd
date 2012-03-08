@@ -29,8 +29,8 @@
 #ifndef _SYS_BUS_HH_
 #define _SYS_BUS_HH_
 
-#include <rtems/freebsd/machine/_limits.h>
-#include <rtems/freebsd/sys/_bus_dma.h>
+#include <freebsd/machine/_limits.h>
+#include <freebsd/sys/_bus_dma.h>
 
 /**
  * @defgroup NEWBUS newbus - a generic framework for managing devices
@@ -76,8 +76,8 @@ struct u_device {
 
 #ifdef _KERNEL
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/kobj.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/kobj.h>
 
 /**
  * devctl hooks.  Typically one should use the devctl_notify
@@ -547,8 +547,8 @@ void	bus_set_pass(int pass);
 /*
  * Some common device interfaces.
  */
-#include <rtems/freebsd/local/device_if.h>
-#include <rtems/freebsd/local/bus_if.h>
+#include <freebsd/local/device_if.h>
+#include <freebsd/local/bus_if.h>
 
 struct	module;
 

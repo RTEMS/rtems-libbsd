@@ -33,9 +33,9 @@
 #ifndef _NETINET_IN_HH_
 #define	_NETINET_IN_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
-#include <rtems/freebsd/machine/endian.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
+#include <freebsd/machine/endian.h>
 
 /* Protocols common to RFC 1700, POSIX, and X/Open. */
 #define	IPPROTO_IP		0		/* dummy for IP */
@@ -787,7 +787,7 @@ void	 in_ifdetach(struct ifnet *);
 /* INET6 stuff */
 #if __POSIX_VISIBLE >= 200112
 #define	__KAME_NETINET_IN_HH_INCLUDED_
-#include <rtems/freebsd/netinet6/in6.h>
+#include <freebsd/netinet6/in6.h>
 #undef __KAME_NETINET_IN_HH_INCLUDED_
 #endif
 

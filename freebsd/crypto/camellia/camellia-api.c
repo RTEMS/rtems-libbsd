@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*
  *
@@ -29,13 +29,13 @@
  * $FreeBSD$
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #endif
-#include <rtems/freebsd/crypto/camellia/camellia.h>
+#include <freebsd/crypto/camellia/camellia.h>
 
 void
 camellia_set_key(camellia_ctx *ctx, const u_char *key, int bits)

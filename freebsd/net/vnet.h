@@ -63,7 +63,7 @@
  * as required for libkvm.
  */
 #if defined(_KERNEL) || defined(_WANT_VNET)
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 struct vnet {
 	LIST_ENTRY(vnet)	 vnet_le;	/* all vnets list */
@@ -86,10 +86,10 @@ struct vnet {
 #ifdef _KERNEL
 
 #ifdef VIMAGE
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/proc.h>			/* for struct thread */
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/sx.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/proc.h>			/* for struct thread */
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/sx.h>
 
 /*
  * Location of the kernel's 'set_vnet' linker set.
@@ -275,7 +275,7 @@ int	vnet_sysctl_handle_uint(SYSCTL_HANDLER_ARGS);
  * startup and shutdown methods to be run when virtual network stack
  * instances are created and destroyed.
  */
-#include <rtems/freebsd/sys/kernel.h>
+#include <freebsd/sys/kernel.h>
 
 /*
  * SYSINIT/SYSUNINIT variants that provide per-vnet constructors and
@@ -330,7 +330,7 @@ void	vnet_deregister_sysuninit(void *arg);
 /*
  * EVENTHANDLER(9) extensions.
  */
-#include <rtems/freebsd/sys/eventhandler.h>
+#include <freebsd/sys/eventhandler.h>
 
 void	vnet_global_eventhandler_iterator_func(void *, ...);
 #define VNET_GLOBAL_EVENTHANDLER_REGISTER_TAG(tag, name, func, arg, priority) \

@@ -33,7 +33,7 @@
 #ifndef _SYS_UCRED_HH_
 #define	_SYS_UCRED_HH_
 
-#include <rtems/freebsd/bsm/audit.h>
+#include <freebsd/bsm/audit.h>
 
 /*
  * Credentials.

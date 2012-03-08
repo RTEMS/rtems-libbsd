@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
@@ -38,33 +38,33 @@
  * PURPOSE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/machine/cpu.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/machine/cpu.h>
 
-#include <rtems/freebsd/crypto/blowfish/blowfish.h>
-#include <rtems/freebsd/crypto/des/des.h>
-#include <rtems/freebsd/crypto/rijndael/rijndael.h>
-#include <rtems/freebsd/crypto/camellia/camellia.h>
-#include <rtems/freebsd/crypto/sha1.h>
+#include <freebsd/crypto/blowfish/blowfish.h>
+#include <freebsd/crypto/des/des.h>
+#include <freebsd/crypto/rijndael/rijndael.h>
+#include <freebsd/crypto/camellia/camellia.h>
+#include <freebsd/crypto/sha1.h>
 
-#include <rtems/freebsd/opencrypto/cast.h>
-#include <rtems/freebsd/opencrypto/deflate.h>
-#include <rtems/freebsd/opencrypto/rmd160.h>
-#include <rtems/freebsd/opencrypto/skipjack.h>
+#include <freebsd/opencrypto/cast.h>
+#include <freebsd/opencrypto/deflate.h>
+#include <freebsd/opencrypto/rmd160.h>
+#include <freebsd/opencrypto/skipjack.h>
 
-#include <rtems/freebsd/sys/md5.h>
+#include <freebsd/sys/md5.h>
 
-#include <rtems/freebsd/opencrypto/cryptodev.h>
-#include <rtems/freebsd/opencrypto/xform.h>
+#include <freebsd/opencrypto/cryptodev.h>
+#include <freebsd/opencrypto/xform.h>
 
 static	int null_setkey(u_int8_t **, u_int8_t *, int);
 static	int des1_setkey(u_int8_t **, u_int8_t *, int);

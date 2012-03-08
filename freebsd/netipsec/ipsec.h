@@ -38,12 +38,12 @@
 #define _NETIPSEC_IPSEC_HH_
 
 #if defined(_KERNEL) && !defined(_LKM) && !defined(KLD_MODULE)
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_ipsec.h>
 #endif
 
-#include <rtems/freebsd/net/pfkeyv2.h>
-#include <rtems/freebsd/netipsec/keydb.h>
+#include <freebsd/net/pfkeyv2.h>
+#include <freebsd/netipsec/keydb.h>
 
 #ifdef _KERNEL
 

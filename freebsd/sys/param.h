@@ -38,7 +38,7 @@
 #ifndef _SYS_PARAM_HH_
 #define _SYS_PARAM_HH_
 
-#include <rtems/freebsd/sys/_null.h>
+#include <freebsd/sys/_null.h>
 
 #define	BSD	199506		/* System version (year & month). */
 #define BSD4_3	1
@@ -66,7 +66,7 @@
 #endif
 
 #ifndef LOCORE
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 #endif
 
 /*
@@ -76,7 +76,7 @@
  * MAXCOMLEN should be >= sizeof(ac_comm) (see <acct.h>)
  * MAXLOGNAME should be == UT_NAMESIZE+1 (see <utmp.h>)
  */
-#include <rtems/freebsd/sys/syslimits.h>
+#include <freebsd/sys/syslimits.h>
 
 #define	MAXCOMLEN	19		/* max command name remembered */
 #define	MAXINTERP	32		/* max interpreter file name length */
@@ -91,11 +91,11 @@
 
 /* More types and definitions used throughout the kernel. */
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/errno.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/errno.h>
 #ifndef LOCORE
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/priority.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/priority.h>
 #endif
 
 #ifndef FALSE
@@ -108,13 +108,13 @@
 
 #ifndef _KERNEL
 /* Signals. */
-#include <rtems/freebsd/sys/signal.h>
+#include <freebsd/sys/signal.h>
 #endif
 
 /* Machine type dependent parameters. */
-#include <rtems/freebsd/machine/param.h>
+#include <freebsd/machine/param.h>
 #ifndef _KERNEL
-#include <rtems/freebsd/sys/limits.h>
+#include <freebsd/sys/limits.h>
 #endif
 
 #ifndef _NO_NAMESPACE_POLLUTION

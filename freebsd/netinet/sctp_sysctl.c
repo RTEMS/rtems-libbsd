@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007, by Cisco Systems, Inc. All rights reserved.
@@ -30,17 +30,17 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/netinet/sctp_os.h>
-#include <rtems/freebsd/netinet/sctp.h>
-#include <rtems/freebsd/netinet/sctp_constants.h>
-#include <rtems/freebsd/netinet/sctp_sysctl.h>
-#include <rtems/freebsd/netinet/sctp_pcb.h>
-#include <rtems/freebsd/netinet/sctputil.h>
-#include <rtems/freebsd/netinet/sctp_output.h>
-#include <rtems/freebsd/sys/smp.h>
+#include <freebsd/netinet/sctp_os.h>
+#include <freebsd/netinet/sctp.h>
+#include <freebsd/netinet/sctp_constants.h>
+#include <freebsd/netinet/sctp_sysctl.h>
+#include <freebsd/netinet/sctp_pcb.h>
+#include <freebsd/netinet/sctputil.h>
+#include <freebsd/netinet/sctp_output.h>
+#include <freebsd/sys/smp.h>
 
 /*
  * sysctl tunable variables

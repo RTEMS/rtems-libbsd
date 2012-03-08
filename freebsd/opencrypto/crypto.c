@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002-2006 Sam Leffler.  All rights reserved.
@@ -24,7 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -58,34 +58,34 @@ __FBSDID("$FreeBSD$");
 
 #define	CRYPTO_TIMING				/* enable timing support */
 
-#include <rtems/freebsd/local/opt_ddb.h>
-#include <rtems/freebsd/local/opt_kdtrace.h>
+#include <freebsd/local/opt_ddb.h>
+#include <freebsd/local/opt_kdtrace.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/eventhandler.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/kthread.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/sdt.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/eventhandler.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/kthread.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/sdt.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/ddb/ddb.h>
+#include <freebsd/ddb/ddb.h>
 
-#include <rtems/freebsd/vm/uma.h>
-#include <rtems/freebsd/opencrypto/cryptodev.h>
-#include <rtems/freebsd/opencrypto/xform.h>			/* XXX for M_XDATA */
+#include <freebsd/vm/uma.h>
+#include <freebsd/opencrypto/cryptodev.h>
+#include <freebsd/opencrypto/xform.h>			/* XXX for M_XDATA */
 
-#include <rtems/freebsd/sys/kobj.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/local/cryptodev_if.h>
+#include <freebsd/sys/kobj.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/local/cryptodev_if.h>
 
 #if defined(__i386__) || defined(__amd64__)
-#include <rtems/freebsd/machine/pcb.h>
+#include <freebsd/machine/pcb.h>
 #endif
 
 SDT_PROVIDER_DEFINE(opencrypto);

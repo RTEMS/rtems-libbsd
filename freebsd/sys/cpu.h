@@ -29,7 +29,7 @@
 #ifndef _SYS_CPU_HH_
 #define _SYS_CPU_HH_
 
-#include <rtems/freebsd/sys/eventhandler.h>
+#include <freebsd/sys/eventhandler.h>
 
 /*
  * CPU device support.

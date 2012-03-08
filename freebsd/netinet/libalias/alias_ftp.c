@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -72,31 +72,31 @@ __FBSDID("$FreeBSD$");
 
 /* Includes */
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/ctype.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/ctype.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
 #else
-#include <rtems/freebsd/ctype.h>
-#include <rtems/freebsd/errno.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/string.h>
+#include <freebsd/ctype.h>
+#include <freebsd/errno.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/stdio.h>
+#include <freebsd/string.h>
 #endif
 
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/tcp.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/netinet/libalias/alias.h>
-#include <rtems/freebsd/netinet/libalias/alias_local.h>
-#include <rtems/freebsd/netinet/libalias/alias_mod.h>
+#include <freebsd/netinet/libalias/alias.h>
+#include <freebsd/netinet/libalias/alias_local.h>
+#include <freebsd/netinet/libalias/alias_mod.h>
 #else
-#include <rtems/freebsd/local/alias_local.h>
-#include <rtems/freebsd/local/alias_mod.h>
+#include <freebsd/local/alias_local.h>
+#include <freebsd/local/alias_mod.h>
 #endif
 
 #define FTP_CONTROL_PORT_NUMBER 21

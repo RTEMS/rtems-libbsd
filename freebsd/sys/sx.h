@@ -32,14 +32,14 @@
 #ifndef	_SYS_SX_HH_
 #define	_SYS_SX_HH_
 
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_sx.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_sx.h>
 
 #ifdef	_KERNEL
-#include <rtems/freebsd/sys/pcpu.h>
-#include <rtems/freebsd/sys/lock_profile.h>
-#include <rtems/freebsd/sys/lockstat.h>
-#include <rtems/freebsd/machine/atomic.h>
+#include <freebsd/sys/pcpu.h>
+#include <freebsd/sys/lock_profile.h>
+#include <freebsd/sys/lockstat.h>
+#include <freebsd/machine/atomic.h>
 #endif
 
 #ifdef __rtems__

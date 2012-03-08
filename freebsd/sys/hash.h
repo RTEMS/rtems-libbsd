@@ -28,7 +28,7 @@
 
 #ifndef _SYS_HASH_HH_
 #define	_SYS_HASH_HH_
-#include <rtems/freebsd/sys/types.h>
+#include <freebsd/sys/types.h>
 
 /* Convenience */
 #ifndef	HASHINIT

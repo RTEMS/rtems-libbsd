@@ -1,6 +1,6 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*-
@@ -104,41 +104,41 @@ __FBSDID("$FreeBSD$");
  * umass_cam_cb again to complete the CAM command.
  */
 
-#include <rtems/freebsd/sys/stdint.h>
-#include <rtems/freebsd/sys/stddef.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/sys/linker_set.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/condvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/sx.h>
-#include <rtems/freebsd/sys/unistd.h>
-#include <rtems/freebsd/sys/callout.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/priv.h>
+#include <freebsd/sys/stdint.h>
+#include <freebsd/sys/stddef.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/sys/linker_set.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/condvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/sx.h>
+#include <freebsd/sys/unistd.h>
+#include <freebsd/sys/callout.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/priv.h>
 
-#include <rtems/freebsd/dev/usb/usb.h>
-#include <rtems/freebsd/dev/usb/usbdi.h>
-#include <rtems/freebsd/dev/usb/usbdi_util.h>
-#include <rtems/freebsd/local/usbdevs.h>
+#include <freebsd/dev/usb/usb.h>
+#include <freebsd/dev/usb/usbdi.h>
+#include <freebsd/dev/usb/usbdi_util.h>
+#include <freebsd/local/usbdevs.h>
 
-#include <rtems/freebsd/dev/usb/quirk/usb_quirk.h>
+#include <freebsd/dev/usb/quirk/usb_quirk.h>
 
-#include <rtems/freebsd/cam/cam.h>
-#include <rtems/freebsd/cam/cam_ccb.h>
-#include <rtems/freebsd/cam/cam_sim.h>
-#include <rtems/freebsd/cam/cam_xpt_sim.h>
-#include <rtems/freebsd/cam/scsi/scsi_all.h>
-#include <rtems/freebsd/cam/scsi/scsi_da.h>
+#include <freebsd/cam/cam.h>
+#include <freebsd/cam/cam_ccb.h>
+#include <freebsd/cam/cam_sim.h>
+#include <freebsd/cam/cam_xpt_sim.h>
+#include <freebsd/cam/scsi/scsi_all.h>
+#include <freebsd/cam/scsi/scsi_da.h>
 
-#include <rtems/freebsd/cam/cam_periph.h>
+#include <freebsd/cam/cam_periph.h>
 
 #define UMASS_EXT_BUFFER
 #ifdef UMASS_EXT_BUFFER

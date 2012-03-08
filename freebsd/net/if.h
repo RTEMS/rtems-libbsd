@@ -33,23 +33,23 @@
 #ifndef _NET_IF_HH_
 #define	_NET_IF_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 #endif
 
 #if __BSD_VISIBLE
 
 #ifdef __rtems__
-#include <rtems/freebsd/sys/time.h>
+#include <freebsd/sys/time.h>
 #else
 #ifndef _KERNEL
 /*
  * <net/if.h> does not depend on <sys/time.h> on most other systems.  This
  * helps userland compatibility.  (struct timeval ifi_lastchange)
  */
-#include <rtems/freebsd/sys/time.h>
+#include <freebsd/sys/time.h>
 #endif
 #endif /* __rtems__ */
 
@@ -464,7 +464,7 @@ __END_DECLS
 
 #ifdef _KERNEL
 /* XXX - this should go away soon. */
-#include <rtems/freebsd/net/if_var.h>
+#include <freebsd/net/if_var.h>
 #endif
 
 #endif /* !_NET_IF_HH_ */

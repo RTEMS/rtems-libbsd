@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002-2009 Luigi Rizzo, Universita` di Pisa
@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -36,41 +36,41 @@ __FBSDID("$FreeBSD$");
  */
 
 #if !defined(KLD_MODULE)
-#include <rtems/freebsd/local/opt_ipfw.h>
-#include <rtems/freebsd/local/opt_ipdivert.h>
-#include <rtems/freebsd/local/opt_ipdn.h>
-#include <rtems/freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_ipfw.h>
+#include <freebsd/local/opt_ipdivert.h>
+#include <freebsd/local/opt_ipdn.h>
+#include <freebsd/local/opt_inet.h>
 #ifndef INET
 #error IPFIREWALL requires INET.
 #endif /* INET */
 #endif
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipsec.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipsec.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>	/* struct m_tag used by nested headers */
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/priv.h>
-#include <rtems/freebsd/sys/proc.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/socketvar.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>	/* struct m_tag used by nested headers */
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/priv.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/socketvar.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip_var.h> /* hooks */
-#include <rtems/freebsd/netinet/ip_fw.h>
-#include <rtems/freebsd/netinet/ipfw/ip_fw_private.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip_var.h> /* hooks */
+#include <freebsd/netinet/ip_fw.h>
+#include <freebsd/netinet/ipfw/ip_fw_private.h>
 
 #ifdef MAC
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 #endif
 
 MALLOC_DEFINE(M_IPFW, "IpFw/IpAcct", "IpFw/IpAcct chain's");

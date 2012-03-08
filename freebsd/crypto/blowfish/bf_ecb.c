@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /* crypto/bf/bf_ecb.c */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
@@ -58,12 +58,12 @@
  * [including the GNU Public Licence.]
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/crypto/blowfish/blowfish.h>
-#include <rtems/freebsd/crypto/blowfish/bf_locl.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/crypto/blowfish/blowfish.h>
+#include <freebsd/crypto/blowfish/bf_locl.h>
 
 /* Blowfish as implemented from 'Blowfish: Springer-Verlag paper'
  * (From LECTURE NOTES IN COMPUTER SCIENCE 809, FAST SOFTWARE ENCRYPTION,

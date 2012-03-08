@@ -29,8 +29,8 @@
 #ifndef _SYS__TYPES_HH_
 #define _SYS__TYPES_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/machine/_types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/machine/_types.h>
 
 /*
  * Standard type definitions.

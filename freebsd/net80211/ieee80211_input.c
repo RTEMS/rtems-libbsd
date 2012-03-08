@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,37 +26,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_wlan.h>
+#include <freebsd/local/opt_wlan.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>   
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/endian.h>
-#include <rtems/freebsd/sys/kernel.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>   
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/endian.h>
+#include <freebsd/sys/kernel.h>
  
-#include <rtems/freebsd/sys/socket.h>
+#include <freebsd/sys/socket.h>
  
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/if_media.h>
-#include <rtems/freebsd/net/if_vlan_var.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/if_media.h>
+#include <freebsd/net/if_vlan_var.h>
 
-#include <rtems/freebsd/net80211/ieee80211_var.h>
-#include <rtems/freebsd/net80211/ieee80211_input.h>
+#include <freebsd/net80211/ieee80211_var.h>
+#include <freebsd/net80211/ieee80211_input.h>
 #ifdef IEEE80211_SUPPORT_MESH
-#include <rtems/freebsd/net80211/ieee80211_mesh.h>
+#include <freebsd/net80211/ieee80211_mesh.h>
 #endif
 
-#include <rtems/freebsd/net/bpf.h>
+#include <freebsd/net/bpf.h>
 
 #ifdef INET
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/net/ethernet.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/net/ethernet.h>
 #endif
 
 int
@@ -748,7 +748,7 @@ ieee80211_getbssid(const struct ieee80211vap *vap,
 	return wh->i_addr3;
 }
 
-#include <rtems/freebsd/machine/stdarg.h>
+#include <freebsd/machine/stdarg.h>
 
 void
 ieee80211_note(const struct ieee80211vap *vap, const char *fmt, ...)

@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,27 +31,27 @@
  *	$KAME: route6.c,v 1.24 2001/03/14 03:07:05 itojun Exp $
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/queue.h>
 
-#include <rtems/freebsd/net/if.h>
+#include <freebsd/net/if.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netinet6/ip6_var.h>
-#include <rtems/freebsd/netinet6/scope6_var.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netinet6/ip6_var.h>
+#include <freebsd/netinet6/scope6_var.h>
 
-#include <rtems/freebsd/netinet/icmp6.h>
+#include <freebsd/netinet/icmp6.h>
 
 /*
  * proto - is unused

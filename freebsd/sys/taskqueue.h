@@ -33,8 +33,8 @@
 #error "no user-servicable parts inside"
 #endif
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_task.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_task.h>
 
 struct taskqueue;
 struct thread;

@@ -29,8 +29,8 @@
 #ifndef _SYS_INTERRUPT_HH_
 #define _SYS_INTERRUPT_HH_
 
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
 
 struct intr_event;
 struct intr_thread;

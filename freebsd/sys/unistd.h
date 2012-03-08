@@ -33,7 +33,7 @@
 #ifndef _SYS_UNISTD_HH_
 #define	_SYS_UNISTD_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 /*
  * POSIX options and option groups we unconditionally do or don't

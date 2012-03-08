@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$OpenBSD: ip_ipip.c,v 1.25 2002/06/10 18:04:55 itojun Exp $ */
@@ -41,52 +41,52 @@
 /*
  * IP-inside-IP processing
  */
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_enc.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_enc.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/sysctl.h>
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/pfil.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/vnet.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/pfil.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/vnet.h>
 
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_ecn.h>
-#include <rtems/freebsd/netinet/ip_var.h>
-#include <rtems/freebsd/netinet/ip_encap.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_ecn.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/ip_encap.h>
 #ifdef MROUTING
-#include <rtems/freebsd/netinet/ip_mroute.h>
+#include <freebsd/netinet/ip_mroute.h>
 #endif
 
-#include <rtems/freebsd/netipsec/ipsec.h>
-#include <rtems/freebsd/netipsec/xform.h>
+#include <freebsd/netipsec/ipsec.h>
+#include <freebsd/netipsec/xform.h>
 
-#include <rtems/freebsd/netipsec/ipip_var.h>
+#include <freebsd/netipsec/ipip_var.h>
 
 #ifdef INET6
-#include <rtems/freebsd/netinet/ip6.h>
-#include <rtems/freebsd/netipsec/ipsec6.h>
-#include <rtems/freebsd/netinet6/ip6_ecn.h>
-#include <rtems/freebsd/netinet6/in6_var.h>
-#include <rtems/freebsd/netinet6/ip6protosw.h>
+#include <freebsd/netinet/ip6.h>
+#include <freebsd/netipsec/ipsec6.h>
+#include <freebsd/netinet6/ip6_ecn.h>
+#include <freebsd/netinet6/in6_var.h>
+#include <freebsd/netinet6/ip6protosw.h>
 #endif
 
-#include <rtems/freebsd/netipsec/key.h>
-#include <rtems/freebsd/netipsec/key_debug.h>
+#include <freebsd/netipsec/key.h>
+#include <freebsd/netipsec/key_debug.h>
 
-#include <rtems/freebsd/machine/stdarg.h>
+#include <freebsd/machine/stdarg.h>
 
 /*
  * We can control the acceptance of IP4 packets by altering the sysctl

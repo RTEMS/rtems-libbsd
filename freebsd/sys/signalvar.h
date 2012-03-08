@@ -33,10 +33,10 @@
 #ifndef _SYS_SIGNALVAR_HH_
 #define	_SYS_SIGNALVAR_HH_
 
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
-#include <rtems/freebsd/sys/signal.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
+#include <freebsd/sys/signal.h>
 
 /*
  * Kernel signal definitions and data structures,

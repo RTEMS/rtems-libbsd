@@ -33,7 +33,7 @@
 #ifndef _SYS_SOCKIO_HH_
 #define	_SYS_SOCKIO_HH_
 
-#include <rtems/freebsd/sys/ioccom.h>
+#include <freebsd/sys/ioccom.h>
 
 /* Socket ioctl's. */
 #define	SIOCSHIWAT	 _IOW('s',  0, int)		/* set high watermark */

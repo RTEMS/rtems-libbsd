@@ -235,7 +235,7 @@ typedef uLong FAR uLongf;
 
 /* Compile with -DZLIB_DLL for Windows DLL support */
 #if (defined(_WINDOWS) || defined(WINDOWS)) && defined(ZLIB_DLL)
-#  include <rtems/freebsd/windows.h>
+#  include <freebsd/windows.h>
 #  define EXPORT  WINAPI
 #else
 #  define EXPORT

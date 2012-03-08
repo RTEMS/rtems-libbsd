@@ -33,9 +33,9 @@
 #ifndef _SYS_UIO_HH_
 #define	_SYS_UIO_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
-#include <rtems/freebsd/sys/_iovec.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
+#include <freebsd/sys/_iovec.h>
 
 #ifndef _SSIZE_T_DECLARED
 typedef	__ssize_t	ssize_t;

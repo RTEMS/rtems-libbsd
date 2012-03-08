@@ -94,7 +94,7 @@ struct mod_metadata {
 
 #ifdef	_KERNEL
 
-#include <rtems/freebsd/sys/linker_set.h>
+#include <freebsd/sys/linker_set.h>
 
 #define	MODULE_METADATA(uniquifier, type, data, cval)			\
 	static struct mod_metadata _mod_metadata##uniquifier = {	\
@@ -204,7 +204,7 @@ struct module_stat {
 
 #ifndef _KERNEL
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 __BEGIN_DECLS
 int	modnext(int _modid);

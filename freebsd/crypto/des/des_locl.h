@@ -51,7 +51,7 @@
 #ifndef HEADER_DES_LOCL_H
 #define HEADER_DES_LOCL_H
 
-#include <rtems/freebsd/crypto/des/des.h>
+#include <freebsd/crypto/des/des.h>
 
 #undef DES_PTR
 

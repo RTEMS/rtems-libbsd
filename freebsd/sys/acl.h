@@ -36,9 +36,9 @@
 #ifndef _SYS_ACL_HH_
 #define	_SYS_ACL_HH_
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/vm/uma.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/vm/uma.h>
 
 /*
  * POSIX.1e and NFSv4 ACL types and related constants.

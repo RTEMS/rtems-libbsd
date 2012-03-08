@@ -30,15 +30,15 @@
 #ifndef	_SYS_BUF_RING_HH_
 #define	_SYS_BUF_RING_HH_
 
-#include <rtems/freebsd/machine/cpu.h>
+#include <freebsd/machine/cpu.h>
 
 #if defined(INVARIANTS) && !defined(DEBUG_BUFRING)
 #define DEBUG_BUFRING 1
 #endif
 
 #ifdef DEBUG_BUFRING
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
 #endif
 
 struct buf_ring {

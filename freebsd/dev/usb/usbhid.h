@@ -29,7 +29,7 @@
 #ifndef _USB_HID_HH_
 #define	_USB_HID_HH_
 
-#include <rtems/freebsd/dev/usb/usb_endian.h>
+#include <freebsd/dev/usb/usb_endian.h>
 
 #define	UR_GET_HID_DESCRIPTOR	0x06
 #define	UDESC_HID		0x21

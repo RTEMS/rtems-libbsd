@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /* camellia.h ver 1.1.0
  *
@@ -34,18 +34,18 @@
  *  http://info.isl.ntt.co.jp/crypt/eng/camellia/specifications.html
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/endian.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/endian.h>
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/systm.h>
+#include <freebsd/sys/systm.h>
 #else
-#include <rtems/freebsd/string.h>
-#include <rtems/freebsd/assert.h>
+#include <freebsd/string.h>
+#include <freebsd/assert.h>
 #define KASSERT(exp, msg) assert(exp)
 #endif
 
-#include <rtems/freebsd/crypto/camellia/camellia.h>
+#include <freebsd/crypto/camellia/camellia.h>
 
 
 /* key constants */

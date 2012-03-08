@@ -34,14 +34,14 @@
 #define	_SYS_FILE_HH_
 
 #ifndef _KERNEL
-#include <rtems/freebsd/sys/types.h> /* XXX */
-#include <rtems/freebsd/sys/fcntl.h>
-#include <rtems/freebsd/sys/unistd.h>
+#include <freebsd/sys/types.h> /* XXX */
+#include <freebsd/sys/fcntl.h>
+#include <freebsd/sys/unistd.h>
 #else
-#include <rtems/freebsd/sys/queue.h>
-#include <rtems/freebsd/sys/refcount.h>
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_mutex.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/refcount.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_mutex.h>
 
 struct stat;
 struct thread;

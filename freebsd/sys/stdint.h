@@ -29,10 +29,10 @@
 #ifndef _SYS_STDINT_HH_
 #define _SYS_STDINT_HH_
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
 
-#include <rtems/freebsd/machine/_stdint.h>
+#include <freebsd/machine/_stdint.h>
 
 #ifndef _INT8_T_DECLARED
 typedef	__int8_t		int8_t;

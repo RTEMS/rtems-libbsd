@@ -33,27 +33,27 @@
  */
 /* NB: portability glue must go first */
 #if defined(__NetBSD__)
-#include <rtems/freebsd/net80211/ieee80211_netbsd.h>
+#include <freebsd/net80211/ieee80211_netbsd.h>
 #elif defined(__FreeBSD__)
-#include <rtems/freebsd/net80211/ieee80211_freebsd.h>
+#include <freebsd/net80211/ieee80211_freebsd.h>
 #elif defined(__linux__)
-#include <rtems/freebsd/net80211/ieee80211_linux.h>
+#include <freebsd/net80211/ieee80211_linux.h>
 #else
 #error	"No support for your operating system!"
 #endif
 
-#include <rtems/freebsd/net80211/_ieee80211.h>
-#include <rtems/freebsd/net80211/ieee80211.h>
-#include <rtems/freebsd/net80211/ieee80211_ageq.h>
-#include <rtems/freebsd/net80211/ieee80211_crypto.h>
-#include <rtems/freebsd/net80211/ieee80211_dfs.h>
-#include <rtems/freebsd/net80211/ieee80211_ioctl.h>		/* for ieee80211_stats */
-#include <rtems/freebsd/net80211/ieee80211_phy.h>
-#include <rtems/freebsd/net80211/ieee80211_power.h>
-#include <rtems/freebsd/net80211/ieee80211_node.h>
-#include <rtems/freebsd/net80211/ieee80211_proto.h>
-#include <rtems/freebsd/net80211/ieee80211_radiotap.h>
-#include <rtems/freebsd/net80211/ieee80211_scan.h>
+#include <freebsd/net80211/_ieee80211.h>
+#include <freebsd/net80211/ieee80211.h>
+#include <freebsd/net80211/ieee80211_ageq.h>
+#include <freebsd/net80211/ieee80211_crypto.h>
+#include <freebsd/net80211/ieee80211_dfs.h>
+#include <freebsd/net80211/ieee80211_ioctl.h>		/* for ieee80211_stats */
+#include <freebsd/net80211/ieee80211_phy.h>
+#include <freebsd/net80211/ieee80211_power.h>
+#include <freebsd/net80211/ieee80211_node.h>
+#include <freebsd/net80211/ieee80211_proto.h>
+#include <freebsd/net80211/ieee80211_radiotap.h>
+#include <freebsd/net80211/ieee80211_scan.h>
 
 #define	IEEE80211_TXPOWER_MAX	100	/* .5 dbM (XXX units?) */
 #define	IEEE80211_TXPOWER_MIN	0	/* kill radio */

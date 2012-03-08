@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1998, Larry Lile
@@ -42,47 +42,47 @@
  * 
  */
 
-#include <rtems/freebsd/local/opt_inet.h>
-#include <rtems/freebsd/local/opt_inet6.h>
-#include <rtems/freebsd/local/opt_ipx.h>
+#include <freebsd/local/opt_inet.h>
+#include <freebsd/local/opt_inet6.h>
+#include <freebsd/local/opt_ipx.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/socket.h>
-#include <rtems/freebsd/sys/sockio.h> 
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/socket.h>
+#include <freebsd/sys/sockio.h> 
 
-#include <rtems/freebsd/net/if.h>
-#include <rtems/freebsd/net/if_arp.h>
-#include <rtems/freebsd/net/if_dl.h>
-#include <rtems/freebsd/net/if_llc.h>
-#include <rtems/freebsd/net/if_types.h>
-#include <rtems/freebsd/net/if_llatbl.h>
+#include <freebsd/net/if.h>
+#include <freebsd/net/if_arp.h>
+#include <freebsd/net/if_dl.h>
+#include <freebsd/net/if_llc.h>
+#include <freebsd/net/if_types.h>
+#include <freebsd/net/if_llatbl.h>
 
-#include <rtems/freebsd/net/ethernet.h>
-#include <rtems/freebsd/net/netisr.h>
-#include <rtems/freebsd/net/route.h>
-#include <rtems/freebsd/net/bpf.h>
-#include <rtems/freebsd/net/iso88025.h>
+#include <freebsd/net/ethernet.h>
+#include <freebsd/net/netisr.h>
+#include <freebsd/net/route.h>
+#include <freebsd/net/bpf.h>
+#include <freebsd/net/iso88025.h>
 
 #if defined(INET) || defined(INET6)
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/in_var.h>
-#include <rtems/freebsd/netinet/if_ether.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/in_var.h>
+#include <freebsd/netinet/if_ether.h>
 #endif
 #ifdef INET6
-#include <rtems/freebsd/netinet6/nd6.h>
+#include <freebsd/netinet6/nd6.h>
 #endif
 
 #ifdef IPX
-#include <rtems/freebsd/netipx/ipx.h>
-#include <rtems/freebsd/netipx/ipx_if.h>
+#include <freebsd/netipx/ipx.h>
+#include <freebsd/netipx/ipx_if.h>
 #endif
 
-#include <rtems/freebsd/security/mac/mac_framework.h>
+#include <freebsd/security/mac/mac_framework.h>
 
 static const u_char iso88025_broadcastaddr[ISO88025_ADDR_LEN] =
 			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };

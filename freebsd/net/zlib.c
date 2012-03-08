@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*
  * This file is derived from various .h and .c files from the zlib-1.0.4
@@ -49,38 +49,38 @@
 #define _Z_UTIL_H
 
 #ifdef _KERNEL
-#include <rtems/freebsd/net/zlib.h>
+#include <freebsd/net/zlib.h>
 #else
-#include <rtems/freebsd/local/zlib.h>
+#include <freebsd/local/zlib.h>
 #endif
 
 #ifdef _KERNEL
 /* Assume this is a *BSD or SVR4 kernel */
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/sys/time.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/module.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/time.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/module.h>
 #  define HAVE_MEMCPY
 
 #else
 #if defined(__KERNEL__)
 /* Assume this is a Linux kernel */
-#include <rtems/freebsd/linux/string.h>
+#include <freebsd/linux/string.h>
 #define HAVE_MEMCPY
 
 #else /* not kernel */
 
 #if defined(MSDOS)||defined(VMS)||defined(CRAY)||defined(WIN32)||defined(RISCOS)
-#   include <rtems/freebsd/stddef.h>
-#   include <rtems/freebsd/errno.h>
+#   include <freebsd/stddef.h>
+#   include <freebsd/errno.h>
 #else
     extern int errno;
 #endif
 #ifdef STDC
-#  include <rtems/freebsd/string.h>
-#  include <rtems/freebsd/stdlib.h>
+#  include <freebsd/string.h>
+#  include <freebsd/stdlib.h>
 #endif
 #endif /* __KERNEL__ */
 #endif /* _KERNEL */
@@ -135,9 +135,9 @@ static const char *z_errmsg[10]; /* indexed by 2-zlib_error */
 #ifdef MSDOS
 #  define OS_CODE  0x00
 #  ifdef __TURBOC__
-#    include <rtems/freebsd/alloc.h>
+#    include <freebsd/alloc.h>
 #  else /* MSC or DJGPP */
-#    include <rtems/freebsd/malloc.h>
+#    include <freebsd/malloc.h>
 #  endif
 #endif
 
@@ -228,7 +228,7 @@ static const char *z_errmsg[10]; /* indexed by 2-zlib_error */
 
 /* Diagnostic functions */
 #ifdef DEBUG_ZLIB
-#  include <rtems/freebsd/stdio.h>
+#  include <freebsd/stdio.h>
 #  ifndef verbose
 #    define verbose 0
 #  endif
@@ -278,7 +278,7 @@ void   zcfree  OF((voidpf opaque, voidpf ptr));
 #ifndef _DEFLATE_H
 #define _DEFLATE_H
 
-/* #include <rtems/freebsd/local/zutil.h> */
+/* #include <freebsd/local/zutil.h> */
 
 /* ===========================================================================
  * Internal compression state.
@@ -595,7 +595,7 @@ void _tr_stored_type_only OF((deflate_state *));
 
 /* From: deflate.c,v 1.15 1996/07/24 13:40:58 me Exp $ */
 
-/* #include <rtems/freebsd/local/deflate.h> */
+/* #include <freebsd/local/deflate.h> */
 
 char deflate_copyright[] = " deflate 1.0.4 Copyright 1995-1996 Jean-loup Gailly ";
 /*
@@ -1871,10 +1871,10 @@ local block_state deflate_slow(s, flush)
 
 /* From: trees.c,v 1.11 1996/07/24 13:41:06 me Exp $ */
 
-/* #include <rtems/freebsd/local/deflate.h> */
+/* #include <freebsd/local/deflate.h> */
 
 #ifdef DEBUG_ZLIB
-#  include <rtems/freebsd/ctype.h>
+#  include <freebsd/ctype.h>
 #endif
 
 /* ===========================================================================
@@ -2996,7 +2996,7 @@ local void copy_block(s, buf, len, header)
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* #include <rtems/freebsd/local/zutil.h> */
+/* #include <freebsd/local/zutil.h> */
 
 /* +++ infblock.h */
 /* infblock.h -- header to use infblock.c
@@ -3424,8 +3424,8 @@ z_streamp z;
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* #include <rtems/freebsd/local/zutil.h> */
-/* #include <rtems/freebsd/local/infblock.h> */
+/* #include <freebsd/local/zutil.h> */
+/* #include <freebsd/local/infblock.h> */
 
 /* +++ inftrees.h */
 /* inftrees.h -- header to use inftrees.c
@@ -4101,8 +4101,8 @@ int inflate_packet_flush(s)
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* #include <rtems/freebsd/local/zutil.h> */
-/* #include <rtems/freebsd/local/inftrees.h> */
+/* #include <freebsd/local/zutil.h> */
+/* #include <freebsd/local/inftrees.h> */
 
 char inflate_copyright[] = " inflate 1.0.4 Copyright 1995-1996 Mark Adler ";
 /*
@@ -4585,11 +4585,11 @@ z_streamp z;            /* for zfree function */
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* #include <rtems/freebsd/local/zutil.h> */
-/* #include <rtems/freebsd/local/inftrees.h> */
-/* #include <rtems/freebsd/local/infblock.h> */
-/* #include <rtems/freebsd/local/infcodes.h> */
-/* #include <rtems/freebsd/local/infutil.h> */
+/* #include <freebsd/local/zutil.h> */
+/* #include <freebsd/local/inftrees.h> */
+/* #include <freebsd/local/infblock.h> */
+/* #include <freebsd/local/infcodes.h> */
+/* #include <freebsd/local/infutil.h> */
 
 /* +++ inffast.h */
 /* inffast.h -- header to use inffast.c
@@ -4854,11 +4854,11 @@ z_streamp z;
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* #include <rtems/freebsd/local/zutil.h> */
-/* #include <rtems/freebsd/local/infblock.h> */
-/* #include <rtems/freebsd/local/inftrees.h> */
-/* #include <rtems/freebsd/local/infcodes.h> */
-/* #include <rtems/freebsd/local/infutil.h> */
+/* #include <freebsd/local/zutil.h> */
+/* #include <freebsd/local/infblock.h> */
+/* #include <freebsd/local/inftrees.h> */
+/* #include <freebsd/local/infcodes.h> */
+/* #include <freebsd/local/infutil.h> */
 
 #ifndef NO_DUMMY_DECL
 struct inflate_codes_state {int dummy;}; /* for buggy compilers */
@@ -4950,12 +4950,12 @@ int r;
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-/* #include <rtems/freebsd/local/zutil.h> */
-/* #include <rtems/freebsd/local/inftrees.h> */
-/* #include <rtems/freebsd/local/infblock.h> */
-/* #include <rtems/freebsd/local/infcodes.h> */
-/* #include <rtems/freebsd/local/infutil.h> */
-/* #include <rtems/freebsd/local/inffast.h> */
+/* #include <freebsd/local/zutil.h> */
+/* #include <freebsd/local/inftrees.h> */
+/* #include <freebsd/local/infblock.h> */
+/* #include <freebsd/local/infcodes.h> */
+/* #include <freebsd/local/infutil.h> */
+/* #include <freebsd/local/inffast.h> */
 
 #ifndef NO_DUMMY_DECL
 struct inflate_codes_state {int dummy;}; /* for buggy compilers */
@@ -5126,10 +5126,10 @@ z_streamp z;
 /* From: zutil.c,v 1.17 1996/07/24 13:41:12 me Exp $ */
 
 #ifdef DEBUG_ZLIB
-#include <rtems/freebsd/stdio.h>
+#include <freebsd/stdio.h>
 #endif
 
-/* #include <rtems/freebsd/local/zutil.h> */
+/* #include <freebsd/local/zutil.h> */
 
 #ifndef NO_DUMMY_DECL
 struct internal_state      {int dummy;}; /* for buggy compilers */
@@ -5343,7 +5343,7 @@ void  zcfree (opaque, ptr)
 
 /* From: adler32.c,v 1.10 1996/05/22 11:52:18 me Exp $ */
 
-/* #include <rtems/freebsd/local/zlib.h> */
+/* #include <freebsd/local/zlib.h> */
 
 #define BASE 65521L /* largest prime smaller than 65536 */
 #define NMAX 5552

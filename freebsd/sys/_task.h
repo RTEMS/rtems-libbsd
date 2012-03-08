@@ -29,7 +29,7 @@
 #ifndef _SYS__TASK_HH_
 #define _SYS__TASK_HH_
 
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 
 /*
  * Each task includes a function which is called from

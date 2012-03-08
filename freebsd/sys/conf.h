@@ -41,9 +41,9 @@
 #define	_SYS_CONF_HH_
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/eventhandler.h>
+#include <freebsd/sys/eventhandler.h>
 #else
-#include <rtems/freebsd/sys/queue.h>
+#include <freebsd/sys/queue.h>
 #endif
 
 struct snapdata;

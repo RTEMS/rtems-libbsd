@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1988, 1989, 1993
@@ -35,27 +35,27 @@
 /*
  * Routines to build and maintain radix trees for routing lookups.
  */
-#include <rtems/freebsd/sys/param.h>
+#include <freebsd/sys/param.h>
 #ifdef	_KERNEL
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/mutex.h>
-#include <rtems/freebsd/sys/rwlock.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/syslog.h>
-#include <rtems/freebsd/net/radix.h>
-#include <rtems/freebsd/local/opt_mpath.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/syslog.h>
+#include <freebsd/net/radix.h>
+#include <freebsd/local/opt_mpath.h>
 #ifdef RADIX_MPATH
-#include <rtems/freebsd/net/radix_mpath.h>
+#include <freebsd/net/radix_mpath.h>
 #endif
 #else /* !_KERNEL */
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/strings.h>
-#include <rtems/freebsd/stdlib.h>
+#include <freebsd/stdio.h>
+#include <freebsd/strings.h>
+#include <freebsd/stdlib.h>
 #define log(x, arg...)  fprintf(stderr, ## arg)
 #define panic(x)        fprintf(stderr, "PANIC: %s", x), exit(1)
 #define min(a, b) ((a) < (b) ? (a) : (b) )
-#include <rtems/freebsd/net/radix.h>
+#include <freebsd/net/radix.h>
 #endif /* !_KERNEL */
 
 static int	rn_walktree_from(struct radix_node_head *h, void *a, void *m,

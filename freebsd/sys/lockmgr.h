@@ -31,10 +31,10 @@
 #ifndef	_SYS_LOCKMGR_HH_
 #define	_SYS_LOCKMGR_HH_
 
-#include <rtems/freebsd/sys/_lock.h>
-#include <rtems/freebsd/sys/_lockmgr.h>
-#include <rtems/freebsd/sys/_mutex.h>
-#include <rtems/freebsd/sys/_rwlock.h>
+#include <freebsd/sys/_lock.h>
+#include <freebsd/sys/_lockmgr.h>
+#include <freebsd/sys/_mutex.h>
+#include <freebsd/sys/_rwlock.h>
 
 #define	LK_SHARE			0x01
 #define	LK_SHARED_WAITERS		0x02

@@ -69,7 +69,7 @@
 
 #else
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 
 __BEGIN_DECLS
 int	ioctl(int, unsigned long, ...);

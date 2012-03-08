@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: cryptosoft.c,v 1.35 2002/04/26 08:43:50 deraadt Exp $	*/
 
@@ -24,34 +24,34 @@
  * PURPOSE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/module.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/errno.h>
-#include <rtems/freebsd/sys/random.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/uio.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/module.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/errno.h>
+#include <freebsd/sys/random.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/uio.h>
 
-#include <rtems/freebsd/crypto/blowfish/blowfish.h>
-#include <rtems/freebsd/crypto/sha1.h>
-#include <rtems/freebsd/opencrypto/rmd160.h>
-#include <rtems/freebsd/opencrypto/cast.h>
-#include <rtems/freebsd/opencrypto/skipjack.h>
-#include <rtems/freebsd/sys/md5.h>
+#include <freebsd/crypto/blowfish/blowfish.h>
+#include <freebsd/crypto/sha1.h>
+#include <freebsd/opencrypto/rmd160.h>
+#include <freebsd/opencrypto/cast.h>
+#include <freebsd/opencrypto/skipjack.h>
+#include <freebsd/sys/md5.h>
 
-#include <rtems/freebsd/opencrypto/cryptodev.h>
-#include <rtems/freebsd/opencrypto/cryptosoft.h>
-#include <rtems/freebsd/opencrypto/xform.h>
+#include <freebsd/opencrypto/cryptodev.h>
+#include <freebsd/opencrypto/cryptosoft.h>
+#include <freebsd/opencrypto/xform.h>
 
-#include <rtems/freebsd/sys/kobj.h>
-#include <rtems/freebsd/sys/bus.h>
-#include <rtems/freebsd/local/cryptodev_if.h>
+#include <freebsd/sys/kobj.h>
+#include <freebsd/sys/bus.h>
+#include <freebsd/local/cryptodev_if.h>
 
 static	int32_t swcr_id;
 static	struct swcr_data **swcr_sessions = NULL;

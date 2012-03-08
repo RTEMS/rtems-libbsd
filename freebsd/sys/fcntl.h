@@ -44,8 +44,8 @@
  * related kernel definitions.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
-#include <rtems/freebsd/sys/_types.h>
+#include <freebsd/sys/cdefs.h>
+#include <freebsd/sys/_types.h>
 
 #ifndef _MODE_T_DECLARED
 typedef	__mode_t	mode_t;

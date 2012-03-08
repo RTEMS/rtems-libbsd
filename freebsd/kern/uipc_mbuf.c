@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1991, 1993
@@ -31,24 +31,24 @@
  *	@(#)uipc_mbuf.c	8.2 (Berkeley) 1/4/94
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/freebsd/local/opt_param.h>
-#include <rtems/freebsd/local/opt_mbuf_stress_test.h>
-#include <rtems/freebsd/local/opt_mbuf_profiling.h>
+#include <freebsd/local/opt_param.h>
+#include <freebsd/local/opt_mbuf_stress_test.h>
+#include <freebsd/local/opt_mbuf_profiling.h>
 
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/kernel.h>
-#include <rtems/freebsd/sys/limits.h>
-#include <rtems/freebsd/sys/lock.h>
-#include <rtems/freebsd/sys/malloc.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/sysctl.h>
-#include <rtems/freebsd/sys/domain.h>
-#include <rtems/freebsd/sys/protosw.h>
-#include <rtems/freebsd/sys/uio.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/kernel.h>
+#include <freebsd/sys/limits.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/malloc.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/domain.h>
+#include <freebsd/sys/protosw.h>
+#include <freebsd/sys/uio.h>
 
 int	max_linkhdr;
 int	max_protohdr;

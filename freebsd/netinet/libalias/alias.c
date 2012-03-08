@@ -1,4 +1,4 @@
-#include <rtems/freebsd/machine/rtems-bsd-config.h>
+#include <freebsd/machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/freebsd/sys/cdefs.h>
+#include <freebsd/sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -114,36 +114,36 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <rtems/freebsd/sys/param.h>
-#include <rtems/freebsd/sys/systm.h>
-#include <rtems/freebsd/sys/mbuf.h>
-#include <rtems/freebsd/sys/sysctl.h>
+#include <freebsd/sys/param.h>
+#include <freebsd/sys/systm.h>
+#include <freebsd/sys/mbuf.h>
+#include <freebsd/sys/sysctl.h>
 #else
-#include <rtems/freebsd/sys/types.h>
-#include <rtems/freebsd/stdlib.h>
-#include <rtems/freebsd/stdio.h>
-#include <rtems/freebsd/ctype.h>
-#include <rtems/freebsd/dlfcn.h>
-#include <rtems/freebsd/errno.h>
-#include <rtems/freebsd/string.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/stdlib.h>
+#include <freebsd/stdio.h>
+#include <freebsd/ctype.h>
+#include <freebsd/dlfcn.h>
+#include <freebsd/errno.h>
+#include <freebsd/string.h>
 #endif
 
-#include <rtems/freebsd/netinet/in_systm.h>
-#include <rtems/freebsd/netinet/in.h>
-#include <rtems/freebsd/netinet/ip.h>
-#include <rtems/freebsd/netinet/ip_icmp.h>
-#include <rtems/freebsd/netinet/tcp.h>
-#include <rtems/freebsd/netinet/udp.h>
+#include <freebsd/netinet/in_systm.h>
+#include <freebsd/netinet/in.h>
+#include <freebsd/netinet/ip.h>
+#include <freebsd/netinet/ip_icmp.h>
+#include <freebsd/netinet/tcp.h>
+#include <freebsd/netinet/udp.h>
 
 #ifdef _KERNEL
-#include <rtems/freebsd/netinet/libalias/alias.h>
-#include <rtems/freebsd/netinet/libalias/alias_local.h>
-#include <rtems/freebsd/netinet/libalias/alias_mod.h>
+#include <freebsd/netinet/libalias/alias.h>
+#include <freebsd/netinet/libalias/alias_local.h>
+#include <freebsd/netinet/libalias/alias_mod.h>
 #else
-#include <rtems/freebsd/err.h>
-#include <rtems/freebsd/local/alias.h>
-#include <rtems/freebsd/local/alias_local.h>
-#include <rtems/freebsd/local/alias_mod.h>
+#include <freebsd/err.h>
+#include <freebsd/local/alias.h>
+#include <freebsd/local/alias_local.h>
+#include <freebsd/local/alias_mod.h>
 #endif
 
 /* 

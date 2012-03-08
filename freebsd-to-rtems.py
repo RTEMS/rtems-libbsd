@@ -8,6 +8,8 @@
 #   Germany
 #   <info@embedded-brains.de>
 #
+#  Copyright (c) 2012 OAR Corporation. All rights reserved.
+#
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
 #  are met:
@@ -36,6 +38,7 @@ import os
 import re
 import sys
 import getopt
+import filecmp
 
 RTEMS_DIR = "not_set"
 FreeBSD_DIR = "not_set"
@@ -44,6 +47,7 @@ isForward = True
 isDryRun = False
 isEarlyExit = False
 isOnlyMakefile = False
+tempFile = "/tmp/tmp_FBRT"
 
 def usage():
   print "freebsd-to-rtems.py [args]"
@@ -177,46 +181,64 @@ def revertFixIncludes(data):
 	data = re.sub('#([ \t]*)include <' + PREFIX + '/', '#\\1include <', data)
 	return data
 
+# compare and overwrite destination file only if different
+def copyIfDifferent(new, old):
+	if filecmp.cmp(new, old, shallow=False) == False:
+		shutil.move(new, old)
+		# print "Move " + new + " to " + old
+		return True
+	return False
+	
+    
 # Copy a header file from FreeBSD to the RTEMS BSD tree
 def installHeaderFile(org):
+	global tempFile
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org # + org.replace('rtems/', '')
 	dst = mapContribPath(dst)
-	if isVerbose == True:
-		print "Install Header - " + src + " => " + dst
 	if isDryRun == True:
+		if isVerbose == True:
+			print "Install Header - " + src + " => " + dst
 		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	data = open(src).read()
-	out = open(dst, 'w')
+	out = open(tempFile, 'w')
 	if src.find('rtems') == -1:
 		data = fixIncludes(data)
 	out.write(data)
 	out.close()
+	if copyIfDifferent(tempFile, dst) == True:
+		if isVerbose == True:
+			print "Install Header - " + src + " => " + dst
+
 
 # Copy a source file from FreeBSD to the RTEMS BSD tree
 def installSourceFile(org):
+	global tempFile
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
 	dst = mapContribPath(dst)
-	if isVerbose == True:
-		print "Install Source - " + src + " => " + dst
 	if isDryRun == True:
+		if isVerbose == True:
+			print "Install Source - " + src + " => " + dst
 		return
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	data = open(src).read()
-	out = open(dst, 'w')
+	out = open(tempFile, 'w')
 	if src.find('rtems') == -1:
 		data = fixIncludes(data)
 		out.write('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n')
 	out.write(data)
 	out.close()
+	if copyIfDifferent(tempFile, dst) == True:
+		if isVerbose == True:
+			print "Install Source - " + src + " => " + dst
 
 # Revert a header file from the RTEMS BSD tree to the FreeBSD tree
 def revertHeaderFile(org):

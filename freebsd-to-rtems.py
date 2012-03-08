@@ -8,9 +8,6 @@
 #   Germany
 #   <info@embedded-brains.de>
 #
-#  Copyright (c) 2012.
-#  Modifications by OAR Corporation. All rights reserved.
-#
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
 #  are met:
@@ -38,17 +35,71 @@ import shutil
 import os
 import re
 import sys
+import getopt
 
-PREFIX = 'rtems/freebsd'
+RTEMS_DIR = sys.argv[1]
+FreeBSD_DIR = '.'
+verbose = False
+isForward = True
 
-# the program name and the file name
-if len(sys.argv) != 2:
-  sys.exit("Must provide an output directory")
+def usage():
+	print "Usage help here"
 
-OUTPUT_DIRECTORY = sys.argv[1]
-print "Generating into", OUTPUT_DIRECTORY
+# Parse the arguments
+def parseArguments():
+  global RTEMS_DIR, FreeBSD_DIR, verbose, isForward
+  try:
+    opts, args = getopt.getopt(sys.argv[1:], "?hRr:f:v",
+                 ["help",
+                  "help",
+                  "reverse"
+                  "rtems="
+                  "freebsd="
+                  "verbose"
+                 ]
+                )
+  except getopt.GetoptError, err:
+    # print help information and exit:
+    print str(err) # will print something like "option -a not recognized"
+    usage()
+    sys.exit(2)
+  for o, a in opts:
+    if o == "-v":
+      verbose = True
+    elif o in ("-h", "--help", "-?"):
+      usage()
+      sys.exit()
+    elif o in ("-R", "--reverse"):
+      isForward = False
+    elif o in ("-r", "--rtems"):
+      RTEMS_DIR = a
+    elif o in ("-r", "--rtems"):
+      RTEMS_DIR = a
+    elif o in ("-f", "--freebsd"):
+      FreeBSD_DIR = a
+    else:
+       assert False, "unhandled option"
 
-REVERT_DIRECTORY = '.'
+parseArguments()
+print "Verbose:           " + ("no", "yes")[verbose]
+print "RTEMS Directory:   " + RTEMS_DIR
+print "FreeBSD Directory: " + FreeBSD_DIR
+print "Direction:         " + ("reverse", "forward")[isForward]
+
+# test for existence of RTEMS and FreeBSD directories
+if os.path.isdir( RTEMS_DIR ) != True:
+    print "RTEMS Directory (" + RTEMS_DIR + ") does not exist"
+    sys.exit(2)
+ 
+if os.path.isdir( FreeBSD_DIR ) != True:
+    print "FreeBSD Directory (" + FreeBSD_DIR + ") does not exist"
+    sys.exit(2)
+ 
+# Prefix added to FreeBSD files as they are copied into the RTEMS
+# build tree.
+PREFIX = 'freebsd'
+
+print "Generating into", RTEMS_DIR
 
 def mapContribPath(path):
 	m = re.match('(.*)(' + PREFIX + '/)(contrib/\\w+/)(.*)', path)
@@ -57,7 +108,7 @@ def mapContribPath(path):
 	return path
 
 def installEmptyFile(src):
-	dst = OUTPUT_DIRECTORY + '/' + PREFIX + '/' + src.replace('rtems/', '')
+	dst = RTEMS_DIR + '/' + PREFIX + '/' + src.replace('rtems/', '')
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -80,8 +131,9 @@ def revertFixIncludes(data):
 	data = re.sub('#([ \t]*)include <' + PREFIX + '/', '#\\1include <', data)
 	return data
 
-def installHeaderFile(src):
-	dst = OUTPUT_DIRECTORY + '/' + PREFIX + '/' + src.replace('rtems/', '')
+def installHeaderFile(org):
+	src = FreeBSD_DIR + '/' + org
+	dst = RTEMS_DIR + '/' + PREFIX + '/' + org # + org.replace('rtems/', '')
 	dst = mapContribPath(dst)
 	try:
 		os.makedirs(os.path.dirname(dst))
@@ -94,8 +146,9 @@ def installHeaderFile(src):
 	out.write(data)
 	out.close()
 
-def installSourceFile(src):
-	dst = OUTPUT_DIRECTORY + '/' + PREFIX + '/' + src
+def installSourceFile(org):
+	src = FreeBSD_DIR + '/' + org
+	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
 	dst = mapContribPath(dst)
 	try:
 		os.makedirs(os.path.dirname(dst))
@@ -110,9 +163,9 @@ def installSourceFile(src):
 	out.close()
 
 def revertHeaderFile(org):
-	src = OUTPUT_DIRECTORY + '/' + PREFIX + '/' + org.replace('rtems/', '')
+	src = RTEMS_DIR + '/' + PREFIX + '/' + org.replace('rtems/', '')
 	src = mapContribPath(src)
-	dst = REVERT_DIRECTORY + '/' + org
+	dst = FreeBSD_DIR + '/' + org
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -125,9 +178,9 @@ def revertHeaderFile(org):
 	out.close()
 
 def revertSourceFile(org):
-	src = OUTPUT_DIRECTORY + '/' + PREFIX + '/' + org
+	src = RTEMS_DIR + '/' + PREFIX + '/' + org
 	src = mapContribPath(src)
-	dst = REVERT_DIRECTORY + '/' + org
+	dst = FreeBSD_DIR + '/' + org
 	try:
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
@@ -142,7 +195,7 @@ def revertSourceFile(org):
 
 def deleteOutputDirectory():
 	try:
-		shutil.rmtree(OUTPUT_DIRECTORY)
+		shutil.rmtree(RTEMS_DIR)
 	except OSError:
 	    pass
 
@@ -180,7 +233,15 @@ class ModuleManager:
 			'include $(RTEMS_CUSTOM)\n' \
 			'include $(PROJECT_ROOT)/make/leaf.cfg\n' \
 			'\n' \
-			'CFLAGS += -ffreestanding -I . -I rtemsbsd -I contrib/altq -I contrib/pf -B $(INSTALL_BASE) -w -std=gnu99\n' \
+			'CFLAGS += -ffreestanding \n' \
+			'CFLAGS += -I . \n' \
+			'CFLAGS += -I rtemsbsd \n' \
+			'CFLAGS += -I rtemsbsd/rtems \n' \
+			'CFLAGS += -I contrib/altq \n' \
+			'CFLAGS += -I contrib/pf \n' \
+			'CFLAGS += -B $(INSTALL_BASE) \n' \
+			'CFLAGS += -w \n' \
+			'CFLAGS += -std=gnu99\n' \
 			'\n'
 		data += 'C_FILES ='
 		for m in self.modules:
@@ -215,7 +276,7 @@ class ModuleManager:
 			'\trm -f $(LIB) $(C_O_FILES) $(C_DEP_FILES)\n' \
 			'\n' \
 			'-include $(C_DEP_FILES)\n'
-		out = open(OUTPUT_DIRECTORY + '/Makefile', 'w')
+		out = open(RTEMS_DIR + '/Makefile', 'w')
 		out.write(data)
 		out.close()
 
@@ -238,6 +299,7 @@ class Module:
 mm = ModuleManager()
 
 rtems_headerFiles = [
+	'rtems/machine/in_cksum.h',  # logically a net file
 	'rtems/machine/atomic.h',
         'rtems/machine/_bus.h',
 	'rtems/machine/bus.h',
@@ -878,9 +940,9 @@ devNet.addSourceFiles(
 )
 
 netDeps = Module('netDeps')
+# logically machine/in_cksum.h is part of this group but RTEMS provides its own
 netDeps.addHeaderFiles(
 	[
-		'rtems/machine/in_cksum.h',
         'security/mac/mac_framework.h',
         'sys/cpu.h',
 		'sys/interrupt.h',

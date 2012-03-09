@@ -405,7 +405,7 @@ class ModuleManager:
 			'\t$(AR) rcu $@ $^\n' \
 			'\n' \
 			'lib_usb:\n' \
-			'\tmake $(LIB)\n' \
+			'\t$(MAKE) $(LIB)\n' \
 			'\n' \
 			'install: $(LIB)\n' \
             '\tinstall -d $(INSTALL_BASE)/include\n' \

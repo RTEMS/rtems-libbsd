@@ -375,7 +375,7 @@ $(LIB): $(C_O_FILES)
 	$(AR) rcu $@ $^
 
 lib_usb:
-	make $(LIB)
+	$(MAKE) $(LIB)
 
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include

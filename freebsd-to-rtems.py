@@ -255,8 +255,11 @@ def installSourceFile(org):
 
 # Revert a header file from the RTEMS BSD tree to the FreeBSD tree
 def revertHeaderFile(org, target):
+	global tempFile
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org.replace('rtems/', '')
 	src = mapContribPath(src)
+	if target != "generic":
+		src = mapCPUDependentPath(src)
 	dst = FreeBSD_DIR + '/' + org
 	if isVerbose == True:
 		print "Revert Header - " + src + " => " + dst
@@ -266,21 +269,23 @@ def revertHeaderFile(org, target):
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
-	if target != "generic":
-		print "Do not yet know how to revert target dependent files"
-		sys.exit(1)
 	data = open(src).read()
-	out = open(dst, 'w')
+	out = open(tempFile, 'w')
 	if org.find('rtems') == -1:
 		data = revertFixIncludes(data)
 	out.write(data)
 	out.close()
+	if copyIfDifferent(tempFile, dst) == True:
+		if isVerbose == True:
+			print "Revert Header - " + src + " => " + dst
 
 # Revert a source file from the RTEMS BSD tree to the FreeBSD tree
-def revertSourceFile(org):
+def revertSourceFile(org, target):
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org
 	src = mapContribPath(src)
 	dst = FreeBSD_DIR + '/' + org
+	if target != "generic":
+		src = mapCPUDependentPath(src)
 	if isVerbose == True:
 		print "Revert Source - " + src + " => " + dst
 	if isDryRun == True:
@@ -290,12 +295,15 @@ def revertSourceFile(org):
 	except OSError:
 		pass
 	data = open(src).read()
-	out = open(dst, 'w')
+	out = open(tempFile, 'w')
 	if org.find('rtems') == -1:
 		data = re.sub('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n', '', data)
 		data = revertFixIncludes(data)
 	out.write(data)
 	out.close()
+	if copyIfDifferent(tempFile, dst) == True:
+		if isVerbose == True:
+			print "Revert Source - " + src + " => " + dst
 
 # Remove the output directory
 def deleteOutputDirectory():
@@ -335,7 +343,7 @@ class ModuleManager:
 			for f in m.headerFiles:
 				revertHeaderFile(f, m.target)
 			for f in m.sourceFiles:
-				revertSourceFile(f)
+				revertSourceFile(f, m.target)
 
 	def createMakefile(self):
 		global tempFile

@@ -15,6 +15,7 @@ CFLAGS += -w
 CFLAGS += -std=gnu99
 
 C_FILES = \
+	freebsd/kern/subr_eventhandler.c \
 	freebsd/kern/kern_subr.c \
 	freebsd/kern/kern_tc.c \
 	freebsd/net/bridgestp.c \

@@ -1195,6 +1195,7 @@ net.addHeaderFiles(
 )
 net.addSourceFiles(
 	[
+		'kern/subr_eventhandler.c',
 		'kern/kern_subr.c',
 		'kern/kern_tc.c',
 		'net/bridgestp.c',

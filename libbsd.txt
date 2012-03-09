@@ -13,6 +13,18 @@ process of merging code from FreeBSD, building this library,
 RTEMS specific support files, and general guidelines on what
 modifications to the FreeBSD source are permitted.
 
+Goals of this effort are:
+
+* Update TCP/IP and provide USB in RTEMS
+* Ease updating to future FreeBSD versions
+* Ease tracking changes in FreeBSD code
+* Minimize manual changes in FreeBSD code
+* Define stable kernel/device driver API which is implemented
+by both RTEMS and FreeBSD. This is the foundation of the port.
+
+We will work to push our changes upstream to the FreeBSD Project
+and minimize changes required at each update point.
+
 **************************************************************
 This is a work in progress and is very likely to be incomplete.
 Please help by adding to it.
@@ -26,6 +38,9 @@ Please help by adding to it.
   - It is preferable if the BSP uses linkcmds.base.
   - BSP must be from an architecture with Programmable Interrupt Controller
     interrupt model.
+
+The FreeBSD 8.2 SVN checkout will generally be referred to as the
+FreeBSD source in this document.
 
 == To Do
 * Adapt generic IRQ PIC interface code to Simple Vectored Interrupt Model
@@ -78,7 +93,6 @@ make -C testsuite
 At this point, we expect multiple linker errors. That is what we are
 currently working on.
 
-
 === Organization
 
 The top level directory contains a few directories and files. The following
@@ -91,4 +105,57 @@ are important to understand:
 * rtemsbsd/ - RTEMS specific implementations of FreeBSD kernel support routines.
 * testsuite/ - RTEMS specific tests
 * libbsd.txt - Documentation in Asciidoc
+
+== Moving Code Between FreeBSD SVN and RTEMS libbsd
+
+The script freebsd-to-rtems.py is used to copy code from FreeBSD to the
+RTEMS libbsd tree and to reverse this process. This script attempts to
+automate this process as much as possible and performs some transformations
+on the FreeBSD code. Its command line arguments are shown below:
+
+[listing]
+----
+freebsd-to-rtems.py [args]
+  -?|-h|--help     print this and exit
+  -d|--dry-run     run program but no modifications
+  -e|--early-exit  evaluate arguments, print results, and exit
+  -m|--makefile    just generate Makefile
+  -R|--reverse     default FreeBSD -> RTEMS, reverse that
+  -r|--rtems       RTEMS directory
+  -f|--freebsd     FreeBSD directory
+  -v|--verbose     enable verbose output mode
+----
+
+In its default mode of operation, freebsd-to-rtems.py is used to copy code
+from FreeBSD to the RTEMS libbsd tree and perform transformations.  In forward
+mode, the script may be requested to just generate the Makefile.
+
+In "reverse mode", this script undoes those transformations and copies 
+the source code back to the FreeBSD SVN tree. This allows us to do 
+'svn diff', evaluate changes made by the RTEMS Project, and report changes
+back to FreeBSD upstream.
+
+In either mode, the script may be asked to perform a dry-run or be verbose.
+Also, in either mode, the script is also smart enough to avoid copying over
+files which have not changed. This means that the timestamps of files are
+not changed unless the contents change. The script will also report the
+number of files which changed. In verbose mode, the script will print
+the name of the files which are changed.
+
+The following is an example forward run with no changes.
+
+[listing]
+----
+$ ~/newbsd/git/libbsd-8.2/freebsd-to-rtems.py \
+    -r /home/joel/newbsd/git/libbsd-8.2 \
+    -f /home/joel/newbsd/libbsd/freebsd-8.2 -v
+Verbose:                yes
+Dry Run:                no
+Only Generate Makefile: no
+RTEMS Directory:        /home/joel/newbsd/git/libbsd-8.2
+FreeBSD Directory:      /home/joel/newbsd/libbsd/freebsd-8.2
+Direction:              forward
+Generating into /home/joel/newbsd/git/libbsd-8.2
+0 files were changed.
+----
 

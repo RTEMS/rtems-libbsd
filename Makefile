@@ -16,6 +16,7 @@ CFLAGS += -std=gnu99
 
 C_FILES = \
 	freebsd/kern/kern_subr.c \
+	freebsd/kern/kern_tc.c \
 	freebsd/net/bridgestp.c \
 	freebsd/net/ieee8023ad_lacp.c \
 	freebsd/net/if_atmsubr.c \

@@ -1181,11 +1181,15 @@ net.addHeaderFiles(
 		'net/slcompress.h',
 		'net/vnet.h',
 		'net/zlib.h',
+		'sys/timepps.h',
+		'sys/timetc.h',
+		'sys/timex.h',
 	]
 )
 net.addSourceFiles(
 	[
 		'kern/kern_subr.c',
+		'kern/kern_tc.c',
 		'net/bridgestp.c',
 		'net/ieee8023ad_lacp.c',
 		'net/if_atmsubr.c',
@@ -1785,6 +1789,7 @@ mm.addEmptyFiles(
 		'machine/elf.h',
 		'machine/sf_buf.h',
 		#'machine/vmparam.h',
+		'local/opt_ntp.h',
 		'security/audit/audit.h',
 		'sys/bio.h',
 		'sys/copyright.h',

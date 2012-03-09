@@ -57,8 +57,8 @@ def usage():
   print "  -e|--early-exit  evaluate arguments, print results, and exit"
   print "  -m|--makefile    just generate Makefile"
   print "  -R|--reverse     default FreeBSD -> RTEMS, reverse that"
-  print "  -r|--rtems       RTEMS directory"
-  print "  -f|--freebsd     FreeBSD directory"
+  print "  -r|--rtems       RTEMS Libbsd directory"
+  print "  -f|--freebsd     FreeBSD SVN directory"
   print "  -v|--verbose     enable verbose output mode"
 
 # Parse the arguments
@@ -110,8 +110,8 @@ parseArguments()
 print "Verbose:                " + ("no", "yes")[isVerbose]
 print "Dry Run:                " + ("no", "yes")[isDryRun]
 print "Only Generate Makefile: " + ("no", "yes")[isOnlyMakefile]
-print "RTEMS Directory:        " + RTEMS_DIR
-print "FreeBSD Directory:      " + FreeBSD_DIR
+print "RTEMS Libbsd Directory: " + RTEMS_DIR
+print "FreeBSD SVN Directory:  " + FreeBSD_DIR
 print "Direction:              " + ("reverse", "forward")[isForward]
 
 # Check directory argument was set and exist
@@ -205,7 +205,7 @@ def revertFixIncludes(data):
 def installHeaderFile(org, target):
 	global tempFile
 	src = FreeBSD_DIR + '/' + org
-	dst = RTEMS_DIR + '/' + PREFIX + '/' + org # + org.replace('rtems/', '')
+	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
 	dst = mapContribPath(dst)
 	if target != "generic":
 		dst = mapCPUDependentPath(dst)
@@ -219,7 +219,7 @@ def installHeaderFile(org, target):
 		pass
 	data = open(src).read()
 	out = open(tempFile, 'w')
-	if src.find('rtems') == -1:
+	if org.find('rtems') == -1:
 		data = fixIncludes(data)
 	out.write(data)
 	out.close()
@@ -244,7 +244,7 @@ def installSourceFile(org):
 		pass
 	data = open(src).read()
 	out = open(tempFile, 'w')
-	if src.find('rtems') == -1:
+	if org.find('rtems') == -1:
 		data = fixIncludes(data)
 		out.write('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n')
 	out.write(data)

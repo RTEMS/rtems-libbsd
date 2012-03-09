@@ -1,7 +1,5 @@
 #include <freebsd/machine/rtems-bsd-config.h>
 
-#include <freebsd/machine/rtems-bsd-config.h>
-
 #include <bsp.h>
 
 #ifdef LIBBSP_ARM_LPC3250_BSP_H

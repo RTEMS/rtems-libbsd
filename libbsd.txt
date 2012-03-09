@@ -59,9 +59,10 @@ for details on the code itself.
 === Automatically Generated FreeBSD Files
 
 The FreeBSD source tarball includes a file named Makefile.rtems which
-has stanzas to automatically generate some files.
+has stanzas to automatically generate some files using awk. For details
+on this, see http://www.freebsd.org/cgi/man.cgi?query=kobj&apropos=0&sektion=0&manpath=FreeBSD+9.0-RELEASE&arch=default&format=html
 
-http://www.freebsd.org/cgi/man.cgi?query=kobj&apropos=0&sektion=0&manpath=FreeBSD+9.0-RELEASE&arch=default&format=html
+XXX This needs more detail.
 
 === Rules for Modifying FreeBSD Source
 
@@ -78,10 +79,44 @@ pre-merged. The Makefile in this kit is automatically generated.
 Any changes to sources in the freebsd or contrib directories will need to
 be merged upstream into our master FreeBSD svn checkout.
 
-=== Building git
+=== Building RTEMS libbsd source
 
-You need to configure RTEMS for the desired BSP and install it. Then edit
-the file config.inc to set RTEMS_MAKEFILE_PATH appropriately.
+You need to configure RTEMS for the desired BSP and install it. The
+following is the script used to build the powerpc/psim BSP for our
+internal testing purposes:
+
+[listing]
+----
+#! /bin/sh
+
+cd ${HOME}/newbsd
+rm -rf b-psim
+mkdir b-psim
+cd b-psim
+../git/rtems/configure --target=powerpc-rtems4.11 \
+  --enable-rtemsbsp=psim --disable-networking \
+  --enable-tests=samples \
+  --prefix=${HOME}/newbsd/bsp-install >c.log 2>&1 && \
+  make >b.log 2>&1 && \
+  make install >i.log 2>&1
+echo $?
+----
+
+Then edit the file config.inc to set RTEMS_MAKEFILE_PATH appropriately
+to indicate the ${prefix}/${target}/${BSP}.  Continuing on the above,
+the config.inc used to match the above is:
+
+[listing]
+----
+RTEMS_MAKEFILE_PATH = ${HOME}/newbsd/bsp-install/powerpc-rtems4.11/psim/
+INSTALL_BASE = ${HOME}/newbsd/install
+----
+
+The above installs the RTEMS libbsd kit into a separate place from 
+RTEMS and the BSP. The RTEMS libbsd tests are built against an installed
+image of the RTEMS libbsd. By keeping it in a separate installation point
+from RTEMS itself, this makes it easier to remove a libbsd installation
+and have a clean test point.
 
 [listing]
 ----
@@ -159,3 +194,17 @@ Generating into /home/joel/newbsd/git/libbsd-8.2
 0 files were changed.
 ----
 
+== Initialization of RTEMS Libbsd
+
+The initialization of the RTEMS Libbsd is based on the FreeBSD SYSINIT 
+infrastructure. This is simply because we are initializing a subset of
+FreeBSD. For details refer to http://www.freebsd.org/cgi/man.cgi?query=SYSINIT&sektion=9&apropos=0&manpath=FreeBSD+9-current
+
+The key to initializing a system is to ensure that the desired device
+drivers are explicitly pulled into the linked application. This plus
+linking against the Libsd library will pull in the necessary FreeBSD
+infrastructure. The SYSINIT structures are automatically built at link
+time and the various initialization routines will thus be executed in'
+the correct order.
+
+XXX This needs more details.

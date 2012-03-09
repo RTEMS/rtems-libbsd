@@ -410,8 +410,15 @@ class ModuleManager:
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
 			'\trm -f $(LIB) $(C_O_FILES) $(C_DEP_FILES)\n' \
+			'\trm -f libbsd.html\n' \
 			'\n' \
-			'-include $(C_DEP_FILES)\n'
+			'-include $(C_DEP_FILES)\n' \
+		'\n' \
+		'doc: libbsd.html\n' \
+		'\n' \
+		'libbsd.html: libbsd.txt\n' \
+		'\tasciidoc -o libbsd.html libbsd.txt\n'
+ 
 		out = open(tempFile, 'w')
 		out.write(data)
 		out.close()

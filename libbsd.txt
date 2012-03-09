@@ -1,0 +1,94 @@
+RTEMS BSD USB and TCP/IP Developers Guide
+=========================================
+Joel Sherrill <joel.sherrill@oarcorp.com>
+:Author Initials: JRS
+:toc:
+:icons:
+:numbered:
+:website: http://www.rtems.org/
+
+RTEMS uses FreeBSD as the source of its TCP/IP and USB stacks.
+This is a developers guide which captures information on the
+process of merging code from FreeBSD, building this library,
+RTEMS specific support files, and general guidelines on what
+modifications to the FreeBSD source are permitted.
+
+**************************************************************
+This is a work in progress and is very likely to be incomplete.
+Please help by adding to it.
+**************************************************************
+
+== Source Code Version Information
+
+* FreeBSD 8.2 SVN r222496
+* RTEMS 4.11
+  - BSP must have support for all new BSD sys sections
+  - It is preferable if the BSP uses linkcmds.base.
+  - BSP must be from an architecture with Programmable Interrupt Controller
+    interrupt model.
+
+== To Do
+* Adapt generic IRQ PIC interface code to Simple Vectored Interrupt Model
+  so that those architectures can use new TCP/IP and USB code. 
+* in_cksum implementations for architectures not supported by FreeBSD.
+  This will require figuring out where to put implementations that do
+  not originate from FreeBSD and are populated via the script.
+* generic in_cksum implementation is missing in_cksum_split so currently
+  cannot be used.
+
+== FreeBSD Source
+
+You should be able to rely on FreebSD manual pages and documentation
+for details on the code itself.
+
+=== Automatically Generated FreeBSD Files
+
+The FreeBSD source tarball includes a file named Makefile.rtems which
+has stanzas to automatically generate some files.
+
+http://www.freebsd.org/cgi/man.cgi?query=kobj&apropos=0&sektion=0&manpath=FreeBSD+9.0-RELEASE&arch=default&format=html
+
+=== Rules for Modifying FreeBSD Source
+
+* Only add lines.  Subtract code by added "ifndef __rtems__". This makes
+merging easier in the future.
+
+== libbsd Source
+
+=== What is in git
+
+The git source is a self-contained kit with FreeBSD and RTEMS components
+pre-merged. The Makefile in this kit is automatically generated.
+
+Any changes to sources in the freebsd or contrib directories will need to
+be merged upstream into our master FreeBSD svn checkout.
+
+=== Building git
+
+You need to configure RTEMS for the desired BSP and install it. Then edit
+the file config.inc to set RTEMS_MAKEFILE_PATH appropriately.
+
+[listing]
+----
+make
+make install
+make -C testsuite
+----
+
+At this point, we expect multiple linker errors. That is what we are
+currently working on.
+
+
+=== Organization
+
+The top level directory contains a few directories and files. The following
+are important to understand:
+
+* freebsd-to-rtems.py - script to convert to and free FreeBSD and RTEMS trees
+* Makefile - automatically generated
+* contrib/ - from FreeBSD by script.
+* freebsd/ - from FreeBSD by script.
+* rtemsbsd/ - RTEMS specific implementations of FreeBSD kernel support routines.
+* testsuite/ - RTEMS specific tests
+* libbsd.txt - Documentation in Asciidoc
+

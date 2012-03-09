@@ -387,5 +387,11 @@ install: $(LIB)
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd
 	rm -f $(LIB) $(C_O_FILES) $(C_DEP_FILES)
+	rm -f libbsd.html
 
 -include $(C_DEP_FILES)
+
+doc: libbsd.html
+
+libbsd.html: libbsd.txt
+	asciidoc -o libbsd.html libbsd.txt

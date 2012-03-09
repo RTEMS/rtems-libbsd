@@ -1767,7 +1767,7 @@ powerpcDependent.addSourceFiles(
 
 # SPARC64 Architecture Specific Files Module
 sparc64Dependent = Module('cpu_dependent')
-sparc64Dependent.setTarget("powerpc")
+sparc64Dependent.setTarget("sparc64")
 sparc64Dependent.addHeaderFiles(
 	[
 		'sparc64/include/in_cksum.h',
@@ -1859,11 +1859,11 @@ mm.addModule(devUsbStorage)
 #mm.addModule(devUsbNet)
 
 # Now add CPU Architecture Dependent Modules
-#mm.addModule(armDependent)
-#mm.addModule(i386Dependent)
-#mm.addModule(mipsDependent)
+mm.addModule(armDependent)
+mm.addModule(i386Dependent)
+mm.addModule(mipsDependent)
 mm.addModule(powerpcDependent)
-#mm.addModule(sparc64Dependent)
+mm.addModule(sparc64Dependent)
 
 # Perform the actual file manipulation
 if isForward == True:

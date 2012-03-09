@@ -341,9 +341,26 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-sysctlnametomib.c \
 	rtemsbsd/src/rtems-bsd-uma.c
 
+ifeq ($(RTEMS_CPU),arm)
+C_FILES += \
+	freebsd/arm/arm/in_cksum.c \
+	freebsd/arm/arm/in_cksum_arm.S
+endif
+ifeq ($(RTEMS_CPU),i386)
+C_FILES += \
+	freebsd/i386/i386/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU),mips)
+C_FILES += \
+	freebsd/mips/mips/in_cksum.c
+endif
 ifeq ($(RTEMS_CPU),powerpc)
 C_FILES += \
 	freebsd/powerpc/powerpc/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU),sparc64)
+C_FILES += \
+	freebsd/sparc64/sparc64/in_cksum.c
 endif
 
 C_O_FILES = $(C_FILES:%.c=%.o)

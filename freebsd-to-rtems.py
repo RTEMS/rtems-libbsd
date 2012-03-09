@@ -48,6 +48,7 @@ isDryRun = False
 isEarlyExit = False
 isOnlyMakefile = False
 tempFile = "/tmp/tmp_FBRT"
+filesChanged = 0
 
 def usage():
   print "freebsd-to-rtems.py [args]"
@@ -150,6 +151,21 @@ def mapContribPath(path):
 		path = m.group(1) + m.group(3) + m.group(2) + m.group(4)
 	return path
 
+# Move target dependent files under a machine directory
+def mapCPUDependentPath(path):
+	return path.replace("include/", "include/freebsd/machine/")
+
+# compare and overwrite destination file only if different
+def copyIfDifferent(new, old):
+	global filesChanged
+	if not os.path.exists(old) or \
+           filecmp.cmp(new, old, shallow=False) == False:
+		shutil.move(new, old)
+		filesChanged += 1
+		# print "Move " + new + " to " + old
+		return True
+	return False
+
 # generate an empty file as a place holder
 def installEmptyFile(src):
 	global tempFile
@@ -185,21 +201,14 @@ def revertFixIncludes(data):
 	data = re.sub('#([ \t]*)include <' + PREFIX + '/', '#\\1include <', data)
 	return data
 
-# compare and overwrite destination file only if different
-def copyIfDifferent(new, old):
-	if filecmp.cmp(new, old, shallow=False) == False:
-		shutil.move(new, old)
-		# print "Move " + new + " to " + old
-		return True
-	return False
-	
-    
 # Copy a header file from FreeBSD to the RTEMS BSD tree
-def installHeaderFile(org):
+def installHeaderFile(org, target):
 	global tempFile
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org # + org.replace('rtems/', '')
 	dst = mapContribPath(dst)
+	if target != "generic":
+		dst = mapCPUDependentPath(dst)
 	if isDryRun == True:
 		if isVerbose == True:
 			print "Install Header - " + src + " => " + dst
@@ -245,7 +254,7 @@ def installSourceFile(org):
 			print "Install Source - " + src + " => " + dst
 
 # Revert a header file from the RTEMS BSD tree to the FreeBSD tree
-def revertHeaderFile(org):
+def revertHeaderFile(org, target):
 	src = RTEMS_DIR + '/' + PREFIX + '/' + org.replace('rtems/', '')
 	src = mapContribPath(src)
 	dst = FreeBSD_DIR + '/' + org
@@ -257,6 +266,9 @@ def revertHeaderFile(org):
 		os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
+	if target != "generic":
+		print "Do not yet know how to revert target dependent files"
+		sys.exit(1)
 	data = open(src).read()
 	out = open(dst, 'w')
 	if org.find('rtems') == -1:
@@ -292,7 +304,8 @@ def deleteOutputDirectory():
 	if isDryRun == True:
 		return
 	try:
-		shutil.rmtree(RTEMS_DIR)
+		print "Deleting output directory needs to be more precise"
+		#shutil.rmtree(RTEMS_DIR)
 	except OSError:
 	    pass
 
@@ -313,21 +326,22 @@ class ModuleManager:
 			installEmptyFile(f)
 		for m in self.modules:
 			for f in m.headerFiles:
-				installHeaderFile(f)
+				installHeaderFile(f, m.target)
 			for f in m.sourceFiles:
 				installSourceFile(f)
 
 	def revertFiles(self):
 		for m in self.modules:
 			for f in m.headerFiles:
-				revertHeaderFile(f)
+				revertHeaderFile(f, m.target)
 			for f in m.sourceFiles:
 				revertSourceFile(f)
 
 	def createMakefile(self):
-		if isVerbose == True:
-			print "Create Makefile"
+		global tempFile
 		if isDryRun == True:
+			if isVerbose == True:
+				print "Create Makefile"
 			return
 		data = 'include config.inc\n' \
 			'\n' \
@@ -338,6 +352,7 @@ class ModuleManager:
 			'CFLAGS += -ffreestanding \n' \
 			'CFLAGS += -I . \n' \
 			'CFLAGS += -I rtemsbsd \n' \
+			'CFLAGS += -I freebsd/$(RTEMS_CPU)/include \n' \
 			'CFLAGS += -I contrib/altq \n' \
 			'CFLAGS += -I contrib/pf \n' \
 			'CFLAGS += -B $(INSTALL_BASE) \n' \
@@ -346,15 +361,32 @@ class ModuleManager:
 			'\n'
 		data += 'C_FILES ='
 		for m in self.modules:
-			for f in m.sourceFiles:
-				f = PREFIX + '/' + f
-				f = mapContribPath(f)
-				data += ' \\\n\t' + f
+			if m.target == "generic":
+				for f in m.sourceFiles:
+					f = PREFIX + '/' + f
+					f = mapContribPath(f)
+					data += ' \\\n\t' + f
+		data += '\n'
+		data += '# RTEMS Project Owned Files\n'
+		data += 'C_FILES +='
 		for f in rtems_sourceFiles:
-			f = 'rtemsbsd/' + f
-			data += ' \\\n\t' + f
+			data += ' \\\n\trtemsbsd/' + f
+		data += '\n'
+		data += '\n'
+		for m in self.modules:
+			if m.target != "generic":
+				data += "ifeq ($(RTEMS_CPU)," + m.target + ")\n"
+				data += "C_FILES +="
+				for f in m.sourceFiles:
+					f = PREFIX + '/' + f
+					f = mapContribPath(f)
+					data += ' \\\n\t' + f
+				data += '\n'
+				data += 'endif\n'
+			
 
-		data += '\nC_O_FILES = $(C_FILES:%.c=%.o)\n' \
+		data += '\n' \
+			'C_O_FILES = $(C_FILES:%.c=%.o)\n' \
 			'C_DEP_FILES = $(C_FILES:%.c=%.dep)\n' \
 			'\n' \
 			'LIB = libbsd.a\n' \
@@ -380,18 +412,26 @@ class ModuleManager:
 			'\trm -f $(LIB) $(C_O_FILES) $(C_DEP_FILES)\n' \
 			'\n' \
 			'-include $(C_DEP_FILES)\n'
-		out = open(RTEMS_DIR + '/Makefile', 'w')
+		out = open(tempFile, 'w')
 		out.write(data)
 		out.close()
+		makefile = RTEMS_DIR + '/Makefile'
+		if copyIfDifferent(tempFile, makefile) == True:
+			if isVerbose == True:
+				print "Create Makefile"
 
 # Module - logical group of related files we can perform actions on
 class Module:
 	def __init__(self, name):
 		self.name = name
+		self.target = "generic"
 		self.headerFiles = []
 		self.sourceFiles = []
 		self.dependencies = []
 
+	def setTarget(self, value):
+		self.target = value
+		
 	def addHeaderFiles(self, files):
 		self.headerFiles.extend(files)
 		for file in files:
@@ -403,7 +443,8 @@ class Module:
 	def addSourceFiles(self, files):
 		self.sourceFiles.extend(files)
 		for file in files:
-			if file[-2] != '.' or file[-1] != 'c':
+			if file[-2] != '.' or \
+			   (file[-1] != 'c' and file[-1] != 'S'):
 				print "*** " + file + " does not end in .c"
 				print "*** Move it to a header file list"
 				sys.exit(2)
@@ -417,7 +458,6 @@ class Module:
 mm = ModuleManager()
 
 rtems_headerFiles = [
-	'rtems/machine/in_cksum.h',  # logically a net file
 	'rtems/machine/atomic.h',
         'rtems/machine/_bus.h',
 	'rtems/machine/bus.h',
@@ -996,7 +1036,6 @@ devUsbBase.addSourceFiles(
 		#'kern/kern_mib.c',
 		'kern/kern_mbuf.c',
 		'kern/kern_module.c',
-		'kern/kern_subr.c',
 		'kern/kern_sysctl.c',
 		'kern/subr_bus.c',
 		'kern/subr_kobj.c',
@@ -1059,7 +1098,6 @@ devNet.addSourceFiles(
 )
 
 netDeps = Module('netDeps')
-# logically machine/in_cksum.h is part of this group but RTEMS provides its own
 netDeps.addHeaderFiles(
 	[
 		'security/mac/mac_framework.h',
@@ -1147,6 +1185,7 @@ net.addHeaderFiles(
 )
 net.addSourceFiles(
 	[
+		'kern/kern_subr.c',
 		'net/bridgestp.c',
 		'net/ieee8023ad_lacp.c',
 		'net/if_atmsubr.c',
@@ -1271,6 +1310,7 @@ netinet.addHeaderFiles(
 		'netinet/libalias/alias_sctp.h',
 	]
 )
+# in_cksum.c is architecture dependent
 netinet.addSourceFiles(
 	[
 		'netinet/accf_data.c',
@@ -1280,7 +1320,6 @@ netinet.addSourceFiles(
 		'netinet/if_ether.c',
 		'netinet/igmp.c',
 		'netinet/in.c',
-		'netinet/in_cksum.c',
 		'netinet/in_gif.c',
 		'netinet/in_mcast.c',
 		'netinet/in_pcb.c',
@@ -1639,6 +1678,7 @@ altq.addSourceFiles(
 	]
 )
 
+# contrib/pf Module
 pf = Module('pf')
 pf.addHeaderFiles(
 	[
@@ -1664,6 +1704,78 @@ pf.addSourceFiles(
 	]
 )
 
+# ARM Architecture Specific Files Module
+armDependent = Module('armDependent')
+armDependent.setTarget("arm")
+armDependent.addHeaderFiles(
+	[
+		'arm/include/in_cksum.h',
+	]
+)
+armDependent.addSourceFiles(
+	[
+		'arm/arm/in_cksum.c',
+		'arm/arm/in_cksum_arm.S',
+	]
+)
+
+# i386 Architecture Specific Files Module
+i386Dependent = Module('i386Dependent')
+i386Dependent.setTarget("i386")
+i386Dependent.addHeaderFiles(
+	[
+		'i386/include/in_cksum.h',
+	]
+)
+i386Dependent.addSourceFiles(
+	[
+		'i386/i386/in_cksum.c',
+	]
+)
+
+# MIPS Architecture Specific Files Module
+mipsDependent = Module('mipsDependent')
+mipsDependent.setTarget("mips")
+mipsDependent.addHeaderFiles(
+	[
+		'mips/include/in_cksum.h',
+	]
+)
+mipsDependent.addSourceFiles(
+	[
+		'mips/mips/in_cksum.c',
+	]
+)
+
+# PowerPC Architecture Specific Files Module
+powerpcDependent = Module('powerpcDependent')
+powerpcDependent.setTarget("powerpc")
+powerpcDependent.addHeaderFiles(
+	[
+		'powerpc/include/in_cksum.h',
+	]
+)
+powerpcDependent.addSourceFiles(
+	[
+		'powerpc/powerpc/in_cksum.c',
+	]
+)
+
+# SPARC64 Architecture Specific Files Module
+sparc64Dependent = Module('cpu_dependent')
+sparc64Dependent.setTarget("powerpc")
+sparc64Dependent.addHeaderFiles(
+	[
+		'sparc64/include/in_cksum.h',
+	]
+)
+sparc64Dependent.addSourceFiles(
+	[
+		'sparc64/sparc64/in_cksum.c',
+	]
+)
+
+# Add Empty Files
 mm.addEmptyFiles(
 	[
 		'cam/cam_queue.h',
@@ -1731,7 +1843,6 @@ mm.addModule(altq)
 mm.addModule(pf)
 mm.addModule(devNet)
 
-# mm.addModule(rtems)
 mm.addModule(local)
 mm.addModule(devUsbBase)
 mm.addModule(devUsb)
@@ -1740,8 +1851,14 @@ mm.addModule(devUsbController)
 
 mm.addModule(cam)
 mm.addModule(devUsbStorage)
-
 #mm.addModule(devUsbNet)
+
+# Now add CPU Architecture Dependent Modules
+#mm.addModule(armDependent)
+#mm.addModule(i386Dependent)
+#mm.addModule(mipsDependent)
+mm.addModule(powerpcDependent)
+#mm.addModule(sparc64Dependent)
 
 # Perform the actual file manipulation
 if isForward == True:
@@ -1751,3 +1868,7 @@ if isForward == True:
 else:
     mm.revertFiles()
 
+if filesChanged == 1:
+    print str(filesChanged) + " file was changed."
+else:
+    print str(filesChanged) + " files were changed."

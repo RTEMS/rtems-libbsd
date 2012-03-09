@@ -7,6 +7,7 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 CFLAGS += -ffreestanding 
 CFLAGS += -I . 
 CFLAGS += -I rtemsbsd 
+CFLAGS += -I freebsd/$(RTEMS_CPU)/include 
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 
 CFLAGS += -B $(INSTALL_BASE) 
@@ -14,6 +15,7 @@ CFLAGS += -w
 CFLAGS += -std=gnu99
 
 C_FILES = \
+	freebsd/kern/kern_subr.c \
 	freebsd/net/bridgestp.c \
 	freebsd/net/ieee8023ad_lacp.c \
 	freebsd/net/if_atmsubr.c \
@@ -66,7 +68,6 @@ C_FILES = \
 	freebsd/netinet/if_ether.c \
 	freebsd/netinet/igmp.c \
 	freebsd/netinet/in.c \
-	freebsd/netinet/in_cksum.c \
 	freebsd/netinet/in_gif.c \
 	freebsd/netinet/in_mcast.c \
 	freebsd/netinet/in_pcb.c \
@@ -272,7 +273,6 @@ C_FILES = \
 	freebsd/kern/init_main.c \
 	freebsd/kern/kern_mbuf.c \
 	freebsd/kern/kern_module.c \
-	freebsd/kern/kern_subr.c \
 	freebsd/kern/kern_sysctl.c \
 	freebsd/kern/subr_bus.c \
 	freebsd/kern/subr_kobj.c \
@@ -304,7 +304,9 @@ C_FILES = \
 	freebsd/dev/usb/controller/usb_controller.c \
 	freebsd/cam/cam.c \
 	freebsd/cam/scsi/scsi_all.c \
-	freebsd/dev/usb/storage/umass.c \
+	freebsd/dev/usb/storage/umass.c
+# RTEMS Project Owned Files
+C_FILES += \
 	rtemsbsd/dev/usb/controller/ohci_lpc3250.c \
 	rtemsbsd/src/rtems-bsd-cam.c \
 	rtemsbsd/src/rtems-bsd-nexus.c \
@@ -337,6 +339,12 @@ C_FILES = \
 	rtemsbsd/src/rtems-bsd-sysctlbyname.c \
 	rtemsbsd/src/rtems-bsd-sysctlnametomib.c \
 	rtemsbsd/src/rtems-bsd-uma.c
+
+ifeq ($(RTEMS_CPU),powerpc)
+C_FILES += \
+	freebsd/powerpc/powerpc/in_cksum.c
+endif
+
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_DEP_FILES = $(C_FILES:%.c=%.dep)
 

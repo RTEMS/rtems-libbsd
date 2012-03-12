@@ -207,6 +207,7 @@ on the FreeBSD code. Its command line arguments are shown below:
 freebsd-to-rtems.py [args]
   -?|-h|--help     print this and exit
   -d|--dry-run     run program but no modifications
+  -D|--diff        provide diff of files between trees
   -e|--early-exit  evaluate arguments, print results, and exit
   -m|--makefile    just generate Makefile
   -R|--reverse     default FreeBSD -> RTEMS, reverse that
@@ -247,6 +248,9 @@ Direction:              forward
 Generating into /home/joel/newbsd/git/libbsd-8.2
 0 files were changed.
 ----
+
+The script may also be used to generate a diff in either forward or reverse
+direction.
 
 == Initialization of RTEMS Libbsd
 

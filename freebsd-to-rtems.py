@@ -39,12 +39,14 @@ import re
 import sys
 import getopt
 import filecmp
+import difflib
 
 RTEMS_DIR = "not_set"
 FreeBSD_DIR = "not_set"
 isVerbose = False
 isForward = True
 isDryRun = False
+isDiffMode = False
 isEarlyExit = False
 isOnlyMakefile = False
 tempFile = "/tmp/tmp_FBRT"
@@ -54,6 +56,7 @@ def usage():
   print "freebsd-to-rtems.py [args]"
   print "  -?|-h|--help     print this and exit"
   print "  -d|--dry-run     run program but no modifications"
+  print "  -D|--diff        provide diff of files between trees"
   print "  -e|--early-exit  evaluate arguments, print results, and exit"
   print "  -m|--makefile    just generate Makefile"
   print "  -R|--reverse     default FreeBSD -> RTEMS, reverse that"
@@ -64,12 +67,13 @@ def usage():
 # Parse the arguments
 def parseArguments():
   global RTEMS_DIR, FreeBSD_DIR
-  global isVerbose, isForward, isEarlyExit, isOnlyMakefile
+  global isVerbose, isForward, isEarlyExit, isOnlyMakefile, isDiffMode
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "?hdemRr:f:v",
+    opts, args = getopt.getopt(sys.argv[1:], "?hdDemRr:f:v",
                  ["help",
                   "help",
                   "dry-run"
+                  "diff"
                   "early-exit"
                   "makefile"
                   "reverse"
@@ -91,6 +95,8 @@ def parseArguments():
       sys.exit()
     elif o in ("-d", "--dry-run"):
       isForward = False
+    elif o in ("-D", "--diff"):
+      isDiffMode = True
     elif o in ("-e", "--early-exit"):
       isEarlyExit = True
     elif o in ("-m", "--makefile"):
@@ -109,6 +115,7 @@ def parseArguments():
 parseArguments()
 print "Verbose:                " + ("no", "yes")[isVerbose]
 print "Dry Run:                " + ("no", "yes")[isDryRun]
+print "Diff Mode Enabled:      " + ("no", "yes")[isDiffMode]
 print "Only Generate Makefile: " + ("no", "yes")[isOnlyMakefile]
 print "RTEMS Libbsd Directory: " + RTEMS_DIR
 print "FreeBSD SVN Directory:  " + FreeBSD_DIR
@@ -130,9 +137,9 @@ wasDirectorySet( "FreeBSD", FreeBSD_DIR )
  
 # Are we generating or reverting?
 if isForward == True:
-    print "Generating into", RTEMS_DIR
+    print "Forward from FreeBSD SVN into ", RTEMS_DIR
 else:
-    print "Reverting from", RTEMS_DIR
+    print "Reverting from ", RTEMS_DIR
     if isOnlyMakefile == True:
         print "Only Makefile Mode and Reverse are contradictory"
         sys.exit(2)
@@ -155,19 +162,25 @@ def mapContribPath(path):
 def mapCPUDependentPath(path):
 	return path.replace("include/", "include/freebsd/machine/")
 
-# compare and overwrite destination file only if different
-def copyIfDifferent(new, old, desc, src):
-	global filesChanged
-	# print new + " " + old + " X" + desc + "X "  + src
-	if not os.path.exists(old) or \
-           filecmp.cmp(new, old, shallow=False) == False:
-		filesChanged += 1
-		print "Install " + desc + src + " => " + dst
-		if isDryRun == False:
-			shutil.move(new, old)
-		# print "Move " + new + " to " + old
-		return True
-	return False
+# compare and process file only if different
+#  + copy or diff depending on execution mode
+def processIfDifferent(new, old, desc, src):
+  global filesChanged
+  # print new + " " + old + " X" + desc + "X "  + src
+  if not os.path.exists(old) or \
+     filecmp.cmp(new, old, shallow=False) == False:
+    filesChanged += 1
+    if isDiffMode == False:
+      # print "Move " + new + " to " + old
+      if isDryRun == False:
+        shutil.move(new, old)
+    else:
+      #print "Diff " + src
+      old_contents = open(old).readlines()
+      new_contents = open(new).readlines()
+      for line in difflib.unified_diff( \
+          old_contents, new_contents, fromfile=src, tofile=new, n=5):
+        sys.stdout.write(line)
 
 # generate an empty file as a place holder
 def installEmptyFile(src):
@@ -181,7 +194,7 @@ def installEmptyFile(src):
 	out = open(tempFile, 'w')
 	out.write('/* EMPTY */\n')
 	out.close()
-	copyIfDifferent(tempFile, dst, "empty file ", "" )
+	processIfDifferent(tempFile, dst, "empty file ", "" )
 
 # fix include paths inside a C or .h file
 def fixIncludes(data):
@@ -218,7 +231,7 @@ def installHeaderFile(org, target):
 		data = fixIncludes(data)
 	out.write(data)
 	out.close()
-	copyIfDifferent(tempFile, dst, "Header ", src)
+	processIfDifferent(tempFile, dst, "Header ", src)
 
 
 # Copy a source file from FreeBSD to the RTEMS BSD tree
@@ -239,7 +252,7 @@ def installSourceFile(org):
 		out.write('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n')
 	out.write(data)
 	out.close()
-	copyIfDifferent(tempFile, dst, "Source ", src)
+	processIfDifferent(tempFile, dst, "Source ", src)
 
 # Revert a header file from the RTEMS BSD tree to the FreeBSD tree
 def revertHeaderFile(org, target):
@@ -260,7 +273,7 @@ def revertHeaderFile(org, target):
 		data = revertFixIncludes(data)
 	out.write(data)
 	out.close()
-	copyIfDifferent(tempFile, dst, "Header ", src)
+	processIfDifferent(tempFile, dst, "Header ", src)
 
 # Revert a source file from the RTEMS BSD tree to the FreeBSD tree
 def revertSourceFile(org, target):
@@ -281,7 +294,7 @@ def revertSourceFile(org, target):
 		data = revertFixIncludes(data)
 	out.write(data)
 	out.close()
-	copyIfDifferent(tempFile, dst, "Source ", src)
+	processIfDifferent(tempFile, dst, "Source ", src)
 
 # Remove the output directory
 def deleteOutputDirectory():
@@ -407,7 +420,7 @@ class ModuleManager:
 		out.write(data)
 		out.close()
 		makefile = RTEMS_DIR + '/Makefile'
-		copyIfDifferent(tempFile, makefile, "Makefile ", "")
+		processIfDifferent(tempFile, makefile, "Makefile ", "")
 
 # Module - logical group of related files we can perform actions on
 class Module:
@@ -1857,13 +1870,15 @@ mm.addModule(sparc64Dependent)
 
 # Perform the actual file manipulation
 if isForward == True:
-    if isOnlyMakefile == False:
-        mm.copyFiles()
-    mm.createMakefile()
+  if isOnlyMakefile == False:
+    mm.copyFiles()
+  mm.createMakefile()
 else:
-    mm.revertFiles()
+  mm.revertFiles()
 
-if filesChanged == 1:
+# Print a summary if changing files
+if isDiffMode == False:
+  if filesChanged == 1:
     print str(filesChanged) + " file was changed."
-else:
+  else:
     print str(filesChanged) + " files were changed."

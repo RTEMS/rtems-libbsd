@@ -281,6 +281,7 @@ C_FILES = \
 	freebsd/kern/uipc_mbuf.c \
 	freebsd/kern/uipc_mbuf2.c \
 	freebsd/kern/uipc_socket.c \
+	freebsd/kern/uipc_sockbuf.c \
 	freebsd/dev/usb/usb_busdma.c \
 	freebsd/dev/usb/usb_core.c \
 	freebsd/dev/usb/usb_debug.c \

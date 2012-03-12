@@ -156,12 +156,15 @@ def mapCPUDependentPath(path):
 	return path.replace("include/", "include/freebsd/machine/")
 
 # compare and overwrite destination file only if different
-def copyIfDifferent(new, old):
+def copyIfDifferent(new, old, desc, src):
 	global filesChanged
+	# print new + " " + old + " X" + desc + "X "  + src
 	if not os.path.exists(old) or \
            filecmp.cmp(new, old, shallow=False) == False:
-		shutil.move(new, old)
 		filesChanged += 1
+		print "Install " + desc + src + " => " + dst
+		if isDryRun == False:
+			shutil.move(new, old)
 		# print "Move " + new + " to " + old
 		return True
 	return False
@@ -170,20 +173,15 @@ def copyIfDifferent(new, old):
 def installEmptyFile(src):
 	global tempFile
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + src.replace('rtems/', '')
-	if isDryRun == True:
-		if isVerbose == True:
-			print "Install empty - " + dst
-		return
 	try:
-		os.makedirs(os.path.dirname(dst))
+		if isDryRun == False:
+			os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	out = open(tempFile, 'w')
 	out.write('/* EMPTY */\n')
 	out.close()
-	if copyIfDifferent(tempFile, dst) == True:
-		if isVerbose == True:
-			print "Install empty - " + dst
+	copyIfDifferent(tempFile, dst, "empty file ", "" )
 
 # fix include paths inside a C or .h file
 def fixIncludes(data):
@@ -209,12 +207,9 @@ def installHeaderFile(org, target):
 	dst = mapContribPath(dst)
 	if target != "generic":
 		dst = mapCPUDependentPath(dst)
-	if isDryRun == True:
-		if isVerbose == True:
-			print "Install Header - " + src + " => " + dst
-		return
 	try:
-		os.makedirs(os.path.dirname(dst))
+		if isDryRun == False:
+			os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	data = open(src).read()
@@ -223,9 +218,7 @@ def installHeaderFile(org, target):
 		data = fixIncludes(data)
 	out.write(data)
 	out.close()
-	if copyIfDifferent(tempFile, dst) == True:
-		if isVerbose == True:
-			print "Install Header - " + src + " => " + dst
+	copyIfDifferent(tempFile, dst, "Header ", src)
 
 
 # Copy a source file from FreeBSD to the RTEMS BSD tree
@@ -234,12 +227,9 @@ def installSourceFile(org):
 	src = FreeBSD_DIR + '/' + org
 	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
 	dst = mapContribPath(dst)
-	if isDryRun == True:
-		if isVerbose == True:
-			print "Install Source - " + src + " => " + dst
-		return
 	try:
-		os.makedirs(os.path.dirname(dst))
+		if isDryRun == False:
+			os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	data = open(src).read()
@@ -249,9 +239,7 @@ def installSourceFile(org):
 		out.write('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n')
 	out.write(data)
 	out.close()
-	if copyIfDifferent(tempFile, dst) == True:
-		if isVerbose == True:
-			print "Install Source - " + src + " => " + dst
+	copyIfDifferent(tempFile, dst, "Source ", src)
 
 # Revert a header file from the RTEMS BSD tree to the FreeBSD tree
 def revertHeaderFile(org, target):
@@ -261,12 +249,9 @@ def revertHeaderFile(org, target):
 	if target != "generic":
 		src = mapCPUDependentPath(src)
 	dst = FreeBSD_DIR + '/' + org
-	if isVerbose == True:
-		print "Revert Header - " + src + " => " + dst
-	if isDryRun == True:
-		return
 	try:
-		os.makedirs(os.path.dirname(dst))
+		if isDryRun == False:
+			os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	data = open(src).read()
@@ -275,9 +260,7 @@ def revertHeaderFile(org, target):
 		data = revertFixIncludes(data)
 	out.write(data)
 	out.close()
-	if copyIfDifferent(tempFile, dst) == True:
-		if isVerbose == True:
-			print "Revert Header - " + src + " => " + dst
+	copyIfDifferent(tempFile, dst, "Header ", src)
 
 # Revert a source file from the RTEMS BSD tree to the FreeBSD tree
 def revertSourceFile(org, target):
@@ -286,12 +269,9 @@ def revertSourceFile(org, target):
 	dst = FreeBSD_DIR + '/' + org
 	if target != "generic":
 		src = mapCPUDependentPath(src)
-	if isVerbose == True:
-		print "Revert Source - " + src + " => " + dst
-	if isDryRun == True:
-		return
 	try:
-		os.makedirs(os.path.dirname(dst))
+		if isDryRun == False:
+			os.makedirs(os.path.dirname(dst))
 	except OSError:
 		pass
 	data = open(src).read()
@@ -301,19 +281,19 @@ def revertSourceFile(org, target):
 		data = revertFixIncludes(data)
 	out.write(data)
 	out.close()
-	if copyIfDifferent(tempFile, dst) == True:
-		if isVerbose == True:
-			print "Revert Source - " + src + " => " + dst
+	copyIfDifferent(tempFile, dst, "Source ", src)
 
 # Remove the output directory
 def deleteOutputDirectory():
-	if isVerbose == True:
-		print "Delete Directory - " + RTEMS_DIR
-	if isDryRun == True:
-		return
 	try:
-		print "Deleting output directory needs to be more precise"
-		#shutil.rmtree(RTEMS_DIR)
+		if isVerbose == True:
+			print "Delete Directory - " + RTEMS_DIR + "/freebsd"
+		if isVerbose == True:
+			print "Delete Directory - " + RTEMS_DIR + "/contrib"
+		if isDryRun == True:
+			return
+		shutil.rmtree(RTEMS_DIR + "/freebsd" )
+		shutil.rmtree(RTEMS_DIR + "/contrib" )
 	except OSError:
 	    pass
 
@@ -347,10 +327,6 @@ class ModuleManager:
 
 	def createMakefile(self):
 		global tempFile
-		if isDryRun == True:
-			if isVerbose == True:
-				print "Create Makefile"
-			return
 		data = 'include config.inc\n' \
 			'\n' \
 			'include $(RTEMS_MAKEFILE_PATH)/Makefile.inc\n' \
@@ -431,9 +407,7 @@ class ModuleManager:
 		out.write(data)
 		out.close()
 		makefile = RTEMS_DIR + '/Makefile'
-		if copyIfDifferent(tempFile, makefile) == True:
-			if isVerbose == True:
-				print "Create Makefile"
+		copyIfDifferent(tempFile, makefile, "Makefile ", "")
 
 # Module - logical group of related files we can perform actions on
 class Module:

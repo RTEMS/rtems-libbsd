@@ -50,7 +50,7 @@ isDiffMode = False
 isEarlyExit = False
 isOnlyMakefile = False
 tempFile = "/tmp/tmp_FBRT"
-filesChanged = 0
+filesProcessed = 0
 
 def usage():
   print "freebsd-to-rtems.py [args]"
@@ -67,7 +67,8 @@ def usage():
 # Parse the arguments
 def parseArguments():
   global RTEMS_DIR, FreeBSD_DIR
-  global isVerbose, isForward, isEarlyExit, isOnlyMakefile, isDiffMode
+  global isVerbose, isForward, isDryRun, isEarlyExit
+  global isOnlyMakefile, isDiffMode
   try:
     opts, args = getopt.getopt(sys.argv[1:], "?hdDemRr:f:v",
                  ["help",
@@ -94,7 +95,7 @@ def parseArguments():
       usage()
       sys.exit()
     elif o in ("-d", "--dry-run"):
-      isForward = False
+      isDryRun = True
     elif o in ("-D", "--diff"):
       isDiffMode = True
     elif o in ("-e", "--early-exit"):
@@ -165,11 +166,11 @@ def mapCPUDependentPath(path):
 # compare and process file only if different
 #  + copy or diff depending on execution mode
 def processIfDifferent(new, old, desc, src):
-  global filesChanged
+  global filesProcessed
   # print new + " " + old + " X" + desc + "X "  + src
   if not os.path.exists(old) or \
      filecmp.cmp(new, old, shallow=False) == False:
-    filesChanged += 1
+    filesProcessed += 1
     if isDiffMode == False:
       # print "Move " + new + " to " + old
       if isDryRun == False:
@@ -1878,7 +1879,7 @@ else:
 
 # Print a summary if changing files
 if isDiffMode == False:
-  if filesChanged == 1:
-    print str(filesChanged) + " file was changed."
+  if filesProcessed == 1:
+    print str(filesProcessed) + " file was changed."
   else:
-    print str(filesChanged) + " files were changed."
+    print str(filesProcessed) + " files were changed."

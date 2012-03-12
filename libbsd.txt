@@ -43,14 +43,56 @@ The FreeBSD 8.2 SVN checkout will generally be referred to as the
 FreeBSD source in this document. An archive of the FreeBSD 8.2 SVN
 archive used is located at http://www.rtems.org/ftp/pub/rtems/people/joel/freebsd
 
-== To Do
+== Issues and To Do
+* Sebastian Huber: mentioned some simple test code which would verify
+  that the BSD code/and or USB stack was initialized.  This has been
+  sent to Joel Sherrill and is pending merger.
+
+* Sebastian Huber and Joel Sherrill discussed the need for a a basic USB
+  functionality test that is known to work on qemu pc.
+
 * Adapt generic IRQ PIC interface code to Simple Vectored Interrupt Model
   so that those architectures can use new TCP/IP and USB code. 
+
 * in_cksum implementations for architectures not supported by FreeBSD.
   This will require figuring out where to put implementations that do
   not originate from FreeBSD and are populated via the script.
-* generic in_cksum implementation is missing in_cksum_split so currently
-  cannot be used.
+
+* FreeBSD generic in_cksum implementation is missing in_cksum_split so
+  currently cannot be used.
+
+* How does one initialize the TCP/IP stack?
+
+* linker section issues: I have undefined symbols for
+  _bsd__start_set_sysinit_set and _bsd__stop_set_sysinit_set.
+  Is this the only type of new section magic?  What about the old sysctl_set?
+  I added this to my linkcmds.  
+
+[listing]
+----
+    /* sysinit section? */
+    . = ALIGN (16);
+    _bsd__start_set_sysinit_set = .;
+    *(set_sys_init_*);
+    _bsd__stop_set_sysinit_set = .;
+
+----
+
+* Convert all BSP linkcmds to use a linkcmds.base so the sections are 
+easier to insert.
+
+* rtems-bsd-init-with-irq.c:
+  rtems_bsd_initialize_with_interrupt_server() has reference to 
+    rtems_interrupt_server_initialize() and this method is unimplemented
+    - XXX BSP implements pieces
+    - BSPs using this software stack must support it apparently.
+    - What about Simple Vectored architectures?
+
+* maxproc variable referenced by rtems-bsd-resource.c.  What should it
+be set to?
+
+* ngroups_max variable referenced by rtems-bsd-prot.c.  - What should
+it be set to?
 
 == FreeBSD Source
 
@@ -79,6 +121,17 @@ pre-merged. The Makefile in this kit is automatically generated.
 
 Any changes to sources in the freebsd or contrib directories will need to
 be merged upstream into our master FreeBSD svn checkout.
+
+The FreeBSD sources managed in RTEMS libbsd git repository (e.g. contrib
+and freebsd directories) contain the "managed" version of the
+FreeBSD source.  The FreeBSD SVN source is the "master" version. The
+freebsd-to-rtems.py script is used to transfer files between the two
+trees. In general terms, if you have modified FreeBSD in the RTEMS libbsd
+tree, you want to run the script in "revert" or "reverse" mode to move
+the source back so you can run an "svn diff" against the upstream FreeBSD
+source. If you want to transfer source from the FreeBSD SVN checkout to
+the RTEMS libbsd tree, then you want to run the script in "forward" or
+default mode.
 
 === Building RTEMS libbsd source
 

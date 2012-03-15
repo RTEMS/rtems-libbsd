@@ -77,6 +77,7 @@ SYSCTL_INT(_kern, KERN_IOV_MAX, iov_max, CTLFLAG_RD, NULL, UIO_MAXIOV,
 /* Declared in uipc_socket.c */
 extern int so_zero_copy_receive;
 
+#ifndef __rtems__
 /*
  * Identify the physical page mapped at the given kernel virtual
  * address.  Insert this physical page into the given address space at
@@ -372,6 +373,7 @@ again:
 	uio->uio_offset++;
 	return (0);
 }
+#endif
 
 /*
  * General routine to allocate a hash table with control of memory flags.
@@ -437,6 +439,7 @@ static int primes[] = { 1, 13, 31, 61, 127, 251, 509, 761, 1021, 1531, 2039,
 			7159, 7673, 8191, 12281, 16381, 24571, 32749 };
 #define NPRIMES (sizeof(primes) / sizeof(primes[0]))
 
+#ifndef __rtems__
 /*
  * General routine to allocate a prime number sized hash table.
  */
@@ -584,3 +587,5 @@ cloneuio(struct uio *uiop)
 	bcopy(uiop->uio_iov, uio->uio_iov, iovlen);
 	return (uio);
 }
+#endif
+

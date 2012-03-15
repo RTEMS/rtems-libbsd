@@ -30,6 +30,7 @@
 #include <freebsd/sys/proc.h>
 #include <freebsd/sys/resourcevar.h>
 #include <freebsd/sys/rwlock.h>
+#include <freebsd/sys/refcount.h>
 
 static MALLOC_DEFINE(M_UIDINFO, "uidinfo", "uidinfo structures");
 

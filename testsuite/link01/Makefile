@@ -14,7 +14,7 @@ C_FILES = test.c
 C_O_FILES = $(C_FILES:%.c=${ARCH}/%.o)
 
 AM_CPPFLAGS += -I $(INSTALL_BASE)/include
-LINK_LIBS += $(INSTALL_BASE)/libbsd.a
+LINK_LIBS += $(INSTALL_BASE)/libbsd.a -Wl,-Map=jennifer.txt
 
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)

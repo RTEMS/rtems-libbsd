@@ -1102,6 +1102,18 @@ devNet.addSourceFiles(
 	]
 )
 
+devNic_re = Module('dev_nic_re')
+devNic_re.addHeaderFiles(
+	[
+		'pci/if_rlreg.h',
+	]
+)
+devNic_re.addSourceFiles(
+	[
+		'dev/re/if_re.c',
+	]
+)
+
 netDeps = Module('netDeps')
 netDeps.addHeaderFiles(
 	[
@@ -1826,11 +1838,8 @@ mm.addEmptyFiles(
 		#'vm/vm_map.h',
 		#'vm/vm_object.h',
 		#'vm/vm_page.h',
-		#'vm/vm_pageout.h',
 		#'vm/vm_param.h',
 		#'vm/vm_kern.h',
-		'dev/pci/pcireg.h',
-		'dev/pci/pcivar.h',
 		'geom/geom_disk.h',
 		#'sys/kdb.h',
 		#'libkern/jenkins.h',
@@ -1864,12 +1873,21 @@ mm.addModule(cam)
 mm.addModule(devUsbStorage)
 #mm.addModule(devUsbNet)
 
+# Add PCI
+mm.addModule(devPci)
+
+# Add NIC devices
+mm.addModule(devNic_re)
+
 # Now add CPU Architecture Dependent Modules
 mm.addModule(armDependent)
 mm.addModule(i386Dependent)
 mm.addModule(mipsDependent)
 mm.addModule(powerpcDependent)
 mm.addModule(sparc64Dependent)
+
+# XXX TODO Check that no file is also listed in empty
+# XXX TODO Check that no file in in two modules
 
 # Perform the actual file manipulation
 if isForward == True:

@@ -31,7 +31,7 @@
 #include <rtems/shell.h>
 #include <rtems/console.h>
 #include <rtems/diskdevs.h>
-#include <rtems/freebsd/bsd.h>
+#include <freebsd/bsd.h>
 
 #include "test.h"
 

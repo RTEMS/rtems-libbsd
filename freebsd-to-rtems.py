@@ -1114,6 +1114,20 @@ devNic_re.addSourceFiles(
 	]
 )
 
+devNic_fxp = Module('dev_nic_fxp')
+devNic_fxp.addHeaderFiles(
+	[
+		'dev/fxp/if_fxpreg.h',
+		'dev/fxp/if_fxpvar.h',
+		'dev/fxp/rcvbundl.h',
+	]
+)
+devNic_fxp.addSourceFiles(
+	[
+		'dev/fxp/if_fxp.c',
+	]
+)
+
 netDeps = Module('netDeps')
 netDeps.addHeaderFiles(
 	[
@@ -1808,6 +1822,7 @@ mm.addEmptyFiles(
 		'machine/sf_buf.h',
 		#'machine/vmparam.h',
 		'local/opt_ntp.h',
+		'local/pci_if.h',
 		'security/audit/audit.h',
 		'sys/bio.h',
 		'sys/copyright.h',
@@ -1878,6 +1893,7 @@ mm.addModule(devPci)
 
 # Add NIC devices
 mm.addModule(devNic_re)
+mm.addModule(devNic_fxp)
 
 # Now add CPU Architecture Dependent Modules
 mm.addModule(armDependent)

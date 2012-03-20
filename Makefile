@@ -308,7 +308,8 @@ C_FILES = \
 	freebsd/cam/cam.c \
 	freebsd/cam/scsi/scsi_all.c \
 	freebsd/dev/usb/storage/umass.c \
-	freebsd/dev/re/if_re.c
+	freebsd/dev/re/if_re.c \
+	freebsd/dev/fxp/if_fxp.c
 # RTEMS Project Owned Files
 C_FILES += \
 	rtemsbsd/dev/usb/controller/ohci_lpc3250.c \

@@ -23,13 +23,15 @@
 #ifndef DEMO_SHELL_MINIMAL_H
 #define DEMO_SHELL_MINIMAL_H
 
-#include <bsp/irq-info.h>
-
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE
 #define CONFIGURE_SHELL_COMMAND_STACKUSE
 
+#if defined(BSP_HAS_IRQ_INFO)
+#include <bsp/irq-info.h>
+
 #define CONFIGURE_SHELL_USER_COMMANDS \
   &bsp_interrupt_shell_command
+#endif
 
 #endif /* DEMO_SHELL_MINIMAL_H */

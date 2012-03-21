@@ -274,6 +274,7 @@
 #define kthread_add _bsd_kthread_add
 #define kthread_exit _bsd_kthread_exit
 #define kthread_start _bsd_kthread_start
+#define kthread_suspend _bsd_kthread_suspend
 #define malloc _bsd_malloc
 #define malloc_init _bsd_malloc_init
 #define malloc_uninit _bsd_malloc_uninit

@@ -1102,6 +1102,18 @@ devNet.addSourceFiles(
 	]
 )
 
+devNic = Module('dev_nic')
+devNic.addHeaderFiles(
+	[
+	#	'sys/taskqueue.h',
+	]
+)
+devNic.addSourceFiles(
+	[
+	#	'kern/subr_taskqueue.c',
+	]
+)
+
 devNic_re = Module('dev_nic_re')
 devNic_re.addHeaderFiles(
 	[
@@ -1128,6 +1140,55 @@ devNic_fxp.addSourceFiles(
 	]
 )
 
+devNic_e1000 = Module('dev_nic_e1000')
+devNic_e1000.addHeaderFiles(
+	[
+		'dev/e1000/e1000_80003es2lan.h',
+		'dev/e1000/e1000_82571.h',
+		'dev/e1000/e1000_defines.h',
+		'dev/e1000/e1000_mac.h',
+		'dev/e1000/e1000_nvm.h',
+		'dev/e1000/e1000_regs.h',
+		'dev/e1000/if_igb.h',
+		'dev/e1000/e1000_82541.h',
+		'dev/e1000/e1000_82575.h',
+		'dev/e1000/e1000_hw.h',
+		'dev/e1000/e1000_manage.h',
+		'dev/e1000/e1000_osdep.h',
+		'dev/e1000/e1000_vf.h',
+		'dev/e1000/if_lem.h',
+		'dev/e1000/e1000_82543.h',
+		'dev/e1000/e1000_api.h',
+		'dev/e1000/e1000_ich8lan.h',
+		'dev/e1000/e1000_mbx.h',
+		'dev/e1000/e1000_phy.h',
+		'dev/e1000/if_em.h',
+	]
+)
+devNic_e1000.addSourceFiles(
+	[
+		'dev/e1000/e1000_80003es2lan.c',
+		'dev/e1000/e1000_82542.c',
+		'dev/e1000/e1000_82575.c',
+		'dev/e1000/e1000_mac.c',
+		'dev/e1000/e1000_nvm.c',
+		'dev/e1000/e1000_vf.c',
+		'dev/e1000/if_lem.c',
+		'dev/e1000/e1000_82540.c',
+		'dev/e1000/e1000_82543.c',
+		'dev/e1000/e1000_api.c',
+		'dev/e1000/e1000_manage.c',
+		'dev/e1000/e1000_osdep.c',
+		'dev/e1000/if_em.c',
+		'dev/e1000/e1000_82541.c',
+		'dev/e1000/e1000_82571.c',
+		'dev/e1000/e1000_ich8lan.c',
+		'dev/e1000/e1000_mbx.c',
+		'dev/e1000/e1000_phy.c',
+		'dev/e1000/if_igb.c',
+	]
+)
+
 netDeps = Module('netDeps')
 netDeps.addHeaderFiles(
 	[
@@ -1136,7 +1197,6 @@ netDeps.addHeaderFiles(
 		'sys/interrupt.h',
 		'sys/fnv_hash.h',
 		'sys/tree.h',
-		'sys/taskqueue.h',
 		'sys/buf_ring.h',
 		'sys/rwlock.h',
 		'sys/_rmlock.h',
@@ -1892,8 +1952,10 @@ mm.addModule(devUsbStorage)
 mm.addModule(devPci)
 
 # Add NIC devices
+mm.addModule(devNic)
 mm.addModule(devNic_re)
 mm.addModule(devNic_fxp)
+#mm.addModule(devNic_e1000)
 
 # Now add CPU Architecture Dependent Modules
 mm.addModule(armDependent)

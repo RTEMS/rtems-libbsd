@@ -309,7 +309,26 @@ C_FILES = \
 	freebsd/cam/scsi/scsi_all.c \
 	freebsd/dev/usb/storage/umass.c \
 	freebsd/dev/re/if_re.c \
-	freebsd/dev/fxp/if_fxp.c
+	freebsd/dev/fxp/if_fxp.c \
+	freebsd/dev/e1000/e1000_80003es2lan.c \
+	freebsd/dev/e1000/e1000_82542.c \
+	freebsd/dev/e1000/e1000_82575.c \
+	freebsd/dev/e1000/e1000_mac.c \
+	freebsd/dev/e1000/e1000_nvm.c \
+	freebsd/dev/e1000/e1000_vf.c \
+	freebsd/dev/e1000/if_lem.c \
+	freebsd/dev/e1000/e1000_82540.c \
+	freebsd/dev/e1000/e1000_82543.c \
+	freebsd/dev/e1000/e1000_api.c \
+	freebsd/dev/e1000/e1000_manage.c \
+	freebsd/dev/e1000/e1000_osdep.c \
+	freebsd/dev/e1000/if_em.c \
+	freebsd/dev/e1000/e1000_82541.c \
+	freebsd/dev/e1000/e1000_82571.c \
+	freebsd/dev/e1000/e1000_ich8lan.c \
+	freebsd/dev/e1000/e1000_mbx.c \
+	freebsd/dev/e1000/e1000_phy.c \
+	freebsd/dev/e1000/if_igb.c
 # RTEMS Project Owned Files
 C_FILES += \
 	rtemsbsd/dev/usb/controller/ohci_lpc3250.c \

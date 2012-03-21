@@ -1955,7 +1955,7 @@ mm.addModule(devPci)
 mm.addModule(devNic)
 mm.addModule(devNic_re)
 mm.addModule(devNic_fxp)
-#mm.addModule(devNic_e1000)
+mm.addModule(devNic_e1000)
 
 # Now add CPU Architecture Dependent Modules
 mm.addModule(armDependent)

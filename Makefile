@@ -267,6 +267,7 @@ C_FILES = \
 	freebsd/dev/mii/mii.c \
 	freebsd/dev/mii/mii_physubr.c \
 	freebsd/dev/mii/icsphy.c \
+	freebsd/dev/mii/brgphy.c \
 	freebsd/local/usb_if.c \
 	freebsd/local/bus_if.c \
 	freebsd/local/device_if.c \
@@ -328,7 +329,14 @@ C_FILES = \
 	freebsd/dev/e1000/e1000_ich8lan.c \
 	freebsd/dev/e1000/e1000_mbx.c \
 	freebsd/dev/e1000/e1000_phy.c \
-	freebsd/dev/e1000/if_igb.c
+	freebsd/dev/e1000/if_igb.c \
+	freebsd/dev/dc/dcphy.c \
+	freebsd/dev/dc/if_dc.c \
+	freebsd/dev/dc/pnphy.c \
+	freebsd/dev/smc/if_smc.c \
+	freebsd/dev/bce/if_bce.c \
+	freebsd/dev/bfe/if_bfe.c \
+	freebsd/dev/bge/if_bge.c
 # RTEMS Project Owned Files
 C_FILES += \
 	rtemsbsd/dev/usb/controller/ohci_lpc3250.c \

@@ -1083,6 +1083,7 @@ devNet.addHeaderFiles(
 	[
 		'dev/mii/mii.h',
 		'dev/mii/miivar.h',
+		'dev/mii/brgphyreg.h',
 		'dev/mii/icsphyreg.h',
 		'net/bpf.h',
 		'net/ethernet.h',
@@ -1100,6 +1101,7 @@ devNet.addSourceFiles(
 		'dev/mii/mii.c',
 		'dev/mii/mii_physubr.c',
 		'dev/mii/icsphy.c',
+		'dev/mii/brgphy.c',
 	]
 )
 
@@ -1187,6 +1189,69 @@ devNic_e1000.addSourceFiles(
 		'dev/e1000/e1000_mbx.c',
 		'dev/e1000/e1000_phy.c',
 		'dev/e1000/if_igb.c',
+	]
+)
+
+# DEC Tulip aka Intel 21143
+devNic_dc = Module('dev_nic_dc')
+devNic_dc.addHeaderFiles(
+	[
+		'dev/dc/if_dcreg.h',
+	]
+)
+devNic_dc.addSourceFiles(
+	[
+		'dev/dc/dcphy.c',
+		'dev/dc/if_dc.c',
+		'dev/dc/pnphy.c',
+	]
+)
+
+# SMC9111x
+devNic_smc = Module('dev_nic_smc')
+devNic_smc.addHeaderFiles(
+	[
+		'dev/smc/if_smcreg.h',
+		'dev/smc/if_smcvar.h',
+	]
+)
+devNic_smc.addSourceFiles(
+	[
+		'dev/smc/if_smc.c',
+	]
+)
+
+# Crystal Semiconductor CS8900
+devNic_cs = Module('dev_nic_cs')
+devNic_cs.addHeaderFiles(
+	[
+		'dev/cs/if_csreg.h',
+		'dev/cs/if_csvar.h',
+	]
+)
+devNic_cs.addSourceFiles(
+	[
+		'dev/cs/if_cs.c',
+		'dev/cs/if_cs_isa.c',
+		'dev/cs/if_cs_pccard.c',
+	]
+)
+
+# Broadcomm BCE, BFE, BGE - MII is intertwined
+devNic_broadcomm = Module('dev_nic_broadcomm')
+devNic_broadcomm.addHeaderFiles(
+	[
+		'dev/bce/if_bcefw.h',
+		'dev/bce/if_bcereg.h',
+		'dev/bfe/if_bfereg.h',
+		'dev/bge/if_bgereg.h',
+	]
+)
+devNic_broadcomm.addSourceFiles(
+	[
+		'dev/bce/if_bce.c',
+		'dev/bfe/if_bfe.c',
+		'dev/bge/if_bge.c',
 	]
 )
 
@@ -1883,6 +1948,7 @@ mm.addEmptyFiles(
 		'machine/sf_buf.h',
 		'machine/smp.h',
 		#'machine/vmparam.h',
+		'local/opt_bce.h',
 		'local/opt_ntp.h',
 		'local/pci_if.h',
 		'security/audit/audit.h',
@@ -1958,6 +2024,11 @@ mm.addModule(devNic)
 mm.addModule(devNic_re)
 mm.addModule(devNic_fxp)
 mm.addModule(devNic_e1000)
+mm.addModule(devNic_dc)
+mm.addModule(devNic_smc)
+mm.addModule(devNic_broadcomm)
+# TBD Requires ISA and PCCard Support to be pulled in.
+# mm.addModule(devNic_cs)
 
 # Now add CPU Architecture Dependent Modules
 mm.addModule(armDependent)

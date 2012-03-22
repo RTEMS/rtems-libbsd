@@ -356,6 +356,7 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-jail.c \
 	rtemsbsd/src/rtems-bsd-shell.c \
 	rtemsbsd/src/rtems-bsd-syscalls.c \
+	rtemsbsd/src/rtems-bsd-smp.c \
 	rtemsbsd/src/rtems-bsd-malloc.c \
 	rtemsbsd/src/rtems-bsd-support.c \
 	rtemsbsd/src/rtems-bsd-bus-dma.c \

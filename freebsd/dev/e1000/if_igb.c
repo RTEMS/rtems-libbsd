@@ -60,10 +60,8 @@
 #include <freebsd/sys/taskqueue.h>
 #include <freebsd/sys/eventhandler.h>
 #include <freebsd/sys/pcpu.h>
-#ifndef __rtems__
 #include <freebsd/sys/smp.h>
 #include <freebsd/machine/smp.h>
-#endif
 #include <freebsd/machine/bus.h>
 #include <freebsd/machine/resource.h>
 
@@ -2515,13 +2513,8 @@ igb_setup_msix(struct adapter *adapter)
 		goto msi;
 	}
 
-#ifdef __rtems__
-	/* Figure out a reasonable auto config value */
-	queues = 10; /* XXX fix me */
-#else
 	/* Figure out a reasonable auto config value */
 	queues = (mp_ncpus > (msgs-1)) ? (msgs-1) : mp_ncpus;
-#endif
 
 	/* Manual override */
 	if (igb_num_queues != 0)

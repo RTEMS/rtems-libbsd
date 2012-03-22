@@ -1109,11 +1109,14 @@ devNic = Module('dev_nic')
 devNic.addHeaderFiles(
 	[
 	#	'sys/taskqueue.h',
+		'dev/random/randomdev_soft.h',
 	]
 )
 devNic.addSourceFiles(
 	[
 	#	'kern/subr_taskqueue.c',
+		'dev/random/harvest.c',
+		'libkern/random.c',
 	]
 )
 

@@ -1049,7 +1049,7 @@ devUsbBase.addSourceFiles(
 		'kern/uipc_mbuf2.c',
 		'kern/uipc_socket.c',
 		'kern/uipc_sockbuf.c',
-		#'kern/uipc_domain.c',
+		'kern/uipc_domain.c',
 		#'kern/uipc_syscalls.c',
 		#'vm/uma_core.c',
 	]

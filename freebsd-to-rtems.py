@@ -1273,7 +1273,7 @@ netDeps.addHeaderFiles(
 		'sys/sdt.h',
 		'sys/_task.h',
 		'sys/sbuf.h',
-		'sys/smp.h',
+		#'sys/smp.h',
 		'sys/syslog.h',
 		'sys/jail.h',
 		'sys/protosw.h',

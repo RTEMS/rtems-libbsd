@@ -487,6 +487,7 @@ rtems_headerFiles = [
 	'rtems/machine/rtems-bsd-cache.h',
 	'rtems/machine/rtems-bsd-sysinit.h',
         'rtems/machine/rtems-bsd-select.h',
+        'rtems/machine/rtems-bsd-taskqueue.h',
         #'rtems/machine/vm.h',
 	'bsd.h',
 	]
@@ -526,6 +527,7 @@ rtems_sourceFiles = [
         'src/rtems-bsd-sysctlbyname.c',
         'src/rtems-bsd-sysctlnametomib.c',
         'src/rtems-bsd-uma.c',
+        'src/rtems-bsd-taskqueue.c',
 	]
 # RTEMS files handled separately from modules
 # rtems = Module('rtems')
@@ -1273,7 +1275,7 @@ netDeps.addHeaderFiles(
 		'sys/sdt.h',
 		'sys/_task.h',
 		'sys/sbuf.h',
-		#'sys/smp.h',
+		'sys/smp.h',
 		'sys/syslog.h',
 		'sys/jail.h',
 		'sys/protosw.h',

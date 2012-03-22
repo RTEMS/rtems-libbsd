@@ -374,7 +374,8 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-sysctl.c \
 	rtemsbsd/src/rtems-bsd-sysctlbyname.c \
 	rtemsbsd/src/rtems-bsd-sysctlnametomib.c \
-	rtemsbsd/src/rtems-bsd-uma.c
+	rtemsbsd/src/rtems-bsd-uma.c \
+	rtemsbsd/src/rtems-bsd-taskqueue.c
 
 ifeq ($(RTEMS_CPU),arm)
 C_FILES += \

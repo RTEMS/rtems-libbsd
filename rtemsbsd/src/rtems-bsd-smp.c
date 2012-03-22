@@ -23,11 +23,17 @@
 #include <freebsd/sys/smp.h>
 #include <freebsd/machine/smp.h>
 
-int mp_ncpus;
-int mp_maxcpus;
+int       mp_ncpus;
+int       mp_maxcpus;
+cpumask_t all_cpus;
+u_int     mp_maxid;
 
 static void configure(void *dummy)
 {
+  int i;
+
+  all_cpus = 0x0;
+
 #if defined(RTEMS_SMP)
   mp_ncpus = rtems_smp_get_number_of_processors();
   mp_maxcpus = rtems_configuration_smp_maximum_processors;
@@ -35,6 +41,10 @@ static void configure(void *dummy)
   mp_ncpus = 1;
   mp_maxcpus = 1;
 #endif
+
+  mp_maxid = mp_maxcpus;
+  for(i=0; i< mp_ncpus; i++)
+    all_cpus |= 0x1 << i;
 }
 
 /* XXX setup initialization of this */

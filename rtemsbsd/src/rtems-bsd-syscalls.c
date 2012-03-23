@@ -39,6 +39,7 @@
 #include <freebsd/net/vnet.h>
 
 #include <rtems/libio_.h>
+#include <rtems/libio.h>
 #include <rtems/seterr.h>
 
 static const rtems_filesystem_file_handlers_r socket_handlers;
@@ -1479,8 +1480,8 @@ static const rtems_filesystem_file_handlers_r socket_handlers = {
 	rtems_bsdnet_fstat,			/* fstat */
 	rtems_filesystem_default_fchmod,	/* fchmod */
 	rtems_filesystem_default_ftruncate,	/* ftruncate */
-	rtems_filesystem_default_fsync,		/* fsync */
-	rtems_filesystem_default_fdatasync,	/* fdatasync */
+	rtems_filesystem_default_fsync_or_fdatasync,		/* fsync */
+	rtems_filesystem_default_fsync_or_fdatasync,	/* fdatasync */
 	rtems_bsdnet_fcntl,			/* fcntl */
 	rtems_filesystem_default_rmnod		/* rmnod */
 };

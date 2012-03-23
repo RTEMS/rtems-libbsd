@@ -94,6 +94,12 @@ be set to?
 * ngroups_max variable referenced by rtems-bsd-prot.c.  - What should
 it be set to?
 
+* NIC Device Drivers
+- Only common NIC drivers have been included in the initial set. These do not
+include any system on chip or ISA drivers.
+- The ISA drivers require more BSD infrastructure to be addressed. This was 
+outside the scope of the initial porting effort.
+
 == FreeBSD Source
 
 You should be able to rely on FreebSD manual pages and documentation

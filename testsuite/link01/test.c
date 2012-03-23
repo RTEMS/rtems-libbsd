@@ -22,12 +22,25 @@ void prison_free() {}
 /* needed by rtems-bsd-init-with-irq.c */
 void rtems_interrupt_server_initialize(void) { }
 
+
+/* 
+ * Methods used to make sure the nic drivers
+ * are pulled into the executable.
+ */
+// extern int _bsd_re_pcimodule_sys_init();
+// extern int _bsd_fxp_pcimodule_sys_init();
+
 rtems_task Init(
   rtems_task_argument ignored
 )
 {
   printf( "\n\n*** LIBFREEBSD INITIALIZATION TEST ***\n" );
   rtems_bsd_initialize_with_interrupt_server();
+
+  printf("Nic Driver Addresses\n");
+  // printf("RealTek %p\n", &_bsd_re_pcimodule_sys_init );
+  // printf("EtherExpress k %p\n", &_bsd_fxp_pcimodule_sys_init );
+
   printf( "*** END OF LIBFREEBSD INITIALIZATION TEST ***\n" );
   exit( 0 );
 }

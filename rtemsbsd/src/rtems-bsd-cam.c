@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Obere Lagerstr. 30
@@ -284,7 +284,7 @@ static int rtems_bsd_sim_disk_ioctl(rtems_disk_device *dd, uint32_t req, void *a
 
 		return 0;
 	} else {
-		return -1;
+		return rtems_blkdev_ioctl(dd, req, arg);
 	}
 }
 
@@ -303,34 +303,26 @@ static rtems_status_code
 rtems_bsd_sim_attach_worker(rtems_media_state state, const char *src, char **dest, void *arg)
 {
 	rtems_status_code sc = RTEMS_SUCCESSFUL;
-	rtems_device_major_number major = UINT32_MAX;
 	struct cam_sim *sim = arg;
 	char *disk = NULL;
 
 	if (state == RTEMS_MEDIA_STATE_READY) {
-		dev_t dev = 0;
 		unsigned retries = 0;
 
 		struct scsi_inquiry_data inq_data;
 		uint32_t block_count = 0;
 		uint32_t block_size = 0;
 
-		sc = rtems_io_register_driver(0, &rtems_blkdev_generic_ops, &major);
-		if (sc != RTEMS_SUCCESSFUL) {
-			BSD_PRINTF("OOPS: register driver failed\n");
-			goto error;
-		}
-
-		disk = rtems_media_create_path("/dev", src, major);
+		disk = rtems_media_create_path("/dev", src, cam_sim_unit(sim));
 		if (disk == NULL) {
 			BSD_PRINTF("OOPS: create path failed\n");
-			goto unregister_and_error;
+			goto error;
 		}
 
 		sc = rtems_bsd_scsi_inquiry(&sim->ccb, &inq_data);
 		if (sc != RTEMS_SUCCESSFUL) {
 			BSD_PRINTF("OOPS: inquiry failed\n");
-			goto unregister_and_error;
+			goto error;
 		}
 		scsi_print_inquiry(&inq_data);
 
@@ -342,22 +334,20 @@ rtems_bsd_sim_attach_worker(rtems_media_state state, const char *src, char **des
 		}
 		if (sc != RTEMS_SUCCESSFUL) {
 			BSD_PRINTF("OOPS: test unit ready failed\n");
-			goto unregister_and_error;
+			goto error;
 		}
 
 		sc = rtems_bsd_scsi_read_capacity(&sim->ccb, &block_count, &block_size);
 		if (sc != RTEMS_SUCCESSFUL) {
 			BSD_PRINTF("OOPS: read capacity failed\n");
-			goto unregister_and_error;
+			goto error;
 		}
 
 		BSD_PRINTF("read capacity: block count %u, block size %u\n", block_count, block_size);
 
-		dev = rtems_filesystem_make_dev_t(major, 0);
-
-		sc = rtems_disk_create_phys(dev, block_size, block_count, rtems_bsd_sim_disk_ioctl, sim, disk);
+		sc = rtems_blkdev_create(disk, block_size, block_count, rtems_bsd_sim_disk_ioctl, sim);
 		if (sc != RTEMS_SUCCESSFUL) {
-			goto unregister_and_error;
+			goto error;
 		}
 
 		/* FIXME */
@@ -373,10 +363,6 @@ rtems_bsd_sim_attach_worker(rtems_media_state state, const char *src, char **des
 	}
 
 	return RTEMS_SUCCESSFUL;
-
-unregister_and_error:
-
-	rtems_io_unregister_driver(major);
 
 error:
 

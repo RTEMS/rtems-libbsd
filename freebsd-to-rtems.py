@@ -492,7 +492,9 @@ rtems_headerFiles = [
 	'bsd.h',
 	]
 rtems_sourceFiles = [
-	'dev/usb/controller/ohci_lpc3250.c',
+	'dev/usb/controller/ohci_lpc24xx.c',
+	'dev/usb/controller/ohci_lpc32xx.c',
+	'dev/usb/controller/ehci_mpc83xx.c',
 	'src/rtems-bsd-cam.c',
 	'src/rtems-bsd-nexus.c',
 	'src/rtems-bsd-autoconf.c',

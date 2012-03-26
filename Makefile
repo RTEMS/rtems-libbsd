@@ -342,7 +342,9 @@ C_FILES = \
 	freebsd/dev/bge/if_bge.c
 # RTEMS Project Owned Files
 C_FILES += \
-	rtemsbsd/dev/usb/controller/ohci_lpc3250.c \
+	rtemsbsd/dev/usb/controller/ohci_lpc24xx.c \
+	rtemsbsd/dev/usb/controller/ohci_lpc32xx.c \
+	rtemsbsd/dev/usb/controller/ehci_mpc83xx.c \
 	rtemsbsd/src/rtems-bsd-cam.c \
 	rtemsbsd/src/rtems-bsd-nexus.c \
 	rtemsbsd/src/rtems-bsd-autoconf.c \

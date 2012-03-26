@@ -76,18 +76,16 @@
 #include <freebsd/netinet/udp.h>
 
 #include <freebsd/machine/in_cksum.h>
-#ifndef __rtems__
 #include <freebsd/dev/led/led.h>
-#endif
 #include <freebsd/dev/pci/pcivar.h>
 #include <freebsd/dev/pci/pcireg.h>
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_api.h>
-#include <freebsd/local/if_lem.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_api.h>
 #include <freebsd/dev/e1000/if_lem.h>
+#else
+#include <freebsd/local/e1000_api.h>
+#include <freebsd/local/if_lem.h>
 #endif
 
 /*********************************************************************

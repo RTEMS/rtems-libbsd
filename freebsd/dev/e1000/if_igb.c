@@ -85,20 +85,18 @@
 #include <freebsd/netinet/udp.h>
 
 #include <freebsd/machine/in_cksum.h>
-#ifndef __rtems__
 #include <freebsd/dev/led/led.h>
-#endif
 #include <freebsd/dev/pci/pcivar.h>
 #include <freebsd/dev/pci/pcireg.h>
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_api.h>
-#include <freebsd/local/e1000_82575.h>
-#include <freebsd/local/if_igb.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_api.h>
 #include <freebsd/dev/e1000/e1000_82575.h>
 #include <freebsd/dev/e1000/if_igb.h>
+#else
+#include <freebsd/local/e1000_api.h>
+#include <freebsd/local/e1000_82575.h>
+#include <freebsd/local/if_igb.h>
 #endif
 
 /*********************************************************************
@@ -222,16 +220,20 @@ static __inline	void igb_rx_discard(struct rx_ring *, int);
 static __inline void igb_rx_input(struct rx_ring *,
 		    struct ifnet *, struct mbuf *, u32);
 
+#ifdef __rtems__
+/* XXX the inconsistent prototype and body need to be reported to FreeBSD */
 static bool	igb_rxeof(struct igb_queue *, int, int *);
+#else
+static boolean_t	igb_rxeof(struct igb_queue *, int, int *);
+#endif
 static void	igb_rx_checksum(u32, struct mbuf *, u32);
 #ifdef __rtems__
-/* XXX this is an inconsistency in BSD */
+/* XXX the inconsistent prototype and body need to be reported to FreeBSD */
 static bool	igb_tx_ctx_setup(struct tx_ring *, struct mbuf *);
-static boolean_t	igb_tso_setup(struct tx_ring *, struct mbuf *, u32 *);
 #else
 static int	igb_tx_ctx_setup(struct tx_ring *, struct mbuf *);
-static bool	igb_tso_setup(struct tx_ring *, struct mbuf *, u32 *);
 #endif
+static boolean_t	igb_tso_setup(struct tx_ring *, struct mbuf *, u32 *);
 static void	igb_set_promisc(struct adapter *);
 static void	igb_disable_promisc(struct adapter *);
 static void	igb_set_multi(struct adapter *);
@@ -4306,6 +4308,7 @@ igb_rx_input(struct rx_ring *rxr, struct ifnet *ifp, struct mbuf *m, u32 ptype)
  *
  *  Return TRUE if more to clean, FALSE otherwise
  *********************************************************************/
+
 static bool
 igb_rxeof(struct igb_queue *que, int count, int *done)
 {

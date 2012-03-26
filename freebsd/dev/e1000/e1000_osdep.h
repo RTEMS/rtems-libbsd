@@ -50,10 +50,8 @@
 #include <freebsd/machine/bus.h>
 #include <freebsd/sys/rman.h>
 #include <freebsd/machine/resource.h>
-#ifndef __rtems__
 #include <freebsd/vm/vm.h>
 #include <freebsd/vm/pmap.h>
-#endif
 #include <freebsd/machine/clock.h>
 #include <freebsd/dev/pci/pcivar.h>
 #include <freebsd/dev/pci/pcireg.h>

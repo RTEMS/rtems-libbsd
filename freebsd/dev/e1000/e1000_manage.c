@@ -34,10 +34,10 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_api.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_api.h>
+#else
+#include <freebsd/local/e1000_api.h>
 #endif
 
 static u8 e1000_calculate_checksum(u8 *buffer, u32 length);

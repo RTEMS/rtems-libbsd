@@ -51,10 +51,10 @@
  * 82583V Gigabit Network Connection
  */
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_api.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_api.h>
+#else
+#include <freebsd/local/e1000_api.h>
 #endif
 
 static s32  e1000_init_phy_params_82571(struct e1000_hw *hw);

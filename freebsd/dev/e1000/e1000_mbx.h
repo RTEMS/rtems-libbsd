@@ -35,10 +35,10 @@
 #ifndef _E1000_MBX_HH_
 #define _E1000_MBX_HH_
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_api.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_api.h>
+#else
+#include <freebsd/local/e1000_api.h>
 #endif
 
 /* Define mailbox register bits */

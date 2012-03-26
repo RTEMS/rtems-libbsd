@@ -34,10 +34,10 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_mbx.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_mbx.h>
+#else
+#include <freebsd/local/e1000_mnx.h>
 #endif
 
 /**

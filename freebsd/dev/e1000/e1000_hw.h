@@ -35,14 +35,14 @@
 #ifndef _E1000_HW_HH_
 #define _E1000_HW_HH_
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_osdep.h>
-#include <freebsd/local/e1000_regs.h>
-#include <freebsd/local/e1000_defines.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_osdep.h>
 #include <freebsd/dev/e1000/e1000_regs.h>
 #include <freebsd/dev/e1000/e1000_defines.h>
+#else
+#include <freebsd/local/e1000_osdep.h>
+#include <freebsd/local/e1000_regs.h>
+#include <freebsd/local/e1000_defines.h>
 #endif
 
 struct e1000_hw;
@@ -629,18 +629,18 @@ struct e1000_host_mng_command_info {
 	u8 command_data[E1000_HI_MAX_MNG_DATA_LENGTH];
 };
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_mac.h>
-#include <freebsd/local/e1000_phy.h>
-#include <freebsd/local/e1000_nvm.h>
-#include <freebsd/local/e1000_manage.h>
-#include <freebsd/local/e1000_mbx.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_mac.h>
 #include <freebsd/dev/e1000/e1000_phy.h>
 #include <freebsd/dev/e1000/e1000_nvm.h>
 #include <freebsd/dev/e1000/e1000_manage.h>
 #include <freebsd/dev/e1000/e1000_mbx.h>
+#else
+#include <freebsd/local/e1000_mac.h>
+#include <freebsd/local/e1000_phy.h>
+#include <freebsd/local/e1000_nvm.h>
+#include <freebsd/local/e1000_manage.h>
+#include <freebsd/local/e1000_mbx.h>
 #endif
 
 struct e1000_mac_operations {
@@ -941,20 +941,20 @@ struct e1000_hw {
 	u8  revision_id;
 };
 
-#ifndef __rtems__
-#include <freebsd/local/e1000_82541.h>
-#include <freebsd/local/e1000_82543.h>
-#include <freebsd/local/e1000_82571.h>
-#include <freebsd/local/e1000_80003es2lan.h>
-#include <freebsd/local/e1000_ich8lan.h>
-#include <freebsd/local/e1000_82575.h>
-#else
+#ifdef __rtems__
 #include <freebsd/dev/e1000/e1000_82541.h>
 #include <freebsd/dev/e1000/e1000_82543.h>
 #include <freebsd/dev/e1000/e1000_82571.h>
 #include <freebsd/dev/e1000/e1000_80003es2lan.h>
 #include <freebsd/dev/e1000/e1000_ich8lan.h>
 #include <freebsd/dev/e1000/e1000_82575.h>
+#else
+#include <freebsd/local/e1000_82541.h>
+#include <freebsd/local/e1000_82543.h>
+#include <freebsd/local/e1000_82571.h>
+#include <freebsd/local/e1000_80003es2lan.h>
+#include <freebsd/local/e1000_ich8lan.h>
+#include <freebsd/local/e1000_82575.h>
 #endif
 
 /* These functions must be implemented by drivers */

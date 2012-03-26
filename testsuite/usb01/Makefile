@@ -25,7 +25,7 @@ CXXFLAGS += $(CFLAGS)
 all: $(APP)
 
 $(APP): $(APP_O_FILES)
-	$(CXX) $(CXXFLAGS) $^ $(LINK_LIBS) -o $(APP)
+	$(CC) $(CXXFLAGS) $^ $(LINK_LIBS) -o $(APP)
 
 clean:
 	rm -f $(APP_O_FILES) $(APP_DEP_FILES)

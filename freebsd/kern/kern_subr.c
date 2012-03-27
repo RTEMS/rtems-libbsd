@@ -70,6 +70,7 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/vm/vm_object.h>
 #endif
 
+#ifndef __rtems__
 SYSCTL_INT(_kern, KERN_IOV_MAX, iov_max, CTLFLAG_RD, NULL, UIO_MAXIOV,
 	"Maximum number of elements in an I/O vector; sysconf(_SC_IOV_MAX)");
 
@@ -372,6 +373,7 @@ again:
 	uio->uio_offset++;
 	return (0);
 }
+#endif  /*  __rtems__ */
 
 /*
  * General routine to allocate a hash table with control of memory flags.
@@ -463,6 +465,7 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 	return (hashtbl);
 }
 
+#ifndef __rtems__
 void
 uio_yield(void)
 {
@@ -584,3 +587,4 @@ cloneuio(struct uio *uiop)
 	bcopy(uiop->uio_iov, uio->uio_iov, iovlen);
 	return (uio);
 }
+#endif  /* __rtems__ */

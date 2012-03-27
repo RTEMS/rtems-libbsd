@@ -3,7 +3,7 @@
  *
  * @ingroup rtems_bsd_rtems
  *
- * @brief TODO.
+ * @brief This object is an minimal rtems implementation of kern_jail.c.
  */
 
 /*
@@ -89,4 +89,9 @@ struct prison prison0 = {
   .pr_allow = PR_ALLOW_ALL,
 };
 MTX_SYSINIT(prison0, &prison0.pr_mtx, "jail mutex", MTX_DEF);
+
+
+void prison_free(struct prison *pr) {}
+void prison_hold(struct prison *pr) {}
+
 

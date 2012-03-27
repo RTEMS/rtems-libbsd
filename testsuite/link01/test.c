@@ -9,15 +9,8 @@
 #include <stdio.h>
 #include <freebsd/bsd.h>
 
-/* needed by rtems-bsd-resource.c */
-int maxproc;
-
-/* needed by rtems-bsd-prot.c */
-int ngroups_max;
-
-/* needed by rtems-bsd-prot.c */
-void prison_hold() {}
-void prison_free() {}
+int     maxproc = 6;               /* XXX Used value of rtems KERN_MAXPROC */
+int     ngroups_max = NGROUPS_MAX; /* XXX */
 
 /* needed by rtems-bsd-init-with-irq.c */
 void rtems_interrupt_server_initialize(void) { }

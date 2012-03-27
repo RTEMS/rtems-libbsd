@@ -221,17 +221,16 @@ static __inline void igb_rx_input(struct rx_ring *,
 		    struct ifnet *, struct mbuf *, u32);
 
 #ifdef __rtems__
-/* XXX the inconsistent prototype and body need to be reported to FreeBSD */
+/* XXX report inconsistent proto/body to FreeBSD */
 static bool	igb_rxeof(struct igb_queue *, int, int *);
 #else
 static boolean_t	igb_rxeof(struct igb_queue *, int, int *);
 #endif
 static void	igb_rx_checksum(u32, struct mbuf *, u32);
 #ifdef __rtems__
-/* XXX the inconsistent prototype and body need to be reported to FreeBSD */
+/* XXX report inconsistent proto/body to FreeBSD */
 static bool	igb_tx_ctx_setup(struct tx_ring *, struct mbuf *);
 #else
-static int	igb_tx_ctx_setup(struct tx_ring *, struct mbuf *);
 #endif
 static boolean_t	igb_tso_setup(struct tx_ring *, struct mbuf *, u32 *);
 static void	igb_set_promisc(struct adapter *);

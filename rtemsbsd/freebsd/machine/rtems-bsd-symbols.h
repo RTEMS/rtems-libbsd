@@ -23,6 +23,8 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_SYMBOLS_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_SYMBOLS_H_
 
+#define bootverbose _bsd_bootverbose
+#define bus_activate_resource _bsd_bus_activate_resource
 #define bus_activate_resource _bsd_bus_activate_resource
 #define bus_activate_resource_desc _bsd_bus_activate_resource_desc
 #define bus_activate_resource_method_default _bsd_bus_activate_resource_method_default

@@ -110,7 +110,10 @@ struct	proc *initproc;
 
 int	boothowto = 0;		/* initialized so that it can be patched */
 SYSCTL_INT(_debug, OID_AUTO, boothowto, CTLFLAG_RD, &boothowto, 0, "");
+#endif /* __rtems__ */
+
 int	bootverbose;
+#ifndef __rtems__
 SYSCTL_INT(_debug, OID_AUTO, bootverbose, CTLFLAG_RW, &bootverbose, 0, "");
 
 /*

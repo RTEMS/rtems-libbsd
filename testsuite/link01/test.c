@@ -9,13 +9,6 @@
 #include <stdio.h>
 #include <freebsd/bsd.h>
 
-int     maxproc = 6;               /* XXX Used value of rtems KERN_MAXPROC */
-int     ngroups_max = NGROUPS_MAX; /* XXX */
-
-/* needed by rtems-bsd-init-with-irq.c */
-void rtems_interrupt_server_initialize(void) { }
-
-
 /* 
  * Methods used to make sure the nic drivers
  * are pulled into the executable.
@@ -28,6 +21,12 @@ rtems_task Init(
 )
 {
   printf( "\n\n*** LIBFREEBSD INITIALIZATION TEST ***\n" );
+  /*
+   *  BSD must support the new "shared IRQ PIC implementation" at this point.
+   *  BSPs must also provide rtems_interrupt_server_initialize() which
+   *  just requires including irq-server.[ch] in their build.
+   */
+
   rtems_bsd_initialize_with_interrupt_server();
 
   printf("Nic Driver Addresses\n");

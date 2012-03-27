@@ -150,6 +150,11 @@
 #define cam_status_table _bsd_cam_status_table
 #define cam_strmatch _bsd_cam_strmatch
 #define cam_strvis _bsd_cam_strvis
+#define cold _bsd_cold
+#define copyin _bsd_copyin
+#define copyout _bsd_copyout
+#define critical_enter _bsd_critical_enter
+#define critical_exit _bsd_critical_exit
 #define cv_broadcastpri _bsd_cv_broadcastpri
 #define cv_destroy _bsd_cv_destroy
 #define cv_init _bsd_cv_init
@@ -236,6 +241,7 @@
 #define device_unbusy _bsd_device_unbusy
 #define device_verbose _bsd_device_verbose
 #define driver_module_handler _bsd_driver_module_handler
+#define dpcpu_off _bsd_dpcpu_off
 #define ehci_bus_methods _bsd_ehci_bus_methods
 #define ehci_detach _bsd_ehci_detach
 #define ehci_device_bulk_methods _bsd_ehci_device_bulk_methods
@@ -280,6 +286,8 @@
 #define malloc _bsd_malloc
 #define malloc_init _bsd_malloc_init
 #define malloc_uninit _bsd_malloc_uninit
+#define maxproc _bsd_maxproc
+#define maxfilesperproc _bsd_maxfilesperproc
 #define M_CAMSIM _bsd_M_CAMSIM
 #define M_DEVBUF _bsd_M_DEVBUF
 #define M_SOCKET _bsd_M_SOCKET
@@ -301,6 +309,7 @@
 #define M_USBDEV _bsd_M_USBDEV
 #define M_USBHC _bsd_M_USBHC
 #define mutex_init _bsd_mutex_init
+#define ngroups_max _bsd_ngroups_max
 #define null_class _bsd_null_class
 #define num_cam_status_entries _bsd_num_cam_status_entries
 #define ohci_bus_methods _bsd_ohci_bus_methods

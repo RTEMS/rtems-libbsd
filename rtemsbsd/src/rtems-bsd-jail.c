@@ -96,14 +96,19 @@ MTX_SYSINIT(prison0, &prison0.pr_mtx, "jail mutex", MTX_DEF);
 int
 prison_flag(struct ucred *cred, unsigned flag)
 {
-
-        /* This is an atomic read, so no locking is necessary. */
-        return (cred->cr_prison->pr_flags & flag);
+  /* This is an atomic read, so no locking is necessary. */
+  return (cred->cr_prison->pr_flags & flag);
 }
 
+void
+prison_free(struct prison *pr)
+{
+}
 
-void prison_free(struct prison *pr) {}
-void prison_hold(struct prison *pr) {}
+void
+prison_hold(struct prison *pr)
+{
+}
 
 /*
  * Check if given address belongs to the jail referenced by cred (wrapper to
@@ -118,6 +123,7 @@ prison_if(struct ucred *cred, struct sockaddr *sa)
 {
   return 0;
 }
+
 /*
  * Return 1 if we should do proper source address selection or are not jailed.
  * We will return 0 if we should bypass source address selection in favour
@@ -130,6 +136,7 @@ prison_saddrsel_ip6(struct ucred *cred, struct in6_addr *ia6)
 {
   return EAFNOSUPPORT;
 }
+
 /*
  * Return true if pr1 and pr2 have the same IPv4 address restrictions.
  */
@@ -139,10 +146,15 @@ prison_equal_ip4(struct prison *pr1, struct prison *pr2)
   return 1;
 }
 
+/*
+ * Assuming 0 means no restrictions.
+ *
+ * NOTE: RTEMS does not restrict via a jail so return 0.
+ */
 int
 prison_check_ip6(struct ucred *cred, struct in6_addr *ia6)
 {
-  return EAFNOSUPPORT;
+  return 0;
 }
 
 /*
@@ -170,6 +182,7 @@ prison_remote_ip4(struct ucred *cred, struct in_addr *ia)
 {
   return EAFNOSUPPORT;
 }
+
 /*
  * Return true if pr1 and pr2 have the same IPv6 address restrictions.
  */
@@ -178,6 +191,7 @@ prison_equal_ip6(struct prison *pr1, struct prison *pr2)
 {
   return 1;
 }
+
 /*
  * Make sure our (source) address is set to something meaningful to this jail.
  *
@@ -187,20 +201,24 @@ prison_equal_ip6(struct prison *pr1, struct prison *pr2)
  * Returns 0 if jail doesn't restrict IPv6 or if address belongs to jail,
  * EADDRNOTAVAIL if the address doesn't belong, or EAFNOSUPPORT if the jail
  * doesn't allow IPv6.
+ *
+ * NOTE: RTEMS does not restrict via a jail so return 0.
  */
 int
 prison_local_ip6(struct ucred *cred, struct in6_addr *ia6, int v6only)
 {
-  return EAFNOSUPPORT;
+  return 0;
 }
 
 /*
  * Rewrite destination address in case we will connect to loopback address.
  *
  * Returns 0 on success, EAFNOSUPPORT if the jail doesn't allow IPv6.
+ *
+ * NOTE: RTEMS does not restrict via a jail so return 0.
  */
 int
 prison_remote_ip6(struct ucred *cred, struct in6_addr *ia6)
 {
-  return EAFNOSUPPORT;
+  return 0;
 }

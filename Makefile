@@ -274,6 +274,7 @@ C_FILES = \
 	freebsd/local/cryptodev_if.c \
 	freebsd/local/miibus_if.c \
 	freebsd/kern/init_main.c \
+	freebsd/kern/kern_mib.c \
 	freebsd/kern/kern_mbuf.c \
 	freebsd/kern/kern_module.c \
 	freebsd/kern/kern_sysctl.c \

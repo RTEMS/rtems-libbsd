@@ -1041,7 +1041,7 @@ devUsbBase.addSourceFiles(
 	[
 		'kern/init_main.c',
 		#'kern/kern_linker.c',
-		#'kern/kern_mib.c',
+		'kern/kern_mib.c',
 		'kern/kern_mbuf.c',
 		'kern/kern_module.c',
 		'kern/kern_sysctl.c',

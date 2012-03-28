@@ -354,6 +354,7 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-thread.c \
 	rtemsbsd/src/rtems-bsd-condvar.c \
 	rtemsbsd/src/rtems-bsd-lock.c \
+	rtemsbsd/src/rtems-bsd-log.c \
 	rtemsbsd/src/rtems-bsd-sx.c \
 	rtemsbsd/src/rtems-bsd-rmlock.c \
 	rtemsbsd/src/rtems-bsd-rwlock.c \

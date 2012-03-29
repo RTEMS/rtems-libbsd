@@ -240,7 +240,7 @@ struct taskqueue *tq = arg;
 rtems_event_set  evs;
 rtems_status_code sc;
 	while ( 1 ) {
-		sc = rtems_bsdnet_event_receive(TQ_WAKE_EVENT, RTEMS_EVENT_ANY | RTEMS_WAIT, RTEMS_NO_TIMEOUT, &evs);
+		sc = rtems_event_receive(TQ_WAKE_EVENT, RTEMS_EVENT_ANY | RTEMS_WAIT, RTEMS_NO_TIMEOUT, &evs);
 		if ( RTEMS_SUCCESSFUL != sc ) {
 			rtems_error(sc,"rtems_taskqueue: taskqueueDoWork() unable to receive wakup event\n");
 			rtems_panic("Can't proceed\n");

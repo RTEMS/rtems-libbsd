@@ -530,6 +530,7 @@ rtems_sourceFiles = [
         'src/rtems-bsd-sysctlnametomib.c',
         'src/rtems-bsd-uma.c',
         'src/rtems-bsd-taskqueue.c',
+        'src/rtems-bsd-newproc.c',
 	]
 # RTEMS files handled separately from modules
 # rtems = Module('rtems')

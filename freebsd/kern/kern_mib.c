@@ -445,7 +445,9 @@ SYSCTL_PROC(_kern, KERN_HOSTID, hostid,
     CTLTYPE_ULONG | CTLFLAG_RW | CTLFLAG_PRISON | CTLFLAG_MPSAFE,
     NULL, 0, sysctl_hostid, "LU", "Host ID");
 
+#endif
 SYSCTL_NODE(_kern, OID_AUTO, features, CTLFLAG_RD, 0, "Kernel Features");
+#ifndef __rtems__
 
 #ifdef COMPAT_FREEBSD4
 FEATURE(compat_freebsd4, "Compatible with FreeBSD 4");

@@ -1123,6 +1123,7 @@ devNic.addSourceFiles(
 	#	'kern/subr_taskqueue.c',
 		'dev/random/harvest.c',
 		'libkern/random.c',
+		'libkern/arc4random.c',
 	]
 )
 

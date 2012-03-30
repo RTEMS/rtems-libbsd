@@ -197,7 +197,7 @@ def installEmptyFile(src):
 	out = open(tempFile, 'w')
 	out.write('/* EMPTY */\n')
 	out.close()
-	processIfDifferent(tempFile, dst, "empty file ", "" )
+	processIfDifferent(tempFile, dst, "empty file ", "empty file" )
 
 # fix include paths inside a C or .h file
 def fixIncludes(data):
@@ -423,7 +423,7 @@ class ModuleManager:
 		out.write(data)
 		out.close()
 		makefile = RTEMS_DIR + '/Makefile'
-		processIfDifferent(tempFile, makefile, "Makefile ", "")
+		processIfDifferent(tempFile, makefile, "Makefile ", "Makefile")
 
 # Module - logical group of related files we can perform actions on
 class Module:

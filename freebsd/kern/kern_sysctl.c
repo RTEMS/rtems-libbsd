@@ -1244,6 +1244,7 @@ kernel_sysctlbyname(struct thread *td, char *name, void *old, size_t *oldlenp,
 	    new, newlen, retval, flags);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Transfer function to/from user space.
@@ -1282,6 +1283,7 @@ sysctl_old_user(struct sysctl_req *req, const void *p, size_t l)
 	return (0);
 }
 
+#ifndef __rtems__
 static int
 sysctl_new_user(struct sysctl_req *req, void *p, size_t l)
 {
@@ -1297,6 +1299,7 @@ sysctl_new_user(struct sysctl_req *req, void *p, size_t l)
 	req->newidx += l;
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Wire the user space destination buffer.  If set to a value greater than
@@ -1325,7 +1328,6 @@ sysctl_wire_old_buffer(struct sysctl_req *req, size_t len)
 	}
 	return (0);
 }
-#endif /* __rtems__ */
 
 int
 sysctl_find_oid(int *name, u_int namelen, struct sysctl_oid **noid,

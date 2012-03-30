@@ -167,12 +167,14 @@ def mapCPUDependentPath(path):
 #  + copy or diff depending on execution mode
 def processIfDifferent(new, old, desc, src):
   global filesProcessed
+  global isVerbose, isDryRun, isEarlyExit
   # print new + " " + old + " X" + desc + "X "  + src
   if not os.path.exists(old) or \
      filecmp.cmp(new, old, shallow=False) == False:
     filesProcessed += 1
     if isDiffMode == False:
-      # print "Move " + new + " to " + old
+      if isVerbose == True:
+        print "Move " + src + " to " + old
       if isDryRun == False:
         shutil.move(new, old)
     else:

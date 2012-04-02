@@ -235,3 +235,30 @@ prison_remote_ip6(struct ucred *cred, struct in6_addr *ia6)
 {
   return 0;
 }
+
+/*
+ * Return 1 if we should do proper source address selection or are not jailed.
+ * We will return 0 if we should bypass source address selection in favour
+ * of the primary jail IPv4 address. Only in this case *ia will be updated and
+ * returned in NBO.
+ * Return EAFNOSUPPORT, in case this jail does not allow IPv4.
+ */
+int
+prison_saddrsel_ip4(struct ucred *cred, struct in_addr *ia)
+{
+}
+
+/*
+ * Pass back primary IPv4 address of this jail.
+ *
+ * If not restricted return success but do not alter the address.  Caller has
+ * to make sure to initialize it correctly (e.g. INADDR_ANY).
+ *
+ * Returns 0 on success, EAFNOSUPPORT if the jail doesn't allow IPv4.
+ * Address returned in NBO.
+ */
+int
+prison_get_ip4(struct ucred *cred, struct in_addr *ia)
+{
+  return 0;
+}

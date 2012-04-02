@@ -1128,6 +1128,7 @@ devNic.addSourceFiles(
 		'libkern/random.c',
 		'libkern/arc4random.c',
 		'kern/subr_pcpu.c',
+		'libkern/inet_ntoa.c',
 	]
 )
 

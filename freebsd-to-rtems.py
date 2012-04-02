@@ -1127,6 +1127,7 @@ devNic.addSourceFiles(
 		'dev/random/harvest.c',
 		'libkern/random.c',
 		'libkern/arc4random.c',
+		'kern/subr_pcpu.c',
 	]
 )
 

@@ -262,3 +262,27 @@ prison_get_ip4(struct ucred *cred, struct in_addr *ia)
 {
   return 0;
 }
+
+/*
+ * Return 1 if the passed credential is in a jail and that jail does not
+ * have its own virtual network stack, otherwise 0.
+ */
+int
+jailed_without_vnet(struct ucred *cred)
+{
+  return 0;
+}
+
+/*
+ * Pass back primary IPv6 address for this jail.
+ *
+ * If not restricted return success but do not alter the address.  Caller has
+ * to make sure to initialize it correctly (e.g. IN6ADDR_ANY_INIT).
+ *
+ * Returns 0 on success, EAFNOSUPPORT if the jail doesn't allow IPv6.
+ */
+int
+prison_get_ip6(struct ucred *cred, struct in6_addr *ia6)
+{
+  return 0;
+}

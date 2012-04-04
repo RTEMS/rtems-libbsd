@@ -156,6 +156,18 @@
 #define	MJUM16BYTES	(16 * 1024)	/* jumbo cluster 16k */
 
 /*
+ * Round p (pointer or byte index) up to a correctly-aligned value
+ * for all data types (int, long, ...).   The result is u_long and
+ * must be cast to any desired pointer type.
+ */
+#ifndef _ALIGNBYTES
+#define _ALIGNBYTES     (sizeof(long) - 1)
+#endif
+#ifndef _ALIGN
+#define _ALIGN(p)       (((uintptr_t)(p) + _ALIGNBYTES) &~ _ALIGNBYTES)
+#endif
+
+/*
  * Some macros for units conversion
  */
 

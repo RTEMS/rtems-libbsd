@@ -20,6 +20,13 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
+/*
+ * This violation is specifically for _Thread_Disable_dispatch
+ * and _Thread_Enable_dispatch. Use of the critical_enter()
+ * and critical_exit() routines should be reviewed.
+ */
+#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 
+
 #include <freebsd/machine/rtems-bsd-config.h>
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>

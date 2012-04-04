@@ -286,3 +286,11 @@ prison_get_ip6(struct ucred *cred, struct in6_addr *ia6)
 {
   return 0;
 }
+/*
+ * Return 0 if jails permit p1 to frob p2, otherwise ESRCH.
+ */
+int
+prison_check(struct ucred *cred1, struct ucred *cred2)
+{
+  return 0;
+}

@@ -384,6 +384,7 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-sysctlnametomib.c \
 	rtemsbsd/src/rtems-bsd-uma.c \
 	rtemsbsd/src/rtems-bsd-taskqueue.c \
+	rtemsbsd/src/rtems-bsd-timesupport.c \
 	rtemsbsd/src/rtems-bsd-newproc.c \
 	rtemsbsd/src/rtems-bsd-vm_glue.c
 

@@ -28,6 +28,7 @@
 #include <freebsd/sys/malloc.h>
 #include <freebsd/sys/ucred.h>
 #include <freebsd/sys/refcount.h>
+#include <freebsd/sys/sysctl.h>
 
 static MALLOC_DEFINE(M_CRED, "cred", "credentials");
 
@@ -238,3 +239,4 @@ crsetgroups(struct ucred *cr, int ngrp, gid_t *groups)
 	crsetgroups_locked(cr, ngrp, groups);
 }
 
+SYSCTL_NODE(_security, OID_AUTO, bsd, CTLFLAG_RW, 0, "BSD security policy");

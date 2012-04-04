@@ -139,6 +139,8 @@ retry:
 }
 #endif /* ZERO_COPY_SOCKETS */
 
+#endif /* __rtems__ */
+
 int
 uiomove(void *cp, int n, struct uio *uio)
 {
@@ -208,6 +210,7 @@ out:
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Wrapper for uiomove() that validates the arguments against a known-good
  * kernel buffer.  Currently, uiomove accepts a signed (n) argument, which

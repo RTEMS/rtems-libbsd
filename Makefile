@@ -316,6 +316,7 @@ C_FILES = \
 	freebsd/libkern/arc4random.c \
 	freebsd/kern/subr_pcpu.c \
 	freebsd/libkern/inet_ntoa.c \
+	freebsd/kern/kern_prot.c \
 	freebsd/dev/re/if_re.c \
 	freebsd/dev/fxp/if_fxp.c \
 	freebsd/dev/e1000/e1000_80003es2lan.c \

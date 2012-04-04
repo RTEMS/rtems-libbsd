@@ -476,7 +476,7 @@ rtems_headerFiles = [
 	'rtems/machine/mutex.h',
 	'rtems/machine/param.h',
 	'rtems/machine/pcpu.h',
-   'rtems/machine/pmap.h',
+	'rtems/machine/pmap.h',
 	'rtems/machine/proc.h',
 	'rtems/machine/resource.h',
 	'rtems/machine/runq.h',
@@ -1129,6 +1129,7 @@ devNic.addSourceFiles(
 		'libkern/arc4random.c',
 		'kern/subr_pcpu.c',
 		'libkern/inet_ntoa.c',
+		'kern/kern_prot.c',
 	]
 )
 

@@ -523,6 +523,8 @@ copyinstrfrom(const void * __restrict src, void * __restrict dst, size_t len,
 	return (error);
 }
 
+#endif /* __rtems__ */
+
 int
 copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
 {
@@ -541,6 +543,7 @@ copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
 	return (error);
 }
 
+#ifndef __rtems__
 int
 copyinuio(struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 {

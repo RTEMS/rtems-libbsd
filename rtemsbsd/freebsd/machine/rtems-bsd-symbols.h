@@ -266,6 +266,7 @@
 #define hid_locate _bsd_hid_locate
 #define hid_report_size _bsd_hid_report_size
 #define hid_start_parse _bsd_hid_start_parse
+#define hogticks _bsd_hogticks
 #define kernel_sysctl _bsd_kernel_sysctl
 #define kobj_class_compile _bsd_kobj_class_compile
 #define kobj_class_compile_static _bsd_kobj_class_compile_static

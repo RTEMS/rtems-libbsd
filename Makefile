@@ -323,6 +323,7 @@ C_FILES = \
 	freebsd/kern/kern_event.c \
 	freebsd/netinet/tcp_hostcache.c \
 	freebsd/dev/pci/pci.c \
+	freebsd/kern/uipc_accf.c \
 	freebsd/dev/re/if_re.c \
 	freebsd/dev/fxp/if_fxp.c \
 	freebsd/dev/e1000/e1000_80003es2lan.c \

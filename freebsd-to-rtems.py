@@ -1138,6 +1138,7 @@ devNic.addSourceFiles(
 		'kern/kern_event.c',
 		'netinet/tcp_hostcache.c',
 		'dev/pci/pci.c',
+		'kern/uipc_accf.c',
 	]
 )
 

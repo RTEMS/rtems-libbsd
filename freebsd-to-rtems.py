@@ -1131,6 +1131,7 @@ devNic.addSourceFiles(
 		'kern/subr_pcpu.c',
 		'libkern/inet_ntoa.c',
 		'kern/kern_prot.c',
+		'kern/kern_time.c',
 	]
 )
 

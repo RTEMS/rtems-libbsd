@@ -294,3 +294,24 @@ prison_check(struct ucred *cred1, struct ucred *cred2)
 {
   return 0;
 }
+
+/*
+ * Check if a jail supports the given address family.
+ *
+ * Returns 0 if not jailed or the address family is supported, EAFNOSUPPORT
+ * if not.
+ */
+int
+prison_check_af(struct ucred *cred, int af)
+{
+  return 0;
+}
+
+/*
+ * Return 1 if the passed credential is in a jail, otherwise 0.
+ */
+int
+jailed(struct ucred *cred)
+{
+  return 0;
+}

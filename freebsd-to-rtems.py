@@ -1119,6 +1119,7 @@ devNic = Module('dev_nic')
 devNic.addHeaderFiles(
 	[
 	#	'sys/taskqueue.h',
+		'sys/pciio.h',
 		'dev/random/randomdev_soft.h',
 	]
 )
@@ -1136,6 +1137,7 @@ devNic.addSourceFiles(
 		'kern/kern_time.c',
 		'kern/kern_event.c',
 		'netinet/tcp_hostcache.c',
+		'dev/pci/pci.c',
 	]
 )
 

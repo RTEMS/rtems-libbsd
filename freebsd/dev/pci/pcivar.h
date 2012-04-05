@@ -306,6 +306,8 @@ PCIB_ACCESSOR(bus,		BUS,		uint32_t)
 #define	PCI_INVALID_IRQ		255
 #define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ)
 
+#ifndef __rtems__
+
 /*
  * Convenience functions.
  *
@@ -347,6 +349,7 @@ pci_get_vpd_readonly(device_t dev, const char *kw, const char **identptr)
 {
     return(PCI_GET_VPD_READONLY(device_get_parent(dev), dev, kw, identptr));
 }
+#endif /* __rtems__ */
 
 /*
  * Check if the address range falls within the VGA defined address range(s)

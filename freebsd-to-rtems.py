@@ -1132,6 +1132,7 @@ devNic.addSourceFiles(
 		'libkern/inet_ntoa.c',
 		'kern/kern_prot.c',
 		'kern/kern_time.c',
+		'kern/kern_event.c',
 	]
 )
 

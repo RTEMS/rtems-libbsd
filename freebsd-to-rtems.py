@@ -1135,6 +1135,7 @@ devNic.addSourceFiles(
 		'kern/kern_prot.c',
 		'kern/kern_time.c',
 		'kern/kern_event.c',
+		'netinet/tcp_hostcache.c',
 	]
 )
 

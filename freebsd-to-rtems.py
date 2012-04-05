@@ -1130,6 +1130,7 @@ devNic.addSourceFiles(
 		'libkern/arc4random.c',
 		'kern/subr_pcpu.c',
 		'kern/subr_sbuf.c',
+		'kern/subr_rman.c',
 		'libkern/inet_ntoa.c',
 		'kern/kern_prot.c',
 		'kern/kern_time.c',

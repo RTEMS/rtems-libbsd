@@ -316,6 +316,7 @@ C_FILES = \
 	freebsd/libkern/arc4random.c \
 	freebsd/kern/subr_pcpu.c \
 	freebsd/kern/subr_sbuf.c \
+	freebsd/kern/subr_rman.c \
 	freebsd/libkern/inet_ntoa.c \
 	freebsd/kern/kern_prot.c \
 	freebsd/kern/kern_time.c \

@@ -1121,6 +1121,7 @@ devNic.addHeaderFiles(
 	#	'sys/taskqueue.h',
 		'sys/pciio.h',
 		'dev/random/randomdev_soft.h',
+		'sys/eventvar.h',
 	]
 )
 devNic.addSourceFiles(

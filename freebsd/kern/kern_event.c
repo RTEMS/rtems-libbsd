@@ -49,9 +49,7 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/sys/selinfo.h>
 #include <freebsd/sys/queue.h>
 #include <freebsd/sys/event.h>
-#ifndef __rtems__
 #include <freebsd/sys/eventvar.h>
-#endif /* __rtems__ */
 #include <freebsd/sys/poll.h>
 #include <freebsd/sys/protosw.h>
 #include <freebsd/sys/sigio.h>
@@ -176,6 +174,7 @@ static int 		kq_ncallouts = 0;
 static int 		kq_calloutmax = (4 * 1024);
 SYSCTL_INT(_kern, OID_AUTO, kq_calloutmax, CTLFLAG_RW,
     &kq_calloutmax, 0, "Maximum number of callouts allocated for kqueue");
+#endif /* __rtems__ */
 
 /* XXX - ensure not KN_INFLUX?? */
 #define KNOTE_ACTIVATE(kn, islock) do { 				\
@@ -240,6 +239,7 @@ SYSCTL_INT(_kern, OID_AUTO, kq_calloutmax, CTLFLAG_RW,
 #define	KN_HASHSIZE		64		/* XXX should be tunable */
 #define KN_HASH(val, mask)	(((val) ^ (val >> 8)) & (mask))
 
+#ifndef __rtems__
 static int
 filt_nullattach(struct knote *kn)
 {

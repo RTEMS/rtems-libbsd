@@ -21,6 +21,7 @@ include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
 OBJS= $(C_O_FILES)
+CLEAN_ADDITIONS += undefined.txt
 
 all:    ${ARCH} $(PGM)
 

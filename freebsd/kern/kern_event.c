@@ -131,7 +131,9 @@ static struct fileops kqueueops = {
 
 static int 	knote_attach(struct knote *kn, struct kqueue *kq);
 static void 	knote_drop(struct knote *kn, struct thread *td);
+#endif /* __rtems__ */
 static void 	knote_enqueue(struct knote *kn);
+#ifndef __rtems__
 static void 	knote_dequeue(struct knote *kn);
 static void 	knote_init(void);
 static struct 	knote *knote_alloc(int waitok);
@@ -2116,6 +2118,7 @@ knote_drop(struct knote *kn, struct thread *td)
 	kn->kn_fop = NULL;
 	knote_free(kn);
 }
+#endif /* __rtems__ */
 
 static void
 knote_enqueue(struct knote *kn)
@@ -2131,6 +2134,7 @@ knote_enqueue(struct knote *kn)
 	kqueue_wakeup(kq);
 }
 
+#ifndef __rtems__
 static void
 knote_dequeue(struct knote *kn)
 {

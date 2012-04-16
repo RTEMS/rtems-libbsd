@@ -369,7 +369,6 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-lock.c \
 	rtemsbsd/src/rtems-bsd-log.c \
 	rtemsbsd/src/rtems-bsd-sx.c \
-	rtemsbsd/src/rtems-bsd-rmlock.c \
 	rtemsbsd/src/rtems-bsd-rwlock.c \
 	rtemsbsd/src/rtems-bsd-generic.c \
 	rtemsbsd/src/rtems-bsd-panic.c \

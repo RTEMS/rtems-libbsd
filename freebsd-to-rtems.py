@@ -506,7 +506,6 @@ rtems_sourceFiles = [
         'src/rtems-bsd-lock.c',
         'src/rtems-bsd-log.c',
 	'src/rtems-bsd-sx.c',
-        'src/rtems-bsd-rmlock.c',
         'src/rtems-bsd-rwlock.c',
         'src/rtems-bsd-generic.c',
         'src/rtems-bsd-panic.c',

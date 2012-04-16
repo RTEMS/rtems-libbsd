@@ -18,6 +18,7 @@ C_FILES = \
 	freebsd/kern/subr_eventhandler.c \
 	freebsd/kern/kern_subr.c \
 	freebsd/kern/kern_tc.c \
+	freebsd/libkern/fls.c \
 	freebsd/net/bridgestp.c \
 	freebsd/net/ieee8023ad_lacp.c \
 	freebsd/net/if_atmsubr.c \

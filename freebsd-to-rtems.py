@@ -1376,6 +1376,7 @@ net.addSourceFiles(
 		'kern/subr_eventhandler.c',
 		'kern/kern_subr.c',
 		'kern/kern_tc.c',
+		'libkern/fls.c',
 		'net/bridgestp.c',
 		'net/ieee8023ad_lacp.c',
 		'net/if_atmsubr.c',

@@ -1128,6 +1128,7 @@ devNic.addHeaderFiles(
 devNic.addSourceFiles(
 	[
 	#	'kern/subr_taskqueue.c',
+		'kern/subr_hints.c',
 		'dev/random/harvest.c',
 		'libkern/random.c',
 		'libkern/arc4random.c',

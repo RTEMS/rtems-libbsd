@@ -312,6 +312,7 @@ C_FILES = \
 	freebsd/cam/cam.c \
 	freebsd/cam/scsi/scsi_all.c \
 	freebsd/dev/usb/storage/umass.c \
+	freebsd/kern/subr_hints.c \
 	freebsd/dev/random/harvest.c \
 	freebsd/libkern/random.c \
 	freebsd/libkern/arc4random.c \

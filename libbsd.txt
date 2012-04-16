@@ -67,7 +67,7 @@ The SVN checkout command is this
 * How does one initialize the TCP/IP stack?
 
 * linker section issues: I have undefined symbols for
-  _bsd__start_set_sysinit_set and _bsd__stop_set_sysinit_set.
+  `_bsd__start_set_sysinit_set` and `_bsd__stop_set_sysinit_set`.
   Is this the only type of new section magic?  What about the old sysctl_set?
   I added this to my linkcmds.  
 
@@ -80,6 +80,18 @@ The SVN checkout command is this
     _bsd__stop_set_sysinit_set = .;
 
 ----
+
+* Why is the interrupt server used?  The BSD interrupt handlers can block on
+synchronization primitives like mutexes.  This is in contrast to RTEMS
+interrupt service routines.  The BSPs using the generic interrupt support must
+implement the `bsp_interrupt_vector_enable()` and
+`bsp_interrupt_vector_disable()` routines.  They normally enable/disable a
+particular interrupt source at the interrupt controller.  This can be used to
+implement the interrupt server.  The interrupt server is a task that wakes-up
+in case an associated interrupt happens.  The interrupt source is disabled in
+a generic interrupt handler that wakes-up the interrupt server task.   Once the
+postponed interrupt processing is performed in the interrupt server the
+interrupt source is enabled again.
 
 * Convert all BSP linkcmds to use a linkcmds.base so the sections are 
 easier to insert.

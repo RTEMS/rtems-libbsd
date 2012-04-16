@@ -257,6 +257,26 @@ _rw_runlock(struct rwlock *rw, const char *file, int line)
   BSD_ASSERT( iret == 0 );
 }
 
+/*
+ * Attempt to do a non-blocking upgrade from a read lock to a write
+ * lock.  This will only succeed if this thread holds a single read
+ * lock.  Returns true if the upgrade succeeded and false otherwise.
+ */
+int
+_rw_try_upgrade(struct rwlock *rw, const char *file, int line)
+{
+  return 0; /* XXX */
+}
+
+/*
+ * Downgrade a write lock into a single read lock.
+ */
+void
+_rw_downgrade(struct rwlock *rw, const char *file, int line)
+{
+  /* XXX */ 
+}
+
 #ifdef INVARIANT_SUPPORT
 #ifndef INVARIANTS
 #undef _rw_assert

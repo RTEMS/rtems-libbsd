@@ -48,8 +48,6 @@ taskqueue_create_fast(const char *name, int mflags, tq_enq_fn, void *ctxt);
 int
 taskqueue_enqueue(struct taskqueue *tq, struct task *ta);
 
-#define taskqueue_enqueue_fast(_q,_t) taskqueue_enqueue(_q,_t)
-
 void
 taskqueue_thread_enqueue(void *ctxt);
 

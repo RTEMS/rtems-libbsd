@@ -123,6 +123,12 @@ rtems_interrupt_enable(l);
 	return 0;
 }
 
+int
+taskqueue_enqueue_fast(struct taskqueue *queue, struct task *task)
+{
+  return taskqueue_enqueue(queue, task);
+}
+
 void
 taskqueue_thread_enqueue(void *ctxt)
 {

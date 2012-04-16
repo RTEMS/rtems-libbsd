@@ -535,6 +535,7 @@ rtems_sourceFiles = [
         'src/rtems-bsd-timeout.c',
         'src/rtems-bsd-newproc.c',
         'src/rtems-bsd-vm_glue.c',
+        'src/rtems-bsd-cyclecount.c',
 	]
 # RTEMS files handled separately from modules
 # rtems = Module('rtems')

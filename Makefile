@@ -395,7 +395,8 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-timesupport.c \
 	rtemsbsd/src/rtems-bsd-timeout.c \
 	rtemsbsd/src/rtems-bsd-newproc.c \
-	rtemsbsd/src/rtems-bsd-vm_glue.c
+	rtemsbsd/src/rtems-bsd-vm_glue.c \
+	rtemsbsd/src/rtems-bsd-cyclecount.c
 
 ifeq ($(RTEMS_CPU),arm)
 C_FILES += \

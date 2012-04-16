@@ -533,6 +533,7 @@ rtems_sourceFiles = [
         'src/rtems-bsd-uma.c',
         'src/rtems-bsd-taskqueue.c',
         'src/rtems-bsd-timesupport.c',
+        'src/rtems-bsd-timeout.c',
         'src/rtems-bsd-newproc.c',
         'src/rtems-bsd-vm_glue.c',
 	]
@@ -1140,6 +1141,7 @@ devNic.addSourceFiles(
 		'netinet/tcp_hostcache.c',
 		'dev/pci/pci.c',
 		'kern/uipc_accf.c',
+		'kern/kern_ntptime.c',
 	]
 )
 

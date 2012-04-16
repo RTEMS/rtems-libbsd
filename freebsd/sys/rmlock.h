@@ -44,6 +44,7 @@
 #define	RM_NOWITNESS	0x00000001
 #define	RM_RECURSE	0x00000002
 
+#ifndef __rtems__
 void	rm_init(struct rmlock *rm, const char *name);
 void	rm_init_flags(struct rmlock *rm, const char *name, int opts);
 void	rm_destroy(struct rmlock *rm);
@@ -83,6 +84,22 @@ void	_rm_runlock(struct rmlock *rm,  struct rm_priotracker *tracker);
 #define	rm_rlock(rm,tracker)   	_rm_rlock((rm),(tracker))
 #define	rm_runlock(rm,tracker)	_rm_runlock((rm), (tracker))
 #endif
+
+#else /* __rtems__ */
+  #define rm_init(rm, name)                rw_init(rm, name)
+  #define rm_init_flags(rm, name, opts)    rw_init_flags(rm, name, opts)
+  #define rm_destroy(rm)                   rw_destroy(rm)
+  #define rm_wowned(rm)                    rw_wowned(rm) 
+  #define rm_sysinit(arg)                  rw_sysinit(arg)
+  #define rm_sysinit_flags(arg)            rw_sysinit_flags(arg)
+
+  #define rm_wlock(rm)                     rw_wlock((rm))
+  #define rm_wunlock(rm)                   rw_wunlock((rm))
+  #define rm_rlock(rm,tracker)             rw_rlock((rm))
+  #define rm_runlock(rm,tracker)           rw_runlock((rm))
+#endif /* __rtems__ */
+
+
 
 struct rm_args {
 	struct rmlock	*ra_rm;

@@ -324,6 +324,7 @@ C_FILES = \
 	freebsd/netinet/tcp_hostcache.c \
 	freebsd/dev/pci/pci.c \
 	freebsd/kern/uipc_accf.c \
+	freebsd/kern/kern_ntptime.c \
 	freebsd/dev/re/if_re.c \
 	freebsd/dev/fxp/if_fxp.c \
 	freebsd/dev/e1000/e1000_80003es2lan.c \
@@ -392,6 +393,7 @@ C_FILES += \
 	rtemsbsd/src/rtems-bsd-uma.c \
 	rtemsbsd/src/rtems-bsd-taskqueue.c \
 	rtemsbsd/src/rtems-bsd-timesupport.c \
+	rtemsbsd/src/rtems-bsd-timeout.c \
 	rtemsbsd/src/rtems-bsd-newproc.c \
 	rtemsbsd/src/rtems-bsd-vm_glue.c
 

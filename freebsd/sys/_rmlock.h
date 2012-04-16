@@ -43,6 +43,7 @@
 
 LIST_HEAD(rmpriolist,rm_priotracker);
 
+#ifndef __rtems__
 struct rmlock {
 	struct lock_object lock_object; 
 	volatile int 	rm_noreadtoken;
@@ -50,6 +51,10 @@ struct rmlock {
 	struct mtx	rm_lock;
 
 };
+#else /* __rtems__ */
+  #include <freebsd/sys/rwlock.h>
+  #define rmlock rwlock
+#endif /* __rtems__ */
 
 struct rm_priotracker {
 	struct rm_queue rmp_cpuQueue; /* Must be first */

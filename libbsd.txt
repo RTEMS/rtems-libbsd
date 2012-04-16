@@ -41,7 +41,10 @@ Please help by adding to it.
 
 The FreeBSD 8.2 SVN checkout will generally be referred to as the
 FreeBSD source in this document. An archive of the FreeBSD 8.2 SVN
-archive used is located at http://www.rtems.org/ftp/pub/rtems/people/joel/freebsd
+archive used is located at
+  http://www.rtems.org/ftp/pub/rtems/people/joel/freebsd/
+The SVN checkout command is this
+  svn co http://svn.freebsd.org/base/releng/8.2/sys/ -r222496 freebsd-8.2
 
 == Issues and To Do
 * Sebastian Huber: mentioned some simple test code which would verify

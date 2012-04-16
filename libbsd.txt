@@ -261,20 +261,135 @@ Generating into /home/joel/newbsd/git/libbsd-8.2
 The script may also be used to generate a diff in either forward or reverse
 direction.
 
-== Initialization of RTEMS Libbsd
+== Initialization of RTEMS libbsd
 
-The initialization of the RTEMS Libbsd is based on the FreeBSD SYSINIT 
-infrastructure. This is simply because we are initializing a subset of
-FreeBSD. For details refer to http://www.freebsd.org/cgi/man.cgi?query=SYSINIT&sektion=9&apropos=0&manpath=FreeBSD+9-current
+The initialization of the RTEMS libbsd is based on the FreeBSD SYSINIT(9)
+infrastructure.  The key to initializing a system is to ensure that the desired
+device drivers are explicitly pulled into the linked application.  This plus
+linking against the libbsd library will pull in the necessary FreeBSD
+infrastructure.
 
-The key to initializing a system is to ensure that the desired device
-drivers are explicitly pulled into the linked application. This plus
-linking against the Libsd library will pull in the necessary FreeBSD
-infrastructure. The SYSINIT structures are automatically built at link
-time and the various initialization routines will thus be executed in'
-the correct order.
+The FreeBSD kernel is not a library like the RTEMS kernel.  It is a bunch of
+object files linked together.  If we have a library, then creating the
+executable is simple.  We begin with a start symbol and recursively resolve all
+references.  With a bunch of object files linked together we need a different
+mechanism.  Most object files don't know each other.  Lets say we have a driver
+module.  The rest of the system has no references to this driver module.  The
+driver module needs a way to tell the rest of the system: Hey, kernel I am
+here, please use my services!
 
-XXX This needs more details.
+This registration of independent components is performed by SYSINIT(9) and
+specializations:
+
+http://www.freebsd.org/cgi/man.cgi?query=SYSINIT
+
+The SYSINIT(9) uses some global data structures that are placed in a certain
+section.  In the linker command file we need this:
+
+[listing]
+----
+.robsdsets : {
+    _bsd__start_set_modmetadata_set = .;
+    *(_bsd_set_modmetadata_set);
+    _bsd__stop_set_modmetadata_set = .;
+    _bsd__start_set_sysctl_set = .;
+    *(_bsd_set_sysctl_set);
+    _bsd__stop_set_sysctl_set = .;
+} > REGION_RODATA AT > REGION_RODATA_LOAD
+
+.rwbsdsets : {
+    _bsd__start_set_sysinit_set = .;
+    *(_bsd_set_sysinit_set);
+    _bsd__stop_set_sysinit_set = .;
+} > REGION_DATA AT > REGION_DATA_LOAD
+----
+
+Here you can see, that these global data structures are collected into
+continuous memory areas.  This memory area can be identified by start and stop
+symbols.  This constructs a table of uniform items.
+
+The low level FreeBSD code calls at some time during the initialization the
+mi_startup() function (machine independent startup).  This function will sort
+the SYSINIT(9) set and call handler functions which perform further
+initialization.  The last step is the scheduler invocation.
+
+The SYSINIT(9) routines are run in mi_startup() which is called by
+rtems_bsd_initialize().
+
+This is also explained in "The Design and Implementation of the FreeBSD
+Operating System" section 14.3 "Kernel Initialization".
+
+In RTEMS we have a library and not a bunch of object files.  Thus we need a way
+to pull-in the desired services out of the libbsd.  Here the
+"rtems-bsd-sysinit.h" comes into play.  The SYSINIT(9) macros have been
+modified and extended for RTEMS in "sys/kernel.h":
+
+[listing]
+----
+#ifndef __rtems__
+#define    C_SYSINIT(uniquifier, subsystem, order, func, ident) \
+    static struct sysinit uniquifier ## _sys_init = { \
+        subsystem, \
+        order, \
+        func, \
+        (ident) \
+    }; \
+    DATA_SET(sysinit_set,uniquifier ## _sys_init)
+#else /* __rtems__ */
+#define    SYSINIT_ENTRY_NAME(uniquifier) \
+    _bsd_ ## uniquifier ## _sys_init
+#define    SYSINIT_REFERENCE_NAME(uniquifier) \
+    _bsd_ ## uniquifier ## _sys_init_ref
+#define    C_SYSINIT(uniquifier, subsystem, order, func, ident) \
+    struct sysinit SYSINIT_ENTRY_NAME(uniquifier) = { \
+        subsystem, \
+        order, \
+        func, \
+        (ident) \
+    }; \
+    DATA_SET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
+#define    SYSINIT_REFERENCE(uniquifier) \
+    extern struct sysinit SYSINIT_ENTRY_NAME(uniquifier); \
+    static struct sysinit const * const \
+    SYSINIT_REFERENCE_NAME(uniquifier) __used \
+    = &SYSINIT_ENTRY_NAME(uniquifier)
+#define    SYSINIT_MODULE_REFERENCE(mod) \
+    SYSINIT_REFERENCE(mod ## module)
+#define    SYSINIT_DRIVER_REFERENCE(driver, bus) \
+    SYSINIT_MODULE_REFERENCE(driver ## _ ## bus)
+#endif /* __rtems__ */
+----
+
+Here you see that the SYSINIT(9) entries are no longer static.  The
+*_REFERENCE() macros will create references to the corresponding modules which
+are later resolved by the linker.  The application has to provide an object
+file with references to all required FreeBSD modules.
+
+The FreeBSD device model is quite elaborated (with follow-ups):
+
+http://www.freebsd.org/cgi/man.cgi?query=driver
+
+The devices form a tree with the Nexus device at a high-level.  This Nexus
+device is architecture specific in FreeBSD.  In RTEMS we have our own Nexus
+device, see "rtems-bsd-nexus.c".  It uses a table to add child devices:
+
+[listing]
+----
+const char *const _bsd_nexus_devices [] = {
+    #ifdef NEED_USB_OHCI
+        "ohci",
+    #endif
+    #ifdef NEED_USB_EHCI
+        "ehci",
+    #endif
+    #ifdef NEED_SDHC
+        "sdhci",
+    #endif
+    NULL
+};
+----
+
+This table must be provided by the application.
 
 === SYSCTL_NODE Example
 

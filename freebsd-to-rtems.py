@@ -1,6 +1,6 @@
 #! /usr/bin/python
 #
-#  Copyright (c) 2009-2011 embedded brains GmbH.  All rights reserved.
+#  Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
 #   Obere Lagerstr. 30
@@ -165,10 +165,9 @@ def mapCPUDependentPath(path):
 
 # compare and process file only if different
 #  + copy or diff depending on execution mode
-def processIfDifferent(new, old, desc, src):
+def processIfDifferent(new, old, src):
   global filesProcessed
   global isVerbose, isDryRun, isEarlyExit
-  # print new + " " + old + " X" + desc + "X "  + src
   if not os.path.exists(old) or \
      filecmp.cmp(new, old, shallow=False) == False:
     filesProcessed += 1
@@ -184,20 +183,6 @@ def processIfDifferent(new, old, desc, src):
       for line in difflib.unified_diff( \
           old_contents, new_contents, fromfile=src, tofile=new, n=5):
         sys.stdout.write(line)
-
-# generate an empty file as a place holder
-def installEmptyFile(src):
-	global tempFile
-	dst = RTEMS_DIR + '/' + PREFIX + '/' + src.replace('rtems/', '')
-	try:
-		if isDryRun == False:
-			os.makedirs(os.path.dirname(dst))
-	except OSError:
-		pass
-	out = open(tempFile, 'w')
-	out.write('/* EMPTY */\n')
-	out.close()
-	processIfDifferent(tempFile, dst, "empty file ", "empty file" )
 
 # fix include paths inside a C or .h file
 def fixIncludes(data):
@@ -215,89 +200,104 @@ def revertFixIncludes(data):
 	data = re.sub('#([ \t]*)include <' + PREFIX + '/', '#\\1include <', data)
 	return data
 
-# Copy a header file from FreeBSD to the RTEMS BSD tree
-def installHeaderFile(org, target):
-	global tempFile
-	src = FreeBSD_DIR + '/' + org
-	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
-	dst = mapContribPath(dst)
-	if target != "generic":
-		dst = mapCPUDependentPath(dst)
-	try:
-		if isDryRun == False:
-			os.makedirs(os.path.dirname(dst))
-	except OSError:
-		pass
-	data = open(src).read()
-	out = open(tempFile, 'w')
-	if org.find('rtems') == -1:
+class Converter(object):
+	def convert(self, src):
+		return open(src).read()
+
+	def isConvertible(self):
+		return True
+
+class NoConverter(object):
+	def convert(self, src):
+		raise
+
+	def isConvertible(self):
+		return False
+
+class EmptyConverter(Converter):
+	def convert(self, src):
+		return '/* EMPTY */\n'
+
+class FromFreeBSDToRTEMSHeaderConverter(Converter):
+	def convert(self, src):
+		data = super(FromFreeBSDToRTEMSHeaderConverter, self).convert(src)
+		return fixIncludes(data)
+
+class FromRTEMSToFreeBSDHeaderConverter(Converter):
+	def convert(self, src):
+		data = super(FromRTEMSToFreeBSDHeaderConverter, self).convert(src)
+		return revertFixIncludes(data)
+
+class FromFreeBSDToRTEMSSourceConverter(Converter):
+	def convert(self, src):
+		data = super(FromFreeBSDToRTEMSSourceConverter, self).convert(src)
 		data = fixIncludes(data)
-	out.write(data)
-	out.close()
-	processIfDifferent(tempFile, dst, "Header ", src)
+		data = '#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n' + data
+		return data
 
-
-# Copy a source file from FreeBSD to the RTEMS BSD tree
-def installSourceFile(org):
-	global tempFile
-	src = FreeBSD_DIR + '/' + org
-	dst = RTEMS_DIR + '/' + PREFIX + '/' + org
-	dst = mapContribPath(dst)
-	try:
-		if isDryRun == False:
-			os.makedirs(os.path.dirname(dst))
-	except OSError:
-		pass
-	data = open(src).read()
-	out = open(tempFile, 'w')
-	if org.find('rtems') == -1:
-		data = fixIncludes(data)
-		out.write('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n')
-	out.write(data)
-	out.close()
-	processIfDifferent(tempFile, dst, "Source ", src)
-
-# Revert a header file from the RTEMS BSD tree to the FreeBSD tree
-def revertHeaderFile(org, target):
-	global tempFile
-	src = RTEMS_DIR + '/' + PREFIX + '/' + org.replace('rtems/', '')
-	src = mapContribPath(src)
-	if target != "generic":
-		src = mapCPUDependentPath(src)
-	dst = FreeBSD_DIR + '/' + org
-	try:
-		if isDryRun == False:
-			os.makedirs(os.path.dirname(dst))
-	except OSError:
-		pass
-	data = open(src).read()
-	out = open(tempFile, 'w')
-	if org.find('rtems') == -1:
-		data = revertFixIncludes(data)
-	out.write(data)
-	out.close()
-	processIfDifferent(tempFile, dst, "Header ", src)
-
-# Revert a source file from the RTEMS BSD tree to the FreeBSD tree
-def revertSourceFile(org, target):
-	src = RTEMS_DIR + '/' + PREFIX + '/' + org
-	src = mapContribPath(src)
-	dst = FreeBSD_DIR + '/' + org
-	if target != "generic":
-		src = mapCPUDependentPath(src)
-	try:
-		if isDryRun == False:
-			os.makedirs(os.path.dirname(dst))
-	except OSError:
-		pass
-	data = open(src).read()
-	out = open(tempFile, 'w')
-	if org.find('rtems') == -1:
+class FromRTEMSToFreeBSDSourceConverter(Converter):
+	def convert(self, src):
+		data = super(FromRTEMSToFreeBSDSourceConverter, self).convert(src)
 		data = re.sub('#include <' + PREFIX + '/machine/rtems-bsd-config.h>\n\n', '', data)
 		data = revertFixIncludes(data)
-	out.write(data)
-	out.close()
-	processIfDifferent(tempFile, dst, "Source ", src)
+		return data
+
+class PathComposer(object):
+	def composeFreeBSDPath(self, path):
+		return FreeBSD_DIR + '/' + path
+
+	def composeRTEMSPath(self, path, prefix):
+		path = prefix + PREFIX + '/' + path
+		path = mapContribPath(path)
+		return path
+
+class RTEMSPathComposer(object):
+	def composeFreeBSDPath(self, path):
+		return path
+
+	def composeRTEMSPath(self, path, prefix):
+		path = prefix + 'rtemsbsd/' + path
+		return path
+
+class CPUDependentPathComposer(PathComposer):
+	def composeRTEMSPath(self, path, prefix):
+		path = super(CPUDependentPathComposer, self).composeRTEMSPath(path, prefix)
+		path = mapCPUDependentPath(path)
+		return path
+
+class File(object):
+	def __init__(self, path, pathComposer, fromFreeBSDToRTEMSConverter, fromRTEMSToFreeBSDConverter):
+		self.path = path
+		self.pathComposer = pathComposer
+		self.fromFreeBSDToRTEMSConverter = fromFreeBSDToRTEMSConverter
+		self.fromRTEMSToFreeBSDConverter = fromRTEMSToFreeBSDConverter
+
+	def copy(self, dst, src, converter):
+		if converter.isConvertible():
+			global tempFile
+			try:
+				if isDryRun == False:
+					os.makedirs(os.path.dirname(dst))
+			except OSError:
+				pass
+			data = converter.convert(src)
+			out = open(tempFile, 'w')
+			out.write(data)
+			out.close()
+			processIfDifferent(tempFile, dst, src)
+
+	def copyFromFreeBSDToRTEMS(self):
+		src = self.pathComposer.composeFreeBSDPath(self.path)
+		dst = self.pathComposer.composeRTEMSPath(self.path, RTEMS_DIR + '/')
+		self.copy(dst, src, self.fromFreeBSDToRTEMSConverter)
+
+	def copyFromRTEMSToFreeBSD(self):
+		src = self.pathComposer.composeRTEMSPath(self.path, RTEMS_DIR + '/')
+		dst = self.pathComposer.composeFreeBSDPath(self.path)
+		self.copy(dst, src, self.fromRTEMSToFreeBSDConverter)
+
+	def getMakefileFragment(self):
+		return self.pathComposer.composeRTEMSPath(self.path, '')
 
 # Remove the output directory
 def deleteOutputDirectory():
@@ -317,29 +317,17 @@ def deleteOutputDirectory():
 class ModuleManager:
 	def __init__(self):
 		self.modules = []
-		self.emptyFiles = []
 
 	def addModule(self, module):
 		self.modules.append(module)
 
-	def addEmptyFiles(self, emptyFiles):
-		self.emptyFiles.extend(emptyFiles)
-
-	def copyFiles(self):
-		for f in self.emptyFiles:
-			installEmptyFile(f)
+	def copyFromFreeBSDToRTEMS(self):
 		for m in self.modules:
-			for f in m.headerFiles:
-				installHeaderFile(f, m.target)
-			for f in m.sourceFiles:
-				installSourceFile(f)
+			m.copyFromFreeBSDToRTEMS()
 
-	def revertFiles(self):
+	def copyFromRTEMSToFreeBSD(self):
 		for m in self.modules:
-			for f in m.headerFiles:
-				revertHeaderFile(f, m.target)
-			for f in m.sourceFiles:
-				revertSourceFile(f, m.target)
+			m.copyFromRTEMSToFreeBSD()
 
 	def createMakefile(self):
 		global tempFile
@@ -352,6 +340,7 @@ class ModuleManager:
 			'CFLAGS += -ffreestanding \n' \
 			'CFLAGS += -I . \n' \
 			'CFLAGS += -I rtemsbsd \n' \
+			'CFLAGS += -I rtemsbsd/$(RTEMS_CPU)/include \n' \
 			'CFLAGS += -I freebsd/$(RTEMS_CPU)/include \n' \
 			'CFLAGS += -I contrib/altq \n' \
 			'CFLAGS += -I contrib/pf \n' \
@@ -359,32 +348,15 @@ class ModuleManager:
 			'CFLAGS += -w \n' \
 			'CFLAGS += -std=gnu99\n' \
 			'\n'
-		data += 'C_FILES ='
+		data += 'C_FILES =\n'
 		for m in self.modules:
-			if m.target == "generic":
-				for f in m.sourceFiles:
-					f = PREFIX + '/' + f
-					f = mapContribPath(f)
-					data += ' \\\n\t' + f
-		data += '\n'
-		data += '# RTEMS Project Owned Files\n'
-		data += 'C_FILES +='
-		for f in rtems_sourceFiles:
-			data += ' \\\n\trtemsbsd/' + f
-		data += '\n'
-		data += '\n'
-		for m in self.modules:
-			if m.target != "generic":
-				data += "ifeq ($(RTEMS_CPU)," + m.target + ")\n"
-				data += "C_FILES +="
-				for f in m.sourceFiles:
-					f = PREFIX + '/' + f
-					f = mapContribPath(f)
-					data += ' \\\n\t' + f
-				data += '\n'
+			for file in m.sourceFiles:
+				data += 'C_FILES += ' + file.getMakefileFragment() + '\n'
+			for cpu, files in sorted(m.cpuDependentSourceFiles.items()):
+				data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n'
+				for file in files:
+					data += 'C_FILES += ' + file.getMakefileFragment() + '\n'
 				data += 'endif\n'
-			
-
 		data += '\n' \
 			'C_O_FILES = $(C_FILES:%.c=%.o)\n' \
 			'C_DEP_FILES = $(C_FILES:%.c=%.dep)\n' \
@@ -400,12 +372,12 @@ class ModuleManager:
 			'\t$(MAKE) $(LIB)\n' \
 			'\n' \
 			'install: $(LIB)\n' \
-            '\tinstall -d $(INSTALL_BASE)/include\n' \
-            '\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
-            '\tcd rtemsbsd; for i in `find . -name \'*.h\'` ; do \\\n' \
-            '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-            '\tfor i in `find contrib freebsd -name \'*.h\'` ; do \\\n' \
-            '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\tinstall -d $(INSTALL_BASE)/include\n' \
+			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
+			'\tcd rtemsbsd; for i in `find . -name \'*.h\'` ; do \\\n' \
+			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\tfor i in `find contrib freebsd -name \'*.h\'` ; do \\\n' \
+			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\n' \
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
@@ -413,47 +385,85 @@ class ModuleManager:
 			'\trm -f libbsd.html\n' \
 			'\n' \
 			'-include $(C_DEP_FILES)\n' \
-		'\n' \
-		'doc: libbsd.html\n' \
-		'\n' \
-		'libbsd.html: libbsd.txt\n' \
-		'\tasciidoc -o libbsd.html libbsd.txt\n'
+			'\n' \
+			'doc: libbsd.html\n' \
+			'\n' \
+			'libbsd.html: libbsd.txt\n' \
+			'\tasciidoc -o libbsd.html libbsd.txt\n'
  
 		out = open(tempFile, 'w')
 		out.write(data)
 		out.close()
 		makefile = RTEMS_DIR + '/Makefile'
-		processIfDifferent(tempFile, makefile, "Makefile ", "Makefile")
+		processIfDifferent(tempFile, makefile, "Makefile")
+
+def assertHeaderFile(path):
+	if path[-2] != '.' or path[-1] != 'h':
+		print "*** " + path + " does not end in .h"
+		print "*** Move it to a C source file list"
+		sys.exit(2)
+
+def assertSourceFile(path):
+	if path[-2] != '.' or (path[-1] != 'c' and path[-1] != 'S'):
+		print "*** " + path + " does not end in .c"
+		print "*** Move it to a header file list"
+		sys.exit(2)
 
 # Module - logical group of related files we can perform actions on
 class Module:
 	def __init__(self, name):
 		self.name = name
-		self.target = "generic"
 		self.headerFiles = []
 		self.sourceFiles = []
+		self.cpuDependentSourceFiles = {}
 		self.dependencies = []
 
-	def setTarget(self, value):
-		self.target = value
-		
+	def copyFromFreeBSDToRTEMS(self):
+		for file in self.headerFiles:
+			file.copyFromFreeBSDToRTEMS()
+		for file in self.sourceFiles:
+			file.copyFromFreeBSDToRTEMS()
+		for cpu, files in self.cpuDependentSourceFiles.items():
+			for file in files:
+				file.copyFromFreeBSDToRTEMS()
+
+	def copyFromRTEMSToFreeBSD(self):
+		for file in self.headerFiles:
+			file.copyFromRTEMSToFreeBSD()
+		for file in self.sourceFiles:
+			file.copyFromRTEMSToFreeBSD()
+		for cpu, files in self.cpuDependentSourceFiles.items():
+			for file in files:
+				file.copyFromRTEMSToFreeBSD()
+
+	def addFiles(self, currentFiles, newFiles, pathComposer, fromFreeBSDToRTEMSConverter, fromRTEMSToFreeBSDConverter, assertFile):
+		for file in newFiles:
+			assertFile(file)
+			currentFiles.append(File(file, pathComposer, fromFreeBSDToRTEMSConverter, fromRTEMSToFreeBSDConverter))
+		return currentFiles
+
 	def addHeaderFiles(self, files):
-		self.headerFiles.extend(files)
-		for file in files:
-			if file[-2] != '.' or file[-1] != 'h':
-				print "*** " + file + " does not end in .h"
-				print "*** Move it to a C source file list"
-				sys.exit(2)
+		self.headerFiles = self.addFiles(self.headerFiles, files, PathComposer(), FromFreeBSDToRTEMSHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+
+	def addEmptyHeaderFiles(self, files):
+		self.headerFiles = self.addFiles(self.headerFiles, files, PathComposer(), EmptyConverter(), NoConverter(), assertHeaderFile)
+
+	def addRTEMSHeaderFiles(self, files):
+		self.headerFiles = self.addFiles(self.headerFiles, files, RTEMSPathComposer(), NoConverter(), NoConverter(), assertHeaderFile)
+
+	def addCPUDependentHeaderFiles(self, files):
+		self.headerFiles = self.addFiles(self.headerFiles, files, CPUDependentPathComposer(), FromFreeBSDToRTEMSHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
 
 	def addSourceFiles(self, files):
-		self.sourceFiles.extend(files)
-		for file in files:
-			if file[-2] != '.' or \
-			   (file[-1] != 'c' and file[-1] != 'S'):
-				print "*** " + file + " does not end in .c"
-				print "*** Move it to a header file list"
-				sys.exit(2)
+		self.sourceFiles = self.addFiles(self.sourceFiles, files, PathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile)
 
+	def addRTEMSSourceFiles(self, files):
+		self.sourceFiles = self.addFiles(self.sourceFiles, files, RTEMSPathComposer(), NoConverter(), NoConverter(), assertSourceFile)
+
+	def addCPUDependentSourceFiles(self, cpu, files):
+		if not self.cpuDependentSourceFiles.has_key(cpu):
+			self.cpuDependentSourceFiles [cpu] = []
+		self.cpuDependentSourceFiles [cpu] = self.addFiles(self.cpuDependentSourceFiles [cpu], files, CPUDependentPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile)
 
 	def addDependency(self, dep):
 		self.dependencies.append(dep)
@@ -462,85 +472,139 @@ class Module:
 #  - initialize each module with set of files associated
 mm = ModuleManager()
 
-rtems_headerFiles = [
-	'rtems/machine/atomic.h',
-        'rtems/machine/_bus.h',
-	'rtems/machine/bus.h',
-	'rtems/machine/bus_dma.h',
-        'rtems/machine/rtems-bsd-config.h',
-        'rtems/machine/clock.h',
-	'rtems/machine/cpufunc.h',
-	'rtems/machine/endian.h',
-	'rtems/machine/_limits.h',
-	'rtems/machine/_align.h',
-	'rtems/machine/mutex.h',
-	'rtems/machine/param.h',
-	'rtems/machine/pcpu.h',
-	'rtems/machine/pmap.h',
-	'rtems/machine/proc.h',
-	'rtems/machine/resource.h',
-	'rtems/machine/runq.h',
-	'rtems/machine/signal.h',
-	'rtems/machine/stdarg.h',
-	'rtems/machine/_stdint.h',
-	'rtems/machine/_types.h',
-	'rtems/machine/ucontext.h',
-	'rtems/machine/rtems-bsd-symbols.h',
-	'rtems/machine/rtems-bsd-cache.h',
-	'rtems/machine/rtems-bsd-sysinit.h',
-        'rtems/machine/rtems-bsd-select.h',
-        'rtems/machine/rtems-bsd-taskqueue.h',
-	'bsd.h',
+rtems = Module('rtems')
+rtems.addRTEMSHeaderFiles(
+	[
+		'rtems/machine/atomic.h',
+		'rtems/machine/_bus.h',
+		'rtems/machine/bus.h',
+		'rtems/machine/bus_dma.h',
+		'rtems/machine/rtems-bsd-config.h',
+		'rtems/machine/clock.h',
+		'rtems/machine/cpufunc.h',
+		'rtems/machine/endian.h',
+		'rtems/machine/_limits.h',
+		'rtems/machine/_align.h',
+		'rtems/machine/mutex.h',
+		'rtems/machine/param.h',
+		'rtems/machine/pcpu.h',
+		'rtems/machine/pmap.h',
+		'rtems/machine/proc.h',
+		'rtems/machine/resource.h',
+		'rtems/machine/runq.h',
+		'rtems/machine/signal.h',
+		'rtems/machine/stdarg.h',
+		'rtems/machine/_stdint.h',
+		'rtems/machine/_types.h',
+		'rtems/machine/ucontext.h',
+		'rtems/machine/rtems-bsd-symbols.h',
+		'rtems/machine/rtems-bsd-cache.h',
+		'rtems/machine/rtems-bsd-sysinit.h',
+		'rtems/machine/rtems-bsd-select.h',
+		'rtems/machine/rtems-bsd-taskqueue.h',
+		'bsd.h',
 	]
-rtems_sourceFiles = [
-	'dev/usb/controller/ohci_lpc24xx.c',
-	'dev/usb/controller/ohci_lpc32xx.c',
-	'dev/usb/controller/ehci_mpc83xx.c',
-	'src/rtems-bsd-cam.c',
-	'src/rtems-bsd-nexus.c',
-	'src/rtems-bsd-autoconf.c',
-        'src/rtems-bsd-delay.c',
-	'src/rtems-bsd-mutex.c',
-	'src/rtems-bsd-thread.c',
-	'src/rtems-bsd-condvar.c',
-        'src/rtems-bsd-lock.c',
-        'src/rtems-bsd-log.c',
-	'src/rtems-bsd-sx.c',
-        'src/rtems-bsd-rwlock.c',
-        'src/rtems-bsd-generic.c',
-        'src/rtems-bsd-panic.c',
-        'src/rtems-bsd-synch.c',
-	'src/rtems-bsd-signal.c',
-	'src/rtems-bsd-callout.c',
-	'src/rtems-bsd-init.c',
-        'src/rtems-bsd-init-with-irq.c',
-	'src/rtems-bsd-assert.c',
-        'src/rtems-bsd-prot.c',
-        'src/rtems-bsd-resource.c',
-        'src/rtems-bsd-jail.c',
-	'src/rtems-bsd-shell.c',
-        'src/rtems-bsd-syscalls.c',
-        'src/rtems-bsd-smp.c',
-        #'src/rtems-bsd-socket.c',
-        #'src/rtems-bsd-mbuf.c',
-	'src/rtems-bsd-malloc.c',
-        'src/rtems-bsd-support.c',
-	'src/rtems-bsd-bus-dma.c',
-        'src/rtems-bsd-sysctl.c',
-        'src/rtems-bsd-sysctlbyname.c',
-        'src/rtems-bsd-sysctlnametomib.c',
-        'src/rtems-bsd-uma.c',
-        'src/rtems-bsd-taskqueue.c',
-        'src/rtems-bsd-timesupport.c',
-        'src/rtems-bsd-timeout.c',
-        'src/rtems-bsd-newproc.c',
-        'src/rtems-bsd-vm_glue.c',
-        'src/rtems-bsd-cyclecount.c',
+)
+rtems.addRTEMSSourceFiles(
+	[
+		'dev/usb/controller/ohci_lpc24xx.c',
+		'dev/usb/controller/ohci_lpc32xx.c',
+		'dev/usb/controller/ehci_mpc83xx.c',
+		'src/rtems-bsd-cam.c',
+		'src/rtems-bsd-nexus.c',
+		'src/rtems-bsd-autoconf.c',
+		'src/rtems-bsd-delay.c',
+		'src/rtems-bsd-mutex.c',
+		'src/rtems-bsd-thread.c',
+		'src/rtems-bsd-condvar.c',
+		'src/rtems-bsd-lock.c',
+		'src/rtems-bsd-log.c',
+		'src/rtems-bsd-sx.c',
+		'src/rtems-bsd-rwlock.c',
+		'src/rtems-bsd-generic.c',
+		'src/rtems-bsd-panic.c',
+		'src/rtems-bsd-synch.c',
+		'src/rtems-bsd-signal.c',
+		'src/rtems-bsd-callout.c',
+		'src/rtems-bsd-init.c',
+		'src/rtems-bsd-init-with-irq.c',
+		'src/rtems-bsd-assert.c',
+		'src/rtems-bsd-prot.c',
+		'src/rtems-bsd-resource.c',
+		'src/rtems-bsd-jail.c',
+		'src/rtems-bsd-shell.c',
+		'src/rtems-bsd-syscalls.c',
+		'src/rtems-bsd-smp.c',
+		#'src/rtems-bsd-socket.c',
+		#'src/rtems-bsd-mbuf.c',
+		'src/rtems-bsd-malloc.c',
+		'src/rtems-bsd-support.c',
+		'src/rtems-bsd-bus-dma.c',
+		'src/rtems-bsd-sysctl.c',
+		'src/rtems-bsd-sysctlbyname.c',
+		'src/rtems-bsd-sysctlnametomib.c',
+		'src/rtems-bsd-uma.c',
+		'src/rtems-bsd-taskqueue.c',
+		'src/rtems-bsd-timesupport.c',
+		'src/rtems-bsd-newproc.c',
+		'src/rtems-bsd-vm_glue.c',
 	]
-# RTEMS files handled separately from modules
-# rtems = Module('rtems')
-# rtems.addHeaderFiles( rtems_headerFiles )
-# rtems.addSourceFiles( rtems_sourceFiles )
+)
+rtems.addEmptyHeaderFiles(
+	[
+		'cam/cam_queue.h',
+		'ddb/db_sym.h',
+		'ddb/ddb.h',
+		'machine/cpu.h',
+		'machine/elf.h',
+		'machine/sf_buf.h',
+		'machine/smp.h',
+		'machine/vm.h',
+		#'machine/vmparam.h',
+		'local/opt_bce.h',
+		'local/opt_ntp.h',
+		'local/pci_if.h',
+		'security/audit/audit.h',
+		'sys/bio.h',
+		'sys/copyright.h',
+		'sys/cpuset.h',
+		'sys/exec.h',
+		'sys/fail.h',
+		'sys/limits.h',
+		'sys/namei.h',
+		'sys/_pthreadtypes.h',
+		#'sys/resourcevar.h',
+		'sys/sched.h',
+		'sys/select.h',
+		'sys/syscallsubr.h',
+		'sys/sysent.h',
+		'sys/syslimits.h',
+		'sys/sysproto.h',
+		'sys/stat.h',
+		#'sys/time.h',
+		'time.h',
+		'sys/timespec.h',
+		'sys/_timeval.h',
+		#'sys/vmmeter.h',
+		#'sys/vnode.h',
+		'vm/pmap.h',
+		#'vm/uma_int.h',
+		#'vm/uma_dbg.h',
+		#'vm/vm_extern.h',
+		#'vm/vm_map.h',
+		#'vm/vm_object.h',
+		#'vm/vm_page.h',
+		#'vm/vm_param.h',
+		#'vm/vm_kern.h',
+		'geom/geom_disk.h',
+		#'sys/kdb.h',
+		#'libkern/jenkins.h',
+		'machine/pcb.h',
+		#'net80211/ieee80211_freebsd.h',
+		'netgraph/ng_ipfw.h',
+		#'sys/sf_buf.h',
+	]
+)
 
 local = Module('local')
 # RTEMS has its own local/pmap.h
@@ -569,7 +633,7 @@ local.addHeaderFiles(
 		'local/opt_cam.h',
 		'local/opt_carp.h',
 		'local/opt_compat.h',
-        	'local/opt_config.h',
+		'local/opt_config.h',
 		'local/opt_cpu.h',
 		'local/opt_ddb.h',
 		'local/opt_device_polling.h',
@@ -595,8 +659,8 @@ local.addHeaderFiles(
 		'local/opt_natm.h',
 		'local/opt_netgraph.h',
 		'local/opt_param.h',
-        	'local/opt_posix.h',
-        	'local/opt_pf.h',
+		'local/opt_posix.h',
+		'local/opt_pf.h',
 		'local/opt_printf.h',
 		'local/opt_route.h',
 		'local/opt_scsi.h',
@@ -606,7 +670,7 @@ local.addHeaderFiles(
 		'local/opt_usb.h',
 		'local/opt_vlan.h',
 		'local/opt_wlan.h',
-        	'local/opt_zero.h',
+		'local/opt_zero.h',
 		'local/usbdevs_data.h',
 		'local/usbdevs.h',
 		'local/usb_if.h',
@@ -1896,135 +1960,51 @@ pf.addSourceFiles(
 	]
 )
 
-# ARM Architecture Specific Files Module
-armDependent = Module('armDependent')
-armDependent.setTarget("arm")
-armDependent.addHeaderFiles(
+# in_chksum Module
+in_cksum = Module('in_cksum')
+in_cksum.addCPUDependentHeaderFiles(
 	[
 		'arm/include/in_cksum.h',
-	]
-)
-armDependent.addSourceFiles(
-	[
-		'arm/arm/in_cksum.c',
-		'arm/arm/in_cksum_arm.S',
-	]
-)
-
-# i386 Architecture Specific Files Module
-i386Dependent = Module('i386Dependent')
-i386Dependent.setTarget("i386")
-i386Dependent.addHeaderFiles(
-	[
 		'i386/include/in_cksum.h',
+		'mips/include/in_cksum.h',
+		'powerpc/include/in_cksum.h',
+		'sparc64/include/in_cksum.h',
 	]
 )
-i386Dependent.addSourceFiles(
+in_cksum.addCPUDependentSourceFiles(
+	'arm',
+	[
+		'arm/arm/in_cksum_arm.S',
+		'arm/arm/in_cksum.c',
+	]
+)
+in_cksum.addCPUDependentSourceFiles(
+	'i386',
 	[
 		'i386/i386/in_cksum.c',
 	]
 )
-
-# MIPS Architecture Specific Files Module
-mipsDependent = Module('mipsDependent')
-mipsDependent.setTarget("mips")
-mipsDependent.addHeaderFiles(
-	[
-		'mips/include/in_cksum.h',
-	]
-)
-mipsDependent.addSourceFiles(
+in_cksum.addCPUDependentSourceFiles(
+	'mips',
 	[
 		'mips/mips/in_cksum.c',
 	]
 )
-
-# PowerPC Architecture Specific Files Module
-powerpcDependent = Module('powerpcDependent')
-powerpcDependent.setTarget("powerpc")
-powerpcDependent.addHeaderFiles(
-	[
-		'powerpc/include/in_cksum.h',
-	]
-)
-powerpcDependent.addSourceFiles(
+in_cksum.addCPUDependentSourceFiles(
+	'powerpc',
 	[
 		'powerpc/powerpc/in_cksum.c',
 	]
 )
-
-# SPARC64 Architecture Specific Files Module
-sparc64Dependent = Module('cpu_dependent')
-sparc64Dependent.setTarget("sparc64")
-sparc64Dependent.addHeaderFiles(
-	[
-		'sparc64/include/in_cksum.h',
-	]
-)
-sparc64Dependent.addSourceFiles(
+in_cksum.addCPUDependentSourceFiles(
+	'sparc64',
 	[
 		'sparc64/sparc64/in_cksum.c',
 	]
 )
 
-# Add Empty Files
-mm.addEmptyFiles(
-	[
-		'cam/cam_queue.h',
-		'ddb/db_sym.h',
-		'ddb/ddb.h',
-		'machine/cpu.h',
-		'machine/elf.h',
-		'machine/sf_buf.h',
-		'machine/smp.h',
-        	'machine/vm.h',
-		#'machine/vmparam.h',
-		'local/opt_bce.h',
-		'local/opt_ntp.h',
-		'local/pci_if.h',
-		'security/audit/audit.h',
-		'sys/bio.h',
-		'sys/copyright.h',
-		'sys/cpuset.h',
-		'sys/exec.h',
-		'sys/fail.h',
-		'sys/limits.h',
-		'sys/namei.h',
-		'sys/_pthreadtypes.h',
-		#'sys/resourcevar.h',
-		'sys/sched.h',
-		'sys/select.h',
-		'sys/syscallsubr.h',
-		'sys/sysent.h',
-		'sys/syslimits.h',
-		'sys/sysproto.h',
-		'sys/stat.h',
-		#'sys/time.h',
-		'time.h',
-		'sys/timespec.h',
-		'sys/_timeval.h',
-		#'sys/vmmeter.h',
-		#'sys/vnode.h',
-		'vm/pmap.h',
-		#'vm/uma_int.h',
-		#'vm/uma_dbg.h',
-		#'vm/vm_extern.h',
-		#'vm/vm_map.h',
-		#'vm/vm_object.h',
-		#'vm/vm_page.h',
-		#'vm/vm_param.h',
-		#'vm/vm_kern.h',
-		'geom/geom_disk.h',
-		#'sys/kdb.h',
-		#'libkern/jenkins.h',
-		'machine/pcb.h',
-		#'net80211/ieee80211_freebsd.h',
-		'netgraph/ng_ipfw.h',
-		#'sys/sf_buf.h',
-	]
-)
-
 # Register all the Module instances with the Module Manager
+mm.addModule(rtems)
 mm.addModule(netDeps)
 mm.addModule(net)
 mm.addModule(netinet)
@@ -2061,12 +2041,8 @@ mm.addModule(devNic_broadcomm)
 # TBD Requires ISA and PCCard Support to be pulled in.
 # mm.addModule(devNic_cs)
 
-# Now add CPU Architecture Dependent Modules
-mm.addModule(armDependent)
-mm.addModule(i386Dependent)
-mm.addModule(mipsDependent)
-mm.addModule(powerpcDependent)
-mm.addModule(sparc64Dependent)
+# Add in_chksum
+mm.addModule(in_cksum)
 
 # XXX TODO Check that no file is also listed in empty
 # XXX TODO Check that no file in in two modules
@@ -2074,10 +2050,10 @@ mm.addModule(sparc64Dependent)
 # Perform the actual file manipulation
 if isForward == True:
   if isOnlyMakefile == False:
-    mm.copyFiles()
+    mm.copyFromFreeBSDToRTEMS()
   mm.createMakefile()
 else:
-  mm.revertFiles()
+  mm.copyFromRTEMSToFreeBSD()
 
 # Print a summary if changing files
 if isDiffMode == False:

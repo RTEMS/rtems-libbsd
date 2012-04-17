@@ -16,8 +16,10 @@
  *
  */
 
-#include <fcntl.h>
-#include <stdarg.h>
+#include <freebsd/machine/rtems-bsd-config.h>
+
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/systm.h>
 
 /*
  * Log writes to the log buffer, and guarantees not to sleep (so can be
@@ -27,10 +29,9 @@
 void
 log(int level, const char *fmt, ...)
 {
-  va_list ap;
+        va_list ap;
 
-  va_start(ap, fmt);
-  printk(fmt, ap);
-  va_end(ap);
+        va_start(ap, fmt);
+        vprintk(fmt, ap);
+        va_end(ap);
 }
-

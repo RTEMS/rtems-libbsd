@@ -1190,6 +1190,7 @@ devNic.addHeaderFiles(
 		'sys/pciio.h',
 		'dev/random/randomdev_soft.h',
 		'sys/eventvar.h',
+		'sys/kenv.h',
 	]
 )
 devNic.addSourceFiles(

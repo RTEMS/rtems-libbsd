@@ -1208,6 +1208,7 @@ devNic.addSourceFiles(
 		'kern/uipc_accf.c',
 		'kern/kern_ntptime.c',
 		'kern/kern_environment.c',
+		'kern/kern_intr.c',
 	]
 )
 

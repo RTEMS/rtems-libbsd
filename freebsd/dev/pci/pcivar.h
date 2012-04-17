@@ -306,7 +306,6 @@ PCIB_ACCESSOR(bus,		BUS,		uint32_t)
 #define	PCI_INVALID_IRQ		255
 #define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ)
 
-#ifndef __rtems__
 
 /*
  * Convenience functions.
@@ -320,6 +319,7 @@ pci_enable_busmaster(device_t dev)
     return(PCI_ENABLE_BUSMASTER(device_get_parent(dev), dev));
 }
 
+#ifndef __rtems__
 static __inline int
 pci_disable_busmaster(device_t dev)
 {

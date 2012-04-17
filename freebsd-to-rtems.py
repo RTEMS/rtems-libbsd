@@ -207,7 +207,7 @@ class Converter(object):
 	def isConvertible(self):
 		return True
 
-class NoConverter(object):
+class NoConverter(Converter):
 	def convert(self, src):
 		raise
 

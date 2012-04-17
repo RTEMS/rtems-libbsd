@@ -297,6 +297,7 @@ SYSCTL_INT(_net_isr, OID_AUTO, numthreads, CTLFLAG_RD,
 #define	NWS_UNLOCK(s)		mtx_unlock(&(s)->nws_mtx)
 #define	NWS_SIGNAL(s)		swi_sched((s)->nws_swi_cookie, 0)
 
+#ifndef __rtems__
 /*
  * Utility routines for protocols that implement their own mapping of flows
  * to CPUs.
@@ -330,6 +331,7 @@ netisr_default_flow2cpu(u_int flowid)
 
 	return (nws_array[flowid % nws_count]);
 }
+#endif  /* __rtems__ */
 
 /*
  * Register a new netisr handler, which requires initializing per-protocol
@@ -540,6 +542,7 @@ netisr_setqlimit(const struct netisr_handler *nhp, u_int qlimit)
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * Drain all packets currently held in a particular protocol work queue.
  */
@@ -605,6 +608,7 @@ netisr_unregister(const struct netisr_handler *nhp)
 	}
 	NETISR_WUNLOCK();
 }
+#endif  /* __rtems__ */
 
 /*
  * Look up the workstream given a packet and source identifier.  Do this by
@@ -665,6 +669,7 @@ netisr_select_cpuid(struct netisr_proto *npp, uintptr_t source,
 	}
 }
 
+#ifndef __rtems__
 /*
  * Process packets associated with a workstream and protocol.  For reasons of
  * fairness, we process up to one complete netisr queue at a time, moving the
@@ -775,6 +780,7 @@ out:
 	netisr_pollmore();
 #endif
 }
+#endif  /* __rtems__ */
 
 static int
 netisr_queue_workstream(struct netisr_workstream *nwsp, u_int proto,
@@ -875,6 +881,7 @@ netisr_queue(u_int proto, struct mbuf *m)
 	return (netisr_queue_src(proto, 0, m));
 }
 
+#ifndef __rtems__
 /*
  * Dispatch a packet for netisr processing, direct dispatch permitted by
  * calling context.
@@ -1156,3 +1163,4 @@ DB_SHOW_COMMAND(netisr, db_show_netisr)
 	}
 }
 #endif
+#endif  /* __rtems__ */

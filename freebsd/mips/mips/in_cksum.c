@@ -187,7 +187,12 @@ in_addword(u_short a, u_short b)
 }
 
 u_short
+#ifdef __rtems__
+/* Prototype does not match in FreeBSD code */
+in_pseudo(u_int a, u_int b, u_int c)
+#else
 in_pseudo(u_int32_t a, u_int32_t b, u_int32_t c)
+#endif
 {
 	u_int64_t sum;
 	union q_util q_util;

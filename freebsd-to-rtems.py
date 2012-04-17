@@ -2006,7 +2006,7 @@ in_cksum.addCPUDependentSourceFiles(
 in_cksum.addCPUDependentSourceFiles(
 	'sparc',
 	[
-		'netinet/in_cksum.c',
+		'mips/mips/in_cksum.c',
 	]
 )
 in_cksum.addCPUDependentSourceFiles(

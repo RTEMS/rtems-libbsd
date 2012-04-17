@@ -549,6 +549,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-newproc.c',
 		'src/rtems-bsd-vm_glue.c',
 		'src/rtems-bsd-subr.c',
+		'src/rtems-bsd-cyclecount.c',
 	]
 )
 rtems.addEmptyHeaderFiles(

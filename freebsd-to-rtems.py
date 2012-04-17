@@ -548,6 +548,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-timesupport.c',
 		'src/rtems-bsd-newproc.c',
 		'src/rtems-bsd-vm_glue.c',
+		'src/rtems-bsd-subr.c',
 	]
 )
 rtems.addEmptyHeaderFiles(

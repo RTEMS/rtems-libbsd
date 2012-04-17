@@ -1214,6 +1214,7 @@ devNic.addSourceFiles(
 		'kern/kern_ntptime.c',
 		'kern/kern_environment.c',
 		'kern/kern_intr.c',
+		'kern/kern_resource.c',
 	]
 )
 

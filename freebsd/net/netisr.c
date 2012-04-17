@@ -318,6 +318,7 @@ netisr_get_cpuid(u_int cpunumber)
 
 	return (nws_array[cpunumber]);
 }
+#endif  /* __rtems__ */
 
 /*
  * The default implementation of -> CPU ID mapping.
@@ -331,7 +332,6 @@ netisr_default_flow2cpu(u_int flowid)
 
 	return (nws_array[flowid % nws_count]);
 }
-#endif  /* __rtems__ */
 
 /*
  * Register a new netisr handler, which requires initializing per-protocol
@@ -881,7 +881,6 @@ netisr_queue(u_int proto, struct mbuf *m)
 	return (netisr_queue_src(proto, 0, m));
 }
 
-#ifndef __rtems__
 /*
  * Dispatch a packet for netisr processing, direct dispatch permitted by
  * calling context.
@@ -1013,6 +1012,7 @@ netisr_dispatch(u_int proto, struct mbuf *m)
 	return (netisr_dispatch_src(proto, 0, m));
 }
 
+#ifndef __rtems__
 #ifdef DEVICE_POLLING
 /*
  * Kernel polling borrows a netisr thread to run interface polling in; this

@@ -408,6 +408,9 @@ endif
 ifeq ($(RTEMS_CPU), powerpc)
 C_FILES += freebsd/powerpc/powerpc/in_cksum.c
 endif
+ifeq ($(RTEMS_CPU), sparc)
+C_FILES += freebsd/netinet/in_cksum.c
+endif
 ifeq ($(RTEMS_CPU), sparc64)
 C_FILES += freebsd/sparc64/sparc64/in_cksum.c
 endif

@@ -1962,6 +1962,11 @@ pf.addSourceFiles(
 
 # in_chksum Module
 in_cksum = Module('in_cksum')
+in_cksum.addRTEMSHeaderFiles(
+	[
+		'sparc/include/freebsd/machine/in_cksum.h',
+        ]
+)
 in_cksum.addCPUDependentHeaderFiles(
 	[
 		'arm/include/in_cksum.h',
@@ -1994,6 +1999,12 @@ in_cksum.addCPUDependentSourceFiles(
 	'powerpc',
 	[
 		'powerpc/powerpc/in_cksum.c',
+	]
+)
+in_cksum.addCPUDependentSourceFiles(
+	'sparc',
+	[
+		'netinet/in_cksum.c',
 	]
 )
 in_cksum.addCPUDependentSourceFiles(

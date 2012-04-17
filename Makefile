@@ -367,6 +367,7 @@ C_FILES += freebsd/netinet/tcp_hostcache.c
 C_FILES += freebsd/dev/pci/pci.c
 C_FILES += freebsd/kern/uipc_accf.c
 C_FILES += freebsd/kern/kern_ntptime.c
+C_FILES += freebsd/kern/kern_environment.c
 C_FILES += freebsd/dev/re/if_re.c
 C_FILES += freebsd/dev/fxp/if_fxp.c
 C_FILES += freebsd/dev/e1000/e1000_80003es2lan.c

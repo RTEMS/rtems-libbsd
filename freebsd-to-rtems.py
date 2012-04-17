@@ -1207,6 +1207,7 @@ devNic.addSourceFiles(
 		'dev/pci/pci.c',
 		'kern/uipc_accf.c',
 		'kern/kern_ntptime.c',
+		'kern/kern_environment.c',
 	]
 )
 

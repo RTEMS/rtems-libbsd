@@ -563,7 +563,6 @@ rtems.addEmptyHeaderFiles(
 		#'machine/vmparam.h',
 		'local/opt_bce.h',
 		'local/opt_ntp.h',
-		'local/pci_if.h',
 		'security/audit/audit.h',
 		'sys/bio.h',
 		'sys/copyright.h',
@@ -680,6 +679,8 @@ local.addHeaderFiles(
 		'local/cryptodev_if.h',
 		'local/miibus_if.h',
 		'local/miidevs.h',
+		'local/pci_if.h',
+		'local/pcib_if.h',
 	]
 )
 local.addSourceFiles(
@@ -690,6 +691,8 @@ local.addSourceFiles(
 		'local/device_if.c',
 		'local/cryptodev_if.c',
 		'local/miibus_if.c',
+		'local/pci_if.c',
+		'local/pcib_if.c',
 	]
 )
 

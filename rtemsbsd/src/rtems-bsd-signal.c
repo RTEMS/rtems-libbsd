@@ -31,3 +31,9 @@ psignal(struct proc *p, int sig)
 {
 	BSD_PANIC("not implemented");
 }
+
+void pgsigio(struct sigio **sigiop, int sig, int checkctty)
+{
+ 
+	BSD_PANIC("not implemented");
+}

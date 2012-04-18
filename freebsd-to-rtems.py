@@ -497,6 +497,7 @@ rtems.addRTEMSHeaderFiles(
 		'rtems/machine/_stdint.h',
 		'rtems/machine/_types.h',
 		'rtems/machine/ucontext.h',
+		'rtems/machine/cpu.h',
 		'rtems/machine/rtems-bsd-symbols.h',
 		'rtems/machine/rtems-bsd-cache.h',
 		'rtems/machine/rtems-bsd-sysinit.h',
@@ -550,7 +551,6 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-newproc.c',
 		'src/rtems-bsd-vm_glue.c',
 		'src/rtems-bsd-subr.c',
-		'src/rtems-bsd-cyclecount.c',
 	]
 )
 rtems.addEmptyHeaderFiles(
@@ -558,7 +558,6 @@ rtems.addEmptyHeaderFiles(
 		'cam/cam_queue.h',
 		'ddb/db_sym.h',
 		'ddb/ddb.h',
-		'machine/cpu.h',
 		'machine/elf.h',
 		'machine/sf_buf.h',
 		'machine/smp.h',

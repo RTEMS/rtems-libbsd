@@ -70,11 +70,6 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/vm/vm_object.h>
 #endif
 
-
-#ifdef __rtems__
-#include <rtems.h>
-#endif
-
 #ifndef __rtems__
 SYSCTL_INT(_kern, KERN_IOV_MAX, iov_max, CTLFLAG_RD, NULL, UIO_MAXIOV,
 	"Maximum number of elements in an I/O vector; sysconf(_SC_IOV_MAX)");
@@ -485,9 +480,9 @@ uio_yield(void)
 	sched_prio(td, td->td_user_pri);
 	mi_switch(SW_INVOL | SWT_RELINQUISH, NULL);
 	thread_unlock(td);
-#else
-        rtems_task_wake_after( RTEMS_YIELD_PROCESSOR );
-#endif
+#else /* __rtems__ */
+	rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
+#endif /* __rtems__ */
 	PICKUP_GIANT();
 }
 

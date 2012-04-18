@@ -197,4 +197,20 @@ le64enc(void *pp, uint64_t u)
 	le32enc(p + 4, u >> 32);
 }
 
+/*
+ * In FreeBSD, this can be CPU specific but most targets use this
+ * implementation.
+ *
+ * This is from the powerpc implementation.
+ */
+static __inline uint64_t
+__bswap64(uint64_t _x)
+{
+
+        return ((_x >> 56) | ((_x >> 40) & 0xff00) | ((_x >> 24) & 0xff0000) |
+            ((_x >> 8) & 0xff000000) | ((_x << 8) & ((__uint64_t)0xff << 32)) |
+            ((_x << 24) & ((__uint64_t)0xff << 40)) |
+            ((_x << 40) & ((__uint64_t)0xff << 48)) | ((_x << 56)));
+}
+
 #endif	/* _SYS_ENDIAN_HH_ */

@@ -15,20 +15,17 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#ifndef _MACHINE_CPU_H_
-#define _MACHINE_CPU_H_
+#ifndef _RTEMS_BSD_MACHINE_CPU_H_
+#define _RTEMS_BSD_MACHINE_CPU_H_
 
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
+#error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
+#endif
 
-#include <string.h>
-#include <stdio.h>
-#include <rtems.h>
-
-#ifdef _KERNEL
-static __inline u_int64_t
+static __inline uint64_t
 get_cyclecount(void)
 {
-  return rtems_clock_get_ticks_since_boot();
+	return rtems_clock_get_ticks_since_boot();
 }
-#endif /* _KERNEL */
 
-#endif /* !MACHINE_CPU_H */
+#endif /* _RTEMS_BSD_MACHINE_CPU_H_ */

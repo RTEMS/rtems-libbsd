@@ -445,3 +445,102 @@ SYSCTL_NODE(, CTL_KERN,   kern,   CTLFLAG_RW, 0,
         "High kernel, proc, limits &c");
 ----
 
+== Core FreeBSD APIs and RTEMS Replacements ==
+
+=== SX(9) (Shared/exclusive locks) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=sx
+
+Binary semaphores (this neglects the ability to allow shared access).
+
+=== MUTEX(9) (Mutual exclusion) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=mutex
+
+Binary semaphores (not recursive mutexes are not supported this way).
+
+=== RWLOCK(9) (Reader/writer lock) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=rwlock
+
+POSIX r/w lock.
+
+=== RMLOCK(9) (Reader/writer lock optimized for mostly read access patterns) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=rmlock
+
+POSIX r/w lock.
+
+=== CONDVAR(9) (Condition variables) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=condvar
+
+POSIX condition variables with modifications (hack).
+
+=== CALLOUT(9) (Timer functions) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=callout
+
+Timer server.
+
+=== TASKQUEUE(9) (Asynchronous task execution) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=taskqueue
+
+TBD.
+
+=== KTHREAD(9), KPROC(9) (Tasks) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=kthread
+
+http://www.freebsd.org/cgi/man.cgi?query=kproc
+
+Tasks.
+
+=== ZONE(9) (Zone allocator) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=zone
+
+TBD.
+
+=== devfs (Device file system) ===
+
+Dummy, IMFS or new implementation (currently dummy).
+
+=== psignal (Signals) ===
+
+TBD.  Seems to be not needed.
+
+=== poll, select ===
+
+TBD.  Seems to be not needed.
+
+=== RMAN(9) (Resource management) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=rman
+
+TBD.  Seems to be not needed.
+
+=== DEVCLASS(9), DEVICE(9), DRIVER(9), MAKE_DEV(9) (Device management) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=devclass
+
+http://www.freebsd.org/cgi/man.cgi?query=device
+
+http://www.freebsd.org/cgi/man.cgi?query=driver
+
+http://www.freebsd.org/cgi/man.cgi?query=make_dev
+
+Use FreeBSD implementation as far as possible.  FreeBSD has a nice API for
+dynamic device handling.  It may be interesting for RTEMS to use this API
+internally in the future.
+
+=== BUS_SPACE(9), BUS_DMA(9) (Bus and DMA access) ===
+
+http://www.freebsd.org/cgi/man.cgi?query=bus_space
+
+http://www.freebsd.org/cgi/man.cgi?query=bus_dma
+
+Likely BSP dependent.  A default implementation for memory mapped linear access
+is easy to provide.  The current heap implementation supports all properties
+demanded by bus_dma (including the boundary constraint).

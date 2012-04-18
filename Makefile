@@ -52,6 +52,7 @@ C_FILES += rtemsbsd/src/rtems-bsd-sysctlbyname.c
 C_FILES += rtemsbsd/src/rtems-bsd-sysctlnametomib.c
 C_FILES += rtemsbsd/src/rtems-bsd-uma.c
 C_FILES += rtemsbsd/src/rtems-bsd-taskqueue.c
+C_FILES += rtemsbsd/src/rtems-bsd-timeout.c
 C_FILES += rtemsbsd/src/rtems-bsd-timesupport.c
 C_FILES += rtemsbsd/src/rtems-bsd-newproc.c
 C_FILES += rtemsbsd/src/rtems-bsd-vm_glue.c

@@ -547,6 +547,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-sysctlnametomib.c',
 		'src/rtems-bsd-uma.c',
 		'src/rtems-bsd-taskqueue.c',
+		'src/rtems-bsd-timeout.c',
 		'src/rtems-bsd-timesupport.c',
 		'src/rtems-bsd-newproc.c',
 		'src/rtems-bsd-vm_glue.c',

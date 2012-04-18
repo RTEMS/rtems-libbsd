@@ -529,7 +529,6 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-init.c',
 		'src/rtems-bsd-init-with-irq.c',
 		'src/rtems-bsd-assert.c',
-		'src/rtems-bsd-prot.c',
 		'src/rtems-bsd-resource.c',
 		'src/rtems-bsd-jail.c',
 		'src/rtems-bsd-shell.c',

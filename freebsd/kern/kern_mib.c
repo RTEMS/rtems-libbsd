@@ -95,8 +95,10 @@ SYSCTL_NODE(, CTL_P1003_1B,  p1003_1b,   CTLFLAG_RW, 0,
 
 SYSCTL_NODE(, OID_AUTO,  compat, CTLFLAG_RW, 0,
 	"Compatibility code");
+#endif /* __rtems__ */
 SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
      	"Security");
+#ifndef __rtems__
 #ifdef REGRESSION
 SYSCTL_NODE(, OID_AUTO, regression, CTLFLAG_RW, 0,
      "Regression test MIB");

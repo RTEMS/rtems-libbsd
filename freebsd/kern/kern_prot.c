@@ -83,12 +83,12 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/security/audit/audit.h>
 #include <freebsd/security/mac/mac_framework.h>
 
-#ifndef __rtems__
 static MALLOC_DEFINE(M_CRED, "cred", "credentials");
 
 SYSCTL_NODE(_security, OID_AUTO, bsd, CTLFLAG_RW, 0, "BSD security policy");
 
 static void crextend(struct ucred *cr, int n);
+#ifndef __rtems__
 static void crsetgroups_locked(struct ucred *cr, int ngrp,
     gid_t *groups);
 
@@ -1710,6 +1710,7 @@ p_candebug(struct thread *td, struct proc *p)
 
 	return (0);
 }
+#endif /* __rtems__ */
 
 /*-
  * Determine whether the subject represented by cred can "see" a socket.
@@ -1735,7 +1736,6 @@ cr_canseesocket(struct ucred *cred, struct socket *so)
 
 	return (0);
 }
-#endif /* __rtems__ */
 
 #if defined(INET) || defined(INET6)
 /*-
@@ -1796,6 +1796,7 @@ p_canwait(struct thread *td, struct proc *p)
 
 	return (0);
 }
+#endif /* __rtems__ */
 
 /*
  * Allocate a zeroed cred structure.
@@ -1863,6 +1864,7 @@ crfree(struct ucred *cr)
 	}
 }
 
+#ifndef __rtems__
 /*
  * Check to see if this ucred is shared.
  */
@@ -1908,6 +1910,7 @@ crdup(struct ucred *cr)
 	crcopy(newcr, cr);
 	return (newcr);
 }
+#endif /* __rtems__ */
 
 /*
  * Fill in a struct xucred based on a struct ucred.
@@ -1927,6 +1930,7 @@ cru2x(struct ucred *cr, struct xucred *xcr)
 	    ngroups * sizeof(*cr->cr_groups));
 }
 
+#ifndef __rtems__
 /*
  * small routine to swap a thread's current ucred for the correct one taken
  * from the process.
@@ -1966,6 +1970,7 @@ crcopysafe(struct proc *p, struct ucred *cr)
 
 	return (oldcred);
 }
+#endif /* __rtems__ */
 
 /*
  * Extend the passed in credential to hold n items.
@@ -2007,6 +2012,7 @@ crextend(struct ucred *cr, int n)
 	cr->cr_agroups = cnt;
 }
 
+#ifndef __rtems__
 /*
  * Copy groups in to a credential, preserving any necessary invariants.
  * Currently this includes the sorting of all supplemental gids.

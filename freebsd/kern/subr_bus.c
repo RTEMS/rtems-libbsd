@@ -90,8 +90,10 @@ struct devclass {
 	int		flags;
 #define DC_HAS_CHILDREN		1
 
+#ifndef __rtems__
 	struct sysctl_ctx_list sysctl_ctx;
 	struct sysctl_oid *sysctl_tree;
+#endif /* __rtems__ */
 };
 
 /**
@@ -136,8 +138,10 @@ struct device {
 	void	*ivars;			/**< instance variables  */
 	void	*softc;			/**< current driver's variables  */
 
+#ifndef __rtems__
 	struct sysctl_ctx_list sysctl_ctx; /**< state for sysctl variables  */
 	struct sysctl_oid *sysctl_tree;	/**< state for sysctl variables */
+#endif /* __rtems__ */
 };
 
 static MALLOC_DEFINE(M_BUS, "bus", "Bus data structures");
@@ -146,9 +150,11 @@ static MALLOC_DEFINE(M_BUS_SC, "bus-sc", "Bus data structures, softc");
 #ifdef BUS_DEBUG
 
 static int bus_debug = 1;
+#ifndef __rtems__
 TUNABLE_INT("bus.debug", &bus_debug);
 SYSCTL_INT(_debug, OID_AUTO, bus_debug, CTLFLAG_RW, &bus_debug, 0,
     "Debug bus code");
+#endif /* __rtems__ */
 
 #define PDEBUG(a)	if (bus_debug) {printf("%s:%d: ", __func__, __LINE__), printf a; printf("\n");}
 #define DEVICENAME(d)	((d)? device_get_name(d): "no device")
@@ -193,6 +199,7 @@ void print_devclass_list(void);
 #define print_devclass_list()		/* nop */
 #endif
 
+#ifndef __rtems__
 /*
  * dev sysctl tree
  */
@@ -276,10 +283,12 @@ device_sysctl_handler(SYSCTL_HANDLER_ARGS)
 		free(buf, M_BUS);
 	return (error);
 }
+#endif /* __rtems__ */
 
 static void
 device_sysctl_init(device_t dev)
 {
+#ifndef __rtems__
 	devclass_t dc = dev->devclass;
 
 	if (dev->sysctl_tree != NULL)
@@ -310,25 +319,30 @@ device_sysctl_init(device_t dev)
 	    OID_AUTO, "%parent", CTLFLAG_RD,
 	    dev, DEVICE_SYSCTL_PARENT, device_sysctl_handler, "A",
 	    "parent device");
+#endif /* __rtems__ */
 }
 
 static void
 device_sysctl_update(device_t dev)
 {
+#ifndef __rtems__
 	devclass_t dc = dev->devclass;
 
 	if (dev->sysctl_tree == NULL)
 		return;
 	sysctl_rename_oid(dev->sysctl_tree, dev->nameunit + strlen(dc->name));
+#endif /* __rtems__ */
 }
 
 static void
 device_sysctl_fini(device_t dev)
 {
+#ifndef __rtems__
 	if (dev->sysctl_tree == NULL)
 		return;
 	sysctl_ctx_free(&dev->sysctl_ctx);
 	dev->sysctl_tree = NULL;
+#endif /* __rtems__ */
 }
 
 /*
@@ -352,15 +366,20 @@ device_sysctl_fini(device_t dev)
  * tested since 3.4 or 2.2.8!
  */
 
+#ifndef __rtems__
 /* Deprecated way to adjust queue length */
 static int sysctl_devctl_disable(SYSCTL_HANDLER_ARGS);
 /* XXX Need to support old-style tunable hw.bus.devctl_disable" */
 SYSCTL_PROC(_hw_bus, OID_AUTO, devctl_disable, CTLTYPE_INT | CTLFLAG_RW, NULL,
     0, sysctl_devctl_disable, "I", "devctl disable -- deprecated");
+#endif /* __rtems__ */
 
 #define DEVCTL_DEFAULT_QUEUE_LEN 1000
+#ifndef __rtems__
 static int sysctl_devctl_queue(SYSCTL_HANDLER_ARGS);
+#endif /* __rtems__ */
 static int devctl_queue_length = DEVCTL_DEFAULT_QUEUE_LEN;
+#ifndef __rtems__
 TUNABLE_INT("hw.bus.devctl_queue", &devctl_queue_length);
 SYSCTL_PROC(_hw_bus, OID_AUTO, devctl_queue, CTLTYPE_INT | CTLFLAG_RW, NULL,
     0, sysctl_devctl_queue, "I", "devctl queue length");
@@ -403,17 +422,23 @@ static struct dev_softc
 } devsoftc;
 
 static struct cdev *devctl_dev;
+#else /* __rtems__ */
+#define devctl_disable 0
+#endif /* __rtems__ */
 
 static void
 devinit(void)
 {
+#ifndef __rtems__
 	devctl_dev = make_dev(&dev_cdevsw, 0, UID_ROOT, GID_WHEEL, 0600,
 	    "devctl");
 	mtx_init(&devsoftc.mtx, "dev mtx", "devd", MTX_DEF);
 	cv_init(&devsoftc.cv, "dev cv");
 	TAILQ_INIT(&devsoftc.devq);
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 static int
 devopen(struct cdev *dev, int oflags, int devtype, struct thread *td)
 {
@@ -531,6 +556,7 @@ devctl_process_running(void)
 {
 	return (devsoftc.inuse == 1);
 }
+#endif /* __rtems__ */
 
 /**
  * @brief Queue data to be read from the devctl device
@@ -542,11 +568,14 @@ devctl_process_running(void)
 void
 devctl_queue_data_f(char *data, int flags)
 {
+#ifndef __rtems__
 	struct dev_event_info *n1 = NULL, *n2 = NULL;
 	struct proc *p;
+#endif /* __rtems__ */
 
 	if (strlen(data) == 0)
 		goto out;
+#ifndef __rtems__
 	if (devctl_queue_length == 0)
 		goto out;
 	n1 = malloc(sizeof(*n1), M_BUS, flags);
@@ -579,7 +608,9 @@ devctl_queue_data_f(char *data, int flags)
 		psignal(p, SIGIO);
 		PROC_UNLOCK(p);
 	}
-	return;
+#else /* __rtems__ */
+	printf("devctl: %s", data);
+#endif /* __rtems__ */
 out:
 	/*
 	 * We have to free data on all error paths since the caller
@@ -772,6 +803,7 @@ devnomatch(device_t dev)
 	devaddq("?", "", dev);
 }
 
+#ifndef __rtems__
 static int
 sysctl_devctl_disable(SYSCTL_HANDLER_ARGS)
 {
@@ -825,6 +857,7 @@ sysctl_devctl_queue(SYSCTL_HANDLER_ARGS)
 }
 
 /* End of /dev/devctl code */
+#endif /* __rtems__ */
 
 static TAILQ_HEAD(,device)	bus_data_devices;
 static int bus_data_generation = 1;
@@ -1494,13 +1527,21 @@ devclass_get_parent(devclass_t dc)
 struct sysctl_ctx_list *
 devclass_get_sysctl_ctx(devclass_t dc)
 {
+#ifndef __rtems__
 	return (&dc->sysctl_ctx);
+#else /* __rtems__ */
+	return (NULL);
+#endif /* __rtems__ */
 }
 
 struct sysctl_oid *
 devclass_get_sysctl_tree(devclass_t dc)
 {
+#ifndef __rtems__
 	return (dc->sysctl_tree);
+#else /* __rtems__ */
+	return (NULL);
+#endif /* __rtems__ */
 }
 
 /**
@@ -1545,10 +1586,12 @@ devclass_alloc_unit(devclass_t dc, device_t dev, int *unitp)
 		/* Unwired device, find the next available slot for it */
 		unit = 0;
 		for (unit = 0;; unit++) {
+#ifndef __rtems__
 			/* If there is an "at" hint for a unit then skip it. */
 			if (resource_string_value(dc->name, unit, "at", &s) ==
 			    0)
 				continue;
+#endif /* __rtems__ */
 
 			/* If this device slot is already in use, skip it. */
 			if (unit < dc->maxunit && dc->devices[unit] != NULL)
@@ -1975,9 +2018,11 @@ device_probe_child(device_t dev, device_t child)
 				}
 			}
 
+#ifndef __rtems__
 			/* Fetch any flags for the device before probing. */
 			resource_int_value(dl->driver->name, child->unit,
 			    "flags", &child->devflags);
+#endif /* __rtems__ */
 
 			result = DEVICE_PROBE(child);
 
@@ -2065,8 +2110,10 @@ device_probe_child(device_t dev, device_t child)
 				return (result);
 		}
 		device_set_driver(child, best->driver);
+#ifndef __rtems__
 		resource_int_value(best->driver->name, child->unit,
 		    "flags", &child->devflags);
+#endif /* __rtems__ */
 
 		if (pri < 0) {
 			/*
@@ -2125,20 +2172,24 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 		count++;
 	}
 
-	if (count) {
-		list = malloc(count * sizeof(device_t), M_TEMP,
-		    M_NOWAIT|M_ZERO);
-		if (!list)
-			return (ENOMEM);
+#ifdef __rtems__
+	/* malloc(0) may return NULL */
+	if (count != 0) {
+#endif /* __rtems__ */
+	list = malloc(count * sizeof(device_t), M_TEMP, M_NOWAIT|M_ZERO);
+	if (!list)
+		return (ENOMEM);
 
-		count = 0;
-		TAILQ_FOREACH(child, &dev->children, link) {
-			list[count] = child;
-			count++;
-		}
+	count = 0;
+	TAILQ_FOREACH(child, &dev->children, link) {
+		list[count] = child;
+		count++;
+	}
+#ifdef __rtems__
 	} else {
 		list = NULL;
 	}
+#endif /* __rtems__ */
 
 	*devlistp = list;
 	*devcountp = count;
@@ -2219,13 +2270,21 @@ device_get_flags(device_t dev)
 struct sysctl_ctx_list *
 device_get_sysctl_ctx(device_t dev)
 {
+#ifndef __rtems__
 	return (&dev->sysctl_ctx);
+#else /* __rtems__ */
+	return (NULL);
+#endif /* __rtems__ */
 }
 
 struct sysctl_oid *
 device_get_sysctl_tree(device_t dev)
 {
+#ifndef __rtems__
 	return (dev->sysctl_tree);
+#else /* __rtems__ */
+	return (NULL);
+#endif /* __rtems__ */
 }
 
 /**
@@ -2802,6 +2861,7 @@ device_set_unit(device_t dev, int unit)
 	return (0);
 }
 
+#ifndef __rtems__
 /*======================================*/
 /*
  * Some useful method implementations to make life easier for bus drivers.
@@ -3133,6 +3193,7 @@ resource_list_purge(struct resource_list *rl)
 		free(rle, M_BUS);
 	}
 }
+#endif /* __rtems__ */
 
 device_t
 bus_generic_add_child(device_t dev, u_int order, const char *name, int unit)
@@ -3457,6 +3518,7 @@ bus_generic_teardown_intr(device_t dev, device_t child, struct resource *irq,
 	return (EINVAL);
 }
 
+#ifndef __rtems__
 /**
  * @brief Helper function for implementing BUS_ALLOC_RESOURCE().
  *
@@ -3524,6 +3586,7 @@ bus_generic_deactivate_resource(device_t dev, device_t child, int type,
 		    r));
 	return (EINVAL);
 }
+#endif /* __rtems__ */
 
 /**
  * @brief Helper function for implementing BUS_BIND_INTR().
@@ -3593,6 +3656,7 @@ bus_generic_get_dma_tag(device_t dev, device_t child)
 	return (NULL);
 }
 
+#ifndef __rtems__
 /**
  * @brief Helper function for implementing BUS_GET_RESOURCE().
  *
@@ -3709,6 +3773,7 @@ bus_generic_rl_alloc_resource(device_t dev, device_t child, int type,
 	return (resource_list_alloc(rl, dev, child, type, rid,
 	    start, end, count, flags));
 }
+#endif /* __rtems__ */
 
 /**
  * @brief Helper function for implementing BUS_CHILD_PRESENT().
@@ -4229,6 +4294,7 @@ driver_module_handler(module_t mod, int what, void *arg)
 	return (error);
 }
 
+#ifndef __rtems__
 /**
  * @brief Enumerate all hinted devices for this bus.
  *
@@ -4262,6 +4328,7 @@ bus_enumerate_hinted_children(device_t bus)
 	while (resource_find_match(&i, &dname, &dunit, "at", busname) == 0)
 		BUS_HINTED_CHILD(bus, dname, dunit);
 }
+#endif /* __rtems__ */
 
 #ifdef BUS_DEBUG
 
@@ -4418,6 +4485,7 @@ print_devclass_list(void)
 
 #endif
 
+#ifndef __rtems__
 /*
  * User-space access to the device tree.
  *
@@ -4497,6 +4565,7 @@ sysctl_devices(SYSCTL_HANDLER_ARGS)
 
 SYSCTL_NODE(_hw_bus, OID_AUTO, devices, CTLFLAG_RD, sysctl_devices,
     "system device tree");
+#endif /* __rtems__ */
 
 int
 bus_data_generation_check(int generation)
@@ -4514,6 +4583,7 @@ bus_data_generation_update(void)
 	bus_data_generation++;
 }
 
+#ifndef __rtems__
 int
 bus_free_resource(device_t dev, int type, struct resource *r)
 {
@@ -4521,3 +4591,4 @@ bus_free_resource(device_t dev, int type, struct resource *r)
 		return (0);
 	return (bus_release_resource(dev, type, rman_get_rid(r), r));
 }
+#endif /* __rtems__ */

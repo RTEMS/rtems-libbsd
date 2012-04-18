@@ -502,6 +502,7 @@ rtems.addRTEMSHeaderFiles(
 		'rtems/machine/rtems-bsd-sysinit.h',
 		'rtems/machine/rtems-bsd-select.h',
 		'rtems/machine/rtems-bsd-taskqueue.h',
+		'rtems/machine/rtems-bsd-bus-dma.h',
 		'bsd.h',
 	]
 )
@@ -539,6 +540,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-malloc.c',
 		'src/rtems-bsd-support.c',
 		'src/rtems-bsd-bus-dma.c',
+		'src/rtems-bsd-bus-dma-mbuf.c',
 		'src/rtems-bsd-sysctl.c',
 		'src/rtems-bsd-sysctlbyname.c',
 		'src/rtems-bsd-sysctlnametomib.c',

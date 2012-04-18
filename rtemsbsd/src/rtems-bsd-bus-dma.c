@@ -5,11 +5,11 @@
  *
  * @brief TODO.
  *
- * File origin from FreeBSD 'sys/powerpc/powerpc/busdma_machdep.c'.
+ * File origin from FreeBSD "sys/powerpc/powerpc/busdma_machdep.c".
  */
 
 /*-
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Obere Lagerstr. 30
@@ -46,44 +46,17 @@
 
 #include <freebsd/machine/rtems-bsd-config.h>
 #include <freebsd/machine/rtems-bsd-cache.h>
+#include <freebsd/machine/rtems-bsd-bus-dma.h>
+
 #include <rtems/malloc.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/systm.h>
 #include <freebsd/sys/malloc.h>
 #include <freebsd/machine/atomic.h>
-#include <freebsd/machine/bus.h>
 
 #ifdef CPU_DATA_CACHE_ALIGNMENT
   #define CLSZ ((uintptr_t) CPU_DATA_CACHE_ALIGNMENT)
   #define CLMASK (CLSZ - (uintptr_t) 1)
 #endif
-
-struct bus_dma_tag {
-	bus_dma_tag_t     parent;
-	bus_size_t	alignment;
-	bus_size_t	boundary;
-	bus_addr_t	lowaddr;
-	bus_addr_t	highaddr;
-	bus_dma_filter_t *filter;
-	void	     *filterarg;
-	bus_size_t	maxsize;
-	int	       nsegments;
-	bus_size_t	maxsegsz;
-	int	       flags;
-	int	       ref_count;
-	int	       map_count;
-	bus_dma_lock_t	 *lockfunc;
-	void		 *lockfuncarg;
-};
-
-struct bus_dmamap {
-	void *buffer_begin;
-	bus_size_t buffer_size;
-};
 
 /*
  * Convenience function for manipulating driver locks from busdma (during
@@ -297,7 +270,7 @@ bus_dmamem_free(bus_dma_tag_t dmat, void *vaddr, bus_dmamap_t map)
  * the starting segment on entrance, and the ending segment on exit.
  * first indicates if this is the first invocation of this function.
  */
-static int
+int
 bus_dmamap_load_buffer(bus_dma_tag_t dmat, bus_dma_segment_t segs[],
     void *buf, bus_size_t buflen, struct thread *td, int flags,
     vm_offset_t *lastaddrp, int *segp, int first)

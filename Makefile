@@ -46,6 +46,7 @@ C_FILES += rtemsbsd/src/rtems-bsd-smp.c
 C_FILES += rtemsbsd/src/rtems-bsd-malloc.c
 C_FILES += rtemsbsd/src/rtems-bsd-support.c
 C_FILES += rtemsbsd/src/rtems-bsd-bus-dma.c
+C_FILES += rtemsbsd/src/rtems-bsd-bus-dma-mbuf.c
 C_FILES += rtemsbsd/src/rtems-bsd-sysctl.c
 C_FILES += rtemsbsd/src/rtems-bsd-sysctlbyname.c
 C_FILES += rtemsbsd/src/rtems-bsd-sysctlnametomib.c

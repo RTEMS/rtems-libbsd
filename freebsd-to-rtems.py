@@ -483,7 +483,7 @@ rtems.addRTEMSHeaderFiles(
 		'rtems/machine/clock.h',
 		'rtems/machine/cpufunc.h',
 		'rtems/machine/endian.h',
-		'rtems/machine/_limits.h',
+		'rtems/macpue/_limits.h',
 		'rtems/machine/_align.h',
 		'rtems/machine/mutex.h',
 		'rtems/machine/param.h',
@@ -550,7 +550,6 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-timesupport.c',
 		'src/rtems-bsd-newproc.c',
 		'src/rtems-bsd-vm_glue.c',
-		'src/rtems-bsd-subr.c',
 	]
 )
 rtems.addEmptyHeaderFiles(

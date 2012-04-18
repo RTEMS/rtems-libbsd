@@ -938,7 +938,9 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 		goto out_unlock;
 	}
 	KASSERT(!CPU_ABSENT(cpuid), ("%s: CPU %u absent", __func__, cpuid));
+#ifndef __rtems__
 	sched_pin();
+#endif  /* __rtems__ */
 	if (cpuid != curcpu)
 		goto queue_fallback;
 	nwsp = DPCPU_PTR(nws);
@@ -997,7 +999,9 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 queue_fallback:
 	error = netisr_queue_internal(proto, m, cpuid);
 out_unpin:
+#ifndef __rtems__
 	sched_unpin();
+#endif  /* __rtems__ */
 out_unlock:
 #ifdef NETISR_LOCKING
 	NETISR_RUNLOCK(&tracker);

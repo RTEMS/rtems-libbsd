@@ -36,8 +36,6 @@
 #include <freebsd/sys/mutex.h>
 #include <freebsd/sys/malloc.h>
 
-MALLOC_DEFINE(M_IOV, "iov", "large iov's");
-
 void selrecord(struct thread *selector, struct selinfo *sip)
 {
 	BSD_PANIC("not implemented");

@@ -35,6 +35,8 @@ MALLOC_DEFINE(M_TEMP, "temp", "misc temporary data buffers");
 MALLOC_DEFINE(M_IP6OPT, "ip6opt", "IPv6 options");
 MALLOC_DEFINE(M_IP6NDP, "ip6ndp", "IPv6 Neighbor Discovery");
 
+MALLOC_DEFINE(M_IOV, "iov", "large iov's");
+
 void
 malloc_init(void *data)
 {

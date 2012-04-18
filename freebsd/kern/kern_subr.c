@@ -70,6 +70,11 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/vm/vm_object.h>
 #endif
 
+
+#ifdef __rtems__
+#include <rtems.h>
+#endif
+
 #ifndef __rtems__
 SYSCTL_INT(_kern, KERN_IOV_MAX, iov_max, CTLFLAG_RD, NULL, UIO_MAXIOV,
 	"Maximum number of elements in an I/O vector; sysconf(_SC_IOV_MAX)");
@@ -468,7 +473,6 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 	return (hashtbl);
 }
 
-#ifndef __rtems__
 void
 uio_yield(void)
 {
@@ -476,15 +480,18 @@ uio_yield(void)
 
 	td = curthread;
 	DROP_GIANT();
-	thread_lock(td);
 #ifndef __rtems__
+	thread_lock(td);
 	sched_prio(td, td->td_user_pri);
-#endif
 	mi_switch(SW_INVOL | SWT_RELINQUISH, NULL);
 	thread_unlock(td);
+#else
+        rtems_task_wake_after( RTEMS_YIELD_PROCESSOR );
+#endif
 	PICKUP_GIANT();
 }
 
+#ifndef __rtems__
 int
 copyinfrom(const void * __restrict src, void * __restrict dst, size_t len,
     int seg)

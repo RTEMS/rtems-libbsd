@@ -56,6 +56,7 @@ C_FILES += rtemsbsd/src/rtems-bsd-timeout.c
 C_FILES += rtemsbsd/src/rtems-bsd-timesupport.c
 C_FILES += rtemsbsd/src/rtems-bsd-newproc.c
 C_FILES += rtemsbsd/src/rtems-bsd-vm_glue.c
+C_FILES += rtemsbsd/src/rtems-bsd-copyinout.c
 C_FILES += freebsd/kern/subr_eventhandler.c
 C_FILES += freebsd/kern/kern_subr.c
 C_FILES += freebsd/kern/kern_tc.c

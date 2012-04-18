@@ -46,6 +46,7 @@ __END_DECLS
 #define	errno		(* __error())
 #endif
 
+#ifndef __rtems__
 #define	EPERM		1		/* Operation not permitted */
 #define	ENOENT		2		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
@@ -180,6 +181,7 @@ __END_DECLS
 #ifndef _POSIX_SOURCE
 #define	ELAST		93		/* Must be equal largest errno */
 #endif /* _POSIX_SOURCE */
+#endif /* __rtems__ */
 
 #ifdef _KERNEL
 /* pseudo-errors returned inside kernel to modify return to process */

@@ -69,12 +69,14 @@ __FBSDID("$FreeBSD$");
 
 
 static MALLOC_DEFINE(M_PLIMIT, "plimit", "plimit structures");
+#endif /* __rtems__ */
 static MALLOC_DEFINE(M_UIDINFO, "uidinfo", "uidinfo structures");
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
 static struct rwlock uihashtbl_lock;
 static LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
 static u_long uihash;		/* size of hash table - 1 */
 
+#ifndef __rtems__
 static void	calcru1(struct proc *p, struct rusage_ext *ruxp,
 		    struct timeval *up, struct timeval *sp);
 static int	donice(struct thread *td, struct proc *chgp, int n);
@@ -1140,6 +1142,7 @@ lim_max(struct proc *p, int which)
 	lim_rlimit(p, which, &rl);
 	return (rl.rlim_max);
 }
+#endif /* __rtems__ */
 
 /*
  * Return the current (soft) limit for a particular system resource.
@@ -1148,12 +1151,21 @@ lim_max(struct proc *p, int which)
 rlim_t
 lim_cur(struct proc *p, int which)
 {
+#ifndef __rtems__
 	struct rlimit rl;
 
 	lim_rlimit(p, which, &rl);
 	return (rl.rlim_cur);
+#else
+	/* 
+         * Resource limits not currently supported in RTEMS version.  
+         * This is left for future work.
+         */
+	return RLIM_INFINITY;
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 /*
  * Return a copy of the entire rlimit structure for the system limit
  * specified by 'which' in the rlimit structure pointed to by 'rlp'.
@@ -1169,6 +1181,7 @@ lim_rlimit(struct proc *p, int which, struct rlimit *rlp)
 	if (p->p_sysent->sv_fixlimit != NULL)
 		p->p_sysent->sv_fixlimit(rlp, which);
 }
+#endif /* __rtems__ */
 
 /*
  * Find the uidinfo structure for a uid.  This structure is used to
@@ -1304,6 +1317,7 @@ uifree(uip)
 	rw_wunlock(&uihashtbl_lock);
 }
 
+#ifndef __rtems__
 /*
  * Change the count associated with number of processes
  * a given user is using.  When 'max' is 0, don't enforce a limit

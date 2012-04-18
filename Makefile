@@ -38,7 +38,6 @@ C_FILES += rtemsbsd/src/rtems-bsd-callout.c
 C_FILES += rtemsbsd/src/rtems-bsd-init.c
 C_FILES += rtemsbsd/src/rtems-bsd-init-with-irq.c
 C_FILES += rtemsbsd/src/rtems-bsd-assert.c
-C_FILES += rtemsbsd/src/rtems-bsd-resource.c
 C_FILES += rtemsbsd/src/rtems-bsd-jail.c
 C_FILES += rtemsbsd/src/rtems-bsd-shell.c
 C_FILES += rtemsbsd/src/rtems-bsd-syscalls.c

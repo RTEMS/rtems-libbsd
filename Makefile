@@ -14,6 +14,7 @@ CFLAGS += -I contrib/pf
 CFLAGS += -B $(INSTALL_BASE) 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
+CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 
 C_FILES =
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc24xx.c
@@ -422,7 +423,7 @@ C_FILES += freebsd/sparc64/sparc64/in_cksum.c
 endif
 
 C_O_FILES = $(C_FILES:%.c=%.o)
-C_DEP_FILES = $(C_FILES:%.c=%.dep)
+C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsd.a
 
@@ -444,10 +445,10 @@ install: $(LIB)
 
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd
-	rm -f $(LIB) $(C_O_FILES) $(C_DEP_FILES)
+	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES)
 	rm -f libbsd.html
 
--include $(C_DEP_FILES)
+-include $(C_D_FILES)
 
 doc: libbsd.html
 

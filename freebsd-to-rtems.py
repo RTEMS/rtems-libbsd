@@ -347,6 +347,7 @@ class ModuleManager:
 			'CFLAGS += -B $(INSTALL_BASE) \n' \
 			'CFLAGS += -w \n' \
 			'CFLAGS += -std=gnu99\n' \
+			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'\n'
 		data += 'C_FILES =\n'
 		for m in self.modules:
@@ -359,7 +360,7 @@ class ModuleManager:
 				data += 'endif\n'
 		data += '\n' \
 			'C_O_FILES = $(C_FILES:%.c=%.o)\n' \
-			'C_DEP_FILES = $(C_FILES:%.c=%.dep)\n' \
+			'C_D_FILES = $(C_FILES:%.c=%.d)\n' \
 			'\n' \
 			'LIB = libbsd.a\n' \
 			'\n' \
@@ -381,10 +382,10 @@ class ModuleManager:
 			'\n' \
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
-			'\trm -f $(LIB) $(C_O_FILES) $(C_DEP_FILES)\n' \
+			'\trm -f $(LIB) $(C_O_FILES) $(C_D_FILES)\n' \
 			'\trm -f libbsd.html\n' \
 			'\n' \
-			'-include $(C_DEP_FILES)\n' \
+			'-include $(C_D_FILES)\n' \
 			'\n' \
 			'doc: libbsd.html\n' \
 			'\n' \

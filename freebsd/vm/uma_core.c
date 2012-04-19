@@ -1,38 +1,102 @@
-/**
- * @file
+#include <freebsd/machine/rtems-bsd-config.h>
+
+/*-
+ * Copyright (c) 2002-2005, 2009 Jeffrey Roberson <jeff@FreeBSD.org>
+ * Copyright (c) 2004, 2005 Bosko Milekic <bmilekic@FreeBSD.org>
+ * Copyright (c) 2004-2006 Robert N. M. Watson
+ * All rights reserved.
  *
- * @ingroup rtems_bsd_rtems
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice unmodified, this list of conditions, and the following
+ *    disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
  *
- * @brief TODO.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * uma_core.c  Implementation of the Universal Memory allocator
  *
- *  embedded brains GmbH
- *  Obere Lagerstr. 30
- *  82178 Puchheim
- *  Germany
- *  <rtems@embedded-brains.de>
+ * This allocator is intended to replace the multitude of similar object caches
+ * in the standard FreeBSD kernel.  The intent is to be flexible as well as
+ * effecient.  A primary design goal is to return unused memory to the rest of
+ * the system.  This will make the system as a whole more flexible due to the
+ * ability to move memory to subsystems which most need it instead of leaving
+ * pools of reserved memory unused.
  *
- * The license and distribution terms for this file may be
- * found in the file LICENSE in this distribution or at
- * http://www.rtems.com/license/LICENSE.
+ * The basic ideas stem from similar slab/zone based allocators whose algorithms
+ * are well known.
+ *
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+/*
+ * TODO:
+ *	- Improve memory usage for large allocations
+ *	- Investigate cache size adjustments
+ */
+
+#include <freebsd/sys/cdefs.h>
+__FBSDID("$FreeBSD$");
+
+/* I should really use ktr.. */
+/*
+#define UMA_DEBUG 1
+#define UMA_DEBUG_ALLOC 1
+#define UMA_DEBUG_ALLOC_1 1
+*/
+
+#include <freebsd/local/opt_ddb.h>
+#include <freebsd/local/opt_param.h>
 
 #include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
 #include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
 #include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/types.h>
+#include <freebsd/sys/queue.h>
+#include <freebsd/sys/malloc.h>
 #include <freebsd/sys/ktr.h>
+#include <freebsd/sys/lock.h>
+#include <freebsd/sys/sysctl.h>
+#include <freebsd/sys/mutex.h>
+#include <freebsd/sys/proc.h>
+#include <freebsd/sys/sbuf.h>
+#include <freebsd/sys/smp.h>
+#ifndef __rtems__
+#include <freebsd/sys/vmmeter.h>
+#endif /* __rtems__ */
+
+#include <freebsd/vm/vm.h>
+#ifndef __rtems__
+#include <freebsd/vm/vm_object.h>
+#include <freebsd/vm/vm_page.h>
+#include <freebsd/vm/vm_param.h>
+#include <freebsd/vm/vm_map.h>
+#include <freebsd/vm/vm_kern.h>
+#include <freebsd/vm/vm_extern.h>
+#endif /* __rtems__ */
 #include <freebsd/vm/uma.h>
 #include <freebsd/vm/uma_int.h>
 #include <freebsd/vm/uma_dbg.h>
+
+#ifndef __rtems__
+#include <freebsd/machine/vmparam.h>
+
+#include <freebsd/ddb/ddb.h>
+#endif /* __rtems__ */
 
 /*
  * This is the zone and keg from which all zones are spawned.  The idea is that
@@ -48,12 +112,6 @@ static uma_zone_t zones = &masterzone_z;
 /* This is the zone from which all of uma_slab_t's are allocated. */
 static uma_zone_t slabzone;
 static uma_zone_t slabrefzone;	/* With refcounters (for UMA_ZONE_REFCNT) */
-
-static u_int mp_maxid = 0; /* simulate 1 CPU.  This should really come from RTEMS SMP.  AT this time, RTEMS SMP is not functional */
-#define CPU_ABSENT(x_cpu) 0 /* force all cpus to be present.  This should really come from RTEMS SMP. */
-#define CPU_FOREACH(i)              \
-  for ((i) = 0; (i) <= mp_maxid; (i)++)       \
-    if (!CPU_ABSENT((i)))
 
 /*
  * The initial hash tables come out of this zone so they can be allocated
@@ -157,7 +215,9 @@ enum zfreeskip { SKIP_NONE, SKIP_DTOR, SKIP_FINI };
 #define	ZFREE_STATFREE	0x00000002	/* Update zone free statistic. */
 
 /* Prototypes.. */
-
+#ifndef __rtems__
+static void *obj_alloc(uma_zone_t, int, u_int8_t *, int);
+#endif /* __rtems__ */
 static void *page_alloc(uma_zone_t, int, u_int8_t *, int);
 static void *startup_alloc(uma_zone_t, int, u_int8_t *, int);
 static void page_free(void *, int, u_int8_t);
@@ -177,9 +237,16 @@ static void zone_timeout(uma_zone_t zone);
 static int hash_alloc(struct uma_hash *);
 static int hash_expand(struct uma_hash *, struct uma_hash *);
 static void hash_free(struct uma_hash *hash);
+#ifndef __rtems__
+static void uma_timeout(void *);
+static void uma_startup3(void);
+#endif /* __rtems__ */
 static void *zone_alloc_item(uma_zone_t, void *, int);
 static void zone_free_item(uma_zone_t, void *, void *, enum zfreeskip,
     int);
+#ifndef __rtems__
+static void bucket_enable(void);
+#endif /* __rtems__ */
 static void bucket_init(void);
 static uma_bucket_t bucket_alloc(int, int);
 static void bucket_free(uma_bucket_t);
@@ -195,6 +262,31 @@ static inline void keg_relock(uma_keg_t keg, uma_zone_t zone);
 
 void uma_print_zone(uma_zone_t);
 void uma_print_stats(void);
+#ifndef __rtems__
+static int sysctl_vm_zone_count(SYSCTL_HANDLER_ARGS);
+static int sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS);
+
+SYSINIT(uma_startup3, SI_SUB_VM_CONF, SI_ORDER_SECOND, uma_startup3, NULL);
+
+SYSCTL_PROC(_vm, OID_AUTO, zone_count, CTLFLAG_RD|CTLTYPE_INT,
+    0, 0, sysctl_vm_zone_count, "I", "Number of UMA zones");
+
+SYSCTL_PROC(_vm, OID_AUTO, zone_stats, CTLFLAG_RD|CTLTYPE_STRUCT,
+    0, 0, sysctl_vm_zone_stats, "s,struct uma_type_header", "Zone Stats");
+
+/*
+ * This routine checks to see whether or not it's safe to enable buckets.
+ */
+
+static void
+bucket_enable(void)
+{
+	if (cnt.v_free_count < cnt.v_free_min)
+		bucketdisable = 1;
+	else
+		bucketdisable = 0;
+}
+#endif /* __rtems__ */
 
 /*
  * Initialize bucket_zones, the array of zones of buckets of various sizes.
@@ -299,6 +391,28 @@ zone_foreach_keg(uma_zone_t zone, void (*kegfn)(uma_keg_t))
 	LIST_FOREACH(klink, &zone->uz_kegs, kl_link)
 		kegfn(klink->kl_keg);
 }
+
+#ifndef __rtems__
+/*
+ * Routine called by timeout which is used to fire off some time interval
+ * based calculations.  (stats, hash size, etc.)
+ *
+ * Arguments:
+ *	arg   Unused
+ *
+ * Returns:
+ *	Nothing
+ */
+static void
+uma_timeout(void *unused)
+{
+	bucket_enable();
+	zone_foreach(zone_timeout);
+
+	/* Reschedule this event */
+	callout_reset(&uma_callout, UMA_TIMEOUT * hz, uma_timeout, NULL);
+}
+#endif /* __rtems__ */
 
 /*
  * Routine to perform timeout driven calculations.  This expands the
@@ -631,6 +745,21 @@ finished:
 		flags = slab->us_flags;
 		mem = slab->us_data;
 
+#ifndef __rtems__
+		if (keg->uk_flags & UMA_ZONE_VTOSLAB) {
+			vm_object_t obj;
+
+			if (flags & UMA_SLAB_KMEM)
+				obj = kmem_object;
+			else if (flags & UMA_SLAB_KERNEL)
+				obj = kernel_object;
+			else
+				obj = NULL;
+			for (i = 0; i < keg->uk_ppera; i++)
+				vsetobj((vm_offset_t)mem + (i * PAGE_SIZE),
+				    obj);
+		}
+#endif /* __rtems__ */
 		if (keg->uk_flags & UMA_ZONE_OFFPAGE)
 			zone_free_item(keg->uk_slabzone, slab, NULL,
 			    SKIP_NONE, ZFREE_STATFREE);
@@ -746,6 +875,12 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 	if (!(keg->uk_flags & UMA_ZONE_OFFPAGE))
 		slab = (uma_slab_t )(mem + keg->uk_pgoff);
 
+#ifndef __rtems__
+	if (keg->uk_flags & UMA_ZONE_VTOSLAB)
+		for (i = 0; i < keg->uk_ppera; i++)
+			vsetslab((vm_offset_t)mem + (i * PAGE_SIZE), slab);
+#endif /* __rtems__ */
+
 	slab->us_keg = keg;
 	slab->us_data = mem;
 	slab->us_freecount = keg->uk_ipers;
@@ -775,6 +910,21 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 					    (keg->uk_rsize * i),
 					    keg->uk_size);
 			}
+#ifndef __rtems__
+			if (keg->uk_flags & UMA_ZONE_VTOSLAB) {
+				vm_object_t obj;
+
+				if (flags & UMA_SLAB_KMEM)
+					obj = kmem_object;
+				else if (flags & UMA_SLAB_KERNEL)
+					obj = kernel_object;
+				else
+					obj = NULL;
+				for (i = 0; i < keg->uk_ppera; i++)
+					vsetobj((vm_offset_t)mem +
+					    (i * PAGE_SIZE), obj);
+			}
+#endif /* __rtems__ */
 			if (keg->uk_flags & UMA_ZONE_OFFPAGE)
 				zone_free_item(keg->uk_slabzone, slab,
 				    NULL, SKIP_NONE, ZFREE_STATFREE);
@@ -866,10 +1016,78 @@ page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 	void *p;	/* Returned page */
 
 	*pflag = UMA_SLAB_KMEM;
-  p = (void *) malloc(bytes, M_TEMP, wait);
+#ifndef __rtems__
+	p = (void *) kmem_malloc(kmem_map, bytes, wait);
+#else /* __rtems__ */
+	p = (void *) malloc(bytes, M_TEMP, wait);
+#endif /* __rtems__ */
 
 	return (p);
 }
+
+#ifndef __rtems__
+/*
+ * Allocates a number of pages from within an object
+ *
+ * Arguments:
+ *	bytes  The number of bytes requested
+ *	wait   Shall we wait?
+ *
+ * Returns:
+ *	A pointer to the alloced memory or possibly
+ *	NULL if M_NOWAIT is set.
+ */
+static void *
+obj_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
+{
+	vm_object_t object;
+	vm_offset_t retkva, zkva;
+	vm_page_t p;
+	int pages, startpages;
+	uma_keg_t keg;
+
+	keg = zone_first_keg(zone);
+	object = keg->uk_obj;
+	retkva = 0;
+
+	/*
+	 * This looks a little weird since we're getting one page at a time.
+	 */
+	VM_OBJECT_LOCK(object);
+	p = TAILQ_LAST(&object->memq, pglist);
+	pages = p != NULL ? p->pindex + 1 : 0;
+	startpages = pages;
+	zkva = keg->uk_kva + pages * PAGE_SIZE;
+	for (; bytes > 0; bytes -= PAGE_SIZE) {
+		p = vm_page_alloc(object, pages,
+		    VM_ALLOC_INTERRUPT | VM_ALLOC_WIRED);
+		if (p == NULL) {
+			if (pages != startpages)
+				pmap_qremove(retkva, pages - startpages);
+			while (pages != startpages) {
+				pages--;
+				p = TAILQ_LAST(&object->memq, pglist);
+				vm_page_lock_queues();
+				vm_page_unwire(p, 0);
+				vm_page_free(p);
+				vm_page_unlock_queues();
+			}
+			retkva = 0;
+			goto done;
+		}
+		pmap_qenter(zkva, &p, 1);
+		if (retkva == 0)
+			retkva = zkva;
+		zkva += PAGE_SIZE;
+		pages += 1;
+	}
+done:
+	VM_OBJECT_UNLOCK(object);
+	*flags = UMA_SLAB_PRIV;
+
+	return ((void *)retkva);
+}
+#endif /* __rtems__ */
 
 /*
  * Frees a number of pages to the system
@@ -885,7 +1103,20 @@ page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 static void
 page_free(void *mem, int size, u_int8_t flags)
 {
-  free( mem, M_TEMP );
+#ifndef __rtems__
+	vm_map_t map;
+
+	if (flags & UMA_SLAB_KMEM)
+		map = kmem_map;
+	else if (flags & UMA_SLAB_KERNEL)
+		map = kernel_map;
+	else
+		panic("UMA: page_free used with invalid flags %d", flags);
+
+	kmem_free(map, (vm_offset_t)mem, size);
+#else /* __rtems__ */
+	free( mem, M_TEMP );
+#endif /* __rtems__ */
 }
 
 /*
@@ -1037,7 +1268,9 @@ keg_cachespread_init(uma_keg_t keg)
 	keg->uk_rsize = rsize;
 	keg->uk_ppera = pages;
 	keg->uk_ipers = ((pages * PAGE_SIZE) + trailer) / rsize;
-  //keg->uk_flags |= UMA_ZONE_OFFPAGE | UMA_ZONE_VTOSLAB;
+#ifndef __rtems__
+	keg->uk_flags |= UMA_ZONE_OFFPAGE | UMA_ZONE_VTOSLAB;
+#endif /* __rtems__ */
 	KASSERT(keg->uk_ipers <= uma_max_ipers,
 	    ("keg_small_init: keg->uk_ipers too high(%d) increase max_ipers",
 	    keg->uk_ipers));
@@ -1082,8 +1315,10 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	if (arg->flags & UMA_ZONE_ZINIT)
 		keg->uk_init = zero_init;
 
-  /*if (arg->flags & UMA_ZONE_REFCNT || arg->flags & UMA_ZONE_MALLOC)
-    keg->uk_flags |= UMA_ZONE_VTOSLAB;*/
+#ifndef __rtems__
+	if (arg->flags & UMA_ZONE_REFCNT || arg->flags & UMA_ZONE_MALLOC)
+		keg->uk_flags |= UMA_ZONE_VTOSLAB;
+#endif /* __rtems__ */
 
 	/*
 	 * The +UMA_FRITM_SZ added to uk_size is to account for the
@@ -1568,6 +1803,37 @@ uma_startup(void *bootmem, int boot_pages)
 #endif
 }
 
+#ifndef __rtems__
+/* see uma.h */
+void
+uma_startup2(void)
+{
+	booted = 1;
+	bucket_enable();
+#ifdef UMA_DEBUG
+	printf("UMA startup2 complete.\n");
+#endif
+}
+
+/*
+ * Initialize our callout handle
+ *
+ */
+
+static void
+uma_startup3(void)
+{
+#ifdef UMA_DEBUG
+	printf("Starting callout.\n");
+#endif
+	callout_init(&uma_callout, CALLOUT_MPSAFE);
+	callout_reset(&uma_callout, UMA_TIMEOUT * hz, uma_timeout, NULL);
+#ifdef UMA_DEBUG
+	printf("UMA startup3 complete.\n");
+#endif
+}
+#endif /* __rtems__ */
+
 static uma_keg_t
 uma_kcreate(uma_zone_t zone, size_t size, uma_init uminit, uma_fini fini,
 		int align, u_int32_t flags)
@@ -1656,6 +1922,73 @@ zone_unlock_pair(uma_zone_t a, uma_zone_t b)
 	ZONE_UNLOCK(a);
 	ZONE_UNLOCK(b);
 }
+
+#ifndef __rtems__
+int
+uma_zsecond_add(uma_zone_t zone, uma_zone_t master)
+{
+	uma_klink_t klink;
+	uma_klink_t kl;
+	int error;
+
+	error = 0;
+	klink = malloc(sizeof(*klink), M_TEMP, M_WAITOK | M_ZERO);
+
+	zone_lock_pair(zone, master);
+	/*
+	 * zone must use vtoslab() to resolve objects and must already be
+	 * a secondary.
+	 */
+	if ((zone->uz_flags & (UMA_ZONE_VTOSLAB | UMA_ZONE_SECONDARY))
+	    != (UMA_ZONE_VTOSLAB | UMA_ZONE_SECONDARY)) {
+		error = EINVAL;
+		goto out;
+	}
+	/*
+	 * The new master must also use vtoslab().
+	 */
+	if ((zone->uz_flags & UMA_ZONE_VTOSLAB) != UMA_ZONE_VTOSLAB) {
+		error = EINVAL;
+		goto out;
+	}
+	/*
+	 * Both must either be refcnt, or not be refcnt.
+	 */
+	if ((zone->uz_flags & UMA_ZONE_REFCNT) !=
+	    (master->uz_flags & UMA_ZONE_REFCNT)) {
+		error = EINVAL;
+		goto out;
+	}
+	/*
+	 * The underlying object must be the same size.  rsize
+	 * may be different.
+	 */
+	if (master->uz_size != zone->uz_size) {
+		error = E2BIG;
+		goto out;
+	}
+	/*
+	 * Put it at the end of the list.
+	 */
+	klink->kl_keg = zone_first_keg(master);
+	LIST_FOREACH(kl, &zone->uz_kegs, kl_link) {
+		if (LIST_NEXT(kl, kl_link) == NULL) {
+			LIST_INSERT_AFTER(kl, klink, kl_link);
+			break;
+		}
+	}
+	klink = NULL;
+	zone->uz_flags |= UMA_ZFLAG_MULTI;
+	zone->uz_slab = zone_fetch_slab_multi;
+
+out:
+	zone_unlock_pair(zone, master);
+	if (klink != NULL)
+		free(klink, M_TEMP);
+
+	return (error);
+}
+#endif /* __rtems__ */
 
 
 /* See uma.h */
@@ -2442,7 +2775,7 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 	if (flags & ZFREE_STATFREE)
 		zone->uz_frees++;
 
-  if (!(zone->uz_flags & UMA_ZONE_VTOSLAB)) {
+	if (!(zone->uz_flags & UMA_ZONE_VTOSLAB)) {
 		mem = (u_int8_t *)((unsigned long)item & (~UMA_SLAB_MASK));
 		keg = zone_first_keg(zone); /* Must only be one. */
 		if (zone->uz_flags & UMA_ZONE_HASH) {
@@ -2452,7 +2785,17 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 			slab = (uma_slab_t)mem;
 		}
 	} else {
-    panic("uma virtual memory not supported!" );
+#ifndef __rtems__
+		/* This prevents redundant lookups via free(). */
+		if ((zone->uz_flags & UMA_ZONE_MALLOC) && udata != NULL)
+			slab = (uma_slab_t)udata;
+		else
+			slab = vtoslab((vm_offset_t)item);
+		keg = slab->us_keg;
+		keg_relock(keg, zone);
+#else /* __rtems__ */
+		panic("uma virtual memory not supported!" );
+#endif /* __rtems__ */
 	}
 	MPASS(keg == slab->us_keg);
 
@@ -2638,6 +2981,44 @@ uma_zone_set_allocf(uma_zone_t zone, uma_alloc allocf)
 	ZONE_UNLOCK(zone);
 }
 
+#ifndef __rtems__
+/* See uma.h */
+int
+uma_zone_set_obj(uma_zone_t zone, struct vm_object *obj, int count)
+{
+	uma_keg_t keg;
+	vm_offset_t kva;
+	int pages;
+
+	keg = zone_first_keg(zone);
+	pages = count / keg->uk_ipers;
+
+	if (pages * keg->uk_ipers < count)
+		pages++;
+
+	kva = kmem_alloc_nofault(kernel_map, pages * UMA_SLAB_SIZE);
+
+	if (kva == 0)
+		return (0);
+	if (obj == NULL) {
+		obj = vm_object_allocate(OBJT_DEFAULT,
+		    pages);
+	} else {
+		VM_OBJECT_LOCK_INIT(obj, "uma object");
+		_vm_object_allocate(OBJT_DEFAULT,
+		    pages, obj);
+	}
+	ZONE_LOCK(zone);
+	keg->uk_kva = kva;
+	keg->uk_obj = obj;
+	keg->uk_maxpages = pages;
+	keg->uk_allocf = obj_alloc;
+	keg->uk_flags |= UMA_ZONE_NOFREE | UMA_ZFLAG_PRIVALLOC;
+	ZONE_UNLOCK(zone);
+	return (1);
+}
+#endif /* __rtems__ */
+
 /* See uma.h */
 void
 uma_prealloc(uma_zone_t zone, int items)
@@ -2662,6 +3043,28 @@ uma_prealloc(uma_zone_t zone, int items)
 	ZONE_UNLOCK(zone);
 }
 
+#ifndef __rtems__
+/* See uma.h */
+u_int32_t *
+uma_find_refcnt(uma_zone_t zone, void *item)
+{
+	uma_slabrefcnt_t slabref;
+	uma_keg_t keg;
+	u_int32_t *refcnt;
+	int idx;
+
+	slabref = (uma_slabrefcnt_t)vtoslab((vm_offset_t)item &
+	    (~UMA_SLAB_MASK));
+	keg = slabref->us_keg;
+	KASSERT(slabref != NULL && slabref->us_keg->uk_flags & UMA_ZONE_REFCNT,
+	    ("uma_find_refcnt(): zone possibly not UMA_ZONE_REFCNT"));
+	idx = ((unsigned long)item - (unsigned long)slabref->us_data)
+	    / keg->uk_rsize;
+	refcnt = &slabref->us_freelist[idx].us_refcnt;
+	return refcnt;
+}
+#endif /* __rtems__ */
+
 /* See uma.h */
 void
 uma_reclaim(void)
@@ -2669,6 +3072,9 @@ uma_reclaim(void)
 #ifdef UMA_DEBUG
 	printf("UMA: vm asked us to release pages!\n");
 #endif
+#ifndef __rtems__
+	bucket_enable();
+#endif /* __rtems__ */
 	zone_foreach(zone_drain);
 	/*
 	 * Some slabs may have been freed but this zone will be visited early
@@ -2710,6 +3116,9 @@ uma_large_malloc(int size, int wait)
 		return (NULL);
 	mem = page_alloc(NULL, size, &flags, wait);
 	if (mem) {
+#ifndef __rtems__
+		vsetslab((vm_offset_t)mem, slab);
+#endif /* __rtems__ */
 		slab->us_data = mem;
 		slab->us_flags = flags | UMA_SLAB_MALLOC;
 		slab->us_size = size;
@@ -2724,6 +3133,9 @@ uma_large_malloc(int size, int wait)
 void
 uma_large_free(uma_slab_t slab)
 {
+#ifndef __rtems__
+	vsetobj((vm_offset_t)slab->us_data, kmem_object);
+#endif /* __rtems__ */
 	page_free(slab->us_data, slab->us_size, slab->us_flags);
 	zone_free_item(slabzone, slab, NULL, SKIP_NONE, ZFREE_STATFREE);
 }
@@ -2794,3 +3206,234 @@ uma_print_zone(uma_zone_t zone)
 	}
 }
 
+#ifndef __rtems__
+#ifdef DDB
+/*
+ * Generate statistics across both the zone and its per-cpu cache's.  Return
+ * desired statistics if the pointer is non-NULL for that statistic.
+ *
+ * Note: does not update the zone statistics, as it can't safely clear the
+ * per-CPU cache statistic.
+ *
+ * XXXRW: Following the uc_allocbucket and uc_freebucket pointers here isn't
+ * safe from off-CPU; we should modify the caches to track this information
+ * directly so that we don't have to.
+ */
+static void
+uma_zone_sumstat(uma_zone_t z, int *cachefreep, u_int64_t *allocsp,
+    u_int64_t *freesp)
+{
+	uma_cache_t cache;
+	u_int64_t allocs, frees;
+	int cachefree, cpu;
+
+	allocs = frees = 0;
+	cachefree = 0;
+	for (cpu = 0; cpu <= mp_maxid; cpu++) {
+		if (CPU_ABSENT(cpu))
+			continue;
+		cache = &z->uz_cpu[cpu];
+		if (cache->uc_allocbucket != NULL)
+			cachefree += cache->uc_allocbucket->ub_cnt;
+		if (cache->uc_freebucket != NULL)
+			cachefree += cache->uc_freebucket->ub_cnt;
+		allocs += cache->uc_allocs;
+		frees += cache->uc_frees;
+	}
+	allocs += z->uz_allocs;
+	frees += z->uz_frees;
+	if (cachefreep != NULL)
+		*cachefreep = cachefree;
+	if (allocsp != NULL)
+		*allocsp = allocs;
+	if (freesp != NULL)
+		*freesp = frees;
+}
+#endif /* DDB */
+
+static int
+sysctl_vm_zone_count(SYSCTL_HANDLER_ARGS)
+{
+	uma_keg_t kz;
+	uma_zone_t z;
+	int count;
+
+	count = 0;
+	mtx_lock(&uma_mtx);
+	LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		LIST_FOREACH(z, &kz->uk_zones, uz_link)
+			count++;
+	}
+	mtx_unlock(&uma_mtx);
+	return (sysctl_handle_int(oidp, &count, 0, req));
+}
+
+static int
+sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS)
+{
+	struct uma_stream_header ush;
+	struct uma_type_header uth;
+	struct uma_percpu_stat ups;
+	uma_bucket_t bucket;
+	struct sbuf sbuf;
+	uma_cache_t cache;
+	uma_klink_t kl;
+	uma_keg_t kz;
+	uma_zone_t z;
+	uma_keg_t k;
+	char *buffer;
+	int buflen, count, error, i;
+
+	mtx_lock(&uma_mtx);
+restart:
+	mtx_assert(&uma_mtx, MA_OWNED);
+	count = 0;
+	LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		LIST_FOREACH(z, &kz->uk_zones, uz_link)
+			count++;
+	}
+	mtx_unlock(&uma_mtx);
+
+	buflen = sizeof(ush) + count * (sizeof(uth) + sizeof(ups) *
+	    (mp_maxid + 1)) + 1;
+	buffer = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
+
+	mtx_lock(&uma_mtx);
+	i = 0;
+	LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		LIST_FOREACH(z, &kz->uk_zones, uz_link)
+			i++;
+	}
+	if (i > count) {
+		free(buffer, M_TEMP);
+		goto restart;
+	}
+	count =  i;
+
+	sbuf_new(&sbuf, buffer, buflen, SBUF_FIXEDLEN);
+
+	/*
+	 * Insert stream header.
+	 */
+	bzero(&ush, sizeof(ush));
+	ush.ush_version = UMA_STREAM_VERSION;
+	ush.ush_maxcpus = (mp_maxid + 1);
+	ush.ush_count = count;
+	if (sbuf_bcat(&sbuf, &ush, sizeof(ush)) < 0) {
+		mtx_unlock(&uma_mtx);
+		error = ENOMEM;
+		goto out;
+	}
+
+	LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		LIST_FOREACH(z, &kz->uk_zones, uz_link) {
+			bzero(&uth, sizeof(uth));
+			ZONE_LOCK(z);
+			strlcpy(uth.uth_name, z->uz_name, UTH_MAX_NAME);
+			uth.uth_align = kz->uk_align;
+			uth.uth_size = kz->uk_size;
+			uth.uth_rsize = kz->uk_rsize;
+			LIST_FOREACH(kl, &z->uz_kegs, kl_link) {
+				k = kl->kl_keg;
+				uth.uth_maxpages += k->uk_maxpages;
+				uth.uth_pages += k->uk_pages;
+				uth.uth_keg_free += k->uk_free;
+				uth.uth_limit = (k->uk_maxpages / k->uk_ppera)
+				    * k->uk_ipers;
+			}
+
+			/*
+			 * A zone is secondary is it is not the first entry
+			 * on the keg's zone list.
+			 */
+			if ((z->uz_flags & UMA_ZONE_SECONDARY) &&
+			    (LIST_FIRST(&kz->uk_zones) != z))
+				uth.uth_zone_flags = UTH_ZONE_SECONDARY;
+
+			LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
+				uth.uth_zone_free += bucket->ub_cnt;
+			uth.uth_allocs = z->uz_allocs;
+			uth.uth_frees = z->uz_frees;
+			uth.uth_fails = z->uz_fails;
+			if (sbuf_bcat(&sbuf, &uth, sizeof(uth)) < 0) {
+				ZONE_UNLOCK(z);
+				mtx_unlock(&uma_mtx);
+				error = ENOMEM;
+				goto out;
+			}
+			/*
+			 * While it is not normally safe to access the cache
+			 * bucket pointers while not on the CPU that owns the
+			 * cache, we only allow the pointers to be exchanged
+			 * without the zone lock held, not invalidated, so
+			 * accept the possible race associated with bucket
+			 * exchange during monitoring.
+			 */
+			for (i = 0; i < (mp_maxid + 1); i++) {
+				bzero(&ups, sizeof(ups));
+				if (kz->uk_flags & UMA_ZFLAG_INTERNAL)
+					goto skip;
+				if (CPU_ABSENT(i))
+					goto skip;
+				cache = &z->uz_cpu[i];
+				if (cache->uc_allocbucket != NULL)
+					ups.ups_cache_free +=
+					    cache->uc_allocbucket->ub_cnt;
+				if (cache->uc_freebucket != NULL)
+					ups.ups_cache_free +=
+					    cache->uc_freebucket->ub_cnt;
+				ups.ups_allocs = cache->uc_allocs;
+				ups.ups_frees = cache->uc_frees;
+skip:
+				if (sbuf_bcat(&sbuf, &ups, sizeof(ups)) < 0) {
+					ZONE_UNLOCK(z);
+					mtx_unlock(&uma_mtx);
+					error = ENOMEM;
+					goto out;
+				}
+			}
+			ZONE_UNLOCK(z);
+		}
+	}
+	mtx_unlock(&uma_mtx);
+	sbuf_finish(&sbuf);
+	error = SYSCTL_OUT(req, sbuf_data(&sbuf), sbuf_len(&sbuf));
+out:
+	free(buffer, M_TEMP);
+	return (error);
+}
+
+#ifdef DDB
+DB_SHOW_COMMAND(uma, db_show_uma)
+{
+	u_int64_t allocs, frees;
+	uma_bucket_t bucket;
+	uma_keg_t kz;
+	uma_zone_t z;
+	int cachefree;
+
+	db_printf("%18s %8s %8s %8s %12s\n", "Zone", "Size", "Used", "Free",
+	    "Requests");
+	LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		LIST_FOREACH(z, &kz->uk_zones, uz_link) {
+			if (kz->uk_flags & UMA_ZFLAG_INTERNAL) {
+				allocs = z->uz_allocs;
+				frees = z->uz_frees;
+				cachefree = 0;
+			} else
+				uma_zone_sumstat(z, &cachefree, &allocs,
+				    &frees);
+			if (!((z->uz_flags & UMA_ZONE_SECONDARY) &&
+			    (LIST_FIRST(&kz->uk_zones) != z)))
+				cachefree += kz->uk_free;
+			LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
+				cachefree += bucket->ub_cnt;
+			db_printf("%18s %8ju %8jd %8d %12ju\n", z->uz_name,
+			    (uintmax_t)kz->uk_size,
+			    (intmax_t)(allocs - frees), cachefree,
+			    (uintmax_t)allocs);
+		}
+	}
+}
+#endif
+#endif /* __rtems__ */

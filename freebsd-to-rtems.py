@@ -545,7 +545,6 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-sysctl.c',
 		'src/rtems-bsd-sysctlbyname.c',
 		'src/rtems-bsd-sysctlnametomib.c',
-		'src/rtems-bsd-uma.c',
 		'src/rtems-bsd-taskqueue.c',
 		'src/rtems-bsd-timeout.c',
 		'src/rtems-bsd-timesupport.c',
@@ -1130,7 +1129,7 @@ devUsbBase.addSourceFiles(
 		'kern/uipc_sockbuf.c',
 		'kern/uipc_domain.c',
 		#'kern/uipc_syscalls.c',
-		#'vm/uma_core.c',
+		'vm/uma_core.c',
 	]
 )
 

@@ -452,10 +452,14 @@ usb_proc_drain(struct usb_process *up)
 		/* Check if we are still cold booted */
 
 		if (cold) {
+#ifndef __rtems__
 			USB_THREAD_SUSPEND(up->up_ptr);
 			printf("WARNING: A USB process has "
 			    "been left suspended\n");
 			break;
+#else /* __rtems__ */
+                        BSD_ASSERT(0);
+#endif /* __rtems__ */
 		}
 		cv_wait(&up->up_cv, up->up_mtx);
 	}

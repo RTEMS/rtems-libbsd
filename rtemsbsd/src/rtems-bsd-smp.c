@@ -22,13 +22,14 @@
 
 #include <freebsd/sys/smp.h>
 #include <freebsd/machine/smp.h>
+#include <freebsd/sys/sysctl.h>
 
 int       mp_ncpus;
 int       mp_maxcpus;
 cpumask_t all_cpus;
 u_int     mp_maxid;
 
-static void configure(void *dummy)
+static void smp_configure(void *dummy)
 {
   int i;
 
@@ -47,4 +48,4 @@ static void configure(void *dummy)
     all_cpus |= 0x1 << i;
 }
 
-/* XXX setup initialization of this */
+SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD, smp_configure, "Kernel SMP");

@@ -564,6 +564,7 @@ rtems.addEmptyHeaderFiles(
 		'machine/smp.h',
 		'machine/vm.h',
 		#'machine/vmparam.h',
+		'local/linker_if.h',
 		'local/opt_bce.h',
 		'local/opt_ntp.h',
 		'security/audit/audit.h',
@@ -614,7 +615,6 @@ local.addHeaderFiles(
 	[
 		'local/bus_if.h',
 		'local/device_if.h',
-		#'local/linker_if.h',
 		'local/opt_bus.h',
 		'local/opt_cam.h',
 		'local/opt_compat.h',
@@ -690,7 +690,6 @@ local.addSourceFiles(
 	[
 		'local/usb_if.c',
 		'local/bus_if.c',
-		#'local/linker_if.c',
 		'local/device_if.c',
 		'local/cryptodev_if.c',
 		'local/miibus_if.c',
@@ -1117,7 +1116,7 @@ devUsbBase.addHeaderFiles(
 devUsbBase.addSourceFiles(
 	[
 		'kern/init_main.c',
-		#'kern/kern_linker.c',
+		'kern/kern_linker.c',
 		'kern/kern_mib.c',
 		'kern/kern_mbuf.c',
 		'kern/kern_module.c',

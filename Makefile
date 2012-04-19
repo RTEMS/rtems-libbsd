@@ -319,6 +319,7 @@ C_FILES += freebsd/local/miibus_if.c
 C_FILES += freebsd/local/pci_if.c
 C_FILES += freebsd/local/pcib_if.c
 C_FILES += freebsd/kern/init_main.c
+C_FILES += freebsd/kern/kern_linker.c
 C_FILES += freebsd/kern/kern_mib.c
 C_FILES += freebsd/kern/kern_mbuf.c
 C_FILES += freebsd/kern/kern_module.c

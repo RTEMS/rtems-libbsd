@@ -3043,7 +3043,6 @@ uma_prealloc(uma_zone_t zone, int items)
 	ZONE_UNLOCK(zone);
 }
 
-#ifndef __rtems__
 /* See uma.h */
 u_int32_t *
 uma_find_refcnt(uma_zone_t zone, void *item)
@@ -3063,7 +3062,6 @@ uma_find_refcnt(uma_zone_t zone, void *item)
 	refcnt = &slabref->us_freelist[idx].us_refcnt;
 	return refcnt;
 }
-#endif /* __rtems__ */
 
 /* See uma.h */
 void

@@ -391,10 +391,10 @@ hash_sfind(struct uma_hash *hash, u_int8_t *data)
         return (NULL);
 }
 
-#ifndef __rtems__
 static __inline uma_slab_t
 vtoslab(vm_offset_t va)
 {
+#ifndef __rtems__
 	vm_page_t p;
 	uma_slab_t slab;
 
@@ -405,8 +405,12 @@ vtoslab(vm_offset_t va)
 		return (slab);
 	else
 		return (NULL);
+#else /* __rtems__ */
+	return (NULL);  /* XXX - FIX THIS!!! */
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 static __inline void
 vsetslab(vm_offset_t va, uma_slab_t slab)
 {

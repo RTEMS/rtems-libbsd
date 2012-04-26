@@ -65,17 +65,13 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/sys/resourcevar.h>
 #include <freebsd/sys/systm.h>
 #include <freebsd/sys/signalvar.h>
-#ifndef __rtems__
 #include <freebsd/sys/vnode.h>
-#endif
 #include <freebsd/sys/sysent.h>
 #include <freebsd/sys/reboot.h>
 #include <freebsd/sys/sched.h>
 #include <freebsd/sys/sx.h>
 #include <freebsd/sys/sysproto.h>
-#ifndef __rtems__
 #include <freebsd/sys/vmmeter.h>
-#endif
 #include <freebsd/sys/unistd.h>
 #include <freebsd/sys/malloc.h>
 #include <freebsd/sys/conf.h>
@@ -86,12 +82,10 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/security/audit/audit.h>
 #include <freebsd/security/mac/mac_framework.h>
 
-#ifndef __rtems__
 #include <freebsd/vm/vm.h>
 #include <freebsd/vm/vm_param.h>
 #include <freebsd/vm/pmap.h>
 #include <freebsd/vm/vm_map.h>
-#endif
 #include <freebsd/sys/copyright.h>
 
 #include <freebsd/ddb/ddb.h>
@@ -104,18 +98,13 @@ void mi_startup(void);				/* Should be elsewhere */
 static struct session session0;
 static struct pgrp pgrp0;
 struct	proc proc0;
-#endif /* __rtems__ */
 struct	thread thread0 __aligned(16);
-#ifndef __rtems__
 struct	vmspace vmspace0;
 struct	proc *initproc;
 
 int	boothowto = 0;		/* initialized so that it can be patched */
 SYSCTL_INT(_debug, OID_AUTO, boothowto, CTLFLAG_RD, &boothowto, 0, "");
-#endif /* __rtems__ */
-
 int	bootverbose;
-#ifndef __rtems__
 SYSCTL_INT(_debug, OID_AUTO, bootverbose, CTLFLAG_RW, &bootverbose, 0, "");
 
 /*
@@ -129,11 +118,6 @@ SYSINIT(placeholder, SI_SUB_DUMMY, SI_ORDER_ANY, NULL, NULL);
  * The sysinit table itself.  Items are checked off as the are run.
  * If we want to register new sysinit types, add them to newsysinit.
  */
-
-#else /* __rtems__ */
-
-struct  proc proc0;
-
 #endif /* __rtems__ */
 SET_DECLARE(sysinit_set, struct sysinit);
 #ifndef __rtems__
@@ -434,7 +418,7 @@ proc0_init(void *dummy __unused)
 	GIANT_REQUIRED;
 	p = &proc0;
 	td = &thread0;
-
+	
 	/*
 	 * Initialize magic number and osrel.
 	 */
@@ -709,7 +693,7 @@ start_init(void *dummy)
 		strlcpy(init_path, var, sizeof(init_path));
 		freeenv(var);
 	}
-
+	
 	for (path = init_path; *path != '\0'; path = next) {
 		while (*path == ':')
 			path++;
@@ -720,7 +704,7 @@ start_init(void *dummy)
 		if (bootverbose)
 			printf("start_init: trying %.*s\n", (int)(next - path),
 			    path);
-
+			
 		/*
 		 * Move out the boot flag argument.
 		 */
@@ -783,7 +767,7 @@ start_init(void *dummy)
 			return;
 		}
 		if (error != ENOENT)
-			printf("exec %.*s: error %d\n", (int)(next - path),
+			printf("exec %.*s: error %d\n", (int)(next - path), 
 			    path, error);
 	}
 	printf("init: not found in path %s\n", init_path);
@@ -842,41 +826,4 @@ kick_init(const void *udata __unused)
 	thread_unlock(td);
 }
 SYSINIT(kickinit, SI_SUB_KTHREAD_INIT, SI_ORDER_FIRST, kick_init, NULL);
-#else /* __rtems__ */
-/*
- ***************************************************************************
- ****
- **** The two following SYSINIT's are proc0 specific glue code.  I am not
- **** convinced that they can not be safely combined, but their order of
- **** operation has been maintained as the same as the original init_main.c
- **** for right now.
- ****
- **** These probably belong in init_proc.c or kern_proc.c, since they
- **** deal with proc0 (the fork template process).
- ****
- ***************************************************************************
- */
-/* ARGSUSED*/
-static void
-proc0_init(void *dummy __unused)
-{
-  struct proc *p;
-
-  GIANT_REQUIRED;
-  p = &proc0;
-
-  /* Create credentials. */
-  p->p_ucred = crget();
-  p->p_ucred->cr_ngroups = 1; /* group 0 */
-  p->p_ucred->cr_uidinfo = uifind(0);
-  p->p_ucred->cr_ruidinfo = uifind(0);
-  p->p_ucred->cr_prison = &prison0;
-#ifdef AUDIT
-  audit_cred_kproc0(p->p_ucred);
-#endif
-#ifdef MAC
-  mac_cred_create_swapper(p->p_ucred);
-#endif
-}
-SYSINIT(p0init, SI_SUB_INTRINSIC, SI_ORDER_FIRST, proc0_init, NULL);
 #endif /* __rtems__ */

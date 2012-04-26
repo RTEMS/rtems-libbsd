@@ -200,7 +200,9 @@ struct rusage_ext {
 struct thread {
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */
+#endif /* __rtems__ */
 	struct proc	*td_proc;	/* (*) Associated process. */
+#ifndef __rtems__
 	TAILQ_ENTRY(thread) td_plist;	/* (*) All threads in this proc. */
 	TAILQ_ENTRY(thread) td_runq;	/* (t) Run queue. */
 	TAILQ_ENTRY(thread) td_slpq;	/* (t) Sleep queue. */
@@ -236,7 +238,9 @@ struct thread {
 	struct lock_list_entry *td_sleeplocks; /* (k) Held sleep locks. */
 	int		td_intr_nesting_level; /* (k) Interrupt recursion. */
 	int		td_pinned;	/* (k) Temporary cpu pin count. */
+#endif /* __rtems__ */
 	struct ucred	*td_ucred;	/* (k) Reference to credentials. */
+#ifndef __rtems__
 	u_int		td_estcpu;	/* (t) estimated cpu utilization */
 	int		td_slptick;	/* (t) Time at sleep. */
 	int		td_blktick;	/* (t) Time spent blocked. */
@@ -285,7 +289,9 @@ struct thread {
 		TDS_RUNQ,
 		TDS_RUNNING
 	} td_state;			/* (t) thread state */
+#endif /* __rtems__ */
 	register_t	td_retval[2];	/* (k) Syscall aux returns. */
+#ifndef __rtems__
 	struct callout	td_slpcallout;	/* (h) Callout for sleep. */
 	struct trapframe *td_frame;	/* (k) */
 	struct vm_object *td_kstack_obj;/* (a) Kstack object. */
@@ -310,10 +316,6 @@ struct thread {
 	rtems_chain_node td_node;
 	rtems_id td_id;
 	char td_name [16];
-  struct proc *td_proc; /* (*) Associated process. */
-  struct ucred  *td_ucred;  /* (k) Reference to credentials. */
-	register_t	td_retval[2];	/* (k) Syscall aux returns. */
-  void    *td_wchan;  /* (t) Sleep address. */
 #endif /* __rtems__ */
 };
 

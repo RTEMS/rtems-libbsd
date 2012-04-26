@@ -176,19 +176,16 @@ int
 _sleep(void *ident, struct lock_object *lock, int priority, const char *wmesg, int timo)
 {
   struct thread *td;
-  struct proc *p;
   struct lock_class *class;
   int catch, flags, lock_state, pri, rval;
 
   td = curthread;
-  p = td->td_proc;
 #ifdef KTRACE
   if (KTRPOINT(td, KTR_CSW))
     ktrcsw(1, 0);
 #endif
   KASSERT(timo != 0 || mtx_owned(&Giant) || lock != NULL,
       ("sleeping without a lock"));
-  KASSERT(p != NULL, ("msleep1"));
   KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
   if (priority & PDROP)
     KASSERT(lock != NULL && lock != &Giant.lock_object,
@@ -213,9 +210,6 @@ _sleep(void *ident, struct lock_object *lock, int priority, const char *wmesg, i
   }
   catch = priority & PCATCH;
   pri = priority & PRIMASK;
-
-  CTR5(KTR_PROC, "sleep: thread %ld (pid %ld, %s) on %s (%p)",
-      td->td_tid, p->p_pid, td->td_name, wmesg, ident);
 
   if (lock == &Giant.lock_object)
     mtx_assert(&Giant, MA_OWNED);

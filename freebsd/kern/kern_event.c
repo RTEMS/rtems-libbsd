@@ -70,7 +70,6 @@ __FBSDID("$FreeBSD$");
 ##include <freebsd/vm/uma.h>
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 static MALLOC_DEFINE(M_KQUEUE, "kqueue", "memory for kqueue system");
 
 /*
@@ -92,6 +91,7 @@ MTX_SYSINIT(kq_global, &kq_global, "kqueue order", MTX_DEF);
 
 TASKQUEUE_DEFINE_THREAD(kqueue);
 
+#ifndef __rtems__
 static int	kevent_copyout(void *arg, struct kevent *kevp, int count);
 static int	kevent_copyin(void *arg, struct kevent *kevp, int count);
 static int	kqueue_register(struct kqueue *kq, struct kevent *kev,
@@ -1184,6 +1184,7 @@ kqueue_release(struct kqueue *kq, int locked)
 	if (!locked)
 		KQ_UNLOCK(kq);
 }
+#endif /* __rtems__ */
 
 static void
 kqueue_schedtask(struct kqueue *kq)
@@ -1199,6 +1200,7 @@ kqueue_schedtask(struct kqueue *kq)
 	}
 }
 
+#ifndef __rtems__
 /*
  * Expand the kq to make sure we have storage for fops/ident pair.
  *
@@ -1710,6 +1712,7 @@ kqueue_close(struct file *fp, struct thread *td)
 
 	return (0);
 }
+#endif /* __rtems__ */
 
 static void
 kqueue_wakeup(struct kqueue *kq)
@@ -1731,7 +1734,6 @@ kqueue_wakeup(struct kqueue *kq)
 		pgsigio(&kq->kq_sigio, SIGIO, 0);
 	}
 }
-#endif /* __rtems__ */
 
 /*
  * Walk down a list of knotes, activating them if their event has triggered.

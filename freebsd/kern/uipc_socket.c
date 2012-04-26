@@ -975,8 +975,10 @@ sosend_dgram(struct socket *so, struct sockaddr *addr, struct uio *uio,
 
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0;
+#ifndef __rtems__
 	if (td != NULL)
 		td->td_ru.ru_msgsnd++;
+#endif /* __rtems__ */
 	if (control != NULL)
 		clen = control->m_len;
 
@@ -1144,8 +1146,10 @@ sosend_generic(struct socket *so, struct sockaddr *addr, struct uio *uio,
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
+#ifndef __rtems__
 	if (td != NULL)
 		td->td_ru.ru_msgsnd++;
+#endif /* __rtems__ */
 	if (control != NULL)
 		clen = control->m_len;
 
@@ -1525,8 +1529,10 @@ dontblock:
 	 * readers from pulling off the front of the socket buffer.
 	 */
 	SOCKBUF_LOCK_ASSERT(&so->so_rcv);
+#ifndef __rtems__
 	if (uio->uio_td)
 		uio->uio_td->td_ru.ru_msgrcv++;
+#endif /* __rtems__ */
 	KASSERT(m == so->so_rcv.sb_mb, ("soreceive: m != so->so_rcv.sb_mb"));
 	SBLASTRECORDCHK(&so->so_rcv);
 	SBLASTMBUFCHK(&so->so_rcv);
@@ -1973,8 +1979,10 @@ deliver:
 	KASSERT(sb->sb_mb != NULL, ("%s: sb_mb == NULL", __func__));
 
 	/* Statistics. */
+#ifndef __rtems__
 	if (uio->uio_td)
 		uio->uio_td->td_ru.ru_msgrcv++;
+#endif /* __rtems__ */
 
 	/* Fill uio until full or current end of socket buffer is reached. */
 	len = min(uio->uio_resid, sb->sb_cc);
@@ -2134,8 +2142,10 @@ soreceive_dgram(struct socket *so, struct sockaddr **psa, struct uio *uio,
 	}
 	SOCKBUF_LOCK_ASSERT(&so->so_rcv);
 
+#ifndef __rtems__
 	if (uio->uio_td)
 		uio->uio_td->td_ru.ru_msgrcv++;
+#endif /* __rtems__ */
 	SBLASTRECORDCHK(&so->so_rcv);
 	SBLASTMBUFCHK(&so->so_rcv);
 	nextrecord = m->m_nextpkt;

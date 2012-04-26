@@ -312,7 +312,6 @@ struct thread {
 	char td_name [16];
   struct proc *td_proc; /* (*) Associated process. */
   struct ucred  *td_ucred;  /* (k) Reference to credentials. */
-  struct rusage td_ru;    /* (t) rusage information. */
 	register_t	td_retval[2];	/* (k) Syscall aux returns. */
   void    *td_wchan;  /* (t) Sleep address. */
 #endif /* __rtems__ */

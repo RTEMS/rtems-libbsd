@@ -12580,10 +12580,12 @@ sctp_lower_sosend(struct socket *so,
 			goto out_unlocked;
 		}
 	}
+#ifndef __rtems__
 	/* Ok, we will attempt a msgsnd :> */
 	if (p) {
 		p->td_ru.ru_msgsnd++;
 	}
+#endif /* __rtems__ */
 	/* Are we aborting? */
 	if (srcv->sinfo_flags & SCTP_ABORT) {
 		struct mbuf *mm;

@@ -49,7 +49,9 @@
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 
 /* FIXME: What to do with the credentials? */
-static struct ucred FIXME_ucred;
+static struct ucred FIXME_ucred = {
+  .cr_ref = 1
+};
 
 static int
 rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, int flags, int pages, const char *fmt, va_list ap)
@@ -105,7 +107,7 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, 
 
 		td->td_id = id;
 		vsnprintf(td->td_name, sizeof(td->td_name), fmt, ap);
-		td->td_ucred = &FIXME_ucred;
+		td->td_ucred = crhold(&FIXME_ucred);
 
 		rtems_chain_append(&rtems_bsd_thread_chain, &td->td_node);
 

@@ -71,7 +71,7 @@ sleepinit(void)
      */
     _Thread_queue_Initialize(
       &sleep_queue[ii].queue,
-      THREAD_QUEUE_DISCIPLINE_FIFO,
+      THREAD_QUEUE_DISCIPLINE_PRIORITY,
       STATES_WAITING_FOR_SLEEP | STATES_INTERRUPTIBLE_BY_SIGNAL,
       EAGAIN
     );
@@ -271,5 +271,26 @@ wakeup(void *ident)
   {
   }
   return 0;
+}
+
+/*
+ * Make a thread sleeping on the specified identifier runnable.
+ * May wake more than one thread if a target thread is currently
+ * swapped out.
+ */
+void
+wakeup_one(void *ident)
+{
+  sleep_queue_control_t *sq;
+  Thread_Control *the_thread;
+
+  sq = sleep_queue_lookup( ident );
+  if (sq == NULL)
+  {
+    return (0);
+  }
+  the_thread = _Thread_queue_Dequeue(&sq->queue); 
+  return 0;
+
 }
 

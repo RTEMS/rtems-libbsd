@@ -61,7 +61,12 @@ extern long realmem;		/* 'real' memory */
 extern char *rootdevnames[2];	/* names of possible root devices */
 
 extern int boothowto;		/* reboot flags, from console subsystem */
+#ifndef __rtems__
 extern int bootverbose;		/* nonzero to print verbose messages */
+#else /* __rtems__ */
+#define bootverbose    0        /* XXX RTEMS doesn't support verbose */
+#endif /* __rtems__ */
+
 
 extern int maxusers;		/* system tune hint */
 extern int ngroups_max;		/* max # of supplemental groups */

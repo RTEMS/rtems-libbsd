@@ -42,6 +42,10 @@ __FBSDID("$FreeBSD$");
 static int checkmethod = 1;
 static int use_kenv;
 static char *hintp;
+#ifdef __rtems__
+char static_hints[] = {};
+int hintmode = 2;
+#endif /* __rtems__ */
 
 /*
  * Evil wildcarding resource string lookup.

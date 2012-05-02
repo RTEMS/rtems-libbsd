@@ -551,6 +551,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-newproc.c',
 		'src/rtems-bsd-vm_glue.c',
 		'src/rtems-bsd-copyinout.c',
+		'src/rtems-bsd-descrip.c',
 	]
 )
 rtems.addEmptyHeaderFiles(

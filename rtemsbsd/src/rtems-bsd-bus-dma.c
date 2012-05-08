@@ -8,8 +8,9 @@
  * File origin from FreeBSD "sys/powerpc/powerpc/busdma_machdep.c".
  */
 
-/*-
- * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
+/*
+ * Copyright (c) 2009-2012 embedded brains GmbH.  
+ * All rights reserved.
  *
  *  embedded brains GmbH
  *  Obere Lagerstr. 30

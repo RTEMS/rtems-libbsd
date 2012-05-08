@@ -9,7 +9,8 @@
  */
 
 /*-
- * Copyright (c) 2012 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2012 embedded brains GmbH.  
+ * All rights reserved.
  *
  *  embedded brains GmbH
  *  Obere Lagerstr. 30

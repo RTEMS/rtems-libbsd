@@ -1219,6 +1219,7 @@ devNic.addSourceFiles(
 		'kern/kern_resource.c',
 		'kern/subr_bufring.c',
 		'dev/led/led.c',
+		'kern/subr_unit.c',
 	]
 )
 

@@ -15,6 +15,13 @@
  */
 extern int _bsd_re_pcimodule_sys_init();
 extern int _bsd_fxp_pcimodule_sys_init();
+extern int _bsd_dc_pcimodule_sys_init();
+extern int _bsd_em_pcimodule_sys_init();
+extern int _bsd_igb_pcimodule_sys_init();
+extern int _bsd_bce_pcimodule_sys_init();
+extern int _bsd_lem_pcimodule_sys_init();
+extern int _bsd_bfe_pcimodule_sys_init();
+extern int _bsd_bge_pcimodule_sys_init();
 
 rtems_task Init(
   rtems_task_argument ignored
@@ -31,7 +38,16 @@ rtems_task Init(
 
   printf("Nic Driver Addresses\n");
   printf("RealTek %p\n", &_bsd_re_pcimodule_sys_init );
-  printf("EtherExpress k %p\n", &_bsd_fxp_pcimodule_sys_init );
+  printf("EtherExpress %p\n", &_bsd_fxp_pcimodule_sys_init );
+  printf("DEC tulip %p\n", &_bsd_dc_pcimodule_sys_init );
+  printf("Broadcom BCM570XX/BCM571XX %p\n", &_bsd_bce_pcimodule_sys_init );
+  printf("Broadcom BCM4401 %p\n", &_bsd_bfe_pcimodule_sys_init );
+
+#if 0
+  printf("Broadcom BCM570x %p\n", &_bsd_bge_pcimodule_sys_init );
+  printf("E1000 XXX %p\n", &_bsd_igb_pcimodule_sys_init );
+  printf("E1000 XXX %p\n", &_bsd_em_pcimodule_sys_init );
+#endif
 
   printf( "*** END OF LIBFREEBSD INITIALIZATION TEST ***\n" );
   exit( 0 );

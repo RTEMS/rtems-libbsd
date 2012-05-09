@@ -1193,6 +1193,7 @@ devNic.addHeaderFiles(
 		'dev/random/randomdev_soft.h',
 		'sys/eventvar.h',
 		'sys/kenv.h',
+		'dev/pci/pci_private.h',
 	]
 )
 devNic.addSourceFiles(
@@ -1216,6 +1217,8 @@ devNic.addSourceFiles(
 		'kern/kern_environment.c',
 		'kern/kern_intr.c',
 		'kern/kern_resource.c',
+		'kern/subr_bufring.c',
+		'dev/led/led.c',
 	]
 )
 

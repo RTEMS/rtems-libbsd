@@ -9,20 +9,6 @@
 #include <stdio.h>
 #include <freebsd/bsd.h>
 
-/* 
- * Methods used to make sure the nic drivers
- * are pulled into the executable.
- */
-extern int _bsd_re_pcimodule_sys_init();
-extern int _bsd_fxp_pcimodule_sys_init();
-extern int _bsd_dc_pcimodule_sys_init();
-extern int _bsd_em_pcimodule_sys_init();
-extern int _bsd_igb_pcimodule_sys_init();
-extern int _bsd_bce_pcimodule_sys_init();
-extern int _bsd_lem_pcimodule_sys_init();
-extern int _bsd_bfe_pcimodule_sys_init();
-extern int _bsd_bge_pcimodule_sys_init();
-
 rtems_task Init(
   rtems_task_argument ignored
 )
@@ -35,19 +21,6 @@ rtems_task Init(
    */
 
   rtems_bsd_initialize_with_interrupt_server();
-
-  printf("Nic Driver Addresses\n");
-  printf("RealTek %p\n", &_bsd_re_pcimodule_sys_init );
-  printf("EtherExpress %p\n", &_bsd_fxp_pcimodule_sys_init );
-  printf("DEC tulip %p\n", &_bsd_dc_pcimodule_sys_init );
-  printf("Broadcom BCM570XX/BCM571XX %p\n", &_bsd_bce_pcimodule_sys_init );
-  printf("Broadcom BCM4401 %p\n", &_bsd_bfe_pcimodule_sys_init );
-
-#if 0
-  printf("Broadcom BCM570x %p\n", &_bsd_bge_pcimodule_sys_init );
-  printf("E1000 XXX %p\n", &_bsd_igb_pcimodule_sys_init );
-  printf("E1000 XXX %p\n", &_bsd_em_pcimodule_sys_init );
-#endif
 
   printf( "*** END OF LIBFREEBSD INITIALIZATION TEST ***\n" );
   exit( 0 );
@@ -64,4 +37,22 @@ rtems_task Init(
 
 #define CONFIGURE_INIT
 #include <rtems/confdefs.h>
+
+#include <freebsd/machine/rtems-bsd-sysinit.h>
+
+SYSINIT_NEED_FREEBSD_CORE;
+SYSINIT_NEED_NET_IF_BFE;
+SYSINIT_NEED_NET_IF_RE;
+SYSINIT_NEED_NET_IF_EM;
+SYSINIT_NEED_NET_IF_IGB;
+SYSINIT_NEED_NET_IF_LEM;
+SYSINIT_NEED_NET_IF_BCE;
+SYSINIT_NEED_NET_IF_BGE;
+SYSINIT_NEED_NET_IF_FXP;
+SYSINIT_NEED_NET_IF_DC;
+
+const char *const _bsd_nexus_devices [] = {
+	NULL
+};
+
 /* end of file */

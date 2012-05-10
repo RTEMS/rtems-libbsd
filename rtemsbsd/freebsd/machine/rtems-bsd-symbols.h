@@ -136,11 +136,6 @@
 #define bus_teardown_intr_method_default _bsd_bus_teardown_intr_method_default
 #define bus_write_ivar_desc _bsd_bus_write_ivar_desc
 #define bus_write_ivar_method_default _bsd_bus_write_ivar_method_default
-#define callout_init _bsd_callout_init
-#define _callout_init_lock _bsd__callout_init_lock
-#define callout_reset _bsd_callout_reset
-#define callout_schedule _bsd_callout_schedule
-#define _callout_stop_safe _bsd__callout_stop_safe
 #define cam_fetch_status_entry _bsd_cam_fetch_status_entry
 #define cam_quirkmatch _bsd_cam_quirkmatch
 #define cam_sim_alloc _bsd_cam_sim_alloc

@@ -52,23 +52,6 @@
 #include <rtems/shell.h>
 
 static void
-rtems_bsd_dump_callout(void)
-{
-	rtems_chain_control *chain = &rtems_bsd_callout_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
-
-	printf("callout dump:\n");
-
-	while (!rtems_chain_is_tail(chain, node)) {
-		struct callout *c = (struct callout *) node;
-
-		printf("\t%08x\n", c->c_id);
-
-		node = rtems_chain_next(node);
-	}
-}
-
-static void
 rtems_bsd_dump_mtx(void)
 {
 	rtems_chain_control *chain = &rtems_bsd_mtx_chain;
@@ -167,10 +150,6 @@ rtems_bsd_info(int argc, char **argv)
 		}
 		if (CMP("thread")) {
 			rtems_bsd_dump_thread();
-			usage = false;
-		}
-		if (CMP("callout")) {
-			rtems_bsd_dump_callout();
 			usage = false;
 		}
 	}

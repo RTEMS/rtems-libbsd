@@ -122,10 +122,15 @@ void	_mtx_unlock_spin(struct mtx *m, int opts, const char *file, int line);
 int	_mtx_trylock(struct mtx *m, int opts, const char *file, int line);
 void	_mtx_lock_flags(struct mtx *m, int opts, const char *file, int line);
 void	_mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line);
+#ifndef __rtems__
 void	_mtx_lock_spin_flags(struct mtx *m, int opts, const char *file,
 	     int line);
 void	_mtx_unlock_spin_flags(struct mtx *m, int opts, const char *file,
 	     int line);
+#else /* __rtems__ */
+#define _mtx_lock_spin_flags _mtx_lock_flags
+#define _mtx_unlock_spin_flags _mtx_unlock_flags
+#endif /* __rtems__ */ 
 #if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
 void	_mtx_assert(struct mtx *m, int what, const char *file, int line);
 #endif

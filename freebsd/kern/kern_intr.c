@@ -55,19 +55,22 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/sys/sysctl.h>
 #include <freebsd/sys/syslog.h>
 #include <freebsd/sys/unistd.h>
-#ifndef __rtems__
 #include <freebsd/sys/vmmeter.h>
-#endif /* __rtems__ */
 #include <freebsd/machine/atomic.h>
 #include <freebsd/machine/cpu.h>
 #ifndef __rtems__
 #include <freebsd/machine/md_var.h>
 #include <freebsd/machine/stdarg.h>
+#else /* __rtems__ */
+  #ifdef INTR_FILTER
+    #error INTR_FILTER is currently not suppported with RTEMS
+  #endif
+  #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
+#endif /* __rtems__ */
 #ifdef DDB
 #include <freebsd/ddb/ddb.h>
 #include <freebsd/ddb/db_sym.h>
 #endif
-#endif /* __rtems__ */
 
 /*
  * Describe an interrupt thread.  There is one of these per interrupt event.
@@ -88,24 +91,27 @@ struct	intr_entropy {
 };
 
 struct	intr_event *clk_intr_event;
+#ifndef __rtems__
 struct	intr_event *tty_intr_event;
 void	*vm_ih;
+#endif /* __rtems__ */ 
 struct proc *intrproc;
 
 static MALLOC_DEFINE(M_ITHREAD, "ithread", "Interrupt Threads");
 
 static int intr_storm_threshold = 1000;
+#ifndef __rtems__
 TUNABLE_INT("hw.intr_storm_threshold", &intr_storm_threshold);
 SYSCTL_INT(_hw, OID_AUTO, intr_storm_threshold, CTLFLAG_RW,
     &intr_storm_threshold, 0,
     "Number of consecutive interrupts before storm protection is enabled");
+#endif /* __rtems__ */
 static TAILQ_HEAD(, intr_event) event_list =
     TAILQ_HEAD_INITIALIZER(event_list);
 static struct mtx event_lock;
 MTX_SYSINIT(intr_event_list, &event_lock, "intr event list", MTX_DEF);
 
 static void	intr_event_update(struct intr_event *ie);
-#ifndef __rtems__
 #ifdef INTR_FILTER
 static int	intr_event_schedule_thread(struct intr_event *ie,
 		    struct intr_thread *ithd);
@@ -117,7 +123,9 @@ static struct intr_thread *ithread_create(const char *name,
 static int	intr_event_schedule_thread(struct intr_event *ie);
 static struct intr_thread *ithread_create(const char *name);
 #endif
+#ifndef __rtems__
 static void	ithread_destroy(struct intr_thread *ithread);
+#endif /* __rtems__ */
 static void	ithread_execute_handlers(struct proc *p, 
 		    struct intr_event *ie);
 #ifdef INTR_FILTER
@@ -125,7 +133,6 @@ static void	priv_ithread_execute_handler(struct proc *p,
 		    struct intr_handler *ih);
 #endif
 static void	ithread_loop(void *);
-#endif /* __rtems__ */
 static void	ithread_update(struct intr_thread *ithd);
 #ifndef __rtems__
 static void	start_softintr(void *);
@@ -172,6 +179,7 @@ intr_priority(enum intr_type flags)
 	return pri;
 }
 
+#endif /* __rtems__ */
 /*
  * Update an ithread based on the associated intr_event.
  */
@@ -194,10 +202,13 @@ ithread_update(struct intr_thread *ithd)
 	/* Update name and priority. */
 	strlcpy(td->td_name, ie->ie_fullname, sizeof(td->td_name));
 	thread_lock(td);
+#ifndef __rtems__
 	sched_prio(td, pri);
+#else /* __rtems__ */
+#warning TODO: set thread priority
+#endif /* __rtems__ */
 	thread_unlock(td);
 }
-#endif /* __rtems__ */
 
 /*
  * Regenerate the full name of an interrupt event and update its priority.
@@ -257,7 +268,6 @@ intr_event_update(struct intr_event *ie)
 		ithread_update(ie->ie_thread);
 	CTR2(KTR_INTR, "%s: updated %s", __func__, ie->ie_fullname);
 }
-#ifndef __rtems__
 
 int
 intr_event_create(struct intr_event **event, void *source, int flags, int irq,
@@ -296,6 +306,7 @@ intr_event_create(struct intr_event **event, void *source, int flags, int irq,
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * Bind an interrupt event to the specified CPU.  Note that not all
  * platforms support binding an interrupt to a CPU.  For those
@@ -453,6 +464,7 @@ intr_event_destroy(struct intr_event *ie)
 	return (0);
 }
 
+#endif /* __rtems__ */
 #ifndef INTR_FILTER
 static struct intr_thread *
 ithread_create(const char *name)
@@ -469,15 +481,20 @@ ithread_create(const char *name)
 	if (error)
 		panic("kproc_create() failed with %d", error);
 	thread_lock(td);
+#ifndef __rtems__
 	sched_class(td, PRI_ITHD);
 	TD_SET_IWAIT(td);
+#endif /* __rtems__ */
 	thread_unlock(td);
+#ifndef __rtems__
 	td->td_pflags |= TDP_ITHREAD;
+#endif /* __rtems__ */
 	ithd->it_thread = td;
 	CTR2(KTR_INTR, "%s: created %s", __func__, name);
 	return (ithd);
 }
 #else
+#ifndef __rtems__
 static struct intr_thread *
 ithread_create(const char *name, struct intr_handler *ih)
 {
@@ -501,7 +518,9 @@ ithread_create(const char *name, struct intr_handler *ih)
 	CTR2(KTR_INTR, "%s: created %s", __func__, name);
 	return (ithd);
 }
+#endif /* __rtems__ */
 #endif
+#ifndef __rtems__
 
 static void
 ithread_destroy(struct intr_thread *ithread)
@@ -518,8 +537,8 @@ ithread_destroy(struct intr_thread *ithread)
 	}
 	thread_unlock(td);
 }
-#endif /* __rtems__ */
 
+#endif /* __rtems__ */ 
 #ifndef INTR_FILTER
 int
 intr_event_add_handler(struct intr_event *ie, const char *name,
@@ -594,6 +613,7 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 	return (0);
 }
 #else
+#ifndef __rtems__
 int
 intr_event_add_handler(struct intr_event *ie, const char *name,
     driver_filter_t filter, driver_intr_t handler, void *arg, u_char pri,
@@ -675,6 +695,7 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		*cookiep = ih;
 	return (0);
 }
+#endif /* __rtems__ */
 #endif
 
 #ifndef __rtems__
@@ -753,7 +774,9 @@ intr_handler_source(void *cookie)
 	return (ie->ie_source);
 }
 
+#endif /* __rtems__ */ 
 #ifndef INTR_FILTER
+#ifndef __rtems__
 int
 intr_event_remove_handler(void *cookie)
 {
@@ -843,6 +866,7 @@ ok:
 	return (0);
 }
 
+#endif /* __rtems__ */ 
 static int
 intr_event_schedule_thread(struct intr_event *ie)
 {
@@ -886,6 +910,7 @@ intr_event_schedule_thread(struct intr_event *ie)
 	 */
 	it->it_need = 1;
 	thread_lock(td);
+#ifndef __rtems__
 	if (TD_AWAITING_INTR(td)) {
 		CTR3(KTR_INTR, "%s: schedule pid %d (%s)", __func__, p->p_pid,
 		    td->td_name);
@@ -895,11 +920,19 @@ intr_event_schedule_thread(struct intr_event *ie)
 		CTR5(KTR_INTR, "%s: pid %d (%s): it_need %d, state %d",
 		    __func__, p->p_pid, td->td_name, it->it_need, td->td_state);
 	}
+#else /* __rtems__ */
+	/* Send event to wake the thread up.
+	 * TODO: eventually replace event by a better mechanism
+	 */
+	rtems_status_code sc = rtems_event_send(td->td_id, RTEMSBSD_SWI_WAKEUP_EVENT);
+	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+#endif /* __rtems__ */
 	thread_unlock(td);
 
 	return (0);
 }
 #else
+#ifndef __rtems__
 int
 intr_event_remove_handler(void *cookie)
 {
@@ -1053,8 +1086,8 @@ intr_event_schedule_thread(struct intr_event *ie, struct intr_thread *it)
 
 	return (0);
 }
-#endif
 #endif /* __rtems__ */
+#endif
 
 /*
  * Allow interrupt event binding for software interrupt handlers -- a no-op,
@@ -1099,19 +1132,20 @@ swi_add(struct intr_event **eventp, const char *name, driver_intr_t handler,
 	    (pri * RQ_PPQ) + PI_SOFT, flags, cookiep);
 	if (error)
 		return (error);
+#ifndef __rtems__
 	if (pri == SWI_CLOCK) {
 		struct proc *p;
 		p = ie->ie_thread->it_thread->td_proc;
 		PROC_LOCK(p);
-#ifndef __rtems__
 		p->p_flag |= P_NOLOAD;
-#endif /* __rtems__ */
 		PROC_UNLOCK(p);
 	}
+#else /* __rtems__ */
+	// Do _not_ ignore the thread in the load avarage
+#endif /* __rtems__ */
 	return (0);
 }
 
-#ifndef __rtems__
 /*
  * Schedule a software interrupt thread.
  */
@@ -1133,7 +1167,9 @@ swi_sched(void *cookie, int flags)
 	atomic_store_rel_int(&ih->ih_need, 1);
 
 	if (!(flags & SWI_DELAY)) {
+#ifndef __rtems__
 		PCPU_INC(cnt.v_soft);
+#endif /* __rtems__ */ 
 #ifdef INTR_FILTER
 		error = intr_event_schedule_thread(ie, ie->ie_thread);
 #else
@@ -1143,6 +1179,7 @@ swi_sched(void *cookie, int flags)
 	}
 }
 
+#ifndef __rtems__
 /*
  * Remove a software interrupt handler.  Currently this code does not
  * remove the associated interrupt event if it becomes empty.  Calling code
@@ -1189,6 +1226,7 @@ priv_ithread_execute_handler(struct proc *p, struct intr_handler *ih)
 }
 #endif
 
+#endif /* __rtems__ */
 /*
  * This is a public function for use by drivers that mux interrupt
  * handlers for child devices from their interrupt handler.
@@ -1245,12 +1283,17 @@ static void
 ithread_execute_handlers(struct proc *p, struct intr_event *ie)
 {
 
+#ifndef __rtems__
 	/* Interrupt handlers should not sleep. */
 	if (!(ie->ie_flags & IE_SOFT))
 		THREAD_NO_SLEEPING();
 	intr_event_execute_handlers(p, ie);
 	if (!(ie->ie_flags & IE_SOFT))
 		THREAD_SLEEPING_OK();
+#else /* __rtems__ */
+	/* We only have soft-threads, so the two queries are not necessary. */
+	intr_event_execute_handlers(p, ie);
+#endif /* __rtems__ */
 
 	/*
 	 * Interrupt storm handling:
@@ -1264,12 +1307,14 @@ ithread_execute_handlers(struct proc *p, struct intr_event *ie)
 	 */
 	if (intr_storm_threshold != 0 && ie->ie_count >= intr_storm_threshold &&
 	    !(ie->ie_flags & IE_SOFT)) {
+#ifndef __rtems__
 		/* Report the message only once every second. */
 		if (ppsratecheck(&ie->ie_warntm, &ie->ie_warncnt, 1)) {
 			printf(
 	"interrupt storm detected on \"%s\"; throttling interrupt source\n",
 			    ie->ie_name);
 		}
+#endif /* __rtems__ */
 		pause("istorm", 1);
 	} else
 		ie->ie_count++;
@@ -1342,13 +1387,27 @@ ithread_loop(void *arg)
 		 */
 		thread_lock(td);
 		if (!ithd->it_need && !(ithd->it_flags & IT_DEAD)) {
+#ifndef __rtems__
 			TD_SET_IWAIT(td);
 			ie->ie_count = 0;
 			mi_switch(SW_VOL | SWT_IWAIT, NULL);
+#else /* __rtems__ */
+			/* wait for wakeup event
+			 * TODO: eventually replace event by a better mechanism
+			 */
+			rtems_event_set event_out;
+			rtems_status_code sc = rtems_event_receive(
+				RTEMSBSD_SWI_WAKEUP_EVENT,
+				RTEMS_WAIT | RTEMS_EVENT_ALL,
+				RTEMS_NO_TIMEOUT,
+				&event_out);
+			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+#endif /* __rtems__ */
 		}
 		thread_unlock(td);
 	}
 }
+#ifndef __rtems__
 
 /*
  * Main interrupt handling body.
@@ -1444,7 +1503,9 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	td->td_intr_nesting_level--;
 	return (0);
 }
+#endif /* __rtems__ */
 #else
+#ifndef __rtems__
 /*
  * This is the main code for interrupt threads.
  */
@@ -1647,7 +1708,9 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	td->td_intr_nesting_level--;
 	return (0);
 }
+#endif /* __rtems__ */
 #endif
+#ifndef __rtems__
 
 #ifdef DDB
 /*

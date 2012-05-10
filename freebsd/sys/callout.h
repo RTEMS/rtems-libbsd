@@ -46,23 +46,16 @@ SLIST_HEAD(callout_list, callout);
 TAILQ_HEAD(callout_tailq, callout);
 
 struct callout {
-#ifndef __rtems__
 	union {
 		SLIST_ENTRY(callout) sle;
 		TAILQ_ENTRY(callout) tqe;
 	} c_links;
 	int	c_time;				/* ticks to the event */
-#else /* __rtems__ */
-	rtems_chain_node c_node;
-	rtems_id c_id;
-#endif /* __rtems__ */
 	void	*c_arg;				/* function argument */
 	void	(*c_func)(void *);		/* function to call */
 	struct lock_object *c_lock;		/* lock to handle */
 	int	c_flags;			/* state of this entry */
-#ifndef __rtems__
 	volatile int c_cpu;			/* CPU we're scheduled on */
-#endif /* __rtems__ */
 };
 
 #define	CALLOUT_LOCAL_ALLOC	0x0001 /* was allocated from callfree */
@@ -92,12 +85,8 @@ void	_callout_init_lock(struct callout *, struct lock_object *, int);
 	   NULL, (flags))
 #define	callout_pending(c)	((c)->c_flags & CALLOUT_PENDING)
 int	callout_reset_on(struct callout *, int, void (*)(void *), void *, int);
-#ifndef __rtems__
 #define	callout_reset(c, on_tick, fn, arg)				\
     callout_reset_on((c), (on_tick), (fn), (arg), (c)->c_cpu)
-#else /* __rtems__ */
-int callout_reset(struct callout *, int, void (*)(void *), void *);
-#endif /* __rtems__ */
 #define	callout_reset_curcpu(c, on_tick, fn, arg)			\
     callout_reset_on((c), (on_tick), (fn), (arg), PCPU_GET(cpuid))
 int	callout_schedule(struct callout *, int);

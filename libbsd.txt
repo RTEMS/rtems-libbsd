@@ -547,7 +547,7 @@ Likely BSP dependent.  A default implementation for memory mapped linear access
 is easy to provide.  The current heap implementation supports all properties
 demanded by bus_dma (including the boundary constraint).
 
-== RTEMS Replacements by File Description and Status ==
+== RTEMS Replacements by File Description ==
 
 Note:  Files with a status of USB are used by the USB test and have at least
 been partially tested.  If they contain both USB and Nic, then they are used
@@ -737,3 +737,24 @@ rtems-libbsd File: 	rtems-bsd-vm_glue.c
 FreeBSD File:		vm/vm_glue.c
 Description:		
 Status: 		USB, Nic 
+
+== NICs Status ==
+
+Driver			Symbol				Status
+======			======				======
+RealTek			_bsd_re_pcimodule_sys_init	Links 
+EtherExpress		_bsd_fxp_pcimodule_sys_init	Links
+DEC tulip		_bsd_dc_pcimodule_sys_init	Links
+Broadcom BCM57xxx	_bsd_bce_pcimodule_sys_init	Links
+Broadcom BCM4401	_bsd_bfe_pcimodule_sys_init	Links
+Broadcom BCM570x 	_bsd_bge_pcimodule_sys_init	Needs Symbols (A)
+E1000 xxx 		_bsd_igb_pcimodule_sys_init	Needs Symbols (B)	
+E1000 XXX		_bsd_em_pcimodule_sys_init 	Needs Symbols (B)
+
+
+Symbols (A)
+         pci_find_dbsf
+         pci_get_vpd_ident
+Symbols (B)
+	make_dev()
+	destroy_dev()

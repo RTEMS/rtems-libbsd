@@ -20,6 +20,7 @@ C_FILES =
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc24xx.c
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc32xx.c
 C_FILES += rtemsbsd/dev/usb/controller/ehci_mpc83xx.c
+C_FILES += rtemsbsd/src/rtems-bsd-thread0-ucred.c
 C_FILES += rtemsbsd/src/rtems-bsd-cam.c
 C_FILES += rtemsbsd/src/rtems-bsd-nexus.c
 C_FILES += rtemsbsd/src/rtems-bsd-autoconf.c

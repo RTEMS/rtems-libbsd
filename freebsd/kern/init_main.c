@@ -118,8 +118,6 @@ SYSINIT(placeholder, SI_SUB_DUMMY, SI_ORDER_ANY, NULL, NULL);
  * The sysinit table itself.  Items are checked off as the are run.
  * If we want to register new sysinit types, add them to newsysinit.
  */
-#else  /* __rtems__ */
-struct ucred *rtems_bsd_thread0_ucred;
 #endif /* __rtems__ */
 SET_DECLARE(sysinit_set, struct sysinit);
 #ifndef __rtems__
@@ -193,13 +191,6 @@ mi_startup(void)
 #ifndef __rtems__
 	if (boothowto & RB_VERBOSE)
 		bootverbose++;
-#else  /* __rtems__ */
-	rtems_bsd_thread0_ucred = crget();
-	rtems_bsd_thread0_ucred->cr_ngroups = 1;	/* group 0 */
-	rtems_bsd_thread0_ucred->cr_uidinfo = uifind(0);
-	rtems_bsd_thread0_ucred = uifind(0);
-	rtems_bsd_thread0_ucred->cr_prison = &prison0;
-
 #endif /* __rtems__ */
 
 	if (sysinit == NULL) {

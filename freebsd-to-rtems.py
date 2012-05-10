@@ -513,6 +513,7 @@ rtems.addRTEMSSourceFiles(
 		'dev/usb/controller/ohci_lpc24xx.c',
 		'dev/usb/controller/ohci_lpc32xx.c',
 		'dev/usb/controller/ehci_mpc83xx.c',
+		'src/rtems-bsd-thread0-ucred.c',
 		'src/rtems-bsd-cam.c',
 		'src/rtems-bsd-nexus.c',
 		'src/rtems-bsd-autoconf.c',

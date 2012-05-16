@@ -112,7 +112,7 @@ int rtems_bsdnet_makeFdForSocket(
   iop->data0 = fd;
   iop->data1 = so;
   iop->pathinfo.handlers = h;
-  iop->pathinfo.ops = &rtems_filesystem_operations_default;
+  iop->pathinfo.mt_entry->ops = &rtems_filesystem_operations_default;
   return fd;
 }
 

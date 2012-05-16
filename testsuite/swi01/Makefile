@@ -1,29 +1,27 @@
 include ../../config.inc
 
+APP=swi01
+PGM=${ARCH}/$(APP).exe
+
+# optional managers required
+MANAGERS=all
+
+# C source names
+C_FILES = init.c swi_test.c
+C_O_FILES = $(C_FILES:%.c=${ARCH}/%.o)
+
+AM_CPPFLAGS += -I $(INSTALL_BASE)/include
+LINK_LIBS += $(INSTALL_BASE)/libbsd.a ${REL_ARGS}
+CFLAGS += $(DEPFLAGS) $(GCCFLAGS) $(AM_CPPFLAGS) -Wno-unused -Wl,-Map,$(APP).map
+
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
-APP_PIECES = init swi_test
+OBJS= $(C_O_FILES)
+CLEAN_ADDITIONS += $(APP).map
 
-APP_O_FILES = $(APP_PIECES:%=%.o)
-APP_DEP_FILES = $(APP_PIECES:%=%.dep)
+all:    ${ARCH} $(PGM)
 
-APP = app.exe
-
-DEPFLAGS = -MT $@ -MD -MP -MF $*.dep
-AM_CPPFLAGS += -I $(INSTALL_BASE)/include -I.
-
-CFLAGS += $(DEPFLAGS) $(GCCFLAGS) $(AM_CPPFLAGS) -Wno-unused -Wl,-Map,app.map
-
-LINK_LIBS += $(INSTALL_BASE)/libbsd.a
-
-all: $(APP)
-
-$(APP): $(APP_O_FILES)
-	$(CC) $(CFLAGS) $^ $(LINK_LIBS) -o $(APP)
-
-clean:
-	rm -f app.map $(APP) $(APP_O_FILES) $(APP_DEP_FILES)
-
--include $(APP_DEP_FILES)
+$(PGM): $(OBJS)
+	-$(make-exe)

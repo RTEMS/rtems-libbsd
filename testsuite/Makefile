@@ -8,4 +8,4 @@ include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(RTEMS_SHARE)/make/directory.cfg
 
-SUBDIRS=link01 
+SUBDIRS=link01 swi01 timeout01 usb01 

@@ -1,40 +1,29 @@
 
 include ../../config.inc
 
+APP = usb01
+
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
-APP_PIECES = init \
-	test-file-system
+C_PIECES = init test-file-system
+C_O_FILES = $(C_PIECES:%=%.o)
+C_DEP_FILES = $(C_PIECES:%=%.dep)
 
-APP_O_FILES = $(APP_PIECES:%=%.o)
-APP_DEP_FILES = $(APP_PIECES:%=%.dep)
-
-APP = app.exe
+OBJS= $(C_O_FILES)
 
 DEPFLAGS = -MT $@ -MD -MP -MF $*.dep
 AM_CPPFLAGS += -I $(INSTALL_BASE)/include -I.
+CLEAN_ADDITIONS += $(APP).exe $(APP).map $(C_DEP_FILES)
 
-CFLAGS += $(DEPFLAGS) $(GCCFLAGS) $(AM_CPPFLAGS) -Wno-unused
+CFLAGS += $(DEPFLAGS) $(GCCFLAGS) $(AM_CPPFLAGS) -Wno-unused -Wl,-Map,$(APP).map
 
 LINK_LIBS += $(INSTALL_BASE)/libbsd.a
 
-CXXFLAGS += $(CFLAGS)
+all: $(APP).exe
 
-all: $(APP)
+$(APP).exe: $(C_O_FILES)
+	$(make-exe)
 
-$(APP): $(APP_O_FILES)
-	$(CC) $(CXXFLAGS) $^ $(LINK_LIBS) -o $(APP)
-
-clean:
-	rm -f $(APP_O_FILES) $(APP_DEP_FILES)
-
-dist:
-	cd .. && tar cjf usb-demo/usb-demo.tar.bz2 \
-	  `find usb-demo -name '*.h' -o -name '*.c'` usb-demo/Makefile
-
-%.dep:
-	touch $@
-
-include $(APP_DEP_FILES)
+-include $(C_DEP_FILES)

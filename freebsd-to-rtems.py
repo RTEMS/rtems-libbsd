@@ -1197,6 +1197,14 @@ devNic.addHeaderFiles(
 		'dev/pci/pci_private.h',
 	]
 )
+
+devNic.addCPUDependentHeaderFiles(
+	[
+		'i386/include/specialreg.h',
+		'i386/include/md_var.h',
+	]
+)
+
 devNic.addSourceFiles(
 	[
 	#	'kern/subr_taskqueue.c',

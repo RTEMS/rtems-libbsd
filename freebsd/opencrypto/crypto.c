@@ -1247,9 +1247,11 @@ crypto_proc(void)
 	u_int32_t hid;
 	int result, hint;
 
+#ifndef __rtems__
 #if defined(__i386__) || defined(__amd64__)
 	fpu_kern_thread(FPU_KERN_NORMAL);
 #endif
+#endif /* __rtems__ */
 
 	CRYPTO_Q_LOCK();
 	for (;;) {

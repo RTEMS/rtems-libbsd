@@ -912,6 +912,7 @@ extern u_int64_t cycles_per_usec;	/* alpha cpu clock frequency */
 extern u_int64_t cpu_tsc_freq;
 #endif /* __alpha__ */
 
+#ifndef __rtems__
 #if (__FreeBSD_version >= 700035)
 /* Update TSC freq with the value indicated by the caller. */
 static void
@@ -933,6 +934,7 @@ tsc_freq_changed(void *arg, const struct cf_level *level, int status)
 EVENTHANDLER_DEFINE(cpufreq_post_change, tsc_freq_changed, NULL,
     EVENTHANDLER_PRI_LAST);
 #endif /* __FreeBSD_version >= 700035 */
+#endif /* __rtems__ */
 
 static void
 init_machclk_setup(void)
@@ -953,9 +955,15 @@ init_machclk_setup(void)
 	machclk_usepcc = 0;
 #endif
 #ifdef __i386__
+#ifndef __rtems__
 	/* check if TSC is available */
 	if (machclk_usepcc == 1 && ((cpu_feature & CPUID_TSC) == 0 ||
 	    tsc_is_broken))
+#else   /* __rtems__ */
+	/* check if TSC is available */
+	if (machclk_usepcc == 1 && ((cpu_feature & CPUID_TSC) == 0 ||
+	    !(x86_has_tsc()) ))
+#endif /* __rtems__ */
 		machclk_usepcc = 0;
 #endif
 }
@@ -985,6 +993,7 @@ init_machclk(void)
 	 * if the clock frequency (of Pentium TSC or Alpha PCC) is
 	 * accessible, just use it.
 	 */
+#ifndef __rtems__
 #ifdef __i386__
 #ifdef __FreeBSD__
 #if (__FreeBSD_version > 300000)
@@ -1004,6 +1013,7 @@ init_machclk(void)
 	machclk_freq = (u_int32_t)(cycles_per_usec * 1000000);
 #endif
 #endif /* __alpha__ */
+#endif /* __rtems__ */
 
 	/*
 	 * if we don't know the clock frequency, measure it.

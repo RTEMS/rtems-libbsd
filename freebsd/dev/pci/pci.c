@@ -57,9 +57,11 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/machine/resource.h>
 #include <freebsd/machine/stdarg.h>
 
+#ifndef __rtems__
 #if defined(__i386__) || defined(__amd64__) || defined(__powerpc__)
 #include <freebsd/machine/intr_machdep.h>
 #endif
+#endif /* __rtems__ */
 
 #include <freebsd/sys/pciio.h>
 #include <freebsd/dev/pci/pcireg.h>

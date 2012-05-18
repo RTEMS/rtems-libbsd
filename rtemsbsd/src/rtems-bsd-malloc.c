@@ -96,8 +96,21 @@ _bsd_realloc( void *addr, unsigned long size,
 	return p;
 }
 
-#undef free
+#undef reallocf
+void *
+_bsd_reallocf( void *addr, unsigned long size, 
+  struct malloc_type *type, int flags)
+{
+	void *p = realloc(addr, size);
 
+	if (p == NULL) {
+		free(addr,NULL);
+	}
+
+	return p;
+}
+
+#undef free
 void
 _bsd_free(void *addr, struct malloc_type *mtp)
 {

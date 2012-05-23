@@ -551,6 +551,8 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-vm_glue.c',
 		'src/rtems-bsd-copyinout.c',
 		'src/rtems-bsd-descrip.c',
+		'src/rtems-bsd-conf.c',
+		'src/rtems-bsd-subr_param.c',
 	]
 )
 rtems.addEmptyHeaderFiles(
@@ -1202,6 +1204,7 @@ devNic.addCPUDependentHeaderFiles(
 	[
 		'i386/include/specialreg.h',
 		'i386/include/md_var.h',
+		'i386/include/intr_machdep.h',
 	]
 )
 
@@ -1215,12 +1218,14 @@ devNic.addSourceFiles(
 		'kern/subr_pcpu.c',
 		'kern/subr_sbuf.c',
 		'kern/subr_rman.c',
+		'kern/subr_module.c',
 		'libkern/inet_ntoa.c',
 		'kern/kern_prot.c',
 		'kern/kern_time.c',
 		'kern/kern_event.c',
 		'netinet/tcp_hostcache.c',
 		'dev/pci/pci.c',
+		'dev/pci/pci_user.c',
 		'kern/uipc_accf.c',
 		'kern/kern_ntptime.c',
 		'kern/kern_environment.c',

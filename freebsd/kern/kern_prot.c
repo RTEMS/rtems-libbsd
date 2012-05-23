@@ -1286,7 +1286,6 @@ groupmember(gid_t gid, struct ucred *cred)
 	return (0);
 }
 
-#ifndef __rtems__
 /*
  * Test the active securelevel against a given level.  securelevel_gt()
  * implements (securelevel > level).  securelevel_ge() implements
@@ -1313,8 +1312,6 @@ securelevel_ge(struct ucred *cr, int level)
 
 	return (cr->cr_prison->pr_securelevel >= level ? EPERM : 0);
 }
-
-#endif /* __rtems__ */
 
 /*
  * 'see_other_uids' determines whether or not visibility of processes

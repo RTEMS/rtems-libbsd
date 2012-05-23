@@ -57,21 +57,20 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/machine/resource.h>
 #include <freebsd/machine/stdarg.h>
 
-#ifndef __rtems__
 #if defined(__i386__) || defined(__amd64__) || defined(__powerpc__)
 #include <freebsd/machine/intr_machdep.h>
 #endif
-#endif /* __rtems__ */
 
 #include <freebsd/sys/pciio.h>
 #include <freebsd/dev/pci/pcireg.h>
 #include <freebsd/dev/pci/pcivar.h>
-#ifndef __rtems__
 #include <freebsd/dev/pci/pci_private.h>
 
 #include <freebsd/dev/usb/controller/ehcireg.h>
 #include <freebsd/dev/usb/controller/ohcireg.h>
+#ifndef __rtems__
 #include <freebsd/dev/usb/controller/uhcireg.h>
+#endif /* __rtems__ */
 
 #include <freebsd/local/pcib_if.h>
 #include <freebsd/local/pci_if.h>
@@ -82,9 +81,7 @@ __FBSDID("$FreeBSD$");
 #else
 #define	ACPI_PWR_FOR_SLEEP(x, y, z)
 #endif
-#endif /* __rtems__ */
 
-#ifndef __rtems__
 static pci_addr_t	pci_mapbase(uint64_t mapreg);
 static const char	*pci_maptype(uint64_t mapreg);
 static int		pci_mapsize(uint64_t testval);
@@ -332,6 +329,7 @@ pci_find_dbsf(uint32_t domain, uint8_t bus, uint8_t slot, uint8_t func)
 	return (NULL);
 }
 
+#ifndef __rtems__
 /* Find a device_t by vendor/device ID */
 
 device_t
@@ -348,6 +346,7 @@ pci_find_device(uint16_t vendor, uint16_t device)
 
 	return (NULL);
 }
+#endif /* __rtems__ */
 
 static int
 pci_printf(pcicfgregs *cfg, const char *fmt, ...)
@@ -1614,7 +1613,6 @@ pci_ht_map_msi(device_t dev, uint64_t addr)
 		    ht->ht_msictrl, 2);
 	}
 }
-#endif /* __rtems__ */
 
 int
 pci_get_max_read_req(device_t dev)
@@ -1650,7 +1648,6 @@ pci_set_max_read_req(device_t dev, int size)
 	return (size);
 }
 
-#ifndef __rtems__
 /*
  * Support for MSI message signalled interrupts.
  */
@@ -2625,11 +2622,13 @@ pci_assign_interrupt(device_t bus, device_t dev, int force_route)
 
 	/* Let the user override the IRQ with a tunable. */
 	irq = PCI_INVALID_IRQ;
+#ifndef __rtems__
 	snprintf(tunable_name, sizeof(tunable_name),
 	    "hw.pci%d.%d.%d.INT%c.irq",
 	    cfg->domain, cfg->bus, cfg->slot, cfg->intpin + 'A' - 1);
 	if (TUNABLE_INT_FETCH(tunable_name, &irq) && (irq >= 255 || irq <= 0))
 		irq = PCI_INVALID_IRQ;
+#endif /* __rtems__ */
 
 	/*
 	 * If we didn't get an IRQ via the tunable, then we either use the
@@ -2696,6 +2695,7 @@ ohci_early_takeover(device_t self)
 	bus_release_resource(self, SYS_RES_MEMORY, rid, res);
 }
 
+#ifndef __rtems__
 /* Perform early UHCI takeover from SMM. */
 static void
 uhci_early_takeover(device_t self)
@@ -2719,6 +2719,7 @@ uhci_early_takeover(device_t self)
 		bus_release_resource(self, SYS_RES_IOPORT, rid, res);
 	}
 }
+#endif /* __rtems__ */
 
 /* Perform early EHCI takeover from SMM. */
 static void
@@ -2826,8 +2827,10 @@ pci_add_resources(device_t bus, device_t dev, int force, uint32_t prefetchmask)
 			ehci_early_takeover(dev);
 		else if (pci_get_progif(dev) == PCIP_SERIALBUS_USB_OHCI)
 			ohci_early_takeover(dev);
+#ifndef __rtems__
 		else if (pci_get_progif(dev) == PCIP_SERIALBUS_USB_UHCI)
 			uhci_early_takeover(dev);
+#endif /* __rtems__ */
 	}
 }
 
@@ -4114,4 +4117,3 @@ pci_cfg_save(device_t dev, struct pci_devinfo *dinfo, int setstate)
 	if (pci_get_powerstate(dev) != PCI_POWERSTATE_D3)
 		pci_set_powerstate(dev, PCI_POWERSTATE_D3);
 }
-#endif /* __rtems__ */

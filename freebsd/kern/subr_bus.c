@@ -2861,7 +2861,6 @@ device_set_unit(device_t dev, int unit)
 	return (0);
 }
 
-#ifndef __rtems__
 /*======================================*/
 /*
  * Some useful method implementations to make life easier for bus drivers.
@@ -3193,7 +3192,6 @@ resource_list_purge(struct resource_list *rl)
 		free(rle, M_BUS);
 	}
 }
-#endif /* __rtems__ */
 
 device_t
 bus_generic_add_child(device_t dev, u_int order, const char *name, int unit)
@@ -3518,7 +3516,6 @@ bus_generic_teardown_intr(device_t dev, device_t child, struct resource *irq,
 	return (EINVAL);
 }
 
-#ifndef __rtems__
 /**
  * @brief Helper function for implementing BUS_ALLOC_RESOURCE().
  *
@@ -3586,7 +3583,6 @@ bus_generic_deactivate_resource(device_t dev, device_t child, int type,
 		    r));
 	return (EINVAL);
 }
-#endif /* __rtems__ */
 
 /**
  * @brief Helper function for implementing BUS_BIND_INTR().
@@ -3656,7 +3652,6 @@ bus_generic_get_dma_tag(device_t dev, device_t child)
 	return (NULL);
 }
 
-#ifndef __rtems__
 /**
  * @brief Helper function for implementing BUS_GET_RESOURCE().
  *
@@ -3773,7 +3768,6 @@ bus_generic_rl_alloc_resource(device_t dev, device_t child, int type,
 	return (resource_list_alloc(rl, dev, child, type, rid,
 	    start, end, count, flags));
 }
-#endif /* __rtems__ */
 
 /**
  * @brief Helper function for implementing BUS_CHILD_PRESENT().

@@ -554,6 +554,8 @@ been partially tested.  If they contain both USB and Nic, then they are used
 by both and MAY contain methods that have not been tested yet.  Files that
 are only used by the Nic test are the most suspect.
 
+[listing]
+----
 rtems-libbsd File:	rtems-bsd-assert.c
 FreeBSD File: 		rtems-bsd-config.h redefines BSD_ASSERT.
 Description:		This file contains the support method rtems_bsd_assert_func().
@@ -737,9 +739,23 @@ rtems-libbsd File: 	rtems-bsd-vm_glue.c
 FreeBSD File:		vm/vm_glue.c
 Description:		
 Status: 		USB, Nic 
+----
 
+== Notes by File ==
+
+altq_subr.c - Arbitrary choices were made in this file that RTEMS would
+not support tsc frequency change.  Additionally, the clock frequency
+for machclk_freq is always measured for RTEMS.
+
+conf.h - In order to add make_dev and destroy_dev, variables in the cdev
+structure that were not being used were conditionally compiled out. The
+capability of supporting children did not appear to be needed and was
+not implemented in the rtems version of these routines.
+ 
 == NICs Status ==
 
+[listing]
+----
 Driver			Symbol				Status
 ======			======				======
 RealTek			_bsd_re_pcimodule_sys_init	Links 
@@ -748,13 +764,10 @@ DEC tulip		_bsd_dc_pcimodule_sys_init	Links
 Broadcom BCM57xxx	_bsd_bce_pcimodule_sys_init	Links
 Broadcom BCM4401	_bsd_bfe_pcimodule_sys_init	Links
 Broadcom BCM570x 	_bsd_bge_pcimodule_sys_init	Needs Symbols (A)
-E1000 xxx 		_bsd_igb_pcimodule_sys_init	Needs Symbols (B)	
-E1000 XXX		_bsd_em_pcimodule_sys_init 	Needs Symbols (B)
+E1000 IGB 		_bsd_igb_pcimodule_sys_init	Links
+E1000 EM		_bsd_em_pcimodule_sys_init	Links
+----
 
 
 Symbols (A)
-         pci_find_dbsf
          pci_get_vpd_ident
-Symbols (B)
-	make_dev()
-	destroy_dev()

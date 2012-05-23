@@ -446,7 +446,9 @@ pci_msix_count(device_t dev)
 
 device_t pci_find_bsf(uint8_t, uint8_t, uint8_t);
 device_t pci_find_dbsf(uint32_t, uint8_t, uint8_t, uint8_t);
+#ifndef __rtems__
 device_t pci_find_device(uint16_t, uint16_t);
+#endif /* __rtems__ */
 
 /* Can be used by drivers to manage the MSI-X table. */
 int	pci_pending_msix(device_t dev, u_int index);

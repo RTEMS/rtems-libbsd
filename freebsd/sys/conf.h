@@ -64,6 +64,7 @@ struct cdev {
 #define SI_DUMPDEV	0x0080	/* is kernel dumpdev */
 #define SI_CANDELETE	0x0100	/* can do BIO_DELETE */
 #define SI_CLONELIST	0x0200	/* on a clone list */
+#ifndef __rtems__
 	struct timespec	si_atime;
 	struct timespec	si_ctime;
 	struct timespec	si_mtime;
@@ -71,7 +72,9 @@ struct cdev {
 	gid_t		si_gid;
 	mode_t		si_mode;
 	struct ucred	*si_cred;	/* cached clone-time credential */
+#endif /* __rtems__ */
 	int		si_drv0;
+#ifndef __rtems__
 	int		si_refcount;
 	LIST_ENTRY(cdev)	si_list;
 	LIST_ENTRY(cdev)	si_clone;
@@ -79,7 +82,9 @@ struct cdev {
 	LIST_ENTRY(cdev)	si_siblings;
 	struct cdev *si_parent;
 	char		*si_name;
+#endif /* __rtems__ */
 	void		*si_drv1, *si_drv2;
+#ifndef __rtems__
 	struct cdevsw	*si_devsw;
 	int		si_iosize_max;	/* maximum I/O size (for physio &al) */
 	u_long		si_usecount;
@@ -88,6 +93,7 @@ struct cdev {
 		struct snapdata *__sid_snapdata;
 	} __si_u;
 	char		__si_namebuf[SPECNAMELEN + 1];
+#endif /* __rtems__ */
 };
 
 #define si_snapdata	__si_u.__sid_snapdata

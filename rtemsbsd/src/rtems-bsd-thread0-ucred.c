@@ -50,4 +50,4 @@ static void rtems_bsd_thread0_ucred_init(void *arg)
 	rtems_bsd_thread0_ucred->cr_prison = &prison0;
 }
 
-SYSINIT(cpu, SI_SUB_CPU, SI_ORDER_FIRST, rtems_bsd_thread0_ucred_init, NULL);
+SYSINIT(cpu, SI_SUB_INTRINSIC, SI_ORDER_SECOND, rtems_bsd_thread0_ucred_init, NULL);

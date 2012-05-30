@@ -183,6 +183,7 @@ mi_startup(void)
 	struct sysinit **sysinit_end = NULL;
 #endif /* __rtems__ */
 
+#define VERBOSE_SYSINIT
 #if defined(VERBOSE_SYSINIT)
 	int last;
 	int verbose;
@@ -393,6 +394,7 @@ struct sysentvec null_sysvec = {
 	.sv_fetch_syscall_args = null_fetch_syscall_args,
 	.sv_syscallnames = NULL,
 };
+#endif /* __rtems__ */
 
 /*
  ***************************************************************************
@@ -411,6 +413,7 @@ struct sysentvec null_sysvec = {
 static void
 proc0_init(void *dummy __unused)
 {
+#ifndef __rtems__
 	struct proc *p;
 	unsigned i;
 	struct thread *td;
@@ -424,11 +427,13 @@ proc0_init(void *dummy __unused)
 	 */
 	p->p_magic = P_MAGIC;
 	p->p_osrel = osreldate;
+#endif /* __rtems__ */
 
 	/*
 	 * Initialize thread and process structures.
 	 */
 	procinit();	/* set up proc zone */
+#ifndef __rtems__
 	threadinit();	/* set up UMA zones */
 
 	/*
@@ -558,9 +563,11 @@ proc0_init(void *dummy __unused)
 	 * Charge root for one process.
 	 */
 	(void)chgproccnt(p->p_ucred->cr_ruidinfo, 1, 0);
+#endif /* __rtems__ */
 }
 SYSINIT(p0init, SI_SUB_INTRINSIC, SI_ORDER_FIRST, proc0_init, NULL);
 
+#ifndef __rtems__
 /* ARGSUSED*/
 static void
 proc0_post(void *dummy __unused)

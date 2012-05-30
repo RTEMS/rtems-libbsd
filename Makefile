@@ -370,6 +370,7 @@ C_FILES += freebsd/kern/subr_rman.c
 C_FILES += freebsd/kern/subr_module.c
 C_FILES += freebsd/libkern/inet_ntoa.c
 C_FILES += freebsd/kern/kern_prot.c
+C_FILES += freebsd/kern/kern_proc.c
 C_FILES += freebsd/kern/kern_time.c
 C_FILES += freebsd/kern/kern_event.c
 C_FILES += freebsd/netinet/tcp_hostcache.c

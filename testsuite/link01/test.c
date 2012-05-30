@@ -29,29 +29,69 @@ rtems_task Init(
 /* configuration information */
 
 /* NOTICE: the clock driver is explicitly disabled */
-#define CONFIGURE_APPLICATION_DOES_NOT_NEED_CLOCK_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 
+#define CONFIGURE_APPLICATION_NEEDS_LIBBLOCK
+#define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
+
+#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 32
+
+#define CONFIGURE_UNLIMITED_OBJECTS
+#define CONFIGURE_UNIFIED_WORK_AREAS
+
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
-#define CONFIGURE_MAXIMUM_TASKS 1
 
 #define CONFIGURE_INIT
 #include <rtems/confdefs.h>
 
 #include <freebsd/machine/rtems-bsd-sysinit.h>
 
-SYSINIT_NEED_FREEBSD_CORE;
+/*
+ *  User says I need XXX
+ */
+#define CONFIGURE_NEED_NET
+#define CONFIGURE_NEED_PCIB
+#define CONFIGURE_NEED_NET_IF_FXP
+
+/*
+ *  We "read" that and generate references and nexus devices
+ */
+#if defined(CONFIGURE_NEED_NET)
+  SYSINIT_NEED_FREEBSD_CORE;
+#endif
+
+  SYSINIT_NEED_USB_CORE;
+#if defined(CONFIGURE_NEED_PCIB)
+  SYSINIT_NEED_PCIB;
+#endif
+
+#if defined(CONFIGURE_NEED_NET_IF_FXP)
+  SYSINIT_NEED_NET_IF_FXP;
+#endif
+#if defined(CONFIGURE_NEED_NET_IF_DC)
+  SYSINIT_NEED_NET_IF_DC;
+#endif
+
+#if 0
 SYSINIT_NEED_NET_IF_BFE;
 SYSINIT_NEED_NET_IF_RE;
 SYSINIT_NEED_NET_IF_EM;
 SYSINIT_NEED_NET_IF_IGB;
-SYSINIT_NEED_NET_IF_LEM;
 SYSINIT_NEED_NET_IF_BCE;
-SYSINIT_NEED_NET_IF_BGE;
-SYSINIT_NEED_NET_IF_FXP;
-SYSINIT_NEED_NET_IF_DC;
+SYSINIT_NEED_NET_IF_LEM;
+
+SYSINIT_NEED_NET_IF_BGE; // does not link 23 May 2012
+#endif
+
 
 const char *const _bsd_nexus_devices [] = {
+	#if defined(CONFIGURE_NEED_PCIB)
+		"pcib",
+	#endif
+	#if defined(CONFIGURE_NEED_NET_IF_FXP)
+		"fxp",
+	#endif
 	NULL
 };
 

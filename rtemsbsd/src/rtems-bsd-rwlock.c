@@ -39,6 +39,8 @@
 
 /* Necessary to obtain some internal functions */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
+#include <pthread.h>
+#include <rtems/posix/rwlock.h>
 
 #include <freebsd/machine/rtems-bsd-config.h>
 
@@ -48,7 +50,6 @@
 #include <freebsd/sys/systm.h>
 #include <freebsd/sys/lock.h>
 #include <freebsd/sys/rwlock.h>
-#include <pthread.h>
 
 #ifndef INVARIANTS
 #define _rw_assert(rw, what, file, line)
@@ -191,23 +192,43 @@ rw_sysinit_flags(void *arg)
   rw_init_flags(args->ra_rw, args->ra_desc, args->ra_flags);
 }
 
+/* XXX add pthread_rwlock_is_wlocked_np( id, &wlocked )
+ * XXX    returns 0 or -1 w/error
+ * XXX    wlocked = 1 if write locked
+ * XXX 
+/* XXX add pthread_rwlock_is_rlocked_np( id, &wlocked )
+ * XXX    similar behavior
+ * XXX probably want to add "unlocked" state to RTEMS SuperCore rwlock
+ * XXX
+ * XXX Rationale: This violates the API layering BADLY!!!!!
+ * XXX Consider: Adding pthread_np.h to hold np methods like FreeBSD
+ * XXX           This would avoid polluting pthread.h
+ */
 int
 rw_wowned(struct rwlock *rw)
 {
-  Objects_Locations location;
-  Semaphore_Control *sema = _Semaphore_Get(rw->lock_object.lo_id, &location);
+  int                   is_locked_for_write = 0;
+  Objects_Locations     location;
+  POSIX_RWLock_Control *the_rwlock;
 
-  if (location == OBJECTS_LOCAL && !_Attributes_Is_counting_semaphore(sema->attribute_set)) {
-    int owned = sema->Core_control.mutex.holder_id == rtems_task_self();
+  the_rwlock = _POSIX_RWLock_Get(&rw->lock_object.lo_id, &location);
+  switch ( location ) {
 
-    _Thread_Enable_dispatch();
+    case OBJECTS_LOCAL:
+      if (the_rwlock->RWLock.current_state == CORE_RWLOCK_LOCKED_FOR_WRITING)
+        is_locked_for_write = 1;
+      _Thread_Enable_dispatch();
+      return is_locked_for_write;
 
-    return owned;
-  } else {
-    _Thread_Enable_dispatch();
-
-    BSD_PANIC("unexpected semaphore location or attributes");
+#if defined(RTEMS_MULTIPROCESSING)
+    case OBJECTS_REMOTE:
+#endif
+    case OBJECTS_ERROR:
+      break;
   }
+  _Thread_Enable_dispatch();
+
+  BSD_PANIC("unexpected semaphore location or attributes");
 }
 
 void

@@ -50,7 +50,7 @@
 #include <freebsd/sys/malloc.h>
 #include <freebsd/sys/uio.h>
 
-int     maxproc = 6;               /* XXX Used value of rtems KERN_MAXPROC */
+int     maxproc = 32;              /* XXX Used value of rtems KERN_MAXPROC */
 int     ngroups_max = NGROUPS_MAX; /* XXX */
 
 int     maxfiles = 7;                  /* XXX sys. wide open files limit */

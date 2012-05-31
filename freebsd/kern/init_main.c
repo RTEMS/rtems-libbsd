@@ -183,7 +183,6 @@ mi_startup(void)
 	struct sysinit **sysinit_end = NULL;
 #endif /* __rtems__ */
 
-#define VERBOSE_SYSINIT
 #if defined(VERBOSE_SYSINIT)
 	int last;
 	int verbose;

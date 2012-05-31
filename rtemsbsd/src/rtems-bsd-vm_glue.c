@@ -32,13 +32,41 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#include <freebsd/machine/rtems-bsd-config.h>
 
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/sched.h>
+
+#include <freebsd/sys/cdefs.h>
+__FBSDID("$FreeBSD$");
+#include <freebsd/sys/kernel.h>
+#include <freebsd/vm/uma.h>
+#include <freebsd/vm/uma_int.h>
+#include <freebsd/sys/systm.h>
+
+/*
+ * System initialization
+ */
+static int boot_pages = UMA_BOOT_PAGES;
+static void vm_mem_init(void *);
+SYSINIT(vm_mem, SI_SUB_VM, SI_ORDER_FIRST, vm_mem_init, NULL);
+
+static void
+vm_mem_init(dummy)
+        void *dummy;
+{
+  void *mapped;
+
+  /*
+   * The values for mapped came from the freeBSD method
+   * vm_page_startup() in the freeBSD file vm_page.c.
+   * XXX - This may need to be adjusted for our system.
+   */
+  mapped = calloc( boot_pages * UMA_SLAB_SIZE, 1 );
+  uma_startup((void *)mapped, boot_pages);
+  kern_timeout_callwheel_init();
+}
 
 /*
  * MPSAFE

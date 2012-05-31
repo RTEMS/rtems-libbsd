@@ -54,10 +54,10 @@ __FBSDID("$FreeBSD$");
 
 /* I should really use ktr.. */
 /*
+*/
 #define UMA_DEBUG 1
 #define UMA_DEBUG_ALLOC 1
 #define UMA_DEBUG_ALLOC_1 1
-*/
 
 #include <freebsd/local/opt_ddb.h>
 #include <freebsd/local/opt_param.h>
@@ -75,9 +75,7 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/sys/proc.h>
 #include <freebsd/sys/sbuf.h>
 #include <freebsd/sys/smp.h>
-#ifndef __rtems__
 #include <freebsd/sys/vmmeter.h>
-#endif /* __rtems__ */
 
 #include <freebsd/vm/vm.h>
 #ifndef __rtems__
@@ -237,16 +235,12 @@ static void zone_timeout(uma_zone_t zone);
 static int hash_alloc(struct uma_hash *);
 static int hash_expand(struct uma_hash *, struct uma_hash *);
 static void hash_free(struct uma_hash *hash);
-#ifndef __rtems__
 static void uma_timeout(void *);
 static void uma_startup3(void);
-#endif /* __rtems__ */
 static void *zone_alloc_item(uma_zone_t, void *, int);
 static void zone_free_item(uma_zone_t, void *, void *, enum zfreeskip,
     int);
-#ifndef __rtems__
 static void bucket_enable(void);
-#endif /* __rtems__ */
 static void bucket_init(void);
 static uma_bucket_t bucket_alloc(int, int);
 static void bucket_free(uma_bucket_t);
@@ -265,14 +259,17 @@ void uma_print_stats(void);
 #ifndef __rtems__
 static int sysctl_vm_zone_count(SYSCTL_HANDLER_ARGS);
 static int sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS);
+#endif
 
 SYSINIT(uma_startup3, SI_SUB_VM_CONF, SI_ORDER_SECOND, uma_startup3, NULL);
 
+#ifndef __rtems__
 SYSCTL_PROC(_vm, OID_AUTO, zone_count, CTLFLAG_RD|CTLTYPE_INT,
     0, 0, sysctl_vm_zone_count, "I", "Number of UMA zones");
 
 SYSCTL_PROC(_vm, OID_AUTO, zone_stats, CTLFLAG_RD|CTLTYPE_STRUCT,
     0, 0, sysctl_vm_zone_stats, "s,struct uma_type_header", "Zone Stats");
+#endif /* __rtems__ */
 
 /*
  * This routine checks to see whether or not it's safe to enable buckets.
@@ -281,12 +278,13 @@ SYSCTL_PROC(_vm, OID_AUTO, zone_stats, CTLFLAG_RD|CTLTYPE_STRUCT,
 static void
 bucket_enable(void)
 {
+#ifndef __rtems__
 	if (cnt.v_free_count < cnt.v_free_min)
 		bucketdisable = 1;
 	else
+#endif /* __rtems__ */
 		bucketdisable = 0;
 }
-#endif /* __rtems__ */
 
 /*
  * Initialize bucket_zones, the array of zones of buckets of various sizes.
@@ -392,7 +390,6 @@ zone_foreach_keg(uma_zone_t zone, void (*kegfn)(uma_keg_t))
 		kegfn(klink->kl_keg);
 }
 
-#ifndef __rtems__
 /*
  * Routine called by timeout which is used to fire off some time interval
  * based calculations.  (stats, hash size, etc.)
@@ -412,7 +409,6 @@ uma_timeout(void *unused)
 	/* Reschedule this event */
 	callout_reset(&uma_callout, UMA_TIMEOUT * hz, uma_timeout, NULL);
 }
-#endif /* __rtems__ */
 
 /*
  * Routine to perform timeout driven calculations.  This expands the
@@ -1814,6 +1810,7 @@ uma_startup2(void)
 	printf("UMA startup2 complete.\n");
 #endif
 }
+#endif /* __rtems__ */
 
 /*
  * Initialize our callout handle
@@ -1832,7 +1829,6 @@ uma_startup3(void)
 	printf("UMA startup3 complete.\n");
 #endif
 }
-#endif /* __rtems__ */
 
 static uma_keg_t
 uma_kcreate(uma_zone_t zone, size_t size, uma_init uminit, uma_fini fini,

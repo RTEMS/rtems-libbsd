@@ -669,7 +669,6 @@ netisr_select_cpuid(struct netisr_proto *npp, uintptr_t source,
 	}
 }
 
-#ifndef __rtems__
 /*
  * Process packets associated with a workstream and protocol.  For reasons of
  * fairness, we process up to one complete netisr queue at a time, moving the
@@ -780,7 +779,6 @@ out:
 	netisr_pollmore();
 #endif
 }
-#endif  /* __rtems__ */
 
 static int
 netisr_queue_workstream(struct netisr_workstream *nwsp, u_int proto,
@@ -1016,7 +1014,6 @@ netisr_dispatch(u_int proto, struct mbuf *m)
 	return (netisr_dispatch_src(proto, 0, m));
 }
 
-#ifndef __rtems__
 #ifdef DEVICE_POLLING
 /*
  * Kernel polling borrows a netisr thread to run interface polling in; this
@@ -1051,12 +1048,14 @@ netisr_start_swi(u_int cpuid, struct pcpu *pc)
 	if (error)
 		panic("%s: swi_add %d", __func__, error);
 	pc->pc_netisr = nwsp->nws_intr_event;
+#ifndef __rtems__
 	if (netisr_bindthreads) {
 		error = intr_event_bind(nwsp->nws_intr_event, cpuid);
 		if (error != 0)
 			printf("%s: cpu %u: intr_event_bind: %d", __func__,
 			    cpuid, error);
 	}
+#endif
 	NETISR_WLOCK();
 	nws_array[nws_count] = nwsp->nws_cpu;
 	nws_count++;
@@ -1167,4 +1166,3 @@ DB_SHOW_COMMAND(netisr, db_show_netisr)
 	}
 }
 #endif
-#endif  /* __rtems__ */

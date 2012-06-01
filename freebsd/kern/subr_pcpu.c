@@ -64,6 +64,10 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/sys/sx.h>
 #include <freebsd/ddb/ddb.h>
 
+#ifdef __rtems__
+#include <freebsd/sys/kernel.h>
+#endif
+
 MALLOC_DEFINE(M_PCPU, "Per-cpu", "Per-cpu resource accouting.");
 
 struct dpcpu_free {
@@ -79,7 +83,6 @@ uintptr_t dpcpu_off[MAXCPU];
 struct pcpu *cpuid_to_pcpu[MAXCPU];
 struct cpuhead cpuhead = SLIST_HEAD_INITIALIZER(cpuhead);
 
-#ifndef __rtems__
 /*
  * Initialize the MI portions of a struct pcpu.
  */
@@ -94,7 +97,9 @@ pcpu_init(struct pcpu *pcpu, int cpuid, size_t size)
 	pcpu->pc_cpumask = 1 << cpuid;
 	cpuid_to_pcpu[cpuid] = pcpu;
 	SLIST_INSERT_HEAD(&cpuhead, pcpu, pc_allcpu);
+#ifndef __rtems__
 	cpu_pcpu_init(pcpu, cpuid, size);
+#endif
 	pcpu->pc_rm_queue.rmq_next = &pcpu->pc_rm_queue;
 	pcpu->pc_rm_queue.rmq_prev = &pcpu->pc_rm_queue;
 #ifdef KTR
@@ -402,4 +407,3 @@ DB_SHOW_ALL_COMMAND(pcpu, db_show_cpu_all)
 }
 DB_SHOW_ALIAS(allpcpu, db_show_cpu_all);
 #endif
-#endif /* __rtems__ */

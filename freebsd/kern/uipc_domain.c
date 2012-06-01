@@ -262,9 +262,13 @@ domaininit(void *dummy)
 	uma_zone_set_max(socket_zone, maxsockets);
 	EVENTHANDLER_REGISTER(maxsockets_change, socket_zone_change, NULL,
 		EVENTHANDLER_PRI_FIRST);
-
+#ifndef __rtems__
 	if (max_linkhdr < 16)		/* XXX */
 		max_linkhdr = 16;
+#else /*__rtems__ */
+	if (max_linkhdr < 10)		/* XXX -- Not sure this is correct*/
+		max_linkhdr = 10;
+#endif /*__rtems__ */
 
 	callout_init(&pffast_callout, CALLOUT_MPSAFE);
 	callout_init(&pfslow_callout, CALLOUT_MPSAFE);

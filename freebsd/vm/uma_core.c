@@ -54,10 +54,10 @@ __FBSDID("$FreeBSD$");
 
 /* I should really use ktr.. */
 /*
-*/
 #define UMA_DEBUG 1
 #define UMA_DEBUG_ALLOC 1
 #define UMA_DEBUG_ALLOC_1 1
+*/
 
 #include <freebsd/local/opt_ddb.h>
 #include <freebsd/local/opt_param.h>

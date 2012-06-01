@@ -52,11 +52,15 @@ static int boot_pages = UMA_BOOT_PAGES;
 static void vm_mem_init(void *);
 SYSINIT(vm_mem, SI_SUB_VM, SI_ORDER_FIRST, vm_mem_init, NULL);
 
+
 static void
 vm_mem_init(dummy)
         void *dummy;
 {
-  void *mapped;
+  void        *mapped;
+  static void *callwheel_array[270];
+  caddr_t      c;
+  caddr_t      p;
 
   /*
    * The values for mapped came from the freeBSD method
@@ -65,6 +69,16 @@ vm_mem_init(dummy)
    */
   mapped = calloc( boot_pages * UMA_SLAB_SIZE, 1 );
   uma_startup((void *)mapped, boot_pages);
+
+  /*
+   * The following is doing a minimal amount of work from 
+   * the method vm_ksubmap_init() in freeBSD vm_init.c.
+   */
+  c = (caddr_t) callwheel_array;
+  p = kern_timeout_callwheel_alloc(c);
+  printf( "*** callwheel 0x%x 0x%x 0x%x\n", c, p,  (c + sizeof(callwheel_array)) );
+  if ( p > (c + sizeof(callwheel_array)) )
+    panic( "*** not enough memory for callwheel_array ***" );
   kern_timeout_callwheel_init();
 }
 

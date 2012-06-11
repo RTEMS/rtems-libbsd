@@ -1205,9 +1205,16 @@ devNic.addCPUDependentHeaderFiles(
 		'i386/include/specialreg.h',
 		'i386/include/md_var.h',
 		'i386/include/intr_machdep.h',
+		'i386/include/legacyvar.h',
+		'i386/include/pci_cfgreg.h',
 	]
 )
-
+devNic.addCPUDependentSourceFiles(
+	'i386',
+	[
+		'i386/pci/pci_bus.c',
+	]
+)
 devNic.addSourceFiles(
 	[
 	#	'kern/subr_taskqueue.c',
@@ -1235,6 +1242,7 @@ devNic.addSourceFiles(
 		'kern/subr_bufring.c',
 		'dev/led/led.c',
 		'kern/subr_unit.c',
+		'dev/pci/pci_pci.c',
 	]
 )
 

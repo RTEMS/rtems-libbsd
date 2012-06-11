@@ -384,6 +384,10 @@ C_FILES += freebsd/kern/kern_resource.c
 C_FILES += freebsd/kern/subr_bufring.c
 C_FILES += freebsd/dev/led/led.c
 C_FILES += freebsd/kern/subr_unit.c
+C_FILES += freebsd/dev/pci/pci_pci.c
+ifeq ($(RTEMS_CPU), i386)
+C_FILES += freebsd/i386/pci/pci_bus.c
+endif
 C_FILES += freebsd/dev/re/if_re.c
 C_FILES += freebsd/dev/fxp/if_fxp.c
 C_FILES += freebsd/dev/e1000/e1000_80003es2lan.c

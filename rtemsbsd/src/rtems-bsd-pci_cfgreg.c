@@ -48,8 +48,6 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/sys/sysctl.h>
 #include <freebsd/dev/pci/pcivar.h>
 #include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/machine/pci_cfgreg.h>
-
 #include <rtems/pci.h>
 
 

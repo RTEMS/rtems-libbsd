@@ -553,6 +553,8 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-descrip.c',
 		'src/rtems-bsd-conf.c',
 		'src/rtems-bsd-subr_param.c',
+		'src/rtems-bsd-pci_cfgreg.c',
+		'src/rtems-bsd-pci_bus.c',
 	]
 )
 rtems.addEmptyHeaderFiles(
@@ -1213,6 +1215,7 @@ devNic.addCPUDependentSourceFiles(
 	'i386',
 	[
 		'i386/pci/pci_bus.c',
+		'i386/i386/legacy.c',
 	]
 )
 devNic.addSourceFiles(

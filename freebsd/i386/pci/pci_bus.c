@@ -52,8 +52,13 @@ __FBSDID("$FreeBSD$");
 
 #include <freebsd/local/pcib_if.h>
 
+#ifndef __rtems__
 static int	pcibios_pcib_route_interrupt(device_t pcib, device_t dev,
     int pin);
+#else /* __rtems__ */
+int	pcibios_pcib_route_interrupt(device_t pcib, device_t dev, int pin);
+#endif /* __rtems__ */
+
 
 int
 legacy_pcib_maxslots(device_t dev)
@@ -480,11 +485,14 @@ legacy_pcib_attach(device_t dev)
 	 * our method of routing interrupts if we have one.
 	 */
 	bus = pcib_get_bus(dev);
+#ifndef __rtems__
 	if (pci_pir_probe(bus, 0)) {
 		pir = BUS_ADD_CHILD(device_get_parent(dev), 0, "pir", 0);
 		if (pir != NULL)
 			device_probe_and_attach(pir);
 	}
+#else /* __rtems__ */
+#endif /* __rtems__ */
 	device_add_child(dev, "pci", bus);
 	return bus_generic_attach(dev);
 }
@@ -593,6 +601,7 @@ DEFINE_CLASS_0(pcib, legacy_pcib_driver, legacy_pcib_methods, 1);
 DRIVER_MODULE(pcib, legacy, legacy_pcib_driver, hostb_devclass, 0, 0);
 
 
+#ifndef __rtems__
 /*
  * Install placeholder to claim the resources owned by the
  * PCI bus interface.  This could be used to extract the
@@ -711,3 +720,4 @@ pcibios_pcib_route_interrupt(device_t pcib, device_t dev, int pin)
 	return (pci_pir_route_interrupt(pci_get_bus(dev), pci_get_slot(dev),
 		pci_get_function(dev), pin));
 }
+#endif /* __rtems__ */

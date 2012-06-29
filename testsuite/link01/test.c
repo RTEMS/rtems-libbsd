@@ -47,52 +47,6 @@ rtems_task Init(
 
 #include <freebsd/machine/rtems-bsd-sysinit.h>
 
-/*
- *  User says I need XXX
- */
-#define CONFIGURE_NEED_NET
-#define CONFIGURE_NEED_PCIB
-#define CONFIGURE_NEED_NET_IF_FXP
-
-/*
- *  We "read" that and generate references and nexus devices
- */
-#if defined(CONFIGURE_NEED_NET)
-  SYSINIT_NEED_FREEBSD_CORE;
-#endif
-
-  SYSINIT_NEED_USB_CORE;
-#if defined(CONFIGURE_NEED_PCIB)
-  SYSINIT_NEED_PCIB;
-#endif
-
-#if defined(CONFIGURE_NEED_NET_IF_FXP)
-  SYSINIT_NEED_NET_IF_FXP;
-#endif
-#if defined(CONFIGURE_NEED_NET_IF_DC)
-  SYSINIT_NEED_NET_IF_DC;
-#endif
-
-#if 0
-SYSINIT_NEED_NET_IF_BFE;
-SYSINIT_NEED_NET_IF_RE;
-SYSINIT_NEED_NET_IF_EM;
-SYSINIT_NEED_NET_IF_IGB;
-SYSINIT_NEED_NET_IF_BCE;
-SYSINIT_NEED_NET_IF_LEM;
-
-SYSINIT_NEED_NET_IF_BGE; // does not link 23 May 2012
-#endif
-
-
-const char *const _bsd_nexus_devices [] = {
-	#if defined(CONFIGURE_NEED_PCIB)
-		"pcib",
-	#endif
-	#if defined(CONFIGURE_NEED_NET_IF_FXP)
-		"fxp",
-	#endif
-	NULL
-};
+#include "nic-sysinit.h"
 
 /* end of file */

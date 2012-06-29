@@ -58,6 +58,8 @@ C_FILES += rtemsbsd/src/rtems-bsd-copyinout.c
 C_FILES += rtemsbsd/src/rtems-bsd-descrip.c
 C_FILES += rtemsbsd/src/rtems-bsd-conf.c
 C_FILES += rtemsbsd/src/rtems-bsd-subr_param.c
+C_FILES += rtemsbsd/src/rtems-bsd-pci_cfgreg.c
+C_FILES += rtemsbsd/src/rtems-bsd-pci_bus.c
 C_FILES += freebsd/kern/subr_eventhandler.c
 C_FILES += freebsd/kern/kern_subr.c
 C_FILES += freebsd/kern/kern_tc.c
@@ -387,6 +389,7 @@ C_FILES += freebsd/kern/subr_unit.c
 C_FILES += freebsd/dev/pci/pci_pci.c
 ifeq ($(RTEMS_CPU), i386)
 C_FILES += freebsd/i386/pci/pci_bus.c
+C_FILES += freebsd/i386/i386/legacy.c
 endif
 C_FILES += freebsd/dev/re/if_re.c
 C_FILES += freebsd/dev/fxp/if_fxp.c

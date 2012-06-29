@@ -1199,6 +1199,7 @@ devNic.addHeaderFiles(
 		'sys/eventvar.h',
 		'sys/kenv.h',
 		'dev/pci/pci_private.h',
+		'dev/pci/pcib_private.h',
 	]
 )
 

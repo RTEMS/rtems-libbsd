@@ -1200,6 +1200,8 @@ devNic.addHeaderFiles(
 		'sys/kenv.h',
 		'dev/pci/pci_private.h',
 		'dev/pci/pcib_private.h',
+		'isa/isavar.h',
+		'isa/pnpvar.h',
 	]
 )
 

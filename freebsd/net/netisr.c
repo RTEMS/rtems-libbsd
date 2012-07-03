@@ -542,7 +542,6 @@ netisr_setqlimit(const struct netisr_handler *nhp, u_int qlimit)
 	return (0);
 }
 
-#ifndef __rtems__
 /*
  * Drain all packets currently held in a particular protocol work queue.
  */
@@ -608,7 +607,6 @@ netisr_unregister(const struct netisr_handler *nhp)
 	}
 	NETISR_WUNLOCK();
 }
-#endif  /* __rtems__ */
 
 /*
  * Look up the workstream given a packet and source identifier.  Do this by

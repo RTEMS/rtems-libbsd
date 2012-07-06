@@ -482,7 +482,6 @@ rtems.addRTEMSHeaderFiles(
 		'rtems/machine/bus_dma.h',
 		'rtems/machine/rtems-bsd-config.h',
 		'rtems/machine/clock.h',
-		'rtems/machine/cpufunc.h',
 		'rtems/machine/endian.h',
 		'rtems/macpue/_limits.h',
 		'rtems/machine/_align.h',
@@ -1212,6 +1211,7 @@ devNic.addCPUDependentHeaderFiles(
 		'i386/include/intr_machdep.h',
 		'i386/include/legacyvar.h',
 		'i386/include/pci_cfgreg.h',
+		'i386/include/cpufunc.h',
 	]
 )
 devNic.addCPUDependentSourceFiles(

@@ -65,11 +65,13 @@ struct region_descriptor;
 
 #if defined(__GNUCLIKE_ASM) && defined(__CC_SUPPORTS___INLINE)
 
+#ifndef __rtems__
 static __inline void
 breakpoint(void)
 {
 	__asm __volatile("int $3");
 }
+#endif
 
 static __inline u_int
 bsfl(u_int mask)
@@ -170,11 +172,13 @@ ffs(int mask)
 
 #define	HAVE_INLINE_FLS
 
+#ifndef __rtems__
 static __inline int
 fls(int mask)
 {
 	return (mask == 0 ? mask : (int)bsrl((u_int)mask) + 1);
 }
+#endif
 
 #endif /* _KERNEL */
 
@@ -674,7 +678,9 @@ intr_restore(register_t eflags)
 
 #else /* !(__GNUCLIKE_ASM && __CC_SUPPORTS___INLINE) */
 
+#ifndef __rtems__
 int	breakpoint(void);
+#endif
 u_int	bsfl(u_int mask);
 u_int	bsrl(u_int mask);
 void	disable_intr(void);

@@ -118,7 +118,12 @@
 #include <freebsd/machine/cpufunc.h>
 #include <freebsd/machine/resource.h>
 
+#if 0
 #define I386_BUS_SPACE_IO SYS_RES_IOPORT
+#else
+#define I386_BUS_SPACE_IO       0       /* space is i/o space */
+#define I386_BUS_SPACE_MEM      1       /* space is mem space */  
+#endif
 
 /*
  * Read a 1, 2, 4, or 8 byte quantity from bus space

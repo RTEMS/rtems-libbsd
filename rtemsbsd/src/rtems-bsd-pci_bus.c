@@ -52,6 +52,7 @@ __FBSDID("$FreeBSD$");
 
 #include <freebsd/local/pcib_if.h>
 #include <rtems/pci.h>
+#include <freebsd/machine/bus.h>
 
 int
 pcibios_pcib_route_interrupt(device_t pcib, device_t dev, int pin)

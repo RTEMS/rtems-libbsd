@@ -43,8 +43,7 @@ static int checkmethod = 1;
 static int use_kenv;
 static char *hintp;
 #ifdef __rtems__
-char static_hints[] = {};
-int hintmode = 2;
+int hintmode = 1;  /* always use static_hints */
 #endif /* __rtems__ */
 
 /*

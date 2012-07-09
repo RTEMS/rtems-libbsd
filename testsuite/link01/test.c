@@ -45,7 +45,22 @@ rtems_task Init(
 #define CONFIGURE_INIT
 #include <rtems/confdefs.h>
 
+/*
+ * FreeBSD TCP/IP Initialization
+ */
+
 #include <freebsd/machine/rtems-bsd-sysinit.h>
+
+#define CONFIGURE_NEED_NET
+#define CONFIGURE_NEED_PCIB
+#define CONFIGURE_NEED_NET_IF_FXP
+
+/*
+ * This is correct for the PC
+ */
+char static_hints[] = {
+  "hint.fxp.0.prefer_iomap=1\0\n"
+};
 
 #include "nic-sysinit.h"
 

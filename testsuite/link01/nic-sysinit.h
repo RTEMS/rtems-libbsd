@@ -35,10 +35,6 @@
 
 #include <freebsd/machine/rtems-bsd-sysinit.h>
 
-#define CONFIGURE_NEED_NET
-#define CONFIGURE_NEED_PCIB
-#define CONFIGURE_NEED_NET_IF_FXP
-
 /*
  *  We "read" that and generate references and nexus devices
  */

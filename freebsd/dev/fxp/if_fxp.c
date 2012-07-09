@@ -459,15 +459,7 @@ fxp_attach(device_t dev)
 	 * We default to memory mapping. Then we accept an override from the
 	 * command line. Then we check to see which one is enabled.
 	 */
-#ifndef __rtems__        /* XXX NOTE: This is a hack. */
 	prefer_iomap = 0;
-#else   /* __rtems__ */
-#if defined(__i386__) 
-	prefer_iomap = 1;
-#else
-	prefer_iomap = 0;
-#endif
-#endif /* __rtems__ */
 	resource_int_value(device_get_name(dev), device_get_unit(dev),
 	    "prefer_iomap", &prefer_iomap);
 	if (prefer_iomap)

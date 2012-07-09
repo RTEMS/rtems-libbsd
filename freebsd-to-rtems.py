@@ -372,12 +372,22 @@ class ModuleManager:
 			'lib_usb:\n' \
 			'\t$(MAKE) $(LIB)\n' \
 			'\n' \
+			'CPU_SED  = sed\n' \
+			'CPU_SED += -e \'/arm/d\'\n' \
+			'CPU_SED += -e \'/i386/d\'\n' \
+			'CPU_SED += -e \'/powerpc/d\'\n' \
+			'CPU_SED += -e \'/mips/d\'\n' \
+			'CPU_SED += -e \'/sparc/d\'\n' \
+			'CPU_SED += -e \'/sparc64/d\'\n' \
+			'\n' \
 			'install: $(LIB)\n' \
 			'\tinstall -d $(INSTALL_BASE)/include\n' \
 			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
-			'\tcd rtemsbsd; for i in `find . -name \'*.h\'` ; do \\\n' \
+			'\tcd rtemsbsd; for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\tfor i in `find contrib freebsd -name \'*.h\'` ; do \\\n' \
+			'\tfor i in `find contrib freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
+			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\tcd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\n' \
 			'clean:\n' \

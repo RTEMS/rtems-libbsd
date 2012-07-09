@@ -452,12 +452,22 @@ $(LIB): $(C_O_FILES)
 lib_usb:
 	$(MAKE) $(LIB)
 
+CPU_SED  = sed
+CPU_SED += -e '/arm/d'
+CPU_SED += -e '/i386/d'
+CPU_SED += -e '/powerpc/d'
+CPU_SED += -e '/mips/d'
+CPU_SED += -e '/sparc/d'
+CPU_SED += -e '/sparc64/d'
+
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
-	cd rtemsbsd; for i in `find . -name '*.h'` ; do \
+	cd rtemsbsd; for i in `find . -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	for i in `find contrib freebsd -name '*.h'` ; do \
+	for i in `find contrib freebsd -name '*.h' | $(CPU_SED)` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 
 clean:

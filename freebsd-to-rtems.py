@@ -385,7 +385,7 @@ class ModuleManager:
 			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
 			'\tcd rtemsbsd; for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\tfor i in `find contrib freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
+			'\tfor i in `find freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tcd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \

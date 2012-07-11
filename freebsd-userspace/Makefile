@@ -54,6 +54,35 @@ C_FILES += lib/libc/net/getnetbynis.c
 # C_FILES += lib/libc/net/getprotoent.c
 # C_FILES += lib/libc/net/getprotoname.c
 # C_FILES += lib/libc/net/getservent.c
+C_FILES += lib/libc/gen/gethostname.c
+# C_FILES += lib/libc/nameser/ns_name.c
+C_FILES += lib/libc/nameser/ns_netint.c
+C_FILES += lib/libc/nameser/ns_parse.c
+# C_FILES += lib/libc/nameser/ns_print.c
+C_FILES += lib/libc/nameser/ns_ttl.c
+C_FILES += lib/libc/net/if_indextoname.c
+C_FILES += lib/libc/net/if_nameindex.c
+C_FILES += lib/libc/net/linkaddr.c
+# C_FILES += lib/libc/net/map_v4v6.c
+# C_FILES += lib/libc/net/rcmd.c
+C_FILES += lib/libc/net/recv.c
+C_FILES += lib/libc/net/send.c
+# iovec redefined between RTEMS and FreeBSD
+# C_FILES += lib/libc/resolv/herror.c
+C_FILES += lib/libc/resolv/res_comp.c
+# Little of res_XXX compiles without BIND_4_COMPAT fixed
+# one of many needing BIND_4_COMPAT defined (#1 issue impacting most)
+# C_FILES += lib/libc/resolv/res_data.c
+# one of many needing BIND_4_COMPAT defined (#1 issue impacting most)
+# C_FILES += lib/libc/resolv/res_debug.c
+# one of many needing BIND_4_COMPAT defined (#1 issue impacting most)
+# C_FILES += lib/libc/resolv/res_init.c
+# C_FILES += lib/libc/resolv/res_mkquery.c
+# C_FILES += lib/libc/resolv/res_mkupdate.c
+# C_FILES += lib/libc/resolv/res_query.c
+#C_FILES += lib/libc/resolv/res_send.c
+#C_FILES += lib/libc/resolv/res_update.c
+C_FILES += lib/libc/string/strsep.c
 
 C_FILES += rtems/rtems-net-setup.c
 
@@ -61,14 +90,19 @@ C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsdc.a
+GEN_FILES = include/rpc/rpcb_prot.h
 
 all: lib_bsdc
 
-$(LIB): $(C_O_FILES)
+$(LIB): $(GEN_FILES) $(C_O_FILES)
 	$(AR) rcu $@ $^
 
-lib_bsdc:
+lib_bsdc: $(LIB) include/rpc/rpcb_prot.h
 	$(MAKE) $(LIB)
+
+include/rpc/rpcb_prot.h: include/rpc/rpcb_prot.x
+	rm -f include/rpc/rpcb_prot.h
+	rpcgen -h -o include/rpc/rpcb_prot.h include/rpc/rpcb_prot.x
 
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include
@@ -77,7 +111,7 @@ install: $(LIB)
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 
 clean:
-	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES)
+	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GEN_FILES)
 
 -include $(C_D_FILES)
 

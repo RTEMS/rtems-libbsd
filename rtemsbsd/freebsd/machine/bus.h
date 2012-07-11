@@ -217,7 +217,9 @@ bus_space_free(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t 
 #elif defined(__ppc__)
   #include <freebsd/machine/bus_space-simple_memory.h>
 #else
-  #error "Bus space routines not implemented for this architecture!!"
+  #warning "Bus space routines not implemented for this architecture!!"
+  #warning "Defaulting to simple-memory Bus space routines!!"
+  #include <freebsd/machine/bus_space-simple_memory.h>
 #endif
 
 #include <freebsd/machine/bus_dma.h>

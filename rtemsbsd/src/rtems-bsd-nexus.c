@@ -53,23 +53,24 @@
 #include <freebsd/machine/rtems-bsd-devicet.h>
 #include <bsp/irq.h>
 #include <rtems/irq.h>
+#include <freebsd/machine/bus.h>
 
+/* XXX Note:  These defines should be moved. */
 #if defined(__i386__) 
-#include <freebsd/machine/rtems-bsd-config.h>
-#define I386_BUS_SPACE_MEM      0       /* space is mem space */
-#endif
-
-/* XXX */
-#define NUM_IO_INTS   30 
-
-#ifdef __amd64__
-#define	BUS_SPACE_IO	AMD64_BUS_SPACE_IO
-#define	BUS_SPACE_MEM	AMD64_BUS_SPACE_MEM
+  #define	BUS_SPACE_IO	I386_BUS_SPACE_IO
+  #define	BUS_SPACE_MEM	I386_BUS_SPACE_MEM
+#elif defined(__amd64__)
+  #define	BUS_SPACE_IO	AMD64_BUS_SPACE_IO
+  #define	BUS_SPACE_MEM	AMD64_BUS_SPACE_MEM
 #else
-#define	BUS_SPACE_IO	I386_BUS_SPACE_IO
-#define	BUS_SPACE_MEM	I386_BUS_SPACE_MEM
+  #warning "Bus space information not implemented for this architecture!!"
+  #warning "Defaulting Bus space information!!"
+  #define	BUS_SPACE_IO    0	
+  #define	BUS_SPACE_MEM	1
 #endif
 
+/* XXX - Just a guess */
+#define NUM_IO_INTS   30 
 
 #define DEVTONX(dev)	((struct nexus_device *)device_get_ivars(dev))
 

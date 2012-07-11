@@ -514,6 +514,7 @@ rtems.addRTEMSHeaderFiles(
 		'rtems/machine/rtems-bsd-select.h',
 		'rtems/machine/rtems-bsd-taskqueue.h',
 		'rtems/machine/rtems-bsd-bus-dma.h',
+		'rtems/machine/rtems-bsd-bus-devicet.h',
 		'bsd.h',
 	]
 )

@@ -49,6 +49,11 @@
 #include <freebsd/sys/rman.h>
 #include <freebsd/sys/malloc.h>
 
+#include <bsp.h>
+#include <freebsd/machine/rtems-bsd-devicet.h>
+#include <bsp/irq.h>
+#include <rtems/irq.h>
+
 #if defined(__i386__) 
 #include <freebsd/machine/rtems-bsd-config.h>
 #define I386_BUS_SPACE_MEM      0       /* space is mem space */
@@ -108,11 +113,8 @@ nexus_init_resources(void)
 	 * resource manager.
 	 */
 	for (irq = 0; irq < NUM_IO_INTS; irq++)
-#ifndef __rtems__
-		if (intr_lookup_source(irq) != NULL)
-#endif
-			if (rman_manage_region(&irq_rman, irq, irq) != 0)
-				panic("nexus_init_resources irq_rmand");
+          if (rman_manage_region(&irq_rman, irq, irq) != 0)
+	    panic("nexus_init_resources irq_rmand");
  
 	/*
 	 * ISA DMA on PCI systems is implemented in the ISA part of each
@@ -241,22 +243,18 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 
 	switch (type) {
 	case SYS_RES_IRQ:
-printf( "nexus_alloc_resource: IRQ\n" );
 		rm = &irq_rman;
 		break;
 
 	case SYS_RES_DRQ:
-printf( "nexus_alloc_resource: DRQ\n" );
 		rm = &drq_rman;
 		break;
 
 	case SYS_RES_IOPORT:
-printf( "nexus_alloc_resource: IO\n" );
 		rm = &port_rman;
 		break;
 
 	case SYS_RES_MEMORY:
-printf( "nexus_alloc_resource: Memory\n" );
 		rm = &mem_rman;
 		break;
 
@@ -265,14 +263,12 @@ printf( "nexus_alloc_resource: Memory\n" );
 	}
 
 	rv = rman_reserve_resource(rm, start, end, count, flags, child);
-printf( "nexus_alloc_resource: rman_reserve_resource ==> %d\n", rv );
 	if (rv == 0)
 		return 0;
 	rman_set_rid(rv, *rid);
 
 	if (needactivate) {
 		if (bus_activate_resource(child, type, *rid, rv)) {
-printf( "nexus_alloc_resource: bus_activate_resource failed\n", rv );
 			rman_release_resource(rv);
 			return 0;
 		}
@@ -355,6 +351,59 @@ nexus_release_resource(device_t bus, device_t child, int type, int rid,
 	return (rman_release_resource(r));
 }
 
+static void noop(const rtems_irq_connect_data *unused) {};
+static int  noop1(const rtems_irq_connect_data *unused) { return 0;};
+
+static int
+bspExtInstallSharedISR(int irqLine, void (*isr)(void *), void * uarg, int flags)
+{
+  return rtems_interrupt_handler_install(
+    irqLine, 
+    "BSD Interrupt", 
+    RTEMS_INTERRUPT_SHARED, 
+    isr, 
+    uarg 
+  );
+}
+
+int
+intr_add_handler(const char *name, int vector, driver_filter_t filter,
+    driver_intr_t handler, void *arg, enum intr_type flags, void **cookiep)
+{
+  int  rval;
+  
+  rval = bspExtInstallSharedISR(vector, handler, arg, 0);
+  return rval;
+}
+
+static int
+nexus_setup_intr(device_t bus, device_t child, struct resource *irq,
+		 int flags, driver_filter_t filter, void (*ihand)(void *),
+		 void *arg, void **cookiep)
+{
+	int		error;
+
+	/* somebody tried to setup an irq that failed to allocate! */
+	if (irq == NULL)
+		panic("nexus_setup_intr: NULL irq resource!");
+
+	*cookiep = 0;
+	if ((rman_get_flags(irq) & RF_SHAREABLE) == 0)
+		flags |= INTR_EXCL;
+
+	/*
+	 * We depend here on rman_activate_resource() being idempotent.
+	 */
+	error = rman_activate_resource(irq);
+	if (error)
+		return (error);
+
+	error = intr_add_handler(device_get_nameunit(child),
+	    rman_get_start(irq), filter, ihand, arg, flags, cookiep);
+
+	return (error);
+}
+
 
 static device_method_t nexus_methods [] = {
 	/* Device interface */
@@ -372,6 +421,7 @@ static device_method_t nexus_methods [] = {
 	DEVMETHOD(bus_release_resource,	nexus_release_resource),
 	DEVMETHOD(bus_activate_resource, nexus_activate_resource),
 	DEVMETHOD(bus_deactivate_resource, nexus_deactivate_resource),
+	DEVMETHOD(bus_setup_intr,	nexus_setup_intr),
 
 	{ 0, 0 }
 };

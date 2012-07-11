@@ -55,6 +55,8 @@ C_FILES += lib/libc/net/getnetbynis.c
 # C_FILES += lib/libc/net/getprotoname.c
 # C_FILES += lib/libc/net/getservent.c
 
+C_FILES += rtems/rtems-net-setup.c
+
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 
@@ -69,8 +71,10 @@ lib_bsdc:
 	$(MAKE) $(LIB)
 
 install: $(LIB)
-	#install -d $(INSTALL_BASE)/include
-	#install -c -m 644 $(LIB) $(INSTALL_BASE)
+	install -d $(INSTALL_BASE)/include
+	cd include; for i in `find . -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	install -c -m 644 $(LIB) $(INSTALL_BASE)
 
 clean:
 	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES)

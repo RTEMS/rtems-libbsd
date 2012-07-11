@@ -53,8 +53,7 @@ C_FILES += lib/libc/net/getnetnamadr.c
 C_FILES += lib/libc/net/getproto.c
 C_FILES += lib/libc/net/getprotoent.c
 C_FILES += lib/libc/net/getprotoname.c
-# _ALIGNBYTES needs to be addressed
-# C_FILES += lib/libc/net/getservent.c
+C_FILES += lib/libc/net/getservent.c
 C_FILES += lib/libc/gen/gethostname.c
 C_FILES += lib/libc/nameser/ns_name.c
 C_FILES += lib/libc/nameser/ns_netint.c

@@ -420,7 +420,6 @@ C_FILES += freebsd/dev/bce/if_bce.c
 C_FILES += freebsd/dev/bfe/if_bfe.c
 C_FILES += freebsd/dev/bge/if_bge.c
 ifeq ($(RTEMS_CPU), arm)
-C_FILES += freebsd/arm/arm/in_cksum_arm.S
 C_FILES += freebsd/arm/arm/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), i386)

@@ -89,7 +89,7 @@ def parseArguments():
     usage()
     sys.exit(2)
   for o, a in opts:
-    if o == "-v":
+    if o in ("-v", "--verbose"):
       isVerbose = True
     elif o in ("-h", "--help", "-?"):
       usage()
@@ -104,8 +104,6 @@ def parseArguments():
       isOnlyMakefile = True
     elif o in ("-R", "--reverse"):
       isForward = False
-    elif o in ("-r", "--rtems"):
-      RTEMS_DIR = a
     elif o in ("-r", "--rtems"):
       RTEMS_DIR = a
     elif o in ("-f", "--freebsd"):
@@ -2032,7 +2030,6 @@ in_cksum.addCPUDependentHeaderFiles(
 in_cksum.addCPUDependentSourceFiles(
 	'arm',
 	[
-		'arm/arm/in_cksum_arm.S',
 		'arm/arm/in_cksum.c',
 	]
 )

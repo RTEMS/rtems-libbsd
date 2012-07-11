@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <freebsd/bsd.h>
 
+/* XXX temporary until in .h file */
+void rtems_initialize_interfaces(void);
+
 rtems_task Init(
   rtems_task_argument ignored
 )
@@ -21,6 +24,12 @@ rtems_task Init(
    */
 
   rtems_bsd_initialize_with_interrupt_server();
+
+  puts( "Initializing interfaces" );
+  rtems_initialize_interfaces();
+
+  puts( "Sleeping to see what happens" );
+  sleep( 5 );
 
   printf( "*** END OF LIBFREEBSD INITIALIZATION TEST ***\n" );
   exit( 0 );

@@ -58,7 +58,7 @@
 
 /*! \file */
 
-/* #define BIND_4_COMPAT */
+#define BIND_4_COMPAT
 
 #include <sys/param.h>
 #include <sys/types.h>

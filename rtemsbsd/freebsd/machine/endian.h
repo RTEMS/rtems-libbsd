@@ -52,6 +52,10 @@
 
 #include <rtems/endian.h>
 
+#define _LITTLE_ENDIAN  1234    /* LSB first: i386, vax */
+#define _BIG_ENDIAN     4321    /* MSB first: 68000, ibm, net */
+#define _PDP_ENDIAN     3412    /* LSB first in word, MSW first in long */
+
 #if CPU_BIG_ENDIAN
 # define _BYTE_ORDER _BIG_ENDIAN
 #elif CPU_LITTLE_ENDIAN

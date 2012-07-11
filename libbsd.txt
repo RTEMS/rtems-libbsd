@@ -143,18 +143,19 @@ pre-merged. The Makefile in this kit is automatically generated.
 Any changes to sources in the freebsd or contrib directories will need to
 be merged upstream into our master FreeBSD svn checkout.
 
-The FreeBSD sources managed in RTEMS libbsd git repository (e.g. contrib
+The FreeBSD sources managed in the rtems-libbsd git repository (e.g. contrib
 and freebsd directories) contain the "managed" version of the
 FreeBSD source.  The FreeBSD SVN source is the "master" version. The
 freebsd-to-rtems.py script is used to transfer files between the two
-trees. In general terms, if you have modified FreeBSD in the RTEMS libbsd
-tree, you want to run the script in "revert" or "reverse" mode to move
-the source back so you can run an "svn diff" against the upstream FreeBSD
-source. If you want to transfer source from the FreeBSD SVN checkout to
-the RTEMS libbsd tree, then you want to run the script in "forward" or
-default mode.
+trees. In general terms, if you have modified FreeBSD (i.e. anything in the
+freebsd directory) in the rtems-libbsd tree, you will need to run the script
+in "revert" or "reverse" mode using the -R switch. This will copy the source
+back to your local copy of the FreeBSD source so you can run "svn diff" against
+the upstream FreeBSD source. If you want to transfer source files from the
+FreeBSD SVN checkout to the rtems-libbsd tree, then you must run the script in
+"forward" mode (the default).
 
-=== Building RTEMS libbsd source
+=== Building rtems-libbsd source
 
 You need to configure RTEMS for the desired BSP and install it. The
 following is the script used to build the powerpc/psim BSP for our
@@ -187,9 +188,9 @@ RTEMS_MAKEFILE_PATH = ${HOME}/newbsd/bsp-install/powerpc-rtems4.11/psim/
 INSTALL_BASE = ${HOME}/newbsd/install
 ----
 
-The above installs the RTEMS libbsd kit into a separate place from 
-RTEMS and the BSP. The RTEMS libbsd tests are built against an installed
-image of the RTEMS libbsd. By keeping it in a separate installation point
+The above installs the rtems-libbsd kit into a separate place from 
+RTEMS and the BSP. The rtems-libbsd tests are built against an installed
+image of the rtems-libbsd. By keeping it in a separate installation point
 from RTEMS itself, this makes it easier to remove a libbsd installation
 and have a clean test point.
 
@@ -216,10 +217,10 @@ are important to understand:
 * testsuite/ - RTEMS specific tests
 * libbsd.txt - Documentation in Asciidoc
 
-== Moving Code Between FreeBSD SVN and RTEMS libbsd
+== Moving Code Between FreeBSD SVN and rtems-libbsd
 
 The script freebsd-to-rtems.py is used to copy code from FreeBSD to the
-RTEMS libbsd tree and to reverse this process. This script attempts to
+rtems-libbsd tree and to reverse this process. This script attempts to
 automate this process as much as possible and performs some transformations
 on the FreeBSD code. Its command line arguments are shown below:
 
@@ -238,7 +239,7 @@ freebsd-to-rtems.py [args]
 ----
 
 In its default mode of operation, freebsd-to-rtems.py is used to copy code
-from FreeBSD to the RTEMS libbsd tree and perform transformations.  In forward
+from FreeBSD to the rtems-libbsd tree and perform transformations.  In forward
 mode, the script may be requested to just generate the Makefile.
 
 In "reverse mode", this script undoes those transformations and copies 
@@ -273,9 +274,9 @@ Generating into /home/joel/newbsd/git/libbsd-8.2
 The script may also be used to generate a diff in either forward or reverse
 direction.
 
-== Initialization of RTEMS libbsd
+== Initialization of rtems-libbsd
 
-The initialization of the RTEMS libbsd is based on the FreeBSD SYSINIT(9)
+The initialization of the rtems-libbsd is based on the FreeBSD SYSINIT(9)
 infrastructure.  The key to initializing a system is to ensure that the desired
 device drivers are explicitly pulled into the linked application.  This plus
 linking against the libbsd library will pull in the necessary FreeBSD

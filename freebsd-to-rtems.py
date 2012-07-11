@@ -390,7 +390,7 @@ class ModuleManager:
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tcd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\t$(MAKE) -C freebsd-userspace clean\n' \
+			'\t$(MAKE) -C freebsd-userspace install\n' \
 			'\n' \
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \

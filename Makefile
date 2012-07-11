@@ -471,7 +471,7 @@ install: $(LIB)
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	$(MAKE) -C freebsd-userspace clean
+	$(MAKE) -C freebsd-userspace install
 
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd

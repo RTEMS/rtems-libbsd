@@ -123,8 +123,8 @@ include/rpc/svc.h
 include/rpc/svc_auth.h
 include/rpc/svc_soc.h
 include/rpc/xdr.h
-include/arpa/nameser_compat.h
 include/arpa/inet.h
+include/arpa/nameser.h
 sys/net/ethernet.h
 sys/rpc/types.h
 sys/sys/_null.h
@@ -153,11 +153,19 @@ lib/libc/inet/nsap_addr.c
 lib/libc/net/netdb_private.h
 lib/libc/net/res_config.h
 EOF
+# processed by hand
+# include/arpa/nameser_compat.h
 
 # disable BIND_4_COMPAT since it trips a weird endian issue in nameser_compat.h
-sed -e 's/#define BIND_4_COMPAT/\/* #define BIND_4_COMPAT *\//' \
-  <${src}/include/arpa/nameser.h \
-  >${dest}/include/arpa/nameser.h
+#sed -e 's/#define BIND_4_COMPAT/\/* #define BIND_4_COMPAT *\//' \
+#  >${dest}/include/arpa/nameser.h
+#  <${src}/include/arpa/nameser.h \
+
+# fix include so it sees FreeBSD endian definitions
+sed -e 's/<machine\/endian.h>/<freebsd\/machine\/endian.h>/' \
+  <${src}/include/arpa/nameser_compat.h \
+  >${dest}/include/arpa/nameser_compat.h
+
 
 # source files to prepend "include of local/port_before.h"
 while read f
@@ -214,6 +222,10 @@ lib/libc/resolv/res_send.c
 lib/libc/resolv/res_update.c
 lib/libc/string/strsep.c
 EOF
+
+# This file includes a private "dprintf" which conflicts with stdio.h
+sed -e 's/dprintf/DPRINTF/g' <${dest}/lib/libc/net/gethostbydns.c  >XXX
+mv XXX ${dest}/lib/libc/net/gethostbydns.c
 
 
 # files to "include with freebsd"

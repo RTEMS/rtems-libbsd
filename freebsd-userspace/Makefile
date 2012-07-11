@@ -39,49 +39,50 @@ C_FILES += lib/libc/inet/nsap_addr.c
 
 C_FILES += lib/libc/net/base64.c
 C_FILES += lib/libc/net/ether_addr.c
-# C_FILES += lib/libc/net/gethostbydns.c
-# C_FILES += lib/libc/net/gethostbyht.c
+C_FILES += lib/libc/net/gethostbydns.c
+C_FILES += lib/libc/net/gethostbyht.c
 C_FILES += lib/libc/net/gethostbynis.c
-# C_FILES += lib/libc/net/gethostnamadr.c
+C_FILES += lib/libc/net/gethostnamadr.c
 C_FILES += lib/libc/net/getifaddrs.c
 C_FILES += lib/libc/net/getifmaddrs.c
 C_FILES += lib/libc/net/getnameinfo.c
-# C_FILES += lib/libc/net/getnetbydns.c
-# C_FILES += lib/libc/net/getnetbyht.c
+C_FILES += lib/libc/net/getnetbydns.c
+C_FILES += lib/libc/net/getnetbyht.c
 C_FILES += lib/libc/net/getnetbynis.c
-# C_FILES += lib/libc/net/getnetnamadr.c
-# C_FILES += lib/libc/net/getproto.c
-# C_FILES += lib/libc/net/getprotoent.c
-# C_FILES += lib/libc/net/getprotoname.c
+C_FILES += lib/libc/net/getnetnamadr.c
+C_FILES += lib/libc/net/getproto.c
+C_FILES += lib/libc/net/getprotoent.c
+C_FILES += lib/libc/net/getprotoname.c
+# _ALIGNBYTES needs to be addressed
 # C_FILES += lib/libc/net/getservent.c
 C_FILES += lib/libc/gen/gethostname.c
-# C_FILES += lib/libc/nameser/ns_name.c
+C_FILES += lib/libc/nameser/ns_name.c
 C_FILES += lib/libc/nameser/ns_netint.c
 C_FILES += lib/libc/nameser/ns_parse.c
+# isc/assertions.h is needed
 # C_FILES += lib/libc/nameser/ns_print.c
 C_FILES += lib/libc/nameser/ns_ttl.c
 C_FILES += lib/libc/net/if_indextoname.c
 C_FILES += lib/libc/net/if_nameindex.c
 C_FILES += lib/libc/net/linkaddr.c
-# C_FILES += lib/libc/net/map_v4v6.c
-# C_FILES += lib/libc/net/rcmd.c
+C_FILES += lib/libc/net/map_v4v6.c
+C_FILES += lib/libc/net/rcmd.c
 C_FILES += lib/libc/net/recv.c
 C_FILES += lib/libc/net/send.c
 # iovec redefined between RTEMS and FreeBSD
 # C_FILES += lib/libc/resolv/herror.c
 C_FILES += lib/libc/resolv/res_comp.c
-# Little of res_XXX compiles without BIND_4_COMPAT fixed
-# one of many needing BIND_4_COMPAT defined (#1 issue impacting most)
-# C_FILES += lib/libc/resolv/res_data.c
-# one of many needing BIND_4_COMPAT defined (#1 issue impacting most)
-# C_FILES += lib/libc/resolv/res_debug.c
-# one of many needing BIND_4_COMPAT defined (#1 issue impacting most)
-# C_FILES += lib/libc/resolv/res_init.c
-# C_FILES += lib/libc/resolv/res_mkquery.c
+C_FILES += lib/libc/resolv/res_data.c
+C_FILES += lib/libc/resolv/res_debug.c
+C_FILES += lib/libc/resolv/res_init.c
+C_FILES += lib/libc/resolv/res_mkquery.c
+# weird compile problem with what appears to be a list
 # C_FILES += lib/libc/resolv/res_mkupdate.c
-# C_FILES += lib/libc/resolv/res_query.c
-#C_FILES += lib/libc/resolv/res_send.c
-#C_FILES += lib/libc/resolv/res_update.c
+C_FILES += lib/libc/resolv/res_query.c
+# fd_setsize.h is missing and Joel can't find it
+# C_FILES += lib/libc/resolv/res_send.c
+# isc/list.h is missing
+# C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/string/strsep.c
 
 C_FILES += rtems/rtems-net-setup.c

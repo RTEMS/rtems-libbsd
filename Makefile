@@ -443,13 +443,16 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsd.a
 
-all: lib_usb
+all: lib_bsd lib_user
 
 $(LIB): $(C_O_FILES)
 	$(AR) rcu $@ $^
 
-lib_usb:
+lib_bsd:
 	$(MAKE) $(LIB)
+
+lib_user:
+	$(MAKE) -C freebsd-userspace
 
 CPU_SED  = sed
 CPU_SED += -e '/arm/d'
@@ -468,11 +471,13 @@ install: $(LIB)
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	$(MAKE) -C freebsd-userspace clean
 
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd
 	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES)
 	rm -f libbsd.html
+	$(MAKE) -C freebsd-userspace clean
 
 -include $(C_D_FILES)
 

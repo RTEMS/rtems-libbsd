@@ -362,13 +362,16 @@ class ModuleManager:
 			'\n' \
 			'LIB = libbsd.a\n' \
 			'\n' \
-			'all: lib_usb\n' \
+			'all: lib_bsd lib_user\n' \
 			'\n' \
 			'$(LIB): $(C_O_FILES)\n' \
 			'\t$(AR) rcu $@ $^\n' \
 			'\n' \
-			'lib_usb:\n' \
+			'lib_bsd:\n' \
 			'\t$(MAKE) $(LIB)\n' \
+			'\n' \
+			'lib_user:\n' \
+			'\t$(MAKE) -C freebsd-userspace\n' \
 			'\n' \
 			'CPU_SED  = sed\n' \
 			'CPU_SED += -e \'/arm/d\'\n' \
@@ -387,11 +390,13 @@ class ModuleManager:
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tcd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\t$(MAKE) -C freebsd-userspace clean\n' \
 			'\n' \
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
 			'\trm -f $(LIB) $(C_O_FILES) $(C_D_FILES)\n' \
 			'\trm -f libbsd.html\n' \
+			'\t$(MAKE) -C freebsd-userspace clean\n' \
 			'\n' \
 			'-include $(C_D_FILES)\n' \
 			'\n' \

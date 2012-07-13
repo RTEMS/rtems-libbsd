@@ -1223,12 +1223,21 @@ devNic.addHeaderFiles(
 
 devNic.addCPUDependentHeaderFiles(
 	[
+		'arm/include/cpufunc.h',
 		'i386/include/specialreg.h',
 		'i386/include/md_var.h',
 		'i386/include/intr_machdep.h',
 		'i386/include/legacyvar.h',
 		'i386/include/pci_cfgreg.h',
 		'i386/include/cpufunc.h',
+		'mips/include/cpufunc.h',
+		'mips/include/cpuregs.h',
+		'powerpc/include/cpufunc.h',
+		'powerpc/include/psl.h',
+		'powerpc/include/spr.h',
+		'sparc64/include/cpufunc.h',
+		'sparc64/include/asi.h',
+		'sparc64/include/pstate.h',
 	]
 )
 

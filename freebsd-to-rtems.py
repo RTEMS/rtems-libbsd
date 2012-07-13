@@ -1229,13 +1229,6 @@ devNic.addCPUDependentHeaderFiles(
 	]
 )
 
-devNic.addCPUDependentHeaderFiles(
-    [
-		'mips/include/cpufunc.h',
-		'mips/include/cpuregs.h',
-    ]
-)
-
 devNic.addCPUDependentSourceFiles(
 	'i386',
 	[

@@ -11,7 +11,6 @@ CFLAGS += -I rtemsbsd/$(RTEMS_CPU)/include
 CFLAGS += -I freebsd/$(RTEMS_CPU)/include 
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 
-CFLAGS += -B $(INSTALL_BASE) 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -451,7 +450,7 @@ $(LIB): $(C_O_FILES)
 lib_bsd:
 	$(MAKE) $(LIB)
 
-lib_user:
+lib_user: install_bsd
 	$(MAKE) -C freebsd-userspace
 
 CPU_SED  = sed
@@ -462,15 +461,19 @@ CPU_SED += -e '/mips/d'
 CPU_SED += -e '/sparc/d'
 CPU_SED += -e '/sparc64/d'
 
-install: $(LIB)
+install: lib_bsd install_bsd lib_user install_user
+
+install_bsd:
 	install -d $(INSTALL_BASE)/include
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 	cd rtemsbsd; for i in `find . -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \
+	-cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+
+install_user:
 	$(MAKE) -C freebsd-userspace install
 
 clean:

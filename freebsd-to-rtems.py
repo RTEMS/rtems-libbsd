@@ -342,7 +342,6 @@ class ModuleManager:
 			'CFLAGS += -I freebsd/$(RTEMS_CPU)/include \n' \
 			'CFLAGS += -I contrib/altq \n' \
 			'CFLAGS += -I contrib/pf \n' \
-			'CFLAGS += -B $(INSTALL_BASE) \n' \
 			'CFLAGS += -w \n' \
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
@@ -370,7 +369,7 @@ class ModuleManager:
 			'lib_bsd:\n' \
 			'\t$(MAKE) $(LIB)\n' \
 			'\n' \
-			'lib_user:\n' \
+			'lib_user: install_bsd\n' \
 			'\t$(MAKE) -C freebsd-userspace\n' \
 			'\n' \
 			'CPU_SED  = sed\n' \
@@ -381,7 +380,9 @@ class ModuleManager:
 			'CPU_SED += -e \'/sparc/d\'\n' \
 			'CPU_SED += -e \'/sparc64/d\'\n' \
 			'\n' \
-			'install: $(LIB)\n' \
+			'install: lib_bsd install_bsd lib_user install_user\n' \
+			'\n' \
+			'install_bsd:\n' \
 			'\tinstall -d $(INSTALL_BASE)/include\n' \
 			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
 			'\tcd rtemsbsd; for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
@@ -390,6 +391,8 @@ class ModuleManager:
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\t-cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\n' \
+			'install_user:\n' \
 			'\t$(MAKE) -C freebsd-userspace install\n' \
 			'\n' \
 			'clean:\n' \

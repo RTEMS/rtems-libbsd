@@ -385,12 +385,15 @@ class ModuleManager:
 			'install_bsd:\n' \
 			'\tinstall -d $(INSTALL_BASE)/include\n' \
 			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
-			'\tcd rtemsbsd; for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
+			'\tcd rtemsbsd; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tfor i in `find freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\t-cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
+			'\t-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\t-cd rtemsbsd/$(RTEMS_CPU)/include && \\\n' \
+			'\t  for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
+			'\t    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\n' \
 			'install_user:\n' \
 			'\t$(MAKE) -C freebsd-userspace install\n' \

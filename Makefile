@@ -466,12 +466,15 @@ install: lib_bsd install_bsd lib_user install_user
 install_bsd:
 	install -d $(INSTALL_BASE)/include
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
-	cd rtemsbsd; for i in `find . -name '*.h' | $(CPU_SED)` ; do \
+	cd rtemsbsd; for i in `find freebsd -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	-cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name '*.h'` ; do \
+	-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	-cd rtemsbsd/$(RTEMS_CPU)/include && \
+	  for i in `find . -name '*.h' | $(CPU_SED)` ; do \
+	    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 
 install_user:
 	$(MAKE) -C freebsd-userspace install

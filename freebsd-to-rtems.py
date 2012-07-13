@@ -388,7 +388,7 @@ class ModuleManager:
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tfor i in `find freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\tcd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
+			'\t-cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\t$(MAKE) -C freebsd-userspace install\n' \
 			'\n' \
@@ -1228,6 +1228,14 @@ devNic.addCPUDependentHeaderFiles(
 		'i386/include/cpufunc.h',
 	]
 )
+
+devNic.addCPUDependentHeaderFiles(
+    [
+		'mips/include/cpufunc.h',
+		'mips/include/cpuregs.h',
+    ]
+)
+
 devNic.addCPUDependentSourceFiles(
 	'i386',
 	[

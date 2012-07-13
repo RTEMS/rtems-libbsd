@@ -469,7 +469,7 @@ install: $(LIB)
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	cd freebsd/$(RTEMS_CPU)/include ; for i in `find . -name '*.h'` ; do \
+	-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	$(MAKE) -C freebsd-userspace install
 

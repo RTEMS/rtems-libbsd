@@ -16,6 +16,8 @@ CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes
 
+GENERATED_FILES =
+
 C_FILES =
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc24xx.c
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc32xx.c
@@ -443,6 +445,61 @@ endif
 ifeq ($(RTEMS_CPU), sparc64)
 C_FILES += freebsd/sparc64/sparc64/in_cksum.c
 endif
+ifeq ($(RTEMS_CPU), avr)
+GENERATED_FILES += rtemsbsd/avr/avr/in_cksum.c
+GENERATED_FILES += rtemsbsd/avr/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/avr/avr/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), bfin)
+GENERATED_FILES += rtemsbsd/bfin/bfin/in_cksum.c
+GENERATED_FILES += rtemsbsd/bfin/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/bfin/bfin/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), h8300)
+GENERATED_FILES += rtemsbsd/h8300/h8300/in_cksum.c
+GENERATED_FILES += rtemsbsd/h8300/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/h8300/h8300/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), lm32)
+GENERATED_FILES += rtemsbsd/lm32/lm32/in_cksum.c
+GENERATED_FILES += rtemsbsd/lm32/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/lm32/lm32/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), m32c)
+GENERATED_FILES += rtemsbsd/m32c/m32c/in_cksum.c
+GENERATED_FILES += rtemsbsd/m32c/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/m32c/m32c/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), m32r)
+GENERATED_FILES += rtemsbsd/m32r/m32r/in_cksum.c
+GENERATED_FILES += rtemsbsd/m32r/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/m32r/m32r/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), m68k)
+GENERATED_FILES += rtemsbsd/m68k/m68k/in_cksum.c
+GENERATED_FILES += rtemsbsd/m68k/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/m68k/m68k/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), nios2)
+GENERATED_FILES += rtemsbsd/nios2/nios2/in_cksum.c
+GENERATED_FILES += rtemsbsd/nios2/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/nios2/nios2/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), sh)
+GENERATED_FILES += rtemsbsd/sh/sh/in_cksum.c
+GENERATED_FILES += rtemsbsd/sh/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/sh/sh/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), sparc)
+GENERATED_FILES += rtemsbsd/sparc/sparc/in_cksum.c
+GENERATED_FILES += rtemsbsd/sparc/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/sparc/sparc/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), v850)
+GENERATED_FILES += rtemsbsd/v850/v850/in_cksum.c
+GENERATED_FILES += rtemsbsd/v850/include/freebsd/machine/in_cksum.h
+C_FILES += rtemsbsd/v850/v850/in_cksum.c
+endif
 
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include
@@ -452,13 +509,80 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsd.a
 
-all: $(LIB) lib_user
+all: $(GENERATED_FILES) $(LIB) lib_user
 
 $(LIB): $(C_O_FILES)
 	$(AR) rcu $@ $^
 
 lib_user: $(LIB) install_bsd
 	$(MAKE) -C freebsd-userspace
+
+# The following targets use the MIPS Generic in_cksum routine
+rtemsbsd/avr/avr/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/avr/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/bfin/bfin/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/bfin/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/h8300/h8300/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/h8300/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/lm32/lm32/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/lm32/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/m32c/m32c/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/m32c/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/m32r/m32r/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/m32r/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/m68k/m68k/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/m68k/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/nios2/nios2/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/nios2/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/sh/sh/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/sh/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/sparc/sparc/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/sparc/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
+
+rtemsbsd/v850/v850/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	cp $< $@
+
+rtemsbsd/v850/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	cp $< $@
 
 CPU_SED  = sed
 CPU_SED += -e '/arm/d'
@@ -488,7 +612,7 @@ install_user:
 
 clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd
-	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES)
+	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GENERATED_FILES)
 	rm -f libbsd.html
 	$(MAKE) -C freebsd-userspace clean
 

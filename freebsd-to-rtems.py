@@ -52,6 +52,21 @@ isOnlyMakefile = False
 tempFile = "/tmp/tmp_FBRT"
 filesProcessed = 0
 
+# currently these all use the MIPS in_cksum method
+CPUsNeedingGenericIncksum = [ 
+	"avr",
+	"bfin",
+	"h8300",
+	"lm32",
+	"m32c",
+	"m32r",
+	"m68k",
+	"nios2",
+	"sh",
+	"sparc",
+	"v850",
+]
+
 def usage():
   print "freebsd-to-rtems.py [args]"
   print "  -?|-h|--help     print this and exit"
@@ -346,6 +361,8 @@ class ModuleManager:
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
+			'\n' \
+			'GENERATED_FILES =\n' \
 			'\n'
 		data += 'C_FILES =\n'
 		for m in self.modules:
@@ -358,6 +375,12 @@ class ModuleManager:
 				if cpu in ("arm", "i386", "lm32", "mips", "powerpc", "sparc"):
 					data += 'NEED_DUMMY_PIC_IRQ=no\n'
 				data += 'endif\n'
+		for cpu in CPUsNeedingGenericIncksum:
+			data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n' \
+				'GENERATED_FILES += rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
+				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h\n' \
+				'C_FILES += rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
+				'endif\n'
 		data += '\n' \
 			'ifeq ($(NEED_DUMMY_PIC_IRQ),yes)\n' \
 			'CFLAGS += -I rtems-dummy-pic-irq/include\n' \
@@ -367,7 +390,7 @@ class ModuleManager:
 			'\n' \
 			'LIB = libbsd.a\n' \
 			'\n' \
-			'all: $(LIB) lib_user\n' \
+			'all: $(GENERATED_FILES) $(LIB) lib_user\n' \
 			'\n' \
 			'$(LIB): $(C_O_FILES)\n' \
 			'\t$(AR) rcu $@ $^\n' \
@@ -375,7 +398,16 @@ class ModuleManager:
 			'lib_user: $(LIB) install_bsd\n' \
 			'\t$(MAKE) -C freebsd-userspace\n' \
 			'\n' \
-			'CPU_SED  = sed\n' \
+			'# The following targets use the MIPS Generic in_cksum routine\n'
+		for cpu in CPUsNeedingGenericIncksum:
+			data += 'rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c: freebsd/mips/mips/in_cksum.c\n' \
+				'\tcp $< $@\n' \
+				'\n' \
+				'rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h\n' \
+				'\tcp $< $@\n' \
+				'\n' \
+
+		data += 'CPU_SED  = sed\n' \
 			'CPU_SED += -e \'/arm/d\'\n' \
 			'CPU_SED += -e \'/i386/d\'\n' \
 			'CPU_SED += -e \'/powerpc/d\'\n' \
@@ -403,7 +435,7 @@ class ModuleManager:
 			'\n' \
 			'clean:\n' \
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
-			'\trm -f $(LIB) $(C_O_FILES) $(C_D_FILES)\n' \
+			'\trm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GENERATED_FILES)\n' \
 			'\trm -f libbsd.html\n' \
 			'\t$(MAKE) -C freebsd-userspace clean\n' \
 			'\n' \

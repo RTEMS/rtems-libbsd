@@ -67,6 +67,25 @@ CPUsNeedingGenericIncksum = [
 	"v850",
 ]
 
+# currently these all use the MIPS in_cksum method
+CPUsSharingPCICodeFromX86 = [ 
+	'arm',
+	'avr',
+	'bfin',
+	'h8300',
+	'lm32',
+	'm32c',
+	'm32r',
+	'm68k',
+	'mips',
+	'nios2',
+	'powerpc',
+	'sh',
+	'sparc',
+	'sparc64',
+	'v850',
+]
+
 def usage():
   print "freebsd-to-rtems.py [args]"
   print "  -?|-h|--help     print this and exit"
@@ -381,6 +400,13 @@ class ModuleManager:
 				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h\n' \
 				'C_FILES += rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
 				'endif\n'
+		for cpu in CPUsSharingPCICodeFromX86:
+			data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n' \
+				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/legacyvar.h\n' \
+				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/pci_cfgreg.h\n' \
+				'C_FILES += freebsd/i386/pci/pci_bus.c\n' \
+				'C_FILES += freebsd/i386/i386/legacy.c\n' \
+				'endif\n'
 		data += '\n' \
 			'ifeq ($(NEED_DUMMY_PIC_IRQ),yes)\n' \
 			'CFLAGS += -I rtems-dummy-pic-irq/include\n' \
@@ -407,6 +433,13 @@ class ModuleManager:
 				'\tcp $< $@\n' \
 				'\n' \
 
+		for cpu in CPUsSharingPCICodeFromX86:
+			data += 'rtemsbsd/' + cpu + '/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h\n' \
+				'\tcp $< $@\n' \
+				'\n' \
+				'rtemsbsd/' + cpu + '/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h\n' \
+				'\tcp $< $@\n' \
+				'\n'
 		data += 'CPU_SED  = sed\n' \
 			'CPU_SED += -e \'/arm/d\'\n' \
 			'CPU_SED += -e \'/i386/d\'\n' \

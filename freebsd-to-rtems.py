@@ -427,6 +427,7 @@ class ModuleManager:
 			'# The following targets use the MIPS Generic in_cksum routine\n'
 		for cpu in CPUsNeedingGenericIncksum:
 			data += 'rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c: freebsd/mips/mips/in_cksum.c\n' \
+				'\ttest -d rtemsbsd/' + cpu + '/' + cpu + '|| mkdir -p rtemsbsd/' + cpu + '/' + cpu + '\n' \
 				'\tcp $< $@\n' \
 				'\n' \
 				'rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h\n' \
@@ -445,7 +446,6 @@ class ModuleManager:
 			'CPU_SED += -e \'/i386/d\'\n' \
 			'CPU_SED += -e \'/powerpc/d\'\n' \
 			'CPU_SED += -e \'/mips/d\'\n' \
-			'CPU_SED += -e \'/sparc/d\'\n' \
 			'CPU_SED += -e \'/sparc64/d\'\n' \
 			'\n' \
 			'install: $(LIB) install_bsd lib_user install_user\n' \
@@ -2104,7 +2104,6 @@ pf.addSourceFiles(
 in_cksum = Module('in_cksum')
 in_cksum.addRTEMSHeaderFiles(
 	[
-		'sparc/include/freebsd/machine/in_cksum.h',
         ]
 )
 in_cksum.addCPUDependentHeaderFiles(

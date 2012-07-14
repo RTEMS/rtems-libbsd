@@ -609,66 +609,77 @@ lib_user: $(LIB) install_bsd
 
 # The following targets use the MIPS Generic in_cksum routine
 rtemsbsd/avr/avr/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/avr/avr|| mkdir -p rtemsbsd/avr/avr
 	cp $< $@
 
 rtemsbsd/avr/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/bfin/bfin/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/bfin/bfin|| mkdir -p rtemsbsd/bfin/bfin
 	cp $< $@
 
 rtemsbsd/bfin/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/h8300/h8300/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/h8300/h8300|| mkdir -p rtemsbsd/h8300/h8300
 	cp $< $@
 
 rtemsbsd/h8300/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/lm32/lm32/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/lm32/lm32|| mkdir -p rtemsbsd/lm32/lm32
 	cp $< $@
 
 rtemsbsd/lm32/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/m32c/m32c/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/m32c/m32c|| mkdir -p rtemsbsd/m32c/m32c
 	cp $< $@
 
 rtemsbsd/m32c/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/m32r/m32r/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/m32r/m32r|| mkdir -p rtemsbsd/m32r/m32r
 	cp $< $@
 
 rtemsbsd/m32r/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/m68k/m68k/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/m68k/m68k|| mkdir -p rtemsbsd/m68k/m68k
 	cp $< $@
 
 rtemsbsd/m68k/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/nios2/nios2/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/nios2/nios2|| mkdir -p rtemsbsd/nios2/nios2
 	cp $< $@
 
 rtemsbsd/nios2/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/sh/sh/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/sh/sh|| mkdir -p rtemsbsd/sh/sh
 	cp $< $@
 
 rtemsbsd/sh/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/sparc/sparc/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/sparc/sparc|| mkdir -p rtemsbsd/sparc/sparc
 	cp $< $@
 
 rtemsbsd/sparc/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
 	cp $< $@
 
 rtemsbsd/v850/v850/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d rtemsbsd/v850/v850|| mkdir -p rtemsbsd/v850/v850
 	cp $< $@
 
 rtemsbsd/v850/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
@@ -769,7 +780,6 @@ CPU_SED += -e '/arm/d'
 CPU_SED += -e '/i386/d'
 CPU_SED += -e '/powerpc/d'
 CPU_SED += -e '/mips/d'
-CPU_SED += -e '/sparc/d'
 CPU_SED += -e '/sparc64/d'
 
 install: $(LIB) install_bsd lib_user install_user

@@ -53,6 +53,7 @@
 #include <freebsd/machine/rtems-bsd-devicet.h>
 #include <bsp/irq.h>
 #include <rtems/irq.h>
+#include <rtems/irq-extension.h>
 #include <freebsd/machine/bus.h>
 
 /* XXX Note:  These defines should be moved. */

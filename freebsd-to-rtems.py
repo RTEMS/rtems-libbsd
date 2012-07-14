@@ -345,6 +345,7 @@ class ModuleManager:
 			'CFLAGS += -w \n' \
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
+			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n'
 		data += 'C_FILES =\n'
 		for m in self.modules:
@@ -354,8 +355,13 @@ class ModuleManager:
 				data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n'
 				for file in files:
 					data += 'C_FILES += ' + file.getMakefileFragment() + '\n'
+				if cpu in ("arm", "i386", "lm32", "mips", "powerpc", "sparc"):
+					data += 'NEED_DUMMY_PIC_IRQ=no\n'
 				data += 'endif\n'
 		data += '\n' \
+			'ifeq ($(NEED_DUMMY_PIC_IRQ),yes)\n' \
+			'CFLAGS += -I rtems-dummy-pic-irq/include\n' \
+			'endif\n' \
 			'C_O_FILES = $(C_FILES:%.c=%.o)\n' \
 			'C_D_FILES = $(C_FILES:%.c=%.d)\n' \
 			'\n' \

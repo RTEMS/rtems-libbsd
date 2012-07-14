@@ -14,6 +14,7 @@ CFLAGS += -I contrib/pf
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
+NEED_DUMMY_PIC_IRQ=yes
 
 C_FILES =
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc24xx.c
@@ -389,6 +390,7 @@ C_FILES += freebsd/dev/pci/pci_pci.c
 ifeq ($(RTEMS_CPU), i386)
 C_FILES += freebsd/i386/pci/pci_bus.c
 C_FILES += freebsd/i386/i386/legacy.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 C_FILES += freebsd/dev/re/if_re.c
 C_FILES += freebsd/dev/fxp/if_fxp.c
@@ -420,23 +422,31 @@ C_FILES += freebsd/dev/bfe/if_bfe.c
 C_FILES += freebsd/dev/bge/if_bge.c
 ifeq ($(RTEMS_CPU), arm)
 C_FILES += freebsd/arm/arm/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), i386)
 C_FILES += freebsd/i386/i386/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), mips)
 C_FILES += freebsd/mips/mips/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), powerpc)
 C_FILES += freebsd/powerpc/powerpc/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), sparc)
 C_FILES += freebsd/mips/mips/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), sparc64)
 C_FILES += freebsd/sparc64/sparc64/in_cksum.c
 endif
 
+ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
+CFLAGS += -I rtems-dummy-pic-irq/include
+endif
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 

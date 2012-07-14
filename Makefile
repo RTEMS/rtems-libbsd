@@ -452,15 +452,12 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsd.a
 
-all: lib_bsd lib_user
+all: $(LIB) lib_user
 
 $(LIB): $(C_O_FILES)
 	$(AR) rcu $@ $^
 
-lib_bsd:
-	$(MAKE) $(LIB)
-
-lib_user: install_bsd
+lib_user: $(LIB) install_bsd
 	$(MAKE) -C freebsd-userspace
 
 CPU_SED  = sed
@@ -471,9 +468,9 @@ CPU_SED += -e '/mips/d'
 CPU_SED += -e '/sparc/d'
 CPU_SED += -e '/sparc64/d'
 
-install: lib_bsd install_bsd lib_user install_user
+install: $(LIB) install_bsd lib_user install_user
 
-install_bsd:
+install_bsd: $(LIB)
 	install -d $(INSTALL_BASE)/include
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 	cd rtemsbsd; for i in `find freebsd -name '*.h'` ; do \

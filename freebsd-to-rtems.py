@@ -367,15 +367,12 @@ class ModuleManager:
 			'\n' \
 			'LIB = libbsd.a\n' \
 			'\n' \
-			'all: lib_bsd lib_user\n' \
+			'all: $(LIB) lib_user\n' \
 			'\n' \
 			'$(LIB): $(C_O_FILES)\n' \
 			'\t$(AR) rcu $@ $^\n' \
 			'\n' \
-			'lib_bsd:\n' \
-			'\t$(MAKE) $(LIB)\n' \
-			'\n' \
-			'lib_user: install_bsd\n' \
+			'lib_user: $(LIB) install_bsd\n' \
 			'\t$(MAKE) -C freebsd-userspace\n' \
 			'\n' \
 			'CPU_SED  = sed\n' \
@@ -386,9 +383,9 @@ class ModuleManager:
 			'CPU_SED += -e \'/sparc/d\'\n' \
 			'CPU_SED += -e \'/sparc64/d\'\n' \
 			'\n' \
-			'install: lib_bsd install_bsd lib_user install_user\n' \
+			'install: $(LIB) install_bsd lib_user install_user\n' \
 			'\n' \
-			'install_bsd:\n' \
+			'install_bsd: $(LIB)\n' \
 			'\tinstall -d $(INSTALL_BASE)/include\n' \
 			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
 			'\tcd rtemsbsd; for i in `find freebsd -name \'*.h\'` ; do \\\n' \

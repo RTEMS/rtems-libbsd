@@ -202,6 +202,10 @@ socket (int domain, int type, int protocol)
 	int fd, error;
 
 	td = curthread;
+        if (!td) { 
+          printf("Current thread NULL\n");
+          exit(0);
+        }
 #ifdef MAC
 	error = mac_socket_check_create(td->td_ucred, domain, type, protocol);
 	if (error == 0 )

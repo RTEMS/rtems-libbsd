@@ -80,6 +80,7 @@ vm_mem_init(dummy)
   if ( p > (c + sizeof(callwheel_array)) )
     panic( "*** not enough memory for callwheel_array ***" );
   kern_timeout_callwheel_init();
+  uma_startup2();
 }
 
 /*

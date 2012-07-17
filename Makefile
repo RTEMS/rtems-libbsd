@@ -11,6 +11,7 @@ CFLAGS += -I rtemsbsd/$(RTEMS_CPU)/include
 CFLAGS += -I freebsd/$(RTEMS_CPU)/include 
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 
+CFLAGS += -I copied/rtemsbsd/$(RTEMS_CPU)/include 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -446,149 +447,190 @@ ifeq ($(RTEMS_CPU), sparc64)
 C_FILES += freebsd/sparc64/sparc64/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), avr)
-GENERATED_FILES += rtemsbsd/avr/avr/in_cksum.c
-GENERATED_FILES += rtemsbsd/avr/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/avr/avr/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/avr/avr/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/avr/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/avr/avr/in_cksum.c
+C_FILES += copied/rtemsbsd/avr/avr/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), bfin)
-GENERATED_FILES += rtemsbsd/bfin/bfin/in_cksum.c
-GENERATED_FILES += rtemsbsd/bfin/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/bfin/bfin/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/bfin/bfin/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/bfin/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/bfin/bfin/in_cksum.c
+C_FILES += copied/rtemsbsd/bfin/bfin/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), h8300)
-GENERATED_FILES += rtemsbsd/h8300/h8300/in_cksum.c
-GENERATED_FILES += rtemsbsd/h8300/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/h8300/h8300/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/h8300/h8300/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/h8300/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/h8300/h8300/in_cksum.c
+C_FILES += copied/rtemsbsd/h8300/h8300/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), lm32)
-GENERATED_FILES += rtemsbsd/lm32/lm32/in_cksum.c
-GENERATED_FILES += rtemsbsd/lm32/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/lm32/lm32/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/lm32/lm32/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/lm32/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/lm32/lm32/in_cksum.c
+C_FILES += copied/rtemsbsd/lm32/lm32/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), m32c)
-GENERATED_FILES += rtemsbsd/m32c/m32c/in_cksum.c
-GENERATED_FILES += rtemsbsd/m32c/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/m32c/m32c/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/m32c/m32c/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/m32c/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/m32c/m32c/in_cksum.c
+C_FILES += copied/rtemsbsd/m32c/m32c/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), m32r)
-GENERATED_FILES += rtemsbsd/m32r/m32r/in_cksum.c
-GENERATED_FILES += rtemsbsd/m32r/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/m32r/m32r/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/m32r/m32r/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/m32r/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/m32r/m32r/in_cksum.c
+C_FILES += copied/rtemsbsd/m32r/m32r/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), m68k)
-GENERATED_FILES += rtemsbsd/m68k/m68k/in_cksum.c
-GENERATED_FILES += rtemsbsd/m68k/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/m68k/m68k/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/m68k/m68k/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/m68k/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/m68k/m68k/in_cksum.c
+C_FILES += copied/rtemsbsd/m68k/m68k/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), nios2)
-GENERATED_FILES += rtemsbsd/nios2/nios2/in_cksum.c
-GENERATED_FILES += rtemsbsd/nios2/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/nios2/nios2/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/nios2/nios2/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/nios2/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/nios2/nios2/in_cksum.c
+C_FILES += copied/rtemsbsd/nios2/nios2/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), sh)
-GENERATED_FILES += rtemsbsd/sh/sh/in_cksum.c
-GENERATED_FILES += rtemsbsd/sh/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/sh/sh/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/sh/sh/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/sh/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/sh/sh/in_cksum.c
+C_FILES += copied/rtemsbsd/sh/sh/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), sparc)
-GENERATED_FILES += rtemsbsd/sparc/sparc/in_cksum.c
-GENERATED_FILES += rtemsbsd/sparc/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/sparc/sparc/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/sparc/sparc/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/sparc/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/sparc/sparc/in_cksum.c
+C_FILES += copied/rtemsbsd/sparc/sparc/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), v850)
-GENERATED_FILES += rtemsbsd/v850/v850/in_cksum.c
-GENERATED_FILES += rtemsbsd/v850/include/freebsd/machine/in_cksum.h
-C_FILES += rtemsbsd/v850/v850/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/v850/v850/in_cksum.c
+GENERATED_FILES += copied/rtemsbsd/v850/include/freebsd/machine/in_cksum.h
+GENERATED_FILES += copied/rtemsbsd/v850/v850/in_cksum.c
+C_FILES += copied/rtemsbsd/v850/v850/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), arm)
-GENERATED_FILES += rtemsbsd/arm/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/arm/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/arm/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/arm/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/arm/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/arm/arm/legacy.c
+C_FILES += copied/freebsd/arm/pci/pci_bus.c
+C_FILES += copied/freebsd/arm/arm/legacy.c
 endif
 ifeq ($(RTEMS_CPU), avr)
-GENERATED_FILES += rtemsbsd/avr/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/avr/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/avr/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/avr/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/avr/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/avr/avr/legacy.c
+C_FILES += copied/freebsd/avr/pci/pci_bus.c
+C_FILES += copied/freebsd/avr/avr/legacy.c
 endif
 ifeq ($(RTEMS_CPU), bfin)
-GENERATED_FILES += rtemsbsd/bfin/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/bfin/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/bfin/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/bfin/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/bfin/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/bfin/bfin/legacy.c
+C_FILES += copied/freebsd/bfin/pci/pci_bus.c
+C_FILES += copied/freebsd/bfin/bfin/legacy.c
 endif
 ifeq ($(RTEMS_CPU), h8300)
-GENERATED_FILES += rtemsbsd/h8300/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/h8300/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/h8300/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/h8300/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/h8300/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/h8300/h8300/legacy.c
+C_FILES += copied/freebsd/h8300/pci/pci_bus.c
+C_FILES += copied/freebsd/h8300/h8300/legacy.c
 endif
 ifeq ($(RTEMS_CPU), lm32)
-GENERATED_FILES += rtemsbsd/lm32/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/lm32/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/lm32/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/lm32/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/lm32/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/lm32/lm32/legacy.c
+C_FILES += copied/freebsd/lm32/pci/pci_bus.c
+C_FILES += copied/freebsd/lm32/lm32/legacy.c
 endif
 ifeq ($(RTEMS_CPU), m32c)
-GENERATED_FILES += rtemsbsd/m32c/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/m32c/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/m32c/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/m32c/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/m32c/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/m32c/m32c/legacy.c
+C_FILES += copied/freebsd/m32c/pci/pci_bus.c
+C_FILES += copied/freebsd/m32c/m32c/legacy.c
 endif
 ifeq ($(RTEMS_CPU), m32r)
-GENERATED_FILES += rtemsbsd/m32r/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/m32r/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/m32r/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/m32r/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/m32r/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/m32r/m32r/legacy.c
+C_FILES += copied/freebsd/m32r/pci/pci_bus.c
+C_FILES += copied/freebsd/m32r/m32r/legacy.c
 endif
 ifeq ($(RTEMS_CPU), m68k)
-GENERATED_FILES += rtemsbsd/m68k/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/m68k/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/m68k/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/m68k/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/m68k/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/m68k/m68k/legacy.c
+C_FILES += copied/freebsd/m68k/pci/pci_bus.c
+C_FILES += copied/freebsd/m68k/m68k/legacy.c
 endif
 ifeq ($(RTEMS_CPU), mips)
-GENERATED_FILES += rtemsbsd/mips/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/mips/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/mips/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/mips/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/mips/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/mips/mips/legacy.c
+C_FILES += copied/freebsd/mips/pci/pci_bus.c
+C_FILES += copied/freebsd/mips/mips/legacy.c
 endif
 ifeq ($(RTEMS_CPU), nios2)
-GENERATED_FILES += rtemsbsd/nios2/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/nios2/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/nios2/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/nios2/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/nios2/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/nios2/nios2/legacy.c
+C_FILES += copied/freebsd/nios2/pci/pci_bus.c
+C_FILES += copied/freebsd/nios2/nios2/legacy.c
 endif
 ifeq ($(RTEMS_CPU), powerpc)
-GENERATED_FILES += rtemsbsd/powerpc/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/powerpc/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/powerpc/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/powerpc/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/powerpc/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/powerpc/powerpc/legacy.c
+C_FILES += copied/freebsd/powerpc/pci/pci_bus.c
+C_FILES += copied/freebsd/powerpc/powerpc/legacy.c
 endif
 ifeq ($(RTEMS_CPU), sh)
-GENERATED_FILES += rtemsbsd/sh/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/sh/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/sh/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/sh/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/sh/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/sh/sh/legacy.c
+C_FILES += copied/freebsd/sh/pci/pci_bus.c
+C_FILES += copied/freebsd/sh/sh/legacy.c
 endif
 ifeq ($(RTEMS_CPU), sparc)
-GENERATED_FILES += rtemsbsd/sparc/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/sparc/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/sparc/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/sparc/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/sparc/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/sparc/sparc/legacy.c
+C_FILES += copied/freebsd/sparc/pci/pci_bus.c
+C_FILES += copied/freebsd/sparc/sparc/legacy.c
 endif
 ifeq ($(RTEMS_CPU), sparc64)
-GENERATED_FILES += rtemsbsd/sparc64/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/sparc64/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/sparc64/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/sparc64/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/sparc64/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/sparc64/sparc64/legacy.c
+C_FILES += copied/freebsd/sparc64/pci/pci_bus.c
+C_FILES += copied/freebsd/sparc64/sparc64/legacy.c
 endif
 ifeq ($(RTEMS_CPU), v850)
-GENERATED_FILES += rtemsbsd/v850/include/freebsd/machine/legacyvar.h
-GENERATED_FILES += rtemsbsd/v850/include/freebsd/machine/pci_cfgreg.h
-C_FILES += freebsd/i386/pci/pci_bus.c
-C_FILES += freebsd/i386/i386/legacy.c
+GENERATED_FILES += copied/rtemsbsd/v850/include/freebsd/machine/legacyvar.h
+GENERATED_FILES += copied/rtemsbsd/v850/include/freebsd/machine/pci_cfgreg.h
+GENERATED_FILES += copied/freebsd/v850/pci/pci_bus.c
+GENERATED_FILES += copied/freebsd/v850/v850/legacy.c
+C_FILES += copied/freebsd/v850/pci/pci_bus.c
+C_FILES += copied/freebsd/v850/v850/legacy.c
 endif
 
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
@@ -608,171 +650,332 @@ lib_user: $(LIB) install_bsd
 	$(MAKE) -C freebsd-userspace
 
 # The following targets use the MIPS Generic in_cksum routine
-rtemsbsd/avr/avr/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/avr/avr|| mkdir -p rtemsbsd/avr/avr
+copied/rtemsbsd/avr/avr/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/avr/avr/ || mkdir -p copied/rtemsbsd/avr/avr/
 	cp $< $@
 
-rtemsbsd/avr/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/avr/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/avr/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/avr/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/bfin/bfin/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/bfin/bfin|| mkdir -p rtemsbsd/bfin/bfin
+copied/rtemsbsd/bfin/bfin/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/bfin/bfin/ || mkdir -p copied/rtemsbsd/bfin/bfin/
 	cp $< $@
 
-rtemsbsd/bfin/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/bfin/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/bfin/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/bfin/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/h8300/h8300/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/h8300/h8300|| mkdir -p rtemsbsd/h8300/h8300
+copied/rtemsbsd/h8300/h8300/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/h8300/h8300/ || mkdir -p copied/rtemsbsd/h8300/h8300/
 	cp $< $@
 
-rtemsbsd/h8300/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/h8300/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/h8300/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/h8300/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/lm32/lm32/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/lm32/lm32|| mkdir -p rtemsbsd/lm32/lm32
+copied/rtemsbsd/lm32/lm32/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/lm32/lm32/ || mkdir -p copied/rtemsbsd/lm32/lm32/
 	cp $< $@
 
-rtemsbsd/lm32/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/lm32/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/lm32/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/lm32/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/m32c/m32c/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/m32c/m32c|| mkdir -p rtemsbsd/m32c/m32c
+copied/rtemsbsd/m32c/m32c/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/m32c/m32c/ || mkdir -p copied/rtemsbsd/m32c/m32c/
 	cp $< $@
 
-rtemsbsd/m32c/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/m32c/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/m32c/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m32c/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/m32r/m32r/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/m32r/m32r|| mkdir -p rtemsbsd/m32r/m32r
+copied/rtemsbsd/m32r/m32r/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/m32r/m32r/ || mkdir -p copied/rtemsbsd/m32r/m32r/
 	cp $< $@
 
-rtemsbsd/m32r/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/m32r/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/m32r/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m32r/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/m68k/m68k/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/m68k/m68k|| mkdir -p rtemsbsd/m68k/m68k
+copied/rtemsbsd/m68k/m68k/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/m68k/m68k/ || mkdir -p copied/rtemsbsd/m68k/m68k/
 	cp $< $@
 
-rtemsbsd/m68k/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/m68k/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/m68k/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m68k/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/nios2/nios2/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/nios2/nios2|| mkdir -p rtemsbsd/nios2/nios2
+copied/rtemsbsd/nios2/nios2/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/nios2/nios2/ || mkdir -p copied/rtemsbsd/nios2/nios2/
 	cp $< $@
 
-rtemsbsd/nios2/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/nios2/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/nios2/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/nios2/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/sh/sh/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/sh/sh|| mkdir -p rtemsbsd/sh/sh
+copied/rtemsbsd/sh/sh/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/sh/sh/ || mkdir -p copied/rtemsbsd/sh/sh/
 	cp $< $@
 
-rtemsbsd/sh/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/sh/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/sh/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sh/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/sparc/sparc/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/sparc/sparc|| mkdir -p rtemsbsd/sparc/sparc
+copied/rtemsbsd/sparc/sparc/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/sparc/sparc/ || mkdir -p copied/rtemsbsd/sparc/sparc/
 	cp $< $@
 
-rtemsbsd/sparc/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/sparc/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/sparc/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sparc/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/v850/v850/in_cksum.c: freebsd/mips/mips/in_cksum.c
-	test -d rtemsbsd/v850/v850|| mkdir -p rtemsbsd/v850/v850
+copied/rtemsbsd/v850/v850/in_cksum.c: freebsd/mips/mips/in_cksum.c
+	test -d copied/rtemsbsd/v850/v850/ || mkdir -p copied/rtemsbsd/v850/v850/
 	cp $< $@
 
-rtemsbsd/v850/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+copied/rtemsbsd/v850/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h
+	test -d copied/rtemsbsd/v850/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/v850/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/arm/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/arm/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/arm/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/arm/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/arm/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/arm/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/arm/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/arm/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/avr/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/arm/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/arm/pci/ || mkdir -p copied/freebsd/arm/pci/
 	cp $< $@
 
-rtemsbsd/avr/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/arm/arm/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/arm/arm/ || mkdir -p copied/freebsd/arm/arm/
 	cp $< $@
 
-rtemsbsd/bfin/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/avr/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/avr/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/avr/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/bfin/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/avr/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/avr/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/avr/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/h8300/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/avr/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/avr/pci/ || mkdir -p copied/freebsd/avr/pci/
 	cp $< $@
 
-rtemsbsd/h8300/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/avr/avr/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/avr/avr/ || mkdir -p copied/freebsd/avr/avr/
 	cp $< $@
 
-rtemsbsd/lm32/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/bfin/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/bfin/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/bfin/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/lm32/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/bfin/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/bfin/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/bfin/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/m32c/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/bfin/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/bfin/pci/ || mkdir -p copied/freebsd/bfin/pci/
 	cp $< $@
 
-rtemsbsd/m32c/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/bfin/bfin/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/bfin/bfin/ || mkdir -p copied/freebsd/bfin/bfin/
 	cp $< $@
 
-rtemsbsd/m32r/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/h8300/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/h8300/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/h8300/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/m32r/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/h8300/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/h8300/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/h8300/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/m68k/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/h8300/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/h8300/pci/ || mkdir -p copied/freebsd/h8300/pci/
 	cp $< $@
 
-rtemsbsd/m68k/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/h8300/h8300/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/h8300/h8300/ || mkdir -p copied/freebsd/h8300/h8300/
 	cp $< $@
 
-rtemsbsd/mips/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/lm32/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/lm32/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/lm32/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/mips/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/lm32/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/lm32/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/lm32/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/nios2/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/lm32/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/lm32/pci/ || mkdir -p copied/freebsd/lm32/pci/
 	cp $< $@
 
-rtemsbsd/nios2/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/lm32/lm32/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/lm32/lm32/ || mkdir -p copied/freebsd/lm32/lm32/
 	cp $< $@
 
-rtemsbsd/powerpc/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/m32c/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/m32c/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m32c/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/powerpc/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/m32c/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/m32c/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m32c/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/sh/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/m32c/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/m32c/pci/ || mkdir -p copied/freebsd/m32c/pci/
 	cp $< $@
 
-rtemsbsd/sh/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/m32c/m32c/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/m32c/m32c/ || mkdir -p copied/freebsd/m32c/m32c/
 	cp $< $@
 
-rtemsbsd/sparc/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/m32r/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/m32r/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m32r/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/sparc/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/m32r/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/m32r/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m32r/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/sparc64/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/freebsd/m32r/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/m32r/pci/ || mkdir -p copied/freebsd/m32r/pci/
 	cp $< $@
 
-rtemsbsd/sparc64/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/freebsd/m32r/m32r/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/m32r/m32r/ || mkdir -p copied/freebsd/m32r/m32r/
 	cp $< $@
 
-rtemsbsd/v850/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+copied/rtemsbsd/m68k/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/m68k/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m68k/include/freebsd/machine/
 	cp $< $@
 
-rtemsbsd/v850/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+copied/rtemsbsd/m68k/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/m68k/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/m68k/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/m68k/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/m68k/pci/ || mkdir -p copied/freebsd/m68k/pci/
+	cp $< $@
+
+copied/freebsd/m68k/m68k/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/m68k/m68k/ || mkdir -p copied/freebsd/m68k/m68k/
+	cp $< $@
+
+copied/rtemsbsd/mips/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/mips/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/mips/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/mips/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/mips/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/mips/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/mips/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/mips/pci/ || mkdir -p copied/freebsd/mips/pci/
+	cp $< $@
+
+copied/freebsd/mips/mips/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/mips/mips/ || mkdir -p copied/freebsd/mips/mips/
+	cp $< $@
+
+copied/rtemsbsd/nios2/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/nios2/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/nios2/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/nios2/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/nios2/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/nios2/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/nios2/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/nios2/pci/ || mkdir -p copied/freebsd/nios2/pci/
+	cp $< $@
+
+copied/freebsd/nios2/nios2/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/nios2/nios2/ || mkdir -p copied/freebsd/nios2/nios2/
+	cp $< $@
+
+copied/rtemsbsd/powerpc/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/powerpc/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/powerpc/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/powerpc/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/powerpc/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/powerpc/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/powerpc/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/powerpc/pci/ || mkdir -p copied/freebsd/powerpc/pci/
+	cp $< $@
+
+copied/freebsd/powerpc/powerpc/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/powerpc/powerpc/ || mkdir -p copied/freebsd/powerpc/powerpc/
+	cp $< $@
+
+copied/rtemsbsd/sh/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/sh/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sh/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/sh/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/sh/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sh/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/sh/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/sh/pci/ || mkdir -p copied/freebsd/sh/pci/
+	cp $< $@
+
+copied/freebsd/sh/sh/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/sh/sh/ || mkdir -p copied/freebsd/sh/sh/
+	cp $< $@
+
+copied/rtemsbsd/sparc/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/sparc/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sparc/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/sparc/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/sparc/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sparc/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/sparc/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/sparc/pci/ || mkdir -p copied/freebsd/sparc/pci/
+	cp $< $@
+
+copied/freebsd/sparc/sparc/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/sparc/sparc/ || mkdir -p copied/freebsd/sparc/sparc/
+	cp $< $@
+
+copied/rtemsbsd/sparc64/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/sparc64/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sparc64/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/sparc64/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/sparc64/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/sparc64/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/sparc64/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/sparc64/pci/ || mkdir -p copied/freebsd/sparc64/pci/
+	cp $< $@
+
+copied/freebsd/sparc64/sparc64/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/sparc64/sparc64/ || mkdir -p copied/freebsd/sparc64/sparc64/
+	cp $< $@
+
+copied/rtemsbsd/v850/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h
+	test -d copied/rtemsbsd/v850/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/v850/include/freebsd/machine/
+	cp $< $@
+
+copied/rtemsbsd/v850/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h
+	test -d copied/rtemsbsd/v850/include/freebsd/machine/ || mkdir -p copied/rtemsbsd/v850/include/freebsd/machine/
+	cp $< $@
+
+copied/freebsd/v850/pci/pci_bus.c: freebsd/i386/pci/pci_bus.c
+	test -d copied/freebsd/v850/pci/ || mkdir -p copied/freebsd/v850/pci/
+	cp $< $@
+
+copied/freebsd/v850/v850/legacy.c: freebsd/i386/i386/legacy.c
+	test -d copied/freebsd/v850/v850/ || mkdir -p copied/freebsd/v850/v850/
 	cp $< $@
 
 CPU_SED  = sed
@@ -796,6 +999,8 @@ install_bsd: $(LIB)
 	-cd rtemsbsd/$(RTEMS_CPU)/include && \
 	  for i in `find . -name '*.h' | $(CPU_SED)` ; do \
 	    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	-cd copied/rtemsbsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 
 install_user:
 	$(MAKE) -C freebsd-userspace install
@@ -804,6 +1009,7 @@ clean:
 	rm -f -r $(PROJECT_INCLUDE)/rtems/freebsd
 	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GENERATED_FILES)
 	rm -f libbsd.html
+	rm -rf copied
 	$(MAKE) -C freebsd-userspace clean
 
 -include $(C_D_FILES)

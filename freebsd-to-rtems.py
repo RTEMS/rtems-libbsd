@@ -376,6 +376,7 @@ class ModuleManager:
 			'CFLAGS += -I freebsd/$(RTEMS_CPU)/include \n' \
 			'CFLAGS += -I contrib/altq \n' \
 			'CFLAGS += -I contrib/pf \n' \
+			'CFLAGS += -I copied/rtemsbsd/$(RTEMS_CPU)/include \n' \
 			'CFLAGS += -w \n' \
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
@@ -396,16 +397,19 @@ class ModuleManager:
 				data += 'endif\n'
 		for cpu in CPUsNeedingGenericIncksum:
 			data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n' \
-				'GENERATED_FILES += rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
-				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h\n' \
-				'C_FILES += rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
+				'GENERATED_FILES += copied/rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
+				'GENERATED_FILES += copied/rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h\n' \
+				'GENERATED_FILES += copied/rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
+				'C_FILES += copied/rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
 				'endif\n'
 		for cpu in CPUsSharingPCICodeFromX86:
 			data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n' \
-				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/legacyvar.h\n' \
-				'GENERATED_FILES += rtemsbsd/' + cpu + '/include/freebsd/machine/pci_cfgreg.h\n' \
-				'C_FILES += freebsd/i386/pci/pci_bus.c\n' \
-				'C_FILES += freebsd/i386/i386/legacy.c\n' \
+				'GENERATED_FILES += copied/rtemsbsd/' + cpu + '/include/freebsd/machine/legacyvar.h\n' \
+				'GENERATED_FILES += copied/rtemsbsd/' + cpu + '/include/freebsd/machine/pci_cfgreg.h\n' \
+				'GENERATED_FILES += copied/freebsd/' + cpu + '/pci/pci_bus.c\n' \
+				'GENERATED_FILES += copied/freebsd/' + cpu + '/' + cpu + '/legacy.c\n' \
+				'C_FILES += copied/freebsd/' + cpu + '/pci/pci_bus.c\n' \
+				'C_FILES += copied/freebsd/' + cpu + '/' + cpu + '/legacy.c\n' \
 				'endif\n'
 		data += '\n' \
 			'ifeq ($(NEED_DUMMY_PIC_IRQ),yes)\n' \
@@ -426,21 +430,43 @@ class ModuleManager:
 			'\n' \
 			'# The following targets use the MIPS Generic in_cksum routine\n'
 		for cpu in CPUsNeedingGenericIncksum:
-			data += 'rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c: freebsd/mips/mips/in_cksum.c\n' \
-				'\ttest -d rtemsbsd/' + cpu + '/' + cpu + '|| mkdir -p rtemsbsd/' + cpu + '/' + cpu + '\n' \
+			dDir = 'copied/rtemsbsd/' + cpu + '/' + cpu + '/'
+			sDir = 'freebsd/mips/mips/'
+			data += dDir + 'in_cksum.c: ' + sDir + 'in_cksum.c\n' \
+				'\ttest -d ' + dDir + ' || mkdir -p ' + dDir + '\n' \
 				'\tcp $< $@\n' \
-				'\n' \
-				'rtemsbsd/' + cpu + '/include/freebsd/machine/in_cksum.h: freebsd/mips/include/freebsd/machine/in_cksum.h\n' \
+				'\n'
+			dDir = 'copied/rtemsbsd/' + cpu + '/include/freebsd/machine/'
+			sDir = 'freebsd/mips/include/freebsd/machine/'
+			data += dDir + 'in_cksum.h: ' + sDir + 'in_cksum.h\n' \
+				'\ttest -d ' + dDir + ' || mkdir -p ' + dDir + '\n' \
 				'\tcp $< $@\n' \
 				'\n' \
 
 		for cpu in CPUsSharingPCICodeFromX86:
-			data += 'rtemsbsd/' + cpu + '/include/freebsd/machine/legacyvar.h: freebsd/i386/include/freebsd/machine/legacyvar.h\n' \
+			dDir = 'copied/rtemsbsd/' + cpu + '/include/freebsd/machine/'
+			sDir = 'freebsd/i386/include/freebsd/machine/'
+			data += dDir + 'legacyvar.h: ' + sDir + 'legacyvar.h\n' \
+				'\ttest -d ' + dDir + ' || mkdir -p ' + dDir + '\n' \
 				'\tcp $< $@\n' \
-				'\n' \
-				'rtemsbsd/' + cpu + '/include/freebsd/machine/pci_cfgreg.h: freebsd/i386/include/freebsd/machine/pci_cfgreg.h\n' \
+				'\n' + \
+				dDir + 'pci_cfgreg.h: ' + sDir + 'pci_cfgreg.h\n' \
+				'\ttest -d ' + dDir + ' || mkdir -p ' + dDir + '\n' \
 				'\tcp $< $@\n' \
 				'\n'
+			dDir = 'copied/freebsd/' + cpu + '/pci/'
+			sDir = 'freebsd/i386/pci/'
+			data += dDir + 'pci_bus.c: ' + sDir + 'pci_bus.c\n' \
+				'\ttest -d ' + dDir + ' || mkdir -p ' + dDir + '\n' \
+				'\tcp $< $@\n' \
+				'\n'
+			dDir = 'copied/freebsd/' + cpu + '/' + cpu + '/'
+			sDir = 'freebsd/i386/i386/'
+			data += dDir + 'legacy.c: ' + sDir + 'legacy.c\n' \
+				'\ttest -d ' + dDir + ' || mkdir -p ' + dDir + '\n' \
+				'\tcp $< $@\n' \
+				'\n'
+
 		data += 'CPU_SED  = sed\n' \
 			'CPU_SED += -e \'/arm/d\'\n' \
 			'CPU_SED += -e \'/i386/d\'\n' \
@@ -462,6 +488,8 @@ class ModuleManager:
 			'\t-cd rtemsbsd/$(RTEMS_CPU)/include && \\\n' \
 			'\t  for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\t-cd copied/rtemsbsd/$(RTEMS_CPU)/include && for i in `find . -name \'*.h\'` ; do \\\n' \
+			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\n' \
 			'install_user:\n' \
 			'\t$(MAKE) -C freebsd-userspace install\n' \
@@ -470,6 +498,7 @@ class ModuleManager:
 			'\trm -f -r $(PROJECT_INCLUDE)/rtems/freebsd\n' \
 			'\trm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GENERATED_FILES)\n' \
 			'\trm -f libbsd.html\n' \
+			'\trm -rf copied\n' \
 			'\t$(MAKE) -C freebsd-userspace clean\n' \
 			'\n' \
 			'-include $(C_D_FILES)\n' \

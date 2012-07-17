@@ -509,8 +509,9 @@ struct ucred;
 int	priv_check(struct thread *td, int priv);
 int	priv_check_cred(struct ucred *cred, int priv, int flags);
 #else /* __rtems__ */
-#define priv_check(td, priv) 1
-#define priv_check_cred(cred, priv, flags) 1
+/* rtems assumes all privileges for now. */
+#define priv_check(td, priv) 		   0  
+#define priv_check_cred(cred, priv, flags) 0
 #endif /* __rtems__ */
 #endif
 

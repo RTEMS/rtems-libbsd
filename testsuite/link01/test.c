@@ -61,8 +61,11 @@ rtems_task Init(
 #include <freebsd/machine/rtems-bsd-sysinit.h>
 
 #define CONFIGURE_NEED_NET
-#define CONFIGURE_NEED_PCIB
-#define CONFIGURE_NEED_NET_IF_FXP
+/* only include FXP and PCI for i386/pc386 for debug on qemu (for now) */
+#if defined(i386)
+  #define CONFIGURE_NEED_PCIB
+  #define CONFIGURE_NEED_NET_IF_FXP
+#endif
 
 /*
  * This is correct for the PC

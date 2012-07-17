@@ -54,10 +54,10 @@ __FBSDID("$FreeBSD$");
 
 /* I should really use ktr.. */
 /*
+*/
 #define UMA_DEBUG 1
 #define UMA_DEBUG_ALLOC 1
 #define UMA_DEBUG_ALLOC_1 1
-*/
 
 #include <freebsd/local/opt_ddb.h>
 #include <freebsd/local/opt_param.h>
@@ -1799,18 +1799,18 @@ uma_startup(void *bootmem, int boot_pages)
 #endif
 }
 
-#ifndef __rtems__
 /* see uma.h */
 void
 uma_startup2(void)
 {
 	booted = 1;
+#ifndef __rtems__
 	bucket_enable();
+#endif /* __rtems__ */
 #ifdef UMA_DEBUG
 	printf("UMA startup2 complete.\n");
 #endif
 }
-#endif /* __rtems__ */
 
 /*
  * Initialize our callout handle

@@ -56,14 +56,28 @@ int hz;
 int tick;
 int maxusers;     /* base tunable */
 
+
+static struct pcpu FIXME_pcpu[MAXCPU];
+
+/*
+ * Initialize per cpu data structures.  Based off
+ * of the freeBSD mips method mips_pcpu0_init()
+ */
+static void
+pcpu0_init()
+{
+        /* Initialize pcpu info of cpu-zero */
+        pcpu_init((char *)&FIXME_pcpu[0], 0, sizeof(struct pcpu));
+}
+
 rtems_status_code
 rtems_bsd_initialize(void)
 {
 	rtems_status_code sc = RTEMS_SUCCESSFUL;
 
-  hz = (int) rtems_clock_get_ticks_per_second();
-  tick = 1000000 / hz;
-  maxusers = 1;
+	hz = (int) rtems_clock_get_ticks_per_second();
+	tick = 1000000 / hz;
+	maxusers = 1;
 
 	sc =  rtems_timer_initiate_server(
 		BSD_TASK_PRIORITY_TIMER,
@@ -75,7 +89,7 @@ rtems_bsd_initialize(void)
 	}
 
 	mutex_init();
-
+	pcpu0_init();
 	mi_startup();
 
 	return RTEMS_SUCCESSFUL;

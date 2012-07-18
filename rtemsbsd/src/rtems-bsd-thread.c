@@ -48,6 +48,7 @@
 #include <freebsd/sys/lock.h>
 #include <freebsd/sys/mutex.h>
 #include <freebsd/sys/jail.h>
+#include <freebsd/sys/resourcevar.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 
@@ -62,6 +63,9 @@ static int prison_init = 1;
 static struct prison FIXME_prison = {
   .pr_parent = NULL
 };
+
+static struct uidinfo	FIXME_uidinfo;	/* per euid resource consumption */
+static struct uidinfo	FIXME_ruidinfo;	/* per ruid resource consumption */
 
 static struct thread *
 rtems_bsd_thread_init_note( rtems_id id )
@@ -99,10 +103,14 @@ rtems_bsd_thread_init_note( rtems_id id )
 
   if (prison_init ) {
     mtx_init(&FIXME_prison.pr_mtx, "prison lock", NULL, MTX_DEF | MTX_DUPOK);
+
     prison_init = 0;
   }
 
-  FIXME_ucred.cr_prison = &FIXME_prison;     /* jail(2) */
+  FIXME_ucred.cr_prison   = &FIXME_prison;    /* jail(2) */
+  FIXME_ucred.cr_uidinfo  = uifind(0);
+  FIXME_ucred.cr_ruidinfo = uifind(0);
+  FIXME_ucred.cr_ngroups = 1;     /* group 0 */
 
 	td->td_proc->p_ucred = crhold(&FIXME_ucred);
 	mtx_init(&td->td_proc->p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);

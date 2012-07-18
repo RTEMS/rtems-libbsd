@@ -94,11 +94,7 @@ struct socket *rtems_bsdnet_fdToSocket(
 /*
  * Create an RTEMS file descriptor for a socket
  */
-
-int rtems_bsdnet_makeFdForSocket(
-  void *so,
-  const rtems_filesystem_file_handlers_r *h
-)
+static int rtems_bsdnet_makeFdForSocket (void *so)
 {
   rtems_libio_t *iop;
   int fd;
@@ -111,8 +107,9 @@ int rtems_bsdnet_makeFdForSocket(
   iop->flags |= LIBIO_FLAGS_WRITE | LIBIO_FLAGS_READ;
   iop->data0 = fd;
   iop->data1 = so;
-  iop->pathinfo.handlers = h;
-  iop->pathinfo.mt_entry->ops = &rtems_filesystem_operations_default;
+  iop->pathinfo.handlers = &socket_handlers;
+  iop->pathinfo.mt_entry = &rtems_filesystem_null_mt_entry;
+  rtems_filesystem_location_add_to_mt_entry(&iop->pathinfo);
   return fd;
 }
 
@@ -214,7 +211,7 @@ socket (int domain, int type, int protocol)
 		/* An extra reference on `fp' has been held for us by falloc(). */
 		error = socreate(domain, &so, type, protocol, td->td_ucred, td);
 		if (error == 0) {
-			fd = rtems_bsdnet_makeFdForSocket (so, &socket_handlers);
+			fd = rtems_bsdnet_makeFdForSocket (so);
 			if (fd < 0)
 			{
 				soclose (so);
@@ -461,7 +458,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name, socklen_t *namelen
 	TAILQ_REMOVE(&head->so_comp, so, so_list);
 	head->so_qlen--;
 
-	fd = rtems_bsdnet_makeFdForSocket (so, &socket_handlers);
+	fd = rtems_bsdnet_makeFdForSocket (so);
 	if (fd < 0) {
 		TAILQ_INSERT_HEAD(&head->so_comp, so, so_list);
 		head->so_qlen++;

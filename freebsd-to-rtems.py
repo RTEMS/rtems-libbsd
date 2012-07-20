@@ -642,6 +642,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-sx.c',
 		'src/rtems-bsd-rwlock.c',
 		'src/rtems-bsd-generic.c',
+		'src/rtems-bsd-page.c',
 		'src/rtems-bsd-panic.c',
 		'src/rtems-bsd-synch.c',
 		'src/rtems-bsd-signal.c',

@@ -36,6 +36,7 @@ C_FILES += rtemsbsd/src/rtems-bsd-log.c
 C_FILES += rtemsbsd/src/rtems-bsd-sx.c
 C_FILES += rtemsbsd/src/rtems-bsd-rwlock.c
 C_FILES += rtemsbsd/src/rtems-bsd-generic.c
+C_FILES += rtemsbsd/src/rtems-bsd-page.c
 C_FILES += rtemsbsd/src/rtems-bsd-panic.c
 C_FILES += rtemsbsd/src/rtems-bsd-synch.c
 C_FILES += rtemsbsd/src/rtems-bsd-signal.c

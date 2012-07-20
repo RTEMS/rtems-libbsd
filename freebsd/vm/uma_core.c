@@ -85,6 +85,10 @@ __FBSDID("$FreeBSD$");
 #include <freebsd/vm/vm_map.h>
 #include <freebsd/vm/vm_kern.h>
 #include <freebsd/vm/vm_extern.h>
+#else
+void *rtems_page_alloc(int bytes);
+void *rtems_page_find( void *address );
+void rtems_page_free( void *address );
 #endif /* __rtems__ */
 #include <freebsd/vm/uma.h>
 #include <freebsd/vm/uma_int.h>
@@ -1006,19 +1010,24 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
  *	A pointer to the alloced memory or possibly
  *	NULL if M_NOWAIT is set.
  */
+#ifdef __rtems__
+#define PAGE_MASK       (PAGE_SIZE-1)
+
+#define round_page(x) ((((unsigned long )(x)) + PAGE_MASK) & ~(PAGE_MASK))
+#endif
 static void *
 page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 {
-	void *p;	/* Returned page */
+     void *p;    /* Returned page */
 
-	*pflag = UMA_SLAB_KMEM;
+     *pflag = UMA_SLAB_KMEM;
 #ifndef __rtems__
-	p = (void *) kmem_malloc(kmem_map, bytes, wait);
+     p = (void *) kmem_malloc(kmem_map, bytes, wait);
 #else /* __rtems__ */
-	p = (void *) malloc(bytes, M_TEMP, wait);
+     p = rtems_page_alloc(bytes);
 #endif /* __rtems__ */
 
-	return (p);
+     return (p);
 }
 
 #ifndef __rtems__
@@ -1111,7 +1120,7 @@ page_free(void *mem, int size, u_int8_t flags)
 
 	kmem_free(map, (vm_offset_t)mem, size);
 #else /* __rtems__ */
-	free( mem, M_TEMP );
+	rtems_page_free( mem );
 #endif /* __rtems__ */
 }
 
@@ -2772,7 +2781,11 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 		zone->uz_frees++;
 
 	if (!(zone->uz_flags & UMA_ZONE_VTOSLAB)) {
+#ifndef __rtems__
 		mem = (u_int8_t *)((unsigned long)item & (~UMA_SLAB_MASK));
+#else /* __rtems__ */
+		mem = rtems_page_find(item);
+#endif /* __rtems__ */
 		keg = zone_first_keg(zone); /* Must only be one. */
 		if (zone->uz_flags & UMA_ZONE_HASH) {
 			slab = hash_sfind(&keg->uk_hash, mem);

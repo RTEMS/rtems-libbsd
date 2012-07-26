@@ -4,14 +4,13 @@
 
 include ../../config.inc
 
-PGM=${ARCH}/link01.exe
-PGM_R=${ARCH}/link01_r.exe
+PGM=${ARCH}/init01.exe
 
 # optional managers required
 MANAGERS=all
 
 # C source names
-C_FILES = test.c
+C_FILES = init.c test_main.c
 C_O_FILES = $(C_FILES:%.c=${ARCH}/%.o)
 
 AM_CPPFLAGS += -I $(INSTALL_BASE)/include
@@ -25,12 +24,7 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 OBJS= $(C_O_FILES)
 CLEAN_ADDITIONS += undefined.txt
 
-all:    ${ARCH} $(PGM_R) $(PGM)
-	$(NM) $(PGM_R) | grep "U " >undefined.txt
-	@echo `cat undefined.txt | wc -l` symbols to resolve
+all:    ${ARCH} $(PGM)
 
 $(PGM): $(OBJS)
 	-$(make-exe)
-
-$(PGM_R): $(OBJS)
-	$(MAKE) -f Makefile_ldr

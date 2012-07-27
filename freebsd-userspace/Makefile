@@ -4,20 +4,14 @@ include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
-CFLAGS += -I $(INSTALL_BASE)/include
-#CFLAGS += -ffreestanding 
 CFLAGS += -I include 
 CFLAGS += -I rtems/include 
 CFLAGS += -I lib/libc/include 
 CFLAGS += -I sys
 CFLAGS += -I local 
-#CFLAGS += -I . 
-#CFLAGS += -I rtemsbsd 
-##CFLAGS += -I rtemsbsd/$(RTEMS_CPU)/include 
-#CFLAGS += -I freebsd/$(RTEMS_CPU)/include 
-#CFLAGS += -I contrib/altq 
-#CFLAGS += -I contrib/pf 
-#CFLAGS += -B $(INSTALL_BASE) 
+
+CFLAGS += -I $(INSTALL_BASE)/include
+
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -93,13 +87,10 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 LIB = libbsdc.a
 GEN_FILES = include/rpc/rpcb_prot.h
 
-all: lib_bsdc
+all: $(LIB)
 
 $(LIB): $(GEN_FILES) $(C_O_FILES)
 	$(AR) rcu $@ $^
-
-lib_bsdc: $(LIB) include/rpc/rpcb_prot.h
-	$(MAKE) $(LIB)
 
 include/rpc/rpcb_prot.h: include/rpc/rpcb_prot.x
 	rm -f include/rpc/rpcb_prot.h

@@ -1,7 +1,5 @@
 /*
- *  Simple test program -- simplified version of sample test hello.
- *
- *  $Id$
+ *  Shared Network Test Initialization File
  */
 
 #include <bsp.h>
@@ -37,7 +35,6 @@ rtems_task Init(
   /* should not return */
 
   printf( "*** Test main returned and should not have ***\n" );
-
   exit( 5 );
 }
 

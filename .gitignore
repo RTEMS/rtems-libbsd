@@ -1,4 +1,5 @@
 *.d
+o-optimize
 copied
 libbsd.html
 rtemsbsd/avr/avr/in_cksum.c

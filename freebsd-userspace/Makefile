@@ -7,6 +7,7 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 CFLAGS += -I $(INSTALL_BASE)/include
 #CFLAGS += -ffreestanding 
 CFLAGS += -I include 
+CFLAGS += -I rtems/include 
 CFLAGS += -I lib/libc/include 
 CFLAGS += -I sys
 CFLAGS += -I local 
@@ -107,6 +108,8 @@ include/rpc/rpcb_prot.h: include/rpc/rpcb_prot.x
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include
 	cd include; for i in `find . -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	cd rtems/include; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 

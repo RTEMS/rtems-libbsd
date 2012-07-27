@@ -88,7 +88,7 @@
 /* Networking */
 #define IPSEC 1
 #define INET  1
-#define INET6 1
+// #define INET6 1
 #define TCP_SIGNATURE 1
 
 /* Integer type definitions */

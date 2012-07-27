@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <freebsd/bsd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -17,6 +15,7 @@ void print_test_name(void)
 }
 
 
+/* XXX remaining init configuration to evaluate */
 #define CONFIGURE_INIT_TASK_STACK_SIZE    (10*1024)
 #define CONFIGURE_INIT_TASK_PRIORITY    50
 #define CONFIGURE_INIT_TASK_INITIAL_MODES (RTEMS_PREEMPT | \

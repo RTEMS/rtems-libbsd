@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <freebsd/bsd.h>
 
+/* XXX should these be in a header? */
+void print_test_name(void);
+void test_main(void);
+
 /* XXX temporary until in .h file */
 void rtems_initialize_interfaces(void);
 
@@ -16,7 +20,8 @@ rtems_task Init(
   rtems_task_argument ignored
 )
 {
-  printf( "\n\n*** LIBFREEBSD INITIALIZATION TEST ***\n" );
+  print_test_name();
+
   /*
    *  BSD must support the new "shared IRQ PIC implementation" at this point.
    *  BSPs must also provide rtems_interrupt_server_initialize() which
@@ -28,11 +33,12 @@ rtems_task Init(
   puts( "Initializing interfaces" );
   rtems_initialize_interfaces();
 
-  puts( "Sleeping to see what happens" );
-  sleep( 5 );
+  test_main();
+  /* should not return */
 
-  printf( "*** END OF LIBFREEBSD INITIALIZATION TEST ***\n" );
-  exit( 0 );
+  printf( "*** Test main returned and should not have ***\n" );
+
+  exit( 5 );
 }
 
 /* configuration information */

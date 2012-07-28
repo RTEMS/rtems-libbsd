@@ -123,12 +123,12 @@ include/rpc/svc.h
 include/rpc/svc_auth.h
 include/rpc/svc_soc.h
 include/rpc/xdr.h
+include/arpa/ftp.h
 include/arpa/inet.h
 include/arpa/nameser.h
 sys/net/ethernet.h
 sys/rpc/types.h
 sys/sys/_null.h
-sys/sys/syslog.h
 sys/sys/un.h
 lib/libc/include/libc_private.h
 lib/libc/include/namespace.h
@@ -235,7 +235,8 @@ do
   test -d include/${d}/${d} || mkdir -p include/${d}/${d}
 
   test ${verbose} = "yes" && echo "Generate wrapper $f"
-  echo "#include <freebsd/${f}>" > include/${f}
+  ( echo "#include <freebsd/bsd.h>" ; 
+    echo "#include <freebsd/${f}>" ) > include/${f}
 done <<EOF
 net/if.h
 net/if_dl.h
@@ -261,4 +262,5 @@ EOF
 
 # Fix syslog.h issues...
 echo "#include <sys/syslog.h>" > local/syslog.h
-
+# Should be able to copy this except for printflike issue
+# sys/sys/syslog.h

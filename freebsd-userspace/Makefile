@@ -79,7 +79,9 @@ C_FILES += lib/libc/resolv/res_query.c
 # C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/string/strsep.c
 
+# RTEMS Specific Files
 C_FILES += rtems/rtems-net-setup.c
+C_FILES += rtems/syslog.c
 
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
@@ -101,6 +103,10 @@ install: $(LIB)
 	cd include; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	cd rtems/include; for i in `find . -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	cd local; for i in `find . -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	cd sys; for i in `find . -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 

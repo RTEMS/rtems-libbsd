@@ -47,24 +47,20 @@ The SVN checkout command is this
   svn co http://svn.freebsd.org/base/releng/8.2/sys/ -r222496 freebsd-8.2
 
 == Issues and To Do
-* Sebastian Huber: mentioned some simple test code which would verify
-  that the BSD code/and or USB stack was initialized.  This has been
-  sent to Joel Sherrill and is pending merger.
-
 * Sebastian Huber and Joel Sherrill discussed the need for a a basic USB
   functionality test that is known to work on qemu pc.
 
 * Adapt generic IRQ PIC interface code to Simple Vectored Interrupt Model
   so that those architectures can use new TCP/IP and USB code. 
 
+* freebsd-userspace/rtems/include/sys/syslog.h is a copy from the old
+  RTEMS TCP/IP stack. For some reason, the __printflike markers do not
+  compile in this environment. We may want to use the FreeBSD syslog.h
+  and get this addressed.
+
 * in_cksum implementations for architectures not supported by FreeBSD.
   This will require figuring out where to put implementations that do
   not originate from FreeBSD and are populated via the script.
-
-* FreeBSD generic in_cksum implementation is missing in_cksum_split so
-  currently cannot be used.
-
-* How does one initialize the TCP/IP stack?
 
 * linker section issues: I have undefined symbols for
   `_bsd__start_set_sysinit_set` and `_bsd__stop_set_sysinit_set`.
@@ -103,6 +99,9 @@ easier to insert.
     - BSPs using this software stack must support it apparently.
     - What about Simple Vectored architectures?
 
+* We carried over use of notepad 0 for per task information. This should
+be changed.
+
 * maxproc variable referenced by rtems-bsd-resource.c.  What should it
 be set to?
 
@@ -110,8 +109,12 @@ be set to?
 it be set to?
 
 * NIC Device Drivers
-- Only common NIC drivers have been included in the initial set. These do not
-include any system on chip or ISA drivers.
+- Only common PCI NIC drivers have been included in the initial set. These
+do not include any system on chip or ISA drivers.
+- PCI configuration probe does not appear to happen to determine if a
+NIC is in I/O or memory space. We have worked around this by using a
+static hint to tell the fxp driver the correct mode. But this needs to
+be addressed.
 - The ISA drivers require more BSD infrastructure to be addressed. This was 
 outside the scope of the initial porting effort.
 

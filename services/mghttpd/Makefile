@@ -26,8 +26,8 @@ $(LIB): $(C_O_FILES)
 	$(AR) rcu $@ $^
 
 install: $(LIB)
-	install -d $(INSTALL_BASE)/include
-	install -c -m 644 mongoose.h $(INSTALL_BASE)
+	install -d $(INSTALL_BASE)/include/rtems
+	install -c -m 644 mongoose.h $(INSTALL_BASE)/rtems
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 
 clean:

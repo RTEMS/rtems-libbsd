@@ -44,6 +44,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_simple.c,v 1.12 2000/01/27
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <sys/param.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,6 +53,9 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_simple.c,v 1.12 2000/01/27
 #include <rpc/rpc.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#ifdef __rtems__
+#include <rpc/rpc_rtems.h>
+#endif
 
 struct call_rpc_private {
 	CLIENT	*client;
@@ -63,10 +67,10 @@ struct call_rpc_private {
 
 int
 callrpc(
-	char *host,
+	const char *host,
 	int prognum, int versnum, int procnum,
-	xdrproc_t inproc, char *in,
-	xdrproc_t outproc, char *out )
+	xdrproc_t inproc, void *in,
+	xdrproc_t outproc, void *out )
 {
 	register struct call_rpc_private *crp = callrpc_private;
 	struct sockaddr_in server_addr;

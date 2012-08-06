@@ -36,7 +36,12 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/rpc_commondata.c,v 1.7 1999/08/
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
+#ifdef __rtems__
+	#include <rpc/clnt.h>
+#endif
+
 /*
  * This file should only contain common data (global data) that is exported
  * by public interfaces

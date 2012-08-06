@@ -53,6 +53,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/xdr/xdr_rec.c,v 1.12 2000/01/19 06:
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -145,9 +146,9 @@ xdrrec_create(
 	XDR *xdrs,
 	u_int sendsize,
 	u_int recvsize,
-	caddr_t tcp_handle,
-	int (*readit)(char*, char*, int),  /* like read, but pass it a tcp_handle, not sock */
-	int (*writeit)(char*, char*, int)  /* like write, but pass it a tcp_handle, not sock */
+	void *tcp_handle,
+	int (*readit)(void*, void*, int),  /* like read, but pass it a tcp_handle, not sock */
+	int (*writeit)(void*, void*, int)  /* like write, but pass it a tcp_handle, not sock */
 )
 {
 	RECSTREAM *rstrm =
@@ -466,7 +467,7 @@ xdrrec_eof(
 bool_t
 xdrrec_endofrecord(
 	XDR *xdrs,
-	bool_t sendnow)
+	int sendnow)
 {
 	RECSTREAM *rstrm = (RECSTREAM *)(xdrs->x_private);
 	u_long len;  /* fragment length */

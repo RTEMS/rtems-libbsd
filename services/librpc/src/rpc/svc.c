@@ -47,6 +47,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc.c,v 1.14 1999/08/28 00:00:4
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <string.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h> /* for ffs */
@@ -55,6 +56,10 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc.c,v 1.14 1999/08/28 00:00:4
 #include <sys/errno.h>
 #include <rpc/rpc.h>
 #include <rpc/pmap_clnt.h>
+#ifdef __rtems__
+	/* XXX in rpc.h in old .. not new */
+	#include <rpc/rpc_rtems.h>
+#endif
 
 #define xports (rtems_rpc_task_variables->svc_xports)
 #define xportssize (rtems_rpc_task_variables->svc_xportssize)
@@ -90,7 +95,7 @@ void
 xprt_register(
 	SVCXPRT *xprt )
 {
-	register int sock = xprt->xp_sock;
+	register int sock = xprt->xp_fd;
 
 	if (sock + 1 > __svc_fdsetsize) {
 		int bytes = sizeof (fd_set);
@@ -136,7 +141,7 @@ void
 xprt_unregister(
 	SVCXPRT *xprt )
 {
-	register int sock = xprt->xp_sock;
+	register int sock = xprt->xp_fd;
 
 	if (xports[sock] == xprt) {
 		xports[sock] = (SVCXPRT *)0;

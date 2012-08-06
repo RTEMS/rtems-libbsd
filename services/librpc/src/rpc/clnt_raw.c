@@ -48,9 +48,13 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_raw.c,v 1.10 1999/08/28 00
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef __rtems__
+#include <rpc/rpc_rtems.h>
+#endif
 
 #define MCALL_MSG_SIZE 24
 
@@ -189,7 +193,7 @@ call_again:
 		}
 	}  /* end successful completion */
 	else {
-		if (AUTH_REFRESH(h->cl_auth))
+		if (AUTH_REFRESH(h->cl_auth, &msg))
 			goto call_again;
 	}  /* end of unsuccessful completion */
 

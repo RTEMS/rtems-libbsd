@@ -40,10 +40,15 @@ static char sccsid[] = "@(#)rpcdname.c 1.7 91/03/11 Copyr 1989 Sun Micro";
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <rpc/rpc.h>
+#ifdef __rtems__
+	/* XXX in rpc.h in old .. not new */
+	#include <rpc/rpc_rtems.h>
+#endif
 
 int getdomainname(char *, size_t);
 

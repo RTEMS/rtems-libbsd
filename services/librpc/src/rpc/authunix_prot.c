@@ -45,6 +45,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/authunix_prot.c,v 1.6 1999/08/2
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <rpc/auth.h>

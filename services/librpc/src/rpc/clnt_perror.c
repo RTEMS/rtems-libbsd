@@ -44,6 +44,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_perror.c,v 1.11 1999/08/28
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,9 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_perror.c,v 1.11 1999/08/28
 #include <rpc/types.h>
 #include <rpc/auth.h>
 #include <rpc/clnt.h>
+#ifdef __rtems__
+#include <rpc/rpc_rtems.h>
+#endif
 
 static char *auth_errmsg(enum auth_stat stat);
 #define CLNT_PERROR_BUFLEN 256

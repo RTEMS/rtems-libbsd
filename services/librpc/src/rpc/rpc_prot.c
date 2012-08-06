@@ -50,6 +50,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/rpc_prot.c,v 1.8 1999/08/28 00:
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <assert.h>
 #include <sys/param.h>
 

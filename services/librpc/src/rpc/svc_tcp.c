@@ -47,6 +47,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_tcp.c,v 1.18 2000/01/27 23:
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -56,6 +57,9 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_tcp.c,v 1.18 2000/01/27 23:
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <sys/select.h>
+#ifdef __rtems__
+#include <rpc/rpc_rtems.h>
+#endif
 
 /*
  * Ops vector for TCP/IP based rpc service handle
@@ -119,7 +123,7 @@ struct tcp_conn {  /* kept in xprt->xp_p1 */
  * If the socket, sock is not bound to a port then svctcp_create
  * binds it to an arbitrary port.  The routine then starts a tcp
  * listener on the socket's associated port.  In any (successful) case,
- * xprt->xp_sock is the registered socket number and xprt->xp_port is the
+ * xprt->xp_fd is the registered socket number and xprt->xp_port is the
  * associated port number.
  *
  * Since tcp streams do buffered io similar to stdio, the caller can specify
@@ -184,7 +188,7 @@ svctcp_create(
 	xprt->xp_verf = _null_auth;
 	xprt->xp_ops = &svctcp_rendezvous_op;
 	xprt->xp_port = ntohs(addr.sin_port);
-	xprt->xp_sock = sock;
+	xprt->xp_fd = sock;
 	xprt_register(xprt);
 	return (xprt);
 }
@@ -233,7 +237,7 @@ makefd_xprt(
 	xprt->xp_addrlen = 0;
 	xprt->xp_ops = &svctcp_op;  /* truely deals with calls */
 	xprt->xp_port = 0;  /* this is a connection, not a rendezvouser */
-	xprt->xp_sock = fd;
+	xprt->xp_fd = fd;
 	xprt_register(xprt);
     done:
 	return (xprt);
@@ -253,7 +257,7 @@ rendezvous_request(
 	r = (struct tcp_rendezvous *)xprt->xp_p1;
     again:
 	len = sizeof(struct sockaddr_in);
-	if ((sock = accept(xprt->xp_sock, (struct sockaddr *)&addr,
+	if ((sock = accept(xprt->xp_fd, (struct sockaddr *)&addr,
 	    &len)) < 0) {
 		if (errno == EINTR)
 			goto again;
@@ -297,7 +301,7 @@ svctcp_destroy(
 	register struct tcp_conn *cd = (struct tcp_conn *)xprt->xp_p1;
 
 	xprt_unregister(xprt);
-	(void)_RPC_close(xprt->xp_sock);
+	(void)_RPC_close(xprt->xp_fd);
 	if (xprt->xp_port != 0) {
 		/* a rendezvouser socket */
 		xprt->xp_port = 0;
@@ -334,7 +338,7 @@ readtcp(
 	int len)
 {
 	SVCXPRT *xprt = (SVCXPRT*) _xprt;
-	register int sock = xprt->xp_sock;
+	register int sock = xprt->xp_fd;
 	struct timeval start, delta, tv;
 	struct timeval tmp1, tmp2;
 	fd_set *fds;
@@ -406,7 +410,7 @@ writetcp(
 	register int i, cnt;
 
 	for (cnt = len; cnt > 0; cnt -= i, buf += i) {
-		if ((i = _RPC_write(xprt->xp_sock, buf, cnt)) < 0) {
+		if ((i = _RPC_write(xprt->xp_fd, buf, cnt)) < 0) {
 			((struct tcp_conn *)(xprt->xp_p1))->strm_stat =
 			    XPRT_DIED;
 			return (-1);

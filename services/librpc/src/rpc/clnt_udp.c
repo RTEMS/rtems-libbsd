@@ -43,6 +43,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_udp.c,v 1.15 2000/01/27 23
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -388,7 +389,7 @@ send_again:
 		}  /* end successful completion */
 		else {
 			/* maybe our credentials need to be refreshed ... */
-			if (nrefreshes > 0 && AUTH_REFRESH(cl->cl_auth)) {
+			if (nrefreshes > 0 && AUTH_REFRESH(cl->cl_auth, &reply_msg)) {
 				nrefreshes--;
 				goto call_again;
 			}
@@ -549,11 +550,14 @@ clntudp_control(
 		*(u_long *)(cu->cu_outbuf + 3 * BYTES_PER_XDR_UNIT)
 				= htonl(*(u_long *)info);
 		break;
+#ifndef __rtems__
+	/* XXX defined in old.. not new */
 	case CLGET_LOCAL_ADDR:
 		len = sizeof(struct sockaddr);
 		if (getsockname(cu->cu_sock, (struct sockaddr *)info, &len) <0)
 			return(FALSE);
 		break;
+#endif
 	case CLGET_SVC_ADDR:
 	case CLSET_SVC_ADDR:
 	case CLSET_PUSH_TIMOD:

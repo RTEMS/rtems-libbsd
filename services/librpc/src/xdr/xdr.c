@@ -47,6 +47,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/xdr/xdr.c,v 1.9 1999/08/28 00:02:55
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,7 +78,7 @@ static const char xdr_zero[BYTES_PER_XDR_UNIT] = { 0, 0, 0, 0 };
 void
 xdr_free(
 	xdrproc_t proc,
-	char *objp)
+	void *objp)
 {
 	XDR x;
 

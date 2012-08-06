@@ -45,6 +45,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/pmap_getmaps.c,v 1.11 2000/01/2
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <rpc/pmap_prot.h>
 #include <rpc/pmap_clnt.h>
@@ -53,7 +54,12 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/pmap_getmaps.c,v 1.11 2000/01/2
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/mbuf.h>
+#ifndef __rtems__
+	/* XXX fix for new location */
+	#include <sys/mbuf.h>
+#else
+	#include <freebsd/sys/mbuf.h>
+#endif
 #include <net/if.h>
 #include <sys/ioctl.h>
 #define NAMELEN 255

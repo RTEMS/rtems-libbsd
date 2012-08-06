@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)netname.c 1.8 91/03/11 Copyr 1986 Sun Micro";
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <sys/param.h>
 #include <rpc/rpc.h>
 #include <rpc/rpc_com.h>
@@ -88,8 +89,8 @@ getnetname(char name[MAXNETNAMELEN+1])
 int
 user2netname(
 	char netname[MAXNETNAMELEN + 1],
-	uid_t uid,
-	char *domain)
+	const uid_t uid,
+	const char *domain)
 {
 	char *dfltdom;
 
@@ -115,8 +116,8 @@ user2netname(
 int
 host2netname(
 	char netname[MAXNETNAMELEN + 1],
-	char *host,
-	char *domain)
+	const char *host,
+	const char *domain)
 {
 	char *dfltdom;
 	char hostname[MAXHOSTNAMELEN+1];

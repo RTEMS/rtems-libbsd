@@ -1450,7 +1450,7 @@ If the socket is not bound to a local
 .SM TCP
 port, then this routine binds it to an arbitrary port.  Upon
 completion,
-\fB\%xprt\->xp_sock\fR
+\fB\%xprt\->xp_fd\fR
 is the transport's socket descriptor, and
 \fB\%xprt\->xp_port\fR
 is the transport's port number.
@@ -1515,7 +1515,7 @@ If the socket is not bound to a local
 port, then this routine binds it to an arbitrary port.
 Upon
 completion,
-\fB\%xprt\->xp_sock\fR
+\fB\%xprt\->xp_fd\fR
 is the transport's socket descriptor, and
 \fB\%xprt\->xp_port\fR
 is the transport's port number.

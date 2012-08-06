@@ -56,6 +56,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_tcp.c,v 1.14 2000/01/27 23
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -330,7 +331,7 @@ call_again:
 	}  /* end successful completion */
 	else {
 		/* maybe our credentials need to be refreshed ... */
-		if (refreshes-- && AUTH_REFRESH(h->cl_auth))
+		if (refreshes-- && AUTH_REFRESH(h->cl_auth, &reply_msg))
 			goto call_again;
 	}  /* end of unsuccessful completion */
 	return (ct->ct_error.re_status);
@@ -470,11 +471,14 @@ clnttcp_control(
 				= htonl(*(u_int32_t *)info);
 		break;
 
+#ifndef __rtems__
+	/* XXX defined in old.. not new */
 	case CLGET_LOCAL_ADDR:
 		len = sizeof(struct sockaddr);
 		if (getsockname(ct->ct_sock, (struct sockaddr *)info, &len) <0)
 			return(FALSE);
 		break;
+#endif
 
 	case CLGET_RETRY_TIMEOUT:
 	case CLSET_RETRY_TIMEOUT:

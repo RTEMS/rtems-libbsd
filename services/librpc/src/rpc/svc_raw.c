@@ -46,8 +46,13 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_raw.c,v 1.7 1999/08/28 00:0
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <stdlib.h>
+#ifdef __rtems__
+	/* XXX in rpc.h in old .. not new */
+	#include <rpc/rpc_rtems.h>
+#endif
 
 /*
  * This is the "network" that we will be moving data over
@@ -86,7 +91,7 @@ svcraw_create(void)
 		if (srp == 0)
 			return (0);
 	}
-	srp->server.xp_sock = 0;
+	srp->server.xp_fd = 0;
 	srp->server.xp_port = 0;
 	srp->server.xp_ops = &server_ops;
 	srp->server.xp_verf.oa_base = srp->verf_body;

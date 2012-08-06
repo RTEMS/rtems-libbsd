@@ -48,6 +48,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_auth_unix.c,v 1.8 1999/08/2
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <string.h>
 #include <rpc/rpc.h>

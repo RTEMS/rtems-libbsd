@@ -56,7 +56,10 @@
 
 __BEGIN_DECLS
 extern u_int __rpc_get_a_size(int);
-extern u_int __rpc_get_t_size(int, long);
+#ifndef __rtems__
+	/* XXX defined in old.. in new rpc.h as internal */
+	extern u_int __rpc_get_t_size(int, long);
+#endif
 extern int __rpc_dtbsize(void);
 extern int _rpc_dtablesize(void);
 extern  int  _rpc_get_default_domain(char **);

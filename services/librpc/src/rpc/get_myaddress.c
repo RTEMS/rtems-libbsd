@@ -44,13 +44,19 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/get_myaddress.c,v 1.17 2000/01/
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <rpc/pmap_prot.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/mbuf.h>
+#ifndef __rtems__
+	/* XXX old.. not new */
+	#include <sys/mbuf.h>
+#else
+	#include <freebsd/sys/mbuf.h>
+#endif
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>

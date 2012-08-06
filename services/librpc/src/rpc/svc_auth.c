@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #ifdef _KERNEL
 #include <sys/param.h>
 #include <rpc/types.h>
@@ -64,6 +65,10 @@ static const char rcsid[] =
 #include <rpc/rpc.h>
 #endif
 #include <sys/types.h>
+#ifdef __rtems__
+	/* XXX in rpc.h in old .. not new */
+	#include <rpc/rpc_rtems.h>
+#endif
 
 /*
  * svcauthsw is the bdevsw of server side authentication.

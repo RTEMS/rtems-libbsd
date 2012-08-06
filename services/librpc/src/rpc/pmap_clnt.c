@@ -44,6 +44,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/pmap_clnt.c,v 1.11 2000/01/27 2
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

@@ -6,9 +6,14 @@
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <rtems.h>
 #include <stdlib.h>
+#ifdef __rtems__
+	/* XXX in rpc.h in old .. not new */
+	#include <rpc/rpc_rtems.h>
+#endif
 
 /*
  * RPC variables for single-thread

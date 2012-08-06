@@ -44,6 +44,7 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_simple.c,v 1.9 1999/08/28 0
 #include "config.h"
 #endif
 
+#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,6 +55,9 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_simple.c,v 1.9 1999/08/28 0
 #include <netdb.h>
 
 #include <inttypes.h> /* for PRIxx printf formats */
+#ifdef __rtems__
+#include <rpc/rpc_rtems.h>
+#endif
 
 struct prog_lst {
 	char *(*p_progname)(char *);

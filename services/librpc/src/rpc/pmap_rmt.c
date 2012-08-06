@@ -248,7 +248,10 @@ getbroadcastnets(
 	return (i);
 }
 
+#ifndef __rtems__
+/* XXX now defined in rpc/clnt.h */
 typedef bool_t (*resultproc_t)(caddr_t, struct sockaddr_in *);
+#endif
 
 enum clnt_stat
 clnt_broadcast(
@@ -256,9 +259,9 @@ clnt_broadcast(
 	u_long		vers,		/* version number */
 	u_long		proc,		/* procedure number */
 	xdrproc_t	xargs,		/* xdr routine for args */
-	caddr_t		argsp,		/* pointer to args */
+	void *		argsp,		/* pointer to args */
 	xdrproc_t	xresults,	/* xdr routine for results */
-	caddr_t		resultsp,	/* pointer to results */
+	void *		resultsp,	/* pointer to results */
 	resultproc_t	eachresult	/* call with each result obtained */ )
 {
 	enum clnt_stat stat = RPC_SUCCESS; /* to avoid warning */

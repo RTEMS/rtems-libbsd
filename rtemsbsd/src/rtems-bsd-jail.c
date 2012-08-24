@@ -198,7 +198,7 @@ prison_check_ip6(struct ucred *cred, struct in6_addr *ia6)
 int
 prison_local_ip4(struct ucred *cred, struct in_addr *ia)
 {
-  return EAFNOSUPPORT;
+  return 0;
 }
 
 /*
@@ -210,7 +210,7 @@ prison_local_ip4(struct ucred *cred, struct in_addr *ia)
 int
 prison_remote_ip4(struct ucred *cred, struct in_addr *ia)
 {
-  return EAFNOSUPPORT;
+  return 0;
 }
 
 /*
@@ -263,6 +263,7 @@ prison_remote_ip6(struct ucred *cred, struct in6_addr *ia6)
 int
 prison_saddrsel_ip4(struct ucred *cred, struct in_addr *ia)
 {
+  return 1;
 }
 
 /*

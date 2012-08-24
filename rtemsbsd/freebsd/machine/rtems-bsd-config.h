@@ -28,6 +28,9 @@
 #define __FreeBSD__ 1
 #define __BSD_VISIBLE 1
 
+/* XXX hack so /opt.../machine/param.h can disable MSIZE and use this one */
+#define __NEW_RTEMS_BSD__
+
 /* Disable procedure call definitions */
 #undef __P
 #undef __strong_reference

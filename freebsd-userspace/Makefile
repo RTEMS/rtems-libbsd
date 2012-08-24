@@ -9,6 +9,8 @@ CFLAGS += -I rtems/include
 CFLAGS += -I lib/libc/include 
 CFLAGS += -I sys
 CFLAGS += -I local 
+# XXX hack to find rpc
+CFLAGS += -I ../services/librpc/include 
 
 CFLAGS += -I $(INSTALL_BASE)/include
 
@@ -34,6 +36,7 @@ C_FILES += lib/libc/inet/nsap_addr.c
 
 C_FILES += lib/libc/net/base64.c
 C_FILES += lib/libc/net/ether_addr.c
+C_FILES += lib/libc/net/getaddrinfo.c
 C_FILES += lib/libc/net/gethostbydns.c
 C_FILES += lib/libc/net/gethostbyht.c
 C_FILES += lib/libc/net/gethostbynis.c

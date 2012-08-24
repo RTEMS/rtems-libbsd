@@ -102,7 +102,6 @@ done <<EOF
 include/db.h
 include/ifaddrs.h
 include/netconfig.h
-include/netdb.h
 include/nsswitch.h
 include/resolv.h
 include/res_update.h
@@ -114,7 +113,6 @@ include/rpc/clnt_soc.h
 include/rpc/clnt_stat.h
 include/rpc/pmap_clnt.h
 include/rpc/pmap_prot.h
-include/rpc/rpc.h
 include/rpc/rpcent.h
 include/rpc/rpc_msg.h
 include/rpc/rpcb_clnt.h
@@ -181,6 +179,7 @@ do
 done <<EOF
 lib/libc/net/base64.c
 lib/libc/net/ether_addr.c
+lib/libc/net/getaddrinfo.c
 lib/libc/net/gethostbydns.c
 lib/libc/net/gethostbyht.c
 lib/libc/net/gethostbynis.c
@@ -264,3 +263,8 @@ EOF
 echo "#include <sys/syslog.h>" > local/syslog.h
 # Should be able to copy this except for printflike issue
 # sys/sys/syslog.h
+
+# netdb.h has an issue with __socklen_t which needs to be run down
+# for now, a manually edited copy is in rtems/include
+# include/rpc/rpc.h has issue with internal methods changing from 
+#   old implementation to current day. We need to update our RPC

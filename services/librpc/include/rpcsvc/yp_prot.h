@@ -68,7 +68,9 @@
  */
 
 #ifndef BOOL_DEFINED
+/* old code
 typedef u_int bool;
+*/
 #define BOOL_DEFINED
 #endif
 

@@ -382,10 +382,13 @@ class ModuleManager:
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n' \
-			'GENERATED_FILES =\n' \
+			'GENERATED_FILES = rtemsbsd/freebsd/machine/rtems-bsd-config.h\n' \
 			'\n'
 		data += 'C_FILES =\n'
 		for m in self.modules:
+			if m.conditionalOn != "none":
+				data += 'ifneq ($(' + m.conditionalOn + '),yes)\n'
+
 			for file in m.sourceFiles:
 				data += 'C_FILES += ' + file.getMakefileFragment() + '\n'
 			for cpu, files in sorted(m.cpuDependentSourceFiles.items()):
@@ -395,6 +398,10 @@ class ModuleManager:
 				if cpu in ("arm", "i386", "lm32", "mips", "powerpc", "sparc"):
 					data += 'NEED_DUMMY_PIC_IRQ=no\n'
 				data += 'endif\n'
+			if m.conditionalOn != "none":
+				data += 'else\n'
+				data += 'SED_PATTERN += -e \'' + m.cppPattern +'\'\n'
+				data += 'endif # ' + m.conditionalOn +'\n'
 		for cpu in CPUsNeedingGenericIncksum:
 			data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n' \
 				'GENERATED_FILES += copied/rtemsbsd/' + cpu + '/' + cpu + '/in_cksum.c\n' \
@@ -429,6 +436,9 @@ class ModuleManager:
 			'\t$(MAKE) -C freebsd-userspace\n' \
 			'\n' \
 			'# The following targets use the MIPS Generic in_cksum routine\n'
+		data += 'rtemsbsd/freebsd/machine/rtems-bsd-config.h: rtemsbsd/freebsd/machine/rtems-bsd-config.h.in\n'
+		data += '\tsed $(SED_PATTERN) <$< >$@\n'
+		data += '\n'
 		for cpu in CPUsNeedingGenericIncksum:
 			dDir = 'copied/rtemsbsd/' + cpu + '/' + cpu + '/'
 			sDir = 'freebsd/mips/mips/'
@@ -530,6 +540,8 @@ def assertSourceFile(path):
 class Module:
 	def __init__(self, name):
 		self.name = name
+		self.conditionalOn = "none"
+		self.cppPattern = "s///"
 		self.headerFiles = []
 		self.sourceFiles = []
 		self.cpuDependentSourceFiles = {}
@@ -1827,6 +1839,8 @@ netinet.addSourceFiles(
 )
 
 netinet6 = Module('netinet6')
+netinet6.conditionalOn = "DISABLE_IPV6"
+netinet6.cppPattern = 's/^\#define INET6 1/\/\/ \#define INET6 1/'
 netinet6.addHeaderFiles(
 	[
 		'netinet6/icmp6.h',

@@ -17,7 +17,7 @@ CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes
 
-GENERATED_FILES =
+GENERATED_FILES = rtemsbsd/freebsd/machine/rtems-bsd-config.h
 
 C_FILES =
 C_FILES += rtemsbsd/dev/usb/controller/ohci_lpc24xx.c
@@ -195,6 +195,7 @@ C_FILES += freebsd/netinet/libalias/alias_proxy.c
 C_FILES += freebsd/netinet/libalias/alias.c
 C_FILES += freebsd/netinet/libalias/alias_skinny.c
 C_FILES += freebsd/netinet/libalias/alias_sctp.c
+ifneq ($(DISABLE_IPV6),yes)
 C_FILES += freebsd/netinet6/dest6.c
 C_FILES += freebsd/netinet6/frag6.c
 C_FILES += freebsd/netinet6/icmp6.c
@@ -222,6 +223,9 @@ C_FILES += freebsd/netinet6/route6.c
 C_FILES += freebsd/netinet6/scope6.c
 C_FILES += freebsd/netinet6/sctp6_usrreq.c
 C_FILES += freebsd/netinet6/udp6_usrreq.c
+else
+SED_PATTERN += -e 's/^\#define INET6 1/\/\/ \#define INET6 1/'
+endif # DISABLE_IPV6
 C_FILES += freebsd/netipsec/ipsec.c
 C_FILES += freebsd/netipsec/ipsec_input.c
 C_FILES += freebsd/netipsec/ipsec_mbuf.c
@@ -651,6 +655,9 @@ lib_user: $(LIB) install_bsd
 	$(MAKE) -C freebsd-userspace
 
 # The following targets use the MIPS Generic in_cksum routine
+rtemsbsd/freebsd/machine/rtems-bsd-config.h: rtemsbsd/freebsd/machine/rtems-bsd-config.h.in
+	sed $(SED_PATTERN) <$< >$@
+
 copied/rtemsbsd/avr/avr/in_cksum.c: freebsd/mips/mips/in_cksum.c
 	test -d copied/rtemsbsd/avr/avr/ || mkdir -p copied/rtemsbsd/avr/avr/
 	cp $< $@

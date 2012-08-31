@@ -2,6 +2,7 @@
 o-optimize
 copied
 libbsd.html
+rtemsbsd/freebsd/machine/rtems-bsd-config.h
 rtemsbsd/avr/avr/in_cksum.c
 rtemsbsd/avr/include/freebsd/machine/in_cksum.h
 rtemsbsd/bfin/bfin/in_cksum.c

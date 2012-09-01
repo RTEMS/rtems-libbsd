@@ -100,10 +100,12 @@ do
   cp ${src}/${f} ${dest}/${d}
 done <<EOF
 include/db.h
+include/err.h
 include/ifaddrs.h
 include/netconfig.h
 include/nsswitch.h
 include/resolv.h
+include/sysexit.h
 include/res_update.h
 include/rpc/auth.h
 include/rpc/auth_unix.h
@@ -243,6 +245,7 @@ net/if_types.h
 net/in.h
 net/route.h
 netinet/in.h
+netinet/icmp6.h
 sys/socket.h
 sys/sysctl.h
 EOF

@@ -66,8 +66,7 @@ C_FILES += lib/libc/net/map_v4v6.c
 C_FILES += lib/libc/net/rcmd.c
 C_FILES += lib/libc/net/recv.c
 C_FILES += lib/libc/net/send.c
-# iovec redefined between RTEMS and FreeBSD
-# C_FILES += lib/libc/resolv/herror.c
+C_FILES += lib/libc/resolv/herror.c
 C_FILES += lib/libc/resolv/res_comp.c
 C_FILES += lib/libc/resolv/res_data.c
 C_FILES += lib/libc/resolv/res_debug.c
@@ -85,6 +84,10 @@ C_FILES += lib/libc/string/strsep.c
 # RTEMS Specific Files
 C_FILES += rtems/rtems-net-setup.c
 C_FILES += rtems/syslog.c
+
+# ping command sources
+C_FILES += commands/sbin/ping/ping.c
+C_FILES += commands/sbin/ping6/ping6.c
 
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)

@@ -49,6 +49,9 @@ __FBSDID("$FreeBSD$");
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __rtems__
+#include <isc/print.h>
+#endif
 #include <isc/list.h>
 #include <resolv.h>
 

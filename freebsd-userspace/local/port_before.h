@@ -1,6 +1,12 @@
 #include <freebsd/bsd.h>
 
 #include <freebsd/sys/_types.h>
+
+/*
+ * Some of the code needs to know it is being built inside libc.
+ */
+#define _LIBC 1
+
 /*
 #ifndef _bsd_off_t
 #define _bsd_off_t off_t

@@ -56,8 +56,7 @@ C_FILES += lib/libc/gen/gethostname.c
 C_FILES += lib/libc/nameser/ns_name.c
 C_FILES += lib/libc/nameser/ns_netint.c
 C_FILES += lib/libc/nameser/ns_parse.c
-# isc/assertions.h is needed
-# C_FILES += lib/libc/nameser/ns_print.c
+C_FILES += lib/libc/nameser/ns_print.c
 C_FILES += lib/libc/nameser/ns_ttl.c
 C_FILES += lib/libc/net/if_indextoname.c
 C_FILES += lib/libc/net/if_nameindex.c
@@ -72,13 +71,11 @@ C_FILES += lib/libc/resolv/res_data.c
 C_FILES += lib/libc/resolv/res_debug.c
 C_FILES += lib/libc/resolv/res_init.c
 C_FILES += lib/libc/resolv/res_mkquery.c
-# weird compile problem with what appears to be a list
-# C_FILES += lib/libc/resolv/res_mkupdate.c
+C_FILES += lib/libc/resolv/res_mkupdate.c
 C_FILES += lib/libc/resolv/res_query.c
-# fd_setsize.h is missing and Joel can't find it
+# fd_setsize.h is missing and Joel can't find it. Looks like KQUEUE path
 # C_FILES += lib/libc/resolv/res_send.c
-# isc/list.h is missing
-# C_FILES += lib/libc/resolv/res_update.c
+C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/string/strsep.c
 
 # RTEMS Specific Files

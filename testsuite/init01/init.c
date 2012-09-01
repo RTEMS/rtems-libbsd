@@ -11,9 +11,6 @@
 void print_test_name(void);
 void test_main(void);
 
-/* XXX temporary until in .h file */
-void rtems_initialize_interfaces(void);
-
 rtems_task Init(
   rtems_task_argument ignored
 )
@@ -27,9 +24,6 @@ rtems_task Init(
    */
 
   rtems_bsd_initialize_with_interrupt_server();
-
-  puts( "Initializing interfaces" );
-  rtems_initialize_interfaces();
 
   test_main();
   /* should not return */

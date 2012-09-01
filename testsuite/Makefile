@@ -16,4 +16,5 @@ SUBDIRS += usb01
 
 # Network Tests
 SUBDIRS += init01
+SUBDIRS += netshell01
 SUBDIRS += loopback01

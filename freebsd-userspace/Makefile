@@ -78,7 +78,7 @@ C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/string/strsep.c
 
 # RTEMS Specific Files
-C_FILES += rtems/rtems-net-setup.c
+# C_FILES += rtems/rtems-net-setup.c
 C_FILES += rtems/syslog.c
 
 # ping command sources

@@ -1,5 +1,8 @@
 #ifdef __rtems__
 #define USE_RFC2292BIS
+
+#define __need_getopt_newlib
+#include <getopt.h>
 #endif
 /*	$KAME: ping6.c,v 1.169 2003/07/25 06:01:47 itojun Exp $	*/
 
@@ -263,7 +266,11 @@ volatile sig_atomic_t seenint;
 volatile sig_atomic_t seeninfo;
 #endif
 
+#ifdef __rtems__
+int	 main_ping6(int, char *[]);
+#else
 int	 main(int, char *[]);
+#endif
 void	 fill(char *, char *);
 int	 get_hoplim(struct msghdr *);
 int	 get_pathmtu(struct msghdr *);
@@ -295,7 +302,11 @@ char	*nigroup(char *);
 void	 usage(void);
 
 int
+#ifdef __rtems__
+main_ping6(argc, argv)
+#else
 main(argc, argv)
+#endif
 	int argc;
 	char *argv[];
 {
@@ -341,6 +352,9 @@ main(argc, argv)
 #ifdef IPV6_USE_MIN_MTU
 	int mflag = 0;
 #endif
+#ifdef __rtems__
+	struct getopt_data getopt_reent;
+#endif
 
 	/* just to be sure */
 	memset(&smsghdr, 0, sizeof(smsghdr));
@@ -357,8 +371,14 @@ main(argc, argv)
 #define ADDOPTS	"AE"
 #endif /*IPSEC_POLICY_IPSEC*/
 #endif
+#ifdef __rtems__
+	memset(&getopt_reent, 0, sizeof(getopt_data));
+	while ((ch = getopt_r(argc, argv,
+	    "a:b:c:DdfHg:h:I:i:l:mnNop:qrRS:s:tvwW" ADDOPTS, &getopt_reent)) != -1) {
+#else
 	while ((ch = getopt(argc, argv,
 	    "a:b:c:DdfHg:h:I:i:l:mnNop:qrRS:s:tvwW" ADDOPTS)) != -1) {
+#endif
 #undef ADDOPTS
 		switch (ch) {
 		case 'a':

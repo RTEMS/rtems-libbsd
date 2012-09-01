@@ -1,3 +1,7 @@
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -225,7 +229,11 @@ static void tvsub(struct timeval *, struct timeval *);
 static void usage(void) __dead2;
 
 int
+#ifdef __rtems__
+main_ping(argc, argv)
+#else
 main(argc, argv)
+#endif
 	int argc;
 	char *const *argv;
 {
@@ -254,6 +262,9 @@ main(argc, argv)
 	char rspace[MAX_IPOPTLEN];	/* record route space */
 #endif
 	unsigned char loop, mttl;
+#ifdef __rtems__
+	struct getopt_data getopt_reent;
+#endif
 
 	payload = source = NULL;
 #ifdef IPSEC_POLICY_IPSEC
@@ -274,13 +285,21 @@ main(argc, argv)
 	alarmtimeout = df = preload = tos = 0;
 
 	outpack = outpackhdr + sizeof(struct ip);
+#ifdef __rtems__
+	memset(&getopt_reent, 0, sizeof(getopt_data));
+	while ((ch = getopt_r(argc, argv,
+#else
 	while ((ch = getopt(argc, argv,
+#endif
 		"Aac:DdfG:g:h:I:i:Ll:M:m:nop:QqRrS:s:T:t:vW:z:"
 #ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 		"P:"
 #endif /*IPSEC_POLICY_IPSEC*/
 #endif /*IPSEC*/
+#ifdef __rtems__
+		, &getopt_reent
+#endif
 		)) != -1)
 	{
 		switch(ch) {

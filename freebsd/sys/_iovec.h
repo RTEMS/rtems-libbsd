@@ -47,12 +47,12 @@ struct iovec {
 	void	*iov_base;	/* Base address. */
 	size_t	 iov_len;	/* Length. */
 };
-#endif
+#endif /* __IOVEC_DEFINED */
 #else
 struct iovec {
 	void	*iov_base;	/* Base address. */
 	size_t	 iov_len;	/* Length. */
 };
-#endif
+#endif /* rtems */
 
 #endif /* !_SYS__IOVEC_HH_ */

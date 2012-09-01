@@ -8,6 +8,16 @@
 #define _LIBC 1
 
 /*
+ *  lib/libc/resolv/res_send.c needs this defined.
+ */
+#define USE_KQUEUE 1
+
+/*
+ *  lib/libc/resolv/res_send.c also needs this defined.
+ */
+#define ISC_SOCKLEN_T   socklen_t
+
+/*
 #ifndef _bsd_off_t
 #define _bsd_off_t off_t
 #endif

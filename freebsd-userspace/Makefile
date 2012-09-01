@@ -73,8 +73,7 @@ C_FILES += lib/libc/resolv/res_init.c
 C_FILES += lib/libc/resolv/res_mkquery.c
 C_FILES += lib/libc/resolv/res_mkupdate.c
 C_FILES += lib/libc/resolv/res_query.c
-# fd_setsize.h is missing and Joel can't find it. Looks like KQUEUE path
-# C_FILES += lib/libc/resolv/res_send.c
+C_FILES += lib/libc/resolv/res_send.c
 C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/string/strsep.c
 

@@ -44,8 +44,13 @@
  * for utilities to have to include one of them to include err.h, so we get
  * __va_list from <sys/_types.h> and use it.
  */
+#include <freebsd/bsd.h>
 #include <sys/cdefs.h>
+#ifdef __rtems__
+#include <freebsd/sys/_types.h>
+#else
 #include <sys/_types.h>
+#endif
 
 __BEGIN_DECLS
 void	err(int, const char *, ...) __dead2 __printf0like(2, 3);

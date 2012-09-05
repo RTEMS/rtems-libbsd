@@ -34,6 +34,7 @@
  */
 #include <freebsd/machine/rtems-bsd-config.h>
 
+#include <freebsd/sys/types.h>
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/sched.h>

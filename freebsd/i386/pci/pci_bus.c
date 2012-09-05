@@ -68,9 +68,15 @@ legacy_pcib_maxslots(device_t dev)
 
 /* read configuration space register */
 
+#ifdef __rtems__
+uint32_t
+legacy_pcib_read_config(device_t dev, u_int bus, u_int slot, u_int func,
+			u_int reg, int bytes)
+#else
 u_int32_t
 legacy_pcib_read_config(device_t dev, u_int bus, u_int slot, u_int func,
 			u_int reg, int bytes)
+#endif
 {
 	return(pci_cfgregread(bus, slot, func, reg, bytes));
 }

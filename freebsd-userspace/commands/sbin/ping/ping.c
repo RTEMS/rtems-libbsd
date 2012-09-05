@@ -1,4 +1,5 @@
 #ifdef __rtems__
+#include "port_before.h"
 #define __need_getopt_newlib
 #include <getopt.h>
 #endif
@@ -1749,3 +1750,16 @@ usage()
 "            [-z tos] mcast-group");
 	exit(EX_USAGE);
 }
+
+#ifdef __rtems__
+  #include <rtems/shell.h>
+
+  rtems_shell_cmd_t rtems_shell_PING_Command = {
+    "ping",                        /* name */
+    "ping [args]",                 /* usage */
+    "net",                         /* topic */
+    main_ping,                     /* command */
+    NULL,                          /* alias */
+    NULL                           /* next */
+  };
+#endif

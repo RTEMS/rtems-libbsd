@@ -1,3 +1,5 @@
+#include "port_before.h"
+
 /*
  * Copyright (c) 1983, 1990, 1993
  *    The Regents of the University of California.  All rights reserved.
@@ -70,8 +72,6 @@ static const char rcsid[] = "$Id: inet_addr.c,v 1.4.18.1 2005/04/27 05:00:52 sra
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
-
-#include "port_before.h"
 
 #include <sys/types.h>
 #include <sys/param.h>

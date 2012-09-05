@@ -42,8 +42,6 @@
 /* Disable standard system headers */
 #undef _SYS_UNISTD_H
 #define _SYS_UNISTD_H 1
-#undef _SYS_FEATURES_H
-#define _SYS_FEATURES_H 1
 #undef _SYS_TTYCOM_H_
 #define _SYS_TTYCOM_H_ 1
 

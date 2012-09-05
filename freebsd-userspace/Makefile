@@ -52,6 +52,7 @@ C_FILES += lib/libc/net/getproto.c
 C_FILES += lib/libc/net/getprotoent.c
 C_FILES += lib/libc/net/getprotoname.c
 C_FILES += lib/libc/net/getservent.c
+C_FILES += lib/libc/gen/err.c
 C_FILES += lib/libc/gen/gethostname.c
 C_FILES += lib/libc/nameser/ns_name.c
 C_FILES += lib/libc/nameser/ns_netint.c

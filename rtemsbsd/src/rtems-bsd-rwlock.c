@@ -62,8 +62,6 @@ static int  owner_rw(struct lock_object *lock, struct thread **owner);
 #endif
 static int  unlock_rw(struct lock_object *lock);
 
-typedef uint32_t pthread_rwlock_t;
-
 struct lock_class lock_class_rw = {
   .lc_name = "rw",
   .lc_flags = LC_SLEEPLOCK | LC_RECURSABLE | LC_UPGRADABLE,

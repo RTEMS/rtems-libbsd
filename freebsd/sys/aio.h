@@ -73,7 +73,9 @@ typedef struct aiocb {
 	int	aio_lio_opcode;		/* LIO opcode */
 	int	aio_reqprio;		/* Request priority -- ignored */
 	struct	__aiocb_private	_aiocb_private;
+#ifndef __rtems__
 	struct	sigevent aio_sigevent;	/* Signal to deliver */
+#endif
 } aiocb_t;
 
 #ifndef _KERNEL

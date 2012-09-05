@@ -382,6 +382,8 @@ class ModuleManager:
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n' \
+                        '# do nothing default so sed on rtems-bsd-config.h always works.\n' \
+                        'SED_PATTERN += -e \'s/^//\'\n' \
 			'GENERATED_FILES = rtemsbsd/freebsd/machine/rtems-bsd-config.h\n' \
 			'\n'
 		data += 'C_FILES =\n'
@@ -427,9 +429,9 @@ class ModuleManager:
 			'\n' \
 			'LIB = libbsd.a\n' \
 			'\n' \
-			'all: $(GENERATED_FILES) $(LIB) lib_user\n' \
+			'all: $(LIB) lib_user\n' \
 			'\n' \
-			'$(LIB): $(C_O_FILES)\n' \
+			'$(LIB): $(GENERATED_FILES) $(C_O_FILES)\n' \
 			'\t$(AR) rcu $@ $^\n' \
 			'\n' \
 			'lib_user: $(LIB) install_bsd\n' \
@@ -490,6 +492,8 @@ class ModuleManager:
 			'\tinstall -d $(INSTALL_BASE)/include\n' \
 			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
 			'\tcd rtemsbsd; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
+			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\tcd contrib/altq; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tfor i in `find freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
@@ -1174,7 +1178,8 @@ devUsbBase.addHeaderFiles(
 		'sys/file.h',
 		'sys/filio.h',
 		'sys/ioccom.h',
-		'sys/_iovec.h',
+		# FreeBSD version is in RTEMS since used by readv/writev
+		# 'sys/_iovec.h',
 		'sys/kernel.h',
 		'sys/kobj.h',
 		'sys/kthread.h',
@@ -1229,7 +1234,8 @@ devUsbBase.addHeaderFiles(
 		'sys/types.h',
 		'sys/ucontext.h',
 		'sys/ucred.h',
-		'sys/uio.h',
+		# FreeBSD version is in RTEMS since used by readv/writev
+		# 'sys/uio.h',
 		'sys/aio.h',
 		'sys/unistd.h',
 		'sys/vmmeter.h',
@@ -1648,7 +1654,6 @@ net.addSourceFiles(
 		'net/if_mib.c',
 		'net/if_spppfr.c',
 		'net/if_spppsubr.c',
-		'net/if_stf.c',
 		'net/if_tap.c',
 		'net/if_tun.c',
 		'net/if_vlan.c',
@@ -1869,6 +1874,7 @@ netinet6.addHeaderFiles(
 )
 netinet6.addSourceFiles(
 	[
+		'net/if_stf.c',
 		'netinet6/dest6.c',
 		'netinet6/frag6.c',
 		'netinet6/icmp6.c',

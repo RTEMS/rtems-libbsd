@@ -17,6 +17,8 @@ CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes
 
+# do nothing default so sed on rtems-bsd-config.h always works.
+SED_PATTERN += -e 's/^//'
 GENERATED_FILES = rtemsbsd/freebsd/machine/rtems-bsd-config.h
 
 C_FILES =
@@ -92,7 +94,6 @@ C_FILES += freebsd/net/if_media.c
 C_FILES += freebsd/net/if_mib.c
 C_FILES += freebsd/net/if_spppfr.c
 C_FILES += freebsd/net/if_spppsubr.c
-C_FILES += freebsd/net/if_stf.c
 C_FILES += freebsd/net/if_tap.c
 C_FILES += freebsd/net/if_tun.c
 C_FILES += freebsd/net/if_vlan.c
@@ -196,6 +197,7 @@ C_FILES += freebsd/netinet/libalias/alias.c
 C_FILES += freebsd/netinet/libalias/alias_skinny.c
 C_FILES += freebsd/netinet/libalias/alias_sctp.c
 ifneq ($(DISABLE_IPV6),yes)
+C_FILES += freebsd/net/if_stf.c
 C_FILES += freebsd/netinet6/dest6.c
 C_FILES += freebsd/netinet6/frag6.c
 C_FILES += freebsd/netinet6/icmp6.c
@@ -646,9 +648,9 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsd.a
 
-all: $(GENERATED_FILES) $(LIB) lib_user
+all: $(LIB) lib_user
 
-$(LIB): $(C_O_FILES)
+$(LIB): $(GENERATED_FILES) $(C_O_FILES)
 	$(AR) rcu $@ $^
 
 lib_user: $(LIB) install_bsd
@@ -999,6 +1001,8 @@ install_bsd: $(LIB)
 	install -d $(INSTALL_BASE)/include
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 	cd rtemsbsd; for i in `find freebsd -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	cd contrib/altq ; for i in `find freebsd -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done

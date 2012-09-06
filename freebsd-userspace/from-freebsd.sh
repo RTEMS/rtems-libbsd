@@ -239,7 +239,10 @@ do
   ( echo "#include <freebsd/bsd.h>" ; 
     echo "#include <freebsd/${f}>" ) > include/${f}
 done <<EOF
+poll.h
+net/ethernet.h
 net/if.h
+net/if_arp.h
 net/if_dl.h
 net/if_types.h
 net/in.h
@@ -248,6 +251,12 @@ netatalk/at.h
 netinet/if_ether.h
 netinet/in.h
 netinet/icmp6.h
+netinet/igmp.h
+netinet/in_systm.h
+netinet/ip.h
+netinet/ip_icmp.h
+netinet/tcp.h
+netinet/udp.h
 sys/socket.h
 sys/sysctl.h
 EOF

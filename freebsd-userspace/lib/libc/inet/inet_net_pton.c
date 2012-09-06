@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*
  * Copyright (c) 2004 by Internet Systems Consortium, Inc. ("ISC")
  * Copyright (c) 1996,1999 by Internet Software Consortium.
@@ -22,6 +20,8 @@ static const char rcsid[] = "$Id: inet_net_pton.c,v 1.7.18.2 2008/08/26 04:42:43
 #endif
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
+
+#include "port_before.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

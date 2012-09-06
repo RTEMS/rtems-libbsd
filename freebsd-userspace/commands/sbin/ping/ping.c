@@ -1,5 +1,4 @@
 #ifdef __rtems__
-#include "port_before.h"
 #define __need_getopt_newlib
 #include <getopt.h>
 #endif

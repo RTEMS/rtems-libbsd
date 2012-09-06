@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*
  * RTEMS version of syslog and associated routines
  */

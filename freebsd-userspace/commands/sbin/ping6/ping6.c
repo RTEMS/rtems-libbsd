@@ -1,8 +1,6 @@
 #ifdef __rtems__
 #define USE_RFC2292BIS
 
-#include "port_before.h"
-
 #define __need_getopt_newlib
 #include <getopt.h>
 #endif

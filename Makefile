@@ -397,6 +397,14 @@ C_FILES += freebsd/kern/subr_bufring.c
 C_FILES += freebsd/dev/led/led.c
 C_FILES += freebsd/kern/subr_unit.c
 C_FILES += freebsd/dev/pci/pci_pci.c
+C_FILES += freebsd/netatalk/aarp.c
+C_FILES += freebsd/netatalk/at_control.c
+C_FILES += freebsd/netatalk/at_rmx.c
+C_FILES += freebsd/netatalk/ddp_input.c
+C_FILES += freebsd/netatalk/ddp_pcb.c
+C_FILES += freebsd/netatalk/ddp_usrreq.c
+C_FILES += freebsd/netatalk/at_proto.c
+C_FILES += freebsd/netatalk/ddp_output.c
 ifeq ($(RTEMS_CPU), i386)
 C_FILES += freebsd/i386/pci/pci_bus.c
 C_FILES += freebsd/i386/i386/legacy.c
@@ -1002,7 +1010,7 @@ install_bsd: $(LIB)
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 	cd rtemsbsd; for i in `find freebsd -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	cd contrib/altq ; for i in `find freebsd -name '*.h'` ; do \
+	cd contrib/altq; for i in `find freebsd -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done

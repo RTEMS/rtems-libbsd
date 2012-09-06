@@ -1334,6 +1334,15 @@ devNic.addHeaderFiles(
 		'dev/pci/pcib_private.h',
 		'isa/isavar.h',
 		'isa/pnpvar.h',
+		'netatalk/at.h',
+		'netatalk/endian.h',
+		'netatalk/aarp.h',
+		'netatalk/at_extern.h',
+		'netatalk/at_var.h',
+		'netatalk/ddp.h',
+		'netatalk/ddp_pcb.h',
+		'netatalk/ddp_var.h',
+		'netatalk/phase2.h',
 	]
 )
 
@@ -1392,6 +1401,14 @@ devNic.addSourceFiles(
 		'dev/led/led.c',
 		'kern/subr_unit.c',
 		'dev/pci/pci_pci.c',
+		'netatalk/aarp.c',
+		'netatalk/at_control.c',
+		'netatalk/at_rmx.c',
+		'netatalk/ddp_input.c',
+		'netatalk/ddp_pcb.c',
+		'netatalk/ddp_usrreq.c',
+		'netatalk/at_proto.c',
+		'netatalk/ddp_output.c',
 	]
 )
 

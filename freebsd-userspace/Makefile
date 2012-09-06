@@ -86,12 +86,15 @@ C_FILES += rtems/syslog.c
 C_FILES += commands/sbin/ping/ping.c
 C_FILES += commands/sbin/ping6/ping6.c
 
+# route command sources
+C_FILES += commands/sbin/route/route.c
+
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 
 LIB = libbsdc.a
 GEN_FILES = include/rpc/rpcb_prot.h
-
+GEN_FILES += commands/sbin/route/keywords.h
 all: $(LIB)
 
 $(LIB): $(GEN_FILES) $(C_O_FILES)
@@ -100,6 +103,16 @@ $(LIB): $(GEN_FILES) $(C_O_FILES)
 include/rpc/rpcb_prot.h: include/rpc/rpcb_prot.x
 	rm -f include/rpc/rpcb_prot.h
 	rpcgen -h -o include/rpc/rpcb_prot.h include/rpc/rpcb_prot.x
+
+commands/sbin/route/keywords.h: commands/sbin/route/keywords
+	sed -e '/^#/d' -e '/^$$/d' commands/sbin/route//keywords > _keywords.tmp
+	LC_ALL=C tr 'a-z' 'A-Z' < _keywords.tmp | paste _keywords.tmp - | \
+	    awk '{ \
+		if (NF > 1) \
+			printf "#define\tK_%s\t%d\n\t{\"%s\", K_%s},\n", \
+			    $$2, NR, $$1, $$2 }' \
+	    > commands/sbin/route/keywords.h
+	rm -f _keywords.tmp
 
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include

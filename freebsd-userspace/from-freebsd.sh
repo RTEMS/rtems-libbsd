@@ -244,6 +244,8 @@ net/if_dl.h
 net/if_types.h
 net/in.h
 net/route.h
+netatalk/at.h
+netinet/if_ether.h
 netinet/in.h
 netinet/icmp6.h
 sys/socket.h

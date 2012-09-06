@@ -31,10 +31,6 @@
 /* XXX hack so /opt.../machine/param.h can disable MSIZE and use this one */
 #define __NEW_RTEMS_BSD__
 
-/* Disable procedure call definitions */
-#undef __P
-#undef __strong_reference
-
 #ifndef _RTEMS_BSD_BSD_HH_
 /* General defines to activate BSD kernel parts */
 #define _KERNEL 1
@@ -44,10 +40,6 @@
 #define _SYS_UNISTD_H 1
 #undef _SYS_TTYCOM_H_
 #define _SYS_TTYCOM_H_ 1
-
-/* Disable procedure call definitions */
-#undef __P
-#undef __strong_reference
 
 /* Disable some quirks in the standard headers */
 #define _POSIX_SOURCE 1

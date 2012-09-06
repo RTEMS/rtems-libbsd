@@ -89,6 +89,24 @@ C_FILES += commands/sbin/ping6/ping6.c
 # route command sources
 C_FILES += commands/sbin/route/route.c
 
+# dhclient command sources
+C_FILES += commands/sbin/dhclient/alloc.c
+C_FILES += commands/sbin/dhclient/bpf.c
+C_FILES += commands/sbin/dhclient/clparse.c
+C_FILES += commands/sbin/dhclient/conflex.c
+C_FILES += commands/sbin/dhclient/convert.c
+C_FILES += commands/sbin/dhclient/dhclient.c
+C_FILES += commands/sbin/dhclient/dispatch.c
+C_FILES += commands/sbin/dhclient/errwarn.c
+C_FILES += commands/sbin/dhclient/hash.c
+C_FILES += commands/sbin/dhclient/inet.c
+C_FILES += commands/sbin/dhclient/options.c
+C_FILES += commands/sbin/dhclient/packet.c
+C_FILES += commands/sbin/dhclient/parse.c
+C_FILES += commands/sbin/dhclient/privsep.c
+C_FILES += commands/sbin/dhclient/tables.c
+C_FILES += commands/sbin/dhclient/tree.c
+
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 

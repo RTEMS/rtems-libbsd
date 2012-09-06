@@ -177,6 +177,26 @@
 /* Missing error number */
 //#define ENOIOCTL EINVAL
 
+/* multiple user space methods and commands use this */
+#ifndef _PATH_DEVNULL
+#define _PATH_DEVNULL "/dev/null"
+#endif
+
+/* used by some user space code */
+#ifndef SIZE_T_MAX
+#define SIZE_T_MAX SIZE_MAX
+#endif
+
+/* used by some user space code */
+#ifndef O_EXLOCK
+#define O_EXLOCK O_EXCL
+#endif
+
+/* from limits.h on FreeBSD */
+#ifndef _POSIX_HOST_NAME_MAX
+#define _POSIX_HOST_NAME_MAX    255
+#endif
+
 #ifndef _RTEMS_BSD_BSD_HH_
 /* Symbol rename */
 

@@ -25,6 +25,7 @@ rtemsbsd/sparc/sparc/in_cksum.c
 rtemsbsd/sparc/include/freebsd/machine/in_cksum.h
 rtemsbsd/v850/v850/in_cksum.c
 rtemsbsd/v850/include/freebsd/machine/in_cksum.h
+freebsd-userspace/commands/sbin/route/keywords.h
 freebsd-userspace/include/rpc/rpcb_prot.h
 rtemsbsd/arm/include/freebsd/machine/legacyvar.h
 rtemsbsd/arm/include/freebsd/machine/pci_cfgreg.h

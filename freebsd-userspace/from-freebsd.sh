@@ -260,6 +260,7 @@ netinet/udp.h
 sys/socket.h
 sys/socketvar.h
 sys/sysctl.h
+sys/mman.h
 EOF
 
 

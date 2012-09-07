@@ -107,6 +107,35 @@ C_FILES += commands/sbin/dhclient/privsep.c
 C_FILES += commands/sbin/dhclient/tables.c
 C_FILES += commands/sbin/dhclient/tree.c
 
+# ifconfig command sources
+C_FILES += commands/sbin/ifconfig/af_atalk.c
+C_FILES += commands/sbin/ifconfig/af_inet.c
+C_FILES += commands/sbin/ifconfig/af_link.c
+C_FILES += commands/sbin/ifconfig/ifbridge.c
+C_FILES += commands/sbin/ifconfig/ifclone.c
+C_FILES += commands/sbin/ifconfig/ifgif.c
+C_FILES += commands/sbin/ifconfig/ifgroup.c
+C_FILES += commands/sbin/ifconfig/iflagg.c
+C_FILES += commands/sbin/ifconfig/ifmedia.c
+C_FILES += commands/sbin/ifconfig/ifvlan.c
+C_FILES += commands/sbin/ifconfig/af_inet6.c
+C_FILES += commands/sbin/ifconfig/af_nd6.c
+C_FILES += commands/sbin/ifconfig/ifcarp.c
+C_FILES += commands/sbin/ifconfig/ifconfig.c
+C_FILES += commands/sbin/ifconfig/ifgre.c
+C_FILES += commands/sbin/ifconfig/ifieee80211.c
+C_FILES += commands/sbin/ifconfig/ifmac.c
+C_FILES += commands/sbin/ifconfig/ifpfsync.c
+
+# The following two files were left out to avoid
+# porting issues.  regdomain uses an xml parser
+# that is not part of the standard release and
+# af_ipx uses thread0 which we are trying to avoid
+# pulling in.
+#
+# C_FILES += commands/sbin/ifconfig/regdomain.c
+# C_FILES += commands/sbin/ifconfig/af_ipx.c
+
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 

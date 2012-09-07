@@ -1012,6 +1012,8 @@ install_bsd: $(LIB)
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	cd contrib/altq; for i in `find freebsd -name '*.h'` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	cd contrib/pf; for i in `find freebsd -name '*.h'` ; do \
+	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
 	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
 	-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \

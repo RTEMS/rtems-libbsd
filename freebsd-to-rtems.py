@@ -495,6 +495,8 @@ class ModuleManager:
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tcd contrib/altq; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\tcd contrib/pf; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
+                        '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\tfor i in `find freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
 			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
 			'\t-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name \'*.h\'` ; do \\\n' \

@@ -41,7 +41,11 @@
  * or more threads. It is used to avoid calling locking functions
  * when they are not required.
  */
+#ifdef __rtems__
+#define __isthreaded 1
+#else
 extern int	__isthreaded;
+#endif
 
 /*
  * libc should use libc_dlopen internally, which respects a global

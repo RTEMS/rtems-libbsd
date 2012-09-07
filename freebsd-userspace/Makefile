@@ -7,6 +7,7 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 CFLAGS += -I include 
 CFLAGS += -I rtems/include 
 CFLAGS += -I lib/libc/include 
+CFLAGS += -I lib/netgraph
 CFLAGS += -I sys
 CFLAGS += -I local 
 # XXX hack to find rpc
@@ -78,6 +79,9 @@ C_FILES += lib/libc/resolv/res_send.c
 C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/string/strsep.c
 
+C_FILES += lib/libc/isc/ev_streams.c
+C_FILES += lib/libc/isc/ev_timers.c
+
 # RTEMS Specific Files
 # C_FILES += rtems/rtems-net-setup.c
 C_FILES += rtems/syslog.c
@@ -135,6 +139,29 @@ C_FILES += commands/sbin/ifconfig/ifpfsync.c
 #
 # C_FILES += commands/sbin/ifconfig/regdomain.c
 # C_FILES += commands/sbin/ifconfig/af_ipx.c
+
+ifeq (1,0)
+# netstat command sources
+# no need to support AppleTalk yet
+# C_FILES += commands/usr.bin/netstat/atalk.c
+C_FILES += commands/usr.bin/netstat/bpf.c
+C_FILES += commands/usr.bin/netstat/if.c
+C_FILES += commands/usr.bin/netstat/inet6.c
+C_FILES += commands/usr.bin/netstat/inet.c
+C_FILES += commands/usr.bin/netstat/ipsec.c
+# no need to support IPX yet
+# C_FILES += commands/usr.bin/netstat/ipx.c
+C_FILES += commands/usr.bin/netstat/main.c
+C_FILES += commands/usr.bin/netstat/mbuf.c
+C_FILES += commands/usr.bin/netstat/mroute6.c
+C_FILES += commands/usr.bin/netstat/mroute.c
+# Disable netgraph support - this is a long thread to pull
+# C_FILES += commands/usr.bin/netstat/netgraph.c
+C_FILES += commands/usr.bin/netstat/pfkey.c
+C_FILES += commands/usr.bin/netstat/route.c
+C_FILES += commands/usr.bin/netstat/sctp.c
+C_FILES += commands/usr.bin/netstat/unix.c
+endif
 
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)

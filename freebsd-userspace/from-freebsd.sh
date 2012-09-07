@@ -258,6 +258,7 @@ netinet/ip_icmp.h
 netinet/tcp.h
 netinet/udp.h
 sys/socket.h
+sys/socketvar.h
 sys/sysctl.h
 EOF
 

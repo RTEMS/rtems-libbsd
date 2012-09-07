@@ -53,8 +53,4 @@
 #define _getprogname			getprogname
 #define _getsockname			getsockname
 
-#define _nsdispatch			nsdispatch
-
-
-
 #endif /* _NAMESPACE_H_ */

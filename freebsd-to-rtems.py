@@ -1345,6 +1345,7 @@ devNic.addHeaderFiles(
 		'netatalk/ddp_pcb.h',
 		'netatalk/ddp_var.h',
 		'netatalk/phase2.h',
+		'sys/mman.h',
 	]
 )
 

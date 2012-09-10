@@ -43,11 +43,11 @@
 #include <freebsd/sys/sysctl.h>
 
 int sysctl(
-  int *name,
+	int *name,
 	u_int namelen,
 	void *oldp,
 	size_t *oldlenp,
-  void *newp,
+	void *newp,
 	size_t newlen
 )
 {

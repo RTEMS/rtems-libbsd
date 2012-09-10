@@ -342,7 +342,6 @@
 #define _sx_xlock _bsd__sx_xlock
 #define sx_xlocked _bsd_sx_xlocked
 #define _sx_xunlock _bsd__sx_xunlock
-#define sysctl _bsd_sysctl
 #define sysctl_add_oid _bsd_sysctl_add_oid
 #define sysctlbyname _bsd_sysctlbyname
 #define sysctl_ctx_entry_add _bsd_sysctl_ctx_entry_add

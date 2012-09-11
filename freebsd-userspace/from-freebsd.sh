@@ -207,6 +207,7 @@ lib/libc/net/if_indextoname.c
 lib/libc/net/if_nameindex.c
 lib/libc/net/linkaddr.c
 lib/libc/net/map_v4v6.c
+lib/libc/net/name6.c
 lib/libc/net/rcmd.c
 lib/libc/net/recv.c
 lib/libc/net/send.c

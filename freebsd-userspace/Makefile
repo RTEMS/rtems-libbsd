@@ -4,16 +4,17 @@ include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
-CFLAGS += -I include 
-CFLAGS += -I rtems/include 
-CFLAGS += -I lib/libc/include 
-CFLAGS += -I lib/netgraph
-CFLAGS += -I sys
-CFLAGS += -I local 
+CFLAGS += -Iinclude 
+CFLAGS += -Irtems/include 
+CFLAGS += -Ilib/libc/include 
+CFLAGS += -Ilib/libc/resolv 
+CFLAGS += -Ilib/netgraph
+CFLAGS += -Isys
+CFLAGS += -Ilocal 
 # XXX hack to find rpc
-CFLAGS += -I ../services/librpc/include 
+CFLAGS += -I../services/librpc/include 
 
-CFLAGS += -I $(INSTALL_BASE)/include
+CFLAGS += -I$(INSTALL_BASE)/include
 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
@@ -64,6 +65,7 @@ C_FILES += lib/libc/net/if_indextoname.c
 C_FILES += lib/libc/net/if_nameindex.c
 C_FILES += lib/libc/net/linkaddr.c
 C_FILES += lib/libc/net/map_v4v6.c
+C_FILES += lib/libc/net/name6.c
 C_FILES += lib/libc/net/rcmd.c
 C_FILES += lib/libc/net/recv.c
 C_FILES += lib/libc/net/send.c

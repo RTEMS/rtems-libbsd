@@ -29,6 +29,7 @@ extern "C" {
 
 #include <freebsd/machine/rtems-bsd-config.h>
 #include <freebsd/machine/rtems-bsd-select.h>
+#include <freebsd/machine/_align.h>
 
 rtems_status_code rtems_bsd_initialize(void);
 

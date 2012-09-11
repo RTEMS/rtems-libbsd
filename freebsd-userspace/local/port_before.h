@@ -2,38 +2,36 @@
 
 #include <freebsd/sys/_types.h>
 
-/*
- * Some of the code needs to know it is being built inside libc.
- */
-#define _LIBC 1
+/*********************************************************************
+ *  These are also defined in the FreeBSD version of this file.
+ *********************************************************************/
 
+#define _LIBC      1
 /*
- *  lib/libc/resolv/res_send.c needs this defined.
+ * This is defined in the FreeBSD source but we have no code yet which
+ * relies upon it.
  */
+/* #define DO_PTHREADS     1 */
 #define USE_KQUEUE 1
 
-/*
- *  lib/libc/resolv/res_send.c also needs this defined.
- */
 #define ISC_SOCKLEN_T   socklen_t
+#define ISC_FORMAT_PRINTF(fmt, args) \
+        __attribute__((__format__(__printf__, fmt, args)))
+#define DE_CONST(konst, var) \
+        do { \
+                union { const void *k; void *v; } _u; \
+                _u.k = konst; \
+                var = _u.v; \
+        } while (0)
 
-/*
-#ifndef _bsd_off_t
-#define _bsd_off_t off_t
-#endif
-*/
+#define UNUSED(x) (x) = (x)
 
+
+/*********************************************************************
+ *  FROM HERE DOWN, THESE ARE NOT IN THE FreeBSD VERSION!!!
+ *********************************************************************/
 #ifndef __ssize_t
 #define __ssize_t ssize_t
 #endif
 
-/*
- * lib/libc/net/getservent.c needs _ALIGNBYTES and there seems to be no
- * clean way to get it from the FreeBSD kernel code.
- *
- * Duplicated from freebsd/sys/param.h
- */
-#ifndef _ALIGNBYTES
-#define _ALIGNBYTES     (sizeof(long) - 1)
-#endif
-
+#include <freebsd/machine/_align.h>

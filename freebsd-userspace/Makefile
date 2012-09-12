@@ -60,6 +60,7 @@ C_FILES += lib/libc/nameser/ns_name.c
 C_FILES += lib/libc/nameser/ns_netint.c
 C_FILES += lib/libc/nameser/ns_parse.c
 C_FILES += lib/libc/nameser/ns_print.c
+C_FILES += lib/libc/nameser/ns_samedomain.c
 C_FILES += lib/libc/nameser/ns_ttl.c
 C_FILES += lib/libc/net/if_indextoname.c
 C_FILES += lib/libc/net/if_nameindex.c

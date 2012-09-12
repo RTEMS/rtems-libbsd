@@ -150,6 +150,7 @@ lib/libc/inet/inet_ntoa.c
 lib/libc/inet/inet_ntop.c
 lib/libc/inet/inet_pton.c
 lib/libc/inet/nsap_addr.c
+lib/libc/nameser/ns_samedomain.c
 lib/libc/net/netdb_private.h
 lib/libc/net/res_config.h
 EOF

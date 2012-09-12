@@ -40,6 +40,13 @@
 #define _pthread_main_np		pthread_main_np
 #define _pthread_once			pthread_once
 #define _pthread_setspecific		pthread_setspecific
+#define _pthread_mutex_trylock		pthread_mutex_trylock
+#define _pthread_mutex_unlock		pthread_mutex_unlock
+#define _pthread_rwlock_rdlock		pthread_rwlock_rdlock
+#define _pthread_rwlock_unlock		pthread_rwlock_unlock
+#define _pthread_rwlock_wrlock		pthread_rwlock_wrlock
+
+
 #define _read				read
 #define _recvfrom			recvfrom
 #define _sendto				sendto

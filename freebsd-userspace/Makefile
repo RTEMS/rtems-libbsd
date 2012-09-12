@@ -16,6 +16,9 @@ CFLAGS += -I../services/librpc/include
 
 CFLAGS += -I$(INSTALL_BASE)/include
 
+#Only Needed for db files
+CFLAGS += -D__DBINTERFACE_PRIVATE
+
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -86,6 +89,32 @@ C_FILES += lib/libc/isc/ev_streams.c
 C_FILES += lib/libc/isc/ev_timers.c
 
 C_FILES += lib/libc/stdio/fgetln.c
+
+C_FILES += lib/libc/db/db/db.c
+C_FILES += lib/libc/db/btree/bt_close.c   
+C_FILES += lib/libc/db/btree/bt_get.c       
+C_FILES += lib/libc/db/btree/bt_put.c     
+C_FILES += lib/libc/db/btree/bt_utils.c
+C_FILES += lib/libc/db/btree/bt_conv.c    
+C_FILES += lib/libc/db/btree/bt_open.c      
+C_FILES += lib/libc/db/btree/bt_search.c
+C_FILES += lib/libc/db/btree/bt_debug.c   
+C_FILES += lib/libc/db/btree/bt_overflow.c  
+C_FILES += lib/libc/db/btree/bt_seq.c
+C_FILES += lib/libc/db/btree/bt_delete.c  
+C_FILES += lib/libc/db/btree/bt_page.c      
+C_FILES += lib/libc/db/btree/bt_split.c
+C_FILES += lib/libc/db/recno/rec_close.c   
+C_FILES += lib/libc/db/recno/rec_get.c   
+C_FILES += lib/libc/db/recno/rec_put.c     
+C_FILES += lib/libc/db/recno/rec_seq.c
+C_FILES += lib/libc/db/recno/rec_delete.c  
+C_FILES += lib/libc/db/recno/rec_open.c  
+C_FILES += lib/libc/db/recno/rec_search.c  
+C_FILES += lib/libc/db/recno/rec_utils.c
+
+
+C_FILES += lib/libc/db/mpool/mpool.c
 
 # RTEMS Specific Files
 # C_FILES += rtems/rtems-net-setup.c

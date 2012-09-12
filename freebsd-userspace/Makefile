@@ -81,6 +81,7 @@ C_FILES += lib/libc/resolv/herror.c
 C_FILES += lib/libc/resolv/res_comp.c
 C_FILES += lib/libc/resolv/res_data.c
 C_FILES += lib/libc/resolv/res_debug.c
+C_FILES += lib/libc/resolv/res_findzonecut.c
 C_FILES += lib/libc/resolv/res_init.c
 C_FILES += lib/libc/resolv/res_mkquery.c
 C_FILES += lib/libc/resolv/res_mkupdate.c

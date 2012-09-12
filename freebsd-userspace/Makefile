@@ -13,6 +13,8 @@ CFLAGS += -Isys
 CFLAGS += -Ilocal 
 # XXX hack to find rpc
 CFLAGS += -I../services/librpc/include 
+# nsparser needs this
+CFLAGS += -Ilib/libc/net
 
 CFLAGS += -I$(INSTALL_BASE)/include
 
@@ -57,6 +59,8 @@ C_FILES += lib/libc/net/getproto.c
 C_FILES += lib/libc/net/getprotoent.c
 C_FILES += lib/libc/net/getprotoname.c
 C_FILES += lib/libc/net/getservent.c
+C_FILES += lib/libc/net/nsdispatch.c
+C_FILES += lib/libc/net/nslexer.c
 C_FILES += lib/libc/gen/err.c
 C_FILES += lib/libc/gen/gethostname.c
 C_FILES += lib/libc/nameser/ns_name.c
@@ -204,6 +208,11 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 LIB = libbsdc.a
 GEN_FILES = include/rpc/rpcb_prot.h
 GEN_FILES += commands/sbin/route/keywords.h
+GEN_FILES += lib/libc/net/nslexer.c
+GEN_FILES += lib/libc/net/nsparser.c
+
+EXTRA_CLEAN = lib/libc/net/nsparser.i
+
 all: $(LIB)
 
 $(LIB): $(GEN_FILES) $(C_O_FILES)
@@ -223,6 +232,17 @@ commands/sbin/route/keywords.h: commands/sbin/route/keywords
 	    > commands/sbin/route/keywords.h
 	rm -f _keywords.tmp
 
+YFLAGS+=-p_nsyy
+LFLAGS+=-P_nsyy
+
+lib/libc/net/nslexer.c: lib/libc/net/nslexer.l
+	${LEX} ${LFLAGS} -t $^ | \
+		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
+
+lib/libc/net/nsparser.c: lib/libc/net/nsparser.y
+	yacc -d ${YFLAGS} -o lib/libc/net/nsparser.i $^
+	cat lib/libc/net/nsparser.i | \
+		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include
 	cd include; for i in `find . -name '*.h'` ; do \
@@ -236,7 +256,7 @@ install: $(LIB)
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 
 clean:
-	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GEN_FILES)
+	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GEN_FILES) $(CLEAN_FILES)
 
 -include $(C_D_FILES)
 

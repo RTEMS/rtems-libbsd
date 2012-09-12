@@ -46,16 +46,23 @@
 #define _pthread_rwlock_unlock		pthread_rwlock_unlock
 #define _pthread_rwlock_wrlock		pthread_rwlock_wrlock
 
-
+#define _open				open
+#define _close				close
 #define _read				read
+#define _write				write
+#define _writev				writev
+#define _fcntl				fcntl
+#define _fsync				fsync
+#define _fstat				fstat
+#define _stat				stat
+
+#define _sigprocmask			sigprocmask
+
 #define _recvfrom			recvfrom
 #define _sendto				sendto
 #define _setsockopt			setsockopt
 #define _socket				socket
-
-#define _close				close
 #define _connect			connect
-#define _writev				writev
 #define _getpeername			getpeername
 #define _getprogname			getprogname
 #define _getsockname			getsockname

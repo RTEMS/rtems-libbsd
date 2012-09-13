@@ -35,3 +35,7 @@
 #endif
 
 #include <freebsd/machine/_align.h>
+
+#ifdef __rtems__
+#include <freebsd/machine/endian.h>
+#endif

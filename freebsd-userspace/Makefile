@@ -80,6 +80,7 @@ C_FILES += lib/libc/net/rcmd.c
 C_FILES += lib/libc/net/recv.c
 C_FILES += lib/libc/net/send.c
 C_FILES += lib/libc/resolv/herror.c
+C_FILES += lib/libc/resolv/h_errno.c
 C_FILES += lib/libc/resolv/res_comp.c
 C_FILES += lib/libc/resolv/res_data.c
 C_FILES += lib/libc/resolv/res_debug.c

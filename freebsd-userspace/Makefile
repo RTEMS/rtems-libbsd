@@ -60,7 +60,9 @@ C_FILES += lib/libc/net/getprotoent.c
 C_FILES += lib/libc/net/getprotoname.c
 C_FILES += lib/libc/net/getservent.c
 C_FILES += lib/libc/net/nsdispatch.c
+# The following two /net files are generated
 C_FILES += lib/libc/net/nslexer.c
+C_FILES += lib/libc/net/nsparser.c
 C_FILES += lib/libc/gen/err.c
 C_FILES += lib/libc/gen/gethostname.c
 C_FILES += lib/libc/nameser/ns_name.c
@@ -118,7 +120,6 @@ C_FILES += lib/libc/db/recno/rec_delete.c
 C_FILES += lib/libc/db/recno/rec_open.c  
 C_FILES += lib/libc/db/recno/rec_search.c  
 C_FILES += lib/libc/db/recno/rec_utils.c
-
 
 C_FILES += lib/libc/db/mpool/mpool.c
 
@@ -244,6 +245,8 @@ lib/libc/net/nsparser.c: lib/libc/net/nsparser.y
 	yacc -d ${YFLAGS} -o lib/libc/net/nsparser.i $^
 	cat lib/libc/net/nsparser.i | \
 		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
+	rm -f lib/libc/net/nsparser.i
+
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include
 	cd include; for i in `find . -name '*.h'` ; do \

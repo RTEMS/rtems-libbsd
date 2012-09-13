@@ -775,3 +775,12 @@ E1000 EM		_bsd_em_pcimodule_sys_init	Links
 
 Symbols (A)
          pci_get_vpd_ident
+ 
+== Problems to report to FreeBSD ==
+
+The MMAP_NOT_AVAILABLE define is inverted on its usage.  When it is
+defined the mmap method is called. Additionally, it is not used 
+thoroughly. It is not used in the unmap portion of the source.
+
+
+

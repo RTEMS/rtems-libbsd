@@ -77,9 +77,11 @@ __rec_close(DB *dbp)
 
 	/* Committed to closing. */
 	status = RET_SUCCESS;
+
+#ifndef __rtems__   /* XXX */
 	if (F_ISSET(t, R_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
 		status = RET_ERROR;
-
+#endif
 	if (!F_ISSET(t, R_INMEM)) {
 		if (F_ISSET(t, R_CLOSEFP)) {
 			if (fclose(t->bt_rfp))

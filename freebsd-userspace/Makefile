@@ -89,6 +89,7 @@ C_FILES += lib/libc/resolv/res_query.c
 C_FILES += lib/libc/resolv/res_send.c
 C_FILES += lib/libc/resolv/res_state.c
 C_FILES += lib/libc/resolv/res_update.c
+C_FILES += lib/libc/resolv/mtctxres.c
 C_FILES += lib/libc/string/strsep.c
 
 C_FILES += lib/libc/isc/ev_streams.c

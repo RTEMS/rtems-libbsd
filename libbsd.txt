@@ -781,6 +781,8 @@ Symbols (A)
 The MMAP_NOT_AVAILABLE define is inverted on its usage.  When it is
 defined the mmap method is called. Additionally, it is not used 
 thoroughly. It is not used in the unmap portion of the source.
+The file rec_open.c uses the define MMAP_NOT_AVAILABLE to wrap
+the call to mmap and file rec_close.c uses the munmap method.
 
 
 

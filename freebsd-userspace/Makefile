@@ -130,6 +130,7 @@ C_FILES += lib/libc/db/mpool/mpool.c
 C_FILES += rtems/syslog.c
 C_FILES += rtems/rtems-syslog-initialize.c
 C_FILES += rtems/rtems-getprogname.c
+C_FILES += rtems/rtems-uthread_main_np.c
 
 # ping command sources
 C_FILES += commands/sbin/ping/ping.c

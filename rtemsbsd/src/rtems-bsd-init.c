@@ -69,12 +69,14 @@ pcpu0_init()
         /* Initialize pcpu info of cpu-zero */
         pcpu_init((char *)&FIXME_pcpu[0], 0, sizeof(struct pcpu));
 }
+rtems_id  rtems_init_task_id;
 
 rtems_status_code
 rtems_bsd_initialize(void)
 {
 	rtems_status_code sc = RTEMS_SUCCESSFUL;
 
+        rtems_init_task_id = rtems_task_self();
 	hz = (int) rtems_clock_get_ticks_per_second();
 	tick = 1000000 / hz;
 	maxusers = 1;

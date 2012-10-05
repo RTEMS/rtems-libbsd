@@ -156,8 +156,13 @@ usage(void)
 	exit(1);
 }
 
+#ifdef __rtems__
+int
+main_ifconfig(int argc, char *argv[])
+#else
 int
 main(int argc, char *argv[])
+#endif
 {
 	int c, all, namesonly, downonly, uponly;
 	const struct afswtch *afp = NULL;

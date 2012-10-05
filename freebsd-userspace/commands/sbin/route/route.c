@@ -132,8 +132,12 @@ usage(cp)
 	/* NOTREACHED */
 }
 
+#ifdef __rtems__
 int
-route_main(argc, argv)
+main_route(argc, argv)
+#else
+main(argc, argv)
+#endif
 	int argc;
 	char **argv;
 {

@@ -3,6 +3,7 @@
  */
 
 #include <rtems.h>
+#include <pthread_np.h>
 
 __weak_reference(_pthread_main_np, pthread_main_np);
 
@@ -12,9 +13,6 @@ __weak_reference(_pthread_main_np, pthread_main_np);
 int
 _pthread_main_np()
 {
-  /* Created and set in rtems_bsd_initialize */
-  extern rtems_id rtems_init_task_id;  
-
   if ( rtems_init_task_id == rtems_task_self() )
     return 1;
   else 

@@ -6,7 +6,7 @@ PGM=${ARCH}/netshell01.exe
 MANAGERS=all
 
 # C source names
-C_FILES = init.c test_main.c shellconfig.c
+C_FILES = init.c test_main.c shellconfig.c ns_parser_vars.c
 C_O_FILES = $(C_FILES:%.c=${ARCH}/%.o)
 
 AM_CPPFLAGS += -I $(INSTALL_BASE)/include

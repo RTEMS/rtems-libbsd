@@ -75,6 +75,7 @@ C_FILES += lib/libc/nameser/ns_samedomain.c
 C_FILES += lib/libc/nameser/ns_ttl.c
 C_FILES += lib/libc/net/if_indextoname.c
 C_FILES += lib/libc/net/if_nameindex.c
+C_FILES += lib/libc/net/if_nametoindex.c
 C_FILES += lib/libc/net/linkaddr.c
 C_FILES += lib/libc/net/map_v4v6.c
 C_FILES += lib/libc/net/name6.c

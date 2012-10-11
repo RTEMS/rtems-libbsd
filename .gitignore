@@ -2,6 +2,13 @@
 o-optimize
 copied
 libbsd.html
+freebsd-userspace/commands/sbin/route/keywords.h
+freebsd-userspace/include/rpc/rpcb_prot.h
+freebsd-userspace/lib/libipsec/y.tab.h
+freebsd-userspace/lib/libc/net/y.tab.h
+freebsd-userspace/lib/libipsec/policy_parse.c
+freebsd-userspace/lib/libipsec/policy_token.c
+freebsd-userspace/lib/libipsec/y.tab.h
 rtemsbsd/freebsd/machine/rtems-bsd-config.h
 rtemsbsd/avr/avr/in_cksum.c
 rtemsbsd/avr/include/freebsd/machine/in_cksum.h
@@ -25,12 +32,10 @@ rtemsbsd/sparc/sparc/in_cksum.c
 rtemsbsd/sparc/include/freebsd/machine/in_cksum.h
 rtemsbsd/v850/v850/in_cksum.c
 rtemsbsd/v850/include/freebsd/machine/in_cksum.h
-freebsd-userspace/commands/sbin/route/keywords.h
-freebsd-userspace/include/rpc/rpcb_prot.h
 rtemsbsd/arm/include/freebsd/machine/legacyvar.h
 rtemsbsd/arm/include/freebsd/machine/pci_cfgreg.h
 rtemsbsd/avr/include/freebsd/machine/legacyvar.h
-rtemsbsd/avr/include/freebsd/machine/pci_cfgreg.h
+rtemsbsd/avr/include/freebsd/machine/pci_cfgreg.hs
 rtemsbsd/bfin/include/freebsd/machine/legacyvar.h
 rtemsbsd/bfin/include/freebsd/machine/pci_cfgreg.h
 rtemsbsd/h8300/include/freebsd/machine/legacyvar.h

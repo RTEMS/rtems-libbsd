@@ -236,11 +236,13 @@ GEN_FILES += commands/sbin/route/keywords.h
 GEN_FILES += lib/libc/net/nslexer.c
 GEN_FILES += lib/libc/net/nsparser.c
 EXTRA_CLEAN = lib/libc/net/nsparser.i
+EXTRA_CLEAN += lib/libc/net/y.tab.h
 
 # lib/libipsec
 GEN_FILES += lib/libipsec/policy_token.c
 GEN_FILES += lib/libipsec/policy_parse.c
-EXTRA_CLEAN += lib/libc/net/policy_parse.i
+EXTRA_CLEAN += lib/libipsec/policy_parse.i
+EXTRA_CLEAN += lib/libipsec/y.tab.h
 
 all: $(LIB)
 
@@ -263,25 +265,17 @@ commands/sbin/route/keywords.h: commands/sbin/route/keywords
 
 # lib/libc/net Yacc and lex files
 lib/libc/net/nslexer.c: lib/libc/net/nslexer.l
-	${LEX} -P _nsyy -t $^ | \
-		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
+	make -C lib/libc/net nslexer.c
 
 lib/libc/net/nsparser.c: lib/libc/net/nsparser.y
-	yacc -d -p_nsyy -o lib/libc/net/nsparser.i $^
-	cat lib/libc/net/nsparser.i | \
-		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
-	rm -f lib/libc/net/nsparser.i
+	make -C lib/libc/net nsparser.c
 
 # libipsec Yacc and lex files
 lib/libipsec/policy_token.c: lib/libipsec/policy_token.l
-	${LEX} -P __libipsecyy -t $^ | \
-		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
+	make -C lib/libipsec policy_token.c
 
 lib/libipsec/policy_parse.c: lib/libipsec/policy_parse.y
-	yacc -d -p __libipsecyy -o lib/libipsec/policy_parse.i $^
-	cat lib/libipsec/policy_parse.i | \
-		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
-	rm -f lib/libipsec/policy_parse.i
+	make -C lib/libipsec policy_parse.c
 
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include

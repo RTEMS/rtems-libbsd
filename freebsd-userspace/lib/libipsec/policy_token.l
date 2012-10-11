@@ -54,12 +54,11 @@
 #include <errno.h>
 
 #ifdef __rtems__
-#include "../../y.tab.h"
 /* XXX - Jennifer doesn't know where to get this from */
 YY_BUFFER_STATE yy_current_buffer; 
-#else
-#include "y.tab.h"
 #endif
+
+#include "y.tab.h"
 
 #define yylval __libipsecyylval	/* XXX */
 

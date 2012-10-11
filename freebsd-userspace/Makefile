@@ -21,6 +21,7 @@ CFLAGS += -I$(INSTALL_BASE)/include
 #Only Needed for db files
 CFLAGS += -D__DBINTERFACE_PRIVATE
 
+CFLAGS += -g 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -60,6 +61,7 @@ C_FILES += lib/libc/net/getprotoent.c
 C_FILES += lib/libc/net/getprotoname.c
 C_FILES += lib/libc/net/getservent.c
 C_FILES += lib/libc/net/nsdispatch.c
+C_FILES += lib/libc/net/gai_strerror.c
 # The following two /net files are generated
 C_FILES += lib/libc/net/nslexer.c
 C_FILES += lib/libc/net/nsparser.c
@@ -78,7 +80,7 @@ C_FILES += lib/libc/net/map_v4v6.c
 C_FILES += lib/libc/net/name6.c
 C_FILES += lib/libc/net/rcmd.c
 C_FILES += lib/libc/net/recv.c
-C_FILES += lib/libc/net/send.c
+# C_FILES += lib/libc/net/send.c
 C_FILES += lib/libc/resolv/herror.c
 C_FILES += lib/libc/resolv/h_errno.c
 C_FILES += lib/libc/resolv/res_comp.c
@@ -125,12 +127,27 @@ C_FILES += lib/libc/db/recno/rec_utils.c
 
 C_FILES += lib/libc/db/mpool/mpool.c
 
+
+# libipsec files
+C_FILES += lib/libipsec/pfkey_dump.c
+# Has a main and may or may not be needed
+# C_FILES += lib/libipsec/test-policy.c
+C_FILES += lib/libipsec/pfkey.c
+C_FILES += lib/libipsec/ipsec_strerror.c
+C_FILES += lib/libipsec/ipsec_get_policylen.c
+C_FILES += lib/libipsec/ipsec_dump_policy.c
+# The following two /net files are generated
+C_FILES += lib/libipsec/policy_token.c
+C_FILES += lib/libipsec/policy_parse.c
+
 # RTEMS Specific Files
 # C_FILES += rtems/rtems-net-setup.c
 C_FILES += rtems/syslog.c
 C_FILES += rtems/rtems-syslog-initialize.c
 C_FILES += rtems/rtems-getprogname.c
 C_FILES += rtems/rtems-uthread_main_np.c
+C_FILES += rtems/rtems-uthread_kevent.c
+C_FILES += rtems/rtems-uthread_kqueue.c
 
 # ping command sources
 C_FILES += commands/sbin/ping/ping.c
@@ -215,10 +232,15 @@ C_D_FILES = $(C_FILES:%.c=%.d)
 LIB = libbsdc.a
 GEN_FILES = include/rpc/rpcb_prot.h
 GEN_FILES += commands/sbin/route/keywords.h
+# lib/libc/net
 GEN_FILES += lib/libc/net/nslexer.c
 GEN_FILES += lib/libc/net/nsparser.c
-
 EXTRA_CLEAN = lib/libc/net/nsparser.i
+
+# lib/libipsec
+GEN_FILES += lib/libipsec/policy_token.c
+GEN_FILES += lib/libipsec/policy_parse.c
+EXTRA_CLEAN += lib/libc/net/policy_parse.i
 
 all: $(LIB)
 
@@ -239,18 +261,27 @@ commands/sbin/route/keywords.h: commands/sbin/route/keywords
 	    > commands/sbin/route/keywords.h
 	rm -f _keywords.tmp
 
-YFLAGS+=-p_nsyy
-LFLAGS+=-P_nsyy
-
+# lib/libc/net Yacc and lex files
 lib/libc/net/nslexer.c: lib/libc/net/nslexer.l
-	${LEX} ${LFLAGS} -t $^ | \
+	${LEX} -P _nsyy -t $^ | \
 		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
 
 lib/libc/net/nsparser.c: lib/libc/net/nsparser.y
-	yacc -d ${YFLAGS} -o lib/libc/net/nsparser.i $^
+	yacc -d -p_nsyy -o lib/libc/net/nsparser.i $^
 	cat lib/libc/net/nsparser.i | \
 		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
 	rm -f lib/libc/net/nsparser.i
+
+# libipsec Yacc and lex files
+lib/libipsec/policy_token.c: lib/libipsec/policy_token.l
+	${LEX} -P __libipsecyy -t $^ | \
+		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
+
+lib/libipsec/policy_parse.c: lib/libipsec/policy_parse.y
+	yacc -d -p __libipsecyy -o lib/libipsec/policy_parse.i $^
+	cat lib/libipsec/policy_parse.i | \
+		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
+	rm -f lib/libipsec/policy_parse.i
 
 install: $(LIB)
 	install -d $(INSTALL_BASE)/include

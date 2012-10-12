@@ -25,8 +25,8 @@
   extern rtems_shell_cmd_t rtems_shell_PING_Command;
   extern rtems_shell_cmd_t rtems_shell_PING6_Command;
 
-  // extern rtems_shell_cmd_t rtems_shell_IFCONFIG_Command;
-  // extern rtems_shell_cmd_t rtems_shell_ROUTE_Command;
+  extern rtems_shell_cmd_t rtems_shell_IFCONFIG_Command;
+  extern rtems_shell_cmd_t rtems_shell_ROUTE_Command;
   // extern rtems_shell_cmd_t rtems_shell_NETSTATS_Command;
 // #endif
 

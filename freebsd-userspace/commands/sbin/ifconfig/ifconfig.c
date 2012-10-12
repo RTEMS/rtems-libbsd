@@ -1,3 +1,7 @@
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif
 /*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -123,6 +127,16 @@ static struct afswtch *af_getbyname(const char *name);
 static struct afswtch *af_getbyfamily(int af);
 static void af_other_status(int);
 
+#ifdef __rtems__
+static struct ifconfig_option *opts = NULL;
+
+void
+opt_register(struct ifconfig_option *p)
+{
+	p->next = opts;
+	opts = p;
+}
+#else
 static struct option *opts = NULL;
 
 void
@@ -131,12 +145,17 @@ opt_register(struct option *p)
 	p->next = opts;
 	opts = p;
 }
+#endif
 
 static void
 usage(void)
 {
 	char options[1024];
+	#ifdef __rtems__
+	struct ifconfig_option *p;
+	#else
 	struct option *p;
+	#endif
 
 	/* XXX not right but close enough for now */
 	options[0] = '\0';
@@ -172,8 +191,15 @@ main(int argc, char *argv[])
 	const struct sockaddr_dl *sdl;
 	char options[1024], *cp;
 	const char *ifname;
+#ifdef __rtems__
+	struct ifconfig_option *p;
+#else
 	struct option *p;
+#endif
 	size_t iflen;
+#ifdef __rtems__
+	struct getopt_data getopt_reent;
+#endif
 
 	all = downonly = uponly = namesonly = noload = verbose = 0;
 
@@ -181,7 +207,12 @@ main(int argc, char *argv[])
 	strlcpy(options, "adklmnuv", sizeof(options));
 	for (p = opts; p != NULL; p = p->next)
 		strlcat(options, p->opt, sizeof(options));
+#ifdef __rtems__
+	memset(&getopt_reent, 0, sizeof(getopt_data));
+	while ((c = getopt_r(argc, argv, options, &getopt_reent)) != -1) {
+#else
 	while ((c = getopt(argc, argv, options)) != -1) {
+#endif
 		switch (c) {
 		case 'a':	/* scan all interfaces */
 			all++;
@@ -672,8 +703,8 @@ setifvnet(const char *jname, int dummy __unused, int s,
 	struct ifreq my_ifr;
 
 	memcpy(&my_ifr, &ifr, sizeof(my_ifr));
-	my_ifr.ifr_jid = jail_getid(jname);
 #ifndef __rtems__
+	my_ifr.ifr_jid = jail_getid(jname);
 	if (my_ifr.ifr_jid < 0)
 		errx(1, "%s", jail_errmsg);
 #endif
@@ -688,8 +719,8 @@ setifrvnet(const char *jname, int dummy __unused, int s,
 	struct ifreq my_ifr;
 
 	memcpy(&my_ifr, &ifr, sizeof(my_ifr));
-	my_ifr.ifr_jid = jail_getid(jname);
 #ifndef __rtems__
+	my_ifr.ifr_jid = jail_getid(jname);
 	if (my_ifr.ifr_jid < 0)
 		errx(1, "%s", jail_errmsg);
 #endif
@@ -1061,6 +1092,7 @@ printb(const char *s, unsigned v, const char *bits)
 void
 ifmaybeload(const char *name)
 {
+#ifndef __rtems__
 #define MOD_PREFIX_LEN		3	/* "if_" */
 	struct module_stat mstat;
 	int fileid, modid;
@@ -1107,6 +1139,7 @@ ifmaybeload(const char *name)
 
 	/* not present, we should try to load it */
 	kldload(ifkind);
+#endif
 }
 
 static struct cmd basic_cmds[] = {
@@ -1188,3 +1221,16 @@ ifconfig_ctor(void)
 		cmd_register(&basic_cmds[i]);
 #undef N
 }
+
+#ifdef __rtems__
+  #include <rtems/shell.h>
+
+  rtems_shell_cmd_t rtems_shell_IFCONFIG_Command = {
+    "ifconfig",                    /* name */
+    "ifconfig [args]",             /* usage */
+    "net",                         /* topic */
+    main_ifconfig,                 /* command */
+    NULL,                          /* alias */
+    NULL                           /* next */
+  };
+#endif

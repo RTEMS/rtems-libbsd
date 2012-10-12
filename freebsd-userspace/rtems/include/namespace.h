@@ -55,6 +55,7 @@
 #define _fsync				fsync
 #define _fstat				fstat
 #define _stat				stat
+#define _ioctl				ioctl
 
 #define _sigprocmask			sigprocmask
 

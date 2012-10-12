@@ -121,13 +121,25 @@ struct afswtch {
 };
 void	af_register(struct afswtch *);
 
+#ifdef __rtems__
+struct ifconfig_option {
+#else
 struct option {
+#endif
 	const char *opt;
 	const char *opt_usage;
 	void	(*cb)(const char *arg);
+	#ifdef __rtems__
+	struct ifconfig_option *next;
+	#else
 	struct option *next;
+	#endif
 };
+#ifdef __rtems__
+void	opt_register(struct ifconfig_option *);
+#else
 void	opt_register(struct option *);
+#endif
 
 extern	struct ifreq ifr;
 extern	char name[IFNAMSIZ];	/* name of interface */

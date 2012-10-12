@@ -183,7 +183,11 @@ clone_Copt_cb(const char *optarg __unused)
 	list_cloners();
 	exit(0);
 }
+#ifdef __rtems__
+static struct ifconfig_option clone_Copt = { .opt = "C", .opt_usage = "[-C]", .cb = clone_Copt_cb };
+#else
 static struct option clone_Copt = { .opt = "C", .opt_usage = "[-C]", .cb = clone_Copt_cb };
+#endif
 
 static __constructor void
 clone_ctor(void)

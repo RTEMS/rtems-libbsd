@@ -1,3 +1,7 @@
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif
 /*
  * Copyright (c) 1983, 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -142,11 +146,19 @@ main(argc, argv)
 	char **argv;
 {
 	int ch;
+#ifdef __rtems__
+	struct getopt_data getopt_reent;
+#endif
 
 	if (argc < 2)
 		usage((char *)NULL);
 
+#ifdef __rtems__
+	memset(&getopt_reent, 0, sizeof(getopt_data));
+	while ((ch = getopt_r(argc, argv, "nqdtv", &getopt_reent)) != -1)
+#else
 	while ((ch = getopt(argc, argv, "nqdtv")) != -1)
+#endif
 		switch(ch) {
 		case 'n':
 			nflag = 1;
@@ -1683,3 +1695,16 @@ atalk_ntoa(struct at_addr at)
 	(void) snprintf(buf, sizeof(buf), "%u.%u", ntohs(at.s_net), at.s_node);
 	return(buf);
 }
+
+#ifdef __rtems__
+  #include <rtems/shell.h>
+
+  rtems_shell_cmd_t rtems_shell_ROUTE_Command = {
+    "route",                       /* name */
+    "route [args]",                /* usage */
+    "net",                         /* topic */
+    main_route,                    /* command */
+    NULL,                          /* alias */
+    NULL                           /* next */
+  };
+#endif

@@ -128,6 +128,25 @@ static struct afswtch *af_getbyfamily(int af);
 static void af_other_status(int);
 
 #ifdef __rtems__
+static int main_ifconfig(int argc, char *argv[]);
+static int rtems_shell_main_ifconfig(int argc, char *argv[])
+{
+  rtems_shell_globals_t  ifconfig_globals;
+  rtems_shell_globals = &ifconfig_globals;
+  memset (rtems_shell_globals, 0, sizeof (ifconfig_globals));
+  descr = NULL;
+  descrlen = 64;
+  newaddr = 1;
+  supmedia = 0;
+  printkeys = 0;	
+  ifconfig_globals.exit_code = 1;
+  if (setjmp (ifconfig_globals.exit_jmp) == 0)
+    return main_ifconfig ( argc, argv);
+  return ifconfig_globals.exit_code;
+}
+#endif
+
+#ifdef __rtems__
 static struct ifconfig_option *opts = NULL;
 
 void
@@ -1229,7 +1248,7 @@ ifconfig_ctor(void)
     "ifconfig",                    /* name */
     "ifconfig [args]",             /* usage */
     "net",                         /* topic */
-    main_ifconfig,                 /* command */
+    rtems_shell_main_ifconfig,     /* command */
     NULL,                          /* alias */
     NULL                           /* next */
   };

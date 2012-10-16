@@ -80,6 +80,7 @@ static const char rcsid[] =
 #endif
 #endif
 
+
 struct keytab {
 	char	*kt_cp;
 	int	kt_i;
@@ -123,6 +124,24 @@ int	prefixlen();
 extern	char *iso_ntoa();
 
 void usage(const char *) __dead2;
+
+#ifdef __rtems__
+
+static int main_route(int argc, char **argv);
+
+static int rtems_shell_main_route(int argc, char *argv[])
+{
+  rtems_shell_globals_t  route_globals;
+  rtems_shell_globals = &route_globals;
+  memset (rtems_shell_globals, 0, sizeof (route_globals));
+  route_globals.exit_code = 1;
+  if (setjmp (route_globals.exit_jmp) == 0)
+    return main_route ( argc, argv);
+  return route_globals.exit_code;
+}
+
+#endif
+
 
 void
 usage(cp)
@@ -1703,7 +1722,7 @@ atalk_ntoa(struct at_addr at)
     "route",                       /* name */
     "route [args]",                /* usage */
     "net",                         /* topic */
-    main_route,                    /* command */
+    rtems_shell_main_route,        /* command */
     NULL,                          /* alias */
     NULL                           /* next */
   };

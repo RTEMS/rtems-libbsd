@@ -149,6 +149,8 @@ C_FILES += rtems/rtems-getprogname.c
 C_FILES += rtems/rtems-uthread_main_np.c
 C_FILES += rtems/rtems-uthread_kevent.c
 C_FILES += rtems/rtems-uthread_kqueue.c
+C_FILES += rtems/rtems-shell.c
+
 
 # ping command sources
 C_FILES += commands/sbin/ping/ping.c

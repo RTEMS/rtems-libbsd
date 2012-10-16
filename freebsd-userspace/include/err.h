@@ -52,6 +52,19 @@
 #include <sys/_types.h>
 #endif
 
+#ifdef __rtems__
+#include <setjmp.h>
+typedef struct  rtems_shell_globals_s {
+  jmp_buf exit_jmp;
+  int     exit_code;
+} rtems_shell_globals_t;
+extern rtems_shell_globals_t *rtems_shell_globals;
+void rtems_shell_exit (int code);
+
+#define exit rtems_shell_exit
+#endif
+
+
 __BEGIN_DECLS
 void	err(int, const char *, ...) __dead2 __printf0like(2, 3);
 void	verr(int, const char *, __va_list) __dead2 __printf0like(2, 0);

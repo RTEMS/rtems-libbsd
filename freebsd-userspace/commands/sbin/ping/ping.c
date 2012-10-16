@@ -228,6 +228,37 @@ static void stopit(int);
 static void tvsub(struct timeval *, struct timeval *);
 static void usage(void) __dead2;
 
+#ifdef __rtems__
+static int main_ping(int argc, char *const *argv);
+static int rtems_shell_main_ping(int argc, char *argv[])
+{
+  rtems_shell_globals_t  ping_globals;
+  rtems_shell_globals = &ping_globals;
+  memset (rtems_shell_globals, 0, sizeof (ping_globals));
+  BBELL = '\a';
+  BSPACE = '\b';
+  DOT = '.';
+  icmp_type = ICMP_ECHO;
+  icmp_type_rsp = ICMP_ECHOREPLY;
+  phdr_len = 0;
+  sweepmin = 0;
+  sweepincr = 1;
+  interval = 1000;
+  waittime = MAXWAIT;
+  nrcvtimeout = 0;
+  tmin = 999999999.0;
+  tmax = 0.0;
+  tsum = 0.0;
+  tsumsq = 0.0;
+  ping_globals.exit_code = 1;
+  if (setjmp (ping_globals.exit_jmp) == 0)
+    return main_ping (argc, argv);
+  return ping_globals.exit_code;
+}
+#endif
+
+
+
 int
 #ifdef __rtems__
 main_ping(argc, argv)
@@ -519,11 +550,13 @@ main(argc, argv)
 			break;
 		default:
 			usage();
+
 		}
 	}
 
 	if (argc - optind != 1)
 		usage();
+
 	target = argv[optind];
 
 	switch (options & (F_MASK|F_TIME)) {
@@ -937,6 +970,13 @@ main(argc, argv)
 		}
 	}
 	finish();
+#ifdef __rtems__
+	/* RTEMS shell programs return -- they do not exit */
+	if (nreceived)
+		return(0);
+	else
+		return(2);
+#endif
 	/* NOTREACHED */
 	exit(0);	/* Make the compiler happy */
 }
@@ -1434,11 +1474,12 @@ finish()
 		    "round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n",
 		    tmin, avg, tmax, sqrt(vari));
 	}
-
+#ifndef __rtems__
 	if (nreceived)
 		exit(0);
 	else
 		exit(2);
+#endif
 }
 
 #ifdef notdef
@@ -1737,7 +1778,6 @@ fill(bp, patp)
 static void
 usage()
 {
-
 	(void)fprintf(stderr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 "usage: ping [-AaDdfnoQqRrv] [-c count] [-G sweepmaxsize] [-g sweepminsize]",
 "            [-h sweepincrsize] [-i wait] [-l preload] [-M mask | time] [-m ttl]",
@@ -1757,7 +1797,7 @@ usage()
     "ping",                        /* name */
     "ping [args]",                 /* usage */
     "net",                         /* topic */
-    main_ping,                     /* command */
+    rtems_shell_main_ping,         /* command */
     NULL,                          /* alias */
     NULL                           /* next */
   };

@@ -9,6 +9,8 @@ CFLAGS += -Irtems/include
 CFLAGS += -Ilib/libc/include 
 CFLAGS += -Ilib/libc/resolv 
 CFLAGS += -Ilib/netgraph
+CFLAGS += -Ilib/libmemstat
+CFLAGS += -Ilib/libutil
 CFLAGS += -Isys
 CFLAGS += -Ilocal 
 # XXX hack to find rpc
@@ -18,6 +20,8 @@ CFLAGS += -Ilib/libc/net
 
 CFLAGS += -I$(INSTALL_BASE)/include
 
+#Only needed for route
+# CFLAGS += -D__BSD_VISIBLE=1
 #Only Needed for db files
 CFLAGS += -D__DBINTERFACE_PRIVATE
 
@@ -128,6 +132,15 @@ C_FILES += lib/libc/db/recno/rec_utils.c
 
 C_FILES += lib/libc/db/mpool/mpool.c
 
+# libmemstat
+C_FILES += lib/libmemstat/memstat_all.c
+C_FILES += lib/libmemstat/memstat.c
+C_FILES += lib/libmemstat/memstat_malloc.c
+C_FILES += lib/libmemstat/memstat_uma.c
+
+# libutil
+C_FILES += lib/libutil/expand_number.c
+C_FILES += lib/libutil/humanize_number.c
 
 # libipsec files
 C_FILES += lib/libipsec/pfkey_dump.c
@@ -206,7 +219,6 @@ C_FILES += commands/sbin/ifconfig/ifpfsync.c
 # C_FILES += commands/sbin/ifconfig/regdomain.c
 # C_FILES += commands/sbin/ifconfig/af_ipx.c
 
-ifeq (1,0)
 # netstat command sources
 # no need to support AppleTalk yet
 # C_FILES += commands/usr.bin/netstat/atalk.c
@@ -218,7 +230,8 @@ C_FILES += commands/usr.bin/netstat/ipsec.c
 # no need to support IPX yet
 # C_FILES += commands/usr.bin/netstat/ipx.c
 C_FILES += commands/usr.bin/netstat/main.c
-C_FILES += commands/usr.bin/netstat/mbuf.c
+# XXX does not compile yet
+# C_FILES += commands/usr.bin/netstat/mbuf.c
 C_FILES += commands/usr.bin/netstat/mroute6.c
 C_FILES += commands/usr.bin/netstat/mroute.c
 # Disable netgraph support - this is a long thread to pull
@@ -227,7 +240,6 @@ C_FILES += commands/usr.bin/netstat/pfkey.c
 C_FILES += commands/usr.bin/netstat/route.c
 C_FILES += commands/usr.bin/netstat/sctp.c
 C_FILES += commands/usr.bin/netstat/unix.c
-endif
 
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)

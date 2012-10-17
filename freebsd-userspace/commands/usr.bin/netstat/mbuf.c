@@ -56,12 +56,10 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 
 #include <err.h>
-#ifdef __rtems__
-/* XXX what to do? */
-#else
+#ifndef __rtems__
 #include <kvm.h>
-#include <memstat.h>
 #endif
+#include <memstat.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,6 +108,7 @@ mbpr(void *kvmd, u_long mbaddr)
 			goto out;
 		}
 	} else {
+#ifndef __rtems__
 		if (memstat_kvm_all(mtlp, kvmd) < 0) {
 			error = memstat_mtl_geterror(mtlp);
 			if (error == MEMSTAT_ERROR_KVM)
@@ -120,6 +119,7 @@ mbpr(void *kvmd, u_long mbaddr)
 				    memstat_strerror(error));
 			goto out;
 		}
+#endif
 	}
 
 	mtp = memstat_mtl_find(mtlp, ALLOCATOR_UMA, MBUF_MEM_NAME);

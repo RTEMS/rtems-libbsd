@@ -66,8 +66,28 @@ __FBSDID("$FreeBSD$");
 #ifdef INET6
 #include <netinet/ip6.h>
 #endif /* INET6 */
+#ifdef __rtems__
+#include <freebsd/netinet/in_pcb.h>
+#else
 #include <netinet/in_pcb.h>
+#endif
 #include <netinet/ip_icmp.h>
+#ifdef __rtems__
+#include <freebsd/netinet/icmp_var.h>
+#include <freebsd/netinet/igmp_var.h>
+#include <freebsd/netinet/ip_var.h>
+#include <freebsd/netinet/pim_var.h>
+#include <netinet/tcp.h>
+#include <freebsd/netinet/tcpip.h>
+#include <freebsd/netinet/tcp_seq.h>
+#define	TCPSTATES
+#include <freebsd/netinet/tcp_fsm.h>
+#include <freebsd/netinet/tcp_timer.h>
+#include <freebsd/netinet/tcp_var.h>
+#include <freebsd/netinet/tcp_debug.h>
+#include <netinet/udp.h>
+#include <freebsd/netinet/udp_var.h>
+#else
 #include <netinet/icmp_var.h>
 #include <netinet/igmp_var.h>
 #include <netinet/ip_var.h>
@@ -82,6 +102,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet/tcp_debug.h>
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
+#endif
 
 #include <arpa/inet.h>
 #include <err.h>

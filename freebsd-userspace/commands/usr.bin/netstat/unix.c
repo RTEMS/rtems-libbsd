@@ -59,7 +59,9 @@ __FBSDID("$FreeBSD$");
 #endif
 #include <sys/sysctl.h>
 #include <sys/un.h>
+#ifndef __rtems__
 #include <sys/unpcb.h>
+#endif
 
 #include <netinet/in.h>
 
@@ -70,7 +72,9 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#ifndef __rtems__
 #include <kvm.h>
+#endif
 #include "netstat.h"
 
 static	void unixdomainpr(struct xunpcb *, struct xsocket *);
@@ -106,6 +110,7 @@ pcblist_sysctl(int type, char **bufp)
 	return (0);
 }
 
+#ifndef __rtems__
 static int
 pcblist_kvm(u_long count_off, u_long gencnt_off, u_long head_off, char **bufp)
 {
@@ -292,3 +297,4 @@ unixdomainpr(struct xunpcb *xunp, struct xsocket *so)
 		    sa->sun_path);
 	putchar('\n');
 }
+#endif

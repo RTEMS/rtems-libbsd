@@ -1,3 +1,7 @@
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif
 /*-
  * Copyright (c) 1983, 1988, 1993
  *	Regents of the University of California.  All rights reserved.
@@ -65,7 +69,9 @@ __FBSDID("$FreeBSD$");
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
+#ifndef __rtems__
 #include <kvm.h>
+#endif
 #include <limits.h>
 #include <netdb.h>
 #include <nlist.h>
@@ -323,7 +329,9 @@ static void usage(void);
 static struct protox *name2protox(const char *);
 static struct protox *knownname(const char *);
 
+#ifndef __rtems__
 static kvm_t *kvmd;
+#endif
 static char *nlistf = NULL, *memf = NULL;
 
 int	Aflag;		/* show addresses of protocol control block */
@@ -356,14 +364,26 @@ int	af;		/* address family */
 int	live;		/* true if we are examining a live system */
 
 int
+#ifdef __rtems__
+main_netstat(int argc, char *argv[])
+#else
 main(int argc, char *argv[])
+#endif
 {
 	struct protox *tp = NULL;  /* for printing cblocks & stats */
 	int ch;
+#ifdef __rtems__
+	struct getopt_data getopt_reent;
+#endif
 
 	af = AF_UNSPEC;
 
+#ifdef __rtems__
+	memset(&getopt_reent, 0, sizeof(getopt_data));
+	while ((ch = getopt_r(argc, argv, "AaBbdf:ghI:iLlM:mN:np:q:rSstuWw:xz", &getopt_reent)) != -1)
+#else
 	while ((ch = getopt(argc, argv, "AaBbdf:ghI:iLlM:mN:np:q:rSstuWw:xz")) != -1)
+#endif
 		switch(ch) {
 		case 'A':
 			Aflag = 1;
@@ -508,6 +528,7 @@ main(int argc, char *argv[])
 	}
 #endif
 
+#ifndef __rtems__
 	/*
 	 * Discard setgid privileges if not the running kernel so that bad
 	 * guys can't print interesting stuff from kernel memory.
@@ -530,6 +551,7 @@ main(int argc, char *argv[])
 			mbpr(NULL, 0);
 		exit(0);
 	}
+#endif
 #if 0
 	/*
 	 * Keep file descriptors open to avoid overhead
@@ -544,7 +566,9 @@ main(int argc, char *argv[])
 	 * used for the queries, which is slower.
 	 */
 #endif
+#ifndef __rtems__
 	kread(0, NULL, 0);
+#endif
 	if (iflag && !sflag) {
 		intpr(interval, nl[N_IFNET].n_value, NULL);
 		exit(0);
@@ -679,6 +703,7 @@ printproto(tp, name)
 		(*pr)(off, name, af, tp->pr_protocol);
 }
 
+#ifndef __rtems__
 /*
  * Read kernel memory, return 0 on success.
  */
@@ -718,6 +743,7 @@ kread(u_long addr, void *buf, size_t size)
 	}
 	return (0);
 }
+#endif
 
 const char *
 plural(uintmax_t n)
@@ -803,3 +829,16 @@ usage(void)
 "       netstat -gs [-s] [-f address_family] [-M core] [-N system]");
 	exit(1);
 }
+
+#ifdef __rtems__
+  #include <rtems/shell.h>
+
+  rtems_shell_cmd_t rtems_shell_NETSTAT_Command = {
+    "netstat",                     /* name */
+    "netstat [args]",              /* usage */
+    "net",                         /* topic */
+    main_netstat,                  /* command */
+    NULL,                          /* alias */
+    NULL                           /* next */
+  };
+#endif

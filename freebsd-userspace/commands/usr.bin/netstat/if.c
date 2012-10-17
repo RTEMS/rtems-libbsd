@@ -80,11 +80,7 @@ __FBSDID("$FreeBSD$");
 
 #include <err.h>
 #include <errno.h>
-#ifdef __rtems__
-/* apparently libutil.h is not needed */
-#else
 #include <libutil.h>
-#endif
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -207,7 +203,9 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 #ifdef INET6
 		struct in6_ifaddr in6;
 #endif
+#ifndef __rtems__
 		struct ipx_ifaddr ipx;
+#endif
 	} ifaddr;
 	u_long ifaddraddr;
 	u_long ifaddrfound;
@@ -380,6 +378,7 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 				network_layer = 1;
 				break;
 #endif /*INET6*/
+#ifndef __rtems__
 			case AF_IPX:
 				{
 				struct sockaddr_ipx *sipx =
@@ -397,6 +396,7 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 
 				network_layer = 1;
 				break;
+#endif
 
 			case AF_APPLETALK:
 				printf("atalk:%-12.12s ",atalk_print(sa,0x10) );

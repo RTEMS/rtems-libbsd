@@ -72,9 +72,7 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-#ifndef __rtems__
 #include <kvm.h>
-#endif
 #include "netstat.h"
 
 static	void unixdomainpr(struct xunpcb *, struct xsocket *);
@@ -204,7 +202,9 @@ fail:
 #undef COPYOUT
 #undef KREAD
 }
+#endif
 
+#ifndef __rtems__
 void
 unixpr(u_long count_off, u_long gencnt_off, u_long dhead_off, u_long shead_off)
 {
@@ -253,7 +253,9 @@ unixpr(u_long count_off, u_long gencnt_off, u_long dhead_off, u_long shead_off)
 		free(buf);
 	}
 }
+#endif
 
+#ifndef __rtems__
 static void
 unixdomainpr(struct xunpcb *xunp, struct xsocket *so)
 {

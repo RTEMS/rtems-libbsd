@@ -398,10 +398,12 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 				break;
 #endif
 
+#ifndef __rtems__
 			case AF_APPLETALK:
 				printf("atalk:%-12.12s ",atalk_print(sa,0x10) );
 				printf("%-11.11s  ",atalk_print(sa,0x0b) );
 				break;
+#endif
 			case AF_LINK:
 				{
 				struct sockaddr_dl *sdl =
@@ -710,11 +712,15 @@ loop:
 	fflush(stdout);
 	if ((noutputs != 0) && (--noutputs == 0))
 		exit(0);
+#ifndef __rtems__
 	oldmask = sigblock(sigmask(SIGALRM));
 	while (!signalled)
 		sigpause(0);
 	signalled = NO;
 	sigsetmask(oldmask);
+#else
+	#warning "Add BSD Signals wrapper"
+#endif
 	line++;
 	first = 0;
 	if (line == 21)

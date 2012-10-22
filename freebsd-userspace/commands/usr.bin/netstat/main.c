@@ -69,9 +69,7 @@ __FBSDID("$FreeBSD$");
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
-#ifndef __rtems__
 #include <kvm.h>
-#endif
 #include <limits.h>
 #include <netdb.h>
 #include <nlist.h>
@@ -284,12 +282,14 @@ struct protox pfkeyprotox[] = {
 };
 #endif
 
+#ifndef __rtems__
 struct protox atalkprotox[] = {
 	{ N_DDPCB,	N_DDPSTAT,	1,	atalkprotopr,
 	  ddp_stats,	NULL,		"ddp",	0,	0 },
 	{ -1,		-1,		0,	NULL,
 	  NULL,		NULL,		NULL,	0,	0 }
 };
+#endif
 #ifdef NETGRAPH
 struct protox netgraphprotox[] = {
 	{ N_NGSOCKS,	-1,		1,	netgraphprotopr,
@@ -322,16 +322,18 @@ struct protox *protoprotox[] = {
 #ifdef IPX
 					 ipxprotox,
 #endif
+#ifndef __rtems__
 					 atalkprotox, NULL };
+#else
+				};
+#endif
 
 static void printproto(struct protox *, const char *);
 static void usage(void);
 static struct protox *name2protox(const char *);
 static struct protox *knownname(const char *);
 
-#ifndef __rtems__
 static kvm_t *kvmd;
-#endif
 static char *nlistf = NULL, *memf = NULL;
 
 int	Aflag;		/* show addresses of protocol control block */
@@ -528,7 +530,6 @@ main(int argc, char *argv[])
 	}
 #endif
 
-#ifndef __rtems__
 	/*
 	 * Discard setgid privileges if not the running kernel so that bad
 	 * guys can't print interesting stuff from kernel memory.
@@ -551,7 +552,6 @@ main(int argc, char *argv[])
 			mbpr(NULL, 0);
 		exit(0);
 	}
-#endif
 #if 0
 	/*
 	 * Keep file descriptors open to avoid overhead
@@ -566,9 +566,7 @@ main(int argc, char *argv[])
 	 * used for the queries, which is slower.
 	 */
 #endif
-#ifndef __rtems__
 	kread(0, NULL, 0);
-#endif
 	if (iflag && !sflag) {
 		intpr(interval, nl[N_IFNET].n_value, NULL);
 		exit(0);
@@ -625,17 +623,21 @@ main(int argc, char *argv[])
 			printproto(tp, tp->pr_name);
 	}
 #endif /* IPX */
+#ifndef __rtems__
 	if (af == AF_APPLETALK || af == AF_UNSPEC)
 		for (tp = atalkprotox; tp->pr_name; tp++)
 			printproto(tp, tp->pr_name);
+#endif
 #ifdef NETGRAPH
 	if (af == AF_NETGRAPH || af == AF_UNSPEC)
 		for (tp = netgraphprotox; tp->pr_name; tp++)
 			printproto(tp, tp->pr_name);
 #endif /* NETGRAPH */
+#ifndef __rtems__
 	if ((af == AF_UNIX || af == AF_UNSPEC) && !sflag)
 		unixpr(nl[N_UNP_COUNT].n_value, nl[N_UNP_GENCNT].n_value,
 		    nl[N_UNP_DHEAD].n_value, nl[N_UNP_SHEAD].n_value);
+#endif
 	exit(0);
 }
 
@@ -702,6 +704,10 @@ printproto(tp, name)
 	    af != AF_UNSPEC))
 		(*pr)(off, name, af, tp->pr_protocol);
 }
+
+#ifdef __rtems__
+#define _POSIX2_LINE_MAX 128
+#endif
 
 #ifndef __rtems__
 /*

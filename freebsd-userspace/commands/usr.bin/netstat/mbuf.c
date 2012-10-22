@@ -56,9 +56,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 
 #include <err.h>
-#ifndef __rtems__
 #include <kvm.h>
-#endif
 #include <memstat.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -119,6 +117,8 @@ mbpr(void *kvmd, u_long mbaddr)
 				    memstat_strerror(error));
 			goto out;
 		}
+#else
+		;
 #endif
 	}
 

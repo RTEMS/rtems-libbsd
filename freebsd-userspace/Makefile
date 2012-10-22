@@ -142,6 +142,7 @@ C_FILES += lib/libmemstat/memstat_uma.c
 # libutil
 C_FILES += lib/libutil/expand_number.c
 C_FILES += lib/libutil/humanize_number.c
+C_FILES += lib/libutil/trimdomain.c
 
 # libipsec files
 C_FILES += lib/libipsec/pfkey_dump.c

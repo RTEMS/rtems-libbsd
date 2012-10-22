@@ -35,6 +35,10 @@
  */
 
 #include <sys/cdefs.h>
+#ifdef __rtems__
+#define __BSD_VISIBLE 1
+#include <freebsd/sys/types.h>
+#endif
 
 extern int	Aflag;	/* show addresses of protocol control block */
 extern int	aflag;	/* show all sockets (including servers) */
@@ -63,7 +67,11 @@ extern int	unit;	/* unit number for above */
 extern int	af;	/* address family */
 extern int	live;	/* true if we are examining a live system */
 
+#ifdef __rtems__
+#define kread(_x, _y, _z) (0)
+#else
 int	kread(u_long addr, void *buf, size_t size);
+#endif
 const char *plural(uintmax_t);
 const char *plurales(uintmax_t);
 const char *pluralies(uintmax_t);
@@ -125,6 +133,12 @@ char	*ipx_pnet(struct sockaddr *);
 char	*ipx_phost(struct sockaddr *);
 char	*ns_phost(struct sockaddr *);
 void	upHex(char *);
+
+#ifdef __rtems__
+#define routename rtems_shell_netstats_routername
+#define netname rtems_shell_netstats_netname
+#define sotoxsocket rtems_shell_netstats_sotoxsocket
+#endif
 
 char	*routename(in_addr_t);
 char	*netname(in_addr_t, u_long);

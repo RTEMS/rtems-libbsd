@@ -712,14 +712,25 @@ loop:
 	fflush(stdout);
 	if ((noutputs != 0) && (--noutputs == 0))
 		exit(0);
-#ifndef __rtems__
+#ifdef __rtems__
+	{
+	sigset_t oldmask, desired, empty;
+
+	sigemptyset(&empty);
+	sigemptyset(&desired);
+	sigaddset(&desired, SIGALRM);
+	sigprocmask(SIG_BLOCK, &desired, &oldmask);
+	while (!signalled)
+		sigsuspend(&desired);
+	signalled = NO;
+	sigprocmask(SIG_SETMASK, &oldmask, NULL);
+	}
+#else
 	oldmask = sigblock(sigmask(SIGALRM));
 	while (!signalled)
 		sigpause(0);
 	signalled = NO;
 	sigsetmask(oldmask);
-#else
-	#warning "Add BSD Signals wrapper"
 #endif
 	line++;
 	first = 0;

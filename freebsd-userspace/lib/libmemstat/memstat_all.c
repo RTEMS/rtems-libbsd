@@ -46,6 +46,7 @@ memstat_sysctl_all(struct memory_type_list *mtlp, int flags)
 	return (0);
 }
 
+#ifndef __rtems__
 int
 memstat_kvm_all(struct memory_type_list *mtlp, void *kvm_handle)
 {
@@ -56,3 +57,4 @@ memstat_kvm_all(struct memory_type_list *mtlp, void *kvm_handle)
 		return (-1);
 	return (0);
 }
+#endif

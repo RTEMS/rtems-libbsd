@@ -11,6 +11,7 @@ CFLAGS += -Ilib/libc/resolv
 CFLAGS += -Ilib/netgraph
 CFLAGS += -Ilib/libmemstat
 CFLAGS += -Ilib/libutil
+CFLAGS += -Ilib/libkvm
 CFLAGS += -Isys
 CFLAGS += -Ilocal 
 # XXX hack to find rpc
@@ -164,7 +165,6 @@ C_FILES += rtems/rtems-uthread_kevent.c
 C_FILES += rtems/rtems-uthread_kqueue.c
 C_FILES += rtems/rtems-shell.c
 
-
 # ping command sources
 C_FILES += commands/sbin/ping/ping.c
 C_FILES += commands/sbin/ping6/ping6.c
@@ -231,13 +231,14 @@ C_FILES += commands/usr.bin/netstat/ipsec.c
 # C_FILES += commands/usr.bin/netstat/ipx.c
 C_FILES += commands/usr.bin/netstat/main.c
 # XXX does not compile yet
-# C_FILES += commands/usr.bin/netstat/mbuf.c
+C_FILES += commands/usr.bin/netstat/mbuf.c
 C_FILES += commands/usr.bin/netstat/mroute6.c
 C_FILES += commands/usr.bin/netstat/mroute.c
 # Disable netgraph support - this is a long thread to pull
 # C_FILES += commands/usr.bin/netstat/netgraph.c
 C_FILES += commands/usr.bin/netstat/pfkey.c
-C_FILES += commands/usr.bin/netstat/route.c
+# Actually just route.c in FreeBSD
+C_FILES += commands/usr.bin/netstat/netstat_route.c
 C_FILES += commands/usr.bin/netstat/sctp.c
 C_FILES += commands/usr.bin/netstat/unix.c
 

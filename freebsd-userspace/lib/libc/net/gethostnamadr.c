@@ -458,19 +458,23 @@ fakeaddr(const char *name, int af, struct hostent *hp, char *buf,
 	}
 	strncpy(hed->hostbuf, name, MAXDNAME);
 	hed->hostbuf[MAXDNAME] = '\0';
+#ifdef INET6
 	if (af == AF_INET && (statp->options & RES_USE_INET6) != 0U) {
 		_map_v4v6_address((char *)hed->host_addr,
 		    (char *)hed->host_addr);
 		af = AF_INET6;
 	}
+#endif
 	he.h_addrtype = af;
 	switch(af) {
 	case AF_INET:
 		he.h_length = NS_INADDRSZ;
 		break;
+#ifdef INET6
 	case AF_INET6:
 		he.h_length = NS_IN6ADDRSZ;
 		break;
+#endif
 	default:
 		errno = EAFNOSUPPORT;
 		RES_SET_H_ERRNO(statp, NETDB_INTERNAL);

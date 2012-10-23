@@ -82,7 +82,10 @@ C_FILES += lib/libc/net/if_indextoname.c
 C_FILES += lib/libc/net/if_nameindex.c
 C_FILES += lib/libc/net/if_nametoindex.c
 C_FILES += lib/libc/net/linkaddr.c
+ifneq ($(DISABLE_IPV6),yes)
 C_FILES += lib/libc/net/map_v4v6.c
+endif
+# This file is not IPV6 specific
 C_FILES += lib/libc/net/name6.c
 C_FILES += lib/libc/net/rcmd.c
 C_FILES += lib/libc/net/recv.c
@@ -102,6 +105,7 @@ C_FILES += lib/libc/resolv/res_state.c
 C_FILES += lib/libc/resolv/res_update.c
 C_FILES += lib/libc/resolv/mtctxres.c
 C_FILES += lib/libc/string/strsep.c
+C_FILES += lib/libc/stdlib/strtonum.c
 
 C_FILES += lib/libc/isc/ev_streams.c
 C_FILES += lib/libc/isc/ev_timers.c
@@ -168,7 +172,9 @@ C_FILES += rtems/rtems-shell.c
 
 # ping command sources
 C_FILES += commands/sbin/ping/ping.c
+ifneq ($(DISABLE_IPV6),yes)
 C_FILES += commands/sbin/ping6/ping6.c
+endif
 
 # route command sources
 C_FILES += commands/sbin/route/route.c
@@ -192,24 +198,26 @@ C_FILES += commands/sbin/dhclient/tables.c
 C_FILES += commands/sbin/dhclient/tree.c
 
 # ifconfig command sources
-C_FILES += commands/sbin/ifconfig/af_atalk.c
-C_FILES += commands/sbin/ifconfig/af_inet.c
-C_FILES += commands/sbin/ifconfig/af_link.c
-C_FILES += commands/sbin/ifconfig/ifbridge.c
-C_FILES += commands/sbin/ifconfig/ifclone.c
-C_FILES += commands/sbin/ifconfig/ifgif.c
-C_FILES += commands/sbin/ifconfig/ifgroup.c
-C_FILES += commands/sbin/ifconfig/iflagg.c
-C_FILES += commands/sbin/ifconfig/ifmedia.c
-C_FILES += commands/sbin/ifconfig/ifvlan.c
-C_FILES += commands/sbin/ifconfig/af_inet6.c
-C_FILES += commands/sbin/ifconfig/af_nd6.c
-C_FILES += commands/sbin/ifconfig/ifcarp.c
-C_FILES += commands/sbin/ifconfig/ifconfig.c
-C_FILES += commands/sbin/ifconfig/ifgre.c
-C_FILES += commands/sbin/ifconfig/ifieee80211.c
-C_FILES += commands/sbin/ifconfig/ifmac.c
-C_FILES += commands/sbin/ifconfig/ifpfsync.c
+# UNUSED IFCONFIG_C_FILES += commands/sbin/ifconfig/af_atalk.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/af_inet.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/af_link.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifbridge.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifclone.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifgif.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifgroup.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/iflagg.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifmedia.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifvlan.c
+ifneq ($(DISABLE_IPV6),yes)
+IFCONFIG_C_FILES += commands/sbin/ifconfig/af_inet6.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/af_nd6.c
+endif
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifcarp.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifconfig.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifgre.c
+# UNUSED IFCONFIG_C_FILES += commands/sbin/ifconfig/ifieee80211.c
+# UNUSED IFCONFIG_C_FILES += commands/sbin/ifconfig/ifmac.c
+IFCONFIG_C_FILES += commands/sbin/ifconfig/ifpfsync.c
 
 # The following two files were left out to avoid
 # porting issues.  regdomain uses an xml parser
@@ -222,31 +230,46 @@ C_FILES += commands/sbin/ifconfig/ifpfsync.c
 
 # netstat command sources
 # no need to support AppleTalk yet
-# C_FILES += commands/usr.bin/netstat/atalk.c
-C_FILES += commands/usr.bin/netstat/bpf.c
-C_FILES += commands/usr.bin/netstat/if.c
-C_FILES += commands/usr.bin/netstat/inet6.c
-C_FILES += commands/usr.bin/netstat/inet.c
-C_FILES += commands/usr.bin/netstat/ipsec.c
+# NETSTAT_C_FILES += commands/usr.bin/netstat/atalk.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/bpf.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/if.c
+ifneq ($(DISABLE_IPV6),yes)
+NETSTAT_C_FILES += commands/usr.bin/netstat/inet6.c
+endif
+NETSTAT_C_FILES += commands/usr.bin/netstat/inet.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/ipsec.c
 # no need to support IPX yet
-# C_FILES += commands/usr.bin/netstat/ipx.c
-C_FILES += commands/usr.bin/netstat/main.c
+# NETSTAT_C_FILES += commands/usr.bin/netstat/ipx.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/main.c
 # XXX does not compile yet
-C_FILES += commands/usr.bin/netstat/mbuf.c
-C_FILES += commands/usr.bin/netstat/mroute6.c
-C_FILES += commands/usr.bin/netstat/mroute.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/mbuf.c
+ifneq ($(DISABLE_IPV6),yes)
+NETSTAT_C_FILES += commands/usr.bin/netstat/mroute6.c
+endif
+NETSTAT_C_FILES += commands/usr.bin/netstat/mroute.c
 # Disable netgraph support - this is a long thread to pull
-# C_FILES += commands/usr.bin/netstat/netgraph.c
-C_FILES += commands/usr.bin/netstat/pfkey.c
+# NETSTAT_C_FILES += commands/usr.bin/netstat/netgraph.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/pfkey.c
 # Actually just route.c in FreeBSD
-C_FILES += commands/usr.bin/netstat/netstat_route.c
-C_FILES += commands/usr.bin/netstat/sctp.c
-C_FILES += commands/usr.bin/netstat/unix.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/netstat_route.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/sctp.c
+NETSTAT_C_FILES += commands/usr.bin/netstat/unix.c
 
 C_O_FILES = $(C_FILES:%.c=%.o)
 C_D_FILES = $(C_FILES:%.c=%.d)
 
+IFCONFIG_C_O_FILES = $(IFCONFIG_C_FILES:%.c=%.o)
+IFCONFIG_C_D_FILES = $(IFCONFIG_C_FILES:%.c=%.d)
+
+NETSTAT_C_O_FILES = $(NETSTAT_C_FILES:%.c=%.o)
+NETSTAT_C_D_FILES = $(NETSTAT_C_FILES:%.c=%.d)
+
 LIB = libbsdc.a
+IFCONFIG = commands/sbin/ifconfig/ifconfig.rel
+NETSTAT = commands/usr.bin/netstat/netstat.rel
+
+COMMAND_RELS = $(NETSTAT) $(IFCONFIG)
+
 GEN_FILES = include/rpc/rpcb_prot.h
 GEN_FILES += commands/sbin/route/keywords.h
 # lib/libc/net
@@ -261,10 +284,16 @@ GEN_FILES += lib/libipsec/policy_parse.c
 EXTRA_CLEAN += lib/libipsec/policy_parse.i
 EXTRA_CLEAN += lib/libipsec/y.tab.h
 
-all: $(LIB)
+all: $(LIB) 
 
-$(LIB): $(GEN_FILES) $(C_O_FILES)
+$(LIB): $(GEN_FILES) $(C_O_FILES) $(COMMAND_RELS)
 	$(AR) rcu $@ $^
+
+$(IFCONFIG): $(IFCONFIG_C_O_FILES)
+	$(LD) -r -o $@ $^
+
+$(NETSTAT): $(NETSTAT_C_O_FILES)
+	$(LD) -r -o $@ $^
 
 include/rpc/rpcb_prot.h: include/rpc/rpcb_prot.x
 	rm -f include/rpc/rpcb_prot.h
@@ -307,7 +336,9 @@ install: $(LIB)
 	install -c -m 644 $(LIB) $(INSTALL_BASE)
 
 clean:
-	rm -f $(LIB) $(C_O_FILES) $(C_D_FILES) $(GEN_FILES) $(CLEAN_FILES)
+	rm -f $(LIB) $(GEN_FILES) $(CLEAN_FILES)
+	rm -f $(C_O_FILES) $(IFCONFIG_C_O_FILES) $(NETSTAT_C_O_FILES)
+	rm -f $(C_D_FILES) $(IFCONFIG_C_D_FILES) $(NETSTAT_C_D_FILES)
 
 -include $(C_D_FILES)
 

@@ -195,7 +195,9 @@ routepr(u_long rtree)
 	 * directly we should do rt_rmx.rmx_expire --> expire_time conversion.
 	 */
 #ifdef __rtems__
-#warning "fix clock_gettime(CLOCK_UPTIME)"
+	{
+	  rtems_clock_get_uptime(&uptime);
+	}
 #else
 	if (clock_gettime(CLOCK_UPTIME, &uptime) < 0)
 		err(EX_OSERR, "clock_gettime() failed");

@@ -68,6 +68,9 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#ifdef __rtems__
+#include "port_before.h"
+#endif
 #ifdef INET6
 #include <sys/param.h>
 #include <sys/queue.h>
@@ -87,7 +90,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/time.h>
 
 #include <net/if.h>
+#ifdef __rtems__
+#include <freebsd/net/if_var.h>
+#else
 #include <net/if_var.h>
+#endif
 #include <net/route.h>
 
 #include <netinet/in.h>
@@ -98,7 +105,11 @@ __FBSDID("$FreeBSD$");
 #include <stdlib.h>
 
 #define	KERNEL 1
+#ifdef __rtems__
+#include <freebsd/netinet6/ip6_mroute.h>
+#else
 #include <netinet6/ip6_mroute.h>
+#endif
 #undef KERNEL
 
 #include "netstat.h"

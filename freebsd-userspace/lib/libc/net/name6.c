@@ -99,10 +99,17 @@ __FBSDID("$FreeBSD$");
 #include <netinet/in.h>
 #ifdef INET6
 #include <net/if.h>
+#ifdef __rtems__
+#include <freebsd/net/if_var.h>
+#include <sys/sysctl.h>
+#include <sys/ioctl.h>
+#include <freebsd/netinet6/in6_var.h>	/* XXX */
+#else
 #include <net/if_var.h>
 #include <sys/sysctl.h>
 #include <sys/ioctl.h>
 #include <netinet6/in6_var.h>	/* XXX */
+#endif
 #endif
 
 #include <arpa/inet.h>

@@ -177,6 +177,7 @@ struct clock_gettime_args {
 	struct	timespec *tp;
 };
 #endif
+#ifndef __rtems__
 /* ARGSUSED */
 int
 clock_gettime(struct thread *td, struct clock_gettime_args *uap)
@@ -190,7 +191,9 @@ clock_gettime(struct thread *td, struct clock_gettime_args *uap)
 
 	return (error);
 }
+#endif
 
+#ifndef __rtems__
 int
 kern_clock_gettime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 {
@@ -253,6 +256,7 @@ kern_clock_gettime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 	}
 	return (0);
 }
+#endif
 
 #ifndef _SYS_SYSPROTO_HH_
 struct clock_settime_args {
@@ -260,6 +264,7 @@ struct clock_settime_args {
 	const struct	timespec *tp;
 };
 #endif
+#ifndef __rtems__
 /* ARGSUSED */
 int
 clock_settime(struct thread *td, struct clock_settime_args *uap)
@@ -289,6 +294,7 @@ kern_clock_settime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 	error = settime(td, &atv);
 	return (error);
 }
+#endif
 
 #ifndef _SYS_SYSPROTO_HH_
 struct clock_getres_args {
@@ -296,6 +302,7 @@ struct clock_getres_args {
 	struct	timespec *tp;
 };
 #endif
+#ifndef __rtems__
 int
 clock_getres(struct thread *td, struct clock_getres_args *uap)
 {
@@ -353,6 +360,7 @@ kern_clock_getres(struct thread *td, clockid_t clock_id, struct timespec *ts)
 	}
 	return (0);
 }
+#endif
 
 static int nanowait;
 

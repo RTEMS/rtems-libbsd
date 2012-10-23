@@ -218,6 +218,10 @@ main(int argc, char *argv[])
 	size_t iflen;
 #ifdef __rtems__
 	struct getopt_data getopt_reent;
+#define optind getopt_reent.optind
+#define optarg getopt_reent.optarg
+#define opterr getopt_reent.opterr
+#define optopt getopt_reent.optopt
 #endif
 
 	all = downonly = uponly = namesonly = noload = verbose = 0;

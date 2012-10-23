@@ -1,4 +1,5 @@
 *.d
+*.rel
 o-optimize
 copied
 libbsd.html

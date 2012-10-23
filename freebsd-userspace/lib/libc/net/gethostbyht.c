@@ -115,6 +115,7 @@ gethostent_p(struct hostent *he, struct hostent_data *hed, int mapped,
 	if (!(cp = strpbrk(p, " \t")))
 		goto again;
 	*cp++ = '\0';
+#ifdef INET6
 	if (inet_pton(AF_INET6, p, hed->host_addr) > 0) {
 		af = AF_INET6;
 		len = IN6ADDRSZ;
@@ -131,6 +132,12 @@ gethostent_p(struct hostent *he, struct hostent_data *hed, int mapped,
 	} else {
 		goto again;
 	}
+#else
+	if (inet_pton(AF_INET, p, hed->host_addr) > 0) {
+		af = AF_INET;
+		len = INADDRSZ;
+	}
+#endif
 	hed->h_addr_ptrs[0] = (char *)hed->host_addr;
 	hed->h_addr_ptrs[1] = NULL;
 	he->h_addr_list = hed->h_addr_ptrs;
@@ -193,8 +200,10 @@ gethostent_r(struct hostent *hptr, char *buffer, size_t buflen,
 		*h_errnop = statp->res_h_errno;
 		return (-1);
 	}
+#ifdef INET6
 	if (gethostent_p(&he, hed, statp->options & RES_USE_INET6, statp) != 0)
 		return (-1);
+#endif
 	if (__copy_hostent(&he, hptr, buffer, buflen) != 0) {
 		RES_SET_H_ERRNO(statp, NETDB_INTERNAL);
 		*h_errnop = statp->res_h_errno;
@@ -254,12 +263,14 @@ _ht_gethostbyname(void *rval, void *cb_data, va_list ap)
 	while ((error = gethostent_p(&he, hed, 0, statp)) == 0) {
 		if (he.h_addrtype != af)
 			continue;
+#ifdef INET6
 		if (he.h_addrtype == AF_INET &&
 		    statp->options & RES_USE_INET6) {
 			_map_v4v6_address(he.h_addr, he.h_addr);
 			he.h_length = IN6ADDRSZ;
 			he.h_addrtype = AF_INET6;
 		}
+#endif
 		if (strcasecmp(he.h_name, name) == 0)
 			break;
 		for (cp = he.h_aliases; *cp != 0; cp++)
@@ -317,6 +328,7 @@ _ht_gethostbyaddr(void *rval, void *cb_data, va_list ap)
 
 	_sethosthtent(0, hed);
 	while ((error = gethostent_p(&he, hed, 0, statp)) == 0)
+#ifdef INET6
 		if (he.h_addrtype == af && !bcmp(he.h_addr, addr, len)) {
 			if (he.h_addrtype == AF_INET &&
 			    statp->options & RES_USE_INET6) {
@@ -326,6 +338,7 @@ _ht_gethostbyaddr(void *rval, void *cb_data, va_list ap)
 			}
 			break;
 		}
+#endif
 	_endhosthtent(hed);
 
 	if (error != 0)

@@ -167,6 +167,10 @@ main(argc, argv)
 	int ch;
 #ifdef __rtems__
 	struct getopt_data getopt_reent;
+#define optind getopt_reent.optind
+#define optarg getopt_reent.optarg
+#define opterr getopt_reent.opterr
+#define optopt getopt_reent.optopt
 #endif
 
 	if (argc < 2)

@@ -295,6 +295,10 @@ main(argc, argv)
 	unsigned char loop, mttl;
 #ifdef __rtems__
 	struct getopt_data getopt_reent;
+#define optarg getopt_reent.optarg
+#define optind getopt_reent.optind
+#define opterr getopt.reent.opterr
+#define optopt getopt.reent.optopt
 #endif
 
 	payload = source = NULL;

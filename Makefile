@@ -12,6 +12,7 @@ CFLAGS += -I freebsd/$(RTEMS_CPU)/include
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 
 CFLAGS += -I copied/rtemsbsd/$(RTEMS_CPU)/include 
+CFLAGS += -g 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d

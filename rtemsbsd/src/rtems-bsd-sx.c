@@ -196,7 +196,8 @@ _sx_xlock(struct sx *sx, int opts, const char *file, int line)
 
 	#warning "SX_INTERRUPTIBLE NOT SUPPORTED YET"
 	/* BSD_ASSERT((opts & SX_INTERRUPTIBLE) == 0); */
-
+        BSD_ASSERT(!rtems_interrupt_is_in_progress());
+        
 	sc = rtems_semaphore_obtain( sx->lock_object.lo_id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 	BSD_ASSERT_SC(sc);
 

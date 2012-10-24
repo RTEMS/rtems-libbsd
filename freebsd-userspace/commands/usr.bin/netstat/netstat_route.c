@@ -230,6 +230,12 @@ routepr(u_long rtree)
 				continue;
 			if (rnh == NULL)
 				continue;
+#ifdef __rtems__
+			printf( "rnh %p %p\n", (void *)rnhp, (void *)rnh );
+			/* We get a 1 here on some fields. Why? XXX */
+			if (rnh == 1)
+				continue;
+#endif
 			/* Read the rnh data. */
 			if (kget(rnh, head) != 0)
 				continue;

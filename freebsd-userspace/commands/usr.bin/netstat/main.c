@@ -325,7 +325,7 @@ struct protox *protoprotox[] = {
 #ifndef __rtems__
 					 atalkprotox, NULL };
 #else
-				};
+				NULL };
 #endif
 
 static void printproto(struct protox *, const char *);
@@ -1087,7 +1087,6 @@ printproto(tp, name)
 #define _POSIX2_LINE_MAX 128
 #endif
 
-#ifndef __rtems__
 /*
  * Read kernel memory, return 0 on success.
  */
@@ -1095,6 +1094,9 @@ int
 kread(u_long addr, void *buf, size_t size)
 {
 	char errbuf[_POSIX2_LINE_MAX];
+#ifdef __rtems__
+	printf( "kread( %p to %p for %d)\n", (void *)addr, buf, size );
+#endif
 
 	if (kvmd == NULL) {
 		kvmd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);
@@ -1127,7 +1129,6 @@ kread(u_long addr, void *buf, size_t size)
 	}
 	return (0);
 }
-#endif
 
 const char *
 plural(uintmax_t n)

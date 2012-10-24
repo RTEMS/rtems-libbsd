@@ -67,11 +67,7 @@ extern int	unit;	/* unit number for above */
 extern int	af;	/* address family */
 extern int	live;	/* true if we are examining a live system */
 
-#ifdef __rtems__
-#define kread(_x, _y, _z) (0)
-#else
 int	kread(u_long addr, void *buf, size_t size);
-#endif
 const char *plural(uintmax_t);
 const char *plurales(uintmax_t);
 const char *pluralies(uintmax_t);

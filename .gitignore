@@ -66,3 +66,4 @@ rtemsbsd/v850/include/freebsd/machine/pci_cfgreg.h
 freebsd-userspace/lib/libc/net/nslexer.c
 freebsd-userspace/lib/libc/net/nsparser.c
 freebsd-userspace/lib/libc/net/nsparser.i
+freebsd-userspace/rtems/rtems-kvm-symbols.c

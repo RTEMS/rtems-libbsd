@@ -163,6 +163,8 @@ C_FILES += lib/libipsec/policy_parse.c
 # RTEMS Specific Files
 # C_FILES += rtems/rtems-net-setup.c
 C_FILES += rtems/syslog.c
+C_FILES += rtems/rtems-kvm.c
+C_FILES += rtems/rtems-kvm-symbols.c
 C_FILES += rtems/rtems-syslog-initialize.c
 C_FILES += rtems/rtems-getprogname.c
 C_FILES += rtems/rtems-uthread_main_np.c
@@ -270,7 +272,8 @@ NETSTAT = commands/usr.bin/netstat/netstat.rel
 
 COMMAND_RELS = $(NETSTAT) $(IFCONFIG)
 
-GEN_FILES = include/rpc/rpcb_prot.h
+GEN_FILES = rtems/rtems-kvm-symbols.c
+GEN_FILES += include/rpc/rpcb_prot.h
 GEN_FILES += commands/sbin/route/keywords.h
 # lib/libc/net
 GEN_FILES += lib/libc/net/nslexer.c
@@ -294,6 +297,9 @@ $(IFCONFIG): $(IFCONFIG_C_O_FILES)
 
 $(NETSTAT): $(NETSTAT_C_O_FILES)
 	$(LD) -r -o $@ $^
+
+rtems/rtems-kvm-symbols.c: rtems/generate_kvm_symbols
+	./rtems/generate_kvm_symbols >rtems/rtems-kvm-symbols.c
 
 include/rpc/rpcb_prot.h: include/rpc/rpcb_prot.x
 	rm -f include/rpc/rpcb_prot.h

@@ -1095,7 +1095,7 @@ kread(u_long addr, void *buf, size_t size)
 {
 	char errbuf[_POSIX2_LINE_MAX];
 #ifdef __rtems__
-	printf( "kread( %p to %p for %d)\n", (void *)addr, buf, size );
+	/* printf( "kread( %p to %p for %d)\n", (void *)addr, buf, size ); */
 #endif
 
 	if (kvmd == NULL) {

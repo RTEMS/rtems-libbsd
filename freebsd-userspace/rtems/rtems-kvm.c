@@ -54,7 +54,7 @@ again:
 				p->n_value = kvm->value;
 				if (kvm->value) {
 					++nvalid;
-			printf("kvm: %s = %p\n", p->n_name, (void*)kvm->value);
+		// printf("kvm: %s = %p\n", p->n_name, (void*)kvm->value);
 				}
 				break;
 			}

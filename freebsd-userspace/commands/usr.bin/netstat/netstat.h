@@ -38,6 +38,8 @@
 #ifdef __rtems__
 #define __BSD_VISIBLE 1
 #include <freebsd/sys/types.h>
+
+#define rt_tables netstat_rt_tables
 #endif
 
 extern int	Aflag;	/* show addresses of protocol control block */

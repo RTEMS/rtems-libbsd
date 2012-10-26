@@ -1478,12 +1478,10 @@ finish()
 		    "round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n",
 		    tmin, avg, tmax, sqrt(vari));
 	}
-#ifndef __rtems__
 	if (nreceived)
 		exit(0);
 	else
 		exit(2);
-#endif
 }
 
 #ifdef notdef

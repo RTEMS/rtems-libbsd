@@ -246,7 +246,7 @@ rtems_bsd_csio_callback(struct cam_periph *periph, union ccb *ccb)
 	}
 
 	if (done) {
-		ccb->csio.req->req_done(ccb->csio.req->done_arg, sc);
+		rtems_blkdev_request_done(ccb->csio.req, sc);
 		rtems_bsd_sim_set_state_and_notify(sim, BSD_SIM_IDLE);
 	}
 }

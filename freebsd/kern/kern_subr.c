@@ -545,7 +545,6 @@ copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
 	return (error);
 }
 
-#ifndef __rtems__
 int
 copyinuio(struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 {
@@ -582,6 +581,7 @@ copyinuio(struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 	return (0);
 }
 
+#ifndef __rtems__
 struct uio *
 cloneuio(struct uio *uiop)
 {

@@ -160,6 +160,9 @@ C_FILES += lib/libipsec/ipsec_dump_policy.c
 C_FILES += lib/libipsec/policy_token.c
 C_FILES += lib/libipsec/policy_parse.c
 
+C_FILES += lib/libc_r/uthread/uthread_select.c
+C_FILES += lib/libc_r/uthread/uthread_kern.c
+
 # RTEMS Specific Files
 # C_FILES += rtems/rtems-net-setup.c
 C_FILES += rtems/syslog.c
@@ -171,6 +174,9 @@ C_FILES += rtems/rtems-uthread_main_np.c
 C_FILES += rtems/rtems-uthread_kevent.c
 C_FILES += rtems/rtems-uthread_kqueue.c
 C_FILES += rtems/rtems-shell.c
+C_FILES += rtems/rtems-syspoll.c
+C_FILES += rtems/rtems-uthread_init.c
+C_FILES += rtems/rtems-get_curthread.c
 
 # ping command sources
 C_FILES += commands/sbin/ping/ping.c
@@ -278,14 +284,14 @@ GEN_FILES += commands/sbin/route/keywords.h
 # lib/libc/net
 GEN_FILES += lib/libc/net/nslexer.c
 GEN_FILES += lib/libc/net/nsparser.c
-EXTRA_CLEAN = lib/libc/net/nsparser.i
-EXTRA_CLEAN += lib/libc/net/y.tab.h
+CLEAN_FILES = lib/libc/net/nsparser.i
+CLEAN_FILES += lib/libc/net/y.tab.h
 
 # lib/libipsec
 GEN_FILES += lib/libipsec/policy_token.c
 GEN_FILES += lib/libipsec/policy_parse.c
-EXTRA_CLEAN += lib/libipsec/policy_parse.i
-EXTRA_CLEAN += lib/libipsec/y.tab.h
+CLEAN_FILES += lib/libipsec/policy_parse.i
+CLEAN_FILES += lib/libipsec/y.tab.h
 
 all: $(LIB) 
 

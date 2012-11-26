@@ -208,7 +208,9 @@ struct thread {
 	TAILQ_ENTRY(thread) td_slpq;	/* (t) Sleep queue. */
 	TAILQ_ENTRY(thread) td_lockq;	/* (t) Lock queue. */
 	struct cpuset	*td_cpuset;	/* (t) CPU affinity mask. */
+#endif /* __rtems__ */
 	struct seltd	*td_sel;	/* Select queue/channel. */
+#ifndef __rtems__
 	struct sleepqueue *td_sleepqueue; /* (k) Associated sleep queue. */
 	struct turnstile *td_turnstile;	/* (k) Associated turnstile. */
 	struct umtx_q   *td_umtxq;	/* (c?) Link for when we're blocked. */
@@ -478,7 +480,9 @@ struct proc {
 	TAILQ_HEAD(, thread) p_threads;	/* (c) all threads. */
 	struct mtx	p_slock;	/* process spin lock */
 	struct ucred	*p_ucred;	/* (c) Process owner's identity. */
+#endif /* __rtems__ */
 	struct filedesc	*p_fd;		/* (b) Open files. */
+#ifndef __rtems__
 	struct filedesc_to_leader *p_fdtol; /* (b) Tracking node */
 	struct pstats	*p_stats;	/* (b) Accounting/statistics (CPU). */
 	struct plimit	*p_limit;	/* (c) Process limits. */
@@ -572,6 +576,9 @@ struct proc {
 	struct kdtrace_proc	*p_dtrace; /* (*) DTrace-specific data. */
 	struct cv	p_pwait;	/* (*) wait cv for exit/exec */
 #else /* __rtems__ */
+  struct sigiolst	p_sigiolst;	/* (c) List of sigio sources. */
+  int		p_flag;		/* (c) P_* flags. */
+  struct proc	*p_leader;	/* (b) */
   struct ucred  *p_ucred; /* (c) Process owner's identity. */
   struct mtx  p_mtx;    /* (n) Lock for this struct. */
   rtems_id p_pid;

@@ -49,12 +49,16 @@
 #include <freebsd/sys/mutex.h>
 #include <freebsd/sys/jail.h>
 #include <freebsd/sys/resourcevar.h>
+#include <freebsd/sys/filedesc.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 
 /* FIXME: What to do with the credentials? */
 static struct ucred FIXME_ucred = {
   .cr_ref = 1				/* reference count */
+};
+static struct filedesc FIXME_fd = {
+  .fd_ofiles = NULL	/* file structures for open files */
 };
 static struct proc  FIXME_proc = {
   .p_ucred = NULL /* (c) Process owner's identity. */
@@ -67,29 +71,34 @@ static struct prison FIXME_prison = {
 static struct uidinfo	FIXME_uidinfo;	/* per euid resource consumption */
 static struct uidinfo	FIXME_ruidinfo;	/* per ruid resource consumption */
 
+static struct thread *rtems_bsd_current_td = NULL;
+
+static void rtems_bsd_thread_descriptor_dtor(void *td)
+{
+	// XXX are there other pieces to clean up?
+	free(td, M_TEMP);
+}
+
 static struct thread *
-rtems_bsd_thread_init_note( rtems_id id )
+rtems_bsd_thread_init( rtems_id id )
 {
 	rtems_status_code sc = RTEMS_SUCCESSFUL;
 	unsigned index = 0;
 	char name [5] = "_???";
-	struct thread *td = malloc(sizeof(struct thread), M_TEMP, M_WAITOK | M_ZERO);
-  struct proc   *proc;
+	struct thread *td;
+	struct proc   *proc;
 
-	if ( td == NULL )
-		return td;
-
-	sc = rtems_task_set_note( id, RTEMS_NOTEPAD_0, ( uint32_t )td );
-	if (sc != RTEMS_SUCCESSFUL) {
-		free(td, M_TEMP);
+	td = malloc(sizeof(struct thread), M_TEMP, M_WAITOK | M_ZERO);
+	if (td == NULL)
 		return NULL;
-	}
 
+	// Initialize the thread descriptor
 	index = rtems_object_id_get_index(id);
 	snprintf(name + 1, sizeof(name) - 1, "%03u", index);
 	sc = rtems_object_set_name(id, name);
 	if (sc != RTEMS_SUCCESSFUL) {
-		rtems_task_delete(id);
+		// XXX does the thread get deleted? Seems wrong
+		// rtems_task_delete(id);
 		free(td, M_TEMP);
 		return 	NULL;
 	}
@@ -98,54 +107,61 @@ rtems_bsd_thread_init_note( rtems_id id )
 	td->td_ucred = crhold(&FIXME_ucred);
   
 	td->td_proc = &FIXME_proc;
-	if (td->td_proc->p_ucred != NULL)
-		return td;
+	if (td->td_proc->p_ucred == NULL) {
+  		if ( prison_init ) {
+			mtx_init(&FIXME_prison.pr_mtx, "prison lock", NULL, MTX_DEF | MTX_DUPOK);
+    			prison_init = 0;
+  		}
+  		FIXME_ucred.cr_prison   = &FIXME_prison;    /* jail(2) */
+		FIXME_ucred.cr_uidinfo  = uifind(0);
+		FIXME_ucred.cr_ruidinfo = uifind(0);
+		FIXME_ucred.cr_ngroups = 1;     /* group 0 */
 
-  if (prison_init ) {
-    mtx_init(&FIXME_prison.pr_mtx, "prison lock", NULL, MTX_DEF | MTX_DUPOK);
+		td->td_proc->p_ucred = crhold(&FIXME_ucred);
+		mtx_init(&td->td_proc->p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
+		td->td_proc->p_pid = getpid();
+		td->td_proc->p_fibnum = 0;
+		td->td_proc->p_fd = &FIXME_fd;
+		sx_init_flags(&FIXME_fd.fd_sx, "config SX thread lock", SX_DUPOK);
+	}
 
-    prison_init = 0;
-  }
+	// Actually set the global pointer 
+	rtems_bsd_current_td = td;
 
-  FIXME_ucred.cr_prison   = &FIXME_prison;    /* jail(2) */
-  FIXME_ucred.cr_uidinfo  = uifind(0);
-  FIXME_ucred.cr_ruidinfo = uifind(0);
-  FIXME_ucred.cr_ngroups = 1;     /* group 0 */
+	// Now add the task descriptor as a per-task variable
+	sc = rtems_task_variable_add(
+		id,
+		&rtems_bsd_current_td,
+		rtems_bsd_thread_descriptor_dtor
+	);
+	if (sc != RTEMS_SUCCESSFUL) {
+		free(td, M_TEMP);
+		return NULL;
+	}
 
-	td->td_proc->p_ucred = crhold(&FIXME_ucred);
-	mtx_init(&td->td_proc->p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
-	td->td_proc->p_pid = getpid();
-	td->td_proc->p_fibnum = 0;
-
-  return td;
+  	return td;
 }
 
 /*
- *  XXX Threads which delete themselves will leak this
- *  XXX Maybe better integrated into the TCB OR a task variable.
- *  XXX but this is OK for now
+ *  Threads which delete themselves would leak the task
+ *  descriptor so we are using the per-task variable so
+ *  it can be cleaned up.
  */
 struct thread *rtems_get_curthread(void)
 {
 	struct thread *td;
-	rtems_status_code sc;
-	rtems_id id;
 
 	/*
 	 * If we already have a struct thread associated with this thread,
-	 * obtain it
+	 * obtain it. Otherwise, allocate and initialize one.
 	 */
-  id = rtems_task_self();
-
-	sc = rtems_task_get_note( id, RTEMS_NOTEPAD_0, (uint32_t *) &td );
-	if (sc != RTEMS_SUCCESSFUL) {
-			panic("rtems_get_curthread: get note Error\n");
+	td = rtems_bsd_current_td;
+	if ( td == NULL ) {
+		td = rtems_bsd_thread_init( rtems_task_self() );
+		if ( td == NULL ){
+			panic("rtems_get_curthread: Unable to thread descriptor\n");
+		}
 	}
-
-  td = rtems_bsd_thread_init_note( id);
-  if ( td == NULL ){
-		panic("rtems_get_curthread: Unable to generate thread note\n");
-  }
 
   return td;
 }
@@ -163,6 +179,8 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, 
 
 		BSD_ASSERT(pages >= 0);
 
+		memset( td, 0, sizeof(struct thread) );
+
 		sc = rtems_task_create(
 			rtems_build_name('_', 'T', 'S', 'K'),
 			BSD_TASK_PRIORITY_NORMAL,
@@ -177,8 +195,8 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, 
 			return ENOMEM;
 		}
 
-    td = rtems_bsd_thread_init_note( id );
-    if (!td)
+		td = rtems_bsd_thread_init( id );
+		if (!td)
 			return ENOMEM;
 		
 		sc = rtems_task_start(id, (rtems_task_entry) func, (rtems_task_argument) arg);

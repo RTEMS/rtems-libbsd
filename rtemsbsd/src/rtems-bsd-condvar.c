@@ -183,3 +183,20 @@ cv_broadcastpri(struct cv *cv, int pri)
 	rv = pthread_cond_broadcast(&cv->cv_id);
 	BSD_ASSERT_RV(rv);
 }
+int
+_cv_wait_sig(struct cv *cvp, struct lock_object *lock)
+{
+  /* XXX */
+	_cv_wait_support(cvp, lock, 0, true);
+}
+
+int
+_cv_timedwait_sig(struct cv *cvp, struct lock_object *lock, int timo)
+{
+  /* XXX */
+	if (timo <= 0) {
+		timo = 1;
+	}
+
+	return _cv_wait_support(cvp, lock, timo, true);
+}

@@ -12,7 +12,6 @@ CFLAGS += -I freebsd/$(RTEMS_CPU)/include
 CFLAGS += -I contrib/altq 
 CFLAGS += -I contrib/pf 
 CFLAGS += -I copied/rtemsbsd/$(RTEMS_CPU)/include 
-CFLAGS += -g 
 CFLAGS += -w 
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -38,7 +37,6 @@ C_FILES += rtemsbsd/src/rtems-bsd-lock.c
 C_FILES += rtemsbsd/src/rtems-bsd-log.c
 C_FILES += rtemsbsd/src/rtems-bsd-sx.c
 C_FILES += rtemsbsd/src/rtems-bsd-rwlock.c
-C_FILES += rtemsbsd/src/rtems-bsd-generic.c
 C_FILES += rtemsbsd/src/rtems-bsd-page.c
 C_FILES += rtemsbsd/src/rtems-bsd-panic.c
 C_FILES += rtemsbsd/src/rtems-bsd-synch.c
@@ -406,6 +404,9 @@ C_FILES += freebsd/netatalk/ddp_pcb.c
 C_FILES += freebsd/netatalk/ddp_usrreq.c
 C_FILES += freebsd/netatalk/at_proto.c
 C_FILES += freebsd/netatalk/ddp_output.c
+C_FILES += freebsd/kern/sys_generic.c
+C_FILES += freebsd/kern/kern_descrip.c
+C_FILES += freebsd/kern/kern_mtxpool.c
 ifeq ($(RTEMS_CPU), i386)
 C_FILES += freebsd/i386/pci/pci_bus.c
 C_FILES += freebsd/i386/i386/legacy.c

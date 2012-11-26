@@ -659,7 +659,7 @@ rtems.addRTEMSSourceFiles(
 		'src/rtems-bsd-log.c',
 		'src/rtems-bsd-sx.c',
 		'src/rtems-bsd-rwlock.c',
-		'src/rtems-bsd-generic.c',
+		#'src/rtems-bsd-generic.c',
 		'src/rtems-bsd-page.c',
 		'src/rtems-bsd-panic.c',
 		'src/rtems-bsd-synch.c',
@@ -711,13 +711,13 @@ rtems.addEmptyHeaderFiles(
 		'sys/cpuset.h',
 		'sys/exec.h',
 		'sys/fail.h',
-		'sys/limits.h',
+		#'sys/limits.h',
 		'sys/sleepqueue.h',
 		'sys/namei.h',
 		'sys/_pthreadtypes.h',
 		#'sys/resourcevar.h',
 		'sys/sched.h',
-		'sys/select.h',
+		#'sys/select.h',
 		'sys/syscallsubr.h',
 		'sys/sysent.h',
 		'sys/syslimits.h',
@@ -725,7 +725,7 @@ rtems.addEmptyHeaderFiles(
 		'sys/stat.h',
 		#'sys/time.h',
 		'time.h',
-		'sys/timespec.h',
+		#'sys/timespec.h',
 		'sys/_timeval.h',
 		#'sys/vmmeter.h',
 		#'sys/vnode.h',
@@ -1346,6 +1346,14 @@ devNic.addHeaderFiles(
 		'netatalk/ddp_var.h',
 		'netatalk/phase2.h',
 		'sys/mman.h',
+		'sys/buf.h',
+		'sys/mqueue.h',
+		'sys/tty.h',
+		'sys/ttyqueue.h',
+		'sys/ttydisc.h',
+		'sys/ttydevsw.h',
+		'sys/ttyhook.h',
+		'sys/user.h',
 	]
 )
 
@@ -1412,6 +1420,9 @@ devNic.addSourceFiles(
 		'netatalk/ddp_usrreq.c',
 		'netatalk/at_proto.c',
 		'netatalk/ddp_output.c',
+		'kern/sys_generic.c',
+		'kern/kern_descrip.c',
+		'kern/kern_mtxpool.c',
 	]
 )
 

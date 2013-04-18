@@ -5,8 +5,7 @@ policy_token.c: policy_token.l
 		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
 
 policy_parse.c: policy_parse.y
-	yacc -d -p __libipsecyy -o policy_parse.i $^
-	cat policy_parse.i | \
+	yacc -d -p __libipsecyy $^
+	cat y.tab.c | \
 		sed -e '/YY_BUF_SIZE/s/16384/1024/' >$@
-	rm -f policy_parse.i
-
+	rm y.tab.c

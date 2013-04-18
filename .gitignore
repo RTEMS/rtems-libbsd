@@ -1,5 +1,9 @@
 *.d
 *.rel
+*.o
+*.dep
+*.exe
+*.map
 o-optimize
 copied
 libbsd.html

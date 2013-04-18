@@ -550,7 +550,7 @@ static int rtems_shell_main_netstat(int argc, char *argv[])
   ip6protox[i].pr_istats    = NULL;
   ip6protox[i].pr_name      = "tcp";
   ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = ;
+  ip6protox[i].pr_protocol  = IPPROTO_TCP;
   i++;
   ip6protox[i].pr_index     = N_UDBINFO;
   ip6protox[i].pr_sindex    = N_UDPSTAT;

@@ -723,6 +723,7 @@ rtems.addEmptyHeaderFiles(
 		'sys/syslimits.h',
 		'sys/sysproto.h',
 		'sys/stat.h',
+		'sys/ucontext.h',
 		#'sys/time.h',
 		'time.h',
 		#'sys/timespec.h',
@@ -1231,7 +1232,6 @@ devUsbBase.addHeaderFiles(
 		'sys/ttycom.h',
 		'sys/_types.h',
 		'sys/types.h',
-		'sys/ucontext.h',
 		'sys/ucred.h',
 		# FreeBSD version is in RTEMS since used by readv/writev
 		# 'sys/uio.h',

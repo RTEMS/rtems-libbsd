@@ -50,14 +50,9 @@ name##_keyinit(void)							\
 static int							\
 name##_getstate(struct name##_state **p)			\
 {								\
-	static struct name##_state st;				\
 	static pthread_once_t	keyinit = PTHREAD_ONCE_INIT;	\
 	int			rv;				\
 								\
-	if (!__isthreaded || _pthread_main_np() != 0) {		\
-		*p = &st;					\
-		return (0);					\
-	}							\
 	rv = _pthread_once(&keyinit, name##_keyinit);		\
 	if (rv != 0)						\
 		return (rv);					\

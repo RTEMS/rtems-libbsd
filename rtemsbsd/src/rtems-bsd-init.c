@@ -56,14 +56,11 @@ int hz;
 int tick;
 int maxusers;     /* base tunable */
 
-rtems_id  rtems_init_task_id;
-
 rtems_status_code
 rtems_bsd_initialize(void)
 {
 	rtems_status_code sc = RTEMS_SUCCESSFUL;
 
-        rtems_init_task_id = rtems_task_self();
 	hz = (int) rtems_clock_get_ticks_per_second();
 	tick = 1000000 / hz;
 	maxusers = 1;

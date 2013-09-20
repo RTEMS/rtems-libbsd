@@ -31,7 +31,6 @@
 #include <stdio.h>				/* XXX: for FILE */
 
 #define	NETDB_THREAD_ALLOC(name)					\
-static struct name name;						\
 static thread_key_t name##_key;						\
 static once_t name##_init_once = ONCE_INITIALIZER;			\
 static int name##_thr_keycreated = 0;					\
@@ -50,8 +49,6 @@ __##name##_init(void)							\
 {									\
 	struct name *he;						\
 									\
-	if (thr_main() != 0)						\
-		return (&name);						\
 	if (thr_once(&name##_init_once, name##_keycreate) != 0 ||	\
 	    !name##_thr_keycreated)					\
 		return (NULL);						\

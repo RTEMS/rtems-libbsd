@@ -37,13 +37,11 @@
  * SUCH DAMAGE.
  */
 
-/*
- * This violation is specifically for _Thread_Disable_dispatch
- * and _Thread_Enable_dispatch. Use of the critical_enter()
- * and critical_exit() routines should be reviewed.
- */
-#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 
+/* FIXME: This file needs careful review. */
+
 #include <freebsd/machine/rtems-bsd-config.h>
+
+#include <rtems/score/threaddispatch.h>
 
 #include <freebsd/sys/types.h>
 #include <freebsd/sys/systm.h>

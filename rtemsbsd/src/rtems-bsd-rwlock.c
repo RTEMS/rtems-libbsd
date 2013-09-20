@@ -37,12 +37,12 @@
  * SUCH DAMAGE.
  */
 
-/* Necessary to obtain some internal functions */
-#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
 #include <pthread.h>
-#include <rtems/posix/rwlock.h>
 
 #include <freebsd/machine/rtems-bsd-config.h>
+
+#include <rtems/score/objectimpl.h>
+#include <rtems/posix/rwlockimpl.h>
 
 #include <sys/types.h>
 #include <freebsd/sys/param.h>

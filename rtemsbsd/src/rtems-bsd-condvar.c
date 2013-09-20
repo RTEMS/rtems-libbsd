@@ -7,10 +7,9 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  
- * All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH. All rights reserved.
  *
- *  embedded brains GmbH
+ *  Dornierstr. 4
  *  Obere Lagerstr. 30
  *  82178 Puchheim
  *  Germany
@@ -38,12 +37,12 @@
  * SUCH DAMAGE.
  */
 
-/* Necessary to obtain some internal functions */
-#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
-
 #include <freebsd/machine/rtems-bsd-config.h>
 
-#include <rtems/posix/cond.h>
+#include <rtems/score/objectimpl.h>
+#include <rtems/score/threaddispatch.h>
+#include <rtems/score/threadqimpl.h>
+#include <rtems/posix/condimpl.h>
 
 #include <freebsd/sys/param.h>
 #include <freebsd/sys/types.h>
@@ -109,7 +108,7 @@ static int _cv_wait_support(struct cv *cv, struct lock_object *lock, int timo, b
 		_Thread_Executing->Wait.id = cv->cv_id;
 
 		/* FIXME: Integer conversion */
-		_Thread_queue_Enqueue(&pcv->Wait_queue, (Watchdog_Interval) timo);
+		_Thread_queue_Enqueue(&pcv->Wait_queue, _Thread_Executing, (Watchdog_Interval) timo);
 
 		DROP_GIANT();
 

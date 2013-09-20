@@ -38,16 +38,15 @@
  */
 
 /*
- * This violation is specifically for _Thread_Disable_dispatch
- * and _Thread_Enable_dispatch. Use of the critical_enter()
- * and critical_exit() routines should be reviewed.
+ * FIXME: This seems to be a completely broken implementation.
  */
-#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 
 
 #include <freebsd/machine/rtems-bsd-config.h>
-#include <rtems/score/states.h>
+
+#include <rtems/score/statesimpl.h>
+#include <rtems/score/threaddispatch.h>
 #include <rtems/score/thread.h>
-#include <rtems/score/threadq.h>
+#include <rtems/score/threadqimpl.h>
 
 #include <freebsd/sys/param.h>
 #include <freebsd/sys/types.h>
@@ -169,7 +168,7 @@ sleep_queue_timedwait(void *wchan, int pri, int timeout, int catch)
   executing->Wait.queue = &sq->queue;
   _ISR_Enable( level );
 
-  _Thread_queue_Enqueue( &sq->queue, timeout );
+  _Thread_queue_Enqueue( &sq->queue, executing, timeout );
   _Thread_Enable_dispatch();
   return _Thread_Executing->Wait.return_code;
 }

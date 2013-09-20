@@ -31,6 +31,8 @@
 /* XXX hack so /opt.../machine/param.h can disable MSIZE and use this one */
 #define __NEW_RTEMS_BSD__
 
+#include <sys/cdefs.h>
+
 #ifndef _RTEMS_BSD_BSD_HH_
 /* General defines to activate BSD kernel parts */
 #define _KERNEL 1

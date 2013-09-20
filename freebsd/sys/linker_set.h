@@ -30,7 +30,7 @@
 #ifndef _SYS_LINKER_SET_HH_
 #define _SYS_LINKER_SET_HH_
 
-#ifndef _SYS_CDEFS_HH_
+#ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
 #endif
 

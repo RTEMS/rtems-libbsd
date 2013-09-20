@@ -889,8 +889,10 @@ void	cpu_fork(struct thread *, struct proc *, struct thread *, int);
 void	cpu_set_fork_handler(struct thread *, void (*)(void *), void *);
 void	cpu_set_syscall_retval(struct thread *, int);
 void	cpu_set_upcall(struct thread *td, struct thread *td0);
+#ifndef __rtems__
 void	cpu_set_upcall_kse(struct thread *, void (*)(void *), void *,
 	    stack_t *);
+#endif /* __rtems__ */
 int	cpu_set_user_tls(struct thread *, void *tls_base);
 void	cpu_thread_alloc(struct thread *);
 void	cpu_thread_clean(struct thread *);

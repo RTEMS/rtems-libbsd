@@ -1045,8 +1045,8 @@ netisr_start_swi(u_int cpuid, struct pcpu *pc)
 	    SWI_NET, INTR_MPSAFE, &nwsp->nws_swi_cookie);
 	if (error)
 		panic("%s: swi_add %d", __func__, error);
-	pc->pc_netisr = nwsp->nws_intr_event;
 #ifndef __rtems__
+	pc->pc_netisr = nwsp->nws_intr_event;
 	if (netisr_bindthreads) {
 		error = intr_event_bind(nwsp->nws_intr_event, cpuid);
 		if (error != 0)
@@ -1101,10 +1101,15 @@ netisr_init(void *arg)
 	}
 #endif
 
+#ifndef __rtems__
 	netisr_start_swi(curcpu, pcpu_find(curcpu));
+#else /* __rtems__ */
+	netisr_start_swi(0, NULL);
+#endif /* __rtems__ */
 }
 SYSINIT(netisr_init, SI_SUB_SOFTINTR, SI_ORDER_FIRST, netisr_init, NULL);
 
+#ifndef __rtems__
 /*
  * Start worker threads for additional CPUs.  No attempt to gracefully handle
  * work reassignment, we don't yet support dynamic reconfiguration.
@@ -1127,6 +1132,7 @@ netisr_start(void *arg)
 	}
 }
 SYSINIT(netisr_start, SI_SUB_SMP, SI_ORDER_MIDDLE, netisr_start, NULL);
+#endif /* __rtems__ */
 
 #ifdef DDB
 DB_SHOW_COMMAND(netisr, db_show_netisr)

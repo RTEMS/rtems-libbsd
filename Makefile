@@ -375,7 +375,6 @@ C_FILES += freebsd/kern/subr_hints.c
 C_FILES += freebsd/dev/random/harvest.c
 C_FILES += freebsd/libkern/random.c
 C_FILES += freebsd/libkern/arc4random.c
-C_FILES += freebsd/kern/subr_pcpu.c
 C_FILES += freebsd/kern/subr_sbuf.c
 C_FILES += freebsd/kern/subr_rman.c
 C_FILES += freebsd/kern/subr_module.c

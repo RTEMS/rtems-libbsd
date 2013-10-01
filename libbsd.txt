@@ -32,19 +32,18 @@ Please help by adding to it.
 
 == Source Code Version Information
 
-* FreeBSD 8.2 SVN r222496
+* FreeBSD 8.2 SVN r255967
 * RTEMS 4.11
   - BSP must have support for all new BSD sys sections
   - It is preferable if the BSP uses linkcmds.base.
   - BSP must be from an architecture with Programmable Interrupt Controller
     interrupt model.
 
-The FreeBSD 8.2 SVN checkout will generally be referred to as the
-FreeBSD source in this document. An archive of the FreeBSD 8.2 SVN
-archive used is located at
-  http://www.rtems.org/ftp/pub/rtems/people/joel/freebsd/
-The SVN checkout command is this
-  svn co http://svn.freebsd.org/base/releng/8.2/sys/ -r222496 freebsd-8.2
+The latest port uses the FreeBSD sources as a Git submodule which will
+generally be referred to as the FreeBSD source in this document.  Previously a
+FreeBSD 8.2 SVN checkout was used.  The SVN checkout command corresponding to
+the current Git submodule commit is this
+  svn co http://svn.freebsd.org/base/releng/8.2 -r255967 freebsd-8.2
 
 == Issues and To Do
 * Sebastian Huber and Joel Sherrill discussed the need for a a basic USB

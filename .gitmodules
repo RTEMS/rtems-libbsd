@@ -1,0 +1,3 @@
+[submodule "freebsd-org"]
+	path = freebsd-org
+	url = https://github.com/freebsd/freebsd.git

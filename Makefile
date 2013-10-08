@@ -1,5 +1,6 @@
 include config.inc
 
+RTEMS_MAKEFILE_PATH = $(PREFIX)/$(TARGET)/$(BSP)
 include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg

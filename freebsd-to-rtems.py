@@ -406,6 +406,7 @@ class ModuleManager:
 		global tempFile
 		data = 'include config.inc\n' \
 			'\n' \
+			'RTEMS_MAKEFILE_PATH = $(PREFIX)/$(TARGET)/$(BSP)\n' \
 			'include $(RTEMS_MAKEFILE_PATH)/Makefile.inc\n' \
 			'include $(RTEMS_CUSTOM)\n' \
 			'include $(PROJECT_ROOT)/make/leaf.cfg\n' \

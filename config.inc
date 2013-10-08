@@ -1,6 +1,12 @@
-BSP = jmr3904
-RTEMS_MAKEFILE_PATH = ${HOME}/newbsd/bsp-install/mips-rtems4.11/$(BSP)
-INSTALL_BASE = ${HOME}/newbsd/install
+# Mandatory: Select your BSP and installation prefix
+TARGET = arm-rtems4.11
+BSP = realview_pbx_a9_qemu
+PREFIX = /opt/rtems-4.11
+
+# Optional: Separate installation base directory
+INSTALL_BASE = $(PREFIX)
+
+# Optional: Network test configuration
 TEST_RUNNER = $(BSP)
 NET_CFG_SELF_IP = 10.0.2.1
 NET_CFG_NETMASK = 255.255.0.0

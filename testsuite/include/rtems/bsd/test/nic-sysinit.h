@@ -39,9 +39,6 @@
  *  We "read" that and generate references and nexus devices
  */
 
-#if defined(CONFIGURE_NEED_NET)
-  SYSINIT_NEED_FREEBSD_CORE;
-#endif
 #if defined(CONFIGURE_NEED_USB)
   SYSINIT_NEED_USB_CORE;
 #endif

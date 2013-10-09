@@ -27,14 +27,6 @@
 #include <sys/queue.h>
 #include <sys/kernel.h>
 
-#define SYSINIT_NEED_FREEBSD_CORE \
-	SYSINIT_REFERENCE(configure1); \
-	SYSINIT_REFERENCE(module); \
-	SYSINIT_REFERENCE(kobj); \
-	SYSINIT_REFERENCE(linker_kernel); \
-	SYSINIT_MODULE_REFERENCE(rootbus); \
-	SYSINIT_DRIVER_REFERENCE(nexus, root)
-
 #define SYSINIT_NEED_USB_CORE \
 	SYSINIT_REFERENCE(usb_quirk_init); \
 	SYSINIT_DRIVER_REFERENCE(uhub, usbus)

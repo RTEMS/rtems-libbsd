@@ -49,6 +49,13 @@
 
 #include <rtems/bsd/bsd.h>
 
+SYSINIT_REFERENCE(configure1);
+SYSINIT_REFERENCE(module);
+SYSINIT_REFERENCE(kobj);
+SYSINIT_REFERENCE(linker_kernel);
+SYSINIT_MODULE_REFERENCE(rootbus);
+SYSINIT_DRIVER_REFERENCE(nexus, root);
+
 /* In FreeBSD this is a local function */
 void mi_startup(void);
 

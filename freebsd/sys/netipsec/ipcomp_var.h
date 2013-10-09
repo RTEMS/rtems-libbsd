@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETIPSEC_IPCOMP_VAR_HH_
-#define _NETIPSEC_IPCOMP_VAR_HH_
+#ifndef _NETIPSEC_IPCOMP_VAR_H_
+#define _NETIPSEC_IPCOMP_VAR_H_
 
 /*
  * These define the algorithm indices into the histogram.  They're
@@ -71,4 +71,4 @@ VNET_DECLARE(struct ipcompstat, ipcompstat);
 #define	V_ipcomp_enable		VNET(ipcomp_enable)
 #define	V_ipcompstat		VNET(ipcompstat)
 #endif /* _KERNEL */
-#endif /*_NETIPSEC_IPCOMP_VAR_HH_*/
+#endif /*_NETIPSEC_IPCOMP_VAR_H_*/

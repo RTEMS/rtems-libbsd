@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*      $OpenBSD: criov.c,v 1.9 2002/01/29 15:48:29 jason Exp $	*/
 
@@ -29,19 +29,19 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/uio.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/uio.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
+#include <opencrypto/cryptodev.h>
 
 /*
  * This macro is only for avoiding code duplication, as we need to skip

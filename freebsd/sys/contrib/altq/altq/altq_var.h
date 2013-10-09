@@ -26,14 +26,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _ALTQ_ALTQ_VAR_HH_
-#define	_ALTQ_ALTQ_VAR_HH_
+#ifndef _ALTQ_ALTQ_VAR_H_
+#define	_ALTQ_ALTQ_VAR_H_
 
 #ifdef _KERNEL
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/queue.h>
 
 #ifdef ALTQ3_CLFIER_COMPAT
 /*
@@ -167,7 +167,7 @@ typedef u_long ioctlcmd_t;
 /* macro for timeout/untimeout */
 #if (__FreeBSD_version > 300000) || defined(__NetBSD__)
 /* use callout */
-#include <freebsd/sys/callout.h>
+#include <sys/callout.h>
 
 #if (__FreeBSD_version > 500000)
 #define	CALLOUT_INIT(c)		callout_init((c), 0)
@@ -180,7 +180,7 @@ typedef u_long ioctlcmd_t;
 #define	CALLOUT_INITIALIZER	{ { { NULL } }, 0, NULL, NULL, 0 }
 #endif
 #elif defined(__OpenBSD__)
-#include <freebsd/sys/timeout.h>
+#include <sys/timeout.h>
 /* callout structure as a wrapper of struct timeout */
 struct callout {
 	struct timeout	c_to;
@@ -262,4 +262,4 @@ int	hfsc_remove_queue(struct pf_altq *);
 int	hfsc_getqstats(struct pf_altq *, void *, int *);
 
 #endif /* _KERNEL */
-#endif /* _ALTQ_ALTQ_VAR_HH_ */
+#endif /* _ALTQ_ALTQ_VAR_H_ */

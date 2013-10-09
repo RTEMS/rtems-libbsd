@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_REGS_HH_
-#define _E1000_REGS_HH_
+#ifndef _E1000_REGS_H_
+#define _E1000_REGS_H_
 
 #define E1000_CTRL     0x00000  /* Device Control - RW */
 #define E1000_CTRL_DUP 0x00004  /* Device Control Duplicate (Shadow) - RW */

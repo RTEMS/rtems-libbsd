@@ -37,24 +37,24 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
-#include <freebsd/machine/rtems-bsd-sysinit.h>
+#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-sysinit.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/bus.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/rman.h>
+#include <sys/malloc.h>
 
 #include <bsp.h>
-#include <freebsd/machine/rtems-bsd-devicet.h>
+#include <machine/rtems-bsd-devicet.h>
 #include <bsp/irq.h>
 #include <rtems/irq.h>
 #include <rtems/irq-extension.h>
-#include <freebsd/machine/bus.h>
+#include <machine/bus.h>
 
 /* XXX Note:  These defines should be moved. */
 #if defined(__i386__) 
@@ -180,9 +180,10 @@ nexus_attach(device_t dev)
 static int
 nexus_probe(device_t dev)
 {
-	size_t unit = 0;
 #if 0
 	/* FIXME */
+	size_t unit = 0;
+
 	for (unit = 0; _bsd_nexus_devices [unit] != NULL; ++unit) {
 		device_add_child(dev, _bsd_nexus_devices [unit], unit);
 	}
@@ -352,9 +353,6 @@ nexus_release_resource(device_t bus, device_t child, int type, int rid,
 	}
 	return (rman_release_resource(r));
 }
-
-static void noop(const rtems_irq_connect_data *unused) {};
-static int  noop1(const rtems_irq_connect_data *unused) { return 0;};
 
 static int
 bspExtInstallSharedISR(int irqLine, void (*isr)(void *), void * uarg, int flags)

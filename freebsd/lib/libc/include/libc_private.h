@@ -43,9 +43,9 @@
  */
 #ifdef __rtems__
 #define __isthreaded 1
-#else
+#else /* __rtems__ */
 extern int	__isthreaded;
-#endif
+#endif /* __rtems__ */
 
 /*
  * libc should use libc_dlopen internally, which respects a global
@@ -203,7 +203,7 @@ extern void (*__cleanup)(void);
  * for the wrapped "new" pad-less syscalls are here for now.
  */
 extern int __getosreldate(void);
-#include <sys/_types.h>
+#include <rtems/bsd/sys/_types.h>
 /* Without pad */
 extern __off_t	__sys_lseek(int, __off_t, int);
 extern int	__sys_ftruncate(int, __off_t);

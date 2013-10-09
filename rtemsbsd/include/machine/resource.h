@@ -1,10 +1,32 @@
-#ifndef _MACHINE_RESOURCE_H_
-#define	_MACHINE_RESOURCE_H_	1
+/**
+ * @file
+ *
+ * @ingroup rtems_bsd_machine
+ *
+ * @brief TODO.
+ */
 
-#define	SYS_RES_IRQ	1	/* interrupt lines */
-#define	SYS_RES_DRQ	2	/* isa dma lines */
-#define	SYS_RES_MEMORY	3	/* i/o memory */
-#define	SYS_RES_IOPORT	4	/* i/o ports */
-#define	SYS_RES_GPIO	5	/* general purpose i/o */
+/*
+ * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Obere Lagerstr. 30
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
+ *
+ * The license and distribution terms for this file may be
+ * found in the file LICENSE in this distribution or at
+ * http://www.rtems.com/license/LICENSE.
+ */
 
-#endif /* !_MACHINE_RESOURCE_H_ */
+#ifndef _RTEMS_BSD_MACHINE_RESOURCE_H_
+#define _RTEMS_BSD_MACHINE_RESOURCE_H_
+
+#define SYS_RES_IRQ 1
+#define SYS_RES_DRQ 2
+#define SYS_RES_MEMORY 3
+#define SYS_RES_IOPORT 4
+#define SYS_RES_GPIO 5
+
+#endif /* _RTEMS_BSD_MACHINE_RESOURCE_H_ */

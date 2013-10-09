@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IP_DIVERT_HH_
-#define	_NETINET_IP_DIVERT_HH_
+#ifndef _NETINET_IP_DIVERT_H_
+#define	_NETINET_IP_DIVERT_H_
 
 /*
  * divert has no custom kernel-userland API.
@@ -52,4 +52,4 @@
  *	sin_addr = IN: address of the incoming interface;
  *		   OUT: INADDR_ANY
  */
-#endif /* _NETINET_IP_DIVERT_HH_ */
+#endif /* _NETINET_IP_DIVERT_H_ */

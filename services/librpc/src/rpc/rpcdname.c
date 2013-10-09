@@ -40,7 +40,6 @@ static char sccsid[] = "@(#)rpcdname.c 1.7 91/03/11 Copyr 1989 Sun Micro";
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>

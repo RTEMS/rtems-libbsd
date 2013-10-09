@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /* file: alias_proxy.c
@@ -57,29 +57,29 @@ __FBSDID("$FreeBSD$");
 
 /* System includes */
 #ifdef _KERNEL
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/ctype.h>
-#include <freebsd/sys/libkern.h>
-#include <freebsd/sys/limits.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/ctype.h>
+#include <sys/libkern.h>
+#include <sys/limits.h>
 #else
-#include <freebsd/sys/types.h>
-#include <freebsd/ctype.h>
-#include <freebsd/stdio.h>
-#include <freebsd/stdlib.h>
-#include <freebsd/netdb.h>
-#include <freebsd/string.h>
+#include <rtems/bsd/sys/types.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <netdb.h>
+#include <string.h>
 #endif
 
-#include <freebsd/netinet/tcp.h>
+#include <netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
-#include <freebsd/netinet/libalias/alias_mod.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias_mod.h>
 #else
-#include <freebsd/arpa/inet.h>
-#include <freebsd/local/alias.h>		/* Public API functions for libalias */
-#include <freebsd/local/alias_local.h>	/* Functions used by alias*.c */
+#include <arpa/inet.h>
+#include <rtems/bsd/local/alias.h>		/* Public API functions for libalias */
+#include <rtems/bsd/local/alias_local.h>	/* Functions used by alias*.c */
 #endif
 
 /*

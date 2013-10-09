@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002 Andre Oppermann, Internet Business Solutions AG
@@ -64,43 +64,43 @@
  * followed here.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/ip_var.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_var.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
 #endif
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/tcp_hostcache.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcp_hostcache.h>
 #ifdef INET6
-#include <freebsd/netinet6/tcp6_var.h>
+#include <netinet6/tcp6_var.h>
 #endif
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
 /* Arbitrary values */
 #define TCP_HOSTCACHE_HASHSIZE		512

@@ -61,7 +61,7 @@
 #ifndef VM_H
 #define VM_H
 
-#include <freebsd/machine/vm.h>
+#include <machine/vm.h>
 
 typedef char vm_inherit_t;	/* inheritance codes */
 

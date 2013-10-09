@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /* $FreeBSD$ */
 /*-
@@ -28,36 +28,36 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/stdint.h>
-#include <freebsd/sys/stddef.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/linker_set.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/priv.h>
+#include <sys/stdint.h>
+#include <sys/stddef.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/bus.h>
+#include <sys/linker_set.h>
+#include <sys/module.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/condvar.h>
+#include <sys/sysctl.h>
+#include <sys/sx.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/priv.h>
 
-#include <freebsd/dev/usb/usb.h>
-#include <freebsd/dev/usb/usb_ioctl.h>
-#include <freebsd/dev/usb/usbdi.h>
-#include <freebsd/local/usbdevs.h>
+#include <dev/usb/usb.h>
+#include <dev/usb/usb_ioctl.h>
+#include <dev/usb/usbdi.h>
+#include <rtems/bsd/local/usbdevs.h>
 
 #define	USB_DEBUG_VAR usb_debug
-#include <freebsd/dev/usb/usb_debug.h>
-#include <freebsd/dev/usb/usb_dynamic.h>
+#include <dev/usb/usb_debug.h>
+#include <dev/usb/usb_dynamic.h>
 
-#include <freebsd/dev/usb/quirk/usb_quirk.h>
+#include <dev/usb/quirk/usb_quirk.h>
 
 MODULE_DEPEND(usb_quirk, usb, 1, 1, 1);
 MODULE_VERSION(usb_quirk, 1);

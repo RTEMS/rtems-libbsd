@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1990, 1993
@@ -96,52 +96,52 @@
  * these interfaces are not preferred, and should be avoided.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_zero.h>
-#include <freebsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_zero.h>
+#include <rtems/bsd/local/opt_compat.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mac.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/file.h>			/* for struct knote */
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/event.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/poll.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/net/route.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/stat.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/jail.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/fcntl.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mac.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/mutex.h>
+#include <sys/domain.h>
+#include <sys/file.h>			/* for struct knote */
+#include <sys/kernel.h>
+#include <sys/event.h>
+#include <sys/eventhandler.h>
+#include <sys/poll.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/resourcevar.h>
+#include <net/route.h>
+#include <sys/signalvar.h>
+#include <sys/stat.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/uio.h>
+#include <sys/jail.h>
 
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
 #ifdef COMPAT_FREEBSD32
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/compat/freebsd32/freebsd32.h>
+#include <sys/mount.h>
+#include <sys/sysent.h>
+#include <compat/freebsd32/freebsd32.h>
 #endif
 
 static int	soreceive_rcvoob(struct socket *so, struct uio *uio,
@@ -820,12 +820,12 @@ struct so_zerocopy_stats{
 	int found_ifp;
 };
 struct so_zerocopy_stats so_zerocp_stats = {0,0,0};
-#include <freebsd/netinet/in.h>
-#include <freebsd/net/route.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_page.h>
-#include <freebsd/vm/vm_object.h>
+#include <netinet/in.h>
+#include <net/route.h>
+#include <netinet/in_pcb.h>
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vm_object.h>
 
 /*
  * sosend_copyin() is only used if zero copy sockets are enabled.  Otherwise

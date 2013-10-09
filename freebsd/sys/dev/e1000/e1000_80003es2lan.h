@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_80003ES2LAN_HH_
-#define _E1000_80003ES2LAN_HH_
+#ifndef _E1000_80003ES2LAN_H_
+#define _E1000_80003ES2LAN_H_
 
 #define E1000_KMRNCTRLSTA_OFFSET_FIFO_CTRL       0x00
 #define E1000_KMRNCTRLSTA_OFFSET_INB_CTRL        0x02

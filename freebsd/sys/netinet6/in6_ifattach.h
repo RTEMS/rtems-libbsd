@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_IN6_IFATTACH_HH_
-#define _NETINET6_IN6_IFATTACH_HH_
+#ifndef _NETINET6_IN6_IFATTACH_H_
+#define _NETINET6_IN6_IFATTACH_H_
 
 #ifdef _KERNEL
 void in6_ifattach __P((struct ifnet *, struct ifnet *));
@@ -42,4 +42,4 @@ int in6_get_hw_ifid __P((struct ifnet *, struct in6_addr *));
 int in6_nigroup __P((struct ifnet *, const char *, int, struct in6_addr *));
 #endif /* _KERNEL */
 
-#endif /* _NETINET6_IN6_IFATTACH_HH_ */
+#endif /* _NETINET6_IN6_IFATTACH_H_ */

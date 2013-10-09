@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1980, 1986, 1993
@@ -33,21 +33,21 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/domain.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/raw_cb.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/raw_cb.h>
+#include <net/vnet.h>
 
 /*
  * Routines to manage the raw protocol control blocks.

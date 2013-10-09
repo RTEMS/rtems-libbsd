@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_CPUFUNC_HH_
-#define	_MACHINE_CPUFUNC_HH_
+#ifndef _MACHINE_CPUFUNC_H_
+#define	_MACHINE_CPUFUNC_H_
 
 /*
  * Required for user-space atomic.h includes
@@ -41,10 +41,10 @@ powerpc_mb(void)
 
 #ifdef _KERNEL
 
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
-#include <freebsd/machine/psl.h>
-#include <freebsd/machine/spr.h>
+#include <machine/psl.h>
+#include <machine/spr.h>
 
 struct thread;
 
@@ -196,4 +196,4 @@ powerpc_get_pcpup(void)
 
 #endif /* _KERNEL */
 
-#endif /* !_MACHINE_CPUFUNC_HH_ */
+#endif /* !_MACHINE_CPUFUNC_H_ */

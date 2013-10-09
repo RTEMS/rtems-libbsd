@@ -26,8 +26,8 @@
  *	$FreeBSD$
  */
 
-#ifndef _ISA_PNPVAR_HH_
-#define _ISA_PNPVAR_HH_
+#ifndef _ISA_PNPVAR_H_
+#define _ISA_PNPVAR_H_
 
 #ifdef _KERNEL
 
@@ -63,4 +63,4 @@ void pnp_check_quirks(uint32_t vendor_id, uint32_t logical_id, int ldn,
 
 #endif /* _KERNEL */
 
-#endif /* !_ISA_PNPVAR_HH_ */
+#endif /* !_ISA_PNPVAR_H_ */

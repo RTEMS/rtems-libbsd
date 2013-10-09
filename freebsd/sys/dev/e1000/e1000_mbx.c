@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /******************************************************************************
 
@@ -35,9 +35,9 @@
 /*$FreeBSD$*/
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_mbx.h>
+#include <dev/e1000/e1000_mbx.h>
 #else
-#include <freebsd/local/e1000_mnx.h>
+#include <rtems/bsd/local/e1000_mnx.h>
 #endif
 
 /**

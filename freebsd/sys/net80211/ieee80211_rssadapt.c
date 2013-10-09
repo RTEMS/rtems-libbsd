@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /* $NetBSD: ieee80211_rssadapt.c,v 1.9 2005/02/26 22:45:09 perry Exp $ */
@@ -32,20 +32,20 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  */
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/if_media.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_rssadapt.h>
-#include <freebsd/net80211/ieee80211_ratectl.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_rssadapt.h>
+#include <net80211/ieee80211_ratectl.h>
 
 struct rssadapt_expavgctl {
 	/* RSS threshold decay. */

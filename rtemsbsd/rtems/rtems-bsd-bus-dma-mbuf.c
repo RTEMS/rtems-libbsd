@@ -43,10 +43,10 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
-#include <freebsd/machine/rtems-bsd-bus-dma.h>
+#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-bus-dma.h>
 
-#include <freebsd/sys/mbuf.h>
+#include <sys/mbuf.h>
 
 /*
  * Like bus_dmamap_load(), but for mbufs.

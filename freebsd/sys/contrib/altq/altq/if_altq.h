@@ -26,17 +26,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _ALTQ_IF_ALTQ_HH_
-#define	_ALTQ_IF_ALTQ_HH_
+#ifndef _ALTQ_IF_ALTQ_H_
+#define	_ALTQ_IF_ALTQ_H_
 
 #if (defined(__FreeBSD__) && __FreeBSD_version >= 500000)
-#include <freebsd/sys/lock.h>		/* XXX */
-#include <freebsd/sys/mutex.h>		/* XXX */
-#include <freebsd/sys/event.h>		/* XXX */
+#include <rtems/bsd/sys/lock.h>		/* XXX */
+#include <sys/mutex.h>		/* XXX */
+#include <sys/event.h>		/* XXX */
 #endif
 
 #ifdef _KERNEL_OPT
-#include <freebsd/altq/altqconf.h>
+#include <altq/altqconf.h>
 #endif
 
 struct altq_pktattr; struct tb_regulator; struct top_cdnr;
@@ -188,4 +188,4 @@ void altq_etherclassify(struct ifaltq *, struct mbuf *, struct altq_pktattr *);
 #endif
 #endif /* _KERNEL */
 
-#endif /* _ALTQ_IF_ALTQ_HH_ */
+#endif /* _ALTQ_IF_ALTQ_H_ */

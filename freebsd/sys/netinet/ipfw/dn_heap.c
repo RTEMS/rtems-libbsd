@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1998-2002,2010 Luigi Rizzo, Universita` di Pisa
@@ -32,24 +32,24 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/param.h>
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/param.h>
 #ifdef _KERNEL
 __FBSDID("$FreeBSD$");
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/netinet/ipfw/dn_heap.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <netinet/ipfw/dn_heap.h>
 #ifndef log
 #define log(x, arg...)
 #endif
 
 #else /* !_KERNEL */
 
-#include <freebsd/stdio.h>
-#include <freebsd/dn_test.h>
-#include <freebsd/strings.h>
-#include <freebsd/stdlib.h>
+#include <stdio.h>
+#include <dn_test.h>
+#include <strings.h>
+#include <stdlib.h>
 
 #include  "dn_heap.h"
 #define log(x, arg...)	fprintf(stderr, ## arg)

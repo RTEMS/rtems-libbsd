@@ -29,10 +29,10 @@
  */
 /*	$KAME: sctp6_var.h,v 1.7 2004/08/17 04:06:22 itojun Exp $	*/
 
-#ifndef _NETINET6_SCTP6_VAR_HH_
-#define _NETINET6_SCTP6_VAR_HH_
+#ifndef _NETINET6_SCTP6_VAR_H_
+#define _NETINET6_SCTP6_VAR_H_
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /* TODO __Userspace__ IPv6 stuff... */

@@ -34,16 +34,16 @@
  * IPsec controller part.
  */
 
-#ifndef _NETIPSEC_IPSEC_HH_
-#define _NETIPSEC_IPSEC_HH_
+#ifndef _NETIPSEC_IPSEC_H_
+#define _NETIPSEC_IPSEC_H_
 
 #if defined(_KERNEL) && !defined(_LKM) && !defined(KLD_MODULE)
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_ipsec.h>
 #endif
 
-#include <freebsd/net/pfkeyv2.h>
-#include <freebsd/netipsec/keydb.h>
+#include <net/pfkeyv2.h>
+#include <netipsec/keydb.h>
 
 #ifdef _KERNEL
 
@@ -450,4 +450,4 @@ extern const char *ipsec_strerror __P((void));
 
 #endif /* ! KERNEL */
 
-#endif /* _NETIPSEC_IPSEC_HH_ */
+#endif /* _NETIPSEC_IPSEC_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1990, 1993
@@ -29,10 +29,10 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/libkern.h>
+#include <sys/libkern.h>
 
 /*
  * Find Last Set bit

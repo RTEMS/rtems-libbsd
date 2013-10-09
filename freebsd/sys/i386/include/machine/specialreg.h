@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_SPECIALREG_HH_
-#define	_MACHINE_SPECIALREG_HH_
+#ifndef _MACHINE_SPECIALREG_H_
+#define	_MACHINE_SPECIALREG_H_
 
 /*
  * Bits in 386 special registers:
@@ -593,4 +593,4 @@
 #define	VIA_CRYPT_CWLO_KEY192		0x0000040c	/* 192bit, 12 rds */
 #define	VIA_CRYPT_CWLO_KEY256		0x0000080e	/* 256bit, 15 rds */
 
-#endif /* !_MACHINE_SPECIALREG_HH_ */
+#endif /* !_MACHINE_SPECIALREG_H_ */

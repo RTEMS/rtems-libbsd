@@ -33,12 +33,12 @@
  * Support for POSIX.1e and NFSv4 access control lists.
  */
 
-#ifndef _SYS_ACL_HH_
-#define	_SYS_ACL_HH_
+#ifndef _SYS_ACL_H_
+#define	_SYS_ACL_H_
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/vm/uma.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <vm/uma.h>
 
 /*
  * POSIX.1e and NFSv4 ACL types and related constants.
@@ -404,4 +404,4 @@ __END_DECLS
 
 #endif /* !_KERNEL */
 
-#endif /* !_SYS_ACL_HH_ */
+#endif /* !_SYS_ACL_H_ */

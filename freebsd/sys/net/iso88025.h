@@ -40,8 +40,8 @@
  * Fundamental constants relating to iso 802.5
  */
 
-#ifndef _NET_ISO88025_HH_
-#define	_NET_ISO88025_HH_
+#ifndef _NET_ISO88025_H_
+#define	_NET_ISO88025_H_
 
 /*
  * General ISO 802.5 definitions

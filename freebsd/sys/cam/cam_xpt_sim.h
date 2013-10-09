@@ -32,8 +32,8 @@
 #ifndef _CAM_CAM_XPT_SIM_H
 #define _CAM_CAM_XPT_SIM_H 1
 
-#include <freebsd/cam/cam_xpt.h>
-#include <freebsd/cam/cam_queue.h>
+#include <cam/cam_xpt.h>
+#include <cam/cam_queue.h>
 
 /* Functions accessed by SIM drivers */
 #ifdef _KERNEL

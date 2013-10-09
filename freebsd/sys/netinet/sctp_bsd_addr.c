@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
@@ -32,23 +32,23 @@
 
 /* $KAME: sctp_output.c,v 1.46 2005/03/06 16:04:17 itojun Exp $	 */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/netinet/sctp_os.h>
-#include <freebsd/netinet/sctp_var.h>
-#include <freebsd/netinet/sctp_pcb.h>
-#include <freebsd/netinet/sctp_header.h>
-#include <freebsd/netinet/sctputil.h>
-#include <freebsd/netinet/sctp_output.h>
-#include <freebsd/netinet/sctp_bsd_addr.h>
-#include <freebsd/netinet/sctp_uio.h>
-#include <freebsd/netinet/sctputil.h>
-#include <freebsd/netinet/sctp_timer.h>
-#include <freebsd/netinet/sctp_asconf.h>
-#include <freebsd/netinet/sctp_sysctl.h>
-#include <freebsd/netinet/sctp_indata.h>
-#include <freebsd/sys/unistd.h>
+#include <netinet/sctp_os.h>
+#include <netinet/sctp_var.h>
+#include <netinet/sctp_pcb.h>
+#include <netinet/sctp_header.h>
+#include <netinet/sctputil.h>
+#include <netinet/sctp_output.h>
+#include <netinet/sctp_bsd_addr.h>
+#include <netinet/sctp_uio.h>
+#include <netinet/sctputil.h>
+#include <netinet/sctp_timer.h>
+#include <netinet/sctp_asconf.h>
+#include <netinet/sctp_sysctl.h>
+#include <netinet/sctp_indata.h>
+#include <rtems/bsd/sys/unistd.h>
 
 /* Declare all of our malloc named types */
 MALLOC_DEFINE(SCTP_M_MAP, "sctp_map", "sctp asoc map descriptor");

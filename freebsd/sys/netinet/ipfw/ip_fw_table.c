@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004 Ruslan Ermilov and Vsevolod Lobko.
@@ -25,7 +25,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -42,37 +42,37 @@ __FBSDID("$FreeBSD$");
  */
 
 #if !defined(KLD_MODULE)
-#include <freebsd/local/opt_ipfw.h>
-#include <freebsd/local/opt_ipdivert.h>
-#include <freebsd/local/opt_ipdn.h>
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_ipfw.h>
+#include <rtems/bsd/local/opt_ipdivert.h>
+#include <rtems/bsd/local/opt_ipdn.h>
+#include <rtems/bsd/local/opt_inet.h>
 #ifndef INET
 #error IPFIREWALL requires INET.
 #endif /* INET */
 #endif
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/net/if.h>	/* ip_fw.h requires IFNAMSIZ */
-#include <freebsd/net/radix.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/rwlock.h>
+#include <sys/socket.h>
+#include <net/if.h>	/* ip_fw.h requires IFNAMSIZ */
+#include <net/radix.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip_var.h>	/* struct ipfw_rule_ref */
-#include <freebsd/netinet/ip_fw.h>
-#include <freebsd/sys/queue.h> /* LIST_HEAD */
-#include <freebsd/netinet/ipfw/ip_fw_private.h>
+#include <netinet/in.h>
+#include <netinet/ip_var.h>	/* struct ipfw_rule_ref */
+#include <netinet/ip_fw.h>
+#include <sys/queue.h> /* LIST_HEAD */
+#include <netinet/ipfw/ip_fw_private.h>
 
 #ifdef MAC
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 #endif
 
 MALLOC_DEFINE(M_IPFW_TBL, "ipfw_tbl", "IpFw tables");

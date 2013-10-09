@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * Copyright (c) 2010 Riccardo Panicucci, Universita` di Pisa
@@ -31,22 +31,22 @@
  */
 
 #ifdef _KERNEL
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/net/if.h>	/* IFNAMSIZ */
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip_var.h>		/* ipfw_rule_ref */
-#include <freebsd/netinet/ip_fw.h>	/* flow_id */
-#include <freebsd/netinet/ip_dummynet.h>
-#include <freebsd/netinet/ipfw/dn_heap.h>
-#include <freebsd/netinet/ipfw/ip_dn_private.h>
-#include <freebsd/netinet/ipfw/dn_sched.h>
+#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <net/if.h>	/* IFNAMSIZ */
+#include <netinet/in.h>
+#include <netinet/ip_var.h>		/* ipfw_rule_ref */
+#include <netinet/ip_fw.h>	/* flow_id */
+#include <netinet/ip_dummynet.h>
+#include <netinet/ipfw/dn_heap.h>
+#include <netinet/ipfw/ip_dn_private.h>
+#include <netinet/ipfw/dn_sched.h>
 #else
-#include <freebsd/dn_test.h>
+#include <dn_test.h>
 #endif
 
 /*

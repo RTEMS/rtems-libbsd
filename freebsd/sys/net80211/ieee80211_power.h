@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_POWER_HH_
-#define _NET80211_IEEE80211_POWER_HH_
+#ifndef _NET80211_IEEE80211_POWER_H_
+#define _NET80211_IEEE80211_POWER_H_
 
 struct ieee80211com;
 struct ieee80211vap;
@@ -76,4 +76,4 @@ void	ieee80211_node_pwrsave(struct ieee80211_node *, int enable);
 void	ieee80211_sta_pwrsave(struct ieee80211vap *, int enable);
 
 void	ieee80211_power_poll(struct ieee80211com *);
-#endif /* _NET80211_IEEE80211_POWER_HH_ */
+#endif /* _NET80211_IEEE80211_POWER_H_ */

@@ -23,9 +23,9 @@
  * $FreeBSD$
  */
 
-#ifndef _ATALK_ENDIAN_HH_
-#define _ATALK_ENDIAN_HH_
+#ifndef _ATALK_ENDIAN_H_
+#define _ATALK_ENDIAN_H_
 
-#include <freebsd/machine/endian.h>
+#include <machine/rtems-bsd-endian.h>
 
-#endif /* !_ATALK_ENDIAN_HH_ */
+#endif /* !_ATALK_ENDIAN_H_ */

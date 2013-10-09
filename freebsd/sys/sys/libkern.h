@@ -30,13 +30,13 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_LIBKERN_HH_
-#define	_SYS_LIBKERN_HH_
+#ifndef _SYS_LIBKERN_H_
+#define	_SYS_LIBKERN_H_
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/types.h>
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/types.h>
 #ifdef _KERNEL
-#include <freebsd/sys/systm.h>
+#include <sys/systm.h>
 #endif
 
 #ifndef __rtems__
@@ -192,4 +192,4 @@ strrchr(const char *p, int ch)
 #define	FNM_IGNORECASE	FNM_CASEFOLD
 #define	FNM_FILE_NAME	FNM_PATHNAME
 
-#endif /* !_SYS_LIBKERN_HH_ */
+#endif /* !_SYS_LIBKERN_H_ */

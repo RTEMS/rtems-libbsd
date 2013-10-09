@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997 Doug Rabson
@@ -26,25 +26,25 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_compat.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/reboot.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/linker.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/eventhandler.h>
+#include <sys/malloc.h>
+#include <sys/sysproto.h>
+#include <sys/sysent.h>
+#include <sys/proc.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/reboot.h>
+#include <sys/sx.h>
+#include <sys/module.h>
+#include <sys/linker.h>
 
 static MALLOC_DEFINE(M_MODULE, "module", "module data structures");
 
@@ -474,11 +474,11 @@ modfind(struct thread *td, struct modfind_args *uap)
 MODULE_VERSION(kernel, __FreeBSD_version);
 
 #ifdef COMPAT_FREEBSD32
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/compat/freebsd32/freebsd32_util.h>
-#include <freebsd/compat/freebsd32/freebsd32.h>
-#include <freebsd/compat/freebsd32/freebsd32_proto.h>
+#include <sys/mount.h>
+#include <sys/socket.h>
+#include <compat/freebsd32/freebsd32_util.h>
+#include <compat/freebsd32/freebsd32.h>
+#include <compat/freebsd32/freebsd32_proto.h>
 
 typedef union modspecific32 {
 	int		intval;

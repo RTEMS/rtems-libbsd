@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: radix_mpath.c,v 1.17 2004/11/08 10:29:39 itojun Exp $	*/
 
@@ -35,23 +35,23 @@
  * PROPERTIES.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/net/radix.h>
-#include <freebsd/net/radix_mpath.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_var.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/domain.h>
+#include <sys/syslog.h>
+#include <net/radix.h>
+#include <net/radix_mpath.h>
+#include <net/route.h>
+#include <net/if.h>
+#include <net/if_var.h>
 
 /*
  * give some jitter to hash, to avoid synchronization between routers

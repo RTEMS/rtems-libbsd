@@ -46,14 +46,14 @@
  * once things starts to crystalize.
  */
 
-#ifndef _SYS_BUFOBJ_HH_
-#define _SYS_BUFOBJ_HH_
+#ifndef _SYS_BUFOBJ_H_
+#define _SYS_BUFOBJ_H_
 
 #if defined(_KERNEL) || defined(_KVM_VNODE)
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
 
 struct bufobj;
 struct buf_ops;
@@ -128,4 +128,4 @@ int bufsync(struct bufobj *bo, int waitfor);
 void bufbdflush(struct bufobj *bo, struct buf *bp);
 
 #endif /* defined(_KERNEL) || defined(_KVM_VNODE) */
-#endif /* _SYS_BUFOBJ_HH_ */
+#endif /* _SYS_BUFOBJ_H_ */

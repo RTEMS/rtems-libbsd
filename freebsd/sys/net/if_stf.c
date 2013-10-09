@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: if_stf.c,v 1.73 2001/12/03 11:08:30 keiichi Exp $	*/
@@ -76,51 +76,51 @@
  * Note that there is no way to be 100% secure.
  */
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/machine/cpu.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/mbuf.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/protosw.h>
+#include <sys/proc.h>
+#include <sys/queue.h>
+#include <sys/sysctl.h>
+#include <machine/cpu.h>
 
-#include <freebsd/sys/malloc.h>
+#include <sys/malloc.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_stf.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_clone.h>
+#include <net/route.h>
+#include <net/netisr.h>
+#include <net/if_types.h>
+#include <net/if_stf.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/in_var.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/in_var.h>
 
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet/ip_ecn.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/in6_var.h>
+#include <netinet/ip_ecn.h>
 
-#include <freebsd/netinet/ip_encap.h>
+#include <netinet/ip_encap.h>
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
-#include <freebsd/net/bpf.h>
+#include <net/bpf.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 SYSCTL_DECL(_net_link);
 SYSCTL_NODE(_net_link, IFT_STF, stf, CTLFLAG_RW, 0, "6to4 Interface");

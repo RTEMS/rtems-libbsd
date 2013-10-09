@@ -37,17 +37,17 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <rtems/score/objectimpl.h>
 #include <rtems/rtems/attrimpl.h>
 #include <rtems/rtems/semimpl.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/sx.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/sx.h>
 
 #ifndef INVARIANTS
 #define _sx_assert(sx, what, file, line)

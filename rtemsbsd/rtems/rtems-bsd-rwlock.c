@@ -37,19 +37,16 @@
  * SUCH DAMAGE.
  */
 
-#include <pthread.h>
-
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <rtems/score/objectimpl.h>
 #include <rtems/posix/rwlockimpl.h>
 
-#include <sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/rwlock.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/rwlock.h>
 
 #ifndef INVARIANTS
 #define _rw_assert(rw, what, file, line)
@@ -234,7 +231,7 @@ _rw_wlock(struct rwlock *rw, const char *file, int line)
 {
   int iret;
 
-  pthread_rwlock_wrlock( &rw->lock_object.lo_id );
+  iret = pthread_rwlock_wrlock( &rw->lock_object.lo_id );
   BSD_ASSERT( iret == 0 );
 
   return 0;

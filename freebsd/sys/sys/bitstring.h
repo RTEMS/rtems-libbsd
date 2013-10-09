@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_BITSTRING_HH_
-#define	_SYS_BITSTRING_HH_
+#ifndef _SYS_BITSTRING_H_
+#define	_SYS_BITSTRING_H_
 
 typedef	unsigned char bitstr_t;
 
@@ -143,4 +143,4 @@ typedef	unsigned char bitstr_t;
 	*(value) = _value; \
 } while (0)
 
-#endif /* !_SYS_BITSTRING_HH_ */
+#endif /* !_SYS_BITSTRING_H_ */

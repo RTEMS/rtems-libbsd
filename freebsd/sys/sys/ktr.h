@@ -33,8 +33,8 @@
  *	Wraparound kernel trace buffer support.
  */
 
-#ifndef _SYS_KTR_HH_
-#define _SYS_KTR_HH_
+#ifndef _SYS_KTR_H_
+#define _SYS_KTR_H_
 
 /*
  * Trace classes
@@ -279,4 +279,4 @@ void	ktr_tracepoint(u_int mask, const char *file, int line,
 
 #endif /* !LOCORE */
 
-#endif /* !_SYS_KTR_HH_ */
+#endif /* !_SYS_KTR_H_ */

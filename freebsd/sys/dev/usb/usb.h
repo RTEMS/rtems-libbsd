@@ -36,26 +36,26 @@
  * USB v3.0
  */
 
-#ifndef _USB_STANDARD_HH_
-#define	_USB_STANDARD_HH_
+#ifndef _USB_STANDARD_H_
+#define	_USB_STANDARD_H_
 
 #if defined(_KERNEL)
-#include <freebsd/local/opt_usb.h>
+#include <rtems/bsd/local/opt_usb.h>
 
 /* Declare parent SYSCTL USB node. */
 #ifdef SYSCTL_DECL
 SYSCTL_DECL(_hw_usb);
 #endif
 
-#include <freebsd/sys/malloc.h>
+#include <sys/malloc.h>
 
 MALLOC_DECLARE(M_USB);
 MALLOC_DECLARE(M_USBDEV);
 MALLOC_DECLARE(M_USBHC);
 #endif /* _KERNEL */
 
-#include <freebsd/dev/usb/usb_endian.h>
-#include <freebsd/dev/usb/usb_freebsd.h>
+#include <dev/usb/usb_endian.h>
+#include <dev/usb/usb_freebsd.h>
 
 #define	USB_STACK_VERSION 2000		/* 2.0 */
 
@@ -752,4 +752,4 @@ enum usb_dev_state {
 	USB_STATE_CONFIGURED,
 };
 #define	USB_STATE_MAX	(USB_STATE_CONFIGURED+1)
-#endif					/* _USB_STANDARD_HH_ */
+#endif					/* _USB_STANDARD_H_ */

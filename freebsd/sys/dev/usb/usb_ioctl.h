@@ -26,15 +26,15 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_IOCTL_HH_
-#define	_USB_IOCTL_HH_
+#ifndef _USB_IOCTL_H_
+#define	_USB_IOCTL_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 /* Building "kdump" depends on these includes */
 
-#include <freebsd/dev/usb/usb_endian.h>
-#include <freebsd/dev/usb/usb.h>
+#include <dev/usb/usb_endian.h>
+#include <dev/usb/usb.h>
 
 #define	USB_DEVICE_NAME "usbctl"
 #define	USB_DEVICE_DIR "usb"
@@ -269,4 +269,4 @@ struct usb_gen_quirk {
 #define	USB_DEV_QUIRK_ADD	_IOW ('Q', 2, struct usb_gen_quirk)
 #define	USB_DEV_QUIRK_REMOVE	_IOW ('Q', 3, struct usb_gen_quirk)
 
-#endif					/* _USB_IOCTL_HH_ */
+#endif					/* _USB_IOCTL_H_ */

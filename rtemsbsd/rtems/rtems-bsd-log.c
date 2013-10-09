@@ -32,10 +32,10 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
 
 /*
  * Log writes to the log buffer, and guarantees not to sleep (so can be

@@ -29,14 +29,14 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_RMAN_HH_
-#define	_SYS_RMAN_HH_	1
+#ifndef _SYS_RMAN_H_
+#define	_SYS_RMAN_H_	1
 
 #ifndef	_KERNEL
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 #else
-#include <freebsd/machine/_bus.h>
-#include <freebsd/machine/resource.h>
+#include <machine/_bus.h>
+#include <machine/resource.h>
 #endif
 
 #define	RF_ALLOCATED	0x0001	/* resource has been reserved */
@@ -152,4 +152,4 @@ extern	struct rman_head rman_head;
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_RMAN_HH_ */
+#endif /* !_SYS_RMAN_H_ */

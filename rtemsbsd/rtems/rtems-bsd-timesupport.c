@@ -37,7 +37,7 @@
  * This violation is specifically for _Timespec_To_ticks
  */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <rtems/score/timespec.h>
 

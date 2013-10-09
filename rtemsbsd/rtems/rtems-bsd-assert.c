@@ -38,10 +38,10 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
 
 void
 rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr)

@@ -30,10 +30,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_UCRED_HH_
-#define	_SYS_UCRED_HH_
+#ifndef _SYS_UCRED_H_
+#define	_SYS_UCRED_H_
 
-#include <freebsd/bsm/audit.h>
+#include <bsm/audit.h>
 
 /*
  * Credentials.
@@ -107,4 +107,4 @@ void	crsetgroups(struct ucred *cr, int n, gid_t *groups);
 int	groupmember(gid_t gid, struct ucred *cred);
 #endif /* _KERNEL */
 
-#endif /* !_SYS_UCRED_HH_ */
+#endif /* !_SYS_UCRED_H_ */

@@ -32,34 +32,34 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_USER_HH_
-#define _SYS_USER_HH_
+#ifndef _SYS_USER_H_
+#define _SYS_USER_H_
 
-#include <freebsd/machine/pcb.h>
+#include <machine/pcb.h>
 #ifndef _KERNEL
 /* stuff that *used* to be included by user.h, or is now needed */
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/resource.h>
-#include <freebsd/sys/ucred.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/vm/vm.h>		/* XXX */
-#include <freebsd/vm/vm_param.h>	/* XXX */
-#include <freebsd/vm/pmap.h>		/* XXX */
-#include <freebsd/vm/vm_map.h>		/* XXX */
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/time.h>
+#include <rtems/bsd/sys/resource.h>
+#include <sys/ucred.h>
+#include <sys/uio.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
+#include <sys/proc.h>
+#include <vm/vm.h>		/* XXX */
+#include <vm/vm_param.h>	/* XXX */
+#include <vm/pmap.h>		/* XXX */
+#include <vm/vm_map.h>		/* XXX */
 #endif /* !_KERNEL */
-#ifndef _SYS_RESOURCEVAR_HH_
-#include <freebsd/sys/resourcevar.h>
+#ifndef _SYS_RESOURCEVAR_H_
+#include <sys/resourcevar.h>
 #endif
-#ifndef _SYS_SIGNALVAR_HH_
-#include <freebsd/sys/signalvar.h>
+#ifndef _SYS_SIGNALVAR_H_
+#include <sys/signalvar.h>
 #endif
-#ifndef _SYS_SOCKET_VAR_HH_
-#include <freebsd/sys/socket.h>
+#ifndef _SYS_SOCKET_VAR_H_
+#include <sys/socket.h>
 #endif
 
 /*

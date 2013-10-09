@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,36 +26,36 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h> 
-#include <freebsd/sys/mbuf.h>   
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h> 
+#include <sys/mbuf.h>   
+#include <sys/malloc.h>
+#include <sys/kernel.h>
 
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
  
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/ethernet.h>
+#include <net/if.h>
+#include <net/if_media.h>
+#include <net/ethernet.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_input.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_input.h>
 #ifdef IEEE80211_SUPPORT_SUPERG
-#include <freebsd/net80211/ieee80211_superg.h>
+#include <net80211/ieee80211_superg.h>
 #endif
 #ifdef IEEE80211_SUPPORT_TDMA
-#include <freebsd/net80211/ieee80211_tdma.h>
+#include <net80211/ieee80211_tdma.h>
 #endif
-#include <freebsd/net80211/ieee80211_wds.h>
-#include <freebsd/net80211/ieee80211_mesh.h>
-#include <freebsd/net80211/ieee80211_ratectl.h>
+#include <net80211/ieee80211_wds.h>
+#include <net80211/ieee80211_mesh.h>
+#include <net80211/ieee80211_ratectl.h>
 
-#include <freebsd/net/bpf.h>
+#include <net/bpf.h>
 
 /*
  * IEEE80211_NODE_HASHSIZE must be a power of 2.

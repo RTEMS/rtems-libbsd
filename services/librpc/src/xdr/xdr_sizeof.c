@@ -39,7 +39,6 @@
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <sys/types.h>

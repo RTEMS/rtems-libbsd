@@ -37,17 +37,17 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
 
-#include <freebsd/bsd.h>
+#include <rtems/bsd/bsd.h>
 
 /* In FreeBSD this is a local function */
 void mi_startup(void);

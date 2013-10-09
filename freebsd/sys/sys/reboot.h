@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_REBOOT_HH_
-#define	_SYS_REBOOT_HH_
+#ifndef _SYS_REBOOT_H_
+#define	_SYS_REBOOT_H_
 
 /*
  * Arguments to reboot system call.  These are passed to

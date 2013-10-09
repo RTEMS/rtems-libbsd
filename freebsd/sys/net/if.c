@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1980, 1986, 1993
@@ -32,66 +32,66 @@
  * $FreeBSD$
  */
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/sbuf.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/refcount.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/taskqueue.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/machine/stdarg.h>
-#include <freebsd/vm/uma.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/conf.h>
+#include <sys/malloc.h>
+#include <sys/sbuf.h>
+#include <sys/bus.h>
+#include <sys/mbuf.h>
+#include <sys/systm.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/refcount.h>
+#include <sys/module.h>
+#include <sys/rwlock.h>
+#include <sys/sockio.h>
+#include <sys/syslog.h>
+#include <sys/sysctl.h>
+#include <sys/taskqueue.h>
+#include <sys/domain.h>
+#include <sys/jail.h>
+#include <machine/stdarg.h>
+#include <vm/uma.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/radix.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_clone.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/if_var.h>
+#include <net/radix.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
 #if defined(INET) || defined(INET6)
 /*XXX*/
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip_carp.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/ip_carp.h>
 #ifdef INET6
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet6/in6_ifattach.h>
+#include <netinet6/in6_var.h>
+#include <netinet6/in6_ifattach.h>
 #endif
 #endif
 #ifdef INET
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/if_ether.h>
 #endif
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #ifdef COMPAT_FREEBSD32
-#include <freebsd/sys/mount.h>
-#include <freebsd/compat/freebsd32/freebsd32.h>
+#include <sys/mount.h>
+#include <compat/freebsd32/freebsd32.h>
 #endif
 
 struct ifindex_entry {
@@ -1820,7 +1820,7 @@ done:
 	return (ifa);
 }
 
-#include <freebsd/net/if_llatbl.h>
+#include <net/if_llatbl.h>
 
 /*
  * Default action when installing a route with a Link Level gateway.

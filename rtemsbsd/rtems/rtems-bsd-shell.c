@@ -37,18 +37,18 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/proc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/callout.h>
+#include <sys/condvar.h>
+#include <sys/proc.h>
 
-#include <freebsd/bsd.h>
+#include <rtems/bsd/bsd.h>
 #include <rtems/shell.h>
 
 static void

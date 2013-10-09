@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /* $OpenBSD: ip_ipcomp.c,v 1.1 2001/07/05 12:08:52 jjbg Exp $ */
@@ -31,44 +31,44 @@
  */
 
 /* IP payload compression protocol (IPComp), see RFC 2393 */
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/socket.h>
+#include <sys/kernel.h>
+#include <sys/protosw.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netipsec/ipsec.h>
-#include <freebsd/netipsec/xform.h>
+#include <netipsec/ipsec.h>
+#include <netipsec/xform.h>
 
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netipsec/ipsec6.h>
+#include <netinet/ip6.h>
+#include <netipsec/ipsec6.h>
 #endif
 
-#include <freebsd/netipsec/ipcomp.h>
-#include <freebsd/netipsec/ipcomp_var.h>
+#include <netipsec/ipcomp.h>
+#include <netipsec/ipcomp_var.h>
 
-#include <freebsd/netipsec/key.h>
-#include <freebsd/netipsec/key_debug.h>
+#include <netipsec/key.h>
+#include <netipsec/key_debug.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/deflate.h>
-#include <freebsd/opencrypto/xform.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/deflate.h>
+#include <opencrypto/xform.h>
 
 VNET_DEFINE(int, ipcomp_enable) = 1;
 VNET_DEFINE(struct ipcompstat, ipcompstat);

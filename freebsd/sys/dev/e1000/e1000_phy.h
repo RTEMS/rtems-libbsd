@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_PHY_HH_
-#define _E1000_PHY_HH_
+#ifndef _E1000_PHY_H_
+#define _E1000_PHY_H_
 
 void e1000_init_phy_ops_generic(struct e1000_hw *hw);
 s32  e1000_null_read_reg(struct e1000_hw *hw, u32 offset, u16 *data);

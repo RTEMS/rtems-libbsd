@@ -30,13 +30,13 @@
  * These notices must be retained in any copies of any part of this software.
  */
 
-#ifndef _ALTQ_ALTQ_CBQ_HH_
-#define	_ALTQ_ALTQ_CBQ_HH_
+#ifndef _ALTQ_ALTQ_CBQ_H_
+#define	_ALTQ_ALTQ_CBQ_H_
 
-#include <freebsd/altq/altq.h>
-#include <freebsd/altq/altq_rmclass.h>
-#include <freebsd/altq/altq_red.h>
-#include <freebsd/altq/altq_rio.h>
+#include <altq/altq.h>
+#include <altq/altq_rmclass.h>
+#include <altq/altq_red.h>
+#include <altq/altq_rio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -218,4 +218,4 @@ typedef struct cbqstate {
 }
 #endif
 
-#endif /* !_ALTQ_ALTQ_CBQ_HH_ */
+#endif /* !_ALTQ_ALTQ_CBQ_H_ */

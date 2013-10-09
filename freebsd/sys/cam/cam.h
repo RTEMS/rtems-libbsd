@@ -33,13 +33,13 @@
 
 #ifdef _KERNEL
 #ifndef __rtems__
-#include <freebsd/opt_cam.h>
+#include <opt_cam.h>
 #else /* __rtems__ */
-#include <freebsd/local/opt_cam.h>
+#include <rtems/bsd/local/opt_cam.h>
 #endif /* __rtems__ */
 #endif
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 typedef u_int path_id_t;
 typedef u_int target_id_t;

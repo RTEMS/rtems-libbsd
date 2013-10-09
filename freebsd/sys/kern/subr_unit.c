@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004 Poul-Henning Kamp
@@ -69,19 +69,19 @@
  *	N is the number of the highest unit allocated.
  */
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/bitstring.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/queue.h>
+#include <sys/bitstring.h>
 
 #ifdef _KERNEL
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
 
 /*
  * In theory it would be smarter to allocate the individual blocks
@@ -100,9 +100,9 @@ MTX_SYSINIT(unit, &unitmtx, "unit# allocation", MTX_DEF);
 
 #else /* ...USERLAND */
 
-#include <freebsd/stdio.h>
-#include <freebsd/stdlib.h>
-#include <freebsd/string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define KASSERT(cond, arg) \
 	do { \

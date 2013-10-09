@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * This file is produced automatically.
@@ -12,12 +12,12 @@
  * See the source file for legal information
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/kobj.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/local/usb_if.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <sys/kernel.h>
+#include <sys/kobj.h>
+#include <sys/bus.h>
+#include <rtems/bsd/local/usb_if.h>
 
 struct kobj_method usb_handle_request_method_default = {
 	&usb_handle_request_desc, (kobjop_t) kobj_error_method

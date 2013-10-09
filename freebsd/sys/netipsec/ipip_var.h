@@ -36,8 +36,8 @@
  * PURPOSE.
  */
 
-#ifndef _NETINET_IPIP_HH_
-#define _NETINET_IPIP_HH_
+#ifndef _NETINET_IPIP_H_
+#define _NETINET_IPIP_H_
 
 /*
  * IP-inside-IP processing.
@@ -65,4 +65,4 @@ VNET_DECLARE(struct ipipstat, ipipstat);
 #define	V_ipip_allow		VNET(ipip_allow)
 #define	V_ipipstat		VNET(ipipstat)
 #endif /* _KERNEL */
-#endif /* _NETINET_IPIP_HH_ */
+#endif /* _NETINET_IPIP_H_ */

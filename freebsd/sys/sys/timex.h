@@ -65,7 +65,7 @@
  *	ntp_gettime - NTP user application interface
  *
  * SYNOPSIS
- *	#include <freebsd/sys/timex.h>
+ *	#include <sys/timex.h>
  *
  *	int ntp_gettime(struct ntptimeval *ntv);
  *
@@ -80,8 +80,8 @@
  *	ntp_adjtime - NTP daemon application interface
  *
  * SYNOPSIS
- *	#include <freebsd/sys/timex.h>
- *	#include <freebsd/sys/syscall.h>
+ *	#include <sys/timex.h>
+ *	#include <sys/syscall.h>
  *
  *	int syscall(SYS_ntp_adjtime, tptr);
  *	int SYS_ntp_adjtime;
@@ -93,13 +93,13 @@
  *	STA_NANO bit in the status word. See the description below for
  *	further information.
  */
-#ifndef _SYS_TIMEX_HH_
-#define _SYS_TIMEX_HH_ 1
+#ifndef _SYS_TIMEX_H_
+#define _SYS_TIMEX_H_ 1
 #define NTP_API		4	/* NTP API version */
 
 #ifndef __rtems__
 #ifndef MSDOS			/* Microsoft specific */
-#include <freebsd/sys/syscall.h>
+#include <sys/syscall.h>
 #endif /* MSDOS */
 #endif
 
@@ -225,7 +225,7 @@ struct timex {
 #ifdef _KERNEL
 void	ntp_update_second(int64_t *adjustment, time_t *newsec);
 #else /* !_KERNEL */
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int	ntp_adjtime(struct timex *);
@@ -235,4 +235,4 @@ __END_DECLS
 
 #endif /* __FreeBSD__ */
 
-#endif /* !_SYS_TIMEX_HH_ */
+#endif /* !_SYS_TIMEX_H_ */

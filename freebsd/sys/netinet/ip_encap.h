@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETINET_IP_ENCAP_HH_
-#define _NETINET_IP_ENCAP_HH_
+#ifndef _NETINET_IP_ENCAP_H_
+#define _NETINET_IP_ENCAP_H_
 
 #ifdef _KERNEL
 
@@ -61,4 +61,4 @@ int	encap_detach(const struct encaptab *);
 void	*encap_getarg(struct mbuf *);
 #endif
 
-#endif /*_NETINET_IP_ENCAP_HH_*/
+#endif /*_NETINET_IP_ENCAP_H_*/

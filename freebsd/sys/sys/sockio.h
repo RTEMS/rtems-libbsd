@@ -30,10 +30,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_SOCKIO_HH_
-#define	_SYS_SOCKIO_HH_
+#ifndef _SYS_SOCKIO_H_
+#define	_SYS_SOCKIO_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 /* Socket ioctl's. */
 #define	SIOCSHIWAT	 _IOW('s',  0, int)		/* set high watermark */
@@ -125,4 +125,4 @@
 #define	SIOCDIFGROUP	 _IOW('i', 137, struct ifgroupreq) /* delete ifgroup */
 #define	SIOCGIFGMEMB	_IOWR('i', 138, struct ifgroupreq) /* get members */
 
-#endif /* !_SYS_SOCKIO_HH_ */
+#endif /* !_SYS_SOCKIO_H_ */

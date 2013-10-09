@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2008 The FreeBSD Foundation
@@ -49,29 +49,29 @@
  *   For now let the user handle that case.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/refcount.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/refcount.h>
+#include <sys/queue.h>
+#include <sys/smp.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/sysctl.h>
+#include <rtems/bsd/sys/types.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/vnet.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_clone.h>
+#include <net/if_var.h>
+#include <net/if_types.h>
+#include <net/netisr.h>
+#include <net/vnet.h>
 
 #define	EPAIRNAME	"epair"
 

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright 1994, 1995 Massachusetts Institute of Technology
@@ -34,11 +34,11 @@
 
 /* This code generates debugging traces to the radix code. */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/route.h>
+#include <net/route.h>
 
 int	at_inithead(void **head, int off);
 

@@ -23,8 +23,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _USB_USBDI_UTIL_HH_
-#define _USB_USBDI_UTIL_HH_
+#ifndef _USB_USBDI_UTIL_H_
+#define _USB_USBDI_UTIL_H_
 
 struct cv;
 
@@ -88,4 +88,4 @@ const char *usb_get_manufacturer(struct usb_device *);
 const char *usb_get_product(struct usb_device *);
 const char *usb_get_serial(struct usb_device *);
 
-#endif /* _USB_USBDI_UTIL_HH_ */
+#endif /* _USB_USBDI_UTIL_H_ */

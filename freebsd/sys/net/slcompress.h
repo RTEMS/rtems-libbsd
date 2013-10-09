@@ -34,8 +34,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_SLCOMPRESS_HH_
-#define _NET_SLCOMPRESS_HH_
+#ifndef _NET_SLCOMPRESS_H_
+#define _NET_SLCOMPRESS_H_
 
 #define MAX_STATES 16		/* must be > 2 and < 256 */
 #define MAX_HDR 128
@@ -155,4 +155,4 @@ int	 sl_uncompress_tcp(u_char **, int, u_int, struct slcompress *);
 int	 sl_uncompress_tcp_core(u_char *, int, int, u_int,
 	    struct slcompress *, u_char **, u_int *);
 
-#endif /* !_NET_SLCOMPRESS_HH_ */
+#endif /* !_NET_SLCOMPRESS_H_ */

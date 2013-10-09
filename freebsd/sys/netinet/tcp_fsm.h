@@ -31,8 +31,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_FSM_HH_
-#define	_NETINET_TCP_FSM_HH_
+#ifndef _NETINET_TCP_FSM_H_
+#define	_NETINET_TCP_FSM_H_
 
 /*
  * TCP FSM state definitions.

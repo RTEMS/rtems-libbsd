@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /******************************************************************************
 
@@ -40,9 +40,9 @@
  */
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_api.h>
+#include <dev/e1000/e1000_api.h>
 #else
-#include <freebsd/local/e1000_api.h>
+#include <rtems/bsd/local/e1000_api.h>
 #endif
 
 static s32  e1000_init_phy_params_80003es2lan(struct e1000_hw *hw);

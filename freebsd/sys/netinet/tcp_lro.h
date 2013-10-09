@@ -34,8 +34,8 @@ POSSIBILITY OF SUCH DAMAGE.
 $FreeBSD$
 
 ***************************************************************************/
-#ifndef _TCP_LRO_HH_
-#define _TCP_LRO_HH_
+#ifndef _TCP_LRO_H_
+#define _TCP_LRO_H_
 
 struct lro_entry;
 struct lro_entry
@@ -82,4 +82,4 @@ int tcp_lro_rx(struct lro_ctrl *, struct mbuf *, uint32_t);
 /* Number of LRO entries - these are per rx queue */
 #define LRO_ENTRIES			8
 
-#endif /* _TCP_LRO_HH_ */
+#endif /* _TCP_LRO_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1991, 1993
@@ -31,65 +31,65 @@
  *	@(#)kern_proc.c	8.7 (Berkeley) 2/14/95
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_kdtrace.h>
-#include <freebsd/local/opt_ktrace.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_kdtrace.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 #ifndef __rtems__
-#include <freebsd/local/opt_kstack_pages.h>
-#include <freebsd/local/opt_stack.h>
+#include <rtems/bsd/local/opt_kstack_pages.h>
+#include <rtems/bsd/local/opt_stack.h>
 #endif /* __rtems__ */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/refcount.h>
-#include <freebsd/sys/sbuf.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/sched.h>
-#include <freebsd/sys/smp.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/refcount.h>
+#include <sys/sbuf.h>
+#include <sys/sysent.h>
+#include <sys/sched.h>
+#include <sys/smp.h>
 #ifndef __rtems__
-#include <freebsd/sys/stack.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/tty.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/sdt.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/user.h>
+#include <sys/stack.h>
+#include <sys/sysctl.h>
+#include <sys/filedesc.h>
+#include <sys/tty.h>
+#include <sys/signalvar.h>
+#include <sys/sdt.h>
+#include <sys/sx.h>
+#include <sys/user.h>
 #endif /* __rtems__ */
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/vnode.h>
-#include <freebsd/sys/eventhandler.h>
+#include <sys/jail.h>
+#include <sys/vnode.h>
+#include <sys/eventhandler.h>
 #ifdef KTRACE
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/ktrace.h>
+#include <sys/uio.h>
+#include <sys/ktrace.h>
 #endif
 
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 #endif
 
 #ifndef __rtems__
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_extern.h>
-#include <freebsd/vm/pmap.h>
-#include <freebsd/vm/vm_map.h>
-#include <freebsd/vm/vm_object.h>
-#include <freebsd/vm/uma.h>
+#include <vm/vm.h>
+#include <vm/vm_extern.h>
+#include <vm/pmap.h>
+#include <vm/vm_map.h>
+#include <vm/vm_object.h>
+#include <vm/uma.h>
 
 #ifdef COMPAT_FREEBSD32
-#include <freebsd/compat/freebsd32/freebsd32.h>
-#include <freebsd/compat/freebsd32/freebsd32_util.h>
+#include <compat/freebsd32/freebsd32.h>
+#include <compat/freebsd32/freebsd32_util.h>
 #endif
 #endif /* __rtems__ */
 
@@ -652,9 +652,9 @@ sess_release(struct session *s)
 	}
 }
 
-#include <freebsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ddb.h>
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 
 DB_SHOW_COMMAND(pgrpdump, pgrpdump)
 {

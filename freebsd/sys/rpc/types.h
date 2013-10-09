@@ -39,7 +39,7 @@
 #ifndef _RPC_TYPES_H
 #define _RPC_TYPES_H
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/_null.h>
 
 typedef int32_t bool_t;
@@ -72,7 +72,7 @@ MALLOC_DECLARE(M_RPC);
 #define mem_free(ptr, bsize)	free(ptr)
 #endif
 
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 #ifdef _KERNEL
 #include <rpc/netconfig.h>
 #else

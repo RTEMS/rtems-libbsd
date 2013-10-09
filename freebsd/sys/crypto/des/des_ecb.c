@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: des_ecb.c,v 1.6 2001/09/10 04:03:58 itojun Exp $	*/
 
@@ -50,13 +50,13 @@
  * [including the GNU Public Licence.]
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/crypto/des/des_locl.h>
-#include <freebsd/crypto/des/spr.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <crypto/des/des_locl.h>
+#include <crypto/des/spr.h>
 
 /* char *libdes_version="libdes v 3.24 - 20-Apr-1996 - eay"; */ /* wrong */
 /* char *DES_version="DES part of SSLeay 0.6.4 30-Aug-1996"; */

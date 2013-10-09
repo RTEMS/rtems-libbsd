@@ -25,8 +25,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211__IEEE80211_HH_
-#define _NET80211__IEEE80211_HH_
+#ifndef _NET80211__IEEE80211_H_
+#define _NET80211__IEEE80211_H_
 
 /*
  * 802.11 implementation definitions.
@@ -393,4 +393,4 @@ struct ieee80211_mimo_info {
 	uint8_t		pad[2];
 	uint32_t	evm[3];		/* EVM data */
 };
-#endif /* _NET80211__IEEE80211_HH_ */
+#endif /* _NET80211__IEEE80211_H_ */

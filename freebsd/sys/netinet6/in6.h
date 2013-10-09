@@ -65,8 +65,8 @@
 #error "do not include netinet6/in6.h directly, include netinet/in.h.  see RFC2553"
 #endif
 
-#ifndef _NETINET6_IN6_HH_
-#define _NETINET6_IN6_HH_
+#ifndef _NETINET6_IN6_H_
+#define _NETINET6_IN6_H_
 
 /*
  * Identification of the network protocol stack
@@ -705,4 +705,4 @@ __END_DECLS
 
 #endif /* __BSD_VISIBLE */
 
-#endif /* !_NETINET6_IN6_HH_ */
+#endif /* !_NETINET6_IN6_H_ */

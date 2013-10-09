@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_MD_VAR_HH_
-#define	_MACHINE_MD_VAR_HH_
+#ifndef _MACHINE_MD_VAR_H_
+#define	_MACHINE_MD_VAR_H_
 
 /*
  * Miscellaneous machine-dependent declarations.
@@ -103,4 +103,4 @@ void	setidt(int idx, alias_for_inthand_t *func, int typ, int dpl, int selec);
 int     user_dbreg_trap(void);
 void	minidumpsys(struct dumperinfo *);
 
-#endif /* !_MACHINE_MD_VAR_HH_ */
+#endif /* !_MACHINE_MD_VAR_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: if_pflog.c,v 1.22 2006/12/15 09:31:20 otto Exp $	*/
 /*
@@ -36,12 +36,12 @@
  */
 
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_bpf.h>
-#include <freebsd/local/opt_pf.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_bpf.h>
+#include <rtems/bsd/local/opt_pf.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifdef DEV_BPF
@@ -57,53 +57,53 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #else /* ! __FreeBSD__ */
-#include <freebsd/local/bpfilter.h>
-#include <freebsd/local/pflog.h>
+#include <rtems/bsd/local/bpfilter.h>
+#include <rtems/bsd/local/pflog.h>
 #endif /* __FreeBSD__ */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/proc.h>
+#include <sys/socket.h>
 #ifdef __FreeBSD__
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/sockio.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/sockio.h>
 #else
-#include <freebsd/sys/ioctl.h>
+#include <sys/ioctl.h>
 #endif
 
-#include <freebsd/net/if.h>
+#include <net/if.h>
 #ifdef __FreeBSD__
-#include <freebsd/net/if_clone.h>
+#include <net/if_clone.h>
 #endif
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/bpf.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/bpf.h>
 
 #ifdef	INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #endif
 
 #ifdef INET6
 #ifndef INET
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 #endif
-#include <freebsd/netinet6/nd6.h>
+#include <netinet6/nd6.h>
 #endif /* INET6 */
 
-#include <freebsd/net/pfvar.h>
-#include <freebsd/net/if_pflog.h>
+#include <net/pfvar.h>
+#include <net/if_pflog.h>
 
 #ifdef INET
 #ifdef __FreeBSD__
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 #endif
 #endif
 

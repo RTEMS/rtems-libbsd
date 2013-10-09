@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /******************************************************************************
 
@@ -36,67 +36,67 @@
 
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
-#include <freebsd/local/opt_device_polling.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_altq.h>
+#include <rtems/bsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_altq.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 #if __FreeBSD_version >= 800000
-#include <freebsd/sys/buf_ring.h>
+#include <sys/buf_ring.h>
 #endif
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/kthread.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/taskqueue.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/pcpu.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/machine/smp.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/resource.h>
+#include <sys/bus.h>
+#include <sys/endian.h>
+#include <sys/kernel.h>
+#include <sys/kthread.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/rman.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/sysctl.h>
+#include <sys/taskqueue.h>
+#include <sys/eventhandler.h>
+#include <sys/pcpu.h>
+#include <sys/smp.h>
+#include <machine/smp.h>
+#include <machine/bus.h>
+#include <machine/resource.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
 
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_vlan_var.h>
+#include <net/if_types.h>
+#include <net/if_vlan_var.h>
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_lro.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_lro.h>
+#include <netinet/udp.h>
 
-#include <freebsd/machine/in_cksum.h>
-#include <freebsd/dev/led/led.h>
-#include <freebsd/dev/pci/pcivar.h>
-#include <freebsd/dev/pci/pcireg.h>
+#include <machine/in_cksum.h>
+#include <dev/led/led.h>
+#include <dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_api.h>
-#include <freebsd/dev/e1000/e1000_82575.h>
-#include <freebsd/dev/e1000/if_igb.h>
+#include <dev/e1000/e1000_api.h>
+#include <dev/e1000/e1000_82575.h>
+#include <dev/e1000/if_igb.h>
 #else
-#include <freebsd/local/e1000_api.h>
-#include <freebsd/local/e1000_82575.h>
-#include <freebsd/local/if_igb.h>
+#include <rtems/bsd/local/e1000_api.h>
+#include <rtems/bsd/local/e1000_82575.h>
+#include <rtems/bsd/local/if_igb.h>
 #endif
 
 /*********************************************************************

@@ -16,8 +16,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_IF_TUN_HH_
-#define _NET_IF_TUN_HH_
+#ifndef _NET_IF_TUN_H_
+#define _NET_IF_TUN_H_
 
 /* Refer to if_tunvar.h for the softc stuff */
 
@@ -45,4 +45,4 @@ struct tuninfo {
 #define	TUNSIFHEAD	_IOW('t', 96, int)
 #define	TUNGIFHEAD	_IOR('t', 97, int)
 
-#endif /* !_NET_IF_TUN_HH_ */
+#endif /* !_NET_IF_TUN_H_ */

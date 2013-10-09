@@ -30,8 +30,8 @@
  * These notices must be retained in any copies of any part of this software.
  */
 
-#ifndef _ALTQ_ALTQ_RMCLASS_DEBUG_HH_
-#define	_ALTQ_ALTQ_RMCLASS_DEBUG_HH_
+#ifndef _ALTQ_ALTQ_RMCLASS_DEBUG_H_
+#define	_ALTQ_ALTQ_RMCLASS_DEBUG_H_
 
 /* #pragma ident	"@(#)rm_class_debug.h	1.7	98/05/04 SMI" */
 
@@ -109,4 +109,4 @@ extern int cbqtrace_count;
 }
 #endif
 
-#endif	/* _ALTQ_ALTQ_RMCLASS_DEBUG_HH_ */
+#endif	/* _ALTQ_ALTQ_RMCLASS_DEBUG_H_ */

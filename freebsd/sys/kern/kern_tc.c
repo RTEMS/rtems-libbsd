@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * ----------------------------------------------------------------------------
@@ -9,19 +9,19 @@
  * ----------------------------------------------------------------------------
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ntp.h>
+#include <rtems/bsd/local/opt_ntp.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/timepps.h>
-#include <freebsd/sys/timetc.h>
-#include <freebsd/sys/timex.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/systm.h>
+#include <sys/timepps.h>
+#include <sys/timetc.h>
+#include <sys/timex.h>
 
 /*
  * A large step happens on boot.  This constant detects such steps.

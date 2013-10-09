@@ -24,12 +24,12 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_ADHOC_HH_
-#define _NET80211_IEEE80211_ADHOC_HH_
+#ifndef _NET80211_IEEE80211_ADHOC_H_
+#define _NET80211_IEEE80211_ADHOC_H_
 
 /*
  * Adhoc-mode (ibss+ahdemo) implementation definitions.
  */
 void	ieee80211_adhoc_attach(struct ieee80211com *);
 void	ieee80211_adhoc_detach(struct ieee80211com *);
-#endif /* !_NET80211_IEEE80211_STA_HH_ */
+#endif /* !_NET80211_IEEE80211_STA_H_ */

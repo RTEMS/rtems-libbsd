@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004-2009 Robert N. M. Watson
@@ -51,26 +51,26 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mbuf.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sx.h>
+#include <sys/systm.h>
+#include <net/if.h>
+#include <net/route.h>
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/at_var.h>
-#include <freebsd/netatalk/ddp.h>
-#include <freebsd/netatalk/ddp_var.h>
-#include <freebsd/netatalk/ddp_pcb.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/at_var.h>
+#include <netatalk/ddp.h>
+#include <netatalk/ddp_var.h>
+#include <netatalk/ddp_pcb.h>
+#include <netatalk/at_extern.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 static volatile int	ddp_forward = 1;
 static volatile int	ddp_firewall = 0;

@@ -26,10 +26,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _ALTQ_ALTQ_RIO_HH_
-#define	_ALTQ_ALTQ_RIO_HH_
+#ifndef _ALTQ_ALTQ_RIO_H_
+#define	_ALTQ_ALTQ_RIO_H_
 
-#include <freebsd/altq/altq_classq.h>
+#include <altq/altq_classq.h>
 
 /*
  * RIO: RED with IN/OUT bit
@@ -141,4 +141,4 @@ extern struct mbuf	*rio_getq(rio_t *, class_queue_t *);
 
 #endif /* _KERNEL */
 
-#endif /* _ALTQ_ALTQ_RIO_HH_ */
+#endif /* _ALTQ_ALTQ_RIO_H_ */

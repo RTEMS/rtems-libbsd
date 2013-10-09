@@ -26,8 +26,8 @@
 
 /* This file contains various factored out debug macros. */
 
-#ifndef _USB_DEBUG_HH_
-#define	_USB_DEBUG_HH_
+#ifndef _USB_DEBUG_H_
+#define	_USB_DEBUG_H_
 
 /* Declare global USB debug variable. */
 extern int usb_debug;
@@ -59,4 +59,4 @@ void	usb_dump_queue(struct usb_endpoint *ep);
 void	usb_dump_endpoint(struct usb_endpoint *ep);
 void	usb_dump_xfer(struct usb_xfer *xfer);
 
-#endif					/* _USB_DEBUG_HH_ */
+#endif					/* _USB_DEBUG_H_ */

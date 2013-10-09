@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: in_gif.c,v 1.54 2001/05/14 14:02:16 itojun Exp $	*/
 
@@ -31,46 +31,46 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_mrouting.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_mrouting.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/mbuf.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/protosw.h>
+#include <sys/malloc.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/in_gif.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip_encap.h>
-#include <freebsd/netinet/ip_ecn.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/in_gif.h>
+#include <netinet/in_var.h>
+#include <netinet/ip_encap.h>
+#include <netinet/ip_ecn.h>
 
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif
 
 #ifdef MROUTING
-#include <freebsd/netinet/ip_mroute.h>
+#include <netinet/ip_mroute.h>
 #endif /* MROUTING */
 
-#include <freebsd/net/if_gif.h>	
+#include <net/if_gif.h>	
 
 static int gif_validate4(const struct ip *, struct gif_softc *,
 	struct ifnet *);

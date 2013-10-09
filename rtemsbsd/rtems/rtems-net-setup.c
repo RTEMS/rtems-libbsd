@@ -4,8 +4,9 @@
  * XXX integrate using old configuration structure as it makes sense
  */
 
-#include <freebsd/bsd.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/errno.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$OpenBSD: ipsec_input.c,v 1.63 2003/02/20 18:35:43 deraadt Exp $	*/
@@ -42,62 +42,62 @@
  * IPsec input processing.
  */
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipsec.h>
-#include <freebsd/local/opt_enc.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_enc.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/syslog.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/pfil.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/pfil.h>
+#include <net/route.h>
+#include <net/netisr.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/in_var.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/in_var.h>
 
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #ifdef INET6
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet6/ip6_var.h>
 #endif
-#include <freebsd/netinet/in_pcb.h>
+#include <netinet/in_pcb.h>
 #ifdef INET6
-#include <freebsd/netinet/icmp6.h>
+#include <netinet/icmp6.h>
 #endif
 
-#include <freebsd/netipsec/ipsec.h>
+#include <netipsec/ipsec.h>
 #ifdef INET6
-#include <freebsd/netipsec/ipsec6.h>
+#include <netipsec/ipsec6.h>
 #endif
-#include <freebsd/netipsec/ah_var.h>
-#include <freebsd/netipsec/esp.h>
-#include <freebsd/netipsec/esp_var.h>
-#include <freebsd/netipsec/ipcomp_var.h>
+#include <netipsec/ah_var.h>
+#include <netipsec/esp.h>
+#include <netipsec/esp_var.h>
+#include <netipsec/ipcomp_var.h>
 
-#include <freebsd/netipsec/key.h>
-#include <freebsd/netipsec/keydb.h>
+#include <netipsec/key.h>
+#include <netipsec/keydb.h>
 
-#include <freebsd/netipsec/xform.h>
-#include <freebsd/netinet6/ip6protosw.h>
+#include <netipsec/xform.h>
+#include <netinet6/ip6protosw.h>
 
-#include <freebsd/machine/in_cksum.h>
-#include <freebsd/machine/stdarg.h>
+#include <machine/in_cksum.h>
+#include <machine/stdarg.h>
 
 #ifdef DEV_ENC
-#include <freebsd/net/if_enc.h>
+#include <net/if_enc.h>
 #endif
 
 

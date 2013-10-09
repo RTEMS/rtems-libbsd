@@ -25,11 +25,11 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_NODE_HH_
-#define _NET80211_IEEE80211_NODE_HH_
+#ifndef _NET80211_IEEE80211_NODE_H_
+#define _NET80211_IEEE80211_NODE_H_
 
-#include <freebsd/net80211/ieee80211_ioctl.h>		/* for ieee80211_nodestats */
-#include <freebsd/net80211/ieee80211_ht.h>		/* for aggregation state */
+#include <net80211/ieee80211_ioctl.h>		/* for ieee80211_nodestats */
+#include <net80211/ieee80211_ht.h>		/* for aggregation state */
 
 /*
  * Each ieee80211com instance has a single timer that fires every
@@ -453,4 +453,4 @@ void	ieee80211_node_join(struct ieee80211_node *,int);
 void	ieee80211_node_leave(struct ieee80211_node *);
 int8_t	ieee80211_getrssi(struct ieee80211vap *);
 void	ieee80211_getsignal(struct ieee80211vap *, int8_t *, int8_t *);
-#endif /* _NET80211_IEEE80211_NODE_HH_ */
+#endif /* _NET80211_IEEE80211_NODE_H_ */

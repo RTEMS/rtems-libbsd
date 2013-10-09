@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_NETISR_HH_
-#define _NET_NETISR_HH_
+#ifndef _NET_NETISR_H_
+#define _NET_NETISR_H_
 #ifdef _KERNEL
 
 /*
@@ -153,4 +153,4 @@ void	netisr_poll(void);
 void	netisr_pollmore(void);
 
 #endif /* !_KERNEL */
-#endif /* !_NET_NETISR_HH_ */
+#endif /* !_NET_NETISR_H_ */

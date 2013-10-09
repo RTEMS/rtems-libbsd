@@ -34,8 +34,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IP_MROUTE_HH_
-#define _NETINET_IP_MROUTE_HH_
+#ifndef _NETINET_IP_MROUTE_H_
+#define _NETINET_IP_MROUTE_H_
 
 /*
  * Definitions for IP multicast forwarding.
@@ -356,4 +356,4 @@ extern int	(*mrt_ioctl)(u_long, caddr_t, int);
 
 #endif /* _KERNEL */
 
-#endif /* _NETINET_IP_MROUTE_HH_ */
+#endif /* _NETINET_IP_MROUTE_H_ */

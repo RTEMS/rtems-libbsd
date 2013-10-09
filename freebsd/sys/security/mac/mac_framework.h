@@ -46,8 +46,8 @@
  * interact with the TrustedBSD MAC Framework.
  */
 
-#ifndef _SECURITY_MAC_MAC_FRAMEWORK_HH_
-#define	_SECURITY_MAC_MAC_FRAMEWORK_HH_
+#ifndef _SECURITY_MAC_MAC_FRAMEWORK_H_
+#define	_SECURITY_MAC_MAC_FRAMEWORK_H_
 
 #ifndef _KERNEL
 #error "no user-serviceable parts inside"
@@ -89,8 +89,8 @@ struct vattr;
 struct vnode;
 struct vop_setlabel_args;
 
-#include <freebsd/sys/acl.h>			/* XXX acl_type_t */
-#include <freebsd/sys/types.h>			/* accmode_t */
+#include <sys/acl.h>			/* XXX acl_type_t */
+#include <rtems/bsd/sys/types.h>			/* accmode_t */
 
 /*
  * Entry points to the TrustedBSD MAC Framework from the remainder of the
@@ -438,4 +438,4 @@ void	mac_vnode_relabel(struct ucred *cred, struct vnode *vp,
  */
 int	vop_stdsetlabel_ea(struct vop_setlabel_args *ap);
 
-#endif /* !_SECURITY_MAC_MAC_FRAMEWORK_HH_ */
+#endif /* !_SECURITY_MAC_MAC_FRAMEWORK_H_ */

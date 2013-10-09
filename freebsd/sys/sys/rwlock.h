@@ -29,17 +29,17 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_RWLOCK_HH_
-#define _SYS_RWLOCK_HH_
+#ifndef _SYS_RWLOCK_H_
+#define _SYS_RWLOCK_H_
 
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_rwlock.h>
-#include <freebsd/sys/lock_profile.h>
-#include <freebsd/sys/lockstat.h>
+#include <sys/_lock.h>
+#include <sys/_rwlock.h>
+#include <sys/lock_profile.h>
+#include <sys/lockstat.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/pcpu.h>
-#include <freebsd/machine/atomic.h>
+#include <sys/pcpu.h>
+#include <machine/atomic.h>
 #endif
 
 #ifdef __rtems__
@@ -155,7 +155,7 @@ void	_rw_assert(struct rwlock *rw, int what, const char *file, int line);
  */
 
 #ifndef LOCK_DEBUG
-#error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/rwlock.h>
+#error LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/rwlock.h>
 #endif
 #if LOCK_DEBUG > 0 || defined(RWLOCK_NOINLINE)
 #define	rw_wlock(rw)		_rw_wlock((rw), LOCK_FILE, LOCK_LINE)
@@ -248,4 +248,4 @@ struct rw_args_flags {
 #endif
 
 #endif /* _KERNEL */
-#endif /* !_SYS_RWLOCK_HH_ */
+#endif /* !_SYS_RWLOCK_H_ */

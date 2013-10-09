@@ -27,8 +27,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NETINET6_MLD6_VAR_HH_
-#define _NETINET6_MLD6_VAR_HH_
+#ifndef _NETINET6_MLD6_VAR_H_
+#define _NETINET6_MLD6_VAR_H_
 
 /*
  * Multicast Listener Discovery (MLD)
@@ -161,4 +161,4 @@ SYSCTL_DECL(_net_inet6_mld);
 
 #endif /* _KERNEL */
 
-#endif /* _NETINET6_MLD6_VAR_HH_ */
+#endif /* _NETINET6_MLD6_VAR_H_ */

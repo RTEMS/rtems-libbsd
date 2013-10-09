@@ -31,8 +31,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IP_OPTIONS_HH_
-#define	_NETINET_IP_OPTIONS_HH_
+#ifndef _NETINET_IP_OPTIONS_H_
+#define	_NETINET_IP_OPTIONS_H_
 
 struct ipoptrt {
         struct  in_addr dst;                    /* final destination */
@@ -57,4 +57,4 @@ int		 ip_pcbopts(struct inpcb *, int, struct mbuf *);
 void		 ip_stripoptions(struct mbuf *, struct mbuf *);
 struct mbuf	*ip_srcroute(struct mbuf *);
 
-#endif /* !_NETINET_IP_OPTIONS_HH_ */
+#endif /* !_NETINET_IP_OPTIONS_H_ */

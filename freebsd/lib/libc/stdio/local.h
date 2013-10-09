@@ -33,7 +33,7 @@
  * $FreeBSD$
  */
 
-#include <sys/types.h>	/* for off_t */
+#include <rtems/bsd/sys/types.h>	/* for off_t */
 #include <pthread.h>
 #include <string.h>
 #include <wchar.h>

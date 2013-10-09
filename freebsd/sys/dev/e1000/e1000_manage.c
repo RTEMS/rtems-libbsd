@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /******************************************************************************
 
@@ -35,9 +35,9 @@
 /*$FreeBSD$*/
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_api.h>
+#include <dev/e1000/e1000_api.h>
 #else
-#include <freebsd/local/e1000_api.h>
+#include <rtems/bsd/local/e1000_api.h>
 #endif
 
 static u8 e1000_calculate_checksum(u8 *buffer, u32 length);

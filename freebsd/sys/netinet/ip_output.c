@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1990, 1993
@@ -31,60 +31,60 @@
  *	@(#)ip_output.c	8.3 (Berkeley) 1/21/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ipfw.h>
-#include <freebsd/local/opt_ipsec.h>
-#include <freebsd/local/opt_route.h>
-#include <freebsd/local/opt_mbuf_stress_test.h>
-#include <freebsd/local/opt_mpath.h>
-#include <freebsd/local/opt_sctp.h>
+#include <rtems/bsd/local/opt_ipfw.h>
+#include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_route.h>
+#include <rtems/bsd/local/opt_mbuf_stress_test.h>
+#include <rtems/bsd/local/opt_mpath.h>
+#include <rtems/bsd/local/opt_sctp.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/ucred.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sysctl.h>
+#include <sys/ucred.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_llatbl.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/pfil.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/flowtable.h>
+#include <net/if.h>
+#include <net/if_llatbl.h>
+#include <net/netisr.h>
+#include <net/pfil.h>
+#include <net/route.h>
+#include <net/flowtable.h>
 #ifdef RADIX_MPATH
-#include <freebsd/net/radix_mpath.h>
+#include <net/radix_mpath.h>
 #endif
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_options.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_var.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_options.h>
 #ifdef SCTP
-#include <freebsd/netinet/sctp.h>
-#include <freebsd/netinet/sctp_crc32.h>
+#include <netinet/sctp.h>
+#include <netinet/sctp_crc32.h>
 #endif
 
 #ifdef IPSEC
-#include <freebsd/netinet/ip_ipsec.h>
-#include <freebsd/netipsec/ipsec.h>
+#include <netinet/ip_ipsec.h>
+#include <netipsec/ipsec.h>
 #endif /* IPSEC*/
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #define print_ip(x, a, y)	 printf("%s %d.%d.%d.%d%s",\
 				x, (ntohl(a.s_addr)>>24)&0xFF,\

@@ -29,13 +29,13 @@
  * and to grant Carnegie Mellon the rights to redistribute these
  * changes without encumbrance.
  */
-#ifndef _ALTQ_ALTQ_HFSC_HH_
-#define	_ALTQ_ALTQ_HFSC_HH_
+#ifndef _ALTQ_ALTQ_HFSC_H_
+#define	_ALTQ_ALTQ_HFSC_H_
 
-#include <freebsd/altq/altq.h>
-#include <freebsd/altq/altq_classq.h>
-#include <freebsd/altq/altq_red.h>
-#include <freebsd/altq/altq_rio.h>
+#include <altq/altq.h>
+#include <altq/altq_classq.h>
+#include <altq/altq_red.h>
+#include <altq/altq_rio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -317,4 +317,4 @@ struct hfsc_if {
 }
 #endif
 
-#endif /* _ALTQ_ALTQ_HFSC_HH_ */
+#endif /* _ALTQ_ALTQ_HFSC_H_ */

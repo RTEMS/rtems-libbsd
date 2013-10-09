@@ -26,10 +26,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _ALTQ_ALTQ_RED_HH_
-#define	_ALTQ_ALTQ_RED_HH_
+#ifndef _ALTQ_ALTQ_RED_H_
+#define	_ALTQ_ALTQ_RED_H_
 
-#include <freebsd/altq/altq_classq.h>
+#include <altq/altq_classq.h>
 
 #ifdef ALTQ3_COMPAT
 struct red_interface {
@@ -195,4 +195,4 @@ extern int32_t		 pow_w(struct wtab *, int);
 
 #endif /* _KERNEL */
 
-#endif /* _ALTQ_ALTQ_RED_HH_ */
+#endif /* _ALTQ_ALTQ_RED_H_ */

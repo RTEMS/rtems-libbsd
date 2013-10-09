@@ -6,8 +6,8 @@
  */
 
 extern struct vnodeop_desc vop_default_desc;
-#include <freebsd/local/vnode_if_typedef.h>
-#include <freebsd/local/vnode_if_newproto.h>
+#include <rtems/bsd/local/vnode_if_typedef.h>
+#include <rtems/bsd/local/vnode_if_newproto.h>
 struct vop_islocked_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;

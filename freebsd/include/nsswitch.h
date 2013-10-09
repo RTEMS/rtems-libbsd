@@ -40,7 +40,7 @@
 #ifndef _NSSWITCH_H
 #define _NSSWITCH_H	1
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <stdarg.h>
 
 #define NSS_MODULE_INTERFACE_VERSION 1

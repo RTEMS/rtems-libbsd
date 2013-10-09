@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_VMMETER_HH_
-#define _SYS_VMMETER_HH_
+#ifndef _SYS_VMMETER_H_
+#define _SYS_VMMETER_H_
 
 /*
  * System wide statistics counters.

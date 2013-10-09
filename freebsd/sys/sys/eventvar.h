@@ -26,14 +26,14 @@
  *	$FreeBSD$
  */
 
-#ifndef _SYS_EVENTVAR_HH_
-#define _SYS_EVENTVAR_HH_
+#ifndef _SYS_EVENTVAR_H_
+#define _SYS_EVENTVAR_H_
 
 #ifndef _KERNEL
 #error "no user-servicable parts inside"
 #endif
 
-#include <freebsd/sys/_task.h>
+#include <sys/_task.h>
 
 #define KQ_NEVENTS	8		/* minimize copy{in,out} calls */
 #define KQEXTENT	256		/* linear growth by this amount */
@@ -62,4 +62,4 @@ struct kqueue {
 	struct		task kq_task;
 };
 
-#endif /* !_SYS_EVENTVAR_HH_ */
+#endif /* !_SYS_EVENTVAR_H_ */

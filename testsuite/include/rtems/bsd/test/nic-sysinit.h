@@ -33,7 +33,7 @@
  */
 
 
-#include <freebsd/machine/rtems-bsd-sysinit.h>
+#include <machine/rtems-bsd-sysinit.h>
 
 /*
  *  We "read" that and generate references and nexus devices

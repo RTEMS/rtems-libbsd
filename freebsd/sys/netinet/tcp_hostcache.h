@@ -34,8 +34,8 @@
  * followed here.
  */
 
-#ifndef _NETINET_TCP_HOSTCACHE_HH_
-#define _NETINET_TCP_HOSTCACHE_HH_
+#ifndef _NETINET_TCP_HOSTCACHE_H_
+#define _NETINET_TCP_HOSTCACHE_H_
 
 TAILQ_HEAD(hc_qhead, hc_metrics);
 
@@ -79,4 +79,4 @@ struct tcp_hostcache {
 	int	purgeall;
 };
 
-#endif /* !_NETINET_TCP_HOSTCACHE_HH_*/
+#endif /* !_NETINET_TCP_HOSTCACHE_H_*/

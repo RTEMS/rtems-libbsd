@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993
@@ -36,27 +36,27 @@
  *	From: @(#)kern_clock.c	8.5 (Berkeley) 1/21/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_kdtrace.h>
+#include <rtems/bsd/local/opt_kdtrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/interrupt.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sdt.h>
-#include <freebsd/sys/sleepqueue.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/smp.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/bus.h>
+#include <sys/callout.h>
+#include <sys/condvar.h>
+#include <sys/interrupt.h>
+#include <sys/kernel.h>
+#include <sys/ktr.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/sdt.h>
+#include <sys/sleepqueue.h>
+#include <sys/sysctl.h>
+#include <sys/smp.h>
 
 #ifdef __rtems__
 int ncallout = 16;

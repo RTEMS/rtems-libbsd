@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_MAC_HH_
-#define _E1000_MAC_HH_
+#ifndef _E1000_MAC_H_
+#define _E1000_MAC_H_
 
 /*
  * Functions that should not be called directly from drivers but can be used

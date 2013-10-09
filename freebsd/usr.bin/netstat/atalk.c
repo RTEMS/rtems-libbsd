@@ -40,15 +40,11 @@ static char sccsid[] = "@(#)atalk.c	1.1 (Whistle) 6/6/96";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#ifdef __rtems__
-#include <freebsd/sys/protosw.h>
-#else
 #include <sys/protosw.h>
-#endif
 
 #include <arpa/inet.h>
 #include <net/route.h>

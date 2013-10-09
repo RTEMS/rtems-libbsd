@@ -1,4 +1,4 @@
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <rtems.h>

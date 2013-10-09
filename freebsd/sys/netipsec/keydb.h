@@ -30,12 +30,12 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETIPSEC_KEYDB_HH_
-#define _NETIPSEC_KEYDB_HH_
+#ifndef _NETIPSEC_KEYDB_H_
+#define _NETIPSEC_KEYDB_H_
 
 #ifdef _KERNEL
 
-#include <freebsd/netipsec/key_var.h>
+#include <netipsec/key_var.h>
 
 #ifndef _SOCKADDR_UNION_DEFINED
 #define	_SOCKADDR_UNION_DEFINED
@@ -224,4 +224,4 @@ extern void keydb_delsecreg __P((struct secreg *));
 
 #endif /* _KERNEL */
 
-#endif /* _NETIPSEC_KEYDB_HH_ */
+#endif /* _NETIPSEC_KEYDB_H_ */

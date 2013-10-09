@@ -25,8 +25,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_TDMA_HH_
-#define _NET80211_IEEE80211_TDMA_HH_
+#ifndef _NET80211_IEEE80211_TDMA_H_
+#define _NET80211_IEEE80211_TDMA_H_
 
 /*
  * TDMA-mode implementation definitions.
@@ -99,4 +99,4 @@ struct ieee80211_beacon_offsets;
 void	ieee80211_tdma_update_beacon(struct ieee80211vap *vap,
 	    struct ieee80211_beacon_offsets *bo);
 #endif /* _KERNEL */
-#endif /* !_NET80211_IEEE80211_TDMA_HH_ */
+#endif /* !_NET80211_IEEE80211_TDMA_H_ */

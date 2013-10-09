@@ -29,12 +29,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TTYDEVSW_HH_
-#define	_SYS_TTYDEVSW_HH_
+#ifndef _SYS_TTYDEVSW_H_
+#define	_SYS_TTYDEVSW_H_
 
-#ifndef _SYS_TTY_HH_
+#ifndef _SYS_TTY_H_
 #error "can only be included through <sys/tty.h>"
-#endif /* !_SYS_TTY_HH_ */
+#endif /* !_SYS_TTY_H_ */
 
 /*
  * Driver routines that are called from the line discipline to adjust
@@ -166,4 +166,4 @@ ttydevsw_free(struct tty *tp)
 	tp->t_devsw->tsw_free(tty_softc(tp));
 }
 
-#endif /* !_SYS_TTYDEVSW_HH_ */
+#endif /* !_SYS_TTYDEVSW_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
@@ -26,41 +26,41 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 
-#include <freebsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ddb.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/cpuset.h>
-#include <freebsd/sys/rtprio.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/interrupt.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/kthread.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/random.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/sched.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/vmmeter.h>
-#include <freebsd/machine/atomic.h>
-#include <freebsd/machine/cpu.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/bus.h>
+#include <sys/conf.h>
+#include <sys/cpuset.h>
+#include <sys/rtprio.h>
+#include <sys/systm.h>
+#include <sys/interrupt.h>
+#include <sys/kernel.h>
+#include <sys/kthread.h>
+#include <sys/ktr.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/random.h>
+#include <sys/resourcevar.h>
+#include <sys/sched.h>
+#include <sys/smp.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/vmmeter.h>
+#include <machine/atomic.h>
+#include <machine/cpu.h>
 #ifndef __rtems__
-#include <freebsd/machine/md_var.h>
-#include <freebsd/machine/stdarg.h>
+#include <machine/md_var.h>
+#include <machine/stdarg.h>
 #else /* __rtems__ */
   #ifdef INTR_FILTER
     #error INTR_FILTER is currently not suppported with RTEMS
@@ -68,8 +68,8 @@ __FBSDID("$FreeBSD$");
   #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
 #endif /* __rtems__ */
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
-#include <freebsd/ddb/db_sym.h>
+#include <ddb/ddb.h>
+#include <ddb/db_sym.h>
 #endif
 
 /*

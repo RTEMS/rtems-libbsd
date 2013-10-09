@@ -23,8 +23,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETATALK_AT_VAR_HH_
-#define	_NETATALK_AT_VAR_HH_
+#ifndef _NETATALK_AT_VAR_H_
+#define	_NETATALK_AT_VAR_H_
 
 /*
  * For phase2, we need to keep not only our address on an interface, but also
@@ -74,4 +74,4 @@ extern struct at_ifaddrhead	at_ifaddrhead;
 #define	AT_IFADDR_WUNLOCK()	rw_wunlock(&at_ifaddr_rw)
 #endif
 
-#endif /* _NETATALK_AT_VAR_HH_ */
+#endif /* _NETATALK_AT_VAR_H_ */

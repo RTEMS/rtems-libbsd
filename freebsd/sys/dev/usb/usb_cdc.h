@@ -38,8 +38,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _USB_CDC_HH_
-#define	_USB_CDC_HH_
+#ifndef _USB_CDC_H_
+#define	_USB_CDC_H_
 
 #define	UDESCSUB_CDC_HEADER	0
 #define	UDESCSUB_CDC_CM		1	/* Call Management */
@@ -292,4 +292,4 @@ struct usb_ncm_parameters {
 #define	UCDC_NCM_NOTIF_RESPONSE_AVAILABLE	0x01
 #define	UCDC_NCM_NOTIF_CONNECTION_SPEED_CHANGE	0x2A
 
-#endif					/* _USB_CDC_HH_ */
+#endif					/* _USB_CDC_H_ */

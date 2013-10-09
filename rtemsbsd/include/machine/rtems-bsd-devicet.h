@@ -41,7 +41,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 typedef struct device *device_t;
 

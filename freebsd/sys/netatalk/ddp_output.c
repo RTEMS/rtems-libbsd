@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1990, 1991 Regents of The University of Michigan.
@@ -25,24 +25,24 @@
 
 /* $FreeBSD$ */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/route.h>
 
 #undef s_net
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/at_var.h>
-#include <freebsd/netatalk/ddp.h>
-#include <freebsd/netatalk/ddp_var.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/at_var.h>
+#include <netatalk/ddp.h>
+#include <netatalk/ddp_var.h>
+#include <netatalk/at_extern.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 int	ddp_cksum = 1;
 

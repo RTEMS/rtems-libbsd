@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__TASK_HH_
-#define _SYS__TASK_HH_
+#ifndef _SYS__TASK_H_
+#define _SYS__TASK_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Each task includes a function which is called from
@@ -47,4 +47,4 @@ struct task {
 	void	*ta_context;		/* argument for handler */
 };
 
-#endif /* !_SYS__TASK_HH_ */
+#endif /* !_SYS__TASK_H_ */

@@ -26,17 +26,17 @@
  * $FreeBSD$
  */
 
-#ifndef _ISA_ISAVAR_HH_
-#define _ISA_ISAVAR_HH_
+#ifndef _ISA_ISAVAR_H_
+#define _ISA_ISAVAR_H_
 
 struct isa_config;
 struct isa_pnp_id;
 typedef void isa_config_cb(void *arg, struct isa_config *config, int enable);
 #ifndef __rtems__
-#include <freebsd/local/isa_if.h>
+#include <rtems/bsd/local/isa_if.h>
 #endif /* __rtems__ */
 
-#include <freebsd/isa/pnpvar.h>
+#include <isa/pnpvar.h>
 
 #ifdef _KERNEL
 
@@ -189,7 +189,7 @@ void	isa_hint_device_unit(device_t bus, device_t child, const char *name,
 int	isab_attach(device_t dev);
 
 #ifdef PC98
-#include <freebsd/machine/bus.h>
+#include <machine/bus.h>
 
 /*
  * Allocate discontinuous resources for ISA bus.
@@ -203,4 +203,4 @@ isa_load_resourcev(struct resource *re, bus_addr_t *res, bus_size_t count);
 
 #endif /* _KERNEL */
 
-#endif /* !_ISA_ISAVAR_HH_ */
+#endif /* !_ISA_ISAVAR_H_ */

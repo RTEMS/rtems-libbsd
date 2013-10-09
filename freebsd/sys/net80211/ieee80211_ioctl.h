@@ -25,15 +25,15 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_IOCTL_HH_
-#define _NET80211_IEEE80211_IOCTL_HH_
+#ifndef _NET80211_IEEE80211_IOCTL_H_
+#define _NET80211_IEEE80211_IOCTL_H_
 
 /*
  * IEEE 802.11 ioctls.
  */
-#include <freebsd/net80211/_ieee80211.h>
-#include <freebsd/net80211/ieee80211.h>
-#include <freebsd/net80211/ieee80211_crypto.h>
+#include <net80211/_ieee80211.h>
+#include <net80211/ieee80211.h>
+#include <net80211/ieee80211_crypto.h>
 
 /*
  * Per/node (station) statistics.
@@ -846,4 +846,4 @@ struct ieee80211_clone_params {
 #define	IEEE80211_CLONE_TDMA		0x0010	/* operate in TDMA mode */
 #endif /* __FreeBSD__ */
 
-#endif /* _NET80211_IEEE80211_IOCTL_HH_ */
+#endif /* _NET80211_IEEE80211_IOCTL_H_ */

@@ -27,10 +27,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef	_SYS_TREE_HH_
-#define	_SYS_TREE_HH_
+#ifndef	_SYS_TREE_H_
+#define	_SYS_TREE_H_
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 /*
  * This file defines data structures for different types of trees:
@@ -762,4 +762,4 @@ name##_RB_MINMAX(struct name *head, int val)				\
 	    ((x) != NULL) && ((y) = name##_RB_PREV(x), (x) != NULL);	\
 	     (x) = (y))
 
-#endif	/* _SYS_TREE_HH_ */
+#endif	/* _SYS_TREE_H_ */

@@ -28,10 +28,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_POLL_HH_
-#define	_SYS_POLL_HH_
+#ifndef _SYS_POLL_H_
+#define	_SYS_POLL_H_
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 /*
  * This file is intended to be compatible with the traditional poll.h.
@@ -101,4 +101,4 @@ __END_DECLS
 
 #endif /* !_KERNEL */
 
-#endif /* !_SYS_POLL_HH_ */
+#endif /* !_SYS_POLL_H_ */

@@ -38,8 +38,8 @@
  * $Id: if_tapvar.h,v 0.6 2000/07/11 02:16:08 max Exp $
  */
 
-#ifndef _NET_IF_TAPVAR_HH_
-#define _NET_IF_TAPVAR_HH_
+#ifndef _NET_IF_TAPVAR_H_
+#define _NET_IF_TAPVAR_H_
 
 /*
  * tap_mtx locks tap_flags, tap_pid.  tap_next locked with global tapmtx.
@@ -66,4 +66,4 @@ struct tap_softc {
 	struct mtx	 tap_mtx;		/* per-softc mutex */
 };
 
-#endif /* !_NET_IF_TAPVAR_HH_ */
+#endif /* !_NET_IF_TAPVAR_H_ */

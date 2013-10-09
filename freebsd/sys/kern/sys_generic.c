@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
@@ -36,52 +36,52 @@
  *	@(#)sys_generic.c	8.5 (Berkeley) 1/21/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_ktrace.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/poll.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/sleepqueue.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/vnode.h>
-#include <freebsd/sys/bio.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/sysproto.h>
+#include <sys/filedesc.h>
+#include <sys/filio.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+#include <sys/proc.h>
+#include <sys/signalvar.h>
+#include <sys/socketvar.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/ktr.h>
+#include <sys/limits.h>
+#include <sys/malloc.h>
+#include <sys/poll.h>
+#include <sys/resourcevar.h>
+#include <sys/selinfo.h>
+#include <sys/sleepqueue.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
+#include <sys/sysent.h>
+#include <sys/vnode.h>
+#include <sys/bio.h>
 #ifndef __rtems__
-#include <freebsd/sys/buf.h>
+#include <sys/buf.h>
 #endif
-#include <freebsd/sys/condvar.h>
+#include <sys/condvar.h>
 #ifdef KTRACE
-#include <freebsd/sys/ktrace.h>
+#include <sys/ktrace.h>
 #endif
 
-#include <freebsd/security/audit/audit.h>
+#include <security/audit/audit.h>
 
 #ifdef __rtems__
 typedef long fd_mask;
-#include <freebsd/vm/uma.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/machine/rtems-bsd-symbols.h>
+#include <vm/uma.h>
+#include <sys/mutex.h>
+#include <machine/rtems-bsd-symbols.h>
 #endif /* __rtems__ */
 
 static MALLOC_DEFINE(M_IOCTLOPS, "ioctlops", "ioctl data buffer");
@@ -169,7 +169,6 @@ read(td, uap)
 	error = kern_readv(td, uap->fd, &auio);
 	return(error);
 }
-#endif
 
 /*
  * Positioned read system call
@@ -204,7 +203,6 @@ pread(td, uap)
 	return(error);
 }
 
-#ifndef __rtems__
 int
 freebsd6_pread(td, uap)
 	struct thread *td;
@@ -824,6 +822,7 @@ kern_pselect(struct thread *td, int nd, fd_set *in, fd_set *ou, fd_set *ex,
 	error = kern_select(td, nd, in, ou, ex, tvp, abi_nfdbits);
 	return (error);
 }
+#endif /* __rtems__ */
 
 #ifndef _SYS_SYSPROTO_H_
 struct select_args {
@@ -1009,6 +1008,7 @@ done:
 
 	return (error);
 }
+#ifndef __rtems__
 /* 
  * Convert a select bit set to poll flags.
  *
@@ -1074,6 +1074,7 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 
 	return (n);
 }
+#endif /* __rtems__ */
 
 /*
  * Traverse the list of fds attached to this thread's seltd and check for
@@ -1082,6 +1083,7 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 static int
 selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 {
+#ifndef __rtems__
 	struct filedesc *fdp;
 	struct selinfo *si;
 	struct seltd *stp;
@@ -1113,6 +1115,9 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 	stp->st_flags = 0;
 	td->td_retval[0] = n;
 	return (0);
+#else /* __rtems__ */
+	return (ENOMEM);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1125,6 +1130,7 @@ selscan(td, ibits, obits, nfd)
 	fd_mask **ibits, **obits;
 	int nfd;
 {
+#ifndef __rtems__
 	struct filedesc *fdp;
 	struct file *fp;
 	fd_mask bit;
@@ -1152,8 +1158,10 @@ selscan(td, ibits, obits, nfd)
 
 	td->td_retval[0] = n;
 	return (0);
-}
+#else /* __rtems__ */
+	return (ENOMEM);
 #endif /* __rtems__ */
+}
 
 #ifndef _SYS_SYSPROTO_H_
 struct poll_args {

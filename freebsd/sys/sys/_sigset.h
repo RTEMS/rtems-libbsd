@@ -35,8 +35,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__SIGSET_HH_
-#define	_SYS__SIGSET_HH_
+#ifndef _SYS__SIGSET_H_
+#define	_SYS__SIGSET_H_
 
 /*
  * sigset_t macros.
@@ -56,4 +56,4 @@ typedef struct __sigset {
 typedef unsigned int osigset_t;
 #endif
 
-#endif /* !_SYS__SIGSET_HH_ */
+#endif /* !_SYS__SIGSET_H_ */

@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_KTHREAD_HH_
-#define	_SYS_KTHREAD_HH_
+#ifndef _SYS_KTHREAD_H_
+#define	_SYS_KTHREAD_H_
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 /*-
  * A kernel process descriptor; used to start "internal" daemons.
@@ -76,4 +76,4 @@ int	kthread_suspend(struct thread *, int);
 void	kthread_suspend_check(struct thread *);
 
 
-#endif /* !_SYS_KTHREAD_HH_ */
+#endif /* !_SYS_KTHREAD_H_ */

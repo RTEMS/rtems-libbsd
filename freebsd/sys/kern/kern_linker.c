@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997-2000 Doug Rabson
@@ -26,42 +26,42 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_hwpmc_hooks.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_hwpmc_hooks.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/linker.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/libkern.h>
-#include <freebsd/sys/namei.h>
-#include <freebsd/sys/vnode.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/sysproto.h>
+#include <sys/sysent.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sx.h>
+#include <sys/module.h>
+#include <sys/mount.h>
+#include <sys/linker.h>
+#include <sys/fcntl.h>
+#include <sys/jail.h>
+#include <sys/libkern.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
-#include <freebsd/local/linker_if.h>
+#include <rtems/bsd/local/linker_if.h>
 
 #ifdef HWPMC_HOOKS
-#include <freebsd/sys/pmckern.h>
+#include <sys/pmckern.h>
 #endif
 
 #ifndef __rtems__

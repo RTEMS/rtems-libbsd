@@ -186,15 +186,15 @@ CODE facilitynames[] = {
  * __va_list from <sys/_types.h> and use it.
  */
 #include <sys/cdefs.h>
-#include <sys/_types.h>
+#include <rtems/bsd/sys/_types.h>
 
 __BEGIN_DECLS
 void	closelog(void);
 void	openlog(const char *, int, int);
 int	setlogmask(int);
-void	syslog(int, const char *, ...); /* JRS __printflike(2, 3); */
+void	syslog(int, const char *, ...) __printflike(2, 3);
 #if __BSD_VISIBLE
-void	vsyslog(int, const char *, __va_list); /* JRS __printflike(2, 0); */
+void	vsyslog(int, const char *, __va_list) __printflike(2, 0);
 #endif
 __END_DECLS
 

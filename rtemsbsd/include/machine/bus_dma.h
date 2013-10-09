@@ -27,6 +27,6 @@
 #error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
 #endif
 
-#include <freebsd/sys/bus_dma.h>
+#include <sys/bus_dma.h>
 
 #endif /* _RTEMS_BSD_MACHINE_BUS_DMA_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1998 Michael Smith
@@ -26,12 +26,12 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/linker.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/linker.h>
 
 /*
  * Preloaded module support

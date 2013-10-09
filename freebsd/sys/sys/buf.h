@@ -35,13 +35,13 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_BUF_HH_
-#define	_SYS_BUF_HH_
+#ifndef _SYS_BUF_H_
+#define	_SYS_BUF_H_
 
-#include <freebsd/sys/bufobj.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/lockmgr.h>
+#include <sys/bufobj.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/lockmgr.h>
 
 struct bio;
 struct buf;
@@ -255,8 +255,8 @@ struct buf {
  */
 extern const char *buf_wmesg;		/* Default buffer lock message */
 #define BUF_WMESG "bufwait"
-#include <freebsd/sys/proc.h>			/* XXX for curthread */
-#include <freebsd/sys/mutex.h>
+#include <sys/proc.h>			/* XXX for curthread */
+#include <sys/mutex.h>
 
 /*
  * Initialize a lock.
@@ -333,7 +333,7 @@ extern const char *buf_wmesg;		/* Default buffer lock message */
 #define	BUF_ASSERT_UNHELD(bp)
 #endif
 
-#ifdef _SYS_PROC_HH_	/* Avoid #include <freebsd/sys/proc.h> pollution */
+#ifdef _SYS_PROC_H_	/* Avoid #include <sys/proc.h> pollution */
 /*
  * When initiating asynchronous I/O, change ownership of the lock to the
  * kernel. Once done, the lock may legally released by biodone. The
@@ -523,4 +523,4 @@ void 	bunpin_wait(struct buf *);
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_BUF_HH_ */
+#endif /* !_SYS_BUF_H_ */

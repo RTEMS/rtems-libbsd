@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: cryptosoft.c,v 1.35 2002/04/26 08:43:50 deraadt Exp $	*/
 
@@ -24,34 +24,34 @@
  * PURPOSE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/random.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/uio.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/sysctl.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/random.h>
+#include <sys/kernel.h>
+#include <sys/uio.h>
 
-#include <freebsd/crypto/blowfish/blowfish.h>
-#include <freebsd/crypto/sha1.h>
-#include <freebsd/opencrypto/rmd160.h>
-#include <freebsd/opencrypto/cast.h>
-#include <freebsd/opencrypto/skipjack.h>
-#include <freebsd/sys/md5.h>
+#include <crypto/blowfish/blowfish.h>
+#include <crypto/sha1.h>
+#include <opencrypto/rmd160.h>
+#include <opencrypto/cast.h>
+#include <opencrypto/skipjack.h>
+#include <sys/md5.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/cryptosoft.h>
-#include <freebsd/opencrypto/xform.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/cryptosoft.h>
+#include <opencrypto/xform.h>
 
-#include <freebsd/sys/kobj.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/local/cryptodev_if.h>
+#include <sys/kobj.h>
+#include <sys/bus.h>
+#include <rtems/bsd/local/cryptodev_if.h>
 
 static	int32_t swcr_id;
 static	struct swcr_data **swcr_sessions = NULL;

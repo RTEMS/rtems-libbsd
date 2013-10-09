@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,43 +31,43 @@
  *	$KAME: in6_ifattach.c,v 1.118 2001/05/24 07:44:00 itojun Exp $
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/md5.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/syslog.h>
+#include <sys/md5.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/if_ether.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet6/in6_pcb.h>
-#include <freebsd/netinet6/in6_ifattach.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/nd6.h>
-#include <freebsd/netinet6/mld6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/in6_var.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/in6_ifattach.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/nd6.h>
+#include <netinet6/mld6_var.h>
+#include <netinet6/scope6_var.h>
 
 VNET_DEFINE(unsigned long, in6_maxmtu) = 0;
 

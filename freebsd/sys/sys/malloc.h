@@ -32,13 +32,13 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_MALLOC_HH_
-#define	_SYS_MALLOC_HH_
+#ifndef _SYS_MALLOC_H_
+#define	_SYS_MALLOC_H_
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
 
 #define	MINALLOCSIZE	UMA_SMALLEST_UNIT
 
@@ -186,4 +186,4 @@ void	*reallocf(void *addr, unsigned long size, struct malloc_type *type,
 struct malloc_type *malloc_desc2type(const char *desc);
 #endif /* _KERNEL */
 
-#endif /* !_SYS_MALLOC_HH_ */
+#endif /* !_SYS_MALLOC_H_ */

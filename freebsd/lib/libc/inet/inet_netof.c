@@ -35,7 +35,7 @@ __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 

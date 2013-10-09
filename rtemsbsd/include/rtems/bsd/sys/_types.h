@@ -26,11 +26,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__TYPES_HH_
-#define _SYS__TYPES_HH_
+#ifndef _RTEMS_BSD_SYS__TYPES_H_
+#define _RTEMS_BSD_SYS__TYPES_H_
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/machine/_types.h>
+#include <sys/cdefs.h>
+#ifndef __rtems__
+#include <machine/_types.h>
 
 /*
  * Standard type definitions.
@@ -101,5 +102,110 @@ typedef union {
 	char		__mbstate8[128];
 	__int64_t	_mbstateL;	/* for alignment */
 } __mbstate_t;
+#else /* __rtems__ */
+#include <sys/types.h>
 
-#endif /* !_SYS__TYPES_HH_ */
+#ifdef __BSD_VISIBLE
+
+#include <machine/rtems-bsd-endian.h>
+#include <stdarg.h>
+
+#define _INT8_T_DECLARED
+#define _UINT8_T_DECLARED
+
+#define _INT16_T_DECLARED
+#define _UINT16_T_DECLARED
+
+#define _INT32_T_DECLARED
+#define _UINT32_T_DECLARED
+
+#define _INT64_T_DECLARED
+#define _UINT64_T_DECLARED
+
+#define _INTPTR_T_DECLARED
+
+#ifdef _KERNEL
+
+typedef int boolean_t;
+
+typedef struct device *device_t;
+
+typedef intptr_t intfptr_t;
+typedef uintptr_t uintfptr_t;
+
+typedef uint32_t intrmask_t;
+
+typedef char vm_memattr_t;
+
+#endif /* _KERNEL */
+
+typedef int accmode_t;
+#define _ACCMODE_T_DECLARED
+
+typedef const char *c_caddr_t;
+
+typedef uint32_t cpumask_t;
+
+typedef int cpusetid_t;
+
+#define _DEV_T_DECLARED
+
+typedef uint32_t __fixpt_t;
+typedef __fixpt_t fixpt_t;
+
+#define _GID_T_DECLARED
+
+typedef uint32_t in_addr_t;
+#define _IN_ADDR_T_DECLARED
+
+typedef uint16_t in_port_t;
+#define _IN_PORT_T_DECLARED
+
+#define _MODE_T_DECLARED
+
+typedef _off_t __off_t;
+#define _OFF_T_DECLARED
+
+#define _PID_T_DECLARED
+
+typedef int register_t;
+typedef unsigned int u_register_t;
+
+typedef intptr_t segsz_t;
+
+#undef __size_t
+typedef size_t __size_t;
+#define _SIZE_T_DECLARED
+
+#define __ssize_t ssize_t
+#define _SSIZE_T_DECLARED
+
+#define _UID_T_DECLARED
+
+#define __va_list va_list
+
+typedef uintptr_t vm_offset_t;
+typedef uint64_t vm_ooffset_t;
+typedef uintptr_t vm_paddr_t;
+typedef uint64_t vm_pindex_t;
+typedef uintptr_t vm_size_t;
+
+typedef int lwpid_t;
+#define _LWPID_T_DECLARED
+
+typedef int64_t rlim_t;
+#define _RLIM_T_DECLARED
+
+typedef uint8_t sa_family_t;
+#define _SA_FAMILY_T_DECLARED
+
+typedef uint32_t socklen_t;
+#define _SOCKLEN_T_DECLARED
+
+#define SIZE_T_MAX SIZE_MAX
+
+#endif /* __BSD_VISIBLE */
+
+#endif /* __rtems__ */
+
+#endif /* !_RTEMS_BSD_SYS__TYPES_H_ */

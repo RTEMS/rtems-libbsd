@@ -74,8 +74,8 @@
  * Data structure and control definitions for STP interfaces.
  */
 
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/queue.h>
+#include <sys/callout.h>
+#include <sys/queue.h>
 
 /* STP port states */
 #define	BSTP_IFSTATE_DISABLED	0

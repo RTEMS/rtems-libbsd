@@ -30,13 +30,13 @@
 
 /* $KAME: sctp_var.h,v 1.24 2005/03/06 16:04:19 itojun Exp $	 */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#ifndef _NETINET_SCTP_VAR_HH_
-#define _NETINET_SCTP_VAR_HH_
+#ifndef _NETINET_SCTP_VAR_H_
+#define _NETINET_SCTP_VAR_H_
 
-#include <freebsd/netinet/sctp_uio.h>
+#include <netinet/sctp_uio.h>
 
 #if defined(_KERNEL) || defined(__Userspace__)
 
@@ -333,4 +333,4 @@ __P((struct sctp_inpcb *, struct ip *ip, struct sctphdr *,
 
 #endif				/* _KERNEL */
 
-#endif				/* !_NETINET_SCTP_VAR_HH_ */
+#endif				/* !_NETINET_SCTP_VAR_H_ */

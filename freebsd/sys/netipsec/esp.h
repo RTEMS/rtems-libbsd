@@ -34,8 +34,8 @@
  * RFC1827/2406 Encapsulated Security Payload.
  */
 
-#ifndef _NETIPSEC_ESP_HH_
-#define _NETIPSEC_ESP_HH_
+#ifndef _NETIPSEC_ESP_H_
+#define _NETIPSEC_ESP_H_
 
 struct esp {
 	u_int32_t	esp_spi;	/* ESP */
@@ -66,4 +66,4 @@ struct esptail {
 };
 	
 #define ESP_ALEN	12	/* 96-bit authenticator */
-#endif /*_NETIPSEC_ESP_HH_*/
+#endif /*_NETIPSEC_ESP_H_*/

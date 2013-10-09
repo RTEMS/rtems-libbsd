@@ -26,7 +26,7 @@
  * $FreeBSD$
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/sysctl.h>
 
 #include <err.h>

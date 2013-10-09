@@ -25,15 +25,15 @@
  *
  *	$FreeBSD$
  */
-#ifndef __SEMAPHORE_HH_
-#define __SEMAPHORE_HH_
+#ifndef __SEMAPHORE_H_
+#define __SEMAPHORE_H_
 
 typedef intptr_t semid_t;
 struct timespec;
 
 #ifndef _KERNEL
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 /*
  * Semaphore definitions.
@@ -70,4 +70,4 @@ __END_DECLS
 
 #endif /* !_KERNEL */
 
-#endif /* __SEMAPHORE_HH_ */
+#endif /* __SEMAPHORE_H_ */

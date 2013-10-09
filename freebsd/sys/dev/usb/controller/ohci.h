@@ -36,8 +36,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _OHCI_HH_
-#define	_OHCI_HH_
+#ifndef _OHCI_H_
+#define	_OHCI_H_
 
 #define	OHCI_MAX_DEVICES MIN(USB_MAX_DEVICES, 128)
 
@@ -273,4 +273,4 @@ void	ohci_suspend(ohci_softc_t *sc);
 void	ohci_resume(ohci_softc_t *sc);
 void	ohci_interrupt(ohci_softc_t *sc);
 
-#endif					/* _OHCI_HH_ */
+#endif					/* _OHCI_H_ */

@@ -3,7 +3,7 @@
 #include <sys/time.h>
 #include <rtems.h>
 #include <rtems/error.h>
-#include <freebsd/sys/poll.h>
+#include <sys/poll.h>
 
 struct poll_args {
         struct pollfd *fds;

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -114,36 +114,36 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/sysctl.h>
 #else
-#include <freebsd/sys/types.h>
-#include <freebsd/stdlib.h>
-#include <freebsd/stdio.h>
-#include <freebsd/ctype.h>
-#include <freebsd/dlfcn.h>
-#include <freebsd/errno.h>
-#include <freebsd/string.h>
+#include <rtems/bsd/sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <dlfcn.h>
+#include <errno.h>
+#include <string.h>
 #endif
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_icmp.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 #ifdef _KERNEL
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
-#include <freebsd/netinet/libalias/alias_mod.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias_mod.h>
 #else
-#include <freebsd/err.h>
-#include <freebsd/local/alias.h>
-#include <freebsd/local/alias_local.h>
-#include <freebsd/local/alias_mod.h>
+#include <err.h>
+#include <rtems/bsd/local/alias.h>
+#include <rtems/bsd/local/alias_local.h>
+#include <rtems/bsd/local/alias_mod.h>
 #endif
 
 /* 

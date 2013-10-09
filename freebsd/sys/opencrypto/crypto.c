@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002-2006 Sam Leffler.  All rights reserved.
@@ -24,7 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -58,34 +58,34 @@ __FBSDID("$FreeBSD$");
 
 #define	CRYPTO_TIMING				/* enable timing support */
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_kdtrace.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_kdtrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/kthread.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sdt.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/eventhandler.h>
+#include <sys/kernel.h>
+#include <sys/kthread.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/mutex.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/sdt.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 
-#include <freebsd/vm/uma.h>
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/xform.h>			/* XXX for M_XDATA */
+#include <vm/uma.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/xform.h>			/* XXX for M_XDATA */
 
-#include <freebsd/sys/kobj.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/local/cryptodev_if.h>
+#include <sys/kobj.h>
+#include <sys/bus.h>
+#include <rtems/bsd/local/cryptodev_if.h>
 
 #if defined(__i386__) || defined(__amd64__)
-#include <freebsd/machine/pcb.h>
+#include <machine/pcb.h>
 #endif
 
 SDT_PROVIDER_DEFINE(opencrypto);

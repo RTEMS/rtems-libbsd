@@ -35,10 +35,10 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_FILIO_HH_
-#define	_SYS_FILIO_HH_
+#ifndef	_SYS_FILIO_H_
+#define	_SYS_FILIO_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 /* Generic file-descriptor ioctl's. */
 #define	FIOCLEX		 _IO('f', 1)		/* set close on exec on fd */
@@ -61,4 +61,4 @@ struct fiodgname_arg {
 #define	FIOSEEKDATA	_IOWR('f', 97, off_t)	/* SEEK_DATA */
 #define	FIOSEEKHOLE	_IOWR('f', 98, off_t)	/* SEEK_HOLE */
 
-#endif /* !_SYS_FILIO_HH_ */
+#endif /* !_SYS_FILIO_H_ */

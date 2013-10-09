@@ -32,19 +32,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <sys/param.h>
-#include <sys/lock.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/lock.h>
 #include <sys/sched.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
-#include <freebsd/sys/kernel.h>
-#include <freebsd/vm/uma.h>
-#include <freebsd/vm/uma_int.h>
-#include <freebsd/sys/systm.h>
+#include <sys/kernel.h>
+#include <vm/uma.h>
+#include <vm/uma_int.h>
+#include <sys/systm.h>
 
 /*
  * System initialization

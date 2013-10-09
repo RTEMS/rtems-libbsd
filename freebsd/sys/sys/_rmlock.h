@@ -29,14 +29,14 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__RMLOCK_HH_
-#define	_SYS__RMLOCK_HH_
+#ifndef _SYS__RMLOCK_H_
+#define	_SYS__RMLOCK_H_
 
 /* 
  * XXXUPS remove as soon as we have per cpu variable
  * linker sets and  can define rm_queue in _rm_lock.h
 */
-#include <freebsd/sys/pcpu.h>
+#include <sys/pcpu.h>
 /*
  * Mostly reader/occasional writer lock.
  */
@@ -52,7 +52,7 @@ struct rmlock {
 
 };
 #else /* __rtems__ */
-  #include <freebsd/sys/rwlock.h>
+  #include <sys/rwlock.h>
   #define rmlock rwlock
 #endif /* __rtems__ */
 
@@ -64,4 +64,4 @@ struct rm_priotracker {
 	LIST_ENTRY(rm_priotracker) rmp_qentry;
 };
 
-#endif /* !_SYS__RMLOCK_HH_ */
+#endif /* !_SYS__RMLOCK_H_ */

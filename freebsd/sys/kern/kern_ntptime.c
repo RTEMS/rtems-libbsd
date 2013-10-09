@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  ***********************************************************************
@@ -32,26 +32,26 @@
  * confusing and/or plain wrong in that context.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ntp.h>
+#include <rtems/bsd/local/opt_ntp.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/timex.h>
-#include <freebsd/sys/timetc.h>
-#include <freebsd/sys/timepps.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/sysproto.h>
+#include <sys/eventhandler.h>
+#include <sys/kernel.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/timex.h>
+#include <sys/timetc.h>
+#include <sys/timepps.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
 
 /*
  * Single-precision macros for 64-bit machines
@@ -266,7 +266,7 @@ ntp_gettime1(struct ntptimeval *ntvp)
  * See the timex.h header file for synopsis and API description.  Note that
  * the TAI offset is returned in the ntvtimeval.tai structure member.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ntp_gettime_args {
 	struct ntptimeval *ntvp;
 };
@@ -315,7 +315,7 @@ SYSCTL_OPAQUE(_kern_ntp_pll, OID_AUTO, time_freq, CTLFLAG_RD, &time_freq, sizeof
  * the timex.constant structure member has a dual purpose to set the time
  * constant and to set the TAI offset.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ntp_adjtime_args {
 	struct timex *tp;
 };
@@ -924,7 +924,7 @@ hardpps(tsp, nsec)
 }
 #endif /* PPS_SYNC */
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct adjtime_args {
 	struct timeval *delta;
 	struct timeval *olddelta;

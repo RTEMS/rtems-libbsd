@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
@@ -31,35 +31,35 @@
  */
 /*	$KAME: sctp6_usrreq.c,v 1.38 2005/08/24 08:08:56 suz Exp $	*/
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/netinet/sctp_os.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/netinet/sctp_pcb.h>
-#include <freebsd/netinet/sctp_header.h>
-#include <freebsd/netinet/sctp_var.h>
+#include <netinet/sctp_os.h>
+#include <sys/proc.h>
+#include <netinet/sctp_pcb.h>
+#include <netinet/sctp_header.h>
+#include <netinet/sctp_var.h>
 #if defined(INET6)
-#include <freebsd/netinet6/sctp6_var.h>
+#include <netinet6/sctp6_var.h>
 #endif
-#include <freebsd/netinet/sctp_sysctl.h>
-#include <freebsd/netinet/sctp_output.h>
-#include <freebsd/netinet/sctp_uio.h>
-#include <freebsd/netinet/sctp_asconf.h>
-#include <freebsd/netinet/sctputil.h>
-#include <freebsd/netinet/sctp_indata.h>
-#include <freebsd/netinet/sctp_timer.h>
-#include <freebsd/netinet/sctp_auth.h>
-#include <freebsd/netinet/sctp_input.h>
-#include <freebsd/netinet/sctp_output.h>
-#include <freebsd/netinet/sctp_bsd_addr.h>
-#include <freebsd/netinet/sctp_crc32.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/sctp_sysctl.h>
+#include <netinet/sctp_output.h>
+#include <netinet/sctp_uio.h>
+#include <netinet/sctp_asconf.h>
+#include <netinet/sctputil.h>
+#include <netinet/sctp_indata.h>
+#include <netinet/sctp_timer.h>
+#include <netinet/sctp_auth.h>
+#include <netinet/sctp_input.h>
+#include <netinet/sctp_output.h>
+#include <netinet/sctp_bsd_addr.h>
+#include <netinet/sctp_crc32.h>
+#include <netinet/udp.h>
 
 #ifdef IPSEC
-#include <freebsd/netipsec/ipsec.h>
+#include <netipsec/ipsec.h>
 #if defined(INET6)
-#include <freebsd/netipsec/ipsec6.h>
+#include <netipsec/ipsec6.h>
 #endif				/* INET6 */
 #endif				/* IPSEC */
 

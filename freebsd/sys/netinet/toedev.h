@@ -27,8 +27,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TOEDEV_HH_
-#define	_NETINET_TOEDEV_HH_
+#ifndef _NETINET_TOEDEV_H_
+#define	_NETINET_TOEDEV_H_
 
 #ifndef _KERNEL
 #error "no user-serviceable parts inside"
@@ -159,4 +159,4 @@ toe_enslave(struct ifnet *bond_ifp, struct ifnet *slave_ifp)
 	return (0);
 }
 
-#endif /* _NETINET_TOEDEV_HH_ */
+#endif /* _NETINET_TOEDEV_H_ */

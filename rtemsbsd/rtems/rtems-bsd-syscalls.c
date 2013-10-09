@@ -37,24 +37,24 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/machine/pcpu.h>
-#include <freebsd/net/vnet.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/fcntl.h>
+#include <sys/protosw.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/uio.h>
+#include <machine/pcpu.h>
+#include <net/vnet.h>
 
 #include <rtems/libio_.h>
 #include <rtems/libio.h>

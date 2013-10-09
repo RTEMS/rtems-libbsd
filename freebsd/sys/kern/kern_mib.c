@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
@@ -37,29 +37,29 @@
  *	@(#)kern_sysctl.c	8.4 (Berkeley) 4/14/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_posix.h>
-#include <freebsd/local/opt_config.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_posix.h>
+#include <rtems/bsd/local/opt_config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
 #ifndef __rtems__
-#include <freebsd/sys/sbuf.h>
+#include <sys/sbuf.h>
 #endif
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/proc.h>
+#include <sys/systm.h>
+#include <sys/sysctl.h>
+#include <sys/proc.h>
 #ifndef __rtems__
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/sys/sx.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/jail.h>
+#include <sys/smp.h>
+#include <sys/sx.h>
 #endif
-#include <freebsd/sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 
 #ifdef __rtems__
 char machine[] = "SET ME";
@@ -513,27 +513,27 @@ SYSCTL_INT(_user, USER_STREAM_MAX, stream_max, CTLFLAG_RD,
 SYSCTL_INT(_user, USER_TZNAME_MAX, tzname_max, CTLFLAG_RD,
     0, 0, "Min Maximum number of types supported for timezone names");
 
-#include <freebsd/sys/vnode.h>
+#include <sys/vnode.h>
 SYSCTL_INT(_debug_sizeof, OID_AUTO, vnode, CTLFLAG_RD,
     0, sizeof(struct vnode), "sizeof(struct vnode)");
 
 SYSCTL_INT(_debug_sizeof, OID_AUTO, proc, CTLFLAG_RD,
     0, sizeof(struct proc), "sizeof(struct proc)");
 
-#include <freebsd/sys/bio.h>
-#include <freebsd/sys/buf.h>
+#include <sys/bio.h>
+#include <sys/buf.h>
 SYSCTL_INT(_debug_sizeof, OID_AUTO, bio, CTLFLAG_RD,
     0, sizeof(struct bio), "sizeof(struct bio)");
 SYSCTL_INT(_debug_sizeof, OID_AUTO, buf, CTLFLAG_RD,
     0, sizeof(struct buf), "sizeof(struct buf)");
 
-#include <freebsd/sys/user.h>
+#include <sys/user.h>
 SYSCTL_INT(_debug_sizeof, OID_AUTO, kinfo_proc, CTLFLAG_RD,
     0, sizeof(struct kinfo_proc), "sizeof(struct kinfo_proc)");
 
 /* XXX compatibility, remove for 6.0 */
-#include <freebsd/sys/imgact.h>
-#include <freebsd/sys/imgact_elf.h>
+#include <sys/imgact.h>
+#include <sys/imgact_elf.h>
 SYSCTL_INT(_kern, OID_AUTO, fallback_elf_brand, CTLFLAG_RW,
     &__elfN(fallback_brand), sizeof(__elfN(fallback_brand)),
     "compatibility for kern.fallback_elf_brand");

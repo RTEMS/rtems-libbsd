@@ -38,7 +38,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems.h>
 #include <rtems/error.h>
-#include <freebsd/machine/rtems-bsd-taskqueue.h>
+#include <machine/rtems-bsd-taskqueue.h>
 
 /*
 #define STATIC static

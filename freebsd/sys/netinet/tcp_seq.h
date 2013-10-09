@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_SEQ_HH_
-#define _NETINET_TCP_SEQ_HH_
+#ifndef _NETINET_TCP_SEQ_H_
+#define _NETINET_TCP_SEQ_H_
 /*
  * TCP sequence numbers are 32 bit integers operated
  * on with modular arithmetic.  These macros can be
@@ -65,4 +65,4 @@
 #define TCP_PAWS_IDLE	(24 * 24 * 60 * 60 * hz)
 					/* timestamp wrap-around time */
 
-#endif /* _NETINET_TCP_SEQ_HH_ */
+#endif /* _NETINET_TCP_SEQ_H_ */

@@ -27,11 +27,6 @@
  * SUCH DAMAGE.
  */
 
-#ifdef __rtems__
-#include <freebsd/machine/rtems-bsd-config.h>
-#include <freebsd/sys/_types.h>
-#endif
-
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 

@@ -34,8 +34,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_CTYPE_HH_
-#define	_SYS_CTYPE_HH_
+#ifndef _SYS_CTYPE_H_
+#define	_SYS_CTYPE_H_
 
 #ifdef _KERNEL
 
@@ -54,4 +54,4 @@
 #define tolower(c)	((c) + 0x20 * (((c) >= 'A') && ((c) <= 'Z')))
 
 #endif
-#endif /* !_SYS_CTYPE_HH_ */
+#endif /* !_SYS_CTYPE_H_ */

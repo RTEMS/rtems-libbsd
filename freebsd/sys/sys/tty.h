@@ -29,20 +29,20 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TTY_HH_
-#define	_SYS_TTY_HH_
+#ifndef _SYS_TTY_H_
+#define	_SYS_TTY_H_
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/selinfo.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/condvar.h>
+#include <sys/selinfo.h>
 #ifndef __rtems__
-#include <freebsd/sys/termios.h>
+#include <sys/termios.h>
 #endif
-#include <freebsd/sys/ttycom.h>
-#include <freebsd/sys/ttyqueue.h>
+#include <sys/ttycom.h>
+#include <sys/ttyqueue.h>
 
 struct cdev;
 struct file;
@@ -209,9 +209,9 @@ int	pts_alloc_external(int fd, struct thread *td, struct file *fp,
     struct cdev *dev, const char *name);
 
 /* Drivers and line disciplines also need to call these. */
-#include <freebsd/sys/ttydisc.h>
-#include <freebsd/sys/ttydevsw.h>
-#include <freebsd/sys/ttyhook.h>
+#include <sys/ttydisc.h>
+#include <sys/ttydevsw.h>
+#include <sys/ttyhook.h>
 #endif /* _KERNEL */
 
-#endif /* !_SYS_TTY_HH_ */
+#endif /* !_SYS_TTY_H_ */

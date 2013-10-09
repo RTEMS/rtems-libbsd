@@ -30,10 +30,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_SELINFO_HH_
-#define	_SYS_SELINFO_HH_
+#ifndef _SYS_SELINFO_H_
+#define	_SYS_SELINFO_H_
 
-#include <freebsd/sys/event.h>		/* for struct klist */
+#include <sys/event.h>		/* for struct klist */
 
 struct selfd;
 TAILQ_HEAD(selfdlist, selfd);
@@ -61,4 +61,4 @@ void	selwakeuppri(struct selinfo *sip, int pri);
 void	seltdfini(struct thread *td);
 #endif
 
-#endif /* !_SYS_SELINFO_HH_ */
+#endif /* !_SYS_SELINFO_H_ */

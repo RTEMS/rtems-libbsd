@@ -28,8 +28,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_MLD6_HH_
-#define _NETINET6_MLD6_HH_
+#ifndef _NETINET6_MLD6_H_
+#define _NETINET6_MLD6_H_
 
 /*
  * Multicast Listener Discovery (MLD) definitions.
@@ -109,4 +109,4 @@ struct mldv2_record {
  */
 #define MLD_TIMER_SCALE			1000
 
-#endif /* _NETINET6_MLD6_HH_ */
+#endif /* _NETINET6_MLD6_H_ */

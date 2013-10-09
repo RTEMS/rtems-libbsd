@@ -26,9 +26,9 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_HASH_HH_
-#define	_SYS_HASH_HH_
-#include <freebsd/sys/types.h>
+#ifndef _SYS_HASH_H_
+#define	_SYS_HASH_H_
+#include <rtems/bsd/sys/types.h>
 
 /* Convenience */
 #ifndef	HASHINIT
@@ -118,4 +118,4 @@ hash32_strne(const void *buf, size_t len, int end, const char **ep,
 
 	return hash;
 }
-#endif /* !_SYS_HASH_HH_ */
+#endif /* !_SYS_HASH_H_ */

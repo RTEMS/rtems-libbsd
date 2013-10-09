@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_SIGIO_HH_
-#define _SYS_SIGIO_HH_
+#ifndef _SYS_SIGIO_H_
+#define _SYS_SIGIO_H_
 
 /*
  * This structure holds the information needed to send a SIGIO or
@@ -64,4 +64,4 @@ int	fsetown(pid_t pgid, struct sigio **sigiop);
 void	funsetown(struct sigio **sigiop);
 void	funsetownlst(struct sigiolst *sigiolst);
 
-#endif /* _SYS_SIGIO_HH_ */
+#endif /* _SYS_SIGIO_H_ */

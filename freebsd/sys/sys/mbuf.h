@@ -31,16 +31,16 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_MBUF_HH_
-#define	_SYS_MBUF_HH_
+#ifndef _SYS_MBUF_H_
+#define	_SYS_MBUF_H_
 
 /* XXX: These includes suck. Sorry! */
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 #ifdef _KERNEL
-#include <freebsd/sys/systm.h>
-#include <freebsd/vm/uma.h>
+#include <sys/systm.h>
+#include <vm/uma.h>
 #ifdef WITNESS
-#include <freebsd/sys/lock.h>
+#include <rtems/bsd/sys/lock.h>
 #endif
 #endif
 
@@ -1029,4 +1029,4 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 #endif
 
 
-#endif /* !_SYS_MBUF_HH_ */
+#endif /* !_SYS_MBUF_H_ */

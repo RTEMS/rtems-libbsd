@@ -33,10 +33,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _ALTQ_ALTQ_RMCLASS_HH_
-#define	_ALTQ_ALTQ_RMCLASS_HH_
+#ifndef _ALTQ_ALTQ_RMCLASS_H_
+#define	_ALTQ_ALTQ_RMCLASS_H_
 
-#include <freebsd/altq/altq_classq.h>
+#include <altq/altq_classq.h>
 
 /* #pragma ident "@(#)rm_class.h  1.20     97/10/23 SMI" */
 
@@ -263,4 +263,4 @@ extern int	rmc_get_weight(struct rm_ifdat *, int);
 }
 #endif
 
-#endif /* _ALTQ_ALTQ_RMCLASS_HH_ */
+#endif /* _ALTQ_ALTQ_RMCLASS_H_ */

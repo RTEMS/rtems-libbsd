@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1993
@@ -29,52 +29,52 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mac.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/mac.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_options.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_options.h>
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
 #ifdef IPSEC
-#include <freebsd/netipsec/ipsec.h>
-#include <freebsd/netipsec/ipsec6.h>
-#include <freebsd/netipsec/xform.h>
-#include <freebsd/netipsec/key.h>
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
+#include <netipsec/xform.h>
+#include <netipsec/key.h>
 #ifdef IPSEC_DEBUG
-#include <freebsd/netipsec/key_debug.h>
+#include <netipsec/key_debug.h>
 #else
 #define	KEYDEBUG(lev,arg)
 #endif
 #endif /*IPSEC*/
 
-#include <freebsd/netinet6/ip6_ipsec.h>
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet6/ip6_ipsec.h>
+#include <netinet6/ip6_var.h>
 
 extern	struct protosw inet6sw[];
 

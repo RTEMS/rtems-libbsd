@@ -55,8 +55,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MIPS_CPUREGS_HH_
-#define	_MIPS_CPUREGS_HH_
+#ifndef _MIPS_CPUREGS_H_
+#define	_MIPS_CPUREGS_H_
 
 /*
  * Address space.
@@ -975,13 +975,13 @@
 #define	MIPS_R3TOSH	0x22	/* Toshiba R3000 based FPU	ISA I	*/
 
 #ifdef ENABLE_MIPS_TX3900
-#include <freebsd/mips/r3900regs.h>
+#include <mips/r3900regs.h>
 #endif
 #ifdef MIPS3_5900
-#include <freebsd/mips/r5900regs.h>
+#include <mips/r5900regs.h>
 #endif
 #ifdef MIPS64_SB1
-#include <freebsd/mips/sb1regs.h>
+#include <mips/sb1regs.h>
 #endif
 
-#endif /* _MIPS_CPUREGS_HH_ */
+#endif /* _MIPS_CPUREGS_H_ */

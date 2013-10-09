@@ -30,13 +30,13 @@
  * $FreeBSD$
  */
 
-#ifndef _RADIX_HH_
-#define	_RADIX_HH_
+#ifndef _RADIX_H_
+#define	_RADIX_H_
 
 #ifdef _KERNEL
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/_rwlock.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
+#include <sys/_rwlock.h>
 #endif
 
 #ifdef MALLOC_DECLARE
@@ -173,4 +173,4 @@ struct radix_node
 		        struct radix_node_head *head),
 	 *rn_match(void *, struct radix_node_head *);
 
-#endif /* _RADIX_HH_ */
+#endif /* _RADIX_H_ */

@@ -9,19 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-void print_test_name(void)
-{
-  printf( "\n\n*** LIBFREEBSD LOOPBACK SOCKET01 TEST ***\n" );
-}
-
-
-/* XXX remaining init configuration to evaluate */
-#define CONFIGURE_INIT_TASK_STACK_SIZE    (10*1024)
-#define CONFIGURE_INIT_TASK_PRIORITY    50
-#define CONFIGURE_INIT_TASK_INITIAL_MODES (RTEMS_PREEMPT | \
-                                           RTEMS_NO_TIMESLICE | \
-                                           RTEMS_NO_ASR | \
-                                           RTEMS_INTERRUPT_LEVEL(0))
+#define TEST_NAME "LIBBSD LOOPBACK 1"
 
 #include <rtems/error.h>
 #include <stdio.h>
@@ -224,7 +212,7 @@ static rtems_task clientTask(rtems_task_argument arg)
 /*
  * RTEMS Startup Task
  */
-void test_main(void)
+static void test_main(void)
 {
   rtems_status_code    sc;
   rtems_task_priority  old;
@@ -270,6 +258,8 @@ void test_main(void)
   spawnTask(clientTask, 120, 6);
 
   rtems_task_wake_after(500);
-  puts( "*** END OF LOOPBACK TEST ***" );
+  puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }
+
+#include <rtems/bsd/test/default-init.h>

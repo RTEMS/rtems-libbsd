@@ -30,7 +30,7 @@ __FBSDID("$FreeBSD$");
 #include "fd_setsize.h"
 #endif
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/uio.h>
 
 #include <errno.h>

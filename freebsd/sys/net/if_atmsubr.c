@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*      $NetBSD: if_atmsubr.c,v 1.10 1997/03/11 23:19:51 chuck Exp $       */
 
@@ -36,42 +36,42 @@
  * if_atmsubr.c
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_natm.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_natm.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/sysctl.h>
+#include <sys/malloc.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_atm.h>
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/if_atm.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/if_atm.h>
-#include <freebsd/netinet/if_ether.h> /* XXX: for ETHERTYPE_* */
+#include <netinet/in.h>
+#include <netinet/if_atm.h>
+#include <netinet/if_ether.h> /* XXX: for ETHERTYPE_* */
 #if defined(INET) || defined(INET6)
-#include <freebsd/netinet/in_var.h>
+#include <netinet/in_var.h>
 #endif
 #ifdef NATM
-#include <freebsd/netnatm/natm.h>
+#include <netnatm/natm.h>
 #endif
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 /*
  * Netgraph interface functions.

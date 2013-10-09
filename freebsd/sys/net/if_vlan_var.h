@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_IF_VLAN_VAR_HH_
-#define	_NET_IF_VLAN_VAR_HH_	1
+#ifndef _NET_IF_VLAN_VAR_H_
+#define	_NET_IF_VLAN_VAR_H_	1
 
 struct	ether_vlan_header {
 	u_char	evl_dhost[ETHER_ADDR_LEN];
@@ -134,4 +134,4 @@ struct	vlanreq {
 extern	void (*vlan_trunk_cap_p)(struct ifnet *);
 #endif /* _KERNEL */
 
-#endif /* _NET_IF_VLAN_VAR_HH_ */
+#endif /* _NET_IF_VLAN_VAR_H_ */

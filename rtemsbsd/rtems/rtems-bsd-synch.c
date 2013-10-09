@@ -41,22 +41,22 @@
  * FIXME: This seems to be a completely broken implementation.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <rtems/score/statesimpl.h>
 #include <rtems/score/threaddispatch.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadqimpl.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/machine/pcpu.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/ktr.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <machine/pcpu.h>
 
 #define STATES_WAITING_FOR_SLEEP              0x40000
 

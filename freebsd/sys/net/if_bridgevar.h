@@ -74,9 +74,9 @@
  * Data structure and control definitions for bridge interfaces.
  */
 
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/condvar.h>
+#include <sys/callout.h>
+#include <sys/queue.h>
+#include <sys/condvar.h>
 
 /*
  * Commands used in the SIOCSDRVSPEC ioctl.  Note the lookup of the

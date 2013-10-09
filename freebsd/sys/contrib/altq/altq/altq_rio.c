@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: altq_rio.c,v 1.17 2003/07/10 12:07:49 kjc Exp $	*/
@@ -62,44 +62,44 @@
  */
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
-#include <freebsd/local/opt_altq.h>
+#include <rtems/bsd/local/opt_altq.h>
 #if (__FreeBSD__ != 2)
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet.h>
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet6.h>
 #endif
 #endif
 #endif /* __FreeBSD__ || __NetBSD__ */
 #ifdef ALTQ_RIO	/* rio is enabled by ALTQ_RIO option in opt_altq.h */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/errno.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/errno.h>
 #if 1 /* ALTQ3_COMPAT */
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/sockio.h>
+#include <sys/kernel.h>
 #endif
 
-#include <freebsd/net/if.h>
+#include <net/if.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif
 
-#include <freebsd/net/pfvar.h>
-#include <freebsd/altq/altq.h>
-#include <freebsd/altq/altq_cdnr.h>
-#include <freebsd/altq/altq_red.h>
-#include <freebsd/altq/altq_rio.h>
+#include <net/pfvar.h>
+#include <altq/altq.h>
+#include <altq/altq_cdnr.h>
+#include <altq/altq_red.h>
+#include <altq/altq_rio.h>
 #ifdef ALTQ3_COMPAT
-#include <freebsd/altq/altq_conf.h>
+#include <altq/altq_conf.h>
 #endif
 
 /*

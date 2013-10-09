@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2009 Bruce Simpson.
@@ -65,39 +65,39 @@
  *	@(#)igmp.c	8.1 (Berkeley) 7/19/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/ktr.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/sysctl.h>
+#include <sys/kernel.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/ktr.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet6/mld6.h>
-#include <freebsd/netinet6/mld6_var.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet6/in6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
+#include <netinet/icmp6.h>
+#include <netinet6/mld6.h>
+#include <netinet6/mld6_var.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #ifndef KTR_MLD
 #define KTR_MLD KTR_INET6

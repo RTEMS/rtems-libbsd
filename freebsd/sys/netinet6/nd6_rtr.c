@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,42 +31,42 @@
  *	$KAME: nd6_rtr.c,v 1.111 2001/04/27 01:37:15 jinmei Exp $
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/rwlock.h>
+#include <sys/syslog.h>
+#include <sys/queue.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/radix.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+#include <net/radix.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/net/if_llatbl.h>
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet6/in6_ifattach.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/nd6.h>
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet6/scope6_var.h>
+#include <netinet/in.h>
+#include <net/if_llatbl.h>
+#include <netinet6/in6_var.h>
+#include <netinet6/in6_ifattach.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/nd6.h>
+#include <netinet/icmp6.h>
+#include <netinet6/scope6_var.h>
 
 static int rtpref(struct nd_defrouter *);
 static struct nd_defrouter *defrtrlist_update(struct nd_defrouter *);

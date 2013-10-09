@@ -27,30 +27,20 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/types.h>
-#ifdef __rtems__
-#include <freebsd/sys/protosw.h>
-#else
+#include <rtems/bsd/sys/types.h>
 #include <sys/protosw.h>
-#endif
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #ifndef __rtems__
 #include <sys/user.h>
-#endif
+#endif /* __rtems__ */
 
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/bpfdesc.h>
-#else
 #include <net/if_var.h>
 #include <net/bpf.h>
 #include <net/bpfdesc.h>
-#endif
 #include <arpa/inet.h>
 
 #include <err.h>

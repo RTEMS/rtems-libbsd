@@ -95,7 +95,7 @@ static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -103,17 +103,10 @@ __FBSDID("$FreeBSD$");
 #include <netinet/in.h>
 
 #ifdef IPSEC
-#ifdef __rtems__
-#include <freebsd/netipsec/ipsec.h>
-#include <freebsd/netipsec/ah_var.h>
-#include <freebsd/netipsec/esp_var.h>
-#include <freebsd/netipsec/ipcomp_var.h>
-#else
 #include <netipsec/ipsec.h>
 #include <netipsec/ah_var.h>
 #include <netipsec/esp_var.h>
 #include <netipsec/ipcomp_var.h>
-#endif
 #endif
 
 #include <stdint.h>

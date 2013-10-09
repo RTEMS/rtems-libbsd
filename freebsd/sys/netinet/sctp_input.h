@@ -30,7 +30,7 @@
 
 /* $KAME: sctp_input.h,v 1.6 2005/03/06 16:04:17 itojun Exp $	 */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_input_h__

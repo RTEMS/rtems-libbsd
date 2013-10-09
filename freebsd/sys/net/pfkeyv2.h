@@ -36,8 +36,8 @@
  *	sakane@ydc.co.jp
  */
 
-#ifndef _NET_PFKEYV2_HH_
-#define _NET_PFKEYV2_HH_
+#ifndef _NET_PFKEYV2_H_
+#define _NET_PFKEYV2_H_
 
 /*
 This file defines structures and symbols for the PF_KEY Version 2
@@ -429,4 +429,4 @@ struct sadb_x_nat_t_frag {
 
 #endif /* __PFKEY_V2_H */
 
-#endif /* _NET_PFKEYV2_HH_ */
+#endif /* _NET_PFKEYV2_H_ */

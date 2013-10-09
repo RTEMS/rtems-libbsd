@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETATALK_AARP_HH_
-#define	_NETATALK_AARP_HH_
+#ifndef _NETATALK_AARP_H_
+#define	_NETATALK_AARP_H_
 
 /*
  * This structure is used for both phase 1 and 2. Under phase 1
@@ -83,4 +83,4 @@ struct aarptab {
 struct aarptab		*aarptnew(struct at_addr      *);
 #endif
 
-#endif /* _NETATALK_AARP_HH_ */
+#endif /* _NETATALK_AARP_H_ */

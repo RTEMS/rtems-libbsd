@@ -30,14 +30,14 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_RESOURCEVAR_HH_
-#define	_SYS_RESOURCEVAR_HH_
+#ifndef	_SYS_RESOURCEVAR_H_
+#define	_SYS_RESOURCEVAR_H_
 
-#include <freebsd/sys/resource.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/resource.h>
+#include <sys/queue.h>
 #ifdef _KERNEL
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
 #endif
 
 /*
@@ -140,4 +140,4 @@ void	 uihashinit(void);
 void	 uihold(struct uidinfo *uip);
 
 #endif /* _KERNEL */
-#endif /* !_SYS_RESOURCEVAR_HH_ */
+#endif /* !_SYS_RESOURCEVAR_H_ */

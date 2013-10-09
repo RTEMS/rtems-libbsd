@@ -27,7 +27,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
@@ -37,11 +37,7 @@
 
 #include <net/ethernet.h>
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/netinet/ip_carp.h>
-#else
 #include <netinet/ip_carp.h>
-#endif
 #include <net/route.h>
 
 #include <ctype.h>

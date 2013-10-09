@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /* Alias_irc.c intercepts packages contain IRC CTCP commands, and
@@ -51,34 +51,34 @@ __FBSDID("$FreeBSD$");
 
 /* Includes */
 #ifdef _KERNEL
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/ctype.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/ctype.h>
+#include <sys/limits.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
 #else
-#include <freebsd/ctype.h>
-#include <freebsd/errno.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/stdio.h>
-#include <freebsd/stdlib.h>
-#include <freebsd/string.h>
-#include <freebsd/limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include <rtems/bsd/sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
 #endif
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
-#include <freebsd/netinet/libalias/alias_mod.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias_mod.h>
 #else
-#include <freebsd/local/alias_local.h>
-#include <freebsd/local/alias_mod.h>
+#include <rtems/bsd/local/alias_local.h>
+#include <rtems/bsd/local/alias_mod.h>
 #endif
 
 #define IRC_CONTROL_PORT_NUMBER_1 6667

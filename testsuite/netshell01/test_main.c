@@ -11,20 +11,19 @@
 
 #include <rtems/shell.h>
 
-void print_test_name(void)
-{
-  printf( "\n\n*** LIBFREEBSD NETWORK SHELL TEST ***\n" );
-}
+#define TEST_NAME "LIBBSD NETSHELL 1"
 
 /*
  * RTEMS Startup Task
  */
-void test_main(void)
+static void test_main(void)
 {
   rtems_shell_env_t env = rtems_global_shell_env;
 
   rtems_shell_main_loop( &env );
 
-  puts( "*** END OF NETWORK SHELL TEST ***" );
+  puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }
+
+#include <rtems/bsd/test/default-init.h>

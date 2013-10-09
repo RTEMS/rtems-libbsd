@@ -26,17 +26,17 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_STDDEF_HH_
-#define _SYS_STDDEF_HH_
+#ifndef _SYS_STDDEF_H_
+#define _SYS_STDDEF_H_
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/_null.h>
-#include <freebsd/machine/_types.h>
-
+#include <sys/cdefs.h>
 #ifndef __rtems__
+#include <sys/_null.h>
+#include <machine/_types.h>
+
 typedef	__ptrdiff_t	ptrdiff_t;
 
 #define	offsetof(type, field)	__offsetof(type, field)
 #endif /* __rtems__ */
 
-#endif /* !_SYS_STDDEF_HH_ */
+#endif /* !_SYS_STDDEF_H_ */

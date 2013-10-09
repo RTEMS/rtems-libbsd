@@ -25,35 +25,35 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_VAR_HH_
-#define _NET80211_IEEE80211_VAR_HH_
+#ifndef _NET80211_IEEE80211_VAR_H_
+#define _NET80211_IEEE80211_VAR_H_
 
 /*
  * Definitions for IEEE 802.11 drivers.
  */
 /* NB: portability glue must go first */
 #if defined(__NetBSD__)
-#include <freebsd/net80211/ieee80211_netbsd.h>
+#include <net80211/ieee80211_netbsd.h>
 #elif defined(__FreeBSD__)
-#include <freebsd/net80211/ieee80211_freebsd.h>
+#include <net80211/ieee80211_freebsd.h>
 #elif defined(__linux__)
-#include <freebsd/net80211/ieee80211_linux.h>
+#include <net80211/ieee80211_linux.h>
 #else
 #error	"No support for your operating system!"
 #endif
 
-#include <freebsd/net80211/_ieee80211.h>
-#include <freebsd/net80211/ieee80211.h>
-#include <freebsd/net80211/ieee80211_ageq.h>
-#include <freebsd/net80211/ieee80211_crypto.h>
-#include <freebsd/net80211/ieee80211_dfs.h>
-#include <freebsd/net80211/ieee80211_ioctl.h>		/* for ieee80211_stats */
-#include <freebsd/net80211/ieee80211_phy.h>
-#include <freebsd/net80211/ieee80211_power.h>
-#include <freebsd/net80211/ieee80211_node.h>
-#include <freebsd/net80211/ieee80211_proto.h>
-#include <freebsd/net80211/ieee80211_radiotap.h>
-#include <freebsd/net80211/ieee80211_scan.h>
+#include <net80211/_ieee80211.h>
+#include <net80211/ieee80211.h>
+#include <net80211/ieee80211_ageq.h>
+#include <net80211/ieee80211_crypto.h>
+#include <net80211/ieee80211_dfs.h>
+#include <net80211/ieee80211_ioctl.h>		/* for ieee80211_stats */
+#include <net80211/ieee80211_phy.h>
+#include <net80211/ieee80211_power.h>
+#include <net80211/ieee80211_node.h>
+#include <net80211/ieee80211_proto.h>
+#include <net80211/ieee80211_radiotap.h>
+#include <net80211/ieee80211_scan.h>
 
 #define	IEEE80211_TXPOWER_MAX	100	/* .5 dbM (XXX units?) */
 #define	IEEE80211_TXPOWER_MIN	0	/* kill radio */
@@ -913,4 +913,4 @@ void ieee80211_discard_mac(const struct ieee80211vap *,
 #define	IEEE80211_DISCARD_MAC(_vap, _m, _mac, _type, _fmt, ...)
 #endif
 
-#endif /* _NET80211_IEEE80211_VAR_HH_ */
+#endif /* _NET80211_IEEE80211_VAR_H_ */

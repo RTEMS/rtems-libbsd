@@ -26,12 +26,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TTYHOOK_HH_
-#define	_SYS_TTYHOOK_HH_
+#ifndef _SYS_TTYHOOK_H_
+#define	_SYS_TTYHOOK_H_
 
-#ifndef _SYS_TTY_HH_
+#ifndef _SYS_TTY_H_
 #error "can only be included through <sys/tty.h>"
-#endif /* !_SYS_TTY_HH_ */
+#endif /* !_SYS_TTY_H_ */
 
 struct tty;
 
@@ -144,4 +144,4 @@ ttyhook_close(struct tty *tp)
 	tp->t_hook->th_close(tp);
 }
 
-#endif /* !_SYS_TTYHOOK_HH_ */
+#endif /* !_SYS_TTYHOOK_H_ */

@@ -56,11 +56,11 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_CPUFUNC_HH_
-#define	_MACHINE_CPUFUNC_HH_
+#ifndef _MACHINE_CPUFUNC_H_
+#define	_MACHINE_CPUFUNC_H_
 
-#include <freebsd/sys/types.h>
-#include <freebsd/machine/cpuregs.h>
+#include <rtems/bsd/sys/types.h>
+#include <machine/cpuregs.h>
 
 /* 
  * These functions are required by user-land atomi ops
@@ -407,4 +407,4 @@ void outsw(uint16_t *, const uint16_t *,int);
 void outsl(uint32_t *, const uint32_t *,int);
 u_int loadandclear(volatile u_int *addr);
 
-#endif /* !_MACHINE_CPUFUNC_HH_ */
+#endif /* !_MACHINE_CPUFUNC_H_ */

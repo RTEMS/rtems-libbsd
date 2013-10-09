@@ -30,8 +30,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _SYS_SOCKOPT_HH_
-#define _SYS_SOCKOPT_HH_
+#ifndef _SYS_SOCKOPT_H_
+#define _SYS_SOCKOPT_H_
 
 #ifndef _KERNEL
 #error "no user-servicable parts inside"
@@ -69,4 +69,4 @@ int	do_setopt_accept_filter(struct socket *so, struct sockopt *sopt);
 int	so_setsockopt(struct socket *so, int level, int optname,
 	    void *optval, size_t optlen);
 
-#endif /* _SYS_SOCKOPT_HH_ */
+#endif /* _SYS_SOCKOPT_H_ */

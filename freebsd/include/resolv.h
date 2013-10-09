@@ -57,8 +57,8 @@
 #ifndef _RESOLV_H_
 #define	_RESOLV_H_
 
-#include <sys/param.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/socket.h>
 #include <stdio.h>

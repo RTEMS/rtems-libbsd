@@ -23,8 +23,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _USB_USBDI_HH_
-#define _USB_USBDI_HH_
+#ifndef _USB_USBDI_H_
+#define _USB_USBDI_H_
 
 struct usb_fifo;
 struct usb_xfer;
@@ -101,7 +101,7 @@ typedef void (usb_fifo_filter_t)(struct usb_fifo *fifo, struct usb_mbuf *m);
 
 
 /* USB events */
-#include <freebsd/sys/eventhandler.h>
+#include <sys/eventhandler.h>
 typedef void (*usb_dev_configured_t)(void *, struct usb_device *,
     struct usb_attach_arg *);
 EVENTHANDLER_DECLARE(usb_dev_configured, usb_dev_configured_t);
@@ -559,4 +559,4 @@ void	usb_fifo_set_close_zlp(struct usb_fifo *, uint8_t);
 void	usb_fifo_set_write_defrag(struct usb_fifo *, uint8_t);
 void	usb_fifo_free(struct usb_fifo *f);
 #endif /* _KERNEL */
-#endif /* _USB_USBDI_HH_ */
+#endif /* _USB_USBDI_H_ */

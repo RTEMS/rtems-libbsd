@@ -31,10 +31,10 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_RAW_CB_HH_
-#define _NET_RAW_CB_HH_
+#ifndef _NET_RAW_CB_H_
+#define _NET_RAW_CB_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Raw protocol interface control block.  Used to tie a socket to the generic

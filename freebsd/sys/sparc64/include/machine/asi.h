@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_MACHINE_ASI_HH_
-#define	_MACHINE_ASI_HH_
+#ifndef	_MACHINE_ASI_H_
+#define	_MACHINE_ASI_H_
 
 /*
  * Standard v9 ASIs
@@ -257,4 +257,4 @@
 #define	ASI_BLK_PL				0xf8
 #define	ASI_BLK_SL				0xf9
 
-#endif /* !_MACHINE_ASI_HH_ */
+#endif /* !_MACHINE_ASI_H_ */

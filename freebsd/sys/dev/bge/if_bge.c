@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Wind River Systems
@@ -33,7 +33,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -69,58 +69,58 @@ __FBSDID("$FreeBSD$");
  */
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
-#include <freebsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/taskqueue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/endian.h>
+#include <sys/systm.h>
+#include <sys/sockio.h>
+#include <sys/mbuf.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
+#include <sys/taskqueue.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/ethernet.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
 
-#include <freebsd/net/bpf.h>
+#include <net/bpf.h>
 
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_vlan_var.h>
+#include <net/if_types.h>
+#include <net/if_vlan_var.h>
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/rman.h>
+#include <machine/bus.h>
+#include <machine/resource.h>
+#include <sys/bus.h>
+#include <sys/rman.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
-#include <freebsd/local/miidevs.h>
-#include <freebsd/dev/mii/brgphyreg.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
+#include <rtems/bsd/local/miidevs.h>
+#include <dev/mii/brgphyreg.h>
 
 #ifdef __sparc64__
-#include <freebsd/dev/ofw/ofw_bus.h>
-#include <freebsd/dev/ofw/openfirm.h>
-#include <freebsd/machine/ofw_machdep.h>
-#include <freebsd/machine/ver.h>
+#include <dev/ofw/ofw_bus.h>
+#include <dev/ofw/openfirm.h>
+#include <machine/ofw_machdep.h>
+#include <machine/ver.h>
 #endif
 
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcivar.h>
 
-#include <freebsd/dev/bge/if_bgereg.h>
+#include <dev/bge/if_bgereg.h>
 
 #define	BGE_CSUM_FEATURES	(CSUM_IP | CSUM_TCP)
 #define	ETHER_MIN_NOPAD		(ETHER_MIN_LEN - ETHER_CRC_LEN) /* i.e., 60 */
@@ -130,7 +130,7 @@ MODULE_DEPEND(bge, ether, 1, 1, 1);
 MODULE_DEPEND(bge, miibus, 1, 1, 1);
 
 /* "device miibus" required.  See GENERIC if you get errors here. */
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 /*
  * Various supported device vendors/types and their names. Note: the

@@ -34,10 +34,6 @@
  * $FreeBSD$
  */
 
-#ifdef __rtems__
-#include <freebsd/sys/sockio.h>
-#endif
-
 #define	__constructor	__attribute__((constructor))
 
 struct afswtch;

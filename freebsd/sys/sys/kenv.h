@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_KENV_HH_
-#define _SYS_KENV_HH_
+#ifndef _SYS_KENV_H_
+#define _SYS_KENV_H_
 
 /*
  * Constants for the kenv(2) syscall
@@ -40,4 +40,4 @@
 #define KENV_MNAMELEN	128	/* Maximum name length (for the syscall) */
 #define KENV_MVALLEN	128	/* Maximum value length (for the syscall) */
 
-#endif /* !_SYS_KENV_HH_ */
+#endif /* !_SYS_KENV_H_ */

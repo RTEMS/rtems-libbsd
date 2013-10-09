@@ -28,8 +28,8 @@
  * 
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_MESH_HH_
-#define _NET80211_IEEE80211_MESH_HH_
+#ifndef _NET80211_IEEE80211_MESH_H_
+#define _NET80211_IEEE80211_MESH_H_
 
 #define	IEEE80211_MESH_DEFAULT_TTL	31
 
@@ -500,4 +500,4 @@ ieee80211_mesh_discover(struct ieee80211vap *vap,
 }
 
 #endif /* _KERNEL */
-#endif /* !_NET80211_IEEE80211_MESH_HH_ */
+#endif /* !_NET80211_IEEE80211_MESH_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2003-2009 Sam Leffler, Errno Consulting
@@ -25,37 +25,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 support (FreeBSD-specific code)
  */
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h> 
-#include <freebsd/sys/linker.h>
-#include <freebsd/sys/mbuf.h>   
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h> 
+#include <sys/linker.h>
+#include <sys/mbuf.h>   
+#include <sys/module.h>
+#include <sys/proc.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/bpf.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_clone.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
+#include <net/ethernet.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_input.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_input.h>
 
 SYSCTL_NODE(_net, OID_AUTO, wlan, CTLFLAG_RD, 0, "IEEE 80211 parameters");
 
@@ -481,7 +481,7 @@ ieee80211_process_callback(struct ieee80211_node *ni,
 	}
 }
 
-#include <freebsd/sys/libkern.h>
+#include <sys/libkern.h>
 
 void
 get_random_bytes(void *p, size_t n)

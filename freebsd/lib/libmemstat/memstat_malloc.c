@@ -28,12 +28,8 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/param.h>
-#ifdef __rtems__
-#include <freebsd/sys/malloc.h>
-#else
+#include <rtems/bsd/sys/param.h>
 #include <sys/malloc.h>
-#endif
 #include <sys/sysctl.h>
 
 #include <err.h>

@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_DEBUG_HH_
-#define	_NETINET_TCP_DEBUG_HH_
+#ifndef _NETINET_TCP_DEBUG_H_
+#define	_NETINET_TCP_DEBUG_H_
 
 struct	tcp_debug {
 	uint32_t	td_time;	/* network format */
@@ -77,4 +77,4 @@ struct	tcp_debug tcp_debug[TCP_NDEBUG];
 int	tcp_debx;
 #endif
 
-#endif /* !_NETINET_TCP_DEBUG_HH_ */
+#endif /* !_NETINET_TCP_DEBUG_H_ */

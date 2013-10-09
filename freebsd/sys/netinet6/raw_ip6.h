@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_RAW_IP6_HH_
-#define _NETINET6_RAW_IP6_HH_
+#ifndef _NETINET6_RAW_IP6_H_
+#define _NETINET6_RAW_IP6_H_
 
 /*
  * ICMPv6 stat is counted separately.  see netinet/icmp6.h

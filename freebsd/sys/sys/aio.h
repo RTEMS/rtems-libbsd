@@ -16,11 +16,11 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_AIO_HH_
-#define	_SYS_AIO_HH_
+#ifndef _SYS_AIO_H_
+#define	_SYS_AIO_H_
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/signal.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/signal.h>
 
 /*
  * Returned by aio_cancel:

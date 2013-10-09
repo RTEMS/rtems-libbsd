@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: cryptodev.c,v 1.52 2002/06/19 07:22:46 deraadt Exp $	*/
 
@@ -34,35 +34,35 @@
  * Materiel Command, USAF, under agreement number F30602-01-2-0537.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_compat.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/random.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/bus.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sysctl.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/uio.h>
+#include <sys/random.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/fcntl.h>
+#include <sys/bus.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/xform.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/xform.h>
 
 #ifdef COMPAT_FREEBSD32
-#include <freebsd/sys/mount.h>
-#include <freebsd/compat/freebsd32/freebsd32.h>
+#include <sys/mount.h>
+#include <compat/freebsd32/freebsd32.h>
 
 struct session_op32 {
 	u_int32_t	cipher;

@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_QUIRK_HH_
-#define	_USB_QUIRK_HH_
+#ifndef _USB_QUIRK_H_
+#define	_USB_QUIRK_H_
 
 enum {
 	/*
@@ -105,4 +105,4 @@ enum {
 
 uint8_t	usb_test_quirk(const struct usb_attach_arg *uaa, uint16_t quirk);
 
-#endif					/* _USB_QUIRK_HH_ */
+#endif					/* _USB_QUIRK_H_ */

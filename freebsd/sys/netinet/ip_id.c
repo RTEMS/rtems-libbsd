@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 
 /*-
@@ -27,7 +27,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -76,20 +76,20 @@ __FBSDID("$FreeBSD$");
  * enabled.
  */
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/libkern.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/random.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/sys/bitstring.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/kernel.h>
+#include <sys/libkern.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/random.h>
+#include <sys/systm.h>
+#include <sys/sysctl.h>
+#include <netinet/in.h>
+#include <netinet/ip_var.h>
+#include <sys/bitstring.h>
 
 static MALLOC_DEFINE(M_IPID, "ipid", "randomized ip id state");
 

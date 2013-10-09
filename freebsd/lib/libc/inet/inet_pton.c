@@ -22,8 +22,8 @@ static const char rcsid[] = "$Id: inet_pton.c,v 1.3.18.2 2005/07/28 07:38:07 mar
 __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
-#include <sys/param.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

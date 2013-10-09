@@ -25,8 +25,8 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
-#ifndef _SYS_MD5_HH_
-#define _SYS_MD5_HH_
+#ifndef _SYS_MD5_H_
+#define _SYS_MD5_H_
 
 #define MD5_BLOCK_LENGTH		64
 #define MD5_DIGEST_LENGTH		16
@@ -39,7 +39,7 @@ typedef struct MD5Context {
   unsigned char buffer[64];	/* input buffer */
 } MD5_CTX;
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 void   MD5Init (MD5_CTX *);
@@ -50,4 +50,4 @@ char * MD5File(const char *, char *);
 char * MD5FileChunk(const char *, char *, off_t, off_t);
 char * MD5Data(const void *, unsigned int, char *);
 __END_DECLS
-#endif /* _SYS_MD5_HH_ */
+#endif /* _SYS_MD5_H_ */

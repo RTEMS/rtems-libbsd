@@ -23,7 +23,7 @@ __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <arpa/nameser.h>
 #include <errno.h>
 #include <string.h>

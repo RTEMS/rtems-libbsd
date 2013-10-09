@@ -35,7 +35,7 @@
 #ifndef _SPINLOCK_H_
 #define _SPINLOCK_H_
 #include <sys/cdefs.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
 /*
  * Lock structure with room for debugging information.

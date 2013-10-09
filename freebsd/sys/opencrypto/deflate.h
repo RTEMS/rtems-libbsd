@@ -33,10 +33,10 @@
  * algorithm used in /sys/crypto
  */
 
-#ifndef _CRYPTO_DEFLATE_HH_
-#define _CRYPTO_DEFLATE_HH_
+#ifndef _CRYPTO_DEFLATE_H_
+#define _CRYPTO_DEFLATE_H_
 
-#include <freebsd/net/zlib.h>
+#include <net/zlib.h>
 
 #define Z_METHOD	8
 #define Z_MEMLEVEL	8
@@ -57,4 +57,4 @@ struct deflate_buf {
 	uint8_t data[];
 };
 
-#endif /* _CRYPTO_DEFLATE_HH_ */
+#endif /* _CRYPTO_DEFLATE_H_ */

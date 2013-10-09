@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
@@ -31,36 +31,36 @@
  *	@(#)kern_time.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/limits.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/limits.h>
 #ifndef __rtems__
-#include <freebsd/sys/clock.h>
+#include <sys/clock.h>
 #endif /* __rtems__ */
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sysproto.h>
+#include <sys/eventhandler.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
+#include <sys/kernel.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
+#include <sys/sysent.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
 #ifndef __rtems__
-#include <freebsd/sys/posix4.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/timers.h>
-#include <freebsd/sys/timetc.h>
-#include <freebsd/sys/vnode.h>
+#include <sys/posix4.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/timers.h>
+#include <sys/timetc.h>
+#include <sys/vnode.h>
 
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_extern.h>
+#include <vm/vm.h>
+#include <vm/vm_extern.h>
 
 #define MAX_CLOCKS 	(CLOCK_MONOTONIC+1)
 
@@ -171,7 +171,7 @@ settime(struct thread *td, struct timeval *tv)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct clock_gettime_args {
 	clockid_t clock_id;
 	struct	timespec *tp;
@@ -258,7 +258,7 @@ kern_clock_gettime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 }
 #endif
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct clock_settime_args {
 	clockid_t clock_id;
 	const struct	timespec *tp;
@@ -296,7 +296,7 @@ kern_clock_settime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 }
 #endif
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct clock_getres_args {
 	clockid_t clock_id;
 	struct	timespec *tp;
@@ -401,7 +401,7 @@ kern_nanosleep(struct thread *td, struct timespec *rqt, struct timespec *rmt)
 	}
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct nanosleep_args {
 	struct	timespec *rqtp;
 	struct	timespec *rmtp;
@@ -432,7 +432,7 @@ nanosleep(struct thread *td, struct nanosleep_args *uap)
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct gettimeofday_args {
 	struct	timeval *tp;
 	struct	timezone *tzp;
@@ -458,7 +458,7 @@ gettimeofday(struct thread *td, struct gettimeofday_args *uap)
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct settimeofday_args {
 	struct	timeval *tv;
 	struct	timezone *tzp;
@@ -531,7 +531,7 @@ kern_settimeofday(struct thread *td, struct timeval *tv, struct timezone *tzp)
  * .it_interval.  Rather, we compute the next time in absolute time the timer
  * should go off.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getitimer_args {
 	u_int	which;
 	struct	itimerval *itv;
@@ -583,7 +583,7 @@ kern_getitimer(struct thread *td, u_int which, struct itimerval *aitv)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setitimer_args {
 	u_int	which;
 	struct	itimerval *itv, *oitv;
@@ -934,7 +934,7 @@ itimer_leave(struct itimer *it)
 		wakeup(it);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ktimer_create_args {
 	clockid_t clock_id;
 	struct sigevent * evp;
@@ -1075,7 +1075,7 @@ out:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ktimer_delete_args {
 	int timerid;
 };
@@ -1137,7 +1137,7 @@ kern_timer_delete(struct thread *td, int timerid)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ktimer_settime_args {
 	int timerid;
 	int flags;
@@ -1180,7 +1180,7 @@ ktimer_settime(struct thread *td, struct ktimer_settime_args *uap)
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ktimer_gettime_args {
 	int timerid;
 	struct itimerspec * value;
@@ -1212,7 +1212,7 @@ ktimer_gettime(struct thread *td, struct ktimer_gettime_args *uap)
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct timer_getoverrun_args {
 	int timerid;
 };

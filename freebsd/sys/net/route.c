@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1980, 1986, 1991, 1993
@@ -36,38 +36,38 @@
  * Which is the new name for an in kernel routing (next hop) table.	*
  ***********************************************************************/
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_route.h>
-#include <freebsd/local/opt_mrouting.h>
-#include <freebsd/local/opt_mpath.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_route.h>
+#include <rtems/bsd/local/opt_mrouting.h>
+#include <rtems/bsd/local/opt_mpath.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/kernel.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/syslog.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/sysproto.h>
+#include <sys/proc.h>
+#include <sys/domain.h>
+#include <sys/kernel.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
-#include <freebsd/net/flowtable.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+#include <net/vnet.h>
+#include <net/flowtable.h>
 
 #ifdef RADIX_MPATH
-#include <freebsd/net/radix_mpath.h>
+#include <net/radix_mpath.h>
 #endif
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip_mroute.h>
+#include <netinet/in.h>
+#include <netinet/ip_mroute.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
 u_int rt_numfibs = RT_NUMFIBS;
 SYSCTL_INT(_net, OID_AUTO, fibs, CTLFLAG_RD, &rt_numfibs, 0, "");
@@ -262,7 +262,7 @@ VNET_SYSUNINIT(vnet_route_uninit, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD,
     vnet_route_uninit, 0);
 #endif
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setfib_args {
 	int     fibnum;
 };

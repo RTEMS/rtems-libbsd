@@ -47,12 +47,12 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_BUS_DMA_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_BUS_DMA_H_
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/machine/bus.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/systm.h>
+#include <machine/bus.h>
 
 struct bus_dma_tag {
 	bus_dma_tag_t     parent;

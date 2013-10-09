@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef _PCI_PRIVATE_HH_
-#define	_PCI_PRIVATE_HH_
+#ifndef _PCI_PRIVATE_H_
+#define	_PCI_PRIVATE_H_
 
 /*
  * Export definitions of the pci bus so that we can more easily share
@@ -113,4 +113,4 @@ void		pci_cfg_restore(device_t, struct pci_devinfo *);
  */
 void		pci_cfg_save(device_t, struct pci_devinfo *, int);
 
-#endif /* _PCI_PRIVATE_HH_ */
+#endif /* _PCI_PRIVATE_H_ */

@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_CPU_HH_
-#define _SYS_CPU_HH_
+#ifndef _SYS_CPU_H_
+#define _SYS_CPU_H_
 
-#include <freebsd/sys/eventhandler.h>
+#include <sys/eventhandler.h>
 
 /*
  * CPU device support.
@@ -170,4 +170,4 @@ EVENTHANDLER_DECLARE(cpufreq_levels_changed, cpufreq_levels_notify_fn);
 /* Estimate the current clock rate for the given CPU id. */
 int	cpu_est_clockrate(int cpu_id, uint64_t *rate);
 
-#endif /* !_SYS_CPU_HH_ */
+#endif /* !_SYS_CPU_H_ */

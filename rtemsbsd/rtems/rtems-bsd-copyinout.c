@@ -33,7 +33,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <string.h>
 #include <stdio.h>

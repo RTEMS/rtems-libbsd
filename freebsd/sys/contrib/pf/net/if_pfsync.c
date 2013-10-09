@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: if_pfsync.c,v 1.73 2006/11/16 13:13:38 henning Exp $	*/
 
@@ -29,13 +29,13 @@
  */
 
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_carp.h>
-#include <freebsd/local/opt_bpf.h>
-#include <freebsd/local/opt_pf.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_carp.h>
+#include <rtems/bsd/local/opt_bpf.h>
+#include <rtems/bsd/local/opt_pf.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifdef DEV_BPF
@@ -57,66 +57,66 @@ __FBSDID("$FreeBSD$");
 #endif
 #endif /* __FreeBSD__ */
 
-#include <freebsd/sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #ifdef __FreeBSD__
-#include <freebsd/sys/priv.h>
+#include <sys/priv.h>
 #endif
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
 #ifdef __FreeBSD__
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/taskqueue.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sysctl.h>
+#include <sys/endian.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/sockio.h>
+#include <sys/taskqueue.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sysctl.h>
 #else
-#include <freebsd/sys/ioctl.h>
-#include <freebsd/sys/timeout.h>
+#include <sys/ioctl.h>
+#include <sys/timeout.h>
 #endif
-#include <freebsd/sys/kernel.h>
+#include <sys/kernel.h>
 
-#include <freebsd/net/if.h>
+#include <net/if.h>
 #ifdef __FreeBSD__
-#include <freebsd/net/if_clone.h>
+#include <net/if_clone.h>
 #endif
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_seq.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/bpf.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_seq.h>
 
 #ifdef	INET
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 #endif
 
 #ifdef INET6
-#include <freebsd/netinet6/nd6.h>
+#include <netinet6/nd6.h>
 #endif /* INET6 */
 
 #ifndef __FreeBSD__
-#include <freebsd/local/carp.h>
+#include <rtems/bsd/local/carp.h>
 #endif
 #if NCARP > 0
-#include <freebsd/netinet/ip_carp.h>
+#include <netinet/ip_carp.h>
 #endif
 
-#include <freebsd/net/pfvar.h>
-#include <freebsd/net/if_pfsync.h>
+#include <net/pfvar.h>
+#include <net/if_pfsync.h>
 
 #ifndef __FreeBSD__
-#include <freebsd/local/bpfilter.h>
-#include <freebsd/local/pfsync.h>
+#include <rtems/bsd/local/bpfilter.h>
+#include <rtems/bsd/local/pfsync.h>
 #endif
 
 #define PFSYNC_MINMTU	\

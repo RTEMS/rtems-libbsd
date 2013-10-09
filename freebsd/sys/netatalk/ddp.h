@@ -23,8 +23,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETATALK_DDP_HH_
-#define	_NETATALK_DDP_HH_
+#ifndef _NETATALK_DDP_H_
+#define	_NETATALK_DDP_H_
 
 /*-
  * <-1byte(8bits) ->
@@ -134,4 +134,4 @@ struct ddpshdr {
 #define	dsh_sport	dsh_u.du_bits.dub_sport
 #define	dsh_bytes	dsh_u.du_bytes
 
-#endif /* _NETATALK_DDP_HH_ */
+#endif /* _NETATALK_DDP_H_ */

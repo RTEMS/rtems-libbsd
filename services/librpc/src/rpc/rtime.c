@@ -46,7 +46,6 @@
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

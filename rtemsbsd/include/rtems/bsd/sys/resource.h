@@ -30,12 +30,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_RESOURCE_HH_
-#define	_SYS_RESOURCE_HH_
+#ifndef _RTEMS_BSD_SYS_RESOURCE_H_
+#define	_RTEMS_BSD_SYS_RESOURCE_H_
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/_timeval.h>
-#include <freebsd/sys/_types.h>
+#include <sys/cdefs.h>
+#include <sys/_timeval.h>
+#include <rtems/bsd/sys/_types.h>
 
 /*
  * Process priority specifications to get/setpriority.
@@ -56,6 +56,7 @@
 
 #define	RUSAGE_SELF	0
 #define	RUSAGE_CHILDREN	-1
+#ifndef __rtems__
 #define	RUSAGE_THREAD	1
 
 struct rusage {
@@ -78,6 +79,9 @@ struct rusage {
 	long	ru_nivcsw;		/* involuntary " */
 #define	ru_last		ru_nivcsw
 };
+#else /* __rtems__ */
+#include <sys/resource.h>
+#endif /* __rtems__ */
 
 /*
  * Resource limits
@@ -173,4 +177,4 @@ int	setrlimit(int, const struct rlimit *);
 __END_DECLS
 
 #endif	/* _KERNEL */
-#endif	/* !_SYS_RESOURCE_HH_ */
+#endif	/* !_RTEMS_BSD_SYS_RESOURCE_H_ */

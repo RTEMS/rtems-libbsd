@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_DEVICE_HH_
-#define	_USB_DEVICE_HH_
+#ifndef _USB_DEVICE_H_
+#define	_USB_DEVICE_H_
 
 struct usb_symlink;		/* UGEN */
 struct usb_device;		/* linux compat */
@@ -224,4 +224,4 @@ void	usbd_sr_lock(struct usb_device *);
 void	usbd_sr_unlock(struct usb_device *);
 uint8_t usbd_enum_is_locked(struct usb_device *);
 
-#endif					/* _USB_DEVICE_HH_ */
+#endif					/* _USB_DEVICE_H_ */

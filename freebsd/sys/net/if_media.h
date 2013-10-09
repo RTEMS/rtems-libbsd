@@ -35,8 +35,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NET_IF_MEDIA_HH_
-#define _NET_IF_MEDIA_HH_
+#ifndef _NET_IF_MEDIA_H_
+#define _NET_IF_MEDIA_H_
 
 /*
  * Prototypes and definitions for BSD/OS-compatible network interface
@@ -52,7 +52,7 @@
 
 #ifdef _KERNEL
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Driver callbacks for media status and change requests.
@@ -689,4 +689,4 @@ struct ifmedia_status_description {
 	{ 0,			0,		0,			\
 	    { NULL, NULL } }						\
 }
-#endif	/* _NET_IF_MEDIA_HH_ */
+#endif	/* _NET_IF_MEDIA_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004-2009 Robert N. M. Watson
@@ -51,23 +51,23 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/netisr.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/priv.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/netisr.h>
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/at_var.h>
-#include <freebsd/netatalk/ddp_var.h>
-#include <freebsd/netatalk/ddp_pcb.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/at_var.h>
+#include <netatalk/ddp_var.h>
+#include <netatalk/ddp_pcb.h>
+#include <netatalk/at_extern.h>
 
 struct mtx		 ddp_list_mtx;
 static struct ddpcb	*ddp_ports[ATPORT_LAST];

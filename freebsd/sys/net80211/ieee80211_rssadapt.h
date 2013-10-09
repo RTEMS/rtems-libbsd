@@ -29,8 +29,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  */
-#ifndef _NET80211_IEEE80211_RSSADAPT_HH_
-#define _NET80211_IEEE80211_RSSADAPT_HH_
+#ifndef _NET80211_IEEE80211_RSSADAPT_H_
+#define _NET80211_IEEE80211_RSSADAPT_H_
 
 /* Data-rate adaptation loosely based on "Link Adaptation Strategy
  * for IEEE 802.11 WLAN via Received Signal Strength Measurement"
@@ -68,4 +68,4 @@ struct ieee80211_rssadapt_node {
 
 #define	IEEE80211_RSSADAPT_SUCCESS	1
 #define	IEEE80211_RSSADAPT_FAILURE	0
-#endif /* _NET80211_IEEE80211_RSSADAPT_HH_ */
+#endif /* _NET80211_IEEE80211_RSSADAPT_H_ */

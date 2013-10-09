@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$NetBSD: if_arcsubr.c,v 1.36 2001/06/14 05:44:23 itojun Exp $	*/
 /*	$FreeBSD$ */
@@ -40,47 +40,47 @@
  *       @(#)if_ethersubr.c	8.1 (Berkeley) 6/10/93
  *
  */
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipx.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipx.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/syslog.h>
 
-#include <freebsd/machine/cpu.h>
+#include <machine/cpu.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_arc.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/if_llatbl.h>
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/if_arc.h>
+#include <net/if_arp.h>
+#include <net/bpf.h>
+#include <net/if_llatbl.h>
 
 #if defined(INET) || defined(INET6)
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef INET6
-#include <freebsd/netinet6/nd6.h>
+#include <netinet6/nd6.h>
 #endif
 
 #ifdef IPX
-#include <freebsd/netipx/ipx.h>
-#include <freebsd/netipx/ipx_if.h>
+#include <netipx/ipx.h>
+#include <netipx/ipx_if.h>
 #endif
 
 #define ARCNET_ALLOW_BROKEN_ARP

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: key_debug.c,v 1.26 2001/06/27 10:46:50 sakane Exp $	*/
@@ -33,36 +33,36 @@
  */
 
 #ifdef _KERNEL
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
 #endif
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
 #ifdef _KERNEL
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/queue.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/queue.h>
 #endif
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netipsec/key_var.h>
-#include <freebsd/netipsec/key_debug.h>
+#include <netipsec/key_var.h>
+#include <netipsec/key_debug.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netipsec/ipsec.h>
+#include <netinet/in.h>
+#include <netipsec/ipsec.h>
 #ifdef _KERNEL
-#include <freebsd/netipsec/keydb.h>
+#include <netipsec/keydb.h>
 #endif
 
 #ifndef _KERNEL
-#include <freebsd/ctype.h>
-#include <freebsd/stdio.h>
-#include <freebsd/stdlib.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 #endif /* !_KERNEL */
 
 static void kdebug_sadb_prop __P((struct sadb_ext *));

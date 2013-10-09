@@ -31,10 +31,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_RTPRIO_HH_
-#define _SYS_RTPRIO_HH_
+#ifndef _SYS_RTPRIO_H_
+#define _SYS_RTPRIO_H_
 
-#include <freebsd/sys/priority.h>
+#include <sys/priority.h>
 
 /*
  * Process realtime-priority specifications to rtprio.
@@ -82,11 +82,11 @@ void	pri_to_rtp(struct thread *, struct rtprio *);
 #endif
 
 #ifndef _KERNEL
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int	rtprio(int, pid_t, struct rtprio *);
 int	rtprio_thread(int, lwpid_t, struct rtprio *);
 __END_DECLS
 #endif	/* !_KERNEL */
-#endif	/* !_SYS_RTPRIO_HH_ */
+#endif	/* !_SYS_RTPRIO_H_ */

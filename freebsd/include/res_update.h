@@ -25,7 +25,7 @@
 
 /*! \file */
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 

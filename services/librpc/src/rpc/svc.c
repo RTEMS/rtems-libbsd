@@ -47,7 +47,6 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc.c,v 1.14 1999/08/28 00:00:4
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <string.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h> /* for ffs */

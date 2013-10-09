@@ -61,8 +61,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_IN6_PCB_HH_
-#define	_NETINET6_IN6_PCB_HH_
+#ifndef _NETINET6_IN6_PCB_H_
+#define	_NETINET6_IN6_PCB_H_
 
 #ifdef _KERNEL
 #define	satosin6(sa)	((struct sockaddr_in6 *)(sa))
@@ -106,4 +106,4 @@ int	in6_pcbsetport __P((struct in6_addr *, struct inpcb *, struct ucred *));
 void	init_sin6 __P((struct sockaddr_in6 *sin6, struct mbuf *m));
 #endif /* _KERNEL */
 
-#endif /* !_NETINET6_IN6_PCB_HH_ */
+#endif /* !_NETINET6_IN6_PCB_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
@@ -25,26 +25,26 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 PHY-related support.
  */
 
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
 
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/if_media.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_phy.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_phy.h>
 
 #ifdef notyet
 struct ieee80211_ds_plcp_hdr {

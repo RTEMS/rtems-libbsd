@@ -42,15 +42,15 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_KERNEL_HH_
-#define	_SYS_KERNEL_HH_
+#ifndef _SYS_KERNEL_H_
+#define	_SYS_KERNEL_H_
 
-#include <freebsd/sys/linker_set.h>
+#include <sys/linker_set.h>
 
 #ifdef _KERNEL
 
 /* for intrhook below */
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /* Global variables for the kernel. */
 
@@ -421,4 +421,4 @@ struct intr_config_hook {
 int	config_intrhook_establish(struct intr_config_hook *hook);
 void	config_intrhook_disestablish(struct intr_config_hook *hook);
 
-#endif /* !_SYS_KERNEL_HH_*/
+#endif /* !_SYS_KERNEL_H_*/

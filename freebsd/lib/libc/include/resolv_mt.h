@@ -1,7 +1,7 @@
 #ifndef _RESOLV_MT_H
 #define _RESOLV_MT_H
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>

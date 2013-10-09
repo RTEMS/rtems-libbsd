@@ -42,8 +42,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/types.h>
-#include <sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
 
 #include <net/ethernet.h>

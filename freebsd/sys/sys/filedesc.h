@@ -30,16 +30,16 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_FILEDESC_HH_
-#define	_SYS_FILEDESC_HH_
+#ifndef _SYS_FILEDESC_H_
+#define	_SYS_FILEDESC_H_
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/event.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/priority.h>
-#include <freebsd/sys/sx.h>
+#include <sys/queue.h>
+#include <sys/event.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/priority.h>
+#include <sys/sx.h>
 
-#include <freebsd/machine/_limits.h>
+#include <machine/_limits.h>
 
 /*
  * This structure is used for the management of descriptors.  It may be
@@ -142,4 +142,4 @@ fget_locked(struct filedesc *fdp, int fd)
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_FILEDESC_HH_ */
+#endif /* !_SYS_FILEDESC_H_ */

@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_NET_IF_VAR_HH_
-#define	_NET_IF_VAR_HH_
+#ifndef	_NET_IF_VAR_H_
+#define	_NET_IF_VAR_H_
 
 /*
  * Structures defining a network interface, providing a packet
@@ -74,24 +74,24 @@ struct	route;
 struct	vnet;
 #endif
 
-#include <freebsd/sys/queue.h>		/* get TAILQ macros */
+#include <sys/queue.h>		/* get TAILQ macros */
 
 #ifdef _KERNEL
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/buf_ring.h>
-#include <freebsd/net/vnet.h>
+#include <sys/mbuf.h>
+#include <sys/eventhandler.h>
+#include <sys/buf_ring.h>
+#include <net/vnet.h>
 #endif /* _KERNEL */
-#include <freebsd/sys/lock.h>		/* XXX */
-#include <freebsd/sys/mutex.h>		/* XXX */
-#include <freebsd/sys/rwlock.h>		/* XXX */
-#include <freebsd/sys/sx.h>		/* XXX */
-#include <freebsd/sys/event.h>		/* XXX */
-#include <freebsd/sys/_task.h>
+#include <rtems/bsd/sys/lock.h>		/* XXX */
+#include <sys/mutex.h>		/* XXX */
+#include <sys/rwlock.h>		/* XXX */
+#include <sys/sx.h>		/* XXX */
+#include <sys/event.h>		/* XXX */
+#include <sys/_task.h>
 
 #define	IF_DUNIT_NONE	-1
 
-#include <freebsd/altq/if_altq.h>
+#include <altq/if_altq.h>
 
 TAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
 TAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */
@@ -901,4 +901,4 @@ int    ether_poll_deregister(struct ifnet *ifp);
 
 #endif /* _KERNEL */
 
-#endif /* !_NET_IF_VAR_HH_ */
+#endif /* !_NET_IF_VAR_H_ */

@@ -29,10 +29,10 @@
 #ifndef SYS_EVENTHANDLER_H
 #define SYS_EVENTHANDLER_H
 
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/ktr.h>
+#include <sys/mutex.h>
+#include <sys/queue.h>
 
 struct eventhandler_entry {
 	TAILQ_ENTRY(eventhandler_entry)	ee_link;

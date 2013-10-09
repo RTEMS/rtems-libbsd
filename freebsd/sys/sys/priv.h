@@ -32,8 +32,8 @@
 /*
  * Privilege checking interface for BSD kernel.
  */
-#ifndef _SYS_PRIV_HH_
-#define	_SYS_PRIV_HH_
+#ifndef _SYS_PRIV_H_
+#define	_SYS_PRIV_H_
 
 /*
  * Privilege list, sorted loosely by kernel subsystem.
@@ -515,4 +515,4 @@ int	priv_check_cred(struct ucred *cred, int priv, int flags);
 #endif /* __rtems__ */
 #endif
 
-#endif /* !_SYS_PRIV_HH_ */
+#endif /* !_SYS_PRIV_H_ */

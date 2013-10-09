@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_SCOPE6_VAR_HH_
-#define _NETINET6_SCOPE6_VAR_HH_
+#ifndef _NETINET6_SCOPE6_VAR_H_
+#define _NETINET6_SCOPE6_VAR_H_
 
 #ifdef _KERNEL
 struct scope6_id {
@@ -57,4 +57,4 @@ int	in6_setscope __P((struct in6_addr *, struct ifnet *, u_int32_t *));
 int	in6_clearscope __P((struct in6_addr *));
 #endif /* _KERNEL */
 
-#endif /* _NETINET6_SCOPE6_VAR_HH_ */
+#endif /* _NETINET6_SCOPE6_VAR_H_ */

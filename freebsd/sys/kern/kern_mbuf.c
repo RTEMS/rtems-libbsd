@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004, 2005,
@@ -27,33 +27,31 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_param.h>
+#include <rtems/bsd/local/opt_param.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/eventhandler.h>
+#include <sys/kernel.h>
+#include <sys/protosw.h>
+#include <sys/smp.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
-#ifndef __rtems__
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_extern.h>
-#include <freebsd/vm/vm_kern.h>
-#include <freebsd/vm/vm_page.h>
-#endif
-#include <freebsd/vm/uma.h>
-#include <freebsd/vm/uma_int.h>
-#include <freebsd/vm/uma_dbg.h>
+#include <vm/vm.h>
+#include <vm/vm_extern.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
+#include <vm/uma.h>
+#include <vm/uma_int.h>
+#include <vm/uma_dbg.h>
 
 /*
  * In FreeBSD, Mbufs and Mbuf Clusters are allocated from UMA

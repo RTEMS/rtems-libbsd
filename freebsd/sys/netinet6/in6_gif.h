@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_IN6_GIF_HH_
-#define _NETINET6_IN6_GIF_HH_
+#ifndef _NETINET6_IN6_GIF_H_
+#define _NETINET6_IN6_GIF_H_
 
 #define GIF_HLIM	30
 
@@ -42,4 +42,4 @@ int gif_encapcheck6 __P((const struct mbuf *, int, int, void *));
 int in6_gif_attach __P((struct gif_softc *));
 int in6_gif_detach __P((struct gif_softc *));
 
-#endif /* _NETINET6_IN6_GIF_HH_ */
+#endif /* _NETINET6_IN6_GIF_H_ */

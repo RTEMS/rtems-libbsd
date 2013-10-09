@@ -31,14 +31,14 @@
  * modular framework
  */
 
-#ifndef _ALIAS_MOD_HH_
-#define _ALIAS_MOD_HH_
+#ifndef _ALIAS_MOD_H_
+#define _ALIAS_MOD_H_
 
 #ifdef _KERNEL
 MALLOC_DECLARE(M_ALIAS);
 
 /* Use kernel allocator. */
-#if defined(_SYS_MALLOC_HH_)
+#if defined(_SYS_MALLOC_H_)
 #ifndef __rtems__
 #define	malloc(x)	malloc(x, M_ALIAS, M_NOWAIT|M_ZERO)
 #define	calloc(x, n)	malloc(x*n)
@@ -160,4 +160,4 @@ typedef struct moduledata {
 } moduledata_t;
 #endif
 
-#endif				/* !_ALIAS_MOD_HH_ */
+#endif				/* !_ALIAS_MOD_H_ */

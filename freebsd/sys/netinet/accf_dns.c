@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * Copyright (C) 2007 David Malone <dwmalone@FreeBSD.org>
@@ -30,13 +30,13 @@
 
 #define ACCEPT_FILTER_MOD
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/socketvar.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/signalvar.h>
+#include <sys/sysctl.h>
+#include <sys/socketvar.h>
 
 /* check for full DNS request */
 static int sohasdns(struct socket *so, void *arg, int waitflag);

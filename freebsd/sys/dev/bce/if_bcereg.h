@@ -33,53 +33,53 @@
 #define _BCEREG_HH_DEFINED
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
-#include <freebsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/endian.h>
+#include <sys/systm.h>
+#include <sys/sockio.h>
+#include <sys/mbuf.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
+#include <sys/queue.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
 
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_vlan_var.h>
+#include <net/if_types.h>
+#include <net/if_vlan_var.h>
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/rman.h>
+#include <machine/bus.h>
+#include <machine/resource.h>
+#include <sys/bus.h>
+#include <sys/rman.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
-#include <freebsd/local/miidevs.h>
-#include <freebsd/dev/mii/brgphyreg.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
+#include <rtems/bsd/local/miidevs.h>
+#include <dev/mii/brgphyreg.h>
 
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcivar.h>
 
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 /****************************************************************************/
 /* Conversion to FreeBSD type definitions.                                  */
@@ -468,7 +468,7 @@
 	bce_debug = bce_debug_temp;
 
 /* Needed for random() function which is only used in debugging. */
-#include <freebsd/sys/random.h>
+#include <sys/random.h>
 
 /* Returns FALSE in "defects" per 2^31 - 1 calls, otherwise returns TRUE. */
 #define DB_RANDOMFALSE(defects)        (random() > defects)

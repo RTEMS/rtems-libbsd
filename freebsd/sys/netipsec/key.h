@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETIPSEC_KEY_HH_
-#define _NETIPSEC_KEY_HH_
+#ifndef _NETIPSEC_KEY_H_
+#define _NETIPSEC_KEY_H_
 
 #ifdef _KERNEL
 
@@ -124,4 +124,4 @@ MALLOC_DECLARE(M_IPSEC_INPCB);
 #endif /* MALLOC_DECLARE */
 
 #endif /* defined(_KERNEL) */
-#endif /* _NETIPSEC_KEY_HH_ */
+#endif /* _NETIPSEC_KEY_H_ */

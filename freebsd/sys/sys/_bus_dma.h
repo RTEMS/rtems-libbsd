@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef _SYS__BUS_DMA_HH_
-#define _SYS__BUS_DMA_HH_
+#ifndef _SYS__BUS_DMA_H_
+#define _SYS__BUS_DMA_H_
 
 typedef int bus_dmasync_op_t;
 
@@ -60,4 +60,4 @@ typedef enum {
 
 typedef void bus_dma_lock_t(void *, bus_dma_lock_op_t);
 
-#endif /* !_SYS__BUS_DMA_HH_ */
+#endif /* !_SYS__BUS_DMA_H_ */

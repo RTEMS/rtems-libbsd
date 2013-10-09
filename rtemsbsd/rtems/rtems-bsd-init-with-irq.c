@@ -37,11 +37,11 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <rtems/irq-extension.h>
 
-#include <freebsd/bsd.h>
+#include <rtems/bsd/bsd.h>
 
 rtems_status_code
 rtems_bsd_initialize_with_interrupt_server(void)

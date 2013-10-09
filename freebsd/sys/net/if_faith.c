@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: if_faith.c,v 1.23 2001/12/17 13:55:29 sumikawa Exp $	*/
 
@@ -41,44 +41,44 @@
 /*
  * Loopback interface driver for protocol testing and timing.
  */
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/socket.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/sockio.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/malloc.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_clone.h>
+#include <net/if_types.h>
+#include <net/netisr.h>
+#include <net/route.h>
+#include <net/bpf.h>
+#include <net/vnet.h>
 
 #ifdef	INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
 #endif
 
 #ifdef INET6
 #ifndef INET
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 #endif
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet6/in6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
 #endif
 
 #define FAITHNAME	"faith"

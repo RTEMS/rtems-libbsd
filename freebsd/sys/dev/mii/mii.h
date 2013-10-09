@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _DEV_MII_MII_HH_
-#define	_DEV_MII_MII_HH_
+#ifndef _DEV_MII_MII_H_
+#define	_DEV_MII_MII_H_
 
 /*
  * Registers common to all PHYs.
@@ -209,4 +209,4 @@
 #define	EXTSR_MEDIAMASK	(EXTSR_1000XFDX|EXTSR_1000XHDX| \
 			 EXTSR_1000TFDX|EXTSR_1000THDX)
 
-#endif /* _DEV_MII_MII_HH_ */
+#endif /* _DEV_MII_MII_H_ */

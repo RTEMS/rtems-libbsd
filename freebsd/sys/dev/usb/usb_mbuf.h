@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_MBUF_HH_
-#define	_USB_MBUF_HH_
+#ifndef _USB_MBUF_H_
+#define	_USB_MBUF_H_
 
 /*
  * The following structure defines a minimum re-implementation of the
@@ -87,4 +87,4 @@ struct usb_mbuf {
 void   *usb_alloc_mbufs(struct malloc_type *type, struct usb_ifqueue *ifq,
 	    usb_size_t block_size, uint16_t nblocks);
 
-#endif					/* _USB_MBUF_HH_ */
+#endif					/* _USB_MBUF_H_ */

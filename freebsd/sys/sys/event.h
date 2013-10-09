@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_EVENT_HH_
-#define _SYS_EVENT_HH_
+#ifndef _SYS_EVENT_H_
+#define _SYS_EVENT_H_
 
-#include <freebsd/sys/queue.h> 
+#include <sys/queue.h> 
 
 #define EVFILT_READ		(-1)
 #define EVFILT_WRITE		(-2)
@@ -264,7 +264,7 @@ extern int	kqueue_del_filteropts(int filt);
 
 #else 	/* !_KERNEL */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 struct timespec;
 
 __BEGIN_DECLS
@@ -276,4 +276,4 @@ __END_DECLS
 
 #endif /* !_KERNEL */
 
-#endif /* !_SYS_EVENT_HH_ */
+#endif /* !_SYS_EVENT_H_ */

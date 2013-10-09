@@ -47,36 +47,36 @@
 
 /* $FreeBSD$ */
 
-#ifndef _ALIAS_SCTP_HH_
-#define _ALIAS_SCTP_HH_
+#ifndef _ALIAS_SCTP_H_
+#define _ALIAS_SCTP_H_
 
-#include <freebsd/sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #ifdef	_KERNEL
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/syslog.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/uio.h>
+#include <sys/socketvar.h>
+#include <sys/syslog.h>
 #endif // #ifdef	_KERNEL
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/time.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/time.h>
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 /**
  * These are defined in sctp_os_bsd.h, but it can't be included due to its local file
  * inclusion, so I'm defining them here.
  *
  */
-#include <freebsd/machine/cpufunc.h>
-#include <freebsd/machine/cpu.h>
+#include <machine/cpufunc.h>
+#include <machine/cpu.h>
 /* The packed define for 64 bit platforms */
 #ifndef SCTP_PACKED
 #define SCTP_PACKED __attribute__((packed))
@@ -86,14 +86,14 @@
 #endif //#ifndef SCTP_UNUSED
 
 
-#include <freebsd/netinet/sctp.h>
-//#include <freebsd/netinet/sctp_os_bsd.h> --might be needed later for mbuf stuff
-#include <freebsd/netinet/sctp_header.h>
+#include <netinet/sctp.h>
+//#include <netinet/sctp_os_bsd.h> --might be needed later for mbuf stuff
+#include <netinet/sctp_header.h>
 
 #ifndef _KERNEL
-#include <freebsd/stdlib.h>
-#include <freebsd/stdio.h>
-#include <freebsd/curses.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <curses.h>
 #endif //#ifdef _KERNEL
 
 

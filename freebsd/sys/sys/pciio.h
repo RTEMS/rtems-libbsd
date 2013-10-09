@@ -28,10 +28,10 @@
  *
  */
 
-#ifndef _SYS_PCIIO_HH_
-#define	_SYS_PCIIO_HH_
+#ifndef _SYS_PCIIO_H_
+#define	_SYS_PCIIO_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 #define PCI_MAXNAMELEN	16
 
@@ -122,4 +122,4 @@ struct pci_bar_io {
 #define	PCIOCATTACHED	_IOWR('p', 4, struct pci_io)
 #define	PCIOCGETBAR	_IOWR('p', 6, struct pci_bar_io)
 
-#endif /* !_SYS_PCIIO_HH_ */
+#endif /* !_SYS_PCIIO_H_ */

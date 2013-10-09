@@ -30,16 +30,16 @@
 
 /* $KAME: sctp_pcb.h,v 1.21 2005/07/16 01:18:47 suz Exp $	 */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifndef __sctp_pcb_h__
 #define __sctp_pcb_h__
 
-#include <freebsd/netinet/sctp_os.h>
-#include <freebsd/netinet/sctp.h>
-#include <freebsd/netinet/sctp_constants.h>
-#include <freebsd/netinet/sctp_sysctl.h>
+#include <netinet/sctp_os.h>
+#include <netinet/sctp.h>
+#include <netinet/sctp_constants.h>
+#include <netinet/sctp_sysctl.h>
 
 LIST_HEAD(sctppcbhead, sctp_inpcb);
 LIST_HEAD(sctpasochead, sctp_tcb);
@@ -51,8 +51,8 @@ LIST_HEAD(sctp_ifalist, sctp_ifa);
 TAILQ_HEAD(sctp_readhead, sctp_queued_to_read);
 TAILQ_HEAD(sctp_streamhead, sctp_stream_queue_pending);
 
-#include <freebsd/netinet/sctp_structs.h>
-#include <freebsd/netinet/sctp_auth.h>
+#include <netinet/sctp_structs.h>
+#include <netinet/sctp_auth.h>
 
 #define SCTP_PCBHASH_ALLADDR(port, mask) (port & mask)
 #define SCTP_PCBHASH_ASOC(tag, mask) (tag & mask)
@@ -450,7 +450,7 @@ struct sctp_tcb {
 
 
 
-#include <freebsd/netinet/sctp_lock_bsd.h>
+#include <netinet/sctp_lock_bsd.h>
 
 
 /* TODO where to put non-_KERNEL things for __Userspace__? */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 2003 WIDE Project.
@@ -68,7 +68,7 @@
  * $OpenBSD: ip_id.c,v 1.6 2002/03/15 18:19:52 millert Exp $
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -91,17 +91,17 @@ __FBSDID("$FreeBSD$");
  * This avoids reuse issues caused by reseeding.
  */
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/libkern.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
+#include <sys/libkern.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
 
 #ifndef INT32_MAX
 #define INT32_MAX	0x7fffffffU

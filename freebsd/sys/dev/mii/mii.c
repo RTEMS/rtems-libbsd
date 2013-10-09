@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$NetBSD: mii.c,v 1.12 1999/08/03 19:41:49 drochner Exp $	*/
 
@@ -32,7 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -41,23 +41,23 @@ __FBSDID("$FreeBSD$");
  * plus some NetBSD extensions.
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/bus.h> 
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/bus.h> 
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/if_media.h>
+#include <net/route.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
 
 MODULE_VERSION(miibus, 1);
 
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 static int miibus_print_child(device_t dev, device_t child);
 static int miibus_read_ivar(device_t dev, device_t child, int which,

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,52 +31,52 @@
  *	$KAME: nd6.c,v 1.144 2001/05/24 07:44:00 itojun Exp $
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/kernel.h>
+#include <sys/protosw.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/syslog.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/rwlock.h>
+#include <sys/queue.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arc.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/iso88025.h>
-#include <freebsd/net/fddi.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_arc.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/iso88025.h>
+#include <net/fddi.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/net/if_llatbl.h>
+#include <netinet/in.h>
+#include <net/if_llatbl.h>
 #define	L3_ADDR_SIN6(le)	((struct sockaddr_in6 *) L3_ADDR(le))
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
-#include <freebsd/netinet6/nd6.h>
-#include <freebsd/netinet/icmp6.h>
+#include <netinet/if_ether.h>
+#include <netinet6/in6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
+#include <netinet6/nd6.h>
+#include <netinet/icmp6.h>
 
-#include <freebsd/sys/limits.h>
+#include <sys/limits.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #define ND6_SLOWTIMER_INTERVAL (60 * 60) /* 1 hour */
 #define ND6_RECALC_REACHTM_INTERVAL (60 * 120) /* 2 hours */

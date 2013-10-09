@@ -29,10 +29,10 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
+#include <sys/param.h>
+#include <sys/systm.h>
 
 #include <assert.h>
 #include <malloc.h>

@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETIPSEC_KEY_VAR_HH_
-#define _NETIPSEC_KEY_VAR_HH_
+#ifndef _NETIPSEC_KEY_VAR_H_
+#define _NETIPSEC_KEY_VAR_H_
 
 /* sysctl */
 #define KEYCTL_DEBUG_LEVEL		1
@@ -71,4 +71,4 @@
 #define _KEYBUF(key) ((caddr_t)((caddr_t)(key) + sizeof(struct sadb_key)))
 #endif /*_KERNEL*/
 
-#endif /* _NETIPSEC_KEY_VAR_HH_ */
+#endif /* _NETIPSEC_KEY_VAR_H_ */

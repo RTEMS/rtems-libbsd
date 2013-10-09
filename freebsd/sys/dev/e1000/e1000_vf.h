@@ -32,17 +32,17 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_VF_HH_
-#define _E1000_VF_HH_
+#ifndef _E1000_VF_H_
+#define _E1000_VF_H_
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_osdep.h>
-#include <freebsd/dev/e1000/e1000_regs.h>
-#include <freebsd/dev/e1000/e1000_defines.h>
+#include <dev/e1000/e1000_osdep.h>
+#include <dev/e1000/e1000_regs.h>
+#include <dev/e1000/e1000_defines.h>
 #else
-#include <freebsd/local/e1000_osdep.h>
-#include <freebsd/local/e1000_regs.h>
-#include <freebsd/local/e1000_defines.h>
+#include <rtems/bsd/local/e1000_osdep.h>
+#include <rtems/bsd/local/e1000_regs.h>
+#include <rtems/bsd/local/e1000_defines.h>
 #endif
 
 struct e1000_hw;
@@ -196,9 +196,9 @@ struct e1000_vf_stats {
 };
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_mbx.h>
+#include <dev/e1000/e1000_mbx.h>
 #else
-#include <freebsd/local/e1000_mbx.h>
+#include <rtems/bsd/local/e1000_mbx.h>
 #endif
 
 struct e1000_mac_operations {
@@ -298,4 +298,4 @@ s32  e1000_read_pcie_cap_reg(struct e1000_hw *hw, u32 reg, u16 *value);
 void e1000_vfta_set_vf(struct e1000_hw *, u16, bool);
 void e1000_rlpml_set_vf(struct e1000_hw *, u16);
 s32 e1000_promisc_set_vf(struct e1000_hw *, enum e1000_promisc_type);
-#endif /* _E1000_VF_HH_ */
+#endif /* _E1000_VF_H_ */

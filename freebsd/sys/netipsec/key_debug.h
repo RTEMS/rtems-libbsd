@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETIPSEC_KEY_DEBUG_HH_
-#define _NETIPSEC_KEY_DEBUG_HH_
+#ifndef _NETIPSEC_KEY_DEBUG_H_
+#define _NETIPSEC_KEY_DEBUG_H_
 
 #ifdef _KERNEL
 /* debug flags */
@@ -86,4 +86,4 @@ extern void kdebug_sockaddr __P((struct sockaddr *));
 extern void ipsec_hexdump __P((caddr_t, int));
 extern void ipsec_bindump __P((caddr_t, int));
 
-#endif /* _NETIPSEC_KEY_DEBUG_HH_ */
+#endif /* _NETIPSEC_KEY_DEBUG_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1999, 2000 Boris Popov
@@ -28,39 +28,39 @@
  * $FreeBSD$
  */
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_ipx.h>
-#include <freebsd/local/opt_ef.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_ipx.h>
+#include <rtems/bsd/local/opt_ef.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/sockio.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
 
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if_llc.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/vnet.h>
+#include <net/ethernet.h>
+#include <net/if_llc.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/netisr.h>
+#include <net/bpf.h>
+#include <net/vnet.h>
 
 #ifdef INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef IPX
-#include <freebsd/netipx/ipx.h>
-#include <freebsd/netipx/ipx_if.h>
+#include <netipx/ipx.h>
+#include <netipx/ipx_if.h>
 #endif
 
 /* If none of the supported layers is enabled explicitly enable them all */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: altq_subr.c,v 1.21 2003/11/06 06:32:53 kjc Exp $	*/
@@ -30,65 +30,65 @@
  */
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
-#include <freebsd/local/opt_altq.h>
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_altq.h>
+#include <rtems/bsd/local/opt_inet.h>
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet6.h>
 #endif
 #endif /* __FreeBSD__ || __NetBSD__ */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/syslog.h>
+#include <sys/sysctl.h>
+#include <sys/queue.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
 #ifdef __FreeBSD__
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 #endif
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
-#include <freebsd/net/pfvar.h>
-#include <freebsd/altq/altq.h>
+#include <net/pfvar.h>
+#include <altq/altq.h>
 #ifdef ALTQ3_COMPAT
-#include <freebsd/altq/altq_conf.h>
+#include <altq/altq_conf.h>
 #endif
 
 /* machine dependent clock related includes */
 #ifdef __FreeBSD__
 #if __FreeBSD__ < 3
-#include <freebsd/local/opt_cpu.h>	/* for FreeBSD-2.2.8 to get i586_ctr_freq */
+#include <rtems/bsd/local/opt_cpu.h>	/* for FreeBSD-2.2.8 to get i586_ctr_freq */
 #endif
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/cpu.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/machine/clock.h>
+#include <sys/bus.h>
+#include <sys/cpu.h>
+#include <sys/eventhandler.h>
+#include <machine/clock.h>
 #endif
 #if defined(__i386__)
-#include <freebsd/machine/cpufunc.h>		/* for pentium tsc */
-#include <freebsd/machine/specialreg.h>		/* for CPUID_TSC */
+#include <machine/cpufunc.h>		/* for pentium tsc */
+#include <machine/specialreg.h>		/* for CPUID_TSC */
 #ifdef __FreeBSD__
-#include <freebsd/machine/md_var.h>		/* for cpu_feature */
+#include <machine/md_var.h>		/* for cpu_feature */
 #elif defined(__NetBSD__) || defined(__OpenBSD__)
-#include <freebsd/machine/cpu.h>		/* for cpu_feature */
+#include <machine/cpu.h>		/* for cpu_feature */
 #endif
 #endif /* __i386__ */
 

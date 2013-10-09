@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_ACTION_HH_
-#define _NET80211_IEEE80211_ACTION_HH_
+#ifndef _NET80211_IEEE80211_ACTION_H_
+#define _NET80211_IEEE80211_ACTION_H_
 
 /*
  * 802.11 send/recv action frame support.
@@ -49,4 +49,4 @@ void	ieee80211_recv_action_unregister(int cat, int act);
 int	ieee80211_recv_action(struct ieee80211_node *,
 		const struct ieee80211_frame *,
 		const uint8_t *, const uint8_t *);
-#endif /* _NET80211_IEEE80211_ACTION_HH_ */
+#endif /* _NET80211_IEEE80211_ACTION_H_ */

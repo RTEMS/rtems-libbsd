@@ -34,19 +34,19 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
+#include <sys/types.h>
+#include <sys/systm.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/interrupt.h>
+#include <sys/param.h>
+#include <sys/bus.h>
+#include <sys/interrupt.h>
 
 #define SWI_TEST_THREAD_PRIO (0)
 
 // Time to wait for swi-test-handler
-#define SWI_SLEEP_TIME (100)
+#define SWI_SLEEP_TIME (1)
 
 enum arg {
 	HANDLER_NOT_VISITED,
@@ -78,7 +78,7 @@ void swi_test_normal_handler()
 
 	swi_sched(test_ih, 0);
 
-	usleep(SWI_SLEEP_TIME);
+	sleep(SWI_SLEEP_TIME);
 	
 	assert(argument == HANDLER_VISITED);
 }
@@ -98,7 +98,7 @@ void swi_test_exclusive_handler()
 
 	swi_sched(test_ih, 0);
 	
-	usleep(SWI_SLEEP_TIME);
+	sleep(SWI_SLEEP_TIME);
 	
 	assert(argument == HANDLER_VISITED);
 }
@@ -124,7 +124,7 @@ void swi_test_error_intr_entropy_set()
 		SWI_TEST_THREAD_PRIO, INTR_ENTROPY, &test_ih);
 	assert(retval == EINVAL);
 	
-	usleep(SWI_SLEEP_TIME);
+	sleep(SWI_SLEEP_TIME);
 	
 	assert(argument == HANDLER_NOT_VISITED);
 }
@@ -148,7 +148,7 @@ void swi_test_error_name_null()
 		SWI_TEST_THREAD_PRIO, 0, &test_ih);
 	assert(retval == EINVAL);
 	
-	usleep(SWI_SLEEP_TIME);
+	sleep(SWI_SLEEP_TIME);
 	
 	assert(argument == HANDLER_NOT_VISITED);
 }
@@ -166,7 +166,7 @@ void swi_test_error_handler_null()
 		SWI_TEST_THREAD_PRIO, 0, &test_ih);
 	assert(retval == EINVAL);
 	
-	usleep(SWI_SLEEP_TIME);
+	sleep(SWI_SLEEP_TIME);
 	
 	assert(argument == HANDLER_NOT_VISITED);
 }
@@ -189,7 +189,7 @@ void swi_test_error_has_allready_exclusive()
 		SWI_TEST_THREAD_PRIO, 0, &test_ih2);
 	assert(retval == EINVAL);
 	
-	usleep(SWI_SLEEP_TIME);
+	sleep(SWI_SLEEP_TIME);
 	
 	assert(argument == HANDLER_NOT_VISITED);
 }

@@ -38,12 +38,12 @@
  * PURPOSE.
  */
 
-#ifndef _NETIPSEC_XFORM_HH_
-#define _NETIPSEC_XFORM_HH_
+#ifndef _NETIPSEC_XFORM_H_
+#define _NETIPSEC_XFORM_H_
 
-#include <freebsd/sys/types.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/opencrypto/xform.h>
+#include <rtems/bsd/sys/types.h>
+#include <netinet/in.h>
+#include <opencrypto/xform.h>
 
 #define	AH_HMAC_HASHLEN		12	/* 96 bits of authenticator */
 #define	AH_HMAC_INITIAL_RPL	1	/* replay counter initial value */
@@ -126,4 +126,4 @@ extern size_t esp_hdrsiz(struct secasvar *sav);
 extern struct comp_algo *ipcomp_algorithm_lookup(int alg);
 
 #endif /* _KERNEL */
-#endif /* _NETIPSEC_XFORM_HH_ */
+#endif /* _NETIPSEC_XFORM_H_ */

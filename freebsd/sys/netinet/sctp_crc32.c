@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
@@ -33,13 +33,13 @@
 /* $KAME: sctp_crc32.c,v 1.12 2005/03/06 16:04:17 itojun Exp $	 */
 
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/netinet/sctp_os.h>
-#include <freebsd/netinet/sctp.h>
-#include <freebsd/netinet/sctp_crc32.h>
-#include <freebsd/netinet/sctp_pcb.h>
+#include <netinet/sctp_os.h>
+#include <netinet/sctp.h>
+#include <netinet/sctp_crc32.h>
+#include <netinet/sctp_pcb.h>
 
 
 #if !defined(SCTP_WITH_NO_CSUM)

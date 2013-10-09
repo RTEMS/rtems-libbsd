@@ -34,11 +34,11 @@
  * IPsec controller part.
  */
 
-#ifndef _NETIPSEC_IPSEC6_HH_
-#define _NETIPSEC_IPSEC6_HH_
+#ifndef _NETIPSEC_IPSEC6_H_
+#define _NETIPSEC_IPSEC6_H_
 
-#include <freebsd/net/pfkeyv2.h>
-#include <freebsd/netipsec/keydb.h>
+#include <net/pfkeyv2.h>
+#include <netipsec/keydb.h>
 
 #ifdef _KERNEL
 VNET_DECLARE(struct ipsecstat, ipsec6stat);
@@ -75,4 +75,4 @@ extern int ipsec6_output_tunnel __P((struct ipsec_output_state *,
 	struct secpolicy *, int));
 #endif /*_KERNEL*/
 
-#endif /*_NETIPSEC_IPSEC6_HH_*/
+#endif /*_NETIPSEC_IPSEC6_H_*/

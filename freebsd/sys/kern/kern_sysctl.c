@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
@@ -41,35 +41,35 @@
 /* FIXME */
 #undef sysctl
 #endif /* __rtems__ */
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_ktrace.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/uio.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/malloc.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/jail.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sx.h>
+#include <sys/sysproto.h>
+#include <sys/uio.h>
 #ifdef KTRACE
-#include <freebsd/sys/ktrace.h>
+#include <sys/ktrace.h>
 #endif
 
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 #ifndef __rtems__
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_extern.h>
+#include <vm/vm.h>
+#include <vm/vm_extern.h>
 #endif
 
 #ifdef __rtems__
@@ -1456,7 +1456,7 @@ sysctl_root(SYSCTL_HANDLER_ARGS)
 }
 
 #ifndef __rtems__
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct sysctl_args {
 	int	*name;
 	u_int	namelen;

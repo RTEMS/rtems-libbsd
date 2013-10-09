@@ -35,10 +35,10 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_TTYCOM_HH_
-#define	_SYS_TTYCOM_HH_
+#ifndef	_SYS_TTYCOM_H_
+#define	_SYS_TTYCOM_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 /*
  * Tty ioctl's except for those supported only for backwards compatibility
@@ -143,4 +143,4 @@ struct winsize {
 #define	NETGRAPHDISC	6		/* Netgraph tty node discipline */
 #define	H4DISC		7		/* Netgraph Bluetooth H4 discipline */
 
-#endif /* !_SYS_TTYCOM_HH_ */
+#endif /* !_SYS_TTYCOM_H_ */

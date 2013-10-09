@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /**
  * @file
@@ -36,18 +36,18 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/dev/pci/pcivar.h>
-#include <freebsd/dev/pci/pcireg.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/bus.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/sysctl.h>
+#include <dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
 #include <rtems/pci.h>
 
 

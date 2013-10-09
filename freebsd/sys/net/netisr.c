@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2009 Robert N. M. Watson
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -61,34 +61,34 @@ __FBSDID("$FreeBSD$");
  * detail in netisr.h.
  */
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_device_polling.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/kthread.h>
-#include <freebsd/sys/interrupt.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/pcpu.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/rmlock.h>
-#include <freebsd/sys/sched.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/bus.h>
+#include <sys/kernel.h>
+#include <sys/kthread.h>
+#include <sys/interrupt.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mbuf.h>
+#include <sys/mutex.h>
+#include <sys/pcpu.h>
+#include <sys/proc.h>
+#include <sys/rmlock.h>
+#include <sys/sched.h>
+#include <sys/smp.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
 
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 #endif
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_var.h>
+#include <net/netisr.h>
+#include <net/vnet.h>
 
 /*-
  * Synchronize use and modification of the registered netisr data structures;

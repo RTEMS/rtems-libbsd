@@ -35,8 +35,8 @@
  * implemented by Jun-ichiro itojun Itoh <itojun@itojun.org>
  */
 
-#ifndef _NETINET6_SHA1_HH_
-#define _NETINET6_SHA1_HH_
+#ifndef _NETINET6_SHA1_H_
+#define _NETINET6_SHA1_H_
 
 struct sha1_ctxt {
 	union {
@@ -69,4 +69,4 @@ typedef struct sha1_ctxt SHA1_CTX;
 
 #define	SHA1_RESULTLEN	(160/8)
 
-#endif /*_NETINET6_SHA1_HH_*/
+#endif /*_NETINET6_SHA1_H_*/

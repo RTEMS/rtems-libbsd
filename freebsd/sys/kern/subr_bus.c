@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997,1998,2003 Doug Rabson
@@ -26,38 +26,38 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_bus.h>
+#include <rtems/bsd/local/opt_bus.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/kobj.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/poll.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/interrupt.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/conf.h>
+#include <sys/filio.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/kernel.h>
+#include <sys/kobj.h>
+#include <sys/limits.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/mutex.h>
+#include <sys/poll.h>
+#include <sys/proc.h>
+#include <sys/condvar.h>
+#include <sys/queue.h>
+#include <machine/bus.h>
+#include <sys/rman.h>
+#include <sys/selinfo.h>
+#include <sys/signalvar.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
+#include <sys/uio.h>
+#include <sys/bus.h>
+#include <sys/interrupt.h>
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
 SYSCTL_NODE(_hw, OID_AUTO, bus, CTLFLAG_RW, NULL, NULL);
 SYSCTL_NODE(, OID_AUTO, dev, CTLFLAG_RW, NULL, NULL);

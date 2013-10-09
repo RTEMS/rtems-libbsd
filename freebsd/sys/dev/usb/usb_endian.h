@@ -24,11 +24,11 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_ENDIAN_HH_
-#define	_USB_ENDIAN_HH_
+#ifndef _USB_ENDIAN_H_
+#define	_USB_ENDIAN_H_
 
-#include <freebsd/sys/stdint.h>
-#include <freebsd/sys/endian.h>
+#include <sys/stdint.h>
+#include <sys/endian.h>
 
 /*
  * Declare the basic USB record types. USB records have an alignment
@@ -116,4 +116,4 @@ typedef uint8_t uQWord[8];
   (w)[7] = (uint8_t)(b7);		\
 } while (0)
 
-#endif					/* _USB_ENDIAN_HH_ */
+#endif					/* _USB_ENDIAN_H_ */

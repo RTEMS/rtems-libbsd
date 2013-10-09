@@ -27,8 +27,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_OFFLOAD_HH_
-#define	_NETINET_TCP_OFFLOAD_HH_
+#ifndef _NETINET_TCP_OFFLOAD_H_
+#define	_NETINET_TCP_OFFLOAD_H_
 
 #ifndef _KERNEL
 #error "no user-serviceable parts inside"
@@ -247,7 +247,7 @@ int	tcp_offload_connect(struct socket *so, struct sockaddr *nam);
  * hackish way of allowing this file to also be included by TOE
  * which needs to be kept ignorant of socket implementation details
  */
-#ifdef _SYS_SOCKETVAR_HH_
+#ifdef _SYS_SOCKETVAR_H_
 /*
  * The socket has not been marked as "do not offload"
  */
@@ -344,11 +344,11 @@ tcp_offload_listen_close(struct tcpcb *tp)
 #endif	
 }
 #undef SO_OFFLOADABLE
-#endif /* _SYS_SOCKETVAR_HH_ */
+#endif /* _SYS_SOCKETVAR_H_ */
 #undef tp_offload
 
 void tcp_offload_twstart(struct tcpcb *tp);
 struct tcpcb *tcp_offload_close(struct tcpcb *tp);
 struct tcpcb *tcp_offload_drop(struct tcpcb *tp, int error);
 
-#endif /* _NETINET_TCP_OFFLOAD_HH_ */
+#endif /* _NETINET_TCP_OFFLOAD_H_ */

@@ -9,8 +9,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_SMP_HH_
-#define _SYS_SMP_HH_
+#ifndef _SYS_SMP_H_
+#define _SYS_SMP_H_
 
 #ifdef _KERNEL
 
@@ -180,4 +180,4 @@ void	smp_rendezvous_cpus(cpumask_t,
 		       void *arg);
 #endif /* !LOCORE */
 #endif /* _KERNEL */
-#endif /* _SYS_SMP_HH_ */
+#endif /* _SYS_SMP_H_ */

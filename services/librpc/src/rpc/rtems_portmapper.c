@@ -31,7 +31,6 @@
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <rpc/pmap_prot.h>
 #include <stdio.h>

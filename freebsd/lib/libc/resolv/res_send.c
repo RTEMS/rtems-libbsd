@@ -84,9 +84,9 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #include "namespace.h"
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/time.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 
@@ -108,11 +108,7 @@ __FBSDID("$FreeBSD$");
 #include "port_after.h"
 
 #ifdef USE_KQUEUE
-#ifdef __rtems__
-#include <freebsd/sys/event.h>
-#else
 #include <sys/event.h>
-#endif /* __rtems__ */
 #else
 #ifdef USE_POLL
 #ifdef HAVE_STROPTS_H

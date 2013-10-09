@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_DYNAMIC_HH_
-#define	_USB_DYNAMIC_HH_
+#ifndef _USB_DYNAMIC_H_
+#define	_USB_DYNAMIC_H_
 
 /* prototypes */
 
@@ -58,4 +58,4 @@ void	usb_temp_unload(void *);
 void	usb_quirk_unload(void *);
 void	usb_bus_unload(void *);
 
-#endif					/* _USB_DYNAMIC_HH_ */
+#endif					/* _USB_DYNAMIC_H_ */

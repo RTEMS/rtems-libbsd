@@ -60,8 +60,8 @@
 
 #define BIND_4_COMPAT
 
-#include <sys/param.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/cdefs.h>
 
 /*%

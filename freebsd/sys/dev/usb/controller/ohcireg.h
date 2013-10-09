@@ -36,8 +36,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _OHCIREG_HH_
-#define	_OHCIREG_HH_
+#ifndef _OHCIREG_H_
+#define	_OHCIREG_H_
 
 /* PCI config registers  */
 #define	PCI_CBMEM		0x10	/* configuration base memory */
@@ -128,4 +128,4 @@
 #define	OHCI_FSMPS(i)		(((i-210)*6/7) << 16)
 #define	OHCI_PERIODIC(i)	((i)*9/10)
 
-#endif	/* _OHCIREG_HH_ */
+#endif	/* _OHCIREG_H_ */

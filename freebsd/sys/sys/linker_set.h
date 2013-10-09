@@ -27,8 +27,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_LINKER_SET_HH_
-#define _SYS_LINKER_SET_HH_
+#ifndef _SYS_LINKER_SET_H_
+#define _SYS_LINKER_SET_H_
 
 #ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
@@ -111,4 +111,4 @@
 #define SET_COUNT(set)							\
 	(SET_LIMIT(set) - SET_BEGIN(set))
 
-#endif	/* _SYS_LINKER_SET_HH_ */
+#endif	/* _SYS_LINKER_SET_H_ */

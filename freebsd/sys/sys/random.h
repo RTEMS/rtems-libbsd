@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_RANDOM_HH_
-#define	_SYS_RANDOM_HH_
+#ifndef	_SYS_RANDOM_H_
+#define	_SYS_RANDOM_H_
 
 #ifdef _KERNEL
 
@@ -63,4 +63,4 @@ extern struct harvest_select harvest;
 
 #endif /* _KERNEL */
 
-#endif /* _SYS_RANDOM_HH_ */
+#endif /* _SYS_RANDOM_H_ */

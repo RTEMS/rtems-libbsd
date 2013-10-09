@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _EHCIREG_HH_
-#define	_EHCIREG_HH_
+#ifndef _EHCIREG_H_
+#define	_EHCIREG_H_
 
 /* PCI config registers  */
 #define	PCI_CBMEM		0x10	/* configuration base MEM */
@@ -168,4 +168,4 @@
 
 #define	EHCI_PORT_RESET_COMPLETE	2	/* ms */
 
-#endif	/* _EHCIREG_HH_ */
+#endif	/* _EHCIREG_H_ */

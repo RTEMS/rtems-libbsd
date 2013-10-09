@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 
@@ -46,24 +46,24 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/proc.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/proc.h>
 #else
-#include <freebsd/sys/types.h>
-#include <freebsd/stdio.h>
+#include <rtems/bsd/sys/types.h>
+#include <stdio.h>
 #endif
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
 #else
-#include <freebsd/local/alias.h>
-#include <freebsd/local/alias_local.h>
+#include <rtems/bsd/local/alias.h>
+#include <rtems/bsd/local/alias_local.h>
 #endif
 
 /*

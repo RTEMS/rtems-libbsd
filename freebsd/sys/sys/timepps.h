@@ -12,11 +12,11 @@
  * timing interfaces.  
  */
 
-#ifndef _SYS_TIMEPPS_HH_
-#define _SYS_TIMEPPS_HH_
+#ifndef _SYS_TIMEPPS_H_
+#define _SYS_TIMEPPS_H_
 
-#include <freebsd/sys/ioccom.h>
-#include <freebsd/sys/time.h>
+#include <sys/ioccom.h>
+#include <rtems/bsd/sys/time.h>
 
 #define PPS_API_VERS_1	1
 
@@ -197,4 +197,4 @@ time_pps_kcbind(pps_handle_t handle, const int kernel_consumer,
 
 #endif /* KERNEL */
 
-#endif /* !_SYS_TIMEPPS_HH_ */
+#endif /* !_SYS_TIMEPPS_H_ */

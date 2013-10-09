@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: pf_ioctl.c,v 1.175 2007/02/26 22:47:43 deraadt Exp $ */
 
@@ -38,13 +38,13 @@
  */
 
 #ifdef __FreeBSD__
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_bpf.h>
-#include <freebsd/local/opt_pf.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_bpf.h>
+#include <rtems/bsd/local/opt_pf.h>
 
 #ifdef DEV_BPF
 #define	NBPFILTER	DEV_BPF
@@ -65,79 +65,79 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #else
-#include <freebsd/local/bpfilter.h>
-#include <freebsd/local/pflog.h>
-#include <freebsd/local/pfsync.h>
+#include <rtems/bsd/local/bpfilter.h>
+#include <rtems/bsd/local/pflog.h>
+#include <rtems/bsd/local/pfsync.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/filio.h>
+#include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/malloc.h>
 #ifdef __FreeBSD__
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sysctl.h>
+#include <sys/module.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
+#include <sys/sysctl.h>
 #else
-#include <freebsd/sys/timeout.h>
-#include <freebsd/sys/pool.h>
+#include <sys/timeout.h>
+#include <sys/pool.h>
 #endif
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kthread.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/kthread.h>
 #ifndef __FreeBSD__
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/uvm/uvm_extern.h>
+#include <sys/rwlock.h>
+#include <uvm/uvm_extern.h>
 #endif
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
+#include <net/if.h>
+#include <net/if_types.h>
 #ifdef __FreeBSD__
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 #endif
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_icmp.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
 
 #ifdef __FreeBSD__
-#include <freebsd/sys/md5.h>
+#include <sys/md5.h>
 #else
-#include <freebsd/dev/rndvar.h>
-#include <freebsd/crypto/md5.h>
+#include <dev/rndvar.h>
+#include <crypto/md5.h>
 #endif
-#include <freebsd/net/pfvar.h>
+#include <net/pfvar.h>
 
 #if NPFSYNC > 0
-#include <freebsd/net/if_pfsync.h>
+#include <net/if_pfsync.h>
 #endif /* NPFSYNC > 0 */
 
-#include <freebsd/net/if_pflog.h>
+#include <net/if_pflog.h>
 
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet/in_pcb.h>
+#include <netinet/ip6.h>
+#include <netinet/in_pcb.h>
 #endif /* INET6 */
 
 #ifdef ALTQ
-#include <freebsd/altq/altq.h>
+#include <altq/altq.h>
 #endif
 
 #ifdef __FreeBSD__
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/net/pfil.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <net/pfil.h>
 #endif /* __FreeBSD__ */
 
 #ifdef __FreeBSD__

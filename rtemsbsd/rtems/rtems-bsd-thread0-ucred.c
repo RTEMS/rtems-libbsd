@@ -30,14 +30,15 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/resourcevar.h>
 
 struct ucred *rtems_bsd_thread0_ucred;
 
@@ -46,7 +47,6 @@ static void rtems_bsd_thread0_ucred_init(void *arg)
 	rtems_bsd_thread0_ucred = crget();
 	rtems_bsd_thread0_ucred->cr_ngroups = 1;	/* group 0 */
 	rtems_bsd_thread0_ucred->cr_uidinfo = uifind(0);
-	rtems_bsd_thread0_ucred = uifind(0);
 	rtems_bsd_thread0_ucred->cr_prison = &prison0;
 }
 

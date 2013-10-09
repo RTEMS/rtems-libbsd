@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * alias_pptp.c
@@ -38,32 +38,32 @@
  * Author: Erik Salander <erik@whistle.com>
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /* Includes */
 #ifdef _KERNEL
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/limits.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
 #else
-#include <freebsd/errno.h>
-#include <freebsd/limits.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/stdio.h>
+#include <errno.h>
+#include <limits.h>
+#include <rtems/bsd/sys/types.h>
+#include <stdio.h>
 #endif
 
-#include <freebsd/netinet/tcp.h>
+#include <netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
-#include <freebsd/netinet/libalias/alias_mod.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias_mod.h>
 #else
-#include <freebsd/local/alias.h>
-#include <freebsd/local/alias_local.h>
-#include <freebsd/local/alias_mod.h>
+#include <rtems/bsd/local/alias.h>
+#include <rtems/bsd/local/alias_local.h>
+#include <rtems/bsd/local/alias_mod.h>
 #endif
 
 #define PPTP_CONTROL_PORT_NUMBER 1723

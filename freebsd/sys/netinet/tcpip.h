@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCPIP_HH_
-#define _NETINET_TCPIP_HH_
+#ifndef _NETINET_TCPIP_H_
+#define _NETINET_TCPIP_H_
 
 /*
  * Tcp+ip header, after ip options removed.

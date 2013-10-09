@@ -35,8 +35,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_FCNTL_HH_
-#define	_SYS_FCNTL_HH_
+#ifndef _SYS_FCNTL_H_
+#define	_SYS_FCNTL_H_
 
 /*
  * This file includes the definitions for open and fcntl
@@ -44,8 +44,8 @@
  * related kernel definitions.
  */
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/_types.h>
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/_types.h>
 
 #ifndef _MODE_T_DECLARED
 typedef	__mode_t	mode_t;
@@ -293,4 +293,4 @@ int	flock(int, int);
 __END_DECLS
 #endif
 
-#endif /* !_SYS_FCNTL_HH_ */
+#endif /* !_SYS_FCNTL_H_ */

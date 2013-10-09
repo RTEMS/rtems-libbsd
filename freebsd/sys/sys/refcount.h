@@ -32,10 +32,10 @@
 #ifndef __SYS_REFCOUNT_HH__
 #define __SYS_REFCOUNT_HH__
 
-#include <freebsd/machine/atomic.h>
+#include <machine/atomic.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/systm.h>
+#include <sys/systm.h>
 #else
 #define	KASSERT(exp, msg)	/* */
 #endif

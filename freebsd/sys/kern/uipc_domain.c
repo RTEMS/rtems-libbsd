@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1993
@@ -31,24 +31,24 @@
  *	@(#)uipc_domain.c	8.2 (Berkeley) 10/18/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/domain.h>
+#include <sys/eventhandler.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/socketvar.h>
+#include <sys/systm.h>
 
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
 /*
  * System initialization

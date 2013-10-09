@@ -31,8 +31,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_BPF_JITTER_HH_
-#define _NET_BPF_JITTER_HH_
+#ifndef _NET_BPF_JITTER_H_
+#define _NET_BPF_JITTER_H_
 
 #ifdef _KERNEL
 MALLOC_DECLARE(M_BPFJIT);
@@ -81,4 +81,4 @@ bpf_jit_filter	*bpf_jitter(struct bpf_insn *fp, int nins);
  */
 void		bpf_destroy_jit_filter(bpf_jit_filter *filter);
 
-#endif	/* _NET_BPF_JITTER_HH_ */
+#endif	/* _NET_BPF_JITTER_H_ */

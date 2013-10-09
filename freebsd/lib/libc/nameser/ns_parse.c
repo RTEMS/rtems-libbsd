@@ -25,7 +25,7 @@ static const char rcsid[] = "$Id: ns_parse.c,v 1.5.18.4 2007/08/27 03:34:24 mark
 
 #include "port_before.h"
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
 #include <netinet/in.h>
 #include <arpa/nameser.h>

@@ -33,13 +33,13 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
-#include <freebsd/sys/smp.h>
-#include <freebsd/machine/smp.h>
-#include <freebsd/sys/sysctl.h>
+#include <sys/smp.h>
+#include <machine/smp.h>
+#include <sys/sysctl.h>
 
 int       mp_ncpus;
 int       mp_maxcpus;

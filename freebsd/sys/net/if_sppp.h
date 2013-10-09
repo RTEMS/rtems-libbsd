@@ -20,8 +20,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_IF_SPPP_HH_
-#define _NET_IF_SPPP_HH_ 1
+#ifndef _NET_IF_SPPP_H_
+#define _NET_IF_SPPP_H_ 1
 
 #define IDX_LCP 0		/* idx into state table */
 
@@ -231,4 +231,4 @@ void sppp_get_ip_addrs(struct sppp *sp, u_long *src, u_long *dst,
 
 #endif
 
-#endif /* _NET_IF_SPPP_HH_ */
+#endif /* _NET_IF_SPPP_H_ */

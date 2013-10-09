@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2006-2010 Broadcom Corporation
@@ -30,7 +30,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -53,10 +53,10 @@ __FBSDID("$FreeBSD$");
  *   BCM5709S A0, B0, B1, B2 (pre-production)
  */
 
-#include <freebsd/local/opt_bce.h>
+#include <rtems/bsd/local/opt_bce.h>
 
-#include <freebsd/dev/bce/if_bcereg.h>
-#include <freebsd/dev/bce/if_bcefw.h>
+#include <dev/bce/if_bcereg.h>
+#include <dev/bce/if_bcefw.h>
 
 /****************************************************************************/
 /* BCE Debug Options                                                        */

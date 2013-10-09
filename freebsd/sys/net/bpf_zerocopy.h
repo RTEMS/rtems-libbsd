@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_BPF_ZEROCOPY_HH_
-#define	_NET_BPF_ZEROCOPY_HH_
+#ifndef _NET_BPF_ZEROCOPY_H_
+#define	_NET_BPF_ZEROCOPY_H_
 
 #ifndef _KERNEL
 #error "no user-serviceable parts inside"
@@ -53,4 +53,4 @@ int	bpf_zerocopy_ioctl_rotzbuf(struct thread *td, struct bpf_d *d,
 int	bpf_zerocopy_ioctl_setzbuf(struct thread *td, struct bpf_d *d,
 	    struct bpf_zbuf *bz);
 
-#endif /* !_NET_BPF_ZEROCOPY_HH_ */
+#endif /* !_NET_BPF_ZEROCOPY_H_ */

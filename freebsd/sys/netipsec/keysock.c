@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: keysock.c,v 1.25 2001/08/13 20:07:41 itojun Exp $	*/
@@ -32,41 +32,41 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_ipsec.h>
 
 /* This code has derived from sys/net/rtsock.c on FreeBSD2.2.5 */
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/domain.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/mutex.h>
+#include <sys/priv.h>
+#include <sys/protosw.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/raw_cb.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/raw_cb.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 
-#include <freebsd/net/pfkeyv2.h>
-#include <freebsd/netipsec/key.h>
-#include <freebsd/netipsec/keysock.h>
-#include <freebsd/netipsec/key_debug.h>
-#include <freebsd/netipsec/ipsec.h>
+#include <net/pfkeyv2.h>
+#include <netipsec/key.h>
+#include <netipsec/keysock.h>
+#include <netipsec/key_debug.h>
+#include <netipsec/ipsec.h>
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
 struct key_cb {
 	int key_count;

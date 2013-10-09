@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007 Seccuris Inc.
@@ -63,23 +63,23 @@
  *      @(#)bpf.c	8.4 (Berkeley) 1/9/95
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_bpf.h>
+#include <rtems/bsd/local/opt_bpf.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/bpf_buffer.h>
-#include <freebsd/net/bpfdesc.h>
+#include <net/if.h>
+#include <net/bpf.h>
+#include <net/bpf_buffer.h>
+#include <net/bpfdesc.h>
 
 /*
  * Implement historical kernel memory buffering model for BPF: two malloc(9)

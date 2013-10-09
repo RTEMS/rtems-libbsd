@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef	_IF_SMCREG_HH_
-#define	_IF_SMCREG_HH_
+#ifndef	_IF_SMCREG_H_
+#define	_IF_SMCREG_H_
 
 /* All Banks, Offset 0xe: Bank Select Register */
 #define	BSR			0xe
@@ -258,4 +258,4 @@
 /* Number of times to spin on TX allocations */
 #define	TX_ALLOC_WAIT_TIME	1000
 
-#endif /* IF_SMCREG_HH_ */
+#endif /* IF_SMCREG_H_ */

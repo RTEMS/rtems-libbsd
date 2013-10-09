@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1994,1995 Stefan Esser, Wolfgang StanglMeier
@@ -30,29 +30,29 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * PCI:PCI bridge support.
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/bus.h>
+#include <machine/bus.h>
+#include <sys/rman.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/machine/resource.h>
+#include <machine/resource.h>
 
-#include <freebsd/dev/pci/pcivar.h>
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcib_private.h>
+#include <dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcib_private.h>
 
-#include <freebsd/local/pcib_if.h>
+#include <rtems/bsd/local/pcib_if.h>
 
 static int		pcib_probe(device_t dev);
 

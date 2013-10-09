@@ -4,10 +4,10 @@
 #if defined(_KERNEL_OPT) || defined(__OpenBSD__)
 
 #if defined(_KERNEL_OPT)
-#include <freebsd/local/opt_altq_enabled.h>
+#include <rtems/bsd/local/opt_altq_enabled.h>
 #endif
 
-#include <freebsd/sys/conf.h>
+#include <sys/conf.h>
 
 #ifdef ALTQ
 #define	NALTQ	1

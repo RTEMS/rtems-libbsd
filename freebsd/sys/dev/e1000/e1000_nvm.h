@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_NVM_HH_
-#define _E1000_NVM_HH_
+#ifndef _E1000_NVM_H_
+#define _E1000_NVM_H_
 
 void e1000_init_nvm_ops_generic(struct e1000_hw *hw);
 s32  e1000_null_read_nvm(struct e1000_hw *hw, u16 a, u16 b, u16 *c);

@@ -1,22 +1,15 @@
-#include <freebsd/bsd.h>
+/* $FreeBSD$ */
 
-#include <freebsd/sys/_types.h>
+#ifndef _PORT_BEFORE_H_
+#define _PORT_BEFORE_H_
 
-/*********************************************************************
- *  These are also defined in the FreeBSD version of this file.
- *********************************************************************/
+#define _LIBC		1
+#define DO_PTHREADS	1
+#define USE_KQUEUE	1
 
-#define _LIBC      1
-/*
- * This is defined in the FreeBSD source but we have no code yet which
- * relies upon it.
- */
-/* #define DO_PTHREADS     1 */
-#define USE_KQUEUE 1
-
-#define ISC_SOCKLEN_T   socklen_t
+#define ISC_SOCKLEN_T	socklen_t
 #define ISC_FORMAT_PRINTF(fmt, args) \
-        __attribute__((__format__(__printf__, fmt, args)))
+	__attribute__((__format__(__printf__, fmt, args)))
 #define DE_CONST(konst, var) \
         do { \
                 union { const void *k; void *v; } _u; \
@@ -24,18 +17,6 @@
                 var = _u.v; \
         } while (0)
 
-#define UNUSED(x) (x) = (x)
+#define UNUSED(x) (void)(x)
 
-
-/*********************************************************************
- *  FROM HERE DOWN, THESE ARE NOT IN THE FreeBSD VERSION!!!
- *********************************************************************/
-#ifndef __ssize_t
-#define __ssize_t ssize_t
-#endif
-
-#include <freebsd/machine/_align.h>
-
-#ifdef __rtems__
-#include <freebsd/machine/endian.h>
-#endif
+#endif /* _PORT_BEFORE_H_ */

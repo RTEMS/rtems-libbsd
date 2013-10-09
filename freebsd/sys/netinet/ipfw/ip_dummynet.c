@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1998-2002,2010 Luigi Rizzo, Universita` di Pisa
@@ -27,38 +27,38 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * Configuration and internal object management for dummynet.
  */
 
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/taskqueue.h>
-#include <freebsd/net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
-#include <freebsd/netinet/ip_fw.h>
-#include <freebsd/netinet/ipfw/ip_fw_private.h>
-#include <freebsd/netinet/ipfw/dn_heap.h>
-#include <freebsd/netinet/ip_dummynet.h>
-#include <freebsd/netinet/ipfw/ip_dn_private.h>
-#include <freebsd/netinet/ipfw/dn_sched.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/rwlock.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/taskqueue.h>
+#include <net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
+#include <netinet/in.h>
+#include <netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
+#include <netinet/ip_fw.h>
+#include <netinet/ipfw/ip_fw_private.h>
+#include <netinet/ipfw/dn_heap.h>
+#include <netinet/ip_dummynet.h>
+#include <netinet/ipfw/ip_dn_private.h>
+#include <netinet/ipfw/dn_sched.h>
 
 /* which objects to copy */
 #define DN_C_LINK 	0x01

@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_SCAN_HH_
-#define _NET80211_IEEE80211_SCAN_HH_
+#ifndef _NET80211_IEEE80211_SCAN_H_
+#define _NET80211_IEEE80211_SCAN_H_
 
 /*
  * 802.11 scanning support.
@@ -298,4 +298,4 @@ void	ieee80211_scanner_unregister(enum ieee80211_opmode,
 		const struct ieee80211_scanner *);
 void	ieee80211_scanner_unregister_all(const struct ieee80211_scanner *);
 const struct ieee80211_scanner *ieee80211_scanner_get(enum ieee80211_opmode);
-#endif /* _NET80211_IEEE80211_SCAN_HH_ */
+#endif /* _NET80211_IEEE80211_SCAN_H_ */

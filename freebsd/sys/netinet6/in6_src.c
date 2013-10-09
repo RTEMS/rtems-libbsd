@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -62,53 +62,53 @@
  *	@(#)in_pcb.c	8.2 (Berkeley) 1/4/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_mpath.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_mpath.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sx.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/priv.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sockio.h>
+#include <sys/sysctl.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/sx.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if_llatbl.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+#include <net/if_llatbl.h>
 #ifdef RADIX_MPATH
-#include <freebsd/net/radix_mpath.h>
+#include <net/radix_mpath.h>
 #endif
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/in6_pcb.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
-#include <freebsd/netinet6/nd6.h>
+#include <netinet6/in6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
+#include <netinet6/nd6.h>
 
 static struct mtx addrsel_lock;
 #define	ADDRSEL_LOCK_INIT()	mtx_init(&addrsel_lock, "addrsel_lock", NULL, MTX_DEF)

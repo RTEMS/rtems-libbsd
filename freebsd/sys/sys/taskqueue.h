@@ -26,15 +26,15 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TASKQUEUE_HH_
-#define _SYS_TASKQUEUE_HH_
+#ifndef _SYS_TASKQUEUE_H_
+#define _SYS_TASKQUEUE_H_
 
 #ifndef _KERNEL
 #error "no user-servicable parts inside"
 #endif
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_task.h>
+#include <sys/queue.h>
+#include <sys/_task.h>
 
 struct taskqueue;
 struct thread;
@@ -158,4 +158,4 @@ struct taskqueue *taskqueue_create_fast(const char *name, int mflags,
 				    taskqueue_enqueue_fn enqueue,
 				    void *context);
 
-#endif /* !_SYS_TASKQUEUE_HH_ */
+#endif /* !_SYS_TASKQUEUE_H_ */

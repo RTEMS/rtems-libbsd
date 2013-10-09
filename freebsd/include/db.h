@@ -37,7 +37,7 @@
 #ifndef _DB_H_
 #define	_DB_H_
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/cdefs.h>
 
 #include <limits.h>

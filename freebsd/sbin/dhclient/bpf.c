@@ -47,13 +47,8 @@ __FBSDID("$FreeBSD$");
 #include <sys/ioctl.h>
 #include <sys/uio.h>
 
-#ifdef __rtems__
-#include <freebsd/net/bpf.h>
-#include <freebsd/netinet/in_systm.h>
-#else
 #include <net/bpf.h>
 #include <netinet/in_systm.h>
-#endif
 #include <netinet/ip.h>
 #include <netinet/udp.h>
 #include <netinet/if_ether.h>

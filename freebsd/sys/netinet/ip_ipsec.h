@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IP_IPSEC_HH_
-#define _NETINET_IP_IPSEC_HH_
+#ifndef _NETINET_IP_IPSEC_H_
+#define _NETINET_IP_IPSEC_H_
 
 int	ip_ipsec_filtertunnel(struct mbuf *);
 int	ip_ipsec_fwd(struct mbuf *);

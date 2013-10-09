@@ -28,8 +28,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS__SX_HH_
-#define	_SYS__SX_HH_
+#ifndef	_SYS__SX_H_
+#define	_SYS__SX_H_
 
 /*
  * Shared/exclusive lock main structure definition.
@@ -41,4 +41,4 @@ struct sx {
 #endif /* __rtems__ */
 };
 
-#endif	/* !_SYS__SX_HH_ */
+#endif	/* !_SYS__SX_H_ */

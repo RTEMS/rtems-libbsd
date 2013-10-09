@@ -34,8 +34,8 @@
  * RFC2393 IP payload compression protocol (IPComp).
  */
 
-#ifndef _NETIPSEC_IPCOMP_HH_
-#define _NETIPSEC_IPCOMP_HH_
+#ifndef _NETIPSEC_IPCOMP_H_
+#define _NETIPSEC_IPCOMP_H_
 
 struct ipcomp {
 	u_int8_t comp_nxt;	/* Next Header */
@@ -52,4 +52,4 @@ struct ipcomp {
 #define IPCOMP_MAX	4
 
 #define IPCOMP_CPI_NEGOTIATE_MIN	256
-#endif /*_NETIPSEC_IPCOMP_HH_*/
+#endif /*_NETIPSEC_IPCOMP_H_*/

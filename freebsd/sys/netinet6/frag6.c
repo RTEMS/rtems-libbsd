@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -31,34 +31,34 @@
  *	$KAME: frag6.c,v 1.33 2002/01/07 11:34:48 kjc Exp $
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet/in_systm.h>	/* for ECN definitions */
-#include <freebsd/netinet/ip.h>		/* for ECN definitions */
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet/icmp6.h>
+#include <netinet/in_systm.h>	/* for ECN definitions */
+#include <netinet/ip.h>		/* for ECN definitions */
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 /*
  * Define it to get a correct behavior on per-interface statistics.

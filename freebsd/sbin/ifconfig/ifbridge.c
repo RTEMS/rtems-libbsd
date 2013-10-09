@@ -38,7 +38,7 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
@@ -48,11 +48,7 @@ static const char rcsid[] =
 
 #include <net/ethernet.h>
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_bridgevar.h>
-#else
 #include <net/if_bridgevar.h>
-#endif
 #include <net/route.h>
 
 #include <ctype.h>
@@ -64,10 +60,6 @@ static const char rcsid[] =
 #include <errno.h>
 
 #include "ifconfig.h"
-
-#ifdef __rtems__
-#include <freebsd/sys/sockio.h>
-#endif
 
 #define PV2ID(pv, epri, eaddr)  do {		\
 		epri     = pv >> 48;		\

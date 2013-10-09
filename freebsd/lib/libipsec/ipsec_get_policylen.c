@@ -32,18 +32,12 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/types.h>
-#include <sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
 
-#ifdef __rtems__
-#include <freebsd/netipsec/ipsec.h>
-
-#include <freebsd/net/pfkeyv2.h>
-#else
 #include <netipsec/ipsec.h>
 
 #include <net/pfkeyv2.h>
-#endif
 #include "ipsec_strerror.h"
 
 int

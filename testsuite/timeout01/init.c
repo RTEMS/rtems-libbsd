@@ -35,7 +35,7 @@
 
 #include <rtems.h>
 
-#include <freebsd/bsd.h>
+#include <rtems/bsd/bsd.h>
 
 #include "timeout_test.h"
 #include "timeout_helper.h"

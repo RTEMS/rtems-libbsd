@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_MACHINE_PSL_HH_
-#define	_MACHINE_PSL_HH_
+#ifndef	_MACHINE_PSL_H_
+#define	_MACHINE_PSL_H_
 
 #if defined(E500)
 /*
@@ -117,4 +117,4 @@
 #define	PSL_USERSTATIC	(PSL_USERSET | PSL_IP | 0x87c0008c)
 
 #endif	/* if defined(E500) */
-#endif	/* _MACHINE_PSL_HH_ */
+#endif	/* _MACHINE_PSL_H_ */

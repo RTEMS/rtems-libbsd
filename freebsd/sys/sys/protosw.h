@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_PROTOSW_HH_
-#define _SYS_PROTOSW_HH_
+#ifndef _SYS_PROTOSW_H_
+#define _SYS_PROTOSW_H_
 
 /* Forward declare these structures referenced from prototypes below. */
 struct mbuf;

@@ -35,17 +35,10 @@
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <net/route.h>
-#ifdef __rtems__
-#include <freebsd/net/pfkeyv2.h>
-#include <freebsd/netipsec/keydb.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netipsec/ipsec.h>
-#else
 #include <net/pfkeyv2.h>
 #include <netipsec/keydb.h>
 #include <netinet/in.h>
 #include <netipsec/ipsec.h>
-#endif
 
 #include <stdlib.h>
 #include <limits.h>
@@ -55,7 +48,7 @@
 
 #ifdef __rtems__
 /* XXX - Jennifer doesn't know where to get this from */
-YY_BUFFER_STATE yy_current_buffer; 
+static YY_BUFFER_STATE yy_current_buffer;
 #endif
 
 #include "y.tab.h"

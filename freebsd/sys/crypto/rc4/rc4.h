@@ -37,8 +37,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_CRYPTO_RC4_RC4_HH_
-#define _SYS_CRYPTO_RC4_RC4_HH_
+#ifndef _SYS_CRYPTO_RC4_RC4_H_
+#define _SYS_CRYPTO_RC4_RC4_H_
 
 struct rc4_state {
 	u_char	perm[256];

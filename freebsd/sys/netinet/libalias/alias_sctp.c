@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2008
@@ -73,24 +73,24 @@
 /* $FreeBSD$ */
 
 #ifdef _KERNEL
-#include <freebsd/machine/stdarg.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/netinet/libalias/alias_sctp.h>
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
-#include <freebsd/netinet/sctp_crc32.h>
-#include <freebsd/machine/in_cksum.h>
+#include <machine/stdarg.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/syslog.h>
+#include <netinet/libalias/alias_sctp.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
+#include <netinet/sctp_crc32.h>
+#include <machine/in_cksum.h>
 #else
-#include <freebsd/local/alias_sctp.h>
-#include <freebsd/arpa/inet.h>
-#include <freebsd/local/alias.h>
-#include <freebsd/local/alias_local.h>
-#include <freebsd/machine/in_cksum.h>
-#include <freebsd/sys/libkern.h>
+#include <rtems/bsd/local/alias_sctp.h>
+#include <arpa/inet.h>
+#include <rtems/bsd/local/alias.h>
+#include <rtems/bsd/local/alias_local.h>
+#include <machine/in_cksum.h>
+#include <sys/libkern.h>
 #endif //#ifdef _KERNEL
 
 /* ----------------------------------------------------------------------
@@ -185,11 +185,11 @@ void SctpShowAliasStats(struct libalias *la);
 
 MALLOC_DEFINE(M_SCTPNAT, "sctpnat", "sctp nat dbs");
 /* Use kernel allocator. */
-#ifdef _SYS_MALLOC_HH_
+#ifdef _SYS_MALLOC_H_
 #define	sn_malloc(x)	malloc(x, M_SCTPNAT, M_NOWAIT|M_ZERO)
 #define	sn_calloc(n,x)	sn_malloc(x * n)
 #define	sn_free(x)	free(x, M_SCTPNAT)
-#endif// #ifdef _SYS_MALLOC_HH_
+#endif// #ifdef _SYS_MALLOC_H_
 
 #else //#ifdef	_KERNEL
 #define	sn_malloc(x)	malloc(x)

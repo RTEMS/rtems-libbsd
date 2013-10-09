@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -74,39 +74,39 @@
  *     indefinitely.  See in6_rtqtimo() below for the exact mechanism.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/callout.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/sysctl.h>
+#include <sys/queue.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/mbuf.h>
+#include <sys/rwlock.h>
+#include <sys/syslog.h>
+#include <sys/callout.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/route.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/in_var.h>
+#include <netinet/in.h>
+#include <netinet/ip_var.h>
+#include <netinet/in_var.h>
 
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
 
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet6/nd6.h>
+#include <netinet/icmp6.h>
+#include <netinet6/nd6.h>
 
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_seq.h>
-#include <freebsd/netinet/tcp_timer.h>
-#include <freebsd/netinet/tcp_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
 
 extern int	in6_inithead(void **head, int off);
 #ifdef VIMAGE

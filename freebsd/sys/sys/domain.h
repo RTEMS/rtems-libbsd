@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_DOMAIN_HH_
-#define _SYS_DOMAIN_HH_
+#ifndef _SYS_DOMAIN_H_
+#define _SYS_DOMAIN_H_
 
 /*
  * Structure per communications domain.
@@ -103,4 +103,4 @@ void		vnet_domain_uninit(void *);
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_DOMAIN_HH_ */
+#endif /* !_SYS_DOMAIN_H_ */

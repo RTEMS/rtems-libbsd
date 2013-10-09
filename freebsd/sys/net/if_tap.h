@@ -35,8 +35,8 @@
  * $Id: if_tap.h,v 0.7 2000/07/12 04:12:51 max Exp $
  */
 
-#ifndef _NET_IF_TAP_HH_
-#define _NET_IF_TAP_HH_
+#ifndef _NET_IF_TAP_H_
+#define _NET_IF_TAP_H_
 
 /* refer to if_tapvar.h for the softc stuff */
 
@@ -71,4 +71,4 @@ struct tapinfo {
 #define VMIO_SIOCBRIDGE		_IO('V', 6)
 #define VMIO_SIOCNETIF		_IO('V', 7)
 
-#endif /* !_NET_IF_TAP_HH_ */
+#endif /* !_NET_IF_TAP_H_ */

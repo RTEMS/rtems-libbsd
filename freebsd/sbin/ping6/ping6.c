@@ -110,10 +110,10 @@ static const char rcsid[] =
  * network attached to 1 or more interfaces)
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -140,13 +140,8 @@ static const char rcsid[] =
 #endif
 
 #ifdef IPSEC
-#ifdef __rtems__
-#include <freebsd/netipsec/ah.h>
-#include <freebsd/netipsec/ipsec.h>
-#else
 #include <netipsec/ah.h>
 #include <netipsec/ipsec.h>
-#endif
 #endif
 
 #include <md5.h>

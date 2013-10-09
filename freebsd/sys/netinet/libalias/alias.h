@@ -36,12 +36,12 @@
  * distribution.
  */
 
-#ifndef _ALIAS_HH_
-#define	_ALIAS_HH_
+#ifndef _ALIAS_H_
+#define	_ALIAS_H_
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 #define LIBALIAS_BUF_SIZE 128
 #ifdef	_KERNEL
@@ -227,6 +227,6 @@ struct mbuf    *m_megapullup(struct mbuf *, int);
 #define	PKT_ALIAS_UNRESOLVED_FRAGMENT	3
 #define	PKT_ALIAS_FOUND_HEADER_FRAGMENT	4
 
-#endif				/* !_ALIAS_HH_ */
+#endif				/* !_ALIAS_H_ */
 
 /* lint -restore */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1995 Terrence R. Lambert
@@ -43,53 +43,53 @@
  *	@(#)init_main.c	8.9 (Berkeley) 1/21/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_init_path.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_init_path.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/exec.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/vnode.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/reboot.h>
-#include <freebsd/sys/sched.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/vmmeter.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/cpuset.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/exec.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/jail.h>
+#include <sys/ktr.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mount.h>
+#include <sys/mutex.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
+#include <sys/systm.h>
+#include <sys/signalvar.h>
+#include <sys/vnode.h>
+#include <sys/sysent.h>
+#include <sys/reboot.h>
+#include <sys/sched.h>
+#include <sys/sx.h>
+#include <sys/sysproto.h>
+#include <sys/vmmeter.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/malloc.h>
+#include <sys/conf.h>
+#include <sys/cpuset.h>
 
-#include <freebsd/machine/cpu.h>
+#include <machine/cpu.h>
 
-#include <freebsd/security/audit/audit.h>
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/audit/audit.h>
+#include <security/mac/mac_framework.h>
 
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_param.h>
-#include <freebsd/vm/pmap.h>
-#include <freebsd/vm/vm_map.h>
-#include <freebsd/sys/copyright.h>
+#include <vm/vm.h>
+#include <vm/vm_param.h>
+#include <vm/pmap.h>
+#include <vm/vm_map.h>
+#include <sys/copyright.h>
 
-#include <freebsd/ddb/ddb.h>
-#include <freebsd/ddb/db_sym.h>
+#include <ddb/ddb.h>
+#include <ddb/db_sym.h>
 
 void mi_startup(void);				/* Should be elsewhere */
 

@@ -35,15 +35,15 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_SYSTM_HH_
-#define	_SYS_SYSTM_HH_
+#ifndef _SYS_SYSTM_H_
+#define	_SYS_SYSTM_H_
 
-#include <freebsd/machine/atomic.h>
-#include <freebsd/machine/cpufunc.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/stdint.h>		/* for people using printf mainly */
+#include <machine/atomic.h>
+#include <machine/cpufunc.h>
+#include <sys/callout.h>
+#include <sys/cdefs.h>
+#include <sys/queue.h>
+#include <sys/stdint.h>		/* for people using printf mainly */
 
 extern int cold;		/* nonzero if we are doing a cold boot */
 extern int rebooting;		/* boot() has been called. */
@@ -279,7 +279,7 @@ struct timeval;
 void	adjust_timeout_calltodo(struct timeval *time_change);
 #endif /* APM_FIXUP_CALLTODO */
 
-#include <freebsd/sys/libkern.h>
+#include <sys/libkern.h>
 
 /* Initialize the world */
 void	consinit(void);
@@ -420,4 +420,4 @@ bitcount32(uint32_t x)
 	return (x);
 }
 
-#endif /* !_SYS_SYSTM_HH_ */
+#endif /* !_SYS_SYSTM_H_ */

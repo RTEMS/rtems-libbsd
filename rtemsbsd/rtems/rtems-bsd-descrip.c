@@ -32,27 +32,27 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/namei.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
+#include <sys/conf.h>
+#include <sys/domain.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/filio.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+#include <sys/mutex.h>
+#include <sys/namei.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
 
 /*
  * This routine is not supported in the RTEMS interface

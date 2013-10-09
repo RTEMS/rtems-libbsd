@@ -29,12 +29,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_RMLOCK_HH_
-#define _SYS_RMLOCK_HH_
+#ifndef _SYS_RMLOCK_H_
+#define _SYS_RMLOCK_H_
 
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_rmlock.h>
+#include <sys/mutex.h>
+#include <sys/_lock.h>
+#include <sys/_rmlock.h>
 
 #ifdef _KERNEL
 
@@ -68,7 +68,7 @@ void	_rm_runlock(struct rmlock *rm,  struct rm_priotracker *tracker);
  * Public interface for lock operations.
  */
 #ifndef LOCK_DEBUG
-#error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/rmlock.h>
+#error LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/rmlock.h>
 #endif
 
 #if LOCK_DEBUG > 0
@@ -135,4 +135,4 @@ struct rm_args_flags {
 	    rm_destroy, (rm))
 
 #endif /* _KERNEL */
-#endif /* !_SYS_RMLOCK_HH_ */
+#endif /* !_SYS_RMLOCK_H_ */

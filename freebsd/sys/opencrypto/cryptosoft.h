@@ -22,8 +22,8 @@
  * PURPOSE.
  */
 
-#ifndef _CRYPTO_CRYPTOSOFT_HH_
-#define _CRYPTO_CRYPTOSOFT_HH_
+#ifndef _CRYPTO_CRYPTOSOFT_H_
+#define _CRYPTO_CRYPTOSOFT_H_
 
 /* Software session entry */
 struct swcr_data {
@@ -64,4 +64,4 @@ extern u_int8_t hmac_ipad_buffer[];
 extern u_int8_t hmac_opad_buffer[];
 #endif /* _KERNEL */
 
-#endif /* _CRYPTO_CRYPTO_HH_ */
+#endif /* _CRYPTO_CRYPTO_H_ */

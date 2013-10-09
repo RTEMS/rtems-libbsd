@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_82541_HH_
-#define _E1000_82541_HH_
+#ifndef _E1000_82541_H_
+#define _E1000_82541_H_
 
 #define NVM_WORD_SIZE_BASE_SHIFT_82541 (NVM_WORD_SIZE_BASE_SHIFT + 1)
 

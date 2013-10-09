@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$NetBSD: mii_physubr.c,v 1.5 1999/08/03 19:41:49 drochner Exp $	*/
 
@@ -32,28 +32,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * Subroutines common to all PHYs.
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/bus.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/module.h>
+#include <sys/bus.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/if_media.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
 
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 /*
  * Media to register setting conversion table.  Order matters.

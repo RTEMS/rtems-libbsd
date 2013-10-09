@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1993
@@ -29,53 +29,53 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #if !defined(KLD_MODULE)
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_sctp.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_sctp.h>
 #ifndef INET
 #error "IPDIVERT requires INET."
 #endif
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/rwlock.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/netisr.h> 
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/netisr.h> 
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 #ifdef SCTP
-#include <freebsd/netinet/sctp_crc32.h>
+#include <netinet/sctp_crc32.h>
 #endif
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 /*
  * Divert sockets

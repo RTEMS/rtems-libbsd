@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: altq_rmclass.c,v 1.18 2003/11/06 06:32:53 kjc Exp $	*/
@@ -42,39 +42,39 @@
 #ident "@(#)rm_class.c  1.48     97/12/05 SMI"
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
-#include <freebsd/local/opt_altq.h>
+#include <rtems/bsd/local/opt_altq.h>
 #if (__FreeBSD__ != 2)
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet.h>
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet6.h>
 #endif
 #endif
 #endif /* __FreeBSD__ || __NetBSD__ */
 #ifdef ALTQ_CBQ	/* cbq is enabled by ALTQ_CBQ option in opt_altq.h */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/time.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/time.h>
 #ifdef ALTQ3_COMPAT
-#include <freebsd/sys/kernel.h>
+#include <sys/kernel.h>
 #endif
 
-#include <freebsd/net/if.h>
+#include <net/if.h>
 #ifdef ALTQ3_COMPAT
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #endif
 
-#include <freebsd/altq/altq.h>
-#include <freebsd/altq/altq_rmclass.h>
-#include <freebsd/altq/altq_rmclass_debug.h>
-#include <freebsd/altq/altq_red.h>
-#include <freebsd/altq/altq_rio.h>
+#include <altq/altq.h>
+#include <altq/altq_rmclass.h>
+#include <altq/altq_rmclass_debug.h>
+#include <altq/altq_red.h>
+#include <altq/altq_rio.h>
 
 /*
  * Local Macros

@@ -26,10 +26,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_HID_HH_
-#define	_USB_HID_HH_
+#ifndef _USB_HID_H_
+#define	_USB_HID_H_
 
-#include <freebsd/dev/usb/usb_endian.h>
+#include <dev/usb/usb_endian.h>
 
 #define	UR_GET_HID_DESCRIPTOR	0x06
 #define	UDESC_HID		0x21
@@ -241,4 +241,4 @@ usb_error_t usbd_req_get_hid_desc(struct usb_device *udev, struct mtx *mtx,
 	    void **descp, uint16_t *sizep, struct malloc_type *mem,
 	    uint8_t iface_index);
 #endif					/* _KERNEL */
-#endif					/* _USB_HID_HH_ */
+#endif					/* _USB_HID_H_ */

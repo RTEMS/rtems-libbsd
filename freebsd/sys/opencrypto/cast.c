@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*      $OpenBSD: cast.c,v 1.2 2000/06/06 06:49:47 deraadt Exp $       */
 /*-
@@ -8,12 +8,12 @@
  *	Released 1997.10.11
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/types.h>
-#include <freebsd/opencrypto/cast.h>
-#include <freebsd/opencrypto/castsb.h>
+#include <rtems/bsd/sys/types.h>
+#include <opencrypto/cast.h>
+#include <opencrypto/castsb.h>
 
 /* Macros to access 8-bit bytes out of a 32-bit word */
 #define U_INT8_Ta(x) ( (u_int8_t) (x>>24) )

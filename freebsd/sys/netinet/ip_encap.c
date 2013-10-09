@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: ip_encap.c,v 1.41 2001/03/15 08:35:08 itojun Exp $	*/
 
@@ -58,41 +58,41 @@
  */
 /* XXX is M_NETADDR correct? */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_mrouting.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_mrouting.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/mbuf.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/protosw.h>
+#include <sys/queue.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/route.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_encap.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_encap.h>
 
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/ip6protosw.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/ip6protosw.h>
 #endif
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
 static MALLOC_DEFINE(M_NETADDR, "encap_export_host", "Export host address structure");
 
 static void encap_add(struct encaptab *);

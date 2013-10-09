@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_SF_BUF_HH_
-#define _SYS_SF_BUF_HH_
+#ifndef _SYS_SF_BUF_H_
+#define _SYS_SF_BUF_H_
 
-#include <freebsd/machine/sf_buf.h>
+#include <machine/sf_buf.h>
 
 /*
  * Options to sf_buf_alloc() are specified through its flags argument.  This
@@ -53,4 +53,4 @@ struct sf_buf *
 void	sf_buf_free(struct sf_buf *sf);
 void	sf_buf_mext(void *addr, void *args);
 
-#endif /* !_SYS_SF_BUF_HH_ */
+#endif /* !_SYS_SF_BUF_H_ */

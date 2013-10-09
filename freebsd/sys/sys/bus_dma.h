@@ -69,10 +69,10 @@
  */
 /* $FreeBSD$ */
 
-#ifndef _BUS_DMA_HH_
-#define _BUS_DMA_HH_
+#ifndef _BUS_DMA_H_
+#define _BUS_DMA_H_
 
-#include <freebsd/sys/_bus_dma.h>
+#include <sys/_bus_dma.h>
 
 /*
  * Machine independent interface for mapping physical addresses to peripheral
@@ -274,4 +274,4 @@ void _bus_dmamap_unload(bus_dma_tag_t dmat, bus_dmamap_t map);
 
 #endif /* __sparc64__ */
 
-#endif /* _BUS_DMA_HH_ */
+#endif /* _BUS_DMA_H_ */

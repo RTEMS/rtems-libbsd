@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETATALK_AT_EXTERN_HH_
-#define	_NETATALK_AT_EXTERN_HH_
+#ifndef _NETATALK_AT_EXTERN_H_
+#define	_NETATALK_AT_EXTERN_H_
 
 extern struct mtx	aarptab_mtx;
 
@@ -64,4 +64,4 @@ int		 ddp_route(struct mbuf *m, struct route *ro);
 struct ddpcb	*ddp_search(struct sockaddr_at *, struct sockaddr_at *,
 		    struct at_ifaddr *);
 
-#endif /* !_NETATALK_AT_EXTERN_HH_ */
+#endif /* !_NETATALK_AT_EXTERN_H_ */

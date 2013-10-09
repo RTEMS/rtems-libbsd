@@ -29,17 +29,17 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_SX_HH_
-#define	_SYS_SX_HH_
+#ifndef	_SYS_SX_H_
+#define	_SYS_SX_H_
 
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_sx.h>
+#include <sys/_lock.h>
+#include <sys/_sx.h>
 
 #ifdef	_KERNEL
-#include <freebsd/sys/pcpu.h>
-#include <freebsd/sys/lock_profile.h>
-#include <freebsd/sys/lockstat.h>
-#include <freebsd/machine/atomic.h>
+#include <sys/pcpu.h>
+#include <sys/lock_profile.h>
+#include <sys/lockstat.h>
+#include <machine/atomic.h>
 #endif
 
 #ifdef __rtems__
@@ -210,7 +210,7 @@ __sx_sunlock(struct sx *sx, const char *file, int line)
  * Public interface for lock operations.
  */
 #ifndef LOCK_DEBUG
-#error	"LOCK_DEBUG not defined, include <sys/lock.h> before <sys/sx.h>"
+#error	"LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/sx.h>"
 #endif
 #if	(LOCK_DEBUG > 0) || defined(SX_NOINLINE)
 #define	sx_xlock(sx)		(void)_sx_xlock((sx), 0, LOCK_FILE, LOCK_LINE)
@@ -304,4 +304,4 @@ int sx_xlocked(struct sx *sx);
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_SX_HH_ */
+#endif /* !_SYS_SX_H_ */

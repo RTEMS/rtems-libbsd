@@ -20,7 +20,7 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <freebsd/machine/rtems-bsd-sysinit.h>
+#include <machine/rtems-bsd-sysinit.h>
 
 #include <bsp.h>
 

@@ -61,8 +61,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_IP6_VAR_HH_
-#define _NETINET6_IP6_VAR_HH_
+#ifndef _NETINET6_IP6_VAR_H_
+#define _NETINET6_IP6_VAR_H_
 
 /*
  * IP6 reassembly queue structure.  Each fragment
@@ -441,4 +441,4 @@ u_int32_t ip6_randomid __P((void));
 u_int32_t ip6_randomflowlabel __P((void));
 #endif /* _KERNEL */
 
-#endif /* !_NETINET6_IP6_VAR_HH_ */
+#endif /* !_NETINET6_IP6_VAR_H_ */

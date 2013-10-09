@@ -44,8 +44,8 @@
  * http://www.TrustedBSD.org/
  */
 
-#ifndef _SYS_MAC_HH_
-#define	_SYS_MAC_HH_
+#ifndef _SYS_MAC_H_
+#define	_SYS_MAC_H_
 
 #ifndef _POSIX_MAC
 #define	_POSIX_MAC
@@ -108,4 +108,4 @@ __END_DECLS
 
 #endif /* !_KERNEL */
 
-#endif /* !_SYS_MAC_HH_ */
+#endif /* !_SYS_MAC_H_ */

@@ -26,8 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef _ALTQ_ALTQ_HH_
-#define	_ALTQ_ALTQ_HH_
+#ifndef _ALTQ_ALTQ_H_
+#define	_ALTQ_ALTQ_H_
 
 #if 0
 /*
@@ -39,10 +39,10 @@
 #endif
 
 #ifdef ALTQ3_COMPAT
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/ioccom.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/netinet/in.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/ioccom.h>
+#include <sys/queue.h>
+#include <netinet/in.h>
 
 #ifndef IFNAMSIZ
 #define	IFNAMSIZ	16
@@ -198,7 +198,7 @@ struct pktcntr {
 #endif /* ALTQ3_COMPAT */
 
 #ifdef _KERNEL
-#include <freebsd/altq/altq_var.h>
+#include <altq/altq_var.h>
 #endif
 
-#endif /* _ALTQ_ALTQ_HH_ */
+#endif /* _ALTQ_ALTQ_H_ */

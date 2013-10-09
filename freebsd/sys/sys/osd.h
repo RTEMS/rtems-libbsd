@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_OSD_HH_
-#define _SYS_OSD_HH_
+#ifndef _SYS_OSD_H_
+#define _SYS_OSD_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Lock key:
@@ -98,4 +98,4 @@ void osd_exit(u_int type, struct osd *osd);
 
 #endif	/* _KERNEL */
 
-#endif	/* !_SYS_OSD_HH_ */
+#endif	/* !_SYS_OSD_H_ */

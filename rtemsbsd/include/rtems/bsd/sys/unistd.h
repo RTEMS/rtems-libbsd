@@ -30,11 +30,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_UNISTD_HH_
-#define	_SYS_UNISTD_HH_
+#ifndef _RTEMS_BSD_SYS_UNISTD_H_
+#define	_RTEMS_BSD_SYS_UNISTD_H_
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
+#ifndef __rtems__
 /*
  * POSIX options and option groups we unconditionally do or don't
  * implement.  Those options which are implemented (or not) entirely
@@ -158,6 +159,9 @@
 
 /* From OpenSolaris, used by SEEK_DATA/SEEK_HOLE. */
 #define	_PC_MIN_HOLE_SIZE	21
+#else /* __rtems__ */
+#include <unistd.h>
+#endif /* __rtems__ */
 
 #if __BSD_VISIBLE
 /*
@@ -185,4 +189,4 @@
 
 #endif /* __BSD_VISIBLE */
 
-#endif /* !_SYS_UNISTD_HH_ */
+#endif /* !_RTEMS_BSD_SYS_UNISTD_H_ */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1999,2000,2001 Jonathan Lemon <jlemon@FreeBSD.org>
@@ -28,46 +28,46 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ktrace.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/kthread.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/event.h>
-#include <freebsd/sys/eventvar.h>
-#include <freebsd/sys/poll.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/sigio.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/stat.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/taskqueue.h>
-#include <freebsd/sys/uio.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/filio.h>
+#include <sys/fcntl.h>
+#include <sys/kthread.h>
+#include <sys/selinfo.h>
+#include <sys/queue.h>
+#include <sys/event.h>
+#include <sys/eventvar.h>
+#include <sys/poll.h>
+#include <sys/protosw.h>
+#include <sys/sigio.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/stat.h>
+#include <sys/sysctl.h>
+#include <sys/sysproto.h>
+#include <sys/syscallsubr.h>
+#include <sys/taskqueue.h>
+#include <sys/uio.h>
 #ifdef KTRACE
-#include <freebsd/sys/ktrace.h>
+#include <sys/ktrace.h>
 #endif
 
 #ifndef __rtems__
-##include <freebsd/vm/uma.h>
+##include <vm/uma.h>
 #endif /* __rtems__ */
 
 static MALLOC_DEFINE(M_KQUEUE, "kqueue", "memory for kqueue system");
@@ -702,7 +702,7 @@ done2:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct kevent_args {
 	int	fd;
 	const struct kevent *changelist;

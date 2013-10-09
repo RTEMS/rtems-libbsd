@@ -26,12 +26,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_ENDIAN_HH_
-#define _SYS_ENDIAN_HH_
+#ifndef _SYS_ENDIAN_H_
+#define _SYS_ENDIAN_H_
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/_types.h>
-#include <freebsd/machine/endian.h>
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/_types.h>
+#include <machine/rtems-bsd-endian.h>
 
 #ifndef _UINT16_T_DECLARED
 typedef	__uint16_t	uint16_t;
@@ -197,4 +197,4 @@ le64enc(void *pp, uint64_t u)
 	le32enc(p + 4, u >> 32);
 }
 
-#endif	/* _SYS_ENDIAN_HH_ */
+#endif	/* _SYS_ENDIAN_H_ */

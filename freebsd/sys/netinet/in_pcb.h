@@ -31,17 +31,17 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IN_PCB_HH_
-#define _NETINET_IN_PCB_HH_
+#ifndef _NETINET_IN_PCB_H_
+#define _NETINET_IN_PCB_H_
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/_rwlock.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
+#include <sys/_rwlock.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/net/vnet.h>
+#include <sys/rwlock.h>
+#include <net/vnet.h>
 #endif
 
 #define	in6pcb		inpcb	/* for KAME src sync over BSD*'s */
@@ -237,7 +237,7 @@ struct inpcb {
  * Interface exported to userland by various protocols which use inpcbs.  Hack
  * alert -- only define if struct xsocket is in scope.
  */
-#ifdef _SYS_SOCKETVAR_HH_
+#ifdef _SYS_SOCKETVAR_H_
 struct	xinpcb {
 	size_t	xi_len;		/* length of this structure */
 	struct	inpcb xi_inp;
@@ -251,7 +251,7 @@ struct	xinpgen {
 	inp_gen_t xig_gen;	/* generation count at this time */
 	so_gen_t xig_sogen;	/* socket generation count at this time */
 };
-#endif /* _SYS_SOCKETVAR_HH_ */
+#endif /* _SYS_SOCKETVAR_H_ */
 
 struct inpcbport {
 	LIST_ENTRY(inpcbport) phd_hash;
@@ -522,4 +522,4 @@ void	in_pcbsosetlabel(struct socket *so);
 void	ipport_tick(void *xtp);
 #endif /* _KERNEL */
 
-#endif /* !_NETINET_IN_PCB_HH_ */
+#endif /* !_NETINET_IN_PCB_H_ */

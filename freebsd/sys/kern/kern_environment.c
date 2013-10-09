@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1998 Michael Smith
@@ -36,25 +36,25 @@
  * the kernel.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/libkern.h>
-#include <freebsd/sys/kenv.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/proc.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/priv.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/sysent.h>
+#include <sys/sysproto.h>
+#include <sys/libkern.h>
+#include <sys/kenv.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 static MALLOC_DEFINE(M_KENV, "kenv", "kernel environment");
 

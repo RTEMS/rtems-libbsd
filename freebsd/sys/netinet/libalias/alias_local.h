@@ -43,24 +43,24 @@
  * <updated several times by original author and Eivind Eklund>
  */
 
-#ifndef _ALIAS_LOCAL_HH_
-#define	_ALIAS_LOCAL_HH_
+#ifndef _ALIAS_LOCAL_H_
+#define	_ALIAS_LOCAL_H_
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/sysctl.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
+#include <sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
 
 /* XXX: LibAliasSetTarget() uses this constant. */
 #define	INADDR_NONE	0xffffffff
 
-#include <freebsd/netinet/libalias/alias_sctp.h>
+#include <netinet/libalias/alias_sctp.h>
 #else
-#include <freebsd/local/alias_sctp.h>
+#include <rtems/bsd/local/alias_sctp.h>
 #endif
 
 /* Sizes of input and output link tables */
@@ -368,7 +368,7 @@ enum alias_tcp_state {
 	ALIAS_TCP_STATE_DISCONNECTED
 };
 
-#if defined(_NETINET_IP_HH_)
+#if defined(_NETINET_IP_H_)
 static __inline void *
 ip_next(struct ip *iphdr)
 {
@@ -377,7 +377,7 @@ ip_next(struct ip *iphdr)
 }
 #endif
 
-#if defined(_NETINET_TCP_HH_)
+#if defined(_NETINET_TCP_H_)
 static __inline void *
 tcp_next(struct tcphdr *tcphdr)
 {
@@ -386,7 +386,7 @@ tcp_next(struct tcphdr *tcphdr)
 }
 #endif
 
-#if defined(_NETINET_UDP_HH_)
+#if defined(_NETINET_UDP_H_)
 static __inline void *
 udp_next(struct udphdr *udphdr)
 {
@@ -394,4 +394,4 @@ udp_next(struct udphdr *udphdr)
 }
 #endif
 
-#endif				/* !_ALIAS_LOCAL_HH_ */
+#endif				/* !_ALIAS_LOCAL_H_ */

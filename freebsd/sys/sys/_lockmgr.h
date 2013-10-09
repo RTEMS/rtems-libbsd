@@ -28,11 +28,11 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__LOCKMGR_HH_
-#define	_SYS__LOCKMGR_HH_
+#ifndef _SYS__LOCKMGR_H_
+#define	_SYS__LOCKMGR_H_
 
 #ifdef DEBUG_LOCKS
-#include <freebsd/sys/_stack.h>
+#include <sys/_stack.h>
 #endif
 
 struct lock {

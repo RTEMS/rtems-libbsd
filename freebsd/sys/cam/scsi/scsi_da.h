@@ -52,7 +52,7 @@
 #ifndef	_SCSI_SCSI_DA_H
 #define _SCSI_SCSI_DA_H 1
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 struct scsi_rezero_unit
 {

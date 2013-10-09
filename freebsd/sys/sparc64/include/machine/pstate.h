@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_MACHINE_PSTATE_HH_
-#define	_MACHINE_PSTATE_HH_
+#ifndef	_MACHINE_PSTATE_H_
+#define	_MACHINE_PSTATE_H_
 
 #define	PSTATE_AG		(1<<0)
 #define	PSTATE_IE		(1<<1)
@@ -60,4 +60,4 @@
 #define	PSTATE_SECURE(pstate) \
 	(((pstate) & ~(PSTATE_AM|PSTATE_MM_MASK)) == (PSTATE_IE|PSTATE_PEF))
 
-#endif /* !_MACHINE_PSTATE_HH_ */
+#endif /* !_MACHINE_PSTATE_H_ */

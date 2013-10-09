@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004-2009 Robert N. M. Watson
@@ -52,22 +52,22 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/netisr.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/netisr.h>
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/at_var.h>
-#include <freebsd/netatalk/ddp_var.h>
-#include <freebsd/netatalk/ddp_pcb.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/at_var.h>
+#include <netatalk/ddp_var.h>
+#include <netatalk/ddp_pcb.h>
+#include <netatalk/at_extern.h>
 
 static u_long	ddp_sendspace = DDP_MAXSZ; /* Max ddp size + 1 (ddp_type) */
 static u_long	ddp_recvspace = 10 * (587 + sizeof(struct sockaddr_at));

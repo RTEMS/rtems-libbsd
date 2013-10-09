@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_MANAGE_HH_
-#define _E1000_MANAGE_HH_
+#ifndef _E1000_MANAGE_H_
+#define _E1000_MANAGE_H_
 
 bool e1000_check_mng_mode_generic(struct e1000_hw *hw);
 bool e1000_enable_tx_pkt_filtering_generic(struct e1000_hw *hw);

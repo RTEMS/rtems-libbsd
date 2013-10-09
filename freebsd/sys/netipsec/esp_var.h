@@ -36,8 +36,8 @@
  * PURPOSE.
  */
 
-#ifndef _NETIPSEC_ESP_VAR_HH_
-#define _NETIPSEC_ESP_VAR_HH_
+#ifndef _NETIPSEC_ESP_VAR_H_
+#define _NETIPSEC_ESP_VAR_H_
 
 /*
  * These define the algorithm indices into the histogram.  They're
@@ -78,4 +78,4 @@ VNET_DECLARE(struct espstat, espstat);
 #define	V_esp_enable	VNET(esp_enable)
 #define	V_espstat	VNET(espstat)
 #endif /* _KERNEL */
-#endif /*_NETIPSEC_ESP_VAR_HH_*/
+#endif /*_NETIPSEC_ESP_VAR_H_*/

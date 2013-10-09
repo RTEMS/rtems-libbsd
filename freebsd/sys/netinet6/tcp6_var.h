@@ -59,8 +59,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP6_VAR_HH_
-#define _NETINET_TCP6_VAR_HH_
+#ifndef _NETINET_TCP6_VAR_H_
+#define _NETINET_TCP6_VAR_H_
 
 #ifdef _KERNEL
 #ifdef SYSCTL_DECL
@@ -80,4 +80,4 @@ extern struct	pr_usrreqs tcp6_usrreqs;
 
 #endif /* _KERNEL */
 
-#endif /* _NETINET_TCP6_VAR_HH_ */
+#endif /* _NETINET_TCP6_VAR_H_ */

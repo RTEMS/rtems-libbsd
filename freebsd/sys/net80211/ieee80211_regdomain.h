@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_REGDOMAIN_HH_
-#define _NET80211_IEEE80211_REGDOMAIN_HH_
+#ifndef _NET80211_IEEE80211_REGDOMAIN_H_
+#define _NET80211_IEEE80211_REGDOMAIN_H_
 
 /*
  * 802.11 regulatory domain definitions.
@@ -279,4 +279,4 @@ struct ieee80211_regdomain_req;
 int	ieee80211_setregdomain(struct ieee80211vap *,
 	    struct ieee80211_regdomain_req *);
 #endif /* defined(__KERNEL__) || defined(_KERNEL) */
-#endif /* _NET80211_IEEE80211_REGDOMAIN_HH_ */
+#endif /* _NET80211_IEEE80211_REGDOMAIN_H_ */

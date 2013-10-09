@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_SYNCACHE_HH_
-#define _NETINET_TCP_SYNCACHE_HH_
+#ifndef _NETINET_TCP_SYNCACHE_H_
+#define _NETINET_TCP_SYNCACHE_H_
 #ifdef _KERNEL
 
 struct toeopt;
@@ -124,4 +124,4 @@ struct tcp_syncache {
 };
 
 #endif /* _KERNEL */
-#endif /* !_NETINET_TCP_SYNCACHE_HH_ */
+#endif /* !_NETINET_TCP_SYNCACHE_H_ */

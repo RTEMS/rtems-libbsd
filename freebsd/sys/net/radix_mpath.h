@@ -34,8 +34,8 @@
  */
 /* $FreeBSD$ */
 
-#ifndef _NET_RADIX_MPATH_HH_
-#define	_NET_RADIX_MPATH_HH_
+#ifndef _NET_RADIX_MPATH_H_
+#define	_NET_RADIX_MPATH_H_
 
 #ifdef _KERNEL
 /*
@@ -60,4 +60,4 @@ int	rn6_mpath_inithead(void **, int);
 
 #endif
 
-#endif /* _NET_RADIX_MPATH_HH_ */
+#endif /* _NET_RADIX_MPATH_H_ */

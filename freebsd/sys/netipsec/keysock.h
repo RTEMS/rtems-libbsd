@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETIPSEC_KEYSOCK_HH_
-#define _NETIPSEC_KEYSOCK_HH_
+#ifndef _NETIPSEC_KEYSOCK_H_
+#define _NETIPSEC_KEYSOCK_H_
 
 /* statistics for pfkey socket */
 struct pfkeystat {
@@ -80,4 +80,4 @@ extern int key_sendup __P((struct socket *, struct sadb_msg *, u_int, int));
 extern int key_sendup_mbuf __P((struct socket *, struct mbuf *, int));
 #endif /* _KERNEL */
 
-#endif /*_NETIPSEC_KEYSOCK_HH_*/
+#endif /*_NETIPSEC_KEYSOCK_H_*/

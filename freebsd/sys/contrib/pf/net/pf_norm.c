@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: pf_norm.c,v 1.107 2006/04/16 00:59:52 pascoe Exp $ */
 
@@ -28,11 +28,11 @@
  */
 
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_pf.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_pf.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 #ifdef DEV_PFLOG
@@ -41,46 +41,46 @@ __FBSDID("$FreeBSD$");
 #define	NPFLOG 0
 #endif
 #else
-#include <freebsd/local/pflog.h>
+#include <rtems/bsd/local/pflog.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/time.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/filio.h>
+#include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/time.h>
 #ifndef __FreeBSD__
-#include <freebsd/sys/pool.h>
+#include <sys/pool.h>
 
-#include <freebsd/dev/rndvar.h>
+#include <dev/rndvar.h>
 #endif
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if_pflog.h>
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/bpf.h>
+#include <net/route.h>
+#include <net/if_pflog.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_seq.h>
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/ip_icmp.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/udp.h>
+#include <netinet/ip_icmp.h>
 
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif /* INET6 */
 
-#include <freebsd/net/pfvar.h>
+#include <net/pfvar.h>
 
 #ifndef __FreeBSD__
-#include <freebsd/inttypes.h>
+#include <inttypes.h>
 
 struct pf_frent {
 	LIST_ENTRY(pf_frent) fr_next;

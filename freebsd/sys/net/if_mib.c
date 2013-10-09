@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright 1996 Massachusetts Institute of Technology
@@ -31,15 +31,15 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_mib.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_mib.h>
+#include <net/vnet.h>
 
 /*
  * A sysctl(3) MIB for generic interface information.  This information

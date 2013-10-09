@@ -50,8 +50,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETATALK_DDP_PCB_HH_
-#define	_NETATALK_DDP_PCB_HH_
+#ifndef _NETATALK_DDP_PCB_H_
+#define	_NETATALK_DDP_PCB_H_
 
 int	at_pcballoc(struct socket *so);
 int	at_pcbconnect(struct ddpcb *ddp, struct sockaddr *addr, 
@@ -81,4 +81,4 @@ void	at_sockaddr(struct ddpcb *ddp, struct sockaddr **addr);
 #define	DDP_LIST_SUNLOCK()	mtx_unlock(&ddp_list_mtx)
 #define	DDP_LIST_SLOCK_ASSERT()	mtx_assert(&ddp_list_mtx, MA_OWNED)
 
-#endif /* !_NETATALK_DDP_PCB_HH_ */
+#endif /* !_NETATALK_DDP_PCB_H_ */

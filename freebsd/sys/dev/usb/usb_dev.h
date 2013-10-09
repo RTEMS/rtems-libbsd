@@ -24,14 +24,14 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_DEV_HH_
-#define	_USB_DEV_HH_
+#ifndef _USB_DEV_H_
+#define	_USB_DEV_H_
 
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/poll.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/proc.h>
+#include <sys/file.h>
+#include <sys/selinfo.h>
+#include <sys/poll.h>
+#include <sys/signalvar.h>
+#include <sys/proc.h>
 
 struct usb_fifo;
 struct usb_mbuf;
@@ -151,4 +151,4 @@ void	usb_free_symlink(struct usb_symlink *ps);
 int	usb_read_symlink(uint8_t *user_ptr, uint32_t startentry,
 	    uint32_t user_len);
 
-#endif					/* _USB_DEV_HH_ */
+#endif					/* _USB_DEV_H_ */

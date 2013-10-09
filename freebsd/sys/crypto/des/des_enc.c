@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: des_enc.c,v 1.1 2001/09/10 04:03:58 itojun Exp $	*/
 
@@ -61,11 +61,11 @@
  * [including the GNU Public Licence.]
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/types.h>
-#include <freebsd/crypto/des/des_locl.h>
+#include <rtems/bsd/sys/types.h>
+#include <crypto/des/des_locl.h>
 
 extern	const DES_LONG des_SPtrans[8][64];
 

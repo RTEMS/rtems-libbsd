@@ -26,19 +26,14 @@
  * $FreeBSD$
  */
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
 #include <net/if.h>
 #include <netinet/in.h>
-#ifdef __rtems__
-#include <freebsd/net/pfvar.h>
-#include <freebsd/net/if_pfsync.h>
-#else
 #include <net/pfvar.h>
 #include <net/if_pfsync.h>
-#endif
 #include <net/route.h>
 #include <arpa/inet.h>
 

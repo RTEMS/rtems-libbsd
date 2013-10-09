@@ -29,24 +29,24 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_MUTEX_HH_
-#define _SYS_MUTEX_HH_
+#ifndef _SYS_MUTEX_H_
+#define _SYS_MUTEX_H_
 
 #ifndef LOCORE
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/pcpu.h>
-#include <freebsd/sys/lock_profile.h>
-#include <freebsd/sys/lockstat.h>
-#include <freebsd/machine/atomic.h>
-#include <freebsd/machine/cpufunc.h>
+#include <sys/pcpu.h>
+#include <sys/lock_profile.h>
+#include <sys/lockstat.h>
+#include <machine/atomic.h>
+#include <machine/cpufunc.h>
 #endif	/* _KERNEL_ */
 #endif	/* !LOCORE */
 
-#include <freebsd/machine/mutex.h>
+#include <machine/mutex.h>
 
 #ifdef _KERNEL
 
@@ -337,7 +337,7 @@ extern struct mtx_pool *mtxpool_lockbuilder;
 extern struct mtx_pool *mtxpool_sleep;
 
 #ifndef LOCK_DEBUG
-#error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/mutex.h>
+#error LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/mutex.h>
 #endif
 #if LOCK_DEBUG > 0 || defined(MUTEX_NOINLINE)
 #define	mtx_lock_flags(m, opts)						\
@@ -471,4 +471,4 @@ struct mtx_args {
 
 #endif	/* _KERNEL */
 #endif	/* !LOCORE */
-#endif	/* _SYS_MUTEX_HH_ */
+#endif	/* _SYS_MUTEX_H_ */

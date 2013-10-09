@@ -28,9 +28,13 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__LOCK_HH_
-#define	_SYS__LOCK_HH_
+#ifndef _SYS__LOCK_H_
+#define	_SYS__LOCK_H_
 
+#ifdef __rtems__
+#include <rtems.h>
+#include <rtems/chain.h>
+#endif
 struct lock_object {
 #ifdef __rtems__
 	rtems_chain_node lo_node;
@@ -44,4 +48,4 @@ struct lock_object {
 #endif /* __rtems__ */
 };
 
-#endif /* !_SYS__LOCK_HH_ */
+#endif /* !_SYS__LOCK_H_ */

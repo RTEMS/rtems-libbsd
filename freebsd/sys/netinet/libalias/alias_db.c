@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -145,34 +145,34 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <freebsd/machine/stdarg.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/syslog.h>
+#include <machine/stdarg.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/rwlock.h>
+#include <sys/syslog.h>
 #else
-#include <freebsd/stdarg.h>
-#include <freebsd/stdlib.h>
-#include <freebsd/stdio.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/unistd.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/time.h>
+#include <unistd.h>
 #endif
 
-#include <freebsd/sys/socket.h>
-#include <freebsd/netinet/tcp.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
-#include <freebsd/netinet/libalias/alias_mod.h>
-#include <freebsd/net/if.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias_mod.h>
+#include <net/if.h>
 #else
-#include <freebsd/local/alias.h>
-#include <freebsd/local/alias_local.h>
-#include <freebsd/local/alias_mod.h>
+#include <rtems/bsd/local/alias.h>
+#include <rtems/bsd/local/alias_local.h>
+#include <rtems/bsd/local/alias_mod.h>
 #endif
 
 static		LIST_HEAD(, libalias) instancehead = LIST_HEAD_INITIALIZER(instancehead);
@@ -2646,10 +2646,10 @@ LibAliasCheckNewLink(struct libalias *la)
   ****************/
 
 /* Firewall include files */
-#include <freebsd/net/if.h>
-#include <freebsd/netinet/ip_fw.h>
-#include <freebsd/string.h>
-#include <freebsd/err.h>
+#include <net/if.h>
+#include <netinet/ip_fw.h>
+#include <string.h>
+#include <err.h>
 
 /*
  * helper function, updates the pointer to cmd with the length

@@ -50,7 +50,6 @@ static const char rcsid[] =
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #ifdef _KERNEL
 #include <sys/param.h>
 #include <rpc/types.h>

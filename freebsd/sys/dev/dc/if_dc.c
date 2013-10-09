@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997, 1998, 1999
@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -95,47 +95,47 @@ __FBSDID("$FreeBSD$");
  */
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
-#include <freebsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/endian.h>
+#include <sys/systm.h>
+#include <sys/sockio.h>
+#include <sys/mbuf.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_vlan_var.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/ethernet.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
+#include <net/if_vlan_var.h>
 
-#include <freebsd/net/bpf.h>
+#include <net/bpf.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/rman.h>
+#include <machine/bus.h>
+#include <machine/resource.h>
+#include <sys/bus.h>
+#include <sys/rman.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
 
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcivar.h>
 
 #define DC_USEIOSPACE
 
-#include <freebsd/dev/dc/if_dcreg.h>
+#include <dev/dc/if_dcreg.h>
 
 #ifdef __sparc64__
-#include <freebsd/dev/ofw/openfirm.h>
-#include <freebsd/machine/ofw_machdep.h>
+#include <dev/ofw/openfirm.h>
+#include <machine/ofw_machdep.h>
 #endif
 
 MODULE_DEPEND(dc, pci, 1, 1, 1);
@@ -146,7 +146,7 @@ MODULE_DEPEND(dc, miibus, 1, 1, 1);
  * "device miibus" is required in kernel config.  See GENERIC if you get
  * errors here.
  */
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 /*
  * Various supported device vendors/types and their names.

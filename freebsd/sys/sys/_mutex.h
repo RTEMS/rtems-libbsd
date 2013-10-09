@@ -28,8 +28,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__MUTEX_HH_
-#define	_SYS__MUTEX_HH_
+#ifndef _SYS__MUTEX_H_
+#define	_SYS__MUTEX_H_
 
 /*
  * Sleep/spin mutex.
@@ -41,4 +41,4 @@ struct mtx {
 #endif /* __rtems__ */
 };
 
-#endif /* !_SYS__MUTEX_HH_ */
+#endif /* !_SYS__MUTEX_H_ */

@@ -26,11 +26,11 @@
  * $FreeBSD$
  */
 
-#ifndef	_MACHINE_CPUFUNC_HH_
-#define	_MACHINE_CPUFUNC_HH_
+#ifndef	_MACHINE_CPUFUNC_H_
+#define	_MACHINE_CPUFUNC_H_
 
-#include <freebsd/machine/asi.h>
-#include <freebsd/machine/pstate.h>
+#include <machine/asi.h>
+#include <machine/pstate.h>
 
 struct thread;
 
@@ -265,4 +265,4 @@ ffs(int mask)
 #undef LDNC_GEN
 #undef STNC_GEN
 
-#endif /* !_MACHINE_CPUFUNC_HH_ */
+#endif /* !_MACHINE_CPUFUNC_H_ */

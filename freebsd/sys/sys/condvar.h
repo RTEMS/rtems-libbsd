@@ -26,11 +26,11 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_CONDVAR_HH_
-#define	_SYS_CONDVAR_HH_
+#ifndef	_SYS_CONDVAR_H_
+#define	_SYS_CONDVAR_H_
 
 #ifndef	LOCORE
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 struct lock_object;
 struct thread;
@@ -43,6 +43,10 @@ TAILQ_HEAD(cv_waitq, thread);
  * and is held across calls to cv_signal() and cv_broadcast().  It is an
  * optimization to avoid looking up the sleep queue if there are no waiters.
  */
+#ifdef __rtems__
+#include <pthread.h>
+#include <rtems/chain.h>
+#endif
 struct cv {
 #ifdef __rtems__
 	rtems_chain_node cv_node;
@@ -84,4 +88,4 @@ void	cv_broadcastpri(struct cv *cvp, int pri);
 
 #endif	/* _KERNEL */
 #endif	/* !LOCORE */
-#endif	/* _SYS_CONDVAR_HH_ */
+#endif	/* _SYS_CONDVAR_H_ */

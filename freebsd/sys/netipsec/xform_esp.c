@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$	*/
 /*	$OpenBSD: ip_esp.c,v 1.69 2001/06/26 06:18:59 angelos Exp $ */
@@ -37,46 +37,46 @@
  * MERCHANTABILITY OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR
  * PURPOSE.
  */
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/random.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/kernel.h>
+#include <sys/random.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_ecn.h>
-#include <freebsd/netinet/ip6.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_ecn.h>
+#include <netinet/ip6.h>
 
-#include <freebsd/net/route.h>
-#include <freebsd/netipsec/ipsec.h>
-#include <freebsd/netipsec/ah.h>
-#include <freebsd/netipsec/ah_var.h>
-#include <freebsd/netipsec/esp.h>
-#include <freebsd/netipsec/esp_var.h>
-#include <freebsd/netipsec/xform.h>
+#include <net/route.h>
+#include <netipsec/ipsec.h>
+#include <netipsec/ah.h>
+#include <netipsec/ah_var.h>
+#include <netipsec/esp.h>
+#include <netipsec/esp_var.h>
+#include <netipsec/xform.h>
 
 #ifdef INET6
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netipsec/ipsec6.h>
-#include <freebsd/netinet6/ip6_ecn.h>
+#include <netinet6/ip6_var.h>
+#include <netipsec/ipsec6.h>
+#include <netinet6/ip6_ecn.h>
 #endif
 
-#include <freebsd/netipsec/key.h>
-#include <freebsd/netipsec/key_debug.h>
+#include <netipsec/key.h>
+#include <netipsec/key_debug.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/xform.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/xform.h>
 
 VNET_DEFINE(int, esp_enable) = 1;
 VNET_DEFINE(struct espstat, espstat);

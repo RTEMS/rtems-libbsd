@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2009 Bruce Simpson.
@@ -49,37 +49,37 @@
  * MULTICAST Revision: 3.5.1.4
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/condvar.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/module.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/ktr.h>
+#include <sys/condvar.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_options.h>
-#include <freebsd/netinet/igmp.h>
-#include <freebsd/netinet/igmp_var.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_options.h>
+#include <netinet/igmp.h>
+#include <netinet/igmp_var.h>
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #ifndef KTR_IGMPV3
 #define KTR_IGMPV3 KTR_INET

@@ -28,8 +28,8 @@
  * $FreeBSD$
  */
 
-#ifndef _PPP_DEFS_HH_
-#define _PPP_DEFS_HH_
+#ifndef _PPP_DEFS_H_
+#define _PPP_DEFS_H_
 
 /*
  * The basic PPP frame.
@@ -155,4 +155,4 @@ struct ppp_idle {
 #endif
 #endif
 
-#endif /* _PPP_DEFS_HH_ */
+#endif /* _PPP_DEFS_H_ */

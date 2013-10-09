@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -61,53 +61,53 @@
  *	@(#)raw_ip.c	8.2 (Berkeley) 1/4/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ipsec.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/jail.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sx.h>
+#include <sys/syslog.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_pcb.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_pcb.h>
 
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6protosw.h>
-#include <freebsd/netinet6/ip6_mroute.h>
-#include <freebsd/netinet6/in6_pcb.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/nd6.h>
-#include <freebsd/netinet6/raw_ip6.h>
-#include <freebsd/netinet6/scope6_var.h>
+#include <netinet/icmp6.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6protosw.h>
+#include <netinet6/ip6_mroute.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/nd6.h>
+#include <netinet6/raw_ip6.h>
+#include <netinet6/scope6_var.h>
 
 #ifdef IPSEC
-#include <freebsd/netipsec/ipsec.h>
-#include <freebsd/netipsec/ipsec6.h>
+#include <netipsec/ipsec.h>
+#include <netipsec/ipsec6.h>
 #endif /* IPSEC */
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
 #define	satosin6(sa)	((struct sockaddr_in6 *)(sa))
 #define	ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))

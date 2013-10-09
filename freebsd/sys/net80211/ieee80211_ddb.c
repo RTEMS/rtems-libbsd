@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007-2009 Sam Leffler, Errno Consulting
@@ -25,38 +25,38 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
 #ifdef DDB
 /*
  * IEEE 802.11 DDB support
  */
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h> 
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h> 
+#include <sys/kernel.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
+#include <net/ethernet.h>
+#include <net/vnet.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
+#include <net80211/ieee80211_var.h>
 #ifdef IEEE80211_SUPPORT_TDMA
-#include <freebsd/net80211/ieee80211_tdma.h>
+#include <net80211/ieee80211_tdma.h>
 #endif
 #ifdef IEEE80211_SUPPORT_MESH
-#include <freebsd/net80211/ieee80211_mesh.h>
+#include <net80211/ieee80211_mesh.h>
 #endif
 
-#include <freebsd/ddb/ddb.h>
-#include <freebsd/ddb/db_sym.h>
+#include <ddb/ddb.h>
+#include <ddb/db_sym.h>
 
 #define DB_PRINTSYM(prefix, name, addr) do { \
 	db_printf("%s%-25s : ",  prefix, name); \

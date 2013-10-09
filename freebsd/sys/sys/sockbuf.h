@@ -30,12 +30,12 @@
  *
  * $FreeBSD$
  */
-#ifndef _SYS_SOCKBUF_HH_
-#define _SYS_SOCKBUF_HH_
-#include <freebsd/sys/selinfo.h>		/* for struct selinfo */
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/_sx.h>
+#ifndef _SYS_SOCKBUF_H_
+#define _SYS_SOCKBUF_H_
+#include <sys/selinfo.h>		/* for struct selinfo */
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
+#include <sys/_sx.h>
 
 #define	SB_MAX		(256*1024)	/* default for max chars in sockbuf */
 
@@ -220,4 +220,4 @@ void	sblastmbufchk(struct sockbuf *, const char *, int);
 
 #endif /* _KERNEL */
 
-#endif /* _SYS_SOCKBUF_HH_ */
+#endif /* _SYS_SOCKBUF_H_ */

@@ -31,35 +31,35 @@
  *
  */
 
-#ifndef _NET_PFVAR_HH_
-#define _NET_PFVAR_HH_
+#ifndef _NET_PFVAR_H_
+#define _NET_PFVAR_H_
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/tree.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/queue.h>
+#include <sys/tree.h>
 #ifdef __FreeBSD__
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/sx.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/sx.h>
 #else
-#include <freebsd/sys/rwlock.h>
+#include <sys/rwlock.h>
 #endif
 
-#include <freebsd/net/radix.h>
-#include <freebsd/net/route.h>
+#include <net/radix.h>
+#include <net/route.h>
 #ifdef __FreeBSD__
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/pf_mtag.h>
-#include <freebsd/vm/uma.h>
+#include <net/if_clone.h>
+#include <net/pf_mtag.h>
+#include <vm/uma.h>
 #else
-#include <freebsd/netinet/ip_ipsp.h>
+#include <netinet/ip_ipsp.h>
 #endif
 
 #ifdef __FreeBSD__
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 #endif
 
-#include <freebsd/netinet/tcp_fsm.h>
+#include <netinet/tcp_fsm.h>
 
 struct ip;
 struct ip6_hdr;
@@ -1863,4 +1863,4 @@ int	pf_osfp_match(struct pf_osfp_enlist *, pf_osfp_t);
 struct pf_os_fingerprint *
 	pf_osfp_validate(void);
 
-#endif /* _NET_PFVAR_HH_ */
+#endif /* _NET_PFVAR_H_ */

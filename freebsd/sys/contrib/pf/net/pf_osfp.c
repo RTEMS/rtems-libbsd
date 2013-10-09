@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: pf_osfp.c,v 1.12 2006/12/13 18:14:10 itojun Exp $ */
 
@@ -20,28 +20,28 @@
  */
 
 #ifdef __FreeBSD__
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/socket.h>
 #ifdef _KERNEL
-# include <freebsd/sys/systm.h>
+# include <sys/systm.h>
 #endif /* _KERNEL */
-#include <freebsd/sys/mbuf.h>
+#include <sys/mbuf.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/pfvar.h>
+#include <net/if.h>
+#include <net/pfvar.h>
 
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #ifdef _KERNEL
-#include <freebsd/netinet6/in6_var.h>
+#include <netinet6/in6_var.h>
 #endif
 
 #ifdef _KERNEL
@@ -57,12 +57,12 @@ typedef struct pool pool_t;
 #else
 /* Userland equivalents so we can lend code to tcpdump et al. */
 
-# include <freebsd/arpa/inet.h>
-# include <freebsd/errno.h>
-# include <freebsd/stdio.h>
-# include <freebsd/stdlib.h>
-# include <freebsd/string.h>
-# include <freebsd/netdb.h>
+# include <arpa/inet.h>
+# include <errno.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <netdb.h>
 # define pool_t			int
 # define pool_get(pool, flags)	malloc(*(pool))
 # define pool_put(pool, item)	free(item)
@@ -73,7 +73,7 @@ typedef struct pool pool_t;
 # endif
 
 # ifdef PFDEBUG
-#  include <freebsd/sys/stdarg.h>
+#  include <sys/stdarg.h>
 #  define DPFPRINTF(format, x...)	fprintf(stderr, format , ##x)
 # else
 #  define DPFPRINTF(format, x...)	((void)0)

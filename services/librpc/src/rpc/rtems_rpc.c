@@ -6,7 +6,6 @@
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <rtems.h>
 #include <stdlib.h>

@@ -66,25 +66,16 @@
  * SUCH DAMAGE.
  */
 
-
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
-
-#ifdef __rtems__
-#define  _KERNEL
-#include <freebsd/net/if_media.h>
-#undef _KERNEL
-#else
 #include <net/if_media.h>
-#endif
-
 #include <net/route.h>
 
 #include <ctype.h>

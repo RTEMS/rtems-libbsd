@@ -31,7 +31,7 @@
 
 /* $KAME: sctputil.h,v 1.15 2005/03/06 16:04:19 itojun Exp $	 */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #ifndef __sctputil_h__
 #define __sctputil_h__

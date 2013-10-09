@@ -32,10 +32,10 @@
  * $FreeBSD$
  */
 
-#ifndef _DEV_MII_MIIVAR_HH_
-#define	_DEV_MII_MIIVAR_HH_
+#ifndef _DEV_MII_MIIVAR_H_
+#define	_DEV_MII_MIIVAR_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Media Independent Interface configuration defintions.
@@ -257,4 +257,4 @@ int mii_phy_dev_probe(device_t dev, const struct mii_phydesc *mpd, int mrv);
 void	ukphy_status(struct mii_softc *);
 #endif /* _KERNEL */
 
-#endif /* _DEV_MII_MIIVAR_HH_ */
+#endif /* _DEV_MII_MIIVAR_H_ */

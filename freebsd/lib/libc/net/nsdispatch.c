@@ -73,14 +73,12 @@
 __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/stat.h>
 
 #ifndef __rtems__
 #include <dlfcn.h>
-#else
-#include <stdint.h>
-#endif
+#endif /* __rtems__ */
 #include <errno.h>
 #include <fcntl.h>
 #define _NS_PRIVATE

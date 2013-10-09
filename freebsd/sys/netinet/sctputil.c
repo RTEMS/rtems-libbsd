@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
@@ -32,25 +32,25 @@
 
 /* $KAME: sctputil.c,v 1.37 2005/03/07 23:26:09 itojun Exp $	 */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/netinet/sctp_os.h>
-#include <freebsd/netinet/sctp_pcb.h>
-#include <freebsd/netinet/sctputil.h>
-#include <freebsd/netinet/sctp_var.h>
-#include <freebsd/netinet/sctp_sysctl.h>
+#include <netinet/sctp_os.h>
+#include <netinet/sctp_pcb.h>
+#include <netinet/sctputil.h>
+#include <netinet/sctp_var.h>
+#include <netinet/sctp_sysctl.h>
 #ifdef INET6
 #endif
-#include <freebsd/netinet/sctp_header.h>
-#include <freebsd/netinet/sctp_output.h>
-#include <freebsd/netinet/sctp_uio.h>
-#include <freebsd/netinet/sctp_timer.h>
-#include <freebsd/netinet/sctp_indata.h>/* for sctp_deliver_data() */
-#include <freebsd/netinet/sctp_auth.h>
-#include <freebsd/netinet/sctp_asconf.h>
-#include <freebsd/netinet/sctp_cc_functions.h>
-#include <freebsd/netinet/sctp_bsd_addr.h>
+#include <netinet/sctp_header.h>
+#include <netinet/sctp_output.h>
+#include <netinet/sctp_uio.h>
+#include <netinet/sctp_timer.h>
+#include <netinet/sctp_indata.h>/* for sctp_deliver_data() */
+#include <netinet/sctp_auth.h>
+#include <netinet/sctp_asconf.h>
+#include <netinet/sctp_cc_functions.h>
+#include <netinet/sctp_bsd_addr.h>
 
 
 #ifndef KTR_SCTP
@@ -6813,11 +6813,11 @@ sctp_log_trace(uint32_t subsys, const char *str SCTP_UNUSED, uint32_t a, uint32_
  * so we can do UDP tunneling. In
  * the mean-time, we return error
  */
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
-#include <freebsd/sys/proc.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
+#include <sys/proc.h>
 #ifdef INET6
-#include <freebsd/netinet6/sctp6_var.h>
+#include <netinet6/sctp6_var.h>
 #endif
 
 static void

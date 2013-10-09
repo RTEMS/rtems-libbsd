@@ -65,7 +65,7 @@
 /* External definitions for functions in inet(3). */
 
 #include <sys/cdefs.h>
-#include <sys/_types.h>
+#include <rtems/bsd/sys/_types.h>
 
 /* Required for byteorder(3) functions. */
 #include <machine/endian.h>

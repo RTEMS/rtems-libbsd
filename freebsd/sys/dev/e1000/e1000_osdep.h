@@ -33,28 +33,28 @@
 /*$FreeBSD$*/
 
 
-#ifndef _FREEBSD_OS_HH_
-#define _FREEBSD_OS_HH_
+#ifndef _FREEBSD_OS_H_
+#define _FREEBSD_OS_H_
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/pmap.h>
-#include <freebsd/machine/clock.h>
-#include <freebsd/dev/pci/pcivar.h>
-#include <freebsd/dev/pci/pcireg.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/bus.h>
+#include <machine/bus.h>
+#include <sys/rman.h>
+#include <machine/resource.h>
+#include <vm/vm.h>
+#include <vm/pmap.h>
+#include <machine/clock.h>
+#include <dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
 
 
 #define ASSERT(x) if(!(x)) panic("EM: x")
@@ -216,5 +216,5 @@ struct e1000_osdep
     bus_space_write_2(((struct e1000_osdep *)(hw)->back)->flash_bus_space_tag, \
         ((struct e1000_osdep *)(hw)->back)->flash_bus_space_handle, reg, value)
 
-#endif  /* _FREEBSD_OS_HH_ */
+#endif  /* _FREEBSD_OS_H_ */
 

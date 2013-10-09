@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_MQUEUE_HH_
-#define _SYS_MQUEUE_HH_
+#ifndef _SYS_MQUEUE_H_
+#define _SYS_MQUEUE_H_
 
 struct mq_attr {
 	long	mq_flags;	/* Message queue flags. */

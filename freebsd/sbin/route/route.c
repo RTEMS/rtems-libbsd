@@ -45,21 +45,19 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
 #include <net/if.h>
 #include <net/route.h>
 #include <net/if_dl.h>
 #include <netinet/in.h>
-
 #include <netinet/if_ether.h>
 #include <netatalk/at.h>
-
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -73,13 +71,6 @@ static const char rcsid[] =
 #include <sysexits.h>
 #include <unistd.h>
 #include <ifaddrs.h>
-
-#ifdef __rtems__
-#ifndef _PATH_DEVNULL
-#define _PATH_DEVNULL "/dev/null"
-#endif
-#endif
-
 
 struct keytab {
 	char	*kt_cp;

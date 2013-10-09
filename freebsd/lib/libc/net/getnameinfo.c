@@ -49,7 +49,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_dl.h>

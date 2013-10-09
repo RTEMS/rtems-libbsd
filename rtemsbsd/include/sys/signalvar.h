@@ -1,1 +1,1 @@
-/* deliberately empty file */
+/* EMPTY */

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1990,1991 Regents of The University of Michigan.
@@ -27,27 +27,27 @@
  *	netatalk@umich.edu
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/netinet/in.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/sockio.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/priv.h>
+#include <sys/rwlock.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in.h>
 #undef s_net
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/if_ether.h>
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/at_var.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/at_var.h>
+#include <netatalk/at_extern.h>
 
 struct rwlock		 at_ifaddr_rw;
 struct at_ifaddrhead	 at_ifaddrhead;

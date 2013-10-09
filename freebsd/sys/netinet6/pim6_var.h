@@ -38,8 +38,8 @@
  * Modified by Pavlin Ivanov Radoslavov, USC/ISI, May 1998
  */
 
-#ifndef _NETINET6_PIM6_VAR_HH_
-#define _NETINET6_PIM6_VAR_HH_
+#ifndef _NETINET6_PIM6_VAR_H_
+#define _NETINET6_PIM6_VAR_H_
 
 struct pim6stat {
 	u_quad_t pim6s_rcv_total;	/* total PIM messages received	*/
@@ -65,4 +65,4 @@ int pim6_input __P((struct mbuf **, int*, int));
 	{ 0, 0 }, \
 	{ 0, 0 }, \
 }
-#endif /* _NETINET6_PIM6_VAR_HH_ */
+#endif /* _NETINET6_PIM6_VAR_H_ */

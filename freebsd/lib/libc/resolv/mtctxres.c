@@ -107,8 +107,10 @@ ___mtctxres(void) {
 	mtctxres_t	*mt;
 
 #ifdef _LIBC
+#ifndef __rtems__
 	if (pthread_main_np() != 0)
 		return (&sharedctx);
+#endif /* __rtems__ */
 #endif
 
 	/*

@@ -29,8 +29,8 @@ $FreeBSD$
 
 ***************************************************************************/
 
-#ifndef	_NET_FLOWTABLE_HH_
-#define	_NET_FLOWTABLE_HH_
+#ifndef	_NET_FLOWTABLE_H_
+#define	_NET_FLOWTABLE_H_
 
 #ifdef	_KERNEL
 

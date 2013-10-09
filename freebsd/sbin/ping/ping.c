@@ -66,32 +66,21 @@ __FBSDID("$FreeBSD$");
  *	This program has to run SUID to ROOT to access the ICMP socket.
  */
 
-#include <sys/param.h>		/* NB: we rely on this for <sys/types.h> */
+#include <rtems/bsd/sys/param.h>		/* NB: we rely on this for <sys/types.h> */
 #include <sys/socket.h>
 #include <sys/sysctl.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 #include <sys/uio.h>
 
 #include <netinet/in.h>
-#ifdef __rtems__
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_icmp.h>
-#include <freebsd/netinet/ip_var.h>
-#else
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/ip_var.h>
-#endif
 #include <arpa/inet.h>
 
 #ifdef IPSEC
-#ifdef __rtems__
-#include <freebsd/netipsec/ipsec.h>
-#else
 #include <netipsec/ipsec.h>
-#endif
 #endif /*IPSEC*/
 
 #include <ctype.h>
@@ -105,10 +94,6 @@ __FBSDID("$FreeBSD$");
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
-
-#ifdef __rtems__
-#define select  __select
-#endif
 
 #define	INADDR_LEN	((int)sizeof(in_addr_t))
 #define	TIMEVAL_LEN	((int)sizeof(struct tv32))

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2000
@@ -32,38 +32,38 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * Driver for the Broadcom BCM54xx/57xx 1000baseTX PHY.
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/bus.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/socket.h>
+#include <sys/bus.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/ethernet.h>
+#include <net/if_media.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
-#include <freebsd/local/miidevs.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
+#include <rtems/bsd/local/miidevs.h>
 
-#include <freebsd/dev/mii/brgphyreg.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/dev/bge/if_bgereg.h>
-#include <freebsd/dev/bce/if_bcereg.h>
+#include <dev/mii/brgphyreg.h>
+#include <net/if_arp.h>
+#include <machine/bus.h>
+#include <dev/bge/if_bgereg.h>
+#include <dev/bce/if_bcereg.h>
 
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcivar.h>
 
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 static int brgphy_probe(device_t);
 static int brgphy_attach(device_t);

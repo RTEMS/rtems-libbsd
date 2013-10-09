@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1995
@@ -31,59 +31,59 @@
  *	@(#)tcp_output.c	8.4 (Berkeley) 5/24/95
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipsec.h>
-#include <freebsd/local/opt_tcpdebug.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_tcpdebug.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/domain.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mbuf.h>
+#include <sys/mutex.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_options.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_options.h>
 #ifdef INET6
-#include <freebsd/netinet6/in6_pcb.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet6/in6_pcb.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
 #endif
-#include <freebsd/netinet/tcp.h>
+#include <netinet/tcp.h>
 #define	TCPOUTFLAGS
-#include <freebsd/netinet/tcp_fsm.h>
-#include <freebsd/netinet/tcp_seq.h>
-#include <freebsd/netinet/tcp_timer.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/tcpip.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
 #ifdef TCPDEBUG
-#include <freebsd/netinet/tcp_debug.h>
+#include <netinet/tcp_debug.h>
 #endif
 
 #ifdef IPSEC
-#include <freebsd/netipsec/ipsec.h>
+#include <netipsec/ipsec.h>
 #endif /*IPSEC*/
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #ifdef notyet
 extern struct mbuf *m_copypack();

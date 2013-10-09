@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2010 Bernhard Schmidt <bschmidt@FreeBSD.org>
@@ -25,27 +25,27 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/if_media.h>
 
 #ifdef INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
 #endif
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_ratectl.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_ratectl.h>
 
 static void
 none_init(struct ieee80211vap *vap)

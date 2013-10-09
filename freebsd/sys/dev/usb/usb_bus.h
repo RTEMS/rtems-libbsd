@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_BUS_HH_
-#define	_USB_BUS_HH_
+#ifndef _USB_BUS_H_
+#define	_USB_BUS_H_
 
 /*
  * The following structure defines the USB explore message sent to the USB
@@ -111,4 +111,4 @@ struct usb_bus {
 	}	scratch[1];
 };
 
-#endif					/* _USB_BUS_HH_ */
+#endif					/* _USB_BUS_H_ */

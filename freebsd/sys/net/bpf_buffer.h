@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_BPF_BUFFER_HH_
-#define	_NET_BPF_BUFFER_HH_
+#ifndef _NET_BPF_BUFFER_H_
+#define	_NET_BPF_BUFFER_H_
 
 #ifndef _KERNEL
 #error "no user-serviceable parts inside"
@@ -47,4 +47,4 @@ int	bpf_buffer_ioctl_sblen(struct bpf_d *d, u_int *i);
 int	bpf_buffer_uiomove(struct bpf_d *d, caddr_t buf, u_int len,
 	    struct uio *uio);
 
-#endif /* !_NET_BPF_BUFFER_HH_ */
+#endif /* !_NET_BPF_BUFFER_H_ */

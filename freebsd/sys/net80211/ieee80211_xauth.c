@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004 Video54 Technologies, Inc.
@@ -26,7 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -41,22 +41,22 @@ __FBSDID("$FreeBSD$");
  * of the available callbacks--the user mode authenticator process works
  * entirely from messages about stations joining and leaving.
  */
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h> 
-#include <freebsd/sys/mbuf.h>   
-#include <freebsd/sys/module.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h> 
+#include <sys/mbuf.h>   
+#include <sys/module.h>
 
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/if_media.h>
+#include <net/ethernet.h>
+#include <net/route.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
+#include <net80211/ieee80211_var.h>
 
 /* XXX number of references from net80211 layer; needed for module code */
 static	int nrefs = 0;

@@ -37,38 +37,38 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-/*#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>*/
+/*#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/jail.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>*/
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/osd.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/taskqueue.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/namei.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/sysproto.h>
+#include <sys/malloc.h>
+#include <sys/osd.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/taskqueue.h>
+#include <sys/fcntl.h>
+#include <sys/jail.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sx.h>
+#include <sys/sysent.h>
+#include <sys/namei.h>
+#include <sys/mount.h>
+#include <sys/queue.h>
+#include <sys/socket.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
 
 #define DEFAULT_HOSTUUID  "00000000-0000-0000-0000-000000000000"
 

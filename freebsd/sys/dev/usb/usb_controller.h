@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_CONTROLLER_HH_
-#define	_USB_CONTROLLER_HH_
+#ifndef _USB_CONTROLLER_H_
+#define	_USB_CONTROLLER_H_
 
 /* defines */
 
@@ -222,4 +222,4 @@ uint16_t usb_isoc_time_expand(struct usb_bus *bus, uint16_t isoc_time_curr);
 uint16_t usbd_fs_isoc_schedule_isoc_time_expand(struct usb_device *udev, struct usb_fs_isoc_schedule **pp_start, struct usb_fs_isoc_schedule **pp_end, uint16_t isoc_time);
 uint8_t	usbd_fs_isoc_schedule_alloc(struct usb_fs_isoc_schedule *fss, uint8_t *pstart, uint16_t len);
 
-#endif					/* _USB_CONTROLLER_HH_ */
+#endif					/* _USB_CONTROLLER_H_ */

@@ -27,8 +27,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _NET_IF_PFSYNC_HH_
-#define _NET_IF_PFSYNC_HH_
+#ifndef _NET_IF_PFSYNC_H_
+#define _NET_IF_PFSYNC_H_
 
 
 #define PFSYNC_ID_LEN	sizeof(u_int64_t)
@@ -372,4 +372,4 @@ int pfsync_update_tdb(struct tdb *, int);
 #endif
 #endif
 
-#endif /* _NET_IF_PFSYNC_HH_ */
+#endif /* _NET_IF_PFSYNC_H_ */

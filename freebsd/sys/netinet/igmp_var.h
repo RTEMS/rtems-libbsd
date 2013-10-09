@@ -34,8 +34,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IGMP_VAR_HH_
-#define _NETINET_IGMP_VAR_HH_
+#ifndef _NETINET_IGMP_VAR_H_
+#define _NETINET_IGMP_VAR_H_
 
 /*
  * Internet Group Management Protocol (IGMP),

@@ -45,14 +45,14 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
-#include <freebsd/machine/rtems-bsd-cache.h>
-#include <freebsd/machine/rtems-bsd-bus-dma.h>
+#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-cache.h>
+#include <machine/rtems-bsd-bus-dma.h>
 
 #include <rtems/malloc.h>
 
-#include <freebsd/sys/malloc.h>
-#include <freebsd/machine/atomic.h>
+#include <sys/malloc.h>
+#include <machine/atomic.h>
 
 #ifdef CPU_DATA_CACHE_ALIGNMENT
   #define CLSZ ((uintptr_t) CPU_DATA_CACHE_ALIGNMENT)

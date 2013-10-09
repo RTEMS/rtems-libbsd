@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_DFS_HH_
-#define _NET80211_IEEE80211_DFS_HH_
+#ifndef _NET80211_IEEE80211_DFS_H_
+#define _NET80211_IEEE80211_DFS_H_
 
 /*
  * 802.11h/DFS definitions.
@@ -54,4 +54,4 @@ void	ieee80211_dfs_cac_clear(struct ieee80211com *,
 void	ieee80211_dfs_notify_radar(struct ieee80211com *,
 		struct ieee80211_channel *);
 struct ieee80211_channel *ieee80211_dfs_pickchannel(struct ieee80211com *);
-#endif /* _NET80211_IEEE80211_DFS_HH_ */
+#endif /* _NET80211_IEEE80211_DFS_H_ */

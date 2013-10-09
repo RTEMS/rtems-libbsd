@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2002-2005, 2009 Jeffrey Roberson <jeff@FreeBSD.org>
@@ -49,7 +49,7 @@
  *	- Investigate cache size adjustments
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /* I should really use ktr.. */
@@ -59,45 +59,44 @@ __FBSDID("$FreeBSD$");
 #define UMA_DEBUG_ALLOC_1 1
 */
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_param.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_param.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sbuf.h>
-#include <freebsd/sys/smp.h>
-#include <freebsd/sys/vmmeter.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/queue.h>
+#include <sys/malloc.h>
+#include <sys/ktr.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/sysctl.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/sbuf.h>
+#include <sys/smp.h>
+#include <sys/vmmeter.h>
 
-#include <freebsd/vm/vm.h>
-#ifndef __rtems__
-#include <freebsd/vm/vm_object.h>
-#include <freebsd/vm/vm_page.h>
-#include <freebsd/vm/vm_param.h>
-#include <freebsd/vm/vm_map.h>
-#include <freebsd/vm/vm_kern.h>
-#include <freebsd/vm/vm_extern.h>
-#else
+#include <vm/vm.h>
+#include <vm/vm_object.h>
+#include <vm/vm_page.h>
+#include <vm/vm_param.h>
+#include <vm/vm_map.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_extern.h>
+#ifdef __rtems__
 void *rtems_page_alloc(int bytes);
 void *rtems_page_find( void *address );
 void rtems_page_free( void *address );
 #endif /* __rtems__ */
-#include <freebsd/vm/uma.h>
-#include <freebsd/vm/uma_int.h>
-#include <freebsd/vm/uma_dbg.h>
+#include <vm/uma.h>
+#include <vm/uma_int.h>
+#include <vm/uma_dbg.h>
 
 #ifndef __rtems__
-#include <freebsd/machine/vmparam.h>
+#include <machine/vmparam.h>
 
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 #endif /* __rtems__ */
 
 /*

@@ -44,13 +44,8 @@
  * for utilities to have to include one of them to include err.h, so we get
  * __va_list from <sys/_types.h> and use it.
  */
-#include <freebsd/bsd.h>
 #include <sys/cdefs.h>
-#ifdef __rtems__
-#include <freebsd/sys/_types.h>
-#else
-#include <sys/_types.h>
-#endif
+#include <rtems/bsd/sys/_types.h>
 
 #ifdef __rtems__
 #include <setjmp.h>

@@ -40,17 +40,17 @@
 /* Necessary to obtain some internal functions */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/proc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/ktr.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/sx.h>
+#include <sys/rwlock.h>
+#include <sys/proc.h>
 
 struct lock_class *lock_classes[LOCK_CLASS_MAX + 1] = {
   &lock_class_mtx_spin,

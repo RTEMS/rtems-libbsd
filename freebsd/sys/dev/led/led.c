@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * ----------------------------------------------------------------------------
@@ -10,21 +10,21 @@
  *
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/ctype.h>
-#include <freebsd/sys/sbuf.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/dev/led/led.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/sx.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/limits.h>
+#include <sys/malloc.h>
+#include <sys/ctype.h>
+#include <sys/sbuf.h>
+#include <sys/queue.h>
+#include <dev/led/led.h>
+#include <sys/uio.h>
+#include <sys/sx.h>
 
 struct ledsc {
 	LIST_ENTRY(ledsc)	list;

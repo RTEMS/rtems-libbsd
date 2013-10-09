@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
@@ -38,33 +38,33 @@
  * PURPOSE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/machine/cpu.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/sysctl.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/kernel.h>
+#include <machine/cpu.h>
 
-#include <freebsd/crypto/blowfish/blowfish.h>
-#include <freebsd/crypto/des/des.h>
-#include <freebsd/crypto/rijndael/rijndael.h>
-#include <freebsd/crypto/camellia/camellia.h>
-#include <freebsd/crypto/sha1.h>
+#include <crypto/blowfish/blowfish.h>
+#include <crypto/des/des.h>
+#include <crypto/rijndael/rijndael.h>
+#include <crypto/camellia/camellia.h>
+#include <crypto/sha1.h>
 
-#include <freebsd/opencrypto/cast.h>
-#include <freebsd/opencrypto/deflate.h>
-#include <freebsd/opencrypto/rmd160.h>
-#include <freebsd/opencrypto/skipjack.h>
+#include <opencrypto/cast.h>
+#include <opencrypto/deflate.h>
+#include <opencrypto/rmd160.h>
+#include <opencrypto/skipjack.h>
 
-#include <freebsd/sys/md5.h>
+#include <sys/md5.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/xform.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/xform.h>
 
 static	int null_setkey(u_int8_t **, u_int8_t *, int);
 static	int des1_setkey(u_int8_t **, u_int8_t *, int);

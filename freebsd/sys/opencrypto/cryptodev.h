@@ -53,10 +53,10 @@
  *
  */
 
-#ifndef _CRYPTO_CRYPTO_HH_
-#define _CRYPTO_CRYPTO_HH_
+#ifndef _CRYPTO_CRYPTO_H_
+#define _CRYPTO_CRYPTO_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 /* Some initial values */
 #define CRYPTO_DRIVERS_INITIAL	4
@@ -429,4 +429,4 @@ extern	void crypto_copydata(int flags, caddr_t buf, int off, int size,
 extern	int crypto_apply(int flags, caddr_t buf, int off, int len,
 	    int (*f)(void *, void *, u_int), void *arg);
 #endif /* _KERNEL */
-#endif /* _CRYPTO_CRYPTO_HH_ */
+#endif /* _CRYPTO_CRYPTO_H_ */

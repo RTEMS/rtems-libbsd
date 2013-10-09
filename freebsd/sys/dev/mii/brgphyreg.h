@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef _DEV_MII_BRGPHYREG_HH_
-#define	_DEV_MII_BRGPHYREG_HH_
+#ifndef _DEV_MII_BRGPHYREG_H_
+#define	_DEV_MII_BRGPHYREG_H_
 
 /*
  * Broadcom BCM5400 registers
@@ -417,4 +417,4 @@
 #define	BRGPHY_INTRS	\
 	~(BRGPHY_IMR_LNK_CHG|BRGPHY_IMR_LSP_CHG|BRGPHY_IMR_DUP_CHG)
 
-#endif /* _DEV_BRGPHY_MIIREG_HH_ */
+#endif /* _DEV_BRGPHY_MIIREG_H_ */

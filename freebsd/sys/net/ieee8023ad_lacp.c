@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$NetBSD: ieee8023ad_lacp.c,v 1.3 2005/12/11 12:24:54 christos Exp $	*/
 
@@ -29,29 +29,29 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h> /* hz */
-#include <freebsd/sys/socket.h> /* for net/if.h */
-#include <freebsd/sys/sockio.h>
-#include <freebsd/machine/stdarg.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/rwlock.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/callout.h>
+#include <sys/mbuf.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h> /* hz */
+#include <sys/socket.h> /* for net/if.h */
+#include <sys/sockio.h>
+#include <machine/stdarg.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/rwlock.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/if_types.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/ethernet.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
 
-#include <freebsd/net/if_lagg.h>
-#include <freebsd/net/ieee8023ad_lacp.h>
+#include <net/if_lagg.h>
+#include <net/ieee8023ad_lacp.h>
 
 /*
  * actor system priority and port priority.

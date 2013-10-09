@@ -26,8 +26,8 @@
  *	$FreeBSD$
  */
 
-#ifndef _NET_FIREWIRE_HH_
-#define _NET_FIREWIRE_HH_
+#ifndef _NET_FIREWIRE_H_
+#define _NET_FIREWIRE_H_
 
 #define FW_ENCAP_UNFRAG		0
 #define FW_ENCAP_FIRST		1
@@ -139,4 +139,4 @@ extern	int	firewire_ioctl(struct ifnet *, u_long, caddr_t);
 
 #endif /* !_KERNEL */
 
-#endif /* !_NET_FIREWIRE_HH_ */
+#endif /* !_NET_FIREWIRE_H_ */

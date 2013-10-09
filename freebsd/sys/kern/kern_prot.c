@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1990, 1991, 1993
@@ -43,45 +43,45 @@
  * System calls related to processes and protection
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 #ifndef __rtems__
-#include <freebsd/sys/acct.h>
-#include <freebsd/sys/kdb.h>
+#include <sys/acct.h>
+#include <sys/kdb.h>
 #endif /* __rtems__ */
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/refcount.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/jail.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/refcount.h>
+#include <sys/sx.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/sysproto.h>
+#include <sys/jail.h>
 #ifndef __rtems__
-#include <freebsd/sys/pioctl.h>
+#include <sys/pioctl.h>
 #endif /* __rtems__ */
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
+#include <sys/resourcevar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
 
 #if defined(INET) || defined(INET6)
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_pcb.h>
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
 #endif
 
-#include <freebsd/security/audit/audit.h>
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/audit/audit.h>
+#include <security/mac/mac_framework.h>
 
 static MALLOC_DEFINE(M_CRED, "cred", "credentials");
 
@@ -92,7 +92,7 @@ static void crextend(struct ucred *cr, int n);
 static void crsetgroups_locked(struct ucred *cr, int ngrp,
     gid_t *groups);
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getpid_args {
 	int	dummy;
 };
@@ -112,7 +112,7 @@ getpid(struct thread *td, struct getpid_args *uap)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getppid_args {
         int     dummy;
 };
@@ -132,7 +132,7 @@ getppid(struct thread *td, struct getppid_args *uap)
 /*
  * Get process group ID; note that POSIX getpgrp takes no parameter.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getpgrp_args {
         int     dummy;
 };
@@ -149,7 +149,7 @@ getpgrp(struct thread *td, struct getpgrp_args *uap)
 }
 
 /* Get an arbitary pid's process group id */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getpgid_args {
 	pid_t	pid;
 };
@@ -181,7 +181,7 @@ getpgid(struct thread *td, struct getpgid_args *uap)
 /*
  * Get an arbitary pid's session id.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getsid_args {
 	pid_t	pid;
 };
@@ -210,7 +210,7 @@ getsid(struct thread *td, struct getsid_args *uap)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getuid_args {
         int     dummy;
 };
@@ -227,7 +227,7 @@ getuid(struct thread *td, struct getuid_args *uap)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct geteuid_args {
         int     dummy;
 };
@@ -241,7 +241,7 @@ geteuid(struct thread *td, struct geteuid_args *uap)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getgid_args {
         int     dummy;
 };
@@ -263,7 +263,7 @@ getgid(struct thread *td, struct getgid_args *uap)
  * via getgroups.  This syscall exists because it is somewhat painful to do
  * correctly in a library function.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getegid_args {
         int     dummy;
 };
@@ -277,7 +277,7 @@ getegid(struct thread *td, struct getegid_args *uap)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getgroups_args {
 	u_int	gidsetsize;
 	gid_t	*gidset;
@@ -327,7 +327,7 @@ kern_getgroups(struct thread *td, u_int *ngrp, gid_t *groups)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setsid_args {
         int     dummy;
 };
@@ -384,7 +384,7 @@ setsid(register struct thread *td, struct setsid_args *uap)
  * 	there must exist some pid in same session having pgid (EPERM)
  * pid must not be session leader (EPERM)
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setpgid_args {
 	int	pid;		/* target process id */
 	int	pgid;		/* target pgrp id */
@@ -485,7 +485,7 @@ done:
  */
 #define POSIX_APPENDIX_B_4_2_2
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setuid_args {
 	uid_t	uid;
 };
@@ -596,7 +596,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct seteuid_args {
 	uid_t	euid;
 };
@@ -652,7 +652,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setgid_args {
 	gid_t	gid;
 };
@@ -750,7 +750,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setegid_args {
 	gid_t	egid;
 };
@@ -796,7 +796,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setgroups_args {
 	u_int	gidsetsize;
 	gid_t	*gidset;
@@ -869,7 +869,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setreuid_args {
 	uid_t	ruid;
 	uid_t	euid;
@@ -936,7 +936,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setregid_args {
 	gid_t	rgid;
 	gid_t	egid;
@@ -1000,7 +1000,7 @@ fail:
  * setresuid(ruid, euid, suid) is like setreuid except control over the saved
  * uid is explicit.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setresuid_args {
 	uid_t	ruid;
 	uid_t	euid;
@@ -1079,7 +1079,7 @@ fail:
  * setresgid(rgid, egid, sgid) is like setregid except control over the saved
  * gid is explicit.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setresgid_args {
 	gid_t	rgid;
 	gid_t	egid;
@@ -1146,7 +1146,7 @@ fail:
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getresuid_args {
 	uid_t	*ruid;
 	uid_t	*euid;
@@ -1173,7 +1173,7 @@ getresuid(register struct thread *td, struct getresuid_args *uap)
 	return (error1 ? error1 : error2 ? error2 : error3);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getresgid_args {
 	gid_t	*rgid;
 	gid_t	*egid;
@@ -1200,7 +1200,7 @@ getresgid(register struct thread *td, struct getresgid_args *uap)
 	return (error1 ? error1 : error2 ? error2 : error3);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct issetugid_args {
 	int dummy;
 };
@@ -2062,7 +2062,7 @@ crsetgroups(struct ucred *cr, int ngrp, gid_t *groups)
 /*
  * Get login name, if available.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getlogin_args {
 	char	*namebuf;
 	u_int	namelen;
@@ -2090,7 +2090,7 @@ getlogin(struct thread *td, struct getlogin_args *uap)
 /*
  * Set login name.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setlogin_args {
 	char	*namebuf;
 };

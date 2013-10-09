@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /* $FreeBSD$ */
 /*-
@@ -29,57 +29,57 @@
  * usb_dev.c - An abstraction layer for creating devices under /dev/...
  */
 
-#include <freebsd/sys/stdint.h>
-#include <freebsd/sys/stddef.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/linker_set.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/priv.h>
+#include <sys/stdint.h>
+#include <sys/stddef.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/bus.h>
+#include <sys/linker_set.h>
+#include <sys/module.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/condvar.h>
+#include <sys/sysctl.h>
+#include <sys/sx.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/priv.h>
 #ifndef __rtems__
-#include <freebsd/sys/vnode.h>
+#include <sys/vnode.h>
 #endif
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/fcntl.h>
+#include <sys/conf.h>
+#include <sys/fcntl.h>
 
-#include <freebsd/dev/usb/usb.h>
-#include <freebsd/dev/usb/usb_ioctl.h>
-#include <freebsd/dev/usb/usbdi.h>
-#include <freebsd/dev/usb/usbdi_util.h>
+#include <dev/usb/usb.h>
+#include <dev/usb/usb_ioctl.h>
+#include <dev/usb/usbdi.h>
+#include <dev/usb/usbdi_util.h>
 
 #define	USB_DEBUG_VAR usb_fifo_debug
 
-#include <freebsd/dev/usb/usb_core.h>
-#include <freebsd/dev/usb/usb_dev.h>
-#include <freebsd/dev/usb/usb_mbuf.h>
-#include <freebsd/dev/usb/usb_process.h>
-#include <freebsd/dev/usb/usb_device.h>
-#include <freebsd/dev/usb/usb_debug.h>
-#include <freebsd/dev/usb/usb_busdma.h>
-#include <freebsd/dev/usb/usb_generic.h>
-#include <freebsd/dev/usb/usb_dynamic.h>
-#include <freebsd/dev/usb/usb_util.h>
+#include <dev/usb/usb_core.h>
+#include <dev/usb/usb_dev.h>
+#include <dev/usb/usb_mbuf.h>
+#include <dev/usb/usb_process.h>
+#include <dev/usb/usb_device.h>
+#include <dev/usb/usb_debug.h>
+#include <dev/usb/usb_busdma.h>
+#include <dev/usb/usb_generic.h>
+#include <dev/usb/usb_dynamic.h>
+#include <dev/usb/usb_util.h>
 
-#include <freebsd/dev/usb/usb_controller.h>
-#include <freebsd/dev/usb/usb_bus.h>
+#include <dev/usb/usb_controller.h>
+#include <dev/usb/usb_bus.h>
 
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/ttycom.h>
-#include <freebsd/sys/syscallsubr.h>
+#include <sys/filio.h>
+#include <sys/ttycom.h>
+#include <sys/syscallsubr.h>
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
 #if USB_HAVE_UGEN
 

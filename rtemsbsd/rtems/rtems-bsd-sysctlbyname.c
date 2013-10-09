@@ -18,13 +18,13 @@
  *
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/sysctl.h>
 
 int
 sysctlbyname(const char *name, void *oldp, size_t *oldlenp,

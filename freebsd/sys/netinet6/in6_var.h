@@ -61,13 +61,13 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_IN6_VAR_HH_
-#define _NETINET6_IN6_VAR_HH_
+#ifndef _NETINET6_IN6_VAR_H_
+#define _NETINET6_IN6_VAR_H_
 
-#include <freebsd/sys/tree.h>
+#include <sys/tree.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/libkern.h>
+#include <sys/libkern.h>
 #endif
 
 /*
@@ -783,4 +783,4 @@ struct inpcb;
 int in6_src_ioctl __P((u_long, caddr_t));
 #endif /* _KERNEL */
 
-#endif /* _NETINET6_IN6_VAR_HH_ */
+#endif /* _NETINET6_IN6_VAR_H_ */

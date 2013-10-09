@@ -34,13 +34,9 @@
  * $FreeBSD$
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
-#ifdef __rtems__
-#include <freebsd/sys/mac.h>
-#else
 #include <sys/mac.h>
-#endif
 #include <sys/socket.h>
 #include <sys/sockio.h>
 

@@ -114,9 +114,9 @@
 #ifndef _RTEMS_BSD_MACHINE_BUS_I386_H_
 #define _RTEMS_BSD_MACHINE_BUS_I386_H_
 
-#include <freebsd/machine/_bus.h>
-#include <freebsd/machine/cpufunc.h>
-#include <freebsd/machine/resource.h>
+#include <machine/_bus.h>
+#include <machine/cpufunc.h>
+#include <machine/resource.h>
 
 #if 0
 #define I386_BUS_SPACE_IO SYS_RES_IOPORT

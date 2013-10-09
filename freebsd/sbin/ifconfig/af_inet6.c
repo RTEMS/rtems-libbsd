@@ -32,7 +32,7 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -47,21 +47,12 @@ static const char rcsid[] =
 #include <arpa/inet.h>
 
 #include <netinet/in.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>		/* for struct ifaddr */
-#include <freebsd/netinet/in_var.h>
-#else
 #include <net/if_var.h>		/* for struct ifaddr */
 #include <netinet/in_var.h>
-#endif
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#ifdef __rtems__
-#include <freebsd/netinet6/nd6.h>	/* Define ND6_INFINITE_LIFETIME */
-#else
 #include <netinet6/nd6.h>	/* Define ND6_INFINITE_LIFETIME */
-#endif
 
 #include "ifconfig.h"
 

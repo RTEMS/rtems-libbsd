@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * Copyright (c) 2002 Michael Shalayeff. All rights reserved.
@@ -26,71 +26,71 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_bpf.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_bpf.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/sockio.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/signalvar.h>
+#include <sys/filio.h>
+#include <sys/sockio.h>
 
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
 #ifndef __rtems__
-#include <freebsd/sys/vnode.h>
+#include <sys/vnode.h>
 #endif
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/fddi.h>
-#include <freebsd/net/iso88025.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/fddi.h>
+#include <net/iso88025.h>
+#include <net/if.h>
+#include <net/if_clone.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
 #ifdef INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/machine/in_cksum.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/if_ether.h>
+#include <machine/in_cksum.h>
 #endif
 
 #ifdef INET6
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6protosw.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
-#include <freebsd/netinet6/nd6.h>
+#include <netinet/icmp6.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6protosw.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
+#include <netinet6/nd6.h>
 #endif
 
-#include <freebsd/crypto/sha1.h>
-#include <freebsd/netinet/ip_carp.h>
+#include <crypto/sha1.h>
+#include <netinet/ip_carp.h>
 
 #define	CARP_IFNAME	"carp"
 static MALLOC_DEFINE(M_CARP, "CARP", "CARP interfaces");

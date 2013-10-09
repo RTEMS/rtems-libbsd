@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1993
@@ -32,12 +32,12 @@
  *	@(#)tcp_debug.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_tcpdebug.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_tcpdebug.h>
 
 #ifdef TCPDEBUG
 /* load symbolic names */
@@ -47,28 +47,28 @@ __FBSDID("$FreeBSD$");
 #define	TANAMES
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mbuf.h>
+#include <sys/mutex.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_fsm.h>
-#include <freebsd/netinet/tcp_timer.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/tcpip.h>
-#include <freebsd/netinet/tcp_debug.h>
+#include <netinet/ip_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
 
 #ifdef TCPDEBUG
 static int		tcpconsdebug = 0;

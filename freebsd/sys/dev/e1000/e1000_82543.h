@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_82543_HH_
-#define _E1000_82543_HH_
+#ifndef _E1000_82543_H_
+#define _E1000_82543_H_
 
 #define PHY_PREAMBLE      0xFFFFFFFF
 #define PHY_PREAMBLE_SIZE 32

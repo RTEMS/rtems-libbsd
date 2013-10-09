@@ -29,12 +29,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TTYDISC_HH_
-#define	_SYS_TTYDISC_HH_
+#ifndef _SYS_TTYDISC_H_
+#define	_SYS_TTYDISC_H_
 
-#ifndef _SYS_TTY_HH_
+#ifndef _SYS_TTY_H_
 #error "can only be included through <sys/tty.h>"
-#endif /* !_SYS_TTY_HH_ */
+#endif /* !_SYS_TTY_H_ */
 
 struct cv;
 struct thread;
@@ -83,4 +83,4 @@ ttydisc_write_poll(struct tty *tp)
 	return ttyoutq_bytesleft(&tp->t_outq);
 }
 
-#endif /* !_SYS_TTYDISC_HH_ */
+#endif /* !_SYS_TTYDISC_H_ */

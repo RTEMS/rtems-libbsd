@@ -35,8 +35,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _EHCI_HH_
-#define	_EHCI_HH_
+#ifndef _EHCI_H_
+#define	_EHCI_H_
 
 #define	EHCI_MAX_DEVICES MIN(USB_MAX_DEVICES, 128)
 
@@ -483,4 +483,4 @@ void	ehci_resume(struct ehci_softc *sc);
 void	ehci_shutdown(ehci_softc_t *sc);
 void	ehci_interrupt(ehci_softc_t *sc);
 
-#endif					/* _EHCI_HH_ */
+#endif					/* _EHCI_H_ */

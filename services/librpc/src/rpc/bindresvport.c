@@ -46,7 +46,6 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/bindresvport.c,v 1.12 2000/01/2
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 

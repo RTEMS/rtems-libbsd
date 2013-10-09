@@ -25,8 +25,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_HH_
-#define _NET80211_IEEE80211_HH_
+#ifndef _NET80211_IEEE80211_H_
+#define _NET80211_IEEE80211_H_
 
 /*
  * 802.11 protocol definitions.
@@ -1084,4 +1084,4 @@ struct ieee80211_duration {
 				 IEEE80211_DUR_DS_SLOW_PLCPHDR + \
 				 IEEE80211_DUR_DIFS)
 
-#endif /* _NET80211_IEEE80211_HH_ */
+#endif /* _NET80211_IEEE80211_H_ */

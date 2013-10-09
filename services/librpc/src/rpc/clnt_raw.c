@@ -48,7 +48,6 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/clnt_raw.c,v 1.10 1999/08/28 00
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <rpc/rpc.h>
 #include <stdlib.h>
 #include <stdio.h>

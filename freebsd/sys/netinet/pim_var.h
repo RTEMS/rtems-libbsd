@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_PIM_VAR_HH_
-#define _NETINET_PIM_VAR_HH_
+#ifndef _NETINET_PIM_VAR_H_
+#define _NETINET_PIM_VAR_H_
 
 /*
  * Protocol Independent Multicast (PIM),
@@ -81,4 +81,4 @@ void pim_input(struct mbuf *, int);
 SYSCTL_DECL(_net_inet_pim);
 #endif
 
-#endif /* _NETINET_PIM_VAR_HH_ */
+#endif /* _NETINET_PIM_VAR_H_ */

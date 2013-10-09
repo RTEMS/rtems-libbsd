@@ -39,14 +39,14 @@
 
 /* FIXME: This file needs careful review. */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 #include <rtems/score/threaddispatch.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/uio.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/uio.h>
 
 int     maxproc = 32;              /* XXX Used value of rtems KERN_MAXPROC */
 int     ngroups_max = NGROUPS_MAX; /* XXX */

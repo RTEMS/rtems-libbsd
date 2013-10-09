@@ -46,22 +46,14 @@ __FBSDID("$FreeBSD$");
  * MROUTING 1.0
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
-#ifdef __rtems__
-#include <freebsd/sys/protosw.h>
-#else
 #include <sys/protosw.h>
-#endif
-#ifdef __rtems__
-#include <freebsd/sys/mbuf.h>
-#else
 #include <sys/mbuf.h>
-#endif
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 
 #include <net/if.h>
 #include <netinet/in.h>
@@ -69,11 +61,7 @@ __FBSDID("$FreeBSD$");
 #include <net/route.h>
 
 #define _KERNEL 1
-#ifdef __rtems__
-#include <freebsd/netinet/ip_mroute.h>
-#else
 #include <netinet/ip_mroute.h>
-#endif
 #undef _KERNEL
 
 #include <err.h>

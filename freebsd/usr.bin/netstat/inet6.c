@@ -41,47 +41,27 @@ static char sccsid[] = "@(#)inet6.c	8.4 (Berkeley) 4/20/94";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#ifdef __rtems__
-#include "port_before.h"
-#endif
 #ifdef INET6
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/ioctl.h>
-#ifdef __rtems__
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/protosw.h>
-#else
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
-#endif
 #include <sys/sysctl.h>
 
 #include <net/route.h>
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>
-#else
 #include <net/if_var.h>
-#endif
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
 #include <netinet/in_systm.h>
-#ifdef __rtems__
-#include <freebsd/netinet6/in6_pcb.h>
-#include <freebsd/netinet6/in6_var.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/pim6_var.h>
-#include <freebsd/netinet6/raw_ip6.h>
-#else
 #include <netinet6/in6_pcb.h>
 #include <netinet6/in6_var.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/pim6_var.h>
 #include <netinet6/raw_ip6.h>
-#endif
 
 #include <arpa/inet.h>
 #include <netdb.h>

@@ -37,35 +37,22 @@ static char sccsid[] = "@(#)sctp.c	0.1 (Berkeley) 4/18/2007";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
-#ifdef __rtems__
-#include <freebsd/sys/protosw.h>
-#else
 #include <sys/protosw.h>
-#endif
 
 #include <netinet/in.h>
-#ifdef __rtems__
-#include <freebsd/netinet/sctp.h>
-#include <freebsd/netinet/sctp_constants.h>
-#else
 #include <netinet/sctp.h>
 #include <netinet/sctp_constants.h>
-#endif
 #include <arpa/inet.h>
 
 #include <err.h>
 #include <errno.h>
-#ifdef __rtems__
-/* apparently libutil.h is not needed */
-#else
 #include <libutil.h>
-#endif
 #include <netdb.h>
 #include <stdint.h>
 #include <stdio.h>

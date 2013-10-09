@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * rc4.c
@@ -36,14 +36,14 @@
  * OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/crypto/rc4/rc4.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <rtems/bsd/sys/types.h>
+#include <crypto/rc4/rc4.h>
 
 static __inline void
 swap_bytes(u_char *a, u_char *b)

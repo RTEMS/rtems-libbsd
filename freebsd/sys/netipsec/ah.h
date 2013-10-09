@@ -34,8 +34,8 @@
  * RFC1826/2402 authentication header.
  */
 
-#ifndef _NETIPSEC_AH_HH_
-#define _NETIPSEC_AH_HH_
+#ifndef _NETIPSEC_AH_H_
+#define _NETIPSEC_AH_H_
 
 struct ah {
 	u_int8_t	ah_nxt;		/* Next Header */
@@ -53,4 +53,4 @@ struct newah {
 	u_int32_t	ah_seq;		/* Sequence number field */
 	/* variable size, 32bit bound*/	/* Authentication data */
 };
-#endif /*_NETIPSEC_AH_HH_*/
+#endif /*_NETIPSEC_AH_H_*/

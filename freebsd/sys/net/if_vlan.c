@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright 1998 Massachusetts Institute of Technology
@@ -41,32 +41,32 @@
  * and ask it to send them.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_vlan.h>
+#include <rtems/bsd/local/opt_vlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/rwlock.h>
+#include <sys/queue.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_vlan_var.h>
-#include <freebsd/net/vnet.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_clone.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/if_vlan_var.h>
+#include <net/vnet.h>
 
 #define VLANNAME	"vlan"
 #define	VLAN_DEF_HWIDTH	4

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,44 +26,44 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 ioctl support (FreeBSD-specific)
  */
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_ipx.h>
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_ipx.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/systm.h>
+#include <sys/endian.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/priv.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/systm.h>
  
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/ethernet.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
+#include <net/ethernet.h>
 
 #ifdef INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef IPX
-#include <freebsd/netipx/ipx.h>
-#include <freebsd/netipx/ipx_if.h>
+#include <netipx/ipx.h>
+#include <netipx/ipx_if.h>
 #endif
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_ioctl.h>
-#include <freebsd/net80211/ieee80211_regdomain.h>
-#include <freebsd/net80211/ieee80211_input.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_ioctl.h>
+#include <net80211/ieee80211_regdomain.h>
+#include <net80211/ieee80211_input.h>
 
 #define	IS_UP_AUTO(_vap) \
 	(IFNET_IS_UP_RUNNING((_vap)->iv_ifp) && \

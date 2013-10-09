@@ -27,18 +27,18 @@
  *
  */
 
-#ifndef	_SYS_BUF_RING_HH_
-#define	_SYS_BUF_RING_HH_
+#ifndef	_SYS_BUF_RING_H_
+#define	_SYS_BUF_RING_H_
 
-#include <freebsd/machine/cpu.h>
+#include <machine/cpu.h>
 
 #if defined(INVARIANTS) && !defined(DEBUG_BUFRING)
 #define DEBUG_BUFRING 1
 #endif
 
 #ifdef DEBUG_BUFRING
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
 #endif
 
 struct buf_ring {

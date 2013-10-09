@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2008 Benno Rice.  All rights reserved.
@@ -24,7 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -32,51 +32,51 @@ __FBSDID("$FreeBSD$");
  */
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
-#include <freebsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/taskqueue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/kernel.h>
+#include <sys/sockio.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/queue.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/taskqueue.h>
 
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/bus.h>
+#include <sys/module.h>
+#include <sys/bus.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/sys/rman.h>
+#include <machine/bus.h>
+#include <machine/resource.h>
+#include <sys/rman.h>
 
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_mib.h>
-#include <freebsd/net/if_media.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/if_mib.h>
+#include <net/if_media.h>
 
 #ifdef INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
 #endif
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/bpfdesc.h>
+#include <net/bpf.h>
+#include <net/bpfdesc.h>
 
-#include <freebsd/dev/smc/if_smcreg.h>
-#include <freebsd/dev/smc/if_smcvar.h>
+#include <dev/smc/if_smcreg.h>
+#include <dev/smc/if_smcvar.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
 
 #define	SMC_LOCK(sc)		mtx_lock(&(sc)->smc_mtx)
 #define	SMC_UNLOCK(sc)		mtx_unlock(&(sc)->smc_mtx)

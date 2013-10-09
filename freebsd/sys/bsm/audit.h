@@ -33,8 +33,8 @@
 #ifndef	_BSM_AUDIT_H
 #define	_BSM_AUDIT_H
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
 
 #define	AUDIT_RECORD_MAGIC	0x828a0f1b
 #define	MAX_AUDIT_RECORDS	20
@@ -316,7 +316,7 @@ int	getaudit_addr(struct auditinfo_addr *, int);
 int	setaudit_addr(const struct auditinfo_addr *, int);
 
 #ifdef __APPLE_API_PRIVATE
-#include <freebsd/mach/port.h>
+#include <mach/port.h>
 mach_port_name_t audit_session_self(void);
 au_asid_t	 audit_session_join(mach_port_name_t port);
 #endif /* __APPLE_API_PRIVATE */

@@ -25,8 +25,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET80211_IEEE80211_PHY_HH_
-#define _NET80211_IEEE80211_PHY_HH_
+#ifndef _NET80211_IEEE80211_PHY_H_
+#define _NET80211_IEEE80211_PHY_H_
 
 #ifdef _KERNEL
 /*
@@ -152,4 +152,4 @@ uint8_t		ieee80211_plcp2rate(uint8_t, enum ieee80211_phytype);
  */
 uint8_t		ieee80211_rate2plcp(int, enum ieee80211_phytype);
 #endif	/* _KERNEL */
-#endif	/* !_NET80211_IEEE80211_PHY_HH_ */
+#endif	/* !_NET80211_IEEE80211_PHY_H_ */

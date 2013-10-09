@@ -25,7 +25,7 @@
  * $FreeBSD$
  */
 
-#include <freebsd/net/if_llc.h>
+#include <net/if_llc.h>
 
 #define llc_org_code llc_un.type_snap.org_code
 #define llc_ether_type llc_un.type_snap.ether_type

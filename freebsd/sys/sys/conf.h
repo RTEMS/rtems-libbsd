@@ -37,13 +37,13 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_CONF_HH_
-#define	_SYS_CONF_HH_
+#ifndef _SYS_CONF_H_
+#define	_SYS_CONF_H_
 
 #ifdef _KERNEL
-#include <freebsd/sys/eventhandler.h>
+#include <sys/eventhandler.h>
 #else
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 #endif
 
 struct snapdata;
@@ -348,4 +348,4 @@ extern int dumping;		/* system is dumping */
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_CONF_HH_ */
+#endif /* !_SYS_CONF_H_ */

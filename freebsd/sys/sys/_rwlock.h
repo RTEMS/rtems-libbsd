@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS__RWLOCK_HH_
-#define	_SYS__RWLOCK_HH_
+#ifndef _SYS__RWLOCK_H_
+#define	_SYS__RWLOCK_H_
 
 /*
  * Reader/writer lock.
@@ -40,4 +40,4 @@ struct rwlock {
 	volatile uintptr_t	rw_lock;
 };
 
-#endif /* !_SYS__RWLOCK_HH_ */
+#endif /* !_SYS__RWLOCK_H_ */

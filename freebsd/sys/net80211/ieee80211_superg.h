@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_SUPERG_HH_
-#define _NET80211_IEEE80211_SUPERG_HH_
+#ifndef _NET80211_IEEE80211_SUPERG_H_
+#define _NET80211_IEEE80211_SUPERG_H_
 
 /*
  * Atheros' 802.11 SuperG protocol support.
@@ -126,4 +126,4 @@ ieee80211_decap_fastframe(struct ieee80211vap *vap, struct ieee80211_node *ni,
 	    ieee80211_ff_decap(ni, m) : m;
 }
 #endif /* _KERNEL */
-#endif /* _NET80211_IEEE80211_SUPERG_HH_ */
+#endif /* _NET80211_IEEE80211_SUPERG_H_ */

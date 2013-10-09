@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef _IF_SMCVAR_HH_
-#define	_IF_SMCVAR_HH_
+#ifndef _IF_SMCVAR_H_
+#define	_IF_SMCVAR_H_
 
 struct smc_softc {
 	struct ifnet		*smc_ifp;
@@ -74,4 +74,4 @@ int	smc_miibus_readreg(device_t, int, int);
 int	smc_miibus_writereg(device_t, int, int, int);
 void	smc_miibus_statchg(device_t);
 
-#endif /* _IF_SMCVAR_HH_ */
+#endif /* _IF_SMCVAR_H_ */

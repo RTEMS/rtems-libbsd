@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2003 Andre Oppermann, Internet Business Solutions AG
@@ -75,38 +75,38 @@
  * is being followed here.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ipfw.h>
-#include <freebsd/local/opt_ipstealth.h>
+#include <rtems/bsd/local/opt_ipfw.h>
+#include <rtems/bsd/local/opt_ipstealth.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/pfil.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/pfil.h>
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/if_var.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_icmp.h>
-#include <freebsd/netinet/ip_options.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/ip_options.h>
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
 static VNET_DEFINE(int, ipfastforward_active);
 #define	V_ipfastforward_active		VNET(ipfastforward_active)

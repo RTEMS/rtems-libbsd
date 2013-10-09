@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
@@ -28,56 +28,56 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_bus.h>
+#include <rtems/bsd/local/opt_bus.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/linker.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/endian.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/linker.h>
+#include <sys/fcntl.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/queue.h>
+#include <sys/sysctl.h>
+#include <sys/endian.h>
 
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/pmap.h>
+#include <vm/vm.h>
+#include <vm/pmap.h>
 #ifndef __rtems__
-#include <freebsd/vm/vm_extern.h>
+#include <vm/vm_extern.h>
 #endif /* __rtems__ */
 
-#include <freebsd/sys/bus.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/machine/stdarg.h>
+#include <sys/bus.h>
+#include <machine/bus.h>
+#include <sys/rman.h>
+#include <machine/resource.h>
+#include <machine/stdarg.h>
 
 #if defined(__i386__) || defined(__amd64__) || defined(__powerpc__)
-#include <freebsd/machine/intr_machdep.h>
+#include <machine/intr_machdep.h>
 #endif
 
-#include <freebsd/sys/pciio.h>
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcivar.h>
-#include <freebsd/dev/pci/pci_private.h>
+#include <sys/pciio.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcivar.h>
+#include <dev/pci/pci_private.h>
 
-#include <freebsd/dev/usb/controller/ehcireg.h>
-#include <freebsd/dev/usb/controller/ohcireg.h>
+#include <dev/usb/controller/ehcireg.h>
+#include <dev/usb/controller/ohcireg.h>
 #ifndef __rtems__
-#include <freebsd/dev/usb/controller/uhcireg.h>
+#include <dev/usb/controller/uhcireg.h>
 #endif /* __rtems__ */
 
-#include <freebsd/local/pcib_if.h>
-#include <freebsd/local/pci_if.h>
+#include <rtems/bsd/local/pcib_if.h>
+#include <rtems/bsd/local/pci_if.h>
 
 #ifdef __HAVE_ACPI
-#include <freebsd/contrib/dev/acpica/include/acpi.h>
-#include <freebsd/local/acpi_if.h>
+#include <contrib/dev/acpica/include/acpi.h>
+#include <rtems/bsd/local/acpi_if.h>
 #else
 #define	ACPI_PWR_FOR_SLEEP(x, y, z)
 #endif
@@ -3591,10 +3591,10 @@ pci_write_ivar(device_t dev, device_t child, int which, uintptr_t value)
 }
 
 
-#include <freebsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ddb.h>
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
-#include <freebsd/sys/cons.h>
+#include <ddb/ddb.h>
+#include <sys/cons.h>
 
 /*
  * List resources based on pci map registers, used for within ddb

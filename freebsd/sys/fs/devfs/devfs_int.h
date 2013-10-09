@@ -30,10 +30,10 @@
  * by kern/kern_conf.c and fs/devfs/...
  */
 
-#ifndef _FS_DEVFS_DEVFS_INT_HH_
-#define	_FS_DEVFS_DEVFS_INT_HH_
+#ifndef _FS_DEVFS_DEVFS_INT_H_
+#define	_FS_DEVFS_DEVFS_INT_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 #ifdef _KERNEL
 
@@ -87,4 +87,4 @@ extern TAILQ_HEAD(cdev_priv_list, cdev_priv) cdevp_list;
 
 #endif /* _KERNEL */
 
-#endif /* !_FS_DEVFS_DEVFS_INT_HH_ */
+#endif /* !_FS_DEVFS_DEVFS_INT_H_ */

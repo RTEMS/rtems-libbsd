@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1995
@@ -33,63 +33,63 @@
  *	@(#)udp_usrreq.c	8.6 (Berkeley) 5/23/95
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ipfw.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_ipfw.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipsec.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/domain.h>
+#include <sys/eventhandler.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/systm.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/route.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif
-#include <freebsd/netinet/ip_icmp.h>
-#include <freebsd/netinet/icmp_var.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_options.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/icmp_var.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_options.h>
 #ifdef INET6
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet6/ip6_var.h>
 #endif
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
 #ifdef IPSEC
-#include <freebsd/netipsec/ipsec.h>
-#include <freebsd/netipsec/esp.h>
+#include <netipsec/ipsec.h>
+#include <netipsec/esp.h>
 #endif
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 /*
  * UDP protocol implementation.

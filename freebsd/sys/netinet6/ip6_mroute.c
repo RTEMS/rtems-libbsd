@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1998 WIDE Project.
@@ -80,50 +80,50 @@
  * MROUTING Revision: 3.5.1.2 + PIM-SMv2 (pimd) Support
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/time.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/callout.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sockio.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/time.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/raw_cb.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/raw_cb.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/icmp6.h>
-#include <freebsd/netinet/ip_encap.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/icmp6.h>
+#include <netinet/ip_encap.h>
 
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
-#include <freebsd/netinet6/nd6.h>
-#include <freebsd/netinet6/ip6_mroute.h>
-#include <freebsd/netinet6/ip6protosw.h>
-#include <freebsd/netinet6/pim6.h>
-#include <freebsd/netinet6/pim6_var.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
+#include <netinet6/nd6.h>
+#include <netinet6/ip6_mroute.h>
+#include <netinet6/ip6protosw.h>
+#include <netinet6/pim6.h>
+#include <netinet6/pim6_var.h>
 
 static MALLOC_DEFINE(M_MRTABLE6, "mf6c", "multicast forwarding cache entry");
 

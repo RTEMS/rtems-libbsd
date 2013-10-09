@@ -28,8 +28,8 @@
  * Including this file is mandatory for all USB related c-files in the kernel.
  */
 
-#ifndef _USB_CORE_HH_
-#define	_USB_CORE_HH_
+#ifndef _USB_CORE_H_
+#define	_USB_CORE_H_
 
 /*
  * The following macro will tell if an USB transfer is currently
@@ -180,4 +180,4 @@ typedef struct malloc_type *usb_malloc_type;
 
 /* prototypes */
 
-#endif					/* _USB_CORE_HH_ */
+#endif					/* _USB_CORE_H_ */

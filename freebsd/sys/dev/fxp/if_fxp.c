@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1995, David Greenman
@@ -29,7 +29,7 @@
  *
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -37,56 +37,56 @@ __FBSDID("$FreeBSD$");
  */
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
-#include <freebsd/local/opt_device_polling.h>
+#include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/bus.h>
+#include <sys/endian.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/mutex.h>
+#include <sys/rman.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_vlan_var.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
+#include <net/if_vlan_var.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/in_cksum.h>
-#include <freebsd/machine/resource.h>
+#include <machine/bus.h>
+#include <machine/in_cksum.h>
+#include <machine/resource.h>
 
-#include <freebsd/dev/pci/pcivar.h>
-#include <freebsd/dev/pci/pcireg.h>		/* for PCIM_CMD_xxx */
+#include <dev/pci/pcivar.h>
+#include <dev/pci/pcireg.h>		/* for PCIM_CMD_xxx */
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
 
-#include <freebsd/dev/fxp/if_fxpreg.h>
-#include <freebsd/dev/fxp/if_fxpvar.h>
-#include <freebsd/dev/fxp/rcvbundl.h>
+#include <dev/fxp/if_fxpreg.h>
+#include <dev/fxp/if_fxpvar.h>
+#include <dev/fxp/rcvbundl.h>
 
 MODULE_DEPEND(fxp, pci, 1, 1, 1);
 MODULE_DEPEND(fxp, ether, 1, 1, 1);
 MODULE_DEPEND(fxp, miibus, 1, 1, 1);
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 /*
  * NOTE!  On the Alpha, we have an alignment constraint.  The

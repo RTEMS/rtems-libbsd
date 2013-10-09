@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2008 Paolo Pisati
@@ -26,33 +26,33 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/eventhandler.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/rwlock.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/eventhandler.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/rwlock.h>
 
 #define        IPFW_INTERNAL   /* Access to protected data structures in ip_fw.h. */
 
-#include <freebsd/netinet/libalias/alias.h>
-#include <freebsd/netinet/libalias/alias_local.h>
+#include <netinet/libalias/alias.h>
+#include <netinet/libalias/alias_local.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_fw.h>
-#include <freebsd/netinet/ipfw/ip_fw_private.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/udp.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_fw.h>
+#include <netinet/ipfw/ip_fw_private.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
-#include <freebsd/machine/in_cksum.h>	/* XXX for in_cksum */
+#include <machine/in_cksum.h>	/* XXX for in_cksum */
 
 static VNET_DEFINE(eventhandler_tag, ifaddr_event_tag);
 #define	V_ifaddr_event_tag	VNET(ifaddr_event_tag)

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1993
@@ -31,47 +31,47 @@
  *	@(#)in_proto.c	8.2 (Berkeley) 2/9/95
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ipx.h>
-#include <freebsd/local/opt_mrouting.h>
-#include <freebsd/local/opt_ipsec.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_pf.h>
-#include <freebsd/local/opt_sctp.h>
-#include <freebsd/local/opt_mpath.h>
+#include <rtems/bsd/local/opt_ipx.h>
+#include <rtems/bsd/local/opt_mrouting.h>
+#include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_pf.h>
+#include <rtems/bsd/local/opt_sctp.h>
+#include <rtems/bsd/local/opt_mpath.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
+#include <sys/domain.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/queue.h>
+#include <sys/sysctl.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
+#include <net/if.h>
+#include <net/route.h>
 #ifdef RADIX_MPATH
-#include <freebsd/net/radix_mpath.h>
+#include <net/radix_mpath.h>
 #endif
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_icmp.h>
-#include <freebsd/netinet/igmp_var.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_timer.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
-#include <freebsd/netinet/ip_encap.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/igmp_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
+#include <netinet/ip_encap.h>
 
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
@@ -80,19 +80,19 @@ __FBSDID("$FreeBSD$");
 static struct pr_usrreqs nousrreqs;
 
 #ifdef IPSEC
-#include <freebsd/netipsec/ipsec.h>
+#include <netipsec/ipsec.h>
 #endif /* IPSEC */
 
 #ifdef SCTP
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/sctp_pcb.h>
-#include <freebsd/netinet/sctp.h>
-#include <freebsd/netinet/sctp_var.h>
+#include <netinet/in_pcb.h>
+#include <netinet/sctp_pcb.h>
+#include <netinet/sctp.h>
+#include <netinet/sctp_var.h>
 #endif /* SCTP */
 
 #ifdef DEV_PFSYNC
-#include <freebsd/net/pfvar.h>
-#include <freebsd/net/if_pfsync.h>
+#include <net/pfvar.h>
+#include <net/if_pfsync.h>
 #endif
 
 extern	struct domain inetdomain;

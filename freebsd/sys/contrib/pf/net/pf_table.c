@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$OpenBSD: pf_table.c,v 1.68 2006/05/02 10:08:45 dhartmei Exp $	*/
 
@@ -33,32 +33,32 @@
  */
 
 #ifdef __FreeBSD__
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/rwlock.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/socket.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/rwlock.h>
 #ifdef __FreeBSD__
-#include <freebsd/sys/malloc.h>
+#include <sys/malloc.h>
 #endif
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/netinet/in.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in.h>
 #ifndef __FreeBSD__
-#include <freebsd/netinet/ip_ipsp.h>
+#include <netinet/ip_ipsp.h>
 #endif
 
-#include <freebsd/net/pfvar.h>
+#include <net/pfvar.h>
 
 #define ACCEPT_FLAGS(oklist)			\
 	do {					\

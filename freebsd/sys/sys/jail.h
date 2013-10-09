@@ -27,8 +27,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_JAIL_HH_
-#define _SYS_JAIL_HH_
+#ifndef _SYS_JAIL_H_
+#define _SYS_JAIL_H_
 
 #ifdef _KERNEL
 struct jail_v0 {
@@ -116,11 +116,11 @@ int jail_remove(int);
 
 #else /* _KERNEL */
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/_task.h>
+#include <sys/queue.h>
+#include <sys/sysctl.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/_task.h>
 
 #define JAIL_MAX	999999
 
@@ -131,7 +131,7 @@ MALLOC_DECLARE(M_PRISON);
 
 #if defined(_KERNEL) || defined(_WANT_PRISON)
 
-#include <freebsd/sys/osd.h>
+#include <sys/osd.h>
 
 #define	HOSTUUIDLEN	64
 
@@ -382,4 +382,4 @@ int prison_priv_check(struct ucred *cred, int priv);
 int sysctl_jail_param(struct sysctl_oid *, void *, int , struct sysctl_req *);
 
 #endif /* _KERNEL */
-#endif /* !_SYS_JAIL_HH_ */
+#endif /* !_SYS_JAIL_H_ */

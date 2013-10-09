@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,37 +26,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>   
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/kernel.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>   
+#include <sys/malloc.h>
+#include <sys/endian.h>
+#include <sys/kernel.h>
  
-#include <freebsd/sys/socket.h>
+#include <sys/socket.h>
  
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_llc.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/if_vlan_var.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_llc.h>
+#include <net/if_media.h>
+#include <net/if_vlan_var.h>
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_input.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_input.h>
 #ifdef IEEE80211_SUPPORT_MESH
-#include <freebsd/net80211/ieee80211_mesh.h>
+#include <net80211/ieee80211_mesh.h>
 #endif
 
-#include <freebsd/net/bpf.h>
+#include <net/bpf.h>
 
 #ifdef INET
-#include <freebsd/netinet/in.h>
-#include <freebsd/net/ethernet.h>
+#include <netinet/in.h>
+#include <net/ethernet.h>
 #endif
 
 int
@@ -748,7 +748,7 @@ ieee80211_getbssid(const struct ieee80211vap *vap,
 	return wh->i_addr3;
 }
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
 void
 ieee80211_note(const struct ieee80211vap *vap, const char *fmt, ...)

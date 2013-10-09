@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_PIM_HH_
-#define _NETINET_PIM_HH_
+#ifndef _NETINET_PIM_H_
+#define _NETINET_PIM_H_
 
 /*
  * Protocol Independent Multicast (PIM) definitions.
@@ -42,7 +42,7 @@
  * Modified by Pavlin Radoslavov, USC/ISI, May 1998, October 2000.
  */
 
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
 #ifndef _PIM_VT
 #ifndef BYTE_ORDER
@@ -116,4 +116,4 @@ struct pim {
 	{{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		\
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0d }}}
 
-#endif /* _NETINET_PIM_HH_ */
+#endif /* _NETINET_PIM_H_ */

@@ -30,13 +30,13 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_VAR_HH_
-#define _NETINET_TCP_VAR_HH_
+#ifndef _NETINET_TCP_VAR_H_
+#define _NETINET_TCP_VAR_H_
 
-#include <freebsd/netinet/tcp.h>
+#include <netinet/tcp.h>
 
 #ifdef _KERNEL
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
 /*
  * Kernel variables for tcp.
@@ -298,9 +298,9 @@ struct hc_metrics_lite {	/* must stay in sync with hc_metrics */
 	u_long	rmx_recvpipe;   /* inbound delay-bandwidth product */
 };
 
-#ifndef _NETINET_IN_PCB_HH_
+#ifndef _NETINET_IN_PCB_H_
 struct in_conninfo;
-#endif /* _NETINET_IN_PCB_HH_ */
+#endif /* _NETINET_IN_PCB_H_ */
 
 struct tcptw {
 	struct inpcb	*tw_inpcb;	/* XXX back pointer to internet pcb */
@@ -490,7 +490,7 @@ void	kmod_tcpstat_inc(int statnum);
  * Evil hack: declare only if in_pcb.h and sys/socketvar.h have been
  * included.  Not all of our clients do.
  */
-#if defined(_NETINET_IN_PCB_HH_) && defined(_SYS_SOCKETVAR_HH_)
+#if defined(_NETINET_IN_PCB_H_) && defined(_SYS_SOCKETVAR_H_)
 struct	xtcpcb {
 	size_t	xt_len;
 	struct	inpcb	xt_inp;
@@ -684,4 +684,4 @@ u_long	 tcp_seq_subtract(u_long, u_long );
 
 #endif /* _KERNEL */
 
-#endif /* _NETINET_TCP_VAR_HH_ */
+#endif /* _NETINET_TCP_VAR_H_ */

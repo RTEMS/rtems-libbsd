@@ -30,18 +30,18 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_FILE_HH_
-#define	_SYS_FILE_HH_
+#ifndef _SYS_FILE_H_
+#define	_SYS_FILE_H_
 
 #ifndef _KERNEL
-#include <freebsd/sys/types.h> /* XXX */
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/unistd.h>
+#include <rtems/bsd/sys/types.h> /* XXX */
+#include <sys/fcntl.h>
+#include <rtems/bsd/sys/unistd.h>
 #else
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/refcount.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
+#include <sys/queue.h>
+#include <sys/refcount.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
 
 struct stat;
 struct thread;

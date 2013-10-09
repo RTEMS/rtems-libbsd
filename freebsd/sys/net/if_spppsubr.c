@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*
  * Synchronous PPP/Cisco/Frame Relay link level subroutines.
@@ -23,55 +23,55 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
+#include <rtems/bsd/sys/param.h>
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_ipx.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ipx.h>
 
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/random.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/sockio.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/random.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
 
-#include <freebsd/sys/md5.h>
+#include <sys/md5.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/net/slcompress.h>
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/vnet.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <net/slcompress.h>
 
-#include <freebsd/machine/stdarg.h>
+#include <machine/stdarg.h>
 
-#include <freebsd/netinet/in_var.h>
+#include <netinet/in_var.h>
 
 #ifdef INET
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
 #endif
 
 #ifdef INET6
-#include <freebsd/netinet6/scope6_var.h>
+#include <netinet6/scope6_var.h>
 #endif
 
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/if_ether.h>
 
 #ifdef IPX
-#include <freebsd/netipx/ipx.h>
-#include <freebsd/netipx/ipx_if.h>
+#include <netipx/ipx.h>
+#include <netipx/ipx_if.h>
 #endif
 
-#include <freebsd/net/if_sppp.h>
+#include <net/if_sppp.h>
 
 #define IOCTL_CMD_T	u_long
 #define MAXALIVECNT     3               /* max. alive packets */

@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_STAGEQ_HH_
-#define _NET80211_IEEE80211_STAGEQ_HH_
+#ifndef _NET80211_IEEE80211_STAGEQ_H_
+#define _NET80211_IEEE80211_STAGEQ_H_
 
 struct ieee80211_node;
 struct mbuf;
@@ -51,4 +51,4 @@ void	ieee80211_ageq_drain_node(struct ieee80211_ageq *,
 struct mbuf *ieee80211_ageq_age(struct ieee80211_ageq *, int quanta);
 struct mbuf *ieee80211_ageq_remove(struct ieee80211_ageq *,
 	    struct ieee80211_node *match);
-#endif /* _NET80211_IEEE80211_STAGEQ_HH_ */
+#endif /* _NET80211_IEEE80211_STAGEQ_H_ */

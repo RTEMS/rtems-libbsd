@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETATALK_DDP_VAR_HH_
-#define	_NETATALK_DDP_VAR_HH_
+#ifndef _NETATALK_DDP_VAR_H_
+#define	_NETATALK_DDP_VAR_H_
 
 struct ddpcb {
 	struct sockaddr_at	 ddp_fsat, ddp_lsat;
@@ -60,4 +60,4 @@ extern struct pr_usrreqs	 ddp_usrreqs;
 extern struct mtx		 ddp_list_mtx;
 #endif
 
-#endif /* _NETATALK_DDP_VAR_HH_ */
+#endif /* _NETATALK_DDP_VAR_H_ */

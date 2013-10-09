@@ -35,12 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-#ifdef __rtems__
-#define __BSD_VISIBLE 1
-#include <freebsd/sys/types.h>
-
-#define rt_tables netstat_rt_tables
-#endif
 
 extern int	Aflag;	/* show addresses of protocol control block */
 extern int	aflag;	/* show all sockets (including servers) */
@@ -133,6 +127,7 @@ char	*ns_phost(struct sockaddr *);
 void	upHex(char *);
 
 #ifdef __rtems__
+#define rt_tables netstat_rt_tables
 #define routename rtems_shell_netstats_routername
 #define netname rtems_shell_netstats_netname
 #define sotoxsocket rtems_shell_netstats_sotoxsocket

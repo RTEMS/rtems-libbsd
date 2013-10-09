@@ -37,19 +37,19 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/kthread.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/filedesc.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/kthread.h>
+#include <sys/malloc.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/jail.h>
+#include <sys/resourcevar.h>
+#include <sys/filedesc.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 

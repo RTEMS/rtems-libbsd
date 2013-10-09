@@ -28,10 +28,10 @@
  *      $FreeBSD$
  */
 
-#ifndef _SYS_SBUF_HH_
-#define	_SYS_SBUF_HH_
+#ifndef _SYS_SBUF_H_
+#define	_SYS_SBUF_H_
 
-#include <freebsd/sys/_types.h>
+#include <rtems/bsd/sys/_types.h>
 
 /*
  * Structure definition

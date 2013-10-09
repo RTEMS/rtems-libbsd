@@ -30,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NETINET_IN_GIF_HH_
-#define _NETINET_IN_GIF_HH_
+#ifndef _NETINET_IN_GIF_H_
+#define _NETINET_IN_GIF_H_
 
 #define GIF_TTL		30
 
@@ -42,4 +42,4 @@ int gif_encapcheck4(const struct mbuf *, int, int, void *);
 int in_gif_attach(struct gif_softc *);
 int in_gif_detach(struct gif_softc *);
 
-#endif /*_NETINET_IN_GIF_HH_*/
+#endif /*_NETINET_IN_GIF_H_*/

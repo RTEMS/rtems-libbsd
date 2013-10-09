@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1989 Stephen Deering
@@ -68,55 +68,55 @@
  * TODO: Sync ip6_mroute.c with this file.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_mrouting.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_mrouting.h>
 
 #define _PIM_VT 1
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/stddef.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/time.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/stddef.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/ktr.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/priv.h>
+#include <sys/protosw.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sockio.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/time.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/netisr.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/igmp.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/ip_encap.h>
-#include <freebsd/netinet/ip_mroute.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/ip_options.h>
-#include <freebsd/netinet/pim.h>
-#include <freebsd/netinet/pim_var.h>
-#include <freebsd/netinet/udp.h>
+#include <netinet/in.h>
+#include <netinet/igmp.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_encap.h>
+#include <netinet/ip_mroute.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_options.h>
+#include <netinet/pim.h>
+#include <netinet/pim_var.h>
+#include <netinet/udp.h>
 
-#include <freebsd/machine/in_cksum.h>
+#include <machine/in_cksum.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 #ifndef KTR_IPMF
 #define KTR_IPMF KTR_INET

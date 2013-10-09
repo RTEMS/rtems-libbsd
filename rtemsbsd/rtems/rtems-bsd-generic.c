@@ -37,21 +37,21 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/types.h> //needed for fd_mask and such
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <rtems/bsd/sys/types.h> //needed for fd_mask and such
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/select.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/malloc.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/selinfo.h>
+#include <sys/fcntl.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/select.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/malloc.h>
 
 void selrecord(struct thread *selector, struct selinfo *sip)
 {

@@ -60,8 +60,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_UDP6_VAR_HH_
-#define _NETINET6_UDP6_VAR_HH_
+#ifndef _NETINET6_UDP6_VAR_H_
+#define _NETINET6_UDP6_VAR_H_
 
 #ifdef _KERNEL
 SYSCTL_DECL(_net_inet6_udp6);
@@ -72,4 +72,4 @@ void	udp6_ctlinput(int, struct sockaddr *, void *);
 int	udp6_input(struct mbuf **, int *, int);
 #endif
 
-#endif /*_NETINET6_UDP6_VAR_HH_*/
+#endif /*_NETINET6_UDP6_VAR_H_*/

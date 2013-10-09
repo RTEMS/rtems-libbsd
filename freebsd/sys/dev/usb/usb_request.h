@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_REQUEST_HH_
-#define	_USB_REQUEST_HH_
+#ifndef _USB_REQUEST_H_
+#define	_USB_REQUEST_H_
 
 struct usb_process;
 
@@ -86,4 +86,4 @@ usb_error_t usbd_req_set_hub_u2_timeout(struct usb_device *udev,
 usb_error_t usbd_req_set_hub_depth(struct usb_device *udev,
 		    struct mtx *mtx, uint16_t depth);
 
-#endif					/* _USB_REQUEST_HH_ */
+#endif					/* _USB_REQUEST_H_ */

@@ -29,7 +29,7 @@
 __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <net/if.h>
@@ -40,9 +40,6 @@ __FBSDID("$FreeBSD$");
 #include <errno.h>
 #include <unistd.h>
 #include "un-namespace.h"
-#ifdef __rtems__
-#include <freebsd/sys/sockio.h>
-#endif
 
 /*
  * From RFC 2553:

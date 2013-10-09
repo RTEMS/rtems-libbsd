@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_INPUT_HH_
-#define _NET80211_IEEE80211_INPUT_HH_
+#ifndef _NET80211_IEEE80211_INPUT_H_
+#define _NET80211_IEEE80211_INPUT_H_
 
 /* Verify the existence and length of __elem or get out. */
 #define IEEE80211_VERIFY_ELEMENT(__elem, __maxlen, _action) do {	\
@@ -157,4 +157,4 @@ int	ieee80211_alloc_challenge(struct ieee80211_node *);
 int	ieee80211_parse_beacon(struct ieee80211_node *, struct mbuf *,
 		struct ieee80211_scanparams *);
 int	ieee80211_parse_action(struct ieee80211_node *, struct mbuf *);
-#endif /* _NET80211_IEEE80211_INPUT_HH_ */
+#endif /* _NET80211_IEEE80211_INPUT_H_ */

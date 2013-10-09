@@ -27,23 +27,15 @@
  * $FreeBSD$
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/sysctl.h>
 
 #define	LIBMEMSTAT	/* Cause vm_page.h not to include opt_vmpage.h */
-#ifdef __rtems__
-#include <freebsd/sys/types.h>
-#include <freebsd/vm/vm.h>
-// #include <vm/vm_page.h>
-#include <freebsd/vm/uma.h>
-#include <freebsd/vm/uma_int.h>
-#else
 #include <vm/vm.h>
 #include <vm/vm_page.h>
+
 #include <vm/uma.h>
 #include <vm/uma_int.h>
-#endif
-
 
 #include <err.h>
 #include <errno.h>

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: des_setkey.c,v 1.7 2001/09/10 04:03:58 itojun Exp $	*/
 
@@ -58,14 +58,14 @@
  * 1.0 First working version
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/crypto/des/des_locl.h>
-#include <freebsd/crypto/des/podd.h>
-#include <freebsd/crypto/des/sk.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <crypto/des/des_locl.h>
+#include <crypto/des/podd.h>
+#include <crypto/des/sk.h>
 
 int des_check_key=0;
 

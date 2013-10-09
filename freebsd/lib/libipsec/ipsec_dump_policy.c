@@ -32,19 +32,13 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/types.h>
-#include <sys/param.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
 
-#ifdef __rtems__
-#include <freebsd/netipsec/key_var.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netipsec/ipsec.h>
-#else
 #include <netipsec/key_var.h>
 #include <netinet/in.h>
 #include <netipsec/ipsec.h>
-#endif
 
 #include <arpa/inet.h>
 

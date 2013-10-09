@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -62,50 +62,50 @@
  *	@(#)in.c	8.2 (Berkeley) 11/15/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/errno.h>
+#include <sys/jail.h>
+#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sockio.h>
+#include <sys/systm.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_var.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/if_dl.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/net/if_llatbl.h>
-#include <freebsd/netinet/if_ether.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/in_pcb.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <net/if_llatbl.h>
+#include <netinet/if_ether.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
 
-#include <freebsd/netinet/ip6.h>
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/nd6.h>
-#include <freebsd/netinet6/mld6_var.h>
-#include <freebsd/netinet6/ip6_mroute.h>
-#include <freebsd/netinet6/in6_ifattach.h>
-#include <freebsd/netinet6/scope6_var.h>
-#include <freebsd/netinet6/in6_pcb.h>
+#include <netinet/ip6.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/nd6.h>
+#include <netinet6/mld6_var.h>
+#include <netinet6/ip6_mroute.h>
+#include <netinet6/in6_ifattach.h>
+#include <netinet6/scope6_var.h>
+#include <netinet6/in6_pcb.h>
 
 /*
  * Definitions of some costant IP6 addresses.
@@ -2310,7 +2310,7 @@ in6_if2idlen(struct ifnet *ifp)
 	}
 }
 
-#include <freebsd/sys/sysctl.h>
+#include <sys/sysctl.h>
 
 struct in6_llentry {
 	struct llentry		base;

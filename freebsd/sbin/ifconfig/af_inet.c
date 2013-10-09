@@ -32,7 +32,7 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -46,21 +46,12 @@ static const char rcsid[] =
 #include <ifaddrs.h>
 
 #include <netinet/in.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>		/* for struct ifaddr */
-#include <freebsd/netinet/in_var.h>
-#else
 #include <net/if_var.h>		/* for struct ifaddr */
 #include <netinet/in_var.h>
-#endif
 #include <arpa/inet.h>
 #include <netdb.h>
 
 #include "ifconfig.h"
-
-#ifdef __rtems__
-#include <freebsd/sys/sockio.h>
-#endif
 
 static struct in_aliasreq in_addreq;
 static struct ifreq in_ridreq;

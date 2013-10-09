@@ -35,8 +35,8 @@
 /*
  * class queue definitions extracted from rm_class.h.
  */
-#ifndef _ALTQ_ALTQ_CLASSQ_HH_
-#define	_ALTQ_ALTQ_CLASSQ_HH_
+#ifndef _ALTQ_ALTQ_CLASSQ_H_
+#define	_ALTQ_ALTQ_CLASSQ_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -203,4 +203,4 @@ _flushq(class_queue_t *q)
 }
 #endif
 
-#endif /* _ALTQ_ALTQ_CLASSQ_HH_ */
+#endif /* _ALTQ_ALTQ_CLASSQ_H_ */

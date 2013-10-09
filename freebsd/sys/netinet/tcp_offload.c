@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2007, Chelsio Inc.
@@ -27,32 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/if_var.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/tcp_offload.h>
-#include <freebsd/netinet/toedev.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_pcb.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcp_offload.h>
+#include <netinet/toedev.h>
 
 uint32_t toedev_registration_count;
 

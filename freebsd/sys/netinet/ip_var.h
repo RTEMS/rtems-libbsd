@@ -30,10 +30,10 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IP_VAR_HH_
-#define	_NETINET_IP_VAR_HH_
+#ifndef _NETINET_IP_VAR_H_
+#define	_NETINET_IP_VAR_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -129,7 +129,7 @@ struct	ipstat {
 
 #ifdef _KERNEL
 
-#include <freebsd/net/vnet.h>
+#include <net/vnet.h>
 
 /*
  * In-kernel consumers can use these accessor macros directly to update
@@ -312,4 +312,4 @@ VNET_DECLARE(int, ip_do_randomid);
 
 #endif /* _KERNEL */
 
-#endif /* !_NETINET_IP_VAR_HH_ */
+#endif /* !_NETINET_IP_VAR_H_ */

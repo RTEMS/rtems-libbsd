@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$FreeBSD$ */
 /*	$NetBSD: pfil.c,v 1.20 2001/11/12 23:49:46 lukem Exp $	*/
@@ -31,23 +31,23 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/rmlock.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/rmlock.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/systm.h>
+#include <sys/condvar.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/queue.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/pfil.h>
+#include <net/if.h>
+#include <net/pfil.h>
 
 static struct mtx pfil_global_lock;
 

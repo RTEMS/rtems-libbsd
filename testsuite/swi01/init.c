@@ -34,7 +34,7 @@
 
 #include <rtems.h>
 
-#include <freebsd/bsd.h>
+#include <rtems/bsd/bsd.h>
 
 #include "swi_test.h"
 

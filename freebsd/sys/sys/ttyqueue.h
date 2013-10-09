@@ -29,12 +29,12 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TTYQUEUE_HH_
-#define	_SYS_TTYQUEUE_HH_
+#ifndef _SYS_TTYQUEUE_H_
+#define	_SYS_TTYQUEUE_H_
 
-#ifndef _SYS_TTY_HH_
+#ifndef _SYS_TTY_H_
 #error "can only be included through <sys/tty.h>"
-#endif /* !_SYS_TTY_HH_ */
+#endif /* !_SYS_TTY_H_ */
 
 struct tty;
 struct ttyinq_block;
@@ -175,4 +175,4 @@ ttyoutq_bytesused(struct ttyoutq *to)
 }
 #endif /* _KERNEL */
 
-#endif /* !_SYS_TTYQUEUE_HH_ */
+#endif /* !_SYS_TTYQUEUE_H_ */

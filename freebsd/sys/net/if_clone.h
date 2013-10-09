@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_NET_IF_CLONE_HH_
-#define	_NET_IF_CLONE_HH_
+#ifndef	_NET_IF_CLONE_H_
+#define	_NET_IF_CLONE_H_
 
 #ifdef _KERNEL
 
@@ -113,4 +113,4 @@ int	ifc_simple_destroy(struct if_clone *, struct ifnet *);
 
 #endif /* _KERNEL */
 
-#endif /* !_NET_IF_CLONE_HH_ */
+#endif /* !_NET_IF_CLONE_H_ */

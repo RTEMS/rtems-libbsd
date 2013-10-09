@@ -32,13 +32,13 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_MBX_HH_
-#define _E1000_MBX_HH_
+#ifndef _E1000_MBX_H_
+#define _E1000_MBX_H_
 
 #ifdef __rtems__
-#include <freebsd/dev/e1000/e1000_api.h>
+#include <dev/e1000/e1000_api.h>
 #else
-#include <freebsd/local/e1000_api.h>
+#include <rtems/bsd/local/e1000_api.h>
 #endif
 
 /* Define mailbox register bits */
@@ -107,4 +107,4 @@ void e1000_init_mbx_ops_generic(struct e1000_hw *hw);
 s32 e1000_init_mbx_params_vf(struct e1000_hw *);
 s32 e1000_init_mbx_params_pf(struct e1000_hw *);
 
-#endif /* _E1000_MBX_HH_ */
+#endif /* _E1000_MBX_H_ */

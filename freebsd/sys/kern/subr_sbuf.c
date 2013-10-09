@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2000-2008 Poul-Henning Kamp
@@ -28,27 +28,27 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
+#include <rtems/bsd/sys/param.h>
 
 #ifdef _KERNEL
-#include <freebsd/sys/ctype.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/machine/stdarg.h>
+#include <sys/ctype.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/systm.h>
+#include <sys/uio.h>
+#include <machine/stdarg.h>
 #else /* _KERNEL */
-#include <freebsd/ctype.h>
-#include <freebsd/stdarg.h>
-#include <freebsd/stdio.h>
-#include <freebsd/stdlib.h>
-#include <freebsd/string.h>
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #endif /* _KERNEL */
 
-#include <freebsd/sys/sbuf.h>
+#include <sys/sbuf.h>
 
 #ifdef _KERNEL
 static MALLOC_DEFINE(M_SBUF, "sbuf", "string buffers");

@@ -64,36 +64,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
-#ifdef __rtems__
-#include <freebsd/net/if_media.h>
-#else
 #include <net/if_media.h>
-#endif
 #include <net/route.h>
 
-#ifdef __rtems__
-#include <freebsd/net80211/ieee80211_ioctl.h>
-#include <freebsd/net80211/ieee80211_freebsd.h>
-#include <freebsd/net80211/ieee80211_superg.h>
-#include <freebsd/net80211/ieee80211_tdma.h>
-#include <freebsd/net80211/ieee80211_mesh.h>
-#else
 #include <net80211/ieee80211_ioctl.h>
 #include <net80211/ieee80211_freebsd.h>
 #include <net80211/ieee80211_superg.h>
 #include <net80211/ieee80211_tdma.h>
 #include <net80211/ieee80211_mesh.h>
-#endif
 
 #include <assert.h>
 #include <ctype.h>

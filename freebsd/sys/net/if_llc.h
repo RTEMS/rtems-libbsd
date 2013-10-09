@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_IF_LLC_HH_
-#define _NET_IF_LLC_HH_
+#ifndef _NET_IF_LLC_H_
+#define _NET_IF_LLC_H_
 
 /*
  * IEEE 802.2 Link Level Control headers, for use in conjunction with
@@ -158,4 +158,4 @@ CTASSERT(sizeof (struct llc) == LLC_SNAPFRAMELEN);
 #define LLC_SNAP_LSAP	0xaa
 #define LLC_ISO_LSAP	0xfe
 
-#endif /* _NET_IF_LLC_HH_ */
+#endif /* _NET_IF_LLC_H_ */

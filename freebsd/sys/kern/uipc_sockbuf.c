@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1990, 1993
@@ -31,25 +31,25 @@
  *	@(#)uipc_socket2.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_param.h>
+#include <rtems/bsd/local/opt_param.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/aio.h> /* for aio_swake proto */
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/aio.h> /* for aio_swake proto */
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mbuf.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
 
 /*
  * Function pointer set by the AIO routines so that the socket buffer code

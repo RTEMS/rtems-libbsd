@@ -30,8 +30,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _SYS_SOCKTATE_HH_
-#define _SYS_SOCKTATE_HH_
+#ifndef _SYS_SOCKTATE_H_
+#define _SYS_SOCKTATE_H_
 
 /*
  * Socket state bits.
@@ -80,4 +80,4 @@ void	socantrcvmore(struct socket *so);
 void	socantrcvmore_locked(struct socket *so);
 void	socantsendmore(struct socket *so);
 void	socantsendmore_locked(struct socket *so);
-#endif /* _SYS_SOCKTATE_HH_ */
+#endif /* _SYS_SOCKTATE_H_ */

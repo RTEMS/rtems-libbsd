@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef	_RUNQ_HH_
-#define	_RUNQ_HH_
+#ifndef	_RUNQ_H_
+#define	_RUNQ_H_
 
-#include <freebsd/machine/runq.h>
+#include <machine/runq.h>
 
 struct thread;
 

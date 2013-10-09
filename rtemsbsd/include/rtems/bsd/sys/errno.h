@@ -35,11 +35,11 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_ERRNO_HH_
-#define _SYS_ERRNO_HH_
+#ifndef _RTEMS_BSD_SYS_ERRNO_H_
+#define _RTEMS_BSD_SYS_ERRNO_H_
 
 #ifndef _KERNEL
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __BEGIN_DECLS
 int *	__error(void);
 __END_DECLS
@@ -181,6 +181,8 @@ __END_DECLS
 #ifndef _POSIX_SOURCE
 #define	ELAST		93		/* Must be equal largest errno */
 #endif /* _POSIX_SOURCE */
+#else /* __rtems__ */
+#include <errno.h>
 #endif /* __rtems__ */
 
 #ifdef _KERNEL

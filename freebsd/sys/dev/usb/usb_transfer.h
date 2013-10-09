@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_TRANSFER_HH_
-#define	_USB_TRANSFER_HH_
+#ifndef _USB_TRANSFER_H_
+#define	_USB_TRANSFER_H_
 
 /*
  * The following structure defines the messages that is used to signal
@@ -137,4 +137,4 @@ void	usbd_transfer_timeout_ms(struct usb_xfer *xfer,
 usb_timeout_t usbd_get_dma_delay(struct usb_device *udev);
 void	usbd_transfer_power_ref(struct usb_xfer *xfer, int val);
 
-#endif					/* _USB_TRANSFER_HH_ */
+#endif					/* _USB_TRANSFER_H_ */

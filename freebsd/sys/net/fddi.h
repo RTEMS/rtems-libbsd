@@ -36,8 +36,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IF_FDDI_HH_
-#define _NETINET_IF_FDDI_HH_
+#ifndef _NETINET_IF_FDDI_H_
+#define _NETINET_IF_FDDI_H_
 
 #define	FDDIIPMTU		4352
 #define	FDDIMTU			4470
@@ -102,4 +102,4 @@ void	fddi_ifdetach(struct ifnet *, int);
 int	fddi_ioctl(struct ifnet *, u_long, caddr_t);
 
 #endif	/* _KERNEL */
-#endif	/* _NET_FDDI_HH_ */
+#endif	/* _NET_FDDI_H_ */

@@ -40,15 +40,10 @@ static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
-#ifdef __rtems__
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/protosw.h>
-#else
 #include <sys/domain.h>
 #include <sys/protosw.h>
-#endif
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
@@ -58,36 +53,12 @@ __FBSDID("$FreeBSD$");
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
-#ifdef __rtems__
-#include <freebsd/netinet/ip_carp.h>
-#else
 #include <netinet/ip_carp.h>
-#endif
 #ifdef INET6
 #include <netinet/ip6.h>
 #endif /* INET6 */
-#ifdef __rtems__
-#include <freebsd/netinet/in_pcb.h>
-#else
 #include <netinet/in_pcb.h>
-#endif
 #include <netinet/ip_icmp.h>
-#ifdef __rtems__
-#include <freebsd/netinet/icmp_var.h>
-#include <freebsd/netinet/igmp_var.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/pim_var.h>
-#include <netinet/tcp.h>
-#include <freebsd/netinet/tcpip.h>
-#include <freebsd/netinet/tcp_seq.h>
-#define	TCPSTATES
-#include <freebsd/netinet/tcp_fsm.h>
-#include <freebsd/netinet/tcp_timer.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/tcp_debug.h>
-#include <netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
-#else
 #include <netinet/icmp_var.h>
 #include <netinet/igmp_var.h>
 #include <netinet/ip_var.h>
@@ -102,7 +73,6 @@ __FBSDID("$FreeBSD$");
 #include <netinet/tcp_debug.h>
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
-#endif
 
 #include <arpa/inet.h>
 #include <err.h>

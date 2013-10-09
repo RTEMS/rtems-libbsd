@@ -24,14 +24,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#ifndef	_NET_IF_LLATBL_HH_
-#define	_NET_IF_LLATBL_HH_
+#ifndef	_NET_IF_LLATBL_H_
+#define	_NET_IF_LLATBL_H_
 
-#include <freebsd/sys/_rwlock.h>
-#include <freebsd/netinet/in.h>
+#include <sys/_rwlock.h>
+#include <netinet/in.h>
 
 struct ifnet;
 struct sysctl_req;
@@ -205,4 +205,4 @@ lla_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3addr)
 }
 
 int		lla_rt_output(struct rt_msghdr *, struct rt_addrinfo *);
-#endif  /* _NET_IF_LLATBL_HH_ */
+#endif  /* _NET_IF_LLATBL_H_ */

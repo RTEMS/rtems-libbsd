@@ -29,15 +29,15 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NET_PFIL_HH_
-#define _NET_PFIL_HH_
+#ifndef _NET_PFIL_H_
+#define _NET_PFIL_H_
 
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/rmlock.h>
+#include <sys/systm.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/rmlock.h>
 
 struct mbuf;
 struct ifnet;
@@ -114,4 +114,4 @@ pfil_hook_get(int dir, struct pfil_head *ph)
 		return (NULL);
 }
 
-#endif /* _NET_PFIL_HH_ */
+#endif /* _NET_PFIL_H_ */

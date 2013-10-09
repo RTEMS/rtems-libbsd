@@ -41,12 +41,12 @@
  * $FreeBSD$
  */
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 #include <sys/un.h>
 #include <sys/wait.h>
 

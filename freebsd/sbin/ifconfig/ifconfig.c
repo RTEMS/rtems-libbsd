@@ -45,36 +45,23 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#ifdef __rtems__
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/linker.h>
-#else
+#include <rtems/bsd/sys/time.h>
 #include <sys/module.h>
 #include <sys/linker.h>
-#endif
 
 #include <net/ethernet.h>
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>
-#else
 #include <net/if_var.h>
-#endif
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #include <net/route.h>
 
 /* IP */
 #include <netinet/in.h>
-#ifdef __rtems__
-#include <freebsd/netinet/in_var.h>
-#else
 #include <netinet/in_var.h>
-#endif
 #include <arpa/inet.h>
 #include <netdb.h>
 

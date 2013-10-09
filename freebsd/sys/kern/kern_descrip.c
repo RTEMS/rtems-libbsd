@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1989, 1991, 1993
@@ -36,55 +36,55 @@
  *	@(#)kern_descrip.c	8.6 (Berkeley) 4/19/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_ktrace.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/mqueue.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/namei.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/stat.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/tty.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/user.h>
-#include <freebsd/sys/vnode.h>
+#include <sys/conf.h>
+#include <sys/domain.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/filio.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+#include <sys/mqueue.h>
+#include <sys/mutex.h>
+#include <sys/namei.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
+#include <sys/socketvar.h>
+#include <sys/stat.h>
+#include <sys/sx.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
+#include <sys/sysproto.h>
+#include <sys/tty.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/user.h>
+#include <sys/vnode.h>
 #ifdef KTRACE
-#include <freebsd/sys/ktrace.h>
+#include <sys/ktrace.h>
 #endif
 
-#include <freebsd/security/audit/audit.h>
+#include <security/audit/audit.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 
 static MALLOC_DEFINE(M_FILEDESC, "filedesc", "Open file descriptor table");
 static MALLOC_DEFINE(M_FILEDESC_TO_LEADER, "filedesc_to_leader",
@@ -267,7 +267,7 @@ fdunused(struct filedesc *fdp, int fd)
 /*
  * System calls on descriptors.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getdtablesize_args {
 	int	dummy;
 };
@@ -291,7 +291,7 @@ getdtablesize(struct thread *td, struct getdtablesize_args *uap)
  * Note: keep in mind that a potential race condition exists when closing
  * descriptors from a shared descriptor table (via rfork).
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct dup2_args {
 	u_int	from;
 	u_int	to;
@@ -309,7 +309,7 @@ dup2(struct thread *td, struct dup2_args *uap)
 /*
  * Duplicate a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct dup_args {
 	u_int	fd;
 };
@@ -325,7 +325,7 @@ dup(struct thread *td, struct dup_args *uap)
 /*
  * The file control system call.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct fcntl_args {
 	int	fd;
 	int	cmd;
@@ -1102,7 +1102,7 @@ fgetown(sigiop)
 /*
  * Close a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct close_args {
 	int     fd;
 };
@@ -1179,7 +1179,7 @@ kern_close(td, fd)
 /*
  * Close open file descriptors.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct closefrom_args {
 	int	lowfd;
 };
@@ -1216,7 +1216,7 @@ closefrom(struct thread *td, struct closefrom_args *uap)
 /*
  * Return status information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ofstat_args {
 	int	fd;
 	struct	ostat *sb;
@@ -1242,7 +1242,7 @@ ofstat(struct thread *td, struct ofstat_args *uap)
 /*
  * Return status information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct fstat_args {
 	int	fd;
 	struct	stat *sb;
@@ -1286,7 +1286,7 @@ kern_fstat(struct thread *td, int fd, struct stat *sbp)
 /*
  * Return status information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct nfstat_args {
 	int	fd;
 	struct	nstat *sb;
@@ -1311,7 +1311,7 @@ nfstat(struct thread *td, struct nfstat_args *uap)
 /*
  * Return pathconf information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct fpathconf_args {
 	int	fd;
 	int	name;
@@ -2378,7 +2378,7 @@ _fdrop(struct file *fp, struct thread *td)
  * Just attempt to get a record lock of the requested type on the entire file
  * (l_whence = SEEK_SET, l_start = 0, l_len = 0).
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct flock_args {
 	int	fd;
 	int	how;
@@ -3422,8 +3422,6 @@ fdopen(struct cdev *dev, int mode, int type, struct thread *td)
 {
 
 	/*
-#include <freebsd/machine/rtems-bsd-config.h>
-
 /*-
  * Copyright (c) 1982, 1986, 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -3460,55 +3458,55 @@ fdopen(struct cdev *dev, int mode, int type, struct thread *td)
  *	@(#)kern_descrip.c	8.6 (Berkeley) 4/19/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_ktrace.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/filedesc.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mount.h>
-#include <freebsd/sys/mqueue.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/namei.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/stat.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/tty.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/user.h>
-#include <freebsd/sys/vnode.h>
+#include <sys/conf.h>
+#include <sys/domain.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/filio.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+#include <sys/mqueue.h>
+#include <sys/mutex.h>
+#include <sys/namei.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/protosw.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
+#include <sys/socketvar.h>
+#include <sys/stat.h>
+#include <sys/sx.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
+#include <sys/sysproto.h>
+#include <sys/tty.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/user.h>
+#include <sys/vnode.h>
 #ifdef KTRACE
-#include <freebsd/sys/ktrace.h>
+#include <sys/ktrace.h>
 #endif
 
-#include <freebsd/security/audit/audit.h>
+#include <security/audit/audit.h>
 
-#include <freebsd/vm/uma.h>
+#include <vm/uma.h>
 
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 
 static MALLOC_DEFINE(M_FILEDESC, "filedesc", "Open file descriptor table");
 static MALLOC_DEFINE(M_FILEDESC_TO_LEADER, "filedesc_to_leader",
@@ -3691,7 +3689,7 @@ fdunused(struct filedesc *fdp, int fd)
 /*
  * System calls on descriptors.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getdtablesize_args {
 	int	dummy;
 };
@@ -3715,7 +3713,7 @@ getdtablesize(struct thread *td, struct getdtablesize_args *uap)
  * Note: keep in mind that a potential race condition exists when closing
  * descriptors from a shared descriptor table (via rfork).
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct dup2_args {
 	u_int	from;
 	u_int	to;
@@ -3733,7 +3731,7 @@ dup2(struct thread *td, struct dup2_args *uap)
 /*
  * Duplicate a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct dup_args {
 	u_int	fd;
 };
@@ -3749,7 +3747,7 @@ dup(struct thread *td, struct dup_args *uap)
 /*
  * The file control system call.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct fcntl_args {
 	int	fd;
 	int	cmd;
@@ -4526,7 +4524,7 @@ fgetown(sigiop)
 /*
  * Close a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct close_args {
 	int     fd;
 };
@@ -4603,7 +4601,7 @@ kern_close(td, fd)
 /*
  * Close open file descriptors.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct closefrom_args {
 	int	lowfd;
 };
@@ -4640,7 +4638,7 @@ closefrom(struct thread *td, struct closefrom_args *uap)
 /*
  * Return status information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ofstat_args {
 	int	fd;
 	struct	ostat *sb;
@@ -4666,7 +4664,7 @@ ofstat(struct thread *td, struct ofstat_args *uap)
 /*
  * Return status information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct fstat_args {
 	int	fd;
 	struct	stat *sb;
@@ -4710,7 +4708,7 @@ kern_fstat(struct thread *td, int fd, struct stat *sbp)
 /*
  * Return status information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct nfstat_args {
 	int	fd;
 	struct	nstat *sb;
@@ -4735,7 +4733,7 @@ nfstat(struct thread *td, struct nfstat_args *uap)
 /*
  * Return pathconf information about a file descriptor.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct fpathconf_args {
 	int	fd;
 	int	name;
@@ -5802,7 +5800,7 @@ _fdrop(struct file *fp, struct thread *td)
  * Just attempt to get a record lock of the requested type on the entire file
  * (l_whence = SEEK_SET, l_start = 0, l_len = 0).
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct flock_args {
 	int	fd;
 	int	how;

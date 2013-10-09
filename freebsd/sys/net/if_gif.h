@@ -34,15 +34,15 @@
  * if_gif.h
  */
 
-#ifndef _NET_IF_GIF_HH_
-#define _NET_IF_GIF_HH_
+#ifndef _NET_IF_GIF_H_
+#define _NET_IF_GIF_H_
 
 
 #ifdef _KERNEL
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 /* xxx sigh, why route have struct route instead of pointer? */
 
 struct encaptab;
@@ -127,4 +127,4 @@ int gif_encapcheck(const struct mbuf *, int, int, void *);
 #define	GIF_SEND_REVETHIP	0x0010
 #define	GIF_OPTMASK		(GIF_ACCEPT_REVETHIP|GIF_SEND_REVETHIP)
 
-#endif /* _NET_IF_GIF_HH_ */
+#endif /* _NET_IF_GIF_H_ */

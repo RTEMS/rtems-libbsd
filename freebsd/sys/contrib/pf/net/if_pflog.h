@@ -25,8 +25,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _NET_IF_PFLOG_HH_
-#define _NET_IF_PFLOG_HH_
+#ifndef _NET_IF_PFLOG_H_
+#define _NET_IF_PFLOG_H_
 
 #define	PFLOGIFS_MAX	16
 
@@ -100,4 +100,4 @@ extern pflog_packet_t *pflog_packet_ptr;
 #endif /* NPFLOG > 0 */
 #endif /* __FreeBSD__ */
 #endif /* _KERNEL */
-#endif /* _NET_IF_PFLOG_HH_ */
+#endif /* _NET_IF_PFLOG_H_ */

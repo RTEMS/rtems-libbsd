@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_82575_HH_
-#define _E1000_82575_HH_
+#ifndef _E1000_82575_H_
+#define _E1000_82575_H_
 
 #define ID_LED_DEFAULT_82575_SERDES ((ID_LED_DEF1_DEF2 << 12) | \
                                      (ID_LED_DEF1_DEF2 <<  8) | \
@@ -472,4 +472,4 @@ void e1000_vfta_set_vf(struct e1000_hw *, u16, bool);
 void e1000_rlpml_set_vf(struct e1000_hw *, u16);
 s32 e1000_promisc_set_vf(struct e1000_hw *, enum e1000_promisc_type type);
 u16 e1000_rxpbs_adjust_82580(u32 data);
-#endif /* _E1000_82575_HH_ */
+#endif /* _E1000_82575_H_ */

@@ -24,16 +24,16 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_FREEBSD_HH_
-#define _NET80211_IEEE80211_FREEBSD_HH_
+#ifndef _NET80211_IEEE80211_FREEBSD_H_
+#define _NET80211_IEEE80211_FREEBSD_H_
 
 #ifdef _KERNEL
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/taskqueue.h>
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/rwlock.h>
+#include <sys/sysctl.h>
+#include <sys/taskqueue.h>
 
 /*
  * Common state locking definitions.
@@ -167,7 +167,7 @@ typedef struct mtx ieee80211_scan_table_lock_t;
  *				is the last reference, otherwise 0
  * ieee80211_node_refcnt	reference count for printing (only)
  */
-#include <freebsd/machine/atomic.h>
+#include <machine/atomic.h>
 
 #define ieee80211_node_initref(_ni) \
 	do { ((_ni)->ni_refcnt = 1); } while (0)
@@ -547,4 +547,4 @@ struct ieee80211_bpf_params {
 	uint8_t		ibp_try3;	/* series 4 try count */
 	uint8_t		ibp_rate3;	/* series 4 IEEE tx rate */
 };
-#endif /* _NET80211_IEEE80211_FREEBSD_HH_ */
+#endif /* _NET80211_IEEE80211_FREEBSD_H_ */

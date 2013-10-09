@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_MODULE_HH_
-#define _SYS_MODULE_HH_
+#ifndef _SYS_MODULE_H_
+#define _SYS_MODULE_H_
 
 /*
  * Module metadata types
@@ -94,7 +94,7 @@ struct mod_metadata {
 
 #ifdef	_KERNEL
 
-#include <freebsd/sys/linker_set.h>
+#include <sys/linker_set.h>
 
 #define	MODULE_METADATA(uniquifier, type, data, cval)			\
 	static struct mod_metadata _mod_metadata##uniquifier = {	\
@@ -204,7 +204,7 @@ struct module_stat {
 
 #ifndef _KERNEL
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int	modnext(int _modid);
@@ -215,4 +215,4 @@ __END_DECLS
 
 #endif
 
-#endif	/* !_SYS_MODULE_HH_ */
+#endif	/* !_SYS_MODULE_H_ */

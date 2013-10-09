@@ -40,42 +40,26 @@ static char sccsid[] = "@(#)if.c	8.3 (Berkeley) 4/28/95";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/types.h>
-#ifdef __rtems__
-#include <freebsd/sys/protosw.h>
-#else
+#include <rtems/bsd/sys/types.h>
 #include <sys/protosw.h>
-#endif
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>
-#else
 #include <net/if_var.h>
-#endif
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #include <net/ethernet.h>
-#ifdef __rtems__
-#include <freebsd/net/pfvar.h>
-#include <freebsd/net/if_pfsync.h>
-#include <netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-/* IPX not on RTEMS */
-/* #include <netipx/ipx.h> */
-/* #include <netipx/ipx_if.h> */
-#else
 #include <net/pfvar.h>
 #include <net/if_pfsync.h>
 #include <netinet/in.h>
 #include <netinet/in_var.h>
+#ifndef __rtems__
 #include <netipx/ipx.h>
 #include <netipx/ipx_if.h>
-#endif
+#endif /* __rtems__ */
 #include <arpa/inet.h>
 
 #include <err.h>

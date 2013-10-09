@@ -26,11 +26,11 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_BUS_HH_
-#define _SYS_BUS_HH_
+#ifndef _SYS_BUS_H_
+#define _SYS_BUS_H_
 
-#include <freebsd/machine/_limits.h>
-#include <freebsd/sys/_bus_dma.h>
+#include <machine/_limits.h>
+#include <sys/_bus_dma.h>
 
 /**
  * @defgroup NEWBUS newbus - a generic framework for managing devices
@@ -76,8 +76,8 @@ struct u_device {
 
 #ifdef _KERNEL
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/kobj.h>
+#include <sys/queue.h>
+#include <sys/kobj.h>
 
 /**
  * devctl hooks.  Typically one should use the devctl_notify
@@ -547,8 +547,8 @@ void	bus_set_pass(int pass);
 /*
  * Some common device interfaces.
  */
-#include <freebsd/local/device_if.h>
-#include <freebsd/local/bus_if.h>
+#include <rtems/bsd/local/device_if.h>
+#include <rtems/bsd/local/bus_if.h>
 
 struct	module;
 
@@ -745,4 +745,4 @@ static __inline void varp ## _set_ ## var(device_t dev, type t)		\
 	bus_space_write_region_stream_8((r)->r_bustag, (r)->r_bushandle, (o), (d), (c))
 #endif /* _KERNEL */
 
-#endif /* !_SYS_BUS_HH_ */
+#endif /* !_SYS_BUS_H_ */

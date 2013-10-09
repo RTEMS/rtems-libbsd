@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /******************************************************************************
 
@@ -35,25 +35,25 @@ POSSIBILITY OF SUCH DAMAGE.
 $FreeBSD$ 
 ***************************************************************************/
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/endian.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/endian.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/ethernet.h>
+#include <net/if_media.h>
 
-#include <freebsd/netinet/in_systm.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_lro.h>
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_lro.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/in_cksum.h>
+#include <machine/bus.h>
+#include <machine/in_cksum.h>
 
 
 static uint16_t do_csum_data(uint16_t *raw, int len)

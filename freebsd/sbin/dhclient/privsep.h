@@ -16,7 +16,7 @@
  * OF OR IN CONNECTION WITH THE USE, ABUSE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 
 #include <poll.h>
 #include <pwd.h>

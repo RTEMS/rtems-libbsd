@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_ATA_HH_
-#define _SYS_ATA_HH_
+#ifndef _SYS_ATA_H_
+#define _SYS_ATA_H_
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 
 /* ATA/ATAPI device parameters */
 struct ata_params {
@@ -557,4 +557,4 @@ struct ata_ioc_raid_status {
 #define IOCATARAIDADDSPARE      _IOW('a', 203, struct ata_ioc_raid_config)
 #define IOCATARAIDREBUILD       _IOW('a', 204, int)
 
-#endif /* _SYS_ATA_HH_ */
+#endif /* _SYS_ATA_H_ */

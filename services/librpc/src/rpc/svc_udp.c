@@ -45,7 +45,6 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/svc_udp.c,v 1.13 2000/01/27 23:
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

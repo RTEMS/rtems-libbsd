@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _BSM_AUDIT_KEVENTS_HH_
-#define	_BSM_AUDIT_KEVENTS_HH_
+#ifndef _BSM_AUDIT_KEVENTS_H_
+#define	_BSM_AUDIT_KEVENTS_H_
 
 /*
  * The reserved event numbers for kernel events are 1...2047 and 43001..44900.
@@ -796,4 +796,4 @@
 #define	AUE_WORKQOPEN		AUE_NULL
 #define	AUE_WORKQOPS		AUE_NULL
 
-#endif /* !_BSM_AUDIT_KEVENTS_HH_ */
+#endif /* !_BSM_AUDIT_KEVENTS_H_ */

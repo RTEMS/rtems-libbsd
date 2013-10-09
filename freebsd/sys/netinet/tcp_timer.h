@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_TCP_TIMER_HH_
-#define _NETINET_TCP_TIMER_HH_
+#ifndef _NETINET_TCP_TIMER_H_
+#define _NETINET_TCP_TIMER_H_
 
 /*
  * The TCPT_REXMT timer is used to force retransmissions.
@@ -180,4 +180,4 @@ void	tcp_timer_delack(void *xtp);
 
 #endif /* _KERNEL */
 
-#endif /* !_NETINET_TCP_TIMER_HH_ */
+#endif /* !_NETINET_TCP_TIMER_H_ */

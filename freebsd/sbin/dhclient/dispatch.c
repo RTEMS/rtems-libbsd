@@ -46,11 +46,7 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/ioctl.h>
 
-#ifdef __rtems__
-#include <freebsd/net/if_media.h>
-#else
 #include <net/if_media.h>
-#endif
 #include <ifaddrs.h>
 #include <poll.h>
 

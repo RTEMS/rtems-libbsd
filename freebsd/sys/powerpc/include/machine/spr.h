@@ -33,8 +33,8 @@
  * $NetBSD: spr.h,v 1.25 2002/08/14 15:38:40 matt Exp $
  * $FreeBSD$
  */
-#ifndef _POWERPC_SPR_HH_
-#define	_POWERPC_SPR_HH_
+#ifndef _POWERPC_SPR_H_
+#define	_POWERPC_SPR_H_
 
 #ifndef _LOCORE
 #define	mtspr(reg, val)							\
@@ -695,4 +695,4 @@
 
 #endif /* #elif defined(E500) */
 
-#endif /* !_POWERPC_SPR_HH_ */
+#endif /* !_POWERPC_SPR_H_ */

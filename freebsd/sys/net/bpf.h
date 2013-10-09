@@ -37,8 +37,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_BPF_HH_
-#define _NET_BPF_HH_
+#ifndef _NET_BPF_H_
+#define _NET_BPF_H_
 
 /* BSD style release date */
 #define	BPF_RELEASE 199606
@@ -971,4 +971,4 @@ bpf_peers_present(struct bpf_if *bpf)
  */
 #define BPF_MEMWORDS 16
 
-#endif /* _NET_BPF_HH_ */
+#endif /* _NET_BPF_H_ */

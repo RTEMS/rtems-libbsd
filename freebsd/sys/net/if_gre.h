@@ -40,9 +40,9 @@
 #ifndef _NET_IF_GRE_H
 #define _NET_IF_GRE_H
 
-#include <freebsd/sys/ioccom.h>
+#include <sys/ioccom.h>
 #ifdef _KERNEL
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /*
  * Version of the WCCP, need to be configured manually since

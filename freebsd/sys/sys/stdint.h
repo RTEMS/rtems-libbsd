@@ -26,13 +26,14 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_STDINT_HH_
-#define _SYS_STDINT_HH_
+#ifndef _SYS_STDINT_H_
+#define _SYS_STDINT_H_
 
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/_types.h>
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/_types.h>
 
-#include <freebsd/machine/_stdint.h>
+#ifndef __rtems__
+#include <machine/_stdint.h>
 
 #ifndef _INT8_T_DECLARED
 typedef	__int8_t		int8_t;
@@ -102,5 +103,6 @@ typedef	__intptr_t		intptr_t;
 typedef	__uintptr_t		uintptr_t;
 #define	_INTPTR_T_DECLARED
 #endif
+#endif /* __rtems__ */
 
-#endif /* !_SYS_STDINT_HH_ */
+#endif /* !_SYS_STDINT_H_ */

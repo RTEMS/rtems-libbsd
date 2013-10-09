@@ -41,14 +41,15 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_CPUFUNC_HH_
-#define _MACHINE_CPUFUNC_HH_
+#ifndef _MACHINE_CPUFUNC_H_
+#define _MACHINE_CPUFUNC_H_
 
 #ifdef _KERNEL
+#ifndef __rtems__
 
-#include <freebsd/sys/types.h>
-#include <freebsd/machine/cpuconf.h>
-#include <freebsd/machine/katelib.h> /* For in[bwl] and out[bwl] */
+#include <rtems/bsd/sys/types.h>
+#include <machine/cpuconf.h>
+#include <machine/katelib.h> /* For in[bwl] and out[bwl] */
 
 static __inline void
 breakpoint(void)
@@ -612,7 +613,8 @@ extern int	arm_pcache_unified;
 extern int	arm_dcache_align;
 extern int	arm_dcache_align_mask;
 
+#endif /* __rtems__ */
 #endif	/* _KERNEL */
-#endif	/* _MACHINE_CPUFUNC_HH_ */
+#endif	/* _MACHINE_CPUFUNC_H_ */
 
 /* End of cpufunc.h */

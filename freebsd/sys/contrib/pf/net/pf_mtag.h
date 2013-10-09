@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef _NET_PF_MTAG_HH_
-#define _NET_PF_MTAG_HH_
+#ifndef _NET_PF_MTAG_H_
+#define _NET_PF_MTAG_H_
 
 #ifdef _KERNEL
 
@@ -79,4 +79,4 @@ pf_get_mtag(struct mbuf *m)
 	return ((struct pf_mtag *)(mtag + 1));
 }
 #endif /* _KERNEL */
-#endif /* _NET_PF_MTAG_HH_ */
+#endif /* _NET_PF_MTAG_H_ */

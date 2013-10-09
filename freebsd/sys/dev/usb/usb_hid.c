@@ -1,9 +1,9 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$NetBSD: hid.c,v 1.17 2001/11/13 06:24:53 lukem Exp $	*/
 
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 /*-
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -42,38 +42,38 @@ __FBSDID("$FreeBSD$");
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/stdint.h>
-#include <freebsd/sys/stddef.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/bus.h>
-#include <freebsd/sys/linker_set.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/condvar.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/unistd.h>
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/priv.h>
+#include <sys/stdint.h>
+#include <sys/stddef.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/bus.h>
+#include <sys/linker_set.h>
+#include <sys/module.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/condvar.h>
+#include <sys/sysctl.h>
+#include <sys/sx.h>
+#include <rtems/bsd/sys/unistd.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/priv.h>
 
-#include <freebsd/dev/usb/usb.h>
-#include <freebsd/dev/usb/usbdi.h>
-#include <freebsd/dev/usb/usbdi_util.h>
-#include <freebsd/dev/usb/usbhid.h>
+#include <dev/usb/usb.h>
+#include <dev/usb/usbdi.h>
+#include <dev/usb/usbdi_util.h>
+#include <dev/usb/usbhid.h>
 
 #define	USB_DEBUG_VAR usb_debug
 
-#include <freebsd/dev/usb/usb_core.h>
-#include <freebsd/dev/usb/usb_debug.h>
-#include <freebsd/dev/usb/usb_process.h>
-#include <freebsd/dev/usb/usb_device.h>
-#include <freebsd/dev/usb/usb_request.h>
+#include <dev/usb/usb_core.h>
+#include <dev/usb/usb_debug.h>
+#include <dev/usb/usb_process.h>
+#include <dev/usb/usb_device.h>
+#include <dev/usb/usb_request.h>
 
 static void hid_clear_local(struct hid_item *);
 static uint8_t hid_get_byte(struct hid_data *s, const uint16_t wSize);

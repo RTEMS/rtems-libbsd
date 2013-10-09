@@ -45,7 +45,6 @@ static char *rcsid = "$FreeBSD: src/lib/libc/rpc/auth_none.c,v 1.9 1999/08/28 00
 #include "config.h"
 #endif
 
-#include <freebsd/bsd.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <rpc/auth.h>

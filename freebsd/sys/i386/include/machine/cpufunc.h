@@ -35,10 +35,10 @@
  * used in preference to this.
  */
 
-#ifndef _MACHINE_CPUFUNC_HH_
-#define	_MACHINE_CPUFUNC_HH_
+#ifndef _MACHINE_CPUFUNC_H_
+#define	_MACHINE_CPUFUNC_H_
 
-#ifndef _SYS_CDEFS_HH_
+#ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
 #endif
 
@@ -758,4 +758,4 @@ int	rdmsr_safe(u_int msr, uint64_t *val);
 int	wrmsr_safe(u_int msr, uint64_t newval);
 #endif
 
-#endif /* !_MACHINE_CPUFUNC_HH_ */
+#endif /* !_MACHINE_CPUFUNC_H_ */

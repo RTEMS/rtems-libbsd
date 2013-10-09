@@ -1,6 +1,3 @@
-#ifdef __rtems__
-#include "port_before.h"
-#endif
 /*-
  * Copyright (c) 2001 Brian Somers <brian@Awfulhak.org>
  *   Based on original work by Atsushi Murai <amurai@FreeBSD.org>
@@ -32,7 +29,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 
 #include <libutil.h>
 #include <string.h>

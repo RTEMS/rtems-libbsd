@@ -36,8 +36,8 @@
 #ifndef VM_UMA_H
 #define VM_UMA_H
 
-#include <freebsd/sys/param.h>		/* For NULL */
-#include <freebsd/sys/malloc.h>		/* For M_* */
+#include <rtems/bsd/sys/param.h>		/* For NULL */
+#include <sys/malloc.h>		/* For M_* */
 
 /* User visible parameters */
 #define UMA_SMALLEST_UNIT       (PAGE_SIZE / 256) /* Smallest item allocated */

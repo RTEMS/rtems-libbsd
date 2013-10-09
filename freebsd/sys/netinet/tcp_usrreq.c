@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1988, 1993
@@ -33,62 +33,62 @@
  *	From: @(#)tcp_usrreq.c	8.2 (Berkeley) 1/3/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_ddb.h>
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_inet6.h>
-#include <freebsd/local/opt_tcpdebug.h>
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_tcpdebug.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/mbuf.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/mbuf.h>
 #ifdef INET6
-#include <freebsd/sys/domain.h>
+#include <sys/domain.h>
 #endif /* INET6 */
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/socketvar.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/jail.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/proc.h>
+#include <sys/jail.h>
 
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 #endif
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
 #ifdef INET6
-#include <freebsd/netinet/ip6.h>
+#include <netinet/ip6.h>
 #endif
-#include <freebsd/netinet/in_pcb.h>
+#include <netinet/in_pcb.h>
 #ifdef INET6
-#include <freebsd/netinet6/in6_pcb.h>
+#include <netinet6/in6_pcb.h>
 #endif
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/ip_var.h>
+#include <netinet/in_var.h>
+#include <netinet/ip_var.h>
 #ifdef INET6
-#include <freebsd/netinet6/ip6_var.h>
-#include <freebsd/netinet6/scope6_var.h>
+#include <netinet6/ip6_var.h>
+#include <netinet6/scope6_var.h>
 #endif
-#include <freebsd/netinet/tcp.h>
-#include <freebsd/netinet/tcp_fsm.h>
-#include <freebsd/netinet/tcp_seq.h>
-#include <freebsd/netinet/tcp_timer.h>
-#include <freebsd/netinet/tcp_var.h>
-#include <freebsd/netinet/tcpip.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
 #ifdef TCPDEBUG
-#include <freebsd/netinet/tcp_debug.h>
+#include <netinet/tcp_debug.h>
 #endif
-#include <freebsd/netinet/tcp_offload.h>
+#include <netinet/tcp_offload.h>
 
 /*
  * TCP protocol interface to socket abstraction.

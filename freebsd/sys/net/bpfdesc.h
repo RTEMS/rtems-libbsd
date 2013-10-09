@@ -36,14 +36,14 @@
  * $FreeBSD$
  */
 
-#ifndef _NET_BPFDESC_HH_
-#define _NET_BPFDESC_HH_
+#ifndef _NET_BPFDESC_H_
+#define _NET_BPFDESC_H_
 
-#include <freebsd/sys/callout.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/net/if.h>
+#include <sys/callout.h>
+#include <sys/selinfo.h>
+#include <sys/queue.h>
+#include <sys/conf.h>
+#include <net/if.h>
 
 /*
  * Descriptor associated with each open bpf file.

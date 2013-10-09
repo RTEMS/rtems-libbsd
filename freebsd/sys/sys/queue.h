@@ -30,10 +30,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_QUEUE_HH_
-#define	_SYS_QUEUE_HH_
+#ifndef _SYS_QUEUE_H_
+#define	_SYS_QUEUE_H_
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 /*
  * This file defines four types of data structures: singly-linked lists,
@@ -633,4 +633,4 @@ struct {								\
 		(head2)->tqh_last = &(head2)->tqh_first;		\
 } while (0)
 
-#endif /* !_SYS_QUEUE_HH_ */
+#endif /* !_SYS_QUEUE_H_ */

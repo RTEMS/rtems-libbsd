@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /* $OpenBSD: deflate.c,v 1.3 2001/08/20 02:45:22 hugh Exp $ */
 
@@ -34,22 +34,22 @@
  * functions using the zlib library (see net/zlib.{c,h})
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_kdtrace.h>
+#include <rtems/bsd/local/opt_kdtrace.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/sdt.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/net/zlib.h>
+#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/malloc.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/sdt.h>
+#include <sys/systm.h>
+#include <net/zlib.h>
 
-#include <freebsd/opencrypto/cryptodev.h>
-#include <freebsd/opencrypto/deflate.h>
+#include <opencrypto/cryptodev.h>
+#include <opencrypto/deflate.h>
 
 SDT_PROVIDER_DECLARE(opencrypto);
 SDT_PROBE_DEFINE2(opencrypto, deflate, deflate_global, entry,

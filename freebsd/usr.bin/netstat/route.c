@@ -40,54 +40,38 @@ static char sccsid[] = "From: @(#)route.c	8.6 (Berkeley) 4/28/95";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <sys/param.h>
-#ifdef __rtems__
-#include <freebsd/sys/protosw.h>
-#else
+#include <rtems/bsd/sys/param.h>
 #include <sys/protosw.h>
-#endif
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/time.h>
+#include <rtems/bsd/sys/time.h>
 
 #include <net/ethernet.h>
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>
-#else
 #include <net/if_var.h>
-#endif
 #include <net/if_dl.h>
 #include <net/if_types.h>
-#ifdef __rtems__
-#include <freebsd/net/radix.h>
-#else
 #include <net/radix.h>
-#endif
 #include <net/route.h>
 
 #include <netinet/in.h>
 #ifdef __rtems__
 /* no IPX on RTEMS */
 /* no AppleTalk on RTEMS */
-#else
+#else /* __rtems__ */
 #include <netipx/ipx.h>
 #include <netatalk/at.h>
-#endif
+#endif /* __rtems__ */
 #ifdef __rtems__
 /* why isn't this protected by a NETGRAPH define */
-#else
+#else /* __rtems__ */
 #include <netgraph/ng_socket.h>
-#endif
+#endif /* __rtems__ */
 
 #include <sys/sysctl.h>
 
 #include <arpa/inet.h>
-#ifdef __rtems__
-/* apparently libutil.h is not needed */
-#else
 #include <libutil.h>
-#endif
 #include <netdb.h>
 #include <stdint.h>
 #include <stdio.h>

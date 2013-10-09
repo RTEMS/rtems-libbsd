@@ -44,8 +44,8 @@
  * MROUTING Revision: 1.2
  */
 
-#ifndef _NETINET6_IP6_MROUTE_HH_
-#define _NETINET6_IP6_MROUTE_HH_
+#ifndef _NETINET6_IP6_MROUTE_H_
+#define _NETINET6_IP6_MROUTE_H_
 
 /*
  * Multicast Routing set/getsockopt commands.
@@ -242,7 +242,7 @@ struct mf6c {
 /*
  * Argument structure used for pkt info. while upcall is made
  */
-#ifndef _NETINET_IP_MROUTE_HH_
+#ifndef _NETINET_IP_MROUTE_H_
 struct rtdetq {		/* XXX: rtdetq is also defined in ip_mroute.h */
     struct mbuf		*m;		/* A copy of the packet		    */
     struct ifnet	*ifp;		/* Interface pkt came in on	    */
@@ -251,7 +251,7 @@ struct rtdetq {		/* XXX: rtdetq is also defined in ip_mroute.h */
 #endif /* UPCALL_TIMING */
     struct rtdetq	*next;
 };
-#endif /* _NETINET_IP_MROUTE_HH_ */
+#endif /* _NETINET_IP_MROUTE_H_ */
 
 #define MF6CTBLSIZ	256
 #if (MF6CTBLSIZ & (MF6CTBLSIZ - 1)) == 0	  /* from sys:route.h */
@@ -268,4 +268,4 @@ extern int	(*ip6_mrouter_done)(void);
 extern int	(*mrt6_ioctl)(u_long, caddr_t);
 #endif /* _KERNEL */
 
-#endif /* !_NETINET6_IP6_MROUTE_HH_ */
+#endif /* !_NETINET6_IP6_MROUTE_H_ */

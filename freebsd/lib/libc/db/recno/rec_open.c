@@ -39,7 +39,7 @@ static char sccsid[] = "@(#)rec_open.c	8.10 (Berkeley) 9/1/94";
 __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 

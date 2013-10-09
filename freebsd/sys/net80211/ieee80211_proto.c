@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2001 Atsushi Onoe
@@ -26,37 +26,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
  * IEEE 802.11 protocol support.
  */
 
-#include <freebsd/local/opt_inet.h>
-#include <freebsd/local/opt_wlan.h>
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_wlan.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
 
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_media.h>
-#include <freebsd/net/ethernet.h>		/* XXX for ether_sprintf */
+#include <net/if.h>
+#include <net/if_media.h>
+#include <net/ethernet.h>		/* XXX for ether_sprintf */
 
-#include <freebsd/net80211/ieee80211_var.h>
-#include <freebsd/net80211/ieee80211_adhoc.h>
-#include <freebsd/net80211/ieee80211_sta.h>
-#include <freebsd/net80211/ieee80211_hostap.h>
-#include <freebsd/net80211/ieee80211_wds.h>
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_adhoc.h>
+#include <net80211/ieee80211_sta.h>
+#include <net80211/ieee80211_hostap.h>
+#include <net80211/ieee80211_wds.h>
 #ifdef IEEE80211_SUPPORT_MESH
-#include <freebsd/net80211/ieee80211_mesh.h>
+#include <net80211/ieee80211_mesh.h>
 #endif
-#include <freebsd/net80211/ieee80211_monitor.h>
-#include <freebsd/net80211/ieee80211_input.h>
+#include <net80211/ieee80211_monitor.h>
+#include <net80211/ieee80211_input.h>
 
 /* XXX tunables */
 #define	AGGRESSIVE_MODE_SWITCH_HYSTERESIS	3	/* pkts / 100ms */

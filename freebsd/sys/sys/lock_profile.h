@@ -28,16 +28,16 @@
  */
 
 
-#ifndef _SYS_LOCK_PROFILE_HH_
-#define _SYS_LOCK_PROFILE_HH_
+#ifndef _SYS_LOCK_PROFILE_H_
+#define _SYS_LOCK_PROFILE_H_
 
 struct lock_profile_object;
 LIST_HEAD(lpohead, lock_profile_object);
 
 #ifdef _KERNEL
 #ifdef LOCK_PROFILING
-#include <freebsd/machine/cpufunc.h>
-#include <freebsd/sys/lock.h>
+#include <machine/cpufunc.h>
+#include <rtems/bsd/sys/lock.h>
 
 #ifndef USE_CPU_NANOSECONDS
 u_int64_t nanoseconds(void);
@@ -72,4 +72,4 @@ lock_profile_obtain_lock_failed(struct lock_object *lo, int *contested,
 
 #endif /* _KERNEL */
 
-#endif /* _SYS_LOCK_PROFILE_HH_ */
+#endif /* _SYS_LOCK_PROFILE_H_ */

@@ -38,24 +38,24 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/condvar.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/condvar.h>
 
-#include <freebsd/cam/cam.h>
-#include <freebsd/cam/cam_ccb.h>
-#include <freebsd/cam/cam_sim.h>
-#include <freebsd/cam/cam_xpt.h>
-#include <freebsd/cam/cam_xpt_sim.h>
-#include <freebsd/cam/cam_debug.h>
+#include <cam/cam.h>
+#include <cam/cam_ccb.h>
+#include <cam/cam_sim.h>
+#include <cam/cam_xpt.h>
+#include <cam/cam_xpt_sim.h>
+#include <cam/cam_debug.h>
 
-#include <freebsd/cam/scsi/scsi_all.h>
+#include <cam/scsi/scsi_all.h>
 
 #include <rtems/media.h>
 #include <rtems/libio.h>

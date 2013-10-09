@@ -29,8 +29,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  */
-#ifndef _NET80211_IEEE80211_RADIOTAP_HH_
-#define _NET80211_IEEE80211_RADIOTAP_HH_
+#ifndef _NET80211_IEEE80211_RADIOTAP_H_
+#define _NET80211_IEEE80211_RADIOTAP_H_
 
 /* A generic radio capture format is desirable. It must be
  * rigidly defined (e.g., units for fields should be given),
@@ -231,4 +231,4 @@ enum ieee80211_radiotap_type {
 #define	IEEE80211_RADIOTAP_F_BADFCS	0x40	/* does not pass FCS check */
 #define	IEEE80211_RADIOTAP_F_SHORTGI	0x80	/* HT short GI */
 
-#endif /* !_NET80211_IEEE80211_RADIOTAP_HH_ */
+#endif /* !_NET80211_IEEE80211_RADIOTAP_H_ */

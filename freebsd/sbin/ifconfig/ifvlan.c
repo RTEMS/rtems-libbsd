@@ -30,7 +30,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
@@ -40,13 +40,8 @@
 
 #include <net/ethernet.h>
 #include <net/if.h>
-#ifdef __rtems__
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/if_vlan_var.h>
-#else
 #include <net/if_var.h>
 #include <net/if_vlan_var.h>
-#endif
 #include <net/route.h>
 
 #include <ctype.h>

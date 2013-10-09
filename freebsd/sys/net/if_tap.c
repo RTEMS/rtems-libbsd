@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (C) 1999-2000 by Maksim Yevmenkin <m_evmenkin@yahoo.com>
@@ -37,42 +37,42 @@
  * $Id: if_tap.c,v 0.21 2000/07/23 21:46:02 max Exp $
  */
 
-#include <freebsd/local/opt_compat.h>
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_inet.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/filio.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/poll.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/selinfo.h>
-#include <freebsd/sys/signalvar.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/ttycom.h>
-#include <freebsd/sys/uio.h>
-#include <freebsd/sys/queue.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/conf.h>
+#include <sys/fcntl.h>
+#include <sys/filio.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/module.h>
+#include <sys/poll.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/selinfo.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
+#include <sys/ttycom.h>
+#include <sys/uio.h>
+#include <sys/queue.h>
 
-#include <freebsd/net/bpf.h>
-#include <freebsd/net/ethernet.h>
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_clone.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/if_types.h>
+#include <net/bpf.h>
+#include <net/ethernet.h>
+#include <net/if.h>
+#include <net/if_clone.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+#include <net/if_types.h>
 
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 
-#include <freebsd/net/if_tapvar.h>
-#include <freebsd/net/if_tap.h>
+#include <net/if_tapvar.h>
+#include <net/if_tap.h>
 
 
 #define CDEV_NAME	"tap"

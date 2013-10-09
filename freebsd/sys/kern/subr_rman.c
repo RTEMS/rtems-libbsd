@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright 1998 Massachusetts Institute of Technology
@@ -57,25 +57,25 @@
  * permitted.
  */
 
-#include <freebsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ddb.h>
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/bus.h>		/* XXX debugging */
-#include <freebsd/machine/bus.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/bus.h>		/* XXX debugging */
+#include <machine/bus.h>
+#include <sys/rman.h>
+#include <sys/sysctl.h>
 
 #ifdef DDB
-#include <freebsd/ddb/ddb.h>
+#include <ddb/ddb.h>
 #endif
 
 /*

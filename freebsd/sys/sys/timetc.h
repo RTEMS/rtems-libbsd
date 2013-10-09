@@ -9,8 +9,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_TIMETC_HH_
-#define	_SYS_TIMETC_HH_
+#ifndef _SYS_TIMETC_H_
+#define	_SYS_TIMETC_H_
 
 #ifndef _KERNEL
 #error "no user-serviceable parts inside"
@@ -75,4 +75,4 @@ void	tc_ticktock(void);
 SYSCTL_DECL(_kern_timecounter);
 #endif
 
-#endif /* !_SYS_TIMETC_HH_ */
+#endif /* !_SYS_TIMETC_H_ */

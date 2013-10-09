@@ -26,8 +26,8 @@
  *	$FreeBSD$
  */
 
-#ifndef _SYS_KOBJ_HH_
-#define _SYS_KOBJ_HH_
+#ifndef _SYS_KOBJ_H_
+#define _SYS_KOBJ_H_
 
 /*
  * Forward declarations
@@ -254,4 +254,4 @@ kobj_method_t* kobj_lookup_method(kobj_class_t cls,
  */
 int kobj_error_method(void);
 
-#endif /* !_SYS_KOBJ_HH_ */
+#endif /* !_SYS_KOBJ_H_ */

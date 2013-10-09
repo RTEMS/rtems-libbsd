@@ -36,8 +36,8 @@
  * PURPOSE.
  */
 
-#ifndef _NETIPSEC_AH_VAR_HH_
-#define _NETIPSEC_AH_VAR_HH_
+#ifndef _NETIPSEC_AH_VAR_H_
+#define _NETIPSEC_AH_VAR_H_
 
 /*
  * These define the algorithm indices into the histogram.  They're
@@ -79,4 +79,4 @@ VNET_DECLARE(struct ahstat, ahstat);
 #define	V_ah_cleartos		VNET(ah_cleartos)
 #define	V_ahstat		VNET(ahstat)
 #endif /* _KERNEL */
-#endif /*_NETIPSEC_AH_VAR_HH_*/
+#endif /*_NETIPSEC_AH_VAR_H_*/

@@ -33,8 +33,8 @@
  *       @(#)if_ether.h	8.1 (Berkeley) 6/10/93
  */
 
-#ifndef _NET_IF_ARC_HH_
-#define _NET_IF_ARC_HH_
+#ifndef _NET_IF_ARC_H_
+#define _NET_IF_ARC_H_
 
 /*
  * Arcnet address - 1 octets
@@ -140,4 +140,4 @@ void		arc_frag_init(struct ifnet *);
 struct mbuf *	arc_frag_next(struct ifnet *);
 #endif
 
-#endif /* _NET_IF_ARC_HH_ */
+#endif /* _NET_IF_ARC_H_ */

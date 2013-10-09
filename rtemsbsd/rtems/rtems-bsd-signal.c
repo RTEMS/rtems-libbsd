@@ -37,11 +37,11 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/signalvar.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/systm.h>
+#include <sys/signalvar.h>
 
 void
 psignal(struct proc *p, int sig)

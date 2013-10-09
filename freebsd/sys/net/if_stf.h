@@ -30,9 +30,9 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _NET_IF_STF_HH_
-#define _NET_IF_STF_HH_
+#ifndef _NET_IF_STF_H_
+#define _NET_IF_STF_H_
 
 void in_stf_input(struct mbuf *, int);
 
-#endif /* _NET_IF_STF_HH_ */
+#endif /* _NET_IF_STF_H_ */

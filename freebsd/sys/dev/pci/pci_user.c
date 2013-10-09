@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
@@ -26,41 +26,41 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_bus.h>	/* XXX trim includes */
-#include <freebsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_bus.h>	/* XXX trim includes */
+#include <rtems/bsd/local/opt_compat.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/linker.h>
-#include <freebsd/sys/fcntl.h>
-#include <freebsd/sys/conf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/linker.h>
+#include <sys/fcntl.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/queue.h>
+#include <rtems/bsd/sys/types.h>
 
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/pmap.h>
+#include <vm/vm.h>
+#include <vm/pmap.h>
 #ifndef __rtems__
-#include <freebsd/vm/vm_extern.h>
+#include <vm/vm_extern.h>
 #endif /* __rtems__ */
 
-#include <freebsd/sys/bus.h>
-#include <freebsd/machine/bus.h>
-#include <freebsd/sys/rman.h>
-#include <freebsd/machine/resource.h>
+#include <sys/bus.h>
+#include <machine/bus.h>
+#include <sys/rman.h>
+#include <machine/resource.h>
 
-#include <freebsd/sys/pciio.h>
-#include <freebsd/dev/pci/pcireg.h>
-#include <freebsd/dev/pci/pcivar.h>
+#include <sys/pciio.h>
+#include <dev/pci/pcireg.h>
+#include <dev/pci/pcivar.h>
 
-#include <freebsd/local/pcib_if.h>
-#include <freebsd/local/pci_if.h>
+#include <rtems/bsd/local/pcib_if.h>
+#include <rtems/bsd/local/pci_if.h>
 
 /*
  * This is the user interface to PCI configuration space.

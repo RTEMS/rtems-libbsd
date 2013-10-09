@@ -30,16 +30,16 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_ND6_HH_
-#define _NETINET6_ND6_HH_
+#ifndef _NETINET6_ND6_H_
+#define _NETINET6_ND6_H_
 
 /* see net/route.h, or net/if_inarp.h */
 #ifndef RTF_ANNOUNCE
 #define RTF_ANNOUNCE	RTF_PROTO2
 #endif
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/callout.h>
+#include <sys/queue.h>
+#include <sys/callout.h>
 
 struct llentry;
 
@@ -452,4 +452,4 @@ int in6_tmpifadd __P((const struct in6_ifaddr *, int, int));
 
 #endif /* _KERNEL */
 
-#endif /* _NETINET6_ND6_HH_ */
+#endif /* _NETINET6_ND6_H_ */

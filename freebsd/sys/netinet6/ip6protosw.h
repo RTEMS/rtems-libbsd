@@ -62,8 +62,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET6_IP6PROTOSW_HH_
-#define _NETINET6_IP6PROTOSW_HH_
+#ifndef _NETINET6_IP6PROTOSW_H_
+#define _NETINET6_IP6PROTOSW_H_
 
 /*
  * Protocol switch table for IPv6.
@@ -145,4 +145,4 @@ struct ip6protosw {
 extern struct ip6protosw inet6sw[];
 #endif
 
-#endif /* !_NETINET6_IP6PROTOSW_HH_ */
+#endif /* !_NETINET6_IP6PROTOSW_H_ */

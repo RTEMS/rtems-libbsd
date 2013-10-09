@@ -30,15 +30,15 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_MOUNT_HH_
-#define _SYS_MOUNT_HH_
+#ifndef _SYS_MOUNT_H_
+#define _SYS_MOUNT_H_
 
-#include <freebsd/sys/ucred.h>
-#include <freebsd/sys/queue.h>
+#include <sys/ucred.h>
+#include <sys/queue.h>
 #ifdef _KERNEL
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/lockmgr.h>
-#include <freebsd/sys/_mutex.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/lockmgr.h>
+#include <sys/_mutex.h>
 #endif
 
 /*
@@ -663,7 +663,7 @@ vfs_statfs_t	__vfs_statfs;
 		VN_KNOTE((vp), (hint), 0);				\
 } while (0)
 
-#include <freebsd/sys/module.h>
+#include <sys/module.h>
 
 /*
  * Version numbers.
@@ -771,7 +771,7 @@ vfs_sysctl_t		vfs_stdsysctl;
 
 #else /* !_KERNEL */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 
 struct stat;
 
@@ -795,4 +795,4 @@ __END_DECLS
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_MOUNT_HH_ */
+#endif /* !_SYS_MOUNT_H_ */

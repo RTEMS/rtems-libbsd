@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993
@@ -36,38 +36,36 @@
  *	@(#)kern_subr.c	8.3 (Berkeley) 1/21/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_zero.h>
+#include <rtems/bsd/local/opt_zero.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/ktr.h>
-#include <freebsd/sys/limits.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/sched.h>
-#include <freebsd/sys/sysctl.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/ktr.h>
+#include <sys/limits.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/resourcevar.h>
+#include <sys/sched.h>
+#include <sys/sysctl.h>
 #ifndef __rtems__
-#include <freebsd/sys/vnode.h>
+#include <sys/vnode.h>
 #endif
 
-#ifndef __rtems__
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_page.h>
-#include <freebsd/vm/vm_map.h>
-#endif
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vm_map.h>
 #ifdef __rtems__
-#include <freebsd/sys/uio.h>
+#include <sys/uio.h>
 #endif
 #ifdef ZERO_COPY_SOCKETS
-#include <freebsd/vm/vm_param.h>
-#include <freebsd/vm/vm_object.h>
+#include <vm/vm_param.h>
+#include <vm/vm_object.h>
 #endif
 
 #ifndef __rtems__

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993
@@ -32,38 +32,38 @@
  *	@(#)in.c	8.4 (Berkeley) 1/9/95
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_mpath.h>
+#include <rtems/bsd/local/opt_mpath.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sockio.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/jail.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/sockio.h>
+#include <sys/malloc.h>
+#include <sys/priv.h>
+#include <sys/socket.h>
+#include <sys/jail.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/sysctl.h>
+#include <sys/syslog.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_var.h>
-#include <freebsd/net/if_dl.h>
-#include <freebsd/net/if_llatbl.h>
-#include <freebsd/net/if_types.h>
-#include <freebsd/net/route.h>
-#include <freebsd/net/vnet.h>
+#include <net/if.h>
+#include <net/if_var.h>
+#include <net/if_dl.h>
+#include <net/if_llatbl.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/in_var.h>
-#include <freebsd/netinet/in_pcb.h>
-#include <freebsd/netinet/ip_var.h>
-#include <freebsd/netinet/igmp_var.h>
-#include <freebsd/netinet/udp.h>
-#include <freebsd/netinet/udp_var.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/igmp_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
 static int in_mask2len(struct in_addr *);
 static void in_len2mask(struct in_addr *, int);
@@ -1309,8 +1309,8 @@ in_purgemaddrs(struct ifnet *ifp)
 	IN_MULTI_UNLOCK();
 }
 
-#include <freebsd/net/if_dl.h>
-#include <freebsd/netinet/if_ether.h>
+#include <net/if_dl.h>
+#include <netinet/if_ether.h>
 
 struct in_llentry {
 	struct llentry		base;

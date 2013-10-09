@@ -3,22 +3,18 @@
  *  that the target is alive after initializing the TCP/IP stack.
  */
 
-#include <bsp.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <freebsd/bsd.h>
+#include <unistd.h>
 
-void print_test_name(void)
-{
-  printf( "\n\n*** LIBFREEBSD INITIALIZATION TEST ***\n" );
-}
+#define TEST_NAME "LIBBSD INIT 1"
 
-void test_main(void)
+static void test_main(void)
 {
   puts( "Sleeping to see what happens" );
   sleep( 5 );
 
-  printf( "*** END OF LIBFREEBSD INITIALIZATION TEST ***\n" );
+  puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }
 
@@ -47,3 +43,4 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
     0
 };
 
+#include <rtems/bsd/test/default-init.h>

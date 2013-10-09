@@ -30,19 +30,19 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_PCPU_HH_
-#define	_SYS_PCPU_HH_
+#ifndef _SYS_PCPU_H_
+#define	_SYS_PCPU_H_
 
 #ifdef LOCORE
 #error "no assembler-serviceable parts inside"
 #endif
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 #ifndef __rtems__
-#include <freebsd/sys/vmmeter.h>
+#include <sys/vmmeter.h>
 #endif
-#include <freebsd/sys/resource.h>
-#include <freebsd/machine/pcpu.h>
+#include <rtems/bsd/sys/resource.h>
+#include <machine/pcpu.h>
 
 /*
  * Define a set for pcpu data.
@@ -230,4 +230,4 @@ void	pcpu_init(struct pcpu *pcpu, int cpuid, size_t size);
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_PCPU_HH_ */
+#endif /* !_SYS_PCPU_H_ */

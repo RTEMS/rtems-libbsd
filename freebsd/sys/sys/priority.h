@@ -31,8 +31,8 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_PRIORITY_HH_
-#define _SYS_PRIORITY_HH_
+#ifndef _SYS_PRIORITY_H_
+#define _SYS_PRIORITY_H_
 
 /*
  * Process priority specifications.
@@ -127,4 +127,4 @@ struct priority {
 	u_char	pri_user;	/* User priority based on p_cpu and p_nice. */
 };
 
-#endif	/* !_SYS_PRIORITY_HH_ */
+#endif	/* !_SYS_PRIORITY_H_ */

@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_ICMP_VAR_HH_
-#define _NETINET_ICMP_VAR_HH_
+#ifndef _NETINET_ICMP_VAR_H_
+#define _NETINET_ICMP_VAR_H_
 
 
 /*

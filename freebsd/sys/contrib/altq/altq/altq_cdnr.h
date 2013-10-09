@@ -26,10 +26,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _ALTQ_ALTQ_CDNR_HH_
-#define	_ALTQ_ALTQ_CDNR_HH_
+#ifndef _ALTQ_ALTQ_CDNR_H_
+#define	_ALTQ_ALTQ_CDNR_H_
 
-#include <freebsd/altq/altq.h>
+#include <altq/altq.h>
 
 /*
  * traffic conditioner element types
@@ -332,4 +332,4 @@ struct tswtcm {
 
 #endif /* _KERNEL */
 
-#endif /* _ALTQ_ALTQ_CDNR_HH_ */
+#endif /* _ALTQ_ALTQ_CDNR_H_ */

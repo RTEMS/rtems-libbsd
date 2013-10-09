@@ -8,6 +8,6 @@ typedef struct {
   uintptr_t   value;
 } kvm_symval_t;
 
-kvm_symval_t rtems_kvm_symbols[];
+extern kvm_symval_t rtems_kvm_symbols[];
 
 #endif

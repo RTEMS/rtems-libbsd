@@ -28,13 +28,13 @@
  * $FreeBSD$
  */
 
-#ifndef	_SYS_LOCKMGR_HH_
-#define	_SYS_LOCKMGR_HH_
+#ifndef	_SYS_LOCKMGR_H_
+#define	_SYS_LOCKMGR_H_
 
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_lockmgr.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/_rwlock.h>
+#include <sys/_lock.h>
+#include <sys/_lockmgr.h>
+#include <sys/_mutex.h>
+#include <sys/_rwlock.h>
 
 #define	LK_SHARE			0x01
 #define	LK_SHARED_WAITERS		0x02
@@ -56,7 +56,7 @@
 #ifdef _KERNEL
 
 #if !defined(LOCK_FILE) || !defined(LOCK_LINE)
-#error	"LOCK_FILE and LOCK_LINE not defined, include <sys/lock.h> before"
+#error	"LOCK_FILE and LOCK_LINE not defined, include <rtems/bsd/sys/lock.h> before"
 #endif
 
 struct thread;
@@ -192,4 +192,4 @@ _lockmgr_args_rw(struct lock *lk, u_int flags, struct rwlock *ilk,
 
 #endif /* _KERNEL */
 
-#endif /* !_SYS_LOCKMGR_HH_ */
+#endif /* !_SYS_LOCKMGR_H_ */

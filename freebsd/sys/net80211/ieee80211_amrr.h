@@ -17,8 +17,8 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#ifndef _NET80211_IEEE80211_AMRR_HH_
-#define _NET80211_IEEE80211_AMRR_HH_
+#ifndef _NET80211_IEEE80211_AMRR_H_
+#define _NET80211_IEEE80211_AMRR_H_
 
 /*-
  * Naive implementation of the Adaptive Multi Rate Retry algorithm:
@@ -58,4 +58,4 @@ struct ieee80211_amrr_node {
 	u_int	amn_retrycnt;
 };
 
-#endif /* _NET80211_IEEE80211_AMRR_HH_ */
+#endif /* _NET80211_IEEE80211_AMRR_H_ */

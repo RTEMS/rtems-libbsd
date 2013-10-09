@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1990, 1991 Regents of The University of Michigan.
@@ -25,18 +25,18 @@
  * $FreeBSD$
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/protosw.h>
-#include <freebsd/sys/domain.h>
-#include <freebsd/sys/socket.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/protosw.h>
+#include <sys/domain.h>
+#include <sys/socket.h>
 
-#include <freebsd/sys/kernel.h>
+#include <sys/kernel.h>
 
-#include <freebsd/net/route.h>
+#include <net/route.h>
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/ddp_var.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/ddp_var.h>
+#include <netatalk/at_extern.h>
 
 static struct domain	atalkdomain;
 

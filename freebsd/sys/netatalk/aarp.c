@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2004-2009 Robert N. M. Watson
@@ -52,29 +52,29 @@
  * $FreeBSD$
  */
 
-#include <freebsd/local/opt_atalk.h>
+#include <rtems/bsd/local/opt_atalk.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/syslog.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_dl.h>
+#include <net/if.h>
+#include <net/if_dl.h>
 
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 #undef s_net
-#include <freebsd/netinet/if_ether.h>
+#include <netinet/if_ether.h>
 
-#include <freebsd/netatalk/at.h>
-#include <freebsd/netatalk/at_var.h>
-#include <freebsd/netatalk/aarp.h>
-#include <freebsd/netatalk/phase2.h>
-#include <freebsd/netatalk/at_extern.h>
+#include <netatalk/at.h>
+#include <netatalk/at_var.h>
+#include <netatalk/aarp.h>
+#include <netatalk/phase2.h>
+#include <netatalk/at_extern.h>
 
-#include <freebsd/security/mac/mac_framework.h>
+#include <security/mac/mac_framework.h>
 
 static void	aarptfree(struct aarptab *aat);
 static void	at_aarpinput(struct ifnet *ifp, struct mbuf *m);

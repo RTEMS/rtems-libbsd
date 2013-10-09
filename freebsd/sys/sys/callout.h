@@ -35,10 +35,10 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_CALLOUT_HH_
-#define _SYS_CALLOUT_HH_
+#ifndef _SYS_CALLOUT_H_
+#define _SYS_CALLOUT_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 struct lock_object;
 
@@ -100,4 +100,4 @@ void	callout_tick(void);
 
 #endif
 
-#endif /* _SYS_CALLOUT_HH_ */
+#endif /* _SYS_CALLOUT_H_ */

@@ -24,8 +24,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_MSCTEST_HH_
-#define	_USB_MSCTEST_HH_
+#ifndef _USB_MSCTEST_H_
+#define	_USB_MSCTEST_H_
 
 enum {
 	MSC_EJECT_STOPUNIT,
@@ -41,4 +41,4 @@ int usb_iface_is_cdrom(struct usb_device *udev,
 usb_error_t usb_msc_eject(struct usb_device *udev,
 	    uint8_t iface_index, int method);
 
-#endif					/* _USB_MSCTEST_HH_ */
+#endif					/* _USB_MSCTEST_H_ */

@@ -29,10 +29,6 @@
 #ifndef _MEMSTAT_H_
 #define	_MEMSTAT_H_
 
-#ifdef __rtems__
-#include <stdint.h>
-#endif
-
 /*
  * Number of CPU slots in library-internal data structures.  This should be
  * at least the value of MAXCPU from param.h.

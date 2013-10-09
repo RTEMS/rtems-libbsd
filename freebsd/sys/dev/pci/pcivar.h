@@ -27,10 +27,10 @@
  *
  */
 
-#ifndef _PCIVAR_HH_
-#define	_PCIVAR_HH_
+#ifndef _PCIVAR_H_
+#define	_PCIVAR_H_
 
-#include <freebsd/sys/queue.h>
+#include <sys/queue.h>
 
 /* some PCI bus constants */
 #define	PCI_MAXMAPS_0	6	/* max. no. of memory/port maps */
@@ -198,7 +198,7 @@ typedef struct {
 extern uint32_t pci_numdevs;
 
 /* Only if the prerequisites are present */
-#if defined(_SYS_BUS_HH_) && defined(_SYS_PCIIO_HH_)
+#if defined(_SYS_BUS_H_) && defined(_SYS_PCIIO_H_)
 struct pci_devinfo {
         STAILQ_ENTRY(pci_devinfo) pci_links;
 	struct resource_list resources;
@@ -207,9 +207,9 @@ struct pci_devinfo {
 };
 #endif
 
-#ifdef _SYS_BUS_HH_
+#ifdef _SYS_BUS_H_
 
-#include <freebsd/local/pci_if.h>
+#include <rtems/bsd/local/pci_if.h>
 
 enum pci_device_ivars {
     PCI_IVAR_SUBVENDOR,
@@ -460,7 +460,7 @@ void	pci_ht_map_msi(device_t dev, uint64_t addr);
 int	pci_get_max_read_req(device_t dev);
 int	pci_set_max_read_req(device_t dev, int size);
 
-#endif	/* _SYS_BUS_HH_ */
+#endif	/* _SYS_BUS_H_ */
 
 /*
  * cdev switch for control device, initialised in generic PCI code
@@ -475,4 +475,4 @@ STAILQ_HEAD(devlist, pci_devinfo);
 extern struct devlist	pci_devq;
 extern uint32_t	pci_generation;
 
-#endif /* _PCIVAR_HH_ */
+#endif /* _PCIVAR_H_ */

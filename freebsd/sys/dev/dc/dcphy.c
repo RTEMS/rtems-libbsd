@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1997, 1998, 1999
@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
 /*
@@ -44,33 +44,33 @@ __FBSDID("$FreeBSD$");
  * which is harder to do.
  */
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/errno.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/bus.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/socket.h>
+#include <rtems/bsd/sys/errno.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/mutex.h>
+#include <sys/bus.h>
 
-#include <freebsd/net/if.h>
-#include <freebsd/net/if_arp.h>
-#include <freebsd/net/if_media.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/if_media.h>
 
-#include <freebsd/dev/mii/mii.h>
-#include <freebsd/dev/mii/miivar.h>
-#include <freebsd/local/miidevs.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
+#include <rtems/bsd/local/miidevs.h>
 
-#include <freebsd/machine/bus.h>
-#include <freebsd/machine/resource.h>
-#include <freebsd/sys/bus.h>
+#include <machine/bus.h>
+#include <machine/resource.h>
+#include <sys/bus.h>
 
-#include <freebsd/dev/pci/pcivar.h>
+#include <dev/pci/pcivar.h>
 
-#include <freebsd/dev/dc/if_dcreg.h>
+#include <dev/dc/if_dcreg.h>
 
-#include <freebsd/local/miibus_if.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 #define DC_SETBIT(sc, reg, x)                           \
         CSR_WRITE_4(sc, reg,                            \

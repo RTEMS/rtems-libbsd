@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993
@@ -36,36 +36,36 @@
  *	@(#)kern_resource.c	8.5 (Berkeley) 1/21/94
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_compat.h>
+#include <rtems/bsd/local/opt_compat.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/sysproto.h>
-#include <freebsd/sys/file.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mutex.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/refcount.h>
-#include <freebsd/sys/resourcevar.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/sched.h>
-#include <freebsd/sys/sx.h>
-#include <freebsd/sys/syscallsubr.h>
-#include <freebsd/sys/sysent.h>
-#include <freebsd/sys/time.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/sysproto.h>
+#include <sys/file.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
+#include <sys/mutex.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/refcount.h>
+#include <sys/resourcevar.h>
+#include <sys/rwlock.h>
+#include <sys/sched.h>
+#include <sys/sx.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysent.h>
+#include <rtems/bsd/sys/time.h>
 #ifndef __rtems__
-#include <freebsd/sys/umtx.h>
+#include <sys/umtx.h>
 
-#include <freebsd/vm/vm.h>
-#include <freebsd/vm/vm_param.h>
-#include <freebsd/vm/pmap.h>
-#include <freebsd/vm/vm_map.h>
+#include <vm/vm.h>
+#include <vm/vm_param.h>
+#include <vm/pmap.h>
+#include <vm/vm_map.h>
 
 
 static MALLOC_DEFINE(M_PLIMIT, "plimit", "plimit structures");
@@ -86,7 +86,7 @@ static void	ruxagg_locked(struct rusage_ext *rux, struct thread *td);
 /*
  * Resource controls and accounting.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getpriority_args {
 	int	which;
 	int	who;
@@ -171,7 +171,7 @@ getpriority(td, uap)
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct setpriority_args {
 	int	which;
 	int	who;
@@ -279,7 +279,7 @@ donice(struct thread *td, struct proc *p, int n)
 /*
  * Set realtime priority for LWP.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct rtprio_thread_args {
 	int		function;
 	lwpid_t		lwpid;
@@ -363,7 +363,7 @@ rtprio_thread(struct thread *td, struct rtprio_thread_args *uap)
 /*
  * Set realtime priority.
  */
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct rtprio_args {
 	int		function;
 	pid_t		pid;
@@ -534,7 +534,7 @@ pri_to_rtp(struct thread *td, struct rtprio *rtp)
 }
 
 #if defined(COMPAT_43)
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct osetrlimit_args {
 	u_int	which;
 	struct	orlimit *rlp;
@@ -557,7 +557,7 @@ osetrlimit(td, uap)
 	return (error);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct ogetrlimit_args {
 	u_int	which;
 	struct	orlimit *rlp;
@@ -596,7 +596,7 @@ ogetrlimit(td, uap)
 }
 #endif /* COMPAT_43 */
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct __setrlimit_args {
 	u_int	which;
 	struct	rlimit *rlp;
@@ -774,7 +774,7 @@ kern_setrlimit(td, which, limp)
 	return (0);
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct __getrlimit_args {
 	u_int	which;
 	struct	rlimit *rlp;
@@ -924,7 +924,7 @@ calcru1(struct proc *p, struct rusage_ext *ruxp, struct timeval *up,
 	sp->tv_usec = su % 1000000;
 }
 
-#ifndef _SYS_SYSPROTO_HH_
+#ifndef _SYS_SYSPROTO_H_
 struct getrusage_args {
 	int	who;
 	struct	rusage *rusage;

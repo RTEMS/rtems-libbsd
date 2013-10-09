@@ -35,11 +35,11 @@
  * http://www.aciri.org/floyd/papers/draft-ipsec-ecn-00.txt
  */
 
-#ifndef _NETINET_IP_ECN_HH_
-#define _NETINET_IP_ECN_HH_
+#ifndef _NETINET_IP_ECN_H_
+#define _NETINET_IP_ECN_H_
 
 #if defined(_KERNEL) && !defined(_LKM)
-#include <freebsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet.h>
 #endif
 
 #define ECN_ALLOWED	1	/* ECN allowed */

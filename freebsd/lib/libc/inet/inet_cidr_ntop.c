@@ -21,7 +21,7 @@ static const char rcsid[] = "$Id: inet_cidr_ntop.c,v 1.4.18.3 2006/10/11 02:32:4
 
 #include "port_before.h"
 
-#include <sys/types.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>

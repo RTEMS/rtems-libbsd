@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef _DEV_MII_ICSPHYREG_HH_
-#define	_DEV_MII_ICSPHYREG_HH_
+#ifndef _DEV_MII_ICSPHYREG_H_
+#define	_DEV_MII_ICSPHYREG_H_
 
 /*
  * ICS1890 registers.
@@ -126,4 +126,4 @@
 #define	ECR2_10AUTOPWRDN	0x0002	/* Automatic 10baseT power down */
 #define	ECR2_100AUTOPWRDN	0x0001	/* Automatic 100baseTX power down */
 
-#endif /* _DEV_MII_ICSPHYREG_HH_ */
+#endif /* _DEV_MII_ICSPHYREG_H_ */

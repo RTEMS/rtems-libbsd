@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*	$KAME: sha1.c,v 1.5 2000/11/08 06:13:08 itojun Exp $	*/
 /*
@@ -36,15 +36,15 @@
  * implemented by Jun-ichiro itojun Itoh <itojun@itojun.org>
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/types.h>
-#include <freebsd/sys/cdefs.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/systm.h>
+#include <rtems/bsd/sys/types.h>
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/systm.h>
 
-#include <freebsd/crypto/sha1.h>
+#include <crypto/sha1.h>
 
 /* sanity check */
 #if BYTE_ORDER != BIG_ENDIAN

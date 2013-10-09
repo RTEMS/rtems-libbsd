@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_HT_HH_
-#define _NET80211_IEEE80211_HT_HH_
+#ifndef _NET80211_IEEE80211_HT_H_
+#define _NET80211_IEEE80211_HT_H_
 
 /*
  * 802.11n protocol implementation definitions.
@@ -199,4 +199,4 @@ uint8_t	*ieee80211_add_htinfo_vendor(uint8_t *, struct ieee80211_node *);
 struct ieee80211_beacon_offsets;
 void	ieee80211_ht_update_beacon(struct ieee80211vap *,
 		struct ieee80211_beacon_offsets *);
-#endif /* _NET80211_IEEE80211_HT_HH_ */
+#endif /* _NET80211_IEEE80211_HT_H_ */

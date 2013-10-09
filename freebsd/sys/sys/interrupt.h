@@ -26,11 +26,11 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_INTERRUPT_HH_
-#define _SYS_INTERRUPT_HH_
+#ifndef _SYS_INTERRUPT_H_
+#define _SYS_INTERRUPT_H_
 
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/_mutex.h>
+#include <sys/_lock.h>
+#include <sys/_mutex.h>
 
 struct intr_event;
 struct intr_thread;

@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 1990, 1991, 1993
@@ -36,13 +36,13 @@
  *      @(#)bpf_filter.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
+#include <rtems/bsd/sys/param.h>
 
 #if !defined(_KERNEL) || defined(sun)
-#include <freebsd/netinet/in.h>
+#include <netinet/in.h>
 #endif
 
 #ifndef __i386__
@@ -65,11 +65,11 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #ifdef _KERNEL
-#include <freebsd/sys/mbuf.h>
+#include <sys/mbuf.h>
 #else
-#include <freebsd/stdlib.h>
+#include <stdlib.h>
 #endif
-#include <freebsd/net/bpf.h>
+#include <net/bpf.h>
 #ifdef _KERNEL
 #define MINDEX(m, k) \
 { \

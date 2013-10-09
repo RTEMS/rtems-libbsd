@@ -24,10 +24,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_PROCESS_HH_
-#define	_USB_PROCESS_HH_
+#ifndef _USB_PROCESS_H_
+#define	_USB_PROCESS_H_
 
-#include <freebsd/sys/priority.h>
+#include <sys/priority.h>
 
 /* defines */
 #define	USB_PRI_HIGH PI_NET
@@ -81,4 +81,4 @@ void	usb_proc_free(struct usb_process *up);
 void   *usb_proc_msignal(struct usb_process *up, void *pm0, void *pm1);
 void	usb_proc_rewakeup(struct usb_process *up);
 
-#endif					/* _USB_PROCESS_HH_ */
+#endif					/* _USB_PROCESS_H_ */

@@ -35,35 +35,35 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_PROC_HH_
-#define	_SYS_PROC_HH_
+#ifndef _SYS_PROC_H_
+#define	_SYS_PROC_H_
 
-#include <freebsd/sys/callout.h>		/* For struct callout. */
-#include <freebsd/sys/event.h>			/* For struct klist. */
-#include <freebsd/sys/condvar.h>
+#include <sys/callout.h>		/* For struct callout. */
+#include <sys/event.h>			/* For struct klist. */
+#include <sys/condvar.h>
 #ifndef _KERNEL
-#include <freebsd/sys/filedesc.h>
+#include <sys/filedesc.h>
 #endif
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
-#include <freebsd/sys/lock_profile.h>
-#include <freebsd/sys/_mutex.h>
-#include <freebsd/sys/osd.h>
-#include <freebsd/sys/priority.h>
-#include <freebsd/sys/rtprio.h>			/* XXX. */
-#include <freebsd/sys/runq.h>
-#include <freebsd/sys/resource.h>
-#include <freebsd/sys/sigio.h>
-#include <freebsd/sys/signal.h>
-#include <freebsd/sys/signalvar.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
+#include <sys/lock_profile.h>
+#include <sys/_mutex.h>
+#include <sys/osd.h>
+#include <sys/priority.h>
+#include <sys/rtprio.h>			/* XXX. */
+#include <sys/runq.h>
+#include <rtems/bsd/sys/resource.h>
+#include <sys/sigio.h>
+#include <sys/signal.h>
+#include <sys/signalvar.h>
 #ifndef _KERNEL
-#include <freebsd/sys/time.h>			/* For structs itimerval, timeval. */
+#include <rtems/bsd/sys/time.h>			/* For structs itimerval, timeval. */
 #else
-#include <freebsd/sys/pcpu.h>
+#include <sys/pcpu.h>
 #endif
-#include <freebsd/sys/ucontext.h>
-#include <freebsd/sys/ucred.h>
-#include <freebsd/machine/proc.h>		/* Machine-dependent proc substruct. */
+#include <sys/ucontext.h>
+#include <sys/ucred.h>
+#include <machine/proc.h>		/* Machine-dependent proc substruct. */
 
 /*
  * One structure allocated per session.
@@ -926,4 +926,4 @@ void	thr_exit1(void);
 
 #endif	/* _KERNEL */
 
-#endif	/* !_SYS_PROC_HH_ */
+#endif	/* !_SYS_PROC_H_ */

@@ -29,11 +29,11 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_LOCK_HH_
-#define _SYS_LOCK_HH_
+#ifndef _RTEMS_BSD_SYS_LOCK_H_
+#define _RTEMS_BSD_SYS_LOCK_H_
 
-#include <freebsd/sys/queue.h>
-#include <freebsd/sys/_lock.h>
+#include <sys/queue.h>
+#include <sys/_lock.h>
 
 struct lock_list_entry;
 struct thread;
@@ -316,4 +316,4 @@ void	witness_thread_exit(struct thread *);
 	WITNESS_CHECKORDER(&(l)->lock_object, 0, LOCK_FILE, LOCK_LINE, NULL)
 
 #endif	/* _KERNEL */
-#endif	/* _SYS_LOCK_HH_ */
+#endif	/* _RTEMS_BSD_SYS_LOCK_H_ */

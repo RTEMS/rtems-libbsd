@@ -59,11 +59,7 @@ __FBSDID("$FreeBSD$");
 #include "dhcpd.h"
 #include "privsep.h"
 
-#ifdef __rtems__
-#include <freebsd/net80211/ieee80211_freebsd.h>
-#else
 #include <net80211/ieee80211_freebsd.h>
-#endif
 
 #ifndef _PATH_VAREMPTY
 #define	_PATH_VAREMPTY	"/var/empty"
@@ -422,6 +418,10 @@ main(int argc, char *argv[])
 	close(pipe_fd[0]);
 	privfd = pipe_fd[1];
 
+#ifdef __rtems__
+/* FIXME: Add O_EXLOCK capabilities to RTEMS file system */
+#define O_EXLOCK 0
+#endif /* __rtems__ */
 	if ((fd = open(path_dhclient_db, O_RDONLY|O_EXLOCK|O_CREAT, 0)) == -1)
 		error("can't open and lock %s: %m", path_dhclient_db);
 	read_client_leases();

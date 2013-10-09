@@ -33,14 +33,14 @@
  * SUCH DAMAGE.
  */
 
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 #include <stdio.h>
 #include <rtems.h>
 
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/conf.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/conf.h>
 
 struct cdev *
 make_dev(struct cdevsw *devsw, int unit, uid_t uid, gid_t gid, int mode,

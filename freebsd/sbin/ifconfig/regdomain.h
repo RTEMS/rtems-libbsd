@@ -30,12 +30,7 @@
 #include <sys/cdefs.h>
 #include <sys/queue.h>
 
-#ifdef __rtems__
-#include <freebsd/net80211/ieee80211_regdomain.h>
-#else
 #include <net80211/ieee80211_regdomain.h>
-#endif
-
 
 __BEGIN_DECLS
 

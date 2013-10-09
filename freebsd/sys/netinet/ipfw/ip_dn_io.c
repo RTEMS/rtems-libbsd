@@ -1,4 +1,4 @@
-#include <freebsd/machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-config.h>
 
 /*-
  * Copyright (c) 2010 Luigi Rizzo, Riccardo Panicucci, Universita` di Pisa
@@ -29,40 +29,40 @@
 /*
  * Dummynet portions related to packet handling.
  */
-#include <freebsd/sys/cdefs.h>
+#include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <freebsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
-#include <freebsd/sys/param.h>
-#include <freebsd/sys/systm.h>
-#include <freebsd/sys/malloc.h>
-#include <freebsd/sys/mbuf.h>
-#include <freebsd/sys/kernel.h>
-#include <freebsd/sys/lock.h>
-#include <freebsd/sys/module.h>
-#include <freebsd/sys/priv.h>
-#include <freebsd/sys/proc.h>
-#include <freebsd/sys/rwlock.h>
-#include <freebsd/sys/socket.h>
-#include <freebsd/sys/time.h>
-#include <freebsd/sys/sysctl.h>
-#include <freebsd/net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
-#include <freebsd/net/netisr.h>
-#include <freebsd/netinet/in.h>
-#include <freebsd/netinet/ip.h>		/* ip_len, ip_off */
-#include <freebsd/netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
-#include <freebsd/netinet/ip_fw.h>
-#include <freebsd/netinet/ipfw/ip_fw_private.h>
-#include <freebsd/netinet/ipfw/dn_heap.h>
-#include <freebsd/netinet/ip_dummynet.h>
-#include <freebsd/netinet/ipfw/ip_dn_private.h>
-#include <freebsd/netinet/ipfw/dn_sched.h>
+#include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
+#include <sys/module.h>
+#include <sys/priv.h>
+#include <sys/proc.h>
+#include <sys/rwlock.h>
+#include <sys/socket.h>
+#include <rtems/bsd/sys/time.h>
+#include <sys/sysctl.h>
+#include <net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
+#include <net/netisr.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>		/* ip_len, ip_off */
+#include <netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
+#include <netinet/ip_fw.h>
+#include <netinet/ipfw/ip_fw_private.h>
+#include <netinet/ipfw/dn_heap.h>
+#include <netinet/ip_dummynet.h>
+#include <netinet/ipfw/ip_dn_private.h>
+#include <netinet/ipfw/dn_sched.h>
 
-#include <freebsd/netinet/if_ether.h> /* various ether_* routines */
+#include <netinet/if_ether.h> /* various ether_* routines */
 
-#include <freebsd/netinet/ip6.h>       /* for ip6_input, ip6_output prototypes */
-#include <freebsd/netinet6/ip6_var.h>
+#include <netinet/ip6.h>       /* for ip6_input, ip6_output prototypes */
+#include <netinet6/ip6_var.h>
 
 /*
  * We keep a private variable for the simulation time, but we could

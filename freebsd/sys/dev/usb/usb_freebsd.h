@@ -28,8 +28,8 @@
  * Including this file is mandatory for all USB related c-files in the kernel.
  */
 
-#ifndef _USB_FREEBSD_HH_
-#define	_USB_FREEBSD_HH_
+#ifndef _USB_FREEBSD_H_
+#define	_USB_FREEBSD_H_
 
 /* Default USB configuration */
 #ifndef __rtems__
@@ -66,4 +66,4 @@ typedef uint32_t usb_size_t;		/* bytes */
 typedef uint32_t usb_ticks_t;		/* system defined */
 typedef uint16_t usb_power_mask_t;	/* see "USB_HW_POWER_XXX" */
 
-#endif	/* _USB_FREEBSD_HH_ */
+#endif	/* _USB_FREEBSD_H_ */

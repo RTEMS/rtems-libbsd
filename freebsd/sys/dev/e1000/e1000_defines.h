@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _E1000_DEFINES_HH_
-#define _E1000_DEFINES_HH_
+#ifndef _E1000_DEFINES_H_
+#define _E1000_DEFINES_H_
 
 /* Number of Transmit and Receive Descriptors must be a multiple of 8 */
 #define REQ_TX_DESCRIPTOR_MULTIPLE  8
@@ -1720,4 +1720,4 @@
                                                       on DMA coal */
 
 
-#endif /* _E1000_DEFINES_HH_ */
+#endif /* _E1000_DEFINES_H_ */

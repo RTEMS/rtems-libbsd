@@ -24,10 +24,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _USB_GENERIC_HH_
-#define	_USB_GENERIC_HH_
+#ifndef _USB_GENERIC_H_
+#define	_USB_GENERIC_H_
 
 extern struct usb_fifo_methods usb_ugen_methods;
 int	ugen_do_request(struct usb_fifo *f, struct usb_ctl_request *ur);
 
-#endif					/* _USB_GENERIC_HH_ */
+#endif					/* _USB_GENERIC_H_ */

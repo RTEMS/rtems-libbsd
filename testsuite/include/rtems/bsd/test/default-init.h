@@ -46,6 +46,8 @@ rtems_task Init(
 
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
+#define CONFIGURE_INIT_TASK_INITIAL_MODES RTEMS_DEFAULT_MODES
+
 #define CONFIGURE_INIT
 #include <rtems/confdefs.h>
 

@@ -2359,7 +2359,7 @@ in_cksum.addCPUDependentSourceFiles(
 tests = Module('tests')
 tests.addTest('usb01', ['init', 'test-file-system'], False)
 tests.addTest('loopback01', ['test_main'])
-tests.addTest('netshell01', ['test_main', 'shellconfig', 'ns_parser_vars'])
+tests.addTest('netshell01', ['test_main', 'shellconfig', 'ns_parser_vars'], False)
 tests.addTest('swi01', ['init', 'swi_test'])
 tests.addTest('timeout01', ['init', 'timeout_test', 'timeout_helper'])
 tests.addTest('init01', ['test_main'])

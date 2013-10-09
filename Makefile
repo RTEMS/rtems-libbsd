@@ -863,6 +863,18 @@ O_FILES += $(TEST_INIT01_O_FILES)
 D_FILES += $(TEST_INIT01_D_FILES)
 RUN_TESTS += $(TEST_INIT01)
 
+TEST_THREAD01 = testsuite/thread01/thread01.exe
+TEST_THREAD01_O_FILES =
+TEST_THREAD01_D_FILES =
+TEST_THREAD01_O_FILES += testsuite/thread01/test_main.o
+TEST_THREAD01_D_FILES += testsuite/thread01/test_main.d
+$(TEST_THREAD01): $(TEST_THREAD01_O_FILES) $(LIB)
+	$(LINK.c) $^ -lm -o $@
+TESTS += $(TEST_THREAD01)
+O_FILES += $(TEST_THREAD01_O_FILES)
+D_FILES += $(TEST_THREAD01_D_FILES)
+RUN_TESTS += $(TEST_THREAD01)
+
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include
 endif

@@ -7,10 +7,10 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
@@ -105,17 +106,17 @@ rtems_bsd_dump_condvar(void)
 static void
 rtems_bsd_dump_thread(void)
 {
-	rtems_chain_control *chain = &rtems_bsd_thread_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
+	const rtems_chain_control *chain = &rtems_bsd_thread_chain;
+	const rtems_chain_node *node = rtems_chain_immutable_first(chain);
 
 	printf("thread dump:\n");
 
 	while (!rtems_chain_is_tail(chain, node)) {
-		struct thread *td = (struct thread *) node;
+		const struct thread *td = (const struct thread *) node;
 
-		printf("\t%s: 0x%08x\n", td->td_name, td->td_id);
+		printf("\t%s: 0x%08x\n", td->td_name, rtems_bsd_get_task_id(td));
 
-		node = rtems_chain_next(node);
+		node = rtems_chain_immutable_next(node);
 	}
 }
 

@@ -1,16 +1,16 @@
 /**
  * @file
  *
- * @ingroup rtems_bsd_rtems
+ * @ingroup rtems_bsd_machine
  *
  * @brief TODO.
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -37,53 +37,37 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-config.h>
-#include <machine/rtems-bsd-thread.h>
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_
+#define _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
-#include <sys/mutex.h>
 #include <sys/proc.h>
 
-#include <rtems/bsd/bsd.h>
+#include <rtems.h>
 
-SYSINIT_REFERENCE(configure1);
-SYSINIT_REFERENCE(module);
-SYSINIT_REFERENCE(kobj);
-SYSINIT_REFERENCE(linker_kernel);
-SYSINIT_MODULE_REFERENCE(rootbus);
-SYSINIT_DRIVER_REFERENCE(nexus, root);
+#define BSD_TASK_NAME rtems_build_name('_', 'B', 'S', 'D')
 
-/* In FreeBSD this is a local function */
-void mi_startup(void);
+#define BSD_TASK_PRIORITY_NORMAL 120
 
-int hz;
-int tick;
-int maxusers;     /* base tunable */
+#define BSD_TASK_PRIORITY_TIMER 110
 
-rtems_status_code
-rtems_bsd_initialize(void)
+#define BSD_TASK_PRIORITY_INTERRUPT 100
+
+#define BSD_TASK_PRIORITY_RESOURCE_OWNER 100
+
+/* FIXME */
+#define BSD_MINIMUM_TASK_STACK_SIZE ((size_t) 32 * 1024)
+
+extern rtems_chain_control rtems_bsd_thread_chain;
+
+struct thread *
+rtems_bsd_get_thread(const Thread_Control *thread);
+
+static inline rtems_id
+rtems_bsd_get_task_id(const struct thread *td)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	hz = (int) rtems_clock_get_ticks_per_second();
-	tick = 1000000 / hz;
-	maxusers = 1;
-
-	sc =  rtems_timer_initiate_server(
-		BSD_TASK_PRIORITY_TIMER,
-		BSD_MINIMUM_TASK_STACK_SIZE,
-		RTEMS_DEFAULT_ATTRIBUTES
-	);
-	if (sc != RTEMS_SUCCESSFUL) {
-		return RTEMS_UNSATISFIED;
-	}
-
-	mutex_init();
-	mi_startup();
-
-	return RTEMS_SUCCESSFUL;
+	return td->td_thread->Object.id;
 }
+
+#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_ */

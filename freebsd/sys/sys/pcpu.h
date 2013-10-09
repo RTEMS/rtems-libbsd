@@ -201,11 +201,6 @@ SLIST_HEAD(cpuhead, pcpu);
 extern struct cpuhead cpuhead;
 extern struct pcpu *cpuid_to_pcpu[MAXCPU];
 
-#ifdef __rtems__
-struct thread *rtems_get_curthread(void);
-#define	curthread	rtems_get_curthread()
-#endif
-
 #define	curcpu		PCPU_GET(cpuid)
 #define	curproc		(curthread->td_proc)
 #ifndef curthread

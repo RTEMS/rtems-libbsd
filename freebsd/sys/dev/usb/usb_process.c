@@ -99,11 +99,11 @@ usb_process(void *arg)
 {
 	struct usb_process *up = arg;
 	struct usb_proc_msg *pm;
-#ifndef __rtems__
 	struct thread *td;
 
 	/* adjust priority */
 	td = curthread;
+#ifndef __rtems__
 	thread_lock(td);
 	sched_prio(td, up->up_prio);
 	thread_unlock(td);
@@ -111,9 +111,7 @@ usb_process(void *arg)
 
 	mtx_lock(up->up_mtx);
 
-#ifndef __rtems__
 	up->up_curtd = td;
-#endif /* __rtems__ */
 
 	while (1) {
 
@@ -390,11 +388,7 @@ usb_proc_mwait(struct usb_process *up, void *_pm0, void *_pm1)
 
 	mtx_assert(up->up_mtx, MA_OWNED);
 
-#ifndef __rtems__
 	if (up->up_curtd == curthread) {
-#else /* __rtems__ */
-	if (up->up_ptr->td_id == rtems_task_self()) {
-#endif /* __rtems__ */
 		/* Just remove the messages from the queue. */
 		if (pm0->pm_qentry.tqe_prev) {
 			TAILQ_REMOVE(&up->up_qhead, pm0, pm_qentry);

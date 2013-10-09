@@ -49,16 +49,12 @@ struct usb_process {
 	struct cv up_cv;
 	struct cv up_drain;
 
-#ifndef __rtems__
 #if (__FreeBSD_version >= 800000)
 	struct thread *up_ptr;
 #else
 	struct proc *up_ptr;
 #endif
 	struct thread *up_curtd;
-#else /* __rtems__ */
-	struct thread *up_ptr;
-#endif /* __rtems__ */
 	struct mtx *up_mtx;
 
 	usb_size_t up_msg_num;

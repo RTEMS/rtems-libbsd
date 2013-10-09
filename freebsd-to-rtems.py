@@ -2363,6 +2363,7 @@ tests.addTest('netshell01', ['test_main', 'shellconfig', 'ns_parser_vars'], Fals
 tests.addTest('swi01', ['init', 'swi_test'])
 tests.addTest('timeout01', ['init', 'timeout_test', 'timeout_helper'])
 tests.addTest('init01', ['test_main'])
+tests.addTest('thread01', ['test_main'])
 
 # Register all the Module instances with the Module Manager
 mm.addModule(rtems)

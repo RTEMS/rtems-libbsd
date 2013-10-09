@@ -41,6 +41,8 @@ rtems_task Init(
 
 #define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 32
 
+#define CONFIGURE_MAXIMUM_USER_EXTENSIONS 1
+
 #define CONFIGURE_UNLIMITED_OBJECTS
 #define CONFIGURE_UNIFIED_WORK_AREAS
 
@@ -57,7 +59,6 @@ rtems_task Init(
 
 #include <machine/rtems-bsd-sysinit.h>
 
-#define CONFIGURE_NEED_NET
 /* only include FXP and PCI for i386/pc386 for debug on qemu (for now) */
 #if defined(i386)
   #define CONFIGURE_NEED_PCIB

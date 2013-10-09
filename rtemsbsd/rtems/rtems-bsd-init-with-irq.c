@@ -7,10 +7,10 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/irq-extension.h>
 

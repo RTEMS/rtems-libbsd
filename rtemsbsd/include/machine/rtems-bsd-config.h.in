@@ -132,17 +132,6 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 
 /* General definitions */
 
-#define BSD_TASK_PRIORITY_NORMAL 120
-
-#define BSD_TASK_PRIORITY_TIMER 110
-
-#define BSD_TASK_PRIORITY_INTERRUPT 100
-
-#define BSD_TASK_PRIORITY_RESOURCE_OWNER 100
-
-/* FIXME */
-#define BSD_MINIMUM_TASK_STACK_SIZE ((size_t) 32 * 1024)
-
 #define M_RTEMS_HEAP 0
 
 #define BSD_MAXIMUM_SLEEP_QUEUES 32
@@ -156,8 +145,6 @@ extern rtems_chain_control rtems_bsd_sx_chain;
 extern rtems_chain_control rtems_bsd_condvar_chain;
 
 extern rtems_chain_control rtems_bsd_callout_chain;
-
-extern rtems_chain_control rtems_bsd_thread_chain;
 
 extern rtems_chain_control rtems_bsd_malloc_chain;
 

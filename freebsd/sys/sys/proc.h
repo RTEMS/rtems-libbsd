@@ -198,6 +198,11 @@ struct rusage_ext {
  * Thread context.  Processes may have multiple threads.
  */
 struct thread {
+#ifdef __rtems__
+	rtems_chain_node td_node;
+	Thread_Control *td_thread;
+	char td_name [16];
+#endif /* __rtems__ */
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */
 #endif /* __rtems__ */
@@ -314,10 +319,6 @@ struct thread {
 	const char	*td_vnet_lpush;	/* (k) Debugging vnet push / pop. */
 	struct rusage_ext td_rux;	/* (t) Internal rusage information. */
 	struct vm_map_entry *td_map_def_user; /* (k) Deferred entries. */
-#else /* __rtems__ */
-	rtems_chain_node td_node;
-	rtems_id td_id;
-	char td_name [16];
 #endif /* __rtems__ */
 };
 

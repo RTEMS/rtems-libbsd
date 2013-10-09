@@ -7,10 +7,10 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
@@ -50,18 +51,19 @@
 static void
 suspend_all_threads(void)
 {
-	rtems_chain_control *chain = &rtems_bsd_thread_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
+	const rtems_chain_control *chain = &rtems_bsd_thread_chain;
+	const rtems_chain_node *node = rtems_chain_immutable_first(chain);
 	rtems_id self = rtems_task_self();
 
 	while (!rtems_chain_is_tail(chain, node)) {
-		struct thread *td = (struct thread *) node;
+		const struct thread *td = (const struct thread *) node;
+		rtems_id id = rtems_bsd_get_task_id(td);
 
-		if (td->td_id != self && td->td_id != RTEMS_SELF) {
-			rtems_task_suspend(td->td_id);
+		if (id != self) {
+			rtems_task_suspend(id);
 		}
 
-		node = rtems_chain_next(node);
+		node = rtems_chain_immutable_next(node);
 	}
 
 	rtems_task_suspend(RTEMS_SELF);

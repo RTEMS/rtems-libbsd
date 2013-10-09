@@ -65,6 +65,7 @@ __FBSDID("$FreeBSD$");
   #ifdef INTR_FILTER
     #error INTR_FILTER is currently not suppported with RTEMS
   #endif
+  #include <machine/rtems-bsd-thread.h>
   #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
 #endif /* __rtems__ */
 #ifdef DDB
@@ -924,7 +925,7 @@ intr_event_schedule_thread(struct intr_event *ie)
 	/* Send event to wake the thread up.
 	 * TODO: eventually replace event by a better mechanism
 	 */
-	rtems_status_code sc = rtems_event_send(td->td_id, RTEMSBSD_SWI_WAKEUP_EVENT);
+	rtems_status_code sc = rtems_event_send(rtems_bsd_get_task_id(td), RTEMSBSD_SWI_WAKEUP_EVENT);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 #endif /* __rtems__ */
 	thread_unlock(td);

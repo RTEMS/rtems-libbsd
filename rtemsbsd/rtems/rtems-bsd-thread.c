@@ -7,10 +7,10 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -38,225 +38,238 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/kthread.h>
 #include <sys/malloc.h>
-#include <rtems/bsd/sys/lock.h>
-#include <sys/mutex.h>
+#include <sys/selinfo.h>
+#include <sys/filedesc.h>
 #include <sys/jail.h>
 #include <sys/resourcevar.h>
-#include <sys/filedesc.h>
+
+#include <rtems/score/threadimpl.h>
+#include <rtems/score/objectimpl.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 
 /* FIXME: What to do with the credentials? */
 static struct ucred FIXME_ucred = {
-  .cr_ref = 1				/* reference count */
+  .cr_ref = 1                          /* reference count */
 };
 static struct filedesc FIXME_fd = {
-  .fd_ofiles = NULL	/* file structures for open files */
+  .fd_ofiles = NULL    /* file structures for open files */
 };
 static struct proc  FIXME_proc = {
   .p_ucred = NULL /* (c) Process owner's identity. */
 };
-static int prison_init = 1;
 static struct prison FIXME_prison = {
   .pr_parent = NULL
 };
 
-static struct uidinfo	FIXME_uidinfo;	/* per euid resource consumption */
-static struct uidinfo	FIXME_ruidinfo;	/* per ruid resource consumption */
+static size_t rtems_bsd_extension_index;
 
-static struct thread *rtems_bsd_current_td = NULL;
-
-static void rtems_bsd_thread_descriptor_dtor(void *td)
+struct thread *
+rtems_bsd_get_thread(const Thread_Control *thread)
 {
-	// XXX are there other pieces to clean up?
-	free(td, M_TEMP);
+	return thread->extensions[rtems_bsd_extension_index];
 }
 
 static struct thread *
-rtems_bsd_thread_init( rtems_id id )
+rtems_bsd_get_thread_by_id(rtems_id task_id)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-	unsigned index = 0;
-	char name [5] = "_???";
-	struct thread *td;
-	struct proc   *proc;
+	struct thread *td = NULL;
+	Thread_Control *thread;
+	Objects_Locations location;
 
-	td = malloc(sizeof(struct thread), M_TEMP, M_WAITOK | M_ZERO);
-	if (td == NULL)
-		return NULL;
-
-	// Initialize the thread descriptor
-	index = rtems_object_id_get_index(id);
-	snprintf(name + 1, sizeof(name) - 1, "%03u", index);
-	sc = rtems_object_set_name(id, name);
-	if (sc != RTEMS_SUCCESSFUL) {
-		// XXX does the thread get deleted? Seems wrong
-		// rtems_task_delete(id);
-		free(td, M_TEMP);
-		return 	NULL;
+	thread = _Thread_Get(task_id, &location);
+	switch (location) {
+		case OBJECTS_LOCAL:
+			td = rtems_bsd_get_thread(thread);
+			_Objects_Put(&thread->Object);
+			break;
+#if defined(RTEMS_MULTIPROCESSING)
+		case OBJECTS_REMOTE:
+			_Thread_Dispatch();
+			break;
+#endif
+		default:
+			break;
 	}
 
-	td->td_id = id;
-	td->td_ucred = crhold(&FIXME_ucred);
-  
-	td->td_proc = &FIXME_proc;
-	if (td->td_proc->p_ucred == NULL) {
-  		if ( prison_init ) {
-			mtx_init(&FIXME_prison.pr_mtx, "prison lock", NULL, MTX_DEF | MTX_DUPOK);
-    			prison_init = 0;
-  		}
-  		FIXME_ucred.cr_prison   = &FIXME_prison;    /* jail(2) */
-		FIXME_ucred.cr_uidinfo  = uifind(0);
-		FIXME_ucred.cr_ruidinfo = uifind(0);
-		FIXME_ucred.cr_ngroups = 1;     /* group 0 */
-
-		td->td_proc->p_ucred = crhold(&FIXME_ucred);
-		mtx_init(&td->td_proc->p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
-		td->td_proc->p_pid = getpid();
-		td->td_proc->p_fibnum = 0;
-		td->td_proc->p_fd = &FIXME_fd;
-		sx_init_flags(&FIXME_fd.fd_sx, "config SX thread lock", SX_DUPOK);
-	}
-
-	// Actually set the global pointer 
-	rtems_bsd_current_td = td;
-
-	// Now add the task descriptor as a per-task variable
-	sc = rtems_task_variable_add(
-		id,
-		&rtems_bsd_current_td,
-		rtems_bsd_thread_descriptor_dtor
-	);
-	if (sc != RTEMS_SUCCESSFUL) {
-		free(td, M_TEMP);
-		return NULL;
-	}
-
-  	return td;
+	return td;
 }
 
-/*
- *  Threads which delete themselves would leak the task
- *  descriptor so we are using the per-task variable so
- *  it can be cleaned up.
- */
-struct thread *rtems_get_curthread(void)
+struct thread *
+rtems_bsd_thread_create(Thread_Control *thread, int wait)
 {
-	struct thread *td;
+	struct thread *td = malloc(sizeof(*td), M_TEMP, M_ZERO | wait);
 
-	/*
-	 * If we already have a struct thread associated with this thread,
-	 * obtain it. Otherwise, allocate and initialize one.
-	 */
-	td = rtems_bsd_current_td;
-	if ( td == NULL ) {
-		td = rtems_bsd_thread_init( rtems_task_self() );
-		if ( td == NULL ){
-			panic("rtems_get_curthread: Unable to thread descriptor\n");
+	if (td != NULL) {
+		td->td_thread = thread;
+		td->td_proc = &FIXME_proc;
+	}
+
+	thread->extensions[rtems_bsd_extension_index] = td;
+
+	return td;
+}
+
+static struct thread *
+rtems_bsd_get_curthread(int wait)
+{
+	Thread_Control *executing = _Thread_Get_executing();
+	struct thread *td = rtems_bsd_get_thread(executing);
+
+	if (td == NULL) {
+		td = rtems_bsd_thread_create(executing, wait);
+	}
+
+	return td;
+}
+
+struct thread *
+rtems_bsd_get_curthread_or_wait_forever(void)
+{
+	return rtems_bsd_get_curthread(M_WAITOK);
+}
+
+struct thread *
+rtems_bsd_get_curthread_or_null(void)
+{
+	return rtems_bsd_get_curthread(0);
+}
+
+static bool
+rtems_bsd_is_bsd_thread(Thread_Control *thread)
+{
+	return thread->Object.name.name_u32 == BSD_TASK_NAME;
+}
+
+static bool
+rtems_bsd_extension_thread_create(
+	Thread_Control *executing,
+	Thread_Control *created
+)
+{
+	bool ok = true;
+
+	if (rtems_bsd_is_bsd_thread(created)) {
+		struct thread *td = rtems_bsd_thread_create(created, 0);
+
+		ok = td != NULL;
+		if (ok) {
+			rtems_chain_append(&rtems_bsd_thread_chain, &td->td_node);
 		}
 	}
 
-  return td;
+	return ok;
 }
+
+static void
+rtems_bsd_extension_thread_delete(
+	Thread_Control *executing,
+	Thread_Control *deleted
+)
+{
+	struct thread *td = rtems_bsd_get_thread(deleted);
+
+	if (td != NULL) {
+		seltdfini(td);
+
+		if (rtems_bsd_is_bsd_thread(deleted)) {
+			rtems_chain_explicit_extract(&rtems_bsd_thread_chain, &td->td_node);
+		}
+
+		free(td, M_TEMP);
+	}
+}
+
+static const rtems_extensions_table rtems_bsd_extensions = {
+	.thread_create = rtems_bsd_extension_thread_create,
+	.thread_delete = rtems_bsd_extension_thread_delete
+};
+
+static void
+rtems_bsd_threads_init(void *arg __unused)
+{
+	rtems_id ext_id;
+	rtems_status_code sc;
+
+	sc = rtems_extension_create(
+		BSD_TASK_NAME,
+		&rtems_bsd_extensions,
+		&ext_id
+	);
+	if (sc != RTEMS_SUCCESSFUL) {
+		BSD_PANIC("cannot create extension");
+	}
+
+	rtems_bsd_extension_index = rtems_object_id_get_index(ext_id);
+
+	mtx_init(&FIXME_prison.pr_mtx, "prison lock", NULL, MTX_DEF | MTX_DUPOK);
+
+	FIXME_ucred.cr_prison   = &FIXME_prison;    /* jail(2) */
+	FIXME_ucred.cr_uidinfo  = uifind(0);
+	FIXME_ucred.cr_ruidinfo = uifind(0);
+	FIXME_ucred.cr_ngroups = 1;     /* group 0 */
+
+	FIXME_proc.p_ucred = crhold(&FIXME_ucred);
+	mtx_init(&FIXME_proc.p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
+	FIXME_proc.p_pid = getpid();
+	FIXME_proc.p_fibnum = 0;
+	FIXME_proc.p_fd = &FIXME_fd;
+	sx_init_flags(&FIXME_fd.fd_sx, "config SX thread lock", SX_DUPOK);
+}
+
+SYSINIT(rtems_bsd_threads, SI_SUB_INTRINSIC, SI_ORDER_ANY, rtems_bsd_threads_init, NULL);
 
 static int
 rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, int flags, int pages, const char *fmt, va_list ap)
 {
-	struct thread *td = malloc(sizeof(struct thread), M_TEMP, M_WAITOK | M_ZERO);
+	int eno = 0;
+	rtems_status_code sc;
+	rtems_id task_id;
 
-	if (td != NULL) {
-		rtems_status_code sc = RTEMS_SUCCESSFUL;
-		rtems_id id = RTEMS_ID_NONE;
-		unsigned index = 0;
-		char name [5] = "_???";
+	BSD_ASSERT(pages >= 0);
 
-		BSD_ASSERT(pages >= 0);
+	sc = rtems_task_create(
+		BSD_TASK_NAME,
+		BSD_TASK_PRIORITY_NORMAL,
+		BSD_MINIMUM_TASK_STACK_SIZE + (size_t) pages * PAGE_SIZE,
+		RTEMS_DEFAULT_ATTRIBUTES,
+		RTEMS_DEFAULT_ATTRIBUTES,
+		&task_id
+	);
+	if (sc == RTEMS_SUCCESSFUL) {
+		struct thread *td = rtems_bsd_get_thread_by_id(task_id);
 
-		memset( td, 0, sizeof(struct thread) );
+		BSD_ASSERT(td != NULL);
 
-		sc = rtems_task_create(
-			rtems_build_name('_', 'T', 'S', 'K'),
-			BSD_TASK_PRIORITY_NORMAL,
-			BSD_MINIMUM_TASK_STACK_SIZE + (size_t) pages * PAGE_SIZE,
-			RTEMS_DEFAULT_ATTRIBUTES,
-			RTEMS_DEFAULT_ATTRIBUTES,
-			&id
-		);
-		if (sc != RTEMS_SUCCESSFUL) {
-			free(td, M_TEMP);
-
-			return ENOMEM;
-		}
-
-		td = rtems_bsd_thread_init( id );
-		if (!td)
-			return ENOMEM;
-		
-		sc = rtems_task_start(id, (rtems_task_entry) func, (rtems_task_argument) arg);
-		if (sc != RTEMS_SUCCESSFUL) {
-			rtems_task_delete(id);
-			free(td, M_TEMP);
-
-			return ENOMEM;
-		}
-
-		td->td_id = id;
 		vsnprintf(td->td_name, sizeof(td->td_name), fmt, ap);
-		td->td_ucred = crhold(&FIXME_ucred);
 
-		rtems_chain_append(&rtems_bsd_thread_chain, &td->td_node);
+		sc = rtems_task_start(task_id, (rtems_task_entry) func, (rtems_task_argument) arg);
+		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 
 		if (td_ptr != NULL) {
 			*td_ptr = td;
 		}
-
-		return 0;
+	} else {
+		eno = ENOMEM;
 	}
 
-	return ENOMEM;
+	return eno;
 }
 
-static void rtems_bsd_thread_delete(void) __dead2;
-
-static void
+static __dead2 void
 rtems_bsd_thread_delete(void)
 {
-	rtems_chain_control *chain = &rtems_bsd_thread_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
-	rtems_id id = rtems_task_self();
-	struct thread *td = NULL;
-
-	while (!rtems_chain_is_tail(chain, node)) {
-		struct thread *cur = (struct thread *) node;
-
-		if (cur->td_id == id) {
-			td = cur;
-			break;
-		}
-
-		node = rtems_chain_next(node);
-	}
-
-	if (td != NULL) {
-		rtems_chain_extract(&td->td_node);
-
-		free(td, M_TEMP);
-	} else {
-		BSD_PANIC("cannot find task entry");
-	}
-
 	rtems_task_delete(RTEMS_SELF);
-
-	while (true) {
-		/* Do nothing */
-	}
+	BSD_PANIC("delete self failed");
 }
 
 void

@@ -22,7 +22,7 @@ CFLAGS += -Ifreebsd/lib/libkvm
 CFLAGS += -Ifreebsd/lib/libmemstat
 CFLAGS += -Ifreebsd/lib/libipsec
 CFLAGS += -Itestsuite/include
-CFLAGS += -w
+CFLAGS += -Wall
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes

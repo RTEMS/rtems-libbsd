@@ -428,7 +428,7 @@ class ModuleManager:
 			'CFLAGS += -Ifreebsd/lib/libmemstat\n' \
 			'CFLAGS += -Ifreebsd/lib/libipsec\n' \
 			'CFLAGS += -Itestsuite/include\n' \
-			'CFLAGS += -w\n' \
+			'CFLAGS += -Wall\n' \
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \

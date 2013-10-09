@@ -38,9 +38,7 @@
 #endif
 
 #include <sys/queue.h>
-#ifndef __rtems__
 #include <sys/vmmeter.h>
-#endif
 #include <rtems/bsd/sys/resource.h>
 #include <machine/pcpu.h>
 
@@ -75,8 +73,12 @@ extern uintptr_t dpcpu_off[];
 /*
  * Accessors with a given base.
  */
+#ifndef __rtems__
 #define	_DPCPU_PTR(b, n)						\
     (__typeof(DPCPU_NAME(n))*)((b) + (uintptr_t)&DPCPU_NAME(n))
+#else /* __rtems__ */
+#define	_DPCPU_PTR(b, n) NULL
+#endif /* __rtems__ */
 #define	_DPCPU_GET(b, n)	(*_DPCPU_PTR(b, n))
 #define	_DPCPU_SET(b, n, v)	(*_DPCPU_PTR(b, n) = v)
 

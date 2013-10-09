@@ -260,6 +260,7 @@ struct netisr_workstream {
 	struct netisr_work	nws_work[NETISR_MAXPROT];
 } __aligned(CACHE_LINE_SIZE);
 
+#ifndef __rtems__
 /*
  * Per-CPU workstream data.
  */
@@ -279,6 +280,9 @@ static u_int				 nws_array[MAXCPU];
 static u_int				 nws_count;
 SYSCTL_INT(_net_isr, OID_AUTO, numthreads, CTLFLAG_RD,
     &nws_count, 0, "Number of extant netisr threads.");
+#else /* __rtems__ */
+static struct netisr_workstream rtems_bsd_nws;
+#endif /* __rtems__ */
 
 /*
  * Per-workstream flags.
@@ -318,7 +322,6 @@ netisr_get_cpuid(u_int cpunumber)
 
 	return (nws_array[cpunumber]);
 }
-#endif  /* __rtems__ */
 
 /*
  * The default implementation of -> CPU ID mapping.
@@ -332,6 +335,7 @@ netisr_default_flow2cpu(u_int flowid)
 
 	return (nws_array[flowid % nws_count]);
 }
+#endif  /* __rtems__ */
 
 /*
  * Register a new netisr handler, which requires initializing per-protocol
@@ -400,7 +404,11 @@ netisr_register(const struct netisr_handler *nhp)
 	for (i = 0; i <= mp_maxid; i++) {
 		if (CPU_ABSENT(i))
 			continue;
+#ifndef __rtems__
 		npwp = &(DPCPU_ID_PTR(i, nws))->nws_work[proto];
+#else /* __rtems__ */
+		npwp = &rtems_bsd_nws.nws_work[proto];
+#endif /* __rtems__ */
 		bzero(npwp, sizeof(*npwp));
 		npwp->nw_qlimit = np[proto].np_qlimit;
 	}
@@ -434,7 +442,11 @@ netisr_clearqdrops(const struct netisr_handler *nhp)
 	for (i = 0; i <= mp_maxid; i++) {
 		if (CPU_ABSENT(i))
 			continue;
+#ifndef __rtems__
 		npwp = &(DPCPU_ID_PTR(i, nws))->nws_work[proto];
+#else /* __rtems__ */
+		npwp = &rtems_bsd_nws.nws_work[proto];
+#endif /* __rtems__ */
 		npwp->nw_qdrops = 0;
 	}
 	NETISR_WUNLOCK();
@@ -469,7 +481,11 @@ netisr_getqdrops(const struct netisr_handler *nhp, u_int64_t *qdropp)
 	for (i = 0; i <= mp_maxid; i++) {
 		if (CPU_ABSENT(i))
 			continue;
+#ifndef __rtems__
 		npwp = &(DPCPU_ID_PTR(i, nws))->nws_work[proto];
+#else /* __rtems__ */
+		npwp = &rtems_bsd_nws.nws_work[proto];
+#endif /* __rtems__ */
 		*qdropp += npwp->nw_qdrops;
 	}
 	NETISR_RUNLOCK(&tracker);
@@ -535,7 +551,11 @@ netisr_setqlimit(const struct netisr_handler *nhp, u_int qlimit)
 	for (i = 0; i <= mp_maxid; i++) {
 		if (CPU_ABSENT(i))
 			continue;
+#ifndef __rtems__
 		npwp = &(DPCPU_ID_PTR(i, nws))->nws_work[proto];
+#else /* __rtems__ */
+		npwp = &rtems_bsd_nws.nws_work[proto];
+#endif /* __rtems__ */
 		npwp->nw_qlimit = qlimit;
 	}
 	NETISR_WUNLOCK();
@@ -601,7 +621,11 @@ netisr_unregister(const struct netisr_handler *nhp)
 	for (i = 0; i <= mp_maxid; i++) {
 		if (CPU_ABSENT(i))
 			continue;
+#ifndef __rtems__
 		npwp = &(DPCPU_ID_PTR(i, nws))->nws_work[proto];
+#else /* __rtems__ */
+		npwp = &rtems_bsd_nws.nws_work[proto];
+#endif /* __rtems__ */
 		netisr_drain_proto(npwp);
 		bzero(npwp, sizeof(*npwp));
 	}
@@ -621,6 +645,7 @@ netisr_select_cpuid(struct netisr_proto *npp, uintptr_t source,
 
 	NETISR_LOCK_ASSERT();
 
+#ifndef __rtems__
 	/*
 	 * In the event we have only one worker, shortcut and deliver to it
 	 * without further ado.
@@ -665,6 +690,10 @@ netisr_select_cpuid(struct netisr_proto *npp, uintptr_t source,
 		panic("%s: invalid policy %u for %s", __func__,
 		    npp->np_policy, npp->np_name);
 	}
+#else /* __rtems__ */
+	*cpuidp = 0;
+	return (m);
+#endif /* __rtems__ */
 }
 
 /*
@@ -829,7 +858,11 @@ netisr_queue_internal(u_int proto, struct mbuf *m, u_int cpuid)
 
 	dosignal = 0;
 	error = 0;
+#ifndef __rtems__
 	nwsp = DPCPU_ID_PTR(cpuid, nws);
+#else /* __rtems__ */
+	nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 	npwp = &nwsp->nws_work[proto];
 	NWS_LOCK(nwsp);
 	error = netisr_queue_workstream(nwsp, proto, npwp, m, &dosignal);
@@ -1037,7 +1070,11 @@ netisr_start_swi(u_int cpuid, struct pcpu *pc)
 
 	KASSERT(!CPU_ABSENT(cpuid), ("%s: CPU %u absent", __func__, cpuid));
 
+#ifndef __rtems__
 	nwsp = DPCPU_ID_PTR(cpuid, nws);
+#else /* __rtems__ */
+	nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 	mtx_init(&nwsp->nws_mtx, "netisr_mtx", NULL, MTX_DEF);
 	nwsp->nws_cpu = cpuid;
 	snprintf(swiname, sizeof(swiname), "netisr %u", cpuid);
@@ -1053,11 +1090,11 @@ netisr_start_swi(u_int cpuid, struct pcpu *pc)
 			printf("%s: cpu %u: intr_event_bind: %d", __func__,
 			    cpuid, error);
 	}
-#endif
 	NETISR_WLOCK();
 	nws_array[nws_count] = nwsp->nws_cpu;
 	nws_count++;
 	NETISR_WUNLOCK();
+#endif
 }
 
 /*

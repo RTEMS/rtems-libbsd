@@ -46,6 +46,10 @@ the current Git submodule commit is this
   svn co http://svn.freebsd.org/base/releng/8.2 -r255967 freebsd-8.2
 
 == Issues and To Do
+* Per-CPU data should be enabled once the new stack is ready for SMP.
+
+* Per-CPU NETISR(9) should be enabled onece the new stack is ready for SMP.
+
 * Sebastian Huber and Joel Sherrill discussed the need for a a basic USB
   functionality test that is known to work on qemu pc.
 

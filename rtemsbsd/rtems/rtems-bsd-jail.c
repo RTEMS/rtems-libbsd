@@ -114,7 +114,7 @@ int
 prison_flag(struct ucred *cred, unsigned flag)
 {
   /* This is an atomic read, so no locking is necessary. */
-  return (cred->cr_prison->pr_flags & flag);
+  return (prison0.pr_flags & flag);
 }
 
 void
@@ -152,15 +152,6 @@ int
 prison_saddrsel_ip6(struct ucred *cred, struct in6_addr *ia6)
 {
   return EAFNOSUPPORT;
-}
-
-/*
- * Return true if pr1 and pr2 have the same IPv4 address restrictions.
- */
-int
-prison_equal_ip4(struct prison *pr1, struct prison *pr2)
-{
-  return 1;
 }
 
 /*
@@ -211,15 +202,6 @@ int
 prison_remote_ip4(struct ucred *cred, struct in_addr *ia)
 {
   return 0;
-}
-
-/*
- * Return true if pr1 and pr2 have the same IPv6 address restrictions.
- */
-int
-prison_equal_ip6(struct prison *pr1, struct prison *pr2)
-{
-  return 1;
 }
 
 /*

@@ -1332,7 +1332,6 @@ chgproccnt(uip, diff, max)
 	}
 	return (1);
 }
-#endif /* __rtems__ */
 
 /*
  * Change the total socket buffer size a user has used.
@@ -1361,7 +1360,6 @@ chgsbsize(uip, hiwat, to, max)
 	return (1);
 }
 
-#ifndef __rtems__
 /*
  * Change the count associated with number of pseudo-terminals
  * a given user is using.  When 'max' is 0, don't enforce a limit

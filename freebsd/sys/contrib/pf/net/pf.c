@@ -2987,8 +2987,13 @@ pf_socket_lookup(int direction, struct pf_pdesc *pd)
 #ifdef __FreeBSD__
 	if (inp_arg != NULL) {
 		INP_LOCK_ASSERT(inp_arg);
+#ifndef __rtems__
 		pd->lookup.uid = inp_arg->inp_cred->cr_uid;
 		pd->lookup.gid = inp_arg->inp_cred->cr_groups[0];
+#else /* __rtems__ */
+		pd->lookup.uid = BSD_DEFAULT_UID;
+		pd->lookup.gid = BSD_DEFAULT_GID;
+#endif /* __rtems__ */
 		return (1);
 	}
 #endif
@@ -3085,8 +3090,13 @@ pf_socket_lookup(int direction, struct pf_pdesc *pd)
 		return (-1);
 	}
 #ifdef __FreeBSD__
+#ifndef __rtems__
 	pd->lookup.uid = inp->inp_cred->cr_uid;
 	pd->lookup.gid = inp->inp_cred->cr_groups[0];
+#else /* __rtems__ */
+	pd->lookup.uid = BSD_DEFAULT_UID;
+	pd->lookup.gid = BSD_DEFAULT_GID;
+#endif /* __rtems__ */
 	INP_INFO_RUNLOCK(pi);
 #else
 	pd->lookup.uid = inp->inp_socket->so_euid;

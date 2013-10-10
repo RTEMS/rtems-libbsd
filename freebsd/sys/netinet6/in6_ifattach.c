@@ -118,7 +118,11 @@ get_rand_ifid(struct ifnet *ifp, struct in6_addr *in6)
 	u_int8_t digest[16];
 	int hostnamelen;
 
+#ifndef __rtems__
 	pr = curthread->td_ucred->cr_prison;
+#else /* __rtems__ */
+	pr = &prison0;
+#endif /* __rtems__ */
 	mtx_lock(&pr->pr_mtx);
 	hostnamelen = strlen(pr->pr_hostname);
 #if 0
@@ -642,7 +646,11 @@ in6_nigroup(struct ifnet *ifp, const char *name, int namelen,
 	 * we try to do the hostname lookup ourselves.
 	 */
 	if (!name && namelen == -1) {
+#ifndef __rtems__
 		pr = curthread->td_ucred->cr_prison;
+#else /* __rtems__ */
+                pr = &prison0;
+#endif /* __rtems__ */
 		mtx_lock(&pr->pr_mtx);
 		name = pr->pr_hostname;
 		namelen = strlen(name);

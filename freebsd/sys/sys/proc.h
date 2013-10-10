@@ -205,9 +205,7 @@ struct thread {
 #endif /* __rtems__ */
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */
-#endif /* __rtems__ */
 	struct proc	*td_proc;	/* (*) Associated process. */
-#ifndef __rtems__
 	TAILQ_ENTRY(thread) td_plist;	/* (*) All threads in this proc. */
 	TAILQ_ENTRY(thread) td_runq;	/* (t) Run queue. */
 	TAILQ_ENTRY(thread) td_slpq;	/* (t) Sleep queue. */
@@ -574,8 +572,6 @@ struct proc {
 	LIST_HEAD(, mqueue_notifier)	p_mqnotifier; /* (c) mqueue notifiers.*/
 	struct kdtrace_proc	*p_dtrace; /* (*) DTrace-specific data. */
 	struct cv	p_pwait;	/* (*) wait cv for exit/exec */
-#else /* __rtems__ */
-  struct ucred  *p_ucred; /* (c) Process owner's identity. */
 #endif /* __rtems__ */
 };
 
@@ -796,11 +792,7 @@ extern struct sx allproc_lock;
 extern struct sx proctree_lock;
 extern struct mtx ppeers_lock;
 extern struct proc proc0;		/* Process slot for swapper. */
-#ifndef __rtems__
 extern struct thread thread0;		/* Primary thread in proc0. */
-#else  /*  __rtems__ */
-extern struct ucred *rtems_bsd_thread0_ucred;
-#endif  /*  __rtems__ */
 extern struct vmspace vmspace0;		/* VM space for proc0. */
 extern int hogticks;			/* Limit on kernel cpu hogs. */
 extern int lastpid;

@@ -42,6 +42,7 @@
  * priv(9) interface should be used to check for privilege.
  */
 #if defined(_KERNEL) || defined(_WANT_UCRED)
+#ifndef __rtems__
 struct ucred {
 	u_int	cr_ref;			/* reference count */
 #define	cr_startcopy cr_uid
@@ -63,6 +64,9 @@ struct ucred {
 	gid_t	*cr_groups;		/* groups */
 	int	cr_agroups;		/* Available groups */
 };
+#else /* __rtems__ */
+struct ucred;
+#endif /* __rtems__ */
 #define	NOCRED	((struct ucred *)0)	/* no credential available */
 #define	FSCRED	((struct ucred *)-1)	/* filesystem credential */
 #endif /* _KERNEL || _WANT_UCRED */
@@ -73,11 +77,13 @@ struct ucred {
  * This is the external representation of struct ucred.
  */
 struct xucred {
+#ifndef __rtems__
 	u_int	cr_version;		/* structure layout version */
 	uid_t	cr_uid;			/* effective user id */
 	short	cr_ngroups;		/* number of groups */
 	gid_t	cr_groups[XU_NGROUPS];	/* groups */
 	void	*_cr_unused1;		/* compatibility with old ucred */
+#endif /* __rtems__ */
 };
 #define	XUCRED_VERSION	0
 
@@ -88,6 +94,7 @@ struct xucred {
 struct proc;
 struct thread;
 
+#ifndef __rtems__
 void	change_egid(struct ucred *newcred, gid_t egid);
 void	change_euid(struct ucred *newcred, struct uidinfo *euip);
 void	change_rgid(struct ucred *newcred, gid_t rgid);
@@ -105,6 +112,11 @@ int	crshared(struct ucred *cr);
 void	cru2x(struct ucred *cr, struct xucred *xcr);
 void	crsetgroups(struct ucred *cr, int n, gid_t *groups);
 int	groupmember(gid_t gid, struct ucred *cred);
+#else /* __rtems__ */
+#define crfree(cr) do { } while (0)
+#define crhold(cr) NULL
+#define cru2x(cr, xcr) do { } while (0)
+#endif /* __rtems__ */
 #endif /* _KERNEL */
 
 #endif /* !_SYS_UCRED_H_ */

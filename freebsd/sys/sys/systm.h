@@ -257,9 +257,15 @@ void	stopprofclock(struct proc *);
 void	cpu_startprofclock(void);
 void	cpu_stopprofclock(void);
 
+#ifndef __rtems__
 int	cr_cansee(struct ucred *u1, struct ucred *u2);
 int	cr_canseesocket(struct ucred *cred, struct socket *so);
 int	cr_canseeinpcb(struct ucred *cred, struct inpcb *inp);
+#else /* __rtems__ */
+#define cr_cansee(u1, u2) 1
+#define cr_canseesocket(cred, so) 1
+#define cr_canseeinpcb(cred, inp) 1
+#endif /* __rtems__ */
 
 char	*getenv(const char *name);
 void	freeenv(char *env);

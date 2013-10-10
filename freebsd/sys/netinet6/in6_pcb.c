@@ -205,8 +205,12 @@ in6_pcbbind(register struct inpcb *inp, struct sockaddr *nam,
 				    (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr) ||
 				     !IN6_IS_ADDR_UNSPECIFIED(&t->in6p_laddr) ||
 				     (t->inp_socket->so_options & SO_REUSEPORT)
+#ifndef __rtems__
 				      == 0) && (inp->inp_cred->cr_uid !=
 				     t->inp_cred->cr_uid))
+#else /* __rtems__ */
+				      == 0))
+#endif /* __rtems__ */
 					return (EADDRINUSE);
 				if ((inp->inp_flags & IN6P_IPV6_V6ONLY) == 0 &&
 				    IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
@@ -222,8 +226,12 @@ in6_pcbbind(register struct inpcb *inp, struct sockaddr *nam,
 					    (so->so_type != SOCK_STREAM ||
 					     ntohl(t->inp_faddr.s_addr) ==
 					      INADDR_ANY) &&
+#ifndef __rtems__
 					    (inp->inp_cred->cr_uid !=
 					     t->inp_cred->cr_uid))
+#else /* __rtems__ */
+              0)
+#endif /* __rtems__ */
 						return (EADDRINUSE);
 				}
 			}

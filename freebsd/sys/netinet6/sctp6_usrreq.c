@@ -559,6 +559,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 	}
 }
 
+#ifndef __rtems__
 /*
  * this routine can probably be collasped into the one in sctp_userreq.c
  * since they do the same thing and now we lookup with a sockaddr
@@ -630,6 +631,7 @@ out:
 SYSCTL_PROC(_net_inet6_sctp6, OID_AUTO, getcred, CTLTYPE_OPAQUE | CTLFLAG_RW,
     0, 0,
     sctp6_getcred, "S,ucred", "Get the ucred of a SCTP6 connection");
+#endif /* __rtems__ */
 
 
 /* This is the same as the sctp_abort() could be made common */

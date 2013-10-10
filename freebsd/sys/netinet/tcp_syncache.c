@@ -735,7 +735,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		    thread0.td_ucred)) != 0) {
 #else  /*  __rtems__ */
 		if ((error = in6_pcbconnect(inp, (struct sockaddr *)&sin6,
-		    rtems_bsd_thread0_ucred)) != 0) {
+		    NULL)) != 0) {
 #endif  /*  __rtems__ */
 			inp->in6p_laddr = laddr6;
 			if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
@@ -775,7 +775,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		    thread0.td_ucred)) != 0) {
 #else  /*  __rtems__ */
 		if ((error = in_pcbconnect(inp, (struct sockaddr *)&sin,
-		    rtems_bsd_thread0_ucred)) != 0) {
+		    NULL)) != 0) {
 #endif  /*  __rtems__ */
 
 			inp->inp_laddr = laddr;

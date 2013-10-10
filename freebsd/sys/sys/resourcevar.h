@@ -111,8 +111,19 @@ void	 addupc_task(struct thread *td, uintfptr_t pc, u_int ticks);
 void	 calccru(struct proc *p, struct timeval *up, struct timeval *sp);
 void	 calcru(struct proc *p, struct timeval *up, struct timeval *sp);
 int	 chgproccnt(struct uidinfo *uip, int diff, rlim_t maxval);
+#ifndef __rtems__
 int	 chgsbsize(struct uidinfo *uip, u_int *hiwat, u_int to,
 	    rlim_t maxval);
+#else /* __rtems__ */
+static inline int
+rtems_bsd_chgsbsize(u_int *hiwat, u_int to)
+{
+	*hiwat = to;
+
+	return (1);
+}
+#define chgsbsize(uip, hiwat, to, maxval) rtems_bsd_chgsbsize(hiwat, to)
+#endif /* __rtems__ */
 int	 chgptscnt(struct uidinfo *uip, int diff, rlim_t maxval);
 int	 fuswintr(void *base);
 struct plimit

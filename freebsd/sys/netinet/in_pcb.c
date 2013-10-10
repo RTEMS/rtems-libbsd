@@ -385,8 +385,12 @@ in_pcbbind_setup(struct inpcb *inp, struct sockaddr *nam, in_addr_t *laddrp,
 				     ntohl(t->inp_laddr.s_addr) != INADDR_ANY ||
 				     (t->inp_socket->so_options &
 					 SO_REUSEPORT) == 0) &&
+#ifndef __rtems__
 				    (inp->inp_cred->cr_uid !=
 				     t->inp_cred->cr_uid))
+#else /* __rtems__ */
+				    0)
+#endif /* __rtems__ */
 					return (EADDRINUSE);
 			}
 			t = in_pcblookup_local(pcbinfo, sin->sin_addr,

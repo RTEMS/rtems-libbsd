@@ -3194,6 +3194,7 @@ filt_solisten(struct knote *kn, long hint)
 	return (! TAILQ_EMPTY(&so->so_comp));
 }
 
+#ifndef __rtems__
 int
 socheckuid(struct socket *so, uid_t uid)
 {
@@ -3204,6 +3205,7 @@ socheckuid(struct socket *so, uid_t uid)
 		return (EPERM);
 	return (0);
 }
+#endif /* __rtems__ */
 
 static int
 sysctl_somaxconn(SYSCTL_HANDLER_ARGS)
@@ -3446,7 +3448,11 @@ sotoxsocket(struct socket *so, struct xsocket *xso)
 	xso->so_oobmark = so->so_oobmark;
 	sbtoxsockbuf(&so->so_snd, &xso->so_snd);
 	sbtoxsockbuf(&so->so_rcv, &xso->so_rcv);
+#ifndef __rtems__
 	xso->so_uid = so->so_cred->cr_uid;
+#else /* __rtems__ */
+	xso->so_uid = BSD_DEFAULT_UID;
+#endif /* __rtems__ */
 }
 
 

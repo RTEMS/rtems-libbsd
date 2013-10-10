@@ -361,14 +361,22 @@ void prison_hold_locked(struct prison *pr);
 void prison_proc_hold(struct prison *);
 void prison_proc_free(struct prison *);
 int prison_ischild(struct prison *, struct prison *);
+#ifndef __rtems__
 int prison_equal_ip4(struct prison *, struct prison *);
+#else /* __rtems__ */
+#define prison_equal_ip4(p1, p2) 1
+#endif /* __rtems__ */
 int prison_get_ip4(struct ucred *cred, struct in_addr *ia);
 int prison_local_ip4(struct ucred *cred, struct in_addr *ia);
 int prison_remote_ip4(struct ucred *cred, struct in_addr *ia);
 int prison_check_ip4(struct ucred *cred, struct in_addr *ia);
 int prison_saddrsel_ip4(struct ucred *, struct in_addr *);
 #ifdef INET6
+#ifndef __rtems__
 int prison_equal_ip6(struct prison *, struct prison *);
+#else /* __rtems__ */
+#define prison_equal_ip6(p1, p2) 1
+#endif /* __rtems__ */
 int prison_get_ip6(struct ucred *, struct in6_addr *);
 int prison_local_ip6(struct ucred *, struct in6_addr *, int);
 int prison_remote_ip6(struct ucred *, struct in6_addr *);

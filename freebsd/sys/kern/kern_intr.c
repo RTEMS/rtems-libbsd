@@ -875,7 +875,9 @@ intr_event_schedule_thread(struct intr_event *ie)
 	struct intr_thread *it;
 	struct thread *td;
 	struct thread *ctd;
+#ifndef __rtems__
 	struct proc *p;
+#endif /* __rtems__ */
 
 	/*
 	 * If no ithread or no handlers, then we have a stray interrupt.
@@ -887,7 +889,9 @@ intr_event_schedule_thread(struct intr_event *ie)
 	ctd = curthread;
 	it = ie->ie_thread;
 	td = it->it_thread;
+#ifndef __rtems__
 	p = td->td_proc;
+#endif /* __rtems__ */
 
 	/*
 	 * If any of the handlers for this ithread claim to be good
@@ -1040,7 +1044,9 @@ intr_event_schedule_thread(struct intr_event *ie, struct intr_thread *it)
 	struct intr_entropy entropy;
 	struct thread *td;
 	struct thread *ctd;
+#ifndef __rtems__
 	struct proc *p;
+#endif /* __rtems__ */
 
 	/*
 	 * If no ithread or no handlers, then we have a stray interrupt.
@@ -1050,7 +1056,9 @@ intr_event_schedule_thread(struct intr_event *ie, struct intr_thread *it)
 
 	ctd = curthread;
 	td = it->it_thread;
+#ifndef __rtems__
 	p = td->td_proc;
+#endif /* __rtems__ */
 
 	/*
 	 * If any of the handlers for this ithread claim to be good
@@ -1341,7 +1349,11 @@ ithread_loop(void *arg)
 	struct proc *p;
 
 	td = curthread;
+#ifndef __rtems__
 	p = td->td_proc;
+#else /* __rtems__ */
+	p = NULL;
+#endif /* __rtems__ */
 	ithd = (struct intr_thread *)arg;
 	KASSERT(ithd->it_thread == td,
 	    ("%s: ithread and proc linkage out of sync", __func__));

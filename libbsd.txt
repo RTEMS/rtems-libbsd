@@ -56,6 +56,14 @@ the current Git submodule commit is this
 * Process identifiers are not supported.  Every PID value is set to zero
   (= BSD_DEFAULT_PID).
 
+* User credentials are not supported.  The following functions allow the
+  operation for everyone
+  - prison_equal_ip4(),
+  - chgsbsize(),
+  - cr_cansee(),
+  - cr_canseesocket() and
+  - cr_canseeinpcb().
+
 * Sebastian Huber and Joel Sherrill discussed the need for a a basic USB
   functionality test that is known to work on qemu pc.
 

@@ -140,6 +140,12 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 
 #define BSD_DEFAULT_PID 0
 
+#define BSD_DEFAULT_UID 0
+
+#define BSD_DEFAULT_GID 0
+
+#define BSD_DEFAULT_PRISON (&prison0)
+
 extern rtems_chain_control rtems_bsd_lock_chain;
 
 extern rtems_chain_control rtems_bsd_mtx_chain;

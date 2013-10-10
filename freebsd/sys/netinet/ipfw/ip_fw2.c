@@ -717,11 +717,19 @@ check_uidgid(ipfw_insn_u32 *insn, int proto, struct ifnet *oif,
 		}
 	} 
 	if (insn->o.opcode == O_UID)
+#ifndef __rtems__
 		match = ((*uc)->cr_uid == (uid_t)insn->d[0]);
+#else /* __rtems__ */
+		match = (BSD_DEFAULT_UID == (uid_t)insn->d[0]);
+#endif /* __rtems__ */
 	else if (insn->o.opcode == O_GID)
 		match = groupmember((gid_t)insn->d[0], *uc);
 	else if (insn->o.opcode == O_JAIL)
+#ifndef __rtems__
 		match = ((*uc)->cr_prison->pr_id == (int)insn->d[0]);
+#else /* __rtems__ */
+		match = (BSD_DEFAULT_PRISON->pr_id == (int)insn->d[0]);
+#endif /* __rtems__ */
 	return match;
 #endif /* __FreeBSD__ */
 }
@@ -1389,9 +1397,17 @@ do {								\
 #ifdef __FreeBSD__
 						&ucred_cache, args->inp);
 					    if (v == 4 /* O_UID */)
+#ifndef __rtems__
 						key = ucred_cache->cr_uid;
+#else /* __rtems__ */
+						key = BSD_DEFAULT_UID;
+#endif /* __rtems__ */
 					    else if (v == 5 /* O_JAIL */)
+#ifndef __rtems__
 						key = ucred_cache->cr_prison->pr_id;
+#else /* __rtems__ */
+						key = BSD_DEFAULT_PRISON->pr_id;
+#endif /* __rtems__ */
 #else /* !__FreeBSD__ */
 						(void *)&ucred_cache,
 						(struct inpcb *)args->m);

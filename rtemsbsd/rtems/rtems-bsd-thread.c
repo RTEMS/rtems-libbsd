@@ -48,25 +48,11 @@
 #include <sys/kthread.h>
 #include <sys/malloc.h>
 #include <sys/selinfo.h>
-#include <sys/filedesc.h>
-#include <sys/jail.h>
-#include <sys/resourcevar.h>
 
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/objectimpl.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
-
-/* FIXME: What to do with the credentials? */
-static struct ucred FIXME_ucred = {
-  .cr_ref = 1                          /* reference count */
-};
-static struct proc  FIXME_proc = {
-  .p_ucred = NULL /* (c) Process owner's identity. */
-};
-static struct prison FIXME_prison = {
-  .pr_parent = NULL
-};
 
 static size_t rtems_bsd_extension_index;
 
@@ -108,7 +94,6 @@ rtems_bsd_thread_create(Thread_Control *thread, int wait)
 
 	if (td != NULL) {
 		td->td_thread = thread;
-		td->td_proc = &FIXME_proc;
 	}
 
 	thread->extensions[rtems_bsd_extension_index] = td;
@@ -207,15 +192,6 @@ rtems_bsd_threads_init(void *arg __unused)
 	}
 
 	rtems_bsd_extension_index = rtems_object_id_get_index(ext_id);
-
-	mtx_init(&FIXME_prison.pr_mtx, "prison lock", NULL, MTX_DEF | MTX_DUPOK);
-
-	FIXME_ucred.cr_prison   = &FIXME_prison;    /* jail(2) */
-	FIXME_ucred.cr_uidinfo  = uifind(0);
-	FIXME_ucred.cr_ruidinfo = uifind(0);
-	FIXME_ucred.cr_ngroups = 1;     /* group 0 */
-
-	FIXME_proc.p_ucred = crhold(&FIXME_ucred);
 }
 
 SYSINIT(rtems_bsd_threads, SI_SUB_INTRINSIC, SI_ORDER_ANY, rtems_bsd_threads_init, NULL);

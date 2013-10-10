@@ -1489,10 +1489,11 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		}
 		bcopy(&pr->rule, rule, sizeof(struct pf_rule));
 #ifdef __FreeBSD__
-		rule->cuid = td->td_ucred->cr_ruid;
 #ifndef __rtems__
+		rule->cuid = td->td_ucred->cr_ruid;
 		rule->cpid = td->td_proc ? td->td_proc->p_pid : 0;
 #else /* __rtems__ */
+		rule->cuid = BSD_DEFAULT_UID;
 		rule->cpid = BSD_DEFAULT_PID;
 #endif /* __rtems__ */
 #else
@@ -1763,10 +1764,11 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			}
 			bcopy(&pcr->rule, newrule, sizeof(struct pf_rule));
 #ifdef __FreeBSD__
-			newrule->cuid = td->td_ucred->cr_ruid;
 #ifndef __rtems__
+			newrule->cuid = td->td_ucred->cr_ruid;
 			newrule->cpid = td->td_proc ? td->td_proc->p_pid : 0;
 #else /* __rtems__ */
+			newrule->cuid = BSD_DEFAULT_UID;
 			newrule->cpid = BSD_DEFAULT_PID;
 #endif /* __rtems__ */
 #else

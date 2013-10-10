@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/types.h>
 #include <rtems/bsd/sys/param.h>
@@ -662,7 +663,7 @@ kern_sendit(td, s, mp, flags, control, segflg)
 		/* Generation of SIGPIPE can be controlled per socket */
 		if (error == EPIPE && !(so->so_options & SO_NOSIGPIPE) &&
 		    !(flags & MSG_NOSIGNAL)) {
-			killinfo(td->td_proc->p_pid, SIGPIPE, NULL);
+			killinfo(rtems_bsd_get_task_id(td), SIGPIPE, NULL);
 		}
 	}
 	if (error == 0)

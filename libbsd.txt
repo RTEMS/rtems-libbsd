@@ -53,6 +53,9 @@ the current Git submodule commit is this
 * Multiple routing tables are not supported.  Every FIB value is set to zero
   (= BSD_DEFAULT_FIB).
 
+* Process identifiers are not supported.  Every PID value is set to zero
+  (= BSD_DEFAULT_PID).
+
 * Sebastian Huber and Joel Sherrill discussed the need for a a basic USB
   functionality test that is known to work on qemu pc.
 

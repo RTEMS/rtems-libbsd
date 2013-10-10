@@ -491,7 +491,11 @@ tapopen(struct cdev *dev, int flag, int mode, struct thread *td)
 	}
 
 	bcopy(IF_LLADDR(tp->tap_ifp), tp->ether_addr, sizeof(tp->ether_addr));
+#ifndef __rtems__
 	tp->tap_pid = td->td_proc->p_pid;
+#else /* __rtems__ */
+	tp->tap_pid = BSD_DEFAULT_PID;
+#endif /* __rtems__ */
 	tp->tap_flags |= TAP_OPEN;
 	ifp = tp->tap_ifp;
 

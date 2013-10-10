@@ -613,7 +613,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-conf.c',
 		'rtems/rtems-bsd-copyinout.c',
 		'rtems/rtems-bsd-delay.c',
-		'rtems/rtems-bsd-descrip.c',
 		'rtems/rtems-bsd-get-file.c',
 		'rtems/rtems-bsd-init.c',
 		'rtems/rtems-bsd-init-with-irq.c',

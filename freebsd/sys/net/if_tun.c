@@ -421,11 +421,19 @@ tunopen(struct cdev *dev, int flag, int mode, struct thread *td)
 	 * with a simple busy flag?
 	 */
 	mtx_lock(&tp->tun_mtx);
+#ifndef __rtems__
 	if (tp->tun_pid != 0 && tp->tun_pid != td->td_proc->p_pid) {
+#else /* __rtems__ */
+	if (tp->tun_pid != 0 && tp->tun_pid != BSD_DEFAULT_PID) {
+#endif /* __rtems__ */
 		mtx_unlock(&tp->tun_mtx);
 		return (EBUSY);
 	}
+#ifndef __rtems__
 	tp->tun_pid = td->td_proc->p_pid;
+#else /* __rtems__ */
+	tp->tun_pid = BSD_DEFAULT_PID;
+#endif /* __rtems__ */
 
 	tp->tun_flags |= TUN_OPEN;
 	ifp = TUN2IFP(tp);
@@ -754,7 +762,11 @@ tunioctl(struct cdev *dev, u_long cmd, caddr_t data, int flag, struct thread *td
 		break;
 	case TUNSIFPID:
 		mtx_lock(&tp->tun_mtx);
-    tp->tun_pid = curthread->td_proc->p_pid;
+#ifndef __rtems__
+		tp->tun_pid = curthread->td_proc->p_pid;
+#else /* __rtems__ */
+		tp->tun_pid = BSD_DEFAULT_PID;
+#endif /* __rtems__ */
 		mtx_unlock(&tp->tun_mtx);
 		break;
 	case FIONBIO:

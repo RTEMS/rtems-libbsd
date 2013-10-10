@@ -544,7 +544,11 @@ route_output(struct mbuf *m, struct socket *so)
 		info.rti_info[RTAX_DST] = NULL;
 		senderr(EPROTONOSUPPORT);
 	}
+#ifndef __rtems__
 	rtm->rtm_pid = curproc->p_pid;
+#else /* __rtems__ */
+	rtm->rtm_pid = BSD_DEFAULT_PID;
+#endif /* __rtems__ */
 	bzero(&info, sizeof(info));
 	info.rti_addrs = rtm->rtm_addrs;
 	if (rt_xaddrs((caddr_t)(rtm + 1), len + (caddr_t)rtm, &info)) {

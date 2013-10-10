@@ -789,7 +789,7 @@ TEST_USB01_D_FILES += testsuite/usb01/init.d
 TEST_USB01_O_FILES += testsuite/usb01/test-file-system.o
 TEST_USB01_D_FILES += testsuite/usb01/test-file-system.d
 $(TEST_USB01): $(TEST_USB01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/usb01/usb01.map $^ -lm -o $@
 TESTS += $(TEST_USB01)
 O_FILES += $(TEST_USB01_O_FILES)
 D_FILES += $(TEST_USB01_D_FILES)
@@ -800,7 +800,7 @@ TEST_LOOPBACK01_D_FILES =
 TEST_LOOPBACK01_O_FILES += testsuite/loopback01/test_main.o
 TEST_LOOPBACK01_D_FILES += testsuite/loopback01/test_main.d
 $(TEST_LOOPBACK01): $(TEST_LOOPBACK01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/loopback01/loopback01.map $^ -lm -o $@
 TESTS += $(TEST_LOOPBACK01)
 O_FILES += $(TEST_LOOPBACK01_O_FILES)
 D_FILES += $(TEST_LOOPBACK01_D_FILES)
@@ -816,7 +816,7 @@ TEST_NETSHELL01_D_FILES += testsuite/netshell01/shellconfig.d
 TEST_NETSHELL01_O_FILES += testsuite/netshell01/ns_parser_vars.o
 TEST_NETSHELL01_D_FILES += testsuite/netshell01/ns_parser_vars.d
 $(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/netshell01/netshell01.map $^ -lm -o $@
 TESTS += $(TEST_NETSHELL01)
 O_FILES += $(TEST_NETSHELL01_O_FILES)
 D_FILES += $(TEST_NETSHELL01_D_FILES)
@@ -829,7 +829,7 @@ TEST_SWI01_D_FILES += testsuite/swi01/init.d
 TEST_SWI01_O_FILES += testsuite/swi01/swi_test.o
 TEST_SWI01_D_FILES += testsuite/swi01/swi_test.d
 $(TEST_SWI01): $(TEST_SWI01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/swi01/swi01.map $^ -lm -o $@
 TESTS += $(TEST_SWI01)
 O_FILES += $(TEST_SWI01_O_FILES)
 D_FILES += $(TEST_SWI01_D_FILES)
@@ -845,7 +845,7 @@ TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_test.d
 TEST_TIMEOUT01_O_FILES += testsuite/timeout01/timeout_helper.o
 TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_helper.d
 $(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/timeout01/timeout01.map $^ -lm -o $@
 TESTS += $(TEST_TIMEOUT01)
 O_FILES += $(TEST_TIMEOUT01_O_FILES)
 D_FILES += $(TEST_TIMEOUT01_D_FILES)
@@ -857,7 +857,7 @@ TEST_INIT01_D_FILES =
 TEST_INIT01_O_FILES += testsuite/init01/test_main.o
 TEST_INIT01_D_FILES += testsuite/init01/test_main.d
 $(TEST_INIT01): $(TEST_INIT01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/init01/init01.map $^ -lm -o $@
 TESTS += $(TEST_INIT01)
 O_FILES += $(TEST_INIT01_O_FILES)
 D_FILES += $(TEST_INIT01_D_FILES)
@@ -869,7 +869,7 @@ TEST_THREAD01_D_FILES =
 TEST_THREAD01_O_FILES += testsuite/thread01/test_main.o
 TEST_THREAD01_D_FILES += testsuite/thread01/test_main.d
 $(TEST_THREAD01): $(TEST_THREAD01_O_FILES) $(LIB)
-	$(LINK.c) $^ -lm -o $@
+	$(LINK.c) -Wl,-Map,testsuite/thread01/thread01.map $^ -lm -o $@
 TESTS += $(TEST_THREAD01)
 O_FILES += $(TEST_THREAD01_O_FILES)
 D_FILES += $(TEST_THREAD01_D_FILES)

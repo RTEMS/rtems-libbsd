@@ -310,6 +310,7 @@ class TestMakefileFragementComposer(MakefileFragmentComposer):
 		testDFiles = testPrefix + '_D_FILES'
 		testDir = 'testsuite/' + self.testName
 		testExe = testDir + '/' + self.testName + '.exe'
+		testMap = testDir + '/' + self.testName + '.map'
 		makefileFragment = '\n' + testPrefix + ' = ' + testExe + '\n' \
 			+ testOFiles + ' =\n' \
 			+ testDFiles + ' =\n'
@@ -317,7 +318,7 @@ class TestMakefileFragementComposer(MakefileFragmentComposer):
 			makefileFragment = makefileFragment + testOFiles + ' += ' + testDir + '/' + fileFragment + '.o\n' \
 				+ testDFiles + ' += ' + testDir + '/' + fileFragment + '.d\n'
 		makefileFragment = makefileFragment + '$(' + testPrefix + '): $(' + testOFiles + ') $(LIB)\n' \
-			'\t$(LINK.c) $^ -lm -o $@\n' \
+			'\t$(LINK.c) -Wl,-Map,' + testMap + ' $^ -lm -o $@\n' \
 			'TESTS += $(' + testPrefix + ')\n' \
 			'O_FILES += $(' + testOFiles + ')\n' \
 			'D_FILES += $(' + testDFiles + ')\n'

@@ -262,6 +262,7 @@ VNET_SYSUNINIT(vnet_route_uninit, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD,
     vnet_route_uninit, 0);
 #endif
 
+#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct setfib_args {
 	int     fibnum;
@@ -275,6 +276,7 @@ setfib(struct thread *td, struct setfib_args *uap)
 	td->td_proc->p_fibnum = uap->fibnum;
 	return (0);
 }
+#endif /* __rtems__ */
 
 /*
  * Packet routing routines.

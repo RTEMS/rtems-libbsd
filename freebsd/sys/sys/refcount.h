@@ -51,7 +51,11 @@ static __inline void
 refcount_acquire(volatile u_int *count)
 {
 
+#ifndef __rtems__
 	atomic_add_acq_int(count, 1);	
+#else /* __rtems__ */
+	atomic_add_acq_int((volatile int *) count, 1);
+#endif /* __rtems__ */
 }
 
 static __inline int
@@ -60,7 +64,11 @@ refcount_release(volatile u_int *count)
 	u_int old;
 
 	/* XXX: Should this have a rel membar? */
+#ifndef __rtems__
 	old = atomic_fetchadd_int(count, -1);
+#else /* __rtems__ */
+	old = atomic_fetchadd_int((volatile int *) count, -1);
+#endif /* __rtems__ */
 	KASSERT(old > 0, ("negative refcount %p", count));
 	return (old == 1);
 }

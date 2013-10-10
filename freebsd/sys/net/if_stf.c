@@ -231,7 +231,11 @@ stf_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 		return (ENOSPC);
 	}
 	ifp->if_softc = sc;
+#ifndef __rtems__
 	sc->sc_fibnum = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+	sc->sc_fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 
 	/*
 	 * Set the name manually rather then using if_initname because

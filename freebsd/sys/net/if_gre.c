@@ -205,7 +205,11 @@ gre_clone_create(ifc, unit, params)
 	GRE2IFP(sc)->if_flags |= IFF_LINK0;
 	sc->encap = NULL;
 	sc->called = 0;
+#ifndef __rtems__
 	sc->gre_fibnum = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+	sc->gre_fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 	sc->wccp_ver = WCCP_V1;
 	sc->key = 0;
 	if_attach(GRE2IFP(sc));

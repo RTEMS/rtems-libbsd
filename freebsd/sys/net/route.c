@@ -124,6 +124,7 @@ u_int tunnel_fib = 0;
 SYSCTL_INT(_net, OID_AUTO, tunnelfib, CTLFLAG_RD, &tunnel_fib, 0, "");
 #endif
 
+#ifndef __rtems__
 /*
  * handler for net.my_fibnum
  */
@@ -140,6 +141,7 @@ sysctl_my_fibnum(SYSCTL_HANDLER_ARGS)
 
 SYSCTL_PROC(_net, OID_AUTO, my_fibnum, CTLTYPE_INT|CTLFLAG_RD,
             NULL, 0, &sysctl_my_fibnum, "I", "default FIB of caller");
+#endif /* __rtems__ */
 
 static __inline struct radix_node_head **
 rt_tables_get_rnh_ptr(int table, int fam)
@@ -1397,7 +1399,11 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 		fibnum = 0;
 	if (fibnum == -1) {
 		if (rt_add_addr_allfibs == 0 && cmd == (int)RTM_ADD) {
+#ifndef __rtems__
 			startfib = endfib = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+			startfib = endfib = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 		} else {
 			startfib = 0;
 			endfib = rt_numfibs - 1;

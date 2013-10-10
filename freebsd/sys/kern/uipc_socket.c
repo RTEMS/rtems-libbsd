@@ -372,7 +372,11 @@ socreate(int dom, struct socket **aso, int type, int proto,
 	so->so_cred = crhold(cred);
 	if ((prp->pr_domain->dom_family == PF_INET) ||
 	    (prp->pr_domain->dom_family == PF_ROUTE))
+#ifndef __rtems__
 		so->so_fibnum = td->td_proc->p_fibnum;
+#else /* __rtems__ */
+		so->so_fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 	else
 		so->so_fibnum = 0;
 	so->so_proto = prp;

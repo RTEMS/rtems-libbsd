@@ -261,7 +261,11 @@ rts_attach(struct socket *so, int proto, struct thread *td)
 	 */
 	s = splnet();
 	so->so_pcb = (caddr_t)rp;
+#ifndef __rtems__
 	so->so_fibnum = td->td_proc->p_fibnum;
+#else /* __rtems__ */
+	so->so_fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 	error = raw_attach(so, proto);
 	rp = sotorawcb(so);
 	if (error) {
@@ -1648,7 +1652,11 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 		 * take care of routing entries
 		 */
 		for (error = 0; error == 0 && i <= lim; i++) {
+#ifndef __rtems__
 			rnh = rt_tables_get_rnh(req->td->td_proc->p_fibnum, i);
+#else /* __rtems__ */
+			rnh = rt_tables_get_rnh(BSD_DEFAULT_FIB, i);
+#endif /* __rtems__ */
 			if (rnh != NULL) {
 				RADIX_NODE_HEAD_LOCK(rnh);
 			    	error = rnh->rnh_walktree(rnh,

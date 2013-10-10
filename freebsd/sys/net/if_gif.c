@@ -162,7 +162,11 @@ gif_clone_create(ifc, unit, params)
 	struct gif_softc *sc;
 
 	sc = malloc(sizeof(struct gif_softc), M_GIF, M_WAITOK | M_ZERO);
+#ifndef __rtems__
 	sc->gif_fibnum = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+	sc->gif_fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 	GIF2IFP(sc) = if_alloc(IFT_GIF);
 	if (GIF2IFP(sc) == NULL) {
 		free(sc, M_GIF);

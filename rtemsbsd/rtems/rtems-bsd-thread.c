@@ -217,7 +217,6 @@ rtems_bsd_threads_init(void *arg __unused)
 
 	FIXME_proc.p_ucred = crhold(&FIXME_ucred);
 	FIXME_proc.p_pid = getpid();
-	FIXME_proc.p_fibnum = 0;
 }
 
 SYSINIT(rtems_bsd_threads, SI_SUB_INTRINSIC, SI_ORDER_ANY, rtems_bsd_threads_init, NULL);

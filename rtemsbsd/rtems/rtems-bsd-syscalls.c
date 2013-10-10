@@ -662,9 +662,7 @@ kern_sendit(td, s, mp, flags, control, segflg)
 		/* Generation of SIGPIPE can be controlled per socket */
 		if (error == EPIPE && !(so->so_options & SO_NOSIGPIPE) &&
 		    !(flags & MSG_NOSIGNAL)) {
-			PROC_LOCK(td->td_proc);
-      killinfo(td->td_proc->p_pid, SIGPIPE, NULL);
-			PROC_UNLOCK(td->td_proc);
+			killinfo(td->td_proc->p_pid, SIGPIPE, NULL);
 		}
 	}
 	if (error == 0)

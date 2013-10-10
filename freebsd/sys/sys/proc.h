@@ -576,7 +576,6 @@ struct proc {
 	struct cv	p_pwait;	/* (*) wait cv for exit/exec */
 #else /* __rtems__ */
   struct ucred  *p_ucred; /* (c) Process owner's identity. */
-  struct mtx  p_mtx;    /* (n) Lock for this struct. */
   rtems_id p_pid;
   int p_fibnum; /* in this routing domain XXX MRT */
 #endif /* __rtems__ */

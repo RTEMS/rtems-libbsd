@@ -264,10 +264,15 @@ crypto_terminate(struct proc **pp, void *q)
 	*pp = NULL;
 	if (p) {
 		wakeup_one(q);
+#ifndef __rtems__
 		PROC_LOCK(p);		/* NB: insure we don't miss wakeup */
 		CRYPTO_DRIVER_UNLOCK();	/* let crypto_finis progress */
 		msleep(p, &p->p_mtx, PWAIT, "crypto_destroy", 0);
 		PROC_UNLOCK(p);
+#else /* __rtems__ */
+		/* FIXME: The hacks with the PROC_LOCK() do not work on RTEMS */
+		BSD_ASSERT(0);
+#endif /* __rtems__ */
 		CRYPTO_DRIVER_LOCK();
 	}
 }

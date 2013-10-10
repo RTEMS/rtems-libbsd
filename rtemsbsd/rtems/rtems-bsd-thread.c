@@ -216,7 +216,6 @@ rtems_bsd_threads_init(void *arg __unused)
 	FIXME_ucred.cr_ngroups = 1;     /* group 0 */
 
 	FIXME_proc.p_ucred = crhold(&FIXME_ucred);
-	mtx_init(&FIXME_proc.p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
 	FIXME_proc.p_pid = getpid();
 	FIXME_proc.p_fibnum = 0;
 }

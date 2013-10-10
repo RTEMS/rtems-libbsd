@@ -1142,7 +1142,6 @@ lim_max(struct proc *p, int which)
 	lim_rlimit(p, which, &rl);
 	return (rl.rlim_max);
 }
-#endif /* __rtems__ */
 
 /*
  * Return the current (soft) limit for a particular system resource.
@@ -1151,21 +1150,12 @@ lim_max(struct proc *p, int which)
 rlim_t
 lim_cur(struct proc *p, int which)
 {
-#ifndef __rtems__
 	struct rlimit rl;
 
 	lim_rlimit(p, which, &rl);
 	return (rl.rlim_cur);
-#else
-	/* 
-         * Resource limits not currently supported in RTEMS version.  
-         * This is left for future work.
-         */
-	return RLIM_INFINITY;
-#endif /* __rtems__ */
 }
 
-#ifndef __rtems__
 /*
  * Return a copy of the entire rlimit structure for the system limit
  * specified by 'which' in the rlimit structure pointed to by 'rlp'.

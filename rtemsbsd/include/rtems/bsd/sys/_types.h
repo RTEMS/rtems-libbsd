@@ -199,7 +199,8 @@ typedef int64_t rlim_t;
 typedef uint8_t sa_family_t;
 #define _SA_FAMILY_T_DECLARED
 
-typedef uint32_t socklen_t;
+typedef size_t __socklen_t;
+typedef __socklen_t socklen_t;
 #define _SOCKLEN_T_DECLARED
 
 #define SIZE_T_MAX SIZE_MAX

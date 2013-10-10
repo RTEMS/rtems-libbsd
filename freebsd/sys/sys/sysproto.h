@@ -350,11 +350,13 @@ struct setpriority_args {
 	char who_l_[PADL_(int)]; int who; char who_r_[PADR_(int)];
 	char prio_l_[PADL_(int)]; int prio; char prio_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct socket_args {
 	char domain_l_[PADL_(int)]; int domain; char domain_r_[PADR_(int)];
 	char type_l_[PADL_(int)]; int type; char type_r_[PADR_(int)];
 	char protocol_l_[PADL_(int)]; int protocol; char protocol_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct connect_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char name_l_[PADL_(caddr_t)]; caddr_t name; char name_r_[PADR_(caddr_t)];

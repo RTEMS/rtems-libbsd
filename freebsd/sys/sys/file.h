@@ -254,7 +254,11 @@ MALLOC_DECLARE(M_FILE);
 
 extern struct fileops vnops;
 extern struct fileops badfileops;
+#ifndef __rtems__
 extern struct fileops socketops;
+#else /* __rtems__ */
+extern const rtems_filesystem_file_handlers_r socketops;
+#endif /* __rtems__ */
 extern int maxfiles;		/* kernel limit on number of open files */
 extern int maxfilesperproc;	/* per process limit on number of open files */
 extern volatile int openfiles;	/* actual number of open files */
@@ -280,6 +284,7 @@ int fget_read(struct thread *td, int fd, struct file **fpp);
 int fget_write(struct thread *td, int fd, struct file **fpp);
 int _fdrop(struct file *fp, struct thread *td);
 
+#ifndef __rtems__
 /*
  * The socket operations are used a couple of places.
  * XXX: This is wrong, they should go through the operations vector for
@@ -293,6 +298,7 @@ fo_poll_t	soo_poll;
 fo_kqfilter_t	soo_kqfilter;
 fo_stat_t	soo_stat;
 fo_close_t	soo_close;
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 void finit(struct file *, u_int, short, void *, struct fileops *);

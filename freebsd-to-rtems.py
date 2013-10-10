@@ -1432,6 +1432,8 @@ net.addHeaderFiles(
 )
 net.addSourceFiles(
 	[
+		'sys/kern/sys_socket.c',
+		'sys/kern/uipc_syscalls.c',
 		'sys/net/bridgestp.c',
 		'sys/net/ieee8023ad_lacp.c',
 		'sys/net/if_atmsubr.c',
@@ -2356,6 +2358,7 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('syscalls01', ['test_main'])
 tests.addTest('usb01', ['init', 'test-file-system'], False)
 tests.addTest('loopback01', ['test_main'])
 tests.addTest('netshell01', ['test_main', 'shellconfig', 'ns_parser_vars'], False)

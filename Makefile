@@ -163,6 +163,8 @@ LIB_C_FILES += freebsd/sys/libkern/fls.c
 LIB_C_FILES += freebsd/sys/libkern/inet_ntoa.c
 LIB_C_FILES += freebsd/sys/libkern/random.c
 LIB_C_FILES += freebsd/sys/vm/uma_core.c
+LIB_C_FILES += freebsd/sys/kern/sys_socket.c
+LIB_C_FILES += freebsd/sys/kern/uipc_syscalls.c
 LIB_C_FILES += freebsd/sys/net/bridgestp.c
 LIB_C_FILES += freebsd/sys/net/ieee8023ad_lacp.c
 LIB_C_FILES += freebsd/sys/net/if_atmsubr.c
@@ -777,6 +779,18 @@ LIB_C_FILES += freebsd/usr.bin/netstat/route.c
 LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
+
+TEST_SYSCALLS01 = testsuite/syscalls01/syscalls01.exe
+TEST_SYSCALLS01_O_FILES =
+TEST_SYSCALLS01_D_FILES =
+TEST_SYSCALLS01_O_FILES += testsuite/syscalls01/test_main.o
+TEST_SYSCALLS01_D_FILES += testsuite/syscalls01/test_main.d
+$(TEST_SYSCALLS01): $(TEST_SYSCALLS01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/syscalls01/syscalls01.map $^ -lm -o $@
+TESTS += $(TEST_SYSCALLS01)
+O_FILES += $(TEST_SYSCALLS01_O_FILES)
+D_FILES += $(TEST_SYSCALLS01_D_FILES)
+RUN_TESTS += $(TEST_SYSCALLS01)
 
 TEST_USB01 = testsuite/usb01/usb01.exe
 TEST_USB01_O_FILES =

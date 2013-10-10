@@ -193,44 +193,6 @@ getsockaddr(namp, uaddr, len)
  *********************************************************************
  */
 int
-socket (int domain, int type, int protocol)
-{
-	struct thread *td;
-	struct socket *so;
-	int fd, error;
-
-	td = curthread;
-        if (!td) { 
-          printf("Current thread NULL\n");
-          exit(0);
-        }
-#ifdef MAC
-	error = mac_socket_check_create(td->td_ucred, domain, type, protocol);
-	if (error == 0 )
-	{
-#endif
-		/* An extra reference on `fp' has been held for us by falloc(). */
-		error = socreate(domain, &so, type, protocol, td->td_ucred, td);
-		if (error == 0) {
-			fd = rtems_bsdnet_makeFdForSocket (so);
-			if (fd < 0)
-			{
-				soclose (so);
-				error = EBADF;
-			}
-		}
-#ifdef MAC
-	}
-#endif
-	if( error == 0 )
-	{
-		return fd;
-	}
-	errno = error;
-	return -1;
-}
-
-int
 kern_bind(td, fd, sa)
 	struct thread *td;
 	int fd;

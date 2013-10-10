@@ -67,41 +67,43 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysent.h>
 #include <sys/vnode.h>
 #include <sys/bio.h>
-#ifndef __rtems__
 #include <sys/buf.h>
-#endif
 #include <sys/condvar.h>
 #ifdef KTRACE
 #include <sys/ktrace.h>
 #endif
 
 #include <security/audit/audit.h>
-
 #ifdef __rtems__
-typedef long fd_mask;
-#include <vm/uma.h>
-#include <sys/mutex.h>
-#include <machine/rtems-bsd-symbols.h>
+#include <machine/rtems-bsd-syscall-api.h>
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 static MALLOC_DEFINE(M_IOCTLOPS, "ioctlops", "ioctl data buffer");
+#endif /* __rtems__ */
 static MALLOC_DEFINE(M_SELECT, "select", "select() buffer");
 #ifndef __rtems__
 MALLOC_DEFINE(M_IOV, "iov", "large iov's");
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 static int	pollout(struct thread *, struct pollfd *, struct pollfd *,
 		    u_int);
 static int	pollscan(struct thread *, struct pollfd *, u_int);
 static int	pollrescan(struct thread *);
+#endif /* __rtems__ */
 static int	selscan(struct thread *, fd_mask **, fd_mask **, int);
 static int	selrescan(struct thread *, fd_mask **, fd_mask **);
+#ifndef __rtems__
 static void	selfdalloc(struct thread *, void *);
+#endif /* __rtems__ */
 static void	selfdfree(struct seltd *, struct selfd *);
+#ifndef __rtems__
 static int	dofileread(struct thread *, int, struct file *, struct uio *,
 		    off_t, int);
 static int	dofilewrite(struct thread *, int, struct file *, struct uio *,
 		    off_t, int);
+#endif /* __rtems__ */
 static void	doselwakeup(struct selinfo *, int);
 static void	seltdinit(struct thread *);
 static int	seltdwait(struct thread *, int);
@@ -141,6 +143,7 @@ struct selfd {
 static uma_zone_t selfd_zone;
 static struct mtx_pool *mtxpool_select;
 
+#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct read_args {
 	int	fd;
@@ -148,7 +151,6 @@ struct read_args {
 	size_t	nbyte;
 };
 #endif
-#ifndef __rtems__
 int
 read(td, uap)
 	struct thread *td;
@@ -216,7 +218,6 @@ freebsd6_pread(td, uap)
 	oargs.offset = uap->offset;
 	return (pread(td, &oargs));
 }
-#endif /* __rtems__ */
 
 /*
  * Scatter read system call.
@@ -296,10 +297,8 @@ kern_preadv(td, fd, auio, offset)
 		return (error);
 	if (!(fp->f_ops->fo_flags & DFLAG_SEEKABLE))
 		error = ESPIPE;
-#ifndef __rtems__
 	else if (offset < 0 && fp->f_vnode->v_type != VCHR)
 		error = EINVAL;
-#endif /* __rtems__ */
 	else
 		error = dofileread(td, fd, fp, auio, offset, FOF_OFFSET);
 	fdrop(fp, td);
@@ -354,7 +353,6 @@ dofileread(td, fd, fp, auio, offset, flags)
 	return (error);
 }
 
-#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct write_args {
 	int	fd;
@@ -822,7 +820,6 @@ kern_pselect(struct thread *td, int nd, fd_set *in, fd_set *ou, fd_set *ex,
 	error = kern_select(td, nd, in, ou, ex, tvp, abi_nfdbits);
 	return (error);
 }
-#endif /* __rtems__ */
 
 #ifndef _SYS_SYSPROTO_H_
 struct select_args {
@@ -848,6 +845,7 @@ select(struct thread *td, struct select_args *uap)
 	return (kern_select(td, uap->nd, uap->in, uap->ou, uap->ex, tvp,
 	    NFDBITS));
 }
+#endif /* __rtems__ */
 
 int
 kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
@@ -866,6 +864,10 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 	int error, timo;
 	u_int nbufbytes, ncpbytes, ncpubytes, nfdbits;
 
+#ifdef __rtems__
+	if (td == NULL)
+		return (ENOMEM);
+#endif /* __rtems__ */
 	if (nd < 0)
 		return (EINVAL);
 	fdp = td->td_proc->p_fd;
@@ -1008,6 +1010,22 @@ done:
 
 	return (error);
 }
+#ifdef __rtems__
+int
+select(int nfds, fd_set *restrict readfds, fd_set *__restrict writefds, fd_set
+    *__restrict errorfds, struct timeval *__restrict timeout)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	int error = kern_select(td, nfds, readfds, writefds, errorfds, timeout,
+	    NFDBITS);
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 #ifndef __rtems__
 /* 
  * Convert a select bit set to poll flags.
@@ -1163,6 +1181,7 @@ selscan(td, ibits, obits, nfd)
 #endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct poll_args {
 	struct pollfd *fds;
@@ -1171,11 +1190,7 @@ struct poll_args {
 };
 #endif
 int
-#ifdef __rtems__
-kern_poll(td, uap)
-#else
 poll(td, uap)
-#endif /* __rtems__ */
 	struct thread *td;
 	struct poll_args *uap;
 {
@@ -1386,11 +1401,7 @@ openbsd_poll(td, uap)
 	register struct thread *td;
 	register struct openbsd_poll_args *uap;
 {
-#ifdef __rtems__
-	return (kern_poll(td, (struct poll_args *)uap));
-#else
 	return (poll(td, (struct poll_args *)uap));
-#endif
 }
 
 /*
@@ -1468,6 +1479,7 @@ selfdalloc(struct thread *td, void *cookie)
 	stp->st_free2->sf_td = stp;
 	stp->st_free2->sf_cookie = cookie;
 }
+#endif /* __rtems__ */
 
 static void
 selfdfree(struct seltd *stp, struct selfd *sfp)

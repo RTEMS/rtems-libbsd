@@ -786,7 +786,6 @@ base.addHeaderFiles(
 base.addSourceFiles(
 	[
 		'sys/kern/init_main.c',
-		'sys/kern/kern_descrip.c',
 		'sys/kern/kern_environment.c',
 		'sys/kern/kern_event.c',
 		'sys/kern/kern_intr.c',

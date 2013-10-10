@@ -675,6 +675,7 @@ base.addHeaderFiles(
 		'sys/bsm/audit.h',
 		'sys/bsm/audit_kevents.h',
 		'sys/fs/devfs/devfs_int.h',
+		'sys/security/audit/audit.h',
 		'sys/security/mac/mac_framework.h',
 		'sys/sys/acl.h',
 		'sys/sys/aio.h',

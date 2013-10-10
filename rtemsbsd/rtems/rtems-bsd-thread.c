@@ -61,9 +61,6 @@ RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 static struct ucred FIXME_ucred = {
   .cr_ref = 1                          /* reference count */
 };
-static struct filedesc FIXME_fd = {
-  .fd_ofiles = NULL    /* file structures for open files */
-};
 static struct proc  FIXME_proc = {
   .p_ucred = NULL /* (c) Process owner's identity. */
 };
@@ -222,8 +219,6 @@ rtems_bsd_threads_init(void *arg __unused)
 	mtx_init(&FIXME_proc.p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
 	FIXME_proc.p_pid = getpid();
 	FIXME_proc.p_fibnum = 0;
-	FIXME_proc.p_fd = &FIXME_fd;
-	sx_init_flags(&FIXME_fd.fd_sx, "config SX thread lock", SX_DUPOK);
 }
 
 SYSINIT(rtems_bsd_threads, SI_SUB_INTRINSIC, SI_ORDER_ANY, rtems_bsd_threads_init, NULL);

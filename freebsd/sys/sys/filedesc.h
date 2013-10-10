@@ -47,6 +47,7 @@
  */
 #define NDSLOTTYPE	u_long
 
+#ifndef __rtems__
 struct filedesc {
 	struct	file **fd_ofiles;	/* file structures for open files */
 	char	*fd_ofileflags;		/* per-process open file flags */
@@ -65,6 +66,9 @@ struct filedesc {
 	int	fd_holdleaderscount;	/* block fdfree() for shared close() */
 	int	fd_holdleaderswakeup;	/* fdfree() needs wakeup */
 };
+#else /* __rtems__ */
+struct filedesc;
+#endif /* __rtems__ */
 
 /*
  * Structure to keep track of (process leader, struct fildedesc) tuples.
@@ -75,6 +79,7 @@ struct filedesc {
  *
  * fdl_refcount and fdl_holdcount are protected by struct filedesc mtx.
  */
+#ifndef __rtems__
 struct filedesc_to_leader {
 	int		fdl_refcount;	/* references from struct proc */
 	int		fdl_holdcount;	/* temporary hold during closef */
@@ -84,6 +89,9 @@ struct filedesc_to_leader {
 	struct filedesc_to_leader *fdl_prev;
 	struct filedesc_to_leader *fdl_next;
 };
+#else /* __rtems__ */
+struct filedesc_to_leader;
+#endif /* __rtems__ */
 
 /*
  * Per-process open flags.
@@ -91,15 +99,26 @@ struct filedesc_to_leader {
 #define	UF_EXCLOSE 	0x01		/* auto-close on exec */
 
 #ifdef _KERNEL
+#ifdef __rtems__
+#include <sys/file.h>
+#include <rtems/libio_.h>
+#endif /* __rtems__ */
 
 /* Lock a file descriptor table. */
 #define	FILEDESC_LOCK_INIT(fdp)	sx_init(&(fdp)->fd_sx, "filedesc structure")
 #define	FILEDESC_LOCK_DESTROY(fdp)	sx_destroy(&(fdp)->fd_sx)
 #define	FILEDESC_LOCK(fdp)	(&(fdp)->fd_sx)
+#ifndef __rtems__
 #define	FILEDESC_XLOCK(fdp)	sx_xlock(&(fdp)->fd_sx)
 #define	FILEDESC_XUNLOCK(fdp)	sx_xunlock(&(fdp)->fd_sx)
 #define	FILEDESC_SLOCK(fdp)	sx_slock(&(fdp)->fd_sx)
 #define	FILEDESC_SUNLOCK(fdp)	sx_sunlock(&(fdp)->fd_sx)
+#else /* __rtems__ */
+#define	FILEDESC_XLOCK(fdp)	do { } while (0)
+#define	FILEDESC_XUNLOCK(fdp)	do { } while (0)
+#define	FILEDESC_SLOCK(fdp)	do { } while (0)
+#define	FILEDESC_SUNLOCK(fdp)	do { } while (0)
+#endif /* __rtems__ */
 
 #define	FILEDESC_LOCK_ASSERT(fdp)	sx_assert(&(fdp)->fd_sx, SX_LOCKED | \
 					    SX_NOTRECURSED)
@@ -111,11 +130,46 @@ struct thread;
 int	closef(struct file *fp, struct thread *td);
 int	dupfdopen(struct thread *td, struct filedesc *fdp, int indx, int dfd,
 	    int mode, int error);
+#ifndef __rtems__
 int	falloc(struct thread *td, struct file **resultfp, int *resultfd);
+#else /* __rtems__ */
+static inline int
+falloc(struct thread *td, struct file **resultfp, int *resultfd)
+{
+	rtems_libio_t *iop = rtems_libio_allocate();
+
+	(void) td;
+
+	*resultfp = rtems_bsd_iop_to_fp(iop);
+
+	if (iop != NULL) {
+		iop->pathinfo.mt_entry = &rtems_filesystem_null_mt_entry;
+		rtems_filesystem_location_add_to_mt_entry(&iop->pathinfo);
+		*resultfd = rtems_libio_iop_to_descriptor(iop);
+
+		return (0);
+	} else {
+		return (ENFILE);
+	}
+}
+#endif /* __rtems__ */
 int	fdalloc(struct thread *td, int minfd, int *result);
 int	fdavail(struct thread *td, int n);
 int	fdcheckstd(struct thread *td);
+#ifndef __rtems__
 void	fdclose(struct filedesc *fdp, struct file *fp, int idx, struct thread *td);
+#else /* __rtems__ */
+static inline void
+rtems_bsd_fdclose(struct file *fp, int idx, struct thread *td)
+{
+	(void) idx;
+	(void) td;
+
+	rtems_libio_free(&fp->f_io);
+}
+
+#define fdclose(fdp, fp, idx, td) rtems_bsd_fdclose(fp, idx, td)
+#endif /* __rtems__ */
 void	fdcloseexec(struct thread *td);
 struct	filedesc *fdcopy(struct filedesc *fdp);
 void	fdunshare(struct proc *p, struct thread *td);
@@ -130,8 +184,19 @@ void	mountcheckdirs(struct vnode *olddp, struct vnode *newdp);
 void	setugidsafety(struct thread *td);
 
 /* Return a referenced file from an unlocked descriptor. */
+#ifndef __rtems__
 struct file *fget_unlocked(struct filedesc *fdp, int fd);
+#else /* __rtems__ */
+static inline struct file *
+fget_unlocked(struct filedesc *fdp, int fd)
+{
+	(void) fdp;
 
+	return rtems_bsd_get_file(fd);
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 /* Requires a FILEDESC_{S,X}LOCK held and returns without a ref. */
 static __inline struct file *
 fget_locked(struct filedesc *fdp, int fd)
@@ -139,6 +204,7 @@ fget_locked(struct filedesc *fdp, int fd)
 
 	return (fd < 0 || fd >= fdp->fd_nfiles ? NULL : fdp->fd_ofiles[fd]);
 }
+#endif /* __rtems__ */
 
 #endif /* _KERNEL */
 

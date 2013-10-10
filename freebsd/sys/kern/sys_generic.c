@@ -851,7 +851,9 @@ int
 kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
     fd_set *fd_ex, struct timeval *tvp, int abi_nfdbits)
 {
+#ifndef __rtems__
 	struct filedesc *fdp;
+#endif /* __rtems__ */
 	/*
 	 * The magic 2048 here is chosen to be just enough for FD_SETSIZE
 	 * infds with the new FD_SETSIZE of 1024, and more than enough for
@@ -870,9 +872,14 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 #endif /* __rtems__ */
 	if (nd < 0)
 		return (EINVAL);
+#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
 	if (nd > fdp->fd_lastfile + 1)
 		nd = fdp->fd_lastfile + 1;
+#else /* __rtems__ */
+	if (nd > rtems_libio_number_iops)
+		nd = rtems_libio_number_iops;
+#endif /* __rtems__ */
 
 	/*
 	 * Allocate just enough bits for the non-null fd_sets.  Use the

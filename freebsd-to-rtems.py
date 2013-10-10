@@ -763,6 +763,7 @@ base.addHeaderFiles(
 		'sys/sys/sx.h',
 		'sys/sys/sysctl.h',
 		'sys/sys/syslog.h',
+		'sys/sys/sysproto.h',
 		'sys/sys/systm.h',
 		'sys/sys/_task.h',
 		'sys/sys/taskqueue.h',

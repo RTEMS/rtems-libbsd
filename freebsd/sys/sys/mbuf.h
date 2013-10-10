@@ -637,7 +637,7 @@ m_cljset(struct mbuf *m, void *cl, int type)
 	m->m_ext.ext_free = m->m_ext.ext_arg1 = m->m_ext.ext_arg2 = NULL;
 	m->m_ext.ext_size = size;
 	m->m_ext.ext_type = type;
-	m->m_ext.ref_cnt = uma_find_refcnt(zone, cl);
+	m->m_ext.ref_cnt = (volatile u_int *) uma_find_refcnt(zone, cl);
 	m->m_flags |= M_EXT;
 
 }

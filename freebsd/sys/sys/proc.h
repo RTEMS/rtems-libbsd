@@ -575,9 +575,6 @@ struct proc {
 	struct kdtrace_proc	*p_dtrace; /* (*) DTrace-specific data. */
 	struct cv	p_pwait;	/* (*) wait cv for exit/exec */
 #else /* __rtems__ */
-  struct sigiolst	p_sigiolst;	/* (c) List of sigio sources. */
-  int		p_flag;		/* (c) P_* flags. */
-  struct proc	*p_leader;	/* (b) */
   struct ucred  *p_ucred; /* (c) Process owner's identity. */
   struct mtx  p_mtx;    /* (n) Lock for this struct. */
   rtems_id p_pid;

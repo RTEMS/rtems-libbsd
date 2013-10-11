@@ -694,7 +694,6 @@ base.addHeaderFiles(
 		'sys/sys/endian.h',
 		'sys/sys/event.h',
 		'sys/sys/eventhandler.h',
-		'sys/sys/fcntl.h',
 		'sys/sys/filedesc.h',
 		'sys/sys/file.h',
 		'sys/sys/filio.h',

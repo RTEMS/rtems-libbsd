@@ -205,6 +205,9 @@ typedef __socklen_t socklen_t;
 
 #define SIZE_T_MAX SIZE_MAX
 
+/* FIXME */
+#define FNONBLOCK _FNONBLOCK
+
 #endif /* __BSD_VISIBLE */
 
 #endif /* __rtems__ */

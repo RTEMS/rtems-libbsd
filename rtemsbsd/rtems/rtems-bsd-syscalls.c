@@ -761,12 +761,6 @@ sendto (int s, const void *buf, size_t len, int flags, const struct sockaddr *to
 	return -1;
 }
 
-ssize_t
-send( int s, const void *msg, size_t len, int flags )
-{
-  return (sendto(s, msg, len, flags, NULL, 0));
-}
-
 int
 kern_recvit(td, s, mp, fromseg, controlp)
 	struct thread *td;
@@ -1021,12 +1015,6 @@ done2:
 	}
 	errno = error;
 	return -1;
-}
-
-ssize_t
-recv( int s, void *buf, size_t len, int flags )
-{
-  return (recvfrom(s, buf, len, flags, NULL, 0));
 }
 
 int

@@ -271,6 +271,12 @@ socket(int domain, int type, int protocol)
 /* ARGSUSED */
 int
 bind(td, uap)
+#else /* __rtems__ */
+static int kern_bind(struct thread *, int, struct sockaddr *);
+
+static int
+rtems_bsd_bind(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct bind_args /* {
 		int	s;
@@ -288,6 +294,27 @@ bind(td, uap)
 	free(sa, M_SONAME);
 	return (error);
 }
+#ifdef __rtems__
+int
+bind(int socket, const struct sockaddr *address, socklen_t address_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct bind_args ua = {
+		.s = socket,
+		.name = (caddr_t) address,
+		.namelen = address_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = rtems_bsd_bind(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 int
 kern_bind(td, fd, sa)
@@ -317,6 +344,7 @@ kern_bind(td, fd, sa)
 	return (error);
 }
 
+#ifndef __rtems__
 /* ARGSUSED */
 int
 listen(td, uap)
@@ -1763,6 +1791,7 @@ sockargs(mp, buf, buflen, type)
 	}
 	return (error);
 }
+#endif /* __rtems__ */
 
 int
 getsockaddr(namp, uaddr, len)
@@ -1792,6 +1821,7 @@ getsockaddr(namp, uaddr, len)
 	return (error);
 }
 
+#ifndef __rtems__
 #include <sys/condvar.h>
 
 struct sendfile_sync {

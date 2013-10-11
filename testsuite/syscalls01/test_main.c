@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -215,6 +216,18 @@ static socket_test socket_tests[] = {
 	{ PF_BLUETOOTH, SOCK_DGRAM, 0, EPROTONOSUPPORT },
 	{ AF_IEEE80211, SOCK_DGRAM, 0, EPROTONOSUPPORT }
 };
+
+static void
+init_addr(struct sockaddr_in *addr)
+{
+	int ok;
+
+	memset(addr, 0, sizeof(*addr));
+	addr->sin_family = AF_INET;
+	addr->sin_port = htons(1234);
+	ok = inet_aton("127.0.0.1", &addr->sin_addr);
+	assert(ok != 0);
+}
 
 static void
 no_mem_task(rtems_task_argument arg)
@@ -445,6 +458,63 @@ test_socket_fstat_and_shutdown(void)
 }
 
 static void
+no_mem_socket_bind(int fd)
+{
+	struct sockaddr_in addr;
+	int rv;
+
+	errno = 0;
+	rv = bind(fd, (const struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_bind(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
+	int sd;
+	int rv;
+
+	puts("test socket bind");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	init_addr(&addr);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_bind, sd);
+
+	errno = 0;
+	rv = bind(sd, (const struct sockaddr *) &addr, SOCK_MAXADDRLEN + 1);
+	assert(rv == -1);
+	assert(errno == ENAMETOOLONG);
+
+	errno = 0;
+	rv = bind(sd, (const struct sockaddr *) &addr, 0);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	errno = 0;
+	rv = bind(sd, (const struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == -1);
+	assert(errno == EADDRNOTAVAIL);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = bind(sd, (struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -452,6 +522,7 @@ test_main(void)
 
 	test_socket_unsupported_ops();
 	test_socket_fstat_and_shutdown();
+	test_socket_bind();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

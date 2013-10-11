@@ -159,86 +159,11 @@ sockargs(mp, buf, buflen, type)
 	return (error);
 }
 
-int
-getsockaddr(namp, uaddr, len)
-	struct sockaddr **namp;
-	caddr_t uaddr;
-	size_t len;
-{
-	struct sockaddr *sa;
-	int error;
-
-	if (len > SOCK_MAXADDRLEN)
-		return (ENAMETOOLONG);
-	if (len < offsetof(struct sockaddr, sa_data[0]))
-		return (EINVAL);
-	sa = malloc(len, M_SONAME, M_WAITOK);
-	error = copyin(uaddr, sa, len);
-	if (error) {
-		free(sa, M_SONAME);
-	} else {
-#if defined(COMPAT_OLDSOCK) && BYTE_ORDER != BIG_ENDIAN
-		if (sa->sa_family == 0 && sa->sa_len < AF_MAX)
-			sa->sa_family = sa->sa_len;
-#endif
-		sa->sa_len = len;
-		*namp = sa;
-	}
-	return (error);
-}
-
 /*
  *********************************************************************
  *                       BSD-style entry points                      *
  *********************************************************************
  */
-int
-kern_bind(td, fd, sa)
-	struct thread *td;
-	int fd;
-	struct sockaddr *sa;
-{
-	struct socket *so;
-	int error;
-
-	if ((so = rtems_bsdnet_fdToSocket (fd)) == NULL) {
-		error = EBADF;
-		return (error);
-	}
-#ifdef KTRACE
-	if (KTRPOINT(td, KTR_STRUCT))
-		ktrsockaddr(sa);
-#endif
-#ifdef MAC
-	error = mac_socket_check_bind(td->td_ucred, so, sa);
-	if (error == 0)
-#endif
-		error = sobind(so, sa, td);
-	return (error);
-}
-
-int
-bind (int s, struct sockaddr *name, int namelen)
-{
-	struct thread *td;
-	struct sockaddr *sa;
-	int error;
-
-	error = getsockaddr(&sa, name, namelen);
-	if( error == 0 )
-	{
-		td = curthread;
-		error = kern_bind(td, s, sa);
-		free(sa, M_SONAME);
-	}
-	if( error == 0 )
-	{
-		return error;
-	}
-	errno = error;
-	return -1;
-}
-
 int
 kern_connect(td, fd, sa)
 	struct thread *td;

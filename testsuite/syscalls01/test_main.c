@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/filio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -458,6 +459,56 @@ test_socket_fstat_and_shutdown(void)
 }
 
 static void
+no_mem_socket_ioctl(int fd)
+{
+	int rv;
+	int data;
+
+	errno = 0;
+	rv = ioctl(fd, FIONREAD, &data);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_ioctl(void)
+{
+	rtems_resource_snapshot snapshot;
+	int sd;
+	int rv;
+	int data;
+
+	puts("test socket ioctl");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_ioctl, sd);
+
+	errno = 0;
+	rv = ioctl(sd, 0xffffffff);
+	assert(rv == -1);
+	assert(errno == EOPNOTSUPP);
+
+	data = -1;
+	rv = ioctl(sd, FIONREAD, &data);
+	assert(rv == 0);
+	assert(data == 0);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = ioctl(sd, 0);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 no_mem_socket_bind(int fd)
 {
 	struct sockaddr_in addr;
@@ -522,6 +573,7 @@ test_main(void)
 
 	test_socket_unsupported_ops();
 	test_socket_fstat_and_shutdown();
+	test_socket_ioctl();
 	test_socket_bind();
 
 	puts("*** END OF " TEST_NAME " TEST ***");

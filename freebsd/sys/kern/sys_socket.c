@@ -120,7 +120,11 @@ soo_truncate(struct file *fp, off_t length, struct ucred *active_cred,
 
 	return (EINVAL);
 }
+#endif /* __rtems__ */
 
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 soo_ioctl(struct file *fp, u_long cmd, void *data, struct ucred *active_cred,
     struct thread *td)
@@ -128,6 +132,10 @@ soo_ioctl(struct file *fp, u_long cmd, void *data, struct ucred *active_cred,
 	struct socket *so = fp->f_data;
 	int error = 0;
 
+#ifdef __rtems__
+	if (td == NULL)
+		return (ENOMEM);
+#endif /* __rtems__ */
 	CURVNET_SET(so->so_vnet);
 	switch (cmd) {
 	case FIONBIO:
@@ -225,7 +233,19 @@ soo_ioctl(struct file *fp, u_long cmd, void *data, struct ucred *active_cred,
 	CURVNET_RESTORE();
 	return (error);
 }
+#ifdef __rtems__
+static int
+rtems_bsd_soo_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	int error = soo_ioctl(fp, request, buffer, NULL, td);
 
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 int
 soo_poll(struct file *fp, int events, struct ucred *active_cred,
     struct thread *td)
@@ -345,7 +365,7 @@ const rtems_filesystem_file_handlers_r socketops = {
 	.close_h = rtems_bsd_soo_close,
 	.read_h = rtems_filesystem_default_read,
 	.write_h = rtems_filesystem_default_write,
-	.ioctl_h = rtems_filesystem_default_ioctl,
+	.ioctl_h = rtems_bsd_soo_ioctl,
 	.lseek_h = rtems_filesystem_default_lseek,
 	.fstat_h = rtems_bsd_soo_stat,
 	.ftruncate_h = rtems_filesystem_default_ftruncate,

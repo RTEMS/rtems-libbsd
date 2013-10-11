@@ -448,10 +448,12 @@ struct sendto_args {
 	char to_l_[PADL_(caddr_t)]; caddr_t to; char to_r_[PADR_(caddr_t)];
 	char tolen_l_[PADL_(int)]; int tolen; char tolen_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct shutdown_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char how_l_[PADL_(int)]; int how; char how_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct socketpair_args {
 	char domain_l_[PADL_(int)]; int domain; char domain_r_[PADR_(int)];
 	char type_l_[PADL_(int)]; int type; char type_r_[PADR_(int)];

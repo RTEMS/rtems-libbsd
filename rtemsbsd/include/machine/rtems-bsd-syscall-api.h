@@ -55,6 +55,8 @@ int pselect(int, fd_set *__restrict, fd_set *__restrict, fd_set *__restrict,
 
 int	select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 
+int	shutdown(int, int);
+
 int	socket(int, int, int);
 
 __END_DECLS

@@ -370,7 +370,16 @@ no_mem_socket_fstat(int fd)
 }
 
 static void
-test_socket_fstat(void)
+no_mem_socket_shutdown(int fd)
+{
+	int rv;
+
+	rv = shutdown(fd, SHUT_RDWR);
+	assert(rv == 0);
+}
+
+static void
+test_socket_fstat_and_shutdown(void)
 {
 	mode_t canrecv = S_IRUSR | S_IRGRP | S_IROTH;
 	mode_t cansend = S_IWUSR | S_IWGRP | S_IWOTH;
@@ -379,7 +388,7 @@ test_socket_fstat(void)
 	int sd;
 	int rv;
 
-	puts("test socket fstat");
+	puts("test socket fstat and shutdown");
 
 	rtems_resource_snapshot_take(&snapshot);
 
@@ -392,8 +401,45 @@ test_socket_fstat(void)
 	assert(rv == 0);
 	assert(st.st_mode == (S_IFSOCK | canrecv | cansend));
 
+	rv = shutdown(sd, SHUT_RD);
+	assert(rv == 0);
+
+	rv = fstat(sd, &st);
+	assert(rv == 0);
+	assert(st.st_mode == (S_IFSOCK | cansend));
+
+	rv = shutdown(sd, SHUT_WR);
+	assert(rv == 0);
+
+	rv = fstat(sd, &st);
+	assert(rv == 0);
+	assert(st.st_mode == S_IFSOCK);
+
+	errno = 0;
+	rv = shutdown(sd, ~SHUT_RDWR);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
 	rv = close(sd);
 	assert(rv == 0);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_shutdown, sd);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = shutdown(sd, SHUT_RDWR);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	rv = shutdown(0, SHUT_RDWR);
+	assert(rv == -1);
+	assert(errno == ENOTSOCK);
 
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
@@ -405,7 +451,7 @@ test_main(void)
 	test_sockets();
 
 	test_socket_unsupported_ops();
-	test_socket_fstat();
+	test_socket_fstat_and_shutdown();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

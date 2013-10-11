@@ -538,31 +538,6 @@ accept (int s, struct sockaddr *name, int *namelen)
 	return -1;
 }
 
-/*
- *  Shutdown routine
- */
-
-int
-shutdown (int s, int how)
-{
-  struct socket *so;
-	int error = 0;
-
-	if ((so = rtems_bsdnet_fdToSocket (s)) == NULL) {
-		error = EBADF;
-	}
-	if( error == 0 )
-	{
-		error = soshutdown(so, how);
-	}
-	if( error == 0 )
-	{
-		return error;
-	}
-	errno = error;
-	return -1;
-}
-
 int
 kern_sendit(td, s, mp, flags, control, segflg)
 	struct thread *td;

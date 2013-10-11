@@ -152,6 +152,41 @@ getsock(struct filedesc *fdp, int fd, struct file **fpp, u_int *fflagp)
 	*fpp = fp;
 	return (error);
 }
+#else /* __rtems__ */
+static int
+rtems_bsd_getsock(int fd, struct file **fpp, u_int *fflagp)
+{
+	struct file *fp;
+	int error;
+
+	if ((uint32_t) fd < rtems_libio_number_iops) {
+		fp = rtems_bsd_fd_to_fp(fd);
+		if ((fp->f_io.flags & LIBIO_FLAGS_OPEN) != LIBIO_FLAGS_OPEN) {
+			fp = NULL;
+			error = EBADF;
+		} else if (fp->f_io.pathinfo.handlers != &socketops) {
+			fp = NULL;
+			error = ENOTSOCK;
+		} else {
+			if (fflagp != NULL) {
+				*fflagp = rtems_bsd_libio_flags_to_fflag(
+				    fp->f_io.flags);
+			}
+
+			error = 0;
+		}
+	} else {
+		fp = NULL;
+		error = EBADF;
+	}
+
+	*fpp = fp;
+
+	return (error);
+}
+
+#define getsock(fdp, fd, fpp, fflagp) rtems_bsd_getsock(fd, fpp, fflagp)
+#endif /* __rtems__ */
 
 /*
  * System call interface to the socket abstraction.
@@ -159,7 +194,6 @@ getsock(struct filedesc *fdp, int fd, struct file **fpp, u_int *fflagp)
 #if defined(COMPAT_43)
 #define COMPAT_OLDSOCK
 #endif
-#endif /* __rtems__ */
 
 #ifndef __rtems__
 int
@@ -1292,10 +1326,16 @@ recvmsg(td, uap)
 	free(iov, M_IOV);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /* ARGSUSED */
+#ifndef __rtems__
 int
 shutdown(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_shutdown(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct shutdown_args /* {
 		int	s;
@@ -1315,7 +1355,21 @@ shutdown(td, uap)
 	}
 	return (error);
 }
+#ifdef __rtems__
+int
+shutdown(int socket, int how)
+{
+	struct shutdown_args ua = {
+		.s = socket,
+		.how = how
+	};
+	int error = rtems_bsd_shutdown(NULL, &ua);
 
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 /* ARGSUSED */
 int
 setsockopt(td, uap)

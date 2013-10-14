@@ -608,10 +608,17 @@ oaccept(td, uap)
 	return (accept1(td, uap, 1));
 }
 #endif /* COMPAT_OLDSOCK */
+#endif /* __rtems__ */
 
 /* ARGSUSED */
+#ifndef __rtems__
 int
-connect(td, uap)
+#else /* __rtems__ */
+static int kern_connect(struct thread *, int, struct sockaddr *);
+
+static int
+rtems_bsd_connect(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct connect_args /* {
 		int	s;
@@ -630,6 +637,27 @@ connect(td, uap)
 	free(sa, M_SONAME);
 	return (error);
 }
+#ifdef __rtems__
+int
+connect(int socket, const struct sockaddr *address, socklen_t address_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct connect_args ua = {
+		.s = socket,
+		.name = (caddr_t) address,
+		.namelen = address_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = rtems_bsd_connect(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 
 int
@@ -693,6 +721,7 @@ done1:
 	return (error);
 }
 
+#ifndef __rtems__
 int
 kern_socketpair(struct thread *td, int domain, int type, int protocol,
     int *rsv)

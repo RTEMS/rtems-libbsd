@@ -566,6 +566,63 @@ test_socket_bind(void)
 }
 
 static void
+no_mem_socket_connect(int fd)
+{
+	struct sockaddr_in addr;
+	int rv;
+
+	errno = 0;
+	rv = connect(fd, (const struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_connect(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
+	int sd;
+	int rv;
+
+	puts("test socket connect");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	init_addr(&addr);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_connect, sd);
+
+	errno = 0;
+	rv = connect(sd, (const struct sockaddr *) &addr, SOCK_MAXADDRLEN + 1);
+	assert(rv == -1);
+	assert(errno == ENAMETOOLONG);
+
+	errno = 0;
+	rv = connect(sd, (const struct sockaddr *) &addr, 0);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	errno = 0;
+	rv = connect(sd, (const struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == -1);
+	assert(errno == ENETUNREACH);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = connect(sd, (struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -575,6 +632,7 @@ test_main(void)
 	test_socket_fstat_and_shutdown();
 	test_socket_ioctl();
 	test_socket_bind();
+	test_socket_connect();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

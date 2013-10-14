@@ -57,6 +57,8 @@ int	select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 
 int	bind(int, const struct sockaddr *, socklen_t);
 
+int	connect(int, const struct sockaddr *, socklen_t);
+
 int	shutdown(int, int);
 
 int	socket(int, int, int);

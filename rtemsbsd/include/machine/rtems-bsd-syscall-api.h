@@ -61,7 +61,11 @@ int	bind(int, const struct sockaddr *, socklen_t);
 
 int	connect(int, const struct sockaddr *, socklen_t);
 
+int	getsockopt(int, int, int, void * __restrict, socklen_t * __restrict);
+
 int	listen(int, int);
+
+int	setsockopt(int, int, int, const void *, socklen_t);
 
 int	shutdown(int, int);
 

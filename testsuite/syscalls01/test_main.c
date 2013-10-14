@@ -728,6 +728,106 @@ test_socket_accept(void)
 }
 
 static void
+no_mem_socket_getsockopt_and_setsockopt(int fd)
+{
+	int rv;
+	int optval;
+	socklen_t optlen;
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_getsockopt_and_setsockopt(void)
+{
+	rtems_resource_snapshot snapshot;
+	int optval;
+	socklen_t optlen;
+	int sd;
+	int rv;
+
+	puts("test socket getsockopt and setsockopt");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_STREAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_getsockopt_and_setsockopt, sd);
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = getsockopt(sd, SOL_SOCKET, -1, &optval, &optlen);
+	assert(rv == -1);
+	assert(errno == ENOPROTOOPT);
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = setsockopt(sd, SOL_SOCKET, -1, &optval, optlen);
+	assert(rv == -1);
+	assert(errno == ENOPROTOOPT);
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = getsockopt(sd, -1, SO_REUSEADDR, &optval, &optlen);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = setsockopt(sd, -1, SO_REUSEADDR, &optval, optlen);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	optval = -1;
+	optlen = sizeof(optval);
+	rv = getsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
+	assert(rv == 0);
+	assert(optval == 0);
+	assert(optlen == sizeof(optval));
+
+	optval = 1;
+	optlen = sizeof(optval);
+	rv = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
+	assert(rv == 0);
+
+	optval = 0;
+	optlen = sizeof(optval);
+	rv = getsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
+	assert(rv == 0);
+	assert(optval != 0);
+	assert(optlen == sizeof(optval));
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	optlen = sizeof(optval);
+	rv = getsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, &optlen);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	optval = 0;
+	optlen = sizeof(optval);
+	rv = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -740,6 +840,7 @@ test_main(void)
 	test_socket_connect();
 	test_socket_listen();
 	test_socket_accept();
+	test_socket_getsockopt_and_setsockopt();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

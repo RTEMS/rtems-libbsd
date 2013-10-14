@@ -382,15 +382,17 @@ struct bind_args {
 	char namelen_l_[PADL_(__socklen_t)]; __socklen_t namelen; char namelen_r_[PADR_(__socklen_t)];
 #endif /* __rtems__ */
 };
-#ifndef __rtems__
 struct setsockopt_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char level_l_[PADL_(int)]; int level; char level_r_[PADR_(int)];
 	char name_l_[PADL_(int)]; int name; char name_r_[PADR_(int)];
 	char val_l_[PADL_(caddr_t)]; caddr_t val; char val_r_[PADR_(caddr_t)];
+#ifndef __rtems__
 	char valsize_l_[PADL_(int)]; int valsize; char valsize_r_[PADR_(int)];
-};
+#else /* __rtems__ */
+	char valsize_l_[PADL_(__socklen_t)]; __socklen_t valsize; char valsize_r_[PADR_(__socklen_t)];
 #endif /* __rtems__ */
+};
 struct listen_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char backlog_l_[PADL_(int)]; int backlog; char backlog_r_[PADR_(int)];
@@ -404,13 +406,19 @@ struct getrusage_args {
 	char who_l_[PADL_(int)]; int who; char who_r_[PADR_(int)];
 	char rusage_l_[PADL_(struct rusage *)]; struct rusage * rusage; char rusage_r_[PADR_(struct rusage *)];
 };
+#endif /* __rtems__ */
 struct getsockopt_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char level_l_[PADL_(int)]; int level; char level_r_[PADR_(int)];
 	char name_l_[PADL_(int)]; int name; char name_r_[PADR_(int)];
 	char val_l_[PADL_(caddr_t)]; caddr_t val; char val_r_[PADR_(caddr_t)];
+#ifndef __rtems__
 	char avalsize_l_[PADL_(int *)]; int * avalsize; char avalsize_r_[PADR_(int *)];
+#else /* __rtems__ */
+	char avalsize_l_[PADL_(__socklen_t *)]; __socklen_t * avalsize; char avalsize_r_[PADR_(__socklen_t *)];
+#endif /* __rtems__ */
 };
+#ifndef __rtems__
 struct readv_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char iovp_l_[PADL_(struct iovec *)]; struct iovec * iovp; char iovp_r_[PADR_(struct iovec *)];

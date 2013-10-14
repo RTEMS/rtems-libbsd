@@ -1486,10 +1486,18 @@ shutdown(int socket, int how)
 }
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 /* ARGSUSED */
+#ifndef __rtems__
 int
 setsockopt(td, uap)
+#else /* __rtems__ */
+static int
+kern_setsockopt( struct thread *td, int s, int level, int name, void *val,
+    enum uio_seg valseg, socklen_t valsize);
+
+static int
+rtems_bsd_setsockopt(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct setsockopt_args /* {
 		int	s;
@@ -1503,6 +1511,30 @@ setsockopt(td, uap)
 	return (kern_setsockopt(td, uap->s, uap->level, uap->name,
 	    uap->val, UIO_USERSPACE, uap->valsize));
 }
+#ifdef __rtems__
+int
+setsockopt(int socket, int level, int option_name, const void *option_value,
+    socklen_t option_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct setsockopt_args ua = {
+		.s = socket,
+		.level = level,
+		.name = option_name,
+		.val = __DECONST(void *, option_value),
+		.valsize = option_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = rtems_bsd_setsockopt(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 int
 kern_setsockopt(td, s, level, name, val, valseg, valsize)
@@ -1553,8 +1585,17 @@ kern_setsockopt(td, s, level, name, val, valseg, valsize)
 }
 
 /* ARGSUSED */
+#ifndef __rtems__
 int
 getsockopt(td, uap)
+#else /* __rtems__ */
+static int
+kern_getsockopt( struct thread *td, int s, int level, int name, void *val,
+   enum uio_seg valseg, socklen_t *valsize);
+
+static int
+rtems_bsd_getsockopt(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct getsockopt_args /* {
 		int	s;
@@ -1580,6 +1621,30 @@ getsockopt(td, uap)
 		error = copyout(&valsize, uap->avalsize, sizeof (valsize));
 	return (error);
 }
+#ifdef __rtems__
+int
+getsockopt(int socket, int level, int option_name, void *__restrict
+    option_value, socklen_t *__restrict option_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct getsockopt_args ua = {
+		.s = socket,
+		.level = level,
+		.name = option_name,
+		.val = (caddr_t) option_value,
+		.avalsize = option_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = rtems_bsd_getsockopt(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 /*
  * Kernel version of getsockopt.
@@ -1634,6 +1699,7 @@ kern_getsockopt(td, s, level, name, val, valseg, valsize)
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * getsockname1() - Get socket name.
  */

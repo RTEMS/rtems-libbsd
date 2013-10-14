@@ -677,6 +677,57 @@ test_socket_listen(void)
 }
 
 static void
+no_mem_socket_accept(int fd)
+{
+	struct sockaddr_in addr;
+	socklen_t addr_len;
+	int rv;
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	rv = accept(fd, (struct sockaddr *) &addr, &addr_len);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_accept(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
+	socklen_t addr_len;
+	int sd;
+	int ad;
+	int rv;
+
+	puts("test socket accept");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_STREAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_accept, sd);
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	ad = accept(sd, (struct sockaddr *) &addr, &addr_len);
+	assert(ad == -1);
+	assert(errno == EINVAL);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	ad = accept(sd, (struct sockaddr *) &addr, &addr_len);
+	assert(ad == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -688,6 +739,7 @@ test_main(void)
 	test_socket_bind();
 	test_socket_connect();
 	test_socket_listen();
+	test_socket_accept();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

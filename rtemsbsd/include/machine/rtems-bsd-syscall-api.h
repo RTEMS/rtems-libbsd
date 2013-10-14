@@ -55,6 +55,8 @@ int pselect(int, fd_set *__restrict, fd_set *__restrict, fd_set *__restrict,
 
 int	select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 
+int	accept(int, struct sockaddr * __restrict, socklen_t * __restrict);
+
 int	bind(int, const struct sockaddr *, socklen_t);
 
 int	connect(int, const struct sockaddr *, socklen_t);

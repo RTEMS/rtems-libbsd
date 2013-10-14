@@ -401,7 +401,11 @@ listen(int socket, int backlog)
 }
 #endif /* __rtems__ */
 
-#ifndef __rtems__
+#ifdef __rtems__
+static int
+kern_accept(struct thread *td, int s, struct sockaddr **name,
+    socklen_t *namelen, struct file **fp);
+#endif /* __rtems__ */
 /*
  * accept1()
  */
@@ -456,12 +460,40 @@ accept1(td, uap, compat)
 	free(name, M_SONAME);
 	return (error);
 }
+#ifdef __rtems__
+int
+accept(int socket, struct sockaddr *__restrict address,
+    socklen_t *__restrict address_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct accept_args ua = {
+		.s = socket,
+		.name = address,
+		.anamelen = address_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = accept1(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 
 int
 kern_accept(struct thread *td, int s, struct sockaddr **name,
     socklen_t *namelen, struct file **fp)
 {
+#ifndef __rtems__
 	struct filedesc *fdp;
+#endif /* __rtems__ */
 	struct file *headfp, *nfp = NULL;
 	struct sockaddr *sa = NULL;
 	int error;
@@ -478,7 +510,9 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 	}
 
 	AUDIT_ARG_FD(s);
+#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
+#endif /* __rtems__ */
 	error = getsock(fdp, s, &headfp, &fflag);
 	if (error)
 		return (error);
@@ -614,6 +648,7 @@ done:
 	return (error);
 }
 
+#ifndef __rtems__
 int
 accept(td, uap)
 	struct thread *td;

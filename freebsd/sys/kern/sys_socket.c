@@ -71,8 +71,10 @@ struct fileops	socketops = {
 };
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 /* ARGSUSED */
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 soo_read(struct file *fp, struct uio *uio, struct ucred *active_cred,
     int flags, struct thread *td)
@@ -90,8 +92,45 @@ soo_read(struct file *fp, struct uio *uio, struct ucred *active_cred,
 	CURVNET_RESTORE();
 	return (error);
 }
+#ifdef __rtems__
+static ssize_t
+rtems_bsd_soo_read(rtems_libio_t *iop, void *buffer, size_t count)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct iovec iov = {
+		.iov_base = buffer,
+		.iov_len = count
+	};
+	struct uio auio = {
+		.uio_iov = &iov,
+		.uio_iovcnt = 1,
+		.uio_offset = 0,
+		.uio_resid = count,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_READ,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = soo_read(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (count - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 
 /* ARGSUSED */
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 soo_write(struct file *fp, struct uio *uio, struct ucred *active_cred,
     int flags, struct thread *td)
@@ -106,13 +145,52 @@ soo_write(struct file *fp, struct uio *uio, struct ucred *active_cred,
 #endif
 	error = sosend(so, 0, uio, 0, 0, 0, uio->uio_td);
 	if (error == EPIPE && (so->so_options & SO_NOSIGPIPE) == 0) {
+#ifndef __rtems__
 		PROC_LOCK(uio->uio_td->td_proc);
 		tdksignal(uio->uio_td, SIGPIPE, NULL);
 		PROC_UNLOCK(uio->uio_td->td_proc);
+#else /* __rtems__ */
+		/* FIXME: Determine if we really want to use signals */
+#endif /* __rtems__ */
 	}
 	return (error);
 }
+#ifdef __rtems__
+static ssize_t
+rtems_bsd_soo_write(rtems_libio_t *iop, const void *buffer, size_t count)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct iovec iov = {
+		.iov_base = __DECONST(void *, buffer),
+		.iov_len = count
+	};
+	struct uio auio = {
+		.uio_iov = &iov,
+		.uio_iovcnt = 1,
+		.uio_offset = 0,
+		.uio_resid = count,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_WRITE,
+		.uio_td = td
+	};
+	int error;
 
+	if (td != NULL) {
+		error = soo_write(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (count - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 int
 soo_truncate(struct file *fp, off_t length, struct ucred *active_cred,
     struct thread *td)
@@ -132,10 +210,6 @@ soo_ioctl(struct file *fp, u_long cmd, void *data, struct ucred *active_cred,
 	struct socket *so = fp->f_data;
 	int error = 0;
 
-#ifdef __rtems__
-	if (td == NULL)
-		return (ENOMEM);
-#endif /* __rtems__ */
 	CURVNET_SET(so->so_vnet);
 	switch (cmd) {
 	case FIONBIO:
@@ -239,7 +313,13 @@ rtems_bsd_soo_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
 {
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct file *fp = rtems_bsd_iop_to_fp(iop);
-	int error = soo_ioctl(fp, request, buffer, NULL, td);
+	int error;
+
+	if (td != NULL) {
+		error = soo_ioctl(fp, request, buffer, NULL, td);
+	} else {
+		error = ENOMEM;
+	}
 
 	return rtems_bsd_error_to_status_and_errno(error);
 }
@@ -363,8 +443,8 @@ rtems_bsd_soo_close(rtems_libio_t *iop)
 const rtems_filesystem_file_handlers_r socketops = {
 	.open_h = rtems_filesystem_default_open,
 	.close_h = rtems_bsd_soo_close,
-	.read_h = rtems_filesystem_default_read,
-	.write_h = rtems_filesystem_default_write,
+	.read_h = rtems_bsd_soo_read,
+	.write_h = rtems_bsd_soo_write,
 	.ioctl_h = rtems_bsd_soo_ioctl,
 	.lseek_h = rtems_filesystem_default_lseek,
 	.fstat_h = rtems_bsd_soo_stat,

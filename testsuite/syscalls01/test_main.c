@@ -932,6 +932,71 @@ test_socket_getsockname(void)
 }
 
 static void
+no_mem_socket_read_and_write(int fd)
+{
+	ssize_t n;
+	char buf[1];
+
+	errno = 0;
+	n = read(fd, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == ENOMEM);
+
+	errno = 0;
+	n = write(fd, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_read_and_write(void)
+{
+	rtems_resource_snapshot snapshot;
+	int sd;
+	int rv;
+	ssize_t n;
+	char buf[1];
+	int enable = 1;
+
+	puts("test socket read and write");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	rv = ioctl(sd, FIONBIO, &enable);
+	assert(rv == 0);
+
+	do_no_mem_test(no_mem_socket_read_and_write, sd);
+
+	errno = 0;
+	n = read(sd, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == EAGAIN);
+
+	errno = 0;
+	n = write(sd, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == EDESTADDRREQ);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	n = read(sd, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	n = write(sd, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -947,6 +1012,7 @@ test_main(void)
 	test_socket_getsockopt_and_setsockopt();
 	test_socket_getpeername();
 	test_socket_getsockname();
+	test_socket_read_and_write();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

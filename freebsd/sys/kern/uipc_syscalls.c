@@ -1799,7 +1799,13 @@ ogetsockname(td, uap)
 	return (getsockname1(td, uap, 1));
 }
 #endif /* COMPAT_OLDSOCK */
+#endif /* __rtems__ */
 
+#ifdef __rtems__
+static int
+kern_getpeername(struct thread *td, int fd, struct sockaddr **sa,
+    socklen_t *alen);
+#endif /* __rtems__ */
 /*
  * getpeername1() - Get name of peer for connected socket.
  */
@@ -1838,6 +1844,28 @@ getpeername1(td, uap, compat)
 		error = copyout(&len, uap->alen, sizeof(len));
 	return (error);
 }
+#ifdef __rtems__
+int
+getpeername(int socket, struct sockaddr *__restrict address,
+    socklen_t *__restrict address_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct getpeername_args ua = {
+		.fdes = socket,
+		.asa = address,
+		.alen = address_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = getpeername1(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 int
 kern_getpeername(struct thread *td, int fd, struct sockaddr **sa,
@@ -1885,6 +1913,7 @@ done:
 	return (error);
 }
 
+#ifndef __rtems__
 int
 getpeername(td, uap)
 	struct thread *td;

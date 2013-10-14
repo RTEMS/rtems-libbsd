@@ -151,12 +151,12 @@ struct accept_args {
 	char name_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict name; char name_r_[PADR_(struct sockaddr *__restrict)];
 	char anamelen_l_[PADL_(__socklen_t *__restrict)]; __socklen_t *__restrict anamelen; char anamelen_r_[PADR_(__socklen_t *__restrict)];
 };
-#ifndef __rtems__
 struct getpeername_args {
 	char fdes_l_[PADL_(int)]; int fdes; char fdes_r_[PADR_(int)];
 	char asa_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict asa; char asa_r_[PADR_(struct sockaddr *__restrict)];
 	char alen_l_[PADL_(__socklen_t *__restrict)]; __socklen_t *__restrict alen; char alen_r_[PADR_(__socklen_t *__restrict)];
 };
+#ifndef __rtems__
 struct getsockname_args {
 	char fdes_l_[PADL_(int)]; int fdes; char fdes_r_[PADR_(int)];
 	char asa_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict asa; char asa_r_[PADR_(struct sockaddr *__restrict)];

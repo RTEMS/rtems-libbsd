@@ -61,6 +61,8 @@ int	bind(int, const struct sockaddr *, socklen_t);
 
 int	connect(int, const struct sockaddr *, socklen_t);
 
+int	getpeername(int, struct sockaddr * __restrict, socklen_t * __restrict);
+
 int	getsockopt(int, int, int, void * __restrict, socklen_t * __restrict);
 
 int	listen(int, int);

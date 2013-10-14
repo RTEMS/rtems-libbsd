@@ -144,7 +144,6 @@
 #define cam_status_table _bsd_cam_status_table
 #define cam_strmatch _bsd_cam_strmatch
 #define cam_strvis _bsd_cam_strvis
-#define cold _bsd_cold
 #define copyin _bsd_copyin
 #define copyout _bsd_copyout
 #define critical_enter _bsd_critical_enter

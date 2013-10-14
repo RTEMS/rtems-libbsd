@@ -45,7 +45,12 @@
 #include <sys/queue.h>
 #include <sys/stdint.h>		/* for people using printf mainly */
 
+#ifndef __rtems__
 extern int cold;		/* nonzero if we are doing a cold boot */
+#else /* __rtems__ */
+/* In RTEMS there is no cold boot */
+#define cold 0
+#endif /* __rtems__ */
 extern int rebooting;		/* boot() has been called. */
 extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */

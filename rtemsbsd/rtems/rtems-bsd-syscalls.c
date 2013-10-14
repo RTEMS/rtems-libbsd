@@ -166,38 +166,6 @@ sockargs(mp, buf, buflen, type)
  */
 
 int
-listen (int s, int backlog)
-{
-	struct thread *td;
-	struct socket *so;
-	int error = 0;
-
-	if ((so = rtems_bsdnet_fdToSocket (s)) == NULL) {
-		error = EBADF;
-	}
-	if( error == 0 )
-	{
-		td = curthread;
-#ifdef MAC
-		error = mac_socket_check_listen(td->td_ucred, so);
-		if (error == 0) {
-#endif
-			CURVNET_SET(so->so_vnet);
-			error = solisten(so, backlog, td);
-			CURVNET_RESTORE();
-#ifdef MAC
-		}
-#endif
-	}
-	if( error == 0 )
-	{
-		return error;
-	}
-	errno = error;
-	return -1;
-}
-
-int
 kern_accept(struct thread *td, int s, struct sockaddr **name, socklen_t *namelen)
 {
 	struct sockaddr *sa = NULL;

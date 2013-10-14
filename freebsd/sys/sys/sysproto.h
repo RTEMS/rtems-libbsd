@@ -388,10 +388,12 @@ struct setsockopt_args {
 	char val_l_[PADL_(caddr_t)]; caddr_t val; char val_r_[PADR_(caddr_t)];
 	char valsize_l_[PADL_(int)]; int valsize; char valsize_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct listen_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char backlog_l_[PADL_(int)]; int backlog; char backlog_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct gettimeofday_args {
 	char tp_l_[PADL_(struct timeval *)]; struct timeval * tp; char tp_r_[PADR_(struct timeval *)];
 	char tzp_l_[PADL_(struct timezone *)]; struct timezone * tzp; char tzp_r_[PADR_(struct timezone *)];

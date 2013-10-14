@@ -623,6 +623,60 @@ test_socket_connect(void)
 }
 
 static void
+no_mem_socket_listen(int fd)
+{
+	int rv;
+
+	errno = 0;
+	rv = listen(fd, 0);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_listen(void)
+{
+	rtems_resource_snapshot snapshot;
+	int sd;
+	int rv;
+
+	puts("test socket listen");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_listen, sd);
+
+	errno = 0;
+	rv = listen(sd, 0);
+	assert(rv == -1);
+	assert(errno == EOPNOTSUPP);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = listen(sd, 0);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	sd = socket(PF_INET, SOCK_STREAM, 0);
+	assert(sd >= 0);
+
+	errno = 0;
+	rv = listen(sd, 0);
+	assert(rv == -1);
+	assert(errno == EADDRNOTAVAIL);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -633,6 +687,7 @@ test_main(void)
 	test_socket_ioctl();
 	test_socket_bind();
 	test_socket_connect();
+	test_socket_listen();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

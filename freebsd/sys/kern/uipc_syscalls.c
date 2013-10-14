@@ -344,10 +344,14 @@ kern_bind(td, fd, sa)
 	return (error);
 }
 
-#ifndef __rtems__
 /* ARGSUSED */
+#ifndef __rtems__
 int
 listen(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_listen(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct listen_args /* {
 		int	s;
@@ -376,7 +380,28 @@ listen(td, uap)
 	}
 	return(error);
 }
+#ifdef __rtems__
+int
+listen(int socket, int backlog)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct listen_args ua = {
+		.s = socket,
+		.backlog = backlog
+	};
+	int error;
 
+	if (td != NULL) {
+		error = rtems_bsd_listen(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 /*
  * accept1()
  */

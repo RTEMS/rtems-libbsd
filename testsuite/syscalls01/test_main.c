@@ -231,6 +231,20 @@ init_addr(struct sockaddr_in *addr)
 }
 
 static void
+init_msg(struct msghdr *msg, struct sockaddr_in *addr, struct iovec *iov,
+    void *buf, size_t n)
+{
+	memset(msg, 0, sizeof(*msg));
+	memset(iov, 0, sizeof(*iov));
+	iov->iov_base = buf;
+	iov->iov_len = n;
+	msg->msg_name = addr;
+	msg->msg_namelen = sizeof(*addr);
+	msg->msg_iov = iov;
+	msg->msg_iovlen = 1;
+}
+
+static void
 no_mem_task(rtems_task_argument arg)
 {
 	const no_mem_test *self = (const no_mem_test *) arg;
@@ -997,6 +1011,197 @@ test_socket_read_and_write(void)
 }
 
 static void
+no_mem_socket_send_and_sendto_and_sendmsg(int fd)
+{
+	struct sockaddr_in addr;
+	struct iovec iov;
+	struct msghdr msg;
+	ssize_t n;
+	char buf[1];
+
+	init_addr(&addr);
+	init_msg(&msg, &addr, &iov, &buf[0], sizeof(buf));
+
+	errno = 0;
+	n = send(fd, &buf[0], sizeof(buf), 0);
+	assert(n == -1);
+	assert(errno == ENOMEM);
+
+	errno = 0;
+	n = sendto(fd, &buf[0], sizeof(buf), 0,
+	    (const struct sockaddr *) &addr, sizeof(addr));
+	assert(n == -1);
+	assert(errno == ENOMEM);
+
+	errno = 0;
+	n = sendmsg(fd, &msg, 0);
+	assert(n == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_send_and_sendto_and_sendmsg(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
+	struct iovec iov;
+	struct msghdr msg;
+	int sd;
+	int rv;
+	ssize_t n;
+	char buf[1];
+
+	puts("test socket send, sendto and sendmsg");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	init_addr(&addr);
+	init_msg(&msg, &addr, &iov, &buf[0], sizeof(buf));
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_send_and_sendto_and_sendmsg, sd);
+
+	errno = 0;
+	n = send(sd, &buf[0], sizeof(buf), 0);
+	assert(n == -1);
+	assert(errno == EDESTADDRREQ);
+
+	errno = 0;
+	n = sendto(sd, &buf[0], sizeof(buf), 0,
+	    (const struct sockaddr *) &addr, sizeof(addr));
+	assert(n == -1);
+	assert(errno == ENETUNREACH);
+
+	errno = 0;
+	n = sendmsg(sd, &msg, 0);
+	assert(n == -1);
+	assert(errno == ENETUNREACH);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	n = send(sd, &buf[0], sizeof(buf), 0);
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	n = sendto(sd, &buf[0], sizeof(buf), 0,
+	    (const struct sockaddr *) &addr, sizeof(addr));
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	n = sendmsg(sd, &msg, 0);
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
+no_mem_socket_recv_and_recvfrom_and_recvmsg(int fd)
+{
+	struct sockaddr_in addr;
+	socklen_t addr_len;
+	struct iovec iov;
+	struct msghdr msg;
+	ssize_t n;
+	char buf[1];
+
+	init_addr(&addr);
+	init_msg(&msg, &addr, &iov, &buf[0], sizeof(buf));
+
+	errno = 0;
+	n = recv(fd, &buf[0], sizeof(buf), 0);
+	assert(n == -1);
+	assert(errno == ENOMEM);
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	n = recvfrom(fd, &buf[0], sizeof(buf), 0,
+	    (struct sockaddr *) &addr, &addr_len);
+	assert(n == -1);
+	assert(errno == ENOMEM);
+
+	errno = 0;
+	n = recvmsg(fd, &msg, 0);
+	assert(n == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_recv_and_recvfrom_and_recvmsg(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
+	socklen_t addr_len;
+	struct iovec iov;
+	struct msghdr msg;
+	int sd;
+	int rv;
+	ssize_t n;
+	char buf[1];
+	int enable = 1;
+
+	puts("test socket recv, recvfrom and recvmsg");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	init_addr(&addr);
+	init_msg(&msg, &addr, &iov, &buf[0], sizeof(buf));
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	rv = ioctl(sd, FIONBIO, &enable);
+	assert(rv == 0);
+
+	do_no_mem_test(no_mem_socket_recv_and_recvfrom_and_recvmsg, sd);
+
+	errno = 0;
+	n = recv(sd, &buf[0], sizeof(buf), 0);
+	assert(n == -1);
+	assert(errno == EAGAIN);
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	n = recvfrom(sd, &buf[0], sizeof(buf), 0,
+	    (struct sockaddr *) &addr, &addr_len);
+	assert(n == -1);
+	assert(errno == EAGAIN);
+
+	errno = 0;
+	n = recvmsg(sd, &msg, 0);
+	assert(n == -1);
+	assert(errno == EAGAIN);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	n = recv(sd, &buf[0], sizeof(buf), 0);
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	n = recvfrom(sd, &buf[0], sizeof(buf), 0,
+	    (struct sockaddr *) &addr, &addr_len);
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	n = recvmsg(sd, &msg, 0);
+	assert(n == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -1013,6 +1218,8 @@ test_main(void)
 	test_socket_getpeername();
 	test_socket_getsockname();
 	test_socket_read_and_write();
+	test_socket_send_and_sendto_and_sendmsg();
+	test_socket_recv_and_recvfrom_and_recvmsg();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

@@ -127,6 +127,7 @@ struct ptrace_args {
 	char addr_l_[PADL_(caddr_t)]; caddr_t addr; char addr_r_[PADR_(caddr_t)];
 	char data_l_[PADL_(int)]; int data; char data_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct recvmsg_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char msg_l_[PADL_(struct msghdr *)]; struct msghdr * msg; char msg_r_[PADR_(struct msghdr *)];
@@ -134,7 +135,11 @@ struct recvmsg_args {
 };
 struct sendmsg_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
+#ifndef __rtems__
 	char msg_l_[PADL_(struct msghdr *)]; struct msghdr * msg; char msg_r_[PADR_(struct msghdr *)];
+#else /* __rtems__ */
+	char msg_l_[PADL_(struct msghdr *)]; const struct msghdr * msg; char msg_r_[PADR_(struct msghdr *)];
+#endif /* __rtems__ */
 	char flags_l_[PADL_(int)]; int flags; char flags_r_[PADR_(int)];
 };
 struct recvfrom_args {
@@ -145,7 +150,6 @@ struct recvfrom_args {
 	char from_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict from; char from_r_[PADR_(struct sockaddr *__restrict)];
 	char fromlenaddr_l_[PADL_(__socklen_t *__restrict)]; __socklen_t *__restrict fromlenaddr; char fromlenaddr_r_[PADR_(__socklen_t *__restrict)];
 };
-#endif /* __rtems__ */
 struct accept_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char name_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict name; char name_r_[PADR_(struct sockaddr *__restrict)];
@@ -462,15 +466,19 @@ struct mkfifo_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(int)]; int mode; char mode_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct sendto_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char buf_l_[PADL_(caddr_t)]; caddr_t buf; char buf_r_[PADR_(caddr_t)];
 	char len_l_[PADL_(size_t)]; size_t len; char len_r_[PADR_(size_t)];
 	char flags_l_[PADL_(int)]; int flags; char flags_r_[PADR_(int)];
 	char to_l_[PADL_(caddr_t)]; caddr_t to; char to_r_[PADR_(caddr_t)];
+#ifndef __rtems__
 	char tolen_l_[PADL_(int)]; int tolen; char tolen_r_[PADR_(int)];
-};
+#else /* __rtems__ */
+	char tolen_l_[PADL_(__socklen_t)]; __socklen_t tolen; char tolen_r_[PADR_(__socklen_t)];
 #endif /* __rtems__ */
+};
 struct shutdown_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char how_l_[PADL_(int)]; int how; char how_r_[PADR_(int)];

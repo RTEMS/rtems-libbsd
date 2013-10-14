@@ -69,6 +69,14 @@ int	getsockopt(int, int, int, void * __restrict, socklen_t * __restrict);
 
 int	listen(int, int);
 
+ssize_t	recvfrom(int, void *, size_t, int, struct sockaddr * __restrict, socklen_t * __restrict);
+
+ssize_t	recvmsg(int, struct msghdr *, int);
+
+ssize_t	sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_t);
+
+ssize_t	sendmsg(int, const struct msghdr *, int);
+
 int	setsockopt(int, int, int, const void *, socklen_t);
 
 int	shutdown(int, int);

@@ -79,7 +79,6 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-support.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sx.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-synch.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-syscall-api.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-syscalls.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlbyname.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctl.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlnametomib.c

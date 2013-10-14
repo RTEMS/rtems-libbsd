@@ -636,7 +636,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-sx.c',
 		'rtems/rtems-bsd-synch.c',
 		'rtems/rtems-bsd-syscall-api.c',
-		'rtems/rtems-bsd-syscalls.c',
 		'rtems/rtems-bsd-sysctlbyname.c',
 		'rtems/rtems-bsd-sysctl.c',
 		'rtems/rtems-bsd-sysctlnametomib.c',

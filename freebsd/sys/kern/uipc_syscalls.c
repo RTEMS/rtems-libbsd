@@ -98,10 +98,10 @@ __FBSDID("$FreeBSD$");
 #include <machine/rtems-bsd-syscall-api.h>
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 static int sendit(struct thread *td, int s, struct msghdr *mp, int flags);
 static int recvit(struct thread *td, int s, struct msghdr *mp, void *namelenp);
 
+#ifndef __rtems__
 static int accept1(struct thread *td, struct accept_args *uap, int compat);
 static int do_sendfile(struct thread *td, struct sendfile_args *uap, int compat);
 static int getsockname1(struct thread *td, struct getsockname_args *uap,
@@ -863,7 +863,13 @@ socketpair(struct thread *td, struct socketpair_args *uap)
 	}
 	return (error);
 }
+#endif /* __rtems__ */
 
+#ifdef __rtems__
+static int
+kern_sendit( struct thread *td, int s, struct msghdr *mp, int flags,
+    struct mbuf *control, enum uio_seg segflg);
+#endif /* __rtems__ */
 static int
 sendit(td, s, mp, flags)
 	struct thread *td;
@@ -986,9 +992,13 @@ kern_sendit(td, s, mp, flags, control, segflg)
 		/* Generation of SIGPIPE can be controlled per socket */
 		if (error == EPIPE && !(so->so_options & SO_NOSIGPIPE) &&
 		    !(flags & MSG_NOSIGNAL)) {
+#ifndef __rtems__
 			PROC_LOCK(td->td_proc);
 			tdksignal(td, SIGPIPE, NULL);
 			PROC_UNLOCK(td->td_proc);
+#else /* __rtems__ */
+		/* FIXME: Determine if we really want to use signals */
+#endif /* __rtems__ */
 		}
 	}
 	if (error == 0)
@@ -1004,8 +1014,13 @@ bad:
 	return (error);
 }
 
+#ifndef __rtems__
 int
 sendto(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_sendto(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct sendto_args /* {
 		int	s;
@@ -1033,7 +1048,37 @@ sendto(td, uap)
 	error = sendit(td, uap->s, &msg, uap->flags);
 	return (error);
 }
+#ifdef __rtems__
+ssize_t
+sendto(int socket, const void *message, size_t length, int flags,
+    const struct sockaddr *dest_addr, socklen_t dest_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct sendto_args ua = {
+		.s = socket,
+		.buf = (caddr_t) message,
+		.len = length,
+		.flags = flags,
+		.to = (caddr_t) dest_addr,
+		.tolen = dest_len
+	};
+	int error;
 
+	if (td != NULL) {
+		error = rtems_bsd_sendto(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 #ifdef COMPAT_OLDSOCK
 int
 osend(td, uap)
@@ -1087,9 +1132,15 @@ osendmsg(td, uap)
 	return (error);
 }
 #endif
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 int
 sendmsg(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_sendmsg(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct sendmsg_args /* {
 		int	s;
@@ -1115,7 +1166,35 @@ sendmsg(td, uap)
 	free(iov, M_IOV);
 	return (error);
 }
+#ifdef __rtems__
+ssize_t
+sendmsg(int socket, const struct msghdr *message, int flags)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct sendmsg_args ua = {
+		.s = socket,
+		.msg = message,
+		.flags = flags
+	};
+	int error;
 
+	if (td != NULL) {
+		error = rtems_bsd_sendmsg(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
+
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 kern_recvit(td, s, mp, fromseg, controlp)
 	struct thread *td;
@@ -1300,8 +1379,13 @@ recvit(td, s, mp, namelenp)
 	return (error);
 }
 
+#ifndef __rtems__
 int
 recvfrom(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_recvfrom(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct recvfrom_args /* {
 		int	s;
@@ -1335,7 +1419,37 @@ recvfrom(td, uap)
 done2:
 	return(error);
 }
+#ifdef __rtems__
+ssize_t
+recvfrom(int socket, void *__restrict buffer, size_t length, int flags,
+    struct sockaddr *__restrict address, socklen_t *__restrict address_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct recvfrom_args ua = {
+		.s = socket,
+		.buf = buffer,
+		.len = length,
+		.flags = flags,
+		.from = address,
+		.fromlenaddr = address_len
+	};
+	int error;
 
+	if (td != NULL) {
+		error = rtems_bsd_recvfrom(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 #ifdef COMPAT_OLDSOCK
 int
 orecvfrom(td, uap)
@@ -1409,9 +1523,15 @@ orecvmsg(td, uap)
 	return (error);
 }
 #endif
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 int
 recvmsg(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_recvmsg(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct recvmsg_args /* {
 		int	s;
@@ -1442,6 +1562,30 @@ recvmsg(td, uap)
 	}
 	free(iov, M_IOV);
 	return (error);
+}
+#ifdef __rtems__
+ssize_t
+recvmsg(int socket, struct msghdr *message, int flags)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct recvmsg_args ua = {
+		.s = socket,
+		.msg = message,
+		.flags = flags
+	};
+	int error;
+
+	if (td != NULL) {
+		error = rtems_bsd_recvmsg(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
 }
 #endif /* __rtems__ */
 
@@ -1961,6 +2105,7 @@ ogetpeername(td, uap)
 	return (getpeername1(td, (struct getpeername_args *)uap, 1));
 }
 #endif /* COMPAT_OLDSOCK */
+#endif /* __rtems__ */
 
 int
 sockargs(mp, buf, buflen, type)
@@ -2002,7 +2147,6 @@ sockargs(mp, buf, buflen, type)
 	}
 	return (error);
 }
-#endif /* __rtems__ */
 
 int
 getsockaddr(namp, uaddr, len)

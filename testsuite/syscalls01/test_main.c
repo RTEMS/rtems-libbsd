@@ -878,6 +878,60 @@ test_socket_getpeername(void)
 }
 
 static void
+no_mem_socket_getsockname(int fd)
+{
+	struct sockaddr_in addr;
+	socklen_t addr_len;
+	int rv;
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	rv = getsockname(fd, (struct sockaddr *) &addr, &addr_len);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_getsockname(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
+	struct sockaddr_in expected_addr;
+	socklen_t addr_len;
+	int sd;
+	int rv;
+
+	puts("test socket getsockname");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_STREAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_getsockname, sd);
+
+	memset(&addr, 0xff, sizeof(addr));
+	addr_len = sizeof(addr);
+	rv = getsockname(sd, (struct sockaddr *) &addr, &addr_len);
+	assert(rv == 0);
+	memset(&expected_addr, 0, sizeof(expected_addr));
+	expected_addr.sin_len = sizeof(expected_addr);
+	expected_addr.sin_family = AF_INET;
+	assert(memcmp(&addr, &expected_addr, sizeof(addr)) == 0);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	addr_len = sizeof(addr);
+	rv = getsockname(sd, (struct sockaddr *) &addr, &addr_len);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -892,6 +946,7 @@ test_main(void)
 	test_socket_accept();
 	test_socket_getsockopt_and_setsockopt();
 	test_socket_getpeername();
+	test_socket_getsockname();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

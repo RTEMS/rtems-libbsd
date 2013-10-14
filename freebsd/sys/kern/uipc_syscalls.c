@@ -1699,7 +1699,11 @@ kern_getsockopt(td, s, level, name, val, valseg, valsize)
 	return (error);
 }
 
-#ifndef __rtems__
+#ifdef __rtems__
+int
+kern_getsockname(struct thread *td, int fd, struct sockaddr **sa,
+    socklen_t *alen);
+#endif /* __rtems__ */
 /*
  * getsockname1() - Get socket name.
  */
@@ -1738,6 +1742,28 @@ getsockname1(td, uap, compat)
 		error = copyout(&len, uap->alen, sizeof(len));
 	return (error);
 }
+#ifdef __rtems__
+int
+getsockname(int socket, struct sockaddr *__restrict address,
+    socklen_t *__restrict address_len)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct getsockname_args ua = {
+		.fdes = socket,
+		.asa = address,
+		.alen = address_len
+	};
+	int error;
+
+	if (td != NULL) {
+		error = getsockname1(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 int
 kern_getsockname(struct thread *td, int fd, struct sockaddr **sa,
@@ -1780,6 +1806,7 @@ bad:
 	return (error);
 }
 
+#ifndef __rtems__
 int
 getsockname(td, uap)
 	struct thread *td;

@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-syscall-api.h>
 
 #include <rtems/bsd/sys/types.h>
 #include <sys/sysctl.h>

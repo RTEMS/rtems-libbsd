@@ -47,6 +47,7 @@
 #include <sys/cdefs.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/sysctl.h>
 
 __BEGIN_DECLS
 
@@ -82,6 +83,12 @@ int	setsockopt(int, int, int, const void *, socklen_t);
 int	shutdown(int, int);
 
 int	socket(int, int, int);
+
+int	sysctl(int *, u_int, void *, size_t *, void *, size_t);
+
+int	sysctlbyname(const char *, void *, size_t *, void *, size_t);
+
+int	sysctlnametomib(const char *, int *, size_t *);
 
 __END_DECLS
 

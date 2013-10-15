@@ -747,9 +747,7 @@ void	sysctl_lock(void);
 void	sysctl_unlock(void);
 int	sysctl_wire_old_buffer(struct sysctl_req *req, size_t len);
 
-#ifndef __rtems__
 #else	/* !_KERNEL */
-#endif /* __rtems__ */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS

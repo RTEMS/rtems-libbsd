@@ -240,17 +240,26 @@ soo_poll(struct file *fp, int events, struct ucred *active_cred,
 #endif
 	return (sopoll(so, events, fp->f_cred, td));
 }
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 int
 soo_stat(struct file *fp, struct stat *ub, struct ucred *active_cred,
     struct thread *td)
 {
 	struct socket *so = fp->f_data;
+#else /* __rtems__ */
+static int
+soo_stat(struct socket *so, struct stat *ub)
+{
+#endif /* __rtems__ */
 #ifdef MAC
 	int error;
 #endif
 
+#ifndef __rtems__
 	bzero((caddr_t)ub, sizeof (*ub));
+#endif /* __rtems__ */
 	ub->st_mode = S_IFSOCK;
 #ifdef MAC
 	error = mac_socket_check_stat(active_cred, so);
@@ -270,9 +279,26 @@ soo_stat(struct file *fp, struct stat *ub, struct ucred *active_cred,
 	/* Unlocked read. */
 	if ((so->so_snd.sb_state & SBS_CANTSENDMORE) == 0)
 		ub->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+#ifndef __rtems__
 	ub->st_uid = so->so_cred->cr_uid;
 	ub->st_gid = so->so_cred->cr_gid;
+#else /* __rtems__ */
+	ub->st_uid = BSD_DEFAULT_UID;
+	ub->st_gid = BSD_DEFAULT_GID;
+#endif /* __rtems__ */
 	return (*so->so_proto->pr_usrreqs->pru_sense)(so, ub);
+}
+#ifdef __rtems__
+static int
+rtems_bsd_soo_stat(
+	const rtems_filesystem_location_info_t *loc,
+	struct stat *buf
+)
+{
+	struct socket *so = rtems_bsd_loc_to_f_data(loc);
+	int error = soo_stat(so, buf);
+
+	return rtems_bsd_error_to_status_and_errno(error);
 }
 #endif /* __rtems__ */
 
@@ -321,7 +347,7 @@ const rtems_filesystem_file_handlers_r socketops = {
 	.write_h = rtems_filesystem_default_write,
 	.ioctl_h = rtems_filesystem_default_ioctl,
 	.lseek_h = rtems_filesystem_default_lseek,
-	.fstat_h = rtems_filesystem_default_fstat,
+	.fstat_h = rtems_bsd_soo_stat,
 	.ftruncate_h = rtems_filesystem_default_ftruncate,
 	.fsync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,

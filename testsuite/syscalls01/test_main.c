@@ -31,6 +31,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -45,6 +46,14 @@
 #include <rtems/libcsupport.h>
 
 #define TEST_NAME "LIBBSD SYSCALLS 1"
+
+typedef void (*no_mem_test_body)(int fd);
+
+typedef struct {
+	no_mem_test_body body;
+	int fd;
+	rtems_id master_task;
+} no_mem_test;
 
 typedef struct {
 	int domain;
@@ -208,6 +217,62 @@ static socket_test socket_tests[] = {
 };
 
 static void
+no_mem_task(rtems_task_argument arg)
+{
+	const no_mem_test *self = (const no_mem_test *) arg;
+	rtems_status_code sc;
+	void *greedy;
+
+	assert(rtems_configuration_get_unified_work_area());
+
+	greedy = rtems_workspace_greedy_allocate(NULL, 0);
+	(*self->body)(self->fd);
+	rtems_workspace_greedy_free(greedy);
+
+	sc = rtems_event_transient_send(self->master_task);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_suspend(RTEMS_SELF);
+	assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void
+do_no_mem_test(no_mem_test_body body, int fd)
+{
+	no_mem_test test = {
+		.body = body,
+		.fd = fd,
+		.master_task = rtems_task_self()
+	};
+	rtems_status_code sc;
+	rtems_id id;
+	rtems_resource_snapshot snapshot;
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sc = rtems_task_create(
+		rtems_build_name('N', 'M', 'E', 'M'),
+		RTEMS_MINIMUM_PRIORITY,
+		RTEMS_MINIMUM_STACK_SIZE,
+		RTEMS_DEFAULT_MODES,
+		RTEMS_DEFAULT_ATTRIBUTES,
+		&id
+	);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_start(id, no_mem_task, (rtems_task_argument) &test);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_event_transient_receive(RTEMS_WAIT, RTEMS_NO_TIMEOUT);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_delete(id);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_socket(const socket_test *st)
 {
 	int sd;
@@ -294,6 +359,44 @@ test_socket_unsupported_ops(void)
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
+static void
+no_mem_socket_fstat(int fd)
+{
+	struct stat st;
+	int rv;
+
+	rv = fstat(fd, &st);
+	assert(rv == 0);
+}
+
+static void
+test_socket_fstat(void)
+{
+	mode_t canrecv = S_IRUSR | S_IRGRP | S_IROTH;
+	mode_t cansend = S_IWUSR | S_IWGRP | S_IWOTH;
+	rtems_resource_snapshot snapshot;
+	struct stat st;
+	int sd;
+	int rv;
+
+	puts("test socket fstat");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_fstat, sd);
+
+	rv = fstat(sd, &st);
+	assert(rv == 0);
+	assert(st.st_mode == (S_IFSOCK | canrecv | cansend));
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
 
 static void
 test_main(void)
@@ -302,6 +405,7 @@ test_main(void)
 	test_sockets();
 
 	test_socket_unsupported_ops();
+	test_socket_fstat();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

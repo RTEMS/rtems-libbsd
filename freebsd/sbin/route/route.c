@@ -116,24 +116,6 @@ extern	char *iso_ntoa();
 
 void usage(const char *) __dead2;
 
-#ifdef __rtems__
-
-static int main_route(int argc, char **argv);
-
-static int rtems_shell_main_route(int argc, char *argv[])
-{
-  rtems_shell_globals_t  route_globals;
-  rtems_shell_globals = &route_globals;
-  memset (rtems_shell_globals, 0, sizeof (route_globals));
-  route_globals.exit_code = 1;
-  if (setjmp (route_globals.exit_jmp) == 0)
-    return main_route ( argc, argv);
-  return route_globals.exit_code;
-}
-
-#endif
-
-
 void
 usage(cp)
 	const char *cp;
@@ -147,11 +129,17 @@ usage(cp)
 }
 
 #ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+
+static int main(int argc, char **argv);
+
+static int rtems_shell_main_route(int argc, char *argv[])
+{
+	return rtems_bsd_program_call_main("route", main, argc, argv);
+}
+#endif /* __rtems__ */
 int
-main_route(argc, argv)
-#else
 main(argc, argv)
-#endif
 	int argc;
 	char **argv;
 {

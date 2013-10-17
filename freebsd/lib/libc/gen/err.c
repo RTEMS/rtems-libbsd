@@ -46,9 +46,16 @@ __FBSDID("$FreeBSD$");
 
 #include "libc_private.h"
 
+#ifndef __rtems__
 static FILE *err_file; /* file to use for error output */
 static void (*err_exit)(int);
+#else /* __rtems__ */
+#include <machine/rtems-bsd-program.h>
+#define err_file stderr
+#define err_set_file(x) do { } while (0)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 /*
  * This is declared to take a `void *' so that the caller is not required
  * to include <stdio.h> first.  However, it is really a `FILE *', and the
@@ -68,6 +75,7 @@ err_set_exit(void (*ef)(int))
 {
 	err_exit = ef;
 }
+#endif /* __rtems__ */
 
 __weak_reference(_err, err);
 
@@ -109,8 +117,10 @@ verrc(int eval, int code, const char *fmt, va_list ap)
 		fprintf(err_file, ": ");
 	}
 	fprintf(err_file, "%s\n", strerror(code));
+#ifndef __rtems__
 	if (err_exit)
 		err_exit(eval);
+#endif /* __rtems__ */
 	exit(eval);
 }
 
@@ -132,8 +142,10 @@ verrx(int eval, const char *fmt, va_list ap)
 	if (fmt != NULL)
 		vfprintf(err_file, fmt, ap);
 	fprintf(err_file, "\n");
+#ifndef __rtems__
 	if (err_exit)
 		err_exit(eval);
+#endif /* __rtems__ */
 	exit(eval);
 }
 

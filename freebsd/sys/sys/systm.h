@@ -153,8 +153,10 @@ struct ucred;
 struct uio;
 struct _jmp_buf;
 
+#ifndef __rtems__
 int	setjmp(struct _jmp_buf *);
 void	longjmp(struct _jmp_buf *, int) __dead2;
+#endif /* __rtems__ */
 int	dumpstatus(vm_offset_t addr, off_t count);
 int	nullop(void);
 int	eopnotsupp(void);

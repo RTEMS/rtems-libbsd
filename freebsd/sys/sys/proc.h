@@ -201,6 +201,7 @@ struct thread {
 #ifdef __rtems__
 	rtems_chain_node td_node;
 	Thread_Control *td_thread;
+	struct rtems_bsd_program_control *td_prog_ctrl;
 	char td_name [16];
 #endif /* __rtems__ */
 #ifndef __rtems__

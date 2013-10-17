@@ -361,15 +361,14 @@ int	unit;		/* unit number for above */
 int	af;		/* address family */
 int	live;		/* true if we are examining a live system */
 
-
 #ifdef __rtems__
-static int main_netstat(int argc, char *argv[]);
+#include <machine/rtems-bsd-program.h>
+
+static int main(int argc, char *argv[]);
+
 static int rtems_shell_main_netstat(int argc, char *argv[])
 {
   int i;
-  rtems_shell_globals_t  netstat_globals;
-  rtems_shell_globals = &netstat_globals;
-  memset (rtems_shell_globals, 0, sizeof (netstat_globals));
 
   i = 0;
   protox[i].pr_index     = N_TCBINFO;
@@ -728,19 +727,11 @@ static int rtems_shell_main_netstat(int argc, char *argv[])
 #endif
   noutputs = 0;
 
-  netstat_globals.exit_code = 1;
-  if (setjmp (netstat_globals.exit_jmp) == 0)
-    return main_netstat (argc, argv);
-  return netstat_globals.exit_code;
+  return rtems_bsd_program_call_main("netstat", main, argc, argv);
 }
-#endif
-
+#endif /* __rtems__ */
 int
-#ifdef __rtems__
-main_netstat(int argc, char *argv[])
-#else
 main(int argc, char *argv[])
-#endif
 {
 	struct protox *tp = NULL;  /* for printing cblocks & stats */
 	int ch;

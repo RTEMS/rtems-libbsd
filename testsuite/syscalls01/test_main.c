@@ -36,6 +36,7 @@
 #include <sys/filio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <err.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -44,6 +45,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#define RTEMS_BSD_PROGRAM_NO_EXIT_WRAP
+#define RTEMS_BSD_PROGRAM_NO_PRINTF_WRAP
+#include <machine/rtems-bsd-program.h>
 
 #include <rtems/libcsupport.h>
 
@@ -1201,6 +1206,193 @@ test_socket_recv_and_recvfrom_and_recvmsg(void)
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
+static const char prog_name[] = "prog";
+
+static int
+invalid_prog(void *ctx)
+{
+	(void) ctx;
+
+	assert(0);
+}
+
+static int
+invalid_main(int argc, char **argv)
+{
+	(void) argc;
+	(void) argv;
+
+	assert(0);
+}
+
+static void *const some_context = (void *) 0xcafe;
+
+static int
+some_prog(void *ctx)
+{
+	assert(ctx == some_context);
+	assert(strcmp(rtems_bsd_program_get_name(), prog_name) == 0);
+	assert(rtems_bsd_program_get_context() == some_context);
+	errno = 0;
+	rtems_bsd_program_exit(456);
+}
+
+static const int some_argc = 1;
+
+static char *some_argv[] = { "a", NULL };
+
+static int
+some_main(int argc, char **argv)
+{
+	assert(argc == some_argc);
+	assert(argv == some_argv);
+	assert(strcmp(rtems_bsd_program_get_name(), prog_name) == 0);
+	errno = 0;
+	rtems_bsd_program_exit(789);
+}
+
+static void
+no_mem_bsd_program(int fd)
+{
+	(void) fd;
+
+	assert(rtems_bsd_program_call(prog_name, invalid_prog, NULL)
+	    == EXIT_FAILURE);
+	assert(rtems_bsd_program_call_main(prog_name, invalid_main, some_argc,
+	    some_argv) == EXIT_FAILURE);
+	assert(strcmp(rtems_bsd_program_get_name(), "?") == 0);
+	assert(rtems_bsd_program_get_context() == NULL);
+}
+
+static void
+test_bsd_program(void)
+{
+	rtems_resource_snapshot snapshot;
+	int exit_code;
+	void *greedy;
+	char *invalid_argv[2] = { "a", "b" };
+
+	assert(rtems_configuration_get_unified_work_area());
+
+	puts("test BSD program");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	do_no_mem_test(no_mem_bsd_program, -1);
+
+	greedy = rtems_workspace_greedy_allocate(NULL, 0);
+	no_mem_bsd_program(-1);
+	rtems_workspace_greedy_free(greedy);
+
+	errno = 0;
+	exit_code = rtems_bsd_program_call_main(prog_name, NULL, 1, invalid_argv);
+	assert(errno == EFAULT);
+	assert(exit_code == EXIT_FAILURE);
+
+	errno = EINVAL;
+	exit_code = rtems_bsd_program_call(prog_name, some_prog, some_context);
+	assert(errno == 0);
+	assert(exit_code == 456);
+	assert(strcmp(rtems_bsd_program_get_name(), "?") == 0);
+	assert(rtems_bsd_program_get_context() == NULL);
+
+	errno = EINVAL;
+	exit_code = rtems_bsd_program_call_main(prog_name, some_main,
+	    some_argc, some_argv);
+	assert(errno == 0);
+	assert(exit_code == 789);
+	assert(strcmp(rtems_bsd_program_get_name(), "?") == 0);
+	assert(rtems_bsd_program_get_context() == NULL);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
+test_warn(void)
+{
+	puts("test warn");
+
+	errno = EAGAIN;
+	warn("%s", "warn");
+
+	errno = ENAMETOOLONG;
+	warn(NULL);
+
+	errno = 0;
+	warnc(EDOM, "%s", "warnc");
+
+	errno = 0;
+	warnc(ERANGE, NULL);
+
+	warnx("%s", "warnx");
+
+	warnx(NULL);
+}
+
+static int
+call_err(void *ctx)
+{
+	errno = EAGAIN;
+	err(10, "%s", "call_err");
+}
+
+static int
+call_err_null(void *ctx)
+{
+	errno = ENAMETOOLONG;
+	err(11, NULL);
+}
+
+static int
+call_errc(void *ctx)
+{
+	errc(12, EDOM, "%s", "call_errc");
+}
+
+static int
+call_errc_null(void *ctx)
+{
+	errc(13, ERANGE, NULL);
+}
+
+static int
+call_errx(void *ctx)
+{
+	errx(14, "%s", "call_errx");
+}
+
+static int
+call_errx_null(void *ctx)
+{
+	errx(15, NULL);
+}
+
+static void
+test_err(void)
+{
+	int exit_code;
+
+	puts("test err");
+
+	exit_code = rtems_bsd_program_call("err", call_err, NULL);
+	assert(exit_code == 10);
+
+	exit_code = rtems_bsd_program_call("err", call_err_null, NULL);
+	assert(exit_code == 11);
+
+	exit_code = rtems_bsd_program_call("errc", call_errc, NULL);
+	assert(exit_code == 12);
+
+	exit_code = rtems_bsd_program_call("errc", call_errc_null, NULL);
+	assert(exit_code == 13);
+
+	exit_code = rtems_bsd_program_call("errx", call_errx, NULL);
+	assert(exit_code == 14);
+
+	exit_code = rtems_bsd_program_call("errx", call_errx_null, NULL);
+	assert(exit_code == 15);
+}
+
 static void
 test_main(void)
 {
@@ -1220,6 +1412,10 @@ test_main(void)
 	test_socket_read_and_write();
 	test_socket_send_and_sendto_and_sendmsg();
 	test_socket_recv_and_recvfrom_and_recvmsg();
+
+	test_bsd_program();
+	test_warn();
+	test_err();
 
 	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);

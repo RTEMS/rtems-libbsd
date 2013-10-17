@@ -1,9 +1,3 @@
-#ifdef __rtems__
-#define USE_RFC2292BIS
-
-#define __need_getopt_newlib
-#include <getopt.h>
-#endif
 /*	$KAME: ping6.c,v 1.169 2003/07/25 06:01:47 itojun Exp $	*/
 
 /*
@@ -110,6 +104,12 @@ static const char rcsid[] =
  * network attached to 1 or more interfaces)
  */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+
+#define USE_RFC2292BIS
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
@@ -348,8 +348,14 @@ main(argc, argv)
 	int mflag = 0;
 #endif
 #ifdef __rtems__
-	struct getopt_data getopt_reent;
-#endif
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
+#endif /* __rtems__ */
 
 	/* just to be sure */
 	memset(&smsghdr, 0, sizeof(smsghdr));
@@ -366,14 +372,8 @@ main(argc, argv)
 #define ADDOPTS	"AE"
 #endif /*IPSEC_POLICY_IPSEC*/
 #endif
-#ifdef __rtems__
-	memset(&getopt_reent, 0, sizeof(getopt_data));
-	while ((ch = getopt_r(argc, argv,
-	    "a:b:c:DdfHg:h:I:i:l:mnNop:qrRS:s:tvwW" ADDOPTS, &getopt_reent)) != -1) {
-#else
 	while ((ch = getopt(argc, argv,
 	    "a:b:c:DdfHg:h:I:i:l:mnNop:qrRS:s:tvwW" ADDOPTS)) != -1) {
-#endif
 #undef ADDOPTS
 		switch (ch) {
 		case 'a':

@@ -1,7 +1,3 @@
-#ifdef __rtems__
-#define __need_getopt_newlib
-#include <getopt.h>
-#endif
 /*-
  * Copyright (c) 1983, 1988, 1993
  *	Regents of the University of California.  All rights reserved.
@@ -47,6 +43,10 @@ static char sccsid[] = "@(#)main.c	8.4 (Berkeley) 3/1/94";
 #endif /* not lint */
 #endif
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -745,21 +745,18 @@ main(int argc, char *argv[])
 	struct protox *tp = NULL;  /* for printing cblocks & stats */
 	int ch;
 #ifdef __rtems__
-	struct getopt_data getopt_reent;
-#define optind getopt_reent.optind
-#define optarg getopt_reent.optarg
-#define opterr getopt_reent.opterr
-#define optopt getopt_reent.optopt
-#endif
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
+#endif /* __rtems__ */
 
 	af = AF_UNSPEC;
 
-#ifdef __rtems__
-	memset(&getopt_reent, 0, sizeof(getopt_data));
-	while ((ch = getopt_r(argc, argv, "AaBbdf:ghI:iLlM:mN:np:q:rSstuWw:xz", &getopt_reent)) != -1)
-#else
 	while ((ch = getopt(argc, argv, "AaBbdf:ghI:iLlM:mN:np:q:rSstuWw:xz")) != -1)
-#endif
 		switch(ch) {
 		case 'A':
 			Aflag = 1;

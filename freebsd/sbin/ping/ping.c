@@ -1,7 +1,3 @@
-#ifdef __rtems__
-#define __need_getopt_newlib
-#include <getopt.h>
-#endif
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -45,6 +41,10 @@ static const char copyright[] =
 static char sccsid[] = "@(#)ping.c	8.1 (Berkeley) 6/5/93";
 #endif /* not lint */
 #endif
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -283,12 +283,14 @@ main(argc, argv)
 #endif
 	unsigned char loop, mttl;
 #ifdef __rtems__
-	struct getopt_data getopt_reent;
-#define optarg getopt_reent.optarg
-#define optind getopt_reent.optind
-#define opterr getopt.reent.opterr
-#define optopt getopt.reent.optopt
-#endif
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
+#endif /* __rtems__ */
 
 	payload = source = NULL;
 #ifdef IPSEC_POLICY_IPSEC
@@ -309,21 +311,13 @@ main(argc, argv)
 	alarmtimeout = df = preload = tos = 0;
 
 	outpack = outpackhdr + sizeof(struct ip);
-#ifdef __rtems__
-	memset(&getopt_reent, 0, sizeof(getopt_data));
-	while ((ch = getopt_r(argc, argv,
-#else
 	while ((ch = getopt(argc, argv,
-#endif
 		"Aac:DdfG:g:h:I:i:Ll:M:m:nop:QqRrS:s:T:t:vW:z:"
 #ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 		"P:"
 #endif /*IPSEC_POLICY_IPSEC*/
 #endif /*IPSEC*/
-#ifdef __rtems__
-		, &getopt_reent
-#endif
 		)) != -1)
 	{
 		switch(ch) {

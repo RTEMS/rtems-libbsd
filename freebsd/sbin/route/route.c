@@ -1,7 +1,3 @@
-#ifdef __rtems__
-#define __need_getopt_newlib
-#include <getopt.h>
-#endif
 /*
  * Copyright (c) 1983, 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -45,6 +41,10 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif
 #include <rtems/bsd/sys/param.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -157,22 +157,19 @@ main(argc, argv)
 {
 	int ch;
 #ifdef __rtems__
-	struct getopt_data getopt_reent;
-#define optind getopt_reent.optind
-#define optarg getopt_reent.optarg
-#define opterr getopt_reent.opterr
-#define optopt getopt_reent.optopt
-#endif
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
+#endif /* __rtems__ */
 
 	if (argc < 2)
 		usage((char *)NULL);
 
-#ifdef __rtems__
-	memset(&getopt_reent, 0, sizeof(getopt_data));
-	while ((ch = getopt_r(argc, argv, "nqdtv", &getopt_reent)) != -1)
-#else
 	while ((ch = getopt(argc, argv, "nqdtv")) != -1)
-#endif
 		switch(ch) {
 		case 'n':
 			nflag = 1;

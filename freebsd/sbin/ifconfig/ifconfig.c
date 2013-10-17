@@ -1,7 +1,3 @@
-#ifdef __rtems__
-#define __need_getopt_newlib
-#include <getopt.h>
-#endif
 /*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -45,6 +41,10 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -204,12 +204,14 @@ main(int argc, char *argv[])
 #endif
 	size_t iflen;
 #ifdef __rtems__
-	struct getopt_data getopt_reent;
-#define optind getopt_reent.optind
-#define optarg getopt_reent.optarg
-#define opterr getopt_reent.opterr
-#define optopt getopt_reent.optopt
-#endif
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
+#endif /* __rtems__ */
 
 	all = downonly = uponly = namesonly = noload = verbose = 0;
 
@@ -217,12 +219,7 @@ main(int argc, char *argv[])
 	strlcpy(options, "adklmnuv", sizeof(options));
 	for (p = opts; p != NULL; p = p->next)
 		strlcat(options, p->opt, sizeof(options));
-#ifdef __rtems__
-	memset(&getopt_reent, 0, sizeof(getopt_data));
-	while ((c = getopt_r(argc, argv, options, &getopt_reent)) != -1) {
-#else
 	while ((c = getopt(argc, argv, options)) != -1) {
-#endif
 		switch (c) {
 		case 'a':	/* scan all interfaces */
 			all++;

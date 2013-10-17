@@ -630,6 +630,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-program.c',
 		'rtems/rtems-bsd-rwlock.c',
 		'rtems/rtems-bsd-shell.c',
+		'rtems/rtems-bsd-shell-netcmds.c',
 		'rtems/rtems-bsd-signal.c',
 		'rtems/rtems-bsd-smp.c',
 		'rtems/rtems-bsd-subr_param.c',

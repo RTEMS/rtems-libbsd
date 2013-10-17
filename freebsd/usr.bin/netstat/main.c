@@ -363,10 +363,11 @@ int	live;		/* true if we are examining a live system */
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 
 static int main(int argc, char *argv[]);
 
-static int rtems_shell_main_netstat(int argc, char *argv[])
+int rtems_bsd_command_netstat(int argc, char *argv[])
 {
   int i;
 
@@ -1198,16 +1199,3 @@ usage(void)
 "       netstat -gs [-s] [-f address_family] [-M core] [-N system]");
 	exit(1);
 }
-
-#ifdef __rtems__
-  #include <rtems/shell.h>
-
-  rtems_shell_cmd_t rtems_shell_NETSTAT_Command = {
-    "netstat",                     /* name */
-    "netstat [args]",              /* usage */
-    "net",                         /* topic */
-    rtems_shell_main_netstat,      /* command */
-    NULL,                          /* alias */
-    NULL                           /* next */
-  };
-#endif

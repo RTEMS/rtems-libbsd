@@ -219,10 +219,11 @@ static void usage(void) __dead2;
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 
 static int main(int argc, char **argv);
 
-static int rtems_shell_main_ping(int argc, char *argv[])
+int rtems_bsd_command_ping(int argc, char *argv[])
 {
 	BBELL = '\a';
 	BSPACE = '\b';
@@ -1769,16 +1770,3 @@ usage()
 "            [-z tos] mcast-group");
 	exit(EX_USAGE);
 }
-
-#ifdef __rtems__
-  #include <rtems/shell.h>
-
-  rtems_shell_cmd_t rtems_shell_PING_Command = {
-    "ping",                        /* name */
-    "ping [args]",                 /* usage */
-    "net",                         /* topic */
-    rtems_shell_main_ping,         /* command */
-    NULL,                          /* alias */
-    NULL                           /* next */
-  };
-#endif

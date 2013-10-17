@@ -164,10 +164,11 @@ usage(void)
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 
 static int main(int argc, char *argv[]);
 
-static int rtems_shell_main_ifconfig(int argc, char *argv[])
+int rtems_bsd_command_ifconfig(int argc, char *argv[])
 {
 	descr = NULL;
 	descrlen = 64;
@@ -1220,16 +1221,3 @@ ifconfig_ctor(void)
 		cmd_register(&basic_cmds[i]);
 #undef N
 }
-
-#ifdef __rtems__
-  #include <rtems/shell.h>
-
-  rtems_shell_cmd_t rtems_shell_IFCONFIG_Command = {
-    "ifconfig",                    /* name */
-    "ifconfig [args]",             /* usage */
-    "net",                         /* topic */
-    rtems_shell_main_ifconfig,     /* command */
-    NULL,                          /* alias */
-    NULL                           /* next */
-  };
-#endif

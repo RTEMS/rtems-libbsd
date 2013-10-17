@@ -130,10 +130,11 @@ usage(cp)
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 
 static int main(int argc, char **argv);
 
-static int rtems_shell_main_route(int argc, char *argv[])
+int rtems_bsd_command_route(int argc, char *argv[])
 {
 	return rtems_bsd_program_call_main("route", main, argc, argv);
 }
@@ -1694,16 +1695,3 @@ atalk_ntoa(struct at_addr at)
 	(void) snprintf(buf, sizeof(buf), "%u.%u", ntohs(at.s_net), at.s_node);
 	return(buf);
 }
-
-#ifdef __rtems__
-  #include <rtems/shell.h>
-
-  rtems_shell_cmd_t rtems_shell_ROUTE_Command = {
-    "route",                       /* name */
-    "route [args]",                /* usage */
-    "net",                         /* topic */
-    rtems_shell_main_route,        /* command */
-    NULL,                          /* alias */
-    NULL                           /* next */
-  };
-#endif

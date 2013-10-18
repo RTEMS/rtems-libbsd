@@ -116,7 +116,7 @@ in_getaddr(const char *s, int which)
 			int masklen;
 			struct sockaddr_in *min = sintab[MASK];
 			*p = '\0';
-			if (!isdigit(*(p + 1)))
+			if (!isdigit((unsigned char)*(p + 1)))
 				errstr = "invalid";
 			else
 				masklen = (int)strtonum(p + 1, 0, 32, &errstr);

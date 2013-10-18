@@ -155,7 +155,7 @@ bridge_interfaces(int s, const char *prefix)
 		err(1, "strdup");
 	/* replace the prefix with whitespace */
 	for (p = pad; *p != '\0'; p++) {
-		if(isprint(*p))
+		if(isprint((unsigned char)*p))
 			*p = ' ';
 	}
 

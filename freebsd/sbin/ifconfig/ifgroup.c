@@ -52,7 +52,7 @@ setifgroup(const char *group_name, int d, int s, const struct afswtch *rafp)
 	memset(&ifgr, 0, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, name, IFNAMSIZ);
 
-	if (group_name[0] && isdigit(group_name[strlen(group_name) - 1]))
+	if (group_name[0] && isdigit((unsigned char)group_name[strlen(group_name) - 1]))
 		errx(1, "setifgroup: group names may not end in a digit");
 
 	if (strlcpy(ifgr.ifgr_group, group_name, IFNAMSIZ) >= IFNAMSIZ)
@@ -70,7 +70,7 @@ unsetifgroup(const char *group_name, int d, int s, const struct afswtch *rafp)
 	memset(&ifgr, 0, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, name, IFNAMSIZ);
 
-	if (group_name[0] && isdigit(group_name[strlen(group_name) - 1]))
+	if (group_name[0] && isdigit((unsigned char)group_name[strlen(group_name) - 1]))
 		errx(1, "unsetifgroup: group names may not end in a digit");
 
 	if (strlcpy(ifgr.ifgr_group, group_name, IFNAMSIZ) >= IFNAMSIZ)

@@ -23,6 +23,7 @@ CFLAGS += -Ifreebsd/lib/libmemstat
 CFLAGS += -Ifreebsd/lib/libipsec
 CFLAGS += -Itestsuite/include
 CFLAGS += -Wall
+CFLAGS += -Wno-format
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes

@@ -93,14 +93,14 @@ static void	domediaopt(const char *, int, int);
 static int	get_media_subtype(int, const char *);
 static int	get_media_mode(int, const char *);
 static int	get_media_options(int, const char *);
-static int	lookup_media_word(struct ifmedia_description *, const char *);
+static int	lookup_media_word(const struct ifmedia_description *, const char *);
 static void	print_media_word(int, int);
 static void	print_media_word_ifconfig(int);
 
-static struct ifmedia_description *get_toptype_desc(int);
-static struct ifmedia_type_to_subtype *get_toptype_ttos(int);
-static struct ifmedia_description *get_subtype_desc(int,
-    struct ifmedia_type_to_subtype *ttos);
+static const struct ifmedia_description *get_toptype_desc(int);
+static const struct ifmedia_type_to_subtype *get_toptype_ttos(int);
+static const struct ifmedia_description *get_subtype_desc(int,
+    const struct ifmedia_type_to_subtype *ttos);
 
 #define	IFM_OPMODE(x) \
 	((x) & (IFM_IEEE80211_ADHOC | IFM_IEEE80211_HOSTAP | \
@@ -362,86 +362,86 @@ setmediamode(const char *val, int d, int s, const struct afswtch *afp)
  * A good chunk of this is duplicated from sys/net/ifmedia.c
  **********************************************************************/
 
-static struct ifmedia_description ifm_type_descriptions[] =
+static const struct ifmedia_description ifm_type_descriptions[] =
     IFM_TYPE_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_ethernet_descriptions[] =
+static const struct ifmedia_description ifm_subtype_ethernet_descriptions[] =
     IFM_SUBTYPE_ETHERNET_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_ethernet_aliases[] =
+static const struct ifmedia_description ifm_subtype_ethernet_aliases[] =
     IFM_SUBTYPE_ETHERNET_ALIASES;
 
-static struct ifmedia_description ifm_subtype_ethernet_option_descriptions[] =
+static const struct ifmedia_description ifm_subtype_ethernet_option_descriptions[] =
     IFM_SUBTYPE_ETHERNET_OPTION_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_tokenring_descriptions[] =
+static const struct ifmedia_description ifm_subtype_tokenring_descriptions[] =
     IFM_SUBTYPE_TOKENRING_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_tokenring_aliases[] =
+static const struct ifmedia_description ifm_subtype_tokenring_aliases[] =
     IFM_SUBTYPE_TOKENRING_ALIASES;
 
-static struct ifmedia_description ifm_subtype_tokenring_option_descriptions[] =
+static const struct ifmedia_description ifm_subtype_tokenring_option_descriptions[] =
     IFM_SUBTYPE_TOKENRING_OPTION_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_fddi_descriptions[] =
+static const struct ifmedia_description ifm_subtype_fddi_descriptions[] =
     IFM_SUBTYPE_FDDI_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_fddi_aliases[] =
+static const struct ifmedia_description ifm_subtype_fddi_aliases[] =
     IFM_SUBTYPE_FDDI_ALIASES;
 
-static struct ifmedia_description ifm_subtype_fddi_option_descriptions[] =
+static const struct ifmedia_description ifm_subtype_fddi_option_descriptions[] =
     IFM_SUBTYPE_FDDI_OPTION_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_ieee80211_descriptions[] =
+static const struct ifmedia_description ifm_subtype_ieee80211_descriptions[] =
     IFM_SUBTYPE_IEEE80211_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_ieee80211_aliases[] =
+static const struct ifmedia_description ifm_subtype_ieee80211_aliases[] =
     IFM_SUBTYPE_IEEE80211_ALIASES;
 
-static struct ifmedia_description ifm_subtype_ieee80211_option_descriptions[] =
+static const struct ifmedia_description ifm_subtype_ieee80211_option_descriptions[] =
     IFM_SUBTYPE_IEEE80211_OPTION_DESCRIPTIONS;
 
-struct ifmedia_description ifm_subtype_ieee80211_mode_descriptions[] =
+static const struct ifmedia_description ifm_subtype_ieee80211_mode_descriptions[] =
     IFM_SUBTYPE_IEEE80211_MODE_DESCRIPTIONS;
 
-struct ifmedia_description ifm_subtype_ieee80211_mode_aliases[] =
+static const struct ifmedia_description ifm_subtype_ieee80211_mode_aliases[] =
     IFM_SUBTYPE_IEEE80211_MODE_ALIASES;
 
-static struct ifmedia_description ifm_subtype_atm_descriptions[] =
+static const struct ifmedia_description ifm_subtype_atm_descriptions[] =
     IFM_SUBTYPE_ATM_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_atm_aliases[] =
+static const struct ifmedia_description ifm_subtype_atm_aliases[] =
     IFM_SUBTYPE_ATM_ALIASES;
 
-static struct ifmedia_description ifm_subtype_atm_option_descriptions[] =
+static const struct ifmedia_description ifm_subtype_atm_option_descriptions[] =
     IFM_SUBTYPE_ATM_OPTION_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_shared_descriptions[] =
+static const struct ifmedia_description ifm_subtype_shared_descriptions[] =
     IFM_SUBTYPE_SHARED_DESCRIPTIONS;
 
-static struct ifmedia_description ifm_subtype_shared_aliases[] =
+static const struct ifmedia_description ifm_subtype_shared_aliases[] =
     IFM_SUBTYPE_SHARED_ALIASES;
 
-static struct ifmedia_description ifm_shared_option_descriptions[] =
+static const struct ifmedia_description ifm_shared_option_descriptions[] =
     IFM_SHARED_OPTION_DESCRIPTIONS;
 
 struct ifmedia_type_to_subtype {
 	struct {
-		struct ifmedia_description *desc;
+		const struct ifmedia_description *desc;
 		int alias;
 	} subtypes[5];
 	struct {
-		struct ifmedia_description *desc;
+		const struct ifmedia_description *desc;
 		int alias;
 	} options[3];
 	struct {
-		struct ifmedia_description *desc;
+		const struct ifmedia_description *desc;
 		int alias;
 	} modes[3];
 };
 
 /* must be in the same order as IFM_TYPE_DESCRIPTIONS */
-static struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
+static const struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 	{
 		{
 			{ &ifm_subtype_shared_descriptions[0], 0 },
@@ -534,8 +534,8 @@ static struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 static int
 get_media_subtype(int type, const char *val)
 {
-	struct ifmedia_description *desc;
-	struct ifmedia_type_to_subtype *ttos;
+	const struct ifmedia_description *desc;
+	const struct ifmedia_type_to_subtype *ttos;
 	int rval, i;
 
 	/* Find the top-level interface type. */
@@ -558,8 +558,8 @@ get_media_subtype(int type, const char *val)
 static int
 get_media_mode(int type, const char *val)
 {
-	struct ifmedia_description *desc;
-	struct ifmedia_type_to_subtype *ttos;
+	const struct ifmedia_description *desc;
+	const struct ifmedia_type_to_subtype *ttos;
 	int rval, i;
 
 	/* Find the top-level interface type. */
@@ -581,8 +581,8 @@ get_media_mode(int type, const char *val)
 static int
 get_media_options(int type, const char *val)
 {
-	struct ifmedia_description *desc;
-	struct ifmedia_type_to_subtype *ttos;
+	const struct ifmedia_description *desc;
+	const struct ifmedia_type_to_subtype *ttos;
 	char *optlist, *optptr;
 	int option = 0, i, rval = 0;
 
@@ -620,7 +620,7 @@ get_media_options(int type, const char *val)
 }
 
 static int
-lookup_media_word(struct ifmedia_description *desc, const char *val)
+lookup_media_word(const struct ifmedia_description *desc, const char *val)
 {
 
 	for (; desc->ifmt_string != NULL; desc++)
@@ -630,9 +630,9 @@ lookup_media_word(struct ifmedia_description *desc, const char *val)
 	return (-1);
 }
 
-static struct ifmedia_description *get_toptype_desc(int ifmw)
+static const struct ifmedia_description *get_toptype_desc(int ifmw)
 {
-	struct ifmedia_description *desc;
+	const struct ifmedia_description *desc;
 
 	for (desc = ifm_type_descriptions; desc->ifmt_string != NULL; desc++)
 		if (IFM_TYPE(ifmw) == desc->ifmt_word)
@@ -641,10 +641,10 @@ static struct ifmedia_description *get_toptype_desc(int ifmw)
 	return desc;
 }
 
-static struct ifmedia_type_to_subtype *get_toptype_ttos(int ifmw)
+static const struct ifmedia_type_to_subtype *get_toptype_ttos(int ifmw)
 {
-	struct ifmedia_description *desc;
-	struct ifmedia_type_to_subtype *ttos;
+	const struct ifmedia_description *desc;
+	const struct ifmedia_type_to_subtype *ttos;
 
 	for (desc = ifm_type_descriptions, ttos = ifmedia_types_to_subtypes;
 	    desc->ifmt_string != NULL; desc++, ttos++)
@@ -654,11 +654,11 @@ static struct ifmedia_type_to_subtype *get_toptype_ttos(int ifmw)
 	return ttos;
 }
 
-static struct ifmedia_description *get_subtype_desc(int ifmw, 
-    struct ifmedia_type_to_subtype *ttos)
+static const struct ifmedia_description *get_subtype_desc(int ifmw, 
+    const struct ifmedia_type_to_subtype *ttos)
 {
 	int i;
-	struct ifmedia_description *desc;
+	const struct ifmedia_description *desc;
 
 	for (i = 0; ttos->subtypes[i].desc != NULL; i++) {
 		if (ttos->subtypes[i].alias)
@@ -673,11 +673,11 @@ static struct ifmedia_description *get_subtype_desc(int ifmw,
 	return NULL;
 }
 
-static struct ifmedia_description *get_mode_desc(int ifmw, 
-    struct ifmedia_type_to_subtype *ttos)
+static const struct ifmedia_description *get_mode_desc(int ifmw, 
+    const struct ifmedia_type_to_subtype *ttos)
 {
 	int i;
-	struct ifmedia_description *desc;
+	const struct ifmedia_description *desc;
 
 	for (i = 0; ttos->modes[i].desc != NULL; i++) {
 		if (ttos->modes[i].alias)
@@ -695,8 +695,8 @@ static struct ifmedia_description *get_mode_desc(int ifmw,
 static void
 print_media_word(int ifmw, int print_toptype)
 {
-	struct ifmedia_description *desc;
-	struct ifmedia_type_to_subtype *ttos;
+	const struct ifmedia_description *desc;
+	const struct ifmedia_type_to_subtype *ttos;
 	int seen_option = 0, i;
 
 	/* Find the top-level interface type. */
@@ -755,8 +755,8 @@ print_media_word(int ifmw, int print_toptype)
 static void
 print_media_word_ifconfig(int ifmw)
 {
-	struct ifmedia_description *desc;
-	struct ifmedia_type_to_subtype *ttos;
+	const struct ifmedia_description *desc;
+	const struct ifmedia_type_to_subtype *ttos;
 	int seen_option = 0, i;
 
 	/* Find the top-level interface type. */

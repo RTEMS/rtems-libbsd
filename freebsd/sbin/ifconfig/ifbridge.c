@@ -71,7 +71,7 @@ static const char rcsid[] =
 		eaddr[5] = pv >> 0;		\
 } while (0)
 
-static const char *stpstates[] = {
+static const char *const stpstates[] = {
 	"disabled",
 	"listening",
 	"learning",
@@ -79,12 +79,12 @@ static const char *stpstates[] = {
 	"blocking",
 	"discarding"
 };
-static const char *stpproto[] = {
+static const char *const stpproto[] = {
 	"stp",
 	"-",
 	"rstp"
 };
-static const char *stproles[] = {
+static const char *const stproles[] = {
 	"disabled",
 	"root",
 	"designated",

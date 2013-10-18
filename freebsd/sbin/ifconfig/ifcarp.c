@@ -50,7 +50,7 @@
 
 #include "ifconfig.h"
 
-static const char *carp_states[] = { CARP_STATES };
+static const char *const carp_states[] = { CARP_STATES };
 
 void carp_status(int s);
 void setcarp_advbase(const char *,int, int, const struct afswtch *rafp);

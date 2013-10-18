@@ -53,7 +53,7 @@ static const char rcsid[] =
 
 static void	gif_status(int);
 
-static struct {
+static const struct {
 	const char	*label;
 	u_int		mask;
 } gif_opts[] = {

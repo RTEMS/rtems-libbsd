@@ -2475,7 +2475,7 @@ static void
 printwmeparam(const char *tag, const u_int8_t *ie, size_t ielen, int maxlen)
 {
 #define	MS(_v, _f)	(((_v) & _f) >> _f##_S)
-	static const char *acnames[] = { "BE", "BK", "VO", "VI" };
+	static const char *const acnames[] = { "BE", "BK", "VO", "VI" };
 	const struct ieee80211_wme_param *wme =
 	    (const struct ieee80211_wme_param *) ie;
 	int i;
@@ -2844,7 +2844,7 @@ printwpsie(const char *tag, const u_int8_t *ie, size_t ielen, int maxlen)
 
 	printf("%s", tag);
 	if (verbose) {
-		static const char *dev_pass_id[] = {
+		static const char *const dev_pass_id[] = {
 			"D",	/* Default (PIN) */
 			"U",	/* User-specified */
 			"M",	/* Machine-specified */
@@ -3397,7 +3397,7 @@ static const char *
 mesh_linkstate_string(uint8_t state)
 {
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
-	static const char *state_names[] = {
+	static const char *const state_names[] = {
 	    [0] = "IDLE",
 	    [1] = "OPEN-TX",
 	    [2] = "OPEN-RX",
@@ -3726,7 +3726,7 @@ list_wme_aci(int s, const char *tag, int ac)
 static void
 list_wme(int s)
 {
-	static const char *acnames[] = { "AC_BE", "AC_BK", "AC_VI", "AC_VO" };
+	static const char *const acnames[] = { "AC_BE", "AC_BK", "AC_VI", "AC_VO" };
 	int ac;
 
 	if (verbose) {

@@ -644,7 +644,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-taskqueue.c',
 		'rtems/rtems-bsd-thread.c',
 		'rtems/rtems-bsd-timesupport.c',
-		'rtems/rtems-bsd-vm_glue.c',
 		'rtems/rtems-kvm.c',
 		'rtems/rtems-net-setup.c',
 		'rtems/rtems-syslog-initialize.c',
@@ -778,6 +777,7 @@ base.addHeaderFiles(
 		'sys/vm/uma_dbg.h',
 		'sys/vm/uma.h',
 		'sys/vm/uma_int.h',
+		'sys/vm/vm_extern.h',
 		'sys/vm/vm.h',
 	]
 )

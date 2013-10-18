@@ -49,7 +49,6 @@ static void Init(rtems_task_argument arg)
 	sc = rtems_bsd_initialize();
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	timeout_table_init();
 	callout_tick_task_init();
 
 	timeout_test();

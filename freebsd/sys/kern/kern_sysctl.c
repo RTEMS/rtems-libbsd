@@ -67,10 +67,8 @@ __FBSDID("$FreeBSD$");
 #include <net/vnet.h>
 
 #include <security/mac/mac_framework.h>
-#ifndef __rtems__
 #include <vm/vm.h>
 #include <vm/vm_extern.h>
-#endif
 
 #ifdef __rtems__
 /* From FreeBSD file 'sys/kern/kern_mib.c' */
@@ -1207,10 +1205,8 @@ kernel_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 	error = sysctl_root(0, name, namelen, &req);
 	SYSCTL_SUNLOCK();
 
-#ifndef __rtems__
 	if (req.lock == REQ_WIRED && req.validlen > 0)
 		vsunlock(req.oldptr, req.validlen);
-#endif /* __rtems__ */
 
 	if (error && error != ENOMEM)
 		return (error);

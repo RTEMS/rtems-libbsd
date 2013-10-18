@@ -36,7 +36,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-void timeout_table_init(void);
 void callout_tick_task_init(void);
 
 #ifdef __cplusplus

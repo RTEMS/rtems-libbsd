@@ -93,11 +93,9 @@ void rtems_page_free( void *address );
 #include <vm/uma_int.h>
 #include <vm/uma_dbg.h>
 
-#ifndef __rtems__
 #include <machine/vmparam.h>
 
 #include <ddb/ddb.h>
-#endif /* __rtems__ */
 
 /*
  * This is the zone and keg from which all zones are spawned.  The idea is that
@@ -125,10 +123,12 @@ static int uma_align_cache = 64 - 1;
 
 static MALLOC_DEFINE(M_UMAHASH, "UMAHash", "UMA Hash Buckets");
 
+#ifndef __rtems__
 /*
  * Are we allowed to allocate buckets?
  */
 static int bucketdisable = 1;
+#endif /* __rtems__ */
 
 /* Linked list of all kegs in the system */
 static LIST_HEAD(,uma_keg) uma_kegs = LIST_HEAD_INITIALIZER(uma_kegs);
@@ -136,6 +136,7 @@ static LIST_HEAD(,uma_keg) uma_kegs = LIST_HEAD_INITIALIZER(uma_kegs);
 /* This mutex protects the keg list */
 static struct mtx uma_mtx;
 
+#ifndef __rtems__
 /* Linked list of boot time pages */
 static LIST_HEAD(,uma_slab) uma_boot_pages =
     LIST_HEAD_INITIALIZER(uma_boot_pages);
@@ -145,6 +146,7 @@ static struct mtx uma_boot_pages_mtx;
 
 /* Is the VM done starting up? */
 static int booted = 0;
+#endif /* __rtems__ */
 
 /* Maximum number of allowed items-per-slab if the slab header is OFFPAGE */
 static u_int uma_max_ipers;
@@ -220,7 +222,9 @@ enum zfreeskip { SKIP_NONE, SKIP_DTOR, SKIP_FINI };
 static void *obj_alloc(uma_zone_t, int, u_int8_t *, int);
 #endif /* __rtems__ */
 static void *page_alloc(uma_zone_t, int, u_int8_t *, int);
+#ifndef __rtems__
 static void *startup_alloc(uma_zone_t, int, u_int8_t *, int);
+#endif /* __rtems__ */
 static void page_free(void *, int, u_int8_t);
 static uma_slab_t keg_alloc_slab(uma_keg_t, uma_zone_t, int);
 static void cache_drain(uma_zone_t);
@@ -250,7 +254,9 @@ static void bucket_free(uma_bucket_t);
 static void bucket_zone_drain(void);
 static int zone_alloc_bucket(uma_zone_t zone, int flags);
 static uma_slab_t zone_fetch_slab(uma_zone_t zone, uma_keg_t last, int flags);
+#ifndef __rtems__
 static uma_slab_t zone_fetch_slab_multi(uma_zone_t zone, uma_keg_t last, int flags);
+#endif /* __rtems__ */
 static void *slab_alloc_item(uma_zone_t zone, uma_slab_t slab);
 static uma_keg_t uma_kcreate(uma_zone_t zone, size_t size, uma_init uminit,
     uma_fini fini, int align, u_int32_t flags);
@@ -285,8 +291,8 @@ bucket_enable(void)
 	if (cnt.v_free_count < cnt.v_free_min)
 		bucketdisable = 1;
 	else
-#endif /* __rtems__ */
 		bucketdisable = 0;
+#endif /* __rtems__ */
 }
 
 /*
@@ -336,6 +342,7 @@ bucket_alloc(int entries, int bflags)
 	struct uma_bucket_zone *ubz;
 	uma_bucket_t bucket;
 
+#ifndef __rtems__
 	/*
 	 * This is to stop us from allocating per cpu buckets while we're
 	 * running out of vm.boot_pages.  Otherwise, we would exhaust the
@@ -344,6 +351,7 @@ bucket_alloc(int entries, int bflags)
 	 */
 	if (bucketdisable)
 		return (NULL);
+#endif /* __rtems__ */
 
 	ubz = bucket_zone_lookup(entries);
 	bucket = zone_alloc_item(ubz->ubz_zone, NULL, bflags);
@@ -944,6 +952,7 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 	return (slab);
 }
 
+#ifndef __rtems__
 /*
  * This function is intended to be used early on in place of page_alloc() so
  * that we may use the boot time page cache to satisfy allocations before
@@ -997,6 +1006,7 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 #endif
 	return keg->uk_allocf(zone, bytes, pflag, wait);
 }
+#endif /* __rtems__ */
 
 /*
  * Allocates a number of pages from the system
@@ -1009,11 +1019,6 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
  *	A pointer to the alloced memory or possibly
  *	NULL if M_NOWAIT is set.
  */
-#ifdef __rtems__
-#define PAGE_MASK       (PAGE_SIZE-1)
-
-#define round_page(x) ((((unsigned long )(x)) + PAGE_MASK) & ~(PAGE_MASK))
-#endif
 static void *
 page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 {
@@ -1364,10 +1369,14 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 		keg->uk_allocf = uma_small_alloc;
 		keg->uk_freef = uma_small_free;
 #endif
+#ifndef __rtems__
 		if (booted == 0)
 			keg->uk_allocf = startup_alloc;
 	} else if (booted == 0 && (keg->uk_flags & UMA_ZFLAG_INTERNAL))
 		keg->uk_allocf = startup_alloc;
+#else /* __rtems__ */
+	}
+#endif /* __rtems__ */
 
 	/*
 	 * Initialize keg's lock (shared among zones).
@@ -1638,10 +1647,14 @@ void
 uma_startup(void *bootmem, int boot_pages)
 {
 	struct uma_zctor_args args;
+#ifndef __rtems__
 	uma_slab_t slab;
+#endif /* __rtems__ */
 	u_int slabsize;
 	u_int objsize, totsize, wsize;
+#ifndef __rtems__
 	int i;
+#endif /* __rtems__ */
 
 #ifdef UMA_DEBUG
 	printf("Creating uma keg headers zone and keg.\n");
@@ -1732,6 +1745,7 @@ uma_startup(void *bootmem, int boot_pages)
 	/* The initial zone has no Per cpu queues so it's smaller */
 	zone_ctor(kegs, sizeof(struct uma_zone), &args, M_WAITOK);
 
+#ifndef __rtems__
 #ifdef UMA_DEBUG
 	printf("Filling boot free list.\n");
 #endif
@@ -1742,6 +1756,7 @@ uma_startup(void *bootmem, int boot_pages)
 		LIST_INSERT_HEAD(&uma_boot_pages, slab, us_link);
 	}
 	mtx_init(&uma_boot_pages_mtx, "UMA boot pages", NULL, MTX_DEF);
+#endif /* __rtems__ */
 
 #ifdef UMA_DEBUG
 	printf("Creating uma zone headers zone and keg.\n");
@@ -1806,19 +1821,31 @@ uma_startup(void *bootmem, int boot_pages)
 	printf("UMA startup complete.\n");
 #endif
 }
+#ifdef __rtems__
+static void
+rtems_bsd_uma_startup(void *unused)
+{
+	(void) unused;
 
+	uma_startup(NULL, 0);
+}
+
+SYSINIT(rtems_bsd_uma_startup, SI_SUB_VM, SI_ORDER_FIRST,
+    rtems_bsd_uma_startup, NULL);
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 /* see uma.h */
 void
 uma_startup2(void)
 {
 	booted = 1;
-#ifndef __rtems__
 	bucket_enable();
-#endif /* __rtems__ */
 #ifdef UMA_DEBUG
 	printf("UMA startup2 complete.\n");
 #endif
 }
+#endif /* __rtems__ */
 
 /*
  * Initialize our callout handle
@@ -1907,6 +1934,7 @@ uma_zsecond_create(char *name, uma_ctor ctor, uma_dtor dtor,
 	return (zone_alloc_item(zones, &args, M_WAITOK));
 }
 
+#ifndef __rtems__
 static void
 zone_lock_pair(uma_zone_t a, uma_zone_t b)
 {
@@ -1927,7 +1955,6 @@ zone_unlock_pair(uma_zone_t a, uma_zone_t b)
 	ZONE_UNLOCK(b);
 }
 
-#ifndef __rtems__
 int
 uma_zsecond_add(uma_zone_t zone, uma_zone_t master)
 {
@@ -2284,6 +2311,7 @@ zone_fetch_slab(uma_zone_t zone, uma_keg_t keg, int flags)
 	return (NULL);
 }
 
+#ifndef __rtems__
 /*
  * uma_zone_fetch_slab_multi:  Fetches a slab from one available keg.  Returns
  * with the keg locked.  Caller must call zone_relock() afterwards if the
@@ -2360,6 +2388,7 @@ zone_fetch_slab_multi(uma_zone_t zone, uma_keg_t last, int rflags)
 	}
 	return (NULL);
 }
+#endif /* __rtems__ */
 
 static void *
 slab_alloc_item(uma_zone_t zone, uma_slab_t slab)
@@ -3078,9 +3107,7 @@ uma_reclaim(void)
 #ifdef UMA_DEBUG
 	printf("UMA: vm asked us to release pages!\n");
 #endif
-#ifndef __rtems__
 	bucket_enable();
-#endif /* __rtems__ */
 	zone_foreach(zone_drain);
 	/*
 	 * Some slabs may have been freed but this zone will be visited early

@@ -39,30 +39,6 @@
 
 #include "timeout_helper.h"
 
-void timeout_table_init()
-{
-	size_t size = 0;
-	caddr_t v = 0;
-	void* firstaddr = 0;
-
-	/* calculates how much memory is needed */
-	v = kern_timeout_callwheel_alloc(v);
-
-	/* allocate memory */
-	size = (size_t)v;
-	firstaddr = malloc(round_page(size));
-	assert(firstaddr != NULL);
-
-	/* now set correct addresses for callwheel */
-	v = (caddr_t) firstaddr;
-	v = kern_timeout_callwheel_alloc(v);
-
-	assert((size_t)((void *)v - firstaddr) == size);
-
-	/* Initialize the callouts we just allocated. */
-	kern_timeout_callwheel_init();
-}
-
 #define CALLOUT_TICK_TASK_PRIO		(PRIORITY_DEFAULT_MAXIMUM - 1)
 #define CALLOUT_TICK_TASK_STACK_SIZE	(1024)
 #define CALLOUT_TICK_TASK_NAME		rtems_build_name('C', 'O', 'U', 'T')

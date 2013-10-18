@@ -87,7 +87,6 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlnametomib.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-taskqueue.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-thread.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-timesupport.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-vm_glue.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-kvm.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-net-setup.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c

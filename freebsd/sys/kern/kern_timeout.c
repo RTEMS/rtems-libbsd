@@ -157,10 +157,27 @@ MALLOC_DEFINE(M_CALLOUT, "callout", "Callout datastructures");
  *	This code is called very early in the kernel initialization sequence,
  *	and may be called more then once.
  */
+#ifdef __rtems__
+static void rtems_bsd_timeout_init(void *);
+
+static void callout_cpu_init(struct callout_cpu *);
+
+SYSINIT(rtems_bsd_timeout, SI_SUB_VM, SI_ORDER_FIRST, rtems_bsd_timeout_init,
+    NULL);
+
+static void
+rtems_bsd_timeout_init(void *unused)
+#else /* __rtems__ */
 caddr_t
 kern_timeout_callwheel_alloc(caddr_t v)
+#endif /* __rtems__ */
 {
 	struct callout_cpu *cc;
+#ifdef __rtems__
+	caddr_t v;
+
+	(void) unused;
+#endif /* __rtems__ */
 
 	timeout_cpu = PCPU_GET(cpuid);
 	cc = CC_CPU(timeout_cpu);
@@ -173,11 +190,19 @@ kern_timeout_callwheel_alloc(caddr_t v)
 		;
 	callwheelmask = callwheelsize - 1;
 
+#ifdef __rtems__
+	v = malloc(ncallout * sizeof(*cc->cc_callout) + callwheelsize
+	    * sizeof(*cc->cc_callwheel), M_CALLOUT, M_ZERO | M_WAITOK);
+#endif /* __rtems__ */
 	cc->cc_callout = (struct callout *)v;
 	v = (caddr_t)(cc->cc_callout + ncallout);
 	cc->cc_callwheel = (struct callout_tailq *)v;
 	v = (caddr_t)(cc->cc_callwheel + callwheelsize);
+#ifndef __rtems__
 	return(v);
+#else /* __rtems__ */
+	callout_cpu_init(cc);
+#endif /* __rtems__ */
 }
 
 static void
@@ -201,6 +226,7 @@ callout_cpu_init(struct callout_cpu *cc)
 	}
 }
 
+#ifndef __rtems__
 /*
  * kern_timeout_callwheel_init() - initialize previously reserved callwheel
  *				   space.
@@ -213,6 +239,7 @@ kern_timeout_callwheel_init(void)
 {
 	callout_cpu_init(CC_CPU(timeout_cpu));
 }
+#endif /* __rtems__ */
 
 /*
  * Start standard softclock thread.

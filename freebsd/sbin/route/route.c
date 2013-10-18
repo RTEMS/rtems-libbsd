@@ -44,6 +44,8 @@ static const char rcsid[] =
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 #endif
 #include <rtems/bsd/sys/param.h>
 #include <sys/file.h>
@@ -113,7 +115,9 @@ struct rt_ctx {
 	} m_rtmsg;
 };
 
+#ifndef __rtems__
 struct rt_ctx rt_ctx;
+#endif /* __rtems__ */
 
 typedef union sockunion *sup;
 
@@ -148,22 +152,59 @@ usage(cp)
 }
 
 #ifdef __rtems__
-#include <machine/rtems-bsd-program.h>
-#include <machine/rtems-bsd-commands.h>
+static int main(int argc, char **argv, struct rt_ctx *c);
 
-static int main(int argc, char **argv);
+struct main_ctx {
+	int argc;
+	char **argv;
+	struct rt_ctx *c;
+};
+
+static int
+call_main(void *ctx)
+{
+	const struct main_ctx *mc = ctx;
+
+	return main(mc->argc, mc->argv, mc->c);
+}
 
 int rtems_bsd_command_route(int argc, char *argv[])
 {
-	return rtems_bsd_program_call_main("route", main, argc, argv);
+	struct rt_ctx *c;
+	int exit_code;
+
+	c = calloc(1, sizeof(*c));
+	if (c != NULL) {
+		struct main_ctx mc;
+
+		mc.argc = argc;
+		mc.argv = argv;
+		mc.c = c;
+
+		c->aflen = sizeof(struct sockaddr_in);
+
+		exit_code = rtems_bsd_program_call("route", call_main, &mc);
+
+		close(c->s);
+		free(c);
+	} else {
+		exit_code = EXIT_FAILURE;
+	}
+
+	return exit_code;
 }
-#endif /* __rtems__ */
+
+int
+main(int argc, char **argv, struct rt_ctx *c)
+{
+#else /* __rtems__ */
 int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	struct rt_ctx *c;
+#endif /* __rtems__ */
 	int ch;
 #ifdef __rtems__
 	struct getopt_data getopt_data;
@@ -175,8 +216,10 @@ main(argc, argv)
 #define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 	c = &rt_ctx;
 	c->aflen = sizeof (struct sockaddr_in);
+#endif /* __rtems__ */
 
 	if (argc < 2)
 		usage((char *)NULL);

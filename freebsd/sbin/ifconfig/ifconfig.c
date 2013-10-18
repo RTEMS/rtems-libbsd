@@ -72,10 +72,7 @@ static const char rcsid[] =
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
-
-#ifndef __rtems__
 #include <jail.h>
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -679,6 +676,7 @@ deletetunnel(const char *vname, int param, int s, const struct afswtch *afp)
 		err(1, "SIOCDIFPHYADDR");
 }
 
+#ifndef __rtems__
 static void
 setifvnet(const char *jname, int dummy __unused, int s,
     const struct afswtch *afp)
@@ -686,11 +684,9 @@ setifvnet(const char *jname, int dummy __unused, int s,
 	struct ifreq my_ifr;
 
 	memcpy(&my_ifr, &ifr, sizeof(my_ifr));
-#ifndef __rtems__
 	my_ifr.ifr_jid = jail_getid(jname);
 	if (my_ifr.ifr_jid < 0)
 		errx(1, "%s", jail_errmsg);
-#endif
 	if (ioctl(s, SIOCSIFVNET, &my_ifr) < 0)
 		err(1, "SIOCSIFVNET");
 }
@@ -702,14 +698,13 @@ setifrvnet(const char *jname, int dummy __unused, int s,
 	struct ifreq my_ifr;
 
 	memcpy(&my_ifr, &ifr, sizeof(my_ifr));
-#ifndef __rtems__
 	my_ifr.ifr_jid = jail_getid(jname);
 	if (my_ifr.ifr_jid < 0)
 		errx(1, "%s", jail_errmsg);
-#endif
 	if (ioctl(s, SIOCSIFRVNET, &my_ifr) < 0)
 		err(1, "SIOCSIFRVNET(%d, %s)", my_ifr.ifr_jid, my_ifr.ifr_name);
 }
+#endif /* __rtems__ */
 
 static void
 setifnetmask(const char *addr, int dummy __unused, int s,
@@ -1155,8 +1150,10 @@ static struct cmd basic_cmds[] = {
 	DEF_CMD_ARG2("tunnel",			settunnel),
 	DEF_CMD("-tunnel", 0,			deletetunnel),
 	DEF_CMD("deletetunnel", 0,		deletetunnel),
+#ifndef __rtems__
 	DEF_CMD_ARG("vnet",			setifvnet),
 	DEF_CMD_ARG("-vnet",			setifrvnet),
+#endif /* __rtems__ */
 	DEF_CMD("link0",	IFF_LINK0,	setifflags),
 	DEF_CMD("-link0",	-IFF_LINK0,	setifflags),
 	DEF_CMD("link1",	IFF_LINK1,	setifflags),

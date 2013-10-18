@@ -197,8 +197,16 @@ static struct afswtch af_inet = {
 	.af_addreq	= &in_addreq,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 inet_ctor(void)
 {
+#ifdef __rtems__
+	memset(&in_addreq, 0, sizeof(in_addreq));
+	memset(&in_ridreq, 0, sizeof(in_ridreq));
+#endif /* __rtems__ */
 	af_register(&af_inet);
 }

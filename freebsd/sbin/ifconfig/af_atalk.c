@@ -169,9 +169,17 @@ static struct afswtch af_atalk = {
 	.af_addreq	= &at_addreq,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 atalk_ctor(void)
 {
+#ifdef __rtems__
+	memset(&at_nr, 0, sizeof(at_nr));
+	memset(&at_addreq, 0, sizeof(at_addreq));
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 

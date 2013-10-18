@@ -202,7 +202,11 @@ static struct afswtch af_pfsync = {
 	.af_other_status = pfsync_status,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 pfsync_ctor(void)
 {
 #define	N(a)	(sizeof(a) / sizeof(a[0]))

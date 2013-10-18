@@ -34,7 +34,11 @@
  * $FreeBSD$
  */
 
+#ifndef __rtems__
 #define	__constructor	__attribute__((constructor))
+#else /* __rtems__ */
+#define	__constructor
+#endif /* __rtems__ */
 
 struct afswtch;
 struct cmd;
@@ -148,3 +152,21 @@ void	clone_setdefcallback(const char *, clone_callback_func *);
  * operations on ifmedia can avoid cmd line ordering confusion.
  */
 struct ifmediareq *ifmedia_getstate(int s);
+#ifdef __rtems__
+void atalk_ctor(void);
+void bridge_ctor(void);
+void carp_ctor(void);
+void clone_ctor(void);
+void gif_ctor(void);
+void gre_ctor(void);
+void group_ctor(void);
+void ifmedia_ctor(void);
+void inet6_ctor(void);
+void inet_ctor(void);
+void lagg_ctor(void);
+void link_ctor(void);
+void mac_ctor(void);
+void nd6_ctor(void);
+void pfsync_ctor(void);
+void vlan_ctor(void);
+#endif /* __rtems__ */

@@ -46,6 +46,8 @@ static const char rcsid[] =
 #define option getopt_option
 #include <getopt.h>
 #undef option
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
@@ -147,20 +149,39 @@ usage(void)
 }
 
 #ifdef __rtems__
-#include <machine/rtems-bsd-program.h>
-#include <machine/rtems-bsd-commands.h>
-
+static void ifconfig_ctor(void);
 static int main(int argc, char *argv[]);
 
 int rtems_bsd_command_ifconfig(int argc, char *argv[])
 {
-	descr = NULL;
-	descrlen = 64;
-	newaddr = 1;
-	supmedia = 0;
-	printkeys = 0;
+	int exit_code;
 
-	return rtems_bsd_program_call_main("ifconfig", main, argc, argv);
+	rtems_bsd_program_lock();
+
+	ifconfig_ctor();
+
+	atalk_ctor();
+	bridge_ctor();
+	carp_ctor();
+	clone_ctor();
+	gif_ctor();
+	gre_ctor();
+	group_ctor();
+	ifmedia_ctor();
+	inet_ctor();
+	inet6_ctor();
+	lagg_ctor();
+	link_ctor();
+	mac_ctor();
+	nd6_ctor();
+	pfsync_ctor();
+	vlan_ctor();
+
+	exit_code = rtems_bsd_program_call_main("ifconfig", main, argc, argv);
+
+	rtems_bsd_program_unlock();
+
+	return exit_code;
 }
 #endif /* __rtems__ */
 int
@@ -1194,6 +1215,25 @@ static struct cmd basic_cmds[] = {
 static __constructor void
 ifconfig_ctor(void)
 {
+#ifdef __rtems__
+	memset(&ifr, 0, sizeof(ifr));
+	memset(&name, 0, sizeof(name));
+	descr = NULL;
+	descrlen = 64;
+	setaddr = 0;
+	setmask = 0;
+	doalias = 0;
+	clearaddr = 0;
+	newaddr = 1;
+	verbose = 0;
+	noload = 0;
+	supmedia = 0;
+	printkeys = 0;
+	opts = NULL;
+	afs = NULL;
+	callbacks = NULL;
+	cmds = NULL;
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 

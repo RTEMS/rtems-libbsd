@@ -120,9 +120,16 @@ static struct afswtch af_lladdr = {
 	.af_addreq	= &link_ridreq,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 link_ctor(void)
 {
+#ifdef __rtems__
+	memset(&link_ridreq, 0, sizeof(link_ridreq));
+#endif /* __rtems__ */
 	af_register(&af_link);
 	af_register(&af_ether);
 	af_register(&af_lladdr);

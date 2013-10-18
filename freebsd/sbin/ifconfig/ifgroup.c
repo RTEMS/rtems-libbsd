@@ -172,7 +172,11 @@ static struct afswtch af_group = {
 };
 static struct option group_gopt = { "g:", "[-g groupname]", printgroup };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 group_ctor(void)
 {
 #define	N(a)	(sizeof(a) / sizeof(a[0]))

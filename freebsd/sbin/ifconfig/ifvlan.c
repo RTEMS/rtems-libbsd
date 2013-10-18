@@ -190,9 +190,17 @@ static struct afswtch af_vlan = {
 	.af_other_status = vlan_status,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 vlan_ctor(void)
 {
+#ifdef __rtems__
+	memset(&params, 0, sizeof(params));
+	params.vlr_tag = NOTAG;
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 

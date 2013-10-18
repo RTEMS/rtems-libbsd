@@ -533,9 +533,22 @@ in6_Lopt_cb(const char *optarg __unused)
 }
 static struct option in6_Lopt = { .opt = "L", .opt_usage = "[-L]", .cb = in6_Lopt_cb };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 inet6_ctor(void)
 {
+#ifdef __rtems__
+	memset(&in6_ridreq, 0, sizeof(in6_ridreq));
+	memset(&in6_addreq, 0, sizeof(in6_addreq));
+	in6_addreq.ifra_lifetime.ia6t_vltime = ND6_INFINITE_LIFETIME;
+	in6_addreq.ifra_lifetime.ia6t_pltime = ND6_INFINITE_LIFETIME;
+	ip6lifetime = 0;
+	explicit_prefix = 0;
+	memset(&addr_buf, 0, sizeof(addr_buf));
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 

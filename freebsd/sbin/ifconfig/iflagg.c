@@ -181,9 +181,16 @@ static struct afswtch af_lagg = {
 	.af_other_status = lagg_status,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 lagg_ctor(void)
 {
+#ifdef __rtems__
+	memset(&lacpbuf, 0, sizeof(lacpbuf));
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	int i;
 

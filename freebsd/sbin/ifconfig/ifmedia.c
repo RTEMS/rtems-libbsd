@@ -193,10 +193,15 @@ media_status(int s)
 	free(media_list);
 }
 
+#ifdef __rtems__
+static struct ifmediareq *ifmr = NULL;
+#endif /* __rtems__ */
 struct ifmediareq *
 ifmedia_getstate(int s)
 {
+#ifndef __rtems__
 	static struct ifmediareq *ifmr = NULL;
+#endif /* __rtems__ */
 	int *mwords;
 
 	if (ifmr == NULL) {
@@ -236,11 +241,16 @@ ifmedia_getstate(int s)
 	return ifmr;
 }
 
+#ifdef __rtems__
+static int did_it = 0;
+#endif /* __rtems__ */
 static void
 setifmediacallback(int s, void *arg)
 {
 	struct ifmediareq *ifmr = (struct ifmediareq *)arg;
+#ifndef __rtems__
 	static int did_it = 0;
+#endif /* __rtems__ */
 
 	if (!did_it) {
 		ifr.ifr_media = ifmr->ifm_current;
@@ -822,9 +832,17 @@ static struct afswtch af_media = {
 	.af_other_status = media_status,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 ifmedia_ctor(void)
 {
+#ifdef __rtems__
+	did_it = 0;
+	ifmr = NULL;
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 

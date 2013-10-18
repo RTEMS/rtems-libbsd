@@ -181,9 +181,16 @@ clone_Copt_cb(const char *optarg __unused)
 }
 static struct option clone_Copt = { .opt = "C", .opt_usage = "[-C]", .cb = clone_Copt_cb };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 clone_ctor(void)
 {
+#ifdef __rtems__
+	SLIST_INIT(&clone_defcbh);
+#endif /* __rtems__ */
 #define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 

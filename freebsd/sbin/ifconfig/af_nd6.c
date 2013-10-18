@@ -222,7 +222,11 @@ static struct afswtch af_nd6 = {
 	.af_other_status= nd6_status,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 nd6_ctor(void)
 {
 	af_register(&af_nd6);

@@ -531,11 +531,7 @@ in6_Lopt_cb(const char *optarg __unused)
 {
 	ip6lifetime++;	/* print IPv6 address lifetime */
 }
-#ifdef __rtems__
-static struct ifconfig_option in6_Lopt = { .opt = "L", .opt_usage = "[-L]", .cb = in6_Lopt_cb };
-#else
 static struct option in6_Lopt = { .opt = "L", .opt_usage = "[-L]", .cb = in6_Lopt_cb };
-#endif
 
 static __constructor void
 inet6_ctor(void)

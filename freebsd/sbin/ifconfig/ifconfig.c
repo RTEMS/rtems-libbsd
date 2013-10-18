@@ -43,7 +43,9 @@ static const char rcsid[] =
 
 #ifdef __rtems__
 #define __need_getopt_newlib
+#define option getopt_option
 #include <getopt.h>
+#undef option
 #endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
@@ -114,16 +116,6 @@ static struct afswtch *af_getbyname(const char *name);
 static struct afswtch *af_getbyfamily(int af);
 static void af_other_status(int);
 
-#ifdef __rtems__
-static struct ifconfig_option *opts = NULL;
-
-void
-opt_register(struct ifconfig_option *p)
-{
-	p->next = opts;
-	opts = p;
-}
-#else
 static struct option *opts = NULL;
 
 void
@@ -132,17 +124,12 @@ opt_register(struct option *p)
 	p->next = opts;
 	opts = p;
 }
-#endif
 
 static void
 usage(void)
 {
 	char options[1024];
-	#ifdef __rtems__
-	struct ifconfig_option *p;
-	#else
 	struct option *p;
-	#endif
 
 	/* XXX not right but close enough for now */
 	options[0] = '\0';
@@ -190,11 +177,7 @@ main(int argc, char *argv[])
 	const struct sockaddr_dl *sdl;
 	char options[1024], *cp;
 	const char *ifname;
-#ifdef __rtems__
-	struct ifconfig_option *p;
-#else
 	struct option *p;
-#endif
 	size_t iflen;
 #ifdef __rtems__
 	struct getopt_data getopt_data;

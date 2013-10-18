@@ -170,11 +170,7 @@ static struct afswtch af_group = {
 	.af_af		= AF_UNSPEC,
 	.af_other_status = getifgroups,
 };
-#ifdef __rtems__
-static struct ifconfig_option group_gopt = { "g:", "[-g groupname]", printgroup };
-#else
 static struct option group_gopt = { "g:", "[-g groupname]", printgroup };
-#endif
 
 static __constructor void
 group_ctor(void)

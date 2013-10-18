@@ -291,7 +291,7 @@ retry:
 	mib[5] = 0;		/* no flags */
 	if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
 		err(EX_OSERR, "route-sysctl-estimate");
-	if ((buf = malloc(needed)) == NULL)
+	if ((buf = malloc(needed)) == NULL && needed != 0)
 		errx(EX_OSERR, "malloc failed");
 	if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0) {
 		if (errno == ENOMEM && count++ < 10) {
@@ -346,6 +346,7 @@ retry:
 			(void) printf("done\n");
 		}
 	}
+	free(buf);
 }
 
 const char *
@@ -1193,7 +1194,7 @@ retry2:
 	mib[5] = 0;		/* no flags */
 	if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
 		err(EX_OSERR, "route-sysctl-estimate");
-	if ((buf = malloc(needed)) == NULL)
+	if ((buf = malloc(needed)) == NULL && needed != 0)
 		errx(EX_OSERR, "malloc failed");
 	if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0) {
 		if (errno == ENOMEM && count++ < 10) {
@@ -1209,6 +1210,7 @@ retry2:
 		rtm = (struct rt_msghdr *)next;
 		print_rtmsg(c, rtm, rtm->rtm_msglen);
 	}
+	free(buf);
 }
 
 void

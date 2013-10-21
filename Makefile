@@ -697,6 +697,7 @@ LIB_C_FILES += freebsd/lib/libc/net/nsdispatch.c
 LIB_C_FILES += freebsd/lib/libc/net/rcmd.c
 LIB_C_FILES += freebsd/lib/libc/net/recv.c
 LIB_C_FILES += freebsd/lib/libc/net/send.c
+LIB_C_FILES += freebsd/lib/libc/net/vars.c
 LIB_C_FILES += freebsd/lib/libc/posix1e/mac.c
 LIB_C_FILES += freebsd/lib/libc/resolv/h_errno.c
 LIB_C_FILES += freebsd/lib/libc/resolv/herror.c

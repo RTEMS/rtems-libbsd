@@ -756,7 +756,6 @@ LIB_C_FILES += freebsd/sbin/ifconfig/ifconfig.c
 LIB_C_FILES += freebsd/sbin/ifconfig/ifgif.c
 LIB_C_FILES += freebsd/sbin/ifconfig/ifgre.c
 LIB_C_FILES += freebsd/sbin/ifconfig/ifgroup.c
-LIB_C_FILES += freebsd/sbin/ifconfig/ifieee80211.c
 LIB_C_FILES += freebsd/sbin/ifconfig/iflagg.c
 LIB_C_FILES += freebsd/sbin/ifconfig/ifmac.c
 LIB_C_FILES += freebsd/sbin/ifconfig/ifmedia.c

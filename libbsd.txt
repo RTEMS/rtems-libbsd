@@ -86,6 +86,9 @@ the current Git submodule commit is this
 
 * MAC support functions are not thread-safe ("freebsd/lib/libc/posix1e/mac.c").
 
+* IFCONFIG(8): IEEE80211 support is disabled.  This module depends on a XML
+  parser and mmap().
+
 [listing]
 ----
     /* sysinit section? */

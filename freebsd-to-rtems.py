@@ -2273,7 +2273,6 @@ userSpace.addUserSpaceSourceFiles(
 		'sbin/ifconfig/ifgif.c',
 		'sbin/ifconfig/ifgre.c',
 		'sbin/ifconfig/ifgroup.c',
-		'sbin/ifconfig/ifieee80211.c',
 		'sbin/ifconfig/iflagg.c',
 		'sbin/ifconfig/ifmac.c',
 		'sbin/ifconfig/ifmedia.c',

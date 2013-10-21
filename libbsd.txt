@@ -84,6 +84,8 @@ the current Git submodule commit is this
   Is this the only type of new section magic?  What about the old sysctl_set?
   I added this to my linkcmds.  
 
+* MAC support functions are not thread-safe ("freebsd/lib/libc/posix1e/mac.c").
+
 [listing]
 ----
     /* sysinit section? */

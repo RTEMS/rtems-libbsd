@@ -356,7 +356,6 @@
 #define sysctl_lock _bsd_sysctl_lock
 #define sysctl_move_oid _bsd_sysctl_move_oid
 #define sysctl_msec_to_ticks _bsd_sysctl_msec_to_ticks
-#define sysctlnametomib _bsd_sysctlnametomib
 #define sysctl_register_oid _bsd_sysctl_register_oid
 #define sysctl_remove_oid _bsd_sysctl_remove_oid
 #define sysctl_rename_oid _bsd_sysctl_rename_oid

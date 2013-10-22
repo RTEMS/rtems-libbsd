@@ -779,6 +779,18 @@ LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 
+TEST_SLEEP01 = testsuite/sleep01/sleep01.exe
+TEST_SLEEP01_O_FILES =
+TEST_SLEEP01_D_FILES =
+TEST_SLEEP01_O_FILES += testsuite/sleep01/test_main.o
+TEST_SLEEP01_D_FILES += testsuite/sleep01/test_main.d
+$(TEST_SLEEP01): $(TEST_SLEEP01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/sleep01/sleep01.map $^ -lm -o $@
+TESTS += $(TEST_SLEEP01)
+O_FILES += $(TEST_SLEEP01_O_FILES)
+D_FILES += $(TEST_SLEEP01_D_FILES)
+RUN_TESTS += $(TEST_SLEEP01)
+
 TEST_SYSCALLS01 = testsuite/syscalls01/syscalls01.exe
 TEST_SYSCALLS01_O_FILES =
 TEST_SYSCALLS01_D_FILES =

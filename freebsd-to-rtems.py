@@ -2357,6 +2357,7 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('sleep01', ['test_main'])
 tests.addTest('syscalls01', ['test_main'])
 tests.addTest('commands01', ['test_main'])
 tests.addTest('usb01', ['init', 'test-file-system'], False)

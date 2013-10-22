@@ -6,12 +6,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
 #define TEST_NAME "LIBBSD LOOPBACK 1"
 
 #include <rtems/error.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -19,31 +21,11 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sysexits.h>
 
-/* for old configuration structure */
-#include <rtems/rtems_bsdnet.h>
+#include <machine/rtems-bsd-commands.h>
 
-/*
- * Network configuration
- */
-struct rtems_bsdnet_config rtems_bsdnet_config = {
-    NULL,                   /* Network interface */
-    NULL,                   /* Use fixed network configuration */
-    0,                      /* Default network task priority */
-    0,                      /* Default mbuf capacity */
-    0,                      /* Default mbuf cluster capacity */
-    "testSystem",           /* Host name */
-    "nowhere.com",          /* Domain name */
-    "127.0.0.1",            /* Gateway */
-    "127.0.0.1",            /* Log host */
-    {"127.0.0.1" },         /* Name server(s) */
-    {"127.0.0.1" },         /* NTP server(s) */
-    0,
-    0,
-    0,
-    0,
-    0
-};
+#include <rtems.h>
 
 /*
  * Thread-safe output routines
@@ -216,6 +198,16 @@ static void test_main(void)
 {
   rtems_status_code    sc;
   rtems_task_priority  old;
+  int                  exit_code;
+  char *lo0[] = {
+    "ifconfig",
+    "lo0",
+    "inet",
+    "127.0.0.1",
+    "netmask",
+    "255.255.255.0",
+    NULL
+  };
 
   sc = rtems_semaphore_create(
     rtems_build_name('P','m','t','x'),
@@ -239,6 +231,9 @@ static void test_main(void)
   printf("Try running client with no server present.\n");
   printf("Should fail with `connection refused'.\n");
   clientWorker(0);
+
+  exit_code = rtems_bsd_command_ifconfig(nitems(lo0) - 1, lo0);
+  assert(exit_code == EX_OK);
 
   printf("\nStart server.\n");
   spawnTask(serverTask, 150, 0);

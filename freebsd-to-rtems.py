@@ -1825,7 +1825,6 @@ netipsec.addSourceFiles(
 opencrypto = Module('opencrypto')
 opencrypto.addHeaderFiles(
 	[
-		'sys/sys/md5.h',
 		'sys/opencrypto/deflate.h',
 		'sys/opencrypto/xform.h',
 		'sys/opencrypto/cryptosoft.h',

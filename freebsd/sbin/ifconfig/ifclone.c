@@ -32,6 +32,9 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/queue.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/ioctl.h>

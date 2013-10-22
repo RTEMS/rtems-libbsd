@@ -70,8 +70,10 @@ list_cloners(void)
 	ifcr.ifcr_count = ifcr.ifcr_total;
 	ifcr.ifcr_buffer = buf;
 
-	if (ioctl(s, SIOCIFGCLONERS, &ifcr) < 0)
+	if (ioctl(s, SIOCIFGCLONERS, &ifcr) < 0) {
+		free(buf);
 		err(1, "SIOCIFGCLONERS for names");
+	}
 
 	/*
 	 * In case some disappeared in the mean time, clamp it down.
@@ -104,6 +106,11 @@ clone_setdefcallback(const char *ifprefix, clone_callback_func *p)
 	struct clone_defcb *dcp;
 
 	dcp = malloc(sizeof(*dcp));
+#ifndef __rtems__
+	if (dcp == NULL) {
+		errx(1, "unable to allocate clone");
+	}
+#endif /* __rtems__ */
 	strlcpy(dcp->ifprefix, ifprefix, IFNAMSIZ-1);
 	dcp->clone_cb = p;
 	SLIST_INSERT_HEAD(&clone_defcbh, dcp, next);
@@ -199,3 +206,15 @@ clone_ctor(void)
 	opt_register(&clone_Copt);
 #undef N
 }
+#ifdef __rtems__
+void
+clone_dtor(void)
+{
+	struct clone_defcb *dcp;
+	struct clone_defcb *dcp_tmp;
+
+	SLIST_FOREACH_SAFE(dcp, &clone_defcbh, next, dcp_tmp) {
+		free(dcp);
+	}
+}
+#endif /* __rtems__ */

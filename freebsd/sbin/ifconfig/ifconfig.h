@@ -169,4 +169,6 @@ void mac_ctor(void);
 void nd6_ctor(void);
 void pfsync_ctor(void);
 void vlan_ctor(void);
+
+void clone_dtor(void);
 #endif /* __rtems__ */

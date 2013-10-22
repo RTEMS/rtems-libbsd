@@ -150,6 +150,7 @@ usage(void)
 
 #ifdef __rtems__
 static void ifconfig_ctor(void);
+static void ifconfig_dtor(void);
 static int main(int argc, char *argv[]);
 
 int rtems_bsd_command_ifconfig(int argc, char *argv[])
@@ -178,6 +179,9 @@ int rtems_bsd_command_ifconfig(int argc, char *argv[])
 	vlan_ctor();
 
 	exit_code = rtems_bsd_program_call_main("ifconfig", main, argc, argv);
+
+	clone_dtor();
+	ifconfig_dtor();
 
 	rtems_bsd_program_unlock();
 
@@ -1241,3 +1245,19 @@ ifconfig_ctor(void)
 		cmd_register(&basic_cmds[i]);
 #undef N
 }
+#ifdef __rtems__
+static void
+ifconfig_dtor(void)
+{
+	struct callback *cb = callbacks;
+
+	while (cb != NULL) {
+		struct callback *to_free = cb;
+
+		cb = to_free->cb_next;
+		free(to_free);
+	}
+
+	free(descr);
+}
+#endif /* __rtems__ */

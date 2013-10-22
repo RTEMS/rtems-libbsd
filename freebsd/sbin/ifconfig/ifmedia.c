@@ -134,8 +134,10 @@ media_status(int s)
 		err(1, "malloc");
 	ifmr.ifm_ulist = media_list;
 
-	if (ioctl(s, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0)
+	if (ioctl(s, SIOCGIFMEDIA, (caddr_t)&ifmr) < 0) {
+		free(media_list);
 		err(1, "SIOCGIFMEDIA");
+	}
 
 	printf("\tmedia: ");
 	print_media_word(ifmr.ifm_current, 1);

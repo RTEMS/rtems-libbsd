@@ -137,6 +137,7 @@ printgroup(const char *groupname)
 	bzero(&ifgr, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, groupname, sizeof(ifgr.ifgr_name));
 	if (ioctl(s, SIOCGIFGMEMB, (caddr_t)&ifgr) == -1) {
+		close(s);
 		if (errno == EINVAL || errno == ENOTTY ||
 		    errno == ENOENT)
 			exit(0);
@@ -145,10 +146,15 @@ printgroup(const char *groupname)
 	}
 
 	len = ifgr.ifgr_len;
-	if ((ifgr.ifgr_groups = calloc(1, len)) == NULL)
+	if ((ifgr.ifgr_groups = calloc(1, len)) == NULL) {
+		close(s);
 		err(1, "printgroup");
-	if (ioctl(s, SIOCGIFGMEMB, (caddr_t)&ifgr) == -1)
+	}
+	if (ioctl(s, SIOCGIFGMEMB, (caddr_t)&ifgr) == -1) {
+		free(ifgr.ifgr_groups);
+		close(s);
 		err(1, "SIOCGIFGMEMB");
+	}
 
 	for (ifg = ifgr.ifgr_groups; ifg && len >= sizeof(struct ifg_req);
 	    ifg++) {
@@ -157,6 +163,7 @@ printgroup(const char *groupname)
 		cnt++;
 	}
 	free(ifgr.ifgr_groups);
+	close(s);
 
 	exit(0);
 }

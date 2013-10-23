@@ -771,6 +771,18 @@ LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 
+TEST_SELECTPOLLKQUEUE01 = testsuite/selectpollkqueue01/selectpollkqueue01.exe
+TEST_SELECTPOLLKQUEUE01_O_FILES =
+TEST_SELECTPOLLKQUEUE01_D_FILES =
+TEST_SELECTPOLLKQUEUE01_O_FILES += testsuite/selectpollkqueue01/test_main.o
+TEST_SELECTPOLLKQUEUE01_D_FILES += testsuite/selectpollkqueue01/test_main.d
+$(TEST_SELECTPOLLKQUEUE01): $(TEST_SELECTPOLLKQUEUE01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/selectpollkqueue01/selectpollkqueue01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SELECTPOLLKQUEUE01)
+O_FILES += $(TEST_SELECTPOLLKQUEUE01_O_FILES)
+D_FILES += $(TEST_SELECTPOLLKQUEUE01_D_FILES)
+RUN_TESTS += $(TEST_SELECTPOLLKQUEUE01)
+
 TEST_RWLOCK01 = testsuite/rwlock01/rwlock01.exe
 TEST_RWLOCK01_O_FILES =
 TEST_RWLOCK01_D_FILES =

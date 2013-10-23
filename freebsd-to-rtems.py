@@ -2347,6 +2347,7 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('selectpollkqueue01', ['test_main'])
 tests.addTest('rwlock01', ['test_main'])
 tests.addTest('sleep01', ['test_main'])
 tests.addTest('syscalls01', ['test_main'])

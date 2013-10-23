@@ -1180,6 +1180,8 @@ kernel_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 
 #ifndef __rtems__
 	req.td = td;
+#else /* __rtems__ */
+	req.td = curthread;
 #endif /* __rtems__ */
 	req.flags = flags;
 
@@ -1428,6 +1430,8 @@ sysctl_root(SYSCTL_HANDLER_ARGS)
 		if (error)
 			return (error);
 	}
+#else /* __rtems__ */
+	(void) lvl;
 #endif /* __rtems__ */
 
 	if (!oid->oid_handler)

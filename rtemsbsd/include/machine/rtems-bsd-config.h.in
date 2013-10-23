@@ -134,8 +134,6 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 
 #define M_RTEMS_HEAP 0
 
-#define BSD_MAXIMUM_SLEEP_QUEUES 32
-
 #define BSD_DEFAULT_FIB 0
 
 #define BSD_DEFAULT_PID 0

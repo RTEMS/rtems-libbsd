@@ -49,8 +49,12 @@
 #include <sys/malloc.h>
 #include <sys/selinfo.h>
 
-#include <rtems/score/threadimpl.h>
 #include <rtems/score/objectimpl.h>
+#include <rtems/score/statesimpl.h>
+#include <rtems/score/threaddispatch.h>
+#include <rtems/score/thread.h>
+#include <rtems/score/threadimpl.h>
+#include <rtems/score/threadqimpl.h>
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 
@@ -91,9 +95,24 @@ struct thread *
 rtems_bsd_thread_create(Thread_Control *thread, int wait)
 {
 	struct thread *td = malloc(sizeof(*td), M_TEMP, M_ZERO | wait);
+	struct sleepqueue *sq = malloc(sizeof(*sq), M_TEMP, wait);
 
-	if (td != NULL) {
+	if (td != NULL && sq != NULL) {
 		td->td_thread = thread;
+		td->td_sleepqueue = sq;
+
+		LIST_INIT(&sq->sq_free);
+
+		_Thread_queue_Initialize(
+			&sq->sq_blocked,
+			THREAD_QUEUE_DISCIPLINE_PRIORITY,
+			STATES_WAITING_FOR_BSD_WAKEUP,
+			EWOULDBLOCK
+		);
+	} else {
+		free(td, M_TEMP);
+		free(sq, M_TEMP);
+		td = NULL;
 	}
 
 	thread->extensions[rtems_bsd_extension_index] = td;
@@ -167,6 +186,7 @@ rtems_bsd_extension_thread_delete(
 			rtems_chain_explicit_extract(&rtems_bsd_thread_chain, &td->td_node);
 		}
 
+		free(td->td_sleepqueue, M_TEMP);
 		free(td, M_TEMP);
 	}
 }

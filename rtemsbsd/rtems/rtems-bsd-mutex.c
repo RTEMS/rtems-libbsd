@@ -53,12 +53,10 @@
 
 static void assert_mtx(struct lock_object *lock, int what);
 static void lock_mtx(struct lock_object *lock, int how);
-static void lock_spin(struct lock_object *lock, int how);
 #ifdef KDTRACE_HOOKS
 static int  owner_mtx(struct lock_object *lock, struct thread **owner);
 #endif
 static int  unlock_mtx(struct lock_object *lock);
-static int  unlock_spin(struct lock_object *lock);
 
 RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_mtx_chain);
 
@@ -86,8 +84,8 @@ struct lock_class lock_class_mtx_spin = {
 #ifdef DDB
   .lc_ddb_show = db_show_mtx,
 #endif
-  .lc_lock = lock_spin,
-  .lc_unlock = unlock_spin,
+  .lc_lock = lock_mtx,
+  .lc_unlock = unlock_mtx,
 #ifdef KDTRACE_HOOKS
   .lc_owner = owner_mtx,
 #endif
@@ -108,13 +106,6 @@ lock_mtx(struct lock_object *lock, int how)
   mtx_lock((struct mtx *)lock);
 }
 
-void
-lock_spin(struct lock_object *lock, int how)
-{
-
-  panic("spin locks can only use msleep_spin");
-}
-
 int
 unlock_mtx(struct lock_object *lock)
 {
@@ -126,12 +117,6 @@ unlock_mtx(struct lock_object *lock)
   return (0);
 }
 
-int
-unlock_spin(struct lock_object *lock)
-{
-
-  panic("spin locks can only use msleep_spin");
-}
 
 #ifdef KDTRACE_HOOKS
 int

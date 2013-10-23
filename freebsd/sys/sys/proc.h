@@ -214,8 +214,8 @@ struct thread {
 	struct cpuset	*td_cpuset;	/* (t) CPU affinity mask. */
 #endif /* __rtems__ */
 	struct seltd	*td_sel;	/* Select queue/channel. */
-#ifndef __rtems__
 	struct sleepqueue *td_sleepqueue; /* (k) Associated sleep queue. */
+#ifndef __rtems__
 	struct turnstile *td_turnstile;	/* (k) Associated turnstile. */
 	struct umtx_q   *td_umtxq;	/* (c?) Link for when we're blocked. */
 	lwpid_t		td_tid;		/* (b) Thread ID. */

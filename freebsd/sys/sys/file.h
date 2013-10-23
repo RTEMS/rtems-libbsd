@@ -408,7 +408,6 @@ fo_ioctl(fp, com, data, active_cred, td)
 #endif /* __rtems__ */
 }
 
-#ifndef __rtems__
 static __inline int
 fo_poll(fp, events, active_cred, td)
 	struct file *fp;
@@ -417,9 +416,17 @@ fo_poll(fp, events, active_cred, td)
 	struct thread *td;
 {
 
+#ifndef __rtems__
 	return ((*fp->f_ops->fo_poll)(fp, events, active_cred, td));
+#else /* __rtems__ */
+	(void) active_cred;
+	(void) td;
+
+	return ((*fp->f_io.pathinfo.handlers->poll_h)(&fp->f_io, events));
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 static __inline int
 fo_stat(fp, sb, active_cred, td)
 	struct file *fp;

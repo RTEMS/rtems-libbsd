@@ -94,9 +94,7 @@ static int	pollrescan(struct thread *);
 #endif /* __rtems__ */
 static int	selscan(struct thread *, fd_mask **, fd_mask **, int);
 static int	selrescan(struct thread *, fd_mask **, fd_mask **);
-#ifndef __rtems__
 static void	selfdalloc(struct thread *, void *);
-#endif /* __rtems__ */
 static void	selfdfree(struct seltd *, struct selfd *);
 #ifndef __rtems__
 static int	dofileread(struct thread *, int, struct file *, struct uio *,
@@ -851,9 +849,7 @@ int
 kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
     fd_set *fd_ex, struct timeval *tvp, int abi_nfdbits)
 {
-#ifndef __rtems__
 	struct filedesc *fdp;
-#endif /* __rtems__ */
 	/*
 	 * The magic 2048 here is chosen to be just enough for FD_SETSIZE
 	 * infds with the new FD_SETSIZE of 1024, and more than enough for
@@ -866,10 +862,6 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 	int error, timo;
 	u_int nbufbytes, ncpbytes, ncpubytes, nfdbits;
 
-#ifdef __rtems__
-	if (td == NULL)
-		return (ENOMEM);
-#endif /* __rtems__ */
 	if (nd < 0)
 		return (EINVAL);
 #ifndef __rtems__
@@ -877,6 +869,7 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 	if (nd > fdp->fd_lastfile + 1)
 		nd = fdp->fd_lastfile + 1;
 #else /* __rtems__ */
+	(void) fdp;
 	if (nd > rtems_libio_number_iops)
 		nd = rtems_libio_number_iops;
 #endif /* __rtems__ */
@@ -1019,12 +1012,18 @@ done:
 }
 #ifdef __rtems__
 int
-select(int nfds, fd_set *restrict readfds, fd_set *__restrict writefds, fd_set
-    *__restrict errorfds, struct timeval *__restrict timeout)
+select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+    struct timeval *timeout)
 {
 	struct thread *td = rtems_bsd_get_curthread_or_null();
-	int error = kern_select(td, nfds, readfds, writefds, errorfds, timeout,
-	    NFDBITS);
+	int error;
+
+	if (td != NULL) {
+		error = kern_select(td, nfds, readfds, writefds, errorfds,
+		    timeout, NFDBITS);
+	} else {
+		error = ENOMEM;
+	}
 
 	if (error == 0) {
 		return td->td_retval[0];
@@ -1033,7 +1032,7 @@ select(int nfds, fd_set *restrict readfds, fd_set *__restrict writefds, fd_set
 	}
 }
 #endif /* __rtems__ */
-#ifndef __rtems__
+
 /* 
  * Convert a select bit set to poll flags.
  *
@@ -1099,7 +1098,6 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 
 	return (n);
 }
-#endif /* __rtems__ */
 
 /*
  * Traverse the list of fds attached to this thread's seltd and check for
@@ -1108,7 +1106,6 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 static int
 selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 {
-#ifndef __rtems__
 	struct filedesc *fdp;
 	struct selinfo *si;
 	struct seltd *stp;
@@ -1118,7 +1115,11 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 	fd_mask bit;
 	int fd, ev, n, idx;
 
+#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
+#else /* __rtems__ */
+	fdp = NULL;
+#endif /* __rtems__ */
 	stp = td->td_sel;
 	n = 0;
 	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
@@ -1140,9 +1141,6 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 	stp->st_flags = 0;
 	td->td_retval[0] = n;
 	return (0);
-#else /* __rtems__ */
-	return (ENOMEM);
-#endif /* __rtems__ */
 }
 
 /*
@@ -1155,14 +1153,17 @@ selscan(td, ibits, obits, nfd)
 	fd_mask **ibits, **obits;
 	int nfd;
 {
-#ifndef __rtems__
 	struct filedesc *fdp;
 	struct file *fp;
 	fd_mask bit;
 	int ev, flags, end, fd;
 	int n, idx;
 
+#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
+#else /* __rtems__ */
+	fdp = NULL;
+#endif /* __rtems__ */
 	n = 0;
 	for (idx = 0, fd = 0; fd < nfd; idx++) {
 		end = imin(fd + NFDBITS, nfd);
@@ -1183,9 +1184,6 @@ selscan(td, ibits, obits, nfd)
 
 	td->td_retval[0] = n;
 	return (0);
-#else /* __rtems__ */
-	return (ENOMEM);
-#endif /* __rtems__ */
 }
 
 #ifndef __rtems__
@@ -1466,6 +1464,7 @@ selsocket(struct socket *so, int events, struct timeval *tvp, struct thread *td)
 		error = 0;
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Preallocate two selfds associated with 'cookie'.  Some fo_poll routines
@@ -1486,7 +1485,6 @@ selfdalloc(struct thread *td, void *cookie)
 	stp->st_free2->sf_td = stp;
 	stp->st_free2->sf_cookie = cookie;
 }
-#endif /* __rtems__ */
 
 static void
 selfdfree(struct seltd *stp, struct selfd *sfp)

@@ -325,7 +325,9 @@ rtems_bsd_soo_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
 }
 #endif /* __rtems__ */
 
-#ifndef __rtems__
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 soo_poll(struct file *fp, int events, struct ucred *active_cred,
     struct thread *td)
@@ -338,7 +340,27 @@ soo_poll(struct file *fp, int events, struct ucred *active_cred,
 	if (error)
 		return (error);
 #endif
+#ifndef __rtems__
 	return (sopoll(so, events, fp->f_cred, td));
+#else /* __rtems__ */
+	return (sopoll(so, events, NULL, td));
+#endif /* __rtems__ */
+}
+#ifdef __rtems__
+static int
+rtems_bsd_soo_poll(rtems_libio_t *iop, int events)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	int error;
+
+	if (td != NULL) {
+		error = soo_poll(fp, events, NULL, td);
+	} else {
+		error = ENOMEM;
+	}
+
+	return error;
 }
 #endif /* __rtems__ */
 
@@ -451,6 +473,7 @@ const rtems_filesystem_file_handlers_r socketops = {
 	.ftruncate_h = rtems_filesystem_default_ftruncate,
 	.fsync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
-	.fcntl_h = rtems_filesystem_default_fcntl
+	.fcntl_h = rtems_filesystem_default_fcntl,
+	.poll_h = rtems_bsd_soo_poll
 };
 #endif /* __rtems__ */

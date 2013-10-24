@@ -77,12 +77,19 @@ extern cpumask_t hlt_cpus_mask;
 extern cpumask_t logical_cpus_mask;
 #endif /* SMP */
 
+#ifndef __rtems__
 extern u_int mp_maxid;
 extern int mp_maxcpus;
 extern int mp_ncpus;
 extern volatile int smp_started;
 
 extern cpumask_t all_cpus;
+#else /* __rtems__ */
+#define mp_maxid 1U
+#define mp_maxcpus 1
+#define mp_ncpus 1
+#define all_cpus 1U
+#endif /* __rtems__ */
 
 /*
  * Macro allowing us to determine whether a CPU is absent at any given

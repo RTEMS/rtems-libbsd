@@ -39,6 +39,7 @@
 
 #include <machine/rtems-bsd-config.h>
 #include <machine/rtems-bsd-thread.h>
+#include <machine/rtems-bsd-support.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>

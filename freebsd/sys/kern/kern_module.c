@@ -196,7 +196,7 @@ module_register(const moduledata_t *data, linker_file_t container)
 		TAILQ_INSERT_TAIL(&container->modules, newmod, flink);
 	newmod->file = container;
 #else /* __rtems__ */
-		BSD_PANIC("not supported");
+		BSD_ASSERT(0);
 #endif /* __rtems__ */
 	MOD_XUNLOCK;
 	return (0);

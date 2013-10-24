@@ -59,5 +59,5 @@ DELAY(int usec)
 	}
 
 	sc = rtems_task_wake_after(ticks);
-	BSD_ASSERT_SC(sc);
+	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 }

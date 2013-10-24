@@ -1,16 +1,16 @@
 /**
  * @file
  *
- * @ingroup rtems_bsd_rtems
+ * @ingroup rtems_bsd_machine
  *
  * @brief TODO.
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -37,20 +37,33 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-config.h>
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_SUPPORT_H_
+#define _RTEMS_BSD_MACHINE_RTEMS_BSD_SUPPORT_H_
 
-#include <rtems/bsd/sys/types.h>
-#include <sys/systm.h>
-#include <sys/signalvar.h>
+#include <stdio.h>
 
-void
-psignal(struct proc *p, int sig)
-{
-	BSD_ASSERT(0);
-}
+#include <rtems/chain.h>
 
-void pgsigio(struct sigio **sigiop, int sig, int checkctty)
-{
- 
-	BSD_ASSERT(0);
-}
+/* Debug */
+
+#define BSD_PRINTF(fmt, ...) printf("%s: " fmt, __func__, ##__VA_ARGS__)
+
+#define BSD_PANIC(fmt, ...) panic("%s: " fmt "\n",  __func__, ##__VA_ARGS__)
+
+#define BSD_ASSERT_SC(sc) BSD_ASSERT((sc) == RTEMS_SUCCESSFUL)
+
+#define BSD_ASSERT_RV(rv) BSD_ASSERT((rv) == 0)
+
+extern rtems_chain_control rtems_bsd_lock_chain;
+
+extern rtems_chain_control rtems_bsd_mtx_chain;
+
+extern rtems_chain_control rtems_bsd_sx_chain;
+
+extern rtems_chain_control rtems_bsd_condvar_chain;
+
+extern rtems_chain_control rtems_bsd_callout_chain;
+
+extern rtems_chain_control rtems_bsd_malloc_chain;
+
+#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_SUPPORT_H_ */

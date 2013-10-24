@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-support.h>
 
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/threaddispatch.h>

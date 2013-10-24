@@ -96,23 +96,15 @@
 
 #include <machine/rtems-bsd-symbols.h>
 
-/* Debug */
+/* Assert */
 
 void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);
 
-#define BSD_PRINTF(fmt, ...) printf("%s: " fmt, __func__, ##__VA_ARGS__)
-
-#define BSD_PANIC(fmt, ...) panic("%s: " fmt "\n",  __func__, ##__VA_ARGS__)
-
-#ifdef NDEBUG
+#ifdef RTEMS_BSD_NO_ASSERT
 # define BSD_ASSERT(expr) ((void) 0)
 #else
 # define BSD_ASSERT(expr) ((expr) ? (void) 0 : rtems_bsd_assert_func(__FILE__, __LINE__, __func__, #expr))
 #endif
-
-#define BSD_ASSERT_SC(sc) BSD_ASSERT((sc) == RTEMS_SUCCESSFUL)
-
-#define BSD_ASSERT_RV(rv) BSD_ASSERT((rv) == 0)
 
 /* General definitions */
 
@@ -127,17 +119,5 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 #define BSD_DEFAULT_GID 0
 
 #define BSD_DEFAULT_PRISON (&prison0)
-
-extern rtems_chain_control rtems_bsd_lock_chain;
-
-extern rtems_chain_control rtems_bsd_mtx_chain;
-
-extern rtems_chain_control rtems_bsd_sx_chain;
-
-extern rtems_chain_control rtems_bsd_condvar_chain;
-
-extern rtems_chain_control rtems_bsd_callout_chain;
-
-extern rtems_chain_control rtems_bsd_malloc_chain;
 
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_ */

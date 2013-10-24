@@ -135,10 +135,9 @@ mtx_init(struct mtx *m, const char *name, const char *type, int opts)
 {
   struct lock_class *class;
   int i;
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-	rtems_id id = RTEMS_ID_NONE;
-	/* rtems_attribute attr = RTEMS_LOCAL | RTEMS_PRIORITY | RTEMS_BINARY_SEMAPHORE | RTEMS_PRIORITY_CEILING; */
-  rtems_attribute attr = RTEMS_LOCAL | RTEMS_PRIORITY | RTEMS_BINARY_SEMAPHORE;
+  rtems_status_code sc = RTEMS_SUCCESSFUL;
+  rtems_id id = RTEMS_ID_NONE;
+  rtems_attribute attr = RTEMS_LOCAL | RTEMS_BINARY_SEMAPHORE | RTEMS_PRIORITY | RTEMS_INHERIT_PRIORITY;
 
   if ((opts & MTX_RECURSE) != 0 )
   {

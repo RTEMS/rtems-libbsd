@@ -426,13 +426,11 @@ proc0_init(void *dummy __unused)
 	 */
 	p->p_magic = P_MAGIC;
 	p->p_osrel = osreldate;
-#endif /* __rtems__ */
 
 	/*
 	 * Initialize thread and process structures.
 	 */
 	procinit();	/* set up proc zone */
-#ifndef __rtems__
 	threadinit();	/* set up UMA zones */
 
 	/*

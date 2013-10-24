@@ -792,8 +792,6 @@ base.addSourceFiles(
 		'sys/kern/kern_module.c',
 		'sys/kern/kern_mtxpool.c',
 		'sys/kern/kern_ntptime.c',
-		'sys/kern/kern_proc.c',
-		'sys/kern/kern_resource.c',
 		'sys/kern/kern_subr.c',
 		'sys/kern/kern_sysctl.c',
 		'sys/kern/kern_tc.c',

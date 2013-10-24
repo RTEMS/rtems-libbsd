@@ -73,25 +73,6 @@
 #define INET6 1
 #define TCP_SIGNATURE 1
 
-/* Integer type definitions */
-
-#define __float_t float
-#define __double_t double
-
-#define __clock_t clock_t
-#define __cpumask_t unsigned int
-#define __critical_t intptr_t
-#define __ptrdiff_t ptrdiff_t
-#define __time_t time_t
-
-#define	_CLOCKID_T_DECLARED 1
-#define	_TIMER_T_DECLARED 1
-#define	_TIME_T_DECLARED 1
-#define	_USECONDS_T_DECLARED 1
-#define	_FSBLKCNT_T_DECLARED 1
-#define	_BLKSIZE_T_DECLARED 1
-#define	_BLKCNT_T_DECLARED 1
-
 /* Symbol rename */
 
 #include <machine/rtems-bsd-symbols.h>

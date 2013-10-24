@@ -107,7 +107,6 @@ typedef	__uintptr_t	uintptr_t;
 #define	_INTPTR_T_DECLARED
 #endif
 
-#ifndef __rtems__
 typedef __uint8_t	u_int8_t;	/* unsigned integrals (deprecated) */
 typedef __uint16_t	u_int16_t;
 typedef __uint32_t	u_int32_t;
@@ -118,7 +117,6 @@ typedef	__int64_t	quad_t;
 typedef	quad_t *	qaddr_t;
 
 typedef	char *		caddr_t;	/* core address */
-#endif /* __rtems__ */
 typedef	__const char *	c_caddr_t;	/* core address, pointer to const */
 typedef	__volatile char *v_caddr_t;	/* core address, pointer to volatile */
 
@@ -148,9 +146,7 @@ typedef	__clockid_t	clockid_t;
 
 typedef	__cpumask_t	cpumask_t;
 typedef	__critical_t	critical_t;	/* Critical section value */
-#ifndef __rtems__
 typedef	__int64_t	daddr_t;	/* disk address */
-#endif /* __rtems__ */
 
 #ifndef _DEV_T_DECLARED
 typedef	__dev_t		dev_t;		/* device number or struct cdev */
@@ -307,9 +303,7 @@ typedef	__uint64_t	uoff_t;
 typedef	char		vm_memattr_t;	/* memory attribute codes */
 typedef	struct vm_page	*vm_page_t;
 
-#ifndef __rtems__
 #define offsetof(type, field) __offsetof(type, field)
-#endif /* __rtems__ */
 
 #endif /* !_KERNEL */
 

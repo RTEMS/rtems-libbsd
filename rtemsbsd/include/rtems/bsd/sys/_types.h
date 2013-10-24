@@ -128,12 +128,26 @@ typedef union {
 
 typedef int boolean_t;
 
+typedef clock_t __clock_t;
+
+typedef unsigned int __cpumask_t;
+
+typedef intptr_t __critical_t;
+
 typedef struct device *device_t;
+
+typedef double __double_t;
+
+typedef float __float_t;
 
 typedef intptr_t intfptr_t;
 typedef uintptr_t uintfptr_t;
 
 typedef uint32_t intrmask_t;
+
+typedef time_t __time_t;
+
+typedef ptrdiff_t __ptrdiff_t;
 
 typedef char vm_memattr_t;
 

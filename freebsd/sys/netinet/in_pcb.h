@@ -441,7 +441,7 @@ void 	inp_4tuple_get(struct inpcb *inp, uint32_t *laddr, uint16_t *lp,
 /*
  * Flags for inp_flags2.
  */
-#define	INP_LLE_VALID		0x00000001 /* cached lle is valid */
+#define	INP_LLE_VALID		0x00000001 /* cached lle is valid */	
 #define	INP_RT_VALID		0x00000002 /* cached rtentry is valid */
 
 #define	INPLOOKUP_WILDCARD	1
@@ -503,13 +503,8 @@ struct inpcb *
 struct inpcb *
 	in_pcblookup_hash(struct inpcbinfo *, struct in_addr, u_int,
 	    struct in_addr, u_int, int, struct ifnet *);
-#ifndef __rtems__
-void  in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr,
-      int, struct inpcb *(*)(struct inpcb *, int));
-#else
-void  in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr faddr, int errno,
-    struct inpcb *(*notify)(struct inpcb *, int));
-#endif
+void	in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr,
+	    int, struct inpcb *(*)(struct inpcb *, int));
 void	in_pcbref(struct inpcb *);
 void	in_pcbrehash(struct inpcb *);
 int	in_pcbrele(struct inpcb *);

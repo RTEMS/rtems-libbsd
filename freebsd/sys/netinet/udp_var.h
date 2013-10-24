@@ -91,6 +91,10 @@ struct udpstat {
 };
 
 #ifdef _KERNEL
+#ifdef __rtems__
+#include <errno.h>
+#undef errno
+#endif /* __rtems__ */
 /*
  * In-kernel consumers can use these accessor macros directly to update
  * stats.

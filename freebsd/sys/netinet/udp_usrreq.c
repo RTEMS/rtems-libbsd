@@ -33,6 +33,10 @@
  *	@(#)udp_usrreq.c	8.6 (Berkeley) 5/23/95
  */
 
+#ifdef __rtems__
+#include <errno.h>
+#undef errno
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 

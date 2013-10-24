@@ -62,6 +62,10 @@
  *	@(#)in_pcb.c	8.2 (Berkeley) 1/4/94
  */
 
+#ifdef __rtems__
+#include <errno.h>
+#undef errno
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 

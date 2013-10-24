@@ -86,13 +86,8 @@ struct	inpcb *
 void	in6_pcbnotify __P((struct inpcbinfo *, struct sockaddr *,
 			   u_int, const struct sockaddr *, u_int, int, void *,
 			   struct inpcb *(*)(struct inpcb *, int)));
-#ifndef __rtems__
 struct inpcb *
 	in6_rtchange __P((struct inpcb *, int));
-#else
-struct inpcb *
-  in6_rtchange(struct inpcb *inp, int errno);
-#endif
 struct sockaddr *
 	in6_sockaddr __P((in_port_t port, struct in6_addr *addr_p));
 struct sockaddr *

@@ -31,6 +31,10 @@
  *	@(#)tcp_subr.c	8.2 (Berkeley) 5/24/95
  */
 
+#ifdef __rtems__
+#include <errno.h>
+#undef errno
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 

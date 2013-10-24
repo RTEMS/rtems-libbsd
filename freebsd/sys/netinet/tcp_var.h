@@ -458,7 +458,7 @@ struct	tcpstat {
 	u_long  tcps_sack_rcv_blocks;	    /* SACK blocks (options) received */
 	u_long  tcps_sack_send_blocks;	    /* SACK blocks (options) sent     */
 	u_long  tcps_sack_sboverflow; 	    /* times scoreboard overflowed */
-
+	
 	/* ECN related stats */
 	u_long	tcps_ecn_ce;		/* ECN Congestion Experienced */
 	u_long	tcps_ecn_ect0;		/* ECN Capable Transport */
@@ -590,13 +590,8 @@ int	 tcp_twrecycleable(struct tcptw *tw);
 void	 tcp_twclose(struct tcptw *_tw, int _reuse);
 void	 tcp_ctlinput(int, struct sockaddr *, void *);
 int	 tcp_ctloutput(struct socket *, struct sockopt *);
-#ifndef __rtems__
 struct tcpcb *
-   tcp_drop(struct tcpcb *, int);
-#else
-struct tcpcb *
-tcp_drop(struct tcpcb *tp, int errno);
-#endif
+	 tcp_drop(struct tcpcb *, int);
 void	 tcp_drain(void);
 void	 tcp_init(void);
 #ifdef VIMAGE
@@ -619,17 +614,10 @@ u_long	 tcp_maxmtu6(struct in_conninfo *, int *);
 void	 tcp_mss_update(struct tcpcb *, int, struct hc_metrics_lite *, int *);
 void	 tcp_mss(struct tcpcb *, int);
 int	 tcp_mssopt(struct in_conninfo *);
-#ifndef __rtems__
 struct inpcb *
-   tcp_drop_syn_sent(struct inpcb *, int);
+	 tcp_drop_syn_sent(struct inpcb *, int);
 struct inpcb *
-   tcp_mtudisc(struct inpcb *, int);
-#else
-struct inpcb *
-tcp_drop_syn_sent(struct inpcb *inp, int errno);
-struct inpcb *
-tcp_mtudisc(struct inpcb *inp, int errno);
-#endif
+	 tcp_mtudisc(struct inpcb *, int);
 struct tcpcb *
 	 tcp_newtcpcb(struct inpcb *);
 int	 tcp_output(struct tcpcb *);

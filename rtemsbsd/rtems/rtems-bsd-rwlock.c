@@ -15,6 +15,14 @@
  *  USA
  *  <kevin.kirspel@optimedical.com>
  *
+ * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Dornierstr. 4
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -38,16 +46,17 @@
  */
 
 #include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-thread.h>
 #include <machine/rtems-bsd-support.h>
 
-#include <rtems/score/objectimpl.h>
-#include <rtems/posix/rwlockimpl.h>
+#include <rtems.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/rwlock.h>
+#include <sys/mutex.h>
 
 #ifndef INVARIANTS
 #define _rw_assert(rw, what, file, line)
@@ -128,8 +137,9 @@ rw_init_flags(struct rwlock *rw, const char *name, int opts)
 {
   struct lock_class *class;
   int i;
-  pthread_rwlock_t lock;
-  int iret;
+  rtems_status_code sc;
+  rtems_id id;
+  rtems_attribute attr = RTEMS_LOCAL | RTEMS_BINARY_SEMAPHORE | RTEMS_PRIORITY | RTEMS_INHERIT_PRIORITY;
 
   if ((opts & RW_RECURSE) != 0) {
     /* FIXME */
@@ -151,12 +161,18 @@ rw_init_flags(struct rwlock *rw, const char *name, int opts)
   }
   KASSERT(i < LOCK_CLASS_MAX, ("unknown lock class %p", class));
 
-  iret = pthread_rwlock_init( &lock, NULL );
-  BSD_ASSERT( iret == 0 );
+  sc = rtems_semaphore_create(
+    rtems_build_name('_', '_', 'R', 'W'),
+    1,
+    attr,
+    BSD_TASK_PRIORITY_RESOURCE_OWNER,
+    &id
+  );
+  BSD_ASSERT_SC(sc);
 
   rw->lock_object.lo_name = name;
   rw->lock_object.lo_flags |= LO_INITIALIZED;
-  rw->lock_object.lo_id = lock;
+  rw->lock_object.lo_id = id;
 
   rtems_chain_append(&rtems_bsd_rwlock_chain, &rw->lock_object.lo_node);
 }
@@ -164,12 +180,7 @@ rw_init_flags(struct rwlock *rw, const char *name, int opts)
 void
 rw_destroy(struct rwlock *rw)
 {
-  int iret;
-  pthread_rwlock_destroy( rw->lock_object.lo_id );
-  BSD_ASSERT( iret == 0 );
-  rtems_chain_extract( &rw->lock_object.lo_node );
-  rw->lock_object.lo_id = 0;
-  rw->lock_object.lo_flags &= ~LO_INITIALIZED;
+  mtx_destroy((struct mtx *) rw);
 }
 
 void
@@ -188,127 +199,58 @@ rw_sysinit_flags(void *arg)
   rw_init_flags(args->ra_rw, args->ra_desc, args->ra_flags);
 }
 
-/* XXX add pthread_rwlock_is_wlocked_np( id, &wlocked )
- * XXX    returns 0 or -1 w/error
- * XXX    wlocked = 1 if write locked
- * XXX 
-/* XXX add pthread_rwlock_is_rlocked_np( id, &wlocked )
- * XXX    similar behavior
- * XXX probably want to add "unlocked" state to RTEMS SuperCore rwlock
- * XXX
- * XXX Rationale: This violates the API layering BADLY!!!!!
- * XXX Consider: Adding pthread_np.h to hold np methods like FreeBSD
- * XXX           This would avoid polluting pthread.h
- */
 int
 rw_wowned(struct rwlock *rw)
 {
-  int                   is_locked_for_write = 0;
-  Objects_Locations     location;
-  POSIX_RWLock_Control *the_rwlock;
-
-  the_rwlock = _POSIX_RWLock_Get(&rw->lock_object.lo_id, &location);
-  switch ( location ) {
-
-    case OBJECTS_LOCAL:
-      if (the_rwlock->RWLock.current_state == CORE_RWLOCK_LOCKED_FOR_WRITING)
-        is_locked_for_write = 1;
-      _Thread_Enable_dispatch();
-      return is_locked_for_write;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-#endif
-    case OBJECTS_ERROR:
-      break;
-  }
-  _Thread_Enable_dispatch();
-
-  BSD_PANIC("unexpected semaphore location or attributes");
+  return mtx_owned((struct mtx *) rw);
 }
 
 void
 _rw_wlock(struct rwlock *rw, const char *file, int line)
 {
-  int iret;
-
-  iret = pthread_rwlock_wrlock( &rw->lock_object.lo_id );
-  BSD_ASSERT( iret == 0 );
-
-  return 0;
+  _mtx_lock_flags((struct mtx *) rw, 0, file, line);
 }
 
 int
 _rw_try_wlock(struct rwlock *rw, const char *file, int line)
 {
-  int iret;
-
-  iret = pthread_rwlock_trywrlock( &rw->lock_object.lo_id );
-  if (iret == 0) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return _mtx_trylock((struct mtx *) rw, 0, file, line);
 }
 
 void
 _rw_wunlock(struct rwlock *rw, const char *file, int line)
 {
-  int iret;
-
-  iret = pthread_rwlock_unlock( &rw->lock_object.lo_id );
-  BSD_ASSERT( iret == 0 );
+  _mtx_unlock_flags((struct mtx *) rw, 0, file, line);
 }
 
 void
 _rw_rlock(struct rwlock *rw, const char *file, int line)
 {
-  int iret;
-
-  iret = pthread_rwlock_rdlock( &rw->lock_object.lo_id );
-  BSD_ASSERT( iret == 0 );
+  _mtx_lock_flags((struct mtx *) rw, 0, file, line);
 }
 
 int
 _rw_try_rlock(struct rwlock *rw, const char *file, int line)
 {
-  int iret;
-
-  iret = pthread_rwlock_tryrdlock( &rw->lock_object.lo_id );
-  if (iret == 0) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return _mtx_trylock((struct mtx *) rw, 0, file, line);
 }
 
 void
 _rw_runlock(struct rwlock *rw, const char *file, int line)
 {
-  int iret;
-
-  iret = pthread_rwlock_unlock( &rw->lock_object.lo_id );
-  BSD_ASSERT( iret == 0 );
+  _mtx_unlock_flags((struct mtx *) rw, 0, file, line);
 }
 
-/*
- * Attempt to do a non-blocking upgrade from a read lock to a write
- * lock.  This will only succeed if this thread holds a single read
- * lock.  Returns true if the upgrade succeeded and false otherwise.
- */
 int
 _rw_try_upgrade(struct rwlock *rw, const char *file, int line)
 {
-  return 0; /* XXX */
+  return 1;
 }
 
-/*
- * Downgrade a write lock into a single read lock.
- */
 void
 _rw_downgrade(struct rwlock *rw, const char *file, int line)
 {
-  /* XXX */ 
+  /* Nothing to do */
 }
 
 #ifdef INVARIANT_SUPPORT

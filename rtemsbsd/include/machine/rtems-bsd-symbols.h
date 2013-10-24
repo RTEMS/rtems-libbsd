@@ -317,7 +317,6 @@
 #define ohci_resume _bsd_ohci_resume
 #define ohci_suspend _bsd_ohci_suspend
 #define panic _bsd_panic
-#define psignal _bsd_psignal
 #define root_bus_configure _bsd_root_bus_configure
 #define scsi_inquiry _bsd_scsi_inquiry
 #define scsi_print_inquiry _bsd_scsi_print_inquiry

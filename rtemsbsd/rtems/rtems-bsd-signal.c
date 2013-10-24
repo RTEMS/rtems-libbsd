@@ -43,12 +43,6 @@
 #include <sys/systm.h>
 #include <sys/signalvar.h>
 
-void
-psignal(struct proc *p, int sig)
-{
-	BSD_ASSERT(0);
-}
-
 void pgsigio(struct sigio **sigiop, int sig, int checkctty)
 {
  

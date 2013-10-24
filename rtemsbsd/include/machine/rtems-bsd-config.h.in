@@ -99,8 +99,6 @@
 #define realloc _bsd_realloc
 #define reallocf _bsd_reallocf
 #define setenv _bsd_setenv
-#define abs _bsd_abs
-#define labs _bsd_labs
 
 /* Debug */
 

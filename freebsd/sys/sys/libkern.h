@@ -70,8 +70,10 @@ static __inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
 static __inline off_t omax(off_t a, off_t b) { return (a > b ? a : b); }
 static __inline off_t omin(off_t a, off_t b) { return (a < b ? a : b); }
 
+#ifndef __rtems__
 static __inline int abs(int a) { return (a < 0 ? -a : a); }
 static __inline long labs(long a) { return (a < 0 ? -a : a); }
+#endif /* __rtems__ */
 static __inline quad_t qabs(quad_t a) { return (a < 0 ? -a : a); }
 
 /* Prototypes for non-quad routines. */

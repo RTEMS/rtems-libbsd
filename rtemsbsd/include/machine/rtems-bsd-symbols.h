@@ -329,7 +329,6 @@
 #define seltdfini _bsd_seltdfini
 #define selwakeup _bsd_selwakeup
 #define selwakeuppri _bsd_selwakeuppri
-#define strdup _bsd_strdup
 #define sx_destroy _bsd_sx_destroy
 #define _sx_downgrade _bsd__sx_downgrade
 #define sx_init_flags _bsd_sx_init_flags

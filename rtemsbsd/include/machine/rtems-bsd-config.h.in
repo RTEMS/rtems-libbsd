@@ -140,7 +140,4 @@ extern rtems_chain_control rtems_bsd_callout_chain;
 
 extern rtems_chain_control rtems_bsd_malloc_chain;
 
-/* CPU definitions */
-#define cpu_spinwait()    /* nothing */
-
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_ */

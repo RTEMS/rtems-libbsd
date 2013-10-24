@@ -22,6 +22,8 @@
 #error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
 #endif
 
+#define cpu_spinwait() do { } while (0)
+
 /* FIXME: This implementation is a security problem */
 static __inline uint64_t
 get_cyclecount(void)

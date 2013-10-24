@@ -277,7 +277,9 @@ int	getenv_long(const char *name, long *data);
 int	getenv_ulong(const char *name, unsigned long *data);
 int	getenv_string(const char *name, char *data, int size);
 int	getenv_quad(const char *name, quad_t *data);
+#ifndef __rtems__
 int	setenv(const char *name, const char *value);
+#endif /* __rtems__ */
 int	unsetenv(const char *name);
 int	testenv(const char *name);
 

@@ -27,6 +27,8 @@
 #error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
 #endif
 
+#include <rtems.h>
+
 #define mb() RTEMS_COMPILER_MEMORY_BARRIER()
 #define wmb() RTEMS_COMPILER_MEMORY_BARRIER()
 #define rmb() RTEMS_COMPILER_MEMORY_BARRIER()

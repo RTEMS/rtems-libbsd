@@ -94,7 +94,9 @@ int	 fls(int);
 int	 flsl(long);
 #endif
 int	 fnmatch(const char *, const char *, int);
+#ifndef __rtems__
 void	 gets(char *, size_t, int);
+#endif /* __rtems__ */
 int	 locc(int, char *, u_int);
 int	 memcmp(const void *b1, const void *b2, size_t len);
 void	 qsort(void *base, size_t nmemb, size_t size,

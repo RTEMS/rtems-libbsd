@@ -96,7 +96,6 @@
 
 #include <machine/rtems-bsd-symbols.h>
 
-#define gets _bsd_gets
 #define realloc _bsd_realloc
 #define reallocf _bsd_reallocf
 #define setenv _bsd_setenv

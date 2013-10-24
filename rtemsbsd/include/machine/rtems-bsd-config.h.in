@@ -43,29 +43,8 @@
 /* XXX hack so /opt.../machine/param.h can disable MSIZE and use this one */
 #define __NEW_RTEMS_BSD__
 
-/* General defines to activate BSD kernel parts */
+/* General define to activate BSD kernel parts */
 #define _KERNEL 1
-
-#include <sys/cdefs.h>
-#include <sys/types.h>
-
-/* Type set from the C standard */
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <limits.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-/* Ensure that we are RTEMS compatible and can use RTEMS */
-#include <rtems.h>
-#include <rtems/error.h>
-#include <rtems/chain.h>
-#include <rtems/libio.h>
-
-/* Ensure that we can use POSIX threads */
-#include <pthread.h>
 
 /* Networking */
 #define IPSEC 1

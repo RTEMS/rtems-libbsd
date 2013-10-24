@@ -67,12 +67,6 @@
 /* Ensure that we can use POSIX threads */
 #include <pthread.h>
 
-/* The BSD kernel is not a POSIX source */
-#undef _POSIX_SOURCE
-
-/* Symbol undefines */
-#undef MAXPATHLEN
-
 /* Networking */
 #define IPSEC 1
 #define INET  1

@@ -348,6 +348,10 @@ int	msleep_spin(void *chan, struct mtx *mtx, const char *wmesg, int timo)
 #define	msleep_spin(chan, mtx, wmesg, timo)				\
 	msleep((chan), (mtx), 0, (wmesg), (timo))
 #endif /* __rtems__ */
+#ifdef __rtems__
+#include <unistd.h>
+#define pause _bsd_pause
+#endif /* __rtems__ */
 int	pause(const char *wmesg, int timo);
 #define	tsleep(chan, pri, wmesg, timo)					\
 	_sleep((chan), NULL, (pri), (wmesg), (timo))

@@ -249,7 +249,6 @@
 #define ehci_resume _bsd_ehci_resume
 #define ehci_shutdown _bsd_ehci_shutdown
 #define ehci_suspend _bsd_ehci_suspend
-#define free _bsd_free
 #define hid_end_parse _bsd_hid_end_parse
 #define hid_get_data _bsd_hid_get_data
 #define hid_get_data_unsigned _bsd_hid_get_data_unsigned
@@ -278,7 +277,6 @@
 #define kthread_exit _bsd_kthread_exit
 #define kthread_start _bsd_kthread_start
 #define kthread_suspend _bsd_kthread_suspend
-#define malloc _bsd_malloc
 #define malloc_init _bsd_malloc_init
 #define malloc_uninit _bsd_malloc_uninit
 #define maxproc _bsd_maxproc

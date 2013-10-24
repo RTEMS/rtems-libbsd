@@ -96,9 +96,6 @@
 
 #include <machine/rtems-bsd-symbols.h>
 
-#define realloc _bsd_realloc
-#define reallocf _bsd_reallocf
-
 /* Debug */
 
 void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);

@@ -126,6 +126,13 @@ struct malloc_type_header {
 };
 
 #ifdef _KERNEL
+#ifdef __rtems__
+#include <stdlib.h>
+#define malloc _bsd_malloc
+#define realloc _bsd_realloc
+#define reallocf _bsd_reallocf
+#define free _bsd_free
+#endif /* __rtems__ */
 #define	MALLOC_DEFINE(type, shortdesc, longdesc)			\
 	struct malloc_type type[1] = {					\
 		{ NULL, M_MAGIC, shortdesc, NULL }			\

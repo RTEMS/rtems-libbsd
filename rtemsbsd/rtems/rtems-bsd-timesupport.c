@@ -33,11 +33,9 @@
  * SUCH DAMAGE.
  */
 
-/*
- * This violation is specifically for _Timespec_To_ticks
- */
-#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 
 #include <machine/rtems-bsd-config.h>
+
+#include <sys/time.h>
 
 #include <rtems/score/timespec.h>
 

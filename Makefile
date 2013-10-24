@@ -775,6 +775,18 @@ LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 
+TEST_RWLOCK01 = testsuite/rwlock01/rwlock01.exe
+TEST_RWLOCK01_O_FILES =
+TEST_RWLOCK01_D_FILES =
+TEST_RWLOCK01_O_FILES += testsuite/rwlock01/test_main.o
+TEST_RWLOCK01_D_FILES += testsuite/rwlock01/test_main.d
+$(TEST_RWLOCK01): $(TEST_RWLOCK01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/rwlock01/rwlock01.map $^ -lm -lz -o $@
+TESTS += $(TEST_RWLOCK01)
+O_FILES += $(TEST_RWLOCK01_O_FILES)
+D_FILES += $(TEST_RWLOCK01_D_FILES)
+RUN_TESTS += $(TEST_RWLOCK01)
+
 TEST_SLEEP01 = testsuite/sleep01/sleep01.exe
 TEST_SLEEP01_O_FILES =
 TEST_SLEEP01_D_FILES =

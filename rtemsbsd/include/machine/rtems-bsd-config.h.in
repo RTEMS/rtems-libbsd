@@ -109,9 +109,6 @@
 #define abs _bsd_abs
 #define labs _bsd_labs
 
-#include <rtems/score/watchdogimpl.h>
-#define ticks _Watchdog_Ticks_since_boot
-
 /* Debug */
 
 void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);

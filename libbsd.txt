@@ -91,6 +91,9 @@ the current Git submodule commit is this
 
 * get_cyclecount(): The implementation is a security problem.
 
+* What to do with the priority parameter present in the FreeBSD synchronization
+  primitives?
+
 [listing]
 ----
     /* sysinit section? */

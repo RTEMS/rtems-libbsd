@@ -178,7 +178,7 @@ cv_broadcastpri(struct cv *cv, int pri)
 {
 	int rv = 0;
 
-	BSD_ASSERT(pri == 0);
+	/* FIXME: What to do with "pri"? */
 
 	rv = pthread_cond_broadcast(&cv->cv_id);
 	BSD_ASSERT_RV(rv);

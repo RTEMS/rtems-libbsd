@@ -318,7 +318,7 @@ class TestMakefileFragementComposer(MakefileFragmentComposer):
 			makefileFragment = makefileFragment + testOFiles + ' += ' + testDir + '/' + fileFragment + '.o\n' \
 				+ testDFiles + ' += ' + testDir + '/' + fileFragment + '.d\n'
 		makefileFragment = makefileFragment + '$(' + testPrefix + '): $(' + testOFiles + ') $(LIB)\n' \
-			'\t$(LINK.c) -Wl,-Map,' + testMap + ' $^ -lm -o $@\n' \
+			'\t$(LINK.c) -Wl,-Map,' + testMap + ' $^ -lm -lz -o $@\n' \
 			'TESTS += $(' + testPrefix + ')\n' \
 			'O_FILES += $(' + testOFiles + ')\n' \
 			'D_FILES += $(' + testDFiles + ')\n'
@@ -1426,7 +1426,6 @@ net.addHeaderFiles(
 		'sys/net/route.h',
 		'sys/net/slcompress.h',
 		'sys/net/vnet.h',
-		'sys/net/zlib.h',
 	]
 )
 net.addSourceFiles(
@@ -1468,7 +1467,6 @@ net.addSourceFiles(
 		'sys/net/route.c',
 		'sys/net/rtsock.c',
 		'sys/net/slcompress.c',
-		'sys/net/zlib.c',
 		'sys/net/bpf_buffer.c',
 		'sys/net/bpf.c',
 		'sys/net/bpf_filter.c',

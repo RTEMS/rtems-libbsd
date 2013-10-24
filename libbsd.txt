@@ -89,6 +89,8 @@ the current Git submodule commit is this
 * IFCONFIG(8): IEEE80211 support is disabled.  This module depends on a XML
   parser and mmap().
 
+* get_cyclecount(): The implementation is a security problem.
+
 [listing]
 ----
     /* sysinit section? */

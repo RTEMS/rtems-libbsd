@@ -94,6 +94,8 @@ the current Git submodule commit is this
 * What to do with the priority parameter present in the FreeBSD synchronization
   primitives?
 
+* ZONE(9): Review allocator lock usage in rtems-bsd-chunk.c.
+
 [listing]
 ----
     /* sysinit section? */

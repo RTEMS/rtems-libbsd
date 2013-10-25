@@ -84,11 +84,6 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_map.h>
 #include <vm/vm_kern.h>
 #include <vm/vm_extern.h>
-#ifdef __rtems__
-void *rtems_page_alloc(int bytes);
-void *rtems_page_find( void *address );
-void rtems_page_free( void *address );
-#endif /* __rtems__ */
 #include <vm/uma.h>
 #include <vm/uma_int.h>
 #include <vm/uma_dbg.h>
@@ -97,6 +92,9 @@ void rtems_page_free( void *address );
 
 #include <ddb/ddb.h>
 
+#ifdef __rtems__
+rtems_bsd_chunk_control rtems_bsd_uma_chunks;
+#endif /* __rtems__ */
 /*
  * This is the zone and keg from which all zones are spawned.  The idea is that
  * even the zone & keg heads are allocated from the allocator, so we use the
@@ -882,10 +880,12 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 	if (!(keg->uk_flags & UMA_ZONE_OFFPAGE))
 		slab = (uma_slab_t )(mem + keg->uk_pgoff);
 
-#ifndef __rtems__
 	if (keg->uk_flags & UMA_ZONE_VTOSLAB)
+#ifndef __rtems__
 		for (i = 0; i < keg->uk_ppera; i++)
 			vsetslab((vm_offset_t)mem + (i * PAGE_SIZE), slab);
+#else /* __rtems__ */
+		vsetslab((vm_offset_t)mem, slab);
 #endif /* __rtems__ */
 
 	slab->us_keg = keg;
@@ -1028,7 +1028,7 @@ page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 #ifndef __rtems__
      p = (void *) kmem_malloc(kmem_map, bytes, wait);
 #else /* __rtems__ */
-     p = rtems_page_alloc(bytes);
+     p = rtems_bsd_chunk_alloc(&rtems_bsd_uma_chunks, bytes);
 #endif /* __rtems__ */
 
      return (p);
@@ -1124,7 +1124,7 @@ page_free(void *mem, int size, u_int8_t flags)
 
 	kmem_free(map, (vm_offset_t)mem, size);
 #else /* __rtems__ */
-	rtems_page_free( mem );
+	rtems_bsd_chunk_free(&rtems_bsd_uma_chunks, mem);
 #endif /* __rtems__ */
 }
 
@@ -1277,9 +1277,7 @@ keg_cachespread_init(uma_keg_t keg)
 	keg->uk_rsize = rsize;
 	keg->uk_ppera = pages;
 	keg->uk_ipers = ((pages * PAGE_SIZE) + trailer) / rsize;
-#ifndef __rtems__
 	keg->uk_flags |= UMA_ZONE_OFFPAGE | UMA_ZONE_VTOSLAB;
-#endif /* __rtems__ */
 	KASSERT(keg->uk_ipers <= uma_max_ipers,
 	    ("keg_small_init: keg->uk_ipers too high(%d) increase max_ipers",
 	    keg->uk_ipers));
@@ -1324,10 +1322,8 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	if (arg->flags & UMA_ZONE_ZINIT)
 		keg->uk_init = zero_init;
 
-#ifndef __rtems__
 	if (arg->flags & UMA_ZONE_REFCNT || arg->flags & UMA_ZONE_MALLOC)
 		keg->uk_flags |= UMA_ZONE_VTOSLAB;
-#endif /* __rtems__ */
 
 	/*
 	 * The +UMA_FRITM_SZ added to uk_size is to account for the
@@ -1641,6 +1637,16 @@ zone_foreach(void (*zfunc)(uma_zone_t))
 	mtx_unlock(&uma_mtx);
 }
 
+#ifdef __rtems__
+static void
+rtems_bsd_uma_chunk_info_ctor(rtems_bsd_chunk_control *self,
+    rtems_bsd_chunk_info *info)
+{
+	rtems_bsd_uma_chunk_info *uci = (rtems_bsd_uma_chunk_info *) info;
+
+	uci->slab = NULL;
+}
+#endif /* __rtems__ */
 /* Public functions */
 /* See uma.h */
 void
@@ -1659,6 +1665,11 @@ uma_startup(void *bootmem, int boot_pages)
 #ifdef UMA_DEBUG
 	printf("Creating uma keg headers zone and keg.\n");
 #endif
+#ifdef __rtems__
+	rtems_bsd_chunk_init(&rtems_bsd_uma_chunks,
+	    sizeof(rtems_bsd_uma_chunk_info), rtems_bsd_uma_chunk_info_ctor,
+	    rtems_bsd_chunk_info_dtor_default);
+#endif /* __rtems__ */
 	mtx_init(&uma_mtx, "UMA lock", NULL, MTX_DEF);
 
 	/*
@@ -2812,7 +2823,7 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 #ifndef __rtems__
 		mem = (u_int8_t *)((unsigned long)item & (~UMA_SLAB_MASK));
 #else /* __rtems__ */
-		mem = rtems_page_find(item);
+		mem = rtems_bsd_chunk_get_begin(&rtems_bsd_uma_chunks, item);
 #endif /* __rtems__ */
 		keg = zone_first_keg(zone); /* Must only be one. */
 		if (zone->uz_flags & UMA_ZONE_HASH) {
@@ -2822,7 +2833,6 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 			slab = (uma_slab_t)mem;
 		}
 	} else {
-#ifndef __rtems__
 		/* This prevents redundant lookups via free(). */
 		if ((zone->uz_flags & UMA_ZONE_MALLOC) && udata != NULL)
 			slab = (uma_slab_t)udata;
@@ -2830,9 +2840,6 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 			slab = vtoslab((vm_offset_t)item);
 		keg = slab->us_keg;
 		keg_relock(keg, zone);
-#else /* __rtems__ */
-		panic("uma virtual memory not supported!" );
-#endif /* __rtems__ */
 	}
 	MPASS(keg == slab->us_keg);
 
@@ -3089,8 +3096,12 @@ uma_find_refcnt(uma_zone_t zone, void *item)
 	u_int32_t *refcnt;
 	int idx;
 
+#ifndef __rtems__
 	slabref = (uma_slabrefcnt_t)vtoslab((vm_offset_t)item &
 	    (~UMA_SLAB_MASK));
+#else /* __rtems__ */
+	slabref = (uma_slabrefcnt_t)vtoslab((vm_offset_t)item);
+#endif /* __rtems__ */
 	keg = slabref->us_keg;
 	KASSERT(slabref != NULL && slabref->us_keg->uk_flags & UMA_ZONE_REFCNT,
 	    ("uma_find_refcnt(): zone possibly not UMA_ZONE_REFCNT"));
@@ -3149,9 +3160,7 @@ uma_large_malloc(int size, int wait)
 		return (NULL);
 	mem = page_alloc(NULL, size, &flags, wait);
 	if (mem) {
-#ifndef __rtems__
 		vsetslab((vm_offset_t)mem, slab);
-#endif /* __rtems__ */
 		slab->us_data = mem;
 		slab->us_flags = flags | UMA_SLAB_MALLOC;
 		slab->us_size = size;

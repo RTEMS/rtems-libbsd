@@ -27,6 +27,8 @@
 
 #include <rtems.h>
 
+static rtems_id masterTask;
+
 /*
  * Thread-safe output routines
  */
@@ -41,6 +43,44 @@ static void printSafe(const char *fmt, ...)
     va_end(args);
 }
 #define printf printSafe
+
+static void
+setSelfPrio(rtems_task_priority prio)
+{
+	rtems_status_code sc;
+
+	sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
+	assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static rtems_event_set argToClientEvent(rtems_task_argument arg)
+{
+    return 1U << arg;
+}
+
+static void
+sendClientEventToMasterTask(rtems_task_argument arg)
+{
+    rtems_status_code sc;
+
+    sc = rtems_event_send(masterTask, argToClientEvent(arg));
+    assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void
+waitForClientEvents(rtems_event_set which)
+{
+    rtems_status_code sc;
+    rtems_event_set events;
+
+    sc = rtems_event_receive(
+        which,
+        RTEMS_EVENT_ALL | RTEMS_WAIT,
+        RTEMS_NO_TIMEOUT,
+        &events
+    );
+    assert(sc == RTEMS_SUCCESSFUL);
+}
 
 /*
  * Spawn a task
@@ -80,7 +120,6 @@ static rtems_task workerTask(rtems_task_argument arg)
         }
         if (i == 0)
             break;
-        rtems_task_wake_after(20); /* Simulate some processing delay */
         i = sprintf(reply, "Server received %d (%s)", i, msg);
         if ((i = write(s, reply, i+1)) < 0) {
             printf("Server couldn't write message to client: %s\n", strerror(errno));
@@ -161,7 +200,6 @@ static rtems_task clientWorker(int arg)
     printf("Can't connect to server: %s\n", strerror(errno));
         goto close;
     }
-    rtems_task_wake_after(20); /* Simulate client delay */
     i = sprintf(cbuf, "Hi there, server (%d).", arg);
     i++;    /* Send the '\0', too */
     printf("Write %d-byte message to server.\n", i);
@@ -174,7 +212,6 @@ static rtems_task clientWorker(int arg)
       goto close;
     }
     printf("Read %d from server: %.*s\n", i, i, cbuf);
-    rtems_task_wake_after(20); /* Simulate client delay */
   close:
     printf("Client closing connection.\n");
     if (close(s) < 0)
@@ -187,6 +224,7 @@ static rtems_task clientWorker(int arg)
 static rtems_task clientTask(rtems_task_argument arg)
 {
     clientWorker(arg);
+    sendClientEventToMasterTask(arg);
     printf("Client task terminating.\n");
     rtems_task_delete( RTEMS_SELF );
 }
@@ -208,6 +246,10 @@ static void test_main(void)
     "255.255.255.0",
     NULL
   };
+
+  masterTask = rtems_task_self();
+
+  setSelfPrio(RTEMS_MAXIMUM_PRIORITY - 1);
 
   sc = rtems_semaphore_create(
     rtems_build_name('P','m','t','x'),
@@ -236,23 +278,23 @@ static void test_main(void)
   assert(exit_code == EX_OK);
 
   printf("\nStart server.\n");
-  spawnTask(serverTask, 150, 0);
+  spawnTask(serverTask, 110, 0);
 
   printf("\nTry running client with server present.\n");
   spawnTask(clientTask, 120, 1);
-  rtems_task_wake_after(500);
+  waitForClientEvents(argToClientEvent(1));
 
   printf("\nTry running two clients.\n");
   spawnTask(clientTask, 120, 2);
   spawnTask(clientTask, 120, 3);
-  rtems_task_wake_after(500);
+  waitForClientEvents(argToClientEvent(2) | argToClientEvent(3));
 
   printf("\nTry running three clients.\n");
   spawnTask(clientTask, 120, 4);
   spawnTask(clientTask, 120, 5);
   spawnTask(clientTask, 120, 6);
+  waitForClientEvents(argToClientEvent(4) | argToClientEvent(5) | argToClientEvent(6));
 
-  rtems_task_wake_after(500);
   puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }

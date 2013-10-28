@@ -644,8 +644,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-kvm.c',
 		'rtems/rtems-net-setup.c',
 		'rtems/rtems-syslog-initialize.c',
-		'rtems/rtems-uthread_kevent.c',
-		'rtems/rtems-uthread_kqueue.c',
 		'rtems/syslog.c',
 		'sys/dev/usb/controller/ehci_mpc83xx.c',
 		'sys/dev/usb/controller/ohci_lpc24xx.c',

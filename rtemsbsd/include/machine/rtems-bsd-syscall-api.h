@@ -45,10 +45,13 @@
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSCALL_API_H_
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/event.h>
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
+#include <sys/time.h>
 
 __BEGIN_DECLS
 
@@ -68,6 +71,12 @@ int	getpeername(int, struct sockaddr * __restrict, socklen_t * __restrict);
 int	getsockname(int, struct sockaddr * __restrict, socklen_t * __restrict);
 
 int	getsockopt(int, int, int, void * __restrict, socklen_t * __restrict);
+
+int     kqueue(void);
+
+int     kevent(int kq, const struct kevent *changelist, int nchanges,
+	    struct kevent *eventlist, int nevents,
+	    const struct timespec *timeout);
 
 int	listen(int, int);
 

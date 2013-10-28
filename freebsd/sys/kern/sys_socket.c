@@ -440,6 +440,11 @@ soo_close(struct file *fp, struct thread *td)
 	int error = 0;
 	struct socket *so;
 
+#ifdef __rtems__
+	/* FIXME: Move this to the RTEMS close() function */
+	knote_fdclose(td, rtems_bsd_fp_to_fd(fp));
+#endif /* __rtems__ */
+
 	so = fp->f_data;
 #ifndef __rtems__
 	fp->f_ops = &badfileops;
@@ -474,6 +479,7 @@ const rtems_filesystem_file_handlers_r socketops = {
 	.fsync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fcntl_h = rtems_filesystem_default_fcntl,
-	.poll_h = rtems_bsd_soo_poll
+	.poll_h = rtems_bsd_soo_poll,
+	.kqfilter_h = rtems_bsd_soo_kqfilter
 };
 #endif /* __rtems__ */

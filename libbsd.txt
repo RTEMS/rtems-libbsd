@@ -98,6 +98,8 @@ the current Git submodule commit is this
 
 * ZONE(9): Review allocator lock usage in rtems-bsd-chunk.c.
 
+* KQUEUE(2): Choose proper lock for global kqueue list.
+
 [listing]
 ----
     /* sysinit section? */

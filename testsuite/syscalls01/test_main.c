@@ -31,10 +31,12 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/event.h>
 #include <sys/poll.h>
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/filio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -1354,6 +1356,151 @@ test_socket_poll(void)
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
+static void
+test_kqueue_unsupported_ops(void)
+{
+	rtems_resource_snapshot snapshot;
+	int kq;
+	int rv;
+	off_t off;
+	ssize_t n;
+	char buf[1];
+
+	puts("test kqueue unsupported ops");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	kq = kqueue();
+	assert(kq >= 0);
+
+	errno = 0;
+	n = read(kq, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == ENOTSUP);
+
+	errno = 0;
+	n = write(kq, &buf[0], sizeof(buf));
+	assert(n == -1);
+	assert(errno == ENOTSUP);
+
+	errno = 0;
+	rv = ioctl(kq, 0);
+	assert(rv == -1);
+	assert(errno == ENOTSUP);
+
+	errno = 0;
+	off = lseek(kq, 0, SEEK_CUR);
+	assert(off == -1);
+	assert(errno == ESPIPE);
+
+	errno = 0;
+	rv = ftruncate(kq, 0);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	errno = 0;
+	rv = fsync(kq);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	errno = 0;
+	rv = fdatasync(kq);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	rv = close(kq);
+	assert(rv == 0);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
+no_mem_kqueue_fstat(int fd)
+{
+	struct stat st;
+	int rv;
+
+	rv = fstat(fd, &st);
+	assert(rv == 0);
+}
+
+static void
+test_kqueue_fstat(void)
+{
+	static const struct stat expected_st = {
+		.st_mode = S_IFIFO
+	};
+
+	rtems_resource_snapshot snapshot;
+	struct stat st;
+	int kq;
+	int rv;
+
+	puts("test kqueue fstat");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	kq = kqueue();
+	assert(kq >= 0);
+
+	do_no_mem_test(no_mem_kqueue_fstat, kq);
+
+	rv = fstat(kq, &st);
+	assert(rv == 0);
+	assert(memcmp(&expected_st, &st, sizeof(st)) == 0);
+
+	rv = close(kq);
+	assert(rv == 0);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
+no_mem_kqueue_kevent(int fd)
+{
+	int rv;
+
+	errno = 0;
+	rv = kevent(fd, NULL, 0, NULL, 0, NULL);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_kqueue_kevent(void)
+{
+	rtems_resource_snapshot snapshot;
+	int kq;
+	int rv;
+
+	puts("test kqueue kevent");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	kq = kqueue();
+	assert(kq >= 0);
+
+	do_no_mem_test(no_mem_kqueue_kevent, kq);
+
+	rv = kevent(kq, NULL, 0, NULL, 0, NULL);
+	assert(rv == 0);
+
+	rv = close(kq);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = kevent(kq, NULL, 0, NULL, 0, NULL);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	errno = 0;
+	rv = kevent(0, NULL, 0, NULL, 0, NULL);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
 static const char prog_name[] = "prog";
 
 static int
@@ -1562,6 +1709,10 @@ test_main(void)
 	test_socket_recv_and_recvfrom_and_recvmsg();
 	test_socket_select();
 	test_socket_poll();
+
+	test_kqueue_unsupported_ops();
+	test_kqueue_fstat();
+	test_kqueue_kevent();
 
 	test_bsd_program();
 	test_warn();

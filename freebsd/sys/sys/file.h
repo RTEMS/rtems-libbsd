@@ -298,6 +298,8 @@ fo_poll_t	soo_poll;
 fo_kqfilter_t	soo_kqfilter;
 fo_stat_t	soo_stat;
 fo_close_t	soo_close;
+#else /* __rtems__ */
+int rtems_bsd_soo_kqfilter(rtems_libio_t *iop, struct knote *kn);
 #endif /* __rtems__ */
 
 #ifndef __rtems__
@@ -446,6 +448,7 @@ fo_close(fp, td)
 
 	return ((*fp->f_ops->fo_close)(fp, td));
 }
+#endif /* __rtems__ */
 
 static __inline int
 fo_kqfilter(fp, kn)
@@ -453,9 +456,12 @@ fo_kqfilter(fp, kn)
 	struct knote *kn;
 {
 
+#ifndef __rtems__
 	return ((*fp->f_ops->fo_kqfilter)(fp, kn));
-}
+#else /* __rtems__ */
+	return ((*fp->f_io.pathinfo.handlers->kqfilter_h)(&fp->f_io, kn));
 #endif /* __rtems__ */
+}
 
 #endif /* _KERNEL */
 

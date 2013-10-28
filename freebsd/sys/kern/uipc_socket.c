@@ -2945,6 +2945,9 @@ sopoll_generic(struct socket *so, int events, struct ucred *active_cred,
 	return (revents);
 }
 
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 soo_kqfilter(struct file *fp, struct knote *kn)
 {
@@ -2973,6 +2976,15 @@ soo_kqfilter(struct file *fp, struct knote *kn)
 	SOCKBUF_UNLOCK(sb);
 	return (0);
 }
+#ifdef __rtems__
+int
+rtems_bsd_soo_kqfilter(rtems_libio_t *iop, struct knote *kn)
+{
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+
+	return soo_kqfilter(fp, kn);
+}
+#endif /* __rtems__ */
 
 /*
  * Some routines that return EOPNOTSUPP for entry points that are not

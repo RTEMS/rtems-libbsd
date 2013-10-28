@@ -1078,17 +1078,23 @@ struct getresgid_args {
 	char egid_l_[PADL_(gid_t *)]; gid_t * egid; char egid_r_[PADR_(gid_t *)];
 	char sgid_l_[PADL_(gid_t *)]; gid_t * sgid; char sgid_r_[PADR_(gid_t *)];
 };
+#endif /* __rtems__ */
 struct kqueue_args {
 	register_t dummy;
 };
 struct kevent_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
+#ifndef __rtems__
 	char changelist_l_[PADL_(struct kevent *)]; struct kevent * changelist; char changelist_r_[PADR_(struct kevent *)];
+#else /* __rtems__ */
+	char changelist_l_[PADL_(struct kevent *)]; const struct kevent * changelist; char changelist_r_[PADR_(struct kevent *)];
+#endif /* __rtems__ */
 	char nchanges_l_[PADL_(int)]; int nchanges; char nchanges_r_[PADR_(int)];
 	char eventlist_l_[PADL_(struct kevent *)]; struct kevent * eventlist; char eventlist_r_[PADR_(struct kevent *)];
 	char nevents_l_[PADL_(int)]; int nevents; char nevents_r_[PADR_(int)];
 	char timeout_l_[PADL_(const struct timespec *)]; const struct timespec * timeout; char timeout_r_[PADR_(const struct timespec *)];
 };
+#ifndef __rtems__
 struct extattr_set_fd_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char attrnamespace_l_[PADL_(int)]; int attrnamespace; char attrnamespace_r_[PADR_(int)];

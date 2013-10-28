@@ -160,6 +160,19 @@ MALLOC_DEFINE(M_CALLOUT, "callout", "Callout datastructures");
 #ifdef __rtems__
 static void rtems_bsd_timeout_init(void *);
 
+static void
+rtems_bsd_callout_timer(rtems_id id, void *arg)
+{
+	rtems_status_code sc;
+
+	(void) arg;
+
+	sc = rtems_timer_reset(id);
+	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+
+	callout_tick();
+}
+
 static void callout_cpu_init(struct callout_cpu *);
 
 SYSINIT(rtems_bsd_timeout, SI_SUB_VM, SI_ORDER_FIRST, rtems_bsd_timeout_init,
@@ -174,6 +187,8 @@ kern_timeout_callwheel_alloc(caddr_t v)
 {
 	struct callout_cpu *cc;
 #ifdef __rtems__
+	rtems_status_code sc;
+	rtems_id id;
 	caddr_t v;
 
 	(void) unused;
@@ -202,6 +217,12 @@ kern_timeout_callwheel_alloc(caddr_t v)
 	return(v);
 #else /* __rtems__ */
 	callout_cpu_init(cc);
+
+	sc = rtems_timer_create(rtems_build_name('_', 'C', 'L', 'O'), &id);
+	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_timer_server_fire_after(id, 1, rtems_bsd_callout_timer, NULL);
+	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 #endif /* __rtems__ */
 }
 

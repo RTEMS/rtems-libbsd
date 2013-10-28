@@ -2355,7 +2355,7 @@ tests.addTest('usb01', ['init', 'test-file-system'], False)
 tests.addTest('loopback01', ['test_main'])
 tests.addTest('netshell01', ['test_main', 'shellconfig', 'ns_parser_vars'], False)
 tests.addTest('swi01', ['init', 'swi_test'])
-tests.addTest('timeout01', ['init', 'timeout_test', 'timeout_helper'])
+tests.addTest('timeout01', ['init', 'timeout_test'])
 tests.addTest('init01', ['test_main'])
 tests.addTest('thread01', ['test_main'])
 

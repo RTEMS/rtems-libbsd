@@ -880,8 +880,6 @@ TEST_TIMEOUT01_O_FILES += testsuite/timeout01/init.o
 TEST_TIMEOUT01_D_FILES += testsuite/timeout01/init.d
 TEST_TIMEOUT01_O_FILES += testsuite/timeout01/timeout_test.o
 TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_test.d
-TEST_TIMEOUT01_O_FILES += testsuite/timeout01/timeout_helper.o
-TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_helper.d
 $(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)
 	$(LINK.c) -Wl,-Map,testsuite/timeout01/timeout01.map $^ -lm -lz -o $@
 TESTS += $(TEST_TIMEOUT01)

@@ -38,7 +38,6 @@
 #include <rtems/bsd/bsd.h>
 
 #include "timeout_test.h"
-#include "timeout_helper.h"
 
 static void Init(rtems_task_argument arg)
 {
@@ -48,8 +47,6 @@ static void Init(rtems_task_argument arg)
 
 	sc = rtems_bsd_initialize();
 	assert(sc == RTEMS_SUCCESSFUL);
-
-	callout_tick_task_init();
 
 	timeout_test();
 

@@ -100,6 +100,9 @@ the current Git submodule commit is this
 
 * KQUEUE(2): Choose proper lock for global kqueue list.
 
+* TIMEOUT(9): Maybe use special task instead of timer server to call
+  callout_tick().
+
 [listing]
 ----
     /* sysinit section? */

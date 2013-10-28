@@ -75,7 +75,11 @@ extern int bootverbose;		/* nonzero to print verbose messages */
 
 extern int maxusers;		/* system tune hint */
 extern int ngroups_max;		/* max # of supplemental groups */
+#ifndef __rtems__
 extern int vm_guest;		/* Running as virtual machine guest? */
+#else /* __rtems__ */
+#define vm_guest VM_GUEST_NO
+#endif /* __rtems__ */
 
 /*
  * Detected virtual machine guest types. The intention is to expand

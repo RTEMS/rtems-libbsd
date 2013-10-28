@@ -633,7 +633,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-shell.c',
 		'rtems/rtems-bsd-shell-netcmds.c',
 		'rtems/rtems-bsd-signal.c',
-		'rtems/rtems-bsd-subr_param.c',
 		'rtems/rtems-bsd-support.c',
 		'rtems/rtems-bsd-sx.c',
 		'rtems/rtems-bsd-syscall-api.c',

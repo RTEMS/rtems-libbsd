@@ -43,6 +43,7 @@
 #include <rtems/bsd/sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/errno.h>
+#include <string.h>
 
 int sysctl(
 	int *name,

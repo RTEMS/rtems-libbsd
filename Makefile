@@ -89,7 +89,6 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-timesupport.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-kvm.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-net-setup.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-syspoll.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-uthread_kevent.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-uthread_kqueue.c
 LIB_C_FILES += rtemsbsd/rtems/syslog.c

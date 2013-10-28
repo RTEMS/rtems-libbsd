@@ -45,6 +45,7 @@
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSCALL_API_H_
 
 #include <sys/cdefs.h>
+#include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
@@ -69,6 +70,8 @@ int	getsockname(int, struct sockaddr * __restrict, socklen_t * __restrict);
 int	getsockopt(int, int, int, void * __restrict, socklen_t * __restrict);
 
 int	listen(int, int);
+
+int	poll(struct pollfd _pfd[], nfds_t _nfds, int _timeout);
 
 ssize_t	recvfrom(int, void *, size_t, int, struct sockaddr * __restrict, socklen_t * __restrict);
 

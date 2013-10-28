@@ -86,12 +86,10 @@ static MALLOC_DEFINE(M_SELECT, "select", "select() buffer");
 MALLOC_DEFINE(M_IOV, "iov", "large iov's");
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 static int	pollout(struct thread *, struct pollfd *, struct pollfd *,
 		    u_int);
 static int	pollscan(struct thread *, struct pollfd *, u_int);
 static int	pollrescan(struct thread *);
-#endif /* __rtems__ */
 static int	selscan(struct thread *, fd_mask **, fd_mask **, int);
 static int	selrescan(struct thread *, fd_mask **, fd_mask **);
 static void	selfdalloc(struct thread *, void *);
@@ -1186,7 +1184,6 @@ selscan(td, ibits, obits, nfd)
 	return (0);
 }
 
-#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct poll_args {
 	struct pollfd *fds;
@@ -1194,8 +1191,13 @@ struct poll_args {
 	int	timeout;
 };
 #endif
+#ifndef __rtems__
 int
 poll(td, uap)
+#else /* __rtems__ */
+static int
+rtems_bsd_poll(td, uap)
+#endif /* __rtems__ */
 	struct thread *td;
 	struct poll_args *uap;
 {
@@ -1207,7 +1209,11 @@ poll(td, uap)
 	size_t ni;
 
 	nfds = uap->nfds;
+#ifndef __rtems__
 	if (nfds > maxfilesperproc && nfds > FD_SETSIZE) 
+#else /* __rtems__ */
+	if (nfds > rtems_libio_number_iops)
+#endif /* __rtems__ */
 		return (EINVAL);
 	ni = nfds * sizeof(struct pollfd);
 	if (ni > sizeof(smallbits))
@@ -1271,6 +1277,31 @@ out:
 		free(bits, M_TEMP);
 	return (error);
 }
+#ifdef __rtems__
+int
+poll(struct pollfd fds[], nfds_t nfds, int timeout)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct poll_args ua = {
+		.fds = &fds[0],
+		.nfds = nfds,
+		.timeout = timeout
+	};
+	int error;
+
+	if (td != NULL) {
+		error = rtems_bsd_poll(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 
 static int
 pollrescan(struct thread *td)
@@ -1285,7 +1316,11 @@ pollrescan(struct thread *td)
 	int n;
 
 	n = 0;
+#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
+#else /* __rtems__ */
+	fdp = NULL;
+#endif /* __rtems__ */
 	stp = td->td_sel;
 	FILEDESC_SLOCK(fdp);
 	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
@@ -1295,7 +1330,11 @@ pollrescan(struct thread *td)
 		/* If the selinfo wasn't cleared the event didn't fire. */
 		if (si != NULL)
 			continue;
+#ifndef __rtems__
 		fp = fdp->fd_ofiles[fd->fd];
+#else /* __rtems__ */
+		fp = fget_unlocked(fdp, fd->fd);
+#endif /* __rtems__ */
 		if (fp == NULL) {
 			fd->revents = POLLNVAL;
 			n++;
@@ -1347,20 +1386,32 @@ pollscan(td, fds, nfd)
 	struct pollfd *fds;
 	u_int nfd;
 {
+#ifndef __rtems__
 	struct filedesc *fdp = td->td_proc->p_fd;
+#else /* __rtems__ */
+	struct filedesc *fdp = NULL;
+#endif /* __rtems__ */
 	int i;
 	struct file *fp;
 	int n = 0;
 
 	FILEDESC_SLOCK(fdp);
 	for (i = 0; i < nfd; i++, fds++) {
+#ifndef __rtems__
 		if (fds->fd >= fdp->fd_nfiles) {
+#else /* __rtems__ */
+		if (fds->fd >= rtems_libio_number_iops) {
+#endif /* __rtems__ */
 			fds->revents = POLLNVAL;
 			n++;
 		} else if (fds->fd < 0) {
 			fds->revents = 0;
 		} else {
+#ifndef __rtems__
 			fp = fdp->fd_ofiles[fds->fd];
+#else /* __rtems__ */
+			fp = fget_unlocked(fdp, fds->fd);
+#endif /* __rtems__ */
 			if (fp == NULL) {
 				fds->revents = POLLNVAL;
 				n++;
@@ -1389,6 +1440,7 @@ pollscan(td, fds, nfd)
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * OpenBSD poll system call.
  *

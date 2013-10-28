@@ -646,7 +646,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-kvm.c',
 		'rtems/rtems-net-setup.c',
 		'rtems/rtems-syslog-initialize.c',
-		'rtems/rtems-syspoll.c',
 		'rtems/rtems-uthread_kevent.c',
 		'rtems/rtems-uthread_kqueue.c',
 		'rtems/syslog.c',

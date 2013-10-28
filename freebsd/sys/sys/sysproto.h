@@ -682,11 +682,13 @@ struct futimes_args {
 struct getpgid_args {
 	char pid_l_[PADL_(pid_t)]; pid_t pid; char pid_r_[PADR_(pid_t)];
 };
+#endif /* __rtems__ */
 struct poll_args {
 	char fds_l_[PADL_(struct pollfd *)]; struct pollfd * fds; char fds_r_[PADR_(struct pollfd *)];
 	char nfds_l_[PADL_(u_int)]; u_int nfds; char nfds_r_[PADR_(u_int)];
 	char timeout_l_[PADL_(int)]; int timeout; char timeout_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct semget_args {
 	char key_l_[PADL_(key_t)]; key_t key; char key_r_[PADR_(key_t)];
 	char nsems_l_[PADL_(int)]; int nsems; char nsems_r_[PADR_(int)];

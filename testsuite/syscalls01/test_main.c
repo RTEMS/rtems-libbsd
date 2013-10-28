@@ -31,6 +31,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/poll.h>
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -41,6 +42,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1280,6 +1282,78 @@ test_socket_select(void)
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
+static void
+no_mem_socket_poll(int fd)
+{
+	struct pollfd pfd;
+	int timeout = -1;
+	int rv;
+
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	errno = 0;
+	rv = poll(&pfd, 1, timeout);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_poll(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct pollfd pfd;
+	int timeout = -1;
+	int sd;
+	int rv;
+
+	puts("test socket poll");
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	pfd.fd = sd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	rv = poll(&pfd, 1, timeout);
+	assert(rv == 1);
+	assert(pfd.revents == POLLNVAL);
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_poll, sd);
+
+	pfd.fd = sd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	errno = 0;
+	rv = poll(NULL, UINT_MAX, timeout);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	pfd.fd = sd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	rv = poll(&pfd, 1, timeout);
+	assert(rv == 1);
+	assert(pfd.revents == POLLNVAL);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
 static const char prog_name[] = "prog";
 
 static int
@@ -1487,6 +1561,7 @@ test_main(void)
 	test_socket_send_and_sendto_and_sendmsg();
 	test_socket_recv_and_recvfrom_and_recvmsg();
 	test_socket_select();
+	test_socket_poll();
 
 	test_bsd_program();
 	test_warn();

@@ -92,7 +92,9 @@ the current Git submodule commit is this
 * get_cyclecount(): The implementation is a security problem.
 
 * What to do with the priority parameter present in the FreeBSD synchronization
-  primitives?
+  primitives and the thread creation functions?
+
+* TASKQUEUE(9): Support spin mutexes.
 
 * ZONE(9): Review allocator lock usage in rtems-bsd-chunk.c.
 

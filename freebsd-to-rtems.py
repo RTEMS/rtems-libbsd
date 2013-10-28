@@ -640,7 +640,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-sysctlbyname.c',
 		'rtems/rtems-bsd-sysctl.c',
 		'rtems/rtems-bsd-sysctlnametomib.c',
-		'rtems/rtems-bsd-taskqueue.c',
 		'rtems/rtems-bsd-thread.c',
 		'rtems/rtems-bsd-timesupport.c',
 		'rtems/rtems-kvm.c',
@@ -804,6 +803,7 @@ base.addSourceFiles(
 		'sys/kern/subr_module.c',
 		'sys/kern/subr_rman.c',
 		'sys/kern/subr_sbuf.c',
+		'sys/kern/subr_taskqueue.c',
 		'sys/kern/subr_unit.c',
 		'sys/kern/sys_generic.c',
 		'sys/kern/uipc_accf.c',
@@ -1175,7 +1175,6 @@ devNet.addSourceFiles(
 devNic = Module('dev_nic')
 devNic.addHeaderFiles(
 	[
-	#	'sys/taskqueue.h',
 		'sys/sys/pciio.h',
 		'sys/dev/random/randomdev_soft.h',
 		'sys/sys/eventvar.h',

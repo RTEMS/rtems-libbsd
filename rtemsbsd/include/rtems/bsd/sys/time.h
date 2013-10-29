@@ -272,8 +272,27 @@ struct clockinfo {
 void	inittodr(time_t base);
 void	resettodr(void);
 
+#ifndef __rtems__
 extern time_t	time_second;
 extern time_t	time_uptime;
+#else /* __rtems__ */
+#include <rtems.h>
+
+static inline time_t
+rtems_bsd_time_second(void)
+{
+	return time(NULL);
+}
+
+static inline time_t
+rtems_bsd_time_uptime(void)
+{
+	return rtems_clock_get_uptime_seconds();
+}
+
+#define time_second rtems_bsd_time_second()
+#define time_uptime rtems_bsd_time_uptime()
+#endif /* __rtems__ */
 extern struct timeval boottime;
 
 /*
@@ -298,21 +317,67 @@ extern struct timeval boottime;
  *
  */
 
+#ifndef __rtems__
 void	binuptime(struct bintime *bt);
+#else /* __rtems__ */
+static inline void
+binuptime(struct bintime *bt)
+{
+	struct timeval tv;
+
+	rtems_clock_get_uptime_timeval(&tv);
+	timeval2bintime(&tv, bt);
+}
+#endif /* __rtems__ */
 void	nanouptime(struct timespec *tsp);
 void	microuptime(struct timeval *tvp);
 
+#ifndef __rtems__
 void	bintime(struct bintime *bt);
+#else /* __rtems__ */
+static inline void
+bintime(struct bintime *bt)
+{
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	timeval2bintime(&tv, bt);
+}
+#endif /* __rtems__ */
 void	nanotime(struct timespec *tsp);
+#ifndef __rtems__
 void	microtime(struct timeval *tvp);
+#else /* __rtems__ */
+static inline void
+microtime(struct timeval *tvp)
+{
+	gettimeofday(tvp, NULL);
+}
+#endif /* __rtems__ */
 
 void	getbinuptime(struct bintime *bt);
 void	getnanouptime(struct timespec *tsp);
+#ifndef __rtems__
 void	getmicrouptime(struct timeval *tvp);
+#else /* __rtems__ */
+static inline void
+getmicrouptime(struct timeval *tvp)
+{
+	rtems_clock_get_uptime_timeval(tvp);
+}
+#endif /* __rtems__ */
 
 void	getbintime(struct bintime *bt);
 void	getnanotime(struct timespec *tsp);
+#ifndef __rtems__
 void	getmicrotime(struct timeval *tvp);
+#else /* __rtems__ */
+static inline void
+getmicrotime(struct timeval *tvp)
+{
+	microtime(tvp);
+}
+#endif /* __rtems__ */
 
 /* Other functions */
 int	itimerdecr(struct itimerval *itp, int usec);

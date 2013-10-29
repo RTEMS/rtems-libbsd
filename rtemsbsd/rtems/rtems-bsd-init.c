@@ -64,6 +64,8 @@ int hz;
 int tick;
 int maxusers;     /* base tunable */
 
+struct timeval boottime;
+
 rtems_status_code
 rtems_bsd_initialize(void)
 {
@@ -72,6 +74,8 @@ rtems_bsd_initialize(void)
 	hz = (int) rtems_clock_get_ticks_per_second();
 	tick = 1000000 / hz;
 	maxusers = 1;
+
+	gettimeofday(&boottime, NULL);
 
 	sc =  rtems_timer_initiate_server(
 		BSD_TASK_PRIORITY_TIMER,

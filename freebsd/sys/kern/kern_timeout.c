@@ -825,8 +825,16 @@ again:
 				PICKUP_GIANT();
 				CC_LOCK(cc);
 #else /* __rtems__ */
-				BSD_ASSERT(0);
-#endif /* __rtems__ */ 
+				/*
+				 * On RTEMS the LOR problem above does not
+				 * exist since here we do not use
+				 * sleepq_set_timeout() and instead use the
+				 * RTEMS watchdog.
+				 */
+				cc->cc_waiting = 1;
+				msleep_spin(&cc->cc_waiting, &cc->cc_lock,
+				    "codrain", 0);
+#endif /* __rtems__ */
 			}
 		} else if (use_lock && !cc->cc_cancel) {
 			/*

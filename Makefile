@@ -55,7 +55,6 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-cam.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-chunk.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-condvar.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-conf.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-copyinout.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-delay.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-file.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-init.c

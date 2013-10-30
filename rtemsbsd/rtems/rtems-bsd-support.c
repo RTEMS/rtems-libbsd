@@ -56,43 +56,6 @@ int     maxfilesperproc = 27;          /* XXX per-proc open files limit */
 uintptr_t dpcpu_off[MAXCPU];
 int	hogticks = 2;                  /* hogticks = 2 * sched_quantum */
 
-int
-copyout(const void *kaddr, void *udaddr, size_t len)
-{
-  bcopy(kaddr, udaddr, len);
-  return (0);
-}
-
-int
-copyin(const void *udaddr, void *kaddr, size_t len)
-{
-  bcopy(udaddr, kaddr, len);
-  return (0);
-}
-
-#if 0
-/*
- * As of 27 March 2012, use version in kern_subr.c
- */
-int
-copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
-{
-  u_int iovlen;
-
-  *iov = NULL;
-  if (iovcnt > UIO_MAXIOV)
-    return (error);
-  iovlen = iovcnt * sizeof (struct iovec);
-  *iov = malloc(iovlen, M_IOV, M_WAITOK);
-  error = copyin(iovp, *iov, iovlen);
-  if (error) {
-    free(*iov, M_IOV);
-    *iov = NULL;
-  }
-  return (error);
-}
-#endif
-
 void
 critical_enter(void)
 {

@@ -227,6 +227,7 @@ void	*memmove(void *dest, const void *src, size_t n) __nonnull(1) __nonnull(2);
 int	copystr(const void * __restrict kfaddr, void * __restrict kdaddr,
 	    size_t len, size_t * __restrict lencopied)
 	    __nonnull(1) __nonnull(2);
+#ifndef __rtems__
 int	copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
 	    size_t len, size_t * __restrict lencopied)
 	    __nonnull(1) __nonnull(2);
@@ -234,6 +235,38 @@ int	copyin(const void * __restrict udaddr, void * __restrict kaddr,
 	    size_t len) __nonnull(1) __nonnull(2);
 int	copyout(const void * __restrict kaddr, void * __restrict udaddr,
 	    size_t len) __nonnull(1) __nonnull(2);
+#else /* __rtems__ */
+static inline int __nonnull(1) __nonnull(2)
+copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
+	    size_t len, size_t * __restrict lencopied)
+{
+	if (lencopied != NULL) {
+		*lencopied = len;
+	}
+
+	memcpy(kaddr, udaddr, len);
+
+	return (0);
+}
+
+static inline int __nonnull(1) __nonnull(2)
+copyin(const void * __restrict udaddr, void * __restrict kaddr,
+    size_t len)
+{
+	memcpy(kaddr, udaddr, len);
+
+	return (0);
+}
+
+static inline int __nonnull(1) __nonnull(2)
+copyout(const void * __restrict kaddr, void * __restrict udaddr,
+    size_t len)
+{
+	memcpy(udaddr, kaddr, len);
+
+	return (0);
+}
+#endif /* __rtems__ */
 
 int	fubyte(const void *base);
 long	fuword(const void *base);

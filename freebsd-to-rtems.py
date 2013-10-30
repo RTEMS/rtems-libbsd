@@ -612,7 +612,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-chunk.c',
 		'rtems/rtems-bsd-condvar.c',
 		'rtems/rtems-bsd-conf.c',
-		'rtems/rtems-bsd-copyinout.c',
 		'rtems/rtems-bsd-delay.c',
 		'rtems/rtems-bsd-get-file.c',
 		'rtems/rtems-bsd-init.c',

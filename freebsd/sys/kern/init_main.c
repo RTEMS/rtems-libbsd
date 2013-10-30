@@ -198,7 +198,9 @@ mi_startup(void)
 		sysinit_end = SET_LIMIT(sysinit_set);
 	}
 
+#ifndef __rtems__
 restart:
+#endif /* __rtems__ */
 	/*
 	 * Perform a bubble sort of the system initialization objects by
 	 * their subsystem (primary key) and order (secondary key).

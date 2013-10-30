@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*	$KAME: if_nameindex.c,v 1.8 2000/11/24 08:20:01 itojun Exp $	*/
 
 /*-

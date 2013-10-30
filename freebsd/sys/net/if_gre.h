@@ -162,9 +162,9 @@ struct mobip_h {
 } __packed;
 
 
-#define MOB_HH_SIZ_S		(sizeof(struct mobile_h) - sizeof(u_int32_t))
-#define MOB_HH_SIZ_L		(sizeof(struct mobile_h))
-#define MOB_HH_SBIT	0x0080
+#define MOB_H_SIZ_S		(sizeof(struct mobile_h) - sizeof(u_int32_t))
+#define MOB_H_SIZ_L		(sizeof(struct mobile_h))
+#define MOB_H_SBIT	0x0080
 
 #define	GRE_TTL	30
 

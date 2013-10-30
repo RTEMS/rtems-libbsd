@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*-
  * Copyright (c) 1985, 1988, 1993
  *	The Regents of the University of California.  All rights reserved.

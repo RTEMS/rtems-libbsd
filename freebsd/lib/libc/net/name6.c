@@ -1,4 +1,3 @@
-#include "port_before.h"
 /*	$KAME: name6.c,v 1.25 2000/06/26 16:44:40 itojun Exp $	*/
 
 /*

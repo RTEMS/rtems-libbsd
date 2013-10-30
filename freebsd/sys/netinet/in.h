@@ -35,7 +35,11 @@
 
 #include <sys/cdefs.h>
 #include <rtems/bsd/sys/_types.h>
+#ifndef __rtems__
+#include <machine/endian.h>
+#else /* __rtems__ */
 #include <machine/rtems-bsd-endian.h>
+#endif /* __rtems__ */
 
 /* Protocols common to RFC 1700, POSIX, and X/Open. */
 #define	IPPROTO_IP		0		/* dummy for IP */
@@ -786,9 +790,9 @@ void	 in_ifdetach(struct ifnet *);
 
 /* INET6 stuff */
 #if __POSIX_VISIBLE >= 200112
-#define	__KAME_NETINET_IN_HH_INCLUDED_
+#define	__KAME_NETINET_IN_H_INCLUDED_
 #include <netinet6/in6.h>
-#undef __KAME_NETINET_IN_HH_INCLUDED_
+#undef __KAME_NETINET_IN_H_INCLUDED_
 #endif
 
 #endif /* !_NETINET_IN_H_*/

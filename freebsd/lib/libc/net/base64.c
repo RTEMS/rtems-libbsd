@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*
  * Copyright (c) 1996, 1998 by Internet Software Consortium.
  *

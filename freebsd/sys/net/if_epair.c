@@ -210,7 +210,7 @@ epair_dpcpu_init(void)
 		s = &epair_dpcpu->epair_ifp_drain_list;
 		s->stqh_first = NULL;
 		s->stqh_last = &s->stqh_first;
-	}
+	} 
 }
 
 static void
@@ -486,7 +486,7 @@ epair_transmit_locked(struct ifnet *ifp, struct mbuf *m)
 
 	if (m == NULL)
 		return (0);
-
+	
 	/*
 	 * We are not going to use the interface en/dequeue mechanism
 	 * on the TX side. We are called from ether_output_frame()
@@ -531,7 +531,7 @@ epair_transmit_locked(struct ifnet *ifp, struct mbuf *m)
 			ifp->if_obytes += len;
 			if (mflags & (M_BCAST|M_MCAST))
 				ifp->if_omcasts++;
-
+			
 			if ((ifp->if_drv_flags & IFF_DRV_OACTIVE) == 0)
 				epair_start_locked(ifp);
 			else
@@ -606,7 +606,7 @@ static void
 epair_qflush(struct ifnet *ifp)
 {
 	struct epair_softc *sc;
-
+	
 	sc = ifp->if_softc;
 	KASSERT(sc != NULL, ("%s: ifp=%p, epair_softc gone? sc=%p\n",
 	    __func__, ifp, sc));
@@ -769,7 +769,7 @@ epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 		ifc_free_unit(ifc, unit);
 		return (ENOSPC);
 	}
-
+	
 	/*
 	 * Cross-reference the interfaces so we will be able to free both.
 	 */
@@ -786,7 +786,7 @@ epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	    netisr_get_cpuid(sca->ifp->if_index % netisr_get_cpucount());
 	scb->cpuid =
 	    netisr_get_cpuid(scb->ifp->if_index % netisr_get_cpucount());
-
+	
 	/* Finish initialization of interface <n>a. */
 	ifp = sca->ifp;
 	ifp->if_softc = sca;
@@ -865,7 +865,7 @@ epair_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	 */
 	if (ifp->if_softc == NULL)
 		return (0);
-
+	
 	unit = ifp->if_dunit;
 	sca = ifp->if_softc;
 	oifp = sca->oifp;
@@ -926,7 +926,7 @@ epair_modevent(module_t mod, int type, void *data)
 #ifndef __rtems__
 		if (TUNABLE_INT_FETCH("net.link.epair.netisr_maxqlen", &qlimit))
 		    epair_nh.nh_qlimit = qlimit;
-#endif
+#endif /* __rtems__ */
 		netisr_register(&epair_nh);
 		if_clone_attach(&epair_cloner);
 		if (bootverbose)

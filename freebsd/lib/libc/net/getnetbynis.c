@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*-
  * Copyright (c) 1994, Garrett Wollman
  *

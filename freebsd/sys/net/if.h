@@ -40,18 +40,13 @@
 #endif
 
 #if __BSD_VISIBLE
-
-#ifdef __rtems__
-#include <rtems/bsd/sys/time.h>
-#else
-#ifndef _KERNEL
 /*
  * <net/if.h> does not depend on <sys/time.h> on most other systems.  This
  * helps userland compatibility.  (struct timeval ifi_lastchange)
  */
+#ifndef _KERNEL
 #include <rtems/bsd/sys/time.h>
 #endif
-#endif /* __rtems__ */
 
 struct ifnet;
 #endif

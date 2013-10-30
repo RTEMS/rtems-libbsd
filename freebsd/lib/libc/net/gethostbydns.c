@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*
  * ++Copyright++ 1985, 1988, 1993
  * -

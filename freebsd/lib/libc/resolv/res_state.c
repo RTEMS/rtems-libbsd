@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*-
  * Copyright (c) 2006 The FreeBSD Project. All rights reserved.
  *

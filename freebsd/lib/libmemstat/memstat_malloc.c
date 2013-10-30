@@ -1,4 +1,3 @@
-#include "port_before.h"
 /*-
  * Copyright (c) 2005 Robert N. M. Watson
  * All rights reserved.
@@ -34,9 +33,7 @@
 
 #include <err.h>
 #include <errno.h>
-#ifndef __rtems__
 #include <kvm.h>
-#endif
 #include <nlist.h>
 #include <stdio.h>
 #include <stdlib.h>

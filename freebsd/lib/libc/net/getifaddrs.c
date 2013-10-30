@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*	$KAME: getifaddrs.c,v 1.9 2001/08/20 02:31:20 itojun Exp $	*/
 
 /*

@@ -61,7 +61,7 @@
  * $FreeBSD$
  */
 
-#ifndef __KAME_NETINET_IN_HH_INCLUDED_
+#ifndef __KAME_NETINET_IN_H_INCLUDED_
 #error "do not include netinet6/in6.h directly, include netinet/in.h.  see RFC2553"
 #endif
 

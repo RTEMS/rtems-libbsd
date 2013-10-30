@@ -312,7 +312,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 				error = EINVAL;    /* is there better errno? */
 				goto end;
 			}
-			memset(&mob_h, 0, MOB_HH_SIZ_L);
+			memset(&mob_h, 0, MOB_H_SIZ_L);
 			mob_h.proto = (ip->ip_p) << 8;
 			mob_h.odst = ip->ip_dst.s_addr;
 			ip->ip_dst.s_addr = sc->g_dst.s_addr;
@@ -323,12 +323,12 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 			 * Else we also need to save and change the source
 			 */
 			if (in_hosteq(ip->ip_src, sc->g_src)) {
-				msiz = MOB_HH_SIZ_S;
+				msiz = MOB_H_SIZ_S;
 			} else {
-				mob_h.proto |= MOB_HH_SBIT;
+				mob_h.proto |= MOB_H_SBIT;
 				mob_h.osrc = ip->ip_src.s_addr;
 				ip->ip_src.s_addr = sc->g_src.s_addr;
-				msiz = MOB_HH_SIZ_L;
+				msiz = MOB_H_SIZ_L;
 			}
 			mob_h.proto = htons(mob_h.proto);
 			mob_h.hcrc = gre_in_cksum((u_int16_t *)&mob_h, msiz);

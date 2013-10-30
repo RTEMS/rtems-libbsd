@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -77,11 +75,11 @@ __rec_close(DB *dbp)
 
 	/* Committed to closing. */
 	status = RET_SUCCESS;
-
-#ifndef __rtems__   /* XXX */
+#ifndef __rtems__
 	if (F_ISSET(t, R_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
 		status = RET_ERROR;
-#endif
+#endif /* __rtems__ */
+
 	if (!F_ISSET(t, R_INMEM)) {
 		if (F_ISSET(t, R_CLOSEFP)) {
 			if (fclose(t->bt_rfp))

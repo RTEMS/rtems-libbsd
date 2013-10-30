@@ -254,11 +254,11 @@ gre_mobile_input(struct mbuf *m, int hlen)
 	GRE2IFP(sc)->if_ipackets++;
 	GRE2IFP(sc)->if_ibytes += m->m_pkthdr.len;
 
-	if (ntohs(mip->mh.proto) & MOB_HH_SBIT) {
-		msiz = MOB_HH_SIZ_L;
+	if (ntohs(mip->mh.proto) & MOB_H_SBIT) {
+		msiz = MOB_H_SIZ_L;
 		mip->mi.ip_src.s_addr = mip->mh.osrc;
 	} else
-		msiz = MOB_HH_SIZ_S;
+		msiz = MOB_H_SIZ_S;
 
 	if (m->m_len < (ip->ip_hl << 2) + msiz) {
 		m = m_pullup(m, (ip->ip_hl << 2) + msiz);

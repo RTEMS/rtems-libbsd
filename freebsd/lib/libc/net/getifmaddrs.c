@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*
  * Copyright (c) 2003 Bruce M. Simpson.
  * All rights reserved

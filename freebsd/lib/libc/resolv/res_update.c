@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 #if !defined(lint) && !defined(SABER)
 static const char rcsid[] = "$Id: res_update.c,v 1.12.18.1 2005/04/27 05:01:12 sra Exp $";
 #endif /* not lint */

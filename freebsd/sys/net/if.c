@@ -562,10 +562,10 @@ if_rele(struct ifnet *ifp)
 void
 ifq_init(struct ifaltq *ifq, struct ifnet *ifp)
 {
-
+	
 	mtx_init(&ifq->ifq_mtx, ifp->if_xname, "if send queue", MTX_DEF);
 
-	if (ifq->ifq_maxlen == 0)
+	if (ifq->ifq_maxlen == 0) 
 		ifq->ifq_maxlen = ifqmaxlen;
 
 	ifq->altq_type = 0;
@@ -622,7 +622,7 @@ if_attach_internal(struct ifnet *ifp, int vmove)
 	if_addgroup(ifp, IFG_ALL);
 
 	getmicrotime(&ifp->if_lastchange);
-  ifp->if_data.ifi_epoch = time_uptime;
+	ifp->if_data.ifi_epoch = time_uptime;
 	ifp->if_data.ifi_datalen = sizeof(struct if_data);
 
 	KASSERT((ifp->if_transmit == NULL && ifp->if_qflush == NULL) ||
@@ -632,7 +632,7 @@ if_attach_internal(struct ifnet *ifp, int vmove)
 		ifp->if_transmit = if_transmit;
 		ifp->if_qflush = if_qflush;
 	}
-
+	
 	if (!vmove) {
 #ifdef MAC
 		mac_ifnet_create(ifp);
@@ -1694,7 +1694,7 @@ ifa_ifwithnet(struct sockaddr *addr, int ignore_ptp)
 
 			if (ifa->ifa_addr->sa_family != af)
 next:				continue;
-			if (af == AF_INET &&
+			if (af == AF_INET && 
 			    ifp->if_flags & IFF_POINTOPOINT && !ignore_ptp) {
 				/*
 				 * This is a bit broken as it doesn't
@@ -1989,7 +1989,7 @@ if_qflush(struct ifnet *ifp)
 {
 	struct mbuf *m, *n;
 	struct ifaltq *ifq;
-
+	
 	ifq = &ifp->if_snd;
 	IFQ_LOCK(ifq);
 #ifdef ALTQ
@@ -2259,7 +2259,7 @@ ifhwioctl(u_long cmd, struct ifnet *ifp, caddr_t data, struct thread *td)
 		 * changes (renames, vmoves, if_attach, etc).
 		 */
 		ifp->if_flags |= IFF_RENAMING;
-
+		
 		/* Announce the departure of the interface. */
 		rt_ifannouncemsg(ifp, IFAN_DEPARTURE);
 		EVENTHANDLER_INVOKE(ifnet_departure_event, ifp);
@@ -2667,7 +2667,7 @@ if_setflag(struct ifnet *ifp, int flag, int pflag, int *refcount, int onswitch)
 	/* Save ifnet parameters for if_ioctl() may fail */
 	oldcount = *refcount;
 	oldflags = ifp->if_flags;
-
+	
 	/*
 	 * See if we aren't the only and touching refcount is enough.
 	 * Actually toggle interface flag if we are the first or last.
@@ -3367,7 +3367,7 @@ if_start(struct ifnet *ifp)
 }
 
 /*
- * Backwards compatibility interface for drivers
+ * Backwards compatibility interface for drivers 
  * that have not implemented it
  */
 static int
@@ -3408,7 +3408,7 @@ void
 if_register_com_alloc(u_char type,
     if_com_alloc_t *a, if_com_free_t *f)
 {
-
+	
 	KASSERT(if_com_alloc[type] == NULL,
 	    ("if_register_com_alloc: %d already registered", type));
 	KASSERT(if_com_free[type] == NULL,
@@ -3421,7 +3421,7 @@ if_register_com_alloc(u_char type,
 void
 if_deregister_com_alloc(u_char type)
 {
-
+	
 	KASSERT(if_com_alloc[type] != NULL,
 	    ("if_deregister_com_alloc: %d not registered", type));
 	KASSERT(if_com_free[type] != NULL,

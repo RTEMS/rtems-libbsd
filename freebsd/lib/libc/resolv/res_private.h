@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 #ifndef res_private_h
 #define res_private_h
 

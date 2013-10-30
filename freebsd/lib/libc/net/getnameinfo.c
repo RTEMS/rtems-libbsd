@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*	$KAME: getnameinfo.c,v 1.61 2002/06/27 09:25:47 itojun Exp $	*/
 
 /*

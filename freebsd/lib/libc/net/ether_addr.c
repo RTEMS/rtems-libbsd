@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*
  * Copyright (c) 1995 Bill Paul <wpaul@ctr.columbia.edu>.
  * Copyright (c) 2007 Robert N. M. Watson

@@ -1,5 +1,3 @@
-#include "port_before.h"
-
 /*	$NetBSD: nsdispatch.c,v 1.9 1999/01/25 00:16:17 lukem Exp $	*/
 
 /*-
@@ -76,9 +74,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/stat.h>
 
-#ifndef __rtems__
 #include <dlfcn.h>
-#endif /* __rtems__ */
 #include <errno.h>
 #include <fcntl.h>
 #define _NS_PRIVATE

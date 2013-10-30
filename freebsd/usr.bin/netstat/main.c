@@ -46,6 +46,8 @@ static char sccsid[] = "@(#)main.c	8.4 (Berkeley) 3/1/94";
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");

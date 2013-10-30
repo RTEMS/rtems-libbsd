@@ -44,6 +44,8 @@ static char sccsid[] = "@(#)ping.c	8.1 (Berkeley) 6/5/93";
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
@@ -220,13 +222,14 @@ static void tvsub(struct timeval *, struct timeval *);
 static void usage(void) __dead2;
 
 #ifdef __rtems__
-#include <machine/rtems-bsd-program.h>
-#include <machine/rtems-bsd-commands.h>
-
 static int main(int argc, char **argv);
 
 int rtems_bsd_command_ping(int argc, char *argv[])
 {
+	int exit_code;
+
+	rtems_bsd_program_lock();
+
 	BBELL = '\a';
 	BSPACE = '\b';
 	DOT = '.';
@@ -243,7 +246,11 @@ int rtems_bsd_command_ping(int argc, char *argv[])
 	tsum = 0.0;
 	tsumsq = 0.0;
 
-	return rtems_bsd_program_call_main("ping", main, argc, argv);
+	exit_code = rtems_bsd_program_call_main("ping", main, argc, argv);
+
+	rtems_bsd_program_unlock();
+
+	return exit_code;
 }
 #endif /* __rtems__ */
 int

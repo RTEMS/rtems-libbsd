@@ -223,10 +223,12 @@ sysctl_maxsockets(SYSCTL_HANDLER_ARGS)
 	if (error == 0 && req->newptr) {
 		if (newmaxsockets > maxsockets) {
 			maxsockets = newmaxsockets;
+#ifndef __rtems__
 			if (maxsockets > ((maxfiles / 4) * 3)) {
 				maxfiles = (maxsockets * 5) / 4;
 				maxfilesperproc = (maxfiles * 9) / 10;
 			}
+#endif /* __rtems__ */
 			EVENTHANDLER_INVOKE(maxsockets_change);
 		} else
 			error = EINVAL;
@@ -247,7 +249,11 @@ init_maxsockets(void *ignored)
 {
 
 	TUNABLE_INT_FETCH("kern.ipc.maxsockets", &maxsockets);
+#ifndef __rtems__
 	maxsockets = imax(maxsockets, imax(maxfiles, nmbclusters));
+#else /* __rtems__ */
+	maxsockets = imax(maxsockets, nmbclusters);
+#endif /* __rtems__ */
 }
 SYSINIT(param, SI_SUB_TUNABLES, SI_ORDER_ANY, init_maxsockets, NULL);
 

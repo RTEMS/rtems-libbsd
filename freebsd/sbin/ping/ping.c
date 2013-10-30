@@ -212,8 +212,10 @@ static void pr_icmph(struct icmp *);
 static void pr_iph(struct ip *);
 static void pr_pack(char *, int, struct sockaddr_in *, struct timeval *);
 static void pr_retip(struct ip *);
+#ifndef __rtems__
 static void status(int);
 static void stopit(int);
+#endif /* __rtems__ */
 static void tvsub(struct timeval *, struct timeval *);
 static void usage(void) __dead2;
 
@@ -533,13 +535,11 @@ main(argc, argv)
 			break;
 		default:
 			usage();
-
 		}
 	}
 
 	if (argc - optind != 1)
 		usage();
-
 	target = argv[optind];
 
 	switch (options & (F_MASK|F_TIME)) {
@@ -805,6 +805,7 @@ main(argc, argv)
 			(void)printf("PING %s: %d data bytes\n", hostname, datalen);
 	}
 
+#ifndef __rtems__
 	/*
 	 * Use sigaction() instead of signal() to get unambiguous semantics,
 	 * in particular with SA_RESTART not set.
@@ -818,18 +819,19 @@ main(argc, argv)
 		err(EX_OSERR, "sigaction SIGINT");
 	}
 
-#ifdef SIGINFO
 	si_sa.sa_handler = status;
 	if (sigaction(SIGINFO, &si_sa, 0) == -1) {
 		err(EX_OSERR, "sigaction");
 	}
-#endif
 
         if (alarmtimeout > 0) {
 		si_sa.sa_handler = stopit;
 		if (sigaction(SIGALRM, &si_sa, 0) == -1)
 			err(EX_OSERR, "sigaction SIGALRM");
         }
+#else /* __rtems__ */
+	(void) si_sa;
+#endif /* __rtems__ */
 
 	bzero(&msg, sizeof(msg));
 	msg.msg_name = (caddr_t)&from;
@@ -953,17 +955,11 @@ main(argc, argv)
 		}
 	}
 	finish();
-#ifdef __rtems__
-	/* RTEMS shell programs return -- they do not exit */
-	if (nreceived)
-		return(0);
-	else
-		return(2);
-#endif
 	/* NOTREACHED */
 	exit(0);	/* Make the compiler happy */
 }
 
+#ifndef __rtems__
 /*
  * stopit --
  *	Set the global bit that causes the main loop to quit.
@@ -983,6 +979,7 @@ stopit(sig)
 		_exit(nreceived ? 0 : 2);
 	finish_up = 1;
 }
+#endif /* __rtems__ */
 
 /*
  * pinger --
@@ -1392,6 +1389,7 @@ tvsub(out, in)
 	out->tv_sec -= in->tv_sec;
 }
 
+#ifndef __rtems__
 /*
  * status --
  *	Print out statistics when SIGINFO is received.
@@ -1404,6 +1402,7 @@ status(sig)
 
 	siginfo_p = 1;
 }
+#endif /* __rtems__ */
 
 static void
 check_status()
@@ -1457,6 +1456,7 @@ finish()
 		    "round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n",
 		    tmin, avg, tmax, sqrt(vari));
 	}
+
 	if (nreceived)
 		exit(0);
 	else
@@ -1759,6 +1759,7 @@ fill(bp, patp)
 static void
 usage()
 {
+
 	(void)fprintf(stderr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 "usage: ping [-AaDdfnoQqRrv] [-c count] [-G sweepmaxsize] [-g sweepminsize]",
 "            [-h sweepincrsize] [-i wait] [-l preload] [-M mask | time] [-m ttl]",

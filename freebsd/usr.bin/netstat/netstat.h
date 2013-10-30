@@ -36,6 +36,12 @@
 
 #include <sys/cdefs.h>
 
+#ifdef __rtems__
+#define rt_tables netstat_rt_tables
+#define routename rtems_shell_netstats_routername
+#define netname rtems_shell_netstats_netname
+#define sotoxsocket rtems_shell_netstats_sotoxsocket
+#endif /* __rtems__ */
 extern int	Aflag;	/* show addresses of protocol control block */
 extern int	aflag;	/* show all sockets (including servers) */
 extern int	bflag;	/* show i/f total bytes in/out */
@@ -62,6 +68,11 @@ extern int	unit;	/* unit number for above */
 
 extern int	af;	/* address family */
 extern int	live;	/* true if we are examining a live system */
+#ifdef __rtems__
+extern int	protopr_initialized;
+extern int	do_rtent;
+extern struct	radix_node_head **rt_tables;
+#endif /* __rtems__ */
 
 int	kread(u_long addr, void *buf, size_t size);
 const char *plural(uintmax_t);
@@ -125,13 +136,6 @@ char	*ipx_pnet(struct sockaddr *);
 char	*ipx_phost(struct sockaddr *);
 char	*ns_phost(struct sockaddr *);
 void	upHex(char *);
-
-#ifdef __rtems__
-#define rt_tables netstat_rt_tables
-#define routename rtems_shell_netstats_routername
-#define netname rtems_shell_netstats_netname
-#define sotoxsocket rtems_shell_netstats_sotoxsocket
-#endif
 
 char	*routename(in_addr_t);
 char	*netname(in_addr_t, u_long);

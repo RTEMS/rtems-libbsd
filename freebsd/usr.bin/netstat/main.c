@@ -364,13 +364,54 @@ int	af;		/* address family */
 int	live;		/* true if we are examining a live system */
 
 #ifdef __rtems__
+int	protopr_initialized;
+int	do_rtent;
+struct	radix_node_head **rt_tables;
+
 static int main(int argc, char *argv[]);
 
 int rtems_bsd_command_netstat(int argc, char *argv[])
 {
-  noutputs = 0;
+	int exit_code;
 
-  return rtems_bsd_program_call_main("netstat", main, argc, argv);
+	rtems_bsd_program_lock();
+
+	Aflag = 0;
+	aflag = 0;
+	bflag = 0;
+	dflag = 0;
+	gflag = 0;
+	hflag = 0;
+	iflag = 0;
+	Lflag = 0;
+	mflag = 0;
+	noutputs = 0;
+	numeric_addr = 0;
+	numeric_port = 0;
+	pflag = 0;
+	rflag = 0;
+	sflag = 0;
+	tflag = 0;
+	Wflag = 0;
+	xflag = 0;
+	zflag = 0;
+	interval = 0;
+	interface = 0;
+	unit = 0;
+	af = 0;
+	live = 0;
+
+	protopr_initialized = 0;
+	do_rtent = 0;
+
+	exit_code = rtems_bsd_program_call_main("netstat", main, argc, argv);
+
+	free(rt_tables);
+	rt_tables = NULL;
+
+	rtems_bsd_program_unlock();
+
+	return exit_code;
 }
 #endif /* __rtems__ */
 int

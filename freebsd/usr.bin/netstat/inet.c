@@ -306,7 +306,6 @@ void
 protopr(u_long off, const char *name, int af1, int proto)
 {
 	int istcp;
-	static int first = 1;
 	char *buf;
 	const char *vchar;
 	struct tcpcb *tp = NULL;
@@ -394,7 +393,7 @@ protopr(u_long off, const char *name, int af1, int proto)
 		     ))
 			continue;
 
-		if (first) {
+		if (!protopr_initialized) {
 			if (!Lflag) {
 				printf("Active Internet connections");
 				if (aflag)
@@ -424,7 +423,7 @@ protopr(u_long off, const char *name, int af1, int proto)
 				else
 					printf("(state)\n");
 			}
-			first = 0;
+			protopr_initialized = 1;
 		}
 		if (Lflag && so->so_qlimit == 0)
 			continue;
@@ -913,7 +912,7 @@ arp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 
 
 
-static	const char *icmpnames[ICMP_MAXTYPE + 1] = {
+static	const char *const icmpnames[ICMP_MAXTYPE + 1] = {
 	"echo reply",			/* RFC 792 */
 	"#1",
 	"#2",

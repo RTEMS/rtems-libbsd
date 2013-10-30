@@ -126,16 +126,14 @@ typedef union {
 
 static sa_u pt_u;
 
-int	fibnum;
-int	do_rtent = 0;
-struct	rtentry rtentry;
-struct	radix_node rnode;
-struct	radix_mask rmask;
-struct	radix_node_head **rt_tables;
+static int	fibnum;
+static struct	rtentry rtentry;
+static struct	radix_node rnode;
+static struct	radix_mask rmask;
 
-int	NewTree = 0;
+static const int	NewTree = 0;
 
-struct	timespec uptime;
+static struct	timespec uptime;
 
 static struct sockaddr *kgetsa(struct sockaddr *);
 static void size_cols(int ef, struct radix_node *rn);
@@ -493,7 +491,7 @@ again:
 	}
 }
 
-char	nbuf[20];
+static char	nbuf[20];
 
 static void
 p_rtnode(void)

@@ -207,7 +207,7 @@ struct protox {
 	const char	*pr_name;		/* well-known name */
 	int	pr_usesysctl;		/* non-zero if we use sysctl, not kvm */
 	int	pr_protocol;
-} protox[] = {
+} static const protox[] = {
 	{ N_TCBINFO,	N_TCPSTAT,	1,	protopr,
 	  tcp_stats,	NULL,		"tcp",	1,	IPPROTO_TCP },
 	{ N_UDBINFO,	N_UDPSTAT,	1,	protopr,
@@ -247,7 +247,7 @@ struct protox {
 };
 
 #ifdef INET6
-struct protox ip6protox[] = {
+static const struct protox ip6protox[] = {
 	{ N_TCBINFO,	N_TCPSTAT,	1,	protopr,
 	  tcp_stats,	NULL,		"tcp",	1,	IPPROTO_TCP },
 	{ N_UDBINFO,	N_UDPSTAT,	1,	protopr,
@@ -272,7 +272,7 @@ struct protox ip6protox[] = {
 #endif /*INET6*/
 
 #ifdef IPSEC
-struct protox pfkeyprotox[] = {
+static const struct protox pfkeyprotox[] = {
 	{ -1,		N_PFKEYSTAT,	1,	NULL,
 	  pfkey_stats,	NULL,		"pfkey", 0,	0 },
 	{ -1,		-1,		0,	NULL,
@@ -281,7 +281,7 @@ struct protox pfkeyprotox[] = {
 #endif
 
 #ifndef __rtems__
-struct protox atalkprotox[] = {
+static const struct protox atalkprotox[] = {
 	{ N_DDPCB,	N_DDPSTAT,	1,	atalkprotopr,
 	  ddp_stats,	NULL,		"ddp",	0,	0 },
 	{ -1,		-1,		0,	NULL,
@@ -289,7 +289,7 @@ struct protox atalkprotox[] = {
 };
 #endif
 #ifdef NETGRAPH
-struct protox netgraphprotox[] = {
+static const struct protox netgraphprotox[] = {
 	{ N_NGSOCKS,	-1,		1,	netgraphprotopr,
 	  NULL,		NULL,		"ctrl",	0,	0 },
 	{ N_NGSOCKS,	-1,		1,	netgraphprotopr,
@@ -299,7 +299,7 @@ struct protox netgraphprotox[] = {
 };
 #endif
 #ifdef IPX
-struct protox ipxprotox[] = {
+static const struct protox ipxprotox[] = {
 	{ N_IPX,	N_IPXSTAT,	1,	ipxprotopr,
 	  ipx_stats,	NULL,		"ipx",	0,	0 },
 	{ N_IPX,	N_SPXSTAT,	1,	ipxprotopr,
@@ -309,7 +309,7 @@ struct protox ipxprotox[] = {
 };
 #endif
 
-struct protox *protoprotox[] = {
+static const struct protox *protoprotox[] = {
 					 protox,
 #ifdef INET6
 					 ip6protox,
@@ -326,10 +326,10 @@ struct protox *protoprotox[] = {
 				NULL };
 #endif
 
-static void printproto(struct protox *, const char *);
+static void printproto(const struct protox *, const char *);
 static void usage(void);
-static struct protox *name2protox(const char *);
-static struct protox *knownname(const char *);
+static const struct protox *name2protox(const char *);
+static const struct protox *knownname(const char *);
 
 static kvm_t *kvmd;
 static char *nlistf = NULL, *memf = NULL;
@@ -364,370 +364,10 @@ int	af;		/* address family */
 int	live;		/* true if we are examining a live system */
 
 #ifdef __rtems__
-#include <machine/rtems-bsd-program.h>
-#include <machine/rtems-bsd-commands.h>
-
 static int main(int argc, char *argv[]);
 
 int rtems_bsd_command_netstat(int argc, char *argv[])
 {
-  int i;
-
-  i = 0;
-  protox[i].pr_index     = N_TCBINFO;
-  protox[i].pr_sindex    = N_TCPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = tcp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "tcp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_TCP;
-  i++;
-  protox[i].pr_index     = N_UDBINFO;
-  protox[i].pr_sindex    = N_UDPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = udp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "udp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_UDP;
-  i++;
-#ifdef SCTP
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = N_SCTPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = sctp_protopr;
-  protox[i].pr_stats     = sctp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "sctp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_SCTP;
-  i++;
-#endif
-  protox[i].pr_index     = N_DIVCBINFO;
-  protox[i].pr_sindex    = -1;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = NULL;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "divert";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_DIVERT;
-  i++;
-  protox[i].pr_index     = N_RIPCBINFO;
-  protox[i].pr_sindex    = N_IPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = ip_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "ip";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_RAW;
-  i++;
-  protox[i].pr_index     = N_RIPCBINFO;
-  protox[i].pr_sindex    = N_ICMPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = icmp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "icmp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_ICMP;
-  i++;
-  protox[i].pr_index     = N_RIPCBINFO;
-  protox[i].pr_sindex    = N_IGMPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = igmp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "igmp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_IGMP;
-  i++;
-#ifdef IPSEC
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = N_IPSECSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = ipsec_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "ipsec";
-  protox[i].pr_usesysctl = 0;
-  protox[i].pr_protocol  = 0;
-  i++;
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = N_AHSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = ah_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "ah";
-  protox[i].pr_usesysctl = 0;
-  protox[i].pr_protocol  = 0;
-  i++;
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = N_ESPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = esp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "esp";
-  protox[i].pr_usesysctl = 0;
-  protox[i].pr_protocol  = 0;
-  i++;
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = N_IPCOMPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = ipcomp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "ipcomp";
-  protox[i].pr_usesysctl = 0;
-  protox[i].pr_protocol  = 0;
-  i++;
-#endif
-  protox[i].pr_index     = N_RIPCBINFO;
-  protox[i].pr_sindex    = N_PIMSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = protopr;
-  protox[i].pr_stats     = pim_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "pim";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = IPPROTO_PIM;
-  i++;
-  protox[i].pr_index     =  -1;
-  protox[i].pr_sindex    = N_CARPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = carp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "carp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = 0;
-  i++;
-  protox[i].pr_index     =  -1;
-  protox[i].pr_sindex    = N_PFSYNCSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = pfsync_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "pfsync";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = 0;
-  i++;
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = N_ARPSTAT;
-  protox[i].pr_wanted    = 1;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = arp_stats;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = "arp";
-  protox[i].pr_usesysctl = 1;
-  protox[i].pr_protocol  = 0;
-  i++;
-  protox[i].pr_index     = -1;
-  protox[i].pr_sindex    = -1;
-  protox[i].pr_wanted    = 0;
-  protox[i].pr_cblocks   = NULL;
-  protox[i].pr_stats     = NULL;
-  protox[i].pr_istats    = NULL;
-  protox[i].pr_name      = NULL;
-  protox[i].pr_usesysctl = 0;
-  protox[i].pr_protocol  = 0;
-
-#ifdef INET6
-  i=0;
-  ip6protox[i].pr_index     = N_TCBINFO;
-  ip6protox[i].pr_sindex    = N_TCPSTAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = protopr;
-  ip6protox[i].pr_stats     = tcp_stats;
-  ip6protox[i].pr_istats    = NULL;
-  ip6protox[i].pr_name      = "tcp";
-  ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = IPPROTO_TCP;
-  i++;
-  ip6protox[i].pr_index     = N_UDBINFO;
-  ip6protox[i].pr_sindex    = N_UDPSTAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = protopr;
-  ip6protox[i].pr_stats     = udp_stats;
-  ip6protox[i].pr_istats    = NULL;
-  ip6protox[i].pr_name      = "udp";
-  ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = IPPROTO_UDP;
-  i++;
-  ip6protox[i].pr_index     = N_RIPCBINFO;
-  ip6protox[i].pr_sindex    = N_IP6STAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = protopr;
-  ip6protox[i].pr_stats     = ip6_stats;
-  ip6protox[i].pr_istats    = ip6_ifstats;
-  ip6protox[i].pr_name      = "ip6";
-  ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = IPPROTO_RAW;
-  i++;
-  ip6protox[i].pr_index     = N_RIPCBINFO;
-  ip6protox[i].pr_sindex    = N_ICMP6STAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = protopr;
-  ip6protox[i].pr_stats     = icmp6_stats;
-  ip6protox[i].pr_istats    = icmp6_ifstats;
-  ip6protox[i].pr_name      = "icmp6";
-  ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = IPPROTO_ICMPV6;
-  i++;
-#ifdef IPSEC
-  ip6protox[i].pr_index     = -1;
-  ip6protox[i].pr_sindex    = N_IPSEC6STAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = NULL;
-  ip6protox[i].pr_stats     = ipsec_stats;
-  ip6protox[i].pr_istats    = NULL;
-  ip6protox[i].pr_name      = "ipsec6";
-  ip6protox[i].pr_usesysctl = 0;
-  ip6protox[i].pr_protocol  = 0;
-  i++;
-#endif
-#ifdef notyet
-  ip6protox[i].pr_index     = -1;
-  ip6protox[i].pr_sindex    = N_PIM6STAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = NULL;
-  ip6protox[i].pr_stats     = pim6_stats;
-  ip6protox[i].pr_istats    = NULL;
-  ip6protox[i].pr_name      = "pim6";
-  ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = 0;
-  i++;
-#endif
-  ip6protox[i].pr_index     = -1;
-  ip6protox[i].pr_sindex    = N_RIP6STAT;
-  ip6protox[i].pr_wanted    = 1;
-  ip6protox[i].pr_cblocks   = NULL;
-  ip6protox[i].pr_stats     = rip6_stats;
-  ip6protox[i].pr_istats    = NULL;
-  ip6protox[i].pr_name      = "rip6";
-  ip6protox[i].pr_usesysctl = 1;
-  ip6protox[i].pr_protocol  = 0;
-  i++;
-  ip6protox[i].pr_index     = -1;
-  ip6protox[i].pr_sindex    = -1;
-  ip6protox[i].pr_wanted    = 0;
-  ip6protox[i].pr_cblocks   = NULL;
-  ip6protox[i].pr_stats     = NULL;
-  ip6protox[i].pr_istats    = NULL;
-  ip6protox[i].pr_name      = NULL;
-  ip6protox[i].pr_usesysctl = 0;
-  ip6protox[i].pr_protocol  = 0;
-  i++;
-#endif /*INET6*/
-
-#ifdef IPSEC
-  i=0;
-  pfkeyprotox[i].pr_index     = -1;
-  pfkeyprotox[i].pr_sindex    = N_PFKEYSTAT;
-  pfkeyprotox[i].pr_wanted    = 1;
-  pfkeyprotox[i].pr_cblocks   = NULL;
-  pfkeyprotox[i].pr_stats     = pfkey_stats;
-  pfkeyprotox[i].pr_istats    = NULL;
-  pfkeyprotox[i].pr_name      = "pfkey";
-  pfkeyprotox[i].pr_usesysctl = 0;
-  pfkeyprotox[i].pr_protocol  = 0;
-  i++;
-  pfkeyprotox[i].pr_index     = -1;
-  pfkeyprotox[i].pr_sindex    = -1;
-  pfkeyprotox[i].pr_wanted    = 0;
-  pfkeyprotox[i].pr_cblocks   = NULL;
-  pfkeyprotox[i].pr_stats     = NULL;
-  pfkeyprotox[i].pr_istats    = NULL;
-  pfkeyprotox[i].pr_name      = NULL;
-  pfkeyprotox[i].pr_usesysctl = 0;
-  pfkeyprotox[i].pr_protocol  = 0;
-#endif
-
-#ifdef NETGRAPH
-  netgraphprotox[i].pr_index     = N_NGSOCKS;
-  netgraphprotox[i].pr_sindex    = -1;
-  netgraphprotox[i].pr_wanted    = 1;
-  netgraphprotox[i].pr_cblocks   = netgraphprotopr;
-  netgraphprotox[i].pr_stats     = NULL;
-  netgraphprotox[i].pr_istats    = NULL;
-  netgraphprotox[i].pr_name      = "ctrl";
-  netgraphprotox[i].pr_usesysctl = 0;
-  netgraphprotox[i].pr_protocol  = 0;
-  i++;
-  netgraphprotox[i].pr_index     = N_NGSOCKS;
-  netgraphprotox[i].pr_sindex    = -1;
-  netgraphprotox[i].pr_wanted    = 1;
-  netgraphprotox[i].pr_cblocks   = netgraphprotopr;
-  netgraphprotox[i].pr_stats     = NULL;
-  netgraphprotox[i].pr_istats    = NULL;
-  netgraphprotox[i].pr_name      = "data";
-  netgraphprotox[i].pr_usesysctl = 0;
-  netgraphprotox[i].pr_protocol  = 0;
-  i++;
-  netgraphprotox[i].pr_index     = -1;
-  netgraphprotox[i].pr_sindex    = -1;
-  netgraphprotox[i].pr_wanted    = 0;
-  netgraphprotox[i].pr_cblocks   = NULL;
-  netgraphprotox[i].pr_stats     = NULL;
-  netgraphprotox[i].pr_istats    = NULL;
-  netgraphprotox[i].pr_name      = NULL;
-  netgraphprotox[i].pr_usesysctl = 0;
-  netgraphprotox[i].pr_protocol  = 0;
-#endif
-#ifdef IPX
-  i=0;
-  ipxprotox[i].pr_index     = N_IPX;
-  ipxprotox[i].pr_sindex    = N_IPXSTAT;
-  ipxprotox[i].pr_wanted    = 1;
-  ipxprotox[i].pr_cblocks   = ipxprotopr;
-  ipxprotox[i].pr_stats     = ipx_stats;
-  ipxprotox[i].pr_istats    = NULL;
-  ipxprotox[i].pr_name      = "ipx";
-  ipxprotox[i].pr_usesysctl = 0;
-  ipxprotox[i].pr_protocol  = 0;
-  i++;
-  ipxprotox[i].pr_index     = N_IPX;
-  ipxprotox[i].pr_sindex    = N_SPXSTAT;
-  ipxprotox[i].pr_wanted    = 1;
-  ipxprotox[i].pr_cblocks   = ipxprotopr;
-  ipxprotox[i].pr_stats     = spx_stats;
-  ipxprotox[i].pr_istats    = NULL;
-  ipxprotox[i].pr_name      = "spx";
-  ipxprotox[i].pr_usesysctl = 0;
-  ipxprotox[i].pr_protocol  = 0;
-  i++;
-  ipxprotox[i].pr_index     = -1;
-  ipxprotox[i].pr_sindex    = -1;
-  ipxprotox[i].pr_wanted    = 0;
-  ipxprotox[i].pr_cblocks   = NULL;
-  ipxprotox[i].pr_stats     = NULL;
-  ipxprotox[i].pr_istats    = NULL;
-  ipxprotox[i].pr_name      = 0;
-  ipxprotox[i].pr_usesysctl = 0;
-  ipxprotox[i].pr_protocol  = 0;
-  i++;
-#endif
-
-  i=0;
-  protoprotox[i] = protox;
-  i++;
-#ifdef INET6
-  protoprotox[i] = ip6protox,
-  i++;
-#endif
-#ifdef IPSEC
-  protoprotox[i] = pfkeyprotox,
-  i++;
-#endif
-#ifdef IPX
-  protoprotox[i] = ipxprotox,
-#endif
   noutputs = 0;
 
   return rtems_bsd_program_call_main("netstat", main, argc, argv);
@@ -736,7 +376,7 @@ int rtems_bsd_command_netstat(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	struct protox *tp = NULL;  /* for printing cblocks & stats */
+	const struct protox *tp = NULL;  /* for printing cblocks & stats */
 	int ch;
 #ifdef __rtems__
 	struct getopt_data getopt_data;
@@ -1013,7 +653,7 @@ main(int argc, char *argv[])
  */
 static void
 printproto(tp, name)
-	struct protox *tp;
+	const struct protox *tp;
 	const char *name;
 {
 	void (*pr)(u_long, const char *, int, int);
@@ -1138,10 +778,10 @@ pluralies(uintmax_t n)
 /*
  * Find the protox for the given "well-known" name.
  */
-static struct protox *
+static const struct protox *
 knownname(const char *name)
 {
-	struct protox **tpp, *tp;
+	const struct protox **tpp, *tp;
 
 	for (tpp = protoprotox; *tpp; tpp++)
 		for (tp = *tpp; tp->pr_name; tp++)
@@ -1153,10 +793,10 @@ knownname(const char *name)
 /*
  * Find the protox corresponding to name.
  */
-static struct protox *
+static const struct protox *
 name2protox(const char *name)
 {
-	struct protox *tp;
+	const struct protox *tp;
 	char **alias;			/* alias from p->aliases */
 	struct protoent *p;
 

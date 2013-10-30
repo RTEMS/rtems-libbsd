@@ -90,7 +90,7 @@ __FBSDID("$FreeBSD$");
 struct bits {
 	u_long	b_mask;
 	char	b_val;
-} bits[] = {
+} static const bits[] = {
 	{ RTF_UP,	'U' },
 	{ RTF_GATEWAY,	'G' },
 	{ RTF_HOST,	'H' },
@@ -772,7 +772,7 @@ fmt_flags(int f)
 {
 	static char name[33];
 	char *flags;
-	struct bits *p = bits;
+	const struct bits *p = bits;
 
 	for (flags = name; p->b_mask; p++)
 		if (p->b_mask & f)

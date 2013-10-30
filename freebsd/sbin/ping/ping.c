@@ -263,7 +263,12 @@ main(argc, argv)
 	struct msghdr msg;
 	struct sigaction si_sa;
 	size_t sz;
+#ifndef __rtems__
 	u_char *datap, packet[IP_MAXPACKET] __aligned(4);
+#else /* __rtems__ */
+	u_char *datap;
+	static u_char packet[IP_MAXPACKET] __aligned(4);
+#endif /* __rtems__ */
 	char *ep, *source, *target, *payload;
 	struct hostent *hp;
 #ifdef IPSEC_POLICY_IPSEC
@@ -275,7 +280,12 @@ main(argc, argv)
 	int almost_done, ch, df, hold, i, icmp_len, mib[4], preload, sockerrno,
 	    tos, ttl;
 	char ctrl[CMSG_SPACE(sizeof(struct timeval))];
+#ifndef __rtems__
 	char hnamebuf[MAXHOSTNAMELEN], snamebuf[MAXHOSTNAMELEN];
+#else /* __rtems__ */
+	static char hnamebuf[MAXHOSTNAMELEN];
+	static char snamebuf[MAXHOSTNAMELEN];
+#endif /* __rtems__ */
 #ifdef IP_OPTIONS
 	char rspace[MAX_IPOPTLEN];	/* record route space */
 #endif

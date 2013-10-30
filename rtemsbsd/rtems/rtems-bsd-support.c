@@ -48,11 +48,6 @@
 #include <sys/malloc.h>
 #include <sys/uio.h>
 
-int     maxproc = 32;              /* XXX Used value of rtems KERN_MAXPROC */
-int     ngroups_max = NGROUPS_MAX; /* XXX */
-
-uintptr_t dpcpu_off[MAXCPU];
-
 void
 critical_enter(void)
 {

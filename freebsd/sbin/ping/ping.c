@@ -1728,7 +1728,7 @@ fill(bp, patp)
 	u_int ii, jj, kk;
 
 	for (cp = patp; *cp; cp++) {
-		if (!isxdigit(*cp))
+		if (!isxdigit((unsigned char) *cp))
 			errx(EX_USAGE,
 			    "patterns must be specified as hex digits");
 

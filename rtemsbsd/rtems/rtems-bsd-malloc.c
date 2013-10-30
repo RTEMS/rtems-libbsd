@@ -74,7 +74,7 @@ malloc_uninit(void *data)
 void *
 _bsd_malloc(unsigned long size, struct malloc_type *mtp, int flags)
 {
-	void *p = malloc(size);
+	void *p = malloc(size > 0 ? size : 1);
 
 	if ((flags & M_ZERO) != 0 && p != NULL) {
 		memset(p, 0, size);
@@ -88,7 +88,7 @@ void *
 _bsd_realloc( void *addr, unsigned long size, 
   struct malloc_type *type, int flags)
 {
-	void *p = realloc(addr, size);
+	void *p = realloc(addr, size > 0 ? size : 1);
 
 	if ((flags & M_ZERO) != 0 && p != NULL) {
 		memset(p, 0, size);
@@ -102,7 +102,7 @@ void *
 _bsd_reallocf( void *addr, unsigned long size, 
   struct malloc_type *type, int flags)
 {
-	void *p = realloc(addr, size);
+	void *p = realloc(addr, size > 0 ? size : 1);
 
 	if (p == NULL) {
 		free(addr,NULL);

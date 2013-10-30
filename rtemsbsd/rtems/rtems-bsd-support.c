@@ -54,7 +54,6 @@ int     ngroups_max = NGROUPS_MAX; /* XXX */
 int     maxfiles = 7;                  /* XXX sys. wide open files limit */
 int     maxfilesperproc = 27;          /* XXX per-proc open files limit */
 uintptr_t dpcpu_off[MAXCPU];
-int	hogticks = 2;                  /* hogticks = 2 * sched_quantum */
 
 void
 critical_enter(void)

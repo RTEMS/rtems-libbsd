@@ -53,16 +53,12 @@ __FBSDID("$FreeBSD$");
 #include <sys/resourcevar.h>
 #include <sys/sched.h>
 #include <sys/sysctl.h>
-#ifndef __rtems__
 #include <sys/vnode.h>
-#endif
 
 #include <vm/vm.h>
 #include <vm/vm_page.h>
 #include <vm/vm_map.h>
-#ifdef __rtems__
 #include <sys/uio.h>
-#endif
 #ifdef ZERO_COPY_SOCKETS
 #include <vm/vm_param.h>
 #include <vm/vm_object.h>
@@ -136,17 +132,20 @@ retry:
 	return(KERN_SUCCESS);
 }
 #endif /* ZERO_COPY_SOCKETS */
-
 #endif /* __rtems__ */
 
 int
 uiomove(void *cp, int n, struct uio *uio)
 {
+#ifndef __rtems__
 	struct thread *td = curthread;
+#endif /* __rtems__ */
 	struct iovec *iov;
 	u_int cnt;
 	int error = 0;
+#ifndef __rtems__
 	int save = 0;
+#endif /* __rtems__ */
 
 	KASSERT(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE,
 	    ("uiomove: mode"));
@@ -158,7 +157,7 @@ uiomove(void *cp, int n, struct uio *uio)
 #ifndef __rtems__
 	save = td->td_pflags & TDP_DEADLKTREAT;
 	td->td_pflags |= TDP_DEADLKTREAT;
-#endif
+#endif /* __rtems__ */
 
 	while (n > 0 && uio->uio_resid) {
 		iov = uio->uio_iov;
@@ -174,8 +173,10 @@ uiomove(void *cp, int n, struct uio *uio)
 		switch (uio->uio_segflg) {
 
 		case UIO_USERSPACE:
+#ifndef __rtems__
 			if (ticks - PCPU_GET(switchticks) >= hogticks)
 				uio_yield();
+#endif /* __rtems__ */
 			if (uio->uio_rw == UIO_READ)
 				error = copyout(cp, iov->iov_base, cnt);
 			else
@@ -204,7 +205,7 @@ out:
 #ifndef __rtems__
 	if (save == 0)
 		td->td_pflags &= ~TDP_DEADLKTREAT;
-#endif
+#endif /* __rtems__ */
 	return (error);
 }
 
@@ -466,6 +467,7 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 	return (hashtbl);
 }
 
+#ifndef __rtems__
 void
 uio_yield(void)
 {
@@ -473,18 +475,14 @@ uio_yield(void)
 
 	td = curthread;
 	DROP_GIANT();
-#ifndef __rtems__
 	thread_lock(td);
 	sched_prio(td, td->td_user_pri);
 	mi_switch(SW_INVOL | SWT_RELINQUISH, NULL);
 	thread_unlock(td);
-#else /* __rtems__ */
 	rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
-#endif /* __rtems__ */
 	PICKUP_GIANT();
 }
 
-#ifndef __rtems__
 int
 copyinfrom(const void * __restrict src, void * __restrict dst, size_t len,
     int seg)

@@ -103,6 +103,8 @@ the current Git submodule commit is this
 * TIMEOUT(9): Maybe use special task instead of timer server to call
   callout_tick().
 
+* sysctl_handle_opaque(): Implement reliable snapshots.
+
 [listing]
 ----
     /* sysinit section? */

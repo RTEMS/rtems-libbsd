@@ -1108,22 +1108,23 @@ sysctl_handle_opaque(SYSCTL_HANDLER_ARGS)
 	req2 = *req;
 retry:
 	generation = curthread->td_generation;
+#else /* __rtems__ */
+	int error;
+#endif /* __rtems__ */
 	error = SYSCTL_OUT(req, arg1, arg2);
 	if (error)
 		return (error);
+#ifndef __rtems__
 	tries++;
 	if (generation != curthread->td_generation && tries < 3) {
 		*req = req2;
 		goto retry;
 	}
+#endif /* __rtems__ */
 
 	error = SYSCTL_IN(req, arg1, arg2);
 
 	return (error);
-#else /* __rtems__ */
-	/* FIXME */
-	return (0);
-#endif /* __rtems__ */
 }
 
 /*

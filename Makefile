@@ -118,7 +118,6 @@ freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
 	rm -f __libipsecyy.tab.c
 	mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
 LIB_C_FILES += freebsd/sys/kern/init_main.c
-LIB_C_FILES += freebsd/sys/kern/kern_environment.c
 LIB_C_FILES += freebsd/sys/kern/kern_event.c
 LIB_C_FILES += freebsd/sys/kern/kern_intr.c
 LIB_C_FILES += freebsd/sys/kern/kern_linker.c

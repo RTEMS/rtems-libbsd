@@ -445,7 +445,7 @@ main(int argc, char *argv[])
 			char *cp;
 
 			iflag = 1;
-			for (cp = interface = optarg; isalpha(*cp); cp++)
+			for (cp = interface = optarg; isalpha((unsigned char) *cp); cp++)
 				continue;
 			unit = atoi(cp);
 			break;
@@ -520,7 +520,7 @@ main(int argc, char *argv[])
 #define	BACKWARD_COMPATIBILITY
 #ifdef	BACKWARD_COMPATIBILITY
 	if (*argv) {
-		if (isdigit(**argv)) {
+		if (isdigit((unsigned char) **argv)) {
 			interval = atoi(*argv);
 			if (interval <= 0)
 				usage();

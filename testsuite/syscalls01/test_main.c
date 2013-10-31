@@ -1386,7 +1386,7 @@ test_kqueue_unsupported_ops(void)
 	errno = 0;
 	rv = ioctl(kq, 0);
 	assert(rv == -1);
-	assert(errno == ENOTSUP);
+	assert(errno == ENOTTY);
 
 	errno = 0;
 	off = lseek(kq, 0, SEEK_CUR);

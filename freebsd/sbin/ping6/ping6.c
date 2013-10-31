@@ -107,6 +107,8 @@ static const char rcsid[] =
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 
 #define USE_RFC2292BIS
 #endif /* __rtems__ */
@@ -220,7 +222,7 @@ static struct addrinfo *res;
 static struct sockaddr_in6 dst;	/* who to ping6 */
 static struct sockaddr_in6 src;	/* src addr of this packet */
 static socklen_t srclen;
-static int datalen = DEFDATALEN;
+static int datalen;
 static int s;				/* socket file descriptor */
 static u_char outpack[MAXPACKETLEN];
 static const char BSPACE = '\b';	/* characters written for flood */
@@ -229,7 +231,7 @@ static const char DOT = '.';
 static char *hostname;
 static int ident;			/* process id to identify our packets */
 static u_int8_t nonce[8];		/* nonce field for node information */
-static int hoplimit = -1;		/* hoplimit */
+static int hoplimit;			/* hoplimit */
 
 /* counters */
 static long nmissedmax;		/* max value of ntransmitted - nreceived - 1 */
@@ -237,14 +239,14 @@ static long npackets;			/* max packets to transmit */
 static long nreceived;			/* # of packets we got back */
 static long nrepeats;			/* number of duplicates */
 static long ntransmitted;		/* sequence # for outbound packets = #sent */
-static struct timeval interval = {1, 0}; /* interval between packets */
+static struct timeval interval;		/* interval between packets */
 
 /* timing */
 static int timing;			/* flag to do timing */
-static double tmin = 999999999.0;	/* minimum round trip time */
-static double tmax = 0.0;		/* maximum round trip time */
-static double tsum = 0.0;		/* sum of all times, for doing average */
-static double tsumsq = 0.0;		/* sum of all times squared, for std. dev. */
+static double tmin;			/* minimum round trip time */
+static double tmax;			/* maximum round trip time */
+static double tsum;			/* sum of all times, for doing average */
+static double tsumsq;			/* sum of all times squared, for std. dev. */
 
 /* for node addresses */
 static u_short naflags;
@@ -295,13 +297,47 @@ static int	 setpolicy(int, char *);
 static char	*nigroup(char *);
 static void	 usage(void);
 
-
-int
 #ifdef __rtems__
-main_ping6(argc, argv)
-#else
-main(argc, argv)
+int rtems_bsd_command_ping6(int argc, char **argv)
+{
+	int exit_code;
+
+	rtems_bsd_program_lock();
+
+	memset(&rcvd_tbl[0], 0, sizeof(rcvd_tbl));
+	srclen = 0;
+	datalen = DEFDATALEN;
+	memset(&outpack[0], 0, sizeof(outpack));
+	hoplimit = -1;
+	nmissedmax = 0;
+	npackets = 0;
+	nreceived = 0;
+	nrepeats = 0;
+	ntransmitted = 0;
+	interval.tv_sec = 1;
+	interval.tv_usec = 0;
+	timing = 0;
+	tmin = 999999999.0;
+	tmax = 0.0;
+	tsum = 0.0;
+	tsumsq = 0.0;
+	naflags = 0;
+	scmsg = NULL;
+	seenalrm = 0;
+	seenint = 0;
+#ifdef SIGINFO
+	seeninfo = 0;
 #endif
+
+	exit_code = rtems_bsd_program_call_main("ping6", main, argc, argv);
+
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
+int
+main(argc, argv)
 	int argc;
 	char *argv[];
 {

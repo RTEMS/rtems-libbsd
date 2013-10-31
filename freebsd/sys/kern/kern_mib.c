@@ -46,26 +46,16 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/kernel.h>
-#ifndef __rtems__
 #include <sys/sbuf.h>
-#endif
 #include <sys/systm.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
-#ifndef __rtems__
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/jail.h>
 #include <sys/smp.h>
 #include <sys/sx.h>
-#endif
 #include <rtems/bsd/sys/unistd.h>
-
-#ifdef __rtems__
-char machine[] = "SET ME";
-char osrelease[] = RTEMS_VERSION;
-char ostype[] = "RTEMS";
-#endif
 
 SYSCTL_NODE(, 0,	  sysctl, CTLFLAG_RW, 0,
 	"Sysctl internal magic");
@@ -76,16 +66,18 @@ SYSCTL_NODE(, CTL_VM,	  vm,     CTLFLAG_RW, 0,
 	"Virtual memory");
 SYSCTL_NODE(, CTL_VFS,	  vfs,     CTLFLAG_RW, 0,
 	"File system");
-#endif
+#endif /* __rtems__ */
 SYSCTL_NODE(, CTL_NET,	  net,    CTLFLAG_RW, 0,
 	"Network, (see socket.h)");
-#ifndef __rtems__
 SYSCTL_NODE(, CTL_DEBUG,  debug,  CTLFLAG_RW, 0,
 	"Debugging");
+#ifndef __rtems__
 SYSCTL_NODE(_debug, OID_AUTO,  sizeof,  CTLFLAG_RW, 0,
 	"Sizeof various things");
+#endif /* __rtems__ */
 SYSCTL_NODE(, CTL_HW,	  hw,     CTLFLAG_RW, 0,
 	"hardware");
+#ifndef __rtems__
 SYSCTL_NODE(, CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
 	"machine dependent");
 SYSCTL_NODE(, CTL_USER,	  user,   CTLFLAG_RW, 0,
@@ -96,7 +88,7 @@ SYSCTL_NODE(, CTL_P1003_1B,  p1003_1b,   CTLFLAG_RW, 0,
 SYSCTL_NODE(, OID_AUTO,  compat, CTLFLAG_RW, 0,
 	"Compatibility code");
 #endif /* __rtems__ */
-SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
+SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0, 
      	"Security");
 #ifndef __rtems__
 #ifdef REGRESSION
@@ -106,7 +98,6 @@ SYSCTL_NODE(, OID_AUTO, regression, CTLFLAG_RW, 0,
 
 SYSCTL_STRING(_kern, OID_AUTO, ident, CTLFLAG_RD|CTLFLAG_MPSAFE,
     kern_ident, 0, "Kernel identifier");
-#endif /* __rtems__ */
 
 SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
     osrelease, 0, "Operating system release");
@@ -114,15 +105,12 @@ SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
 SYSCTL_INT(_kern, KERN_OSREV, osrevision, CTLFLAG_RD,
     0, BSD, "Operating system revision");
 
-#ifndef __rtems__
 SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD|CTLFLAG_MPSAFE,
     version, 0, "Kernel version");
-#endif
 
 SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD|CTLFLAG_MPSAFE,
     ostype, 0, "Operating system type");
 
-#ifndef __rtems__
 /*
  * NOTICE: The *userland* release date is available in
  * /usr/include/osreldate.h
@@ -405,7 +393,7 @@ sysctl_kern_config(SYSCTL_HANDLER_ARGS)
 	    strlen(kernconfstring), req));
 }
 
-SYSCTL_PROC(_kern, OID_AUTO, conftxt, CTLTYPE_STRING|CTLFLAG_RW,
+SYSCTL_PROC(_kern, OID_AUTO, conftxt, CTLTYPE_STRING|CTLFLAG_RW, 
     0, 0, sysctl_kern_config, "", "Kernel configuration file");
 #endif
 
@@ -446,11 +434,11 @@ sysctl_hostid(SYSCTL_HANDLER_ARGS)
 SYSCTL_PROC(_kern, KERN_HOSTID, hostid,
     CTLTYPE_ULONG | CTLFLAG_RW | CTLFLAG_PRISON | CTLFLAG_MPSAFE,
     NULL, 0, sysctl_hostid, "LU", "Host ID");
+#endif /* __rtems__ */
 
-#endif
 SYSCTL_NODE(_kern, OID_AUTO, features, CTLFLAG_RD, 0, "Kernel Features");
-#ifndef __rtems__
 
+#ifndef __rtems__
 #ifdef COMPAT_FREEBSD4
 FEATURE(compat_freebsd4, "Compatible with FreeBSD 4");
 #endif

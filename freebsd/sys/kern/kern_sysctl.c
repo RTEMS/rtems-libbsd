@@ -37,10 +37,6 @@
  *	@(#)kern_sysctl.c	8.4 (Berkeley) 4/14/94
  */
 
-#ifdef __rtems__
-/* FIXME */
-#undef sysctl
-#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -67,16 +63,10 @@ __FBSDID("$FreeBSD$");
 #include <net/vnet.h>
 
 #include <security/mac/mac_framework.h>
+
 #include <vm/vm.h>
 #include <vm/vm_extern.h>
 
-#ifdef __rtems__
-/* From FreeBSD file 'sys/kern/kern_mib.c' */
-SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0, "Sysctl internal magic");
-SYSCTL_NODE(, CTL_KERN, kern, CTLFLAG_RW, 0, "High kernel, proc, limits &c");
-SYSCTL_NODE(, CTL_DEBUG, debug, CTLFLAG_RW, 0, "Debugging");
-SYSCTL_NODE(, CTL_HW, hw, CTLFLAG_RW, 0, "hardware");
-#endif /* __rtems__ */
 static MALLOC_DEFINE(M_SYSCTL, "sysctl", "sysctl internal magic");
 static MALLOC_DEFINE(M_SYSCTLOID, "sysctloid", "sysctl dynamic oids");
 static MALLOC_DEFINE(M_SYSCTLTMP, "sysctltmp", "sysctl temp output buffer");

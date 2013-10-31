@@ -105,6 +105,8 @@ the current Git submodule commit is this
 
 * sysctl_handle_opaque(): Implement reliable snapshots.
 
+* PING6(8): What to do with SIGALARM?
+
 [listing]
 ----
     /* sysinit section? */

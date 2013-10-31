@@ -2710,7 +2710,7 @@ fill(bp, patp)
 	char *cp;
 
 	for (cp = patp; *cp; cp++)
-		if (!isxdigit(*cp))
+		if (!isxdigit((unsigned char) *cp))
 			errx(1, "patterns must be specified as hex digits");
 	ii = sscanf(patp,
 	    "%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x%2x",

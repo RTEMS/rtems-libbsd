@@ -685,6 +685,7 @@ LIB_C_FILES += freebsd/lib/libc/net/name6.c
 LIB_C_FILES += freebsd/lib/libc/net/nsdispatch.c
 LIB_C_FILES += freebsd/lib/libc/net/rcmd.c
 LIB_C_FILES += freebsd/lib/libc/net/recv.c
+LIB_C_FILES += freebsd/lib/libc/net/rthdr.c
 LIB_C_FILES += freebsd/lib/libc/net/send.c
 LIB_C_FILES += freebsd/lib/libc/net/vars.c
 LIB_C_FILES += freebsd/lib/libc/posix1e/mac.c

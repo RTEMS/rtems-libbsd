@@ -2199,6 +2199,7 @@ userSpace.addUserSpaceSourceFiles(
 		'lib/libc/net/nsdispatch.c',
 		'lib/libc/net/rcmd.c',
 		'lib/libc/net/recv.c',
+		'lib/libc/net/rthdr.c',
 		'lib/libc/net/send.c',
 		'lib/libc/net/vars.c',
 		'lib/libc/posix1e/mac.c',

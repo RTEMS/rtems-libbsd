@@ -859,8 +859,6 @@ TEST_NETSHELL01_O_FILES += testsuite/netshell01/test_main.o
 TEST_NETSHELL01_D_FILES += testsuite/netshell01/test_main.d
 TEST_NETSHELL01_O_FILES += testsuite/netshell01/shellconfig.o
 TEST_NETSHELL01_D_FILES += testsuite/netshell01/shellconfig.d
-TEST_NETSHELL01_O_FILES += testsuite/netshell01/ns_parser_vars.o
-TEST_NETSHELL01_D_FILES += testsuite/netshell01/ns_parser_vars.d
 $(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
 	$(LINK.c) -Wl,-Map,testsuite/netshell01/netshell01.map $^ -lm -lz -o $@
 TESTS += $(TEST_NETSHELL01)

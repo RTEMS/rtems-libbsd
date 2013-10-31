@@ -213,7 +213,7 @@ static u_int options;
  * to 8192 for complete accuracy...
  */
 #define	MAX_DUP_CHK	(8 * 8192)
-static int mx_dup_ck = MAX_DUP_CHK;
+static const int mx_dup_ck = MAX_DUP_CHK;
 static char rcvd_tbl[MAX_DUP_CHK / 8];
 
 static struct addrinfo *res;
@@ -223,9 +223,9 @@ static socklen_t srclen;
 static int datalen = DEFDATALEN;
 static int s;				/* socket file descriptor */
 static u_char outpack[MAXPACKETLEN];
-static char BSPACE = '\b';		/* characters written for flood */
-static char BBELL = '\a';		/* characters written for AUDIBLE */
-static char DOT = '.';
+static const char BSPACE = '\b';	/* characters written for flood */
+static const char BBELL = '\a';		/* characters written for AUDIBLE */
+static const char DOT = '.';
 static char *hostname;
 static int ident;			/* process id to identify our packets */
 static u_int8_t nonce[8];		/* nonce field for node information */

@@ -230,7 +230,6 @@ static char *hostname;
 static int ident;			/* process id to identify our packets */
 static u_int8_t nonce[8];		/* nonce field for node information */
 static int hoplimit = -1;		/* hoplimit */
-static int pathmtu = 0;		/* path MTU for the destination.  0 = unspec. */
 
 /* counters */
 static long nmissedmax;		/* max value of ntransmitted - nreceived - 1 */

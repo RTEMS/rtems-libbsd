@@ -111,6 +111,7 @@ static const char rcsid[] =
 #include <machine/rtems-bsd-commands.h>
 
 #define USE_RFC2292BIS
+#define HAVE_POLL_H
 #endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/uio.h>
@@ -262,6 +263,9 @@ static volatile sig_atomic_t seenint;
 static volatile sig_atomic_t seeninfo;
 #endif
 
+static u_char *packet;
+static struct cmsghdr *cm;
+
 static int	 main(int, char *[]);
 static void	 fill(char *, char *);
 static int	 get_hoplim(struct msghdr *);
@@ -305,8 +309,10 @@ int rtems_bsd_command_ping6(int argc, char **argv)
 	rtems_bsd_program_lock();
 
 	memset(&rcvd_tbl[0], 0, sizeof(rcvd_tbl));
+	res = NULL;
 	srclen = 0;
 	datalen = DEFDATALEN;
+	s = -1;
 	memset(&outpack[0], 0, sizeof(outpack));
 	hoplimit = -1;
 	nmissedmax = 0;
@@ -329,9 +335,22 @@ int rtems_bsd_command_ping6(int argc, char **argv)
 	seeninfo = 0;
 #endif
 
+	packet = NULL;
+	cm = NULL;
+
 	exit_code = rtems_bsd_program_call_main("ping6", main, argc, argv);
 
 	rtems_bsd_program_unlock();
+
+	close(s);
+	free(scmsg);
+	free(packet);
+
+	if (res != NULL) {
+		freeaddrinfo(res);
+	}
+
+	free(cm);
 
 	return exit_code;
 }
@@ -360,11 +379,10 @@ main(argc, argv)
 #endif
 	int cc, i;
 	int ch, hold, packlen, preload, optval, ret_ga;
-	u_char *datap, *packet;
+	u_char *datap;
 	char *e, *target, *ifname = NULL, *gateway = NULL;
 	int ip6optlen = 0;
 	struct cmsghdr *scmsgp = NULL;
-	struct cmsghdr *cm;
 #if defined(SO_SNDBUF) && defined(SO_RCVBUF)
 	u_long lsockbufsize;
 	int sockbufsize = 0;
@@ -588,6 +606,7 @@ main(argc, argv)
 			memcpy(&src, res->ai_addr, res->ai_addrlen);
 			srclen = res->ai_addrlen;
 			freeaddrinfo(res);
+			res = NULL;
 			options |= F_SRCADDR;
 			break;
 		case 's':		/* size of packet to send */
@@ -716,14 +735,17 @@ main(argc, argv)
 
 		error = getaddrinfo(gateway, NULL, &hints, &gres);
 		if (error) {
+			freeaddrinfo(gres);
 			errx(1, "getaddrinfo for the gateway %s: %s",
 			     gateway, gai_strerror(error));
 		}
 		if (gres->ai_next && (options & F_VERBOSE))
+			freeaddrinfo(gres);
 			warnx("gateway resolves to multiple addresses");
 
 		if (setsockopt(s, IPPROTO_IPV6, IPV6_NEXTHOP,
 			       gres->ai_addr, gres->ai_addrlen)) {
+			freeaddrinfo(gres);
 			err(1, "setsockopt(IPV6_NEXTHOP)");
 		}
 

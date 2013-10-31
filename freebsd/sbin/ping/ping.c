@@ -229,22 +229,38 @@ int rtems_bsd_command_ping(int argc, char *argv[])
 
 	rtems_bsd_program_lock();
 
+	memset(&rcvd_tbl[0], 0, sizeof(rcvd_tbl));
+	s = -1;
+	memset(&outpackhdr[0], 0, sizeof(outpackhdr));
 	icmp_type = ICMP_ECHO;
 	icmp_type_rsp = ICMP_ECHOREPLY;
 	phdr_len = 0;
+	nmissedmax = 0;
+	npackets = 0;
+	nreceived = 0;
+	nrepeats = 0;
+	ntransmitted = 0;
+	snpackets = 0;
+	sntransmitted = 0;
+	sweepmax = 0;
 	sweepmin = 0;
 	sweepincr = 1;
 	interval = 1000;
 	waittime = MAXWAIT;
 	nrcvtimeout = 0;
+	timing = 0;
 	tmin = 999999999.0;
 	tmax = 0.0;
 	tsum = 0.0;
 	tsumsq = 0.0;
+	finish_up = 0;
+	siginfo_p = 0;
 
 	exit_code = rtems_bsd_program_call_main("ping", main, argc, argv);
 
 	rtems_bsd_program_unlock();
+
+	close(s);
 
 	return exit_code;
 }

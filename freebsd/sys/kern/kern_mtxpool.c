@@ -80,18 +80,22 @@ struct mtx_pool {
 	struct mtx	mtx_pool_ary[1];
 };
 
+#ifndef __rtems__
 static struct mtx_pool_lockbuilder {
 	struct mtxpool_header mtx_pool_header;
 	struct mtx	mtx_pool_ary[MTX_POOL_LOCKBUILDER_SIZE];
 } lockbuilder_pool;
+#endif /* __rtems__ */
 
 #define mtx_pool_size	mtx_pool_header.mtxpool_size
 #define mtx_pool_mask	mtx_pool_header.mtxpool_mask
 #define mtx_pool_shift	mtx_pool_header.mtxpool_shift
 #define mtx_pool_next	mtx_pool_header.mtxpool_next
 
+#ifndef __rtems__
 struct mtx_pool *mtxpool_sleep;
 struct mtx_pool *mtxpool_lockbuilder;
+#endif /* __rtems__ */
 
 #if UINTPTR_MAX == UINT64_MAX	/* 64 bits */
 # define POINTER_BITS		64
@@ -167,6 +171,7 @@ mtx_pool_destroy(struct mtx_pool **poolp)
 	*poolp = NULL;
 }
 
+#ifndef __rtems__
 static void
 mtx_pool_setup_static(void *dummy __unused)
 {
@@ -182,6 +187,7 @@ mtx_pool_setup_dynamic(void *dummy __unused)
 	mtxpool_sleep = mtx_pool_create("sleep mtxpool",
 	    MTX_POOL_SLEEP_SIZE, MTX_DEF);
 }
+#endif /* __rtems__ */
 
 /*
  * Obtain a (shared) mutex from the pool.  The returned mutex is a leaf
@@ -204,6 +210,7 @@ mtx_pool_alloc(struct mtx_pool *pool)
 	return (&pool->mtx_pool_ary[i]);
 }
 
+#ifndef __rtems__
 /*
  * The lockbuilder pool must be initialized early because the lockmgr
  * and sx locks depend on it.  The sx locks are used in the kernel
@@ -218,3 +225,4 @@ SYSINIT(mtxpooli1, SI_SUB_MTX_POOL_STATIC, SI_ORDER_FIRST,
     mtx_pool_setup_static, NULL);
 SYSINIT(mtxpooli2, SI_SUB_MTX_POOL_DYNAMIC, SI_ORDER_FIRST,
     mtx_pool_setup_dynamic, NULL);
+#endif /* __rtems__ */

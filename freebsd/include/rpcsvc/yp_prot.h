@@ -67,10 +67,12 @@
  * YPPROC_MAPLIST	takes (char *), returns (struct ypmaplist *).
  */
 
+#ifndef __rtems__
 #ifndef BOOL_DEFINED
 typedef u_int bool;
 #define BOOL_DEFINED
 #endif
+#endif /* __rtems__ */
 
 /* Program and version symbols, magic numbers */
 

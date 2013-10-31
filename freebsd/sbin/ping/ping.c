@@ -184,7 +184,6 @@ static long nreceived;			/* # of packets we got back */
 static long nrepeats;			/* number of duplicates */
 static long ntransmitted;		/* sequence # for outbound packets = #sent */
 static long snpackets;			/* max packets to transmit in one sweep */
-static long snreceived;		/* # of packets we got back in this sweep */
 static long sntransmitted;		/* # of packets we sent in this sweep */
 static int sweepmax;			/* max value of payload in sweep */
 static int sweepmin = 0;		/* start value of payload in sweep */

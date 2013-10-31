@@ -131,7 +131,7 @@ static void	flushroutes(), newroute(), monitor(), sockaddr(), sodump(), bprintf(
 static void	print_getmsg(), print_rtmsg(), pmsg_common(), pmsg_addrs(), mask_addr();
 static void	inet_makenetandmask();
 #ifdef INET6
-static int	inet6_makenetandmask(struct sockaddr_in6 *, char *);
+static int	inet6_makenetandmask(struct rt_ctx *, struct sockaddr_in6 *, char *);
 #endif
 static int	getaddr(), rtmsg();
 static int	prefixlen();
@@ -943,7 +943,8 @@ inet_makenetandmask(c, net, sin, bits)
  * XXX the function may need more improvement...
  */
 static int
-inet6_makenetandmask(sin6, plen)
+inet6_makenetandmask(c, sin6, plen)
+	struct rt_ctx *c;
 	struct sockaddr_in6 *sin6;
 	char *plen;
 {
@@ -1104,7 +1105,7 @@ getaddr(c, which, s, hpp)
 		if (q != NULL)
 			*q++ = '/';
 		if (which == RTA_DST)
-			return (inet6_makenetandmask(&su->sin6, q));
+			return (inet6_makenetandmask(c, &su->sin6, q));
 		return (0);
 	}
 #endif /* INET6 */

@@ -24,6 +24,7 @@ CFLAGS += -Ifreebsd/lib/libipsec
 CFLAGS += -Itestsuite/include
 CFLAGS += -D__FreeBSD__
 CFLAGS += -D__DBINTERFACE_PRIVATE
+CFLAGS += -DINET6
 CFLAGS += -w
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -688,7 +689,6 @@ LIB_C_FILES += freebsd/lib/libc/net/rcmd.c
 LIB_C_FILES += freebsd/lib/libc/net/recv.c
 LIB_C_FILES += freebsd/lib/libc/net/rthdr.c
 LIB_C_FILES += freebsd/lib/libc/net/send.c
-LIB_C_FILES += freebsd/lib/libc/net/vars.c
 LIB_C_FILES += freebsd/lib/libc/posix1e/mac.c
 LIB_C_FILES += freebsd/lib/libc/resolv/h_errno.c
 LIB_C_FILES += freebsd/lib/libc/resolv/herror.c

@@ -405,6 +405,7 @@ class ModuleManager:
 			'CFLAGS += -Itestsuite/include\n' \
 			'CFLAGS += -D__FreeBSD__\n' \
 			'CFLAGS += -D__DBINTERFACE_PRIVATE\n' \
+			'CFLAGS += -DINET6\n' \
 			'CFLAGS += -w\n' \
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
@@ -2202,7 +2203,6 @@ userSpace.addUserSpaceSourceFiles(
 		'lib/libc/net/recv.c',
 		'lib/libc/net/rthdr.c',
 		'lib/libc/net/send.c',
-		'lib/libc/net/vars.c',
 		'lib/libc/posix1e/mac.c',
 		'lib/libc/resolv/h_errno.c',
 		'lib/libc/resolv/herror.c',

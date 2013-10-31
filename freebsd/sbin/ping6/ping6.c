@@ -199,7 +199,7 @@ struct tv32 {
 #define F_MISSED	0x800000
 #define F_DONTFRAG	0x1000000
 #define F_NOUSERDATA	(F_NODEADDR | F_FQDN | F_FQDNOLD | F_SUPTYPES)
-u_int options;
+static u_int options;
 
 #define IN6LEN		sizeof(struct in6_addr)
 #define SA6LEN		sizeof(struct sockaddr_in6)
@@ -213,52 +213,52 @@ u_int options;
  * to 8192 for complete accuracy...
  */
 #define	MAX_DUP_CHK	(8 * 8192)
-int mx_dup_ck = MAX_DUP_CHK;
-char rcvd_tbl[MAX_DUP_CHK / 8];
+static int mx_dup_ck = MAX_DUP_CHK;
+static char rcvd_tbl[MAX_DUP_CHK / 8];
 
-struct addrinfo *res;
-struct sockaddr_in6 dst;	/* who to ping6 */
-struct sockaddr_in6 src;	/* src addr of this packet */
-socklen_t srclen;
-int datalen = DEFDATALEN;
-int s;				/* socket file descriptor */
-u_char outpack[MAXPACKETLEN];
-char BSPACE = '\b';		/* characters written for flood */
-char BBELL = '\a';		/* characters written for AUDIBLE */
-char DOT = '.';
-char *hostname;
-int ident;			/* process id to identify our packets */
-u_int8_t nonce[8];		/* nonce field for node information */
-int hoplimit = -1;		/* hoplimit */
-int pathmtu = 0;		/* path MTU for the destination.  0 = unspec. */
+static struct addrinfo *res;
+static struct sockaddr_in6 dst;	/* who to ping6 */
+static struct sockaddr_in6 src;	/* src addr of this packet */
+static socklen_t srclen;
+static int datalen = DEFDATALEN;
+static int s;				/* socket file descriptor */
+static u_char outpack[MAXPACKETLEN];
+static char BSPACE = '\b';		/* characters written for flood */
+static char BBELL = '\a';		/* characters written for AUDIBLE */
+static char DOT = '.';
+static char *hostname;
+static int ident;			/* process id to identify our packets */
+static u_int8_t nonce[8];		/* nonce field for node information */
+static int hoplimit = -1;		/* hoplimit */
+static int pathmtu = 0;		/* path MTU for the destination.  0 = unspec. */
 
 /* counters */
-long nmissedmax;		/* max value of ntransmitted - nreceived - 1 */
-long npackets;			/* max packets to transmit */
-long nreceived;			/* # of packets we got back */
-long nrepeats;			/* number of duplicates */
-long ntransmitted;		/* sequence # for outbound packets = #sent */
-struct timeval interval = {1, 0}; /* interval between packets */
+static long nmissedmax;		/* max value of ntransmitted - nreceived - 1 */
+static long npackets;			/* max packets to transmit */
+static long nreceived;			/* # of packets we got back */
+static long nrepeats;			/* number of duplicates */
+static long ntransmitted;		/* sequence # for outbound packets = #sent */
+static struct timeval interval = {1, 0}; /* interval between packets */
 
 /* timing */
-int timing;			/* flag to do timing */
-double tmin = 999999999.0;	/* minimum round trip time */
-double tmax = 0.0;		/* maximum round trip time */
-double tsum = 0.0;		/* sum of all times, for doing average */
-double tsumsq = 0.0;		/* sum of all times squared, for std. dev. */
+static int timing;			/* flag to do timing */
+static double tmin = 999999999.0;	/* minimum round trip time */
+static double tmax = 0.0;		/* maximum round trip time */
+static double tsum = 0.0;		/* sum of all times, for doing average */
+static double tsumsq = 0.0;		/* sum of all times squared, for std. dev. */
 
 /* for node addresses */
-u_short naflags;
+static u_short naflags;
 
 /* for ancillary data(advanced API) */
-struct msghdr smsghdr;
-struct iovec smsgiov;
-char *scmsg = 0;
+static struct msghdr smsghdr;
+static struct iovec smsgiov;
+static char *scmsg = 0;
 
-volatile sig_atomic_t seenalrm;
-volatile sig_atomic_t seenint;
+static volatile sig_atomic_t seenalrm;
+static volatile sig_atomic_t seenint;
 #ifdef SIGINFO
-volatile sig_atomic_t seeninfo;
+static volatile sig_atomic_t seeninfo;
 #endif
 
 #ifdef __rtems__

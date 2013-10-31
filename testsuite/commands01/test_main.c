@@ -118,19 +118,45 @@ test_ifconfig_lo0(void)
 		"255.255.255.0",
 		NULL
 	};
+	char *lo0_inet6[] = {
+		"ifconfig",
+		"lo0",
+		"inet6",
+		"::1",
+		"prefixlen",
+		"128",
+		NULL
+	};
 	char *status[] = {
 		"ifconfig",
 		"lo0",
 		"inet",
 		NULL
 	};
+	char *status_inet6[] = {
+		"ifconfig",
+		"lo0",
+		"inet6",
+		NULL
+	};
 
 	exit_code = rtems_bsd_command_ifconfig(ARGC(lo0), lo0);
+	assert(exit_code == EX_OK);
+
+	exit_code = rtems_bsd_command_ifconfig(ARGC(lo0_inet6), lo0_inet6);
 	assert(exit_code == EX_OK);
 
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_ifconfig(ARGC(status), status);
+	assert(exit_code == EX_OK);
+
+	exit_code = rtems_bsd_command_ifconfig(ARGC(status_inet6), status_inet6);
+	assert(exit_code == EX_OK);
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	exit_code = rtems_bsd_command_ifconfig(ARGC(status_inet6), status_inet6);
 	assert(exit_code == EX_OK);
 
 	assert(rtems_resource_snapshot_check(&snapshot));
@@ -171,6 +197,30 @@ test_ping(void)
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_ping(ARGC(ping), ping);
+	assert(exit_code == EXIT_SUCCESS);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
+test_ping6(void)
+{
+	rtems_resource_snapshot snapshot;
+	int exit_code;
+	char *ping6[] = {
+		"ping6",
+		"-c",
+		"1",
+		"::1",
+		NULL
+	};
+
+	exit_code = rtems_bsd_command_ping6(ARGC(ping6), ping6);
+	assert(exit_code == EXIT_SUCCESS);
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	exit_code = rtems_bsd_command_ping6(ARGC(ping6), ping6);
 	assert(exit_code == EXIT_SUCCESS);
 
 	assert(rtems_resource_snapshot_check(&snapshot));
@@ -230,6 +280,7 @@ test_main(void)
 	test_ifconfig_lo0();
 	test_route_with_lo0();
 	test_ping();
+	test_ping6();
 	test_netstat();
 
 	rtems_stack_checker_report_usage_with_plugin(NULL,

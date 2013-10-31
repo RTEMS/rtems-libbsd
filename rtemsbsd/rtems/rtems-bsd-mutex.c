@@ -299,15 +299,23 @@ mtx_sysinit(void *arg)
 void
 mtx_destroy(struct mtx *m)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
+	rtems_status_code sc;
 
-	sc = rtems_semaphore_delete(m->lock_object.lo_id);
-	BSD_ASSERT_SC(sc);
+	do {
+		sc = rtems_semaphore_delete(m->lock_object.lo_id);
+		if (sc == RTEMS_RESOURCE_IN_USE) {
+			BSD_ASSERT(mtx_owned(m));
+
+			mtx_unlock(m);
+		} else {
+			BSD_ASSERT_SC(sc);
+		}
+	} while (sc != RTEMS_SUCCESSFUL);
 
 	rtems_chain_extract(&m->lock_object.lo_node);
 
-  m->lock_object.lo_id = 0;
-  m->lock_object.lo_flags &= ~LO_INITIALIZED;
+	m->lock_object.lo_id = 0;
+	m->lock_object.lo_flags &= ~LO_INITIALIZED;
 }
 
 void

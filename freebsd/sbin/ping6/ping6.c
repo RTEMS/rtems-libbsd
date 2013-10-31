@@ -261,40 +261,41 @@ static volatile sig_atomic_t seenint;
 static volatile sig_atomic_t seeninfo;
 #endif
 
-#ifdef __rtems__
-int	 main_ping6(int, char *[]);
-#else
-int	 main(int, char *[]);
+static int	 main(int, char *[]);
+static void	 fill(char *, char *);
+static int	 get_hoplim(struct msghdr *);
+static int	 get_pathmtu(struct msghdr *);
+static struct in6_pktinfo *get_rcvpktinfo(struct msghdr *);
+static void	 onsignal(int);
+static void	 retransmit(void);
+static void	 onint(int);
+static size_t	 pingerlen(void);
+static int	 pinger(void);
+static const char *pr_addr(struct sockaddr *, int);
+static void	 pr_icmph(struct icmp6_hdr *, u_char *);
+static void	 pr_iph(struct ip6_hdr *);
+static void	 pr_suptypes(struct icmp6_nodeinfo *, size_t);
+static void	 pr_nodeaddr(struct icmp6_nodeinfo *, int);
+static int	 myechoreply(const struct icmp6_hdr *);
+static int	 mynireply(const struct icmp6_nodeinfo *);
+static char *dnsdecode(const u_char **, const u_char *, const u_char *,
+		char *, size_t);
+static void	 pr_pack(u_char *, int, struct msghdr *);
+static void	 pr_exthdrs(struct msghdr *);
+static void	 pr_ip6opt(void *, size_t);
+static void	 pr_rthdr(void *, size_t);
+static int	 pr_bitrange(u_int32_t, int, int);
+static void	 pr_retip(struct ip6_hdr *, u_char *);
+static void	 summary(void);
+static void	 tvsub(struct timeval *, struct timeval *);
+#ifdef IPSEC
+#ifdef IPSEC_POLICY_IPSEC
+static int	 setpolicy(int, char *);
 #endif
-void	 fill(char *, char *);
-int	 get_hoplim(struct msghdr *);
-int	 get_pathmtu(struct msghdr *);
-struct in6_pktinfo *get_rcvpktinfo(struct msghdr *);
-void	 onsignal(int);
-void	 retransmit(void);
-void	 onint(int);
-size_t	 pingerlen(void);
-int	 pinger(void);
-const char *pr_addr(struct sockaddr *, int);
-void	 pr_icmph(struct icmp6_hdr *, u_char *);
-void	 pr_iph(struct ip6_hdr *);
-void	 pr_suptypes(struct icmp6_nodeinfo *, size_t);
-void	 pr_nodeaddr(struct icmp6_nodeinfo *, int);
-int	 myechoreply(const struct icmp6_hdr *);
-int	 mynireply(const struct icmp6_nodeinfo *);
-char *dnsdecode(const u_char **, const u_char *, const u_char *,
-	char *, size_t);
-void	 pr_pack(u_char *, int, struct msghdr *);
-void	 pr_exthdrs(struct msghdr *);
-void	 pr_ip6opt(void *, size_t);
-void	 pr_rthdr(void *, size_t);
-int	 pr_bitrange(u_int32_t, int, int);
-void	 pr_retip(struct ip6_hdr *, u_char *);
-void	 summary(void);
-void	 tvsub(struct timeval *, struct timeval *);
-int	 setpolicy(int, char *);
-char	*nigroup(char *);
-void	 usage(void);
+#endif
+static char	*nigroup(char *);
+static void	 usage(void);
+
 
 int
 #ifdef __rtems__

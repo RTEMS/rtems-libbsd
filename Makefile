@@ -5,6 +5,7 @@ include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
 CFLAGS += -ffreestanding
+CFLAGS += -fno-common
 CFLAGS += -Irtemsbsd/include
 CFLAGS += -Irtemsbsd/$(RTEMS_CPU)/include
 CFLAGS += -Ifreebsd/sys

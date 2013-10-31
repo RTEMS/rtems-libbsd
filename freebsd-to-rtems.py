@@ -386,6 +386,7 @@ class ModuleManager:
 			'include $(PROJECT_ROOT)/make/leaf.cfg\n' \
 			'\n' \
 			'CFLAGS += -ffreestanding\n' \
+			'CFLAGS += -fno-common\n' \
 			'CFLAGS += -Irtemsbsd/include\n' \
 			'CFLAGS += -Irtemsbsd/$(RTEMS_CPU)/include\n' \
 			'CFLAGS += -Ifreebsd/sys\n' \

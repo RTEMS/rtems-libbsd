@@ -679,6 +679,7 @@ LIB_C_FILES += freebsd/lib/libc/net/getservent.c
 LIB_C_FILES += freebsd/lib/libc/net/if_indextoname.c
 LIB_C_FILES += freebsd/lib/libc/net/if_nameindex.c
 LIB_C_FILES += freebsd/lib/libc/net/if_nametoindex.c
+LIB_C_FILES += freebsd/lib/libc/net/ip6opt.c
 LIB_C_FILES += freebsd/lib/libc/net/linkaddr.c
 LIB_C_FILES += freebsd/lib/libc/net/map_v4v6.c
 LIB_C_FILES += freebsd/lib/libc/net/name6.c

@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include <net/if.h>
 
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -338,12 +339,20 @@ in6_getprefix(const char *plen, int which)
 }
 
 static void
-in6_getaddr(const char *s, int which)
+in6_getaddr(const char *cs, int which)
 {
 	struct sockaddr_in6 *sin = sin6tab[which];
 	struct addrinfo hints, *res;
 	int error = -1;
+	char s[64];
+	size_t slen = strlen(cs);
 
+	if (slen < sizeof(s) - 1 ) {
+		memcpy(s, cs, slen + 1);
+	} else {
+		error = ENAMETOOLONG;
+		goto done;
+	}
 	newaddr &= 1;
 
 	sin->sin6_len = sizeof(*sin);
@@ -364,9 +373,10 @@ in6_getaddr(const char *s, int which)
 		hints.ai_family = AF_INET6;
 		error = getaddrinfo(s, NULL, &hints, &res);
 	}
+done:
 	if (error != 0) {
-		if (inet_pton(AF_INET6, s, &sin->sin6_addr) != 1)
-			errx(1, "%s: bad value", s);
+		if (inet_pton(AF_INET6, cs, &sin->sin6_addr) != 1)
+			errx(1, "%s: bad value", cs);
 	} else
 		bcopy(res->ai_addr, sin, res->ai_addrlen);
 }

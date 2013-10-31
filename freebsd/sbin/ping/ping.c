@@ -157,7 +157,7 @@ static int options;
  * to 8192 for complete accuracy...
  */
 #define	MAX_DUP_CHK	(8 * 128)
-static int mx_dup_ck = MAX_DUP_CHK;
+static const int mx_dup_ck = MAX_DUP_CHK;
 static char rcvd_tbl[MAX_DUP_CHK / 8];
 
 static struct sockaddr_in whereto;	/* who to ping */
@@ -165,9 +165,9 @@ static int datalen = DEFDATALEN;
 static int maxpayload;
 static int s;				/* socket file descriptor */
 static u_char outpackhdr[IP_MAXPACKET], *outpack;
-static char BBELL = '\a';		/* characters written for MISSED and AUDIBLE */
-static char BSPACE = '\b';		/* characters written for flood */
-static char DOT = '.';
+static const char BBELL = '\a';		/* characters written for MISSED and AUDIBLE */
+static const char BSPACE = '\b';		/* characters written for flood */
+static const char DOT = '.';
 static char *hostname;
 static char *shostname;
 static int ident;			/* process id to identify our packets */
@@ -230,9 +230,6 @@ int rtems_bsd_command_ping(int argc, char *argv[])
 
 	rtems_bsd_program_lock();
 
-	BBELL = '\a';
-	BSPACE = '\b';
-	DOT = '.';
 	icmp_type = ICMP_ECHO;
 	icmp_type_rsp = ICMP_ECHOREPLY;
 	phdr_len = 0;

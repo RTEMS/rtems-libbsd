@@ -722,7 +722,6 @@ base.addHeaderFiles(
 		'sys/sys/priv.h',
 		'sys/sys/proc.h',
 		'sys/sys/protosw.h',
-		'sys/sys/queue.h',
 		'sys/sys/random.h',
 		'sys/sys/reboot.h',
 		'sys/sys/refcount.h',

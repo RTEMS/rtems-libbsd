@@ -214,7 +214,7 @@ bus_space_free(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t 
 
 #if defined(__i386__)
   #include <machine/bus_space-i386.h>
-#elif defined(__ppc__)
+#elif defined(__ppc__) || defined(__arm__)
   #include <machine/bus_space-simple_memory.h>
 #else
   #warning "Bus space routines not implemented for this architecture!!"

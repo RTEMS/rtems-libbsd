@@ -85,14 +85,12 @@
 
 #define	PI_REALTIME		(PRI_MIN_ITHD + 0)
 #define	PI_AV			(PRI_MIN_ITHD + 4)
-#define	PI_TTYHIGH		(PRI_MIN_ITHD + 8)
-#define	PI_TAPE			(PRI_MIN_ITHD + 12)
 #define	PI_NET			(PRI_MIN_ITHD + 16)
 #define	PI_DISK			(PRI_MIN_ITHD + 20)
-#define	PI_TTYLOW		(PRI_MIN_ITHD + 24)
-#define	PI_DISKLOW		(PRI_MIN_ITHD + 28)
+#define	PI_TTY			(PRI_MIN_ITHD + 24)
 #define	PI_DULL			(PRI_MIN_ITHD + 32)
 #define	PI_SOFT			(PRI_MIN_ITHD + 36)
+#define	PI_SWI(x)		(PI_SOFT + (x) * RQ_PPQ)
 
 #define	PRI_MIN_KERN		(64)
 #define	PRI_MAX_KERN		(PRI_MIN_REALTIME - 1)
@@ -105,7 +103,6 @@
 #define	PZERO			(PRI_MIN_KERN + 20)
 #define	PSOCK			(PRI_MIN_KERN + 24)
 #define	PWAIT			(PRI_MIN_KERN + 28)
-#define	PCONFIG			(PRI_MIN_KERN + 32)
 #define	PLOCK			(PRI_MIN_KERN + 36)
 #define	PPAUSE			(PRI_MIN_KERN + 40)
 
@@ -119,6 +116,12 @@
 
 #define	PRI_MIN_IDLE		(224)
 #define	PRI_MAX_IDLE		(PRI_MAX)
+
+#ifdef _KERNEL
+/* Other arguments for kern_yield(9). */
+#define	PRI_USER	-2	/* Change to current user priority. */
+#define	PRI_UNCHANGED	-1	/* Do not change priority. */
+#endif
 
 struct priority {
 	u_char	pri_class;	/* Scheduling class. */

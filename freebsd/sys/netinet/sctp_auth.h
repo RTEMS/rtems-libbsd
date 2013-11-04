@@ -1,15 +1,17 @@
 /*-
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -31,8 +33,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#ifndef __SCTP_AUTH_HH__
-#define __SCTP_AUTH_HH__
+#ifndef _NETINET_SCTP_AUTH_H_
+#define _NETINET_SCTP_AUTH_H_
 
 
 /* digest lengths */
@@ -87,7 +89,7 @@ typedef struct sctp_hmaclist {
 }             sctp_hmaclist_t;
 
 /* authentication info */
-typedef struct sctp_authinfo {
+typedef struct sctp_authinformation {
 	sctp_key_t *random;	/* local random key (concatenated) */
 	uint32_t random_len;	/* local random number length for param */
 	sctp_key_t *peer_random;/* peer's random key (concatenated) */
@@ -96,7 +98,7 @@ typedef struct sctp_authinfo {
 	uint16_t active_keyid;	/* active send keyid */
 	uint16_t assoc_keyid;	/* current send keyid (cached) */
 	uint16_t recv_keyid;	/* last recv keyid (cached) */
-}             sctp_authinfo_t;
+}                    sctp_authinfo_t;
 
 
 
@@ -154,7 +156,9 @@ sctp_copy_skeylist(const struct sctp_keyhead *src,
 
 /* ref counts on shared keys, by key id */
 extern void sctp_auth_key_acquire(struct sctp_tcb *stcb, uint16_t keyid);
-extern void sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t keyid);
+extern void 
+sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t keyid,
+    int so_locked);
 
 
 /* hmac list handling */

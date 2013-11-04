@@ -91,19 +91,13 @@ __FBSDID("$FreeBSD$");
 #endif
 
 /****************************************************************************/
-/* BCE Build Time Options                                                   */
-/****************************************************************************/
-/* #define BCE_NVRAM_WRITE_SUPPORT 1 */
-
-
-/****************************************************************************/
 /* PCI Device ID Table                                                      */
 /*                                                                          */
 /* Used by bce_probe() to identify the devices supported by this driver.    */
 /****************************************************************************/
 #define BCE_DEVDESC_MAX		64
 
-static struct bce_type bce_devs[] = {
+static const struct bce_type bce_devs[] = {
 	/* BCM5706C Controllers and OEM boards. */
 	{ BRCM_VENDORID, BRCM_DEVICEID_BCM5706,  HP_VENDORID, 0x3101,
 		"HP NC370T Multifunction Gigabit Server Adapter" },
@@ -169,7 +163,7 @@ static struct bce_type bce_devs[] = {
 /****************************************************************************/
 /* Supported Flash NVRAM device data.                                       */
 /****************************************************************************/
-static struct flash_spec flash_table[] =
+static const struct flash_spec flash_table[] =
 {
 #define BUFFERED_FLAGS		(BCE_NV_BUFFERED | BCE_NV_TRANSLATE)
 #define NONBUFFERED_FLAGS	(BCE_NV_WREN)
@@ -266,7 +260,7 @@ static struct flash_spec flash_table[] =
  * logical-to-physical mapping is required in the
  * driver.
  */
-static struct flash_spec flash_5709 = {
+static const struct flash_spec flash_5709 = {
 	.flags		= BCE_NV_BUFFERED,
 	.page_bits	= BCM5709_FLASH_PAGE_BITS,
 	.page_size	= BCM5709_FLASH_PAGE_SIZE,
@@ -289,48 +283,43 @@ static int  bce_shutdown		(device_t);
 /* BCE Debug Data Structure Dump Routines                                   */
 /****************************************************************************/
 #ifdef BCE_DEBUG
-static u32  bce_reg_rd			(struct bce_softc *, u32);
-static void bce_reg_wr			(struct bce_softc *, u32, u32);
-static void bce_reg_wr16		(struct bce_softc *, u32, u16);
-static u32  bce_ctx_rd			(struct bce_softc *, u32, u32);
-static void bce_dump_enet		(struct bce_softc *, struct mbuf *);
-static void bce_dump_mbuf		(struct bce_softc *, struct mbuf *);
+static u32  bce_reg_rd				(struct bce_softc *, u32);
+static void bce_reg_wr				(struct bce_softc *, u32, u32);
+static void bce_reg_wr16			(struct bce_softc *, u32, u16);
+static u32  bce_ctx_rd				(struct bce_softc *, u32, u32);
+static void bce_dump_enet			(struct bce_softc *, struct mbuf *);
+static void bce_dump_mbuf			(struct bce_softc *, struct mbuf *);
 static void bce_dump_tx_mbuf_chain	(struct bce_softc *, u16, int);
 static void bce_dump_rx_mbuf_chain	(struct bce_softc *, u16, int);
-#ifdef BCE_JUMBO_HDRSPLIT
 static void bce_dump_pg_mbuf_chain	(struct bce_softc *, u16, int);
-#endif
-static void bce_dump_txbd		(struct bce_softc *,
+static void bce_dump_txbd			(struct bce_softc *,
     int, struct tx_bd *);
-static void bce_dump_rxbd		(struct bce_softc *,
+static void bce_dump_rxbd			(struct bce_softc *,
     int, struct rx_bd *);
-#ifdef BCE_JUMBO_HDRSPLIT
-static void bce_dump_pgbd		(struct bce_softc *,
+static void bce_dump_pgbd			(struct bce_softc *,
     int, struct rx_bd *);
-#endif
 static void bce_dump_l2fhdr		(struct bce_softc *,
     int, struct l2_fhdr *);
-static void bce_dump_ctx		(struct bce_softc *, u16);
-static void bce_dump_ftqs		(struct bce_softc *);
+static void bce_dump_ctx			(struct bce_softc *, u16);
+static void bce_dump_ftqs			(struct bce_softc *);
 static void bce_dump_tx_chain		(struct bce_softc *, u16, int);
 static void bce_dump_rx_bd_chain	(struct bce_softc *, u16, int);
-#ifdef BCE_JUMBO_HDRSPLIT
 static void bce_dump_pg_chain		(struct bce_softc *, u16, int);
-#endif
 static void bce_dump_status_block	(struct bce_softc *);
 static void bce_dump_stats_block	(struct bce_softc *);
 static void bce_dump_driver_state	(struct bce_softc *);
 static void bce_dump_hw_state		(struct bce_softc *);
+static void bce_dump_shmem_state	(struct bce_softc *);
 static void bce_dump_mq_regs		(struct bce_softc *);
 static void bce_dump_bc_state		(struct bce_softc *);
 static void bce_dump_txp_state		(struct bce_softc *, int);
 static void bce_dump_rxp_state		(struct bce_softc *, int);
-static void bce_dump_tpat_state		(struct bce_softc *, int);
+static void bce_dump_tpat_state	(struct bce_softc *, int);
 static void bce_dump_cp_state		(struct bce_softc *, int);
 static void bce_dump_com_state		(struct bce_softc *, int);
-static void bce_dump_rv2p_state		(struct bce_softc *);
-static void bce_breakpoint		(struct bce_softc *);
-#endif
+static void bce_dump_rv2p_state	(struct bce_softc *);
+static void bce_breakpoint			(struct bce_softc *);
+#endif /*BCE_DEBUG */
 
 
 /****************************************************************************/
@@ -345,21 +334,27 @@ static int  bce_miibus_read_reg		(device_t, int, int);
 static int  bce_miibus_write_reg	(device_t, int, int, int);
 static void bce_miibus_statchg		(device_t);
 
+#ifdef BCE_DEBUG
+static int bce_sysctl_nvram_dump(SYSCTL_HANDLER_ARGS);
+#ifdef BCE_NVRAM_WRITE_SUPPORT
+static int bce_sysctl_nvram_write(SYSCTL_HANDLER_ARGS);
+#endif
+#endif
 
 /****************************************************************************/
 /* BCE NVRAM Access Routines                                                */
 /****************************************************************************/
 static int  bce_acquire_nvram_lock	(struct bce_softc *);
 static int  bce_release_nvram_lock	(struct bce_softc *);
-static void bce_enable_nvram_access	(struct bce_softc *);
-static void bce_disable_nvram_access	(struct bce_softc *);
+static void bce_enable_nvram_access(struct bce_softc *);
+static void bce_disable_nvram_access(struct bce_softc *);
 static int  bce_nvram_read_dword	(struct bce_softc *, u32, u8 *, u32);
-static int  bce_init_nvram		(struct bce_softc *);
-static int  bce_nvram_read		(struct bce_softc *, u32, u8 *, int);
-static int  bce_nvram_test		(struct bce_softc *);
+static int  bce_init_nvram			(struct bce_softc *);
+static int  bce_nvram_read			(struct bce_softc *, u32, u8 *, int);
+static int  bce_nvram_test			(struct bce_softc *);
 #ifdef BCE_NVRAM_WRITE_SUPPORT
 static int  bce_enable_nvram_write	(struct bce_softc *);
-static void bce_disable_nvram_write	(struct bce_softc *);
+static void bce_disable_nvram_write(struct bce_softc *);
 static int  bce_nvram_erase_page	(struct bce_softc *, u32);
 static int  bce_nvram_write_dword	(struct bce_softc *, u32, u8 *, u32);
 static int  bce_nvram_write		(struct bce_softc *, u32, u8 *, int);
@@ -368,84 +363,85 @@ static int  bce_nvram_write		(struct bce_softc *, u32, u8 *, int);
 /****************************************************************************/
 /*                                                                          */
 /****************************************************************************/
-static void bce_get_media		(struct bce_softc *);
-static void bce_init_media		(struct bce_softc *);
-static void bce_dma_map_addr		(void *,
-    bus_dma_segment_t *, int, int);
-static int  bce_dma_alloc		(device_t);
-static void bce_dma_free		(struct bce_softc *);
+static void bce_get_rx_buffer_sizes(struct bce_softc *, int);
+static void bce_get_media			(struct bce_softc *);
+static void bce_init_media			(struct bce_softc *);
+static u32 bce_get_rphy_link		(struct bce_softc *);
+static void bce_dma_map_addr		(void *, bus_dma_segment_t *, int, int);
+static int  bce_dma_alloc			(device_t);
+static void bce_dma_free			(struct bce_softc *);
 static void bce_release_resources	(struct bce_softc *);
 
 /****************************************************************************/
 /* BCE Firmware Synchronization and Load                                    */
 /****************************************************************************/
+static void bce_fw_cap_init			(struct bce_softc *);
 static int  bce_fw_sync			(struct bce_softc *, u32);
 static void bce_load_rv2p_fw		(struct bce_softc *, u32 *, u32, u32);
 static void bce_load_cpu_fw		(struct bce_softc *,
     struct cpu_reg *, struct fw_info *);
-static void bce_start_cpu		(struct bce_softc *, struct cpu_reg *);
-static void bce_halt_cpu		(struct bce_softc *, struct cpu_reg *);
+static void bce_start_cpu			(struct bce_softc *, struct cpu_reg *);
+static void bce_halt_cpu			(struct bce_softc *, struct cpu_reg *);
 static void bce_start_rxp_cpu		(struct bce_softc *);
 static void bce_init_rxp_cpu		(struct bce_softc *);
 static void bce_init_txp_cpu 		(struct bce_softc *);
 static void bce_init_tpat_cpu		(struct bce_softc *);
 static void bce_init_cp_cpu	  	(struct bce_softc *);
 static void bce_init_com_cpu	  	(struct bce_softc *);
-static void bce_init_cpus		(struct bce_softc *);
+static void bce_init_cpus			(struct bce_softc *);
 
-static void	bce_print_adapter_info	(struct bce_softc *);
+static void bce_print_adapter_info	(struct bce_softc *);
 static void bce_probe_pci_caps		(device_t, struct bce_softc *);
-static void bce_stop			(struct bce_softc *);
-static int  bce_reset			(struct bce_softc *, u32);
-static int  bce_chipinit 		(struct bce_softc *);
-static int  bce_blockinit 		(struct bce_softc *);
+static void bce_stop				(struct bce_softc *);
+static int  bce_reset				(struct bce_softc *, u32);
+static int  bce_chipinit 			(struct bce_softc *);
+static int  bce_blockinit 			(struct bce_softc *);
 
 static int  bce_init_tx_chain		(struct bce_softc *);
 static void bce_free_tx_chain		(struct bce_softc *);
 
-static int  bce_get_rx_buf		(struct bce_softc *,
+static int  bce_get_rx_buf			(struct bce_softc *,
     struct mbuf *, u16 *, u16 *, u32 *);
 static int  bce_init_rx_chain		(struct bce_softc *);
 static void bce_fill_rx_chain		(struct bce_softc *);
 static void bce_free_rx_chain		(struct bce_softc *);
 
-#ifdef BCE_JUMBO_HDRSPLIT
-static int  bce_get_pg_buf		(struct bce_softc *,
+static int  bce_get_pg_buf			(struct bce_softc *,
     struct mbuf *, u16 *, u16 *);
 static int  bce_init_pg_chain		(struct bce_softc *);
 static void bce_fill_pg_chain		(struct bce_softc *);
 static void bce_free_pg_chain		(struct bce_softc *);
-#endif
 
 static struct mbuf *bce_tso_setup	(struct bce_softc *,
     struct mbuf **, u16 *);
-static int  bce_tx_encap		(struct bce_softc *, struct mbuf **);
+static int  bce_tx_encap			(struct bce_softc *, struct mbuf **);
 static void bce_start_locked		(struct ifnet *);
-static void bce_start			(struct ifnet *);
-static int  bce_ioctl			(struct ifnet *, u_long, caddr_t);
-static void bce_watchdog		(struct bce_softc *);
+static void bce_start				(struct ifnet *);
+static int  bce_ioctl				(struct ifnet *, u_long, caddr_t);
+static void bce_watchdog			(struct bce_softc *);
 static int  bce_ifmedia_upd		(struct ifnet *);
 static int  bce_ifmedia_upd_locked	(struct ifnet *);
 static void bce_ifmedia_sts		(struct ifnet *, struct ifmediareq *);
+static void bce_ifmedia_sts_rphy	(struct bce_softc *, struct ifmediareq *);
 static void bce_init_locked		(struct bce_softc *);
-static void bce_init			(void *);
+static void bce_init				(void *);
 static void bce_mgmt_init_locked	(struct bce_softc *sc);
 
-static int  bce_init_ctx		(struct bce_softc *);
+static int  bce_init_ctx			(struct bce_softc *);
 static void bce_get_mac_addr		(struct bce_softc *);
 static void bce_set_mac_addr		(struct bce_softc *);
-static void bce_phy_intr		(struct bce_softc *);
+static void bce_phy_intr			(struct bce_softc *);
 static inline u16 bce_get_hw_rx_cons	(struct bce_softc *);
 static void bce_rx_intr			(struct bce_softc *);
 static void bce_tx_intr			(struct bce_softc *);
 static void bce_disable_intr		(struct bce_softc *);
 static void bce_enable_intr		(struct bce_softc *, int);
 
-static void bce_intr			(void *);
+static void bce_intr				(void *);
 static void bce_set_rx_mode		(struct bce_softc *);
 static void bce_stats_update		(struct bce_softc *);
-static void bce_tick			(void *);
-static void bce_pulse			(void *);
+static void bce_tick				(void *);
+static void bce_pulse				(void *);
 static void bce_add_sysctls		(struct bce_softc *);
 
 
@@ -464,10 +460,6 @@ static device_method_t bce_methods[] = {
 /*	DEVMETHOD(device_resume,	bce_resume),        */
 /*	DEVMETHOD(device_quiesce,	bce_quiesce),       */
 
-	/* Bus interface (bus_if.h) */
-	DEVMETHOD(bus_print_child,	bus_generic_print_child),
-	DEVMETHOD(bus_driver_added,	bus_generic_driver_added),
-
 	/* MII interface (miibus_if.h) */
 	DEVMETHOD(miibus_readreg,	bce_miibus_read_reg),
 	DEVMETHOD(miibus_writereg,	bce_miibus_write_reg),
@@ -476,7 +468,7 @@ static device_method_t bce_methods[] = {
 /*	DEVMETHOD(miibus_linkchg,	bce_miibus_linkchg),   */
 /*	DEVMETHOD(miibus_mediainit,	bce_miibus_mediainit), */
 
-	{ 0, 0 }
+	DEVMETHOD_END
 };
 
 static driver_t bce_driver = {
@@ -491,8 +483,8 @@ MODULE_DEPEND(bce, pci, 1, 1, 1);
 MODULE_DEPEND(bce, ether, 1, 1, 1);
 MODULE_DEPEND(bce, miibus, 1, 1, 1);
 
-DRIVER_MODULE(bce, pci, bce_driver, bce_devclass, 0, 0);
-DRIVER_MODULE(miibus, bce, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(bce, pci, bce_driver, bce_devclass, NULL, NULL);
+DRIVER_MODULE(miibus, bce, miibus_driver, miibus_devclass, NULL, NULL);
 
 
 /****************************************************************************/
@@ -501,23 +493,148 @@ DRIVER_MODULE(miibus, bce, miibus_driver, miibus_devclass, 0, 0);
 SYSCTL_NODE(_hw, OID_AUTO, bce, CTLFLAG_RD, 0, "bce driver parameters");
 
 /* Allowable values are TRUE or FALSE */
+static int bce_verbose = TRUE;
+TUNABLE_INT("hw.bce.verbose", &bce_verbose);
+SYSCTL_INT(_hw_bce, OID_AUTO, verbose, CTLFLAG_RDTUN, &bce_verbose, 0,
+    "Verbose output enable/disable");
+
+/* Allowable values are TRUE or FALSE */
 static int bce_tso_enable = TRUE;
 TUNABLE_INT("hw.bce.tso_enable", &bce_tso_enable);
 SYSCTL_UINT(_hw_bce, OID_AUTO, tso_enable, CTLFLAG_RDTUN, &bce_tso_enable, 0,
-"TSO Enable/Disable");
+    "TSO Enable/Disable");
 
 /* Allowable values are 0 (IRQ), 1 (MSI/IRQ), and 2 (MSI-X/MSI/IRQ) */
 /* ToDo: Add MSI-X support. */
 static int bce_msi_enable = 1;
 TUNABLE_INT("hw.bce.msi_enable", &bce_msi_enable);
 SYSCTL_UINT(_hw_bce, OID_AUTO, msi_enable, CTLFLAG_RDTUN, &bce_msi_enable, 0,
-"MSI-X|MSI|INTx selector");
+    "MSI-X|MSI|INTx selector");
 
-/* ToDo: Add tunable to enable/disable strict MTU handling. */
-/* Currently allows "loose" RX MTU checking (i.e. sets the  */
-/* H/W RX MTU to the size of the largest receive buffer, or */
-/* 2048 bytes). This will cause a UNH failure but is more   */
-/* desireable from a functional perspective.                */
+/* Allowable values are 1, 2, 4, 8. */
+static int bce_rx_pages = DEFAULT_RX_PAGES;
+TUNABLE_INT("hw.bce.rx_pages", &bce_rx_pages);
+SYSCTL_UINT(_hw_bce, OID_AUTO, rx_pages, CTLFLAG_RDTUN, &bce_rx_pages, 0,
+    "Receive buffer descriptor pages (1 page = 255 buffer descriptors)");
+
+/* Allowable values are 1, 2, 4, 8. */
+static int bce_tx_pages = DEFAULT_TX_PAGES;
+TUNABLE_INT("hw.bce.tx_pages", &bce_tx_pages);
+SYSCTL_UINT(_hw_bce, OID_AUTO, tx_pages, CTLFLAG_RDTUN, &bce_tx_pages, 0,
+    "Transmit buffer descriptor pages (1 page = 255 buffer descriptors)");
+
+/* Allowable values are TRUE or FALSE. */
+static int bce_hdr_split = TRUE;
+TUNABLE_INT("hw.bce.hdr_split", &bce_hdr_split);
+SYSCTL_UINT(_hw_bce, OID_AUTO, hdr_split, CTLFLAG_RDTUN, &bce_hdr_split, 0,
+    "Frame header/payload splitting Enable/Disable");
+
+/* Allowable values are TRUE or FALSE. */
+static int bce_strict_rx_mtu = FALSE;
+TUNABLE_INT("hw.bce.strict_rx_mtu", &bce_strict_rx_mtu);
+SYSCTL_UINT(_hw_bce, OID_AUTO, loose_rx_mtu, CTLFLAG_RDTUN,
+    &bce_strict_rx_mtu, 0,
+    "Enable/Disable strict RX frame size checking");
+
+/* Allowable values are 0 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate 1 interrupt for every transmit completion. */
+static int bce_tx_quick_cons_trip_int = 1;
+#else
+/* Generate 1 interrupt for every 20 transmit completions. */
+static int bce_tx_quick_cons_trip_int = DEFAULT_TX_QUICK_CONS_TRIP_INT;
+#endif
+TUNABLE_INT("hw.bce.tx_quick_cons_trip_int", &bce_tx_quick_cons_trip_int);
+SYSCTL_UINT(_hw_bce, OID_AUTO, tx_quick_cons_trip_int, CTLFLAG_RDTUN,
+    &bce_tx_quick_cons_trip_int, 0,
+    "Transmit BD trip point during interrupts");
+
+/* Allowable values are 0 ... 100 */
+/* Generate 1 interrupt for every transmit completion. */
+#ifdef BCE_DEBUG
+static int bce_tx_quick_cons_trip = 1;
+#else
+/* Generate 1 interrupt for every 20 transmit completions. */
+static int bce_tx_quick_cons_trip = DEFAULT_TX_QUICK_CONS_TRIP;
+#endif
+TUNABLE_INT("hw.bce.tx_quick_cons_trip", &bce_tx_quick_cons_trip);
+SYSCTL_UINT(_hw_bce, OID_AUTO, tx_quick_cons_trip, CTLFLAG_RDTUN,
+    &bce_tx_quick_cons_trip, 0,
+    "Transmit BD trip point");
+
+/* Allowable values are 0 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate an interrupt if 0us have elapsed since the last TX completion. */
+static int bce_tx_ticks_int = 0;
+#else
+/* Generate an interrupt if 80us have elapsed since the last TX completion. */
+static int bce_tx_ticks_int = DEFAULT_TX_TICKS_INT;
+#endif
+TUNABLE_INT("hw.bce.tx_ticks_int", &bce_tx_ticks_int);
+SYSCTL_UINT(_hw_bce, OID_AUTO, tx_ticks_int, CTLFLAG_RDTUN,
+    &bce_tx_ticks_int, 0, "Transmit ticks count during interrupt");
+
+/* Allowable values are 0 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate an interrupt if 0us have elapsed since the last TX completion. */
+static int bce_tx_ticks = 0;
+#else
+/* Generate an interrupt if 80us have elapsed since the last TX completion. */
+static int bce_tx_ticks = DEFAULT_TX_TICKS;
+#endif
+TUNABLE_INT("hw.bce.tx_ticks", &bce_tx_ticks);
+SYSCTL_UINT(_hw_bce, OID_AUTO, tx_ticks, CTLFLAG_RDTUN,
+    &bce_tx_ticks, 0, "Transmit ticks count");
+
+/* Allowable values are 1 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate 1 interrupt for every received frame. */
+static int bce_rx_quick_cons_trip_int = 1;
+#else
+/* Generate 1 interrupt for every 6 received frames. */
+static int bce_rx_quick_cons_trip_int = DEFAULT_RX_QUICK_CONS_TRIP_INT;
+#endif
+TUNABLE_INT("hw.bce.rx_quick_cons_trip_int", &bce_rx_quick_cons_trip_int);
+SYSCTL_UINT(_hw_bce, OID_AUTO, rx_quick_cons_trip_int, CTLFLAG_RDTUN,
+    &bce_rx_quick_cons_trip_int, 0,
+    "Receive BD trip point duirng interrupts");
+
+/* Allowable values are 1 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate 1 interrupt for every received frame. */
+static int bce_rx_quick_cons_trip = 1;
+#else
+/* Generate 1 interrupt for every 6 received frames. */
+static int bce_rx_quick_cons_trip = DEFAULT_RX_QUICK_CONS_TRIP;
+#endif
+TUNABLE_INT("hw.bce.rx_quick_cons_trip", &bce_rx_quick_cons_trip);
+SYSCTL_UINT(_hw_bce, OID_AUTO, rx_quick_cons_trip, CTLFLAG_RDTUN,
+    &bce_rx_quick_cons_trip, 0,
+    "Receive BD trip point");
+
+/* Allowable values are 0 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate an int. if 0us have elapsed since the last received frame. */
+static int bce_rx_ticks_int = 0;
+#else
+/* Generate an int. if 18us have elapsed since the last received frame. */
+static int bce_rx_ticks_int = DEFAULT_RX_TICKS_INT;
+#endif
+TUNABLE_INT("hw.bce.rx_ticks_int", &bce_rx_ticks_int);
+SYSCTL_UINT(_hw_bce, OID_AUTO, rx_ticks_int, CTLFLAG_RDTUN,
+    &bce_rx_ticks_int, 0, "Receive ticks count during interrupt");
+
+/* Allowable values are 0 ... 100 */
+#ifdef BCE_DEBUG
+/* Generate an int. if 0us have elapsed since the last received frame. */
+static int bce_rx_ticks = 0;
+#else
+/* Generate an int. if 18us have elapsed since the last received frame. */
+static int bce_rx_ticks = DEFAULT_RX_TICKS;
+#endif
+TUNABLE_INT("hw.bce.rx_ticks", &bce_rx_ticks);
+SYSCTL_UINT(_hw_bce, OID_AUTO, rx_ticks, CTLFLAG_RDTUN,
+    &bce_rx_ticks, 0, "Receive ticks count");
 
 
 /****************************************************************************/
@@ -532,7 +649,7 @@ SYSCTL_UINT(_hw_bce, OID_AUTO, msi_enable, CTLFLAG_RDTUN, &bce_msi_enable, 0,
 static int
 bce_probe(device_t dev)
 {
-	struct bce_type *t;
+	const struct bce_type *t;
 	struct bce_softc *sc;
 	char *descbuf;
 	u16 vid = 0, did = 0, svid = 0, sdid = 0;
@@ -540,7 +657,6 @@ bce_probe(device_t dev)
 	t = bce_devs;
 
 	sc = device_get_softc(dev);
-	bzero(sc, sizeof(struct bce_softc));
 	sc->bce_unit = device_get_unit(dev);
 	sc->bce_dev = dev;
 
@@ -599,7 +715,7 @@ bce_print_adapter_info(struct bce_softc *sc)
 
 	DBENTER(BCE_VERBOSE_LOAD);
 
-	if (bootverbose) {
+	if (bce_verbose || bootverbose) {
 		BCE_PRINTF("ASIC (0x%08X); ", sc->bce_chipid);
 		printf("Rev (%c%d); ", ((BCE_CHIP_ID(sc) & 0xf000) >>
 		    12) + 'A', ((BCE_CHIP_ID(sc) & 0x0ff0) >> 4));
@@ -621,12 +737,14 @@ bce_print_adapter_info(struct bce_softc *sc)
 		}
 
 		/* Firmware version and device features. */
-		printf("B/C (%s); Flags (", sc->bce_bc_ver);
+		printf("B/C (%s); Bufs (RX:%d;TX:%d;PG:%d); Flags (",
+		    sc->bce_bc_ver,	sc->rx_pages, sc->tx_pages,
+		    (bce_hdr_split == TRUE ? sc->pg_pages: 0));
 
-	#ifdef BCE_JUMBO_HDRSPLIT
-		printf("SPLT");
-		i++;
-	#endif
+		if (bce_hdr_split == TRUE) {
+			printf("SPLT");
+			i++;
+		}
 
 		if (sc->bce_flags & BCE_USING_MSI_FLAG) {
 			if (i > 0) printf("|");
@@ -643,12 +761,30 @@ bce_print_adapter_info(struct bce_softc *sc)
 			printf("2.5G"); i++;
 		}
 
+		if (sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) {
+			if (i > 0) printf("|");
+			printf("Remote PHY(%s)",
+			    sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG ?
+			    "FIBER" : "TP"); i++;
+		}
+
 		if (sc->bce_flags & BCE_MFW_ENABLE_FLAG) {
 			if (i > 0) printf("|");
 			printf("MFW); MFW (%s)\n", sc->bce_mfw_ver);
 		} else {
 			printf(")\n");
 		}
+
+		printf("Coal (RX:%d,%d,%d,%d; TX:%d,%d,%d,%d)\n",
+		    sc->bce_rx_quick_cons_trip_int,
+		    sc->bce_rx_quick_cons_trip,
+		    sc->bce_rx_ticks_int,
+		    sc->bce_rx_ticks,
+		    sc->bce_tx_quick_cons_trip_int,
+		    sc->bce_tx_quick_cons_trip,
+		    sc->bce_tx_ticks_int,
+		    sc->bce_tx_ticks);
+
 	}
 
 	DBEXIT(BCE_VERBOSE_LOAD);
@@ -707,6 +843,189 @@ bce_probe_pci_caps(device_t dev, struct bce_softc *sc)
 
 
 /****************************************************************************/
+/* Load and validate user tunable settings.                                 */
+/*                                                                          */
+/* Returns:                                                                 */
+/*   Nothing.                                                               */
+/****************************************************************************/
+static void
+bce_set_tunables(struct bce_softc *sc)
+{
+	/* Set sysctl values for RX page count. */
+	switch (bce_rx_pages) {
+	case 1:
+		/* fall-through */
+	case 2:
+		/* fall-through */
+	case 4:
+		/* fall-through */
+	case 8:
+		sc->rx_pages = bce_rx_pages;
+		break;
+	default:
+		sc->rx_pages = DEFAULT_RX_PAGES;
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.rx_pages!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_rx_pages, DEFAULT_RX_PAGES);
+	}
+
+	/* ToDo: Consider allowing user setting for pg_pages. */
+	sc->pg_pages = min((sc->rx_pages * 4), MAX_PG_PAGES);
+
+	/* Set sysctl values for TX page count. */
+	switch (bce_tx_pages) {
+	case 1:
+		/* fall-through */
+	case 2:
+		/* fall-through */
+	case 4:
+		/* fall-through */
+	case 8:
+		sc->tx_pages = bce_tx_pages;
+		break;
+	default:
+		sc->tx_pages = DEFAULT_TX_PAGES;
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.tx_pages!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_tx_pages, DEFAULT_TX_PAGES);
+	}
+
+	/*
+	 * Validate the TX trip point (i.e. the number of
+	 * TX completions before a status block update is
+	 * generated and an interrupt is asserted.
+	 */
+	if (bce_tx_quick_cons_trip_int <= 100) {
+		sc->bce_tx_quick_cons_trip_int =
+		    bce_tx_quick_cons_trip_int;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.tx_quick_cons_trip_int!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_tx_quick_cons_trip_int,
+		    DEFAULT_TX_QUICK_CONS_TRIP_INT);
+		sc->bce_tx_quick_cons_trip_int =
+		    DEFAULT_TX_QUICK_CONS_TRIP_INT;
+	}
+
+	if (bce_tx_quick_cons_trip <= 100) {
+		sc->bce_tx_quick_cons_trip =
+		    bce_tx_quick_cons_trip;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.tx_quick_cons_trip!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_tx_quick_cons_trip,
+		    DEFAULT_TX_QUICK_CONS_TRIP);
+		sc->bce_tx_quick_cons_trip =
+		    DEFAULT_TX_QUICK_CONS_TRIP;
+	}
+
+	/*
+	 * Validate the TX ticks count (i.e. the maximum amount
+	 * of time to wait after the last TX completion has
+	 * occurred before a status block update is generated
+	 * and an interrupt is asserted.
+	 */
+	if (bce_tx_ticks_int <= 100) {
+		sc->bce_tx_ticks_int =
+		    bce_tx_ticks_int;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.tx_ticks_int!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_tx_ticks_int,
+		    DEFAULT_TX_TICKS_INT);
+		sc->bce_tx_ticks_int =
+		    DEFAULT_TX_TICKS_INT;
+	   }
+
+	if (bce_tx_ticks <= 100) {
+		sc->bce_tx_ticks =
+		    bce_tx_ticks;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.tx_ticks!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_tx_ticks,
+		    DEFAULT_TX_TICKS);
+		sc->bce_tx_ticks =
+		    DEFAULT_TX_TICKS;
+	}
+
+	/*
+	 * Validate the RX trip point (i.e. the number of
+	 * RX frames received before a status block update is
+	 * generated and an interrupt is asserted.
+	 */
+	if (bce_rx_quick_cons_trip_int <= 100) {
+		sc->bce_rx_quick_cons_trip_int =
+		    bce_rx_quick_cons_trip_int;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.rx_quick_cons_trip_int!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_rx_quick_cons_trip_int,
+		    DEFAULT_RX_QUICK_CONS_TRIP_INT);
+		sc->bce_rx_quick_cons_trip_int =
+		    DEFAULT_RX_QUICK_CONS_TRIP_INT;
+	}
+
+	if (bce_rx_quick_cons_trip <= 100) {
+		sc->bce_rx_quick_cons_trip =
+		    bce_rx_quick_cons_trip;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.rx_quick_cons_trip!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_rx_quick_cons_trip,
+		    DEFAULT_RX_QUICK_CONS_TRIP);
+		sc->bce_rx_quick_cons_trip =
+		    DEFAULT_RX_QUICK_CONS_TRIP;
+	}
+
+	/*
+	 * Validate the RX ticks count (i.e. the maximum amount
+	 * of time to wait after the last RX frame has been
+	 * received before a status block update is generated
+	 * and an interrupt is asserted.
+	 */
+	if (bce_rx_ticks_int <= 100) {
+		sc->bce_rx_ticks_int = bce_rx_ticks_int;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.rx_ticks_int!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_rx_ticks_int,
+		    DEFAULT_RX_TICKS_INT);
+		sc->bce_rx_ticks_int = DEFAULT_RX_TICKS_INT;
+	}
+
+	if (bce_rx_ticks <= 100) {
+		sc->bce_rx_ticks = bce_rx_ticks;
+	} else {
+		BCE_PRINTF("%s(%d): Illegal value (%d) specified for "
+		    "hw.bce.rx_ticks!  Setting default of %d.\n",
+		    __FILE__, __LINE__, bce_rx_ticks,
+		    DEFAULT_RX_TICKS);
+		sc->bce_rx_ticks = DEFAULT_RX_TICKS;
+	}
+
+	/* Disabling both RX ticks and RX trips will prevent interrupts. */
+	if ((bce_rx_quick_cons_trip == 0) && (bce_rx_ticks == 0)) {
+		BCE_PRINTF("%s(%d): Cannot set both hw.bce.rx_ticks and "
+		    "hw.bce.rx_quick_cons_trip to 0. Setting default values.\n",
+		   __FILE__, __LINE__);
+		sc->bce_rx_ticks = DEFAULT_RX_TICKS;
+		sc->bce_rx_quick_cons_trip = DEFAULT_RX_QUICK_CONS_TRIP;
+	}
+
+	/* Disabling both TX ticks and TX trips will prevent interrupts. */
+	if ((bce_tx_quick_cons_trip == 0) && (bce_tx_ticks == 0)) {
+		BCE_PRINTF("%s(%d): Cannot set both hw.bce.tx_ticks and "
+		    "hw.bce.tx_quick_cons_trip to 0. Setting default values.\n",
+		   __FILE__, __LINE__);
+		sc->bce_tx_ticks = DEFAULT_TX_TICKS;
+		sc->bce_tx_quick_cons_trip = DEFAULT_TX_QUICK_CONS_TRIP;
+	}
+
+}
+
+
+/****************************************************************************/
 /* Device attach function.                                                  */
 /*                                                                          */
 /* Allocates device resources, performs secondary chip identification,      */
@@ -722,7 +1041,7 @@ bce_attach(device_t dev)
 	struct bce_softc *sc;
 	struct ifnet *ifp;
 	u32 val;
-	int error, rid, rc = 0;
+	int count, error, rc = 0, rid;
 
 	sc = device_get_softc(dev);
 	sc->bce_dev = dev;
@@ -734,6 +1053,8 @@ bce_attach(device_t dev)
 	/* Set initial device and PHY flags */
 	sc->bce_flags = 0;
 	sc->bce_phy_flags = 0;
+
+	bce_set_tunables(sc);
 
 	pci_enable_busmaster(dev);
 
@@ -757,6 +1078,7 @@ bce_attach(device_t dev)
 	bce_probe_pci_caps(dev, sc);
 
 	rid = 1;
+	count = 0;
 #if 0
 	/* Try allocating MSI-X interrupts. */
 	if ((sc->bce_cap_flags & BCE_MSIX_CAPABLE_FLAG) &&
@@ -764,14 +1086,14 @@ bce_attach(device_t dev)
 		((sc->bce_res_irq = bus_alloc_resource_any(dev, SYS_RES_MEMORY,
 		&rid, RF_ACTIVE)) != NULL)) {
 
-		msi_needed = sc->bce_msi_count = 1;
+		msi_needed = count = 1;
 
-		if (((error = pci_alloc_msix(dev, &sc->bce_msi_count)) != 0) ||
-			(sc->bce_msi_count != msi_needed)) {
+		if (((error = pci_alloc_msix(dev, &count)) != 0) ||
+			(count != msi_needed)) {
 			BCE_PRINTF("%s(%d): MSI-X allocation failed! Requested = %d,"
 				"Received = %d, error = %d\n", __FILE__, __LINE__,
-				msi_needed, sc->bce_msi_count, error);
-			sc->bce_msi_count = 0;
+				msi_needed, count, error);
+			count = 0;
 			pci_release_msi(dev);
 			bus_release_resource(dev, SYS_RES_MEMORY, rid,
 				sc->bce_res_irq);
@@ -780,44 +1102,38 @@ bce_attach(device_t dev)
 			DBPRINT(sc, BCE_INFO_LOAD, "%s(): Using MSI-X interrupt.\n",
 				__FUNCTION__);
 			sc->bce_flags |= BCE_USING_MSIX_FLAG;
-			sc->bce_intr = bce_intr;
 		}
 	}
 #endif
 
 	/* Try allocating a MSI interrupt. */
 	if ((sc->bce_cap_flags & BCE_MSI_CAPABLE_FLAG) &&
-		(bce_msi_enable >= 1) && (sc->bce_msi_count == 0)) {
-		sc->bce_msi_count = 1;
-		if ((error = pci_alloc_msi(dev, &sc->bce_msi_count)) != 0) {
+		(bce_msi_enable >= 1) && (count == 0)) {
+		count = 1;
+		if ((error = pci_alloc_msi(dev, &count)) != 0) {
 			BCE_PRINTF("%s(%d): MSI allocation failed! "
 			    "error = %d\n", __FILE__, __LINE__, error);
-			sc->bce_msi_count = 0;
+			count = 0;
 			pci_release_msi(dev);
 		} else {
 			DBPRINT(sc, BCE_INFO_LOAD, "%s(): Using MSI "
 			    "interrupt.\n", __FUNCTION__);
 			sc->bce_flags |= BCE_USING_MSI_FLAG;
-			if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-				(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716))
+			if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709)
 				sc->bce_flags |= BCE_ONE_SHOT_MSI_FLAG;
-			sc->bce_irq_rid = 1;
-			sc->bce_intr = bce_intr;
+			rid = 1;
 		}
 	}
 
 	/* Try allocating a legacy interrupt. */
-	if (sc->bce_msi_count == 0) {
+	if (count == 0) {
 		DBPRINT(sc, BCE_INFO_LOAD, "%s(): Using INTx interrupt.\n",
 			__FUNCTION__);
 		rid = 0;
-		sc->bce_intr = bce_intr;
 	}
 
 	sc->bce_res_irq = bus_alloc_resource_any(dev, SYS_RES_IRQ,
-	    &rid, RF_SHAREABLE | RF_ACTIVE);
-
-	sc->bce_irq_rid = rid;
+	    &rid, RF_ACTIVE | (count != 0 ? 0 : RF_SHAREABLE));
 
 	/* Report any IRQ allocation errors. */
 	if (sc->bce_res_irq == NULL) {
@@ -988,6 +1304,9 @@ bce_attach(device_t dev)
 	if (val & BCE_PCICFG_MISC_STATUS_32BIT_DET)
 		sc->bce_flags |= BCE_PCI_32BIT_FLAG;
 
+	/* Find the media type for the adapter. */
+	bce_get_media(sc);
+
 	/* Reset controller and announce to bootcode that driver is present. */
 	if (bce_reset(sc, BCE_DRV_MSG_CODE_RESET)) {
 		BCE_PRINTF("%s(%d): Controller reset failed!\n",
@@ -1024,43 +1343,16 @@ bce_attach(device_t dev)
 	 * values for the RX and TX chains.
 	 */
 
-#ifdef BCE_DEBUG
-	/* Force more frequent interrupts. */
-	sc->bce_tx_quick_cons_trip_int = 1;
-	sc->bce_tx_quick_cons_trip     = 1;
-	sc->bce_tx_ticks_int           = 0;
-	sc->bce_tx_ticks               = 0;
-
-	sc->bce_rx_quick_cons_trip_int = 1;
-	sc->bce_rx_quick_cons_trip     = 1;
-	sc->bce_rx_ticks_int           = 0;
-	sc->bce_rx_ticks               = 0;
-#else
-	/* Improve throughput at the expense of increased latency. */
-	sc->bce_tx_quick_cons_trip_int = 20;
-	sc->bce_tx_quick_cons_trip     = 20;
-	sc->bce_tx_ticks_int           = 80;
-	sc->bce_tx_ticks               = 80;
-
-	sc->bce_rx_quick_cons_trip_int = 6;
-	sc->bce_rx_quick_cons_trip     = 6;
-	sc->bce_rx_ticks_int           = 18;
-	sc->bce_rx_ticks               = 18;
-#endif
-
 	/* Not used for L2. */
-	sc->bce_comp_prod_trip_int = 0;
-	sc->bce_comp_prod_trip = 0;
-	sc->bce_com_ticks_int = 0;
-	sc->bce_com_ticks = 0;
-	sc->bce_cmd_ticks_int = 0;
-	sc->bce_cmd_ticks = 0;
+	sc->bce_comp_prod_trip_int     = 0;
+	sc->bce_comp_prod_trip         = 0;
+	sc->bce_com_ticks_int          = 0;
+	sc->bce_com_ticks              = 0;
+	sc->bce_cmd_ticks_int          = 0;
+	sc->bce_cmd_ticks              = 0;
 
 	/* Update statistics once every second. */
 	sc->bce_stats_ticks = 1000000 & 0xffff00;
-
-	/* Find the media type for the adapter. */
-	bce_get_media(sc);
 
 	/* Store data needed by PHY driver for backplane applications */
 	sc->bce_shared_hw_cfg = bce_shmem_rd(sc, BCE_SHARED_HW_CFG_CONFIG);
@@ -1101,6 +1393,15 @@ bce_attach(device_t dev)
 		ifp->if_capabilities = BCE_IF_CAPABILITIES;
 	}
 
+#if __FreeBSD_version >= 800505
+	/*
+	 * Introducing IFCAP_LINKSTATE didn't bump __FreeBSD_version
+	 * so it's approximate value.
+	 */
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0)
+		ifp->if_capabilities |= IFCAP_LINKSTATE;
+#endif
+
 	ifp->if_capenable = ifp->if_capabilities;
 
 	/*
@@ -1108,23 +1409,11 @@ bce_attach(device_t dev)
 	 * This may change later if the MTU size is set to
 	 * something other than 1500.
 	 */
-#ifdef BCE_JUMBO_HDRSPLIT
-	sc->rx_bd_mbuf_alloc_size = MHLEN;
-	/* Make sure offset is 16 byte aligned for hardware. */
-	sc->rx_bd_mbuf_align_pad =
-	    roundup2((MSIZE - MHLEN), 16) - (MSIZE - MHLEN);
-	sc->rx_bd_mbuf_data_len = sc->rx_bd_mbuf_alloc_size -
-	    sc->rx_bd_mbuf_align_pad;
-	sc->pg_bd_mbuf_alloc_size = MCLBYTES;
-#else
-	sc->rx_bd_mbuf_alloc_size = MCLBYTES;
-	sc->rx_bd_mbuf_align_pad =
-	    roundup2(MCLBYTES, 16) - MCLBYTES;
-	sc->rx_bd_mbuf_data_len = sc->rx_bd_mbuf_alloc_size -
-	    sc->rx_bd_mbuf_align_pad;
-#endif
+	bce_get_rx_buffer_sizes(sc,
+	    (ETHER_MAX_LEN - ETHER_HDR_LEN - ETHER_CRC_LEN));
 
-	ifp->if_snd.ifq_drv_maxlen = USABLE_TX_BD;
+	/* Recalculate our buffer allocation sizes. */
+	ifp->if_snd.ifq_drv_maxlen = USABLE_TX_BD_ALLOC;
 	IFQ_SET_MAXLEN(&ifp->if_snd, ifp->if_snd.ifq_drv_maxlen);
 	IFQ_SET_READY(&ifp->if_snd);
 
@@ -1136,14 +1425,52 @@ bce_attach(device_t dev)
 	/* Handle any special PHY initialization for SerDes PHYs. */
 	bce_init_media(sc);
 
-	/* MII child bus by attaching the PHY. */
-	rc = mii_attach(dev, &sc->bce_miibus, ifp, bce_ifmedia_upd,
-	    bce_ifmedia_sts, BMSR_DEFCAPMASK, sc->bce_phy_addr,
-	    MII_OFFSET_ANY, MIIF_DOPAUSE | MIIF_FORCEPAUSE);
-	if (rc != 0) {
-		BCE_PRINTF("%s(%d): attaching PHYs failed\n", __FILE__,
-		    __LINE__);
-		goto bce_attach_fail;
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0) {
+		ifmedia_init(&sc->bce_ifmedia, IFM_IMASK, bce_ifmedia_upd,
+		    bce_ifmedia_sts);
+		/*
+		 * We can't manually override remote PHY's link and assume
+		 * PHY port configuration(Fiber or TP) is not changed after
+		 * device attach.  This may not be correct though.
+		 */
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) != 0) {
+			if (sc->bce_phy_flags & BCE_PHY_2_5G_CAPABLE_FLAG) {
+				ifmedia_add(&sc->bce_ifmedia,
+				    IFM_ETHER | IFM_2500_SX, 0, NULL);
+				ifmedia_add(&sc->bce_ifmedia,
+				    IFM_ETHER | IFM_2500_SX | IFM_FDX, 0, NULL);
+			}
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_1000_SX, 0, NULL);
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_1000_SX | IFM_FDX, 0, NULL);
+		} else {
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_10_T, 0, NULL);
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_10_T | IFM_FDX, 0, NULL);
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_100_TX, 0, NULL);
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_100_TX | IFM_FDX, 0, NULL);
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_1000_T, 0, NULL);
+			ifmedia_add(&sc->bce_ifmedia,
+			    IFM_ETHER | IFM_1000_T | IFM_FDX, 0, NULL);
+		}
+		ifmedia_add(&sc->bce_ifmedia, IFM_ETHER | IFM_AUTO, 0, NULL);
+		ifmedia_set(&sc->bce_ifmedia, IFM_ETHER | IFM_AUTO);
+		sc->bce_ifmedia.ifm_media = sc->bce_ifmedia.ifm_cur->ifm_media;
+	} else {
+		/* MII child bus by attaching the PHY. */
+		rc = mii_attach(dev, &sc->bce_miibus, ifp, bce_ifmedia_upd,
+		    bce_ifmedia_sts, BMSR_DEFCAPMASK, sc->bce_phy_addr,
+		    MII_OFFSET_ANY, MIIF_DOPAUSE | MIIF_FORCEPAUSE);
+		if (rc != 0) {
+			BCE_PRINTF("%s(%d): attaching PHYs failed\n", __FILE__,
+			    __LINE__);
+			goto bce_attach_fail;
+		}
 	}
 
 	/* Attach to the Ethernet interface list. */
@@ -1248,8 +1575,12 @@ bce_detach(device_t dev)
 	ether_ifdetach(ifp);
 
 	/* If we have a child device on the MII bus remove it too. */
-	bus_generic_detach(dev);
-	device_delete_child(dev, sc->bce_miibus);
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0)
+		ifmedia_removeall(&sc->bce_ifmedia);
+	else {
+		bus_generic_detach(dev);
+		device_delete_child(dev, sc->bce_miibus);
+	}
 
 	/* Release all remaining resources. */
 	bce_release_resources(sc);
@@ -1301,7 +1632,7 @@ bce_shutdown(device_t dev)
 static u32
 bce_reg_rd(struct bce_softc *sc, u32 offset)
 {
-	u32 val = bus_space_read_4(sc->bce_btag, sc->bce_bhandle, offset);
+	u32 val = REG_RD(sc, offset);
 	DBPRINT(sc, BCE_INSANE_REG, "%s(); offset = 0x%08X, val = 0x%08X\n",
 		__FUNCTION__, offset, val);
 	return val;
@@ -1319,7 +1650,7 @@ bce_reg_wr16(struct bce_softc *sc, u32 offset, u16 val)
 {
 	DBPRINT(sc, BCE_INSANE_REG, "%s(); offset = 0x%08X, val = 0x%04X\n",
 		__FUNCTION__, offset, val);
-	bus_space_write_2(sc->bce_btag, sc->bce_bhandle, offset, val);
+	REG_WR16(sc, offset, val);
 }
 
 
@@ -1334,7 +1665,7 @@ bce_reg_wr(struct bce_softc *sc, u32 offset, u32 val)
 {
 	DBPRINT(sc, BCE_INSANE_REG, "%s(); offset = 0x%08X, val = 0x%08X\n",
 		__FUNCTION__, offset, val);
-	bus_space_write_4(sc->bce_btag, sc->bce_bhandle, offset, val);
+	REG_WR(sc, offset, val);
 }
 #endif
 
@@ -1452,8 +1783,7 @@ bce_ctx_rd(struct bce_softc *sc, u32 cid_addr, u32 ctx_offset)
 
 	offset = ctx_offset + cid_addr;
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 
 		REG_WR(sc, BCE_CTX_CTX_CTRL, (offset | BCE_CTX_CTX_CTRL_READ_REQ));
 
@@ -1505,8 +1835,7 @@ bce_ctx_wr(struct bce_softc *sc, u32 cid_addr, u32 ctx_offset, u32 ctx_val)
 		BCE_PRINTF("%s(): Invalid CID address: 0x%08X.\n",
 		    __FUNCTION__, cid_addr));
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 
 		REG_WR(sc, BCE_CTX_CTX_DATA, ctx_val);
 		REG_WR(sc, BCE_CTX_CTX_CTRL, (offset | BCE_CTX_CTX_CTRL_WRITE_REQ));
@@ -1546,13 +1875,6 @@ bce_miibus_read_reg(device_t dev, int phy, int reg)
 	int i;
 
 	sc = device_get_softc(dev);
-
-	/* Make sure we are accessing the correct PHY address. */
-	if (phy != sc->bce_phy_addr) {
-		DBPRINT(sc, BCE_INSANE_PHY, "Invalid PHY address %d "
-		    "for PHY read!\n", phy);
-		return(0);
-	}
 
     /*
      * The 5709S PHY is an IEEE Clause 45 PHY
@@ -1636,13 +1958,6 @@ bce_miibus_write_reg(device_t dev, int phy, int reg, int val)
 
 	sc = device_get_softc(dev);
 
-	/* Make sure we are accessing the correct PHY address. */
-	if (phy != sc->bce_phy_addr) {
-		DBPRINT(sc, BCE_INSANE_PHY, "Invalid PHY address %d "
-		    "for PHY write!\n", phy);
-		return(0);
-	}
-
 	DB_PRINT_PHY_REG(reg, val);
 
 	/*
@@ -1712,13 +2027,28 @@ bce_miibus_statchg(device_t dev)
 {
 	struct bce_softc *sc;
 	struct mii_data *mii;
-	int val;
+	struct ifmediareq ifmr;
+	int media_active, media_status, val;
 
 	sc = device_get_softc(dev);
 
 	DBENTER(BCE_VERBOSE_PHY);
 
-	mii = device_get_softc(sc->bce_miibus);
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0) {
+		bzero(&ifmr, sizeof(ifmr));
+		bce_ifmedia_sts_rphy(sc, &ifmr);
+		media_active = ifmr.ifm_active;
+		media_status = ifmr.ifm_status;
+	} else {
+		mii = device_get_softc(sc->bce_miibus);
+		media_active = mii->mii_media_active;
+		media_status = mii->mii_media_status;
+	}
+
+	/* Ignore invalid media status. */
+	if ((media_status & (IFM_ACTIVE | IFM_AVALID)) !=
+	    (IFM_ACTIVE | IFM_AVALID))
+		goto bce_miibus_statchg_exit;
 
 	val = REG_RD(sc, BCE_EMAC_MODE);
 	val &= ~(BCE_EMAC_MODE_PORT | BCE_EMAC_MODE_HALF_DUPLEX |
@@ -1726,7 +2056,7 @@ bce_miibus_statchg(device_t dev)
 	    BCE_EMAC_MODE_25G);
 
 	/* Set MII or GMII interface based on the PHY speed. */
-	switch (IFM_SUBTYPE(mii->mii_media_active)) {
+	switch (IFM_SUBTYPE(media_active)) {
 	case IFM_10_T:
 		if (BCE_CHIP_NUM(sc) != BCE_CHIP_NUM_5706) {
 			DBPRINT(sc, BCE_INFO_PHY,
@@ -1755,7 +2085,7 @@ bce_miibus_statchg(device_t dev)
 	}
 
 	/* Set half or full duplex based on PHY settings. */
-	if ((mii->mii_media_active & IFM_GMASK) == IFM_HDX) {
+	if ((IFM_OPTIONS(media_active) & IFM_FDX) == 0) {
 		DBPRINT(sc, BCE_INFO_PHY,
 		    "Setting Half-Duplex interface.\n");
 		val |= BCE_EMAC_MODE_HALF_DUPLEX;
@@ -1765,7 +2095,7 @@ bce_miibus_statchg(device_t dev)
 
 	REG_WR(sc, BCE_EMAC_MODE, val);
 
- 	if ((mii->mii_media_active & IFM_ETH_RXPAUSE) != 0) {
+	if ((IFM_OPTIONS(media_active) & IFM_ETH_RXPAUSE) != 0) {
 		DBPRINT(sc, BCE_INFO_PHY,
 		    "%s(): Enabling RX flow control.\n", __FUNCTION__);
 		BCE_SETBIT(sc, BCE_EMAC_RX_MODE, BCE_EMAC_RX_MODE_FLOW_EN);
@@ -1775,7 +2105,7 @@ bce_miibus_statchg(device_t dev)
 		BCE_CLRBIT(sc, BCE_EMAC_RX_MODE, BCE_EMAC_RX_MODE_FLOW_EN);
 	}
 
- 	if ((mii->mii_media_active & IFM_ETH_TXPAUSE) != 0) {
+	if ((IFM_OPTIONS(media_active) & IFM_ETH_TXPAUSE) != 0) {
 		DBPRINT(sc, BCE_INFO_PHY,
 		    "%s(): Enabling TX flow control.\n", __FUNCTION__);
 		BCE_SETBIT(sc, BCE_EMAC_TX_MODE, BCE_EMAC_TX_MODE_FLOW_EN);
@@ -1789,6 +2119,7 @@ bce_miibus_statchg(device_t dev)
 
 	/* ToDo: Update watermarks in bce_init_rx_context(). */
 
+bce_miibus_statchg_exit:
 	DBEXIT(BCE_VERBOSE_PHY);
 }
 
@@ -2187,12 +2518,11 @@ bce_init_nvram(struct bce_softc *sc)
 {
 	u32 val;
 	int j, entry_count, rc = 0;
-	struct flash_spec *flash;
+	const struct flash_spec *flash;
 
 	DBENTER(BCE_VERBOSE_NVRAM);
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		sc->bce_flash_info = &flash_5709;
 		goto bce_init_nvram_get_flash_size;
 	}
@@ -2600,9 +2930,9 @@ bce_nvram_write(struct bce_softc *sc, u32 offset, u8 *data_buf,
 	goto bce_nvram_write_exit;
 
 bce_nvram_write_locked_exit:
-		bce_disable_nvram_write(sc);
-		bce_disable_nvram_access(sc);
-		bce_release_nvram_lock(sc);
+	bce_disable_nvram_write(sc);
+	bce_disable_nvram_access(sc);
+	bce_release_nvram_lock(sc);
 
 bce_nvram_write_exit:
 	if (align_start || align_end)
@@ -2647,7 +2977,7 @@ bce_nvram_test(struct bce_softc *sc)
 	 * Verify that offset 0 of the NVRAM contains
 	 * a valid magic number.
 	 */
-    magic = bce_be32toh(buf[0]);
+	magic = bce_be32toh(buf[0]);
 	if (magic != BCE_NVRAM_MAGIC) {
 		rc = ENODEV;
 		BCE_PRINTF("%s(%d): Invalid NVRAM magic value! "
@@ -2689,6 +3019,58 @@ bce_nvram_test_exit:
 	return rc;
 }
 
+
+/****************************************************************************/
+/* Calculates the size of the buffers to allocate based on the MTU.         */
+/*                                                                          */
+/* Returns:                                                                 */
+/*   Nothing.                                                               */
+/****************************************************************************/
+static void
+bce_get_rx_buffer_sizes(struct bce_softc *sc, int mtu)
+{
+	DBENTER(BCE_VERBOSE_LOAD);
+
+	/* Use a single allocation type when header splitting enabled. */
+	if (bce_hdr_split == TRUE) {
+		sc->rx_bd_mbuf_alloc_size = MHLEN;
+		/* Make sure offset is 16 byte aligned for hardware. */
+		sc->rx_bd_mbuf_align_pad =
+			roundup2((MSIZE - MHLEN), 16) - (MSIZE - MHLEN);
+		sc->rx_bd_mbuf_data_len = sc->rx_bd_mbuf_alloc_size -
+			sc->rx_bd_mbuf_align_pad;
+		sc->pg_bd_mbuf_alloc_size = MCLBYTES;
+	} else {
+		if ((mtu + ETHER_HDR_LEN + ETHER_VLAN_ENCAP_LEN +
+		    ETHER_CRC_LEN) > MCLBYTES) {
+			/* Setup for jumbo RX buffer allocations. */
+			sc->rx_bd_mbuf_alloc_size = MJUM9BYTES;
+			sc->rx_bd_mbuf_align_pad  =
+				roundup2(MJUM9BYTES, 16) - MJUM9BYTES;
+			sc->rx_bd_mbuf_data_len =
+			    sc->rx_bd_mbuf_alloc_size -
+			    sc->rx_bd_mbuf_align_pad;
+		} else {
+			/* Setup for standard RX buffer allocations. */
+			sc->rx_bd_mbuf_alloc_size = MCLBYTES;
+			sc->rx_bd_mbuf_align_pad  =
+			    roundup2(MCLBYTES, 16) - MCLBYTES;
+			sc->rx_bd_mbuf_data_len =
+			    sc->rx_bd_mbuf_alloc_size -
+			    sc->rx_bd_mbuf_align_pad;
+		}
+	}
+
+//	DBPRINT(sc, BCE_INFO_LOAD,
+	DBPRINT(sc, BCE_WARN,
+	   "%s(): rx_bd_mbuf_alloc_size = %d, rx_bd_mbuf_data_len = %d, "
+	   "rx_bd_mbuf_align_pad = %d\n", __FUNCTION__,
+	   sc->rx_bd_mbuf_alloc_size, sc->rx_bd_mbuf_data_len,
+	   sc->rx_bd_mbuf_align_pad);
+
+	DBEXIT(BCE_VERBOSE_LOAD);
+
+}
 
 /****************************************************************************/
 /* Identifies the current media type of the controller and sets the PHY     */
@@ -2808,7 +3190,8 @@ bce_get_media_exit:
 static void
 bce_init_media(struct bce_softc *sc)
 {
-	if ((sc->bce_phy_flags & BCE_PHY_IEEE_CLAUSE_45_FLAG) != 0) {
+	if ((sc->bce_phy_flags & (BCE_PHY_IEEE_CLAUSE_45_FLAG |
+	    BCE_PHY_REMOTE_CAP_FLAG)) == BCE_PHY_IEEE_CLAUSE_45_FLAG) {
 		/*
 		 * Configure 5709S/5716S PHYs to use traditional IEEE
 		 * Clause 22 method. Otherwise we have no way to attach
@@ -2894,8 +3277,7 @@ bce_dma_free(struct bce_softc *sc)
 
 
 	/* Free, unmap and destroy all context memory pages. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		for (i = 0; i < sc->ctx_pages; i++ ) {
 			if (sc->ctx_block[i] != NULL) {
 				bus_dmamem_free(
@@ -2925,7 +3307,7 @@ bce_dma_free(struct bce_softc *sc)
 
 
 	/* Free, unmap and destroy all TX buffer descriptor chain pages. */
-	for (i = 0; i < TX_PAGES; i++ ) {
+	for (i = 0; i < sc->tx_pages; i++ ) {
 		if (sc->tx_bd_chain[i] != NULL) {
 			bus_dmamem_free(
 			    sc->tx_bd_chain_tag,
@@ -2953,7 +3335,7 @@ bce_dma_free(struct bce_softc *sc)
 
 
 	/* Free, unmap and destroy all RX buffer descriptor chain pages. */
-	for (i = 0; i < RX_PAGES; i++ ) {
+	for (i = 0; i < sc->rx_pages; i++ ) {
 		if (sc->rx_bd_chain[i] != NULL) {
 			bus_dmamem_free(
 			    sc->rx_bd_chain_tag,
@@ -2980,38 +3362,38 @@ bce_dma_free(struct bce_softc *sc)
 	}
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 	/* Free, unmap and destroy all page buffer descriptor chain pages. */
-	for (i = 0; i < PG_PAGES; i++ ) {
-		if (sc->pg_bd_chain[i] != NULL) {
-			bus_dmamem_free(
-			    sc->pg_bd_chain_tag,
-			    sc->pg_bd_chain[i],
-			    sc->pg_bd_chain_map[i]);
-			sc->pg_bd_chain[i] = NULL;
+	if (bce_hdr_split == TRUE) {
+		for (i = 0; i < sc->pg_pages; i++ ) {
+			if (sc->pg_bd_chain[i] != NULL) {
+				bus_dmamem_free(
+				    sc->pg_bd_chain_tag,
+				    sc->pg_bd_chain[i],
+				    sc->pg_bd_chain_map[i]);
+				sc->pg_bd_chain[i] = NULL;
+			}
+
+			if (sc->pg_bd_chain_map[i] != NULL) {
+				bus_dmamap_unload(
+				    sc->pg_bd_chain_tag,
+				    sc->pg_bd_chain_map[i]);
+				bus_dmamap_destroy(
+				    sc->pg_bd_chain_tag,
+				    sc->pg_bd_chain_map[i]);
+				sc->pg_bd_chain_map[i] = NULL;
+			}
 		}
 
-		if (sc->pg_bd_chain_map[i] != NULL) {
-			bus_dmamap_unload(
-			    sc->pg_bd_chain_tag,
-			    sc->pg_bd_chain_map[i]);
-			bus_dmamap_destroy(
-			    sc->pg_bd_chain_tag,
-			    sc->pg_bd_chain_map[i]);
-			sc->pg_bd_chain_map[i] = NULL;
+		/* Destroy the page buffer descriptor tag. */
+		if (sc->pg_bd_chain_tag != NULL) {
+			bus_dma_tag_destroy(sc->pg_bd_chain_tag);
+			sc->pg_bd_chain_tag = NULL;
 		}
 	}
-
-	/* Destroy the page buffer descriptor tag. */
-	if (sc->pg_bd_chain_tag != NULL) {
-		bus_dma_tag_destroy(sc->pg_bd_chain_tag);
-		sc->pg_bd_chain_tag = NULL;
-	}
-#endif
 
 
 	/* Unload and destroy the TX mbuf maps. */
-	for (i = 0; i < TOTAL_TX_BD; i++) {
+	for (i = 0; i < MAX_TX_BD_AVAIL; i++) {
 		if (sc->tx_mbuf_map[i] != NULL) {
 			bus_dmamap_unload(sc->tx_mbuf_tag,
 			    sc->tx_mbuf_map[i]);
@@ -3028,7 +3410,7 @@ bce_dma_free(struct bce_softc *sc)
 	}
 
 	/* Unload and destroy the RX mbuf maps. */
-	for (i = 0; i < TOTAL_RX_BD; i++) {
+	for (i = 0; i < MAX_RX_BD_AVAIL; i++) {
 		if (sc->rx_mbuf_map[i] != NULL) {
 			bus_dmamap_unload(sc->rx_mbuf_tag,
 			    sc->rx_mbuf_map[i]);
@@ -3044,24 +3426,24 @@ bce_dma_free(struct bce_softc *sc)
 		sc->rx_mbuf_tag = NULL;
 	}
 
-#ifdef BCE_JUMBO_HDRSPLIT
 	/* Unload and destroy the page mbuf maps. */
-	for (i = 0; i < TOTAL_PG_BD; i++) {
-		if (sc->pg_mbuf_map[i] != NULL) {
-			bus_dmamap_unload(sc->pg_mbuf_tag,
-			    sc->pg_mbuf_map[i]);
-			bus_dmamap_destroy(sc->pg_mbuf_tag,
-	 		    sc->pg_mbuf_map[i]);
-			sc->pg_mbuf_map[i] = NULL;
+	if (bce_hdr_split == TRUE) {
+		for (i = 0; i < MAX_PG_BD_AVAIL; i++) {
+			if (sc->pg_mbuf_map[i] != NULL) {
+				bus_dmamap_unload(sc->pg_mbuf_tag,
+				    sc->pg_mbuf_map[i]);
+				bus_dmamap_destroy(sc->pg_mbuf_tag,
+				    sc->pg_mbuf_map[i]);
+				sc->pg_mbuf_map[i] = NULL;
+			}
+		}
+
+		/* Destroy the page mbuf tag. */
+		if (sc->pg_mbuf_tag != NULL) {
+			bus_dma_tag_destroy(sc->pg_mbuf_tag);
+			sc->pg_mbuf_tag = NULL;
 		}
 	}
-
-	/* Destroy the page mbuf tag. */
-	if (sc->pg_mbuf_tag != NULL) {
-		bus_dma_tag_destroy(sc->pg_mbuf_tag);
-		sc->pg_mbuf_tag = NULL;
-	}
-#endif
 
 	/* Destroy the parent tag */
 	if (sc->parent_tag != NULL) {
@@ -3234,8 +3616,7 @@ bce_dma_alloc(device_t dev)
 	    __FUNCTION__, (uintmax_t) sc->stats_block_paddr);
 
 	/* BCM5709 uses host memory as cache for context memory. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		sc->ctx_pages = 0x2000 / BCM_PAGE_SIZE;
 		if (sc->ctx_pages == 0)
 			sc->ctx_pages = 1;
@@ -3304,7 +3685,7 @@ bce_dma_alloc(device_t dev)
 		goto bce_dma_alloc_exit;
 	}
 
-	for (i = 0; i < TX_PAGES; i++) {
+	for (i = 0; i < sc->tx_pages; i++) {
 
 		if(bus_dmamem_alloc(sc->tx_bd_chain_tag,
 		    (void **)&sc->tx_bd_chain[i],
@@ -3355,7 +3736,7 @@ bce_dma_alloc(device_t dev)
 	}
 
 	/* Create DMA maps for the TX mbufs clusters. */
-	for (i = 0; i < TOTAL_TX_BD; i++) {
+	for (i = 0; i < TOTAL_TX_BD_ALLOC; i++) {
 		if (bus_dmamap_create(sc->tx_mbuf_tag, BUS_DMA_NOWAIT,
 			&sc->tx_mbuf_map[i])) {
 			BCE_PRINTF("%s(%d): Unable to create TX mbuf DMA "
@@ -3381,7 +3762,7 @@ bce_dma_alloc(device_t dev)
 		goto bce_dma_alloc_exit;
 	}
 
-	for (i = 0; i < RX_PAGES; i++) {
+	for (i = 0; i < sc->rx_pages; i++) {
 
 		if (bus_dmamem_alloc(sc->rx_bd_chain_tag,
 		    (void **)&sc->rx_bd_chain[i],
@@ -3413,12 +3794,11 @@ bce_dma_alloc(device_t dev)
 	/*
 	 * Create a DMA tag for RX mbufs.
 	 */
-#ifdef BCE_JUMBO_HDRSPLIT
-	max_size = max_seg_size = ((sc->rx_bd_mbuf_alloc_size < MCLBYTES) ?
-		MCLBYTES : sc->rx_bd_mbuf_alloc_size);
-#else
-	max_size = max_seg_size = MJUM9BYTES;
-#endif
+	if (bce_hdr_split == TRUE)
+		max_size = max_seg_size = ((sc->rx_bd_mbuf_alloc_size < MCLBYTES) ?
+		    MCLBYTES : sc->rx_bd_mbuf_alloc_size);
+	else
+		max_size = max_seg_size = MJUM9BYTES;
 	max_segments = 1;
 
 	DBPRINT(sc, BCE_INFO_LOAD, "%s(): Creating rx_mbuf_tag "
@@ -3437,7 +3817,7 @@ bce_dma_alloc(device_t dev)
 	}
 
 	/* Create DMA maps for the RX mbuf clusters. */
-	for (i = 0; i < TOTAL_RX_BD; i++) {
+	for (i = 0; i < TOTAL_RX_BD_ALLOC; i++) {
 		if (bus_dmamap_create(sc->rx_mbuf_tag, BUS_DMA_NOWAIT,
 		    &sc->rx_mbuf_map[i])) {
 			BCE_PRINTF("%s(%d): Unable to create RX mbuf "
@@ -3447,78 +3827,77 @@ bce_dma_alloc(device_t dev)
 		}
 	}
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	/*
-	 * Create a DMA tag for the page buffer descriptor chain,
-	 * allocate and clear the memory, and fetch the physical
-	 * address of the blocks.
-	 */
-	if (bus_dma_tag_create(sc->parent_tag, BCM_PAGE_SIZE,
-	    BCE_DMA_BOUNDARY, BUS_SPACE_MAXADDR, sc->max_bus_addr,
-	    NULL, NULL,	BCE_PG_CHAIN_PAGE_SZ, 1, BCE_PG_CHAIN_PAGE_SZ,
-	    0, NULL, NULL, &sc->pg_bd_chain_tag)) {
-		BCE_PRINTF("%s(%d): Could not allocate page descriptor "
-		    "chain DMA tag!\n",	__FILE__, __LINE__);
-		rc = ENOMEM;
-		goto bce_dma_alloc_exit;
-	}
-
-	for (i = 0; i < PG_PAGES; i++) {
-
-		if (bus_dmamem_alloc(sc->pg_bd_chain_tag,
-		    (void **)&sc->pg_bd_chain[i],
-		    BUS_DMA_NOWAIT | BUS_DMA_ZERO | BUS_DMA_COHERENT,
-		    &sc->pg_bd_chain_map[i])) {
-			BCE_PRINTF("%s(%d): Could not allocate page "
-			    "descriptor chain DMA memory!\n",
-			    __FILE__, __LINE__);
+	if (bce_hdr_split == TRUE) {
+		/*
+		 * Create a DMA tag for the page buffer descriptor chain,
+		 * allocate and clear the memory, and fetch the physical
+		 * address of the blocks.
+		 */
+		if (bus_dma_tag_create(sc->parent_tag, BCM_PAGE_SIZE,
+			    BCE_DMA_BOUNDARY, BUS_SPACE_MAXADDR, sc->max_bus_addr,
+			    NULL, NULL,	BCE_PG_CHAIN_PAGE_SZ, 1, BCE_PG_CHAIN_PAGE_SZ,
+			    0, NULL, NULL, &sc->pg_bd_chain_tag)) {
+			BCE_PRINTF("%s(%d): Could not allocate page descriptor "
+			    "chain DMA tag!\n",	__FILE__, __LINE__);
 			rc = ENOMEM;
 			goto bce_dma_alloc_exit;
 		}
 
-		error = bus_dmamap_load(sc->pg_bd_chain_tag,
-		    sc->pg_bd_chain_map[i], sc->pg_bd_chain[i],
-		    BCE_PG_CHAIN_PAGE_SZ, bce_dma_map_addr,
-		    &sc->pg_bd_chain_paddr[i], BUS_DMA_NOWAIT);
+		for (i = 0; i < sc->pg_pages; i++) {
+			if (bus_dmamem_alloc(sc->pg_bd_chain_tag,
+			    (void **)&sc->pg_bd_chain[i],
+			    BUS_DMA_NOWAIT | BUS_DMA_ZERO | BUS_DMA_COHERENT,
+			    &sc->pg_bd_chain_map[i])) {
+				BCE_PRINTF("%s(%d): Could not allocate page "
+				    "descriptor chain DMA memory!\n",
+				    __FILE__, __LINE__);
+				rc = ENOMEM;
+				goto bce_dma_alloc_exit;
+			}
 
-		if (error) {
-			BCE_PRINTF("%s(%d): Could not map page descriptor "
-			    "chain DMA memory!\n", __FILE__, __LINE__);
+			error = bus_dmamap_load(sc->pg_bd_chain_tag,
+			    sc->pg_bd_chain_map[i], sc->pg_bd_chain[i],
+			    BCE_PG_CHAIN_PAGE_SZ, bce_dma_map_addr,
+			    &sc->pg_bd_chain_paddr[i], BUS_DMA_NOWAIT);
+
+			if (error) {
+				BCE_PRINTF("%s(%d): Could not map page descriptor "
+					"chain DMA memory!\n", __FILE__, __LINE__);
+				rc = ENOMEM;
+				goto bce_dma_alloc_exit;
+			}
+
+			DBPRINT(sc, BCE_INFO_LOAD, "%s(): pg_bd_chain_paddr[%d] = "
+				"0x%jX\n", __FUNCTION__, i,
+				(uintmax_t) sc->pg_bd_chain_paddr[i]);
+		}
+
+		/*
+		 * Create a DMA tag for page mbufs.
+		 */
+		max_size = max_seg_size = ((sc->pg_bd_mbuf_alloc_size < MCLBYTES) ?
+			MCLBYTES : sc->pg_bd_mbuf_alloc_size);
+
+		if (bus_dma_tag_create(sc->parent_tag, 1, BCE_DMA_BOUNDARY,
+			sc->max_bus_addr, BUS_SPACE_MAXADDR, NULL, NULL,
+			max_size, 1, max_seg_size, 0, NULL, NULL, &sc->pg_mbuf_tag)) {
+			BCE_PRINTF("%s(%d): Could not allocate page mbuf "
+				"DMA tag!\n", __FILE__, __LINE__);
 			rc = ENOMEM;
 			goto bce_dma_alloc_exit;
 		}
 
-		DBPRINT(sc, BCE_INFO_LOAD, "%s(): pg_bd_chain_paddr[%d] = "
-		    "0x%jX\n", __FUNCTION__, i,
-		    (uintmax_t) sc->pg_bd_chain_paddr[i]);
-	}
-
-	/*
-	 * Create a DMA tag for page mbufs.
-	 */
-	max_size = max_seg_size = ((sc->pg_bd_mbuf_alloc_size < MCLBYTES) ?
-	    MCLBYTES : sc->pg_bd_mbuf_alloc_size);
-
-	if (bus_dma_tag_create(sc->parent_tag, 1, BCE_DMA_BOUNDARY,
-	    sc->max_bus_addr, BUS_SPACE_MAXADDR, NULL, NULL,
-	    max_size, 1, max_seg_size, 0, NULL, NULL, &sc->pg_mbuf_tag)) {
-		BCE_PRINTF("%s(%d): Could not allocate page mbuf "
-		    "DMA tag!\n", __FILE__, __LINE__);
-		rc = ENOMEM;
-		goto bce_dma_alloc_exit;
-	}
-
-	/* Create DMA maps for the page mbuf clusters. */
-	for (i = 0; i < TOTAL_PG_BD; i++) {
-		if (bus_dmamap_create(sc->pg_mbuf_tag, BUS_DMA_NOWAIT,
-		    &sc->pg_mbuf_map[i])) {
-			BCE_PRINTF("%s(%d): Unable to create page mbuf "
-			    "DMA map!\n", __FILE__, __LINE__);
-			rc = ENOMEM;
-			goto bce_dma_alloc_exit;
+		/* Create DMA maps for the page mbuf clusters. */
+		for (i = 0; i < TOTAL_PG_BD_ALLOC; i++) {
+			if (bus_dmamap_create(sc->pg_mbuf_tag, BUS_DMA_NOWAIT,
+				&sc->pg_mbuf_map[i])) {
+				BCE_PRINTF("%s(%d): Unable to create page mbuf "
+					"DMA map!\n", __FILE__, __LINE__);
+				rc = ENOMEM;
+				goto bce_dma_alloc_exit;
+			}
 		}
 	}
-#endif
 
 bce_dma_alloc_exit:
 	DBEXIT(BCE_VERBOSE_RESET | BCE_VERBOSE_CTX);
@@ -3553,8 +3932,8 @@ bce_release_resources(struct bce_softc *sc)
 
 	if (sc->bce_res_irq != NULL) {
 		DBPRINT(sc, BCE_INFO_RESET, "Releasing IRQ.\n");
-		bus_release_resource(dev, SYS_RES_IRQ, sc->bce_irq_rid,
-		    sc->bce_res_irq);
+		bus_release_resource(dev, SYS_RES_IRQ,
+		    rman_get_rid(sc->bce_res_irq), sc->bce_res_irq);
 	}
 
 	if (sc->bce_flags & (BCE_USING_MSI_FLAG | BCE_USING_MSIX_FLAG)) {
@@ -3878,8 +4257,7 @@ bce_init_rxp_cpu(struct bce_softc *sc)
 	cpu_reg.spad_base = BCE_RXP_SCRATCH;
 	cpu_reg.mips_view_base = 0x8000000;
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
  		fw.ver_major = bce_RXP_b09FwReleaseMajor;
 		fw.ver_minor = bce_RXP_b09FwReleaseMinor;
 		fw.ver_fix = bce_RXP_b09FwReleaseFix;
@@ -3977,8 +4355,7 @@ bce_init_txp_cpu(struct bce_softc *sc)
 	cpu_reg.spad_base = BCE_TXP_SCRATCH;
 	cpu_reg.mips_view_base = 0x8000000;
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		fw.ver_major = bce_TXP_b09FwReleaseMajor;
 		fw.ver_minor = bce_TXP_b09FwReleaseMinor;
 		fw.ver_fix = bce_TXP_b09FwReleaseFix;
@@ -4075,8 +4452,7 @@ bce_init_tpat_cpu(struct bce_softc *sc)
 	cpu_reg.spad_base = BCE_TPAT_SCRATCH;
 	cpu_reg.mips_view_base = 0x8000000;
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		fw.ver_major = bce_TPAT_b09FwReleaseMajor;
 		fw.ver_minor = bce_TPAT_b09FwReleaseMinor;
 		fw.ver_fix = bce_TPAT_b09FwReleaseFix;
@@ -4173,8 +4549,7 @@ bce_init_cp_cpu(struct bce_softc *sc)
 	cpu_reg.spad_base = BCE_CP_SCRATCH;
 	cpu_reg.mips_view_base = 0x8000000;
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		fw.ver_major = bce_CP_b09FwReleaseMajor;
 		fw.ver_minor = bce_CP_b09FwReleaseMinor;
 		fw.ver_fix = bce_CP_b09FwReleaseFix;
@@ -4271,8 +4646,7 @@ bce_init_com_cpu(struct bce_softc *sc)
 	cpu_reg.spad_base = BCE_COM_SCRATCH;
 	cpu_reg.mips_view_base = 0x8000000;
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		fw.ver_major = bce_COM_b09FwReleaseMajor;
 		fw.ver_minor = bce_COM_b09FwReleaseMinor;
 		fw.ver_fix = bce_COM_b09FwReleaseFix;
@@ -4355,8 +4729,7 @@ bce_init_cpus(struct bce_softc *sc)
 {
 	DBENTER(BCE_VERBOSE_RESET);
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 
 		if ((BCE_CHIP_REV(sc) == BCE_CHIP_REV_Ax)) {
 			bce_load_rv2p_fw(sc, bce_xi90_rv2p_proc1,
@@ -4404,8 +4777,7 @@ bce_init_ctx(struct bce_softc *sc)
 	rc = 0;
 	DBENTER(BCE_VERBOSE_RESET | BCE_VERBOSE_CTX);
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		retry_cnt = CTX_INIT_RETRY_COUNT;
 
 		DBPRINT(sc, BCE_INFO_CTX, "Initializing 5709 context.\n");
@@ -4593,9 +4965,9 @@ bce_stop(struct bce_softc *sc)
 	bce_disable_intr(sc);
 
 	/* Free RX buffers. */
-#ifdef BCE_JUMBO_HDRSPLIT
-	bce_free_pg_chain(sc);
-#endif
+	if (bce_hdr_split == TRUE) {
+		bce_free_pg_chain(sc);
+	}
 	bce_free_rx_chain(sc);
 
 	/* Free TX buffers. */
@@ -4614,13 +4986,24 @@ bce_stop(struct bce_softc *sc)
 static int
 bce_reset(struct bce_softc *sc, u32 reset_code)
 {
-	u32 val;
+	u32 emac_mode_save, val;
 	int i, rc = 0;
+	static const u32 emac_mode_mask = BCE_EMAC_MODE_PORT |
+	    BCE_EMAC_MODE_HALF_DUPLEX | BCE_EMAC_MODE_25G;
 
 	DBENTER(BCE_VERBOSE_RESET);
 
 	DBPRINT(sc, BCE_VERBOSE_RESET, "%s(): reset_code = 0x%08X\n",
 	    __FUNCTION__, reset_code);
+
+	/*
+	 * If ASF/IPMI is operational, then the EMAC Mode register already
+	 * contains appropriate values for the link settings that have
+	 * been auto-negotiated.  Resetting the chip will clobber those
+	 * values.  Save the important bits so we can restore them after
+	 * the reset.
+	 */
+	emac_mode_save = REG_RD(sc, BCE_EMAC_MODE) & emac_mode_mask;
 
 	/* Wait for pending PCI transactions to complete. */
 	REG_WR(sc, BCE_MISC_ENABLE_CLR_BITS,
@@ -4632,8 +5015,7 @@ bce_reset(struct bce_softc *sc, u32 reset_code)
 	DELAY(5);
 
 	/* Disable DMA */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		val = REG_RD(sc, BCE_MISC_NEW_CORE_CTL);
 		val &= ~BCE_MISC_NEW_CORE_CTL_DMA_ENABLE;
 		REG_WR(sc, BCE_MISC_NEW_CORE_CTL, val);
@@ -4655,8 +5037,7 @@ bce_reset(struct bce_softc *sc, u32 reset_code)
 	val = REG_RD(sc, BCE_MISC_ID);
 
 	/* Chip reset. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		REG_WR(sc, BCE_MISC_COMMAND, BCE_MISC_COMMAND_SW_RESET);
 		REG_RD(sc, BCE_MISC_COMMAND);
 		DELAY(5);
@@ -4709,8 +5090,15 @@ bce_reset(struct bce_softc *sc, u32 reset_code)
 	if (rc)
 		BCE_PRINTF("%s(%d): Firmware did not complete "
 		    "initialization!\n", __FILE__, __LINE__);
+	/* Get firmware capabilities. */
+	bce_fw_cap_init(sc);
 
 bce_reset_exit:
+	/* Restore EMAC Mode bits needed to keep ASF/IPMI running. */
+	val = REG_RD(sc, BCE_EMAC_MODE);
+	val = (val & ~emac_mode_mask) | emac_mode_save;
+	REG_WR(sc, BCE_EMAC_MODE, val);
+
 	DBEXIT(BCE_VERBOSE_RESET);
 	return (rc);
 }
@@ -4785,8 +5173,7 @@ bce_chipinit(struct bce_softc *sc)
 	val |= BCE_MQ_CONFIG_KNL_BYP_BLK_SIZE_256;
 
 	/* Enable bins used on the 5709. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		val |= BCE_MQ_CONFIG_BIN_MQ_MODE;
 		if (BCE_CHIP_ID(sc) == BCE_CHIP_ID_5709_A1)
 			val |= BCE_MQ_CONFIG_HALT_DIS;
@@ -4940,8 +5327,7 @@ bce_blockinit(struct bce_softc *sc)
 	}
 
 	/* Enable DMA */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		val = REG_RD(sc, BCE_MISC_NEW_CORE_CTL);
 		val |= BCE_MISC_NEW_CORE_CTL_DMA_ENABLE;
 		REG_WR(sc, BCE_MISC_NEW_CORE_CTL, val);
@@ -4965,8 +5351,7 @@ bce_blockinit(struct bce_softc *sc)
 	}
 
 	/* Enable all remaining blocks in the MAC. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716))
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709)
 		REG_WR(sc, BCE_MISC_ENABLE_SET_BITS,
 		    BCE_MISC_ENABLE_DEFAULT_XI);
 	else
@@ -5008,10 +5393,10 @@ bce_get_rx_buf(struct bce_softc *sc, struct mbuf *m, u16 *prod,
 	DBENTER(BCE_EXTREME_RESET | BCE_EXTREME_RECV | BCE_EXTREME_LOAD);
 
 	/* Make sure the inputs are valid. */
-	DBRUNIF((*chain_prod > MAX_RX_BD),
+	DBRUNIF((*chain_prod > MAX_RX_BD_ALLOC),
 	    BCE_PRINTF("%s(%d): RX producer out of range: "
 	    "0x%04X > 0x%04X\n", __FILE__, __LINE__,
-	    *chain_prod, (u16) MAX_RX_BD));
+	    *chain_prod, (u16) MAX_RX_BD_ALLOC));
 
 	DBPRINT(sc, BCE_EXTREME_RECV, "%s(enter): prod = 0x%04X, "
 	    "chain_prod = 0x%04X, prod_bseq = 0x%08X\n", __FUNCTION__,
@@ -5034,15 +5419,11 @@ bce_get_rx_buf(struct bce_softc *sc, struct mbuf *m, u16 *prod,
 		    goto bce_get_rx_buf_exit);
 
 		/* This is a new mbuf allocation. */
-#ifdef BCE_JUMBO_HDRSPLIT
-		MGETHDR(m_new, M_DONTWAIT, MT_DATA);
-#else
-		if (sc->rx_bd_mbuf_alloc_size <= MCLBYTES)
-			m_new = m_getcl(M_DONTWAIT, MT_DATA, M_PKTHDR);
+		if (bce_hdr_split == TRUE)
+			MGETHDR(m_new, M_DONTWAIT, MT_DATA);
 		else
 			m_new = m_getjcl(M_DONTWAIT, MT_DATA, M_PKTHDR,
 			    sc->rx_bd_mbuf_alloc_size);
-#endif
 
 		if (m_new == NULL) {
 			sc->mbuf_alloc_failed_count++;
@@ -5115,7 +5496,6 @@ bce_get_rx_buf_exit:
 }
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 /****************************************************************************/
 /* Encapsulate an mbuf cluster into the page chain.                         */
 /*                                                                          */
@@ -5138,10 +5518,10 @@ bce_get_pg_buf(struct bce_softc *sc, struct mbuf *m, u16 *prod,
 	DBENTER(BCE_EXTREME_RESET | BCE_EXTREME_RECV | BCE_EXTREME_LOAD);
 
 	/* Make sure the inputs are valid. */
-	DBRUNIF((*prod_idx > MAX_PG_BD),
+	DBRUNIF((*prod_idx > MAX_PG_BD_ALLOC),
 	    BCE_PRINTF("%s(%d): page producer out of range: "
 	    "0x%04X > 0x%04X\n", __FILE__, __LINE__,
-	    *prod_idx, (u16) MAX_PG_BD));
+	    *prod_idx, (u16) MAX_PG_BD_ALLOC));
 
 	DBPRINT(sc, BCE_EXTREME_RECV, "%s(enter): prod = 0x%04X, "
 	    "chain_prod = 0x%04X\n", __FUNCTION__, *prod, *prod_idx);
@@ -5226,7 +5606,6 @@ bce_get_pg_buf_exit:
 
 	return(rc);
 }
-#endif /* BCE_JUMBO_HDRSPLIT */
 
 
 /****************************************************************************/
@@ -5243,8 +5622,7 @@ bce_init_tx_context(struct bce_softc *sc)
 	DBENTER(BCE_VERBOSE_RESET | BCE_VERBOSE_SEND | BCE_VERBOSE_CTX);
 
 	/* Initialize the context ID for an L2 TX chain. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		/* Set the CID type to support an L2 connection. */
 		val = BCE_L2CTX_TX_TYPE_TYPE_L2_XI |
 		    BCE_L2CTX_TX_TYPE_SIZE_L2_XI;
@@ -5299,7 +5677,7 @@ bce_init_tx_chain(struct bce_softc *sc)
 	sc->tx_cons        = 0;
 	sc->tx_prod_bseq   = 0;
 	sc->used_tx_bd     = 0;
-	sc->max_tx_bd      = USABLE_TX_BD;
+	sc->max_tx_bd      = USABLE_TX_BD_ALLOC;
 	DBRUN(sc->tx_hi_watermark = 0);
 	DBRUN(sc->tx_full_count = 0);
 
@@ -5314,24 +5692,26 @@ bce_init_tx_chain(struct bce_softc *sc)
 	 */
 
 	/* Set the TX next pointer chain entries. */
-	for (i = 0; i < TX_PAGES; i++) {
+	for (i = 0; i < sc->tx_pages; i++) {
 		int j;
 
 		txbd = &sc->tx_bd_chain[i][USABLE_TX_BD_PER_PAGE];
 
 		/* Check if we've reached the last page. */
-		if (i == (TX_PAGES - 1))
+		if (i == (sc->tx_pages - 1))
 			j = 0;
 		else
 			j = i + 1;
 
-		txbd->tx_bd_haddr_hi = htole32(BCE_ADDR_HI(sc->tx_bd_chain_paddr[j]));
-		txbd->tx_bd_haddr_lo = htole32(BCE_ADDR_LO(sc->tx_bd_chain_paddr[j]));
+		txbd->tx_bd_haddr_hi =
+		    htole32(BCE_ADDR_HI(sc->tx_bd_chain_paddr[j]));
+		txbd->tx_bd_haddr_lo =
+		    htole32(BCE_ADDR_LO(sc->tx_bd_chain_paddr[j]));
 	}
 
 	bce_init_tx_context(sc);
 
-	DBRUNMSG(BCE_INSANE_SEND, bce_dump_tx_chain(sc, 0, TOTAL_TX_BD));
+	DBRUNMSG(BCE_INSANE_SEND, bce_dump_tx_chain(sc, 0, TOTAL_TX_BD_ALLOC));
 	DBEXIT(BCE_VERBOSE_RESET | BCE_VERBOSE_SEND | BCE_VERBOSE_LOAD);
 
 	return(rc);
@@ -5352,7 +5732,7 @@ bce_free_tx_chain(struct bce_softc *sc)
 	DBENTER(BCE_VERBOSE_RESET | BCE_VERBOSE_SEND | BCE_VERBOSE_UNLOAD);
 
 	/* Unmap, unload, and free any mbufs still in the TX mbuf chain. */
-	for (i = 0; i < TOTAL_TX_BD; i++) {
+	for (i = 0; i < MAX_TX_BD_AVAIL; i++) {
 		if (sc->tx_mbuf_ptr[i] != NULL) {
 			if (sc->tx_mbuf_map[i] != NULL)
 				bus_dmamap_sync(sc->tx_mbuf_tag,
@@ -5365,7 +5745,7 @@ bce_free_tx_chain(struct bce_softc *sc)
 	}
 
 	/* Clear each TX chain page. */
-	for (i = 0; i < TX_PAGES; i++)
+	for (i = 0; i < sc->tx_pages; i++)
 		bzero((char *)sc->tx_bd_chain[i], BCE_TX_CHAIN_PAGE_SZ);
 
 	sc->used_tx_bd = 0;
@@ -5405,21 +5785,20 @@ bce_init_rx_context(struct bce_softc *sc)
 	 * when pause frames can be stopped (the high
 	 * watermark).
 	 */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		u32 lo_water, hi_water;
 
-		if (sc->bce_flags && BCE_USING_TX_FLOW_CONTROL) {
+		if (sc->bce_flags & BCE_USING_TX_FLOW_CONTROL) {
 			lo_water = BCE_L2CTX_RX_LO_WATER_MARK_DEFAULT;
 		} else {
 			lo_water = 0;
 		}
 
-		if (lo_water >= USABLE_RX_BD) {
+		if (lo_water >= USABLE_RX_BD_ALLOC) {
 			lo_water = 0;
 		}
 
-		hi_water = USABLE_RX_BD / 4;
+		hi_water = USABLE_RX_BD_ALLOC / 4;
 
 		if (hi_water <= lo_water) {
 			lo_water = 0;
@@ -5440,8 +5819,7 @@ bce_init_rx_context(struct bce_softc *sc)
 	CTX_WR(sc, GET_CID_ADDR(RX_CID), BCE_L2CTX_RX_CTX_TYPE, val);
 
 	/* Setup the MQ BIN mapping for l2_ctx_host_bseq. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		val = REG_RD(sc, BCE_MQ_MAP_L2_5);
 		REG_WR(sc, BCE_MQ_MAP_L2_5, val | BCE_MQ_MAP_L2_5_ARM);
 	}
@@ -5475,17 +5853,17 @@ bce_init_rx_chain(struct bce_softc *sc)
 	sc->rx_prod        = 0;
 	sc->rx_cons        = 0;
 	sc->rx_prod_bseq   = 0;
-	sc->free_rx_bd     = USABLE_RX_BD;
-	sc->max_rx_bd      = USABLE_RX_BD;
+	sc->free_rx_bd     = USABLE_RX_BD_ALLOC;
+	sc->max_rx_bd      = USABLE_RX_BD_ALLOC;
 
 	/* Initialize the RX next pointer chain entries. */
-	for (i = 0; i < RX_PAGES; i++) {
+	for (i = 0; i < sc->rx_pages; i++) {
 		int j;
 
 		rxbd = &sc->rx_bd_chain[i][USABLE_RX_BD_PER_PAGE];
 
 		/* Check if we've reached the last page. */
-		if (i == (RX_PAGES - 1))
+		if (i == (sc->rx_pages - 1))
 			j = 0;
 		else
 			j = i + 1;
@@ -5500,16 +5878,17 @@ bce_init_rx_chain(struct bce_softc *sc)
 	/* Fill up the RX chain. */
 	bce_fill_rx_chain(sc);
 
-	DBRUN(sc->rx_low_watermark = USABLE_RX_BD);
+	DBRUN(sc->rx_low_watermark = USABLE_RX_BD_ALLOC);
 	DBRUN(sc->rx_empty_count = 0);
-	for (i = 0; i < RX_PAGES; i++) {
+	for (i = 0; i < sc->rx_pages; i++) {
 		bus_dmamap_sync(sc->rx_bd_chain_tag, sc->rx_bd_chain_map[i],
 		    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
 	}
 
 	bce_init_rx_context(sc);
 
-	DBRUNMSG(BCE_EXTREME_RECV, bce_dump_rx_bd_chain(sc, 0, TOTAL_RX_BD));
+	DBRUNMSG(BCE_EXTREME_RECV,
+	    bce_dump_rx_bd_chain(sc, 0, TOTAL_RX_BD_ALLOC));
 	DBEXIT(BCE_VERBOSE_RESET | BCE_VERBOSE_RECV | BCE_VERBOSE_LOAD |
 	    BCE_VERBOSE_CTX);
 
@@ -5583,7 +5962,7 @@ bce_free_rx_chain(struct bce_softc *sc)
 	DBENTER(BCE_VERBOSE_RESET | BCE_VERBOSE_RECV | BCE_VERBOSE_UNLOAD);
 
 	/* Free any mbufs still in the RX mbuf chain. */
-	for (i = 0; i < TOTAL_RX_BD; i++) {
+	for (i = 0; i < MAX_RX_BD_AVAIL; i++) {
 		if (sc->rx_mbuf_ptr[i] != NULL) {
 			if (sc->rx_mbuf_map[i] != NULL)
 				bus_dmamap_sync(sc->rx_mbuf_tag,
@@ -5596,7 +5975,7 @@ bce_free_rx_chain(struct bce_softc *sc)
 	}
 
 	/* Clear each RX chain page. */
-	for (i = 0; i < RX_PAGES; i++)
+	for (i = 0; i < sc->rx_pages; i++)
 		if (sc->rx_bd_chain[i] != NULL) {
 			bzero((char *)sc->rx_bd_chain[i],
 			    BCE_RX_CHAIN_PAGE_SZ);
@@ -5613,7 +5992,6 @@ bce_free_rx_chain(struct bce_softc *sc)
 }
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 /****************************************************************************/
 /* Allocate memory and initialize the page data structures.                 */
 /* Assumes that bce_init_rx_chain() has not already been called.            */
@@ -5634,31 +6012,32 @@ bce_init_pg_chain(struct bce_softc *sc)
 	/* Initialize the page producer and consumer indices. */
 	sc->pg_prod        = 0;
 	sc->pg_cons        = 0;
-	sc->free_pg_bd     = USABLE_PG_BD;
-	sc->max_pg_bd      = USABLE_PG_BD;
+	sc->free_pg_bd     = USABLE_PG_BD_ALLOC;
+	sc->max_pg_bd      = USABLE_PG_BD_ALLOC;
 	DBRUN(sc->pg_low_watermark = sc->max_pg_bd);
 	DBRUN(sc->pg_empty_count = 0);
 
 	/* Initialize the page next pointer chain entries. */
-	for (i = 0; i < PG_PAGES; i++) {
+	for (i = 0; i < sc->pg_pages; i++) {
 		int j;
 
 		pgbd = &sc->pg_bd_chain[i][USABLE_PG_BD_PER_PAGE];
 
 		/* Check if we've reached the last page. */
-		if (i == (PG_PAGES - 1))
+		if (i == (sc->pg_pages - 1))
 			j = 0;
 		else
 			j = i + 1;
 
 		/* Setup the chain page pointers. */
-		pgbd->rx_bd_haddr_hi = htole32(BCE_ADDR_HI(sc->pg_bd_chain_paddr[j]));
-		pgbd->rx_bd_haddr_lo = htole32(BCE_ADDR_LO(sc->pg_bd_chain_paddr[j]));
+		pgbd->rx_bd_haddr_hi =
+		    htole32(BCE_ADDR_HI(sc->pg_bd_chain_paddr[j]));
+		pgbd->rx_bd_haddr_lo =
+		    htole32(BCE_ADDR_LO(sc->pg_bd_chain_paddr[j]));
 	}
 
 	/* Setup the MQ BIN mapping for host_pg_bidx. */
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709)	||
-		(BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716))
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709)
 		REG_WR(sc, BCE_MQ_MAP_L2_3, BCE_MQ_MAP_L2_3_DEFAULT);
 
 	CTX_WR(sc, GET_CID_ADDR(RX_CID), BCE_L2CTX_RX_PG_BUF_SIZE, 0);
@@ -5680,12 +6059,13 @@ bce_init_pg_chain(struct bce_softc *sc)
 	/* Fill up the page chain. */
 	bce_fill_pg_chain(sc);
 
-	for (i = 0; i < PG_PAGES; i++) {
+	for (i = 0; i < sc->pg_pages; i++) {
 		bus_dmamap_sync(sc->pg_bd_chain_tag, sc->pg_bd_chain_map[i],
 		    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
 	}
 
-	DBRUNMSG(BCE_EXTREME_RECV, bce_dump_pg_chain(sc, 0, TOTAL_PG_BD));
+	DBRUNMSG(BCE_EXTREME_RECV,
+	    bce_dump_pg_chain(sc, 0, TOTAL_PG_BD_ALLOC));
 	DBEXIT(BCE_VERBOSE_RESET | BCE_VERBOSE_RECV | BCE_VERBOSE_LOAD |
 		BCE_VERBOSE_CTX);
 	return(rc);
@@ -5753,7 +6133,7 @@ bce_free_pg_chain(struct bce_softc *sc)
 	DBENTER(BCE_VERBOSE_RESET | BCE_VERBOSE_RECV | BCE_VERBOSE_UNLOAD);
 
 	/* Free any mbufs still in the mbuf page chain. */
-	for (i = 0; i < TOTAL_PG_BD; i++) {
+	for (i = 0; i < MAX_PG_BD_AVAIL; i++) {
 		if (sc->pg_mbuf_ptr[i] != NULL) {
 			if (sc->pg_mbuf_map[i] != NULL)
 				bus_dmamap_sync(sc->pg_mbuf_tag,
@@ -5766,7 +6146,7 @@ bce_free_pg_chain(struct bce_softc *sc)
 	}
 
 	/* Clear each page chain pages. */
-	for (i = 0; i < PG_PAGES; i++)
+	for (i = 0; i < sc->pg_pages; i++)
 		bzero((char *)sc->pg_bd_chain[i], BCE_PG_CHAIN_PAGE_SZ);
 
 	sc->free_pg_bd = sc->max_pg_bd;
@@ -5778,7 +6158,55 @@ bce_free_pg_chain(struct bce_softc *sc)
 
 	DBEXIT(BCE_VERBOSE_RESET | BCE_VERBOSE_RECV | BCE_VERBOSE_UNLOAD);
 }
-#endif /* BCE_JUMBO_HDRSPLIT */
+
+
+static u32
+bce_get_rphy_link(struct bce_softc *sc)
+{
+	u32 advertise, link;
+	int fdpx;
+
+	advertise = 0;
+	fdpx = 0;
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) != 0)
+		link = bce_shmem_rd(sc, BCE_RPHY_SERDES_LINK);
+	else
+		link = bce_shmem_rd(sc, BCE_RPHY_COPPER_LINK);
+	if (link & BCE_NETLINK_ANEG_ENB)
+		advertise |= BCE_NETLINK_ANEG_ENB;
+	if (link & BCE_NETLINK_SPEED_10HALF)
+		advertise |= BCE_NETLINK_SPEED_10HALF;
+	if (link & BCE_NETLINK_SPEED_10FULL) {
+		advertise |= BCE_NETLINK_SPEED_10FULL;
+		fdpx++;
+	}
+	if (link & BCE_NETLINK_SPEED_100HALF)
+		advertise |= BCE_NETLINK_SPEED_100HALF;
+	if (link & BCE_NETLINK_SPEED_100FULL) {
+		advertise |= BCE_NETLINK_SPEED_100FULL;
+		fdpx++;
+	}
+	if (link & BCE_NETLINK_SPEED_1000HALF)
+		advertise |= BCE_NETLINK_SPEED_1000HALF;
+	if (link & BCE_NETLINK_SPEED_1000FULL) {
+		advertise |= BCE_NETLINK_SPEED_1000FULL;
+		fdpx++;
+	}
+	if (link & BCE_NETLINK_SPEED_2500HALF)
+		advertise |= BCE_NETLINK_SPEED_2500HALF;
+	if (link & BCE_NETLINK_SPEED_2500FULL) {
+		advertise |= BCE_NETLINK_SPEED_2500FULL;
+		fdpx++;
+	}
+	if (fdpx)
+		advertise |= BCE_NETLINK_FC_PAUSE_SYM |
+		    BCE_NETLINK_FC_PAUSE_ASYM;
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0)
+		advertise |= BCE_NETLINK_PHY_APP_REMOTE |
+		    BCE_NETLINK_ETH_AT_WIRESPEED;
+
+	return (advertise);
+}
 
 
 /****************************************************************************/
@@ -5815,29 +6243,194 @@ bce_ifmedia_upd_locked(struct ifnet *ifp)
 {
 	struct bce_softc *sc = ifp->if_softc;
 	struct mii_data *mii;
-	int error;
+	struct mii_softc *miisc;
+	struct ifmedia *ifm;
+	u32 link;
+	int error, fdx;
 
 	DBENTER(BCE_VERBOSE_PHY);
 
 	error = 0;
 	BCE_LOCK_ASSERT(sc);
 
-	mii = device_get_softc(sc->bce_miibus);
-
-	/* Make sure the MII bus has been enumerated. */
-	if (mii) {
-		sc->bce_link_up = FALSE;
-		if (mii->mii_instance) {
-			struct mii_softc *miisc;
-
-			LIST_FOREACH(miisc, &mii->mii_phys, mii_list)
-			    mii_phy_reset(miisc);
+	sc->bce_link_up = FALSE;
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0) {
+		ifm = &sc->bce_ifmedia;
+		if (IFM_TYPE(ifm->ifm_media) != IFM_ETHER)
+			return (EINVAL);
+		link = 0;
+		fdx = IFM_OPTIONS(ifm->ifm_media) & IFM_FDX;
+		switch(IFM_SUBTYPE(ifm->ifm_media)) {
+		case IFM_AUTO:
+			/*
+			 * Check advertised link of remote PHY by reading
+			 * BCE_RPHY_SERDES_LINK or BCE_RPHY_COPPER_LINK.
+			 * Always use the same link type of remote PHY.
+			 */
+			link = bce_get_rphy_link(sc);
+			break;
+		case IFM_2500_SX:
+			if ((sc->bce_phy_flags &
+			    (BCE_PHY_REMOTE_PORT_FIBER_FLAG |
+			    BCE_PHY_2_5G_CAPABLE_FLAG)) == 0)
+				return (EINVAL);
+			/*
+			 * XXX
+			 * Have to enable forced 2.5Gbps configuration.
+			 */
+			if (fdx != 0)
+				link |= BCE_NETLINK_SPEED_2500FULL;
+			else
+				link |= BCE_NETLINK_SPEED_2500HALF;
+			break;
+		case IFM_1000_SX:
+			if ((sc->bce_phy_flags &
+			    BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0)
+				return (EINVAL);
+			/*
+			 * XXX
+			 * Have to disable 2.5Gbps configuration.
+			 */
+			if (fdx != 0)
+				link = BCE_NETLINK_SPEED_1000FULL;
+			else
+				link = BCE_NETLINK_SPEED_1000HALF;
+			break;
+		case IFM_1000_T:
+			if (sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG)
+				return (EINVAL);
+			if (fdx != 0)
+				link = BCE_NETLINK_SPEED_1000FULL;
+			else
+				link = BCE_NETLINK_SPEED_1000HALF;
+			break;
+		case IFM_100_TX:
+			if (sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG)
+				return (EINVAL);
+			if (fdx != 0)
+				link = BCE_NETLINK_SPEED_100FULL;
+			else
+				link = BCE_NETLINK_SPEED_100HALF;
+			break;
+		case IFM_10_T:
+			if (sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG)
+				return (EINVAL);
+			if (fdx != 0)
+				link = BCE_NETLINK_SPEED_10FULL;
+			else
+				link = BCE_NETLINK_SPEED_10HALF;
+			break;
+		default:
+			return (EINVAL);
 		}
-		error = mii_mediachg(mii);
+		if (IFM_SUBTYPE(ifm->ifm_media) != IFM_AUTO) {
+			/*
+			 * XXX
+			 * Advertise pause capability for full-duplex media.
+			 */
+			if (fdx != 0)
+				link |= BCE_NETLINK_FC_PAUSE_SYM |
+				    BCE_NETLINK_FC_PAUSE_ASYM;
+			if ((sc->bce_phy_flags &
+			    BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0)
+				link |= BCE_NETLINK_PHY_APP_REMOTE |
+				    BCE_NETLINK_ETH_AT_WIRESPEED;
+		}
+
+		bce_shmem_wr(sc, BCE_MB_ARGS_0, link);
+		error = bce_fw_sync(sc, BCE_DRV_MSG_CODE_CMD_SET_LINK);
+	} else {
+		mii = device_get_softc(sc->bce_miibus);
+
+		/* Make sure the MII bus has been enumerated. */
+		if (mii) {
+			LIST_FOREACH(miisc, &mii->mii_phys, mii_list)
+				mii_phy_reset(miisc);
+			error = mii_mediachg(mii);
+		}
 	}
 
 	DBEXIT(BCE_VERBOSE_PHY);
 	return (error);
+}
+
+
+static void
+bce_ifmedia_sts_rphy(struct bce_softc *sc, struct ifmediareq *ifmr)
+{
+	struct ifnet *ifp;
+	u32 link;
+
+	ifp = sc->bce_ifp;
+	BCE_LOCK_ASSERT(sc);
+
+	ifmr->ifm_status = IFM_AVALID;
+	ifmr->ifm_active = IFM_ETHER;
+	link = bce_shmem_rd(sc, BCE_LINK_STATUS);
+	/* XXX Handle heart beat status? */
+	if ((link & BCE_LINK_STATUS_LINK_UP) != 0)
+		ifmr->ifm_status |= IFM_ACTIVE;
+	else {
+		ifmr->ifm_active |= IFM_NONE;
+		ifp->if_baudrate = 0;
+		return;
+	}
+	switch (link & BCE_LINK_STATUS_SPEED_MASK) {
+	case BCE_LINK_STATUS_10HALF:
+		ifmr->ifm_active |= IFM_10_T | IFM_HDX;
+		ifp->if_baudrate = IF_Mbps(10UL);
+		break;
+	case BCE_LINK_STATUS_10FULL:
+		ifmr->ifm_active |= IFM_10_T | IFM_FDX;
+		ifp->if_baudrate = IF_Mbps(10UL);
+		break;
+	case BCE_LINK_STATUS_100HALF:
+		ifmr->ifm_active |= IFM_100_TX | IFM_HDX;
+		ifp->if_baudrate = IF_Mbps(100UL);
+		break;
+	case BCE_LINK_STATUS_100FULL:
+		ifmr->ifm_active |= IFM_100_TX | IFM_FDX;
+		ifp->if_baudrate = IF_Mbps(100UL);
+		break;
+	case BCE_LINK_STATUS_1000HALF:
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0)
+			ifmr->ifm_active |= IFM_1000_T | IFM_HDX;
+		else
+			ifmr->ifm_active |= IFM_1000_SX | IFM_HDX;
+		ifp->if_baudrate = IF_Mbps(1000UL);
+		break;
+	case BCE_LINK_STATUS_1000FULL:
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0)
+			ifmr->ifm_active |= IFM_1000_T | IFM_FDX;
+		else
+			ifmr->ifm_active |= IFM_1000_SX | IFM_FDX;
+		ifp->if_baudrate = IF_Mbps(1000UL);
+		break;
+	case BCE_LINK_STATUS_2500HALF:
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0) {
+			ifmr->ifm_active |= IFM_NONE;
+			return;
+		} else
+			ifmr->ifm_active |= IFM_2500_SX | IFM_HDX;
+		ifp->if_baudrate = IF_Mbps(2500UL);
+		break;
+	case BCE_LINK_STATUS_2500FULL:
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_PORT_FIBER_FLAG) == 0) {
+			ifmr->ifm_active |= IFM_NONE;
+			return;
+		} else
+			ifmr->ifm_active |= IFM_2500_SX | IFM_FDX;
+		ifp->if_baudrate = IF_Mbps(2500UL);
+		break;
+	default:
+		ifmr->ifm_active |= IFM_NONE;
+		return;
+	}
+
+	if ((link & BCE_LINK_STATUS_RX_FC_ENABLED) != 0)
+		ifmr->ifm_active |= IFM_ETH_RXPAUSE;
+	if ((link & BCE_LINK_STATUS_TX_FC_ENABLED) != 0)
+		ifmr->ifm_active |= IFM_ETH_TXPAUSE;
 }
 
 
@@ -5861,11 +6454,15 @@ bce_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 		BCE_UNLOCK(sc);
 		return;
 	}
-	mii = device_get_softc(sc->bce_miibus);
 
-	mii_pollstat(mii);
-	ifmr->ifm_active = mii->mii_media_active;
-	ifmr->ifm_status = mii->mii_media_status;
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0)
+		bce_ifmedia_sts_rphy(sc, ifmr);
+	else {
+		mii = device_get_softc(sc->bce_miibus);
+		mii_pollstat(mii);
+		ifmr->ifm_active = mii->mii_media_active;
+		ifmr->ifm_status = mii->mii_media_status;
+	}
 
 	BCE_UNLOCK(sc);
 
@@ -5902,14 +6499,26 @@ bce_phy_intr(struct bce_softc *sc)
 			    STATUS_ATTN_BITS_LINK_STATE);
 			DBPRINT(sc, BCE_INFO_PHY, "%s(): Link is now UP.\n",
 			    __FUNCTION__);
-		}
-		else {
+		} else {
 			REG_WR(sc, BCE_PCICFG_STATUS_BIT_CLEAR_CMD,
 			    STATUS_ATTN_BITS_LINK_STATE);
 			DBPRINT(sc, BCE_INFO_PHY, "%s(): Link is now DOWN.\n",
 			    __FUNCTION__);
 		}
 
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0) {
+			if (new_link_state) {
+				if (bootverbose)
+					if_printf(sc->bce_ifp, "link UP\n");
+				if_link_state_change(sc->bce_ifp,
+				    LINK_STATE_UP);
+			} else {
+				if (bootverbose)
+					if_printf(sc->bce_ifp, "link DOWN\n");
+				if_link_state_change(sc->bce_ifp,
+				    LINK_STATE_DOWN);
+			}
+		}
 		/*
 		 * Assume link is down and allow
 		 * tick routine to update the state
@@ -5962,10 +6571,8 @@ bce_rx_intr(struct bce_softc *sc)
 	unsigned int pkt_len;
 	u16 sw_rx_cons, sw_rx_cons_idx, hw_rx_cons;
 	u32 status;
-#ifdef BCE_JUMBO_HDRSPLIT
 	unsigned int rem_len;
 	u16 sw_pg_cons, sw_pg_cons_idx;
-#endif
 
 	DBENTER(BCE_VERBOSE_RECV | BCE_VERBOSE_INTR);
 	DBRUN(sc->interrupts_rx++);
@@ -5974,26 +6581,23 @@ bce_rx_intr(struct bce_softc *sc)
 	    __FUNCTION__, sc->rx_prod, sc->rx_cons, sc->rx_prod_bseq);
 
 	/* Prepare the RX chain pages to be accessed by the host CPU. */
-	for (int i = 0; i < RX_PAGES; i++)
+	for (int i = 0; i < sc->rx_pages; i++)
 		bus_dmamap_sync(sc->rx_bd_chain_tag,
 		    sc->rx_bd_chain_map[i], BUS_DMASYNC_POSTREAD);
 
-#ifdef BCE_JUMBO_HDRSPLIT
 	/* Prepare the page chain pages to be accessed by the host CPU. */
-	for (int i = 0; i < PG_PAGES; i++)
-		bus_dmamap_sync(sc->pg_bd_chain_tag,
-		    sc->pg_bd_chain_map[i], BUS_DMASYNC_POSTREAD);
-#endif
+	if (bce_hdr_split == TRUE) {
+		for (int i = 0; i < sc->pg_pages; i++)
+			bus_dmamap_sync(sc->pg_bd_chain_tag,
+			    sc->pg_bd_chain_map[i], BUS_DMASYNC_POSTREAD);
+	}
 
 	/* Get the hardware's view of the RX consumer index. */
 	hw_rx_cons = sc->hw_rx_cons = bce_get_hw_rx_cons(sc);
 
 	/* Get working copies of the driver's view of the consumer indices. */
 	sw_rx_cons = sc->rx_cons;
-
-#ifdef BCE_JUMBO_HDRSPLIT
 	sw_pg_cons = sc->pg_cons;
-#endif
 
 	/* Update some debug statistics counters */
 	DBRUNIF((sc->free_rx_bd < sc->rx_low_watermark),
@@ -6036,7 +6640,7 @@ bce_rx_intr(struct bce_softc *sc)
  		 * with an l2_fhdr structure which provides status
  		 * information about the received frame (including
  		 * VLAN tags and checksum info).  The frames are
-		 * also automatically adjusted to align the IP
+		 * also automatically adjusted to word align the IP
  		 * header (i.e. two null bytes are inserted before
  		 * the Ethernet	header).  As a result the data
  		 * DMA'd by the controller into	the mbuf looks
@@ -6065,96 +6669,104 @@ bce_rx_intr(struct bce_softc *sc)
 		 */
 		m_adj(m0, sizeof(struct l2_fhdr) + ETHER_ALIGN);
 
-#ifdef BCE_JUMBO_HDRSPLIT
 		/*
-		 * Check whether the received frame fits in a single
-		 * mbuf or not (i.e. packet data + FCS <=
-		 * sc->rx_bd_mbuf_data_len bytes).
+ 		 * When split header mode is used, an ethernet frame
+ 		 * may be split across the receive chain and the
+ 		 * page chain. If that occurs an mbuf cluster must be
+ 		 * reassembled from the individual mbuf pieces.
 		 */
-		if (pkt_len > m0->m_len) {
+		if (bce_hdr_split == TRUE) {
 			/*
-			 * The received frame is larger than a single mbuf.
-			 * If the frame was a TCP frame then only the TCP
-			 * header is placed in the mbuf, the remaining
-			 * payload (including FCS) is placed in the page
-			 * chain, the SPLIT flag is set, and the header
-			 * length is placed in the IP checksum field.
-			 * If the frame is not a TCP frame then the mbuf
-			 * is filled and the remaining bytes are placed
-			 * in the page chain.
+			 * Check whether the received frame fits in a single
+			 * mbuf or not (i.e. packet data + FCS <=
+			 * sc->rx_bd_mbuf_data_len bytes).
 			 */
+			if (pkt_len > m0->m_len) {
+				/*
+				 * The received frame is larger than a single mbuf.
+				 * If the frame was a TCP frame then only the TCP
+				 * header is placed in the mbuf, the remaining
+				 * payload (including FCS) is placed in the page
+				 * chain, the SPLIT flag is set, and the header
+				 * length is placed in the IP checksum field.
+				 * If the frame is not a TCP frame then the mbuf
+				 * is filled and the remaining bytes are placed
+				 * in the page chain.
+				 */
 
-			DBPRINT(sc, BCE_INFO_RECV, "%s(): Found a large "
-			    "packet.\n", __FUNCTION__);
+				DBPRINT(sc, BCE_INFO_RECV, "%s(): Found a large "
+					"packet.\n", __FUNCTION__);
+				DBRUN(sc->split_header_frames_rcvd++);
 
-			/*
-			 * When the page chain is enabled and the TCP
-			 * header has been split from the TCP payload,
-			 * the ip_xsum structure will reflect the length
-			 * of the TCP header, not the IP checksum.  Set
-			 * the packet length of the mbuf accordingly.
-			 */
-		 	if (status & L2_FHDR_STATUS_SPLIT)
-				m0->m_len = l2fhdr->l2_fhdr_ip_xsum;
-
-			rem_len = pkt_len - m0->m_len;
-
-			/* Pull mbufs off the page chain for the remaining data. */
-			while (rem_len > 0) {
-				struct mbuf *m_pg;
-
-				sw_pg_cons_idx = PG_CHAIN_IDX(sw_pg_cons);
-
-				/* Remove the mbuf from the page chain. */
-				m_pg = sc->pg_mbuf_ptr[sw_pg_cons_idx];
-				sc->pg_mbuf_ptr[sw_pg_cons_idx] = NULL;
-				DBRUN(sc->debug_pg_mbuf_alloc--);
-				sc->free_pg_bd++;
-
-				/* Unmap the page chain mbuf from DMA space. */
-				bus_dmamap_sync(sc->pg_mbuf_tag,
-				    sc->pg_mbuf_map[sw_pg_cons_idx],
-				    BUS_DMASYNC_POSTREAD);
-				bus_dmamap_unload(sc->pg_mbuf_tag,
-				    sc->pg_mbuf_map[sw_pg_cons_idx]);
-
-				/* Adjust the mbuf length. */
-				if (rem_len < m_pg->m_len) {
-					/* The mbuf chain is complete. */
-					m_pg->m_len = rem_len;
-					rem_len = 0;
-				} else {
-					/* More packet data is waiting. */
-					rem_len -= m_pg->m_len;
+				/*
+				 * When the page chain is enabled and the TCP
+				 * header has been split from the TCP payload,
+				 * the ip_xsum structure will reflect the length
+				 * of the TCP header, not the IP checksum.  Set
+				 * the packet length of the mbuf accordingly.
+				 */
+				if (status & L2_FHDR_STATUS_SPLIT) {
+					m0->m_len = l2fhdr->l2_fhdr_ip_xsum;
+					DBRUN(sc->split_header_tcp_frames_rcvd++);
 				}
 
-				/* Concatenate the mbuf cluster to the mbuf. */
-				m_cat(m0, m_pg);
+				rem_len = pkt_len - m0->m_len;
 
-				sw_pg_cons = NEXT_PG_BD(sw_pg_cons);
+				/* Pull mbufs off the page chain for any remaining data. */
+				while (rem_len > 0) {
+					struct mbuf *m_pg;
+
+					sw_pg_cons_idx = PG_CHAIN_IDX(sw_pg_cons);
+
+					/* Remove the mbuf from the page chain. */
+					m_pg = sc->pg_mbuf_ptr[sw_pg_cons_idx];
+					sc->pg_mbuf_ptr[sw_pg_cons_idx] = NULL;
+					DBRUN(sc->debug_pg_mbuf_alloc--);
+					sc->free_pg_bd++;
+
+					/* Unmap the page chain mbuf from DMA space. */
+					bus_dmamap_sync(sc->pg_mbuf_tag,
+						sc->pg_mbuf_map[sw_pg_cons_idx],
+						BUS_DMASYNC_POSTREAD);
+					bus_dmamap_unload(sc->pg_mbuf_tag,
+						sc->pg_mbuf_map[sw_pg_cons_idx]);
+
+					/* Adjust the mbuf length. */
+					if (rem_len < m_pg->m_len) {
+						/* The mbuf chain is complete. */
+						m_pg->m_len = rem_len;
+						rem_len = 0;
+					} else {
+						/* More packet data is waiting. */
+						rem_len -= m_pg->m_len;
+					}
+
+					/* Concatenate the mbuf cluster to the mbuf. */
+					m_cat(m0, m_pg);
+
+					sw_pg_cons = NEXT_PG_BD(sw_pg_cons);
+				}
+
+				/* Set the total packet length. */
+				m0->m_pkthdr.len = pkt_len;
+
+			} else {
+				/*
+				 * The received packet is small and fits in a
+				 * single mbuf (i.e. the l2_fhdr + pad + packet +
+				 * FCS <= MHLEN).  In other words, the packet is
+				 * 154 bytes or less in size.
+				 */
+
+				DBPRINT(sc, BCE_INFO_RECV, "%s(): Found a small "
+					"packet.\n", __FUNCTION__);
+
+				/* Set the total packet length. */
+				m0->m_pkthdr.len = m0->m_len = pkt_len;
 			}
-
-			/* Set the total packet length. */
-			m0->m_pkthdr.len = pkt_len;
-
-		} else {
-			/*
-			 * The received packet is small and fits in a
-			 * single mbuf (i.e. the l2_fhdr + pad + packet +
-			 * FCS <= MHLEN).  In other words, the packet is
-			 * 154 bytes or less in size.
-			 */
-
-			DBPRINT(sc, BCE_INFO_RECV, "%s(): Found a small "
-			    "packet.\n", __FUNCTION__);
-
+		} else
 			/* Set the total packet length. */
 			m0->m_pkthdr.len = m0->m_len = pkt_len;
-		}
-#else
-		/* Set the total packet length. */
-		m0->m_pkthdr.len = m0->m_len = pkt_len;
-#endif
 
 		/* Remove the trailing Ethernet FCS. */
 		m_adj(m0, -ETHER_CRC_LEN);
@@ -6163,8 +6775,8 @@ bce_rx_intr(struct bce_softc *sc)
 		DBRUN(m_sanity(m0, FALSE));
 		DBRUNIF(((m0->m_len < ETHER_HDR_LEN) |
 		    (m0->m_pkthdr.len > BCE_MAX_JUMBO_ETHER_MTU_VLAN)),
-		     BCE_PRINTF("Invalid Ethernet frame size!\n");
-		     m_print(m0, 128));
+		    BCE_PRINTF("Invalid Ethernet frame size!\n");
+		    m_print(m0, 128));
 
 		DBRUNIF(DB_RANDOMTRUE(l2fhdr_error_sim_control),
 		    sc->l2fhdr_error_sim_count++;
@@ -6223,7 +6835,9 @@ bce_rx_intr(struct bce_softc *sc)
 
 		/* Attach the VLAN tag.	*/
 		if (status & L2_FHDR_STATUS_L2_VLAN_TAG) {
+			DBRUN(sc->vlan_tagged_frames_rcvd++);
 			if (ifp->if_capenable & IFCAP_VLAN_HWTAGGING) {
+				DBRUN(sc->vlan_tagged_frames_stripped++);
 #if __FreeBSD_version < 700000
 				VLAN_INPUT_TAG(ifp, m0,
 				    l2fhdr->l2_fhdr_vlan_tag, continue);
@@ -6266,9 +6880,7 @@ bce_rx_int_next_rx:
 		if (m0) {
 			/* Make sure we don't lose our place when we release the lock. */
 			sc->rx_cons = sw_rx_cons;
-#ifdef BCE_JUMBO_HDRSPLIT
 			sc->pg_cons = sw_pg_cons;
-#endif
 
 			BCE_UNLOCK(sc);
 			(*ifp->if_input)(ifp, m0);
@@ -6276,9 +6888,7 @@ bce_rx_int_next_rx:
 
 			/* Recover our place. */
 			sw_rx_cons = sc->rx_cons;
-#ifdef BCE_JUMBO_HDRSPLIT
 			sw_pg_cons = sc->pg_cons;
-#endif
 		}
 
 		/* Refresh hw_cons to see if there's new work */
@@ -6286,26 +6896,26 @@ bce_rx_int_next_rx:
 			hw_rx_cons = sc->hw_rx_cons = bce_get_hw_rx_cons(sc);
 	}
 
-#ifdef BCE_JUMBO_HDRSPLIT
 	/* No new packets.  Refill the page chain. */
-	sc->pg_cons = sw_pg_cons;
-	bce_fill_pg_chain(sc);
-#endif
+	if (bce_hdr_split == TRUE) {
+		sc->pg_cons = sw_pg_cons;
+		bce_fill_pg_chain(sc);
+	}
 
 	/* No new packets.  Refill the RX chain. */
 	sc->rx_cons = sw_rx_cons;
 	bce_fill_rx_chain(sc);
 
 	/* Prepare the page chain pages to be accessed by the NIC. */
-	for (int i = 0; i < RX_PAGES; i++)
+	for (int i = 0; i < sc->rx_pages; i++)
 		bus_dmamap_sync(sc->rx_bd_chain_tag,
 		    sc->rx_bd_chain_map[i], BUS_DMASYNC_PREWRITE);
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	for (int i = 0; i < PG_PAGES; i++)
-		bus_dmamap_sync(sc->pg_bd_chain_tag,
-		    sc->pg_bd_chain_map[i], BUS_DMASYNC_PREWRITE);
-#endif
+	if (bce_hdr_split == TRUE) {
+		for (int i = 0; i < sc->pg_pages; i++)
+			bus_dmamap_sync(sc->pg_bd_chain_tag,
+			    sc->pg_bd_chain_map[i], BUS_DMASYNC_PREWRITE);
+	}
 
 	DBPRINT(sc, BCE_EXTREME_RECV, "%s(exit): rx_prod = 0x%04X, "
 	    "rx_cons = 0x%04X, rx_prod_bseq = 0x%08X\n",
@@ -6375,10 +6985,10 @@ bce_tx_intr(struct bce_softc *sc)
 		    "sw_tx_chain_cons = 0x%04X\n",
 		    __FUNCTION__, hw_tx_cons, sw_tx_cons, sw_tx_chain_cons);
 
-		DBRUNIF((sw_tx_chain_cons > MAX_TX_BD),
+		DBRUNIF((sw_tx_chain_cons > MAX_TX_BD_ALLOC),
 		    BCE_PRINTF("%s(%d): TX chain consumer out of range! "
 		    " 0x%04X > 0x%04X\n", __FILE__, __LINE__, sw_tx_chain_cons,
-		    (int) MAX_TX_BD);
+		    (int) MAX_TX_BD_ALLOC);
 		    bce_breakpoint(sc));
 
 		DBRUN(txbd = &sc->tx_bd_chain[TX_PAGE(sw_tx_chain_cons)]
@@ -6544,21 +7154,30 @@ bce_init_locked(struct bce_softc *sc)
 	bcopy(IF_LLADDR(sc->bce_ifp), sc->eaddr, ETHER_ADDR_LEN);
 	bce_set_mac_addr(sc);
 
+	if (bce_hdr_split == FALSE)
+		bce_get_rx_buffer_sizes(sc, ifp->if_mtu);
 	/*
 	 * Calculate and program the hardware Ethernet MTU
-	 * size. Be generous on the receive if we have room.
+ 	 * size. Be generous on the receive if we have room
+ 	 * and allowed by the user.
 	 */
-#ifdef BCE_JUMBO_HDRSPLIT
-	if (ifp->if_mtu <= (sc->rx_bd_mbuf_data_len +
-	    sc->pg_bd_mbuf_alloc_size))
-		ether_mtu = sc->rx_bd_mbuf_data_len +
-		    sc->pg_bd_mbuf_alloc_size;
-#else
-	if (ifp->if_mtu <= sc->rx_bd_mbuf_data_len)
-		ether_mtu = sc->rx_bd_mbuf_data_len;
-#endif
-	else
+	if (bce_strict_rx_mtu == TRUE)
 		ether_mtu = ifp->if_mtu;
+	else {
+		if (bce_hdr_split == TRUE) {
+			if (ifp->if_mtu <= (sc->rx_bd_mbuf_data_len +
+				   sc->pg_bd_mbuf_alloc_size))
+					ether_mtu = sc->rx_bd_mbuf_data_len +
+					   sc->pg_bd_mbuf_alloc_size;
+			else
+				ether_mtu = ifp->if_mtu;
+		} else {
+			if (ifp->if_mtu <= sc->rx_bd_mbuf_data_len)
+				ether_mtu = sc->rx_bd_mbuf_data_len;
+			else
+				ether_mtu = ifp->if_mtu;
+		}
+	}
 
 	ether_mtu += ETHER_HDR_LEN + ETHER_VLAN_ENCAP_LEN + ETHER_CRC_LEN;
 
@@ -6573,22 +7192,16 @@ bce_init_locked(struct bce_softc *sc)
 	else
 		REG_WR(sc, BCE_EMAC_RX_MTU_SIZE, ether_mtu);
 
-	DBPRINT(sc, BCE_INFO_LOAD,
-	    "%s(): rx_bd_mbuf_alloc_size = %d, rx_bce_mbuf_data_len = %d, "
-	    "rx_bd_mbuf_align_pad = %d\n", __FUNCTION__,
-	    sc->rx_bd_mbuf_alloc_size, sc->rx_bd_mbuf_data_len,
-	    sc->rx_bd_mbuf_align_pad);
-
 	/* Program appropriate promiscuous/multicast filtering. */
 	bce_set_rx_mode(sc);
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	DBPRINT(sc, BCE_INFO_LOAD, "%s(): pg_bd_mbuf_alloc_size = %d\n",
-	    __FUNCTION__, sc->pg_bd_mbuf_alloc_size);
+	if (bce_hdr_split == TRUE) {
+		DBPRINT(sc, BCE_INFO_LOAD, "%s(): pg_bd_mbuf_alloc_size = %d\n",
+			__FUNCTION__, sc->pg_bd_mbuf_alloc_size);
 
-	/* Init page buffer descriptor chain. */
-	bce_init_pg_chain(sc);
-#endif
+		/* Init page buffer descriptor chain. */
+		bce_init_pg_chain(sc);
+	}
 
 	/* Init RX buffer descriptor chain. */
 	bce_init_rx_chain(sc);
@@ -6747,7 +7360,7 @@ bce_tso_setup(struct bce_softc *sc, struct mbuf **m_head, u16 *flags)
 			return (NULL);
 		}
 
-		/* IP header length and checksum will be calc'd by hardware */
+		/* Clear IP header length and checksum, will be calc'd by h/w. */
 		ip = (struct ip *)(m->m_data + sizeof(struct ether_header));
 		ip_len = ip->ip_len;
 		ip->ip_len = 0;
@@ -7116,7 +7729,7 @@ bce_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 	struct bce_softc *sc = ifp->if_softc;
 	struct ifreq *ifr = (struct ifreq *) data;
 	struct mii_data *mii;
-	int mask, error = 0, reinit;
+	int mask, error = 0;
 
 	DBENTER(BCE_VERBOSE_MISC);
 
@@ -7137,40 +7750,10 @@ bce_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 
 		BCE_LOCK(sc);
 		ifp->if_mtu = ifr->ifr_mtu;
-		reinit = 0;
 		if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
-			/*
-			 * Because allocation size is used in RX
-			 * buffer allocation, stop controller if
-			 * it is already running.
-			 */
-			bce_stop(sc);
-			reinit = 1;
-		}
-#ifdef BCE_JUMBO_HDRSPLIT
-		/* No buffer allocation size changes are necessary. */
-#else
-		/* Recalculate our buffer allocation sizes. */
-		if ((ifp->if_mtu + ETHER_HDR_LEN + ETHER_VLAN_ENCAP_LEN +
-		     ETHER_CRC_LEN) > MCLBYTES) {
-			sc->rx_bd_mbuf_alloc_size = MJUM9BYTES;
-			sc->rx_bd_mbuf_align_pad  =
-			    roundup2(MJUM9BYTES, 16) - MJUM9BYTES;
-			sc->rx_bd_mbuf_data_len =
-			    sc->rx_bd_mbuf_alloc_size -
-			    sc->rx_bd_mbuf_align_pad;
-		} else {
-			sc->rx_bd_mbuf_alloc_size = MCLBYTES;
-			sc->rx_bd_mbuf_align_pad  =
-			    roundup2(MCLBYTES, 16) - MCLBYTES;
-			sc->rx_bd_mbuf_data_len =
-			    sc->rx_bd_mbuf_alloc_size -
-			    sc->rx_bd_mbuf_align_pad;
-		}
-#endif
-
-		if (reinit != 0)
+			ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 			bce_init_locked(sc);
+		}
 		BCE_UNLOCK(sc);
 		break;
 
@@ -7224,10 +7807,14 @@ bce_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 	case SIOCGIFMEDIA:
 		DBPRINT(sc, BCE_VERBOSE_MISC,
 		    "Received SIOCSIFMEDIA/SIOCGIFMEDIA\n");
-
-		mii = device_get_softc(sc->bce_miibus);
-		error = ifmedia_ioctl(ifp, ifr,
-		    &mii->mii_media, command);
+		if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0)
+			error = ifmedia_ioctl(ifp, ifr, &sc->bce_ifmedia,
+			    command);
+		else {
+			mii = device_get_softc(sc->bce_miibus);
+			error = ifmedia_ioctl(ifp, ifr, &mii->mii_media,
+			    command);
+		}
 		break;
 
 	/* Set interface capability */
@@ -7847,7 +8434,7 @@ bce_pulse(void *xsc)
 	sc->bc_state = bce_shmem_rd(sc, BCE_BC_STATE_CONDITION);
 
 	/* Report whether the bootcode still knows the driver is running. */
-	if (bootverbose) {
+	if (bce_verbose || bootverbose) {
 		if (sc->bce_drv_cardiac_arrest == FALSE) {
 			if (!(sc->bc_state & BCE_CONDITION_DRV_PRESENT)) {
 				sc->bce_drv_cardiac_arrest = TRUE;
@@ -7892,6 +8479,7 @@ bce_tick(void *xsc)
 	struct bce_softc *sc = xsc;
 	struct mii_data *mii;
 	struct ifnet *ifp;
+	struct ifmediareq ifmr;
 
 	ifp = sc->bce_ifp;
 
@@ -7905,10 +8493,13 @@ bce_tick(void *xsc)
 	/* Update the statistics from the hardware statistics block. */
 	bce_stats_update(sc);
 
+ 	/*
+ 	 * ToDo: This is a safety measure.  Need to re-evaluate
+ 	 * high	level processing logic and eliminate this code.
+ 	 */
 	/* Top off the receive and page chains. */
-#ifdef BCE_JUMBO_HDRSPLIT
-	bce_fill_pg_chain(sc);
-#endif
+	if (bce_hdr_split == TRUE)
+		bce_fill_pg_chain(sc);
 	bce_fill_rx_chain(sc);
 
 	/* Check that chip hasn't hung. */
@@ -7919,21 +8510,32 @@ bce_tick(void *xsc)
 		goto bce_tick_exit;
 
 	/* Link is down.  Check what the PHY's doing. */
-	mii = device_get_softc(sc->bce_miibus);
-	mii_tick(mii);
+	if ((sc->bce_phy_flags & BCE_PHY_REMOTE_CAP_FLAG) != 0) {
+		bzero(&ifmr, sizeof(ifmr));
+		bce_ifmedia_sts_rphy(sc, &ifmr);
+		if ((ifmr.ifm_status & (IFM_ACTIVE | IFM_AVALID)) ==
+		    (IFM_ACTIVE | IFM_AVALID)) {
+			sc->bce_link_up = TRUE;
+			bce_miibus_statchg(sc->bce_dev);
+		}
+	} else {
+		mii = device_get_softc(sc->bce_miibus);
+		mii_tick(mii);
+		/* Check if the link has come up. */
+		if ((mii->mii_media_status & IFM_ACTIVE) &&
+		    (IFM_SUBTYPE(mii->mii_media_active) != IFM_NONE)) {
+			DBPRINT(sc, BCE_VERBOSE_MISC, "%s(): Link up!\n",
+			    __FUNCTION__);
+			sc->bce_link_up = TRUE;
+			if ((IFM_SUBTYPE(mii->mii_media_active) == IFM_1000_T ||
+			    IFM_SUBTYPE(mii->mii_media_active) == IFM_1000_SX ||
+			    IFM_SUBTYPE(mii->mii_media_active) == IFM_2500_SX) &&
+			    (bce_verbose || bootverbose))
+				BCE_PRINTF("Gigabit link up!\n");
+		}
 
-	/* Check if the link has come up. */
-	if ((mii->mii_media_status & IFM_ACTIVE) &&
-	    (IFM_SUBTYPE(mii->mii_media_active) != IFM_NONE)) {
-		DBPRINT(sc, BCE_VERBOSE_MISC,
-		    "%s(): Link up!\n", __FUNCTION__);
-		sc->bce_link_up = TRUE;
-		if ((IFM_SUBTYPE(mii->mii_media_active) == IFM_1000_T ||
-		    IFM_SUBTYPE(mii->mii_media_active) == IFM_1000_SX ||
-		    IFM_SUBTYPE(mii->mii_media_active) == IFM_2500_SX) &&
-		    bootverbose)
-			BCE_PRINTF("Gigabit link up!\n");
-
+	}
+	if (sc->bce_link_up == TRUE) {
 		/* Now that link is up, handle any outstanding TX traffic. */
 		if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd)) {
 			DBPRINT(sc, BCE_VERBOSE_MISC, "%s(): Found "
@@ -7945,6 +8547,35 @@ bce_tick(void *xsc)
 bce_tick_exit:
 	DBEXIT(BCE_EXTREME_MISC);
 	return;
+}
+
+static void
+bce_fw_cap_init(struct bce_softc *sc)
+{
+	u32 ack, cap, link;
+
+	ack = 0;
+	cap = bce_shmem_rd(sc, BCE_FW_CAP_MB);
+	if ((cap & BCE_FW_CAP_SIGNATURE_MAGIC_MASK) !=
+	    BCE_FW_CAP_SIGNATURE_MAGIC)
+		return;
+	if ((cap & (BCE_FW_CAP_MFW_KEEP_VLAN | BCE_FW_CAP_BC_KEEP_VLAN)) ==
+	    (BCE_FW_CAP_MFW_KEEP_VLAN | BCE_FW_CAP_BC_KEEP_VLAN))
+		ack |= BCE_DRV_ACK_CAP_SIGNATURE_MAGIC |
+		    BCE_FW_CAP_MFW_KEEP_VLAN | BCE_FW_CAP_BC_KEEP_VLAN;
+	if ((sc->bce_phy_flags & BCE_PHY_SERDES_FLAG) != 0 &&
+	    (cap & BCE_FW_CAP_REMOTE_PHY_CAP) != 0) {
+		sc->bce_phy_flags &= ~BCE_PHY_REMOTE_PORT_FIBER_FLAG;
+		sc->bce_phy_flags |= BCE_PHY_REMOTE_CAP_FLAG;
+		link = bce_shmem_rd(sc, BCE_LINK_STATUS);
+		if ((link & BCE_LINK_STATUS_SERDES_LINK) != 0)
+			sc->bce_phy_flags |= BCE_PHY_REMOTE_PORT_FIBER_FLAG;
+		ack |= BCE_DRV_ACK_CAP_SIGNATURE_MAGIC |
+		    BCE_FW_CAP_REMOTE_PHY_CAP;
+	}
+
+	if (ack != 0)
+		bce_shmem_wr(sc, BCE_DRV_ACK_CAP_MB, ack);
 }
 
 
@@ -8083,6 +8714,10 @@ bce_sysctl_stats_clear(SYSCTL_HANDLER_ARGS)
 
 	if (result == 1) {
 		sc = (struct bce_softc *)arg1;
+		struct statistics_block *stats;
+
+		stats = (struct statistics_block *) sc->stats_block;
+		bzero(stats, sizeof(struct statistics_block));
 
 		/* Clear the internal H/W statistics counters. */
 		REG_WR(sc, BCE_HC_COMMAND, BCE_HC_COMMAND_CLR_STAT_NOW);
@@ -8095,7 +8730,7 @@ bce_sysctl_stats_clear(SYSCTL_HANDLER_ARGS)
 		    sc->tso_frames_failed = 0;
 		sc->rx_empty_count =
 		    sc->tx_full_count = 0;
-		sc->rx_low_watermark = USABLE_RX_BD;
+		sc->rx_low_watermark = USABLE_RX_BD_ALLOC;
 		sc->tx_hi_watermark = 0;
 		sc->l2fhdr_error_count =
 		    sc->l2fhdr_error_sim_count = 0;
@@ -8105,12 +8740,43 @@ bce_sysctl_stats_clear(SYSCTL_HANDLER_ARGS)
 		    sc->dma_map_addr_tx_failed_count = 0;
 		sc->mbuf_frag_count = 0;
 		sc->csum_offload_tcp_udp =
-		   sc->csum_offload_ip = 0;
+		    sc->csum_offload_ip = 0;
 		sc->vlan_tagged_frames_rcvd =
-		   sc->vlan_tagged_frames_stripped = 0;
+		    sc->vlan_tagged_frames_stripped = 0;
+		sc->split_header_frames_rcvd =
+		    sc->split_header_tcp_frames_rcvd = 0;
 
 		/* Clear firmware maintained statistics. */
 		REG_WR_IND(sc, 0x120084, 0);
+	}
+
+	return error;
+}
+
+
+/****************************************************************************/
+/* Allows the shared memory contents to be dumped through the sysctl  .     */
+/* interface.                                                               */
+/*                                                                          */
+/* Returns:                                                                 */
+/*   0 for success, positive value for failure.                             */
+/****************************************************************************/
+static int
+bce_sysctl_shmem_state(SYSCTL_HANDLER_ARGS)
+{
+	int error;
+	int result;
+	struct bce_softc *sc;
+
+	result = -1;
+	error = sysctl_handle_int(oidp, &result, 0, req);
+
+	if (error || !req->newptr)
+		return (error);
+
+	if (result == 1) {
+		sc = (struct bce_softc *)arg1;
+		bce_dump_shmem_state(sc);
 	}
 
 	return error;
@@ -8166,7 +8832,7 @@ bce_sysctl_dump_rx_bd_chain(SYSCTL_HANDLER_ARGS)
 
 	if (result == 1) {
 		sc = (struct bce_softc *)arg1;
-		bce_dump_rx_bd_chain(sc, 0, TOTAL_RX_BD);
+		bce_dump_rx_bd_chain(sc, 0, TOTAL_RX_BD_ALLOC);
 	}
 
 	return error;
@@ -8194,7 +8860,7 @@ bce_sysctl_dump_rx_mbuf_chain(SYSCTL_HANDLER_ARGS)
 
 	if (result == 1) {
 		sc = (struct bce_softc *)arg1;
-		bce_dump_rx_mbuf_chain(sc, 0, USABLE_RX_BD);
+		bce_dump_rx_mbuf_chain(sc, 0, USABLE_RX_BD_ALLOC);
 	}
 
 	return error;
@@ -8222,14 +8888,13 @@ bce_sysctl_dump_tx_chain(SYSCTL_HANDLER_ARGS)
 
 	if (result == 1) {
 		sc = (struct bce_softc *)arg1;
-		bce_dump_tx_chain(sc, 0, TOTAL_TX_BD);
+		bce_dump_tx_chain(sc, 0, TOTAL_TX_BD_ALLOC);
 	}
 
 	return error;
 }
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 /****************************************************************************/
 /* Provides a sysctl interface to allow dumping the page chain.             */
 /*                                                                          */
@@ -8251,12 +8916,11 @@ bce_sysctl_dump_pg_chain(SYSCTL_HANDLER_ARGS)
 
 	if (result == 1) {
 		sc = (struct bce_softc *)arg1;
-		bce_dump_pg_chain(sc, 0, TOTAL_PG_BD);
+		bce_dump_pg_chain(sc, 0, TOTAL_PG_BD_ALLOC);
 	}
 
 	return error;
 }
-#endif
 
 /****************************************************************************/
 /* Provides a sysctl interface to allow reading arbitrary NVRAM offsets in  */
@@ -8279,7 +8943,8 @@ bce_sysctl_nvram_read(SYSCTL_HANDLER_ARGS)
 	if (error || (req->newptr == NULL))
 		return (error);
 
-	bce_nvram_read(sc, result, data, 4);
+	error = bce_nvram_read(sc, result, data, 4);
+
 	BCE_PRINTF("offset 0x%08X = 0x%08X\n", result, bce_be32toh(val[0]));
 
 	return (error);
@@ -8350,6 +9015,69 @@ bce_sysctl_phy_read(SYSCTL_HANDLER_ARGS)
 
 
 /****************************************************************************/
+/* Provides a sysctl interface for dumping the nvram contents.              */
+/* DO NOT ENABLE ON PRODUCTION SYSTEMS!					    */
+/*									    */
+/* Returns:								    */
+/*   0 for success, positive errno for failure.				    */
+/****************************************************************************/
+static int
+bce_sysctl_nvram_dump(SYSCTL_HANDLER_ARGS)
+{
+	struct bce_softc *sc = (struct bce_softc *)arg1;
+	int error, i;
+
+	if (sc->nvram_buf == NULL)
+		sc->nvram_buf = malloc(sc->bce_flash_size,
+				    M_TEMP, M_ZERO | M_WAITOK);
+
+	error = 0;
+	if (req->oldlen == sc->bce_flash_size) {
+		for (i = 0; i < sc->bce_flash_size && error == 0; i++)
+			error = bce_nvram_read(sc, i, &sc->nvram_buf[i], 1);
+	}
+
+	if (error == 0)
+		error = SYSCTL_OUT(req, sc->nvram_buf, sc->bce_flash_size);
+
+	return error;
+}
+
+#ifdef BCE_NVRAM_WRITE_SUPPORT
+/****************************************************************************/
+/* Provides a sysctl interface for writing to nvram.                        */
+/* DO NOT ENABLE ON PRODUCTION SYSTEMS!					    */
+/*									    */
+/* Returns:								    */
+/*   0 for success, positive errno for failure.				    */
+/****************************************************************************/
+static int
+bce_sysctl_nvram_write(SYSCTL_HANDLER_ARGS)
+{
+	struct bce_softc *sc = (struct bce_softc *)arg1;
+	int error;
+
+	if (sc->nvram_buf == NULL)
+		sc->nvram_buf = malloc(sc->bce_flash_size,
+				    M_TEMP, M_ZERO | M_WAITOK);
+	else
+		bzero(sc->nvram_buf, sc->bce_flash_size);
+
+	error = SYSCTL_IN(req, sc->nvram_buf, sc->bce_flash_size);
+	if (error == 0)
+		return (error);
+
+	if (req->newlen == sc->bce_flash_size)
+		error = bce_nvram_write(sc, 0, sc->nvram_buf,
+			    sc->bce_flash_size);
+
+
+	return error;
+}
+#endif
+
+
+/****************************************************************************/
 /* Provides a sysctl interface to allow reading a CID.                      */
 /*                                                                          */
 /* Returns:                                                                 */
@@ -8376,7 +9104,7 @@ bce_sysctl_dump_ctx(SYSCTL_HANDLER_ARGS)
 }
 
 
- /****************************************************************************/
+/****************************************************************************/
 /* Provides a sysctl interface to forcing the driver to dump state and      */
 /* enter the debugger.  DO NOT ENABLE ON PRODUCTION SYSTEMS!                */
 /*                                                                          */
@@ -8404,7 +9132,6 @@ bce_sysctl_breakpoint(SYSCTL_HANDLER_ARGS)
 	return error;
 }
 #endif
-
 
 /****************************************************************************/
 /* Adds any sysctl parameters for tuning or debugging purposes.             */
@@ -8514,113 +9241,137 @@ bce_add_sysctls(struct bce_softc *sc)
 	    CTLFLAG_RD, &sc->rx_low_watermark,
 	    0, "Lowest level of free rx_bd's");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "rx_empty_count",
 	    CTLFLAG_RD, &sc->rx_empty_count,
-	    0, "Number of times the RX chain was empty");
+	    "Number of times the RX chain was empty");
 
 	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
 	    "tx_hi_watermark",
 	    CTLFLAG_RD, &sc->tx_hi_watermark,
 	    0, "Highest level of used tx_bd's");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "tx_full_count",
 	    CTLFLAG_RD, &sc->tx_full_count,
-	    0, "Number of times the TX chain was full");
+	    "Number of times the TX chain was full");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "tso_frames_requested",
 	    CTLFLAG_RD, &sc->tso_frames_requested,
-	    0, "Number of TSO frames requested");
+	    "Number of TSO frames requested");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "tso_frames_completed",
 	    CTLFLAG_RD, &sc->tso_frames_completed,
-	    0, "Number of TSO frames completed");
+	    "Number of TSO frames completed");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "tso_frames_failed",
 	    CTLFLAG_RD, &sc->tso_frames_failed,
-	    0, "Number of TSO frames failed");
+	    "Number of TSO frames failed");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "csum_offload_ip",
 	    CTLFLAG_RD, &sc->csum_offload_ip,
-	    0, "Number of IP checksum offload frames");
+	    "Number of IP checksum offload frames");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "csum_offload_tcp_udp",
 	    CTLFLAG_RD, &sc->csum_offload_tcp_udp,
-	    0, "Number of TCP/UDP checksum offload frames");
+	    "Number of TCP/UDP checksum offload frames");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "vlan_tagged_frames_rcvd",
 	    CTLFLAG_RD, &sc->vlan_tagged_frames_rcvd,
-	    0, "Number of VLAN tagged frames received");
+	    "Number of VLAN tagged frames received");
 
-	SYSCTL_ADD_INT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "vlan_tagged_frames_stripped",
 	    CTLFLAG_RD, &sc->vlan_tagged_frames_stripped,
-	    0, "Number of VLAN tagged frames stripped");
+	    "Number of VLAN tagged frames stripped");
 
-	SYSCTL_ADD_UINT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "interrupts_rx",
 	    CTLFLAG_RD, &sc->interrupts_rx,
-	    0, "Number of RX interrupts");
+	    "Number of RX interrupts");
 
-	SYSCTL_ADD_UINT(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "interrupts_tx",
 	    CTLFLAG_RD, &sc->interrupts_tx,
-	    0, "Number of TX interrupts");
-#endif
+	    "Number of TX interrupts");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	if (bce_hdr_split == TRUE) {
+		SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
+		    "split_header_frames_rcvd",
+		    CTLFLAG_RD, &sc->split_header_frames_rcvd,
+		    "Number of split header frames received");
+
+		SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
+		    "split_header_tcp_frames_rcvd",
+		    CTLFLAG_RD, &sc->split_header_tcp_frames_rcvd,
+		    "Number of split header TCP frames received");
+	}
+
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
+	    "nvram_dump", CTLTYPE_OPAQUE | CTLFLAG_RD,
+	    (void *)sc, 0,
+	    bce_sysctl_nvram_dump, "S", "");
+
+#ifdef BCE_NVRAM_WRITE_SUPPORT
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
+	    "nvram_write", CTLTYPE_OPAQUE | CTLFLAG_WR,
+	    (void *)sc, 0,
+	    bce_sysctl_nvram_write, "S", "");
+#endif
+#endif /* BCE_DEBUG */
+
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHcInOctets",
 	    CTLFLAG_RD, &sc->stat_IfHCInOctets,
 	    "Bytes received");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCInBadOctets",
 	    CTLFLAG_RD, &sc->stat_IfHCInBadOctets,
 	    "Bad bytes received");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCOutOctets",
 	    CTLFLAG_RD, &sc->stat_IfHCOutOctets,
 	    "Bytes sent");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCOutBadOctets",
 	    CTLFLAG_RD, &sc->stat_IfHCOutBadOctets,
 	    "Bad bytes sent");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCInUcastPkts",
 	    CTLFLAG_RD, &sc->stat_IfHCInUcastPkts,
 	    "Unicast packets received");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCInMulticastPkts",
 	    CTLFLAG_RD, &sc->stat_IfHCInMulticastPkts,
 	    "Multicast packets received");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCInBroadcastPkts",
 	    CTLFLAG_RD, &sc->stat_IfHCInBroadcastPkts,
 	    "Broadcast packets received");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCOutUcastPkts",
 	    CTLFLAG_RD, &sc->stat_IfHCOutUcastPkts,
 	    "Unicast packets sent");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCOutMulticastPkts",
 	    CTLFLAG_RD, &sc->stat_IfHCOutMulticastPkts,
 	    "Multicast packets sent");
 
-	SYSCTL_ADD_ULONG(ctx, children, OID_AUTO,
+	SYSCTL_ADD_QUAD(ctx, children, OID_AUTO,
 	    "stat_IfHCOutBroadcastPkts",
 	    CTLFLAG_RD, &sc->stat_IfHCOutBroadcastPkts,
 	    "Broadcast packets sent");
@@ -8879,6 +9630,11 @@ bce_add_sysctls(struct bce_softc *sc)
 	    bce_sysctl_stats_clear, "I", "Clear statistics block");
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
+	    "shmem_state", CTLTYPE_INT | CTLFLAG_RW,
+	    (void *)sc, 0,
+	    bce_sysctl_shmem_state, "I", "Shared memory state information");
+
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
 	    "bc_state", CTLTYPE_INT | CTLFLAG_RW,
 	    (void *)sc, 0,
 	    bce_sysctl_bc_state, "I", "Bootcode state information");
@@ -8898,12 +9654,13 @@ bce_add_sysctls(struct bce_softc *sc)
 	    (void *)sc, 0,
 	    bce_sysctl_dump_tx_chain, "I", "Dump tx_bd chain");
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
-	    "dump_pg_chain", CTLTYPE_INT | CTLFLAG_RW,
-	    (void *)sc, 0,
-	    bce_sysctl_dump_pg_chain, "I", "Dump page chain");
-#endif
+	if (bce_hdr_split == TRUE) {
+		SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
+		    "dump_pg_chain", CTLTYPE_INT | CTLFLAG_RW,
+		    (void *)sc, 0,
+		    bce_sysctl_dump_pg_chain, "I", "Dump page chain");
+	}
+
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO,
 	    "dump_ctx", CTLTYPE_INT | CTLFLAG_RW,
 	    (void *)sc, 0,
@@ -9207,7 +9964,6 @@ bce_dump_rx_mbuf_chain(struct bce_softc *sc, u16 chain_prod, int count)
 }
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 /****************************************************************************/
 /* Prints out the mbufs in the mbuf page chain.                             */
 /*                                                                          */
@@ -9237,7 +9993,6 @@ bce_dump_pg_mbuf_chain(struct bce_softc *sc, u16 chain_prod, int count)
 		"----------------"
 		"----------------------------\n");
 }
-#endif
 
 
 /****************************************************************************/
@@ -9251,7 +10006,7 @@ bce_dump_txbd(struct bce_softc *sc, int idx, struct tx_bd *txbd)
 {
 	int i = 0;
 
-	if (idx > MAX_TX_BD)
+	if (idx > MAX_TX_BD_ALLOC)
 		/* Index out of range. */
 		BCE_PRINTF("tx_bd[0x%04X]: Invalid tx_bd index!\n", idx);
 	else if ((idx & USABLE_TX_BD_PER_PAGE) == USABLE_TX_BD_PER_PAGE)
@@ -9364,7 +10119,7 @@ bce_dump_txbd(struct bce_softc *sc, int idx, struct tx_bd *txbd)
 static __attribute__ ((noinline)) void
 bce_dump_rxbd(struct bce_softc *sc, int idx, struct rx_bd *rxbd)
 {
-	if (idx > MAX_RX_BD)
+	if (idx > MAX_RX_BD_ALLOC)
 		/* Index out of range. */
 		BCE_PRINTF("rx_bd[0x%04X]: Invalid rx_bd index!\n", idx);
 	else if ((idx & USABLE_RX_BD_PER_PAGE) == USABLE_RX_BD_PER_PAGE)
@@ -9381,7 +10136,6 @@ bce_dump_rxbd(struct bce_softc *sc, int idx, struct rx_bd *rxbd)
 }
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 /****************************************************************************/
 /* Prints out a rx_bd structure in the page chain.                          */
 /*                                                                          */
@@ -9391,7 +10145,7 @@ bce_dump_rxbd(struct bce_softc *sc, int idx, struct rx_bd *rxbd)
 static __attribute__ ((noinline)) void
 bce_dump_pgbd(struct bce_softc *sc, int idx, struct rx_bd *pgbd)
 {
-	if (idx > MAX_PG_BD)
+	if (idx > MAX_PG_BD_ALLOC)
 		/* Index out of range. */
 		BCE_PRINTF("pg_bd[0x%04X]: Invalid pg_bd index!\n", idx);
 	else if ((idx & USABLE_PG_BD_PER_PAGE) == USABLE_PG_BD_PER_PAGE)
@@ -9405,7 +10159,6 @@ bce_dump_pgbd(struct bce_softc *sc, int idx, struct rx_bd *pgbd)
 			pgbd->rx_bd_haddr_hi, pgbd->rx_bd_haddr_lo,
 			pgbd->rx_bd_len, pgbd->rx_bd_flags);
 }
-#endif
 
 
 /****************************************************************************/
@@ -9481,8 +10234,7 @@ bce_dump_ctx(struct bce_softc *sc, u16 cid)
 		    "consumer index\n",	CTX_RD(sc, GET_CID_ADDR(cid),
 		    BCE_L2CTX_RX_NX_PG_BDIDX));
 	} else if (cid == TX_CID) {
-		if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-		    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+		if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 			BCE_PRINTF(" 0x%08X - (L2CTX_TX_TYPE_XI) ctx type\n",
 			    CTX_RD(sc, GET_CID_ADDR(cid),
 			    BCE_L2CTX_TX_TYPE_XI));
@@ -9744,8 +10496,7 @@ bce_dump_ftqs(struct bce_softc *sc)
 	    (BCE_HC_STAT_GEN_SEL_0_GEN_SEL_0_CPQ_VALID_CNT  <<  8) |
 	    (BCE_HC_STAT_GEN_SEL_0_GEN_SEL_0_MGMQ_VALID_CNT);
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716))
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709)
 		val = val |
 		    (BCE_HC_STAT_GEN_SEL_0_GEN_SEL_0_RV2PCSQ_VALID_CNT_XI <<
 		     24);
@@ -9778,8 +10529,7 @@ bce_dump_ftqs(struct bce_softc *sc)
 	BCE_PRINTF(" CS      0x%08X 0x%08X 0x%08X 0x%08X 0x%08X\n",
 	    cmd, ctl, cur_depth, max_depth, valid_cnt);
 
-	if ((BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) ||
-	    (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5716)) {
+	if (BCE_CHIP_NUM(sc) == BCE_CHIP_NUM_5709) {
 		/* Input queue to the RV2P Command Scheduler */
 		cmd = REG_RD(sc, BCE_RV2PCSR_FTQ_CMD);
 		ctl = REG_RD(sc, BCE_RV2PCSR_FTQ_CTL);
@@ -9815,10 +10565,10 @@ bce_dump_tx_chain(struct bce_softc *sc, u16 tx_prod, int count)
 	    "----------------------------\n");
 
 	BCE_PRINTF("page size      = 0x%08X, tx chain pages        = 0x%08X\n",
-	    (u32) BCM_PAGE_SIZE, (u32) TX_PAGES);
+	    (u32) BCM_PAGE_SIZE, (u32) sc->tx_pages);
 	BCE_PRINTF("tx_bd per page = 0x%08X, usable tx_bd per page = 0x%08X\n",
 	    (u32) TOTAL_TX_BD_PER_PAGE, (u32) USABLE_TX_BD_PER_PAGE);
-	BCE_PRINTF("total tx_bd    = 0x%08X\n", (u32) TOTAL_TX_BD);
+	BCE_PRINTF("total tx_bd    = 0x%08X\n", (u32) TOTAL_TX_BD_ALLOC);
 
 	BCE_PRINTF(
 	    "----------------------------"
@@ -9857,12 +10607,12 @@ bce_dump_rx_bd_chain(struct bce_softc *sc, u16 rx_prod, int count)
 	    "----------------------------\n");
 
 	BCE_PRINTF("page size      = 0x%08X, rx chain pages        = 0x%08X\n",
-	    (u32) BCM_PAGE_SIZE, (u32) RX_PAGES);
+	    (u32) BCM_PAGE_SIZE, (u32) sc->rx_pages);
 
 	BCE_PRINTF("rx_bd per page = 0x%08X, usable rx_bd per page = 0x%08X\n",
 	    (u32) TOTAL_RX_BD_PER_PAGE, (u32) USABLE_RX_BD_PER_PAGE);
 
-	BCE_PRINTF("total rx_bd    = 0x%08X\n", (u32) TOTAL_RX_BD);
+	BCE_PRINTF("total rx_bd    = 0x%08X\n", (u32) TOTAL_RX_BD_ALLOC);
 
 	BCE_PRINTF(
 	    "----------------------------"
@@ -9883,7 +10633,6 @@ bce_dump_rx_bd_chain(struct bce_softc *sc, u16 rx_prod, int count)
 }
 
 
-#ifdef BCE_JUMBO_HDRSPLIT
 /****************************************************************************/
 /* Prints out the page chain.                                               */
 /*                                                                          */
@@ -9902,13 +10651,12 @@ bce_dump_pg_chain(struct bce_softc *sc, u16 pg_prod, int count)
 	    "----------------------------\n");
 
 	BCE_PRINTF("page size      = 0x%08X, pg chain pages        = 0x%08X\n",
-	    (u32) BCM_PAGE_SIZE, (u32) PG_PAGES);
+	    (u32) BCM_PAGE_SIZE, (u32) sc->pg_pages);
 
 	BCE_PRINTF("rx_bd per page = 0x%08X, usable rx_bd per page = 0x%08X\n",
 	    (u32) TOTAL_PG_BD_PER_PAGE, (u32) USABLE_PG_BD_PER_PAGE);
 
-	BCE_PRINTF("total rx_bd    = 0x%08X, max_pg_bd             = 0x%08X\n",
-	    (u32) TOTAL_PG_BD, (u32) MAX_PG_BD);
+	BCE_PRINTF("total pg_bd             = 0x%08X\n", (u32) TOTAL_PG_BD_ALLOC);
 
 	BCE_PRINTF(
 	    "----------------------------"
@@ -9927,7 +10675,6 @@ bce_dump_pg_chain(struct bce_softc *sc, u16 pg_prod, int count)
 	    "----------------"
 	    "----------------------------\n");
 }
-#endif
 
 
 #define BCE_PRINT_RX_CONS(arg)						\
@@ -10134,12 +10881,12 @@ bce_dump_driver_state(struct bce_softc *sc)
 	BCE_PRINTF("0x%08X:%08X - (sc->rx_bd_chain) rx_bd chain "
 	    "virtual address\n", val_hi, val_lo);
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	val_hi = BCE_ADDR_HI(sc->pg_bd_chain);
-	val_lo = BCE_ADDR_LO(sc->pg_bd_chain);
-	BCE_PRINTF("0x%08X:%08X - (sc->pg_bd_chain) page chain "
-	    "virtual address\n", val_hi, val_lo);
-#endif
+	if (bce_hdr_split == TRUE) {
+		val_hi = BCE_ADDR_HI(sc->pg_bd_chain);
+		val_lo = BCE_ADDR_LO(sc->pg_bd_chain);
+		BCE_PRINTF("0x%08X:%08X - (sc->pg_bd_chain) page chain "
+		    "virtual address\n", val_hi, val_lo);
+	}
 
 	val_hi = BCE_ADDR_HI(sc->tx_mbuf_ptr);
 	val_lo = BCE_ADDR_LO(sc->tx_mbuf_ptr);
@@ -10151,24 +10898,28 @@ bce_dump_driver_state(struct bce_softc *sc)
 	BCE_PRINTF("0x%08X:%08X - (sc->rx_mbuf_ptr) rx mbuf chain "
 	    "virtual address\n", val_hi, val_lo);
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	val_hi = BCE_ADDR_HI(sc->pg_mbuf_ptr);
-	val_lo = BCE_ADDR_LO(sc->pg_mbuf_ptr);
-	BCE_PRINTF("0x%08X:%08X - (sc->pg_mbuf_ptr) page mbuf chain "
-	    "virtual address\n", val_hi, val_lo);
-#endif
+	if (bce_hdr_split == TRUE) {
+		val_hi = BCE_ADDR_HI(sc->pg_mbuf_ptr);
+		val_lo = BCE_ADDR_LO(sc->pg_mbuf_ptr);
+		BCE_PRINTF("0x%08X:%08X - (sc->pg_mbuf_ptr) page mbuf chain "
+		    "virtual address\n", val_hi, val_lo);
+	}
 
-	BCE_PRINTF("         0x%08X - (sc->interrupts_generated) "
-	    "h/w intrs\n", sc->interrupts_generated);
+	BCE_PRINTF(" 0x%016llX - (sc->interrupts_generated) "
+	    "h/w intrs\n",
+	    (long long unsigned int) sc->interrupts_generated);
 
-	BCE_PRINTF("         0x%08X - (sc->interrupts_rx) "
-	    "rx interrupts handled\n", sc->interrupts_rx);
+	BCE_PRINTF(" 0x%016llX - (sc->interrupts_rx) "
+	    "rx interrupts handled\n",
+	    (long long unsigned int) sc->interrupts_rx);
 
-	BCE_PRINTF("         0x%08X - (sc->interrupts_tx) "
-	    "tx interrupts handled\n", sc->interrupts_tx);
+	BCE_PRINTF(" 0x%016llX - (sc->interrupts_tx) "
+	    "tx interrupts handled\n",
+	    (long long unsigned int) sc->interrupts_tx);
 
-	BCE_PRINTF("         0x%08X - (sc->phy_interrupts) "
-	    "phy interrupts handled\n", sc->phy_interrupts);
+	BCE_PRINTF(" 0x%016llX - (sc->phy_interrupts) "
+	    "phy interrupts handled\n",
+	    (long long unsigned int) sc->phy_interrupts);
 
 	BCE_PRINTF("         0x%08X - (sc->last_status_idx) "
 	    "status block index\n", sc->last_status_idx);
@@ -10188,8 +10939,8 @@ bce_dump_driver_state(struct bce_softc *sc)
 	BCE_PRINTF("         0x%08X - (sc->used_tx_bd) used "
 	    "tx_bd's\n", sc->used_tx_bd);
 
-	BCE_PRINTF("0x%08X/%08X - (sc->tx_hi_watermark) tx hi "
-	    "watermark\n", sc->tx_hi_watermark, sc->max_tx_bd);
+	BCE_PRINTF("      0x%04X/0x%04X - (sc->tx_hi_watermark)/"
+	    "(sc->max_tx_bd)\n", sc->tx_hi_watermark, sc->max_tx_bd);
 
 	BCE_PRINTF("     0x%04X(0x%04X) - (sc->rx_prod) rx producer "
 	    "index\n", sc->rx_prod, (u16) RX_CHAIN_IDX(sc->rx_prod));
@@ -10200,28 +10951,31 @@ bce_dump_driver_state(struct bce_softc *sc)
 	BCE_PRINTF("         0x%08X - (sc->rx_prod_bseq) rx producer "
 	    "byte seq index\n",	sc->rx_prod_bseq);
 
+	BCE_PRINTF("      0x%04X/0x%04X - (sc->rx_low_watermark)/"
+		   "(sc->max_rx_bd)\n", sc->rx_low_watermark, sc->max_rx_bd);
+
 	BCE_PRINTF("         0x%08X - (sc->debug_rx_mbuf_alloc) rx "
 	    "mbufs allocated\n", sc->debug_rx_mbuf_alloc);
 
 	BCE_PRINTF("         0x%08X - (sc->free_rx_bd) free "
 	    "rx_bd's\n", sc->free_rx_bd);
 
-#ifdef BCE_JUMBO_HDRSPLIT
-	BCE_PRINTF("     0x%04X(0x%04X) - (sc->pg_prod) page producer "
-	    "index\n", sc->pg_prod, (u16) PG_CHAIN_IDX(sc->pg_prod));
+	if (bce_hdr_split == TRUE) {
+		BCE_PRINTF("     0x%04X(0x%04X) - (sc->pg_prod) page producer "
+		    "index\n", sc->pg_prod, (u16) PG_CHAIN_IDX(sc->pg_prod));
 
-	BCE_PRINTF("     0x%04X(0x%04X) - (sc->pg_cons) page consumer "
-	    "index\n", sc->pg_cons, (u16) PG_CHAIN_IDX(sc->pg_cons));
+		BCE_PRINTF("     0x%04X(0x%04X) - (sc->pg_cons) page consumer "
+		    "index\n", sc->pg_cons, (u16) PG_CHAIN_IDX(sc->pg_cons));
 
-	BCE_PRINTF("         0x%08X - (sc->debug_pg_mbuf_alloc) page "
-	    "mbufs allocated\n", sc->debug_pg_mbuf_alloc);
+		BCE_PRINTF("         0x%08X - (sc->debug_pg_mbuf_alloc) page "
+		    "mbufs allocated\n", sc->debug_pg_mbuf_alloc);
+	}
 
 	BCE_PRINTF("         0x%08X - (sc->free_pg_bd) free page "
 	    "rx_bd's\n", sc->free_pg_bd);
 
-	BCE_PRINTF("0x%08X/%08X - (sc->pg_low_watermark) page low "
-	    "watermark\n", sc->pg_low_watermark, sc->max_pg_bd);
-#endif
+	BCE_PRINTF("      0x%04X/0x%04X - (sc->pg_low_watermark)/"
+	    "(sc->max_pg_bd)\n", sc->pg_low_watermark, sc->max_pg_bd);
 
 	BCE_PRINTF("         0x%08X - (sc->mbuf_alloc_failed_count) "
 	    "mbuf alloc failures\n", sc->mbuf_alloc_failed_count);
@@ -10342,6 +11096,44 @@ bce_dump_hw_state(struct bce_softc *sc)
 		BCE_PRINTF("0x%04X: 0x%08X 0x%08X 0x%08X 0x%08X\n",
 		    i, REG_RD(sc, i), REG_RD(sc, i + 0x4),
 		    REG_RD(sc, i + 0x8), REG_RD(sc, i + 0xC));
+	}
+
+	BCE_PRINTF(
+	    "----------------------------"
+	    "----------------"
+	    "----------------------------\n");
+}
+
+
+/****************************************************************************/
+/* Prints out the contentst of shared memory which is used for host driver  */
+/* to bootcode firmware communication.                                      */
+/*                                                                          */
+/* Returns:                                                                 */
+/*   Nothing.                                                               */
+/****************************************************************************/
+static __attribute__ ((noinline)) void
+bce_dump_shmem_state(struct bce_softc *sc)
+{
+	BCE_PRINTF(
+	    "----------------------------"
+	    " Hardware State "
+	    "----------------------------\n");
+
+	BCE_PRINTF("0x%08X - Shared memory base address\n",
+	    sc->bce_shmem_base);
+	BCE_PRINTF("%s - bootcode version\n",
+	    sc->bce_bc_ver);
+
+	BCE_PRINTF(
+	    "----------------------------"
+	    "   Shared Mem   "
+	    "----------------------------\n");
+
+	for (int i = 0x0; i < 0x200; i += 0x10) {
+		BCE_PRINTF("0x%04X: 0x%08X 0x%08X 0x%08X 0x%08X\n",
+		    i, bce_shmem_rd(sc, i), bce_shmem_rd(sc, i + 0x4),
+		    bce_shmem_rd(sc, i + 0x8), bce_shmem_rd(sc, i + 0xC));
 	}
 
 	BCE_PRINTF(
@@ -10809,13 +11601,15 @@ bce_breakpoint(struct bce_softc *sc)
 		bce_dump_enet(sc, NULL);
 		bce_dump_txbd(sc, 0, NULL);
 		bce_dump_rxbd(sc, 0, NULL);
-		bce_dump_tx_mbuf_chain(sc, 0, USABLE_TX_BD);
-		bce_dump_rx_mbuf_chain(sc, 0, USABLE_RX_BD);
+		bce_dump_tx_mbuf_chain(sc, 0, USABLE_TX_BD_ALLOC);
+		bce_dump_rx_mbuf_chain(sc, 0, USABLE_RX_BD_ALLOC);
+		bce_dump_pg_mbuf_chain(sc, 0, USABLE_PG_BD_ALLOC);
 		bce_dump_l2fhdr(sc, 0, NULL);
 		bce_dump_ctx(sc, RX_CID);
 		bce_dump_ftqs(sc);
-		bce_dump_tx_chain(sc, 0, USABLE_TX_BD);
-		bce_dump_rx_bd_chain(sc, 0, USABLE_RX_BD);
+		bce_dump_tx_chain(sc, 0, USABLE_TX_BD_ALLOC);
+		bce_dump_rx_bd_chain(sc, 0, USABLE_RX_BD_ALLOC);
+		bce_dump_pg_chain(sc, 0, USABLE_PG_BD_ALLOC);
 		bce_dump_status_block(sc);
 		bce_dump_stats_block(sc);
 		bce_dump_driver_state(sc);
@@ -10827,12 +11621,7 @@ bce_breakpoint(struct bce_softc *sc)
 		bce_dump_cp_state(sc, 0);
 		bce_dump_com_state(sc, 0);
 		bce_dump_rv2p_state(sc);
-
-#ifdef BCE_JUMBO_HDRSPLIT
 		bce_dump_pgbd(sc, 0, NULL);
-		bce_dump_pg_mbuf_chain(sc, 0, USABLE_PG_BD);
-		bce_dump_pg_chain(sc, 0, USABLE_PG_BD);
-#endif
 	}
 
 	bce_dump_status_block(sc);
@@ -10844,4 +11633,3 @@ bce_breakpoint(struct bce_softc *sc)
 	return;
 }
 #endif
-

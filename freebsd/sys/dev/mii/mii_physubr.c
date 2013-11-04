@@ -111,7 +111,7 @@ mii_phy_setmedia(struct mii_softc *sc)
 		/*
 		 * Force renegotiation if MIIF_DOPAUSE or MIIF_FORCEANEG.
 		 * The former is necessary as we might switch from flow-
-		 * control advertisment being off to on or vice versa.
+		 * control advertisement being off to on or vice versa.
 		 */
 		if ((PHY_READ(sc, MII_BMCR) & BMCR_AUTOEN) == 0 ||
 		    (sc->mii_flags & (MIIF_DOPAUSE | MIIF_FORCEANEG)) != 0)
@@ -137,8 +137,9 @@ mii_phy_setmedia(struct mii_softc *sc)
 			gtcr |= GTCR_ADV_MS;
 	}
 
-	if ((ife->ifm_media & IFM_GMASK) == (IFM_FDX | IFM_FLOW) ||
-	    (sc->mii_flags & MIIF_FORCEPAUSE) != 0) {
+	if ((ife->ifm_media & IFM_FDX) != 0 &&
+	    ((ife->ifm_media & IFM_FLOW) != 0 ||
+	    (sc->mii_flags & MIIF_FORCEPAUSE) != 0)) {
 		if ((sc->mii_flags & MIIF_IS_1000X) != 0)
 			anar |= ANAR_X_PAUSE_TOWARDS;
 		else {
@@ -186,7 +187,8 @@ mii_phy_auto(struct mii_softc *sc)
 		    ANAR_CSMA;
 		if ((ife->ifm_media & IFM_FLOW) != 0 ||
 		    (sc->mii_flags & MIIF_FORCEPAUSE) != 0) {
-			if ((sc->mii_capabilities & BMSR_100TXFDX) != 0)
+			if ((sc->mii_capabilities &
+			    (BMSR_10TFDX | BMSR_100TXFDX)) != 0)
 				anar |= ANAR_FC;
 			/* XXX Only 1000BASE-T has PAUSE_ASYM? */
 			if (((sc->mii_flags & MIIF_HAVE_GTCR) != 0) &&
@@ -260,7 +262,7 @@ void
 mii_phy_reset(struct mii_softc *sc)
 {
 	struct ifmedia_entry *ife = sc->mii_pdata->mii_media.ifm_cur;
-	int reg, i;
+	int i, reg;
 
 	if ((sc->mii_flags & MIIF_NOISOLATE) != 0)
 		reg = BMCR_RESET;
@@ -276,11 +278,14 @@ mii_phy_reset(struct mii_softc *sc)
 		DELAY(1000);
 	}
 
-	if ((sc->mii_flags & MIIF_NOISOLATE) == 0) {
-		if ((ife == NULL && sc->mii_inst != 0) ||
-		    (ife != NULL && IFM_INST(ife->ifm_media) != sc->mii_inst))
-			PHY_WRITE(sc, MII_BMCR, reg | BMCR_ISO);
-	}
+	/* NB: a PHY may default to being powered down and/or isolated. */
+	reg &= ~(BMCR_PDOWN | BMCR_ISO);
+	if ((sc->mii_flags & MIIF_NOISOLATE) == 0 &&
+	    ((ife == NULL && sc->mii_inst != 0) ||
+	    (ife != NULL && IFM_INST(ife->ifm_media) != sc->mii_inst)))
+		reg |= BMCR_ISO;
+	if (PHY_READ(sc, MII_BMCR) != reg)
+		PHY_WRITE(sc, MII_BMCR, reg);
 }
 
 void
@@ -425,9 +430,11 @@ mii_phy_add_media(struct mii_softc *sc)
 #define	ADD(m, c)	ifmedia_add(&mii->mii_media, (m), (c), NULL)
 #define	PRINT(s)	printf("%s%s", sep, s); sep = ", "
 
-	if ((sc->mii_flags & MIIF_NOISOLATE) == 0)
+	if ((sc->mii_flags & MIIF_NOISOLATE) == 0) {
 		ADD(IFM_MAKEWORD(IFM_ETHER, IFM_NONE, 0, sc->mii_inst),
 		    MII_MEDIA_NONE);
+		PRINT("none");
+	}
 
 	/*
 	 * There are different interpretations for the bits in

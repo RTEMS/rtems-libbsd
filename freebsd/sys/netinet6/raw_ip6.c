@@ -197,6 +197,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 			    &ip6->ip6_dst) != 0)
 				continue;
 		}
+		INP_RLOCK(in6p);
 		if (in6p->in6p_cksum != -1) {
 			V_rip6stat.rip6s_isum++;
 			if (in6_cksum(m, proto, *offp,
@@ -206,7 +207,6 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 				continue;
 			}
 		}
-		INP_RLOCK(in6p);
 		/*
 		 * If this raw socket has multicast state, and we
 		 * have received a multicast, check if this socket
@@ -564,6 +564,7 @@ rip6_output(m, va_alist)
 int
 rip6_ctloutput(struct socket *so, struct sockopt *sopt)
 {
+	struct inpcb *inp;
 	int error;
 
 	if (sopt->sopt_level == IPPROTO_ICMPV6)
@@ -572,8 +573,17 @@ rip6_ctloutput(struct socket *so, struct sockopt *sopt)
 		 * from protosw?
 		 */
 		return (icmp6_ctloutput(so, sopt));
-	else if (sopt->sopt_level != IPPROTO_IPV6)
+	else if (sopt->sopt_level != IPPROTO_IPV6) {
+		if (sopt->sopt_level == SOL_SOCKET &&
+		    sopt->sopt_name == SO_SETFIB) {
+			inp = sotoinpcb(so);
+			INP_WLOCK(inp);
+			inp->inp_inc.inc_fibnum = so->so_fibnum;
+			INP_WUNLOCK(inp);
+			return (0);
+		}
 		return (EINVAL);
+	}
 
 	error = 0;
 

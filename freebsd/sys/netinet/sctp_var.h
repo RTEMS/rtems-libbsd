@@ -1,15 +1,17 @@
 /*-
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -27,8 +29,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/* $KAME: sctp_var.h,v 1.24 2005/03/06 16:04:19 itojun Exp $	 */
 
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
@@ -48,6 +48,31 @@ extern struct pr_usrreqs sctp_usrreqs;
 #define sctp_is_feature_on(inp, feature) ((inp->sctp_features & feature) == feature)
 #define sctp_is_feature_off(inp, feature) ((inp->sctp_features & feature) == 0)
 
+#define sctp_stcb_feature_on(inp, stcb, feature) {\
+	if (stcb) { \
+		stcb->asoc.sctp_features |= feature; \
+	} else if (inp) { \
+		inp->sctp_features |= feature; \
+	} \
+}
+#define sctp_stcb_feature_off(inp, stcb, feature) {\
+	if (stcb) { \
+		stcb->asoc.sctp_features &= ~feature; \
+	} else if (inp) { \
+		inp->sctp_features &= ~feature; \
+	} \
+}
+#define sctp_stcb_is_feature_on(inp, stcb, feature) \
+	(((stcb != NULL) && \
+	  ((stcb->asoc.sctp_features & feature) == feature)) || \
+	 ((stcb == NULL) && (inp != NULL) && \
+	  ((inp->sctp_features & feature) == feature)))
+#define sctp_stcb_is_feature_off(inp, stcb, feature) \
+	(((stcb != NULL) && \
+	  ((stcb->asoc.sctp_features & feature) == 0)) || \
+	 ((stcb == NULL) && (inp != NULL) && \
+	  ((inp->sctp_features & feature) == 0)) || \
+         ((stcb == NULL) && (inp == NULL)))
 
 /* managing mobility_feature in inpcb (by micchie) */
 #define sctp_mobility_feature_on(inp, feature)  (inp->sctp_mobility_features |= feature)
@@ -85,9 +110,9 @@ extern struct pr_usrreqs sctp_usrreqs;
 	} \
 }
 
-#define sctp_free_a_strmoq(_stcb, _strmoq) { \
+#define sctp_free_a_strmoq(_stcb, _strmoq, _so_locked) { \
 	if ((_strmoq)->holds_key_ref) { \
-		sctp_auth_key_release(stcb, sp->auth_keyid); \
+		sctp_auth_key_release(stcb, sp->auth_keyid, _so_locked); \
 		(_strmoq)->holds_key_ref = 0; \
 	} \
 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_strmoq), (_strmoq)); \
@@ -103,9 +128,9 @@ extern struct pr_usrreqs sctp_usrreqs;
  	} \
 }
 
-#define sctp_free_a_chunk(_stcb, _chk) { \
+#define sctp_free_a_chunk(_stcb, _chk, _so_locked) { \
 	if ((_chk)->holds_key_ref) {\
-		sctp_auth_key_release((_stcb), (_chk)->auth_keyid); \
+		sctp_auth_key_release((_stcb), (_chk)->auth_keyid, _so_locked); \
 		(_chk)->holds_key_ref = 0; \
 	} \
         if (_stcb) { \
@@ -130,7 +155,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 }
 
 #define sctp_alloc_a_chunk(_stcb, _chk) { \
-	if (TAILQ_EMPTY(&(_stcb)->asoc.free_chunks))  { \
+	if (TAILQ_EMPTY(&(_stcb)->asoc.free_chunks)) { \
 		(_chk) = SCTP_ZONE_GET(SCTP_BASE_INFO(ipi_zone_chunk), struct sctp_tmit_chunk); \
 		if ((_chk)) { \
 			SCTP_INCR_CHK_COUNT(); \
@@ -153,7 +178,6 @@ extern struct pr_usrreqs sctp_usrreqs;
 		if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&(__net)->ref_count)) { \
 			(void)SCTP_OS_TIMER_STOP(&(__net)->rxt_timer.timer); \
 			(void)SCTP_OS_TIMER_STOP(&(__net)->pmtu_timer.timer); \
-			(void)SCTP_OS_TIMER_STOP(&(__net)->fr_timer.timer); \
                         if ((__net)->ro.ro_rt) { \
 				RTFREE((__net)->ro.ro_rt); \
 				(__net)->ro.ro_rt = NULL; \
@@ -163,7 +187,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 				(__net)->ro._s_addr = NULL; \
 			} \
                         (__net)->src_addr_selected = 0; \
-			(__net)->dest_state = SCTP_ADDR_NOT_REACHABLE; \
+			(__net)->dest_state &= ~SCTP_ADDR_REACHABLE; \
 			SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_net), (__net)); \
 			SCTP_DECR_RADDR_COUNT(); \
 		} \
@@ -210,7 +234,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 #define sctp_mbuf_crush(data) do { \
 	struct mbuf *_m; \
 	_m = (data); \
-	while(_m && (SCTP_BUF_LEN(_m) == 0)) { \
+	while (_m && (SCTP_BUF_LEN(_m) == 0)) { \
 		(data)  = SCTP_BUF_NEXT(_m); \
 		SCTP_BUF_NEXT(_m) = NULL; \
 		sctp_m_free(_m); \
@@ -286,6 +310,8 @@ extern struct pr_usrreqs sctp_usrreqs;
 
 #endif
 
+#define SCTP_PF_ENABLED(_net) (_net->pf_threshold < _net->failure_threshold)
+#define SCTP_NET_IS_PF(_net) (_net->pf_threshold < _net->error_count)
 
 struct sctp_nets;
 struct sctp_inpcb;
@@ -298,9 +324,16 @@ int sctp_disconnect(struct socket *so);
 
 void sctp_ctlinput __P((int, struct sockaddr *, void *));
 int sctp_ctloutput __P((struct socket *, struct sockopt *));
+
+#ifdef INET
 void sctp_input_with_port __P((struct mbuf *, int, uint16_t));
+
+#endif
+#ifdef INET
 void sctp_input __P((struct mbuf *, int));
-void sctp_pathmtu_adjustment __P((struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *, uint16_t));
+
+#endif
+void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
 void sctp_drain __P((void));
 void sctp_init __P((void));
 

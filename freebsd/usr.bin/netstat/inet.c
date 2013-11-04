@@ -403,35 +403,44 @@ protopr(u_long off, const char *name, int af1, int proto)
 	"Current listen queue sizes (qlen/incqlen/maxqlen)");
 			putchar('\n');
 			if (Aflag)
-				printf("%-8.8s ", "Tcpcb");
+				printf("%-*s ", 2 * (int)sizeof(void *), "Tcpcb");
 			if (Lflag)
-				printf("%-5.5s %-14.14s %-22.22s\n",
+				printf((Aflag && !Wflag) ?
+				    "%-5.5s %-14.14s %-18.18s" :
+				    "%-5.5s %-14.14s %-22.22s",
 				    "Proto", "Listen", "Local Address");
+			else if (Tflag)
+				printf((Aflag && !Wflag) ?
+			    "%-5.5s %-6.6s %-6.6s %-6.6s %-18.18s %s" :
+			    "%-5.5s %-6.6s %-6.6s %-6.6s %-22.22s %s",
+				    "Proto", "Rexmit", "OOORcv", "0-win",
+				    "Local Address", "Foreign Address");
 			else {
 				printf((Aflag && !Wflag) ? 
-				       "%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s" :
-				       "%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s",
+				       "%-5.5s %-6.6s %-6.6s %-18.18s %-18.18s" :
+				       "%-5.5s %-6.6s %-6.6s %-22.22s %-22.22s",
 				       "Proto", "Recv-Q", "Send-Q",
 				       "Local Address", "Foreign Address");
-				if (xflag)
-					printf("%-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %s\n",
-					       	"R-MBUF", "S-MBUF", "R-CLUS", 
-						"S-CLUS", "R-HIWA", "S-HIWA", 
-						"R-LOWA", "S-LOWA", "R-BCNT", 
-						"S-BCNT", "R-BMAX", "S-BMAX",
-					       "(state)");
-				else
-					printf("(state)\n");
+				if (!xflag)
+					printf(" (state)");
 			}
+			if (xflag) {
+				printf(" %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s %-6.6s",
+				       "R-MBUF", "S-MBUF", "R-CLUS", 
+				       "S-CLUS", "R-HIWA", "S-HIWA", 
+				       "R-LOWA", "S-LOWA", "R-BCNT", 
+				       "S-BCNT", "R-BMAX", "S-BMAX");
+			}
+			putchar('\n');
 			protopr_initialized = 1;
 		}
 		if (Lflag && so->so_qlimit == 0)
 			continue;
 		if (Aflag) {
 			if (istcp)
-				printf("%8lx ", (u_long)inp->inp_ppcb);
+				printf("%*lx ", 2 * (int)sizeof(void *), (u_long)inp->inp_ppcb);
 			else
-				printf("%8lx ", (u_long)so->so_pcb);
+				printf("%*lx ", 2 * (int)sizeof(void *), (u_long)so->so_pcb);
 		}
 #ifdef INET6
 		if ((inp->inp_vflag & INP_IPV6) != 0)
@@ -448,6 +457,12 @@ protopr(u_long off, const char *name, int af1, int proto)
 			snprintf(buf1, 15, "%d/%d/%d", so->so_qlen,
 			    so->so_incqlen, so->so_qlimit);
 			printf("%-14.14s ", buf1);
+		} else if (Tflag) {
+			if (istcp)
+				printf("%6ju %6ju %6u ", 
+				       (uintmax_t)tp->t_sndrexmitpack,
+				       (uintmax_t)tp->t_rcvoopack, 
+				       tp->t_sndzerowin);
 		} else {
 			printf("%6u %6u ", so->so_rcv.sb_cc, so->so_snd.sb_cc);
 		}
@@ -506,25 +521,15 @@ protopr(u_long off, const char *name, int af1, int proto)
 #endif /* INET6 */
 		}
 		if (xflag) {
-			if (Lflag)
-				printf("%21s %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u ",
-				       " ",
-				       so->so_rcv.sb_mcnt, so->so_snd.sb_mcnt,
-				       so->so_rcv.sb_ccnt, so->so_snd.sb_ccnt,
-				       so->so_rcv.sb_hiwat, so->so_snd.sb_hiwat,
-				       so->so_rcv.sb_lowat, so->so_snd.sb_lowat,
-				       so->so_rcv.sb_mbcnt, so->so_snd.sb_mbcnt,
-				       so->so_rcv.sb_mbmax, so->so_snd.sb_mbmax);
-			else
-				printf("%6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u ",
-				       so->so_rcv.sb_mcnt, so->so_snd.sb_mcnt,
-				       so->so_rcv.sb_ccnt, so->so_snd.sb_ccnt,
-				       so->so_rcv.sb_hiwat, so->so_snd.sb_hiwat,
-				       so->so_rcv.sb_lowat, so->so_snd.sb_lowat,
-				       so->so_rcv.sb_mbcnt, so->so_snd.sb_mbcnt,
-				       so->so_rcv.sb_mbmax, so->so_snd.sb_mbmax);
+			printf("%6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u %6u",
+			       so->so_rcv.sb_mcnt, so->so_snd.sb_mcnt,
+			       so->so_rcv.sb_ccnt, so->so_snd.sb_ccnt,
+			       so->so_rcv.sb_hiwat, so->so_snd.sb_hiwat,
+			       so->so_rcv.sb_lowat, so->so_snd.sb_lowat,
+			       so->so_rcv.sb_mbcnt, so->so_snd.sb_mbcnt,
+			       so->so_rcv.sb_mbmax, so->so_snd.sb_mbmax);
 		}
-		if (istcp && !Lflag) {
+		if (istcp && !Lflag && !xflag && !Tflag) {
 			if (tp->t_state < 0 || tp->t_state >= TCP_NSTATES)
 				printf("%d", tp->t_state);
 			else {
@@ -673,6 +678,9 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	p(tcps_sc_zonefail, "\t\t%lu zone failure%s\n");
 	p(tcps_sc_sendcookie, "\t%lu cookie%s sent\n");
 	p(tcps_sc_recvcookie, "\t%lu cookie%s received\n");
+
+	p(tcps_hc_added, "\t%lu hostcache entrie%s added\n");
+	p1a(tcps_hc_bucketoverflow, "\t\t%lu bucket overflow\n");
 
 	p(tcps_sack_recovery_episode, "\t%lu SACK recovery episode%s\n");
 	p(tcps_sack_rexmits,
@@ -1043,7 +1051,7 @@ icmp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
  * Dump IGMP statistics structure (pre 8.x kernel).
  */
 static void
-igmp_stats_live_old(u_long off, const char *name)
+igmp_stats_live_old(const char *name)
 {
 	struct oigmpstat oigmpstat, zerostat;
 	size_t len = sizeof(oigmpstat);
@@ -1103,7 +1111,7 @@ igmp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 			return;
 		}
 		if (len < sizeof(igmpstat)) {
-			igmp_stats_live_old(off, name);
+			igmp_stats_live_old(name);
 			return;
 		}
 	}

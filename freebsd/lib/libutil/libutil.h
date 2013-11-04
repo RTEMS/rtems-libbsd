@@ -39,6 +39,39 @@
 #ifndef _LIBUTIL_H_
 #define	_LIBUTIL_H_
 
+#include <sys/cdefs.h>
+#include <rtems/bsd/sys/_types.h>
+
+#ifndef _GID_T_DECLARED
+typedef	__gid_t		gid_t;
+#define	_GID_T_DECLARED
+#endif
+
+#ifndef _INT64_T_DECLARED
+typedef	__int64_t	int64_t;
+#define	_INT64_T_DECLARED
+#endif
+
+#ifndef _UINT64_T_DECLARED
+typedef	__uint64_t	uint64_t;
+#define	_UINT64_T_DECLARED
+#endif
+
+#ifndef _PID_T_DECLARED
+typedef	__pid_t		pid_t;
+#define	_PID_T_DECLARED
+#endif
+
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
+#endif
+
+#ifndef _UID_T_DECLARED
+typedef	__uid_t		uid_t;
+#define	_UID_T_DECLARED
+#endif
+
 #define PROPERTY_MAX_NAME	64
 #define PROPERTY_MAX_VALUE	512
 
@@ -119,6 +152,7 @@ int	pw_equal(const struct passwd *_pw1, const struct passwd *_pw2);
 void	pw_fini(void);
 int	pw_init(const char *_dir, const char *_master);
 char	*pw_make(const struct passwd *_pw);
+char	*pw_make_v7(const struct passwd *_pw);
 int	pw_mkdb(const char *_user);
 int	pw_lock(void);
 struct passwd *pw_scan(const char *_line, int _flags);
@@ -127,9 +161,15 @@ int	pw_tmp(int _mfd);
 #endif
 
 #ifdef _GRP_H_
-int	gr_equal(const struct group *gr1, const struct group *gr2);
-char	*gr_make(const struct group *gr);
+int 	gr_copy(int __ffd, int _tfd, const struct group *_gr, struct group *_old_gr);
 struct group *gr_dup(const struct group *gr);
+int	gr_equal(const struct group *gr1, const struct group *gr2);
+void	gr_fini(void);
+int	gr_init(const char *_dir, const char *_master);
+int	gr_lock(void);
+char	*gr_make(const struct group *gr);
+int	gr_mkdb(void);
+int	gr_tmp(int _mdf);
 struct group *gr_scan(const char *line);
 #endif
 
@@ -174,7 +214,9 @@ __END_DECLS
 #define HN_NOSPACE		0x02
 #define HN_B			0x04
 #define HN_DIVISOR_1000		0x08
+#define HN_IEC_PREFIXES		0x10
 
+/* maxscale = 0x07 */
 #define HN_GETSCALE		0x10
 #define HN_AUTOSCALE		0x20
 

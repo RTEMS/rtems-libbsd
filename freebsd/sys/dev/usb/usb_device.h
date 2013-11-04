@@ -27,8 +27,18 @@
 #ifndef _USB_DEVICE_H_
 #define	_USB_DEVICE_H_
 
-struct usb_symlink;		/* UGEN */
+#ifndef USB_GLOBAL_INCLUDE_FILE
+#include <dev/usb/usb_core.h>
+#include <dev/usb/usb_busdma.h>
+#include <dev/usb/usb_transfer.h>
+#endif
+
+struct usb_bus_methods;
+struct usb_config_descriptor;
 struct usb_device;		/* linux compat */
+struct usb_fs_privdata;
+struct usb_hw_ep_profile;
+struct usb_symlink;		/* UGEN */
 
 #define	USB_CTRL_XFER_MAX 2
 
@@ -107,13 +117,70 @@ struct usb_power_save {
 };
 
 /*
+ * The following structure is used when trying to allocate hardware
+ * endpoints for an USB configuration in USB device side mode.
+ */
+struct usb_hw_ep_scratch_sub {
+	const struct usb_hw_ep_profile *pf;
+	uint16_t max_frame_size;
+	uint8_t	hw_endpoint_out;
+	uint8_t	hw_endpoint_in;
+	uint8_t	needs_ep_type;
+	uint8_t	needs_in:1;
+	uint8_t	needs_out:1;
+};
+
+/*
+ * The following structure is used when trying to allocate hardware
+ * endpoints for an USB configuration in USB device side mode.
+ */
+struct usb_hw_ep_scratch {
+	struct usb_hw_ep_scratch_sub ep[USB_EP_MAX];
+	struct usb_hw_ep_scratch_sub *ep_max;
+	struct usb_config_descriptor *cd;
+	struct usb_device *udev;
+	struct usb_bus_methods *methods;
+	uint8_t	bmOutAlloc[(USB_EP_MAX + 15) / 16];
+	uint8_t	bmInAlloc[(USB_EP_MAX + 15) / 16];
+};
+
+/*
+ * The following structure is used when generating USB descriptors
+ * from USB templates.
+ */
+struct usb_temp_setup {
+	void   *buf;
+	usb_size_t size;
+	enum usb_dev_speed	usb_speed;
+	uint8_t	self_powered;
+	uint8_t	bNumEndpoints;
+	uint8_t	bInterfaceNumber;
+	uint8_t	bAlternateSetting;
+	uint8_t	bConfigurationValue;
+	usb_error_t err;
+};
+
+/* 
+ * The scratch area for USB devices. Access to this structure is
+ * protected by the enumeration SX lock.
+ */
+union usb_device_scratch {
+	struct usb_hw_ep_scratch hw_ep_scratch[1];
+	struct usb_temp_setup temp_setup[1];
+	struct {
+		struct usb_xfer dummy;
+		struct usb_setup_params parm;
+	} xfer_setup[1];
+	uint8_t	data[255];
+};
+
+/*
  * The following structure defines an USB device. There exists one of
  * these structures for every USB device.
  */
 struct usb_device {
 	struct usb_clear_stall_msg cs_msg[2];	/* generic clear stall
 						 * messages */
-	struct sx ctrl_sx;
 	struct sx enum_sx;
 	struct sx sr_sx;
 	struct mtx device_mtx;
@@ -135,7 +202,7 @@ struct usb_device {
 #if USB_HAVE_UGEN
 	struct usb_fifo *fifo[USB_FIFO_MAX];
 	struct usb_symlink *ugen_symlink;	/* our generic symlink */
-	struct cdev *ctrl_dev;	/* Control Endpoint 0 device node */
+	struct usb_fs_privdata *ctrl_dev;	/* Control Endpoint 0 device node */
 	LIST_HEAD(,usb_fs_privdata) pd_list;
 	char	ugen_name[20];		/* name of ugenX.X device */
 #endif
@@ -187,6 +254,12 @@ struct usb_device {
 	struct usb_host_endpoint *linux_endpoint_end;
 	uint16_t devnum;
 #endif
+
+	uint32_t clear_stall_errors;	/* number of clear-stall failures */
+
+	uint16_t autoQuirk[USB_MAX_AUTO_QUIRK];		/* dynamic quirks */
+
+	union usb_device_scratch scratch;
 };
 
 /* globals */
@@ -200,6 +273,11 @@ struct usb_device *usb_alloc_device(device_t parent_dev, struct usb_bus *bus,
 		    struct usb_device *parent_hub, uint8_t depth,
 		    uint8_t port_index, uint8_t port_no,
 		    enum usb_dev_speed speed, enum usb_hc_mode mode);
+#if USB_HAVE_UGEN
+struct usb_fs_privdata *usb_make_dev(struct usb_device *, const char *,
+		    int, int, int, uid_t, gid_t, int);
+void	usb_destroy_dev(struct usb_fs_privdata *);
+#endif
 usb_error_t	usb_probe_and_attach(struct usb_device *udev,
 		    uint8_t iface_index);
 void		usb_detach_device(struct usb_device *, uint8_t, uint8_t);
@@ -218,7 +296,7 @@ struct usb_endpoint *usb_endpoint_foreach(struct usb_device *udev, struct usb_en
 void	usb_set_device_state(struct usb_device *, enum usb_dev_state);
 enum usb_dev_state usb_get_device_state(struct usb_device *);
 
-void	usbd_enum_lock(struct usb_device *);
+uint8_t	usbd_enum_lock(struct usb_device *);
 void	usbd_enum_unlock(struct usb_device *);
 void	usbd_sr_lock(struct usb_device *);
 void	usbd_sr_unlock(struct usb_device *);

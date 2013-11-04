@@ -231,7 +231,9 @@ atm_rtrequest(int req, struct rtentry *rt, struct rt_addrinfo *info)
 		npcb->npcb_flags |= NPCB_IP;
 		npcb->ipaddr.s_addr = sin->sin_addr.s_addr;
 		/* XXX: move npcb to llinfo when ATM ARP is ready */
+#ifdef __notyet_restored__
 		rt->rt_llinfo = (caddr_t) npcb;
+#endif
 		rt->rt_flags |= RTF_LLINFO;
 #endif
 		/*
@@ -257,7 +259,9 @@ failed:
 #ifdef NATM
 		if (npcb) {
 			npcb_free(npcb, NPCB_DESTROY);
+#ifdef __notyet_restored__
 			rt->rt_llinfo = NULL;
+#endif
 			rt->rt_flags &= ~RTF_LLINFO;
 		}
 		NATM_UNLOCK();
@@ -275,9 +279,11 @@ failed:
 		 */
 		if (rt->rt_flags & RTF_LLINFO) {
 			NATM_LOCK();
+#ifdef __notyet_restored__
 			npcb_free((struct natmpcb *)rt->rt_llinfo,
 			    NPCB_DESTROY);
 			rt->rt_llinfo = NULL;
+#endif
 			rt->rt_flags &= ~RTF_LLINFO;
 			NATM_UNLOCK();
 		}

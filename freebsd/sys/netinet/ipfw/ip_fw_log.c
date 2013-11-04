@@ -32,17 +32,12 @@ __FBSDID("$FreeBSD$");
  * Logging support for ipfw
  */
 
-#if !defined(KLD_MODULE)
 #include <rtems/bsd/local/opt_ipfw.h>
-#include <rtems/bsd/local/opt_ipdivert.h>
-#include <rtems/bsd/local/opt_ipdn.h>
 #include <rtems/bsd/local/opt_inet.h>
 #ifndef INET
 #error IPFIREWALL requires INET.
 #endif /* INET */
-#endif
 #include <rtems/bsd/local/opt_inet6.h>
-#include <rtems/bsd/local/opt_ipsec.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
@@ -306,6 +301,13 @@ ipfw_log(struct ip_fw *f, u_int hlen, struct ip_fw_args *args,
 		case O_REASS:
 			action = "Reass";
 			break;
+		case O_CALLRETURN:
+			if (cmd->len & F_NOT)
+				action = "Return";
+			else
+				snprintf(SNPARGS(action2, 0), "Call %d",
+				    cmd->arg1);
+			break;
 		default:
 			action = "UNKNOWN";
 			break;
@@ -328,10 +330,14 @@ ipfw_log(struct ip_fw *f, u_int hlen, struct ip_fw_args *args,
 #ifdef INET6
 		struct ip6_hdr *ip6 = NULL;
 		struct icmp6_hdr *icmp6;
+		u_short ip6f_mf;
 #endif
 		src[0] = '\0';
 		dst[0] = '\0';
 #ifdef INET6
+		ip6f_mf = offset & IP6F_MORE_FRAG;
+		offset &= IP6F_OFF_MASK;
+
 		if (IS_IP6_FLOW_ID(&(args->f_id))) {
 			char ip6buf[INET6_ADDRSTRLEN];
 			snprintf(src, sizeof(src), "[%s]",
@@ -413,8 +419,7 @@ ipfw_log(struct ip_fw *f, u_int hlen, struct ip_fw_args *args,
 				    " (frag %08x:%d@%d%s)",
 				    args->f_id.extra,
 				    ntohs(ip6->ip6_plen) - hlen,
-				    ntohs(offset & IP6F_OFF_MASK) << 3,
-				    (offset & IP6F_MORE_FRAG) ? "+" : "");
+				    ntohs(offset) << 3, ip6f_mf ? "+" : "");
 		} else
 #endif
 		{

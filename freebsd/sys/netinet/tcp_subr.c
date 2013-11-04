@@ -47,7 +47,9 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/callout.h>
+#include <sys/hhook.h>
 #include <sys/kernel.h>
+#include <sys/khelp.h>
 #include <sys/sysctl.h>
 #include <sys/jail.h>
 #include <sys/malloc.h>
@@ -68,6 +70,7 @@ __FBSDID("$FreeBSD$");
 #include <net/if.h>
 #include <net/vnet.h>
 
+#include <netinet/cc.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -86,7 +89,6 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/nd6.h>
 #endif
 #include <netinet/ip_icmp.h>
-#include <netinet/tcp.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
 #include <netinet/tcp_timer.h>
@@ -204,7 +206,7 @@ static int	do_tcpdrain = 1;
 SYSCTL_INT(_net_inet_tcp, OID_AUTO, do_tcpdrain, CTLFLAG_RW, &do_tcpdrain, 0,
     "Enable tcp_drain routine for extra help when low on mbufs");
 
-SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, pcbcount, CTLFLAG_RD,
+SYSCTL_VNET_UINT(_net_inet_tcp, OID_AUTO, pcbcount, CTLFLAG_RD,
     &VNET_NAME(tcbinfo.ipi_count), 0, "Number of active PCBs");
 
 static VNET_DEFINE(int, icmp_may_rst) = 1;
@@ -263,10 +265,19 @@ SYSCTL_VNET_INT(_net_inet_tcp_inflight, OID_AUTO, stab, CTLFLAG_RW,
     &VNET_NAME(tcp_inflight_stab), 0,
     "Inflight Algorithm Stabilization 20 = 2 packets");
 
+#ifdef TCP_SIGNATURE
+static int	tcp_sig_checksigs = 1;
+SYSCTL_INT(_net_inet_tcp, OID_AUTO, signature_verify_input, CTLFLAG_RW,
+    &tcp_sig_checksigs, 0, "Verify RFC2385 digests on inbound traffic");
+#endif
+
 VNET_DEFINE(uma_zone_t, sack_hole_zone);
 #define	V_sack_hole_zone		VNET(sack_hole_zone)
 
+VNET_DEFINE(struct hhook_head *, tcp_hhh[HHOOK_TCP_LAST+1]);
+
 static struct inpcb *tcp_notify(struct inpcb *, int);
+static struct inpcb *tcp_mtudisc_notify(struct inpcb *, int);
 static void	tcp_isn_tick(void *);
 static char *	tcp_log_addr(struct in_conninfo *inc, struct tcphdr *th,
 		    void *ip4hdr, const void *ip6hdr);
@@ -290,6 +301,8 @@ static char *	tcp_log_addr(struct in_conninfo *inc, struct tcphdr *th,
 struct tcpcb_mem {
 	struct	tcpcb		tcb;
 	struct	tcp_timer	tt;
+	struct	cc_var		ccv;
+	struct	osd		osd;
 };
 
 static VNET_DEFINE(uma_zone_t, tcpcb_zone);
@@ -335,6 +348,14 @@ tcp_init(void)
 	V_tcbinfo.ipi_vnet = curvnet;
 #endif
 	V_tcbinfo.ipi_listhead = &V_tcb;
+
+	if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_IN,
+	    &V_tcp_hhh[HHOOK_TCP_EST_IN], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
+		printf("%s: WARNING: unable to register helper hook\n", __func__);
+	if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_OUT,
+	    &V_tcp_hhh[HHOOK_TCP_EST_OUT], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
+		printf("%s: WARNING: unable to register helper hook\n", __func__);
+
 	hashsize = TCBHASHSIZE;
 	TUNABLE_INT_FETCH("net.inet.tcp.tcbhashsize", &hashsize);
 	if (!powerof2(hashsize)) {
@@ -705,6 +726,32 @@ tcp_newtcpcb(struct inpcb *inp)
 	if (tm == NULL)
 		return (NULL);
 	tp = &tm->tcb;
+
+	/* Initialise cc_var struct for this tcpcb. */
+	tp->ccv = &tm->ccv;
+	tp->ccv->type = IPPROTO_TCP;
+	tp->ccv->ccvc.tcp = tp;
+
+	/*
+	 * Use the current system default CC algorithm.
+	 */
+	CC_LIST_RLOCK();
+	KASSERT(!STAILQ_EMPTY(&cc_list), ("cc_list is empty!"));
+	CC_ALGO(tp) = CC_DEFAULT();
+	CC_LIST_RUNLOCK();
+
+	if (CC_ALGO(tp)->cb_init != NULL)
+		if (CC_ALGO(tp)->cb_init(tp->ccv) > 0) {
+			uma_zfree(V_tcpcb_zone, tm);
+			return (NULL);
+		}
+
+	tp->osd = &tm->osd;
+	if (khelp_init_osd(HELPER_CLASS_TCP, tp->osd)) {
+		uma_zfree(V_tcpcb_zone, tm);
+		return (NULL);
+	}
+
 #ifdef VIMAGE
 	tp->t_vnet = inp->inp_vnet;
 #endif
@@ -751,6 +798,69 @@ tcp_newtcpcb(struct inpcb *inp)
 	inp->inp_ip_ttl = V_ip_defttl;
 	inp->inp_ppcb = tp;
 	return (tp);		/* XXX */
+}
+
+/*
+ * Switch the congestion control algorithm back to NewReno for any active
+ * control blocks using an algorithm which is about to go away.
+ * This ensures the CC framework can allow the unload to proceed without leaving
+ * any dangling pointers which would trigger a panic.
+ * Returning non-zero would inform the CC framework that something went wrong
+ * and it would be unsafe to allow the unload to proceed. However, there is no
+ * way for this to occur with this implementation so we always return zero.
+ */
+int
+tcp_ccalgounload(struct cc_algo *unload_algo)
+{
+	struct cc_algo *tmpalgo;
+	struct inpcb *inp;
+	struct tcpcb *tp;
+	VNET_ITERATOR_DECL(vnet_iter);
+
+	/*
+	 * Check all active control blocks across all network stacks and change
+	 * any that are using "unload_algo" back to NewReno. If "unload_algo"
+	 * requires cleanup code to be run, call it.
+	 */
+	VNET_LIST_RLOCK();
+	VNET_FOREACH(vnet_iter) {
+		CURVNET_SET(vnet_iter);
+		INP_INFO_RLOCK(&V_tcbinfo);
+		/*
+		 * New connections already part way through being initialised
+		 * with the CC algo we're removing will not race with this code
+		 * because the INP_INFO_WLOCK is held during initialisation. We
+		 * therefore don't enter the loop below until the connection
+		 * list has stabilised.
+		 */
+		LIST_FOREACH(inp, &V_tcb, inp_list) {
+			INP_WLOCK(inp);
+			/* Important to skip tcptw structs. */
+			if (!(inp->inp_flags & INP_TIMEWAIT) &&
+			    (tp = intotcpcb(inp)) != NULL) {
+				/*
+				 * By holding INP_WLOCK here, we are assured
+				 * that the connection is not currently
+				 * executing inside the CC module's functions
+				 * i.e. it is safe to make the switch back to
+				 * NewReno.
+				 */
+				if (CC_ALGO(tp) == unload_algo) {
+					tmpalgo = CC_ALGO(tp);
+					/* NewReno does not require any init. */
+					CC_ALGO(tp) = &newreno_cc_algo;
+					if (tmpalgo->cb_destroy != NULL)
+						tmpalgo->cb_destroy(tp->ccv);
+				}
+			}
+			INP_WUNLOCK(inp);
+		}
+		INP_INFO_RUNLOCK(&V_tcbinfo);
+		CURVNET_RESTORE();
+	}
+	VNET_LIST_RUNLOCK();
+
+	return (0);
 }
 
 /*
@@ -863,6 +973,14 @@ tcp_discardcb(struct tcpcb *tp)
 	tcp_offload_detach(tp);
 		
 	tcp_free_sackholes(tp);
+
+	/* Allow the CC algorithm to clean up after itself. */
+	if (CC_ALGO(tp)->cb_destroy != NULL)
+		CC_ALGO(tp)->cb_destroy(tp->ccv);
+
+	khelp_destroy_osd(tp->osd);
+
+	CC_ALGO(tp) = NULL;
 	inp->inp_ppcb = NULL;
 	tp->t_inpcb = NULL;
 	uma_zfree(V_tcpcb_zone, tp);
@@ -1135,7 +1253,8 @@ tcp_pcblist(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-SYSCTL_PROC(_net_inet_tcp, TCPCTL_PCBLIST, pcblist, CTLFLAG_RD, 0, 0,
+SYSCTL_PROC(_net_inet_tcp, TCPCTL_PCBLIST, pcblist,
+    CTLTYPE_OPAQUE | CTLFLAG_RD, NULL, 0,
     tcp_pcblist, "S,xtcpcb", "List of active TCP connections");
 
 static int
@@ -1260,7 +1379,7 @@ tcp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 		return;
 
 	if (cmd == PRC_MSGSIZE)
-		notify = tcp_mtudisc;
+		notify = tcp_mtudisc_notify;
 	else if (V_icmp_may_rst && (cmd == PRC_UNREACH_ADMIN_PROHIB ||
 		cmd == PRC_UNREACH_PORT || cmd == PRC_TIMXCEED_INTRANS) && ip)
 		notify = tcp_drop_syn_sent;
@@ -1327,16 +1446,17 @@ tcp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 						mtu = V_tcp_minmss
 						 + sizeof(struct tcpiphdr);
 					    /*
-					     * Only cache the the MTU if it
+					     * Only cache the MTU if it
 					     * is smaller than the interface
 					     * or route MTU.  tcp_mtudisc()
 					     * will do right thing by itself.
 					     */
 					    if (mtu <= tcp_maxmtu(&inc, NULL))
 						tcp_hc_updatemtu(&inc, mtu);
-					}
-
-					inp = (*notify)(inp, inetctlerrmap[cmd]);
+					    tcp_mtudisc(inp, mtu);
+					} else
+						inp = (*notify)(inp,
+						    inetctlerrmap[cmd]);
 				}
 			}
 			if (inp != NULL)
@@ -1375,7 +1495,7 @@ tcp6_ctlinput(int cmd, struct sockaddr *sa, void *d)
 		return;
 
 	if (cmd == PRC_MSGSIZE)
-		notify = tcp_mtudisc;
+		notify = tcp_mtudisc_notify;
 	else if (!PRC_IS_REDIRECT(cmd) &&
 		 ((unsigned)cmd >= PRC_NCMDS || inet6ctlerrmap[cmd] == 0))
 		return;
@@ -1594,12 +1714,19 @@ tcp_drop_syn_sent(struct inpcb *inp, int errno)
 
 /*
  * When `need fragmentation' ICMP is received, update our idea of the MSS
- * based on the new value in the route.  Also nudge TCP to send something,
- * since we know the packet we just sent was dropped.
+ * based on the new value. Also nudge TCP to send something, since we
+ * know the packet we just sent was dropped.
  * This duplicates some code in the tcp_mss() function in tcp_input.c.
  */
+static struct inpcb *
+tcp_mtudisc_notify(struct inpcb *inp, int error)
+{
+
+	return (tcp_mtudisc(inp, -1));
+}
+
 struct inpcb *
-tcp_mtudisc(struct inpcb *inp, int errno)
+tcp_mtudisc(struct inpcb *inp, int mtuoffer)
 {
 	struct tcpcb *tp;
 	struct socket *so;
@@ -1612,7 +1739,7 @@ tcp_mtudisc(struct inpcb *inp, int errno)
 	tp = intotcpcb(inp);
 	KASSERT(tp != NULL, ("tcp_mtudisc: tp == NULL"));
 
-	tcp_mss_update(tp, -1, NULL, NULL);
+	tcp_mss_update(tp, -1, mtuoffer, NULL, NULL);
   
 	so = inp->inp_socket;
 	SOCKBUF_LOCK(&so->so_snd);
@@ -1627,7 +1754,7 @@ tcp_mtudisc(struct inpcb *inp, int errno)
 	tcp_free_sackholes(tp);
 	tp->snd_recover = tp->snd_max;
 	if (tp->t_flags & TF_SACK_PERMIT)
-		EXIT_FASTRECOVERY(tp);
+		EXIT_FASTRECOVERY(tp->t_flags);
 	tcp_output_send(tp);
 	return (inp);
 }
@@ -1689,7 +1816,7 @@ tcp_maxmtu6(struct in_conninfo *inc, int *flags)
 		sro6.ro_dst.sin6_family = AF_INET6;
 		sro6.ro_dst.sin6_len = sizeof(struct sockaddr_in6);
 		sro6.ro_dst.sin6_addr = inc->inc6_faddr;
-		rtalloc_ign((struct route *)&sro6, 0);
+		in6_rtalloc_ign(&sro6, 0, inc->inc_fibnum);
 	}
 	if (sro6.ro_rt != NULL) {
 		ifp = sro6.ro_rt->rt_ifp;
@@ -2089,6 +2216,66 @@ tcp_signature_compute(struct mbuf *m, int _unused, int len, int optlen,
 	key_sa_recordxfer(sav, m);
 	KEY_FREESAV(&sav);
 	return (0);
+}
+
+/*
+ * Verify the TCP-MD5 hash of a TCP segment. (RFC2385)
+ *
+ * Parameters:
+ * m		pointer to head of mbuf chain
+ * len		length of TCP segment data, excluding options
+ * optlen	length of TCP segment options
+ * buf		pointer to storage for computed MD5 digest
+ * direction	direction of flow (IPSEC_DIR_INBOUND or OUTBOUND)
+ *
+ * Return 1 if successful, otherwise return 0.
+ */
+int
+tcp_signature_verify(struct mbuf *m, int off0, int tlen, int optlen,
+    struct tcpopt *to, struct tcphdr *th, u_int tcpbflag)
+{
+	char tmpdigest[TCP_SIGLEN];
+
+	if (tcp_sig_checksigs == 0)
+		return (1);
+	if ((tcpbflag & TF_SIGNATURE) == 0) {
+		if ((to->to_flags & TOF_SIGNATURE) != 0) {
+
+			/*
+			 * If this socket is not expecting signature but
+			 * the segment contains signature just fail.
+			 */
+			TCPSTAT_INC(tcps_sig_err_sigopt);
+			TCPSTAT_INC(tcps_sig_rcvbadsig);
+			return (0);
+		}
+
+		/* Signature is not expected, and not present in segment. */
+		return (1);
+	}
+
+	/*
+	 * If this socket is expecting signature but the segment does not
+	 * contain any just fail.
+	 */
+	if ((to->to_flags & TOF_SIGNATURE) == 0) {
+		TCPSTAT_INC(tcps_sig_err_nosigopt);
+		TCPSTAT_INC(tcps_sig_rcvbadsig);
+		return (0);
+	}
+	if (tcp_signature_compute(m, off0, tlen, optlen, &tmpdigest[0],
+	    IPSEC_DIR_INBOUND) == -1) {
+		TCPSTAT_INC(tcps_sig_err_buildsig);
+		TCPSTAT_INC(tcps_sig_rcvbadsig);
+		return (0);
+	}
+	
+	if (bcmp(to->to_signature, &tmpdigest[0], TCP_SIGLEN) != 0) {
+		TCPSTAT_INC(tcps_sig_rcvbadsig);
+		return (0);
+	}
+	TCPSTAT_INC(tcps_sig_rcvgoodsig);
+	return (1);
 }
 #endif /* TCP_SIGNATURE */
 

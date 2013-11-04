@@ -128,7 +128,7 @@ static void	tunclone(void *arg, struct ucred *cred, char *name,
 		    int namelen, struct cdev **dev);
 static void	tuncreate(const char *name, struct cdev *dev);
 static int	tunifioctl(struct ifnet *, u_long, caddr_t);
-static int	tuninit(struct ifnet *);
+static void	tuninit(struct ifnet *);
 static int	tunmodevent(module_t, int, void *);
 static int	tunoutput(struct ifnet *, struct mbuf *, struct sockaddr *,
 		    struct route *ro);
@@ -230,8 +230,8 @@ tunclone(void *arg, struct ucred *cred, char *name, int namelen,
 	i = clone_create(&tunclones, &tun_cdevsw, &u, dev, 0);
 	if (i) {
 		if (append_unit) {
-			namelen = snprintf(devname, sizeof(devname), "%s%d", name,
-			    u);
+			namelen = snprintf(devname, sizeof(devname), "%s%d",
+			    name, u);
 			name = devname;
 		}
 		/* No preexisting struct cdev *, create one */
@@ -261,6 +261,7 @@ tun_destroy(struct tun_softc *tp)
 	if_detach(TUN2IFP(tp));
 	if_free(TUN2IFP(tp));
 	destroy_dev(dev);
+	seldrain(&tp->tun_rsel);
 	knlist_destroy(&tp->tun_rsel.si_note);
 	mtx_destroy(&tp->tun_mtx);
 	cv_destroy(&tp->tun_cv);
@@ -504,14 +505,13 @@ tunclose(struct cdev *dev, int foo, int bar, struct thread *td)
 	return (0);
 }
 
-static int
+static void
 tuninit(struct ifnet *ifp)
 {
 	struct tun_softc *tp = ifp->if_softc;
 #ifdef INET
 	struct ifaddr *ifa;
 #endif
-	int error = 0;
 
 	TUNDEBUG(ifp, "tuninit\n");
 
@@ -538,7 +538,6 @@ tuninit(struct ifnet *ifp)
 	if_addr_runlock(ifp);
 #endif
 	mtx_unlock(&tp->tun_mtx);
-	return (error);
 }
 
 /*
@@ -562,12 +561,12 @@ tunifioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		mtx_unlock(&tp->tun_mtx);
 		break;
 	case SIOCSIFADDR:
-		error = tuninit(ifp);
-		TUNDEBUG(ifp, "address set, error=%d\n", error);
+		tuninit(ifp);
+		TUNDEBUG(ifp, "address set\n");
 		break;
 	case SIOCSIFDSTADDR:
-		error = tuninit(ifp);
-		TUNDEBUG(ifp, "destination address set, error=%d\n", error);
+		tuninit(ifp);
+		TUNDEBUG(ifp, "destination address set\n");
 		break;
 	case SIOCSIFMTU:
 		ifp->if_mtu = ifr->ifr_mtu;
@@ -587,11 +586,8 @@ tunifioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
  * tunoutput - queue packets from higher level ready to put out.
  */
 static int
-tunoutput(
-	struct ifnet *ifp,
-	struct mbuf *m0,
-	struct sockaddr *dst,
-	struct route *ro)
+tunoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
+    struct route *ro)
 {
 	struct tun_softc *tp = ifp->if_softc;
 	u_short cached_tun_flags;
@@ -671,10 +667,8 @@ tunoutput(
 	}
 
 	error = (ifp->if_transmit)(ifp, m0);
-	if (error) {
-		ifp->if_collisions++;
+	if (error)
 		return (ENOBUFS);
-	}
 	ifp->if_opackets++;
 	return (0);
 }
@@ -683,7 +677,8 @@ tunoutput(
  * the cdevsw interface is now pretty minimal.
  */
 static	int
-tunioctl(struct cdev *dev, u_long cmd, caddr_t data, int flag, struct thread *td)
+tunioctl(struct cdev *dev, u_long cmd, caddr_t data, int flag,
+    struct thread *td)
 {
 	int		error;
 	struct tun_softc *tp = dev->si_drv1;
@@ -875,7 +870,6 @@ tunwrite(struct cdev *dev, struct uio *uio, int flag)
 	struct tun_softc *tp = dev->si_drv1;
 	struct ifnet	*ifp = TUN2IFP(tp);
 	struct mbuf	*m;
-	int		error = 0;
 	uint32_t	family;
 	int 		isr;
 
@@ -895,7 +889,7 @@ tunwrite(struct cdev *dev, struct uio *uio, int flag)
 
 	if ((m = m_uiotombuf(uio, M_DONTWAIT, 0, 0, M_PKTHDR)) == NULL) {
 		ifp->if_ierrors++;
-		return (error);
+		return (ENOBUFS);
 	}
 
 	m->m_pkthdr.rcvif = ifp;
@@ -950,6 +944,7 @@ tunwrite(struct cdev *dev, struct uio *uio, int flag)
 	ifp->if_ibytes += m->m_pkthdr.len;
 	ifp->if_ipackets++;
 	CURVNET_SET(ifp->if_vnet);
+	M_SETFIB(m, ifp->if_fib);
 	netisr_dispatch(isr, m);
 	CURVNET_RESTORE();
 	return (0);

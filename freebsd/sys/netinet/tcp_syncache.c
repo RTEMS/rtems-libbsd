@@ -150,23 +150,23 @@ static VNET_DEFINE(struct tcp_syncache, tcp_syncache);
 
 SYSCTL_NODE(_net_inet_tcp, OID_AUTO, syncache, CTLFLAG_RW, 0, "TCP SYN cache");
 
-SYSCTL_VNET_INT(_net_inet_tcp_syncache, OID_AUTO, bucketlimit, CTLFLAG_RDTUN,
+SYSCTL_VNET_UINT(_net_inet_tcp_syncache, OID_AUTO, bucketlimit, CTLFLAG_RDTUN,
     &VNET_NAME(tcp_syncache.bucket_limit), 0,
     "Per-bucket hash limit for syncache");
 
-SYSCTL_VNET_INT(_net_inet_tcp_syncache, OID_AUTO, cachelimit, CTLFLAG_RDTUN,
+SYSCTL_VNET_UINT(_net_inet_tcp_syncache, OID_AUTO, cachelimit, CTLFLAG_RDTUN,
     &VNET_NAME(tcp_syncache.cache_limit), 0,
     "Overall entry limit for syncache");
 
-SYSCTL_VNET_INT(_net_inet_tcp_syncache, OID_AUTO, count, CTLFLAG_RD,
+SYSCTL_VNET_UINT(_net_inet_tcp_syncache, OID_AUTO, count, CTLFLAG_RD,
     &VNET_NAME(tcp_syncache.cache_count), 0,
     "Current number of entries in syncache");
 
-SYSCTL_VNET_INT(_net_inet_tcp_syncache, OID_AUTO, hashsize, CTLFLAG_RDTUN,
+SYSCTL_VNET_UINT(_net_inet_tcp_syncache, OID_AUTO, hashsize, CTLFLAG_RDTUN,
     &VNET_NAME(tcp_syncache.hashsize), 0,
     "Size of TCP syncache hashtable");
 
-SYSCTL_VNET_INT(_net_inet_tcp_syncache, OID_AUTO, rexmtlimit, CTLFLAG_RW,
+SYSCTL_VNET_UINT(_net_inet_tcp_syncache, OID_AUTO, rexmtlimit, CTLFLAG_RW,
     &VNET_NAME(tcp_syncache.rexmt_limit), 0,
     "Limit on SYN/ACK retransmissions");
 
@@ -526,7 +526,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th)
 	 * used, or we are under memory pressure, a valid RST
 	 * may not find a syncache entry.  In that case we're
 	 * done and no SYN|ACK retransmissions will happen.
-	 * Otherwise the the RST was misdirected or spoofed.
+	 * Otherwise the RST was misdirected or spoofed.
 	 */
 	if (sc == NULL) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
@@ -814,7 +814,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		if (sc->sc_flags & SCF_TIMESTAMP) {
 			tp->t_flags |= TF_REQ_TSTMP|TF_RCVD_TSTMP;
 			tp->ts_recent = sc->sc_tsreflect;
-			tp->ts_recent_age = ticks;
+			tp->ts_recent_age = tcp_ts_getticks();
 			tp->ts_offset = sc->sc_tsoff;
 		}
 #ifdef TCP_SIGNATURE
@@ -1023,7 +1023,8 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	struct syncache_head *sch;
 	struct mbuf *ipopts = NULL;
 	u_int32_t flowtmp;
-	int win, sb_hiwat, ip_ttl, ip_tos, noopt;
+	u_int ltflags;
+	int win, sb_hiwat, ip_ttl, ip_tos;
 	char *s;
 #ifdef INET6
 	int autoflowlabel = 0;
@@ -1056,7 +1057,7 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	ip_tos = inp->inp_ip_tos;
 	win = sbspace(&so->so_rcv);
 	sb_hiwat = so->so_rcv.sb_hiwat;
-	noopt = (tp->t_flags & TF_NOOPT);
+	ltflags = (tp->t_flags & (TF_NOOPT | TF_SIGNATURE));
 
 	/* By the time we drop the lock these should no longer be used. */
 	so = NULL;
@@ -1208,7 +1209,7 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		 */
 		if (to->to_flags & TOF_TS) {
 			sc->sc_tsreflect = to->to_tsval;
-			sc->sc_ts = ticks;
+			sc->sc_ts = tcp_ts_getticks();
 			sc->sc_flags |= SCF_TIMESTAMP;
 		}
 		if (to->to_flags & TOF_SCALE) {
@@ -1251,14 +1252,14 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	 * XXX: Currently we always record the option by default and will
 	 * attempt to use it in syncache_respond().
 	 */
-	if (to->to_flags & TOF_SIGNATURE)
+	if (to->to_flags & TOF_SIGNATURE || ltflags & TF_SIGNATURE)
 		sc->sc_flags |= SCF_SIGNATURE;
 #endif
 	if (to->to_flags & TOF_SACKPERM)
 		sc->sc_flags |= SCF_SACK;
 	if (to->to_flags & TOF_MSS)
 		sc->sc_peer_mss = to->to_mss;	/* peer mss may be zero */
-	if (noopt)
+	if (ltflags & TF_NOOPT)
 		sc->sc_flags |= SCF_NOOPT;
 	if ((th->th_flags & (TH_ECE|TH_CWR)) && V_tcp_do_ecn)
 		sc->sc_flags |= SCF_ECN;
@@ -1639,7 +1640,7 @@ syncookie_generate(struct syncache_head *sch, struct syncache *sc,
 		data |= md5_buffer[2] << 10;		/* more digest bits */
 		data ^= md5_buffer[3];
 		sc->sc_ts = data;
-		sc->sc_tsoff = data - ticks;		/* after XOR */
+		sc->sc_tsoff = data - tcp_ts_getticks();	/* after XOR */
 	}
 
 	TCPSTAT_INC(tcps_sc_sendcookie);
@@ -1724,7 +1725,7 @@ syncookie_lookup(struct in_conninfo *inc, struct syncache_head *sch,
 		sc->sc_flags |= SCF_TIMESTAMP;
 		sc->sc_tsreflect = to->to_tsval;
 		sc->sc_ts = to->to_tsecr;
-		sc->sc_tsoff = to->to_tsecr - ticks;
+		sc->sc_tsoff = to->to_tsecr - tcp_ts_getticks();
 		sc->sc_flags |= (data & 0x1) ? SCF_SIGNATURE : 0;
 		sc->sc_flags |= ((data >> 1) & 0x1) ? SCF_SACK : 0;
 		sc->sc_requested_s_scale = min((data >> 2) & 0xf,

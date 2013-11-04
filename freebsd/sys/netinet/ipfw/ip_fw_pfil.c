@@ -29,15 +29,12 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#if !defined(KLD_MODULE)
 #include <rtems/bsd/local/opt_ipfw.h>
-#include <rtems/bsd/local/opt_ipdn.h>
 #include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 #ifndef INET
 #error IPFIREWALL requires INET.
 #endif /* INET */
-#endif /* KLD_MODULE */
-#include <rtems/bsd/local/opt_inet6.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
@@ -129,8 +126,9 @@ again:
 		args.rule = *((struct ipfw_rule_ref *)(tag+1));
 		m_tag_delete(*m0, tag);
 		if (args.rule.info & IPFW_ONEPASS) {
-			SET_HOST_IPLEN(mtod(*m0, struct ip *));
-			return 0;
+			if (mtod(*m0, struct ip *)->ip_v == 4)
+				SET_HOST_IPLEN(mtod(*m0, struct ip *));
+			return (0);
 		}
 	}
 
@@ -151,7 +149,7 @@ again:
 		/* next_hop may be set by ipfw_chk */
                 if (args.next_hop == NULL)
                         break; /* pass */
-#ifndef IPFIREWALL_FORWARD
+#if !defined(IPFIREWALL_FORWARD) || (!defined(INET6) && !defined(INET))
 		ret = EACCES;
 #else
 	    {
@@ -179,7 +177,7 @@ again:
 		if (in_localip(args.next_hop->sin_addr))
 			(*m0)->m_flags |= M_FASTFWD_OURS;
 	    }
-#endif
+#endif /* IPFIREWALL_FORWARD */
 		break;
 
 	case IP_FW_DENY:

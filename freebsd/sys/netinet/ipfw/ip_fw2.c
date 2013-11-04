@@ -32,15 +32,12 @@ __FBSDID("$FreeBSD$");
  * The FreeBSD IP packet firewall, main file
  */
 
-#if !defined(KLD_MODULE)
 #include <rtems/bsd/local/opt_ipfw.h>
 #include <rtems/bsd/local/opt_ipdivert.h>
-#include <rtems/bsd/local/opt_ipdn.h>
 #include <rtems/bsd/local/opt_inet.h>
 #ifndef INET
 #error IPFIREWALL requires INET.
 #endif /* INET */
-#endif
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_ipsec.h>
 
@@ -108,6 +105,9 @@ static VNET_DEFINE(int, ipfw_vnet_ready) = 0;
 static VNET_DEFINE(int, fw_deny_unknown_exthdrs);
 #define	V_fw_deny_unknown_exthdrs	VNET(fw_deny_unknown_exthdrs)
 
+static VNET_DEFINE(int, fw_permit_single_frag6) = 1;
+#define	V_fw_permit_single_frag6	VNET(fw_permit_single_frag6)
+
 #ifdef IPFIREWALL_DEFAULT_TO_ACCEPT
 static int default_to_accept = 1;
 #else
@@ -115,6 +115,10 @@ static int default_to_accept;
 #endif
 
 VNET_DEFINE(int, autoinc_step);
+
+VNET_DEFINE(unsigned int, fw_tables_max);
+/* Use 128 tables by default */
+static unsigned int default_fw_tables = IPFW_TABLES_DEFAULT;
 
 /*
  * Each rule belongs to one of 32 different sets (0..31).
@@ -145,7 +149,7 @@ ipfw_nat_cfg_t *ipfw_nat_get_log_ptr;
 
 #ifdef SYSCTL_NODE
 uint32_t dummy_def = IPFW_DEFAULT_RULE;
-uint32_t dummy_tables_max = IPFW_TABLES_MAX;
+static int sysctl_ipfw_table_num(SYSCTL_HANDLER_ARGS);
 
 SYSBEGIN(f3)
 
@@ -165,13 +169,14 @@ SYSCTL_VNET_INT(_net_inet_ip_fw, OID_AUTO, verbose_limit,
 SYSCTL_UINT(_net_inet_ip_fw, OID_AUTO, default_rule, CTLFLAG_RD,
     &dummy_def, 0,
     "The default/max possible rule number.");
-SYSCTL_UINT(_net_inet_ip_fw, OID_AUTO, tables_max, CTLFLAG_RD,
-    &dummy_tables_max, 0,
-    "The maximum number of tables.");
+SYSCTL_VNET_PROC(_net_inet_ip_fw, OID_AUTO, tables_max,
+    CTLTYPE_UINT|CTLFLAG_RW, 0, 0, sysctl_ipfw_table_num, "IU",
+    "Maximum number of tables");
 SYSCTL_INT(_net_inet_ip_fw, OID_AUTO, default_to_accept, CTLFLAG_RDTUN,
     &default_to_accept, 0,
     "Make the default rule accept all packets.");
 TUNABLE_INT("net.inet.ip.fw.default_to_accept", &default_to_accept);
+TUNABLE_INT("net.inet.ip.fw.tables_max", &default_fw_tables);
 SYSCTL_VNET_INT(_net_inet_ip_fw, OID_AUTO, static_count,
     CTLFLAG_RD, &VNET_NAME(layer3_chain.n_rules), 0,
     "Number of static rules");
@@ -182,6 +187,9 @@ SYSCTL_NODE(_net_inet6_ip6, OID_AUTO, fw, CTLFLAG_RW, 0, "Firewall");
 SYSCTL_VNET_INT(_net_inet6_ip6_fw, OID_AUTO, deny_unknown_exthdrs,
     CTLFLAG_RW | CTLFLAG_SECURE, &VNET_NAME(fw_deny_unknown_exthdrs), 0,
     "Deny packets with unknown IPv6 Extension Headers");
+SYSCTL_VNET_INT(_net_inet6_ip6_fw, OID_AUTO, permit_single_frag6,
+    CTLFLAG_RW | CTLFLAG_SECURE, &VNET_NAME(fw_permit_single_frag6), 0,
+    "Permit single packet IPv6 fragments");
 #endif /* INET6 */
 
 SYSEND
@@ -338,12 +346,15 @@ tcpopts_match(struct tcphdr *tcp, ipfw_insn *cmd)
 }
 
 static int
-iface_match(struct ifnet *ifp, ipfw_insn_if *cmd)
+iface_match(struct ifnet *ifp, ipfw_insn_if *cmd, struct ip_fw_chain *chain, uint32_t *tablearg)
 {
 	if (ifp == NULL)	/* no iface with this packet, match fails */
 		return 0;
 	/* Check by name or by IP address */
 	if (cmd->name[0] != '\0') { /* match by name */
+		if (cmd->name[0] == '\1') /* use tablearg to match */
+			return ipfw_lookup_table_extended(chain, cmd->p.glob,
+				ifp->if_xname, tablearg, IPFW_TABLE_INTERFACE);
 		/* Check name */
 		if (cmd->p.glob) {
 			if (fnmatch(cmd->name, ifp->if_xname, 0) == 0)
@@ -493,7 +504,7 @@ search_ip6_addr_net (struct in6_addr * ip6_addr)
 }
 
 static int
-verify_path6(struct in6_addr *src, struct ifnet *ifp)
+verify_path6(struct in6_addr *src, struct ifnet *ifp, u_int fib)
 {
 	struct route_in6 ro;
 	struct sockaddr_in6 *dst;
@@ -504,9 +515,8 @@ verify_path6(struct in6_addr *src, struct ifnet *ifp)
 	dst->sin6_family = AF_INET6;
 	dst->sin6_len = sizeof(*dst);
 	dst->sin6_addr = *src;
-	/* XXX MRT 0 for ipv6 at this time */
-	rtalloc_ign((struct route *)&ro, 0);
 
+	in6_rtalloc_ign(&ro, 0, fib);
 	if (ro.ro_rt == NULL)
 		return 0;
 
@@ -851,13 +861,14 @@ ipfw_chk(struct ip_fw_args *args)
 	 *	we have a fragment at this offset of an IPv4 packet.
 	 *	offset == 0 means that (if this is an IPv4 packet)
 	 *	this is the first or only fragment.
-	 *	For IPv6 offset == 0 means there is no Fragment Header. 
-	 *	If offset != 0 for IPv6 always use correct mask to
-	 *	get the correct offset because we add IP6F_MORE_FRAG
-	 *	to be able to dectect the first fragment which would
-	 *	otherwise have offset = 0.
+	 *	For IPv6 offset|ip6f_mf == 0 means there is no Fragment Header
+	 *	or there is a single packet fragement (fragement header added
+	 *	without needed).  We will treat a single packet fragment as if
+	 *	there was no fragment header (or log/block depending on the
+	 *	V_fw_permit_single_frag6 sysctl setting).
 	 */
 	u_short offset = 0;
+	u_short ip6f_mf = 0;
 
 	/*
 	 * Local copies of addresses. They are only valid if we have
@@ -923,9 +934,10 @@ ipfw_chk(struct ip_fw_args *args)
  * pointer might become stale after other pullups (but we never use it
  * this way).
  */
-#define PULLUP_TO(_len, p, T)					\
+#define PULLUP_TO(_len, p, T)	PULLUP_LEN(_len, p, sizeof(T))
+#define PULLUP_LEN(_len, p, T)					\
 do {								\
-	int x = (_len) + sizeof(T);				\
+	int x = (_len) + T;					\
 	if ((m)->m_len < x) {					\
 		args->m = m = m_pullup(m, x);			\
 		if (m == NULL)					\
@@ -950,7 +962,7 @@ do {								\
 		proto = ip6->ip6_nxt;
 
 		/* Search extension headers to find upper layer protocols */
-		while (ulp == NULL) {
+		while (ulp == NULL && offset == 0) {
 			switch (proto) {
 			case IPPROTO_ICMPV6:
 				PULLUP_TO(hlen, ulp, struct icmp6_hdr);
@@ -995,9 +1007,11 @@ do {								\
 					ext_hd |= EXT_RTHDR2;
 					break;
 				default:
-					printf("IPFW2: IPV6 - Unknown Routing "
-					    "Header type(%d)\n",
-					    ((struct ip6_rthdr *)ulp)->ip6r_type);
+					if (V_fw_verbose)
+						printf("IPFW2: IPV6 - Unknown "
+						    "Routing Header type(%d)\n",
+						    ((struct ip6_rthdr *)
+						    ulp)->ip6r_type);
 					if (V_fw_deny_unknown_exthdrs)
 					    return (IP_FW_DENY);
 					break;
@@ -1015,13 +1029,13 @@ do {								\
 				proto = ((struct ip6_frag *)ulp)->ip6f_nxt;
 				offset = ((struct ip6_frag *)ulp)->ip6f_offlg &
 					IP6F_OFF_MASK;
-				/* Add IP6F_MORE_FRAG for offset of first
-				 * fragment to be != 0. */
-				offset |= ((struct ip6_frag *)ulp)->ip6f_offlg &
+				ip6f_mf = ((struct ip6_frag *)ulp)->ip6f_offlg &
 					IP6F_MORE_FRAG;
-				if (offset == 0) {
-					printf("IPFW2: IPV6 - Invalid Fragment "
-					    "Header\n");
+				if (V_fw_permit_single_frag6 == 0 &&
+				    offset == 0 && ip6f_mf == 0) {
+					if (V_fw_verbose)
+						printf("IPFW2: IPV6 - Invalid "
+						    "Fragment Header\n");
 					if (V_fw_deny_unknown_exthdrs)
 					    return (IP_FW_DENY);
 					break;
@@ -1092,8 +1106,10 @@ do {								\
 				break;
 
 			default:
-				printf("IPFW2: IPV6 - Unknown Extension "
-				    "Header(%d), ext_hd=%x\n", proto, ext_hd);
+				if (V_fw_verbose)
+					printf("IPFW2: IPV6 - Unknown "
+					    "Extension Header(%d), ext_hd=%x\n",
+					     proto, ext_hd);
 				if (V_fw_deny_unknown_exthdrs)
 				    return (IP_FW_DENY);
 				PULLUP_TO(hlen, ulp, struct ip6_ext);
@@ -1131,6 +1147,12 @@ do {								\
 				src_port = TCP(ulp)->th_sport;
 				/* save flags for dynamic rules */
 				args->f_id._flags = TCP(ulp)->th_flags;
+				break;
+
+			case IPPROTO_SCTP:
+				PULLUP_TO(hlen, ulp, struct sctphdr);
+				src_port = SCTP(ulp)->src_port;
+				dst_port = SCTP(ulp)->dest_port;
 				break;
 
 			case IPPROTO_UDP:
@@ -1282,16 +1304,18 @@ do {								\
 
 			case O_RECV:
 				match = iface_match(m->m_pkthdr.rcvif,
-				    (ipfw_insn_if *)cmd);
+				    (ipfw_insn_if *)cmd, chain, &tablearg);
 				break;
 
 			case O_XMIT:
-				match = iface_match(oif, (ipfw_insn_if *)cmd);
+				match = iface_match(oif, (ipfw_insn_if *)cmd,
+				    chain, &tablearg);
 				break;
 
 			case O_VIA:
 				match = iface_match(oif ? oif :
-				    m->m_pkthdr.rcvif, (ipfw_insn_if *)cmd);
+				    m->m_pkthdr.rcvif, (ipfw_insn_if *)cmd,
+				    chain, &tablearg);
 				break;
 
 			case O_MACADDR2:
@@ -1429,6 +1453,17 @@ do {								\
 					    ((ipfw_insn_u32 *)cmd)->d[0] == v;
 				    else
 					tablearg = v;
+				} else if (is_ipv6) {
+					uint32_t v = 0;
+					void *pkey = (cmd->opcode == O_IP_DST_LOOKUP) ?
+						&args->f_id.dst_ip6: &args->f_id.src_ip6;
+					match = ipfw_lookup_table_extended(chain,
+							cmd->arg1, pkey, &v,
+							IPFW_TABLE_CIDR);
+					if (cmdlen == F_INSN_SIZE(ipfw_insn_u32))
+						match = ((ipfw_insn_u32 *)cmd)->d[0] == v;
+					if (match)
+						tablearg = v;
 				}
 				break;
 
@@ -1612,6 +1647,7 @@ do {								\
 				break;
 
 			case O_TCPOPTS:
+				PULLUP_LEN(hlen, ulp, (TCP(ulp)->th_off << 2));
 				match = (proto == IPPROTO_TCP && offset == 0 &&
 				    tcpopts_match(TCP(ulp), cmd));
 				break;
@@ -1668,7 +1704,7 @@ do {								\
 
 			case O_LOG:
 				ipfw_log(f, hlen, args, m,
-					    oif, offset, tablearg, ip);
+				    oif, offset | ip6f_mf, tablearg, ip);
 				match = 1;
 				break;
 
@@ -1684,7 +1720,7 @@ do {								\
 #ifdef INET6
 				    is_ipv6 ?
 					verify_path6(&(args->f_id.src_ip6),
-					    m->m_pkthdr.rcvif) :
+					    m->m_pkthdr.rcvif, args->f_id.fib) :
 #endif
 				    verify_path(src_ip, m->m_pkthdr.rcvif,
 				        args->f_id.fib)));
@@ -1696,7 +1732,7 @@ do {								\
 #ifdef INET6
 				    is_ipv6 ?
 				        verify_path6(&(args->f_id.src_ip6),
-				            NULL) :
+				            NULL, args->f_id.fib) :
 #endif
 				    verify_path(src_ip, NULL, args->f_id.fib)));
 				break;
@@ -1714,7 +1750,8 @@ do {								\
 #ifdef INET6
 					    is_ipv6 ? verify_path6(
 					        &(args->f_id.src_ip6),
-					        m->m_pkthdr.rcvif) :
+					        m->m_pkthdr.rcvif,
+						args->f_id.fib) :
 #endif
 					    verify_path(src_ip,
 					    	m->m_pkthdr.rcvif,
@@ -1805,10 +1842,13 @@ do {								\
 					if (mtag != NULL)
 						m_tag_delete(m, mtag);
 					match = 0;
-				} else if (mtag == NULL) {
-					if ((mtag = m_tag_alloc(MTAG_IPFW,
-					    tag, 0, M_NOWAIT)) != NULL)
-						m_tag_prepend(m, mtag);
+				} else {
+					if (mtag == NULL) {
+						mtag = m_tag_alloc( MTAG_IPFW,
+						    tag, 0, M_NOWAIT);
+						if (mtag != NULL)
+							m_tag_prepend(m, mtag);
+					}
 					match = 1;
 				}
 				break;
@@ -2040,6 +2080,123 @@ do {								\
 			    continue;
 			    break;	/* not reached */
 
+			case O_CALLRETURN: {
+				/*
+				 * Implementation of `subroutine' call/return,
+				 * in the stack carried in an mbuf tag. This
+				 * is different from `skipto' in that any call
+				 * address is possible (`skipto' must prevent
+				 * backward jumps to avoid endless loops).
+				 * We have `return' action when F_NOT flag is
+				 * present. The `m_tag_id' field is used as
+				 * stack pointer.
+				 */
+				struct m_tag *mtag;
+				uint16_t jmpto, *stack;
+
+#define	IS_CALL		((cmd->len & F_NOT) == 0)
+#define	IS_RETURN	((cmd->len & F_NOT) != 0)
+				/*
+				 * Hand-rolled version of m_tag_locate() with
+				 * wildcard `type'.
+				 * If not already tagged, allocate new tag.
+				 */
+				mtag = m_tag_first(m);
+				while (mtag != NULL) {
+					if (mtag->m_tag_cookie ==
+					    MTAG_IPFW_CALL)
+						break;
+					mtag = m_tag_next(m, mtag);
+				}
+				if (mtag == NULL && IS_CALL) {
+					mtag = m_tag_alloc(MTAG_IPFW_CALL, 0,
+					    IPFW_CALLSTACK_SIZE *
+					    sizeof(uint16_t), M_NOWAIT);
+					if (mtag != NULL)
+						m_tag_prepend(m, mtag);
+				}
+
+				/*
+				 * On error both `call' and `return' just
+				 * continue with next rule.
+				 */
+				if (IS_RETURN && (mtag == NULL ||
+				    mtag->m_tag_id == 0)) {
+					l = 0;		/* exit inner loop */
+					break;
+				}
+				if (IS_CALL && (mtag == NULL ||
+				    mtag->m_tag_id >= IPFW_CALLSTACK_SIZE)) {
+					printf("ipfw: call stack error, "
+					    "go to next rule\n");
+					l = 0;		/* exit inner loop */
+					break;
+				}
+
+				f->pcnt++;	/* update stats */
+				f->bcnt += pktlen;
+				f->timestamp = time_uptime;
+				stack = (uint16_t *)(mtag + 1);
+
+				/*
+				 * The `call' action may use cached f_pos
+				 * (in f->next_rule), whose version is written
+				 * in f->next_rule.
+				 * The `return' action, however, doesn't have
+				 * fixed jump address in cmd->arg1 and can't use
+				 * cache.
+				 */
+				if (IS_CALL) {
+					stack[mtag->m_tag_id] = f->rulenum;
+					mtag->m_tag_id++;
+					if (cmd->arg1 != IP_FW_TABLEARG &&
+					    (uintptr_t)f->x_next == chain->id) {
+						f_pos = (uintptr_t)f->next_rule;
+					} else {
+						jmpto = (cmd->arg1 ==
+						    IP_FW_TABLEARG) ? tablearg:
+						    cmd->arg1;
+						f_pos = ipfw_find_rule(chain,
+						    jmpto, 0);
+						/* update the cache */
+						if (cmd->arg1 !=
+						    IP_FW_TABLEARG) {
+							f->next_rule =
+							    (void *)(uintptr_t)
+							    f_pos;
+							f->x_next =
+							    (void *)(uintptr_t)
+							    chain->id;
+						}
+					}
+				} else {	/* `return' action */
+					mtag->m_tag_id--;
+					jmpto = stack[mtag->m_tag_id] + 1;
+					f_pos = ipfw_find_rule(chain, jmpto, 0);
+				}
+
+				/*
+				 * Skip disabled rules, and re-enter
+				 * the inner loop with the correct
+				 * f_pos, f, l and cmd.
+				 * Also clear cmdlen and skip_or
+				 */
+				for (; f_pos < chain->n_rules - 1 &&
+				    (V_set_disable &
+				    (1 << chain->map[f_pos]->set)); f_pos++)
+					;
+				/* Re-enter the inner loop at the dest rule. */
+				f = chain->map[f_pos];
+				l = f->cmd_len;
+				cmd = f->cmd;
+				cmdlen = 0;
+				skip_or = 0;
+				continue;
+				break;	/* NOTREACHED */
+			}
+#undef IS_CALL
+#undef IS_RETURN
+
 			case O_REJECT:
 				/*
 				 * Drop the packet and send a reject notice
@@ -2079,7 +2236,8 @@ do {								\
 			case O_FORWARD_IP:
 				if (args->eh)	/* not valid on layer2 pkts */
 					break;
-				if (!q || dyn_dir == MATCH_FORWARD) {
+				if (q == NULL || q->rule != f ||
+				    dyn_dir == MATCH_FORWARD) {
 				    struct sockaddr_in *sa;
 				    sa = &(((ipfw_insn_sa *)cmd)->sa);
 				    if (sa->sin_addr.s_addr == INADDR_ANY) {
@@ -2110,14 +2268,21 @@ do {								\
 				done = 1;       /* exit outer loop */
 				break;
 
-			case O_SETFIB:
+			case O_SETFIB: {
+				uint32_t fib;
+
 				f->pcnt++;	/* update stats */
 				f->bcnt += pktlen;
 				f->timestamp = time_uptime;
-				M_SETFIB(m, cmd->arg1);
-				args->f_id.fib = cmd->arg1;
+				fib = (cmd->arg1 == IP_FW_TABLEARG) ? tablearg:
+				    cmd->arg1;
+				if (fib >= rt_numfibs)
+					fib = 0;
+				M_SETFIB(m, fib);
+				args->f_id.fib = fib;
 				l = 0;		/* exit inner loop */
 				break;
+		        }
 
 			case O_NAT:
  				if (!IPFW_NAT_LOADED) {
@@ -2127,6 +2292,13 @@ do {								\
 				    int nat_id;
 
 				    set_match(args, f_pos, chain);
+				    /* Check if this is 'global' nat rule */
+				    if (cmd->arg1 == 0) {
+					    retval = ipfw_nat_ptr(args, NULL, m);
+					    l = 0;
+					    done = 1;
+					    break;
+				    }
 				    t = ((ipfw_insn_nat *)cmd)->nat;
 				    if (t == NULL) {
 					nat_id = (cmd->arg1 == IP_FW_TABLEARG) ?
@@ -2209,6 +2381,7 @@ do {								\
 			}
 
 		}	/* end of inner loop, scan opcodes */
+#undef PULLUP_LEN
 
 		if (done)
 			break;
@@ -2240,6 +2413,26 @@ pullup_failed:
 	return (IP_FW_DENY);
 }
 
+/*
+ * Set maximum number of tables that can be used in given VNET ipfw instance.
+ */
+#ifdef SYSCTL_NODE
+static int
+sysctl_ipfw_table_num(SYSCTL_HANDLER_ARGS)
+{
+	int error;
+	unsigned int ntables;
+
+	ntables = V_fw_tables_max;
+
+	error = sysctl_handle_int(oidp, &ntables, 0, req);
+	/* Read operation or some error */
+	if ((error != 0) || (req->newptr == NULL))
+		return (error);
+
+	return (ipfw_resize_tables(&V_layer3_chain, ntables));
+}
+#endif
 /*
  * Module and VNET glue
  */
@@ -2296,6 +2489,10 @@ ipfw_init(void)
 		printf("limited to %d packets/entry by default\n",
 		    V_verbose_limit);
 
+	/* Check user-supplied table count for validness */
+	if (default_fw_tables > IPFW_TABLES_MAX)
+	  default_fw_tables = IPFW_TABLES_MAX;
+
 	ipfw_log_bpf(1); /* init */
 	return (error);
 }
@@ -2341,19 +2538,18 @@ vnet_ipfw_init(const void *unused)
 	/* insert the default rule and create the initial map */
 	chain->n_rules = 1;
 	chain->static_len = sizeof(struct ip_fw);
-	chain->map = malloc(sizeof(struct ip_fw *), M_IPFW, M_NOWAIT | M_ZERO);
+	chain->map = malloc(sizeof(struct ip_fw *), M_IPFW, M_WAITOK | M_ZERO);
 	if (chain->map)
-		rule = malloc(chain->static_len, M_IPFW, M_NOWAIT | M_ZERO);
-	if (rule == NULL) {
-		if (chain->map)
-			free(chain->map, M_IPFW);
-		printf("ipfw2: ENOSPC initializing default rule "
-			"(support disabled)\n");
-		return (ENOSPC);
-	}
+		rule = malloc(chain->static_len, M_IPFW, M_WAITOK | M_ZERO);
+
+	/* Set initial number of tables */
+	V_fw_tables_max = default_fw_tables;
 	error = ipfw_init_tables(chain);
 	if (error) {
-		panic("init_tables"); /* XXX Marko fix this ! */
+		printf("ipfw2: setting up tables failed\n");
+		free(chain->map, M_IPFW);
+		free(rule, M_IPFW);
+		return (ENOSPC);
 	}
 
 	/* fill and insert the default rule */
@@ -2416,12 +2612,12 @@ vnet_ipfw_uninit(const void *unused)
 	IPFW_UH_WLOCK(chain);
 
 	IPFW_WLOCK(chain);
-	IPFW_WUNLOCK(chain);
-	IPFW_WLOCK(chain);
-
 	ipfw_dyn_uninit(0);	/* run the callout_drain */
+	IPFW_WUNLOCK(chain);
+
 	ipfw_destroy_tables(chain);
 	reap = NULL;
+	IPFW_WLOCK(chain);
 	for (i = 0; i < chain->n_rules; i++) {
 		rule = chain->map[i];
 		rule->x_next = reap;

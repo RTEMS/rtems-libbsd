@@ -162,7 +162,7 @@ static struct callout uma_callout;
  * a special allocation function just for zones.
  */
 struct uma_zctor_args {
-	char *name;
+	const char *name;
 	size_t size;
 	uma_ctor ctor;
 	uma_dtor dtor;
@@ -216,6 +216,7 @@ enum zfreeskip { SKIP_NONE, SKIP_DTOR, SKIP_FINI };
 #define	ZFREE_STATFREE	0x00000002	/* Update zone free statistic. */
 
 /* Prototypes.. */
+
 #ifndef __rtems__
 static void *obj_alloc(uma_zone_t, int, u_int8_t *, int);
 #endif /* __rtems__ */
@@ -286,10 +287,7 @@ static void
 bucket_enable(void)
 {
 #ifndef __rtems__
-	if (cnt.v_free_count < cnt.v_free_min)
-		bucketdisable = 1;
-	else
-		bucketdisable = 0;
+	bucketdisable = vm_page_count_min();
 #endif /* __rtems__ */
 }
 
@@ -642,9 +640,7 @@ cache_drain(uma_zone_t zone)
 	 * it is used elsewhere.  Should the tear-down path be made special
 	 * there in some form?
 	 */
-	for (cpu = 0; cpu <= mp_maxid; cpu++) {
-		if (CPU_ABSENT(cpu))
-			continue;
+	CPU_FOREACH(cpu) {
 		cache = &zone->uz_cpu[cpu];
 		bucket_drain(zone, cache->uc_allocbucket);
 		bucket_drain(zone, cache->uc_freebucket);
@@ -1022,16 +1018,16 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 static void *
 page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 {
-     void *p;    /* Returned page */
+	void *p;	/* Returned page */
 
-     *pflag = UMA_SLAB_KMEM;
+	*pflag = UMA_SLAB_KMEM;
 #ifndef __rtems__
-     p = (void *) kmem_malloc(kmem_map, bytes, wait);
+	p = (void *) kmem_malloc(kmem_map, bytes, wait);
 #else /* __rtems__ */
-     p = rtems_bsd_chunk_alloc(&rtems_bsd_uma_chunks, bytes);
+	p = rtems_bsd_chunk_alloc(&rtems_bsd_uma_chunks, bytes);
 #endif /* __rtems__ */
 
-     return (p);
+	return (p);
 }
 
 #ifndef __rtems__
@@ -1429,7 +1425,7 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 		hash_alloc(&keg->uk_hash);
 
 #ifdef UMA_DEBUG
-	printf("UMA: %s(%p) size %d(%d) flags %d ipers %d ppera %d out %d free %d\n",
+	printf("UMA: %s(%p) size %d(%d) flags %#x ipers %d ppera %d out %d free %d\n",
 	    zone->uz_name, zone, keg->uk_size, keg->uk_rsize, keg->uk_flags,
 	    keg->uk_ipers, keg->uk_ppera,
 	    (keg->uk_ipers * keg->uk_pages) - keg->uk_free, keg->uk_free);
@@ -1902,7 +1898,7 @@ uma_set_align(int align)
 
 /* See uma.h */
 uma_zone_t
-uma_zcreate(char *name, size_t size, uma_ctor ctor, uma_dtor dtor,
+uma_zcreate(const char *name, size_t size, uma_ctor ctor, uma_dtor dtor,
 		uma_init uminit, uma_fini fini, int align, u_int32_t flags)
 
 {
@@ -3211,7 +3207,7 @@ uma_print_keg(uma_keg_t keg)
 {
 	uma_slab_t slab;
 
-	printf("keg: %s(%p) size %d(%d) flags %d ipers %d ppera %d "
+	printf("keg: %s(%p) size %d(%d) flags %#x ipers %d ppera %d "
 	    "out %d free %d limit %d\n",
 	    keg->uk_name, keg, keg->uk_size, keg->uk_rsize, keg->uk_flags,
 	    keg->uk_ipers, keg->uk_ppera,
@@ -3235,13 +3231,11 @@ uma_print_zone(uma_zone_t zone)
 	uma_klink_t kl;
 	int i;
 
-	printf("zone: %s(%p) size %d flags %d\n",
+	printf("zone: %s(%p) size %d flags %#x\n",
 	    zone->uz_name, zone, zone->uz_size, zone->uz_flags);
 	LIST_FOREACH(kl, &zone->uz_kegs, kl_link)
 		uma_print_keg(kl->kl_keg);
-	for (i = 0; i <= mp_maxid; i++) {
-		if (CPU_ABSENT(i))
-			continue;
+	CPU_FOREACH(i) {
 		cache = &zone->uz_cpu[i];
 		printf("CPU %d Cache:\n", i);
 		cache_print(cache);
@@ -3271,9 +3265,7 @@ uma_zone_sumstat(uma_zone_t z, int *cachefreep, u_int64_t *allocsp,
 
 	allocs = frees = 0;
 	cachefree = 0;
-	for (cpu = 0; cpu <= mp_maxid; cpu++) {
-		if (CPU_ABSENT(cpu))
-			continue;
+	CPU_FOREACH(cpu) {
 		cache = &z->uz_cpu[cpu];
 		if (cache->uc_allocbucket != NULL)
 			cachefree += cache->uc_allocbucket->ub_cnt;
@@ -3474,6 +3466,8 @@ DB_SHOW_COMMAND(uma, db_show_uma)
 			    (uintmax_t)kz->uk_size,
 			    (intmax_t)(allocs - frees), cachefree,
 			    (uintmax_t)allocs);
+			if (db_pager_quit)
+				return;
 		}
 	}
 }

@@ -396,9 +396,9 @@ inm_lookup(struct ifnet *ifp, const struct in_addr ina)
 	struct in_multi *inm;
 
 	IN_MULTI_LOCK_ASSERT();
-	IF_ADDR_LOCK(ifp);
+	IF_ADDR_RLOCK(ifp);
 	inm = inm_lookup_locked(ifp, ina);
-	IF_ADDR_UNLOCK(ifp);
+	IF_ADDR_RUNLOCK(ifp);
 
 	return (inm);
 }
@@ -423,6 +423,7 @@ inm_acquire_locked(struct in_multi *inm)
 struct	rtentry;
 struct	route;
 struct	ip_moptions;
+struct radix_node_head;
 
 int	imo_multi_filter(const struct ip_moptions *, const struct ifnet *,
 	    const struct sockaddr *, const struct sockaddr *);
@@ -447,7 +448,7 @@ int	in_control(struct socket *, u_long, caddr_t, struct ifnet *,
 void	in_rtqdrain(void);
 void	ip_input(struct mbuf *);
 int	in_ifadown(struct ifaddr *ifa, int);
-void	in_ifscrub(struct ifnet *, struct in_ifaddr *);
+void	in_ifscrub(struct ifnet *, struct in_ifaddr *, u_int);
 struct	mbuf	*ip_fastforward(struct mbuf *);
 void	*in_domifattach(struct ifnet *);
 void	in_domifdetach(struct ifnet *, void *);
@@ -461,6 +462,7 @@ void	 in_rtredirect(struct sockaddr *, struct sockaddr *,
 	    struct sockaddr *, int, struct sockaddr *, u_int);
 int	 in_rtrequest(int, struct sockaddr *,
 	    struct sockaddr *, struct sockaddr *, int, struct rtentry **, u_int);
+void	in_setmatchfunc(struct radix_node_head *, int);
 
 #if 0
 int	 in_rt_getifa(struct rt_addrinfo *, u_int fibnum);

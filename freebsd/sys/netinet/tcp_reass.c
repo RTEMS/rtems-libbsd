@@ -84,19 +84,22 @@ SYSCTL_NODE(_net_inet_tcp, OID_AUTO, reass, CTLFLAG_RW, 0,
 
 static VNET_DEFINE(int, tcp_reass_maxseg) = 0;
 #define	V_tcp_reass_maxseg		VNET(tcp_reass_maxseg)
-SYSCTL_VNET_PROC(_net_inet_tcp_reass, OID_AUTO, maxsegments, CTLFLAG_RDTUN,
+SYSCTL_VNET_PROC(_net_inet_tcp_reass, OID_AUTO, maxsegments,
+    CTLTYPE_INT | CTLFLAG_RDTUN,
     &VNET_NAME(tcp_reass_maxseg), 0, &tcp_reass_sysctl_maxseg, "I",
     "Global maximum number of TCP Segments in Reassembly Queue");
 
 static VNET_DEFINE(int, tcp_reass_qsize) = 0;
 #define	V_tcp_reass_qsize		VNET(tcp_reass_qsize)
-SYSCTL_VNET_PROC(_net_inet_tcp_reass, OID_AUTO, cursegments, CTLFLAG_RD,
+SYSCTL_VNET_PROC(_net_inet_tcp_reass, OID_AUTO, cursegments,
+    CTLTYPE_INT | CTLFLAG_RD,
     &VNET_NAME(tcp_reass_qsize), 0, &tcp_reass_sysctl_qsize, "I",
     "Global number of TCP Segments currently in Reassembly Queue");
 
 static VNET_DEFINE(int, tcp_reass_overflows) = 0;
 #define	V_tcp_reass_overflows		VNET(tcp_reass_overflows)
-SYSCTL_VNET_INT(_net_inet_tcp_reass, OID_AUTO, overflows, CTLFLAG_RD,
+SYSCTL_VNET_INT(_net_inet_tcp_reass, OID_AUTO, overflows,
+    CTLTYPE_INT | CTLFLAG_RD,
     &VNET_NAME(tcp_reass_overflows), 0,
     "Global number of TCP Segment Reassembly Queue Overflows");
 
@@ -176,7 +179,9 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 	struct tseg_qent *nq;
 	struct tseg_qent *te = NULL;
 	struct socket *so = tp->t_inpcb->inp_socket;
+	char *s = NULL;
 	int flags;
+	struct tseg_qent tqs;
 
 	INP_WLOCK_ASSERT(tp->t_inpcb);
 
@@ -214,19 +219,45 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 		TCPSTAT_INC(tcps_rcvmemdrop);
 		m_freem(m);
 		*tlenp = 0;
+		if ((s = tcp_log_addrs(&tp->t_inpcb->inp_inc, th, NULL, NULL))) {
+			log(LOG_DEBUG, "%s; %s: queue limit reached, "
+			    "segment dropped\n", s, __func__);
+			free(s, M_TCPLOG);
+		}
 		return (0);
 	}
 
 	/*
 	 * Allocate a new queue entry. If we can't, or hit the zone limit
 	 * just drop the pkt.
+	 *
+	 * Use a temporary structure on the stack for the missing segment
+	 * when the zone is exhausted. Otherwise we may get stuck.
 	 */
 	te = uma_zalloc(V_tcp_reass_zone, M_NOWAIT);
 	if (te == NULL) {
-		TCPSTAT_INC(tcps_rcvmemdrop);
-		m_freem(m);
-		*tlenp = 0;
-		return (0);
+		if (th->th_seq != tp->rcv_nxt) {
+			TCPSTAT_INC(tcps_rcvmemdrop);
+			m_freem(m);
+			*tlenp = 0;
+			if ((s = tcp_log_addrs(&tp->t_inpcb->inp_inc, th, NULL,
+			    NULL))) {
+				log(LOG_DEBUG, "%s; %s: global zone limit "
+				    "reached, segment dropped\n", s, __func__);
+				free(s, M_TCPLOG);
+			}
+			return (0);
+		} else {
+			bzero(&tqs, sizeof(struct tseg_qent));
+			te = &tqs;
+			if ((s = tcp_log_addrs(&tp->t_inpcb->inp_inc, th, NULL,
+			    NULL))) {
+				log(LOG_DEBUG,
+				    "%s; %s: global zone limit reached, using "
+				    "stack for missing segment\n", s, __func__);
+				free(s, M_TCPLOG);
+			}
+		}
 	}
 	tp->t_segqlen++;
 
@@ -268,6 +299,7 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 			th->th_seq += i;
 		}
 	}
+ 	tp->t_rcvoopack++;
 	TCPSTAT_INC(tcps_rcvoopack);
 	TCPSTAT_ADD(tcps_rcvoobyte, *tlenp);
 
@@ -302,6 +334,8 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 	if (p == NULL) {
 		LIST_INSERT_HEAD(&tp->t_segq, te, tqe_q);
 	} else {
+		KASSERT(te != &tqs, ("%s: temporary stack based entry not "
+		    "first element in queue", __func__));
 		LIST_INSERT_AFTER(p, te, tqe_q);
 	}
 
@@ -325,7 +359,8 @@ present:
 			m_freem(q->tqe_m);
 		else
 			sbappendstream_locked(&so->so_rcv, q->tqe_m);
-		uma_zfree(V_tcp_reass_zone, q);
+		if (q != &tqs)
+			uma_zfree(V_tcp_reass_zone, q);
 		tp->t_segqlen--;
 		q = nq;
 	} while (q && q->tqe_th->th_seq == tp->rcv_nxt);

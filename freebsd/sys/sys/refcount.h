@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef __SYS_REFCOUNT_HH__
-#define __SYS_REFCOUNT_HH__
+#ifndef __SYS_REFCOUNT_H__
+#define __SYS_REFCOUNT_H__
 
 #include <machine/atomic.h>
 
@@ -73,4 +73,4 @@ refcount_release(volatile u_int *count)
 	return (old == 1);
 }
 
-#endif	/* ! __SYS_REFCOUNT_HH__ */
+#endif	/* ! __SYS_REFCOUNT_H__ */

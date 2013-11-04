@@ -148,6 +148,13 @@ cpu_mwait(int extensions, int hints)
 }
 
 static __inline void
+lfence(void)
+{
+
+	__asm __volatile("lfence" : : : "memory");
+}
+
+static __inline void
 mfence(void)
 {
 

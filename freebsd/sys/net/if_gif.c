@@ -37,6 +37,7 @@
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
+#include <sys/jail.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
@@ -493,7 +494,7 @@ gif_input(m, af, ifp)
 	struct ifnet *ifp;
 {
 	int isr, n;
-	struct gif_softc *sc = ifp->if_softc;
+	struct gif_softc *sc;
 	struct etherip_header *eip;
 	struct ether_header *eh;
 	struct ifnet *oldifp;
@@ -503,7 +504,7 @@ gif_input(m, af, ifp)
 		m_freem(m);
 		return;
 	}
-
+	sc = ifp->if_softc;
 	m->m_pkthdr.rcvif = ifp;
 
 #ifdef MAC
@@ -614,6 +615,7 @@ gif_input(m, af, ifp)
 
 	ifp->if_ipackets++;
 	ifp->if_ibytes += m->m_pkthdr.len;
+	M_SETFIB(m, ifp->if_fib);
 	netisr_dispatch(isr, m);
 }
 
@@ -823,6 +825,12 @@ gif_ioctl(ifp, cmd, data)
 		}
 		if (src->sa_len > size)
 			return EINVAL;
+		error = prison_if(curthread->td_ucred, src);
+		if (error != 0)
+			return (error);
+		error = prison_if(curthread->td_ucred, dst);
+		if (error != 0)
+			return (error);
 		bcopy((caddr_t)src, (caddr_t)dst, src->sa_len);
 #ifdef INET6
 		if (dst->sa_family == AF_INET6) {

@@ -3,7 +3,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   dev/usb/usb_if.m
+ *   freebsd-org/sys/dev/usb/usb_if.m
  * with
  *   makeobjops.awk
  *
@@ -26,6 +26,18 @@ static __inline int USB_HANDLE_REQUEST(device_t dev, const void *req,
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,usb_handle_request);
 	return ((usb_handle_request_t *) _m)(dev, req, pptr, plen, offset, pstate);
+}
+
+/** @brief Unique descriptor for the USB_TAKE_CONTROLLER() method */
+extern struct kobjop_desc usb_take_controller_desc;
+/** @brief A function implementing the USB_TAKE_CONTROLLER() method */
+typedef int usb_take_controller_t(device_t dev);
+
+static __inline int USB_TAKE_CONTROLLER(device_t dev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,usb_take_controller);
+	return ((usb_take_controller_t *) _m)(dev);
 }
 
 #endif /* _usb_if_h_ */

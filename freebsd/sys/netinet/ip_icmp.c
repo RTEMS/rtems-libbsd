@@ -94,11 +94,7 @@ SYSCTL_VNET_UINT(_net_inet_icmp, OID_AUTO, maskfake, CTLFLAG_RW,
 	&VNET_NAME(icmpmaskfake), 0,
 	"Fake reply to ICMP Address Mask Request packets.");
 
-static VNET_DEFINE(int, drop_redirect) = 0;
-#define	V_drop_redirect			VNET(drop_redirect)
-SYSCTL_VNET_INT(_net_inet_icmp, OID_AUTO, drop_redirect, CTLFLAG_RW,
-	&VNET_NAME(drop_redirect), 0,
-	"Ignore ICMP redirects");
+VNET_DEFINE(int, drop_redirect) = 0;
 
 static VNET_DEFINE(int, log_redirect) = 0;
 #define	V_log_redirect			VNET(log_redirect)
@@ -154,6 +150,39 @@ static void	icmp_reflect(struct mbuf *);
 static void	icmp_send(struct mbuf *, struct mbuf *);
 
 extern	struct protosw inetsw[];
+
+static int
+sysctl_net_icmp_drop_redir(SYSCTL_HANDLER_ARGS)
+{
+	int error, new;
+	int i;
+	struct radix_node_head *rnh;
+
+	new = V_drop_redirect;
+	error = sysctl_handle_int(oidp, &new, 0, req);
+	if (error == 0 && req->newptr) {
+		new = (new != 0) ? 1 : 0;
+
+		if (new == V_drop_redirect)
+			return (0);
+
+		for (i = 0; i < rt_numfibs; i++) {
+			if ((rnh = rt_tables_get_rnh(i, AF_INET)) == NULL)
+				continue;
+			RADIX_NODE_HEAD_LOCK(rnh);
+			in_setmatchfunc(rnh, new);
+			RADIX_NODE_HEAD_UNLOCK(rnh);
+		}
+		
+		V_drop_redirect = new;
+	}
+
+	return (error);
+}
+
+SYSCTL_VNET_PROC(_net_inet_icmp, OID_AUTO, drop_redirect,
+    CTLTYPE_INT|CTLFLAG_RW, 0, 0,
+    sysctl_net_icmp_drop_redir, "I", "Ignore ICMP redirects");
 
 /*
  * Kernel module interface for updating icmpstat.  The argument is an index
@@ -699,7 +728,7 @@ icmp_reflect(struct mbuf *m)
 	 */
 	ifp = m->m_pkthdr.rcvif;
 	if (ifp != NULL && ifp->if_flags & IFF_BROADCAST) {
-		IF_ADDR_LOCK(ifp);
+		IF_ADDR_RLOCK(ifp);
 		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
@@ -707,11 +736,11 @@ icmp_reflect(struct mbuf *m)
 			if (satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
 			    t.s_addr) {
 				t = IA_SIN(ia)->sin_addr;
-				IF_ADDR_UNLOCK(ifp);
+				IF_ADDR_RUNLOCK(ifp);
 				goto match;
 			}
 		}
-		IF_ADDR_UNLOCK(ifp);
+		IF_ADDR_RUNLOCK(ifp);
 	}
 	/*
 	 * If the packet was transiting through us, use the address of
@@ -720,16 +749,16 @@ icmp_reflect(struct mbuf *m)
 	 * criteria apply.
 	 */
 	if (V_icmp_rfi && ifp != NULL) {
-		IF_ADDR_LOCK(ifp);
+		IF_ADDR_RLOCK(ifp);
 		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
 			ia = ifatoia(ifa);
 			t = IA_SIN(ia)->sin_addr;
-			IF_ADDR_UNLOCK(ifp);
+			IF_ADDR_RUNLOCK(ifp);
 			goto match;
 		}
-		IF_ADDR_UNLOCK(ifp);
+		IF_ADDR_RUNLOCK(ifp);
 	}
 	/*
 	 * If the incoming packet was not addressed directly to us, use
@@ -738,16 +767,16 @@ icmp_reflect(struct mbuf *m)
 	 * with normal source selection.
 	 */
 	if (V_reply_src[0] != '\0' && (ifp = ifunit(V_reply_src))) {
-		IF_ADDR_LOCK(ifp);
+		IF_ADDR_RLOCK(ifp);
 		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
 			ia = ifatoia(ifa);
 			t = IA_SIN(ia)->sin_addr;
-			IF_ADDR_UNLOCK(ifp);
+			IF_ADDR_RUNLOCK(ifp);
 			goto match;
 		}
-		IF_ADDR_UNLOCK(ifp);
+		IF_ADDR_RUNLOCK(ifp);
 	}
 	/*
 	 * If the packet was transiting through us, use the address of
@@ -960,7 +989,8 @@ badport_bandlim(int which)
 		{ "icmp tstamp response" },
 		{ "closed port RST response" },
 		{ "open port RST response" },
-		{ "icmp6 unreach response" }
+		{ "icmp6 unreach response" },
+		{ "sctp ootb response" }
 	};
 
 	/*

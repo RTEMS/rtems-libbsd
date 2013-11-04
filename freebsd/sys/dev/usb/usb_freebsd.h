@@ -34,6 +34,7 @@
 /* Default USB configuration */
 #ifndef __rtems__
 #define	USB_HAVE_UGEN 1
+#define	USB_HAVE_DEVCTL 1
 #define	USB_HAVE_BUSDMA 1
 #define	USB_HAVE_COMPAT_LINUX 1
 #define	USB_HAVE_USER_IO 1
@@ -41,6 +42,7 @@
 #define	USB_HAVE_TT_SUPPORT 1
 #define	USB_HAVE_POWERD 1
 #define	USB_HAVE_MSCTEST 1
+#define	USB_HAVE_PF 1
 #endif /* __rtems__ */
 
 #define	USB_TD_GET_PROC(td) (td)->td_proc
@@ -58,6 +60,9 @@
 
 #define	USB_HUB_MAX_DEPTH	5
 #define	USB_EP0_BUFSIZE		1024	/* bytes */
+#define	USB_CS_RESET_LIMIT	20	/* failures = 20 * 50 ms = 1sec */
+
+#define	USB_MAX_AUTO_QUIRK	4	/* maximum number of dynamic quirks */
 
 typedef uint32_t usb_timeout_t;		/* milliseconds */
 typedef uint32_t usb_frlength_t;	/* bytes */

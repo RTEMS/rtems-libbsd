@@ -42,6 +42,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/domain.h>
+#include <sys/hhook.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mbuf.h>
@@ -55,6 +56,7 @@ __FBSDID("$FreeBSD$");
 #include <net/route.h>
 #include <net/vnet.h>
 
+#include <netinet/cc.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -66,7 +68,6 @@ __FBSDID("$FreeBSD$");
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
 #endif
-#include <netinet/tcp.h>
 #define	TCPOUTFLAGS
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
@@ -104,11 +105,6 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, local_slowstart_flightsize,
 	CTLFLAG_RW, &VNET_NAME(ss_fltsz_local), 1,
 	"Slow start flight size for local networks");
 
-VNET_DEFINE(int, tcp_do_newreno) = 1;
-SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, newreno, CTLFLAG_RW,
-	&VNET_NAME(tcp_do_newreno), 0,
-	"Enable NewReno Algorithms");
-
 VNET_DEFINE(int, tcp_do_tso) = 1;
 #define	V_tcp_do_tso		VNET(tcp_do_tso)
 SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, tso, CTLFLAG_RW,
@@ -133,6 +129,43 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, sendbuf_max, CTLFLAG_RW,
 	&VNET_NAME(tcp_autosndbuf_max), 0,
 	"Max size of automatic send buffer");
 
+static void inline	hhook_run_tcp_est_out(struct tcpcb *tp,
+			    struct tcphdr *th, struct tcpopt *to,
+			    long len, int tso);
+static void inline	cc_after_idle(struct tcpcb *tp);
+
+/*
+ * Wrapper for the TCP established ouput helper hook.
+ */
+static void inline
+hhook_run_tcp_est_out(struct tcpcb *tp, struct tcphdr *th,
+    struct tcpopt *to, long len, int tso)
+{
+	struct tcp_hhook_data hhook_data;
+
+	if (V_tcp_hhh[HHOOK_TCP_EST_OUT]->hhh_nhooks > 0) {
+		hhook_data.tp = tp;
+		hhook_data.th = th;
+		hhook_data.to = to;
+		hhook_data.len = len;
+		hhook_data.tso = tso;
+
+		hhook_run_hooks(V_tcp_hhh[HHOOK_TCP_EST_OUT], &hhook_data,
+		    tp->osd);
+	}
+}
+
+/*
+ * CC wrapper hook functions
+ */
+static void inline
+cc_after_idle(struct tcpcb *tp)
+{
+	INP_WLOCK_ASSERT(tp->t_inpcb);
+
+	if (CC_ALGO(tp)->after_idle != NULL)
+		CC_ALGO(tp)->after_idle(tp->ccv);
+}
 
 /*
  * Tcp output routine: figure out what should be sent and send it.
@@ -142,7 +175,7 @@ tcp_output(struct tcpcb *tp)
 {
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, recwin, sendwin;
-	int off, flags, error, rw;
+	int off, flags, error;
 	struct mbuf *m;
 	struct ip *ip = NULL;
 	struct ipovly *ipov = NULL;
@@ -176,37 +209,8 @@ tcp_output(struct tcpcb *tp)
 	 * to send, then transmit; otherwise, investigate further.
 	 */
 	idle = (tp->t_flags & TF_LASTIDLE) || (tp->snd_max == tp->snd_una);
-	if (idle && ticks - tp->t_rcvtime >= tp->t_rxtcur) {
-		/*
-		 * If we've been idle for more than one retransmit
-		 * timeout the old congestion window is no longer
-		 * current and we have to reduce it to the restart
-		 * window before we can transmit again.
-		 *
-		 * The restart window is the initial window or the last
-		 * CWND, whichever is smaller.
-		 * 
-		 * This is done to prevent us from flooding the path with
-		 * a full CWND at wirespeed, overloading router and switch
-		 * buffers along the way.
-		 *
-		 * See RFC5681 Section 4.1. "Restarting Idle Connections".
-		 */
-		if (V_tcp_do_rfc3390)
-			rw = min(4 * tp->t_maxseg,
-				 max(2 * tp->t_maxseg, 4380));
-#ifdef INET6
-		else if ((isipv6 ? in6_localaddr(&tp->t_inpcb->in6p_faddr) :
-			  in_localaddr(tp->t_inpcb->inp_faddr)))
-#else
-		else if (in_localaddr(tp->t_inpcb->inp_faddr))
-#endif
-			rw = V_ss_fltsz_local * tp->t_maxseg;
-		else
-			rw = V_ss_fltsz * tp->t_maxseg;
-
-		tp->snd_cwnd = min(rw, tp->snd_cwnd);
-	}
+	if (idle && ticks - tp->t_rcvtime >= tp->t_rxtcur)
+		cc_after_idle(tp);
 	tp->t_flags &= ~TF_LASTIDLE;
 	if (idle) {
 		if (tp->t_flags & TF_MORETOCOME) {
@@ -244,7 +248,7 @@ again:
 	sack_bytes_rxmt = 0;
 	len = 0;
 	p = NULL;
-	if ((tp->t_flags & TF_SACK_PERMIT) && IN_FASTRECOVERY(tp) &&
+	if ((tp->t_flags & TF_SACK_PERMIT) && IN_FASTRECOVERY(tp->t_flags) &&
 	    (p = tcp_sack_output(tp, &sack_bytes_rxmt))) {
 		long cwin;
 		
@@ -572,14 +576,28 @@ after_sack_rexmit:
 		 * taking into account that we are limited by
 		 * TCP_MAXWIN << tp->rcv_scale.
 		 */
-		long adv = min(recwin, (long)TCP_MAXWIN << tp->rcv_scale) -
-			(tp->rcv_adv - tp->rcv_nxt);
+		long adv;
+		int oldwin;
 
+		adv = min(recwin, (long)TCP_MAXWIN << tp->rcv_scale);
+		if (SEQ_GT(tp->rcv_adv, tp->rcv_nxt)) {
+			oldwin = (tp->rcv_adv - tp->rcv_nxt);
+			adv -= oldwin;
+		} else
+			oldwin = 0;
+
+		/* 
+		 * If the new window size ends up being the same as the old
+		 * size when it is scaled, then don't force a window update.
+		 */
+		if (oldwin >> tp->rcv_scale == (adv + oldwin) >> tp->rcv_scale)
+			goto dontupdate;
 		if (adv >= (long) (2 * tp->t_maxseg))
 			goto send;
 		if (2 * adv >= (long) so->so_rcv.sb_hiwat)
 			goto send;
 	}
+dontupdate:
 
 	/*
 	 * Send if we owe the peer an ACK, RST, SYN, or urgent data.  ACKNOW
@@ -686,13 +704,13 @@ send:
 		/* Timestamps. */
 		if ((tp->t_flags & TF_RCVD_TSTMP) ||
 		    ((flags & TH_SYN) && (tp->t_flags & TF_REQ_TSTMP))) {
-			to.to_tsval = ticks + tp->ts_offset;
+			to.to_tsval = tcp_ts_getticks() + tp->ts_offset;
 			to.to_tsecr = tp->ts_recent;
 			to.to_flags |= TOF_TS;
 			/* Set receive buffer autosizing timestamp. */
 			if (tp->rfbuf_ts == 0 &&
 			    (so->so_rcv.sb_flags & SB_AUTOSIZE))
-				tp->rfbuf_ts = ticks;
+				tp->rfbuf_ts = tcp_ts_getticks();
 		}
 		/* Selective ACK's. */
 		if (tp->t_flags & TF_SACK_PERMIT) {
@@ -785,6 +803,7 @@ send:
 		if ((tp->t_flags & TF_FORCEDATA) && len == 1)
 			TCPSTAT_INC(tcps_sndprobe);
 		else if (SEQ_LT(tp->snd_nxt, tp->snd_max) || sack_rxmit) {
+			tp->t_sndrexmitpack++;
 			TCPSTAT_INC(tcps_sndrexmitpack);
 			TCPSTAT_ADD(tcps_sndrexmitbyte, len);
 		} else {
@@ -985,7 +1004,8 @@ send:
 	if (recwin < (long)(so->so_rcv.sb_hiwat / 4) &&
 	    recwin < (long)tp->t_maxseg)
 		recwin = 0;
-	if (recwin < (long)(tp->rcv_adv - tp->rcv_nxt))
+	if (SEQ_GT(tp->rcv_adv, tp->rcv_nxt) &&
+	    recwin < (long)(tp->rcv_adv - tp->rcv_nxt))
 		recwin = (long)(tp->rcv_adv - tp->rcv_nxt);
 	if (recwin > (long)TCP_MAXWIN << tp->rcv_scale)
 		recwin = (long)TCP_MAXWIN << tp->rcv_scale;
@@ -1009,9 +1029,10 @@ send:
 	 * to read more data than can be buffered prior to transmitting on
 	 * the connection.
 	 */
-	if (th->th_win == 0)
+	if (th->th_win == 0) {
+		tp->t_sndzerowin++;
 		tp->t_flags |= TF_RXWIN0SENT;
-	else
+	} else
 		tp->t_flags &= ~TF_RXWIN0SENT;
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		th->th_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
@@ -1140,6 +1161,9 @@ timer:
 			tp->snd_max = tp->snd_nxt + len;
 	}
 
+	/* Run HHOOK_TCP_ESTABLISHED_OUT helper hooks. */
+	hhook_run_tcp_est_out(tp, th, &to, len, tso);
+
 #ifdef TCPDEBUG
 	/*
 	 * Trace.
@@ -1266,7 +1290,7 @@ out:
 			 */
 			if (tso)
 				tp->t_flags &= ~TF_TSO;
-			tcp_mtudisc(tp->t_inpcb, 0);
+			tcp_mtudisc(tp->t_inpcb, -1);
 			return (0);
 		case EHOSTDOWN:
 		case EHOSTUNREACH:
@@ -1289,7 +1313,7 @@ out:
 	 * then remember the size of the advertised window.
 	 * Any pending ACK has now been sent.
 	 */
-	if (recwin > 0 && SEQ_GT(tp->rcv_nxt + recwin, tp->rcv_adv))
+	if (recwin >= 0 && SEQ_GT(tp->rcv_nxt + recwin, tp->rcv_adv))
 		tp->rcv_adv = tp->rcv_nxt + recwin;
 	tp->last_ack_sent = tp->rcv_nxt;
 	tp->t_flags &= ~(TF_ACKNOW | TF_DELACK);
@@ -1302,7 +1326,7 @@ out:
 	 * on the transmitter effectively destroys the TCP window, forcing
 	 * it to four packets (1.5Kx4 = 6K window).
 	 */
-	if (sendalot && (!V_tcp_do_newreno || --maxburst))
+	if (sendalot && --maxburst)
 		goto again;
 #endif
 	if (sendalot)
@@ -1316,6 +1340,7 @@ tcp_setpersist(struct tcpcb *tp)
 	int t = ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1;
 	int tt;
 
+	tp->t_flags &= ~TF_PREVVALID;
 	if (tcp_timer_active(tp, TT_REXMT))
 		panic("tcp_setpersist: retransmit pending");
 	/*

@@ -51,6 +51,7 @@ __FBSDID("$FreeBSD$");
 #include <machine/resource.h>
 
 #include <rtems/bsd/local/pcib_if.h>
+#define pci_find_device rtems_pci_find_device
 #include <rtems/pci.h>
 #include <machine/bus.h>
 

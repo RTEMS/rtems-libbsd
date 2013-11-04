@@ -54,6 +54,7 @@ extern int cold;		/* nonzero if we are doing a cold boot */
 extern int rebooting;		/* boot() has been called. */
 extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */
+extern char compiler_version[];	/* compiler version */
 extern char copyright[];	/* system copyright */
 extern int kstack_pages;	/* number of kernel stack pages */
 
@@ -125,6 +126,18 @@ enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN };
 	    ((uintptr_t)&(var) & (sizeof(void *) - 1)) == 0, msg)
 
 /*
+ * If we have already panic'd and this is the thread that called
+ * panic(), then don't block on any mutexes but silently succeed.
+ * Otherwise, the kernel will deadlock since the scheduler isn't
+ * going to run the thread that holds any lock we need.
+ */
+#ifndef __rtems__
+#define	SCHEDULER_STOPPED() __predict_false(curthread->td_stopsched)
+#else /* __rtems__ */
+#define	SCHEDULER_STOPPED() 0
+#endif /* __rtems__ */
+
+/*
  * XXX the hints declarations are even more misplaced than most declarations
  * in this file, since they are needed in one file (per arch) and only used
  * in two files.
@@ -166,7 +179,7 @@ int	nullop(void);
 int	eopnotsupp(void);
 int	ureadc(int, struct uio *);
 void	hashdestroy(void *, struct malloc_type *, u_long);
-void	*hashinit(int count, struct malloc_type *type, u_long *hashmark);
+void	*hashinit(int count, struct malloc_type *type, u_long *hashmask);
 void	*hashinit_flags(int count, struct malloc_type *type,
     u_long *hashmask, int flags);
 #define	HASH_NOWAIT	0x00000001
@@ -233,7 +246,11 @@ int	copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
 	    __nonnull(1) __nonnull(2);
 int	copyin(const void * __restrict udaddr, void * __restrict kaddr,
 	    size_t len) __nonnull(1) __nonnull(2);
+int	copyin_nofault(const void * __restrict udaddr, void * __restrict kaddr,
+	    size_t len) __nonnull(1) __nonnull(2);
 int	copyout(const void * __restrict kaddr, void * __restrict udaddr,
+	    size_t len) __nonnull(1) __nonnull(2);
+int	copyout_nofault(const void * __restrict kaddr, void * __restrict udaddr,
 	    size_t len) __nonnull(1) __nonnull(2);
 #else /* __rtems__ */
 static inline int __nonnull(1) __nonnull(2)
@@ -259,6 +276,13 @@ copyin(const void * __restrict udaddr, void * __restrict kaddr,
 }
 
 static inline int __nonnull(1) __nonnull(2)
+copyin_nofault(const void * __restrict udaddr, void * __restrict kaddr,
+    size_t len)
+{
+	return copyin(udaddr, kaddr, len);
+}
+
+static inline int __nonnull(1) __nonnull(2)
 copyout(const void * __restrict kaddr, void * __restrict udaddr,
     size_t len)
 {
@@ -266,9 +290,26 @@ copyout(const void * __restrict kaddr, void * __restrict udaddr,
 
 	return (0);
 }
+
+static inline int __nonnull(1) __nonnull(2)
+copyout_nofault(const void * __restrict kaddr, void * __restrict udaddr,
+    size_t len)
+{
+	return copyout(kaddr, udaddr, len);
+}
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 int	fubyte(const void *base);
+#else /* __rtems__ */
+static inline int
+fubyte(const void *base)
+{
+  const unsigned char *byte_base = base;
+
+  return byte_base[0];
+}
+#endif /* __rtems__ */
 long	fuword(const void *base);
 int	fuword16(void *base);
 int32_t	fuword32(const void *base);
@@ -426,48 +467,13 @@ void delete_unrhdr(struct unrhdr *uh);
 void clean_unrhdr(struct unrhdr *uh);
 void clean_unrhdrl(struct unrhdr *uh);
 int alloc_unr(struct unrhdr *uh);
+int alloc_unr_specific(struct unrhdr *uh, u_int item);
 int alloc_unrl(struct unrhdr *uh);
 void free_unr(struct unrhdr *uh, u_int item);
 
 /*
- * This is about as magic as it gets.  fortune(1) has got similar code
- * for reversing bits in a word.  Who thinks up this stuff??
- *
- * Yes, it does appear to be consistently faster than:
- * while (i = ffs(m)) {
- *	m >>= i;
- *	bits++;
- * }
- * and
- * while (lsb = (m & -m)) {	// This is magic too
- * 	m &= ~lsb;		// or: m ^= lsb
- *	bits++;
- * }
- * Both of these latter forms do some very strange things on gcc-3.1 with
- * -mcpu=pentiumpro and/or -march=pentiumpro and/or -O or -O2.
- * There is probably an SSE or MMX popcnt instruction.
- *
- * I wonder if this should be in libkern?
- *
- * XXX Stop the presses!  Another one:
- * static __inline u_int32_t
- * popcnt1(u_int32_t v)
- * {
- *	v -= ((v >> 1) & 0x55555555);
- *	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
- *	v = (v + (v >> 4)) & 0x0F0F0F0F;
- *	return (v * 0x01010101) >> 24;
- * }
- * The downside is that it has a multiply.  With a pentium3 with
- * -mcpu=pentiumpro and -march=pentiumpro then gcc-3.1 will use
- * an imull, and in that case it is faster.  In most other cases
- * it appears slightly slower.
- *
- * Another variant (also from fortune):
- * #define BITCOUNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 255)
- * #define  BX_(x)     ((x) - (((x)>>1)&0x77777777)            \
- *                          - (((x)>>2)&0x33333333)            \
- *                          - (((x)>>3)&0x11111111))
+ * Population count algorithm using SWAR approach
+ * - "SIMD Within A Register".
  */
 static __inline uint32_t
 bitcount32(uint32_t x)
@@ -478,6 +484,17 @@ bitcount32(uint32_t x)
 	x = (x + (x >> 4)) & 0x0f0f0f0f;
 	x = (x + (x >> 8));
 	x = (x + (x >> 16)) & 0x000000ff;
+	return (x);
+}
+
+static __inline uint16_t
+bitcount16(uint32_t x)
+{
+
+	x = (x & 0x5555) + ((x & 0xaaaa) >> 1);
+	x = (x & 0x3333) + ((x & 0xcccc) >> 2);
+	x = (x + (x >> 4)) & 0x0f0f;
+	x = (x + (x >> 8)) & 0x00ff;
 	return (x);
 }
 

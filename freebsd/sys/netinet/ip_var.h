@@ -187,6 +187,7 @@ VNET_DECLARE(struct socket *, ip_mrouter);	/* multicast routing daemon */
 extern int	(*legal_vif_num)(int);
 extern u_long	(*ip_mcast_src)(int);
 VNET_DECLARE(int, rsvp_on);
+VNET_DECLARE(int, drop_redirect);
 extern struct	pr_usrreqs rip_usrreqs;
 
 #define	V_ipstat		VNET(ipstat)
@@ -199,6 +200,7 @@ extern struct	pr_usrreqs rip_usrreqs;
 #define	V_ip_rsvpd		VNET(ip_rsvpd)
 #define	V_ip_mrouter		VNET(ip_mrouter)
 #define	V_rsvp_on		VNET(rsvp_on)
+#define	V_drop_redirect		VNET(drop_redirect)
 
 void	inp_freemoptions(struct ip_moptions *);
 int	inp_getmoptions(struct inpcb *, struct sockopt *);
@@ -287,6 +289,7 @@ enum {
 };
 #define MTAG_IPFW	1148380143	/* IPFW-tagged cookie */
 #define MTAG_IPFW_RULE	1262273568	/* rule reference */
+#define	MTAG_IPFW_CALL	1308397630	/* call stack */
 
 struct ip_fw_args;
 typedef int	(*ip_fw_chk_ptr_t)(struct ip_fw_args *args);

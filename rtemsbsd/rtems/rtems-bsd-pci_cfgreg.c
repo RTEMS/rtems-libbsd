@@ -48,6 +48,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
+#define pci_find_device rtems_pci_find_device
 #include <rtems/pci.h>
 
 

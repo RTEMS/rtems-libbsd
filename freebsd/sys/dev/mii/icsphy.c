@@ -96,7 +96,7 @@ static device_method_t icsphy_methods[] = {
 	DEVMETHOD(device_attach,	icsphy_attach),
 	DEVMETHOD(device_detach,	mii_phy_detach),
 	DEVMETHOD(device_shutdown,	bus_generic_shutdown),
-	{ 0, 0 }
+	DEVMETHOD_END
 };
 
 static devclass_t icsphy_devclass;
@@ -149,7 +149,7 @@ icsphy_attach(device_t dev)
 	sc->mii_service = icsphy_service;
 	sc->mii_pdata = mii;
 
-	sc->mii_flags |= MIIF_NOISOLATE;
+	sc->mii_flags |= MIIF_NOISOLATE | MIIF_NOMANPAUSE;
 
 	ifmedia_add(&mii->mii_media,
 	    IFM_MAKEWORD(IFM_ETHER, IFM_100_TX, IFM_LOOP, sc->mii_inst),
@@ -242,7 +242,8 @@ icsphy_status(struct mii_softc *sc)
 		else
 			mii->mii_media_active |= IFM_10_T;
 		if (qpr & QPR_FDX)
-			mii->mii_media_active |= IFM_FDX;
+			mii->mii_media_active |=
+			    IFM_FDX | mii_phy_flowstatus(sc);
 		else
 			mii->mii_media_active |= IFM_HDX;
 	} else

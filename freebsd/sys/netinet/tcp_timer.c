@@ -52,6 +52,7 @@ __FBSDID("$FreeBSD$");
 #include <net/route.h>
 #include <net/vnet.h>
 
+#include <netinet/cc.h>
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
 #include <netinet/in_systm.h>
@@ -59,7 +60,6 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/in6_pcb.h>
 #endif
 #include <netinet/ip_var.h>
-#include <netinet/tcp.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_timer.h>
 #include <netinet/tcp_var.h>
@@ -118,6 +118,11 @@ static int	tcp_keepcnt = TCPTV_KEEPCNT;
 int	tcp_maxpersistidle;
 	/* max idle time in persist */
 int	tcp_maxidle;
+
+static int	tcp_rexmit_drop_options = 1;
+SYSCTL_INT(_net_inet_tcp, OID_AUTO, rexmit_drop_options, CTLFLAG_RW,
+    &tcp_rexmit_drop_options, 0,
+    "Drop TCP options from 3rd and later retransmitted SYN");
 
 /*
  * Tcp protocol timeout routine called every 500 ms.
@@ -178,13 +183,18 @@ tcp_timer_delack(void *xtp)
 		return;
 	}
 	INP_WLOCK(inp);
-	if ((inp->inp_flags & INP_DROPPED) || callout_pending(&tp->t_timers->tt_delack)
-	    || !callout_active(&tp->t_timers->tt_delack)) {
+	if (callout_pending(&tp->t_timers->tt_delack) ||
+	    !callout_active(&tp->t_timers->tt_delack)) {
 		INP_WUNLOCK(inp);
 		CURVNET_RESTORE();
 		return;
 	}
 	callout_deactivate(&tp->t_timers->tt_delack);
+	if ((inp->inp_flags & INP_DROPPED) != 0) {
+		INP_WUNLOCK(inp);
+		CURVNET_RESTORE();
+		return;
+	}
 
 	tp->t_flags |= TF_ACKNOW;
 	TCPSTAT_INC(tcps_delack);
@@ -224,7 +234,7 @@ tcp_timer_2msl(void *xtp)
 	}
 	INP_WLOCK(inp);
 	tcp_free_sackholes(tp);
-	if ((inp->inp_flags & INP_DROPPED) || callout_pending(&tp->t_timers->tt_2msl) ||
+	if (callout_pending(&tp->t_timers->tt_2msl) ||
 	    !callout_active(&tp->t_timers->tt_2msl)) {
 		INP_WUNLOCK(tp->t_inpcb);
 		INP_INFO_WUNLOCK(&V_tcbinfo);
@@ -232,6 +242,12 @@ tcp_timer_2msl(void *xtp)
 		return;
 	}
 	callout_deactivate(&tp->t_timers->tt_2msl);
+	if ((inp->inp_flags & INP_DROPPED) != 0) {
+		INP_WUNLOCK(inp);
+		INP_INFO_WUNLOCK(&V_tcbinfo);
+		CURVNET_RESTORE();
+		return;
+	}
 	/*
 	 * 2 MSL timeout in shutdown went off.  If we're closed but
 	 * still waiting for peer to close and connection has been idle
@@ -295,14 +311,20 @@ tcp_timer_keep(void *xtp)
 		return;
 	}
 	INP_WLOCK(inp);
-	if ((inp->inp_flags & INP_DROPPED) || callout_pending(&tp->t_timers->tt_keep)
-	    || !callout_active(&tp->t_timers->tt_keep)) {
+	if (callout_pending(&tp->t_timers->tt_keep) ||
+	    !callout_active(&tp->t_timers->tt_keep)) {
 		INP_WUNLOCK(inp);
 		INP_INFO_WUNLOCK(&V_tcbinfo);
 		CURVNET_RESTORE();
 		return;
 	}
 	callout_deactivate(&tp->t_timers->tt_keep);
+	if ((inp->inp_flags & INP_DROPPED) != 0) {
+		INP_WUNLOCK(inp);
+		INP_INFO_WUNLOCK(&V_tcbinfo);
+		CURVNET_RESTORE();
+		return;
+	}
 	/*
 	 * Keep-alive timer went off; send something
 	 * or drop connection if idle for too long.
@@ -390,14 +412,20 @@ tcp_timer_persist(void *xtp)
 		return;
 	}
 	INP_WLOCK(inp);
-	if ((inp->inp_flags & INP_DROPPED) || callout_pending(&tp->t_timers->tt_persist)
-	    || !callout_active(&tp->t_timers->tt_persist)) {
+	if (callout_pending(&tp->t_timers->tt_persist) ||
+	    !callout_active(&tp->t_timers->tt_persist)) {
 		INP_WUNLOCK(inp);
 		INP_INFO_WUNLOCK(&V_tcbinfo);
 		CURVNET_RESTORE();
 		return;
 	}
 	callout_deactivate(&tp->t_timers->tt_persist);
+	if ((inp->inp_flags & INP_DROPPED) != 0) {
+		INP_WUNLOCK(inp);
+		INP_INFO_WUNLOCK(&V_tcbinfo);
+		CURVNET_RESTORE();
+		return;
+	}
 	/*
 	 * Persistance timer into zero window.
 	 * Force a byte to be output, if possible.
@@ -463,14 +491,20 @@ tcp_timer_rexmt(void * xtp)
 		return;
 	}
 	INP_WLOCK(inp);
-	if ((inp->inp_flags & INP_DROPPED) || callout_pending(&tp->t_timers->tt_rexmt)
-	    || !callout_active(&tp->t_timers->tt_rexmt)) {
+	if (callout_pending(&tp->t_timers->tt_rexmt) ||
+	    !callout_active(&tp->t_timers->tt_rexmt)) {
 		INP_WUNLOCK(inp);
 		INP_INFO_WUNLOCK(&V_tcbinfo);
 		CURVNET_RESTORE();
 		return;
 	}
 	callout_deactivate(&tp->t_timers->tt_rexmt);
+	if ((inp->inp_flags & INP_DROPPED) != 0) {
+		INP_WUNLOCK(inp);
+		INP_INFO_WUNLOCK(&V_tcbinfo);
+		CURVNET_RESTORE();
+		return;
+	}
 	tcp_free_sackholes(tp);
 	/*
 	 * Retransmission timer went off.  Message has not
@@ -499,12 +533,18 @@ tcp_timer_rexmt(void * xtp)
 		tp->snd_cwnd_prev = tp->snd_cwnd;
 		tp->snd_ssthresh_prev = tp->snd_ssthresh;
 		tp->snd_recover_prev = tp->snd_recover;
-		if (IN_FASTRECOVERY(tp))
-		  tp->t_flags |= TF_WASFRECOVERY;
+		if (IN_FASTRECOVERY(tp->t_flags))
+			tp->t_flags |= TF_WASFRECOVERY;
 		else
-		  tp->t_flags &= ~TF_WASFRECOVERY;
+			tp->t_flags &= ~TF_WASFRECOVERY;
+		if (IN_CONGRECOVERY(tp->t_flags))
+			tp->t_flags |= TF_WASCRECOVERY;
+		else
+			tp->t_flags &= ~TF_WASCRECOVERY;
 		tp->t_badrxtwin = ticks + (tp->t_srtt >> (TCP_RTT_SHIFT + 1));
-	}
+		tp->t_flags |= TF_PREVVALID;
+	} else
+		tp->t_flags &= ~TF_PREVVALID;
 	TCPSTAT_INC(tcps_rexmttimeo);
 	if (tp->t_state == TCPS_SYN_SENT)
 		rexmt = TCP_REXMTVAL(tp) * tcp_syn_backoff[tp->t_rxtshift];
@@ -513,13 +553,14 @@ tcp_timer_rexmt(void * xtp)
 	TCPT_RANGESET(tp->t_rxtcur, rexmt,
 		      tp->t_rttmin, TCPTV_REXMTMAX);
 	/*
-	 * Disable rfc1323 if we havn't got any response to
+	 * Disable rfc1323 if we haven't got any response to
 	 * our third SYN to work-around some broken terminal servers
 	 * (most of which have hopefully been retired) that have bad VJ
 	 * header compression code which trashes TCP segments containing
 	 * unknown-to-them TCP options.
 	 */
-	if ((tp->t_state == TCPS_SYN_SENT) && (tp->t_rxtshift == 3))
+	if (tcp_rexmit_drop_options && (tp->t_state == TCPS_SYN_SENT) &&
+	    (tp->t_rxtshift == 3))
 		tp->t_flags &= ~(TF_REQ_SCALE|TF_REQ_TSTMP);
 	/*
 	 * If we backed off this far, our srtt estimate is probably bogus.
@@ -546,40 +587,9 @@ tcp_timer_rexmt(void * xtp)
 	 * If timing a segment in this window, stop the timer.
 	 */
 	tp->t_rtttime = 0;
-	/*
-	 * Close the congestion window down to one segment
-	 * (we'll open it by one segment for each ack we get).
-	 * Since we probably have a window's worth of unacked
-	 * data accumulated, this "slow start" keeps us from
-	 * dumping all that data as back-to-back packets (which
-	 * might overwhelm an intermediate gateway).
-	 *
-	 * There are two phases to the opening: Initially we
-	 * open by one mss on each ack.  This makes the window
-	 * size increase exponentially with time.  If the
-	 * window is larger than the path can handle, this
-	 * exponential growth results in dropped packet(s)
-	 * almost immediately.  To get more time between
-	 * drops but still "push" the network to take advantage
-	 * of improving conditions, we switch from exponential
-	 * to linear window opening at some threshhold size.
-	 * For a threshhold, we use half the current window
-	 * size, truncated to a multiple of the mss.
-	 *
-	 * (the minimum cwnd that will give us exponential
-	 * growth is 2 mss.  We don't allow the threshhold
-	 * to go below this.)
-	 */
-	{
-		u_int win = min(tp->snd_wnd, tp->snd_cwnd) / 2 / tp->t_maxseg;
-		if (win < 2)
-			win = 2;
-		tp->snd_cwnd = tp->t_maxseg;
-		tp->snd_ssthresh = win * tp->t_maxseg;
-		tp->t_dupacks = 0;
-	}
-	EXIT_FASTRECOVERY(tp);
-	tp->t_bytes_acked = 0;
+
+	cc_cong_signal(tp, NULL, CC_RTO);
+
 	(void) tcp_output(tp);
 
 out:

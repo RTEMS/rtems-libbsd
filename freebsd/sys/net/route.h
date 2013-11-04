@@ -86,30 +86,8 @@ struct rt_metrics {
 #define	RTM_RTTUNIT	1000000	/* units for rtt, rttvar, as units per sec */
 #define	RTTTOPRHZ(r)	((r) / (RTM_RTTUNIT / PR_SLOWHZ))
 
-/* MRT compile-time constants */
-#ifdef _KERNEL
- #ifndef ROUTETABLES
-  #define RT_NUMFIBS 1
-  #define RT_MAXFIBS 1
- #else
-  /* while we use 4 bits in the mbuf flags, we are limited to 16 */
-  #define RT_MAXFIBS 16
-  #if ROUTETABLES > RT_MAXFIBS
-   #define RT_NUMFIBS RT_MAXFIBS
-   #error "ROUTETABLES defined too big"
-  #else
-   #if ROUTETABLES == 0
-    #define RT_NUMFIBS 1
-   #else
-    #define RT_NUMFIBS ROUTETABLES
-   #endif
-  #endif
- #endif
-#endif
-
+#define	RT_DEFAULT_FIB	0	/* Explicitly mark fib=0 restricted cases */
 extern u_int rt_numfibs;	/* number fo usable routing tables */
-extern u_int tunnel_fib;	/* tunnels use these */
-extern u_int fwd_fib;		/* packets being forwarded use these routes */
 /*
  * XXX kernel function pointer `rt_output' is visible to applications.
  */
@@ -325,7 +303,6 @@ struct rt_addrinfo {
 #define	RT_LOCK_INIT(_rt) \
 	mtx_init(&(_rt)->rt_mtx, "rtentry", NULL, MTX_DEF | MTX_DUPOK)
 #define	RT_LOCK(_rt)		mtx_lock(&(_rt)->rt_mtx)
-#define	RT_TRYLOCK(_rt)		mtx_trylock(&(_rt)->rt_mtx)
 #define	RT_UNLOCK(_rt)		mtx_unlock(&(_rt)->rt_mtx)
 #define	RT_LOCK_DESTROY(_rt)	mtx_destroy(&(_rt)->rt_mtx)
 #define	RT_LOCK_ASSERT(_rt)	mtx_assert(&(_rt)->rt_mtx, MA_OWNED)
@@ -360,22 +337,6 @@ struct rt_addrinfo {
 	RTFREE_LOCKED(_rt);					\
 } while (0)
 
-#define RT_TEMP_UNLOCK(_rt) do {				\
-	RT_ADDREF(_rt);						\
-	RT_UNLOCK(_rt);						\
-} while (0)
-
-#define RT_RELOCK(_rt) do {					\
-	RT_LOCK(_rt);						\
-	if ((_rt)->rt_refcnt <= 1) {				\
-		rtfree(_rt);					\
-		_rt = 0; /*  signal that it went away */	\
-	} else {						\
-		RT_REMREF(_rt);					\
-		/* note that _rt is still valid */		\
-	}							\
-} while (0)
-
 struct radix_node_head *rt_tables_get_rnh(int, int);
 
 struct ifmultiaddr;
@@ -384,7 +345,9 @@ void	 rt_ieee80211msg(struct ifnet *, int, void *, size_t);
 void	 rt_ifannouncemsg(struct ifnet *, int);
 void	 rt_ifmsg(struct ifnet *);
 void	 rt_missmsg(int, struct rt_addrinfo *, int, int);
+void	 rt_missmsg_fib(int, struct rt_addrinfo *, int, int, int);
 void	 rt_newaddrmsg(int, struct ifaddr *, int, struct rtentry *);
+void	 rt_newaddrmsg_fib(int, struct ifaddr *, int, struct rtentry *, int);
 void	 rt_newmaddrmsg(int, struct ifmultiaddr *);
 int	 rt_setgate(struct rtentry *, struct sockaddr *, struct sockaddr *);
 void 	 rt_maskedcopy(struct sockaddr *, struct sockaddr *, struct sockaddr *);
@@ -418,8 +381,10 @@ void	 rtredirect(struct sockaddr *, struct sockaddr *,
 int	 rtrequest(int, struct sockaddr *,
 	    struct sockaddr *, struct sockaddr *, int, struct rtentry **);
 
+#ifndef BURN_BRIDGES
 /* defaults to "all" FIBs */
 int	 rtinit_fib(struct ifaddr *, int, int);
+#endif
 
 /* XXX MRT NEW VERSIONS THAT USE FIBs
  * For now the protocol indepedent versions are the same as the AF_INET ones

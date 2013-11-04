@@ -197,17 +197,18 @@ struct ifnet {
 					/* protected by if_addr_mtx */
 	void	*if_pf_kif;
 	void	*if_lagg;		/* lagg glue */
-	u_char	 if_alloctype;		/* if_type at time of allocation */
+	u_char	if_alloctype;		/* if_type at time of allocation */
 
 	/*
 	 * Spare fields are added so that we can modify sensitive data
 	 * structures without changing the kernel binary interface, and must
 	 * be used with care where binary compatibility is required.
 	 */
-	char	 if_cspare[3];
+	char	if_cspare[3];
 	char	*if_description;	/* interface description */
-	void	*if_pspare[7];
-	int	if_ispare[4];
+	void	*if_pspare[7];		/* 1 netmap, 6 TBD */
+	int	if_ispare[3];
+	u_int	if_fib;			/* interface FIB */
 };
 
 typedef void if_init_f_t(void *);
@@ -249,9 +250,15 @@ typedef void if_init_f_t(void *);
 #define	IF_ADDR_LOCK_INIT(if)	mtx_init(&(if)->if_addr_mtx,		\
 				    "if_addr_mtx", NULL, MTX_DEF)
 #define	IF_ADDR_LOCK_DESTROY(if)	mtx_destroy(&(if)->if_addr_mtx)
-#define	IF_ADDR_LOCK(if)	mtx_lock(&(if)->if_addr_mtx)
-#define	IF_ADDR_UNLOCK(if)	mtx_unlock(&(if)->if_addr_mtx)
+#define	IF_ADDR_WLOCK(if)	mtx_lock(&(if)->if_addr_mtx)
+#define	IF_ADDR_WUNLOCK(if)	mtx_unlock(&(if)->if_addr_mtx)
+#define	IF_ADDR_RLOCK(if)	mtx_lock(&(if)->if_addr_mtx)
+#define	IF_ADDR_RUNLOCK(if)	mtx_unlock(&(if)->if_addr_mtx)
 #define	IF_ADDR_LOCK_ASSERT(if)	mtx_assert(&(if)->if_addr_mtx, MA_OWNED)
+#define	IF_ADDR_WLOCK_ASSERT(if)	mtx_assert(&(if)->if_addr_mtx, MA_OWNED)
+/* XXX: Compat. */
+#define	IF_ADDR_LOCK(if)	IF_ADDR_WLOCK(if)
+#define	IF_ADDR_UNLOCK(if)	IF_ADDR_WUNLOCK(if)
 
 /*
  * Function variations on locking macros intended to be used by loadable

@@ -843,6 +843,54 @@ select(struct thread *td, struct select_args *uap)
 }
 #endif /* __rtems__ */
 
+/*
+ * In the unlikely case when user specified n greater then the last
+ * open file descriptor, check that no bits are set after the last
+ * valid fd.  We must return EBADF if any is set.
+ *
+ * There are applications that rely on the behaviour.
+ *
+ * nd is fd_lastfile + 1.
+ */
+static int
+select_check_badfd(fd_set *fd_in, int nd, int ndu, int abi_nfdbits)
+{
+	char *addr, *oaddr;
+	int b, i, res;
+	uint8_t bits;
+
+	if (nd >= ndu || fd_in == NULL)
+		return (0);
+
+	oaddr = NULL;
+	bits = 0; /* silence gcc */
+	for (i = nd; i < ndu; i++) {
+		b = i / NBBY;
+#if BYTE_ORDER == LITTLE_ENDIAN
+		addr = (char *)fd_in + b;
+#else
+		addr = (char *)fd_in;
+		if (abi_nfdbits == NFDBITS) {
+			addr += rounddown(b, sizeof(fd_mask)) +
+			    sizeof(fd_mask) - 1 - b % sizeof(fd_mask);
+		} else {
+			addr += rounddown(b, sizeof(uint32_t)) +
+			    sizeof(uint32_t) - 1 - b % sizeof(uint32_t);
+		}
+#endif
+		if (addr != oaddr) {
+			res = fubyte(addr);
+			if (res == -1)
+				return (EFAULT);
+			oaddr = addr;
+			bits = res;
+		}
+		if ((bits & (1 << (i % NBBY))) != 0)
+			return (EBADF);
+	}
+	return (0);
+}
+
 int
 kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
     fd_set *fd_ex, struct timeval *tvp, int abi_nfdbits)
@@ -857,20 +905,30 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 	fd_mask s_selbits[howmany(2048, NFDBITS)];
 	fd_mask *ibits[3], *obits[3], *selbits, *sbp;
 	struct timeval atv, rtv, ttv;
-	int error, timo;
+	int error, lf, ndu, timo;
 	u_int nbufbytes, ncpbytes, ncpubytes, nfdbits;
 
 	if (nd < 0)
 		return (EINVAL);
+	ndu = nd;
 #ifndef __rtems__
-	fdp = td->td_proc->p_fd;
-	if (nd > fdp->fd_lastfile + 1)
-		nd = fdp->fd_lastfile + 1;
+	lf = fdp->fd_lastfile;
 #else /* __rtems__ */
 	(void) fdp;
-	if (nd > rtems_libio_number_iops)
-		nd = rtems_libio_number_iops;
+	lf = rtems_libio_number_iops;
 #endif /* __rtems__ */
+	if (nd > lf + 1)
+		nd = lf + 1;
+
+	error = select_check_badfd(fd_in, nd, ndu, abi_nfdbits);
+	if (error != 0)
+		return (error);
+	error = select_check_badfd(fd_ou, nd, ndu, abi_nfdbits);
+	if (error != 0)
+		return (error);
+	error = select_check_badfd(fd_ex, nd, ndu, abi_nfdbits);
+	if (error != 0)
+		return (error);
 
 	/*
 	 * Allocate just enough bits for the non-null fd_sets.  Use the
@@ -1204,7 +1262,7 @@ rtems_bsd_poll(td, uap)
 	struct pollfd *bits;
 	struct pollfd smallbits[32];
 	struct timeval atv, rtv, ttv;
-	int error = 0, timo;
+	int error, timo;
 	u_int nfds;
 	size_t ni;
 
@@ -1547,6 +1605,23 @@ selfdfree(struct seltd *stp, struct selfd *sfp)
 		TAILQ_REMOVE(&sfp->sf_si->si_tdlist, sfp, sf_threads);
 	mtx_unlock(sfp->sf_mtx);
 	uma_zfree(selfd_zone, sfp);
+}
+
+/* Drain the waiters tied to all the selfd belonging the specified selinfo. */
+void
+seldrain(sip)
+        struct selinfo *sip;
+{
+
+	/*
+	 * This feature is already provided by doselwakeup(), thus it is
+	 * enough to go for it.
+	 * Eventually, the context, should take care to avoid races
+	 * between thread calling select()/poll() and file descriptor
+	 * detaching, but, again, the races are just the same as
+	 * selwakeup().
+	 */
+        doselwakeup(sip, -1);
 }
 
 /*

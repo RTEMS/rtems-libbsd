@@ -5,7 +5,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   kern/device_if.m
+ *   freebsd-org/sys/kern/device_if.m
  * with
  *   makeobjops.awk
  *

@@ -62,18 +62,9 @@ static struct mtx kobj_mtx;
 static int kobj_mutex_inited;
 static int kobj_next_id = 1;
 
-/*
- * In the event that kobj_mtx has not been initialized yet,
- * we will ignore it, and run without locks in order to support
- * use of KOBJ before mutexes are available. This early in the boot
- * process, everything is single threaded and so races should not
- * happen. This is used to provide the PMAP layer on PowerPC, as well
- * as board support.
- */
-
-#define KOBJ_LOCK()	if (kobj_mutex_inited) mtx_lock(&kobj_mtx);
-#define KOBJ_UNLOCK()	if (kobj_mutex_inited) mtx_unlock(&kobj_mtx);
-#define KOBJ_ASSERT(what) if (kobj_mutex_inited) mtx_assert(&kobj_mtx,what);
+#define	KOBJ_LOCK()		mtx_lock(&kobj_mtx)
+#define	KOBJ_UNLOCK()		mtx_unlock(&kobj_mtx)
+#define	KOBJ_ASSERT(what)	mtx_assert(&kobj_mtx, what);
 
 SYSCTL_UINT(_kern, OID_AUTO, kobj_methodcount, CTLFLAG_RD,
 	   &kobj_next_id, 0, "");
@@ -106,27 +97,10 @@ kobj_error_method(void)
 }
 
 static void
-kobj_register_method(struct kobjop_desc *desc)
-{
-	KOBJ_ASSERT(MA_OWNED);
-
-	if (desc->id == 0) {
-		desc->id = kobj_next_id++;
-	}
-}
-
-static void
-kobj_unregister_method(struct kobjop_desc *desc)
-{
-}
-
-static void
 kobj_class_compile_common(kobj_class_t cls, kobj_ops_t ops)
 {
 	kobj_method_t *m;
 	int i;
-
-	KOBJ_ASSERT(MA_OWNED);
 
 	/*
 	 * Don't do anything if we are already compiled.
@@ -137,8 +111,10 @@ kobj_class_compile_common(kobj_class_t cls, kobj_ops_t ops)
 	/*
 	 * First register any methods which need it.
 	 */
-	for (i = 0, m = cls->methods; m->desc; i++, m++)
-		kobj_register_method(m->desc);
+	for (i = 0, m = cls->methods; m->desc; i++, m++) {
+		if (m->desc->id == 0)
+			m->desc->id = kobj_next_id++;
+	}
 
 	/*
 	 * Then initialise the ops table.
@@ -161,7 +137,7 @@ kobj_class_compile(kobj_class_t cls)
 	 */
 	ops = malloc(sizeof(struct kobj_ops), M_KOBJ, M_NOWAIT);
 	if (!ops)
-		panic("kobj_compile_methods: out of memory");
+		panic("%s: out of memory", __func__);
 
 	KOBJ_LOCK();
 	
@@ -184,17 +160,14 @@ void
 kobj_class_compile_static(kobj_class_t cls, kobj_ops_t ops)
 {
 
-	KOBJ_ASSERT(MA_NOTOWNED);
+	KASSERT(kobj_mutex_inited == 0,
+	    ("%s: only supported during early cycles", __func__));
 
 	/*
 	 * Increment refs to make sure that the ops table is not freed.
 	 */
-	KOBJ_LOCK();
-
 	cls->refs++;
 	kobj_class_compile_common(cls, ops);
-
-	KOBJ_UNLOCK();
 }
 
 static kobj_method_t*
@@ -261,8 +234,6 @@ kobj_lookup_method(kobj_class_t cls,
 void
 kobj_class_free(kobj_class_t cls)
 {
-	int i;
-	kobj_method_t *m;
 	void* ops = NULL;
 
 	KOBJ_ASSERT(MA_NOTOWNED);
@@ -274,10 +245,9 @@ kobj_class_free(kobj_class_t cls)
 	 */
 	if (cls->refs == 0) {
 		/*
-		 * Unregister any methods which are no longer used.
+		 * For now we don't do anything to unregister any methods
+		 * which are no longer used.
 		 */
-		for (i = 0, m = cls->methods; m->desc; i++, m++)
-			kobj_unregister_method(m->desc);
 
 		/*
 		 * Free memory and clean up.
@@ -310,6 +280,14 @@ kobj_create(kobj_class_t cls,
 	return obj;
 }
 
+static void
+kobj_init_common(kobj_t obj, kobj_class_t cls)
+{
+
+	obj->ops = cls->ops;
+	cls->refs++;
+}
+
 void
 kobj_init(kobj_t obj, kobj_class_t cls)
 {
@@ -331,10 +309,19 @@ kobj_init(kobj_t obj, kobj_class_t cls)
 		goto retry;
 	}
 
-	obj->ops = cls->ops;
-	cls->refs++;
+	kobj_init_common(obj, cls);
 
 	KOBJ_UNLOCK();
+}
+
+void
+kobj_init_static(kobj_t obj, kobj_class_t cls)
+{
+
+	KASSERT(kobj_mutex_inited == 0,
+	    ("%s: only supported during early cycles", __func__));
+
+	kobj_init_common(obj, cls);
 }
 
 void

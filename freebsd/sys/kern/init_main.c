@@ -321,6 +321,7 @@ print_version(void *data __unused)
 	while (len > 0 && version[len - 1] == '\n')
 		len--;
 	printf("%.*s %s\n", len, version, machine);
+	printf("%s\n", compiler_version);
 }
 
 SYSINIT(announce, SI_SUB_COPYRIGHT, SI_ORDER_FIRST, print_caddr_t,
@@ -394,6 +395,7 @@ struct sysentvec null_sysvec = {
 	.sv_set_syscall_retval = null_set_syscall_retval,
 	.sv_fetch_syscall_args = null_fetch_syscall_args,
 	.sv_syscallnames = NULL,
+	.sv_schedtail	= NULL,
 };
 #endif /* __rtems__ */
 
@@ -478,7 +480,7 @@ proc0_init(void *dummy __unused)
 	td->td_user_pri = PUSER;
 	td->td_base_user_pri = PUSER;
 	td->td_priority = PVM;
-	td->td_base_pri = PUSER;
+	td->td_base_pri = PVM;
 	td->td_oncpu = 0;
 	td->td_flags = TDF_INMEM|TDP_KTHREAD;
 	td->td_cpuset = cpuset_thread0();

@@ -5,7 +5,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   kern/bus_if.m
+ *   freebsd-org/sys/kern/bus_if.m
  * with
  *   makeobjops.awk
  *
@@ -125,6 +125,14 @@ struct kobj_method bus_deactivate_resource_method_default = {
 
 struct kobjop_desc bus_deactivate_resource_desc = {
 	0, &bus_deactivate_resource_method_default
+};
+
+struct kobj_method bus_adjust_resource_method_default = {
+	&bus_adjust_resource_desc, (kobjop_t) kobj_error_method
+};
+
+struct kobjop_desc bus_adjust_resource_desc = {
+	0, &bus_adjust_resource_method_default
 };
 
 struct kobj_method bus_release_resource_method_default = {

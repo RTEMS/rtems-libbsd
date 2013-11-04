@@ -47,8 +47,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <rtems/bsd/sys/time.h>
 #include <sys/sysctl.h>
+
 #include <net/if.h>	/* IFNAMSIZ, struct ifaddr, ifq head, lock.h mutex.h */
 #include <net/netisr.h>
+#include <net/vnet.h>
+
 #include <netinet/in.h>
 #include <netinet/ip.h>		/* ip_len, ip_off */
 #include <netinet/ip_var.h>	/* ip_output(), IP_FORWARDING */
@@ -71,6 +74,7 @@ __FBSDID("$FreeBSD$");
  */
 
 struct dn_parms dn_cfg;
+//VNET_DEFINE(struct dn_parms, _base_dn_cfg);
 
 static long tick_last;		/* Last tick duration (usec). */
 static long tick_delta;		/* Last vs standard tick diff (usec). */
@@ -102,31 +106,78 @@ SYSCTL_DECL(_net_inet);
 SYSCTL_DECL(_net_inet_ip);
 SYSCTL_NODE(_net_inet_ip, OID_AUTO, dummynet, CTLFLAG_RW, 0, "Dummynet");
 
+/* wrapper to pass dn_cfg fields to SYSCTL_* */
+//#define DC(x)	(&(VNET_NAME(_base_dn_cfg).x))
+#define DC(x)	(&(dn_cfg.x))
 /* parameters */
-SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, hash_size,
-    CTLFLAG_RW, &dn_cfg.hash_size, 0, "Default hash table size");
-SYSCTL_LONG(_net_inet_ip_dummynet, OID_AUTO, pipe_slot_limit,
-    CTLFLAG_RW, &dn_cfg.slot_limit, 0,
-    "Upper limit in slots for pipe queue.");
-SYSCTL_LONG(_net_inet_ip_dummynet, OID_AUTO, pipe_byte_limit,
-    CTLFLAG_RW, &dn_cfg.byte_limit, 0,
-    "Upper limit in bytes for pipe queue.");
+
+static int
+sysctl_hash_size(SYSCTL_HANDLER_ARGS)
+{
+	int error, value;
+
+	value = dn_cfg.hash_size;
+	error = sysctl_handle_int(oidp, &value, 0, req);
+	if (error != 0 || req->newptr == NULL)
+		return (error);
+	if (value < 16 || value > 65536)
+		return (EINVAL);
+	dn_cfg.hash_size = value;
+	return (0);
+}
+
+SYSCTL_PROC(_net_inet_ip_dummynet, OID_AUTO, hash_size,
+    CTLTYPE_INT | CTLFLAG_RW, 0, 0, sysctl_hash_size,
+    "I", "Default hash table size");
+
+static int
+sysctl_limits(SYSCTL_HANDLER_ARGS)
+{
+	int error;
+	long value;
+
+	if (arg2 != 0)
+		value = dn_cfg.slot_limit;
+	else
+		value = dn_cfg.byte_limit;
+	error = sysctl_handle_long(oidp, &value, 0, req);
+
+	if (error != 0 || req->newptr == NULL)
+		return (error);
+	if (arg2 != 0) {
+		if (value < 1)
+			return (EINVAL);
+		dn_cfg.slot_limit = value;
+	} else {
+		if (value < 1500)
+			return (EINVAL);
+		dn_cfg.byte_limit = value;
+	}
+	return (0);
+}
+
+SYSCTL_PROC(_net_inet_ip_dummynet, OID_AUTO, pipe_slot_limit,
+    CTLTYPE_LONG | CTLFLAG_RW, 0, 1, sysctl_limits,
+    "L", "Upper limit in slots for pipe queue.");
+SYSCTL_PROC(_net_inet_ip_dummynet, OID_AUTO, pipe_byte_limit,
+    CTLTYPE_LONG | CTLFLAG_RW, 0, 0, sysctl_limits,
+    "L", "Upper limit in bytes for pipe queue.");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, io_fast,
-    CTLFLAG_RW, &dn_cfg.io_fast, 0, "Enable fast dummynet io.");
+    CTLFLAG_RW, DC(io_fast), 0, "Enable fast dummynet io.");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, debug,
-    CTLFLAG_RW, &dn_cfg.debug, 0, "Dummynet debug level");
-SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, expire,
-    CTLFLAG_RW, &dn_cfg.expire, 0, "Expire empty queues/pipes");
-SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, expire_cycle,
-    CTLFLAG_RD, &dn_cfg.expire_cycle, 0, "Expire cycle for queues/pipes");
+    CTLFLAG_RW, DC(debug), 0, "Dummynet debug level");
+SYSCTL_UINT(_net_inet_ip_dummynet, OID_AUTO, expire,
+    CTLFLAG_RW, DC(expire), 0, "Expire empty queues/pipes");
+SYSCTL_UINT(_net_inet_ip_dummynet, OID_AUTO, expire_cycle,
+    CTLFLAG_RD, DC(expire_cycle), 0, "Expire cycle for queues/pipes");
 
 /* RED parameters */
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, red_lookup_depth,
-    CTLFLAG_RD, &dn_cfg.red_lookup_depth, 0, "Depth of RED lookup table");
+    CTLFLAG_RD, DC(red_lookup_depth), 0, "Depth of RED lookup table");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, red_avg_pkt_size,
-    CTLFLAG_RD, &dn_cfg.red_avg_pkt_size, 0, "RED Medium packet size");
+    CTLFLAG_RD, DC(red_avg_pkt_size), 0, "RED Medium packet size");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, red_max_pkt_size,
-    CTLFLAG_RD, &dn_cfg.red_max_pkt_size, 0, "RED Max packet size");
+    CTLFLAG_RD, DC(red_max_pkt_size), 0, "RED Max packet size");
 
 /* time adjustment */
 SYSCTL_LONG(_net_inet_ip_dummynet, OID_AUTO, tick_delta,
@@ -144,13 +195,13 @@ SYSCTL_LONG(_net_inet_ip_dummynet, OID_AUTO, tick_lost,
 
 /* statistics */
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, schk_count,
-    CTLFLAG_RD, &dn_cfg.schk_count, 0, "Number of schedulers");
+    CTLFLAG_RD, DC(schk_count), 0, "Number of schedulers");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, si_count,
-    CTLFLAG_RD, &dn_cfg.si_count, 0, "Number of scheduler instances");
+    CTLFLAG_RD, DC(si_count), 0, "Number of scheduler instances");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, fsk_count,
-    CTLFLAG_RD, &dn_cfg.fsk_count, 0, "Number of flowsets");
+    CTLFLAG_RD, DC(fsk_count), 0, "Number of flowsets");
 SYSCTL_INT(_net_inet_ip_dummynet, OID_AUTO, queue_count,
-    CTLFLAG_RD, &dn_cfg.queue_count, 0, "Number of queues");
+    CTLFLAG_RD, DC(queue_count), 0, "Number of queues");
 SYSCTL_ULONG(_net_inet_ip_dummynet, OID_AUTO, io_pkt,
     CTLFLAG_RD, &io_pkt, 0,
     "Number of packets passed to dummynet.");
@@ -160,7 +211,7 @@ SYSCTL_ULONG(_net_inet_ip_dummynet, OID_AUTO, io_pkt_fast,
 SYSCTL_ULONG(_net_inet_ip_dummynet, OID_AUTO, io_pkt_drop,
     CTLFLAG_RD, &io_pkt_drop, 0,
     "Number of packets dropped by dummynet.");
-
+#undef DC
 SYSEND
 
 #endif
@@ -463,7 +514,7 @@ serve_sched(struct mq *q, struct dn_sch_inst *si, uint64_t now)
 		    (m->m_pkthdr.len * 8 + extra_bits(m, s));
 		si->credit -= len_scaled;
 		/* Move packet in the delay line */
-		dn_tag_get(m)->output_time += s->link.delay ;
+		dn_tag_get(m)->output_time = dn_cfg.curr_time + s->link.delay ;
 		mq_append(&si->dline.mq, m);
 	}
 	/*
@@ -497,6 +548,8 @@ dummynet_task(void *context, int pending)
 {
 	struct timeval t;
 	struct mq q = { NULL, NULL }; /* queue to accumulate results */
+
+	CURVNET_SET((struct vnet *)context);
 
 	DN_BH_WLOCK();
 
@@ -562,6 +615,7 @@ dummynet_task(void *context, int pending)
 	dn_reschedule();
 	if (q.head != NULL)
 		dummynet_send(q.head);
+	CURVNET_RESTORE();
 }
 
 /*
@@ -612,7 +666,6 @@ dummynet_send(struct mbuf *m)
 			break;
 
 		case DIR_OUT | PROTO_IPV6:
-			SET_HOST_IPLEN(mtod(m, struct ip *));
 			ip6_output(m, NULL, NULL, IPV6_FORWARDING, NULL, NULL, NULL);
 			break;
 #endif

@@ -44,6 +44,7 @@
 #include <sys/conf.h>
 #include <sys/fcntl.h>
 #include <sys/filio.h>
+#include <sys/jail.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
@@ -66,8 +67,9 @@
 #include <net/if.h>
 #include <net/if_clone.h>
 #include <net/if_dl.h>
-#include <net/route.h>
 #include <net/if_types.h>
+#include <net/route.h>
+#include <net/vnet.h>
 
 #include <netinet/in.h>
 
@@ -216,6 +218,8 @@ tap_destroy(struct tap_softc *tp)
 	KASSERT(!(tp->tap_flags & TAP_OPEN),
 		("%s flags is out of sync", ifp->if_xname));
 
+	CURVNET_SET(ifp->if_vnet);
+	seldrain(&tp->tap_rsel);
 	knlist_destroy(&tp->tap_rsel.si_note);
 	destroy_dev(tp->tap_dev);
 	ether_ifdetach(ifp);
@@ -223,6 +227,7 @@ tap_destroy(struct tap_softc *tp)
 
 	mtx_destroy(&tp->tap_mtx);
 	free(tp, M_TAP);
+	CURVNET_RESTORE();
 }
 
 static void
@@ -364,6 +369,7 @@ tapclone(void *arg, struct ucred *cred, char *name, int namelen, struct cdev **d
 	if (unit == -1)
 		append_unit = 1;
 
+	CURVNET_SET(CRED_TO_VNET(cred));
 	/* find any existing device, or allocate new unit number */
 	i = clone_create(&tapclones, &tap_cdevsw, &unit, dev, extra);
 	if (i) {
@@ -382,6 +388,7 @@ tapclone(void *arg, struct ucred *cred, char *name, int namelen, struct cdev **d
 	}
 
 	if_clone_create(name, namelen, NULL);
+	CURVNET_RESTORE();
 } /* tapclone */
 
 
@@ -526,6 +533,7 @@ tapclose(struct cdev *dev, int foo, int bar, struct thread *td)
 
 	/* junk all pending output */
 	mtx_lock(&tp->tap_mtx);
+	CURVNET_SET(ifp->if_vnet);
 	IF_DRAIN(&ifp->if_snd);
 
 	/*
@@ -549,6 +557,8 @@ tapclose(struct cdev *dev, int foo, int bar, struct thread *td)
 	}
 
 	if_link_state_change(ifp, LINK_STATE_DOWN);
+	CURVNET_RESTORE();
+
 	funsetown(&tp->tap_sigio);
 	selwakeuppri(&tp->tap_rsel, PZERO+1);
 	KNOTE_LOCKED(&tp->tap_rsel.si_note, 0);
@@ -950,7 +960,9 @@ tapwrite(struct cdev *dev, struct uio *uio, int flag)
 	}
 
 	/* Pass packet up to parent. */
+	CURVNET_SET(ifp->if_vnet);
 	(*ifp->if_input)(ifp, m);
+	CURVNET_RESTORE();
 	ifp->if_ipackets ++; /* ibytes are counted in parent */
 
 	return (0);

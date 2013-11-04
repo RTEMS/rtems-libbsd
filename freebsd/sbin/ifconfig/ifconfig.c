@@ -363,6 +363,8 @@ main(int argc, char *argv[])
 		}
 		cp = ifa->ifa_name;
 
+		if ((ifa->ifa_flags & IFF_CANTCONFIG) != 0)
+			continue;
 		if (downonly && (ifa->ifa_flags & IFF_UP) != 0)
 			continue;
 		if (uponly && (ifa->ifa_flags & IFF_UP) == 0)
@@ -925,7 +927,7 @@ unsetifdescr(const char *val, int value, int s, const struct afswtch *afp)
 #define	IFCAPBITS \
 "\020\1RXCSUM\2TXCSUM\3NETCONS\4VLAN_MTU\5VLAN_HWTAGGING\6JUMBO_MTU\7POLLING" \
 "\10VLAN_HWCSUM\11TSO4\12TSO6\13LRO\14WOL_UCAST\15WOL_MCAST\16WOL_MAGIC" \
-"\21VLAN_HWFILTER\23VLAN_HWTSO\24LINKSTATE"
+"\21VLAN_HWFILTER\23VLAN_HWTSO\24LINKSTATE\25NETMAP"
 
 /*
  * Print the status of the interface.  If an address family was

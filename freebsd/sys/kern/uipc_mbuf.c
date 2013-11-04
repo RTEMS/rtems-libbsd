@@ -282,7 +282,7 @@ mb_free_ext(struct mbuf *m)
 }
 
 /*
- * Attach the the cluster from *m to *n, set up m_ext in *n
+ * Attach the cluster from *m to *n, set up m_ext in *n
  * and bump the refcount of the cluster.
  */
 static void
@@ -1411,6 +1411,11 @@ m_print(const struct mbuf *m, int maxlen)
 	int len;
 	int pdata;
 	const struct mbuf *m2;
+
+	if (m == NULL) {
+		printf("mbuf: %p\n", m);
+		return;
+	}
 
 	if (m->m_flags & M_PKTHDR)
 		len = m->m_pkthdr.len;

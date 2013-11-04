@@ -120,12 +120,15 @@ freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
 	mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
 LIB_C_FILES += freebsd/sys/kern/init_main.c
 LIB_C_FILES += freebsd/sys/kern/kern_event.c
+LIB_C_FILES += freebsd/sys/kern/kern_hhook.c
 LIB_C_FILES += freebsd/sys/kern/kern_intr.c
+LIB_C_FILES += freebsd/sys/kern/kern_khelp.c
 LIB_C_FILES += freebsd/sys/kern/kern_linker.c
 LIB_C_FILES += freebsd/sys/kern/kern_mbuf.c
 LIB_C_FILES += freebsd/sys/kern/kern_mib.c
 LIB_C_FILES += freebsd/sys/kern/kern_module.c
 LIB_C_FILES += freebsd/sys/kern/kern_mtxpool.c
+LIB_C_FILES += freebsd/sys/kern/kern_osd.c
 LIB_C_FILES += freebsd/sys/kern/kern_subr.c
 LIB_C_FILES += freebsd/sys/kern/kern_sysctl.c
 LIB_C_FILES += freebsd/sys/kern/kern_time.c
@@ -200,6 +203,8 @@ LIB_C_FILES += freebsd/sys/net/netisr.c
 LIB_C_FILES += freebsd/sys/netinet/accf_data.c
 LIB_C_FILES += freebsd/sys/netinet/accf_dns.c
 LIB_C_FILES += freebsd/sys/netinet/accf_http.c
+LIB_C_FILES += freebsd/sys/netinet/cc/cc.c
+LIB_C_FILES += freebsd/sys/netinet/cc/cc_newreno.c
 LIB_C_FILES += freebsd/sys/netinet/if_atm.c
 LIB_C_FILES += freebsd/sys/netinet/if_ether.c
 LIB_C_FILES += freebsd/sys/netinet/igmp.c

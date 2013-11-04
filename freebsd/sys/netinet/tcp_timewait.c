@@ -230,7 +230,10 @@ tcp_twstart(struct tcpcb *tp)
 	/*
 	 * Recover last window size sent.
 	 */
-	tw->last_win = (tp->rcv_adv - tp->rcv_nxt) >> tp->rcv_scale;
+	if (SEQ_GT(tp->rcv_adv, tp->rcv_nxt))
+		tw->last_win = (tp->rcv_adv - tp->rcv_nxt) >> tp->rcv_scale;
+	else
+		tw->last_win = 0;
 
 	/*
 	 * Set t_recent if timestamps are used on the connection.
@@ -399,7 +402,7 @@ tcp_twcheck(struct inpcb *inp, struct tcpopt *to, struct tcphdr *th,
 	}
 
 	/*
-	 * Drop the the segment if it does not contain an ACK.
+	 * Drop the segment if it does not contain an ACK.
 	 */
 	if ((thflags & TH_ACK) == 0)
 		goto drop;
@@ -534,7 +537,7 @@ tcp_twrespond(struct tcptw *tw, int flags)
 	 */
 	if (tw->t_recent && flags == TH_ACK) {
 		to.to_flags |= TOF_TS;
-		to.to_tsval = ticks + tw->ts_offset;
+		to.to_tsval = tcp_ts_getticks() + tw->ts_offset;
 		to.to_tsecr = tw->t_recent;
 	}
 	optlen = tcp_addoptions(&to, (u_char *)(th + 1));

@@ -41,7 +41,7 @@
  * $FreeBSD$
  */
 
-#include <rtems/bsd/sys/types.h>
+#include <rtems/bsd/sys/param.h>
 
 #include <sys/socket.h>
 #include <sys/sockio.h>
@@ -60,6 +60,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <libutil.h>
 #include <limits.h>
 #include <netdb.h>
 #include <paths.h>
@@ -207,6 +208,7 @@ struct interface_info {
 	int			 errors;
 	int			 dead;
 	u_int16_t		 index;
+	int			 linkstat;
 };
 
 struct timeout {
@@ -352,6 +354,8 @@ extern int log_priority;
 extern int log_perror;
 
 extern struct client_config top_level_config;
+
+extern struct pidfh *pidfile;
 
 void dhcpoffer(struct packet *);
 void dhcpack(struct packet *);

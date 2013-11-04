@@ -66,6 +66,7 @@
 #define	CR4_PCE	0x00000100	/* Performance monitoring counter enable */
 #define	CR4_FXSR 0x00000200	/* Fast FPU save/restore used by OS */
 #define	CR4_XMM	0x00000400	/* enable SIMD/MMX2 to use except 16 */
+#define	CR4_XSAVE 0x00040000	/* XSETBV/XGETBV */
 
 /*
  * Bits in AMD64 special registers.  EFER is 64 bits wide.
@@ -120,6 +121,7 @@
 #define	CPUID2_TM2	0x00000100
 #define	CPUID2_SSSE3	0x00000200
 #define	CPUID2_CNXTID	0x00000400
+#define	CPUID2_FMA	0x00001000
 #define	CPUID2_CX16	0x00002000
 #define	CPUID2_XTPR	0x00004000
 #define	CPUID2_PDCM	0x00008000
@@ -130,7 +132,23 @@
 #define	CPUID2_X2APIC	0x00200000
 #define	CPUID2_MOVBE	0x00400000
 #define	CPUID2_POPCNT	0x00800000
+#define	CPUID2_TSCDLT	0x01000000
 #define	CPUID2_AESNI	0x02000000
+#define	CPUID2_XSAVE	0x04000000
+#define	CPUID2_OSXSAVE	0x08000000
+#define	CPUID2_AVX	0x10000000
+#define	CPUID2_F16C	0x20000000
+#define	CPUID2_RDRAND	0x40000000
+#define	CPUID2_HV	0x80000000
+
+/*
+ * Important bits in the Thermal and Power Management flags
+ * CPUID.6 EAX and ECX.
+ */
+#define	CPUTPM1_SENSOR	0x00000001
+#define	CPUTPM1_TURBO	0x00000002
+#define	CPUTPM1_ARAT	0x00000004
+#define	CPUTPM2_EFFREQ	0x00000001
 
 /*
  * Important bits in the AMD extended cpuid flags
@@ -157,9 +175,14 @@
 #define	AMDID2_PREFETCH	0x00000100
 #define	AMDID2_OSVW	0x00000200
 #define	AMDID2_IBS	0x00000400
-#define	AMDID2_SSE5	0x00000800
+#define	AMDID2_XOP	0x00000800
 #define	AMDID2_SKINIT	0x00001000
 #define	AMDID2_WDT	0x00002000
+#define	AMDID2_LWP	0x00008000
+#define	AMDID2_FMA4	0x00010000
+#define	AMDID2_NODE_ID	0x00080000
+#define	AMDID2_TBM	0x00200000
+#define	AMDID2_TOPOLOGY	0x00400000
 
 /*
  * CPUID instruction 1 eax info
@@ -205,11 +228,14 @@
 #define	AMDPM_100MHZ_STEPS	0x00000040
 #define	AMDPM_HW_PSTATE		0x00000080
 #define	AMDPM_TSC_INVARIANT	0x00000100
+#define	AMDPM_CPB		0x00000200
 
 /*
  * AMD extended function 8000_0008h ecx info
  */
 #define	AMDID_CMP_CORES		0x000000ff
+#define	AMDID_COREID_SIZE	0x0000f000
+#define	AMDID_COREID_SIZE_SHIFT	12
 
 /*
  * CPUID manufacturers identifiers
@@ -245,6 +271,8 @@
 #define	MSR_BIOS_SIGN		0x08b
 #define	MSR_PERFCTR0		0x0c1
 #define	MSR_PERFCTR1		0x0c2
+#define	MSR_MPERF		0x0e7
+#define	MSR_APERF		0x0e8
 #define	MSR_IA32_EXT_CONFIG	0x0ee	/* Undocumented. Core Solo/Duo only */
 #define	MSR_MTRRcap		0x0fe
 #define	MSR_BBL_CR_ADDR		0x116
@@ -553,7 +581,8 @@
 #define	AMD_WT_ALLOC_FRE	0x10000	/* fixed (A0000-FFFFF) range enable */
 
 /* AMD64 MSR's */
-#define	MSR_EFER	0xc0000080	/* extended features */
+#define	MSR_EFER		0xc0000080	/* extended features */
+#define	MSR_HWCR		0xc0010015
 #define	MSR_K8_UCODE_UPDATE	0xc0010020	/* update microcode */
 #define	MSR_MC0_CTL_MASK	0xc0010044
 

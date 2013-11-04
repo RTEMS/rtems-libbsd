@@ -153,6 +153,8 @@ falloc(struct thread *td, struct file **resultfp, int *resultfd)
 	}
 }
 #endif /* __rtems__ */
+int	fallocf(struct thread *td, struct file **resultfp, int *resultfd,
+	    int flags);
 int	fdalloc(struct thread *td, int minfd, int *result);
 int	fdavail(struct thread *td, int n);
 int	fdcheckstd(struct thread *td);

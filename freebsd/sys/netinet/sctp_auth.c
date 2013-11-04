@@ -2,16 +2,18 @@
 
 /*-
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -284,16 +286,16 @@ sctp_print_key(sctp_key_t * key, const char *str)
 	uint32_t i;
 
 	if (key == NULL) {
-		printf("%s: [Null key]\n", str);
+		SCTP_PRINTF("%s: [Null key]\n", str);
 		return;
 	}
-	printf("%s: len %u, ", str, key->keylen);
+	SCTP_PRINTF("%s: len %u, ", str, key->keylen);
 	if (key->keylen) {
 		for (i = 0; i < key->keylen; i++)
-			printf("%02x", key->key[i]);
-		printf("\n");
+			SCTP_PRINTF("%02x", key->key[i]);
+		SCTP_PRINTF("\n");
 	} else {
-		printf("[Null key]\n");
+		SCTP_PRINTF("[Null key]\n");
 	}
 }
 
@@ -303,16 +305,16 @@ sctp_show_key(sctp_key_t * key, const char *str)
 	uint32_t i;
 
 	if (key == NULL) {
-		printf("%s: [Null key]\n", str);
+		SCTP_PRINTF("%s: [Null key]\n", str);
 		return;
 	}
-	printf("%s: len %u, ", str, key->keylen);
+	SCTP_PRINTF("%s: len %u, ", str, key->keylen);
 	if (key->keylen) {
 		for (i = 0; i < key->keylen; i++)
-			printf("%02x", key->key[i]);
-		printf("\n");
+			SCTP_PRINTF("%02x", key->key[i]);
+		SCTP_PRINTF("\n");
 	} else {
-		printf("[Null key]\n");
+		SCTP_PRINTF("[Null key]\n");
 	}
 }
 
@@ -469,7 +471,6 @@ sctp_compute_hashkey(sctp_key_t * key1, sctp_key_t * key2, sctp_key_t * shared)
 		}
 		if (sctp_get_keylen(key2)) {
 			bcopy(key2->key, key_ptr, key2->keylen);
-			key_ptr += key2->keylen;
 		}
 	} else {
 		/* key is shared + key2 + key1 */
@@ -483,7 +484,6 @@ sctp_compute_hashkey(sctp_key_t * key1, sctp_key_t * key2, sctp_key_t * shared)
 		}
 		if (sctp_get_keylen(key1)) {
 			bcopy(key1->key, key_ptr, key1->keylen);
-			key_ptr += key1->keylen;
 		}
 	}
 	return (new_key);
@@ -593,12 +593,16 @@ sctp_auth_key_acquire(struct sctp_tcb *stcb, uint16_t key_id)
 		atomic_add_int(&skey->refcount, 1);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 		    "%s: stcb %p key %u refcount acquire to %d\n",
-		    __FUNCTION__, stcb, key_id, skey->refcount);
+		    __FUNCTION__, (void *)stcb, key_id, skey->refcount);
 	}
 }
 
 void
-sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id)
+sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
+#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+    SCTP_UNUSED
+#endif
+)
 {
 	sctp_sharedkey_t *skey;
 
@@ -610,16 +614,16 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id)
 		sctp_free_sharedkey(skey);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 		    "%s: stcb %p key %u refcount release to %d\n",
-		    __FUNCTION__, stcb, key_id, skey->refcount);
+		    __FUNCTION__, (void *)stcb, key_id, skey->refcount);
 
 		/* see if a notification should be generated */
 		if ((skey->refcount <= 1) && (skey->deactivated)) {
 			/* notify ULP that key is no longer used */
 			sctp_ulp_notify(SCTP_NOTIFY_AUTH_FREE_KEY, stcb,
-			    key_id, 0, SCTP_SO_LOCKED);
+			    key_id, 0, so_locked);
 			SCTPDBG(SCTP_DEBUG_AUTH2,
 			    "%s: stcb %p key %u no longer used, %d\n",
-			    __FUNCTION__, stcb, key_id, skey->refcount);
+			    __FUNCTION__, (void *)stcb, key_id, skey->refcount);
 		}
 	}
 }
@@ -1799,7 +1803,7 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 			 * shared_key_id, (void
 			 * *)stcb->asoc.authinfo.recv_keyid);
 			 */
-			sctp_notify_authentication(stcb, SCTP_AUTH_NEWKEY,
+			sctp_notify_authentication(stcb, SCTP_AUTH_NEW_KEY,
 			    shared_key_id, stcb->asoc.authinfo.recv_keyid,
 			    SCTP_SO_NOT_LOCKED);
 		/* compute a new recv assoc key and cache it */
@@ -1862,7 +1866,7 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 		/* If the socket is gone we are out of here */
 		return;
 	}
-	if (sctp_is_feature_off(stcb->sctp_ep, SCTP_PCB_FLAGS_AUTHEVNT))
+	if (sctp_stcb_is_feature_off(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_AUTHEVNT))
 		/* event not enabled */
 		return;
 
@@ -1887,7 +1891,7 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 
 	/* append to socket */
 	control = sctp_build_readq_entry(stcb, stcb->asoc.primary_destination,
-	    0, 0, 0, 0, 0, 0, m_notify);
+	    0, 0, stcb->asoc.context, 0, 0, 0, m_notify);
 	if (control == NULL) {
 		/* no memory */
 		sctp_m_freem(m_notify);
@@ -1948,9 +1952,6 @@ sctp_validate_init_auth_params(struct mbuf *m, int offset, int limit)
 				case SCTP_ASCONF:
 				case SCTP_ASCONF_ACK:
 					peer_supports_asconf = 1;
-					break;
-				case SCTP_AUTHENTICATION:
-					peer_supports_auth = 1;
 					break;
 				default:
 					/* one we don't care about */

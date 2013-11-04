@@ -47,6 +47,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/ktr.h>
 #include <sys/limits.h>
 #include <rtems/bsd/sys/lock.h>
+#include <sys/mman.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
@@ -56,6 +57,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/vnode.h>
 
 #include <vm/vm.h>
+#include <vm/vm_extern.h>
 #include <vm/vm_page.h>
 #include <vm/vm_map.h>
 #include <sys/uio.h>
@@ -67,7 +69,11 @@ __FBSDID("$FreeBSD$");
 #ifndef __rtems__
 SYSCTL_INT(_kern, KERN_IOV_MAX, iov_max, CTLFLAG_RD, NULL, UIO_MAXIOV,
 	"Maximum number of elements in an I/O vector; sysconf(_SC_IOV_MAX)");
+#endif /* __rtems__ */
 
+static int uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault);
+
+#ifndef __rtems__
 #ifdef ZERO_COPY_SOCKETS
 /* Declared in uipc_socket.c */
 extern int so_zero_copy_receive;
@@ -132,31 +138,75 @@ retry:
 	return(KERN_SUCCESS);
 }
 #endif /* ZERO_COPY_SOCKETS */
+
+int
+copyin_nofault(const void *udaddr, void *kaddr, size_t len)
+{
+	int error, save;
+
+	save = vm_fault_disable_pagefaults();
+	error = copyin(udaddr, kaddr, len);
+	vm_fault_enable_pagefaults(save);
+	return (error);
+}
+
+int
+copyout_nofault(const void *kaddr, void *udaddr, size_t len)
+{
+	int error, save;
+
+	save = vm_fault_disable_pagefaults();
+	error = copyout(kaddr, udaddr, len);
+	vm_fault_enable_pagefaults(save);
+	return (error);
+}
 #endif /* __rtems__ */
 
 int
 uiomove(void *cp, int n, struct uio *uio)
 {
+
+	return (uiomove_faultflag(cp, n, uio, 0));
+}
+
+int
+uiomove_nofault(void *cp, int n, struct uio *uio)
+{
+
+	return (uiomove_faultflag(cp, n, uio, 1));
+}
+
+static int
+uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
+{
 #ifndef __rtems__
-	struct thread *td = curthread;
+	struct thread *td;
 #endif /* __rtems__ */
 	struct iovec *iov;
 	u_int cnt;
-	int error = 0;
-#ifndef __rtems__
-	int save = 0;
-#endif /* __rtems__ */
+	int error, newflags, save;
 
 	KASSERT(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE,
 	    ("uiomove: mode"));
-	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == curthread,
+	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == td,
 	    ("uiomove proc"));
-	WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
-	    "Calling uiomove()");
+	if (!nofault)
+		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
+		    "Calling uiomove()");
 
 #ifndef __rtems__
-	save = td->td_pflags & TDP_DEADLKTREAT;
-	td->td_pflags |= TDP_DEADLKTREAT;
+	/* XXX does it make a sense to set TDP_DEADLKTREAT for UIO_SYSSPACE ? */
+	newflags = TDP_DEADLKTREAT;
+	if (uio->uio_segflg == UIO_USERSPACE && nofault) {
+		/*
+		 * Fail if a non-spurious page fault occurs.
+		 */
+		newflags |= TDP_NOFAULTING | TDP_RESETSPUR;
+	}
+	save = curthread_pflags_set(newflags);
+#else /* __rtems__ */
+	(void) newflags;
+	(void) save;
 #endif /* __rtems__ */
 
 	while (n > 0 && uio->uio_resid) {
@@ -203,8 +253,7 @@ uiomove(void *cp, int n, struct uio *uio)
 	}
 out:
 #ifndef __rtems__
-	if (save == 0)
-		td->td_pflags &= ~TDP_DEADLKTREAT;
+	curthread_pflags_restore(save);
 #endif /* __rtems__ */
 	return (error);
 }
@@ -388,9 +437,7 @@ hashinit_flags(int elements, struct malloc_type *type, u_long *hashmask,
 	LIST_HEAD(generic, generic) *hashtbl;
 	int i;
 
-	if (elements <= 0)
-		panic("hashinit: bad elements");
-
+	KASSERT(elements > 0, ("%s: bad elements", __func__));
 	/* Exactly one of HASH_WAITOK and HASH_NOWAIT must be set. */
 	KASSERT((flags & HASH_WAITOK) ^ (flags & HASH_NOWAIT),
 	    ("Bad flags (0x%x) passed to hashinit_flags", flags));
@@ -431,8 +478,7 @@ hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 
 	hashtbl = vhashtbl;
 	for (hp = hashtbl; hp <= &hashtbl[hashmask]; hp++)
-		if (!LIST_EMPTY(hp))
-			panic("hashdestroy: hash not empty");
+		KASSERT(LIST_EMPTY(hp), ("%s: hash not empty", __func__));
 	free(hashtbl, type);
 }
 
@@ -451,8 +497,7 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 	LIST_HEAD(generic, generic) *hashtbl;
 	int i;
 
-	if (elements <= 0)
-		panic("phashinit: bad elements");
+	KASSERT(elements > 0, ("%s: bad elements", __func__));
 	for (i = 1, hashsize = primes[1]; hashsize <= elements;) {
 		i++;
 		if (i == NPRIMES)
@@ -471,16 +516,8 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 void
 uio_yield(void)
 {
-	struct thread *td;
 
-	td = curthread;
-	DROP_GIANT();
-	thread_lock(td);
-	sched_prio(td, td->td_user_pri);
-	mi_switch(SW_INVOL | SWT_RELINQUISH, NULL);
-	thread_unlock(td);
-	rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
-	PICKUP_GIANT();
+	kern_yield(PRI_USER);
 }
 
 int
@@ -590,5 +627,56 @@ cloneuio(struct uio *uiop)
 	uio->uio_iov = (struct iovec *)(uio + 1);
 	bcopy(uiop->uio_iov, uio->uio_iov, iovlen);
 	return (uio);
+}
+
+/*
+ * Map some anonymous memory in user space of size sz, rounded up to the page
+ * boundary.
+ */
+int
+copyout_map(struct thread *td, vm_offset_t *addr, size_t sz)
+{
+	struct vmspace *vms;
+	int error;
+	vm_size_t size;
+
+	vms = td->td_proc->p_vmspace;
+
+	/*
+	 * Map somewhere after heap in process memory.
+	 */
+	PROC_LOCK(td->td_proc);
+	*addr = round_page((vm_offset_t)vms->vm_daddr +
+	    lim_max(td->td_proc, RLIMIT_DATA));
+	PROC_UNLOCK(td->td_proc);
+
+	/* round size up to page boundry */
+	size = (vm_size_t)round_page(sz);
+
+	error = vm_mmap(&vms->vm_map, addr, size, PROT_READ | PROT_WRITE,
+	    VM_PROT_ALL, MAP_PRIVATE | MAP_ANON, OBJT_DEFAULT, NULL, 0);
+
+	return (error);
+}
+
+/*
+ * Unmap memory in user space.
+ */
+int
+copyout_unmap(struct thread *td, vm_offset_t addr, size_t sz)
+{
+	vm_map_t map;
+	vm_size_t size;
+
+	if (sz == 0)
+		return (0);
+
+	map = &td->td_proc->p_vmspace->vm_map;
+	size = (vm_size_t)round_page(sz);
+
+	if (vm_map_remove(map, addr, addr + size) != KERN_SUCCESS)
+		return (EINVAL);
+
+	return (0);
 }
 #endif  /* __rtems__ */

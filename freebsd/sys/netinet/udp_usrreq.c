@@ -106,9 +106,9 @@ __FBSDID("$FreeBSD$");
  * packets that would otherwise be discarded due to bad checksums, and may
  * cause problems (especially for NFS data blocks).
  */
-static int	udp_cksum = 1;
-SYSCTL_INT(_net_inet_udp, UDPCTL_CHECKSUM, checksum, CTLFLAG_RW, &udp_cksum,
-    0, "compute udp checksum");
+VNET_DEFINE(int, udp_cksum) = 1;
+SYSCTL_VNET_INT(_net_inet_udp, UDPCTL_CHECKSUM, checksum, CTLFLAG_RW,
+    &VNET_NAME(udp_cksum), 0, "compute udp checksum");
 
 int	udp_log_in_vain = 0;
 SYSCTL_INT(_net_inet_udp, OID_AUTO, log_in_vain, CTLFLAG_RW,
@@ -501,6 +501,15 @@ udp_input(struct mbuf *m, int off)
 			INP_RLOCK(inp);
 
 			/*
+			 * Detached PCBs can linger in the list if someone
+			 * holds a reference. (e.g. udp_pcblist)
+			 */
+			if (inp->inp_socket == NULL) {
+				INP_RUNLOCK(inp);
+				continue;
+			}
+
+			/*
 			 * Handle socket delivery policy for any-source
 			 * and source-specific multicast. [RFC3678]
 			 */
@@ -626,6 +635,15 @@ udp_input(struct mbuf *m, int off)
 	 */
 	INP_RLOCK(inp);
 	INP_INFO_RUNLOCK(&V_udbinfo);
+
+	/*
+	 * Detached PCBs can linger in the hash table if someone holds a
+	 * reference. (e.g. udp_pcblist)
+	 */
+	if (inp->inp_socket == NULL) {
+		INP_RUNLOCK(inp);
+		goto badunlocked;
+	}
 	if (inp->inp_ip_minttl && inp->inp_ip_minttl > ip->ip_ttl) {
 		INP_RUNLOCK(inp);
 		goto badunlocked;
@@ -826,7 +844,8 @@ udp_pcblist(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-SYSCTL_PROC(_net_inet_udp, UDPCTL_PCBLIST, pcblist, CTLFLAG_RD, 0, 0,
+SYSCTL_PROC(_net_inet_udp, UDPCTL_PCBLIST, pcblist,
+    CTLTYPE_OPAQUE | CTLFLAG_RD, NULL, 0,
     udp_pcblist, "S,xinpcb", "List of active UDP sockets");
 
 static int
@@ -975,6 +994,7 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr,
 	int ipflags;
 	u_short fport, lport;
 	int unlock_udbinfo;
+	u_char tos;
 
 	/*
 	 * udp_output() may need to temporarily bind or connect the current
@@ -990,6 +1010,7 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr,
 	}
 
 	src.sin_family = 0;
+	tos = inp->inp_ip_tos;
 	if (control != NULL) {
 		/*
 		 * XXX: Currently, we assume all the optional information is
@@ -1025,6 +1046,14 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr,
 				src.sin_port = inp->inp_lport;
 				src.sin_addr =
 				    *(struct in_addr *)CMSG_DATA(cm);
+				break;
+
+			case IP_TOS:
+				if (cm->cmsg_len != CMSG_LEN(sizeof(u_char))) {
+					error = EINVAL;
+					break;
+				}
+				tos = *(u_char *)CMSG_DATA(cm);
 				break;
 
 			default:
@@ -1233,7 +1262,7 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr,
 	/*
 	 * Set up checksum and output datagram.
 	 */
-	if (udp_cksum) {
+	if (V_udp_cksum) {
 		if (inp->inp_flags & INP_ONESBCAST)
 			faddr.s_addr = INADDR_BROADCAST;
 		ui->ui_sum = in_pseudo(ui->ui_src.s_addr, faddr.s_addr,
@@ -1244,7 +1273,7 @@ udp_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr,
 		ui->ui_sum = 0;
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = inp->inp_ip_ttl;	/* XXX */
-	((struct ip *)ui)->ip_tos = inp->inp_ip_tos;	/* XXX */
+	((struct ip *)ui)->ip_tos = tos;		/* XXX */
 	UDPSTAT_INC(udps_opackets);
 
 	if (unlock_udbinfo == 2)

@@ -2,7 +2,7 @@
 
 /******************************************************************************
 
-  Copyright (c) 2001-2010, Intel Corporation 
+  Copyright (c) 2001-2013, Intel Corporation 
   All rights reserved.
   
   Redistribution and use in source and binary forms, with or without 
@@ -283,7 +283,6 @@ s32 e1000_set_mac_type(struct e1000_hw *hw)
 	case E1000_DEV_ID_ICH10_D_BM_LM:
 	case E1000_DEV_ID_ICH10_D_BM_LF:
 	case E1000_DEV_ID_ICH10_D_BM_V:
-	case E1000_DEV_ID_ICH10_HANKSVILLE:
 		mac->type = e1000_ich10lan;
 		break;
 	case E1000_DEV_ID_PCH_D_HV_DM:
@@ -296,10 +295,15 @@ s32 e1000_set_mac_type(struct e1000_hw *hw)
 	case E1000_DEV_ID_PCH2_LV_V:
 		mac->type = e1000_pch2lan;
 		break;
+	case E1000_DEV_ID_PCH_LPT_I217_LM:
+	case E1000_DEV_ID_PCH_LPT_I217_V:
+	case E1000_DEV_ID_PCH_LPTLP_I218_LM:
+	case E1000_DEV_ID_PCH_LPTLP_I218_V:
+		mac->type = e1000_pch_lpt;
+		break;
 	case E1000_DEV_ID_82575EB_COPPER:
 	case E1000_DEV_ID_82575EB_FIBER_SERDES:
 	case E1000_DEV_ID_82575GB_QUAD_COPPER:
-	case E1000_DEV_ID_82575GB_QUAD_COPPER_PM:
 		mac->type = e1000_82575;
 		break;
 	case E1000_DEV_ID_82576:
@@ -320,11 +324,37 @@ s32 e1000_set_mac_type(struct e1000_hw *hw)
 	case E1000_DEV_ID_82580_QUAD_FIBER:
 	case E1000_DEV_ID_DH89XXCC_SGMII:
 	case E1000_DEV_ID_DH89XXCC_SERDES:
+	case E1000_DEV_ID_DH89XXCC_BACKPLANE:
+	case E1000_DEV_ID_DH89XXCC_SFP:
 		mac->type = e1000_82580;
 		break;
+	case E1000_DEV_ID_I350_COPPER:
+	case E1000_DEV_ID_I350_FIBER:
+	case E1000_DEV_ID_I350_SERDES:
+	case E1000_DEV_ID_I350_SGMII:
+	case E1000_DEV_ID_I350_DA4:
+		mac->type = e1000_i350;
+		break;
+	case E1000_DEV_ID_I210_COPPER:
+	case E1000_DEV_ID_I210_COPPER_OEM1:
+	case E1000_DEV_ID_I210_COPPER_IT:
+	case E1000_DEV_ID_I210_FIBER:
+	case E1000_DEV_ID_I210_SERDES:
+	case E1000_DEV_ID_I210_SGMII:
+		mac->type = e1000_i210;
+		break;
+	case E1000_DEV_ID_I211_COPPER:
+		mac->type = e1000_i211;
+		break;
 	case E1000_DEV_ID_82576_VF:
+	case E1000_DEV_ID_82576_VF_HV:
 		mac->type = e1000_vfadapt;
 		break;
+	case E1000_DEV_ID_I350_VF:
+	case E1000_DEV_ID_I350_VF_HV:
+		mac->type = e1000_vfadapt_i350;
+		break;
+
 	default:
 		/* Should never have loaded on this device */
 		ret_val = -E1000_ERR_MAC_INIT;
@@ -338,10 +368,10 @@ s32 e1000_set_mac_type(struct e1000_hw *hw)
  *  e1000_setup_init_funcs - Initializes function pointers
  *  @hw: pointer to the HW structure
  *  @init_device: TRUE will initialize the rest of the function pointers
- *                 getting the device ready for use.  FALSE will only set
- *                 MAC type and the function pointers for the other init
- *                 functions.  Passing FALSE will not generate any hardware
- *                 reads or writes.
+ *		  getting the device ready for use.  FALSE will only set
+ *		  MAC type and the function pointers for the other init
+ *		  functions.  Passing FALSE will not generate any hardware
+ *		  reads or writes.
  *
  *  This function must be called by a driver in order to use the rest
  *  of the 'shared' code files. Called by drivers only.
@@ -413,14 +443,23 @@ s32 e1000_setup_init_funcs(struct e1000_hw *hw, bool init_device)
 	case e1000_ich10lan:
 	case e1000_pchlan:
 	case e1000_pch2lan:
+	case e1000_pch_lpt:
 		e1000_init_function_pointers_ich8lan(hw);
 		break;
 	case e1000_82575:
 	case e1000_82576:
 	case e1000_82580:
+	case e1000_i350:
 		e1000_init_function_pointers_82575(hw);
 		break;
+	case e1000_i210:
+	case e1000_i211:
+		e1000_init_function_pointers_i210(hw);
+		break;
 	case e1000_vfadapt:
+		e1000_init_function_pointers_vf(hw);
+		break;
+	case e1000_vfadapt_i350:
 		e1000_init_function_pointers_vf(hw);
 		break;
 	default:
@@ -509,11 +548,11 @@ void e1000_write_vfta(struct e1000_hw *hw, u32 offset, u32 value)
  *  The caller must have a packed mc_addr_list of multicast addresses.
  **/
 void e1000_update_mc_addr_list(struct e1000_hw *hw, u8 *mc_addr_list,
-                               u32 mc_addr_count)
+			       u32 mc_addr_count)
 {
 	if (hw->mac.ops.update_mc_addr_list)
 		hw->mac.ops.update_mc_addr_list(hw, mc_addr_list,
-		                                mc_addr_count);
+						mc_addr_count);
 }
 
 /**
@@ -847,14 +886,10 @@ bool e1000_enable_tx_pkt_filtering(struct e1000_hw *hw)
  *  It also does alignment considerations to do the writes in most efficient
  *  way.  Also fills up the sum of the buffer in *buffer parameter.
  **/
-s32 e1000_mng_host_if_write(struct e1000_hw * hw, u8 *buffer, u16 length,
-                            u16 offset, u8 *sum)
+s32 e1000_mng_host_if_write(struct e1000_hw *hw, u8 *buffer, u16 length,
+			    u16 offset, u8 *sum)
 {
-	if (hw->mac.ops.mng_host_if_write)
-		return hw->mac.ops.mng_host_if_write(hw, buffer, length,
-		                                     offset, sum);
-
-	return E1000_NOT_IMPLEMENTED;
+	return e1000_mng_host_if_write_generic(hw, buffer, length, offset, sum);
 }
 
 /**
@@ -865,12 +900,9 @@ s32 e1000_mng_host_if_write(struct e1000_hw * hw, u8 *buffer, u16 length,
  *  Writes the command header after does the checksum calculation.
  **/
 s32 e1000_mng_write_cmd_header(struct e1000_hw *hw,
-                               struct e1000_host_mng_command_header *hdr)
+			       struct e1000_host_mng_command_header *hdr)
 {
-	if (hw->mac.ops.mng_write_cmd_header)
-		return hw->mac.ops.mng_write_cmd_header(hw, hdr);
-
-	return E1000_NOT_IMPLEMENTED;
+	return e1000_mng_write_cmd_header_generic(hw, hdr);
 }
 
 /**
@@ -883,25 +915,22 @@ s32 e1000_mng_write_cmd_header(struct e1000_hw *hw,
  *  and also checks whether the previous command is completed.  It busy waits
  *  in case of previous command is not completed.
  **/
-s32 e1000_mng_enable_host_if(struct e1000_hw * hw)
+s32 e1000_mng_enable_host_if(struct e1000_hw *hw)
 {
-	if (hw->mac.ops.mng_enable_host_if)
-		return hw->mac.ops.mng_enable_host_if(hw);
-
-	return E1000_NOT_IMPLEMENTED;
+	return e1000_mng_enable_host_if_generic(hw);
 }
 
 /**
- *  e1000_wait_autoneg - Waits for autonegotiation completion
+ *  e1000_set_obff_timer - Set Optimized Buffer Flush/Fill timer
  *  @hw: pointer to the HW structure
+ *  @itr: u32 indicating itr value
  *
- *  Waits for autoneg to complete. Currently no func pointer exists and all
- *  implementations are handled in the generic version of this function.
+ *  Set the OBFF timer based on the given interrupt rate.
  **/
-s32 e1000_wait_autoneg(struct e1000_hw *hw)
+s32 e1000_set_obff_timer(struct e1000_hw *hw, u32 itr)
 {
-	if (hw->mac.ops.wait_autoneg)
-		return hw->mac.ops.wait_autoneg(hw);
+	if (hw->mac.ops.set_obff_timer)
+		return hw->mac.ops.set_obff_timer(hw, itr);
 
 	return E1000_SUCCESS;
 }
@@ -1179,21 +1208,6 @@ s32 e1000_read_pba_length(struct e1000_hw *hw, u32 *pba_num_size)
 }
 
 /**
- *  e1000_read_pba_num - Read device part number
- *  @hw: pointer to the HW structure
- *  @pba_num: pointer to device part number
- *
- *  Reads the product board assembly (PBA) number from the EEPROM and stores
- *  the value in pba_num.
- *  Currently no func pointer exists and all implementations are handled in the
- *  generic version of this function.
- **/
-s32 e1000_read_pba_num(struct e1000_hw *hw, u32 *pba_num)
-{
-	return e1000_read_pba_num_generic(hw, pba_num);
-}
-
-/**
  *  e1000_validate_nvm_checksum - Verifies NVM (EEPROM) checksum
  *  @hw: pointer to the HW structure
  *
@@ -1283,7 +1297,7 @@ s32 e1000_write_nvm(struct e1000_hw *hw, u16 offset, u16 words, u16 *data)
  *  This is a function pointer entry point called by drivers.
  **/
 s32 e1000_write_8bit_ctrl_reg(struct e1000_hw *hw, u32 reg, u32 offset,
-                              u8 data)
+			      u8 data)
 {
 	return e1000_write_8bit_ctrl_reg_generic(hw, reg, offset, data);
 }

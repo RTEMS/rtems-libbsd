@@ -76,6 +76,19 @@ void _rtld_error(const char *fmt, ...);
 #define	FLOCKFILE(fp)		if (__isthreaded) _FLOCKFILE(fp)
 #define	FUNLOCKFILE(fp)		if (__isthreaded) _funlockfile(fp)
 
+struct _spinlock;
+extern struct _spinlock __stdio_thread_lock;
+#define STDIO_THREAD_LOCK()				\
+do {							\
+	if (__isthreaded)				\
+		_SPINLOCK(&__stdio_thread_lock);	\
+} while (0)
+#define STDIO_THREAD_UNLOCK()				\
+do {							\
+	if (__isthreaded)				\
+		_SPINUNLOCK(&__stdio_thread_lock);	\
+} while (0)
+
 /*
  * Indexes into the pthread jump table.
  *
@@ -225,5 +238,8 @@ extern int	__sys_fcntl(int, int, ...);
 
 /* execve() with PATH processing to implement posix_spawnp() */
 int _execvpe(const char *, char * const *, char * const *);
+
+struct dl_phdr_info;
+int __elf_phdr_match_addr(struct dl_phdr_info *, void *);
 
 #endif /* _LIBC_PRIVATE_H_ */

@@ -36,7 +36,6 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>
-#include <sys/linker_set.h>
 #include <sys/module.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
@@ -70,11 +69,17 @@ static int usb_pcount;
 #define	USB_THREAD_CREATE(f, s, p, ...) \
 		kproc_kthread_add((f), (s), &usbproc, (p), RFHIGHPID, \
 		    0, "usb", __VA_ARGS__)
+#if (__FreeBSD_version >= 900000)
+#define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check()
+#else
+#define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check(curthread)
+#endif
 #define	USB_THREAD_SUSPEND(p)   kthread_suspend(p,0)
 #define	USB_THREAD_EXIT(err)	kthread_exit()
 #else
 #define	USB_THREAD_CREATE(f, s, p, ...) \
 		kthread_create((f), (s), (p), RFHIGHPID, 0, __VA_ARGS__)
+#define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check(curproc)
 #define	USB_THREAD_SUSPEND(p)   kthread_suspend(p,0)
 #define	USB_THREAD_EXIT(err)	kthread_exit(err)
 #endif
@@ -83,9 +88,8 @@ static int usb_pcount;
 static int usb_proc_debug;
 
 SYSCTL_NODE(_hw_usb, OID_AUTO, proc, CTLFLAG_RW, 0, "USB process");
-SYSCTL_INT(_hw_usb_proc, OID_AUTO, debug, CTLFLAG_RW, &usb_proc_debug, 0,
+SYSCTL_INT(_hw_usb_proc, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN, &usb_proc_debug, 0,
     "Debug level");
-
 TUNABLE_INT("hw.usb.proc.debug", &usb_proc_debug);
 #endif
 
@@ -100,6 +104,11 @@ usb_process(void *arg)
 	struct usb_process *up = arg;
 	struct usb_proc_msg *pm;
 	struct thread *td;
+
+	/* in case of attach error, check for suspended */
+#ifndef __rtems__
+	USB_THREAD_SUSPEND_CHECK();
+#endif /* __rtems__ */
 
 	/* adjust priority */
 	td = curthread;
@@ -365,7 +374,12 @@ usb_proc_is_gone(struct usb_process *up)
 	if (up->up_gone)
 		return (1);
 
-	mtx_assert(up->up_mtx, MA_OWNED);
+	/*
+	 * Allow calls when up_mtx is NULL, before the USB process
+	 * structure is initialised.
+	 */
+	if (up->up_mtx != NULL)
+		mtx_assert(up->up_mtx, MA_OWNED);
 	return (0);
 }
 
@@ -471,7 +485,7 @@ usb_proc_drain(struct usb_process *up)
 /*------------------------------------------------------------------------*
  *	usb_proc_rewakeup
  *
- * This function is called to re-wakeup the the given USB
+ * This function is called to re-wakeup the given USB
  * process. This usually happens after that the USB system has been in
  * polling mode, like during a panic. This function must be called
  * having "up->up_mtx" locked.

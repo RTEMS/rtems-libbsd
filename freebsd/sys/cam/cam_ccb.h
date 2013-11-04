@@ -187,6 +187,11 @@ typedef enum {
 				/*
 				 * Set SIM specific knob values.
 				 */
+
+	XPT_SCAN_TGT		= 0x1E | XPT_FC_QUEUED | XPT_FC_USER_CCB
+				       | XPT_FC_XPT_ONLY,
+				/* Scan Target */
+
 /* HBA engine commands 0x20->0x2F */
 	XPT_ENG_INQ		= 0x20 | XPT_FC_XPT_ONLY,
 				/* HBA engine feature inquiry */
@@ -250,6 +255,14 @@ typedef enum {
 	XPORT_SATA,	/* Serial AT Attachment */
 	XPORT_ISCSI,	/* iSCSI */
 } cam_xport;
+
+#define XPORT_IS_ATA(t)		((t) == XPORT_ATA || (t) == XPORT_SATA)
+#define XPORT_IS_SCSI(t)	((t) != XPORT_UNKNOWN && \
+				 (t) != XPORT_UNSPECIFIED && \
+				 !XPORT_IS_ATA(t))
+#define XPORT_DEVSTAT_TYPE(t)	(XPORT_IS_ATA(t) ? DEVSTAT_TYPE_IF_IDE : \
+				 XPORT_IS_SCSI(t) ? DEVSTAT_TYPE_IF_SCSI : \
+				 DEVSTAT_TYPE_IF_OTHER)
 
 #define PROTO_VERSION_UNKNOWN (UINT_MAX - 1)
 #define PROTO_VERSION_UNSPECIFIED UINT_MAX
@@ -808,6 +821,14 @@ struct ccb_trans_settings_scsi
 #define	CTS_SCSI_FLAGS_TAG_ENB		0x01
 };
 
+struct ccb_trans_settings_ata
+{
+	u_int	valid;	/* Which fields to honor */
+#define	CTS_ATA_VALID_TQ		0x01
+	u_int	flags;
+#define	CTS_ATA_FLAGS_TAG_ENB		0x01
+};
+
 struct ccb_trans_settings_spi
 {
 	u_int	  valid;	/* Which fields to honor */
@@ -842,7 +863,7 @@ struct ccb_trans_settings_sas {
 	u_int32_t 	bitrate;	/* Mbps */
 };
 
-struct ccb_trans_settings_ata {
+struct ccb_trans_settings_pata {
 	u_int     	valid;		/* Which fields to honor */
 #define	CTS_ATA_VALID_MODE		0x01
 #define	CTS_ATA_VALID_BYTECOUNT		0x02
@@ -869,9 +890,10 @@ struct ccb_trans_settings_sata {
 	u_int 		atapi;		/* Length of ATAPI CDB */
 	u_int 		caps;		/* Device and host SATA caps. */
 #define	CTS_SATA_CAPS_H			0x0000ffff
-#define	CTS_SATA_CAPS_HH_PMREQ		0x00000001
-#define	CTS_SATA_CAPS_HH_APST		0x00000002
-#define	CTS_SATA_CAPS_HH_DMAAA		0x00000010 /* Auto-activation */
+#define	CTS_SATA_CAPS_H_PMREQ		0x00000001
+#define	CTS_SATA_CAPS_H_APST		0x00000002
+#define	CTS_SATA_CAPS_H_DMAAA		0x00000010 /* Auto-activation */
+#define	CTS_SATA_CAPS_H_AN		0x00000020 /* Async. notification */
 #define	CTS_SATA_CAPS_D			0xffff0000
 #define	CTS_SATA_CAPS_D_PMREQ		0x00010000
 #define	CTS_SATA_CAPS_D_APST		0x00020000
@@ -887,6 +909,7 @@ struct ccb_trans_settings {
 	u_int	  transport_version;
 	union {
 		u_int  valid;	/* Which fields to honor */
+		struct ccb_trans_settings_ata ata;
 		struct ccb_trans_settings_scsi scsi;
 	} proto_specific;
 	union {
@@ -894,7 +917,7 @@ struct ccb_trans_settings {
 		struct ccb_trans_settings_spi spi;
 		struct ccb_trans_settings_fc fc;
 		struct ccb_trans_settings_sas sas;
-		struct ccb_trans_settings_ata ata;
+		struct ccb_trans_settings_pata ata;
 		struct ccb_trans_settings_sata sata;
 	} xport_specific;
 };

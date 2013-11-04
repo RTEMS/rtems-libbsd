@@ -21,13 +21,6 @@ __FBSDID("$FreeBSD$");
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -50,7 +43,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>
-#include <sys/linker_set.h>
 #include <sys/module.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
@@ -435,7 +427,7 @@ hid_get_item(struct hid_data *s, struct hid_item *h)
 				s->loc_size = dval & mask;
 				break;
 			case 8:
-				hid_switch_rid(s, c, dval);
+				hid_switch_rid(s, c, dval & mask);
 				break;
 			case 9:
 				/* mask because value is unsigned */
@@ -622,7 +614,7 @@ hid_report_size(const void *buf, usb_size_t len, enum hid_kind k, uint8_t *id)
  *	hid_locate
  *------------------------------------------------------------------------*/
 int
-hid_locate(const void *desc, usb_size_t size, uint32_t u, enum hid_kind k,
+hid_locate(const void *desc, usb_size_t size, int32_t u, enum hid_kind k,
     uint8_t index, struct hid_location *loc, uint32_t *flags, uint8_t *id)
 {
 	struct hid_data *d;
@@ -712,10 +704,47 @@ hid_get_data_unsigned(const uint8_t *buf, usb_size_t len, struct hid_location *l
 }
 
 /*------------------------------------------------------------------------*
+ *	hid_put_data
+ *------------------------------------------------------------------------*/
+void
+hid_put_data_unsigned(uint8_t *buf, usb_size_t len,
+    struct hid_location *loc, unsigned int value)
+{
+	uint32_t hpos = loc->pos;
+	uint32_t hsize = loc->size;
+	uint64_t data;
+	uint64_t mask;
+	uint32_t rpos;
+	uint8_t n;
+
+	DPRINTFN(11, "hid_put_data: loc %d/%d = %u\n", hpos, hsize, value);
+
+	/* Range check and limit */
+	if (hsize == 0)
+		return;
+	if (hsize > 32)
+		hsize = 32;
+
+	/* Put data in a safe way */	
+	rpos = (hpos / 8);
+	n = (hsize + 7) / 8;
+	data = ((uint64_t)value) << (hpos % 8);
+	mask = ((1ULL << hsize) - 1ULL) << (hpos % 8);
+	rpos += n;
+	while (n--) {
+		rpos--;
+		if (rpos < len) {
+			buf[rpos] &= ~(mask >> (8 * n));
+			buf[rpos] |= (data >> (8 * n));
+		}
+	}
+}
+
+/*------------------------------------------------------------------------*
  *	hid_is_collection
  *------------------------------------------------------------------------*/
 int
-hid_is_collection(const void *desc, usb_size_t size, uint32_t usage)
+hid_is_collection(const void *desc, usb_size_t size, int32_t usage)
 {
 	struct hid_data *hd;
 	struct hid_item hi;

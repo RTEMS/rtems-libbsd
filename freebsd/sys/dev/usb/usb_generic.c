@@ -34,7 +34,6 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>
-#include <sys/linker_set.h>
 #include <sys/module.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
@@ -130,9 +129,8 @@ struct usb_fifo_methods usb_ugen_methods = {
 static int ugen_debug = 0;
 
 SYSCTL_NODE(_hw_usb, OID_AUTO, ugen, CTLFLAG_RW, 0, "USB generic");
-SYSCTL_INT(_hw_usb_ugen, OID_AUTO, debug, CTLFLAG_RW, &ugen_debug,
+SYSCTL_INT(_hw_usb_ugen, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN, &ugen_debug,
     0, "Debug level");
-
 TUNABLE_INT("hw.usb.ugen.debug", &ugen_debug);
 #endif
 
@@ -243,7 +241,7 @@ ugen_open_pipe_write(struct usb_fifo *f)
 		/* transfers are already opened */
 		return (0);
 	}
-	bzero(usb_config, sizeof(usb_config));
+	memset(usb_config, 0, sizeof(usb_config));
 
 	usb_config[1].type = UE_CONTROL;
 	usb_config[1].endpoint = 0;
@@ -311,7 +309,7 @@ ugen_open_pipe_read(struct usb_fifo *f)
 		/* transfers are already opened */
 		return (0);
 	}
-	bzero(usb_config, sizeof(usb_config));
+	memset(usb_config, 0, sizeof(usb_config));
 
 	usb_config[1].type = UE_CONTROL;
 	usb_config[1].endpoint = 0;
@@ -717,12 +715,19 @@ ugen_get_cdesc(struct usb_fifo *f, struct usb_gen_descriptor *ugd)
 	return (error);
 }
 
+/*
+ * This function is called having the enumeration SX locked which
+ * protects the scratch area used.
+ */
 static int
 ugen_get_sdesc(struct usb_fifo *f, struct usb_gen_descriptor *ugd)
 {
-	void *ptr = f->udev->bus->scratch[0].data;
-	uint16_t size = sizeof(f->udev->bus->scratch[0].data);
+	void *ptr;
+	uint16_t size;
 	int error;
+
+	ptr = f->udev->scratch.data;
+	size = sizeof(f->udev->scratch.data);
 
 	if (usbd_req_get_string_desc(f->udev, NULL, ptr,
 	    size, ugd->ugd_lang_id, ugd->ugd_string_index)) {
@@ -955,7 +960,13 @@ ugen_re_enumerate(struct usb_fifo *f)
 	}
 	if (udev->flags.usb_mode != USB_MODE_HOST) {
 		/* not possible in device side mode */
+		DPRINTFN(6, "device mode\n");
 		return (ENOTTY);
+	}
+	if (udev->parent_hub == NULL) {
+		/* the root HUB cannot be re-enumerated */
+		DPRINTFN(6, "cannot reset root HUB\n");
+		return (EINVAL);
 	}
 	/* make sure all FIFO's are gone */
 	/* else there can be a deadlock */
@@ -963,10 +974,8 @@ ugen_re_enumerate(struct usb_fifo *f)
 		/* ignore any errors */
 		DPRINTFN(6, "no FIFOs\n");
 	}
-	if (udev->re_enumerate_wait == 0) {
-		udev->re_enumerate_wait = 1;
-		usb_needs_explore(udev->bus, 0);
-	}
+	/* start re-enumeration of device */
+	usbd_start_re_enumerate(udev);
 	return (0);
 }
 
@@ -1396,10 +1405,12 @@ ugen_ioctl(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 	}     u;
 	struct usb_endpoint *ep;
 	struct usb_endpoint_descriptor *ed;
+	struct usb_xfer *xfer;
 	int error = 0;
 	uint8_t iface_index;
 	uint8_t isread;
 	uint8_t ep_index;
+	uint8_t pre_scale;
 
 	u.addr = addr;
 
@@ -1421,11 +1432,11 @@ ugen_ioctl(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 
 	case USB_FS_START:
 		error = ugen_fs_copy_in(f, u.pstart->ep_index);
-		if (error) {
+		if (error)
 			break;
-		}
 		mtx_lock(f->priv_mtx);
-		usbd_transfer_start(f->fs_xfer[u.pstart->ep_index]);
+		xfer = f->fs_xfer[u.pstart->ep_index];
+		usbd_transfer_start(xfer);
 		mtx_unlock(f->priv_mtx);
 		break;
 
@@ -1435,7 +1446,19 @@ ugen_ioctl(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 			break;
 		}
 		mtx_lock(f->priv_mtx);
-		usbd_transfer_stop(f->fs_xfer[u.pstop->ep_index]);
+		xfer = f->fs_xfer[u.pstart->ep_index];
+		if (usbd_transfer_pending(xfer)) {
+			usbd_transfer_stop(xfer);
+			/*
+			 * Check if the USB transfer was stopped
+			 * before it was even started. Else a cancel
+			 * callback will be pending.
+			 */
+			if (!xfer->flags_int.transferring) {
+				ugen_fs_set_complete(xfer->priv_sc,
+				    USB_P2U(xfer->priv_fifo));
+			}
+		}
 		mtx_unlock(f->priv_mtx);
 		break;
 
@@ -1450,6 +1473,12 @@ ugen_ioctl(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 		}
 		if (u.popen->max_bufsize > USB_FS_MAX_BUFSIZE) {
 			u.popen->max_bufsize = USB_FS_MAX_BUFSIZE;
+		}
+		if (u.popen->max_frames & USB_FS_MAX_FRAMES_PRE_SCALE) {
+			pre_scale = 1;
+			u.popen->max_frames &= ~USB_FS_MAX_FRAMES_PRE_SCALE;
+		} else {
+			pre_scale = 0;
 		}
 		if (u.popen->max_frames > USB_FS_MAX_FRAMES) {
 			u.popen->max_frames = USB_FS_MAX_FRAMES;
@@ -1471,13 +1500,15 @@ ugen_ioctl(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 		}
 		iface_index = ep->iface_index;
 
-		bzero(usb_config, sizeof(usb_config));
+		memset(usb_config, 0, sizeof(usb_config));
 
 		usb_config[0].type = ed->bmAttributes & UE_XFERTYPE;
 		usb_config[0].endpoint = ed->bEndpointAddress & UE_ADDR;
 		usb_config[0].direction = ed->bEndpointAddress & (UE_DIR_OUT | UE_DIR_IN);
 		usb_config[0].interval = USB_DEFAULT_INTERVAL;
 		usb_config[0].flags.proxy_buffer = 1;
+		if (pre_scale != 0)
+			usb_config[0].flags.pre_scale_frames = 1;
 		usb_config[0].callback = &ugen_ctrl_fs_callback;
 		usb_config[0].timeout = 0;	/* no timeout */
 		usb_config[0].frames = u.popen->max_frames;
@@ -1519,6 +1550,10 @@ ugen_ioctl(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 			    f->fs_xfer[u.popen->ep_index]->max_frame_size;
 			u.popen->max_bufsize =
 			    f->fs_xfer[u.popen->ep_index]->max_data_length;
+			/* update number of frames */
+			u.popen->max_frames =
+			    f->fs_xfer[u.popen->ep_index]->nframes;
+			/* store index of endpoint */
 			f->fs_xfer[u.popen->ep_index]->priv_fifo =
 			    ((uint8_t *)0) + u.popen->ep_index;
 		} else {
@@ -2139,7 +2174,16 @@ ugen_ioctl_post(struct usb_fifo *f, u_long cmd, void *addr, int fflags)
 			break;
 		}
 
+		/*
+		 * Detach the currently attached driver.
+		 */
 		usb_detach_device(f->udev, n, 0);
+
+		/*
+		 * Set parent to self, this should keep attach away
+		 * until the next set configuration event.
+		 */
+		usbd_set_parent_iface(f->udev, n, n);
 		break;
 
 	case USB_SET_POWER_MODE:

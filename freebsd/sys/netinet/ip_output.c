@@ -95,7 +95,7 @@ __FBSDID("$FreeBSD$");
 VNET_DEFINE(u_short, ip_id);
 
 #ifdef MBUF_STRESS_TEST
-int mbuf_frag_size = 0;
+static int mbuf_frag_size = 0;
 SYSCTL_INT(_net_inet_ip, OID_AUTO, mbuf_frag_size, CTLFLAG_RW,
 	&mbuf_frag_size, 0, "Fragment outgoing mbufs to this size");
 #endif
@@ -199,8 +199,8 @@ ip_output(struct mbuf *m, struct mbuf *opt, struct route *ro, int flags,
 		hlen = ip->ip_hl << 2;
 	}
 
-	dst = (struct sockaddr_in *)&ro->ro_dst;
 again:
+	dst = (struct sockaddr_in *)&ro->ro_dst;
 	/*
 	 * If there is a cached route,
 	 * check that it is to the same destination
@@ -958,6 +958,7 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 		case IP_FAITH:
 		case IP_ONESBCAST:
 		case IP_DONTFRAG:
+		case IP_RECVTOS:
 			error = sooptcopyin(sopt, &optval, sizeof optval,
 					    sizeof optval);
 			if (error)
@@ -1020,6 +1021,9 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 				break;
 			case IP_BINDANY:
 				OPTSET(INP_BINDANY);
+				break;
+			case IP_RECVTOS:
+				OPTSET(INP_RECVTOS);
 				break;
 			}
 			break;
@@ -1130,6 +1134,7 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 		case IP_ONESBCAST:
 		case IP_DONTFRAG:
 		case IP_BINDANY:
+		case IP_RECVTOS:
 			switch (sopt->sopt_name) {
 
 			case IP_TOS:
@@ -1187,6 +1192,9 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 				break;
 			case IP_BINDANY:
 				optval = OPTBIT(INP_BINDANY);
+				break;
+			case IP_RECVTOS:
+				optval = OPTBIT(INP_RECVTOS);
 				break;
 			}
 			error = sooptcopyout(sopt, &optval, sizeof optval);

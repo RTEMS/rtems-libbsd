@@ -37,6 +37,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/module.h>
+#include <sys/rman.h>
 #include <sys/sysctl.h>
 
 #include <dev/pci/pcivar.h>
@@ -112,14 +113,28 @@ legacy_pcib_alloc_msix(device_t pcib, device_t dev, int *irq)
 	return (PCIB_ALLOC_MSIX(device_get_parent(bus), dev, irq));
 }
 
-static int
+int
 legacy_pcib_map_msi(device_t pcib, device_t dev, int irq, uint64_t *addr,
     uint32_t *data)
 {
-	device_t bus;
+	device_t bus, hostb;
+	int error, func, slot;
 
 	bus = device_get_parent(pcib);
-	return (PCIB_MAP_MSI(device_get_parent(bus), dev, irq, addr, data));
+	error = PCIB_MAP_MSI(device_get_parent(bus), dev, irq, addr, data);
+	if (error)
+		return (error);
+
+	slot = legacy_get_pcislot(pcib);
+	func = legacy_get_pcifunc(pcib);
+	if (slot == -1 || func == -1)
+		return (0);
+	hostb = pci_find_bsf(0, slot, func);
+	KASSERT(hostb != NULL, ("%s: missing hostb for 0:%d:%d", __func__,
+	    slot, func));
+	pci_ht_map_msi(hostb, *addr);
+	return (0);
+	
 }
 
 static const char *
@@ -444,6 +459,8 @@ legacy_pcib_identify(driver_t *driver, device_t parent)
 					      "pcib", busnum);
 			device_set_desc(child, s);
 			legacy_set_pcibus(child, busnum);
+			legacy_set_pcislot(child, slot);
+			legacy_set_pcifunc(child, func);
 
 			found = 1;
 			if (id == 0x12258086)
@@ -577,10 +594,10 @@ static device_method_t legacy_pcib_methods[] = {
 	DEVMETHOD(device_resume,	bus_generic_resume),
 
 	/* Bus interface */
-	DEVMETHOD(bus_print_child,	bus_generic_print_child),
 	DEVMETHOD(bus_read_ivar,	legacy_pcib_read_ivar),
 	DEVMETHOD(bus_write_ivar,	legacy_pcib_write_ivar),
 	DEVMETHOD(bus_alloc_resource,	legacy_pcib_alloc_resource),
+	DEVMETHOD(bus_adjust_resource,	bus_generic_adjust_resource),
 	DEVMETHOD(bus_release_resource,	bus_generic_release_resource),
 	DEVMETHOD(bus_activate_resource, bus_generic_activate_resource),
 	DEVMETHOD(bus_deactivate_resource, bus_generic_deactivate_resource),
@@ -598,7 +615,7 @@ static device_method_t legacy_pcib_methods[] = {
 	DEVMETHOD(pcib_release_msix,	pcib_release_msix),
 	DEVMETHOD(pcib_map_msi,		legacy_pcib_map_msi),
 
-	{ 0, 0 }
+	DEVMETHOD_END
 };
 
 static devclass_t hostb_devclass;
@@ -673,7 +690,6 @@ static device_method_t pcibios_pcib_pci_methods[] = {
 	DEVMETHOD(device_resume,	bus_generic_resume),
 
 	/* Bus interface */
-	DEVMETHOD(bus_print_child,	bus_generic_print_child),
 	DEVMETHOD(bus_read_ivar,	pcib_read_ivar),
 	DEVMETHOD(bus_write_ivar,	pcib_write_ivar),
 	DEVMETHOD(bus_alloc_resource,	pcib_alloc_resource),
@@ -694,7 +710,7 @@ static device_method_t pcibios_pcib_pci_methods[] = {
 	DEVMETHOD(pcib_release_msix,	pcib_release_msix),
 	DEVMETHOD(pcib_map_msi,		pcib_map_msi),
 
-	{0, 0}
+	DEVMETHOD_END
 };
 
 static devclass_t pcib_devclass;

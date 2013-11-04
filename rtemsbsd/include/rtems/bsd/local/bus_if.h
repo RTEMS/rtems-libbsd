@@ -3,7 +3,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   kern/bus_if.m
+ *   freebsd-org/sys/kern/bus_if.m
  * with
  *   makeobjops.awk
  *
@@ -317,6 +317,37 @@ static __inline int BUS_DEACTIVATE_RESOURCE(device_t _dev, device_t _child,
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_deactivate_resource);
 	return ((bus_deactivate_resource_t *) _m)(_dev, _child, _type, _rid, _r);
+}
+
+/** @brief Unique descriptor for the BUS_ADJUST_RESOURCE() method */
+extern struct kobjop_desc bus_adjust_resource_desc;
+/** @brief A function implementing the BUS_ADJUST_RESOURCE() method */
+typedef int bus_adjust_resource_t(device_t _dev, device_t _child, int _type,
+                                  struct resource *_res, u_long _start,
+                                  u_long _end);
+/**
+ * @brief Adjust a resource
+ *
+ * Adjust the start and/or end of a resource allocated by
+ * BUS_ALLOC_RESOURCE.  At least part of the new address range must overlap
+ * with the existing address range.  If the successful, the resource's range
+ * will be adjusted to [start, end] on return.
+ *
+ * @param _dev		the parent device of @p _child
+ * @param _child	the device which allocated the resource
+ * @param _type		the type of resource
+ * @param _res		the resource to adjust
+ * @param _start	the new starting address of the resource range
+ * @param _end		the new ending address of the resource range
+ */
+
+static __inline int BUS_ADJUST_RESOURCE(device_t _dev, device_t _child,
+                                        int _type, struct resource *_res,
+                                        u_long _start, u_long _end)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_adjust_resource);
+	return ((bus_adjust_resource_t *) _m)(_dev, _child, _type, _res, _start, _end);
 }
 
 /** @brief Unique descriptor for the BUS_RELEASE_RESOURCE() method */

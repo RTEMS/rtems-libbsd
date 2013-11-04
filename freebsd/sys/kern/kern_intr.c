@@ -148,22 +148,18 @@ intr_priority(enum intr_type flags)
 	    INTR_TYPE_CAM | INTR_TYPE_MISC | INTR_TYPE_CLK | INTR_TYPE_AV);
 	switch (flags) {
 	case INTR_TYPE_TTY:
-		pri = PI_TTYLOW;
+		pri = PI_TTY;
 		break;
 	case INTR_TYPE_BIO:
-		/*
-		 * XXX We need to refine this.  BSD/OS distinguishes
-		 * between tape and disk priorities.
-		 */
 		pri = PI_DISK;
 		break;
 	case INTR_TYPE_NET:
 		pri = PI_NET;
 		break;
 	case INTR_TYPE_CAM:
-		pri = PI_DISK;          /* XXX or PI_CAM? */
+		pri = PI_DISK;
 		break;
-	case INTR_TYPE_AV:		/* Audio/video */
+	case INTR_TYPE_AV:
 		pri = PI_AV;
 		break;
 	case INTR_TYPE_CLK:
@@ -202,6 +198,9 @@ ithread_update(struct intr_thread *ithd)
 
 	/* Update name and priority. */
 	strlcpy(td->td_name, ie->ie_fullname, sizeof(td->td_name));
+#ifdef KTR
+	sched_clear_tdname(td);
+#endif
 	thread_lock(td);
 #ifndef __rtems__
 	sched_prio(td, pri);
@@ -1118,6 +1117,7 @@ int
 swi_add(struct intr_event **eventp, const char *name, driver_intr_t handler,
 	    void *arg, int pri, enum intr_type flags, void **cookiep)
 {
+	struct thread *td;
 	struct intr_event *ie;
 	int error;
 
@@ -1138,16 +1138,15 @@ swi_add(struct intr_event **eventp, const char *name, driver_intr_t handler,
 			*eventp = ie;
 	}
 	error = intr_event_add_handler(ie, name, NULL, handler, arg,
-	    (pri * RQ_PPQ) + PI_SOFT, flags, cookiep);
+	    PI_SWI(pri), flags, cookiep);
 	if (error)
 		return (error);
 #ifndef __rtems__
 	if (pri == SWI_CLOCK) {
-		struct proc *p;
-		p = ie->ie_thread->it_thread->td_proc;
-		PROC_LOCK(p);
-		p->p_flag |= P_NOLOAD;
-		PROC_UNLOCK(p);
+		td = ie->ie_thread->it_thread;
+		thread_lock(td);
+		td->td_flags |= TDF_NOLOAD;
+		thread_unlock(td);
 	}
 #else /* __rtems__ */
 	// Do _not_ ignore the thread in the load avarage
@@ -1742,18 +1741,13 @@ db_dump_intrhand(struct intr_handler *ih)
 	case PI_AV:
 		db_printf("AV  ");
 		break;
-	case PI_TTYHIGH:
-	case PI_TTYLOW:
+	case PI_TTY:
 		db_printf("TTY ");
-		break;
-	case PI_TAPE:
-		db_printf("TAPE");
 		break;
 	case PI_NET:
 		db_printf("NET ");
 		break;
 	case PI_DISK:
-	case PI_DISKLOW:
 		db_printf("DISK");
 		break;
 	case PI_DULL:

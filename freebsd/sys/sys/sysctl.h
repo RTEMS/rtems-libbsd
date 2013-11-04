@@ -87,6 +87,7 @@ struct ctlname {
 #define CTLFLAG_MPSAFE	0x00040000	/* Handler is MP safe */
 #define CTLFLAG_VNET	0x00020000	/* Prisons with vnet can fiddle */
 #define CTLFLAG_RDTUN	(CTLFLAG_RD|CTLFLAG_TUN)
+#define	CTLFLAG_DYING	0x00010000	/* oid is being removed */
 
 /*
  * Secure level.   Note that CTLFLAG_SECURE == CTLFLAG_SECURE1.
@@ -114,6 +115,8 @@ struct ctlname {
 #define CTL_AUTO_START	0x100
 
 #ifdef _KERNEL
+#include <sys/linker_set.h>
+
 #define SYSCTL_HANDLER_ARGS struct sysctl_oid *oidp, void *arg1, int arg2, \
 	struct sysctl_req *req
 
@@ -166,7 +169,8 @@ struct sysctl_oid {
 	const char	*oid_name;
 	int 		(*oid_handler)(SYSCTL_HANDLER_ARGS);
 	const char	*oid_fmt;
-	int		oid_refcnt;
+	int16_t		oid_refcnt;
+	uint16_t	oid_running;
 	const char	*oid_descr;
 };
 
@@ -242,13 +246,13 @@ TAILQ_HEAD(sysctl_ctx_list, sysctl_ctx_entry);
 #define SYSCTL_OID(parent, nbr, name, kind, a1, a2, handler, fmt, descr) \
 	static struct sysctl_oid sysctl__##parent##_##name = {		 \
 		&sysctl_##parent##_children, { NULL }, nbr, kind,	 \
-		a1, a2, #name, handler, fmt, 0, __DESCR(descr) };     \
+		a1, a2, #name, handler, fmt, 0, 0, __DESCR(descr) };	 \
 	DATA_SET(sysctl_set, sysctl__##parent##_##name)
 #else /* __rtems__ */
 #define SYSCTL_OID(parent, nbr, name, kind, a1, a2, handler, fmt, descr) \
 	static struct sysctl_oid sysctl__##parent##_##name = {		 \
 		&_bsd_sysctl_##parent##_children, { NULL }, nbr, kind,	 \
-		a1, a2, #name, handler, fmt, 0, __DESCR(descr) };     \
+		a1, a2, #name, handler, fmt, 0, 0, __DESCR(descr) };	 \
 	DATA_SET(sysctl_set, sysctl__##parent##_##name)
 #endif /* __rtems__ */
 
@@ -516,6 +520,7 @@ TAILQ_HEAD(sysctl_ctx_list, sysctl_ctx_entry);
 #define	KERN_PROC_VMMAP		32	/* VM map entries for process */
 #define	KERN_PROC_FILEDESC	33	/* File descriptors for process */
 #define	KERN_PROC_GROUPS	34	/* process groups */
+#define	KERN_PROC_OSREL		40	/* osreldate for process binary */
 
 /*
  * KERN_IPC identifiers
@@ -747,6 +752,9 @@ void	sysctl_lock(void);
 void	sysctl_unlock(void);
 int	sysctl_wire_old_buffer(struct sysctl_req *req, size_t len);
 
+struct sbuf;
+struct sbuf	*sbuf_new_for_sysctl(struct sbuf *, char *, int,
+		    struct sysctl_req *);
 #else	/* !_KERNEL */
 #include <sys/cdefs.h>
 

@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -250,8 +243,6 @@ typedef struct ohci_softc {
 	bus_space_handle_t sc_io_hdl;
 
 	uint32_t sc_eintrs;		/* enabled interrupts */
-	uint32_t sc_control;		/* Preserved during suspend/standby */
-	uint32_t sc_intre;
 
 	uint16_t sc_intr_stat[OHCI_NO_EDS];
 	uint16_t sc_id_vendor;
@@ -269,8 +260,6 @@ usb_bus_mem_cb_t ohci_iterate_hw_softc;
 
 usb_error_t ohci_init(ohci_softc_t *sc);
 void	ohci_detach(struct ohci_softc *sc);
-void	ohci_suspend(ohci_softc_t *sc);
-void	ohci_resume(ohci_softc_t *sc);
 void	ohci_interrupt(ohci_softc_t *sc);
 
 #endif					/* _OHCI_H_ */

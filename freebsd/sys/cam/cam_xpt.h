@@ -63,28 +63,6 @@ struct async_node {
 SLIST_HEAD(async_list, async_node);
 SLIST_HEAD(periph_list, cam_periph);
 
-#if defined(CAM_DEBUG_FLAGS) && !defined(CAMDEBUG)
-#error "You must have options CAMDEBUG to use options CAM_DEBUG_FLAGS"
-#endif
-
-/*
- * In order to enable the CAM_DEBUG_* options, the user must have CAMDEBUG
- * enabled.  Also, the user must have either none, or all of CAM_DEBUG_BUS,
- * CAM_DEBUG_TARGET, and CAM_DEBUG_LUN specified.
- */
-#if defined(CAM_DEBUG_BUS) || defined(CAM_DEBUG_TARGET) \
-    || defined(CAM_DEBUG_LUN)
-#ifdef CAMDEBUG
-#if !defined(CAM_DEBUG_BUS) || !defined(CAM_DEBUG_TARGET) \
-    || !defined(CAM_DEBUG_LUN)
-#error "You must define all or none of CAM_DEBUG_BUS, CAM_DEBUG_TARGET \
-        and CAM_DEBUG_LUN"
-#endif /* !CAM_DEBUG_BUS || !CAM_DEBUG_TARGET || !CAM_DEBUG_LUN */
-#else /* !CAMDEBUG */
-#error "You must use options CAMDEBUG if you use the CAM_DEBUG_* options"
-#endif /* CAMDEBUG */
-#endif /* CAM_DEBUG_BUS || CAM_DEBUG_TARGET || CAM_DEBUG_LUN */
-
 void			xpt_action(union ccb *new_ccb);
 void			xpt_action_default(union ccb *new_ccb);
 union ccb		*xpt_alloc_ccb(void);
@@ -104,6 +82,9 @@ cam_status		xpt_create_path_unlocked(struct cam_path **new_path_ptr,
 					path_id_t path_id,
 					target_id_t target_id, lun_id_t lun_id);
 void			xpt_free_path(struct cam_path *path);
+void			xpt_path_counts(struct cam_path *path, uint32_t *bus_ref,
+					uint32_t *periph_ref, uint32_t *target_ref,
+					uint32_t *device_ref);
 int			xpt_path_comp(struct cam_path *path1,
 				      struct cam_path *path2);
 void			xpt_print_path(struct cam_path *path);
@@ -113,6 +94,7 @@ int			xpt_path_string(struct cam_path *path, char *str,
 path_id_t		xpt_path_path_id(struct cam_path *path);
 target_id_t		xpt_path_target_id(struct cam_path *path);
 lun_id_t		xpt_path_lun_id(struct cam_path *path);
+int			xpt_path_legacy_ata_id(struct cam_path *path);
 struct cam_sim		*xpt_path_sim(struct cam_path *path);
 struct cam_periph	*xpt_path_periph(struct cam_path *path);
 void			xpt_async(u_int32_t async_code, struct cam_path *path,
@@ -135,4 +117,3 @@ void			xpt_release_path(struct cam_path *path);
 #endif /* _KERNEL */
 
 #endif /* _CAM_CAM_XPT_H */
-

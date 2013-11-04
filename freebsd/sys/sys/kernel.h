@@ -66,7 +66,7 @@ extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int profprocs;			/* number of process's profiling */
 #ifndef __rtems__
-extern int ticks;
+extern volatile int ticks;
 #else /* __rtems__ */
 #include <rtems/score/watchdogimpl.h>
 #define ticks _Watchdog_Ticks_since_boot

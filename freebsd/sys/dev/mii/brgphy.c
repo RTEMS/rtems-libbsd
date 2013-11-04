@@ -87,7 +87,7 @@ static device_method_t brgphy_methods[] = {
 	DEVMETHOD(device_attach,	brgphy_attach),
 	DEVMETHOD(device_detach,	mii_phy_detach),
 	DEVMETHOD(device_shutdown,	bus_generic_shutdown),
-	{ 0, 0 }
+	DEVMETHOD_END
 };
 
 static devclass_t brgphy_devclass;
@@ -144,6 +144,10 @@ static const struct mii_phydesc brgphys[] = {
 	MII_PHY_DESC(xxBROADCOM_ALT1, BCM5761),
 	MII_PHY_DESC(xxBROADCOM_ALT1, BCM5709S),
 	MII_PHY_DESC(xxBROADCOM_ALT2, BCM5717C),
+	MII_PHY_DESC(xxBROADCOM_ALT2, BCM5719C),
+	MII_PHY_DESC(xxBROADCOM_ALT2, BCM5720C),
+	MII_PHY_DESC(xxBROADCOM_ALT2, BCM57765),
+	MII_PHY_DESC(xxBROADCOM_ALT2, BCM57780),
 	MII_PHY_DESC(BROADCOM2, BCM5906),
 	MII_PHY_END
 };
@@ -215,16 +219,20 @@ brgphy_attach(device_t dev)
 	bsc->mii_model = MII_MODEL(ma->mii_id2);
 	bsc->mii_rev = MII_REV(ma->mii_id2);
 	bsc->serdes_flags = 0;
+	ifp = sc->mii_pdata->mii_ifp;
 
 	if (bootverbose)
 		device_printf(dev, "OUI 0x%06x, model 0x%04x, rev. %d\n",
 		    bsc->mii_oui, bsc->mii_model, bsc->mii_rev);
 
+	/* Find the MAC driver associated with this PHY. */
+	if (strcmp(ifp->if_dname, "bge") == 0)
+		bge_sc = ifp->if_softc;
+	else if (strcmp(ifp->if_dname, "bce") == 0)
+		bce_sc = ifp->if_softc;
+
 	/* Handle any special cases based on the PHY ID */
 	switch (bsc->mii_oui) {
-	case MII_OUI_BROADCOM:
-	case MII_OUI_BROADCOM2:
-		break;
 	case MII_OUI_xxBROADCOM:
 		switch (bsc->mii_model) {
 		case MII_MODEL_xxBROADCOM_BCM5706:
@@ -244,7 +252,8 @@ brgphy_attach(device_t dev)
 				sc->mii_flags |= MIIF_HAVEFIBER;
 			}
 			break;
-		} break;
+		}
+		break;
 	case MII_OUI_xxBROADCOM_ALT1:
 		switch (bsc->mii_model) {
 		case MII_MODEL_xxBROADCOM_ALT1_BCM5708S:
@@ -252,25 +261,19 @@ brgphy_attach(device_t dev)
 			sc->mii_flags |= MIIF_HAVEFIBER;
 			break;
 		case MII_MODEL_xxBROADCOM_ALT1_BCM5709S:
-			bsc->serdes_flags |= BRGPHY_5709S;
+			/*
+			 * XXX
+			 * 5720S and 5709S shares the same PHY id.
+			 * Assume 5720S PHY if parent device is bge(4).
+			 */
+			if (bge_sc != NULL)
+				bsc->serdes_flags |= BRGPHY_5708S;
+			else
+				bsc->serdes_flags |= BRGPHY_5709S;
 			sc->mii_flags |= MIIF_HAVEFIBER;
 			break;
 		}
 		break;
-	case MII_OUI_xxBROADCOM_ALT2:
-		/* No special handling yet. */
-		break;
-	default:
-		device_printf(dev, "Unrecognized OUI for PHY!\n");
-	}
-
-	ifp = sc->mii_pdata->mii_ifp;
-
-	/* Find the MAC driver associated with this PHY. */
-	if (strcmp(ifp->if_dname, "bge") == 0)	{
-		bge_sc = ifp->if_softc;
-	} else if (strcmp(ifp->if_dname, "bce") == 0) {
-		bce_sc = ifp->if_softc;
 	}
 
 	brgphy_reset(sc);
@@ -400,8 +403,6 @@ brgphy_service(struct mii_softc *sc, struct mii_data *mii, int cmd)
 	    sc->mii_media_status != mii->mii_media_status ||
 	    cmd == MII_MEDIACHG) {
 		switch (bsc->mii_oui) {
-		case MII_OUI_BROADCOM:
-			break;
 		case MII_OUI_xxBROADCOM:
 			switch (bsc->mii_model) {
 			case MII_MODEL_xxBROADCOM_BCM5400:
@@ -418,8 +419,6 @@ brgphy_service(struct mii_softc *sc, struct mii_data *mii, int cmd)
 				bcm54k2_load_dspcode(sc);
 				break;
 			}
-			break;
-		case MII_OUI_xxBROADCOM_ALT1:
 			break;
 		}
 	}
@@ -454,7 +453,7 @@ brgphy_setmedia(struct mii_softc *sc, int media)
 		break;
 	}
 
-	if ((media & IFM_GMASK) == IFM_FDX) {
+	if ((media & IFM_FDX) != 0) {
 		bmcr |= BRGPHY_BMCR_FDX;
 		gig = BRGPHY_1000CTL_AFD;
 	} else {
@@ -637,6 +636,11 @@ brgphy_mii_phy_auto(struct mii_softc *sc, int media)
 		    (sc->mii_flags & MIIF_FORCEPAUSE) != 0)
 			anar |= BRGPHY_ANAR_PC | BRGPHY_ANAR_ASP;
 		PHY_WRITE(sc, BRGPHY_MII_ANAR, anar);
+		ktcr = BRGPHY_1000CTL_AFD | BRGPHY_1000CTL_AHD;
+		if (bsc->mii_model == MII_MODEL_xxBROADCOM_BCM5701)
+			ktcr |= BRGPHY_1000CTL_MSE | BRGPHY_1000CTL_MSC;
+		PHY_WRITE(sc, BRGPHY_MII_1000CTL, ktcr);
+		PHY_READ(sc, BRGPHY_MII_1000CTL);
 	} else {
 		anar = BRGPHY_SERDES_ANAR_FDX | BRGPHY_SERDES_ANAR_HDX;
 		if ((media & IFM_FLOW) != 0 ||
@@ -644,12 +648,6 @@ brgphy_mii_phy_auto(struct mii_softc *sc, int media)
 			anar |= BRGPHY_SERDES_ANAR_BOTH_PAUSE;
 		PHY_WRITE(sc, BRGPHY_SERDES_ANAR, anar);
 	}
-
-	ktcr = BRGPHY_1000CTL_AFD | BRGPHY_1000CTL_AHD;
-	if (bsc->mii_model == MII_MODEL_xxBROADCOM_BCM5701)
-		ktcr |= BRGPHY_1000CTL_MSE | BRGPHY_1000CTL_MSC;
-	PHY_WRITE(sc, BRGPHY_MII_1000CTL, ktcr);
-	ktcr = PHY_READ(sc, BRGPHY_MII_1000CTL);
 
 	PHY_WRITE(sc, BRGPHY_MII_BMCR, BRGPHY_BMCR_AUTOEN |
 	    BRGPHY_BMCR_STARTNEG);
@@ -913,15 +911,25 @@ brgphy_reset(struct mii_softc *sc)
 	struct bge_softc *bge_sc = NULL;
 	struct bce_softc *bce_sc = NULL;
 	struct ifnet *ifp;
-	int val;
+	int i, val;
 
-	/* Perform a standard PHY reset. */
-	mii_phy_reset(sc);
+	/*
+	 * Perform a reset.  Note that at least some Broadcom PHYs default to
+	 * being powered down as well as isolated after a reset but don't work
+	 * if one or both of these bits are cleared.  However, they just work
+	 * fine if both bits remain set, so we don't use mii_phy_reset() here.
+	 */
+	PHY_WRITE(sc, BRGPHY_MII_BMCR, BRGPHY_BMCR_RESET);
+
+	/* Wait 100ms for it to complete. */
+	for (i = 0; i < 100; i++) {
+		if ((PHY_READ(sc, BRGPHY_MII_BMCR) & BRGPHY_BMCR_RESET) == 0)
+			break;
+		DELAY(1000);
+	}
 
 	/* Handle any PHY specific procedures following the reset. */
 	switch (bsc->mii_oui) {
-	case MII_OUI_BROADCOM:
-		break;
 	case MII_OUI_xxBROADCOM:
 		switch (bsc->mii_model) {
 		case MII_MODEL_xxBROADCOM_BCM5400:
@@ -939,8 +947,14 @@ brgphy_reset(struct mii_softc *sc)
 			break;
 		}
 		break;
-	case MII_OUI_xxBROADCOM_ALT1:
 	case MII_OUI_xxBROADCOM_ALT2:
+		switch (bsc->mii_model) {
+		case MII_MODEL_xxBROADCOM_ALT2_BCM5717C:
+		case MII_MODEL_xxBROADCOM_ALT2_BCM5719C:
+		case MII_MODEL_xxBROADCOM_ALT2_BCM5720C:
+		case MII_MODEL_xxBROADCOM_ALT2_BCM57765:
+			return;
+		}
 		break;
 	}
 
@@ -968,9 +982,10 @@ brgphy_reset(struct mii_softc *sc)
 		if (bge_sc->bge_phy_flags & BGE_PHY_JITTER_BUG)
 			brgphy_fixup_jitter_bug(sc);
 
-		brgphy_jumbo_settings(sc, ifp->if_mtu);
+		if (bge_sc->bge_flags & BGE_FLAG_JUMBO)
+			brgphy_jumbo_settings(sc, ifp->if_mtu);
 
-		if (bge_sc->bge_phy_flags & BGE_PHY_WIRESPEED)
+		if ((bge_sc->bge_phy_flags & BGE_PHY_NO_WIRESPEED) == 0)
 			brgphy_ethernet_wirespeed(sc);
 
 		/* Enable Link LED on Dell boxes */

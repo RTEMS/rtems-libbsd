@@ -68,14 +68,6 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/miibus_if.h>
 
-#define DC_SETBIT(sc, reg, x)                           \
-        CSR_WRITE_4(sc, reg,                            \
-                CSR_READ_4(sc, reg) | x)
-
-#define DC_CLRBIT(sc, reg, x)                           \
-        CSR_WRITE_4(sc, reg,                            \
-                CSR_READ_4(sc, reg) & ~x)
-
 static int pnphy_probe(device_t);
 static int pnphy_attach(device_t);
 
@@ -85,7 +77,7 @@ static device_method_t pnphy_methods[] = {
 	DEVMETHOD(device_attach,	pnphy_attach),
 	DEVMETHOD(device_detach,	mii_phy_detach),
 	DEVMETHOD(device_shutdown,	bus_generic_shutdown),
-	{ 0, 0 }
+	DEVMETHOD_END
 };
 
 static devclass_t pnphy_devclass;
@@ -143,7 +135,7 @@ pnphy_attach(device_t dev)
 	/*
 	 * Apparently, we can neither isolate nor do loopback.
 	 */
-	sc->mii_flags |= MIIF_NOISOLATE | MIIF_NOLOOP;
+	sc->mii_flags |= MIIF_NOISOLATE | MIIF_NOLOOP | MIIF_NOMANPAUSE;
 
 	sc->mii_capabilities =
 	    BMSR_100TXFDX | BMSR_100TXHDX | BMSR_10TFDX | BMSR_10THDX;
@@ -172,23 +164,19 @@ pnphy_service(struct mii_softc *sc, struct mii_data *mii, int cmd)
 		if ((mii->mii_ifp->if_flags & IFF_UP) == 0)
 			break;
 
+		/*
+		 * Note that auto-negotiation is broken on this chip.
+		 */
 		switch (IFM_SUBTYPE(ife->ifm_media)) {
-		case IFM_AUTO:
-			/* NWAY is busted on this chip */
-		case IFM_100_T4:
-			/*
-			 * XXX Not supported as a manual setting right now.
-			 */
-			return (EINVAL);
 		case IFM_100_TX:
 			mii->mii_media_active = IFM_ETHER | IFM_100_TX;
-			if ((ife->ifm_media & IFM_GMASK) == IFM_FDX)
+			if ((ife->ifm_media & IFM_FDX) != 0)
 				mii->mii_media_active |= IFM_FDX;
 			MIIBUS_STATCHG(sc->mii_dev);
 			return (0);
 		case IFM_10_T:
 			mii->mii_media_active = IFM_ETHER | IFM_10_T;
-			if ((ife->ifm_media & IFM_GMASK) == IFM_FDX)
+			if ((ife->ifm_media & IFM_FDX) != 0)
 				mii->mii_media_active |= IFM_FDX;
 			MIIBUS_STATCHG(sc->mii_dev);
 			return (0);
@@ -228,15 +216,14 @@ pnphy_status(struct mii_softc *sc)
 	mii->mii_media_active = IFM_ETHER;
 
 	reg = CSR_READ_4(dc_sc, DC_ISR);
-
 	if (!(reg & DC_ISR_LINKFAIL))
 		mii->mii_media_status |= IFM_ACTIVE;
-
-	if (CSR_READ_4(dc_sc, DC_NETCFG) & DC_NETCFG_SPEEDSEL)
+	reg = CSR_READ_4(dc_sc, DC_NETCFG);
+	if (reg & DC_NETCFG_SPEEDSEL)
 		mii->mii_media_active |= IFM_10_T;
 	else
 		mii->mii_media_active |= IFM_100_TX;
-	if (CSR_READ_4(dc_sc, DC_NETCFG) & DC_NETCFG_FULLDUPLEX)
+	if (reg & DC_NETCFG_FULLDUPLEX)
 		mii->mii_media_active |= IFM_FDX;
 	else
 		mii->mii_media_active |= IFM_HDX;

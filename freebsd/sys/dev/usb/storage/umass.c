@@ -112,7 +112,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>
-#include <sys/linker_set.h>
 #include <sys/module.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
@@ -177,9 +176,8 @@ __FBSDID("$FreeBSD$");
 static int umass_debug = 0;
 
 SYSCTL_NODE(_hw_usb, OID_AUTO, umass, CTLFLAG_RW, 0, "USB umass");
-SYSCTL_INT(_hw_usb_umass, OID_AUTO, debug, CTLFLAG_RW,
+SYSCTL_INT(_hw_usb_umass, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN,
     &umass_debug, 0, "umass debug level");
-
 TUNABLE_INT("hw.usb.umass.debug", &umass_debug);
 #else
 #define	DIF(...) do { } while (0)
@@ -726,6 +724,11 @@ MODULE_VERSION(umass, 1);
  * USB device probe/attach/detach
  */
 
+static const STRUCT_USB_HOST_ID __used umass_devs[] = {
+	/* generic mass storage class */
+	{USB_IFACE_CLASS(UICLASS_MASS),},
+};
+
 static uint16_t
 umass_get_proto(struct usb_interface *iface)
 {
@@ -787,6 +790,7 @@ umass_probe_proto(device_t dev, struct usb_attach_arg *uaa)
 	uint32_t proto = umass_get_proto(uaa->iface);
 
 	memset(&ret, 0, sizeof(ret));
+	ret.error = BUS_PROBE_GENERIC;
 
 	/* Search for protocol enforcement */
 
@@ -875,10 +879,6 @@ umass_probe(device_t dev)
 	if (uaa->usb_mode != USB_MODE_HOST) {
 		return (ENXIO);
 	}
-	if (uaa->use_generic == 0) {
-		/* give other drivers a try first */
-		return (ENXIO);
-	}
 	temp = umass_probe_proto(dev, uaa);
 
 	return (temp.error);
@@ -894,7 +894,7 @@ umass_attach(device_t dev)
 	int32_t err;
 
 	/*
-	 * NOTE: the softc struct is bzero-ed in device_set_driver.
+	 * NOTE: the softc struct is cleared in device_set_driver.
 	 * We can safely call umass_detach without specifically
 	 * initializing the struct.
 	 */
@@ -1027,12 +1027,6 @@ umass_attach(device_t dev)
 	/* Prepare the SCSI command block */
 	sc->cam_scsi_sense.opcode = REQUEST_SENSE;
 	sc->cam_scsi_test_unit_ready.opcode = TEST_UNIT_READY;
-
-	/*
-	 * some devices need a delay after that the configuration value is
-	 * set to function properly:
-	 */
-	usb_pause_mtx(NULL, hz);
 
 	/* register the SIM */
 	err = umass_cam_attach_sim(sc);
@@ -1316,11 +1310,13 @@ umass_t_bbb_command_callback(struct usb_xfer *xfer, usb_error_t error)
 			}
 			sc->cbw.bCDBLength = sc->sc_transfer.cmd_len;
 
-			bcopy(sc->sc_transfer.cmd_data, sc->cbw.CBWCDB,
+			memcpy(sc->cbw.CBWCDB, sc->sc_transfer.cmd_data,
 			    sc->sc_transfer.cmd_len);
 
-			bzero(sc->sc_transfer.cmd_data + sc->sc_transfer.cmd_len,
-			    sizeof(sc->cbw.CBWCDB) - sc->sc_transfer.cmd_len);
+			memset(sc->sc_transfer.cmd_data +
+			    sc->sc_transfer.cmd_len, 0,
+			    sizeof(sc->cbw.CBWCDB) -
+			    sc->sc_transfer.cmd_len);
 
 			DIF(UDMASS_BBB, umass_bbb_dump_cbw(sc, &sc->cbw));
 
@@ -1491,9 +1487,9 @@ umass_t_bbb_status_callback(struct usb_xfer *xfer, usb_error_t error)
 
 		/* Zero missing parts of the CSW: */
 
-		if (actlen < sizeof(sc->csw)) {
-			bzero(&sc->csw, sizeof(sc->csw));
-		}
+		if (actlen < (int)sizeof(sc->csw))
+			memset(&sc->csw, 0, sizeof(sc->csw));
+
 		pc = usbd_xfer_get_frame(xfer, 0);
 		usbd_copy_out(pc, 0, &sc->csw, actlen);
 
@@ -1856,9 +1852,23 @@ umass_t_cbi_command_callback(struct usb_xfer *xfer, usb_error_t error)
 		break;
 
 	default:			/* Error */
-		umass_tr_error(xfer, error);
-		/* skip reset */
-		sc->sc_last_xfer_index = UMASS_T_CBI_COMMAND;
+		/*
+		 * STALL on the control pipe can be result of the command error.
+		 * Attempt to clear this STALL same as for bulk pipe also
+		 * results in command completion interrupt, but ASC/ASCQ there
+		 * look like not always valid, so don't bother about it.
+		 */
+		if ((error == USB_ERR_STALLED) ||
+		    (sc->sc_transfer.callback == &umass_cam_cb)) {
+			sc->sc_transfer.ccb = NULL;
+			(sc->sc_transfer.callback)
+			    (sc, ccb, sc->sc_transfer.data_len,
+			    STATUS_CMD_UNKNOWN);
+		} else {
+			umass_tr_error(xfer, error);
+			/* skip reset */
+			sc->sc_last_xfer_index = UMASS_T_CBI_COMMAND;
+		}
 		break;
 	}
 }
@@ -2011,7 +2021,7 @@ umass_t_cbi_status_callback(struct usb_xfer *xfer, usb_error_t error)
 	switch (USB_GET_STATE(xfer)) {
 	case USB_ST_TRANSFERRED:
 
-		if (actlen < sizeof(sc->sbl)) {
+		if (actlen < (int)sizeof(sc->sbl)) {
 			goto tr_setup;
 		}
 		pc = usbd_xfer_get_frame(xfer, 0);
@@ -2616,17 +2626,9 @@ umass_cam_cb(struct umass_softc *sc, union ccb *ccb, uint32_t residue,
 		/*
 		 * The wire protocol failed and will hopefully have
 		 * recovered. We return an error to CAM and let CAM
-		 * retry the command if necessary. In case of SCSI IO
-		 * commands we ask the CAM layer to check the
-		 * condition first. This is a quick hack to make
-		 * certain devices work.
+		 * retry the command if necessary.
 		 */
-		if (ccb->ccb_h.func_code == XPT_SCSI_IO) {
-			ccb->ccb_h.status = CAM_SCSI_STATUS_ERROR;
-			ccb->csio.scsi_status = SCSI_STATUS_CHECK_COND;
-		} else {
-			ccb->ccb_h.status = CAM_REQ_CMP_ERR;
-		}
+		ccb->ccb_h.status = CAM_REQ_CMP_ERR;
 		xpt_done(ccb);
 		break;
 	}
@@ -2761,7 +2763,7 @@ umass_scsi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 		if (sc->sc_quirks & NO_TEST_UNIT_READY) {
 			DPRINTF(sc, UDMASS_SCSI, "Converted TEST_UNIT_READY "
 			    "to START_UNIT\n");
-			bzero(sc->sc_transfer.cmd_data, cmd_len);
+			memset(sc->sc_transfer.cmd_data, 0, cmd_len);
 			sc->sc_transfer.cmd_data[0] = START_STOP_UNIT;
 			sc->sc_transfer.cmd_data[4] = SSS_START;
 			return (1);
@@ -2774,14 +2776,14 @@ umass_scsi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 		 * information.
 		 */
 		if (sc->sc_quirks & FORCE_SHORT_INQUIRY) {
-			bcopy(cmd_ptr, sc->sc_transfer.cmd_data, cmd_len);
+			memcpy(sc->sc_transfer.cmd_data, cmd_ptr, cmd_len);
 			sc->sc_transfer.cmd_data[4] = SHORT_INQUIRY_LENGTH;
 			return (1);
 		}
 		break;
 	}
 
-	bcopy(cmd_ptr, sc->sc_transfer.cmd_data, cmd_len);
+	memcpy(sc->sc_transfer.cmd_data, cmd_ptr, cmd_len);
 	return (1);
 }
 
@@ -2816,10 +2818,11 @@ umass_rbc_transform(struct umass_softc *sc, uint8_t *cmd_ptr, uint8_t cmd_len)
 	case REQUEST_SENSE:
 	case PREVENT_ALLOW:
 
-		bcopy(cmd_ptr, sc->sc_transfer.cmd_data, cmd_len);
+		memcpy(sc->sc_transfer.cmd_data, cmd_ptr, cmd_len);
 
 		if ((sc->sc_quirks & RBC_PAD_TO_12) && (cmd_len < 12)) {
-			bzero(sc->sc_transfer.cmd_data + cmd_len, 12 - cmd_len);
+			memset(sc->sc_transfer.cmd_data + cmd_len,
+			    0, 12 - cmd_len);
 			cmd_len = 12;
 		}
 		sc->sc_transfer.cmd_len = cmd_len;
@@ -2847,7 +2850,7 @@ umass_ufi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 	sc->sc_transfer.cmd_len = UFI_COMMAND_LENGTH;
 
 	/* Zero the command data */
-	bzero(sc->sc_transfer.cmd_data, UFI_COMMAND_LENGTH);
+	memset(sc->sc_transfer.cmd_data, 0, UFI_COMMAND_LENGTH);
 
 	switch (cmd_ptr[0]) {
 		/*
@@ -2904,7 +2907,7 @@ umass_ufi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 		return (0);		/* failure */
 	}
 
-	bcopy(cmd_ptr, sc->sc_transfer.cmd_data, cmd_len);
+	memcpy(sc->sc_transfer.cmd_data, cmd_ptr, cmd_len);
 	return (1);			/* success */
 }
 
@@ -2925,7 +2928,7 @@ umass_atapi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 	sc->sc_transfer.cmd_len = ATAPI_COMMAND_LENGTH;
 
 	/* Zero the command data */
-	bzero(sc->sc_transfer.cmd_data, ATAPI_COMMAND_LENGTH);
+	memset(sc->sc_transfer.cmd_data, 0, ATAPI_COMMAND_LENGTH);
 
 	switch (cmd_ptr[0]) {
 		/*
@@ -2939,7 +2942,7 @@ umass_atapi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 		 * information.
 		 */
 		if (sc->sc_quirks & FORCE_SHORT_INQUIRY) {
-			bcopy(cmd_ptr, sc->sc_transfer.cmd_data, cmd_len);
+			memcpy(sc->sc_transfer.cmd_data, cmd_ptr, cmd_len);
 
 			sc->sc_transfer.cmd_data[4] = SHORT_INQUIRY_LENGTH;
 			return (1);
@@ -3000,7 +3003,7 @@ umass_atapi_transform(struct umass_softc *sc, uint8_t *cmd_ptr,
 		break;
 	}
 
-	bcopy(cmd_ptr, sc->sc_transfer.cmd_data, cmd_len);
+	memcpy(sc->sc_transfer.cmd_data, cmd_ptr, cmd_len);
 	return (1);			/* success */
 }
 

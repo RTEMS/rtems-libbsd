@@ -629,6 +629,7 @@ firewire_input(struct ifnet *ifp, struct mbuf *m, uint16_t src)
 		return;
 	}
 
+	M_SETFIB(m, ifp->if_fib);
 	netisr_dispatch(isr, m);
 }
 

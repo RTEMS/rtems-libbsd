@@ -1,7 +1,7 @@
-#ifndef __sctp_lock_bsd_h__
-#define __sctp_lock_bsd_h__
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
+
+#ifndef _NETINET_SCTP_LOCK_BSD_H_
+#define _NETINET_SCTP_LOCK_BSD_H_
 
 /*
  * General locking concepts: The goal of our locking is to of course provide
@@ -68,9 +74,6 @@
  * SCTP_INP_INFO_RLOCK() and then when we want to add a new association to
  * the SCTP_BASE_INFO() list's we will do a SCTP_INP_INFO_WLOCK().
  */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 
 extern struct sctp_foo_stuff sctp_logoff[];
 extern int sctp_logoff_stuff;
@@ -97,6 +100,48 @@ extern int sctp_logoff_stuff;
              rw_rlock(&SCTP_BASE_INFO(ipi_ep_mtx));                         \
 } while (0)
 
+#define SCTP_MCORE_QLOCK_INIT(cpstr) do { \
+		mtx_init(&(cpstr)->que_mtx,	      \
+			 "sctp-mcore_queue","queue_lock",	\
+			 MTX_DEF|MTX_DUPOK);		\
+} while (0)
+
+#define SCTP_MCORE_QLOCK(cpstr)  do { \
+		mtx_lock(&(cpstr)->que_mtx);	\
+} while (0)
+
+#define SCTP_MCORE_QUNLOCK(cpstr)  do { \
+		mtx_unlock(&(cpstr)->que_mtx);	\
+} while (0)
+
+#define SCTP_MCORE_QDESTROY(cpstr)  do { \
+	if(mtx_owned(&(cpstr)->core_mtx)) {	\
+		mtx_unlock(&(cpstr)->que_mtx);	\
+        } \
+	mtx_destroy(&(cpstr)->que_mtx);	\
+} while (0)
+
+
+#define SCTP_MCORE_LOCK_INIT(cpstr) do { \
+		mtx_init(&(cpstr)->core_mtx,	      \
+			 "sctp-cpulck","cpu_proc_lock",	\
+			 MTX_DEF|MTX_DUPOK);		\
+} while (0)
+
+#define SCTP_MCORE_LOCK(cpstr)  do { \
+		mtx_lock(&(cpstr)->core_mtx);	\
+} while (0)
+
+#define SCTP_MCORE_UNLOCK(cpstr)  do { \
+		mtx_unlock(&(cpstr)->core_mtx);	\
+} while (0)
+
+#define SCTP_MCORE_DESTROY(cpstr)  do { \
+	if(mtx_owned(&(cpstr)->core_mtx)) {	\
+		mtx_unlock(&(cpstr)->core_mtx);	\
+        } \
+	mtx_destroy(&(cpstr)->core_mtx);	\
+} while (0)
 
 #define SCTP_INP_INFO_WLOCK()	do { 					\
             rw_wlock(&SCTP_BASE_INFO(ipi_ep_mtx));                         \

@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -340,8 +333,6 @@ typedef struct ehci_softc {
 
 	uint32_t sc_terminate_self;	/* TD short packet termination pointer */
 	uint32_t sc_eintrs;
-	uint32_t sc_cmd;		/* shadow of cmd register during
-					 * suspend */
 
 	uint16_t sc_intr_stat[EHCI_VIRTUAL_FRAMELIST_COUNT];
 	uint16_t sc_id_vendor;		/* vendor ID for root hub */
@@ -478,9 +469,6 @@ usb_bus_mem_cb_t ehci_iterate_hw_softc;
 usb_error_t ehci_reset(ehci_softc_t *sc);
 usb_error_t ehci_init(ehci_softc_t *sc);
 void	ehci_detach(struct ehci_softc *sc);
-void	ehci_suspend(struct ehci_softc *sc);
-void	ehci_resume(struct ehci_softc *sc);
-void	ehci_shutdown(ehci_softc_t *sc);
 void	ehci_interrupt(ehci_softc_t *sc);
 
 #endif					/* _EHCI_H_ */

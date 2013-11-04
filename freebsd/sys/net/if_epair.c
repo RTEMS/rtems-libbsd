@@ -68,6 +68,7 @@ __FBSDID("$FreeBSD$");
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_clone.h>
+#include <net/if_media.h>
 #include <net/if_var.h>
 #include <net/if_types.h>
 #include <net/netisr.h>
@@ -94,6 +95,8 @@ static struct mbuf *epair_nh_m2cpuid(struct mbuf *, uintptr_t, u_int *);
 static void epair_nh_drainedcpu(u_int);
 
 static void epair_start_locked(struct ifnet *);
+static int epair_media_change(struct ifnet *);
+static void epair_media_status(struct ifnet *, struct ifmediareq *);
 
 static int epair_clone_match(struct if_clone *, const char *);
 static int epair_clone_create(struct if_clone *, char *, size_t, caddr_t);
@@ -129,6 +132,7 @@ SYSCTL_PROC(_net_link_epair, OID_AUTO, netisr_maxqlen, CTLTYPE_INT|CTLFLAG_RW,
 struct epair_softc {
 	struct ifnet	*ifp;		/* This ifp. */
 	struct ifnet	*oifp;		/* other ifp of pair. */
+	struct ifmedia	media;		/* Media config (fake). */
 	u_int		refcount;	/* # of mbufs in flight. */
 	u_int		cpuid;		/* CPU ID assigned upon creation. */
 	void		(*if_qflush)(struct ifnet *);
@@ -191,10 +195,7 @@ epair_dpcpu_init(void)
 	struct eid_list *s;
 	u_int cpuid;
 
-	for (cpuid = 0; cpuid <= mp_maxid; cpuid++) {
-		if (CPU_ABSENT(cpuid))
-			continue;
-
+	CPU_FOREACH(cpuid) {
 		epair_dpcpu = DPCPU_ID_PTR(cpuid, epair_dpcpu);
 
 		/* Initialize per-cpu lock. */
@@ -219,10 +220,7 @@ epair_dpcpu_detach(void)
 	struct epair_dpcpu *epair_dpcpu;
 	u_int cpuid;
 
-	for (cpuid = 0; cpuid <= mp_maxid; cpuid++) {
-		if (CPU_ABSENT(cpuid))
-			continue;
-
+	CPU_FOREACH(cpuid) {
 		epair_dpcpu = DPCPU_ID_PTR(cpuid, epair_dpcpu);
 
 		/* Destroy per-cpu lock. */
@@ -332,10 +330,7 @@ epair_remove_ifp_from_draining(struct ifnet *ifp)
 	struct epair_ifp_drain *elm, *tvar;
 	u_int cpuid;
 
-	for (cpuid = 0; cpuid <= mp_maxid; cpuid++) {
-		if (CPU_ABSENT(cpuid))
-			continue;
-
+	CPU_FOREACH(cpuid) {
 		epair_dpcpu = DPCPU_ID_PTR(cpuid, epair_dpcpu);
 		EPAIR_LOCK(epair_dpcpu);
 		STAILQ_FOREACH_SAFE(elm, &epair_dpcpu->epair_ifp_drain_list,
@@ -622,8 +617,25 @@ epair_qflush(struct ifnet *ifp)
 }
 
 static int
+epair_media_change(struct ifnet *ifp __unused)
+{
+
+	/* Do nothing. */
+	return (0);
+}
+
+static void
+epair_media_status(struct ifnet *ifp __unused, struct ifmediareq *imr)
+{
+
+	imr->ifm_status = IFM_AVALID | IFM_ACTIVE;
+	imr->ifm_active = IFM_ETHER | IFM_10G_T | IFM_FDX;
+}
+
+static int
 epair_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 {
+	struct epair_softc *sc;
 	struct ifreq *ifr;
 	int error;
 
@@ -633,6 +645,12 @@ epair_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
 		error = 0;
+		break;
+
+	case SIOCSIFMEDIA:
+	case SIOCGIFMEDIA:
+		sc = ifp->if_softc;
+		error = ifmedia_ioctl(ifp, ifr, &sc->media, cmd);
 		break;
 
 	case SIOCSIFMTU:
@@ -794,6 +812,8 @@ epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	ifp->if_dname = ifc->ifc_name;
 	ifp->if_dunit = unit;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
+	ifp->if_capabilities = IFCAP_VLAN_MTU;
+	ifp->if_capenable = IFCAP_VLAN_MTU;
 	ifp->if_start = epair_start;
 	ifp->if_ioctl = epair_ioctl;
 	ifp->if_init  = epair_init;
@@ -818,6 +838,8 @@ epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	ifp->if_dname = ifc->ifc_name;
 	ifp->if_dunit = unit;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
+	ifp->if_capabilities = IFCAP_VLAN_MTU;
+	ifp->if_capenable = IFCAP_VLAN_MTU;
 	ifp->if_start = epair_start;
 	ifp->if_ioctl = epair_ioctl;
 	ifp->if_init  = epair_init;
@@ -839,6 +861,14 @@ epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	 */
 	strlcpy(name, sca->ifp->if_xname, len);
 	DPRINTF("name='%s/%db' created sca=%p scb=%p\n", name, unit, sca, scb);
+
+	/* Initialise pseudo media types. */
+	ifmedia_init(&sca->media, 0, epair_media_change, epair_media_status);
+	ifmedia_add(&sca->media, IFM_ETHER | IFM_10G_T, 0, NULL);
+	ifmedia_set(&sca->media, IFM_ETHER | IFM_10G_T);
+	ifmedia_init(&scb->media, 0, epair_media_change, epair_media_status);
+	ifmedia_add(&scb->media, IFM_ETHER | IFM_10G_T, 0, NULL);
+	ifmedia_set(&scb->media, IFM_ETHER | IFM_10G_T);
 
 	/* Tell the world, that we are ready to rock. */
 	sca->ifp->if_drv_flags |= IFF_DRV_RUNNING;
@@ -876,37 +906,41 @@ epair_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	if_link_state_change(oifp, LINK_STATE_DOWN);
 	ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 	oifp->if_drv_flags &= ~IFF_DRV_RUNNING;
-	ether_ifdetach(oifp);
-	ether_ifdetach(ifp);
-	/*
-	 * Wait for all packets to be dispatched to if_input.
-	 * The numbers can only go down as the interfaces are
-	 * detached so there is no need to use atomics.
-	 */
-	DPRINTF("sca refcnt=%u scb refcnt=%u\n", sca->refcount, scb->refcount);
-	EPAIR_REFCOUNT_ASSERT(sca->refcount == 1 && scb->refcount == 1,
-	    ("%s: ifp=%p sca->refcount!=1: %d || ifp=%p scb->refcount!=1: %d",
-	    __func__, ifp, sca->refcount, oifp, scb->refcount));
 
 	/*
-	 * Get rid of our second half.
+	 * Get rid of our second half. As the other of the two
+	 * interfaces may reside in a different vnet, we need to
+	 * switch before freeing them.
 	 */
+	CURVNET_SET_QUIET(oifp->if_vnet);
+	ether_ifdetach(oifp);
+	/*
+	 * Wait for all packets to be dispatched to if_input.
+	 * The numbers can only go down as the interface is
+	 * detached so there is no need to use atomics.
+	 */
+	DPRINTF("scb refcnt=%u\n", scb->refcount);
+	EPAIR_REFCOUNT_ASSERT(scb->refcount == 1,
+	    ("%s: ifp=%p scb->refcount!=1: %d", __func__, oifp, scb->refcount));
 	oifp->if_softc = NULL;
 	error = if_clone_destroyif(ifc, oifp);
 	if (error)
 		panic("%s: if_clone_destroyif() for our 2nd iface failed: %d",
 		    __func__, error);
-
-	/*
-	 * Finish cleaning up. Free them and release the unit.
-	 * As the other of the two interfaces my reside in a different vnet,
-	 * we need to switch before freeing them.
-	 */
-	CURVNET_SET_QUIET(oifp->if_vnet);
 	if_free(oifp);
-	CURVNET_RESTORE();
-	if_free(ifp);
+	ifmedia_removeall(&scb->media);
 	free(scb, M_EPAIR);
+	CURVNET_RESTORE();
+
+	ether_ifdetach(ifp);
+	/*
+	 * Wait for all packets to be dispatched to if_input.
+	 */
+	DPRINTF("sca refcnt=%u\n", sca->refcount);
+	EPAIR_REFCOUNT_ASSERT(sca->refcount == 1,
+	    ("%s: ifp=%p sca->refcount!=1: %d", __func__, ifp, sca->refcount));
+	if_free(ifp);
+	ifmedia_removeall(&sca->media);
 	free(sca, M_EPAIR);
 	ifc_free_unit(ifc, unit);
 

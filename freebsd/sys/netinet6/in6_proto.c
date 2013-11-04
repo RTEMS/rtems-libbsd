@@ -130,6 +130,7 @@ __FBSDID("$FreeBSD$");
 /*
  * TCP/IP protocol family: IP6, ICMP6, UDP, TCP.
  */
+FEATURE(inet6, "Internet Protocol version 6");
 
 extern	struct domain inet6domain;
 static	struct pr_usrreqs nousrreqs;
@@ -185,38 +186,29 @@ struct ip6protosw inet6sw[] = {
 },
 #ifdef SCTP
 {
-	.pr_type =	SOCK_DGRAM,
-	.pr_domain =	&inet6domain,
-        .pr_protocol =	IPPROTO_SCTP,
-        .pr_flags =	PR_WANTRCVD,
-        .pr_input =	sctp6_input,
-        .pr_ctlinput =  sctp6_ctlinput,
-        .pr_ctloutput = sctp_ctloutput,
-        .pr_drain =	sctp_drain,
-        .pr_usrreqs =	&sctp6_usrreqs
+	.pr_type =		SOCK_SEQPACKET,
+	.pr_domain =		&inet6domain,
+	.pr_protocol =		IPPROTO_SCTP,
+	.pr_flags =		PR_WANTRCVD,
+	.pr_input =		sctp6_input,
+	.pr_ctlinput =		sctp6_ctlinput,
+	.pr_ctloutput =	sctp_ctloutput,
+	.pr_drain =		sctp_drain,
+#ifndef INET	/* Do not call initialization twice. */
+	.pr_init =		sctp_init,
+#endif
+	.pr_usrreqs =		&sctp6_usrreqs
 },
 {
-	.pr_type =	SOCK_SEQPACKET,
-	.pr_domain =	&inet6domain,
-        .pr_protocol =	IPPROTO_SCTP,
-        .pr_flags =	PR_WANTRCVD,
-        .pr_input =	sctp6_input,
-        .pr_ctlinput =  sctp6_ctlinput,
-        .pr_ctloutput = sctp_ctloutput,
-        .pr_drain =	sctp_drain,
-        .pr_usrreqs =	&sctp6_usrreqs
-},
-
-{
-	.pr_type =	SOCK_STREAM,
-	.pr_domain =	&inet6domain,
-        .pr_protocol =	IPPROTO_SCTP,
-        .pr_flags =	PR_WANTRCVD,
-        .pr_input =	sctp6_input,
-        .pr_ctlinput =  sctp6_ctlinput,
-        .pr_ctloutput = sctp_ctloutput,
-        .pr_drain =	sctp_drain,
-        .pr_usrreqs =	&sctp6_usrreqs
+	.pr_type =		SOCK_STREAM,
+	.pr_domain =		&inet6domain,
+	.pr_protocol =		IPPROTO_SCTP,
+	.pr_flags =		PR_WANTRCVD,
+	.pr_input =		sctp6_input,
+	.pr_ctlinput =	sctp6_ctlinput,
+	.pr_ctloutput =		sctp_ctloutput,
+	.pr_drain =		sctp_drain,
+	.pr_usrreqs =		&sctp6_usrreqs
 },
 #endif /* SCTP */
 {

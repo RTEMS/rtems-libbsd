@@ -249,7 +249,6 @@ ipsec_process_done(struct mbuf *m, struct ipsecrequest *isr)
 	panic("ipsec_process_done");
 bad:
 	m_freem(m);
-	KEY_FREESAV(&sav);
 	return (error);
 }
 
@@ -846,7 +845,7 @@ ipsec6_output_tunnel(struct ipsec_output_state *state, struct secpolicy *sp, int
 			dst6->sin6_family = AF_INET6;
 			dst6->sin6_len = sizeof(*dst6);
 			dst6->sin6_addr = ip6->ip6_dst;
-			rtalloc(state->ro);
+			rtalloc_ign_fib(state->ro, 0UL, M_GETFIB(m));
 		}
 		if (state->ro->ro_rt == NULL) {
 			V_ip6stat.ip6s_noroute++;

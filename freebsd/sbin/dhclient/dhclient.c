@@ -95,6 +95,9 @@ struct iaddr iaddr_broadcast = { 4, { 255, 255, 255, 255 } };
 struct in_addr inaddr_any;
 struct sockaddr_in sockaddr_broadcast;
 
+char *path_dhclient_pidfile;
+struct pidfh *pidfile;
+
 /*
  * ASSERT_STATE() does nothing now; it used to be
  * assert (state_is == state_shouldbe).
@@ -215,6 +218,7 @@ routehandler(struct protocol *p)
 	struct sockaddr *sa;
 	struct iaddr a;
 	ssize_t n;
+	int linkstat;
 
 	n = read(routefd, &msg, sizeof(msg));
 	rtm = (struct rt_msghdr *)msg;
@@ -275,6 +279,15 @@ routehandler(struct protocol *p)
 			    ifi->name);
 			goto die;
 		}
+		linkstat = interface_link_status(ifi->name);
+		if (linkstat != ifi->linkstat) {
+			debug("%s link state %s -> %s", ifi->name,
+			    ifi->linkstat ? "up" : "down",
+			    linkstat ? "up" : "down");
+			ifi->linkstat = linkstat;
+			if (linkstat)
+				state_reboot(ifi);
+		}
 		break;
 	case RTM_IFANNOUNCE:
 		ifan = (struct if_announcemsghdr *)rtm;
@@ -316,6 +329,8 @@ die:
 	if (ifi->client->alias)
 		script_write_params("alias_", ifi->client->alias);
 	script_go();
+	if (pidfile != NULL)
+		pidfile_remove(pidfile);
 	exit(1);
 }
 
@@ -327,12 +342,13 @@ main(int argc, char *argv[])
 	int			 pipe_fd[2];
 	int			 immediate_daemon = 0;
 	struct passwd		*pw;
+	pid_t			 otherpid;
 
 	/* Initially, log errors to stderr as well as to syslogd. */
 	openlog(__progname, LOG_PID | LOG_NDELAY, DHCPD_LOG_FACILITY);
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 
-	while ((ch = getopt(argc, argv, "bc:dl:qu")) != -1)
+	while ((ch = getopt(argc, argv, "bc:dl:p:qu")) != -1)
 		switch (ch) {
 		case 'b':
 			immediate_daemon = 1;
@@ -345,6 +361,9 @@ main(int argc, char *argv[])
 			break;
 		case 'l':
 			path_dhclient_db = optarg;
+			break;
+		case 'p':
+			path_dhclient_pidfile = optarg;
 			break;
 		case 'q':
 			quiet = 1;
@@ -361,6 +380,24 @@ main(int argc, char *argv[])
 
 	if (argc != 1)
 		usage();
+
+	if (path_dhclient_pidfile == NULL) {
+#ifdef __rtems__
+#define _PATH_VARRUN "/var/run"
+#endif /* __rtems__ */
+		asprintf(&path_dhclient_pidfile,
+		    "%sdhclient.%s.pid", _PATH_VARRUN, *argv);
+		if (path_dhclient_pidfile == NULL)
+			error("asprintf");
+	}
+	pidfile = pidfile_open(path_dhclient_pidfile, 0600, &otherpid);
+	if (pidfile == NULL) {
+		if (errno == EEXIST)
+			error("dhclient already running, pid: %d.", otherpid);
+		if (errno == EAGAIN)
+			error("dhclient already running.");
+		warning("Cannot open or create pidfile: %m");
+	}
 
 	if ((ifi = calloc(1, sizeof(struct interface_info))) == NULL)
 		error("calloc");
@@ -385,6 +422,12 @@ main(int argc, char *argv[])
 
 	read_client_conf();
 
+	/* The next bit is potentially very time-consuming, so write out
+	   the pidfile right away.  We will write it out again with the
+	   correct pid after daemonizing. */
+	if (pidfile != NULL)
+		pidfile_write(pidfile);
+
 	if (!interface_link_status(ifi->name)) {
 		fprintf(stderr, "%s: no link ...", ifi->name);
 		fflush(stderr);
@@ -400,6 +443,7 @@ main(int argc, char *argv[])
 		}
 		fprintf(stderr, " got link\n");
 	}
+	ifi->linkstat = 1;
 
 	if ((nullfd = open(_PATH_DEVNULL, O_RDWR, 0)) == -1)
 		error("cannot open %s: %m", _PATH_DEVNULL);
@@ -2302,6 +2346,9 @@ go_daemon(void)
 	if (daemon(1, 0) == -1)
 		error("daemon");
 
+	if (pidfile != NULL)
+		pidfile_write(pidfile);
+
 	/* we are chrooted, daemon(3) fails to open /dev/null */
 	if (nullfd != -1) {
 		dup2(nullfd, STDIN_FILENO);
@@ -2372,6 +2419,7 @@ check_option(struct client_lease *l, int option)
 		}
 		return (1);
 	case DHO_DOMAIN_NAME:
+	case DHO_DOMAIN_SEARCH:
 		if (!res_hnok(sbuf)) {
 			if (!check_search(sbuf)) {
 				warning("Bogus domain search list %d: %s (%s)",

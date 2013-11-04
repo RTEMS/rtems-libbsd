@@ -38,7 +38,7 @@
 #include <sys/queue.h>
 
 /*
- * Media Independent Interface configuration defintions.
+ * Media Independent Interface data structure defintions
  */
 
 struct mii_softc;
@@ -65,13 +65,13 @@ struct mii_data {
 	 * request is made.
 	 */
 	LIST_HEAD(mii_listhead, mii_softc) mii_phys;
-	int mii_instance;
+	u_int mii_instance;
 
 	/*
 	 * PHY driver fills this in with active media status.
 	 */
-	int mii_media_status;
-	int mii_media_active;
+	u_int mii_media_status;
+	u_int mii_media_active;
 
 	/*
 	 * Calls from MII layer into network interface driver.
@@ -105,19 +105,19 @@ struct mii_softc {
 
 	LIST_ENTRY(mii_softc) mii_list;	/* entry on parent's PHY list */
 
-	int mii_phy;			/* our MII address */
-	int mii_inst;			/* instance for ifmedia */
+	u_int mii_phy;			/* our MII address */
+	u_int mii_inst;			/* instance for ifmedia */
 
 	mii_downcall_t mii_service;	/* our downcall */
 	struct mii_data *mii_pdata;	/* pointer to parent's mii_data */
 
-	int mii_flags;			/* misc. flags; see below */
-	int mii_capabilities;		/* capabilities from BMSR */
-	int mii_extcapabilities;	/* extended capabilities */
-	int mii_ticks;			/* MII_TICK counter */
-	int mii_anegticks;		/* ticks before retrying aneg */
-	int mii_media_active;		/* last active media */
-	int mii_media_status;		/* last active status */
+	u_int mii_flags;		/* misc. flags; see below */
+	u_int mii_capabilities;		/* capabilities from BMSR */
+	u_int mii_extcapabilities;	/* extended capabilities */
+	u_int mii_ticks;		/* MII_TICK counter */
+	u_int mii_anegticks;		/* ticks before retrying aneg */
+	u_int mii_media_active;		/* last active media */
+	u_int mii_media_status;		/* last active status */
 };
 typedef struct mii_softc mii_softc_t;
 
@@ -134,7 +134,7 @@ typedef struct mii_softc mii_softc_t;
 #define	MIIF_IS_HPNA	0x00000200	/* is a HomePNA device */
 #define	MIIF_FORCEANEG	0x00000400	/* force auto-negotiation */
 #define	MIIF_NOMANPAUSE	0x00100000	/* no manual PAUSE selection */
-#define	MIIF_FORCEPAUSE	0x00200000	/* force PAUSE advertisment */
+#define	MIIF_FORCEPAUSE	0x00200000	/* force PAUSE advertisement */
 #define	MIIF_MACPRIV0	0x01000000	/* private to the MAC driver */
 #define	MIIF_MACPRIV1	0x02000000	/* private to the MAC driver */
 #define	MIIF_MACPRIV2	0x04000000	/* private to the MAC driver */
@@ -161,10 +161,11 @@ typedef struct mii_softc mii_softc_t;
  */
 struct mii_attach_args {
 	struct mii_data *mii_data;	/* pointer to parent data */
-	int mii_phyno;			/* MII address */
-	int mii_id1;			/* PHY ID register 1 */
-	int mii_id2;			/* PHY ID register 2 */
-	int mii_capmask;		/* capability mask from BMSR */
+	u_int mii_phyno;		/* MII address */
+	u_int mii_offset;		/* first PHY, second PHY, etc. */
+	uint32_t mii_id1;		/* PHY ID register 1 */
+	uint32_t mii_id2;		/* PHY ID register 2 */
+	u_int mii_capmask;		/* capability mask for BMSR */
 };
 typedef struct mii_attach_args mii_attach_args_t;
 
@@ -172,8 +173,8 @@ typedef struct mii_attach_args mii_attach_args_t;
  * Used to match a PHY.
  */
 struct mii_phydesc {
-	u_int32_t mpd_oui;		/* the PHY's OUI */
-	u_int32_t mpd_model;		/* the PHY's model */
+	uint32_t mpd_oui;		/* the PHY's OUI */
+	uint32_t mpd_model;		/* the PHY's model */
 	const char *mpd_name;		/* the PHY's name */
 };
 #define MII_PHY_DESC(a, b) { MII_OUI_ ## a, MII_MODEL_ ## a ## _ ## b, \
@@ -184,9 +185,9 @@ struct mii_phydesc {
  * An array of these structures map MII media types to BMCR/ANAR settings.
  */
 struct mii_media {
-	int	mm_bmcr;		/* BMCR settings for this media */
-	int	mm_anar;		/* ANAR settings for this media */
-	int	mm_gtcr;		/* 100base-T2 or 1000base-T CR */
+	u_int	mm_bmcr;		/* BMCR settings for this media */
+	u_int	mm_anar;		/* ANAR settings for this media */
+	u_int	mm_gtcr;		/* 100base-T2 or 1000base-T CR */
 };
 
 #define	MII_MEDIA_NONE		0
@@ -219,14 +220,10 @@ enum miibus_device_ivars {
 #define	MIIBUS_ACCESSOR(var, ivar, type)				\
 	__BUS_ACCESSOR(miibus, var, MIIBUS, ivar, type)
 
-MIIBUS_ACCESSOR(flags,		FLAGS,		int)
+MIIBUS_ACCESSOR(flags,		FLAGS,		u_int)
 
 extern devclass_t	miibus_devclass;
 extern driver_t		miibus_driver;
-
-int	miibus_probe(device_t);
-int	miibus_attach(device_t);
-int	miibus_detach(device_t);
 
 int	mii_attach(device_t, device_t *, struct ifnet *, ifm_change_cb_t,
 	    ifm_stat_cb_t, int, int, int, int);

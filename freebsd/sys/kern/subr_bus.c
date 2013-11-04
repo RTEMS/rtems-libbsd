@@ -430,8 +430,8 @@ static void
 devinit(void)
 {
 #ifndef __rtems__
-	devctl_dev = make_dev(&dev_cdevsw, 0, UID_ROOT, GID_WHEEL, 0600,
-	    "devctl");
+	devctl_dev = make_dev_credf(MAKEDEV_ETERNAL, &dev_cdevsw, 0, NULL,
+	    UID_ROOT, GID_WHEEL, 0600, "devctl");
 	mtx_init(&devsoftc.mtx, "dev mtx", "devd", MTX_DEF);
 	cv_init(&devsoftc.cv, "dev cv");
 	TAILQ_INIT(&devsoftc.devq);
@@ -1058,10 +1058,12 @@ devclass_find(const char *classname)
  * is called by devclass_add_driver to accomplish the recursive
  * notification of all the children classes of dc, as well as dc.
  * Each layer will have BUS_DRIVER_ADDED() called for all instances of
- * the devclass.  We do a full search here of the devclass list at
- * each iteration level to save storing children-lists in the devclass
- * structure.  If we ever move beyond a few dozen devices doing this,
- * we may need to reevaluate...
+ * the devclass.
+ *
+ * We do a full search here of the devclass list at each iteration
+ * level to save storing children-lists in the devclass structure.  If
+ * we ever move beyond a few dozen devices doing this, we may need to
+ * reevaluate...
  *
  * @param dc		the devclass to edit
  * @param driver	the driver that was just added
@@ -1156,6 +1158,77 @@ devclass_add_driver(devclass_t dc, driver_t *driver, int pass, devclass_t *dcp)
 }
 
 /**
+ * @brief Register that a device driver has been deleted from a devclass
+ *
+ * Register that a device driver has been removed from a devclass.
+ * This is called by devclass_delete_driver to accomplish the
+ * recursive notification of all the children classes of busclass, as
+ * well as busclass.  Each layer will attempt to detach the driver
+ * from any devices that are children of the bus's devclass.  The function
+ * will return an error if a device fails to detach.
+ * 
+ * We do a full search here of the devclass list at each iteration
+ * level to save storing children-lists in the devclass structure.  If
+ * we ever move beyond a few dozen devices doing this, we may need to
+ * reevaluate...
+ *
+ * @param busclass	the devclass of the parent bus
+ * @param dc		the devclass of the driver being deleted
+ * @param driver	the driver being deleted
+ */
+static int
+devclass_driver_deleted(devclass_t busclass, devclass_t dc, driver_t *driver)
+{
+	devclass_t parent;
+	device_t dev;
+	int error, i;
+
+	/*
+	 * Disassociate from any devices.  We iterate through all the
+	 * devices in the devclass of the driver and detach any which are
+	 * using the driver and which have a parent in the devclass which
+	 * we are deleting from.
+	 *
+	 * Note that since a driver can be in multiple devclasses, we
+	 * should not detach devices which are not children of devices in
+	 * the affected devclass.
+	 */
+	for (i = 0; i < dc->maxunit; i++) {
+		if (dc->devices[i]) {
+			dev = dc->devices[i];
+			if (dev->driver == driver && dev->parent &&
+			    dev->parent->devclass == busclass) {
+				if ((error = device_detach(dev)) != 0)
+					return (error);
+				BUS_PROBE_NOMATCH(dev->parent, dev);
+				devnomatch(dev);
+				dev->flags |= DF_DONENOMATCH;
+			}
+		}
+	}
+
+	/*
+	 * Walk through the children classes.  Since we only keep a
+	 * single parent pointer around, we walk the entire list of
+	 * devclasses looking for children.  We set the
+	 * DC_HAS_CHILDREN flag when a child devclass is created on
+	 * the parent, so we only walk the list for those devclasses
+	 * that have children.
+	 */
+	if (!(busclass->flags & DC_HAS_CHILDREN))
+		return (0);
+	parent = busclass;
+	TAILQ_FOREACH(busclass, &devclasses, link) {
+		if (busclass->parent == parent) {
+			error = devclass_driver_deleted(busclass, dc, driver);
+			if (error)
+				return (error);
+		}
+	}
+	return (0);
+}
+
+/**
  * @brief Delete a device driver from a device class
  *
  * Delete a device driver from a devclass. This is normally called
@@ -1174,8 +1247,6 @@ devclass_delete_driver(devclass_t busclass, driver_t *driver)
 {
 	devclass_t dc = devclass_find(driver->name);
 	driverlink_t dl;
-	device_t dev;
-	int i;
 	int error;
 
 	PDEBUG(("%s from devclass %s", driver->name, DEVCLANAME(busclass)));
@@ -1197,27 +1268,9 @@ devclass_delete_driver(devclass_t busclass, driver_t *driver)
 		return (ENOENT);
 	}
 
-	/*
-	 * Disassociate from any devices.  We iterate through all the
-	 * devices in the devclass of the driver and detach any which are
-	 * using the driver and which have a parent in the devclass which
-	 * we are deleting from.
-	 *
-	 * Note that since a driver can be in multiple devclasses, we
-	 * should not detach devices which are not children of devices in
-	 * the affected devclass.
-	 */
-	for (i = 0; i < dc->maxunit; i++) {
-		if (dc->devices[i]) {
-			dev = dc->devices[i];
-			if (dev->driver == driver && dev->parent &&
-			    dev->parent->devclass == busclass) {
-				if ((error = device_detach(dev)) != 0)
-					return (error);
-				device_set_driver(dev, NULL);
-			}
-		}
-	}
+	error = devclass_driver_deleted(busclass, dc, driver);
+	if (error != 0)
+		return (error);
 
 	TAILQ_REMOVE(&busclass->drivers, dl, link);
 	free(dl, M_BUS);
@@ -1889,7 +1942,7 @@ device_delete_child(device_t dev, device_t child)
 	PDEBUG(("%s from %s", DEVICENAME(child), DEVICENAME(dev)));
 
 	/* remove children first */
-	while ( (grandchild = TAILQ_FIRST(&child->children)) ) {
+	while ((grandchild = TAILQ_FIRST(&child->children)) != NULL) {
 		error = device_delete_child(child, grandchild);
 		if (error)
 			return (error);
@@ -1905,6 +1958,39 @@ device_delete_child(device_t dev, device_t child)
 
 	bus_data_generation_update();
 	return (0);
+}
+
+/**
+ * @brief Delete all children devices of the given device, if any.
+ *
+ * This function deletes all children devices of the given device, if
+ * any, using the device_delete_child() function for each device it
+ * finds. If a child device cannot be deleted, this function will
+ * return an error code.
+ * 
+ * @param dev		the parent device
+ *
+ * @retval 0		success
+ * @retval non-zero	a device would not detach
+ */
+int
+device_delete_children(device_t dev)
+{
+	device_t child;
+	int error;
+
+	PDEBUG(("Deleting all children of %s", DEVICENAME(dev)));
+
+	error = 0;
+
+	while ((child = TAILQ_FIRST(&dev->children)) != NULL) {
+		error = device_delete_child(dev, child);
+		if (error) {
+			PDEBUG(("Failed deleting %s", DEVICENAME(child)));
+			break;
+		}
+	}
+	return (error);
 }
 
 /**
@@ -2001,19 +2087,23 @@ device_probe_child(device_t dev, device_t child)
 		for (dl = first_matching_driver(dc, child);
 		     dl;
 		     dl = next_matching_driver(dc, child, dl)) {
-
 			/* If this driver's pass is too high, then ignore it. */
 			if (dl->pass > bus_current_pass)
 				continue;
 
 			PDEBUG(("Trying %s", DRIVERNAME(dl->driver)));
-			device_set_driver(child, dl->driver);
+			result = device_set_driver(child, dl->driver);
+			if (result == ENOMEM)
+				return (result);
+			else if (result != 0)
+				continue;
 			if (!hasclass) {
-				if (device_set_devclass(child, dl->driver->name)) {
-					printf("driver bug: Unable to set devclass (devname: %s)\n",
-					    (child ? device_get_name(child) :
-						"no device"));
-					device_set_driver(child, NULL);
+				if (device_set_devclass(child,
+				    dl->driver->name) != 0) {
+					printf("driver bug: Unable to set "
+					    "devclass (devname: %s)\n",
+					    device_get_name(child));
+					(void)device_set_driver(child, NULL);
 					continue;
 				}
 			}
@@ -2029,7 +2119,7 @@ device_probe_child(device_t dev, device_t child)
 			/* Reset flags and devclass before the next probe. */
 			child->devflags = 0;
 			if (!hasclass)
-				device_set_devclass(child, NULL);
+				(void)device_set_devclass(child, NULL);
 
 			/*
 			 * If the driver returns SUCCESS, there can be
@@ -2046,7 +2136,7 @@ device_probe_child(device_t dev, device_t child)
 			 * certainly doesn't match.
 			 */
 			if (result > 0) {
-				device_set_driver(child, NULL);
+				(void)device_set_driver(child, NULL);
 				continue;
 			}
 
@@ -2083,7 +2173,7 @@ device_probe_child(device_t dev, device_t child)
 	/* XXX What happens if we rebid and got no best? */
 	if (best) {
 		/*
-		 * If this device was atached, and we were asked to
+		 * If this device was attached, and we were asked to
 		 * rescan, and it is a different driver, then we have
 		 * to detach the old driver and reattach this new one.
 		 * Note, we don't have to check for DF_REBID here
@@ -2109,7 +2199,9 @@ device_probe_child(device_t dev, device_t child)
 			if (result != 0)
 				return (result);
 		}
-		device_set_driver(child, best->driver);
+		result = device_set_driver(child, best->driver);
+		if (result != 0)
+			return (result);
 #ifndef __rtems__
 		resource_int_value(best->driver->name, child->unit,
 		    "flags", &child->devflags);
@@ -2170,6 +2262,11 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 	count = 0;
 	TAILQ_FOREACH(child, &dev->children, link) {
 		count++;
+	}
+	if (count == 0) {
+		*devlistp = NULL;
+		*devcountp = 0;
+		return (0);
 	}
 
 #ifdef __rtems__
@@ -2471,12 +2568,13 @@ device_disable(device_t dev)
 void
 device_busy(device_t dev)
 {
-	if (dev->state < DS_ATTACHED)
+	if (dev->state < DS_ATTACHING)
 		panic("device_busy: called for unattached device");
 	if (dev->busy == 0 && dev->parent)
 		device_busy(dev->parent);
 	dev->busy++;
-	dev->state = DS_BUSY;
+	if (dev->state == DS_ATTACHED)
+		dev->state = DS_BUSY;
 }
 
 /**
@@ -2485,14 +2583,16 @@ device_busy(device_t dev)
 void
 device_unbusy(device_t dev)
 {
-	if (dev->state != DS_BUSY)
+	if (dev->busy != 0 && dev->state != DS_BUSY &&
+	    dev->state != DS_ATTACHING)
 		panic("device_unbusy: called for non-busy device %s",
 		    device_get_nameunit(dev));
 	dev->busy--;
 	if (dev->busy == 0) {
 		if (dev->parent)
 			device_unbusy(dev->parent);
-		dev->state = DS_ATTACHED;
+		if (dev->state == DS_BUSY)
+			dev->state = DS_ATTACHED;
 	}
 }
 
@@ -2602,6 +2702,7 @@ device_set_driver(device_t dev, driver_t *driver)
 		free(dev->softc, M_BUS_SC);
 		dev->softc = NULL;
 	}
+	device_set_desc(dev, NULL);
 	kobj_delete((kobj_t) dev, NULL);
 	dev->driver = driver;
 	if (driver) {
@@ -2724,22 +2825,36 @@ device_attach(device_t dev)
 {
 	int error;
 
+#ifndef __rtems__
+	if (resource_disabled(dev->driver->name, dev->unit)) {
+		device_disable(dev);
+		if (bootverbose)
+			 device_printf(dev, "disabled via hints entry\n");
+		return (ENXIO);
+	}
+#endif /* __rtems__ */
+
 	device_sysctl_init(dev);
 	if (!device_is_quiet(dev))
 		device_print_child(dev->parent, dev);
+	dev->state = DS_ATTACHING;
 	if ((error = DEVICE_ATTACH(dev)) != 0) {
 		printf("device_attach: %s%d attach returned %d\n",
 		    dev->driver->name, dev->unit, error);
-		/* Unset the class; set in device_probe_child */
-		if (dev->devclass == NULL)
-			device_set_devclass(dev, NULL);
-		device_set_driver(dev, NULL);
+		if (!(dev->flags & DF_FIXEDCLASS))
+			devclass_delete_device(dev->devclass, dev);
+		(void)device_set_driver(dev, NULL);
 		device_sysctl_fini(dev);
+		KASSERT(dev->busy == 0, ("attach failed but busy"));
 		dev->state = DS_NOTPRESENT;
 		return (error);
 	}
 	device_sysctl_update(dev);
-	dev->state = DS_ATTACHED;
+	if (dev->busy)
+		dev->state = DS_BUSY;
+	else
+		dev->state = DS_ATTACHED;
+	dev->flags &= ~DF_DONENOMATCH;
 	devadded(dev);
 	return (0);
 }
@@ -2785,8 +2900,7 @@ device_detach(device_t dev)
 		devclass_delete_device(dev->devclass, dev);
 
 	dev->state = DS_NOTPRESENT;
-	device_set_driver(dev, NULL);
-	device_set_desc(dev, NULL);
+	(void)device_set_driver(dev, NULL);
 	device_sysctl_fini(dev);
 
 	return (0);
@@ -3517,6 +3631,23 @@ bus_generic_teardown_intr(device_t dev, device_t child, struct resource *irq,
 }
 
 /**
+ * @brief Helper function for implementing BUS_ADJUST_RESOURCE().
+ *
+ * This simple implementation of BUS_ADJUST_RESOURCE() simply calls the
+ * BUS_ADJUST_RESOURCE() method of the parent of @p dev.
+ */
+int
+bus_generic_adjust_resource(device_t dev, device_t child, int type,
+    struct resource *r, u_long start, u_long end)
+{
+	/* Propagate up the bus hierarchy until someone handles it. */
+	if (dev->parent)
+		return (BUS_ADJUST_RESOURCE(dev->parent, child, type, r, start,
+		    end));
+	return (EINVAL);
+}
+
+/**
  * @brief Helper function for implementing BUS_ALLOC_RESOURCE().
  *
  * This simple implementation of BUS_ALLOC_RESOURCE() simply calls the
@@ -3836,6 +3967,21 @@ bus_alloc_resource(device_t dev, int type, int *rid, u_long start, u_long end,
 		return (NULL);
 	return (BUS_ALLOC_RESOURCE(dev->parent, dev, type, rid, start, end,
 	    count, flags));
+}
+
+/**
+ * @brief Wrapper function for BUS_ADJUST_RESOURCE().
+ *
+ * This function simply calls the BUS_ADJUST_RESOURCE() method of the
+ * parent of @p dev.
+ */
+int
+bus_adjust_resource(device_t dev, int type, struct resource *r, u_long start,
+    u_long end)
+{
+	if (dev->parent == NULL)
+		return (EINVAL);
+	return (BUS_ADJUST_RESOURCE(dev->parent, dev, type, r, start, end));
 }
 
 /**
@@ -4416,7 +4562,6 @@ print_driver(driver_t *driver, int indent)
 
 	print_driver_short(driver, indent);
 }
-
 
 static void
 print_driver_list(driver_list_t drivers, int indent)

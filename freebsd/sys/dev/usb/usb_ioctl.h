@@ -39,15 +39,37 @@
 #define	USB_DEVICE_NAME "usbctl"
 #define	USB_DEVICE_DIR "usb"
 #define	USB_GENERIC_NAME "ugen"
+#define	USB_TEMPLATE_SYSCTL "hw.usb.template"	/* integer type */
+
+/* Definition of valid template sysctl values */
+
+enum {
+	USB_TEMP_MSC,		/* USB Mass Storage */
+	USB_TEMP_CDCE,		/* USB CDC Ethernet */
+	USB_TEMP_MTP,		/* Message Transfer Protocol */
+	USB_TEMP_MODEM,		/* USB CDC Modem */
+	USB_TEMP_AUDIO,		/* USB Audio */
+	USB_TEMP_KBD,		/* USB Keyboard */
+	USB_TEMP_MOUSE,		/* USB Mouse */
+	USB_TEMP_MAX,
+};
 
 struct usb_read_dir {
+#ifdef COMPAT_32BIT
+	uint64_t urd_data;
+#else
 	void   *urd_data;
+#endif
 	uint32_t urd_startentry;
 	uint32_t urd_maxlen;
 };
 
 struct usb_ctl_request {
+#ifdef COMPAT_32BIT
+	uint64_t ucr_data;
+#else
 	void   *ucr_data;
+#endif
 	uint16_t ucr_flags;
 	uint16_t ucr_actlen;		/* actual length transferred */
 	uint8_t	ucr_addr;		/* zero - currently not used */
@@ -60,7 +82,11 @@ struct usb_alt_interface {
 };
 
 struct usb_gen_descriptor {
+#ifdef COMPAT_32BIT
+	uint64_t ugd_data;
+#else
 	void   *ugd_data;
+#endif
 	uint16_t ugd_lang_id;
 	uint16_t ugd_maxlen;
 	uint16_t ugd_actlen;
@@ -126,9 +152,14 @@ struct usb_fs_endpoint {
 	 * NOTE: isochronous USB transfer only use one buffer, but can have
 	 * multiple frame lengths !
 	 */
+#ifdef COMPAT_32BIT
+	uint64_t ppBuffer;
+	uint64_t pLength;
+#else
 	void  **ppBuffer;		/* pointer to userland buffers */
 	uint32_t *pLength;		/* pointer to frame lengths, updated
 					 * to actual length */
+#endif
 	uint32_t nFrames;		/* number of frames */
 	uint32_t aFrames;		/* actual number of frames */
 	uint16_t flags;
@@ -150,7 +181,11 @@ struct usb_fs_endpoint {
 
 struct usb_fs_init {
 	/* userland pointer to endpoints structure */
+#ifdef COMPAT_32BIT
+	uint64_t pEndpoints;
+#else
 	struct usb_fs_endpoint *pEndpoints;
+#endif
 	/* maximum number of endpoints */
 	uint8_t	ep_index_max;
 };
@@ -162,8 +197,9 @@ struct usb_fs_uninit {
 struct usb_fs_open {
 #define	USB_FS_MAX_BUFSIZE (1 << 18)
 	uint32_t max_bufsize;
-#define	USB_FS_MAX_FRAMES (1 << 12)
-	uint32_t max_frames;
+#define	USB_FS_MAX_FRAMES		(1U << 12)
+#define	USB_FS_MAX_FRAMES_PRE_SCALE	(1U << 31)	/* for ISOCHRONOUS transfers */
+	uint32_t max_frames;		/* read and write */
 	uint16_t max_packet_length;	/* read only */
 	uint8_t	dev_index;		/* currently unused */
 	uint8_t	ep_index;
@@ -252,6 +288,10 @@ struct usb_gen_quirk {
 /* Modem device */
 #define	USB_GET_CM_OVER_DATA	_IOR ('U', 180, int)
 #define	USB_SET_CM_OVER_DATA	_IOW ('U', 181, int)
+
+/* GPIO control */
+#define	USB_GET_GPIO		_IOR ('U', 182, int)
+#define	USB_SET_GPIO		_IOW ('U', 183, int)
 
 /* USB file system interface */
 #define	USB_FS_START		_IOW ('U', 192, struct usb_fs_start)

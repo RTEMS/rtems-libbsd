@@ -35,6 +35,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/interrupt.h>
 #include <sys/kernel.h>
 #include <sys/kthread.h>
+#include <sys/limits.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>
@@ -57,7 +58,6 @@ struct taskqueue_busy {
 
 struct taskqueue {
 	STAILQ_HEAD(, task)	tq_queue;
-	const char		*tq_name;
 	taskqueue_enqueue_fn	tq_enqueue;
 	void			*tq_context;
 	TAILQ_HEAD(, taskqueue_busy) tq_active;
@@ -110,7 +110,7 @@ TQ_SLEEP(struct taskqueue *tq, void *p, struct mtx *m, int pri, const char *wm,
 }
 
 static struct taskqueue *
-_taskqueue_create(const char *name, int mflags,
+_taskqueue_create(const char *name __unused, int mflags,
 		 taskqueue_enqueue_fn enqueue, void *context,
 		 int mtxflags, const char *mtxname)
 {
@@ -122,7 +122,6 @@ _taskqueue_create(const char *name, int mflags,
 
 	STAILQ_INIT(&queue->tq_queue);
 	TAILQ_INIT(&queue->tq_active);
-	queue->tq_name = name;
 	queue->tq_enqueue = enqueue;
 	queue->tq_context = context;
 #ifndef __rtems__
@@ -186,7 +185,8 @@ taskqueue_enqueue(struct taskqueue *queue, struct task *task)
 	 * Count multiple enqueues.
 	 */
 	if (task->ta_pending) {
-		task->ta_pending++;
+		if (task->ta_pending < USHRT_MAX)
+			task->ta_pending++;
 		TQ_UNLOCK(queue);
 		return 0;
 	}
@@ -485,7 +485,7 @@ taskqueue_fast_run(void *dummy)
 }
 
 TASKQUEUE_FAST_DEFINE(fast, taskqueue_fast_enqueue, NULL,
-	swi_add(NULL, "Fast task queue", taskqueue_fast_run, NULL,
+	swi_add(NULL, "fast taskq", taskqueue_fast_run, NULL,
 	SWI_TQ_FAST, INTR_MPSAFE, &taskqueue_fast_ih));
 
 int

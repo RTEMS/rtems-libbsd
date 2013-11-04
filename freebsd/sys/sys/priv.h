@@ -336,6 +336,7 @@
 #define	PRIV_NET_GIF		416	/* Administer gif interface. */
 #define	PRIV_NET_SETIFVNET	417	/* Move interface to vnet. */
 #define	PRIV_NET_SETIFDESCR	418	/* Set interface description. */
+#define	PRIV_NET_SETIFFIB	419	/* Set interface fib. */
 
 /*
  * 802.11-related privileges.
@@ -497,7 +498,7 @@
 
 #ifdef _KERNEL
 /*
- * Privilege check interfaces, modeled after historic suser() interfacs, but
+ * Privilege check interfaces, modeled after historic suser() interfaces, but
  * with the addition of a specific privilege name.  No flags are currently
  * defined for the API.  Historically, flags specified using the real uid
  * instead of the effective uid, and whether or not the check should be

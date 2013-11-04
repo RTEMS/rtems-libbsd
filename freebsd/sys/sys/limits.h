@@ -91,7 +91,7 @@
 #endif
 
 #ifndef __rtems__
-#if __XSI_VISIBLE
+#if __XSI_VISIBLE || __POSIX_VISIBLE >= 200809
 #define	LONG_BIT	__LONG_BIT
 #define	WORD_BIT	__WORD_BIT
 #endif

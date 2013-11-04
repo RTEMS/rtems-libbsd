@@ -368,14 +368,9 @@ rtems_bsd_listen(td, uap)
 		so = fp->f_data;
 #ifdef MAC
 		error = mac_socket_check_listen(td->td_ucred, so);
-		if (error == 0) {
+		if (error == 0)
 #endif
-			CURVNET_SET(so->so_vnet);
 			error = solisten(so, uap->backlog, td);
-			CURVNET_RESTORE();
-#ifdef MAC
-		}
-#endif
 		fdrop(fp, td);
 	}
 	return(error);
@@ -591,9 +586,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 	tmp = fflag & FASYNC;
 	(void) fo_ioctl(nfp, FIOASYNC, &tmp, td->td_ucred, td);
 	sa = 0;
-	CURVNET_SET(so->so_vnet);
 	error = soaccept(so, &sa);
-	CURVNET_RESTORE();
 	if (error) {
 		/*
 		 * return a namelen of zero for older code which might
@@ -953,6 +946,10 @@ kern_sendit(td, s, mp, flags, control, segflg)
 		return (error);
 	so = (struct socket *)fp->f_data;
 
+#ifdef KTRACE
+	if (mp->msg_name != NULL && KTRPOINT(td, KTR_STRUCT))
+		ktrsockaddr(mp->msg_name);
+#endif
 #ifdef MAC
 	if (mp->msg_name != NULL) {
 		error = mac_socket_check_connect(td->td_ucred, so,
@@ -1253,11 +1250,9 @@ kern_recvit(td, s, mp, fromseg, controlp)
 		ktruio = cloneuio(&auio);
 #endif
 	len = auio.uio_resid;
-	CURVNET_SET(so->so_vnet);
 	error = soreceive(so, &fromsa, &auio, (struct mbuf **)0,
 	    (mp->msg_control || controlp) ? &control : (struct mbuf **)0,
 	    &mp->msg_flags);
-	CURVNET_RESTORE();
 	if (error) {
 		if (auio.uio_resid != (int)len && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
@@ -1720,9 +1715,7 @@ kern_setsockopt(td, s, level, name, val, valseg, valsize)
 	error = getsock(td->td_proc->p_fd, s, &fp, NULL);
 	if (error == 0) {
 		so = fp->f_data;
-		CURVNET_SET(so->so_vnet);
 		error = sosetopt(so, &sopt);
-		CURVNET_RESTORE();
 		fdrop(fp, td);
 	}
 	return(error);
@@ -1834,9 +1827,7 @@ kern_getsockopt(td, s, level, name, val, valseg, valsize)
 	error = getsock(td->td_proc->p_fd, s, &fp, NULL);
 	if (error == 0) {
 		so = fp->f_data;
-		CURVNET_SET(so->so_vnet);
 		error = sogetopt(so, &sopt);
-		CURVNET_RESTORE();
 		*valsize = sopt.sopt_valsize;
 		fdrop(fp, td);
 	}
@@ -2609,11 +2600,17 @@ retry_space:
 			}
 
 			/*
-			 * Get a sendfile buf.  We usually wait as long
-			 * as necessary, but this wait can be interrupted.
+			 * Get a sendfile buf.  When allocating the
+			 * first buffer for mbuf chain, we usually
+			 * wait as long as necessary, but this wait
+			 * can be interrupted.  For consequent
+			 * buffers, do not sleep, since several
+			 * threads might exhaust the buffers and then
+			 * deadlock.
 			 */
-			if ((sf = sf_buf_alloc(pg,
-			    (mnw ? SFB_NOWAIT : SFB_CATCH))) == NULL) {
+			sf = sf_buf_alloc(pg, (mnw || m != NULL) ? SFB_NOWAIT :
+			    SFB_CATCH);
+			if (sf == NULL) {
 				mbstat.sf_allocfail++;
 				vm_page_lock_queues();
 				vm_page_unwire(pg, 0);
@@ -2623,7 +2620,8 @@ retry_space:
 				if (pg->wire_count == 0 && pg->object == NULL)
 					vm_page_free(pg);
 				vm_page_unlock_queues();
-				error = (mnw ? EAGAIN : EINTR);
+				if (m == NULL)
+					error = (mnw ? EAGAIN : EINTR);
 				break;
 			}
 
@@ -2783,9 +2781,13 @@ sctp_peeloff(td, uap)
 	error = fgetsock(td, uap->sd, &head, &fflag);
 	if (error)
 		goto done2;
+	if (head->so_proto->pr_protocol != IPPROTO_SCTP) {
+		error = EOPNOTSUPP;
+		goto done;
+	}
 	error = sctp_can_peel_off(head, (sctp_assoc_t)uap->name);
 	if (error)
-		goto done2;
+		goto done;
 	/*
 	 * At this point we know we do have a assoc to pull
 	 * we proceed to get the fd setup. This may block
@@ -2901,6 +2903,10 @@ sctp_generic_sendmsg (td, uap)
 	iov[0].iov_len = uap->mlen;
 
 	so = (struct socket *)fp->f_data;
+	if (so->so_proto->pr_protocol != IPPROTO_SCTP) {
+		error = EOPNOTSUPP;
+		goto sctp_bad;
+	}
 #ifdef MAC
 	error = mac_socket_check_send(td->td_ucred, so);
 	if (error)
@@ -3011,6 +3017,10 @@ sctp_generic_sendmsg_iov(td, uap)
 #endif
 
 	so = (struct socket *)fp->f_data;
+	if (so->so_proto->pr_protocol != IPPROTO_SCTP) {
+		error = EOPNOTSUPP;
+		goto sctp_bad;
+	}
 #ifdef MAC
 	error = mac_socket_check_send(td->td_ucred, so);
 	if (error)
@@ -3115,6 +3125,10 @@ sctp_generic_recvmsg(td, uap)
 		goto out1;
 
 	so = fp->f_data;
+	if (so->so_proto->pr_protocol != IPPROTO_SCTP) {
+		error = EOPNOTSUPP;
+		goto out;
+	}
 #ifdef MAC
 	error = mac_socket_check_receive(td->td_ucred, so);
 	if (error) {

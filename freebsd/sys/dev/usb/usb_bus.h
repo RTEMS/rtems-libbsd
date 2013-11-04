@@ -71,6 +71,9 @@ struct usb_bus {
 	struct usb_bus_msg explore_msg[2];
 	struct usb_bus_msg detach_msg[2];
 	struct usb_bus_msg attach_msg[2];
+	struct usb_bus_msg suspend_msg[2];
+	struct usb_bus_msg resume_msg[2];
+	struct usb_bus_msg shutdown_msg[2];
 	/*
 	 * This mutex protects the USB hardware:
 	 */
@@ -88,6 +91,8 @@ struct usb_bus {
 	struct usb_bus_methods *methods;	/* filled by HC driver */
 	struct usb_device **devices;
 
+	struct ifnet *ifp;	/* only for USB Packet Filter */
+
 	usb_power_mask_t hw_power_state;	/* see USB_HW_POWER_XXX */
 	usb_size_t uframe_usage[USB_HS_MICRO_FRAMES_MAX];
 
@@ -98,17 +103,8 @@ struct usb_bus {
 	enum usb_revision usbrev;	/* USB revision. See "USB_REV_XXX". */
 
 	uint8_t	devices_max;		/* maximum number of USB devices */
-	uint8_t	do_probe;		/* set if USB BUS should be re-probed */
-
-	/* 
-	 * The scratch area can only be used inside the explore thread
-	 * belonging to the give serial bus.
-	 */
-	union {
-		struct usb_hw_ep_scratch hw_ep_scratch[1];
-		struct usb_temp_setup temp_setup[1];
-		uint8_t	data[255];
-	}	scratch[1];
+	uint8_t	do_probe;		/* set if USB should be re-probed */
+	uint8_t no_explore;		/* don't explore USB ports */
 };
 
 #endif					/* _USB_BUS_H_ */

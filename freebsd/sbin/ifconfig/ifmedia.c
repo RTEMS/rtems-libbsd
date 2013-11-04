@@ -284,12 +284,8 @@ setmedia(const char *val, int d, int s, const struct afswtch *afp)
 	subtype = get_media_subtype(IFM_TYPE(ifmr->ifm_ulist[0]), val);
 
 	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	ifr.ifr_media = (ifmr->ifm_current & ~(IFM_NMASK|IFM_TMASK)) |
+	ifr.ifr_media = (ifmr->ifm_current & IFM_IMASK) |
 	    IFM_TYPE(ifmr->ifm_ulist[0]) | subtype;
-
-	if ((ifr.ifr_media & IFM_TMASK) == 0) {
-		ifr.ifr_media &= ~(IFM_GMASK | IFM_OMASK);
-	}
 
 	ifmr->ifm_current = ifr.ifr_media;
 	callback_register(setifmediacallback, (void *)ifmr);
@@ -437,6 +433,9 @@ static const struct ifmedia_description ifm_subtype_shared_aliases[] =
 static const struct ifmedia_description ifm_shared_option_descriptions[] =
     IFM_SHARED_OPTION_DESCRIPTIONS;
 
+static struct ifmedia_description ifm_shared_option_aliases[] =
+    IFM_SHARED_OPTION_ALIASES;
+
 struct ifmedia_type_to_subtype {
 	struct {
 		const struct ifmedia_description *desc;
@@ -445,7 +444,7 @@ struct ifmedia_type_to_subtype {
 	struct {
 		const struct ifmedia_description *desc;
 		int alias;
-	} options[3];
+	} options[4];
 	struct {
 		const struct ifmedia_description *desc;
 		int alias;
@@ -464,6 +463,7 @@ static const struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 		},
 		{
 			{ &ifm_shared_option_descriptions[0], 0 },
+			{ &ifm_shared_option_aliases[0], 1 },
 			{ &ifm_subtype_ethernet_option_descriptions[0], 0 },
 			{ NULL, 0 },
 		},
@@ -481,6 +481,7 @@ static const struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 		},
 		{
 			{ &ifm_shared_option_descriptions[0], 0 },
+			{ &ifm_shared_option_aliases[0], 1 },
 			{ &ifm_subtype_tokenring_option_descriptions[0], 0 },
 			{ NULL, 0 },
 		},
@@ -498,6 +499,7 @@ static const struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 		},
 		{
 			{ &ifm_shared_option_descriptions[0], 0 },
+			{ &ifm_shared_option_aliases[0], 1 },
 			{ &ifm_subtype_fddi_option_descriptions[0], 0 },
 			{ NULL, 0 },
 		},
@@ -515,6 +517,7 @@ static const struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 		},
 		{
 			{ &ifm_shared_option_descriptions[0], 0 },
+			{ &ifm_shared_option_aliases[0], 1 },
 			{ &ifm_subtype_ieee80211_option_descriptions[0], 0 },
 			{ NULL, 0 },
 		},
@@ -534,6 +537,7 @@ static const struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[] = {
 		},
 		{
 			{ &ifm_shared_option_descriptions[0], 0 },
+			{ &ifm_shared_option_aliases[0], 1 },
 			{ &ifm_subtype_atm_option_descriptions[0], 0 },
 			{ NULL, 0 },
 		},

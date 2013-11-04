@@ -151,7 +151,7 @@ struct kinfo_proc {
 	u_int	ki_estcpu;	 	/* Time averaged value of ki_cpticks */
 	u_int	ki_slptime;	 	/* Time since last blocked */
 	u_int	ki_swtime;	 	/* Time swapped in or out */
-	int	ki_spareint1;	 	/* unused (just here for alignment) */
+	u_int	ki_cow;			/* number of copy-on-write faults */
 	u_int64_t ki_runtime;		/* Real time in microsec */
 	struct	timeval ki_start;	/* starting time */
 	struct	timeval ki_childtime;	/* time used by process children */
@@ -338,6 +338,7 @@ struct kinfo_file {
 #define	KVME_FLAG_COW		0x00000001
 #define	KVME_FLAG_NEEDS_COPY	0x00000002
 #define	KVME_FLAG_NOCOREDUMP	0x00000004
+#define	KVME_FLAG_SUPER		0x00000008
 
 #if defined(__amd64__)
 #define	KINFO_OVMENTRY_SIZE	1168

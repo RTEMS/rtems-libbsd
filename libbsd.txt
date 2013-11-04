@@ -107,6 +107,8 @@ the current Git submodule commit is this
 
 * PING6(8): What to do with SIGALARM?
 
+* <sys/param.h>: Update Newlib to use a MSIZE of 256.
+
 [listing]
 ----
     /* sysinit section? */

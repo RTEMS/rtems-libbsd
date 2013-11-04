@@ -40,8 +40,8 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
 
-/* XXX hack so /opt.../machine/param.h can disable MSIZE and use this one */
-#define __NEW_RTEMS_BSD__
+/* FIXME: Update Newlib */
+#define MSIZE 256
 
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1

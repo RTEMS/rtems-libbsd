@@ -1166,6 +1166,7 @@ devNet.addHeaderFiles(
 devNet.addSourceFiles(
 	[
 		'sys/dev/mii/mii.c',
+		'sys/dev/mii/mii_bitbang.c',
 		'sys/dev/mii/mii_physubr.c',
 		'sys/dev/mii/icsphy.c',
 		'sys/dev/mii/brgphy.c',

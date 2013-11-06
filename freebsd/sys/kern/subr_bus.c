@@ -4434,7 +4434,6 @@ driver_module_handler(module_t mod, int what, void *arg)
 	return (error);
 }
 
-#ifndef __rtems__
 /**
  * @brief Enumerate all hinted devices for this bus.
  *
@@ -4468,7 +4467,6 @@ bus_enumerate_hinted_children(device_t bus)
 	while (resource_find_match(&i, &dname, &dunit, "at", busname) == 0)
 		BUS_HINTED_CHILD(bus, dname, dunit);
 }
-#endif /* __rtems__ */
 
 #ifdef BUS_DEBUG
 

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: alloc.c,v 1.9 2004/05/04 20:28:40 deraadt Exp $	*/
 
 /* Memory allocation... */

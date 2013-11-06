@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 2005 Robert N. M. Watson
  * All rights reserved.

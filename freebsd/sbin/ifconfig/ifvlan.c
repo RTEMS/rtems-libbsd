@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*
  * Copyright (c) 1999
  *	Bill Paul <wpaul@ctr.columbia.edu>.  All rights reserved.

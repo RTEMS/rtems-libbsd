@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: inet.c,v 1.7 2004/05/04 21:48:16 deraadt Exp $	*/
 
 /*

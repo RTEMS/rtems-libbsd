@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*
  * Copyright (c) 2003 Bruce M. Simpson.
  * All rights reserved

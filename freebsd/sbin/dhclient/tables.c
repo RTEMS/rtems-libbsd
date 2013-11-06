@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: tables.c,v 1.4 2004/05/04 20:28:40 deraadt Exp $	*/
 
 /* Tables of information... */

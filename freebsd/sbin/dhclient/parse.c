@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: parse.c,v 1.11 2004/05/05 23:07:47 deraadt Exp $	*/
 
 /* Common parser code for dhcpd and dhclient. */

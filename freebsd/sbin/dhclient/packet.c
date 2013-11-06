@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: packet.c,v 1.9 2004/05/04 18:58:50 deraadt Exp $	*/
 
 /* Packet assembly code, originally contributed by Archie Cobbs. */

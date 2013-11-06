@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: dispatch.c,v 1.31 2004/09/21 04:07:03 david Exp $	*/
 
 /*

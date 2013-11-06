@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 2007 Eric Anderson <anderson@FreeBSD.org>
  * Copyright (c) 2007 Pawel Jakub Dawidek <pjd@FreeBSD.org>

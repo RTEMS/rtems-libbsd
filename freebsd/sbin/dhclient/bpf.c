@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: bpf.c,v 1.13 2004/05/05 14:28:58 deraadt Exp $	*/
 
 /* BPF socket interface code, originally contributed by Archie Cobbs. */

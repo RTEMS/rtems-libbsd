@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: nsdispatch.c,v 1.9 1999/01/25 00:16:17 lukem Exp $	*/
 
 /*-

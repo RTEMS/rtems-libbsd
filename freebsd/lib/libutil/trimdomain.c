@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 2001 Brian Somers <brian@Awfulhak.org>
  *   Based on original work by Atsushi Murai <amurai@FreeBSD.org>

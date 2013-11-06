@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: conflex.c,v 1.7 2004/09/15 19:02:38 deraadt Exp $	*/
 
 /* Lexical scanner for dhcpd config file... */

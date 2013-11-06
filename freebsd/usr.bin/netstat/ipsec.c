@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$KAME: ipsec.c,v 1.33 2003/07/25 09:54:32 itojun Exp $	*/
 
 /*-

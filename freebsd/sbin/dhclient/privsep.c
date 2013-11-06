@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: privsep.c,v 1.7 2004/05/10 18:34:42 deraadt Exp $ */
 
 /*

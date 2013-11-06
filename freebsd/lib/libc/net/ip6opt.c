@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$KAME: ip6opt.c,v 1.13 2003/06/06 10:08:20 suz Exp $	*/
 
 /*

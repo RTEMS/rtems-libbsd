@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 2008 Andrew Thompson. All rights reserved.
  *

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: hash.c,v 1.9 2004/05/10 15:30:47 deraadt Exp $	*/
 
 /* Routines for manipulating hash tables... */

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 2001 Networks Associates Technology, Inc.
  * All rights reserved.

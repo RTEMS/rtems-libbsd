@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	BSDI inet.c,v 2.3 1995/10/24 02:19:29 prb Exp	*/
 /*-
  * Copyright (c) 1983, 1988, 1993

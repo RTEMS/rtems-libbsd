@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: tree.c,v 1.13 2004/05/06 22:29:15 deraadt Exp $	*/
 
 /* Routines for manipulating parse trees... */

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 2001-2007, by Weongyo Jeong. All rights reserved.
  * Copyright (c) 2011, by Michael Tuexen. All rights reserved.

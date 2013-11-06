@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (C) 1998 WIDE Project.
  * All rights reserved.

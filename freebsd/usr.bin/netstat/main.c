@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright (c) 1983, 1988, 1993
  *	Regents of the University of California.  All rights reserved.

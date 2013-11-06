@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: convert.c,v 1.5 2004/02/07 11:35:59 henning Exp $	*/
 
 /*

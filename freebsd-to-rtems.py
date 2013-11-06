@@ -242,6 +242,7 @@ class FromFreeBSDToRTEMSUserSpaceSourceConverter(Converter):
 	def convert(self, src):
 		data = super(FromFreeBSDToRTEMSUserSpaceSourceConverter, self).convert(src)
 		data = fixIncludes(data)
+		data = '#include <machine/rtems-bsd-user-space.h>\n\n' + data
 		return data
 
 class FromRTEMSToFreeBSDHeaderConverter(Converter):
@@ -255,6 +256,7 @@ class FromRTEMSToFreeBSDSourceConverter(Converter):
 	def convert(self, src):
 		data = super(FromRTEMSToFreeBSDSourceConverter, self).convert(src)
 		data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '', data)
+		data = re.sub('#include <machine/rtems-bsd-user-space.h>\n\n', '', data)
 		data = revertFixLocalIncludes(data)
 		data = revertFixIncludes(data)
 		return data

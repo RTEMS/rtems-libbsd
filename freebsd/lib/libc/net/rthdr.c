@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$KAME: rthdr.c,v 1.19 2003/06/06 10:48:51 itojun Exp $	*/
 
 /*

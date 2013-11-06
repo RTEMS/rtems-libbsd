@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: options.c,v 1.15 2004/12/26 03:17:07 deraadt Exp $	*/
 
 /* DHCP options parsing and reassembly. */

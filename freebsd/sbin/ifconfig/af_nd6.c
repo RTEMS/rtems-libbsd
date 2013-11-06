@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*
  * Copyright (c) 2009 Hiroki Sato.  All rights reserved.
  *

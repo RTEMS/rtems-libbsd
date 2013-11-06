@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*-
  * Copyright 2001 Wasabi Systems, Inc.
  * All rights reserved.

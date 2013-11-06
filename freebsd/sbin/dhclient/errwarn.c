@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: errwarn.c,v 1.7 2004/05/04 22:23:01 mickey Exp $	*/
 
 /* Errors and warnings... */

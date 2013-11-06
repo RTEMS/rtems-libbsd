@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*
  * Copyright (c) 2003 Ryan McBride. All rights reserved.
  * Copyright (c) 2004 Max Laier. All rights reserved.

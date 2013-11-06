@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$KAME: ping6.c,v 1.169 2003/07/25 06:01:47 itojun Exp $	*/
 
 /*

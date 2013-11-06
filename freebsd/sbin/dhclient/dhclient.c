@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: dhclient.c,v 1.63 2005/02/06 17:10:13 krw Exp $	*/
 
 /*

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$OpenBSD: clparse.c,v 1.18 2004/09/15 18:15:18 henning Exp $	*/
 
 /* Parser for dhclient config and lease files... */

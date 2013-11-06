@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef __MACHINE_INTR_MACHDEP_HH__
-#define	__MACHINE_INTR_MACHDEP_HH__
+#ifndef __MACHINE_INTR_MACHDEP_H__
+#define	__MACHINE_INTR_MACHDEP_H__
 
 #ifdef _KERNEL
 
@@ -158,4 +158,4 @@ int	msix_release(int irq);
 
 #endif	/* !LOCORE */
 #endif	/* _KERNEL */
-#endif	/* !__MACHINE_INTR_MACHDEP_HH__ */
+#endif	/* !__MACHINE_INTR_MACHDEP_H__ */

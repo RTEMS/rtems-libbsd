@@ -191,7 +191,10 @@ def revertFixIncludes(data):
 
 # fix include paths inside a C or .h file
 def fixLocalIncludes(data):
-	data = re.sub('#include "([^"]*)"', '#include <rtems/bsd/local/\\1>', data)
+	data = re.sub('#include "opt_([^"]*)"', '#include <rtems/bsd/local/opt_\\1>', data)
+	data = re.sub('#include "([^"]*)_if.h"', '#include <rtems/bsd/local/\\1_if.h>', data)
+	data = re.sub('#include "miidevs([^"]*)"', '#include <rtems/bsd/local/miidevs\\1>', data)
+	data = re.sub('#include "usbdevs([^"]*)"', '#include <rtems/bsd/local/usbdevs\\1>', data)
 	return data
 
 # revert fixing the include paths inside a C or .h file
@@ -770,6 +773,7 @@ base.addHeaderFiles(
 		'sys/sys/ttycom.h',
 		'sys/sys/ucred.h',
 		'sys/sys/un.h',
+		'sys/sys/unpcb.h',
 		'sys/sys/vmmeter.h',
 		'sys/vm/uma_dbg.h',
 		'sys/vm/uma.h',
@@ -910,6 +914,7 @@ devUsbController.addHeaderFiles(
 		'sys/dev/usb/controller/ohcireg.h',
 		'sys/dev/usb/controller/ehci.h',
 		'sys/dev/usb/controller/ehcireg.h',
+		'sys/dev/usb/controller/uhcireg.h',
 	]
 )
 devUsbController.addSourceFiles(

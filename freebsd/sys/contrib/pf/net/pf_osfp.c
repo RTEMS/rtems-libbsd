@@ -135,11 +135,6 @@ pf_osfp_fingerprint_hdr(const struct ip *ip, const struct ip6_hdr *ip6, const st
 #else
 	char srcname[NI_MAXHOST];
 #endif
-#ifdef __rtems__
-#ifdef INET6
-char ip6buf[INET6_ADDRSTRLEN];
-#endif //INET6
-#endif //__rtems__
 
 	if ((tcp->th_flags & (TH_SYN|TH_ACK)) != TH_SYN)
 		return (NULL);
@@ -176,6 +171,9 @@ char ip6buf[INET6_ADDRSTRLEN];
 #ifndef _KERNEL
 		struct sockaddr_in6 sin6;
 #endif
+#ifdef __rtems__
+		char ip6buf[INET6_ADDRSTRLEN];
+#endif /* __rtems__ */
 
 		/* jumbo payload? */
 		fp.fp_psize = sizeof(struct ip6_hdr) + ntohs(ip6->ip6_plen);
@@ -184,12 +182,12 @@ char ip6buf[INET6_ADDRSTRLEN];
 		fp.fp_flags |= PF_OSFP_INET6;
 #ifdef _KERNEL
 #ifndef __rtems__
-    strlcpy(srcname, ip6_sprintf((struct in6_addr *)&ip6->ip6_src),
+		strlcpy(srcname, ip6_sprintf((struct in6_addr *)&ip6->ip6_src),
 		    sizeof(srcname));
-#else
-    strlcpy(srcname, ip6_sprintf(&ip6buf, (struct in6_addr *)&ip6->ip6_src),
-        sizeof(srcname));
-#endif
+#else /* __rtems__ */
+		strlcpy(srcname, ip6_sprintf(ip6buf, (struct in6_addr *)&ip6->ip6_src),
+		    sizeof(srcname));
+#endif /* __rtems__ */
 #else
 		memset(&sin6, 0, sizeof(sin6));
 		sin6.sin6_family = AF_INET6;
@@ -322,7 +320,7 @@ pf_osfp_initialize(void)
 {
 #if defined(__FreeBSD__) && defined(_KERNEL)
 	int error = ENOMEM;
-
+	
 	do {
 		pf_osfp_entry_pl = pf_osfp_pl = NULL;
 		UMA_CREATE(pf_osfp_entry_pl, struct pf_osfp_entry, "pfospfen");

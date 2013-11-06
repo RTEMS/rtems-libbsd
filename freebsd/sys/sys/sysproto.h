@@ -9,9 +9,6 @@
 #ifndef _SYS_SYSPROTO_H_
 #define	_SYS_SYSPROTO_H_
 
-#ifdef __rtems__
-#include <rtems/bsd/sys/types.h>
-#endif
 #include <sys/signal.h>
 #include <sys/acl.h>
 #include <sys/cpuset.h>

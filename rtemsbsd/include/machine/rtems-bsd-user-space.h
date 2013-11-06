@@ -53,6 +53,8 @@
 
 #define _PATH_VARRUN "/var/run"
 
+#define _POSIX2_LINE_MAX 128
+
 __BEGIN_DECLS
 
 /* FIXME: Add to Newlib */

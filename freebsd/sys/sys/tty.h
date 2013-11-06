@@ -38,9 +38,7 @@
 #include <sys/mutex.h>
 #include <sys/condvar.h>
 #include <sys/selinfo.h>
-#ifndef __rtems__
 #include <sys/termios.h>
-#endif
 #include <sys/ttycom.h>
 #include <sys/ttyqueue.h>
 

@@ -78,8 +78,8 @@ __FBSDID("$FreeBSD$");
 #include <netinet/libalias/alias_mod.h>
 #else
 #include <arpa/inet.h>
-#include <rtems/bsd/local/alias.h>		/* Public API functions for libalias */
-#include <rtems/bsd/local/alias_local.h>	/* Functions used by alias*.c */
+#include "alias.h"		/* Public API functions for libalias */
+#include "alias_local.h"	/* Functions used by alias*.c */
 #endif
 
 /*

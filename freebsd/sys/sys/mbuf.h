@@ -115,7 +115,7 @@ struct pkthdr {
 	/* variables for ip and tcp reassembly */
 	void		*header;	/* pointer to packet header */
 	int		 len;		/* total packet length */
-	uint32_t	 flowid;	/* packet's 4-tuple system
+	uint32_t	 flowid;	/* packet's 4-tuple system 
 					 * flow identifier
 					 */
 	/* variables for hardware checksum */
@@ -380,7 +380,7 @@ static __inline int
 m_gettype(int size)
 {
 	int type;
-
+	
 	switch (size) {
 	case MSIZE:
 		type = EXT_MBUF;
@@ -410,7 +410,7 @@ static __inline uma_zone_t
 m_getzone(int size)
 {
 	uma_zone_t zone;
-
+	
 	switch (size) {
 	case MSIZE:
 		zone = zone_mbuf;
@@ -533,7 +533,7 @@ m_getjcl(int how, short type, int flags, int size)
 	if (m == NULL)
 		return (NULL);
 
-  zone = m_getzone(size);
+	zone = m_getzone(size);
 	n = uma_zalloc_arg(zone, m, how);
 	if (n == NULL) {
 		uma_zfree(zone_mbuf, m);
@@ -549,6 +549,7 @@ m_free_fast(struct mbuf *m)
 	if (m->m_flags & M_PKTHDR)
 		KASSERT(SLIST_EMPTY(&m->m_pkthdr.tags), ("doing fast free of mbuf with tags"));
 #endif
+	
 	uma_zfree_arg(zone_mbuf, m, (void *)MB_NOTAGS);
 }
 
@@ -608,7 +609,7 @@ m_cljset(struct mbuf *m, void *cl, int type)
 {
 	uma_zone_t zone;
 	int size;
-
+	
 	switch (type) {
 	case EXT_CLUSTER:
 		size = MCLBYTES;
@@ -1017,7 +1018,7 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 #define M_SETFIB(_m, _fib) do {						\
 	_m->m_flags &= ~M_FIB;					   	\
 	_m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
-} while (0)
+} while (0) 
 
 #endif /* _KERNEL */
 

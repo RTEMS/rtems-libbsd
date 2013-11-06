@@ -57,7 +57,7 @@
  * Mutex types and options passed to mtx_init().  MTX_QUIET and MTX_DUPOK
  * can also be passed in.
  */
-#define	MTX_DEF		0x00000000	/* DEFAULT (sleep) lock */
+#define	MTX_DEF		0x00000000	/* DEFAULT (sleep) lock */ 
 #define MTX_SPIN	0x00000001	/* Spin lock (disables interrupts) */
 #define MTX_RECURSE	0x00000004	/* Option: lock allowed to recurse */
 #define	MTX_NOWITNESS	0x00000008	/* Don't do any witness checking. */
@@ -153,7 +153,7 @@ void	_thread_lock_flags(struct thread *, int, const char *, int);
 
 /*
  * We define our machine-independent (unoptimized) mutex micro-operations
- * here, if they are not already defined in the machine-dependent mutex.h
+ * here, if they are not already defined in the machine-dependent mutex.h 
  */
 
 /* Try to obtain mtx_lock once. */
@@ -193,7 +193,7 @@ void	_thread_lock_flags(struct thread *, int, const char *, int);
  * Obtain a spin lock inline, or call the "hard" function if we can't get it
  * easy. For spinlocks, we handle recursion inline (it turns out that function
  * calls can be significantly expensive on some architectures).
- * Since spin locks are not _too_ common, inlining this code is not too big
+ * Since spin locks are not _too_ common, inlining this code is not too big 
  * a deal.
  */
 #ifndef _get_spin_lock
@@ -242,7 +242,7 @@ void	_thread_lock_flags(struct thread *, int, const char *, int);
 /*
  * For spinlocks, we can handle everything inline, as it's pretty simple and
  * a function call would be too expensive (at least on some architectures).
- * Since spin locks are not _too_ common, inlining this code is not too big
+ * Since spin locks are not _too_ common, inlining this code is not too big 
  * a deal.
  *
  * Since we always perform a spinlock_enter() when attempting to acquire a
@@ -305,7 +305,7 @@ void	_thread_lock_flags(struct thread *, int, const char *, int);
  * mtx_owned(m) returns non-zero if the current thread owns the lock `m'
  *
  * mtx_recursed(m) returns non-zero if the lock `m' is presently recursed.
- */
+ */ 
 #define mtx_lock(m)		mtx_lock_flags((m), 0)
 #define mtx_lock_spin(m)	mtx_lock_spin_flags((m), 0)
 #define mtx_trylock(m)		mtx_trylock_flags((m), 0)
@@ -337,7 +337,7 @@ extern struct mtx_pool *mtxpool_lockbuilder;
 extern struct mtx_pool *mtxpool_sleep;
 
 #ifndef LOCK_DEBUG
-#error LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/mutex.h>
+#error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/mutex.h>
 #endif
 #if LOCK_DEBUG > 0 || defined(MUTEX_NOINLINE)
 #define	mtx_lock_flags(m, opts)						\
@@ -388,7 +388,7 @@ extern struct mtx blocked_lock;
  * Giant lock manipulation and clean exit macros.
  * Used to replace return with an exit Giant and return.
  *
- * Note that DROP_GIANT*() needs to be paired with PICKUP_GIANT()
+ * Note that DROP_GIANT*() needs to be paired with PICKUP_GIANT() 
  * The #ifndef is to allow lint-like tools to redefine DROP_GIANT.
  */
 #ifndef DROP_GIANT

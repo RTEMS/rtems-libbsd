@@ -33,8 +33,8 @@
 /*$FreeBSD$*/
 
 
-#ifndef _EM_HH_DEFINED_
-#define _EM_HH_DEFINED_
+#ifndef _EM_H_DEFINED_
+#define _EM_H_DEFINED_
 
 
 /* Tunables */
@@ -500,4 +500,4 @@ e1000_rx_unrefreshed(struct rx_ring *rxr)
 #define	EM_TX_LOCK_ASSERT(_sc)		mtx_assert(&(_sc)->tx_mtx, MA_OWNED)
 #define	EM_RX_LOCK_ASSERT(_sc)		mtx_assert(&(_sc)->rx_mtx, MA_OWNED)
 
-#endif /* _EM_HH_DEFINED_ */
+#endif /* _EM_H_DEFINED_ */

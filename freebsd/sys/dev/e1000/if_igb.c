@@ -90,15 +90,9 @@
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#include <dev/e1000/e1000_82575.h>
-#include <dev/e1000/if_igb.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#include <rtems/bsd/local/e1000_82575.h>
-#include <rtems/bsd/local/if_igb.h>
-#endif
+#include "e1000_api.h"
+#include "e1000_82575.h"
+#include "if_igb.h"
 
 /*********************************************************************
  *  Set this to one to display debug statistics
@@ -4715,7 +4709,6 @@ igb_rx_input(struct rx_ring *rxr, struct ifnet *ifp, struct mbuf *m, u32 ptype)
  *
  *  Return TRUE if more to clean, FALSE otherwise
  *********************************************************************/
-
 static bool
 igb_rxeof(struct igb_queue *que, int count, int *done)
 {

@@ -622,7 +622,7 @@ tunoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 	/* BPF writes need to be handled specially. */
 	if (dst->sa_family == AF_UNSPEC) {
 		bcopy(dst->sa_data, &af, sizeof(af));
-		dst->sa_family = af;
+		dst->sa_family = af; 
 	}
 
 	if (bpf_peers_present(ifp->if_bpf)) {

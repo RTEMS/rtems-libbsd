@@ -35,9 +35,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
 #include <rtems/bsd/sys/param.h>
-#ifndef __rtems__
 #include <sys/user.h>
-#endif /* __rtems__ */
 
 #include <net/if.h>
 #include <net/if_var.h>
@@ -62,7 +60,7 @@ bpf_pidname(pid_t pid)
 {
 #ifdef __rtems__
 	return "rtems";
-#else
+#else /* __rtems__ */
 	struct kinfo_proc newkp;
 	int error, mib[4];
 	size_t size;
@@ -78,7 +76,7 @@ bpf_pidname(pid_t pid)
 		return (strdup("??????"));
 	}
 	return (strdup(newkp.ki_comm));
-#endif
+#endif /* __rtems__ */
 }
 
 static void

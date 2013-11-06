@@ -779,10 +779,6 @@ printproto(tp, name)
 		(*pr)(off, name, af, tp->pr_protocol);
 }
 
-#ifdef __rtems__
-#define _POSIX2_LINE_MAX 128
-#endif
-
 /*
  * Read kernel memory, return 0 on success.
  */
@@ -790,9 +786,6 @@ int
 kread(u_long addr, void *buf, size_t size)
 {
 	char errbuf[_POSIX2_LINE_MAX];
-#ifdef __rtems__
-	/* printf( "kread( %p to %p for %d)\n", (void *)addr, buf, size ); */
-#endif
 
 	if (kvmd == NULL) {
 		kvmd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);

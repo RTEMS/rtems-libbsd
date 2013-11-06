@@ -45,7 +45,6 @@
 #ifdef __rtems__
 #define RWLOCK_NOINLINE 1
 #endif /* __rtems__ */
-
 /*
  * The rw_lock field consists of several fields.  The low bit indicates
  * if the lock is locked with a read (shared) or write (exclusive) lock.
@@ -155,7 +154,7 @@ void	_rw_assert(struct rwlock *rw, int what, const char *file, int line);
  */
 
 #ifndef LOCK_DEBUG
-#error LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/rwlock.h>
+#error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/rwlock.h>
 #endif
 #if LOCK_DEBUG > 0 || defined(RWLOCK_NOINLINE)
 #define	rw_wlock(rw)		_rw_wlock((rw), LOCK_FILE, LOCK_LINE)

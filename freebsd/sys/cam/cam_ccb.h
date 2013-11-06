@@ -44,7 +44,7 @@
 
 #ifdef __rtems__
 #include <rtems/blkdev.h>
-#endif /* __rtems__ */ 
+#endif /* __rtems__ */
 
 /* General allocation length definitions for CCB structures */
 #define	IOCDBLEN	CAM_MAX_CDBLEN	/* Space for CDB bytes/pointer */

@@ -77,7 +77,6 @@ static const char rcsid[] =
 #include <errno.h>
 #include <fcntl.h>
 #include <jail.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1146,7 +1145,7 @@ ifmaybeload(const char *name)
 
 	/* not present, we should try to load it */
 	kldload(ifkind);
-#endif
+#endif /* __rtems__ */
 }
 
 static struct cmd basic_cmds[] = {

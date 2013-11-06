@@ -2876,10 +2876,10 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 			clearfull = 1;
 		}
 
-		/*
+		/* 
 		 * We can handle one more allocation. Since we're clearing ZFLAG_FULL,
-		 * wake up all procs blocked on pages. This should be uncommon, so
-		 * keeping this simple for now (rather than adding count of blocked
+		 * wake up all procs blocked on pages. This should be uncommon, so 
+		 * keeping this simple for now (rather than adding count of blocked 
 		 * threads etc).
 		 */
 		wakeup(keg);
@@ -3135,7 +3135,7 @@ uma_zone_exhausted(uma_zone_t zone)
 	ZONE_LOCK(zone);
 	full = (zone->uz_flags & UMA_ZFLAG_FULL);
 	ZONE_UNLOCK(zone);
-	return (full);
+	return (full);	
 }
 
 int

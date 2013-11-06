@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
 #define	NPFLOG 0
 #endif
 #else
-#include <rtems/bsd/local/pflog.h>
+#include "pflog.h"
 #endif
 
 #include <rtems/bsd/sys/param.h>

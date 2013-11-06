@@ -451,7 +451,7 @@ gif_output(ifp, m, dst, ro)
 
 	af = dst->sa_family;
 	BPF_MTAP2(ifp, &af, sizeof(af), m);
-	ifp->if_opackets++;
+	ifp->if_opackets++;	
 	ifp->if_obytes += m->m_pkthdr.len;
 
 	/* override to IPPROTO_ETHERIP for bridged traffic */
@@ -476,7 +476,7 @@ gif_output(ifp, m, dst, ro)
 		break;
 #endif
 	default:
-		m_freem(m);
+		m_freem(m);		
 		error = ENETDOWN;
 	}
 
@@ -555,7 +555,7 @@ gif_input(m, af, ifp)
 		}
 
 		eip = mtod(m, struct etherip_header *);
-		/*
+		/* 
 		 * GIF_ACCEPT_REVETHIP (enabled by default) intentionally
 		 * accepts an EtherIP packet with revered version field in
 		 * the header.  This is a knob for backward compatibility
@@ -639,7 +639,7 @@ gif_ioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 		break;
-
+		
 	case SIOCSIFDSTADDR:
 		break;
 

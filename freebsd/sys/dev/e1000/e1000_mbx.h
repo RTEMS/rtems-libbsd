@@ -35,11 +35,7 @@
 #ifndef _E1000_MBX_H_
 #define _E1000_MBX_H_
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#endif
+#include "e1000_api.h"
 
 /* Define mailbox register bits */
 #define E1000_V2PMAILBOX_REQ   0x00000001 /* Request for PF Ready bit */

@@ -100,11 +100,9 @@ typedef int64_t		s64;
 typedef int32_t		s32;
 typedef int16_t		s16;
 typedef int8_t		s8;
-#ifndef __rtems__
 #ifndef __bool_true_false_are_defined
 typedef boolean_t	bool;
 #endif
-#endif /* __rtems__ */
 
 #define __le16		u16
 #define __le32		u32

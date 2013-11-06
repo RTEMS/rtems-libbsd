@@ -35,11 +35,7 @@
 #ifndef _E1000_API_H_
 #define _E1000_API_H_
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_hw.h>
-#else
-#include <rtems/bsd/local/e1000_hw.h>
-#endif
+#include "e1000_hw.h"
 
 extern void e1000_init_function_pointers_82542(struct e1000_hw *hw);
 extern void e1000_init_function_pointers_82543(struct e1000_hw *hw);

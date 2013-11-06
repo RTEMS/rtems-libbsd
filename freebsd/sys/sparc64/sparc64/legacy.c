@@ -49,9 +49,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/rman.h>
 #include <sys/smp.h>
 
-#ifndef __rtems__
 #include <rtems/bsd/local/opt_mca.h>
-#endif /* __rtems__ */
 #ifdef DEV_MCA
 #include <i386/bios/mca_machdep.h>
 #endif

@@ -33,8 +33,8 @@
 /*$FreeBSD$*/
 
 
-#ifndef _LEM_HH_DEFINED_
-#define _LEM_HH_DEFINED_
+#ifndef _LEM_H_DEFINED_
+#define _LEM_H_DEFINED_
 
 
 /* Tunables */
@@ -493,4 +493,4 @@ typedef struct _DESCRIPTOR_PAIR
 #define	EM_CORE_LOCK_ASSERT(_sc)	mtx_assert(&(_sc)->core_mtx, MA_OWNED)
 #define	EM_TX_LOCK_ASSERT(_sc)		mtx_assert(&(_sc)->tx_mtx, MA_OWNED)
 
-#endif /* _LEM_HH_DEFINED_ */
+#endif /* _LEM_H_DEFINED_ */

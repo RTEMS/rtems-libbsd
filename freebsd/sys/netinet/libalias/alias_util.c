@@ -62,8 +62,8 @@ __FBSDID("$FreeBSD$");
 #include <netinet/libalias/alias.h>
 #include <netinet/libalias/alias_local.h>
 #else
-#include <rtems/bsd/local/alias.h>
-#include <rtems/bsd/local/alias_local.h>
+#include "alias.h"
+#include "alias_local.h"
 #endif
 
 /*

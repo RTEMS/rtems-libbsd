@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef	_BCEREG_HH_DEFINED
-#define _BCEREG_HH_DEFINED
+#ifndef	_BCEREG_H_DEFINED
+#define _BCEREG_H_DEFINED
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
 #include <rtems/bsd/local/opt_device_polling.h>

@@ -106,9 +106,8 @@ fgetln(FILE *fp, size_t *lenp)
 		ret = (char *)fp->_p;
 		*lenp = len = p - fp->_p;
 #ifndef __rtems__
-
 		fp->_flags |= __SMOD;
-#endif
+#endif /* __rtems__ */
 		fp->_r -= len;
 		fp->_p = p;
 		FUNLOCKFILE(fp);

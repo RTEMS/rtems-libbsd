@@ -59,4 +59,4 @@ memstat_kvm_all(struct memory_type_list *mtlp, void *kvm_handle)
 		return (-1);
 	return (0);
 }
-#endif
+#endif /* __rtems__ */

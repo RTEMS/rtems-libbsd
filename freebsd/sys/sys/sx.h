@@ -48,7 +48,6 @@
 #define _sx_try_slock _bsd__sx_try_xlock
 #define _sx_sunlock _bsd__sx_xunlock
 #endif /* __rtems__ */
-
 /*
  * In general, the sx locks and rwlocks use very similar algorithms.
  * The main difference in the implementations is how threads are
@@ -210,7 +209,7 @@ __sx_sunlock(struct sx *sx, const char *file, int line)
  * Public interface for lock operations.
  */
 #ifndef LOCK_DEBUG
-#error	"LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/sx.h>"
+#error	"LOCK_DEBUG not defined, include <sys/lock.h> before <sys/sx.h>"
 #endif
 #if	(LOCK_DEBUG > 0) || defined(SX_NOINLINE)
 #define	sx_xlock(sx)		(void)_sx_xlock((sx), 0, LOCK_FILE, LOCK_LINE)

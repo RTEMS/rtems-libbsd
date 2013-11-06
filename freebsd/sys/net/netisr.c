@@ -1036,7 +1036,7 @@ netisr_start_swi(u_int cpuid, struct pcpu *pc)
 	nws_array[nws_count] = nwsp->nws_cpu;
 	nws_count++;
 	NETISR_WUNLOCK();
-#endif
+#endif /* __rtems__ */
 }
 
 /*

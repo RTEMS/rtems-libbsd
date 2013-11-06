@@ -608,6 +608,7 @@ devctl_queue_data_f(char *data, int flags)
 		psignal(p, SIGIO);
 		PROC_UNLOCK(p);
 	}
+	return;
 #else /* __rtems__ */
 	printf("devctl: %s", data);
 #endif /* __rtems__ */
@@ -2269,10 +2270,6 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 		return (0);
 	}
 
-#ifdef __rtems__
-	/* malloc(0) may return NULL */
-	if (count != 0) {
-#endif /* __rtems__ */
 	list = malloc(count * sizeof(device_t), M_TEMP, M_NOWAIT|M_ZERO);
 	if (!list)
 		return (ENOMEM);
@@ -2282,11 +2279,6 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 		list[count] = child;
 		count++;
 	}
-#ifdef __rtems__
-	} else {
-		list = NULL;
-	}
-#endif /* __rtems__ */
 
 	*devlistp = list;
 	*devcountp = count;

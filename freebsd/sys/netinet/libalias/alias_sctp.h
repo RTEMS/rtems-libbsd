@@ -25,7 +25,7 @@
  */
 
 /*
- * Alias_sctp forms part of the libalias kernel module to handle
+ * Alias_sctp forms part of the libalias kernel module to handle 
  * Network Address Translation (NAT) for the SCTP protocol.
  *
  *  This software was developed by David A. Hayes
@@ -38,7 +38,7 @@
  * proposed by Jason But and Grenville Armitage:
  * http://caia.swin.edu.au/urp/sonata/
  *
- *
+ * 
  * This project has been made possible in part by a grant from
  * the Cisco University Research Program Fund at Community
  * Foundation Silicon Valley.
@@ -51,7 +51,7 @@
 #define _ALIAS_SCTP_H_
 
 #include <rtems/bsd/sys/param.h>
-#ifdef	_KERNEL
+#ifdef	_KERNEL 
 #include <sys/malloc.h>
 #include <sys/module.h>
 #include <sys/kernel.h>
@@ -59,7 +59,7 @@
 #include <sys/uio.h>
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
-#endif // #ifdef	_KERNEL
+#endif // #ifdef	_KERNEL 
 #include <rtems/bsd/sys/types.h>
 
 #include <sys/queue.h>
@@ -73,7 +73,7 @@
 /**
  * These are defined in sctp_os_bsd.h, but it can't be included due to its local file
  * inclusion, so I'm defining them here.
- *
+ * 
  */
 #include <machine/cpufunc.h>
 #include <machine/cpu.h>
@@ -165,20 +165,19 @@ union sctpChunkOfInt {
 
 /**
  * @brief SCTP message
- *
+ * 
  * Structure containing the relevant information from the SCTP message
  */
 struct sctp_nat_msg {
 	uint16_t msg;			/**< one of the key messages defined above */
-#ifndef __rtems__
 #ifdef INET6
 	//  struct ip6_hdr *ip_hdr;	/**< pointer to ip packet header */ /*no inet6 support yet*/
+#ifdef __rtems__
+	struct ip *ip_hdr;		/**< pointer to ip packet header */
+#endif /* __rtems__ */
 #else
 	struct ip *ip_hdr;		/**< pointer to ip packet header */
 #endif //#ifdef INET6
-#else //__rtems__
-  struct ip *ip_hdr;    /**< pointer to ip packet header */
-#endif //__rtems__
 	struct sctphdr *sctp_hdr;	/**< pointer to sctp common header */
 	union sctpChunkOfInt sctpchnk; /**< union of pointers to the chunk of interest */
 	int chunk_length;		/**< length of chunk of interest */
@@ -187,7 +186,7 @@ struct sctp_nat_msg {
 
 /**
  * @brief sctp nat timer queue structure
- *
+ * 
  */
 
 struct sctp_nat_timer {

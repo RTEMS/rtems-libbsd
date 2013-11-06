@@ -50,11 +50,7 @@
  * 82583V Gigabit Network Connection
  */
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#endif
+#include "e1000_api.h"
 
 static s32  e1000_acquire_nvm_82571(struct e1000_hw *hw);
 static void e1000_release_nvm_82571(struct e1000_hw *hw);

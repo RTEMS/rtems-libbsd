@@ -37,9 +37,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/limits.h>
-#ifndef __rtems__
 #include <sys/clock.h>
-#endif /* __rtems__ */
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/sysproto.h>
@@ -52,7 +50,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysent.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
-#ifndef __rtems__
 #include <sys/posix4.h>
 #include <rtems/bsd/sys/time.h>
 #include <sys/timers.h>
@@ -64,6 +61,7 @@ __FBSDID("$FreeBSD$");
 
 #define MAX_CLOCKS 	(CLOCK_MONOTONIC+1)
 
+#ifndef __rtems__
 static struct kclock	posix_clocks[MAX_CLOCKS];
 static uma_zone_t	itimer_zone = NULL;
 

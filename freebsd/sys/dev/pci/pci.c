@@ -47,9 +47,7 @@ __FBSDID("$FreeBSD$");
 
 #include <vm/vm.h>
 #include <vm/pmap.h>
-#ifndef __rtems__
 #include <vm/vm_extern.h>
-#endif /* __rtems__ */
 
 #include <sys/bus.h>
 #include <machine/bus.h>
@@ -68,9 +66,7 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/usb/controller/ehcireg.h>
 #include <dev/usb/controller/ohcireg.h>
-#ifndef __rtems__
 #include <dev/usb/controller/uhcireg.h>
-#endif /* __rtems__ */
 
 #include <rtems/bsd/local/pcib_if.h>
 #include <rtems/bsd/local/pci_if.h>

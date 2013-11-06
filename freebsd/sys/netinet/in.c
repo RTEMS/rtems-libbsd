@@ -347,7 +347,7 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 		IF_ADDR_RLOCK(ifp);
 		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			iap = ifatoia(ifa);
-      if (iap->ia_addr.sin_family == AF_INET) {
+			if (iap->ia_addr.sin_family == AF_INET) {
 				if (td != NULL &&
 				    prison_check_ip4(td->td_ucred,
 				    &iap->ia_addr.sin_addr) != 0)
@@ -541,13 +541,13 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 				hostIsNew = 0;
 		}
 		if (ifra->ifra_mask.sin_len) {
-			/*
+			/* 
 			 * QL: XXX
 			 * Need to scrub the prefix here in case
 			 * the issued command is SIOCAIFADDR with
 			 * the same address, but with a different
 			 * prefix length. And if the prefix length
-			 * is the same as before, then the call is
+			 * is the same as before, then the call is 
 			 * un-necessarily executed here.
 			 */
 			in_ifscrub(ifp, ia, LLE_STATIC);
@@ -880,11 +880,11 @@ in_ifinit(struct ifnet *ifp, struct in_ifaddr *ia, struct sockaddr_in *sin,
 			if (ia->ia_addr.sin_family == AF_INET)
 				LIST_INSERT_HEAD(INADDR_HASH(
 				    ia->ia_addr.sin_addr.s_addr), ia, ia_hash);
-			else
-				/*
-				 * If oldaddr family is not AF_INET (e.g.
-				 * interface has been just created) in_control
-				 * does not call LIST_REMOVE, and we end up
+			else 
+				/* 
+				 * If oldaddr family is not AF_INET (e.g. 
+				 * interface has been just created) in_control 
+				 * does not call LIST_REMOVE, and we end up 
 				 * with bogus ia entries in hash
 				 */
 				LIST_REMOVE(ia, ia_hash);
@@ -966,7 +966,7 @@ in_ifinit(struct ifnet *ifp, struct in_ifaddr *ia, struct sockaddr_in *sin,
 			RT_ADDREF(ia_ro.ro_rt);
 			RTFREE_LOCKED(ia_ro.ro_rt);
 		} else
-			error = ifa_add_loopback_route((struct ifaddr *)ia,
+			error = ifa_add_loopback_route((struct ifaddr *)ia, 
 				       (struct sockaddr *)&ia->ia_addr);
 		if (error == 0)
 			ia->ia_flags |= IFA_RTSELF;
@@ -982,10 +982,10 @@ in_ifinit(struct ifnet *ifp, struct in_ifaddr *ia, struct sockaddr_in *sin,
 	    ? RTF_HOST : 0)
 
 /*
- * Generate a routing message when inserting or deleting
+ * Generate a routing message when inserting or deleting 
  * an interface address alias.
  */
-static void in_addralias_rtmsg(int cmd, struct in_addr *prefix,
+static void in_addralias_rtmsg(int cmd, struct in_addr *prefix, 
     struct in_ifaddr *target)
 {
 	struct route pfx_ro;
@@ -1008,14 +1008,14 @@ static void in_addralias_rtmsg(int cmd, struct in_addr *prefix,
 
 		/* QL: XXX
 		 * Point the gateway to the new interface
-		 * address as if a new prefix route entry has
-		 * been added through the new address alias.
-		 * All other parts of the rtentry is accurate,
+		 * address as if a new prefix route entry has 
+		 * been added through the new address alias. 
+		 * All other parts of the rtentry is accurate, 
 		 * e.g., rt_key, rt_mask, rt_ifp etc.
 		 */
-		msg_rt.rt_gateway =
+		msg_rt.rt_gateway = 
 			(struct sockaddr *)&target->ia_addr;
-		rt_newaddrmsg(cmd,
+		rt_newaddrmsg(cmd, 
 			      (struct ifaddr *)target,
 			      0, &msg_rt);
 		RTFREE(pfx_ro.ro_rt);
@@ -1065,7 +1065,7 @@ in_addprefix(struct in_ifaddr *target, int flags)
 		 */
 		if (ia->ia_flags & IFA_ROUTE) {
 #ifdef RADIX_MPATH
-			if (ia->ia_addr.sin_addr.s_addr ==
+			if (ia->ia_addr.sin_addr.s_addr == 
 			    target->ia_addr.sin_addr.s_addr) {
 				IN_IFADDR_RUNLOCK();
 				return (EEXIST);
@@ -1383,7 +1383,7 @@ in_lltable_free(struct lltable *llt, struct llentry *lle)
 	    (((ntohl((d)->sin_addr.s_addr) ^ (a)->sin_addr.s_addr) & (m)->sin_addr.s_addr)) == 0 )
 
 static void
-in_lltable_prefix_free(struct lltable *llt,
+in_lltable_prefix_free(struct lltable *llt, 
 		       const struct sockaddr *prefix,
 		       const struct sockaddr *mask,
 		       u_int flags)
@@ -1521,7 +1521,7 @@ in_lltable_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3add
 	if (lle == NULL) {
 #ifdef DIAGNOSTIC
 		if (flags & LLE_DELETE)
-			log(LOG_INFO, "interface address is missing from cache = %p  in delete\n", lle);
+			log(LOG_INFO, "interface address is missing from cache = %p  in delete\n", lle);	
 #endif
 		if (!(flags & LLE_CREATE))
 			return (NULL);
@@ -1554,11 +1554,11 @@ in_lltable_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3add
 			lle->la_flags = LLE_DELETED;
 			LLE_WUNLOCK(lle);
 #ifdef DIAGNOSTIC
-			log(LOG_INFO, "ifaddr cache = %p  is deleted\n", lle);
+			log(LOG_INFO, "ifaddr cache = %p  is deleted\n", lle);	
 #endif
 		}
 		lle = (void *)-1;
-
+		
 	}
 	if (LLE_IS_VALID(lle)) {
 		if (flags & LLE_EXCLUSIVE)
@@ -1590,7 +1590,7 @@ in_lltable_dump(struct lltable *llt, struct sysctl_req *wr)
 	for (i = 0; i < LLTBL_HASHTBL_SIZE; i++) {
 		LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
 			struct sockaddr_dl *sdl;
-
+			
 			/* skip deleted entries */
 			if ((lle->la_flags & LLE_DELETED) == LLE_DELETED)
 				continue;

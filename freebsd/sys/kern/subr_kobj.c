@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #ifdef TEST
-#include <rtems/bsd/local/usertest.h>
+#include "usertest.h"
 #endif
 
 static MALLOC_DEFINE(M_KOBJ, "kobj", "Kernel object structures");

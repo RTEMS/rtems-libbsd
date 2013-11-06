@@ -47,9 +47,7 @@
 #include <sys/callout.h>
 #include <sys/malloc.h>
 #include <sys/priv.h>
-#ifndef __rtems__
 #include <sys/vnode.h>
-#endif
 #include <sys/conf.h>
 #include <sys/fcntl.h>
 
@@ -100,7 +98,7 @@ TUNABLE_INT("hw.usb.dev.debug", &usb_fifo_debug);
 
 /* prototypes */
 
-static int	usb_fifo_open(struct usb_cdev_privdata *,
+static int	usb_fifo_open(struct usb_cdev_privdata *, 
 		    struct usb_fifo *, int);
 static void	usb_fifo_close(struct usb_fifo *, int);
 static void	usb_dev_init(void *);
@@ -185,7 +183,7 @@ usb_loc_fill(struct usb_fs_privdata* pd, struct usb_cdev_privdata *cpd)
  *  Else: Failure.
  *------------------------------------------------------------------------*/
 static usb_error_t
-usb_ref_device(struct usb_cdev_privdata *cpd,
+usb_ref_device(struct usb_cdev_privdata *cpd, 
     struct usb_cdev_refdata *crd, int need_uref)
 {
 	struct usb_fifo **ppf;
@@ -225,7 +223,7 @@ usb_ref_device(struct usb_cdev_privdata *cpd,
 
 		mtx_lock(&usb_ref_lock);
 
-		/*
+		/* 
 		 * Set "is_uref" after grabbing the default SX lock
 		 */
 		crd->is_uref = 1;
@@ -655,7 +653,7 @@ usb_dev_get_ep(struct usb_device *udev, uint8_t ep_index, uint8_t dir)
  * Else: Failure
  *------------------------------------------------------------------------*/
 static int
-usb_fifo_open(struct usb_cdev_privdata *cpd,
+usb_fifo_open(struct usb_cdev_privdata *cpd, 
     struct usb_fifo *f, int fflags)
 {
 	int err;
@@ -1049,7 +1047,7 @@ usb_ioctl(struct cdev *dev, u_long cmd, caddr_t addr, int fflag, struct thread* 
 	if (err != 0)
 		return (err);
 
-	/*
+	/* 
 	 * Performance optimisation: We try to check for IOCTL's that
 	 * don't need the USB reference first. Then we grab the USB
 	 * reference if we need it!

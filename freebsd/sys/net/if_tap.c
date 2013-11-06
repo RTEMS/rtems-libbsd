@@ -463,7 +463,7 @@ tapcreate(struct cdev *dev)
 
 	knlist_init_mtx(&tp->tap_rsel.si_note, &tp->tap_mtx);
 
-	TAPDEBUG("interface %s is created. minor = %#x\n",
+	TAPDEBUG("interface %s is created. minor = %#x\n", 
 		ifp->if_xname, dev2unit(dev));
 } /* tapcreate */
 
@@ -567,7 +567,7 @@ tapclose(struct cdev *dev, int foo, int bar, struct thread *td)
 	tp->tap_pid = 0;
 	mtx_unlock(&tp->tap_mtx);
 
-	TAPDEBUG("%s is closed. minor = %#x\n",
+	TAPDEBUG("%s is closed. minor = %#x\n", 
 		ifp->if_xname, dev2unit(dev));
 
 	return (0);
@@ -663,7 +663,7 @@ tapifstart(struct ifnet *ifp)
 		struct mbuf *m;
 
 		/* Unlocked read. */
-		TAPDEBUG("%s not ready, tap_flags = 0x%x\n", ifp->if_xname,
+		TAPDEBUG("%s not ready, tap_flags = 0x%x\n", ifp->if_xname, 
 		    tp->tap_flags);
 
 		for (;;) {
@@ -899,7 +899,7 @@ tapread(struct cdev *dev, struct uio *uio, int flag)
 	}
 
 	if (m != NULL) {
-		TAPDEBUG("%s dropping mbuf, minor = %#x\n", ifp->if_xname,
+		TAPDEBUG("%s dropping mbuf, minor = %#x\n", ifp->if_xname, 
 			dev2unit(dev));
 		m_freem(m);
 	}
@@ -921,7 +921,7 @@ tapwrite(struct cdev *dev, struct uio *uio, int flag)
 	struct ifnet		*ifp = tp->tap_ifp;
 	struct mbuf		*m;
 
-	TAPDEBUG("%s writting, minor = %#x\n",
+	TAPDEBUG("%s writting, minor = %#x\n", 
 		ifp->if_xname, dev2unit(dev));
 
 	if (uio->uio_resid == 0)
@@ -983,7 +983,7 @@ tappoll(struct cdev *dev, int events, struct thread *td)
 	struct ifnet		*ifp = tp->tap_ifp;
 	int			 revents = 0;
 
-	TAPDEBUG("%s polling, minor = %#x\n",
+	TAPDEBUG("%s polling, minor = %#x\n", 
 		ifp->if_xname, dev2unit(dev));
 
 	if (events & (POLLIN | POLLRDNORM)) {

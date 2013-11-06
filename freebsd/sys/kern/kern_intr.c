@@ -29,7 +29,6 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-
 #include <rtems/bsd/local/opt_ddb.h>
 
 #include <rtems/bsd/sys/param.h>
@@ -95,7 +94,7 @@ struct	intr_event *clk_intr_event;
 #ifndef __rtems__
 struct	intr_event *tty_intr_event;
 void	*vm_ih;
-#endif /* __rtems__ */ 
+#endif /* __rtems__ */
 struct proc *intrproc;
 
 static MALLOC_DEFINE(M_ITHREAD, "ithread", "Interrupt Threads");
@@ -538,7 +537,7 @@ ithread_destroy(struct intr_thread *ithread)
 	thread_unlock(td);
 }
 
-#endif /* __rtems__ */ 
+#endif /* __rtems__ */
 #ifndef INTR_FILTER
 int
 intr_event_add_handler(struct intr_event *ie, const char *name,
@@ -774,7 +773,7 @@ intr_handler_source(void *cookie)
 	return (ie->ie_source);
 }
 
-#endif /* __rtems__ */ 
+#endif /* __rtems__ */
 #ifndef INTR_FILTER
 #ifndef __rtems__
 int
@@ -866,7 +865,7 @@ ok:
 	return (0);
 }
 
-#endif /* __rtems__ */ 
+#endif /* __rtems__ */
 static int
 intr_event_schedule_thread(struct intr_event *ie)
 {
@@ -1177,7 +1176,7 @@ swi_sched(void *cookie, int flags)
 	if (!(flags & SWI_DELAY)) {
 #ifndef __rtems__
 		PCPU_INC(cnt.v_soft);
-#endif /* __rtems__ */ 
+#endif /* __rtems__ */
 #ifdef INTR_FILTER
 		error = intr_event_schedule_thread(ie, ie->ie_thread);
 #else

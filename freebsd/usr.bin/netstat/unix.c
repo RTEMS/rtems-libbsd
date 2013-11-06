@@ -53,9 +53,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/mbuf.h>
 #include <sys/sysctl.h>
 #include <sys/un.h>
-#ifndef __rtems__
 #include <sys/unpcb.h>
-#endif /* __rtems__ */
 
 #include <netinet/in.h>
 
@@ -196,7 +194,7 @@ fail:
 #undef COPYOUT
 #undef KREAD
 }
-#endif
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 void
@@ -247,7 +245,7 @@ unixpr(u_long count_off, u_long gencnt_off, u_long dhead_off, u_long shead_off)
 		free(buf);
 	}
 }
-#endif
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 static void
@@ -293,4 +291,4 @@ unixdomainpr(struct xunpcb *xunp, struct xsocket *so)
 		    sa->sun_path);
 	putchar('\n');
 }
-#endif
+#endif /* __rtems__ */

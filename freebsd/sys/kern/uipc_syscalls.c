@@ -666,6 +666,7 @@ oaccept(td, uap)
 /* ARGSUSED */
 #ifndef __rtems__
 int
+connect(td, uap)
 #else /* __rtems__ */
 static int kern_connect(struct thread *, int, struct sockaddr *);
 

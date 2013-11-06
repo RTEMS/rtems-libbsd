@@ -409,4 +409,4 @@ memstat_kvm_malloc(struct memory_type_list *list, void *kvm_handle)
 
 	return (0);
 }
-#endif
+#endif /* __rtems__ */

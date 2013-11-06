@@ -44,13 +44,8 @@
  * I350 Gigabit Network Connection
  */
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#include <dev/e1000/e1000_i210.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#include <rtems/bsd/local/e1000_i210.h>
-#endif /* __rtems__ */
+#include "e1000_api.h"
+#include "e1000_i210.h"
 
 static s32  e1000_init_phy_params_82575(struct e1000_hw *hw);
 static s32  e1000_init_mac_params_82575(struct e1000_hw *hw);

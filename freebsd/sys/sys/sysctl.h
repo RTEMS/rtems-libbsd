@@ -90,7 +90,7 @@ struct ctlname {
 #define	CTLFLAG_DYING	0x00010000	/* oid is being removed */
 
 /*
- * Secure level.   Note that CTLFLAG_SECURE == CTLFLAG_SECURE1.
+ * Secure level.   Note that CTLFLAG_SECURE == CTLFLAG_SECURE1.  
  *
  * Secure when the securelevel is raised to at least N.
  */
@@ -105,7 +105,7 @@ struct ctlname {
  * technology. This is the way nearly all new sysctl variables should
  * be implemented.
  * e.g. SYSCTL_INT(_parent, OID_AUTO, name, CTLFLAG_RW, &variable, 0, "");
- */
+ */ 
 #define OID_AUTO	(-1)
 
 /*

@@ -465,4 +465,4 @@ skip_percpu:
 	free(ucp_array);
 	return (0);
 }
-#endif
+#endif /* __rtems__ */

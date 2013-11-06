@@ -32,8 +32,8 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifndef _IGB_HH_DEFINED_
-#define _IGB_HH_DEFINED_
+#ifndef _IGB_H_DEFINED_
+#define _IGB_H_DEFINED_
 
 /* Tunables */
 
@@ -543,6 +543,6 @@ drbr_needs_enqueue(struct ifnet *ifp, struct buf_ring *br)
 }
 #endif
 
-#endif /* _IGB_HH_DEFINED_ */
+#endif /* _IGB_H_DEFINED_ */
 
 

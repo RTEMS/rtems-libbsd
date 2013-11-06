@@ -113,9 +113,9 @@ mbpr(void *kvmd, u_long mbaddr)
 				    memstat_strerror(error));
 			goto out;
 		}
-#else
+#else /* __rtems__ */
 		;
-#endif
+#endif /* __rtems__ */
 	}
 
 	mtp = memstat_mtl_find(mtlp, ALLOCATOR_UMA, MBUF_MEM_NAME);

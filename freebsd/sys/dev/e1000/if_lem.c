@@ -81,13 +81,8 @@
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#include <dev/e1000/if_lem.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#include <rtems/bsd/local/if_lem.h>
-#endif
+#include "e1000_api.h"
+#include "if_lem.h"
 
 /*********************************************************************
  *  Legacy Em Driver version:

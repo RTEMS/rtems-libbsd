@@ -84,15 +84,9 @@
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#include <dev/e1000/e1000_82571.h>
-#include <dev/e1000/if_em.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#include <rtems/bsd/local/e1000_82571.h>
-#include <rtems/bsd/local/if_em.h>
-#endif
+#include "e1000_api.h"
+#include "e1000_82571.h"
+#include "if_em.h"
 
 /*********************************************************************
  *  Set this to one to display debug statistics

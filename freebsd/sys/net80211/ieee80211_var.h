@@ -419,7 +419,7 @@ struct ieee80211vap {
 	int			(*iv_key_alloc)(struct ieee80211vap *,
 				    struct ieee80211_key *,
 				    ieee80211_keyix *, ieee80211_keyix *);
-	int			(*iv_key_delete)(struct ieee80211vap *,
+	int			(*iv_key_delete)(struct ieee80211vap *, 
 				    const struct ieee80211_key *);
 	int			(*iv_key_set)(struct ieee80211vap *,
 				    const struct ieee80211_key *,
@@ -718,7 +718,7 @@ ieee80211_draintask(struct ieee80211com *ic, struct task *task)
 	taskqueue_drain(ic->ic_tq, task);
 }
 
-/*
+/* 
  * Key update synchronization methods.  XXX should not be visible.
  */
 static __inline void

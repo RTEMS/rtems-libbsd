@@ -180,10 +180,10 @@ routepr(u_long rtree)
 	{
 	  rtems_clock_get_uptime(&uptime);
 	}
-#else
+#else /* __rtems__ */
 	if (clock_gettime(CLOCK_UPTIME, &uptime) < 0)
 		err(EX_OSERR, "clock_gettime() failed");
-#endif
+#endif /* __rtems__ */
 
 	printf("Routing tables\n");
 
@@ -217,10 +217,6 @@ routepr(u_long rtree)
 				continue;
 			if (rnh == NULL)
 				continue;
-#ifdef __rtems__
-			/* printf( "rnh %p %p\n", (void *)rnhp, (void *)rnh ); */
-			/* We get a 1 here on some fields. Why? XXX */
-#endif
 			/* Read the rnh data. */
 			if (kget(rnh, head) != 0)
 				continue;
@@ -692,17 +688,17 @@ fmt_sockaddr(struct sockaddr *sa, struct sockaddr *mask, int flags)
 			cp = atalk_print(sa,11);
 		break;
 	    }
-#endif
+#endif /* __rtems__ */
 	case AF_NETGRAPH:
 	    {
 #ifdef __rtems__
 		/* netgraph not supported yet */
 		err(EX_OSERR, "memory allocation failed");
-#else
+#else /* __rtems__ */
 		strlcpy(workbuf, ((struct sockaddr_ng *)sa)->sg_data,
 		        sizeof(workbuf));
 		cp = workbuf;
-#endif
+#endif /* __rtems__ */
 		break;
 	    }
 
@@ -1145,7 +1141,7 @@ ipx_phost(struct sockaddr *sa)
 
 	return(p);
 }
-#endif
+#endif /* __rtems__ */
 
 void
 upHex(char *p0)

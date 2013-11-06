@@ -43,11 +43,7 @@
  * 82544GC Gigabit Ethernet Controller (LOM)
  */
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#endif
+#include "e1000_api.h"
 
 static s32  e1000_init_phy_params_82543(struct e1000_hw *hw);
 static s32  e1000_init_nvm_params_82543(struct e1000_hw *hw);

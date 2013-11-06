@@ -3019,7 +3019,7 @@ continue_anyway:
 		 * bind specific, make sure flags is off and add a new
 		 * address structure to the sctp_addr_list inside the ep
 		 * structure.
-		 *
+		 * 
 		 * We will need to allocate one and insert it at the head. The
 		 * socketopt call can just insert new addresses in there as
 		 * well. It will also have to do the embed scope kame hack
@@ -3151,11 +3151,11 @@ sctp_iterator_inp_being_freed(struct sctp_inpcb *inp)
 		 * from happening. But of course the iterator has a
 		 * reference on the stcb and inp. We can mark it and it will
 		 * stop.
-		 *
+		 * 
 		 * If its a single iterator situation, we set the end iterator
 		 * flag. Otherwise we set the iterator to go to the next
 		 * inp.
-		 *
+		 * 
 		 */
 		if (it->iterator_flags & SCTP_ITERATOR_DO_SINGLE_INP) {
 			sctp_it_ctl.iterator_flags |= SCTP_ITERATOR_STOP_CUR_IT;

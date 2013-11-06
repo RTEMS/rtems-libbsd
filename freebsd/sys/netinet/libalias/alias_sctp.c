@@ -85,10 +85,10 @@
 #include <netinet/sctp_crc32.h>
 #include <machine/in_cksum.h>
 #else
-#include <rtems/bsd/local/alias_sctp.h>
+#include "alias_sctp.h"
 #include <arpa/inet.h>
-#include <rtems/bsd/local/alias.h>
-#include <rtems/bsd/local/alias_local.h>
+#include "alias.h"
+#include "alias_local.h"
 #include <machine/in_cksum.h>
 #include <sys/libkern.h>
 #endif //#ifdef _KERNEL

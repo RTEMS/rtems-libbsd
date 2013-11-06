@@ -652,7 +652,7 @@ if_detached_event(void *arg __unused, struct ifnet *ifp)
 
     MROUTER_UNLOCK();
 }
-
+                        
 /*
  * Enable multicast forwarding.
  */
@@ -747,7 +747,7 @@ X_ip_mrouter_done(void)
     bzero((caddr_t)V_viftable, sizeof(V_viftable));
     V_numvifs = 0;
     V_pim_assert_enabled = 0;
-
+    
     VIF_UNLOCK();
 
     callout_stop(&V_expire_upcalls_ch);
@@ -2835,7 +2835,7 @@ vnet_mroute_uninit(const void *unused __unused)
 	V_nexpire = NULL;
 }
 
-VNET_SYSUNINIT(vnet_mroute_uninit, SI_SUB_PSEUDO, SI_ORDER_MIDDLE,
+VNET_SYSUNINIT(vnet_mroute_uninit, SI_SUB_PSEUDO, SI_ORDER_MIDDLE, 
 	vnet_mroute_uninit, NULL);
 
 static int
@@ -2846,7 +2846,7 @@ ip_mroute_modevent(module_t mod, int type, void *unused)
     case MOD_LOAD:
 	MROUTER_LOCK_INIT();
 
-	if_detach_event_tag = EVENTHANDLER_REGISTER(ifnet_departure_event,
+	if_detach_event_tag = EVENTHANDLER_REGISTER(ifnet_departure_event, 
 	    if_detached_event, NULL, EVENTHANDLER_PRI_ANY);
 	if (if_detach_event_tag == NULL) {
 		printf("ip_mroute: unable to ifnet_deperture_even handler\n");
@@ -2864,8 +2864,8 @@ ip_mroute_modevent(module_t mod, int type, void *unused)
 		printf("WARNING: %s not a power of 2; using default\n",
 		    "net.inet.ip.mfchashsize");
 		mfchashsize = MFCHASHSIZE;
-      }
-#endif
+	}
+#endif /* __rtems__ */
 
 	pim_squelch_wholepkt = 0;
 	TUNABLE_ULONG_FETCH("net.inet.pim.squelch_wholepkt",

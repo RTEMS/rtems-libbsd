@@ -79,11 +79,11 @@ rn_mpath_next(struct radix_node *rn)
 		return NULL;
 }
 
-#ifdef __rtems__
-u_int32_t
-#else
+#ifndef __rtems__
 uint32_t
-#endif
+#else /* __rtems__ */
+u_int32_t
+#endif /* __rtems__ */
 rn_mpath_count(struct radix_node *rn)
 {
 	uint32_t i = 0;
@@ -262,11 +262,11 @@ different:
 }
 
 void
-#ifdef __rtems__
-rtalloc_mpath_fib(struct route *ro, u_int32_t hash, u_int fibnum)
-#else
+#ifndef __rtems__
 rtalloc_mpath_fib(struct route *ro, uint32_t hash, u_int fibnum)
-#endif
+#else /* __rtems__ */
+rtalloc_mpath_fib(struct route *ro, u_int32_t hash, u_int fibnum)
+#endif /* __rtems__ */
 {
 	struct radix_node *rn0, *rn;
 	u_int32_t n;

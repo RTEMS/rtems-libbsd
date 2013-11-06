@@ -63,8 +63,8 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #ifdef __rtems__
-int ncallout = 16;
-#endif /* __rtems__ */ 
+#define ncallout 16
+#endif /* __rtems__ */
 SDT_PROVIDER_DEFINE(callout_execute);
 SDT_PROBE_DEFINE(callout_execute, kernel, , callout_start, callout-start);
 SDT_PROBE_ARGTYPE(callout_execute, kernel, , callout_start, 0,

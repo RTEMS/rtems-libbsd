@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef __PCIB_PRIVATE_HH__
-#define	__PCIB_PRIVATE_HH__
+#ifndef __PCIB_PRIVATE_H__
+#define	__PCIB_PRIVATE_H__
 
 /*
  * Export portions of generic PCI:PCI bridge support so that it can be

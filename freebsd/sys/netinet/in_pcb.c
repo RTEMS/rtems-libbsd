@@ -471,12 +471,12 @@ in_pcbbind_setup(struct inpcb *inp, struct sockaddr *nam, in_addr_t *laddrp,
 			sin->sin_port = 0;		/* yech... */
 			bzero(&sin->sin_zero, sizeof(sin->sin_zero));
 			/*
-			 * Is the address a local IP address?
+			 * Is the address a local IP address? 
 			 * If INP_BINDANY is set, then the socket may be bound
 			 * to any endpoint address, local or not.
 			 */
 			if ((inp->inp_flags & INP_BINDANY) == 0 &&
-			    ifa_ifwithaddr_check((struct sockaddr *)sin) == 0)
+			    ifa_ifwithaddr_check((struct sockaddr *)sin) == 0) 
 				return (EADDRNOTAVAIL);
 		}
 		laddr = sin->sin_addr;
@@ -645,7 +645,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 	/*
 	 * If we found a route, use the address corresponding to
 	 * the outgoing interface.
-	 *
+	 * 
 	 * Otherwise assume faddr is reachable on a directly connected
 	 * network and try to find a corresponding interface to take
 	 * the source address from.
@@ -1192,7 +1192,8 @@ in_getpeeraddr(struct socket *so, struct sockaddr **nam)
 	return 0;
 }
 
-void  in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr faddr, int errno,
+void
+in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr faddr, int errno,
     struct inpcb *(*notify)(struct inpcb *, int))
 {
 	struct inpcb *inp, *inp_temp;

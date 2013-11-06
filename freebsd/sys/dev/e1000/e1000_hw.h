@@ -35,15 +35,9 @@
 #ifndef _E1000_HW_H_
 #define _E1000_HW_H_
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_osdep.h>
-#include <dev/e1000/e1000_regs.h>
-#include <dev/e1000/e1000_defines.h>
-#else
-#include <rtems/bsd/local/e1000_osdep.h>
-#include <rtems/bsd/local/e1000_regs.h>
-#include <rtems/bsd/local/e1000_defines.h>
-#endif
+#include "e1000_osdep.h"
+#include "e1000_regs.h"
+#include "e1000_defines.h"
 
 struct e1000_hw;
 
@@ -659,19 +653,11 @@ struct e1000_host_mng_command_info {
 	u8 command_data[E1000_HI_MAX_MNG_DATA_LENGTH];
 };
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_mac.h>
-#include <dev/e1000/e1000_phy.h>
-#include <dev/e1000/e1000_nvm.h>
-#include <dev/e1000/e1000_manage.h>
-#include <dev/e1000/e1000_mbx.h>
-#else
-#include <rtems/bsd/local/e1000_mac.h>
-#include <rtems/bsd/local/e1000_phy.h>
-#include <rtems/bsd/local/e1000_nvm.h>
-#include <rtems/bsd/local/e1000_manage.h>
-#include <rtems/bsd/local/e1000_mbx.h>
-#endif
+#include "e1000_mac.h"
+#include "e1000_phy.h"
+#include "e1000_nvm.h"
+#include "e1000_manage.h"
+#include "e1000_mbx.h"
 
 /* Function pointers for the MAC. */
 struct e1000_mac_operations {
@@ -995,23 +981,13 @@ struct e1000_hw {
 	u8  revision_id;
 };
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_82541.h>
-#include <dev/e1000/e1000_82543.h>
-#include <dev/e1000/e1000_82571.h>
-#include <dev/e1000/e1000_80003es2lan.h>
-#include <dev/e1000/e1000_ich8lan.h>
-#include <dev/e1000/e1000_82575.h>
-#include <dev/e1000/e1000_i210.h>
-#else
-#include <rtems/bsd/local/e1000_82541.h>
-#include <rtems/bsd/local/e1000_82543.h>
-#include <rtems/bsd/local/e1000_82571.h>
-#include <rtems/bsd/local/e1000_80003es2lan.h>
-#include <rtems/bsd/local/e1000_ich8lan.h>
-#include <rtems/bsd/local/e1000_82575.h>
-#include <rtems/bsd/local/e1000_i210.h>
-#endif /* __rtems__ */
+#include "e1000_82541.h"
+#include "e1000_82543.h"
+#include "e1000_82571.h"
+#include "e1000_80003es2lan.h"
+#include "e1000_ich8lan.h"
+#include "e1000_82575.h"
+#include "e1000_i210.h"
 
 /* These functions must be implemented by drivers */
 void e1000_pci_clear_mwi(struct e1000_hw *hw);

@@ -460,7 +460,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 			error = EAFNOSUPPORT;
 			goto end;
 		}
-
+			
 		/* Reserve space for GRE header + optional GRE key */
 		int hdrlen = sizeof(struct greip) + extra;
 		if (sc->key)

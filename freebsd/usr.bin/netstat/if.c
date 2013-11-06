@@ -197,7 +197,7 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 #endif
 #ifndef __rtems__
 		struct ipx_ifaddr ipx;
-#endif
+#endif /* __rtems__ */
 	} ifaddr;
 	u_long ifaddraddr;
 	u_long ifaddrfound;
@@ -387,14 +387,14 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 
 				network_layer = 1;
 				break;
-#endif
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 			case AF_APPLETALK:
 				printf("atalk:%-12.12s ",atalk_print(sa,0x10) );
 				printf("%-11.11s  ",atalk_print(sa,0x0b) );
 				break;
-#endif
+#endif /* __rtems__ */
 			case AF_LINK:
 				{
 				struct sockaddr_dl *sdl =
@@ -716,13 +716,13 @@ loop:
 	signalled = NO;
 	sigprocmask(SIG_SETMASK, &oldmask, NULL);
 	}
-#else
+#else /* __rtems__ */
 	oldmask = sigblock(sigmask(SIGALRM));
 	while (!signalled)
 		sigpause(0);
 	signalled = NO;
 	sigsetmask(oldmask);
-#endif
+#endif /* __rtems__ */
 	line++;
 	first = 0;
 	if (line == 21)

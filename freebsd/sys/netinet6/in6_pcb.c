@@ -234,7 +234,7 @@ in6_pcbbind(register struct inpcb *inp, struct sockaddr *nam,
 					    (inp->inp_cred->cr_uid !=
 					     t->inp_cred->cr_uid))
 #else /* __rtems__ */
-              0)
+					    0)
 #endif /* __rtems__ */
 						return (EADDRINUSE);
 				}

@@ -4,3 +4,6 @@
 #define	RESOLVSORT	/* allow sorting of addresses in gethostbyname */
 #undef	SUNSECURITY	/* verify gethostbyaddr() calls - WE DONT NEED IT  */
 #define MULTI_PTRS_ARE_ALIASES 1 /* fold multiple PTR records into aliases */
+#ifdef __rtems__
+#define dprintf gethostbydns_dprintf
+#endif /* __rtems__ */

@@ -153,7 +153,7 @@ sysctl_my_fibnum(SYSCTL_HANDLER_ARGS)
 {
         int fibnum;
         int error;
-
+ 
         fibnum = curthread->td_proc->p_fibnum;
         error = sysctl_handle_int(oidp, &fibnum, 0, req);
         return (error);
@@ -388,7 +388,7 @@ rtalloc1_fib(struct sockaddr *dst, int report, u_long ignflags,
 	needlock = !(ignflags & RTF_RNH_LOCKED);
 	if (needlock)
 		RADIX_NODE_HEAD_RLOCK(rnh);
-#ifdef INVARIANTS
+#ifdef INVARIANTS	
 	else
 		RADIX_NODE_HEAD_LOCK_ASSERT(rnh);
 #endif
@@ -403,7 +403,7 @@ rtalloc1_fib(struct sockaddr *dst, int report, u_long ignflags,
 
 	} else if (needlock)
 		RADIX_NODE_HEAD_RUNLOCK(rnh);
-
+	
 	/*
 	 * Either we hit the root or couldn't find any match,
 	 * Which basically means
@@ -588,7 +588,7 @@ rtredirect_fib(struct sockaddr *dst,
 		create:
 			rt0 = rt;
 			rt = NULL;
-
+		
 			flags |=  RTF_GATEWAY | RTF_DYNAMIC;
 			bzero((caddr_t)&info, sizeof(info));
 			info.rti_info[RTAX_DST] = dst;
@@ -607,7 +607,7 @@ rtredirect_fib(struct sockaddr *dst,
 			}
 			if (rt0 != NULL)
 				RTFREE(rt0);
-
+			
 			stat = &V_rtstat.rts_dynamic;
 		} else {
 			struct rtentry *gwrt;
@@ -983,12 +983,12 @@ rn_mpath_update(int req, struct rt_addrinfo *info,
 			RT_UNLOCK(rto);
 		} else if (rt->rt_flags & RTF_GATEWAY) {
 			/*
-			 * For gateway routes, we need to
+			 * For gateway routes, we need to 
 			 * make sure that we we are deleting
-			 * the correct gateway.
-			 * rt_mpath_matchgate() does not
+			 * the correct gateway. 
+			 * rt_mpath_matchgate() does not 
 			 * check the case when there is only
-			 * one route in the chain.
+			 * one route in the chain.  
 			 */
 			if (gateway &&
 			    (rt->rt_gateway->sa_len != gateway->sa_len ||
@@ -1003,19 +1003,19 @@ rn_mpath_update(int req, struct rt_addrinfo *info,
 				KASSERT(rt == RNTORT(rn), ("radix node disappeared"));
 				goto gwdelete;
 			}
-
+			
 		}
 		/*
 		 * use the normal delete code to remove
 		 * the first entry
 		 */
-		if (req != RTM_DELETE)
+		if (req != RTM_DELETE) 
 			goto nondelete;
 
 		error = ENOENT;
 		goto done;
 	}
-
+		
 	/*
 	 * if the entry is 2nd and on up
 	 */
@@ -1033,11 +1033,11 @@ gwdelete:
 		 */
 		V_rttrash++;
 	}
-
+	
 nondelete:
 	if (req != RTM_DELETE)
 		panic("unrecognized request %d", req);
-
+	
 
 	/*
 	 * If the caller wants it, then it can have it,
@@ -1165,7 +1165,7 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 	case RTM_ADD:
 		if ((flags & RTF_GATEWAY) && !gateway)
 			senderr(EINVAL);
-		if (dst && gateway && (dst->sa_family != gateway->sa_family) &&
+		if (dst && gateway && (dst->sa_family != gateway->sa_family) && 
 		    (gateway->sa_family != AF_UNSPEC) && (gateway->sa_family != AF_LINK))
 			senderr(EINVAL);
 
@@ -1251,7 +1251,7 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 				struct sockaddr *mask;
 				u_char *m, *n;
 				int len;
-
+				
 				/*
 				 * compare mask to see if the new route is
 				 * more specific than the existing one
@@ -1261,7 +1261,7 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 				RT_ADDREF(rt0);
 				RT_UNLOCK(rt0);
 				/*
-				 * A host route is already present, so
+				 * A host route is already present, so 
 				 * leave the flow-table entries as is.
 				 */
 				if (rt0->rt_flags & RTF_HOST) {
@@ -1305,7 +1305,7 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 				RTFREE(rt0);
 #endif
 			senderr(EEXIST);
-		}
+		} 
 #ifdef FLOWTABLE
 		else if (rt0 != NULL) {
 			switch (dst->sa_family) {
@@ -1373,7 +1373,7 @@ rt_setgate(struct rtentry *rt, struct sockaddr *dst, struct sockaddr *gate)
 
 	RT_LOCK_ASSERT(rt);
 	RADIX_NODE_HEAD_LOCK_ASSERT(rnh);
-
+	
 	/*
 	 * Prepare to store the gateway in rt->rt_gateway.
 	 * Both dst and gateway are stored one after the other in the same
@@ -1522,7 +1522,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 			if (rn_mpath_capable(rnh)) {
 
 				rn = rnh->rnh_matchaddr(dst, rnh);
-				if (rn == NULL)
+				if (rn == NULL) 
 					error = ESRCH;
 				else {
 					rt = RNTORT(rn);
@@ -1535,7 +1535,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 					 */
 					rt = rt_mpath_matchgate(rt,
 					    ifa->ifa_addr);
-					if (!rt)
+					if (!rt) 
 						error = ESRCH;
 				}
 			}
@@ -1559,7 +1559,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 		info.rti_ifa = ifa;
 		info.rti_flags = flags | (ifa->ifa_flags & ~IFA_RTSELF);
 		info.rti_info[RTAX_DST] = dst;
-		/*
+		/* 
 		 * doing this for compatibility reasons
 		 */
 		if (cmd == RTM_ADD)
@@ -1590,7 +1590,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 				rt->rt_ifa = ifa;
 			}
 #endif
-			/*
+			/* 
 			 * doing this for compatibility reasons
 			 */
 			if (cmd == RTM_ADD) {

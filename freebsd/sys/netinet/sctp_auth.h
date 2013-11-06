@@ -236,4 +236,4 @@ sctp_initialize_auth_params(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb);
 
 /* test functions */
-#endif				/* __SCTP_AUTH_HH__ */
+#endif				/* __SCTP_AUTH_H__ */

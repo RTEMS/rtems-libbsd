@@ -873,7 +873,7 @@ struct so_zerocopy_stats so_zerocp_stats = {0,0,0};
 /*
  * sosend_copyin() is only used if zero copy sockets are enabled.  Otherwise
  * sosend_dgram() and sosend_generic() use m_uiotombuf().
- *
+ * 
  * sosend_copyin() accepts a uio and prepares an mbuf chain holding part or
  * all of the data referenced by the uio.  If desired, it uses zero-copy.
  * *space will be updated to reflect data copied in.
@@ -3352,7 +3352,7 @@ soisconnecting(struct socket *so)
 void
 soisconnected(struct socket *so)
 {
-	struct socket *head;
+	struct socket *head;	
 	int ret;
 
 restart:
@@ -3457,7 +3457,7 @@ soupcall_set(struct socket *so, int which,
     int (*func)(struct socket *, void *, int), void *arg)
 {
 	struct sockbuf *sb;
-
+	
 	switch (which) {
 	case SO_RCV:
 		sb = &so->so_rcv;
@@ -3547,7 +3547,7 @@ sotoxsocket(struct socket *so, struct xsocket *xso)
 void
 so_listeners_apply_all(struct socket *so, void (*func)(struct socket *, void *), void *arg)
 {
-
+	
 	TAILQ_FOREACH(so, &so->so_comp, so_list)
 		func(so, arg);
 }

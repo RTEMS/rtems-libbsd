@@ -313,7 +313,6 @@ PCIB_ACCESSOR(bus,		BUS,		uint32_t)
 #define	PCI_INVALID_IRQ		255
 #define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ)
 
-
 /*
  * Convenience functions.
  *
@@ -460,6 +459,7 @@ pci_msix_count(device_t dev)
 device_t pci_find_bsf(uint8_t, uint8_t, uint8_t);
 device_t pci_find_dbsf(uint32_t, uint8_t, uint8_t, uint8_t);
 device_t pci_find_device(uint16_t, uint16_t);
+device_t pci_find_class(uint8_t class, uint8_t subclass);
 
 /* Can be used by drivers to manage the MSI-X table. */
 int	pci_pending_msix(device_t dev, u_int index);

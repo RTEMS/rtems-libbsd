@@ -519,13 +519,13 @@ nss_load_module(const char *source, nss_module_register_fn reg_fn)
 			goto fin;
 		}
 	}
-#endif
+#endif /* __rtems__ */
 	mod.mtab = fn(mod.name, &mod.mtabsize, &mod.unregister);
 	if (mod.mtab == NULL || mod.mtabsize == 0) {
 #ifndef __rtems__
 		if (mod.handle != nss_builtin_handle)
 			(void)dlclose(mod.handle);
-#endif
+#endif /* __rtems__ */
 		mod.handle = NULL;
 		nss_log(LOG_ERR, "%s, registration failed", mod.name);
 		goto fin;
@@ -552,7 +552,7 @@ ns_mod_free(ns_mod *mod)
 #ifndef __rtems__
 	if (mod->handle != nss_builtin_handle)
 		(void)dlclose(mod->handle);
-#endif
+#endif /* __rtems__ */
 }
 
 

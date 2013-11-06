@@ -51,8 +51,8 @@ __FBSDID("$FreeBSD$");
 #include <netinet/libalias/alias_local.h>
 #include <netinet/libalias/alias_mod.h>
 #else
-#include <rtems/bsd/local/alias_local.h>
-#include <rtems/bsd/local/alias_mod.h>
+#include "alias_local.h"
+#include "alias_mod.h"
 #endif
 
 #define CUSEEME_PORT_NUMBER 7648

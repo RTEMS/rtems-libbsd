@@ -64,7 +64,7 @@ pid_t	fgetown(struct sigio **sigiop);
 int	fsetown(pid_t pgid, struct sigio **sigiop);
 void	funsetown(struct sigio **sigiop);
 void	funsetownlst(struct sigiolst *sigiolst);
-#else /* __rtems__ */
+#elif defined(__rtems__) && defined(_KERNEL)
 static inline pid_t
 fgetown(struct sigio **sigiop)
 {
@@ -93,6 +93,6 @@ funsetownlst(struct sigiolst *sigiolst)
 {
 	(void) sigiolst;
 }
-#endif /* __rtems__ */
+#endif /* __rtems__ && _KERNEL */
 
 #endif /* _SYS_SIGIO_H_ */

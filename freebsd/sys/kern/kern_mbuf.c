@@ -129,14 +129,14 @@ sysctl_nmbclusters(SYSCTL_HANDLER_ARGS)
 	int error, newnmbclusters;
 
 	newnmbclusters = nmbclusters;
-	error = sysctl_handle_int(oidp, &newnmbclusters, 0, req);
+	error = sysctl_handle_int(oidp, &newnmbclusters, 0, req); 
 	if (error == 0 && req->newptr) {
 		if (newnmbclusters > nmbclusters) {
 			nmbclusters = newnmbclusters;
 			uma_zone_set_max(zone_clust, nmbclusters);
 #ifndef __rtems__
 			EVENTHANDLER_INVOKE(nmbclusters_change);
-#endif
+#endif /* __rtems__ */
 		} else
 			error = EINVAL;
 	}
@@ -152,7 +152,7 @@ sysctl_nmbjumbop(SYSCTL_HANDLER_ARGS)
 	int error, newnmbjumbop;
 
 	newnmbjumbop = nmbjumbop;
-	error = sysctl_handle_int(oidp, &newnmbjumbop, 0, req);
+	error = sysctl_handle_int(oidp, &newnmbjumbop, 0, req); 
 	if (error == 0 && req->newptr) {
 		if (newnmbjumbop> nmbjumbop) {
 			nmbjumbop = newnmbjumbop;
@@ -173,7 +173,7 @@ sysctl_nmbjumbo9(SYSCTL_HANDLER_ARGS)
 	int error, newnmbjumbo9;
 
 	newnmbjumbo9 = nmbjumbo9;
-	error = sysctl_handle_int(oidp, &newnmbjumbo9, 0, req);
+	error = sysctl_handle_int(oidp, &newnmbjumbo9, 0, req); 
 	if (error == 0 && req->newptr) {
 		if (newnmbjumbo9> nmbjumbo9) {
 			nmbjumbo9 = newnmbjumbo9;
@@ -185,7 +185,7 @@ sysctl_nmbjumbo9(SYSCTL_HANDLER_ARGS)
 }
 SYSCTL_PROC(_kern_ipc, OID_AUTO, nmbjumbo9, CTLTYPE_INT|CTLFLAG_RW,
 &nmbjumbo9, 0, sysctl_nmbjumbo9, "IU",
-	"Maximum number of mbuf 9k jumbo clusters allowed");
+	"Maximum number of mbuf 9k jumbo clusters allowed"); 
 
 static int
 sysctl_nmbjumbo16(SYSCTL_HANDLER_ARGS)
@@ -193,7 +193,7 @@ sysctl_nmbjumbo16(SYSCTL_HANDLER_ARGS)
 	int error, newnmbjumbo16;
 
 	newnmbjumbo16 = nmbjumbo16;
-	error = sysctl_handle_int(oidp, &newnmbjumbo16, 0, req);
+	error = sysctl_handle_int(oidp, &newnmbjumbo16, 0, req); 
 	if (error == 0 && req->newptr) {
 		if (newnmbjumbo16> nmbjumbo16) {
 			nmbjumbo16 = newnmbjumbo16;
@@ -327,7 +327,7 @@ mbuf_init(void *dummy)
 #ifndef __rtems__
 	EVENTHANDLER_REGISTER(vm_lowmem, mb_reclaim, NULL,
 	    EVENTHANDLER_PRI_FIRST);
-#endif
+#endif /* __rtems__ */
 
 	/*
 	 * [Re]set counters and local statistics knobs.
@@ -364,9 +364,9 @@ mbuf_jumbo_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
 #ifndef __rtems__
 	return ((void *)kmem_alloc_contig(kernel_map, bytes, wait,
 	    (vm_paddr_t)0, ~(vm_paddr_t)0, 1, 0, VM_MEMATTR_DEFAULT));
-#else
-  return ((void *)malloc(bytes, M_TEMP, wait));
-#endif
+#else /* __rtems__ */
+	return ((void *)malloc(bytes, M_TEMP, wait));
+#endif /* __rtems__ */
 }
 
 /*
@@ -436,7 +436,7 @@ static void
 mb_dtor_mbuf(void *mem, int size, void *arg)
 {
 	struct mbuf *m;
-	unsigned long flags;
+	unsigned long flags; 
 
 	m = (struct mbuf *)mem;
 	flags = (unsigned long)arg;

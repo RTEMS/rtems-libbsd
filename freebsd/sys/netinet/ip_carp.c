@@ -53,9 +53,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sockio.h>
 
 #include <sys/socket.h>
-#ifndef __rtems__
 #include <sys/vnode.h>
-#endif
 
 #include <machine/stdarg.h>
 
@@ -134,7 +132,7 @@ struct carp_softc {
 	struct callout		 sc_ad_tmo;	/* advertisement timeout */
 	struct callout		 sc_md_tmo;	/* master down timeout */
 	struct callout 		 sc_md6_tmo;	/* master down timeout */
-
+	
 	LIST_ENTRY(carp_softc)	 sc_next;	/* Interface clue */
 };
 #define	SC2IFP(sc)	((sc)->sc_ifp)
@@ -400,7 +398,7 @@ carp_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 		free(sc, M_CARP);
 		return (ENOSPC);
 	}
-
+	
 	sc->sc_flags_backup = 0;
 	sc->sc_suppress = 0;
 	sc->sc_advbase = CARP_DFLTINTV;
@@ -426,7 +424,7 @@ carp_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	callout_init(&sc->sc_ad_tmo, CALLOUT_MPSAFE);
 	callout_init(&sc->sc_md_tmo, CALLOUT_MPSAFE);
 	callout_init(&sc->sc_md6_tmo, CALLOUT_MPSAFE);
-
+	
 	ifp->if_softc = sc;
 	if_initname(ifp, CARP_IFNAME, unit);
 	ifp->if_mtu = ETHERMTU;
@@ -1259,7 +1257,7 @@ carp_iamatch6(struct ifnet *ifp, struct in6_addr *taddr)
 		IF_ADDR_RUNLOCK(SC2IFP(vh));
 	}
 	CARP_UNLOCK(cif);
-
+	
 	return (NULL);
 }
 
@@ -1559,7 +1557,7 @@ carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 			free(cif, M_CARP);
 			goto cleanup;
 		}
-
+		
 		CARP_LOCK_INIT(cif);
 		CARP_LOCK(cif);
 		cif->vhif_ifp = ifp;

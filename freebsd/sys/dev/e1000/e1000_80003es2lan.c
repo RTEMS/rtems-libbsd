@@ -39,11 +39,7 @@
  * 80003ES2LAN Gigabit Ethernet Controller (Serdes)
  */
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#endif
+#include "e1000_api.h"
 
 static s32  e1000_init_phy_params_80003es2lan(struct e1000_hw *hw);
 static s32  e1000_init_nvm_params_80003es2lan(struct e1000_hw *hw);

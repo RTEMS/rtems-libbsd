@@ -77,8 +77,8 @@ __FBSDID("$FreeBSD$");
 #include <netinet/libalias/alias_local.h>
 #include <netinet/libalias/alias_mod.h>
 #else
-#include <rtems/bsd/local/alias_local.h>
-#include <rtems/bsd/local/alias_mod.h>
+#include "alias_local.h"
+#include "alias_mod.h"
 #endif
 
 #define IRC_CONTROL_PORT_NUMBER_1 6667
@@ -91,14 +91,14 @@ char *newpacket;
 #define DBprintf(a)
 
 static void
-AliasHandleIrcOut(struct libalias *, struct ip *, struct alias_link *,
+AliasHandleIrcOut(struct libalias *, struct ip *, struct alias_link *,	
 		  int maxpacketsize);
 
-static int
+static int 
 fingerprint(struct libalias *la, struct alias_data *ah)
 {
 
-	if (ah->dport == NULL || ah->dport == NULL || ah->lnk == NULL ||
+	if (ah->dport == NULL || ah->dport == NULL || ah->lnk == NULL || 
 	    ah->maxpktsize == 0)
 		return (-1);
 	if (ntohs(*ah->dport) == IRC_CONTROL_PORT_NUMBER_1
@@ -107,7 +107,7 @@ fingerprint(struct libalias *la, struct alias_data *ah)
 	return (-1);
 }
 
-static int
+static int 
 protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
@@ -120,13 +120,13 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 }
 
 struct proto_handler handlers[] = {
-	{
-	  .pri = 90,
-	  .dir = OUT,
-	  .proto = TCP,
-	  .fingerprint = &fingerprint,
+	{ 
+	  .pri = 90, 
+	  .dir = OUT, 
+	  .proto = TCP, 
+	  .fingerprint = &fingerprint, 
 	  .protohandler = &protohandler
-	},
+	}, 
 	{ EOH }
 };
 
@@ -151,7 +151,7 @@ mod_handler(module_t mod, int type, void *data)
 }
 
 #ifdef _KERNEL
-static
+static 
 #endif
 moduledata_t alias_mod = {
        "alias_irc", mod_handler, NULL
@@ -441,7 +441,7 @@ lPACKET_DONE:
 			int delta;
 
 			SetAckModified(lnk);
-			tc = (struct tcphdr *)ip_next(pip);
+			tc = (struct tcphdr *)ip_next(pip);				
 			delta = GetDeltaSeqOut(tc->th_seq, lnk);
 			AddSeq(lnk, delta + copyat + iCopy - dlen, pip->ip_hl,
 			    pip->ip_len, tc->th_seq, tc->th_off);

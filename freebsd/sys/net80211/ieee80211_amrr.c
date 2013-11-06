@@ -67,7 +67,7 @@ static int	amrr_update(struct ieee80211_amrr *,
     			struct ieee80211_amrr_node *, struct ieee80211_node *);
 static int	amrr_rate(struct ieee80211_node *, void *, uint32_t);
 static void	amrr_tx_complete(const struct ieee80211vap *,
-    			const struct ieee80211_node *, int,
+    			const struct ieee80211_node *, int, 
 			void *, void *);
 static void	amrr_tx_update(const struct ieee80211vap *vap,
 			const struct ieee80211_node *, void *, void *, void *);

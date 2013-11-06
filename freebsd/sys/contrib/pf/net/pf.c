@@ -69,9 +69,9 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #else
-#include <rtems/bsd/local/bpfilter.h>
-#include <rtems/bsd/local/pflog.h>
-#include <rtems/bsd/local/pfsync.h>
+#include "bpfilter.h"
+#include "pflog.h"
+#include "pfsync.h"
 #endif
 
 #include <rtems/bsd/sys/param.h>

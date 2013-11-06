@@ -105,7 +105,7 @@ __FBSDID("$FreeBSD$");
 #endif /* INET6 */
 
 #ifndef __FreeBSD__
-#include <rtems/bsd/local/carp.h>
+#include "carp.h"
 #endif
 #if NCARP > 0
 #include <netinet/ip_carp.h>
@@ -115,8 +115,8 @@ __FBSDID("$FreeBSD$");
 #include <net/if_pfsync.h>
 
 #ifndef __FreeBSD__
-#include <rtems/bsd/local/bpfilter.h>
-#include <rtems/bsd/local/pfsync.h>
+#include "bpfilter.h"
+#include "pfsync.h"
 #endif
 
 #define PFSYNC_MINMTU	\

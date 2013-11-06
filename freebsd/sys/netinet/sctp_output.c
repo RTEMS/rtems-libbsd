@@ -4840,11 +4840,11 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 	 * being equal to the beginning of the params i.e. (iphlen +
 	 * sizeof(struct sctp_init_msg) parse through the parameters to the
 	 * end of the mbuf verifying that all parameters are known.
-	 *
+	 * 
 	 * For unknown parameters build and return a mbuf with
 	 * UNRECOGNIZED_PARAMETER errors. If the flags indicate to stop
 	 * processing this chunk stop, and set *abort_processing to 1.
-	 *
+	 * 
 	 * By having param_offset be pre-set to where parameters begin it is
 	 * hoped that this routine may be reused in the future by new
 	 * features.
@@ -7754,7 +7754,7 @@ nothing_to_send:
 			 * (when CMT is off) then it calls
 			 * sctp_fill_outqueue for the net. This gets data on
 			 * the send queue for that network.
-			 *
+			 * 
 			 * In sctp_fill_outqueue TSN's are assigned and data is
 			 * copied out of the stream buffers. Note mostly
 			 * copy by reference (we hope).

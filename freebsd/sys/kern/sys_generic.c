@@ -39,7 +39,6 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-
 #include <rtems/bsd/local/opt_compat.h>
 #include <rtems/bsd/local/opt_ktrace.h>
 
@@ -910,6 +909,9 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 
 	if (nd < 0)
 		return (EINVAL);
+#ifndef __rtems__
+	fdp = td->td_proc->p_fd;
+#endif /* __rtems__ */
 	ndu = nd;
 #ifndef __rtems__
 	lf = fdp->fd_lastfile;

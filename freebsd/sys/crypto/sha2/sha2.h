@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef __SHA2_HH__
-#define __SHA2_HH__
+#ifndef __SHA2_H__
+#define __SHA2_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -137,5 +137,5 @@ char* SHA512_Data(const u_int8_t*, size_t, char[SHA512_DIGEST_STRING_LENGTH]);
 }
 #endif /* __cplusplus */
 
-#endif /* __SHA2_HH__ */
+#endif /* __SHA2_H__ */
 

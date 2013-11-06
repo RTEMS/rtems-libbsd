@@ -131,7 +131,7 @@ extern uintptr_t dpcpu_off[];
 	}								\
 } while(0)
 
-/*
+/* 
  * XXXUPS remove as soon as we have per cpu variable
  * linker sets and can define rm_queue in _rm_lock.h
  */

@@ -158,21 +158,21 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <rtems/bsd/sys/errno.h>
 #include <rtems/bsd/sys/time.h>
-#include <unistd.h>
+#include <unistd.h> 
 #endif
 
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 
-#ifdef _KERNEL
+#ifdef _KERNEL  
 #include <netinet/libalias/alias.h>
 #include <netinet/libalias/alias_local.h>
 #include <netinet/libalias/alias_mod.h>
 #include <net/if.h>
 #else
-#include <rtems/bsd/local/alias.h>
-#include <rtems/bsd/local/alias_local.h>
-#include <rtems/bsd/local/alias_mod.h>
+#include "alias.h"
+#include "alias_local.h"
+#include "alias_mod.h"
 #endif
 
 static		LIST_HEAD(, libalias) instancehead = LIST_HEAD_INITIALIZER(instancehead);
@@ -465,9 +465,9 @@ SeqDiff(u_long x, u_long y)
 
 static void
 AliasLog(char *str, const char *format, ...)
-{
+{		
 	va_list ap;
-
+	
 	va_start(ap, format);
 	vsnprintf(str, LIBALIAS_BUF_SIZE, format, ap);
 	va_end(ap);
@@ -477,7 +477,7 @@ static void
 AliasLog(FILE *stream, const char *format, ...)
 {
 	va_list ap;
-
+	
 	va_start(ap, format);
 	vfprintf(stream, format, ap);
 	va_end(ap);
@@ -492,12 +492,12 @@ ShowAliasStats(struct libalias *la)
 	LIBALIAS_LOCK_ASSERT(la);
 /* Used for debugging */
 	if (la->logDesc) {
-		int tot  = la->icmpLinkCount + la->udpLinkCount +
+		int tot  = la->icmpLinkCount + la->udpLinkCount + 
 		  (la->sctpLinkCount>>1) + /* sctp counts half associations */
 			la->tcpLinkCount + la->pptpLinkCount +
 			la->protoLinkCount + la->fragmentIdLinkCount +
 			la->fragmentPtrLinkCount;
-
+		
 		AliasLog(la->logDesc,
 			 "icmp=%u, udp=%u, tcp=%u, sctp=%u, pptp=%u, proto=%u, frag_id=%u frag_ptr=%u / tot=%u",
 			 la->icmpLinkCount,
@@ -509,7 +509,7 @@ ShowAliasStats(struct libalias *la)
 			 la->fragmentIdLinkCount,
 			 la->fragmentPtrLinkCount, tot);
 #ifndef _KERNEL
-		AliasLog(la->logDesc, " (sock=%u)\n", la->sockCount);
+		AliasLog(la->logDesc, " (sock=%u)\n", la->sockCount); 
 #endif
 	}
 }
@@ -1417,7 +1417,7 @@ FindFragmentIn2(struct libalias *la, struct in_addr dst_addr,	/* Doesn't add a l
     struct in_addr alias_addr,	/* is not found.           */
     u_short ip_id)
 {
-
+	
 	LIBALIAS_LOCK_ASSERT(la);
 	return FindLinkIn(la, dst_addr, alias_addr,
 	    NO_DEST_PORT, ip_id,
@@ -1904,7 +1904,7 @@ GetAliasAddress(struct alias_link *lnk)
 struct in_addr
 GetDefaultAliasAddress(struct libalias *la)
 {
-
+	
 	LIBALIAS_LOCK_ASSERT(la);
 	return (la->aliasAddress);
 }
@@ -2064,7 +2064,7 @@ packet size was altered is searched.
 
 // XXX ip free
 void
-AddSeq(struct alias_link *lnk, int delta, u_int ip_hl, u_short ip_len,
+AddSeq(struct alias_link *lnk, int delta, u_int ip_hl, u_short ip_len, 
     u_long th_seq, u_int th_off)
 {
 /*
@@ -2117,7 +2117,7 @@ SetExpire(struct alias_link *lnk, int expire)
 void
 ClearCheckNewLink(struct libalias *la)
 {
-
+	
 	LIBALIAS_LOCK_ASSERT(la);
 	la->newDefaultLink = 0;
 }
@@ -2217,11 +2217,11 @@ InitPacketAliasLog(struct libalias *la)
 #ifdef _KERNEL
 		if ((la->logDesc = malloc(LIBALIAS_BUF_SIZE)))
 			;
-#else
+#else 		
 		if ((la->logDesc = fopen("/var/log/alias.log", "w")))
-			fprintf(la->logDesc, "PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n");
+			fprintf(la->logDesc, "PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n");	       
 #endif
-		else
+		else 
 			return (ENOMEM); /* log initialization failed */
 		la->packetAliasMode |= PKT_ALIAS_LOG;
 	}

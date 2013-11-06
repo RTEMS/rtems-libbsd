@@ -68,7 +68,7 @@ void	_rm_runlock(struct rmlock *rm,  struct rm_priotracker *tracker);
  * Public interface for lock operations.
  */
 #ifndef LOCK_DEBUG
-#error LOCK_DEBUG not defined, include <rtems/bsd/sys/lock.h> before <sys/rmlock.h>
+#error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/rmlock.h>
 #endif
 
 #if LOCK_DEBUG > 0
@@ -89,7 +89,7 @@ void	_rm_runlock(struct rmlock *rm,  struct rm_priotracker *tracker);
   #define rm_init(rm, name)                rw_init(rm, name)
   #define rm_init_flags(rm, name, opts)    rw_init_flags(rm, name, opts)
   #define rm_destroy(rm)                   rw_destroy(rm)
-  #define rm_wowned(rm)                    rw_wowned(rm) 
+  #define rm_wowned(rm)                    rw_wowned(rm)
   #define rm_sysinit(arg)                  rw_sysinit(arg)
   #define rm_sysinit_flags(arg)            rw_sysinit_flags(arg)
 

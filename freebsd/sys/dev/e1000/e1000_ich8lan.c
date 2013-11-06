@@ -63,11 +63,7 @@
  * 82579V Gigabit Network Connection
  */
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#endif
+#include "e1000_api.h"
 
 static s32  e1000_acquire_swflag_ich8lan(struct e1000_hw *hw);
 static void e1000_release_swflag_ich8lan(struct e1000_hw *hw);

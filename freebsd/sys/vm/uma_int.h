@@ -28,12 +28,12 @@
  *
  */
 
-/*
+/* 
  * This file includes definitions, structures, prototypes, and inlines that
  * should not be used outside of the actual implementation of UMA.
  */
 
-/*
+/* 
  * Here's a quick description of the relationship between the objects:
  *
  * Kegs contain lists of slabs which are stored in either the full bin, empty
@@ -42,7 +42,7 @@
  * and rsize is the result of that.  The Keg also stores information for
  * managing a hash of page addresses that maps pages to uma_slab_t structures
  * for pages that don't have embedded uma_slab_t's.
- *
+ *  
  * The uma_slab_t may be embedded in a UMA_SLAB_SIZE chunk of memory or it may
  * be allocated off the page from a special slab zone.  The free list within a
  * slab is managed with a linked list of indexes, which are 8 bit values.  If
@@ -50,7 +50,7 @@
  * values.  Currently on alpha you can get 250 or so 32 byte items and on x86
  * you can get 250 or so 16byte items.  For item sizes that would yield more
  * than 10% memory waste we potentially allocate a separate uma_slab_t if this
- * will improve the number of items per slab that will fit.
+ * will improve the number of items per slab that will fit.  
  *
  * Other potential space optimizations are storing the 8bit of linkage in space
  * wasted between items due to alignment problems.  This may yield a much better
@@ -65,7 +65,7 @@
  * so you fall back to the memory footprint of the power of two allocator. I
  * have looked at memory allocation sizes on many of the machines available to
  * me, and there does not seem to be an abundance of allocations at this range
- * so at this time it may not make sense to optimize for it.  This can, of
+ * so at this time it may not make sense to optimize for it.  This can, of 
  * course, be solved with dynamic slab sizes.
  *
  * Kegs may serve multiple Zones but by far most of the time they only serve
@@ -94,7 +94,7 @@
  *	___________________________________________________________
  *     | _  _  _  _  _  _  _  _  _  _  _  _  _  _  _   ___________ |
  *     ||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i| |slab header||
- *     ||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_| |___________||
+ *     ||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_| |___________|| 
  *     |___________________________________________________________|
  *
  *
@@ -128,9 +128,9 @@
  * size of the hash table for uma_slabs that are managed off page. This hash
  * does expand by powers of two.  Currently it doesn't get smaller.
  */
-#define UMA_HASH_SIZE_INIT	32
+#define UMA_HASH_SIZE_INIT	32		
 
-/*
+/* 
  * I should investigate other hashing algorithms.  This should yield a low
  * number of collisions if the pages are relatively contiguous.
  *
@@ -290,7 +290,7 @@ struct uma_klink {
 typedef struct uma_klink *uma_klink_t;
 
 /*
- * Zone management structure
+ * Zone management structure 
  *
  * TODO: Optimize for cache line size
  *
@@ -358,7 +358,7 @@ void uma_large_free(uma_slab_t slab);
 			mtx_init(&(k)->uk_lock, (k)->uk_name,	\
 			    "UMA zone", MTX_DEF | MTX_DUPOK);	\
 	} while (0)
-
+	    
 #define	KEG_LOCK_FINI(k)	mtx_destroy(&(k)->uk_lock)
 #define	KEG_LOCK(k)	mtx_lock(&(k)->uk_lock)
 #define	KEG_UNLOCK(k)	mtx_unlock(&(k)->uk_lock)
@@ -450,7 +450,7 @@ vsetobj(vm_offset_t va, vm_object_t obj)
 	p->object = obj;
 	p->flags &= ~PG_SLAB;
 }
-#endif
+#endif /* __rtems__ */
 
 /*
  * The following two functions may be defined by architecture specific code

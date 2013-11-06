@@ -60,7 +60,7 @@
 
 #include <netinet/libalias/alias_sctp.h>
 #else
-#include <rtems/bsd/local/alias_sctp.h>
+#include "alias_sctp.h"
 #endif
 
 /* Sizes of input and output link tables */

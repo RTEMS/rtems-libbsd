@@ -90,7 +90,7 @@ static void addrsort(char **, int, res_state);
 #endif
 
 #ifdef DEBUG
-static void DPRINTF(char *, int, res_state) __printflike(1, 0);
+static void dprintf(char *, int, res_state) __printflike(1, 0);
 #endif
 
 #define MAXPACKET	(64*1024)
@@ -109,7 +109,7 @@ int _dns_ttl_;
 
 #ifdef DEBUG
 static void
-DPRINTF(msg, num, res)
+dprintf(msg, num, res)
 	char *msg;
 	int num;
 	res_state res;
@@ -122,7 +122,7 @@ DPRINTF(msg, num, res)
 	}
 }
 #else
-# define DPRINTF(msg, num, res) /*nada*/
+# define dprintf(msg, num, res) /*nada*/
 #endif
 
 #define BOUNDED_INCR(x) \
@@ -340,7 +340,6 @@ gethostanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			break;
 #else
 			he->h_name = bp;
-#ifdef INET6
 			if (statp->options & RES_USE_INET6) {
 				n = strlen(bp) + 1;	/* for the \0 */
 				if (n >= MAXHOSTNAMELEN) {
@@ -350,7 +349,6 @@ gethostanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 				bp += n;
 				_map_v4v6_hostent(he, &bp, ep);
 			}
-#endif
 			RES_SET_H_ERRNO(statp, NETDB_SUCCESS);
 			return (0);
 #endif
@@ -377,13 +375,13 @@ gethostanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			bp += sizeof(align) - ((u_long)bp % sizeof(align));
 
 			if (bp + n >= ep) {
-				DPRINTF("size (%d) too big\n", n, statp);
+				dprintf("size (%d) too big\n", n, statp);
 				had_error++;
 				continue;
 			}
 			if (hap >= &hed->h_addr_ptrs[_MAXADDRS-1]) {
 				if (!toobig++)
-					DPRINTF("Too many addresses (%d)\n",
+					dprintf("Too many addresses (%d)\n",
 						_MAXADDRS, statp);
 				cp += n;
 				continue;
@@ -397,7 +395,7 @@ gethostanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			}
 			break;
 		default:
-			DPRINTF("Impossible condition (type=%d)\n", type,
+			dprintf("Impossible condition (type=%d)\n", type,
 			    statp);
 			RES_SET_H_ERRNO(statp, NO_RECOVERY);
 			return (-1);
@@ -426,10 +424,8 @@ gethostanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 			he->h_name = bp;
 			bp += n;
 		}
-#ifdef INET6
 		if (statp->options & RES_USE_INET6)
 			_map_v4v6_hostent(he, &bp, ep);
-#endif
 		RES_SET_H_ERRNO(statp, NETDB_SUCCESS);
 		return (0);
 	}
@@ -526,12 +522,12 @@ _dns_gethostbyname(void *rval, void *cb_data, va_list ap)
 	n = res_nsearch(statp, name, C_IN, type, buf->buf, sizeof(buf->buf));
 	if (n < 0) {
 		free(buf);
-		DPRINTF("res_nsearch failed (%d)\n", n, statp);
+		dprintf("res_nsearch failed (%d)\n", n, statp);
 		*h_errnop = statp->res_h_errno;
 		return (NS_NOTFOUND);
 	} else if (n > sizeof(buf->buf)) {
 		free(buf);
-		DPRINTF("static buffer is too small (%d)\n", n, statp);
+		dprintf("static buffer is too small (%d)\n", n, statp);
 		*h_errnop = statp->res_h_errno;
 		return (NS_UNAVAIL);
 	}
@@ -633,13 +629,13 @@ _dns_gethostbyaddr(void *rval, void *cb_data, va_list ap)
 	    sizeof buf->buf);
 	if (n < 0) {
 		free(buf);
-		DPRINTF("res_nquery failed (%d)\n", n, statp);
+		dprintf("res_nquery failed (%d)\n", n, statp);
 		*h_errnop = statp->res_h_errno;
 		return (NS_UNAVAIL);
 	}
 	if (n > sizeof buf->buf) {
 		free(buf);
-		DPRINTF("static buffer is too small (%d)\n", n, statp);
+		dprintf("static buffer is too small (%d)\n", n, statp);
 		*h_errnop = statp->res_h_errno;
 		return (NS_UNAVAIL);
 	}
@@ -703,13 +699,11 @@ _dns_gethostbyaddr(void *rval, void *cb_data, va_list ap)
 	memcpy(hed->host_addr, uaddr, len);
 	hed->h_addr_ptrs[0] = (char *)hed->host_addr;
 	hed->h_addr_ptrs[1] = NULL;
-#ifdef INET6
 	if (af == AF_INET && (statp->options & RES_USE_INET6)) {
 		_map_v4v6_address((char*)hed->host_addr, (char*)hed->host_addr);
 		he.h_addrtype = AF_INET6;
 		he.h_length = NS_IN6ADDRSZ;
 	}
-#endif
 	if (__copy_hostent(&he, hptr, buffer, buflen) != 0) {
 		*errnop = errno;
 		RES_SET_H_ERRNO(statp, NETDB_INTERNAL);

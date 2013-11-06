@@ -34,11 +34,7 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_api.h>
-#else
-#include <rtems/bsd/local/e1000_api.h>
-#endif
+#include "e1000_api.h"
 
 static void e1000_reload_nvm_generic(struct e1000_hw *hw);
 

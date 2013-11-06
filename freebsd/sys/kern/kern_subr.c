@@ -186,6 +186,11 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 	u_int cnt;
 	int error, newflags, save;
 
+#ifndef __rtems__
+	td = curthread;
+#endif /* __rtems__ */
+	error = 0;
+
 	KASSERT(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE,
 	    ("uiomove: mode"));
 	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == td,
@@ -557,7 +562,6 @@ copyinstrfrom(const void * __restrict src, void * __restrict dst, size_t len,
 	}
 	return (error);
 }
-
 #endif /* __rtems__ */
 
 int

@@ -35,15 +35,9 @@
 #ifndef _E1000_VF_H_
 #define _E1000_VF_H_
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_osdep.h>
-#include <dev/e1000/e1000_regs.h>
-#include <dev/e1000/e1000_defines.h>
-#else
-#include <rtems/bsd/local/e1000_osdep.h>
-#include <rtems/bsd/local/e1000_regs.h>
-#include <rtems/bsd/local/e1000_defines.h>
-#endif
+#include "e1000_osdep.h"
+#include "e1000_regs.h"
+#include "e1000_defines.h"
 
 struct e1000_hw;
 
@@ -198,11 +192,7 @@ struct e1000_vf_stats {
 	u64 gprlbc;
 };
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_mbx.h>
-#else
-#include <rtems/bsd/local/e1000_mbx.h>
-#endif
+#include "e1000_mbx.h"
 
 struct e1000_mac_operations {
 	/* Function pointers for the MAC. */

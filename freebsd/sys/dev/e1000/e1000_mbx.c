@@ -34,11 +34,7 @@
 ******************************************************************************/
 /*$FreeBSD$*/
 
-#ifdef __rtems__
-#include <dev/e1000/e1000_mbx.h>
-#else
-#include <rtems/bsd/local/e1000_mnx.h>
-#endif
+#include "e1000_mbx.h"
 
 /**
  *  e1000_null_mbx_check_for_flag - No-op function, return 0

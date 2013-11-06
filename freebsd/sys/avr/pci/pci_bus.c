@@ -60,7 +60,6 @@ static int	pcibios_pcib_route_interrupt(device_t pcib, device_t dev,
 int	pcibios_pcib_route_interrupt(device_t pcib, device_t dev, int pin);
 #endif /* __rtems__ */
 
-
 int
 legacy_pcib_maxslots(device_t dev)
 {
@@ -69,15 +68,9 @@ legacy_pcib_maxslots(device_t dev)
 
 /* read configuration space register */
 
-#ifdef __rtems__
-uint32_t
-legacy_pcib_read_config(device_t dev, u_int bus, u_int slot, u_int func,
-			u_int reg, int bytes)
-#else
 u_int32_t
 legacy_pcib_read_config(device_t dev, u_int bus, u_int slot, u_int func,
 			u_int reg, int bytes)
-#endif
 {
 	return(pci_cfgregread(bus, slot, func, reg, bytes));
 }
@@ -514,7 +507,6 @@ legacy_pcib_attach(device_t dev)
 		if (pir != NULL)
 			device_probe_and_attach(pir);
 	}
-#else /* __rtems__ */
 #endif /* __rtems__ */
 	device_add_child(dev, "pci", bus);
 	return bus_generic_attach(dev);

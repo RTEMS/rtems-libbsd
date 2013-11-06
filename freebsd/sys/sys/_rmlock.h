@@ -52,8 +52,8 @@ struct rmlock {
 
 };
 #else /* __rtems__ */
-  #include <sys/rwlock.h>
-  #define rmlock rwlock
+#include <sys/rwlock.h>
+#define rmlock rwlock
 #endif /* __rtems__ */
 
 struct rm_priotracker {

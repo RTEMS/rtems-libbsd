@@ -40,4 +40,28 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_
 
+#include <sys/cdefs.h>
+
+#include <stdio.h>
+
+/* FIXME: Add lock capabilities to RTEMS file system */
+#define O_EXLOCK 0
+#define O_SHLOCK 0
+
+/* FIXME: Add no symlink follow capabilities to RTEMS file system */
+#define O_NOFOLLOW 0
+
+#define _PATH_VARRUN "/var/run"
+
+__BEGIN_DECLS
+
+/* FIXME: Add to Newlib */
+long long strtonum(const char *numstr, long long minval, long long maxval,
+    const char **errstrp);
+
+/* FIXME: Add to Newlib */
+char *fgetln(FILE *fp, size_t *lenp);
+
+__END_DECLS
+
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_ */

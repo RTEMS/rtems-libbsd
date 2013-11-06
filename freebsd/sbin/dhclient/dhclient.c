@@ -384,9 +384,6 @@ main(int argc, char *argv[])
 		usage();
 
 	if (path_dhclient_pidfile == NULL) {
-#ifdef __rtems__
-#define _PATH_VARRUN "/var/run"
-#endif /* __rtems__ */
 		asprintf(&path_dhclient_pidfile,
 		    "%sdhclient.%s.pid", _PATH_VARRUN, *argv);
 		if (path_dhclient_pidfile == NULL)
@@ -464,10 +461,6 @@ main(int argc, char *argv[])
 	close(pipe_fd[0]);
 	privfd = pipe_fd[1];
 
-#ifdef __rtems__
-/* FIXME: Add O_EXLOCK capabilities to RTEMS file system */
-#define O_EXLOCK 0
-#endif /* __rtems__ */
 	if ((fd = open(path_dhclient_db, O_RDONLY|O_EXLOCK|O_CREAT, 0)) == -1)
 		error("can't open and lock %s: %m", path_dhclient_db);
 	read_client_leases();

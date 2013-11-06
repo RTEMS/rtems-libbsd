@@ -51,13 +51,6 @@ dbopen(const char *fname, int flags, int mode, DBTYPE type, const void *openinfo
 {
 
 #define	DB_FLAGS	(DB_LOCK | DB_SHMEM | DB_TXN)
-#ifdef __rtems__
-/* FIXME: Add lock capabilities to RTEMS file system */
-#define O_EXLOCK 0
-#define O_SHLOCK 0
-/* FIXME: Add no symlink follow capabilities to RTEMS file system */
-#define O_NOFOLLOW 0
-#endif /* __rtems__ */
 #define	USE_OPEN_FLAGS							\
 	(O_CREAT | O_EXCL | O_EXLOCK | O_NOFOLLOW | O_NONBLOCK | 	\
 	 O_RDONLY | O_RDWR | O_SHLOCK | O_SYNC | O_TRUNC)

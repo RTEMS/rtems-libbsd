@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: if_gif.c,v 1.87 2001/10/19 08:50:27 itojun Exp $	*/

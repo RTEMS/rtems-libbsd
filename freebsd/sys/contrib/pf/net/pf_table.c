@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$OpenBSD: pf_table.c,v 1.68 2006/05/02 10:08:45 dhartmei Exp $	*/
 

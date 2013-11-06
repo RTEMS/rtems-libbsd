@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$OpenBSD: pf_norm.c,v 1.107 2006/04/16 00:59:52 pascoe Exp $ */
 

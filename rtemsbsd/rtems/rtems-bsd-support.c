@@ -39,7 +39,7 @@
 
 /* FIXME: This file needs careful review. */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 #include <rtems/score/threaddispatch.h>
 

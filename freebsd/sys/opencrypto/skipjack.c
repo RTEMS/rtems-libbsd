@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$OpenBSD: skipjack.c,v 1.3 2001/05/05 00:31:34 angelos Exp $	*/
 /*-

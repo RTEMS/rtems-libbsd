@@ -29,7 +29,7 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*-
  * Copyright (c) 1990, 1991 Regents of The University of Michigan.

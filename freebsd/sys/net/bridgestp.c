@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: bridgestp.c,v 1.5 2003/11/28 08:56:48 keihan Exp $	*/
 

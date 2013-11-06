@@ -23,8 +23,8 @@
 #ifndef _RTEMS_BSD_MACHINE_SIGNAL_H_
 #define _RTEMS_BSD_MACHINE_SIGNAL_H_
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_CONFIG_H_
-#error "the header file <freebsd/machine/rtems-bsd-config.h> must be included first"
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_KERNEL_SPACE_H_
+#error "the header file <machine/rtems-bsd-kernel-space.h> must be included first"
 #endif
 
 #endif /* _RTEMS_BSD_MACHINE_SIGNAL_H_ */

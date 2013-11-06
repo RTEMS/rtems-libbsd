@@ -53,7 +53,7 @@
  *	@(#)kern_synch.c	8.9 (Berkeley) 5/19/95
  */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-thread.h>
 
 #include <rtems/score/statesimpl.h>

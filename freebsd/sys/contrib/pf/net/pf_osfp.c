@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$OpenBSD: pf_osfp.c,v 1.12 2006/12/13 18:14:10 itojun Exp $ */
 

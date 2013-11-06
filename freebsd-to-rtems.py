@@ -235,7 +235,7 @@ class FromFreeBSDToRTEMSSourceConverter(Converter):
 		data = super(FromFreeBSDToRTEMSSourceConverter, self).convert(src)
 		data = fixLocalIncludes(data)
 		data = fixIncludes(data)
-		data = '#include <machine/rtems-bsd-config.h>\n\n' + data
+		data = '#include <machine/rtems-bsd-kernel-space.h>\n\n' + data
 		return data
 
 class FromFreeBSDToRTEMSUserSpaceSourceConverter(Converter):
@@ -254,7 +254,7 @@ class FromRTEMSToFreeBSDHeaderConverter(Converter):
 class FromRTEMSToFreeBSDSourceConverter(Converter):
 	def convert(self, src):
 		data = super(FromRTEMSToFreeBSDSourceConverter, self).convert(src)
-		data = re.sub('#include <machine/rtems-bsd-config.h>\n\n', '', data)
+		data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '', data)
 		data = revertFixLocalIncludes(data)
 		data = revertFixIncludes(data)
 		return data
@@ -411,7 +411,7 @@ class ModuleManager:
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n' \
-                        '# do nothing default so sed on rtems-bsd-config.h always works.\n' \
+                        '# do nothing default so sed on rtems-bsd-kernel-space.h always works.\n' \
                         'SED_PATTERN += -e \'s/^//\'\n' \
 			'\n' \
 			'TESTS =\n' \
@@ -420,7 +420,7 @@ class ModuleManager:
 			'D_FILES =\n' \
 			'\n' \
 			'LIB = libbsd.a\n' \
-			'LIB_GEN_FILES = rtemsbsd/include/machine/rtems-bsd-config.h\n' \
+			'LIB_GEN_FILES = rtemsbsd/include/machine/rtems-bsd-kernel-space.h\n' \
 			'LIB_C_FILES =\n'
 		for m in self.modules:
 			if m.conditionalOn != "none":
@@ -456,7 +456,7 @@ class ModuleManager:
 			'\tcheck_endof\n' \
 			'\n' \
 			'# The following targets use the MIPS Generic in_cksum routine\n' \
-			'rtemsbsd/include/machine/rtems-bsd-config.h: rtemsbsd/include/machine/rtems-bsd-config.h.in\n' \
+			'rtemsbsd/include/machine/rtems-bsd-kernel-space.h: rtemsbsd/include/machine/rtems-bsd-kernel-space.h.in\n' \
 			'\tsed $(SED_PATTERN) <$< >$@\n' \
 			'\n' \
 			'CPU_SED  = sed\n' \

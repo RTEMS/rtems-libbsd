@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: mii.c,v 1.12 1999/08/03 19:41:49 drochner Exp $	*/
 

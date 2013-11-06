@@ -12,7 +12,7 @@
  * http://www.rtems.com/license/LICENSE.
  */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 #include <bsp.h>
 

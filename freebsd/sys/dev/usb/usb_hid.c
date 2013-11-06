@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: hid.c,v 1.17 2001/11/13 06:24:53 lukem Exp $	*/
 

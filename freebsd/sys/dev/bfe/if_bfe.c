@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*-
  * Copyright (c) 2003 Stuart Walsh<stu@ipng.org.uk>

@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$OpenBSD: pf_ioctl.c,v 1.175 2007/02/26 22:47:43 deraadt Exp $ */
 

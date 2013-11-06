@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: icsphy.c,v 1.41 2006/11/16 21:24:07 christos Exp $	*/
 

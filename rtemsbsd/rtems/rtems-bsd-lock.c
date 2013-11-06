@@ -40,7 +40,7 @@
 /* Necessary to obtain some internal functions */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>

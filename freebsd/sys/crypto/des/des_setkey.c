@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: des_setkey.c,v 1.7 2001/09/10 04:03:58 itojun Exp $	*/
 

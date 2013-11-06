@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: rijndael.c,v 1.3 2003/08/28 14:20:22 itojun Exp $	*/
 

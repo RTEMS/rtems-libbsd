@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*
  * Synchronous PPP/Cisco/Frame Relay link level subroutines.

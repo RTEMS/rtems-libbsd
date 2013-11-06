@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: bf_enc.c,v 1.7 2002/02/27 01:33:59 itojun Exp $	*/
 

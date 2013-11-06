@@ -45,7 +45,7 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-cache.h>
 #include <machine/rtems-bsd-bus-dma.h>
 

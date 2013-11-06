@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: if_faith.c,v 1.23 2001/12/17 13:55:29 sumikawa Exp $	*/
 

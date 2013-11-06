@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*      $OpenBSD: cast.c,v 1.2 2000/06/06 06:49:47 deraadt Exp $       */
 /*-

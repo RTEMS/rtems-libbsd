@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: ip_ecn.c,v 1.12 2002/01/07 11:34:47 kjc Exp $	*/
 

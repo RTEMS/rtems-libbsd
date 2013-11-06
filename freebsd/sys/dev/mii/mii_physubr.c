@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: mii_physubr.c,v 1.5 1999/08/03 19:41:49 drochner Exp $	*/
 

@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$FreeBSD$	*/
 /* $NetBSD: ieee80211_rssadapt.c,v 1.9 2005/02/26 22:45:09 perry Exp $ */

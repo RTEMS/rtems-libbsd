@@ -30,7 +30,7 @@ CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes
 
-# do nothing default so sed on rtems-bsd-config.h always works.
+# do nothing default so sed on rtems-bsd-kernel-space.h always works.
 SED_PATTERN += -e 's/^//'
 
 TESTS =
@@ -39,7 +39,7 @@ O_FILES =
 D_FILES =
 
 LIB = libbsd.a
-LIB_GEN_FILES = rtemsbsd/include/machine/rtems-bsd-config.h
+LIB_GEN_FILES = rtemsbsd/include/machine/rtems-bsd-kernel-space.h
 LIB_C_FILES =
 LIB_C_FILES += rtemsbsd/local/bus_if.c
 LIB_C_FILES += rtemsbsd/local/cryptodev_if.c
@@ -942,7 +942,7 @@ run_tests: $(RUN_TESTS)
 	check_endof
 
 # The following targets use the MIPS Generic in_cksum routine
-rtemsbsd/include/machine/rtems-bsd-config.h: rtemsbsd/include/machine/rtems-bsd-config.h.in
+rtemsbsd/include/machine/rtems-bsd-kernel-space.h: rtemsbsd/include/machine/rtems-bsd-kernel-space.h.in
 	sed $(SED_PATTERN) <$< >$@
 
 CPU_SED  = sed

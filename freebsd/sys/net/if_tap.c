@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*-
  * Copyright (C) 1999-2000 by Maksim Yevmenkin <m_evmenkin@yahoo.com>

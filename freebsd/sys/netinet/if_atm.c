@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*      $NetBSD: if_atm.c,v 1.6 1996/10/13 02:03:01 christos Exp $       */
 

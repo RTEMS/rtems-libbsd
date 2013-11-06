@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: in_gif.c,v 1.54 2001/05/14 14:02:16 itojun Exp $	*/
 

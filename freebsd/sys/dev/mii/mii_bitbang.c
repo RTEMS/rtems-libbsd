@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: mii_bitbang.c,v 1.12 2008/05/04 17:06:09 xtraeme Exp $	*/
 

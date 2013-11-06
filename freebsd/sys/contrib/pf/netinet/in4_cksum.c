@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$FreeBSD$	*/
 /*	$OpenBSD: in4_cksum.c,v 1.7 2003/06/02 23:28:13 millert Exp $	*/

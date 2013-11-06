@@ -18,7 +18,7 @@
  *
  */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-syscall-api.h>
 
 #include <sys/cdefs.h>

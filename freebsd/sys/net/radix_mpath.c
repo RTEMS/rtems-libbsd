@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: radix_mpath.c,v 1.17 2004/11/08 10:29:39 itojun Exp $	*/
 

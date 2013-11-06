@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>

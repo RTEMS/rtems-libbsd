@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: ip_gre.c,v 1.29 2003/09/05 23:02:43 itojun Exp $ */
 

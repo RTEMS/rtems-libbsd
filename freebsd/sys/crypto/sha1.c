@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: sha1.c,v 1.5 2000/11/08 06:13:08 itojun Exp $	*/
 /*

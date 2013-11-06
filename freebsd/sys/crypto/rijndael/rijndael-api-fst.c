@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$KAME: rijndael-api-fst.c,v 1.10 2001/05/27 09:34:18 itojun Exp $	*/
 

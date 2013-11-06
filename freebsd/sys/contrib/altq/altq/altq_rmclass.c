@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$FreeBSD$	*/
 /*	$KAME: altq_rmclass.c,v 1.18 2003/11/06 06:32:53 kjc Exp $	*/

@@ -1,4 +1,4 @@
-#include <machine/rtems-bsd-config.h>
+#include <machine/rtems-bsd-kernel-space.h>
 
 /*	$FreeBSD$ */
 /*	$NetBSD: pfil.c,v 1.20 2001/11/12 23:49:46 lukem Exp $	*/

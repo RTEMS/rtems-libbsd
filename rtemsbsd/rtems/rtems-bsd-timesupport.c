@@ -50,5 +50,5 @@ tvtohz(struct timeval *tv)
   ts.tv_sec = tv->tv_sec;
   ts.tv_nsec = tv->tv_usec * 1000;
 
-  (int) _Timespec_To_ticks( &ts );
+  return (int) _Timespec_To_ticks( &ts );
 }

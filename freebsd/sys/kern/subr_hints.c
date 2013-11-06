@@ -39,11 +39,16 @@ __FBSDID("$FreeBSD$");
  * Access functions for device resources.
  */
 
+#ifndef __rtems__
 static int checkmethod = 1;
 static int use_kenv;
 static char *hintp;
-#ifdef __rtems__
-int hintmode = 1;  /* always use static_hints */
+#else /* __rtems__ */
+#define hintmode 1
+#define hintp static_hints
+#define use_kenv 0
+static char __used default_static_hints[] = "";
+__weak_reference(default_static_hints, static_hints);
 #endif /* __rtems__ */
 
 /*
@@ -65,6 +70,7 @@ res_find(int *line, int *startln,
 	const char *s, *cp;
 	char *p;
 
+#ifndef __rtems__
 	if (checkmethod) {
 		hintp = NULL;
 
@@ -127,6 +133,7 @@ res_find(int *line, int *startln,
 			return (ENOENT);
 		}
 	} else
+#endif /* __rtems__ */
 		cp = hintp;
 	while (cp) {
 		hit = 1;
@@ -156,9 +163,13 @@ res_find(int *line, int *startln,
 		if (hit)
 			break;
 		if (use_kenv) {
+#ifndef __rtems__
 			cp = kenvp[++i];
 			if (cp == NULL)
 				break;
+#else /* __rtems__ */
+			(void) i;
+#endif /* __rtems__ */
 		} else {
 			while (*cp != '\0')
 				cp++;
@@ -169,8 +180,10 @@ res_find(int *line, int *startln,
 			}
 		}
 	}
+#ifndef __rtems__
 	if (use_kenv)
 		mtx_unlock(&kenv_lock);
+#endif /* __rtems__ */
 	if (cp == NULL)
 		return ENOENT;
 

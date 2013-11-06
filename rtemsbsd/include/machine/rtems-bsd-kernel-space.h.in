@@ -43,6 +43,10 @@
 /* FIXME: Update Newlib */
 #define MSIZE 256
 
+/* FIXME: Update Newlib */
+#define	__GLOBL1(sym)	__asm__(".globl " #sym)
+#define	__GLOBL(sym)	__GLOBL1(sym)
+
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1
 

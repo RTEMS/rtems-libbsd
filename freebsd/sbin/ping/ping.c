@@ -219,7 +219,7 @@ static void pr_retip(struct ip *);
 static void status(int);
 static void stopit(int);
 #endif /* __rtems__ */
-static void tvsub(struct timeval *, struct timeval *);
+static void tvsub(struct timeval *, const struct timeval *);
 static void usage(void) __dead2;
 
 #ifdef __rtems__
@@ -268,12 +268,10 @@ int rtems_bsd_command_ping(int argc, char *argv[])
 }
 #endif /* __rtems__ */
 int
-main(argc, argv)
-	int argc;
 #ifndef __rtems__
-	char *const *argv;
+main(int argc, char *const *argv)
 #else /* __rtems__ */
-	char **argv;
+main(int argc, char **argv)
 #endif /* __rtems__ */
 {
 	struct sockaddr_in from, sock_in;
@@ -998,8 +996,7 @@ main(argc, argv)
  * to be called from a signal handler.
  */
 void
-stopit(sig)
-	int sig __unused;
+stopit(int sig __unused)
 {
 
 	/*
@@ -1095,11 +1092,7 @@ pinger(void)
  * program to be run without having intermingled output (or statistics!).
  */
 static void
-pr_pack(buf, cc, from, tv)
-	char *buf;
-	int cc;
-	struct sockaddr_in *from;
-	struct timeval *tv;
+pr_pack(char *buf, int cc, struct sockaddr_in *from, struct timeval *tv)
 {
 	struct in_addr ina;
 	u_char *cp, *dp;
@@ -1363,9 +1356,7 @@ pr_pack(buf, cc, from, tv)
  *	Checksum routine for Internet Protocol family headers (C Version)
  */
 u_short
-in_cksum(addr, len)
-	u_short *addr;
-	int len;
+in_cksum(u_short *addr, int len)
 {
 	int nleft, sum;
 	u_short *w;
@@ -1409,8 +1400,7 @@ in_cksum(addr, len)
  * be >= in.
  */
 static void
-tvsub(out, in)
-	struct timeval *out, *in;
+tvsub(struct timeval *out, const struct timeval *in)
 {
 
 	if ((out->tv_usec -= in->tv_usec) < 0) {
@@ -1427,8 +1417,7 @@ tvsub(out, in)
  */
 
 static void
-status(sig)
-	int sig __unused;
+status(int sig __unused)
 {
 
 	siginfo_p = 1;
@@ -1436,7 +1425,7 @@ status(sig)
 #endif /* __rtems__ */
 
 static void
-check_status()
+check_status(void)
 {
 
 	if (siginfo_p) {
@@ -1456,7 +1445,7 @@ check_status()
  *	Print out statistics, and give up.
  */
 static void
-finish()
+finish(void)
 {
 
 	(void)signal(SIGINT, SIG_IGN);
@@ -1515,8 +1504,7 @@ static char *ttab[] = {
  *	Print a descriptive string about an ICMP header.
  */
 static void
-pr_icmph(icp)
-	struct icmp *icp;
+pr_icmph(struct icmp *icp)
 {
 
 	switch(icp->icmp_type) {
@@ -1663,8 +1651,7 @@ pr_icmph(icp)
  *	Print an IP header with options.
  */
 static void
-pr_iph(ip)
-	struct ip *ip;
+pr_iph(struct ip *ip)
 {
 	u_char *cp;
 	int hlen;
@@ -1696,8 +1683,7 @@ pr_iph(ip)
  * a hostname.
  */
 static char *
-pr_addr(ina)
-	struct in_addr ina;
+pr_addr(struct in_addr ina)
 {
 	struct hostent *hp;
 	static char buf[16 + 3 + MAXHOSTNAMELEN];
@@ -1716,8 +1702,7 @@ pr_addr(ina)
  *	Dump some info on a returned (via ICMP) IP packet.
  */
 static void
-pr_retip(ip)
-	struct ip *ip;
+pr_retip(struct ip *ip)
 {
 	u_char *cp;
 	int hlen;
@@ -1735,7 +1720,7 @@ pr_retip(ip)
 }
 
 static char *
-pr_ntime (n_time timestamp)
+pr_ntime(n_time timestamp)
 {
 	static char buf[10];
 	int hour, min, sec;
@@ -1751,8 +1736,7 @@ pr_ntime (n_time timestamp)
 }
 
 static void
-fill(bp, patp)
-	char *bp, *patp;
+fill(char *bp, char *patp)
 {
 	char *cp;
 	int pat[16];
@@ -1788,7 +1772,7 @@ fill(bp, patp)
 #define	SECOPT		""
 #endif
 static void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",

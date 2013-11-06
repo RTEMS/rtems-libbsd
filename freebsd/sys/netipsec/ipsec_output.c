@@ -166,10 +166,33 @@ ipsec_process_done(struct mbuf *m, struct ipsecrequest *isr)
 	 * doing further processing.
 	 */
 	if (isr->next) {
-		V_ipsec4stat.ips_out_bundlesa++;
-		return ipsec4_process_packet(m, isr->next, 0, 0);
+		IPSECSTAT_INC(ips_out_bundlesa);
+		/* XXX-BZ currently only support same AF bundles. */
+		switch (saidx->dst.sa.sa_family) {
+#ifdef INET
+		case AF_INET:
+			return ipsec4_process_packet(m, isr->next, 0, 0);
+			/* NOTREACHED */
+#endif
+#ifdef notyet
+#ifdef INET6
+		case AF_INET6:
+			/* XXX */
+			ipsec6_output_trans()
+			ipsec6_output_tunnel()
+			/* NOTREACHED */
+#endif /* INET6 */
+#endif
+		default:
+			DPRINTF(("%s: unknown protocol family %u\n", __func__,
+			    saidx->dst.sa.sa_family));
+			error = ENXIO;
+			goto bad;
+		}
 	}
 	key_sa_recordxfer(sav, m);		/* record data transfer */
+
+	m_addr_changed(m);
 
 	/*
 	 * We're done with IPsec processing, transmit the packet using the
@@ -261,8 +284,14 @@ ipsec_nextisr(
 	int *error
 )
 {
-#define IPSEC_OSTAT(x,y,z) (isr->saidx.proto == IPPROTO_ESP ? (x)++ : \
-			    isr->saidx.proto == IPPROTO_AH ? (y)++ : (z)++)
+#define	IPSEC_OSTAT(name)	do {		\
+	if (isr->saidx.proto == IPPROTO_ESP)	\
+		ESPSTAT_INC(esps_##name);	\
+	else if (isr->saidx.proto == IPPROTO_AH)\
+		AHSTAT_INC(ahs_##name);		\
+	else					\
+		IPCOMPSTAT_INC(ipcomps_##name);	\
+} while (0)
 	struct secasvar *sav;
 
 	IPSECREQUEST_LOCK_ASSERT(isr);
@@ -341,7 +370,7 @@ again:
 		 * this packet because it is responsibility for
 		 * upper layer to retransmit the packet.
 		 */
-		V_ipsec4stat.ips_out_nosa++;
+		IPSECSTAT_INC(ips_out_nosa);
 		goto bad;
 	}
 	sav = isr->sav;
@@ -370,8 +399,7 @@ again:
 	    (isr->saidx.proto == IPPROTO_IPCOMP && !V_ipcomp_enable)) {
 		DPRINTF(("%s: IPsec outbound packet dropped due"
 			" to policy (check your sysctls)\n", __func__));
-		IPSEC_OSTAT(V_espstat.esps_pdrops, V_ahstat.ahs_pdrops,
-		    V_ipcompstat.ipcomps_pdrops);
+		IPSEC_OSTAT(pdrops);
 		*error = EHOSTUNREACH;
 		goto bad;
 	}
@@ -382,8 +410,7 @@ again:
 	 */
 	if (sav->tdb_xform == NULL) {
 		DPRINTF(("%s: no transform for SA\n", __func__));
-		IPSEC_OSTAT(V_espstat.esps_noxform, V_ahstat.ahs_noxform,
-		    V_ipcompstat.ipcomps_noxform);
+		IPSEC_OSTAT(noxform);
 		*error = EHOSTUNREACH;
 		goto bad;
 	}
@@ -812,14 +839,14 @@ ipsec6_output_tunnel(struct ipsec_output_state *state, struct secpolicy *sp, int
 			ipseclog((LOG_ERR, "%s: family mismatched between "
 			    "inner and outer, spi=%u\n", __func__,
 			    ntohl(isr->sav->spi)));
-			V_ipsec6stat.ips_out_inval++;
+			IPSEC6STAT_INC(ips_out_inval);
 			error = EAFNOSUPPORT;
 			goto bad;
 		}
 
 		m = ipsec6_splithdr(m);
 		if (!m) {
-			V_ipsec6stat.ips_out_nomem++;
+			IPSEC6STAT_INC(ips_out_nomem);
 			error = ENOMEM;
 			goto bad;
 		}
@@ -848,8 +875,8 @@ ipsec6_output_tunnel(struct ipsec_output_state *state, struct secpolicy *sp, int
 			rtalloc_ign_fib(state->ro, 0UL, M_GETFIB(m));
 		}
 		if (state->ro->ro_rt == NULL) {
-			V_ip6stat.ip6s_noroute++;
-			V_ipsec6stat.ips_out_noroute++;
+			IP6STAT_INC(ip6s_noroute);
+			IPSEC6STAT_INC(ips_out_noroute);
 			error = EHOSTUNREACH;
 			goto bad;
 		}
@@ -861,7 +888,7 @@ ipsec6_output_tunnel(struct ipsec_output_state *state, struct secpolicy *sp, int
 
 	m = ipsec6_splithdr(m);
 	if (!m) {
-		V_ipsec6stat.ips_out_nomem++;
+		IPSEC6STAT_INC(ips_out_nomem);
 		error = ENOMEM;
 		goto bad;
 	}

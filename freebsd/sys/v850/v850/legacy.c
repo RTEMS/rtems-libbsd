@@ -54,6 +54,7 @@ __FBSDID("$FreeBSD$");
 #include <i386/bios/mca_machdep.h>
 #endif
 
+#include <machine/clock.h>
 #include <machine/legacyvar.h>
 #include <machine/resource.h>
 
@@ -351,9 +352,22 @@ cpu_read_ivar(device_t dev, device_t child, int index, uintptr_t *result)
 {
 	struct cpu_device *cpdev;
 
-	if (index != CPU_IVAR_PCPU)
+	switch (index) {
+	case CPU_IVAR_PCPU:
+		cpdev = device_get_ivars(child);
+		*result = (uintptr_t)cpdev->cd_pcpu;
+		break;
+#ifndef __rtems__
+	case CPU_IVAR_NOMINAL_MHZ:
+		if (tsc_is_invariant) {
+			*result = (uintptr_t)(atomic_load_acq_64(&tsc_freq) /
+			    1000000);
+			break;
+		}
+		/* FALLTHROUGH */
+#endif /* __rtems__ */
+	default:
 		return (ENOENT);
-	cpdev = device_get_ivars(child);
-	*result = (uintptr_t)cpdev->cd_pcpu;
+	}
 	return (0);
 }

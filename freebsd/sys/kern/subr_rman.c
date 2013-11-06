@@ -1087,10 +1087,20 @@ found:
 	return (error);
 }
 
-SYSCTL_NODE(_hw_bus, OID_AUTO, rman, CTLFLAG_RD, sysctl_rman,
+static SYSCTL_NODE(_hw_bus, OID_AUTO, rman, CTLFLAG_RD, sysctl_rman,
     "kernel resource manager");
 
 #ifdef DDB
+static void
+dump_rman_header(struct rman *rm)
+{
+
+	if (db_pager_quit)
+		return;
+	db_printf("rman %p: %s (0x%lx-0x%lx full range)\n",
+	    rm, rm->rm_descr, rm->rm_start, rm->rm_end);
+}
+
 static void
 dump_rman(struct rman *rm)
 {
@@ -1099,8 +1109,6 @@ dump_rman(struct rman *rm)
 
 	if (db_pager_quit)
 		return;
-	db_printf("rman: %s\n", rm->rm_descr);
-	db_printf("    0x%lx-0x%lx (full range)\n", rm->rm_start, rm->rm_end);
 	TAILQ_FOREACH(r, &rm->rm_list, r_link) {
 		if (r->r_dev != NULL) {
 			devname = device_get_nameunit(r->r_dev);
@@ -1121,16 +1129,29 @@ dump_rman(struct rman *rm)
 DB_SHOW_COMMAND(rman, db_show_rman)
 {
 
-	if (have_addr)
+	if (have_addr) {
+		dump_rman_header((struct rman *)addr);
 		dump_rman((struct rman *)addr);
+	}
+}
+
+DB_SHOW_COMMAND(rmans, db_show_rmans)
+{
+	struct rman *rm;
+
+	TAILQ_FOREACH(rm, &rman_head, rm_link) {
+		dump_rman_header(rm);
+	}
 }
 
 DB_SHOW_ALL_COMMAND(rman, db_show_all_rman)
 {
 	struct rman *rm;
 
-	TAILQ_FOREACH(rm, &rman_head, rm_link)
+	TAILQ_FOREACH(rm, &rman_head, rm_link) {
+		dump_rman_header(rm);
 		dump_rman(rm);
+	}
 }
 DB_SHOW_ALIAS(allrman, db_show_all_rman);
 #endif

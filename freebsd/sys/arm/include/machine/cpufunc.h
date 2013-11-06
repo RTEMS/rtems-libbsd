@@ -284,6 +284,28 @@ void	arm8_setup		(char *string);
 u_int	arm8_clock_config	(u_int, u_int);
 #endif
 
+
+#if defined(CPU_FA526) || defined(CPU_FA626TE)
+void	fa526_setup		(char *arg);
+void	fa526_setttb		(u_int ttb);
+void	fa526_context_switch	(void);
+void	fa526_cpu_sleep		(int);
+void	fa526_tlb_flushI_SE	(u_int);
+void	fa526_tlb_flushID_SE	(u_int);
+void	fa526_flush_prefetchbuf	(void);
+void	fa526_flush_brnchtgt_E	(u_int);
+
+void	fa526_icache_sync_all	(void);
+void	fa526_icache_sync_range(vm_offset_t start, vm_size_t end);
+void	fa526_dcache_wbinv_all	(void);
+void	fa526_dcache_wbinv_range(vm_offset_t start, vm_size_t end);
+void	fa526_dcache_inv_range	(vm_offset_t start, vm_size_t end);
+void	fa526_dcache_wb_range	(vm_offset_t start, vm_size_t end);
+void	fa526_idcache_wbinv_all(void);
+void	fa526_idcache_wbinv_range(vm_offset_t start, vm_size_t end);
+#endif
+
+
 #ifdef CPU_SA110
 void	sa110_setup		(char *string);
 void	sa110_context_switch	(void);
@@ -379,6 +401,7 @@ extern unsigned arm10_dcache_index_max;
 extern unsigned arm10_dcache_index_inc;
 
 u_int	sheeva_control_ext 		(u_int, u_int);
+void	sheeva_cpu_sleep		(int);
 void	sheeva_setttb			(u_int);
 void	sheeva_dcache_wbinv_range	(vm_offset_t, vm_size_t);
 void	sheeva_dcache_inv_range		(vm_offset_t, vm_size_t);
@@ -443,10 +466,11 @@ extern unsigned armv5_dcache_index_max;
 extern unsigned armv5_dcache_index_inc;
 #endif
 
-#if defined(CPU_ARM9) || defined(CPU_ARM9E) || defined(CPU_ARM10) || \
-  defined(CPU_SA110) || defined(CPU_SA1100) || defined(CPU_SA1110) || \
-  defined(CPU_XSCALE_80200) || defined(CPU_XSCALE_80321) ||	     \
-  defined(CPU_XSCALE_PXA2X0) || defined(CPU_XSCALE_IXP425) ||	     \
+#if defined(CPU_ARM9) || defined(CPU_ARM9E) || defined(CPU_ARM10) ||	\
+  defined(CPU_SA110) || defined(CPU_SA1100) || defined(CPU_SA1110) ||	\
+  defined(CPU_XSCALE_80200) || defined(CPU_XSCALE_80321) ||		\
+  defined(CPU_FA526) || defined(CPU_FA626TE) ||				\
+  defined(CPU_XSCALE_PXA2X0) || defined(CPU_XSCALE_IXP425) ||		\
   defined(CPU_XSCALE_80219) || defined(CPU_XSCALE_81342)
   
 void	armv4_tlb_flushID	(void);

@@ -466,7 +466,7 @@ getaddrinfo(const char *hostname, const char *servname,
 		}
 		error = get_portmatch(pai, servname);
 		if (error)
-			ERR(error);
+			goto bad;
 
 		*pai = ai0;
 	}
@@ -694,6 +694,8 @@ get_addrselectpolicy(struct policyhead *head)
 	struct in6_addrpolicy *pol, *ep;
 
 	if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), NULL, &l, NULL, 0) < 0)
+		return (0);
+	if (l == 0)
 		return (0);
 	if ((buf = malloc(l)) == NULL)
 		return (0);

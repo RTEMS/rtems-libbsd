@@ -682,9 +682,13 @@ base.addHeaderFiles(
 		'sys/sys/_bus_dma.h',
 		'sys/sys/bus_dma.h',
 		'sys/sys/bus.h',
+		'sys/sys/_callout.h',
 		'sys/sys/callout.h',
+		'sys/sys/capability.h',
 		'sys/sys/condvar.h',
 		'sys/sys/conf.h',
+		'sys/sys/_cpuset.h',
+		'sys/sys/cpuset.h',
 		'sys/sys/cpu.h',
 		'sys/sys/ctype.h',
 		'sys/sys/domain.h',
@@ -712,6 +716,7 @@ base.addHeaderFiles(
 		'sys/sys/lockmgr.h',
 		'sys/sys/lock_profile.h',
 		'sys/sys/lockstat.h',
+		'sys/sys/loginclass.h',
 		'sys/sys/mac.h',
 		'sys/sys/malloc.h',
 		'sys/sys/mbuf.h',
@@ -727,6 +732,7 @@ base.addHeaderFiles(
 		'sys/sys/priv.h',
 		'sys/sys/proc.h',
 		'sys/sys/protosw.h',
+		'sys/sys/racct.h',
 		'sys/sys/random.h',
 		'sys/sys/reboot.h',
 		'sys/sys/refcount.h',
@@ -747,6 +753,7 @@ base.addHeaderFiles(
 		'sys/sys/sigio.h',
 		'sys/sys/_sigset.h',
 		'sys/sys/smp.h',
+		'sys/sys/_sockaddr_storage.h',
 		'sys/sys/sockbuf.h',
 		'sys/sys/socket.h',
 		'sys/sys/socketvar.h',
@@ -775,6 +782,7 @@ base.addHeaderFiles(
 		'sys/sys/un.h',
 		'sys/sys/unpcb.h',
 		'sys/sys/vmmeter.h',
+		'sys/sys/vnode.h',
 		'sys/vm/uma_dbg.h',
 		'sys/vm/uma.h',
 		'sys/vm/uma_int.h',
@@ -795,19 +803,20 @@ base.addSourceFiles(
 		'sys/kern/kern_module.c',
 		'sys/kern/kern_mtxpool.c',
 		'sys/kern/kern_osd.c',
-		'sys/kern/kern_subr.c',
 		'sys/kern/kern_sysctl.c',
 		'sys/kern/kern_time.c',
 		'sys/kern/kern_timeout.c',
 		'sys/kern/subr_bufring.c',
 		'sys/kern/subr_bus.c',
 		'sys/kern/subr_eventhandler.c',
+		'sys/kern/subr_hash.c',
 		'sys/kern/subr_hints.c',
 		'sys/kern/subr_kobj.c',
 		'sys/kern/subr_module.c',
 		'sys/kern/subr_rman.c',
 		'sys/kern/subr_sbuf.c',
 		'sys/kern/subr_taskqueue.c',
+		'sys/kern/subr_uio.c',
 		'sys/kern/subr_unit.c',
 		'sys/kern/sys_generic.c',
 		'sys/kern/uipc_accf.c',
@@ -915,6 +924,7 @@ devUsbController.addHeaderFiles(
 		'sys/dev/usb/controller/ehci.h',
 		'sys/dev/usb/controller/ehcireg.h',
 		'sys/dev/usb/controller/uhcireg.h',
+		'sys/dev/usb/controller/xhcireg.h',
 	]
 )
 devUsbController.addSourceFiles(
@@ -1513,10 +1523,10 @@ netinet.addHeaderFiles(
 		'sys/netinet/ip_mroute.h',
 		'sys/netinet/ip_options.h',
 		'sys/netinet/ip_var.h',
-		'sys/netinet/ipfw/ip_dn_private.h',
-		'sys/netinet/ipfw/ip_fw_private.h',
-		'sys/netinet/ipfw/dn_sched.h',
-		'sys/netinet/ipfw/dn_heap.h',
+		'sys/netpfil/ipfw/dn_heap.h',
+		'sys/netpfil/ipfw/dn_sched.h',
+		'sys/netpfil/ipfw/ip_dn_private.h',
+		'sys/netpfil/ipfw/ip_fw_private.h',
 		'sys/netinet/pim.h',
 		'sys/netinet/pim_var.h',
 		'sys/netinet/sctp_asconf.h',
@@ -1553,7 +1563,7 @@ netinet.addHeaderFiles(
 		'sys/netinet/tcp_syncache.h',
 		'sys/netinet/tcp_timer.h',
 		'sys/netinet/tcp_var.h',
-		'sys/netinet/toedev.h',
+		'sys/netinet/toecore.h',
 		'sys/netinet/udp.h',
 		'sys/netinet/udp_var.h',
 		'sys/netinet/libalias/alias_local.h',
@@ -1620,23 +1630,23 @@ netinet.addSourceFiles(
 		'sys/netinet/tcp_timer.c',
 		'sys/netinet/tcp_timewait.c',
 		'sys/netinet/tcp_usrreq.c',
+		'sys/netpfil/ipfw/dn_heap.c',
+		'sys/netpfil/ipfw/dn_sched_fifo.c',
+		'sys/netpfil/ipfw/dn_sched_prio.c',
+		'sys/netpfil/ipfw/dn_sched_qfq.c',
+		'sys/netpfil/ipfw/dn_sched_rr.c',
+		'sys/netpfil/ipfw/dn_sched_wf2q.c',
+		'sys/netpfil/ipfw/ip_dn_glue.c',
+		'sys/netpfil/ipfw/ip_dn_io.c',
+		'sys/netpfil/ipfw/ip_dummynet.c',
+		'sys/netpfil/ipfw/ip_fw2.c',
+		#'sys/netpfil/ipfw/ip_fw_dynamic.c',
+		'sys/netpfil/ipfw/ip_fw_log.c',
+		'sys/netpfil/ipfw/ip_fw_nat.c',
+		'sys/netpfil/ipfw/ip_fw_pfil.c',
+		'sys/netpfil/ipfw/ip_fw_sockopt.c',
+		'sys/netpfil/ipfw/ip_fw_table.c',
 		'sys/netinet/udp_usrreq.c',
-		'sys/netinet/ipfw/dn_sched_fifo.c',
-		'sys/netinet/ipfw/dn_sched_rr.c',
-		'sys/netinet/ipfw/ip_fw_log.c',
-		'sys/netinet/ipfw/dn_sched_qfq.c',
-		'sys/netinet/ipfw/dn_sched_prio.c',
-		#'netinet/ipfw/ip_fw_dynamic.c',
-		'sys/netinet/ipfw/ip_dn_glue.c',
-		'sys/netinet/ipfw/ip_fw2.c',
-		'sys/netinet/ipfw/dn_heap.c',
-		'sys/netinet/ipfw/ip_dummynet.c',
-		'sys/netinet/ipfw/ip_fw_sockopt.c',
-		'sys/netinet/ipfw/dn_sched_wf2q.c',
-		'sys/netinet/ipfw/ip_fw_nat.c',
-		'sys/netinet/ipfw/ip_fw_pfil.c',
-		'sys/netinet/ipfw/ip_dn_io.c',
-		'sys/netinet/ipfw/ip_fw_table.c',
 		'sys/netinet/libalias/alias_dummy.c',
 		'sys/netinet/libalias/alias_pptp.c',
 		'sys/netinet/libalias/alias_smedia.c',
@@ -1679,6 +1689,7 @@ netinet6.addHeaderFiles(
 		'sys/netinet6/raw_ip6.h',
 		'sys/netinet6/scope6_var.h',
 		'sys/netinet6/sctp6_var.h',
+		'sys/netinet6/send.h',
 		'sys/netinet6/tcp6_var.h',
 		'sys/netinet6/udp6_var.h',
 	]
@@ -1853,7 +1864,6 @@ opencrypto.addSourceFiles(
 		'sys/opencrypto/xform.c',
 		'sys/opencrypto/skipjack.c',
 		'sys/opencrypto/cast.c',
-		'sys/opencrypto/cryptodev.c',
 	]
 )
 
@@ -1938,25 +1948,26 @@ altq.addSourceFiles(
 pf = Module('pf')
 pf.addHeaderFiles(
 	[
-		'sys/contrib/pf/net/pf_mtag.h',
+		'sys/contrib/pf/net/if_pflog.h',
+		'sys/contrib/pf/net/if_pflow.h',
 		'sys/contrib/pf/net/if_pfsync.h',
 		'sys/contrib/pf/net/pfvar.h',
-		'sys/contrib/pf/net/if_pflog.h',
+		'sys/contrib/pf/net/pf_mtag.h',
 	]
 )
 pf.addSourceFiles(
 	[
-		'sys/contrib/pf/netinet/in4_cksum.c',
-		'sys/contrib/pf/net/pf.c',
 		'sys/contrib/pf/net/if_pflog.c',
-		'sys/contrib/pf/net/pf_subr.c',
-		'sys/contrib/pf/net/pf_ioctl.c',
-		'sys/contrib/pf/net/pf_table.c',
-		'sys/contrib/pf/net/pf_if.c',
-		'sys/contrib/pf/net/pf_osfp.c',
-		'sys/contrib/pf/net/pf_norm.c',
-		'sys/contrib/pf/net/pf_ruleset.c',
 		'sys/contrib/pf/net/if_pfsync.c',
+		'sys/contrib/pf/net/pf.c',
+		'sys/contrib/pf/net/pf_if.c',
+		'sys/contrib/pf/net/pf_ioctl.c',
+		'sys/contrib/pf/net/pf_lb.c',
+		'sys/contrib/pf/net/pf_norm.c',
+		'sys/contrib/pf/net/pf_osfp.c',
+		'sys/contrib/pf/net/pf_ruleset.c',
+		'sys/contrib/pf/net/pf_table.c',
+		'sys/contrib/pf/netinet/in4_cksum.c',
 	]
 )
 
@@ -1974,12 +1985,12 @@ pci.addHeaderFiles(
 		'sys/dev/pci/pci_private.h',
 		'sys/dev/pci/pcireg.h',
 		'sys/dev/pci/pcivar.h',
+		'sys/dev/pci/pcivar.h',
 	]
 )
 pci.addCPUDependentHeaderFiles(
 	[
 		'sys/i386/include/legacyvar.h',
-		'sys/i386/include/pci_cfgreg.h',
 	]
 )
 pci.addTargetSourceCPUDependentHeaderFiles(
@@ -1987,13 +1998,18 @@ pci.addTargetSourceCPUDependentHeaderFiles(
 	'i386',
 	[
 		'sys/i386/include/legacyvar.h',
-		'sys/i386/include/pci_cfgreg.h',
+	]
+)
+pci.addTargetSourceCPUDependentHeaderFiles(
+	[ 'arm', 'avr', 'bfin', 'h8300', 'i386', 'lm32', 'm32c', 'm32r', 'm68k', 'mips', 'nios2', 'powerpc', 'sh', 'sparc', 'sparc64', 'v850' ],
+	'x86',
+	[
+		'sys/x86/include/pci_cfgreg.h',
 	]
 )
 pci.addCPUDependentSourceFiles(
 	'i386',
 	[
-		'sys/i386/pci/pci_bus.c',
 		'sys/i386/i386/legacy.c',
 	]
 )
@@ -2001,8 +2017,14 @@ pci.addTargetSourceCPUDependentSourceFiles(
 	[ 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k', 'mips', 'nios2', 'powerpc', 'sh', 'sparc', 'sparc64', 'v850' ],
 	'i386',
 	[
-		'sys/i386/pci/pci_bus.c',
 		'sys/i386/i386/legacy.c',
+	]
+)
+pci.addTargetSourceCPUDependentSourceFiles(
+	[ 'arm', 'avr', 'bfin', 'h8300', 'i386', 'lm32', 'm32c', 'm32r', 'm68k', 'mips', 'nios2', 'powerpc', 'sh', 'sparc', 'sparc64', 'v850' ],
+	'x86',
+	[
+		'sys/x86/pci/pci_bus.c',
 	]
 )
 
@@ -2169,6 +2191,7 @@ userSpace.addUserSpaceSourceFiles(
 		'lib/libc/db/recno/rec_seq.c',
 		'lib/libc/db/recno/rec_utils.c',
 		'lib/libc/gen/err.c',
+		'lib/libc/gen/feature_present.c',
 		'lib/libc/gen/gethostname.c',
 		'lib/libc/inet/inet_addr.c',
 		'lib/libc/inet/inet_cidr_ntop.c',

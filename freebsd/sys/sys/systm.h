@@ -51,14 +51,12 @@ extern int cold;		/* nonzero if we are doing a cold boot */
 /* In RTEMS there is no cold boot */
 #define cold 0
 #endif /* __rtems__ */
-extern int rebooting;		/* boot() has been called. */
+extern int rebooting;		/* kern_reboot() has been called. */
 extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */
 extern char compiler_version[];	/* compiler version */
 extern char copyright[];	/* system copyright */
 extern int kstack_pages;	/* number of kernel stack pages */
-
-extern int nswap;		/* size of swap space */
 
 extern u_long pagesizes[];	/* supported page sizes */
 extern long physmem;		/* physical memory */
@@ -154,6 +152,12 @@ extern char static_hints[];	/* by config for now */
 
 extern char **kenvp;
 
+extern const void *zero_region;	/* address space maps to a zeroed page	*/
+
+extern int unmapped_buf_allowed;
+extern int iosize_max_clamp;
+#define	IOSIZE_MAX	(iosize_max_clamp ? INT_MAX : SSIZE_MAX)
+
 /*
  * General function declarations.
  */
@@ -169,9 +173,10 @@ struct tty;
 struct ucred;
 struct uio;
 struct _jmp_buf;
+struct trapframe;
 
 #ifndef __rtems__
-int	setjmp(struct _jmp_buf *);
+int	setjmp(struct _jmp_buf *) __returns_twice;
 void	longjmp(struct _jmp_buf *, int) __dead2;
 #endif /* __rtems__ */
 int	dumpstatus(vm_offset_t addr, off_t count);
@@ -188,11 +193,7 @@ void	*hashinit_flags(int count, struct malloc_type *type,
 void	*phashinit(int count, struct malloc_type *type, u_long *nentries);
 void	g_waitidle(void);
 
-#ifdef RESTARTABLE_PANICS
-void	panic(const char *, ...) __printflike(1, 2);
-#else
 void	panic(const char *, ...) __dead2 __printflike(1, 2);
-#endif
 
 void	cpu_boot(int);
 void	cpu_flush_dcache(void *, size_t);
@@ -201,7 +202,7 @@ void	critical_enter(void);
 void	critical_exit(void);
 void	init_param1(void);
 void	init_param2(long physpages);
-void	init_param3(long kmempages);
+void	init_static_kenv(char *, size_t);
 void	tablefull(const char *);
 int	kvprintf(char const *, void (*)(int, void*), void *, int,
 	    __va_list) __printflike(1, 0);
@@ -327,15 +328,25 @@ void	realitexpire(void *);
 int	sysbeep(int hertz, int period);
 
 void	hardclock(int usermode, uintfptr_t pc);
+void	hardclock_cnt(int cnt, int usermode);
 void	hardclock_cpu(int usermode);
+void	hardclock_sync(int cpu);
 void	softclock(void *);
 void	statclock(int usermode);
+void	statclock_cnt(int cnt, int usermode);
 void	profclock(int usermode, uintfptr_t pc);
+void	profclock_cnt(int cnt, int usermode, uintfptr_t pc);
+
+int	hardclockintr(void);
 
 void	startprofclock(struct proc *);
 void	stopprofclock(struct proc *);
 void	cpu_startprofclock(void);
 void	cpu_stopprofclock(void);
+void	cpu_idleclock(void);
+void	cpu_activeclock(void);
+extern int	cpu_can_deep_sleep;
+extern int	cpu_disable_deep_sleep;
 
 #ifndef __rtems__
 int	cr_cansee(struct ucred *u1, struct ucred *u2);
@@ -377,9 +388,12 @@ void	adjust_timeout_calltodo(struct timeval *time_change);
 /* Initialize the world */
 void	consinit(void);
 void	cpu_initclocks(void);
+void	cpu_initclocks_bsp(void);
+void	cpu_initclocks_ap(void);
 void	usrinfoinit(void);
 
 /* Finalize the world */
+void	kern_reboot(int) __dead2;
 void	shutdown_nice(int);
 
 /* Timeouts */

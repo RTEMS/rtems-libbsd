@@ -37,6 +37,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <rtems/bsd/local/opt_capsicum.h>
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_sctp.h>
@@ -45,6 +46,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
+#include <sys/capability.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
@@ -82,6 +84,7 @@ __FBSDID("$FreeBSD$");
 #include <security/mac/mac_framework.h>
 
 #include <vm/vm.h>
+#include <vm/vm_param.h>
 #include <vm/vm_object.h>
 #include <vm/vm_page.h>
 #include <vm/vm_pageout.h>
@@ -96,6 +99,16 @@ __FBSDID("$FreeBSD$");
 #endif /* INET || INET6 */
 #ifdef __rtems__
 #include <machine/rtems-bsd-syscall-api.h>
+
+static int kern_bind(struct thread *, int, struct sockaddr *);
+
+static int kern_connect(struct thread *, int, struct sockaddr *);
+
+static int kern_setsockopt( struct thread *td, int s, int level, int name,
+    void *val, enum uio_seg valseg, socklen_t valsize);
+
+static int kern_getsockopt( struct thread *td, int s, int level, int name,
+    void *val, enum uio_seg valseg, socklen_t *valsize);
 #endif /* __rtems__ */
 
 static int sendit(struct thread *td, int s, struct msghdr *mp, int flags);
@@ -124,33 +137,47 @@ SYSCTL_INT(_kern_ipc, OID_AUTO, nsfbufsused, CTLFLAG_RD, &nsfbufsused, 0,
     "Number of sendfile(2) sf_bufs in use");
 
 /*
- * Convert a user file descriptor to a kernel file entry.  A reference on the
- * file entry is held upon returning.  This is lighter weight than
- * fgetsock(), which bumps the socket reference drops the file reference
- * count instead, as this approach avoids several additional mutex operations
- * associated with the additional reference count.  If requested, return the
- * open file flags.
+ * Convert a user file descriptor to a kernel file entry and check that, if
+ * it is a capability, the right rights are present. A reference on the file
+ * entry is held upon returning.
  */
 static int
-getsock(struct filedesc *fdp, int fd, struct file **fpp, u_int *fflagp)
+getsock_cap(struct filedesc *fdp, int fd, cap_rights_t rights,
+    struct file **fpp, u_int *fflagp)
 {
 	struct file *fp;
+#ifdef CAPABILITIES
+	struct file *fp_fromcap;
 	int error;
+#endif
 
 	fp = NULL;
-	if (fdp == NULL || (fp = fget_unlocked(fdp, fd)) == NULL) {
-		error = EBADF;
-	} else if (fp->f_type != DTYPE_SOCKET) {
+	if ((fdp == NULL) || ((fp = fget_unlocked(fdp, fd)) == NULL))
+		return (EBADF);
+#ifdef CAPABILITIES
+	/*
+	 * If the file descriptor is for a capability, test rights and use
+	 * the file descriptor referenced by the capability.
+	 */
+	error = cap_funwrap(fp, rights, &fp_fromcap);
+	if (error) {
 		fdrop(fp, curthread);
-		fp = NULL;
-		error = ENOTSOCK;
-	} else {
-		if (fflagp != NULL)
-			*fflagp = fp->f_flag;
-		error = 0;
+		return (error);
 	}
+	if (fp != fp_fromcap) {
+		fhold(fp_fromcap);
+		fdrop(fp, curthread);
+		fp = fp_fromcap;
+	}
+#endif /* CAPABILITIES */
+	if (fp->f_type != DTYPE_SOCKET) {
+		fdrop(fp, curthread);
+		return (ENOTSOCK);
+	}
+	if (fflagp != NULL)
+		*fflagp = fp->f_flag;
 	*fpp = fp;
-	return (error);
+	return (0);
 }
 #else /* __rtems__ */
 static int
@@ -185,7 +212,7 @@ rtems_bsd_getsock(int fd, struct file **fpp, u_int *fflagp)
 	return (error);
 }
 
-#define getsock(fdp, fd, fpp, fflagp) rtems_bsd_getsock(fd, fpp, fflagp)
+#define getsock_cap(fdp, fd, rights, fpp, fflagp) rtems_bsd_getsock(fd, fpp, fflagp)
 #endif /* __rtems__ */
 
 /*
@@ -195,13 +222,11 @@ rtems_bsd_getsock(int fd, struct file **fpp, u_int *fflagp)
 #define COMPAT_OLDSOCK
 #endif
 
-#ifndef __rtems__
-int
-socket(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_socket(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_socket(td, uap)
 	struct thread *td;
 	struct socket_args /* {
 		int	domain;
@@ -226,7 +251,7 @@ rtems_bsd_socket(td, uap)
 #ifndef __rtems__
 	fdp = td->td_proc->p_fd;
 #endif /* __rtems__ */
-	error = falloc(td, &fp, &fd);
+	error = falloc(td, &fp, &fd, 0);
 	if (error)
 		return (error);
 	/* An extra reference on `fp' has been held for us by falloc(). */
@@ -254,7 +279,7 @@ socket(int domain, int type, int protocol)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_socket(td, &ua);
+		error = sys_socket(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -267,16 +292,12 @@ socket(int domain, int type, int protocol)
 }
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 /* ARGSUSED */
-int
-bind(td, uap)
-#else /* __rtems__ */
-static int kern_bind(struct thread *, int, struct sockaddr *);
-
-static int
-rtems_bsd_bind(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_bind(td, uap)
 	struct thread *td;
 	struct bind_args /* {
 		int	s;
@@ -307,7 +328,7 @@ bind(int socket, const struct sockaddr *address, socklen_t address_len)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_bind(td, &ua);
+		error = sys_bind(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -327,7 +348,7 @@ kern_bind(td, fd, sa)
 	int error;
 
 	AUDIT_ARG_FD(fd);
-	error = getsock(td->td_proc->p_fd, fd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, fd, CAP_BIND, &fp, NULL);
 	if (error)
 		return (error);
 	so = fp->f_data;
@@ -345,13 +366,11 @@ kern_bind(td, fd, sa)
 }
 
 /* ARGSUSED */
-#ifndef __rtems__
-int
-listen(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_listen(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_listen(td, uap)
 	struct thread *td;
 	struct listen_args /* {
 		int	s;
@@ -363,7 +382,7 @@ rtems_bsd_listen(td, uap)
 	int error;
 
 	AUDIT_ARG_FD(uap->s);
-	error = getsock(td->td_proc->p_fd, uap->s, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, uap->s, CAP_LISTEN, &fp, NULL);
 	if (error == 0) {
 		so = fp->f_data;
 #ifdef MAC
@@ -387,7 +406,7 @@ listen(int socket, int backlog)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_listen(td, &ua);
+		error = sys_listen(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -508,7 +527,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 #ifndef __rtems__
 	fdp = td->td_proc->p_fd;
 #endif /* __rtems__ */
-	error = getsock(fdp, s, &headfp, &fflag);
+	error = getsock_cap(fdp, s, CAP_ACCEPT, &headfp, &fflag);
 	if (error)
 		return (error);
 	head = headfp->f_data;
@@ -521,7 +540,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 	if (error != 0)
 		goto done;
 #endif
-	error = falloc(td, &nfp, &fd);
+	error = falloc(td, &nfp, &fd, 0);
 	if (error)
 		goto done;
 	ACCEPT_LOCK();
@@ -643,7 +662,7 @@ done:
 
 #ifndef __rtems__
 int
-accept(td, uap)
+sys_accept(td, uap)
 	struct thread *td;
 	struct accept_args *uap;
 {
@@ -664,15 +683,11 @@ oaccept(td, uap)
 #endif /* __rtems__ */
 
 /* ARGSUSED */
-#ifndef __rtems__
-int
-connect(td, uap)
-#else /* __rtems__ */
-static int kern_connect(struct thread *, int, struct sockaddr *);
-
-static int
-rtems_bsd_connect(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_connect(td, uap)
 	struct thread *td;
 	struct connect_args /* {
 		int	s;
@@ -704,7 +719,7 @@ connect(int socket, const struct sockaddr *address, socklen_t address_len)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_connect(td, &ua);
+		error = sys_connect(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -726,7 +741,7 @@ kern_connect(td, fd, sa)
 	int interrupted = 0;
 
 	AUDIT_ARG_FD(fd);
-	error = getsock(td->td_proc->p_fd, fd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, fd, CAP_CONNECT, &fp, NULL);
 	if (error)
 		return (error);
 	so = fp->f_data;
@@ -800,12 +815,12 @@ kern_socketpair(struct thread *td, int domain, int type, int protocol,
 	if (error)
 		goto free1;
 	/* On success extra reference to `fp1' and 'fp2' is set by falloc. */
-	error = falloc(td, &fp1, &fd);
+	error = falloc(td, &fp1, &fd, 0);
 	if (error)
 		goto free2;
 	rsv[0] = fd;
 	fp1->f_data = so1;	/* so1 already has ref count */
-	error = falloc(td, &fp2, &fd);
+	error = falloc(td, &fp2, &fd, 0);
 	if (error)
 		goto free3;
 	fp2->f_data = so2;	/* so2 already has ref count */
@@ -842,7 +857,7 @@ free1:
 }
 
 int
-socketpair(struct thread *td, struct socketpair_args *uap)
+sys_socketpair(struct thread *td, struct socketpair_args *uap)
 {
 	int error, sv[2];
 
@@ -874,6 +889,11 @@ sendit(td, s, mp, flags)
 	struct mbuf *control;
 	struct sockaddr *to;
 	int error;
+
+#ifdef CAPABILITY_MODE
+	if (IN_CAPABILITY_MODE(td) && (mp->msg_name != NULL))
+		return (ECAPMODE);
+#endif
 
 	if (mp->msg_name != NULL) {
 		error = getsockaddr(&to, mp->msg_name, mp->msg_namelen);
@@ -935,14 +955,18 @@ kern_sendit(td, s, mp, flags, control, segflg)
 	struct uio auio;
 	struct iovec *iov;
 	struct socket *so;
-	int i;
-	int len, error;
+	int i, error;
+	ssize_t len;
+	cap_rights_t rights;
 #ifdef KTRACE
 	struct uio *ktruio = NULL;
 #endif
 
 	AUDIT_ARG_FD(s);
-	error = getsock(td->td_proc->p_fd, s, &fp, NULL);
+	rights = CAP_WRITE;
+	if (mp->msg_name != NULL)
+		rights |= CAP_CONNECT;
+	error = getsock_cap(td->td_proc->p_fd, s, rights, &fp, NULL);
 	if (error)
 		return (error);
 	so = (struct socket *)fp->f_data;
@@ -992,7 +1016,7 @@ kern_sendit(td, s, mp, flags, control, segflg)
 		    !(flags & MSG_NOSIGNAL)) {
 #ifndef __rtems__
 			PROC_LOCK(td->td_proc);
-			tdksignal(td, SIGPIPE, NULL);
+			tdsignal(td, SIGPIPE);
 			PROC_UNLOCK(td->td_proc);
 #else /* __rtems__ */
 		/* FIXME: Determine if we really want to use signals */
@@ -1012,13 +1036,11 @@ bad:
 	return (error);
 }
 
-#ifndef __rtems__
-int
-sendto(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_sendto(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_sendto(td, uap)
 	struct thread *td;
 	struct sendto_args /* {
 		int	s;
@@ -1063,7 +1085,7 @@ sendto(int socket, const void *message, size_t length, int flags,
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_sendto(td, &ua);
+		error = sys_sendto(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1132,13 +1154,11 @@ osendmsg(td, uap)
 #endif
 #endif /* __rtems__ */
 
-#ifndef __rtems__
-int
-sendmsg(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_sendmsg(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_sendmsg(td, uap)
 	struct thread *td;
 	struct sendmsg_args /* {
 		int	s;
@@ -1177,7 +1197,7 @@ sendmsg(int socket, const struct msghdr *message, int flags)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_sendmsg(td, &ua);
+		error = sys_sendmsg(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1204,7 +1224,7 @@ kern_recvit(td, s, mp, fromseg, controlp)
 	struct uio auio;
 	struct iovec *iov;
 	int i;
-	socklen_t len;
+	ssize_t len;
 	int error;
 	struct mbuf *m, *control = 0;
 	caddr_t ctlbuf;
@@ -1215,11 +1235,11 @@ kern_recvit(td, s, mp, fromseg, controlp)
 	struct uio *ktruio = NULL;
 #endif
 
-	if(controlp != NULL)
-		*controlp = 0;
+	if (controlp != NULL)
+		*controlp = NULL;
 
 	AUDIT_ARG_FD(s);
-	error = getsock(td->td_proc->p_fd, s, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, s, CAP_READ, &fp, NULL);
 	if (error)
 		return (error);
 	so = fp->f_data;
@@ -1255,19 +1275,19 @@ kern_recvit(td, s, mp, fromseg, controlp)
 	    (mp->msg_control || controlp) ? &control : (struct mbuf **)0,
 	    &mp->msg_flags);
 	if (error) {
-		if (auio.uio_resid != (int)len && (error == ERESTART ||
+		if (auio.uio_resid != len && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
 	}
 #ifdef KTRACE
 	if (ktruio != NULL) {
-		ktruio->uio_resid = (int)len - auio.uio_resid;
+		ktruio->uio_resid = len - auio.uio_resid;
 		ktrgenio(s, UIO_READ, ktruio, error);
 	}
 #endif
 	if (error)
 		goto out;
-	td->td_retval[0] = (int)len - auio.uio_resid;
+	td->td_retval[0] = len - auio.uio_resid;
 	if (mp->msg_name) {
 		len = mp->msg_namelen;
 		if (len <= 0 || fromsa == 0)
@@ -1375,13 +1395,11 @@ recvit(td, s, mp, namelenp)
 	return (error);
 }
 
-#ifndef __rtems__
-int
-recvfrom(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_recvfrom(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_recvfrom(td, uap)
 	struct thread *td;
 	struct recvfrom_args /* {
 		int	s;
@@ -1432,7 +1450,7 @@ recvfrom(int socket, void *__restrict buffer, size_t length, int flags,
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_recvfrom(td, &ua);
+		error = sys_recvfrom(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1454,7 +1472,7 @@ orecvfrom(td, uap)
 {
 
 	uap->flags |= MSG_COMPAT;
-	return (recvfrom(td, uap));
+	return (sys_recvfrom(td, uap));
 }
 #endif
 
@@ -1521,13 +1539,11 @@ orecvmsg(td, uap)
 #endif
 #endif /* __rtems__ */
 
-#ifndef __rtems__
-int
-recvmsg(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_recvmsg(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_recvmsg(td, uap)
 	struct thread *td;
 	struct recvmsg_args /* {
 		int	s;
@@ -1572,7 +1588,7 @@ recvmsg(int socket, struct msghdr *message, int flags)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_recvmsg(td, &ua);
+		error = sys_recvmsg(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1586,13 +1602,11 @@ recvmsg(int socket, struct msghdr *message, int flags)
 #endif /* __rtems__ */
 
 /* ARGSUSED */
-#ifndef __rtems__
-int
-shutdown(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_shutdown(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_shutdown(td, uap)
 	struct thread *td;
 	struct shutdown_args /* {
 		int	s;
@@ -1604,7 +1618,8 @@ rtems_bsd_shutdown(td, uap)
 	int error;
 
 	AUDIT_ARG_FD(uap->s);
-	error = getsock(td->td_proc->p_fd, uap->s, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, uap->s, CAP_SHUTDOWN, &fp,
+	    NULL);
 	if (error == 0) {
 		so = fp->f_data;
 		error = soshutdown(so, uap->how);
@@ -1620,24 +1635,18 @@ shutdown(int socket, int how)
 		.s = socket,
 		.how = how
 	};
-	int error = rtems_bsd_shutdown(NULL, &ua);
+	int error = sys_shutdown(NULL, &ua);
 
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 #endif /* __rtems__ */
 
 /* ARGSUSED */
-#ifndef __rtems__
-int
-setsockopt(td, uap)
-#else /* __rtems__ */
-static int
-kern_setsockopt( struct thread *td, int s, int level, int name, void *val,
-    enum uio_seg valseg, socklen_t valsize);
-
-static int
-rtems_bsd_setsockopt(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_setsockopt(td, uap)
 	struct thread *td;
 	struct setsockopt_args /* {
 		int	s;
@@ -1667,7 +1676,7 @@ setsockopt(int socket, int level, int option_name, const void *option_value,
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_setsockopt(td, &ua);
+		error = sys_setsockopt(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1713,7 +1722,7 @@ kern_setsockopt(td, s, level, name, val, valseg, valsize)
 	}
 
 	AUDIT_ARG_FD(s);
-	error = getsock(td->td_proc->p_fd, s, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, s, CAP_SETSOCKOPT, &fp, NULL);
 	if (error == 0) {
 		so = fp->f_data;
 		error = sosetopt(so, &sopt);
@@ -1723,17 +1732,11 @@ kern_setsockopt(td, s, level, name, val, valseg, valsize)
 }
 
 /* ARGSUSED */
-#ifndef __rtems__
-int
-getsockopt(td, uap)
-#else /* __rtems__ */
-static int
-kern_getsockopt( struct thread *td, int s, int level, int name, void *val,
-   enum uio_seg valseg, socklen_t *valsize);
-
-static int
-rtems_bsd_getsockopt(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_getsockopt(td, uap)
 	struct thread *td;
 	struct getsockopt_args /* {
 		int	s;
@@ -1775,7 +1778,7 @@ getsockopt(int socket, int level, int option_name, void *__restrict
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_getsockopt(td, &ua);
+		error = sys_getsockopt(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1825,7 +1828,7 @@ kern_getsockopt(td, s, level, name, val, valseg, valsize)
 	}
 
 	AUDIT_ARG_FD(s);
-	error = getsock(td->td_proc->p_fd, s, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, s, CAP_GETSOCKOPT, &fp, NULL);
 	if (error == 0) {
 		so = fp->f_data;
 		error = sogetopt(so, &sopt);
@@ -1914,7 +1917,7 @@ kern_getsockname(struct thread *td, int fd, struct sockaddr **sa,
 		return (EINVAL);
 
 	AUDIT_ARG_FD(fd);
-	error = getsock(td->td_proc->p_fd, fd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, fd, CAP_GETSOCKNAME, &fp, NULL);
 	if (error)
 		return (error);
 	so = fp->f_data;
@@ -1944,7 +1947,7 @@ bad:
 
 #ifndef __rtems__
 int
-getsockname(td, uap)
+sys_getsockname(td, uap)
 	struct thread *td;
 	struct getsockname_args *uap;
 {
@@ -2043,7 +2046,7 @@ kern_getpeername(struct thread *td, int fd, struct sockaddr **sa,
 		return (EINVAL);
 
 	AUDIT_ARG_FD(fd);
-	error = getsock(td->td_proc->p_fd, fd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, fd, CAP_GETPEERNAME, &fp, NULL);
 	if (error)
 		return (error);
 	so = fp->f_data;
@@ -2078,7 +2081,7 @@ done:
 
 #ifndef __rtems__
 int
-getpeername(td, uap)
+sys_getpeername(td, uap)
 	struct thread *td;
 	struct getpeername_args *uap;
 {
@@ -2188,7 +2191,7 @@ sf_buf_mext(void *addr, void *args)
 
 	m = sf_buf_page(args);
 	sf_buf_free(args);
-	vm_page_lock_queues();
+	vm_page_lock(m);
 	vm_page_unwire(m, 0);
 	/*
 	 * Check for the object going away on us. This can
@@ -2197,7 +2200,7 @@ sf_buf_mext(void *addr, void *args)
 	 */
 	if (m->wire_count == 0 && m->object == NULL)
 		vm_page_free(m);
-	vm_page_unlock_queues();
+	vm_page_unlock(m);
 	if (addr == NULL)
 		return;
 	sfs = addr;
@@ -2220,7 +2223,7 @@ sf_buf_mext(void *addr, void *args)
  * specified, write the total number of bytes sent into *sbytes.
  */
 int
-sendfile(struct thread *td, struct sendfile_args *uap)
+sys_sendfile(struct thread *td, struct sendfile_args *uap)
 {
 
 	return (do_sendfile(td, uap, 0));
@@ -2290,9 +2293,11 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 	struct mbuf *m = NULL;
 	struct sf_buf *sf;
 	struct vm_page *pg;
+	struct vattr va;
 	off_t off, xfsize, fsbytes = 0, sbytes = 0, rem = 0;
 	int error, hdrlen = 0, mnw = 0;
 	int vfslocked;
+	int bsize;
 	struct sendfile_sync *sfs = NULL;
 
 	/*
@@ -2302,11 +2307,23 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 	 * we send only the header/trailer and no payload data.
 	 */
 	AUDIT_ARG_FD(uap->fd);
-	if ((error = fgetvp_read(td, uap->fd, &vp)) != 0)
+	if ((error = fgetvp_read(td, uap->fd, CAP_READ, &vp)) != 0)
 		goto out;
 	vfslocked = VFS_LOCK_GIANT(vp->v_mount);
 	vn_lock(vp, LK_SHARED | LK_RETRY);
 	if (vp->v_type == VREG) {
+		bsize = vp->v_mount->mnt_stat.f_iosize;
+		if (uap->nbytes == 0) {
+			error = VOP_GETATTR(vp, &va, td->td_ucred);
+			if (error != 0) {
+				VOP_UNLOCK(vp, 0);
+				VFS_UNLOCK_GIANT(vfslocked);
+				obj = NULL;
+				goto out;
+			}
+			rem = va.va_size;
+		} else
+			rem = uap->nbytes;
 		obj = vp->v_object;
 		if (obj != NULL) {
 			/*
@@ -2324,7 +2341,8 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 				obj = NULL;
 			}
 		}
-	}
+	} else
+		bsize = 0;	/* silence gcc */
 	VOP_UNLOCK(vp, 0);
 	VFS_UNLOCK_GIANT(vfslocked);
 	if (obj == NULL) {
@@ -2340,8 +2358,8 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 	 * The socket must be a stream socket and connected.
 	 * Remember if it a blocking or non-blocking socket.
 	 */
-	if ((error = getsock(td->td_proc->p_fd, uap->s, &sock_fp,
-	    NULL)) != 0)
+	if ((error = getsock_cap(td->td_proc->p_fd, uap->s, CAP_WRITE,
+	    &sock_fp, NULL)) != 0)
 		goto out;
 	so = sock_fp->f_data;
 	if (so->so_type != SOCK_STREAM) {
@@ -2361,8 +2379,7 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 		mnw = 1;
 
 	if (uap->flags & SF_SYNC) {
-		sfs = malloc(sizeof *sfs, M_TEMP, M_WAITOK);
-		memset(sfs, 0, sizeof *sfs);
+		sfs = malloc(sizeof *sfs, M_TEMP, M_WAITOK | M_ZERO);
 		mtx_init(&sfs->mtx, "sendfile", NULL, MTX_DEF);
 		cv_init(&sfs->cv, "sendfile");
 	}
@@ -2418,10 +2435,20 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 	 * The outer loop checks the state and available space of the socket
 	 * and takes care of the overall progress.
 	 */
-	for (off = uap->offset, rem = uap->nbytes; ; ) {
-		int loopbytes = 0;
-		int space = 0;
-		int done = 0;
+	for (off = uap->offset; ; ) {
+		struct mbuf *mtail;
+		int loopbytes;
+		int space;
+		int done;
+
+		if ((uap->nbytes != 0 && uap->nbytes == fsbytes) ||
+		    (uap->nbytes == 0 && va.va_size == fsbytes))
+			break;
+
+		mtail = NULL;
+		loopbytes = 0;
+		space = 0;
+		done = 0;
 
 		/*
 		 * Check the socket state for ongoing connection,
@@ -2489,34 +2516,42 @@ retry_space:
 		 */
 		space -= hdrlen;
 
+		vfslocked = VFS_LOCK_GIANT(vp->v_mount);
+		error = vn_lock(vp, LK_SHARED);
+		if (error != 0) {
+			VFS_UNLOCK_GIANT(vfslocked);
+			goto done;
+		}
+		error = VOP_GETATTR(vp, &va, td->td_ucred);
+		if (error != 0 || off >= va.va_size) {
+			VOP_UNLOCK(vp, 0);
+			VFS_UNLOCK_GIANT(vfslocked);
+			goto done;
+		}
+		VFS_UNLOCK_GIANT(vfslocked);
+
 		/*
 		 * Loop and construct maximum sized mbuf chain to be bulk
 		 * dumped into socket buffer.
 		 */
-		while(space > loopbytes) {
+		while (space > loopbytes) {
 			vm_pindex_t pindex;
 			vm_offset_t pgoff;
 			struct mbuf *m0;
 
-			VM_OBJECT_LOCK(obj);
 			/*
 			 * Calculate the amount to transfer.
 			 * Not to exceed a page, the EOF,
 			 * or the passed in nbytes.
 			 */
 			pgoff = (vm_offset_t)(off & PAGE_MASK);
-			xfsize = omin(PAGE_SIZE - pgoff,
-			    obj->un_pager.vnp.vnp_size - uap->offset -
-			    fsbytes - loopbytes);
-			if (uap->nbytes)
-				rem = (uap->nbytes - fsbytes - loopbytes);
-			else
-				rem = obj->un_pager.vnp.vnp_size -
-				    uap->offset - fsbytes - loopbytes;
-			xfsize = omin(rem, xfsize);
+			rem = va.va_size - uap->offset;
+			if (uap->nbytes != 0)
+				rem = omin(rem, uap->nbytes);
+			rem -= fsbytes + loopbytes;
+			xfsize = omin(PAGE_SIZE - pgoff, rem);
 			xfsize = omin(space - loopbytes, xfsize);
 			if (xfsize <= 0) {
-				VM_OBJECT_UNLOCK(obj);
 				done = 1;		/* all data sent */
 				break;
 			}
@@ -2526,6 +2561,7 @@ retry_space:
 			 * if not found or wait and loop if busy.
 			 */
 			pindex = OFF_TO_IDX(off);
+			VM_OBJECT_LOCK(obj);
 			pg = vm_page_grab(obj, pindex, VM_ALLOC_NOBUSY |
 			    VM_ALLOC_NORMAL | VM_ALLOC_WIRED | VM_ALLOC_RETRY);
 
@@ -2543,45 +2579,29 @@ retry_space:
 			else if (uap->flags & SF_NODISKIO)
 				error = EBUSY;
 			else {
-				int bsize, resid;
+				ssize_t resid;
 
-				/*
-				 * Ensure that our page is still around
-				 * when the I/O completes.
-				 */
-				vm_page_io_start(pg);
 				VM_OBJECT_UNLOCK(obj);
 
 				/*
 				 * Get the page from backing store.
-				 */
-				vfslocked = VFS_LOCK_GIANT(vp->v_mount);
-				error = vn_lock(vp, LK_SHARED);
-				if (error != 0)
-					goto after_read;
-				bsize = vp->v_mount->mnt_stat.f_iosize;
-
-				/*
 				 * XXXMAC: Because we don't have fp->f_cred
 				 * here, we pass in NOCRED.  This is probably
 				 * wrong, but is consistent with our original
 				 * implementation.
 				 */
+				vfslocked = VFS_LOCK_GIANT(vp->v_mount);
 				error = vn_rdwr(UIO_READ, vp, NULL, MAXBSIZE,
 				    trunc_page(off), UIO_NOCOPY, IO_NODELOCKED |
 				    IO_VMIO | ((MAXBSIZE / bsize) << IO_SEQSHIFT),
 				    td->td_ucred, NOCRED, &resid, td);
-				VOP_UNLOCK(vp, 0);
-			after_read:
 				VFS_UNLOCK_GIANT(vfslocked);
-				VM_OBJECT_LOCK(obj);
-				vm_page_io_finish(pg);
-				if (!error)
-					VM_OBJECT_UNLOCK(obj);
+				if (error)
+					VM_OBJECT_LOCK(obj);
 				mbstat.sf_iocnt++;
 			}
 			if (error) {
-				vm_page_lock_queues();
+				vm_page_lock(pg);
 				vm_page_unwire(pg, 0);
 				/*
 				 * See if anyone else might know about
@@ -2589,11 +2609,9 @@ retry_space:
 				 * then free it.
 				 */
 				if (pg->wire_count == 0 && pg->valid == 0 &&
-				    pg->busy == 0 && !(pg->oflags & VPO_BUSY) &&
-				    pg->hold_count == 0) {
+				    pg->busy == 0 && !(pg->oflags & VPO_BUSY))
 					vm_page_free(pg);
-				}
-				vm_page_unlock_queues();
+				vm_page_unlock(pg);
 				VM_OBJECT_UNLOCK(obj);
 				if (error == EAGAIN)
 					error = 0;	/* not a real error */
@@ -2613,14 +2631,11 @@ retry_space:
 			    SFB_CATCH);
 			if (sf == NULL) {
 				mbstat.sf_allocfail++;
-				vm_page_lock_queues();
+				vm_page_lock(pg);
 				vm_page_unwire(pg, 0);
-				/*
-				 * XXX: Not same check as above!?
-				 */
-				if (pg->wire_count == 0 && pg->object == NULL)
-					vm_page_free(pg);
-				vm_page_unlock_queues();
+				KASSERT(pg->object != NULL,
+				    ("kern_sendfile: object disappeared"));
+				vm_page_unlock(pg);
 				if (m == NULL)
 					error = (mnw ? EAGAIN : EINTR);
 				break;
@@ -2633,7 +2648,7 @@ retry_space:
 			m0 = m_get((mnw ? M_NOWAIT : M_WAITOK), MT_DATA);
 			if (m0 == NULL) {
 				error = (mnw ? EAGAIN : ENOBUFS);
-				sf_buf_mext((void *)sf_buf_kva(sf), sf);
+				sf_buf_mext(NULL, sf);
 				break;
 			}
 			MEXTADD(m0, sf_buf_kva(sf), PAGE_SIZE, sf_buf_mext,
@@ -2642,10 +2657,13 @@ retry_space:
 			m0->m_len = xfsize;
 
 			/* Append to mbuf chain. */
-			if (m != NULL)
-				m_cat(m, m0);
+			if (mtail != NULL)
+				mtail->m_next = m0;
+			else if (m != NULL)
+				m_last(m)->m_next = m0;
 			else
 				m = m0;
+			mtail = m0;
 
 			/* Keep track of bits processed. */
 			loopbytes += xfsize;
@@ -2657,6 +2675,8 @@ retry_space:
 				mtx_unlock(&sfs->mtx);
 			}
 		}
+
+		VOP_UNLOCK(vp, 0);
 
 		/* Add the buffer chain to the socket buffer. */
 		if (m != NULL) {
@@ -2762,7 +2782,7 @@ out:
  * XXX: We should make this loadable one day.
  */
 int
-sctp_peeloff(td, uap)
+sys_sctp_peeloff(td, uap)
 	struct thread *td;
 	struct sctp_peeloff_args /* {
 		int	sd;
@@ -2779,7 +2799,7 @@ sctp_peeloff(td, uap)
 
 	fdp = td->td_proc->p_fd;
 	AUDIT_ARG_FD(uap->sd);
-	error = fgetsock(td, uap->sd, &head, &fflag);
+	error = fgetsock(td, uap->sd, CAP_PEELOFF, &head, &fflag);
 	if (error)
 		goto done2;
 	if (head->so_proto->pr_protocol != IPPROTO_SCTP) {
@@ -2795,15 +2815,17 @@ sctp_peeloff(td, uap)
 	 * but that is ok.
 	 */
 
-	error = falloc(td, &nfp, &fd);
+	error = falloc(td, &nfp, &fd, 0);
 	if (error)
 		goto done;
 	td->td_retval[0] = fd;
 
 	CURVNET_SET(head->so_vnet);
 	so = sonewconn(head, SS_ISCONNECTED);
-	if (so == NULL) 
+	if (so == NULL) {
+		error = ENOMEM;
 		goto noconnection;
+	}
 	/*
 	 * Before changing the flags on the socket, we have to bump the
 	 * reference count.  Otherwise, if the protocol calls sofree(),
@@ -2853,7 +2875,7 @@ done2:
 }
 
 int
-sctp_generic_sendmsg (td, uap)
+sys_sctp_generic_sendmsg (td, uap)
 	struct thread *td;
 	struct sctp_generic_sendmsg_args /* {
 		int sd, 
@@ -2876,6 +2898,7 @@ sctp_generic_sendmsg (td, uap)
 #endif
 	struct uio auio;
 	struct iovec iov[1];
+	cap_rights_t rights;
 
 	if (uap->sinfo) {
 		error = copyin(uap->sinfo, &sinfo, sizeof (sinfo));
@@ -2883,16 +2906,19 @@ sctp_generic_sendmsg (td, uap)
 			return (error);
 		u_sinfo = &sinfo;
 	}
+
+	rights = CAP_WRITE;
 	if (uap->tolen) {
 		error = getsockaddr(&to, uap->to, uap->tolen);
 		if (error) {
 			to = NULL;
 			goto sctp_bad2;
 		}
+		rights |= CAP_CONNECT;
 	}
 
 	AUDIT_ARG_FD(uap->sd);
-	error = getsock(td->td_proc->p_fd, uap->sd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, uap->sd, rights, &fp, NULL);
 	if (error)
 		goto sctp_bad;
 #ifdef KTRACE
@@ -2935,7 +2961,7 @@ sctp_generic_sendmsg (td, uap)
 		if (error == EPIPE && !(so->so_options & SO_NOSIGPIPE) &&
 		    !(uap->flags & MSG_NOSIGNAL)) {
 			PROC_LOCK(td->td_proc);
-			tdksignal(td, SIGPIPE, NULL);
+			tdsignal(td, SIGPIPE);
 			PROC_UNLOCK(td->td_proc);
 		}
 	}
@@ -2960,7 +2986,7 @@ sctp_bad2:
 }
 
 int
-sctp_generic_sendmsg_iov(td, uap)
+sys_sctp_generic_sendmsg_iov(td, uap)
 	struct thread *td;
 	struct sctp_generic_sendmsg_iov_args /* {
 		int sd, 
@@ -2976,13 +3002,15 @@ sctp_generic_sendmsg_iov(td, uap)
 	struct sctp_sndrcvinfo sinfo, *u_sinfo = NULL;
 	struct socket *so;
 	struct file *fp = NULL;
-	int error=0, len, i;
+	int error=0, i;
+	ssize_t len;
 	struct sockaddr *to = NULL;
 #ifdef KTRACE
 	struct uio *ktruio = NULL;
 #endif
 	struct uio auio;
 	struct iovec *iov, *tiov;
+	cap_rights_t rights;
 
 	if (uap->sinfo) {
 		error = copyin(uap->sinfo, &sinfo, sizeof (sinfo));
@@ -2990,16 +3018,18 @@ sctp_generic_sendmsg_iov(td, uap)
 			return (error);
 		u_sinfo = &sinfo;
 	}
+	rights = CAP_WRITE;
 	if (uap->tolen) {
 		error = getsockaddr(&to, uap->to, uap->tolen);
 		if (error) {
 			to = NULL;
 			goto sctp_bad2;
 		}
+		rights |= CAP_CONNECT;
 	}
 
 	AUDIT_ARG_FD(uap->sd);
-	error = getsock(td->td_proc->p_fd, uap->sd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, uap->sd, rights, &fp, NULL);
 	if (error)
 		goto sctp_bad1;
 
@@ -3056,7 +3086,7 @@ sctp_generic_sendmsg_iov(td, uap)
 		if (error == EPIPE && !(so->so_options & SO_NOSIGPIPE) &&
 		    !(uap->flags & MSG_NOSIGNAL)) {
 			PROC_LOCK(td->td_proc);
-			tdksignal(td, SIGPIPE, NULL);
+			tdsignal(td, SIGPIPE);
 			PROC_UNLOCK(td->td_proc);
 		}
 	}
@@ -3083,7 +3113,7 @@ sctp_bad2:
 }
 
 int
-sctp_generic_recvmsg(td, uap)
+sys_sctp_generic_recvmsg(td, uap)
 	struct thread *td;
 	struct sctp_generic_recvmsg_args /* {
 		int sd, 
@@ -3096,7 +3126,7 @@ sctp_generic_recvmsg(td, uap)
 	} */ *uap;
 {
 #if (defined(INET) || defined(INET6)) && defined(SCTP)
-	u_int8_t sockbufstore[256];
+	uint8_t sockbufstore[256];
 	struct uio auio;
 	struct iovec *iov, *tiov;
 	struct sctp_sndrcvinfo sinfo;
@@ -3104,14 +3134,15 @@ sctp_generic_recvmsg(td, uap)
 	struct file *fp = NULL;
 	struct sockaddr *fromsa;
 	int fromlen;
-	int len, i, msg_flags;
+	ssize_t len;
+	int i, msg_flags;
 	int error = 0;
 #ifdef KTRACE
 	struct uio *ktruio = NULL;
 #endif
 
 	AUDIT_ARG_FD(uap->sd);
-	error = getsock(td->td_proc->p_fd, uap->sd, &fp, NULL);
+	error = getsock_cap(td->td_proc->p_fd, uap->sd, CAP_READ, &fp, NULL);
 	if (error) {
 		return (error);
 	}
@@ -3182,7 +3213,7 @@ sctp_generic_recvmsg(td, uap)
 		    (struct sctp_sndrcvinfo *)&sinfo, 1);
 	CURVNET_RESTORE();
 	if (error) {
-		if (auio.uio_resid != (int)len && (error == ERESTART ||
+		if (auio.uio_resid != len && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
 	} else {
@@ -3191,13 +3222,13 @@ sctp_generic_recvmsg(td, uap)
 	}
 #ifdef KTRACE
 	if (ktruio != NULL) {
-		ktruio->uio_resid = (int)len - auio.uio_resid;
+		ktruio->uio_resid = len - auio.uio_resid;
 		ktrgenio(uap->sd, UIO_READ, ktruio, error);
 	}
 #endif /* KTRACE */
 	if (error)
 		goto out;
-	td->td_retval[0] = (int)len - auio.uio_resid;
+	td->td_retval[0] = len - auio.uio_resid;
 
 	if (fromlen && uap->from) {
 		len = fromlen;
@@ -3205,7 +3236,7 @@ sctp_generic_recvmsg(td, uap)
 			len = 0;
 		else {
 			len = MIN(len, fromsa->sa_len);
-			error = copyout(fromsa, uap->from, (unsigned)len);
+			error = copyout(fromsa, uap->from, (size_t)len);
 			if (error)
 				goto out;
 		}

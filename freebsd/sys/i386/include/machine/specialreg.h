@@ -209,12 +209,23 @@
 #define	CPUID_HTT_CORES		0x00ff0000
 #define	CPUID_LOCAL_APIC_ID	0xff000000
 
+/*
+ * CPUID instruction 6 ecx info
+ */
+#define	CPUID_PERF_STAT		0x00000001
+#define	CPUID_PERF_BIAS		0x00000008
+
 /* 
  * CPUID instruction 0xb ebx info.
  */
 #define	CPUID_TYPE_INVAL	0
 #define	CPUID_TYPE_SMT		1
 #define	CPUID_TYPE_CORE		2
+
+/*
+ * CPUID instruction 0xd Processor Extended State Enumeration Sub-leaf 1
+ */
+#define	CPUID_EXTSTATE_XSAVEOPT	0x00000001
 
 /*
  * AMD extended function 8000_0007h edx info

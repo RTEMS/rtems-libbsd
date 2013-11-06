@@ -331,6 +331,9 @@ s32 e1000_set_mac_type(struct e1000_hw *hw)
 	case E1000_DEV_ID_I350_DA4:
 		mac->type = e1000_i350;
 		break;
+#if defined(QV_RELEASE) && defined(SPRINGVILLE_FLASHLESS_HW)
+	case E1000_DEV_ID_I210_NVMLESS:
+#endif /* QV_RELEASE && SPRINGVILLE_FLASHLESS_HW */
 	case E1000_DEV_ID_I210_COPPER:
 	case E1000_DEV_ID_I210_COPPER_OEM1:
 	case E1000_DEV_ID_I210_COPPER_IT:

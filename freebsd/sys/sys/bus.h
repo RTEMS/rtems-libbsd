@@ -192,7 +192,6 @@ enum intr_type {
 	INTR_TYPE_MISC = 16,
 	INTR_TYPE_CLK = 32,
 	INTR_TYPE_AV = 64,
-	INTR_FAST = 128,
 	INTR_EXCL = 256,		/* exclusive interrupt */
 	INTR_MPSAFE = 512,		/* this interrupt is SMP safe */
 	INTR_ENTROPY = 1024,		/* this interrupt provides entropy */
@@ -239,12 +238,17 @@ struct resource_list_entry {
 	STAILQ_ENTRY(resource_list_entry) link;
 	int	type;			/**< @brief type argument to alloc_resource */
 	int	rid;			/**< @brief resource identifier */
+	int	flags;			/**< @brief resource flags */
 	struct	resource *res;		/**< @brief the real resource when allocated */
 	u_long	start;			/**< @brief start of resource range */
 	u_long	end;			/**< @brief end of resource range */
 	u_long	count;			/**< @brief count within range */
 };
 STAILQ_HEAD(resource_list, resource_list_entry);
+
+#define	RLE_RESERVED		0x0001	/* Reserved by the parent bus. */
+#define	RLE_ALLOCATED		0x0002	/* Reserved resource is allocated. */
+#define	RLE_PREFETCH		0x0004	/* Resource is a prefetch range. */
 
 void	resource_list_init(struct resource_list *rl);
 void	resource_list_free(struct resource_list *rl);
@@ -255,6 +259,9 @@ struct resource_list_entry *
 int	resource_list_add_next(struct resource_list *rl,
 			  int type,
 			  u_long start, u_long end, u_long count);
+int	resource_list_busy(struct resource_list *rl,
+			   int type, int rid);
+int	resource_list_reserved(struct resource_list *rl, int type, int rid);
 struct resource_list_entry*
 	resource_list_find(struct resource_list *rl,
 			   int type, int rid);
@@ -269,6 +276,15 @@ struct resource *
 int	resource_list_release(struct resource_list *rl,
 			      device_t bus, device_t child,
 			      int type, int rid, struct resource *res);
+struct resource *
+	resource_list_reserve(struct resource_list *rl,
+			      device_t bus, device_t child,
+			      int type, int *rid,
+			      u_long start, u_long end,
+			      u_long count, u_int flags);
+int	resource_list_unreserve(struct resource_list *rl,
+				device_t bus, device_t child,
+				int type, int rid);
 void	resource_list_purge(struct resource_list *rl);
 int	resource_list_print_type(struct resource_list *rl,
 				 const char *name, int type,
@@ -358,8 +374,10 @@ struct resource_spec {
 	int	flags;
 };
 
-int bus_alloc_resources(device_t dev, struct resource_spec *rs, struct resource **res);
-void bus_release_resources(device_t dev, const struct resource_spec *rs, struct resource **res);
+int	bus_alloc_resources(device_t dev, struct resource_spec *rs,
+			    struct resource **res);
+void	bus_release_resources(device_t dev, const struct resource_spec *rs,
+			      struct resource **res);
 
 int	bus_adjust_resource(device_t child, int type, struct resource *r,
 			    u_long start, u_long end);
@@ -446,6 +464,8 @@ int	device_set_devclass(device_t dev, const char *classname);
 int	device_set_driver(device_t dev, driver_t *driver);
 void	device_set_flags(device_t dev, u_int32_t flags);
 void	device_set_softc(device_t dev, void *softc);
+void	device_free_softc(void *softc);
+void	device_claim_softc(device_t dev);
 int	device_set_unit(device_t dev, int unit);	/* XXX DONT USE XXX */
 int	device_shutdown(device_t dev);
 void	device_unbusy(device_t dev);
@@ -454,7 +474,10 @@ void	device_verbose(device_t dev);
 /*
  * Access functions for devclass.
  */
+int		devclass_add_driver(devclass_t dc, driver_t *driver,
+				    int pass, devclass_t *dcp);
 devclass_t	devclass_create(const char *classname);
+int		devclass_delete_driver(devclass_t busclass, driver_t *driver);
 devclass_t	devclass_find(const char *classname);
 const char	*devclass_get_name(devclass_t dc);
 device_t	devclass_get_device(devclass_t dc, int unit);
@@ -515,7 +538,7 @@ void	bus_data_generation_update(void);
  * is for drivers that wish to have a generic form and a specialized form,
  * like is done with the pci bus and the acpi pci bus.  BUS_PROBE_HOOVER is
  * for those busses that implement a generic device place-holder for devices on
- * the bus that have no more specific river for them (aka ugen).
+ * the bus that have no more specific driver for them (aka ugen).
  * BUS_PROBE_NOWILDCARD or lower means that the device isn't really bidding
  * for a device node, but accepts only devices that its parent has told it
  * use this driver.

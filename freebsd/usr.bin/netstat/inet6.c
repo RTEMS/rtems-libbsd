@@ -13,10 +13,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -366,15 +362,17 @@ static char *srcrule_str[] = {
 void
 ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 {
-	struct ip6stat ip6stat;
+	struct ip6stat ip6stat, zerostat;
 	int first, i;
 	size_t len;
 
 	len = sizeof ip6stat;
 	if (live) {
 		memset(&ip6stat, 0, len);
-		if (sysctlbyname("net.inet6.ip6.stats", &ip6stat, &len, NULL,
-		    0) < 0) {
+		if (zflag)
+			memset(&zerostat, 0, len);
+		if (sysctlbyname("net.inet6.ip6.stats", &ip6stat, &len,
+		    zflag ? &zerostat : NULL, zflag ? len : 0) < 0) {
 			if (errno != ENOENT)
 				warn("sysctl: net.inet6.ip6.stats");
 			return;
@@ -412,7 +410,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	p(ip6s_cantfrag, "\t%ju datagram%s that can't be fragmented\n");
 	p(ip6s_badscope, "\t%ju packet%s that violated scope rules\n");
 	p(ip6s_notmember, "\t%ju multicast packet%s which we don't join\n");
-	for (first = 1, i = 0; i < 256; i++)
+	for (first = 1, i = 0; i < IP6S_HDRCNT; i++)
 		if (ip6stat.ip6s_nxthist[i] != 0) {
 			if (first) {
 				printf("\tInput histogram:\n");
@@ -423,7 +421,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 		}
 	printf("\tMbuf statistics:\n");
 	printf("\t\t%ju one mbuf\n", (uintmax_t)ip6stat.ip6s_m1);
-	for (first = 1, i = 0; i < 32; i++) {
+	for (first = 1, i = 0; i < IP6S_M2MMAX; i++) {
 		char ifbuf[IFNAMSIZ];
 		if (ip6stat.ip6s_m2m[i] != 0) {
 			if (first) {
@@ -440,7 +438,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	printf("\t\t%ju two or more ext mbuf\n",
 	    (uintmax_t)ip6stat.ip6s_mext2m);
 	p(ip6s_exthdrtoolong,
-	    "\t%ju packet%s whose headers are not continuous\n");
+	    "\t%ju packet%s whose headers are not contiguous\n");
 	p(ip6s_nogif, "\t%ju tunneling packet%s that can't find gif\n");
 	p(ip6s_toomanyhdr,
 	    "\t%ju packet%s discarded because of too many headers\n");
@@ -449,7 +447,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 #define	PRINT_SCOPESTAT(s,i) do {\
 		switch(i) { /* XXX hardcoding in each case */\
 		case 1:\
-			p(s, "\t\t%ju node-local%s\n");\
+			p(s, "\t\t%ju interface-local%s\n");\
 			break;\
 		case 2:\
 			p(s,"\t\t%ju link-local%s\n");\
@@ -468,7 +466,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 
 	p(ip6s_sources_none,
 	  "\t%ju failure%s of source address selection\n");
-	for (first = 1, i = 0; i < 16; i++) {
+	for (first = 1, i = 0; i < IP6S_SCOPECNT; i++) {
 		if (ip6stat.ip6s_sources_sameif[i]) {
 			if (first) {
 				printf("\tsource addresses on an outgoing I/F\n");
@@ -477,7 +475,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 			PRINT_SCOPESTAT(ip6s_sources_sameif[i], i);
 		}
 	}
-	for (first = 1, i = 0; i < 16; i++) {
+	for (first = 1, i = 0; i < IP6S_SCOPECNT; i++) {
 		if (ip6stat.ip6s_sources_otherif[i]) {
 			if (first) {
 				printf("\tsource addresses on a non-outgoing I/F\n");
@@ -486,7 +484,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 			PRINT_SCOPESTAT(ip6s_sources_otherif[i], i);
 		}
 	}
-	for (first = 1, i = 0; i < 16; i++) {
+	for (first = 1, i = 0; i < IP6S_SCOPECNT; i++) {
 		if (ip6stat.ip6s_sources_samescope[i]) {
 			if (first) {
 				printf("\tsource addresses of same scope\n");
@@ -495,7 +493,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 			PRINT_SCOPESTAT(ip6s_sources_samescope[i], i);
 		}
 	}
-	for (first = 1, i = 0; i < 16; i++) {
+	for (first = 1, i = 0; i < IP6S_SCOPECNT; i++) {
 		if (ip6stat.ip6s_sources_otherscope[i]) {
 			if (first) {
 				printf("\tsource addresses of a different scope\n");
@@ -504,7 +502,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 			PRINT_SCOPESTAT(ip6s_sources_otherscope[i], i);
 		}
 	}
-	for (first = 1, i = 0; i < 16; i++) {
+	for (first = 1, i = 0; i < IP6S_SCOPECNT; i++) {
 		if (ip6stat.ip6s_sources_deprecated[i]) {
 			if (first) {
 				printf("\tdeprecated source addresses\n");
@@ -515,7 +513,7 @@ ip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	}
 
 	printf("\tSource addresses selection rule applied:\n");
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < IP6S_RULESMAX; i++) {
 		if (ip6stat.ip6s_sources_rule[i])
 			printf("\t\t%ju %s\n",
 			       (uintmax_t)ip6stat.ip6s_sources_rule[i],
@@ -846,15 +844,17 @@ static	const char *icmp6names[] = {
 void
 icmp6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 {
-	struct icmp6stat icmp6stat;
+	struct icmp6stat icmp6stat, zerostat;
 	int i, first;
 	size_t len;
 
 	len = sizeof icmp6stat;
 	if (live) {
 		memset(&icmp6stat, 0, len);
+		if (zflag)
+			memset(&zerostat, 0, len);
 		if (sysctlbyname("net.inet6.icmp6.stats", &icmp6stat, &len,
-		    NULL, 0) < 0) {
+		    zflag ? &zerostat : NULL, zflag ? len : 0) < 0) {
 			if (errno != ENOENT)
 				warn("sysctl: net.inet6.icmp6.stats");
 			return;
@@ -1039,14 +1039,16 @@ pim6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 void
 rip6_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 {
-	struct rip6stat rip6stat;
+	struct rip6stat rip6stat, zerostat;
 	u_quad_t delivered;
 	size_t len;
 
 	len = sizeof(rip6stat);
 	if (live) {
+		if (zflag)
+			memset(&zerostat, 0, len);
 		if (sysctlbyname("net.inet6.ip6.rip6stats", &rip6stat, &len,
-		    NULL, 0) < 0) {
+		    zflag ? &zerostat : NULL, zflag ? len : 0) < 0) {
 			if (errno != ENOENT)
 				warn("sysctl: net.inet6.ip6.rip6stats");
 			return;

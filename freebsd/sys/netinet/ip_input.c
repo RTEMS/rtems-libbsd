@@ -42,7 +42,6 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
-#include <sys/callout.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/domain.h>
@@ -103,11 +102,6 @@ static VNET_DEFINE(int, ipsendredirects) = 1;	/* XXX */
 SYSCTL_VNET_INT(_net_inet_ip, IPCTL_SENDREDIRECTS, redirect, CTLFLAG_RW,
     &VNET_NAME(ipsendredirects), 0,
     "Enable sending IP redirects");
-
-VNET_DEFINE(int, ip_defttl) = IPDEFTTL;
-SYSCTL_VNET_INT(_net_inet_ip, IPCTL_DEFTTL, ttl, CTLFLAG_RW,
-    &VNET_NAME(ip_defttl), 0,
-    "Maximum TTL on IP packets");
 
 static VNET_DEFINE(int, ip_keepfaith);
 #define	V_ip_keepfaith		VNET(ip_keepfaith)
@@ -196,8 +190,6 @@ SYSCTL_VNET_INT(_net_inet_ip, OID_AUTO, maxfragsperpacket, CTLFLAG_RW,
     &VNET_NAME(maxfragsperpacket), 0,
     "Maximum number of IPv4 fragments allowed per packet");
 
-struct callout	ipport_tick_callout;
-
 #ifdef IPCTL_DEFMTU
 SYSCTL_INT(_net_inet_ip, IPCTL_DEFMTU, mtu, CTLFLAG_RW,
     &ip_mtu, 0, "Default MTU");
@@ -219,8 +211,6 @@ SYSCTL_VNET_INT(_net_inet_ip, OID_AUTO, output_flowtable_size, CTLFLAG_RDTUN,
     &VNET_NAME(ip_output_flowtable_size), 2048,
     "number of entries in the per-cpu output flow caches");
 #endif
-
-VNET_DEFINE(int, fw_one_pass) = 1;
 
 static void	ip_freef(struct ipqhead *, struct ipq *);
 
@@ -356,11 +346,6 @@ ip_init(void)
 				ip_protox[pr->pr_protocol] = pr - inetsw;
 		}
 
-	/* Start ipport_tick. */
-	callout_init(&ipport_tick_callout, CALLOUT_MPSAFE);
-	callout_reset(&ipport_tick_callout, 1, ipport_tick, NULL);
-	EVENTHANDLER_REGISTER(shutdown_pre_sync, ip_fini, NULL,
-		SHUTDOWN_PRI_DEFAULT);
 	EVENTHANDLER_REGISTER(nmbclusters_change, ipq_zone_change,
 		NULL, EVENTHANDLER_PRI_ANY);
 
@@ -384,13 +369,6 @@ ip_destroy(void)
 	uma_zdestroy(V_ipq_zone);
 }
 #endif
-
-void
-ip_fini(void *xtp)
-{
-
-	callout_stop(&ipport_tick_callout);
-}
 
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
@@ -540,22 +518,22 @@ tooshort:
 	dchg = (odst.s_addr != ip->ip_dst.s_addr);
 	ifp = m->m_pkthdr.rcvif;
 
-#ifdef IPFIREWALL_FORWARD
 	if (m->m_flags & M_FASTFWD_OURS) {
 		m->m_flags &= ~M_FASTFWD_OURS;
 		goto ours;
 	}
-	if ((dchg = (m_tag_find(m, PACKET_TAG_IPFORWARD, NULL) != NULL)) != 0) {
-		/*
-		 * Directly ship the packet on.  This allows forwarding
-		 * packets originally destined to us to some other directly
-		 * connected host.
-		 */
-		ip_forward(m, dchg);
-		return;
+	if (m->m_flags & M_IP_NEXTHOP) {
+		dchg = (m_tag_find(m, PACKET_TAG_IPFORWARD, NULL) != NULL);
+		if (dchg != 0) {
+			/*
+			 * Directly ship the packet on.  This allows
+			 * forwarding packets originally destined to us
+			 * to some other directly connected host.
+			 */
+			ip_forward(m, 1);
+			return;
+		}
 	}
-#endif /* IPFIREWALL_FORWARD */
-
 passin:
 	/*
 	 * Process options and, if not destined for us,
@@ -642,11 +620,6 @@ passin:
 			ia = ifatoia(ifa);
 			if (satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
 			    ip->ip_dst.s_addr) {
-				ifa_ref(ifa);
-				IF_ADDR_RUNLOCK(ifp);
-				goto ours;
-			}
-			if (ia->ia_netbroadcast.s_addr == ip->ip_dst.s_addr) {
 				ifa_ref(ifa);
 				IF_ADDR_RUNLOCK(ifp);
 				goto ours;
@@ -1524,8 +1497,7 @@ ip_forward(struct mbuf *m, int srcrt)
 
 	if (error == EMSGSIZE && ro.ro_rt)
 		mtu = ro.ro_rt->rt_rmx.rmx_mtu;
-	if (ro.ro_rt)
-		RTFREE(ro.ro_rt);
+	RO_RTFREE(&ro);
 
 	if (error)
 		IPSTAT_INC(ips_cantforward);

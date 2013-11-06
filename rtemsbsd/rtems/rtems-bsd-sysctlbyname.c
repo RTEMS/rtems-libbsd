@@ -29,7 +29,7 @@ __FBSDID("$FreeBSD$");
 
 int
 sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
-    void *newp, size_t newlen)
+    const void *newp, size_t newlen)
 {
 	int real_oid[CTL_MAXNAME+2];
 	int error;

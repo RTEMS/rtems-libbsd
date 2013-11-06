@@ -37,16 +37,24 @@
 #error "no assembler-serviceable parts inside"
 #endif
 
+#include <sys/_cpuset.h>
 #include <sys/queue.h>
 #include <sys/vmmeter.h>
 #include <rtems/bsd/sys/resource.h>
 #include <machine/pcpu.h>
 
+#define	DPCPU_SETNAME		"set_pcpu"
+#define	DPCPU_SYMPREFIX		"pcpu_entry_"
+
+#ifdef _KERNEL
+
 /*
  * Define a set for pcpu data.
  */
 extern uintptr_t *__start_set_pcpu;
+__GLOBL(__start_set_pcpu);
 extern uintptr_t *__stop_set_pcpu;
+__GLOBL(__stop_set_pcpu);
 
 /*
  * Array of dynamic pcpu base offsets.  Indexed by id.
@@ -68,7 +76,7 @@ extern uintptr_t dpcpu_off[];
  */
 #define	DPCPU_NAME(n)		pcpu_entry_##n
 #define	DPCPU_DECLARE(t, n)	extern t DPCPU_NAME(n)
-#define	DPCPU_DEFINE(t, n)	t DPCPU_NAME(n) __section("set_pcpu") __used
+#define	DPCPU_DEFINE(t, n)	t DPCPU_NAME(n) __section(DPCPU_SETNAME) __used
 
 /*
  * Accessors with a given base.
@@ -131,6 +139,8 @@ extern uintptr_t dpcpu_off[];
 	}								\
 } while(0)
 
+#endif /* _KERNEL */
+
 /* 
  * XXXUPS remove as soon as we have per cpu variable
  * linker sets and can define rm_queue in _rm_lock.h
@@ -139,8 +149,6 @@ struct rm_queue {
 	struct rm_queue* volatile rmq_next;
 	struct rm_queue* volatile rmq_prev;
 };
-
-#define	PCPU_NAME_LEN (sizeof("CPU ") + sizeof(__XSTRING(MAXCPU) + 1))
 
 /*
  * This structure maps out the global data that needs to be kept on a
@@ -157,19 +165,16 @@ struct pcpu {
 	uint64_t	pc_switchtime;		/* cpu_ticks() at last csw */
 	int		pc_switchticks;		/* `ticks' at last csw */
 	u_int		pc_cpuid;		/* This cpu number */
-	cpumask_t	pc_cpumask;		/* This cpu mask */
-	cpumask_t	pc_other_cpus;		/* Mask of all other cpus */
-	SLIST_ENTRY(pcpu) pc_allcpu;
+	STAILQ_ENTRY(pcpu) pc_allcpu;
 	struct lock_list_entry *pc_spinlocks;
-#ifdef KTR
-	char		pc_name[PCPU_NAME_LEN];	/* String name for KTR */
-#endif
 #ifndef __rtems__
 	struct vmmeter	pc_cnt;			/* VM stats counters */
 #endif
 	long		pc_cp_time[CPUSTATES];	/* statclock ticks */
 	struct device	*pc_device;
 	void		*pc_netisr;		/* netisr SWI cookie */
+	int		pc_dnweight;		/* vm_page_dontneed() */
+	int		pc_domain;		/* Memory domain. */
 
 	/*
 	 * Stuff for read mostly lock
@@ -192,14 +197,14 @@ struct pcpu {
 	 * if only to make kernel debugging easier.
 	 */
 	PCPU_MD_FIELDS;
-} __aligned(128);
+} __aligned(CACHE_LINE_SIZE);
 
 #ifdef _KERNEL
 
-SLIST_HEAD(cpuhead, pcpu);
+STAILQ_HEAD(cpuhead, pcpu);
 
 extern struct cpuhead cpuhead;
-extern struct pcpu *cpuid_to_pcpu[MAXCPU];
+extern struct pcpu *cpuid_to_pcpu[];
 
 #define	curcpu		PCPU_GET(cpuid)
 #define	curproc		(curthread->td_proc)

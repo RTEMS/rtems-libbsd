@@ -67,6 +67,8 @@ __FBSDID("$FreeBSD$");
 #ifndef __rtems__
 #ifdef KLD_DEBUG
 int kld_debug = 0;
+SYSCTL_INT(_debug, OID_AUTO, kld_debug, CTLFLAG_RW,
+        &kld_debug, 0, "Set various levels of KLD debug");
 #endif
 
 #define	KLD_LOCK()		sx_xlock(&kld_sx)
@@ -743,6 +745,9 @@ linker_file_add_dependency(linker_file_t file, linker_file_t dep)
 	file->deps = newdeps;
 	file->deps[file->ndeps] = dep;
 	file->ndeps++;
+	KLD_DPF(FILE, ("linker_file_add_dependency:"
+	    " adding %s as dependency for %s\n", 
+	    dep->filename, file->filename));
 	return (0);
 }
 
@@ -1071,7 +1076,7 @@ done:
 }
 
 int
-kldload(struct thread *td, struct kldload_args *uap)
+sys_kldload(struct thread *td, struct kldload_args *uap)
 {
 	char *pathname = NULL;
 	int error, fileid;
@@ -1151,14 +1156,14 @@ kern_kldunload(struct thread *td, int fileid, int flags)
 }
 
 int
-kldunload(struct thread *td, struct kldunload_args *uap)
+sys_kldunload(struct thread *td, struct kldunload_args *uap)
 {
 
 	return (kern_kldunload(td, uap->fileid, LINKER_UNLOAD_NORMAL));
 }
 
 int
-kldunloadf(struct thread *td, struct kldunloadf_args *uap)
+sys_kldunloadf(struct thread *td, struct kldunloadf_args *uap)
 {
 
 	if (uap->flags != LINKER_UNLOAD_NORMAL &&
@@ -1168,7 +1173,7 @@ kldunloadf(struct thread *td, struct kldunloadf_args *uap)
 }
 
 int
-kldfind(struct thread *td, struct kldfind_args *uap)
+sys_kldfind(struct thread *td, struct kldfind_args *uap)
 {
 	char *pathname;
 	const char *filename;
@@ -1201,7 +1206,7 @@ out:
 }
 
 int
-kldnext(struct thread *td, struct kldnext_args *uap)
+sys_kldnext(struct thread *td, struct kldnext_args *uap)
 {
 	linker_file_t lf;
 	int error = 0;
@@ -1238,7 +1243,7 @@ out:
 }
 
 int
-kldstat(struct thread *td, struct kldstat_args *uap)
+sys_kldstat(struct thread *td, struct kldstat_args *uap)
 {
 	struct kld_file_stat stat;
 	int error, version;
@@ -1300,7 +1305,7 @@ kern_kldstat(struct thread *td, int fileid, struct kld_file_stat *stat)
 }
 
 int
-kldfirstmod(struct thread *td, struct kldfirstmod_args *uap)
+sys_kldfirstmod(struct thread *td, struct kldfirstmod_args *uap)
 {
 	linker_file_t lf;
 	module_t mp;
@@ -1329,7 +1334,7 @@ kldfirstmod(struct thread *td, struct kldfirstmod_args *uap)
 }
 
 int
-kldsym(struct thread *td, struct kldsym_args *uap)
+sys_kldsym(struct thread *td, struct kldsym_args *uap)
 {
 	char *symstr = NULL;
 	c_linker_sym_t sym;
@@ -1631,6 +1636,12 @@ restart:
 				modname = mp->md_cval;
 				verinfo = mp->md_data;
 				mod = modlist_lookup2(modname, verinfo);
+				if (mod == NULL) {
+					printf("KLD file %s - cannot find "
+					    "dependency \"%s\"\n",
+					    lf->filename, modname);
+					goto fail;
+				}
 				/* Don't count self-dependencies */
 				if (lf == mod->container)
 					continue;
@@ -1647,11 +1658,9 @@ restart:
 		 */
 		error = LINKER_LINK_PRELOAD_FINISH(lf);
 		if (error) {
-			TAILQ_REMOVE(&depended_files, lf, loaded);
 			printf("KLD file %s - could not finalize loading\n",
 			    lf->filename);
-			linker_file_unload(lf, LINKER_UNLOAD_FORCE);
-			continue;
+			goto fail;
 		}
 		linker_file_register_modules(lf);
 		if (linker_file_lookup_set(lf, "sysinit_set", &si_start,
@@ -1659,6 +1668,10 @@ restart:
 			sysinit_add(si_start, si_stop);
 		linker_file_register_sysctls(lf);
 		lf->flags |= LINKER_FILE_LINKED;
+		continue;
+fail:
+		TAILQ_REMOVE(&depended_files, lf, loaded);
+		linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 	}
 	/* woohoo! we made it! */
 }
@@ -1765,7 +1778,8 @@ linker_hints_lookup(const char *path, int pathlen, const char *modname,
 	struct vattr vattr, mattr;
 	u_char *hints = NULL;
 	u_char *cp, *recptr, *bufend, *result, *best, *pathbuf, *sep;
-	int error, ival, bestver, *intp, reclen, found, flags, clen, blen;
+	int error, ival, bestver, *intp, found, flags, clen, blen;
+	ssize_t reclen;
 	int vfslocked = 0;
 
 	result = NULL;
@@ -1810,7 +1824,7 @@ linker_hints_lookup(const char *path, int pathlen, const char *modname,
 	VFS_UNLOCK_GIANT(vfslocked);
 	nd.ni_vp = NULL;
 	if (reclen != 0) {
-		printf("can't read %d\n", reclen);
+		printf("can't read %zd\n", reclen);
 		goto bad;
 	}
 	intp = (int *)hints;
@@ -2184,6 +2198,6 @@ sysctl_kern_function_list(SYSCTL_HANDLER_ARGS)
 	return (SYSCTL_OUT(req, "", 1));
 }
 
-SYSCTL_PROC(_kern, OID_AUTO, function_list, CTLFLAG_RD,
+SYSCTL_PROC(_kern, OID_AUTO, function_list, CTLTYPE_OPAQUE | CTLFLAG_RD,
     NULL, 0, sysctl_kern_function_list, "", "kernel function list");
 #endif /* __rtems__ */

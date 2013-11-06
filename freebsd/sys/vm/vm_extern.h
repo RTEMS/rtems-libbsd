@@ -63,8 +63,14 @@ void vm_fault_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t,
     vm_ooffset_t *);
 int vm_fault_disable_pagefaults(void);
 void vm_fault_enable_pagefaults(int save);
+#ifndef __rtems__
+int vm_fault_hold(vm_map_t map, vm_offset_t vaddr, vm_prot_t fault_type,
+    int fault_flags, vm_page_t *m_hold);
+int vm_fault_quick_hold_pages(vm_map_t map, vm_offset_t addr, vm_size_t len,
+    vm_prot_t prot, vm_page_t *ma, int max_count);
+#endif /* __rtems__ */
 void vm_fault_unwire(vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
-int vm_fault_wire(vm_map_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
+int vm_fault_wire(vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
 int vm_forkproc(struct thread *, struct proc *, struct thread *, struct vmspace *, int);
 void vm_waitproc(struct proc *);
 int vm_mmap(vm_map_t, vm_offset_t *, vm_size_t, vm_prot_t, vm_prot_t, int, objtype_t, void *, vm_ooffset_t);
@@ -100,14 +106,9 @@ vsunlock(void *addr, size_t len)
 	(void) len;
 }
 #endif /* __rtems__ */
-void vm_object_print(/* db_expr_t */ long, boolean_t, /* db_expr_t */ long,
-			  char *);
-int vm_fault_quick(caddr_t v, int prot);
 struct sf_buf *vm_imgact_map_page(vm_object_t object, vm_ooffset_t offset);
 void vm_imgact_unmap_page(struct sf_buf *sf);
 void vm_thread_dispose(struct thread *td);
 int vm_thread_new(struct thread *td, int pages);
-void vm_thread_swapin(struct thread *td);
-void vm_thread_swapout(struct thread *td);
 #endif				/* _KERNEL */
 #endif				/* !_VM_EXTERN_H_ */

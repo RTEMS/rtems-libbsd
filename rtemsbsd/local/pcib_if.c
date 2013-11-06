@@ -99,3 +99,11 @@ struct kobjop_desc pcib_map_msi_desc = {
 	0, &pcib_map_msi_method_default
 };
 
+struct kobj_method pcib_power_for_sleep_method_default = {
+	&pcib_power_for_sleep_desc, (kobjop_t) kobj_error_method
+};
+
+struct kobjop_desc pcib_power_for_sleep_desc = {
+	0, &pcib_power_for_sleep_method_default
+};
+

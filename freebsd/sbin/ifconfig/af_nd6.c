@@ -60,11 +60,12 @@ static const char rcsid[] =
 #define	MAX_SYSCTL_TRY	5
 #define	ND6BITS	"\020\001PERFORMNUD\002ACCEPT_RTADV\003PREFER_SOURCE" \
 		"\004IFDISABLED\005DONT_SET_IFROUTE\006AUTO_LINKLOCAL" \
-		"\020DEFAULTIF"
+		"\007NO_RADR\010NO_PREFER_IFACE\020DEFAULTIF"
 
 static int isnd6defif(int);
 void setnd6flags(const char *, int, int, const struct afswtch *);
 void setnd6defif(const char *, int, int, const struct afswtch *);
+void nd6_status(int);
 
 void
 setnd6flags(const char *dummyaddr __unused,
@@ -138,74 +139,25 @@ isnd6defif(int s)
 	return (ndifreq.ifindex == ifindex);
 }
 
-static void
+void
 nd6_status(int s)
 {
 	struct in6_ndireq nd;
-	struct rt_msghdr *rtm;
-	size_t needed;
-	char *buf, *next;
-	int mib[6], ntry;
 	int s6;
 	int error;
-	int isinet6, isdefif;
-
-	/* Check if the interface has at least one IPv6 address. */
-	mib[0] = CTL_NET;
-	mib[1] = PF_ROUTE;
-	mib[2] = 0;
-	mib[3] = AF_INET6;
-	mib[4] = NET_RT_IFLIST;
-	mib[5] = if_nametoindex(ifr.ifr_name);
-
-	/* Try to prevent a race between two sysctls. */
-	ntry = 0;
-	do {
-		error = sysctl(mib, 6, NULL, &needed, NULL, 0);
-		if (error) {
-			warn("sysctl(NET_RT_IFLIST)/estimate");
-			return;
-		}
-		buf = malloc(needed);
-		if (buf == NULL) {
-			warn("malloc for sysctl(NET_RT_IFLIST) failed");
-			return;
-		}
-		if ((error = sysctl(mib, 6, buf, &needed, NULL, 0)) < 0) {
-			if (errno != ENOMEM || ++ntry >= MAX_SYSCTL_TRY) {
-				warn("sysctl(NET_RT_IFLIST)/get");
-				free(buf);
-				return;
-			}
-			free(buf);
-			buf = NULL;
-		}
-	} while (buf == NULL);
-	
-	isinet6 = 0;
-	for (next = buf; next < buf + needed; next += rtm->rtm_msglen) {
-		rtm = (struct rt_msghdr *)next;
-
-		if (rtm->rtm_version != RTM_VERSION)
-			continue;
-		if (rtm->rtm_type == RTM_NEWADDR) {
-			isinet6 = 1;
-			break;
-		}
-	}
-	free(buf);
-	if (!isinet6)
-		return;
+	int isdefif;
 
 	memset(&nd, 0, sizeof(nd));
 	strncpy(nd.ifname, ifr.ifr_name, sizeof(nd.ifname));
 	if ((s6 = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
-		warn("socket(AF_INET6, SOCK_DGRAM)");
+		if (errno != EAFNOSUPPORT && errno != EPROTONOSUPPORT)
+			warn("socket(AF_INET6, SOCK_DGRAM)");
 		return;
 	}
 	error = ioctl(s6, SIOCGIFINFO_IN6, &nd);
 	if (error) {
-		warn("ioctl(SIOCGIFINFO_IN6)");
+		if (errno != EPFNOSUPPORT)
+			warn("ioctl(SIOCGIFINFO_IN6)");
 		close(s6);
 		return;
 	}
@@ -216,20 +168,4 @@ nd6_status(int s)
 	printb("\tnd6 options",
 	    (unsigned int)(nd.ndi.flags | (isdefif << 15)), ND6BITS);
 	putchar('\n');
-}
-
-static struct afswtch af_nd6 = {
-	.af_name	= "nd6",
-	.af_af		= AF_LOCAL,
-	.af_other_status= nd6_status,
-};
-
-#ifndef __rtems__
-static __constructor void
-#else /* __rtems__ */
-void
-#endif /* __rtems__ */
-nd6_ctor(void)
-{
-	af_register(&af_nd6);
 }

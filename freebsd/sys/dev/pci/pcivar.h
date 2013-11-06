@@ -42,9 +42,9 @@ typedef uint64_t pci_addr_t;
 /* Interesting values for PCI power management */
 struct pcicfg_pp {
     uint16_t	pp_cap;		/* PCI power management capabilities */
-    uint8_t	pp_status;	/* config space address of PCI power status reg */
-    uint8_t	pp_pmcsr;	/* config space address of PMCSR reg */
-    uint8_t	pp_data;	/* config space address of PCI power data reg */
+    uint8_t	pp_status;	/* conf. space addr. of PM control/status reg */
+    uint8_t	pp_bse;		/* conf. space addr. of PM BSE reg */
+    uint8_t	pp_data;	/* conf. space addr. of PM data reg */
 };
 
 struct pci_map {
@@ -465,6 +465,7 @@ device_t pci_find_class(uint8_t class, uint8_t subclass);
 int	pci_pending_msix(device_t dev, u_int index);
 
 int	pci_msi_device_blacklisted(device_t dev);
+int	pci_msix_device_blacklisted(device_t dev);
 
 void	pci_ht_map_msi(device_t dev, uint64_t addr);
 

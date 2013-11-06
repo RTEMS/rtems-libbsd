@@ -39,12 +39,14 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <rtems/bsd/local/opt_capsicum.h>
 #include <rtems/bsd/local/opt_compat.h>
 #include <rtems/bsd/local/opt_ktrace.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/sysproto.h>
+#include <sys/capability.h>
 #include <sys/filedesc.h>
 #include <sys/filio.h>
 #include <sys/fcntl.h>
@@ -78,6 +80,16 @@ __FBSDID("$FreeBSD$");
 #endif /* __rtems__ */
 
 #ifndef __rtems__
+int iosize_max_clamp = 1;
+SYSCTL_INT(_debug, OID_AUTO, iosize_max_clamp, CTLFLAG_RW,
+    &iosize_max_clamp, 0, "Clamp max i/o size to INT_MAX");
+/*
+ * Assert that the return value of read(2) and write(2) syscalls fits
+ * into a register.  If not, an architecture will need to provide the
+ * usermode wrappers to reconstruct the result.
+ */
+CTASSERT(sizeof(register_t) >= sizeof(size_t));
+
 static MALLOC_DEFINE(M_IOCTLOPS, "ioctlops", "ioctl data buffer");
 #endif /* __rtems__ */
 static MALLOC_DEFINE(M_SELECT, "select", "select() buffer");
@@ -147,7 +159,7 @@ struct read_args {
 };
 #endif
 int
-read(td, uap)
+sys_read(td, uap)
 	struct thread *td;
 	struct read_args *uap;
 {
@@ -155,7 +167,7 @@ read(td, uap)
 	struct iovec aiov;
 	int error;
 
-	if (uap->nbyte > INT_MAX)
+	if (uap->nbyte > IOSIZE_MAX)
 		return (EINVAL);
 	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->nbyte;
@@ -180,7 +192,7 @@ struct pread_args {
 };
 #endif
 int
-pread(td, uap)
+sys_pread(td, uap)
 	struct thread *td;
 	struct pread_args *uap;
 {
@@ -188,7 +200,7 @@ pread(td, uap)
 	struct iovec aiov;
 	int error;
 
-	if (uap->nbyte > INT_MAX)
+	if (uap->nbyte > IOSIZE_MAX)
 		return (EINVAL);
 	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->nbyte;
@@ -211,7 +223,7 @@ freebsd6_pread(td, uap)
 	oargs.buf = uap->buf;
 	oargs.nbyte = uap->nbyte;
 	oargs.offset = uap->offset;
-	return (pread(td, &oargs));
+	return (sys_pread(td, &oargs));
 }
 
 /*
@@ -225,7 +237,7 @@ struct readv_args {
 };
 #endif
 int
-readv(struct thread *td, struct readv_args *uap)
+sys_readv(struct thread *td, struct readv_args *uap)
 {
 	struct uio *auio;
 	int error;
@@ -244,7 +256,7 @@ kern_readv(struct thread *td, int fd, struct uio *auio)
 	struct file *fp;
 	int error;
 
-	error = fget_read(td, fd, &fp);
+	error = fget_read(td, fd, CAP_READ | CAP_SEEK, &fp);
 	if (error)
 		return (error);
 	error = dofileread(td, fd, fp, auio, (off_t)-1, 0);
@@ -264,7 +276,7 @@ struct preadv_args {
 };
 #endif
 int
-preadv(struct thread *td, struct preadv_args *uap)
+sys_preadv(struct thread *td, struct preadv_args *uap)
 {
 	struct uio *auio;
 	int error;
@@ -287,7 +299,7 @@ kern_preadv(td, fd, auio, offset)
 	struct file *fp;
 	int error;
 
-	error = fget_read(td, fd, &fp);
+	error = fget_read(td, fd, CAP_READ, &fp);
 	if (error)
 		return (error);
 	if (!(fp->f_ops->fo_flags & DFLAG_SEEKABLE))
@@ -356,7 +368,7 @@ struct write_args {
 };
 #endif
 int
-write(td, uap)
+sys_write(td, uap)
 	struct thread *td;
 	struct write_args *uap;
 {
@@ -364,7 +376,7 @@ write(td, uap)
 	struct iovec aiov;
 	int error;
 
-	if (uap->nbyte > INT_MAX)
+	if (uap->nbyte > IOSIZE_MAX)
 		return (EINVAL);
 	aiov.iov_base = (void *)(uintptr_t)uap->buf;
 	aiov.iov_len = uap->nbyte;
@@ -389,7 +401,7 @@ struct pwrite_args {
 };
 #endif
 int
-pwrite(td, uap)
+sys_pwrite(td, uap)
 	struct thread *td;
 	struct pwrite_args *uap;
 {
@@ -397,7 +409,7 @@ pwrite(td, uap)
 	struct iovec aiov;
 	int error;
 
-	if (uap->nbyte > INT_MAX)
+	if (uap->nbyte > IOSIZE_MAX)
 		return (EINVAL);
 	aiov.iov_base = (void *)(uintptr_t)uap->buf;
 	aiov.iov_len = uap->nbyte;
@@ -420,7 +432,7 @@ freebsd6_pwrite(td, uap)
 	oargs.buf = uap->buf;
 	oargs.nbyte = uap->nbyte;
 	oargs.offset = uap->offset;
-	return (pwrite(td, &oargs));
+	return (sys_pwrite(td, &oargs));
 }
 
 /*
@@ -434,7 +446,7 @@ struct writev_args {
 };
 #endif
 int
-writev(struct thread *td, struct writev_args *uap)
+sys_writev(struct thread *td, struct writev_args *uap)
 {
 	struct uio *auio;
 	int error;
@@ -453,7 +465,7 @@ kern_writev(struct thread *td, int fd, struct uio *auio)
 	struct file *fp;
 	int error;
 
-	error = fget_write(td, fd, &fp);
+	error = fget_write(td, fd, CAP_WRITE | CAP_SEEK, &fp);
 	if (error)
 		return (error);
 	error = dofilewrite(td, fd, fp, auio, (off_t)-1, 0);
@@ -473,7 +485,7 @@ struct pwritev_args {
 };
 #endif
 int
-pwritev(struct thread *td, struct pwritev_args *uap)
+sys_pwritev(struct thread *td, struct pwritev_args *uap)
 {
 	struct uio *auio;
 	int error;
@@ -496,7 +508,7 @@ kern_pwritev(td, fd, auio, offset)
 	struct file *fp;
 	int error;
 
-	error = fget_write(td, fd, &fp);
+	error = fget_write(td, fd, CAP_WRITE, &fp);
 	if (error)
 		return (error);
 	if (!(fp->f_ops->fo_flags & DFLAG_SEEKABLE))
@@ -536,7 +548,8 @@ dofilewrite(td, fd, fp, auio, offset, flags)
 		ktruio = cloneuio(auio);
 #endif
 	cnt = auio->uio_resid;
-	if (fp->f_type == DTYPE_VNODE)
+	if (fp->f_type == DTYPE_VNODE &&
+	    (fp->f_vnread_flags & FDEVFS_VNODE) == 0)
 		bwillwrite();
 	if ((error = fo_write(fp, auio, td->td_ucred, flags, td))) {
 		if (auio->uio_resid != cnt && (error == ERESTART ||
@@ -545,7 +558,7 @@ dofilewrite(td, fd, fp, auio, offset, flags)
 		/* Socket layer is responsible for issuing SIGPIPE. */
 		if (fp->f_type != DTYPE_SOCKET && error == EPIPE) {
 			PROC_LOCK(td->td_proc);
-			tdksignal(td, SIGPIPE, NULL);
+			tdsignal(td, SIGPIPE);
 			PROC_UNLOCK(td->td_proc);
 		}
 	}
@@ -578,7 +591,7 @@ kern_ftruncate(td, fd, length)
 	AUDIT_ARG_FD(fd);
 	if (length < 0)
 		return (EINVAL);
-	error = fget(td, fd, &fp);
+	error = fget(td, fd, CAP_FTRUNCATE, &fp);
 	if (error)
 		return (error);
 	AUDIT_ARG_FILE(td->td_proc, fp);
@@ -599,7 +612,7 @@ struct ftruncate_args {
 };
 #endif
 int
-ftruncate(td, uap)
+sys_ftruncate(td, uap)
 	struct thread *td;
 	struct ftruncate_args *uap;
 {
@@ -633,7 +646,7 @@ struct ioctl_args {
 #endif
 /* ARGSUSED */
 int
-ioctl(struct thread *td, struct ioctl_args *uap)
+sys_ioctl(struct thread *td, struct ioctl_args *uap)
 {
 	u_long com;
 	int arg, error;
@@ -708,7 +721,7 @@ kern_ioctl(struct thread *td, int fd, u_long com, caddr_t data)
 
 	AUDIT_ARG_FD(fd);
 	AUDIT_ARG_CMD(com);
-	if ((error = fget(td, fd, &fp)) != 0)
+	if ((error = fget(td, fd, CAP_IOCTL, &fp)) != 0)
 		return (error);
 	if ((fp->f_flag & (FREAD | FWRITE)) == 0) {
 		fdrop(fp, td);
@@ -765,7 +778,7 @@ poll_no_poll(int events)
 }
 
 int
-pselect(struct thread *td, struct pselect_args *uap)
+sys_pselect(struct thread *td, struct pselect_args *uap)
 {
 	struct timespec ts;
 	struct timeval tv, *tvp;
@@ -824,7 +837,7 @@ struct select_args {
 };
 #endif
 int
-select(struct thread *td, struct select_args *uap)
+sys_select(struct thread *td, struct select_args *uap)
 {
 	struct timeval tv, *tvp;
 	int error;
@@ -1157,6 +1170,37 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 	return (n);
 }
 
+static __inline int
+getselfd_cap(struct filedesc *fdp, int fd, struct file **fpp)
+{
+	struct file *fp;
+#ifdef CAPABILITIES
+	struct file *fp_fromcap;
+	int error;
+#endif
+
+	if ((fp = fget_unlocked(fdp, fd)) == NULL)
+		return (EBADF);
+#ifdef CAPABILITIES
+	/*
+	 * If the file descriptor is for a capability, test rights and use
+	 * the file descriptor references by the capability.
+	 */
+	error = cap_funwrap(fp, CAP_POLL_EVENT, &fp_fromcap);
+	if (error) {
+		fdrop(fp, curthread);
+		return (error);
+	}
+	if (fp != fp_fromcap) {
+		fhold(fp_fromcap);
+		fdrop(fp, curthread);
+		fp = fp_fromcap;
+	}
+#endif /* CAPABILITIES */
+	*fpp = fp;
+	return (0);
+}
+
 /*
  * Traverse the list of fds attached to this thread's seltd and check for
  * completion.
@@ -1172,6 +1216,7 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 	struct file *fp;
 	fd_mask bit;
 	int fd, ev, n, idx;
+	int error;
 
 #ifndef __rtems__
 	fdp = td->td_proc->p_fd;
@@ -1187,8 +1232,9 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 		/* If the selinfo wasn't cleared the event didn't fire. */
 		if (si != NULL)
 			continue;
-		if ((fp = fget_unlocked(fdp, fd)) == NULL)
-			return (EBADF);
+		error = getselfd_cap(fdp, fd, &fp);
+		if (error)
+			return (error);
 		idx = fd / NFDBITS;
 		bit = (fd_mask)1 << (fd % NFDBITS);
 		ev = fo_poll(fp, selflags(ibits, idx, bit), td->td_ucred, td);
@@ -1216,6 +1262,7 @@ selscan(td, ibits, obits, nfd)
 	fd_mask bit;
 	int ev, flags, end, fd;
 	int n, idx;
+	int error;
 
 #ifndef __rtems__
 	fdp = td->td_proc->p_fd;
@@ -1230,8 +1277,9 @@ selscan(td, ibits, obits, nfd)
 			flags = selflags(ibits, idx, bit);
 			if (flags == 0)
 				continue;
-			if ((fp = fget_unlocked(fdp, fd)) == NULL)
-				return (EBADF);
+			error = getselfd_cap(fdp, fd, &fp);
+			if (error)
+				return (error);
 			selfdalloc(td, (void *)(uintptr_t)fd);
 			ev = fo_poll(fp, flags, td->td_ucred, td);
 			fdrop(fp, td);
@@ -1251,13 +1299,11 @@ struct poll_args {
 	int	timeout;
 };
 #endif
-#ifndef __rtems__
-int
-poll(td, uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_poll(td, uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_poll(td, uap)
 	struct thread *td;
 	struct poll_args *uap;
 {
@@ -1350,7 +1396,7 @@ poll(struct pollfd fds[], nfds_t nfds, int timeout)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_poll(td, &ua);
+		error = sys_poll(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -1395,11 +1441,17 @@ pollrescan(struct thread *td)
 #else /* __rtems__ */
 		fp = fget_unlocked(fdp, fd->fd);
 #endif /* __rtems__ */
+#ifdef CAPABILITIES
+		if ((fp == NULL)
+		    || (cap_funwrap(fp, CAP_POLL_EVENT, &fp) != 0)) {
+#else
 		if (fp == NULL) {
+#endif
 			fd->revents = POLLNVAL;
 			n++;
 			continue;
 		}
+
 		/*
 		 * Note: backend also returns POLLHUP and
 		 * POLLERR if appropriate.
@@ -1472,7 +1524,12 @@ pollscan(td, fds, nfd)
 #else /* __rtems__ */
 			fp = fget_unlocked(fdp, fds->fd);
 #endif /* __rtems__ */
+#ifdef CAPABILITIES
+			if ((fp == NULL)
+			    || (cap_funwrap(fp, CAP_POLL_EVENT, &fp) != 0)) {
+#else
 			if (fp == NULL) {
+#endif
 				fds->revents = POLLNVAL;
 				n++;
 			} else {
@@ -1514,11 +1571,11 @@ struct openbsd_poll_args {
 };
 #endif
 int
-openbsd_poll(td, uap)
+sys_openbsd_poll(td, uap)
 	register struct thread *td;
 	register struct openbsd_poll_args *uap;
 {
-	return (poll(td, (struct poll_args *)uap));
+	return (sys_poll(td, (struct poll_args *)uap));
 }
 
 /*

@@ -115,7 +115,7 @@ struct pkthdr {
 	/* variables for ip and tcp reassembly */
 	void		*header;	/* pointer to packet header */
 	int		 len;		/* total packet length */
-	uint32_t	 flowid;	/* packet's 4-tuple system 
+	uint32_t	 flowid;	/* packet's 4-tuple system
 					 * flow identifier
 					 */
 	/* variables for hardware checksum */
@@ -199,7 +199,9 @@ struct mbuf {
 #define	M_PROTO6	0x00080000 /* protocol-specific */
 #define	M_PROTO7	0x00100000 /* protocol-specific */
 #define	M_PROTO8	0x00200000 /* protocol-specific */
-#define	M_FLOWID	0x00400000 /* flowid is valid */
+#define	M_FLOWID	0x00400000 /* deprecated: flowid is valid */
+#define	M_HASHTYPEBITS	0x0F000000 /* mask of bits holding flowid hash type */
+
 /*
  * For RELENG_{6,7} steal these flags for limited multiple routing table
  * support. In RELENG_8 and beyond, use just one flag and a tag.
@@ -215,11 +217,45 @@ struct mbuf {
     (M_PROTO1|M_PROTO2|M_PROTO3|M_PROTO4|M_PROTO5|M_PROTO6|M_PROTO7|M_PROTO8)
 
 /*
+ * Network interface cards are able to hash protocol fields (such as IPv4
+ * addresses and TCP port numbers) classify packets into flows.  These flows
+ * can then be used to maintain ordering while delivering packets to the OS
+ * via parallel input queues, as well as to provide a stateless affinity
+ * model.  NIC drivers can pass up the hash via m->m_pkthdr.flowid, and set
+ * m_flag fields to indicate how the hash should be interpreted by the
+ * network stack.
+ *
+ * Most NICs support RSS, which provides ordering and explicit affinity, and
+ * use the hash m_flag bits to indicate what header fields were covered by
+ * the hash.  M_HASHTYPE_OPAQUE can be set by non-RSS cards or configurations
+ * that provide an opaque flow identifier, allowing for ordering and
+ * distribution without explicit affinity.
+ */
+#define	M_HASHTYPE_SHIFT		24
+#define	M_HASHTYPE_NONE			0x0
+#define	M_HASHTYPE_RSS_IPV4		0x1	/* IPv4 2-tuple */
+#define	M_HASHTYPE_RSS_TCP_IPV4		0x2	/* TCPv4 4-tuple */
+#define	M_HASHTYPE_RSS_IPV6		0x3	/* IPv6 2-tuple */
+#define	M_HASHTYPE_RSS_TCP_IPV6		0x4	/* TCPv6 4-tuple */
+#define	M_HASHTYPE_RSS_IPV6_EX		0x5	/* IPv6 2-tuple + ext hdrs */
+#define	M_HASHTYPE_RSS_TCP_IPV6_EX	0x6	/* TCPv6 4-tiple + ext hdrs */
+#define	M_HASHTYPE_OPAQUE		0xf	/* ordering, not affinity */
+
+#define	M_HASHTYPE_CLEAR(m)	(m)->m_flags &= ~(M_HASHTYPEBITS)
+#define	M_HASHTYPE_GET(m)	(((m)->m_flags & M_HASHTYPEBITS) >> \
+				    M_HASHTYPE_SHIFT)
+#define	M_HASHTYPE_SET(m, v)	do {					\
+	(m)->m_flags &= ~M_HASHTYPEBITS;				\
+	(m)->m_flags |= ((v) << M_HASHTYPE_SHIFT);			\
+} while (0)
+#define	M_HASHTYPE_TEST(m, v)	(M_HASHTYPE_GET(m) == (v))
+
+/*
  * Flags preserved when copying m_pkthdr.
  */
 #define	M_COPYFLAGS \
     (M_PKTHDR|M_EOR|M_RDONLY|M_PROTOFLAGS|M_SKIP_FIREWALL|M_BCAST|M_MCAST|\
-     M_FRAG|M_FIRSTFRAG|M_LASTFRAG|M_VLANTAG|M_PROMISC|M_FIB)
+     M_FRAG|M_FIRSTFRAG|M_LASTFRAG|M_VLANTAG|M_PROMISC|M_FIB|M_HASHTYPEBITS)
 
 /*
  * External buffer types: identify ext_buf type.
@@ -243,19 +279,28 @@ struct mbuf {
 #define	CSUM_IP			0x0001		/* will csum IP */
 #define	CSUM_TCP		0x0002		/* will csum TCP */
 #define	CSUM_UDP		0x0004		/* will csum UDP */
-#define	CSUM_IP_FRAGS		0x0008		/* will csum IP fragments */
+#define	CSUM_IP_FRAGS		0x0008		/* removed, left for compat */
 #define	CSUM_FRAGMENT		0x0010		/* will do IP fragmentation */
 #define	CSUM_TSO		0x0020		/* will do TSO */
 #define	CSUM_SCTP		0x0040		/* will csum SCTP */
+#define CSUM_SCTP_IPV6		0x0080		/* will csum IPv6/SCTP */
 
 #define	CSUM_IP_CHECKED		0x0100		/* did csum IP */
 #define	CSUM_IP_VALID		0x0200		/*   ... the csum is valid */
 #define	CSUM_DATA_VALID		0x0400		/* csum_data field is valid */
 #define	CSUM_PSEUDO_HDR		0x0800		/* csum_data has pseudo hdr */
 #define	CSUM_SCTP_VALID		0x1000		/* SCTP checksum is valid */
+#define	CSUM_UDP_IPV6		0x2000		/* will csum IPv6/UDP */
+#define	CSUM_TCP_IPV6		0x4000		/* will csum IPv6/TCP */
+/*	CSUM_TSO_IPV6		0x8000		will do IPv6/TSO */
+
+/*	CSUM_FRAGMENT_IPV6	0x10000		will do IPv6 fragementation */
+
+#define	CSUM_DELAY_DATA_IPV6	(CSUM_TCP_IPV6 | CSUM_UDP_IPV6)
+#define	CSUM_DATA_VALID_IPV6	CSUM_DATA_VALID
 
 #define	CSUM_DELAY_DATA		(CSUM_TCP | CSUM_UDP)
-#define	CSUM_DELAY_IP		(CSUM_IP)	/* XXX add ipv6 here too? */
+#define	CSUM_DELAY_IP		(CSUM_IP)	/* Only v4, no v6 IP hdr csum */
 
 /*
  * mbuf types.
@@ -305,8 +350,8 @@ struct mbstat {
  * Flags specifying how an allocation should be made.
  *
  * The flag to use is as follows:
- * - M_DONTWAIT or M_NOWAIT from an interrupt handler to not block allocation.
- * - M_WAIT or M_WAITOK from wherever it is safe to block.
+ * - M_NOWAIT (M_DONTWAIT) from an interrupt handler to not block allocation.
+ * - M_WAITOK (M_WAIT) from wherever it is safe to block.
  *
  * M_DONTWAIT/M_NOWAIT means that we will not block the thread explicitly and
  * if we cannot allocate immediately we may return NULL, whereas
@@ -380,7 +425,7 @@ static __inline int
 m_gettype(int size)
 {
 	int type;
-	
+
 	switch (size) {
 	case MSIZE:
 		type = EXT_MBUF;
@@ -410,7 +455,7 @@ static __inline uma_zone_t
 m_getzone(int size)
 {
 	uma_zone_t zone;
-	
+
 	switch (size) {
 	case MSIZE:
 		zone = zone_mbuf;
@@ -549,7 +594,7 @@ m_free_fast(struct mbuf *m)
 	if (m->m_flags & M_PKTHDR)
 		KASSERT(SLIST_EMPTY(&m->m_pkthdr.tags), ("doing fast free of mbuf with tags"));
 #endif
-	
+
 	uma_zfree_arg(zone_mbuf, m, (void *)MB_NOTAGS);
 }
 
@@ -609,7 +654,7 @@ m_cljset(struct mbuf *m, void *cl, int type)
 {
 	uma_zone_t zone;
 	int size;
-	
+
 	switch (type) {
 	case EXT_CLUSTER:
 		size = MCLBYTES;
@@ -657,6 +702,16 @@ m_last(struct mbuf *m)
 	while (m->m_next)
 		m = m->m_next;
 	return (m);
+}
+
+extern void (*m_addr_chg_pf_p)(struct mbuf *m);
+
+static __inline void
+m_addr_changed(struct mbuf *m)
+{
+
+	if (m_addr_chg_pf_p)
+		m_addr_chg_pf_p(m);
 }
 
 /*
@@ -903,6 +958,7 @@ struct mbuf	*m_unshare(struct mbuf *, int how);
 #define	PACKET_TAG_IPOPTIONS			27 /* Saved IP options */
 #define	PACKET_TAG_CARP				28 /* CARP info */
 #define	PACKET_TAG_IPSEC_NAT_T_PORTS		29 /* two uint16_t */
+#define	PACKET_TAG_ND_OUTGOING			30 /* ND outgoing */
 
 /* Specific cookies and tags. */
 
@@ -1018,7 +1074,7 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 #define M_SETFIB(_m, _fib) do {						\
 	_m->m_flags &= ~M_FIB;					   	\
 	_m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
-} while (0) 
+} while (0)
 
 #endif /* _KERNEL */
 

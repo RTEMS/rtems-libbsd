@@ -69,17 +69,13 @@ static int usb_pcount;
 #define	USB_THREAD_CREATE(f, s, p, ...) \
 		kproc_kthread_add((f), (s), &usbproc, (p), RFHIGHPID, \
 		    0, "usb", __VA_ARGS__)
-#if (__FreeBSD_version >= 900000)
 #define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check()
-#else
-#define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check(curthread)
-#endif
 #define	USB_THREAD_SUSPEND(p)   kthread_suspend(p,0)
 #define	USB_THREAD_EXIT(err)	kthread_exit()
 #else
 #define	USB_THREAD_CREATE(f, s, p, ...) \
 		kthread_create((f), (s), (p), RFHIGHPID, 0, __VA_ARGS__)
-#define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check(curproc)
+#define	USB_THREAD_SUSPEND_CHECK() kthread_suspend_check()
 #define	USB_THREAD_SUSPEND(p)   kthread_suspend(p,0)
 #define	USB_THREAD_EXIT(err)	kthread_exit(err)
 #endif
@@ -87,7 +83,7 @@ static int usb_pcount;
 #ifdef USB_DEBUG
 static int usb_proc_debug;
 
-SYSCTL_NODE(_hw_usb, OID_AUTO, proc, CTLFLAG_RW, 0, "USB process");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, proc, CTLFLAG_RW, 0, "USB process");
 SYSCTL_INT(_hw_usb_proc, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN, &usb_proc_debug, 0,
     "Debug level");
 TUNABLE_INT("hw.usb.proc.debug", &usb_proc_debug);

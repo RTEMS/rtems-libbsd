@@ -211,11 +211,19 @@ enum ipfw_opcodes {		/* arguments (4 byte each)	*/
 
 	O_SETFIB,		/* arg1=FIB number */
 	O_FIB,			/* arg1=FIB desired fib number */
+	
+	O_SOCKARG,		/* socket argument */
 
 	O_CALLRETURN,		/* arg1=called rule number */
 
+	O_FORWARD_IP6,		/* fwd sockaddr_in6             */
+
+	O_DSCP,			/* 2 u32 = DSCP mask */
+	O_SETDSCP,		/* arg1=DSCP value */
+
 	O_LAST_OPCODE		/* not an opcode!		*/
 };
+
 
 /*
  * The extension header are filtered only for presence using a bit
@@ -307,6 +315,14 @@ typedef struct  _ipfw_insn_sa {
 	ipfw_insn o;
 	struct sockaddr_in sa;
 } ipfw_insn_sa;
+
+/*
+ * This is used to forward to a given address (ipv6).
+ */
+typedef struct _ipfw_insn_sa6 {
+	ipfw_insn o;
+	struct sockaddr_in6 sa;
+} ipfw_insn_sa6;
 
 /*
  * This is used for MAC addr-mask pairs.

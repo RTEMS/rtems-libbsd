@@ -334,4 +334,10 @@ __END_DECLS
 #define	member2struct(s, m, x)						\
 	((struct s *)(void *)((char *)(x) - offsetof(struct s, m)))
 
+/*
+ * Access a variable length array that has been declared as a fixed
+ * length array.
+ */
+#define __PAST_END(array, offset) (((__typeof__(*(array)) *)(array))[offset])
+
 #endif	/* _RTEMS_BSD_SYS_PARAM_H_ */

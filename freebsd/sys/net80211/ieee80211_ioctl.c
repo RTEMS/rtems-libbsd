@@ -72,6 +72,8 @@ __FBSDID("$FreeBSD$");
 static const uint8_t zerobssid[IEEE80211_ADDR_LEN];
 static struct ieee80211_channel *findchannel(struct ieee80211com *,
 		int ieee, int mode);
+static int ieee80211_scanreq(struct ieee80211vap *,
+		struct ieee80211_scan_req *);
 
 static __noinline int
 ieee80211_ioctl_getkey(struct ieee80211vap *vap, struct ieee80211req *ireq)
@@ -143,7 +145,7 @@ static __noinline int
 ieee80211_ioctl_getchaninfo(struct ieee80211vap *vap, struct ieee80211req *ireq)
 {
 	struct ieee80211com *ic = vap->iv_ic;
-	int space;
+	uint32_t space;
 
 	space = __offsetof(struct ieee80211req_chaninfo,
 			ic_chans[ic->ic_nchans]);
@@ -207,7 +209,7 @@ ieee80211_ioctl_getstastats(struct ieee80211vap *vap, struct ieee80211req *ireq)
 {
 	struct ieee80211_node *ni;
 	uint8_t macaddr[IEEE80211_ADDR_LEN];
-	const int off = __offsetof(struct ieee80211req_sta_stats, is_stats);
+	const size_t off = __offsetof(struct ieee80211req_sta_stats, is_stats);
 	int error;
 
 	if (ireq->i_len < off)
@@ -323,7 +325,7 @@ ieee80211_ioctl_getscanresults(struct ieee80211vap *vap,
 	if (req.space > ireq->i_len)
 		req.space = ireq->i_len;
 	if (req.space > 0) {
-		size_t space;
+		uint32_t space;
 		void *p;
 
 		space = req.space;
@@ -458,7 +460,7 @@ get_sta_info(void *arg, struct ieee80211_node *ni)
 
 static __noinline int
 getstainfo_common(struct ieee80211vap *vap, struct ieee80211req *ireq,
-	struct ieee80211_node *ni, int off)
+	struct ieee80211_node *ni, size_t off)
 {
 	struct ieee80211com *ic = vap->iv_ic;
 	struct stainforeq req;
@@ -503,7 +505,7 @@ static __noinline int
 ieee80211_ioctl_getstainfo(struct ieee80211vap *vap, struct ieee80211req *ireq)
 {
 	uint8_t macaddr[IEEE80211_ADDR_LEN];
-	const int off = __offsetof(struct ieee80211req_sta_req, info);
+	const size_t off = __offsetof(struct ieee80211req_sta_req, info);
 	struct ieee80211_node *ni;
 	int error;
 
@@ -1473,14 +1475,15 @@ mlmelookup(void *arg, const struct ieee80211_scan_entry *se)
 }
 
 static __noinline int
-setmlme_assoc(struct ieee80211vap *vap, const uint8_t mac[IEEE80211_ADDR_LEN],
-	int ssid_len, const uint8_t ssid[IEEE80211_NWID_LEN])
+setmlme_assoc_sta(struct ieee80211vap *vap,
+	const uint8_t mac[IEEE80211_ADDR_LEN], int ssid_len,
+	const uint8_t ssid[IEEE80211_NWID_LEN])
 {
 	struct scanlookup lookup;
 
-	/* XXX ibss/ahdemo */
-	if (vap->iv_opmode != IEEE80211_M_STA)
-		return EINVAL;
+	KASSERT(vap->iv_opmode == IEEE80211_M_STA,
+	    ("expected opmode STA not %s",
+	    ieee80211_opmode_name[vap->iv_opmode]));
 
 	/* NB: this is racey if roaming is !manual */
 	lookup.se = NULL;
@@ -1497,6 +1500,37 @@ setmlme_assoc(struct ieee80211vap *vap, const uint8_t mac[IEEE80211_ADDR_LEN],
 }
 
 static __noinline int
+setmlme_assoc_adhoc(struct ieee80211vap *vap,
+	const uint8_t mac[IEEE80211_ADDR_LEN], int ssid_len,
+	const uint8_t ssid[IEEE80211_NWID_LEN])
+{
+	struct ieee80211_scan_req sr;
+
+	KASSERT(vap->iv_opmode == IEEE80211_M_IBSS ||
+	    vap->iv_opmode == IEEE80211_M_AHDEMO,
+	    ("expected opmode IBSS or AHDEMO not %s",
+	    ieee80211_opmode_name[vap->iv_opmode]));
+
+	if (ssid_len == 0)
+		return EINVAL;
+
+	/* NB: IEEE80211_IOC_SSID call missing for ap_scan=2. */
+	memset(vap->iv_des_ssid[0].ssid, 0, IEEE80211_NWID_LEN);
+	vap->iv_des_ssid[0].len = ssid_len;
+	memcpy(vap->iv_des_ssid[0].ssid, ssid, ssid_len);
+	vap->iv_des_nssid = 1;
+
+	memset(&sr, 0, sizeof(sr));
+	sr.sr_flags = IEEE80211_IOC_SCAN_ACTIVE | IEEE80211_IOC_SCAN_ONCE;
+	sr.sr_duration = IEEE80211_IOC_SCAN_FOREVER;
+	memcpy(sr.sr_ssid[0].ssid, ssid, ssid_len);
+	sr.sr_ssid[0].len = ssid_len;
+	sr.sr_nssid = 1;
+
+	return ieee80211_scanreq(vap, &sr);
+}
+
+static __noinline int
 ieee80211_ioctl_setmlme(struct ieee80211vap *vap, struct ieee80211req *ireq)
 {
 	struct ieee80211req_mlme mlme;
@@ -1507,9 +1541,13 @@ ieee80211_ioctl_setmlme(struct ieee80211vap *vap, struct ieee80211req *ireq)
 	error = copyin(ireq->i_data, &mlme, sizeof(mlme));
 	if (error)
 		return error;
-	if  (mlme.im_op == IEEE80211_MLME_ASSOC)
-		return setmlme_assoc(vap, mlme.im_macaddr,
+	if  (vap->iv_opmode == IEEE80211_M_STA &&
+	    mlme.im_op == IEEE80211_MLME_ASSOC)
+		return setmlme_assoc_sta(vap, mlme.im_macaddr,
 		    vap->iv_des_ssid[0].len, vap->iv_des_ssid[0].ssid);
+	else if (mlme.im_op == IEEE80211_MLME_ASSOC)
+		return setmlme_assoc_adhoc(vap, mlme.im_macaddr,
+		    mlme.im_ssid_len, mlme.im_ssid);
 	else
 		return setmlme_common(vap, mlme.im_op,
 		    mlme.im_macaddr, mlme.im_reason);
@@ -2338,8 +2376,8 @@ ieee80211_ioctl_chanswitch(struct ieee80211vap *vap, struct ieee80211req *ireq)
 	return error;
 }
 
-static __noinline int
-ieee80211_ioctl_scanreq(struct ieee80211vap *vap, struct ieee80211req *ireq)
+static int
+ieee80211_scanreq(struct ieee80211vap *vap, struct ieee80211_scan_req *sr)
 {
 #define	IEEE80211_IOC_SCAN_FLAGS \
 	(IEEE80211_IOC_SCAN_NOPICK | IEEE80211_IOC_SCAN_ACTIVE | \
@@ -2348,48 +2386,38 @@ ieee80211_ioctl_scanreq(struct ieee80211vap *vap, struct ieee80211req *ireq)
 	 IEEE80211_IOC_SCAN_NOJOIN | IEEE80211_IOC_SCAN_FLUSH | \
 	 IEEE80211_IOC_SCAN_CHECK)
 	struct ieee80211com *ic = vap->iv_ic;
-	struct ieee80211_scan_req sr;		/* XXX off stack? */
 	int error, i;
 
-	/* NB: parent must be running */
-	if ((ic->ic_ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
-		return ENXIO;
-
-	if (ireq->i_len != sizeof(sr))
-		return EINVAL;
-	error = copyin(ireq->i_data, &sr, sizeof(sr));
-	if (error != 0)
-		return error;
 	/* convert duration */
-	if (sr.sr_duration == IEEE80211_IOC_SCAN_FOREVER)
-		sr.sr_duration = IEEE80211_SCAN_FOREVER;
+	if (sr->sr_duration == IEEE80211_IOC_SCAN_FOREVER)
+		sr->sr_duration = IEEE80211_SCAN_FOREVER;
 	else {
-		if (sr.sr_duration < IEEE80211_IOC_SCAN_DURATION_MIN ||
-		    sr.sr_duration > IEEE80211_IOC_SCAN_DURATION_MAX)
+		if (sr->sr_duration < IEEE80211_IOC_SCAN_DURATION_MIN ||
+		    sr->sr_duration > IEEE80211_IOC_SCAN_DURATION_MAX)
 			return EINVAL;
-		sr.sr_duration = msecs_to_ticks(sr.sr_duration);
-		if (sr.sr_duration < 1)
-			sr.sr_duration = 1;
+		sr->sr_duration = msecs_to_ticks(sr->sr_duration);
+		if (sr->sr_duration < 1)
+			sr->sr_duration = 1;
 	}
 	/* convert min/max channel dwell */
-	if (sr.sr_mindwell != 0) {
-		sr.sr_mindwell = msecs_to_ticks(sr.sr_mindwell);
-		if (sr.sr_mindwell < 1)
-			sr.sr_mindwell = 1;
+	if (sr->sr_mindwell != 0) {
+		sr->sr_mindwell = msecs_to_ticks(sr->sr_mindwell);
+		if (sr->sr_mindwell < 1)
+			sr->sr_mindwell = 1;
 	}
-	if (sr.sr_maxdwell != 0) {
-		sr.sr_maxdwell = msecs_to_ticks(sr.sr_maxdwell);
-		if (sr.sr_maxdwell < 1)
-			sr.sr_maxdwell = 1;
+	if (sr->sr_maxdwell != 0) {
+		sr->sr_maxdwell = msecs_to_ticks(sr->sr_maxdwell);
+		if (sr->sr_maxdwell < 1)
+			sr->sr_maxdwell = 1;
 	}
 	/* NB: silently reduce ssid count to what is supported */
-	if (sr.sr_nssid > IEEE80211_SCAN_MAX_SSID)
-		sr.sr_nssid = IEEE80211_SCAN_MAX_SSID;
-	for (i = 0; i < sr.sr_nssid; i++)
-		if (sr.sr_ssid[i].len > IEEE80211_NWID_LEN)
+	if (sr->sr_nssid > IEEE80211_SCAN_MAX_SSID)
+		sr->sr_nssid = IEEE80211_SCAN_MAX_SSID;
+	for (i = 0; i < sr->sr_nssid; i++)
+		if (sr->sr_ssid[i].len > IEEE80211_NWID_LEN)
 			return EINVAL;
 	/* cleanse flags just in case, could reject if invalid flags */
-	sr.sr_flags &= IEEE80211_IOC_SCAN_FLAGS;
+	sr->sr_flags &= IEEE80211_IOC_SCAN_FLAGS;
 	/*
 	 * Add an implicit NOPICK if the vap is not marked UP.  This
 	 * allows applications to scan without joining a bss (or picking
@@ -2397,13 +2425,13 @@ ieee80211_ioctl_scanreq(struct ieee80211vap *vap, struct ieee80211req *ireq)
 	 * roaming mode--you just need to mark the parent device UP.
 	 */
 	if ((vap->iv_ifp->if_flags & IFF_UP) == 0)
-		sr.sr_flags |= IEEE80211_IOC_SCAN_NOPICK;
+		sr->sr_flags |= IEEE80211_IOC_SCAN_NOPICK;
 
 	IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
 	    "%s: flags 0x%x%s duration 0x%x mindwell %u maxdwell %u nssid %d\n",
-	    __func__, sr.sr_flags,
+	    __func__, sr->sr_flags,
 	    (vap->iv_ifp->if_flags & IFF_UP) == 0 ? " (!IFF_UP)" : "",
-	    sr.sr_duration, sr.sr_mindwell, sr.sr_maxdwell, sr.sr_nssid);
+	    sr->sr_duration, sr->sr_mindwell, sr->sr_maxdwell, sr->sr_nssid);
 	/*
 	 * If we are in INIT state then the driver has never had a chance
 	 * to setup hardware state to do a scan; we must use the state
@@ -2418,13 +2446,13 @@ ieee80211_ioctl_scanreq(struct ieee80211vap *vap, struct ieee80211req *ireq)
 	IEEE80211_LOCK(ic);
 	if (vap->iv_state == IEEE80211_S_INIT) {
 		/* NB: clobbers previous settings */
-		vap->iv_scanreq_flags = sr.sr_flags;
-		vap->iv_scanreq_duration = sr.sr_duration;
-		vap->iv_scanreq_nssid = sr.sr_nssid;
-		for (i = 0; i < sr.sr_nssid; i++) {
-			vap->iv_scanreq_ssid[i].len = sr.sr_ssid[i].len;
-			memcpy(vap->iv_scanreq_ssid[i].ssid, sr.sr_ssid[i].ssid,
-			    sr.sr_ssid[i].len);
+		vap->iv_scanreq_flags = sr->sr_flags;
+		vap->iv_scanreq_duration = sr->sr_duration;
+		vap->iv_scanreq_nssid = sr->sr_nssid;
+		for (i = 0; i < sr->sr_nssid; i++) {
+			vap->iv_scanreq_ssid[i].len = sr->sr_ssid[i].len;
+			memcpy(vap->iv_scanreq_ssid[i].ssid,
+			    sr->sr_ssid[i].ssid, sr->sr_ssid[i].len);
 		}
 		vap->iv_flags_ext |= IEEE80211_FEXT_SCANREQ;
 		IEEE80211_UNLOCK(ic);
@@ -2432,23 +2460,43 @@ ieee80211_ioctl_scanreq(struct ieee80211vap *vap, struct ieee80211req *ireq)
 	} else {
 		vap->iv_flags_ext &= ~IEEE80211_FEXT_SCANREQ;
 		IEEE80211_UNLOCK(ic);
-		/* XXX neeed error return codes */
-		if (sr.sr_flags & IEEE80211_IOC_SCAN_CHECK) {
-			(void) ieee80211_check_scan(vap, sr.sr_flags,
-			    sr.sr_duration, sr.sr_mindwell, sr.sr_maxdwell,
-			    sr.sr_nssid,
+		if (sr->sr_flags & IEEE80211_IOC_SCAN_CHECK) {
+			error = ieee80211_check_scan(vap, sr->sr_flags,
+			    sr->sr_duration, sr->sr_mindwell, sr->sr_maxdwell,
+			    sr->sr_nssid,
 			    /* NB: cheat, we assume structures are compatible */
-			    (const struct ieee80211_scan_ssid *) &sr.sr_ssid[0]);
+			    (const struct ieee80211_scan_ssid *) &sr->sr_ssid[0]);
 		} else {
-			(void) ieee80211_start_scan(vap, sr.sr_flags,
-			    sr.sr_duration, sr.sr_mindwell, sr.sr_maxdwell,
-			    sr.sr_nssid,
+			error = ieee80211_start_scan(vap, sr->sr_flags,
+			    sr->sr_duration, sr->sr_mindwell, sr->sr_maxdwell,
+			    sr->sr_nssid,
 			    /* NB: cheat, we assume structures are compatible */
-			    (const struct ieee80211_scan_ssid *) &sr.sr_ssid[0]);
+			    (const struct ieee80211_scan_ssid *) &sr->sr_ssid[0]);
 		}
+		if (error == 0)
+			return EINPROGRESS;
 	}
-	return error;
+	return 0;
 #undef IEEE80211_IOC_SCAN_FLAGS
+}
+
+static __noinline int
+ieee80211_ioctl_scanreq(struct ieee80211vap *vap, struct ieee80211req *ireq)
+{
+	struct ieee80211com *ic = vap->iv_ic;
+	struct ieee80211_scan_req sr;		/* XXX off stack? */
+	int error;
+
+	/* NB: parent must be running */
+	if ((ic->ic_ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+		return ENXIO;
+
+	if (ireq->i_len != sizeof(sr))
+		return EINVAL;
+	error = copyin(ireq->i_data, &sr, sizeof(sr));
+	if (error != 0)
+		return error;
+	return ieee80211_scanreq(vap, &sr);
 }
 
 static __noinline int
@@ -2676,7 +2724,7 @@ ieee80211_ioctl_set80211(struct ieee80211vap *vap, u_long cmd, struct ieee80211r
 	case IEEE80211_IOC_PROTMODE:
 		if (ireq->i_val > IEEE80211_PROT_RTSCTS)
 			return EINVAL;
-		ic->ic_protmode = ireq->i_val;
+		ic->ic_protmode = (enum ieee80211_protmode)ireq->i_val;
 		/* NB: if not operating in 11g this can wait */
 		if (ic->ic_bsschan != IEEE80211_CHAN_ANYC &&
 		    IEEE80211_IS_CHAN_ANYG(ic->ic_bsschan))
@@ -2695,7 +2743,7 @@ ieee80211_ioctl_set80211(struct ieee80211vap *vap, u_long cmd, struct ieee80211r
 		if (!(IEEE80211_ROAMING_DEVICE <= ireq->i_val &&
 		    ireq->i_val <= IEEE80211_ROAMING_MANUAL))
 			return EINVAL;
-		vap->iv_roaming = ireq->i_val;
+		vap->iv_roaming = (enum ieee80211_roamingmode)ireq->i_val;
 		/* XXXX reset? */
 		break;
 	case IEEE80211_IOC_PRIVACY:

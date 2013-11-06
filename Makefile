@@ -129,19 +129,20 @@ LIB_C_FILES += freebsd/sys/kern/kern_mib.c
 LIB_C_FILES += freebsd/sys/kern/kern_module.c
 LIB_C_FILES += freebsd/sys/kern/kern_mtxpool.c
 LIB_C_FILES += freebsd/sys/kern/kern_osd.c
-LIB_C_FILES += freebsd/sys/kern/kern_subr.c
 LIB_C_FILES += freebsd/sys/kern/kern_sysctl.c
 LIB_C_FILES += freebsd/sys/kern/kern_time.c
 LIB_C_FILES += freebsd/sys/kern/kern_timeout.c
 LIB_C_FILES += freebsd/sys/kern/subr_bufring.c
 LIB_C_FILES += freebsd/sys/kern/subr_bus.c
 LIB_C_FILES += freebsd/sys/kern/subr_eventhandler.c
+LIB_C_FILES += freebsd/sys/kern/subr_hash.c
 LIB_C_FILES += freebsd/sys/kern/subr_hints.c
 LIB_C_FILES += freebsd/sys/kern/subr_kobj.c
 LIB_C_FILES += freebsd/sys/kern/subr_module.c
 LIB_C_FILES += freebsd/sys/kern/subr_rman.c
 LIB_C_FILES += freebsd/sys/kern/subr_sbuf.c
 LIB_C_FILES += freebsd/sys/kern/subr_taskqueue.c
+LIB_C_FILES += freebsd/sys/kern/subr_uio.c
 LIB_C_FILES += freebsd/sys/kern/subr_unit.c
 LIB_C_FILES += freebsd/sys/kern/sys_generic.c
 LIB_C_FILES += freebsd/sys/kern/uipc_accf.c
@@ -254,22 +255,22 @@ LIB_C_FILES += freebsd/sys/netinet/tcp_syncache.c
 LIB_C_FILES += freebsd/sys/netinet/tcp_timer.c
 LIB_C_FILES += freebsd/sys/netinet/tcp_timewait.c
 LIB_C_FILES += freebsd/sys/netinet/tcp_usrreq.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/dn_heap.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/dn_sched_fifo.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/dn_sched_prio.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/dn_sched_qfq.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/dn_sched_rr.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/dn_sched_wf2q.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_dn_glue.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_dn_io.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_dummynet.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_fw2.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_fw_log.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_fw_nat.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_fw_pfil.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_fw_sockopt.c
+LIB_C_FILES += freebsd/sys/netpfil/ipfw/ip_fw_table.c
 LIB_C_FILES += freebsd/sys/netinet/udp_usrreq.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/dn_sched_fifo.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/dn_sched_rr.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_fw_log.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/dn_sched_qfq.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/dn_sched_prio.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_dn_glue.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_fw2.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/dn_heap.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_dummynet.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_fw_sockopt.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/dn_sched_wf2q.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_fw_nat.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_fw_pfil.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_dn_io.c
-LIB_C_FILES += freebsd/sys/netinet/ipfw/ip_fw_table.c
 LIB_C_FILES += freebsd/sys/netinet/libalias/alias_dummy.c
 LIB_C_FILES += freebsd/sys/netinet/libalias/alias_pptp.c
 LIB_C_FILES += freebsd/sys/netinet/libalias/alias_smedia.c
@@ -374,7 +375,6 @@ LIB_C_FILES += freebsd/sys/opencrypto/rmd160.c
 LIB_C_FILES += freebsd/sys/opencrypto/xform.c
 LIB_C_FILES += freebsd/sys/opencrypto/skipjack.c
 LIB_C_FILES += freebsd/sys/opencrypto/cast.c
-LIB_C_FILES += freebsd/sys/opencrypto/cryptodev.c
 LIB_C_FILES += freebsd/sys/crypto/sha1.c
 LIB_C_FILES += freebsd/sys/crypto/sha2/sha2.c
 LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-alg-fst.c
@@ -397,17 +397,17 @@ LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_priq.c
 LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_cbq.c
 LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_hfsc.c
 LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_red.c
-LIB_C_FILES += freebsd/sys/contrib/pf/netinet/in4_cksum.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf.c
 LIB_C_FILES += freebsd/sys/contrib/pf/net/if_pflog.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_subr.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ioctl.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_table.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_if.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_osfp.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_norm.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ruleset.c
 LIB_C_FILES += freebsd/sys/contrib/pf/net/if_pfsync.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_if.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ioctl.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_lb.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_norm.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_osfp.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ruleset.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_table.c
+LIB_C_FILES += freebsd/sys/contrib/pf/netinet/in4_cksum.c
 LIB_C_FILES += freebsd/sys/dev/mii/mii.c
 LIB_C_FILES += freebsd/sys/dev/mii/mii_bitbang.c
 LIB_C_FILES += freebsd/sys/dev/mii/mii_physubr.c
@@ -443,74 +443,74 @@ LIB_C_FILES += freebsd/sys/dev/pci/pci.c
 LIB_C_FILES += freebsd/sys/dev/pci/pci_user.c
 LIB_C_FILES += freebsd/sys/dev/pci/pci_pci.c
 ifeq ($(RTEMS_CPU), arm)
-LIB_C_FILES += freebsd/sys/arm/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/arm/arm/legacy.c
+LIB_C_FILES += freebsd/sys/arm/pci/pci_bus.c
 NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), avr)
-LIB_C_FILES += freebsd/sys/avr/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/avr/avr/legacy.c
+LIB_C_FILES += freebsd/sys/avr/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), bfin)
-LIB_C_FILES += freebsd/sys/bfin/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/bfin/bfin/legacy.c
+LIB_C_FILES += freebsd/sys/bfin/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), h8300)
-LIB_C_FILES += freebsd/sys/h8300/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/h8300/h8300/legacy.c
+LIB_C_FILES += freebsd/sys/h8300/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), i386)
-LIB_C_FILES += freebsd/sys/i386/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/i386/i386/legacy.c
+LIB_C_FILES += freebsd/sys/i386/pci/pci_bus.c
 NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), lm32)
-LIB_C_FILES += freebsd/sys/lm32/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/lm32/lm32/legacy.c
+LIB_C_FILES += freebsd/sys/lm32/pci/pci_bus.c
 NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), m32c)
-LIB_C_FILES += freebsd/sys/m32c/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/m32c/m32c/legacy.c
+LIB_C_FILES += freebsd/sys/m32c/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), m32r)
-LIB_C_FILES += freebsd/sys/m32r/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/m32r/m32r/legacy.c
+LIB_C_FILES += freebsd/sys/m32r/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), m68k)
-LIB_C_FILES += freebsd/sys/m68k/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/m68k/m68k/legacy.c
+LIB_C_FILES += freebsd/sys/m68k/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), mips)
-LIB_C_FILES += freebsd/sys/mips/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/mips/mips/legacy.c
+LIB_C_FILES += freebsd/sys/mips/pci/pci_bus.c
 NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), nios2)
-LIB_C_FILES += freebsd/sys/nios2/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/nios2/nios2/legacy.c
+LIB_C_FILES += freebsd/sys/nios2/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), powerpc)
-LIB_C_FILES += freebsd/sys/powerpc/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/powerpc/powerpc/legacy.c
+LIB_C_FILES += freebsd/sys/powerpc/pci/pci_bus.c
 NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), sh)
-LIB_C_FILES += freebsd/sys/sh/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/sh/sh/legacy.c
+LIB_C_FILES += freebsd/sys/sh/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), sparc)
-LIB_C_FILES += freebsd/sys/sparc/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/sparc/sparc/legacy.c
+LIB_C_FILES += freebsd/sys/sparc/pci/pci_bus.c
 NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), sparc64)
-LIB_C_FILES += freebsd/sys/sparc64/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/sparc64/sparc64/legacy.c
+LIB_C_FILES += freebsd/sys/sparc64/pci/pci_bus.c
 endif
 ifeq ($(RTEMS_CPU), v850)
-LIB_C_FILES += freebsd/sys/v850/pci/pci_bus.c
 LIB_C_FILES += freebsd/sys/v850/v850/legacy.c
+LIB_C_FILES += freebsd/sys/v850/pci/pci_bus.c
 endif
 LIB_C_FILES += freebsd/sys/dev/random/harvest.c
 LIB_C_FILES += freebsd/sys/netinet/tcp_hostcache.c
@@ -641,6 +641,7 @@ LIB_C_FILES += freebsd/lib/libc/db/recno/rec_search.c
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_seq.c
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_utils.c
 LIB_C_FILES += freebsd/lib/libc/gen/err.c
+LIB_C_FILES += freebsd/lib/libc/gen/feature_present.c
 LIB_C_FILES += freebsd/lib/libc/gen/gethostname.c
 LIB_C_FILES += freebsd/lib/libc/inet/inet_addr.c
 LIB_C_FILES += freebsd/lib/libc/inet/inet_cidr_ntop.c

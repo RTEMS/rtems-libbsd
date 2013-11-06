@@ -32,6 +32,11 @@
 #define _CAM_CAM_SIM_H 1
 
 #ifdef _KERNEL
+#ifdef __rtems__
+#include <rtems/bsd/sys/param.h>
+#include <sys/proc.h>
+#include <sys/condvar.h>
+#endif /* __rtems__ */
 
 /*
  * The sim driver creates a sim for each controller.  The sim device
@@ -160,8 +165,8 @@ struct cam_sim {
 
 };
 
-#define CAM_SIM_LOCK(sim)	mtx_lock((sim)->mtx);
-#define CAM_SIM_UNLOCK(sim)	mtx_unlock((sim)->mtx);
+#define CAM_SIM_LOCK(sim)	mtx_lock((sim)->mtx)
+#define CAM_SIM_UNLOCK(sim)	mtx_unlock((sim)->mtx)
 
 static __inline u_int32_t
 cam_sim_path(struct cam_sim *sim)

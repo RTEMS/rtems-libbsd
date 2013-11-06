@@ -63,7 +63,7 @@ void	(*aio_swake)(struct socket *, struct sockbuf *);
 
 u_long	sb_max = SB_MAX;
 u_long sb_max_adj =
-       SB_MAX * MCLBYTES / (MSIZE + MCLBYTES); /* adjusted sb_max */
+       (quad_t)SB_MAX * MCLBYTES / (MSIZE + MCLBYTES); /* adjusted sb_max */
 
 static	u_long sb_efficiency = 8;	/* parameter for sbreserve() */
 
@@ -945,6 +945,13 @@ sbsndptr(struct sockbuf *sb, u_int off, u_int len, u_int *moff)
 	/* Return closest mbuf in chain for current offset. */
 	*moff = off - sb->sb_sndptroff;
 	m = ret = sb->sb_sndptr ? sb->sb_sndptr : sb->sb_mb;
+	if (*moff == m->m_len) {
+		*moff = 0;
+		sb->sb_sndptroff += m->m_len;
+		m = ret = m->m_next;
+		KASSERT(ret->m_len > 0,
+		    ("mbuf %p in sockbuf %p chain has no valid data", ret, sb));
+	}
 
 	/* Advance by len to be as close as possible for the next transmit. */
 	for (off = off - sb->sb_sndptroff + len - 1;

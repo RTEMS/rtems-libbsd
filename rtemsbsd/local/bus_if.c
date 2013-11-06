@@ -16,7 +16,7 @@
 #include <sys/queue.h>
 #include <sys/kernel.h>
 #include <sys/kobj.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
 #include <rtems/bsd/local/bus_if.h>
@@ -77,6 +77,14 @@ struct kobj_method bus_write_ivar_method_default = {
 
 struct kobjop_desc bus_write_ivar_desc = {
 	0, &bus_write_ivar_method_default
+};
+
+struct kobj_method bus_child_deleted_method_default = {
+	&bus_child_deleted_desc, (kobjop_t) kobj_error_method
+};
+
+struct kobjop_desc bus_child_deleted_desc = {
+	0, &bus_child_deleted_method_default
 };
 
 struct kobj_method bus_child_detached_method_default = {

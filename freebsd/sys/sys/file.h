@@ -63,16 +63,34 @@ struct socket;
 #define	DTYPE_SHM	8	/* swap-backed shared memory */
 #define	DTYPE_SEM	9	/* posix semaphore */
 #define	DTYPE_PTS	10	/* pseudo teletype master device */
+#define	DTYPE_DEV	11	/* Device specific fd type */
+#define	DTYPE_CAPABILITY	12	/* capability */
+#define	DTYPE_PROCDESC	13	/* process descriptor */
 
 #ifdef _KERNEL
 
 struct file;
 struct ucred;
 
+#define	FOF_OFFSET	0x01	/* Use the offset in uio argument */
+#define	FOF_NOLOCK	0x02	/* Do not take FOFFSET_LOCK */
+#define	FOF_NEXTOFF	0x04	/* Also update f_nextoff */
+#define	FOF_NOUPDATE	0x10	/* Do not update f_offset */
+off_t foffset_lock(struct file *fp, int flags);
+void foffset_lock_uio(struct file *fp, struct uio *uio, int flags);
+void foffset_unlock(struct file *fp, off_t val, int flags);
+void foffset_unlock_uio(struct file *fp, struct uio *uio, int flags);
+
+static inline off_t
+foffset_get(struct file *fp)
+{
+
+	return (foffset_lock(fp, FOF_NOLOCK));
+}
+
 typedef int fo_rdwr_t(struct file *fp, struct uio *uio,
 		    struct ucred *active_cred, int flags,
 		    struct thread *td);
-#define	FOF_OFFSET	1	/* Use the offset in uio argument */
 typedef	int fo_truncate_t(struct file *fp, off_t length,
 		    struct ucred *active_cred, struct thread *td);
 typedef	int fo_ioctl_t(struct file *fp, u_long com, void *data,
@@ -83,6 +101,10 @@ typedef	int fo_kqfilter_t(struct file *fp, struct knote *kn);
 typedef	int fo_stat_t(struct file *fp, struct stat *sb,
 		    struct ucred *active_cred, struct thread *td);
 typedef	int fo_close_t(struct file *fp, struct thread *td);
+typedef	int fo_chmod_t(struct file *fp, mode_t mode,
+		    struct ucred *active_cred, struct thread *td);
+typedef	int fo_chown_t(struct file *fp, uid_t uid, gid_t gid,
+		    struct ucred *active_cred, struct thread *td);
 typedef	int fo_flags_t;
 
 struct fileops {
@@ -94,6 +116,8 @@ struct fileops {
 	fo_kqfilter_t	*fo_kqfilter;
 	fo_stat_t	*fo_stat;
 	fo_close_t	*fo_close;
+	fo_chmod_t	*fo_chmod;
+	fo_chown_t	*fo_chown;
 	fo_flags_t	fo_flags;	/* DFLAG_* below */
 };
 
@@ -239,7 +263,8 @@ rtems_bsd_error_to_status_and_errno(int error)
 #define	f_advice	f_vnun.fvn_advice
 
 #define	FOFFSET_LOCKED       0x1
-#define	FOFFSET_LOCK_WAITING 0x2		 
+#define	FOFFSET_LOCK_WAITING 0x2
+#define	FDEVFS_VNODE	     0x4
 
 #endif /* _KERNEL || _WANT_FILE */
 
@@ -279,24 +304,30 @@ extern int maxfilesperproc;	/* per process limit on number of open files */
 extern volatile int openfiles;	/* actual number of open files */
 
 #ifndef __rtems__
-int fget(struct thread *td, int fd, struct file **fpp);
+int fget(struct thread *td, int fd, cap_rights_t rights, struct file **fpp);
 #else /* __rtems__ */
 struct file *rtems_bsd_get_file(int fd);
 
 static inline int
-fget(struct thread *td, int fd, struct file **fpp)
+fget(struct thread *td, int fd, cap_rights_t rights, struct file **fpp)
 {
 	struct file *fp = rtems_bsd_get_file(fd);
 
 	(void) td;
+	(void) rights;
 
 	*fpp = fp;
 
 	return fp != NULL ? 0 : EBADF;
 }
 #endif /* __rtems__ */
-int fget_read(struct thread *td, int fd, struct file **fpp);
-int fget_write(struct thread *td, int fd, struct file **fpp);
+int fget_mmap(struct thread *td, int fd, cap_rights_t rights,
+    u_char *maxprotp, struct file **fpp);
+int fget_read(struct thread *td, int fd, cap_rights_t rights,
+    struct file **fpp);
+int fget_write(struct thread *td, int fd, cap_rights_t rights,
+    struct file **fpp);
+int fgetcap(struct thread *td, int fd, struct file **fpp);
 int _fdrop(struct file *fp, struct thread *td);
 
 #ifndef __rtems__
@@ -313,6 +344,9 @@ fo_poll_t	soo_poll;
 fo_kqfilter_t	soo_kqfilter;
 fo_stat_t	soo_stat;
 fo_close_t	soo_close;
+
+fo_chmod_t	invfo_chmod;
+fo_chown_t	invfo_chown;
 #else /* __rtems__ */
 int rtems_bsd_soo_kqfilter(rtems_libio_t *iop, struct knote *kn);
 #endif /* __rtems__ */
@@ -336,18 +370,32 @@ finit(struct file *fp, u_int fflag, short type, void *data,
 	rtems_filesystem_location_add_to_mt_entry(pathinfo);
 }
 #endif /* __rtems__ */
-int fgetvp(struct thread *td, int fd, struct vnode **vpp);
-int fgetvp_read(struct thread *td, int fd, struct vnode **vpp);
-int fgetvp_write(struct thread *td, int fd, struct vnode **vpp);
+int fgetvp(struct thread *td, int fd, cap_rights_t rights, struct vnode **vpp);
+int fgetvp_exec(struct thread *td, int fd, cap_rights_t rights,
+    struct vnode **vpp);
+int fgetvp_rights(struct thread *td, int fd, cap_rights_t need,
+    cap_rights_t *have, struct vnode **vpp);
+int fgetvp_read(struct thread *td, int fd, cap_rights_t rights,
+    struct vnode **vpp);
+int fgetvp_write(struct thread *td, int fd, cap_rights_t rights,
+    struct vnode **vpp);
 
-int fgetsock(struct thread *td, int fd, struct socket **spp, u_int *fflagp);
+int fgetsock(struct thread *td, int fd, cap_rights_t rights,
+    struct socket **spp, u_int *fflagp);
 void fputsock(struct socket *sp);
+
+static __inline int
+_fnoop(void)
+{
+
+	return (0);
+}
 
 #define	fhold(fp)							\
 	(refcount_acquire(&(fp)->f_count))
 #ifndef __rtems__
 #define	fdrop(fp, td)							\
-	(refcount_release(&(fp)->f_count) ? _fdrop((fp), (td)) : 0)
+	(refcount_release(&(fp)->f_count) ? _fdrop((fp), (td)) : _fnoop())
 #else /* __rtems__ */
 #define	fdrop(fp, td) do { } while (0)
 #endif /* __rtems__ */
@@ -361,37 +409,28 @@ static __inline fo_poll_t	fo_poll;
 static __inline fo_kqfilter_t	fo_kqfilter;
 static __inline fo_stat_t	fo_stat;
 static __inline fo_close_t	fo_close;
+static __inline fo_chmod_t	fo_chmod;
+static __inline fo_chown_t	fo_chown;
 
 static __inline int
-fo_read(fp, uio, active_cred, flags, td)
-	struct file *fp;
-	struct uio *uio;
-	struct ucred *active_cred;
-	int flags;
-	struct thread *td;
+fo_read(struct file *fp, struct uio *uio, struct ucred *active_cred,
+    int flags, struct thread *td)
 {
 
 	return ((*fp->f_ops->fo_read)(fp, uio, active_cred, flags, td));
 }
 
 static __inline int
-fo_write(fp, uio, active_cred, flags, td)
-	struct file *fp;
-	struct uio *uio;
-	struct ucred *active_cred;
-	int flags;
-	struct thread *td;
+fo_write(struct file *fp, struct uio *uio, struct ucred *active_cred,
+    int flags, struct thread *td)
 {
 
 	return ((*fp->f_ops->fo_write)(fp, uio, active_cred, flags, td));
 }
 
 static __inline int
-fo_truncate(fp, length, active_cred, td)
-	struct file *fp;
-	off_t length;
-	struct ucred *active_cred;
-	struct thread *td;
+fo_truncate(struct file *fp, off_t length, struct ucred *active_cred,
+    struct thread *td)
 {
 
 	return ((*fp->f_ops->fo_truncate)(fp, length, active_cred, td));
@@ -399,12 +438,8 @@ fo_truncate(fp, length, active_cred, td)
 #endif /* __rtems__ */
 
 static __inline int
-fo_ioctl(fp, com, data, active_cred, td)
-	struct file *fp;
-	u_long com;
-	void *data;
-	struct ucred *active_cred;
-	struct thread *td;
+fo_ioctl(struct file *fp, u_long com, void *data, struct ucred *active_cred,
+    struct thread *td)
 {
 
 #ifndef __rtems__
@@ -426,11 +461,8 @@ fo_ioctl(fp, com, data, active_cred, td)
 }
 
 static __inline int
-fo_poll(fp, events, active_cred, td)
-	struct file *fp;
-	int events;
-	struct ucred *active_cred;
-	struct thread *td;
+fo_poll(struct file *fp, int events, struct ucred *active_cred,
+    struct thread *td)
 {
 
 #ifndef __rtems__
@@ -445,20 +477,15 @@ fo_poll(fp, events, active_cred, td)
 
 #ifndef __rtems__
 static __inline int
-fo_stat(fp, sb, active_cred, td)
-	struct file *fp;
-	struct stat *sb;
-	struct ucred *active_cred;
-	struct thread *td;
+fo_stat(struct file *fp, struct stat *sb, struct ucred *active_cred,
+    struct thread *td)
 {
 
 	return ((*fp->f_ops->fo_stat)(fp, sb, active_cred, td));
 }
 
 static __inline int
-fo_close(fp, td)
-	struct file *fp;
-	struct thread *td;
+fo_close(struct file *fp, struct thread *td)
 {
 
 	return ((*fp->f_ops->fo_close)(fp, td));
@@ -466,9 +493,7 @@ fo_close(fp, td)
 #endif /* __rtems__ */
 
 static __inline int
-fo_kqfilter(fp, kn)
-	struct file *fp;
-	struct knote *kn;
+fo_kqfilter(struct file *fp, struct knote *kn)
 {
 
 #ifndef __rtems__
@@ -477,6 +502,24 @@ fo_kqfilter(fp, kn)
 	return ((*fp->f_io.pathinfo.handlers->kqfilter_h)(&fp->f_io, kn));
 #endif /* __rtems__ */
 }
+
+#ifndef __rtems__
+static __inline int
+fo_chmod(struct file *fp, mode_t mode, struct ucred *active_cred,
+    struct thread *td)
+{
+
+	return ((*fp->f_ops->fo_chmod)(fp, mode, active_cred, td));
+}
+
+static __inline int
+fo_chown(struct file *fp, uid_t uid, gid_t gid, struct ucred *active_cred,
+    struct thread *td)
+{
+
+	return ((*fp->f_ops->fo_chown)(fp, uid, gid, active_cred, td));
+}
+#endif /* __rtems__ */
 
 #endif /* _KERNEL */
 

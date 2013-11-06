@@ -74,7 +74,7 @@
 #include <netinet/ip_carp.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_fw.h>
-#include <netinet/ipfw/ip_fw_private.h>
+#include <netpfil/ipfw/ip_fw_private.h>
 #endif
 #ifdef INET6
 #include <netinet6/nd6.h>
@@ -136,7 +136,7 @@ static	void ether_reassign(struct ifnet *, struct vnet *, char *);
 #endif
 
 /* XXX: should be in an arp support file, not here */
-MALLOC_DEFINE(M_ARPCOM, "arpcom", "802.* interface internals");
+static MALLOC_DEFINE(M_ARPCOM, "arpcom", "802.* interface internals");
 
 #define	ETHER_IS_BROADCAST(addr) \
 	(bcmp(etherbroadcastaddr, (addr), ETHER_ADDR_LEN) == 0)
@@ -470,7 +470,7 @@ ether_ipfw_chk(struct mbuf **m0, struct ifnet *dst, int shared)
 	if (mtag == NULL) {
 		args.rule.slot = 0;
 	} else {
-			/* dummynet packet, already partially processed */
+		/* dummynet packet, already partially processed */
 		struct ipfw_rule_ref *r;
 
 		/* XXX can we free it after use ? */
@@ -501,6 +501,7 @@ ether_ipfw_chk(struct mbuf **m0, struct ifnet *dst, int shared)
 	args.m = m;		/* the packet we are looking at		*/
 	args.oif = dst;		/* destination, if any			*/
 	args.next_hop = NULL;	/* we do not support forward yet	*/
+	args.next_hop6 = NULL;	/* we do not support forward yet	*/
 	args.eh = &save_eh;	/* MAC header for bridged/MAC packets	*/
 	args.inp = NULL;	/* used by ipfw uid/gid/jail rules	*/
 	i = V_ip_fw_chk_ptr(&args);
@@ -563,7 +564,7 @@ ether_ipfw_chk(struct mbuf **m0, struct ifnet *dst, int shared)
  * mbuf chain m with the ethernet header at the front.
  */
 static void
-ether_input(struct ifnet *ifp, struct mbuf *m)
+ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 {
 	struct ether_header *eh;
 	u_short etype;
@@ -695,6 +696,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		bcopy((char *)evl, (char *)evl + ETHER_VLAN_ENCAP_LEN,
 		    ETHER_HDR_LEN - ETHER_TYPE_LEN);
 		m_adj(m, ETHER_VLAN_ENCAP_LEN);
+		eh = mtod(m, struct ether_header *);
 	}
 
 	M_SETFIB(m, ifp->if_fib);
@@ -709,6 +711,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 			CURVNET_RESTORE();
 			return;
 		}
+		eh = mtod(m, struct ether_header *);
 	}
 
 	/*
@@ -723,6 +726,7 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 			CURVNET_RESTORE();
 			return;
 		}
+		eh = mtod(m, struct ether_header *);
 	}
 
 #if defined(INET) || defined(INET6)
@@ -759,6 +763,46 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 
 	ether_demux(ifp, m);
 	CURVNET_RESTORE();
+}
+
+/*
+ * Ethernet input dispatch; by default, direct dispatch here regardless of
+ * global configuration.
+ */
+static void
+ether_nh_input(struct mbuf *m)
+{
+
+	ether_input_internal(m->m_pkthdr.rcvif, m);
+}
+
+static struct netisr_handler	ether_nh = {
+	.nh_name = "ether",
+	.nh_handler = ether_nh_input,
+	.nh_proto = NETISR_ETHER,
+	.nh_policy = NETISR_POLICY_SOURCE,
+	.nh_dispatch = NETISR_DISPATCH_DIRECT,
+};
+
+static void
+ether_init(__unused void *arg)
+{
+
+	netisr_register(&ether_nh);
+}
+SYSINIT(ether, SI_SUB_INIT_IF, SI_ORDER_ANY, ether_init, NULL);
+
+static void
+ether_input(struct ifnet *ifp, struct mbuf *m)
+{
+
+	/*
+	 * We will rely on rcvif being set properly in the deferred context,
+	 * so assert it is correct here.
+	 */
+	KASSERT(m->m_pkthdr.rcvif == ifp, ("%s: ifnet mismatch", __func__));
+
+	netisr_dispatch(NETISR_ETHER, m);
 }
 
 /*

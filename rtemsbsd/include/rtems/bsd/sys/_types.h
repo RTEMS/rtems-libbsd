@@ -156,11 +156,19 @@ typedef char vm_memattr_t;
 typedef int accmode_t;
 #define _ACCMODE_T_DECLARED
 
+typedef	uint64_t cap_rights_t;
+
+typedef int32_t __clockid_t;
+
 typedef const char *c_caddr_t;
 
 typedef uint32_t cpumask_t;
 
+typedef int cpulevel_t;
+
 typedef int cpusetid_t;
+
+typedef int cpuwhich_t;
 
 #define _DEV_T_DECLARED
 
@@ -168,6 +176,8 @@ typedef uint32_t __fixpt_t;
 typedef __fixpt_t fixpt_t;
 
 #define _GID_T_DECLARED
+
+typedef int64_t id_t;
 
 typedef uint32_t in_addr_t;
 #define _IN_ADDR_T_DECLARED

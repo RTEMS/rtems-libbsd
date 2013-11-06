@@ -215,6 +215,7 @@ struct usb_device {
 
 	uint16_t power;			/* mA the device uses */
 	uint16_t langid;		/* language for strings */
+	uint16_t autoQuirk[USB_MAX_AUTO_QUIRK];		/* dynamic quirks */
 
 	uint8_t	address;		/* device addess */
 	uint8_t	device_index;		/* device index in "bus->devices" */
@@ -256,8 +257,6 @@ struct usb_device {
 #endif
 
 	uint32_t clear_stall_errors;	/* number of clear-stall failures */
-
-	uint16_t autoQuirk[USB_MAX_AUTO_QUIRK];		/* dynamic quirks */
 
 	union usb_device_scratch scratch;
 };

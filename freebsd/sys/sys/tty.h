@@ -38,7 +38,7 @@
 #include <sys/mutex.h>
 #include <sys/condvar.h>
 #include <sys/selinfo.h>
-#include <sys/termios.h>
+#include <sys/_termios.h>
 #include <sys/ttycom.h>
 #include <sys/ttyqueue.h>
 
@@ -152,6 +152,11 @@ struct xtty {
 
 #ifdef _KERNEL
 
+/* Used to distinguish between normal, callout, lock and init devices. */
+#define	TTYUNIT_INIT		0x1
+#define	TTYUNIT_LOCK		0x2
+#define	TTYUNIT_CALLOUT		0x4
+
 /* Allocation and deallocation. */
 struct tty *tty_alloc(struct ttydevsw *tsw, void *softc);
 struct tty *tty_alloc_mutex(struct ttydevsw *tsw, void *softc, struct mtx *mtx);
@@ -175,6 +180,7 @@ void	tty_signal_sessleader(struct tty *tp, int signal);
 void	tty_signal_pgrp(struct tty *tp, int signal);
 /* Waking up readers/writers. */
 int	tty_wait(struct tty *tp, struct cv *cv);
+int	tty_wait_background(struct tty *tp, struct thread *td, int sig);
 int	tty_timedwait(struct tty *tp, struct cv *cv, int timo);
 void	tty_wakeup(struct tty *tp, int flags);
 
@@ -203,6 +209,7 @@ void	tty_info(struct tty *tp);
 void	ttyconsdev_select(const char *name);
 
 /* Pseudo-terminal hooks. */
+int	pts_alloc(int fflags, struct thread *td, struct file *fp);
 int	pts_alloc_external(int fd, struct thread *td, struct file *fp,
     struct cdev *dev, const char *name);
 

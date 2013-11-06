@@ -68,14 +68,19 @@ __FBSDID("$FreeBSD$");
 #include <net/route.h>
 #include <net/vnet.h>
 
-#ifdef INET
+#if defined(INET) || defined(INET6)
 #include <netinet/in.h>
 #include <netinet/in_var.h>
-#include <netinet/in_systm.h>
+#include <netinet/ip_carp.h>
 #include <netinet/ip.h>
+
+#include <machine/in_cksum.h>
+#endif
+
+#ifdef INET
+#include <netinet/in_systm.h>
 #include <netinet/ip_var.h>
 #include <netinet/if_ether.h>
-#include <machine/in_cksum.h>
 #endif
 
 #ifdef INET6
@@ -84,11 +89,11 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/ip6protosw.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/scope6_var.h>
+#include <netinet6/in6_var.h>
 #include <netinet6/nd6.h>
 #endif
 
 #include <crypto/sha1.h>
-#include <netinet/ip_carp.h>
 
 #define	CARP_IFNAME	"carp"
 static MALLOC_DEFINE(M_CARP, "CARP", "CARP interfaces");
@@ -98,7 +103,9 @@ struct carp_softc {
 	struct ifnet	 	*sc_ifp;	/* Interface clue */
 	struct ifnet		*sc_carpdev;	/* Pointer to parent interface */
 	struct in_ifaddr 	*sc_ia;		/* primary iface address */
+#ifdef INET
 	struct ip_moptions 	 sc_imo;
+#endif
 #ifdef INET6
 	struct in6_ifaddr 	*sc_ia6;	/* primary iface address v6 */
 	struct ip6_moptions 	 sc_im6o;
@@ -208,7 +215,9 @@ static int	carp_prepare_ad(struct mbuf *, struct carp_softc *,
 static void	carp_send_ad_all(void);
 static void	carp_send_ad(void *);
 static void	carp_send_ad_locked(struct carp_softc *);
+#ifdef INET
 static void	carp_send_arp(struct carp_softc *);
+#endif
 static void	carp_master_down(void *);
 static void	carp_master_down_locked(struct carp_softc *);
 static int	carp_ioctl(struct ifnet *, u_long, caddr_t);
@@ -217,12 +226,16 @@ static int	carp_looutput(struct ifnet *, struct mbuf *, struct sockaddr *,
 static void	carp_start(struct ifnet *);
 static void	carp_setrun(struct carp_softc *, sa_family_t);
 static void	carp_set_state(struct carp_softc *, int);
+#ifdef INET
 static int	carp_addrcount(struct carp_if *, struct in_ifaddr *, int);
+#endif
 enum	{ CARP_COUNT_MASTER, CARP_COUNT_RUNNING };
 
+#ifdef INET
 static void	carp_multicast_cleanup(struct carp_softc *, int dofree);
 static int	carp_set_addr(struct carp_softc *, struct sockaddr_in *);
 static int	carp_del_addr(struct carp_softc *, struct sockaddr_in *);
+#endif
 static void	carp_carpdev_state_locked(struct carp_if *);
 static void	carp_sc_state_locked(struct carp_softc *);
 #ifdef INET6
@@ -371,6 +384,7 @@ carp_setroute(struct carp_softc *sc, int cmd)
 
 	s = splnet();
 	TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+#ifdef INET
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    sc->sc_carpdev != NULL) {
 			int count = carp_addrcount(
@@ -381,6 +395,7 @@ carp_setroute(struct carp_softc *sc, int cmd)
 			    (cmd == RTM_DELETE && count == 0))
 				rtinit(ifa, cmd, RTF_UP | RTF_HOST);
 		}
+#endif
 	}
 	splx(s);
 }
@@ -406,12 +421,14 @@ carp_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	sc->sc_advskew = 0;
 	sc->sc_init_counter = 1;
 	sc->sc_naddrs = sc->sc_naddrs6 = 0; /* M_ZERO? */
+#ifdef INET
 	sc->sc_imo.imo_membership = (struct in_multi **)malloc(
 	    (sizeof(struct in_multi *) * IP_MIN_MEMBERSHIPS), M_CARP,
 	    M_WAITOK);
 	sc->sc_imo.imo_mfilters = NULL;
 	sc->sc_imo.imo_max_memberships = IP_MIN_MEMBERSHIPS;
 	sc->sc_imo.imo_multicast_vif = -1;
+#endif
 #ifdef INET6
 	sc->sc_im6o.im6o_membership = (struct in6_multi **)malloc(
 	    (sizeof(struct in6_multi *) * IPV6_MIN_MEMBERSHIPS), M_CARP,
@@ -458,7 +475,9 @@ carp_clone_destroy(struct ifnet *ifp)
 	bpfdetach(ifp);
 	if_detach(ifp);
 	if_free_type(ifp, IFT_ETHER);
+#ifdef INET
 	free(sc->sc_imo.imo_membership, M_CARP);
+#endif
 #ifdef INET6
 	free(sc->sc_im6o.im6o_membership, M_CARP);
 #endif
@@ -497,7 +516,9 @@ carpdetach(struct carp_softc *sc, int unlock)
 	carp_set_state(sc, INIT);
 	SC2IFP(sc)->if_flags &= ~IFF_UP;
 	carp_setrun(sc, 0);
+#ifdef INET
 	carp_multicast_cleanup(sc, unlock);
+#endif
 #ifdef INET6
 	carp_multicast6_cleanup(sc, unlock);
 #endif
@@ -542,6 +563,7 @@ carp_ifdetach(void *arg __unused, struct ifnet *ifp)
  * we have rearranged checks order compared to the rfc,
  * but it seems more efficient this way or not possible otherwise.
  */
+#ifdef INET
 void
 carp_input(struct mbuf *m, int hlen)
 {
@@ -632,6 +654,7 @@ carp_input(struct mbuf *m, int hlen)
 
 	carp_input_c(m, ch, AF_INET);
 }
+#endif
 
 #ifdef INET6
 int
@@ -722,12 +745,16 @@ carp_input_c(struct mbuf *m, struct carp_header *ch, sa_family_t af)
 	SC2IFP(sc)->if_ibytes += m->m_pkthdr.len;
 
 	if (bpf_peers_present(SC2IFP(sc)->if_bpf)) {
-		struct ip *ip = mtod(m, struct ip *);
 		uint32_t af1 = af;
+#ifdef INET
+		struct ip *ip = mtod(m, struct ip *);
 
 		/* BPF wants net byte order */
-		ip->ip_len = htons(ip->ip_len + (ip->ip_hl << 2));
-		ip->ip_off = htons(ip->ip_off);
+		if (af == AF_INET) {
+			ip->ip_len = htons(ip->ip_len + (ip->ip_hl << 2));
+			ip->ip_off = htons(ip->ip_off);
+		}
+#endif
 		bpf_mtap2(SC2IFP(sc)->if_bpf, &af1, sizeof(af1), m);
 	}
 
@@ -1083,6 +1110,7 @@ carp_send_ad_locked(struct carp_softc *sc)
 
 }
 
+#ifdef INET
 /*
  * Broadcast a gratuitous ARP request containing
  * the virtual router MAC address for each IP address
@@ -1104,6 +1132,7 @@ carp_send_arp(struct carp_softc *sc)
 		DELAY(1000);	/* XXX */
 	}
 }
+#endif
 
 #ifdef INET6
 static void
@@ -1126,6 +1155,7 @@ carp_send_na(struct carp_softc *sc)
 }
 #endif /* INET6 */
 
+#ifdef INET
 static int
 carp_addrcount(struct carp_if *cif, struct in_ifaddr *ia, int type)
 {
@@ -1229,6 +1259,7 @@ carp_iamatch(struct ifnet *ifp, struct in_ifaddr *ia,
 	CARP_UNLOCK(cif);
 	return (0);
 }
+#endif
 
 #ifdef INET6
 struct ifaddr *
@@ -1355,7 +1386,9 @@ carp_master_down_locked(struct carp_softc *sc)
 	case BACKUP:
 		carp_set_state(sc, MASTER);
 		carp_send_ad_locked(sc);
+#ifdef INET
 		carp_send_arp(sc);
+#endif
 #ifdef INET6
 		carp_send_na(sc);
 #endif /* INET6 */
@@ -1434,6 +1467,7 @@ carp_setrun(struct carp_softc *sc, sa_family_t af)
 	}
 }
 
+#ifdef INET
 static void
 carp_multicast_cleanup(struct carp_softc *sc, int dofree)
 {
@@ -1453,6 +1487,7 @@ carp_multicast_cleanup(struct carp_softc *sc, int dofree)
 	imo->imo_num_memberships = 0;
 	imo->imo_multicast_ifp = NULL;
 }
+#endif
 
 #ifdef INET6
 static void
@@ -1475,6 +1510,7 @@ carp_multicast6_cleanup(struct carp_softc *sc, int dofree)
 }
 #endif
 
+#ifdef INET
 static int
 carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 {
@@ -1651,6 +1687,7 @@ carp_del_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 
 	return (error);
 }
+#endif
 
 #ifdef INET6
 static int
@@ -2351,13 +2388,13 @@ carp_mod_load(void)
 		printf("carp: error %d attaching to PF_INET6\n",
 		    proto_reg[CARP_INET6]);
 		carp_mod_cleanup();
-		return (EINVAL);
+		return (proto_reg[CARP_INET6]);
 	}
 	err = ip6proto_register(IPPROTO_CARP);
 	if (err) {
 		printf("carp: error %d registering with INET6\n", err);
 		carp_mod_cleanup();
-		return (EINVAL);
+		return (err);
 	}
 #endif
 #ifdef INET
@@ -2367,13 +2404,13 @@ carp_mod_load(void)
 		printf("carp: error %d attaching to PF_INET\n",
 		    proto_reg[CARP_INET]);
 		carp_mod_cleanup();
-		return (EINVAL);
+		return (proto_reg[CARP_INET]);
 	}
 	err = ipproto_register(IPPROTO_CARP);
 	if (err) {
 		printf("carp: error %d registering with INET\n", err);
 		carp_mod_cleanup();
-		return (EINVAL);
+		return (err);
 	}
 #endif
 	return 0;

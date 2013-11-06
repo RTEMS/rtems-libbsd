@@ -12,10 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -198,21 +194,37 @@ fail:
 
 #ifndef __rtems__
 void
-unixpr(u_long count_off, u_long gencnt_off, u_long dhead_off, u_long shead_off)
+unixpr(u_long count_off, u_long gencnt_off, u_long dhead_off, u_long shead_off,
+    u_long sphead_off)
 {
 	char 	*buf;
 	int	ret, type;
 	struct	xsocket *so;
 	struct	xunpgen *xug, *oxug;
 	struct	xunpcb *xunp;
+	u_long	head_off;
 
 	for (type = SOCK_STREAM; type <= SOCK_SEQPACKET; type++) {
 		if (live)
 			ret = pcblist_sysctl(type, &buf);
-		else
-			ret = pcblist_kvm(count_off, gencnt_off,
-			    type == SOCK_STREAM ? shead_off :
-			    (type == SOCK_DGRAM ? dhead_off : 0), &buf);
+		else {
+			head_off = 0;
+			switch (type) {
+			case SOCK_STREAM:
+				head_off = shead_off;
+				break;
+
+			case SOCK_DGRAM:
+				head_off = dhead_off;
+				break;
+
+			case SOCK_SEQPACKET:
+				head_off = sphead_off;
+				break;
+			}
+			ret = pcblist_kvm(count_off, gencnt_off, head_off,
+			    &buf);
+		}
 		if (ret == -1)
 			continue;
 		if (ret < 0)

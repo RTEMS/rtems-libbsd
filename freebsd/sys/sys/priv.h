@@ -156,6 +156,7 @@
 #define	PRIV_PROC_LIMIT		160	/* Exceed user process limit. */
 #define	PRIV_PROC_SETLOGIN	161	/* Can call setlogin. */
 #define	PRIV_PROC_SETRLIMIT	162	/* Can raise resources limits. */
+#define	PRIV_PROC_SETLOGINCLASS	163	/* Can call setloginclass(2). */
 
 /* System V IPC privileges.
  */
@@ -484,9 +485,18 @@
 #define	PRIV_AFS_DAEMON		661	/* Can become the AFS daemon. */
 
 /*
+ * Resource Limits privileges.
+ */
+#define	PRIV_RCTL_GET_RACCT	670
+#define	PRIV_RCTL_GET_RULES	671
+#define	PRIV_RCTL_GET_LIMITS	672
+#define	PRIV_RCTL_ADD_RULE	673
+#define	PRIV_RCTL_REMOVE_RULE	674
+
+/*
  * Track end of privilege list.
  */
-#define	_PRIV_HIGHEST		662
+#define	_PRIV_HIGHEST		675
 
 /*
  * Validate that a named privilege is known by the privilege system.  Invalid

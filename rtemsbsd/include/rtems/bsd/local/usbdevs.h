@@ -330,6 +330,7 @@
 #define	USB_VENDOR_AVISION	0x0638		/* Avision */
 #define	USB_VENDOR_TEAC	0x0644		/* TEAC */
 #define	USB_VENDOR_ACTON	0x0647		/* Acton Research Corp. */
+#define	USB_VENDOR_OPTO	0x065a		/* Optoelectronics Co., Ltd */
 #define	USB_VENDOR_SGI	0x065e		/* Silicon Graphics */
 #define	USB_VENDOR_SANWASUPPLY	0x0663		/* Sanwa Supply */
 #define	USB_VENDOR_MEGATEC	0x0665		/* Megatec */
@@ -684,6 +685,7 @@
 #define	USB_VENDOR_SWEEX2	0x177f		/* Sweex */
 #define	USB_VENDOR_METAGEEK	0x1781		/* MetaGeek */
 #define	USB_VENDOR_KAMSTRUP	0x17a8		/* Kamstrup A/S */
+#define	USB_VENDOR_LENOVO	0x17ef		/* Lenovo */
 #define	USB_VENDOR_WAVESENSE	0x17f4		/* WaveSense */
 #define	USB_VENDOR_VAISALA	0x1843		/* Vaisala */
 #define	USB_VENDOR_AMIT	0x18c5		/* AMIT */
@@ -728,7 +730,6 @@
 #define	USB_VENDOR_VIALABS	0x2109		/* VIA Labs */
 #define	USB_VENDOR_ERICSSON	0x2282		/* Ericsson */
 #define	USB_VENDOR_MOTOROLA2	0x22b8		/* Motorola */
-#define	USB_VENDOR_WETELECOM	0x22de		/* WeTelecom */
 #define	USB_VENDOR_TRIPPLITE	0x2478		/* Tripp-Lite */
 #define	USB_VENDOR_HIROSE	0x2631		/* Hirose Electric */
 #define	USB_VENDOR_NHJ	0x2770		/* NHJ */
@@ -1088,6 +1089,7 @@
 #define	USB_PRODUCT_APPLE_IPHONE_3G	0x1292		/* iPhone 3G */
 #define	USB_PRODUCT_APPLE_IPHONE_3GS	0x1294		/* iPhone 3GS */
 #define	USB_PRODUCT_APPLE_IPHONE_4	0x1297		/* iPhone 4 */
+#define	USB_PRODUCT_APPLE_IPHONE_4S	0x12a0		/* iPhone 4S */
 #define	USB_PRODUCT_APPLE_IPHONE_5	0x12a8		/* iPhone 5 */
 #define	USB_PRODUCT_APPLE_IPAD	0x129a		/* iPad */
 #define	USB_PRODUCT_APPLE_ETHERNET	0x1402		/* Ethernet A1277 */
@@ -1493,7 +1495,6 @@
 /* D-Link products */
 /*product DLINK DSBS25		0x0100	DSB-S25 serial*/
 #define	USB_PRODUCT_DLINK_DUBE100	0x1a00		/* 10/100 Ethernet */
-#define	USB_PRODUCT_DLINK_DUBE100C1	0x1a02		/* DUB-E100 rev C1 */
 #define	USB_PRODUCT_DLINK_DSB650TX4	0x200c		/* 10/100 Ethernet */
 #define	USB_PRODUCT_DLINK_DWL120E	0x3200		/* DWL-120 rev E */
 #define	USB_PRODUCT_DLINK_DWL122	0x3700		/* DWL-122 */
@@ -1517,6 +1518,8 @@
 #define	USB_PRODUCT_DLINK_DSB650TX2	0x4102		/* 10/100 Ethernet */
 #define	USB_PRODUCT_DLINK_DSB650	0xabc1		/* 10/100 Ethernet */
 #define	USB_PRODUCT_DLINK_DUBH7	0xf103		/* DUB-H7 USB 2.0 7-Port Hub */
+#define	USB_PRODUCT_DLINK_DWR510_CD	0xa805		/* DWR-510 CD-ROM Mode */
+#define	USB_PRODUCT_DLINK_DWR510	0x7e12		/* DWR-510 */
 #define	USB_PRODUCT_DLINK2_DWA120	0x3a0c		/* DWA-120 */
 #define	USB_PRODUCT_DLINK2_DWA120_NF	0x3a0d		/* DWA-120 (no firmware) */
 #define	USB_PRODUCT_DLINK2_DWLG122C1	0x3c03		/* DWL-G122 c1 */
@@ -1556,7 +1559,6 @@
 #define	USB_PRODUCT_EDIMAX_RT2870_1	0x7711		/* RT2870 */
 #define	USB_PRODUCT_EDIMAX_EW7717	0x7717		/* EW-7717 */
 #define	USB_PRODUCT_EDIMAX_EW7718	0x7718		/* EW-7718 */
-#define	USB_PRODUCT_EDIMAX_EW7811UN	0x7811		/* EW-7811Un */
 
 /* eGalax Products */
 #define	USB_PRODUCT_EGALAX_TPANEL	0x0001		/* Touch Panel */
@@ -1723,6 +1725,7 @@
 #define	USB_PRODUCT_FTDI_SERIAL_2232D	0x9e90		/* FT2232D Dual port Serial */
 #define	USB_PRODUCT_FTDI_SERIAL_4232H	0x6011		/* FT4232H Quad port Serial */
 #define	USB_PRODUCT_FTDI_BEAGLEBONE	0xa6d0		/* BeagleBone */
+#define	USB_PRODUCT_FTDI_KTLINK	0xbbe2		/* KT-LINK Embedded Hackers Multitool */
 #define	USB_PRODUCT_FTDI_TURTELIZER2	0xbdc8		/* egnite Turtelizer 2 JTAG/RS232 Adapter */
 /* Gude Analog- und Digitalsysteme products also uses FTDI's id: */
 #define	USB_PRODUCT_FTDI_TACTRIX_OPENPORT_13M	0xcc48		/* OpenPort 1.3 Mitsubishi */
@@ -2425,6 +2428,9 @@
 /* Leadtek products */
 #define	USB_PRODUCT_LEADTEK_9531	0x2101		/* 9531 GPS */
 
+/* Lenovo products */
+#define	USB_PRODUCT_LENOVO_ETHERNET	0x7203		/* USB 2.0 Ethernet */
+
 /* Lexar products */
 #define	USB_PRODUCT_LEXAR_JUMPSHOT	0x0001		/* jumpSHOT CompactFlash Reader */
 #define	USB_PRODUCT_LEXAR_CF_READER	0xb002		/* USB CF Reader */
@@ -2469,7 +2475,6 @@
 #define	USB_PRODUCT_LOGITECH_PAGESCAN	0x040f		/* PageScan */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMWEB	0x0801		/* QuickCam Web */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMPRO	0x0810		/* QuickCam Pro */
-#define	USB_PRODUCT_LOGITECH_WEBCAMC100	0X0817		/* Webcam C100 */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMEXP	0x0840		/* QuickCam Express */
 #define	USB_PRODUCT_LOGITECH_QUICKCAM	0x0850		/* QuickCam */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMPRO3	0x0990		/* QuickCam Pro 9000 */
@@ -2498,6 +2503,7 @@
 #define	USB_PRODUCT_LOGITEC_RT2870_3	0x0164		/* RT2870 */
 #define	USB_PRODUCT_LOGITEC_LANW300NU2	0x0166		/* LAN-W300N/U2 */
 #define	USB_PRODUCT_LOGITEC_LANW150NU2	0x0168		/* LAN-W150N/U2 */
+#define	USB_PRODUCT_LOGITEC_LANW300NU2S	0x0169		/* LAN-W300N/U2S */
 
 /* Longcheer Holdings, Ltd. products */
 #define	USB_PRODUCT_LONGCHEER_WM66	0x6061		/* Longcheer WM66 HSDPA */
@@ -2947,6 +2953,7 @@
 #define	USB_PRODUCT_MOTOROLA2_E398	0x4810		/* E398 Mobile Phone */
 #define	USB_PRODUCT_MOTOROLA2_USBLAN	0x600c		/* USBLAN */
 #define	USB_PRODUCT_MOTOROLA2_USBLAN2	0x6027		/* USBLAN */
+#define	USB_PRODUCT_MOTOROLA2_MB886	0x710f		/* MB886 Mobile Phone (Atria HD) */
 #define	USB_PRODUCT_MOTOROLA4_RT2770	0x9031		/* RT2770 */
 #define	USB_PRODUCT_MOTOROLA4_RT3070	0x9032		/* RT3070 */
 
@@ -3066,6 +3073,7 @@
 #define	USB_PRODUCT_NOVATEL_MC950D	0x4400		/* Novatel MC950D HSUPA */
 #define	USB_PRODUCT_NOVATEL_ZEROCD	0x5010		/* Novatel ZeroCD */
 #define	USB_PRODUCT_NOVATEL_ZEROCD2	0x5030		/* Novatel ZeroCD */
+#define	USB_PRODUCT_NOVATEL_MIFI2200	0x5041		/* Novatel MiFi 2200 CDMA */
 #define	USB_PRODUCT_NOVATEL_U727_2	0x5100		/* Merlin U727 CDMA */
 #define	USB_PRODUCT_NOVATEL_U760	0x6000		/* Novatel U760 */
 #define	USB_PRODUCT_NOVATEL_MC760	0x6002		/* Novatel MC760 */
@@ -3147,6 +3155,13 @@
 #define	USB_PRODUCT_OPTION_ICON321	0xd031		/* Globetrotter HSUPA */
 #define	USB_PRODUCT_OPTION_ICON505	0xd055		/* Globetrotter iCON 505 */
 #define	USB_PRODUCT_OPTION_ICON452	0x7901		/* Globetrotter iCON 452 */
+
+/* Optoelectronics Co., Ltd */
+#define	USB_PRODUCT_OPTO_BARCODE	0x0001		/* Barcode Reader */
+#define	USB_PRODUCT_OPTO_OPTICONCODE	0x0009		/* Opticon Code Reader */
+#define	USB_PRODUCT_OPTO_BARCODE_1	0xa002		/* Barcode Reader */
+#define	USB_PRODUCT_OPTO_CRD7734	0xc000		/* USB Cradle CRD-7734-RU */
+#define	USB_PRODUCT_OPTO_CRD7734_1	0xc001		/* USB Cradle CRD-7734-RU */
 
 /* OvisLink product */
 #define	USB_PRODUCT_OVISLINK_RT3072	0x3072		/* RT3072 */
@@ -3263,6 +3278,7 @@
 #define	USB_PRODUCT_PLANEX2_GWUS54HP	0xab01		/* GW-US54HP */
 #define	USB_PRODUCT_PLANEX2_GWUS300MINIS	0xab24		/* GW-US300MiniS */
 #define	USB_PRODUCT_PLANEX2_RT3070	0xab25		/* RT3070 */
+#define	USB_PRODUCT_PLANEX2_MZKUE150N	0xab2f		/* MZK-UE150N */
 #define	USB_PRODUCT_PLANEX2_GWUS54MINI2	0xab50		/* GW-US54Mini2 */
 #define	USB_PRODUCT_PLANEX2_GWUS54SG	0xc002		/* GW-US54SG */
 #define	USB_PRODUCT_PLANEX2_GWUS54GZL	0xc007		/* GW-US54GZL */
@@ -3354,6 +3370,8 @@
 
 /* Qualcomm products */
 #define	USB_PRODUCT_QUALCOMM_CDMA_MSM	0x6000		/* CDMA Technologies MSM phone */
+#define	USB_PRODUCT_QUALCOMM_NTT_L02C_MODEM	0x618f		/* NTT DOCOMO L-02C */
+#define	USB_PRODUCT_QUALCOMM_NTT_L02C_STORAGE	0x61dd		/* NTT DOCOMO L-02C */
 #define	USB_PRODUCT_QUALCOMM2_MF330	0x6613		/* MF330 */
 #define	USB_PRODUCT_QUALCOMM2_RWT_FCT	0x3100		/* RWT FCT-CDMA 2000 1xRTT modem */
 #define	USB_PRODUCT_QUALCOMM2_CDMA_MSM	0x3196		/* CDMA Technologies MSM modem */
@@ -3890,7 +3908,6 @@
 #define	USB_PRODUCT_SMC2_2020HUB	0x2020		/* USB Hub */
 #define	USB_PRODUCT_SMC2_2514HUB	0x2514		/* USB Hub */
 #define	USB_PRODUCT_SMC3_2662WUSB	0xa002		/* 2662W-AR Wireless */
-#define	USB_PRODUCT_SMC2_LAN9514_ETH	0xec00		/* USB/Ethernet */
 
 /* SOHOware products */
 #define	USB_PRODUCT_SOHOWARE_NUB100	0x9100		/* 10/100 USB Ethernet */
@@ -3991,7 +4008,6 @@
 
 /* Super Top products */
 #define	USB_PRODUCT_SUPERTOP_IDE	0x6600		/* USB-IDE */
-#define	USB_PRODUCT_SUPERTOP_FLASHDRIVE	0x121c		/* extrememory Snippy */
 
 /* Syntech products */
 #define	USB_PRODUCT_SYNTECH_CPT8001C	0x0001		/* CPT-8001C Barcode scanner */
@@ -4204,9 +4220,6 @@
 #define	USB_PRODUCT_WESTERN_HUB	0x0500		/* USB HUB */
 #define	USB_PRODUCT_WESTERN_MYBOOK	0x0901		/* MyBook External HDD */
 #define	USB_PRODUCT_WESTERN_MYPASSWORD	0x0704		/* MyPassword External HDD */
-
-/* WeTelecom products */
-#define	USB_PRODUCT_WETELECOM_WM_D200	0x6801		/* WM-D200 */
 
 /* WIENER Plein & Baus GmbH products */
 #define	USB_PRODUCT_WIENERPLEINBAUS_PL512	0x0010		/* PL512 PSU */

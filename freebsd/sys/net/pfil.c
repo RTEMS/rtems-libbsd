@@ -288,25 +288,27 @@ pfil_list_remove(pfil_list_t *list,
 	return (ENOENT);
 }
 
-/****************
- * Stuff that must be initialized for every instance
- * (including the first of course).
+/*
+ * Stuff that must be initialized for every instance (including the first of
+ * course).
  */
 static int
 vnet_pfil_init(const void *unused)
 {
+
 	LIST_INIT(&V_pfil_head_list);
 	return (0);
 }
 
-/***********************
+/*
  * Called for the removal of each instance.
  */
 static int
 vnet_pfil_uninit(const void *unused)
 {
+
 	/*  XXX should panic if list is not empty */
-	return 0;
+	return (0);
 }
 
 /* Define startup order. */
@@ -315,17 +317,17 @@ vnet_pfil_uninit(const void *unused)
 #define	PFIL_VNET_ORDER		(PFIL_MODEVENT_ORDER + 2) /* Later still. */
 
 /*
- * Starting up. 
+ * Starting up.
+ *
  * VNET_SYSINIT is called for each existing vnet and each new vnet.
  */
 VNET_SYSINIT(vnet_pfil_init, PFIL_SYSINIT_ORDER, PFIL_VNET_ORDER,
-	    vnet_pfil_init, NULL);
+    vnet_pfil_init, NULL);
  
 /*
- * Closing up shop. These are done in REVERSE ORDER, 
- * Not called on reboot.
+ * Closing up shop.  These are done in REVERSE ORDER.  Not called on reboot.
+ *
  * VNET_SYSUNINIT is called for each exiting vnet as it exits.
  */
 VNET_SYSUNINIT(vnet_pfil_uninit, PFIL_SYSINIT_ORDER, PFIL_VNET_ORDER,
-	    vnet_pfil_uninit, NULL);
-
+    vnet_pfil_uninit, NULL);

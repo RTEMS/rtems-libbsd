@@ -36,6 +36,8 @@
 
 #ifdef _KERNEL
 
+#include <cam/cam_xpt.h>
+
 struct devstat;
 
 extern struct cam_periph *xpt_periph;
@@ -118,7 +120,6 @@ struct cam_periph {
 #define CAM_PERIPH_INVALID		0x08
 #define CAM_PERIPH_NEW_DEV_FOUND	0x10
 #define CAM_PERIPH_RECOVERY_INPROG	0x20
-#define CAM_PERIPH_SENSE_INPROG		0x40
 #define CAM_PERIPH_FREE			0x80
 	u_int32_t		 immediate_priority;
 	u_int32_t		 refcount;
@@ -143,6 +144,7 @@ cam_status cam_periph_alloc(periph_ctor_t *periph_ctor,
 			    char *name, cam_periph_type type, struct cam_path *,
 			    ac_callback_t *, ac_code, void *arg);
 struct cam_periph *cam_periph_find(struct cam_path *path, char *name);
+int		cam_periph_list(struct cam_path *, struct sbuf *);
 cam_status	cam_periph_acquire(struct cam_periph *periph);
 void		cam_periph_release(struct cam_periph *periph);
 void		cam_periph_release_locked(struct cam_periph *periph);
@@ -201,6 +203,50 @@ cam_periph_owned(struct cam_periph *periph)
 {
 	return (mtx_owned(periph->sim->mtx));
 }
+
+static __inline int
+cam_periph_sleep(struct cam_periph *periph, void *chan, int priority,
+		 const char *wmesg, int timo)
+{
+	return (msleep(chan, periph->sim->mtx, priority, wmesg, timo));
+}
+
+static inline struct cam_periph *
+cam_periph_acquire_first(struct periph_driver *driver)
+{
+	struct cam_periph *periph;
+
+	xpt_lock_buses();
+	periph = TAILQ_FIRST(&driver->units);
+	while (periph != NULL && (periph->flags & CAM_PERIPH_INVALID) != 0)
+		periph = TAILQ_NEXT(periph, unit_links);
+	if (periph != NULL)
+		periph->refcount++;
+	xpt_unlock_buses();
+	return (periph);
+}
+
+static inline struct cam_periph *
+cam_periph_acquire_next(struct cam_periph *pperiph)
+{
+	struct cam_periph *periph = pperiph;
+
+	mtx_assert(pperiph->sim->mtx, MA_NOTOWNED);
+	xpt_lock_buses();
+	do {
+		periph = TAILQ_NEXT(periph, unit_links);
+	} while (periph != NULL && (periph->flags & CAM_PERIPH_INVALID) != 0);
+	if (periph != NULL)
+		periph->refcount++;
+	xpt_unlock_buses();
+	cam_periph_release(pperiph);
+	return (periph);
+}
+
+#define CAM_PERIPH_FOREACH(periph, driver)				\
+	for ((periph) = cam_periph_acquire_first(driver);		\
+	    (periph) != NULL;						\
+	    (periph) = cam_periph_acquire_next(periph))
 
 #endif /* _KERNEL */
 #endif /* _CAM_CAM_PERIPH_H */

@@ -96,7 +96,7 @@ static int ehcinohighspeed = 0;
 static int ehciiaadbug = 0;
 static int ehcilostintrbug = 0;
 
-SYSCTL_NODE(_hw_usb, OID_AUTO, ehci, CTLFLAG_RW, 0, "USB ehci");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, ehci, CTLFLAG_RW, 0, "USB ehci");
 SYSCTL_INT(_hw_usb_ehci, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN,
     &ehcidebug, 0, "Debug level");
 TUNABLE_INT("hw.usb.ehci.debug", &ehcidebug);
@@ -334,14 +334,18 @@ ehci_init(ehci_softc_t *sc)
 	sc->sc_noport = EHCI_HCS_N_PORTS(sparams);
 	sc->sc_bus.usbrev = USB_REV_2_0;
 
-	/* Reset the controller */
-	DPRINTF("%s: resetting\n", device_get_nameunit(sc->sc_bus.bdev));
+	if (!(sc->sc_flags & EHCI_SCFLG_DONTRESET)) {
+		/* Reset the controller */
+		DPRINTF("%s: resetting\n",
+		    device_get_nameunit(sc->sc_bus.bdev));
 
-	err = ehci_hcreset(sc);
-	if (err) {
-		device_printf(sc->sc_bus.bdev, "reset timeout\n");
-		return (err);
+		err = ehci_hcreset(sc);
+		if (err) {
+			device_printf(sc->sc_bus.bdev, "reset timeout\n");
+			return (err);
+		}
 	}
+
 	/*
 	 * use current frame-list-size selection 0: 1024*4 bytes 1:  512*4
 	 * bytes 2:  256*4 bytes 3:      unknown

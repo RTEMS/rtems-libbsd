@@ -56,6 +56,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
 #include <rtems/bsd/sys/types.h>
+#include <sys/queue.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -85,8 +86,15 @@ static const struct keytab {
 	{0, 0}
 };
 
+struct fibl {
+	TAILQ_ENTRY(fibl)	fl_next;
+
+	int	fl_num;
+	int	fl_error;
+	int	fl_errno;
+};
+
 struct rt_ctx {
-	struct	ortentry route;
 	union	sockunion {
 		struct	sockaddr sa;
 		struct	sockaddr_in sin;
@@ -102,11 +110,13 @@ struct rt_ctx {
 	int	pid, rtm_addrs;
 	int	s;
 	int	forcehost, forcenet, nflag, af, qflag, tflag;
-	int	iflag, verbose, aflen;
+	int	verbose, aflen;
 	int	locking, lockrest, debugonly;
 	struct	rt_metrics rt_metrics;
 	u_long  rtm_inits;
 	uid_t	uid;
+	int	defaultfib;
+	int	numfibs;
 	char	domain[MAXHOSTNAMELEN + 1];
 	int	domain_initialized;
 	int	rtm_seq;
@@ -116,6 +126,7 @@ struct rt_ctx {
 		struct	rt_msghdr m_rtm;
 		char	m_space[512];
 	} m_rtmsg;
+	TAILQ_HEAD(fibl_head_t, fibl) fibl_head;
 };
 
 #ifndef __rtems__
@@ -128,7 +139,8 @@ static int	atalk_aton(const char *, struct at_addr *);
 static char	*atalk_ntoa(struct at_addr, char [20]);
 static void	bprintf(FILE *, int, const char *);
 static void	flushroutes(struct rt_ctx *, int argc, char *argv[]);
-static int	getaddr(struct rt_ctx *, int, char *, struct hostent **);
+static int	flushroutes_fib(struct rt_ctx *, int);
+static int	getaddr(struct rt_ctx *, int, char *, struct hostent **, int);
 static int	keyword(const char *);
 static void	inet_makenetandmask(struct rt_ctx *, u_long, struct sockaddr_in *, u_long);
 #ifdef INET6
@@ -136,20 +148,26 @@ static int inet6_makenetandmask(struct rt_ctx *, struct sockaddr_in6 *, const ch
 #endif
 static void	interfaces(struct rt_ctx *);
 static void	mask_addr(struct rt_ctx *);
-static void	monitor(struct rt_ctx *);
+static void	monitor(struct rt_ctx *, int, char *[]);
 static const char	*netname(struct rt_ctx *, struct sockaddr *);
 static void	newroute(struct rt_ctx *, int, char **);
+static int	newroute_fib(struct rt_ctx *, int, char *, int);
 static void	pmsg_addrs(struct rt_ctx *, char *, int, size_t);
 static void	pmsg_common(struct rt_ctx *, struct rt_msghdr *, size_t);
 static int	prefixlen(struct rt_ctx *, const char *);
-static void	print_getmsg(struct rt_ctx *, struct rt_msghdr *, int);
+static void	print_getmsg(struct rt_ctx *, struct rt_msghdr *, int, int);
 static void	print_rtmsg(struct rt_ctx *, struct rt_msghdr *, size_t);
 static const char	*routename(struct rt_ctx *, struct sockaddr *);
-static int	rtmsg(struct rt_ctx *, int, int);
+static int	rtmsg(struct rt_ctx *, int, int, int);
 static void	set_metric(struct rt_ctx *, char *, int);
+static int	set_sofib(struct rt_ctx *, int);
+static int	set_procfib(int);
 static void	sockaddr(char *, struct sockaddr *);
 static void	sodump(sup, const char *);
 extern	char *iso_ntoa(void);
+
+static int	fiboptlist_csv(struct rt_ctx *, const char *, struct fibl_head_t *);
+static int	fiboptlist_range(struct rt_ctx *, const char *, struct fibl_head_t *);
 
 static void usage(const char *) __dead2;
 
@@ -189,16 +207,24 @@ int rtems_bsd_command_route(int argc, char *argv[])
 	c = calloc(1, sizeof(*c));
 	if (c != NULL) {
 		struct main_ctx mc;
+		struct fibl *fl;
+		struct fibl *tfl;
 
 		mc.argc = argc;
 		mc.argv = argv;
 		mc.c = c;
 
 		c->aflen = sizeof(struct sockaddr_in);
+		TAILQ_INIT(&c->fibl_head);
 
 		exit_code = rtems_bsd_program_call("route", call_main, &mc);
 
 		close(c->s);
+
+		TAILQ_FOREACH_SAFE(fl, &c->fibl_head, fl_next, tfl) {
+			free(fl);
+		}
+
 		free(c);
 	} else {
 		exit_code = EXIT_FAILURE;
@@ -217,6 +243,7 @@ main(int argc, char **argv)
 	struct rt_ctx *c;
 #endif /* __rtems__ */
 	int ch;
+	size_t len;
 #ifdef __rtems__
 	struct getopt_data getopt_data;
 	memset(&getopt_data, 0, sizeof(getopt_data));
@@ -267,6 +294,17 @@ main(int argc, char **argv)
 		c->s = socket(PF_ROUTE, SOCK_RAW, 0);
 	if (c->s < 0)
 		err(EX_OSERR, "socket");
+
+	len = sizeof(c->numfibs);
+	if (sysctlbyname("net.fibs", (void *)&c->numfibs, &len, NULL, 0) == -1)
+		c->numfibs = -1;
+
+	len = sizeof(c->defaultfib);
+	if (c->numfibs != -1 &&
+	    sysctlbyname("net.my_fibnum", (void *)&c->defaultfib, &len, NULL,
+		0) == -1)
+		c->defaultfib = -1;
+
 	if (*argv != NULL)
 		switch (keyword(*argv)) {
 		case K_GET:
@@ -282,7 +320,7 @@ main(int argc, char **argv)
 			/* NOTREACHED */
 
 		case K_MONITOR:
-			monitor(c);
+			monitor(c, argc, argv);
 			/* NOTREACHED */
 
 		case K_FLUSH:
@@ -294,6 +332,136 @@ main(int argc, char **argv)
 	/* NOTREACHED */
 }
 
+static int
+set_sofib(struct rt_ctx *c, int fib)
+{
+
+	if (fib < 0)
+		return (0);
+	return (setsockopt(c->s, SOL_SOCKET, SO_SETFIB, (void *)&fib,
+	    sizeof(fib)));
+}
+
+static int
+set_procfib(int fib)
+{
+	
+	if (fib < 0)
+		return (0);
+	return (setfib(fib));
+}
+
+static int
+fiboptlist_range(struct rt_ctx *c, const char *arg, struct fibl_head_t *flh)
+{
+	struct fibl *fl;
+	char *str0, *str, *token, *endptr;
+	int fib[2], i, error;
+
+	str0 = str = strdup(arg);
+	error = 0;
+	i = 0;
+	while ((token = strsep(&str, "-")) != NULL) {
+		switch (i) {
+		case 0:
+		case 1:
+			errno = 0;
+			fib[i] = strtol(token, &endptr, 0);
+			if (errno == 0) {
+				if (*endptr != '\0' ||
+				    fib[i] < 0 ||
+				    (c->numfibs != -1 && fib[i] > c->numfibs - 1)) 
+					errno = EINVAL;
+			}
+			if (errno)
+				error = 1;
+			break;
+		default:
+			error = 1;
+		}
+		if (error)
+			goto fiboptlist_range_ret;
+		i++;
+	}
+	if (fib[0] >= fib[1]) {
+		error = 1;
+		goto fiboptlist_range_ret;
+	}
+	for (i = fib[0]; i <= fib[1]; i++) {
+		fl = calloc(1, sizeof(*fl));
+		if (fl == NULL) {
+			error = 1;
+			goto fiboptlist_range_ret;
+		}
+		fl->fl_num = i;
+		TAILQ_INSERT_TAIL(flh, fl, fl_next);
+	}
+fiboptlist_range_ret:
+	free(str0);
+	return (error);
+}
+
+#define	ALLSTRLEN	64
+static int
+fiboptlist_csv(struct rt_ctx *c, const char *arg, struct fibl_head_t *flh)
+{
+	struct fibl *fl;
+	char *str0, *str, *token, *endptr;
+	int fib, error;
+
+	if (strcmp("all", arg) == 0) {
+		str = calloc(1, ALLSTRLEN);
+		if (str == NULL) {
+			error = 1;
+			goto fiboptlist_csv_ret;
+		}
+		if (c->numfibs > 1)
+			snprintf(str, ALLSTRLEN - 1, "%d-%d", 0, c->numfibs - 1);
+		else
+			snprintf(str, ALLSTRLEN - 1, "%d", 0);
+	} else if (strcmp("default", arg) == 0) {
+		str0 = str = calloc(1, ALLSTRLEN);
+		if (str == NULL) {
+			error = 1;
+			goto fiboptlist_csv_ret;
+		}
+		snprintf(str, ALLSTRLEN - 1, "%d", c->defaultfib);
+	} else
+		str0 = str = strdup(arg);
+
+	error = 0;
+	while ((token = strsep(&str, ",")) != NULL) {
+		if (*token != '-' && strchr(token, '-') != NULL) {
+			error = fiboptlist_range(c, token, flh);
+			if (error)
+				goto fiboptlist_csv_ret;
+		} else {
+			errno = 0;
+			fib = strtol(token, &endptr, 0);
+			if (errno == 0) {
+				if (*endptr != '\0' ||
+				    fib < 0 ||
+				    (c->numfibs != -1 && fib > c->numfibs - 1))
+					errno = EINVAL;
+			}
+			if (errno) {
+				error = 1;
+				goto fiboptlist_csv_ret;
+			}
+			fl = calloc(1, sizeof(*fl));
+			if (fl == NULL) {
+				error = 1;
+				goto fiboptlist_csv_ret;
+			}
+			fl->fl_num = fib;
+			TAILQ_INSERT_TAIL(flh, fl, fl_next);
+		}
+	}
+fiboptlist_csv_ret:
+	free(str0);
+	return (error);
+}
+
 /*
  * Purge all entries in the routing tables not
  * associated with network interfaces.
@@ -301,38 +469,71 @@ main(int argc, char **argv)
 static void
 flushroutes(struct rt_ctx *c, int argc, char *argv[])
 {
-	size_t needed;
-	int mib[6], rlen, seqno, count = 0;
-	char *buf, *next, *lim;
-	struct rt_msghdr *rtm;
+	struct fibl *fl;
+	int error;
 
 	if (c->uid != 0 && !c->debugonly) {
 		errx(EX_NOPERM, "must be root to alter routing table");
 	}
 	shutdown(c->s, SHUT_RD); /* Don't want to read back our messages */
-	if (argc > 1) {
+
+	TAILQ_INIT(&c->fibl_head);
+	while (argc > 1) {
+		argc--;
 		argv++;
-		if (argc == 2 && **argv == '-')
-		    switch (keyword(*argv + 1)) {
-			case K_INET:
-				c->af = AF_INET;
-				break;
+		if (**argv != '-')
+			usage(*argv);
+		switch (keyword(*argv + 1)) {
+		case K_INET:
+			c->af = AF_INET;
+			break;
 #ifdef INET6
-			case K_INET6:
-				c->af = AF_INET6;
-				break;
+		case K_INET6:
+			c->af = AF_INET6;
+			break;
 #endif
-			case K_ATALK:
-				c->af = AF_APPLETALK;
-				break;
-			case K_LINK:
-				c->af = AF_LINK;
-				break;
-			default:
-				goto bad;
-		} else
-bad:			usage(*argv);
+		case K_ATALK:
+			c->af = AF_APPLETALK;
+			break;
+		case K_LINK:
+			c->af = AF_LINK;
+			break;
+		case K_FIB:
+			if (!--argc)
+				usage(*argv);
+			error = fiboptlist_csv(c, *++argv, &c->fibl_head);
+			if (error)
+				errx(EX_USAGE, "invalid fib number: %s", *argv);
+			break;
+		default:
+			usage(*argv);
+		}
 	}
+	if (TAILQ_EMPTY(&c->fibl_head)) {
+		error = fiboptlist_csv(c, "default", &c->fibl_head);
+		if (error)
+			errx(EX_OSERR, "fiboptlist_csv failed.");
+	}
+	TAILQ_FOREACH(fl, &c->fibl_head, fl_next)
+		flushroutes_fib(c, fl->fl_num);
+}
+
+static int
+flushroutes_fib(struct rt_ctx *c, int fib)
+{
+	struct rt_msghdr *rtm;
+	size_t needed;
+	char *buf, *next, *lim;
+	int mib[6], rlen, seqno, count = 0;
+	int error;
+
+	error = set_sofib(c, fib);
+	error += set_procfib(fib);
+	if (error) {
+		warn("fib number %d is ignored", fib);
+		return (error);
+	}
+
 retry:
 	mib[0] = CTL_NET;
 	mib[1] = PF_ROUTE;
@@ -390,14 +591,18 @@ retry:
 			print_rtmsg(c, rtm, rlen);
 		else {
 			struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
-			(void) printf("%-20.20s ", rtm->rtm_flags & RTF_HOST ?
+
+			printf("%-20.20s ", rtm->rtm_flags & RTF_HOST ?
 			    routename(c, sa) : netname(c, sa));
 			sa = (struct sockaddr *)(SA_SIZE(sa) + (char *)sa);
-			(void) printf("%-20.20s ", routename(c, sa));
-			(void) printf("done\n");
+			printf("%-20.20s ", routename(c, sa));
+			if (fib >= 0)
+				printf("-fib %-3d ", fib);
+			printf("done\n");
 		}
 	}
 	free(buf);
+	return (error);
 }
 
 static const char *
@@ -547,8 +752,8 @@ netname(struct rt_ctx *c, struct sockaddr *sa)
 			 * Guess at the subnet mask, assuming reasonable
 			 * width subnet fields.
 			 */
-			while (in.s_addr & ~mask)
-				mask |= mask >> subnetshift;
+			while (in.s_addr &~ mask)
+				mask = (long)mask >> subnetshift;
 			net = in.s_addr & mask;
 			while ((mask & 1) == 0)
 				mask >>= 1, net >>= 1;
@@ -660,18 +865,32 @@ set_metric(struct rt_ctx *c, char *value, int key)
 	*valp = atoi(value);
 }
 
+#define	F_ISHOST	0x01
+#define	F_FORCENET	0x02
+#define	F_FORCEHOST	0x04
+#define	F_PROXY		0x08
+#define	F_INTERFACE	0x10
+
 static void
 newroute(struct rt_ctx *c, int argc, char **argv)
 {
+	struct hostent *hp;
+	struct fibl *fl;
 	char *cmd;
-	const char *dest = "", *gateway = "", *errmsg;
-	int ishost = 0, proxy = 0, ret, attempts, oerrno, flags = RTF_STATIC;
-	int key;
-	struct hostent *hp = 0;
+	const char *dest, *gateway, *errmsg;
+	int key, error, flags, nrflags, fibnum;
 
 	if (c->uid != 0) {
 		errx(EX_NOPERM, "must be root to alter routing table");
 	}
+
+	dest = NULL;
+	gateway = NULL;
+	flags = RTF_STATIC;
+	nrflags = 0;
+	hp = NULL;
+	TAILQ_INIT(&c->fibl_head);
+
 	cmd = argv[0];
 	if (*cmd != 'g' && *cmd != 's')
 		shutdown(c->s, SHUT_RD); /* Don't want to read back our messages */
@@ -703,7 +922,7 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 				break;
 			case K_IFACE:
 			case K_INTERFACE:
-				c->iflag++;
+				nrflags |= F_INTERFACE;
 				break;
 			case K_NOSTATIC:
 				flags &= ~RTF_STATIC;
@@ -715,7 +934,7 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 				c->lockrest = 1;
 				break;
 			case K_HOST:
-				c->forcehost++;
+				nrflags |= F_FORCEHOST;
 				break;
 			case K_REJECT:
 				flags |= RTF_REJECT;
@@ -730,7 +949,7 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 				flags |= RTF_PROTO2;
 				break;
 			case K_PROXY:
-				proxy = 1;
+				nrflags |= F_PROXY;
 				break;
 			case K_XRESOLVE:
 				flags |= RTF_XRESOLVE;
@@ -744,49 +963,59 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 			case K_NOSTICK:
 				flags &= ~RTF_STICKY;
 				break;
+			case K_FIB:
+				if (!--argc)
+					usage(NULL);
+				error = fiboptlist_csv(c, *++argv, &c->fibl_head);
+				if (error)
+					errx(EX_USAGE,
+					    "invalid fib number: %s", *argv);
+				break;
 			case K_IFA:
 				if (!--argc)
 					usage(NULL);
-				(void) getaddr(c, RTA_IFA, *++argv, 0);
+				getaddr(c, RTA_IFA, *++argv, 0, nrflags);
 				break;
 			case K_IFP:
 				if (!--argc)
 					usage(NULL);
-				(void) getaddr(c, RTA_IFP, *++argv, 0);
+				getaddr(c, RTA_IFP, *++argv, 0, nrflags);
 				break;
 			case K_GENMASK:
 				if (!--argc)
 					usage(NULL);
-				(void) getaddr(c, RTA_GENMASK, *++argv, 0);
+				getaddr(c, RTA_GENMASK, *++argv, 0, nrflags);
 				break;
 			case K_GATEWAY:
 				if (!--argc)
 					usage(NULL);
-				(void) getaddr(c, RTA_GATEWAY, *++argv, 0);
+				getaddr(c, RTA_GATEWAY, *++argv, 0, nrflags);
+				gateway = *argv;
 				break;
 			case K_DST:
 				if (!--argc)
 					usage(NULL);
-				ishost = getaddr(c, RTA_DST, *++argv, &hp);
+				if (getaddr(c, RTA_DST, *++argv, &hp, nrflags))
+					nrflags |= F_ISHOST;
 				dest = *argv;
 				break;
 			case K_NETMASK:
 				if (!--argc)
 					usage(NULL);
-				(void) getaddr(c, RTA_NETMASK, *++argv, 0);
+				getaddr(c, RTA_NETMASK, *++argv, 0, nrflags);
 				/* FALLTHROUGH */
 			case K_NET:
-				c->forcenet++;
+				nrflags |= F_FORCENET;
 				break;
 			case K_PREFIXLEN:
 				if (!--argc)
 					usage(NULL);
 				if (prefixlen(c, *++argv) == -1) {
-					c->forcenet = 0;
-					ishost = 1;
+					nrflags &= ~F_FORCENET;
+					nrflags |= F_ISHOST;
 				} else {
-					c->forcenet = 1;
-					ishost = 0;
+					nrflags |= F_FORCENET;
+					nrflags &= ~F_ISHOST;
 				}
 				break;
 			case K_MTU:
@@ -808,18 +1037,20 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 		} else {
 			if ((c->rtm_addrs & RTA_DST) == 0) {
 				dest = *argv;
-				ishost = getaddr(c, RTA_DST, *argv, &hp);
+				if (getaddr(c, RTA_DST, *argv, &hp, nrflags))
+					nrflags |= F_ISHOST;
 			} else if ((c->rtm_addrs & RTA_GATEWAY) == 0) {
 				gateway = *argv;
-				(void) getaddr(c, RTA_GATEWAY, *argv, &hp);
+				getaddr(c, RTA_GATEWAY, *argv, &hp, nrflags);
 			} else {
-				(void) getaddr(c, RTA_NETMASK, *argv, 0);
-				c->forcenet = 1;
+				getaddr(c, RTA_NETMASK, *argv, 0, nrflags);
+				nrflags |= F_FORCENET;
 			}
 		}
 	}
-	if (c->forcehost) {
-		ishost = 1;
+
+	if (nrflags & F_FORCEHOST) {
+		nrflags |= F_ISHOST;
 #ifdef INET6
 		if (c->af == AF_INET6) {
 			c->rtm_addrs &= ~RTA_NETMASK;
@@ -827,71 +1058,125 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 		}
 #endif
 	}
-	if (c->forcenet)
-		ishost = 0;
+	if (nrflags & F_FORCENET)
+		nrflags &= ~F_ISHOST;
 	flags |= RTF_UP;
-	if (ishost)
+	if (nrflags & F_ISHOST)
 		flags |= RTF_HOST;
-	if (c->iflag == 0)
+	if ((nrflags & F_INTERFACE) == 0)
 		flags |= RTF_GATEWAY;
-	if (proxy) {
+	if (nrflags & F_PROXY) {
 		c->so_dst.sinarp.sin_other = SIN_PROXY;
 		flags |= RTF_ANNOUNCE;
 	}
-	for (attempts = 1; ; attempts++) {
-		errno = 0;
-		if ((ret = rtmsg(c, *cmd, flags)) == 0)
-			break;
-		if (errno != ENETUNREACH && errno != ESRCH)
-			break;
-		if (c->af == AF_INET && *gateway != '\0' &&
-		    hp != NULL && hp->h_addr_list[1] != NULL) {
-			hp->h_addr_list++;
-			memmove(&c->so_gate.sin.sin_addr, hp->h_addr_list[0],
-			    MIN((size_t)hp->h_length,
-			    sizeof(c->so_gate.sin.sin_addr)));
-		} else
-			break;
+	if (dest == NULL)
+		dest = "";
+	if (gateway == NULL)
+		gateway = "";
+
+	if (TAILQ_EMPTY(&c->fibl_head)) {
+		error = fiboptlist_csv(c, "default", &c->fibl_head);
+		if (error)
+			errx(EX_OSERR, "fiboptlist_csv failed.");
+	}
+	error = 0;
+	TAILQ_FOREACH(fl, &c->fibl_head, fl_next) {
+		fl->fl_error = newroute_fib(c, fl->fl_num, cmd, flags);
+		if (fl->fl_error)
+			fl->fl_errno = errno;
+		error += fl->fl_error;
 	}
 	if (*cmd == 'g' || *cmd == 's')
-		exit(ret != 0);
+		exit(error);
+
+	error = 0;
 	if (!c->qflag) {
-		oerrno = errno;
-		(void) printf("%s %s %s", cmd, ishost? "host" : "net", dest);
-		if (*gateway) {
-			(void) printf(": gateway %s", gateway);
-			if (attempts > 1 && ret == 0 && c->af == AF_INET)
-			    (void) printf(" (%s)",
-				inet_ntoa(((struct sockaddr_in *)&c->route.rt_gateway)->sin_addr));
+		fibnum = 0;
+		TAILQ_FOREACH(fl, &c->fibl_head, fl_next) {
+			if (fl->fl_error == 0)
+				fibnum++;
 		}
-		if (ret == 0) {
-			(void) printf("\n");
-		} else {
-			switch (oerrno) {
-			case ESRCH:
-				errmsg = "not in table";
-				break;
-			case EBUSY:
-				errmsg = "entry in use";
-				break;
-			case ENOBUFS:
-				errmsg = "not enough memory";
-				break;
-			case EADDRINUSE:
-				/* handle recursion avoidance in rt_setgate() */
-				errmsg = "gateway uses the same route";
-				break;
-			case EEXIST:
-				errmsg = "route already in table";
-				break;
-			default:
-				errmsg = strerror(oerrno);
-				break;
+		if (fibnum > 0) {
+			int firstfib = 1;
+
+			printf("%s %s %s", cmd,
+			    (nrflags & F_ISHOST) ? "host" : "net", dest);
+			if (*gateway)
+				printf(": gateway %s", gateway);
+
+			if (c->numfibs > 1) {
+				TAILQ_FOREACH(fl, &c->fibl_head, fl_next) {
+					if (fl->fl_error == 0
+					    && fl->fl_num >= 0) {
+						if (firstfib) {
+							printf(" fib ");
+							firstfib = 0;
+						}
+						printf("%d", fl->fl_num);
+						if (fibnum-- > 1)
+							printf(",");
+					}
+				}
 			}
-			(void) printf(": %s\n", errmsg);
+			printf("\n");
+		}
+
+		fibnum = 0;
+		TAILQ_FOREACH(fl, &c->fibl_head, fl_next) {
+			if (fl->fl_error != 0) {
+				printf("%s %s %s", cmd, (nrflags & F_ISHOST)
+				    ? "host" : "net", dest);
+				if (*gateway)
+					printf(": gateway %s", gateway);
+
+				if (fl->fl_num >= 0)
+					printf(" fib %d", fl->fl_num);
+
+				switch (fl->fl_errno) {
+				case ESRCH:
+					errmsg = "not in table";
+					break;
+				case EBUSY:
+					errmsg = "entry in use";
+					break;
+				case ENOBUFS:
+					errmsg = "not enough memory";
+					break;
+				case EADDRINUSE:
+					/*
+					 * handle recursion avoidance
+					 * in rt_setgate()
+					 */
+					errmsg = "gateway uses the same route";
+					break;
+				case EEXIST:
+					errmsg = "route already in table";
+					break;
+				default:
+					errmsg = strerror(fl->fl_errno);
+					break;
+				}
+				printf(": %s\n", errmsg);
+				error = 1;
+			}
 		}
 	}
-	exit(ret != 0);
+	exit(error);
+}
+
+static int
+newroute_fib(struct rt_ctx *c, int fib, char *cmd, int flags)
+{
+	int error;
+
+	error = set_sofib(c, fib);
+	if (error) {
+		warn("fib number %d is ignored", fib);
+		return (error);
+	}
+
+	error = rtmsg(c, *cmd, flags, fib);
+	return (error);
 }
 
 static void
@@ -977,7 +1262,7 @@ inet6_makenetandmask(struct rt_ctx *c, struct sockaddr_in6 *sin6, const char *pl
  * returning 1 if a host address, 0 if a network address.
  */
 static int
-getaddr(struct rt_ctx *c, int which, char *str, struct hostent **hpp)
+getaddr(struct rt_ctx *c, int which, char *str, struct hostent **hpp, int nrflags)
 {
 	sup su;
 	struct hostent *hp;
@@ -998,7 +1283,7 @@ getaddr(struct rt_ctx *c, int which, char *str, struct hostent **hpp)
 		break;
 	case RTA_GATEWAY:
 		su = &c->so_gate;
-		if (c->iflag) {
+		if (nrflags & F_INTERFACE) {
 			struct ifaddrs *ifap, *ifa;
 			struct sockaddr_dl *sdl = NULL;
 
@@ -1058,7 +1343,7 @@ getaddr(struct rt_ctx *c, int which, char *str, struct hostent **hpp)
 #if 0
 			bzero(su, sizeof(*su));	/* for readability */
 #endif
-			getaddr(c, RTA_NETMASK, str, 0);
+			getaddr(c, RTA_NETMASK, str, 0, nrflags);
 			break;
 #if 0
 		case RTA_NETMASK:
@@ -1253,10 +1538,39 @@ retry2:
 }
 
 static void
-monitor(struct rt_ctx *c)
+monitor(struct rt_ctx *c, int argc, char *argv[])
 {
-	int n;
-	char msg[2048];
+	int n, fib, error;
+	char msg[2048], *endptr;
+
+	fib = c->defaultfib;
+	while (argc > 1) {
+		argc--;
+		argv++;
+		if (**argv != '-')
+			usage(*argv);
+		switch (keyword(*argv + 1)) {
+		case K_FIB:
+			if (!--argc)
+				usage(*argv);
+			errno = 0;
+			fib = strtol(*++argv, &endptr, 0);
+			if (errno == 0) {
+				if (*endptr != '\0' ||
+				    fib < 0 ||
+				    (c->numfibs != -1 && fib > c->numfibs - 1))
+					errno = EINVAL;
+			}
+			if (errno)
+				errx(EX_USAGE, "invalid fib number: %s", *argv);
+			break;
+		default:
+			usage(*argv);
+		}
+	}
+	error = set_sofib(c, fib);
+	if (error)
+		errx(EX_USAGE, "invalid fib number: %d", fib);
 
 	c->verbose = 1;
 	if (c->debugonly) {
@@ -1273,7 +1587,7 @@ monitor(struct rt_ctx *c)
 }
 
 static int
-rtmsg(struct rt_ctx *c, int cmd, int flags)
+rtmsg(struct rt_ctx *c, int cmd, int flags, int fib)
 {
 	int rlen;
 	char *cp = c->m_rtmsg.m_space;
@@ -1335,7 +1649,7 @@ rtmsg(struct rt_ctx *c, int cmd, int flags)
 		if (l < 0)
 			warn("read from routing socket");
 		else
-			print_getmsg(c, &rtm, l);
+			print_getmsg(c, &rtm, l, fib);
 	}
 #undef rtm
 	return (0);
@@ -1495,6 +1809,7 @@ print_rtmsg(struct rt_ctx *c, struct rt_msghdr *rtm, size_t msglen)
 			break;
 		}
 		printf("\n");
+		fflush(stdout);
 		break;
 
 	default:
@@ -1512,7 +1827,7 @@ badlen:
 }
 
 static void
-print_getmsg(struct rt_ctx *c, struct rt_msghdr *rtm, int msglen)
+print_getmsg(struct rt_ctx *c, struct rt_msghdr *rtm, int msglen, int fib)
 {
 	struct sockaddr *dst = NULL, *gate = NULL, *mask = NULL;
 	struct sockaddr_dl *ifp = NULL;
@@ -1572,6 +1887,8 @@ print_getmsg(struct rt_ctx *c, struct rt_msghdr *rtm, int msglen)
 	}
 	if (gate && rtm->rtm_flags & RTF_GATEWAY)
 		(void)printf("    gateway: %s\n", routename(c, gate));
+	if (fib >= 0)
+		(void)printf("        fib: %u\n", (unsigned int)fib);
 	if (ifp)
 		(void)printf("  interface: %.*s\n",
 		    ifp->sdl_nlen, ifp->sdl_data);

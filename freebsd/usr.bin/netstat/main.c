@@ -12,10 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -194,6 +190,8 @@ static struct nlist nl[] = {
 	{ .n_name = "_mfctablesize" },
 #define N_ARPSTAT       55
 	{ .n_name = "_arpstat" },
+#define	N_UNP_SPHEAD	56
+	{ .n_name = "unp_sphead" },
 	{ .n_name = NULL },
 };
 
@@ -217,6 +215,10 @@ struct protox {
 #ifdef SCTP
 	{ -1,		N_SCTPSTAT,	1,	sctp_protopr,
 	  sctp_stats,	NULL,		"sctp",	1,	IPPROTO_SCTP },
+#endif
+#ifdef SDP
+	{ -1,		-1,		1,	protopr,
+	 NULL,		NULL,		"sdp",	1,	IPPROTO_TCP },
 #endif
 	{ N_DIVCBINFO,	-1,		1,	protopr,
 	  NULL,		NULL,		"divert", 1,	IPPROTO_DIVERT },
@@ -258,6 +260,10 @@ static const struct protox ip6protox[] = {
 	  ip6_stats,	ip6_ifstats,	"ip6",	1,	IPPROTO_RAW },
 	{ N_RIPCBINFO,	N_ICMP6STAT,	1,	protopr,
 	  icmp6_stats,	icmp6_ifstats,	"icmp6", 1,	IPPROTO_ICMPV6 },
+#ifdef SDP
+	{ -1,		-1,		1,	protopr,
+	 NULL,		NULL,		"sdp",	1,	IPPROTO_TCP },
+#endif
 #ifdef IPSEC
 	{ -1,		N_IPSEC6STAT,	1,	NULL,
 	  ipsec_stats,	NULL,		"ipsec6", 0,	0 },
@@ -355,7 +361,6 @@ int	Qflag;		/* show netisr information */
 #endif /* __rtems__ */
 int	rflag;		/* show routing tables (or routing stats) */
 int	sflag;		/* show protocol statistics */
-int	tflag;		/* show i/f watchdog timers */
 int	Wflag;		/* wide display */
 int	Tflag;		/* TCP Information */
 int	xflag;		/* extra information, includes all socket buffer info */
@@ -397,7 +402,6 @@ int rtems_bsd_command_netstat(int argc, char *argv[])
 	pflag = 0;
 	rflag = 0;
 	sflag = 0;
-	tflag = 0;
 	Wflag = 0;
 	xflag = 0;
 	zflag = 0;
@@ -437,7 +441,7 @@ main(int argc, char *argv[])
 
 	af = AF_UNSPEC;
 
-	while ((ch = getopt(argc, argv, "AaBbdf:ghI:iLlM:mN:np:Qq:rSTstuWw:xz"))
+	while ((ch = getopt(argc, argv, "AaBbdf:ghI:iLlM:mN:np:Qq:rSTsuWw:xz"))
 	    != -1)
 		switch(ch) {
 		case 'A':
@@ -542,9 +546,6 @@ main(int argc, char *argv[])
 			break;
 		case 'S':
 			numeric_addr = 1;
-			break;
-		case 't':
-			tflag = 1;
 			break;
 		case 'u':
 			af = AF_UNIX;
@@ -710,7 +711,8 @@ main(int argc, char *argv[])
 #ifndef __rtems__
 	if ((af == AF_UNIX || af == AF_UNSPEC) && !sflag)
 		unixpr(nl[N_UNP_COUNT].n_value, nl[N_UNP_GENCNT].n_value,
-		    nl[N_UNP_DHEAD].n_value, nl[N_UNP_SHEAD].n_value);
+		    nl[N_UNP_DHEAD].n_value, nl[N_UNP_SHEAD].n_value,
+		    nl[N_UNP_SPHEAD].n_value);
 #endif
 	exit(0);
 }
@@ -888,7 +890,7 @@ usage(void)
 	(void)fprintf(stderr, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 "usage: netstat [-AaLnSTWx] [-f protocol_family | -p protocol]\n"
 "               [-M core] [-N system]",
-"       netstat -i | -I interface [-abdhntW] [-f address_family]\n"
+"       netstat -i | -I interface [-abdhnW] [-f address_family]\n"
 "               [-M core] [-N system]",
 "       netstat -w wait [-I interface] [-d] [-M core] [-N system] [-q howmany]",
 "       netstat -s [-s] [-z] [-f protocol_family | -p protocol]\n"

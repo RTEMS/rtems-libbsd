@@ -69,6 +69,10 @@
 #include <netinet/ip_mroute.h>
 
 #include <vm/uma.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-syscall-api.h>
+#include <sys/file.h>
+#endif /* __rtems__ */
 
 /* We use 4 bits in the mbuf flags, thus we are limited to 16 FIBS. */
 #define	RT_MAXFIBS	16
@@ -144,7 +148,6 @@ VNET_DEFINE(int, rttrash);		/* routes not in table but not freed */
 static VNET_DEFINE(uma_zone_t, rtzone);		/* Routing table UMA zone. */
 #define	V_rtzone	VNET(rtzone)
 
-#ifndef __rtems__
 /*
  * handler for net.my_fibnum
  */
@@ -154,14 +157,17 @@ sysctl_my_fibnum(SYSCTL_HANDLER_ARGS)
         int fibnum;
         int error;
  
+#ifndef __rtems__
         fibnum = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+        fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
         error = sysctl_handle_int(oidp, &fibnum, 0, req);
         return (error);
 }
 
 SYSCTL_PROC(_net, OID_AUTO, my_fibnum, CTLTYPE_INT|CTLFLAG_RD,
             NULL, 0, &sysctl_my_fibnum, "I", "default FIB of caller");
-#endif /* __rtems__ */
 
 static __inline struct radix_node_head **
 rt_tables_get_rnh_ptr(int table, int fam)
@@ -279,19 +285,39 @@ VNET_SYSUNINIT(vnet_route_uninit, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD,
     vnet_route_uninit, 0);
 #endif
 
-#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct setfib_args {
 	int     fibnum;
 };
 #endif
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
-setfib(struct thread *td, struct setfib_args *uap)
+sys_setfib(struct thread *td, struct setfib_args *uap)
 {
 	if (uap->fibnum < 0 || uap->fibnum >= rt_numfibs)
 		return EINVAL;
+#ifndef __rtems__
 	td->td_proc->p_fibnum = uap->fibnum;
+#else /* __rtems__ */
+	if (uap->fibnum != BSD_DEFAULT_FIB)
+		return EINVAL;
+#endif /* __rtems__ */
 	return (0);
+}
+#ifdef __rtems__
+int
+setfib(int fibnum)
+{
+	struct setfib_args ua = {
+		.fibnum = fibnum
+	};
+	int error;
+
+	error = sys_setfib(NULL, &ua);
+
+	return rtems_bsd_error_to_status_and_errno(error);
 }
 #endif /* __rtems__ */
 
@@ -1118,6 +1144,14 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 			error = 0;
 		}
 #endif
+		if ((flags & RTF_PINNED) == 0) {
+			/* Check if target route can be deleted */
+			rt = (struct rtentry *)rnh->rnh_lookup(dst,
+			    netmask, rnh);
+			if ((rt != NULL) && (rt->rt_flags & RTF_PINNED))
+				senderr(EADDRINUSE);
+		}
+
 		/*
 		 * Remove the item from the tree and return it.
 		 * Complain if it is not there and do no more processing.
@@ -1237,10 +1271,8 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 		rt0 = NULL;
 		/* "flow-table" only supports IPv6 and IPv4 at the moment. */
 		switch (dst->sa_family) {
-#ifdef notyet
 #ifdef INET6
 		case AF_INET6:
-#endif
 #endif
 #ifdef INET
 		case AF_INET:
@@ -1309,12 +1341,10 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 #ifdef FLOWTABLE
 		else if (rt0 != NULL) {
 			switch (dst->sa_family) {
-#ifdef notyet
 #ifdef INET6
 			case AF_INET6:
 				flowtable_route_flush(V_ip6_ft, rt0);
 				break;
-#endif
 #endif
 #ifdef INET
 			case AF_INET:
@@ -1445,6 +1475,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 	int didwork = 0;
 	int a_failure = 0;
 	static struct sockaddr_dl null_sdl = {sizeof(null_sdl), AF_LINK};
+	struct radix_node_head *rnh;
 
 	if (flags & RTF_HOST) {
 		dst = ifa->ifa_dstaddr;
@@ -1507,7 +1538,6 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 	 */
 	for ( fibnum = startfib; fibnum <= endfib; fibnum++) {
 		if (cmd == RTM_DELETE) {
-			struct radix_node_head *rnh;
 			struct radix_node *rn;
 			/*
 			 * Look up an rtentry that is in the routing tree and
@@ -1517,7 +1547,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 			if (rnh == NULL)
 				/* this table doesn't exist but others might */
 				continue;
-			RADIX_NODE_HEAD_LOCK(rnh);
+			RADIX_NODE_HEAD_RLOCK(rnh);
 #ifdef RADIX_MPATH
 			if (rn_mpath_capable(rnh)) {
 
@@ -1546,7 +1576,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 			    (rn->rn_flags & RNF_ROOT) ||
 			    RNTORT(rn)->rt_ifa != ifa ||
 			    !sa_equal((struct sockaddr *)rn->rn_key, dst));
-			RADIX_NODE_HEAD_UNLOCK(rnh);
+			RADIX_NODE_HEAD_RUNLOCK(rnh);
 			if (error) {
 				/* this is only an error if bad on ALL tables */
 				continue;
@@ -1557,7 +1587,8 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 		 */
 		bzero((caddr_t)&info, sizeof(info));
 		info.rti_ifa = ifa;
-		info.rti_flags = flags | (ifa->ifa_flags & ~IFA_RTSELF);
+		info.rti_flags = flags |
+		    (ifa->ifa_flags & ~IFA_RTSELF) | RTF_PINNED;
 		info.rti_info[RTAX_DST] = dst;
 		/* 
 		 * doing this for compatibility reasons
@@ -1569,6 +1600,33 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 			info.rti_info[RTAX_GATEWAY] = ifa->ifa_addr;
 		info.rti_info[RTAX_NETMASK] = netmask;
 		error = rtrequest1_fib(cmd, &info, &rt, fibnum);
+
+		if ((error == EEXIST) && (cmd == RTM_ADD)) {
+			/*
+			 * Interface route addition failed.
+			 * Atomically delete current prefix generating
+			 * RTM_DELETE message, and retry adding
+			 * interface prefix.
+			 */
+			rnh = rt_tables_get_rnh(fibnum, dst->sa_family);
+			RADIX_NODE_HEAD_LOCK(rnh);
+
+			/* Delete old prefix */
+			info.rti_ifa = NULL;
+			info.rti_flags = RTF_RNH_LOCKED;
+
+			error = rtrequest1_fib(RTM_DELETE, &info, &rt, fibnum);
+			if (error == 0) {
+				info.rti_ifa = ifa;
+				info.rti_flags = flags | RTF_RNH_LOCKED |
+				    (ifa->ifa_flags & ~IFA_RTSELF) | RTF_PINNED;
+				error = rtrequest1_fib(cmd, &info, &rt, fibnum);
+			}
+
+			RADIX_NODE_HEAD_UNLOCK(rnh);
+		}
+
+
 		if (error == 0 && rt != NULL) {
 			/*
 			 * notify any listening routing agents of the change

@@ -32,6 +32,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_ipsec.h>
 
@@ -45,6 +46,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sysctl.h>
+#include <sys/syslog.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -152,7 +154,7 @@ ip6_ipsec_fwd(struct mbuf *m)
 	KEY_FREESP(&sp);
 	splx(s);
 	if (error) {
-		V_ip6stat.ip6s_cantforward++;
+		IP6STAT_INC(ip6s_cantforward);
 		return 1;
 	}
 #endif /* IPSEC */
@@ -291,11 +293,16 @@ ip6_ipsec_output(struct mbuf **m, struct inpcb *inp, int *flags, int *error,
 		/*
 		 * Do delayed checksums now because we send before
 		 * this is done in the normal processing path.
+		 * For IPv6 we do delayed checksums in ip6_output.c.
 		 */
+#ifdef INET
 		if ((*m)->m_pkthdr.csum_flags & CSUM_DELAY_DATA) {
+			ipseclog((LOG_DEBUG,
+			    "%s: we do not support IPv4 over IPv6", __func__));
 			in_delayed_cksum(*m);
 			(*m)->m_pkthdr.csum_flags &= ~CSUM_DELAY_DATA;
 		}
+#endif
 
 		/*
 		 * Preserve KAME behaviour: ENOENT can be returned

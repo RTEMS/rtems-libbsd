@@ -35,6 +35,8 @@
 
 #include <bsm/audit.h>
 
+struct loginclass;
+
 /*
  * Credentials.
  *
@@ -55,7 +57,7 @@ struct ucred {
 	struct uidinfo	*cr_uidinfo;	/* per euid resource consumption */
 	struct uidinfo	*cr_ruidinfo;	/* per ruid resource consumption */
 	struct prison	*cr_prison;	/* jail(2) */
-	void		*cr_pspare;	/* general use */
+	struct loginclass	*cr_loginclass; /* login class */
 	u_int		cr_flags;	/* credential flags */
 	void 		*cr_pspare2[2];	/* general use 2 */
 #define	cr_endcopy	cr_label
@@ -72,6 +74,11 @@ struct ucred;
 #endif /* _KERNEL || _WANT_UCRED */
 
 #define	XU_NGROUPS	16
+
+/*
+ * Flags for cr_flags.
+ */
+#define	CRED_FLAG_CAPMODE	0x00000001	/* In capability mode. */
 
 /*
  * This is the external representation of struct ucred.
@@ -116,6 +123,7 @@ int	groupmember(gid_t gid, struct ucred *cred);
 #define crfree(cr) do { } while (0)
 #define crhold(cr) NULL
 #define cru2x(cr, xcr) do { } while (0)
+#define groupmember(gid, cred) 1
 #endif /* __rtems__ */
 #endif /* _KERNEL */
 

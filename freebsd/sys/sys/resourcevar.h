@@ -79,8 +79,12 @@ struct plimit {
 	int	pl_refcnt;		/* number of references */
 };
 
+struct racct;
+
 /*-
- * Per uid resource consumption
+ * Per uid resource consumption.  This structure is used to track
+ * the total resource consumption (process count, socket buffer size,
+ * etc) for the uid and impose limits.
  *
  * Locking guide:
  * (a) Constant from inception
@@ -97,6 +101,7 @@ struct uidinfo {
 	long	ui_ptscnt;		/* (b) number of pseudo-terminals */
 	uid_t	ui_uid;			/* (a) uid */
 	u_int	ui_ref;			/* (b) reference count */
+	struct racct *ui_racct;		/* (a) resource accounting */
 };
 
 #define	UIDINFO_VMSIZE_LOCK(ui)		mtx_lock(&((ui)->ui_vmsize_mtx))
@@ -126,6 +131,8 @@ rtems_bsd_chgsbsize(u_int *hiwat, u_int to)
 #endif /* __rtems__ */
 int	 chgptscnt(struct uidinfo *uip, int diff, rlim_t maxval);
 int	 fuswintr(void *base);
+int	 kern_proc_setrlimit(struct thread *td, struct proc *p, u_int which,
+	    struct rlimit *limp);
 struct plimit
 	*lim_alloc(void);
 void	 lim_copy(struct plimit *dst, struct plimit *src);
@@ -142,6 +149,7 @@ void	 rucollect(struct rusage *ru, struct rusage *ru2);
 void	 rufetch(struct proc *p, struct rusage *ru);
 void	 rufetchcalc(struct proc *p, struct rusage *ru, struct timeval *up,
 	    struct timeval *sp);
+void	 rufetchtd(struct thread *td, struct rusage *ru);
 void	 ruxagg(struct proc *p, struct thread *td);
 int	 suswintr(void *base, int word);
 struct uidinfo
@@ -149,6 +157,8 @@ struct uidinfo
 void	 uifree(struct uidinfo *uip);
 void	 uihashinit(void);
 void	 uihold(struct uidinfo *uip);
+void	 ui_racct_foreach(void (*callback)(struct racct *racct,
+	    void *arg2, void *arg3), void *arg2, void *arg3);
 
 #endif /* _KERNEL */
 #endif /* !_SYS_RESOURCEVAR_H_ */

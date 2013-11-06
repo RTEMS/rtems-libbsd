@@ -84,6 +84,7 @@ struct intr_thread {
 
 /* Interrupt thread flags kept in it_flags */
 #define	IT_DEAD		0x000001	/* Thread is waiting to exit. */
+#define	IT_WAIT		0x000002	/* Thread is waiting for completion. */
 
 struct	intr_entropy {
 	struct	thread *td;
@@ -576,17 +577,6 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		}
 	}
 
-	/* Add the new handler to the event in priority order. */
-	TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
-		if (temp_ih->ih_pri > ih->ih_pri)
-			break;
-	}
-	if (temp_ih == NULL)
-		TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
-	else
-		TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
-	intr_event_update(ie);
-
 	/* Create a thread if we need one. */
 	while (ie->ie_thread == NULL && handler != NULL) {
 		if (ie->ie_flags & IE_ADDING_THREAD)
@@ -603,6 +593,18 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 			wakeup(ie);
 		}
 	}
+
+	/* Add the new handler to the event in priority order. */
+	TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
+		if (temp_ih->ih_pri > ih->ih_pri)
+			break;
+	}
+	if (temp_ih == NULL)
+		TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
+	else
+		TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
+	intr_event_update(ie);
+
 	CTR3(KTR_INTR, "%s: added %s to %s", __func__, ih->ih_name,
 	    ie->ie_name);
 	mtx_unlock(&ie->ie_lock);
@@ -650,23 +652,12 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		}
 	}
 
-	/* Add the new handler to the event in priority order. */
-	TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
-		if (temp_ih->ih_pri > ih->ih_pri)
-			break;
-	}
-	if (temp_ih == NULL)
-		TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
-	else
-		TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
-	intr_event_update(ie);
-
 	/* For filtered handlers, create a private ithread to run on. */
-	if (filter != NULL && handler != NULL) { 
+	if (filter != NULL && handler != NULL) {
 		mtx_unlock(&ie->ie_lock);
-		it = ithread_create("intr: newborn", ih);		
+		it = ithread_create("intr: newborn", ih);
 		mtx_lock(&ie->ie_lock);
-		it->it_event = ie; 
+		it->it_event = ie;
 		ih->ih_thread = it;
 		ithread_update(it); // XXX - do we really need this?!?!?
 	} else { /* Create the global per-event thread if we need one. */
@@ -686,6 +677,18 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 			}
 		}
 	}
+
+	/* Add the new handler to the event in priority order. */
+	TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
+		if (temp_ih->ih_pri > ih->ih_pri)
+			break;
+	}
+	if (temp_ih == NULL)
+		TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
+	else
+		TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
+	intr_event_update(ie);
+
 	CTR3(KTR_INTR, "%s: added %s to %s", __func__, ih->ih_name,
 	    ie->ie_name);
 	mtx_unlock(&ie->ie_lock);
@@ -773,7 +776,47 @@ intr_handler_source(void *cookie)
 	return (ie->ie_source);
 }
 
+/*
+ * Sleep until an ithread finishes executing an interrupt handler.
+ *
+ * XXX Doesn't currently handle interrupt filters or fast interrupt
+ * handlers.  This is intended for compatibility with linux drivers
+ * only.  Do not use in BSD code.
+ */
+void
+_intr_drain(int irq)
+{
+	struct intr_event *ie;
+	struct intr_thread *ithd;
+	struct thread *td;
+
+	ie = intr_lookup(irq);
+	if (ie == NULL)
+		return;
+	if (ie->ie_thread == NULL)
+		return;
+	ithd = ie->ie_thread;
+	td = ithd->it_thread;
+	/*
+	 * We set the flag and wait for it to be cleared to avoid
+	 * long delays with potentially busy interrupt handlers
+	 * were we to only sample TD_AWAITING_INTR() every tick.
+	 */
+	thread_lock(td);
+	if (!TD_AWAITING_INTR(td)) {
+		ithd->it_flags |= IT_WAIT;
+		while (ithd->it_flags & IT_WAIT) {
+			thread_unlock(td);
+			pause("idrain", 1);
+			thread_lock(td);
+		}
+	}
+	thread_unlock(td);
+	return;
+}
 #endif /* __rtems__ */
+
+
 #ifndef INTR_FILTER
 #ifndef __rtems__
 int
@@ -835,7 +878,7 @@ ok:
 		 * again and remove this handler if it has already passed
 		 * it on the list.
 		 */
-		ie->ie_thread->it_need = 1;
+		atomic_store_rel_int(&ie->ie_thread->it_need, 1);
 	} else
 		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 	thread_unlock(ie->ie_thread->it_thread);
@@ -911,7 +954,7 @@ intr_event_schedule_thread(struct intr_event *ie)
 	 * running.  Then, lock the thread and see if we actually need to
 	 * put it on the runqueue.
 	 */
-	it->it_need = 1;
+	atomic_store_rel_int(&it->it_need, 1);
 	thread_lock(td);
 #ifndef __rtems__
 	if (TD_AWAITING_INTR(td)) {
@@ -998,7 +1041,7 @@ ok:
 		 * again and remove this handler if it has already passed
 		 * it on the list.
 		 */
-		it->it_need = 1;
+		atomic_store_rel_int(&it->it_need, 1);
 	} else
 		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 	thread_unlock(it->it_thread);
@@ -1078,7 +1121,7 @@ intr_event_schedule_thread(struct intr_event *ie, struct intr_thread *it)
 	 * running.  Then, lock the thread and see if we actually need to
 	 * put it on the runqueue.
 	 */
-	it->it_need = 1;
+	atomic_store_rel_int(&it->it_need, 1);
 	thread_lock(td);
 	if (TD_AWAITING_INTR(td)) {
 		CTR3(KTR_INTR, "%s: schedule pid %d (%s)", __func__, p->p_pid,
@@ -1161,10 +1204,20 @@ swi_sched(void *cookie, int flags)
 {
 	struct intr_handler *ih = (struct intr_handler *)cookie;
 	struct intr_event *ie = ih->ih_event;
+	struct intr_entropy entropy;
 	int error;
 
 	CTR3(KTR_INTR, "swi_sched: %s %s need=%d", ie->ie_name, ih->ih_name,
 	    ih->ih_need);
+
+	if (harvest.swi) {
+		CTR2(KTR_INTR, "swi_sched: pid %d (%s) gathering entropy",
+		    curproc->p_pid, curthread->td_name);
+		entropy.event = (uintptr_t)ih;
+		entropy.td = curthread;
+		random_harvest(&entropy, sizeof(entropy), 1, 0,
+		    RANDOM_INTERRUPT);
+	}
 
 	/*
 	 * Set ih_need for this handler so that if the ithread is already
@@ -1267,7 +1320,7 @@ intr_event_execute_handlers(struct proc *p, struct intr_event *ie)
 		 * interrupt threads always invoke all of their handlers.
 		 */
 		if (ie->ie_flags & IE_SOFT) {
-			if (!ih->ih_need)
+			if (atomic_load_acq_int(&ih->ih_need) == 0)
 				continue;
 			else
 				atomic_store_rel_int(&ih->ih_need, 0);
@@ -1345,6 +1398,7 @@ ithread_loop(void *arg)
 	struct intr_event *ie;
 	struct thread *td;
 	struct proc *p;
+	int wake;
 
 	td = curthread;
 #ifndef __rtems__
@@ -1357,6 +1411,7 @@ ithread_loop(void *arg)
 	    ("%s: ithread and proc linkage out of sync", __func__));
 	ie = ithd->it_event;
 	ie->ie_count = 0;
+	wake = 0;
 
 	/*
 	 * As long as we have interrupts outstanding, go through the
@@ -1378,7 +1433,7 @@ ithread_loop(void *arg)
 		 * we are running, it will set it_need to note that we
 		 * should make another pass.
 		 */
-		while (ithd->it_need) {
+		while (atomic_load_acq_int(&ithd->it_need) != 0) {
 			/*
 			 * This might need a full read and write barrier
 			 * to make sure that this write posts before any
@@ -1397,7 +1452,8 @@ ithread_loop(void *arg)
 		 * set again, so we have to check it again.
 		 */
 		thread_lock(td);
-		if (!ithd->it_need && !(ithd->it_flags & IT_DEAD)) {
+		if ((atomic_load_acq_int(&ithd->it_need) == 0) &&
+		    !(ithd->it_flags & (IT_DEAD | IT_WAIT))) {
 #ifndef __rtems__
 			TD_SET_IWAIT(td);
 			ie->ie_count = 0;
@@ -1415,7 +1471,15 @@ ithread_loop(void *arg)
 			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 #endif /* __rtems__ */
 		}
+		if (ithd->it_flags & IT_WAIT) {
+			wake = 1;
+			ithd->it_flags &= ~IT_WAIT;
+		}
 		thread_unlock(td);
+		if (wake) {
+			wakeup(ithd);
+			wake = 0;
+		}
 	}
 }
 #ifndef __rtems__
@@ -1435,6 +1499,7 @@ int
 intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 {
 	struct intr_handler *ih;
+	struct trapframe *oldframe;
 	struct thread *td;
 	int error, ret, thread;
 
@@ -1454,6 +1519,8 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	thread = 0;
 	ret = 0;
 	critical_enter();
+	oldframe = td->td_intr_frame;
+	td->td_intr_frame = frame;
 	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if (ih->ih_filter == NULL) {
 			thread = 1;
@@ -1491,6 +1558,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 				thread = 1;
 		}
 	}
+	td->td_intr_frame = oldframe;
 
 	if (thread) {
 		if (ie->ie_pre_ithread != NULL)
@@ -1529,6 +1597,7 @@ ithread_loop(void *arg)
 	struct thread *td;
 	struct proc *p;
 	int priv;
+	int wake;
 
 	td = curthread;
 	p = td->td_proc;
@@ -1539,6 +1608,7 @@ ithread_loop(void *arg)
 	    ("%s: ithread and proc linkage out of sync", __func__));
 	ie = ithd->it_event;
 	ie->ie_count = 0;
+	wake = 0;
 
 	/*
 	 * As long as we have interrupts outstanding, go through the
@@ -1560,7 +1630,7 @@ ithread_loop(void *arg)
 		 * we are running, it will set it_need to note that we
 		 * should make another pass.
 		 */
-		while (ithd->it_need) {
+		while (atomic_load_acq_int(&ithd->it_need) != 0) {
 			/*
 			 * This might need a full read and write barrier
 			 * to make sure that this write posts before any
@@ -1582,12 +1652,21 @@ ithread_loop(void *arg)
 		 * set again, so we have to check it again.
 		 */
 		thread_lock(td);
-		if (!ithd->it_need && !(ithd->it_flags & IT_DEAD)) {
+		if ((atomic_load_acq_int(&ithd->it_need) == 0) &&
+		    !(ithd->it_flags & (IT_DEAD | IT_WAIT))) {
 			TD_SET_IWAIT(td);
 			ie->ie_count = 0;
 			mi_switch(SW_VOL | SWT_IWAIT, NULL);
 		}
+		if (ithd->it_flags & IT_WAIT) {
+			wake = 1;
+			ithd->it_flags &= ~IT_WAIT;
+		}
 		thread_unlock(td);
+		if (wake) {
+			wakeup(ithd);
+			wake = 0;
+		}
 	}
 }
 
@@ -1682,6 +1761,7 @@ int
 intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 {
 	struct intr_thread *ithd;
+	struct trapframe *oldframe;
 	struct thread *td;
 	int thread;
 
@@ -1694,6 +1774,8 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	td->td_intr_nesting_level++;
 	thread = 0;
 	critical_enter();
+	oldframe = td->td_intr_frame;
+	td->td_intr_frame = frame;
 	thread = intr_filter_loop(ie, frame, &ithd);	
 	if (thread & FILTER_HANDLED) {
 		if (ie->ie_post_filter != NULL)
@@ -1702,6 +1784,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 		if (ie->ie_pre_ithread != NULL)
 			ie->ie_pre_ithread(ie->ie_source);
 	}
+	td->td_intr_frame = oldframe;
 	critical_exit();
 	
 	/* Interrupt storm logic */
@@ -1760,7 +1843,16 @@ db_dump_intrhand(struct intr_handler *ih)
 		break;
 	}
 	db_printf(" ");
-	db_printsym((uintptr_t)ih->ih_handler, DB_STGY_PROC);
+	if (ih->ih_filter != NULL) {
+		db_printf("[F]");
+		db_printsym((uintptr_t)ih->ih_filter, DB_STGY_PROC);
+	}
+	if (ih->ih_handler != NULL) {
+		if (ih->ih_filter != NULL)
+			db_printf(",");
+		db_printf("[H]");
+		db_printsym((uintptr_t)ih->ih_handler, DB_STGY_PROC);
+	}
 	db_printf("(%p)", ih->ih_argument);
 	if (ih->ih_need ||
 	    (ih->ih_flags & (IH_EXCLUSIVE | IH_ENTROPY | IH_DEAD |
@@ -1896,8 +1988,7 @@ SYSINIT(start_softintr, SI_SUB_SOFTINTR, SI_ORDER_FIRST, start_softintr,
 static int
 sysctl_intrnames(SYSCTL_HANDLER_ARGS)
 {
-	return (sysctl_handle_opaque(oidp, intrnames, eintrnames - intrnames,
-	   req));
+	return (sysctl_handle_opaque(oidp, intrnames, sintrnames, req));
 }
 
 SYSCTL_PROC(_hw, OID_AUTO, intrnames, CTLTYPE_OPAQUE | CTLFLAG_RD,
@@ -1906,8 +1997,7 @@ SYSCTL_PROC(_hw, OID_AUTO, intrnames, CTLTYPE_OPAQUE | CTLFLAG_RD,
 static int
 sysctl_intrcnt(SYSCTL_HANDLER_ARGS)
 {
-	return (sysctl_handle_opaque(oidp, intrcnt,
-	    (char *)eintrcnt - (char *)intrcnt, req));
+	return (sysctl_handle_opaque(oidp, intrcnt, sintrcnt, req));
 }
 
 SYSCTL_PROC(_hw, OID_AUTO, intrcnt, CTLTYPE_OPAQUE | CTLFLAG_RD,
@@ -1921,9 +2011,12 @@ DB_SHOW_COMMAND(intrcnt, db_show_intrcnt)
 {
 	u_long *i;
 	char *cp;
+	u_int j;
 
 	cp = intrnames;
-	for (i = intrcnt; i != eintrcnt && !db_pager_quit; i++) {
+	j = 0;
+	for (i = intrcnt; j < (sintrcnt / sizeof(u_long)) && !db_pager_quit;
+	    i++, j++) {
 		if (*cp == '\0')
 			break;
 		if (*i != 0)

@@ -95,12 +95,16 @@ MALLOC_DEFINE(M_BPF, "BPF", "BPF data");
 
 #define PRINET  26			/* interruptible */
 
+#define	SIZEOF_BPF_HDR(type)	\
+    (offsetof(type, bh_hdrlen) + sizeof(((type *)0)->bh_hdrlen))
+
 #ifdef COMPAT_FREEBSD32
 #include <sys/mount.h>
 #include <compat/freebsd32/freebsd32.h>
 #define BPF_ALIGNMENT32 sizeof(int32_t)
 #define BPF_WORDALIGN32(x) (((x)+(BPF_ALIGNMENT32-1))&~(BPF_ALIGNMENT32-1))
 
+#ifndef BURN_BRIDGES
 /*
  * 32-bit version of structure prepended to each packet.  We use this header
  * instead of the standard one for 32-bit streams.  We mark the a stream as
@@ -113,6 +117,7 @@ struct bpf_hdr32 {
 	uint16_t	bh_hdrlen;	/* length of bpf header (this struct
 					   plus alignment padding) */
 };
+#endif
 
 struct bpf_program32 {
 	u_int bf_len;
@@ -125,11 +130,11 @@ struct bpf_dltlist32 {
 };
 
 #define	BIOCSETF32	_IOW('B', 103, struct bpf_program32)
-#define	BIOCSRTIMEOUT32	_IOW('B',109, struct timeval32)
-#define	BIOCGRTIMEOUT32	_IOR('B',110, struct timeval32)
-#define	BIOCGDLTLIST32	_IOWR('B',121, struct bpf_dltlist32)
-#define	BIOCSETWF32	_IOW('B',123, struct bpf_program32)
-#define	BIOCSETFNR32	_IOW('B',130, struct bpf_program32)
+#define	BIOCSRTIMEOUT32	_IOW('B', 109, struct timeval32)
+#define	BIOCGRTIMEOUT32	_IOR('B', 110, struct timeval32)
+#define	BIOCGDLTLIST32	_IOWR('B', 121, struct bpf_dltlist32)
+#define	BIOCSETWF32	_IOW('B', 123, struct bpf_program32)
+#define	BIOCSETFNR32	_IOW('B', 130, struct bpf_program32)
 #endif
 
 /*
@@ -154,7 +159,7 @@ static __inline void
 		bpf_wakeup(struct bpf_d *);
 static void	catchpacket(struct bpf_d *, u_char *, u_int, u_int,
 		    void (*)(struct bpf_d *, caddr_t, u_int, void *, u_int),
-		    struct timeval *);
+		    struct bintime *);
 static void	reset_d(struct bpf_d *);
 static int	bpf_setf(struct bpf_d *, struct bpf_program *, u_long cmd);
 static int	bpf_getdltlist(struct bpf_d *, struct bpf_dltlist *);
@@ -171,7 +176,7 @@ SYSCTL_INT(_net_bpf, OID_AUTO, maxinsns, CTLFLAG_RW,
 static int bpf_zerocopy_enable = 0;
 SYSCTL_INT(_net_bpf, OID_AUTO, zerocopy_enable, CTLFLAG_RW,
     &bpf_zerocopy_enable, 0, "Enable new zero-copy BPF buffer sessions");
-SYSCTL_NODE(_net_bpf, OID_AUTO, stats, CTLFLAG_MPSAFE | CTLFLAG_RW,
+static SYSCTL_NODE(_net_bpf, OID_AUTO, stats, CTLFLAG_MPSAFE | CTLFLAG_RW,
     bpf_stats_sysctl, "bpf statistics portal");
 
 static VNET_DEFINE(int, bpf_optimize_writers) = 0;
@@ -198,8 +203,11 @@ static struct cdevsw bpf_cdevsw = {
 	.d_kqfilter =	bpfkqfilter,
 };
 
-static struct filterops bpfread_filtops =
-	{ 1, NULL, filt_bpfdetach, filt_bpfread };
+static struct filterops bpfread_filtops = {
+	.f_isfd = 1,
+	.f_detach = filt_bpfdetach,
+	.f_event = filt_bpfread,
+};
 
 eventhandler_tag	bpf_ifdetach_cookie = NULL;
 
@@ -813,6 +821,7 @@ bpfopen(struct cdev *dev, int flags, int fmt, struct thread *td)
 	 * particular buffer method.
 	 */
 	bpf_buffer_init(d);
+	d->bd_hbuf_in_use = 0;
 	d->bd_bufmode = BPF_BUFMODE_BUFFER;
 	d->bd_sig = SIGIO;
 	d->bd_direction = BPF_D_INOUT;
@@ -866,6 +875,14 @@ bpfread(struct cdev *dev, struct uio *uio, int ioflag)
 		callout_stop(&d->bd_callout);
 	timed_out = (d->bd_state == BPF_TIMED_OUT);
 	d->bd_state = BPF_IDLE;
+	while (d->bd_hbuf_in_use) {
+		error = mtx_sleep(&d->bd_hbuf_in_use, &d->bd_lock,
+		    PRINET|PCATCH, "bd_hbuf", 0);
+		if (error != 0) {
+			BPFD_UNLOCK(d);
+			return (error);
+		}
+	}
 	/*
 	 * If the hold buffer is empty, then do a timed sleep, which
 	 * ends when the timeout expires or when enough packets
@@ -934,24 +951,27 @@ bpfread(struct cdev *dev, struct uio *uio, int ioflag)
 	/*
 	 * At this point, we know we have something in the hold slot.
 	 */
+	d->bd_hbuf_in_use = 1;
 	BPFD_UNLOCK(d);
 
 	/*
 	 * Move data from hold buffer into user space.
 	 * We know the entire buffer is transferred since
 	 * we checked above that the read buffer is bpf_bufsize bytes.
-	 *
-	 * XXXRW: More synchronization needed here: what if a second thread
-	 * issues a read on the same fd at the same time?  Don't want this
-	 * getting invalidated.
+  	 *
+	 * We do not have to worry about simultaneous reads because
+	 * we waited for sole access to the hold buffer above.
 	 */
 	error = bpf_uiomove(d, d->bd_hbuf, d->bd_hlen, uio);
 
 	BPFD_LOCK(d);
+	KASSERT(d->bd_hbuf != NULL, ("bpfread: lost bd_hbuf"));
 	d->bd_fbuf = d->bd_hbuf;
 	d->bd_hbuf = NULL;
 	d->bd_hlen = 0;
 	bpf_buf_reclaimed(d);
+	d->bd_hbuf_in_use = 0;
+	wakeup(&d->bd_hbuf_in_use);
 	BPFD_UNLOCK(d);
 
 	return (error);
@@ -1105,6 +1125,9 @@ reset_d(struct bpf_d *d)
 
 	BPFD_LOCK_ASSERT(d);
 
+	while (d->bd_hbuf_in_use)
+		mtx_sleep(&d->bd_hbuf_in_use, &d->bd_lock, PRINET,
+		    "bd_hbuf", 0);
 	if ((d->bd_hbuf != NULL) &&
 	    (d->bd_bufmode != BPF_BUFMODE_ZBUF || bpf_canfreebuf(d))) {
 		/* Free the hold buffer. */
@@ -1145,6 +1168,8 @@ reset_d(struct bpf_d *d)
  *  BIOCSHDRCMPLT	Set "header already complete" flag
  *  BIOCGDIRECTION	Get packet direction flag
  *  BIOCSDIRECTION	Set packet direction flag
+ *  BIOCGTSTAMP		Get time stamp format and resolution.
+ *  BIOCSTSTAMP		Set time stamp format and resolution.
  *  BIOCLOCK		Set "locked" flag
  *  BIOCFEEDBACK	Set packet feedback mode.
  *  BIOCSETZBUF		Set current zero-copy buffer locations.
@@ -1193,6 +1218,7 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 		case BIOCVERSION:
 		case BIOCGRSIG:
 		case BIOCGHDRCMPLT:
+		case BIOCSTSTAMP:
 		case BIOCFEEDBACK:
 		case FIONREAD:
 		case BIOCLOCK:
@@ -1242,6 +1268,9 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 
 			BPFD_LOCK(d);
 			n = d->bd_slen;
+			while (d->bd_hbuf_in_use)
+				mtx_sleep(&d->bd_hbuf_in_use, &d->bd_lock,
+				    PRINET, "bd_hbuf", 0);
 			if (d->bd_hbuf)
 				n += d->bd_hlen;
 			BPFD_UNLOCK(d);
@@ -1544,6 +1573,30 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 			default:
 				error = EINVAL;
 			}
+		}
+		break;
+
+	/*
+	 * Get packet timestamp format and resolution.
+	 */
+	case BIOCGTSTAMP:
+		BPFD_LOCK(d);
+		*(u_int *)addr = d->bd_tstamp;
+		BPFD_UNLOCK(d);
+		break;
+
+	/*
+	 * Set packet timestamp format and resolution.
+	 */
+	case BIOCSTSTAMP:
+		{
+			u_int	func;
+
+			func = *(u_int *)addr;
+			if (BPF_T_VALID(func))
+				d->bd_tstamp = func;
+			else
+				error = EINVAL;
 		}
 		break;
 
@@ -1931,6 +1984,9 @@ filt_bpfread(struct knote *kn, long hint)
 	ready = bpf_ready(d);
 	if (ready) {
 		kn->kn_data = d->bd_slen;
+		while (d->bd_hbuf_in_use)
+			mtx_sleep(&d->bd_hbuf_in_use, &d->bd_lock,
+			    PRINET, "bd_hbuf", 0);
 		if (d->bd_hbuf)
 			kn->kn_data += d->bd_hlen;
 	} else if (d->bd_rtout > 0 && d->bd_state == BPF_IDLE) {
@@ -1942,6 +1998,48 @@ filt_bpfread(struct knote *kn, long hint)
 	return (ready);
 }
 
+#define	BPF_TSTAMP_NONE		0
+#define	BPF_TSTAMP_FAST		1
+#define	BPF_TSTAMP_NORMAL	2
+#define	BPF_TSTAMP_EXTERN	3
+
+static int
+bpf_ts_quality(int tstype)
+{
+
+	if (tstype == BPF_T_NONE)
+		return (BPF_TSTAMP_NONE);
+	if ((tstype & BPF_T_FAST) != 0)
+		return (BPF_TSTAMP_FAST);
+
+	return (BPF_TSTAMP_NORMAL);
+}
+
+static int
+bpf_gettime(struct bintime *bt, int tstype, struct mbuf *m)
+{
+	struct m_tag *tag;
+	int quality;
+
+	quality = bpf_ts_quality(tstype);
+	if (quality == BPF_TSTAMP_NONE)
+		return (quality);
+
+	if (m != NULL) {
+		tag = m_tag_locate(m, MTAG_BPF, MTAG_BPF_TIMESTAMP, NULL);
+		if (tag != NULL) {
+			*bt = *(struct bintime *)(tag + 1);
+			return (BPF_TSTAMP_EXTERN);
+		}
+	}
+	if (quality == BPF_TSTAMP_NORMAL)
+		binuptime(bt);
+	else
+		getbinuptime(bt);
+
+	return (quality);
+}
+
 /*
  * Incoming linkage from device drivers.  Process the packet pkt, of length
  * pktlen, which is stored in a contiguous buffer.  The packet is parsed
@@ -1951,15 +2049,15 @@ filt_bpfread(struct knote *kn, long hint)
 void
 bpf_tap(struct bpf_if *bp, u_char *pkt, u_int pktlen)
 {
+	struct bintime bt;
 	struct bpf_d *d;
 #ifdef BPF_JITTER
 	bpf_jit_filter *bf;
 #endif
 	u_int slen;
 	int gottime;
-	struct timeval tv;
 
-	gottime = 0;
+	gottime = BPF_TSTAMP_NONE;
 
 	BPFIF_RLOCK(bp);
 
@@ -1994,15 +2092,13 @@ bpf_tap(struct bpf_if *bp, u_char *pkt, u_int pktlen)
 			BPFD_LOCK(d);
 
 			d->bd_fcount++;
-			if (!gottime) {
-				microtime(&tv);
-				gottime = 1;
-			}
+			if (gottime < bpf_ts_quality(d->bd_tstamp))
+				gottime = bpf_gettime(&bt, d->bd_tstamp, NULL);
 #ifdef MAC
 			if (mac_bpfdesc_check_receive(d, bp->bif_ifp) == 0)
 #endif
 				catchpacket(d, pkt, pktlen, slen,
-				    bpf_append_bytes, &tv);
+				    bpf_append_bytes, &bt);
 			BPFD_UNLOCK(d);
 		}
 	}
@@ -2020,13 +2116,13 @@ bpf_tap(struct bpf_if *bp, u_char *pkt, u_int pktlen)
 void
 bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 {
+	struct bintime bt;
 	struct bpf_d *d;
 #ifdef BPF_JITTER
 	bpf_jit_filter *bf;
 #endif
 	u_int pktlen, slen;
 	int gottime;
-	struct timeval tv;
 
 	/* Skip outgoing duplicate packets. */
 	if ((m->m_flags & M_PROMISC) != 0 && m->m_pkthdr.rcvif == NULL) {
@@ -2034,9 +2130,8 @@ bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 		return;
 	}
 
-	gottime = 0;
-
 	pktlen = m_length(m, NULL);
+	gottime = BPF_TSTAMP_NONE;
 
 	BPFIF_RLOCK(bp);
 
@@ -2056,15 +2151,13 @@ bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 			BPFD_LOCK(d);
 
 			d->bd_fcount++;
-			if (!gottime) {
-				microtime(&tv);
-				gottime = 1;
-			}
+			if (gottime < bpf_ts_quality(d->bd_tstamp))
+				gottime = bpf_gettime(&bt, d->bd_tstamp, m);
 #ifdef MAC
 			if (mac_bpfdesc_check_receive(d, bp->bif_ifp) == 0)
 #endif
 				catchpacket(d, (u_char *)m, pktlen, slen,
-				    bpf_append_mbuf, &tv);
+				    bpf_append_mbuf, &bt);
 			BPFD_UNLOCK(d);
 		}
 	}
@@ -2078,19 +2171,17 @@ bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 void
 bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 {
+	struct bintime bt;
 	struct mbuf mb;
 	struct bpf_d *d;
 	u_int pktlen, slen;
 	int gottime;
-	struct timeval tv;
 
 	/* Skip outgoing duplicate packets. */
 	if ((m->m_flags & M_PROMISC) != 0 && m->m_pkthdr.rcvif == NULL) {
 		m->m_flags &= ~M_PROMISC;
 		return;
 	}
-
-	gottime = 0;
 
 	pktlen = m_length(m, NULL);
 	/*
@@ -2103,6 +2194,7 @@ bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 	mb.m_len = dlen;
 	pktlen += dlen;
 
+	gottime = BPF_TSTAMP_NONE;
 
 	BPFIF_RLOCK(bp);
 
@@ -2115,15 +2207,13 @@ bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 			BPFD_LOCK(d);
 
 			d->bd_fcount++;
-			if (!gottime) {
-				microtime(&tv);
-				gottime = 1;
-			}
+			if (gottime < bpf_ts_quality(d->bd_tstamp))
+				gottime = bpf_gettime(&bt, d->bd_tstamp, m);
 #ifdef MAC
 			if (mac_bpfdesc_check_receive(d, bp->bif_ifp) == 0)
 #endif
 				catchpacket(d, (u_char *)&mb, pktlen, slen,
-				    bpf_append_mbuf, &tv);
+				    bpf_append_mbuf, &bt);
 			BPFD_UNLOCK(d);
 		}
 	}
@@ -2131,6 +2221,69 @@ bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 }
 
 #undef	BPF_CHECK_DIRECTION
+
+#undef	BPF_TSTAMP_NONE
+#undef	BPF_TSTAMP_FAST
+#undef	BPF_TSTAMP_NORMAL
+#undef	BPF_TSTAMP_EXTERN
+
+static int
+bpf_hdrlen(struct bpf_d *d)
+{
+	int hdrlen;
+
+	hdrlen = d->bd_bif->bif_hdrlen;
+#ifndef BURN_BRIDGES
+	if (d->bd_tstamp == BPF_T_NONE ||
+	    BPF_T_FORMAT(d->bd_tstamp) == BPF_T_MICROTIME)
+#ifdef COMPAT_FREEBSD32
+		if (d->bd_compat32)
+			hdrlen += SIZEOF_BPF_HDR(struct bpf_hdr32);
+		else
+#endif
+			hdrlen += SIZEOF_BPF_HDR(struct bpf_hdr);
+	else
+#endif
+		hdrlen += SIZEOF_BPF_HDR(struct bpf_xhdr);
+#ifdef COMPAT_FREEBSD32
+	if (d->bd_compat32)
+		hdrlen = BPF_WORDALIGN32(hdrlen);
+	else
+#endif
+		hdrlen = BPF_WORDALIGN(hdrlen);
+
+	return (hdrlen - d->bd_bif->bif_hdrlen);
+}
+
+static void
+bpf_bintime2ts(struct bintime *bt, struct bpf_ts *ts, int tstype)
+{
+	struct bintime bt2;
+	struct timeval tsm;
+	struct timespec tsn;
+
+	if ((tstype & BPF_T_MONOTONIC) == 0) {
+		bt2 = *bt;
+		bintime_add(&bt2, &boottimebin);
+		bt = &bt2;
+	}
+	switch (BPF_T_FORMAT(tstype)) {
+	case BPF_T_MICROTIME:
+		bintime2timeval(bt, &tsm);
+		ts->bt_sec = tsm.tv_sec;
+		ts->bt_frac = tsm.tv_usec;
+		break;
+	case BPF_T_NANOTIME:
+		bintime2timespec(bt, &tsn);
+		ts->bt_sec = tsn.tv_sec;
+		ts->bt_frac = tsn.tv_nsec;
+		break;
+	case BPF_T_BINTIME:
+		ts->bt_sec = bt->sec;
+		ts->bt_frac = bt->frac;
+		break;
+	}
+}
 
 /*
  * Move the packet data from interface memory (pkt) into the
@@ -2142,15 +2295,19 @@ bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 static void
 catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
     void (*cpfn)(struct bpf_d *, caddr_t, u_int, void *, u_int),
-    struct timeval *tv)
+    struct bintime *bt)
 {
-	struct bpf_hdr hdr;
+	struct bpf_xhdr hdr;
+#ifndef BURN_BRIDGES
+	struct bpf_hdr hdr_old;
 #ifdef COMPAT_FREEBSD32
-	struct bpf_hdr32 hdr32;
+	struct bpf_hdr32 hdr32_old;
 #endif
-	int totlen, curlen;
-	int hdrlen = d->bd_bif->bif_hdrlen;
+#endif
+	int caplen, curlen, hdrlen, totlen;
 	int do_wakeup = 0;
+	int do_timestamp;
+	int tstype;
 
 	BPFD_LOCK_ASSERT(d);
 
@@ -2162,6 +2319,9 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
 	 * spot to do it.
 	 */
 	if (d->bd_fbuf == NULL && bpf_canfreebuf(d)) {
+		while (d->bd_hbuf_in_use)
+			mtx_sleep(&d->bd_hbuf_in_use, &d->bd_lock,
+			    PRINET, "bd_hbuf", 0);
 		d->bd_fbuf = d->bd_hbuf;
 		d->bd_hbuf = NULL;
 		d->bd_hlen = 0;
@@ -2174,6 +2334,7 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
 	 * much.  Otherwise, transfer the whole packet (unless
 	 * we hit the buffer size limit).
 	 */
+	hdrlen = bpf_hdrlen(d);
 	totlen = hdrlen + min(snaplen, pktlen);
 	if (totlen > d->bd_bufsize)
 		totlen = d->bd_bufsize;
@@ -2203,6 +2364,9 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
 			++d->bd_dcount;
 			return;
 		}
+		while (d->bd_hbuf_in_use)
+			mtx_sleep(&d->bd_hbuf_in_use, &d->bd_lock,
+			    PRINET, "bd_hbuf", 0);
 		ROTATE_BUFFERS(d);
 		do_wakeup = 1;
 		curlen = 0;
@@ -2213,19 +2377,39 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
 		 * reader should be woken up.
 		 */
 		do_wakeup = 1;
+	caplen = totlen - hdrlen;
+	tstype = d->bd_tstamp;
+	do_timestamp = tstype != BPF_T_NONE;
+#ifndef BURN_BRIDGES
+	if (tstype == BPF_T_NONE || BPF_T_FORMAT(tstype) == BPF_T_MICROTIME) {
+		struct bpf_ts ts;
+		if (do_timestamp)
+			bpf_bintime2ts(bt, &ts, tstype);
 #ifdef COMPAT_FREEBSD32
-	/*
-	 * If this is a 32-bit stream, then stick a 32-bit header at the
-	 * front and copy the data into the buffer.
-	 */
-	if (d->bd_compat32) {
-		bzero(&hdr32, sizeof(hdr32));
-		hdr32.bh_tstamp.tv_sec = tv->tv_sec;
-		hdr32.bh_tstamp.tv_usec = tv->tv_usec;
-		hdr32.bh_datalen = pktlen;
-		hdr32.bh_hdrlen = hdrlen;
-		hdr.bh_caplen = hdr32.bh_caplen = totlen - hdrlen;
-		bpf_append_bytes(d, d->bd_sbuf, curlen, &hdr32, sizeof(hdr32));
+		if (d->bd_compat32) {
+			bzero(&hdr32_old, sizeof(hdr32_old));
+			if (do_timestamp) {
+				hdr32_old.bh_tstamp.tv_sec = ts.bt_sec;
+				hdr32_old.bh_tstamp.tv_usec = ts.bt_frac;
+			}
+			hdr32_old.bh_datalen = pktlen;
+			hdr32_old.bh_hdrlen = hdrlen;
+			hdr32_old.bh_caplen = caplen;
+			bpf_append_bytes(d, d->bd_sbuf, curlen, &hdr32_old,
+			    sizeof(hdr32_old));
+			goto copy;
+		}
+#endif
+		bzero(&hdr_old, sizeof(hdr_old));
+		if (do_timestamp) {
+			hdr_old.bh_tstamp.tv_sec = ts.bt_sec;
+			hdr_old.bh_tstamp.tv_usec = ts.bt_frac;
+		}
+		hdr_old.bh_datalen = pktlen;
+		hdr_old.bh_hdrlen = hdrlen;
+		hdr_old.bh_caplen = caplen;
+		bpf_append_bytes(d, d->bd_sbuf, curlen, &hdr_old,
+		    sizeof(hdr_old));
 		goto copy;
 	}
 #endif
@@ -2235,19 +2419,20 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
 	 * move forward the length of the header plus padding.
 	 */
 	bzero(&hdr, sizeof(hdr));
-	hdr.bh_tstamp = *tv;
+	if (do_timestamp)
+		bpf_bintime2ts(bt, &hdr.bh_tstamp, tstype);
 	hdr.bh_datalen = pktlen;
 	hdr.bh_hdrlen = hdrlen;
-	hdr.bh_caplen = totlen - hdrlen;
+	hdr.bh_caplen = caplen;
 	bpf_append_bytes(d, d->bd_sbuf, curlen, &hdr, sizeof(hdr));
 
 	/*
 	 * Copy the packet data into the store buffer and update its length.
 	 */
-#ifdef COMPAT_FREEBSD32
- copy:
+#ifndef BURN_BRIDGES
+copy:
 #endif
-	(*cpfn)(d, d->bd_sbuf, curlen + hdrlen, pkt, hdr.bh_caplen);
+	(*cpfn)(d, d->bd_sbuf, curlen + hdrlen, pkt, caplen);
 	d->bd_slen = curlen + totlen;
 
 	if (do_wakeup)
@@ -2318,13 +2503,7 @@ bpfattach2(struct ifnet *ifp, u_int dlt, u_int hdrlen, struct bpf_if **driverp)
 	LIST_INSERT_HEAD(&bpf_iflist, bp, bif_next);
 	BPF_UNLOCK();
 
-	/*
-	 * Compute the length of the bpf header.  This is not necessarily
-	 * equal to SIZEOF_BPF_HDR because we want to insert spacing such
-	 * that the network layer header begins on a longword boundary (for
-	 * performance reasons and to alleviate alignment restrictions).
-	 */
-	bp->bif_hdrlen = BPF_WORDALIGN(hdrlen + SIZEOF_BPF_HDR) - hdrlen;
+	bp->bif_hdrlen = hdrlen;
 
 	if (bootverbose)
 		if_printf(ifp, "bpf attached\n");

@@ -12,10 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -211,7 +207,6 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 	u_long ierrors;
 	u_long idrops;
 	u_long collisions;
-	short timer;
 	int drops;
 	struct sockaddr *sa = NULL;
 	char name[IFNAMSIZ];
@@ -245,8 +240,6 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 		if (bflag)
 			printf(" %10.10s","Obytes");
 		printf(" %5s", "Coll");
-		if (tflag)
-			printf(" %s", "Time");
 		if (dflag)
 			printf(" %s", "Drop");
 		putchar('\n');
@@ -298,7 +291,6 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 		ierrors = ifnet.if_ierrors;
 		idrops = ifnet.if_iqdrops;
 		collisions = ifnet.if_collisions;
-		timer = ifnet.if_timer;
 		drops = ifnet.if_snd.ifq_drops;
 
 		if (ifaddraddr == 0) {
@@ -450,8 +442,6 @@ intpr(int interval1, u_long ifnetaddr, void (*pfunc)(char *))
 			show_stat("lu", 10, obytes, link_layer|network_layer);
 
 		show_stat("NRSlu", 5, collisions, link_layer);
-		if (tflag)
-			show_stat("LSd", 4, timer, link_layer);
 		if (dflag)
 			show_stat("LSd", 4, drops, link_layer);
 		putchar('\n');
@@ -583,7 +573,7 @@ sidewaysintpr(int interval1, u_long off)
 			interesting = ip;
 			interesting_off = off;
 		}
-		snprintf(ip->ift_name, sizeof(ip->ift_name), "(%s)", name);;
+		snprintf(ip->ift_name, sizeof(ip->ift_name), "(%s)", name);
 		if ((ipn = malloc(sizeof(struct iftot))) == NULL) {
 			printf("malloc failed\n");
 			exit(1);

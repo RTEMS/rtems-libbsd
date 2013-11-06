@@ -83,7 +83,7 @@
 #ifdef USB_DEBUG
 static int usb_fifo_debug = 0;
 
-SYSCTL_NODE(_hw_usb, OID_AUTO, dev, CTLFLAG_RW, 0, "USB device");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, dev, CTLFLAG_RW, 0, "USB device");
 SYSCTL_INT(_hw_usb_dev, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN,
     &usb_fifo_debug, 0, "Debug Level");
 TUNABLE_INT("hw.usb.dev.debug", &usb_fifo_debug);
@@ -770,7 +770,7 @@ usb_fifo_close(struct usb_fifo *f, int fflags)
 	/* check if a thread wants SIGIO */
 	if (f->async_p != NULL) {
 		PROC_LOCK(f->async_p);
-		psignal(f->async_p, SIGIO);
+		kern_psignal(f->async_p, SIGIO);
 		PROC_UNLOCK(f->async_p);
 		f->async_p = NULL;
 	}
@@ -844,7 +844,7 @@ usb_open(struct cdev *dev, int fflags, int devtype, struct thread *td)
 	struct usb_cdev_privdata *cpd;
 	int err, ep;
 
-	DPRINTFN(2, "%s fflags=0x%08x\n", dev->si_name, fflags);
+	DPRINTFN(2, "%s fflags=0x%08x\n", devtoname(dev), fflags);
 
 	KASSERT(fflags & (FREAD|FWRITE), ("invalid open flags"));
 	if (((fflags & FREAD) && !(pd->mode & FREAD)) ||
@@ -1584,7 +1584,7 @@ usb_fifo_wakeup(struct usb_fifo *f)
 	}
 	if (f->async_p != NULL) {
 		PROC_LOCK(f->async_p);
-		psignal(f->async_p, SIGIO);
+		kern_psignal(f->async_p, SIGIO);
 		PROC_UNLOCK(f->async_p);
 	}
 }

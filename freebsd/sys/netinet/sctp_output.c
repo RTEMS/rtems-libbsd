@@ -1967,7 +1967,7 @@ sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t * len)
 		while (SCTP_BUF_NEXT(mret) != NULL) {
 			mret = SCTP_BUF_NEXT(mret);
 		}
-		SCTP_BUF_NEXT(mret) = sctp_get_mbuf_for_msg(plen, 0, M_NOWAIT, 1, MT_DATA);
+		SCTP_BUF_NEXT(mret) = sctp_get_mbuf_for_msg(plen, 0, M_DONTWAIT, 1, MT_DATA);
 		if (SCTP_BUF_NEXT(mret) == NULL) {
 			/* We are hosed, can't add more addresses */
 			return (m);
@@ -4131,10 +4131,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			SCTPDBG(SCTP_DEBUG_OUTPUT3, "IP output returns %d\n", ret);
 			if (net == NULL) {
 				/* free tempy routes */
-				if (ro->ro_rt) {
-					RTFREE(ro->ro_rt);
-					ro->ro_rt = NULL;
-				}
+				RO_RTFREE(ro);
 			} else {
 				/*
 				 * PMTU check versus smallest asoc MTU goes
@@ -4449,8 +4446,9 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #if defined(SCTP_WITH_NO_CSUM)
 				SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-				sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip6_hdr));
-				SCTP_STAT_INCR(sctps_sendswcrc);
+				m->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
+				m->m_pkthdr.csum_data = 0;
+				SCTP_STAT_INCR(sctps_sendhwcrc);
 #endif
 			}
 			/* send it out. table id is taken from stcb */
@@ -4487,9 +4485,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			}
 			if (net == NULL) {
 				/* Now if we had a temp route free it */
-				if (ro->ro_rt) {
-					RTFREE(ro->ro_rt);
-				}
+				RO_RTFREE(ro);
 			} else {
 				/*
 				 * PMTU check versus smallest asoc MTU goes
@@ -10683,6 +10679,7 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	struct sctp_abort_chunk *abort;
 	struct sctp_auth_chunk *auth = NULL;
 	struct sctp_nets *net;
+	uint32_t vtag;
 	uint32_t auth_offset = 0;
 	uint16_t cause_len, chunk_len, padding_len;
 
@@ -10738,7 +10735,14 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	/* Fill in the ABORT chunk header. */
 	abort = mtod(m_abort, struct sctp_abort_chunk *);
 	abort->ch.chunk_type = SCTP_ABORT_ASSOCIATION;
-	abort->ch.chunk_flags = 0;
+	if (stcb->asoc.peer_vtag == 0) {
+		/* This happens iff the assoc is in COOKIE-WAIT state. */
+		vtag = stcb->asoc.my_vtag;
+		abort->ch.chunk_flags = SCTP_HAD_NO_TCB;
+	} else {
+		vtag = stcb->asoc.peer_vtag;
+		abort->ch.chunk_flags = 0;
+	}
 	abort->ch.chunk_length = htons(chunk_len);
 	/* Add padding, if necessary. */
 	if (padding_len > 0) {
@@ -10750,7 +10754,7 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	(void)sctp_lowlevel_chunk_output(stcb->sctp_ep, stcb, net,
 	    (struct sockaddr *)&net->ro._l_addr,
 	    m_out, auth_offset, auth, stcb->asoc.authinfo.active_keyid, 1, 0, 0,
-	    stcb->sctp_ep->sctp_lport, stcb->rport, htonl(stcb->asoc.peer_vtag),
+	    stcb->sctp_ep->sctp_lport, stcb->rport, htonl(vtag),
 	    stcb->asoc.primary_destination->port, NULL,
 	    0, 0,
 	    so_locked);
@@ -11032,8 +11036,9 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
+			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
+			mout->m_pkthdr.csum_data = 0;
+			SCTP_STAT_INCR(sctps_sendhwcrc);
 #endif
 		}
 #ifdef SCTP_PACKET_LOGGING

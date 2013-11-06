@@ -37,8 +37,8 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_ipx.h>
 #include <rtems/bsd/local/opt_mrouting.h>
 #include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
-#include <rtems/bsd/local/opt_pf.h>
 #include <rtems/bsd/local/opt_sctp.h>
 #include <rtems/bsd/local/opt_mpath.h>
 
@@ -52,14 +52,26 @@ __FBSDID("$FreeBSD$");
 #include <sys/queue.h>
 #include <sys/sysctl.h>
 
+/*
+ * While this file provides the domain and protocol switch tables for IPv4, it
+ * also provides the sysctl node declarations for net.inet.* often shared with
+ * IPv6 for common features or by upper layer protocols.  In case of no IPv4
+ * support compile out everything but these sysctl nodes.
+ */
+#ifdef INET
 #include <net/if.h>
 #include <net/route.h>
 #ifdef RADIX_MPATH
 #include <net/radix_mpath.h>
 #endif
 #include <net/vnet.h>
+#endif /* INET */
 
+#if defined(INET) || defined(INET6)
 #include <netinet/in.h>
+#endif
+
+#ifdef INET
 #include <netinet/in_systm.h>
 #include <netinet/in_var.h>
 #include <netinet/ip.h>
@@ -89,11 +101,6 @@ static struct pr_usrreqs nousrreqs;
 #include <netinet/sctp.h>
 #include <netinet/sctp_var.h>
 #endif /* SCTP */
-
-#ifdef DEV_PFSYNC
-#include <net/pfvar.h>
-#include <net/if_pfsync.h>
-#endif
 
 FEATURE(inet, "Internet Protocol version 4");
 
@@ -306,17 +313,6 @@ struct protosw inetsw[] = {
 	.pr_ctloutput =		rip_ctloutput,
 	.pr_usrreqs =		&rip_usrreqs
 },
-#ifdef DEV_PFSYNC
-{
-	.pr_type =		SOCK_RAW,
-	.pr_domain =		&inetdomain,
-	.pr_protocol =		IPPROTO_PFSYNC,
-	.pr_flags =		PR_ATOMIC|PR_ADDR,
-	.pr_input =		pfsync_input,
-	.pr_ctloutput =		rip_ctloutput,
-	.pr_usrreqs =		&rip_usrreqs
-},
-#endif	/* DEV_PFSYNC */
 /* Spacer n-times for loadable protocols. */
 IPPROTOSPACER,
 IPPROTOSPACER,
@@ -364,6 +360,7 @@ struct domain inetdomain = {
 };
 
 VNET_DOMAIN_SET(inet);
+#endif /* INET */
 
 SYSCTL_NODE(_net,      PF_INET,		inet,	CTLFLAG_RW, 0,
 	"Internet Family");
@@ -385,6 +382,3 @@ SYSCTL_NODE(_net_inet, IPPROTO_IPCOMP,	ipcomp,	CTLFLAG_RW, 0,	"IPCOMP");
 SYSCTL_NODE(_net_inet, IPPROTO_IPIP,	ipip,	CTLFLAG_RW, 0,	"IPIP");
 #endif /* IPSEC */
 SYSCTL_NODE(_net_inet, IPPROTO_RAW,	raw,	CTLFLAG_RW, 0,	"RAW");
-#ifdef DEV_PFSYNC
-SYSCTL_NODE(_net_inet, IPPROTO_PFSYNC,	pfsync,	CTLFLAG_RW, 0,	"PFSYNC");
-#endif

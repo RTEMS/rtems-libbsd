@@ -94,6 +94,7 @@ __FBSDID("$FreeBSD$");
 
 #include <netinet/icmp6.h>
 #include <netinet/ip6.h>
+#include <netinet/ip_var.h>
 #include <netinet6/ip6protosw.h>
 #include <netinet6/ip6_mroute.h>
 #include <netinet6/in6_pcb.h>
@@ -101,6 +102,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/nd6.h>
 #include <netinet6/raw_ip6.h>
 #include <netinet6/scope6_var.h>
+#include <netinet6/send.h>
 
 #ifdef IPSEC
 #include <netipsec/ipsec.h>
@@ -160,7 +162,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 	struct mbuf *opts = NULL;
 	struct sockaddr_in6 fromsa;
 
-	V_rip6stat.rip6s_ipackets++;
+	RIP6STAT_INC(rip6s_ipackets);
 
 	if (faithprefix_p != NULL && (*faithprefix_p)(&ip6->ip6_dst)) {
 		/* XXX Send icmp6 host/port unreach? */
@@ -199,11 +201,11 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 		}
 		INP_RLOCK(in6p);
 		if (in6p->in6p_cksum != -1) {
-			V_rip6stat.rip6s_isum++;
+			RIP6STAT_INC(rip6s_isum);
 			if (in6_cksum(m, proto, *offp,
 			    m->m_pkthdr.len - *offp)) {
 				INP_RUNLOCK(in6p);
-				V_rip6stat.rip6s_badsum++;
+				RIP6STAT_INC(rip6s_badsum);
 				continue;
 			}
 		}
@@ -263,7 +265,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 			 */
 			if (n && ipsec6_in_reject(n, last)) {
 				m_freem(n);
-				V_ipsec6stat.in_polvio++;
+				IPSEC6STAT_INC(in_polvio);
 				/* Do not inject data into pcb. */
 			} else
 #endif /* IPSEC */
@@ -279,7 +281,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 					m_freem(n);
 					if (opts)
 						m_freem(opts);
-					V_rip6stat.rip6s_fullsock++;
+					RIP6STAT_INC(rip6s_fullsock);
 				} else
 					sorwakeup(last->inp_socket);
 				opts = NULL;
@@ -295,8 +297,8 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 	 */
 	if ((last != NULL) && ipsec6_in_reject(m, last)) {
 		m_freem(m);
-		V_ipsec6stat.in_polvio++;
-		V_ip6stat.ip6s_delivered--;
+		IPSEC6STAT_INC(in_polvio);
+		IP6STAT_DEC(ip6s_delivered);
 		/* Do not inject data into pcb. */
 		INP_RUNLOCK(last);
 	} else
@@ -312,14 +314,14 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 			m_freem(m);
 			if (opts)
 				m_freem(opts);
-			V_rip6stat.rip6s_fullsock++;
+			RIP6STAT_INC(rip6s_fullsock);
 		} else
 			sorwakeup(last->inp_socket);
 		INP_RUNLOCK(last);
 	} else {
-		V_rip6stat.rip6s_nosock++;
+		RIP6STAT_INC(rip6s_nosock);
 		if (m->m_flags & M_MCAST)
-			V_rip6stat.rip6s_nosockmcast++;
+			RIP6STAT_INC(rip6s_nosockmcast);
 		if (proto == IPPROTO_NONE)
 			m_freem(m);
 		else {
@@ -328,7 +330,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 			    ICMP6_PARAMPROB_NEXTHEADER,
 			    prvnxtp - mtod(m, char *));
 		}
-		V_ip6stat.ip6s_delivered--;
+		IP6STAT_DEC(ip6s_delivered);
 	}
 	return (IPPROTO_DONE);
 }
@@ -392,6 +394,7 @@ rip6_output(m, va_alist)
 #endif
 {
 	struct mbuf *control;
+	struct m_tag *mtag;
 	struct socket *so;
 	struct sockaddr_in6 *dstsock;
 	struct in6_addr *dst;
@@ -535,13 +538,30 @@ rip6_output(m, va_alist)
 		*p = in6_cksum(m, ip6->ip6_nxt, sizeof(*ip6), plen);
 	}
 
+	/*
+	 * Send RA/RS messages to user land for protection, before sending
+	 * them to rtadvd/rtsol.
+	 */
+	if ((send_sendso_input_hook != NULL) &&
+	    so->so_proto->pr_protocol == IPPROTO_ICMPV6) {
+		switch (type) {
+		case ND_ROUTER_ADVERT:
+		case ND_ROUTER_SOLICIT:
+			mtag = m_tag_get(PACKET_TAG_ND_OUTGOING,
+				sizeof(unsigned short), M_NOWAIT);
+			if (mtag == NULL)
+				goto bad;
+			m_tag_prepend(m, mtag);
+		}
+	}
+
 	error = ip6_output(m, optp, NULL, 0, in6p->in6p_moptions, &oifp, in6p);
 	if (so->so_proto->pr_protocol == IPPROTO_ICMPV6) {
 		if (oifp)
 			icmp6_ifoutstat_inc(oifp, type, code);
 		ICMP6STAT_INC(icp6s_outhist[type]);
 	} else
-		V_rip6stat.rip6s_opackets++;
+		RIP6STAT_INC(rip6s_opackets);
 
 	goto freectl;
 

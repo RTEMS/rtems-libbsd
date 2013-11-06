@@ -248,6 +248,10 @@ int uma_zsecond_add(uma_zone_t zone, uma_zone_t master);
 					 * backend pages and can fail early.
 					 */
 #define	UMA_ZONE_VTOSLAB	0x2000	/* Zone uses vtoslab for lookup. */
+#define	UMA_ZONE_NODUMP		0x4000	/*
+					 * Zone's pages will not be included in
+					 * mini-dumps.
+					 */
 
 /*
  * These flags are shared between the keg and zone.  In zones wishing to add
@@ -452,11 +456,12 @@ int uma_zone_set_obj(uma_zone_t zone, struct vm_object *obj, int size);
  *
  * Arguments:
  *	zone  The zone to limit
+ *	nitems  The requested upper limit on the number of items allowed
  *
  * Returns:
- *	Nothing
+ *	int  The effective value of nitems after rounding up based on page size
  */
-void uma_zone_set_max(uma_zone_t zone, int nitems);
+int uma_zone_set_max(uma_zone_t zone, int nitems);
 
 /*
  * Obtains the effective limit on the number of items in a zone
@@ -623,7 +628,8 @@ struct uma_type_header {
 	u_int64_t	uth_allocs;	/* Zone: number of allocations. */
 	u_int64_t	uth_frees;	/* Zone: number of frees. */
 	u_int64_t	uth_fails;	/* Zone: number of alloc failures. */
-	u_int64_t	_uth_reserved1[3];	/* Reserved. */
+	u_int64_t	uth_sleeps;	/* Zone: number of alloc sleeps. */
+	u_int64_t	_uth_reserved1[2];	/* Reserved. */
 };
 
 struct uma_percpu_stat {

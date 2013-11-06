@@ -206,9 +206,16 @@ void
 #endif /* __rtems__ */
 inet_ctor(void)
 {
+
+#ifndef RESCUE
+	if (!feature_present("inet"))
+		return;
+#endif
+
 #ifdef __rtems__
 	memset(&in_addreq, 0, sizeof(in_addreq));
 	memset(&in_ridreq, 0, sizeof(in_ridreq));
 #endif /* __rtems__ */
+
 	af_register(&af_inet);
 }

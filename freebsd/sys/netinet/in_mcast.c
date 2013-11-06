@@ -157,7 +157,8 @@ static int	inp_set_multicast_if(struct inpcb *, struct sockopt *);
 static int	inp_set_source_filters(struct inpcb *, struct sockopt *);
 static int	sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS);
 
-SYSCTL_NODE(_net_inet_ip, OID_AUTO, mcast, CTLFLAG_RW, 0, "IPv4 multicast");
+static SYSCTL_NODE(_net_inet_ip, OID_AUTO, mcast, CTLFLAG_RW, 0,
+    "IPv4 multicast");
 
 static u_long in_mcast_maxgrpsrc = IP_MAX_GROUP_SRC_FILTER;
 SYSCTL_ULONG(_net_inet_ip_mcast, OID_AUTO, maxgrpsrc,
@@ -176,7 +177,7 @@ SYSCTL_INT(_net_inet_ip_mcast, OID_AUTO, loop, CTLFLAG_RW | CTLFLAG_TUN,
     &in_mcast_loop, 0, "Loopback multicast datagrams by default");
 TUNABLE_INT("net.inet.ip.mcast.loop", &in_mcast_loop);
 
-SYSCTL_NODE(_net_inet_ip_mcast, OID_AUTO, filters,
+static SYSCTL_NODE(_net_inet_ip_mcast, OID_AUTO, filters,
     CTLFLAG_RD | CTLFLAG_MPSAFE, sysctl_ip_mcast_filters,
     "Per-interface stack-wide source filters");
 
@@ -1861,6 +1862,7 @@ inp_join_group(struct inpcb *inp, struct sockopt *sopt)
 
 	ifp = NULL;
 	imf = NULL;
+	lims = NULL;
 	error = 0;
 	is_new = 0;
 
@@ -1978,34 +1980,47 @@ inp_join_group(struct inpcb *inp, struct sockopt *sopt)
 				error = EINVAL;
 				goto out_inp_locked;
 			}
-			/* Throw out duplicates. */
+			/*
+			 * Throw out duplicates.
+			 *
+			 * XXX FIXME: This makes a naive assumption that
+			 * even if entries exist for *ssa in this imf,
+			 * they will be rejected as dupes, even if they
+			 * are not valid in the current mode (in-mode).
+			 *
+			 * in_msource is transactioned just as for anything
+			 * else in SSM -- but note naive use of inm_graft()
+			 * below for allocating new filter entries.
+			 *
+			 * This is only an issue if someone mixes the
+			 * full-state SSM API with the delta-based API,
+			 * which is discouraged in the relevant RFCs.
+			 */
 			lims = imo_match_source(imo, idx, &ssa->sa);
-			if (lims != NULL) {
+			if (lims != NULL /*&&
+			    lims->imsl_st[1] == MCAST_INCLUDE*/) {
 				error = EADDRNOTAVAIL;
 				goto out_inp_locked;
 			}
 		} else {
-			/*
-			 * MCAST_JOIN_GROUP on an existing inclusive
-			 * membership is an error; if you want to change
-			 * filter mode, you must use the userland API
-			 * setsourcefilter().
-			 */
-			if (imf->imf_st[1] == MCAST_INCLUDE) {
-				error = EINVAL;
-				goto out_inp_locked;
-			}
 			/*
 			 * MCAST_JOIN_GROUP on an existing exclusive
 			 * membership is an error; return EADDRINUSE
 			 * to preserve 4.4BSD API idempotence, and
 			 * avoid tedious detour to code below.
 			 * NOTE: This is bending RFC 3678 a bit.
+			 *
+			 * On an existing inclusive membership, this is also
+			 * an error; if you want to change filter mode,
+			 * you must use the userland API setsourcefilter().
+			 * XXX We don't reject this for imf in UNDEFINED
+			 * state at t1, because allocation of a filter
+			 * is atomic with allocation of a membership.
 			 */
-			if (imf->imf_st[1] == MCAST_EXCLUDE) {
+			error = EINVAL;
+			if (imf->imf_st[1] == MCAST_EXCLUDE)
 				error = EADDRINUSE;
-				goto out_inp_locked;
-			}
+			goto out_inp_locked;
 		}
 	}
 
@@ -2040,6 +2055,11 @@ inp_join_group(struct inpcb *inp, struct sockopt *sopt)
 	 * membership of the group. The in_multi may not have
 	 * been allocated yet if this is a new membership, however,
 	 * the in_mfilter slot will be allocated and must be initialized.
+	 *
+	 * Note: Grafting of exclusive mode filters doesn't happen
+	 * in this path.
+	 * XXX: Should check for non-NULL lims (node exists but may
+	 * not be in-mode) for interop with full-state API.
 	 */
 	if (ssa->ss.ss_family != AF_UNSPEC) {
 		/* Membership starts in IN mode */
@@ -2424,8 +2444,10 @@ inp_set_source_filters(struct inpcb *inp, struct sockopt *sopt)
 	if (error)
 		return (error);
 
-	if (msfr.msfr_nsrcs > in_mcast_maxsocksrc ||
-	    (msfr.msfr_fmode != MCAST_EXCLUDE &&
+	if (msfr.msfr_nsrcs > in_mcast_maxsocksrc)
+		return (ENOBUFS);
+
+	if ((msfr.msfr_fmode != MCAST_EXCLUDE &&
 	     msfr.msfr_fmode != MCAST_INCLUDE))
 		return (EINVAL);
 

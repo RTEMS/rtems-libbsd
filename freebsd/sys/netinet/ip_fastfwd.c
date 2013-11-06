@@ -153,8 +153,8 @@ ip_findroute(struct route *ro, struct in_addr dest, struct mbuf *m)
 /*
  * Try to forward a packet based on the destination address.
  * This is a fast path optimized for the plain forwarding case.
- * If the packet is handled (and consumed) here then we return 1;
- * otherwise 0 is returned and the packet should be delivered
+ * If the packet is handled (and consumed) here then we return NULL;
+ * otherwise mbuf is returned and the packet should be delivered
  * to ip_input for full processing.
  */
 struct mbuf *
@@ -169,9 +169,7 @@ ip_fastforward(struct mbuf *m)
 	u_short sum, ip_len;
 	int error = 0;
 	int hlen, mtu;
-#ifdef IPFIREWALL_FORWARD
-	struct m_tag *fwd_tag;
-#endif
+	struct m_tag *fwd_tag = NULL;
 
 	/*
 	 * Are we active and forwarding packets?
@@ -380,14 +378,13 @@ ip_fastforward(struct mbuf *m)
 		 * Go on with new destination address
 		 */
 	}
-#ifdef IPFIREWALL_FORWARD
+
 	if (m->m_flags & M_FASTFWD_OURS) {
 		/*
 		 * ipfw changed it for a local address on this host.
 		 */
 		goto forwardlocal;
 	}
-#endif /* IPFIREWALL_FORWARD */
 
 passin:
 	/*
@@ -457,20 +454,13 @@ passin:
 	/*
 	 * Destination address changed?
 	 */
-#ifndef IPFIREWALL_FORWARD
-	if (odest.s_addr != dest.s_addr) {
-#else
-	fwd_tag = m_tag_find(m, PACKET_TAG_IPFORWARD, NULL);
+	if (m->m_flags & M_IP_NEXTHOP)
+		fwd_tag = m_tag_find(m, PACKET_TAG_IPFORWARD, NULL);
 	if (odest.s_addr != dest.s_addr || fwd_tag != NULL) {
-#endif /* IPFIREWALL_FORWARD */
 		/*
 		 * Is it now for a local address on this host?
 		 */
-#ifndef IPFIREWALL_FORWARD
-		if (in_localip(dest)) {
-#else
 		if (m->m_flags & M_FASTFWD_OURS || in_localip(dest)) {
-#endif /* IPFIREWALL_FORWARD */
 forwardlocal:
 			/*
 			 * Return packet for processing by ip_input().
@@ -485,13 +475,12 @@ forwardlocal:
 		/*
 		 * Redo route lookup with new destination address
 		 */
-#ifdef IPFIREWALL_FORWARD
 		if (fwd_tag) {
 			dest.s_addr = ((struct sockaddr_in *)
 				    (fwd_tag + 1))->sin_addr.s_addr;
 			m_tag_delete(m, fwd_tag);
+			m->m_flags &= ~M_IP_NEXTHOP;
 		}
-#endif /* IPFIREWALL_FORWARD */
 		RTFREE(ro.ro_rt);
 		if ((dst = ip_findroute(&ro, dest, m)) == NULL)
 			return NULL;	/* icmp unreach already sent */

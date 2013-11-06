@@ -67,6 +67,8 @@ struct fileops	socketops = {
 	.fo_kqfilter = soo_kqfilter,
 	.fo_stat = soo_stat,
 	.fo_close = soo_close,
+	.fo_chmod = invfo_chmod,
+	.fo_chown = invfo_chown,
 	.fo_flags = DFLAG_PASSABLE
 };
 #endif /* __rtems__ */
@@ -145,7 +147,7 @@ soo_write(struct file *fp, struct uio *uio, struct ucred *active_cred,
 	if (error == EPIPE && (so->so_options & SO_NOSIGPIPE) == 0) {
 #ifndef __rtems__
 		PROC_LOCK(uio->uio_td->td_proc);
-		tdksignal(uio->uio_td, SIGPIPE, NULL);
+		tdsignal(uio->uio_td, SIGPIPE);
 		PROC_UNLOCK(uio->uio_td->td_proc);
 #else /* __rtems__ */
 		/* FIXME: Determine if we really want to use signals */

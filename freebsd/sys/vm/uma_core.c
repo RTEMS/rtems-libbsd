@@ -88,8 +88,6 @@ __FBSDID("$FreeBSD$");
 #include <vm/uma_int.h>
 #include <vm/uma_dbg.h>
 
-#include <machine/vmparam.h>
-
 #include <ddb/ddb.h>
 
 #ifdef __rtems__
@@ -117,7 +115,7 @@ static uma_zone_t slabrefzone;	/* With refcounters (for UMA_ZONE_REFCNT) */
 static uma_zone_t hashzone;
 
 /* The boot-time adjusted value for cache line alignment. */
-static int uma_align_cache = 64 - 1;
+int uma_align_cache = 64 - 1;
 
 static MALLOC_DEFINE(M_UMAHASH, "UMAHash", "UMA Hash Buckets");
 
@@ -144,6 +142,8 @@ static struct mtx uma_boot_pages_mtx;
 
 /* Is the VM done starting up? */
 static int booted = 0;
+#define	UMA_STARTUP	1
+#define	UMA_STARTUP2	2
 #endif /* __rtems__ */
 
 /* Maximum number of allowed items-per-slab if the slab header is OFFPAGE */
@@ -862,6 +862,9 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 	else
 		wait &= ~M_ZERO;
 
+	if (keg->uk_flags & UMA_ZONE_NODUMP)
+		wait |= M_NODUMP;
+
 	/* zone is passed for legacy reasons. */
 	mem = allocf(zone, keg->uk_ppera * UMA_SLAB_SIZE, &flags, wait);
 	if (mem == NULL) {
@@ -990,7 +993,7 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 		return (tmps->us_data);
 	}
 	mtx_unlock(&uma_boot_pages_mtx);
-	if (booted == 0)
+	if (booted < UMA_STARTUP2)
 		panic("UMA: Increase vm.boot_pages");
 	/*
 	 * Now that we've booted reset these users to their real allocator.
@@ -1072,10 +1075,8 @@ obj_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
 			while (pages != startpages) {
 				pages--;
 				p = TAILQ_LAST(&object->memq, pglist);
-				vm_page_lock_queues();
 				vm_page_unwire(p, 0);
 				vm_page_free(p);
-				vm_page_unlock_queues();
 			}
 			retkva = 0;
 			goto done;
@@ -1360,11 +1361,20 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 #ifdef UMA_MD_SMALL_ALLOC
 		keg->uk_allocf = uma_small_alloc;
 		keg->uk_freef = uma_small_free;
+
+#ifndef __rtems__
+		if (booted < UMA_STARTUP)
+			keg->uk_allocf = startup_alloc;
+#endif /* __rtems__ */
+#else
+#ifndef __rtems__
+		if (booted < UMA_STARTUP2)
+			keg->uk_allocf = startup_alloc;
+#endif /* __rtems__ */
 #endif
 #ifndef __rtems__
-		if (booted == 0)
-			keg->uk_allocf = startup_alloc;
-	} else if (booted == 0 && (keg->uk_flags & UMA_ZFLAG_INTERNAL))
+	} else if (booted < UMA_STARTUP2 &&
+	    (keg->uk_flags & UMA_ZFLAG_INTERNAL))
 		keg->uk_allocf = startup_alloc;
 #else /* __rtems__ */
 	}
@@ -1463,6 +1473,7 @@ zone_ctor(void *mem, int size, void *udata, int flags)
 	zone->uz_allocs = 0;
 	zone->uz_frees = 0;
 	zone->uz_fails = 0;
+	zone->uz_sleeps = 0;
 	zone->uz_fills = zone->uz_count = 0;
 	zone->uz_flags = 0;
 	keg = arg->keg;
@@ -1820,9 +1831,9 @@ uma_startup(void *bootmem, int boot_pages)
 
 	bucket_init();
 
-#if defined(UMA_MD_SMALL_ALLOC) && !defined(UMA_MD_SMALL_ALLOC_NEEDS_VM)
-	booted = 1;
-#endif
+#ifndef __rtems__
+	booted = UMA_STARTUP;
+#endif /* __rtems__ */
 
 #ifdef UMA_DEBUG
 	printf("UMA startup complete.\n");
@@ -1846,7 +1857,7 @@ SYSINIT(rtems_bsd_uma_startup, SI_SUB_VM, SI_ORDER_FIRST,
 void
 uma_startup2(void)
 {
-	booted = 1;
+	booted = UMA_STARTUP2;
 	bucket_enable();
 #ifdef UMA_DEBUG
 	printf("UMA startup2 complete.\n");
@@ -2245,6 +2256,7 @@ keg_fetch_slab(uma_keg_t keg, uma_zone_t zone, int flags)
 				zone->uz_flags |= UMA_ZFLAG_FULL;
 			if (flags & M_NOWAIT)
 				break;
+			zone->uz_sleeps++;
 			msleep(keg, &keg->uk_lock, PVM, "keglimit", 0);
 			continue;
 		}
@@ -2388,6 +2400,7 @@ zone_fetch_slab_multi(uma_zone_t zone, uma_keg_t last, int rflags)
 		 */
 		if (full && !empty) {
 			zone->uz_flags |= UMA_ZFLAG_FULL;
+			zone->uz_sleeps++;
 			msleep(zone, zone->uz_lock, PVM, "zonelimit", hz/100);
 			zone->uz_flags &= ~UMA_ZFLAG_FULL;
 			continue;
@@ -2894,7 +2907,7 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 }
 
 /* See uma.h */
-void
+int
 uma_zone_set_max(uma_zone_t zone, int nitems)
 {
 	uma_keg_t keg;
@@ -2904,8 +2917,10 @@ uma_zone_set_max(uma_zone_t zone, int nitems)
 	keg->uk_maxpages = (nitems / keg->uk_ipers) * keg->uk_ppera;
 	if (keg->uk_maxpages * keg->uk_ipers < nitems)
 		keg->uk_maxpages += keg->uk_ppera;
-
+	nitems = keg->uk_maxpages * keg->uk_ipers;
 	ZONE_UNLOCK(zone);
+
+	return (nitems);
 }
 
 /* See uma.h */
@@ -3040,13 +3055,11 @@ uma_zone_set_obj(uma_zone_t zone, struct vm_object *obj, int count)
 
 	if (kva == 0)
 		return (0);
-	if (obj == NULL) {
-		obj = vm_object_allocate(OBJT_DEFAULT,
-		    pages);
-	} else {
+	if (obj == NULL)
+		obj = vm_object_allocate(OBJT_PHYS, pages);
+	else {
 		VM_OBJECT_LOCK_INIT(obj, "uma object");
-		_vm_object_allocate(OBJT_DEFAULT,
-		    pages, obj);
+		_vm_object_allocate(OBJT_PHYS, pages, obj);
 	}
 	ZONE_LOCK(zone);
 	keg->uk_kva = kva;
@@ -3257,13 +3270,13 @@ uma_print_zone(uma_zone_t zone)
  */
 static void
 uma_zone_sumstat(uma_zone_t z, int *cachefreep, u_int64_t *allocsp,
-    u_int64_t *freesp)
+    u_int64_t *freesp, u_int64_t *sleepsp)
 {
 	uma_cache_t cache;
-	u_int64_t allocs, frees;
+	u_int64_t allocs, frees, sleeps;
 	int cachefree, cpu;
 
-	allocs = frees = 0;
+	allocs = frees = sleeps = 0;
 	cachefree = 0;
 	CPU_FOREACH(cpu) {
 		cache = &z->uz_cpu[cpu];
@@ -3276,12 +3289,15 @@ uma_zone_sumstat(uma_zone_t z, int *cachefreep, u_int64_t *allocsp,
 	}
 	allocs += z->uz_allocs;
 	frees += z->uz_frees;
+	sleeps += z->uz_sleeps;
 	if (cachefreep != NULL)
 		*cachefreep = cachefree;
 	if (allocsp != NULL)
 		*allocsp = allocs;
 	if (freesp != NULL)
 		*freesp = frees;
+	if (sleepsp != NULL)
+		*sleepsp = sleeps;
 }
 #endif /* DDB */
 
@@ -3315,36 +3331,19 @@ sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS)
 	uma_keg_t kz;
 	uma_zone_t z;
 	uma_keg_t k;
-	char *buffer;
-	int buflen, count, error, i;
+	int count, error, i;
 
-	mtx_lock(&uma_mtx);
-restart:
-	mtx_assert(&uma_mtx, MA_OWNED);
+	error = sysctl_wire_old_buffer(req, 0);
+	if (error != 0)
+		return (error);
+	sbuf_new_for_sysctl(&sbuf, NULL, 128, req);
+
 	count = 0;
+	mtx_lock(&uma_mtx);
 	LIST_FOREACH(kz, &uma_kegs, uk_link) {
 		LIST_FOREACH(z, &kz->uk_zones, uz_link)
 			count++;
 	}
-	mtx_unlock(&uma_mtx);
-
-	buflen = sizeof(ush) + count * (sizeof(uth) + sizeof(ups) *
-	    (mp_maxid + 1)) + 1;
-	buffer = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
-
-	mtx_lock(&uma_mtx);
-	i = 0;
-	LIST_FOREACH(kz, &uma_kegs, uk_link) {
-		LIST_FOREACH(z, &kz->uk_zones, uz_link)
-			i++;
-	}
-	if (i > count) {
-		free(buffer, M_TEMP);
-		goto restart;
-	}
-	count =  i;
-
-	sbuf_new(&sbuf, buffer, buflen, SBUF_FIXEDLEN);
 
 	/*
 	 * Insert stream header.
@@ -3353,11 +3352,7 @@ restart:
 	ush.ush_version = UMA_STREAM_VERSION;
 	ush.ush_maxcpus = (mp_maxid + 1);
 	ush.ush_count = count;
-	if (sbuf_bcat(&sbuf, &ush, sizeof(ush)) < 0) {
-		mtx_unlock(&uma_mtx);
-		error = ENOMEM;
-		goto out;
-	}
+	(void)sbuf_bcat(&sbuf, &ush, sizeof(ush));
 
 	LIST_FOREACH(kz, &uma_kegs, uk_link) {
 		LIST_FOREACH(z, &kz->uk_zones, uz_link) {
@@ -3389,12 +3384,8 @@ restart:
 			uth.uth_allocs = z->uz_allocs;
 			uth.uth_frees = z->uz_frees;
 			uth.uth_fails = z->uz_fails;
-			if (sbuf_bcat(&sbuf, &uth, sizeof(uth)) < 0) {
-				ZONE_UNLOCK(z);
-				mtx_unlock(&uma_mtx);
-				error = ENOMEM;
-				goto out;
-			}
+			uth.uth_sleeps = z->uz_sleeps;
+			(void)sbuf_bcat(&sbuf, &uth, sizeof(uth));
 			/*
 			 * While it is not normally safe to access the cache
 			 * bucket pointers while not on the CPU that owns the
@@ -3419,53 +3410,47 @@ restart:
 				ups.ups_allocs = cache->uc_allocs;
 				ups.ups_frees = cache->uc_frees;
 skip:
-				if (sbuf_bcat(&sbuf, &ups, sizeof(ups)) < 0) {
-					ZONE_UNLOCK(z);
-					mtx_unlock(&uma_mtx);
-					error = ENOMEM;
-					goto out;
-				}
+				(void)sbuf_bcat(&sbuf, &ups, sizeof(ups));
 			}
 			ZONE_UNLOCK(z);
 		}
 	}
 	mtx_unlock(&uma_mtx);
-	sbuf_finish(&sbuf);
-	error = SYSCTL_OUT(req, sbuf_data(&sbuf), sbuf_len(&sbuf));
-out:
-	free(buffer, M_TEMP);
+	error = sbuf_finish(&sbuf);
+	sbuf_delete(&sbuf);
 	return (error);
 }
 
 #ifdef DDB
 DB_SHOW_COMMAND(uma, db_show_uma)
 {
-	u_int64_t allocs, frees;
+	u_int64_t allocs, frees, sleeps;
 	uma_bucket_t bucket;
 	uma_keg_t kz;
 	uma_zone_t z;
 	int cachefree;
 
-	db_printf("%18s %8s %8s %8s %12s\n", "Zone", "Size", "Used", "Free",
-	    "Requests");
+	db_printf("%18s %8s %8s %8s %12s %8s\n", "Zone", "Size", "Used", "Free",
+	    "Requests", "Sleeps");
 	LIST_FOREACH(kz, &uma_kegs, uk_link) {
 		LIST_FOREACH(z, &kz->uk_zones, uz_link) {
 			if (kz->uk_flags & UMA_ZFLAG_INTERNAL) {
 				allocs = z->uz_allocs;
 				frees = z->uz_frees;
+				sleeps = z->uz_sleeps;
 				cachefree = 0;
 			} else
 				uma_zone_sumstat(z, &cachefree, &allocs,
-				    &frees);
+				    &frees, &sleeps);
 			if (!((z->uz_flags & UMA_ZONE_SECONDARY) &&
 			    (LIST_FIRST(&kz->uk_zones) != z)))
 				cachefree += kz->uk_free;
 			LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
 				cachefree += bucket->ub_cnt;
-			db_printf("%18s %8ju %8jd %8d %12ju\n", z->uz_name,
+			db_printf("%18s %8ju %8jd %8d %12ju %8ju\n", z->uz_name,
 			    (uintmax_t)kz->uk_size,
 			    (intmax_t)(allocs - frees), cachefree,
-			    (uintmax_t)allocs);
+			    (uintmax_t)allocs, sleeps);
 			if (db_pager_quit)
 				return;
 		}

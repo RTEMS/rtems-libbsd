@@ -42,7 +42,11 @@ int32_t		xpt_bus_register(struct cam_sim *sim, device_t parent,
 int32_t		xpt_bus_deregister(path_id_t path_id);
 u_int32_t	xpt_freeze_simq(struct cam_sim *sim, u_int count);
 void		xpt_release_simq(struct cam_sim *sim, int run_queue);
+#ifndef __rtems__
 u_int32_t	xpt_freeze_devq(struct cam_path *path, u_int count);
+#else /* __rtems__ */
+#define xpt_freeze_devq(path, count) do { } while (0)
+#endif /* __rtems__ */
 u_int32_t	xpt_freeze_devq_rl(struct cam_path *path, cam_rl rl,
 		    u_int count);
 void		xpt_release_devq(struct cam_path *path,

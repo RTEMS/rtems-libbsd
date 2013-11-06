@@ -34,6 +34,7 @@
 
 #ifndef _LIBC_PRIVATE_H_
 #define _LIBC_PRIVATE_H_
+#include <rtems/bsd/sys/_types.h>
 #include <sys/_pthreadtypes.h>
 
 /*
@@ -46,6 +47,15 @@
 #else /* __rtems__ */
 extern int	__isthreaded;
 #endif /* __rtems__ */
+
+/*
+ * Elf_Auxinfo *__elf_aux_vector, the pointer to the ELF aux vector
+ * provided by kernel. Either set for us by rtld, or found at runtime
+ * on stack for static binaries.
+ *
+ * Type is void to avoid polluting whole libc with ELF types.
+ */
+extern void	*__elf_aux_vector;
 
 /*
  * libc should use libc_dlopen internally, which respects a global
@@ -155,6 +165,10 @@ typedef enum {
 	PJT_SETSPECIFIC,
 	PJT_SIGMASK,
 	PJT_TESTCANCEL,
+	PJT_CLEANUP_POP_IMP,
+	PJT_CLEANUP_PUSH_IMP,
+	PJT_CANCEL_ENTER,
+	PJT_CANCEL_LEAVE,
 	PJT_MAX
 } pjt_index_t;
 
@@ -236,10 +250,21 @@ extern void *	__sys_freebsd6_mmap(void *, __size_t, int, int, int, int, __off_t)
 /* Without back-compat translation */
 extern int	__sys_fcntl(int, int, ...);
 
+struct timespec;
+struct timeval;
+struct timezone;
+int	__sys_gettimeofday(struct timeval *, struct timezone *);
+int	__sys_clock_gettime(__clockid_t, struct timespec *ts);
+
 /* execve() with PATH processing to implement posix_spawnp() */
 int _execvpe(const char *, char * const *, char * const *);
 
+int _elf_aux_info(int aux, void *buf, int buflen);
 struct dl_phdr_info;
 int __elf_phdr_match_addr(struct dl_phdr_info *, void *);
+void __init_elf_aux_vector(void);
+
+void	_pthread_cancel_enter(int);
+void	_pthread_cancel_leave(int);
 
 #endif /* _LIBC_PRIVATE_H_ */

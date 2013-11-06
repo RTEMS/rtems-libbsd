@@ -112,14 +112,23 @@ struct mbstat mbstat;
 static void
 tunable_mbinit(void *dummy)
 {
-	TUNABLE_INT_FETCH("kern.ipc.nmbclusters", &nmbclusters);
 
 	/* This has to be done before VM init. */
+	TUNABLE_INT_FETCH("kern.ipc.nmbclusters", &nmbclusters);
 	if (nmbclusters == 0)
 		nmbclusters = 1024 + maxusers * 64;
-	nmbjumbop = nmbclusters / 2;
-	nmbjumbo9 = nmbjumbop / 2;
-	nmbjumbo16 = nmbjumbo9 / 2;
+
+	TUNABLE_INT_FETCH("kern.ipc.nmbjumbop", &nmbjumbop);
+	if (nmbjumbop == 0)
+		nmbjumbop = nmbclusters / 2;
+
+	TUNABLE_INT_FETCH("kern.ipc.nmbjumbo9", &nmbjumbo9);
+	if (nmbjumbo9 == 0)
+		nmbjumbo9 = nmbclusters / 4;
+
+	TUNABLE_INT_FETCH("kern.ipc.nmbjumbo16", &nmbjumbo16);
+	if (nmbjumbo16 == 0)
+		nmbjumbo16 = nmbclusters / 8;
 }
 SYSINIT(tunable_mbinit, SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_mbinit, NULL);
 
@@ -237,7 +246,7 @@ static void	mb_zfini_pack(void *, int);
 
 static void	mb_reclaim(void *);
 static void	mbuf_init(void *);
-static void    *mbuf_jumbo_alloc(uma_zone_t, int, u_int8_t *, int);
+static void    *mbuf_jumbo_alloc(uma_zone_t, int, uint8_t *, int);
 
 /* Ensure that MSIZE doesn't break dtom() - it must be a power of 2 */
 CTASSERT((((MSIZE - 1) ^ MSIZE) + 1) >> 1 == MSIZE);
@@ -356,7 +365,7 @@ mbuf_init(void *dummy)
  * pages.
  */
 static void *
-mbuf_jumbo_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
+mbuf_jumbo_alloc(uma_zone_t zone, int bytes, uint8_t *flags, int wait)
 {
 
 	/* Inform UMA that this allocator uses kernel_map/object. */

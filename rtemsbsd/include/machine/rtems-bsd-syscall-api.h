@@ -90,15 +90,17 @@ ssize_t	sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_
 
 ssize_t	sendmsg(int, const struct msghdr *, int);
 
+int	setfib(int);
+
 int	setsockopt(int, int, int, const void *, socklen_t);
 
 int	shutdown(int, int);
 
 int	socket(int, int, int);
 
-int	sysctl(int *, u_int, void *, size_t *, void *, size_t);
+int	sysctl(const int *, u_int, void *, size_t *, const void *, size_t);
 
-int	sysctlbyname(const char *, void *, size_t *, void *, size_t);
+int	sysctlbyname(const char *, void *, size_t *, const void *, size_t);
 
 int	sysctlnametomib(const char *, int *, size_t *);
 

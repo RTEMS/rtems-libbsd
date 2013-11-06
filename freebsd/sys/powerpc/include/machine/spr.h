@@ -10,13 +10,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -43,6 +36,9 @@
 	( { register_t val;						\
 	  __asm __volatile("mfspr %0,%1" : "=r"(val) : "K"(reg));	\
 	  val; } )
+
+
+#ifndef __powerpc64__
 
 /* The following routines allow manipulation of the full 64-bit width 
  * of SPRs on 64 bit CPUs in bridge mode */
@@ -81,6 +77,8 @@
 	    : "=r"(scratch), "=r"(val) : "K"(reg), "r"(32), "r"(1));	\
 	    val; } )
 
+#endif
+
 #endif /* _LOCORE */
 
 /*
@@ -113,6 +111,9 @@
 #define	SPR_SDR1		0x019	/* .68 Page table base address register */
 #define	SPR_SRR0		0x01a	/* 468 Save/Restore Register 0 */
 #define	SPR_SRR1		0x01b	/* 468 Save/Restore Register 1 */
+#define	  SRR1_ISI_PFAULT	0x40000000 /* ISI page not found */
+#define	  SRR1_ISI_NOEXECUTE	0x10000000 /* Memory marked no-execute */
+#define	  SRR1_ISI_PP		0x08000000 /* PP bits forbid access */
 #define	SPR_DECAR		0x036	/* ..8 Decrementer auto reload */
 #define SPR_EIE			0x050	/* ..8 Exception Interrupt ??? */
 #define SPR_EID			0x051	/* ..8 Exception Interrupt ??? */
@@ -150,13 +151,26 @@
 #define	  IBM401E2		  0x0025
 #define	  IBM401F2		  0x0026
 #define	  IBM401G2		  0x0027
+#define	  IBMRS64II		  0x0033
+#define	  IBMRS64III		  0x0034
+#define	  IBMPOWER4		  0x0035
+#define	  IBMRS64III_2		  0x0036
+#define	  IBMRS64IV		  0x0037
+#define	  IBMPOWER4PLUS		  0x0038
 #define	  IBM970		  0x0039
+#define	  IBMPOWER5		  0x003a
+#define	  IBMPOWER5PLUS		  0x003b
 #define	  IBM970FX		  0x003c
-#define	  IBMPOWER3		  0x0041
+#define	  IBMPOWER6		  0x003e
+#define	  IBMPOWER7		  0x003f
+#define	  IBMPOWER3		  0x0040
+#define	  IBMPOWER3PLUS		  0x0041
 #define	  IBM970MP		  0x0044
 #define	  IBM970GX		  0x0045
 #define	  MPC860		  0x0050
+#define	  IBMCELLBE		  0x0070
 #define	  MPC8240		  0x0081
+#define	  PA6T			  0x0090
 #define	  IBM405GP		  0x4011
 #define	  IBM405L		  0x4161
 #define	  IBM750FX		  0x7000
@@ -334,8 +348,8 @@
 #define	  SPR_MMCR0_PMC1CE	  0x00008000 /* PMC1 condition enable */
 #define	  SPR_MMCR0_PMCNCE	  0x00004000 /* PMCn condition enable */
 #define	  SPR_MMCR0_TRIGGER	  0x00002000 /* Trigger */
-#define	  SPR_MMCR0_PMC1SEL(x)	  ((x) << 6) /* PMC1 selector */
-#define	  SPR_MMCR0_PMC2SEL(x)	  ((x) << 0) /* PMC2 selector */
+#define	  SPR_MMCR0_PMC1SEL(x)	  (((x) & 0x3f) << 6) /* PMC1 selector */
+#define	  SPR_MMCR0_PMC2SEL(x)	  (((x) & 0x3f) << 0) /* PMC2 selector */
 #define	  SPR_970MMCR0_PMC1SEL(x) ((x) << 8) /* PMC1 selector (970) */
 #define	  SPR_970MMCR0_PMC2SEL(x) ((x) << 1) /* PMC2 selector (970) */
 #define	SPR_SGR			0x3b9	/* 4.. Storage Guarded Register */
@@ -345,10 +359,10 @@
 #define	SPR_SLER		0x3bb	/* 4.. Storage Little Endian Register */
 #define	SPR_SIA			0x3bb	/* .6. Sampled Instruction Address */
 #define	SPR_MMCR1		0x3bc	/* .6. Monitor Mode Control Register 2 */
-#define	  SPR_MMCR1_PMC3SEL(x)	  ((x) << 27) /* PMC 3 selector */
-#define	  SPR_MMCR1_PMC4SEL(x)	  ((x) << 22) /* PMC 4 selector */
-#define	  SPR_MMCR1_PMC5SEL(x)	  ((x) << 17) /* PMC 5 selector */
-#define	  SPR_MMCR1_PMC6SEL(x)	  ((x) << 11) /* PMC 6 selector */
+#define	  SPR_MMCR1_PMC3SEL(x)	  (((x) & 0x1f) << 27) /* PMC 3 selector */
+#define	  SPR_MMCR1_PMC4SEL(x)	  (((x) & 0x1f) << 22) /* PMC 4 selector */
+#define	  SPR_MMCR1_PMC5SEL(x)	  (((x) & 0x1f) << 17) /* PMC 5 selector */
+#define	  SPR_MMCR1_PMC6SEL(x)	  (((x) & 0x3f) << 11) /* PMC 6 selector */
 
 #define	SPR_SU0R		0x3bc	/* 4.. Storage User-defined 0 Register */
 #define	SPR_PMC3		0x3bd	/* .6. Performance Counter Register 3 */
@@ -409,6 +423,10 @@
 #define	SPR_HID1		0x3f1	/* ..8 Hardware Implementation Register 1 */
 #define	SPR_HID4		0x3f4	/* ..8 Hardware Implementation Register 4 */
 #define	SPR_HID5		0x3f6	/* ..8 Hardware Implementation Register 5 */
+#define	SPR_HID6		0x3f9	/* ..8 Hardware Implementation Register 6 */
+
+#define	SPR_CELL_TSRL		0x380	/* ... Cell BE Thread Status Register */
+#define	SPR_CELL_TSCR		0x399	/* ... Cell BE Thread Switch Register */
 
 #if defined(AIM)
 #define	SPR_DBSR		0x3f0	/* 4.. Debug Status Register */
@@ -626,8 +644,8 @@
 #define	SPR_MCSRR1		0x23b	/* ..8 571 Machine check SRR1 */
 
 #define	SPR_SVR			0x3ff	/* ..8 1023 System Version Register */
-#define	  SVR_MPC8533		  0x803c
-#define	  SVR_MPC8533E		  0x8034
+#define	  SVR_MPC8533		  0x8034
+#define	  SVR_MPC8533E		  0x803c
 #define	  SVR_MPC8541		  0x8072
 #define	  SVR_MPC8541E		  0x807a
 #define	  SVR_MPC8548		  0x8031
@@ -636,6 +654,18 @@
 #define	  SVR_MPC8555E		  0x8079
 #define	  SVR_MPC8572		  0x80e0
 #define	  SVR_MPC8572E		  0x80e8
+#define	  SVR_P1011		  0x80e5
+#define	  SVR_P1011E		  0x80ed
+#define	  SVR_P1020		  0x80e4
+#define	  SVR_P1020E		  0x80ec
+#define	  SVR_P2010		  0x80e3
+#define	  SVR_P2010E		  0x80eb
+#define	  SVR_P2020		  0x80e2
+#define	  SVR_P2020E		  0x80ea
+#define	  SVR_P4040		  0x8200
+#define	  SVR_P4040E		  0x8208
+#define	  SVR_P4080		  0x8201
+#define	  SVR_P4080E		  0x8209
 #define	SVR_VER(svr)		(((svr) >> 16) & 0xffff)
 
 #define	SPR_PID0		0x030	/* ..8 Process ID Register 0 */

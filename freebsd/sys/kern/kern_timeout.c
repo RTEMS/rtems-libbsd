@@ -136,6 +136,7 @@ struct callout_cpu {
 	int 			cc_softticks;
 	int			cc_cancel;
 	int			cc_waiting;
+	int 			cc_firsttick;
 };
 
 #ifdef SMP
@@ -158,8 +159,9 @@ struct callout_cpu cc_cpu;
 #define	CC_LOCK_ASSERT(cc)	mtx_assert(&(cc)->cc_lock, MA_OWNED)
 
 static int timeout_cpu;
+void (*callout_new_inserted)(int cpu, int ticks) = NULL;
 
-MALLOC_DEFINE(M_CALLOUT, "callout", "Callout datastructures");
+static MALLOC_DEFINE(M_CALLOUT, "callout", "Callout datastructures");
 
 /**
  * Locked by cc_lock:
@@ -352,8 +354,6 @@ kern_timeout_callwheel_init(void)
 /*
  * Start standard softclock thread.
  */
-void    *softclock_ih;
-
 static void
 start_softclock(void *dummy)
 {
@@ -364,9 +364,8 @@ start_softclock(void *dummy)
 
 	cc = CC_CPU(timeout_cpu);
 	if (swi_add(&clk_intr_event, "clock", softclock, cc, SWI_CLOCK,
-	    INTR_MPSAFE, &softclock_ih))
+	    INTR_MPSAFE, &cc->cc_cookie))
 		panic("died while creating standard software ithreads");
-	cc->cc_cookie = softclock_ih;
 #ifdef SMP
 	CPU_FOREACH(cpu) {
 		if (cpu == timeout_cpu)
@@ -400,7 +399,7 @@ callout_tick(void)
 	need_softclock = 0;
 	cc = CC_SELF();
 	mtx_lock_spin_flags(&cc->cc_lock, MTX_QUIET);
-	cc->cc_ticks++;
+	cc->cc_firsttick = cc->cc_ticks = ticks;
 	for (; (cc->cc_softticks - cc->cc_ticks) <= 0; cc->cc_softticks++) {
 		bucket = cc->cc_softticks & callwheelmask;
 		if (!TAILQ_EMPTY(&cc->cc_callwheel[bucket])) {
@@ -415,6 +414,33 @@ callout_tick(void)
 	 */
 	if (need_softclock)
 		swi_sched(cc->cc_cookie, 0);
+}
+
+int
+callout_tickstofirst(int limit)
+{
+	struct callout_cpu *cc;
+	struct callout *c;
+	struct callout_tailq *sc;
+	int curticks;
+	int skip = 1;
+
+	cc = CC_SELF();
+	mtx_lock_spin_flags(&cc->cc_lock, MTX_QUIET);
+	curticks = cc->cc_ticks;
+	while( skip < ncallout && skip < limit ) {
+		sc = &cc->cc_callwheel[ (curticks+skip) & callwheelmask ];
+		/* search scanning ticks */
+		TAILQ_FOREACH( c, sc, c_links.tqe ){
+			if (c->c_time - curticks <= ncallout)
+				goto out;
+		}
+		skip++;
+	}
+out:
+	cc->cc_firsttick = curticks + skip;
+	mtx_unlock_spin_flags(&cc->cc_lock, MTX_QUIET);
+	return (skip);
 }
 
 static struct callout_cpu *
@@ -453,24 +479,28 @@ callout_cc_add(struct callout *c, struct callout_cpu *cc, int to_ticks,
 	c->c_arg = arg;
 	c->c_flags |= (CALLOUT_ACTIVE | CALLOUT_PENDING);
 	c->c_func = func;
-	c->c_time = cc->cc_ticks + to_ticks;
-	TAILQ_INSERT_TAIL(&cc->cc_callwheel[c->c_time & callwheelmask],
+	c->c_time = ticks + to_ticks;
+	TAILQ_INSERT_TAIL(&cc->cc_callwheel[c->c_time & callwheelmask], 
 	    c, c_links.tqe);
+	if ((c->c_time - cc->cc_firsttick) < 0 &&
+	    callout_new_inserted != NULL) {
+		cc->cc_firsttick = c->c_time;
+		(*callout_new_inserted)(cpu,
+		    to_ticks + (ticks - cc->cc_ticks));
+	}
 }
 
 static void
 callout_cc_del(struct callout *c, struct callout_cpu *cc)
 {
 
-	if (cc->cc_next == c)
-		cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
-	if (c->c_flags & CALLOUT_LOCAL_ALLOC) {
-		c->c_func = NULL;
-		SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
-	}
+	if ((c->c_flags & CALLOUT_LOCAL_ALLOC) == 0)
+		return;
+	c->c_func = NULL;
+	SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
 }
 
-static struct callout *
+static void
 softclock_call_cc(struct callout *c, struct callout_cpu *cc, int *mpcalls,
     int *lockcalls, int *gcalls)
 {
@@ -492,7 +522,9 @@ softclock_call_cc(struct callout *c, struct callout_cpu *cc, int *mpcalls,
 	static timeout_t *lastfunc;
 #endif
 
-	cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
+	KASSERT((c->c_flags & (CALLOUT_PENDING | CALLOUT_ACTIVE)) ==
+	    (CALLOUT_PENDING | CALLOUT_ACTIVE),
+	    ("softclock_call_cc: pend|act %p %x", c, c->c_flags));
 	class = (c->c_lock != NULL) ? LOCK_CLASS(c->c_lock) : NULL;
 	sharedlock = (c->c_flags & CALLOUT_SHAREDLOCK) ? 0 : 1;
 	c_lock = c->c_lock;
@@ -564,20 +596,7 @@ softclock_call_cc(struct callout *c, struct callout_cpu *cc, int *mpcalls,
 		class->lc_unlock(c_lock);
 skip:
 	CC_LOCK(cc);
-	/*
-	 * If the current callout is locally allocated (from
-	 * timeout(9)) then put it on the freelist.
-	 *
-	 * Note: we need to check the cached copy of c_flags because
-	 * if it was not local, then it's not safe to deref the
-	 * callout pointer.
-	 */
-	if (c_flags & CALLOUT_LOCAL_ALLOC) {
-		KASSERT(c->c_flags == CALLOUT_LOCAL_ALLOC,
-		    ("corrupted callout"));
-		c->c_func = NULL;
-		SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
-	}
+	KASSERT(cc->cc_curr == c, ("mishandled cc_curr"));
 	cc->cc_curr = NULL;
 	if (cc->cc_waiting) {
 		/*
@@ -586,13 +605,22 @@ skip:
 		 * If the callout was scheduled for
 		 * migration just cancel it.
 		 */
-		if (cc_cme_migrating(cc))
+		if (cc_cme_migrating(cc)) {
 			cc_cme_cleanup(cc);
+
+			/*
+			 * It should be assert here that the callout is not
+			 * destroyed but that is not easy.
+			 */
+			c->c_flags &= ~CALLOUT_DFRMIGRATION;
+		}
 		cc->cc_waiting = 0;
 		CC_UNLOCK(cc);
 		wakeup(&cc->cc_waiting);
 		CC_LOCK(cc);
 	} else if (cc_cme_migrating(cc)) {
+		KASSERT((c_flags & CALLOUT_LOCAL_ALLOC) == 0,
+		    ("Migrating legacy callout %p", c));
 #ifdef SMP
 		/*
 		 * If the callout was scheduled for
@@ -605,23 +633,20 @@ skip:
 		cc_cme_cleanup(cc);
 
 		/*
-		 * Handle deferred callout stops
+		 * It should be assert here that the callout is not destroyed
+		 * but that is not easy.
+		 *
+		 * As first thing, handle deferred callout stops.
 		 */
 		if ((c->c_flags & CALLOUT_DFRMIGRATION) == 0) {
 			CTR3(KTR_CALLOUT,
 			     "deferred cancelled %p func %p arg %p",
 			     c, new_func, new_arg);
 			callout_cc_del(c, cc);
-			goto nextc;
+			return;
 		}
-
 		c->c_flags &= ~CALLOUT_DFRMIGRATION;
 
-		/*
-		 * It should be assert here that the
-		 * callout is not destroyed but that
-		 * is not easy.
-		 */
 		new_cc = callout_cpu_switch(c, cc, new_cpu);
 		callout_cc_add(c, new_cc, new_ticks, new_func, new_arg,
 		    new_cpu);
@@ -631,10 +656,19 @@ skip:
 		panic("migration should not happen");
 #endif
 	}
-#ifdef SMP
-nextc:
-#endif
-	return (cc->cc_next);
+	/*
+	 * If the current callout is locally allocated (from
+	 * timeout(9)) then put it on the freelist.
+	 *
+	 * Note: we need to check the cached copy of c_flags because
+	 * if it was not local, then it's not safe to deref the
+	 * callout pointer.
+	 */
+	KASSERT((c_flags & CALLOUT_LOCAL_ALLOC) == 0 ||
+	    c->c_flags == CALLOUT_LOCAL_ALLOC,
+	    ("corrupted callout"));
+	if (c_flags & CALLOUT_LOCAL_ALLOC)
+		callout_cc_del(c, cc);
 }
 
 /*
@@ -701,10 +735,12 @@ softclock(void *arg)
 					steps = 0;
 				}
 			} else {
+				cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
 				TAILQ_REMOVE(bucket, c, c_links.tqe);
-				c = softclock_call_cc(c, cc, &mpcalls,
+				softclock_call_cc(c, cc, &mpcalls,
 				    &lockcalls, &gcalls);
 				steps = 0;
+				c = cc->cc_next;
 			}
 		}
 	}
@@ -1073,6 +1109,8 @@ again:
 
 	CTR3(KTR_CALLOUT, "cancelled %p func %p arg %p",
 	    c, c->c_func, c->c_arg);
+	if (cc->cc_next == c)
+		cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
 	TAILQ_REMOVE(&cc->cc_callwheel[c->c_time & callwheelmask], c,
 	    c_links.tqe);
 	callout_cc_del(c, cc);

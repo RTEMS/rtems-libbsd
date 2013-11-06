@@ -117,6 +117,7 @@ struct buf {
 	long	b_bufsize;		/* Allocated buffer size. */
 	long	b_runningbufspace;	/* when I/O is running, pipelining */
 	caddr_t	b_kvabase;		/* base kva for buffer */
+	caddr_t	b_kvaalloc;		/* allocated kva for B_KVAALLOC */
 	int	b_kvasize;		/* size of kva for buffer */
 	daddr_t b_lblkno;		/* Logical block number. */
 	struct	vnode *b_vp;		/* Device vnode. */
@@ -202,10 +203,10 @@ struct buf {
 #define	B_PERSISTENT	0x00000100	/* Perm. ref'ed while EXT2FS mounted. */
 #define	B_DONE		0x00000200	/* I/O completed. */
 #define	B_EINTR		0x00000400	/* I/O was interrupted */
-#define	B_00000800	0x00000800	/* Available flag. */
-#define	B_00001000	0x00001000	/* Available flag. */
+#define	B_UNMAPPED	0x00000800	/* KVA is not mapped. */
+#define	B_KVAALLOC	0x00001000	/* But allocated. */
 #define	B_INVAL		0x00002000	/* Does not contain valid info. */
-#define	B_00004000	0x00004000	/* Available flag. */
+#define	B_BARRIER	0x00004000	/* Write this and all preceeding first. */
 #define	B_NOCACHE	0x00008000	/* Do not cache block after use. */
 #define	B_MALLOC	0x00010000	/* malloced b_data */
 #define	B_CLUSTEROK	0x00020000	/* Pagein op, so swap() can count it. */
@@ -215,7 +216,7 @@ struct buf {
 #define	B_DIRTY		0x00200000	/* Needs writing later (in EXT2FS). */
 #define	B_RELBUF	0x00400000	/* Release VMIO buffer. */
 #define	B_00800000	0x00800000	/* Available flag. */
-#define	B_01000000	0x01000000	/* Available flag. */
+#define	B_NOCOPY	0x01000000	/* Don't copy-on-write this buf. */
 #define	B_NEEDSGIANT	0x02000000	/* Buffer's vnode needs giant. */
 #define	B_PAGING	0x04000000	/* volatile paging I/O -- bypass VMIO */
 #define B_MANAGED	0x08000000	/* Managed by FS. */
@@ -224,8 +225,8 @@ struct buf {
 #define B_CLUSTER	0x40000000	/* pagein op, so swap() can count it */
 #define B_REMFREE	0x80000000	/* Delayed bremfree */
 
-#define PRINT_BUF_FLAGS "\20\40remfree\37cluster\36vmio\35ram\34b27" \
-	"\33paging\32b25\31b24\30b23\27relbuf\26dirty\25b20" \
+#define PRINT_BUF_FLAGS "\20\40remfree\37cluster\36vmio\35ram\34managed" \
+	"\33paging\32needsgiant\31nocopy\30b23\27relbuf\26dirty\25b20" \
 	"\24b19\23b18\22clusterok\21malloc\20nocache\17b14\16inval" \
 	"\15b12\14b11\13eintr\12done\11persist\10delwri\7validsuspwrt" \
 	"\6cache\5deferred\4direct\3async\2needcommit\1age"
@@ -239,6 +240,8 @@ struct buf {
 #define BX_BKGRDMARKER	0x00000020	/* Mark buffer for splay tree */
 #define	BX_ALTDATA	0x00000040	/* Holds extended data */
 
+#define	PRINT_BUF_XFLAGS "\20\7altdata\6bkgrdmarker\5bkgrdwrite\2clean\1dirty"
+
 #define	NOOFFSET	(-1LL)		/* No buffer offset calculated yet */
 
 /*
@@ -248,6 +251,8 @@ struct buf {
 #define	BV_BKGRDINPROG	0x00000002	/* Background write in progress */
 #define	BV_BKGRDWAIT	0x00000004	/* Background write waiting */
 #define	BV_INFREECNT	0x80000000	/* buf is counted in numfreebufs */
+
+#define	PRINT_BUF_VFLAGS "\20\40infreecnt\3bkgrdwait\2bkgrdinprog\1scanned"
 
 #ifdef _KERNEL
 /*
@@ -450,7 +455,9 @@ buf_countdeps(struct buf *bp, int i)
  */
 #define	GB_LOCK_NOWAIT	0x0001		/* Fail if we block on a buf lock. */
 #define	GB_NOCREAT	0x0002		/* Don't create a buf if not found. */
-#define	GB_NOWAIT_BD	0x0004		/* Do not wait for bufdaemon */
+#define	GB_NOWAIT_BD	0x0004		/* Do not wait for bufdaemon. */
+#define	GB_UNMAPPED	0x0008		/* Do not mmap buffer pages. */
+#define	GB_KVAALLOC	0x0010		/* But allocate KVA. */
 
 #ifdef _KERNEL
 extern int	nbuf;			/* The number of buffer headers */
@@ -470,21 +477,29 @@ extern struct	buf *swbuf;		/* Swap I/O buffer headers. */
 extern int	nswbuf;			/* Number of swap I/O buffer headers. */
 extern int	cluster_pbuf_freecnt;	/* Number of pbufs for clusters */
 extern int	vnode_pbuf_freecnt;	/* Number of pbufs for vnode pager */
+extern caddr_t	unmapped_buf;
 
 void	runningbufwakeup(struct buf *);
 void	waitrunningbufspace(void);
 caddr_t	kern_vfs_bio_buffer_alloc(caddr_t v, long physmem_est);
 void	bufinit(void);
+void	bdata2bio(struct buf *bp, struct bio *bip);
 void	bwillwrite(void);
 int	buf_dirty_count_severe(void);
 void	bremfree(struct buf *);
 void	bremfreef(struct buf *);	/* XXX Force bremfree, only for nfs. */
 int	bread(struct vnode *, daddr_t, int, struct ucred *, struct buf **);
+int     bread_gb(struct vnode *, daddr_t, int, struct ucred *,
+	    int gbflags, struct buf **);
 void	breada(struct vnode *, daddr_t *, int *, int, struct ucred *);
 int	breadn(struct vnode *, daddr_t, int, daddr_t *, int *, int,
 	    struct ucred *, struct buf **);
+int	breadn_flags(struct vnode *, daddr_t, int, daddr_t *, int *, int,
+	    struct ucred *, int, struct buf **);
 void	bdwrite(struct buf *);
 void	bawrite(struct buf *);
+void	babarrierwrite(struct buf *);
+int	bbarrierwrite(struct buf *);
 void	bdirty(struct buf *);
 void	bundirty(struct buf *);
 void	bufstrategy(struct bufobj *, struct buf *);
@@ -500,16 +515,22 @@ int	bufwait(struct buf *);
 int	bufwrite(struct buf *);
 void	bufdone(struct buf *);
 void	bufdone_finish(struct buf *);
+void	bd_speedup(void);
 
 int	cluster_read(struct vnode *, u_quad_t, daddr_t, long,
 	    struct ucred *, long, int, struct buf **);
 int	cluster_wbuild(struct vnode *, long, daddr_t, int);
 void	cluster_write(struct vnode *, struct buf *, u_quad_t, int);
+int	cluster_read_gb(struct vnode *, u_quad_t, daddr_t, long,
+	    struct ucred *, long, int, int, struct buf **);
+int	cluster_wbuild_gb(struct vnode *, long, daddr_t, int, int);
+void	cluster_write_gb(struct vnode *, struct buf *, u_quad_t, int, int);
+void	vfs_bio_bzero_buf(struct buf *bp, int base, int size);
 void	vfs_bio_set_valid(struct buf *, int base, int size);
 void	vfs_bio_clrbuf(struct buf *);
 void	vfs_busy_pages(struct buf *, int clear_modify);
 void	vfs_unbusy_pages(struct buf *);
-int	vmapbuf(struct buf *);
+int	vmapbuf(struct buf *, int);
 void	vunmapbuf(struct buf *);
 void	relpbuf(struct buf *, int *);
 void	brelvp(struct buf *);

@@ -878,7 +878,7 @@ test_kqueue_write(test_context *ctx)
 	assert(event.filter == EVFILT_WRITE);
 	assert(event.flags == 0);
 	assert(event.fflags == 0);
-	assert(event.data == 18432);
+	assert(event.data == 20428);
 	assert(event.udata == TEST_UDATA);
 
 	n = write(afd, &ctx->buf[0], 1);

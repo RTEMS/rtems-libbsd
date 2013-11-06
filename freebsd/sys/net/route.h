@@ -49,8 +49,13 @@
 struct route {
 	struct	rtentry *ro_rt;
 	struct	llentry *ro_lle;
+	struct	in_ifaddr *ro_ia;
+	int		ro_flags;
 	struct	sockaddr ro_dst;
 };
+
+#define	RT_CACHING_CONTEXT	0x1	/* XXX: not used anywhere */
+#define	RT_NORTREF		0x2	/* doesn't hold reference on ro_rt */
 
 /*
  * These numbers are used by reliable protocols for determining
@@ -171,7 +176,7 @@ struct ortentry {
 /*			0x20000		   unused, was RTF_WASCLONED */
 #define RTF_PROTO3	0x40000		/* protocol specific routing flag */
 /*			0x80000		   unused */
-#define RTF_PINNED	0x100000	/* future use */
+#define RTF_PINNED	0x100000	/* route is immutable */
 #define	RTF_LOCAL	0x200000 	/* route represents a local address */
 #define	RTF_BROADCAST	0x400000	/* route represents a bcast address */
 #define	RTF_MULTICAST	0x800000	/* route represents a mcast address */
@@ -337,6 +342,18 @@ struct rt_addrinfo {
 	RTFREE_LOCKED(_rt);					\
 } while (0)
 
+#define	RO_RTFREE(_ro) do {					\
+	if ((_ro)->ro_rt) {					\
+		if ((_ro)->ro_flags & RT_NORTREF) {		\
+			(_ro)->ro_flags &= ~RT_NORTREF;		\
+			(_ro)->ro_rt = NULL;			\
+		} else {					\
+			RT_LOCK((_ro)->ro_rt);			\
+			RTFREE_LOCKED((_ro)->ro_rt);		\
+		}						\
+	}							\
+} while (0)
+
 struct radix_node_head *rt_tables_get_rnh(int, int);
 
 struct ifmultiaddr;
@@ -404,6 +421,7 @@ int	 rtrequest1_fib(int, struct rt_addrinfo *, struct rtentry **, u_int);
 #include <sys/eventhandler.h>
 typedef void (*rtevent_arp_update_fn)(void *, struct rtentry *, uint8_t *, struct sockaddr *);
 typedef void (*rtevent_redirect_fn)(void *, struct rtentry *, struct rtentry *, struct sockaddr *);
+/* route_arp_update_event is no longer generated; see arp_update_event */
 EVENTHANDLER_DECLARE(route_arp_update_event, rtevent_arp_update_fn);
 EVENTHANDLER_DECLARE(route_redirect_event, rtevent_redirect_fn);
 #endif

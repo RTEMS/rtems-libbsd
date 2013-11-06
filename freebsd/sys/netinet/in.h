@@ -93,27 +93,7 @@ typedef	__socklen_t	socklen_t;
 #define	_SOCKLEN_T_DECLARED
 #endif
 
-/* Avoid collision with original definition in sys/socket.h. */
-#ifndef	_STRUCT_SOCKADDR_STORAGE_DECLARED
-/*
- * RFC 2553: protocol-independent placeholder for socket addresses
- */
-#define	_SS_MAXSIZE	128U
-#define	_SS_ALIGNSIZE	(sizeof(__int64_t))
-#define	_SS_PAD1SIZE	(_SS_ALIGNSIZE - sizeof(unsigned char) - \
-			    sizeof(sa_family_t))
-#define	_SS_PAD2SIZE	(_SS_MAXSIZE - sizeof(unsigned char) - \
-			    sizeof(sa_family_t) - _SS_PAD1SIZE - _SS_ALIGNSIZE)
-
-struct sockaddr_storage {
-	unsigned char	ss_len;		/* address length */
-	sa_family_t	ss_family;	/* address family */
-	char		__ss_pad1[_SS_PAD1SIZE];
-	__int64_t	__ss_align;	/* force desired struct alignment */
-	char		__ss_pad2[_SS_PAD2SIZE];
-};
-#define	_STRUCT_SOCKADDR_STORAGE_DECLARED
-#endif
+#include <sys/_sockaddr_storage.h>
 
 /* Socket address, internet style. */
 struct sockaddr_in {
@@ -147,6 +127,7 @@ __END_DECLS
 #endif /* !_KERNEL && __BSD_VISIBLE */
 
 #if __POSIX_VISIBLE >= 200112
+#define	IPPROTO_IPV6		41		/* IP6 header */
 #define	IPPROTO_RAW		255		/* raw IP packet */
 #define	INET_ADDRSTRLEN		16
 #endif
@@ -198,7 +179,6 @@ __END_DECLS
 #define	IPPROTO_CMTP		38		/* Control Message Transport */
 #define	IPPROTO_TPXX		39		/* TP++ Transport */
 #define	IPPROTO_IL		40		/* IL transport protocol */
-#define	IPPROTO_IPV6		41		/* IP6 header */
 #define	IPPROTO_SDRP		42		/* Source Demand Routing */
 #define	IPPROTO_ROUTING		43		/* IP6 routing header */
 #define	IPPROTO_FRAGMENT	44		/* IP6 fragmentation header */
@@ -260,10 +240,12 @@ __END_DECLS
 #define	IPPROTO_GMTP		100		/* GMTP*/
 #define	IPPROTO_IPCOMP		108		/* payload compression (IPComp) */
 #define	IPPROTO_SCTP		132		/* SCTP */
+#define	IPPROTO_MH		135		/* IPv6 Mobility Header */
 /* 101-254: Partly Unassigned */
 #define	IPPROTO_PIM		103		/* Protocol Independent Mcast */
 #define	IPPROTO_CARP		112		/* CARP */
 #define	IPPROTO_PGM		113		/* PGM */
+#define	IPPROTO_MPLS		137		/* MPLS-in-IP */
 #define	IPPROTO_PFSYNC		240		/* PFSYNC */
 /* 255: Reserved */
 /* BSD Private, local use, namespace incursion, no longer used */
@@ -275,6 +257,7 @@ __END_DECLS
 
 /* Only used internally, so can be outside the range of valid IP protocols. */
 #define	IPPROTO_DIVERT		258		/* divert pseudo-protocol */
+#define	IPPROTO_SEND		259		/* SeND pseudo-protocol */
 
 /*
  * Defined to avoid confusion.  The master value is defined by
@@ -413,6 +396,8 @@ __END_DECLS
 #define	INADDR_MAX_LOCAL_GROUP	(u_int32_t)0xe00000ff	/* 224.0.0.255 */
 
 #define	IN_LOOPBACKNET		127			/* official! */
+
+#define	IN_RFC3021_MASK		(u_int32_t)0xfffffffe
 
 /*
  * Options for use with [gs]etsockopt at the IP level.

@@ -175,7 +175,6 @@ int rtems_bsd_command_ifconfig(int argc, char *argv[])
 	lagg_ctor();
 	link_ctor();
 	mac_ctor();
-	nd6_ctor();
 	pfsync_ctor();
 	vlan_ctor();
 
@@ -198,7 +197,7 @@ main(int argc, char *argv[])
 	struct ifaddrs *ifap, *ifa;
 	struct ifreq paifr;
 	const struct sockaddr_dl *sdl;
-	char options[1024], *cp;
+	char options[1024], *cp, *namecp = NULL;
 	const char *ifname;
 	struct option *p;
 	size_t iflen;
@@ -279,8 +278,10 @@ main(int argc, char *argv[])
 		ifindex = 0;
 		if (argc == 1) {
 			afp = af_getbyname(*argv);
-			if (afp == NULL)
+			if (afp == NULL) {
+				warnx("Address family '%s' unknown.", *argv);
 				usage();
+			}
 			if (afp->af_name != NULL)
 				argc--, argv++;
 			/* leave with afp non-zero */
@@ -354,7 +355,7 @@ main(int argc, char *argv[])
 			sdl = (const struct sockaddr_dl *) ifa->ifa_addr;
 		else
 			sdl = NULL;
-		if (cp != NULL && strcmp(cp, ifa->ifa_name) == 0)
+		if (cp != NULL && strcmp(cp, ifa->ifa_name) == 0 && !namesonly)
 			continue;
 		iflen = strlcpy(name, ifa->ifa_name, sizeof(name));
 		if (iflen >= sizeof(name)) {
@@ -370,16 +371,34 @@ main(int argc, char *argv[])
 			continue;
 		if (uponly && (ifa->ifa_flags & IFF_UP) == 0)
 			continue;
-		ifindex++;
 		/*
 		 * Are we just listing the interfaces?
 		 */
 		if (namesonly) {
+			if (namecp == cp)
+				continue;
+			if (afp != NULL) {
+				/* special case for "ether" address family */
+				if (!strcmp(afp->af_name, "ether")) {
+					if (sdl == NULL ||
+					    (sdl->sdl_type != IFT_ETHER &&
+					    sdl->sdl_type != IFT_L2VLAN &&
+					    sdl->sdl_type != IFT_BRIDGE) ||
+					    sdl->sdl_alen != ETHER_ADDR_LEN)
+						continue;
+				} else {
+					if (ifa->ifa_addr->sa_family != afp->af_af)
+						continue;
+				}
+			}
+			namecp = cp;
+			ifindex++;
 			if (ifindex > 1)
 				printf(" ");
 			fputs(name, stdout);
 			continue;
 		}
+		ifindex++;
 
 		if (argc > 0)
 			ifconfig(argc, argv, 0, afp);
@@ -525,7 +544,30 @@ ifconfig(int argc, char *const *argv, int iscreate, const struct afswtch *uafp)
 	int s;
 
 	strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
-	afp = uafp != NULL ? uafp : af_getbyname("inet");
+	afp = NULL;
+	if (uafp != NULL)
+		afp = uafp;
+	/*
+	 * This is the historical "accident" allowing users to configure IPv4
+	 * addresses without the "inet" keyword which while a nice feature has
+	 * proven to complicate other things.  We cannot remove this but only
+	 * make sure we will never have a similar implicit default for IPv6 or
+	 * any other address familiy.  We need a fallback though for
+	 * ifconfig IF up/down etc. to work without INET support as people
+	 * never used ifconfig IF link up/down, etc. either.
+	 */
+#ifndef RESCUE
+#ifdef INET
+	if (afp == NULL && feature_present("inet"))
+		afp = af_getbyname("inet");
+#endif
+#endif
+	if (afp == NULL)
+		afp = af_getbyname("link");
+	if (afp == NULL) {
+		warnx("Please specify an address_family.");
+		usage();
+	}
 top:
 	ifr.ifr_addr.sa_family =
 		afp->af_af == AF_LINK || afp->af_af == AF_UNSPEC ?
@@ -928,7 +970,8 @@ unsetifdescr(const char *val, int value, int s, const struct afswtch *afp)
 #define	IFCAPBITS \
 "\020\1RXCSUM\2TXCSUM\3NETCONS\4VLAN_MTU\5VLAN_HWTAGGING\6JUMBO_MTU\7POLLING" \
 "\10VLAN_HWCSUM\11TSO4\12TSO6\13LRO\14WOL_UCAST\15WOL_MCAST\16WOL_MAGIC" \
-"\21VLAN_HWFILTER\23VLAN_HWTSO\24LINKSTATE\25NETMAP"
+"\17TOE4\20TOE6\21VLAN_HWFILTER\23VLAN_HWTSO\24LINKSTATE\25NETMAP" \
+"\26RXCSUM_IPV6\27TXCSUM_IPV6"
 
 /*
  * Print the status of the interface.  If an address family was
@@ -1192,6 +1235,10 @@ static struct cmd basic_cmds[] = {
 	DEF_CMD("-monitor",	-IFF_MONITOR,	setifflags),
 	DEF_CMD("staticarp",	IFF_STATICARP,	setifflags),
 	DEF_CMD("-staticarp",	-IFF_STATICARP,	setifflags),
+	DEF_CMD("rxcsum6",	IFCAP_RXCSUM_IPV6,	setifcap),
+	DEF_CMD("-rxcsum6",	-IFCAP_RXCSUM_IPV6,	setifcap),
+	DEF_CMD("txcsum6",	IFCAP_TXCSUM_IPV6,	setifcap),
+	DEF_CMD("-txcsum6",	-IFCAP_TXCSUM_IPV6,	setifcap),
 	DEF_CMD("rxcsum",	IFCAP_RXCSUM,	setifcap),
 	DEF_CMD("-rxcsum",	-IFCAP_RXCSUM,	setifcap),
 	DEF_CMD("txcsum",	IFCAP_TXCSUM,	setifcap),
@@ -1200,8 +1247,14 @@ static struct cmd basic_cmds[] = {
 	DEF_CMD("-netcons",	-IFCAP_NETCONS,	setifcap),
 	DEF_CMD("polling",	IFCAP_POLLING,	setifcap),
 	DEF_CMD("-polling",	-IFCAP_POLLING,	setifcap),
+	DEF_CMD("tso6",		IFCAP_TSO6,	setifcap),
+	DEF_CMD("-tso6",	-IFCAP_TSO6,	setifcap),
+	DEF_CMD("tso4",		IFCAP_TSO4,	setifcap),
+	DEF_CMD("-tso4",	-IFCAP_TSO4,	setifcap),
 	DEF_CMD("tso",		IFCAP_TSO,	setifcap),
 	DEF_CMD("-tso",		-IFCAP_TSO,	setifcap),
+	DEF_CMD("toe",		IFCAP_TOE,	setifcap),
+	DEF_CMD("-toe",		-IFCAP_TOE,	setifcap),
 	DEF_CMD("lro",		IFCAP_LRO,	setifcap),
 	DEF_CMD("-lro",		-IFCAP_LRO,	setifcap),
 	DEF_CMD("wol",		IFCAP_WOL,	setifcap),

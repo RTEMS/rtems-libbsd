@@ -135,6 +135,9 @@ MALLOC_DECLARE(M_PRISON);
 
 #define	HOSTUUIDLEN	64
 
+struct racct;
+struct prison_racct;
+
 /*
  * This structure describes a prison.  It is pointed to by all struct
  * ucreds's of the inmates.  pr_ref keeps track of them and is used to
@@ -166,19 +169,28 @@ struct prison {
 	int		 pr_ip6s;			/* (p) number of v6 IPs */
 	struct in_addr	*pr_ip4;			/* (p) v4 IPs of jail */
 	struct in6_addr	*pr_ip6;			/* (p) v6 IPs of jail */
-	void		*pr_sparep[4];
+	struct prison_racct *pr_prison_racct;		/* (c) racct jail proxy */
+	void		*pr_sparep[3];
 	int		 pr_childcount;			/* (a) number of child jails */
 	int		 pr_childmax;			/* (p) maximum child jails */
 	unsigned	 pr_allow;			/* (p) PR_ALLOW_* flags */
 	int		 pr_securelevel;		/* (p) securelevel */
 	int		 pr_enforce_statfs;		/* (p) statfs permission */
-	int		 pr_spare[5];
+	int		 pr_devfs_rsnum;		/* (p) devfs ruleset */
+	int		 pr_spare[4];
 	unsigned long	 pr_hostid;			/* (p) jail hostid */
 	char		 pr_name[MAXHOSTNAMELEN];	/* (p) admin jail name */
 	char		 pr_path[MAXPATHLEN];		/* (c) chroot path */
 	char		 pr_hostname[MAXHOSTNAMELEN];	/* (p) jail hostname */
 	char		 pr_domainname[MAXHOSTNAMELEN];	/* (p) jail domainname */
 	char		 pr_hostuuid[HOSTUUIDLEN];	/* (p) jail hostuuid */
+};
+
+struct prison_racct {
+	LIST_ENTRY(prison_racct) prr_next;
+	char		prr_name[MAXHOSTNAMELEN];
+	u_int		prr_refcount;
+	struct racct	*prr_racct;
 };
 #endif /* _KERNEL || _WANT_PRISON */
 
@@ -211,7 +223,11 @@ struct prison {
 #define	PR_ALLOW_MOUNT			0x0010
 #define	PR_ALLOW_QUOTAS			0x0020
 #define	PR_ALLOW_SOCKET_AF		0x0040
-#define	PR_ALLOW_ALL			0x007f
+#define	PR_ALLOW_MOUNT_DEVFS		0x0080
+#define	PR_ALLOW_MOUNT_NULLFS		0x0100
+#define	PR_ALLOW_MOUNT_ZFS		0x0200
+#define	PR_ALLOW_MOUNT_PROCFS		0x0400
+#define	PR_ALLOW_ALL			0x07ff
 
 /*
  * OSD methods
@@ -326,6 +342,8 @@ SYSCTL_DECL(_security_jail_param);
 	sysctl_jail_param, fmt, descr)
 #define	SYSCTL_JAIL_PARAM_NODE(module, descr)				\
     SYSCTL_NODE(_security_jail_param, OID_AUTO, module, 0, 0, descr)
+#define	SYSCTL_JAIL_PARAM_SUBNODE(parent, module, descr)		\
+    SYSCTL_NODE(_security_jail_param_##parent, OID_AUTO, module, 0, 0, descr)
 #define	SYSCTL_JAIL_PARAM_SYS_NODE(module, access, descr)		\
     SYSCTL_JAIL_PARAM_NODE(module, descr);				\
     SYSCTL_JAIL_PARAM(_##module, , CTLTYPE_INT | (access), "E,jailsys",	\
@@ -387,7 +405,12 @@ int prison_check_af(struct ucred *cred, int af);
 int prison_if(struct ucred *cred, struct sockaddr *sa);
 char *prison_name(struct prison *, struct prison *);
 int prison_priv_check(struct ucred *cred, int priv);
-int sysctl_jail_param(struct sysctl_oid *, void *, int , struct sysctl_req *);
+int sysctl_jail_param(SYSCTL_HANDLER_ARGS);
+void prison_racct_foreach(void (*callback)(struct racct *racct,
+    void *arg2, void *arg3), void *arg2, void *arg3);
+struct prison_racct *prison_racct_find(const char *name);
+void prison_racct_hold(struct prison_racct *prr);
+void prison_racct_free(struct prison_racct *prr);
 
 #endif /* _KERNEL */
 #endif /* !_SYS_JAIL_H_ */

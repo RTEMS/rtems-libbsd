@@ -72,6 +72,7 @@ static miibus_writereg_t miibus_writereg;
 static miibus_linkchg_t miibus_linkchg;
 static miibus_mediainit_t miibus_mediainit;
 
+static unsigned char mii_bitreverse(unsigned char x);
 
 static device_method_t miibus_methods[] = {
 	/* device interface */
@@ -303,19 +304,12 @@ miibus_statchg(device_t dev)
 {
 	device_t		parent;
 	struct mii_data		*mii;
-	struct ifnet		*ifp;
 
 	parent = device_get_parent(dev);
 	MIIBUS_STATCHG(parent);
 
 	mii = device_get_softc(dev);
-
-	/*
-	 * Note that each NIC's softc must start with an ifnet pointer.
-	 * XXX: EVIL HACK!
-	 */
-	ifp = *(struct ifnet **)device_get_softc(parent);
-	ifp->if_baudrate = ifmedia_baudrate(mii->mii_media_active);
+	mii->mii_ifp->if_baudrate = ifmedia_baudrate(mii->mii_media_active);
 }
 
 static void
@@ -337,11 +331,7 @@ miibus_linkchg(device_t dev)
 			link_state = LINK_STATE_DOWN;
 	} else
 		link_state = LINK_STATE_UNKNOWN;
-	/*
-	 * Note that each NIC's softc must start with an ifnet pointer.
-	 * XXX: EVIL HACK!
-	 */
-	if_link_state_change(*(struct ifnet**)device_get_softc(parent), link_state);
+	if_link_state_change(mii->mii_ifp, link_state);
 }
 
 static void
@@ -493,6 +483,7 @@ mii_attach(device_t dev, device_t *miibus, struct ifnet *ifp,
 		ma.mii_id1 = MIIBUS_READREG(dev, ma.mii_phyno, MII_PHYIDR1);
 		ma.mii_id2 = MIIBUS_READREG(dev, ma.mii_phyno, MII_PHYIDR2);
 
+		ma.mii_offset = ivars->mii_offset;
 		args = malloc(sizeof(struct mii_attach_args), M_DEVBUF,
 		    M_NOWAIT);
 		if (args == NULL)
@@ -544,21 +535,6 @@ mii_attach(device_t dev, device_t *miibus, struct ifnet *ifp,
 	return (rv);
 }
 
-int
-mii_phy_probe(device_t dev, device_t *child, ifm_change_cb_t ifmedia_upd,
-    ifm_stat_cb_t ifmedia_sts)
-{
-	struct ifnet *ifp;
-
-	/*
-	 * Note that each NIC's softc must start with an ifnet pointer.
-	 * XXX: EVIL HACK!
-	 */
-	ifp = *(struct ifnet **)device_get_softc(dev);
-	return (mii_attach(dev, child, ifp, ifmedia_upd, ifmedia_sts,
-	    BMSR_DEFCAPMASK, MII_PHY_ANY, MII_OFFSET_ANY, 0));
-}
-
 /*
  * Media changed; notify all PHYs.
  */
@@ -588,7 +564,7 @@ mii_mediachg(struct mii_data *mii)
 			    BMCR_ISO);
 			continue;
 		}
-		rv = (*child->mii_service)(child, mii, MII_MEDIACHG);
+		rv = PHY_SERVICE(child, mii, MII_MEDIACHG);
 		if (rv)
 			return (rv);
 	}
@@ -611,7 +587,7 @@ mii_tick(struct mii_data *mii)
 		 */
 		if (IFM_INST(ife->ifm_media) != child->mii_inst)
 			continue;
-		(void)(*child->mii_service)(child, mii, MII_TICK);
+		(void)PHY_SERVICE(child, mii, MII_TICK);
 	}
 }
 
@@ -633,7 +609,7 @@ mii_pollstat(struct mii_data *mii)
 		 */
 		if (IFM_INST(ife->ifm_media) != child->mii_inst)
 			continue;
-		(void)(*child->mii_service)(child, mii, MII_POLLSTAT);
+		(void)PHY_SERVICE(child, mii, MII_POLLSTAT);
 	}
 }
 
@@ -647,4 +623,26 @@ mii_down(struct mii_data *mii)
 
 	LIST_FOREACH(child, &mii->mii_phys, mii_list)
 		mii_phy_down(child);
+}
+
+static unsigned char
+mii_bitreverse(unsigned char x)
+{
+	static unsigned const char nibbletab[16] = {
+		0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15
+	};
+
+	return ((nibbletab[x & 15] << 4) | nibbletab[x >> 4]);
+}
+
+u_int
+mii_oui(u_int id1, u_int id2)
+{
+	u_int h;
+
+	h = (id1 << 6) | (id2 >> 10);
+
+	return ((mii_bitreverse(h >> 16) << 16) |
+	    (mii_bitreverse((h >> 8) & 0xff) << 8) |
+	    mii_bitreverse(h & 0xff));
 }

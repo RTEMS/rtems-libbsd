@@ -430,7 +430,7 @@ sctp_process_inpcb(struct xsctp_inpcb *xinpcb,
 	}
 	xladdr = (struct xsctp_laddr *)(buf + *offset);
 	if (Lflag && !is_listening) {
-		(int)sctp_skip_xinpcb_ifneed(buf, buflen, offset);
+		sctp_skip_xinpcb_ifneed(buf, buflen, offset);
 		return;
 	}
 

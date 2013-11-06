@@ -196,7 +196,7 @@ static int	sysctl_mld_ifinfo(SYSCTL_HANDLER_ARGS);
  *    to a vnet in ifp->if_vnet.
  */
 static struct mtx		 mld_mtx;
-MALLOC_DEFINE(M_MLD, "mld", "mld state");
+static MALLOC_DEFINE(M_MLD, "mld", "mld state");
 
 #define	MLD_EMBEDSCOPE(pin6, zoneid)					\
 	if (IN6_IS_SCOPE_LINKLOCAL(pin6) ||				\
@@ -234,8 +234,9 @@ SYSCTL_VNET_PROC(_net_inet6_mld, OID_AUTO, gsrdelay,
 /*
  * Non-virtualized sysctls.
  */
-SYSCTL_NODE(_net_inet6_mld, OID_AUTO, ifinfo, CTLFLAG_RD | CTLFLAG_MPSAFE,
-    sysctl_mld_ifinfo, "Per-interface MLDv2 state");
+static SYSCTL_NODE(_net_inet6_mld, OID_AUTO, ifinfo,
+    CTLFLAG_RD | CTLFLAG_MPSAFE, sysctl_mld_ifinfo,
+    "Per-interface MLDv2 state");
 
 static int	mld_v1enable = 1;
 SYSCTL_INT(_net_inet6_mld, OID_AUTO, v1enable, CTLFLAG_RW,
@@ -834,7 +835,7 @@ mld_v2_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 	mld = (struct mldv2_query *)(mtod(m, uint8_t *) + off);
 
 	maxdelay = ntohs(mld->mld_maxdelay);	/* in 1/10ths of a second */
-	if (maxdelay >= 32678) {
+	if (maxdelay >= 32768) {
 		maxdelay = (MLD_MRC_MANT(maxdelay) | 0x1000) <<
 			   (MLD_MRC_EXP(maxdelay) + 3);
 	}
@@ -868,16 +869,10 @@ mld_v2_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 	 */
 	if (IN6_IS_ADDR_UNSPECIFIED(&mld->mld_addr)) {
 		/*
-		 * General Queries SHOULD be directed to ff02::1.
 		 * A general query with a source list has undefined
 		 * behaviour; discard it.
 		 */
-		struct in6_addr		 dst;
-
-		dst = ip6->ip6_dst;
-		in6_clearscope(&dst);
-		if (!IN6_ARE_ADDR_EQUAL(&dst, &in6addr_linklocal_allnodes) ||
-		    nsrc > 0)
+		if (nsrc > 0)
 			return (EINVAL);
 		is_general_query = 1;
 	} else {
@@ -2204,6 +2199,7 @@ mld_final_leave(struct in6_multi *inm, struct mld_ifinfo *mli)
 #endif
 			mld_v1_transmit_report(inm, MLD_LISTENER_DONE);
 			inm->in6m_state = MLD_NOT_MEMBER;
+			V_current_state_timers_running6 = 1;
 		} else if (mli->mli_version == MLD_VERSION_2) {
 			/*
 			 * Stop group timer and all pending reports.
@@ -3098,7 +3094,6 @@ mld_dispatch_packet(struct mbuf *m)
 		m0 = mld_v2_encap_report(ifp, m);
 		if (m0 == NULL) {
 			CTR2(KTR_MLD, "%s: dropped %p", __func__, m);
-			m_freem(m);
 			IP6STAT_INC(ip6s_odropped);
 			goto out;
 		}

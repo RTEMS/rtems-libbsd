@@ -456,7 +456,7 @@ ipsec4_checkpolicy(struct mbuf *m, u_int dir, u_int flag, int *error,
 		sp = ipsec_getpolicybysock(m, dir, inp, error);
 	if (sp == NULL) {
 		IPSEC_ASSERT(*error != 0, ("getpolicy failed w/o error"));
-		V_ipsec4stat.ips_out_inval++;
+		IPSECSTAT_INC(ips_out_inval);
 		return (NULL);
 	}
 	IPSEC_ASSERT(*error == 0, ("sp w/ error set to %u", *error));
@@ -466,7 +466,7 @@ ipsec4_checkpolicy(struct mbuf *m, u_int dir, u_int flag, int *error,
 		printf("%s: invalid policy %u\n", __func__, sp->policy);
 		/* FALLTHROUGH */
 	case IPSEC_POLICY_DISCARD:
-		V_ipsec4stat.ips_out_polvio++;
+		IPSECSTAT_INC(ips_out_polvio);
 		*error = -EINVAL;	/* Packet is discarded by caller. */
 		break;
 	case IPSEC_POLICY_BYPASS:
@@ -600,7 +600,7 @@ ipsec4_get_ulp(struct mbuf *m, struct secpolicyindex *spidx, int needport)
 	IPSEC_ASSERT(m->m_pkthdr.len >= sizeof(struct ip),("packet too short"));
 
 	/* NB: ip_input() flips it into host endian. XXX Need more checking. */
-	if (m->m_len < sizeof (struct ip)) {
+	if (m->m_len >= sizeof (struct ip)) {
 		struct ip *ip = mtod(m, struct ip *);
 		if (ip->ip_off & (IP_MF | IP_OFFMASK))
 			goto done;
@@ -1317,7 +1317,7 @@ ipsec4_in_reject(struct mbuf *m, struct inpcb *inp)
 
 	result = ipsec46_in_reject(m, inp);
 	if (result)
-		V_ipsec4stat.ips_in_polvio++;
+		IPSECSTAT_INC(ips_in_polvio);
 
 	return (result);
 }
@@ -1335,7 +1335,7 @@ ipsec6_in_reject(struct mbuf *m, struct inpcb *inp)
 
 	result = ipsec46_in_reject(m, inp);
 	if (result)
-		V_ipsec6stat.ips_in_polvio++;
+		IPSEC6STAT_INC(ips_in_polvio);
 
 	return (result);
 }

@@ -292,7 +292,7 @@ static device_method_t fxp_methods[] = {
 	DEVMETHOD(miibus_writereg,	fxp_miibus_writereg),
 	DEVMETHOD(miibus_statchg,	fxp_miibus_statchg),
 
-	{ 0, 0 }
+	DEVMETHOD_END
 };
 
 static driver_t fxp_driver = {
@@ -303,8 +303,9 @@ static driver_t fxp_driver = {
 
 static devclass_t fxp_devclass;
 
-DRIVER_MODULE(fxp, pci, fxp_driver, fxp_devclass, 0, 0);
-DRIVER_MODULE(miibus, fxp, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE_ORDERED(fxp, pci, fxp_driver, fxp_devclass, NULL, NULL,
+    SI_ORDER_ANY);
+DRIVER_MODULE(miibus, fxp, miibus_driver, miibus_devclass, NULL, NULL);
 
 static struct resource_spec fxp_res_spec_mem[] = {
 	{ SYS_RES_MEMORY,	FXP_PCI_MMBA,	RF_ACTIVE },
@@ -453,7 +454,6 @@ fxp_attach(device_t dev)
 	 * Enable bus mastering.
 	 */
 	pci_enable_busmaster(dev);
-	val = pci_read_config(dev, PCIR_COMMAND, 2);
 
 	/*
 	 * Figure out which we should try first - memory mapping or i/o mapping?
@@ -525,7 +525,7 @@ fxp_attach(device_t dev)
 	    sc->revision != FXP_REV_82559S_A) {
 		data = sc->eeprom[FXP_EEPROM_MAP_ID];
 		if ((data & 0x20) != 0 &&
-		    pci_find_extcap(sc->dev, PCIY_PMG, &pmc) == 0)
+		    pci_find_cap(sc->dev, PCIY_PMG, &pmc) == 0)
 			sc->flags |= FXP_FLAG_WOLCAP;
 	}
 
@@ -611,6 +611,7 @@ fxp_attach(device_t dev)
 		 * is a valid cacheline size (8 or 16 dwords), then tell
 		 * the board to turn on MWI.
 		 */
+		val = pci_read_config(dev, PCIR_COMMAND, 2);
 		if (val & PCIM_CMD_MWRICEN &&
 		    pci_read_config(dev, PCIR_CACHELNSZ, 1) != 0)
 			sc->flags |= FXP_FLAG_MWI_ENABLE;
@@ -1068,7 +1069,7 @@ fxp_suspend(device_t dev)
 	FXP_LOCK(sc);
 
 	ifp = sc->ifp;
-	if (pci_find_extcap(sc->dev, PCIY_PMG, &pmc) == 0) {
+	if (pci_find_cap(sc->dev, PCIY_PMG, &pmc) == 0) {
 		pmstat = pci_read_config(sc->dev, pmc + PCIR_POWER_STATUS, 2);
 		pmstat &= ~(PCIM_PSTAT_PME | PCIM_PSTAT_PMEENABLE);
 		if ((ifp->if_capenable & IFCAP_WOL_MAGIC) != 0) {
@@ -1103,7 +1104,7 @@ fxp_resume(device_t dev)
 
 	FXP_LOCK(sc);
 
-	if (pci_find_extcap(sc->dev, PCIY_PMG, &pmc) == 0) {
+	if (pci_find_cap(sc->dev, PCIY_PMG, &pmc) == 0) {
 		sc->flags &= ~FXP_FLAG_WOL;
 		pmstat = pci_read_config(sc->dev, pmc + PCIR_POWER_STATUS, 2);
 		/* Disable PME and clear PME status. */
@@ -1449,7 +1450,7 @@ fxp_encap(struct fxp_softc *sc, struct mbuf **m_head)
 
 		if (M_WRITABLE(*m_head) == 0) {
 			/* Get a writable copy. */
-			m = m_dup(*m_head, M_DONTWAIT);
+			m = m_dup(*m_head, M_NOWAIT);
 			m_freem(*m_head);
 			if (m == NULL) {
 				*m_head = NULL;
@@ -1565,7 +1566,7 @@ fxp_encap(struct fxp_softc *sc, struct mbuf **m_head)
 	error = bus_dmamap_load_mbuf_sg(sc->fxp_txmtag, txp->tx_map, *m_head,
 	    segs, &nseg, 0);
 	if (error == EFBIG) {
-		m = m_collapse(*m_head, M_DONTWAIT, sc->maxtxseg);
+		m = m_collapse(*m_head, M_NOWAIT, sc->maxtxseg);
 		if (m == NULL) {
 			m_freem(*m_head);
 			*m_head = NULL;
@@ -2599,7 +2600,7 @@ fxp_ifmedia_upd(struct ifnet *ifp)
 	mii = device_get_softc(sc->miibus);
 	FXP_LOCK(sc);
 	LIST_FOREACH(miisc, &mii->mii_phys, mii_list)
-		mii_phy_reset(miisc);
+		PHY_RESET(miisc);
 	mii_mediachg(mii);
 	FXP_UNLOCK(sc);
 	return (0);
@@ -2637,7 +2638,7 @@ fxp_new_rfabuf(struct fxp_softc *sc, struct fxp_rx *rxp)
 	bus_dmamap_t tmp_map;
 	int error;
 
-	m = m_getcl(M_DONTWAIT, MT_DATA, M_PKTHDR);
+	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
 	if (m == NULL)
 		return (ENOBUFS);
 

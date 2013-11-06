@@ -34,7 +34,6 @@
 #include <rtems/bsd/sys/_types.h>
 
 struct sbuf;
-struct sbuf_drain_data;
 typedef int (sbuf_drain_func)(void *, const char *, int);
 
 /*
@@ -42,17 +41,20 @@ typedef int (sbuf_drain_func)(void *, const char *, int);
  */
 struct sbuf {
 	char		*s_buf;		/* storage buffer */
-	struct sbuf_drain *s_drain;	/* drain function and data */
-	int		 s_size;	/* size of storage buffer */
-	int		 s_len;		/* current length of string */
+	sbuf_drain_func	*s_drain_func;	/* drain function */
+	void		*s_drain_arg;	/* user-supplied drain argument */
+	int		 s_error;	/* current error code */
+	ssize_t		 s_size;	/* size of storage buffer */
+	ssize_t		 s_len;		/* current length of string */
 #define	SBUF_FIXEDLEN	0x00000000	/* fixed length buffer (default) */
 #define	SBUF_AUTOEXTEND	0x00000001	/* automatically extend buffer */
 #define	SBUF_USRFLAGMSK	0x0000ffff	/* mask of flags the user may specify */
 #define	SBUF_DYNAMIC	0x00010000	/* s_buf must be freed */
 #define	SBUF_FINISHED	0x00020000	/* set by sbuf_finish() */
-#define	SBUF_OVERFLOWED	0x00040000	/* sbuf overflowed */
 #define	SBUF_DYNSTRUCT	0x00080000	/* sbuf must be freed */
+#define	SBUF_INSECTION	0x00100000	/* set by sbuf_start_section() */
 	int		 s_flags;	/* flags */
+	ssize_t		 s_sect_len;	/* current length of section */
 };
 
 __BEGIN_DECLS
@@ -63,7 +65,7 @@ struct sbuf	*sbuf_new(struct sbuf *, char *, int, int);
 #define		 sbuf_new_auto()				\
 	sbuf_new(NULL, NULL, 0, SBUF_AUTOEXTEND)
 void		 sbuf_clear(struct sbuf *);
-int		 sbuf_setpos(struct sbuf *, int);
+int		 sbuf_setpos(struct sbuf *, ssize_t);
 int		 sbuf_bcat(struct sbuf *, const void *, size_t);
 int		 sbuf_bcpy(struct sbuf *, const void *, size_t);
 int		 sbuf_cat(struct sbuf *, const char *);
@@ -75,12 +77,14 @@ int		 sbuf_vprintf(struct sbuf *, const char *, __va_list)
 int		 sbuf_putc(struct sbuf *, int);
 void		 sbuf_set_drain(struct sbuf *, sbuf_drain_func *, void *);
 int		 sbuf_trim(struct sbuf *);
-int		 sbuf_overflowed(struct sbuf *);
+int		 sbuf_error(const struct sbuf *);
 int		 sbuf_finish(struct sbuf *);
 char		*sbuf_data(struct sbuf *);
-int		 sbuf_len(struct sbuf *);
-int		 sbuf_done(struct sbuf *);
+ssize_t		 sbuf_len(struct sbuf *);
+int		 sbuf_done(const struct sbuf *);
 void		 sbuf_delete(struct sbuf *);
+void		 sbuf_start_section(struct sbuf *, ssize_t *);
+ssize_t		 sbuf_end_section(struct sbuf *, ssize_t, size_t, int);
 
 #ifdef _KERNEL
 struct uio;

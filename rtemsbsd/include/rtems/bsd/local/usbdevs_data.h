@@ -1306,6 +1306,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "iPhone 4",
 	},
 	{
+	    USB_VENDOR_APPLE, USB_PRODUCT_APPLE_IPHONE_4S,
+	    0,
+	    "Apple Computer",
+	    "iPhone 4S",
+	},
+	{
 	    USB_VENDOR_APPLE, USB_PRODUCT_APPLE_IPHONE_5,
 	    0,
 	    "Apple Computer",
@@ -3010,12 +3016,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "10/100 Ethernet",
 	},
 	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DUBE100C1,
-	    0,
-	    "D-Link",
-	    "DUB-E100 rev C1",
-	},
-	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DSB650TX4,
 	    0,
 	    "D-Link",
@@ -3152,6 +3152,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "D-Link",
 	    "DUB-H7 USB 2.0 7-Port Hub",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWR510_CD,
+	    0,
+	    "D-Link",
+	    "DWR-510 CD-ROM Mode",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWR510,
+	    0,
+	    "D-Link",
+	    "DWR-510",
 	},
 	{
 	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_DWA120,
@@ -3326,12 +3338,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Edimax",
 	    "EW-7718",
-	},
-	{
-	    USB_VENDOR_EDIMAX, USB_PRODUCT_EDIMAX_EW7811UN,
-	    0,
-	    "Edimax",
-	    "EW-7811Un",
 	},
 	{
 	    USB_VENDOR_EGALAX, USB_PRODUCT_EGALAX_TPANEL,
@@ -3992,6 +3998,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Future Technology Devices",
 	    "BeagleBone",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_KTLINK,
+	    0,
+	    "Future Technology Devices",
+	    "KT-LINK Embedded Hackers Multitool",
 	},
 	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_TURTELIZER2,
@@ -7342,6 +7354,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "9531 GPS",
 	},
 	{
+	    USB_VENDOR_LENOVO, USB_PRODUCT_LENOVO_ETHERNET,
+	    0,
+	    "Lenovo",
+	    "USB 2.0 Ethernet",
+	},
+	{
 	    USB_VENDOR_LEXAR, USB_PRODUCT_LEXAR_JUMPSHOT,
 	    0,
 	    "Lexar Media",
@@ -7528,12 +7546,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "QuickCam Pro",
 	},
 	{
-	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_WEBCAMC100,
-	    0,
-	    "Logitech",
-	    "Webcam C100",
-	},
-	{
 	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMEXP,
 	    0,
 	    "Logitech",
@@ -7688,6 +7700,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Logitec",
 	    "LAN-W150N/U2",
+	},
+	{
+	    USB_VENDOR_LOGITEC, USB_PRODUCT_LOGITEC_LANW300NU2S,
+	    0,
+	    "Logitec",
+	    "LAN-W300N/U2S",
 	},
 	{
 	    USB_VENDOR_LONGCHEER, USB_PRODUCT_LONGCHEER_WM66,
@@ -10006,6 +10024,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USBLAN",
 	},
 	{
+	    USB_VENDOR_MOTOROLA2, USB_PRODUCT_MOTOROLA2_MB886,
+	    0,
+	    "Motorola",
+	    "MB886 Mobile Phone (Atria HD)",
+	},
+	{
 	    USB_VENDOR_MOTOROLA4, USB_PRODUCT_MOTOROLA4_RT2770,
 	    0,
 	    "Motorola",
@@ -10504,6 +10528,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Novatel ZeroCD",
 	},
 	{
+	    USB_VENDOR_NOVATEL, USB_PRODUCT_NOVATEL_MIFI2200,
+	    0,
+	    "Novatel Wireless",
+	    "Novatel MiFi 2200 CDMA",
+	},
+	{
 	    USB_VENDOR_NOVATEL, USB_PRODUCT_NOVATEL_U727_2,
 	    0,
 	    "Novatel Wireless",
@@ -10904,6 +10934,36 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Option N.V.",
 	    "Globetrotter iCON 452",
+	},
+	{
+	    USB_VENDOR_OPTO, USB_PRODUCT_OPTO_BARCODE,
+	    0,
+	    "Optoelectronics Co., Ltd",
+	    "Barcode Reader",
+	},
+	{
+	    USB_VENDOR_OPTO, USB_PRODUCT_OPTO_OPTICONCODE,
+	    0,
+	    "Optoelectronics Co., Ltd",
+	    "Opticon Code Reader",
+	},
+	{
+	    USB_VENDOR_OPTO, USB_PRODUCT_OPTO_BARCODE_1,
+	    0,
+	    "Optoelectronics Co., Ltd",
+	    "Barcode Reader",
+	},
+	{
+	    USB_VENDOR_OPTO, USB_PRODUCT_OPTO_CRD7734,
+	    0,
+	    "Optoelectronics Co., Ltd",
+	    "USB Cradle CRD-7734-RU",
+	},
+	{
+	    USB_VENDOR_OPTO, USB_PRODUCT_OPTO_CRD7734_1,
+	    0,
+	    "Optoelectronics Co., Ltd",
+	    "USB Cradle CRD-7734-RU",
 	},
 	{
 	    USB_VENDOR_OVISLINK, USB_PRODUCT_OVISLINK_RT3072,
@@ -11410,6 +11470,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RT3070",
 	},
 	{
+	    USB_VENDOR_PLANEX2, USB_PRODUCT_PLANEX2_MZKUE150N,
+	    0,
+	    "Planex Communications",
+	    "MZK-UE150N",
+	},
+	{
 	    USB_VENDOR_PLANEX2, USB_PRODUCT_PLANEX2_GWUS54MINI2,
 	    0,
 	    "Planex Communications",
@@ -11798,6 +11864,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Qualcomm",
 	    "CDMA Technologies MSM phone",
+	},
+	{
+	    USB_VENDOR_QUALCOMM, USB_PRODUCT_QUALCOMM_NTT_L02C_MODEM,
+	    0,
+	    "Qualcomm",
+	    "NTT DOCOMO L-02C",
+	},
+	{
+	    USB_VENDOR_QUALCOMM, USB_PRODUCT_QUALCOMM_NTT_L02C_STORAGE,
+	    0,
+	    "Qualcomm",
+	    "NTT DOCOMO L-02C",
 	},
 	{
 	    USB_VENDOR_QUALCOMM2, USB_PRODUCT_QUALCOMM2_MF330,
@@ -14488,12 +14566,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "2662W-AR Wireless",
 	},
 	{
-	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_ETH,
-	    0,
-	    "Standard Microsystems",
-	    "USB/Ethernet",
-	},
-	{
 	    USB_VENDOR_SOHOWARE, USB_PRODUCT_SOHOWARE_NUB100,
 	    0,
 	    "SOHOware",
@@ -14894,12 +14966,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Super Top",
 	    "USB-IDE",
-	},
-	{
-	    USB_VENDOR_SUPERTOP, USB_PRODUCT_SUPERTOP_FLASHDRIVE,
-	    0,
-	    "Super Top",
-	    "extrememory Snippy",
 	},
 	{
 	    USB_VENDOR_SYNTECH, USB_PRODUCT_SYNTECH_CPT8001C,
@@ -15572,12 +15638,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Western Digital",
 	    "MyPassword External HDD",
-	},
-	{
-	    USB_VENDOR_WETELECOM, USB_PRODUCT_WETELECOM_WM_D200,
-	    0,
-	    "WeTelecom",
-	    "WM-D200",
 	},
 	{
 	    USB_VENDOR_WIENERPLEINBAUS, USB_PRODUCT_WIENERPLEINBAUS_PL512,
@@ -17539,6 +17599,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_ACTON, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Acton Research Corp.",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_OPTO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Optoelectronics Co., Ltd",
 	    NULL,
 	},
 	{
@@ -19666,6 +19732,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_LENOVO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Lenovo",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_WAVESENSE, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "WaveSense",
@@ -19927,12 +19999,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_MOTOROLA2, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Motorola",
-	    NULL,
-	},
-	{
-	    USB_VENDOR_WETELECOM, 0,
-	    USB_KNOWNDEV_NOPROD,
-	    "WeTelecom",
 	    NULL,
 	},
 	{

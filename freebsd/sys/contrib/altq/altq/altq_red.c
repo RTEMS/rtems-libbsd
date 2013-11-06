@@ -64,11 +64,9 @@
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
 #include <rtems/bsd/local/opt_altq.h>
-#if (__FreeBSD__ != 2)
 #include <rtems/bsd/local/opt_inet.h>
 #ifdef __FreeBSD__
 #include <rtems/bsd/local/opt_inet6.h>
-#endif
 #endif
 #endif /* __FreeBSD__ || __NetBSD__ */
 #ifdef ALTQ_RED	/* red is enabled by ALTQ_RED option in opt_altq.h */
@@ -518,11 +516,9 @@ mark_ecn(struct mbuf *m, struct altq_pktattr *pktattr, int flags)
 	struct mbuf	*m0;
 	struct pf_mtag	*at;
 	void		*hdr;
-	int		 af;
 
 	at = pf_find_mtag(m);
 	if (at != NULL) {
-		af = at->af;
 		hdr = at->hdr;
 #ifdef ALTQ3_COMPAT
 	} else if (pktattr != NULL) {
@@ -530,9 +526,6 @@ mark_ecn(struct mbuf *m, struct altq_pktattr *pktattr, int flags)
 		hdr = pktattr->pattr_hdr;
 #endif /* ALTQ3_COMPAT */
 	} else
-		return (0);
-
-	if (af != AF_INET && af != AF_INET6)
 		return (0);
 
 	/* verify that pattr_hdr is within the mbuf data */
@@ -545,8 +538,8 @@ mark_ecn(struct mbuf *m, struct altq_pktattr *pktattr, int flags)
 		return (0);
 	}
 
-	switch (af) {
-	case AF_INET:
+	switch (((struct ip *)hdr)->ip_v) {
+	case IPVERSION:
 		if (flags & REDF_ECN4) {
 			struct ip *ip = hdr;
 			u_int8_t otos;
@@ -579,7 +572,7 @@ mark_ecn(struct mbuf *m, struct altq_pktattr *pktattr, int flags)
 		}
 		break;
 #ifdef INET6
-	case AF_INET6:
+	case (IPV6_VERSION >> 4):
 		if (flags & REDF_ECN6) {
 			struct ip6_hdr *ip6 = hdr;
 			u_int32_t flowlabel;

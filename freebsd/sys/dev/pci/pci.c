@@ -64,19 +64,13 @@ __FBSDID("$FreeBSD$");
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pci_private.h>
 
+#include <dev/usb/controller/xhcireg.h>
 #include <dev/usb/controller/ehcireg.h>
 #include <dev/usb/controller/ohcireg.h>
 #include <dev/usb/controller/uhcireg.h>
 
 #include <rtems/bsd/local/pcib_if.h>
 #include <rtems/bsd/local/pci_if.h>
-
-#ifdef __HAVE_ACPI
-#include <contrib/dev/acpica/include/acpi.h>
-#include <rtems/bsd/local/acpi_if.h>
-#else
-#define	ACPI_PWR_FOR_SLEEP(x, y, z)
-#endif
 
 /*
  * XXX: Due to a limitation of the bus_dma_tag_create() API, we cannot
@@ -97,6 +91,7 @@ __FBSDID("$FreeBSD$");
 	(((cfg)->hdrtype == PCIM_HDRTYPE_NORMAL && reg == PCIR_BIOS) ||	\
 	 ((cfg)->hdrtype == PCIM_HDRTYPE_BRIDGE && reg == PCIR_BIOS_1))
 
+static int		pci_has_quirk(uint32_t devid, int quirk);
 static pci_addr_t	pci_mapbase(uint64_t mapreg);
 static const char	*pci_maptype(uint64_t mapreg);
 static int		pci_mapsize(uint64_t testval);
@@ -138,6 +133,7 @@ static void		pci_enable_msix(device_t dev, u_int index,
 static void		pci_mask_msix(device_t dev, u_int index);
 static void		pci_unmask_msix(device_t dev, u_int index);
 static int		pci_msi_blacklisted(void);
+static int		pci_msix_blacklisted(void);
 static void		pci_resume_msi(device_t dev);
 static void		pci_resume_msix(device_t dev);
 static int		pci_remap_intr_method(device_t bus, device_t dev,
@@ -201,7 +197,7 @@ static device_method_t pci_methods[] = {
 DEFINE_CLASS_0(pci, pci_driver, pci_methods, sizeof(struct pci_softc));
 
 static devclass_t pci_devclass;
-DRIVER_MODULE(pci, pcib, pci_driver, pci_devclass, pci_modevent, 0);
+DRIVER_MODULE(pci, pcib, pci_driver, pci_devclass, pci_modevent, NULL);
 MODULE_VERSION(pci, 1);
 
 static char	*pci_vendordata;
@@ -211,15 +207,16 @@ struct pci_quirk {
 	uint32_t devid;	/* Vendor/device of the card */
 	int	type;
 #define	PCI_QUIRK_MAP_REG	1 /* PCI map register in weird place */
-#define	PCI_QUIRK_DISABLE_MSI	2 /* MSI/MSI-X doesn't work */
+#define	PCI_QUIRK_DISABLE_MSI	2 /* Neither MSI nor MSI-X work */
 #define	PCI_QUIRK_ENABLE_MSI_VM	3 /* Older chipset in VM where MSI works */
 #define	PCI_QUIRK_UNMAP_REG	4 /* Ignore PCI map register */
+#define	PCI_QUIRK_DISABLE_MSIX	5 /* MSI-X doesn't work */
 	int	arg1;
 	int	arg2;
 };
 
 static const struct pci_quirk pci_quirks[] = {
-	/* The Intel 82371AB and 82443MX has a map register at offset 0x90. */
+	/* The Intel 82371AB and 82443MX have a map register at offset 0x90. */
 	{ 0x71138086, PCI_QUIRK_MAP_REG,	0x90,	 0 },
 	{ 0x719b8086, PCI_QUIRK_MAP_REG,	0x90,	 0 },
 	/* As does the Serverworks OSB4 (the SMBus mapping register) */
@@ -254,8 +251,8 @@ static const struct pci_quirk pci_quirks[] = {
 	 * MSI-X allocation doesn't work properly for devices passed through
 	 * by VMware up to at least ESXi 5.1.
 	 */
-	{ 0x079015ad, PCI_QUIRK_DISABLE_MSI,	0,	0 }, /* PCI/PCI-X */
-	{ 0x07a015ad, PCI_QUIRK_DISABLE_MSI,	0,	0 }, /* PCIe */
+	{ 0x079015ad, PCI_QUIRK_DISABLE_MSIX,	0,	0 }, /* PCI/PCI-X */
+	{ 0x07a015ad, PCI_QUIRK_DISABLE_MSIX,	0,	0 }, /* PCIe */
 
 	/*
 	 * Some virtualization environments emulate an older chipset
@@ -297,6 +294,12 @@ SYSCTL_INT(_hw_pci, OID_AUTO, enable_io_modes, CTLFLAG_RW,
 enable these bits correctly.  We'd like to do this all the time, but there\n\
 are some peripherals that this causes problems with.");
 
+static int pci_do_realloc_bars = 0;
+TUNABLE_INT("hw.pci.realloc_bars", &pci_do_realloc_bars);
+SYSCTL_INT(_hw_pci, OID_AUTO, realloc_bars, CTLFLAG_RW,
+    &pci_do_realloc_bars, 0,
+    "Attempt to allocate a new range for any BARs whose original firmware-assigned ranges fail to allocate during the initial device scan.");
+
 static int pci_do_power_nodriver = 0;
 TUNABLE_INT("hw.pci.do_power_nodriver", &pci_do_power_nodriver);
 SYSCTL_INT(_hw_pci, OID_AUTO, do_power_nodriver, CTLFLAG_RW,
@@ -306,11 +309,17 @@ disable.  1 means conservatively place devices into D3 state.  2 means\n\
 agressively place devices into D3 state.  3 means put absolutely everything\n\
 in D3 state.");
 
-static int pci_do_power_resume = 1;
+int pci_do_power_resume = 1;
 TUNABLE_INT("hw.pci.do_power_resume", &pci_do_power_resume);
 SYSCTL_INT(_hw_pci, OID_AUTO, do_power_resume, CTLFLAG_RW,
     &pci_do_power_resume, 1,
   "Transition from D3 -> D0 on resume.");
+
+int pci_do_power_suspend = 1;
+TUNABLE_INT("hw.pci.do_power_suspend", &pci_do_power_suspend);
+SYSCTL_INT(_hw_pci, OID_AUTO, do_power_suspend, CTLFLAG_RW,
+    &pci_do_power_suspend, 1,
+  "Transition from D0 -> D3 on suspend.");
 
 static int pci_do_msi = 1;
 TUNABLE_INT("hw.pci.enable_msi", &pci_do_msi);
@@ -325,7 +334,7 @@ SYSCTL_INT(_hw_pci, OID_AUTO, enable_msix, CTLFLAG_RW, &pci_do_msix, 1,
 static int pci_honor_msi_blacklist = 1;
 TUNABLE_INT("hw.pci.honor_msi_blacklist", &pci_honor_msi_blacklist);
 SYSCTL_INT(_hw_pci, OID_AUTO, honor_msi_blacklist, CTLFLAG_RD,
-    &pci_honor_msi_blacklist, 1, "Honor chipset blacklist for MSI");
+    &pci_honor_msi_blacklist, 1, "Honor chipset blacklist for MSI/MSI-X");
 
 #if defined(__i386__) || defined(__amd64__)
 static int pci_usb_takeover = 1;
@@ -337,6 +346,18 @@ SYSCTL_INT(_hw_pci, OID_AUTO, usb_early_takeover, CTLFLAG_RDTUN,
     &pci_usb_takeover, 1, "Enable early takeover of USB controllers.\n\
 Disable this if you depend on BIOS emulation of USB devices, that is\n\
 you use USB devices (like keyboard or mouse) but do not load USB drivers");
+
+static int
+pci_has_quirk(uint32_t devid, int quirk)
+{
+	const struct pci_quirk *q;
+
+	for (q = &pci_quirks[0]; q->devid; q++) {
+		if (q->devid == devid && q->type == quirk)
+			return (1);
+	}
+	return (0);
+}
 
 /* Find a device_t by bus/slot/function in domain 0 */
 
@@ -515,12 +536,12 @@ pci_maprange(uint64_t mapreg)
 static void
 pci_fixancient(pcicfgregs *cfg)
 {
-	if (cfg->hdrtype != 0)
+	if ((cfg->hdrtype & PCIM_HDRTYPE) != PCIM_HDRTYPE_NORMAL)
 		return;
 
 	/* PCI to PCI bridges use header type 1 */
 	if (cfg->baseclass == PCIC_BRIDGE && cfg->subclass == PCIS_BRIDGE_PCI)
-		cfg->hdrtype = 1;
+		cfg->hdrtype = PCIM_HDRTYPE_BRIDGE;
 }
 
 /* extract header type specific config data */
@@ -529,16 +550,16 @@ static void
 pci_hdrtypedata(device_t pcib, int b, int s, int f, pcicfgregs *cfg)
 {
 #define	REG(n, w)	PCIB_READ_CONFIG(pcib, b, s, f, n, w)
-	switch (cfg->hdrtype) {
-	case 0:
+	switch (cfg->hdrtype & PCIM_HDRTYPE) {
+	case PCIM_HDRTYPE_NORMAL:
 		cfg->subvendor      = REG(PCIR_SUBVEND_0, 2);
 		cfg->subdevice      = REG(PCIR_SUBDEV_0, 2);
 		cfg->nummaps	    = PCI_MAXMAPS_0;
 		break;
-	case 1:
+	case PCIM_HDRTYPE_BRIDGE:
 		cfg->nummaps	    = PCI_MAXMAPS_1;
 		break;
-	case 2:
+	case PCIM_HDRTYPE_CARDBUS:
 		cfg->subvendor      = REG(PCIR_SUBVEND_2, 2);
 		cfg->subdevice      = REG(PCIR_SUBDEV_2, 2);
 		cfg->nummaps	    = PCI_MAXMAPS_2;
@@ -635,11 +656,11 @@ pci_read_cap(device_t pcib, pcicfgregs *cfg)
 	int	ptr, nextptr, ptrptr;
 
 	switch (cfg->hdrtype & PCIM_HDRTYPE) {
-	case 0:
-	case 1:
+	case PCIM_HDRTYPE_NORMAL:
+	case PCIM_HDRTYPE_BRIDGE:
 		ptrptr = PCIR_CAP_PTR;
 		break;
-	case 2:
+	case PCIM_HDRTYPE_CARDBUS:
 		ptrptr = PCIR_CAP_PTR_2;	/* cardbus capabilities ptr */
 		break;
 	default:
@@ -667,7 +688,7 @@ pci_read_cap(device_t pcib, pcicfgregs *cfg)
 			if (cfg->pp.pp_cap == 0) {
 				cfg->pp.pp_cap = REG(ptr + PCIR_POWER_CAP, 2);
 				cfg->pp.pp_status = ptr + PCIR_POWER_STATUS;
-				cfg->pp.pp_pmcsr = ptr + PCIR_POWER_PMCSR;
+				cfg->pp.pp_bse = ptr + PCIR_POWER_BSE;
 				if ((nextptr - ptr) > PCIR_POWER_DATA)
 					cfg->pp.pp_data = ptr + PCIR_POWER_DATA;
 			}
@@ -730,7 +751,8 @@ pci_read_cap(device_t pcib, pcicfgregs *cfg)
 			break;
 		case PCIY_SUBVENDOR:
 			/* Should always be true. */
-			if ((cfg->hdrtype & PCIM_HDRTYPE) == 1) {
+			if ((cfg->hdrtype & PCIM_HDRTYPE) ==
+			    PCIM_HDRTYPE_BRIDGE) {
 				val = REG(ptr + PCIR_SUBVENDCAP_ID, 4);
 				cfg->subvendor = val & 0xffff;
 				cfg->subdevice = val >> 16;
@@ -744,7 +766,8 @@ pci_read_cap(device_t pcib, pcicfgregs *cfg)
 			 * PCI-express or HT chipsets might match on
 			 * this check as well.
 			 */
-			if ((cfg->hdrtype & PCIM_HDRTYPE) == 1)
+			if ((cfg->hdrtype & PCIM_HDRTYPE) ==
+			    PCIM_HDRTYPE_BRIDGE)
 				pcix_chipset = 1;
 			break;
 		case PCIY_EXPRESS:	/* PCI-express */
@@ -1202,11 +1225,11 @@ pci_find_extcap_method(device_t dev, device_t child, int capability,
 	 * Determine the start pointer of the capabilities list.
 	 */
 	switch (cfg->hdrtype & PCIM_HDRTYPE) {
-	case 0:
-	case 1:
+	case PCIM_HDRTYPE_NORMAL:
+	case PCIM_HDRTYPE_BRIDGE:
 		ptr = PCIR_CAP_PTR;
 		break;
-	case 2:
+	case PCIM_HDRTYPE_CARDBUS:
 		ptr = PCIR_CAP_PTR_2;
 		break;
 	default:
@@ -1354,8 +1377,8 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 	if (cfg->msi.msi_alloc != 0 || cfg->msix.msix_alloc != 0)
 		return (ENXIO);
 
-	/* If MSI is blacklisted for this system, fail. */
-	if (pci_msi_blacklisted())
+	/* If MSI-X is blacklisted for this system, fail. */
+	if (pci_msix_blacklisted())
 		return (ENXIO);
 
 	/* MSI-X capability present? */
@@ -1907,38 +1930,15 @@ pci_remap_intr_method(device_t bus, device_t dev, u_int irq)
 int
 pci_msi_device_blacklisted(device_t dev)
 {
-	const struct pci_quirk *q;
 
 	if (!pci_honor_msi_blacklist)
 		return (0);
 
-	for (q = &pci_quirks[0]; q->devid; q++) {
-		if (q->devid == pci_get_devid(dev) &&
-		    q->type == PCI_QUIRK_DISABLE_MSI)
-			return (1);
-	}
-	return (0);
+	return (pci_has_quirk(pci_get_devid(dev), PCI_QUIRK_DISABLE_MSI));
 }
 
 /*
- * Returns true if a specified chipset supports MSI when it is
- * emulated hardware in a virtual machine.
- */
-static int
-pci_msi_vm_chipset(device_t dev)
-{
-	const struct pci_quirk *q;
-
-	for (q = &pci_quirks[0]; q->devid; q++) {
-		if (q->devid == pci_get_devid(dev) &&
-		    q->type == PCI_QUIRK_ENABLE_MSI_VM)
-			return (1);
-	}
-	return (0);
-}
-
-/*
- * Determine if MSI is blacklisted globally on this sytem.  Currently,
+ * Determine if MSI is blacklisted globally on this system.  Currently,
  * we just check for blacklisted chipsets as represented by the
  * host-PCI bridge at device 0:0:0.  In the future, it may become
  * necessary to check other system attributes, such as the kenv values
@@ -1955,9 +1955,14 @@ pci_msi_blacklisted(void)
 	/* Blacklist all non-PCI-express and non-PCI-X chipsets. */
 	if (!(pcie_chipset || pcix_chipset)) {
 		if (vm_guest != VM_GUEST_NO) {
+			/*
+			 * Whitelist older chipsets in virtual
+			 * machines known to support MSI.
+			 */
 			dev = pci_find_bsf(0, 0, 0);
 			if (dev != NULL)
-				return (pci_msi_vm_chipset(dev) == 0);
+				return (!pci_has_quirk(pci_get_devid(dev),
+					PCI_QUIRK_ENABLE_MSI_VM));
 		}
 		return (1);
 	}
@@ -1966,6 +1971,45 @@ pci_msi_blacklisted(void)
 	if (dev != NULL)
 		return (pci_msi_device_blacklisted(dev));
 	return (0);
+}
+
+/*
+ * Returns true if the specified device is blacklisted because MSI-X
+ * doesn't work.  Note that this assumes that if MSI doesn't work,
+ * MSI-X doesn't either.
+ */
+int
+pci_msix_device_blacklisted(device_t dev)
+{
+
+	if (!pci_honor_msi_blacklist)
+		return (0);
+
+	if (pci_has_quirk(pci_get_devid(dev), PCI_QUIRK_DISABLE_MSIX))
+		return (1);
+
+	return (pci_msi_device_blacklisted(dev));
+}
+
+/*
+ * Determine if MSI-X is blacklisted globally on this system.  If MSI
+ * is blacklisted, assume that MSI-X is as well.  Check for additional
+ * chipsets where MSI works but MSI-X does not.
+ */
+static int
+pci_msix_blacklisted(void)
+{
+	device_t dev;
+
+	if (!pci_honor_msi_blacklist)
+		return (0);
+
+	dev = pci_find_bsf(0, 0, 0);
+	if (dev != NULL && pci_has_quirk(pci_get_devid(dev),
+	    PCI_QUIRK_DISABLE_MSIX))
+		return (1);
+
+	return (pci_msi_blacklisted());
 }
 
 /*
@@ -2745,22 +2789,40 @@ pci_add_map(device_t bus, device_t dev, int reg, struct resource_list *rl,
 	 * driver for this device will later inherit this resource in
 	 * pci_alloc_resource().
 	 */
-	res = resource_list_alloc(rl, bus, dev, type, &reg, start, end, count,
+	res = resource_list_reserve(rl, bus, dev, type, &reg, start, end, count,
 	    prefetch ? RF_PREFETCHABLE : 0);
-	if (res == NULL) {
+	if (pci_do_realloc_bars && res == NULL && (start != 0 || end != ~0ul)) {
 		/*
-		 * If the allocation fails, clear the BAR and delete
-		 * the resource list entry to force
-		 * pci_alloc_resource() to allocate resources from the
-		 * parent.
+		 * If the allocation fails, try to allocate a resource for
+		 * this BAR using any available range.  The firmware felt
+		 * it was important enough to assign a resource, so don't
+		 * disable decoding if we can help it.
 		 */
 		resource_list_delete(rl, type, reg);
-		start = 0;
+		resource_list_add(rl, type, reg, 0, ~0ul, count);
+		res = resource_list_reserve(rl, bus, dev, type, &reg, 0, ~0ul,
+		    count, prefetch ? RF_PREFETCHABLE : 0);
+	}
+	if (res == NULL) {
+		/*
+		 * If the allocation fails, delete the resource list entry
+		 * and disable decoding for this device.
+		 *
+		 * If the driver requests this resource in the future,
+		 * pci_reserve_map() will try to allocate a fresh
+		 * resource range.
+		 */
+		resource_list_delete(rl, type, reg);
+		pci_disable_io(dev, type);
+		if (bootverbose)
+			device_printf(bus,
+			    "pci%d:%d:%d:%d bar %#x failed to allocate\n",
+			    pci_get_domain(dev), pci_get_bus(dev),
+			    pci_get_slot(dev), pci_get_function(dev), reg);
 	} else {
 		start = rman_get_start(res);
-		rman_set_device(res, bus);
+		pci_write_bar(dev, pm, start);
 	}
-	pci_write_bar(dev, pm, start);
 	return (barlen);
 }
 
@@ -2798,14 +2860,12 @@ pci_ata_maps(device_t bus, device_t dev, struct resource_list *rl, int force,
 	} else {
 		rid = PCIR_BAR(0);
 		resource_list_add(rl, type, rid, 0x1f0, 0x1f7, 8);
-		r = resource_list_alloc(rl, bus, dev, type, &rid, 0x1f0, 0x1f7,
-		    8, 0);
-		rman_set_device(r, bus);
+		r = resource_list_reserve(rl, bus, dev, type, &rid, 0x1f0,
+		    0x1f7, 8, 0);
 		rid = PCIR_BAR(1);
 		resource_list_add(rl, type, rid, 0x3f6, 0x3f6, 1);
-		r = resource_list_alloc(rl, bus, dev, type, &rid, 0x3f6, 0x3f6,
-		    1, 0);
-		rman_set_device(r, bus);
+		r = resource_list_reserve(rl, bus, dev, type, &rid, 0x3f6,
+		    0x3f6, 1, 0);
 	}
 	if (progif & PCIP_STORAGE_IDE_MODESEC) {
 		pci_add_map(bus, dev, PCIR_BAR(2), rl, force,
@@ -2815,14 +2875,12 @@ pci_ata_maps(device_t bus, device_t dev, struct resource_list *rl, int force,
 	} else {
 		rid = PCIR_BAR(2);
 		resource_list_add(rl, type, rid, 0x170, 0x177, 8);
-		r = resource_list_alloc(rl, bus, dev, type, &rid, 0x170, 0x177,
-		    8, 0);
-		rman_set_device(r, bus);
+		r = resource_list_reserve(rl, bus, dev, type, &rid, 0x170,
+		    0x177, 8, 0);
 		rid = PCIR_BAR(3);
 		resource_list_add(rl, type, rid, 0x376, 0x376, 1);
-		r = resource_list_alloc(rl, bus, dev, type, &rid, 0x376, 0x376,
-		    1, 0);
-		rman_set_device(r, bus);
+		r = resource_list_reserve(rl, bus, dev, type, &rid, 0x376,
+		    0x376, 1, 0);
 	}
 	pci_add_map(bus, dev, PCIR_BAR(4), rl, force,
 	    prefetchmask & (1 << 4));
@@ -2999,6 +3057,68 @@ ehci_early_takeover(device_t self)
 	bus_release_resource(self, SYS_RES_MEMORY, rid, res);
 }
 
+/* Perform early XHCI takeover from SMM. */
+static void
+xhci_early_takeover(device_t self)
+{
+	struct resource *res;
+	uint32_t cparams;
+	uint32_t eec;
+	uint8_t eecp;
+	uint8_t bios_sem;
+	uint8_t offs;
+	int rid;
+	int i;
+
+	rid = PCIR_BAR(0);
+	res = bus_alloc_resource_any(self, SYS_RES_MEMORY, &rid, RF_ACTIVE);
+	if (res == NULL)
+		return;
+
+	cparams = bus_read_4(res, XHCI_HCSPARAMS0);
+
+	eec = -1;
+
+	/* Synchronise with the BIOS if it owns the controller. */
+	for (eecp = XHCI_HCS0_XECP(cparams) << 2; eecp != 0 && XHCI_XECP_NEXT(eec);
+	    eecp += XHCI_XECP_NEXT(eec) << 2) {
+		eec = bus_read_4(res, eecp);
+
+		if (XHCI_XECP_ID(eec) != XHCI_ID_USB_LEGACY)
+			continue;
+
+		bios_sem = bus_read_1(res, eecp + XHCI_XECP_BIOS_SEM);
+		if (bios_sem == 0)
+			continue;
+
+		if (bootverbose)
+			printf("xhci early: "
+			    "SMM active, request owner change\n");
+
+		bus_write_1(res, eecp + XHCI_XECP_OS_SEM, 1);
+
+		/* wait a maximum of 5 second */
+
+		for (i = 0; (i < 5000) && (bios_sem != 0); i++) {
+			DELAY(1000);
+			bios_sem = bus_read_1(res, eecp +
+			    XHCI_XECP_BIOS_SEM);
+		}
+
+		if (bios_sem != 0) {
+			if (bootverbose)
+				printf("xhci early: "
+				    "SMM does not respond\n");
+		}
+
+		/* Disable interrupts */
+		offs = bus_read_1(res, XHCI_CAPLENGTH);
+		bus_write_4(res, offs + XHCI_USBCMD, 0);
+		bus_read_4(res, offs + XHCI_USBSTS);
+	}
+	bus_release_resource(self, SYS_RES_MEMORY, rid, res);
+}
+
 void
 pci_add_resources(device_t bus, device_t dev, int force, uint32_t prefetchmask)
 {
@@ -3062,7 +3182,9 @@ pci_add_resources(device_t bus, device_t dev, int force, uint32_t prefetchmask)
 
 	if (pci_usb_takeover && pci_get_class(dev) == PCIC_SERIALBUS &&
 	    pci_get_subclass(dev) == PCIS_SERIALBUS_USB) {
-		if (pci_get_progif(dev) == PCIP_SERIALBUS_USB_EHCI)
+		if (pci_get_progif(dev) == PCIP_SERIALBUS_USB_XHCI)
+			xhci_early_takeover(dev);
+		else if (pci_get_progif(dev) == PCIP_SERIALBUS_USB_EHCI)
 			ehci_early_takeover(dev);
 		else if (pci_get_progif(dev) == PCIP_SERIALBUS_USB_OHCI)
 			ohci_early_takeover(dev);
@@ -3184,20 +3306,43 @@ pci_attach(device_t dev)
 	return (bus_generic_attach(dev));
 }
 
+static void
+pci_set_power_children(device_t dev, device_t *devlist, int numdevs,
+    int state)
+{
+	device_t child, pcib;
+	struct pci_devinfo *dinfo;
+	int dstate, i;
+
+	/*
+	 * Set the device to the given state.  If the firmware suggests
+	 * a different power state, use it instead.  If power management
+	 * is not present, the firmware is responsible for managing
+	 * device power.  Skip children who aren't attached since they
+	 * are handled separately.
+	 */
+	pcib = device_get_parent(dev);
+	for (i = 0; i < numdevs; i++) {
+		child = devlist[i];
+		dinfo = device_get_ivars(child);
+		dstate = state;
+		if (device_is_attached(child) &&
+		    PCIB_POWER_FOR_SLEEP(pcib, dev, &dstate) == 0)
+			pci_set_powerstate(child, dstate);
+	}
+}
+
 int
 pci_suspend(device_t dev)
 {
-	int dstate, error, i, numdevs;
-	device_t acpi_dev, child, *devlist;
+	device_t child, *devlist;
 	struct pci_devinfo *dinfo;
+	int error, i, numdevs;
 
 	/*
 	 * Save the PCI configuration space for each child and set the
 	 * device in the appropriate power state for this sleep state.
 	 */
-	acpi_dev = NULL;
-	if (pci_do_power_resume)
-		acpi_dev = devclass_get_device(devclass_find("acpi"), 0);
 	if ((error = device_get_children(dev, &devlist, &numdevs)) != 0)
 		return (error);
 	for (i = 0; i < numdevs; i++) {
@@ -3212,23 +3357,9 @@ pci_suspend(device_t dev)
 		free(devlist, M_TEMP);
 		return (error);
 	}
-
-	/*
-	 * Always set the device to D3.  If ACPI suggests a different
-	 * power state, use it instead.  If ACPI is not present, the
-	 * firmware is responsible for managing device power.  Skip
-	 * children who aren't attached since they are powered down
-	 * separately.  Only manage type 0 devices for now.
-	 */
-	for (i = 0; acpi_dev && i < numdevs; i++) {
-		child = devlist[i];
-		dinfo = (struct pci_devinfo *) device_get_ivars(child);
-		if (device_is_attached(child) && dinfo->cfg.hdrtype == 0) {
-			dstate = PCI_POWERSTATE_D3;
-			ACPI_PWR_FOR_SLEEP(acpi_dev, child, &dstate);
-			pci_set_powerstate(child, dstate);
-		}
-	}
+	if (pci_do_power_suspend)
+		pci_set_power_children(dev, devlist, numdevs,
+		    PCI_POWERSTATE_D3);
 	free(devlist, M_TEMP);
 	return (0);
 }
@@ -3236,51 +3367,76 @@ pci_suspend(device_t dev)
 int
 pci_resume(device_t dev)
 {
-	int i, numdevs, error;
-	device_t acpi_dev, child, *devlist;
+	device_t child, *devlist;
 	struct pci_devinfo *dinfo;
+	int error, i, numdevs;
 
 	/*
 	 * Set each child to D0 and restore its PCI configuration space.
 	 */
-	acpi_dev = NULL;
-	if (pci_do_power_resume)
-		acpi_dev = devclass_get_device(devclass_find("acpi"), 0);
 	if ((error = device_get_children(dev, &devlist, &numdevs)) != 0)
 		return (error);
-	for (i = 0; i < numdevs; i++) {
-		/*
-		 * Notify ACPI we're going to D0 but ignore the result.  If
-		 * ACPI is not present, the firmware is responsible for
-		 * managing device power.  Only manage type 0 devices for now.
-		 */
-		child = devlist[i];
-		dinfo = (struct pci_devinfo *) device_get_ivars(child);
-		if (acpi_dev && device_is_attached(child) &&
-		    dinfo->cfg.hdrtype == 0) {
-			ACPI_PWR_FOR_SLEEP(acpi_dev, child, NULL);
-			pci_set_powerstate(child, PCI_POWERSTATE_D0);
-		}
+	if (pci_do_power_resume)
+		pci_set_power_children(dev, devlist, numdevs,
+		    PCI_POWERSTATE_D0);
 
-		/* Now the device is powered up, restore its config space. */
+	/* Now the device is powered up, restore its config space. */
+	for (i = 0; i < numdevs; i++) {
+		child = devlist[i];
+		dinfo = device_get_ivars(child);
+
 		pci_cfg_restore(child, dinfo);
+		if (!device_is_attached(child))
+			pci_cfg_save(child, dinfo, 1);
+	}
+
+	/*
+	 * Resume critical devices first, then everything else later.
+	 */
+	for (i = 0; i < numdevs; i++) {
+		child = devlist[i];
+		switch (pci_get_class(child)) {
+		case PCIC_DISPLAY:
+		case PCIC_MEMORY:
+		case PCIC_BRIDGE:
+		case PCIC_BASEPERIPH:
+			DEVICE_RESUME(child);
+			break;
+		}
+	}
+	for (i = 0; i < numdevs; i++) {
+		child = devlist[i];
+		switch (pci_get_class(child)) {
+		case PCIC_DISPLAY:
+		case PCIC_MEMORY:
+		case PCIC_BRIDGE:
+		case PCIC_BASEPERIPH:
+			break;
+		default:
+			DEVICE_RESUME(child);
+		}
 	}
 	free(devlist, M_TEMP);
-	return (bus_generic_resume(dev));
+	return (0);
 }
 
 static void
 pci_load_vendor_data(void)
 {
-	caddr_t vendordata, info;
+	caddr_t data;
+	void *ptr;
+	size_t sz;
 
-	if ((vendordata = preload_search_by_type("pci_vendor_data")) != NULL) {
-		info = preload_search_info(vendordata, MODINFO_ADDR);
-		pci_vendordata = *(char **)info;
-		info = preload_search_info(vendordata, MODINFO_SIZE);
-		pci_vendordata_size = *(size_t *)info;
-		/* terminate the database */
-		pci_vendordata[pci_vendordata_size] = '\n';
+	data = preload_search_by_type("pci_vendor_data");
+	if (data != NULL) {
+		ptr = preload_fetch_addr(data);
+		sz = preload_fetch_size(data);
+		if (ptr != NULL && sz != 0) {
+			pci_vendordata = ptr;
+			pci_vendordata_size = sz;
+			/* terminate the database */
+			pci_vendordata[pci_vendordata_size] = '\n';
+		}
 	}
 }
 
@@ -3742,7 +3898,7 @@ pci_describe_device(device_t dev)
 	if ((desc = malloc(strlen(vp) + strlen(dp) + 3, M_DEVBUF, M_NOWAIT)) !=
 	    NULL)
 		sprintf(desc, "%s, %s", vp, dp);
- out:
+out:
 	if (vp != NULL)
 		free(vp, M_DEVBUF);
 	if (dp != NULL)
@@ -3917,7 +4073,7 @@ DB_SHOW_COMMAND(pciregs, db_pci_dump)
 #endif /* DDB */
 
 static struct resource *
-pci_alloc_map(device_t dev, device_t child, int type, int *rid,
+pci_reserve_map(device_t dev, device_t child, int type, int *rid,
     u_long start, u_long end, u_long count, u_int flags)
 {
 	struct pci_devinfo *dinfo = device_get_ivars(child);
@@ -4003,22 +4159,22 @@ pci_alloc_map(device_t dev, device_t child, int type, int *rid,
 		    count, *rid, type, start, end);
 		goto out;
 	}
-	rman_set_device(res, dev);
 	resource_list_add(rl, type, *rid, start, end, count);
 	rle = resource_list_find(rl, type, *rid);
 	if (rle == NULL)
-		panic("pci_alloc_map: unexpectedly can't find resource.");
+		panic("pci_reserve_map: unexpectedly can't find resource.");
 	rle->res = res;
 	rle->start = rman_get_start(res);
 	rle->end = rman_get_end(res);
 	rle->count = count;
+	rle->flags = RLE_RESERVED;
 	if (bootverbose)
 		device_printf(child,
 		    "Lazy allocation of %#lx bytes rid %#x type %d at %#lx\n",
 		    count, *rid, type, rman_get_start(res));
 	map = rman_get_start(res);
 	pci_write_bar(child, pm, map);
-out:;
+out:
 	return (res);
 }
 
@@ -4080,69 +4236,17 @@ pci_alloc_resource(device_t dev, device_t child, int type, int *rid,
 			}
 		}
 #endif
-		/* Allocate resources for this BAR if needed. */
+		/* Reserve resources for this BAR if needed. */
 		rle = resource_list_find(rl, type, *rid);
 		if (rle == NULL) {
-			res = pci_alloc_map(dev, child, type, rid, start, end,
+			res = pci_reserve_map(dev, child, type, rid, start, end,
 			    count, flags);
 			if (res == NULL)
 				return (NULL);
-			rle = resource_list_find(rl, type, *rid);
-		}
-
-		/*
-		 * If the resource belongs to the bus, then give it to
-		 * the child.  We need to activate it if requested
-		 * since the bus always allocates inactive resources.
-		 */
-		if (rle != NULL && rle->res != NULL &&
-		    rman_get_device(rle->res) == dev) {
-			if (bootverbose)
-				device_printf(child,
-			    "Reserved %#lx bytes for rid %#x type %d at %#lx\n",
-				    rman_get_size(rle->res), *rid, type,
-				    rman_get_start(rle->res));
-			rman_set_device(rle->res, child);
-			if ((flags & RF_ACTIVE) &&
-			    bus_activate_resource(child, type, *rid,
-			    rle->res) != 0)
-				return (NULL);
-			return (rle->res);
 		}
 	}
 	return (resource_list_alloc(rl, dev, child, type, rid,
 	    start, end, count, flags));
-}
-
-int
-pci_release_resource(device_t dev, device_t child, int type, int rid,
-    struct resource *r)
-{
-	int error;
-
-	if (device_get_parent(child) != dev)
-		return (BUS_RELEASE_RESOURCE(device_get_parent(dev), child,
-		    type, rid, r));
-
-	/*
-	 * For BARs we don't actually want to release the resource.
-	 * Instead, we deactivate the resource if needed and then give
-	 * ownership of the BAR back to the bus.
-	 */
-	switch (type) {
-	case SYS_RES_IOPORT:
-	case SYS_RES_MEMORY:
-		if (rman_get_device(r) != child)
-			return (EINVAL);
-		if (rman_get_flags(r) & RF_ACTIVE) {
-			error = bus_deactivate_resource(child, type, rid, r);
-			if (error)
-				return (error);
-		}
-		rman_set_device(r, dev);
-		return (0);
-	}
-	return (bus_generic_rl_release_resource(dev, child, type, rid, r));
 }
 
 int
@@ -4195,6 +4299,46 @@ pci_deactivate_resource(device_t dev, device_t child, int type,
 }
 
 void
+pci_delete_child(device_t dev, device_t child)
+{
+	struct resource_list_entry *rle;
+	struct resource_list *rl;
+	struct pci_devinfo *dinfo;
+
+	dinfo = device_get_ivars(child);
+	rl = &dinfo->resources;
+
+	if (device_is_attached(child))
+		device_detach(child);
+
+	/* Turn off access to resources we're about to free */
+	pci_write_config(child, PCIR_COMMAND, pci_read_config(child,
+	    PCIR_COMMAND, 2) & ~(PCIM_CMD_MEMEN | PCIM_CMD_PORTEN), 2);
+
+	/* Free all allocated resources */
+	STAILQ_FOREACH(rle, rl, link) {
+		if (rle->res) {
+			if (rman_get_flags(rle->res) & RF_ACTIVE ||
+			    resource_list_busy(rl, rle->type, rle->rid)) {
+				pci_printf(&dinfo->cfg,
+				    "Resource still owned, oops. "
+				    "(type=%d, rid=%d, addr=%lx)\n",
+				    rle->type, rle->rid,
+				    rman_get_start(rle->res));
+				bus_release_resource(child, rle->type, rle->rid,
+				    rle->res);
+			}
+			resource_list_unreserve(rl, dev, child, rle->type,
+			    rle->rid);
+		}
+	}
+	resource_list_free(rl);
+
+	device_delete_child(dev, child);
+	pci_freecfg(dinfo);
+}
+
+void
 pci_delete_resource(device_t dev, device_t child, int type, int rid)
 {
 	struct pci_devinfo *dinfo;
@@ -4211,29 +4355,15 @@ pci_delete_resource(device_t dev, device_t child, int type, int rid)
 		return;
 
 	if (rle->res) {
-		if (rman_get_device(rle->res) != dev ||
-		    rman_get_flags(rle->res) & RF_ACTIVE) {
+		if (rman_get_flags(rle->res) & RF_ACTIVE ||
+		    resource_list_busy(rl, type, rid)) {
 			device_printf(dev, "delete_resource: "
 			    "Resource still owned by child, oops. "
 			    "(type=%d, rid=%d, addr=%lx)\n",
-			    rle->type, rle->rid,
-			    rman_get_start(rle->res));
+			    type, rid, rman_get_start(rle->res));
 			return;
 		}
-
-#ifndef __PCI_BAR_ZERO_VALID
-		/*
-		 * If this is a BAR, clear the BAR so it stops
-		 * decoding before releasing the resource.
-		 */
-		switch (type) {
-		case SYS_RES_IOPORT:
-		case SYS_RES_MEMORY:
-			pci_write_bar(child, pci_find_bar(child, rid), 0);
-			break;
-		}
-#endif
-		bus_release_resource(dev, type, rid, rle->res);
+		resource_list_unreserve(rl, dev, child, type, rid);
 	}
 	resource_list_delete(rl, type, rid);
 }
@@ -4344,7 +4474,7 @@ pci_cfg_restore(device_t dev, struct pci_devinfo *dinfo)
 	 * Other types are unknown, and we err on the side of safety
 	 * by ignoring them.
 	 */
-	if (dinfo->cfg.hdrtype != 0)
+	if ((dinfo->cfg.hdrtype & PCIM_HDRTYPE) != PCIM_HDRTYPE_NORMAL)
 		return;
 
 	/*
@@ -4388,7 +4518,7 @@ pci_cfg_save(device_t dev, struct pci_devinfo *dinfo, int setstate)
 	 * we err on the side of safety by ignoring them.  Powering down
 	 * bridges should not be undertaken lightly.
 	 */
-	if (dinfo->cfg.hdrtype != 0)
+	if ((dinfo->cfg.hdrtype & PCIM_HDRTYPE) != PCIM_HDRTYPE_NORMAL)
 		return;
 
 	/*

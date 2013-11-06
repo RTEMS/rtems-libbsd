@@ -113,6 +113,15 @@ typedef enum {
 	CAM_RETRY_SELTO		= 0x02 /* Retry Selection Timeouts */
 } cam_flags;
 
+enum {
+	SF_RETRY_UA		= 0x01,	/* Retry UNIT ATTENTION conditions. */
+	SF_NO_PRINT		= 0x02,	/* Never print error status. */
+	SF_QUIET_IR		= 0x04,	/* Be quiet about Illegal Request reponses */
+	SF_PRINT_ALWAYS		= 0x08,	/* Always print error status. */
+	SF_NO_RECOVERY		= 0x10,	/* Don't do active error recovery. */
+	SF_NO_RETRY		= 0x20	/* Don't do any retries. */
+};
+
 /* CAM  Status field values */
 typedef enum {
 	CAM_REQ_INPROG,		/* CCB request is in progress */
@@ -152,6 +161,7 @@ typedef enum {
 				 */
 	CAM_ATA_STATUS_ERROR,	/* ATA error, look at error code in CCB */
 	CAM_SCSI_IT_NEXUS_LOST,	/* Initiator/Target Nexus lost. */
+	CAM_SMP_STATUS_ERROR,	/* SMP error, look at error code in CCB */
 	CAM_IDE = 0x33,		/* Initiator Detected Error */
 	CAM_RESRC_UNAVAIL,	/* Resource Unavailable */
 	CAM_UNACKED_EVENT,	/* Unacknowledged Event by Host */
@@ -203,6 +213,12 @@ typedef enum {
 } cam_error_scsi_flags;
 
 typedef enum {
+	CAM_ESMF_PRINT_NONE	= 0x00,
+	CAM_ESMF_PRINT_STATUS	= 0x10,
+	CAM_ESMF_PRINT_FULL_CMD	= 0x20,
+} cam_error_smp_flags;
+
+typedef enum {
 	CAM_EAF_PRINT_NONE	= 0x00,
 	CAM_EAF_PRINT_STATUS	= 0x10,
 	CAM_EAF_PRINT_RESULT	= 0x20
@@ -216,6 +232,9 @@ struct cam_status_entry
 
 extern const struct cam_status_entry cam_status_table[];
 extern const int num_cam_status_entries;
+#ifdef _KERNEL
+extern int cam_sort_io_queues;
+#endif
 union ccb;
 
 #ifdef SYSCTL_DECL	/* from sysctl.h */

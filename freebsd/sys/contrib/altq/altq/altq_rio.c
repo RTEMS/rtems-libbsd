@@ -63,11 +63,9 @@
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
 #include <rtems/bsd/local/opt_altq.h>
-#if (__FreeBSD__ != 2)
 #include <rtems/bsd/local/opt_inet.h>
 #ifdef __FreeBSD__
 #include <rtems/bsd/local/opt_inet6.h>
-#endif
 #endif
 #endif /* __FreeBSD__ || __NetBSD__ */
 #ifdef ALTQ_RIO	/* rio is enabled by ALTQ_RIO option in opt_altq.h */

@@ -35,6 +35,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
+#include <sys/capability.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
@@ -131,6 +132,8 @@ static struct fileops kqueueops = {
 	.fo_kqfilter = kqueue_kqfilter,
 	.fo_stat = kqueue_stat,
 	.fo_close = kqueue_close,
+	.fo_chmod = invfo_chmod,
+	.fo_chown = invfo_chown,
 };
 #else /* __rtems__ */
 static const rtems_filesystem_file_handlers_r kqueueops;
@@ -162,17 +165,30 @@ static int	filt_user(struct knote *kn, long hint);
 static void	filt_usertouch(struct knote *kn, struct kevent *kev,
 		    u_long type);
 
-static struct filterops file_filtops =
-	{ 1, filt_fileattach, NULL, NULL };
-static struct filterops kqread_filtops =
-	{ 1, NULL, filt_kqdetach, filt_kqueue };
+static struct filterops file_filtops = {
+	.f_isfd = 1,
+	.f_attach = filt_fileattach,
+};
+static struct filterops kqread_filtops = {
+	.f_isfd = 1,
+	.f_detach = filt_kqdetach,
+	.f_event = filt_kqueue,
+};
 /* XXX - move to kern_proc.c?  */
 #ifndef __rtems__
-static struct filterops proc_filtops =
-	{ 0, filt_procattach, filt_procdetach, filt_proc };
+static struct filterops proc_filtops = {
+	.f_isfd = 0,
+	.f_attach = filt_procattach,
+	.f_detach = filt_procdetach,
+	.f_event = filt_proc,
+};
 #endif /* __rtems__ */
-static struct filterops timer_filtops =
-	{ 0, filt_timerattach, filt_timerdetach, filt_timer };
+static struct filterops timer_filtops = {
+	.f_isfd = 0,
+	.f_attach = filt_timerattach,
+	.f_detach = filt_timerdetach,
+	.f_event = filt_timer,
+};
 static struct filterops user_filtops = {
 	.f_attach = filt_userattach,
 	.f_detach = filt_userdetach,
@@ -256,8 +272,10 @@ filt_nullattach(struct knote *kn)
 	return (ENXIO);
 };
 
-struct filterops null_filtops =
-	{ 0, filt_nullattach, NULL, NULL };
+struct filterops null_filtops = {
+	.f_isfd = 0,
+	.f_attach = filt_nullattach,
+};
 
 /* XXX - make SYSINIT to add these, and move into respective modules. */
 extern struct filterops sig_filtops;
@@ -703,13 +721,11 @@ filt_usertouch(struct knote *kn, struct kevent *kev, u_long type)
 	}
 }
 
-#ifndef __rtems__
-int
-kqueue(struct thread *td, struct kqueue_args *uap)
-#else /* __rtems__ */
-static int
-rtems_bsd_kqueue(struct thread *td, struct kqueue_args *uap)
+#ifdef __rtems__
+static
 #endif /* __rtems__ */
+int
+sys_kqueue(struct thread *td, struct kqueue_args *uap)
 {
 	struct filedesc *fdp;
 	struct kqueue *kq;
@@ -721,7 +737,7 @@ rtems_bsd_kqueue(struct thread *td, struct kqueue_args *uap)
 #else /* __rtems__ */
 	(void) fdp;
 #endif /* __rtems__ */
-	error = falloc(td, &fp, &fd);
+	error = falloc(td, &fp, &fd, 0);
 	if (error)
 		goto done2;
 
@@ -761,7 +777,7 @@ kqueue(void)
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_kqueue(td, &ua);
+		error = sys_kqueue(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -784,17 +800,15 @@ struct kevent_args {
 	const struct timespec *timeout;
 };
 #endif
-#ifndef __rtems__
-int
-kevent(struct thread *td, struct kevent_args *uap)
-#else /* __rtems__ */
+#ifdef __rtems__
 static int
 kern_kevent(struct thread *td, int fd, int nchanges, int nevents, struct
     kevent_copyops *k_ops, const struct timespec *timeout);
 
-static int
-rtems_bsd_kevent(struct thread *td, struct kevent_args *uap)
+static
 #endif /* __rtems__ */
+int
+sys_kevent(struct thread *td, struct kevent_args *uap)
 {
 	struct timespec ts, *tsp;
 	struct kevent_copyops k_ops = { uap,
@@ -864,7 +878,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges,
 	int error;
 
 	if (td != NULL) {
-		error = rtems_bsd_kevent(td, &ua);
+		error = sys_kevent(td, &ua);
 	} else {
 		error = ENOMEM;
 	}
@@ -923,7 +937,7 @@ kern_kevent(struct thread *td, int fd, int nchanges, int nevents,
 	struct file *fp;
 	int i, n, nerrors, error;
 
-	if ((error = fget(td, fd, &fp)) != 0)
+	if ((error = fget(td, fd, CAP_POST_EVENT, &fp)) != 0)
 		return (error);
 	if ((error = kqueue_acquire(fp, &kq)) != 0)
 		goto done_norel;
@@ -1079,7 +1093,7 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, struct thread *td, int wa
 findkn:
 	if (fops->f_isfd) {
 		KASSERT(td != NULL, ("td is NULL"));
-		error = fget(td, kev->ident, &fp);
+		error = fget(td, kev->ident, CAP_POLL_EVENT, &fp);
 		if (error)
 			goto done;
 
@@ -1348,7 +1362,7 @@ kqueue_expand(struct kqueue *kq, struct filterops *fops, uintptr_t ident,
 			size = kq->kq_knlistsize;
 			while (size <= fd)
 				size += KQEXTENT;
-			list = malloc(size * sizeof list, M_KQUEUE, mflag);
+			list = malloc(size * sizeof(*list), M_KQUEUE, mflag);
 			if (list == NULL)
 				return ENOMEM;
 			KQ_LOCK(kq);
@@ -1358,13 +1372,13 @@ kqueue_expand(struct kqueue *kq, struct filterops *fops, uintptr_t ident,
 			} else {
 				if (kq->kq_knlist != NULL) {
 					bcopy(kq->kq_knlist, list,
-					    kq->kq_knlistsize * sizeof list);
+					    kq->kq_knlistsize * sizeof(*list));
 					to_free = kq->kq_knlist;
 					kq->kq_knlist = NULL;
 				}
 				bzero((caddr_t)list +
-				    kq->kq_knlistsize * sizeof list,
-				    (size - kq->kq_knlistsize) * sizeof list);
+				    kq->kq_knlistsize * sizeof(*list),
+				    (size - kq->kq_knlistsize) * sizeof(*list));
 				kq->kq_knlistsize = size;
 				kq->kq_knlist = list;
 			}
@@ -2373,7 +2387,7 @@ kqfd_register(int fd, struct kevent *kev, struct thread *td, int waitok)
 	struct file *fp;
 	int error;
 
-	if ((error = fget(td, fd, &fp)) != 0)
+	if ((error = fget(td, fd, CAP_POST_EVENT, &fp)) != 0)
 		return (error);
 	if ((error = kqueue_acquire(fp, &kq)) != 0)
 		goto noacquire;

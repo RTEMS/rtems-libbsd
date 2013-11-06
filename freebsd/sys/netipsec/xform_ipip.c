@@ -117,7 +117,7 @@ ip4_input6(struct mbuf **m, int *offp, int proto)
 	/* If we do not accept IP-in-IP explicitly, drop.  */
 	if (!V_ipip_allow && ((*m)->m_flags & M_IPSEC) == 0) {
 		DPRINTF(("%s: dropped due to policy\n", __func__));
-		V_ipipstat.ipips_pdrops++;
+		IPIPSTAT_INC(ipips_pdrops);
 		m_freem(*m);
 		return IPPROTO_DONE;
 	}
@@ -138,7 +138,7 @@ ip4_input(struct mbuf *m, int off)
 	/* If we do not accept IP-in-IP explicitly, drop.  */
 	if (!V_ipip_allow && (m->m_flags & M_IPSEC) == 0) {
 		DPRINTF(("%s: dropped due to policy\n", __func__));
-		V_ipipstat.ipips_pdrops++;
+		IPIPSTAT_INC(ipips_pdrops);
 		m_freem(m);
 		return;
 	}
@@ -174,7 +174,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 	u_int8_t v;
 	int hlen;
 
-	V_ipipstat.ipips_ipackets++;
+	IPIPSTAT_INC(ipips_ipackets);
 
 	m_copydata(m, 0, 1, &v);
 
@@ -190,7 +190,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 		break;
 #endif
         default:
-		V_ipipstat.ipips_family++;
+		IPIPSTAT_INC(ipips_family);
 		m_freem(m);
 		return /* EAFNOSUPPORT */;
 	}
@@ -199,7 +199,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 	if (m->m_len < hlen) {
 		if ((m = m_pullup(m, hlen)) == NULL) {
 			DPRINTF(("%s: m_pullup (1) failed\n", __func__));
-			V_ipipstat.ipips_hdrops++;
+			IPIPSTAT_INC(ipips_hdrops);
 			return;
 		}
 	}
@@ -236,7 +236,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 
 	/* Sanity check */
 	if (m->m_pkthdr.len < sizeof(struct ip))  {
-		V_ipipstat.ipips_hdrops++;
+		IPIPSTAT_INC(ipips_hdrops);
 		m_freem(m);
 		return;
 	}
@@ -256,7 +256,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 		break;
 #endif
 	default:
-		V_ipipstat.ipips_family++;
+		IPIPSTAT_INC(ipips_family);
 		m_freem(m);
 		return; /* EAFNOSUPPORT */
 	}
@@ -267,7 +267,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 	if (m->m_len < hlen) {
 		if ((m = m_pullup(m, hlen)) == NULL) {
 			DPRINTF(("%s: m_pullup (2) failed\n", __func__));
-			V_ipipstat.ipips_hdrops++;
+			IPIPSTAT_INC(ipips_hdrops);
 			return;
 		}
 	}
@@ -318,7 +318,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 
 					if (sin->sin_addr.s_addr ==
 					    ipo->ip_src.s_addr)	{
-						V_ipipstat.ipips_spoof++;
+						IPIPSTAT_INC(ipips_spoof);
 						m_freem(m);
 						IFNET_RUNLOCK_NOSLEEP();
 						return;
@@ -335,7 +335,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 					sin6 = (struct sockaddr_in6 *) ifa->ifa_addr;
 
 					if (IN6_ARE_ADDR_EQUAL(&sin6->sin6_addr, &ip6->ip6_src)) {
-						V_ipipstat.ipips_spoof++;
+						IPIPSTAT_INC(ipips_spoof);
 						m_freem(m);
 						IFNET_RUNLOCK_NOSLEEP();
 						return;
@@ -349,7 +349,7 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 	}
 
 	/* Statistics */
-	V_ipipstat.ipips_ibytes += m->m_pkthdr.len - iphlen;
+	IPIPSTAT_ADD(ipips_ibytes, m->m_pkthdr.len - iphlen);
 
 #ifdef DEV_ENC
 	switch (v >> 4) {
@@ -394,8 +394,10 @@ _ipip_input(struct mbuf *m, int iphlen, struct ifnet *gifp)
 		panic("%s: bogus ip version %u", __func__, v>>4);
 	}
 
+	m_addr_changed(m);
+
 	if (netisr_queue(isr, m)) {	/* (0) on success. */
-		V_ipipstat.ipips_qfull++;
+		IPIPSTAT_INC(ipips_qfull);
 		DPRINTF(("%s: packet dropped because of full queue\n",
 			__func__));
 	}
@@ -414,8 +416,10 @@ ipip_output(
 	u_int8_t tp, otos;
 	struct secasindex *saidx;
 	int error;
-#ifdef INET
+#if defined(INET) || defined(INET6)
 	u_int8_t itos;
+#endif
+#ifdef INET
 	struct ip *ipo;
 #endif /* INET */
 #ifdef INET6
@@ -442,7 +446,7 @@ ipip_output(
 			    "address in SA %s/%08lx\n", __func__,
 			    ipsec_address(&saidx->dst),
 			    (u_long) ntohl(sav->spi)));
-			V_ipipstat.ipips_unspec++;
+			IPIPSTAT_INC(ipips_unspec);
 			error = EINVAL;
 			goto bad;
 		}
@@ -450,7 +454,7 @@ ipip_output(
 		M_PREPEND(m, sizeof(struct ip), M_DONTWAIT);
 		if (m == 0) {
 			DPRINTF(("%s: M_PREPEND failed\n", __func__));
-			V_ipipstat.ipips_hdrops++;
+			IPIPSTAT_INC(ipips_hdrops);
 			error = ENOBUFS;
 			goto bad;
 		}
@@ -468,7 +472,8 @@ ipip_output(
 		ipo->ip_id = ip_newid();
 
 		/* If the inner protocol is IP... */
-		if (tp == IPVERSION) {
+		switch (tp) {
+		case IPVERSION:
 			/* Save ECN notification */
 			m_copydata(m, sizeof(struct ip) +
 			    offsetof(struct ip, ip_tos),
@@ -486,9 +491,10 @@ ipip_output(
 			ipo->ip_off = ntohs(ipo->ip_off);
 			ipo->ip_off &= ~(IP_DF | IP_MF | IP_OFFMASK);
 			ipo->ip_off = htons(ipo->ip_off);
-		}
+			break;
 #ifdef INET6
-		else if (tp == (IPV6_VERSION >> 4)) {
+		case (IPV6_VERSION >> 4):
+		{
 			u_int32_t itos32;
 
 			/* Save ECN notification. */
@@ -498,9 +504,10 @@ ipip_output(
 			itos = ntohl(itos32) >> 20;
 			ipo->ip_p = IPPROTO_IPV6;
 			ipo->ip_off = 0;
+			break;
 		}
 #endif /* INET6 */
-		else {
+		default:
 			goto nofamily;
 		}
 
@@ -519,7 +526,7 @@ ipip_output(
 			    "address in SA %s/%08lx\n", __func__,
 			    ipsec_address(&saidx->dst),
 			    (u_long) ntohl(sav->spi)));
-			V_ipipstat.ipips_unspec++;
+			IPIPSTAT_INC(ipips_unspec);
 			error = ENOBUFS;
 			goto bad;
 		}
@@ -534,7 +541,7 @@ ipip_output(
 		M_PREPEND(m, sizeof(struct ip6_hdr), M_DONTWAIT);
 		if (m == 0) {
 			DPRINTF(("%s: M_PREPEND failed\n", __func__));
-			V_ipipstat.ipips_hdrops++;
+			IPIPSTAT_INC(ipips_hdrops);
 			error = ENOBUFS;
 			goto bad;
 		}
@@ -549,8 +556,9 @@ ipip_output(
 		ip6o->ip6_dst = saidx->dst.sin6.sin6_addr;
 		ip6o->ip6_src = saidx->src.sin6.sin6_addr;
 
+		switch (tp) {
 #ifdef INET
-		if (tp == IPVERSION) {
+		case IPVERSION:
 			/* Save ECN notification */
 			m_copydata(m, sizeof(struct ip6_hdr) +
 			    offsetof(struct ip, ip_tos), sizeof(u_int8_t),
@@ -558,21 +566,24 @@ ipip_output(
 
 			/* This is really IPVERSION. */
 			ip6o->ip6_nxt = IPPROTO_IPIP;
-		} else
+			break;
 #endif /* INET */
-			if (tp == (IPV6_VERSION >> 4)) {
-				u_int32_t itos32;
+		case (IPV6_VERSION >> 4):
+		{
+			u_int32_t itos32;
 
-				/* Save ECN notification. */
-				m_copydata(m, sizeof(struct ip6_hdr) +
-				    offsetof(struct ip6_hdr, ip6_flow),
-				    sizeof(u_int32_t), (caddr_t) &itos32);
-				itos = ntohl(itos32) >> 20;
+			/* Save ECN notification. */
+			m_copydata(m, sizeof(struct ip6_hdr) +
+			    offsetof(struct ip6_hdr, ip6_flow),
+			    sizeof(u_int32_t), (caddr_t) &itos32);
+			itos = ntohl(itos32) >> 20;
 
-				ip6o->ip6_nxt = IPPROTO_IPV6;
-			} else {
-				goto nofamily;
-			}
+			ip6o->ip6_nxt = IPPROTO_IPV6;
+			break;
+		}
+		default:
+			goto nofamily;
+		}
 
 		otos = 0;
 		ip_ecn_ingress(ECN_ALLOWED, &otos, &itos);
@@ -584,12 +595,12 @@ ipip_output(
 nofamily:
 		DPRINTF(("%s: unsupported protocol family %u\n", __func__,
 		    saidx->dst.sa.sa_family));
-		V_ipipstat.ipips_family++;
+		IPIPSTAT_INC(ipips_family);
 		error = EAFNOSUPPORT;		/* XXX diffs from openbsd */
 		goto bad;
 	}
 
-	V_ipipstat.ipips_opackets++;
+	IPIPSTAT_INC(ipips_opackets);
 	*mp = m;
 
 #ifdef INET
@@ -599,7 +610,8 @@ nofamily:
 			tdb->tdb_cur_bytes +=
 			    m->m_pkthdr.len - sizeof(struct ip);
 #endif
-		V_ipipstat.ipips_obytes += m->m_pkthdr.len - sizeof(struct ip);
+		IPIPSTAT_ADD(ipips_obytes,
+		    m->m_pkthdr.len - sizeof(struct ip));
 	}
 #endif /* INET */
 
@@ -610,8 +622,8 @@ nofamily:
 			tdb->tdb_cur_bytes +=
 			    m->m_pkthdr.len - sizeof(struct ip6_hdr);
 #endif
-		V_ipipstat.ipips_obytes +=
-		    m->m_pkthdr.len - sizeof(struct ip6_hdr);
+		IPIPSTAT_ADD(ipips_obytes,
+		    m->m_pkthdr.len - sizeof(struct ip6_hdr));
 	}
 #endif /* INET6 */
 
@@ -624,6 +636,7 @@ bad:
 }
 
 #ifdef IPSEC
+#if defined(INET) || defined(INET6)
 static int
 ipe4_init(struct secasvar *sav, struct xformsw *xsp)
 {
@@ -654,6 +667,8 @@ static struct xformsw ipe4_xformsw = {
 };
 
 extern struct domain inetdomain;
+#endif /* INET || INET6 */
+#ifdef INET
 static struct protosw ipe4_protosw = {
 	.pr_type =	SOCK_RAW,
 	.pr_domain =	&inetdomain,
@@ -663,7 +678,8 @@ static struct protosw ipe4_protosw = {
 	.pr_ctloutput =	rip_ctloutput,
 	.pr_usrreqs =	&rip_usrreqs
 };
-#ifdef INET6
+#endif /* INET */
+#if defined(INET6) && defined(INET)
 static struct ip6protosw ipe6_protosw = {
 	.pr_type =	SOCK_RAW,
 	.pr_domain =	&inetdomain,
@@ -673,8 +689,9 @@ static struct ip6protosw ipe6_protosw = {
 	.pr_ctloutput =	rip_ctloutput,
 	.pr_usrreqs =	&rip_usrreqs
 };
-#endif
+#endif /* INET6 && INET */
 
+#if defined(INET)
 /*
  * Check the encapsulated packet to see if we want it
  */
@@ -689,6 +706,7 @@ ipe4_encapcheck(const struct mbuf *m, int off, int proto, void *arg)
 	 */
 	return ((m->m_flags & M_IPSEC) != 0 ? 1 : 0);
 }
+#endif /* INET */
 
 static void
 ipe4_attach(void)
@@ -697,9 +715,11 @@ ipe4_attach(void)
 	xform_register(&ipe4_xformsw);
 	/* attach to encapsulation framework */
 	/* XXX save return cookie for detach on module remove */
+#ifdef INET
 	(void) encap_attach_func(AF_INET, -1,
 		ipe4_encapcheck, &ipe4_protosw, NULL);
-#ifdef INET6
+#endif
+#if defined(INET6) && defined(INET)
 	(void) encap_attach_func(AF_INET6, -1,
 		ipe4_encapcheck, (struct protosw *)&ipe6_protosw, NULL);
 #endif

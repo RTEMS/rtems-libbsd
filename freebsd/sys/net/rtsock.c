@@ -172,7 +172,7 @@ MTX_SYSINIT(rtsock, &rtsock_mtx, "rtsock route_cb lock", MTX_DEF);
 #define	RTSOCK_UNLOCK()	mtx_unlock(&rtsock_mtx)
 #define	RTSOCK_LOCK_ASSERT()	mtx_assert(&rtsock_mtx, MA_OWNED)
 
-SYSCTL_NODE(_net, OID_AUTO, route, CTLFLAG_RD, 0, "");
+static SYSCTL_NODE(_net, OID_AUTO, route, CTLFLAG_RD, 0, "");
 
 struct walkarg {
 	int	w_tmemsize;
@@ -956,7 +956,6 @@ flush:
 			m = NULL;
 		} else if (m->m_pkthdr.len > rtm->rtm_msglen)
 			m_adj(m, rtm->rtm_msglen - m->m_pkthdr.len);
-		Free(rtm);
 	}
 	if (m) {
 		M_SETFIB(m, so->so_fibnum);
@@ -973,6 +972,9 @@ flush:
 		} else
 			rt_dispatch(m, saf);
 	}
+	/* info.rti_info[RTAX_DST] (used above) can point inside of rtm */
+	if (rtm)
+		Free(rtm);
     }
 	return (error);
 #undef	sa_equal
@@ -1821,6 +1823,7 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 	u_int	namelen = arg2;
 	struct radix_node_head *rnh = NULL; /* silence compiler. */
 	int	i, lim, error = EINVAL;
+	int	fib = 0;
 	u_char	af;
 	struct	walkarg w;
 
@@ -1828,7 +1831,25 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 	namelen--;
 	if (req->newptr)
 		return (EPERM);
-	if (namelen != 3)
+	if (name[1] == NET_RT_DUMP) {
+		if (namelen == 3)
+#ifndef __rtems__
+			fib = req->td->td_proc->p_fibnum;
+#else /* __rtems__ */
+			fib = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
+		else if (namelen == 4)
+			fib = (name[3] == -1) ?
+#ifndef __rtems__
+			    req->td->td_proc->p_fibnum : name[3];
+#else /* __rtems__ */
+			    BSD_DEFAULT_FIB : name[3];
+#endif /* __rtems__ */
+		else
+			return ((namelen < 3) ? EISDIR : ENOTDIR);
+		if (fib < 0 || fib >= rt_numfibs)
+			return (EINVAL);
+	} else if (namelen != 3)
 		return ((namelen < 3) ? EISDIR : ENOTDIR);
 	af = name[0];
 	if (af > AF_MAX)
@@ -1867,11 +1888,7 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 		 * take care of routing entries
 		 */
 		for (error = 0; error == 0 && i <= lim; i++) {
-#ifndef __rtems__
-			rnh = rt_tables_get_rnh(req->td->td_proc->p_fibnum, i);
-#else /* __rtems__ */
-			rnh = rt_tables_get_rnh(BSD_DEFAULT_FIB, i);
-#endif /* __rtems__ */
+			rnh = rt_tables_get_rnh(fib, i);
 			if (rnh != NULL) {
 				RADIX_NODE_HEAD_RLOCK(rnh); 
 			    	error = rnh->rnh_walktree(rnh,
@@ -1896,7 +1913,7 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-SYSCTL_NODE(_net, PF_ROUTE, routetable, CTLFLAG_RD, sysctl_rtsock, "");
+static SYSCTL_NODE(_net, PF_ROUTE, routetable, CTLFLAG_RD, sysctl_rtsock, "");
 
 /*
  * Definitions of protocols supported in the ROUTE domain.

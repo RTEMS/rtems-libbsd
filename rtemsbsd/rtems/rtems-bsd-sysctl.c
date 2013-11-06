@@ -46,11 +46,11 @@
 #include <string.h>
 
 int sysctl(
-	int *name,
+	const int *name,
 	u_int namelen,
 	void *oldp,
 	size_t *oldlenp,
-	void *newp,
+	const void *newp,
 	size_t newlen
 )
 {

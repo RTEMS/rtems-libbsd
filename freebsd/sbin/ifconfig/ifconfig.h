@@ -166,7 +166,6 @@ void inet_ctor(void);
 void lagg_ctor(void);
 void link_ctor(void);
 void mac_ctor(void);
-void nd6_ctor(void);
 void pfsync_ctor(void);
 void vlan_ctor(void);
 

@@ -139,6 +139,27 @@ static __inline int BUS_WRITE_IVAR(device_t _dev, device_t _child, int _indx,
 	return ((bus_write_ivar_t *) _m)(_dev, _child, _indx, _value);
 }
 
+/** @brief Unique descriptor for the BUS_CHILD_DELETED() method */
+extern struct kobjop_desc bus_child_deleted_desc;
+/** @brief A function implementing the BUS_CHILD_DELETED() method */
+typedef void bus_child_deleted_t(device_t _dev, device_t _child);
+/**
+ * @brief Notify a bus that a child was deleted
+ *
+ * Called at the beginning of device_delete_child() to allow the parent
+ * to teardown any bus-specific state for the child.
+ * 
+ * @param _dev		the device whose child is being deleted
+ * @param _child	the child device which is being deleted
+ */
+
+static __inline void BUS_CHILD_DELETED(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_child_deleted);
+	((bus_child_deleted_t *) _m)(_dev, _child);
+}
+
 /** @brief Unique descriptor for the BUS_CHILD_DETACHED() method */
 extern struct kobjop_desc bus_child_detached_desc;
 /** @brief A function implementing the BUS_CHILD_DETACHED() method */

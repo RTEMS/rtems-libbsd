@@ -298,6 +298,10 @@ static void re_setwol		(struct rl_softc *);
 static void re_clrwol		(struct rl_softc *);
 static void re_set_linkspeed	(struct rl_softc *);
 
+#ifdef DEV_NETMAP	/* see ixgbe.c for details */
+#include <dev/netmap/if_re_netmap.h>
+#endif /* !DEV_NETMAP */
+
 #ifdef RE_DIAG
 static int re_diag		(struct rl_softc *);
 #endif
@@ -756,7 +760,7 @@ re_diag(struct rl_softc *sc)
 	u_int8_t		src[] = { 0x00, 'w', 'o', 'r', 'l', 'd' };
 
 	/* Allocate a single mbuf */
-	MGETHDR(m0, M_DONTWAIT, MT_DATA);
+	MGETHDR(m0, M_NOWAIT, MT_DATA);
 	if (m0 == NULL)
 		return (ENOBUFS);
 
@@ -1243,7 +1247,7 @@ re_attach(device_t dev)
 
 	msic = pci_msi_count(dev);
 	msixc = pci_msix_count(dev);
-	if (pci_find_extcap(dev, PCIY_EXPRESS, &reg) == 0) {
+	if (pci_find_cap(dev, PCIY_EXPRESS, &reg) == 0) {
 		sc->rl_flags |= RL_FLAG_PCIE;
 		sc->rl_expcap = reg;
 	}
@@ -1585,7 +1589,8 @@ re_attach(device_t dev)
 	 * packet has IP options so disable TX IP checksum offloading.
 	 */
 	if (sc->rl_hwrev->rl_rev == RL_HWREV_8168C ||
-	    sc->rl_hwrev->rl_rev == RL_HWREV_8168C_SPIN2)
+	    sc->rl_hwrev->rl_rev == RL_HWREV_8168C_SPIN2 ||
+	    sc->rl_hwrev->rl_rev == RL_HWREV_8168CP)
 		ifp->if_hwassist = CSUM_TCP | CSUM_UDP;
 	else
 		ifp->if_hwassist = CSUM_IP | CSUM_TCP | CSUM_UDP;
@@ -1622,7 +1627,7 @@ re_attach(device_t dev)
 	if (ifp->if_capabilities & IFCAP_HWCSUM)
 		ifp->if_capabilities |= IFCAP_VLAN_HWCSUM;
 	/* Enable WOL if PM is supported. */
-	if (pci_find_extcap(sc->rl_dev, PCIY_PMG, &reg) == 0)
+	if (pci_find_cap(sc->rl_dev, PCIY_PMG, &reg) == 0)
 		ifp->if_capabilities |= IFCAP_WOL;
 	ifp->if_capenable = ifp->if_capabilities;
 	ifp->if_capenable &= ~(IFCAP_WOL_UCAST | IFCAP_WOL_MCAST);
@@ -1643,6 +1648,9 @@ re_attach(device_t dev)
 	 */
 	ifp->if_data.ifi_hdrlen = sizeof(struct ether_vlan_header);
 
+#ifdef DEV_NETMAP
+	re_netmap_attach(sc);
+#endif /* DEV_NETMAP */
 #ifdef RE_DIAG
 	/*
 	 * Perform hardware diagnostic on the original RTL8169.
@@ -1748,8 +1756,12 @@ re_detach(device_t dev)
 		bus_teardown_intr(dev, sc->rl_irq[0], sc->rl_intrhand[0]);
 		sc->rl_intrhand[0] = NULL;
 	}
-	if (ifp != NULL)
+	if (ifp != NULL) {
+#ifdef DEV_NETMAP
+		netmap_detach(ifp);
+#endif /* DEV_NETMAP */
 		if_free(ifp);
+	}
 	if ((sc->rl_flags & (RL_FLAG_MSI | RL_FLAG_MSIX)) == 0)
 		rid = 0;
 	else
@@ -1877,7 +1889,7 @@ re_newbuf(struct rl_softc *sc, int idx)
 	uint32_t		cmdstat;
 	int			error, nsegs;
 
-	m = m_getcl(M_DONTWAIT, MT_DATA, M_PKTHDR);
+	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
 	if (m == NULL)
 		return (ENOBUFS);
 
@@ -1941,7 +1953,7 @@ re_jumbo_newbuf(struct rl_softc *sc, int idx)
 	uint32_t		cmdstat;
 	int			error, nsegs;
 
-	m = m_getjcl(M_DONTWAIT, MT_DATA, M_PKTHDR, MJUM9BYTES);
+	m = m_getjcl(M_NOWAIT, MT_DATA, M_PKTHDR, MJUM9BYTES);
 	if (m == NULL)
 		return (ENOBUFS);
 	m->m_len = m->m_pkthdr.len = MJUM9BYTES;
@@ -2012,6 +2024,9 @@ re_tx_list_init(struct rl_softc *sc)
 	    sc->rl_ldata.rl_tx_desc_cnt * sizeof(struct rl_desc));
 	for (i = 0; i < sc->rl_ldata.rl_tx_desc_cnt; i++)
 		sc->rl_ldata.rl_tx_desc[i].tx_m = NULL;
+#ifdef DEV_NETMAP
+	re_netmap_tx_init(sc);
+#endif /* DEV_NETMAP */
 	/* Set EOR. */
 	desc = &sc->rl_ldata.rl_tx_list[sc->rl_ldata.rl_tx_desc_cnt - 1];
 	desc->rl_cmdstat |= htole32(RL_TDESC_CMD_EOR);
@@ -2039,6 +2054,9 @@ re_rx_list_init(struct rl_softc *sc)
 		if ((error = re_newbuf(sc, i)) != 0)
 			return (error);
 	}
+#ifdef DEV_NETMAP
+	re_netmap_rx_init(sc);
+#endif /* DEV_NETMAP */
 
 	/* Flush the RX descriptors */
 
@@ -2095,6 +2113,11 @@ re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 	RL_LOCK_ASSERT(sc);
 
 	ifp = sc->rl_ifp;
+#ifdef DEV_NETMAP
+	if (netmap_rx_irq(ifp, 0 | (NETMAP_LOCKED_ENTER|NETMAP_LOCKED_EXIT),
+	    &rx_npkts))
+		return 0;
+#endif /* DEV_NETMAP */
 	if (ifp->if_mtu > RL_MTU && (sc->rl_flags & RL_FLAG_JUMBOV2) != 0)
 		jumbo = 1;
 	else
@@ -2336,6 +2359,10 @@ re_txeof(struct rl_softc *sc)
 		return;
 
 	ifp = sc->rl_ifp;
+#ifdef DEV_NETMAP
+	if (netmap_tx_irq(ifp, 0 | (NETMAP_LOCKED_ENTER|NETMAP_LOCKED_EXIT)))
+		return;
+#endif /* DEV_NETMAP */
 	/* Invalidate the TX descriptor list */
 	bus_dmamap_sync(sc->rl_ldata.rl_tx_list_tag,
 	    sc->rl_ldata.rl_tx_list_map,
@@ -2672,7 +2699,7 @@ re_encap(struct rl_softc *sc, struct mbuf **m_head)
 		padlen = RL_MIN_FRAMELEN - (*m_head)->m_pkthdr.len;
 		if (M_WRITABLE(*m_head) == 0) {
 			/* Get a writable copy. */
-			m_new = m_dup(*m_head, M_DONTWAIT);
+			m_new = m_dup(*m_head, M_NOWAIT);
 			m_freem(*m_head);
 			if (m_new == NULL) {
 				*m_head = NULL;
@@ -2682,7 +2709,7 @@ re_encap(struct rl_softc *sc, struct mbuf **m_head)
 		}
 		if ((*m_head)->m_next != NULL ||
 		    M_TRAILINGSPACE(*m_head) < padlen) {
-			m_new = m_defrag(*m_head, M_DONTWAIT);
+			m_new = m_defrag(*m_head, M_NOWAIT);
 			if (m_new == NULL) {
 				m_freem(*m_head);
 				*m_head = NULL;
@@ -2706,7 +2733,7 @@ re_encap(struct rl_softc *sc, struct mbuf **m_head)
 	error = bus_dmamap_load_mbuf_sg(sc->rl_ldata.rl_tx_mtag, txd->tx_dmamap,
 	    *m_head, segs, &nsegs, BUS_DMA_NOWAIT);
 	if (error == EFBIG) {
-		m_new = m_collapse(*m_head, M_DONTWAIT, RL_NTXSEGS);
+		m_new = m_collapse(*m_head, M_NOWAIT, RL_NTXSEGS);
 		if (m_new == NULL) {
 			m_freem(*m_head);
 			*m_head = NULL;
@@ -2854,6 +2881,21 @@ re_start_locked(struct ifnet *ifp)
 
 	sc = ifp->if_softc;
 
+#ifdef DEV_NETMAP
+	/* XXX is this necessary ? */
+	if (ifp->if_capenable & IFCAP_NETMAP) {
+		struct netmap_kring *kring = &NA(ifp)->tx_rings[0];
+		if (sc->rl_ldata.rl_tx_prodidx != kring->nr_hwcur) {
+			/* kick the tx unit */
+			CSR_WRITE_1(sc, sc->rl_txstart, RL_TXSTART_START);
+#ifdef RE_TX_MODERATION
+			CSR_WRITE_4(sc, RL_TIMERCNT, 1);
+#endif
+			sc->rl_watchdog_timer = 5;
+		}
+		return;
+	}
+#endif /* DEV_NETMAP */
 	if ((ifp->if_drv_flags & (IFF_DRV_RUNNING | IFF_DRV_OACTIVE)) !=
 	    IFF_DRV_RUNNING || (sc->rl_flags & RL_FLAG_LINK) == 0)
 		return;
@@ -3376,7 +3418,8 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 			if ((ifp->if_capenable & IFCAP_TXCSUM) != 0) {
 				rev = sc->rl_hwrev->rl_rev;
 				if (rev == RL_HWREV_8168C ||
-				    rev == RL_HWREV_8168C_SPIN2)
+				    rev == RL_HWREV_8168C_SPIN2 ||
+				    rev == RL_HWREV_8168CP)
 					ifp->if_hwassist |= CSUM_TCP | CSUM_UDP;
 				else
 					ifp->if_hwassist |= RE_CSUM_FEATURES;
@@ -3692,7 +3735,7 @@ re_set_linkspeed(struct rl_softc *sc)
 	miisc = LIST_FIRST(&mii->mii_phys);
 	phyno = miisc->mii_phy;
 	LIST_FOREACH(miisc, &mii->mii_phys, mii_list)
-		mii_phy_reset(miisc);
+		PHY_RESET(miisc);
 	re_miibus_writereg(sc->rl_dev, phyno, MII_100T2CR, 0);
 	re_miibus_writereg(sc->rl_dev, phyno,
 	    MII_ANAR, ANAR_TX_FD | ANAR_TX | ANAR_10_FD | ANAR_10 | ANAR_CSMA);
@@ -3742,7 +3785,7 @@ re_setwol(struct rl_softc *sc)
 
 	RL_LOCK_ASSERT(sc);
 
-	if (pci_find_extcap(sc->rl_dev, PCIY_PMG, &pmc) != 0)
+	if (pci_find_cap(sc->rl_dev, PCIY_PMG, &pmc) != 0)
 		return;
 
 	ifp = sc->rl_ifp;
@@ -3814,7 +3857,7 @@ re_clrwol(struct rl_softc *sc)
 
 	RL_LOCK_ASSERT(sc);
 
-	if (pci_find_extcap(sc->rl_dev, PCIY_PMG, &pmc) != 0)
+	if (pci_find_cap(sc->rl_dev, PCIY_PMG, &pmc) != 0)
 		return;
 
 	/* Enable config register write. */

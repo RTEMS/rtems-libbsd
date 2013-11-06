@@ -131,14 +131,17 @@ int	closef(struct file *fp, struct thread *td);
 int	dupfdopen(struct thread *td, struct filedesc *fdp, int indx, int dfd,
 	    int mode, int error);
 #ifndef __rtems__
-int	falloc(struct thread *td, struct file **resultfp, int *resultfd);
+int	falloc(struct thread *td, struct file **resultfp, int *resultfd,
+	    int flags);
 #else /* __rtems__ */
 static inline int
-falloc(struct thread *td, struct file **resultfp, int *resultfd)
+falloc(struct thread *td, struct file **resultfp, int *resultfd,
+	    int flags)
 {
 	rtems_libio_t *iop = rtems_libio_allocate();
 
 	(void) td;
+	(void) flags;
 
 	*resultfp = rtems_bsd_iop_to_fp(iop);
 
@@ -153,9 +156,10 @@ falloc(struct thread *td, struct file **resultfp, int *resultfd)
 	}
 }
 #endif /* __rtems__ */
-int	fallocf(struct thread *td, struct file **resultfp, int *resultfd,
-	    int flags);
+int	falloc_noinstall(struct thread *td, struct file **resultfp);
+int	finstall(struct thread *td, struct file *fp, int *resultfp, int flags);
 int	fdalloc(struct thread *td, int minfd, int *result);
+int	fdallocn(struct thread *td, int minfd, int *fds, int n);
 int	fdavail(struct thread *td, int n);
 int	fdcheckstd(struct thread *td);
 #ifndef __rtems__
@@ -181,7 +185,8 @@ struct	filedesc *fdshare(struct filedesc *fdp);
 struct filedesc_to_leader *
 	filedesc_to_leader_alloc(struct filedesc_to_leader *old,
 	    struct filedesc *fdp, struct proc *leader);
-int	getvnode(struct filedesc *fdp, int fd, struct file **fpp);
+int	getvnode(struct filedesc *fdp, int fd, cap_rights_t rights,
+	    struct file **fpp);
 void	mountcheckdirs(struct vnode *olddp, struct vnode *newdp);
 void	setugidsafety(struct thread *td);
 

@@ -42,7 +42,8 @@ setlaggport(const char *val, int d, int s, const struct afswtch *afp)
 	strlcpy(rp.rp_ifname, name, sizeof(rp.rp_ifname));
 	strlcpy(rp.rp_portname, val, sizeof(rp.rp_portname));
 
-	if (ioctl(s, SIOCSLAGGPORT, &rp))
+	/* Don't choke if the port is already in this lagg. */
+	if (ioctl(s, SIOCSLAGGPORT, &rp) && errno != EEXIST)
 		err(1, "SIOCSLAGGPORT");
 }
 
@@ -99,10 +100,8 @@ setlagghash(const char *val, int d, int s, const struct afswtch *afp)
 			rf.rf_flags |= LAGG_F_HASHL3;
 		else if (strcmp(tok, "l4") == 0)
 			rf.rf_flags |= LAGG_F_HASHL4;
-		else  {
-			free(str);
+		else
 			errx(1, "Invalid lagghash option: %s", tok);
-		}
 	}
 	free(str);
 	if (rf.rf_flags == 0)

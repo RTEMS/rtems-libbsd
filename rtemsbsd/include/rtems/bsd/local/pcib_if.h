@@ -134,4 +134,17 @@ static __inline int PCIB_MAP_MSI(device_t pcib, device_t dev, int irq,
 	return ((pcib_map_msi_t *) _m)(pcib, dev, irq, addr, data);
 }
 
+/** @brief Unique descriptor for the PCIB_POWER_FOR_SLEEP() method */
+extern struct kobjop_desc pcib_power_for_sleep_desc;
+/** @brief A function implementing the PCIB_POWER_FOR_SLEEP() method */
+typedef int pcib_power_for_sleep_t(device_t pcib, device_t dev, int *pstate);
+
+static __inline int PCIB_POWER_FOR_SLEEP(device_t pcib, device_t dev,
+                                         int *pstate)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_power_for_sleep);
+	return ((pcib_power_for_sleep_t *) _m)(pcib, dev, pstate);
+}
+
 #endif /* _pcib_if_h_ */

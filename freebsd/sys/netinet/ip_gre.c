@@ -19,13 +19,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -214,6 +207,11 @@ gre_input2(struct mbuf *m ,int hlen, u_char proto)
 		bpf_mtap2(GRE2IFP(sc)->if_bpf, &af, sizeof(af), m);
 	}
 
+	if ((GRE2IFP(sc)->if_flags & IFF_MONITOR) != 0) {
+		m_freem(m);
+		return(NULL);
+	}
+
 	m->m_pkthdr.rcvif = GRE2IFP(sc);
 
 	netisr_queue(isr, m);
@@ -296,6 +294,11 @@ gre_mobile_input(struct mbuf *m, int hlen)
 	if (bpf_peers_present(GRE2IFP(sc)->if_bpf)) {
 		u_int32_t af = AF_INET;
 		bpf_mtap2(GRE2IFP(sc)->if_bpf, &af, sizeof(af), m);
+	}
+
+	if ((GRE2IFP(sc)->if_flags & IFF_MONITOR) != 0) {
+		m_freem(m);
+		return;
 	}
 
 	m->m_pkthdr.rcvif = GRE2IFP(sc);

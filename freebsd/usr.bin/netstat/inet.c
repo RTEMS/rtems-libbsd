@@ -12,10 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -91,11 +87,11 @@ __FBSDID("$FreeBSD$");
 char	*inetname(struct in_addr *);
 void	inetprint(struct in_addr *, int, const char *, int);
 #ifdef INET6
-static int udp_done, tcp_done;
+static int udp_done, tcp_done, sdp_done;
 #endif /* INET6 */
 
 static int
-pcblist_sysctl(int proto, char **bufp, int istcp)
+pcblist_sysctl(int proto, const char *name, char **bufp, int istcp)
 {
 	const char *mibvar;
 	char *buf;
@@ -115,7 +111,8 @@ pcblist_sysctl(int proto, char **bufp, int istcp)
 		mibvar = "net.inet.raw.pcblist";
 		break;
 	}
-
+	if (strncmp(name, "sdp", 3) == 0)
+		mibvar = "net.inet.sdp.pcblist";
 	len = 0;
 	if (sysctlbyname(mibvar, 0, &len, 0, 0) < 0) {
 		if (errno != ENOENT)
@@ -314,15 +311,23 @@ protopr(u_long off, const char *name, int af1, int proto)
 	struct inpcb *inp;
 	struct xinpgen *xig, *oxig;
 	struct xsocket *so;
+	struct xtcp_timer *timer;
 
 	istcp = 0;
 	switch (proto) {
 	case IPPROTO_TCP:
 #ifdef INET6
-		if (tcp_done != 0)
-			return;
-		else
-			tcp_done = 1;
+		if (strncmp(name, "sdp", 3) != 0) {
+			if (tcp_done != 0)
+				return;
+			else
+				tcp_done = 1;
+		} else {
+			if (sdp_done != 0)
+				return;
+			else
+				sdp_done = 1;
+		}
 #endif
 		istcp = 1;
 		break;
@@ -336,7 +341,7 @@ protopr(u_long off, const char *name, int af1, int proto)
 		break;
 	}
 	if (live) {
-		if (!pcblist_sysctl(proto, &buf, istcp))
+		if (!pcblist_sysctl(proto, name, &buf, istcp))
 			return;
 	} else {
 		if (!pcblist_kvm(off, &buf, istcp))
@@ -348,12 +353,14 @@ protopr(u_long off, const char *name, int af1, int proto)
 	     xig->xig_len > sizeof(struct xinpgen);
 	     xig = (struct xinpgen *)((char *)xig + xig->xig_len)) {
 		if (istcp) {
+			timer = &((struct xtcpcb *)xig)->xt_timer;
 			tp = &((struct xtcpcb *)xig)->xt_tp;
 			inp = &((struct xtcpcb *)xig)->xt_inp;
 			so = &((struct xtcpcb *)xig)->xt_socket;
 		} else {
 			inp = &((struct xinpcb *)xig)->xi_inp;
 			so = &((struct xinpcb *)xig)->xi_socket;
+			timer = NULL;
 		}
 
 		/* Ignore sockets for protocols other than the desired one. */
@@ -432,6 +439,9 @@ protopr(u_long off, const char *name, int af1, int proto)
 				       "S-CLUS", "R-HIWA", "S-HIWA", 
 				       "R-LOWA", "S-LOWA", "R-BCNT", 
 				       "S-BCNT", "R-BMAX", "S-BMAX");
+				printf(" %7.7s %7.7s %7.7s %7.7s %7.7s %7.7s",
+				       "rexmt", "persist", "keep",
+				       "2msl", "delack", "rcvtime");
 			}
 			putchar('\n');
 			protopr_initialized = 1;
@@ -452,7 +462,10 @@ protopr(u_long off, const char *name, int af1, int proto)
 #endif
 		vchar = ((inp->inp_vflag & INP_IPV4) != 0) ?
 		    "4 " : "  ";
-		printf("%-3.3s%-2.2s ", name, vchar);
+		if (istcp && (tp->t_flags & TF_TOE) != 0)
+			printf("%-3.3s%-2.2s ", "toe", vchar);
+		else
+			printf("%-3.3s%-2.2s ", name, vchar);
 		if (Lflag) {
 			char buf1[15];
 
@@ -461,10 +474,8 @@ protopr(u_long off, const char *name, int af1, int proto)
 			printf("%-14.14s ", buf1);
 		} else if (Tflag) {
 			if (istcp)
-				printf("%6ju %6ju %6u ", 
-				       (uintmax_t)tp->t_sndrexmitpack,
-				       (uintmax_t)tp->t_rcvoopack, 
-				       tp->t_sndzerowin);
+				printf("%6u %6u %6u ", tp->t_sndrexmitpack,
+				       tp->t_rcvoopack, tp->t_sndzerowin);
 		} else {
 			printf("%6u %6u ", so->so_rcv.sb_cc, so->so_snd.sb_cc);
 		}
@@ -530,6 +541,14 @@ protopr(u_long off, const char *name, int af1, int proto)
 			       so->so_rcv.sb_lowat, so->so_snd.sb_lowat,
 			       so->so_rcv.sb_mbcnt, so->so_snd.sb_mbcnt,
 			       so->so_rcv.sb_mbmax, so->so_snd.sb_mbmax);
+			if (timer != NULL)
+				printf(" %4d.%02d %4d.%02d %4d.%02d %4d.%02d %4d.%02d %4d.%02d",
+				    timer->tt_rexmt / 1000, (timer->tt_rexmt % 1000) / 10,
+				    timer->tt_persist / 1000, (timer->tt_persist % 1000) / 10,
+				    timer->tt_keep / 1000, (timer->tt_keep % 1000) / 10,
+				    timer->tt_2msl / 1000, (timer->tt_2msl % 1000) / 10,
+				    timer->tt_delack / 1000, (timer->tt_delack % 1000) / 10,
+				    timer->t_rcvtime / 1000, (timer->t_rcvtime % 1000) / 10);
 		}
 		if (istcp && !Lflag && !xflag && !Tflag) {
 			if (tp->t_state < 0 || tp->t_state >= TCP_NSTATES)

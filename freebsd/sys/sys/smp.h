@@ -16,7 +16,7 @@
 
 #ifndef LOCORE
 
-#ifdef SMP
+#include <sys/cpuset.h>
 
 /*
  * Topology of a NUMA or HTT system.
@@ -34,12 +34,14 @@
 struct cpu_group {
 	struct cpu_group *cg_parent;	/* Our parent group. */
 	struct cpu_group *cg_child;	/* Optional children groups. */
-	cpumask_t	cg_mask;	/* Mask of cpus in this group. */
-	int8_t		cg_count;	/* Count of cpus in this group. */
-	int8_t		cg_children;	/* Number of children groups. */
+	cpuset_t	cg_mask;	/* Mask of cpus in this group. */
+	int32_t		cg_count;	/* Count of cpus in this group. */
+	int16_t		cg_children;	/* Number of children groups. */
 	int8_t		cg_level;	/* Shared cache level. */
 	int8_t		cg_flags;	/* Traversal modifiers. */
 };
+
+typedef struct cpu_group *cpu_group_t;
 
 /*
  * Defines common resources for CPUs in the group.  The highest level
@@ -60,6 +62,7 @@ struct cpu_group {
 /*
  * Convenience routines for building topologies.
  */
+#ifdef SMP
 struct cpu_group *smp_topo(void);
 struct cpu_group *smp_topo_none(void);
 struct cpu_group *smp_topo_1level(int l1share, int l1count, int l1flags);
@@ -70,11 +73,10 @@ struct cpu_group *smp_topo_find(struct cpu_group *top, int cpu);
 extern void (*cpustop_restartfunc)(void);
 extern int smp_active;
 extern int smp_cpus;
-extern volatile cpumask_t started_cpus;
-extern volatile cpumask_t stopped_cpus;
-extern cpumask_t idle_cpus_mask;
-extern cpumask_t hlt_cpus_mask;
-extern cpumask_t logical_cpus_mask;
+extern volatile cpuset_t started_cpus;
+extern volatile cpuset_t stopped_cpus;
+extern cpuset_t hlt_cpus_mask;
+extern cpuset_t logical_cpus_mask;
 #endif /* SMP */
 
 #ifndef __rtems__
@@ -83,7 +85,7 @@ extern int mp_maxcpus;
 extern int mp_ncpus;
 extern volatile int smp_started;
 
-extern cpumask_t all_cpus;
+extern cpuset_t all_cpus;
 #else /* __rtems__ */
 #define mp_maxid 1U
 #define mp_maxcpus 1
@@ -96,7 +98,11 @@ extern cpumask_t all_cpus;
  * time, thus permitting us to configure sparse maps of cpuid-dependent
  * (per-CPU) structures.
  */
-#define	CPU_ABSENT(x_cpu)	((all_cpus & (1 << (x_cpu))) == 0)
+#ifndef __rtems__
+#define	CPU_ABSENT(x_cpu)	(!CPU_ISSET(x_cpu, &all_cpus))
+#else /* __rtems__ */
+#define	CPU_ABSENT(x_cpu) 0
+#endif /* __rtems__ */
 
 /*
  * Macros to iterate over non-absent CPUs.  CPU_FOREACH() takes an
@@ -165,11 +171,11 @@ void	cpu_mp_setmaxid(void);
 void	cpu_mp_start(void);
 
 void	forward_signal(struct thread *);
-int	restart_cpus(cpumask_t);
-int	stop_cpus(cpumask_t);
-int	stop_cpus_hard(cpumask_t);
-#if defined(__amd64__)
-int	suspend_cpus(cpumask_t);
+int	restart_cpus(cpuset_t);
+int	stop_cpus(cpuset_t);
+int	stop_cpus_hard(cpuset_t);
+#if defined(__amd64__) || defined(__i386__)
+int	suspend_cpus(cpuset_t);
 #endif
 void	smp_rendezvous_action(void);
 extern	struct mtx smp_ipi_mtx;
@@ -180,7 +186,7 @@ void	smp_rendezvous(void (*)(void *),
 		       void (*)(void *),
 		       void (*)(void *),
 		       void *arg);
-void	smp_rendezvous_cpus(cpumask_t,
+void	smp_rendezvous_cpus(cpuset_t,
 		       void (*)(void *), 
 		       void (*)(void *),
 		       void (*)(void *),

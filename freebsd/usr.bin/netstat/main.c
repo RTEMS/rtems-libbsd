@@ -436,7 +436,7 @@ main(int argc, char *argv[])
 #define optarg getopt_data.optarg
 #define opterr getopt_data.opterr
 #define optopt getopt_data.optopt
-#define getopt(argc, argv, opt) getopt_r(argc, argv, opt, &getopt_data)
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
 #endif /* __rtems__ */
 
 	af = AF_UNSPEC;

@@ -214,7 +214,11 @@ main(int argc, char *argv[])
 	all = downonly = uponly = namesonly = noload = verbose = 0;
 
 	/* Parse leading line options */
+#ifndef __rtems__
 	strlcpy(options, "adklmnuv", sizeof(options));
+#else /* __rtems__ */
+	strlcpy(options, "+adklmnuv", sizeof(options));
+#endif /* __rtems__ */
 	for (p = opts; p != NULL; p = p->next)
 		strlcat(options, p->opt, sizeof(options));
 	while ((c = getopt(argc, argv, options)) != -1) {

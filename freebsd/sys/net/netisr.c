@@ -1042,7 +1042,11 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 	 * to always being forced to directly dispatch.
 	 */
 	if (dispatch_policy == NETISR_DISPATCH_DIRECT) {
+#ifndef __rtems__
 		nwsp = DPCPU_PTR(nws);
+#else /* __rtems__ */
+		nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 		npwp = &nwsp->nws_work[proto];
 		npwp->nw_dispatched++;
 		npwp->nw_handled++;
@@ -1071,7 +1075,11 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 	KASSERT(!CPU_ABSENT(cpuid), ("%s: CPU %u absent", __func__, cpuid));
 	if (cpuid != curcpu)
 		goto queue_fallback;
+#ifndef __rtems__
 	nwsp = DPCPU_PTR(nws);
+#else /* __rtems__ */
+	nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 	npwp = &nwsp->nws_work[proto];
 
 	/*-

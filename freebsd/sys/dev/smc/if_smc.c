@@ -809,6 +809,12 @@ smc_intr(void *context)
 	struct smc_softc	*sc;
 	
 	sc = (struct smc_softc *)context;
+#ifdef __rtems__
+	SMC_LOCK(sc);
+	smc_select_bank(sc, 2);
+	smc_write_1(sc, MSK, 0);
+	SMC_UNLOCK(sc);
+#endif /* __rtems__ */
 	taskqueue_enqueue_fast(sc->smc_tq, &sc->smc_intr);
 	return (FILTER_HANDLED);
 }

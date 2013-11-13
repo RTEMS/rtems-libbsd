@@ -61,35 +61,39 @@ RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
 
 static size_t rtems_bsd_extension_index;
 
+static CHAIN_DEFINE_EMPTY(rtems_bsd_thread_delay_start_chain);
+
+static bool rtems_bsd_thread_ready_to_start;
+
 struct thread *
 rtems_bsd_get_thread(const Thread_Control *thread)
 {
 	return thread->extensions[rtems_bsd_extension_index];
 }
 
-static struct thread *
+static Thread_Control *
 rtems_bsd_get_thread_by_id(rtems_id task_id)
 {
-	struct thread *td = NULL;
 	Thread_Control *thread;
 	Objects_Locations location;
 
 	thread = _Thread_Get(task_id, &location);
 	switch (location) {
 		case OBJECTS_LOCAL:
-			td = rtems_bsd_get_thread(thread);
 			_Objects_Put(&thread->Object);
 			break;
 #if defined(RTEMS_MULTIPROCESSING)
 		case OBJECTS_REMOTE:
 			_Thread_Dispatch();
+			thread = NULL;
 			break;
 #endif
 		default:
+			thread = NULL;
 			break;
 	}
 
-	return td;
+	return thread;
 }
 
 struct thread *
@@ -198,10 +202,12 @@ static const rtems_extensions_table rtems_bsd_extensions = {
 };
 
 static void
-rtems_bsd_threads_init(void *arg __unused)
+rtems_bsd_threads_init_early(void *arg)
 {
 	rtems_id ext_id;
 	rtems_status_code sc;
+
+	(void) arg;
 
 	sc = rtems_extension_create(
 		BSD_TASK_NAME,
@@ -215,10 +221,35 @@ rtems_bsd_threads_init(void *arg __unused)
 	rtems_bsd_extension_index = rtems_object_id_get_index(ext_id);
 }
 
-SYSINIT(rtems_bsd_threads, SI_SUB_INTRINSIC, SI_ORDER_ANY, rtems_bsd_threads_init, NULL);
+static void
+rtems_bsd_threads_init_late(void *arg)
+{
+	Chain_Control *chain = &rtems_bsd_thread_delay_start_chain;
+	Chain_Node *node;
+
+	(void) arg;
+
+	while ((node = _Chain_Get_unprotected(chain)) != NULL) {
+		Thread_Control *thread = (Thread_Control *) node;
+		rtems_status_code sc;
+
+		sc = rtems_task_start(thread->Object.id, (rtems_task_entry)
+		    thread->Start.entry_point, thread->Start.numeric_argument);
+		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+	}
+
+	rtems_bsd_thread_ready_to_start = true;
+}
+
+SYSINIT(rtems_bsd_threads_early, SI_SUB_INTRINSIC, SI_ORDER_ANY,
+    rtems_bsd_threads_init_early, NULL);
+
+SYSINIT(rtems_bsd_threads_late, SI_SUB_RUN_SCHEDULER, SI_ORDER_ANY,
+    rtems_bsd_threads_init_late, NULL);
 
 static int
-rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, int flags, int pages, const char *fmt, va_list ap)
+rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
+    int flags, int pages, const char *fmt, va_list ap)
 {
 	int eno = 0;
 	rtems_status_code sc;
@@ -235,14 +266,28 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg, 
 		&task_id
 	);
 	if (sc == RTEMS_SUCCESSFUL) {
-		struct thread *td = rtems_bsd_get_thread_by_id(task_id);
+		Thread_Control *thread = rtems_bsd_get_thread_by_id(task_id);
+		struct thread *td;
 
+		BSD_ASSERT(thread != NULL);
+
+		td = rtems_bsd_get_thread(thread);
 		BSD_ASSERT(td != NULL);
 
 		vsnprintf(td->td_name, sizeof(td->td_name), fmt, ap);
 
-		sc = rtems_task_start(task_id, (rtems_task_entry) func, (rtems_task_argument) arg);
-		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+		if (rtems_bsd_thread_ready_to_start) {
+			sc = rtems_task_start(task_id, (rtems_task_entry) func,
+			    (rtems_task_argument) arg);
+			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+		} else {
+			thread->Start.entry_point = (Thread_Entry) func;
+			thread->Start.numeric_argument =
+			    (Thread_Entry_numeric_type) arg;
+			_Chain_Append_unprotected(
+			    &rtems_bsd_thread_delay_start_chain,
+			    &thread->Object.Node);
+		}
 
 		if (td_ptr != NULL) {
 			*td_ptr = td;

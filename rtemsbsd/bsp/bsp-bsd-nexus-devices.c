@@ -1,13 +1,5 @@
-/**
- * @file
- *
- * @ingroup rtems_bsd
- *
- * @brief TODO.
- */
-
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -37,45 +29,40 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_BSD_H_
-#define _RTEMS_BSD_BSD_H_
+#include <rtems/bsd/bsd.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#include <machine/rtems-bsd-sysinit.h>
 
-#include <rtems.h>
+#include <bsp.h>
 
-typedef enum {
-	RTEMS_BSD_RES_IRQ = 1,
-	RTEMS_BSD_RES_MEMORY = 3
-} rtems_bsd_device_resource_type;
+#if defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
+#include <bsp/irq.h>
 
-typedef struct {
-	rtems_bsd_device_resource_type type;
-	unsigned long start_request;
-	unsigned long start_actual;
-} rtems_bsd_device_resource;
+static const rtems_bsd_device_resource smc0_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = 0x4e000000
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 0,
+		.start_actual = RVPBXA9_IRQ_ETHERNET
+	}
+};
 
-typedef struct {
-	const char *name;
-	int unit;
-	size_t resource_count;
-	const rtems_bsd_device_resource *resources;
-} rtems_bsd_device;
+const rtems_bsd_device rtems_bsd_nexus_devices[] = {
+	{
+		.name = "smc",
+		.unit = 0,
+		.resource_count = RTEMS_ARRAY_SIZE(smc0_res),
+		.resources = &smc0_res[0]
+	}
+};
 
-extern const rtems_bsd_device rtems_bsd_nexus_devices[];
+SYSINIT_DRIVER_REFERENCE(smc, nexus);
+#else
+const rtems_bsd_device rtems_bsd_nexus_devices[0];
+#endif
 
-extern const size_t rtems_bsd_nexus_device_count;
-
-rtems_status_code rtems_bsd_initialize(void);
-
-rtems_status_code rtems_bsd_initialize_with_interrupt_server(void);
-
-void rtems_bsd_shell_initialize(void);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif /* _RTEMS_BSD_BSD_H_ */
+const size_t rtems_bsd_nexus_device_count =
+    RTEMS_ARRAY_SIZE(rtems_bsd_nexus_devices);

@@ -92,6 +92,7 @@ LIB_C_FILES += rtemsbsd/rtems/syslog.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ehci_mpc83xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc24xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc32xx.c
+LIB_C_FILES += rtemsbsd/bsp/bsp-bsd-nexus-devices.c
 LIB_GEN_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
 rtemsbsd/rtems/rtems-kvm-symbols.c: rtemsbsd/rtems/generate_kvm_symbols

@@ -654,6 +654,7 @@ rtems.addRTEMSSourceFiles(
 		'sys/dev/usb/controller/ehci_mpc83xx.c',
 		'sys/dev/usb/controller/ohci_lpc24xx.c',
 		'sys/dev/usb/controller/ohci_lpc32xx.c',
+		'bsp/bsp-bsd-nexus-devices.c',
 	]
 )
 

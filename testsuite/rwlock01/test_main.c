@@ -43,7 +43,6 @@
 #include <string.h>
 
 #include <rtems/libcsupport.h>
-#include <rtems/stackchk.h>
 #include <rtems.h>
 
 #define TEST_NAME "LIBBSD RWLOCK 1"
@@ -506,12 +505,7 @@ test_rw_sleep_timeout(test_context *ctx)
 static void
 alloc_basic_resources(void)
 {
-	rtems_status_code sc;
-
 	curthread;
-
-	sc = rtems_task_wake_after(2);
-	assert(sc == RTEMS_SUCCESSFUL);
 }
 
 static void
@@ -548,10 +542,6 @@ test_main(void)
 
 	assert(rtems_resource_snapshot_check(&snapshot_0));
 
-	rtems_stack_checker_report_usage_with_plugin(NULL,
-	    rtems_printf_plugin);
-
-	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);
 }
 

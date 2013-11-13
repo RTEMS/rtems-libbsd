@@ -1718,7 +1718,6 @@ test_main(void)
 	test_warn();
 	test_err();
 
-	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);
 }
 

@@ -53,7 +53,6 @@
 #include <machine/rtems-bsd-commands.h>
 
 #include <rtems/libcsupport.h>
-#include <rtems/stackchk.h>
 #include <rtems.h>
 
 #define TEST_NAME "LIBBSD SELECT AND POLL AND KQUEUE 1"
@@ -987,10 +986,6 @@ test_main(void)
 	test_kqueue_write(ctx);
 	test_kqueue_close(ctx);
 
-	rtems_stack_checker_report_usage_with_plugin(NULL,
-	    rtems_printf_plugin);
-
-	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);
 }
 

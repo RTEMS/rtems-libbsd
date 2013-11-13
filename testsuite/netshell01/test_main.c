@@ -22,7 +22,6 @@ static void test_main(void)
 
   rtems_shell_main_loop( &env );
 
-  puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }
 

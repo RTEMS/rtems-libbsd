@@ -40,20 +40,10 @@
 #include <machine/rtems-bsd-commands.h>
 
 #include <rtems/libcsupport.h>
-#include <rtems/stackchk.h>
 
 #define TEST_NAME "LIBBSD COMMANDS 1"
 
 #define ARGC(x) (nitems(x) - 1)
-
-static void
-set_self_prio(rtems_task_priority prio)
-{
-	rtems_status_code sc;
-
-	sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
-	assert(sc == RTEMS_SUCCESSFUL);
-}
 
 static void
 test_route_without_if(void)
@@ -270,12 +260,6 @@ test_netstat(void)
 static void
 test_main(void)
 {
-	/*
-	 * Let other tasks run to complete background work that frees allocated
-	 * resources.
-	 */
-	set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1);
-
 	test_route_without_if();
 	test_ifconfig_lo0();
 	test_route_with_lo0();
@@ -283,10 +267,6 @@ test_main(void)
 	test_ping6();
 	test_netstat();
 
-	rtems_stack_checker_report_usage_with_plugin(NULL,
-	    rtems_printf_plugin);
-
-	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);
 }
 

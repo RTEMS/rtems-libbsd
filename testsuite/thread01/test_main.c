@@ -283,13 +283,7 @@ test_rtems_bsd_get_curthread_or_null(void)
 static void
 test_main(void)
 {
-	rtems_status_code sc;
-	rtems_task_priority prio = RTEMS_MAXIMUM_PRIORITY - 1;
-
 	main_task_id = rtems_task_self();
-
-	sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
-	assert(sc == RTEMS_SUCCESSFUL);
 
 	test_non_bsd_thread();
 	test_kproc_start();
@@ -297,7 +291,6 @@ test_main(void)
 	test_kthread_add();
 	test_rtems_bsd_get_curthread_or_null();
 
-	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);
 }
 

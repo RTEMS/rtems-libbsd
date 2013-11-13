@@ -295,7 +295,6 @@ static void test_main(void)
   spawnTask(clientTask, 120, 6);
   waitForClientEvents(argToClientEvent(4) | argToClientEvent(5) | argToClientEvent(6));
 
-  puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }
 

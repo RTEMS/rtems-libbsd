@@ -14,7 +14,6 @@ static void test_main(void)
   puts( "Sleeping to see what happens" );
   sleep( 5 );
 
-  puts( "*** END OF " TEST_NAME " TEST ***" );
   exit( 0 );
 }
 

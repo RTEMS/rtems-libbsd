@@ -6,14 +6,38 @@
 #define RTEMS_BSD_TEST_DEFAULT_INIT_H
 
 #include <bsp.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
+
+static void default_set_self_prio( rtems_task_priority prio )
+{
+  rtems_status_code sc;
+
+  sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
+  assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void default_on_exit( int exit_code, void *arg )
+{
+  rtems_stack_checker_report_usage_with_plugin(
+    NULL,
+    rtems_printf_plugin
+  );
+
+  if ( exit_code == 0 ) {
+    puts( "*** END OF TEST " TEST_NAME " ***" );
+  }
+}
 
 rtems_task Init(
   rtems_task_argument ignored
 )
 {
+  rtems_status_code sc;
+
   puts( "*** " TEST_NAME " TEST ***" );
 
   /*
@@ -22,13 +46,21 @@ rtems_task Init(
    *  just requires including irq-server.[ch] in their build.
    */
 
+  on_exit( default_on_exit, NULL );
+
+  /* Let other tasks run to complete background work */
+  default_set_self_prio( RTEMS_MAXIMUM_PRIORITY - 1 );
+
   rtems_bsd_initialize_with_interrupt_server();
+
+  /* Let the callout timer allocate its resources */
+  sc = rtems_task_wake_after( 2 );
+  assert(sc == RTEMS_SUCCESSFUL);
 
   test_main();
   /* should not return */
 
-  printf( "*** Test main returned and should not have ***\n" );
-  exit( 5 );
+  assert( 0 );
 }
 
 /* configuration information */

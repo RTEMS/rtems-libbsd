@@ -43,7 +43,6 @@
 #include <inttypes.h>
 
 #include <rtems/libcsupport.h>
-#include <rtems/stackchk.h>
 
 #define TEST_NAME "LIBBSD SLEEP 1"
 
@@ -209,12 +208,7 @@ test_wakeup(void)
 static void
 alloc_basic_resources(void)
 {
-	rtems_status_code sc;
-
 	curthread;
-
-	sc = rtems_task_wake_after(2);
-	assert(sc == RTEMS_SUCCESSFUL);
 }
 
 static void
@@ -234,10 +228,6 @@ test_main(void)
 
 	assert(rtems_resource_snapshot_check(&snapshot));
 
-	rtems_stack_checker_report_usage_with_plugin(NULL,
-	    rtems_printf_plugin);
-
-	puts("*** END OF " TEST_NAME " TEST ***");
 	exit(0);
 }
 

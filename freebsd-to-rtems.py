@@ -1179,6 +1179,9 @@ devNet.addHeaderFiles(
 		'sys/net/if_types.h',
 		'sys/net/if_var.h',
 		'sys/net/vnet.h',
+		'sys/dev/ofw/openfirm.h',
+		'sys/dev/tsec/if_tsec.h',
+		'sys/dev/tsec/if_tsecreg.h',
 	]
 )
 devNet.addSourceFiles(
@@ -1188,6 +1191,7 @@ devNet.addSourceFiles(
 		'sys/dev/mii/mii_physubr.c',
 		'sys/dev/mii/icsphy.c',
 		'sys/dev/mii/brgphy.c',
+		'sys/dev/tsec/if_tsec.c',
 	]
 )
 

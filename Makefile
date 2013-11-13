@@ -33,8 +33,14 @@ NEED_DUMMY_PIC_IRQ=yes
 # do nothing default so sed on rtems-bsd-kernel-space.h always works.
 SED_PATTERN += -e 's/^//'
 
+TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h
+
 TESTS =
 RUN_TESTS =
+
+NET_TESTS =
+RUN_NET_TESTS =
+
 O_FILES =
 D_FILES =
 
@@ -937,13 +943,25 @@ LIB_O_FILES = $(LIB_C_FILES:%.c=%.o)
 O_FILES += $(LIB_O_FILES)
 D_FILES += $(LIB_C_FILES:%.c=%.d)
 
-all: $(LIB) $(TESTS)
+all: $(LIB) $(TESTS) $(TEST_NETWORK_CONFIG) $(NET_TESTS)
 
 $(LIB): $(LIB_GEN_FILES) $(LIB_O_FILES)
 	$(AR) rcu $@ $^
+
 run_tests: $(RUN_TESTS)
 	$(TEST_RUNNER) $^
 	check_endof
+
+run_net_tests: $(RUN_NET_TESTS)
+	$(TEST_RUNNER) -N -T $(NET_TAP_INTERFACE) $^
+	check_endof
+
+$(TEST_NETWORK_CONFIG): $(TEST_NETWORK_CONFIG).in config.inc
+	sed -e 's/@NET_CFG_SELF_IP@/$(NET_CFG_SELF_IP)/' \
+	-e 's/@NET_CFG_NETMASK@/$(NET_CFG_NETMASK)/' \
+	-e 's/@NET_CFG_PEER_IP@/$(NET_CFG_PEER_IP)/' \
+	-e 's/@NET_CFG_GATEWAY_IP@/$(NET_CFG_GATEWAY_IP)/' \
+	< $< > $@
 
 # The following targets use the MIPS Generic in_cksum routine
 rtemsbsd/include/machine/rtems-bsd-kernel-space.h: rtemsbsd/include/machine/rtems-bsd-kernel-space.h.in

@@ -304,10 +304,11 @@ class SourceFileMakefileFragmentComposer(MakefileFragmentComposer):
 		return 'LIB_C_FILES += ' + path + '\n'
 
 class TestMakefileFragementComposer(MakefileFragmentComposer):
-	def __init__(self, testName, fileFragments, runTest):
+	def __init__(self, testName, fileFragments, runTest, netTest):
 		self.testName = testName
 		self.fileFragments = fileFragments
 		self.runTest = runTest
+		self.netTest = netTest
 
 	def compose(self, path):
 		testPrefix = 'TEST_' + self.testName.upper()
@@ -316,6 +317,9 @@ class TestMakefileFragementComposer(MakefileFragmentComposer):
 		testDir = 'testsuite/' + self.testName
 		testExe = testDir + '/' + self.testName + '.exe'
 		testMap = testDir + '/' + self.testName + '.map'
+		testCollection = 'TESTS'
+		if self.netTest:
+			testCollection = 'NET_' + testCollection
 		makefileFragment = '\n' + testPrefix + ' = ' + testExe + '\n' \
 			+ testOFiles + ' =\n' \
 			+ testDFiles + ' =\n'
@@ -324,11 +328,11 @@ class TestMakefileFragementComposer(MakefileFragmentComposer):
 				+ testDFiles + ' += ' + testDir + '/' + fileFragment + '.d\n'
 		makefileFragment = makefileFragment + '$(' + testPrefix + '): $(' + testOFiles + ') $(LIB)\n' \
 			'\t$(LINK.c) -Wl,-Map,' + testMap + ' $^ -lm -lz -o $@\n' \
-			'TESTS += $(' + testPrefix + ')\n' \
+			+ testCollection + ' += $(' + testPrefix + ')\n' \
 			'O_FILES += $(' + testOFiles + ')\n' \
 			'D_FILES += $(' + testDFiles + ')\n'
 		if self.runTest:
-			makefileFragment = makefileFragment + 'RUN_TESTS += $(' + testPrefix + ')\n'
+			makefileFragment = makefileFragment + 'RUN_' + testCollection + ' += $(' + testPrefix + ')\n'
 		return makefileFragment
 
 class File(object):
@@ -419,8 +423,14 @@ class ModuleManager:
                         '# do nothing default so sed on rtems-bsd-kernel-space.h always works.\n' \
                         'SED_PATTERN += -e \'s/^//\'\n' \
 			'\n' \
+			'TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h\n' \
+			'\n' \
 			'TESTS =\n' \
 			'RUN_TESTS =\n' \
+			'\n' \
+			'NET_TESTS =\n' \
+			'RUN_NET_TESTS =\n' \
+			'\n' \
 			'O_FILES =\n' \
 			'D_FILES =\n' \
 			'\n' \
@@ -452,13 +462,25 @@ class ModuleManager:
 			'O_FILES += $(LIB_O_FILES)\n' \
 			'D_FILES += $(LIB_C_FILES:%.c=%.d)\n' \
 			'\n' \
-			'all: $(LIB) $(TESTS)\n' \
+			'all: $(LIB) $(TESTS) $(TEST_NETWORK_CONFIG) $(NET_TESTS)\n' \
 			'\n' \
 			'$(LIB): $(LIB_GEN_FILES) $(LIB_O_FILES)\n' \
 			'\t$(AR) rcu $@ $^\n' \
+			'\n' \
 			'run_tests: $(RUN_TESTS)\n' \
 			'\t$(TEST_RUNNER) $^\n' \
 			'\tcheck_endof\n' \
+			'\n' \
+			'run_net_tests: $(RUN_NET_TESTS)\n' \
+			'\t$(TEST_RUNNER) -N -T $(NET_TAP_INTERFACE) $^\n' \
+			'\tcheck_endof\n' \
+			'\n' \
+			'$(TEST_NETWORK_CONFIG): $(TEST_NETWORK_CONFIG).in config.inc\n' \
+			'\tsed -e \'s/@NET_CFG_SELF_IP@/$(NET_CFG_SELF_IP)/\' \\\n' \
+			'\t-e \'s/@NET_CFG_NETMASK@/$(NET_CFG_NETMASK)/\' \\\n' \
+			'\t-e \'s/@NET_CFG_PEER_IP@/$(NET_CFG_PEER_IP)/\' \\\n' \
+			'\t-e \'s/@NET_CFG_GATEWAY_IP@/$(NET_CFG_GATEWAY_IP)/\' \\\n' \
+			'\t< $< > $@\n' \
 			'\n' \
 			'# The following targets use the MIPS Generic in_cksum routine\n' \
 			'rtemsbsd/include/machine/rtems-bsd-kernel-space.h: rtemsbsd/include/machine/rtems-bsd-kernel-space.h.in\n' \
@@ -590,8 +612,8 @@ class Module:
 			self.initCPUDependencies(cpu)
 			self.cpuDependentSourceFiles [cpu] = self.addFiles(self.cpuDependentSourceFiles [cpu], files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU), FromFreeBSDToRTEMSSourceConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
 
-	def addTest(self, testName, fileFragments, runTest = True):
-		self.files.append(File(testName, PathComposer(), NoConverter(), NoConverter(), TestMakefileFragementComposer(testName, fileFragments, runTest)))
+	def addTest(self, testName, fileFragments, runTest = True, netTest = False):
+		self.files.append(File(testName, PathComposer(), NoConverter(), NoConverter(), TestMakefileFragementComposer(testName, fileFragments, runTest, netTest)))
 
 	def addDependency(self, dep):
 		self.dependencies.append(dep)

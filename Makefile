@@ -786,6 +786,18 @@ LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 
+TEST_PING01 = testsuite/ping01/ping01.exe
+TEST_PING01_O_FILES =
+TEST_PING01_D_FILES =
+TEST_PING01_O_FILES += testsuite/ping01/test_main.o
+TEST_PING01_D_FILES += testsuite/ping01/test_main.d
+$(TEST_PING01): $(TEST_PING01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/ping01/ping01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_PING01)
+O_FILES += $(TEST_PING01_O_FILES)
+D_FILES += $(TEST_PING01_D_FILES)
+RUN_NET_TESTS += $(TEST_PING01)
+
 TEST_SELECTPOLLKQUEUE01 = testsuite/selectpollkqueue01/selectpollkqueue01.exe
 TEST_SELECTPOLLKQUEUE01_O_FILES =
 TEST_SELECTPOLLKQUEUE01_D_FILES =

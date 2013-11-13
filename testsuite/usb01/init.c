@@ -217,7 +217,6 @@ static const char mac_address [6] = { 0x00, 0x1a, 0xf1, 0x00, 0x07, 0xa4 };
 static void Init(rtems_task_argument arg)
 {
   rtems_status_code sc = RTEMS_SUCCESSFUL;
-  int rv = 0;
   int eno = 0;
   rtems_id id = RTEMS_ID_NONE;
   size_t i = 0;

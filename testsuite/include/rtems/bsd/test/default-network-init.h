@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sysexits.h>
 
 #include <machine/rtems-bsd-commands.h>
 
@@ -120,10 +121,10 @@ default_network_route(void)
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_route(ARGC(dflt_route), dflt_route);
+	exit_code = rtems_bsd_command_route(DEFAULT_NETWORK_ARGC(dflt_route), dflt_route);
 	assert(exit_code == EXIT_SUCCESS);
 
-	exit_code = rtems_bsd_command_route(ARGC(dflt_route2), dflt_route2);
+	exit_code = rtems_bsd_command_route(DEFAULT_NETWORK_ARGC(dflt_route2), dflt_route2);
 	assert(exit_code == EXIT_SUCCESS);
 }
 

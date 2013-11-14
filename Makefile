@@ -95,6 +95,7 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-kvm.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-net-setup.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c
 LIB_C_FILES += rtemsbsd/rtems/syslog.c
+LIB_C_FILES += rtemsbsd/ftpd/ftpd.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ehci_mpc83xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc24xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc32xx.c
@@ -785,6 +786,18 @@ LIB_C_FILES += freebsd/usr.bin/netstat/route.c
 LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
+
+TEST_FTPD01 = testsuite/ftpd01/ftpd01.exe
+TEST_FTPD01_O_FILES =
+TEST_FTPD01_D_FILES =
+TEST_FTPD01_O_FILES += testsuite/ftpd01/test_main.o
+TEST_FTPD01_D_FILES += testsuite/ftpd01/test_main.d
+$(TEST_FTPD01): $(TEST_FTPD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/ftpd01/ftpd01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_FTPD01)
+O_FILES += $(TEST_FTPD01_O_FILES)
+D_FILES += $(TEST_FTPD01_D_FILES)
+RUN_NET_TESTS += $(TEST_FTPD01)
 
 TEST_PING01 = testsuite/ping01/ping01.exe
 TEST_PING01_O_FILES =

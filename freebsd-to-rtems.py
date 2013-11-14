@@ -674,6 +674,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-net-setup.c',
 		'rtems/rtems-syslog-initialize.c',
 		'rtems/syslog.c',
+		'ftpd/ftpd.c',
 		'sys/dev/usb/controller/ehci_mpc83xx.c',
 		'sys/dev/usb/controller/ohci_lpc24xx.c',
 		'sys/dev/usb/controller/ohci_lpc32xx.c',
@@ -2418,6 +2419,7 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('ftpd01', ['test_main'], netTest = True)
 tests.addTest('ping01', ['test_main'], netTest = True)
 tests.addTest('selectpollkqueue01', ['test_main'])
 tests.addTest('rwlock01', ['test_main'])

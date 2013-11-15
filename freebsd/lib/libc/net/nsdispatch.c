@@ -109,8 +109,12 @@ static	pthread_rwlock_t	nss_lock = PTHREAD_RWLOCK_INITIALIZER;
 /*
  * Runtime determination of whether we are dynamically linked or not.
  */
+#ifndef __rtems__
 extern	int		_DYNAMIC __attribute__ ((weak));
 #define	is_dynamic()	(&_DYNAMIC != NULL)
+#else /* __rtems__ */
+#define	is_dynamic()	0
+#endif /* __rtems__ */
 
 /*
  * default sourcelist: `files'

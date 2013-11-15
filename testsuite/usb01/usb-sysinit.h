@@ -32,10 +32,6 @@
 	#define NEED_USB_EHCI
 #endif
 
-#if defined(LIBBSP_POWERPC_QORIQ_BSP_H)
-	#define NEED_SDHC
-#endif
-
 SYSINIT_NEED_USB_CORE;
 #ifdef NEED_USB_OHCI
 	SYSINIT_NEED_USB_OHCI;
@@ -44,9 +40,6 @@ SYSINIT_NEED_USB_CORE;
 	SYSINIT_NEED_USB_EHCI;
 #endif
 SYSINIT_NEED_USB_MASS_STORAGE;
-#ifdef NEED_SDHC
-	SYSINIT_NEED_SDHC;
-#endif
 
 const char *const _bsd_nexus_devices [] = {
 	#ifdef NEED_USB_OHCI
@@ -54,9 +47,6 @@ const char *const _bsd_nexus_devices [] = {
 	#endif
 	#ifdef NEED_USB_EHCI
 		"ehci",
-	#endif
-	#ifdef NEED_SDHC
-		"sdhci",
 	#endif
 	NULL
 };

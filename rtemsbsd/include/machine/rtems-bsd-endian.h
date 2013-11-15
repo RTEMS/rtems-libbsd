@@ -46,7 +46,11 @@
 #if __BSD_VISIBLE
 
 #define _BYTE_ORDER BYTE_ORDER
+
+/* On PowerPC this is a GCC built-in define */
+#undef _BIG_ENDIAN
 #define _BIG_ENDIAN BIG_ENDIAN
+
 #define _LITTLE_ENDIAN LITTLE_ENDIAN
 
 #if BYTE_ORDER == BIG_ENDIAN

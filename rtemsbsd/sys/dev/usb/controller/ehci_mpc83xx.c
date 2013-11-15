@@ -1,18 +1,36 @@
 /*
- * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
  *
- * The license and distribution terms for this file may be
- * found in the file LICENSE in this distribution or at
- * http://www.rtems.com/license/LICENSE.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
+#include <machine/rtems-bsd-support.h>
 
 #include <bsp.h>
 
@@ -69,36 +87,6 @@
 static device_probe_t ehci_mpc83xx_probe;
 static device_attach_t ehci_mpc83xx_attach;
 static device_detach_t ehci_mpc83xx_detach;
-static device_suspend_t ehci_mpc83xx_suspend;
-static device_resume_t ehci_mpc83xx_resume;
-
-static int
-ehci_mpc83xx_suspend(device_t self)
-{
-	ehci_softc_t *e = device_get_softc(self);
-	int eno = bus_generic_suspend(self);
-
-	if (eno != 0) {
-		return (eno);
-	}
-
-	ehci_suspend(e);
-
-	return (0);
-}
-
-static int
-ehci_mpc83xx_resume(device_t self)
-{
-	ehci_softc_t *e = device_get_softc(self);
-
-	ehci_resume(e);
-
-	bus_generic_resume(self);
-
-	return (0);
-}
-
 
 static int
 ehci_mpc83xx_probe(device_t self)
@@ -262,8 +250,8 @@ static device_method_t ehci_methods [] = {
 	DEVMETHOD(device_probe, ehci_mpc83xx_probe),
 	DEVMETHOD(device_attach, ehci_mpc83xx_attach),
 	DEVMETHOD(device_detach, ehci_mpc83xx_detach),
-	DEVMETHOD(device_suspend, ehci_mpc83xx_suspend),
-	DEVMETHOD(device_resume, ehci_mpc83xx_resume),
+	DEVMETHOD(device_suspend,bus_generic_suspend),
+	DEVMETHOD(device_resume, bus_generic_resume),
 	DEVMETHOD(device_shutdown, bus_generic_shutdown),
 
 	/* Bus interface */

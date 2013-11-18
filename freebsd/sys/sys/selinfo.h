@@ -46,10 +46,6 @@ struct selinfo {
 	struct selfdlist	si_tdlist;	/* List of sleeping threads. */
 	struct knlist		si_note;	/* kernel note list */
 	struct mtx		*si_mtx;	/* Lock for tdlist. */
-#ifdef __rtems__
-	pid_t	si_pid;		/* process to be notified */
-	short	si_flags;	/* see below */
-#endif
 };
 
 #define	SEL_WAITING(si)		(!TAILQ_EMPTY(&(si)->si_tdlist))

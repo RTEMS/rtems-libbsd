@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -87,5 +87,32 @@ RTEMS_BSD_DEFINE_NEXUS_DEVICE(cgem, 0, RTEMS_ARRAY_SIZE(cgem0_res),
    &cgem0_res[0]);
 
 SYSINIT_DRIVER_REFERENCE(e1000phy, miibus);
+
+#elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
+
+#include <bsp/irq.h>
+
+static const rtems_bsd_device_resource tsec0_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = 0xffeb0000
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 0,
+		.start_actual = QORIQ_IRQ_ETSEC_TX_1
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 1,
+		.start_actual = QORIQ_IRQ_ETSEC_RX_1
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 2,
+		.start_actual = QORIQ_IRQ_ETSEC_ER_1
+	}
+};
+
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(tsec, 0, RTEMS_ARRAY_SIZE(tsec0_res),
+   &tsec0_res[0]);
 
 #endif

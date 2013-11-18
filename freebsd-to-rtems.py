@@ -733,6 +733,7 @@ rtems.addRTEMSSourceFiles(
 		'telnetd/des.c',
 		'telnetd/pty.c',
 		'telnetd/telnetd.c',
+		'sys/dev/tsec/if_tsec_nexus.c',
 	]
 )
 

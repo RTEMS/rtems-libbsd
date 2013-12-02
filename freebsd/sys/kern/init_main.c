@@ -77,7 +77,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/unistd.h>
 #include <sys/malloc.h>
 #include <sys/conf.h>
-#include <sys/cpuset.h>
+#include <rtems/bsd/sys/cpuset.h>
 
 #include <machine/cpu.h>
 

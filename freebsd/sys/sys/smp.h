@@ -16,7 +16,7 @@
 
 #ifndef LOCORE
 
-#include <sys/cpuset.h>
+#include <rtems/bsd/sys/cpuset.h>
 
 /*
  * Topology of a NUMA or HTT system.

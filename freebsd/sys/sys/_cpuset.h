@@ -33,7 +33,9 @@
 #define	_SYS__CPUSET_H_
 
 #ifdef _KERNEL
+#ifndef __rtems__
 #define	CPU_SETSIZE	MAXCPU
+#endif /* __rtems__ */
 #endif
 
 #define	CPU_MAXSIZE	128
@@ -42,11 +44,17 @@
 #define	CPU_SETSIZE	CPU_MAXSIZE
 #endif
 
+#ifndef __rtems__
 #define	_NCPUBITS	(sizeof(long) * NBBY)	/* bits per mask */
 #define	_NCPUWORDS	howmany(CPU_SETSIZE, _NCPUBITS)
 
 typedef	struct _cpuset {
 	long	__bits[howmany(CPU_SETSIZE, _NCPUBITS)];
 } cpuset_t;
+#else /* __rtems__ */
+#include <sys/cpuset.h>
+
+typedef cpu_set_t cpuset_t;
+#endif /* __rtems__ */
 
 #endif /* !_SYS__CPUSET_H_ */

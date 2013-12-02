@@ -175,6 +175,7 @@ def processIfDifferent(new, old, src):
 def fixIncludes(data):
 	data = re.sub('#include <sys/lock.h>', '#include <rtems/bsd/sys/lock.h>', data)
 	data = re.sub('#include <sys/time.h>', '#include <rtems/bsd/sys/time.h>', data)
+	data = re.sub('#include <sys/cpuset.h>', '#include <rtems/bsd/sys/cpuset.h>', data)
 	data = re.sub('#include <sys/errno.h>', '#include <rtems/bsd/sys/errno.h>', data)
 	data = re.sub('#include <sys/param.h>', '#include <rtems/bsd/sys/param.h>', data)
 	data = re.sub('#include <sys/types.h>', '#include <rtems/bsd/sys/types.h>', data)

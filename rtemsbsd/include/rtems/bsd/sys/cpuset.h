@@ -29,50 +29,17 @@
  * $FreeBSD$
  */
 
-#ifndef _SYS_CPUSET_H_
-#define	_SYS_CPUSET_H_
+#ifndef _RTEMS_BSD_SYS_CPUSET_H_
+#define	_RTEMS_BSD_SYS_CPUSET_H_
 
 #include <sys/_cpuset.h>
 
 #define	CPUSETBUFSIZ	((2 + sizeof(long) * 2) * _NCPUWORDS)
 
-/*
- * Macros addressing word and bit within it, tuned to make compiler
- * optimize cases when CPU_SETSIZE fits into single machine word.
- */
-#define	__cpuset_mask(n)				\
-	((long)1 << ((_NCPUWORDS == 1) ? (__size_t)(n) : ((n) % _NCPUBITS)))
-#define	__cpuset_word(n)	((_NCPUWORDS == 1) ? 0 : ((n) / _NCPUBITS))
-
-#define	CPU_CLR(n, p)	((p)->__bits[__cpuset_word(n)] &= ~__cpuset_mask(n))
-#define	CPU_COPY(f, t)	(void)(*(t) = *(f))
-#define	CPU_ISSET(n, p)	(((p)->__bits[__cpuset_word(n)] & __cpuset_mask(n)) != 0)
-#define	CPU_SET(n, p)	((p)->__bits[__cpuset_word(n)] |= __cpuset_mask(n))
-#define	CPU_ZERO(p) do {				\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		(p)->__bits[__i] = 0;			\
-} while (0)
-
-#define	CPU_FILL(p) do {				\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		(p)->__bits[__i] = -1;			\
-} while (0)
-
 #define	CPU_SETOF(n, p) do {					\
 	CPU_ZERO(p);						\
 	((p)->__bits[__cpuset_word(n)] = __cpuset_mask(n));	\
 } while (0)
-
-/* Is p empty. */
-#define	CPU_EMPTY(p) __extension__ ({			\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		if ((p)->__bits[__i])			\
-			break;				\
-	__i == _NCPUWORDS;				\
-})
 
 /* Is p full set. */
 #define	CPU_ISFULLSET(p) __extension__ ({		\
@@ -103,34 +70,6 @@
 			break;				\
 	__i != _NCPUWORDS;				\
 })
-
-/* Compare two sets, returns 0 if equal 1 otherwise. */
-#define	CPU_CMP(p, c) __extension__ ({			\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		if (((c)->__bits[__i] !=		\
-		    (p)->__bits[__i]))			\
-			break;				\
-	__i != _NCPUWORDS;				\
-})
-
-#define	CPU_OR(d, s) do {				\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		(d)->__bits[__i] |= (s)->__bits[__i];	\
-} while (0)
-
-#define	CPU_AND(d, s) do {				\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		(d)->__bits[__i] &= (s)->__bits[__i];	\
-} while (0)
-
-#define	CPU_NAND(d, s) do {				\
-	__size_t __i;					\
-	for (__i = 0; __i < _NCPUWORDS; __i++)		\
-		(d)->__bits[__i] &= ~(s)->__bits[__i];	\
-} while (0)
 
 #define	CPU_CLR_ATOMIC(n, p)						\
 	atomic_clear_long(&(p)->__bits[__cpuset_word(n)], __cpuset_mask(n))
@@ -226,4 +165,4 @@ int	cpuset_getaffinity(cpulevel_t, cpuwhich_t, id_t, size_t, cpuset_t *);
 int	cpuset_setaffinity(cpulevel_t, cpuwhich_t, id_t, size_t, const cpuset_t *);
 __END_DECLS
 #endif
-#endif /* !_SYS_CPUSET_H_ */
+#endif /* !_RTEMS_BSD_SYS_CPUSET_H_ */

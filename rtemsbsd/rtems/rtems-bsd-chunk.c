@@ -87,7 +87,7 @@ rtems_bsd_chunk_alloc(rtems_bsd_chunk_control *self, uintptr_t chunk_size)
 		(*self->info_ctor)(self, info);
 
 		_RTEMS_Lock_allocator();
-		rtems_rbtree_insert_unprotected(&self->chunks, &info->node);
+		rtems_rbtree_insert(&self->chunks, &info->node);
 		_RTEMS_Unlock_allocator();
 	}
 
@@ -102,7 +102,7 @@ rtems_bsd_chunk_free(rtems_bsd_chunk_control *self,
 	    some_addr_in_chunk);
 
 	_RTEMS_Lock_allocator();
-	rtems_rbtree_extract_unprotected(&self->chunks, &info->node);
+	rtems_rbtree_extract(&self->chunks, &info->node);
 	_RTEMS_Unlock_allocator();
 
 	(*self->info_dtor)(self, info);
@@ -118,7 +118,7 @@ rtems_bsd_chunk_get_info(rtems_bsd_chunk_control *self,
 		.begin = (uintptr_t) some_addr_in_chunk
 	};
 
-	return chunk_of_node(rtems_rbtree_find_unprotected(&self->chunks,
+	return chunk_of_node(rtems_rbtree_find(&self->chunks,
 	    &find_me.node));
 }
 

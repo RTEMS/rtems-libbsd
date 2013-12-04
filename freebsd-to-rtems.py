@@ -448,7 +448,7 @@ class ModuleManager:
 				data += 'ifeq ($(RTEMS_CPU), ' + cpu + ')\n'
 				for f in files:
 					data += f.getMakefileFragment()
-				if cpu in ("arm", "i386", "lm32", "mips", "powerpc", "sparc"):
+				if cpu in ("arm", "i386", "lm32", "mips", "powerpc", "sparc", "m68k"):
 					data += 'NEED_DUMMY_PIC_IRQ=no\n'
 				data += 'endif\n'
 			if m.conditionalOn != "none":

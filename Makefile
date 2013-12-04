@@ -490,6 +490,7 @@ endif
 ifeq ($(RTEMS_CPU), m68k)
 LIB_C_FILES += freebsd/sys/m68k/m68k/legacy.c
 LIB_C_FILES += freebsd/sys/m68k/pci/pci_bus.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), mips)
 LIB_C_FILES += freebsd/sys/mips/mips/legacy.c
@@ -590,6 +591,7 @@ LIB_C_FILES += freebsd/sys/m32r/m32r/in_cksum.c
 endif
 ifeq ($(RTEMS_CPU), m68k)
 LIB_C_FILES += freebsd/sys/m68k/m68k/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
 endif
 ifeq ($(RTEMS_CPU), mips)
 LIB_C_FILES += freebsd/sys/mips/mips/in_cksum.c

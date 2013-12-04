@@ -255,7 +255,7 @@ struct sysinit {
 		func,						\
 		(ident)						\
 	};							\
-	DATA_SET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
+	RWDATA_SET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
 #define	SYSINIT_REFERENCE(uniquifier)				\
 	extern struct sysinit SYSINIT_ENTRY_NAME(uniquifier);	\
 	static struct sysinit const * const			\

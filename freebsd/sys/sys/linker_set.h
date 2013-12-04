@@ -51,9 +51,25 @@
 	static void const * const __set_##set##_sym_##sym 		\
 	__section("set_" #set) __used = &sym
 #else /* __rtems__ */
+#define RTEMS_BSD_DEFINE_SET(set, ptype)				\
+	ptype * const __CONCAT(_bsd__start_set_,set)[0]			\
+	__section(".rtemsroset.bsd." __STRING(set) ".begin") __used;		\
+	ptype * const __CONCAT(_bsd__stop_set_,set)[0]			\
+	__section(".rtemsroset.bsd." __STRING(set) ".end") __used
+
 #define __MAKE_SET(set, sym)						\
-	static void const * const __set_##set##_sym_##sym 		\
-	__section("_bsd_set_" #set) __used = &sym
+	static const void * const __set_##set##_sym_##sym 		\
+	__section(".rtemsroset.bsd." __STRING(set) ".content") __used = &sym
+
+#define RTEMS_BSD_DEFINE_RWSET(set, ptype)				\
+	ptype *__CONCAT(_bsd__start_set_,set)[0]			\
+	__section(".rtemsrwset.bsd." __STRING(set) ".begin") __used;		\
+	ptype *__CONCAT(_bsd__stop_set_,set)[0]				\
+	__section(".rtemsrwset.bsd." __STRING(set) ".end") __used
+
+#define __MAKE_RWSET(set, sym)						\
+	static const void * __set_##set##_sym_##sym 			\
+	__section(".rtemsrwset.bsd." __STRING(set) ".content") __used = &sym
 #endif /* __rtems__ */
 #else /* !__GNUCLIKE___SECTION */
 #ifndef lint
@@ -70,6 +86,9 @@
 #define BSS_SET(set, sym)	__MAKE_SET(set, sym)
 #define ABS_SET(set, sym)	__MAKE_SET(set, sym)
 #define SET_ENTRY(set, sym)	__MAKE_SET(set, sym)
+#ifdef __rtems__
+#define RWDATA_SET(set, sym)	__MAKE_RWSET(set, sym)
+#endif /* __rtems__ */
 
 /*
  * Initialize before referring to a given linker set.
@@ -85,8 +104,12 @@
 	(&__CONCAT(__stop_set_,set))
 #else /* __rtems__ */
 #define SET_DECLARE(set, ptype)						\
-	extern ptype *__CONCAT(_bsd__start_set_,set) [];		\
-	extern ptype *__CONCAT(_bsd__stop_set_,set) []
+	extern ptype * const __CONCAT(_bsd__start_set_,set)[];		\
+	extern ptype * const __CONCAT(_bsd__stop_set_,set)[]
+
+#define RWSET_DECLARE(set, ptype)					\
+	extern ptype *__CONCAT(_bsd__start_set_,set)[];			\
+	extern ptype *__CONCAT(_bsd__stop_set_,set)[]
 
 #define SET_BEGIN(set)							\
 	(__CONCAT(_bsd__start_set_,set))

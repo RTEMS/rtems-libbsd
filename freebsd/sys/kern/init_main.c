@@ -122,9 +122,7 @@ SYSINIT(placeholder, SI_SUB_DUMMY, SI_ORDER_ANY, NULL, NULL);
  * The sysinit table itself.  Items are checked off as the are run.
  * If we want to register new sysinit types, add them to newsysinit.
  */
-#endif /* __rtems__ */
 SET_DECLARE(sysinit_set, struct sysinit);
-#ifndef __rtems__
 struct sysinit **sysinit, **sysinit_end;
 struct sysinit **newsysinit, **newsysinit_end;
 
@@ -162,6 +160,8 @@ sysinit_add(struct sysinit **set, struct sysinit **set_end)
 	newsysinit = newset;
 	newsysinit_end = newset + count;
 }
+#else /* __rtems__ */
+RWSET_DECLARE(sysinit_set, struct sysinit);
 #endif /* __rtems__ */
 
 #if defined (DDB) && defined(VERBOSE_SYSINIT)

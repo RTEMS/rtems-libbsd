@@ -109,7 +109,7 @@ start_slaves(void)
 			slave_prios[i],
 			RTEMS_MINIMUM_STACK_SIZE,
 			RTEMS_DEFAULT_MODES,
-			RTEMS_DEFAULT_ATTRIBUTES,
+			RTEMS_FLOATING_POINT,
 			&slave_ids[i]
 		);
 		assert(sc == RTEMS_SUCCESSFUL);

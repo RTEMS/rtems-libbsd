@@ -151,7 +151,7 @@ start_worker(test_context *ctx)
 		PRIO_WORKER,
 		RTEMS_MINIMUM_STACK_SIZE,
 		RTEMS_DEFAULT_MODES,
-		RTEMS_DEFAULT_ATTRIBUTES,
+		RTEMS_FLOATING_POINT,
 		&ctx->worker_task
 	);
 	assert(sc == RTEMS_SUCCESSFUL);

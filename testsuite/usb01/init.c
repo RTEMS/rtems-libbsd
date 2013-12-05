@@ -235,7 +235,7 @@ static void Init(rtems_task_argument arg)
       95 + 10 * (i % 4),
       32 * 1024,
       RTEMS_DEFAULT_MODES,
-      RTEMS_DEFAULT_ATTRIBUTES,
+      RTEMS_FLOATING_POINT,
       &id
     );
     ASSERT_SC(sc);
@@ -301,6 +301,8 @@ static void Init(rtems_task_argument arg)
 #define CONFIGURE_UNIFIED_WORK_AREAS
 
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+
+#define CONFIGURE_INIT_TASK_ATTRIBUTES RTEMS_FLOATING_POINT
 
 #define CONFIGURE_STACK_CHECKER_ENABLED
 

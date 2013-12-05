@@ -293,7 +293,7 @@ do_no_mem_test(no_mem_test_body body, int fd)
 		RTEMS_MINIMUM_PRIORITY,
 		RTEMS_MINIMUM_STACK_SIZE,
 		RTEMS_DEFAULT_MODES,
-		RTEMS_DEFAULT_ATTRIBUTES,
+		RTEMS_FLOATING_POINT,
 		&id
 	);
 	assert(sc == RTEMS_SUCCESSFUL);

@@ -88,8 +88,6 @@ worker_task(rtems_task_argument arg)
 	test_context *ctx = (test_context *) arg;
 	struct rwlock *rw = &ctx->rw;
 
-	puts("worker ready");
-
 	while (true) {
 		rtems_status_code sc;
 		rtems_event_set events;
@@ -103,43 +101,31 @@ worker_task(rtems_task_argument arg)
 		assert(sc == RTEMS_SUCCESSFUL);
 
 		if ((events & EVENT_RLOCK) != 0) {
-			puts("worker: rw_rlock");
-
 			rw_rlock(rw);
 			ctx->done = true;
 		}
 
 		if ((events & EVENT_WLOCK) != 0) {
-			puts("worker: rw_wlock");
-
 			rw_wlock(rw);
 			ctx->done = true;
 		}
 
 		if ((events & EVENT_TRY_RLOCK) != 0) {
-			puts("worker: rw_try_rlock");
-
 			ctx->rv = rw_try_rlock(rw);
 			ctx->done = true;
 		}
 
 		if ((events & EVENT_TRY_WLOCK) != 0) {
-			puts("worker: rw_try_wlock");
-
 			ctx->rv = rw_try_wlock(rw);
 			ctx->done = true;
 		}
 
 		if ((events & EVENT_UNLOCK) != 0) {
-			puts("worker: rw_unlock");
-
 			rw_unlock(rw);
 			ctx->done = true;
 		}
 
 		if ((events & EVENT_SLEEP) != 0) {
-			puts("worker: rw_sleep");
-
 			ctx->rv = rw_sleep(ctx, rw, 0, "worker", ctx->timo);
 			ctx->done = true;
 		}

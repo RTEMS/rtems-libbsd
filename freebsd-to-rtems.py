@@ -680,6 +680,7 @@ rtems.addRTEMSSourceFiles(
 		'sys/dev/usb/controller/ohci_lpc24xx.c',
 		'sys/dev/usb/controller/ohci_lpc32xx.c',
 		'sys/dev/smc/if_smc_nexus.c',
+		'sys/dev/ffec/if_ffec_mcf548x.c',
 		'bsp/bsp-bsd-nexus-devices.c',
 	]
 )

@@ -671,6 +671,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-thread.c',
 		'rtems/rtems-bsd-timesupport.c',
 		'rtems/rtems-kvm.c',
+		'rtems/rtems_mii_ioctl_kern.c',
 		'rtems/rtems-net-setup.c',
 		'rtems/rtems-syslog-initialize.c',
 		'rtems/syslog.c',

@@ -36,6 +36,8 @@
 
 #if defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
   #define NET_CFG_INTERFACE_0 "smc0"
+#elif defined(__GENMCF548X_BSP_H)
+  #define NET_CFG_INTERFACE_0 "fec0"
 #else
   #define NET_CFG_INTERFACE_0 "lo0"
 #endif

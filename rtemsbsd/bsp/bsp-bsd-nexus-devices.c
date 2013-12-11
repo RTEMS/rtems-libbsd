@@ -36,6 +36,7 @@
 #include <bsp.h>
 
 #if defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
+
 #include <bsp/irq.h>
 
 static const rtems_bsd_device_resource smc0_res[] = {
@@ -60,8 +61,25 @@ const rtems_bsd_device rtems_bsd_nexus_devices[] = {
 };
 
 SYSINIT_DRIVER_REFERENCE(smc, nexus);
+
+#elif defined(__GENMCF548X_BSP_H)
+
+const rtems_bsd_device rtems_bsd_nexus_devices[] = {
+	{
+		.name = "fec",
+		.unit = 0
+	}, {
+		.name = "fec",
+		.unit = 1
+	}
+};
+
+SYSINIT_DRIVER_REFERENCE(fec, nexus);
+
 #else
+
 const rtems_bsd_device rtems_bsd_nexus_devices[0];
+
 #endif
 
 const size_t rtems_bsd_nexus_device_count =

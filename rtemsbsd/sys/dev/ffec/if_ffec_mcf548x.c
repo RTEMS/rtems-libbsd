@@ -41,16 +41,31 @@
 
 #ifdef __GENMCF548X_BSP_H
 
-#include <rtems/error.h>
-#include <rtems/rtems_bsdnet.h>
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Wpointer-sign"
+
+#include <machine/rtems-bsd-kernel-space.h>
+
 #include <stdio.h>
-#include <sys/param.h>
+
+#include <rtems/bsd/sys/param.h>
+#include <rtems/bsd/sys/types.h>
 #include <sys/mbuf.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
+
+#include <sys/bus.h>
+#include <machine/bus.h>
+
 #include <net/if.h>
-#include <netinet/in.h>
-#include <netinet/if_ether.h>
+#include <net/ethernet.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
 #include <net/if_var.h>
 
 #include <bsp/irq-generic.h>
@@ -62,6 +77,14 @@
 #include <mcf548x/MCD_dma.h>
 #include <mcf548x/mcdma_glue.h>
 
+/* FIXME */
+rtems_id
+rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg);
+#define rtems_panic panic
+#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
+
+static void mcf548x_fec_watchdog(void *arg);
+
 /*
  * Number of interfaces supported by this driver
  */
@@ -69,8 +92,8 @@
 
 #define FEC_WATCHDOG_TIMEOUT 5 /* check media every 5 seconds */
 
-#define DMA_BD_RX_NUM	32 /* Number of receive buffer descriptors	*/
-#define DMA_BD_TX_NUM	32 /* Number of transmit buffer descriptors	*/
+#define DMA_BD_RX_NUM	128 /* Number of receive buffer descriptors	*/
+#define DMA_BD_TX_NUM	128 /* Number of transmit buffer descriptors	*/
 
 #define FEC_EVENT RTEMS_EVENT_0
 
@@ -179,8 +202,9 @@ typedef enum {
  * Device data
  */
 struct mcf548x_enet_struct {
-  struct arpcom           arpcom;
-  short padding;
+  device_t                dev;
+  struct ifnet            *ifp;
+  struct mtx              mtx;
   struct mbuf             **rxMbuf;
   struct mbuf             **txMbuf;
   int                     chan;
@@ -192,6 +216,7 @@ struct mcf548x_enet_struct {
   MCD_bufDescFec          *txBd;
   int                     rxDmaChan; /* dma task */
   int                     txDmaChan; /* dma task */
+  struct callout          watchdogCallout;
   rtems_id                rxDaemonTid;
   rtems_id                txDaemonTid;
 
@@ -221,24 +246,31 @@ struct mcf548x_enet_struct {
   unsigned long           txRetryLimit;
   };
 
-static struct mcf548x_enet_struct enet_driver[NIFACES];
+#define FEC_LOCK(sc) mtx_lock(&(sc)->mtx)
+
+#define FEC_UNLOCK(sc) mtx_unlock(&(sc)->mtx)
+
+static struct mcf548x_enet_struct *fec_vector_to_sc[NIFACES];
 
 static void mcf548x_fec_restart(struct mcf548x_enet_struct *sc, rtems_id otherDaemon);
 
 static void fec_send_event(rtems_id task)
 {
-  rtems_bsdnet_event_send(task, FEC_EVENT);
+  rtems_event_send(task, FEC_EVENT);
 }
 
-static void fec_wait_for_event(void)
+static void fec_wait_for_event(struct mcf548x_enet_struct *sc)
 {
   rtems_event_set out;
-  rtems_bsdnet_event_receive(
+
+  FEC_UNLOCK(sc);
+  rtems_event_receive(
     FEC_EVENT,
     RTEMS_EVENT_ANY | RTEMS_WAIT,
     RTEMS_NO_TIMEOUT,
     &out
   );
+  FEC_LOCK(sc);
 }
 
 static void mcf548x_fec_request_restart(struct mcf548x_enet_struct *sc)
@@ -270,7 +302,7 @@ static void mcf548x_eth_addr_filter_set(struct mcf548x_enet_struct *sc)  {
  /*
   * Get the mac address of ethernet controller
   */
-  mac = (unsigned char *)(&sc->arpcom.ac_enaddr);
+  mac = IF_LLADDR(sc->ifp);
 
  /*
   * The algorithm used is the following:
@@ -502,6 +534,14 @@ static void mcf548x_fec_reset(struct mcf548x_enet_struct *sc) {
    * wait at least 16 clock cycles
    */
   for (delay = 0;delay < 16*4;delay++) {};
+
+  /* Clear and enable MIB counters */
+  memset(
+    __DEVOLATILE(void *, &MCF548X_FEC_RMON_T_DROP(chan)),
+    0,
+    0xe4
+  );
+  MCF548X_FEC_MIBC(chan) &= ~MCF548X_FEC_MIBC_MIB_DISABLE;
 }
 
 
@@ -592,7 +632,7 @@ void mcf548x_fec_irq_handler(rtems_vector_number vector)
   volatile uint32_t ievent;
   int chan;
 
-  sc     = &(enet_driver[MCF548X_FEC_VECTOR2CHAN(vector)]);
+  sc     = fec_vector_to_sc[MCF548X_FEC_VECTOR2CHAN(vector)];
   chan   = sc->chan;
   ievent = MCF548X_FEC_EIR(chan);
 
@@ -620,7 +660,6 @@ void mcf548x_fec_irq_handler(rtems_vector_number vector)
    */
   if (ievent & (MCF548X_FEC_EIR_RFERR | MCF548X_FEC_EIR_XFERR)) {
     MCF548X_FEC_EIMR(chan) &=~(MCF548X_FEC_EIMR_RFERR | MCF548X_FEC_EIMR_XFERR);
-    printk("fifo\n");
     mcf548x_fec_request_restart(sc);
   }
 }
@@ -763,7 +802,7 @@ static void mcf548x_fec_tx_start(struct ifnet *ifp)
 
   struct mcf548x_enet_struct *sc = ifp->if_softc;
 
-  ifp->if_flags |= IFF_OACTIVE;
+  ifp->if_drv_flags |= IFF_DRV_OACTIVE;
 
   fec_send_event(sc->txDaemonTid);
 
@@ -843,7 +882,7 @@ static void mcf548x_fec_restart(struct mcf548x_enet_struct *sc, rtems_id otherDa
 
   fec_send_event(otherDaemon);
   while (sc->state != FEC_STATE_NORMAL) {
-    fec_wait_for_event();
+    fec_wait_for_event(sc);
   }
 }
 
@@ -902,7 +941,7 @@ static struct mbuf *fec_next_fragment(
       if (m != NULL) {
         *isFirst = true;
       } else {
-        ifp->if_flags &= ~IFF_OACTIVE;
+        ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
 
         return NULL;
       }
@@ -1023,7 +1062,7 @@ static MCD_bufDescFec *fec_init_tx_dma(
 static void mcf548x_fec_txDaemon(void *arg)
 {
   struct mcf548x_enet_struct *sc = arg;
-  struct ifnet *ifp = &sc->arpcom.ac_if;
+  struct ifnet *ifp = sc->ifp;
   int dmaChan = sc->txDmaChan;
   int bdIndex = 0;
   int bdCount = sc->txBdCount;
@@ -1035,11 +1074,13 @@ static void mcf548x_fec_txDaemon(void *arg)
 
   memset(mbufs, 0, bdCount * sizeof(*mbufs));
 
+  FEC_LOCK(sc);
+
   while (true) {
     if (bdShortage) {
       mcdma_glue_irq_enable(dmaChan);
     }
-    fec_wait_for_event();
+    fec_wait_for_event(sc);
 
     if (sc->state != FEC_STATE_NORMAL) {
       fec_reset_tx_dma(dmaChan, bdCount, bdRing, mbufs, m);
@@ -1130,6 +1171,7 @@ static void fec_reset_rx_dma(
 }
 
 static int fec_ether_input(
+  struct mcf548x_enet_struct *sc,
   struct ifnet *ifp,
   int dmaChan,
   int bdIndex,
@@ -1154,14 +1196,14 @@ static int fec_ether_input(
 
     n = fec_add_mbuf(0, ifp, bd, bdIsLast);
     if (n != NULL) {
-      int len = bd->length - ETHER_HDR_LEN - ETHER_CRC_LEN;
-      struct ether_header *eh = mtod(m, struct ether_header *);
+      int len = bd->length - ETHER_CRC_LEN;
 
       m->m_len = len;
       m->m_pkthdr.len = len;
-      m->m_data = mtod(m, char *) + ETHER_HDR_LEN;
 
-      ether_input(ifp, eh, m);
+      FEC_UNLOCK(sc);
+      sc->ifp->if_input(sc->ifp, m);
+      FEC_LOCK(sc);
     } else {
       n = m;
     }
@@ -1181,18 +1223,20 @@ static int fec_ether_input(
 static void mcf548x_fec_rxDaemon(void *arg)
 {
   struct mcf548x_enet_struct *sc = arg;
-  struct ifnet *ifp = &sc->arpcom.ac_if;
+  struct ifnet *ifp = sc->ifp;
   int dmaChan = sc->rxDmaChan;
   int bdIndex = 0;
   int bdCount = sc->rxBdCount;
   struct mbuf **mbufs = &sc->rxMbuf[0];
   MCD_bufDescFec *bdRing = fec_init_rx_dma(sc->rxBd, ifp, bdCount, mbufs);
 
+  FEC_LOCK(sc);
+
   while (true) {
     mcdma_glue_irq_enable(dmaChan);
-    fec_wait_for_event();
+    fec_wait_for_event(sc);
 
-    bdIndex = fec_ether_input(ifp, dmaChan, bdIndex, bdCount, bdRing, mbufs);
+    bdIndex = fec_ether_input(sc, ifp, dmaChan, bdIndex, bdCount, bdRing, mbufs);
 
     if (sc->state != FEC_STATE_NORMAL) {
       fec_reset_rx_dma(dmaChan, bdCount, bdRing);
@@ -1208,7 +1252,7 @@ static void mcf548x_fec_rxDaemon(void *arg)
 static void mcf548x_fec_init(void *arg)
 {
   struct mcf548x_enet_struct *sc = (struct mcf548x_enet_struct *)arg;
-  struct ifnet *ifp = &sc->arpcom.ac_if;
+  struct ifnet *ifp = sc->ifp;
   int chan = sc->chan;
   rtems_isr_entry old_handler;
   char *txTaskName = "FTx0";
@@ -1232,9 +1276,9 @@ static void mcf548x_fec_init(void *arg)
        * Allocate a set of mbuf pointers
        */
       sc->rxMbuf =
-	malloc(sc->rxBdCount * sizeof *sc->rxMbuf, M_MBUF, M_NOWAIT);
+	malloc(sc->rxBdCount * sizeof *sc->rxMbuf, M_TEMP, M_NOWAIT);
       sc->txMbuf =
-	malloc(sc->txBdCount * sizeof *sc->txMbuf, M_MBUF, M_NOWAIT);
+	malloc(sc->txBdCount * sizeof *sc->txMbuf, M_TEMP, M_NOWAIT);
 
       if(!sc->rxMbuf || !sc->txMbuf)
 	rtems_panic ("No memory for mbuf pointers");
@@ -1287,11 +1331,12 @@ static void mcf548x_fec_init(void *arg)
   /*
    * init timer so the "watchdog function gets called periodically
    */
-  ifp->if_timer    = 1;
+  callout_reset(&sc->watchdogCallout, hz, mcf548x_fec_watchdog, sc);
+
   /*
    * Tell the world that we're running.
    */
-  ifp->if_flags |= IFF_RUNNING;
+  ifp->if_drv_flags |= IFF_DRV_RUNNING;
 }
 
 
@@ -1339,76 +1384,15 @@ static int mcf548x_fec_ioctl (struct ifnet *ifp, ioctl_command_t command, caddr_
     case SIOCSIFMEDIA:
       rtems_mii_ioctl (&(sc->mdio_info),sc,command,(void *)data);
       break;
-
-    case SIOCGIFADDR:
-    case SIOCSIFADDR:
-
-      ether_ioctl(ifp, command, data);
-
-      break;
-
-    case SIOCADDMULTI:
-    case SIOCDELMULTI: {
-      struct ifreq* ifr = (struct ifreq*) data;
-      error = (command == SIOCADDMULTI)
-                  ? ether_addmulti(ifr, &sc->arpcom)
-                  : ether_delmulti(ifr, &sc->arpcom);
-
-       if (error == ENETRESET) {
-         if (ifp->if_flags & IFF_RUNNING)
-           error = mcf548x_fec_setMultiFilter(ifp);
-         else
-           error = 0;
-       }
-       break;
-    }
-
-    case SIOCSIFFLAGS:
-
-      switch(ifp->if_flags & (IFF_UP | IFF_RUNNING))
-        {
-
-        case IFF_RUNNING:
-
-          mcf548x_fec_off(sc);
-
-          break;
-
-        case IFF_UP:
-
-          mcf548x_fec_init(sc);
-
-          break;
-
-        case IFF_UP | IFF_RUNNING:
-
-          mcf548x_fec_off(sc);
-          mcf548x_fec_init(sc);
-
-          break;
-
-        default:
-          break;
-
-        }
-
-      break;
-
     case SIO_RTEMS_SHOW_STATS:
 
       enet_stats(sc);
 
       break;
 
-   /*
-    * FIXME: All sorts of multicast commands need to be added here!
-    */
     default:
-
-    error = EINVAL;
-
-    break;
-
+      error = ether_ioctl(ifp, command, data);
+      break;
     }
 
   return error;
@@ -1488,158 +1472,41 @@ int mcf548x_fec_mode_adapt(struct ifnet *ifp)
  * periodically poll the PHY. if mode has changed,
  * then adjust the FEC settings
  */
-static void mcf548x_fec_watchdog( struct ifnet *ifp)
+static void mcf548x_fec_watchdog(void *arg)
 {
-  mcf548x_fec_mode_adapt(ifp);
-  ifp->if_timer    = FEC_WATCHDOG_TIMEOUT;
+  struct mcf548x_enet_struct *sc = arg;
+
+  mcf548x_fec_mode_adapt(sc->ifp);
+
+  callout_reset(&sc->watchdogCallout, FEC_WATCHDOG_TIMEOUT * hz, mcf548x_fec_watchdog, sc);
 }
+
+static const uint8_t eaddr[NIFACES][ETHER_ADDR_LEN] = {
+  { 0x0e, 0xb0, 0xba, 0x5e, 0xba, 0x12 },
+  { 0x0e, 0xb0, 0xba, 0x5e, 0xba, 0x13 }
+};
 
 /*
  * Attach the MCF548X fec driver to the system
  */
-int rtems_mcf548x_fec_driver_attach(struct rtems_bsdnet_ifconfig *config)
-  {
+static int fec_attach(device_t dev)
+{
   struct mcf548x_enet_struct *sc;
   struct ifnet *ifp;
-  int    mtu;
-  int    unitNumber;
-  char   *unitName;
+  int unit = device_get_unit(dev);
 
- /*
-  * Parse driver name
-  */
-  if((unitNumber = rtems_bsdnet_parse_driver_name(config, &unitName)) < 0)
-    return 0;
+  sc = device_get_softc(dev);
 
- /*
-  * Is driver free?
-  */
-  if ((unitNumber <= 0) || (unitNumber > NIFACES))
-    {
+  sc->dev = dev;
+  sc->chan = unit;
+  sc->ifp = ifp = if_alloc(IFT_ETHER);
 
-    printf ("Bad FEC unit number.\n");
-    return 0;
+  mtx_init(&sc->mtx, device_get_nameunit(sc->dev), MTX_NETWORK_LOCK, MTX_DEF);
+  callout_init_mtx(&sc->watchdogCallout, &sc->mtx, 0);
 
-    }
-
-  sc = &enet_driver[unitNumber - 1];
-  sc->chan = unitNumber-1;
-  ifp = &sc->arpcom.ac_if;
-
-  if(ifp->if_softc != NULL)
-    {
-
-    printf ("Driver already in use.\n");
-    return 0;
-
-    }
-
-  /*
-   * Process options
-   */
-#if NVRAM_CONFIGURE == 1
-
-  /* Configure from NVRAM */
-  if(addr = nvram->ipaddr)
-    {
-
-    /* We have a non-zero entry, copy the value */
-    if(pAddr = malloc(INET_ADDR_MAX_BUF_SIZE, 0, M_NOWAIT))
-      config->ip_address = (char *)inet_ntop(AF_INET, &addr, pAddr, INET_ADDR_MAX_BUF_SIZE -1);
-    else
-      rtems_panic("Can't allocate ip_address buffer!\n");
-
-    }
-
-  if(addr = nvram->netmask)
-    {
-
-    /* We have a non-zero entry, copy the value */
-    if (pAddr = malloc (INET_ADDR_MAX_BUF_SIZE, 0, M_NOWAIT))
-      config->ip_netmask = (char *)inet_ntop(AF_INET, &addr, pAddr, INET_ADDR_MAX_BUF_SIZE -1);
-    else
-      rtems_panic("Can't allocate ip_netmask buffer!\n");
-
-    }
-
-  /* Ethernet address requires special handling -- it must be copied into
-   * the arpcom struct. The following if construct serves only to give the
-   * User Area NVRAM parameter the highest priority.
-   *
-   * If the ethernet address is specified in NVRAM, go ahead and copy it.
-   * (ETHER_ADDR_LEN = 6 bytes).
-   */
-  if(nvram->enaddr[0] || nvram->enaddr[1] || nvram->enaddr[2])
-    {
-
-    /* Anything in the first three bytes indicates a non-zero entry, copy value */
-  	memcpy((void *)sc->arpcom.ac_enaddr, &nvram->enaddr, ETHER_ADDR_LEN);
-
-    }
-  else
-    if(config->hardware_address)
-      {
-
-      /* There is no entry in NVRAM, but there is in the ifconfig struct, so use it. */
-      memcpy((void *)sc->arpcom.ac_enaddr, config->hardware_address, ETHER_ADDR_LEN);
-      }
-
-#else /* NVRAM_CONFIGURE != 1 */
-
-  if(config->hardware_address)
-    {
-
-    memcpy(sc->arpcom.ac_enaddr, config->hardware_address, ETHER_ADDR_LEN);
-
-    }
-
-#endif /* NVRAM_CONFIGURE != 1 */
-#ifdef HAS_UBOOT
-  if ((sc->arpcom.ac_enaddr[0] == 0) &&
-      (sc->arpcom.ac_enaddr[1] == 0) &&
-      (sc->arpcom.ac_enaddr[2] == 0)) {
-      memcpy(
-        (void *)sc->arpcom.ac_enaddr,
-        bsp_uboot_board_info.bi_enetaddr,
-        ETHER_ADDR_LEN
-      );
-  }
-#endif
-#ifdef HAS_DBUG
-  if ((sc->arpcom.ac_enaddr[0] == 0) &&
-      (sc->arpcom.ac_enaddr[1] == 0) &&
-      (sc->arpcom.ac_enaddr[2] == 0)) {
-      memcpy(
-        (void *)sc->arpcom.ac_enaddr,
-        DBUG_SETTINGS.macaddr,
-        ETHER_ADDR_LEN
-      );
-  }
-#endif
-  if ((sc->arpcom.ac_enaddr[0] == 0) &&
-      (sc->arpcom.ac_enaddr[1] == 0) &&
-      (sc->arpcom.ac_enaddr[2] == 0)) {
-    /* There is no ethernet address provided, so it could be read
-     * from the Ethernet protocol block of SCC1 in DPRAM.
-     */
-    rtems_panic("No Ethernet address specified!\n");
-  }
-  if(config->mtu)
-    mtu = config->mtu;
-  else
-    mtu = ETHERMTU;
-
-  if(config->rbuf_count)
-    sc->rxBdCount = config->rbuf_count;
-  else
-    sc->rxBdCount = RX_BUF_COUNT;
-
-  if(config->xbuf_count)
-    sc->txBdCount = config->xbuf_count;
-  else
-    sc->txBdCount = TX_BUF_COUNT * TX_BD_PER_BUF;
-
-  sc->acceptBroadcast = !config->ignore_broadcast;
+  sc->rxBdCount = RX_BUF_COUNT;
+  sc->txBdCount = TX_BUF_COUNT * TX_BD_PER_BUF;
+  sc->acceptBroadcast = 1;
 
   /*
    * setup info about mdio interface
@@ -1652,46 +1519,65 @@ int rtems_mcf548x_fec_driver_attach(struct rtems_bsdnet_ifconfig *config)
    * XXX: Although most hardware builders will assign the PHY addresses
    * like this, this should be more configurable
    */
-  sc->phy_default = unitNumber-1;
+  sc->phy_default = unit;
   sc->phy_chan    = 0; /* assume all MII accesses are via FEC0 */
+
+  fec_vector_to_sc[unit] = sc;
 
  /*
   * Set up network interface values
   */
   ifp->if_softc   = sc;
-  ifp->if_unit    = unitNumber;
-  ifp->if_name    = unitName;
-  ifp->if_mtu     = mtu;
+  if_initname(ifp, device_get_name(dev), device_get_unit(dev));
   ifp->if_init    = mcf548x_fec_init;
   ifp->if_ioctl   = mcf548x_fec_ioctl;
   ifp->if_start   = mcf548x_fec_tx_start;
-  ifp->if_output  = ether_output;
-  ifp->if_watchdog =  mcf548x_fec_watchdog; /* XXX: timer is set in "init" */
-  ifp->if_flags   = IFF_BROADCAST | IFF_MULTICAST;
-  /*ifp->if_flags   = IFF_BROADCAST | IFF_SIMPLEX;*/
-
-  if(ifp->if_snd.ifq_maxlen == 0)
-    ifp->if_snd.ifq_maxlen = ifqmaxlen;
+  ifp->if_flags   = IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX;
+  IFQ_SET_MAXLEN(&ifp->if_snd, TX_BUF_COUNT - 1);
+  ifp->if_snd.ifq_drv_maxlen = TX_BUF_COUNT - 1;
+  IFQ_SET_READY(&ifp->if_snd);
+  ifp->if_data.ifi_hdrlen = sizeof(struct ether_header);
 
   /*
    * Attach the interface
    */
-  if_attach(ifp);
+  ether_ifattach(ifp, &eaddr[unit][0]);
 
-  ether_ifattach(ifp);
-
-  return 1;
-  }
-
-
-int rtems_mcf548x_fec_driver_attach_detach(struct rtems_bsdnet_ifconfig *config, int attaching)
-{
-  if (attaching) {
-    return rtems_mcf548x_fec_driver_attach(config);
-  }
-  else {
-    return 0;
-  }
+  return 0;
 }
+
+static int
+fec_probe(device_t dev)
+{
+	int unit = device_get_unit(dev);
+	int error;
+
+	if (unit >= 0 && unit < NIFACES) {
+		error = BUS_PROBE_DEFAULT;
+	} else {
+		error = ENXIO;
+	}
+
+	return (error);
+}
+
+static device_method_t fec_methods[] = {
+	/* Device interface */
+	DEVMETHOD(device_probe,		fec_probe),
+	DEVMETHOD(device_attach,	fec_attach),
+
+	DEVMETHOD_END
+};
+
+static driver_t fec_nexus_driver = {
+	"fec",
+	fec_methods,
+	sizeof(struct mcf548x_enet_struct)
+};
+
+static devclass_t fec_devclass;
+DRIVER_MODULE(fec, nexus, fec_nexus_driver, fec_devclass, 0, 0);
+MODULE_DEPEND(fec, nexus, 1, 1, 1);
+MODULE_DEPEND(fec, ether, 1, 1, 1);
 
 #endif /* __GENMCF548X_BSP_H */

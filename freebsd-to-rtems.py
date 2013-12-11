@@ -587,7 +587,7 @@ class Module:
 	def addFile(self, f):
 		self.files.append(f)
 
-	def addHeaderFiles(self, files):
+	def addKernelSpaceHeaderFiles(self, files):
 		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
 
 	def addUserSpaceHeaderFiles(self, files):
@@ -604,6 +604,9 @@ class Module:
 			self.files = self.addFiles(self.files, files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU), FromFreeBSDToRTEMSHeaderConverter(), NoConverter(), assertHeaderFile)
 
 	def addSourceFiles(self, files):
+		self.files = self.addFiles(self.files, files, PathComposer(), NoConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+
+	def addKernelSpaceSourceFiles(self, files):
 		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
 
 	def addUserSpaceSourceFiles(self, files):
@@ -703,7 +706,7 @@ class KVMSymbolsMakefileFragmentComposer(MakefileFragmentComposer):
 rtems.addFile(File('rtems/rtems-kvm-symbols.c', RTEMSPathComposer(), NoConverter(), NoConverter(), KVMSymbolsMakefileFragmentComposer()))
 
 base = Module('base')
-base.addHeaderFiles(
+base.addKernelSpaceHeaderFiles(
 	[
 		'sys/bsm/audit.h',
 		'sys/bsm/audit_kevents.h',
@@ -824,7 +827,7 @@ base.addHeaderFiles(
 		'sys/vm/vm.h',
 	]
 )
-base.addSourceFiles(
+base.addKernelSpaceSourceFiles(
 	[
 		'sys/kern/init_main.c',
 		'sys/kern/kern_event.c',
@@ -868,7 +871,7 @@ base.addSourceFiles(
 )
 
 devUsb = Module('dev_usb')
-devUsb.addHeaderFiles(
+devUsb.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/ufm_ioctl.h',
 		'sys/dev/usb/usb_busdma.h',
@@ -898,7 +901,7 @@ devUsb.addHeaderFiles(
 		'sys/dev/usb/usb_util.h',
 	]
 )
-devUsb.addSourceFiles(
+devUsb.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/usb_busdma.c',
 		'sys/dev/usb/usb_core.c',
@@ -923,13 +926,13 @@ devUsb.addSourceFiles(
 )
 
 devUsbAddOn = Module('dev_usb_add_on')
-devUsbAddOn.addHeaderFiles(
+devUsbAddOn.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/usb_pci.h',
 		'sys/dev/usb/usb_compat_linux.h',
 	]
 )
-devUsbAddOn.addSourceFiles(
+devUsbAddOn.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/usb_compat_linux.c',
 	]
@@ -937,12 +940,12 @@ devUsbAddOn.addSourceFiles(
 
 devUsbBluetooth = Module('dev_usb_bluetooth')
 devUsbBluetooth.addDependency(devUsb)
-devUsbBluetooth.addHeaderFiles(
+devUsbBluetooth.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/bluetooth/ng_ubt_var.h',
 	]
 )
-devUsbBluetooth.addSourceFiles(
+devUsbBluetooth.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/bluetooth/ng_ubt.c',
 		'sys/dev/usb/bluetooth/ubtbcmfw.c',
@@ -951,7 +954,7 @@ devUsbBluetooth.addSourceFiles(
 
 devUsbController = Module('dev_usb_controller')
 devUsbController.addDependency(devUsb)
-devUsbController.addHeaderFiles(
+devUsbController.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/controller/ohci.h',
 		'sys/dev/usb/controller/ohcireg.h',
@@ -961,7 +964,7 @@ devUsbController.addHeaderFiles(
 		'sys/dev/usb/controller/xhcireg.h',
 	]
 )
-devUsbController.addSourceFiles(
+devUsbController.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/controller/ohci.c',
 		'sys/dev/usb/controller/ehci.c',
@@ -971,7 +974,7 @@ devUsbController.addSourceFiles(
 
 devUsbControllerAddOn = Module('dev_usb_controller_add_on')
 devUsbControllerAddOn.addDependency(devUsb)
-devUsbControllerAddOn.addHeaderFiles(
+devUsbControllerAddOn.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/controller/at91dci.h',
 		'sys/dev/usb/controller/atmegadci.h',
@@ -979,7 +982,7 @@ devUsbControllerAddOn.addHeaderFiles(
 		'sys/dev/usb/controller/uss820dci.h',
 	]
 )
-devUsbControllerAddOn.addSourceFiles(
+devUsbControllerAddOn.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/controller/at91dci_atmelarm.c',
 		'sys/dev/usb/controller/at91dci.c',
@@ -1000,12 +1003,12 @@ devUsbControllerAddOn.addSourceFiles(
 
 devUsbInput = Module('dev_usb_input')
 devUsbInput.addDependency(devUsb)
-devUsbInput.addHeaderFiles(
+devUsbInput.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/input/usb_rdesc.h',
 	]
 )
-devUsbInput.addSourceFiles(
+devUsbInput.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/input/uhid.c',
 		'sys/dev/usb/input/ukbd.c',
@@ -1014,7 +1017,7 @@ devUsbInput.addSourceFiles(
 
 devUsbInputMouse = Module('dev_usb_mouse')
 devUsbInputMouse.addDependency(devUsb)
-devUsbInputMouse.addHeaderFiles(
+devUsbInputMouse.addKernelSpaceHeaderFiles(
 	[
 		'sys/sys/tty.h',
 		'sys/sys/mouse.h',
@@ -1025,7 +1028,7 @@ devUsbInputMouse.addHeaderFiles(
 		'sys/sys/ttyhook.h',
 	]
 )
-devUsbInputMouse.addSourceFiles(
+devUsbInputMouse.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/input/ums.c',
 	]
@@ -1033,12 +1036,12 @@ devUsbInputMouse.addSourceFiles(
 
 devUsbMisc = Module('dev_usb_misc')
 devUsbMisc.addDependency(devUsb)
-devUsbMisc.addHeaderFiles(
+devUsbMisc.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/misc/udbp.h',
 	]
 )
-devUsbMisc.addSourceFiles(
+devUsbMisc.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/misc/udbp.c',
 		'sys/dev/usb/misc/ufm.c',
@@ -1047,7 +1050,7 @@ devUsbMisc.addSourceFiles(
 
 devUsbNet = Module('dev_usb_net')
 devUsbNet.addDependency(devUsb)
-devUsbNet.addHeaderFiles(
+devUsbNet.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/mii/mii.h',
 		'sys/dev/mii/miivar.h',
@@ -1055,7 +1058,7 @@ devUsbNet.addHeaderFiles(
 		'sys/dev/usb/net/usb_ethernet.h',
 	]
 )
-devUsbNet.addSourceFiles(
+devUsbNet.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/net/if_cdce.c',
 		'sys/dev/usb/net/usb_ethernet.c',
@@ -1064,12 +1067,12 @@ devUsbNet.addSourceFiles(
 
 devUsbQuirk = Module('dev_usb_quirk')
 devUsbQuirk.addDependency(devUsb)
-devUsbQuirk.addHeaderFiles(
+devUsbQuirk.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/quirk/usb_quirk.h',
 	]
 )
-devUsbQuirk.addSourceFiles(
+devUsbQuirk.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/quirk/usb_quirk.c',
 	]
@@ -1077,13 +1080,13 @@ devUsbQuirk.addSourceFiles(
 
 devUsbSerial = Module('dev_usb_serial')
 devUsbSerial.addDependency(devUsb)
-devUsbSerial.addHeaderFiles(
+devUsbSerial.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/serial/uftdi_reg.h',
 		'sys/dev/usb/serial/usb_serial.h',
 	]
 )
-devUsbSerial.addSourceFiles(
+devUsbSerial.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/serial/u3g.c',
 		'sys/dev/usb/serial/uark.c',
@@ -1109,7 +1112,7 @@ devUsbSerial.addSourceFiles(
 
 devUsbStorage = Module('dev_usb_storage')
 devUsbStorage.addDependency(devUsb)
-devUsbStorage.addSourceFiles(
+devUsbStorage.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/storage/umass.c',
 	]
@@ -1117,12 +1120,12 @@ devUsbStorage.addSourceFiles(
 
 devUsbStorageAddOn = Module('dev_usb_storage_add_on')
 devUsbStorageAddOn.addDependency(devUsb)
-devUsbStorageAddOn.addHeaderFiles(
+devUsbStorageAddOn.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/storage/rio500_usb.h',
 	]
 )
-devUsbStorageAddOn.addSourceFiles(
+devUsbStorageAddOn.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/storage/urio.c',
 		'sys/dev/usb/storage/ustorage_fs.c',
@@ -1131,12 +1134,12 @@ devUsbStorageAddOn.addSourceFiles(
 
 devUsbTemplate = Module('dev_usb_template')
 devUsbTemplate.addDependency(devUsb)
-devUsbTemplate.addHeaderFiles(
+devUsbTemplate.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/template/usb_template.h',
 	]
 )
-devUsbTemplate.addSourceFiles(
+devUsbTemplate.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/template/usb_template.c',
 		'sys/dev/usb/template/usb_template_cdce.c',
@@ -1147,7 +1150,7 @@ devUsbTemplate.addSourceFiles(
 
 devUsbWlan = Module('dev_usb_wlan')
 devUsbWlan.addDependency(devUsb)
-devUsbWlan.addHeaderFiles(
+devUsbWlan.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/usb/wlan/if_rumfw.h',
 		'sys/dev/usb/wlan/if_rumreg.h',
@@ -1161,7 +1164,7 @@ devUsbWlan.addHeaderFiles(
 		'sys/dev/usb/wlan/if_zydreg.h',
 	]
 )
-devUsbWlan.addSourceFiles(
+devUsbWlan.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/usb/wlan/if_rum.c',
 		'sys/dev/usb/wlan/if_uath.c',
@@ -1172,7 +1175,7 @@ devUsbWlan.addSourceFiles(
 )
 
 cam = Module('cam')
-cam.addHeaderFiles(
+cam.addKernelSpaceHeaderFiles(
 	[
 		'sys/sys/ata.h',
 		'sys/cam/cam.h',
@@ -1187,7 +1190,7 @@ cam.addHeaderFiles(
 		'sys/cam/cam_xpt.h',
 	]
 )
-cam.addSourceFiles(
+cam.addKernelSpaceSourceFiles(
 	[
 		'sys/cam/cam.c',
 		'sys/cam/scsi/scsi_all.c',
@@ -1195,7 +1198,7 @@ cam.addSourceFiles(
 )
 
 devNet = Module('dev_net')
-devNet.addHeaderFiles(
+devNet.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/mii/mii.h',
 		'sys/dev/mii/mii_bitbang.h',
@@ -1217,7 +1220,7 @@ devNet.addHeaderFiles(
 		'sys/dev/tsec/if_tsecreg.h',
 	]
 )
-devNet.addSourceFiles(
+devNet.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/mii/mii.c',
 		'sys/dev/mii/mii_bitbang.c',
@@ -1229,7 +1232,7 @@ devNet.addSourceFiles(
 )
 
 devNic = Module('dev_nic')
-devNic.addHeaderFiles(
+devNic.addKernelSpaceHeaderFiles(
 	[
 		'sys/sys/pciio.h',
 		'sys/dev/random/randomdev_soft.h',
@@ -1275,7 +1278,7 @@ devNic.addCPUDependentHeaderFiles(
 		'sys/sparc64/include/pstate.h',
 	]
 )
-devNic.addSourceFiles(
+devNic.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/random/harvest.c',
 		'sys/netinet/tcp_hostcache.c',
@@ -1292,33 +1295,33 @@ devNic.addSourceFiles(
 )
 
 devNic_re = Module('dev_nic_re')
-devNic_re.addHeaderFiles(
+devNic_re.addKernelSpaceHeaderFiles(
 	[
 		'sys/pci/if_rlreg.h',
 	]
 )
-devNic_re.addSourceFiles(
+devNic_re.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/re/if_re.c',
 	]
 )
 
 devNic_fxp = Module('dev_nic_fxp')
-devNic_fxp.addHeaderFiles(
+devNic_fxp.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/fxp/if_fxpreg.h',
 		'sys/dev/fxp/if_fxpvar.h',
 		'sys/dev/fxp/rcvbundl.h',
 	]
 )
-devNic_fxp.addSourceFiles(
+devNic_fxp.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/fxp/if_fxp.c',
 	]
 )
 
 devNic_e1000 = Module('dev_nic_e1000')
-devNic_e1000.addHeaderFiles(
+devNic_e1000.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/e1000/e1000_80003es2lan.h',
 		'sys/dev/e1000/e1000_82541.h',
@@ -1343,7 +1346,7 @@ devNic_e1000.addHeaderFiles(
 		'sys/dev/e1000/if_lem.h',
 	]
 )
-devNic_e1000.addSourceFiles(
+devNic_e1000.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/e1000/e1000_80003es2lan.c',
 		'sys/dev/e1000/e1000_82542.c',
@@ -1369,12 +1372,12 @@ devNic_e1000.addSourceFiles(
 
 # DEC Tulip aka Intel 21143
 devNic_dc = Module('dev_nic_dc')
-devNic_dc.addHeaderFiles(
+devNic_dc.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/dc/if_dcreg.h',
 	]
 )
-devNic_dc.addSourceFiles(
+devNic_dc.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/dc/dcphy.c',
 		'sys/dev/dc/if_dc.c',
@@ -1384,13 +1387,13 @@ devNic_dc.addSourceFiles(
 
 # SMC9111x
 devNic_smc = Module('dev_nic_smc')
-devNic_smc.addHeaderFiles(
+devNic_smc.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/smc/if_smcreg.h',
 		'sys/dev/smc/if_smcvar.h',
 	]
 )
-devNic_smc.addSourceFiles(
+devNic_smc.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/smc/if_smc.c',
 	]
@@ -1398,13 +1401,13 @@ devNic_smc.addSourceFiles(
 
 # Crystal Semiconductor CS8900
 devNic_cs = Module('dev_nic_cs')
-devNic_cs.addHeaderFiles(
+devNic_cs.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/cs/if_csreg.h',
 		'sys/dev/cs/if_csvar.h',
 	]
 )
-devNic_cs.addSourceFiles(
+devNic_cs.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/cs/if_cs.c',
 		'sys/dev/cs/if_cs_isa.c',
@@ -1414,7 +1417,7 @@ devNic_cs.addSourceFiles(
 
 # Broadcomm BCE, BFE, BGE - MII is intertwined
 devNic_broadcomm = Module('dev_nic_broadcomm')
-devNic_broadcomm.addHeaderFiles(
+devNic_broadcomm.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/bce/if_bcefw.h',
 		'sys/dev/bce/if_bcereg.h',
@@ -1422,7 +1425,7 @@ devNic_broadcomm.addHeaderFiles(
 		'sys/dev/bge/if_bgereg.h',
 	]
 )
-devNic_broadcomm.addSourceFiles(
+devNic_broadcomm.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/bce/if_bce.c',
 		'sys/dev/bfe/if_bfe.c',
@@ -1431,7 +1434,7 @@ devNic_broadcomm.addSourceFiles(
 )
 
 net = Module('net')
-net.addHeaderFiles(
+net.addKernelSpaceHeaderFiles(
 	[
 		'sys/net/bpf_buffer.h',
 		'sys/net/bpfdesc.h',
@@ -1481,7 +1484,7 @@ net.addHeaderFiles(
 		'sys/net/vnet.h',
 	]
 )
-net.addSourceFiles(
+net.addKernelSpaceSourceFiles(
 	[
 		'sys/kern/sys_socket.c',
 		'sys/kern/uipc_syscalls.c',
@@ -1532,7 +1535,7 @@ net.addSourceFiles(
 )
 
 netinet = Module('netinet')
-netinet.addHeaderFiles(
+netinet.addKernelSpaceHeaderFiles(
 	[
 		'sys/netinet/cc.h',
 		'sys/netinet/cc/cc_module.h',
@@ -1611,7 +1614,7 @@ netinet.addHeaderFiles(
 	]
 )
 # in_cksum.c is architecture dependent
-netinet.addSourceFiles(
+netinet.addKernelSpaceSourceFiles(
 	[
 		'sys/netinet/accf_data.c',
 		'sys/netinet/accf_dns.c',
@@ -1705,7 +1708,7 @@ netinet.addSourceFiles(
 netinet6 = Module('netinet6')
 netinet6.conditionalOn = "DISABLE_IPV6"
 netinet6.cppPattern = 's/^\#define INET6 1/\/\/ \#define INET6 1/'
-netinet6.addHeaderFiles(
+netinet6.addKernelSpaceHeaderFiles(
 	[
 		'sys/netinet6/icmp6.h',
 		'sys/netinet6/in6_gif.h',
@@ -1732,7 +1735,7 @@ netinet6.addHeaderFiles(
 		'sys/netinet6/udp6_var.h',
 	]
 )
-netinet6.addSourceFiles(
+netinet6.addKernelSpaceSourceFiles(
 	[
 		'sys/net/if_stf.c',
 		'sys/netinet6/dest6.c',
@@ -1766,7 +1769,7 @@ netinet6.addSourceFiles(
 )
 
 netipsec = Module('netipsec')
-netipsec.addHeaderFiles(
+netipsec.addKernelSpaceHeaderFiles(
 	[
 		'sys/netipsec/ah.h',
 		'sys/netipsec/ah_var.h',
@@ -1785,7 +1788,7 @@ netipsec.addHeaderFiles(
 		'sys/netipsec/xform.h',
 	]
 )
-netipsec.addSourceFiles(
+netipsec.addKernelSpaceSourceFiles(
 	[
 		'sys/netipsec/ipsec.c',
 		'sys/netipsec/ipsec_input.c',
@@ -1803,7 +1806,7 @@ netipsec.addSourceFiles(
 )
 
 net80211 = Module('net80211')
-net80211.addHeaderFiles(
+net80211.addKernelSpaceHeaderFiles(
 	[
 		'sys/net80211/ieee80211_action.h',
 		'sys/net80211/ieee80211_adhoc.h',
@@ -1836,7 +1839,7 @@ net80211.addHeaderFiles(
 		'sys/net80211/ieee80211_wds.h',
 	]
 )
-netipsec.addSourceFiles(
+netipsec.addKernelSpaceSourceFiles(
 	[
 		'sys/net80211/ieee80211_acl.c',
 		'sys/net80211/ieee80211_action.c',
@@ -1880,7 +1883,7 @@ netipsec.addSourceFiles(
 )
 
 opencrypto = Module('opencrypto')
-opencrypto.addHeaderFiles(
+opencrypto.addKernelSpaceHeaderFiles(
 	[
 		'sys/opencrypto/deflate.h',
 		'sys/opencrypto/xform.h',
@@ -1892,7 +1895,7 @@ opencrypto.addHeaderFiles(
 		'sys/opencrypto/cast.h',
 	]
 )
-opencrypto.addSourceFiles(
+opencrypto.addKernelSpaceSourceFiles(
 	[
 		'sys/opencrypto/crypto.c',
 		'sys/opencrypto/deflate.c',
@@ -1906,7 +1909,7 @@ opencrypto.addSourceFiles(
 )
 
 crypto = Module('crypto')
-crypto.addHeaderFiles(
+crypto.addKernelSpaceHeaderFiles(
 	[
 		#'crypto/aesni/aesni.h',
 		'sys/crypto/sha1.h',
@@ -1927,7 +1930,7 @@ crypto.addHeaderFiles(
 		'sys/crypto/camellia/camellia.h',
 	]
 )
-crypto.addSourceFiles(
+crypto.addKernelSpaceSourceFiles(
 	[
 		#'crypto/aesni/aesni.c',
 		#'crypto/aesni/aesni_wrap.c',
@@ -1952,7 +1955,7 @@ crypto.addSourceFiles(
 )
 
 altq = Module('altq')
-altq.addHeaderFiles(
+altq.addKernelSpaceHeaderFiles(
 	[
 		'sys/contrib/altq/altq/altq_rmclass.h',
 		'sys/contrib/altq/altq/altq_cbq.h',
@@ -1969,7 +1972,7 @@ altq.addHeaderFiles(
 		'sys/contrib/altq/altq/if_altq.h',
 	]
 )
-altq.addSourceFiles(
+altq.addKernelSpaceSourceFiles(
 	[
 		'sys/contrib/altq/altq/altq_rmclass.c',
 		'sys/contrib/altq/altq/altq_rio.c',
@@ -1984,7 +1987,7 @@ altq.addSourceFiles(
 
 # contrib/pf Module
 pf = Module('pf')
-pf.addHeaderFiles(
+pf.addKernelSpaceHeaderFiles(
 	[
 		'sys/contrib/pf/net/if_pflog.h',
 		'sys/contrib/pf/net/if_pflow.h',
@@ -1993,7 +1996,7 @@ pf.addHeaderFiles(
 		'sys/contrib/pf/net/pf_mtag.h',
 	]
 )
-pf.addSourceFiles(
+pf.addKernelSpaceSourceFiles(
 	[
 		'sys/contrib/pf/net/if_pflog.c',
 		'sys/contrib/pf/net/if_pfsync.c',
@@ -2010,14 +2013,14 @@ pf.addSourceFiles(
 )
 
 pci = Module('pci')
-pci.addSourceFiles(
+pci.addKernelSpaceSourceFiles(
 	[
 		'sys/dev/pci/pci.c',
 		'sys/dev/pci/pci_user.c',
 		'sys/dev/pci/pci_pci.c',
 	]
 )
-pci.addHeaderFiles(
+pci.addKernelSpaceHeaderFiles(
 	[
 		'sys/dev/pci/pcib_private.h',
 		'sys/dev/pci/pci_private.h',

@@ -267,6 +267,14 @@ class FromRTEMSToFreeBSDSourceConverter(Converter):
 
 class PathComposer(object):
 	def composeFreeBSDPath(self, path):
+		return path
+
+	def composeRTEMSPath(self, path, prefix):
+		path = prefix + path
+		return path
+
+class FreeBSDPathComposer(PathComposer):
+	def composeFreeBSDPath(self, path):
 		return FreeBSD_DIR + '/' + path
 
 	def composeRTEMSPath(self, path, prefix):
@@ -280,7 +288,7 @@ class RTEMSPathComposer(PathComposer):
 		path = prefix + 'rtemsbsd/' + path
 		return path
 
-class CPUDependentPathComposer(PathComposer):
+class CPUDependentPathComposer(FreeBSDPathComposer):
 	def composeRTEMSPath(self, path, prefix):
 		path = super(CPUDependentPathComposer, self).composeRTEMSPath(path, prefix)
 		path = mapCPUDependentPath(path)
@@ -580,10 +588,10 @@ class Module:
 		self.files.append(f)
 
 	def addHeaderFiles(self, files):
-		self.files = self.addFiles(self.files, files, PathComposer(), FromFreeBSDToRTEMSHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
 
 	def addUserSpaceHeaderFiles(self, files):
-		self.files = self.addFiles(self.files, files, PathComposer(), FromFreeBSDToRTEMSUserSpaceHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSUserSpaceHeaderConverter(), FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
 
 	def addRTEMSHeaderFiles(self, files):
 		self.files = self.addFiles(self.files, files, RTEMSPathComposer(), NoConverter(), NoConverter(), assertHeaderFile)
@@ -596,10 +604,10 @@ class Module:
 			self.files = self.addFiles(self.files, files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU), FromFreeBSDToRTEMSHeaderConverter(), NoConverter(), assertHeaderFile)
 
 	def addSourceFiles(self, files):
-		self.files = self.addFiles(self.files, files, PathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
 
 	def addUserSpaceSourceFiles(self, files):
-		self.files = self.addFiles(self.files, files, PathComposer(), FromFreeBSDToRTEMSUserSpaceSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSUserSpaceSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
 
 	def addRTEMSSourceFiles(self, files):
 		self.files = self.addFiles(self.files, files, RTEMSPathComposer(), NoConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
@@ -2145,7 +2153,7 @@ class RPCGENMakefileFragmentComposer(MakefileFragmentComposer):
 			'\t	rm -f $@\n' \
 			'\t	rpcgen -h -o $@ $<\n'
 
-userSpace.addFile(File('include/rpc/rpcb_prot.x', PathComposer(), Converter(), Converter(), RPCGENMakefileFragmentComposer()))
+userSpace.addFile(File('include/rpc/rpcb_prot.x', FreeBSDPathComposer(), Converter(), Converter(), RPCGENMakefileFragmentComposer()))
 
 class RouteKeywordsMakefileFragmentComposer(MakefileFragmentComposer):
 	def compose(self, path):
@@ -2158,7 +2166,7 @@ class RouteKeywordsMakefileFragmentComposer(MakefileFragmentComposer):
 			'\tawk \'{ if (NF > 1) printf "#define\\tK_%s\\t%d\\n\\t{\\"%s\\", K_%s},\\n", $$2, NR, $$1, $$2 }\' > $@\n' \
 			'\trm -f ' + tmpPath + '\n'
 
-userSpace.addFile(File('sbin/route/keywords', PathComposer(), Converter(), Converter(), RouteKeywordsMakefileFragmentComposer()))
+userSpace.addFile(File('sbin/route/keywords', FreeBSDPathComposer(), Converter(), Converter(), RouteKeywordsMakefileFragmentComposer()))
 
 class LexMakefileFragmentComposer(MakefileFragmentComposer):
 	def __init__(self, sym, dep):
@@ -2189,10 +2197,10 @@ class YaccMakefileFragmentComposer(MakefileFragmentComposer):
 			'\trm -f ' + self.sym + '.tab.c\n' \
 			'\tmv ' + self.sym + '.tab.h ' + hdr + '\n'
 
-rtems.addFile(File('lib/libc/net/nslexer.l', PathComposer(), Converter(), Converter(), LexMakefileFragmentComposer('_nsyy', 'nsparser.c')))
-rtems.addFile(File('lib/libc/net/nsparser.y', PathComposer(), Converter(), Converter(), YaccMakefileFragmentComposer('_nsyy', 'nsparser.h')))
-rtems.addFile(File('lib/libipsec/policy_token.l', PathComposer(), Converter(), Converter(), LexMakefileFragmentComposer('__libipsecyy', 'policy_parse.c')))
-rtems.addFile(File('lib/libipsec/policy_parse.y', PathComposer(), Converter(), Converter(), YaccMakefileFragmentComposer('__libipsecyy', 'y.tab.h')))
+rtems.addFile(File('lib/libc/net/nslexer.l', FreeBSDPathComposer(), Converter(), Converter(), LexMakefileFragmentComposer('_nsyy', 'nsparser.c')))
+rtems.addFile(File('lib/libc/net/nsparser.y', FreeBSDPathComposer(), Converter(), Converter(), YaccMakefileFragmentComposer('_nsyy', 'nsparser.h')))
+rtems.addFile(File('lib/libipsec/policy_token.l', FreeBSDPathComposer(), Converter(), Converter(), LexMakefileFragmentComposer('__libipsecyy', 'policy_parse.c')))
+rtems.addFile(File('lib/libipsec/policy_parse.y', FreeBSDPathComposer(), Converter(), Converter(), YaccMakefileFragmentComposer('__libipsecyy', 'y.tab.h')))
 
 userSpace.addUserSpaceSourceFiles(
 	[

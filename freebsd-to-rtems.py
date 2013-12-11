@@ -715,8 +715,6 @@ base.addHeaderFiles(
 		'sys/sys/capability.h',
 		'sys/sys/condvar.h',
 		'sys/sys/conf.h',
-		'sys/sys/_cpuset.h',
-		'sys/sys/cpuset.h',
 		'sys/sys/cpu.h',
 		'sys/sys/ctype.h',
 		'sys/sys/domain.h',

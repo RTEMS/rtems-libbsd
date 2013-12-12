@@ -69,6 +69,7 @@ int hz;
 int tick;
 int maxusers;     /* base tunable */
 
+struct bintime boottimebin;
 struct timeval boottime;
 
 rtems_status_code
@@ -81,6 +82,7 @@ rtems_bsd_initialize(void)
 	maxusers = 1;
 
 	gettimeofday(&boottime, NULL);
+	timeval2bintime(&boottime, &boottimebin);
 
 	sc =  rtems_timer_initiate_server(
 		BSD_TASK_PRIORITY_TIMER,

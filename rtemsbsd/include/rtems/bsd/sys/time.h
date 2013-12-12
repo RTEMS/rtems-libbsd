@@ -293,6 +293,7 @@ rtems_bsd_time_uptime(void)
 #define time_second rtems_bsd_time_second()
 #define time_uptime rtems_bsd_time_uptime()
 #endif /* __rtems__ */
+extern struct bintime boottimebin;
 extern struct timeval boottime;
 
 /*
@@ -355,7 +356,15 @@ microtime(struct timeval *tvp)
 }
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 void	getbinuptime(struct bintime *bt);
+#else /* __rtems__ */
+static inline void
+getbinuptime(struct bintime *bt)
+{
+	binuptime(bt);
+}
+#endif /* __rtems__ */
 void	getnanouptime(struct timespec *tsp);
 #ifndef __rtems__
 void	getmicrouptime(struct timeval *tvp);

@@ -428,7 +428,6 @@ class ModuleManager:
 			'CFLAGS += -Ifreebsd/lib/libmemstat\n' \
 			'CFLAGS += -Ifreebsd/lib/libipsec\n' \
 			'CFLAGS += -Itestsuite/include\n' \
-			'CFLAGS += -D__DBINTERFACE_PRIVATE\n' \
 			'CFLAGS += -DINET6\n' \
 			'CFLAGS += -w\n' \
 			'CFLAGS += -std=gnu99\n' \
@@ -2237,6 +2236,11 @@ userSpace.addUserSpaceSourceFiles(
 		'lib/libc/db/recno/rec_search.c',
 		'lib/libc/db/recno/rec_seq.c',
 		'lib/libc/db/recno/rec_utils.c',
+	],
+	'-D__DBINTERFACE_PRIVATE'
+)
+userSpace.addUserSpaceSourceFiles(
+	[
 		'lib/libc/gen/err.c',
 		'lib/libc/gen/feature_present.c',
 		'lib/libc/gen/gethostname.c',

@@ -22,7 +22,6 @@ CFLAGS += -Ifreebsd/lib/libkvm
 CFLAGS += -Ifreebsd/lib/libmemstat
 CFLAGS += -Ifreebsd/lib/libipsec
 CFLAGS += -Itestsuite/include
-CFLAGS += -D__DBINTERFACE_PRIVATE
 CFLAGS += -DINET6
 CFLAGS += -w
 CFLAGS += -std=gnu99
@@ -630,29 +629,77 @@ freebsd/sbin/route/keywords.h: freebsd/sbin/route/keywords
 	awk '{ if (NF > 1) printf "#define\tK_%s\t%d\n\t{\"%s\", K_%s},\n", $$2, NR, $$1, $$2 }' > $@
 	rm -f freebsd/sbin/route/keywords.tmp
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_close.c
+freebsd/lib/libc/db/btree/bt_close.o: freebsd/lib/libc/db/btree/bt_close.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_conv.c
+freebsd/lib/libc/db/btree/bt_conv.o: freebsd/lib/libc/db/btree/bt_conv.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_debug.c
+freebsd/lib/libc/db/btree/bt_debug.o: freebsd/lib/libc/db/btree/bt_debug.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_delete.c
+freebsd/lib/libc/db/btree/bt_delete.o: freebsd/lib/libc/db/btree/bt_delete.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_get.c
+freebsd/lib/libc/db/btree/bt_get.o: freebsd/lib/libc/db/btree/bt_get.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_open.c
+freebsd/lib/libc/db/btree/bt_open.o: freebsd/lib/libc/db/btree/bt_open.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_overflow.c
+freebsd/lib/libc/db/btree/bt_overflow.o: freebsd/lib/libc/db/btree/bt_overflow.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_page.c
+freebsd/lib/libc/db/btree/bt_page.o: freebsd/lib/libc/db/btree/bt_page.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_put.c
+freebsd/lib/libc/db/btree/bt_put.o: freebsd/lib/libc/db/btree/bt_put.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_search.c
+freebsd/lib/libc/db/btree/bt_search.o: freebsd/lib/libc/db/btree/bt_search.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_seq.c
+freebsd/lib/libc/db/btree/bt_seq.o: freebsd/lib/libc/db/btree/bt_seq.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_split.c
+freebsd/lib/libc/db/btree/bt_split.o: freebsd/lib/libc/db/btree/bt_split.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_utils.c
+freebsd/lib/libc/db/btree/bt_utils.o: freebsd/lib/libc/db/btree/bt_utils.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/db/db.c
+freebsd/lib/libc/db/db/db.o: freebsd/lib/libc/db/db/db.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/mpool/mpool.c
+freebsd/lib/libc/db/mpool/mpool.o: freebsd/lib/libc/db/mpool/mpool.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/mpool/mpool-compat.c
+freebsd/lib/libc/db/mpool/mpool-compat.o: freebsd/lib/libc/db/mpool/mpool-compat.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_close.c
+freebsd/lib/libc/db/recno/rec_close.o: freebsd/lib/libc/db/recno/rec_close.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_delete.c
+freebsd/lib/libc/db/recno/rec_delete.o: freebsd/lib/libc/db/recno/rec_delete.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_get.c
+freebsd/lib/libc/db/recno/rec_get.o: freebsd/lib/libc/db/recno/rec_get.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_open.c
+freebsd/lib/libc/db/recno/rec_open.o: freebsd/lib/libc/db/recno/rec_open.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_put.c
+freebsd/lib/libc/db/recno/rec_put.o: freebsd/lib/libc/db/recno/rec_put.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_search.c
+freebsd/lib/libc/db/recno/rec_search.o: freebsd/lib/libc/db/recno/rec_search.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_seq.c
+freebsd/lib/libc/db/recno/rec_seq.o: freebsd/lib/libc/db/recno/rec_seq.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_utils.c
+freebsd/lib/libc/db/recno/rec_utils.o: freebsd/lib/libc/db/recno/rec_utils.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/gen/err.c
 LIB_C_FILES += freebsd/lib/libc/gen/feature_present.c
 LIB_C_FILES += freebsd/lib/libc/gen/gethostname.c

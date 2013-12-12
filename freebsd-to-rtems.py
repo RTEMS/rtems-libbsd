@@ -309,8 +309,15 @@ class MakefileFragmentComposer(object):
 		return ''
 
 class SourceFileMakefileFragmentComposer(MakefileFragmentComposer):
+	def __init__(self, cflags = None):
+		self.cflags = cflags
+
 	def compose(self, path):
-		return 'LIB_C_FILES += ' + path + '\n'
+		fragment = 'LIB_C_FILES += ' + path + '\n'
+		if self.cflags != None:
+			fragment = fragment + path[:-1] + 'o: ' + path + '\n' \
+				+ '\t$(CC) $(CPPFLAGS) $(CFLAGS) ' + self.cflags + ' -c $< -o $@\n'
+		return fragment
 
 class TestMakefileFragementComposer(MakefileFragmentComposer):
 	def __init__(self, testName, fileFragments, runTest, netTest):
@@ -602,26 +609,26 @@ class Module:
 		for cpu in targetCPUs:
 			self.files = self.addFiles(self.files, files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU), FromFreeBSDToRTEMSHeaderConverter(), NoConverter(), assertHeaderFile)
 
-	def addSourceFiles(self, files):
-		self.files = self.addFiles(self.files, files, PathComposer(), NoConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+	def addSourceFiles(self, files, cflags = None):
+		self.files = self.addFiles(self.files, files, PathComposer(), NoConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer(cflags))
 
-	def addKernelSpaceSourceFiles(self, files):
-		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+	def addKernelSpaceSourceFiles(self, files, cflags = None):
+		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer(cflags))
 
-	def addUserSpaceSourceFiles(self, files):
-		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSUserSpaceSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+	def addUserSpaceSourceFiles(self, files, cflags = None):
+		self.files = self.addFiles(self.files, files, FreeBSDPathComposer(), FromFreeBSDToRTEMSUserSpaceSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer(cflags))
 
-	def addRTEMSSourceFiles(self, files):
-		self.files = self.addFiles(self.files, files, RTEMSPathComposer(), NoConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+	def addRTEMSSourceFiles(self, files, cflags = None):
+		self.files = self.addFiles(self.files, files, RTEMSPathComposer(), NoConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer(cflags))
 
-	def addCPUDependentSourceFiles(self, cpu, files):
+	def addCPUDependentSourceFiles(self, cpu, files, cflags = None):
 		self.initCPUDependencies(cpu)
-		self.cpuDependentSourceFiles [cpu] = self.addFiles(self.cpuDependentSourceFiles [cpu], files, CPUDependentPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+		self.cpuDependentSourceFiles [cpu] = self.addFiles(self.cpuDependentSourceFiles [cpu], files, CPUDependentPathComposer(), FromFreeBSDToRTEMSSourceConverter(), FromRTEMSToFreeBSDSourceConverter(), assertSourceFile, SourceFileMakefileFragmentComposer(cflags))
 
-	def addTargetSourceCPUDependentSourceFiles(self, targetCPUs, sourceCPU, files):
+	def addTargetSourceCPUDependentSourceFiles(self, targetCPUs, sourceCPU, files, cflags = None):
 		for cpu in targetCPUs:
 			self.initCPUDependencies(cpu)
-			self.cpuDependentSourceFiles [cpu] = self.addFiles(self.cpuDependentSourceFiles [cpu], files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU), FromFreeBSDToRTEMSSourceConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer())
+			self.cpuDependentSourceFiles [cpu] = self.addFiles(self.cpuDependentSourceFiles [cpu], files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU), FromFreeBSDToRTEMSSourceConverter(), NoConverter(), assertSourceFile, SourceFileMakefileFragmentComposer(cflags))
 
 	def addTest(self, testName, fileFragments, runTest = True, netTest = False):
 		self.files.append(File(testName, PathComposer(), NoConverter(), NoConverter(), TestMakefileFragementComposer(testName, fileFragments, runTest, netTest)))

@@ -1,11 +1,3 @@
-/**
- * @file
- *
- * @ingroup rtems_bsd_machine
- *
- * @brief TODO.
- */
-
 /*
  * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *
@@ -37,27 +29,21 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
-#define _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
+#include <assert.h>
 
-#include <sys/cdefs.h>
+#include <rtems.h>
 
-#define RTEMS_BSD_ARGC(array) (sizeof(array) / sizeof((array)[0]) - 1)
+#define TEST_NAME "LIBBSD DHCPCD 2"
 
-__BEGIN_DECLS
+static void
+test_main(void)
+{
+	rtems_task_delete(RTEMS_SELF);
+	assert(0);
+}
 
-int rtems_bsd_command_ifconfig(int argc, char **argv);
+#define DEFAULT_NETWORK_DHCPCD_ENABLE
+#define DEFAULT_NETWORK_DHCPCD_NO_DHCP_DISCOVERY
+#define DEFAULT_NETWORK_SHELL
 
-int rtems_bsd_command_netstat(int argc, char **argv);
-
-int rtems_bsd_command_ping(int argc, char **argv);
-
-int rtems_bsd_command_ping6(int argc, char **argv);
-
-int rtems_bsd_command_route(int argc, char **argv);
-
-int rtems_bsd_command_dhcpcd(int argc, char **argv);
-
-__END_DECLS
-
-#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_ */
+#include <rtems/bsd/test/default-network-init.h>

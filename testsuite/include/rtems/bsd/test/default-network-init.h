@@ -29,9 +29,12 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/stat.h>
+
 #include <net/if.h>
 
 #include <assert.h>
+#include <fcntl.h>
 #include <ifaddrs.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +45,11 @@
 #include <rtems.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
+
+#if defined(DEFAULT_NETWORK_DHCPCD_ENABLE) && \
+    !defined(DEFAULT_NETWORK_NO_STATIC_IFCONFIG)
+#define DEFAULT_NETWORK_NO_STATIC_IFCONFIG
+#endif
 
 #ifndef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
 #include <rtems/bsd/test/network-config.h>
@@ -143,6 +151,60 @@ default_network_route_hwif0(char *ifname)
 #endif
 }
 
+#ifdef DEFAULT_NETWORK_DHCPCD_ENABLE
+static void
+default_network_dhcpcd_task(rtems_task_argument arg)
+{
+	int exit_code;
+	char *dhcpcd[] = {
+		"dhcpcd",
+		NULL
+	};
+
+#ifdef DEFAULT_NETWORK_DHCPCD_NO_DHCP_DISCOVERY
+	static const char cfg[] = "nodhcp\nnodhcp6\n";
+	int fd;
+	int rv;
+	ssize_t n;
+
+	fd = open("/etc/dhcpcd.conf", O_CREAT | O_WRONLY,
+	    S_IRWXU | S_IRWXG | S_IRWXO);
+	assert(fd >= 0);
+
+	n = write(fd, cfg, sizeof(cfg));
+	assert(n == (ssize_t) sizeof(cfg));
+
+	rv = close(fd);
+	assert(rv == 0);
+#endif
+
+	exit_code = rtems_bsd_command_dhcpcd(RTEMS_BSD_ARGC(dhcpcd), dhcpcd);
+	assert(exit_code == EXIT_SUCCESS);
+}
+#endif
+
+static void
+default_network_dhcpcd(void)
+{
+#ifdef DEFAULT_NETWORK_DHCPCD_ENABLE
+	rtems_status_code sc;
+	rtems_id id;
+
+	sc = rtems_task_create(
+		rtems_build_name('D', 'H', 'C', 'P'),
+		RTEMS_MAXIMUM_PRIORITY - 1,
+		RTEMS_MINIMUM_STACK_SIZE,
+		RTEMS_DEFAULT_MODES,
+		RTEMS_FLOATING_POINT,
+		&id
+	);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_start(id, default_network_dhcpcd_task, 0);
+	assert(sc == RTEMS_SUCCESSFUL);
+#endif
+}
+
 static void
 default_network_on_exit(int exit_code, void *arg)
 {
@@ -199,6 +261,7 @@ Init(rtems_task_argument arg)
 	default_network_ifconfig_lo0();
 	default_network_ifconfig_hwif0(ifname);
 	default_network_route_hwif0(ifname);
+	default_network_dhcpcd();
 
 	test_main();
 

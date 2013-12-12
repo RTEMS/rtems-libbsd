@@ -1105,6 +1105,28 @@ LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 
+TEST_DHCPCD01 = testsuite/dhcpcd01/dhcpcd01.exe
+TEST_DHCPCD01_O_FILES =
+TEST_DHCPCD01_D_FILES =
+TEST_DHCPCD01_O_FILES += testsuite/dhcpcd01/test_main.o
+TEST_DHCPCD01_D_FILES += testsuite/dhcpcd01/test_main.d
+$(TEST_DHCPCD01): $(TEST_DHCPCD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/dhcpcd01/dhcpcd01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_DHCPCD01)
+O_FILES += $(TEST_DHCPCD01_O_FILES)
+D_FILES += $(TEST_DHCPCD01_D_FILES)
+
+TEST_DHCPCD02 = testsuite/dhcpcd02/dhcpcd02.exe
+TEST_DHCPCD02_O_FILES =
+TEST_DHCPCD02_D_FILES =
+TEST_DHCPCD02_O_FILES += testsuite/dhcpcd02/test_main.o
+TEST_DHCPCD02_D_FILES += testsuite/dhcpcd02/test_main.d
+$(TEST_DHCPCD02): $(TEST_DHCPCD02_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/dhcpcd02/dhcpcd02.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_DHCPCD02)
+O_FILES += $(TEST_DHCPCD02_O_FILES)
+D_FILES += $(TEST_DHCPCD02_D_FILES)
+
 TEST_ARPHOLE = testsuite/arphole/arphole.exe
 TEST_ARPHOLE_O_FILES =
 TEST_ARPHOLE_D_FILES =
@@ -1301,6 +1323,73 @@ TESTS += $(TEST_THREAD01)
 O_FILES += $(TEST_THREAD01_O_FILES)
 D_FILES += $(TEST_THREAD01_D_FILES)
 RUN_TESTS += $(TEST_THREAD01)
+LIB_C_FILES += dhcpcd/arp.c
+dhcpcd/arp.o: dhcpcd/arp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/auth.c
+dhcpcd/auth.o: dhcpcd/auth.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/bpf.c
+dhcpcd/bpf.o: dhcpcd/bpf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/common.c
+dhcpcd/common.o: dhcpcd/common.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcp6.c
+dhcpcd/dhcp6.o: dhcpcd/dhcp6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcp.c
+dhcpcd/dhcp.o: dhcpcd/dhcp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcpcd.c
+dhcpcd/dhcpcd.o: dhcpcd/dhcpcd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcpcd-embedded.c
+dhcpcd/dhcpcd-embedded.o: dhcpcd/dhcpcd-embedded.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcp-common.c
+dhcpcd/dhcp-common.o: dhcpcd/dhcp-common.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/duid.c
+dhcpcd/duid.o: dhcpcd/duid.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/eloop.c
+dhcpcd/eloop.o: dhcpcd/eloop.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/if-bsd.c
+dhcpcd/if-bsd.o: dhcpcd/if-bsd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/if-options.c
+dhcpcd/if-options.o: dhcpcd/if-options.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/if-pref.c
+dhcpcd/if-pref.o: dhcpcd/if-pref.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv4.c
+dhcpcd/ipv4.o: dhcpcd/ipv4.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv4ll.c
+dhcpcd/ipv4ll.o: dhcpcd/ipv4ll.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv6.c
+dhcpcd/ipv6.o: dhcpcd/ipv6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv6nd.c
+dhcpcd/ipv6nd.o: dhcpcd/ipv6nd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/net.c
+dhcpcd/net.o: dhcpcd/net.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/platform-bsd.c
+dhcpcd/platform-bsd.o: dhcpcd/platform-bsd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/compat/pselect.c
+dhcpcd/compat/pselect.o: dhcpcd/compat/pselect.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/crypt/hmac_md5.c
+dhcpcd/crypt/hmac_md5.o: dhcpcd/crypt/hmac_md5.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c
 
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include

@@ -2429,6 +2429,8 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('dhcpcd01', ['test_main'], runTest = False, netTest = True)
+tests.addTest('dhcpcd02', ['test_main'], runTest = False, netTest = True)
 tests.addTest('arphole', ['test_main'], runTest = False, netTest = True)
 tests.addTest('unix01', ['test_main'])
 tests.addTest('ftpd01', ['test_main'], netTest = True)
@@ -2445,6 +2447,40 @@ tests.addTest('swi01', ['init', 'swi_test'])
 tests.addTest('timeout01', ['init', 'timeout_test'])
 tests.addTest('init01', ['test_main'])
 tests.addTest('thread01', ['test_main'])
+
+dhcpcd = Module('dhcpcd')
+dhcpcd.addSourceFiles(
+	[
+		'dhcpcd/arp.c',
+		'dhcpcd/auth.c',
+		'dhcpcd/bpf.c',
+		'dhcpcd/common.c',
+		'dhcpcd/dhcp6.c',
+		'dhcpcd/dhcp.c',
+		'dhcpcd/dhcpcd.c',
+		'dhcpcd/dhcpcd-embedded.c',
+		'dhcpcd/dhcp-common.c',
+		'dhcpcd/duid.c',
+		'dhcpcd/eloop.c',
+		'dhcpcd/if-bsd.c',
+		'dhcpcd/if-options.c',
+		'dhcpcd/if-pref.c',
+		'dhcpcd/ipv4.c',
+		'dhcpcd/ipv4ll.c',
+		'dhcpcd/ipv6.c',
+		'dhcpcd/ipv6nd.c',
+		'dhcpcd/net.c',
+		'dhcpcd/platform-bsd.c',
+		'dhcpcd/compat/pselect.c',
+		'dhcpcd/crypt/hmac_md5.c',
+	],
+	'-D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6'
+)
+dhcpcd.addRTEMSSourceFiles(
+	[
+		'rtems/rtems-bsd-shell-dhcpcd.c',
+	]
+)
 
 # Register all the Module instances with the Module Manager
 mm.addModule(rtems)
@@ -2488,6 +2524,7 @@ mm.addModule(in_cksum)
 mm.addModule(userSpace)
 
 mm.addModule(tests)
+mm.addModule(dhcpcd)
 
 # XXX TODO Check that no file is also listed in empty
 # XXX TODO Check that no file in in two modules

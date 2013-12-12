@@ -1,13 +1,5 @@
-/**
- * @file
- *
- * @ingroup rtems_bsd_machine
- *
- * @brief TODO.
- */
-
 /*
- * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -37,27 +29,12 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
-#define _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
+#include <rtems/netcmds-config.h>
+#include <machine/rtems-bsd-commands.h>
 
-#include <sys/cdefs.h>
-
-#define RTEMS_BSD_ARGC(array) (sizeof(array) / sizeof((array)[0]) - 1)
-
-__BEGIN_DECLS
-
-int rtems_bsd_command_ifconfig(int argc, char **argv);
-
-int rtems_bsd_command_netstat(int argc, char **argv);
-
-int rtems_bsd_command_ping(int argc, char **argv);
-
-int rtems_bsd_command_ping6(int argc, char **argv);
-
-int rtems_bsd_command_route(int argc, char **argv);
-
-int rtems_bsd_command_dhcpcd(int argc, char **argv);
-
-__END_DECLS
-
-#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_ */
+rtems_shell_cmd_t rtems_shell_DHCPCD_Command = {
+  .name = "dhcpcd",
+  .usage = "dhcpcd [args]",
+  .topic = "net",
+  .command = rtems_bsd_command_dhcpcd
+};

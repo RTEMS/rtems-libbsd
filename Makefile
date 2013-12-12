@@ -22,7 +22,6 @@ CFLAGS += -Ifreebsd/lib/libkvm
 CFLAGS += -Ifreebsd/lib/libmemstat
 CFLAGS += -Ifreebsd/lib/libipsec
 CFLAGS += -Itestsuite/include
-CFLAGS += -D__FreeBSD__
 CFLAGS += -D__DBINTERFACE_PRIVATE
 CFLAGS += -DINET6
 CFLAGS += -w

@@ -40,6 +40,8 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_
 
+#define __FreeBSD__ 1
+
 #include <sys/cdefs.h>
 
 #include <stdio.h>

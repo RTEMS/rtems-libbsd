@@ -421,7 +421,6 @@ class ModuleManager:
 			'CFLAGS += -Ifreebsd/lib/libmemstat\n' \
 			'CFLAGS += -Ifreebsd/lib/libipsec\n' \
 			'CFLAGS += -Itestsuite/include\n' \
-			'CFLAGS += -D__FreeBSD__\n' \
 			'CFLAGS += -D__DBINTERFACE_PRIVATE\n' \
 			'CFLAGS += -DINET6\n' \
 			'CFLAGS += -w\n' \

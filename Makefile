@@ -22,7 +22,6 @@ CFLAGS += -Ifreebsd/lib/libkvm
 CFLAGS += -Ifreebsd/lib/libmemstat
 CFLAGS += -Ifreebsd/lib/libipsec
 CFLAGS += -Itestsuite/include
-CFLAGS += -DINET6
 CFLAGS += -w
 CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
@@ -630,212 +629,484 @@ freebsd/sbin/route/keywords.h: freebsd/sbin/route/keywords
 	rm -f freebsd/sbin/route/keywords.tmp
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_close.c
 freebsd/lib/libc/db/btree/bt_close.o: freebsd/lib/libc/db/btree/bt_close.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_conv.c
 freebsd/lib/libc/db/btree/bt_conv.o: freebsd/lib/libc/db/btree/bt_conv.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_debug.c
 freebsd/lib/libc/db/btree/bt_debug.o: freebsd/lib/libc/db/btree/bt_debug.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_delete.c
 freebsd/lib/libc/db/btree/bt_delete.o: freebsd/lib/libc/db/btree/bt_delete.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_get.c
 freebsd/lib/libc/db/btree/bt_get.o: freebsd/lib/libc/db/btree/bt_get.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_open.c
 freebsd/lib/libc/db/btree/bt_open.o: freebsd/lib/libc/db/btree/bt_open.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_overflow.c
 freebsd/lib/libc/db/btree/bt_overflow.o: freebsd/lib/libc/db/btree/bt_overflow.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_page.c
 freebsd/lib/libc/db/btree/bt_page.o: freebsd/lib/libc/db/btree/bt_page.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_put.c
 freebsd/lib/libc/db/btree/bt_put.o: freebsd/lib/libc/db/btree/bt_put.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_search.c
 freebsd/lib/libc/db/btree/bt_search.o: freebsd/lib/libc/db/btree/bt_search.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_seq.c
 freebsd/lib/libc/db/btree/bt_seq.o: freebsd/lib/libc/db/btree/bt_seq.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_split.c
 freebsd/lib/libc/db/btree/bt_split.o: freebsd/lib/libc/db/btree/bt_split.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/btree/bt_utils.c
 freebsd/lib/libc/db/btree/bt_utils.o: freebsd/lib/libc/db/btree/bt_utils.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/db/db.c
 freebsd/lib/libc/db/db/db.o: freebsd/lib/libc/db/db/db.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/mpool/mpool.c
 freebsd/lib/libc/db/mpool/mpool.o: freebsd/lib/libc/db/mpool/mpool.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/mpool/mpool-compat.c
 freebsd/lib/libc/db/mpool/mpool-compat.o: freebsd/lib/libc/db/mpool/mpool-compat.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_close.c
 freebsd/lib/libc/db/recno/rec_close.o: freebsd/lib/libc/db/recno/rec_close.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_delete.c
 freebsd/lib/libc/db/recno/rec_delete.o: freebsd/lib/libc/db/recno/rec_delete.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_get.c
 freebsd/lib/libc/db/recno/rec_get.o: freebsd/lib/libc/db/recno/rec_get.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_open.c
 freebsd/lib/libc/db/recno/rec_open.o: freebsd/lib/libc/db/recno/rec_open.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_put.c
 freebsd/lib/libc/db/recno/rec_put.o: freebsd/lib/libc/db/recno/rec_put.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_search.c
 freebsd/lib/libc/db/recno/rec_search.o: freebsd/lib/libc/db/recno/rec_search.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_seq.c
 freebsd/lib/libc/db/recno/rec_seq.o: freebsd/lib/libc/db/recno/rec_seq.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_utils.c
 freebsd/lib/libc/db/recno/rec_utils.o: freebsd/lib/libc/db/recno/rec_utils.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/gen/err.c
+freebsd/lib/libc/gen/err.o: freebsd/lib/libc/gen/err.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/gen/feature_present.c
+freebsd/lib/libc/gen/feature_present.o: freebsd/lib/libc/gen/feature_present.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/gen/gethostname.c
+freebsd/lib/libc/gen/gethostname.o: freebsd/lib/libc/gen/gethostname.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_addr.c
+freebsd/lib/libc/inet/inet_addr.o: freebsd/lib/libc/inet/inet_addr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_cidr_ntop.c
+freebsd/lib/libc/inet/inet_cidr_ntop.o: freebsd/lib/libc/inet/inet_cidr_ntop.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_cidr_pton.c
+freebsd/lib/libc/inet/inet_cidr_pton.o: freebsd/lib/libc/inet/inet_cidr_pton.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_lnaof.c
+freebsd/lib/libc/inet/inet_lnaof.o: freebsd/lib/libc/inet/inet_lnaof.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_makeaddr.c
+freebsd/lib/libc/inet/inet_makeaddr.o: freebsd/lib/libc/inet/inet_makeaddr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_neta.c
+freebsd/lib/libc/inet/inet_neta.o: freebsd/lib/libc/inet/inet_neta.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_net_ntop.c
+freebsd/lib/libc/inet/inet_net_ntop.o: freebsd/lib/libc/inet/inet_net_ntop.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_netof.c
+freebsd/lib/libc/inet/inet_netof.o: freebsd/lib/libc/inet/inet_netof.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_net_pton.c
+freebsd/lib/libc/inet/inet_net_pton.o: freebsd/lib/libc/inet/inet_net_pton.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_network.c
+freebsd/lib/libc/inet/inet_network.o: freebsd/lib/libc/inet/inet_network.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_ntoa.c
+freebsd/lib/libc/inet/inet_ntoa.o: freebsd/lib/libc/inet/inet_ntoa.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_ntop.c
+freebsd/lib/libc/inet/inet_ntop.o: freebsd/lib/libc/inet/inet_ntop.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_pton.c
+freebsd/lib/libc/inet/inet_pton.o: freebsd/lib/libc/inet/inet_pton.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/nsap_addr.c
+freebsd/lib/libc/inet/nsap_addr.o: freebsd/lib/libc/inet/nsap_addr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/isc/ev_streams.c
+freebsd/lib/libc/isc/ev_streams.o: freebsd/lib/libc/isc/ev_streams.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/isc/ev_timers.c
+freebsd/lib/libc/isc/ev_timers.o: freebsd/lib/libc/isc/ev_timers.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/nameser/ns_name.c
+freebsd/lib/libc/nameser/ns_name.o: freebsd/lib/libc/nameser/ns_name.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/nameser/ns_netint.c
+freebsd/lib/libc/nameser/ns_netint.o: freebsd/lib/libc/nameser/ns_netint.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/nameser/ns_parse.c
+freebsd/lib/libc/nameser/ns_parse.o: freebsd/lib/libc/nameser/ns_parse.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/nameser/ns_print.c
+freebsd/lib/libc/nameser/ns_print.o: freebsd/lib/libc/nameser/ns_print.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/nameser/ns_samedomain.c
+freebsd/lib/libc/nameser/ns_samedomain.o: freebsd/lib/libc/nameser/ns_samedomain.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/nameser/ns_ttl.c
+freebsd/lib/libc/nameser/ns_ttl.o: freebsd/lib/libc/nameser/ns_ttl.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/base64.c
+freebsd/lib/libc/net/base64.o: freebsd/lib/libc/net/base64.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/ether_addr.c
+freebsd/lib/libc/net/ether_addr.o: freebsd/lib/libc/net/ether_addr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/gai_strerror.c
+freebsd/lib/libc/net/gai_strerror.o: freebsd/lib/libc/net/gai_strerror.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getaddrinfo.c
+freebsd/lib/libc/net/getaddrinfo.o: freebsd/lib/libc/net/getaddrinfo.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/gethostbydns.c
+freebsd/lib/libc/net/gethostbydns.o: freebsd/lib/libc/net/gethostbydns.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/gethostbyht.c
+freebsd/lib/libc/net/gethostbyht.o: freebsd/lib/libc/net/gethostbyht.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/gethostbynis.c
+freebsd/lib/libc/net/gethostbynis.o: freebsd/lib/libc/net/gethostbynis.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/gethostnamadr.c
+freebsd/lib/libc/net/gethostnamadr.o: freebsd/lib/libc/net/gethostnamadr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getifaddrs.c
+freebsd/lib/libc/net/getifaddrs.o: freebsd/lib/libc/net/getifaddrs.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getifmaddrs.c
+freebsd/lib/libc/net/getifmaddrs.o: freebsd/lib/libc/net/getifmaddrs.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getnameinfo.c
+freebsd/lib/libc/net/getnameinfo.o: freebsd/lib/libc/net/getnameinfo.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getnetbydns.c
+freebsd/lib/libc/net/getnetbydns.o: freebsd/lib/libc/net/getnetbydns.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getnetbyht.c
+freebsd/lib/libc/net/getnetbyht.o: freebsd/lib/libc/net/getnetbyht.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getnetbynis.c
+freebsd/lib/libc/net/getnetbynis.o: freebsd/lib/libc/net/getnetbynis.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getnetnamadr.c
+freebsd/lib/libc/net/getnetnamadr.o: freebsd/lib/libc/net/getnetnamadr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getproto.c
+freebsd/lib/libc/net/getproto.o: freebsd/lib/libc/net/getproto.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getprotoent.c
+freebsd/lib/libc/net/getprotoent.o: freebsd/lib/libc/net/getprotoent.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getprotoname.c
+freebsd/lib/libc/net/getprotoname.o: freebsd/lib/libc/net/getprotoname.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/getservent.c
+freebsd/lib/libc/net/getservent.o: freebsd/lib/libc/net/getservent.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/if_indextoname.c
+freebsd/lib/libc/net/if_indextoname.o: freebsd/lib/libc/net/if_indextoname.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/if_nameindex.c
+freebsd/lib/libc/net/if_nameindex.o: freebsd/lib/libc/net/if_nameindex.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/if_nametoindex.c
+freebsd/lib/libc/net/if_nametoindex.o: freebsd/lib/libc/net/if_nametoindex.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/ip6opt.c
+freebsd/lib/libc/net/ip6opt.o: freebsd/lib/libc/net/ip6opt.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/linkaddr.c
+freebsd/lib/libc/net/linkaddr.o: freebsd/lib/libc/net/linkaddr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/map_v4v6.c
+freebsd/lib/libc/net/map_v4v6.o: freebsd/lib/libc/net/map_v4v6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/name6.c
+freebsd/lib/libc/net/name6.o: freebsd/lib/libc/net/name6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/nsdispatch.c
+freebsd/lib/libc/net/nsdispatch.o: freebsd/lib/libc/net/nsdispatch.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/rcmd.c
+freebsd/lib/libc/net/rcmd.o: freebsd/lib/libc/net/rcmd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/recv.c
+freebsd/lib/libc/net/recv.o: freebsd/lib/libc/net/recv.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/rthdr.c
+freebsd/lib/libc/net/rthdr.o: freebsd/lib/libc/net/rthdr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/net/send.c
+freebsd/lib/libc/net/send.o: freebsd/lib/libc/net/send.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/posix1e/mac.c
+freebsd/lib/libc/posix1e/mac.o: freebsd/lib/libc/posix1e/mac.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/h_errno.c
+freebsd/lib/libc/resolv/h_errno.o: freebsd/lib/libc/resolv/h_errno.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/herror.c
+freebsd/lib/libc/resolv/herror.o: freebsd/lib/libc/resolv/herror.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/mtctxres.c
+freebsd/lib/libc/resolv/mtctxres.o: freebsd/lib/libc/resolv/mtctxres.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_comp.c
+freebsd/lib/libc/resolv/res_comp.o: freebsd/lib/libc/resolv/res_comp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_data.c
+freebsd/lib/libc/resolv/res_data.o: freebsd/lib/libc/resolv/res_data.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_debug.c
+freebsd/lib/libc/resolv/res_debug.o: freebsd/lib/libc/resolv/res_debug.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_findzonecut.c
+freebsd/lib/libc/resolv/res_findzonecut.o: freebsd/lib/libc/resolv/res_findzonecut.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_init.c
+freebsd/lib/libc/resolv/res_init.o: freebsd/lib/libc/resolv/res_init.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_mkquery.c
+freebsd/lib/libc/resolv/res_mkquery.o: freebsd/lib/libc/resolv/res_mkquery.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_mkupdate.c
+freebsd/lib/libc/resolv/res_mkupdate.o: freebsd/lib/libc/resolv/res_mkupdate.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_query.c
+freebsd/lib/libc/resolv/res_query.o: freebsd/lib/libc/resolv/res_query.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_send.c
+freebsd/lib/libc/resolv/res_send.o: freebsd/lib/libc/resolv/res_send.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_state.c
+freebsd/lib/libc/resolv/res_state.o: freebsd/lib/libc/resolv/res_state.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/resolv/res_update.c
+freebsd/lib/libc/resolv/res_update.o: freebsd/lib/libc/resolv/res_update.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/stdio/fgetln.c
+freebsd/lib/libc/stdio/fgetln.o: freebsd/lib/libc/stdio/fgetln.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/stdlib/strtonum.c
+freebsd/lib/libc/stdlib/strtonum.o: freebsd/lib/libc/stdlib/strtonum.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/string/strsep.c
+freebsd/lib/libc/string/strsep.o: freebsd/lib/libc/string/strsep.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libipsec/ipsec_dump_policy.c
+freebsd/lib/libipsec/ipsec_dump_policy.o: freebsd/lib/libipsec/ipsec_dump_policy.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libipsec/ipsec_get_policylen.c
+freebsd/lib/libipsec/ipsec_get_policylen.o: freebsd/lib/libipsec/ipsec_get_policylen.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libipsec/ipsec_strerror.c
+freebsd/lib/libipsec/ipsec_strerror.o: freebsd/lib/libipsec/ipsec_strerror.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libipsec/pfkey.c
+freebsd/lib/libipsec/pfkey.o: freebsd/lib/libipsec/pfkey.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libipsec/pfkey_dump.c
+freebsd/lib/libipsec/pfkey_dump.o: freebsd/lib/libipsec/pfkey_dump.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libmemstat/memstat_all.c
+freebsd/lib/libmemstat/memstat_all.o: freebsd/lib/libmemstat/memstat_all.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libmemstat/memstat.c
+freebsd/lib/libmemstat/memstat.o: freebsd/lib/libmemstat/memstat.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libmemstat/memstat_malloc.c
+freebsd/lib/libmemstat/memstat_malloc.o: freebsd/lib/libmemstat/memstat_malloc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libmemstat/memstat_uma.c
+freebsd/lib/libmemstat/memstat_uma.o: freebsd/lib/libmemstat/memstat_uma.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libutil/expand_number.c
+freebsd/lib/libutil/expand_number.o: freebsd/lib/libutil/expand_number.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libutil/humanize_number.c
+freebsd/lib/libutil/humanize_number.o: freebsd/lib/libutil/humanize_number.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libutil/trimdomain.c
+freebsd/lib/libutil/trimdomain.o: freebsd/lib/libutil/trimdomain.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/alloc.c
+freebsd/sbin/dhclient/alloc.o: freebsd/sbin/dhclient/alloc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/bpf.c
+freebsd/sbin/dhclient/bpf.o: freebsd/sbin/dhclient/bpf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/clparse.c
+freebsd/sbin/dhclient/clparse.o: freebsd/sbin/dhclient/clparse.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/conflex.c
+freebsd/sbin/dhclient/conflex.o: freebsd/sbin/dhclient/conflex.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/convert.c
+freebsd/sbin/dhclient/convert.o: freebsd/sbin/dhclient/convert.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/dhclient.c
+freebsd/sbin/dhclient/dhclient.o: freebsd/sbin/dhclient/dhclient.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/dispatch.c
+freebsd/sbin/dhclient/dispatch.o: freebsd/sbin/dhclient/dispatch.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/errwarn.c
+freebsd/sbin/dhclient/errwarn.o: freebsd/sbin/dhclient/errwarn.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/hash.c
+freebsd/sbin/dhclient/hash.o: freebsd/sbin/dhclient/hash.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/inet.c
+freebsd/sbin/dhclient/inet.o: freebsd/sbin/dhclient/inet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/options.c
+freebsd/sbin/dhclient/options.o: freebsd/sbin/dhclient/options.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/packet.c
+freebsd/sbin/dhclient/packet.o: freebsd/sbin/dhclient/packet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/parse.c
+freebsd/sbin/dhclient/parse.o: freebsd/sbin/dhclient/parse.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/privsep.c
+freebsd/sbin/dhclient/privsep.o: freebsd/sbin/dhclient/privsep.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/tables.c
+freebsd/sbin/dhclient/tables.o: freebsd/sbin/dhclient/tables.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/dhclient/tree.c
+freebsd/sbin/dhclient/tree.o: freebsd/sbin/dhclient/tree.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/af_atalk.c
+freebsd/sbin/ifconfig/af_atalk.o: freebsd/sbin/ifconfig/af_atalk.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/af_inet6.c
+freebsd/sbin/ifconfig/af_inet6.o: freebsd/sbin/ifconfig/af_inet6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/af_inet.c
+freebsd/sbin/ifconfig/af_inet.o: freebsd/sbin/ifconfig/af_inet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/af_link.c
+freebsd/sbin/ifconfig/af_link.o: freebsd/sbin/ifconfig/af_link.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/af_nd6.c
+freebsd/sbin/ifconfig/af_nd6.o: freebsd/sbin/ifconfig/af_nd6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifbridge.c
+freebsd/sbin/ifconfig/ifbridge.o: freebsd/sbin/ifconfig/ifbridge.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifcarp.c
+freebsd/sbin/ifconfig/ifcarp.o: freebsd/sbin/ifconfig/ifcarp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifclone.c
+freebsd/sbin/ifconfig/ifclone.o: freebsd/sbin/ifconfig/ifclone.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifconfig.c
+freebsd/sbin/ifconfig/ifconfig.o: freebsd/sbin/ifconfig/ifconfig.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifgif.c
+freebsd/sbin/ifconfig/ifgif.o: freebsd/sbin/ifconfig/ifgif.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifgre.c
+freebsd/sbin/ifconfig/ifgre.o: freebsd/sbin/ifconfig/ifgre.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifgroup.c
+freebsd/sbin/ifconfig/ifgroup.o: freebsd/sbin/ifconfig/ifgroup.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/iflagg.c
+freebsd/sbin/ifconfig/iflagg.o: freebsd/sbin/ifconfig/iflagg.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifmac.c
+freebsd/sbin/ifconfig/ifmac.o: freebsd/sbin/ifconfig/ifmac.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifmedia.c
+freebsd/sbin/ifconfig/ifmedia.o: freebsd/sbin/ifconfig/ifmedia.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifpfsync.c
+freebsd/sbin/ifconfig/ifpfsync.o: freebsd/sbin/ifconfig/ifpfsync.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ifconfig/ifvlan.c
+freebsd/sbin/ifconfig/ifvlan.o: freebsd/sbin/ifconfig/ifvlan.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ping6/ping6.c
+freebsd/sbin/ping6/ping6.o: freebsd/sbin/ping6/ping6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/ping/ping.c
+freebsd/sbin/ping/ping.o: freebsd/sbin/ping/ping.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/sbin/route/route.c
+freebsd/sbin/route/route.o: freebsd/sbin/route/route.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/atalk.c
+freebsd/usr.bin/netstat/atalk.o: freebsd/usr.bin/netstat/atalk.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/bpf.c
+freebsd/usr.bin/netstat/bpf.o: freebsd/usr.bin/netstat/bpf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/if.c
+freebsd/usr.bin/netstat/if.o: freebsd/usr.bin/netstat/if.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/inet6.c
+freebsd/usr.bin/netstat/inet6.o: freebsd/usr.bin/netstat/inet6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/inet.c
+freebsd/usr.bin/netstat/inet.o: freebsd/usr.bin/netstat/inet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/ipsec.c
+freebsd/usr.bin/netstat/ipsec.o: freebsd/usr.bin/netstat/ipsec.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/main.c
+freebsd/usr.bin/netstat/main.o: freebsd/usr.bin/netstat/main.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/mbuf.c
+freebsd/usr.bin/netstat/mbuf.o: freebsd/usr.bin/netstat/mbuf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/mroute6.c
+freebsd/usr.bin/netstat/mroute6.o: freebsd/usr.bin/netstat/mroute6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/mroute.c
+freebsd/usr.bin/netstat/mroute.o: freebsd/usr.bin/netstat/mroute.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/route.c
+freebsd/usr.bin/netstat/route.o: freebsd/usr.bin/netstat/route.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/pfkey.c
+freebsd/usr.bin/netstat/pfkey.o: freebsd/usr.bin/netstat/pfkey.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/sctp.c
+freebsd/usr.bin/netstat/sctp.o: freebsd/usr.bin/netstat/sctp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
+freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 
 TEST_FTPD01 = testsuite/ftpd01/ftpd01.exe
 TEST_FTPD01_O_FILES =

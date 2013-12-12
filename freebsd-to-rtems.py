@@ -428,7 +428,6 @@ class ModuleManager:
 			'CFLAGS += -Ifreebsd/lib/libmemstat\n' \
 			'CFLAGS += -Ifreebsd/lib/libipsec\n' \
 			'CFLAGS += -Itestsuite/include\n' \
-			'CFLAGS += -DINET6\n' \
 			'CFLAGS += -w\n' \
 			'CFLAGS += -std=gnu99\n' \
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
@@ -2237,7 +2236,7 @@ userSpace.addUserSpaceSourceFiles(
 		'lib/libc/db/recno/rec_seq.c',
 		'lib/libc/db/recno/rec_utils.c',
 	],
-	'-D__DBINTERFACE_PRIVATE'
+	'-D__DBINTERFACE_PRIVATE -DINET6'
 )
 userSpace.addUserSpaceSourceFiles(
 	[
@@ -2377,7 +2376,8 @@ userSpace.addUserSpaceSourceFiles(
 		'usr.bin/netstat/pfkey.c',
 		'usr.bin/netstat/sctp.c',
 		'usr.bin/netstat/unix.c',
-	]
+	],
+	'-DINET6'
 )
 
 # in_chksum Module

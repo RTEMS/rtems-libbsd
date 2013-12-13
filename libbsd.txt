@@ -109,6 +109,8 @@ the current Git submodule commit is this
 
 * <sys/param.h>: Update Newlib to use a MSIZE of 256.
 
+* BPF(4): Add support for zero-copy buffers.
+
 [listing]
 ----
     /* sysinit section? */

@@ -85,7 +85,9 @@ struct bpf_d {
 	int		bd_direction;	/* select packet direction */
 	int		bd_tstamp;	/* select time stamping function */
 	int		bd_feedback;	/* true to feed back sent packets */
+#ifndef __rtems__
 	int		bd_async;	/* non-zero if packet reception should generate signal */
+#endif /* __rtems__ */
 	int		bd_sig;		/* signal to send upon packet reception */
 	struct sigio *	bd_sigio;	/* information for async I/O */
 	struct selinfo	bd_sel;		/* bsd select info */
@@ -112,8 +114,13 @@ struct bpf_d {
 #define BPFD_UNLOCK(bd)		mtx_unlock(&(bd)->bd_lock)
 #define BPFD_LOCK_ASSERT(bd)	mtx_assert(&(bd)->bd_lock, MA_OWNED)
 
+#ifndef __rtems__
 #define BPF_PID_REFRESH(bd, td)	(bd)->bd_pid = (td)->td_proc->p_pid
 #define BPF_PID_REFRESH_CUR(bd)	(bd)->bd_pid = curthread->td_proc->p_pid
+#else /* __rtems__ */
+#define BPF_PID_REFRESH(bd, td)	do { } while (0)
+#define BPF_PID_REFRESH_CUR(bd)	do { } while (0)
+#endif /* __rtems__ */
 
 #define BPF_LOCK()		mtx_lock(&bpf_mtx)
 #define BPF_UNLOCK()		mtx_unlock(&bpf_mtx)
@@ -129,7 +136,9 @@ struct xbpf_d {
 	int		bd_hdrcmplt;
 	int		bd_direction;
 	int		bd_feedback;
+#ifndef __rtems__
 	int		bd_async;
+#endif /* __rtems__ */
 	u_int64_t	bd_rcount;
 	u_int64_t	bd_dcount;
 	u_int64_t	bd_fcount;

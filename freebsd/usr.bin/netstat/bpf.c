@@ -89,7 +89,9 @@ bpf_flags(struct xbpf_d *bd, char *flagbuf)
 	*flagbuf++ = (bd->bd_direction == BPF_D_IN) ? '-' :
 	    ((bd->bd_direction == BPF_D_OUT) ? 'o' : 's');
 	*flagbuf++ = bd->bd_feedback ? 'b' : '-';
+#ifndef __rtems__
 	*flagbuf++ = bd->bd_async ? 'a' : '-';
+#endif /* __rtems__ */
 	*flagbuf++ = bd->bd_locked ? 'l' : '-';
 	*flagbuf++ = '\0';
 }

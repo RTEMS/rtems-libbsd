@@ -470,6 +470,21 @@ rtems_bsd_soo_close(rtems_libio_t *iop)
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 
+static int
+rtems_bsd_soo_fcntl(rtems_libio_t *iop, int cmd)
+{
+	int error = 0;
+
+	if (cmd == F_SETFL) {
+		struct file *fp = rtems_bsd_iop_to_fp(iop);
+		int nbio = iop->flags & LIBIO_FLAGS_NO_DELAY;
+
+		error = soo_ioctl(fp, FIONBIO, &nbio, NULL, NULL);
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+
 const rtems_filesystem_file_handlers_r socketops = {
 	.open_h = rtems_filesystem_default_open,
 	.close_h = rtems_bsd_soo_close,
@@ -481,7 +496,7 @@ const rtems_filesystem_file_handlers_r socketops = {
 	.ftruncate_h = rtems_filesystem_default_ftruncate,
 	.fsync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
-	.fcntl_h = rtems_filesystem_default_fcntl,
+	.fcntl_h = rtems_bsd_soo_fcntl,
 	.poll_h = rtems_bsd_soo_poll,
 	.kqfilter_h = rtems_bsd_soo_kqfilter
 };

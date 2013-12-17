@@ -1092,6 +1092,24 @@ signal_init(void (*func)(int, siginfo_t *, void *), sigset_t *oldset)
 	return 0;
 }
 
+#ifdef __rtems__
+#include <rtems/libio.h>
+
+static int
+main(int argc, char **argv);
+
+int rtems_bsd_command_dhcpcd(int argc, char **argv)
+{
+	int exit_code;
+
+	rtems_mkdir(DBDIR, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	exit_code = rtems_bsd_program_call_main("dhcpcd", main, argc, argv);
+
+	return exit_code;
+}
+#endif /* __rtems__ */
+
 int
 main(int argc, char **argv)
 {

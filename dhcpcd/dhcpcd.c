@@ -71,7 +71,9 @@ const char dhcpcd_copyright[] = "Copyright (c) 2006-2014 Roy Marples";
 
 struct if_head *ifaces = NULL;
 char vendor[VENDORCLASSID_MAX_LEN];
+#ifndef MASTER_ONLY
 int pidfd = -1;
+#endif
 struct if_options *if_options = NULL;
 int ifac = 0;
 char **ifav = NULL;
@@ -79,6 +81,7 @@ int ifdc = 0;
 char **ifdv = NULL;
 
 sigset_t dhcpcd_sigset;
+#ifndef MASTER_ONLY
 const int handle_sigs[] = {
 	SIGALRM,
 	SIGHUP,
@@ -88,15 +91,19 @@ const int handle_sigs[] = {
 	SIGUSR1,
 	0
 };
+#endif
 
 static char *cffile;
+#ifndef MASTER_ONLY
 static char *pidfile;
+#endif
 static int linkfd = -1;
 static char **ifv;
 static int ifc;
 static char **margv;
 static int margc;
 
+#ifndef MASTER_ONLY
 static pid_t
 read_pid(void)
 {
@@ -112,6 +119,7 @@ read_pid(void)
 	fclose(fp);
 	return pid;
 }
+#endif
 
 static void
 usage(void)
@@ -136,6 +144,7 @@ printf("usage: "PACKAGE"\t[-46ABbDdEGgHJKkLnpqTVw]\n"
 	"       "PACKAGE"\t-x, --exit [interface]\n");
 }
 
+#ifndef MASTER_ONLY
 static void
 free_globals(void)
 {
@@ -204,6 +213,7 @@ cleanup(void)
 	if (options & DHCPCD_STARTED && !(options & DHCPCD_FORKED))
 		syslog(LOG_INFO, "exited");
 }
+#endif /* !MASTER_ONLY */
 
 /* ARGSUSED */
 static void
@@ -830,6 +840,7 @@ reconf_reboot(int action, int argc, char **argv, int oi)
 	sort_interfaces();
 }
 
+#ifndef MASTER_ONLY
 /* ARGSUSED */
 static void
 sig_reboot(void *arg)
@@ -927,6 +938,7 @@ handle_signal(int sig, siginfo_t *siginfo, __unused void *context)
 	}
 	exit(EXIT_FAILURE);
 }
+#endif /* MASTER_ONLY */
 
 int
 handle_args(struct fd_list *fd, int argc, char **argv)
@@ -1072,6 +1084,7 @@ handle_args(struct fd_list *fd, int argc, char **argv)
 	return 0;
 }
 
+#ifndef MASTER_ONLY
 static int
 signal_init(void (*func)(int, siginfo_t *, void *), sigset_t *oldset)
 {
@@ -1094,6 +1107,7 @@ signal_init(void (*func)(int, siginfo_t *, void *), sigset_t *oldset)
 	}
 	return 0;
 }
+#endif
 
 #ifdef __rtems__
 #include <rtems/libio.h>
@@ -1119,10 +1133,13 @@ int
 main(int argc, char **argv)
 {
 	struct interface *ifp;
+	int opt, oi = 0, i;
+#ifndef MASTER_ONLY
 	uint16_t family = 0;
-	int opt, oi = 0, sig = 0, i, control_fd;
+	int sig = 0, control_fd;
 	size_t len;
 	pid_t pid;
+#endif
 	struct timespec ts;
 	struct utsname utn;
 	const char *platform;
@@ -1131,6 +1148,7 @@ main(int argc, char **argv)
 	openlog(PACKAGE, LOG_PERROR | LOG_PID, LOG_DAEMON);
 	setlogmask(LOG_UPTO(LOG_INFO));
 
+#ifndef MASTER_ONLY
 	/* Test for --help and --version */
 	if (argc > 1) {
 		if (strcmp(argv[1], "--help") == 0) {
@@ -1141,6 +1159,7 @@ main(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		}
 	}
+#endif
 
 	platform = hardware_platform();
 	if (uname(&utn) == 0)
@@ -1152,19 +1171,24 @@ main(int argc, char **argv)
 		snprintf(vendor, VENDORCLASSID_MAX_LEN,
 		    "%s-%s", PACKAGE, VERSION);
 
+#ifndef MASTER_ONLY
 	i = 0;
+#endif
 	while ((opt = getopt_long(argc, argv, IF_OPTS, cf_options, &oi)) != -1)
 	{
 		switch (opt) {
+#ifndef MASTER_ONLY
 		case '4':
 			family = AF_INET;
 			break;
 		case '6':
 			family = AF_INET6;
 			break;
+#endif
 		case 'f':
 			cffile = optarg;
 			break;
+#ifndef MASTER_ONLY
 		case 'g':
 			sig = SIGUSR1;
 			break;
@@ -1186,6 +1210,7 @@ main(int argc, char **argv)
 		case 'V':
 			i = 3;
 			break;
+#endif
 		case '?':
 			usage();
 			exit(EXIT_FAILURE);
@@ -1201,6 +1226,7 @@ main(int argc, char **argv)
 			usage();
 		exit(EXIT_FAILURE);
 	}
+#ifndef MASTER_ONLY
 	if (i == 3) {
 		printf("Interface options:\n");
 		if_printoptions();
@@ -1221,7 +1247,9 @@ main(int argc, char **argv)
 #endif
 		exit(EXIT_SUCCESS);
 	}
+#endif /* !MASTER_ONLY */
 	options = if_options->options;
+#ifndef MASTER_ONLY
 	if (i != 0) {
 		if (i == 1)
 			options |= DHCPCD_TEST;
@@ -1230,6 +1258,7 @@ main(int argc, char **argv)
 		options |= DHCPCD_PERSISTENT;
 		options &= ~DHCPCD_DAEMONISE;
 	}
+#endif
 
 #ifdef THERE_IS_NO_FORK
 	options &= ~DHCPCD_DAEMONISE;
@@ -1237,6 +1266,7 @@ main(int argc, char **argv)
 
 	if (options & DHCPCD_DEBUG)
 		setlogmask(LOG_UPTO(LOG_DEBUG));
+#ifndef MASTER_ONLY
 	if (options & DHCPCD_QUIET) {
 		i = open(_PATH_DEVNULL, O_RDWR);
 		if (i == -1)
@@ -1263,9 +1293,13 @@ main(int argc, char **argv)
 			options |= DHCPCD_MASTER;
 		}
 	}
+#else
+	options |= DHCPCD_MASTER;
+#endif
 
 	if (chdir("/") == -1)
 		syslog(LOG_ERR, "chdir `/': %m");
+#ifndef MASTER_ONLY
 	atexit(cleanup);
 
 	if (options & DHCPCD_DUMPLEASE) {
@@ -1364,6 +1398,7 @@ main(int argc, char **argv)
 			writepid(pidfd, getpid());
 		}
 	}
+#endif /* !MASTER_ONLY */
 
 	syslog(LOG_INFO, "version " VERSION " starting");
 	options |= DHCPCD_STARTED;
@@ -1372,6 +1407,7 @@ main(int argc, char **argv)
 	eloop_init();
 #endif
 
+#ifndef MASTER_ONLY
 	/* Save signal mask, block and redirect signals to our handler */
 	if (signal_init(handle_signal, &dhcpcd_sigset) == -1) {
 		syslog(LOG_ERR, "signal_setup: %m");
@@ -1382,6 +1418,7 @@ main(int argc, char **argv)
 		if (control_start() == -1)
 			syslog(LOG_ERR, "control_start: %m");
 	}
+#endif
 
 	if (open_sockets() == -1) {
 		syslog(LOG_ERR, "open_sockets: %m");

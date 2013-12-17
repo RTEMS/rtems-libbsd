@@ -27,6 +27,7 @@
 
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/select.h>
 
 #include <limits.h>
 #include <poll.h>
@@ -42,6 +43,8 @@ pollts(struct pollfd *restrict fds, nfds_t nfds,
 	fd_set read_fds;
 	nfds_t n;
 	int maxfd, r;
+	struct timeval tv;
+	struct timeval *tvp;
 
 	FD_ZERO(&read_fds);
 	maxfd = 0;
@@ -53,7 +56,14 @@ pollts(struct pollfd *restrict fds, nfds_t nfds,
 		}
 	}
 
-	r = pselect(maxfd + 1, &read_fds, NULL, NULL, ts, sigmask);
+	if (ts != NULL) {
+		TIMESPEC_TO_TIMEVAL(&tv, ts);
+		tvp = &tv;
+	} else {
+		tvp = NULL;
+	}
+
+	r = select(maxfd + 1, &read_fds, NULL, NULL, tvp);
 	if (r > 0) {
 		for (n = 0; n < nfds; n++) {
 			fds[n].revents =

@@ -56,6 +56,8 @@
 
 #include <machine/rtems-bsd-symbols.h>
 
+#include <machine/rtems-bsd-printf-to-iprintf.h>
+
 /* Assert */
 
 void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);

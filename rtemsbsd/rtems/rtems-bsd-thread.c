@@ -261,7 +261,7 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 		BSD_TASK_NAME,
 		BSD_TASK_PRIORITY_NORMAL,
 		BSD_MINIMUM_TASK_STACK_SIZE + (size_t) pages * PAGE_SIZE,
-		RTEMS_DEFAULT_ATTRIBUTES,
+		RTEMS_DEFAULT_MODES,
 		RTEMS_DEFAULT_ATTRIBUTES,
 		&task_id
 	);

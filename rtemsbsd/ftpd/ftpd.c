@@ -214,6 +214,7 @@
 
 #include <rtems/ftpd.h>
 
+#include <machine/rtems-bsd-printf-to-iprintf.h>
 
 #ifdef __GNUC__
 /* change to #if 1 to disable syslog entirely */

@@ -70,8 +70,6 @@ extern const size_t rtems_bsd_nexus_device_count;
 
 rtems_status_code rtems_bsd_initialize(void);
 
-rtems_status_code rtems_bsd_initialize_with_interrupt_server(void);
-
 void rtems_bsd_shell_initialize(void);
 
 #ifdef __cplusplus

@@ -259,7 +259,7 @@ static void Init(rtems_task_argument arg)
   sc = rtems_media_server_initialize(200, 32 * 1024, RTEMS_DEFAULT_MODES, RTEMS_DEFAULT_ATTRIBUTES);
   ASSERT_SC(sc);
 
-  sc = rtems_bsd_initialize_with_interrupt_server();
+  sc = rtems_bsd_initialize();
   ASSERT_SC(sc);
 
   rtems_bsd_shell_initialize();

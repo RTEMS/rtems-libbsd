@@ -51,7 +51,7 @@ rtems_task Init(
   /* Let other tasks run to complete background work */
   default_set_self_prio( RTEMS_MAXIMUM_PRIORITY - 1 );
 
-  rtems_bsd_initialize_with_interrupt_server();
+  rtems_bsd_initialize();
 
   /* Let the callout timer allocate its resources */
   sc = rtems_task_wake_after( 2 );

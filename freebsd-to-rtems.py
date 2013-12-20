@@ -652,7 +652,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-delay.c',
 		'rtems/rtems-bsd-get-file.c',
 		'rtems/rtems-bsd-init.c',
-		'rtems/rtems-bsd-init-with-irq.c',
 		'rtems/rtems-bsd-jail.c',
 		'rtems/rtems-bsd-kern_synch.c',
 		'rtems/rtems-bsd-lock.c',

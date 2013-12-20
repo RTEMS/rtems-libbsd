@@ -38,6 +38,7 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
@@ -62,10 +63,20 @@ static struct rman irq_rman;
 static int
 nexus_probe(device_t dev)
 {
+	rtems_status_code status;
 	int err;
 	size_t i;
 
 	device_set_desc(dev, "RTEMS Nexus device");
+
+	status = rtems_interrupt_server_initialize(
+		BSD_TASK_PRIORITY_INTERRUPT,
+		BSD_MINIMUM_TASK_STACK_SIZE,
+		RTEMS_DEFAULT_MODES,
+		RTEMS_DEFAULT_ATTRIBUTES,
+		NULL
+	);
+	BSD_ASSERT(status == RTEMS_SUCCESSFUL);
 
 	mem_rman.rm_start = 0;
 	mem_rman.rm_end = ~0UL;

@@ -214,6 +214,7 @@ int rtems_bsd_command_route(int argc, char *argv[])
 		mc.argv = argv;
 		mc.c = c;
 
+		c->s = -1;
 		c->aflen = sizeof(struct sockaddr_in);
 		TAILQ_INIT(&c->fibl_head);
 

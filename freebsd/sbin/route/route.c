@@ -411,7 +411,7 @@ fiboptlist_csv(struct rt_ctx *c, const char *arg, struct fibl_head_t *flh)
 	int fib, error;
 
 	if (strcmp("all", arg) == 0) {
-		str = calloc(1, ALLSTRLEN);
+		str0 = str = calloc(1, ALLSTRLEN);
 		if (str == NULL) {
 			error = 1;
 			goto fiboptlist_csv_ret;

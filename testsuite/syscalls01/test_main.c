@@ -55,6 +55,7 @@
 #define RTEMS_BSD_PROGRAM_NO_PRINTF_WRAP
 #include <machine/rtems-bsd-program.h>
 
+#include <rtems.h>
 #include <rtems/libcsupport.h>
 
 #define TEST_NAME "LIBBSD SYSCALLS 1"

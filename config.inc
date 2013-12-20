@@ -1,7 +1,6 @@
 BSP = jmr3904
 RTEMS_MAKEFILE_PATH = ${HOME}/newbsd/bsp-install/mips-rtems4.11/$(BSP)
 INSTALL_BASE = ${HOME}/newbsd/install
-DISABLE_IPV6=no
 TEST_RUNNER = $(BSP)
 NET_CFG_SELF_IP = 10.0.2.1
 NET_CFG_NETMASK = 255.255.0.0

@@ -13,7 +13,6 @@ freebsd/lib/libc/net/nsparser.h
 freebsd/lib/libc/net/nslexer.c
 freebsd/lib/libc/net/nsparser.c
 rtemsbsd/rtems/rtems-kvm-symbols.c
-rtemsbsd/include/machine/rtems-bsd-kernel-space.h
 testsuite/include/rtems/bsd/test/network-config.h
 /*.i
 /*.s

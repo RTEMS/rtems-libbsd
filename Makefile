@@ -28,9 +28,6 @@ CFLAGS += -std=gnu99
 CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 NEED_DUMMY_PIC_IRQ=yes
 
-# do nothing default so sed on rtems-bsd-kernel-space.h always works.
-SED_PATTERN += -e 's/^//'
-
 TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h
 
 TESTS =
@@ -43,7 +40,7 @@ O_FILES =
 D_FILES =
 
 LIB = libbsd.a
-LIB_GEN_FILES = rtemsbsd/include/machine/rtems-bsd-kernel-space.h
+LIB_GEN_FILES =
 LIB_C_FILES =
 LIB_C_FILES += rtemsbsd/local/bus_if.c
 LIB_C_FILES += rtemsbsd/local/cryptodev_if.c
@@ -294,7 +291,6 @@ LIB_C_FILES += freebsd/sys/netinet/libalias/alias_proxy.c
 LIB_C_FILES += freebsd/sys/netinet/libalias/alias.c
 LIB_C_FILES += freebsd/sys/netinet/libalias/alias_skinny.c
 LIB_C_FILES += freebsd/sys/netinet/libalias/alias_sctp.c
-ifneq ($(DISABLE_IPV6),yes)
 LIB_C_FILES += freebsd/sys/net/if_stf.c
 LIB_C_FILES += freebsd/sys/netinet6/dest6.c
 LIB_C_FILES += freebsd/sys/netinet6/frag6.c
@@ -323,9 +319,6 @@ LIB_C_FILES += freebsd/sys/netinet6/route6.c
 LIB_C_FILES += freebsd/sys/netinet6/scope6.c
 LIB_C_FILES += freebsd/sys/netinet6/sctp6_usrreq.c
 LIB_C_FILES += freebsd/sys/netinet6/udp6_usrreq.c
-else
-SED_PATTERN += -e 's/^\#define INET6 1/\/\/ \#define INET6 1/'
-endif # DISABLE_IPV6
 LIB_C_FILES += freebsd/sys/netipsec/ipsec.c
 LIB_C_FILES += freebsd/sys/netipsec/ipsec_input.c
 LIB_C_FILES += freebsd/sys/netipsec/ipsec_mbuf.c
@@ -1309,10 +1302,6 @@ $(TEST_NETWORK_CONFIG): $(TEST_NETWORK_CONFIG).in config.inc
 	-e 's/@NET_CFG_PEER_IP@/$(NET_CFG_PEER_IP)/' \
 	-e 's/@NET_CFG_GATEWAY_IP@/$(NET_CFG_GATEWAY_IP)/' \
 	< $< > $@
-
-# The following targets use the MIPS Generic in_cksum routine
-rtemsbsd/include/machine/rtems-bsd-kernel-space.h: rtemsbsd/include/machine/rtems-bsd-kernel-space.h.in
-	sed $(SED_PATTERN) <$< >$@
 
 CPU_SED  = sed
 CPU_SED += -e '/arm/d'

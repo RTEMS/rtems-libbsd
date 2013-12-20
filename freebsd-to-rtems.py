@@ -434,9 +434,6 @@ class ModuleManager:
 			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n' \
-                        '# do nothing default so sed on rtems-bsd-kernel-space.h always works.\n' \
-                        'SED_PATTERN += -e \'s/^//\'\n' \
-			'\n' \
 			'TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h\n' \
 			'\n' \
 			'TESTS =\n' \
@@ -449,7 +446,7 @@ class ModuleManager:
 			'D_FILES =\n' \
 			'\n' \
 			'LIB = libbsd.a\n' \
-			'LIB_GEN_FILES = rtemsbsd/include/machine/rtems-bsd-kernel-space.h\n' \
+			'LIB_GEN_FILES =\n' \
 			'LIB_C_FILES =\n'
 		for m in self.modules:
 			if m.conditionalOn != "none":
@@ -465,8 +462,6 @@ class ModuleManager:
 					data += 'NEED_DUMMY_PIC_IRQ=no\n'
 				data += 'endif\n'
 			if m.conditionalOn != "none":
-				data += 'else\n'
-				data += 'SED_PATTERN += -e \'' + m.cppPattern +'\'\n'
 				data += 'endif # ' + m.conditionalOn +'\n'
 		data += '\n' \
 			'ifeq ($(NEED_DUMMY_PIC_IRQ),yes)\n' \
@@ -495,10 +490,6 @@ class ModuleManager:
 			'\t-e \'s/@NET_CFG_PEER_IP@/$(NET_CFG_PEER_IP)/\' \\\n' \
 			'\t-e \'s/@NET_CFG_GATEWAY_IP@/$(NET_CFG_GATEWAY_IP)/\' \\\n' \
 			'\t< $< > $@\n' \
-			'\n' \
-			'# The following targets use the MIPS Generic in_cksum routine\n' \
-			'rtemsbsd/include/machine/rtems-bsd-kernel-space.h: rtemsbsd/include/machine/rtems-bsd-kernel-space.h.in\n' \
-			'\tsed $(SED_PATTERN) <$< >$@\n' \
 			'\n' \
 			'CPU_SED  = sed\n' \
 			'CPU_SED += -e \'/arm/d\'\n' \
@@ -560,7 +551,6 @@ class Module:
 	def __init__(self, name):
 		self.name = name
 		self.conditionalOn = "none"
-		self.cppPattern = "s///"
 		self.files = []
 		self.cpuDependentSourceFiles = {}
 		self.dependencies = []
@@ -1711,8 +1701,6 @@ netinet.addKernelSpaceSourceFiles(
 )
 
 netinet6 = Module('netinet6')
-netinet6.conditionalOn = "DISABLE_IPV6"
-netinet6.cppPattern = 's/^\#define INET6 1/\/\/ \#define INET6 1/'
 netinet6.addKernelSpaceHeaderFiles(
 	[
 		'sys/netinet6/icmp6.h',

@@ -18,6 +18,8 @@
 
 #include <unistd.h>
 
+#include <machine/rtems-bsd-printf-to-iprintf.h>
+
 static int LogStatus = LOG_CONS;
 static const char *LogTag = "syslog";
 static int LogFacility = LOG_USER;

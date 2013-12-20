@@ -499,24 +499,21 @@ class ModuleManager:
 			'CPU_SED += -e \'/mips/d\'\n' \
 			'CPU_SED += -e \'/sparc64/d\'\n' \
 			'\n' \
+			'LIB_DIR = $(INSTALL_BASE)/lib\n' \
+			'INCLUDE_DIR = $(INSTALL_BASE)/lib/include\n' \
+			'\n' \
 			'install: $(LIB)\n' \
-			'\tinstall -d $(INSTALL_BASE)/include\n' \
-			'\tinstall -c -m 644 $(LIB) $(INSTALL_BASE)\n' \
-			'\tcd rtemsbsd; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
-			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\tcd contrib/altq; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
-			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\tcd contrib/pf; for i in `find freebsd -name \'*.h\'` ; do \\\n' \
-                        '\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\tfor i in `find freebsd -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
-			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\t-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name \'*.h\'` ; do \\\n' \
-			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\t-cd rtemsbsd/$(RTEMS_CPU)/include && \\\n' \
-			'\t  for i in `find . -name \'*.h\' | $(CPU_SED)` ; do \\\n' \
-			'\t    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
-			'\t-cd copied/rtemsbsd/$(RTEMS_CPU)/include && for i in `find . -name \'*.h\'` ; do \\\n' \
-			'\t  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done\n' \
+			'\tinstall -d $(LIB_DIR)\n' \
+			'\tinstall -m 644 $(LIB) $(LIB_DIR)\n' \
+			'\tcd rtemsbsd/include ; for i in `find . -type d` ; do \\\n' \
+			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
+			'\t  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
+			'\tcd freebsd/include ; for i in `find . -type d` ; do \\\n' \
+			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
+			'\t  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
+			'\tfor i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys ; do \\\n' \
+			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
+			'\t  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
 			'\n' \
 			'clean:\n' \
 			'\trm -f $(LIB_GEN_FILES) $(LIB) $(TESTS) $(O_FILES) $(D_FILES)\n' \

@@ -4,7 +4,7 @@ BSP = realview_pbx_a9_qemu
 PREFIX = /opt/rtems-4.11
 
 # Optional: Separate installation base directory
-INSTALL_BASE = $(PREFIX)
+INSTALL_BASE = $(PREFIX)/$(TARGET)/$(BSP)
 
 # Optional: Network test configuration
 TEST_RUNNER = $(BSP)

@@ -1310,24 +1310,21 @@ CPU_SED += -e '/powerpc/d'
 CPU_SED += -e '/mips/d'
 CPU_SED += -e '/sparc64/d'
 
+LIB_DIR = $(INSTALL_BASE)/lib
+INCLUDE_DIR = $(INSTALL_BASE)/lib/include
+
 install: $(LIB)
-	install -d $(INSTALL_BASE)/include
-	install -c -m 644 $(LIB) $(INSTALL_BASE)
-	cd rtemsbsd; for i in `find freebsd -name '*.h'` ; do \
-	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	cd contrib/altq; for i in `find freebsd -name '*.h'` ; do \
-	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	cd contrib/pf; for i in `find freebsd -name '*.h'` ; do \
-	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	for i in `find freebsd -name '*.h' | $(CPU_SED)` ; do \
-	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	-cd freebsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \
-	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	-cd rtemsbsd/$(RTEMS_CPU)/include && \
-	  for i in `find . -name '*.h' | $(CPU_SED)` ; do \
-	    install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
-	-cd copied/rtemsbsd/$(RTEMS_CPU)/include && for i in `find . -name '*.h'` ; do \
-	  install -c -m 644 -D "$$i" "$(INSTALL_BASE)/include/$$i" ; done
+	install -d $(LIB_DIR)
+	install -m 644 $(LIB) $(LIB_DIR)
+	cd rtemsbsd/include ; for i in `find . -type d` ; do \
+	  install -d $(INCLUDE_DIR)/$$i ; \
+	  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done
+	cd freebsd/include ; for i in `find . -type d` ; do \
+	  install -d $(INCLUDE_DIR)/$$i ; \
+	  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done
+	for i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys ; do \
+	  install -d $(INCLUDE_DIR)/$$i ; \
+	  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done
 
 clean:
 	rm -f $(LIB_GEN_FILES) $(LIB) $(TESTS) $(O_FILES) $(D_FILES)

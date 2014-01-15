@@ -157,6 +157,7 @@ LIB_C_FILES += freebsd/sys/kern/uipc_mbuf2.c
 LIB_C_FILES += freebsd/sys/kern/uipc_mbuf.c
 LIB_C_FILES += freebsd/sys/kern/uipc_sockbuf.c
 LIB_C_FILES += freebsd/sys/kern/uipc_socket.c
+LIB_C_FILES += freebsd/sys/kern/uipc_usrreq.c
 LIB_C_FILES += freebsd/sys/libkern/arc4random.c
 LIB_C_FILES += freebsd/sys/libkern/fls.c
 LIB_C_FILES += freebsd/sys/libkern/inet_ntoa.c
@@ -1101,6 +1102,18 @@ freebsd/usr.bin/netstat/sctp.o: freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
+
+TEST_UNIX01 = testsuite/unix01/unix01.exe
+TEST_UNIX01_O_FILES =
+TEST_UNIX01_D_FILES =
+TEST_UNIX01_O_FILES += testsuite/unix01/test_main.o
+TEST_UNIX01_D_FILES += testsuite/unix01/test_main.d
+$(TEST_UNIX01): $(TEST_UNIX01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/unix01/unix01.map $^ -lm -lz -o $@
+TESTS += $(TEST_UNIX01)
+O_FILES += $(TEST_UNIX01_O_FILES)
+D_FILES += $(TEST_UNIX01_D_FILES)
+RUN_TESTS += $(TEST_UNIX01)
 
 TEST_FTPD01 = testsuite/ftpd01/ftpd01.exe
 TEST_FTPD01_O_FILES =

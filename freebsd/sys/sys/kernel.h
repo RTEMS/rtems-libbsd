@@ -265,6 +265,8 @@ struct sysinit {
 	SYSINIT_REFERENCE(mod ## module)
 #define	SYSINIT_DRIVER_REFERENCE(driver, bus)			\
 	SYSINIT_MODULE_REFERENCE(driver ## _ ## bus)
+#define	SYSINIT_DOMAIN_REFERENCE(dom)				\
+	SYSINIT_REFERENCE(domain_add_ ## dom)
 #endif /* __rtems__ */
 
 #define	SYSINIT(uniquifier, subsystem, order, func, ident)	\

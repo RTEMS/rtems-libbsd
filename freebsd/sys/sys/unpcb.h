@@ -68,7 +68,11 @@ struct unpcb {
 	LIST_ENTRY(unpcb) unp_link; 	/* glue on list of all PCBs */
 	struct	socket *unp_socket;	/* pointer back to socket */
 	struct	file *unp_file;		/* back-pointer to file for gc. */
+#ifndef __rtems__
 	struct	vnode *unp_vnode;	/* if associated with file */
+#else /* __rtems__ */
+	struct	IMFS_jnode_tt *unp_vnode;	/* if associated with file */
+#endif /* __rtems__ */
 	ino_t	unp_ino;		/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unp_head unp_refs;	/* referencing socket linked list */

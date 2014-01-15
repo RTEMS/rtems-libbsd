@@ -96,6 +96,8 @@ rtems_task Init(
 
 #include <machine/rtems-bsd-sysinit.h>
 
+SYSINIT_NEED_NET_PF_UNIX;
+
 /* only include FXP and PCI for i386/pc386 for debug on qemu (for now) */
 #if defined(i386)
   #define CONFIGURE_NEED_PCIB

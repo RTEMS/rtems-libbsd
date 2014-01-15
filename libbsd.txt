@@ -111,6 +111,10 @@ the current Git submodule commit is this
 
 * BPF(4): Add support for zero-copy buffers.
 
+* UNIX(4): Fix race conditions in the area of socket object and file node
+  destruction.  Add support for file descriptor transmission via control
+  messages.
+
 [listing]
 ----
     /* sysinit section? */

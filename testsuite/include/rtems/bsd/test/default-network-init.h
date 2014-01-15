@@ -166,6 +166,10 @@ Init(rtems_task_argument arg)
 	assert(0);
 }
 
+#include <machine/rtems-bsd-sysinit.h>
+
+SYSINIT_NEED_NET_PF_UNIX;
+
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 

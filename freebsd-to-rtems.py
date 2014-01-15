@@ -854,6 +854,7 @@ base.addKernelSpaceSourceFiles(
 		'sys/kern/uipc_mbuf.c',
 		'sys/kern/uipc_sockbuf.c',
 		'sys/kern/uipc_socket.c',
+		'sys/kern/uipc_usrreq.c',
 		'sys/libkern/arc4random.c',
 		'sys/libkern/fls.c',
 		'sys/libkern/inet_ntoa.c',
@@ -2426,6 +2427,7 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('unix01', ['test_main'])
 tests.addTest('ftpd01', ['test_main'], netTest = True)
 tests.addTest('ping01', ['test_main'], netTest = True)
 tests.addTest('selectpollkqueue01', ['test_main'])

@@ -182,7 +182,7 @@ struct file {
 #endif /* __rtems__ */
 };
 #ifdef __rtems__
-#define f_data f_io.pathinfo.node_access
+#define f_data f_io.pathinfo.node_access_2
 
 static inline struct file *
 rtems_bsd_iop_to_fp(rtems_libio_t *iop)
@@ -205,7 +205,7 @@ rtems_bsd_fp_to_fd(struct file *fp)
 static inline void *
 rtems_bsd_loc_to_f_data(const rtems_filesystem_location_info_t *loc)
 {
-	return loc->node_access;
+	return loc->node_access_2;
 }
 
 static inline uint32_t

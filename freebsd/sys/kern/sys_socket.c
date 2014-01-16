@@ -462,6 +462,13 @@ soo_close(struct file *fp, struct thread *td)
 }
 #ifdef __rtems__
 static int
+rtems_bsd_soo_open(rtems_libio_t *iop, const char *path, int oflag,
+    mode_t mode)
+{
+	return rtems_bsd_error_to_status_and_errno(ENXIO);
+}
+
+static int
 rtems_bsd_soo_close(rtems_libio_t *iop)
 {
 	struct file *fp = rtems_bsd_iop_to_fp(iop);
@@ -486,7 +493,7 @@ rtems_bsd_soo_fcntl(rtems_libio_t *iop, int cmd)
 }
 
 const rtems_filesystem_file_handlers_r socketops = {
-	.open_h = rtems_filesystem_default_open,
+	.open_h = rtems_bsd_soo_open,
 	.close_h = rtems_bsd_soo_close,
 	.read_h = rtems_bsd_soo_read,
 	.write_h = rtems_bsd_soo_write,

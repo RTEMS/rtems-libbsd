@@ -2429,6 +2429,7 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('arphole', ['test_main'], runTest = False, netTest = True)
 tests.addTest('unix01', ['test_main'])
 tests.addTest('ftpd01', ['test_main'], netTest = True)
 tests.addTest('ping01', ['test_main'], netTest = True)

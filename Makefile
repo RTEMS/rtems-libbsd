@@ -1105,6 +1105,17 @@ LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 
+TEST_ARPHOLE = testsuite/arphole/arphole.exe
+TEST_ARPHOLE_O_FILES =
+TEST_ARPHOLE_D_FILES =
+TEST_ARPHOLE_O_FILES += testsuite/arphole/test_main.o
+TEST_ARPHOLE_D_FILES += testsuite/arphole/test_main.d
+$(TEST_ARPHOLE): $(TEST_ARPHOLE_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/arphole/arphole.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_ARPHOLE)
+O_FILES += $(TEST_ARPHOLE_O_FILES)
+D_FILES += $(TEST_ARPHOLE_D_FILES)
+
 TEST_UNIX01 = testsuite/unix01/unix01.exe
 TEST_UNIX01_O_FILES =
 TEST_UNIX01_D_FILES =

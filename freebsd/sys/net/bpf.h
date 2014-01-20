@@ -40,6 +40,9 @@
 #ifndef _NET_BPF_H_
 #define _NET_BPF_H_
 
+#if defined(__rtems__) && !defined(__FreeBSD__)
+#define __FreeBSD__ 1
+#endif /* defined(__rtems__) && !defined(__FreeBSD__) */
 /* BSD style release date */
 #define	BPF_RELEASE 199606
 

@@ -34,6 +34,8 @@
 
 #include <sys/types.h>
 
+#include <net/if.h>
+#include <net/if_arp.h>
 #include <net/ethernet.h>
 
 #include <stdint.h>
@@ -56,6 +58,24 @@ extern "C" {
  */
 int
 rtems_bsd_get_ethernet_addr(const char *ifname, uint8_t eaddr[ETHER_ADDR_LEN]);
+
+typedef void (*rtems_bsd_arp_processor)(void *arg, int fd,
+    const uint8_t eaddr[ETHER_ADDR_LEN], const struct arphdr *ar,
+    uint32_t spa, uint32_t tpa, const uint8_t *sha, const uint8_t *tha);
+
+typedef struct rtems_bsd_arp_processor_context rtems_bsd_arp_processor_context;
+
+rtems_bsd_arp_processor_context *
+rtems_bsd_arp_processor_create(const char *ifname);
+
+int
+rtems_bsd_arp_processor_get_file_descriptor(
+    const rtems_bsd_arp_processor_context *ctx);
+
+int
+rtems_bsd_arp_processor_process(
+    rtems_bsd_arp_processor_context *ctx,
+    rtems_bsd_arp_processor processor, void *arg);
 
 #ifdef __cplusplus
 }

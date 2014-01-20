@@ -639,6 +639,7 @@ rtems.addRTEMSSourceFiles(
 		'local/usb_if.c',
 		'rtems/ipsec_get_policylen.c',
 		'rtems/rtems-bsd-assert.c',
+		'rtems/rtems-bsd-arp-processor.c',
 		'rtems/rtems-bsd-autoconf.c',
 		'rtems/rtems-bsd-bus-dma.c',
 		'rtems/rtems-bsd-bus-dma-mbuf.c',

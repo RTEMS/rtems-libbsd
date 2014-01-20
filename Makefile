@@ -52,6 +52,7 @@ LIB_C_FILES += rtemsbsd/local/pci_if.c
 LIB_C_FILES += rtemsbsd/local/usb_if.c
 LIB_C_FILES += rtemsbsd/rtems/ipsec_get_policylen.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-assert.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-arp-processor.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-autoconf.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma-mbuf.c

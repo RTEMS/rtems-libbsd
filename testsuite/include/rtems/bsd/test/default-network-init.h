@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -41,8 +41,6 @@
 #include <rtems/bsd/test/network-config.h>
 #include <rtems/bsd/bsd.h>
 
-#define DEFAULT_NETWORK_ARGC(x) (RTEMS_ARRAY_SIZE(x) - 1)
-
 static void
 default_network_set_self_prio(rtems_task_priority prio)
 {
@@ -75,10 +73,10 @@ default_network_ifconfig_lo0(void)
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_ifconfig(DEFAULT_NETWORK_ARGC(lo0), lo0);
+	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(lo0), lo0);
 	assert(exit_code == EX_OK);
 
-	exit_code = rtems_bsd_command_ifconfig(DEFAULT_NETWORK_ARGC(lo0_inet6), lo0_inet6);
+	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(lo0_inet6), lo0_inet6);
 	assert(exit_code == EX_OK);
 }
 
@@ -96,7 +94,7 @@ default_network_ifconfig_interface_0(void)
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_ifconfig(DEFAULT_NETWORK_ARGC(iface0), iface0);
+	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(iface0), iface0);
 	assert(exit_code == EX_OK);
 }
 
@@ -121,10 +119,10 @@ default_network_route(void)
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_route(DEFAULT_NETWORK_ARGC(dflt_route), dflt_route);
+	exit_code = rtems_bsd_command_route(RTEMS_BSD_ARGC(dflt_route), dflt_route);
 	assert(exit_code == EXIT_SUCCESS);
 
-	exit_code = rtems_bsd_command_route(DEFAULT_NETWORK_ARGC(dflt_route2), dflt_route2);
+	exit_code = rtems_bsd_command_route(RTEMS_BSD_ARGC(dflt_route2), dflt_route2);
 	assert(exit_code == EXIT_SUCCESS);
 }
 

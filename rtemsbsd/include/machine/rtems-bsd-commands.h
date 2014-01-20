@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -41,6 +41,8 @@
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
 
 #include <sys/cdefs.h>
+
+#define RTEMS_BSD_ARGC(array) (sizeof(array) / sizeof((array)[0]) - 1)
 
 __BEGIN_DECLS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -41,8 +41,6 @@
 
 #define TEST_NAME "LIBBSD PING 1"
 
-#define ARGC(x) (RTEMS_ARRAY_SIZE(x) - 1)
-
 static void
 test_ping(void)
 {
@@ -55,7 +53,7 @@ test_ping(void)
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_ping(ARGC(ping), ping);
+	exit_code = rtems_bsd_command_ping(RTEMS_BSD_ARGC(ping), ping);
 	assert(exit_code == EXIT_SUCCESS);
 }
 

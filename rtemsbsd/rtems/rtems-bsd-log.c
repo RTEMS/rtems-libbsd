@@ -37,17 +37,10 @@
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
 
-/*
- * Log writes to the log buffer, and guarantees not to sleep (so can be
- * called by interrupt routines).  If there is no process reading the
- * log yet, it writes to the console also.
- */
+#include <stdio.h>
+
 void
 log(int level, const char *fmt, ...)
 {
-        va_list ap;
-
-        va_start(ap, fmt);
-        vprintk(fmt, ap);
-        va_end(ap);
+	puts(fmt);
 }

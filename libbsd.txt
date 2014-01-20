@@ -115,6 +115,9 @@ the current Git submodule commit is this
   destruction.  Add support for file descriptor transmission via control
   messages.
 
+* PRINTF(9): Add support for log(), the %D format specifier is missing in the
+  normal printf() family.
+
 [listing]
 ----
     /* sysinit section? */

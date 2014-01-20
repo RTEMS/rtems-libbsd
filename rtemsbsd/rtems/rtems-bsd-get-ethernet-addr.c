@@ -29,36 +29,46 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_UTIL_H_
-#define _RTEMS_BSD_UTIL_H_
+#include <rtems/bsd/util.h>
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 
-#include <net/ethernet.h>
+#include <net/if_dl.h>
 
-#include <stdint.h>
+#include <errno.h>
+#include <ifaddrs.h>
+#include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-/**
- * @brief Gets the Ethernet address of an interface identified by its name.
- *
- * This function uses getifaddrs().  The interface type is not checked, so it
- * is only safe to use this function for Ethernet type interfaces.
- *
- * @param[in] ifname The name of the interface.
- * @parma[out] eaddr The Ethernet address of this interface.
- *
- * @retval 0 Successful operation.
- * @retval -1 An error occurred.  The errno is set to indicate the error.
- */
 int
-rtems_bsd_get_ethernet_addr(const char *ifname, uint8_t eaddr[ETHER_ADDR_LEN]);
+rtems_bsd_get_ethernet_addr(const char *ifname, uint8_t eaddr[ETHER_ADDR_LEN])
+{
+	int rv;
+	struct ifaddrs *ifa;
 
-#ifdef __cplusplus
+	rv = getifaddrs(&ifa);
+	if (rv == 0) {
+		struct ifaddrs *cur;
+
+		for (cur = ifa; cur != NULL; cur = cur->ifa_next) {
+			if (strcmp(cur->ifa_name, ifname) == 0 &&
+			    cur->ifa_addr->sa_family == AF_LINK) {
+				const struct sockaddr_dl *dl =
+				    (const struct sockaddr_dl *) cur->ifa_addr;
+
+				memcpy(&eaddr[0], LLADDR(dl), ETHER_ADDR_LEN);
+				break;
+			}
+		}
+
+		freeifaddrs(ifa);
+
+		if (cur == NULL) {
+			errno = ENXIO;
+			rv = -1;
+		}
+	}
+
+	return rv;
 }
-#endif /* __cplusplus */
-
-#endif /* _RTEMS_BSD_UTIL_H_ */

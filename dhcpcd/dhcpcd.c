@@ -37,6 +37,9 @@ const char dhcpcd_copyright[] = "Copyright (c) 2006-2014 Roy Marples";
 
 #include <ctype.h>
 #include <errno.h>
+#ifdef __rtems__
+#define __need_getopt_newlib
+#endif /* __rtems__ */
 #include <getopt.h>
 #include <limits.h>
 #include <paths.h>
@@ -1094,6 +1097,8 @@ signal_init(void (*func)(int, siginfo_t *, void *), sigset_t *oldset)
 
 #ifdef __rtems__
 #include <rtems/libio.h>
+
+struct getopt_data dhcpcd_getopt_data;
 
 static int
 main(int argc, char **argv);

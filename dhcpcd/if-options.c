@@ -33,6 +33,9 @@
 
 #include <ctype.h>
 #include <errno.h>
+#ifdef __rtems__
+#define __need_getopt_newlib
+#endif /* __rtems__ */
 #include <getopt.h>
 #include <limits.h>
 #include <paths.h>

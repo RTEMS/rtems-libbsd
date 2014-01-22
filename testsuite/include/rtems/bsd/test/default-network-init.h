@@ -29,7 +29,10 @@
  * SUCH DAMAGE.
  */
 
+#include <net/if.h>
+
 #include <assert.h>
+#include <ifaddrs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
@@ -38,8 +41,11 @@
 
 #include <rtems.h>
 #include <rtems/stackchk.h>
-#include <rtems/bsd/test/network-config.h>
 #include <rtems/bsd/bsd.h>
+
+#ifndef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
+#include <rtems/bsd/test/network-config.h>
+#endif
 
 static void
 default_network_set_self_prio(rtems_task_priority prio)
@@ -81,26 +87,31 @@ default_network_ifconfig_lo0(void)
 }
 
 static void
-default_network_ifconfig_interface_0(void)
+default_network_ifconfig_hwif0(char *ifname)
 {
 	int exit_code;
-	char *iface0[] = {
+	char *ifcfg[] = {
 		"ifconfig",
-		NET_CFG_INTERFACE_0,
+		ifname,
+#ifdef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
+		"up",
+#else
 		"inet",
 		NET_CFG_SELF_IP,
 		"netmask",
 		NET_CFG_NETMASK,
+#endif
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(iface0), iface0);
+	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(ifcfg), ifcfg);
 	assert(exit_code == EX_OK);
 }
 
 static void
-default_network_route(void)
+default_network_route_hwif0(char *ifname)
 {
+#ifndef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
 	int exit_code;
 	char *dflt_route[] = {
 		"route",
@@ -108,7 +119,7 @@ default_network_route(void)
 		"-host",
 		NET_CFG_GATEWAY_IP,
 		"-iface",
-		NET_CFG_INTERFACE_0,
+		ifname,
 		NULL
 	};
 	char *dflt_route2[] = {
@@ -124,6 +135,7 @@ default_network_route(void)
 
 	exit_code = rtems_bsd_command_route(RTEMS_BSD_ARGC(dflt_route2), dflt_route2);
 	assert(exit_code == EXIT_SUCCESS);
+#endif
 }
 
 static void
@@ -141,6 +153,10 @@ static void
 Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;
+#ifdef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
+	char ifnamebuf[IF_NAMESIZE];
+#endif
+	char *ifname;
 
 	puts("*** " TEST_NAME " TEST ***");
 
@@ -151,13 +167,20 @@ Init(rtems_task_argument arg)
 
 	rtems_bsd_initialize();
 
+#ifdef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
+	ifname = if_indextoname(1, &ifnamebuf[0]);
+	assert(ifname != NULL);
+#else
+	ifname = NET_CFG_INTERFACE_0;
+#endif
+
 	/* Let the callout timer allocate its resources */
 	sc = rtems_task_wake_after(2);
 	assert(sc == RTEMS_SUCCESSFUL);
 
 	default_network_ifconfig_lo0();
-	default_network_ifconfig_interface_0();
-	default_network_route();
+	default_network_ifconfig_hwif0(ifname);
+	default_network_route_hwif0(ifname);
 
 	test_main();
 
@@ -170,6 +193,8 @@ SYSINIT_NEED_NET_PF_UNIX;
 
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_ZERO_DRIVER
 
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 

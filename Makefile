@@ -22,6 +22,9 @@ CFLAGS += -Ifreebsd/lib/libutil
 CFLAGS += -Ifreebsd/lib/libkvm
 CFLAGS += -Ifreebsd/lib/libmemstat
 CFLAGS += -Ifreebsd/lib/libipsec
+CFLAGS += -ImDNSResponder/mDNSCore
+CFLAGS += -ImDNSResponder/mDNSShared
+CFLAGS += -ImDNSResponder/mDNSPosix
 CFLAGS += -Itestsuite/include
 CFLAGS += -Wall
 CFLAGS += -Wno-format
@@ -1105,6 +1108,28 @@ LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 
+TEST_FOOBARCLIENT = testsuite/foobarclient/foobarclient.exe
+TEST_FOOBARCLIENT_O_FILES =
+TEST_FOOBARCLIENT_D_FILES =
+TEST_FOOBARCLIENT_O_FILES += testsuite/foobarclient/test_main.o
+TEST_FOOBARCLIENT_D_FILES += testsuite/foobarclient/test_main.d
+$(TEST_FOOBARCLIENT): $(TEST_FOOBARCLIENT_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/foobarclient/foobarclient.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_FOOBARCLIENT)
+O_FILES += $(TEST_FOOBARCLIENT_O_FILES)
+D_FILES += $(TEST_FOOBARCLIENT_D_FILES)
+
+TEST_FOOBARSERVER = testsuite/foobarserver/foobarserver.exe
+TEST_FOOBARSERVER_O_FILES =
+TEST_FOOBARSERVER_D_FILES =
+TEST_FOOBARSERVER_O_FILES += testsuite/foobarserver/test_main.o
+TEST_FOOBARSERVER_D_FILES += testsuite/foobarserver/test_main.d
+$(TEST_FOOBARSERVER): $(TEST_FOOBARSERVER_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/foobarserver/foobarserver.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_FOOBARSERVER)
+O_FILES += $(TEST_FOOBARSERVER_O_FILES)
+D_FILES += $(TEST_FOOBARSERVER_D_FILES)
+
 TEST_DHCPCD01 = testsuite/dhcpcd01/dhcpcd01.exe
 TEST_DHCPCD01_O_FILES =
 TEST_DHCPCD01_D_FILES =
@@ -1390,6 +1415,18 @@ LIB_C_FILES += dhcpcd/crypt/hmac_md5.c
 dhcpcd/crypt/hmac_md5.o: dhcpcd/crypt/hmac_md5.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c
+LIB_C_FILES += mDNSResponder/mDNSCore/anonymous.c
+LIB_C_FILES += mDNSResponder/mDNSCore/CryptoAlg.c
+LIB_C_FILES += mDNSResponder/mDNSCore/DNSCommon.c
+LIB_C_FILES += mDNSResponder/mDNSCore/DNSDigest.c
+LIB_C_FILES += mDNSResponder/mDNSCore/mDNS.c
+LIB_C_FILES += mDNSResponder/mDNSCore/uDNS.c
+LIB_C_FILES += mDNSResponder/mDNSShared/dnssd_clientshim.c
+LIB_C_FILES += mDNSResponder/mDNSShared/mDNSDebug.c
+LIB_C_FILES += mDNSResponder/mDNSShared/PlatformCommon.c
+LIB_C_FILES += mDNSResponder/mDNSShared/GenLinkedList.c
+LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSPosix.c
+LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSUNP.c
 
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include
@@ -1440,6 +1477,10 @@ install: $(LIB)
 	for i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys ; do \
 	  install -d $(INCLUDE_DIR)/$$i ; \
 	  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done
+	install -m 644 mDNSResponder/mDNSCore/mDNSDebug.h $(INCLUDE_DIR)
+	install -m 644 mDNSResponder/mDNSCore/mDNSEmbeddedAPI.h $(INCLUDE_DIR)
+	install -m 644 mDNSResponder/mDNSShared/dns_sd.h $(INCLUDE_DIR)
+	install -m 644 mDNSResponder/mDNSPosix/mDNSPosix.h $(INCLUDE_DIR)
 
 clean:
 	rm -f $(LIB_GEN_FILES) $(LIB) $(TESTS) $(O_FILES) $(D_FILES)

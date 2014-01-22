@@ -428,6 +428,9 @@ class ModuleManager:
 			'CFLAGS += -Ifreebsd/lib/libkvm\n' \
 			'CFLAGS += -Ifreebsd/lib/libmemstat\n' \
 			'CFLAGS += -Ifreebsd/lib/libipsec\n' \
+			'CFLAGS += -ImDNSResponder/mDNSCore\n' \
+			'CFLAGS += -ImDNSResponder/mDNSShared\n' \
+			'CFLAGS += -ImDNSResponder/mDNSPosix\n' \
 			'CFLAGS += -Itestsuite/include\n' \
 			'CFLAGS += -Wall\n' \
 			'CFLAGS += -Wno-format\n' \
@@ -514,6 +517,10 @@ class ModuleManager:
 			'\tfor i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys ; do \\\n' \
 			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
 			'\t  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
+			'\tinstall -m 644 mDNSResponder/mDNSCore/mDNSDebug.h $(INCLUDE_DIR)\n' \
+			'\tinstall -m 644 mDNSResponder/mDNSCore/mDNSEmbeddedAPI.h $(INCLUDE_DIR)\n' \
+			'\tinstall -m 644 mDNSResponder/mDNSShared/dns_sd.h $(INCLUDE_DIR)\n' \
+			'\tinstall -m 644 mDNSResponder/mDNSPosix/mDNSPosix.h $(INCLUDE_DIR)\n' \
 			'\n' \
 			'clean:\n' \
 			'\trm -f $(LIB_GEN_FILES) $(LIB) $(TESTS) $(O_FILES) $(D_FILES)\n' \
@@ -2429,6 +2436,8 @@ in_cksum.addCPUDependentSourceFiles(
 )
 
 tests = Module('tests')
+tests.addTest('foobarclient', ['test_main'], runTest = False, netTest = True)
+tests.addTest('foobarserver', ['test_main'], runTest = False, netTest = True)
 tests.addTest('dhcpcd01', ['test_main'], runTest = False, netTest = True)
 tests.addTest('dhcpcd02', ['test_main'], runTest = False, netTest = True)
 tests.addTest('arphole', ['test_main'], runTest = False, netTest = True)
@@ -2482,6 +2491,24 @@ dhcpcd.addRTEMSSourceFiles(
 	]
 )
 
+mdnsresponder = Module('mdnsresponder')
+mdnsresponder.addSourceFiles(
+	[
+		'mDNSResponder/mDNSCore/anonymous.c',
+		'mDNSResponder/mDNSCore/CryptoAlg.c',
+		'mDNSResponder/mDNSCore/DNSCommon.c',
+		'mDNSResponder/mDNSCore/DNSDigest.c',
+		'mDNSResponder/mDNSCore/mDNS.c',
+		'mDNSResponder/mDNSCore/uDNS.c',
+		'mDNSResponder/mDNSShared/dnssd_clientshim.c',
+		'mDNSResponder/mDNSShared/mDNSDebug.c',
+		'mDNSResponder/mDNSShared/PlatformCommon.c',
+		'mDNSResponder/mDNSShared/GenLinkedList.c',
+		'mDNSResponder/mDNSPosix/mDNSPosix.c',
+		'mDNSResponder/mDNSPosix/mDNSUNP.c',
+	]
+)
+
 # Register all the Module instances with the Module Manager
 mm.addModule(rtems)
 mm.addModule(base)
@@ -2525,6 +2552,7 @@ mm.addModule(userSpace)
 
 mm.addModule(tests)
 mm.addModule(dhcpcd)
+mm.addModule(mdnsresponder)
 
 # XXX TODO Check that no file is also listed in empty
 # XXX TODO Check that no file in in two modules

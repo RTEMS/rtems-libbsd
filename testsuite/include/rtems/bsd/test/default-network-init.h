@@ -47,6 +47,11 @@
 #include <rtems/bsd/test/network-config.h>
 #endif
 
+#ifdef DEFAULT_NETWORK_SHELL
+#include <rtems/console.h>
+#include <rtems/shell.h>
+#endif
+
 static void
 default_network_set_self_prio(rtems_task_priority prio)
 {
@@ -165,6 +170,19 @@ Init(rtems_task_argument arg)
 	/* Let other tasks run to complete background work */
 	default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1);
 
+#ifdef DEFAULT_NETWORK_SHELL
+	sc = rtems_shell_init(
+		"SHLL",
+		32 * 1024,
+		1,
+		CONSOLE_DEVICE_NAME,
+		false,
+		false,
+		NULL
+	);
+	assert(sc == RTEMS_SUCCESSFUL);
+#endif
+
 	rtems_bsd_initialize();
 
 #ifdef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
@@ -217,3 +235,40 @@ SYSINIT_NEED_NET_PF_UNIX;
 #define CONFIGURE_INIT
 
 #include <rtems/confdefs.h>
+
+#ifdef DEFAULT_NETWORK_SHELL
+
+#define CONFIGURE_SHELL_COMMANDS_INIT
+
+#include <bsp/irq-info.h>
+
+#include <rtems/netcmds-config.h>
+
+#define CONFIGURE_SHELL_USER_COMMANDS \
+  &bsp_interrupt_shell_command, \
+  &rtems_shell_PING_Command, \
+  &rtems_shell_ROUTE_Command, \
+  &rtems_shell_NETSTAT_Command, \
+  &rtems_shell_IFCONFIG_Command
+
+#define CONFIGURE_SHELL_COMMAND_CPUUSE
+#define CONFIGURE_SHELL_COMMAND_PERIODUSE
+#define CONFIGURE_SHELL_COMMAND_STACKUSE
+
+#define CONFIGURE_SHELL_COMMAND_CP
+#define CONFIGURE_SHELL_COMMAND_PWD
+#define CONFIGURE_SHELL_COMMAND_LS
+#define CONFIGURE_SHELL_COMMAND_LN
+#define CONFIGURE_SHELL_COMMAND_LSOF
+#define CONFIGURE_SHELL_COMMAND_CHDIR
+#define CONFIGURE_SHELL_COMMAND_CD
+#define CONFIGURE_SHELL_COMMAND_MKDIR
+#define CONFIGURE_SHELL_COMMAND_RMDIR
+#define CONFIGURE_SHELL_COMMAND_CAT
+#define CONFIGURE_SHELL_COMMAND_MV
+#define CONFIGURE_SHELL_COMMAND_RM
+#define CONFIGURE_SHELL_COMMAND_MALLOC_INFO
+
+#include <rtems/shellconfig.h>
+
+#endif /* DEFAULT_NETWORK_SHELL */

@@ -1220,6 +1220,9 @@ mDNSexport mStatus mDNSPlatformInit(mDNS *const m)
 {
     int err = 0;
     struct sockaddr sa;
+#ifdef __rtems__
+    pthread_mutexattr_t attr;
+#endif /* __rtems__ */
     assert(m != NULL);
 
     if (mDNSPlatformInit_CanReceiveUnicast()) m->CanReceiveUnicastOn5353 = mDNStrue;
@@ -1237,6 +1240,12 @@ mDNSexport mStatus mDNSPlatformInit(mDNS *const m)
     if (m->hostlabel.c[0] == 0) MakeDomainLabelFromLiteralString(&m->hostlabel, "Computer");
 
     mDNS_SetFQDN(m);
+#ifdef __rtems__
+    if (err == mStatus_NoError) err = pthread_mutexattr_init(&attr);
+    if (err == mStatus_NoError) err = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+    if (err == mStatus_NoError) err = pthread_mutex_init(&m->p->mutex, &attr);
+    if (err == mStatus_NoError) err = pthread_mutexattr_destroy(&attr);
+#endif /* __rtems__ */
 
     sa.sa_family = AF_INET;
     m->p->unicastSocket4 = -1;
@@ -1306,14 +1315,22 @@ mDNSexport mStatus mDNSPlatformPosixRefreshInterfaceList(mDNS *const m)
 // the platform from reentering mDNS core code.
 mDNSexport void    mDNSPlatformLock   (const mDNS *const m)
 {
+#ifndef __rtems__
     (void) m;   // Unused
+#else /* __rtems__ */
+    pthread_mutex_lock(&m->p->mutex);
+#endif /* __rtems__ */
 }
 
 // mDNS core calls this routine when it release the lock taken by
 // mDNSPlatformLock and allow the platform to reenter mDNS core code.
 mDNSexport void    mDNSPlatformUnlock (const mDNS *const m)
 {
+#ifndef __rtems__
     (void) m;   // Unused
+#else /* __rtems__ */
+    pthread_mutex_unlock(&m->p->mutex);
+#endif /* __rtems__ */
 }
 
 #if COMPILER_LIKES_PRAGMA_MARK

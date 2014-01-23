@@ -20,6 +20,9 @@
 
 #include <signal.h>
 #include <sys/time.h>
+#ifdef __rtems__
+#include <pthread.h>
+#endif /* __rtems__ */
 
 #ifdef  __cplusplus
 extern "C" {
@@ -54,6 +57,9 @@ struct mDNS_PlatformSupport_struct
 #if HAVE_IPV6
     int unicastSocket6;
 #endif
+#ifdef __rtems__
+    pthread_mutex_t mutex;
+#endif /* __rtems__ */
 };
 
 #define uDNS_SERVERS_FILE "/etc/resolv.conf"

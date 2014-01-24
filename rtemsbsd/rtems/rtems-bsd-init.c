@@ -47,6 +47,7 @@
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
+#include <sys/stat.h>
 
 #include <rtems/bsd/bsd.h>
 
@@ -83,6 +84,8 @@ rtems_bsd_initialize(void)
 
 	gettimeofday(&boottime, NULL);
 	timeval2bintime(&boottime, &boottimebin);
+
+	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
 
 	sc =  rtems_timer_initiate_server(
 		BSD_TASK_PRIORITY_TIMER,

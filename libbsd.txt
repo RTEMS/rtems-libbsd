@@ -1,51 +1,207 @@
-RTEMS BSD USB and TCP/IP Developers Guide
-=========================================
-Joel Sherrill <joel.sherrill@oarcorp.com>
-:Author Initials: JRS
+RTEMS BSD Library Guide
+=======================
 :toc:
 :icons:
 :numbered:
 :website: http://www.rtems.org/
 
-RTEMS uses FreeBSD as the source of its TCP/IP and USB stacks.
-This is a developers guide which captures information on the
+RTEMS uses FreeBSD 9.2 as the source of its TCP/IP and USB stacks.
+This is a guide which captures information on the
 process of merging code from FreeBSD, building this library,
 RTEMS specific support files, and general guidelines on what
 modifications to the FreeBSD source are permitted.
 
-Goals of this effort are:
+Goals of this effort are
 
-* Update TCP/IP and provide USB in RTEMS
-* Ease updating to future FreeBSD versions
-* Ease tracking changes in FreeBSD code
-* Minimize manual changes in FreeBSD code
-* Define stable kernel/device driver API which is implemented
+* update TCP/IP and provide USB in RTEMS,
+* ease updating to future FreeBSD versions,
+* ease tracking changes in FreeBSD code,
+* minimize manual changes in FreeBSD code, and
+* define stable kernel/device driver API which is implemented
 by both RTEMS and FreeBSD. This is the foundation of the port.
 
 We will work to push our changes upstream to the FreeBSD Project
 and minimize changes required at each update point.
 
-**************************************************************
+*******************************************************************************
 This is a work in progress and is very likely to be incomplete.
 Please help by adding to it.
-**************************************************************
+*******************************************************************************
 
-== Source Code Version Information
+== Getting Started
 
-* FreeBSD 8.2 SVN r255967
-* RTEMS 4.11
-  - BSP must have support for all new BSD sys sections
-  - It is preferable if the BSP uses linkcmds.base.
-  - BSP must be from an architecture with Programmable Interrupt Controller
-    interrupt model.
+=== Tool Chain ===
 
-The latest port uses the FreeBSD sources as a Git submodule which will
-generally be referred to as the FreeBSD source in this document.  Previously a
-FreeBSD 8.2 SVN checkout was used.  The SVN checkout command corresponding to
-the current Git submodule commit is this
-  svn co http://svn.freebsd.org/base/releng/8.2 -r255967 freebsd-8.2
+You need a tool chain for RTEMS based on at least
 
-== Issues and To Do
+* Binutils 2.24, and
+* Newlib 2.1.0.
+
+The Binutils version is required to ease the handling of linker command files.
+The Newlib version is required since some standard files like `<sys/types.h>`
+must be compatible enough for the files provided by the FreeBSD sources, e.g.
+`<sys/socket.h>`.
+
+=== Board Support Package Requirements ===
+
+The RTEMS version must be at least 4.11.  The Board Support Package (BSP)
+should support the
+http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group__rtems__interrupt__extension.html[Interrupt Manager Extension]
+to make use of generic FreeBSD based drivers.
+
+The linker command file of the BSP must contain the following sections:
+
+-------------------------------------------------------------------------------
+.rtemsroset : {
+        KEEP (*(SORT(.rtemsroset.*)))
+}
+
+.rtemsrwset : {
+        KEEP (*(SORT(.rtemsrwset.*)))
+}
+-------------------------------------------------------------------------------
+
+The first section can be placed in read-only memory.  The section section must
+be placed in read-write memory.
+
+=== Board Support Package Configuration and Build ===
+
+You need to configure RTEMS for the desired BSP and install it.  The BSP should
+be configured with a disabled network stack.  The BSD library containing the
+new network stack is a separate package.  Using a BSP installation containing
+the old network stack may lead to confusion and unpredictable results.
+
+The following script is used to build the `arm/realview_pbx_a9_qemu` BSP for
+our internal testing purposes:
+
+-------------------------------------------------------------------------------
+#!/bin/sh
+
+cd ${HOME}/sandbox
+rm -rf b-realview_pbx_a9_qemu
+mkdir b-realview_pbx_a9_qemu
+cd b-realview_pbx_a9_qemu
+${HOME}/git-rtems/configure \
+        --prefix=${HOME}/sandbox/install \
+        --target=arm-rtems4.11 \
+        --enable-rtemsbsp=realview_pbx_a9_qemu \
+        --disable-networking && \
+        make && \
+        make install
+-------------------------------------------------------------------------------
+
+The `arm/realview_pbx_a9_qemu` BSP running on the Qemu simulator has some
+benefits for development and test of the BSD library
+
+* it offers a NULL pointer read and write protection,
+* Qemu is a fast simulator,
+* Qemu provides support for GDB watchpoints,
+* Qemu provides support for virtual Ethernet networks, e.g. TUN and bridge
+devices (you can run multiple test instances on one virtual network).
+
+=== BSD Library Configuration and Build ===
+
+In the BSD library source directory edit the file 'config.inc'.  Continuing on
+the above, the 'config.inc' used to match the above is:
+
+-------------------------------------------------------------------------------
+# Mandatory: Select your BSP and installation prefix
+TARGET = arm-rtems4.11
+BSP = realview_pbx_a9_qemu
+PREFIX = $(HOME)/sandbox/install
+
+# Optional: Separate installation base directory
+INSTALL_BASE = $(PREFIX)/$(TARGET)/$(BSP)
+
+# Optional: Network test configuration
+TEST_RUNNER = $(BSP)
+NET_CFG_SELF_IP = 10.0.0.2
+NET_CFG_NETMASK = 255.255.0.0
+NET_CFG_PEER_IP = 10.0.0.1
+NET_CFG_GATEWAY_IP = 10.0.0.1
+NET_TAP_INTERFACE = tap0
+-------------------------------------------------------------------------------
+
+Now you can build the BSD library and run the tests:
+
+-------------------------------------------------------------------------------
+make clean
+make
+make run_tests
+-------------------------------------------------------------------------------
+
+To install the BSD library use this:
+
+-------------------------------------------------------------------------------
+make install
+-------------------------------------------------------------------------------
+
+=== BSD Library Initialization ===
+
+Use the following code to initialize the BSD library:
+
+-------------------------------------------------------------------------------
+#include <assert.h>
+
+#include <rtems/bsd/bsd.h>
+
+void do_init(void)
+{
+        rtems_status_code sc;
+
+        sc = rtems_bsd_initialize();
+        assert(sc == RTEMS_SUCCESSFUL);
+}
+-------------------------------------------------------------------------------
+
+== Network Stack Features
+
+http://roy.marples.name/projects/dhcpcd/index[DHCPCD(8)]:: DHCP client
+
+https://developer.apple.com/library/mac/documentation/Networking/Reference/DNSServiceDiscovery_CRef/Reference/reference.html[dns_sd.h]:: DNS Service Discovery
+
+http://www.opensource.apple.com/source/mDNSResponder/mDNSResponder-320.10/mDNSCore/mDNSEmbeddedAPI.h[mDNS]:: Multi-Cast DNS
+
+http://www.freebsd.org/cgi/man.cgi?query=unix&sektion=4&apropos=0&manpath=FreeBSD+9.2-RELEASE[UNIX(4)]:: UNIX-domain protocol family
+
+http://www.freebsd.org/cgi/man.cgi?query=inet&sektion=4&apropos=0&manpath=FreeBSD+9.2-RELEASE[INET(4)]:: Internet protocol family
+
+http://www.freebsd.org/cgi/man.cgi?query=inet6&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[INET6(4)]:: Internet protocol version 6 family
+
+http://www.freebsd.org/cgi/man.cgi?query=tcp&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[TCP(4)]:: Internet Transmission Control Protocol
+
+http://www.freebsd.org/cgi/man.cgi?query=udp&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[UDP(4)]:: Internet User Datagram Protocol
+
+http://www.freebsd.org/cgi/man.cgi?query=route&sektion=4&apropos=0&manpath=FreeBSD+9.2-RELEASE[ROUTE(4)]:: Kernel packet forwarding database
+
+http://www.freebsd.org/cgi/man.cgi?query=bpf&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[BPF(4)]:: Berkeley Packet Filter
+
+http://www.freebsd.org/cgi/man.cgi?query=socket&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[SOCKET(2)]:: Create an endpoint for communication
+
+http://www.freebsd.org/cgi/man.cgi?query=kqueue&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[KQUEUE(2)]:: Kernel event notification mechanism
+
+http://www.freebsd.org/cgi/man.cgi?query=select&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[SELECT(2)]:: Synchronous I/O multiplexing
+
+http://www.freebsd.org/cgi/man.cgi?query=poll&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[POLL(2)]:: Synchronous I/O multiplexing
+
+http://www.freebsd.org/cgi/man.cgi?query=route&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[ROUTE(8)]:: Manually manipulate the routing tables
+
+http://www.freebsd.org/cgi/man.cgi?query=ifconfig&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[IFCONFIG(8)]:: Configure network interface parameters
+
+http://www.freebsd.org/cgi/man.cgi?query=netstat&apropos=0&sektion=1&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[NETSTAT(1)]:: Show network status
+
+http://www.freebsd.org/cgi/man.cgi?query=ping&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[PING(8)]:: Send ICMP ECHO_REQUEST packets to network hosts
+
+http://www.freebsd.org/cgi/man.cgi?query=ping6&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[PING6(8)]:: Send ICMPv6 ECHO_REQUEST packets to network hosts
+
+http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[SYSCTL(3)]:: Get or set system information
+
+http://www.freebsd.org/cgi/man.cgi?query=resolver&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[RESOLVER(3)]:: Resolver routines
+
+http://www.freebsd.org/cgi/man.cgi?query=gethostbyname&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[GETHOSTBYNAME(3)]:: Get network host entry
+
+== Issues and TODO
+
 * Per-CPU data should be enabled once the new stack is ready for SMP.
 
 * Per-CPU NETISR(9) should be enabled onece the new stack is ready for SMP.
@@ -64,8 +220,7 @@ the current Git submodule commit is this
   - cr_canseesocket() and
   - cr_canseeinpcb().
 
-* Sebastian Huber and Joel Sherrill discussed the need for a a basic USB
-  functionality test that is known to work on qemu pc.
+* A basic USB functionality test that is known to work on Qemu is desirable.
 
 * Adapt generic IRQ PIC interface code to Simple Vectored Interrupt Model
   so that those architectures can use new TCP/IP and USB code. 
@@ -78,11 +233,6 @@ the current Git submodule commit is this
 * in_cksum implementations for architectures not supported by FreeBSD.
   This will require figuring out where to put implementations that do
   not originate from FreeBSD and are populated via the script.
-
-* linker section issues: I have undefined symbols for
-  `_bsd__start_set_sysinit_set` and `_bsd__stop_set_sysinit_set`.
-  Is this the only type of new section magic?  What about the old sysctl_set?
-  I added this to my linkcmds.  
 
 * MAC support functions are not thread-safe ("freebsd/lib/libc/posix1e/mac.c").
 
@@ -118,16 +268,6 @@ the current Git submodule commit is this
 * PRINTF(9): Add support for log(), the %D format specifier is missing in the
   normal printf() family.
 
-[listing]
-----
-    /* sysinit section? */
-    . = ALIGN (16);
-    _bsd__start_set_sysinit_set = .;
-    *(set_sys_init_*);
-    _bsd__stop_set_sysinit_set = .;
-
-----
-
 * Why is the interrupt server used?  The BSD interrupt handlers can block on
 synchronization primitives like mutexes.  This is in contrast to RTEMS
 interrupt service routines.  The BSPs using the generic interrupt support must
@@ -142,22 +282,6 @@ interrupt source is enabled again.
 
 * Convert all BSP linkcmds to use a linkcmds.base so the sections are 
 easier to insert.
-
-* rtems-bsd-init-with-irq.c:
-  rtems_bsd_initialize_with_interrupt_server() has reference to 
-    rtems_interrupt_server_initialize() and this method is unimplemented
-    - XXX BSP implements pieces
-    - BSPs using this software stack must support it apparently.
-    - What about Simple Vectored architectures?
-
-* We carried over use of notepad 0 for per task information. This should
-be changed.
-
-* maxproc variable referenced by rtems-bsd-resource.c.  What should it
-be set to?
-
-* ngroups_max variable referenced by rtems-bsd-prot.c.  - What should
-it be set to?
 
 * NIC Device Drivers
 - Only common PCI NIC drivers have been included in the initial set. These
@@ -176,109 +300,101 @@ for details on the code itself.
 
 === Automatically Generated FreeBSD Files
 
-The FreeBSD source tarball includes a file named Makefile.rtems which
-has stanzas to automatically generate some files using awk. For details
-on this, see http://www.freebsd.org/cgi/man.cgi?query=kobj&apropos=0&sektion=0&manpath=FreeBSD+9.0-RELEASE&arch=default&format=html
-
-XXX This needs more detail.
+Some source and header files are automatically generated during the FreeBSD
+build process.  The `Makefile.todo` file performs this manually.  The should be
+included in `freebsd-to-rtems.py` script some time in the future.  For details,
+see also
+http://www.freebsd.org/cgi/man.cgi?query=kobj&sektion=9&apropos=0&manpath=FreeBSD+9.2-RELEASE[KOBJ(9)].
 
 === Rules for Modifying FreeBSD Source
 
-* Only add lines.  Subtract code by added "ifndef __rtems__". This makes
-merging easier in the future.
+Only add lines.  Subtract code by added `#ifndef __rtems__`.  This makes
+merging easier in the future.  For example:
 
-== libbsd Source
+-------------------------------------------------------------------------------
+/* Global variables for the kernel. */
 
-=== What is in git
+#ifndef __rtems__
+/* 1.1 */
+extern char kernelname[MAXPATHLEN];
+#endif /* __rtems__ */
 
-The git source is a self-contained kit with FreeBSD and RTEMS components
-pre-merged. The Makefile in this kit is automatically generated.
+extern int tick;			/* usec per tick (1000000 / hz) */
+-------------------------------------------------------------------------------
 
-Any changes to sources in the freebsd or contrib directories will need to
-be merged upstream into our master FreeBSD svn checkout.
+-------------------------------------------------------------------------------
+#if defined(_KERNEL) || defined(_WANT_FILE)
+#ifdef __rtems__
+#include <rtems/libio_.h>
+#include <sys/fcntl.h>
+#endif /* __rtems__ */
+/*
+ * Kernel descriptor table.
+ * One entry for each open kernel vnode and socket.
+ *
+ * Below is the list of locks that protects members in struct file.
+ *
+ * (f) protected with mtx_lock(mtx_pool_find(fp))
+ * (d) cdevpriv_mtx
+ * none	not locked
+ */
+-------------------------------------------------------------------------------
 
-The FreeBSD sources managed in the rtems-libbsd git repository (e.g. contrib
-and freebsd directories) contain the "managed" version of the
-FreeBSD source.  The FreeBSD SVN source is the "master" version. The
-freebsd-to-rtems.py script is used to transfer files between the two
-trees. In general terms, if you have modified FreeBSD (i.e. anything in the
-freebsd directory) in the rtems-libbsd tree, you will need to run the script
-in "revert" or "reverse" mode using the -R switch. This will copy the source
-back to your local copy of the FreeBSD source so you can run "svn diff" against
-the upstream FreeBSD source. If you want to transfer source files from the
-FreeBSD SVN checkout to the rtems-libbsd tree, then you must run the script in
-"forward" mode (the default).
+-------------------------------------------------------------------------------
+extern int profprocs;			/* number of process's profiling */
+#ifndef __rtems__
+extern volatile int ticks;
+#else /* __rtems__ */
+#include <rtems/score/watchdogimpl.h>
+#define ticks _Watchdog_Ticks_since_boot
+#endif /* __rtems__ */
 
-=== Building rtems-libbsd source
+#endif /* _KERNEL */
+-------------------------------------------------------------------------------
 
-You need to configure RTEMS for the desired BSP and install it. The
-following is the script used to build the powerpc/psim BSP for our
-internal testing purposes:
+Add nothing (even blank lines) before or after the `__rtems__` guards.  Always
+include a `__rtems__` in the guards to make searches easy.
 
-[listing]
-----
-#! /bin/sh
+== BSD Library Source
 
-cd ${HOME}/newbsd
-rm -rf b-psim
-mkdir b-psim
-cd b-psim
-../git/rtems/configure --target=powerpc-rtems4.11 \
-  --enable-rtemsbsp=psim --disable-networking \
-  --enable-tests=samples \
-  --prefix=${HOME}/newbsd/bsp-install >c.log 2>&1 && \
-  make >b.log 2>&1 && \
-  make install >i.log 2>&1
-echo $?
-----
+=== What is in the Git Repository
 
-Then edit the file config.inc to set RTEMS_MAKEFILE_PATH appropriately
-to indicate the ${prefix}/${target}/${BSP}.  Continuing on the above,
-the config.inc used to match the above is:
+There is a self-contained kit with FreeBSD and RTEMS components pre-merged. The
+Makefile in this kit is automatically generated.
 
-[listing]
-----
-RTEMS_MAKEFILE_PATH = ${HOME}/newbsd/bsp-install/powerpc-rtems4.11/psim/
-INSTALL_BASE = ${HOME}/newbsd/install
-----
+Any changes to source in the `freebsd` directories will need to be merged
+upstream into our master FreeBSD checkout, the `freebsd-org` submodule.
 
-The above installs the rtems-libbsd kit into a separate place from 
-RTEMS and the BSP. The rtems-libbsd tests are built against an installed
-image of the rtems-libbsd. By keeping it in a separate installation point
-from RTEMS itself, this makes it easier to remove a libbsd installation
-and have a clean test point.
-
-[listing]
-----
-make
-make install
-make -C testsuite
-----
-
-At this point, we expect multiple linker errors. That is what we are
-currently working on.
+The repository contains two FreeBSD source trees.  In the `freebsd` directory
+are the so called 'managed' FreeBSD sources used to build the BSD library.  The
+FreeBSD source in `freebsd-org` is the 'master' version.  The
+`freebsd-to-rtems.py` script is used to transfer files between the two trees.
+In general terms, if you have modified managed FreeBSD sources, you will need
+to run the script in 'revert' or 'reverse' mode using the `-R` switch.  This
+will copy the source back to your local copy of the master FreeBSD source so
+you can run `git diff` against the upstream FreeBSD source.  If you want to
+transfer source files from the master FreeBSD source to the manged FreeBSD
+sources, then you must run the script in 'forward' mode (the default).
 
 === Organization
 
 The top level directory contains a few directories and files. The following
-are important to understand:
+are important to understand
 
-* freebsd-to-rtems.py - script to convert to and free FreeBSD and RTEMS trees
-* Makefile - automatically generated
-* contrib/ - from FreeBSD by script.
-* freebsd/ - from FreeBSD by script.
-* rtemsbsd/ - RTEMS specific implementations of FreeBSD kernel support routines.
-* testsuite/ - RTEMS specific tests
-* libbsd.txt - Documentation in Asciidoc
+* `freebsd-to-rtems.py` - script to convert to and free FreeBSD and RTEMS trees,
+* `Makefile` - automatically generated,
+* `freebsd/` - from FreeBSD by script,
+* `rtemsbsd/` - RTEMS specific implementations of FreeBSD kernel support routines,
+* `testsuite/` - RTEMS specific tests, and
+* `libbsd.txt` - documentation in Asciidoc.
 
-== Moving Code Between FreeBSD SVN and rtems-libbsd
+== Moving Code Between Managed and Master FreeBSD Source
 
-The script freebsd-to-rtems.py is used to copy code from FreeBSD to the
+The script `freebsd-to-rtems.py` is used to copy code from FreeBSD to the
 rtems-libbsd tree and to reverse this process. This script attempts to
 automate this process as much as possible and performs some transformations
 on the FreeBSD code. Its command line arguments are shown below:
 
-[listing]
 ----
 freebsd-to-rtems.py [args]
   -?|-h|--help     print this and exit
@@ -310,7 +426,6 @@ the name of the files which are changed.
 
 The following is an example forward run with no changes.
 
-[listing]
 ----
 $ ~/newbsd/git/libbsd-8.2/freebsd-to-rtems.py \
     -r /home/joel/newbsd/git/libbsd-8.2 \
@@ -328,12 +443,12 @@ Generating into /home/joel/newbsd/git/libbsd-8.2
 The script may also be used to generate a diff in either forward or reverse
 direction.
 
-== Initialization of rtems-libbsd
+== Initialization of the BSD Library
 
-The initialization of the rtems-libbsd is based on the FreeBSD SYSINIT(9)
+The initialization of the BSD library is based on the FreeBSD SYSINIT(9)
 infrastructure.  The key to initializing a system is to ensure that the desired
 device drivers are explicitly pulled into the linked application.  This plus
-linking against the libbsd library will pull in the necessary FreeBSD
+linking against the BSD library (`libbsd.a`) will pull in the necessary FreeBSD
 infrastructure.
 
 The FreeBSD kernel is not a library like the RTEMS kernel.  It is a bunch of
@@ -353,25 +468,60 @@ http://www.freebsd.org/cgi/man.cgi?query=SYSINIT
 The SYSINIT(9) uses some global data structures that are placed in a certain
 section.  In the linker command file we need this:
 
-[listing]
-----
-.robsdsets : {
-    _bsd__start_set_modmetadata_set = .;
-    *(_bsd_set_modmetadata_set);
-    _bsd__stop_set_modmetadata_set = .;
-    _bsd__start_set_sysctl_set = .;
-    *(_bsd_set_sysctl_set);
-    _bsd__stop_set_sysctl_set = .;
-} > REGION_RODATA AT > REGION_RODATA_LOAD
+-------------------------------------------------------------------------------
+.rtemsroset : {
+        KEEP (*(SORT(.rtemsroset.*)))
+}
 
-.rwbsdsets : {
-    _bsd__start_set_sysinit_set = .;
-    *(_bsd_set_sysinit_set);
-    _bsd__stop_set_sysinit_set = .;
-} > REGION_DATA AT > REGION_DATA_LOAD
-----
+.rtemsrwset : {
+        KEEP (*(SORT(.rtemsrwset.*)))
+}
+-------------------------------------------------------------------------------
 
-Here you can see, that these global data structures are collected into
+This results for example in this executable layout:
+
+-------------------------------------------------------------------------------
+[...]
+ *(SORT(.rtemsroset.*))
+ .rtemsroset.bsd.modmetadata_set.begin
+                0x000000000025fe00        0x0 libbsd.a(rtems-bsd-init.o)
+                0x000000000025fe00                _bsd__start_set_modmetadata_set
+ .rtemsroset.bsd.modmetadata_set.content
+                0x000000000025fe00        0x8 libbsd.a(rtems-bsd-nexus.o)
+ .rtemsroset.bsd.modmetadata_set.content
+                0x000000000025fe08        0x4 libbsd.a(kern_module.o)
+[...]
+ .rtemsroset.bsd.modmetadata_set.content
+                0x000000000025fe68        0x4 libbsd.a(mii.o)
+ .rtemsroset.bsd.modmetadata_set.content
+                0x000000000025fe6c        0x4 libbsd.a(mii_bitbang.o)
+ .rtemsroset.bsd.modmetadata_set.end
+                0x000000000025fe70        0x0 libbsd.a(rtems-bsd-init.o)
+                0x000000000025fe70                _bsd__stop_set_modmetadata_set
+[...]
+.rtemsrwset     0x000000000030bad0      0x290
+ *(SORT(.rtemsrwset.*))
+ .rtemsrwset.bsd.sysinit_set.begin
+                0x000000000030bad0        0x0 libbsd.a(rtems-bsd-init.o)
+                0x000000000030bad0                _bsd__start_set_sysinit_set
+ .rtemsrwset.bsd.sysinit_set.content
+                0x000000000030bad0        0x4 libbsd.a(rtems-bsd-nexus.o)
+ .rtemsrwset.bsd.sysinit_set.content
+                0x000000000030bad4        0x8 libbsd.a(rtems-bsd-thread.o)
+ .rtemsrwset.bsd.sysinit_set.content
+                0x000000000030badc        0x4 libbsd.a(init_main.o)
+[...]
+ .rtemsrwset.bsd.sysinit_set.content
+                0x000000000030bd54        0x4 libbsd.a(frag6.o)
+ .rtemsrwset.bsd.sysinit_set.content
+                0x000000000030bd58        0x8 libbsd.a(uipc_accf.o)
+ .rtemsrwset.bsd.sysinit_set.end
+                0x000000000030bd60        0x0 libbsd.a(rtems-bsd-init.o)
+                0x000000000030bd60                _bsd__stop_set_sysinit_set
+[...]
+-------------------------------------------------------------------------------
+
+Here you can see, that some global data structures are collected into
 continuous memory areas.  This memory area can be identified by start and stop
 symbols.  This constructs a table of uniform items.
 
@@ -388,47 +538,48 @@ Operating System" section 14.3 "Kernel Initialization".
 
 In RTEMS we have a library and not a bunch of object files.  Thus we need a way
 to pull-in the desired services out of the libbsd.  Here the
-"rtems-bsd-sysinit.h" comes into play.  The SYSINIT(9) macros have been
-modified and extended for RTEMS in "sys/kernel.h":
+`rtems-bsd-sysinit.h` comes into play.  The SYSINIT(9) macros have been
+modified and extended for RTEMS in `<sys/kernel.h>`:
 
-[listing]
-----
+-------------------------------------------------------------------------------
 #ifndef __rtems__
-#define    C_SYSINIT(uniquifier, subsystem, order, func, ident) \
-    static struct sysinit uniquifier ## _sys_init = { \
-        subsystem, \
-        order, \
-        func, \
-        (ident) \
-    }; \
-    DATA_SET(sysinit_set,uniquifier ## _sys_init)
+#define	C_SYSINIT(uniquifier, subsystem, order, func, ident)	\
+	static struct sysinit uniquifier ## _sys_init = {	\
+		subsystem,					\
+		order,						\
+		func,						\
+		(ident)						\
+	};							\
+	DATA_SET(sysinit_set,uniquifier ## _sys_init)
 #else /* __rtems__ */
-#define    SYSINIT_ENTRY_NAME(uniquifier) \
-    _bsd_ ## uniquifier ## _sys_init
-#define    SYSINIT_REFERENCE_NAME(uniquifier) \
-    _bsd_ ## uniquifier ## _sys_init_ref
-#define    C_SYSINIT(uniquifier, subsystem, order, func, ident) \
-    struct sysinit SYSINIT_ENTRY_NAME(uniquifier) = { \
-        subsystem, \
-        order, \
-        func, \
-        (ident) \
-    }; \
-    DATA_SET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
-#define    SYSINIT_REFERENCE(uniquifier) \
-    extern struct sysinit SYSINIT_ENTRY_NAME(uniquifier); \
-    static struct sysinit const * const \
-    SYSINIT_REFERENCE_NAME(uniquifier) __used \
-    = &SYSINIT_ENTRY_NAME(uniquifier)
-#define    SYSINIT_MODULE_REFERENCE(mod) \
-    SYSINIT_REFERENCE(mod ## module)
-#define    SYSINIT_DRIVER_REFERENCE(driver, bus) \
-    SYSINIT_MODULE_REFERENCE(driver ## _ ## bus)
+#define	SYSINIT_ENTRY_NAME(uniquifier)				\
+	_bsd_ ## uniquifier ## _sys_init
+#define	SYSINIT_REFERENCE_NAME(uniquifier)			\
+	_bsd_ ## uniquifier ## _sys_init_ref
+#define	C_SYSINIT(uniquifier, subsystem, order, func, ident)	\
+	struct sysinit SYSINIT_ENTRY_NAME(uniquifier) = {	\
+		subsystem,					\
+		order,						\
+		func,						\
+		(ident)						\
+	};							\
+	RWDATA_SET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
+#define	SYSINIT_REFERENCE(uniquifier)				\
+	extern struct sysinit SYSINIT_ENTRY_NAME(uniquifier);	\
+	static struct sysinit const * const			\
+	SYSINIT_REFERENCE_NAME(uniquifier) __used		\
+	= &SYSINIT_ENTRY_NAME(uniquifier)
+#define	SYSINIT_MODULE_REFERENCE(mod)				\
+	SYSINIT_REFERENCE(mod ## module)
+#define	SYSINIT_DRIVER_REFERENCE(driver, bus)			\
+	SYSINIT_MODULE_REFERENCE(driver ## _ ## bus)
+#define	SYSINIT_DOMAIN_REFERENCE(dom)				\
+	SYSINIT_REFERENCE(domain_add_ ## dom)
 #endif /* __rtems__ */
-----
+-------------------------------------------------------------------------------
 
 Here you see that the SYSINIT(9) entries are no longer static.  The
-*_REFERENCE() macros will create references to the corresponding modules which
+\*_REFERENCE() macros will create references to the corresponding modules which
 are later resolved by the linker.  The application has to provide an object
 file with references to all required FreeBSD modules.
 
@@ -438,25 +589,7 @@ http://www.freebsd.org/cgi/man.cgi?query=driver
 
 The devices form a tree with the Nexus device at a high-level.  This Nexus
 device is architecture specific in FreeBSD.  In RTEMS we have our own Nexus
-device, see "rtems-bsd-nexus.c".  It uses a table to add child devices:
-
-[listing]
-----
-const char *const _bsd_nexus_devices [] = {
-    #ifdef NEED_USB_OHCI
-        "ohci",
-    #endif
-    #ifdef NEED_USB_EHCI
-        "ehci",
-    #endif
-    #ifdef NEED_SDHC
-        "sdhci",
-    #endif
-    NULL
-};
-----
-
-This table must be provided by the application.
+device, see `rtemsbsd/bsp/bsp-bsd-nexus-devices.c`.
 
 === SYSCTL_NODE Example
 
@@ -466,7 +599,6 @@ Chris Johns, we located it. He explained how to read SYSCTL_NODE
 definitions. This line from freebsd/netinet/in_proto.c is attempting
 to add the "inet" node to the parent node "_net".
 
-[listing]
 ----
 SYSCTL_NODE(_net,      PF_INET,         inet,   CTLFLAG_RW, 0,
         "Internet Family");
@@ -486,7 +618,6 @@ automatically generated by a SYSCTL_NODE as follows:
   
 This was all generated by a support macro declaring the node as this:
 
-[listing]
 ----
 struct sysctl_oid_list SYSCTL_NODE_CHILDREN(parent, name);
 ----
@@ -494,7 +625,6 @@ struct sysctl_oid_list SYSCTL_NODE_CHILDREN(parent, name);
 Given this information, we located this SYSCTL_NODE declaration in 
 kern/kern_mib.c
 
-[listing]
 ----
 SYSCTL_NODE(, CTL_KERN,   kern,   CTLFLAG_RW, 0,
         "High kernel, proc, limits &c");
@@ -609,7 +739,6 @@ been partially tested.  If they contain both USB and Nic, then they are used
 by both and MAY contain methods that have not been tested yet.  Files that
 are only used by the Nic test are the most suspect.
 
-[listing]
 ----
 rtems-libbsd File:	rtems-bsd-assert.c
 FreeBSD File: 		rtems-bsd-config.h redefines BSD_ASSERT.
@@ -809,7 +938,6 @@ not implemented in the rtems version of these routines.
  
 == NICs Status ==
 
-[listing]
 ----
 Driver			Symbol				Status
 ======			======				======

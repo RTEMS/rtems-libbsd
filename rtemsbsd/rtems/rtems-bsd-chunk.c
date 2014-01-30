@@ -40,6 +40,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-chunk.h>
 
+#include <rtems/bsd/sys/param.h>
 #include <sys/malloc.h>
 
 #include <rtems/score/apimutex.h>
@@ -65,6 +66,8 @@ void
 rtems_bsd_chunk_init(rtems_bsd_chunk_control *self, uintptr_t info_size,
     rtems_bsd_chunk_info_ctor info_ctor, rtems_bsd_chunk_info_dtor info_dtor)
 {
+	info_size = roundup(info_size, CPU_HEAP_ALIGNMENT);
+
 	self->info_size = info_size;
 	self->info_ctor = info_ctor;
 	self->info_dtor = info_dtor;

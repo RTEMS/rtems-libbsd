@@ -85,39 +85,6 @@ test_main(void)
 	assert(sc == RTEMS_SUCCESSFUL);
 }
 
-#define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER
-#define CONFIGURE_APPLICATION_NEEDS_ZERO_DRIVER
+#define DEFAULT_NETWORK_SHELL
 
 #include <rtems/bsd/test/default-network-init.h>
-
-#define CONFIGURE_SHELL_COMMANDS_INIT
-
-#include <bsp/irq-info.h>
-#include <rtems/netcmds-config.h>
-
-#define CONFIGURE_SHELL_USER_COMMANDS \
-	&bsp_interrupt_shell_command, \
-	&rtems_shell_PING_Command, \
-	&rtems_shell_ROUTE_Command, \
-	&rtems_shell_NETSTAT_Command, \
-	&rtems_shell_IFCONFIG_Command
-
-#define CONFIGURE_SHELL_COMMAND_CPUUSE
-#define CONFIGURE_SHELL_COMMAND_PERIODUSE
-#define CONFIGURE_SHELL_COMMAND_STACKUSE
-
-#define CONFIGURE_SHELL_COMMAND_CP
-#define CONFIGURE_SHELL_COMMAND_PWD
-#define CONFIGURE_SHELL_COMMAND_LS
-#define CONFIGURE_SHELL_COMMAND_LN
-#define CONFIGURE_SHELL_COMMAND_LSOF
-#define CONFIGURE_SHELL_COMMAND_CHDIR
-#define CONFIGURE_SHELL_COMMAND_CD
-#define CONFIGURE_SHELL_COMMAND_MKDIR
-#define CONFIGURE_SHELL_COMMAND_RMDIR
-#define CONFIGURE_SHELL_COMMAND_CAT
-#define CONFIGURE_SHELL_COMMAND_MV
-#define CONFIGURE_SHELL_COMMAND_RM
-#define CONFIGURE_SHELL_COMMAND_MALLOC_INFO
-
-#include <rtems/shellconfig.h>

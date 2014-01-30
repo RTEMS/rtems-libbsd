@@ -1379,11 +1379,6 @@ static int mcf548x_fec_ioctl (struct ifnet *ifp, ioctl_command_t command, caddr_
 
   switch(command)
     {
-
-    case SIOCGIFMEDIA:
-    case SIOCSIFMEDIA:
-      rtems_mii_ioctl (&(sc->mdio_info),sc,command,(void *)data);
-      break;
     case SIO_RTEMS_SHOW_STATS:
 
       enet_stats(sc);

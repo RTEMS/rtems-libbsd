@@ -1,0 +1,105 @@
+dhcpcd - DHCP client daemon
+Copyright (c) 2006-2014 Roy Marples <roy@marples.name>
+
+
+Installation
+------------
+./configure; make; make install
+man dhcpcd for command line options
+man dhcpcd.conf for configuration options
+man dhcpcd-run-hooks to learn how to hook scripts into dhcpcd events
+
+
+Notes
+-----
+If you're cross compiling you may need set the platform if OS is different
+from the host.
+--target=sparc-sun-netbsd5.0
+
+If you're building for an MMU-less system where fork() does not work, you
+should ./configure --disable-fork.
+This also puts the --no-background flag on and stops the --background flag
+from working.
+
+You can change the default dirs with these knobs.
+For example, to satisfy FHS compliance you would do this:-
+./configure --libexecdir=/lib/dhcpcd dbdir=/var/lib/dhcpcd
+
+We now default to using -std=c99. For 64-bit linux, this always works, but
+for 32-bit linux it requires either gnu99 or a patch to asm/types.h.
+Most distros patch linux headers so this should work fine.
+linux-2.6.24 finally ships with a working 32-bit header.
+If your linux headers are older, or your distro hasn't patched them you can
+set CSTD=gnu99 to work around this.
+
+Some BSD systems do not allow the manipulation of automatically added subnet
+routes. You can find discussion here:
+    http://mail-index.netbsd.org/tech-net/2008/12/03/msg000896.html
+BSD systems where this has been fixed are:
+    NetBSD-5.0
+
+Some BSD systems protect against IPv6 NS/NA messages by ensuring that the
+source address matches an address/prefix on the interface.
+This is an error as the correct check is for on-link prefixes.
+As such, on these systems stateful addressing via DHCPv6 may cause issues
+trying to reach other neighbours.
+BSD systems where this is known to be a problem
+    Occured in NetBSD-5.0, fixed in NetBSD-6.99.29
+    Occured in OpenBSD-4.2, fixed in OpenBSD-5.0
+
+We try and detect how dhcpcd should interact with system services at runtime.
+If we cannot auto-detect how do to this, or it is wrong then
+you can change this by passing shell commands to --serviceexists,
+--servicecmd and optionally --servicestatus to ./configure or overriding
+the service variables in a hook.
+
+Some systems have /dev management systems and some of these like to rename
+interfaces. As this system would listen in the same way as dhcpcd to new
+interface arrivals, dhcpcd needs to listen to the /dev management sytem
+instead of the kernel. However, if the /dev management system breaks, stops
+working, or changes to a new one, dhcpcd should still try and continue to work.
+To facilitate this, dhcpcd allows a plugin to load to instruct dhcpcd when it
+can use an interface. As of the time of writing only udev support is included.
+You can disable this with --without-dev, or without-udev
+
+To shrink dhcpcd you can disable IPv4 or IPv6:
+	--disable-inet
+	--disable-inet6
+
+You can also move the embedded extended configuration from the dhcpcd binary
+to an external file (LIBEXECDIR/dhcpcd-definitions.conf)
+	--disable-embedded
+If dhcpcd cannot load this file at runtime, dhcpcd will work but will not be
+able to decode any DHCP/DHCPv6 options that are not defined by the user
+in /etc/dhcpcd.conf.
+
+To prepare dhcpcd for import into a platform source tree (like NetBSD)
+you can use the make import target to create /tmp/dhcpcd-$version and
+populate it with all the source files and hooks needed.
+In this instance, you may wish to disable some configured tests when
+the binary has to run on older versions which lack support, such as getline.
+./configure --without-getline
+
+
+Hooks
+-----
+Not all the hooks in dhcpcd-hooks are installed by default.
+By default we install 01-test, 02-dump, 10-mtu, 10-wpa_supplicant,
+15-timezone, 20-resolv.conf, 29-lookup-hostname and 30-hostname.
+The default dhcpcd.conf disables the lookup-hostname hook by default.
+The configure program attempts to find hooks for systems you have installed.
+To add more simply
+./configure -with-hook=ntp.conf
+
+
+Compatibility
+-------------
+dhcpcd-5.0 is only fully command line compatible with dhcpcd-4.0
+For compatibility with older versions, use dhcpcd-4.0
+
+
+ChangeLog
+---------
+We no longer supply a ChangeLog.
+However, you're more than welcome to read the commit log at
+http://roy.marples.name/projects/dhcpcd/timeline/

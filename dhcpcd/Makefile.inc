@@ -1,0 +1,11 @@
+# System definitions
+
+PICFLAG?=	-fPIC
+
+BINMODE?=	0555
+NONBINMODE?=	0444
+MANMODE?=	${NONBINMODE}
+CONFMODE?=	0644
+
+INSTALL?=	install
+SED?=		sed

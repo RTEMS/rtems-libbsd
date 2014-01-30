@@ -85,6 +85,7 @@ test_main(void)
 	assert(sc == RTEMS_SUCCESSFUL);
 }
 
+#define DEFAULT_NETWORK_DHCPCD_ENABLE
 #define DEFAULT_NETWORK_SHELL
 
 #include <rtems/bsd/test/default-network-init.h>

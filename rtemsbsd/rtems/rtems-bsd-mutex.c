@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -258,7 +258,7 @@ int mtx_owned(struct mtx *m)
 	Semaphore_Control *sema = _Semaphore_Get(m->lock_object.lo_id, &location);
 
 	if (location == OBJECTS_LOCAL && !_Attributes_Is_counting_semaphore(sema->attribute_set)) {
-		int owned = sema->Core_control.mutex.holder_id == rtems_task_self();
+		int owned = sema->Core_control.mutex.holder == _Thread_Executing;
 
 		_Thread_Enable_dispatch();
 

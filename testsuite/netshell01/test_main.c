@@ -18,8 +18,9 @@
  */
 static void test_main(void)
 {
-  rtems_shell_env_t env = rtems_global_shell_env;
+  rtems_shell_env_t env;
 
+  memset(&env, 0, sizeof(env));
   rtems_shell_main_loop( &env );
 
   exit( 0 );

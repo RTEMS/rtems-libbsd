@@ -188,7 +188,7 @@ rtems_bsd_extension_thread_delete(
 		seltdfini(td);
 
 		if (rtems_bsd_is_bsd_thread(deleted)) {
-			rtems_chain_explicit_extract(&rtems_bsd_thread_chain, &td->td_node);
+			rtems_chain_extract(&td->td_node);
 		}
 
 		free(td->td_sleepqueue, M_TEMP);

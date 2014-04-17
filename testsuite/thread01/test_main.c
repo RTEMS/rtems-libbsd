@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -30,6 +30,7 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -208,57 +209,55 @@ static void
 test_kthread_add(void)
 {
 	rtems_resource_snapshot snapshot;
-	uintptr_t take_away;
 	void *greedy;
+	uintptr_t take_away = 2 * BSD_MINIMUM_TASK_STACK_SIZE;
 
 	puts("test kthread_add()");
 
-	greedy = rtems_workspace_greedy_allocate_all_except_largest(&take_away);
+	greedy = rtems_workspace_greedy_allocate(&take_away, 1);
 
 	rtems_resource_snapshot_take(&snapshot);
 
 	assert(rtems_configuration_get_unified_work_area());
 
 	while (take_away > 0) {
-		struct thread *td = NULL;
 		void *away;
-		int eno;
+		bool ok;
 
-		/*
-		 * FIXME: This direct workspace access is a hack to get
-		 * reasonable test run times with RTEMS_DEBUG enabled.
-		 */
-		_Thread_Disable_dispatch();
-		away = _Workspace_Allocate(take_away);
-		_Thread_Enable_dispatch();
+		ok = rtems_workspace_allocate(take_away, &away);
+		if (ok) {
+			struct thread *td = NULL;
+			int eno;
 
-		eno = kthread_add(
-			test_kthread_add_thread,
-			TEST_KTHREAD_ADD,
-			NULL,
-			&td,
-			0,
-			0,
-			"%s",
-			&test_kthread_name[0]
-		);
+			eno = kthread_add(
+				test_kthread_add_thread,
+				TEST_KTHREAD_ADD,
+				NULL,
+				&td,
+				0,
+				0,
+				"%s",
+				&test_kthread_name[0]
+			);
 
-		_Thread_Disable_dispatch();
-		_Workspace_Free(away);
-		_Thread_Enable_dispatch();
+			ok = rtems_workspace_free(away);
+			assert(ok);
 
-		if (eno == 0) {
-			wait_for_worker_thread();
-			assert(td != NULL);
+			if (eno == 0) {
+				wait_for_worker_thread();
+				assert(td != NULL);
 
-			take_away = 0;
-		} else {
-			assert(eno == ENOMEM);
-			assert(rtems_resource_snapshot_check(&snapshot));
-
-			--take_away;
+				break;
+			} else {
+				assert(eno == ENOMEM);
+				assert(rtems_resource_snapshot_check(&snapshot));
+			}
 		}
+
+		--take_away;
 	}
+
+	assert(take_away > 0);
 
 	rtems_workspace_greedy_free(greedy);
 }

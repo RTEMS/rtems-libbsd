@@ -42,7 +42,7 @@ The Newlib version is required since some standard files like `<sys/types.h>`
 must be compatible enough for the files provided by the FreeBSD sources, e.g.
 `<sys/socket.h>`.
 
-=== Installation ===
+=== Installation Overview ===
 
 . You must configure your BSP with the +--disable-networking+ option to disable
 the old network stack.  Make sure no header files of the old network stack are
@@ -57,7 +57,8 @@ installed.
 
 The RTEMS version must be at least 4.11.  The Board Support Package (BSP)
 should support the
-http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group__rtems__interrupt__extension.html[Interrupt Manager Extension]
+http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__extension.html[Interrupt Manager Extension]
+// The first underscores have to be masked to stop asciidoc interpreting them
 to make use of generic FreeBSD based drivers.
 
 The linker command file of the BSP must contain the following sections:

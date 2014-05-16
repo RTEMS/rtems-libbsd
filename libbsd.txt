@@ -49,7 +49,7 @@ the old network stack.  Make sure no header files of the old network stack are
 installed.
 . Clone the Git repository +git clone git://git.rtems.org/rtems-libbsd.git+.
 . Change into the RTEMS BSD library root directory.
-. Edit the 'config.inc' Makefile configuration file and adjust it to your environment.
+. Edit the `config.inc` Makefile configuration file and adjust it to your environment.
 . Run +make clean+.
 . Run +make install+.
 
@@ -115,8 +115,8 @@ devices (you can run multiple test instances on one virtual network).
 
 === BSD Library Configuration and Build ===
 
-In the BSD library source directory edit the file 'config.inc'.  Continuing on
-the above, the 'config.inc' used to match the above is:
+In the BSD library source directory edit the file `config.inc`.  Continuing on
+the above, the `config.inc` used to match the above is:
 
 -------------------------------------------------------------------------------
 # Mandatory: Select your BSP and installation prefix
@@ -172,17 +172,61 @@ Use the following code to initialize the BSD library:
 
 -------------------------------------------------------------------------------
 #include <assert.h>
+#include <sysexits.h>
 
+#include <machine/rtems-bsd-commands.h>
 #include <rtems/bsd/bsd.h>
 
-void do_init(void)
+static void
+network_ifconfig_lo0(void)
 {
-        rtems_status_code sc;
+	int exit_code;
+	char *lo0[] = {
+		"ifconfig",
+		"lo0",
+		"inet",
+		"127.0.0.1",
+		"netmask",
+		"255.255.255.0",
+		NULL
+	};
+	char *lo0_inet6[] = {
+		"ifconfig",
+		"lo0",
+		"inet6",
+		"::1",
+		"prefixlen",
+		"128",
+		NULL
+	};
 
-        sc = rtems_bsd_initialize();
-        assert(sc == RTEMS_SUCCESSFUL);
+	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(lo0), lo0);
+	assert(exit_code == EX_OK);
+
+	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(lo0_inet6), lo0_inet6);
+	assert(exit_code == EX_OK);
+}
+
+void
+network_init(void)
+{
+	rtems_status_code sc;
+
+	sc = rtems_bsd_initialize();
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	network_ifconfig_lo0();
 }
 -------------------------------------------------------------------------------
+
+This performs the basic network stack initialization with a loopback interface.
+Further initialization must be done using the standard BSD network
+configuration commands
+http://www.freebsd.org/cgi/man.cgi?query=ifconfig&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[IFCONFIG(8)]
+using `rtems_bsd_command_ifconfig()` and
+http://www.freebsd.org/cgi/man.cgi?query=route&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[ROUTE(8)]
+using `rtems_bsd_command_route()`.  For an example please have a look at
+`testsuite/include/rtems/bsd/test/default-network-init.h`.
 
 == Network Stack Features
 

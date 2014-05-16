@@ -61,7 +61,8 @@ http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__e
 // The first underscores have to be masked to stop asciidoc interpreting them
 to make use of generic FreeBSD based drivers.
 
-The linker command file of the BSP must contain the following sections:
+The linker command file of the BSP must contain the following section
+definitions:
 
 -------------------------------------------------------------------------------
 .rtemsroset : {
@@ -73,8 +74,9 @@ The linker command file of the BSP must contain the following sections:
 }
 -------------------------------------------------------------------------------
 
-The first section can be placed in read-only memory.  The section section must
-be placed in read-write memory.
+The first output section can be placed in read-only memory.  The second output
+section must be placed in read-write memory.  The output section name is not
+relevant.  The output sections may also contain other input sections.
 
 === Board Support Package Configuration and Build ===
 

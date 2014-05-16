@@ -144,6 +144,22 @@ make
 make run_tests
 -------------------------------------------------------------------------------
 
+You can only run the tests directly in case a test runner is available.  The
+following tests run without an external network.  It is strongly advised to run
+them.
+
+* commands01
+* init01
+* loopback01
+* rwlock01
+* selectpollkqueue01
+* sleep01
+* swi01
+* syscalls01
+* thread01
+* timeout01
+* unix01
+
 To install the BSD library use this:
 
 -------------------------------------------------------------------------------

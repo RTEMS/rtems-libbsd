@@ -47,7 +47,7 @@
 
 #define chunk_of_node(n) ((rtems_bsd_chunk_info *) n)
 
-static int
+static rtems_rbtree_compare_result
 chunk_compare(const rtems_rbtree_node *a, const rtems_rbtree_node *b)
 {
 	const rtems_bsd_chunk_info *left = chunk_of_node(a);
@@ -71,7 +71,7 @@ rtems_bsd_chunk_init(rtems_bsd_chunk_control *self, uintptr_t info_size,
 	self->info_size = info_size;
 	self->info_ctor = info_ctor;
 	self->info_dtor = info_dtor;
-	rtems_rbtree_initialize_empty(&self->chunks, chunk_compare, true);
+	rtems_rbtree_initialize_empty(&self->chunks);
 }
 
 void *
@@ -90,7 +90,7 @@ rtems_bsd_chunk_alloc(rtems_bsd_chunk_control *self, uintptr_t chunk_size)
 		(*self->info_ctor)(self, info);
 
 		_RTEMS_Lock_allocator();
-		rtems_rbtree_insert(&self->chunks, &info->node);
+		rtems_rbtree_insert(&self->chunks, &info->node, chunk_compare, true);
 		_RTEMS_Unlock_allocator();
 	}
 
@@ -122,7 +122,7 @@ rtems_bsd_chunk_get_info(rtems_bsd_chunk_control *self,
 	};
 
 	return chunk_of_node(rtems_rbtree_find(&self->chunks,
-	    &find_me.node));
+	    &find_me.node, chunk_compare, true));
 }
 
 void *

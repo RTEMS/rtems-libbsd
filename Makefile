@@ -1475,7 +1475,10 @@ install: $(LIB)
 	cd freebsd/include ; for i in `find . -type d` ; do \
 	  install -d $(INCLUDE_DIR)/$$i ; \
 	  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done
-	for i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys ; do \
+	cd freebsd/sys/contrib/altq ; \
+	  install -d $(INCLUDE_DIR)/altq ; \
+	  install -m 644 altq/*.h $(INCLUDE_DIR)/altq
+	for i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys vm ; do \
 	  install -d $(INCLUDE_DIR)/$$i ; \
 	  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done
 	install -m 644 mDNSResponder/mDNSCore/mDNSDebug.h $(INCLUDE_DIR)

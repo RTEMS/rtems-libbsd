@@ -515,7 +515,10 @@ class ModuleManager:
 			'\tcd freebsd/include ; for i in `find . -type d` ; do \\\n' \
 			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
 			'\t  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
-			'\tfor i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys ; do \\\n' \
+			'\tcd freebsd/sys/contrib/altq ; \\\n' \
+			'\t  install -d $(INCLUDE_DIR)/altq ; \\\n' \
+			'\t  install -m 644 altq/*.h $(INCLUDE_DIR)/altq\n' \
+			'\tfor i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys vm ; do \\\n' \
 			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
 			'\t  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
 			'\tinstall -m 644 mDNSResponder/mDNSCore/mDNSDebug.h $(INCLUDE_DIR)\n' \

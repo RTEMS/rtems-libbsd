@@ -1438,6 +1438,7 @@ D_FILES += $(LIB_C_FILES:%.c=%.d)
 all: $(LIB) $(TESTS) $(TEST_NETWORK_CONFIG) $(NET_TESTS)
 
 $(LIB): $(LIB_GEN_FILES) $(LIB_O_FILES)
+	rm -f $@
 	$(AR) rcu $@ $^
 
 run_tests: $(RUN_TESTS)

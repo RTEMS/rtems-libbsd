@@ -478,6 +478,7 @@ class ModuleManager:
 			'all: $(LIB) $(TESTS) $(TEST_NETWORK_CONFIG) $(NET_TESTS)\n' \
 			'\n' \
 			'$(LIB): $(LIB_GEN_FILES) $(LIB_O_FILES)\n' \
+			'\trm -f $@\n' \
 			'\t$(AR) rcu $@ $^\n' \
 			'\n' \
 			'run_tests: $(RUN_TESTS)\n' \

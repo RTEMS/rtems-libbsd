@@ -99,7 +99,7 @@ buf_ring_enqueue(struct buf_ring *br, void *buf)
 			return (ENOBUFS);
 		}
 		
-		success = atomic_cmpset_int(&br->br_prod_head, prod_head,
+		success = atomic_cmpset_int((volatile int *)&br->br_prod_head, prod_head,
 		    prod_next);
 	} while (success == 0);
 #ifdef DEBUG_BUFRING
@@ -146,7 +146,7 @@ buf_ring_dequeue_mc(struct buf_ring *br)
 			return (NULL);
 		}
 		
-		success = atomic_cmpset_int(&br->br_cons_head, cons_head,
+		success = atomic_cmpset_int((volatile int *)&br->br_cons_head, cons_head,
 		    cons_next);
 	} while (success == 0);		
 
@@ -178,7 +178,10 @@ buf_ring_dequeue_mc(struct buf_ring *br)
 static __inline void *
 buf_ring_dequeue_sc(struct buf_ring *br)
 {
-	uint32_t cons_head, cons_next, cons_next_next;
+	uint32_t cons_head, cons_next;
+#ifdef PREFETCH_DEFINED
+	uint32_t cons_next_next;
+#endif
 	uint32_t prod_tail;
 	void *buf;
 	
@@ -186,7 +189,9 @@ buf_ring_dequeue_sc(struct buf_ring *br)
 	prod_tail = br->br_prod_tail;
 	
 	cons_next = (cons_head + 1) & br->br_cons_mask;
+#ifdef PREFETCH_DEFINED
 	cons_next_next = (cons_head + 2) & br->br_cons_mask;
+#endif
 	
 	if (cons_head == prod_tail) 
 		return (NULL);
@@ -254,11 +259,11 @@ buf_ring_advance_sc(struct buf_ring *br)
  * the compare and an atomic.
  */
 static __inline void
-buf_ring_putback_sc(struct buf_ring *br, void *new)
+buf_ring_putback_sc(struct buf_ring *br, void *new_item)
 {
 	KASSERT(br->br_cons_head != br->br_prod_tail, 
 		("Buf-Ring has none in putback")) ;
-	br->br_ring[br->br_cons_head] = new;
+	br->br_ring[br->br_cons_head] = new_item;
 }
 
 /*

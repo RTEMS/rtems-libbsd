@@ -529,7 +529,7 @@ m_getclr(int how, short type)
 
 	args.flags = 0;
 	args.type = type;
-	m = uma_zalloc_arg(zone_mbuf, &args, how);
+	m = (struct mbuf *)uma_zalloc_arg(zone_mbuf, &args, how);
 	if (m != NULL)
 		bzero(m->m_data, MLEN);
 	return (m);
@@ -574,12 +574,12 @@ m_getjcl(int how, short type, int flags, int size)
 	args.flags = flags;
 	args.type = type;
 
-	m = uma_zalloc_arg(zone_mbuf, &args, how);
+	m = (struct mbuf *)uma_zalloc_arg(zone_mbuf, &args, how);
 	if (m == NULL)
 		return (NULL);
 
 	zone = m_getzone(size);
-	n = uma_zalloc_arg(zone, m, how);
+	n = (struct mbuf *)uma_zalloc_arg(zone, m, how);
 	if (n == NULL) {
 		uma_zfree(zone_mbuf, m);
 		return (NULL);
@@ -679,8 +679,9 @@ m_cljset(struct mbuf *m, void *cl, int type)
 		break;
 	}
 
-	m->m_data = m->m_ext.ext_buf = cl;
-	m->m_ext.ext_free = m->m_ext.ext_arg1 = m->m_ext.ext_arg2 = NULL;
+	m->m_data = m->m_ext.ext_buf = (caddr_t)cl;
+	m->m_ext.ext_free = NULL;
+	m->m_ext.ext_arg1 = m->m_ext.ext_arg2 = NULL;
 	m->m_ext.ext_size = size;
 	m->m_ext.ext_type = type;
 	m->m_ext.ref_cnt = (volatile u_int *) uma_find_refcnt(zone, cl);

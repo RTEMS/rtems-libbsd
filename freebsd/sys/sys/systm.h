@@ -306,7 +306,7 @@ int	fubyte(const void *base);
 static inline int
 fubyte(const void *base)
 {
-  const unsigned char *byte_base = base;
+  const unsigned char *byte_base = (const unsigned char *)base;
 
   return byte_base[0];
 }

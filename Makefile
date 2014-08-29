@@ -5,31 +5,33 @@ include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
-CFLAGS += -ffreestanding
-CFLAGS += -fno-common
-CFLAGS += -Irtemsbsd/include
-CFLAGS += -Irtemsbsd/$(RTEMS_CPU)/include
-CFLAGS += -Ifreebsd/sys
-CFLAGS += -Ifreebsd/sys/$(RTEMS_CPU)/include
-CFLAGS += -Ifreebsd/sys/contrib/altq
-CFLAGS += -Ifreebsd/sys/contrib/pf
-CFLAGS += -Icopied/rtemsbsd/$(RTEMS_CPU)/include
-CFLAGS += -Ifreebsd/include
-CFLAGS += -Ifreebsd/lib/libc/include
-CFLAGS += -Ifreebsd/lib/libc/isc/include
-CFLAGS += -Ifreebsd/lib/libc/resolv
-CFLAGS += -Ifreebsd/lib/libutil
-CFLAGS += -Ifreebsd/lib/libkvm
-CFLAGS += -Ifreebsd/lib/libmemstat
-CFLAGS += -Ifreebsd/lib/libipsec
-CFLAGS += -ImDNSResponder/mDNSCore
-CFLAGS += -ImDNSResponder/mDNSShared
-CFLAGS += -ImDNSResponder/mDNSPosix
-CFLAGS += -Itestsuite/include
-CFLAGS += -Wall
-CFLAGS += -Wno-format
+COMMON_FLAGS += -ffreestanding
+COMMON_FLAGS += -fno-common
+COMMON_FLAGS += -Irtemsbsd/include
+COMMON_FLAGS += -Irtemsbsd/$(RTEMS_CPU)/include
+COMMON_FLAGS += -Ifreebsd/sys
+COMMON_FLAGS += -Ifreebsd/sys/$(RTEMS_CPU)/include
+COMMON_FLAGS += -Ifreebsd/sys/contrib/altq
+COMMON_FLAGS += -Ifreebsd/sys/contrib/pf
+COMMON_FLAGS += -Icopied/rtemsbsd/$(RTEMS_CPU)/include
+COMMON_FLAGS += -Ifreebsd/include
+COMMON_FLAGS += -Ifreebsd/lib/libc/include
+COMMON_FLAGS += -Ifreebsd/lib/libc/isc/include
+COMMON_FLAGS += -Ifreebsd/lib/libc/resolv
+COMMON_FLAGS += -Ifreebsd/lib/libutil
+COMMON_FLAGS += -Ifreebsd/lib/libkvm
+COMMON_FLAGS += -Ifreebsd/lib/libmemstat
+COMMON_FLAGS += -Ifreebsd/lib/libipsec
+COMMON_FLAGS += -ImDNSResponder/mDNSCore
+COMMON_FLAGS += -ImDNSResponder/mDNSShared
+COMMON_FLAGS += -ImDNSResponder/mDNSPosix
+COMMON_FLAGS += -Itestsuite/include
+COMMON_FLAGS += -Wall
+COMMON_FLAGS += -Wno-format
+COMMON_FLAGS += -MT $@ -MD -MP -MF $(basename $@).d
+CFLAGS += $(COMMON_FLAGS)
 CFLAGS += -std=gnu99
-CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d
+CXXFLAGS += $(COMMON_FLAGS)
 NEED_DUMMY_PIC_IRQ=yes
 
 TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h
@@ -46,6 +48,8 @@ D_FILES =
 LIB = libbsd.a
 LIB_GEN_FILES =
 LIB_C_FILES =
+LIB_CXX_FILES =
+LIB_CXX_FILES += rtemsbsd/rtems/rtems-bsd-cxx.cc
 LIB_C_FILES += rtemsbsd/local/bus_if.c
 LIB_C_FILES += rtemsbsd/local/cryptodev_if.c
 LIB_C_FILES += rtemsbsd/local/device_if.c
@@ -1431,9 +1435,9 @@ LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSUNP.c
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include
 endif
-LIB_O_FILES = $(LIB_C_FILES:%.c=%.o)
+LIB_O_FILES = $(LIB_C_FILES:%.c=%.o) $(LIB_CXX_FILES:%.cc=%.o)
 O_FILES += $(LIB_O_FILES)
-D_FILES += $(LIB_C_FILES:%.c=%.d)
+D_FILES += $(LIB_C_FILES:%.c=%.d) $(LIB_CXX_FILES:%.cc=%.d)
 
 all: $(LIB) $(TESTS) $(TEST_NETWORK_CONFIG) $(NET_TESTS)
 

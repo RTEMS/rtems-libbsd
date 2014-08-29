@@ -411,31 +411,33 @@ class ModuleManager:
 			'include $(RTEMS_CUSTOM)\n' \
 			'include $(PROJECT_ROOT)/make/leaf.cfg\n' \
 			'\n' \
-			'CFLAGS += -ffreestanding\n' \
-			'CFLAGS += -fno-common\n' \
-			'CFLAGS += -Irtemsbsd/include\n' \
-			'CFLAGS += -Irtemsbsd/$(RTEMS_CPU)/include\n' \
-			'CFLAGS += -Ifreebsd/sys\n' \
-			'CFLAGS += -Ifreebsd/sys/$(RTEMS_CPU)/include\n' \
-			'CFLAGS += -Ifreebsd/sys/contrib/altq\n' \
-			'CFLAGS += -Ifreebsd/sys/contrib/pf\n' \
-			'CFLAGS += -Icopied/rtemsbsd/$(RTEMS_CPU)/include\n' \
-			'CFLAGS += -Ifreebsd/include\n' \
-			'CFLAGS += -Ifreebsd/lib/libc/include\n' \
-			'CFLAGS += -Ifreebsd/lib/libc/isc/include\n' \
-			'CFLAGS += -Ifreebsd/lib/libc/resolv\n' \
-			'CFLAGS += -Ifreebsd/lib/libutil\n' \
-			'CFLAGS += -Ifreebsd/lib/libkvm\n' \
-			'CFLAGS += -Ifreebsd/lib/libmemstat\n' \
-			'CFLAGS += -Ifreebsd/lib/libipsec\n' \
-			'CFLAGS += -ImDNSResponder/mDNSCore\n' \
-			'CFLAGS += -ImDNSResponder/mDNSShared\n' \
-			'CFLAGS += -ImDNSResponder/mDNSPosix\n' \
-			'CFLAGS += -Itestsuite/include\n' \
-			'CFLAGS += -Wall\n' \
-			'CFLAGS += -Wno-format\n' \
+			'COMMON_FLAGS += -ffreestanding\n' \
+			'COMMON_FLAGS += -fno-common\n' \
+			'COMMON_FLAGS += -Irtemsbsd/include\n' \
+			'COMMON_FLAGS += -Irtemsbsd/$(RTEMS_CPU)/include\n' \
+			'COMMON_FLAGS += -Ifreebsd/sys\n' \
+			'COMMON_FLAGS += -Ifreebsd/sys/$(RTEMS_CPU)/include\n' \
+			'COMMON_FLAGS += -Ifreebsd/sys/contrib/altq\n' \
+			'COMMON_FLAGS += -Ifreebsd/sys/contrib/pf\n' \
+			'COMMON_FLAGS += -Icopied/rtemsbsd/$(RTEMS_CPU)/include\n' \
+			'COMMON_FLAGS += -Ifreebsd/include\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libc/include\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libc/isc/include\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libc/resolv\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libutil\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libkvm\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libmemstat\n' \
+			'COMMON_FLAGS += -Ifreebsd/lib/libipsec\n' \
+			'COMMON_FLAGS += -ImDNSResponder/mDNSCore\n' \
+			'COMMON_FLAGS += -ImDNSResponder/mDNSShared\n' \
+			'COMMON_FLAGS += -ImDNSResponder/mDNSPosix\n' \
+			'COMMON_FLAGS += -Itestsuite/include\n' \
+			'COMMON_FLAGS += -Wall\n' \
+			'COMMON_FLAGS += -Wno-format\n' \
+			'COMMON_FLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
+			'CFLAGS += $(COMMON_FLAGS)\n' \
 			'CFLAGS += -std=gnu99\n' \
-			'CFLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
+			'CXXFLAGS += $(COMMON_FLAGS)\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n' \
 			'TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h\n' \
@@ -451,7 +453,9 @@ class ModuleManager:
 			'\n' \
 			'LIB = libbsd.a\n' \
 			'LIB_GEN_FILES =\n' \
-			'LIB_C_FILES =\n'
+			'LIB_C_FILES =\n' \
+			'LIB_CXX_FILES =\n' \
+			'LIB_CXX_FILES += rtemsbsd/rtems/rtems-bsd-cxx.cc\n'
 		for m in self.modules:
 			if m.conditionalOn != "none":
 				data += 'ifneq ($(' + m.conditionalOn + '),yes)\n'
@@ -471,9 +475,9 @@ class ModuleManager:
 			'ifeq ($(NEED_DUMMY_PIC_IRQ),yes)\n' \
 			'CFLAGS += -I rtems-dummy-pic-irq/include\n' \
 			'endif\n' \
-			'LIB_O_FILES = $(LIB_C_FILES:%.c=%.o)\n' \
+			'LIB_O_FILES = $(LIB_C_FILES:%.c=%.o) $(LIB_CXX_FILES:%.cc=%.o)\n' \
 			'O_FILES += $(LIB_O_FILES)\n' \
-			'D_FILES += $(LIB_C_FILES:%.c=%.d)\n' \
+			'D_FILES += $(LIB_C_FILES:%.c=%.d) $(LIB_CXX_FILES:%.cc=%.d)\n' \
 			'\n' \
 			'all: $(LIB) $(TESTS) $(TEST_NETWORK_CONFIG) $(NET_TESTS)\n' \
 			'\n' \

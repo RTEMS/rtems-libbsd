@@ -52,6 +52,8 @@
 #include <rtems/bsd/bsd.h>
 #include <rtems/irq-extension.h>
 
+/* #define DISABLE_INTERRUPT_EXTENSION */
+
 RTEMS_STATIC_ASSERT(SYS_RES_MEMORY == RTEMS_BSD_RES_MEMORY, RTEMS_BSD_RES_MEMORY);
 
 RTEMS_STATIC_ASSERT(SYS_RES_IRQ == RTEMS_BSD_RES_IRQ, RTEMS_BSD_RES_IRQ);
@@ -69,6 +71,7 @@ nexus_probe(device_t dev)
 
 	device_set_desc(dev, "RTEMS Nexus device");
 
+#ifndef DISABLE_INTERRUPT_EXTENSION
 	status = rtems_interrupt_server_initialize(
 		BSD_TASK_PRIORITY_INTERRUPT,
 		BSD_MINIMUM_TASK_STACK_SIZE,
@@ -77,6 +80,7 @@ nexus_probe(device_t dev)
 		NULL
 	);
 	BSD_ASSERT(status == RTEMS_SUCCESSFUL);
+#endif
 
 	mem_rman.rm_start = 0;
 	mem_rman.rm_end = ~0UL;
@@ -197,6 +201,7 @@ nexus_setup_intr(device_t dev, device_t child, struct resource *res, int flags,
     driver_filter_t *filt, driver_intr_t *intr, void *arg, void **cookiep)
 {
 	int err;
+#ifndef DISABLE_INTERRUPT_EXTENSION
 	struct nexus_intr *ni;
 
 	ni = malloc(sizeof(*ni), M_TEMP, M_WAITOK);
@@ -232,6 +237,9 @@ nexus_setup_intr(device_t dev, device_t child, struct resource *res, int flags,
 	} else {
 		err = ENOMEM;
 	}
+#else
+	err = EINVAL;
+#endif
 
 	return (err);
 }
@@ -241,6 +249,7 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
     void *cookie)
 {
 	int err;
+#ifndef DISABLE_INTERRUPT_EXTENSION
 	struct nexus_intr *ni;
 	rtems_status_code sc;
 	rtems_interrupt_handler rh;
@@ -260,6 +269,9 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 	    rman_get_start(res), device_get_nameunit(child),
 	    RTEMS_INTERRUPT_UNIQUE, rh, ra);
 	err = sc == RTEMS_SUCCESSFUL ? 0 : EINVAL;
+#else
+	err = EINVAL;
+#endif
 
 	return (err);
 }

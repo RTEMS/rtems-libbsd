@@ -389,6 +389,7 @@ int rtems_bsd_command_netstat(int argc, char *argv[])
 
 	Aflag = 0;
 	aflag = 0;
+	Bflag = 0;
 	bflag = 0;
 	dflag = 0;
 	gflag = 0;
@@ -413,6 +414,8 @@ int rtems_bsd_command_netstat(int argc, char *argv[])
 
 	protopr_initialized = 0;
 	do_rtent = 0;
+
+	rtems_bsd_netstat_inet_init();
 
 	exit_code = rtems_bsd_program_call_main("netstat", main, argc, argv);
 

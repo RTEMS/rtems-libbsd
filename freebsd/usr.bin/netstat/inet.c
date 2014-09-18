@@ -89,6 +89,15 @@ void	inetprint(struct in_addr *, int, const char *, int);
 #ifdef INET6
 static int udp_done, tcp_done, sdp_done;
 #endif /* INET6 */
+#ifdef __rtems__
+void
+rtems_bsd_netstat_inet_init(void)
+{
+	udp_done = 0;
+	tcp_done = 0;
+	sdp_done = 0;
+}
+#endif /* __rtems__ */
 
 static int
 pcblist_sysctl(int proto, const char *name, char **bufp, int istcp)

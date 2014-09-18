@@ -178,3 +178,6 @@ void	tp_stats(caddr_t, caddr_t);
 void	mroutepr(u_long, u_long, u_long);
 void	mrt_stats(u_long);
 void	bpf_stats(char *);
+#ifdef __rtems__
+void	rtems_bsd_netstat_inet_init(void);
+#endif /* __rtems__ */

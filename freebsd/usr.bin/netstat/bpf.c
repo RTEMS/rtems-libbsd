@@ -55,12 +55,10 @@ __FBSDID("$FreeBSD$");
 
 /* print bpf stats */
 
+#ifndef __rtems__
 static char *
 bpf_pidname(pid_t pid)
 {
-#ifdef __rtems__
-	return "rtems";
-#else /* __rtems__ */
 	struct kinfo_proc newkp;
 	int error, mib[4];
 	size_t size;
@@ -76,8 +74,8 @@ bpf_pidname(pid_t pid)
 		return (strdup("??????"));
 	}
 	return (strdup(newkp.ki_comm));
-#endif /* __rtems__ */
 }
+#endif /* __rtems__ */
 
 static void
 bpf_flags(struct xbpf_d *bd, char *flagbuf)
@@ -139,12 +137,18 @@ bpf_stats(char *ifname)
 		if (ifname && strcmp(ifname, d->bd_ifname) != 0)
 			continue;
 		bpf_flags(d, flagbuf);
+#ifndef __rtems__
 		pname = bpf_pidname(d->bd_pid);
+#else /* __rtems__ */
+		pname = "??????";
+#endif /* __rtems__ */
 		(void) printf("%5d %6s %7s %9ju %9ju %9ju %5d %5d %s\n",
 		    d->bd_pid, d->bd_ifname, flagbuf,
 		    d->bd_rcount, d->bd_dcount, d->bd_fcount,
 		    d->bd_slen, d->bd_hlen, pname);
+#ifndef __rtems__
 		free(pname);
+#endif /* __rtems__ */
 	}
 	free(bd);
 }

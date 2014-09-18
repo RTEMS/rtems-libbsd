@@ -411,6 +411,7 @@ class ModuleManager:
 			'include $(RTEMS_CUSTOM)\n' \
 			'include $(PROJECT_ROOT)/make/leaf.cfg\n' \
 			'\n' \
+			'COMMON_FLAGS += -fno-strict-aliasing\n' \
 			'COMMON_FLAGS += -ffreestanding\n' \
 			'COMMON_FLAGS += -fno-common\n' \
 			'COMMON_FLAGS += -Irtemsbsd/include\n' \

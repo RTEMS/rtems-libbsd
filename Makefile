@@ -5,6 +5,7 @@ include $(RTEMS_MAKEFILE_PATH)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(PROJECT_ROOT)/make/leaf.cfg
 
+COMMON_FLAGS += -fno-strict-aliasing
 COMMON_FLAGS += -ffreestanding
 COMMON_FLAGS += -fno-common
 COMMON_FLAGS += -Irtemsbsd/include

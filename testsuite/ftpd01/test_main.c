@@ -67,22 +67,13 @@ struct rtems_ftpd_configuration rtems_ftpd_configuration = {
 static void
 test_main(void)
 {
-	rtems_status_code sc;
 	int rv;
 
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
 
-	sc = rtems_shell_init(
-		"SHLL",
-		32 * 1024,
-		1,
-		CONSOLE_DEVICE_NAME,
-		false,
-		true,
-		NULL
-	);
-	assert(sc == RTEMS_SUCCESSFUL);
+	rtems_task_delete(RTEMS_SELF);
+	assert(0);
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

@@ -353,9 +353,9 @@ int	cr_cansee(struct ucred *u1, struct ucred *u2);
 int	cr_canseesocket(struct ucred *cred, struct socket *so);
 int	cr_canseeinpcb(struct ucred *cred, struct inpcb *inp);
 #else /* __rtems__ */
-#define cr_cansee(u1, u2) 1
-#define cr_canseesocket(cred, so) 1
-#define cr_canseeinpcb(cred, inp) 1
+#define cr_cansee(u1, u2) 0
+#define cr_canseesocket(cred, so) 0
+#define cr_canseeinpcb(cred, inp) 0
 #endif /* __rtems__ */
 
 char	*getenv(const char *name);

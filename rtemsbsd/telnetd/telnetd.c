@@ -305,9 +305,6 @@ rtems_status_code rtems_telnetd_initialize( void)
   }
 
   /* Check priority */
-  if (rtems_telnetd_config.priority <= 0) {
-    rtems_telnetd_config.priority = rtems_bsdnet_config.network_task_priority;
-  }
   if (rtems_telnetd_config.priority < 2) {
     rtems_telnetd_config.priority = 100;
   }

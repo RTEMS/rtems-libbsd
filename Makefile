@@ -1171,6 +1171,17 @@ NET_TESTS += $(TEST_ARPHOLE)
 O_FILES += $(TEST_ARPHOLE_O_FILES)
 D_FILES += $(TEST_ARPHOLE_D_FILES)
 
+TEST_TELNETD01 = testsuite/telnetd01/telnetd01.exe
+TEST_TELNETD01_O_FILES =
+TEST_TELNETD01_D_FILES =
+TEST_TELNETD01_O_FILES += testsuite/telnetd01/test_main.o
+TEST_TELNETD01_D_FILES += testsuite/telnetd01/test_main.d
+$(TEST_TELNETD01): $(TEST_TELNETD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/telnetd01/telnetd01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_TELNETD01)
+O_FILES += $(TEST_TELNETD01_O_FILES)
+D_FILES += $(TEST_TELNETD01_D_FILES)
+
 TEST_UNIX01 = testsuite/unix01/unix01.exe
 TEST_UNIX01_O_FILES =
 TEST_UNIX01_D_FILES =

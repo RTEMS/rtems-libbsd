@@ -526,6 +526,9 @@ class ModuleManager:
 			'\tfor i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys vm ; do \\\n' \
 			'\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
 			'\t  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
+			'\tcd freebsd/sys/dev/mii ; \\\n' \
+			'\t  install -d $(INCLUDE_DIR)/dev/mii ; \\\n' \
+			'\t  install -m 644 *.h $(INCLUDE_DIR)/dev/mii\n' \
 			'\tinstall -m 644 mDNSResponder/mDNSCore/mDNSDebug.h $(INCLUDE_DIR)\n' \
 			'\tinstall -m 644 mDNSResponder/mDNSCore/mDNSEmbeddedAPI.h $(INCLUDE_DIR)\n' \
 			'\tinstall -m 644 mDNSResponder/mDNSShared/dns_sd.h $(INCLUDE_DIR)\n' \

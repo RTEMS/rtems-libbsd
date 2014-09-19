@@ -1501,6 +1501,9 @@ install: $(LIB)
 	for i in bsm cam net net80211 netatalk netinet netinet6 netipsec sys vm ; do \
 	  install -d $(INCLUDE_DIR)/$$i ; \
 	  install -m 644 freebsd/sys/$$i/*.h $(INCLUDE_DIR)/$$i ; done
+	cd freebsd/sys/dev/mii ; \
+	  install -d $(INCLUDE_DIR)/dev/mii ; \
+	  install -m 644 *.h $(INCLUDE_DIR)/dev/mii
 	install -m 644 mDNSResponder/mDNSCore/mDNSDebug.h $(INCLUDE_DIR)
 	install -m 644 mDNSResponder/mDNSCore/mDNSEmbeddedAPI.h $(INCLUDE_DIR)
 	install -m 644 mDNSResponder/mDNSShared/dns_sd.h $(INCLUDE_DIR)

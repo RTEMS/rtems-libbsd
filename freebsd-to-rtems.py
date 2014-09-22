@@ -1657,7 +1657,6 @@ netinet.addKernelSpaceSourceFiles(
 		'sys/netinet/ip_icmp.c',
 		'sys/netinet/ip_id.c',
 		'sys/netinet/ip_input.c',
-		'sys/netinet/ip_ipsec.c',
 		'sys/netinet/ip_mroute.c',
 		'sys/netinet/ip_options.c',
 		'sys/netinet/ip_output.c',
@@ -1769,7 +1768,6 @@ netinet6.addKernelSpaceSourceFiles(
 		'sys/netinet6/ip6_forward.c',
 		'sys/netinet6/ip6_id.c',
 		'sys/netinet6/ip6_input.c',
-		'sys/netinet6/ip6_ipsec.c',
 		'sys/netinet6/ip6_mroute.c',
 		'sys/netinet6/ip6_output.c',
 		'sys/netinet6/mld6.c',
@@ -1806,6 +1804,8 @@ netipsec.addKernelSpaceHeaderFiles(
 )
 netipsec.addKernelSpaceSourceFiles(
 	[
+		'sys/netinet/ip_ipsec.c',
+		'sys/netinet6/ip6_ipsec.c',
 		'sys/netipsec/ipsec.c',
 		'sys/netipsec/ipsec_input.c',
 		'sys/netipsec/ipsec_mbuf.c',
@@ -2532,7 +2532,7 @@ mm.addModule(base)
 mm.addModule(net)
 mm.addModule(netinet)
 mm.addModule(netinet6)
-mm.addModule(netipsec)
+#mm.addModule(netipsec)
 mm.addModule(net80211)
 mm.addModule(opencrypto)
 mm.addModule(crypto)

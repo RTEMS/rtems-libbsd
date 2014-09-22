@@ -44,65 +44,10 @@
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/callout.h>
-#include <sys/condvar.h>
 #include <sys/proc.h>
 
 #include <rtems/bsd/bsd.h>
 #include <rtems/shell.h>
-
-static void
-rtems_bsd_dump_mtx(void)
-{
-	rtems_chain_control *chain = &rtems_bsd_mtx_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
-
-	printf("mtx dump:\n");
-
-	while (!rtems_chain_is_tail(chain, node)) {
-		struct lock_object *lo = (struct lock_object *) node;
-
-		printf("\t%s: 0x%08x\n", lo->lo_name, lo->lo_id);
-
-		node = rtems_chain_next(node);
-	}
-}
-
-static void
-rtems_bsd_dump_sx(void)
-{
-	rtems_chain_control *chain = &rtems_bsd_sx_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
-
-	printf("sx dump:\n");
-
-	while (!rtems_chain_is_tail(chain, node)) {
-		struct lock_object *lo = (struct lock_object *) node;
-
-		printf("\t%s: 0x%08x\n", lo->lo_name, lo->lo_id);
-
-		node = rtems_chain_next(node);
-	}
-}
-
-static void
-rtems_bsd_dump_condvar(void)
-{
-	rtems_chain_control *chain = &rtems_bsd_condvar_chain;
-	rtems_chain_node *node = rtems_chain_first(chain);
-
-	printf("condvar dump:\n");
-
-	while (!rtems_chain_is_tail(chain, node)) {
-		struct cv *cv = (struct cv *) node;
-
-		printf("\t%s: 0x%08x\n", cv->cv_description, cv->cv_id);
-
-		node = rtems_chain_next(node);
-	}
-}
 
 static void
 rtems_bsd_dump_thread(void)
@@ -122,7 +67,7 @@ rtems_bsd_dump_thread(void)
 }
 
 static const char rtems_bsd_usage [] =
-	"bsd {all|mtx|sx|condvar|thread|callout}";
+	"bsd {all|condvar|thread|callout}";
 
 #define CMP(s) all || strcasecmp(argv [1], s) == 0
 
@@ -138,18 +83,6 @@ rtems_bsd_info(int argc, char **argv)
 			all = true;
 		}
 
-		if (CMP("mtx")) {
-			rtems_bsd_dump_mtx();
-			usage = false;
-		}
-		if (CMP("sx")) {
-			rtems_bsd_dump_sx();
-			usage = false;
-		}
-		if (CMP("condvar")) {
-			rtems_bsd_dump_condvar();
-			usage = false;
-		}
 		if (CMP("thread")) {
 			rtems_bsd_dump_thread();
 			usage = false;

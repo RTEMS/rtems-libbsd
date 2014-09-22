@@ -44,17 +44,14 @@ TAILQ_HEAD(cv_waitq, thread);
  * optimization to avoid looking up the sleep queue if there are no waiters.
  */
 #ifdef __rtems__
-#include <pthread.h>
-#include <rtems/chain.h>
-#endif
-struct cv {
-#ifdef __rtems__
-	rtems_chain_node cv_node;
-	pthread_cond_t cv_id;
+#include <rtems/score/threadq.h>
 #endif /* __rtems__ */
+struct cv {
 	const char	*cv_description;
 #ifndef __rtems__
 	int		cv_waiters;
+#else /* __rtems__ */
+  Thread_queue_Control cv_waiters;
 #endif /* __rtems__ */
 };
 

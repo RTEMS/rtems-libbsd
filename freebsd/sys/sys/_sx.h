@@ -30,6 +30,9 @@
 
 #ifndef	_SYS__SX_H_
 #define	_SYS__SX_H_
+#ifdef __rtems__
+#include <machine/rtems-bsd-mutex.h>
+#endif /* __rtems__ */
 
 /*
  * Shared/exclusive lock main structure definition.
@@ -38,6 +41,8 @@ struct sx {
 	struct lock_object	lock_object;
 #ifndef __rtems__
 	volatile uintptr_t	sx_lock;
+#else /* __rtems__ */
+	rtems_bsd_mutex mutex;
 #endif /* __rtems__ */
 };
 

@@ -42,8 +42,6 @@
 
 #include <stdio.h>
 
-#include <rtems/chain.h>
-
 /* Debug */
 
 #define BSD_PRINTF(fmt, ...) printf("%s: " fmt, __func__, ##__VA_ARGS__)
@@ -53,17 +51,5 @@
 #define BSD_ASSERT_SC(sc) BSD_ASSERT((sc) == RTEMS_SUCCESSFUL)
 
 #define BSD_ASSERT_RV(rv) BSD_ASSERT((rv) == 0)
-
-extern rtems_chain_control rtems_bsd_lock_chain;
-
-extern rtems_chain_control rtems_bsd_mtx_chain;
-
-extern rtems_chain_control rtems_bsd_sx_chain;
-
-extern rtems_chain_control rtems_bsd_condvar_chain;
-
-extern rtems_chain_control rtems_bsd_callout_chain;
-
-extern rtems_chain_control rtems_bsd_malloc_chain;
 
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_SUPPORT_H_ */

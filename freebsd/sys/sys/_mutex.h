@@ -30,6 +30,9 @@
 
 #ifndef _SYS__MUTEX_H_
 #define	_SYS__MUTEX_H_
+#ifdef __rtems__
+#include <machine/rtems-bsd-mutex.h>
+#endif /* __rtems__ */
 
 /*
  * Sleep/spin mutex.
@@ -38,6 +41,8 @@ struct mtx {
 	struct lock_object	lock_object;	/* Common lock properties. */
 #ifndef __rtems__
 	volatile uintptr_t	mtx_lock;	/* Owner and flags. */
+#else /* __rtems__ */
+	rtems_bsd_mutex mutex;
 #endif /* __rtems__ */
 };
 

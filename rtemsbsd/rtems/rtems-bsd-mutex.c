@@ -38,12 +38,7 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-thread.h>
-#include <machine/rtems-bsd-support.h>
-
-#include <rtems/score/objectimpl.h>
-#include <rtems/rtems/attrimpl.h>
-#include <rtems/rtems/semimpl.h>
+#include <machine/rtems-bsd-muteximpl.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
@@ -58,8 +53,6 @@ static void lock_mtx(struct lock_object *lock, int how);
 static int  owner_mtx(struct lock_object *lock, struct thread **owner);
 #endif
 static int  unlock_mtx(struct lock_object *lock);
-
-RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_mtx_chain);
 
 /*
  * Lock classes for sleep and spin mutexes.
@@ -103,19 +96,15 @@ assert_mtx(struct lock_object *lock, int what)
 void
 lock_mtx(struct lock_object *lock, int how)
 {
-
-  mtx_lock((struct mtx *)lock);
+	mtx_lock((struct mtx *)lock);
 }
 
 int
 unlock_mtx(struct lock_object *lock)
 {
-  struct mtx *m;
+	mtx_unlock((struct mtx *)lock);
 
-  m = (struct mtx *)lock;
-  mtx_assert(m, MA_OWNED | MA_NOTRECURSED);
-  mtx_unlock(m);
-  return (0);
+	return (0);
 }
 
 
@@ -135,9 +124,6 @@ mtx_init(struct mtx *m, const char *name, const char *type, int opts)
 {
 	struct lock_class *class;
 	int flags;
-  rtems_status_code sc = RTEMS_SUCCESSFUL;
-  rtems_id id = RTEMS_ID_NONE;
-  rtems_attribute attr = RTEMS_LOCAL | RTEMS_BINARY_SEMAPHORE | RTEMS_PRIORITY | RTEMS_INHERIT_PRIORITY;
 
 	/* Determine lock class and lock flags. */
 	if (opts & MTX_SPIN)
@@ -148,55 +134,26 @@ mtx_init(struct mtx *m, const char *name, const char *type, int opts)
 	if (opts & MTX_RECURSE)
 		flags |= LO_RECURSABLE;
 
-	lock_init(&m->lock_object, class, name, type, flags);
-
-	sc = rtems_semaphore_create(
-		rtems_build_name('_', 'M', 'T', 'X'),
-		1,
-		attr,
-		BSD_TASK_PRIORITY_RESOURCE_OWNER,
-		&id
-	);
-	BSD_ASSERT_SC(sc);
-
-  m->lock_object.lo_id = id;
-
-	rtems_chain_append(&rtems_bsd_mtx_chain, &m->lock_object.lo_node);
+	rtems_bsd_mutex_init(&m->lock_object, &m->mutex, class, name, type,
+	    flags);
 }
 
 void
 _mtx_lock_flags(struct mtx *m, int opts, const char *file, int line)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	sc = rtems_semaphore_obtain(m->lock_object.lo_id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-	BSD_ASSERT_SC(sc);
+	rtems_bsd_mutex_lock(&m->lock_object, &m->mutex);
 }
 
 int
 _mtx_trylock(struct mtx *m, int opts, const char *file, int line)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	sc = rtems_semaphore_obtain(m->lock_object.lo_id, RTEMS_NO_WAIT, 0);
-	if (sc == RTEMS_SUCCESSFUL) {
-		return 1;
-	} else if (sc == RTEMS_UNSATISFIED) {
-		return 0;
-	} else {
-		BSD_ASSERT_SC(sc);
-
-		return 0;
-	}
+	return (rtems_bsd_mutex_trylock(&m->lock_object, &m->mutex));
 }
 
 void
 _mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	sc = rtems_semaphore_release(m->lock_object.lo_id);
-	BSD_ASSERT_SC(sc);
+	rtems_bsd_mutex_unlock(&m->mutex);
 }
 
 /*
@@ -238,38 +195,12 @@ _mtx_assert(struct mtx *m, int what, const char *file, int line)
 
 int mtx_owned(struct mtx *m)
 {
-	Objects_Locations location;
-	Semaphore_Control *sema = _Semaphore_Get(m->lock_object.lo_id, &location);
-
-	if (location == OBJECTS_LOCAL && !_Attributes_Is_counting_semaphore(sema->attribute_set)) {
-		int owned = sema->Core_control.mutex.holder == _Thread_Executing;
-
-		_Thread_Enable_dispatch();
-
-		return owned;
-	} else {
-		_Thread_Enable_dispatch();
-
-		BSD_PANIC("unexpected semaphore location or attributes");
-	}
+	return (rtems_bsd_mutex_owned(&m->mutex));
 }
 
 int mtx_recursed(struct mtx *m)
 {
-	Objects_Locations location;
-	Semaphore_Control *sema = _Semaphore_Get(m->lock_object.lo_id, &location);
-
-	if (location == OBJECTS_LOCAL && !_Attributes_Is_counting_semaphore(sema->attribute_set)) {
-		int recursed = sema->Core_control.mutex.nest_count != 0;
-
-		_Thread_Enable_dispatch();
-
-		return recursed;
-	} else {
-		_Thread_Enable_dispatch();
-
-		BSD_PANIC("unexpected semaphore location or attributes");
-	}
+	return (rtems_bsd_mutex_recursed(&m->mutex));
 }
 
 void
@@ -283,23 +214,8 @@ mtx_sysinit(void *arg)
 void
 mtx_destroy(struct mtx *m)
 {
-	rtems_status_code sc;
 
-	do {
-		sc = rtems_semaphore_delete(m->lock_object.lo_id);
-		if (sc == RTEMS_RESOURCE_IN_USE) {
-			BSD_ASSERT(mtx_owned(m));
-
-			mtx_unlock(m);
-		} else {
-			BSD_ASSERT_SC(sc);
-		}
-	} while (sc != RTEMS_SUCCESSFUL);
-
-	rtems_chain_extract(&m->lock_object.lo_node);
-
-	m->lock_object.lo_id = 0;
-	m->lock_object.lo_flags &= ~LO_INITIALIZED;
+	rtems_bsd_mutex_destroy(&m->lock_object, &m->mutex);
 }
 
 void

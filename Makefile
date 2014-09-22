@@ -1316,6 +1316,30 @@ TESTS += $(TEST_THREAD01)
 O_FILES += $(TEST_THREAD01_O_FILES)
 D_FILES += $(TEST_THREAD01_D_FILES)
 RUN_TESTS += $(TEST_THREAD01)
+
+TEST_MUTEX01 = testsuite/mutex01/mutex01.exe
+TEST_MUTEX01_O_FILES =
+TEST_MUTEX01_D_FILES =
+TEST_MUTEX01_O_FILES += testsuite/mutex01/test_main.o
+TEST_MUTEX01_D_FILES += testsuite/mutex01/test_main.d
+$(TEST_MUTEX01): $(TEST_MUTEX01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/mutex01/mutex01.map $^ -lm -lz -o $@
+TESTS += $(TEST_MUTEX01)
+O_FILES += $(TEST_MUTEX01_O_FILES)
+D_FILES += $(TEST_MUTEX01_D_FILES)
+RUN_TESTS += $(TEST_MUTEX01)
+
+TEST_CONDVAR01 = testsuite/condvar01/condvar01.exe
+TEST_CONDVAR01_O_FILES =
+TEST_CONDVAR01_D_FILES =
+TEST_CONDVAR01_O_FILES += testsuite/condvar01/test_main.o
+TEST_CONDVAR01_D_FILES += testsuite/condvar01/test_main.d
+$(TEST_CONDVAR01): $(TEST_CONDVAR01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/condvar01/condvar01.map $^ -lm -lz -o $@
+TESTS += $(TEST_CONDVAR01)
+O_FILES += $(TEST_CONDVAR01_O_FILES)
+D_FILES += $(TEST_CONDVAR01_D_FILES)
+RUN_TESTS += $(TEST_CONDVAR01)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

@@ -1,6 +1,19 @@
-/*-
- * Copyright (c) 2006 John Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
+/**
+ * @file
+ *
+ * @ingroup rtems_bsd_machine
+ *
+ * @brief TODO.
+ */
+
+/*
+ * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Dornierstr. 4
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,9 +23,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the author nor the names of any co-contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -25,26 +35,26 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
-#ifndef _SYS__RWLOCK_H_
-#define	_SYS__RWLOCK_H_
-#ifdef __rtems__
-#include <machine/rtems-bsd-mutex.h>
-#endif /* __rtems__ */
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
+#define _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 
-/*
- * Reader/writer lock.
- */
-struct rwlock {
-	struct lock_object	lock_object;
-#ifndef __rtems__
-	volatile uintptr_t	rw_lock;
-#else /* __rtems__ */
-	rtems_bsd_mutex mutex;
-#endif /* __rtems__ */
-};
+#include <rtems/score/rbtree.h>
+#include <rtems/score/thread.h>
 
-#endif /* !_SYS__RWLOCK_H_ */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+typedef struct {
+	Thread_Control *owner;
+	int nest_level;
+	RBTree_Control rivals;
+} rtems_bsd_mutex;
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_ */

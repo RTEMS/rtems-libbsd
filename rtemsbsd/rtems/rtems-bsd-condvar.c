@@ -39,153 +39,127 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-support.h>
 
-#include <rtems/score/objectimpl.h>
 #include <rtems/score/threaddispatch.h>
+#include <rtems/score/threadimpl.h>
 #include <rtems/score/threadqimpl.h>
-#include <rtems/posix/condimpl.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
-#include <sys/mutex.h>
 #include <sys/condvar.h>
-
-RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_condvar_chain);
+#include <sys/mutex.h>
 
 void
 cv_init(struct cv *cv, const char *desc)
 {
-	int rv = pthread_cond_init(&cv->cv_id, NULL);
-
-	BSD_ASSERT_RV(rv);
 
 	cv->cv_description = desc;
-
-	rtems_chain_append(&rtems_bsd_condvar_chain, &cv->cv_node);
+	_Thread_queue_Initialize(&cv->cv_waiters, THREAD_QUEUE_DISCIPLINE_PRIORITY,
+	    STATES_WAITING_FOR_CONDITION_VARIABLE, EWOULDBLOCK);
 }
 
 void
 cv_destroy(struct cv *cv)
 {
-	int rv = pthread_cond_destroy(&cv->cv_id);
 
-	BSD_ASSERT_RV(rv);
-
-	rtems_chain_extract(&cv->cv_node);
+	BSD_ASSERT(_Thread_queue_First(&cv->cv_waiters) == NULL);
 }
 
-static int _cv_wait_support(struct cv *cv, struct lock_object *lock, int timo, bool relock)
+static int
+_cv_wait_support(struct cv *cv, struct lock_object *lock, Watchdog_Interval timo, bool relock)
 {
-	int eno = 0;
-	Objects_Locations location = OBJECTS_ERROR;
-	POSIX_Condition_variables_Control *pcv = _POSIX_Condition_variables_Get(&cv->cv_id, &location);
+	int error;
+	struct lock_class *class;
+	int lock_state;
+	Thread_Control *executing;
 
-	if (location == OBJECTS_LOCAL) {
-		struct lock_class *class = LOCK_CLASS(lock);
-		int lock_state;
+	_Thread_Disable_dispatch();
 
-		if (pcv->Mutex != POSIX_CONDITION_VARIABLES_NO_MUTEX && pcv->Mutex != lock->lo_id) {
-			_Thread_Enable_dispatch();
+	class = LOCK_CLASS(lock);
+	lock_state = (*class->lc_unlock)(lock);
 
-			BSD_ASSERT(false);
+	_Thread_queue_Enter_critical_section(&cv->cv_waiters);
 
-			return EINVAL;
-		}
+	executing = _Thread_Executing;
+	executing->Wait.return_code = 0;
+	executing->Wait.queue = &cv->cv_waiters;
 
-		lock_state = (*class->lc_unlock)(lock);
+	_Thread_queue_Enqueue(&cv->cv_waiters, executing, timo);
 
-		pcv->Mutex = lock->lo_id;
+	DROP_GIANT();
 
-		_Thread_queue_Enter_critical_section(&pcv->Wait_queue);
-		_Thread_Executing->Wait.return_code = 0;
-		_Thread_Executing->Wait.queue = &pcv->Wait_queue;
-		_Thread_Executing->Wait.id = cv->cv_id;
+	_Thread_Enable_dispatch();
 
-		/* FIXME: Integer conversion */
-		_Thread_queue_Enqueue(&pcv->Wait_queue, _Thread_Executing, (Watchdog_Interval) timo);
+	PICKUP_GIANT();
 
-		DROP_GIANT();
+	error = (int)executing->Wait.return_code;
 
-		_Thread_Enable_dispatch();
-
-		PICKUP_GIANT();
-
-		eno = (int) _Thread_Executing->Wait.return_code;
-		if (eno != 0) {
-			if (eno == ETIMEDOUT) {
-				eno = EWOULDBLOCK;
-			} else {
-				BSD_ASSERT(false);
-
-				eno = EINVAL;
-			}
-		}
-
-		if (relock) {
-			(*class->lc_lock)(lock, lock_state);
-		}
-
-		return eno;
+	if (relock) {
+		(*class->lc_lock)(lock, lock_state);
 	}
 
-	BSD_PANIC("unexpected object location");
+	return (error);
 }
 
 void
 _cv_wait(struct cv *cv, struct lock_object *lock)
 {
+
 	_cv_wait_support(cv, lock, 0, true);
 }
 
 void
 _cv_wait_unlock(struct cv *cv, struct lock_object *lock)
 {
+
 	_cv_wait_support(cv, lock, 0, false);
 }
 
 int
 _cv_timedwait(struct cv *cv, struct lock_object *lock, int timo)
 {
-	if (timo <= 0) {
+	if (timo <= 0)
 		timo = 1;
-	}
 
-	return _cv_wait_support(cv, lock, timo, true);
+	return (_cv_wait_support(cv, lock, (Watchdog_Interval)timo, true));
 }
 
 void
 cv_signal(struct cv *cv)
 {
-	int rv = pthread_cond_signal(&cv->cv_id);
 
-	BSD_ASSERT_RV(rv);
+	_Thread_Disable_dispatch();
+	_Thread_queue_Dequeue(&cv->cv_waiters);
+	_Thread_Enable_dispatch();
 }
 
 void
 cv_broadcastpri(struct cv *cv, int pri)
 {
-	int rv = 0;
 
-	/* FIXME: What to do with "pri"? */
+	_Thread_Disable_dispatch();
 
-	rv = pthread_cond_broadcast(&cv->cv_id);
-	BSD_ASSERT_RV(rv);
-}
-int
-_cv_wait_sig(struct cv *cvp, struct lock_object *lock)
-{
-  /* XXX */
-	return _cv_wait_support(cvp, lock, 0, true);
-}
-
-int
-_cv_timedwait_sig(struct cv *cvp, struct lock_object *lock, int timo)
-{
-  /* XXX */
-	if (timo <= 0) {
-		timo = 1;
+	while (_Thread_queue_Dequeue(&cv->cv_waiters) != NULL) {
+		/* Again */
 	}
 
-	return _cv_wait_support(cvp, lock, timo, true);
+	_Thread_Enable_dispatch();
+}
+
+int
+_cv_wait_sig(struct cv *cv, struct lock_object *lock)
+{
+
+	return (_cv_wait_support(cv, lock, 0, true));
+}
+
+int
+_cv_timedwait_sig(struct cv *cv, struct lock_object *lock, int timo)
+{
+
+	if (timo <= 0)
+		timo = 1;
+
+	return (_cv_wait_support(cv, lock, (Watchdog_Interval)timo, true));
 }

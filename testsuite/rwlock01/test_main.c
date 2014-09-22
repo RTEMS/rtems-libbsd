@@ -188,9 +188,6 @@ test_rw_non_recursive(test_context *ctx)
 	rw_rlock(rw);
 	/* FIXME: We use a mutex implementation */
 	assert(rw_wowned(rw));
-	/* FIXME: We always allow recursion */
-	rw_rlock(rw);
-	rw_runlock(rw);
 	rw_runlock(rw);
 
 	rw_rlock(rw);
@@ -228,9 +225,6 @@ test_rw_non_recursive(test_context *ctx)
 
 	rw_wlock(rw);
 	assert(rw_wowned(rw));
-	/* FIXME: We always allow recursion */
-	rw_wlock(rw);
-	rw_wunlock(rw);
 	rw_wunlock(rw);
 
 	rw_wlock(rw);

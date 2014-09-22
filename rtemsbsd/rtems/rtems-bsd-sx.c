@@ -38,11 +38,7 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-support.h>
-
-#include <rtems/score/objectimpl.h>
-#include <rtems/rtems/attrimpl.h>
-#include <rtems/rtems/semimpl.h>
+#include <machine/rtems-bsd-muteximpl.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
@@ -75,8 +71,6 @@ struct lock_class lock_class_sx = {
 #endif
 };
 
-RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_sx_chain);
-
 void
 assert_sx(struct lock_object *lock, int what)
 {
@@ -86,29 +80,15 @@ assert_sx(struct lock_object *lock, int what)
 void
 lock_sx(struct lock_object *lock, int how)
 {
-  struct sx *sx;
-
-  sx = (struct sx *)lock;
-  if (how)
-    sx_xlock(sx);
-  else
-    sx_slock(sx);
+	sx_xlock((struct sx *)lock);
 }
 
 int
 unlock_sx(struct lock_object *lock)
 {
-  struct sx *sx;
+	sx_xunlock((struct sx *)lock);
 
-  sx = (struct sx *)lock;
-  sx_assert(sx, SA_LOCKED | SA_NOTRECURSED);
-  if (sx_xlocked(sx)) {
-    sx_xunlock(sx);
-    return (1);
-  } else {
-    sx_sunlock(sx);
-    return (0);
-  }
+	return (0);
 }
 
 #ifdef KDTRACE_HOOKS
@@ -136,89 +116,46 @@ void
 sx_init_flags(struct sx *sx, const char *description, int opts)
 {
 	int flags;
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-	rtems_id id = RTEMS_ID_NONE;
-	rtems_attribute attr = RTEMS_LOCAL | RTEMS_PRIORITY | RTEMS_BINARY_SEMAPHORE;
 
 	flags = LO_SLEEPABLE | LO_UPGRADABLE;
 	if (opts & SX_RECURSE)
 		flags |= LO_RECURSABLE;
 
-	lock_init(&sx->lock_object, &lock_class_sx, description, NULL, flags);
-
-	sc = rtems_semaphore_create(
-		rtems_build_name( '_', 'S', 'X', ' '),
-		1,
-		attr,
-		0,
-		&id
-	);
-	BSD_ASSERT_SC(sc);
-
-  sx->lock_object.lo_id = id;
-
-	rtems_chain_append(&rtems_bsd_sx_chain, &sx->lock_object.lo_node);
+	rtems_bsd_mutex_init(&sx->lock_object, &sx->mutex, &lock_class_sx,
+	    description, NULL, flags);
 }
 
 void
 sx_destroy(struct sx *sx)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
 
-	sc = rtems_semaphore_delete( sx->lock_object.lo_id);
-	BSD_ASSERT_SC(sc);
-
-	rtems_chain_extract(&sx->lock_object.lo_node);
-
-  sx->lock_object.lo_id = 0;
-  sx->lock_object.lo_flags &= ~LO_INITIALIZED;
+	rtems_bsd_mutex_destroy(&sx->lock_object, &sx->mutex);
 }
 
 int
 _sx_xlock(struct sx *sx, int opts, const char *file, int line)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
+	rtems_bsd_mutex_lock(&sx->lock_object, &sx->mutex);
 
-	#warning "SX_INTERRUPTIBLE NOT SUPPORTED YET"
-	/* BSD_ASSERT((opts & SX_INTERRUPTIBLE) == 0); */
-        BSD_ASSERT(!rtems_interrupt_is_in_progress());
-        
-	sc = rtems_semaphore_obtain( sx->lock_object.lo_id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-	BSD_ASSERT_SC(sc);
-
-	return 0;
+	return (0);
 }
 
 int
 _sx_try_xlock(struct sx *sx, const char *file, int line)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	sc = rtems_semaphore_obtain( sx->lock_object.lo_id, RTEMS_NO_WAIT, 0);
-	if (sc == RTEMS_SUCCESSFUL) {
-		return 1;
-	} else if (sc == RTEMS_UNSATISFIED) {
-		return 0;
-	} else {
-		BSD_ASSERT_SC(sc);
-
-		return 0;
-	}
+	return (rtems_bsd_mutex_trylock(&sx->lock_object, &sx->mutex));
 }
 
 void
 _sx_xunlock(struct sx *sx, const char *file, int line)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	sc = rtems_semaphore_release( sx->lock_object.lo_id);
-	BSD_ASSERT_SC(sc);
+	rtems_bsd_mutex_unlock(&sx->mutex);
 }
 
 int
 _sx_try_upgrade(struct sx *sx, const char *file, int line)
 {
-	return 1;
+	return (1);
 }
 
 void
@@ -322,18 +259,5 @@ _sx_assert(struct sx *sx, int what, const char *file, int line)
 int
 sx_xlocked(struct sx *sx)
 {
-	Objects_Locations location;
-	Semaphore_Control *sema = _Semaphore_Get(sx->lock_object.lo_id, &location);
-
-	if (location == OBJECTS_LOCAL && !_Attributes_Is_counting_semaphore(sema->attribute_set)) {
-		int xlocked = sema->Core_control.mutex.holder == _Thread_Executing;
-
-		_Thread_Enable_dispatch();
-
-		return xlocked;
-	} else {
-		_Thread_Enable_dispatch();
-
-		BSD_PANIC("unexpected semaphore location or attributes");
-	}
+	return (rtems_bsd_mutex_owned(&sx->mutex));
 }

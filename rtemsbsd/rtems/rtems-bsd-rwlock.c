@@ -46,17 +46,13 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-thread.h>
-#include <machine/rtems-bsd-support.h>
-
-#include <rtems.h>
+#include <machine/rtems-bsd-muteximpl.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/rwlock.h>
-#include <sys/mutex.h>
 
 #ifndef INVARIANTS
 #define _rw_assert(rw, what, file, line)
@@ -83,8 +79,6 @@ struct lock_class lock_class_rw = {
 #endif
 };
 
-RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_rwlock_chain);
-
 void
 assert_rw(struct lock_object *lock, int what)
 {
@@ -94,29 +88,15 @@ assert_rw(struct lock_object *lock, int what)
 void
 lock_rw(struct lock_object *lock, int how)
 {
-  struct rwlock *rw;
-
-  rw = (struct rwlock *)lock;
-  if (how)
-    rw_wlock(rw);
-  else
-    rw_rlock(rw);
+  rw_wlock((struct rwlock *)lock);
 }
 
 int
 unlock_rw(struct lock_object *lock)
 {
-  struct rwlock *rw;
+  rw_unlock((struct rwlock *)lock);
 
-  rw = (struct rwlock *)lock;
-  rw_assert(rw, RA_LOCKED | LA_NOTRECURSED);
-  if (rw->rw_lock & RW_LOCK_READ) {
-    rw_runlock(rw);
-    return (0);
-  } else {
-    rw_wunlock(rw);
-    return (1);
-  }
+  return (0);
 }
 
 #ifdef KDTRACE_HOOKS
@@ -136,34 +116,20 @@ void
 rw_init_flags(struct rwlock *rw, const char *name, int opts)
 {
 	int flags;
-  rtems_status_code sc;
-  rtems_id id;
-  rtems_attribute attr = RTEMS_LOCAL | RTEMS_BINARY_SEMAPHORE | RTEMS_PRIORITY | RTEMS_INHERIT_PRIORITY;
 
 	flags = LO_UPGRADABLE;
 	if (opts & RW_RECURSE)
 		flags |= LO_RECURSABLE;
 
-	lock_init(&rw->lock_object, &lock_class_rw, name, NULL, flags);
-
-  sc = rtems_semaphore_create(
-    rtems_build_name('_', '_', 'R', 'W'),
-    1,
-    attr,
-    BSD_TASK_PRIORITY_RESOURCE_OWNER,
-    &id
-  );
-  BSD_ASSERT_SC(sc);
-
-  rw->lock_object.lo_id = id;
-
-  rtems_chain_append(&rtems_bsd_rwlock_chain, &rw->lock_object.lo_node);
+	rtems_bsd_mutex_init(&rw->lock_object, &rw->mutex, &lock_class_rw,
+	    name, NULL, flags);
 }
 
 void
 rw_destroy(struct rwlock *rw)
 {
-  mtx_destroy((struct mtx *) rw);
+
+	rtems_bsd_mutex_destroy(&rw->lock_object, &rw->mutex);
 }
 
 void
@@ -185,55 +151,55 @@ rw_sysinit_flags(void *arg)
 int
 rw_wowned(struct rwlock *rw)
 {
-  return mtx_owned((struct mtx *) rw);
+	return (rtems_bsd_mutex_owned(&rw->mutex));
 }
 
 void
 _rw_wlock(struct rwlock *rw, const char *file, int line)
 {
-  _mtx_lock_flags((struct mtx *) rw, 0, file, line);
+	rtems_bsd_mutex_lock(&rw->lock_object, &rw->mutex);
 }
 
 int
 _rw_try_wlock(struct rwlock *rw, const char *file, int line)
 {
-  return _mtx_trylock((struct mtx *) rw, 0, file, line);
+	return (rtems_bsd_mutex_trylock(&rw->lock_object, &rw->mutex));
 }
 
 void
 _rw_wunlock(struct rwlock *rw, const char *file, int line)
 {
-  _mtx_unlock_flags((struct mtx *) rw, 0, file, line);
+	rtems_bsd_mutex_unlock(&rw->mutex);
 }
 
 void
 _rw_rlock(struct rwlock *rw, const char *file, int line)
 {
-  _mtx_lock_flags((struct mtx *) rw, 0, file, line);
+	rtems_bsd_mutex_lock(&rw->lock_object, &rw->mutex);
 }
 
 int
 _rw_try_rlock(struct rwlock *rw, const char *file, int line)
 {
-  return _mtx_trylock((struct mtx *) rw, 0, file, line);
+	return (rtems_bsd_mutex_trylock(&rw->lock_object, &rw->mutex));
 }
 
 void
 _rw_runlock(struct rwlock *rw, const char *file, int line)
 {
-  _mtx_unlock_flags((struct mtx *) rw, 0, file, line);
+	rtems_bsd_mutex_unlock(&rw->mutex);
 }
 
 int
 _rw_try_upgrade(struct rwlock *rw, const char *file, int line)
 {
-  return 1;
+	return (1);
 }
 
 void
 _rw_downgrade(struct rwlock *rw, const char *file, int line)
 {
-  /* Nothing to do */
+	/* Nothing to do */
 }
 
 #ifdef INVARIANT_SUPPORT

@@ -31,19 +31,11 @@
 #ifndef _SYS__LOCK_H_
 #define	_SYS__LOCK_H_
 
-#ifdef __rtems__
-#include <rtems.h>
-#include <rtems/chain.h>
-#endif
 struct lock_object {
-#ifdef __rtems__
-	rtems_chain_node lo_node;
-	rtems_id lo_id;
-#endif /* __rtems__ */
 	const	char *lo_name;		/* Individual lock name. */
 	u_int	lo_flags;
-	u_int	lo_data;		/* General class specific data. */
 #ifndef __rtems__
+	u_int	lo_data;		/* General class specific data. */
 	struct	witness *lo_witness;	/* Data for witness. */
 #endif /* __rtems__ */
 };

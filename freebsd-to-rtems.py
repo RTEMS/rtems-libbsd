@@ -2473,6 +2473,8 @@ tests.addTest('swi01', ['init', 'swi_test'])
 tests.addTest('timeout01', ['init', 'timeout_test'])
 tests.addTest('init01', ['test_main'])
 tests.addTest('thread01', ['test_main'])
+tests.addTest('mutex01', ['test_main'])
+tests.addTest('condvar01', ['test_main'])
 
 dhcpcd = Module('dhcpcd')
 dhcpcd.addSourceFiles(

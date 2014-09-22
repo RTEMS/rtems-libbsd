@@ -7,10 +7,9 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH. All rights reserved.
+ * Copyright (c) 2009-2014 embedded brains GmbH. All rights reserved.
  *
  *  Dornierstr. 4
- *  Obere Lagerstr. 30
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -78,12 +77,14 @@ cv_destroy(struct cv *cv)
 
 static int _cv_wait_support(struct cv *cv, struct lock_object *lock, int timo, bool relock)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
 	int eno = 0;
 	Objects_Locations location = OBJECTS_ERROR;
 	POSIX_Condition_variables_Control *pcv = _POSIX_Condition_variables_Get(&cv->cv_id, &location);
 
 	if (location == OBJECTS_LOCAL) {
+		struct lock_class *class = LOCK_CLASS(lock);
+		int lock_state;
+
 		if (pcv->Mutex != POSIX_CONDITION_VARIABLES_NO_MUTEX && pcv->Mutex != lock->lo_id) {
 			_Thread_Enable_dispatch();
 
@@ -92,14 +93,7 @@ static int _cv_wait_support(struct cv *cv, struct lock_object *lock, int timo, b
 			return EINVAL;
 		}
 
-		sc = rtems_semaphore_release(lock->lo_id);
-		if (sc != RTEMS_SUCCESSFUL) {
-			_Thread_Enable_dispatch();
-
-			BSD_ASSERT(false);
-
-			return EINVAL;
-		}
+		lock_state = (*class->lc_unlock)(lock);
 
 		pcv->Mutex = lock->lo_id;
 
@@ -129,12 +123,7 @@ static int _cv_wait_support(struct cv *cv, struct lock_object *lock, int timo, b
 		}
 
 		if (relock) {
-			sc = rtems_semaphore_obtain(lock->lo_id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-			if (sc != RTEMS_SUCCESSFUL) {
-				BSD_ASSERT(false);
-
-				eno = EINVAL;
-			}
+			(*class->lc_lock)(lock, lock_state);
 		}
 
 		return eno;
@@ -187,7 +176,7 @@ int
 _cv_wait_sig(struct cv *cvp, struct lock_object *lock)
 {
   /* XXX */
-	_cv_wait_support(cvp, lock, 0, true);
+	return _cv_wait_support(cvp, lock, 0, true);
 }
 
 int

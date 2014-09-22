@@ -133,36 +133,22 @@ owner_mtx(struct lock_object *lock, struct thread **owner)
 void
 mtx_init(struct mtx *m, const char *name, const char *type, int opts)
 {
-  struct lock_class *class;
-  int i;
+	struct lock_class *class;
+	int flags;
   rtems_status_code sc = RTEMS_SUCCESSFUL;
   rtems_id id = RTEMS_ID_NONE;
   rtems_attribute attr = RTEMS_LOCAL | RTEMS_BINARY_SEMAPHORE | RTEMS_PRIORITY | RTEMS_INHERIT_PRIORITY;
 
-  if ((opts & MTX_RECURSE) != 0 )
-  {
-    /*FIXME*/
-  }
+	/* Determine lock class and lock flags. */
+	if (opts & MTX_SPIN)
+		class = &lock_class_mtx_spin;
+	else
+		class = &lock_class_mtx_sleep;
+	flags = 0;
+	if (opts & MTX_RECURSE)
+		flags |= LO_RECURSABLE;
 
-  /* Determine lock class and lock flags. */
-  if (opts & MTX_SPIN)
-    class = &lock_class_mtx_spin;
-  else
-    class = &lock_class_mtx_sleep;
-
-  /* Check for double-init and zero object. */
-  KASSERT(!lock_initalized(&m->lock_object), ("lock \"%s\" %p already initialized", name, m->lock_object));
-
-  /* Look up lock class to find its index. */
-  for (i = 0; i < LOCK_CLASS_MAX; i++)
-  {
-    if (lock_classes[i] == class)
-    {
-      m->lock_object.lo_flags = i << LO_CLASSSHIFT;
-      break;
-    }
-  }
-  KASSERT(i < LOCK_CLASS_MAX, ("unknown lock class %p", class));
+	lock_init(&m->lock_object, class, name, type, flags);
 
 	sc = rtems_semaphore_create(
 		rtems_build_name('_', 'M', 'T', 'X'),
@@ -173,8 +159,6 @@ mtx_init(struct mtx *m, const char *name, const char *type, int opts)
 	);
 	BSD_ASSERT_SC(sc);
 
-	m->lock_object.lo_name = name;
-  m->lock_object.lo_flags |= LO_INITIALIZED;
   m->lock_object.lo_id = id;
 
 	rtems_chain_append(&rtems_bsd_mtx_chain, &m->lock_object.lo_node);

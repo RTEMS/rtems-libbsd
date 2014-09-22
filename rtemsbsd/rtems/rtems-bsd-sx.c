@@ -135,31 +135,16 @@ sx_sysinit(void *arg)
 void
 sx_init_flags(struct sx *sx, const char *description, int opts)
 {
-  struct lock_class *class;
-  int i;
+	int flags;
 	rtems_status_code sc = RTEMS_SUCCESSFUL;
 	rtems_id id = RTEMS_ID_NONE;
 	rtems_attribute attr = RTEMS_LOCAL | RTEMS_PRIORITY | RTEMS_BINARY_SEMAPHORE;
 
-	if ((opts & SX_RECURSE) != 0) {
-		/* FIXME */
-	}
+	flags = LO_SLEEPABLE | LO_UPGRADABLE;
+	if (opts & SX_RECURSE)
+		flags |= LO_RECURSABLE;
 
-  class = &lock_class_sx;
-
-  /* Check for double-init and zero object. */
-  KASSERT(!lock_initalized(&sx->lock_object), ("lock \"%s\" %p already initialized", name, sx->lock_object));
-
-  /* Look up lock class to find its index. */
-  for (i = 0; i < LOCK_CLASS_MAX; i++)
-  {
-    if (lock_classes[i] == class)
-    {
-      sx->lock_object.lo_flags = i << LO_CLASSSHIFT;
-      break;
-    }
-  }
-  KASSERT(i < LOCK_CLASS_MAX, ("unknown lock class %p", class));
+	lock_init(&sx->lock_object, &lock_class_sx, description, NULL, flags);
 
 	sc = rtems_semaphore_create(
 		rtems_build_name( '_', 'S', 'X', ' '),
@@ -170,8 +155,6 @@ sx_init_flags(struct sx *sx, const char *description, int opts)
 	);
 	BSD_ASSERT_SC(sc);
 
-	sx->lock_object.lo_name = description;
-  sx->lock_object.lo_flags |= LO_INITIALIZED;
   sx->lock_object.lo_id = id;
 
 	rtems_chain_append(&rtems_bsd_sx_chain, &sx->lock_object.lo_node);

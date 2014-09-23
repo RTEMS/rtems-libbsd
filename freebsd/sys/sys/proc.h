@@ -201,6 +201,9 @@ struct rusage_ext {
  * This is what is put to sleep and reactivated.
  * Thread context.  Processes may have multiple threads.
  */
+#ifdef __rtems__
+#include <rtems/chain.h>
+#endif /* __rtems__ */
 struct thread {
 #ifdef __rtems__
 	rtems_chain_node td_node;

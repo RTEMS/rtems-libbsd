@@ -238,7 +238,7 @@ int rtems_bsd_command_ping(int argc, char *argv[])
 	icmp_type_rsp = ICMP_ECHOREPLY;
 	phdr_len = 0;
 	nmissedmax = 0;
-	npackets = 0;
+	npackets = 3;
 	nreceived = 0;
 	nrepeats = 0;
 	ntransmitted = 0;

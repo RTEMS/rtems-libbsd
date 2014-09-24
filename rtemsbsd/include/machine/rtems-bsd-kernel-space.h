@@ -65,7 +65,7 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 #ifdef RTEMS_BSD_NO_ASSERT
 # define BSD_ASSERT(expr) ((void) 0)
 #else
-# define BSD_ASSERT(expr) ((expr) ? (void) 0 : rtems_bsd_assert_func(__FILE__, __LINE__, __func__, #expr))
+# define BSD_ASSERT(expr) (__predict_true(expr) ? (void) 0 : rtems_bsd_assert_func(__FILE__, __LINE__, __func__, #expr))
 #endif
 
 /* General definitions */

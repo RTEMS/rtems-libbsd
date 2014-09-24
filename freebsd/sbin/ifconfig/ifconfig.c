@@ -991,7 +991,11 @@ status(const struct afswtch *afp, const struct sockaddr_dl *sdl,
 
 	if (afp == NULL) {
 		allfamilies = 1;
+#ifndef __rtems__
 		ifr.ifr_addr.sa_family = AF_LOCAL;
+#else /* __rtems__ */
+		ifr.ifr_addr.sa_family = AF_INET;
+#endif /* __rtems__ */
 	} else {
 		allfamilies = 0;
 		ifr.ifr_addr.sa_family =

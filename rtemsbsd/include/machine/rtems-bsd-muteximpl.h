@@ -47,10 +47,7 @@
 #include <rtems/bsd/sys/types.h>
 #include <rtems/bsd/sys/lock.h>
 
-#include <rtems/score/isr.h>
-#include <rtems/score/rbtreeimpl.h>
-#include <rtems/score/schedulerimpl.h>
-#include <rtems/score/threaddispatch.h>
+#include <rtems/score/isrlevel.h>
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/threadqimpl.h>
 
@@ -69,6 +66,9 @@ rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
 	lock_init(lock, class, name, type, flags);
 }
 
+void rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
+    Thread_Control *owner, Thread_Control *executing, ISR_Level level);
+
 static inline void
 rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 {
@@ -81,29 +81,13 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 	owner = m->owner;
 	executing = _Thread_Executing;
 
-	if (owner == NULL) {
+	if (__predict_true(owner == NULL)) {
 		m->owner = executing;
 		++executing->resource_count;
 
 		_ISR_Enable(level);
-	} else if (owner == executing) {
-		BSD_ASSERT(lock->lo_flags & LO_RECURSABLE);
-		++m->nest_level;
-
-		_ISR_Enable(level);
 	} else {
-		_RBTree_Insert(&m->rivals, &executing->RBNode,
-		    _Thread_queue_Compare_priority, false);
-		++executing->resource_count;
-
-		_Thread_Disable_dispatch();
-		_ISR_Enable(level);
-
-		_Scheduler_Change_priority_if_higher(_Scheduler_Get(owner),
-		    owner, executing->current_priority, false);
-		_Thread_Set_state(executing, STATES_WAITING_FOR_MUTEX);
-
-		_Thread_Enable_dispatch();
+		rtems_bsd_mutex_lock_more(lock, m, owner, executing, level);
 	}
 }
 
@@ -137,6 +121,9 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 	return (success);
 }
 
+void rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
+    int keep_priority, RBTree_Node *first, ISR_Level level);
+
 static inline void
 rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 {
@@ -146,43 +133,29 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	_ISR_Disable(level);
 
 	nest_level = m->nest_level;
-	if (nest_level != 0) {
+	if (__predict_true(nest_level == 0)) {
+		RBTree_Node *first = _RBTree_First(&m->rivals, RBT_LEFT);
+		Thread_Control *owner = m->owner;
+		int keep_priority;
+
+		--owner->resource_count;
+		keep_priority = _Thread_Owns_resources(owner)
+		    || owner->real_priority == owner->current_priority;
+
+		m->owner = NULL;
+
+		if (__predict_true(first == NULL && keep_priority
+		    && owner == _Thread_Executing)) {
+			_ISR_Enable(level);
+		} else {
+			rtems_bsd_mutex_unlock_more(m, owner, keep_priority,
+			    first, level);
+		}
+
+	} else {
 		m->nest_level = nest_level - 1;
 
 		_ISR_Enable(level);
-	} else {
-		RBTree_Node *first;
-		Thread_Control *owner = m->owner;
-
-		BSD_ASSERT(owner == _Thread_Executing);
-		--owner->resource_count;
-
-		first = _RBTree_Get(&m->rivals, RBT_LEFT);
-
-		if (first == NULL) {
-			m->owner = NULL;
-
-			_ISR_Enable(level);
-		} else {
-			Thread_Control *new_owner =
-			    THREAD_RBTREE_NODE_TO_THREAD(first);
-
-			m->owner = new_owner;
-
-			_Thread_Disable_dispatch();
-			_ISR_Enable(level);
-
-			_Thread_Clear_state(new_owner, STATES_WAITING_FOR_MUTEX);
-
-			_Thread_Enable_dispatch();
-		}
-
-		if (!_Thread_Owns_resources(owner)
-		    && owner->real_priority != owner->current_priority) {
-			_Thread_Disable_dispatch();
-			_Thread_Change_priority(owner, owner->real_priority, true);
-			_Thread_Enable_dispatch();
-		}
 	}
 }
 

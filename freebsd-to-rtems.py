@@ -675,6 +675,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-log.c',
 		'rtems/rtems-bsd-malloc.c',
 		'rtems/rtems-bsd-mutex.c',
+		'rtems/rtems-bsd-muteximpl.c',
 		'rtems/rtems-bsd-newproc.c',
 		'rtems/rtems-bsd-nexus.c',
 		'rtems/rtems-bsd-panic.c',

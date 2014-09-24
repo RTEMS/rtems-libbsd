@@ -77,6 +77,7 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-kern_synch.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-log.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-malloc.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mutex.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-muteximpl.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-newproc.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-nexus.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-panic.c

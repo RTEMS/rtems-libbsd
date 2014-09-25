@@ -18,17 +18,24 @@
 
 #include <rtems/shell.h>
 
-/*
- *  Externs for all command definition structures
- */
-// #if RTEMS_NETWORKING
-  extern rtems_shell_cmd_t rtems_shell_PING_Command;
-  extern rtems_shell_cmd_t rtems_shell_PING6_Command;
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-  extern rtems_shell_cmd_t rtems_shell_IFCONFIG_Command;
-  extern rtems_shell_cmd_t rtems_shell_ROUTE_Command;
-  extern rtems_shell_cmd_t rtems_shell_NETSTAT_Command;
-  extern rtems_shell_cmd_t rtems_shell_DHCPCD_Command;
-// #endif
+extern rtems_shell_cmd_t rtems_shell_BSD_Command;
+
+extern rtems_shell_cmd_t rtems_shell_PING_Command;
+extern rtems_shell_cmd_t rtems_shell_PING6_Command;
+
+extern rtems_shell_cmd_t rtems_shell_IFCONFIG_Command;
+extern rtems_shell_cmd_t rtems_shell_ROUTE_Command;
+extern rtems_shell_cmd_t rtems_shell_NETSTAT_Command;
+extern rtems_shell_cmd_t rtems_shell_DHCPCD_Command;
+
+extern rtems_shell_cmd_t rtems_shell_DHCPCD_Command;
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

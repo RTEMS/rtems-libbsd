@@ -201,15 +201,11 @@ struct rusage_ext {
  * This is what is put to sleep and reactivated.
  * Thread context.  Processes may have multiple threads.
  */
-#ifdef __rtems__
-#include <rtems/chain.h>
-#endif /* __rtems__ */
 struct thread {
 #ifdef __rtems__
-	rtems_chain_node td_node;
 	Thread_Control *td_thread;
 	struct rtems_bsd_program_control *td_prog_ctrl;
-	char td_name [16];
+	char td_name[32];
 #endif /* __rtems__ */
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */

@@ -57,8 +57,6 @@
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/threadqimpl.h>
 
-RTEMS_CHAIN_DEFINE_EMPTY(rtems_bsd_thread_chain);
-
 static size_t rtems_bsd_extension_index;
 
 static CHAIN_DEFINE_EMPTY(rtems_bsd_thread_delay_start_chain);
@@ -162,15 +160,14 @@ rtems_bsd_extension_thread_create(
 	Thread_Control *created
 )
 {
-	bool ok = true;
+	bool ok;
 
 	if (rtems_bsd_is_bsd_thread(created)) {
 		struct thread *td = rtems_bsd_thread_create(created, 0);
 
 		ok = td != NULL;
-		if (ok) {
-			rtems_chain_append(&rtems_bsd_thread_chain, &td->td_node);
-		}
+	} else {
+		ok = true;
 	}
 
 	return ok;
@@ -186,11 +183,6 @@ rtems_bsd_extension_thread_delete(
 
 	if (td != NULL) {
 		seltdfini(td);
-
-		if (rtems_bsd_is_bsd_thread(deleted)) {
-			rtems_chain_extract(&td->td_node);
-		}
-
 		free(td->td_sleepqueue, M_TEMP);
 		free(td, M_TEMP);
 	}

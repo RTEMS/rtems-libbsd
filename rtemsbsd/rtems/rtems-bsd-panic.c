@@ -43,38 +43,13 @@
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
-#include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-
-static void
-suspend_all_threads(void)
-{
-	const rtems_chain_control *chain = &rtems_bsd_thread_chain;
-	const rtems_chain_node *node = rtems_chain_immutable_first(chain);
-	rtems_id self = rtems_task_self();
-
-	while (!rtems_chain_is_tail(chain, node)) {
-		const struct thread *td = (const struct thread *) node;
-		rtems_id id = rtems_bsd_get_task_id(td);
-
-		if (id != self) {
-			rtems_task_suspend(id);
-		}
-
-		node = rtems_chain_immutable_next(node);
-	}
-
-	rtems_task_suspend(RTEMS_SELF);
-}
 
 void
 panic(const char *fmt, ...)
 {
 	va_list ap;
 
-	printf("*** BSD PANIC *** ");
+	printf("\n*** BSD PANIC *** ");
 
 	va_start(ap, fmt);
 	vprintf(fmt, ap);
@@ -82,7 +57,7 @@ panic(const char *fmt, ...)
 
 	printf("\n");
 
-	suspend_all_threads();
+	rtems_task_suspend(RTEMS_SELF);
 
 	/* FIXME */
 	rtems_fatal_error_occurred(0xdeadbeef);

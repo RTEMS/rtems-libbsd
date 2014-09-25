@@ -309,6 +309,7 @@ SYSINIT_NEED_NET_PF_UNIX;
 
 #define CONFIGURE_SHELL_USER_COMMANDS \
   &bsp_interrupt_shell_command, \
+  &rtems_shell_BSD_Command, \
   &rtems_shell_PING_Command, \
   &rtems_shell_ROUTE_Command, \
   &rtems_shell_NETSTAT_Command, \

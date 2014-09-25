@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -46,67 +46,71 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 
-#include <rtems/bsd/bsd.h>
-#include <rtems/shell.h>
+#include <inttypes.h>
+
+#include <rtems/netcmds-config.h>
 
 static void
-rtems_bsd_dump_thread(void)
+rtems_bsd_dump_thread(Thread_Control *thread)
 {
-	const rtems_chain_control *chain = &rtems_bsd_thread_chain;
-	const rtems_chain_node *node = rtems_chain_immutable_first(chain);
+	const struct thread *td = rtems_bsd_get_thread(thread);
 
-	printf("thread dump:\n");
+	if (td != NULL) {
+		char buf[5];
+		const char *name = td->td_name;
 
-	while (!rtems_chain_is_tail(chain, node)) {
-		const struct thread *td = (const struct thread *) node;
+		if (name == NULL || name[0] == '\0') {
+			rtems_object_get_name(thread->Object.id, sizeof(buf), &buf[0]);
+			name = &buf[0];
+		}
 
-		printf("\t%s: 0x%08x\n", td->td_name, rtems_bsd_get_task_id(td));
-
-		node = rtems_chain_immutable_next(node);
+		fprintf(
+			stdout,
+			" 0x%08" PRIx32 " | %8" PRIu32 " | %s\n",
+			thread->Object.id,
+			thread->current_priority,
+			name
+		);
 	}
 }
 
-static const char rtems_bsd_usage [] =
-	"bsd {all|condvar|thread|callout}";
+static void
+rtems_bsd_dump_threads(void)
+{
+	fprintf(
+		stdout,
+		"-------------------------------------------------------------------------------\n"
+		"                                  BSD THREADS\n"
+		"------------+----------+-------------------------------------------------------\n"
+		" ID         | PRIORITY | NAME\n"
+		"------------+----------+-------------------------------------------------------\n"
+	);
+
+	rtems_iterate_over_all_threads(rtems_bsd_dump_thread);
+
+	fprintf(
+		stdout,
+		"------------+----------+-------------------------------------------------------\n"
+	);
+}
+
+static const char rtems_bsd_usage[] = "bsd";
 
 #define CMP(s) all || strcasecmp(argv [1], s) == 0
 
 static int
 rtems_bsd_info(int argc, char **argv)
 {
-	bool usage = true;
-
-	if (argc == 2) {
-		bool all = false;
-
-		if (CMP("all")) {
-			all = true;
-		}
-
-		if (CMP("thread")) {
-			rtems_bsd_dump_thread();
-			usage = false;
-		}
-	}
-
-	if (usage) {
-		puts(rtems_bsd_usage);
-	}
+	rtems_bsd_dump_threads();
 
 	return 0;
 }
 
-static rtems_shell_cmd_t rtems_bsd_info_command = {
+rtems_shell_cmd_t rtems_shell_BSD_Command = {
 	.name = "bsd",
-	.usage = rtems_bsd_usage,
+	.usage = &rtems_bsd_usage[0],
 	.topic = "bsp",
 	.command = rtems_bsd_info,
 	.alias = NULL,
 	.next = NULL
 };
-
-void
-rtems_bsd_shell_initialize(void)
-{
-	rtems_shell_add_cmd_struct(&rtems_bsd_info_command);
-}

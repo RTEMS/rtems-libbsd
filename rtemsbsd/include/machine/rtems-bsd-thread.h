@@ -68,8 +68,6 @@ struct sleepqueue {
 	void *sq_wchan;
 };
 
-extern rtems_chain_control rtems_bsd_thread_chain;
-
 struct thread *
 rtems_bsd_get_thread(const Thread_Control *thread);
 

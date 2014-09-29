@@ -88,7 +88,6 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-rwlock.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-netcmds.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-signal.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-support.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sx.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-syscall-api.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlbyname.c

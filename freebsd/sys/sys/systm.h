@@ -198,8 +198,24 @@ void	panic(const char *, ...) __dead2 __printflike(1, 2);
 void	cpu_boot(int);
 void	cpu_flush_dcache(void *, size_t);
 void	cpu_rootconf(void);
+#ifndef __rtems__
 void	critical_enter(void);
 void	critical_exit(void);
+#else /* __rtems__ */
+#include <rtems/score/threaddispatch.h>
+
+static __inline void
+critical_enter(void)
+{
+	_Thread_Disable_dispatch();
+}
+
+static __inline void
+critical_exit(void)
+{
+	_Thread_Enable_dispatch();
+}
+#endif /* __rtems__ */
 void	init_param1(void);
 void	init_param2(long physpages);
 void	init_static_kenv(char *, size_t);

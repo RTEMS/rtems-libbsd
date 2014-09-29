@@ -3157,6 +3157,7 @@ uma_zone_exhausted_nolock(uma_zone_t zone)
 	return (zone->uz_flags & UMA_ZFLAG_FULL);
 }
 
+#ifndef __rtems__
 void *
 uma_large_malloc(int size, int wait)
 {
@@ -3184,12 +3185,11 @@ uma_large_malloc(int size, int wait)
 void
 uma_large_free(uma_slab_t slab)
 {
-#ifndef __rtems__
 	vsetobj((vm_offset_t)slab->us_data, kmem_object);
-#endif /* __rtems__ */
 	page_free(slab->us_data, slab->us_size, slab->us_flags);
 	zone_free_item(slabzone, slab, NULL, SKIP_NONE, ZFREE_STATFREE);
 }
+#endif /* __rtems__ */
 
 void
 uma_print_stats(void)

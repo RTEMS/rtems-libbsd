@@ -262,8 +262,6 @@ static void Init(rtems_task_argument arg)
   sc = rtems_bsd_initialize();
   ASSERT_SC(sc);
 
-  rtems_bsd_shell_initialize();
-
   sc = rtems_shell_init(
     "SHLL",
     16 * 1024,

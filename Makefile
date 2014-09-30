@@ -14,7 +14,6 @@ COMMON_FLAGS += -Ifreebsd/sys
 COMMON_FLAGS += -Ifreebsd/sys/$(RTEMS_CPU)/include
 COMMON_FLAGS += -Ifreebsd/sys/contrib/altq
 COMMON_FLAGS += -Ifreebsd/sys/contrib/pf
-COMMON_FLAGS += -Icopied/rtemsbsd/$(RTEMS_CPU)/include
 COMMON_FLAGS += -Ifreebsd/include
 COMMON_FLAGS += -Ifreebsd/lib/libc/include
 COMMON_FLAGS += -Ifreebsd/lib/libc/isc/include

@@ -420,7 +420,6 @@ class ModuleManager:
 			'COMMON_FLAGS += -Ifreebsd/sys/$(RTEMS_CPU)/include\n' \
 			'COMMON_FLAGS += -Ifreebsd/sys/contrib/altq\n' \
 			'COMMON_FLAGS += -Ifreebsd/sys/contrib/pf\n' \
-			'COMMON_FLAGS += -Icopied/rtemsbsd/$(RTEMS_CPU)/include\n' \
 			'COMMON_FLAGS += -Ifreebsd/include\n' \
 			'COMMON_FLAGS += -Ifreebsd/lib/libc/include\n' \
 			'COMMON_FLAGS += -Ifreebsd/lib/libc/isc/include\n' \

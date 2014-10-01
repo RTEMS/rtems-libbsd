@@ -58,10 +58,10 @@ SYSINIT_REFERENCE(linker_kernel);
 SYSINIT_MODULE_REFERENCE(rootbus);
 SYSINIT_DRIVER_REFERENCE(nexus, root);
 
-RTEMS_BSD_DEFINE_SET(modmetadata_set, struct mod_metadata);
-RTEMS_BSD_DEFINE_SET(sysctl_set, struct sysctl_oid);
+RTEMS_BSD_DEFINE_SET(modmetadata_set, struct mod_metadata *);
+RTEMS_BSD_DEFINE_SET(sysctl_set, struct sysctl_oid *);
 
-RTEMS_BSD_DEFINE_RWSET(sysinit_set, struct sysinit);
+RTEMS_BSD_DEFINE_RWSET(sysinit_set, struct sysinit *);
 
 /* In FreeBSD this is a local function */
 void mi_startup(void);

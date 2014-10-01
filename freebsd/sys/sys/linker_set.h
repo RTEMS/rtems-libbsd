@@ -51,25 +51,39 @@
 	static void const * const __set_##set##_sym_##sym 		\
 	__section("set_" #set) __used = &sym
 #else /* __rtems__ */
-#define RTEMS_BSD_DEFINE_SET(set, ptype)				\
-	ptype * const __CONCAT(_bsd__start_set_,set)[0]			\
+#define RTEMS_BSD_DEFINE_SET(set, type)				\
+	type const __CONCAT(_bsd__start_set_,set)[0]			\
 	__section(".rtemsroset.bsd." __STRING(set) ".begin") __used;		\
-	ptype * const __CONCAT(_bsd__stop_set_,set)[0]			\
+	type const __CONCAT(_bsd__stop_set_,set)[0]			\
 	__section(".rtemsroset.bsd." __STRING(set) ".end") __used
 
-#define __MAKE_SET(set, sym)						\
-	static const void * const __set_##set##_sym_##sym 		\
-	__section(".rtemsroset.bsd." __STRING(set) ".content") __used = &sym
+#define RTEMS_BSD_DECLARE_SET(set, type)				\
+	extern type const __CONCAT(_bsd__start_set_,set)[0];		\
+	extern type const __CONCAT(_bsd__stop_set_,set)[0]
 
-#define RTEMS_BSD_DEFINE_RWSET(set, ptype)				\
-	ptype *__CONCAT(_bsd__start_set_,set)[0]			\
+#define RTEMS_BSD_DEFINE_SET_ITEM(set, sym, type)			\
+	static type const __set_##set##_sym_##sym 			\
+	__section(".rtemsroset.bsd." __STRING(set) ".content") __used
+
+#define __MAKE_SET(set, sym)						\
+	RTEMS_BSD_DEFINE_SET_ITEM(set, sym, const void *) = &sym
+
+#define RTEMS_BSD_DEFINE_RWSET(set, type)				\
+	type __CONCAT(_bsd__start_set_,set)[0]			\
 	__section(".rtemsrwset.bsd." __STRING(set) ".begin") __used;		\
-	ptype *__CONCAT(_bsd__stop_set_,set)[0]				\
+	type __CONCAT(_bsd__stop_set_,set)[0]				\
 	__section(".rtemsrwset.bsd." __STRING(set) ".end") __used
 
+#define RTEMS_BSD_DECLARE_RWSET(set, type)				\
+	extern type __CONCAT(_bsd__start_set_,set)[0];			\
+	extern type __CONCAT(_bsd__stop_set_,set)[0]
+
+#define RTEMS_BSD_DEFINE_RWSET_ITEM(set, sym, type)			\
+	static type __set_##set##_sym_##sym 				\
+	__section(".rtemsrwset.bsd." __STRING(set) ".content") __used
+
 #define __MAKE_RWSET(set, sym)						\
-	static const void * __set_##set##_sym_##sym 			\
-	__section(".rtemsrwset.bsd." __STRING(set) ".content") __used = &sym
+	RTEMS_BSD_DEFINE_RWSET_ITEM(set, sym, const void *) = &sym
 #endif /* __rtems__ */
 #else /* !__GNUCLIKE___SECTION */
 #ifndef lint
@@ -104,12 +118,10 @@
 	(&__CONCAT(__stop_set_,set))
 #else /* __rtems__ */
 #define SET_DECLARE(set, ptype)						\
-	extern ptype * const __CONCAT(_bsd__start_set_,set)[];		\
-	extern ptype * const __CONCAT(_bsd__stop_set_,set)[]
+	RTEMS_BSD_DECLARE_SET(set, ptype *)
 
 #define RWSET_DECLARE(set, ptype)					\
-	extern ptype *__CONCAT(_bsd__start_set_,set)[];			\
-	extern ptype *__CONCAT(_bsd__stop_set_,set)[]
+	RTEMS_BSD_DECLARE_RWSET(set, ptype *)
 
 #define SET_BEGIN(set)							\
 	(__CONCAT(_bsd__start_set_,set))

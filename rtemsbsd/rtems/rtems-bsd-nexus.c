@@ -132,7 +132,6 @@ static struct resource *
 nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
     u_long start, u_long end, u_long count, u_int flags)
 {
-	struct resource *rv;
 	struct rman *rm;
 	size_t i;
 
@@ -152,21 +151,23 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 
 		if (strcmp(device_get_name(child), nd->name) == 0
 		    && device_get_unit(child) == nd->unit) {
-			if (!nexus_get_start(nd, type, &start)) {
-				return (NULL);
+			struct resource *res = NULL;
+
+			if (nexus_get_start(nd, type, &start)) {
+				res = rman_reserve_resource(rm, start, end,
+				    count, flags, child);
+				if (res != NULL) {
+					rman_set_rid(res, *rid);
+					rman_set_bushandle(res,
+					    rman_get_start(res));
+				}
 			};
-		} else {
-			return (NULL);
+
+			return (res);
 		}
 	}
 
-	rv = rman_reserve_resource(rm, start, end, count, flags, child);
-	if (rv != NULL) {
-		rman_set_rid(rv, *rid);
-		rman_set_bushandle(rv, rman_get_start(rv));
-	}
-
-	return (rv);
+	return (NULL);
 }
 
 static int

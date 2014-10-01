@@ -85,7 +85,4 @@
 #define SYSINIT_NEED_NET_IF_DC \
 	SYSINIT_DRIVER_REFERENCE(dc, pci)
 
-/* FIXME */
-extern const char *const _bsd_nexus_devices [];
-
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSINIT_H_ */

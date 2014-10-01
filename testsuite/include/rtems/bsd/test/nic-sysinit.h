@@ -72,11 +72,3 @@
 #if defined(CONFIGURE_NEED_NET_IF_BGE)
   SYSINIT_NEED_NET_IF_BGE; // does not link 29 June 2012
 #endif
-
-const char *const _bsd_nexus_devices [] = {
-	#if defined(CONFIGURE_NEED_PCIB)
-		"legacy",
-	#endif
-	NULL
-};
-

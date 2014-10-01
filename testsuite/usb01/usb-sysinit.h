@@ -41,14 +41,4 @@ SYSINIT_NEED_USB_CORE;
 #endif
 SYSINIT_NEED_USB_MASS_STORAGE;
 
-const char *const _bsd_nexus_devices [] = {
-	#ifdef NEED_USB_OHCI
-		"ohci",
-	#endif
-	#ifdef NEED_USB_EHCI
-		"ehci",
-	#endif
-	NULL
-};
-
 #endif /* USB_SYSINIT_INIT */

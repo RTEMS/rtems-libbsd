@@ -109,7 +109,6 @@ LIB_C_FILES += rtemsbsd/telnetd/check_passwd.c
 LIB_C_FILES += rtemsbsd/telnetd/des.c
 LIB_C_FILES += rtemsbsd/telnetd/pty.c
 LIB_C_FILES += rtemsbsd/telnetd/telnetd.c
-LIB_C_FILES += rtemsbsd/bsp/bsp-bsd-nexus-devices.c
 LIB_GEN_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
 rtemsbsd/rtems/rtems-kvm-symbols.c: rtemsbsd/rtems/generate_kvm_symbols

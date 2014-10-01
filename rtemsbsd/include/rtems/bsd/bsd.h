@@ -40,11 +40,15 @@
 #ifndef _RTEMS_BSD_BSD_H_
 #define _RTEMS_BSD_BSD_H_
 
+#include <sys/cdefs.h>
+#include <sys/queue.h>
+#include <sys/kernel.h>
+
+#include <rtems.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include <rtems.h>
 
 typedef enum {
 	RTEMS_BSD_RES_IRQ = 1,
@@ -62,11 +66,14 @@ typedef struct {
 	int unit;
 	size_t resource_count;
 	const rtems_bsd_device_resource *resources;
+	const struct sysinit *driver_reference;
 } rtems_bsd_device;
 
-extern const rtems_bsd_device rtems_bsd_nexus_devices[];
-
-extern const size_t rtems_bsd_nexus_device_count;
+#define RTEMS_BSD_DEFINE_NEXUS_DEVICE(name, unit, resource_count, resources) \
+    extern struct sysinit SYSINIT_ENTRY_NAME(name##_nexusmodule); \
+    RTEMS_BSD_DEFINE_SET_ITEM(nexus, name##unit, rtems_bsd_device) = \
+        { #name, unit, (resource_count), (resources), \
+            &SYSINIT_ENTRY_NAME(name##_nexusmodule) }
 
 rtems_status_code rtems_bsd_initialize(void);
 

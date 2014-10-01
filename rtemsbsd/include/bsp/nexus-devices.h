@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -31,8 +31,6 @@
 
 #include <rtems/bsd/bsd.h>
 
-#include <machine/rtems-bsd-sysinit.h>
-
 #include <bsp.h>
 
 #if defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
@@ -51,36 +49,13 @@ static const rtems_bsd_device_resource smc0_res[] = {
 	}
 };
 
-const rtems_bsd_device rtems_bsd_nexus_devices[] = {
-	{
-		.name = "smc",
-		.unit = 0,
-		.resource_count = RTEMS_ARRAY_SIZE(smc0_res),
-		.resources = &smc0_res[0]
-	}
-};
-
-SYSINIT_DRIVER_REFERENCE(smc, nexus);
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(smc, 0, RTEMS_ARRAY_SIZE(smc0_res),
+   &smc0_res[0]);
 
 #elif defined(__GENMCF548X_BSP_H)
 
-const rtems_bsd_device rtems_bsd_nexus_devices[] = {
-	{
-		.name = "fec",
-		.unit = 0
-	}, {
-		.name = "fec",
-		.unit = 1
-	}
-};
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(fec, 0, 0, NULL);
 
-SYSINIT_DRIVER_REFERENCE(fec, nexus);
-
-#else
-
-const rtems_bsd_device rtems_bsd_nexus_devices[0];
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(fec, 1, 0, NULL);
 
 #endif
-
-const size_t rtems_bsd_nexus_device_count =
-    RTEMS_ARRAY_SIZE(rtems_bsd_nexus_devices);

@@ -39,11 +39,6 @@
 
 #include "timeout_test.h"
 
-const rtems_bsd_device rtems_bsd_nexus_devices[0];
-
-const size_t rtems_bsd_nexus_device_count =
-    RTEMS_ARRAY_SIZE(rtems_bsd_nexus_devices);
-
 static void Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;

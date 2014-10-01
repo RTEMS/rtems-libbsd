@@ -707,7 +707,6 @@ rtems.addRTEMSSourceFiles(
 		'telnetd/des.c',
 		'telnetd/pty.c',
 		'telnetd/telnetd.c',
-		'bsp/bsp-bsd-nexus-devices.c',
 	]
 )
 

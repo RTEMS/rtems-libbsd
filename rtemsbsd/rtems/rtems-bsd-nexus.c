@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2014 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -54,6 +54,10 @@
 
 /* #define DISABLE_INTERRUPT_EXTENSION */
 
+RTEMS_BSD_DECLARE_SET(nexus, rtems_bsd_device);
+
+RTEMS_BSD_DEFINE_SET(nexus, rtems_bsd_device);
+
 RTEMS_STATIC_ASSERT(SYS_RES_MEMORY == RTEMS_BSD_RES_MEMORY, RTEMS_BSD_RES_MEMORY);
 
 RTEMS_STATIC_ASSERT(SYS_RES_IRQ == RTEMS_BSD_RES_IRQ, RTEMS_BSD_RES_IRQ);
@@ -67,7 +71,7 @@ nexus_probe(device_t dev)
 {
 	rtems_status_code status;
 	int err;
-	size_t i;
+	const rtems_bsd_device *nd;
 
 	device_set_desc(dev, "RTEMS Nexus device");
 
@@ -100,9 +104,7 @@ nexus_probe(device_t dev)
 	err = rman_manage_region(&irq_rman, irq_rman.rm_start, irq_rman.rm_end);
 	BSD_ASSERT(err == 0);
 
-	for (i = 0; i < rtems_bsd_nexus_device_count; ++i) {
-		const rtems_bsd_device *nd = &rtems_bsd_nexus_devices[i];
-
+	SET_FOREACH(nd, nexus) {
 		device_add_child(dev, nd->name, nd->unit);
 	}
 
@@ -133,7 +135,7 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
     u_long start, u_long end, u_long count, u_int flags)
 {
 	struct rman *rm;
-	size_t i;
+	const rtems_bsd_device *nd;
 
 	switch (type) {
 	case SYS_RES_MEMORY:
@@ -146,9 +148,7 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 		return (NULL);
 	}
 
-	for (i = 0; i < rtems_bsd_nexus_device_count; ++i) {
-		const rtems_bsd_device *nd = &rtems_bsd_nexus_devices[i];
-
+	SET_FOREACH(nd, nexus) {
 		if (strcmp(device_get_name(child), nd->name) == 0
 		    && device_get_unit(child) == nd->unit) {
 			struct resource *res = NULL;

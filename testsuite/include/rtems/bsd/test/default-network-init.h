@@ -99,6 +99,7 @@ default_network_ifconfig_lo0(void)
 	assert(exit_code == EX_OK);
 }
 
+#ifdef DEFAULT_NETWORK_NO_INTERFACE_0
 static void
 default_network_ifconfig_hwif0(char *ifname)
 {
@@ -150,6 +151,7 @@ default_network_route_hwif0(char *ifname)
 	assert(exit_code == EXIT_SUCCESS);
 #endif
 }
+#endif
 
 #ifdef DEFAULT_NETWORK_DHCPCD_ENABLE
 static void
@@ -220,10 +222,12 @@ static void
 Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;
+#ifdef DEFAULT_NETWORK_NO_INTERFACE_0
 #ifdef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
 	char ifnamebuf[IF_NAMESIZE];
 #endif
 	char *ifname;
+#endif
 
 	puts("*** " TEST_NAME " TEST ***");
 
@@ -247,11 +251,13 @@ Init(rtems_task_argument arg)
 
 	rtems_bsd_initialize();
 
+#ifdef DEFAULT_NETWORK_NO_INTERFACE_0
 #ifdef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
 	ifname = if_indextoname(1, &ifnamebuf[0]);
 	assert(ifname != NULL);
 #else
 	ifname = NET_CFG_INTERFACE_0;
+#endif
 #endif
 
 	/* Let the callout timer allocate its resources */
@@ -259,8 +265,10 @@ Init(rtems_task_argument arg)
 	assert(sc == RTEMS_SUCCESSFUL);
 
 	default_network_ifconfig_lo0();
+#ifdef DEFAULT_NETWORK_NO_INTERFACE_0
 	default_network_ifconfig_hwif0(ifname);
 	default_network_route_hwif0(ifname);
+#endif
 	default_network_dhcpcd();
 
 	test_main();

@@ -69,7 +69,9 @@ struct proc;
  * Structure describing each ppp unit.
  */
 struct ppp_softc {
-	struct	ifnet sc_if;		/* network-visible interface */
+	device_t sc_dev;
+	struct mtx sc_mtx;
+	struct	ifnet *sc_ifp;		/* network-visible interface */
 	u_int	sc_flags;		/* control/status bits; see if_ppp.h */
 	void	*sc_devp;		/* pointer to device-dep structure */
 	void	(*sc_start)(struct ppp_softc *);	/* start output proc */
@@ -77,9 +79,9 @@ struct ppp_softc {
 	void	(*sc_relinq)(struct ppp_softc *); /* relinquish ifunit */
 	short	sc_mru;			/* max receive unit */
 	pid_t	sc_xfer;		/* used in transferring unit */
-	struct	ifqueue sc_rawq;	/* received packets */
+	struct	ifqueue sc_rawq;		/* received packets */
 	struct	ifqueue sc_inq;		/* queue of input packets for daemon */
-	struct	ifqueue sc_fastq;	/* interactive output packet q */
+	struct	ifaltq sc_fastq;	/* interactive output packet q */
 	struct	mbuf *sc_npqueue;	/* output packets not to be sent yet */
 	struct	mbuf **sc_npqtail;	/* ptr to last next ptr in npqueue */
 	struct	pppstat sc_stats;	/* count of bytes/pkts sent/rcvd */
@@ -130,7 +132,7 @@ struct ppp_softc {
 struct	ppp_softc *pppalloc(pid_t pid);
 void	pppdealloc(struct ppp_softc *sc);
 int	pppoutput(struct ifnet *, struct mbuf *,
-		       struct sockaddr *, struct rtentry *);
+		       struct sockaddr *, struct route *);
 int	pppioctl(struct ppp_softc *sc, ioctl_command_t cmd, caddr_t data,
 		      int flag, struct proc *p);
 struct	mbuf *ppp_dequeue(struct ppp_softc *sc);
@@ -152,6 +154,34 @@ void    pppallocmbuf(struct ppp_softc *sc, struct mbuf **mp);
 #define SC_TX_ESCAPE    0x0004
 #define SC_TX_LASTCHAR	0x0008
 #define SC_TX_PENDING   0x0010
+
+/*
+ * Special interface queue functions to exchange mbufs between task and
+ * interrupt context via pppinput() and pppstart().
+ */
+
+static inline void
+if_ppp_enqueue(struct ifqueue *ifq, struct mbuf *m)
+{
+	rtems_interrupt_level level;
+
+	rtems_interrupt_disable(level);
+	_IF_ENQUEUE(ifq, m);
+	rtems_interrupt_enable(level);
+}
+
+static inline struct mbuf *
+if_ppp_dequeue(struct ifqueue *ifq)
+{
+	struct mbuf *m;
+	rtems_interrupt_level level;
+
+	rtems_interrupt_disable(level);
+	_IF_DEQUEUE(ifq, m);
+	rtems_interrupt_enable(level);
+
+	return m;
+}
 
 #ifdef __cplusplus
 }

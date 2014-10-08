@@ -31,6 +31,8 @@
 #include <net/ppp_defs.h>
 #include <rtems/rtemsdialer.h>
 #include <stdint.h>
+#include <arpa/nameser.h>
+#include <arpa/nameser_compat.h>
 
 #if defined(__STDC__)
 #include <stdarg.h>
@@ -45,6 +47,8 @@
 #ifdef INET6
 #include "eui64.h"
 #endif
+
+#include "namespace.h"
 
 /*
  * Limits.
@@ -500,29 +504,6 @@ extern void (*auth_linkdown_hook)(void);
 }
 #define PUTCHAR(c, cp) { \
 	*(cp)++ = (u_char) (c); \
-}
-
-
-#define GETSHORT(s, cp) { \
-	(s) = *(cp)++ << 8; \
-	(s) |= *(cp)++; \
-}
-#define PUTSHORT(s, cp) { \
-	*(cp)++ = (u_char) ((s) >> 8); \
-	*(cp)++ = (u_char) (s); \
-}
-
-#define GETLONG(l, cp) { \
-	(l) = *(cp)++ << 8; \
-	(l) |= *(cp)++; (l) <<= 8; \
-	(l) |= *(cp)++; (l) <<= 8; \
-	(l) |= *(cp)++; \
-}
-#define PUTLONG(l, cp) { \
-	*(cp)++ = (u_char) ((l) >> 24); \
-	*(cp)++ = (u_char) ((l) >> 16); \
-	*(cp)++ = (u_char) ((l) >> 8); \
-	*(cp)++ = (u_char) (l); \
 }
 
 #define INCPTR(n, cp)	((cp) += (n))

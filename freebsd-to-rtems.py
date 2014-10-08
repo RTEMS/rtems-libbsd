@@ -428,6 +428,7 @@ class ModuleManager:
 			'COMMON_FLAGS += -Ifreebsd/lib/libkvm\n' \
 			'COMMON_FLAGS += -Ifreebsd/lib/libmemstat\n' \
 			'COMMON_FLAGS += -Ifreebsd/lib/libipsec\n' \
+			'COMMON_FLAGS += -Irtemsbsd/sys\n' \
 			'COMMON_FLAGS += -ImDNSResponder/mDNSCore\n' \
 			'COMMON_FLAGS += -ImDNSResponder/mDNSShared\n' \
 			'COMMON_FLAGS += -ImDNSResponder/mDNSPosix\n' \
@@ -698,11 +699,29 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-syslog-initialize.c',
 		'rtems/syslog.c',
 		'ftpd/ftpd.c',
+		'pppd/auth.c',
+		'pppd/ccp.c',
+		'pppd/chap.c',
+		'pppd/chap_ms.c',
+		'pppd/chat.c',
+		'pppd/demand.c',
+		'pppd/fsm.c',
+		'pppd/ipcp.c',
+		'pppd/lcp.c',
+		'pppd/magic.c',
+		'pppd/options.c',
+		'pppd/rtemsmain.c',
+		'pppd/rtemspppd.c',
+		'pppd/sys-rtems.c',
+		'pppd/upap.c',
+		'pppd/utils.c',
 		'sys/dev/usb/controller/ehci_mpc83xx.c',
 		'sys/dev/usb/controller/ohci_lpc24xx.c',
 		'sys/dev/usb/controller/ohci_lpc32xx.c',
 		'sys/dev/smc/if_smc_nexus.c',
 		'sys/dev/ffec/if_ffec_mcf548x.c',
+		'sys/net/if_ppp.c',
+		'sys/net/ppp_tty.c',
 		'telnetd/check_passwd.c',
 		'telnetd/des.c',
 		'telnetd/pty.c',
@@ -2473,6 +2492,7 @@ tests.addTest('init01', ['test_main'])
 tests.addTest('thread01', ['test_main'])
 tests.addTest('mutex01', ['test_main'])
 tests.addTest('condvar01', ['test_main'])
+tests.addTest('ppp01', ['test_main'], runTest = False)
 
 dhcpcd = Module('dhcpcd')
 dhcpcd.addSourceFiles(

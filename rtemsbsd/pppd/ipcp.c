@@ -38,8 +38,6 @@
 #include "ipcp.h"
 #include "pathnames.h"
 
-#include <rtems/bsdnet/servers.h>
-
 static const char rcsid[] = RCSID;
 
 /* global vars */
@@ -1577,23 +1575,24 @@ static void
 create_resolv(
     uint32_t peerdns1, uint32_t peerdns2)
 {
-  /* initialize values */
-  rtems_bsdnet_nameserver_count = 0;
+    FILE *f;
 
-  /* check to see if primary was specified */
-  if ( peerdns1 ) {
-    rtems_bsdnet_nameserver[rtems_bsdnet_nameserver_count].s_addr = peerdns1;
-    rtems_bsdnet_nameserver_count++;
-  }
+    f = fopen(_PATH_RESOLV, "w");
+    if (f == NULL) {
+	error("Failed to create %s: %m", _PATH_RESOLV);
+	return;
+    }
 
-  /* check to see if secondary was specified */
-  if ( peerdns2 ) {
-    rtems_bsdnet_nameserver[rtems_bsdnet_nameserver_count].s_addr = peerdns2;
-    rtems_bsdnet_nameserver_count++;
-  }
+    if (peerdns1)
+	fprintf(f, "nameserver %s\n", ip_ntoa(peerdns1));
 
-  /* initialize resolver */
-  __res_init();
+    if (peerdns2)
+	fprintf(f, "nameserver %s\n", ip_ntoa(peerdns2));
+
+    if (ferror(f))
+	error("Write failed to %s: %m", _PATH_RESOLV);
+
+    fclose(f);
 }
 
 /*

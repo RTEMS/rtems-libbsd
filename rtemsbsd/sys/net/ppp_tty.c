@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*
  * ppp_tty.c - Point-to-Point Protocol (PPP) driver for asynchronous
  * 	       tty devices.
@@ -78,11 +80,11 @@
 #include "config.h"
 #endif
 
-#include "opt_ppp.h"		/* XXX for ppp_defs.h */
+#include <rtems/bsd/local/opt_ppp.h>		/* XXX for ppp_defs.h */
 
 #if NPPP > 0
 
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/mbuf.h>
@@ -226,7 +228,6 @@ pppopen(struct rtems_termios_tty *tty)
     sc->sc_outmc = NULL;
     
     /* preallocate mbufs for free queue */
-    rtems_bsdnet_semaphore_obtain();
     for (i=0; i<NUM_MBUFQ; i++) {
       pppallocmbuf(sc, &m);
       if ( i == 0 ) {
@@ -235,15 +236,14 @@ pppopen(struct rtems_termios_tty *tty)
       }
       else {
         /* enqueue mbuf for later use */
-        IF_ENQUEUE(&sc->sc_freeq, m);
+        if_ppp_enqueue(&sc->sc_freeq, m);
       }
       m = (struct mbuf *)0;
     }
-    rtems_bsdnet_semaphore_release();
 
     /* initialize values */
-    sc->sc_if.if_flags |= IFF_RUNNING;
-    sc->sc_if.if_baudrate =
+    sc->sc_ifp->if_drv_flags |= IFF_DRV_RUNNING;
+    sc->sc_ifp->if_baudrate =
 	rtems_termios_baud_to_number(tty->termios.c_cflag & CBAUD);
 
     tty->t_sc = (void *)sc;
@@ -267,10 +267,8 @@ pppclose(struct rtems_termios_tty *tty)
     if (sc != NULL) {
 	tty->t_sc = NULL;
 	if (tty == (struct rtems_termios_tty *)sc->sc_devp) {
-            rtems_bsdnet_semaphore_obtain();
 	    pppasyncrelinq(sc);
 	    pppdealloc(sc);
-            rtems_bsdnet_semaphore_release();
 	}
     }
     return ( RTEMS_SUCCESSFUL );
@@ -328,7 +326,6 @@ pppread(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args)
     }
 
     /* Get the packet from the input queue */
-    rtems_bsdnet_semaphore_obtain();
     IF_DEQUEUE(&sc->sc_inq, m0);
 
     /* loop over mbuf chain */
@@ -347,7 +344,6 @@ pppread(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args)
 
     /* free mbuf chain */
     m_freem(m0);
-    rtems_bsdnet_semaphore_release();
 
     /* update return values */
     rw_args->bytes_moved = count;
@@ -380,7 +376,6 @@ pppwrite(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args)
     struct mbuf                  *m0;
     struct mbuf                 **mp;
 
-    rtems_bsdnet_semaphore_obtain();
     for (mp = &m0; maximum; mp = &m->m_next) {
 	MGET(m, M_WAIT, MT_DATA);
 	if ((*mp = m) == NULL) {
@@ -410,8 +405,7 @@ pppwrite(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args)
     m0->m_data += PPP_HDRLEN;
     m0->m_len  -= PPP_HDRLEN;
 
-    n = pppoutput(&sc->sc_if, m0, &dst, (struct rtentry *)0);
-    rtems_bsdnet_semaphore_release();
+    n = pppoutput(sc->sc_ifp, m0, &dst, NULL);
 
     return ( n );
 }
@@ -470,9 +464,7 @@ ppptioctl(struct rtems_termios_tty *tty, rtems_libio_ioctl_args_t *args)
 	break;
 
     default:
-        rtems_bsdnet_semaphore_obtain();
 	error = pppioctl(sc, cmd, data, 0, NULL);
-        rtems_bsdnet_semaphore_release();
     }
     return error;
 }
@@ -746,7 +738,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 	return 0;
     if (sc->sc_m == NULL) {
         rtems_event_send(sc->sc_rxtask, RX_EMPTY);
-        IF_DEQUEUE(&sc->sc_freeq, sc->sc_m);
+        sc->sc_m = if_ppp_dequeue(&sc->sc_freeq);
         if ( sc->sc_m == NULL ) {
           return 0;
         }
@@ -777,7 +769,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 	    sc->sc_flags |= SC_PKTLOST;	/* note the dropped packet */
 	    if ((sc->sc_flags & (SC_FLUSH | SC_ESCAPED)) == 0){
                 /* bad fcs error */
-		sc->sc_if.if_ierrors++;
+		sc->sc_ifp->if_ierrors++;
 		sc->sc_stats.ppp_ierrors++;
 	    } else
 		sc->sc_flags &= ~(SC_FLUSH | SC_ESCAPED);
@@ -787,7 +779,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 	if (ilen < PPP_HDRLEN + PPP_FCSLEN) {
 	    if (ilen) {
                 /* too short error */
-		sc->sc_if.if_ierrors++;
+		sc->sc_ifp->if_ierrors++;
 		sc->sc_stats.ppp_ierrors++;
 		sc->sc_flags |= SC_PKTLOST;
 	    }
@@ -808,10 +800,10 @@ pppinput(int c, struct rtems_termios_tty *tp)
           m->m_flags   |= M_ERRMARK;
           sc->sc_flags &= ~SC_PKTLOST;
         }
-        IF_ENQUEUE(&sc->sc_rawq, m);
+        if_ppp_enqueue(&sc->sc_rawq, m);
 
         /* setup next mbuf chain */
-        IF_DEQUEUE(&sc->sc_freeq, sc->sc_m);
+        sc->sc_m = if_ppp_dequeue(&sc->sc_freeq);
 
         /* send rx packet event */
         rtems_event_send(sc->sc_rxtask, RX_PACKET);
@@ -882,7 +874,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
     if (M_TRAILINGSPACE(m) <= 0) {
 	if (m->m_next == NULL) {
           /* get next available mbuf for the chain */
-          IF_DEQUEUE(&sc->sc_freeq, m->m_next);
+          m->m_next = if_ppp_dequeue(&sc->sc_freeq);
           if (m->m_next == NULL) {
             /* too few mbufs */
             goto flush;
@@ -906,7 +898,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 
  flush:
     if (!(sc->sc_flags & SC_FLUSH)) {
-	sc->sc_if.if_ierrors++;
+	sc->sc_ifp->if_ierrors++;
 	sc->sc_stats.ppp_ierrors++;
 	sc->sc_flags |= SC_FLUSH;
     }

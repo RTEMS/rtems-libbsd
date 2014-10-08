@@ -59,7 +59,6 @@
 #include <rtems.h>
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/termiostypes.h>
-extern int      rtems_bsdnet_microseconds_per_tick;
 extern rtems_id rtems_pppd_taskid;
 
 #include "pppd.h"
@@ -500,7 +499,7 @@ ppp_delay(void)
   rtems_interval     ticks;
 
   /* recommended delay to help negotiation */
-  ticks = 300000/rtems_bsdnet_microseconds_per_tick;
+  ticks = 300000/rtems_configuration_get_microseconds_per_tick();
   rtems_task_wake_after(ticks);
 }
 
@@ -522,7 +521,7 @@ wait_input(
       wait = RTEMS_NO_WAIT;
     else {
       ticks = (timo->tv_sec * 1000000 + timo->tv_usec) /
-        rtems_bsdnet_microseconds_per_tick;
+        rtems_configuration_get_microseconds_per_tick();
       if(ticks <= 0)
         ticks = 1;
     }

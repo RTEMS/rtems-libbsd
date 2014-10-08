@@ -41,6 +41,7 @@
 
 #include <rtems.h>
 #include <rtems/rtems_bsdnet.h>
+#include <rtems/rtemsdialer.h>
 
 #include "pppd.h"
 #include "magic.h"
@@ -55,7 +56,6 @@
 #include "ccp.h"
 #include "pathnames.h"
 #include "patchlevel.h"
-#include "rtemsdialer.h"
 
 #ifdef CBCP_SUPPORT
 #include "cbcp.h"

@@ -22,6 +22,7 @@ COMMON_FLAGS += -Ifreebsd/lib/libutil
 COMMON_FLAGS += -Ifreebsd/lib/libkvm
 COMMON_FLAGS += -Ifreebsd/lib/libmemstat
 COMMON_FLAGS += -Ifreebsd/lib/libipsec
+COMMON_FLAGS += -Irtemsbsd/sys
 COMMON_FLAGS += -ImDNSResponder/mDNSCore
 COMMON_FLAGS += -ImDNSResponder/mDNSShared
 COMMON_FLAGS += -ImDNSResponder/mDNSPosix
@@ -100,11 +101,29 @@ LIB_C_FILES += rtemsbsd/rtems/rtems_mii_ioctl_kern.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c
 LIB_C_FILES += rtemsbsd/rtems/syslog.c
 LIB_C_FILES += rtemsbsd/ftpd/ftpd.c
+LIB_C_FILES += rtemsbsd/pppd/auth.c
+LIB_C_FILES += rtemsbsd/pppd/ccp.c
+LIB_C_FILES += rtemsbsd/pppd/chap.c
+LIB_C_FILES += rtemsbsd/pppd/chap_ms.c
+LIB_C_FILES += rtemsbsd/pppd/chat.c
+LIB_C_FILES += rtemsbsd/pppd/demand.c
+LIB_C_FILES += rtemsbsd/pppd/fsm.c
+LIB_C_FILES += rtemsbsd/pppd/ipcp.c
+LIB_C_FILES += rtemsbsd/pppd/lcp.c
+LIB_C_FILES += rtemsbsd/pppd/magic.c
+LIB_C_FILES += rtemsbsd/pppd/options.c
+LIB_C_FILES += rtemsbsd/pppd/rtemsmain.c
+LIB_C_FILES += rtemsbsd/pppd/rtemspppd.c
+LIB_C_FILES += rtemsbsd/pppd/sys-rtems.c
+LIB_C_FILES += rtemsbsd/pppd/upap.c
+LIB_C_FILES += rtemsbsd/pppd/utils.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ehci_mpc83xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc24xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc32xx.c
 LIB_C_FILES += rtemsbsd/sys/dev/smc/if_smc_nexus.c
 LIB_C_FILES += rtemsbsd/sys/dev/ffec/if_ffec_mcf548x.c
+LIB_C_FILES += rtemsbsd/sys/net/if_ppp.c
+LIB_C_FILES += rtemsbsd/sys/net/ppp_tty.c
 LIB_C_FILES += rtemsbsd/telnetd/check_passwd.c
 LIB_C_FILES += rtemsbsd/telnetd/des.c
 LIB_C_FILES += rtemsbsd/telnetd/pty.c
@@ -1338,6 +1357,17 @@ TESTS += $(TEST_CONDVAR01)
 O_FILES += $(TEST_CONDVAR01_O_FILES)
 D_FILES += $(TEST_CONDVAR01_D_FILES)
 RUN_TESTS += $(TEST_CONDVAR01)
+
+TEST_PPP01 = testsuite/ppp01/ppp01.exe
+TEST_PPP01_O_FILES =
+TEST_PPP01_D_FILES =
+TEST_PPP01_O_FILES += testsuite/ppp01/test_main.o
+TEST_PPP01_D_FILES += testsuite/ppp01/test_main.d
+$(TEST_PPP01): $(TEST_PPP01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/ppp01/ppp01.map $^ -lm -lz -o $@
+TESTS += $(TEST_PPP01)
+O_FILES += $(TEST_PPP01_O_FILES)
+D_FILES += $(TEST_PPP01_D_FILES)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

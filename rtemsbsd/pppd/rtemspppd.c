@@ -10,10 +10,9 @@
  *  $Id$
  */
 
+#include <rtems/rtemspppd.h>
 #include <rtems.h>
-#include <rtems/rtems_bsdnet.h>
 #include "pppd.h"
-#include "rtemspppd.h"
 
 
 /* define pppd function prototypes */
@@ -81,11 +80,6 @@ int rtems_pppd_initialize(void)
   rtems_task_priority priority = 100;
   rtems_status_code   status;
   rtems_name          taskName;
-
-  /* determine priority value */
-  if ( rtems_bsdnet_config.network_task_priority ) {
-    priority = rtems_bsdnet_config.network_task_priority;
-  }
 
   /* initialize the exit hook */
   rtems_pppd_exitfp = (rtems_pppd_hookfunction)0;

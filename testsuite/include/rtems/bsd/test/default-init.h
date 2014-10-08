@@ -63,12 +63,16 @@ rtems_task Init(
   assert( 0 );
 }
 
-/* configuration information */
+#include <machine/rtems-bsd-sysinit.h>
+
+SYSINIT_NEED_NET_PF_UNIX;
 
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
-
+#define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_ZERO_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_LIBBLOCK
+
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 
 #define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 32
@@ -83,35 +87,12 @@ rtems_task Init(
 
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
-#define CONFIGURE_INIT_TASK_STACK_SIZE (128 * 1024)
+#define CONFIGURE_INIT_TASK_STACK_SIZE (32 * 1024)
 #define CONFIGURE_INIT_TASK_INITIAL_MODES RTEMS_DEFAULT_MODES
 #define CONFIGURE_INIT_TASK_ATTRIBUTES RTEMS_FLOATING_POINT
 
 #define CONFIGURE_INIT
+
 #include <rtems/confdefs.h>
 
-/*
- * FreeBSD TCP/IP Initialization
- */
-
-#include <machine/rtems-bsd-sysinit.h>
-
-SYSINIT_NEED_NET_PF_UNIX;
-
-/* only include FXP and PCI for i386/pc386 for debug on qemu (for now) */
-#if defined(i386)
-  #define CONFIGURE_NEED_PCIB
-  #define CONFIGURE_NEED_NET_IF_FXP
-#endif
-
-/*
- * This is correct for the PC
- */
-char static_hints[] = {
-  "hint.fxp.0.prefer_iomap=1\0\n"
-};
-
-#include <rtems/bsd/test/nic-sysinit.h>
-
-/* end of file */
 #endif /* RTEMS_BSD_TEST_DEFAULT_INIT_H */

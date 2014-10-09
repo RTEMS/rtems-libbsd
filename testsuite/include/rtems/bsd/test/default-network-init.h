@@ -89,6 +89,7 @@ default_network_ifconfig_lo0(void)
 		"::1",
 		"prefixlen",
 		"128",
+		"alias",
 		NULL
 	};
 

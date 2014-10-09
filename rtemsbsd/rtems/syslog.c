@@ -1,194 +1,193 @@
-/*
- * RTEMS version of syslog and associated routines
+/**
+ * @file
+ *
+ * @ingroup rtems_bsd_rtems
+ *
+ * @brief TODO.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+/*
+ * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Dornierstr. 4
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
 
-#include <rtems.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <errno.h>
+#include <machine/rtems-bsd-user-space.h>
+#include <machine/rtems-bsd-program.h>
+
 #include <syslog.h>
-#include <rtems/bsd/sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
-#include <unistd.h>
+typedef struct {
+  int mask;
+} rtems_bsd_syslog_context;
 
-#include <machine/rtems-bsd-printf-to-iprintf.h>
+/* FIXME: This should be thread specific */
+static rtems_bsd_syslog_context rtems_bsd_syslog_instance = {
+	.mask = LOG_UPTO(LOG_DEBUG)
+};
 
-static int LogStatus = LOG_CONS;
-static const char *LogTag = "syslog";
-static int LogFacility = LOG_USER;
-static int LogMask = 0xff;
+static const char * const rtems_bsd_syslog_priorities[] = {
+	[LOG_EMERG] = "emerg",
+	[LOG_ALERT] = "alert",
+	[LOG_CRIT] = "crit",
+	[LOG_ERR] = "err",
+	[LOG_WARNING] = "warning",
+	[LOG_NOTICE] = "notice",
+	[LOG_INFO] = "info",
+	[LOG_DEBUG] = "debug"
+};
 
-static int LogFd = -1;
-static rtems_id LogSemaphore;
-extern struct in_addr rtems_bsdnet_log_host_address;
+static rtems_bsd_syslog_context *
+rtems_bsd_syslog_get_context(void)
+{
+	return &rtems_bsd_syslog_instance;
+}
 
-#define SYSLOG_PORT	514
+static void
+rtems_bsd_syslog_format_buffer_overflow(void)
+{
+	fputs("err: syslog: format buffer overflow\n", stderr);
+}
 
 void
-syslog (int pri, const char *fmt, ...)
+syslog(int priority, const char *format, ...)
 {
 	va_list ap;
 
-	va_start (ap, fmt);
-	vsyslog (pri, fmt, ap);
-	va_end (ap);
-}
-
-/*
- * FIXME: Should cbuf be static?  It could be if we put the mutex
- *        around the entire body of this routine.  Then we wouldn't
- *        have to worry about blowing stacks with a local variable
- *        that large.  Could make cbuf bigger, too.
- */
-void
-vsyslog (int pri, const char *fmt, va_list ap)
-{
-	int cnt;
-	char *cp;
-	char *msgp, cbuf[200];
-	int sent;
-
-	if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
-		syslog (LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID,
-								"syslog: unknown facility/priority: %#x", pri);
-		pri &= LOG_PRIMASK|LOG_FACMASK;
-	}
-
-	if (!(LOG_MASK(LOG_PRI(pri)) & LogMask))
-		return;
-
-	if ((pri & LOG_FACMASK) == 0)
-		pri |= LogFacility;
-
-	cnt = sprintf (cbuf, "<%d>", pri);
-	cp = msgp = cbuf + cnt;
-	if (LogTag) {
-		const char *lp = LogTag;
-		while ((*cp = *lp++) != '\0')
-			cp++;
-	}
-	if (LogStatus & LOG_PID) {
-		rtems_id tid;
-		rtems_task_ident (RTEMS_SELF, 0, &tid);
-		cnt = sprintf (cp, "[%#lx]", (unsigned long)tid);
-		cp += cnt;
-	}
-	if (LogTag) {
-		*cp++ = ':';
-		*cp++ = ' ';
-	}
-	cnt = vsprintf (cp, fmt, ap);
-	cnt += cp - cbuf;
-	if (cbuf[cnt-1] == '\n')
-		cbuf[--cnt] = '\0';
-
-	if (LogStatus & LOG_PERROR)
-		printf ("%s\n", cbuf);
-
-	/*
-	 * Grab the mutex
-	 */
-	sent = 0;
-	if ((rtems_bsdnet_log_host_address.s_addr != INADDR_ANY)
-	 && (LogFd >= 0)
-	 && (rtems_semaphore_obtain (LogSemaphore, RTEMS_WAIT, RTEMS_NO_TIMEOUT) == RTEMS_SUCCESSFUL)) {
-		/*
-		 * Set the destination address/port
-		 */
-		struct sockaddr_in farAddress;
-		farAddress.sin_family = AF_INET;
-		farAddress.sin_port = htons (SYSLOG_PORT);
-		farAddress.sin_addr = rtems_bsdnet_log_host_address;
-		memset (farAddress.sin_zero, '\0', sizeof farAddress.sin_zero);
-
-		/*
-		 * Send the message
-		 */
-		if (sendto (LogFd, cbuf, cnt, 0, (struct sockaddr *)&farAddress, sizeof farAddress) >= 0)
-			sent = 1;
-		rtems_semaphore_release (LogSemaphore);
-	}
-	if (!sent && (LogStatus & LOG_CONS) && !(LogStatus & LOG_PERROR))
-		printf ("%s\n", msgp);
+	va_start(ap, format);
+	vsyslog(priority, format, ap);
+	va_end(ap);
 }
 
 void
-openlog (const char *ident, int logstat, int logfac)
+vsyslog(int priority, const char *format, va_list ap)
 {
-	rtems_status_code sc;
-	struct sockaddr_in myAddress;
+	rtems_bsd_syslog_context *ctx = rtems_bsd_syslog_get_context();
+	int pri = LOG_PRI(priority);
+	char fmt[128];
+	char buf[128];
+	const char *src;
+	char *dst;
+	size_t rem;
+	char *m;
+	int n;
+	size_t len;
 
-	if (ident != NULL)
-		LogTag = ident;
-	LogStatus = logstat;
-	if (logfac != 0 && (logfac & ~LOG_FACMASK) == 0)
-		LogFacility = logfac;
-
-	/*
-	 * Create the socket
-	 */
-	if ((LogFd = socket (AF_INET, SOCK_DGRAM, 0)) < 0) {
-		printf ("Can't create syslog socket: %d\n", errno);
+	if ((LOG_MASK(pri) & ctx->mask) == 0) {
 		return;
 	}
 
-	/*
-	 * Bind socket to name
-	 */
-	myAddress.sin_family = AF_INET;
-	myAddress.sin_addr.s_addr = INADDR_ANY;
-	myAddress.sin_port = 0;
-	memset (myAddress.sin_zero, '\0', sizeof myAddress.sin_zero);
-	if (bind (LogFd, (struct sockaddr *)&myAddress, sizeof (myAddress)) < 0) {
-		close (LogFd);
-		LogFd = -1;
-		printf ("Can't bind syslog socket: %d\n", errno);
+	/* Expand the %m in the format string and add a newline character */
+
+	src = format;
+	dst = &fmt[0];
+	rem = sizeof(fmt) - 2;
+
+	while ((m = strstr(src, "%m")) != NULL) {
+		size_t c = m - src;
+
+		if (c > rem) {
+			rtems_bsd_syslog_format_buffer_overflow();
+			return;
+		}
+
+		memcpy(dst, src, c);
+		dst += c;
+		src += c + 2;
+		rem -= c;
+
+		n = sniprintf(dst, rem, "%s", strerror(errno));
+		if (n > rem || n < 0) {
+			rtems_bsd_syslog_format_buffer_overflow();
+			return;
+		}
+
+		dst += (size_t) n;
+		rem -= (size_t) n;
+	}
+
+	len = strlen(src);
+	if (len > rem) {
+		rtems_bsd_syslog_format_buffer_overflow();
 		return;
 	}
 
-	/*
-	 * Create the mutex
-	 */
-	sc = rtems_semaphore_create (rtems_build_name('s', 'L', 'o', 'g'),
-					1,
-					RTEMS_PRIORITY |
-						RTEMS_BINARY_SEMAPHORE |
-						RTEMS_INHERIT_PRIORITY |
-						RTEMS_NO_PRIORITY_CEILING |
-						RTEMS_LOCAL,
-					0,
-					&LogSemaphore);
-	if (sc != RTEMS_SUCCESSFUL) {
-		printf ("Can't create syslog semaphore: %d\n", sc);
-		close (LogFd);
-		LogFd = -1;
+	memcpy(dst, src, len);
+	dst += len;
+	dst[0] = '\n';
+	dst[1] = '\0';
+
+	/* Print into buffer */
+
+	dst = &buf[0];
+	rem = sizeof(buf) - 1;
+
+	n = sniprintf(dst, rem, "%s: ", rtems_bsd_syslog_priorities[pri]);
+	if (n <= rem) {
+		dst += (size_t) n;
+		rem -= (size_t) n;
 	}
+
+	n = sniprintf(dst, rem, "%s: ", rtems_bsd_program_get_name());
+	if (n <= rem) {
+		dst += (size_t) n;
+		rem -= (size_t) n;
+	}
+
+	vsniprintf(dst, rem, &fmt[0], ap);
+
+	/* Write in one rush */
+
+	fputs(&buf[0], stderr);
+}
+
+void
+openlog(const char *ident, int option, int facility)
+{
+	/* TODO */
 }
 
 void
 closelog(void)
 {
-	if (LogFd >= 0) {
-		close (LogFd);
-		LogFd = -1;
-		rtems_semaphore_delete (LogSemaphore);
-	}
+	/* TODO */
 }
 
 int
-setlogmask (int pmask)
+setlogmask(int mask)
 {
-	int omask;
+	rtems_bsd_syslog_context *ctx = rtems_bsd_syslog_get_context();
+	int cur = ctx->mask;
 
-	omask = LogMask;
-	if (pmask != 0)
-		LogMask = pmask;
-	return (omask);
+	ctx->mask = mask & LOG_UPTO(LOG_DEBUG);
+
+	return cur;
 }

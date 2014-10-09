@@ -50,6 +50,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #define RTEMS_BSD_PROGRAM_NO_EXIT_WRAP
 #define RTEMS_BSD_PROGRAM_NO_PRINTF_WRAP
@@ -1692,6 +1693,28 @@ test_err(void)
 }
 
 static void
+test_syslog(void)
+{
+	puts("test syslog");
+
+	errno = 0;
+	syslog(LOG_ERR, "%m");
+	syslog(LOG_ERR, "b%m");
+	syslog(LOG_ERR, "%me");
+	errno = ENXIO;
+	syslog(LOG_ERR, "<%m><%m><%m>");
+	syslog(LOG_INFO, "%m%m%m%m%m%m%m%m%m%m%m%m%m%m");
+	syslog(LOG_EMERG, "emerg");
+	syslog(LOG_ALERT, "alert");
+	syslog(LOG_CRIT, "crit");
+	syslog(LOG_ERR, "err");
+	syslog(LOG_WARNING, "warning");
+	syslog(LOG_NOTICE, "notice");
+	syslog(LOG_INFO, "info");
+	syslog(LOG_DEBUG, "debug");
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -1720,6 +1743,7 @@ test_main(void)
 	test_bsd_program();
 	test_warn();
 	test_err();
+	test_syslog();
 
 	exit(0);
 }

@@ -274,6 +274,17 @@ http://www.freebsd.org/cgi/man.cgi?query=resolver&sektion=3&apropos=0&manpath=Fr
 
 http://www.freebsd.org/cgi/man.cgi?query=gethostbyname&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[GETHOSTBYNAME(3)]:: Get network host entry
 
+== Network Interface Drivers
+
+=== Link Up/Down Events
+
+You can notifiy the application space of link up/down events in your network
+interface driver via the if_link_state_change(LINK_STATE_UP/LINK_STATE_DOWN)
+function.  The DHCPCD(8) client is a consumer of these events for example.
+Make sure that the interface flag IFF_UP and the interface driver flag
+IFF_DRV_RUNNING is set in case the link is up, otherwise ether_output() will
+return the error status ENETDOWN.
+
 == Issues and TODO
 
 * Per-CPU data should be enabled once the new stack is ready for SMP.

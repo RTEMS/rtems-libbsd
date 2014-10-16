@@ -366,8 +366,6 @@ finit(struct file *fp, u_int fflag, short type, void *data,
 	fp->f_io.flags |= rtems_bsd_fflag_to_libio_flags(fflag);
 
 	pathinfo->handlers = ops;
-	pathinfo->mt_entry = &rtems_filesystem_null_mt_entry;
-	rtems_filesystem_location_add_to_mt_entry(pathinfo);
 }
 #endif /* __rtems__ */
 int fgetvp(struct thread *td, int fd, cap_rights_t rights, struct vnode **vpp);

@@ -2272,6 +2272,7 @@ userSpace.addUserSpaceSourceFiles(
 		'lib/libc/gen/err.c',
 		'lib/libc/gen/feature_present.c',
 		'lib/libc/gen/gethostname.c',
+		'lib/libc/gen/sethostname.c',
 		'lib/libc/inet/inet_addr.c',
 		'lib/libc/inet/inet_cidr_ntop.c',
 		'lib/libc/inet/inet_cidr_pton.c',

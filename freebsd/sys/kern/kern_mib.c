@@ -269,6 +269,7 @@ sysctl_hw_machine_arch(SYSCTL_HANDLER_ARGS)
 }
 SYSCTL_PROC(_hw, HW_MACHINE_ARCH, machine_arch, CTLTYPE_STRING | CTLFLAG_RD,
     NULL, 0, sysctl_hw_machine_arch, "A", "System architecture");
+#endif /* __rtems__ */
 
 static int
 sysctl_hostname(SYSCTL_HANDLER_ARGS)
@@ -287,7 +288,11 @@ sysctl_hostname(SYSCTL_HANDLER_ARGS)
 	KASSERT(len <= sizeof(tmpname),
 	    ("length %d too long for %s", len, __func__));
 
+#ifndef __rtems__
 	pr = req->td->td_ucred->cr_prison;
+#else /* __rtems__ */
+	pr = &prison0;
+#endif /* __rtems__ */
 	if (!(pr->pr_allow & PR_ALLOW_SET_HOSTNAME) && req->newptr)
 		return (EPERM);
 	/*
@@ -305,18 +310,27 @@ sysctl_hostname(SYSCTL_HANDLER_ARGS)
 		 * Copy the locally set hostname to all jails that share
 		 * this host info.
 		 */
+#ifndef __rtems__
 		sx_slock(&allprison_lock);
 		while (!(pr->pr_flags & PR_HOST))
 			pr = pr->pr_parent;
+#endif /* __rtems__ */
 		mtx_lock(&pr->pr_mtx);
 		bcopy(tmpname, (char *)pr + pr_offset, len);
+#ifndef __rtems__
 		FOREACH_PRISON_DESCENDANT_LOCKED(pr, cpr, descend)
 			if (cpr->pr_flags & PR_HOST)
 				descend = 0;
 			else
 				bcopy(tmpname, (char *)cpr + pr_offset, len);
+#else /* __rtems__ */
+		(void) cpr;
+		(void) descend;
+#endif /* __rtems__ */
 		mtx_unlock(&pr->pr_mtx);
+#ifndef __rtems__
 		sx_sunlock(&allprison_lock);
+#endif /* __rtems__ */
 	}
 	return (error);
 }
@@ -334,6 +348,7 @@ SYSCTL_PROC(_kern, KERN_HOSTUUID, hostuuid,
     (void *)(offsetof(struct prison, pr_hostuuid)), HOSTUUIDLEN,
     sysctl_hostname, "A", "Host UUID");
 
+#ifndef __rtems__
 static int	regression_securelevel_nonmonotonic = 0;
 
 #ifdef REGRESSION

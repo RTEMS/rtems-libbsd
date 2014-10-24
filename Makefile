@@ -682,6 +682,9 @@ freebsd/lib/libc/gen/feature_present.o: freebsd/lib/libc/gen/feature_present.c
 LIB_C_FILES += freebsd/lib/libc/gen/gethostname.c
 freebsd/lib/libc/gen/gethostname.o: freebsd/lib/libc/gen/gethostname.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
+LIB_C_FILES += freebsd/lib/libc/gen/sethostname.c
+freebsd/lib/libc/gen/sethostname.o: freebsd/lib/libc/gen/sethostname.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/inet/inet_addr.c
 freebsd/lib/libc/inet/inet_addr.o: freebsd/lib/libc/inet/inet_addr.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@

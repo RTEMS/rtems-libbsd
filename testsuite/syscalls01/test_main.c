@@ -1715,6 +1715,25 @@ test_syslog(void)
 }
 
 static void
+test_setgethostname(void)
+{
+	int rv;
+	char out[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
+	char in[] = { '?', '?', '?', '?', '?', '?', '?' };
+
+	puts("test set/get hostname");
+
+	rv = sethostname(&out[0], sizeof(out));
+	assert(rv == 0);
+
+	rv = gethostname(&in[0], sizeof(in));
+	assert(rv == 0);
+
+	assert(memcmp(&in[0], &out[0], sizeof(in) - 1) == 0);
+	assert(in[sizeof(in) - 1] == '\0');
+}
+
+static void
 test_main(void)
 {
 	/* Must be first test to ensure resource checks work */
@@ -1744,6 +1763,7 @@ test_main(void)
 	test_warn();
 	test_err();
 	test_syslog();
+	test_setgethostname();
 
 	exit(0);
 }

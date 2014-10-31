@@ -184,7 +184,12 @@ foobar_create_thread(void)
 static void
 test_main(void)
 {
+	const char name[] = "foobarserver";
+	int rv;
 	mStatus status;
+
+	rv = sethostname(&name[0], sizeof(name) - 1);
+	assert(rv == 0);
 
 	status = mDNS_Init(&mDNSStorage, &PlatformStorage, mDNS_Init_NoCache,
 	    mDNS_Init_ZeroCacheSize, mDNS_Init_AdvertiseLocalAddresses,

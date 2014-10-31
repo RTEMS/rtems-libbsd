@@ -252,12 +252,17 @@ foobar_register(DNSQuestion *question)
 static void
 test_main(void)
 {
+	const char name[] = "foobarclient";
+	int rv;
 	mStatus status;
 	DNSQuestion question;
 
+	rv = sethostname(&name[0], sizeof(name) - 1);
+	assert(rv == 0);
+
 	status = mDNS_Init(&mDNSStorage, &PlatformStorage, &rr_cache[0],
 	    sizeof(rr_cache) / sizeof(rr_cache[0]),
-	    mDNS_Init_DontAdvertiseLocalAddresses, mDNS_Init_NoInitCallback,
+	    mDNS_Init_AdvertiseLocalAddresses, mDNS_Init_NoInitCallback,
 	    mDNS_Init_NoInitCallbackContext);
 	assert(status == mStatus_NoError);
 

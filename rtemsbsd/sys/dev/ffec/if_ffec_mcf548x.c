@@ -784,8 +784,8 @@ static void mcf548x_fec_initialize_hardware(struct mcf548x_enet_struct *sc)
  /*
   * Set multicast address filter
   */
-  MCF548X_FEC_GAUR(chan) = 0x00000000;
-  MCF548X_FEC_GALR(chan) = 0x00000000;
+  MCF548X_FEC_GAUR(chan) = 0xffffffff;
+  MCF548X_FEC_GALR(chan) = 0xffffffff;
 
  /*
   * enable CRC in finite state machine register

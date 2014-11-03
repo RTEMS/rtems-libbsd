@@ -29,9 +29,6 @@
  * SUCH DAMAGE.
  */
 
-#include <mDNSEmbeddedAPI.h>
-#include <mDNSPosix.h>
-
 #include <sys/select.h>
 #include <sys/socket.h>
 
@@ -46,11 +43,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <rtems.h>
+#include <rtems/mdns.h>
+
 #define TEST_NAME "LIBBSD FOOBAR CLIENT"
-
-static mDNS mDNSStorage;
-
-static mDNS_PlatformSupport PlatformStorage;
 
 static CacheEntity rr_cache[64];
 
@@ -243,8 +239,8 @@ foobar_register(DNSQuestion *question)
 	MakeDomainNameFromDNSNameString(&type, "_foobar._tcp");
 	MakeDomainNameFromDNSNameString(&domain, "local.");
 
-	status = mDNS_StartBrowse(&mDNSStorage, question, &type, &domain,
-	    mDNSNULL, mDNSInterface_Any, 0, mDNSfalse, mDNSfalse,
+	status = mDNS_StartBrowse(rtems_mdns_get_instance(), question, &type,
+	    &domain, mDNSNULL, mDNSInterface_Any, 0, mDNSfalse, mDNSfalse,
 	    foobar_browse, NULL);
 	assert(status == mStatus_NoError);
 }
@@ -254,27 +250,19 @@ test_main(void)
 {
 	const char name[] = "foobarclient";
 	int rv;
-	mStatus status;
 	DNSQuestion question;
+	rtems_status_code sc;
 
 	rv = sethostname(&name[0], sizeof(name) - 1);
 	assert(rv == 0);
 
-	status = mDNS_Init(&mDNSStorage, &PlatformStorage, &rr_cache[0],
-	    sizeof(rr_cache) / sizeof(rr_cache[0]),
-	    mDNS_Init_AdvertiseLocalAddresses, mDNS_Init_NoInitCallback,
-	    mDNS_Init_NoInitCallbackContext);
-	assert(status == mStatus_NoError);
+	sc = rtems_mdns_initialize(254, &rr_cache[0], RTEMS_ARRAY_SIZE(rr_cache));
+	assert(sc == RTEMS_SUCCESSFUL);
 
 	foobar_register(&question);
 
-	while (1) {
-		struct timeval timeout = { .tv_sec = 0x3fffffff, .tv_usec = 0 };
-		sigset_t signals;
-		mDNSBool got_something;
-
-		mDNSPosixRunEventLoopOnce(&mDNSStorage, &timeout, &signals, &got_something);
-	}
+	rtems_task_delete(RTEMS_SELF);
+	assert(0);
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

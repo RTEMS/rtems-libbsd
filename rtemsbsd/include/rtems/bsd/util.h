@@ -40,6 +40,8 @@
 
 #include <stdint.h>
 
+#include <rtems.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -76,6 +78,23 @@ int
 rtems_bsd_arp_processor_process(
     rtems_bsd_arp_processor_context *ctx,
     rtems_bsd_arp_processor processor, void *arg);
+
+/**
+ * @brief Forces a select() timeout for the specified task.
+ *
+ * In case the specified task waits in a select(), then it is woken up with a
+ * timeout status, otherwise this call has no effect.
+ *
+ * @param[in] task_id The task identifier.
+ *
+ * @retval RTEMS_SUCCESSFUL Successful operation.
+ * @retval RTEMS_INVALID_ID No such task.
+ *
+ * @warning This function may go away once the signal support for condition
+ * variables is implemented.
+ */
+rtems_status_code
+rtems_bsd_force_select_timeout(rtems_id task_id);
 
 #ifdef __cplusplus
 }

@@ -1874,3 +1874,49 @@ selectinit(void *dummy __unused)
 	    NULL, NULL, UMA_ALIGN_PTR, 0);
 	mtxpool_select = mtx_pool_create("select mtxpool", 128, MTX_DEF);
 }
+#ifdef __rtems__
+#include <machine/rtems-bsd-thread.h>
+
+#include <rtems/score/objectimpl.h>
+#include <rtems/score/threadimpl.h>
+#include <rtems/score/threadqimpl.h>
+
+#include <rtems/bsd/util.h>
+
+static void
+force_select_timeout(Thread_Control *thread)
+{
+	struct thread *td = rtems_bsd_get_thread(thread);
+
+	if (td != NULL) {
+		struct seltd *stp = td->td_sel;
+
+		if (thread->Wait.queue == &stp->st_wait.cv_waiters) {
+			_Thread_queue_Process_timeout(thread);
+		}
+	}
+}
+
+rtems_status_code rtems_bsd_force_select_timeout(rtems_id task_id)
+{
+	Thread_Control *thread;
+	Objects_Locations location;
+
+	thread = _Thread_Get(task_id, &location);
+	switch (location) {
+		case OBJECTS_LOCAL:
+			force_select_timeout(thread);
+			_Objects_Put(&thread->Object);
+			break;
+#if defined(RTEMS_MULTIPROCESSING)
+		case OBJECTS_REMOTE:
+			_Thread_Dispatch();
+			return (RTEMS_ILLEGAL_ON_REMOTE_OBJECT);
+#endif
+		default:
+			return (RTEMS_INVALID_ID);
+	}
+
+	return (RTEMS_SUCCESSFUL);
+}
+#endif /* __rtems__ */

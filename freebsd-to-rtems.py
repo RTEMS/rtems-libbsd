@@ -699,6 +699,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-syslog-initialize.c',
 		'rtems/syslog.c',
 		'ftpd/ftpd.c',
+		'mdns/mdns.c',
 		'pppd/auth.c',
 		'pppd/ccp.c',
 		'pppd/chap.c',

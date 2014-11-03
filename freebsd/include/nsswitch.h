@@ -204,7 +204,7 @@ enum nss_lookup_type {
 typedef struct _ns_dbt {
 	const char	*name;		/* name of database */
 	ns_src		*srclist;	/* list of sources */
-	int		 srclistsize;	/* size of srclist */
+	unsigned int	 srclistsize;	/* size of srclist */
 } ns_dbt;
 
 /*

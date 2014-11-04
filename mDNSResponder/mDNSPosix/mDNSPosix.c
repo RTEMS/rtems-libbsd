@@ -834,7 +834,7 @@ mDNSlocal int SetupOneInterface(mDNS *const m, struct sockaddr *intfAddr, struct
     assert(intfMask != NULL);
 
     // Allocate the interface structure itself.
-    intf = (PosixNetworkInterface*)malloc(sizeof(*intf));
+    intf = (PosixNetworkInterface*)calloc(1, sizeof(*intf));
     if (intf == NULL) { assert(0); err = ENOMEM; }
 
     // And make a copy of the intfName.
@@ -1433,7 +1433,7 @@ mDNSexport void    mDNSPlatformMemZero(void *dst, mDNSu32 len)
     memset(dst, 0, len);
 }
 
-mDNSexport void *  mDNSPlatformMemAllocate(mDNSu32 len) { return(malloc(len)); }
+mDNSexport void *  mDNSPlatformMemAllocate(mDNSu32 len) { return(calloc(1, len)); }
 mDNSexport void    mDNSPlatformMemFree    (void *mem)   { free(mem); }
 
 mDNSexport mDNSu32 mDNSPlatformRandomSeed(void)

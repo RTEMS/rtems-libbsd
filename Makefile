@@ -674,6 +674,9 @@ freebsd/lib/libc/db/recno/rec_seq.o: freebsd/lib/libc/db/recno/rec_seq.c
 LIB_C_FILES += freebsd/lib/libc/db/recno/rec_utils.c
 freebsd/lib/libc/db/recno/rec_utils.o: freebsd/lib/libc/db/recno/rec_utils.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__DBINTERFACE_PRIVATE -DINET6 -c $< -o $@
+LIB_C_FILES += freebsd/bin/hostname/hostname.c
+freebsd/bin/hostname/hostname.o: freebsd/bin/hostname/hostname.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
 LIB_C_FILES += freebsd/lib/libc/gen/err.c
 freebsd/lib/libc/gen/err.o: freebsd/lib/libc/gen/err.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@

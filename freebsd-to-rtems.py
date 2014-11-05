@@ -2270,6 +2270,7 @@ userSpace.addUserSpaceSourceFiles(
 )
 userSpace.addUserSpaceSourceFiles(
 	[
+		'bin/hostname/hostname.c',
 		'lib/libc/gen/err.c',
 		'lib/libc/gen/feature_present.c',
 		'lib/libc/gen/gethostname.c',

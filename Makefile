@@ -102,6 +102,7 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c
 LIB_C_FILES += rtemsbsd/rtems/syslog.c
 LIB_C_FILES += rtemsbsd/ftpd/ftpd.c
 LIB_C_FILES += rtemsbsd/mdns/mdns.c
+LIB_C_FILES += rtemsbsd/mdns/mdns-sethostname-default.c
 LIB_C_FILES += rtemsbsd/pppd/auth.c
 LIB_C_FILES += rtemsbsd/pppd/ccp.c
 LIB_C_FILES += rtemsbsd/pppd/chap.c

@@ -56,6 +56,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/smp.h>
 #include <sys/sx.h>
 #include <rtems/bsd/sys/unistd.h>
+#ifdef __rtems__
+#include <rtems/mdns.h>
+#endif /* __rtems__ */
 
 SYSCTL_NODE(, 0,	  sysctl, CTLFLAG_RW, 0,
 	"Sysctl internal magic");
@@ -326,6 +329,10 @@ sysctl_hostname(SYSCTL_HANDLER_ARGS)
 #else /* __rtems__ */
 		(void) cpr;
 		(void) descend;
+
+		if (pr_offset == offsetof(struct prison, pr_hostname)) {
+			rtems_mdns_sethostname(tmpname);
+		}
 #endif /* __rtems__ */
 		mtx_unlock(&pr->pr_mtx);
 #ifndef __rtems__

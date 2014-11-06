@@ -40,6 +40,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* Private variable, do not touch.  Use rtems_mdns_sethostname() instead. */
+extern void (*rtems_mdns_sethostname_handler)(const char *hostname);
+
 /**
  * @brief Initializes an mDNS resolver instance.
  *
@@ -66,6 +69,20 @@ rtems_status_code rtems_mdns_initialize(rtems_task_priority daemon_priority,
  * @retval instance The mDNS resolver instance.
  */
 mDNS *rtems_mdns_get_instance(void);
+
+/**
+ * @brief Sets the multi-cast hostname of the mDNS resolver instance.
+ *
+ * In case the mDNS resolver instance is not initialized, then this function
+ * has no effect.
+ *
+ * @param[in] hostname The new multi-cast hostname.
+ */
+static inline void
+rtems_mdns_sethostname(const char *hostname)
+{
+  (*rtems_mdns_sethostname_handler)(hostname);
+}
 
 #ifdef __cplusplus
 }

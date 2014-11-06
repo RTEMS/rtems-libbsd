@@ -31,6 +31,7 @@
 
 #include <mDNSEmbeddedAPI.h>
 #include <mDNSPosix.h>
+#include <DNSCommon.h>
 
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -54,7 +55,7 @@
 #include <rtems/bsd/util.h>
 #include <rtems/mdns.h>
 
-static rtems_id daemon_id;
+static rtems_id mdns_daemon_id;
 
 static mDNS mDNSStorage;
 
@@ -223,7 +224,7 @@ mdns_gethostbyname(void *rval, void *cb_data, va_list ap)
 	ctx.task_id = rtems_task_self();
 
 	mDNS_StartQuery(&mDNSStorage, &q);
-	rtems_bsd_force_select_timeout(daemon_id);
+	rtems_bsd_force_select_timeout(mdns_daemon_id);
 
 	sc = rtems_event_transient_receive(RTEMS_WAIT,
 	    10 * rtems_clock_get_ticks_per_second());
@@ -261,6 +262,36 @@ mdns_daemon(rtems_task_argument arg)
 	}
 }
 
+static void
+truncate_at_first_dot(domainlabel *name)
+{
+	int c = name->c[0];
+	int n = 0;
+
+	while (n < c && name->c[n + 1] != '.') {
+		++n;
+	}
+
+	name->c[0] = n;
+}
+
+static void
+mdns_sethostname(const char *hostname)
+{
+	mDNS *m = &mDNSStorage;
+
+	mDNS_Lock(m);
+
+	MakeDomainLabelFromLiteralString(&m->hostlabel, hostname);
+	truncate_at_first_dot(&m->hostlabel);
+
+	mDNS_Unlock(m);
+
+	mDNS_SetFQDN(m);
+
+	rtems_bsd_force_select_timeout(mdns_daemon_id);
+}
+
 rtems_status_code
 rtems_mdns_initialize(rtems_task_priority daemon_priority,
     CacheEntity *rrcachestorage, mDNSu32 rrcachesize)
@@ -279,12 +310,12 @@ rtems_mdns_initialize(rtems_task_priority daemon_priority,
 
 	sc = rtems_task_create(rtems_build_name('m', 'D', 'N', 'S'),
 	    daemon_priority, 16 * 1024, RTEMS_DEFAULT_MODES,
-	    RTEMS_DEFAULT_ATTRIBUTES, &daemon_id);
+	    RTEMS_DEFAULT_ATTRIBUTES, &mdns_daemon_id);
 	if (sc != RTEMS_SUCCESSFUL) {
 		return (RTEMS_UNSATISFIED);
 	}
 
-	sc = rtems_task_start(daemon_id, mdns_daemon, 0);
+	sc = rtems_task_start(mdns_daemon_id, mdns_daemon, 0);
 	if (sc != RTEMS_SUCCESSFUL) {
 		return (RTEMS_UNSATISFIED);
 	}
@@ -310,6 +341,8 @@ rtems_mdns_initialize(rtems_task_priority daemon_priority,
 			return (RTEMS_UNSATISFIED);
 		}
 	}
+
+	rtems_mdns_sethostname_handler = mdns_sethostname;
 
 	return (RTEMS_SUCCESSFUL);
 }

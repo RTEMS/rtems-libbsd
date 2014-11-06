@@ -700,6 +700,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/syslog.c',
 		'ftpd/ftpd.c',
 		'mdns/mdns.c',
+		'mdns/mdns-sethostname-default.c',
 		'pppd/auth.c',
 		'pppd/ccp.c',
 		'pppd/chap.c',

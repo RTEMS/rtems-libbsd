@@ -275,7 +275,7 @@ truncate_at_first_dot(domainlabel *name)
 	name->c[0] = n;
 }
 
-static void
+static int
 mdns_sethostname(const char *hostname)
 {
 	mDNS *m = &mDNSStorage;
@@ -290,6 +290,28 @@ mdns_sethostname(const char *hostname)
 	mDNS_SetFQDN(m);
 
 	rtems_bsd_force_select_timeout(mdns_daemon_id);
+
+	return (0);
+}
+
+static int
+mdns_gethostname(char *hostname, size_t size)
+{
+	mDNS *m = &mDNSStorage;
+
+	if (size < MAX_ESCAPED_DOMAIN_LABEL) {
+		errno = ERANGE;
+
+		return (-1);
+	}
+
+	mDNS_Lock(m);
+
+	ConvertDomainLabelToCString(&m->hostlabel, hostname);
+
+	mDNS_Unlock(m);
+
+	return (0);
 }
 
 rtems_status_code
@@ -343,6 +365,7 @@ rtems_mdns_initialize(rtems_task_priority daemon_priority,
 	}
 
 	rtems_mdns_sethostname_handler = mdns_sethostname;
+	rtems_mdns_gethostname_handler = mdns_gethostname;
 
 	return (RTEMS_SUCCESSFUL);
 }

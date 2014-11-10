@@ -31,11 +31,31 @@
 
 #include <rtems/mdns.h>
 
-static void
+#include <errno.h>
+
+static int
 mdns_sethostname_default(const char *hostname)
 {
-	/* Do nothing */
+  (void)hostname;
+
+  errno = ENXIO;
+
+  return (-1);
 }
 
-void (*rtems_mdns_sethostname_handler)(const char *hostname) =
+static int
+mdns_gethostname_default(char *hostname, size_t size)
+{
+  (void)hostname;
+  (void)size;
+
+  errno = ENXIO;
+
+  return (-1);
+}
+
+int (*rtems_mdns_sethostname_handler)(const char *hostname) =
     mdns_sethostname_default;
+
+int (*rtems_mdns_gethostname_handler)(char *hostname, size_t size) =
+    mdns_gethostname_default;

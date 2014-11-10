@@ -41,7 +41,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Private variable, do not touch.  Use rtems_mdns_sethostname() instead. */
-extern void (*rtems_mdns_sethostname_handler)(const char *hostname);
+extern int (*rtems_mdns_sethostname_handler)(const char *hostname);
+
+/* Private variable, do not touch.  Use rtems_mdns_gethostname() instead. */
+extern int (*rtems_mdns_gethostname_handler)(char *hostname, size_t size);
 
 /**
  * @brief Initializes an mDNS resolver instance.
@@ -77,11 +80,29 @@ mDNS *rtems_mdns_get_instance(void);
  * has no effect.
  *
  * @param[in] hostname The new multicast hostname.
+ *
+ * @retval 0 Successful operation.
+ * @retval -1 An error occurred.  The errno is set to indicate the error.
  */
-static inline void
+static inline int
 rtems_mdns_sethostname(const char *hostname)
 {
-  (*rtems_mdns_sethostname_handler)(hostname);
+  return (*rtems_mdns_sethostname_handler)(hostname);
+}
+
+/**
+ * @brief Gets the multicast hostname of the mDNS resolver instance.
+ *
+ * @param[in] hostname The multicast hostname buffer.
+ * @param[in] size The size of the multicast hostname buffer.
+ *
+ * @retval 0 Successful operation.
+ * @retval -1 An error occurred.  The errno is set to indicate the error.
+ */
+static inline int
+rtems_mdns_gethostname(char *hostname, size_t size)
+{
+  return (*rtems_mdns_gethostname_handler)(hostname, size);
 }
 
 #ifdef __cplusplus

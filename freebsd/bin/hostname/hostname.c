@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)hostname.c	8.1 (Berkeley) 5/31/93";
 #include <rtems/netcmds-config.h>
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
+#include <rtems/mdns.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
@@ -78,7 +79,7 @@ static int hostname_command(int argc, char *argv[])
 
 rtems_shell_cmd_t rtems_shell_HOSTNAME_Command = {
   .name = "hostname",
-  .usage = "hostname [-fs] [name-of-host]",
+  .usage = "hostname [-fms] [name-of-host]",
   .topic = "net",
   .command = hostname_command
 };
@@ -93,10 +94,15 @@ main(int argc, char *argv[])
 	memset(&getopt_data, 0, sizeof(getopt_data));
 #define optind getopt_data.optind
 #define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+	int mflag = 0;
 #endif /* __rtems__ */
 
 	sflag = 0;
+#ifndef __rtems__
 	while ((ch = getopt(argc, argv, "fs")) != -1)
+#else /* __rtems__ */
+	while ((ch = getopt(argc, argv, "fms")) != -1)
+#endif /* __rtems__ */
 		switch (ch) {
 		case 'f':
 			/*
@@ -108,6 +114,11 @@ main(int argc, char *argv[])
 		case 's':
 			sflag = 1;
 			break;
+#ifdef __rtems__
+		case 'm':
+			mflag = 1;
+			break;
+#endif /* __rtems__ */
 		case '?':
 		default:
 			usage();
@@ -119,8 +130,24 @@ main(int argc, char *argv[])
 		usage();
 
 	if (*argv) {
+#ifdef __rtems__
+		if (mflag) {
+			if (rtems_mdns_sethostname(*argv)) {
+				err(1, "rtems_mdns_sethostname");
+			}
+		} else {
+#endif /* __rtems__ */
 		if (sethostname(*argv, (int)strlen(*argv)))
 			err(1, "sethostname");
+#ifdef __rtems__
+		}
+	} else if (mflag) {
+		if (rtems_mdns_gethostname(hostname, sizeof(hostname))) {
+			err(1, "rtems_mdns_gethostname");
+		}
+
+		(void)printf("%s\n", hostname);
+#endif /* __rtems__ */
 	} else {
 		if (gethostname(hostname, (int)sizeof(hostname)))
 			err(1, "gethostname");
@@ -138,6 +165,6 @@ static void
 usage(void)
 {
 
-	(void)fprintf(stderr, "usage: hostname [-fs] [name-of-host]\n");
+	(void)fprintf(stderr, "usage: hostname [-fms] [name-of-host]\n");
 	exit(1);
 }

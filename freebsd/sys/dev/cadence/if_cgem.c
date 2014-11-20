@@ -560,7 +560,11 @@ cgem_recv(struct cgem_softc *sc)
 		           (CGEM_RXDESC_SOF | CGEM_RXDESC_EOF)) {
 			/* discard. */
 			m_free(m);
+#ifndef __rtems__
 			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
+#else /* __rtems__ */
+			ifp->if_ierrors++;
+#endif /* __rtems__ */
 			continue;
 		}
 
@@ -606,7 +610,11 @@ cgem_recv(struct cgem_softc *sc)
 		m = m_hd;
 		m_hd = m_hd->m_next;
 		m->m_next = NULL;
+#ifndef __rtems__
 		if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
+#else /* __rtems__ */
+		ifp->if_ipackets++;
+#endif /* __rtems__ */
 		(*ifp->if_input)(ifp, m);
 	}
 	CGEM_LOCK(sc);
@@ -648,9 +656,17 @@ cgem_clean_tx(struct cgem_softc *sc)
 				   sc->txring[sc->txring_tl_ptr].addr);
 		} else if ((ctl & (CGEM_TXDESC_RETRY_ERR |
 				   CGEM_TXDESC_LATE_COLL)) != 0) {
+#ifndef __rtems__
 			if_inc_counter(sc->ifp, IFCOUNTER_OERRORS, 1);
+#else /* __rtems__ */
+			sc->ifp->if_oerrors++;
+#endif /* __rtems__ */
 		} else
+#ifndef __rtems__
 			if_inc_counter(sc->ifp, IFCOUNTER_OPACKETS, 1);
+#else /* __rtems__ */
+			sc->ifp->if_opackets++;
+#endif /* __rtems__ */
 
 		/* If the packet spanned more than one tx descriptor,
 		 * skip descriptors until we find the end so that only
@@ -823,16 +839,32 @@ cgem_poll_hw_stats(struct cgem_softc *sc)
 
 	n = RD4(sc, CGEM_SINGLE_COLL_FRAMES);
 	sc->stats.tx_single_collisn += n;
+#ifndef __rtems__
 	if_inc_counter(sc->ifp, IFCOUNTER_COLLISIONS, n);
+#else /* __rtems__ */
+	sc->ifp->if_collisions += n;
+#endif /* __rtems__ */
 	n = RD4(sc, CGEM_MULTI_COLL_FRAMES);
 	sc->stats.tx_multi_collisn += n;
+#ifndef __rtems__
 	if_inc_counter(sc->ifp, IFCOUNTER_COLLISIONS, n);
+#else /* __rtems__ */
+	sc->ifp->if_collisions += n;
+#endif /* __rtems__ */
 	n = RD4(sc, CGEM_EXCESSIVE_COLL_FRAMES);
 	sc->stats.tx_excsv_collisn += n;
+#ifndef __rtems__
 	if_inc_counter(sc->ifp, IFCOUNTER_COLLISIONS, n);
+#else /* __rtems__ */
+	sc->ifp->if_collisions += n;
+#endif /* __rtems__ */
 	n = RD4(sc, CGEM_LATE_COLL);
 	sc->stats.tx_late_collisn += n;
+#ifndef __rtems__
 	if_inc_counter(sc->ifp, IFCOUNTER_COLLISIONS, n);
+#else /* __rtems__ */
+	sc->ifp->if_collisions += n;
+#endif /* __rtems__ */
 
 	sc->stats.tx_deferred_frames += RD4(sc, CGEM_DEFERRED_TX_FRAMES);
 	sc->stats.tx_carrier_sense_errs += RD4(sc, CGEM_CARRIER_SENSE_ERRS);

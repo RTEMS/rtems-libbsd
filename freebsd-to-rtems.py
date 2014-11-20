@@ -1258,6 +1258,7 @@ devNet.addKernelSpaceHeaderFiles(
 		'sys/dev/ofw/openfirm.h',
 		'sys/dev/tsec/if_tsec.h',
 		'sys/dev/tsec/if_tsecreg.h',
+		'sys/dev/cadence/if_cgem_hw.h',
 	]
 )
 devNet.addKernelSpaceSourceFiles(
@@ -1268,6 +1269,7 @@ devNet.addKernelSpaceSourceFiles(
 		'sys/dev/mii/icsphy.c',
 		'sys/dev/mii/brgphy.c',
 		'sys/dev/tsec/if_tsec.c',
+		'sys/dev/cadence/if_cgem.c',
 	]
 )
 

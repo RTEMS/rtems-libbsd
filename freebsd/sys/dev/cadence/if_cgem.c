@@ -71,9 +71,11 @@ __FBSDID("$FreeBSD$");
 #include <net/bpf.h>
 #include <net/bpfdesc.h>
 
+#ifndef __rtems__
 #include <dev/fdt/fdt_common.h>
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#endif /* __rtems__ */
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
@@ -1629,8 +1631,10 @@ static int
 cgem_probe(device_t dev)
 {
 
+#ifndef __rtems__
 	if (!ofw_bus_is_compatible(dev, "cadence,gem"))
 		return (ENXIO);
+#endif /* __rtems__ */
 
 	device_set_desc(dev, "Cadence CGEM Gigabit Ethernet Interface");
 	return (0);
@@ -1641,19 +1645,23 @@ cgem_attach(device_t dev)
 {
 	struct cgem_softc *sc = device_get_softc(dev);
 	struct ifnet *ifp = NULL;
+#ifndef __rtems__
 	phandle_t node;
 	pcell_t cell;
+#endif /* __rtems__ */
 	int rid, err;
 	u_char eaddr[ETHER_ADDR_LEN];
 
 	sc->dev = dev;
 	CGEM_LOCK_INIT(sc);
 
+#ifndef __rtems__
 	/* Get reference clock number and base divider from fdt. */
 	node = ofw_bus_get_node(dev);
 	sc->ref_clk_num = 0;
 	if (OF_getprop(node, "ref-clock-num", &cell, sizeof(cell)) > 0)
 		sc->ref_clk_num = fdt32_to_cpu(cell);
+#endif /* __rtems__ */
 
 	/* Get memory resource. */
 	rid = 0;

@@ -66,7 +66,12 @@ void
 rtems_bsd_chunk_init(rtems_bsd_chunk_control *self, uintptr_t info_size,
     rtems_bsd_chunk_info_ctor info_ctor, rtems_bsd_chunk_info_dtor info_dtor)
 {
-	info_size = roundup(info_size, CPU_HEAP_ALIGNMENT);
+	uintptr_t align = rtems_cache_get_data_line_size();
+
+	if (align < CPU_HEAP_ALIGNMENT)
+		align = CPU_HEAP_ALIGNMENT;
+
+	info_size = roundup(info_size, align);
 
 	self->info_size = info_size;
 	self->info_ctor = info_ctor;
@@ -77,7 +82,7 @@ rtems_bsd_chunk_init(rtems_bsd_chunk_control *self, uintptr_t info_size,
 void *
 rtems_bsd_chunk_alloc(rtems_bsd_chunk_control *self, uintptr_t chunk_size)
 {
-	char *p = malloc(chunk_size + self->info_size, M_TEMP, M_WAITOK);
+	char *p = rtems_cache_aligned_malloc(chunk_size + self->info_size);
 
 	if (p != NULL) {
 		rtems_bsd_chunk_info *info = (rtems_bsd_chunk_info *) p;
@@ -110,7 +115,7 @@ rtems_bsd_chunk_free(rtems_bsd_chunk_control *self,
 
 	(*self->info_dtor)(self, info);
 
-	free(info, M_TEMP);
+	free(info, M_RTEMS_HEAP);
 }
 
 rtems_bsd_chunk_info *

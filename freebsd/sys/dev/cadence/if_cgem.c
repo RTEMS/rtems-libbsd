@@ -83,6 +83,9 @@ __FBSDID("$FreeBSD$");
 #include <dev/cadence/if_cgem_hw.h>
 
 #include <rtems/bsd/local/miibus_if.h>
+#ifdef __rtems__
+#pragma GCC diagnostic ignored "-Wpointer-sign"
+#endif /* __rtems__ */
 
 #define IF_CGEM_NAME "cgem"
 

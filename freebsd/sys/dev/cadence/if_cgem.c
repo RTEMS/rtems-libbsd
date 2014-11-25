@@ -126,7 +126,9 @@ struct cgem_softc {
 	struct cgem_rx_desc volatile	*rxring;
 	bus_addr_t		rxring_physaddr;
 	struct mbuf		*rxring_m[CGEM_NUM_RX_DESCS];
+#ifndef __rtems__
 	bus_dmamap_t		rxring_m_dmamap[CGEM_NUM_RX_DESCS];
+#endif /* __rtems__ */
 	int			rxring_hd_ptr;	/* where to put rcv bufs */
 	int			rxring_tl_ptr;	/* where to get receives */
 	int			rxring_queued;	/* how many rcv bufs queued */
@@ -142,7 +144,9 @@ struct cgem_softc {
 	struct cgem_tx_desc volatile	*txring;
 	bus_addr_t		txring_physaddr;
 	struct mbuf		*txring_m[CGEM_NUM_TX_DESCS];
+#ifndef __rtems__
 	bus_dmamap_t		txring_m_dmamap[CGEM_NUM_TX_DESCS];
+#endif /* __rtems__ */
 	int			txring_hd_ptr;	/* where to put next xmits */
 	int			txring_tl_ptr;	/* next xmit mbuf to free */
 	int			txring_queued;	/* num xmits segs queued */
@@ -425,10 +429,12 @@ cgem_setup_descs(struct cgem_softc *sc)
 		sc->rxring[i].addr = CGEM_RXDESC_OWN;
 		sc->rxring[i].ctl = 0;
 		sc->rxring_m[i] = NULL;
+#ifndef __rtems__
 		err = bus_dmamap_create(sc->mbuf_dma_tag, 0,
 					&sc->rxring_m_dmamap[i]);
 		if (err)
 			return (err);
+#endif /* __rtems__ */
 	}
 	sc->rxring[CGEM_NUM_RX_DESCS - 1].addr |= CGEM_RXDESC_WRAP;
 
@@ -458,10 +464,12 @@ cgem_setup_descs(struct cgem_softc *sc)
 		sc->txring[i].addr = 0;
 		sc->txring[i].ctl = CGEM_TXDESC_USED;
 		sc->txring_m[i] = NULL;
+#ifndef __rtems__
 		err = bus_dmamap_create(sc->mbuf_dma_tag, 0,
 					&sc->txring_m_dmamap[i]);
 		if (err)
 			return (err);
+#endif /* __rtems__ */
 	}
 	sc->txring[CGEM_NUM_TX_DESCS - 1].ctl |= CGEM_TXDESC_WRAP;
 
@@ -477,8 +485,12 @@ static void
 cgem_fill_rqueue(struct cgem_softc *sc)
 {
 	struct mbuf *m = NULL;
+#ifndef __rtems__
 	bus_dma_segment_t segs[TX_MAX_DMA_SEGS];
 	int nsegs;
+#else /* __rtems__ */
+	bus_dma_segment_t segs[1];
+#endif /* __rtems__ */
 
 	CGEM_ASSERT_LOCKED(sc);
 
@@ -492,6 +504,7 @@ cgem_fill_rqueue(struct cgem_softc *sc)
 		m->m_pkthdr.len = MCLBYTES;
 		m->m_pkthdr.rcvif = sc->ifp;
 
+#ifndef __rtems__
 		/* Load map and plug in physical address. */
 		if (bus_dmamap_load_mbuf_sg(sc->mbuf_dma_tag, 
 			      sc->rxring_m_dmamap[sc->rxring_hd_ptr], m,
@@ -500,12 +513,18 @@ cgem_fill_rqueue(struct cgem_softc *sc)
 			m_free(m);
 			break;
 		}
+#endif /* __rtems__ */
 		sc->rxring_m[sc->rxring_hd_ptr] = m;
 
+#ifndef __rtems__
 		/* Sync cache with receive buffer. */
 		bus_dmamap_sync(sc->mbuf_dma_tag,
 				sc->rxring_m_dmamap[sc->rxring_hd_ptr],
 				BUS_DMASYNC_PREREAD);
+#else /* __rtems__ */
+		rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+		segs[0].ds_addr = mtod(m, bus_addr_t);
+#endif /* __rtems__ */
 
 		/* Write rx descriptor and increment head pointer. */
 		sc->rxring[sc->rxring_hd_ptr].ctl = 0;
@@ -542,6 +561,7 @@ cgem_recv(struct cgem_softc *sc)
 		m = sc->rxring_m[sc->rxring_tl_ptr];
 		sc->rxring_m[sc->rxring_tl_ptr] = NULL;
 
+#ifndef __rtems__
 		/* Sync cache with receive buffer. */
 		bus_dmamap_sync(sc->mbuf_dma_tag,
 				sc->rxring_m_dmamap[sc->rxring_tl_ptr],
@@ -550,6 +570,9 @@ cgem_recv(struct cgem_softc *sc)
 		/* Unload dmamap. */
 		bus_dmamap_unload(sc->mbuf_dma_tag,
 		  	sc->rxring_m_dmamap[sc->rxring_tl_ptr]);
+#else /* __rtems__ */
+		rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+#endif /* __rtems__ */
 
 		/* Increment tail pointer. */
 		if (++sc->rxring_tl_ptr == CGEM_NUM_RX_DESCS)
@@ -639,6 +662,7 @@ cgem_clean_tx(struct cgem_softc *sc)
 	       ((ctl = sc->txring[sc->txring_tl_ptr].ctl) &
 		CGEM_TXDESC_USED) != 0) {
 
+#ifndef __rtems__
 		/* Sync cache.  nop? */
 		bus_dmamap_sync(sc->mbuf_dma_tag,
 				sc->txring_m_dmamap[sc->txring_tl_ptr],
@@ -647,6 +671,7 @@ cgem_clean_tx(struct cgem_softc *sc)
 		/* Unload DMA map. */
 		bus_dmamap_unload(sc->mbuf_dma_tag,
 				  sc->txring_m_dmamap[sc->txring_tl_ptr]);
+#endif /* __rtems__ */
 
 		/* Free up the mbuf. */
 		m = sc->txring_m[sc->txring_tl_ptr];
@@ -701,6 +726,33 @@ cgem_clean_tx(struct cgem_softc *sc)
 	}
 }
 
+#ifdef __rtems__
+static int
+cgem_get_segs_for_tx(struct mbuf *m, bus_dma_segment_t segs[TX_MAX_DMA_SEGS],
+    int *nsegs)
+{
+	int i = 0;
+
+	do {
+		if (m->m_len > 0) {
+			segs[i].ds_addr = mtod(m, bus_addr_t);
+			segs[i].ds_len = m->m_len;
+			rtems_cache_flush_multiple_data_lines(m->m_data, m->m_len);
+			++i;
+		}
+
+		m = m->m_next;
+
+		if (m == NULL) {
+			*nsegs = i;
+
+			return (0);
+		}
+	} while (i < TX_MAX_DMA_SEGS);
+
+	return (EFBIG);
+}
+#endif /* __rtems__ */
 /* Start transmits. */
 static void
 cgem_start_locked(struct ifnet *ifp)
@@ -738,10 +790,14 @@ cgem_start_locked(struct ifnet *ifp)
 		if (m == NULL)
 			break;
 
+#ifndef __rtems__
 		/* Load DMA map. */
 		err = bus_dmamap_load_mbuf_sg(sc->mbuf_dma_tag,
 				      sc->txring_m_dmamap[sc->txring_hd_ptr],
 				      m, segs, &nsegs, BUS_DMA_NOWAIT);
+#else /* __rtems__ */
+		err = cgem_get_segs_for_tx(m, segs, &nsegs);
+#endif /* __rtems__ */
 		if (err == EFBIG) {
 			/* Too many segments!  defrag and try again. */
 			struct mbuf *m2 = m_defrag(m, M_NOWAIT);
@@ -752,9 +808,13 @@ cgem_start_locked(struct ifnet *ifp)
 				continue;
 			}
 			m = m2;
+#ifndef __rtems__
 			err = bus_dmamap_load_mbuf_sg(sc->mbuf_dma_tag,
 				      sc->txring_m_dmamap[sc->txring_hd_ptr],
 				      m, segs, &nsegs, BUS_DMA_NOWAIT);
+#else /* __rtems__ */
+			err = cgem_get_segs_for_tx(m, segs, &nsegs);
+#endif /* __rtems__ */
 			sc->txdefrags++;
 		}
 		if (err) {
@@ -765,10 +825,12 @@ cgem_start_locked(struct ifnet *ifp)
 		}
 		sc->txring_m[sc->txring_hd_ptr] = m;
 
+#ifndef __rtems__
 		/* Sync tx buffer with cache. */
 		bus_dmamap_sync(sc->mbuf_dma_tag,
 				sc->txring_m_dmamap[sc->txring_hd_ptr],
 				BUS_DMASYNC_PREWRITE);
+#endif /* __rtems__ */
 
 		/* Set wrap flag if next packet might run off end of ring. */
 		wrap = sc->txring_hd_ptr + nsegs + TX_MAX_DMA_SEGS >=
@@ -1127,8 +1189,10 @@ cgem_stop(struct cgem_softc *sc)
 		sc->txring[i].ctl = CGEM_TXDESC_USED;
 		sc->txring[i].addr = 0;
 		if (sc->txring_m[i]) {
+#ifndef __rtems__
 			bus_dmamap_unload(sc->mbuf_dma_tag,
 					  sc->txring_m_dmamap[i]);
+#endif /* __rtems__ */
 			m_freem(sc->txring_m[i]);
 			sc->txring_m[i] = NULL;
 		}
@@ -1144,9 +1208,11 @@ cgem_stop(struct cgem_softc *sc)
 		sc->rxring[i].addr = CGEM_RXDESC_OWN;
 		sc->rxring[i].ctl = 0;
 		if (sc->rxring_m[i]) {
+#ifndef __rtems__
 			/* Unload dmamap. */
 			bus_dmamap_unload(sc->mbuf_dma_tag,
 				  sc->rxring_m_dmamap[sc->rxring_tl_ptr]);
+#endif /* __rtems__ */
 
 			m_freem(sc->rxring_m[i]);
 			sc->rxring_m[i] = NULL;
@@ -1765,7 +1831,9 @@ static int
 cgem_detach(device_t dev)
 {
 	struct cgem_softc *sc = device_get_softc(dev);
+#ifndef __rtems__
 	int i;
+#endif /* __rtems__ */
 
 	if (sc == NULL)
 		return (ENODEV);
@@ -1807,12 +1875,14 @@ cgem_detach(device_t dev)
 		bus_dmamem_free(sc->desc_dma_tag, __DEVOLATILE(void *, sc->rxring),
 				sc->rxring_dma_map);
 		sc->rxring = NULL;
+#ifndef __rtems__
 		for (i = 0; i < CGEM_NUM_RX_DESCS; i++)
 			if (sc->rxring_m_dmamap[i] != NULL) {
 				bus_dmamap_destroy(sc->mbuf_dma_tag,
 						   sc->rxring_m_dmamap[i]);
 				sc->rxring_m_dmamap[i] = NULL;
 			}
+#endif /* __rtems__ */
 	}
 	if (sc->txring != NULL) {
 		if (sc->txring_physaddr != 0) {
@@ -1822,12 +1892,14 @@ cgem_detach(device_t dev)
 		bus_dmamem_free(sc->desc_dma_tag, __DEVOLATILE(void *, sc->txring),
 				sc->txring_dma_map);
 		sc->txring = NULL;
+#ifndef __rtems__
 		for (i = 0; i < CGEM_NUM_TX_DESCS; i++)
 			if (sc->txring_m_dmamap[i] != NULL) {
 				bus_dmamap_destroy(sc->mbuf_dma_tag,
 						   sc->txring_m_dmamap[i]);
 				sc->txring_m_dmamap[i] = NULL;
 			}
+#endif /* __rtems__ */
 	}
 	if (sc->desc_dma_tag != NULL) {
 		bus_dma_tag_destroy(sc->desc_dma_tag);

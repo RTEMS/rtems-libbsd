@@ -1260,6 +1260,7 @@ devNet.addKernelSpaceHeaderFiles(
 		'sys/dev/tsec/if_tsec.h',
 		'sys/dev/tsec/if_tsecreg.h',
 		'sys/dev/cadence/if_cgem_hw.h',
+		'sys/arm/xilinx/zy7_slcr.h',
 	]
 )
 devNet.addKernelSpaceSourceFiles(
@@ -1272,6 +1273,7 @@ devNet.addKernelSpaceSourceFiles(
 		'sys/dev/mii/brgphy.c',
 		'sys/dev/tsec/if_tsec.c',
 		'sys/dev/cadence/if_cgem.c',
+		'sys/arm/xilinx/zy7_slcr.c',
 	]
 )
 

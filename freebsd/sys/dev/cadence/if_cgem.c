@@ -85,6 +85,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/miibus_if.h>
 #ifdef __rtems__
 #pragma GCC diagnostic ignored "-Wpointer-sign"
+#include <rtems/bsd/bsd.h>
 #endif /* __rtems__ */
 
 #define IF_CGEM_NAME "cgem"
@@ -233,7 +234,9 @@ static void
 cgem_get_mac(struct cgem_softc *sc, u_char eaddr[])
 {
 	int i;
+#ifndef __rtems__
 	uint32_t rnd;
+#endif /* __rtems__ */
 
 	/* See if boot loader gave us a MAC address already. */
 	for (i = 0; i < 4; i++) {
@@ -252,6 +255,7 @@ cgem_get_mac(struct cgem_softc *sc, u_char eaddr[])
 
 	/* No MAC from boot loader?  Assign a random one. */
 	if (i == 4) {
+#ifndef __rtems__
 		rnd = arc4random();
 
 		eaddr[0] = 'b';
@@ -260,6 +264,10 @@ cgem_get_mac(struct cgem_softc *sc, u_char eaddr[])
 		eaddr[3] = (rnd >> 16) & 0xff;
 		eaddr[4] = (rnd >> 8) & 0xff;
 		eaddr[5] = rnd & 0xff;
+#else /* __rtems__ */
+		rtems_bsd_get_mac_address(device_get_name(sc->dev),
+		    device_get_unit(sc->dev), eaddr);
+#endif /* __rtems__ */
 
 		device_printf(sc->dev, "no mac address found, assigning "
 			      "random: %02x:%02x:%02x:%02x:%02x:%02x\n",

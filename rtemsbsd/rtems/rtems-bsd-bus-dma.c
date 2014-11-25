@@ -237,7 +237,14 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 		return ENOMEM;
 	}
 
-	*vaddr = rtems_heap_allocate_aligned_with_boundary(dmat->maxsize, dmat->alignment, dmat->boundary);
+	if ((flags & BUS_DMA_COHERENT) != 0) {
+		*vaddr = rtems_cache_coherent_allocate(
+		    dmat->maxsize, dmat->alignment, dmat->boundary);
+	} else {
+		*vaddr = rtems_heap_allocate_aligned_with_boundary(
+		    dmat->maxsize, dmat->alignment, dmat->boundary);
+	}
+
 	if (*vaddr == NULL) {
 		free(*mapp, M_DEVBUF);
 
@@ -261,7 +268,7 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 void
 bus_dmamem_free(bus_dma_tag_t dmat, void *vaddr, bus_dmamap_t map)
 {
-	free(vaddr, M_RTEMS_HEAP);
+	rtems_cache_coherent_free(vaddr);
 	free(map, M_DEVBUF);
 }
 

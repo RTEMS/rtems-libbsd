@@ -399,6 +399,7 @@ LIB_C_FILES += freebsd/sys/dev/mii/mii.c
 LIB_C_FILES += freebsd/sys/dev/mii/mii_bitbang.c
 LIB_C_FILES += freebsd/sys/dev/mii/mii_physubr.c
 LIB_C_FILES += freebsd/sys/dev/mii/icsphy.c
+LIB_C_FILES += freebsd/sys/dev/mii/e1000phy.c
 LIB_C_FILES += freebsd/sys/dev/mii/brgphy.c
 LIB_C_FILES += freebsd/sys/dev/tsec/if_tsec.c
 LIB_C_FILES += freebsd/sys/dev/cadence/if_cgem.c

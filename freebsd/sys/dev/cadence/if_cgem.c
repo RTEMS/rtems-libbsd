@@ -123,7 +123,7 @@ struct cgem_softc {
 	bus_dma_tag_t		mbuf_dma_tag;
 
 	/* receive descriptor ring */
-	struct cgem_rx_desc	*rxring;
+	struct cgem_rx_desc volatile	*rxring;
 	bus_addr_t		rxring_physaddr;
 	struct mbuf		*rxring_m[CGEM_NUM_RX_DESCS];
 	bus_dmamap_t		rxring_m_dmamap[CGEM_NUM_RX_DESCS];
@@ -139,7 +139,7 @@ struct cgem_softc {
 	uint32_t		rx_frames_prev;
 
 	/* transmit descriptor ring */
-	struct cgem_tx_desc	*txring;
+	struct cgem_tx_desc volatile	*txring;
 	bus_addr_t		txring_physaddr;
 	struct mbuf		*txring_m[CGEM_NUM_TX_DESCS];
 	bus_dmamap_t		txring_m_dmamap[CGEM_NUM_TX_DESCS];
@@ -1804,7 +1804,7 @@ cgem_detach(device_t dev)
 			bus_dmamap_unload(sc->desc_dma_tag, sc->rxring_dma_map);
 			sc->rxring_physaddr = 0;
 		}
-		bus_dmamem_free(sc->desc_dma_tag, sc->rxring,
+		bus_dmamem_free(sc->desc_dma_tag, __DEVOLATILE(void *, sc->rxring),
 				sc->rxring_dma_map);
 		sc->rxring = NULL;
 		for (i = 0; i < CGEM_NUM_RX_DESCS; i++)
@@ -1819,7 +1819,7 @@ cgem_detach(device_t dev)
 			bus_dmamap_unload(sc->desc_dma_tag, sc->txring_dma_map);
 			sc->txring_physaddr = 0;
 		}
-		bus_dmamem_free(sc->desc_dma_tag, sc->txring,
+		bus_dmamem_free(sc->desc_dma_tag, __DEVOLATILE(void *, sc->txring),
 				sc->txring_dma_map);
 		sc->txring = NULL;
 		for (i = 0; i < CGEM_NUM_TX_DESCS; i++)

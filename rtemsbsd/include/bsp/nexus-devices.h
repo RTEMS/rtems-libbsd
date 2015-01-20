@@ -56,4 +56,36 @@ RTEMS_BSD_DEFINE_NEXUS_DEVICE(smc, 0, RTEMS_ARRAY_SIZE(smc0_res),
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(fec, 0, 0, NULL);
 
+#elif defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
+
+#include <bsp/irq.h>
+
+static const rtems_bsd_device_resource zy7_slcr0_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = 0xf8000000
+	}
+};
+
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(zy7_slcr, 0, RTEMS_ARRAY_SIZE(zy7_slcr0_res),
+   &zy7_slcr0_res[0]);
+
+static const rtems_bsd_device_resource cgem0_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = 0xe000b000
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 0,
+		.start_actual = ZYNQ_IRQ_ETHERNET_0
+	}
+};
+
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(cgem, 0, RTEMS_ARRAY_SIZE(cgem0_res),
+   &cgem0_res[0]);
+
+SYSINIT_DRIVER_REFERENCE(e1000phy, miibus);
+
 #endif

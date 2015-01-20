@@ -1663,6 +1663,8 @@ cgem_attach(device_t dev)
 	sc->ref_clk_num = 0;
 	if (OF_getprop(node, "ref-clock-num", &cell, sizeof(cell)) > 0)
 		sc->ref_clk_num = fdt32_to_cpu(cell);
+#else /* __rtems__ */
+	sc->ref_clk_num = device_get_unit(dev);
 #endif /* __rtems__ */
 
 	/* Get memory resource. */
@@ -1864,7 +1866,11 @@ static driver_t cgem_driver = {
 	sizeof(struct cgem_softc),
 };
 
+#ifndef __rtems__
 DRIVER_MODULE(cgem, simplebus, cgem_driver, cgem_devclass, NULL, NULL);
+#else /* __rtems__ */
+DRIVER_MODULE(cgem, nexus, cgem_driver, cgem_devclass, NULL, NULL);
+#endif /* __rtems__ */
 DRIVER_MODULE(miibus, cgem, miibus_driver, miibus_devclass, NULL, NULL);
 MODULE_DEPEND(cgem, miibus, 1, 1, 1);
 MODULE_DEPEND(cgem, ether, 1, 1, 1);

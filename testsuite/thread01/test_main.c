@@ -43,6 +43,8 @@
 #include <sys/kthread.h>
 #include <sys/errno.h>
 
+#include <rtems/bsd/bsd.h>
+
 #include <rtems.h>
 #include <rtems/libcsupport.h>
 #include <rtems/score/threaddispatch.h>
@@ -210,7 +212,7 @@ test_kthread_add(void)
 {
 	rtems_resource_snapshot snapshot;
 	void *greedy;
-	uintptr_t take_away = 2 * BSD_MINIMUM_TASK_STACK_SIZE;
+	uintptr_t take_away = 2 * rtems_bsd_get_task_stack_size("");
 
 	puts("test kthread_add()");
 

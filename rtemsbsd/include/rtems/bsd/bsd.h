@@ -90,6 +90,19 @@ rtems_status_code rtems_bsd_initialize(void);
  */
 rtems_task_priority rtems_bsd_get_task_priority(const char *name);
 
+/**
+ * @brief Returns the stack size for a task specified by its name.
+ *
+ * Applications may provide their own implementation of this function.  For
+ * example they can define their implementation in the same module which calls
+ * rtems_bsd_initialize().
+ *
+ * @param[in] name The task name.
+ *
+ * @return The desired task stack size.
+ */
+size_t rtems_bsd_get_task_stack_size(const char *name);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

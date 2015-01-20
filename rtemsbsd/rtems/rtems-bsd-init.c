@@ -90,7 +90,7 @@ rtems_bsd_initialize(void)
 
 	sc =  rtems_timer_initiate_server(
 		rtems_bsd_get_task_priority(name),
-		BSD_MINIMUM_TASK_STACK_SIZE,
+		rtems_bsd_get_task_stack_size(name),
 		RTEMS_DEFAULT_ATTRIBUTES
 	);
 	if (sc != RTEMS_SUCCESSFUL) {

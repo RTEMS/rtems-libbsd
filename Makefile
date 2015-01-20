@@ -72,6 +72,7 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-delay.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-ethernet-addr.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-file.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-task-priority.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-init.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-jail.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-kern_synch.c

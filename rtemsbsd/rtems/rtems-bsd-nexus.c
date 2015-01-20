@@ -79,7 +79,7 @@ nexus_probe(device_t dev)
 #ifndef DISABLE_INTERRUPT_EXTENSION
 	status = rtems_interrupt_server_initialize(
 		rtems_bsd_get_task_priority(name),
-		BSD_MINIMUM_TASK_STACK_SIZE,
+		rtems_bsd_get_task_stack_size(name),
 		RTEMS_DEFAULT_MODES,
 		RTEMS_DEFAULT_ATTRIBUTES,
 		NULL

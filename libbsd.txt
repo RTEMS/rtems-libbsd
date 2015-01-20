@@ -228,6 +228,14 @@ http://www.freebsd.org/cgi/man.cgi?query=route&apropos=0&sektion=8&manpath=FreeB
 using `rtems_bsd_command_route()`.  For an example please have a look at
 `testsuite/include/rtems/bsd/test/default-network-init.h`.
 
+=== Task Priorities and Stack Size ===
+
+The default task priority is 96 for the interrupt server task (name "IRQS"), 98
+for the timer server task (name "TIME") and 100 for all other tasks.  The
+application may provide their own implementation of the
+`rtems_bsd_get_task_priority()` function (for example in the module which calls
+`rtems_bsd_initialize()`) if different values are desired.
+
 == Network Stack Features
 
 http://roy.marples.name/projects/dhcpcd/index[DHCPCD(8)]:: DHCP client

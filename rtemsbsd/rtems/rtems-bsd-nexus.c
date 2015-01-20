@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -69,6 +69,7 @@ static struct rman irq_rman;
 static int
 nexus_probe(device_t dev)
 {
+	static const char name[] = "IRQS";
 	rtems_status_code status;
 	int err;
 	const rtems_bsd_device *nd;
@@ -77,7 +78,7 @@ nexus_probe(device_t dev)
 
 #ifndef DISABLE_INTERRUPT_EXTENSION
 	status = rtems_interrupt_server_initialize(
-		BSD_TASK_PRIORITY_INTERRUPT,
+		rtems_bsd_get_task_priority(name),
 		BSD_MINIMUM_TASK_STACK_SIZE,
 		RTEMS_DEFAULT_MODES,
 		RTEMS_DEFAULT_ATTRIBUTES,

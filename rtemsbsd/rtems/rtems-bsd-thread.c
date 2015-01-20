@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -49,6 +49,8 @@
 #include <sys/kthread.h>
 #include <sys/malloc.h>
 #include <sys/selinfo.h>
+
+#include <rtems/bsd/bsd.h>
 
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/statesimpl.h>
@@ -246,12 +248,16 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 	int eno = 0;
 	rtems_status_code sc;
 	rtems_id task_id;
+	struct thread *td;
+	char name[sizeof(td->td_name)];
 
 	BSD_ASSERT(pages >= 0);
 
+	vsnprintf(name, sizeof(name), fmt, ap);
+
 	sc = rtems_task_create(
 		BSD_TASK_NAME,
-		BSD_TASK_PRIORITY_NORMAL,
+		rtems_bsd_get_task_priority(name),
 		BSD_MINIMUM_TASK_STACK_SIZE + (size_t) pages * PAGE_SIZE,
 		RTEMS_DEFAULT_MODES,
 		RTEMS_DEFAULT_ATTRIBUTES,
@@ -259,14 +265,13 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 	);
 	if (sc == RTEMS_SUCCESSFUL) {
 		Thread_Control *thread = rtems_bsd_get_thread_by_id(task_id);
-		struct thread *td;
 
 		BSD_ASSERT(thread != NULL);
 
 		td = rtems_bsd_get_thread(thread);
 		BSD_ASSERT(td != NULL);
 
-		vsnprintf(td->td_name, sizeof(td->td_name), fmt, ap);
+		memcpy(td->td_name, name, sizeof(name));
 
 		if (rtems_bsd_thread_ready_to_start) {
 			sc = rtems_task_start(task_id, (rtems_task_entry) func,

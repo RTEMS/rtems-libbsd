@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -76,6 +76,19 @@ typedef struct {
             &SYSINIT_ENTRY_NAME(name##_nexusmodule) }
 
 rtems_status_code rtems_bsd_initialize(void);
+
+/**
+ * @brief Returns the initial priority for a task specified by its name.
+ *
+ * Applications may provide their own implementation of this function.  For
+ * example they can define their implementation in the same module which calls
+ * rtems_bsd_initialize().
+ *
+ * @param[in] name The task name.
+ *
+ * @return The desired initial task priority.
+ */
+rtems_task_priority rtems_bsd_get_task_priority(const char *name);
 
 #ifdef __cplusplus
 }

@@ -36,9 +36,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <rtems.h>
-
-
-static uint32_t   networkDaemonPriority = 100; /* XXX */
+#include <rtems/bsd/bsd.h>
 
 /*
  * Structure passed to task-start stub
@@ -88,7 +86,7 @@ rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg
 
   strncpy (nm, name, 4);
   sc = rtems_task_create (rtems_build_name(nm[0], nm[1], nm[2], nm[3]),
-    networkDaemonPriority,
+    rtems_bsd_get_task_priority(name),
     stacksize,
     RTEMS_PREEMPT|RTEMS_NO_TIMESLICE|RTEMS_NO_ASR|RTEMS_INTERRUPT_LEVEL(0),
     RTEMS_NO_FLOATING_POINT|RTEMS_LOCAL,

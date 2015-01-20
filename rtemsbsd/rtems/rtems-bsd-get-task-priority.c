@@ -1,13 +1,13 @@
 /**
  * @file
  *
- * @ingroup rtems_bsd_machine
+ * @ingroup rtems_bsd_rtems
  *
  * @brief TODO.
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -37,36 +37,18 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_
-#define _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_
+#include <rtems/bsd/bsd.h>
 
-#include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
-#include <sys/proc.h>
-#include <sys/queue.h>
+#include <string.h>
 
-#include <rtems/score/threadq.h>
-#include <rtems.h>
-
-#define BSD_TASK_NAME rtems_build_name('_', 'B', 'S', 'D')
-
-/* FIXME */
-#define BSD_MINIMUM_TASK_STACK_SIZE ((size_t) 32 * 1024)
-
-struct sleepqueue {
-	Thread_queue_Control sq_blocked;
-	LIST_ENTRY(sleepqueue) sq_hash;
-	LIST_HEAD(, sleepqueue) sq_free;
-	void *sq_wchan;
-};
-
-struct thread *
-rtems_bsd_get_thread(const Thread_Control *thread);
-
-static inline rtems_id
-rtems_bsd_get_task_id(const struct thread *td)
+rtems_task_priority
+rtems_bsd_get_task_priority(const char *name)
 {
-	return td->td_thread->Object.id;
+	if (strcmp(name, "IRQS") == 0) {
+		return (96);
+	} else if (strcmp(name, "TIME") == 0) {
+		return (98);
+	} else {
+		return (100);
+	}
 }
-
-#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_ */

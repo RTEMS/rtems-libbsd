@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -76,7 +76,8 @@ struct timeval boottime;
 rtems_status_code
 rtems_bsd_initialize(void)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
+	static const char name[] = "TIME";
+	rtems_status_code sc;
 
 	hz = (int) rtems_clock_get_ticks_per_second();
 	tick = 1000000 / hz;
@@ -88,7 +89,7 @@ rtems_bsd_initialize(void)
 	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
 
 	sc =  rtems_timer_initiate_server(
-		BSD_TASK_PRIORITY_TIMER,
+		rtems_bsd_get_task_priority(name),
 		BSD_MINIMUM_TASK_STACK_SIZE,
 		RTEMS_DEFAULT_ATTRIBUTES
 	);

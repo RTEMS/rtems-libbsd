@@ -669,6 +669,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-delay.c',
 		'rtems/rtems-bsd-get-ethernet-addr.c',
 		'rtems/rtems-bsd-get-file.c',
+		'rtems/rtems-bsd-get-mac-address.c',
 		'rtems/rtems-bsd-get-task-priority.c',
 		'rtems/rtems-bsd-get-task-stack-size.c',
 		'rtems/rtems-bsd-init.c',

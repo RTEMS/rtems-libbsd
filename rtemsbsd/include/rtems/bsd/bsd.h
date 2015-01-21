@@ -103,6 +103,26 @@ rtems_task_priority rtems_bsd_get_task_priority(const char *name);
  */
 size_t rtems_bsd_get_task_stack_size(const char *name);
 
+/**
+ * @brief Returns the Ethernet MAC address for a specified device.
+ *
+ * Applications may provide their own implementation of this function.  For
+ * example they can define their implementation in the same module which calls
+ * rtems_bsd_initialize().
+ *
+ * The default implementation returns
+ * { 0x0e, 0xb0, 0xba, 0x5e, 0xba, 0x11 + unit }.
+ *
+ * This is a workaround.  A better approach would be to use a device tree and a
+ * bus device similar to the FreeBSD SIMPLEBUS(4).
+ *
+ * @param[in] name The device name.
+ * @param[in] unit The device unit.
+ * @param[out] mac_addr The Ethernet MAC address.
+ */
+void rtems_bsd_get_mac_address(const char *name, int unit,
+    uint8_t mac_addr[6]);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

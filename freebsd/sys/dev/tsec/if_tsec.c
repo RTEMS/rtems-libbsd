@@ -94,9 +94,11 @@ static void	tsec_start_locked(struct ifnet *ifp);
 static void	tsec_stop(struct tsec_softc *sc);
 static void	tsec_tick(void *arg);
 static void	tsec_watchdog(struct tsec_softc *sc);
+#ifndef __rtems__
 static void	tsec_add_sysctls(struct tsec_softc *sc);
 static int	tsec_sysctl_ic_time(SYSCTL_HANDLER_ARGS);
 static int	tsec_sysctl_ic_count(SYSCTL_HANDLER_ARGS);
+#endif /* __rtems__ */
 static void	tsec_set_rxic(struct tsec_softc *sc);
 static void	tsec_set_txic(struct tsec_softc *sc);
 static int	tsec_receive_intr_locked(struct tsec_softc *sc, int count);
@@ -142,7 +144,9 @@ tsec_attach(struct tsec_softc *sc)
 	sc->tx_ic_count = 16;
 	tsec_set_rxic(sc);
 	tsec_set_txic(sc);
+#ifndef __rtems__
 	tsec_add_sysctls(sc);
+#endif /* __rtems__ */
 
 	/* Allocate a busdma tag and DMA safe memory for TX descriptors. */
 	error = tsec_alloc_dma_desc(sc->dev, &sc->tsec_tx_dtag,
@@ -1658,6 +1662,7 @@ tsec_miibus_statchg(device_t dev)
 	}
 }
 
+#ifndef __rtems__
 static void
 tsec_add_sysctls(struct tsec_softc *sc)
 {
@@ -1771,6 +1776,7 @@ tsec_sysctl_ic_count(SYSCTL_HANDLER_ARGS)
 
 	return (0);
 }
+#endif /* __rtems__ */
 
 static void
 tsec_set_rxic(struct tsec_softc *sc)

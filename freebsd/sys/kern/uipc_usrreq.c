@@ -472,12 +472,12 @@ uipc_attach(struct socket *so, int proto, struct thread *td)
 
 #ifdef __rtems__
 static IMFS_jnode_t *
-rtems_uipc_imfs_initialize(IMFS_jnode_t *node, const IMFS_types_union *info)
+rtems_uipc_imfs_initialize(IMFS_jnode_t *node, void *arg)
 {
 	struct socket *so;
 	struct unpcb *unp;
 
-	node = IMFS_node_initialize_generic(node, info);
+	node = IMFS_node_initialize_generic(node, arg);
 
 	so = IMFS_generic_get_context_by_node(node);
 	unp = sotounpcb(so);
@@ -487,7 +487,7 @@ rtems_uipc_imfs_initialize(IMFS_jnode_t *node, const IMFS_types_union *info)
 	return node;
 }
 
-static IMFS_jnode_t *
+static void
 rtems_uipc_imfs_destroy(IMFS_jnode_t *node)
 {
 	struct socket *so;
@@ -498,24 +498,16 @@ rtems_uipc_imfs_destroy(IMFS_jnode_t *node)
 
 	unp->unp_vnode = NULL;
 
-	return node;
+	IMFS_node_destroy_default(node);
 }
 
-static const IMFS_node_control rtems_uipc_imfs_control = {
-	.imfs_type = IMFS_GENERIC,
-	.handlers = &socketops,
-	.node_initialize = rtems_uipc_imfs_initialize,
-	.node_remove = IMFS_node_remove_default,
-	.node_destroy = rtems_uipc_imfs_destroy
-};
+static const IMFS_node_control rtems_uipc_imfs_control =
+    IMFS_GENERIC_INITIALIZER(&socketops, rtems_uipc_imfs_initialize,
+    rtems_uipc_imfs_destroy);
 
-static const IMFS_node_control rtems_uipc_imfs_zombi_control = {
-	.imfs_type = IMFS_GENERIC,
-	.handlers = &rtems_filesystem_handlers_default,
-	.node_initialize = NULL,
-	.node_remove = IMFS_node_remove_default,
-	.node_destroy = IMFS_node_destroy_default
-};
+static const IMFS_node_control rtems_uipc_imfs_zombi_control =
+    IMFS_GENERIC_INITIALIZER(&rtems_filesystem_handlers_default, NULL,
+    IMFS_node_destroy_default);
 #endif /* __rtems__ */
 static int
 uipc_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
@@ -718,7 +710,7 @@ uipc_detach(struct socket *so)
 	struct vnode *vp;
 	int freeunp, local_unp_rights;
 #else /* __rtems__ */
-	struct IMFS_jnode_tt *vp;
+	IMFS_generic_t *vp;
 	int freeunp;
 #endif /* __rtems__ */
 
@@ -740,8 +732,8 @@ uipc_detach(struct socket *so)
 #ifndef __rtems__
 		VOP_UNP_DETACH(vp);
 #else /* __rtems__ */
-		vp->control = &rtems_uipc_imfs_zombi_control;
-		vp->info.generic.context = NULL;
+		vp->Node.control = &rtems_uipc_imfs_zombi_control;
+		vp->context = NULL;
 #endif /* __rtems__ */
 		unp->unp_vnode = NULL;
 	}

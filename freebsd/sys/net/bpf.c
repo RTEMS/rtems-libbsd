@@ -2931,13 +2931,9 @@ static const rtems_filesystem_file_handlers_r bpf_imfs_handlers = {
 	.writev_h = bpf_imfs_writev
 };
 
-static const IMFS_node_control bpf_imfs_control = {
-	.imfs_type = IMFS_GENERIC,
-	.handlers = &bpf_imfs_handlers,
-	.node_initialize = IMFS_node_initialize_default,
-	.node_remove = IMFS_node_remove_default,
-	.node_destroy = IMFS_node_destroy_default
-};
+static const IMFS_node_control bpf_imfs_control = IMFS_GENERIC_INITIALIZER(
+    &bpf_imfs_handlers, IMFS_node_initialize_generic,
+    IMFS_node_destroy_default);
 #endif /* __rtems__ */
 
 static void

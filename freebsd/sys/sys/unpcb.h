@@ -71,7 +71,7 @@ struct unpcb {
 #ifndef __rtems__
 	struct	vnode *unp_vnode;	/* if associated with file */
 #else /* __rtems__ */
-	struct	IMFS_jnode_tt *unp_vnode;	/* if associated with file */
+	void *unp_vnode;		/* if associated with file */
 #endif /* __rtems__ */
 	ino_t	unp_ino;		/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */

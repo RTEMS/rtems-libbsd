@@ -276,6 +276,7 @@ tsec_attach(struct tsec_softc *sc)
 	error = mii_attach(sc->dev, &sc->tsec_miibus, ifp, tsec_ifmedia_upd,
 	    tsec_ifmedia_sts, BMSR_DEFCAPMASK, sc->phyaddr, MII_OFFSET_ANY,
 	    0);
+#ifndef __rtems__
 	if (error) {
 		device_printf(sc->dev, "attaching PHYs failed\n");
 		if_free(ifp);
@@ -284,6 +285,12 @@ tsec_attach(struct tsec_softc *sc)
 		return (error);
 	}
 	sc->tsec_mii = device_get_softc(sc->tsec_miibus);
+#else /* __rtems__ */
+	if (error == 0)
+		sc->tsec_mii = device_get_softc(sc->tsec_miibus);
+	else
+		sc->tsec_link = 1;
+#endif /* __rtems__ */
 
 	/* Set MAC address */
 	tsec_get_hwaddr(sc, hwaddr);
@@ -430,6 +437,9 @@ tsec_init_locked(struct tsec_softc *sc)
 	}
 
 	/* Step 9: Setup the MII Mgmt */
+#ifdef __rtems__
+	if (sc->tsec_mii)
+#endif /* __rtems__ */
 	mii_mediachg(sc->tsec_mii);
 
 	/* Step 10: Clear IEVENT register */
@@ -948,6 +958,11 @@ tsec_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 		}
 	case SIOCGIFMEDIA:
 	case SIOCSIFMEDIA:
+#ifdef __rtems__
+		if (sc->tsec_mii == 0)
+			error = ENXIO;
+		else
+#endif /* __rtems__ */
 		error = ifmedia_ioctl(ifp, ifr, &sc->tsec_mii->mii_media,
 		    command);
 		break;
@@ -1000,6 +1015,10 @@ tsec_ifmedia_upd(struct ifnet *ifp)
 	struct tsec_softc *sc = ifp->if_softc;
 	struct mii_data *mii;
 
+#ifdef __rtems__
+	if (sc->tsec_mii == NULL)
+		return (0);
+#endif /* __rtems__ */
 	TSEC_TRANSMIT_LOCK(sc);
 
 	mii = sc->tsec_mii;
@@ -1015,6 +1034,10 @@ tsec_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 	struct tsec_softc *sc = ifp->if_softc;
 	struct mii_data *mii;
 
+#ifdef __rtems__
+	if (sc->tsec_mii == NULL)
+		return (0);
+#endif /* __rtems__ */
 	TSEC_TRANSMIT_LOCK(sc);
 
 	mii = sc->tsec_mii;
@@ -1244,6 +1267,9 @@ tsec_tick(void *arg)
 	ifp = sc->tsec_ifp;
 	link = sc->tsec_link;
 
+#ifdef __rtems__
+	if (sc->tsec_mii != NULL)
+#endif /* __rtems__ */
 	mii_tick(sc->tsec_mii);
 
 	if (link == 0 && sc->tsec_link == 1 &&
@@ -1618,6 +1644,10 @@ tsec_miibus_statchg(device_t dev)
 
 	sc = device_get_softc(dev);
 	mii = sc->tsec_mii;
+#ifdef __rtems__
+	if (mii == NULL)
+		return;
+#endif /* __rtems__ */
 	link = ((mii->mii_media_status & IFM_ACTIVE) ? 1 : 0);
 
 	tmp = TSEC_READ(sc, TSEC_REG_MACCFG2) & ~TSEC_MACCFG2_IF;

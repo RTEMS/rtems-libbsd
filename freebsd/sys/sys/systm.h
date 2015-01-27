@@ -248,8 +248,13 @@ void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_OMIT_CHARS	(1 << 18)
 
 #define ovbcopy(f, t, l) bcopy((f), (t), (l))
+#ifndef __rtems__
 void	bcopy(const void *from, void *to, size_t len) __nonnull(1) __nonnull(2);
 void	bzero(void *buf, size_t len) __nonnull(1);
+#else /* __rtems__ */
+#define bcopy(src, dst, len) memmove((dst), (src), (len))
+#define bzero(buf, size) memset((buf), 0, (size))
+#endif /* __rtems__ */
 
 void	*memcpy(void *to, const void *from, size_t len) __nonnull(1) __nonnull(2);
 void	*memmove(void *dest, const void *src, size_t n) __nonnull(1) __nonnull(2);

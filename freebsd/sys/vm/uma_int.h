@@ -405,14 +405,7 @@ hash_sfind(struct uma_hash *hash, u_int8_t *data)
 }
 
 #ifdef __rtems__
-#include <machine/rtems-bsd-chunk.h>
-
-typedef struct {
-	rtems_bsd_chunk_info chunk_info;
-	uma_slab_t slab;
-} rtems_bsd_uma_chunk_info;
-
-extern rtems_bsd_chunk_control rtems_bsd_uma_chunks;
+#include <machine/rtems-bsd-page.h>
 #endif /* __rtems__ */
 static __inline uma_slab_t
 vtoslab(vm_offset_t va)
@@ -429,10 +422,7 @@ vtoslab(vm_offset_t va)
 	else
 		return (NULL);
 #else /* __rtems__ */
-	rtems_bsd_uma_chunk_info *uci = (rtems_bsd_uma_chunk_info *)
-	    rtems_bsd_chunk_get_info(&rtems_bsd_uma_chunks, (void *) va);
-
-	return uci->slab;
+	return (rtems_bsd_page_get_object((void *)va));
 #endif /* __rtems__ */
 }
 
@@ -446,10 +436,7 @@ vsetslab(vm_offset_t va, uma_slab_t slab)
 	p->object = (vm_object_t)slab;
 	p->flags |= PG_SLAB;
 #else /* __rtems__ */
-	rtems_bsd_uma_chunk_info *uci = (rtems_bsd_uma_chunk_info *)
-	    rtems_bsd_chunk_get_info(&rtems_bsd_uma_chunks, (void *) va);
-
-	uci->slab = slab;
+	rtems_bsd_page_set_object((void *)va, slab);
 #endif /* __rtems__ */
 }
 

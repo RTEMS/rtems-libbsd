@@ -90,9 +90,6 @@ __FBSDID("$FreeBSD$");
 
 #include <ddb/ddb.h>
 
-#ifdef __rtems__
-rtems_bsd_chunk_control rtems_bsd_uma_chunks;
-#endif /* __rtems__ */
 /*
  * This is the zone and keg from which all zones are spawned.  The idea is that
  * even the zone & keg heads are allocated from the allocator, so we use the
@@ -880,12 +877,8 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 		slab = (uma_slab_t )(mem + keg->uk_pgoff);
 
 	if (keg->uk_flags & UMA_ZONE_VTOSLAB)
-#ifndef __rtems__
 		for (i = 0; i < keg->uk_ppera; i++)
 			vsetslab((vm_offset_t)mem + (i * PAGE_SIZE), slab);
-#else /* __rtems__ */
-		vsetslab((vm_offset_t)mem, slab);
-#endif /* __rtems__ */
 
 	slab->us_keg = keg;
 	slab->us_data = mem;
@@ -1027,7 +1020,7 @@ page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 #ifndef __rtems__
 	p = (void *) kmem_malloc(kmem_map, bytes, wait);
 #else /* __rtems__ */
-	p = rtems_bsd_chunk_alloc(&rtems_bsd_uma_chunks, bytes);
+	p = rtems_bsd_page_alloc(bytes, wait);
 #endif /* __rtems__ */
 
 	return (p);
@@ -1121,7 +1114,7 @@ page_free(void *mem, int size, u_int8_t flags)
 
 	kmem_free(map, (vm_offset_t)mem, size);
 #else /* __rtems__ */
-	rtems_bsd_chunk_free(&rtems_bsd_uma_chunks, mem);
+	rtems_bsd_page_free(mem);
 #endif /* __rtems__ */
 }
 
@@ -1644,16 +1637,6 @@ zone_foreach(void (*zfunc)(uma_zone_t))
 	mtx_unlock(&uma_mtx);
 }
 
-#ifdef __rtems__
-static void
-rtems_bsd_uma_chunk_info_ctor(rtems_bsd_chunk_control *self,
-    rtems_bsd_chunk_info *info)
-{
-	rtems_bsd_uma_chunk_info *uci = (rtems_bsd_uma_chunk_info *) info;
-
-	uci->slab = NULL;
-}
-#endif /* __rtems__ */
 /* Public functions */
 /* See uma.h */
 void
@@ -1672,11 +1655,6 @@ uma_startup(void *bootmem, int boot_pages)
 #ifdef UMA_DEBUG
 	printf("Creating uma keg headers zone and keg.\n");
 #endif
-#ifdef __rtems__
-	rtems_bsd_chunk_init(&rtems_bsd_uma_chunks,
-	    sizeof(rtems_bsd_uma_chunk_info), rtems_bsd_uma_chunk_info_ctor,
-	    rtems_bsd_chunk_info_dtor_default);
-#endif /* __rtems__ */
 	mtx_init(&uma_mtx, "UMA lock", NULL, MTX_DEF);
 
 	/*
@@ -1848,7 +1826,7 @@ rtems_bsd_uma_startup(void *unused)
 	uma_startup(NULL, 0);
 }
 
-SYSINIT(rtems_bsd_uma_startup, SI_SUB_VM, SI_ORDER_FIRST,
+SYSINIT(rtems_bsd_uma_startup, SI_SUB_VM, SI_ORDER_SECOND,
     rtems_bsd_uma_startup, NULL);
 #endif /* __rtems__ */
 
@@ -2829,11 +2807,7 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 		zone->uz_frees++;
 
 	if (!(zone->uz_flags & UMA_ZONE_VTOSLAB)) {
-#ifndef __rtems__
 		mem = (u_int8_t *)((unsigned long)item & (~UMA_SLAB_MASK));
-#else /* __rtems__ */
-		mem = rtems_bsd_chunk_get_begin(&rtems_bsd_uma_chunks, item);
-#endif /* __rtems__ */
 		keg = zone_first_keg(zone); /* Must only be one. */
 		if (zone->uz_flags & UMA_ZONE_HASH) {
 			slab = hash_sfind(&keg->uk_hash, mem);
@@ -3105,12 +3079,8 @@ uma_find_refcnt(uma_zone_t zone, void *item)
 	u_int32_t *refcnt;
 	int idx;
 
-#ifndef __rtems__
 	slabref = (uma_slabrefcnt_t)vtoslab((vm_offset_t)item &
 	    (~UMA_SLAB_MASK));
-#else /* __rtems__ */
-	slabref = (uma_slabrefcnt_t)vtoslab((vm_offset_t)item);
-#endif /* __rtems__ */
 	keg = slabref->us_keg;
 	KASSERT(slabref != NULL && slabref->us_keg->uk_flags & UMA_ZONE_REFCNT,
 	    ("uma_find_refcnt(): zone possibly not UMA_ZONE_REFCNT"));

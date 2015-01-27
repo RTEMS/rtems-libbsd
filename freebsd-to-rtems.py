@@ -681,6 +681,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-muteximpl.c',
 		'rtems/rtems-bsd-newproc.c',
 		'rtems/rtems-bsd-nexus.c',
+		'rtems/rtems-bsd-page.c',
 		'rtems/rtems-bsd-panic.c',
 		'rtems/rtems-bsd-pci_bus.c',
 		'rtems/rtems-bsd-pci_cfgreg.c',

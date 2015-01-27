@@ -83,6 +83,7 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mutex.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-muteximpl.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-newproc.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-nexus.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-page.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-panic.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-pci_bus.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-pci_cfgreg.c

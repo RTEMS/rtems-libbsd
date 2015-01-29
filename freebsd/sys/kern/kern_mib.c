@@ -61,9 +61,9 @@ SYSCTL_NODE(, 0,	  sysctl, CTLFLAG_RW, 0,
 	"Sysctl internal magic");
 SYSCTL_NODE(, CTL_KERN,	  kern,   CTLFLAG_RW|CTLFLAG_CAPRD, 0,
 	"High kernel, proc, limits &c");
-#ifndef __rtems__
 SYSCTL_NODE(, CTL_VM,	  vm,     CTLFLAG_RW, 0,
 	"Virtual memory");
+#ifndef __rtems__
 SYSCTL_NODE(, CTL_VFS,	  vfs,     CTLFLAG_RW, 0,
 	"File system");
 #endif /* __rtems__ */

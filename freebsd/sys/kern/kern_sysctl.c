@@ -1652,6 +1652,7 @@ userland_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 	}
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Drain into a sysctl struct.  The user buffer should be wired if a page
@@ -1677,4 +1678,3 @@ sbuf_new_for_sysctl(struct sbuf *s, char *buf, int length,
 	sbuf_set_drain(s, sbuf_sysctl_drain, req);
 	return (s);
 }
-#endif /* __rtems__ */

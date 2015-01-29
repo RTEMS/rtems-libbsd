@@ -44,6 +44,7 @@
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/sysctl.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
@@ -72,6 +73,17 @@ int maxusers;     /* base tunable */
 
 struct bintime boottimebin;
 struct timeval boottime;
+
+static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
+    "Kernel SMP");
+
+static int one = 1;
+
+SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD, &one, 0,
+    "Max CPU ID.");
+
+SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD, &one,
+    0, "Max number of CPUs that the system was compiled for.");
 
 rtems_status_code
 rtems_bsd_initialize(void)

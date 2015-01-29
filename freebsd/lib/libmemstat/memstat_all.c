@@ -41,8 +41,10 @@ int
 memstat_sysctl_all(struct memory_type_list *mtlp, int flags)
 {
 
+#ifndef __rtems__
 	if (memstat_sysctl_malloc(mtlp, flags) < 0)
 		return (-1);
+#endif /* __rtems__ */
 	if (memstat_sysctl_uma(mtlp, flags) < 0)
 		return (-1);
 	return (0);

@@ -41,8 +41,8 @@ import getopt
 import filecmp
 import difflib
 
-RTEMS_DIR = "not_set"
-FreeBSD_DIR = "not_set"
+RTEMS_DIR = "."
+FreeBSD_DIR = "freebsd-org"
 isVerbose = False
 isForward = True
 isDryRun = False
@@ -60,8 +60,8 @@ def usage():
   print "  -e|--early-exit  evaluate arguments, print results, and exit"
   print "  -m|--makefile    just generate Makefile"
   print "  -R|--reverse     default FreeBSD -> RTEMS, reverse that"
-  print "  -r|--rtems       RTEMS Libbsd directory"
-  print "  -f|--freebsd     FreeBSD SVN directory"
+  print "  -r|--rtems       RTEMS Libbsd directory (default: '.')"
+  print "  -f|--freebsd     FreeBSD SVN directory (default: 'freebsd-org')"
   print "  -v|--verbose     enable verbose output mode"
 
 # Parse the arguments

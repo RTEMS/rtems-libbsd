@@ -188,6 +188,8 @@ def fixIncludes(data):
 # revert fixing the include paths inside a C or .h file
 def revertFixIncludes(data):
 	data = re.sub('#include <rtems/bsd/', '#include <', data)
+	data = re.sub('#include <util.h>', '#include <rtems/bsd/util.h>', data)
+	data = re.sub('#include <bsd.h>', '#include <rtems/bsd/bsd.h>', data)
 	return data
 
 # fix include paths inside a C or .h file

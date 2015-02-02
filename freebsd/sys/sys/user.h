@@ -83,7 +83,7 @@
  * it in two places: function fill_kinfo_proc in sys/kern/kern_proc.c and
  * function kvm_proclist in lib/libkvm/kvm_proc.c .
  */
-#define	KI_NSPARE_INT	9
+#define	KI_NSPARE_INT	7
 #define	KI_NSPARE_LONG	12
 #define	KI_NSPARE_PTR	6
 
@@ -186,6 +186,8 @@ struct kinfo_proc {
 	 */
 	char	ki_sparestrings[50];	/* spare string space */
 	int	ki_spareints[KI_NSPARE_INT];	/* spare room for growth */
+	int	ki_flag2;		/* P2_* flags */
+	int	ki_fibnum;		/* Default FIB number */
 	u_int	ki_cr_flags;		/* Credential flags */
 	int	ki_jid;			/* Process jail ID */
 	int	ki_numthreads;		/* XXXKSE number of threads in total */
@@ -407,6 +409,7 @@ struct kinfo_file {
 #define	KVME_TYPE_PHYS		5
 #define	KVME_TYPE_DEAD		6
 #define	KVME_TYPE_SG		7
+#define	KVME_TYPE_MGTDEVICE	8
 #define	KVME_TYPE_UNKNOWN	255
 
 #define	KVME_PROT_READ		0x00000001
@@ -494,6 +497,12 @@ struct kinfo_kstack {
 	int	 kkst_state;			/* Validity of stack. */
 	char	 kkst_trace[KKST_MAXLEN];	/* String representing stack. */
 	int	 _kkst_ispare[16];		/* Space for more stuff. */
+};
+
+struct kinfo_sigtramp {
+	void	*ksigtramp_start;
+	void	*ksigtramp_end;
+	void	*ksigtramp_spare[4];
 };
 
 #ifdef _KERNEL

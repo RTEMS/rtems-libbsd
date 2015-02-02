@@ -66,11 +66,9 @@ __FBSDID("$FreeBSD$");
 #define ncallout 16
 #endif /* __rtems__ */
 SDT_PROVIDER_DEFINE(callout_execute);
-SDT_PROBE_DEFINE(callout_execute, kernel, , callout_start, callout-start);
-SDT_PROBE_ARGTYPE(callout_execute, kernel, , callout_start, 0,
+SDT_PROBE_DEFINE1(callout_execute, kernel, , callout__start,
     "struct callout *");
-SDT_PROBE_DEFINE(callout_execute, kernel, , callout_end, callout-end); 
-SDT_PROBE_ARGTYPE(callout_execute, kernel, , callout_end, 0,
+SDT_PROBE_DEFINE1(callout_execute, kernel, , callout__end,
     "struct callout *");
 
 static int avg_depth;
@@ -251,7 +249,7 @@ rtems_bsd_timeout_init_late(void *unused)
 SYSINIT(rtems_bsd_timeout_early, SI_SUB_VM, SI_ORDER_FIRST,
     rtems_bsd_timeout_init_early, NULL);
 
-SYSINIT(rtems_bsd_timeout_late, SI_SUB_RUN_SCHEDULER, SI_ORDER_FIRST,
+SYSINIT(rtems_bsd_timeout_late, SI_SUB_LAST, SI_ORDER_FIRST,
     rtems_bsd_timeout_init_late, NULL);
 
 static void
@@ -580,11 +578,11 @@ softclock_call_cc(struct callout *c, struct callout_cpu *cc, int *mpcalls,
 #endif
 #ifndef __rtems__
 	THREAD_NO_SLEEPING();
-	SDT_PROBE(callout_execute, kernel, , callout_start, c, 0, 0, 0, 0);
+	SDT_PROBE(callout_execute, kernel, , callout__start, c, 0, 0, 0, 0);
 #endif /* __rtems__ */
 	c_func(c_arg);
 #ifndef __rtems__
-	SDT_PROBE(callout_execute, kernel, , callout_end, c, 0, 0, 0, 0);
+	SDT_PROBE(callout_execute, kernel, , callout__end, c, 0, 0, 0, 0);
 	THREAD_SLEEPING_OK();
 #endif /* __rtems__ */
 #ifdef DIAGNOSTIC
@@ -943,11 +941,13 @@ _callout_stop_safe(c, safe)
 	struct	callout *c;
 	int	safe;
 {
+#ifndef __rtems__
 	struct callout_cpu *cc, *old_cc;
 	struct lock_class *class;
-#ifndef __rtems__
 	int use_lock, sq_locked;
 #else /* __rtems__ */
+	struct callout_cpu *cc;
+	struct lock_class *class;
 	int use_lock;
 #endif /* __rtems__ */
 

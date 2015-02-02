@@ -672,6 +672,10 @@ scsi_op_desc(u_int16_t opcode, struct scsi_inquiry_data *inq_data)
 	if (pd_type == T_RBC)
 		pd_type = T_DIRECT;
 
+	/* Map NODEVICE to Direct Access Device to handle REPORT LUNS, etc. */
+	if (pd_type == T_NODEVICE)
+		pd_type = T_DIRECT;
+
 	opmask = 1 << pd_type;
 
 	for (j = 0; j < num_tables; j++) {
@@ -1121,7 +1125,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x04, 0x10, SS_RDEF,	/* XXX TBD */
 	    "Logical unit not ready, auxiliary memory not accessible") },
 	/* DT  WRO AEB VF */
-	{ SST(0x04, 0x11, SS_RDEF,	/* XXX TBD */
+	{ SST(0x04, 0x11, SS_TUR | SSQ_MANY | SSQ_DECREMENT_COUNT | EBUSY,
 	    "Logical unit not ready, notify (enable spinup) required") },
 	/*        M    V  */
 	{ SST(0x04, 0x12, SS_RDEF,	/* XXX TBD */
@@ -1652,7 +1656,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x24, 0x08, SS_RDEF,	/* XXX TBD */
 	    "Invalid XCDB") },
 	/* DTLPWROMAEBKVF */
-	{ SST(0x25, 0x00, SS_FATAL | ENXIO,
+	{ SST(0x25, 0x00, SS_FATAL | ENXIO | SSQ_LOST,
 	    "Logical unit not supported") },
 	/* DTLPWROMAEBKVF */
 	{ SST(0x26, 0x00, SS_FATAL | EINVAL,
@@ -2170,7 +2174,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x3F, 0x0D, SS_RDEF,
 	    "Volume set reassigned") },
 	/* DTLPWROMAE     */
-	{ SST(0x3F, 0x0E, SS_RDEF,	/* XXX TBD */
+	{ SST(0x3F, 0x0E, SS_RDEF | SSQ_RESCAN ,
 	    "Reported LUNs data has changed") },
 	/* DTLPWROMAEBKVF */
 	{ SST(0x3F, 0x0F, SS_RDEF,	/* XXX TBD */
@@ -3270,6 +3274,7 @@ scsi_error_action(struct ccb_scsiio *csio, struct scsi_inquiry_data *inq_data,
 				action |= SS_RETRY|SSQ_DECREMENT_COUNT|
 					  SSQ_PRINT_SENSE;
 			}
+			action |= SSQ_UA;
 		}
 	}
 	if ((action & SS_MASK) >= SS_START &&
@@ -5256,6 +5261,21 @@ scsi_print_inquiry(struct scsi_inquiry_data *inq_data)
 	       dtype, rstr, qtype);
 }
 
+void
+scsi_print_inquiry_short(struct scsi_inquiry_data *inq_data)
+{
+	char vendor[16], product[48], revision[16];
+
+	cam_strvis(vendor, inq_data->vendor, sizeof(inq_data->vendor),
+		   sizeof(vendor));
+	cam_strvis(product, inq_data->product, sizeof(inq_data->product),
+		   sizeof(product));
+	cam_strvis(revision, inq_data->revision, sizeof(inq_data->revision),
+		   sizeof(revision));
+
+	printf("<%s %s %s>", vendor, product, revision);
+}
+
 #ifndef __rtems__
 /*
  * Table of syncrates that don't follow the "divisible by 4"
@@ -6510,7 +6530,11 @@ scsi_devid_match(uint8_t *lhs, size_t lhs_len, uint8_t *rhs, size_t rhs_len)
 		while (rhs_id <= rhs_last
 		    && (rhs_id->identifier + rhs_id->length) <= rhs_end) {
 
-			if (rhs_id->length == lhs_id->length
+			if ((rhs_id->id_type &
+			     (SVPD_ID_ASSOC_MASK | SVPD_ID_TYPE_MASK)) ==
+			    (lhs_id->id_type &
+			     (SVPD_ID_ASSOC_MASK | SVPD_ID_TYPE_MASK))
+			 && rhs_id->length == lhs_id->length
 			 && memcmp(rhs_id->identifier, lhs_id->identifier,
 				   rhs_id->length) == 0)
 				return (0);

@@ -291,6 +291,15 @@ taskqueue_enqueue_timeout(struct taskqueue *queue,
 	return (res);
 }
 
+static void
+taskqueue_drain_running(struct taskqueue *queue)
+{
+
+	while (!TAILQ_EMPTY(&queue->tq_active))
+		TQ_SLEEP(queue, &queue->tq_active, &queue->tq_mutex,
+		    PWAIT, "-", 0);
+}
+
 void
 taskqueue_block(struct taskqueue *queue)
 {
@@ -343,6 +352,8 @@ taskqueue_run_locked(struct taskqueue *queue)
 		wakeup(task);
 	}
 	TAILQ_REMOVE(&queue->tq_active, &tb, tb_link);
+	if (TAILQ_EMPTY(&queue->tq_active))
+		wakeup(&queue->tq_active);
 }
 
 void
@@ -383,11 +394,9 @@ taskqueue_cancel_locked(struct taskqueue *queue, struct task *task,
 int
 taskqueue_cancel(struct taskqueue *queue, struct task *task, u_int *pendp)
 {
-	u_int pending;
 	int error;
 
 	TQ_LOCK(queue);
-	pending = task->ta_pending;
 	error = taskqueue_cancel_locked(queue, task, pendp);
 	TQ_UNLOCK(queue);
 
@@ -427,6 +436,27 @@ taskqueue_drain(struct taskqueue *queue, struct task *task)
 	TQ_LOCK(queue);
 	while (task->ta_pending != 0 || task_is_running(queue, task))
 		TQ_SLEEP(queue, task, &queue->tq_mutex, PWAIT, "-", 0);
+	TQ_UNLOCK(queue);
+}
+
+void
+taskqueue_drain_all(struct taskqueue *queue)
+{
+	struct task *task;
+
+#ifndef __rtems__
+	if (!queue->tq_spin)
+		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL, __func__);
+#endif /* __rtems__ */
+
+	TQ_LOCK(queue);
+	task = STAILQ_LAST(&queue->tq_queue, task, ta_link);
+	if (task != NULL)
+		while (task->ta_pending != 0)
+			TQ_SLEEP(queue, task, &queue->tq_mutex, PWAIT, "-", 0);
+	taskqueue_drain_running(queue);
+	KASSERT(STAILQ_EMPTY(&queue->tq_queue),
+	    ("taskqueue queue is not empty after draining"));
 	TQ_UNLOCK(queue);
 }
 
@@ -614,7 +644,6 @@ taskqueue_member(struct taskqueue *queue, struct thread *td)
 {
 	int i, j, ret = 0;
 
-	TQ_LOCK(queue);
 	for (i = 0, j = 0; ; i++) {
 		if (queue->tq_threads[i] == NULL)
 			continue;
@@ -625,6 +654,5 @@ taskqueue_member(struct taskqueue *queue, struct thread *td)
 		if (++j >= queue->tq_tcount)
 			break;
 	}
-	TQ_UNLOCK(queue);
 	return (ret);
 }

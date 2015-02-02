@@ -60,6 +60,12 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_extern.h>
 
 #define MAX_CLOCKS 	(CLOCK_MONOTONIC+1)
+#define CPUCLOCK_BIT		0x80000000
+#define CPUCLOCK_PROCESS_BIT	0x40000000
+#define CPUCLOCK_ID_MASK	(~(CPUCLOCK_BIT|CPUCLOCK_PROCESS_BIT))
+#define MAKE_THREAD_CPUCLOCK(tid)	(CPUCLOCK_BIT|(tid))
+#define MAKE_PROCESS_CPUCLOCK(pid)	\
+	(CPUCLOCK_BIT|CPUCLOCK_PROCESS_BIT|(pid))
 
 #ifndef __rtems__
 static struct kclock	posix_clocks[MAX_CLOCKS];
@@ -96,9 +102,6 @@ static int	realtimer_settime(struct itimer *, int,
 static int	realtimer_delete(struct itimer *);
 static void	realtimer_clocktime(clockid_t, struct timespec *);
 static void	realtimer_expire(void *);
-static int	kern_timer_create(struct thread *, clockid_t,
-			struct sigevent *, int *, int);
-static int	kern_timer_delete(struct thread *, int);
 
 int		register_posix_clock(int, struct kclock *);
 void		itimer_fire(struct itimer *it);
@@ -170,6 +173,60 @@ settime(struct thread *td, struct timeval *tv)
 }
 
 #ifndef _SYS_SYSPROTO_H_
+struct clock_getcpuclockid2_args {
+	id_t id;
+	int which,
+	clockid_t *clock_id;
+};
+#endif
+/* ARGSUSED */
+int
+sys_clock_getcpuclockid2(struct thread *td, struct clock_getcpuclockid2_args *uap)
+{
+	clockid_t clk_id;
+	int error;
+
+	error = kern_clock_getcpuclockid2(td, uap->id, uap->which, &clk_id);
+	if (error == 0)
+		error = copyout(&clk_id, uap->clock_id, sizeof(clockid_t));
+	return (error);
+}
+
+int
+kern_clock_getcpuclockid2(struct thread *td, id_t id, int which,
+    clockid_t *clk_id)
+{
+	struct proc *p;
+	pid_t pid;
+	lwpid_t tid;
+	int error;
+
+	switch (which) {
+	case CPUCLOCK_WHICH_PID:
+		if (id != 0) {
+			p = pfind(id);
+			if (p == NULL)
+				return (ESRCH);
+			error = p_cansee(td, p);
+			PROC_UNLOCK(p);
+			if (error != 0)
+				return (error);
+			pid = id;
+		} else {
+			pid = td->td_proc->p_pid;
+		}
+		*clk_id = MAKE_PROCESS_CPUCLOCK(pid);
+		return (0);
+	case CPUCLOCK_WHICH_TID:
+		tid = id == 0 ? td->td_tid : id;
+		*clk_id = MAKE_THREAD_CPUCLOCK(tid);
+		return (0);
+	default:
+		return (EINVAL);
+	}
+}
+
+#ifndef _SYS_SYSPROTO_H_
 struct clock_gettime_args {
 	clockid_t clock_id;
 	struct	timespec *tp;
@@ -192,12 +249,80 @@ sys_clock_gettime(struct thread *td, struct clock_gettime_args *uap)
 #endif
 
 #ifndef __rtems__
+static inline void 
+cputick2timespec(uint64_t runtime, struct timespec *ats)
+{
+	runtime = cputick2usec(runtime);
+	ats->tv_sec = runtime / 1000000;
+	ats->tv_nsec = runtime % 1000000 * 1000;
+}
+
+static void
+get_thread_cputime(struct thread *targettd, struct timespec *ats)
+{
+	uint64_t runtime, curtime, switchtime;
+
+	if (targettd == NULL) { /* current thread */
+		critical_enter();
+		switchtime = PCPU_GET(switchtime);
+		curtime = cpu_ticks();
+		runtime = curthread->td_runtime;
+		critical_exit();
+		runtime += curtime - switchtime;
+	} else {
+		thread_lock(targettd);
+		runtime = targettd->td_runtime;
+		thread_unlock(targettd);
+	}
+	cputick2timespec(runtime, ats);
+}
+
+static void
+get_process_cputime(struct proc *targetp, struct timespec *ats)
+{
+	uint64_t runtime;
+	struct rusage ru;
+
+	PROC_SLOCK(targetp);
+	rufetch(targetp, &ru);
+	runtime = targetp->p_rux.rux_runtime;
+	PROC_SUNLOCK(targetp);
+	cputick2timespec(runtime, ats);
+}
+
+static int
+get_cputime(struct thread *td, clockid_t clock_id, struct timespec *ats)
+{
+	struct proc *p, *p2;
+	struct thread *td2;
+	lwpid_t tid;
+	pid_t pid;
+	int error;
+
+	p = td->td_proc;
+	if ((clock_id & CPUCLOCK_PROCESS_BIT) == 0) {
+		tid = clock_id & CPUCLOCK_ID_MASK;
+		td2 = tdfind(tid, p->p_pid);
+		if (td2 == NULL)
+			return (EINVAL);
+		get_thread_cputime(td2, ats);
+		PROC_UNLOCK(td2->td_proc);
+	} else {
+		pid = clock_id & CPUCLOCK_ID_MASK;
+		error = pget(pid, PGET_CANSEE, &p2);
+		if (error != 0)
+			return (EINVAL);
+		get_process_cputime(p2, ats);
+		PROC_UNLOCK(p2);
+	}
+	return (0);
+}
+
 int
 kern_clock_gettime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 {
 	struct timeval sys, user;
 	struct proc *p;
-	uint64_t runtime, curtime, switchtime;
 
 	p = td->td_proc;
 	switch (clock_id) {
@@ -240,17 +365,17 @@ kern_clock_gettime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 		ats->tv_nsec = 0;
 		break;
 	case CLOCK_THREAD_CPUTIME_ID:
-		critical_enter();
-		switchtime = PCPU_GET(switchtime);
-		curtime = cpu_ticks();
-		runtime = td->td_runtime;
-		critical_exit();
-		runtime = cputick2usec(runtime + curtime - switchtime);
-		ats->tv_sec = runtime / 1000000;
-		ats->tv_nsec = runtime % 1000000 * 1000;
+		get_thread_cputime(NULL, ats);
+		break;
+	case CLOCK_PROCESS_CPUTIME_ID:
+		PROC_LOCK(p);
+		get_process_cputime(p, ats);
+		PROC_UNLOCK(p);
 		break;
 	default:
-		return (EINVAL);
+		if ((int)clock_id >= 0)
+			return (EINVAL);
+		return (get_cputime(td, clock_id, ats));
 	}
 	return (0);
 }
@@ -348,12 +473,16 @@ kern_clock_getres(struct thread *td, clockid_t clock_id, struct timespec *ts)
 		ts->tv_nsec = 0;
 		break;
 	case CLOCK_THREAD_CPUTIME_ID:
+	case CLOCK_PROCESS_CPUTIME_ID:
+	cputime:
 		/* sync with cputick2usec */
 		ts->tv_nsec = 1000000 / cpu_tickrate();
 		if (ts->tv_nsec == 0)
 			ts->tv_nsec = 1000;
 		break;
 	default:
+		if ((int)clock_id < 0)
+			goto cputime;
 		return (EINVAL);
 	}
 	return (0);
@@ -939,31 +1068,30 @@ struct ktimer_create_args {
 int
 sys_ktimer_create(struct thread *td, struct ktimer_create_args *uap)
 {
-	struct sigevent *evp1, ev;
+	struct sigevent *evp, ev;
 	int id;
 	int error;
 
-	if (uap->evp != NULL) {
+	if (uap->evp == NULL) {
+		evp = NULL;
+	} else {
 		error = copyin(uap->evp, &ev, sizeof(ev));
 		if (error != 0)
 			return (error);
-		evp1 = &ev;
-	} else
-		evp1 = NULL;
-
-	error = kern_timer_create(td, uap->clock_id, evp1, &id, -1);
-
+		evp = &ev;
+	}
+	error = kern_ktimer_create(td, uap->clock_id, evp, &id, -1);
 	if (error == 0) {
 		error = copyout(&id, uap->timerid, sizeof(int));
 		if (error != 0)
-			kern_timer_delete(td, id);
+			kern_ktimer_delete(td, id);
 	}
 	return (error);
 }
 
-static int
-kern_timer_create(struct thread *td, clockid_t clock_id,
-	struct sigevent *evp, int *timerid, int preset_id)
+int
+kern_ktimer_create(struct thread *td, clockid_t clock_id, struct sigevent *evp,
+    int *timerid, int preset_id)
 {
 	struct proc *p = td->td_proc;
 	struct itimer *it;
@@ -1078,7 +1206,8 @@ struct ktimer_delete_args {
 int
 sys_ktimer_delete(struct thread *td, struct ktimer_delete_args *uap)
 {
-	return (kern_timer_delete(td, uap->timerid));
+
+	return (kern_ktimer_delete(td, uap->timerid));
 }
 
 static struct itimer *
@@ -1100,8 +1229,8 @@ itimer_find(struct proc *p, int timerid)
 	return (it);
 }
 
-static int
-kern_timer_delete(struct thread *td, int timerid)
+int
+kern_ktimer_delete(struct thread *td, int timerid)
 {
 	struct proc *p = td->td_proc;
 	struct itimer *it;
@@ -1143,35 +1272,40 @@ struct ktimer_settime_args {
 int
 sys_ktimer_settime(struct thread *td, struct ktimer_settime_args *uap)
 {
-	struct proc *p = td->td_proc;
-	struct itimer *it;
 	struct itimerspec val, oval, *ovalp;
 	int error;
 
 	error = copyin(uap->value, &val, sizeof(val));
 	if (error != 0)
 		return (error);
-	
-	if (uap->ovalue != NULL)
-		ovalp = &oval;
-	else
-		ovalp = NULL;
+	ovalp = uap->ovalue != NULL ? &oval : NULL;
+	error = kern_ktimer_settime(td, uap->timerid, uap->flags, &val, ovalp);
+	if (error == 0 && uap->ovalue != NULL)
+		error = copyout(ovalp, uap->ovalue, sizeof(*ovalp));
+	return (error);
+}
 
+int
+kern_ktimer_settime(struct thread *td, int timer_id, int flags,
+    struct itimerspec *val, struct itimerspec *oval)
+{
+	struct proc *p;
+	struct itimer *it;
+	int error;
+
+	p = td->td_proc;
 	PROC_LOCK(p);
-	if (uap->timerid < 3 ||
-	    (it = itimer_find(p, uap->timerid)) == NULL) {
+	if (timer_id < 3 || (it = itimer_find(p, timer_id)) == NULL) {
 		PROC_UNLOCK(p);
 		error = EINVAL;
 	} else {
 		PROC_UNLOCK(p);
 		itimer_enter(it);
-		error = CLOCK_CALL(it->it_clockid, timer_settime,
-				(it, uap->flags, &val, ovalp));
+		error = CLOCK_CALL(it->it_clockid, timer_settime, (it,
+		    flags, val, oval));
 		itimer_leave(it);
 		ITIMER_UNLOCK(it);
 	}
-	if (error == 0 && uap->ovalue != NULL)
-		error = copyout(ovalp, uap->ovalue, sizeof(*ovalp));
 	return (error);
 }
 
@@ -1184,26 +1318,34 @@ struct ktimer_gettime_args {
 int
 sys_ktimer_gettime(struct thread *td, struct ktimer_gettime_args *uap)
 {
-	struct proc *p = td->td_proc;
-	struct itimer *it;
 	struct itimerspec val;
 	int error;
 
+	error = kern_ktimer_gettime(td, uap->timerid, &val);
+	if (error == 0)
+		error = copyout(&val, uap->value, sizeof(val));
+	return (error);
+}
+
+int
+kern_ktimer_gettime(struct thread *td, int timer_id, struct itimerspec *val)
+{
+	struct proc *p;
+	struct itimer *it;
+	int error;
+
+	p = td->td_proc;
 	PROC_LOCK(p);
-	if (uap->timerid < 3 ||
-	   (it = itimer_find(p, uap->timerid)) == NULL) {
+	if (timer_id < 3 || (it = itimer_find(p, timer_id)) == NULL) {
 		PROC_UNLOCK(p);
 		error = EINVAL;
 	} else {
 		PROC_UNLOCK(p);
 		itimer_enter(it);
-		error = CLOCK_CALL(it->it_clockid, timer_gettime,
-				(it, &val));
+		error = CLOCK_CALL(it->it_clockid, timer_gettime, (it, val));
 		itimer_leave(it);
 		ITIMER_UNLOCK(it);
 	}
-	if (error == 0)
-		error = copyout(&val, uap->value, sizeof(val));
 	return (error);
 }
 
@@ -1498,7 +1640,7 @@ itimers_event_hook_exit(void *arg, struct proc *p)
 			panic("unhandled event");
 		for (; i < TIMER_MAX; ++i) {
 			if ((it = its->its_timers[i]) != NULL)
-				kern_timer_delete(curthread, i);
+				kern_ktimer_delete(curthread, i);
 		}
 		if (its->its_timers[0] == NULL &&
 		    its->its_timers[1] == NULL &&

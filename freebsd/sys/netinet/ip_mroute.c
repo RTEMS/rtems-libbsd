@@ -610,7 +610,7 @@ static void
 if_detached_event(void *arg __unused, struct ifnet *ifp)
 {
     vifi_t vifi;
-    int i;
+    u_long i;
 
     MROUTER_LOCK();
 
@@ -705,10 +705,9 @@ ip_mrouter_init(struct socket *so, int version)
 static int
 X_ip_mrouter_done(void)
 {
-    vifi_t vifi;
-    int i;
     struct ifnet *ifp;
-    struct ifreq ifr;
+    u_long i;
+    vifi_t vifi;
 
     MROUTER_LOCK();
 
@@ -733,11 +732,6 @@ X_ip_mrouter_done(void)
     for (vifi = 0; vifi < V_numvifs; vifi++) {
 	if (!in_nullhost(V_viftable[vifi].v_lcl_addr) &&
 		!(V_viftable[vifi].v_flags & (VIFF_TUNNEL | VIFF_REGISTER))) {
-	    struct sockaddr_in *so = (struct sockaddr_in *)&(ifr.ifr_addr);
-
-	    so->sin_len = sizeof(struct sockaddr_in);
-	    so->sin_family = AF_INET;
-	    so->sin_addr.s_addr = INADDR_ANY;
 	    ifp = V_viftable[vifi].v_ifp;
 	    if_allmulti(ifp, 0);
 	}
@@ -804,7 +798,7 @@ set_assert(int i)
 int
 set_api_config(uint32_t *apival)
 {
-    int i;
+    u_long i;
 
     /*
      * We can set the API capabilities only if it is the first operation
@@ -826,6 +820,7 @@ set_api_config(uint32_t *apival)
 
     for (i = 0; i < mfchashsize; i++) {
 	if (LIST_FIRST(&V_mfchashtbl[i]) != NULL) {
+	    MFC_UNLOCK();
 	    *apival = 0;
 	    return EPERM;
 	}
@@ -1439,7 +1434,7 @@ non_fatal:
 static void
 expire_upcalls(void *arg)
 {
-    int i;
+    u_long i;
 
     CURVNET_SET((struct vnet *) arg);
 
@@ -2848,7 +2843,8 @@ ip_mroute_modevent(module_t mod, int type, void *unused)
 	if_detach_event_tag = EVENTHANDLER_REGISTER(ifnet_departure_event, 
 	    if_detached_event, NULL, EVENTHANDLER_PRI_ANY);
 	if (if_detach_event_tag == NULL) {
-		printf("ip_mroute: unable to ifnet_deperture_even handler\n");
+		printf("ip_mroute: unable to register "
+		    "ifnet_departure_event handler\n");
 		MROUTER_LOCK_DESTROY();
 		return (EINVAL);
 	}

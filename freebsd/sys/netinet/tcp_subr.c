@@ -1747,9 +1747,10 @@ tcp_maxmtu(struct in_conninfo *inc, struct tcp_ifcap *cap)
 		/* Report additional interface capabilities. */
 		if (cap != NULL) {
 			if (ifp->if_capenable & IFCAP_TSO4 &&
-			    ifp->if_hwassist & CSUM_TSO)
+			    ifp->if_hwassist & CSUM_TSO) {
 				cap->ifcap |= CSUM_TSO;
 				cap->tsomax = ifp->if_hw_tsomax;
+			}
 		}
 		RTFREE(sro.ro_rt);
 	}
@@ -1785,9 +1786,10 @@ tcp_maxmtu6(struct in_conninfo *inc, struct tcp_ifcap *cap)
 		/* Report additional interface capabilities. */
 		if (cap != NULL) {
 			if (ifp->if_capenable & IFCAP_TSO6 &&
-			    ifp->if_hwassist & CSUM_TSO)
+			    ifp->if_hwassist & CSUM_TSO) {
 				cap->ifcap |= CSUM_TSO;
 				cap->tsomax = ifp->if_hw_tsomax;
+			}
 		}
 		RTFREE(sro6.ro_rt);
 	}

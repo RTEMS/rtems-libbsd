@@ -177,7 +177,7 @@ usage(const char *cp)
 	if (cp != NULL)
 		warnx("bad keyword: %s", cp);
 	(void) fprintf(stderr,
-	    "usage: route [-dnqtv] command [[modifiers] args]\n");
+	    "usage: route [-46dnqtv] command [[modifiers] args]\n");
 	exit(EX_USAGE);
 	/* NOTREACHED */
 }
@@ -263,8 +263,24 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage(NULL);
 
-	while ((ch = getopt(argc, argv, "nqdtv")) != -1)
+	while ((ch = getopt(argc, argv, "46nqdtv")) != -1)
 		switch(ch) {
+		case '4':
+#ifdef INET
+			c->af = AF_INET;
+			c->aflen = sizeof(struct sockaddr_in);
+#else
+			errx(1, "IPv4 support is not compiled in");
+#endif
+			break;
+		case '6':
+#ifdef INET6
+			c->af = AF_INET6;
+			c->aflen = sizeof(struct sockaddr_in6);
+#else
+			errx(1, "IPv6 support is not compiled in");
+#endif
+			break;
 		case 'n':
 			c->nflag = 1;
 			break;
@@ -485,10 +501,12 @@ flushroutes(struct rt_ctx *c, int argc, char *argv[])
 		if (**argv != '-')
 			usage(*argv);
 		switch (keyword(*argv + 1)) {
+		case K_4:
 		case K_INET:
 			c->af = AF_INET;
 			break;
 #ifdef INET6
+		case K_6:
 		case K_INET6:
 			c->af = AF_INET6;
 			break;
@@ -903,11 +921,13 @@ newroute(struct rt_ctx *c, int argc, char **argv)
 				c->af = AF_LINK;
 				c->aflen = sizeof(struct sockaddr_dl);
 				break;
+			case K_4:
 			case K_INET:
 				c->af = AF_INET;
 				c->aflen = sizeof(struct sockaddr_in);
 				break;
 #ifdef INET6
+			case K_6:
 			case K_INET6:
 				c->af = AF_INET6;
 				c->aflen = sizeof(struct sockaddr_in6);

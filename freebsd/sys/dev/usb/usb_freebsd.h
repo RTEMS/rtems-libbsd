@@ -45,6 +45,9 @@
 #define	USB_HAVE_PF 1
 #endif /* __rtems__ */
 
+/* define zero ticks callout value */
+#define	USB_CALLOUT_ZERO_TICKS 1
+
 #define	USB_TD_GET_PROC(td) (td)->td_proc
 #define	USB_PROC_GET_GID(td) (td)->p_pgid
 

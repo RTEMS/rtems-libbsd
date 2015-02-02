@@ -125,6 +125,7 @@ struct table_xentry {
 #define OFF_LEN_IFACE	(8 * offsetof(struct xaddr_iface, ifname))
 
 
+#ifdef INET6
 static inline void
 ipv6_writemask(struct in6_addr *addr6, uint8_t mask)
 {
@@ -134,6 +135,7 @@ ipv6_writemask(struct in6_addr *addr6, uint8_t mask)
 		*cp++ = 0xFFFFFFFF;
 	*cp = htonl(mask ? ~((1 << (32 - mask)) - 1) : 0);
 }
+#endif
 
 int
 ipfw_add_table_entry(struct ip_fw_chain *ch, uint16_t tbl, void *paddr,
@@ -544,7 +546,7 @@ ipfw_lookup_table(struct ip_fw_chain *ch, uint16_t tbl, in_addr_t addr,
 		return (0);
 	KEY_LEN(sa) = KEY_LEN_INET;
 	sa.sin_addr.s_addr = addr;
-	ent = (struct table_entry *)(rnh->rnh_lookup(&sa, NULL, rnh));
+	ent = (struct table_entry *)(rnh->rnh_matchaddr(&sa, rnh));
 	if (ent != NULL) {
 		*val = ent->value;
 		return (1);
@@ -570,7 +572,7 @@ ipfw_lookup_table_extended(struct ip_fw_chain *ch, uint16_t tbl, void *paddr,
 	case IPFW_TABLE_CIDR:
 		KEY_LEN(sa6) = KEY_LEN_INET6;
 		memcpy(&sa6.sin6_addr, paddr, sizeof(struct in6_addr));
-		xent = (struct table_xentry *)(rnh->rnh_lookup(&sa6, NULL, rnh));
+		xent = (struct table_xentry *)(rnh->rnh_matchaddr(&sa6, rnh));
 		break;
 
 	case IPFW_TABLE_INTERFACE:
@@ -578,7 +580,7 @@ ipfw_lookup_table_extended(struct ip_fw_chain *ch, uint16_t tbl, void *paddr,
 		    strlcpy(iface.ifname, (char *)paddr, IF_NAMESIZE) + 1;
 		/* Assume direct match */
 		/* FIXME: Add interface pattern matching */
-		xent = (struct table_xentry *)(rnh->rnh_lookup(&iface, NULL, rnh));
+		xent = (struct table_xentry *)(rnh->rnh_matchaddr(&iface, rnh));
 		break;
 
 	default:

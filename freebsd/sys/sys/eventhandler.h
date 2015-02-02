@@ -253,6 +253,24 @@ EVENTHANDLER_DECLARE(thread_fini, thread_fini_fn);
 
 typedef void (*uma_zone_chfn)(void *);
 EVENTHANDLER_DECLARE(nmbclusters_change, uma_zone_chfn);
+EVENTHANDLER_DECLARE(nmbufs_change, uma_zone_chfn);
 EVENTHANDLER_DECLARE(maxsockets_change, uma_zone_chfn);
 
+/* Kernel linker file load and unload events */
+struct linker_file;
+typedef void (*kld_load_fn)(void *, struct linker_file *);
+typedef void (*kld_unload_fn)(void *, const char *, caddr_t, size_t);
+typedef void (*kld_unload_try_fn)(void *, struct linker_file *, int *);
+EVENTHANDLER_DECLARE(kld_load, kld_load_fn);
+EVENTHANDLER_DECLARE(kld_unload, kld_unload_fn);
+EVENTHANDLER_DECLARE(kld_unload_try, kld_unload_try_fn);
+
+/* Generic graphics framebuffer interface */
+struct fb_info;
+typedef void (*register_framebuffer_fn)(void *, struct fb_info *);
+typedef void (*unregister_framebuffer_fn)(void *, struct fb_info *);
+EVENTHANDLER_DECLARE(register_framebuffer, register_framebuffer_fn);
+EVENTHANDLER_DECLARE(unregister_framebuffer, unregister_framebuffer_fn);
+
 #endif /* SYS_EVENTHANDLER_H */
+

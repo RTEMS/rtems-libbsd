@@ -151,6 +151,10 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysent.h>
 #include <compat/freebsd32/freebsd32.h>
 #endif
+#ifdef __rtems__
+#include <rtems/libio.h>
+#define maxfiles rtems_libio_number_iops
+#endif /* __rtems__ */
 
 static int	soreceive_rcvoob(struct socket *so, struct uio *uio,
 		    int flags);
@@ -256,12 +260,14 @@ SYSCTL_NODE(_kern, KERN_IPC, ipc, CTLFLAG_RW, 0, "IPC");
 uma_zone_t socket_zone;
 int	maxsockets;
 
+#ifndef __rtems__
 static void
 socket_zone_change(void *tag)
 {
 
 	uma_zone_set_max(socket_zone, maxsockets);
 }
+#endif /* __rtems__ */
 
 static void
 socket_init(void *tag)
@@ -270,8 +276,10 @@ socket_init(void *tag)
         socket_zone = uma_zcreate("socket", sizeof(struct socket), NULL, NULL,
             NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_NOFREE);
         uma_zone_set_max(socket_zone, maxsockets);
+#ifndef __rtems__
         EVENTHANDLER_REGISTER(maxsockets_change, socket_zone_change, NULL,
                 EVENTHANDLER_PRI_FIRST);
+#endif /* __rtems__ */
 }
 SYSINIT(socket, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, socket_init, NULL);
 
@@ -284,11 +292,7 @@ init_maxsockets(void *ignored)
 {
 
 	TUNABLE_INT_FETCH("kern.ipc.maxsockets", &maxsockets);
-#ifndef __rtems__
-	maxsockets = imax(maxsockets, imax(maxfiles, nmbclusters));
-#else /* __rtems__ */
-	maxsockets = imax(maxsockets, nmbclusters);
-#endif /* __rtems__ */
+	maxsockets = imax(maxsockets, maxfiles);
 }
 SYSINIT(param, SI_SUB_TUNABLES, SI_ORDER_ANY, init_maxsockets, NULL);
 
@@ -304,15 +308,12 @@ sysctl_maxsockets(SYSCTL_HANDLER_ARGS)
 	newmaxsockets = maxsockets;
 	error = sysctl_handle_int(oidp, &newmaxsockets, 0, req);
 	if (error == 0 && req->newptr) {
-		if (newmaxsockets > maxsockets) {
+		if (newmaxsockets > maxsockets &&
+		    newmaxsockets <= maxfiles) {
 			maxsockets = newmaxsockets;
 #ifndef __rtems__
-			if (maxsockets > ((maxfiles / 4) * 3)) {
-				maxfiles = (maxsockets * 5) / 4;
-				maxfilesperproc = (maxfiles * 9) / 10;
-			}
-#endif /* __rtems__ */
 			EVENTHANDLER_INVOKE(maxsockets_change);
+#endif /* __rtems__ */
 		} else
 			error = EINVAL;
 	}
@@ -498,6 +499,10 @@ SYSCTL_INT(_regression, OID_AUTO, sonewconn_earlytest, CTLFLAG_RW,
 struct socket *
 sonewconn(struct socket *head, int connstatus)
 {
+	static struct timeval lastover;
+	static struct timeval overinterval = { 60, 0 };
+	static int overcount;
+
 	struct socket *so;
 	int over;
 
@@ -509,9 +514,17 @@ sonewconn(struct socket *head, int connstatus)
 #else
 	if (over) {
 #endif
-		log(LOG_DEBUG, "%s: pcb %p: Listen queue overflow: "
-		    "%i already in queue awaiting acceptance\n",
-		    __func__, head->so_pcb, head->so_qlen);
+		overcount++;
+
+		if (ratecheck(&lastover, &overinterval)) {
+			log(LOG_DEBUG, "%s: pcb %p: Listen queue overflow: "
+			    "%i already in queue awaiting acceptance "
+			    "(%d occurrences)\n",
+			    __func__, head->so_pcb, head->so_qlen, overcount);
+
+			overcount = 0;
+		}
+
 		return (NULL);
 	}
 	VNET_ASSERT(head->so_vnet != NULL, ("%s:%d so_vnet is NULL, head=%p",
@@ -2679,22 +2692,12 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 				    sizeof tv);
 			if (error)
 				goto bad;
-
-			/* assert(hz > 0); */
-			if (tv.tv_sec < 0 || tv.tv_sec > INT_MAX / hz ||
-			    tv.tv_usec < 0 || tv.tv_usec >= 1000000) {
+			if (tv.tv_sec < 0 || tv.tv_usec < 0 ||
+			    tv.tv_usec >= 1000000) {
 				error = EDOM;
 				goto bad;
 			}
-			/* assert(tick > 0); */
-			/* assert(ULONG_MAX - INT_MAX >= 1000000); */
-			val = (u_long)(tv.tv_sec * hz) + tv.tv_usec / tick;
-			if (val > INT_MAX) {
-				error = EDOM;
-				goto bad;
-			}
-			if (val == 0 && tv.tv_usec != 0)
-				val = 1;
+			val = tvtohz(&tv);
 
 			switch (sopt->sopt_name) {
 			case SO_SNDTIMEO:
@@ -3039,8 +3042,10 @@ void
 sohasoutofband(struct socket *so)
 {
 
+#ifndef __rtems__
 	if (so->so_sigio != NULL)
 		pgsigio(&so->so_sigio, SIGURG, 0);
+#endif /* __rtems__ */
 	selwakeuppri(&so->so_rcv.sb_sel, PSOCK);
 }
 

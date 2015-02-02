@@ -238,7 +238,7 @@ rtems_bsd_threads_init_late(void *arg)
 SYSINIT(rtems_bsd_threads_early, SI_SUB_INTRINSIC, SI_ORDER_ANY,
     rtems_bsd_threads_init_early, NULL);
 
-SYSINIT(rtems_bsd_threads_late, SI_SUB_RUN_SCHEDULER, SI_ORDER_ANY,
+SYSINIT(rtems_bsd_threads_late, SI_SUB_LAST, SI_ORDER_ANY,
     rtems_bsd_threads_init_late, NULL);
 
 static int

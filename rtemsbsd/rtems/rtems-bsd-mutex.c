@@ -222,4 +222,5 @@ void
 mutex_init(void)
 {
 	mtx_init(&Giant, "Giant", NULL, MTX_DEF | MTX_RECURSE);
+	mtx_lock(&Giant);
 }

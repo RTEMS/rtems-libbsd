@@ -56,11 +56,11 @@ __FBSDID("$FreeBSD$");
 
 #if defined(INET) || defined(INET6)
 #include <netinet/in.h>
+#include <netinet/ip.h>
 #endif
 #ifdef INET
 #include <netinet/in_systm.h>
 #include <netinet/if_ether.h>
-#include <netinet/ip.h>
 #endif
 
 #ifdef INET6
@@ -408,6 +408,11 @@ lagg_capabilities(struct lagg_softc *sc)
 	struct lagg_port *lp;
 	int cap = ~0, ena = ~0;
 	u_long hwa = ~0UL;
+#if defined(INET) || defined(INET6)
+	u_int hw_tsomax = IP_MAXPACKET;	/* Initialize to the maximum value. */
+#else
+	u_int hw_tsomax = ~0;	/* if_hw_tsomax is only for INET/INET6, but.. */
+#endif
 
 	LAGG_WLOCK_ASSERT(sc);
 
@@ -416,6 +421,10 @@ lagg_capabilities(struct lagg_softc *sc)
 		cap &= lp->lp_ifp->if_capabilities;
 		ena &= lp->lp_ifp->if_capenable;
 		hwa &= lp->lp_ifp->if_hwassist;
+		/* Set to the minimum value of the lagg ports. */
+		if (lp->lp_ifp->if_hw_tsomax < hw_tsomax &&
+		    lp->lp_ifp->if_hw_tsomax > 0)
+			hw_tsomax = lp->lp_ifp->if_hw_tsomax;
 	}
 	cap = (cap == ~0 ? 0 : cap);
 	ena = (ena == ~0 ? 0 : ena);
@@ -423,10 +432,12 @@ lagg_capabilities(struct lagg_softc *sc)
 
 	if (sc->sc_ifp->if_capabilities != cap ||
 	    sc->sc_ifp->if_capenable != ena ||
-	    sc->sc_ifp->if_hwassist != hwa) {
+	    sc->sc_ifp->if_hwassist != hwa ||
+	    sc->sc_ifp->if_hw_tsomax != hw_tsomax) {
 		sc->sc_ifp->if_capabilities = cap;
 		sc->sc_ifp->if_capenable = ena;
 		sc->sc_ifp->if_hwassist = hwa;
+		sc->sc_ifp->if_hw_tsomax = hw_tsomax;
 		getmicrotime(&sc->sc_ifp->if_lastchange);
 
 		if (sc->sc_ifflags & IFF_DEBUG)
@@ -822,7 +833,7 @@ lagg_port_output(struct ifnet *ifp, struct mbuf *m,
 
 	/* drop any other frames */
 	m_freem(m);
-	return (EBUSY);
+	return (ENETDOWN);
 }
 
 static void
@@ -1895,7 +1906,7 @@ lagg_lacp_start(struct lagg_softc *sc, struct mbuf *m)
 	lp = lacp_select_tx_port(sc, m);
 	if (lp == NULL) {
 		m_freem(m);
-		return (EBUSY);
+		return (ENETDOWN);
 	}
 
 	/* Send mbuf */

@@ -339,6 +339,7 @@ static struct protosw localsw[] = {
 	 */
 	.pr_flags =		PR_ADDR|PR_ATOMIC|PR_CONNREQUIRED|PR_WANTRCVD|
 				    PR_RIGHTS,
+	.pr_ctloutput =		&uipc_ctloutput,
 	.pr_usrreqs =		&uipc_usrreqs_seqpacket,
 },
 };
@@ -985,7 +986,8 @@ uipc_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 			from = &sun_noname;
 		so2 = unp2->unp_socket;
 		SOCKBUF_LOCK(&so2->so_rcv);
-		if (sbappendaddr_locked(&so2->so_rcv, from, m, control)) {
+		if (sbappendaddr_nospacecheck_locked(&so2->so_rcv, from, m,
+		    control)) {
 			sorwakeup_locked(so2);
 			m = NULL;
 			control = NULL;
@@ -1047,7 +1049,8 @@ uipc_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 		if (unp2->unp_flags & UNP_WANTCRED) {
 #ifndef __rtems__
 			/*
-			 * Credentials are passed only once on SOCK_STREAM.
+			 * Credentials are passed only once on SOCK_STREAM
+			 * and SOCK_SEQPACKET.
 			 */
 			unp2->unp_flags &= ~UNP_WANTCRED;
 			control = unp_addsockcred(td, control);
@@ -1071,8 +1074,14 @@ uipc_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 			const struct sockaddr *from;
 
 			from = &sun_noname;
-			if (sbappendaddr_locked(&so2->so_rcv, from, m,
-			    control))
+			/*
+			 * Don't check for space available in so2->so_rcv.
+			 * Unix domain sockets only check for space in the
+			 * sending sockbuf, and that check is performed one
+			 * level up the stack.
+			 */
+			if (sbappendaddr_nospacecheck_locked(&so2->so_rcv,
+				from, m, control))
 				control = NULL;
 			break;
 			}
@@ -1495,7 +1504,7 @@ unp_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 		}
 
 		/*
-		 * The connecter's (client's) credentials are copied from its
+		 * The connector's (client's) credentials are copied from its
 		 * process structure at the time of connect() (which is now).
 		 */
 		cru2x(td->td_ucred, &unp3->unp_peercred);

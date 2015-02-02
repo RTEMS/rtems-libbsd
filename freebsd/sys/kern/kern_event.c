@@ -464,8 +464,11 @@ filt_proc(struct knote *kn, long hint)
 		if (!(kn->kn_status & KN_DETACHED))
 			knlist_remove_inevent(&p->p_klist, kn);
 		kn->kn_flags |= (EV_EOF | EV_ONESHOT);
-		kn->kn_data = p->p_xstat;
 		kn->kn_ptr.p_proc = NULL;
+		if (kn->kn_fflags & NOTE_EXIT)
+			kn->kn_data = p->p_xstat;
+		if (kn->kn_fflags == 0)
+			kn->kn_flags |= EV_DROP;
 		return (1);
 	}
 
@@ -497,7 +500,7 @@ knote_fork(struct knlist *list, int pid)
 			continue;
 		kq = kn->kn_kq;
 		KQ_LOCK(kq);
-		if ((kn->kn_status & KN_INFLUX) == KN_INFLUX) {
+		if ((kn->kn_status & (KN_INFLUX | KN_SCAN)) == KN_INFLUX) {
 			KQ_UNLOCK(kq);
 			continue;
 		}
@@ -507,7 +510,7 @@ knote_fork(struct knlist *list, int pid)
 		 */
 		if ((kn->kn_sfflags & NOTE_TRACK) == 0) {
 			kn->kn_status |= KN_HASKQLOCK;
-			if (kn->kn_fop->f_event(kn, NOTE_FORK | pid))
+			if (kn->kn_fop->f_event(kn, NOTE_FORK))
 				KNOTE_ACTIVATE(kn, 1);
 			kn->kn_status &= ~KN_HASKQLOCK;
 			KQ_UNLOCK(kq);
@@ -535,10 +538,10 @@ knote_fork(struct knlist *list, int pid)
 		kev.data = kn->kn_id;		/* parent */
 		kev.udata = kn->kn_kevent.udata;/* preserve udata */
 		error = kqueue_register(kq, &kev, NULL, 0);
-		if (kn->kn_fop->f_event(kn, NOTE_FORK | pid))
-			KNOTE_ACTIVATE(kn, 0);
 		if (error)
 			kn->kn_fflags |= NOTE_TRACKERR;
+		if (kn->kn_fop->f_event(kn, NOTE_FORK))
+			KNOTE_ACTIVATE(kn, 0);
 		KQ_LOCK(kq);
 		kn->kn_status &= ~KN_INFLUX;
 		KQ_UNLOCK_FLUX(kq);
@@ -753,11 +756,11 @@ sys_kqueue(struct thread *td, struct kqueue_args *uap)
 
 #ifndef __rtems__
 	FILEDESC_XLOCK(fdp);
-	SLIST_INSERT_HEAD(&fdp->fd_kqlist, kq, kq_list);
+	TAILQ_INSERT_HEAD(&fdp->fd_kqlist, kq, kq_list);
 	FILEDESC_XUNLOCK(fdp);
 #else /* __rtems__ */
 	rtems_libio_lock();
-	SLIST_INSERT_HEAD(&fd_kqlist, kq, kq_list);
+	TAILQ_INSERT_HEAD(&fd_kqlist, kq, kq_list);
 	rtems_libio_unlock();
 #endif /* __rtems__ */
 
@@ -1076,12 +1079,13 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, struct thread *td, int wa
 	struct file *fp;
 	struct knote *kn, *tkn;
 	int error, filt, event;
-	int haskqglobal;
+	int haskqglobal, filedesc_unlock;
 
 	fp = NULL;
 	kn = NULL;
 	error = 0;
 	haskqglobal = 0;
+	filedesc_unlock = 0;
 
 	filt = kev->filter;
 	fops = kqueue_fo_find(filt);
@@ -1125,6 +1129,13 @@ findkn:
 				goto done;
 			}
 
+			/*
+			 * Pre-lock the filedesc before the global
+			 * lock mutex, see the comment in
+			 * kqueue_close().
+			 */
+			FILEDESC_XLOCK(td->td_proc->p_fd);
+			filedesc_unlock = 1;
 			KQ_GLOBAL_LOCK(&kq_global, haskqglobal);
 		}
 
@@ -1154,6 +1165,10 @@ findkn:
 	/* knote is in the process of changing, wait for it to stablize. */
 	if (kn != NULL && (kn->kn_status & KN_INFLUX) == KN_INFLUX) {
 		KQ_GLOBAL_UNLOCK(&kq_global, haskqglobal);
+		if (filedesc_unlock) {
+			FILEDESC_XUNLOCK(td->td_proc->p_fd);
+			filedesc_unlock = 0;
+		}
 		kq->kq_state |= KQ_FLUXWAIT;
 		msleep(kq, &kq->kq_lock, PSOCK | PDROP, "kqflxwt", 0);
 		if (fp != NULL) {
@@ -1229,7 +1244,7 @@ findkn:
 	 * but doing so will not reset any filter which has already been
 	 * triggered.
 	 */
-	kn->kn_status |= KN_INFLUX;
+	kn->kn_status |= KN_INFLUX | KN_SCAN;
 	KQ_UNLOCK(kq);
 	KN_LIST_LOCK(kn);
 	kn->kn_kevent.udata = kev->udata;
@@ -1252,7 +1267,7 @@ done_ev_add:
 	KQ_LOCK(kq);
 	if (event)
 		KNOTE_ACTIVATE(kn, 1);
-	kn->kn_status &= ~KN_INFLUX;
+	kn->kn_status &= ~(KN_INFLUX | KN_SCAN);
 	KN_LIST_UNLOCK(kn);
 
 	if ((kev->flags & EV_DISABLE) &&
@@ -1270,6 +1285,8 @@ done_ev_add:
 
 done:
 	KQ_GLOBAL_UNLOCK(&kq_global, haskqglobal);
+	if (filedesc_unlock)
+		FILEDESC_XUNLOCK(td->td_proc->p_fd);
 	if (fp != NULL)
 		fdrop(fp, td);
 	if (tkn != NULL)
@@ -1541,7 +1558,21 @@ start:
 		KASSERT((kn->kn_status & KN_INFLUX) == 0,
 		    ("KN_INFLUX set when not suppose to be"));
 
-		if ((kn->kn_flags & EV_ONESHOT) == EV_ONESHOT) {
+		if ((kn->kn_flags & EV_DROP) == EV_DROP) {
+			kn->kn_status &= ~KN_QUEUED;
+			kn->kn_status |= KN_INFLUX;
+			kq->kq_count--;
+			KQ_UNLOCK(kq);
+			/*
+			 * We don't need to lock the list since we've marked
+			 * it _INFLUX.
+			 */
+			if (!(kn->kn_status & KN_DETACHED))
+				kn->kn_fop->f_detach(kn);
+			knote_drop(kn, td);
+			KQ_LOCK(kq);
+			continue;
+		} else if ((kn->kn_flags & EV_ONESHOT) == EV_ONESHOT) {
 			kn->kn_status &= ~KN_QUEUED;
 			kn->kn_status |= KN_INFLUX;
 			kq->kq_count--;
@@ -1557,7 +1588,7 @@ start:
 			KQ_LOCK(kq);
 			kn = NULL;
 		} else {
-			kn->kn_status |= KN_INFLUX;
+			kn->kn_status |= KN_INFLUX | KN_SCAN;
 			KQ_UNLOCK(kq);
 			if ((kn->kn_status & KN_KQUEUE) == KN_KQUEUE)
 				KQ_GLOBAL_LOCK(&kq_global, haskqglobal);
@@ -1566,7 +1597,8 @@ start:
 				KQ_LOCK(kq);
 				KQ_GLOBAL_UNLOCK(&kq_global, haskqglobal);
 				kn->kn_status &=
-				    ~(KN_QUEUED | KN_ACTIVE | KN_INFLUX);
+				    ~(KN_QUEUED | KN_ACTIVE | KN_INFLUX |
+				    KN_SCAN);
 				kq->kq_count--;
 				KN_LIST_UNLOCK(kn);
 				influx = 1;
@@ -1596,7 +1628,7 @@ start:
 			} else
 				TAILQ_INSERT_TAIL(&kq->kq_head, kn, kn_tqe);
 			
-			kn->kn_status &= ~(KN_INFLUX);
+			kn->kn_status &= ~(KN_INFLUX | KN_SCAN);
 			KN_LIST_UNLOCK(kn);
 			influx = 1;
 		}
@@ -1788,6 +1820,7 @@ kqueue_close(struct file *fp, struct thread *td)
 	struct knote *kn;
 	int i;
 	int error;
+	int filedesc_unlock;
 
 #ifdef __rtems__
 	/* FIXME: Move this to the RTEMS close() function */
@@ -1797,6 +1830,7 @@ kqueue_close(struct file *fp, struct thread *td)
 	if ((error = kqueue_acquire(fp, &kq)))
 		return error;
 
+	filedesc_unlock = 0;
 	KQ_LOCK(kq);
 
 	KASSERT((kq->kq_state & KQ_CLOSING) != KQ_CLOSING,
@@ -1863,12 +1897,24 @@ kqueue_close(struct file *fp, struct thread *td)
 	KQ_UNLOCK(kq);
 
 #ifndef __rtems__
-	FILEDESC_XLOCK(fdp);
-	SLIST_REMOVE(&fdp->fd_kqlist, kq, kqueue, kq_list);
-	FILEDESC_XUNLOCK(fdp);
+	/*
+	 * We could be called due to the knote_drop() doing fdrop(),
+	 * called from kqueue_register().  In this case the global
+	 * lock is owned, and filedesc sx is locked before, to not
+	 * take the sleepable lock after non-sleepable.
+	 */
+	if (!sx_xlocked(FILEDESC_LOCK(fdp))) {
+		FILEDESC_XLOCK(fdp);
+		filedesc_unlock = 1;
+	} else
+		filedesc_unlock = 0;
+	TAILQ_REMOVE(&fdp->fd_kqlist, kq, kq_list);
+	if (filedesc_unlock)
+		FILEDESC_XUNLOCK(fdp);
 #else /* __rtems__ */
+	(void)filedesc_unlock;
 	rtems_libio_lock();
-	SLIST_REMOVE(&fd_kqlist, kq, kqueue, kq_list);
+	TAILQ_REMOVE(&fd_kqlist, kq, kq_list);
 	rtems_libio_unlock();
 #endif /* __rtems__ */
 
@@ -1966,28 +2012,33 @@ knote(struct knlist *list, long hint, int lockflags)
 	 */
 	SLIST_FOREACH(kn, &list->kl_list, kn_selnext) {
 		kq = kn->kn_kq;
-		if ((kn->kn_status & KN_INFLUX) != KN_INFLUX) {
+		KQ_LOCK(kq);
+		if ((kn->kn_status & (KN_INFLUX | KN_SCAN)) == KN_INFLUX) {
+			/*
+			 * Do not process the influx notes, except for
+			 * the influx coming from the kq unlock in the
+			 * kqueue_scan().  In the later case, we do
+			 * not interfere with the scan, since the code
+			 * fragment in kqueue_scan() locks the knlist,
+			 * and cannot proceed until we finished.
+			 */
+			KQ_UNLOCK(kq);
+		} else if ((lockflags & KNF_NOKQLOCK) != 0) {
+			kn->kn_status |= KN_INFLUX;
+			KQ_UNLOCK(kq);
+			error = kn->kn_fop->f_event(kn, hint);
 			KQ_LOCK(kq);
-			if ((kn->kn_status & KN_INFLUX) == KN_INFLUX) {
-				KQ_UNLOCK(kq);
-			} else if ((lockflags & KNF_NOKQLOCK) != 0) {
-				kn->kn_status |= KN_INFLUX;
-				KQ_UNLOCK(kq);
-				error = kn->kn_fop->f_event(kn, hint);
-				KQ_LOCK(kq);
-				kn->kn_status &= ~KN_INFLUX;
-				if (error)
-					KNOTE_ACTIVATE(kn, 1);
-				KQ_UNLOCK_FLUX(kq);
-			} else {
-				kn->kn_status |= KN_HASKQLOCK;
-				if (kn->kn_fop->f_event(kn, hint))
-					KNOTE_ACTIVATE(kn, 1);
-				kn->kn_status &= ~KN_HASKQLOCK;
-				KQ_UNLOCK(kq);
-			}
+			kn->kn_status &= ~KN_INFLUX;
+			if (error)
+				KNOTE_ACTIVATE(kn, 1);
+			KQ_UNLOCK_FLUX(kq);
+		} else {
+			kn->kn_status |= KN_HASKQLOCK;
+			if (kn->kn_fop->f_event(kn, hint))
+				KNOTE_ACTIVATE(kn, 1);
+			kn->kn_status &= ~KN_HASKQLOCK;
+			KQ_UNLOCK(kq);
 		}
-		kq = NULL;
 	}
 	if ((lockflags & KNF_LISTLOCKED) == 0)
 		list->kl_unlock(list->kl_lockarg); 
@@ -2231,11 +2282,11 @@ knote_fdclose(struct thread *td, int fd)
 	 * since filedesc is locked.
 	 */
 #ifndef __rtems__
-	SLIST_FOREACH(kq, &fdp->fd_kqlist, kq_list) {
+	TAILQ_FOREACH(kq, &fdp->fd_kqlist, kq_list) {
 #else /* __rtems__ */
 	/* FIXME: Use separate lock? */
 	rtems_libio_lock();
-	SLIST_FOREACH(kq, &fd_kqlist, kq_list) {
+	TAILQ_FOREACH(kq, &fd_kqlist, kq_list) {
 #endif /* __rtems__ */
 		KQ_LOCK(kq);
 

@@ -560,7 +560,18 @@ ip6_input(struct mbuf *m)
 		in6_ifstat_inc(m->m_pkthdr.rcvif, ifs6_in_addrerr);
 		goto bad;
 	}
-
+	if (IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst) &&
+	    IPV6_ADDR_MC_SCOPE(&ip6->ip6_dst) == 0) {
+		/*
+		 * RFC4291 2.7:
+		 * Nodes must not originate a packet to a multicast address
+		 * whose scop field contains the reserved value 0; if such
+		 * a packet is received, it must be silently dropped.
+		 */
+		IP6STAT_INC(ip6s_badscope);
+		in6_ifstat_inc(m->m_pkthdr.rcvif, ifs6_in_addrerr);
+		goto bad;
+	}
 #ifdef ALTQ
 	if (altq_input != NULL && (*altq_input)(m, AF_INET6) == 0) {
 		/* packet is dropped by traffic conditioner */
@@ -1076,7 +1087,6 @@ ip6_hopopts_input(u_int32_t *plenp, u_int32_t *rtalertp,
 	struct mbuf *m = *mp;
 	int off = *offp, hbhlen;
 	struct ip6_hbh *hbh;
-	u_int8_t *opt;
 
 	/* validation of the length of the header */
 #ifndef PULLDOWN_TEST
@@ -1103,8 +1113,6 @@ ip6_hopopts_input(u_int32_t *plenp, u_int32_t *rtalertp,
 #endif
 	off += hbhlen;
 	hbhlen -= sizeof(struct ip6_hbh);
-	opt = (u_int8_t *)hbh + sizeof(struct ip6_hbh);
-
 	if (ip6_process_hopopts(m, (u_int8_t *)hbh + sizeof(struct ip6_hbh),
 				hbhlen, rtalertp, plenp) < 0)
 		return (-1);

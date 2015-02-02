@@ -59,6 +59,7 @@
 #define	MII_OUI_BROADCOM	0x001018	/* Broadcom Corporation */
 #define	MII_OUI_BROADCOM2	0x000af7	/* Broadcom Corporation */
 #define	MII_OUI_BROADCOM3	0x001be9	/* Broadcom Corporation */
+#define	MII_OUI_BROADCOM4	0x18c086	/* Broadcom Corporation */
 #define	MII_OUI_CICADA	0x0003F1	/* Cicada Semiconductor */
 #define	MII_OUI_DAVICOM	0x00606e	/* Davicom Semiconductor */
 #define	MII_OUI_ENABLESEMI	0x0010dd	/* Enable Semiconductor */
@@ -251,6 +252,8 @@
 #define	MII_STR_BROADCOM3_BCM57765	"BCM57765 1000BASE-T media interface"
 #define	MII_MODEL_BROADCOM3_BCM5720C	0x0036
 #define	MII_STR_BROADCOM3_BCM5720C	"BCM5720C 1000BASE-T media interface"
+#define	MII_MODEL_BROADCOM4_BCM5725C	0x0038
+#define	MII_STR_BROADCOM4_BCM5725C	"BCM5725C 1000BASE-T media interface"
 #define	MII_MODEL_xxBROADCOM_ALT1_BCM5906	0x0004
 #define	MII_STR_xxBROADCOM_ALT1_BCM5906	"BCM5906 10/100baseTX media interface"
 
@@ -449,6 +452,8 @@
 #define	MII_STR_REALTEK_RTL8305SC	"RTL8305SC 10/100 802.1q switch"
 #define	MII_MODEL_REALTEK_RTL8201E	0x0008
 #define	MII_STR_REALTEK_RTL8201E	"RTL8201E 10/100 media interface"
+#define	MII_MODEL_REALTEK_RTL8251	0x0000
+#define	MII_STR_REALTEK_RTL8251	"RTL8251 1000BASE-T media interface"
 #define	MII_MODEL_REALTEK_RTL8169S	0x0011
 #define	MII_STR_REALTEK_RTL8169S	"RTL8169S/8110S/8211 1000BASE-T media interface"
 

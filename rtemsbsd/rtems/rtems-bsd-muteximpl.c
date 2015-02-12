@@ -88,6 +88,8 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 		_Thread_Clear_state(new_owner, STATES_WAITING_FOR_MUTEX);
 
 		_Thread_Enable_dispatch();
+	} else {
+		_ISR_Enable(level);
 	}
 
 	if (!keep_priority) {

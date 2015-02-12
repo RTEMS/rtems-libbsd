@@ -99,6 +99,7 @@ __FBSDID("$FreeBSD$");
 #endif /* INET || INET6 */
 #ifdef __rtems__
 #include <machine/rtems-bsd-syscall-api.h>
+#include <rtems/bsd/zerocopy.h>
 
 static int kern_bind(struct thread *, int, struct sockaddr *);
 
@@ -1136,6 +1137,30 @@ sendto(int socket, const void *message, size_t length, int flags,
 	} else {
 		rtems_set_errno_and_return_minus_one(error);
 	}
+}
+
+int
+rtems_bsd_sendto(int socket, struct mbuf *m, int flags,
+    const struct sockaddr *dest_addr)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp;
+	struct socket *so;
+	int error;
+
+	error = getsock_cap(td->td_proc->p_fd, socket, CAP_WRITE, &fp, NULL);
+	if (error)
+		return (error);
+	so = (struct socket *)fp->f_data;
+
+	if (td != NULL) {
+		error = sosend(so, __DECONST(struct sockaddr *, dest_addr),
+		    NULL, m, NULL, flags, td);
+	} else {
+		error = ENOMEM;
+	}
+
+	return (error);
 }
 #endif /* __rtems__ */
 

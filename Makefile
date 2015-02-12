@@ -80,6 +80,7 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-jail.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-kern_synch.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-log.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-malloc.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mbuf.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mutex.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-muteximpl.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-newproc.c
@@ -1385,6 +1386,17 @@ $(TEST_PPP01): $(TEST_PPP01_O_FILES) $(LIB)
 TESTS += $(TEST_PPP01)
 O_FILES += $(TEST_PPP01_O_FILES)
 D_FILES += $(TEST_PPP01_D_FILES)
+
+TEST_ZEROCOPY01 = testsuite/zerocopy01/zerocopy01.exe
+TEST_ZEROCOPY01_O_FILES =
+TEST_ZEROCOPY01_D_FILES =
+TEST_ZEROCOPY01_O_FILES += testsuite/zerocopy01/test_main.o
+TEST_ZEROCOPY01_D_FILES += testsuite/zerocopy01/test_main.d
+$(TEST_ZEROCOPY01): $(TEST_ZEROCOPY01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/zerocopy01/zerocopy01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_ZEROCOPY01)
+O_FILES += $(TEST_ZEROCOPY01_O_FILES)
+D_FILES += $(TEST_ZEROCOPY01_D_FILES)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

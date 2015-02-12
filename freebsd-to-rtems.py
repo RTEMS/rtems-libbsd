@@ -680,6 +680,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-kern_synch.c',
 		'rtems/rtems-bsd-log.c',
 		'rtems/rtems-bsd-malloc.c',
+		'rtems/rtems-bsd-mbuf.c',
 		'rtems/rtems-bsd-mutex.c',
 		'rtems/rtems-bsd-muteximpl.c',
 		'rtems/rtems-bsd-newproc.c',
@@ -2511,6 +2512,7 @@ tests.addTest('thread01', ['test_main'])
 tests.addTest('mutex01', ['test_main'])
 tests.addTest('condvar01', ['test_main'])
 tests.addTest('ppp01', ['test_main'], runTest = False)
+tests.addTest('zerocopy01', ['test_main'], runTest = False, netTest = True)
 
 dhcpcd = Module('dhcpcd')
 dhcpcd.addSourceFiles(

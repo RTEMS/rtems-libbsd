@@ -31,8 +31,9 @@ COMMON_FLAGS += -Wall
 COMMON_FLAGS += -Wno-format
 COMMON_FLAGS += -MT $@ -MD -MP -MF $(basename $@).d
 CFLAGS += $(COMMON_FLAGS)
-CFLAGS += -std=gnu99
+CFLAGS += -std=gnu11
 CXXFLAGS += $(COMMON_FLAGS)
+CXXFLAGS += -std=gnu++11
 NEED_DUMMY_PIC_IRQ=yes
 
 TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h

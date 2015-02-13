@@ -439,8 +439,9 @@ class ModuleManager:
 			'COMMON_FLAGS += -Wno-format\n' \
 			'COMMON_FLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \
 			'CFLAGS += $(COMMON_FLAGS)\n' \
-			'CFLAGS += -std=gnu99\n' \
+			'CFLAGS += -std=gnu11\n' \
 			'CXXFLAGS += $(COMMON_FLAGS)\n' \
+			'CXXFLAGS += -std=gnu++11\n' \
 			'NEED_DUMMY_PIC_IRQ=yes\n' \
 			'\n' \
 			'TEST_NETWORK_CONFIG = testsuite/include/rtems/bsd/test/network-config.h\n' \

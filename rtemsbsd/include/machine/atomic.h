@@ -105,8 +105,8 @@ atomic_clear_int(volatile int *p, int v)
 static inline int
 atomic_cmpset_int(volatile int *p, int cmp, int set)
 {
-	rtems_interrupt_level level;
 	int rv;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	rv = *p == cmp;
@@ -115,7 +115,7 @@ atomic_cmpset_int(volatile int *p, int cmp, int set)
 	}
 	rtems_interrupt_enable(level);
 
-	return rv;
+	return (rv);
 }
 
 #define atomic_cmpset_acq_int atomic_cmpset_int
@@ -124,35 +124,39 @@ atomic_cmpset_int(volatile int *p, int cmp, int set)
 static inline int
 atomic_fetchadd_int(volatile int *p, int v)
 {
-	rtems_interrupt_level level;
 	int tmp;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	tmp = *p;
 	*p += v;
 	rtems_interrupt_enable(level);
 
-	return tmp;
+	return (tmp);
 }
 
 static inline int
 atomic_readandclear_int(volatile int *p)
 {
-	rtems_interrupt_level level;
 	int tmp;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	tmp = *p;
 	*p = 0;
 	rtems_interrupt_enable(level);
 
-	return tmp;
+	return (tmp);
 }
 
 static inline int
 atomic_load_acq_int(volatile int *p)
 {
-	return *p;
+	int tmp;
+
+	tmp = *p;
+
+	return (tmp);
 }
 
 static inline void
@@ -216,8 +220,8 @@ atomic_clear_32(volatile uint32_t *p, uint32_t v)
 static inline int
 atomic_cmpset_32(volatile uint32_t *p, uint32_t cmp, uint32_t set)
 {
-	rtems_interrupt_level level;
 	int rv;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	rv = *p == cmp;
@@ -226,7 +230,7 @@ atomic_cmpset_32(volatile uint32_t *p, uint32_t cmp, uint32_t set)
 	}
 	rtems_interrupt_enable(level);
 
-	return rv;
+	return (rv);
 }
 
 #define atomic_cmpset_acq_32 atomic_cmpset_32
@@ -235,35 +239,39 @@ atomic_cmpset_32(volatile uint32_t *p, uint32_t cmp, uint32_t set)
 static inline uint32_t
 atomic_fetchadd_32(volatile uint32_t *p, uint32_t v)
 {
-	rtems_interrupt_level level;
 	uint32_t tmp;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	tmp = *p;
 	*p += v;
 	rtems_interrupt_enable(level);
 
-	return tmp;
+	return (tmp);
 }
 
 static inline uint32_t
 atomic_readandclear_32(volatile uint32_t *p)
 {
-	rtems_interrupt_level level;
 	uint32_t tmp;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	tmp = *p;
 	*p = 0;
 	rtems_interrupt_enable(level);
 
-	return tmp;
+	return (tmp);
 }
 
 static inline uint32_t
 atomic_load_acq_32(volatile uint32_t *p)
 {
-	return *p;
+	uint32_t tmp;
+
+	tmp = *p;
+
+	return (tmp);
 }
 
 static inline void
@@ -327,8 +335,8 @@ atomic_clear_long(volatile long *p, long v)
 static inline int
 atomic_cmpset_long(volatile long *p, long cmp, long set)
 {
-	rtems_interrupt_level level;
 	int rv;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	rv = *p == cmp;
@@ -337,7 +345,7 @@ atomic_cmpset_long(volatile long *p, long cmp, long set)
 	}
 	rtems_interrupt_enable(level);
 
-	return rv;
+	return (rv);
 }
 
 #define atomic_cmpset_acq_long atomic_cmpset_long
@@ -346,35 +354,39 @@ atomic_cmpset_long(volatile long *p, long cmp, long set)
 static inline long
 atomic_fetchadd_long(volatile long *p, long v)
 {
-	rtems_interrupt_level level;
 	long tmp;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	tmp = *p;
 	*p += v;
 	rtems_interrupt_enable(level);
 
-	return tmp;
+	return (tmp);
 }
 
 static inline long
 atomic_readandclear_long(volatile long *p)
 {
-	rtems_interrupt_level level;
 	long tmp;
+	rtems_interrupt_level level;
 
 	rtems_interrupt_disable(level);
 	tmp = *p;
 	*p = 0;
 	rtems_interrupt_enable(level);
 
-	return tmp;
+	return (tmp);
 }
 
 static inline long
 atomic_load_acq_long(volatile long *p)
 {
-	return *p;
+	long tmp;
+
+	tmp = *p;
+
+	return (tmp);
 }
 
 static inline void

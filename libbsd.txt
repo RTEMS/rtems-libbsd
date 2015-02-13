@@ -240,6 +240,14 @@ The task stack size is determined by the `rtems_bsd_get_task_stack_size()`
 function which may be provided by the application in case the default is not
 appropriate.
 
+=== Size for Allocator Domains ===
+
+The size for an allocator domain can be specified via the
+`rtems_bsd_get_allocator_domain_size()` function.  The application may provide
+their own implementation of the `rtems_bsd_get_allocator_domain_size()`
+function (for example in the module which calls `rtems_bsd_initialize()`) if
+different values are desired.  The default size is 8MiB for all domains.
+
 == Network Stack Features
 
 http://roy.marples.name/projects/dhcpcd/index[DHCPCD(8)]:: DHCP client

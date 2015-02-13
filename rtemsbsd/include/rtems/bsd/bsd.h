@@ -103,6 +103,26 @@ rtems_task_priority rtems_bsd_get_task_priority(const char *name);
  */
 size_t rtems_bsd_get_task_stack_size(const char *name);
 
+typedef enum {
+	RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE,
+	RTEMS_BSD_ALLOCATOR_DOMAIN_MBUF,
+	RTEMS_BSD_ALLOCATOR_DOMAIN_MALLOC
+} rtems_bsd_allocator_domain;
+
+/**
+ * @brief Returns the size for a specific allocator domain.
+ *
+ * Applications may provide their own implementation of this function.  For
+ * example they can define their implementation in the same module which calls
+ * rtems_bsd_initialize().
+ *
+ * @param[in] domain The allocator domain.
+ *
+ * @return The desired size for the specified allocator domain.
+ */
+uintptr_t rtems_bsd_get_allocator_domain_size(
+    rtems_bsd_allocator_domain domain);
+
 /**
  * @brief Returns the Ethernet MAC address for a specified device.
  *

@@ -50,11 +50,9 @@
 
 #include <stdlib.h>
 
+#include <rtems/bsd/bsd.h>
 #include <rtems/malloc.h>
 #include <rtems/rbheap.h>
-
-/* FIXME: This must be application configurable */
-#define PAGE_HEAP_SIZE (8 * 1024 * 1024)
 
 void **rtems_bsd_page_object_table;
 
@@ -116,21 +114,25 @@ rtems_bsd_page_init(void *arg)
 	rtems_rbheap_chunk *chunks;
 	size_t i;
 	size_t n;
+	uintptr_t heap_size;
 
 	mtx_init(&page_heap_mtx, "page heap", NULL, MTX_DEF);
 
-	area = rtems_heap_allocate_aligned_with_boundary(PAGE_HEAP_SIZE,
-	    PAGE_SIZE, 0);
+	heap_size = rtems_bsd_get_allocator_domain_size(
+	    RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE);
+
+	area = rtems_heap_allocate_aligned_with_boundary(heap_size, PAGE_SIZE,
+	    0);
 	BSD_ASSERT(area != NULL);
 
-	sc = rtems_rbheap_initialize(&page_heap, area, PAGE_HEAP_SIZE,
-	    PAGE_SIZE, rtems_rbheap_extend_descriptors_with_malloc, NULL);
+	sc = rtems_rbheap_initialize(&page_heap, area, heap_size, PAGE_SIZE,
+	    rtems_rbheap_extend_descriptors_with_malloc, NULL);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 
 	rtems_rbheap_set_extend_descriptors(&page_heap,
 	    rtems_rbheap_extend_descriptors_never);
 
-	n = PAGE_HEAP_SIZE / PAGE_SIZE;
+	n = heap_size / PAGE_SIZE;
 
 	chunks = malloc(n * sizeof(*chunks), M_RTEMS_HEAP, M_NOWAIT);
 	BSD_ASSERT(chunks != NULL);

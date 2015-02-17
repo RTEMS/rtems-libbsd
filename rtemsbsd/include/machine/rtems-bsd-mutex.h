@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -40,6 +40,7 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 
+#include <rtems/score/isrlock.h>
 #include <rtems/score/rbtree.h>
 #include <rtems/score/thread.h>
 
@@ -48,6 +49,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 typedef struct {
+	ISR_LOCK_MEMBER(lock)
 	Thread_Control *owner;
 	int nest_level;
 	RBTree_Control rivals;

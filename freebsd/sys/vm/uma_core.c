@@ -89,6 +89,18 @@ __FBSDID("$FreeBSD$");
 #include <vm/uma_dbg.h>
 
 #include <ddb/ddb.h>
+#ifdef __rtems__
+  #ifdef RTEMS_SMP
+    /*
+     * It is essential that we have a per-processor cache, otherwise the
+     * critical_enter()/critical_exit() protection would be insufficient.
+     */
+    #undef curcpu
+    #define curcpu rtems_get_current_processor()
+    #undef mp_maxid
+    #define mp_maxid rtems_get_processor_count()
+  #endif
+#endif /* __rtems__ */
 
 /*
  * This is the zone and keg from which all zones are spawned.  The idea is that

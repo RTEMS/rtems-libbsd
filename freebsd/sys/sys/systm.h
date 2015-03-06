@@ -209,13 +209,13 @@ void	critical_exit(void);
 static __inline void
 critical_enter(void)
 {
-	_Thread_Disable_dispatch();
+	_Thread_Dispatch_disable();
 }
 
 static __inline void
 critical_exit(void)
 {
-	_Thread_Enable_dispatch();
+	_Thread_Dispatch_enable(_Per_CPU_Get());
 }
 #endif /* __rtems__ */
 void	init_param1(void);

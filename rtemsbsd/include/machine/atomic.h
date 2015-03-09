@@ -47,7 +47,8 @@
 #include <rtems.h>
 
 #ifdef RTEMS_SMP
-  #if defined(__cplusplus) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
+  #if defined(__cplusplus) \
+    && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9))
     /*
      * The GCC 4.9 ships its own <stdatomic.h> which is not C++ compatible.  The
      * suggested solution was to include <atomic> in case C++ is used.  This works

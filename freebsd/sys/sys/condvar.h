@@ -43,16 +43,9 @@ TAILQ_HEAD(cv_waitq, thread);
  * and is held across calls to cv_signal() and cv_broadcast().  It is an
  * optimization to avoid looking up the sleep queue if there are no waiters.
  */
-#ifdef __rtems__
-#include <rtems/score/threadq.h>
-#endif /* __rtems__ */
 struct cv {
 	const char	*cv_description;
-#ifndef __rtems__
 	int		cv_waiters;
-#else /* __rtems__ */
-  Thread_queue_Control cv_waiters;
-#endif /* __rtems__ */
 };
 
 #ifdef _KERNEL
@@ -76,8 +69,13 @@ void	cv_broadcastpri(struct cv *cvp, int pri);
 	_cv_wait_sig((cvp), &(lock)->lock_object)
 #define	cv_timedwait(cvp, lock, timo)					\
 	_cv_timedwait((cvp), &(lock)->lock_object, (timo))
+#ifndef __rtems__
 #define	cv_timedwait_sig(cvp, lock, timo)				\
 	_cv_timedwait_sig((cvp), &(lock)->lock_object, (timo))
+#else /* __rtems__ */
+#define	cv_timedwait_sig(cvp, lock, timo)				\
+	_cv_timedwait((cvp), &(lock)->lock_object, (timo))
+#endif /* __rtems__ */
 
 #define cv_broadcast(cvp)	cv_broadcastpri(cvp, 0)
 

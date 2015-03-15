@@ -67,7 +67,6 @@ LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma-mbuf.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-cam.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-chunk.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-condvar.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-conf.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-delay.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-ethernet-addr.c
@@ -164,6 +163,7 @@ freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
 	rm -f __libipsecyy.tab.c
 	mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
 LIB_C_FILES += freebsd/sys/kern/init_main.c
+LIB_C_FILES += freebsd/sys/kern/kern_condvar.c
 LIB_C_FILES += freebsd/sys/kern/kern_event.c
 LIB_C_FILES += freebsd/sys/kern/kern_hhook.c
 LIB_C_FILES += freebsd/sys/kern/kern_intr.c

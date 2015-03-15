@@ -667,7 +667,6 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-bus-dma-mbuf.c',
 		'rtems/rtems-bsd-cam.c',
 		'rtems/rtems-bsd-chunk.c',
-		'rtems/rtems-bsd-condvar.c',
 		'rtems/rtems-bsd-conf.c',
 		'rtems/rtems-bsd-delay.c',
 		'rtems/rtems-bsd-get-ethernet-addr.c',
@@ -874,6 +873,7 @@ base.addKernelSpaceHeaderFiles(
 base.addKernelSpaceSourceFiles(
 	[
 		'sys/kern/init_main.c',
+		'sys/kern/kern_condvar.c',
 		'sys/kern/kern_event.c',
 		'sys/kern/kern_hhook.c',
 		'sys/kern/kern_intr.c',

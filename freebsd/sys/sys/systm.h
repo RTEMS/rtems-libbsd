@@ -52,7 +52,11 @@ extern int cold;		/* nonzero if we are doing a cold boot */
 #define cold 0
 #endif /* __rtems__ */
 extern int rebooting;		/* kern_reboot() has been called. */
+#ifndef __rtems__
 extern const char *panicstr;	/* panic message */
+#else /* __rtems__ */
+#define panicstr NULL
+#endif /* __rtems__ */
 extern char version[];		/* system version */
 extern char compiler_version[];	/* compiler version */
 extern char copyright[];	/* system copyright */

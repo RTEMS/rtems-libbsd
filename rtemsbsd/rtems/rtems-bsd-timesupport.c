@@ -52,3 +52,45 @@ tvtohz(struct timeval *tv)
 
   return (int) _Timespec_To_ticks( &ts );
 }
+
+void
+binuptime(struct bintime *bt)
+{
+	struct timeval tv;
+
+	rtems_clock_get_uptime_timeval(&tv);
+	timeval2bintime(&tv, bt);
+}
+
+void
+bintime(struct bintime *bt)
+{
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	timeval2bintime(&tv, bt);
+}
+
+void
+microtime(struct timeval *tvp)
+{
+	gettimeofday(tvp, NULL);
+}
+
+void
+getbinuptime(struct bintime *bt)
+{
+	binuptime(bt);
+}
+
+void
+getmicrouptime(struct timeval *tvp)
+{
+	rtems_clock_get_uptime_timeval(tvp);
+}
+
+void
+getmicrotime(struct timeval *tvp)
+{
+	microtime(tvp);
+}

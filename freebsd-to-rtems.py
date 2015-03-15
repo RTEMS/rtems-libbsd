@@ -181,7 +181,6 @@ def fixIncludes(data):
 	data = re.sub('#include <sys/types.h>', '#include <rtems/bsd/sys/types.h>', data)
 	data = re.sub('#include <sys/resource.h>', '#include <rtems/bsd/sys/resource.h>', data)
 	data = re.sub('#include <sys/unistd.h>', '#include <rtems/bsd/sys/unistd.h>', data)
-	data = re.sub('#include <sys/timespec.h>', '#include <rtems/bsd/sys/timespec.h>', data)
 	data = re.sub('#include <sys/_types.h>', '#include <rtems/bsd/sys/_types.h>', data)
 	return data
 
@@ -857,7 +856,6 @@ base.addKernelSpaceHeaderFiles(
 		'sys/rpc/types.h',
 		'sys/sys/timepps.h',
 		'sys/sys/timetc.h',
-		'sys/sys/_timeval.h',
 		'sys/sys/timex.h',
 		'sys/sys/tree.h',
 		'sys/sys/ttycom.h',

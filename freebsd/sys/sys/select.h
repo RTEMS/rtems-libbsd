@@ -37,7 +37,7 @@
 
 #include <sys/_sigset.h>
 #include <sys/_timeval.h>
-#include <rtems/bsd/sys/timespec.h>
+#include <sys/timespec.h>
 
 #ifndef __rtems__
 typedef	unsigned long	__fd_mask;

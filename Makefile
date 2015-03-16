@@ -1399,6 +1399,18 @@ $(TEST_ZEROCOPY01): $(TEST_ZEROCOPY01_O_FILES) $(LIB)
 NET_TESTS += $(TEST_ZEROCOPY01)
 O_FILES += $(TEST_ZEROCOPY01_O_FILES)
 D_FILES += $(TEST_ZEROCOPY01_D_FILES)
+
+TEST_SMP01 = testsuite/smp01/smp01.exe
+TEST_SMP01_O_FILES =
+TEST_SMP01_D_FILES =
+TEST_SMP01_O_FILES += testsuite/smp01/test_main.o
+TEST_SMP01_D_FILES += testsuite/smp01/test_main.d
+$(TEST_SMP01): $(TEST_SMP01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/smp01/smp01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SMP01)
+O_FILES += $(TEST_SMP01_O_FILES)
+D_FILES += $(TEST_SMP01_D_FILES)
+RUN_TESTS += $(TEST_SMP01)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

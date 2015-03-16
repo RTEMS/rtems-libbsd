@@ -87,6 +87,36 @@
 static device_probe_t ehci_mpc83xx_probe;
 static device_attach_t ehci_mpc83xx_attach;
 static device_detach_t ehci_mpc83xx_detach;
+static device_suspend_t ehci_mpc83xx_suspend;
+static device_resume_t ehci_mpc83xx_resume;
+
+static int
+ehci_mpc83xx_suspend(device_t self)
+{
+	ehci_softc_t *e = device_get_softc(self);
+	int eno = bus_generic_suspend(self);
+
+	if (eno != 0) {
+		return (eno);
+	}
+
+	ehci_suspend(e);
+
+	return (0);
+}
+
+static int
+ehci_mpc83xx_resume(device_t self)
+{
+	ehci_softc_t *e = device_get_softc(self);
+
+	ehci_resume(e);
+
+	bus_generic_resume(self);
+
+	return (0);
+}
+
 
 static int
 ehci_mpc83xx_probe(device_t self)
@@ -116,8 +146,12 @@ ehci_mpc83xx_phy_init(void)
 #ifdef __GEN83xx_BSP_h
 	volatile uint32_t *control = &mpc83xx.usb_dr.control;
 
+#ifdef BSP_USB_EHCI_MPC83XX_HAS_ULPI
+	*control = CONTROL_PHY_CLOCK_SEL;
+#else
 	*control = CONTROL_PLL_RESET | CONTROL_REFSEL(0x2U);
 	*control = CONTROL_UTMI_PHY_EN | CONTROL_REFSEL(0x2U);
+#endif
 
 	while ((*control & CONTROL_PHY_CLK_VALID) == 0) {
 		/* Wait for PLL */
@@ -146,8 +180,13 @@ ehci_mpc83xx_host_init(void)
 #ifdef __GEN83xx_BSP_h
 	mpc83xx.usb_dr.snoop1 = SNOOP_ADDR(0x0) | SNOOP_SIZE_2GB;
 	mpc83xx.usb_dr.snoop2 = SNOOP_ADDR(0x80000) | SNOOP_SIZE_2GB;
+#ifdef BSP_USB_EHCI_MPC83XX_HAS_ULPI
+	mpc83xx.usb_dr.control = CONTROL_PHY_CLOCK_SEL | CONTROL_USB_EN;
+	mpc83xx.usb_dr.portsc1 = htole32(PORTSC_PTS_ULPI);
+#else
 	mpc83xx.usb_dr.control = CONTROL_UTMI_PHY_EN | CONTROL_REFSEL(0x2) | CONTROL_USB_EN;
 	mpc83xx.usb_dr.portsc1 = htole32(PORTSC_PTS_UTMI);
+#endif
 #if 0
 	mpc83xx.usb_dr.pri_ctrl = 0xcU;
 	mpc83xx.usb_dr.age_cnt_thresh = 0x40U;
@@ -250,8 +289,8 @@ static device_method_t ehci_methods [] = {
 	DEVMETHOD(device_probe, ehci_mpc83xx_probe),
 	DEVMETHOD(device_attach, ehci_mpc83xx_attach),
 	DEVMETHOD(device_detach, ehci_mpc83xx_detach),
-	DEVMETHOD(device_suspend,bus_generic_suspend),
-	DEVMETHOD(device_resume, bus_generic_resume),
+	DEVMETHOD(device_suspend, ehci_mpc83xx_suspend),
+	DEVMETHOD(device_resume, ehci_mpc83xx_resume),
 	DEVMETHOD(device_shutdown, bus_generic_shutdown),
 
 	/* Bus interface */

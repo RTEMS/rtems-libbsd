@@ -591,7 +591,11 @@ ehci_detach(ehci_softc_t *sc)
 	usb_callout_drain(&sc->sc_tmo_poll);
 }
 
+#ifndef __rtems__
 static void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 ehci_suspend(ehci_softc_t *sc)
 {
 	DPRINTF("stopping the HC\n");
@@ -600,7 +604,11 @@ ehci_suspend(ehci_softc_t *sc)
 	ehci_hcreset(sc);
 }
 
+#ifndef __rtems__
 static void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 ehci_resume(ehci_softc_t *sc)
 {
 	/* reset HC */

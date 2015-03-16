@@ -472,5 +472,9 @@ usb_error_t ehci_reset(ehci_softc_t *sc);
 usb_error_t ehci_init(ehci_softc_t *sc);
 void	ehci_detach(struct ehci_softc *sc);
 void	ehci_interrupt(ehci_softc_t *sc);
+#ifdef __rtems__
+void	ehci_suspend(ehci_softc_t *sc);
+void	ehci_resume(ehci_softc_t *sc);
+#endif /* __rtems__ */
 
 #endif					/* _EHCI_H_ */

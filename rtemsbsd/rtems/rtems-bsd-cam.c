@@ -151,7 +151,7 @@ rtems_bsd_scsi_inquiry(union ccb *ccb, struct scsi_inquiry_data *inq_data)
 		rtems_bsd_ccb_callback,
 		BSD_SCSI_TAG,
 		(u_int8_t *) inq_data,
-		sizeof(*inq_data) - 1,
+		SHORT_INQUIRY_LENGTH,
 		FALSE,
 		0,
 		SSD_MIN_SIZE,
@@ -339,11 +339,11 @@ rtems_bsd_sim_attach_worker(rtems_media_state state, const char *src, char **des
 		}
 
 		sc = rtems_bsd_scsi_inquiry(&sim->ccb, &inq_data);
-		if (sc != RTEMS_SUCCESSFUL) {
+		if (sc == RTEMS_SUCCESSFUL) {
+			scsi_print_inquiry(&inq_data);
+		} else {
 			BSD_PRINTF("OOPS: inquiry failed\n");
-			goto error;
 		}
-		scsi_print_inquiry(&inq_data);
 
 		for (retries = 0; retries <= 3; ++retries) {
 			sc = rtems_bsd_scsi_test_unit_ready(&sim->ccb);
@@ -353,10 +353,14 @@ rtems_bsd_sim_attach_worker(rtems_media_state state, const char *src, char **des
 		}
 		if (sc != RTEMS_SUCCESSFUL) {
 			BSD_PRINTF("OOPS: test unit ready failed\n");
-			goto error;
 		}
 
-		sc = rtems_bsd_scsi_read_capacity(&sim->ccb, &block_count, &block_size);
+		for (retries = 0; retries <= 3; ++retries) {
+			sc = rtems_bsd_scsi_read_capacity(&sim->ccb, &block_count, &block_size);
+			if (sc == RTEMS_SUCCESSFUL) {
+				break;
+			}
+		}
 		if (sc != RTEMS_SUCCESSFUL) {
 			BSD_PRINTF("OOPS: read capacity failed\n");
 			goto error;

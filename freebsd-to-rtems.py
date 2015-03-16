@@ -659,6 +659,8 @@ rtems.addRTEMSSourceFiles(
 		'local/pcib_if.c',
 		'local/pci_if.c',
 		'local/usb_if.c',
+		'local/mmcbus_if.c',
+		'local/mmcbr_if.c',
 		'rtems/ipsec_get_policylen.c',
 		'rtems/rtems-bsd-assert.c',
 		'rtems/rtems-bsd-arp-processor.c',
@@ -668,6 +670,7 @@ rtems.addRTEMSSourceFiles(
 		'rtems/rtems-bsd-cam.c',
 		'rtems/rtems-bsd-chunk.c',
 		'rtems/rtems-bsd-conf.c',
+		'rtems/rtems-bsd-configintrhook.c',
 		'rtems/rtems-bsd-delay.c',
 		'rtems/rtems-bsd-get-ethernet-addr.c',
 		'rtems/rtems-bsd-get-file.c',
@@ -729,6 +732,7 @@ rtems.addRTEMSSourceFiles(
 		'sys/dev/usb/controller/ohci_lpc32xx.c',
 		'sys/dev/smc/if_smc_nexus.c',
 		'sys/dev/ffec/if_ffec_mcf548x.c',
+		'sys/dev/dw_mmc/dw_mmc.c',
 		'sys/net/if_ppp.c',
 		'sys/net/ppp_tty.c',
 		'telnetd/check_passwd.c',
@@ -915,6 +919,24 @@ base.addKernelSpaceSourceFiles(
 		'sys/libkern/inet_ntoa.c',
 		'sys/libkern/random.c',
 		'sys/vm/uma_core.c',
+	]
+)
+
+mmc = Module('mmc')
+mmc.addKernelSpaceHeaderFiles(
+	[
+		'sys/dev/mmc/bridge.h',
+		'sys/dev/mmc/mmcbrvar.h',
+		'sys/dev/mmc/mmcreg.h',
+		'sys/dev/mmc/mmcvar.h',
+		'sys/dev/sdhci/sdhci.h',
+	]
+)
+mmc.addKernelSpaceSourceFiles(
+	[
+		'sys/dev/mmc/mmc.c',
+		'sys/dev/mmc/mmcsd.c',
+		'sys/dev/sdhci/sdhci.c',
 	]
 )
 
@@ -2572,6 +2594,7 @@ mdnsresponder.addSourceFiles(
 # Register all the Module instances with the Module Manager
 mm.addModule(rtems)
 mm.addModule(base)
+mm.addModule(mmc)
 mm.addModule(net)
 mm.addModule(netinet)
 mm.addModule(netinet6)

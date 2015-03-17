@@ -50,7 +50,7 @@ static const rtems_bsd_device_resource smc0_res[] = {
 };
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(smc, 0, RTEMS_ARRAY_SIZE(smc0_res),
-   &smc0_res[0]);
+    &smc0_res[0]);
 
 #elif defined(__GENMCF548X_BSP_H)
 
@@ -69,7 +69,7 @@ static const rtems_bsd_device_resource zy7_slcr0_res[] = {
 };
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(zy7_slcr, 0, RTEMS_ARRAY_SIZE(zy7_slcr0_res),
-   &zy7_slcr0_res[0]);
+    &zy7_slcr0_res[0]);
 
 static const rtems_bsd_device_resource cgem0_res[] = {
 	{
@@ -84,11 +84,13 @@ static const rtems_bsd_device_resource cgem0_res[] = {
 };
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(cgem, 0, RTEMS_ARRAY_SIZE(cgem0_res),
-   &cgem0_res[0]);
+    &cgem0_res[0]);
 
 SYSINIT_DRIVER_REFERENCE(e1000phy, miibus);
 
 #elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
+
+#if !QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 
 #include <bsp/irq.h>
 
@@ -113,6 +115,8 @@ static const rtems_bsd_device_resource tsec0_res[] = {
 };
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(tsec, 0, RTEMS_ARRAY_SIZE(tsec0_res),
-   &tsec0_res[0]);
+    &tsec0_res[0]);
+
+#endif /* !QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) */
 
 #endif

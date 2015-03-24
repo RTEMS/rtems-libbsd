@@ -53,6 +53,17 @@
 #define INTERRUPT_SATISFIED \
     (THREAD_WAIT_CLASS_OBJECT | THREAD_WAIT_STATE_INTERRUPT_SATISFIED)
 
+static void
+rtems_bsd_mutex_priority_change(Thread_Control *thread,
+    Priority_Control new_priority, void *context)
+{
+	rtems_bsd_mutex *m = context;
+
+	_RBTree_Extract(&m->rivals, &thread->RBNode);
+	_RBTree_Insert(&m->rivals, &thread->RBNode,
+	    _Thread_queue_Compare_priority, false);
+}
+
 void
 rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
     Per_CPU_Control *cpu_self, Thread_Control *owner,
@@ -66,12 +77,14 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 	} else {
 		bool success;
 
+		_Thread_Lock_set(executing, &m->lock);
+		_Thread_Priority_set_change_handler(executing,
+		    rtems_bsd_mutex_priority_change, m);
+		++executing->resource_count;
 		_RBTree_Insert(&m->rivals, &executing->RBNode,
 		    _Thread_queue_Compare_priority, false);
-		++executing->resource_count;
 
 		_Thread_Dispatch_disable_critical(cpu_self);
-		_Giant_Acquire(cpu_self);
 
 		/* Priority inheritance */
 		_Scheduler_Change_priority_if_higher(_Scheduler_Get(owner),
@@ -86,10 +99,10 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 		success = _Thread_Wait_flags_try_change(executing,
 		    INTEND_TO_BLOCK, BLOCKED);
 		if (!success) {
-			_Thread_Unblock(executing);
+			_Thread_Clear_state(executing,
+			    STATES_WAITING_FOR_MUTEX);
 		}
 
-		_Giant_Release(cpu_self);
 		_Thread_Dispatch_enable(cpu_self);
 	}
 }
@@ -102,10 +115,11 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 		Thread_Control *new_owner;
 		bool success;
 
-		_RBTree_Extract(&m->rivals, first);
-
 		new_owner = THREAD_RBTREE_NODE_TO_THREAD(first);
 		m->owner = new_owner;
+		_RBTree_Extract(&m->rivals, &new_owner->RBNode);
+		_Thread_Priority_restore_default_change_handler(new_owner);
+		_Thread_Lock_restore_default(new_owner);
 
 		success = _Thread_Wait_flags_try_change_critical(new_owner,
 		    INTEND_TO_BLOCK, INTERRUPT_SATISFIED);
@@ -119,11 +133,10 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 			_Thread_Dispatch_disable_critical(cpu_self);
 			_ISR_lock_Release_and_ISR_enable(&m->lock,
 			    lock_context);
-			_Giant_Acquire(cpu_self);
 
-			_Thread_Unblock(new_owner);
+			_Thread_Clear_state(new_owner,
+			    STATES_WAITING_FOR_MUTEX);
 
-			_Giant_Release(cpu_self);
 			_Thread_Dispatch_enable(cpu_self);
 		}
 	} else {
@@ -131,8 +144,10 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 	}
 
 	if (!keep_priority) {
-		_Thread_Disable_dispatch();
+		Per_CPU_Control *cpu_self;
+
+		cpu_self = _Thread_Dispatch_disable();
 		_Thread_Change_priority(owner, owner->real_priority, true);
-		_Thread_Enable_dispatch();
+		_Thread_Dispatch_enable(cpu_self);
 	}
 }

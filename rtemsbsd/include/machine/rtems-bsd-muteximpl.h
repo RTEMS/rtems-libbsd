@@ -131,17 +131,19 @@ static inline void
 rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 {
 	ISR_lock_Context lock_context;
+	Thread_Control *owner;
 	int nest_level;
 
 	_ISR_lock_ISR_disable_and_acquire(&m->lock, &lock_context);
 
 	nest_level = m->nest_level;
+	owner = m->owner;
+
+	BSD_ASSERT(owner == _Thread_Executing);
+
 	if (__predict_true(nest_level == 0)) {
 		RBTree_Node *first = _RBTree_First(&m->rivals, RBT_LEFT);
-		Thread_Control *owner = m->owner;
 		int keep_priority;
-
-		BSD_ASSERT(owner == _Thread_Executing);
 
 		--owner->resource_count;
 		keep_priority = _Thread_Owns_resources(owner)

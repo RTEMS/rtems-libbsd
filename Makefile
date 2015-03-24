@@ -188,6 +188,7 @@ LIB_C_FILES += freebsd/sys/kern/subr_lock.c
 LIB_C_FILES += freebsd/sys/kern/subr_module.c
 LIB_C_FILES += freebsd/sys/kern/subr_rman.c
 LIB_C_FILES += freebsd/sys/kern/subr_sbuf.c
+LIB_C_FILES += freebsd/sys/kern/subr_sleepqueue.c
 LIB_C_FILES += freebsd/sys/kern/subr_taskqueue.c
 LIB_C_FILES += freebsd/sys/kern/subr_uio.c
 LIB_C_FILES += freebsd/sys/kern/subr_unit.c

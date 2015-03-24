@@ -316,6 +316,8 @@ rtems_mdns_gethostname().
 
 == Issues and TODO
 
+* Priority queues are broken with clustered scheduling.
+
 * Per-CPU data should be enabled once the new stack is ready for SMP.
 
 * Per-CPU NETISR(9) should be enabled onece the new stack is ready for SMP.

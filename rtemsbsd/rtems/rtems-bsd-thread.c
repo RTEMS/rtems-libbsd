@@ -49,6 +49,7 @@
 #include <sys/kthread.h>
 #include <sys/malloc.h>
 #include <sys/selinfo.h>
+#include <sys/sleepqueue.h>
 
 #include <rtems/bsd/bsd.h>
 
@@ -100,23 +101,14 @@ struct thread *
 rtems_bsd_thread_create(Thread_Control *thread, int wait)
 {
 	struct thread *td = malloc(sizeof(*td), M_TEMP, M_ZERO | wait);
-	struct sleepqueue *sq = malloc(sizeof(*sq), M_TEMP, wait);
+	struct sleepqueue *sq = sleepq_alloc();
 
 	if (td != NULL && sq != NULL) {
 		td->td_thread = thread;
 		td->td_sleepqueue = sq;
-
-		LIST_INIT(&sq->sq_free);
-
-		_Thread_queue_Initialize(
-			&sq->sq_blocked,
-			THREAD_QUEUE_DISCIPLINE_PRIORITY,
-			STATES_WAITING_FOR_BSD_WAKEUP,
-			EWOULDBLOCK
-		);
 	} else {
 		free(td, M_TEMP);
-		free(sq, M_TEMP);
+		sleepq_free(sq);
 		td = NULL;
 	}
 
@@ -185,7 +177,7 @@ rtems_bsd_extension_thread_delete(
 
 	if (td != NULL) {
 		seltdfini(td);
-		free(td->td_sleepqueue, M_TEMP);
+		sleepq_free(td->td_sleepqueue);
 		free(td, M_TEMP);
 	}
 }

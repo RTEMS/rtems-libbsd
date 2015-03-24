@@ -195,6 +195,16 @@ struct rusage_ext {
 	uint64_t	rux_su;         /* (c) Previous sys time in usec. */
 	uint64_t	rux_tu;         /* (c) Previous total time in usec. */
 };
+#ifdef __rtems__
+enum thread_sq_states {
+	TD_SQ_WAKEUP,
+	TD_SQ_PANIC = EWOULDBLOCK,
+	TD_SQ_TIRED,
+	TD_SQ_SLEEPY,
+	TD_SQ_SLEEPING,
+	TD_SQ_NIGHTMARE
+};
+#endif /* __rtems__ */
 
 /*
  * Kernel runnable context (thread).
@@ -212,7 +222,9 @@ struct thread {
 	struct proc	*td_proc;	/* (*) Associated process. */
 	TAILQ_ENTRY(thread) td_plist;	/* (*) All threads in this proc. */
 	TAILQ_ENTRY(thread) td_runq;	/* (t) Run queue. */
+#endif /* __rtems__ */
 	TAILQ_ENTRY(thread) td_slpq;	/* (t) Sleep queue. */
+#ifndef __rtems__
 	TAILQ_ENTRY(thread) td_lockq;	/* (t) Lock queue. */
 	LIST_ENTRY(thread) td_hash;	/* (d) Hash chain. */
 	struct cpuset	*td_cpuset;	/* (t) CPU affinity mask. */
@@ -233,11 +245,14 @@ struct thread {
 	int		td_inhibitors;	/* (t) Why can not run. */
 	int		td_pflags;	/* (k) Private thread (TDP_*) flags. */
 	int		td_dupfd;	/* (k) Ret value from fdopen. XXX */
-	int		td_sqqueue;	/* (t) Sleepqueue queue blocked on. */
 #endif /* __rtems__ */
+#ifdef __rtems__
+	enum thread_sq_states td_sq_state;
+#endif /* __rtems__ */
+	int		td_sqqueue;	/* (t) Sleepqueue queue blocked on. */
 	void		*td_wchan;	/* (t) Sleep address. */
-#ifndef __rtems__
 	const char	*td_wmesg;	/* (t) Reason for sleep. */
+#ifndef __rtems__
 	u_char		td_lastcpu;	/* (t) Last cpu we were on. */
 	u_char		td_oncpu;	/* (t) Which cpu we are on. */
 	volatile u_char td_owepreempt;  /* (k*) Preempt on last critical_exit */
@@ -337,12 +352,16 @@ struct thread {
 struct mtx *thread_lock_block(struct thread *);
 void thread_lock_unblock(struct thread *, struct mtx *);
 void thread_lock_set(struct thread *, struct mtx *);
+#ifndef __rtems__
 #define	THREAD_LOCK_ASSERT(td, type)					\
 do {									\
 	struct mtx *__m = (td)->td_lock;				\
 	if (__m != &blocked_lock)					\
 		mtx_assert(__m, (type));				\
 } while (0)
+#else /* __rtems__ */
+#define	THREAD_LOCK_ASSERT(td, type)
+#endif /* __rtems__ */
 
 #ifdef INVARIANTS
 #define	THREAD_LOCKPTR_ASSERT(td, lock)					\
@@ -889,7 +908,11 @@ void	fork_exit(void (*)(void *, struct trapframe *), void *,
 void	fork_return(struct thread *, struct trapframe *);
 int	inferior(struct proc *p);
 void	kern_yield(int);
+#ifndef __rtems__
 void 	kick_proc0(void);
+#else /* __rtems__ */
+#define	kick_proc0()
+#endif /* __rtems__ */
 int	leavepgrp(struct proc *p);
 int	maybe_preempt(struct thread *td);
 void	maybe_yield(void);

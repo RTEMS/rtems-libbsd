@@ -43,19 +43,10 @@
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/proc.h>
-#include <sys/queue.h>
 
-#include <rtems/score/threadq.h>
 #include <rtems.h>
 
 #define BSD_TASK_NAME rtems_build_name('_', 'B', 'S', 'D')
-
-struct sleepqueue {
-	Thread_queue_Control sq_blocked;
-	LIST_ENTRY(sleepqueue) sq_hash;
-	LIST_HEAD(, sleepqueue) sq_free;
-	void *sq_wchan;
-};
 
 struct thread *
 rtems_bsd_get_thread(const Thread_Control *thread);

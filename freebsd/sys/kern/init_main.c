@@ -469,11 +469,13 @@ proc0_init(void *dummy __unused)
 	 * Add scheduler specific parts to proc, thread as needed.
 	 */
 	schedinit();	/* scheduler gets its house in order */
+#endif /* __rtems__ */
 	/*
 	 * Initialize sleep queue hash table
 	 */
 	sleepinit();
 
+#ifndef __rtems__
 	/*
 	 * additional VM structures
 	 */

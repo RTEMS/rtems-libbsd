@@ -234,7 +234,9 @@ struct thread {
 	int		td_pflags;	/* (k) Private thread (TDP_*) flags. */
 	int		td_dupfd;	/* (k) Ret value from fdopen. XXX */
 	int		td_sqqueue;	/* (t) Sleepqueue queue blocked on. */
+#endif /* __rtems__ */
 	void		*td_wchan;	/* (t) Sleep address. */
+#ifndef __rtems__
 	const char	*td_wmesg;	/* (t) Reason for sleep. */
 	u_char		td_lastcpu;	/* (t) Last cpu we were on. */
 	u_char		td_oncpu;	/* (t) Which cpu we are on. */

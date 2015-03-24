@@ -82,13 +82,16 @@ __FBSDID("$FreeBSD$");
 	((td)->td_inhibitors & TDI_LOCK) != 0 ? "blocked" :		\
 	((td)->td_inhibitors & TDI_IWAIT) != 0 ? "iwait" : "yielding")
 
+#ifndef __rtems__
 static void synch_setup(void *dummy);
 SYSINIT(synch_setup, SI_SUB_KICK_SCHEDULER, SI_ORDER_FIRST, synch_setup,
     NULL);
 
 int	hogticks;
+#endif /* __rtems__ */
 static int pause_wchan;
 
+#ifndef __rtems__
 static struct callout loadav_callout;
 
 struct loadavg averunnable =
@@ -122,12 +125,15 @@ SDT_PROBE_DEFINE(sched, , , cpucaps__wakeup);
 SDT_PROBE_DEFINE(sched, , , schedctl__nopreempt);
 SDT_PROBE_DEFINE(sched, , , schedctl__preempt);
 SDT_PROBE_DEFINE(sched, , , schedctl__yield);
+#endif /* __rtems__ */
 
 void
 sleepinit(void)
 {
 
+#ifndef __rtems__
 	hogticks = (hz / 10) * 2;	/* Default only. */
+#endif /* __rtems__ */
 	init_sleepqueues();
 }
 
@@ -151,13 +157,21 @@ _sleep(void *ident, struct lock_object *lock, int priority,
     const char *wmesg, int timo)
 {
 	struct thread *td;
+#ifndef __rtems__
 	struct proc *p;
+#endif /* __rtems__ */
 	struct lock_class *class;
+#ifndef __rtems__
 	int catch, flags, lock_state, pri, rval;
+#else /* __rtems__ */
+	int flags, lock_state, pri, rval;
+#endif /* __rtems__ */
 	WITNESS_SAVE_DECL(lock_witness);
 
 	td = curthread;
+#ifndef __rtems__
 	p = td->td_proc;
+#endif /* __rtems__ */
 #ifdef KTRACE
 	if (KTRPOINT(td, KTR_CSW))
 		ktrcsw(1, 0, wmesg);
@@ -168,14 +182,17 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	    ("sleeping without a lock"));
 	KASSERT(p != NULL, ("msleep1"));
 	KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
+#ifndef __rtems__
 	if (priority & PDROP)
 		KASSERT(lock != NULL && lock != &Giant.lock_object,
 		    ("PDROP requires a non-Giant lock"));
+#endif /* __rtems__ */
 	if (lock != NULL)
 		class = LOCK_CLASS(lock);
 	else
 		class = NULL;
 
+#ifndef __rtems__
 	if (cold || SCHEDULER_STOPPED()) {
 		/*
 		 * During autoconfiguration, just return;
@@ -191,6 +208,9 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	}
 	catch = priority & PCATCH;
 	pri = priority & PRIMASK;
+#else /* __rtems__ */
+	pri = priority;
+#endif /* __rtems__ */
 
 	/*
 	 * If we are already on a sleep queue, then remove us from that
@@ -204,10 +224,12 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 		flags = SLEEPQ_PAUSE;
 	else
 		flags = SLEEPQ_SLEEP;
+#ifndef __rtems__
 	if (catch)
 		flags |= SLEEPQ_INTERRUPTIBLE;
 	if (priority & PBDRY)
 		flags |= SLEEPQ_STOP_ON_BDRY;
+#endif /* __rtems__ */
 
 	sleepq_lock(ident);
 	CTR5(KTR_PROC, "sleep: thread %ld (pid %ld, %s) on %s (%p)",
@@ -242,12 +264,18 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 		lock_state = class->lc_unlock(lock);
 		sleepq_lock(ident);
 	}
+#ifndef __rtems__
 	if (timo && catch)
 		rval = sleepq_timedwait_sig(ident, pri);
 	else if (timo)
+#else /* __rtems__ */
+	if (timo)
+#endif /* __rtems__ */
 		rval = sleepq_timedwait(ident, pri);
+#ifndef __rtems__
 	else if (catch)
 		rval = sleepq_wait_sig(ident, pri);
+#endif /* __rtems__ */
 	else {
 		sleepq_wait(ident, pri);
 		rval = 0;
@@ -264,6 +292,7 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	return (rval);
 }
 
+#ifndef __rtems__
 int
 msleep_spin(void *ident, struct mtx *mtx, const char *wmesg, int timo)
 {
@@ -341,6 +370,7 @@ msleep_spin(void *ident, struct mtx *mtx, const char *wmesg, int timo)
 	WITNESS_RESTORE(&mtx->lock_object, mtx);
 	return (rval);
 }
+#endif /* __rtems__ */
 
 /*
  * pause() delays the calling thread by the given number of system ticks.
@@ -409,6 +439,7 @@ wakeup_one(void *ident)
 		kick_proc0();
 }
 
+#ifndef __rtems__
 static void
 kdb_switch(void)
 {
@@ -623,3 +654,4 @@ sys_yield(struct thread *td, struct yield_args *uap)
 	td->td_retval[0] = 0;
 	return (0);
 }
+#endif /* __rtems__ */

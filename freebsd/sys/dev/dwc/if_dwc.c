@@ -804,11 +804,8 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 {
 	struct dwc_bufmap *bmap;
 	struct dwc_hwdesc *desc;
-	struct ifnet *ifp;
 
 	DWC_ASSERT_LOCKED(sc);
-
-	ifp = sc->ifp;
 
 	while (sc->tx_idx_tail != sc->tx_idx_head) {
 		desc = &sc->txdesc_ring[sc->tx_idx_tail];

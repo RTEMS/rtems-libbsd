@@ -419,6 +419,7 @@ LIB_C_FILES += freebsd/sys/dev/mii/ukphy.c
 LIB_C_FILES += freebsd/sys/dev/mii/ukphy_subr.c
 LIB_C_FILES += freebsd/sys/dev/tsec/if_tsec.c
 LIB_C_FILES += freebsd/sys/dev/cadence/if_cgem.c
+LIB_C_FILES += freebsd/sys/dev/dwc/if_dwc.c
 LIB_C_FILES += freebsd/sys/arm/xilinx/zy7_slcr.c
 LIB_C_FILES += freebsd/sys/dev/usb/usb_busdma.c
 LIB_C_FILES += freebsd/sys/dev/usb/usb_core.c

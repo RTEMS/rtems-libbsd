@@ -44,7 +44,8 @@
 
 #if defined(LIBBSP_ARM_LPC24XX_BSP_H)
   /* No cache */
-#elif defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
+#elif defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H) || \
+  defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
   /* With cache, no coherency support in hardware */
   #define CPU_DATA_CACHE_ALIGNMENT 32
 #elif defined(LIBBSP_ARM_LPC32XX_BSP_H)

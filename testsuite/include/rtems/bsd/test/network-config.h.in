@@ -34,7 +34,9 @@
 
 #include <bsp.h>
 
-#if defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
+#if defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H)
+  #define NET_CFG_INTERFACE_0 "dwc0"
+#elif defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
   #define NET_CFG_INTERFACE_0 "smc0"
 #elif defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
   #define NET_CFG_INTERFACE_0 "cgem0"

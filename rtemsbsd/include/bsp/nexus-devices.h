@@ -90,6 +90,26 @@ SYSINIT_DRIVER_REFERENCE(e1000phy, miibus);
 
 #elif defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H)
 
+#include <bsp/socal/hps.h>
+#include <bsp/irq.h>
+
+static const rtems_bsd_device_resource dwc0_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = (unsigned long)ALT_EMAC1_ADDR
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 0,
+		.start_actual = ALT_INT_INTERRUPT_EMAC1_IRQ
+	}
+};
+
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwc, 0, RTEMS_ARRAY_SIZE(dwc0_res),
+    &dwc0_res[0]);
+
+SYSINIT_DRIVER_REFERENCE(micphy, miibus);
+
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(dw_mmc, 0, 0, NULL);
 
 SYSINIT_DRIVER_REFERENCE(mmc, dw_mmc);

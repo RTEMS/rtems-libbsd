@@ -82,6 +82,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/miibus_if.h>
 #ifdef __rtems__
 #pragma GCC diagnostic ignored "-Wpointer-sign"
+#include <rtems/bsd/bsd.h>
 #endif /* __rtems__ */
 
 #define	READ4(_sc, _reg) \
@@ -1061,7 +1062,9 @@ out:
 static int
 dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 {
+#ifndef __rtems__
 	int rnd;
+#endif /* __rtems__ */
 	int lo;
 	int hi;
 
@@ -1084,6 +1087,7 @@ dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 		hwaddr[4] = (hi >>  0) & 0xff;
 		hwaddr[5] = (hi >>  8) & 0xff;
 	} else {
+#ifndef __rtems__
 		rnd = arc4random() & 0x00ffffff;
 		hwaddr[0] = 'b';
 		hwaddr[1] = 's';
@@ -1091,6 +1095,10 @@ dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 		hwaddr[3] = rnd >> 16;
 		hwaddr[4] = rnd >>  8;
 		hwaddr[5] = rnd >>  0;
+#else /* __rtems__ */
+		rtems_bsd_get_mac_address(device_get_name(sc->dev),
+		    device_get_unit(sc->dev), hwaddr);
+#endif /* __rtems__ */
 	}
 
 	return (0);

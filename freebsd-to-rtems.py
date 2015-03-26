@@ -2538,6 +2538,7 @@ tests.addTest('condvar01', ['test_main'])
 tests.addTest('ppp01', ['test_main'], runTest = False)
 tests.addTest('zerocopy01', ['test_main'], runTest = False, netTest = True)
 tests.addTest('smp01', ['test_main'])
+tests.addTest('media01', ['test_main'], runTest = False)
 
 dhcpcd = Module('dhcpcd')
 dhcpcd.addSourceFiles(

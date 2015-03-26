@@ -48,6 +48,10 @@ rtems_task Init(
 
   on_exit( default_on_exit, NULL );
 
+#ifdef DEFAULT_EARLY_INITIALIZATION
+  early_initialization();
+#endif
+
   /* Let other tasks run to complete background work */
   default_set_self_prio( RTEMS_MAXIMUM_PRIORITY - 1 );
 

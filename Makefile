@@ -1418,6 +1418,17 @@ TESTS += $(TEST_SMP01)
 O_FILES += $(TEST_SMP01_O_FILES)
 D_FILES += $(TEST_SMP01_D_FILES)
 RUN_TESTS += $(TEST_SMP01)
+
+TEST_MEDIA01 = testsuite/media01/media01.exe
+TEST_MEDIA01_O_FILES =
+TEST_MEDIA01_D_FILES =
+TEST_MEDIA01_O_FILES += testsuite/media01/test_main.o
+TEST_MEDIA01_D_FILES += testsuite/media01/test_main.d
+$(TEST_MEDIA01): $(TEST_MEDIA01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/media01/media01.map $^ -lm -lz -o $@
+TESTS += $(TEST_MEDIA01)
+O_FILES += $(TEST_MEDIA01_O_FILES)
+D_FILES += $(TEST_MEDIA01_D_FILES)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

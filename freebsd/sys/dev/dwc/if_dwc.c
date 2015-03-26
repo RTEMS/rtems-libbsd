@@ -1360,7 +1360,11 @@ static driver_t dwc_driver = {
 
 static devclass_t dwc_devclass;
 
+#ifndef __rtems__
 DRIVER_MODULE(dwc, simplebus, dwc_driver, dwc_devclass, 0, 0);
+#else /* __rtems__ */
+DRIVER_MODULE(dwc, nexus, dwc_driver, dwc_devclass, 0, 0);
+#endif /* __rtems__ */
 DRIVER_MODULE(miibus, dwc, miibus_driver, miibus_devclass, 0, 0);
 
 MODULE_DEPEND(dwc, ether, 1, 1, 1);

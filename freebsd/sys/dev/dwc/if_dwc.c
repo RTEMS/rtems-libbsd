@@ -386,6 +386,7 @@ dwc_harvest_stats(struct dwc_softc *sc)
 	sc->stats_harvest_count = 0;
 	ifp = sc->ifp;
 
+#ifndef __rtems__
 	if_inc_counter(ifp, IFCOUNTER_IPACKETS, READ4(sc, RXFRAMECOUNT_GB));
 	if_inc_counter(ifp, IFCOUNTER_IMCASTS, READ4(sc, RXMULTICASTFRAMES_G));
 	if_inc_counter(ifp, IFCOUNTER_IERRORS,
@@ -402,6 +403,24 @@ dwc_harvest_stats(struct dwc_softc *sc)
 
 	if_inc_counter(ifp, IFCOUNTER_COLLISIONS,
 	    READ4(sc, TXEXESSCOL) + READ4(sc, TXLATECOL));
+#else /* __rtems__ */
+	ifp->if_ipackets += READ4(sc, RXFRAMECOUNT_GB);
+	ifp->if_imcasts += READ4(sc, RXMULTICASTFRAMES_G);
+	ifp->if_ierrors +=
+	    READ4(sc, RXOVERSIZE_G) + READ4(sc, RXUNDERSIZE_G) +
+	    READ4(sc, RXCRCERROR) + READ4(sc, RXALIGNMENTERROR) +
+	    READ4(sc, RXRUNTERROR) + READ4(sc, RXJABBERERROR) +
+	    READ4(sc, RXLENGTHERROR);
+
+	ifp->if_opackets += READ4(sc, TXFRAMECOUNT_G);
+	ifp->if_omcasts += READ4(sc, TXMULTICASTFRAMES_G);
+	ifp->if_oerrors +=
+	    READ4(sc, TXOVERSIZE_G) + READ4(sc, TXEXCESSDEF) +
+	    READ4(sc, TXCARRIERERR) + READ4(sc, TXUNDERFLOWERROR);
+
+	ifp->if_collisions +=
+	    READ4(sc, TXEXESSCOL) + READ4(sc, TXLATECOL);
+#endif /* __rtems__ */
 
 	dwc_clear_stats(sc);
 }
@@ -798,7 +817,11 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 			m->m_pkthdr.rcvif = ifp;
 			m->m_pkthdr.len = len;
 			m->m_len = len;
+#ifndef __rtems__
 			if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
+#else /* __rtems__ */
+			++ifp->if_ipackets;
+#endif /* __rtems__ */
 
 			DWC_UNLOCK(sc);
 			(*ifp->if_input)(ifp, m);
@@ -815,7 +838,11 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 				 */
 			}
 		} else
+#ifndef __rtems__
 			if_inc_counter(sc->ifp, IFCOUNTER_IQDROPS, 1);
+#else /* __rtems__ */
+			++ifp->if_iqdrops;
+#endif /* __rtems__ */
 
 		sc->rx_idx = next_rxidx(sc, sc->rx_idx);
 	}

@@ -76,6 +76,9 @@ __FBSDID("$FreeBSD$");
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
 #include <rtems/bsd/local/miibus_if.h>
+#ifdef __rtems__
+#pragma GCC diagnostic ignored "-Wpointer-sign"
+#endif /* __rtems__ */
 
 #define	READ4(_sc, _reg) \
 	bus_read_4((_sc)->res[0], _reg)

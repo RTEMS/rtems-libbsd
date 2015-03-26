@@ -65,9 +65,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/bus.h>
 #include <sys/endian.h>
 #include <sys/sysctl.h>
-#ifdef __rtems__
-#include <sys/condvar.h>
-#endif /* __rtems__ */
 
 #include <dev/mmc/mmcreg.h>
 #include <dev/mmc/mmcbrvar.h>
@@ -81,9 +78,6 @@ struct mmc_softc {
 	struct intr_config_hook config_intrhook;
 	device_t owner;
 	uint32_t last_rca;
-#ifdef __rtems__
-	struct cv req_done;
-#endif /* __rtems__ */
 };
 
 /*
@@ -227,9 +221,6 @@ mmc_attach(device_t dev)
 	sc = device_get_softc(dev);
 	sc->dev = dev;
 	MMC_LOCK_INIT(sc);
-#ifdef __rtems__
-	cv_init(&sc->req_done, "MMC request done");
-#endif /* __rtems__ */
 
 	/* We'll probe and attach our children later, but before / mount */
 	sc->config_intrhook.ich_func = mmc_delayed_attach;
@@ -248,9 +239,6 @@ mmc_detach(device_t dev)
 	if ((err = mmc_delete_cards(sc)) != 0)
 		return (err);
 	mmc_power_down(sc);
-#ifdef __rtems__
-	cv_destroy(&sc->req_done);
-#endif /* __rtems__ */
 	MMC_LOCK_DESTROY(sc);
 
 	return (0);
@@ -381,13 +369,8 @@ mmc_wakeup(struct mmc_request *req)
 	sc = (struct mmc_softc *)req->done_data;
 	MMC_LOCK(sc);
 	req->flags |= MMC_REQ_DONE;
-#ifdef __rtems__
-	cv_broadcast(&sc->req_done);
-#endif /* __rtems__ */
 	MMC_UNLOCK(sc);
-#ifndef __rtems__
 	wakeup(req);
-#endif /* __rtems__ */
 }
 
 static int
@@ -407,11 +390,7 @@ mmc_wait_for_req(struct mmc_softc *sc, struct mmc_request *req)
 	MMCBR_REQUEST(device_get_parent(sc->dev), sc->dev, req);
 	MMC_LOCK(sc);
 	while ((req->flags & MMC_REQ_DONE) == 0)
-#ifndef __rtems__
 		msleep(req, &sc->sc_mtx, 0, "mmcreq", 0);
-#else /* __rtems__ */
-		cv_wait(&sc->req_done, &sc->sc_mtx);
-#endif /* __rtems__ */
 	MMC_UNLOCK(sc);
 	if (mmc_debug > 2 || (mmc_debug > 1 && req->cmd->error))
 		device_printf(sc->dev, "RESULT: %d\n", req->cmd->error);

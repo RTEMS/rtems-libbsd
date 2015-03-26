@@ -80,6 +80,7 @@ struct dw_mmc_softc {
 	struct mtx sc_mtx;
 	struct mtx bus_mtx;
 	bus_space_handle_t bushandle;
+	int bus_busy;
 	uint32_t biu_clock;
 	uint32_t ciu_clock;
 	uint32_t card_clock;
@@ -122,12 +123,6 @@ DW_MMC_LOCK(struct dw_mmc_softc *sc)
 #define	DW_MMC_UNLOCK(_sc)		mtx_unlock(&(_sc)->sc_mtx)
 #define DW_MMC_LOCK_INIT(_sc) \
 	mtx_init(&_sc->sc_mtx, device_get_nameunit(_sc->dev), \
-	    "dw_mmc", MTX_DEF)
-
-#define	DW_MMC_BUS_LOCK(_sc)		mtx_lock(&(_sc)->bus_mtx)
-#define	DW_MMC_BUS_UNLOCK(_sc)		mtx_unlock(&(_sc)->bus_mtx)
-#define DW_MMC_BUS_LOCK_INIT(_sc) \
-	mtx_init(&_sc->bus_mtx, device_get_nameunit(_sc->dev), \
 	    "dw_mmc", MTX_DEF)
 
 static int
@@ -356,7 +351,6 @@ dw_mmc_attach(device_t dev)
 	}
 
 	DW_MMC_LOCK_INIT(sc);
-	DW_MMC_BUS_LOCK_INIT(sc);
 
 	dw_mmc_platform_install_intr(sc);
 
@@ -954,8 +948,11 @@ dw_mmc_acquire_host(device_t brdev, device_t reqdev)
 {
 	struct dw_mmc_softc *sc = device_get_softc(brdev);
 
-	DW_MMC_BUS_LOCK(sc);
-
+	DW_MMC_LOCK(sc);
+	while (sc->bus_busy)
+		msleep(sc, &sc->sc_mtx, PZERO, "dw_mmc: acquire host", 0);
+	sc->bus_busy = 1;
+	DW_MMC_UNLOCK(sc);
 	return (0);
 }
 
@@ -964,8 +961,10 @@ dw_mmc_release_host(device_t brdev, device_t reqdev)
 {
 	struct dw_mmc_softc *sc = device_get_softc(brdev);
 
-	DW_MMC_BUS_UNLOCK(sc);
-
+	DW_MMC_LOCK(sc);
+	sc->bus_busy = 0;
+	wakeup(sc);
+	DW_MMC_UNLOCK(sc);
 	return (0);
 }
 

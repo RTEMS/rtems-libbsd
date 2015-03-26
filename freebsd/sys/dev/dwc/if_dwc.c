@@ -56,10 +56,12 @@ __FBSDID("$FreeBSD$");
 #include <sys/sockio.h>
 #include <sys/sysctl.h>
 
+#ifndef __rtems__
 #include <dev/fdt/fdt_common.h>
 #include <dev/ofw/openfirm.h>
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#endif /* __rtems__ */
 
 #include <net/bpf.h>
 #include <net/if.h>
@@ -71,7 +73,9 @@ __FBSDID("$FreeBSD$");
 #include <net/if_vlan_var.h>
 
 #include <machine/bus.h>
+#ifndef __rtems__
 #include <machine/fdt.h>
+#endif /* __rtems__ */
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
@@ -1096,11 +1100,13 @@ static int
 dwc_probe(device_t dev)
 {
 
+#ifndef __rtems__
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
 	if (!ofw_bus_is_compatible(dev, "snps,dwmac"))
 		return (ENXIO);
+#endif /* __rtems__ */
 
 	device_set_desc(dev, "Gigabit Ethernet Controller");
 	return (BUS_PROBE_DEFAULT);

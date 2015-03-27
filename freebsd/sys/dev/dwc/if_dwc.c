@@ -157,10 +157,10 @@ next_rxidx(struct dwc_softc *sc, uint32_t curidx)
 }
 
 static inline uint32_t
-next_txidx(struct dwc_softc *sc, uint32_t curidx)
+next_txidx(struct dwc_softc *sc, uint32_t curidx, int inc)
 {
 
-	return ((curidx + 1) % TX_DESC_COUNT);
+	return ((curidx + (uint32_t)inc) % TX_DESC_COUNT);
 }
 
 static void
@@ -172,62 +172,100 @@ dwc_get1paddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 	*(bus_addr_t *)arg = segs[0].ds_addr;
 }
 
-inline static uint32_t
-dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_addr_t paddr,
-    uint32_t len)
+static void
+dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_dma_segment_t segs[TX_MAX_DMA_SEGS],
+    int nsegs)
 {
-	uint32_t flags;
+	int i;
 
-	++sc->txcount;
+	sc->txcount += nsegs;
 
-	sc->txdesc_ring[idx].addr = (uint32_t)(paddr);
-	if (sc->mactype == DWC_GMAC_ALT_DESC) {
-		flags = DDESC_CNTL_TXCHAIN | DDESC_CNTL_TXFIRST
-		    | DDESC_CNTL_TXLAST | DDESC_CNTL_TXINT;
-		sc->txdesc_ring[idx].tdes0 = 0;
-		sc->txdesc_ring[idx].tdes1 = flags | len;
-	} else {
-		flags = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXFIRST
-		    | DDESC_TDES0_TXLAST | DDESC_TDES0_TXINT;
-		sc->txdesc_ring[idx].tdes0 = flags;
-		sc->txdesc_ring[idx].tdes1 = len;
+	idx = next_txidx(sc, idx, nsegs);
+	sc->tx_idx_head = idx;
+
+	/*
+	 * Fill in the TX descriptors back to front so that OWN bit in first
+	 * descriptor is set last.
+	 */
+	for (i = nsegs - 1; i >= 0; i--) {
+		uint32_t flags;
+		uint32_t len;
+
+		idx = next_txidx(sc, idx, -1);
+
+		sc->txdesc_ring[idx].addr = segs[i].ds_addr;
+		len = segs[i].ds_len;
+
+		if (sc->mactype == DWC_GMAC_ALT_DESC) {
+			flags = DDESC_CNTL_TXCHAIN | DDESC_CNTL_TXINT;
+
+			if (i == 0)
+				flags |= DDESC_CNTL_TXFIRST;
+
+			if (i == nsegs - 1)
+				flags |= DDESC_CNTL_TXLAST;
+
+			sc->txdesc_ring[idx].tdes0 = 0;
+			sc->txdesc_ring[idx].tdes1 = flags | len;
+		} else {
+			flags = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXINT |
+			    DDESC_TDES0_OWN;
+
+			if (i == 0)
+				flags |= DDESC_TDES0_TXFIRST;
+
+			if (i == nsegs - 1)
+				flags |= DDESC_TDES0_TXLAST;
+
+			sc->txdesc_ring[idx].tdes1 = len;
+			wmb();
+			sc->txdesc_ring[idx].tdes0 = flags;
+		}
+
+		wmb();
+
+		if (i != 0)
+			sc->txbuf_map[idx].mbuf = NULL;
 	}
-	wmb();
-
-	sc->txdesc_ring[idx].tdes0 = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXFIRST
-	    | DDESC_TDES0_TXLAST | DDESC_TDES0_TXINT | DDESC_TDES0_OWN;
-	wmb();
-
-	return (next_txidx(sc, idx));
 }
 
-static int
-dwc_setup_txbuf(struct dwc_softc *sc, int idx, struct mbuf **mp)
+static void
+dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
 {
-	struct bus_dma_segment seg;
-	int error, nsegs;
-	struct mbuf * m;
+	bus_dma_segment_t segs[TX_MAX_DMA_SEGS];
+	int error, nsegs, idx;
 
-	if ((m = m_defrag(*mp, M_NOWAIT)) == NULL)
-		return (ENOMEM);
-	*mp = m;
-
+	idx = sc->tx_idx_head;
 	error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, sc->txbuf_map[idx].map,
-	    m, &seg, &nsegs, 0);
+	    m, &seg, &nsegs, BUS_DMA_NOWAIT);
+
+	if (error == EFBIG) {
+		/* Too many segments!  Defrag and try again. */
+		struct mbuf *m2 = m_defrag(m, M_NOWAIT);
+
+		if (m2 == NULL) {
+			m_freem(m);
+			return;
+		}
+		m = m2;
+		error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag,
+		    sc->txbuf_map[idx].map, m, &seg, &nsegs, BUS_DMA_NOWAIT);
+	}
 	if (error != 0) {
-		return (ENOMEM);
+		/* Give up. */
+		m_freem(m);
+		return;
 	}
 
-	KASSERT(nsegs == 1, ("%s: %d segments returned!", __func__, nsegs));
+	sc->txbuf_map[idx].mbuf = m;
 
 	bus_dmamap_sync(sc->txbuf_tag, sc->txbuf_map[idx].map,
 	    BUS_DMASYNC_PREWRITE);
 
-	sc->txbuf_map[idx].mbuf = m;
+	dwc_setup_txdesc(sc, idx, segs, nsegs);
 
-	dwc_setup_txdesc(sc, idx, seg.ds_addr, seg.ds_len);
-
-	return (0);
+	ETHER_BPF_MTAP(sc->ifp, m);
+	*start_tx = 1;
 }
 
 static void
@@ -235,7 +273,7 @@ dwc_txstart_locked(struct dwc_softc *sc)
 {
 	struct ifnet *ifp;
 	struct mbuf *m;
-	int enqueued;
+	int start_tx;
 
 	DWC_ASSERT_LOCKED(sc);
 
@@ -244,10 +282,10 @@ dwc_txstart_locked(struct dwc_softc *sc)
 
 	ifp = sc->ifp;
 
-	enqueued = 0;
+	start_tx = 0;
 
 	for (;;) {
-		if (sc->txcount == (TX_DESC_COUNT-1)) {
+		if (sc->txcount >= (TX_DESC_COUNT - 1 - TX_MAX_DMA_SEGS)) {
 			ifp->if_drv_flags |= IFF_DRV_OACTIVE;
 			break;
 		}
@@ -255,16 +293,11 @@ dwc_txstart_locked(struct dwc_softc *sc)
 		IFQ_DRV_DEQUEUE(&ifp->if_snd, m);
 		if (m == NULL)
 			break;
-		if (dwc_setup_txbuf(sc, sc->tx_idx_head, &m) != 0) {
-			IFQ_DRV_PREPEND(&ifp->if_snd, m);
-			break;
-		}
-		BPF_MTAP(ifp, m);
-		sc->tx_idx_head = next_txidx(sc, sc->tx_idx_head);
-		++enqueued;
+
+		dwc_setup_txbuf(sc, m, &start_tx);
 	}
 
-	if (enqueued != 0) {
+	if (start_tx != 0) {
 		WRITE4(sc, TRANSMIT_POLL_DEMAND, 0x1);
 		sc->tx_watchdog_count = WATCHDOG_TIMEOUT_SECS;
 	}
@@ -475,7 +508,7 @@ dwc_setup_rxdesc(struct dwc_softc *sc, int idx, bus_addr_t paddr)
 static int
 dwc_setup_rxbuf(struct dwc_softc *sc, int idx, struct mbuf *m)
 {
-	struct bus_dma_segment seg;
+	bus_dma_segment_t seg;
 	int error, nsegs;
 
 	m_adj(m, ETHER_ALIGN);
@@ -717,7 +750,7 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 		m_freem(bmap->mbuf);
 		bmap->mbuf = NULL;
 		--sc->txcount;
-		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail);
+		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail, 1);
 	}
 
 	sc->ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
@@ -876,7 +909,7 @@ setup_dma(struct dwc_softc *sc)
 			sc->txdesc_ring[idx].tdes0 = DDESC_TDES0_TXCHAIN;
 			sc->txdesc_ring[idx].tdes1 = 0;
 		}
-		nidx = next_txidx(sc, idx);
+		nidx = next_txidx(sc, idx, 1);
 		sc->txdesc_ring[idx].addr_next = sc->txdesc_ring_paddr +
 		    (nidx * sizeof(struct dwc_hwdesc));
 	}
@@ -887,7 +920,7 @@ setup_dma(struct dwc_softc *sc)
 	    BUS_SPACE_MAXADDR_32BIT,	/* lowaddr */
 	    BUS_SPACE_MAXADDR,		/* highaddr */
 	    NULL, NULL,			/* filter, filterarg */
-	    MCLBYTES, 1, 		/* maxsize, nsegments */
+	    MCLBYTES, TX_MAX_DMA_SEGS,	/* maxsize, nsegments */
 	    MCLBYTES,			/* maxsegsize */
 	    0,				/* flags */
 	    NULL, NULL,			/* lockfunc, lockarg */

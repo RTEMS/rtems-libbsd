@@ -49,6 +49,7 @@
 #define	RX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * RX_DESC_COUNT)
 #define	TX_DESC_COUNT	1024
 #define	TX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * TX_DESC_COUNT)
+#define	TX_MAX_DMA_SEGS	8	/* maximum segs in a tx mbuf dma */
 
 struct dwc_bufmap {
 	bus_dmamap_t		map;

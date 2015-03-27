@@ -1227,14 +1227,6 @@ dwc_attach(device_t dev)
 
 	callout_init_mtx(&sc->dwc_callout, &sc->mtx, 0);
 
-	/* Setup interrupt handler. */
-	error = bus_setup_intr(dev, sc->res[1], INTR_TYPE_NET | INTR_MPSAFE,
-	    NULL, dwc_intr, sc, &sc->intr_cookie);
-	if (error != 0) {
-		device_printf(dev, "could not setup interrupt handler.\n");
-		return (ENXIO);
-	}
-
 	/* Set up the ethernet interface. */
 	sc->ifp = ifp = if_alloc(IFT_ETHER);
 
@@ -1260,6 +1252,14 @@ dwc_attach(device_t dev)
 		return (ENXIO);
 	}
 	sc->mii_softc = device_get_softc(sc->miibus);
+
+	/* Setup interrupt handler. */
+	error = bus_setup_intr(dev, sc->res[1], INTR_TYPE_NET | INTR_MPSAFE,
+	    NULL, dwc_intr, sc, &sc->intr_cookie);
+	if (error != 0) {
+		device_printf(dev, "could not setup interrupt handler.\n");
+		return (ENXIO);
+	}
 
 	/* All ready to run, attach the ethernet interface. */
 	ether_ifattach(ifp, macaddr);

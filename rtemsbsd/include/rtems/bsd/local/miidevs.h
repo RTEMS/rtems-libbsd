@@ -60,7 +60,7 @@
 #define	MII_OUI_BROADCOM2	0x000af7	/* Broadcom Corporation */
 #define	MII_OUI_BROADCOM3	0x001be9	/* Broadcom Corporation */
 #define	MII_OUI_BROADCOM4	0x18c086	/* Broadcom Corporation */
-#define	MII_OUI_CICADA	0x0003F1	/* Cicada Semiconductor */
+#define	MII_OUI_CICADA	0x0003f1	/* Cicada Semiconductor */
 #define	MII_OUI_DAVICOM	0x00606e	/* Davicom Semiconductor */
 #define	MII_OUI_ENABLESEMI	0x0010dd	/* Enable Semiconductor */
 #define	MII_OUI_ICPLUS	0x0090c3	/* IC Plus Corp. */
@@ -69,6 +69,7 @@
 #define	MII_OUI_JMICRON	0x00d831	/* JMicron Technologies */
 #define	MII_OUI_LEVEL1	0x00207b	/* Level 1 */
 #define	MII_OUI_MARVELL	0x005043	/* Marvell Semiconductor */
+#define	MII_OUI_MICREL	0x0010a1	/* Micrel */
 #define	MII_OUI_MYSON	0x00c0b4	/* Myson Technology */
 #define	MII_OUI_NATSEMI	0x080017	/* National Semiconductor */
 #define	MII_OUI_PMCSIERRA	0x00e004	/* PMC-Sierra */
@@ -77,8 +78,10 @@
 #define	MII_OUI_REALTEK	0x00e04c	/* RealTek Semicondctor */
 #define	MII_OUI_SEEQ	0x00a07d	/* Seeq Technology */
 #define	MII_OUI_SIS	0x00e006	/* Silicon Integrated Systems */
+#define	MII_OUI_SMC	0x00800f	/* SMC */
 #define	MII_OUI_TI	0x080028	/* Texas Instruments */
 #define	MII_OUI_TSC	0x00c039	/* TDK Semiconductor */
+#define	MII_OUI_VITESSE	0x0001c1	/* Vitesse Semiconductor */
 #define	MII_OUI_XAQTI	0x00e0ae	/* XaQti Corp. */
 
 /* Some Intel 82553's use an alternative OUI. */
@@ -154,6 +157,8 @@
 #define	MII_STR_xxATHEROS_F1	"Atheros F1 10/100/1000 PHY"
 #define	MII_MODEL_xxATHEROS_F2	0x0002
 #define	MII_STR_xxATHEROS_F2	"Atheros F2 10/100 PHY"
+#define	MII_MODEL_xxATHEROS_AR8021	0x0004
+#define	MII_STR_xxATHEROS_AR8021	"Atheros AR8021 10/100/1000 PHY"
 #define	MII_MODEL_xxATHEROS_F1_7	0x0007
 #define	MII_STR_xxATHEROS_F1_7	"Atheros F1 10/100/1000 PHY"
 
@@ -264,6 +269,8 @@
 #define	MII_STR_xxCICADA_CS8204	"Cicada CS8204 10/100/1000TX PHY"
 #define	MII_MODEL_xxCICADA_VSC8211	0x000b
 #define	MII_STR_xxCICADA_VSC8211	"Cicada VSC8211 10/100/1000TX PHY"
+#define	MII_MODEL_xxCICADA_VSC8221	0x0015
+#define	MII_STR_xxCICADA_VSC8221	"Cicada CS8201 10/100/1000TX PHY"
 #define	MII_MODEL_xxCICADA_CS8201A	0x0020
 #define	MII_STR_xxCICADA_CS8201A	"Cicada CS8201 10/100/1000TX PHY"
 #define	MII_MODEL_xxCICADA_CS8201B	0x0021
@@ -401,6 +408,10 @@
 #define	MII_MODEL_MARVELL_E1111	0x000c
 #define	MII_STR_MARVELL_E1111	"Marvell 88E1111 Gigabit PHY"
 
+/* Micrel PHYs */
+#define	MII_MODEL_MICREL_KSZ9021	0x0021
+#define	MII_STR_MICREL_KSZ9021	"Micrel KSZ9021 10/100/1000 PHY"
+
 /* Myson Technology PHYs */
 #define	MII_MODEL_xxMYSON_MTD972	0x0000
 #define	MII_STR_xxMYSON_MTD972	"MTD972 10/100 media interface"
@@ -483,6 +494,14 @@
 #define	MII_MODEL_xxTSC_78Q2121	0x0015
 #define	MII_STR_xxTSC_78Q2121	"78Q2121 100BASE-TX media interface"
 
+/* Vitesse Semiconductor */
+#define	MII_MODEL_xxVITESSE_VSC8641	0x0003
+#define	MII_STR_xxVITESSE_VSC8641	"Vitesse VSC8641 10/100/1000TX PHY"
+
 /* XaQti Corp. PHYs */
 #define	MII_MODEL_xxXAQTI_XMACII	0x0000
 #define	MII_STR_xxXAQTI_XMACII	"XaQti Corp. XMAC II gigabit interface"
+
+/* SMC */
+#define	MII_MODEL_SMC_LAN8710A	0x000F
+#define	MII_STR_SMC_LAN8710A	"SMC LAN8710A 10/100 interface"

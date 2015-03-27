@@ -194,6 +194,11 @@ micphy_attach(device_t dev)
 	ksz9021_load_values(sc, node, MII_KSZPHY_TX_DATA_PAD_SKEW,
 			"txd0-skew-ps", "txd1-skew-ps",
 			"txd2-skew-ps", "txd3-skew-ps");
+#else /* __rtems__ */
+	/* FIXME */
+	micphy_write(sc, MII_KSZPHY_CLK_CONTROL_PAD_SKEW, 0xf0f0);
+	micphy_write(sc, MII_KSZPHY_RX_DATA_PAD_SKEW, 0x0000);
+	micphy_write(sc, MII_KSZPHY_TX_DATA_PAD_SKEW, 0x0000);
 #endif /* __rtems__ */
 
 	return (0);

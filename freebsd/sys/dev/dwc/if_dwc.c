@@ -135,9 +135,17 @@ struct dwc_hwdesc
 /*
  * Driver data and defines.
  */
+#ifndef __rtems__
 #define	RX_DESC_COUNT	1024
+#else /* __rtems__ */
+#define	RX_DESC_COUNT	64
+#endif /* __rtems__ */
 #define	RX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * RX_DESC_COUNT)
+#ifndef __rtems__
 #define	TX_DESC_COUNT	1024
+#else /* __rtems__ */
+#define	TX_DESC_COUNT	64
+#endif /* __rtems__ */
 #define	TX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * TX_DESC_COUNT)
 
 /*

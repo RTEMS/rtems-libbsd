@@ -199,6 +199,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <sched.h>
 
 #include <rtems.h>
 #include <rtems/rtems_bsdnet.h>
@@ -818,6 +819,7 @@ command_retrieve(FTPD_SessionInfo_t  *info, char const *filename)
       {
         if(send(s, buf, n, 0) != n)
           break;
+        sched_yield();
       }
     }
     else if (info->xfer_mode == TYPE_A)
@@ -853,6 +855,7 @@ command_retrieve(FTPD_SessionInfo_t  *info, char const *filename)
           }
         }
         while((rest -= i) > 0);
+        sched_yield();
       }
     }
 
@@ -1046,6 +1049,7 @@ command_store(FTPD_SessionInfo_t *info, char const *filename)
           res = 0;
           break;
         }
+        sched_yield();
       }
     }
     else if(info->xfer_mode == TYPE_A)
@@ -1107,6 +1111,7 @@ command_store(FTPD_SessionInfo_t *info, char const *filename)
             res = 0;
         }
         while((rest -= i) > 0);
+        sched_yield();
       }
     }
 

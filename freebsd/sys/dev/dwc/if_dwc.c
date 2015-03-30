@@ -242,32 +242,17 @@ inline static uint32_t
 dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_addr_t paddr,
     uint32_t len)
 {
-	uint32_t flags;
-	uint32_t nidx;
-
-	nidx = next_txidx(sc, idx);
-
-	/* Addr/len 0 means we're clearing the descriptor after xmit done. */
-	if (paddr == 0 || len == 0) {
-		flags = 0;
-		--sc->txcount;
-	} else {
-		flags = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXFIRST
-		    | DDESC_TDES0_TXLAST | DDESC_TDES0_TXINT;
-		++sc->txcount;
-	}
+	++sc->txcount;
 
 	sc->txdesc_ring[idx].addr = (uint32_t)(paddr);
-	sc->txdesc_ring[idx].tdes0 = flags;
 	sc->txdesc_ring[idx].tdes1 = len;
+	wmb();
 
-	if (paddr && len) {
-		wmb();
-		sc->txdesc_ring[idx].tdes0 |= DDESC_TDES0_OWN;
-		wmb();
-	}
+	sc->txdesc_ring[idx].tdes0 = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXFIRST
+	    | DDESC_TDES0_TXLAST | DDESC_TDES0_TXINT | DDESC_TDES0_OWN;
+	wmb();
 
-	return (nidx);
+	return (next_txidx(sc, idx));
 }
 
 static int
@@ -817,7 +802,7 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 #endif /* __rtems__ */
 		m_freem(bmap->mbuf);
 		bmap->mbuf = NULL;
-		dwc_setup_txdesc(sc, sc->tx_idx_tail, 0, 0);
+		--sc->txcount;
 		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail);
 	}
 
@@ -981,6 +966,7 @@ setup_dma(struct dwc_softc *sc)
 #endif /* __rtems__ */
 
 	for (idx = 0; idx < TX_DESC_COUNT; idx++) {
+		sc->txdesc_ring[idx].addr = 0;
 		sc->txdesc_ring[idx].tdes0 = DDESC_TDES0_TXCHAIN;
 		sc->txdesc_ring[idx].tdes1 = 0;
 		nidx = next_txidx(sc, idx);
@@ -1022,7 +1008,6 @@ setup_dma(struct dwc_softc *sc)
 			goto out;
 		}
 #endif /* __rtems__ */
-		dwc_setup_txdesc(sc, idx, 0, 0);
 	}
 
 	/*
@@ -1186,8 +1171,7 @@ dwc_attach(device_t dev)
 	sc->dev = dev;
 	sc->mii_clk = MII_CLK_VAL;
 	sc->rx_idx = 0;
-
-	sc->txcount = TX_DESC_COUNT;
+	sc->txcount = 0;
 
 	if (bus_alloc_resources(dev, dwc_spec, sc->res)) {
 		device_printf(dev, "could not allocate resources\n");

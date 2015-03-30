@@ -1429,6 +1429,18 @@ $(TEST_MEDIA01): $(TEST_MEDIA01_O_FILES) $(LIB)
 TESTS += $(TEST_MEDIA01)
 O_FILES += $(TEST_MEDIA01_O_FILES)
 D_FILES += $(TEST_MEDIA01_D_FILES)
+
+TEST_VLAN01 = testsuite/vlan01/vlan01.exe
+TEST_VLAN01_O_FILES =
+TEST_VLAN01_D_FILES =
+TEST_VLAN01_O_FILES += testsuite/vlan01/test_main.o
+TEST_VLAN01_D_FILES += testsuite/vlan01/test_main.d
+$(TEST_VLAN01): $(TEST_VLAN01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/vlan01/vlan01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_VLAN01)
+O_FILES += $(TEST_VLAN01_O_FILES)
+D_FILES += $(TEST_VLAN01_D_FILES)
+RUN_NET_TESTS += $(TEST_VLAN01)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

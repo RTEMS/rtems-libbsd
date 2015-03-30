@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#  Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+#  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
 #   Dornierstr. 4
@@ -2539,6 +2539,7 @@ tests.addTest('ppp01', ['test_main'], runTest = False)
 tests.addTest('zerocopy01', ['test_main'], runTest = False, netTest = True)
 tests.addTest('smp01', ['test_main'])
 tests.addTest('media01', ['test_main'], runTest = False)
+tests.addTest('vlan01', ['test_main'], netTest = True)
 
 dhcpcd = Module('dhcpcd')
 dhcpcd.addSourceFiles(

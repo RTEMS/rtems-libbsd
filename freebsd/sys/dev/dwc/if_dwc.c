@@ -149,6 +149,7 @@ struct dwc_hwdesc
 #define	TX_DESC_COUNT	64
 #endif /* __rtems__ */
 #define	TX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * TX_DESC_COUNT)
+#define TX_MAX_DMA_SEGS	8	/* maximum segs in a tx mbuf dma */
 
 /*
  * The hardware imposes alignment restrictions on various objects involved in
@@ -221,10 +222,10 @@ next_rxidx(struct dwc_softc *sc, uint32_t curidx)
 }
 
 static inline uint32_t
-next_txidx(struct dwc_softc *sc, uint32_t curidx)
+next_txidx(struct dwc_softc *sc, uint32_t curidx, int inc)
 {
 
-	return ((curidx + 1) % TX_DESC_COUNT);
+	return ((curidx + (uint32_t)inc) % TX_DESC_COUNT);
 }
 
 #ifndef __rtems__
@@ -238,58 +239,121 @@ dwc_get1paddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 }
 #endif /* __rtems__ */
 
-inline static uint32_t
-dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_addr_t paddr,
-    uint32_t len)
+static void
+dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_dma_segment_t segs[TX_MAX_DMA_SEGS],
+    int nsegs)
 {
-	++sc->txcount;
+	int i;
 
-	sc->txdesc_ring[idx].addr = (uint32_t)(paddr);
-	sc->txdesc_ring[idx].tdes1 = len;
-	wmb();
+	sc->txcount += nsegs;
 
-	sc->txdesc_ring[idx].tdes0 = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXFIRST
-	    | DDESC_TDES0_TXLAST | DDESC_TDES0_TXINT | DDESC_TDES0_OWN;
-	wmb();
+	idx = next_txidx(sc, idx, nsegs);
+	sc->tx_idx_head = idx;
 
-	return (next_txidx(sc, idx));
+	/*
+	 * Fill in the TX descriptors back to front so that OWN bit in first
+	 * descriptor is set last.
+	 */
+	for (i = nsegs - 1; i >= 0; i--) {
+		uint32_t tdes0;
+
+		idx = next_txidx(sc, idx, -1);
+
+		sc->txdesc_ring[idx].addr = segs[i].ds_addr;
+		sc->txdesc_ring[idx].tdes1 = segs[i].ds_len;
+		wmb();
+
+		tdes0 = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXINT |
+		    DDESC_TDES0_OWN;
+
+		if (i == 0)
+			tdes0 |= DDESC_TDES0_TXFIRST;
+
+		if (i == nsegs - 1)
+			tdes0 |= DDESC_TDES0_TXLAST;
+
+		sc->txdesc_ring[idx].tdes0 = tdes0;
+		wmb();
+
+		if (i != 0)
+			sc->txbuf_map[idx].mbuf = NULL;
+	}
 }
 
+#ifdef __rtems__
 static int
-dwc_setup_txbuf(struct dwc_softc *sc, int idx, struct mbuf **mp)
+dwc_get_segs_for_tx(struct mbuf *m, bus_dma_segment_t segs[TX_MAX_DMA_SEGS],
+    int *nsegs)
 {
-	struct bus_dma_segment seg;
-#ifndef __rtems__
-	int error, nsegs;
+	int i = 0;
+
+	do {
+		if (m->m_len > 0) {
+			segs[i].ds_addr = mtod(m, bus_addr_t);
+			segs[i].ds_len = m->m_len;
+			rtems_cache_flush_multiple_data_lines(m->m_data, m->m_len);
+			++i;
+		}
+
+		m = m->m_next;
+
+		if (m == NULL) {
+			*nsegs = i;
+
+			return (0);
+		}
+	} while (i < TX_MAX_DMA_SEGS);
+
+	return (EFBIG);
+}
 #endif /* __rtems__ */
-	struct mbuf * m;
+static void
+dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
+{
+	bus_dma_segment_t segs[TX_MAX_DMA_SEGS];
+	int error, nsegs, idx;
 
-	if ((m = m_defrag(*mp, M_NOWAIT)) == NULL)
-		return (ENOMEM);
-	*mp = m;
-
+	idx = sc->tx_idx_head;
 #ifndef __rtems__
 	error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, sc->txbuf_map[idx].map,
-	    m, &seg, &nsegs, 0);
-	if (error != 0) {
-		return (ENOMEM);
-	}
+	    m, &seg, &nsegs, BUS_DMA_NOWAIT);
 
-	KASSERT(nsegs == 1, ("%s: %d segments returned!", __func__, nsegs));
-
-	bus_dmamap_sync(sc->txbuf_tag, sc->txbuf_map[idx].map,
-	    BUS_DMASYNC_PREWRITE);
 #else /* __rtems__ */
-	rtems_cache_flush_multiple_data_lines(m->m_data, m->m_len);
-	seg.ds_addr = mtod(m, bus_addr_t);
-	seg.ds_len = m->m_len;
+	error = dwc_get_segs_for_tx(m, segs, &nsegs);
 #endif /* __rtems__ */
+	if (error == EFBIG) {
+		/* Too many segments!  Defrag and try again. */
+		struct mbuf *m2 = m_defrag(m, M_NOWAIT);
+
+		if (m2 == NULL) {
+			m_freem(m);
+			return;
+		}
+		m = m2;
+#ifndef __rtems__
+		error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag,
+		    sc->txbuf_map[idx].map, m, &seg, &nsegs, BUS_DMA_NOWAIT);
+#else /* __rtems__ */
+		error = dwc_get_segs_for_tx(m, segs, &nsegs);
+#endif /* __rtems__ */
+	}
+	if (error != 0) {
+		/* Give up. */
+		m_freem(m);
+		return;
+	}
 
 	sc->txbuf_map[idx].mbuf = m;
 
-	dwc_setup_txdesc(sc, idx, seg.ds_addr, seg.ds_len);
+#ifndef __rtems__
+	bus_dmamap_sync(sc->txbuf_tag, sc->txbuf_map[idx].map,
+	    BUS_DMASYNC_PREWRITE);
+#endif /* __rtems__ */
 
-	return (0);
+	dwc_setup_txdesc(sc, idx, segs, nsegs);
+
+	ETHER_BPF_MTAP(sc->ifp, m);
+	*start_tx = 1;
 }
 
 static void
@@ -297,7 +361,7 @@ dwc_txstart_locked(struct dwc_softc *sc)
 {
 	struct ifnet *ifp;
 	struct mbuf *m;
-	int enqueued;
+	int start_tx;
 
 	DWC_ASSERT_LOCKED(sc);
 
@@ -306,10 +370,10 @@ dwc_txstart_locked(struct dwc_softc *sc)
 
 	ifp = sc->ifp;
 
-	enqueued = 0;
+	start_tx = 0;
 
 	for (;;) {
-		if (sc->txcount == (TX_DESC_COUNT-1)) {
+		if (sc->txcount >= (TX_DESC_COUNT - 1 - TX_MAX_DMA_SEGS)) {
 			ifp->if_drv_flags |= IFF_DRV_OACTIVE;
 			break;
 		}
@@ -317,16 +381,11 @@ dwc_txstart_locked(struct dwc_softc *sc)
 		IFQ_DRV_DEQUEUE(&ifp->if_snd, m);
 		if (m == NULL)
 			break;
-		if (dwc_setup_txbuf(sc, sc->tx_idx_head, &m) != 0) {
-			IFQ_DRV_PREPEND(&ifp->if_snd, m);
-			break;
-		}
-		BPF_MTAP(ifp, m);
-		sc->tx_idx_head = next_txidx(sc, sc->tx_idx_head);
-		++enqueued;
+
+		dwc_setup_txbuf(sc, m, &start_tx);
 	}
 
-	if (enqueued != 0) {
+	if (start_tx != 0) {
 		WRITE4(sc, TRANSMIT_POLL_DEMAND, 0x1);
 		sc->tx_watchdog_count = WATCHDOG_TIMEOUT_SECS;
 	}
@@ -557,7 +616,7 @@ dwc_setup_rxdesc(struct dwc_softc *sc, int idx, bus_addr_t paddr)
 static int
 dwc_setup_rxbuf(struct dwc_softc *sc, int idx, struct mbuf *m)
 {
-	struct bus_dma_segment seg;
+	bus_dma_segment_t seg;
 #ifndef __rtems__
 	int error, nsegs;
 #endif /* __rtems__ */
@@ -803,7 +862,7 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 		m_freem(bmap->mbuf);
 		bmap->mbuf = NULL;
 		--sc->txcount;
-		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail);
+		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail, 1);
 	}
 
 	sc->ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
@@ -969,7 +1028,7 @@ setup_dma(struct dwc_softc *sc)
 		sc->txdesc_ring[idx].addr = 0;
 		sc->txdesc_ring[idx].tdes0 = DDESC_TDES0_TXCHAIN;
 		sc->txdesc_ring[idx].tdes1 = 0;
-		nidx = next_txidx(sc, idx);
+		nidx = next_txidx(sc, idx, 1);
 #ifndef __rtems__
 		sc->txdesc_ring[idx].addr_next = sc->txdesc_ring_paddr + \
 		    (nidx * sizeof(struct dwc_hwdesc));
@@ -986,7 +1045,7 @@ setup_dma(struct dwc_softc *sc)
 	    BUS_SPACE_MAXADDR_32BIT,	/* lowaddr */
 	    BUS_SPACE_MAXADDR,		/* highaddr */
 	    NULL, NULL,			/* filter, filterarg */
-	    MCLBYTES, 1, 		/* maxsize, nsegments */
+	    MCLBYTES, TX_MAX_DMA_SEGS,	/* maxsize, nsegments */
 	    MCLBYTES,			/* maxsegsize */
 	    0,				/* flags */
 	    NULL, NULL,			/* lockfunc, lockarg */

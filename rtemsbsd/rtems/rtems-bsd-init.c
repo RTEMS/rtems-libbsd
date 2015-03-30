@@ -77,13 +77,13 @@ struct timeval boottime;
 static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
     "Kernel SMP");
 
-static int one = 1;
+static int maxid_maxcpus;
 
-SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD, &one, 0,
-    "Max CPU ID.");
+SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD,
+    &maxid_maxcpus, 0, "Max CPU ID.");
 
-SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD, &one,
-    0, "Max number of CPUs that the system was compiled for.");
+SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD,
+    &maxid_maxcpus, 0, "Max number of CPUs that the system was compiled for.");
 
 rtems_status_code
 rtems_bsd_initialize(void)
@@ -94,6 +94,7 @@ rtems_bsd_initialize(void)
 	hz = (int) rtems_clock_get_ticks_per_second();
 	tick = 1000000 / hz;
 	maxusers = 1;
+	maxid_maxcpus = (int) rtems_get_processor_count();
 
 	gettimeofday(&boottime, NULL);
 	timeval2bintime(&boottime, &boottimebin);

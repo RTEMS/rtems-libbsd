@@ -107,13 +107,22 @@ __FBSDID("$FreeBSD$");
 #define	DDESC_TDES0_TXLAST		(1 << 29)
 #define	DDESC_TDES0_TXFIRST		(1 << 28)
 #define	DDESC_TDES0_TXCRCDIS		(1 << 27)
+#define	DDESC_TDES0_CIC_IP_HDR		(0x1 << 22)
+#define	DDESC_TDES0_CIC_IP_HDR_PYL	(0x2 << 22)
+#define	DDESC_TDES0_CIC_IP_HDR_PYL_PHDR	(0x3 << 22)
 #define	DDESC_TDES0_TXRINGEND		(1 << 21)
 #define	DDESC_TDES0_TXCHAIN		(1 << 20)
 
 #define	DDESC_RDES0_OWN			(1 << 31)
 #define	DDESC_RDES0_FL_MASK		0x3fff
 #define	DDESC_RDES0_FL_SHIFT		16	/* Frame Length */
+#define	DDESC_RDES0_ESA			(1 << 0)
 #define	DDESC_RDES1_CHAINED		(1 << 14)
+#define	DDESC_RDES4_IP_PYL_ERR		(1 << 4)
+#define	DDESC_RDES4_IP_HDR_ERR		(1 << 3)
+#define	DDESC_RDES4_IP_PYL_TYPE_MSK	0x7
+#define	DDESC_RDES4_IP_PYL_UDP		1
+#define	DDESC_RDES4_IP_PYL_TCP		2
 
 struct dwc_bufmap {
 #ifndef __rtems__
@@ -132,6 +141,10 @@ struct dwc_hwdesc
 	uint32_t tdes1;
 	uint32_t addr;		/* pointer to buffer data */
 	uint32_t addr_next;	/* link to next descriptor */
+	uint32_t tdes4;
+	uint32_t tdes5;
+	uint32_t timestamp_low;
+	uint32_t timestamp_high;
 };
 
 /*
@@ -156,6 +169,9 @@ struct dwc_hwdesc
  * DMA transfers.  These values are expressed in bytes (not bits).
  */
 #define	DWC_DESC_RING_ALIGN		2048
+
+#define DWC_CKSUM_ASSIST	(CSUM_IP | CSUM_TCP | CSUM_UDP | \
+				 CSUM_TCP_IPV6 | CSUM_UDP_IPV6)
 
 struct dwc_softc {
 	struct resource		*res[2];
@@ -240,8 +256,8 @@ dwc_get1paddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 #endif /* __rtems__ */
 
 static void
-dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_dma_segment_t segs[TX_MAX_DMA_SEGS],
-    int nsegs)
+dwc_setup_txdesc(struct dwc_softc *sc, int csum_flags, int idx,
+    bus_dma_segment_t segs[TX_MAX_DMA_SEGS], int nsegs)
 {
 	int i;
 
@@ -266,8 +282,15 @@ dwc_setup_txdesc(struct dwc_softc *sc, int idx, bus_dma_segment_t segs[TX_MAX_DM
 		tdes0 = DDESC_TDES0_TXCHAIN | DDESC_TDES0_TXINT |
 		    DDESC_TDES0_OWN;
 
-		if (i == 0)
+		if (i == 0) {
 			tdes0 |= DDESC_TDES0_TXFIRST;
+
+			if ((csum_flags & (CSUM_TCP | CSUM_UDP |
+			    CSUM_TCP_IPV6 | CSUM_UDP_IPV6)) != 0)
+				tdes0 |= DDESC_TDES0_CIC_IP_HDR_PYL_PHDR;
+			else if ((csum_flags & CSUM_IP) != 0)
+				tdes0 |= DDESC_TDES0_CIC_IP_HDR;
+		}
 
 		if (i == nsegs - 1)
 			tdes0 |= DDESC_TDES0_TXLAST;
@@ -350,7 +373,7 @@ dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
 	    BUS_DMASYNC_PREWRITE);
 #endif /* __rtems__ */
 
-	dwc_setup_txdesc(sc, idx, segs, nsegs);
+	dwc_setup_txdesc(sc, m->m_pkthdr.csum_flags, idx, segs, nsegs);
 
 	ETHER_BPF_MTAP(sc->ifp, m);
 	*start_tx = 1;
@@ -569,6 +592,7 @@ dwc_init_locked(struct dwc_softc *sc)
 
 	/* Enable transmitters */
 	reg = READ4(sc, MAC_CONFIGURATION);
+	reg |= (CONF_IPC);
 	reg |= (CONF_JD | CONF_ACS | CONF_BE);
 	reg |= (CONF_TE | CONF_RE);
 	WRITE4(sc, MAC_CONFIGURATION, reg);
@@ -881,7 +905,8 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 	struct mbuf *m0;
 	struct mbuf *m;
 	int error;
-	int rdes0;
+	uint32_t rdes0;
+	uint32_t rdes4;
 	int idx;
 	int len;
 
@@ -906,6 +931,32 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 			m->m_pkthdr.rcvif = ifp;
 			m->m_pkthdr.len = len;
 			m->m_len = len;
+
+			/* Check checksum offload flags. */
+			if ((rdes0 & DDESC_RDES0_ESA) != 0) {
+				rdes4 = sc->rxdesc_ring[idx].tdes4;
+
+				/* TCP or UDP checks out, IP checks out too. */
+				if ((rdes4 & DDESC_RDES4_IP_PYL_TYPE_MSK) ==
+				    DDESC_RDES4_IP_PYL_UDP ||
+				    (rdes4 & DDESC_RDES4_IP_PYL_TYPE_MSK) ==
+				    DDESC_RDES4_IP_PYL_TCP) {
+					m->m_pkthdr.csum_flags |=
+						CSUM_IP_CHECKED |
+						CSUM_IP_VALID |
+						CSUM_DATA_VALID |
+						CSUM_PSEUDO_HDR;
+					m->m_pkthdr.csum_data = 0xffff;
+				} else if ((rdes4 & (DDESC_RDES4_IP_PYL_ERR |
+				    DDESC_RDES4_IP_HDR_ERR)) == 0) {
+					/* Only IP checks out. */
+					m->m_pkthdr.csum_flags |=
+						CSUM_IP_CHECKED |
+						CSUM_IP_VALID;
+					m->m_pkthdr.csum_data = 0xffff;
+				}
+			}
+
 #ifndef __rtems__
 			if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 #else /* __rtems__ */
@@ -1146,6 +1197,7 @@ setup_dma(struct dwc_softc *sc)
 			    "could not create new RX buffer.\n");
 			goto out;
 		}
+		sc->rxdesc_ring[idx].tdes4 = 0;
 	}
 
 out:
@@ -1263,6 +1315,7 @@ dwc_attach(device_t dev)
 	}
 
 	reg = READ4(sc, BUS_MODE);
+	reg |= (BUS_MODE_ATDS);
 	reg |= (BUS_MODE_EIGHTXPBL);
 	reg |= (BUS_MODE_PBL_BEATS_8 << BUS_MODE_PBL_SHIFT);
 	WRITE4(sc, BUS_MODE, reg);
@@ -1297,8 +1350,10 @@ dwc_attach(device_t dev)
 	ifp->if_softc = sc;
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-	ifp->if_capabilities = IFCAP_VLAN_MTU;
+	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
+	    IFCAP_VLAN_MTU | IFCAP_VLAN_HWCSUM;
 	ifp->if_capenable = ifp->if_capabilities;
+	ifp->if_hwassist = DWC_CKSUM_ASSIST;
 	ifp->if_start = dwc_txstart;
 	ifp->if_ioctl = dwc_ioctl;
 	ifp->if_init = dwc_init;

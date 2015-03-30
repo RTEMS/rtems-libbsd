@@ -40,6 +40,7 @@
 #define	 CONF_PS		(1 << 15)	/* GMII/MII */
 #define	 CONF_FES		(1 << 14)	/* MII speed select */
 #define	 CONF_DM		(1 << 11)	/* Full Duplex Enable */
+#define	 CONF_IPC		(1 << 10)	/* Checksum Enable */
 #define	 CONF_ACS		(1 << 7)
 #define	 CONF_TE		(1 << 3)
 #define	 CONF_RE		(1 << 2)
@@ -209,6 +210,7 @@
 #define	 BUS_MODE_EIGHTXPBL	(1 << 24) /* Multiplies PBL by 8 */
 #define	 BUS_MODE_PBL_SHIFT	8 /* Single block transfer size */
 #define	 BUS_MODE_PBL_BEATS_8	8
+#define	 BUS_MODE_ATDS		(1 << 7) /* Alternate Descriptor Size */
 #define	 BUS_MODE_SWR		(1 << 0) /* Reset */
 #define	TRANSMIT_POLL_DEMAND	0x1004
 #define	RECEIVE_POLL_DEMAND	0x1008

@@ -70,6 +70,7 @@ rtems_task Init(
 #include <machine/rtems-bsd-sysinit.h>
 
 SYSINIT_NEED_NET_PF_UNIX;
+SYSINIT_NEED_NET_IF_LAGG;
 SYSINIT_NEED_NET_IF_VLAN;
 
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER

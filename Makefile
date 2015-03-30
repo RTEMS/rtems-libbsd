@@ -1441,6 +1441,18 @@ NET_TESTS += $(TEST_VLAN01)
 O_FILES += $(TEST_VLAN01_O_FILES)
 D_FILES += $(TEST_VLAN01_D_FILES)
 RUN_NET_TESTS += $(TEST_VLAN01)
+
+TEST_LAGG01 = testsuite/lagg01/lagg01.exe
+TEST_LAGG01_O_FILES =
+TEST_LAGG01_D_FILES =
+TEST_LAGG01_O_FILES += testsuite/lagg01/test_main.o
+TEST_LAGG01_D_FILES += testsuite/lagg01/test_main.d
+$(TEST_LAGG01): $(TEST_LAGG01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/lagg01/lagg01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_LAGG01)
+O_FILES += $(TEST_LAGG01_O_FILES)
+D_FILES += $(TEST_LAGG01_D_FILES)
+RUN_NET_TESTS += $(TEST_LAGG01)
 LIB_C_FILES += dhcpcd/arp.c
 dhcpcd/arp.o: dhcpcd/arp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@

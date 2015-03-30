@@ -280,6 +280,7 @@ Init(rtems_task_argument arg)
 #include <machine/rtems-bsd-sysinit.h>
 
 SYSINIT_NEED_NET_PF_UNIX;
+SYSINIT_NEED_NET_IF_LAGG;
 SYSINIT_NEED_NET_IF_VLAN;
 
 #include <bsp/nexus-devices.h>

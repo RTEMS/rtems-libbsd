@@ -2540,6 +2540,7 @@ tests.addTest('zerocopy01', ['test_main'], runTest = False, netTest = True)
 tests.addTest('smp01', ['test_main'])
 tests.addTest('media01', ['test_main'], runTest = False)
 tests.addTest('vlan01', ['test_main'], netTest = True)
+tests.addTest('lagg01', ['test_main'], netTest = True)
 
 dhcpcd = Module('dhcpcd')
 dhcpcd.addSourceFiles(

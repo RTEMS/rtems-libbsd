@@ -256,10 +256,6 @@ dwc_txstart_locked(struct dwc_softc *sc)
 
 	ifp = sc->ifp;
 
-	if (ifp->if_drv_flags & IFF_DRV_OACTIVE) {
-		return;
-	}
-
 	enqueued = 0;
 
 	for (;;) {
@@ -292,7 +288,8 @@ dwc_txstart(struct ifnet *ifp)
 	struct dwc_softc *sc = ifp->if_softc;
 
 	DWC_LOCK(sc);
-	dwc_txstart_locked(sc);
+	if ((ifp->if_drv_flags & IFF_DRV_OACTIVE) == 0)
+		dwc_txstart_locked(sc);
 	DWC_UNLOCK(sc);
 }
 
@@ -718,11 +715,9 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 {
 	struct dwc_bufmap *bmap;
 	struct dwc_hwdesc *desc;
-	struct ifnet *ifp;
 
 	DWC_ASSERT_LOCKED(sc);
 
-	ifp = sc->ifp;
 	while (sc->tx_idx_tail != sc->tx_idx_head) {
 		desc = &sc->txdesc_ring[sc->tx_idx_tail];
 		if ((desc->tdes0 & DDESC_TDES0_OWN) != 0)
@@ -735,8 +730,10 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 		bmap->mbuf = NULL;
 		dwc_setup_txdesc(sc, sc->tx_idx_tail, 0, 0);
 		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail);
-		ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
 	}
+
+	sc->ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+	dwc_txstart_locked(sc);
 
 	/* If there are no buffers outstanding, muzzle the watchdog. */
 	if (sc->tx_idx_tail == sc->tx_idx_head) {

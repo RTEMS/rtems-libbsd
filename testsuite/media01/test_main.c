@@ -34,10 +34,37 @@
 
 #include <rtems/bdbuf.h>
 #include <rtems/console.h>
+#include <rtems/ftpd.h>
 #include <rtems/media.h>
 #include <rtems/shell.h>
 
 #define TEST_NAME "LIBBSD MEDIA 1"
+
+struct rtems_ftpd_configuration rtems_ftpd_configuration = {
+	/* FTPD task priority */
+	.priority = 100,
+
+	/* Maximum buffersize for hooks */
+	.max_hook_filesize = 0,
+
+	/* Well-known port */
+	.port = 21,
+
+	/* List of hooks */
+	.hooks = NULL,
+
+	/* Root for FTPD or NULL for "/" */
+	.root = NULL,
+
+	/* Max. connections */
+	.tasks_count = 4,
+
+	/* Idle timeout in seconds  or 0 for no (infinite) timeout */
+	.idle = 5 * 60,
+
+	/* Access: 0 - r/w, 1 - read-only, 2 - write-only, 3 - browse-only */
+	.access = 0
+};
 
 static rtems_status_code
 media_listener(rtems_media_event event, rtems_media_state state,
@@ -83,7 +110,11 @@ media_listener(rtems_media_event event, rtems_media_state state,
 static void
 test_main(void)
 {
+	int rv;
 	rtems_status_code sc;
+
+	rv = rtems_initialize_ftpd();
+	assert(rv == 0);
 
 	sc = rtems_shell_init("SHLL", 16 * 1024, 1, CONSOLE_DEVICE_NAME,
 	    false, true, NULL);
@@ -117,11 +148,15 @@ early_initialization(void)
 	assert(sc == RTEMS_SUCCESSFUL);
 }
 
-#include <bsp/nexus-devices.h>
+#define DEFAULT_NETWORK_DHCPCD_ENABLE
 
 #define CONFIGURE_FILESYSTEM_DOSFS
 
-#include <rtems/bsd/test/default-init.h>
+#define CONFIGURE_SMP_APPLICATION
+
+#define CONFIGURE_SMP_MAXIMUM_PROCESSORS 32
+
+#include <rtems/bsd/test/default-network-init.h>
 
 #define CONFIGURE_SHELL_COMMANDS_INIT
 
@@ -131,7 +166,12 @@ early_initialization(void)
 
 #define CONFIGURE_SHELL_USER_COMMANDS \
   &bsp_interrupt_shell_command, \
-  &rtems_shell_BSD_Command
+  &rtems_shell_BSD_Command, \
+  &rtems_shell_HOSTNAME_Command, \
+  &rtems_shell_PING_Command, \
+  &rtems_shell_ROUTE_Command, \
+  &rtems_shell_NETSTAT_Command, \
+  &rtems_shell_IFCONFIG_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE
@@ -153,6 +193,7 @@ early_initialization(void)
 #define CONFIGURE_SHELL_COMMAND_MALLOC_INFO
 
 #define CONFIGURE_SHELL_COMMAND_FDISK
+#define CONFIGURE_SHELL_COMMAND_BLKSTATS
 #define CONFIGURE_SHELL_COMMAND_BLKSYNC
 #define CONFIGURE_SHELL_COMMAND_MSDOSFMT
 #define CONFIGURE_SHELL_COMMAND_DF

@@ -2595,6 +2595,14 @@ mdnsresponder.addSourceFiles(
 	]
 )
 
+mghttpd = Module('mghttpd')
+mghttpd.addSourceFiles(
+	[
+		'rtemsbsd/mghttpd/mongoose.c',
+	],
+	'-DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET'
+)
+
 # Register all the Module instances with the Module Manager
 mm.addModule(rtems)
 mm.addModule(base)
@@ -2639,6 +2647,7 @@ mm.addModule(userSpace)
 
 mm.addModule(tests)
 mm.addModule(dhcpcd)
+mm.addModule(mghttpd)
 mm.addModule(mdnsresponder)
 
 # XXX TODO Check that no file is also listed in empty

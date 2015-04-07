@@ -1518,6 +1518,9 @@ LIB_C_FILES += dhcpcd/crypt/hmac_md5.c
 dhcpcd/crypt/hmac_md5.o: dhcpcd/crypt/hmac_md5.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
 LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c
+LIB_C_FILES += rtemsbsd/mghttpd/mongoose.c
+rtemsbsd/mghttpd/mongoose.o: rtemsbsd/mghttpd/mongoose.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET -c $< -o $@
 LIB_C_FILES += mDNSResponder/mDNSCore/anonymous.c
 LIB_C_FILES += mDNSResponder/mDNSCore/CryptoAlg.c
 LIB_C_FILES += mDNSResponder/mDNSCore/DNSCommon.c

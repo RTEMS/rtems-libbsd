@@ -2230,8 +2230,7 @@ userSpace.addUserSpaceHeaderFiles(
 class RPCGENMakefileFragmentComposer(MakefileFragmentComposer):
 	def compose(self, path):
 		headerPath = path[:-2] + '.h'
-		return 'LIB_GEN_FILES += ' + headerPath + '\n' \
-			+ headerPath + ': ' + path + '\n' \
+		return headerPath + ': ' + path + '\n' \
 			'\t	rm -f $@\n' \
 			'\t	rpcgen -h -o $@ $<\n'
 
@@ -2241,8 +2240,7 @@ class RouteKeywordsMakefileFragmentComposer(MakefileFragmentComposer):
 	def compose(self, path):
 		headerPath = path + '.h'
 		tmpPath = path + '.tmp'
-		return 'LIB_GEN_FILES += ' + headerPath + '\n' \
-			+ headerPath + ': ' + path + '\n' \
+		return headerPath + ': ' + path + '\n' \
 			'\tsed -e \'/^#/d\' -e \'/^$$/d\' $< > ' + tmpPath + '\n' \
 			'\tLC_ALL=C tr \'a-z\' \'A-Z\' < ' + tmpPath + ' | paste ' + tmpPath + ' - | \\\n' \
 			'\tawk \'{ if (NF > 1) printf "#define\\tK_%s\\t%d\\n\\t{\\"%s\\", K_%s},\\n", $$2, NR, $$1, $$2 }\' > $@\n' \
@@ -2258,8 +2256,7 @@ class LexMakefileFragmentComposer(MakefileFragmentComposer):
 	def compose(self, path):
 		src = path[:-2] + '.c'
 		dep = path[:path.rfind('/')] + '/' + self.dep
-		return 'LIB_GEN_FILES += ' + src + '\n' \
-			'LIB_C_FILES += ' + src + '\n' \
+		return 'LIB_C_FILES += ' + src + '\n' \
 			+ src + ': ' + path + ' ' + dep + '\n' \
 			'\t${LEX} -P ' + self.sym + ' -t $< | sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > $@\n'
 
@@ -2271,8 +2268,7 @@ class YaccMakefileFragmentComposer(MakefileFragmentComposer):
 	def compose(self, path):
 		src = path[:-2] + '.c'
 		hdr = path[:path.rfind('/')] + '/' + self.header
-		return 'LIB_GEN_FILES += ' + src + '\n' \
-			'LIB_C_FILES += ' + src + '\n' \
+		return 'LIB_C_FILES += ' + src + '\n' \
 			+ src + ': ' + path + '\n' \
 			'\tyacc -b ' + self.sym + ' -d -p ' + self.sym + ' $<\n' \
 			'\tsed -e ''/YY_BUF_SIZE/s/16384/1024/'' < ' + self.sym + '.tab.c > $@\n' \

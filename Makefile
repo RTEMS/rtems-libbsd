@@ -144,22 +144,18 @@ LIB_GEN_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
 LIB_C_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
 rtemsbsd/rtems/rtems-kvm-symbols.c: rtemsbsd/rtems/generate_kvm_symbols
 	./$< > $@
-LIB_GEN_FILES += freebsd/lib/libc/net/nslexer.c
 LIB_C_FILES += freebsd/lib/libc/net/nslexer.c
 freebsd/lib/libc/net/nslexer.c: freebsd/lib/libc/net/nslexer.l freebsd/lib/libc/net/nsparser.c
 	${LEX} -P _nsyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
-LIB_GEN_FILES += freebsd/lib/libc/net/nsparser.c
 LIB_C_FILES += freebsd/lib/libc/net/nsparser.c
 freebsd/lib/libc/net/nsparser.c: freebsd/lib/libc/net/nsparser.y
 	yacc -b _nsyy -d -p _nsyy $<
 	sed -e /YY_BUF_SIZE/s/16384/1024/ < _nsyy.tab.c > $@
 	rm -f _nsyy.tab.c
 	mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h
-LIB_GEN_FILES += freebsd/lib/libipsec/policy_token.c
 LIB_C_FILES += freebsd/lib/libipsec/policy_token.c
 freebsd/lib/libipsec/policy_token.c: freebsd/lib/libipsec/policy_token.l freebsd/lib/libipsec/policy_parse.c
 	${LEX} -P __libipsecyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
-LIB_GEN_FILES += freebsd/lib/libipsec/policy_parse.c
 LIB_C_FILES += freebsd/lib/libipsec/policy_parse.c
 freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
 	yacc -b __libipsecyy -d -p __libipsecyy $<
@@ -616,11 +612,9 @@ endif
 ifeq ($(RTEMS_CPU), v850)
 LIB_C_FILES += freebsd/sys/v850/v850/in_cksum.c
 endif
-LIB_GEN_FILES += freebsd/include/rpc/rpcb_prot.h
 freebsd/include/rpc/rpcb_prot.h: freebsd/include/rpc/rpcb_prot.x
 		rm -f $@
 		rpcgen -h -o $@ $<
-LIB_GEN_FILES += freebsd/sbin/route/keywords.h
 freebsd/sbin/route/keywords.h: freebsd/sbin/route/keywords
 	sed -e '/^#/d' -e '/^$$/d' $< > freebsd/sbin/route/keywords.tmp
 	LC_ALL=C tr 'a-z' 'A-Z' < freebsd/sbin/route/keywords.tmp | paste freebsd/sbin/route/keywords.tmp - | \

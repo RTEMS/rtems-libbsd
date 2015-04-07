@@ -4,14 +4,6 @@
 *.exe
 *.map
 libbsd.html
-freebsd/sbin/route/keywords.h
-freebsd/include/rpc/rpcb_prot.h
-freebsd/lib/libipsec/y.tab.h
-freebsd/lib/libipsec/policy_parse.c
-freebsd/lib/libipsec/policy_token.c
-freebsd/lib/libc/net/nsparser.h
-freebsd/lib/libc/net/nslexer.c
-freebsd/lib/libc/net/nsparser.c
 rtemsbsd/rtems/rtems-kvm-symbols.c
 testsuite/include/rtems/bsd/test/network-config.h
 /*.i

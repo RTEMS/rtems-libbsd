@@ -213,7 +213,7 @@ struct dwc_softc {
 	bus_addr_t		txdesc_ring_paddr;
 	bus_dma_tag_t		txbuf_tag;
 #endif /* __rtems__ */
-	struct dwc_bufmap	txbuf_map[RX_DESC_COUNT];
+	struct dwc_bufmap	txbuf_map[TX_DESC_COUNT];
 	uint32_t		tx_idx_head;
 	uint32_t		tx_idx_tail;
 	int			txcount;

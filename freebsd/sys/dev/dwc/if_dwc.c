@@ -915,6 +915,35 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 		if ((rdes0 & DDESC_RDES0_OWN) != 0)
 			break;
 
+		sc->rx_idx = next_rxidx(sc, idx);
+
+		m = sc->rxbuf_map[idx].mbuf;
+
+		m0 = dwc_alloc_mbufcl(sc);
+		if (m0 == NULL) {
+			m0 = m;
+
+			/* Account for m_adj() in dwc_setup_rxbuf() */
+			m0->m_data = m0->m_ext.ext_buf;
+		}
+
+		if ((error = dwc_setup_rxbuf(sc, idx, m0)) != 0) {
+			/*
+			 * XXX Now what?
+			 * We've got a hole in the rx ring.
+			 */
+		}
+
+		if (m0 == m) {
+			/* Discard frame and continue */
+#ifndef __rtems__
+			if_inc_counter(sc->ifp, IFCOUNTER_IQDROPS, 1);
+#else /* __rtems__ */
+			++ifp->if_iqdrops;
+#endif /* __rtems__ */
+			continue;
+		}
+
 #ifndef __rtems__
 		bus_dmamap_sync(sc->rxbuf_tag, sc->rxbuf_map[idx].map,
 		    BUS_DMASYNC_POSTREAD);
@@ -923,7 +952,6 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 
 		len = (rdes0 >> DDESC_RDES0_FL_SHIFT) & DDESC_RDES0_FL_MASK;
 		if (len != 0) {
-			m = sc->rxbuf_map[idx].mbuf;
 			m->m_pkthdr.rcvif = ifp;
 			m->m_pkthdr.len = len;
 			m->m_len = len;
@@ -965,22 +993,6 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 		} else {
 			/* XXX Zero-length packet ? */
 		}
-
-		if ((m0 = dwc_alloc_mbufcl(sc)) != NULL) {
-			if ((error = dwc_setup_rxbuf(sc, idx, m0)) != 0) {
-				/*
-				 * XXX Now what?
-				 * We've got a hole in the rx ring.
-				 */
-			}
-		} else
-#ifndef __rtems__
-			if_inc_counter(sc->ifp, IFCOUNTER_IQDROPS, 1);
-#else /* __rtems__ */
-			++ifp->if_iqdrops;
-#endif /* __rtems__ */
-
-		sc->rx_idx = next_rxidx(sc, sc->rx_idx);
 	}
 }
 

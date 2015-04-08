@@ -3055,7 +3055,6 @@ uma_zone_set_obj(uma_zone_t zone, struct vm_object *obj, int count)
 	ZONE_UNLOCK(zone);
 	return (1);
 }
-#endif /* __rtems__ */
 
 /* See uma.h */
 void
@@ -3080,6 +3079,7 @@ uma_prealloc(uma_zone_t zone, int items)
 	}
 	ZONE_UNLOCK(zone);
 }
+#endif /* __rtems__ */
 
 /* See uma.h */
 u_int32_t *

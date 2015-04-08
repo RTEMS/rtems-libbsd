@@ -68,8 +68,12 @@ extern int profprocs;			/* number of process's profiling */
 #ifndef __rtems__
 extern volatile int ticks;
 #else /* __rtems__ */
-#include <rtems/score/watchdogimpl.h>
-#define ticks _Watchdog_Ticks_since_boot
+/*
+ * This must be a singed integer type, otherwise expressions like
+ * (x - ticks) > 0 would yield unexpected results.
+ */
+extern volatile int32_t _bsd_ticks;
+#define ticks _bsd_ticks
 #endif /* __rtems__ */
 
 #endif /* _KERNEL */

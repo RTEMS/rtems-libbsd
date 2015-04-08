@@ -1858,6 +1858,8 @@ device_add_child_ordered(device_t dev, u_int order, const char *name, int unit)
 
 	PDEBUG(("%s at %s with order %u as unit %d",
 	    name, DEVICENAME(dev), order, unit));
+	KASSERT(name != NULL || unit == -1,
+	    ("child device with wildcard name and specific unit number"));
 
 	child = make_device(dev, name, unit);
 	if (child == NULL)
@@ -3290,7 +3292,10 @@ resource_list_alloc(struct resource_list *rl, device_t bus, device_t child,
 			rle->flags |= RLE_ALLOCATED;
 			return (rle->res);
 		}
-		panic("resource_list_alloc: resource entry is busy");
+		device_printf(bus,
+		    "resource entry %#x type %d for child %s is busy\n", *rid,
+		    type, device_get_nameunit(child));
+		return (NULL);
 	}
 
 	if (isdefault) {

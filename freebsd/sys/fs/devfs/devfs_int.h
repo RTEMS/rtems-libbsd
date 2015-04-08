@@ -56,6 +56,7 @@ struct cdev_priv {
 	u_int			cdp_flags;
 #define CDP_ACTIVE		(1 << 0)
 #define CDP_SCHED_DTR		(1 << 1)
+#define	CDP_UNREF_DTR		(1 << 2)
 
 #ifndef __rtems__
 	u_int			cdp_inuse;

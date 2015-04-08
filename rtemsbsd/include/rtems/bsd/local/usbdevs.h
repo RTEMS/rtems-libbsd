@@ -702,6 +702,7 @@
 #define	USB_VENDOR_ELV	0x18ef		/* ELV */
 #define	USB_VENDOR_LINKSYS3	0x1915		/* Linksys */
 #define	USB_VENDOR_QUALCOMMINC	0x19d2		/* Qualcomm, Incorporated */
+#define	USB_VENDOR_QUALCOMM3	0x19f5		/* Qualcomm, Inc. */
 #define	USB_VENDOR_BAYER	0x1a79		/* Bayer */
 #define	USB_VENDOR_WCH2	0x1a86		/* QinHeng Electronics */
 #define	USB_VENDOR_STELERA	0x1a8d		/* Stelera Wireless */
@@ -720,6 +721,7 @@
 #define	USB_VENDOR_MPMAN	0x1cae		/* MpMan */
 #define	USB_VENDOR_DRESDENELEKTRONIK	0x1cf1		/* dresden elektronik */
 #define	USB_VENDOR_NEOTEL	0x1d09		/* Neotel */
+#define	USB_VENDOR_DREAMLINK	0x1d34		/* Dream Link */
 #define	USB_VENDOR_PEGATRON	0x1d4d		/* Pegatron */
 #define	USB_VENDOR_QISDA	0x1da5		/* Qisda */
 #define	USB_VENDOR_METAGEEK2	0x1dd5		/* MetaGeek */
@@ -1180,6 +1182,7 @@
 
 /* ASUS products */
 #define	USB_PRODUCT_ASUS2_USBN11	0x0b05		/* USB-N11 */
+#define	USB_PRODUCT_ASUS_RT2570	0x1706		/* RT2500USB Wireless Adapter */
 #define	USB_PRODUCT_ASUS_WL167G	0x1707		/* WL-167g Wireless Adapter */
 #define	USB_PRODUCT_ASUS_WL159G	0x170c		/* WL-159g */
 #define	USB_PRODUCT_ASUS_A9T_WIFI	0x171b		/* A9T wireless */
@@ -1193,16 +1196,17 @@
 #define	USB_PRODUCT_ASUS_RT2870_4	0x1760		/* RT2870 */
 #define	USB_PRODUCT_ASUS_RT2870_5	0x1761		/* RT2870 */
 #define	USB_PRODUCT_ASUS_USBN13	0x1784		/* USB-N13 */
-#define	USB_PRODUCT_ASUS_RT3070_1	0x1790		/* RT3070 */
 #define	USB_PRODUCT_ASUS_USBN10	0x1786		/* USB-N10 */
+#define	USB_PRODUCT_ASUS_RT3070_1	0x1790		/* RT3070 */
+#define	USB_PRODUCT_ASUS_RTL8192SU	0x1791		/* RTL8192SU */
+#define	USB_PRODUCT_ASUS_USB_N53	0x179d		/* ASUS Black Diamond Dual Band USB-N53 */
 #define	USB_PRODUCT_ASUS_RTL8192CU	0x17ab		/* RTL8192CU */
 #define	USB_PRODUCT_ASUS_USBN66	0x17ad		/* USB-N66 */
-#define	USB_PRODUCT_ASUS_RTL8192SU	0x1791		/* RTL8192SU */
+#define	USB_PRODUCT_ASUS_USBN10NANO	0x17ba		/* USB-N10 Nano */
+#define	USB_PRODUCT_ASUS_USBAC51	0x17d1		/* USB-AC51 */
 #define	USB_PRODUCT_ASUS_A730W	0x4202		/* ASUS MyPal A730W */
 #define	USB_PRODUCT_ASUS_P535	0x420f		/* ASUS P535 PDA */
 #define	USB_PRODUCT_ASUS_GMSC	0x422f		/* ASUS Generic Mass Storage */
-#define	USB_PRODUCT_ASUS_RT2570	0x1706		/* RT2500USB Wireless Adapter */
-#define	USB_PRODUCT_ASUS_USB_N53	0x179d		/* ASUS Black Diamond Dual Band USB-N53 */
 
 /* ATen products */
 #define	USB_PRODUCT_ATEN_UC1284	0x2001		/* Parallel printer */
@@ -1385,6 +1389,7 @@
 #define	USB_PRODUCT_CHICONY_KB8933	0x0001		/* KB-8933 keyboard */
 #define	USB_PRODUCT_CHICONY_KU0325	0x0116		/* KU-0325 keyboard */
 #define	USB_PRODUCT_CHICONY_CNF7129	0xb071		/* Notebook Web Camera */
+#define	USB_PRODUCT_CHICONY_HDUVCCAM	0xb40a		/* HD UVC WebCam */
 #define	USB_PRODUCT_CHICONY_RTL8188CUS_1	0xaff7		/* RTL8188CUS */
 #define	USB_PRODUCT_CHICONY_RTL8188CUS_2	0xaff8		/* RTL8188CUS */
 #define	USB_PRODUCT_CHICONY_RTL8188CUS_3	0xaff9		/* RTL8188CUS */
@@ -1490,6 +1495,7 @@
 
 /* Corsair products */
 #define	USB_PRODUCT_CORSAIR_K60	0x0a60		/* Corsair Vengeance K60 keyboard */
+#define	USB_PRODUCT_CORSAIR_K70	0x1b09		/* Corsair Vengeance K70 keyboard */
 
 /* Creative products */
 #define	USB_PRODUCT_CREATIVE_NOMAD_II	0x1002		/* Nomad II MP3 player */
@@ -1597,6 +1603,7 @@
 #define	USB_PRODUCT_DLINK_DUBE100C1	0x1a02		/* DUB-E100 rev C1 */
 #define	USB_PRODUCT_DLINK_DSB650TX4	0x200c		/* 10/100 Ethernet */
 #define	USB_PRODUCT_DLINK_DWL120E	0x3200		/* DWL-120 rev E */
+#define	USB_PRODUCT_DLINK_DWA125D1	0x330f		/* DWA-125 rev D1 */
 #define	USB_PRODUCT_DLINK_DWL122	0x3700		/* DWL-122 */
 #define	USB_PRODUCT_DLINK_DWLG120	0x3701		/* DWL-G120 */
 #define	USB_PRODUCT_DLINK_DWL120F	0x3702		/* DWL-120 rev F */
@@ -1626,6 +1633,8 @@
 #define	USB_PRODUCT_DLINK_DUBH7	0xf103		/* DUB-H7 USB 2.0 7-Port Hub */
 #define	USB_PRODUCT_DLINK_DWR510_CD	0xa805		/* DWR-510 CD-ROM Mode */
 #define	USB_PRODUCT_DLINK_DWR510	0x7e12		/* DWR-510 */
+#define	USB_PRODUCT_DLINK_DWM157	0x7d02		/* DWM-157 */
+#define	USB_PRODUCT_DLINK_DWM157_CD	0xa707		/* DWM-157 CD-ROM Mode */
 #define	USB_PRODUCT_DLINK_RTL8188CU	0x3308		/* RTL8188CU */
 #define	USB_PRODUCT_DLINK_RTL8192CU_1	0x3307		/* RTL8192CU */
 #define	USB_PRODUCT_DLINK_RTL8192CU_2	0x3309		/* RTL8192CU */
@@ -1659,9 +1668,13 @@
 /* DrayTek products */
 #define	USB_PRODUCT_DRAYTEK_VIGOR550	0x0550		/* Vigor550 */
 
+/* Dream Link products */
+#define	USB_PRODUCT_DREAMLINK_DL100B	0x0004		/* USB Webmail Notifier */
+
 /* dresden elektronik products */
 #define	USB_PRODUCT_DRESDENELEKTRONIK_SENSORTERMINALBOARD	0x0001		/* SensorTerminalBoard */
 #define	USB_PRODUCT_DRESDENELEKTRONIK_WIRELESSHANDHELDTERMINAL	0x0004		/* Wireless Handheld Terminal */
+#define	USB_PRODUCT_DRESDENELEKTRONIK_DE_RFNODE	0x001c		/* deRFnode */
 #define	USB_PRODUCT_DRESDENELEKTRONIK_LEVELSHIFTERSTICKLOWCOST	0x0022		/* Levelshifter Stick Low Cost */
 
 /* Dynastream Innovations */
@@ -1850,7 +1863,8 @@
 #define	USB_PRODUCT_FTDI_232EX	0x6015		/* FTDI compatible adapter */
 #define	USB_PRODUCT_FTDI_SERIAL_2232D	0x9e90		/* FT2232D Dual port Serial */
 #define	USB_PRODUCT_FTDI_SERIAL_4232H	0x6011		/* FT4232H Quad port Serial */
-#define	USB_PRODUCT_FTDI_BEAGLEBONE	0xa6d0		/* BeagleBone */
+#define	USB_PRODUCT_FTDI_XDS100V2	0xa6d0		/* TI XDS100V1/V2 and early Beaglebones */
+#define	USB_PRODUCT_FTDI_XDS100V3	0xa6d1		/* TI XDS100V3 */
 #define	USB_PRODUCT_FTDI_KTLINK	0xbbe2		/* KT-LINK Embedded Hackers Multitool */
 #define	USB_PRODUCT_FTDI_TURTELIZER2	0xbdc8		/* egnite Turtelizer 2 JTAG/RS232 Adapter */
 /* Gude Analog- und Digitalsysteme products also uses FTDI's id: */
@@ -2226,6 +2240,8 @@
 #define	USB_PRODUCT_HP_CDW8200	0x0207		/* CD-Writer Plus 8200e */
 #define	USB_PRODUCT_HP_MMKEYB	0x020c		/* Multimedia keyboard */
 #define	USB_PRODUCT_HP_1220C	0x0212		/* DeskJet 1220C */
+#define	USB_PRODUCT_HP_UN2420_QDL	0x241d		/* UN2420 QDL Firmware Loader */
+#define	USB_PRODUCT_HP_UN2420	0x251d		/* UN2420 WWAN/GPS Module */
 #define	USB_PRODUCT_HP_810C	0x0304		/* DeskJet 810C/812C */
 #define	USB_PRODUCT_HP_4300C	0x0305		/* Scanjet 4300C */
 #define	USB_PRODUCT_HP_CDW4E	0x0307		/* CD-Writer+ CD-4e */
@@ -2341,15 +2357,21 @@
 #define	USB_PRODUCT_HUAWEI_K3765	0x1465		/* 3G modem */
 #define	USB_PRODUCT_HUAWEI_E1820	0x14ac		/* E1820 HSPA+ USB Slider */
 #define	USB_PRODUCT_HUAWEI_K3770	0x14c9		/* 3G modem */
+#define	USB_PRODUCT_HUAWEI_K3772	0x14cf		/* K3772 */
 #define	USB_PRODUCT_HUAWEI_K3770_INIT	0x14d1		/* K3770 Initial */
 #define	USB_PRODUCT_HUAWEI_E3131_INIT	0x14fe		/* 3G modem initial */
 #define	USB_PRODUCT_HUAWEI_E392	0x1505		/* LTE modem */
 #define	USB_PRODUCT_HUAWEI_E3131	0x1506		/* 3G modem */
 #define	USB_PRODUCT_HUAWEI_K3765_INIT	0x1520		/* K3765 Initial */
 #define	USB_PRODUCT_HUAWEI_K4505_INIT	0x1521		/* K4505 Initial */
+#define	USB_PRODUCT_HUAWEI_K3772_INIT	0x1526		/* K3772 Initial */
+#define	USB_PRODUCT_HUAWEI_E3272_INIT	0x155b		/* LTE modem initial */
+#define	USB_PRODUCT_HUAWEI_R215_INIT	0x1582		/* LTE modem initial */
+#define	USB_PRODUCT_HUAWEI_R215	0x1588		/* LTE modem */
 #define	USB_PRODUCT_HUAWEI_ETS2055	0x1803		/* CDMA modem */
 #define	USB_PRODUCT_HUAWEI_E173	0x1c05		/* 3G modem */
 #define	USB_PRODUCT_HUAWEI_E173_INIT	0x1c0b		/* 3G modem initial */
+#define	USB_PRODUCT_HUAWEI_E3272	0x1c1e		/* LTE modem */
 
 /* HUAWEI 3com products */
 #define	USB_PRODUCT_HUAWEI3COM_WUB320G	0x0009		/* Aolynk WUB320g */
@@ -2396,6 +2418,8 @@
 #define	USB_PRODUCT_INTEL_TESTBOARD	0x9890		/* 82930 test board */
 #define	USB_PRODUCT_INTEL2_IRMH	0x0020		/* Integrated Rate Matching Hub */
 #define	USB_PRODUCT_INTEL2_IRMH2	0x0024		/* Integrated Rate Matching Hub */
+#define	USB_PRODUCT_INTEL2_IRMH3	0x8000		/* Integrated Rate Matching Hub */
+#define	USB_PRODUCT_INTEL2_IRMH4	0x8008		/* Integrated Rate Matching Hub */
 
 /* Interbiometric products */
 #define	USB_PRODUCT_INTERBIOMETRICS_IOBOARD	0x1002		/* FTDI compatible adapter */
@@ -2590,6 +2614,7 @@
 /* Lexar products */
 #define	USB_PRODUCT_LEXAR_JUMPSHOT	0x0001		/* jumpSHOT CompactFlash Reader */
 #define	USB_PRODUCT_LEXAR_CF_READER	0xb002		/* USB CF Reader */
+#define	USB_PRODUCT_LEXAR_JUMPDRIVE	0xa833		/* USB Jumpdrive Flash Drive */
 
 /* Lexmark products */
 #define	USB_PRODUCT_LEXMARK_S2450	0x0009		/* Optra S 2450 */
@@ -3236,6 +3261,7 @@
 #define	USB_PRODUCT_NOVATEL_EU870D	0x2420		/* Expedite EU870D */
 #define	USB_PRODUCT_NOVATEL_U727	0x4100		/* Merlin U727 CDMA */
 #define	USB_PRODUCT_NOVATEL_MC950D	0x4400		/* Novatel MC950D HSUPA */
+#define	USB_PRODUCT_NOVATEL_MC990D	0x7001		/* Novatel MC990D */
 #define	USB_PRODUCT_NOVATEL_ZEROCD	0x5010		/* Novatel ZeroCD */
 #define	USB_PRODUCT_NOVATEL_MIFI2200V	0x5020		/* Novatel MiFi 2200 CDMA Virgin Mobile */
 #define	USB_PRODUCT_NOVATEL_ZEROCD2	0x5030		/* Novatel ZeroCD */
@@ -3244,6 +3270,7 @@
 #define	USB_PRODUCT_NOVATEL_U760	0x6000		/* Novatel U760 */
 #define	USB_PRODUCT_NOVATEL_MC760	0x6002		/* Novatel MC760 */
 #define	USB_PRODUCT_NOVATEL_MC547	0x7042		/* Novatel MC547 */
+#define	USB_PRODUCT_NOVATEL_MC679	0x7031		/* Novatel MC679 */
 #define	USB_PRODUCT_NOVATEL2_FLEXPACKGPS	0x0100		/* NovAtel FlexPack GPS receiver */
 
 /* Merlin products */
@@ -3555,8 +3582,11 @@
 #define	USB_PRODUCT_QUALCOMM2_AC8700	0x6000		/* AC8700 */
 #define	USB_PRODUCT_QUALCOMM2_VW110L	0x1000		/* Vertex Wireless 110L modem */
 #define	USB_PRODUCT_QUALCOMM2_SIM5218	0x9000		/* SIM5218 */
+#define	USB_PRODUCT_QUALCOMM2_WM620	0x9002		/* Neoway WM620 */
 #define	USB_PRODUCT_QUALCOMM2_GOBI2000_QDL	0x9204		/* Qualcomm Gobi 2000 QDL */
 #define	USB_PRODUCT_QUALCOMM2_GOBI2000	0x9205		/* Qualcomm Gobi 2000 modem */
+#define	USB_PRODUCT_QUALCOMM2_VT80N	0x6500		/* Venus VT80N */
+#define	USB_PRODUCT_QUALCOMM3_VFAST2	0x9909		/* Venus Fast2 modem */
 #define	USB_PRODUCT_QUALCOMMINC_CDMA_MSM	0x0001		/* CDMA Technologies MSM modem */
 #define	USB_PRODUCT_QUALCOMMINC_E0002	0x0002		/* 3G modem */
 #define	USB_PRODUCT_QUALCOMMINC_E0003	0x0003		/* 3G modem */
@@ -3624,10 +3654,16 @@
 #define	USB_PRODUCT_QUALCOMMINC_E0082	0x0082		/* 3G modem */
 #define	USB_PRODUCT_QUALCOMMINC_E0086	0x0086		/* 3G modem */
 #define	USB_PRODUCT_QUALCOMMINC_SURFSTICK	0x0117		/* 1&1 Surf Stick */
-#define	USB_PRODUCT_QUALCOMMINC_K3772_Z	0x1179		/* 3G modem */
+#define	USB_PRODUCT_QUALCOMMINC_K3772_Z_INIT	0x1179		/* K3772-Z Initial */
+#define	USB_PRODUCT_QUALCOMMINC_K3772_Z	0x1181		/* K3772-Z */
+#define	USB_PRODUCT_QUALCOMMINC_ZTE_MF730M	0x1420		/* 3G modem */
+#define	USB_PRODUCT_QUALCOMMINC_MF195E_INIT	0x1514		/* MF195E initial */
+#define	USB_PRODUCT_QUALCOMMINC_MF195E	0x1516		/* MF195E */
 #define	USB_PRODUCT_QUALCOMMINC_ZTE_STOR	0x2000		/* USB ZTE Storage */
 #define	USB_PRODUCT_QUALCOMMINC_E2002	0x2002		/* 3G modem */
 #define	USB_PRODUCT_QUALCOMMINC_E2003	0x2003		/* 3G modem */
+#define	USB_PRODUCT_QUALCOMMINC_AC682	0xffdd		/* CDMA 1xEVDO USB modem */
+#define	USB_PRODUCT_QUALCOMMINC_AC682_INIT	0xffde		/* CDMA 1xEVDO USB modem (initial) */
 #define	USB_PRODUCT_QUALCOMMINC_AC8710	0xfff1		/* 3G modem */
 #define	USB_PRODUCT_QUALCOMMINC_AC2726	0xfff5		/* 3G modem */
 #define	USB_PRODUCT_QUALCOMMINC_AC8700	0xfffe		/* CDMA 1xEVDO USB modem */
@@ -3684,6 +3720,7 @@
 /* Green House and CompUSA OEM this part */
 #define	USB_PRODUCT_REALTEK_DUMMY	0x0000		/* Dummy product */
 #define	USB_PRODUCT_REALTEK_USB20CRW	0x0158		/* USB20CRW Card Reader */
+#define	USB_PRODUCT_REALTEK_RTL8188ETV	0x0179		/* RTL8188ETV */
 #define	USB_PRODUCT_REALTEK_RTL8188CTV	0x018a		/* RTL8188CTV */
 #define	USB_PRODUCT_REALTEK_USBKR100	0x8150		/* USBKR100 USB Ethernet */
 #define	USB_PRODUCT_REALTEK_RTL8188CE_0	0x8170		/* RTL8188CE */
@@ -3707,6 +3744,7 @@
 #define	USB_PRODUCT_REALTEK_RTL8192CU	0x8178		/* RTL8192CU */
 #define	USB_PRODUCT_REALTEK_RTL8192CE	0x817c		/* RTL8192CE */
 #define	USB_PRODUCT_REALTEK_RTL8188RU_1	0x817d		/* RTL8188RU */
+#define	USB_PRODUCT_REALTEK_RTL8188RU_3	0x817f		/* RTL8188RU */
 #define	USB_PRODUCT_REALTEK_RTL8712	0x8712		/* RTL8712 */
 #define	USB_PRODUCT_REALTEK_RTL8713	0x8712		/* RTL8713 */
 #define	USB_PRODUCT_REALTEK_RTL8188RU_2	0x317f		/* RTL8188RU */
@@ -4125,6 +4163,23 @@
 #define	USB_PRODUCT_SMC2_2020HUB	0x2020		/* USB Hub */
 #define	USB_PRODUCT_SMC2_2514HUB	0x2514		/* USB Hub */
 #define	USB_PRODUCT_SMC3_2662WUSB	0xa002		/* 2662W-AR Wireless */
+#define	USB_PRODUCT_SMC2_LAN9500_ETH	0x9500		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9505_ETH	0x9505		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9530_ETH	0x9530		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9730_ETH	0x9730		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9500_SAL10	0x9900		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9505_SAL10	0x9901		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9500A_SAL10	0x9902		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9505A_SAL10	0x9903		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9514_SAL10	0x9904		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9500A_HAL	0x9905		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9505A_HAL	0x9906		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9500_ETH_2	0x9907		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9500A_ETH_2	0x9908		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9514_ETH_2	0x9909		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9500A_ETH	0x9e00		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN9505A_ETH	0x9e01		/* USB/Ethernet */
+#define	USB_PRODUCT_SMC2_LAN89530_ETH	0x9e08		/* USB/Ethernet */
 #define	USB_PRODUCT_SMC2_LAN9514_ETH	0xec00		/* USB/Ethernet */
 
 /* SOHOware products */
@@ -4446,8 +4501,28 @@
 #define	USB_PRODUCT_WESTERN_EXTHDD	0x0400		/* External HDD */
 #define	USB_PRODUCT_WESTERN_HUB	0x0500		/* USB HUB */
 #define	USB_PRODUCT_WESTERN_MYBOOK	0x0901		/* MyBook External HDD */
-#define	USB_PRODUCT_WESTERN_MYPASSWORD	0x0704		/* MyPassword External HDD */
-#define	USB_PRODUCT_WESTERN_MYPASSPORT	0x0748		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_00	0x0704		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_11	0x0741		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_01	0x0746		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_02	0x0748		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_03	0x074A		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_04	0x074C		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_05	0x074E		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_06	0x07A6		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_07	0x07A8		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_08	0x07AA		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_09	0x07AC		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORT_10	0x07AE		/* MyPassport External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_00	0x070A		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_01	0x071A		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_02	0x0730		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_03	0x0732		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_04	0x0740		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_05	0x0742		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_06	0x0750		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_07	0x0752		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_08	0x07A0		/* MyPassport Essential External HDD */
+#define	USB_PRODUCT_WESTERN_MYPASSPORTES_09	0x07A2		/* MyPassport Essential External HDD */
 
 /* WeTelecom products */
 #define	USB_PRODUCT_WETELECOM_WM_D200	0x6801		/* WM-D200 */
@@ -4546,5 +4621,6 @@
 #define	USB_PRODUCT_ZYXEL_G202	0x3410		/* G-202 */
 #define	USB_PRODUCT_ZYXEL_RT2870_1	0x3416		/* RT2870 */
 #define	USB_PRODUCT_ZYXEL_RT2870_2	0x341a		/* RT2870 */
+#define	USB_PRODUCT_ZYXEL_RT3070	0x341e		/* NWD2105 */
 #define	USB_PRODUCT_ZYXEL_RTL8192CU	0x341f		/* RTL8192CU */
 #define	USB_PRODUCT_ZYXEL_NWD2705	0x3421		/* NWD2705 */

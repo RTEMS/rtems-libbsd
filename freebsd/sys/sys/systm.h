@@ -47,11 +47,12 @@
 
 #ifndef __rtems__
 extern int cold;		/* nonzero if we are doing a cold boot */
-#else /* __rtems__ */
-/* In RTEMS there is no cold boot */
-#define cold 0
-#endif /* __rtems__ */
 extern int rebooting;		/* kern_reboot() has been called. */
+#else /* __rtems__ */
+/* In RTEMS there is no cold boot and reboot */
+#define cold 0
+#define rebooting 0
+#endif /* __rtems__ */
 #ifndef __rtems__
 extern const char *panicstr;	/* panic message */
 #else /* __rtems__ */
@@ -110,10 +111,8 @@ enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN };
 } while (0)
 #endif
 
-#ifndef CTASSERT		/* Allow lint to override */
-#define	CTASSERT(x)		_CTASSERT(x, __LINE__)
-#define	_CTASSERT(x, y)		__CTASSERT(x, y)
-#define	__CTASSERT(x, y)	typedef char __assert ## y[(x) ? 1 : -1]
+#ifndef CTASSERT	/* Allow lint to override */
+#define	CTASSERT(x)	_Static_assert(x, "compile-time assertion failed")
 #endif
 
 /*
@@ -372,8 +371,9 @@ void	cpu_startprofclock(void);
 void	cpu_stopprofclock(void);
 void	cpu_idleclock(void);
 void	cpu_activeclock(void);
-extern int	cpu_can_deep_sleep;
-extern int	cpu_disable_deep_sleep;
+extern int	cpu_deepest_sleep;
+extern int	cpu_disable_c2_sleep;
+extern int	cpu_disable_c3_sleep;
 
 #ifndef __rtems__
 int	cr_cansee(struct ucred *u1, struct ucred *u2);

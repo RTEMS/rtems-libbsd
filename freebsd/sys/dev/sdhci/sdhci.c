@@ -36,7 +36,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/lock.h>
 #include <sys/module.h>
 #include <sys/mutex.h>
-#include <sys/resource.h>
+#include <rtems/bsd/sys/resource.h>
 #include <sys/rman.h>
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/mmcbr_if.h>
 #ifndef __rtems__
-#include <rtems/bsd/local/sdhci.h>
+#include "sdhci.h"
 #else /* __rtems__ */
 #include <dev/sdhci/sdhci.h>
 #endif /* __rtems__ */

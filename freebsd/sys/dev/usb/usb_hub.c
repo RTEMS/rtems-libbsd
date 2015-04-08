@@ -603,7 +603,6 @@ uhub_reattach_port(struct uhub_softc *sc, uint8_t portno)
 
 	DPRINTF("reattaching port %d\n", portno);
 
-	err = 0;
 	timeout = 0;
 	udev = sc->sc_udev;
 	child = usb_bus_port_get_device(udev->bus,
@@ -1595,6 +1594,7 @@ uhub_child_location_string(device_t parent, device_t child,
 	struct uhub_softc *sc;
 	struct usb_hub *hub;
 	struct hub_result res;
+	char *ugen_name;
 
 	if (!device_is_attached(parent)) {
 		if (buflen)
@@ -1614,10 +1614,16 @@ uhub_child_location_string(device_t parent, device_t child,
 		}
 		goto done;
 	}
-	snprintf(buf, buflen, "bus=%u hubaddr=%u port=%u devaddr=%u interface=%u",
+#if USB_HAVE_UGEN
+	ugen_name = res.udev->ugen_name;
+#else
+	ugen_name = "?";
+#endif
+	snprintf(buf, buflen, "bus=%u hubaddr=%u port=%u devaddr=%u interface=%u"
+	    " ugen=%s",
 	    (res.udev->parent_hub != NULL) ? res.udev->parent_hub->device_index : 0,
 	    res.portno, device_get_unit(res.udev->bus->bdev),
-	    res.udev->device_index, res.iface_index);
+	    res.udev->device_index, res.iface_index, ugen_name);
 done:
 	mtx_unlock(&Giant);
 
@@ -1659,7 +1665,7 @@ uhub_child_pnpinfo_string(device_t parent, device_t child,
 		    "release=0x%04x "
 		    "mode=%s "
 		    "intclass=0x%02x intsubclass=0x%02x "
-		    "intprotocol=0x%02x " "%s%s",
+		    "intprotocol=0x%02x" "%s%s",
 		    UGETW(res.udev->ddesc.idVendor),
 		    UGETW(res.udev->ddesc.idProduct),
 		    res.udev->ddesc.bDeviceClass,

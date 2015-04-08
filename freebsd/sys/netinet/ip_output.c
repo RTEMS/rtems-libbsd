@@ -743,10 +743,8 @@ ip_fragment(struct ip *ip, struct mbuf **m_frag, int mtu,
 		 * be less than the receiver's page size ?
 		 */
 		int newlen;
-		struct mbuf *m;
 
-		for (m = m0, off = 0; m && (off+m->m_len) <= mtu; m = m->m_next)
-			off += m->m_len;
+		off = MIN(mtu, m0->m_pkthdr.len);
 
 		/*
 		 * firstlen (off - hlen) must be aligned on an 
@@ -789,7 +787,11 @@ smart_frag_failure:
 			IPSTAT_INC(ips_odropped);
 			goto done;
 		}
-		m->m_flags |= (m0->m_flags & M_MCAST) | M_FRAG;
+		/* copy multicast and flowid flag, if any */
+		m->m_flags |= (m0->m_flags & (M_FLOWID | M_MCAST)) | M_FRAG;
+		/* make sure the flowid is the same for the fragmented mbufs */
+		M_HASHTYPE_SET(m, M_HASHTYPE_GET(m0));
+		m->m_pkthdr.flowid = m0->m_pkthdr.flowid;
 		/*
 		 * In the first mbuf, leave room for the link header, then
 		 * copy the original IP header including options. The payload

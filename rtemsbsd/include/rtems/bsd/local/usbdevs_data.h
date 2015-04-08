@@ -1618,6 +1618,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB-N11",
 	},
 	{
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_RT2570,
+	    0,
+	    "ASUSTeK Computer",
+	    "RT2500USB Wireless Adapter",
+	},
+	{
 	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_WL167G,
 	    0,
 	    "ASUSTeK Computer",
@@ -1696,16 +1702,28 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB-N13",
 	},
 	{
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USBN10,
+	    0,
+	    "ASUSTeK Computer",
+	    "USB-N10",
+	},
+	{
 	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_RT3070_1,
 	    0,
 	    "ASUSTeK Computer",
 	    "RT3070",
 	},
 	{
-	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USBN10,
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_RTL8192SU,
 	    0,
 	    "ASUSTeK Computer",
-	    "USB-N10",
+	    "RTL8192SU",
+	},
+	{
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USB_N53,
+	    0,
+	    "ASUSTeK Computer",
+	    "ASUS Black Diamond Dual Band USB-N53",
 	},
 	{
 	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_RTL8192CU,
@@ -1720,10 +1738,16 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB-N66",
 	},
 	{
-	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_RTL8192SU,
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USBN10NANO,
 	    0,
 	    "ASUSTeK Computer",
-	    "RTL8192SU",
+	    "USB-N10 Nano",
+	},
+	{
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USBAC51,
+	    0,
+	    "ASUSTeK Computer",
+	    "USB-AC51",
 	},
 	{
 	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_A730W,
@@ -1742,18 +1766,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "ASUSTeK Computer",
 	    "ASUS Generic Mass Storage",
-	},
-	{
-	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_RT2570,
-	    0,
-	    "ASUSTeK Computer",
-	    "RT2500USB Wireless Adapter",
-	},
-	{
-	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USB_N53,
-	    0,
-	    "ASUSTeK Computer",
-	    "ASUS Black Diamond Dual Band USB-N53",
 	},
 	{
 	    USB_VENDOR_ATEN, USB_PRODUCT_ATEN_UC1284,
@@ -2548,6 +2560,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Notebook Web Camera",
 	},
 	{
+	    USB_VENDOR_CHICONY, USB_PRODUCT_CHICONY_HDUVCCAM,
+	    0,
+	    "Chicony Electronics",
+	    "HD UVC WebCam",
+	},
+	{
 	    USB_VENDOR_CHICONY, USB_PRODUCT_CHICONY_RTL8188CUS_1,
 	    0,
 	    "Chicony Electronics",
@@ -3040,6 +3058,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Corsair Vengeance K60 keyboard",
 	},
 	{
+	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_K70,
+	    0,
+	    "Corsair",
+	    "Corsair Vengeance K70 keyboard",
+	},
+	{
 	    USB_VENDOR_CREATIVE, USB_PRODUCT_CREATIVE_NOMAD_II,
 	    0,
 	    "Creative Labs",
@@ -3442,6 +3466,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DWL-120 rev E",
 	},
 	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA125D1,
+	    0,
+	    "D-Link",
+	    "DWA-125 rev D1",
+	},
+	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWL122,
 	    0,
 	    "D-Link",
@@ -3616,6 +3646,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DWR-510",
 	},
 	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157,
+	    0,
+	    "D-Link",
+	    "DWM-157",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157_CD,
+	    0,
+	    "D-Link",
+	    "DWM-157 CD-ROM Mode",
+	},
+	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8188CU,
 	    0,
 	    "D-Link",
@@ -3784,6 +3826,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Vigor550",
 	},
 	{
+	    USB_VENDOR_DREAMLINK, USB_PRODUCT_DREAMLINK_DL100B,
+	    0,
+	    "Dream Link",
+	    "USB Webmail Notifier",
+	},
+	{
 	    USB_VENDOR_DRESDENELEKTRONIK, USB_PRODUCT_DRESDENELEKTRONIK_SENSORTERMINALBOARD,
 	    0,
 	    "dresden elektronik",
@@ -3794,6 +3842,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "dresden elektronik",
 	    "Wireless Handheld Terminal",
+	},
+	{
+	    USB_VENDOR_DRESDENELEKTRONIK, USB_PRODUCT_DRESDENELEKTRONIK_DE_RFNODE,
+	    0,
+	    "dresden elektronik",
+	    "deRFnode",
 	},
 	{
 	    USB_VENDOR_DRESDENELEKTRONIK, USB_PRODUCT_DRESDENELEKTRONIK_LEVELSHIFTERSTICKLOWCOST,
@@ -4552,10 +4606,16 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "FT4232H Quad port Serial",
 	},
 	{
-	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_BEAGLEBONE,
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_XDS100V2,
 	    0,
 	    "Future Technology Devices",
-	    "BeagleBone",
+	    "TI XDS100V1/V2 and early Beaglebones",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_XDS100V3,
+	    0,
+	    "Future Technology Devices",
+	    "TI XDS100V3",
 	},
 	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_KTLINK,
@@ -6454,6 +6514,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DeskJet 1220C",
 	},
 	{
+	    USB_VENDOR_HP, USB_PRODUCT_HP_UN2420_QDL,
+	    0,
+	    "Hewlett Packard",
+	    "UN2420 QDL Firmware Loader",
+	},
+	{
+	    USB_VENDOR_HP, USB_PRODUCT_HP_UN2420,
+	    0,
+	    "Hewlett Packard",
+	    "UN2420 WWAN/GPS Module",
+	},
+	{
 	    USB_VENDOR_HP, USB_PRODUCT_HP_810C,
 	    0,
 	    "Hewlett Packard",
@@ -7120,6 +7192,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "3G modem",
 	},
 	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3772,
+	    0,
+	    "Huawei Technologies",
+	    "K3772",
+	},
+	{
 	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3770_INIT,
 	    0,
 	    "Huawei Technologies",
@@ -7156,6 +7234,30 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "K4505 Initial",
 	},
 	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3772_INIT,
+	    0,
+	    "Huawei Technologies",
+	    "K3772 Initial",
+	},
+	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_E3272_INIT,
+	    0,
+	    "Huawei Technologies",
+	    "LTE modem initial",
+	},
+	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_R215_INIT,
+	    0,
+	    "Huawei Technologies",
+	    "LTE modem initial",
+	},
+	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_R215,
+	    0,
+	    "Huawei Technologies",
+	    "LTE modem",
+	},
+	{
 	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_ETS2055,
 	    0,
 	    "Huawei Technologies",
@@ -7172,6 +7274,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Huawei Technologies",
 	    "3G modem initial",
+	},
+	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_E3272,
+	    0,
+	    "Huawei Technologies",
+	    "LTE modem",
 	},
 	{
 	    USB_VENDOR_HUAWEI3COM, USB_PRODUCT_HUAWEI3COM_WUB320G,
@@ -7337,6 +7445,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	},
 	{
 	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_IRMH2,
+	    0,
+	    "Intel",
+	    "Integrated Rate Matching Hub",
+	},
+	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_IRMH3,
+	    0,
+	    "Intel",
+	    "Integrated Rate Matching Hub",
+	},
+	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_IRMH4,
 	    0,
 	    "Intel",
 	    "Integrated Rate Matching Hub",
@@ -8096,6 +8216,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Lexar Media",
 	    "USB CF Reader",
+	},
+	{
+	    USB_VENDOR_LEXAR, USB_PRODUCT_LEXAR_JUMPDRIVE,
+	    0,
+	    "Lexar Media",
+	    "USB Jumpdrive Flash Drive",
 	},
 	{
 	    USB_VENDOR_LEXMARK, USB_PRODUCT_LEXMARK_S2450,
@@ -11296,6 +11422,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Novatel MC950D HSUPA",
 	},
 	{
+	    USB_VENDOR_NOVATEL, USB_PRODUCT_NOVATEL_MC990D,
+	    0,
+	    "Novatel Wireless",
+	    "Novatel MC990D",
+	},
+	{
 	    USB_VENDOR_NOVATEL, USB_PRODUCT_NOVATEL_ZEROCD,
 	    0,
 	    "Novatel Wireless",
@@ -11342,6 +11474,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Novatel Wireless",
 	    "Novatel MC547",
+	},
+	{
+	    USB_VENDOR_NOVATEL, USB_PRODUCT_NOVATEL_MC679,
+	    0,
+	    "Novatel Wireless",
+	    "Novatel MC679",
 	},
 	{
 	    USB_VENDOR_NOVATEL2, USB_PRODUCT_NOVATEL2_FLEXPACKGPS,
@@ -12754,6 +12892,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "SIM5218",
 	},
 	{
+	    USB_VENDOR_QUALCOMM2, USB_PRODUCT_QUALCOMM2_WM620,
+	    0,
+	    "Qualcomm",
+	    "Neoway WM620",
+	},
+	{
 	    USB_VENDOR_QUALCOMM2, USB_PRODUCT_QUALCOMM2_GOBI2000_QDL,
 	    0,
 	    "Qualcomm",
@@ -12764,6 +12908,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Qualcomm",
 	    "Qualcomm Gobi 2000 modem",
+	},
+	{
+	    USB_VENDOR_QUALCOMM2, USB_PRODUCT_QUALCOMM2_VT80N,
+	    0,
+	    "Qualcomm",
+	    "Venus VT80N",
+	},
+	{
+	    USB_VENDOR_QUALCOMM3, USB_PRODUCT_QUALCOMM3_VFAST2,
+	    0,
+	    "Qualcomm, Inc.",
+	    "Venus Fast2 modem",
 	},
 	{
 	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_CDMA_MSM,
@@ -13168,10 +13324,34 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "1&1 Surf Stick",
 	},
 	{
+	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_K3772_Z_INIT,
+	    0,
+	    "Qualcomm, Incorporated",
+	    "K3772-Z Initial",
+	},
+	{
 	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_K3772_Z,
 	    0,
 	    "Qualcomm, Incorporated",
+	    "K3772-Z",
+	},
+	{
+	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_ZTE_MF730M,
+	    0,
+	    "Qualcomm, Incorporated",
 	    "3G modem",
+	},
+	{
+	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_MF195E_INIT,
+	    0,
+	    "Qualcomm, Incorporated",
+	    "MF195E initial",
+	},
+	{
+	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_MF195E,
+	    0,
+	    "Qualcomm, Incorporated",
+	    "MF195E",
 	},
 	{
 	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_ZTE_STOR,
@@ -13190,6 +13370,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Qualcomm, Incorporated",
 	    "3G modem",
+	},
+	{
+	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_AC682,
+	    0,
+	    "Qualcomm, Incorporated",
+	    "CDMA 1xEVDO USB modem",
+	},
+	{
+	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_AC682_INIT,
+	    0,
+	    "Qualcomm, Incorporated",
+	    "CDMA 1xEVDO USB modem (initial)",
 	},
 	{
 	    USB_VENDOR_QUALCOMMINC, USB_PRODUCT_QUALCOMMINC_AC8710,
@@ -13426,6 +13618,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB20CRW Card Reader",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188ETV,
+	    0,
+	    "Realtek",
+	    "RTL8188ETV",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CTV,
 	    0,
 	    "Realtek",
@@ -13559,6 +13757,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	},
 	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_1,
+	    0,
+	    "Realtek",
+	    "RTL8188RU",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_3,
 	    0,
 	    "Realtek",
 	    "RTL8188RU",
@@ -15634,6 +15838,108 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "2662W-AR Wireless",
 	},
 	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9530_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9730_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500_SAL10,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505_SAL10,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_SAL10,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505A_SAL10,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_SAL10,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_HAL,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505A_HAL,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500_ETH_2,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_ETH_2,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_ETH_2,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505A_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN89530_ETH,
+	    0,
+	    "Standard Microsystems",
+	    "USB/Ethernet",
+	},
+	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_ETH,
 	    0,
 	    "Standard Microsystems",
@@ -16738,16 +17044,136 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "MyBook External HDD",
 	},
 	{
-	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSWORD,
-	    0,
-	    "Western Digital",
-	    "MyPassword External HDD",
-	},
-	{
-	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT,
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_00,
 	    0,
 	    "Western Digital",
 	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_11,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_01,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_02,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_03,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_04,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_05,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_06,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_07,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_08,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_09,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORT_10,
+	    0,
+	    "Western Digital",
+	    "MyPassport External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_00,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_01,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_02,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_03,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_04,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_05,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_06,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_07,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_08,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
+	},
+	{
+	    USB_VENDOR_WESTERN, USB_PRODUCT_WESTERN_MYPASSPORTES_09,
+	    0,
+	    "Western Digital",
+	    "MyPassport Essential External HDD",
 	},
 	{
 	    USB_VENDOR_WETELECOM, USB_PRODUCT_WETELECOM_WM_D200,
@@ -17108,6 +17534,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "ZyXEL Communication",
 	    "RT2870",
+	},
+	{
+	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_RT3070,
+	    0,
+	    "ZyXEL Communication",
+	    "NWD2105",
 	},
 	{
 	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_RTL8192CU,
@@ -20962,6 +21394,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_QUALCOMM3, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Qualcomm, Inc.",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_BAYER, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Bayer",
@@ -21067,6 +21505,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_NEOTEL, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Neotel",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_DREAMLINK, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Dream Link",
 	    NULL,
 	},
 	{

@@ -26,8 +26,6 @@
  * SUCH DAMAGE.
  */
 
-#define	USB_DEBUG_VAR usb_proc_debug
-
 #include <sys/stdint.h>
 #include <sys/stddef.h>
 #include <rtems/bsd/sys/param.h>
@@ -51,6 +49,8 @@
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usbdi_util.h>
 #include <dev/usb/usb_process.h>
+
+#define	USB_DEBUG_VAR usb_proc_debug
 #include <dev/usb/usb_debug.h>
 #include <dev/usb/usb_util.h>
 

@@ -2,7 +2,7 @@
 
 /******************************************************************************
 
-  Copyright (c) 2001-2013, Intel Corporation 
+  Copyright (c) 2001-2014, Intel Corporation 
   All rights reserved.
   
   Redistribution and use in source and binary forms, with or without 
@@ -97,7 +97,7 @@ int	em_display_debug_stats = 0;
 /*********************************************************************
  *  Driver version:
  *********************************************************************/
-char em_driver_version[] = "7.3.8";
+char em_driver_version[] = "7.4.2";
 
 /*********************************************************************
  *  PCI Device ID Table
@@ -181,6 +181,10 @@ static em_vendor_info_t em_vendor_info_array[] =
 						PCI_ANY_ID, PCI_ANY_ID, 0},
 	{ 0x8086, E1000_DEV_ID_PCH_LPTLP_I218_V,
 						PCI_ANY_ID, PCI_ANY_ID, 0},
+	{ 0x8086, E1000_DEV_ID_PCH_I218_LM2,	PCI_ANY_ID, PCI_ANY_ID, 0},
+	{ 0x8086, E1000_DEV_ID_PCH_I218_V2,	PCI_ANY_ID, PCI_ANY_ID, 0},
+	{ 0x8086, E1000_DEV_ID_PCH_I218_LM3,	PCI_ANY_ID, PCI_ANY_ID, 0},
+	{ 0x8086, E1000_DEV_ID_PCH_I218_V3,	PCI_ANY_ID, PCI_ANY_ID, 0},
 	/* required last entry */
 	{ 0, 0, 0, 0, 0}
 };
@@ -698,6 +702,9 @@ em_attach(device_t dev)
 		error = EIO;
 		goto err_late;
 	}
+
+	/* Disable ULP support */
+	e1000_disable_ulp_lpt_lp(hw, TRUE);
 
 	/*
 	**  Do interrupt configuration
@@ -1825,7 +1832,6 @@ em_xmit(struct tx_ring *txr, struct mbuf **m_headp)
 	int			nsegs, i, j, first, last = 0;
 	int			error, do_tso, tso_desc = 0, remap = 1;
 
-retry:
 	m_head = *m_headp;
 	txd_upper = txd_lower = txd_used = txd_saved = 0;
 	do_tso = ((m_head->m_pkthdr.csum_flags & CSUM_TSO) != 0);
@@ -1951,6 +1957,7 @@ retry:
 	tx_buffer_mapped = tx_buffer;
 	map = tx_buffer->map;
 
+retry:
 	error = bus_dmamap_load_mbuf_sg(txr->txtag, map,
 	    *m_headp, segs, &nsegs, BUS_DMA_NOWAIT);
 
@@ -4060,8 +4067,7 @@ em_allocate_receive_buffers(struct rx_ring *rxr)
 	rxbuf = rxr->rx_buffers;
 	for (int i = 0; i < adapter->num_rx_desc; i++, rxbuf++) {
 		rxbuf = &rxr->rx_buffers[i];
-		error = bus_dmamap_create(rxr->rxtag, BUS_DMA_NOWAIT,
-		    &rxbuf->map);
+		error = bus_dmamap_create(rxr->rxtag, 0, &rxbuf->map);
 		if (error) {
 			device_printf(dev, "%s: bus_dmamap_create failed: %d\n",
 			    __func__, error);
@@ -4468,6 +4474,7 @@ em_rxeof(struct rx_ring *rxr, int count, int *done)
 			em_rx_discard(rxr, i);
 			goto next_desc;
 		}
+		bus_dmamap_unload(rxr->rxtag, rxr->rx_buffers[i].map);
 
 		/* Assign correct length to the current fragment */
 		mp = rxr->rx_buffers[i].m_head;
@@ -4554,6 +4561,8 @@ em_rx_discard(struct rx_ring *rxr, int i)
 	struct em_buffer	*rbuf;
 
 	rbuf = &rxr->rx_buffers[i];
+	bus_dmamap_unload(rxr->rxtag, rbuf->map);
+
 	/* Free any previous pieces */
 	if (rxr->fmp != NULL) {
 		rxr->fmp->m_flags |= M_PKTHDR;
@@ -5673,7 +5682,7 @@ em_set_sysctl_value(struct adapter *adapter, const char *name,
 	*limit = value;
 	SYSCTL_ADD_INT(device_get_sysctl_ctx(adapter->dev),
 	    SYSCTL_CHILDREN(device_get_sysctl_tree(adapter->dev)),
-	    OID_AUTO, name, CTLTYPE_INT|CTLFLAG_RW, limit, value, description);
+	    OID_AUTO, name, CTLFLAG_RW, limit, value, description);
 }
 
 

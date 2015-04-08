@@ -111,6 +111,12 @@ struct	ifqueue {
 	struct	mtx ifq_mtx;
 };
 
+struct ifnet_hw_tsomax {
+	u_int	tsomaxbytes;	/* TSO total burst length limit in bytes */
+	u_int	tsomaxsegcount;	/* TSO maximum segment count */
+	u_int	tsomaxsegsize;	/* TSO maximum segment size in bytes */
+};
+
 /*
  * Structure defining a network interface.
  *
@@ -205,11 +211,31 @@ struct ifnet {
 	 * be used with care where binary compatibility is required.
 	 */
 	char	if_cspare[3];
-	u_int	if_hw_tsomax;		/* tso burst length limit, the minmum
-					 * is (IP_MAXPACKET / 8).
-					 * XXXAO: Have to find a better place
-					 * for it eventually. */
-	int	if_ispare[3];
+
+	/*
+	 * Network adapter TSO limits:
+	 * ===========================
+	 *
+	 * If the "if_hw_tsomax" field is zero the maximum segment
+	 * length limit does not apply. If the "if_hw_tsomaxsegcount"
+	 * or the "if_hw_tsomaxsegsize" field is zero the TSO segment
+	 * count limit does not apply. If all three fields are zero,
+	 * there is no TSO limit.
+	 *
+	 * NOTE: The TSO limits only apply to the data payload part of
+	 * a TCP/IP packet. That means there is no need to subtract
+	 * space for ethernet-, vlan-, IP- or TCP- headers from the
+	 * TSO limits unless the hardware driver in question requires
+	 * so.
+	 */
+	u_int	if_hw_tsomax;
+	int	if_ispare[1];
+	/*
+	 * TSO fields for segment limits. If a field is zero below,
+	 * there is no limit:
+	 */
+	u_int	if_hw_tsomaxsegcount;	/* TSO maximum segment count */
+	u_int	if_hw_tsomaxsegsize;	/* TSO maximum segment size in bytes */
 	void	*if_pspare[8];		/* 1 netmap, 7 TDB */
 };
 
@@ -940,7 +966,9 @@ struct	ifaddr *ifa_ifwithaddr(struct sockaddr *);
 int		ifa_ifwithaddr_check(struct sockaddr *);
 struct	ifaddr *ifa_ifwithbroadaddr(struct sockaddr *);
 struct	ifaddr *ifa_ifwithdstaddr(struct sockaddr *);
+struct	ifaddr *ifa_ifwithdstaddr_fib(struct sockaddr *, int);
 struct	ifaddr *ifa_ifwithnet(struct sockaddr *, int);
+struct	ifaddr *ifa_ifwithnet_fib(struct sockaddr *, int, int);
 struct	ifaddr *ifa_ifwithroute(int, struct sockaddr *, struct sockaddr *);
 struct	ifaddr *ifa_ifwithroute_fib(int, struct sockaddr *, struct sockaddr *, u_int);
 
@@ -963,6 +991,10 @@ typedef	int poll_handler_t(struct ifnet *ifp, enum poll_cmd cmd, int count);
 int    ether_poll_register(poll_handler_t *h, struct ifnet *ifp);
 int    ether_poll_deregister(struct ifnet *ifp);
 #endif /* DEVICE_POLLING */
+
+/* TSO */
+void if_hw_tsomax_common(struct ifnet *, struct ifnet_hw_tsomax *);
+int if_hw_tsomax_update(struct ifnet *, struct ifnet_hw_tsomax *);
 
 #endif /* _KERNEL */
 

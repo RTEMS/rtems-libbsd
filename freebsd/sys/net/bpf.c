@@ -698,6 +698,67 @@ bpf_attachd(struct bpf_d *d, struct bpf_if *bp)
 }
 
 /*
+ * Check if we need to upgrade our descriptor @d from write-only mode.
+ */
+static int
+bpf_check_upgrade(u_long cmd, struct bpf_d *d, struct bpf_insn *fcode, int flen)
+{
+	int is_snap, need_upgrade;
+
+	/*
+	 * Check if we've already upgraded or new filter is empty.
+	 */
+	if (d->bd_writer == 0 || fcode == NULL)
+		return (0);
+
+	need_upgrade = 0;
+
+	/*
+	 * Check if cmd looks like snaplen setting from
+	 * pcap_bpf.c:pcap_open_live().
+	 * Note we're not checking .k value here:
+	 * while pcap_open_live() definitely sets to to non-zero value,
+	 * we'd prefer to treat k=0 (deny ALL) case the same way: e.g.
+	 * do not consider upgrading immediately
+	 */
+	if (cmd == BIOCSETF && flen == 1 && fcode[0].code == (BPF_RET | BPF_K))
+		is_snap = 1;
+	else
+		is_snap = 0;
+
+	if (is_snap == 0) {
+		/*
+		 * We're setting first filter and it doesn't look like
+		 * setting snaplen.  We're probably using bpf directly.
+		 * Upgrade immediately.
+		 */
+		need_upgrade = 1;
+	} else {
+		/*
+		 * Do not require upgrade by first BIOCSETF
+		 * (used to set snaplen) by pcap_open_live().
+		 */
+
+		if (--d->bd_writer == 0) {
+			/*
+			 * First snaplen filter has already
+			 * been set. This is probably catch-all
+			 * filter
+			 */
+			need_upgrade = 1;
+		}
+	}
+
+	CTR5(KTR_NET,
+	    "%s: filter function set by pid %d, "
+	    "bd_writer counter %d, snap %d upgrade %d",
+	    __func__, d->bd_pid, d->bd_writer,
+	    is_snap, need_upgrade);
+
+	return (need_upgrade);
+}
+
+/*
  * Add d to the list of active bp filters.
  * Reuqires bpf_attachd() to be called before
  */
@@ -1899,17 +1960,7 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 		if (cmd == BIOCSETF)
 			reset_d(d);
 
-		if (fcode != NULL) {
-			/*
-			 * Do not require upgrade by first BIOCSETF
-			 * (used to set snaplen) by pcap_open_live().
-			 */
-			if (d->bd_writer != 0 && --d->bd_writer == 0)
-				need_upgrade = 1;
-			CTR4(KTR_NET, "%s: filter function set by pid %d, "
-			    "bd_writer counter %d, need_upgrade %d",
-			    __func__, d->bd_pid, d->bd_writer, need_upgrade);
-		}
+		need_upgrade = bpf_check_upgrade(cmd, d, fcode, flen);
 	}
 	BPFD_UNLOCK(d);
 	if (d->bd_bif != NULL)
@@ -1922,7 +1973,7 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 #endif
 
 	/* Move d to active readers list. */
-	if (need_upgrade)
+	if (need_upgrade != 0)
 		bpf_upgraded(d);
 
 	BPF_UNLOCK();
@@ -3036,7 +3087,8 @@ bpfstats_fill_xbpf(struct xbpf_d *d, struct bpf_d *bd)
 static int
 bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct xbpf_d *xbdbuf, *xbd, zerostats;
+	static const struct xbpf_d zerostats;
+	struct xbpf_d *xbdbuf, *xbd, tempstats;
 	int index, error;
 	struct bpf_if *bp;
 	struct bpf_d *bd;
@@ -3056,11 +3108,13 @@ bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 	 * as we aren't allowing the user to set the counters currently.
 	 */
 	if (req->newptr != NULL) {
-		if (req->newlen != sizeof(zerostats))
+		if (req->newlen != sizeof(tempstats))
 			return (EINVAL);
-		bzero(&zerostats, sizeof(zerostats));
-		xbd = req->newptr;
-		if (bcmp(xbd, &zerostats, sizeof(*xbd)) != 0)
+		memset(&tempstats, 0, sizeof(tempstats));
+		error = SYSCTL_IN(req, &tempstats, sizeof(tempstats));
+		if (error)
+			return (error);
+		if (bcmp(&tempstats, &zerostats, sizeof(tempstats)) != 0)
 			return (EINVAL);
 		bpf_zero_counters();
 		return (0);

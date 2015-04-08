@@ -89,6 +89,7 @@ __FBSDID("$FreeBSD$");
 #ifdef __rtems__
 #include <machine/rtems-bsd-thread.h>
 #include <rtems/score/threadimpl.h>
+#include <rtems/score/watchdogimpl.h>
 #endif /* __rtems__ */
 
 /*

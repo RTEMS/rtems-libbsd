@@ -378,7 +378,7 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 	sq->sq_blockedcnt[queue]++;
 #ifdef __rtems__
 	executing = td->td_thread;
-	_Objects_ISR_disable_and_acquire(&executing->Object, &lock_context);
+	_Thread_Lock_acquire_default(executing, &lock_context);
 	td->td_sq_state = TD_SQ_TIRED;
 #endif /* __rtems__ */
 	td->td_sleepqueue = NULL;
@@ -392,7 +392,7 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 	}
 	thread_unlock(td);
 #else /* __rtems__ */
-	_Objects_Release_and_ISR_enable(&executing->Object, &lock_context);
+	_Thread_Lock_release_default(executing, &lock_context);
 #endif /* __rtems__ */
 }
 
@@ -608,7 +608,7 @@ sleepq_switch(void *wchan, int pri)
 
 	sleepq_release(wchan);
 
-	executing = _Thread_Acquire_executing(&lock_context);
+	executing = _Thread_Lock_acquire_default_for_executing(&lock_context);
 	td = rtems_bsd_get_thread(executing);
 	BSD_ASSERT(td != NULL);
 
@@ -635,15 +635,14 @@ sleepq_switch(void *wchan, int pri)
 		Per_CPU_Control *cpu_self;
 		bool unblock;
 
-		cpu_self = _Objects_Release_and_thread_dispatch_disable(
-		    &executing->Object, &lock_context);
+		cpu_self = _Thread_Dispatch_disable_critical();
+		_Thread_Lock_release_default(executing, &lock_context);
 
 		_Giant_Acquire(cpu_self);
 		_Thread_Set_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
 		_Giant_Release(cpu_self);
 
-		_Objects_ISR_disable_and_acquire(&executing->Object,
-		    &lock_context);
+		_Thread_Lock_acquire_default(executing, &lock_context);
 
 		unblock = false;
 		switch (td->td_sq_state) {
@@ -664,8 +663,7 @@ sleepq_switch(void *wchan, int pri)
 			break;
 		}
 
-		_Objects_Release_and_ISR_enable(&executing->Object,
-		    &lock_context);
+		_Thread_Lock_release_default(executing, &lock_context);
 
 		if (unblock) {
 			_Giant_Acquire(cpu_self);
@@ -676,8 +674,7 @@ sleepq_switch(void *wchan, int pri)
 
 		_Thread_Dispatch_enable(cpu_self);
 
-		_Objects_ISR_disable_and_acquire(&executing->Object,
-		    &lock_context);
+		_Thread_Lock_acquire_default(executing, &lock_context);
 
 		switch (td->td_sq_state) {
 		case TD_SQ_NIGHTMARE:
@@ -692,8 +689,7 @@ sleepq_switch(void *wchan, int pri)
 		}
 	}
 
-	_Objects_Release_and_ISR_enable(&executing->Object,
-	    &lock_context);
+	_Thread_Lock_release_default(executing, &lock_context);
 
 	if (remove) {
 		sleepq_remove(td, wchan);
@@ -927,7 +923,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 #ifdef __rtems__
 	(void)sc;
 	thread = td->td_thread;
-	_Objects_ISR_disable_and_acquire(&thread->Object, &lock_context);
+	_Thread_Lock_acquire_default(thread, &lock_context);
 #endif /* __rtems__ */
 
 	td->td_wmesg = NULL;
@@ -973,8 +969,8 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 	if (unblock) {
 		Per_CPU_Control *cpu_self;
 
-		cpu_self = _Objects_Release_and_thread_dispatch_disable(
-		    &thread->Object, &lock_context);
+		cpu_self = _Thread_Dispatch_disable_critical();
+		_Thread_Lock_release_default(thread, &lock_context);
 		_Giant_Acquire(cpu_self);
 
 		_Watchdog_Remove(&thread->Timer);
@@ -983,8 +979,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		_Giant_Release(cpu_self);
 		_Thread_Dispatch_enable(cpu_self);
 	} else {
-		_Objects_Release_and_ISR_enable(&thread->Object,
-		    &lock_context);
+		_Thread_Lock_release_default(thread, &lock_context);
 	}
 #endif /* __rtems__ */
 	return (0);
@@ -1185,7 +1180,7 @@ sleepq_timeout(Objects_Id id, void *arg)
 	td = rtems_bsd_get_thread(thread);
 	BSD_ASSERT(td != NULL);
 
-	_Objects_ISR_disable_and_acquire(&thread->Object, &lock_context);
+	_Thread_Lock_acquire_default(thread, &lock_context);
 
 	unblock = false;
 	switch (td->td_sq_state) {
@@ -1204,8 +1199,8 @@ sleepq_timeout(Objects_Id id, void *arg)
 	if (unblock) {
 		Per_CPU_Control *cpu_self;
 
-		cpu_self = _Objects_Release_and_thread_dispatch_disable(
-		    &thread->Object, &lock_context);
+		cpu_self = _Thread_Dispatch_disable_critical();
+		_Thread_Lock_release_default(thread, &lock_context);
 		_Giant_Acquire(cpu_self);
 
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
@@ -1213,8 +1208,7 @@ sleepq_timeout(Objects_Id id, void *arg)
 		_Giant_Release(cpu_self);
 		_Thread_Dispatch_enable(cpu_self);
 	} else {
-		_Objects_Release_and_ISR_enable(&thread->Object,
-		    &lock_context);
+		_Thread_Lock_release_default(thread, &lock_context);
 	}
 }
 #endif /* __rtems__ */

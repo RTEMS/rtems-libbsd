@@ -638,9 +638,7 @@ sleepq_switch(void *wchan, int pri)
 		cpu_self = _Thread_Dispatch_disable_critical();
 		_Thread_Lock_release_default(executing, &lock_context);
 
-		_Giant_Acquire(cpu_self);
 		_Thread_Set_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
-		_Giant_Release(cpu_self);
 
 		_Thread_Lock_acquire_default(executing, &lock_context);
 
@@ -666,10 +664,8 @@ sleepq_switch(void *wchan, int pri)
 		_Thread_Lock_release_default(executing, &lock_context);
 
 		if (unblock) {
-			_Giant_Acquire(cpu_self);
 			_Watchdog_Remove(&executing->Timer);
 			_Thread_Clear_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
-			_Giant_Release(cpu_self);
 		}
 
 		_Thread_Dispatch_enable(cpu_self);
@@ -971,12 +967,10 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 
 		cpu_self = _Thread_Dispatch_disable_critical();
 		_Thread_Lock_release_default(thread, &lock_context);
-		_Giant_Acquire(cpu_self);
 
 		_Watchdog_Remove(&thread->Timer);
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
-		_Giant_Release(cpu_self);
 		_Thread_Dispatch_enable(cpu_self);
 	} else {
 		_Thread_Lock_release_default(thread, &lock_context);
@@ -1201,11 +1195,9 @@ sleepq_timeout(Objects_Id id, void *arg)
 
 		cpu_self = _Thread_Dispatch_disable_critical();
 		_Thread_Lock_release_default(thread, &lock_context);
-		_Giant_Acquire(cpu_self);
 
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
-		_Giant_Release(cpu_self);
 		_Thread_Dispatch_enable(cpu_self);
 	} else {
 		_Thread_Lock_release_default(thread, &lock_context);

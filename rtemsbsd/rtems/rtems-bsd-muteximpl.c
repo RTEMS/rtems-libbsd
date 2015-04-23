@@ -66,8 +66,8 @@ rtems_bsd_mutex_priority_change(Thread_Control *thread,
 
 void
 rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
-    Per_CPU_Control *cpu_self, Thread_Control *owner,
-    Thread_Control *executing, ISR_lock_Context *lock_context)
+    Thread_Control *owner, Thread_Control *executing,
+    ISR_lock_Context *lock_context)
 {
 	if (owner == executing) {
 		BSD_ASSERT(lock->lo_flags & LO_RECURSABLE);
@@ -75,6 +75,7 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 
 		_ISR_lock_Release_and_ISR_enable(&m->lock, lock_context);
 	} else {
+		Per_CPU_Control *cpu_self;
 		bool success;
 
 		_Thread_Lock_set(executing, &m->lock);
@@ -84,7 +85,7 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 		_RBTree_Insert(&m->rivals, &executing->RBNode,
 		    _Thread_queue_Compare_priority, false);
 
-		_Thread_Dispatch_disable_critical(cpu_self);
+		cpu_self = _Thread_Dispatch_disable_critical();
 
 		/* Priority inheritance */
 		_Scheduler_Change_priority_if_higher(_Scheduler_Get(owner),
@@ -129,8 +130,7 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 		} else {
 			Per_CPU_Control *cpu_self;
 
-			cpu_self = _Per_CPU_Get();
-			_Thread_Dispatch_disable_critical(cpu_self);
+			cpu_self = _Thread_Dispatch_disable_critical();
 			_ISR_lock_Release_and_ISR_enable(&m->lock,
 			    lock_context);
 

@@ -66,22 +66,20 @@ rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
 }
 
 void rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
-    Per_CPU_Control *cpu_self, Thread_Control *owner,
-    Thread_Control *executing, ISR_lock_Context *lock_context);
+    Thread_Control *owner, Thread_Control *executing,
+    ISR_lock_Context *lock_context);
 
 static inline void
 rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 {
 	ISR_lock_Context lock_context;
-	Per_CPU_Control *cpu_self;
 	Thread_Control *executing;
 	Thread_Control *owner;
 
 	_ISR_lock_ISR_disable_and_acquire(&m->lock, &lock_context);
 
 	owner = m->owner;
-	cpu_self = _Per_CPU_Get();
-	executing = cpu_self->executing;
+	executing = _Thread_Executing;
 
 	if (__predict_true(owner == NULL)) {
 		m->owner = executing;
@@ -89,7 +87,7 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 
 		_ISR_lock_Release_and_ISR_enable(&m->lock, &lock_context);
 	} else {
-		rtems_bsd_mutex_lock_more(lock, m, cpu_self, owner, executing,
+		rtems_bsd_mutex_lock_more(lock, m, owner, executing,
 		    &lock_context);
 	}
 }

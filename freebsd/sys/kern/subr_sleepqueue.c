@@ -664,7 +664,7 @@ sleepq_switch(void *wchan, int pri)
 		_Thread_Lock_release_default(executing, &lock_context);
 
 		if (unblock) {
-			_Watchdog_Remove(&executing->Timer);
+			_Watchdog_Remove_ticks(&executing->Timer);
 			_Thread_Clear_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
 		}
 
@@ -968,7 +968,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		cpu_self = _Thread_Dispatch_disable_critical();
 		_Thread_Lock_release_default(thread, &lock_context);
 
-		_Watchdog_Remove(&thread->Timer);
+		_Watchdog_Remove_ticks(&thread->Timer);
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
 		_Thread_Dispatch_enable(cpu_self);

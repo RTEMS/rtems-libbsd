@@ -40,19 +40,17 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 
-#include <rtems/score/isrlock.h>
-#include <rtems/score/rbtree.h>
 #include <rtems/score/thread.h>
+#include <rtems/score/threadq.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 typedef struct {
-	ISR_LOCK_MEMBER(lock)
+	Thread_queue_Control queue;
 	Thread_Control *owner;
 	int nest_level;
-	RBTree_Control rivals;
 } rtems_bsd_mutex;
 
 #ifdef __cplusplus

@@ -57,10 +57,9 @@ static inline void
 rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
     struct lock_class *class, const char *name, const char *type, int flags)
 {
-	_ISR_lock_Initialize(&m->lock, name);
+	_Thread_queue_Initialize(&m->queue, THREAD_QUEUE_DISCIPLINE_PRIORITY);
 	m->owner = NULL;
 	m->nest_level = 0;
-	_RBTree_Initialize_empty(&m->rivals);
 
 	lock_init(lock, class, name, type, flags);
 }
@@ -76,16 +75,16 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 	Thread_Control *executing;
 	Thread_Control *owner;
 
-	_ISR_lock_ISR_disable_and_acquire(&m->lock, &lock_context);
+	_Thread_queue_Acquire(&m->queue, &lock_context);
 
 	owner = m->owner;
 	executing = _Thread_Executing;
+	++executing->resource_count;
 
 	if (__predict_true(owner == NULL)) {
 		m->owner = executing;
-		++executing->resource_count;
 
-		_ISR_lock_Release_and_ISR_enable(&m->lock, &lock_context);
+		_Thread_queue_Release(&m->queue, &lock_context);
 	} else {
 		rtems_bsd_mutex_lock_more(lock, m, owner, executing,
 		    &lock_context);
@@ -100,7 +99,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 	Thread_Control *executing;
 	Thread_Control *owner;
 
-	_ISR_lock_ISR_disable_and_acquire(&m->lock, &lock_context);
+	_Thread_queue_Acquire(&m->queue, &lock_context);
 
 	owner = m->owner;
 	executing = _Thread_Executing;
@@ -117,7 +116,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 		success = 0;
 	}
 
-	_ISR_lock_Release_and_ISR_enable(&m->lock, &lock_context);
+	_Thread_queue_Release(&m->queue, &lock_context);
 
 	return (success);
 }
@@ -132,7 +131,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	Thread_Control *owner;
 	int nest_level;
 
-	_ISR_lock_ISR_disable_and_acquire(&m->lock, &lock_context);
+	_Thread_queue_Acquire(&m->queue, &lock_context);
 
 	nest_level = m->nest_level;
 	owner = m->owner;
@@ -140,17 +139,26 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	BSD_ASSERT(owner == _Thread_Executing);
 
 	if (__predict_true(nest_level == 0)) {
-		RBTree_Node *first = _RBTree_First(&m->rivals, RBT_LEFT);
+		RBTree_Node *first;
 		int keep_priority;
 
 		--owner->resource_count;
+
+		/*
+		 * Ensure that the owner resource count is visible to all other
+		 * processors and that we read the latest priority restore
+		 * hint.
+		 */
+		_Atomic_Fence( ATOMIC_ORDER_ACQ_REL );
+
+		first = _RBTree_First(&m->queue.Queues.Priority, RBT_LEFT);
 		keep_priority = _Thread_Owns_resources(owner)
-		    || owner->real_priority == owner->current_priority;
+		    || !owner->priority_restore_hint;
 
 		m->owner = NULL;
 
 		if (__predict_true(first == NULL && keep_priority)) {
-			_ISR_lock_Release_and_ISR_enable(&m->lock, &lock_context);
+			_Thread_queue_Release(&m->queue, &lock_context);
 		} else {
 			rtems_bsd_mutex_unlock_more(m, owner, keep_priority,
 			    first, &lock_context);
@@ -159,7 +167,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	} else {
 		m->nest_level = nest_level - 1;
 
-		_ISR_lock_Release_and_ISR_enable(&m->lock, &lock_context);
+		_Thread_queue_Release(&m->queue, &lock_context);
 	}
 }
 
@@ -180,14 +188,14 @@ rtems_bsd_mutex_recursed(rtems_bsd_mutex *m)
 static inline void
 rtems_bsd_mutex_destroy(struct lock_object *lock, rtems_bsd_mutex *m)
 {
-	BSD_ASSERT(_RBTree_Is_empty(&m->rivals));
+	BSD_ASSERT(_RBTree_Is_empty(&m->queue.Queues.Priority));
 
 	if (rtems_bsd_mutex_owned(m)) {
 		m->nest_level = 0;
 		rtems_bsd_mutex_unlock(m);
 	}
 
-	_ISR_lock_Destroy(&m->lock);
+	_Thread_queue_Dequeue(&m->queue);
 	lock_destroy(lock);
 }
 

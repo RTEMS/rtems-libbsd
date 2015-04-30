@@ -1900,7 +1900,6 @@ selectinit(void *dummy __unused)
 
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/threadimpl.h>
-#include <rtems/score/threadqimpl.h>
 
 #include <rtems/bsd/util.h>
 
@@ -1912,9 +1911,7 @@ force_select_timeout(Thread_Control *thread)
 	if (td != NULL) {
 		struct seltd *stp = td->td_sel;
 
-		if (thread->Wait.queue == &stp->st_wait.cv_waiters) {
-			_Thread_queue_Process_timeout(thread);
-		}
+		cv_broadcastpri(&stp->st_wait, 0);
 	}
 }
 

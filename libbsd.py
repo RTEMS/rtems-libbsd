@@ -2265,7 +2265,7 @@ def sources(mm):
     mm.addModule(netinet(mm))
     mm.addModule(netinet6(mm))
     #mm.addModule(netipsec(mm))
-    mm.addModule(net80211(mm))
+    #mm.addModule(net80211(mm))
     mm.addModule(opencrypto(mm))
     mm.addModule(crypto(mm))
     mm.addModule(altq(mm))

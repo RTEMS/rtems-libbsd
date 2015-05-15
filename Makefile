@@ -52,116 +52,14 @@ LIB_GEN_FILES =
 LIB_C_FILES =
 LIB_CXX_FILES =
 LIB_CXX_FILES += rtemsbsd/rtems/rtems-bsd-cxx.cc
-LIB_C_FILES += rtemsbsd/local/bus_if.c
-LIB_C_FILES += rtemsbsd/local/cryptodev_if.c
-LIB_C_FILES += rtemsbsd/local/device_if.c
-LIB_C_FILES += rtemsbsd/local/miibus_if.c
-LIB_C_FILES += rtemsbsd/local/pcib_if.c
-LIB_C_FILES += rtemsbsd/local/pci_if.c
-LIB_C_FILES += rtemsbsd/local/usb_if.c
-LIB_C_FILES += rtemsbsd/local/mmcbus_if.c
-LIB_C_FILES += rtemsbsd/local/mmcbr_if.c
-LIB_C_FILES += rtemsbsd/rtems/ipsec_get_policylen.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-assert.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-arp-processor.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-autoconf.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma-mbuf.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-cam.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-chunk.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-conf.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-configintrhook.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-delay.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-ethernet-addr.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-file.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-mac-address.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-allocator-domain-size.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-task-priority.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-init.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-jail.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-log.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-malloc.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mbuf.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mutex.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-muteximpl.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-newproc.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-nexus.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-page.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-panic.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-pci_bus.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-pci_cfgreg.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-program.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-rwlock.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-netcmds.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-signal.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sx.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-syscall-api.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlbyname.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctl.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlnametomib.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-thread.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-timesupport.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsdnet-rtrequest.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-kvm.c
-LIB_C_FILES += rtemsbsd/rtems/rtems_mii_ioctl_kern.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c
-LIB_C_FILES += rtemsbsd/rtems/syslog.c
-LIB_C_FILES += rtemsbsd/ftpd/ftpd.c
-LIB_C_FILES += rtemsbsd/mdns/mdns.c
-LIB_C_FILES += rtemsbsd/mdns/mdns-hostname-default.c
-LIB_C_FILES += rtemsbsd/pppd/auth.c
-LIB_C_FILES += rtemsbsd/pppd/ccp.c
-LIB_C_FILES += rtemsbsd/pppd/chap.c
-LIB_C_FILES += rtemsbsd/pppd/chap_ms.c
-LIB_C_FILES += rtemsbsd/pppd/chat.c
-LIB_C_FILES += rtemsbsd/pppd/demand.c
-LIB_C_FILES += rtemsbsd/pppd/fsm.c
-LIB_C_FILES += rtemsbsd/pppd/ipcp.c
-LIB_C_FILES += rtemsbsd/pppd/lcp.c
-LIB_C_FILES += rtemsbsd/pppd/magic.c
-LIB_C_FILES += rtemsbsd/pppd/options.c
-LIB_C_FILES += rtemsbsd/pppd/rtemsmain.c
-LIB_C_FILES += rtemsbsd/pppd/rtemspppd.c
-LIB_C_FILES += rtemsbsd/pppd/sys-rtems.c
-LIB_C_FILES += rtemsbsd/pppd/upap.c
-LIB_C_FILES += rtemsbsd/pppd/utils.c
-LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ehci_mpc83xx.c
-LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc24xx.c
-LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc32xx.c
-LIB_C_FILES += rtemsbsd/sys/dev/smc/if_smc_nexus.c
-LIB_C_FILES += rtemsbsd/sys/dev/ffec/if_ffec_mcf548x.c
-LIB_C_FILES += rtemsbsd/sys/dev/dw_mmc/dw_mmc.c
-LIB_C_FILES += rtemsbsd/sys/net/if_ppp.c
-LIB_C_FILES += rtemsbsd/sys/net/ppp_tty.c
-LIB_C_FILES += rtemsbsd/telnetd/check_passwd.c
-LIB_C_FILES += rtemsbsd/telnetd/des.c
-LIB_C_FILES += rtemsbsd/telnetd/pty.c
-LIB_C_FILES += rtemsbsd/telnetd/telnetd.c
-LIB_C_FILES += rtemsbsd/sys/dev/tsec/if_tsec_nexus.c
-LIB_GEN_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
-LIB_C_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
-rtemsbsd/rtems/rtems-kvm-symbols.c: rtemsbsd/rtems/generate_kvm_symbols
-	./$< > $@
-LIB_C_FILES += freebsd/lib/libc/net/nslexer.c
-freebsd/lib/libc/net/nslexer.c: freebsd/lib/libc/net/nslexer.l freebsd/lib/libc/net/nsparser.c
-	${LEX} -P _nsyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
-LIB_C_FILES += freebsd/lib/libc/net/nsparser.c
-freebsd/lib/libc/net/nsparser.c: freebsd/lib/libc/net/nsparser.y
-	yacc -b _nsyy -d -p _nsyy $<
-	sed -e /YY_BUF_SIZE/s/16384/1024/ < _nsyy.tab.c > $@
-	rm -f _nsyy.tab.c
-	mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h
-LIB_C_FILES += freebsd/lib/libipsec/policy_token.c
-freebsd/lib/libipsec/policy_token.c: freebsd/lib/libipsec/policy_token.l freebsd/lib/libipsec/policy_parse.c
-	${LEX} -P __libipsecyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
-LIB_C_FILES += freebsd/lib/libipsec/policy_parse.c
-freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
-	yacc -b __libipsecyy -d -p __libipsecyy $<
-	sed -e /YY_BUF_SIZE/s/16384/1024/ < __libipsecyy.tab.c > $@
-	rm -f __libipsecyy.tab.c
-	mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_rmclass.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_rio.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_subr.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_cdnr.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_priq.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_cbq.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_hfsc.c
+LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_red.c
 LIB_C_FILES += freebsd/sys/kern/init_main.c
 LIB_C_FILES += freebsd/sys/kern/kern_condvar.c
 LIB_C_FILES += freebsd/sys/kern/kern_event.c
@@ -205,6 +103,236 @@ LIB_C_FILES += freebsd/sys/libkern/fls.c
 LIB_C_FILES += freebsd/sys/libkern/inet_ntoa.c
 LIB_C_FILES += freebsd/sys/libkern/random.c
 LIB_C_FILES += freebsd/sys/vm/uma_core.c
+LIB_C_FILES += freebsd/sys/cam/cam.c
+LIB_C_FILES += freebsd/sys/cam/scsi/scsi_all.c
+LIB_C_FILES += freebsd/sys/crypto/sha1.c
+LIB_C_FILES += freebsd/sys/crypto/sha2/sha2.c
+LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-alg-fst.c
+LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-api.c
+LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-api-fst.c
+LIB_C_FILES += freebsd/sys/crypto/des/des_setkey.c
+LIB_C_FILES += freebsd/sys/crypto/des/des_enc.c
+LIB_C_FILES += freebsd/sys/crypto/des/des_ecb.c
+LIB_C_FILES += freebsd/sys/crypto/blowfish/bf_enc.c
+LIB_C_FILES += freebsd/sys/crypto/blowfish/bf_skey.c
+LIB_C_FILES += freebsd/sys/crypto/blowfish/bf_ecb.c
+LIB_C_FILES += freebsd/sys/crypto/rc4/rc4.c
+LIB_C_FILES += freebsd/sys/crypto/camellia/camellia-api.c
+LIB_C_FILES += freebsd/sys/crypto/camellia/camellia.c
+LIB_C_FILES += freebsd/sys/dev/mii/mii.c
+LIB_C_FILES += freebsd/sys/dev/mii/mii_bitbang.c
+LIB_C_FILES += freebsd/sys/dev/mii/mii_physubr.c
+LIB_C_FILES += freebsd/sys/dev/mii/icsphy.c
+LIB_C_FILES += freebsd/sys/dev/mii/e1000phy.c
+LIB_C_FILES += freebsd/sys/dev/mii/brgphy.c
+LIB_C_FILES += freebsd/sys/dev/mii/micphy.c
+LIB_C_FILES += freebsd/sys/dev/mii/ukphy.c
+LIB_C_FILES += freebsd/sys/dev/mii/ukphy_subr.c
+LIB_C_FILES += freebsd/sys/dev/tsec/if_tsec.c
+LIB_C_FILES += freebsd/sys/dev/cadence/if_cgem.c
+LIB_C_FILES += freebsd/sys/dev/dwc/if_dwc.c
+LIB_C_FILES += freebsd/sys/arm/xilinx/zy7_slcr.c
+LIB_C_FILES += freebsd/sys/dev/random/harvest.c
+LIB_C_FILES += freebsd/sys/netinet/tcp_hostcache.c
+LIB_C_FILES += freebsd/sys/dev/led/led.c
+LIB_C_FILES += freebsd/sys/netatalk/aarp.c
+LIB_C_FILES += freebsd/sys/netatalk/at_control.c
+LIB_C_FILES += freebsd/sys/netatalk/at_rmx.c
+LIB_C_FILES += freebsd/sys/netatalk/ddp_input.c
+LIB_C_FILES += freebsd/sys/netatalk/ddp_pcb.c
+LIB_C_FILES += freebsd/sys/netatalk/ddp_usrreq.c
+LIB_C_FILES += freebsd/sys/netatalk/at_proto.c
+LIB_C_FILES += freebsd/sys/netatalk/ddp_output.c
+LIB_C_FILES += freebsd/sys/dev/bce/if_bce.c
+LIB_C_FILES += freebsd/sys/dev/bfe/if_bfe.c
+LIB_C_FILES += freebsd/sys/dev/bge/if_bge.c
+LIB_C_FILES += freebsd/sys/dev/dc/dcphy.c
+LIB_C_FILES += freebsd/sys/dev/dc/if_dc.c
+LIB_C_FILES += freebsd/sys/dev/dc/pnphy.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_80003es2lan.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82542.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82575.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_mac.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_nvm.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_vf.c
+LIB_C_FILES += freebsd/sys/dev/e1000/if_lem.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82540.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82543.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_api.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_manage.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_osdep.c
+LIB_C_FILES += freebsd/sys/dev/e1000/if_em.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82541.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82571.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_ich8lan.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_mbx.c
+LIB_C_FILES += freebsd/sys/dev/e1000/e1000_phy.c
+LIB_C_FILES += freebsd/sys/dev/e1000/if_igb.c
+LIB_C_FILES += freebsd/sys/dev/fxp/if_fxp.c
+LIB_C_FILES += freebsd/sys/dev/re/if_re.c
+LIB_C_FILES += freebsd/sys/dev/smc/if_smc.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_busdma.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_core.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_debug.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_dev.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_device.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_dynamic.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_error.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_generic.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_handle_request.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_hid.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_hub.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_lookup.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_mbuf.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_msctest.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_parse.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_process.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_request.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_transfer.c
+LIB_C_FILES += freebsd/sys/dev/usb/usb_util.c
+LIB_C_FILES += freebsd/sys/dev/usb/controller/ohci.c
+LIB_C_FILES += freebsd/sys/dev/usb/controller/ehci.c
+LIB_C_FILES += freebsd/sys/dev/usb/controller/usb_controller.c
+LIB_C_FILES += freebsd/sys/dev/usb/quirk/usb_quirk.c
+LIB_C_FILES += freebsd/sys/dev/usb/storage/umass.c
+LIB_C_FILES += dhcpcd/arp.c
+dhcpcd/arp.o: dhcpcd/arp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/auth.c
+dhcpcd/auth.o: dhcpcd/auth.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/bpf.c
+dhcpcd/bpf.o: dhcpcd/bpf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/common.c
+dhcpcd/common.o: dhcpcd/common.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcp6.c
+dhcpcd/dhcp6.o: dhcpcd/dhcp6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcp.c
+dhcpcd/dhcp.o: dhcpcd/dhcp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcpcd.c
+dhcpcd/dhcpcd.o: dhcpcd/dhcpcd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcpcd-embedded.c
+dhcpcd/dhcpcd-embedded.o: dhcpcd/dhcpcd-embedded.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/dhcp-common.c
+dhcpcd/dhcp-common.o: dhcpcd/dhcp-common.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/duid.c
+dhcpcd/duid.o: dhcpcd/duid.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/eloop.c
+dhcpcd/eloop.o: dhcpcd/eloop.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/if-bsd.c
+dhcpcd/if-bsd.o: dhcpcd/if-bsd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/if-options.c
+dhcpcd/if-options.o: dhcpcd/if-options.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/if-pref.c
+dhcpcd/if-pref.o: dhcpcd/if-pref.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv4.c
+dhcpcd/ipv4.o: dhcpcd/ipv4.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv4ll.c
+dhcpcd/ipv4ll.o: dhcpcd/ipv4ll.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv6.c
+dhcpcd/ipv6.o: dhcpcd/ipv6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/ipv6nd.c
+dhcpcd/ipv6nd.o: dhcpcd/ipv6nd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/net.c
+dhcpcd/net.o: dhcpcd/net.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/platform-bsd.c
+dhcpcd/platform-bsd.o: dhcpcd/platform-bsd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/compat/pselect.c
+dhcpcd/compat/pselect.o: dhcpcd/compat/pselect.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += dhcpcd/crypt/hmac_md5.c
+dhcpcd/crypt/hmac_md5.o: dhcpcd/crypt/hmac_md5.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c
+ifeq ($(RTEMS_CPU), arm)
+LIB_C_FILES += freebsd/sys/arm/arm/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), avr)
+LIB_C_FILES += freebsd/sys/avr/avr/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), bfin)
+LIB_C_FILES += freebsd/sys/bfin/bfin/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), h8300)
+LIB_C_FILES += freebsd/sys/h8300/h8300/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), i386)
+LIB_C_FILES += freebsd/sys/i386/i386/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), lm32)
+LIB_C_FILES += freebsd/sys/lm32/lm32/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), m32c)
+LIB_C_FILES += freebsd/sys/m32c/m32c/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), m32r)
+LIB_C_FILES += freebsd/sys/m32r/m32r/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), m68k)
+LIB_C_FILES += freebsd/sys/m68k/m68k/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), mips)
+LIB_C_FILES += freebsd/sys/mips/mips/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), nios2)
+LIB_C_FILES += freebsd/sys/nios2/nios2/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), powerpc)
+LIB_C_FILES += freebsd/sys/powerpc/powerpc/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), sh)
+LIB_C_FILES += freebsd/sys/sh/sh/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), sparc)
+LIB_C_FILES += freebsd/sys/sparc/sparc/in_cksum.c
+LIB_C_FILES += freebsd/sys/mips/mips/in_cksum.c
+NEED_DUMMY_PIC_IRQ=no
+endif
+ifeq ($(RTEMS_CPU), sparc64)
+LIB_C_FILES += freebsd/sys/sparc64/sparc64/in_cksum.c
+endif
+ifeq ($(RTEMS_CPU), v850)
+LIB_C_FILES += freebsd/sys/v850/v850/in_cksum.c
+endif
+LIB_C_FILES += mDNSResponder/mDNSCore/anonymous.c
+LIB_C_FILES += mDNSResponder/mDNSCore/CryptoAlg.c
+LIB_C_FILES += mDNSResponder/mDNSCore/DNSCommon.c
+LIB_C_FILES += mDNSResponder/mDNSCore/DNSDigest.c
+LIB_C_FILES += mDNSResponder/mDNSCore/mDNS.c
+LIB_C_FILES += mDNSResponder/mDNSCore/uDNS.c
+LIB_C_FILES += mDNSResponder/mDNSShared/dnssd_clientshim.c
+LIB_C_FILES += mDNSResponder/mDNSShared/mDNSDebug.c
+LIB_C_FILES += mDNSResponder/mDNSShared/PlatformCommon.c
+LIB_C_FILES += mDNSResponder/mDNSShared/GenLinkedList.c
+LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSPosix.c
+LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSUNP.c
+LIB_C_FILES += rtemsbsd/mghttpd/mongoose.c
+rtemsbsd/mghttpd/mongoose.o: rtemsbsd/mghttpd/mongoose.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET -c $< -o $@
 LIB_C_FILES += freebsd/sys/dev/mmc/mmc.c
 LIB_C_FILES += freebsd/sys/dev/mmc/mmcsd.c
 LIB_C_FILES += freebsd/sys/dev/sdhci/sdhci.c
@@ -371,78 +499,6 @@ LIB_C_FILES += freebsd/sys/opencrypto/rmd160.c
 LIB_C_FILES += freebsd/sys/opencrypto/xform.c
 LIB_C_FILES += freebsd/sys/opencrypto/skipjack.c
 LIB_C_FILES += freebsd/sys/opencrypto/cast.c
-LIB_C_FILES += freebsd/sys/crypto/sha1.c
-LIB_C_FILES += freebsd/sys/crypto/sha2/sha2.c
-LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-alg-fst.c
-LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-api.c
-LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-api-fst.c
-LIB_C_FILES += freebsd/sys/crypto/des/des_setkey.c
-LIB_C_FILES += freebsd/sys/crypto/des/des_enc.c
-LIB_C_FILES += freebsd/sys/crypto/des/des_ecb.c
-LIB_C_FILES += freebsd/sys/crypto/blowfish/bf_enc.c
-LIB_C_FILES += freebsd/sys/crypto/blowfish/bf_skey.c
-LIB_C_FILES += freebsd/sys/crypto/blowfish/bf_ecb.c
-LIB_C_FILES += freebsd/sys/crypto/rc4/rc4.c
-LIB_C_FILES += freebsd/sys/crypto/camellia/camellia-api.c
-LIB_C_FILES += freebsd/sys/crypto/camellia/camellia.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_rmclass.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_rio.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_subr.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_cdnr.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_priq.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_cbq.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_hfsc.c
-LIB_C_FILES += freebsd/sys/contrib/altq/altq/altq_red.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/if_pflog.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/if_pfsync.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_if.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ioctl.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_lb.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_norm.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_osfp.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ruleset.c
-LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_table.c
-LIB_C_FILES += freebsd/sys/contrib/pf/netinet/in4_cksum.c
-LIB_C_FILES += freebsd/sys/dev/mii/mii.c
-LIB_C_FILES += freebsd/sys/dev/mii/mii_bitbang.c
-LIB_C_FILES += freebsd/sys/dev/mii/mii_physubr.c
-LIB_C_FILES += freebsd/sys/dev/mii/icsphy.c
-LIB_C_FILES += freebsd/sys/dev/mii/e1000phy.c
-LIB_C_FILES += freebsd/sys/dev/mii/brgphy.c
-LIB_C_FILES += freebsd/sys/dev/mii/micphy.c
-LIB_C_FILES += freebsd/sys/dev/mii/ukphy.c
-LIB_C_FILES += freebsd/sys/dev/mii/ukphy_subr.c
-LIB_C_FILES += freebsd/sys/dev/tsec/if_tsec.c
-LIB_C_FILES += freebsd/sys/dev/cadence/if_cgem.c
-LIB_C_FILES += freebsd/sys/dev/dwc/if_dwc.c
-LIB_C_FILES += freebsd/sys/arm/xilinx/zy7_slcr.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_busdma.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_core.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_debug.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_dev.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_device.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_dynamic.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_error.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_generic.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_handle_request.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_hid.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_hub.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_lookup.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_mbuf.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_msctest.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_parse.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_process.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_request.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_transfer.c
-LIB_C_FILES += freebsd/sys/dev/usb/usb_util.c
-LIB_C_FILES += freebsd/sys/dev/usb/quirk/usb_quirk.c
-LIB_C_FILES += freebsd/sys/dev/usb/controller/ohci.c
-LIB_C_FILES += freebsd/sys/dev/usb/controller/ehci.c
-LIB_C_FILES += freebsd/sys/dev/usb/controller/usb_controller.c
-LIB_C_FILES += freebsd/sys/cam/cam.c
-LIB_C_FILES += freebsd/sys/cam/scsi/scsi_all.c
-LIB_C_FILES += freebsd/sys/dev/usb/storage/umass.c
 LIB_C_FILES += freebsd/sys/dev/pci/pci.c
 LIB_C_FILES += freebsd/sys/dev/pci/pci_user.c
 LIB_C_FILES += freebsd/sys/dev/pci/pci_pci.c
@@ -517,101 +573,494 @@ ifeq ($(RTEMS_CPU), v850)
 LIB_C_FILES += freebsd/sys/v850/v850/legacy.c
 LIB_C_FILES += freebsd/sys/v850/pci/pci_bus.c
 endif
-LIB_C_FILES += freebsd/sys/dev/random/harvest.c
-LIB_C_FILES += freebsd/sys/netinet/tcp_hostcache.c
-LIB_C_FILES += freebsd/sys/dev/led/led.c
-LIB_C_FILES += freebsd/sys/netatalk/aarp.c
-LIB_C_FILES += freebsd/sys/netatalk/at_control.c
-LIB_C_FILES += freebsd/sys/netatalk/at_rmx.c
-LIB_C_FILES += freebsd/sys/netatalk/ddp_input.c
-LIB_C_FILES += freebsd/sys/netatalk/ddp_pcb.c
-LIB_C_FILES += freebsd/sys/netatalk/ddp_usrreq.c
-LIB_C_FILES += freebsd/sys/netatalk/at_proto.c
-LIB_C_FILES += freebsd/sys/netatalk/ddp_output.c
-LIB_C_FILES += freebsd/sys/dev/re/if_re.c
-LIB_C_FILES += freebsd/sys/dev/fxp/if_fxp.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_80003es2lan.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82542.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82575.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_mac.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_nvm.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_vf.c
-LIB_C_FILES += freebsd/sys/dev/e1000/if_lem.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82540.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82543.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_api.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_manage.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_osdep.c
-LIB_C_FILES += freebsd/sys/dev/e1000/if_em.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82541.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_82571.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_ich8lan.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_mbx.c
-LIB_C_FILES += freebsd/sys/dev/e1000/e1000_phy.c
-LIB_C_FILES += freebsd/sys/dev/e1000/if_igb.c
-LIB_C_FILES += freebsd/sys/dev/dc/dcphy.c
-LIB_C_FILES += freebsd/sys/dev/dc/if_dc.c
-LIB_C_FILES += freebsd/sys/dev/dc/pnphy.c
-LIB_C_FILES += freebsd/sys/dev/smc/if_smc.c
-LIB_C_FILES += freebsd/sys/dev/bce/if_bce.c
-LIB_C_FILES += freebsd/sys/dev/bfe/if_bfe.c
-LIB_C_FILES += freebsd/sys/dev/bge/if_bge.c
-ifeq ($(RTEMS_CPU), arm)
-LIB_C_FILES += freebsd/sys/arm/arm/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), avr)
-LIB_C_FILES += freebsd/sys/avr/avr/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), bfin)
-LIB_C_FILES += freebsd/sys/bfin/bfin/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), h8300)
-LIB_C_FILES += freebsd/sys/h8300/h8300/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), i386)
-LIB_C_FILES += freebsd/sys/i386/i386/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), lm32)
-LIB_C_FILES += freebsd/sys/lm32/lm32/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), m32c)
-LIB_C_FILES += freebsd/sys/m32c/m32c/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), m32r)
-LIB_C_FILES += freebsd/sys/m32r/m32r/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), m68k)
-LIB_C_FILES += freebsd/sys/m68k/m68k/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), mips)
-LIB_C_FILES += freebsd/sys/mips/mips/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), nios2)
-LIB_C_FILES += freebsd/sys/nios2/nios2/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), powerpc)
-LIB_C_FILES += freebsd/sys/powerpc/powerpc/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), sh)
-LIB_C_FILES += freebsd/sys/sh/sh/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), sparc)
-LIB_C_FILES += freebsd/sys/sparc/sparc/in_cksum.c
-LIB_C_FILES += freebsd/sys/mips/mips/in_cksum.c
-NEED_DUMMY_PIC_IRQ=no
-endif
-ifeq ($(RTEMS_CPU), sparc64)
-LIB_C_FILES += freebsd/sys/sparc64/sparc64/in_cksum.c
-endif
-ifeq ($(RTEMS_CPU), v850)
-LIB_C_FILES += freebsd/sys/v850/v850/in_cksum.c
-endif
+LIB_C_FILES += freebsd/sys/contrib/pf/net/if_pflog.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/if_pfsync.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_if.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ioctl.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_lb.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_norm.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_osfp.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_ruleset.c
+LIB_C_FILES += freebsd/sys/contrib/pf/net/pf_table.c
+LIB_C_FILES += freebsd/sys/contrib/pf/netinet/in4_cksum.c
+LIB_C_FILES += rtemsbsd/local/bus_if.c
+LIB_C_FILES += rtemsbsd/local/cryptodev_if.c
+LIB_C_FILES += rtemsbsd/local/device_if.c
+LIB_C_FILES += rtemsbsd/local/miibus_if.c
+LIB_C_FILES += rtemsbsd/local/pcib_if.c
+LIB_C_FILES += rtemsbsd/local/pci_if.c
+LIB_C_FILES += rtemsbsd/local/usb_if.c
+LIB_C_FILES += rtemsbsd/local/mmcbus_if.c
+LIB_C_FILES += rtemsbsd/local/mmcbr_if.c
+LIB_C_FILES += rtemsbsd/rtems/ipsec_get_policylen.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-assert.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-arp-processor.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-autoconf.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-bus-dma-mbuf.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-cam.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-chunk.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-conf.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-configintrhook.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-delay.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-ethernet-addr.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-file.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-mac-address.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-allocator-domain-size.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-task-priority.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-init.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-jail.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-log.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-malloc.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mbuf.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-mutex.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-muteximpl.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-newproc.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-nexus.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-page.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-panic.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-pci_bus.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-pci_cfgreg.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-program.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-rwlock.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-netcmds.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-signal.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sx.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-syscall-api.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlbyname.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctl.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-sysctlnametomib.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-thread.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-timesupport.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-bsdnet-rtrequest.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-kvm.c
+LIB_C_FILES += rtemsbsd/rtems/rtems_mii_ioctl_kern.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-syslog-initialize.c
+LIB_C_FILES += rtemsbsd/rtems/syslog.c
+LIB_C_FILES += rtemsbsd/ftpd/ftpd.c
+LIB_C_FILES += rtemsbsd/mdns/mdns.c
+LIB_C_FILES += rtemsbsd/mdns/mdns-hostname-default.c
+LIB_C_FILES += rtemsbsd/pppd/auth.c
+LIB_C_FILES += rtemsbsd/pppd/ccp.c
+LIB_C_FILES += rtemsbsd/pppd/chap.c
+LIB_C_FILES += rtemsbsd/pppd/chap_ms.c
+LIB_C_FILES += rtemsbsd/pppd/chat.c
+LIB_C_FILES += rtemsbsd/pppd/demand.c
+LIB_C_FILES += rtemsbsd/pppd/fsm.c
+LIB_C_FILES += rtemsbsd/pppd/ipcp.c
+LIB_C_FILES += rtemsbsd/pppd/lcp.c
+LIB_C_FILES += rtemsbsd/pppd/magic.c
+LIB_C_FILES += rtemsbsd/pppd/options.c
+LIB_C_FILES += rtemsbsd/pppd/rtemsmain.c
+LIB_C_FILES += rtemsbsd/pppd/rtemspppd.c
+LIB_C_FILES += rtemsbsd/pppd/sys-rtems.c
+LIB_C_FILES += rtemsbsd/pppd/upap.c
+LIB_C_FILES += rtemsbsd/pppd/utils.c
+LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ehci_mpc83xx.c
+LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc24xx.c
+LIB_C_FILES += rtemsbsd/sys/dev/usb/controller/ohci_lpc32xx.c
+LIB_C_FILES += rtemsbsd/sys/dev/smc/if_smc_nexus.c
+LIB_C_FILES += rtemsbsd/sys/dev/ffec/if_ffec_mcf548x.c
+LIB_C_FILES += rtemsbsd/sys/dev/dw_mmc/dw_mmc.c
+LIB_C_FILES += rtemsbsd/sys/net/if_ppp.c
+LIB_C_FILES += rtemsbsd/sys/net/ppp_tty.c
+LIB_C_FILES += rtemsbsd/telnetd/check_passwd.c
+LIB_C_FILES += rtemsbsd/telnetd/des.c
+LIB_C_FILES += rtemsbsd/telnetd/pty.c
+LIB_C_FILES += rtemsbsd/telnetd/telnetd.c
+LIB_C_FILES += rtemsbsd/sys/dev/tsec/if_tsec_nexus.c
+LIB_GEN_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
+LIB_C_FILES += rtemsbsd/rtems/rtems-kvm-symbols.c
+rtemsbsd/rtems/rtems-kvm-symbols.c: rtemsbsd/rtems/generate_kvm_symbols
+	./$< > $@
+LIB_C_FILES += freebsd/lib/libc/net/nslexer.c
+freebsd/lib/libc/net/nslexer.c: freebsd/lib/libc/net/nslexer.l freebsd/lib/libc/net/nsparser.c
+	${LEX} -P _nsyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
+LIB_C_FILES += freebsd/lib/libc/net/nsparser.c
+freebsd/lib/libc/net/nsparser.c: freebsd/lib/libc/net/nsparser.y
+	yacc -b _nsyy -d -p _nsyy $<
+	sed -e /YY_BUF_SIZE/s/16384/1024/ < _nsyy.tab.c > $@
+	rm -f _nsyy.tab.c
+	mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h
+LIB_C_FILES += freebsd/lib/libipsec/policy_token.c
+freebsd/lib/libipsec/policy_token.c: freebsd/lib/libipsec/policy_token.l freebsd/lib/libipsec/policy_parse.c
+	${LEX} -P __libipsecyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
+LIB_C_FILES += freebsd/lib/libipsec/policy_parse.c
+freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
+	yacc -b __libipsecyy -d -p __libipsecyy $<
+	sed -e /YY_BUF_SIZE/s/16384/1024/ < __libipsecyy.tab.c > $@
+	rm -f __libipsecyy.tab.c
+	mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
+
+TEST_FOOBARCLIENT = testsuite/foobarclient/foobarclient.exe
+TEST_FOOBARCLIENT_O_FILES =
+TEST_FOOBARCLIENT_D_FILES =
+TEST_FOOBARCLIENT_O_FILES += testsuite/foobarclient/test_main.o
+TEST_FOOBARCLIENT_D_FILES += testsuite/foobarclient/test_main.d
+$(TEST_FOOBARCLIENT): $(TEST_FOOBARCLIENT_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/foobarclient/foobarclient.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_FOOBARCLIENT)
+O_FILES += $(TEST_FOOBARCLIENT_O_FILES)
+D_FILES += $(TEST_FOOBARCLIENT_D_FILES)
+
+TEST_FOOBARSERVER = testsuite/foobarserver/foobarserver.exe
+TEST_FOOBARSERVER_O_FILES =
+TEST_FOOBARSERVER_D_FILES =
+TEST_FOOBARSERVER_O_FILES += testsuite/foobarserver/test_main.o
+TEST_FOOBARSERVER_D_FILES += testsuite/foobarserver/test_main.d
+$(TEST_FOOBARSERVER): $(TEST_FOOBARSERVER_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/foobarserver/foobarserver.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_FOOBARSERVER)
+O_FILES += $(TEST_FOOBARSERVER_O_FILES)
+D_FILES += $(TEST_FOOBARSERVER_D_FILES)
+
+TEST_DHCPCD01 = testsuite/dhcpcd01/dhcpcd01.exe
+TEST_DHCPCD01_O_FILES =
+TEST_DHCPCD01_D_FILES =
+TEST_DHCPCD01_O_FILES += testsuite/dhcpcd01/test_main.o
+TEST_DHCPCD01_D_FILES += testsuite/dhcpcd01/test_main.d
+$(TEST_DHCPCD01): $(TEST_DHCPCD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/dhcpcd01/dhcpcd01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_DHCPCD01)
+O_FILES += $(TEST_DHCPCD01_O_FILES)
+D_FILES += $(TEST_DHCPCD01_D_FILES)
+
+TEST_DHCPCD02 = testsuite/dhcpcd02/dhcpcd02.exe
+TEST_DHCPCD02_O_FILES =
+TEST_DHCPCD02_D_FILES =
+TEST_DHCPCD02_O_FILES += testsuite/dhcpcd02/test_main.o
+TEST_DHCPCD02_D_FILES += testsuite/dhcpcd02/test_main.d
+$(TEST_DHCPCD02): $(TEST_DHCPCD02_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/dhcpcd02/dhcpcd02.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_DHCPCD02)
+O_FILES += $(TEST_DHCPCD02_O_FILES)
+D_FILES += $(TEST_DHCPCD02_D_FILES)
+
+TEST_ARPHOLE = testsuite/arphole/arphole.exe
+TEST_ARPHOLE_O_FILES =
+TEST_ARPHOLE_D_FILES =
+TEST_ARPHOLE_O_FILES += testsuite/arphole/test_main.o
+TEST_ARPHOLE_D_FILES += testsuite/arphole/test_main.d
+$(TEST_ARPHOLE): $(TEST_ARPHOLE_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/arphole/arphole.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_ARPHOLE)
+O_FILES += $(TEST_ARPHOLE_O_FILES)
+D_FILES += $(TEST_ARPHOLE_D_FILES)
+
+TEST_TELNETD01 = testsuite/telnetd01/telnetd01.exe
+TEST_TELNETD01_O_FILES =
+TEST_TELNETD01_D_FILES =
+TEST_TELNETD01_O_FILES += testsuite/telnetd01/test_main.o
+TEST_TELNETD01_D_FILES += testsuite/telnetd01/test_main.d
+$(TEST_TELNETD01): $(TEST_TELNETD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/telnetd01/telnetd01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_TELNETD01)
+O_FILES += $(TEST_TELNETD01_O_FILES)
+D_FILES += $(TEST_TELNETD01_D_FILES)
+
+TEST_UNIX01 = testsuite/unix01/unix01.exe
+TEST_UNIX01_O_FILES =
+TEST_UNIX01_D_FILES =
+TEST_UNIX01_O_FILES += testsuite/unix01/test_main.o
+TEST_UNIX01_D_FILES += testsuite/unix01/test_main.d
+$(TEST_UNIX01): $(TEST_UNIX01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/unix01/unix01.map $^ -lm -lz -o $@
+TESTS += $(TEST_UNIX01)
+O_FILES += $(TEST_UNIX01_O_FILES)
+D_FILES += $(TEST_UNIX01_D_FILES)
+RUN_TESTS += $(TEST_UNIX01)
+
+TEST_FTPD01 = testsuite/ftpd01/ftpd01.exe
+TEST_FTPD01_O_FILES =
+TEST_FTPD01_D_FILES =
+TEST_FTPD01_O_FILES += testsuite/ftpd01/test_main.o
+TEST_FTPD01_D_FILES += testsuite/ftpd01/test_main.d
+$(TEST_FTPD01): $(TEST_FTPD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/ftpd01/ftpd01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_FTPD01)
+O_FILES += $(TEST_FTPD01_O_FILES)
+D_FILES += $(TEST_FTPD01_D_FILES)
+RUN_NET_TESTS += $(TEST_FTPD01)
+
+TEST_PING01 = testsuite/ping01/ping01.exe
+TEST_PING01_O_FILES =
+TEST_PING01_D_FILES =
+TEST_PING01_O_FILES += testsuite/ping01/test_main.o
+TEST_PING01_D_FILES += testsuite/ping01/test_main.d
+$(TEST_PING01): $(TEST_PING01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/ping01/ping01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_PING01)
+O_FILES += $(TEST_PING01_O_FILES)
+D_FILES += $(TEST_PING01_D_FILES)
+RUN_NET_TESTS += $(TEST_PING01)
+
+TEST_SELECTPOLLKQUEUE01 = testsuite/selectpollkqueue01/selectpollkqueue01.exe
+TEST_SELECTPOLLKQUEUE01_O_FILES =
+TEST_SELECTPOLLKQUEUE01_D_FILES =
+TEST_SELECTPOLLKQUEUE01_O_FILES += testsuite/selectpollkqueue01/test_main.o
+TEST_SELECTPOLLKQUEUE01_D_FILES += testsuite/selectpollkqueue01/test_main.d
+$(TEST_SELECTPOLLKQUEUE01): $(TEST_SELECTPOLLKQUEUE01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/selectpollkqueue01/selectpollkqueue01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SELECTPOLLKQUEUE01)
+O_FILES += $(TEST_SELECTPOLLKQUEUE01_O_FILES)
+D_FILES += $(TEST_SELECTPOLLKQUEUE01_D_FILES)
+RUN_TESTS += $(TEST_SELECTPOLLKQUEUE01)
+
+TEST_RWLOCK01 = testsuite/rwlock01/rwlock01.exe
+TEST_RWLOCK01_O_FILES =
+TEST_RWLOCK01_D_FILES =
+TEST_RWLOCK01_O_FILES += testsuite/rwlock01/test_main.o
+TEST_RWLOCK01_D_FILES += testsuite/rwlock01/test_main.d
+$(TEST_RWLOCK01): $(TEST_RWLOCK01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/rwlock01/rwlock01.map $^ -lm -lz -o $@
+TESTS += $(TEST_RWLOCK01)
+O_FILES += $(TEST_RWLOCK01_O_FILES)
+D_FILES += $(TEST_RWLOCK01_D_FILES)
+RUN_TESTS += $(TEST_RWLOCK01)
+
+TEST_SLEEP01 = testsuite/sleep01/sleep01.exe
+TEST_SLEEP01_O_FILES =
+TEST_SLEEP01_D_FILES =
+TEST_SLEEP01_O_FILES += testsuite/sleep01/test_main.o
+TEST_SLEEP01_D_FILES += testsuite/sleep01/test_main.d
+$(TEST_SLEEP01): $(TEST_SLEEP01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/sleep01/sleep01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SLEEP01)
+O_FILES += $(TEST_SLEEP01_O_FILES)
+D_FILES += $(TEST_SLEEP01_D_FILES)
+RUN_TESTS += $(TEST_SLEEP01)
+
+TEST_SYSCALLS01 = testsuite/syscalls01/syscalls01.exe
+TEST_SYSCALLS01_O_FILES =
+TEST_SYSCALLS01_D_FILES =
+TEST_SYSCALLS01_O_FILES += testsuite/syscalls01/test_main.o
+TEST_SYSCALLS01_D_FILES += testsuite/syscalls01/test_main.d
+$(TEST_SYSCALLS01): $(TEST_SYSCALLS01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/syscalls01/syscalls01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SYSCALLS01)
+O_FILES += $(TEST_SYSCALLS01_O_FILES)
+D_FILES += $(TEST_SYSCALLS01_D_FILES)
+RUN_TESTS += $(TEST_SYSCALLS01)
+
+TEST_COMMANDS01 = testsuite/commands01/commands01.exe
+TEST_COMMANDS01_O_FILES =
+TEST_COMMANDS01_D_FILES =
+TEST_COMMANDS01_O_FILES += testsuite/commands01/test_main.o
+TEST_COMMANDS01_D_FILES += testsuite/commands01/test_main.d
+$(TEST_COMMANDS01): $(TEST_COMMANDS01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/commands01/commands01.map $^ -lm -lz -o $@
+TESTS += $(TEST_COMMANDS01)
+O_FILES += $(TEST_COMMANDS01_O_FILES)
+D_FILES += $(TEST_COMMANDS01_D_FILES)
+RUN_TESTS += $(TEST_COMMANDS01)
+
+TEST_USB01 = testsuite/usb01/usb01.exe
+TEST_USB01_O_FILES =
+TEST_USB01_D_FILES =
+TEST_USB01_O_FILES += testsuite/usb01/init.o
+TEST_USB01_D_FILES += testsuite/usb01/init.d
+$(TEST_USB01): $(TEST_USB01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/usb01/usb01.map $^ -lm -lz -o $@
+TESTS += $(TEST_USB01)
+O_FILES += $(TEST_USB01_O_FILES)
+D_FILES += $(TEST_USB01_D_FILES)
+TEST_USB01_O_FILES += testsuite/usb01/test-file-system.o
+TEST_USB01_D_FILES += testsuite/usb01/test-file-system.d
+$(TEST_USB01): $(TEST_USB01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/usb01/usb01.map $^ -lm -lz -o $@
+TESTS += $(TEST_USB01)
+O_FILES += $(TEST_USB01_O_FILES)
+D_FILES += $(TEST_USB01_D_FILES)
+
+TEST_LOOPBACK01 = testsuite/loopback01/loopback01.exe
+TEST_LOOPBACK01_O_FILES =
+TEST_LOOPBACK01_D_FILES =
+TEST_LOOPBACK01_O_FILES += testsuite/loopback01/test_main.o
+TEST_LOOPBACK01_D_FILES += testsuite/loopback01/test_main.d
+$(TEST_LOOPBACK01): $(TEST_LOOPBACK01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/loopback01/loopback01.map $^ -lm -lz -o $@
+TESTS += $(TEST_LOOPBACK01)
+O_FILES += $(TEST_LOOPBACK01_O_FILES)
+D_FILES += $(TEST_LOOPBACK01_D_FILES)
+RUN_TESTS += $(TEST_LOOPBACK01)
+
+TEST_NETSHELL01 = testsuite/netshell01/netshell01.exe
+TEST_NETSHELL01_O_FILES =
+TEST_NETSHELL01_D_FILES =
+TEST_NETSHELL01_O_FILES += testsuite/netshell01/test_main.o
+TEST_NETSHELL01_D_FILES += testsuite/netshell01/test_main.d
+$(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/netshell01/netshell01.map $^ -lm -lz -o $@
+TESTS += $(TEST_NETSHELL01)
+O_FILES += $(TEST_NETSHELL01_O_FILES)
+D_FILES += $(TEST_NETSHELL01_D_FILES)
+TEST_NETSHELL01_O_FILES += testsuite/netshell01/shellconfig.o
+TEST_NETSHELL01_D_FILES += testsuite/netshell01/shellconfig.d
+$(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/netshell01/netshell01.map $^ -lm -lz -o $@
+TESTS += $(TEST_NETSHELL01)
+O_FILES += $(TEST_NETSHELL01_O_FILES)
+D_FILES += $(TEST_NETSHELL01_D_FILES)
+
+TEST_SWI01 = testsuite/swi01/swi01.exe
+TEST_SWI01_O_FILES =
+TEST_SWI01_D_FILES =
+TEST_SWI01_O_FILES += testsuite/swi01/init.o
+TEST_SWI01_D_FILES += testsuite/swi01/init.d
+$(TEST_SWI01): $(TEST_SWI01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/swi01/swi01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SWI01)
+O_FILES += $(TEST_SWI01_O_FILES)
+D_FILES += $(TEST_SWI01_D_FILES)
+RUN_TESTS += $(TEST_SWI01)
+TEST_SWI01_O_FILES += testsuite/swi01/swi_test.o
+TEST_SWI01_D_FILES += testsuite/swi01/swi_test.d
+$(TEST_SWI01): $(TEST_SWI01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/swi01/swi01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SWI01)
+O_FILES += $(TEST_SWI01_O_FILES)
+D_FILES += $(TEST_SWI01_D_FILES)
+RUN_TESTS += $(TEST_SWI01)
+
+TEST_TIMEOUT01 = testsuite/timeout01/timeout01.exe
+TEST_TIMEOUT01_O_FILES =
+TEST_TIMEOUT01_D_FILES =
+TEST_TIMEOUT01_O_FILES += testsuite/timeout01/init.o
+TEST_TIMEOUT01_D_FILES += testsuite/timeout01/init.d
+$(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/timeout01/timeout01.map $^ -lm -lz -o $@
+TESTS += $(TEST_TIMEOUT01)
+O_FILES += $(TEST_TIMEOUT01_O_FILES)
+D_FILES += $(TEST_TIMEOUT01_D_FILES)
+RUN_TESTS += $(TEST_TIMEOUT01)
+TEST_TIMEOUT01_O_FILES += testsuite/timeout01/timeout_test.o
+TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_test.d
+$(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/timeout01/timeout01.map $^ -lm -lz -o $@
+TESTS += $(TEST_TIMEOUT01)
+O_FILES += $(TEST_TIMEOUT01_O_FILES)
+D_FILES += $(TEST_TIMEOUT01_D_FILES)
+RUN_TESTS += $(TEST_TIMEOUT01)
+
+TEST_INIT01 = testsuite/init01/init01.exe
+TEST_INIT01_O_FILES =
+TEST_INIT01_D_FILES =
+TEST_INIT01_O_FILES += testsuite/init01/test_main.o
+TEST_INIT01_D_FILES += testsuite/init01/test_main.d
+$(TEST_INIT01): $(TEST_INIT01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/init01/init01.map $^ -lm -lz -o $@
+TESTS += $(TEST_INIT01)
+O_FILES += $(TEST_INIT01_O_FILES)
+D_FILES += $(TEST_INIT01_D_FILES)
+RUN_TESTS += $(TEST_INIT01)
+
+TEST_THREAD01 = testsuite/thread01/thread01.exe
+TEST_THREAD01_O_FILES =
+TEST_THREAD01_D_FILES =
+TEST_THREAD01_O_FILES += testsuite/thread01/test_main.o
+TEST_THREAD01_D_FILES += testsuite/thread01/test_main.d
+$(TEST_THREAD01): $(TEST_THREAD01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/thread01/thread01.map $^ -lm -lz -o $@
+TESTS += $(TEST_THREAD01)
+O_FILES += $(TEST_THREAD01_O_FILES)
+D_FILES += $(TEST_THREAD01_D_FILES)
+RUN_TESTS += $(TEST_THREAD01)
+
+TEST_MUTEX01 = testsuite/mutex01/mutex01.exe
+TEST_MUTEX01_O_FILES =
+TEST_MUTEX01_D_FILES =
+TEST_MUTEX01_O_FILES += testsuite/mutex01/test_main.o
+TEST_MUTEX01_D_FILES += testsuite/mutex01/test_main.d
+$(TEST_MUTEX01): $(TEST_MUTEX01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/mutex01/mutex01.map $^ -lm -lz -o $@
+TESTS += $(TEST_MUTEX01)
+O_FILES += $(TEST_MUTEX01_O_FILES)
+D_FILES += $(TEST_MUTEX01_D_FILES)
+RUN_TESTS += $(TEST_MUTEX01)
+
+TEST_CONDVAR01 = testsuite/condvar01/condvar01.exe
+TEST_CONDVAR01_O_FILES =
+TEST_CONDVAR01_D_FILES =
+TEST_CONDVAR01_O_FILES += testsuite/condvar01/test_main.o
+TEST_CONDVAR01_D_FILES += testsuite/condvar01/test_main.d
+$(TEST_CONDVAR01): $(TEST_CONDVAR01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/condvar01/condvar01.map $^ -lm -lz -o $@
+TESTS += $(TEST_CONDVAR01)
+O_FILES += $(TEST_CONDVAR01_O_FILES)
+D_FILES += $(TEST_CONDVAR01_D_FILES)
+RUN_TESTS += $(TEST_CONDVAR01)
+
+TEST_PPP01 = testsuite/ppp01/ppp01.exe
+TEST_PPP01_O_FILES =
+TEST_PPP01_D_FILES =
+TEST_PPP01_O_FILES += testsuite/ppp01/test_main.o
+TEST_PPP01_D_FILES += testsuite/ppp01/test_main.d
+$(TEST_PPP01): $(TEST_PPP01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/ppp01/ppp01.map $^ -lm -lz -o $@
+TESTS += $(TEST_PPP01)
+O_FILES += $(TEST_PPP01_O_FILES)
+D_FILES += $(TEST_PPP01_D_FILES)
+
+TEST_ZEROCOPY01 = testsuite/zerocopy01/zerocopy01.exe
+TEST_ZEROCOPY01_O_FILES =
+TEST_ZEROCOPY01_D_FILES =
+TEST_ZEROCOPY01_O_FILES += testsuite/zerocopy01/test_main.o
+TEST_ZEROCOPY01_D_FILES += testsuite/zerocopy01/test_main.d
+$(TEST_ZEROCOPY01): $(TEST_ZEROCOPY01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/zerocopy01/zerocopy01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_ZEROCOPY01)
+O_FILES += $(TEST_ZEROCOPY01_O_FILES)
+D_FILES += $(TEST_ZEROCOPY01_D_FILES)
+
+TEST_SMP01 = testsuite/smp01/smp01.exe
+TEST_SMP01_O_FILES =
+TEST_SMP01_D_FILES =
+TEST_SMP01_O_FILES += testsuite/smp01/test_main.o
+TEST_SMP01_D_FILES += testsuite/smp01/test_main.d
+$(TEST_SMP01): $(TEST_SMP01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/smp01/smp01.map $^ -lm -lz -o $@
+TESTS += $(TEST_SMP01)
+O_FILES += $(TEST_SMP01_O_FILES)
+D_FILES += $(TEST_SMP01_D_FILES)
+RUN_TESTS += $(TEST_SMP01)
+
+TEST_MEDIA01 = testsuite/media01/media01.exe
+TEST_MEDIA01_O_FILES =
+TEST_MEDIA01_D_FILES =
+TEST_MEDIA01_O_FILES += testsuite/media01/test_main.o
+TEST_MEDIA01_D_FILES += testsuite/media01/test_main.d
+$(TEST_MEDIA01): $(TEST_MEDIA01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/media01/media01.map $^ -lm -lz -o $@
+TESTS += $(TEST_MEDIA01)
+O_FILES += $(TEST_MEDIA01_O_FILES)
+D_FILES += $(TEST_MEDIA01_D_FILES)
+
+TEST_VLAN01 = testsuite/vlan01/vlan01.exe
+TEST_VLAN01_O_FILES =
+TEST_VLAN01_D_FILES =
+TEST_VLAN01_O_FILES += testsuite/vlan01/test_main.o
+TEST_VLAN01_D_FILES += testsuite/vlan01/test_main.d
+$(TEST_VLAN01): $(TEST_VLAN01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/vlan01/vlan01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_VLAN01)
+O_FILES += $(TEST_VLAN01_O_FILES)
+D_FILES += $(TEST_VLAN01_D_FILES)
+RUN_NET_TESTS += $(TEST_VLAN01)
+
+TEST_LAGG01 = testsuite/lagg01/lagg01.exe
+TEST_LAGG01_O_FILES =
+TEST_LAGG01_D_FILES =
+TEST_LAGG01_O_FILES += testsuite/lagg01/test_main.o
+TEST_LAGG01_D_FILES += testsuite/lagg01/test_main.d
+$(TEST_LAGG01): $(TEST_LAGG01_O_FILES) $(LIB)
+	$(LINK.c) -Wl,-Map,testsuite/lagg01/lagg01.map $^ -lm -lz -o $@
+NET_TESTS += $(TEST_LAGG01)
+O_FILES += $(TEST_LAGG01_O_FILES)
+D_FILES += $(TEST_LAGG01_D_FILES)
+RUN_NET_TESTS += $(TEST_LAGG01)
 freebsd/include/rpc/rpcb_prot.h: freebsd/include/rpc/rpcb_prot.x
 		rm -f $@
 		rpcgen -h -o $@ $<
@@ -1106,433 +1555,6 @@ freebsd/usr.bin/netstat/sctp.o: freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
-
-TEST_FOOBARCLIENT = testsuite/foobarclient/foobarclient.exe
-TEST_FOOBARCLIENT_O_FILES =
-TEST_FOOBARCLIENT_D_FILES =
-TEST_FOOBARCLIENT_O_FILES += testsuite/foobarclient/test_main.o
-TEST_FOOBARCLIENT_D_FILES += testsuite/foobarclient/test_main.d
-$(TEST_FOOBARCLIENT): $(TEST_FOOBARCLIENT_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/foobarclient/foobarclient.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_FOOBARCLIENT)
-O_FILES += $(TEST_FOOBARCLIENT_O_FILES)
-D_FILES += $(TEST_FOOBARCLIENT_D_FILES)
-
-TEST_FOOBARSERVER = testsuite/foobarserver/foobarserver.exe
-TEST_FOOBARSERVER_O_FILES =
-TEST_FOOBARSERVER_D_FILES =
-TEST_FOOBARSERVER_O_FILES += testsuite/foobarserver/test_main.o
-TEST_FOOBARSERVER_D_FILES += testsuite/foobarserver/test_main.d
-$(TEST_FOOBARSERVER): $(TEST_FOOBARSERVER_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/foobarserver/foobarserver.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_FOOBARSERVER)
-O_FILES += $(TEST_FOOBARSERVER_O_FILES)
-D_FILES += $(TEST_FOOBARSERVER_D_FILES)
-
-TEST_DHCPCD01 = testsuite/dhcpcd01/dhcpcd01.exe
-TEST_DHCPCD01_O_FILES =
-TEST_DHCPCD01_D_FILES =
-TEST_DHCPCD01_O_FILES += testsuite/dhcpcd01/test_main.o
-TEST_DHCPCD01_D_FILES += testsuite/dhcpcd01/test_main.d
-$(TEST_DHCPCD01): $(TEST_DHCPCD01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/dhcpcd01/dhcpcd01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_DHCPCD01)
-O_FILES += $(TEST_DHCPCD01_O_FILES)
-D_FILES += $(TEST_DHCPCD01_D_FILES)
-
-TEST_DHCPCD02 = testsuite/dhcpcd02/dhcpcd02.exe
-TEST_DHCPCD02_O_FILES =
-TEST_DHCPCD02_D_FILES =
-TEST_DHCPCD02_O_FILES += testsuite/dhcpcd02/test_main.o
-TEST_DHCPCD02_D_FILES += testsuite/dhcpcd02/test_main.d
-$(TEST_DHCPCD02): $(TEST_DHCPCD02_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/dhcpcd02/dhcpcd02.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_DHCPCD02)
-O_FILES += $(TEST_DHCPCD02_O_FILES)
-D_FILES += $(TEST_DHCPCD02_D_FILES)
-
-TEST_ARPHOLE = testsuite/arphole/arphole.exe
-TEST_ARPHOLE_O_FILES =
-TEST_ARPHOLE_D_FILES =
-TEST_ARPHOLE_O_FILES += testsuite/arphole/test_main.o
-TEST_ARPHOLE_D_FILES += testsuite/arphole/test_main.d
-$(TEST_ARPHOLE): $(TEST_ARPHOLE_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/arphole/arphole.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_ARPHOLE)
-O_FILES += $(TEST_ARPHOLE_O_FILES)
-D_FILES += $(TEST_ARPHOLE_D_FILES)
-
-TEST_TELNETD01 = testsuite/telnetd01/telnetd01.exe
-TEST_TELNETD01_O_FILES =
-TEST_TELNETD01_D_FILES =
-TEST_TELNETD01_O_FILES += testsuite/telnetd01/test_main.o
-TEST_TELNETD01_D_FILES += testsuite/telnetd01/test_main.d
-$(TEST_TELNETD01): $(TEST_TELNETD01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/telnetd01/telnetd01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_TELNETD01)
-O_FILES += $(TEST_TELNETD01_O_FILES)
-D_FILES += $(TEST_TELNETD01_D_FILES)
-
-TEST_UNIX01 = testsuite/unix01/unix01.exe
-TEST_UNIX01_O_FILES =
-TEST_UNIX01_D_FILES =
-TEST_UNIX01_O_FILES += testsuite/unix01/test_main.o
-TEST_UNIX01_D_FILES += testsuite/unix01/test_main.d
-$(TEST_UNIX01): $(TEST_UNIX01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/unix01/unix01.map $^ -lm -lz -o $@
-TESTS += $(TEST_UNIX01)
-O_FILES += $(TEST_UNIX01_O_FILES)
-D_FILES += $(TEST_UNIX01_D_FILES)
-RUN_TESTS += $(TEST_UNIX01)
-
-TEST_FTPD01 = testsuite/ftpd01/ftpd01.exe
-TEST_FTPD01_O_FILES =
-TEST_FTPD01_D_FILES =
-TEST_FTPD01_O_FILES += testsuite/ftpd01/test_main.o
-TEST_FTPD01_D_FILES += testsuite/ftpd01/test_main.d
-$(TEST_FTPD01): $(TEST_FTPD01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/ftpd01/ftpd01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_FTPD01)
-O_FILES += $(TEST_FTPD01_O_FILES)
-D_FILES += $(TEST_FTPD01_D_FILES)
-RUN_NET_TESTS += $(TEST_FTPD01)
-
-TEST_PING01 = testsuite/ping01/ping01.exe
-TEST_PING01_O_FILES =
-TEST_PING01_D_FILES =
-TEST_PING01_O_FILES += testsuite/ping01/test_main.o
-TEST_PING01_D_FILES += testsuite/ping01/test_main.d
-$(TEST_PING01): $(TEST_PING01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/ping01/ping01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_PING01)
-O_FILES += $(TEST_PING01_O_FILES)
-D_FILES += $(TEST_PING01_D_FILES)
-RUN_NET_TESTS += $(TEST_PING01)
-
-TEST_SELECTPOLLKQUEUE01 = testsuite/selectpollkqueue01/selectpollkqueue01.exe
-TEST_SELECTPOLLKQUEUE01_O_FILES =
-TEST_SELECTPOLLKQUEUE01_D_FILES =
-TEST_SELECTPOLLKQUEUE01_O_FILES += testsuite/selectpollkqueue01/test_main.o
-TEST_SELECTPOLLKQUEUE01_D_FILES += testsuite/selectpollkqueue01/test_main.d
-$(TEST_SELECTPOLLKQUEUE01): $(TEST_SELECTPOLLKQUEUE01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/selectpollkqueue01/selectpollkqueue01.map $^ -lm -lz -o $@
-TESTS += $(TEST_SELECTPOLLKQUEUE01)
-O_FILES += $(TEST_SELECTPOLLKQUEUE01_O_FILES)
-D_FILES += $(TEST_SELECTPOLLKQUEUE01_D_FILES)
-RUN_TESTS += $(TEST_SELECTPOLLKQUEUE01)
-
-TEST_RWLOCK01 = testsuite/rwlock01/rwlock01.exe
-TEST_RWLOCK01_O_FILES =
-TEST_RWLOCK01_D_FILES =
-TEST_RWLOCK01_O_FILES += testsuite/rwlock01/test_main.o
-TEST_RWLOCK01_D_FILES += testsuite/rwlock01/test_main.d
-$(TEST_RWLOCK01): $(TEST_RWLOCK01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/rwlock01/rwlock01.map $^ -lm -lz -o $@
-TESTS += $(TEST_RWLOCK01)
-O_FILES += $(TEST_RWLOCK01_O_FILES)
-D_FILES += $(TEST_RWLOCK01_D_FILES)
-RUN_TESTS += $(TEST_RWLOCK01)
-
-TEST_SLEEP01 = testsuite/sleep01/sleep01.exe
-TEST_SLEEP01_O_FILES =
-TEST_SLEEP01_D_FILES =
-TEST_SLEEP01_O_FILES += testsuite/sleep01/test_main.o
-TEST_SLEEP01_D_FILES += testsuite/sleep01/test_main.d
-$(TEST_SLEEP01): $(TEST_SLEEP01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/sleep01/sleep01.map $^ -lm -lz -o $@
-TESTS += $(TEST_SLEEP01)
-O_FILES += $(TEST_SLEEP01_O_FILES)
-D_FILES += $(TEST_SLEEP01_D_FILES)
-RUN_TESTS += $(TEST_SLEEP01)
-
-TEST_SYSCALLS01 = testsuite/syscalls01/syscalls01.exe
-TEST_SYSCALLS01_O_FILES =
-TEST_SYSCALLS01_D_FILES =
-TEST_SYSCALLS01_O_FILES += testsuite/syscalls01/test_main.o
-TEST_SYSCALLS01_D_FILES += testsuite/syscalls01/test_main.d
-$(TEST_SYSCALLS01): $(TEST_SYSCALLS01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/syscalls01/syscalls01.map $^ -lm -lz -o $@
-TESTS += $(TEST_SYSCALLS01)
-O_FILES += $(TEST_SYSCALLS01_O_FILES)
-D_FILES += $(TEST_SYSCALLS01_D_FILES)
-RUN_TESTS += $(TEST_SYSCALLS01)
-
-TEST_COMMANDS01 = testsuite/commands01/commands01.exe
-TEST_COMMANDS01_O_FILES =
-TEST_COMMANDS01_D_FILES =
-TEST_COMMANDS01_O_FILES += testsuite/commands01/test_main.o
-TEST_COMMANDS01_D_FILES += testsuite/commands01/test_main.d
-$(TEST_COMMANDS01): $(TEST_COMMANDS01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/commands01/commands01.map $^ -lm -lz -o $@
-TESTS += $(TEST_COMMANDS01)
-O_FILES += $(TEST_COMMANDS01_O_FILES)
-D_FILES += $(TEST_COMMANDS01_D_FILES)
-RUN_TESTS += $(TEST_COMMANDS01)
-
-TEST_USB01 = testsuite/usb01/usb01.exe
-TEST_USB01_O_FILES =
-TEST_USB01_D_FILES =
-TEST_USB01_O_FILES += testsuite/usb01/init.o
-TEST_USB01_D_FILES += testsuite/usb01/init.d
-TEST_USB01_O_FILES += testsuite/usb01/test-file-system.o
-TEST_USB01_D_FILES += testsuite/usb01/test-file-system.d
-$(TEST_USB01): $(TEST_USB01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/usb01/usb01.map $^ -lm -lz -o $@
-TESTS += $(TEST_USB01)
-O_FILES += $(TEST_USB01_O_FILES)
-D_FILES += $(TEST_USB01_D_FILES)
-
-TEST_LOOPBACK01 = testsuite/loopback01/loopback01.exe
-TEST_LOOPBACK01_O_FILES =
-TEST_LOOPBACK01_D_FILES =
-TEST_LOOPBACK01_O_FILES += testsuite/loopback01/test_main.o
-TEST_LOOPBACK01_D_FILES += testsuite/loopback01/test_main.d
-$(TEST_LOOPBACK01): $(TEST_LOOPBACK01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/loopback01/loopback01.map $^ -lm -lz -o $@
-TESTS += $(TEST_LOOPBACK01)
-O_FILES += $(TEST_LOOPBACK01_O_FILES)
-D_FILES += $(TEST_LOOPBACK01_D_FILES)
-RUN_TESTS += $(TEST_LOOPBACK01)
-
-TEST_NETSHELL01 = testsuite/netshell01/netshell01.exe
-TEST_NETSHELL01_O_FILES =
-TEST_NETSHELL01_D_FILES =
-TEST_NETSHELL01_O_FILES += testsuite/netshell01/test_main.o
-TEST_NETSHELL01_D_FILES += testsuite/netshell01/test_main.d
-TEST_NETSHELL01_O_FILES += testsuite/netshell01/shellconfig.o
-TEST_NETSHELL01_D_FILES += testsuite/netshell01/shellconfig.d
-$(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/netshell01/netshell01.map $^ -lm -lz -o $@
-TESTS += $(TEST_NETSHELL01)
-O_FILES += $(TEST_NETSHELL01_O_FILES)
-D_FILES += $(TEST_NETSHELL01_D_FILES)
-
-TEST_SWI01 = testsuite/swi01/swi01.exe
-TEST_SWI01_O_FILES =
-TEST_SWI01_D_FILES =
-TEST_SWI01_O_FILES += testsuite/swi01/init.o
-TEST_SWI01_D_FILES += testsuite/swi01/init.d
-TEST_SWI01_O_FILES += testsuite/swi01/swi_test.o
-TEST_SWI01_D_FILES += testsuite/swi01/swi_test.d
-$(TEST_SWI01): $(TEST_SWI01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/swi01/swi01.map $^ -lm -lz -o $@
-TESTS += $(TEST_SWI01)
-O_FILES += $(TEST_SWI01_O_FILES)
-D_FILES += $(TEST_SWI01_D_FILES)
-RUN_TESTS += $(TEST_SWI01)
-
-TEST_TIMEOUT01 = testsuite/timeout01/timeout01.exe
-TEST_TIMEOUT01_O_FILES =
-TEST_TIMEOUT01_D_FILES =
-TEST_TIMEOUT01_O_FILES += testsuite/timeout01/init.o
-TEST_TIMEOUT01_D_FILES += testsuite/timeout01/init.d
-TEST_TIMEOUT01_O_FILES += testsuite/timeout01/timeout_test.o
-TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_test.d
-$(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/timeout01/timeout01.map $^ -lm -lz -o $@
-TESTS += $(TEST_TIMEOUT01)
-O_FILES += $(TEST_TIMEOUT01_O_FILES)
-D_FILES += $(TEST_TIMEOUT01_D_FILES)
-RUN_TESTS += $(TEST_TIMEOUT01)
-
-TEST_INIT01 = testsuite/init01/init01.exe
-TEST_INIT01_O_FILES =
-TEST_INIT01_D_FILES =
-TEST_INIT01_O_FILES += testsuite/init01/test_main.o
-TEST_INIT01_D_FILES += testsuite/init01/test_main.d
-$(TEST_INIT01): $(TEST_INIT01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/init01/init01.map $^ -lm -lz -o $@
-TESTS += $(TEST_INIT01)
-O_FILES += $(TEST_INIT01_O_FILES)
-D_FILES += $(TEST_INIT01_D_FILES)
-RUN_TESTS += $(TEST_INIT01)
-
-TEST_THREAD01 = testsuite/thread01/thread01.exe
-TEST_THREAD01_O_FILES =
-TEST_THREAD01_D_FILES =
-TEST_THREAD01_O_FILES += testsuite/thread01/test_main.o
-TEST_THREAD01_D_FILES += testsuite/thread01/test_main.d
-$(TEST_THREAD01): $(TEST_THREAD01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/thread01/thread01.map $^ -lm -lz -o $@
-TESTS += $(TEST_THREAD01)
-O_FILES += $(TEST_THREAD01_O_FILES)
-D_FILES += $(TEST_THREAD01_D_FILES)
-RUN_TESTS += $(TEST_THREAD01)
-
-TEST_MUTEX01 = testsuite/mutex01/mutex01.exe
-TEST_MUTEX01_O_FILES =
-TEST_MUTEX01_D_FILES =
-TEST_MUTEX01_O_FILES += testsuite/mutex01/test_main.o
-TEST_MUTEX01_D_FILES += testsuite/mutex01/test_main.d
-$(TEST_MUTEX01): $(TEST_MUTEX01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/mutex01/mutex01.map $^ -lm -lz -o $@
-TESTS += $(TEST_MUTEX01)
-O_FILES += $(TEST_MUTEX01_O_FILES)
-D_FILES += $(TEST_MUTEX01_D_FILES)
-RUN_TESTS += $(TEST_MUTEX01)
-
-TEST_CONDVAR01 = testsuite/condvar01/condvar01.exe
-TEST_CONDVAR01_O_FILES =
-TEST_CONDVAR01_D_FILES =
-TEST_CONDVAR01_O_FILES += testsuite/condvar01/test_main.o
-TEST_CONDVAR01_D_FILES += testsuite/condvar01/test_main.d
-$(TEST_CONDVAR01): $(TEST_CONDVAR01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/condvar01/condvar01.map $^ -lm -lz -o $@
-TESTS += $(TEST_CONDVAR01)
-O_FILES += $(TEST_CONDVAR01_O_FILES)
-D_FILES += $(TEST_CONDVAR01_D_FILES)
-RUN_TESTS += $(TEST_CONDVAR01)
-
-TEST_PPP01 = testsuite/ppp01/ppp01.exe
-TEST_PPP01_O_FILES =
-TEST_PPP01_D_FILES =
-TEST_PPP01_O_FILES += testsuite/ppp01/test_main.o
-TEST_PPP01_D_FILES += testsuite/ppp01/test_main.d
-$(TEST_PPP01): $(TEST_PPP01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/ppp01/ppp01.map $^ -lm -lz -o $@
-TESTS += $(TEST_PPP01)
-O_FILES += $(TEST_PPP01_O_FILES)
-D_FILES += $(TEST_PPP01_D_FILES)
-
-TEST_ZEROCOPY01 = testsuite/zerocopy01/zerocopy01.exe
-TEST_ZEROCOPY01_O_FILES =
-TEST_ZEROCOPY01_D_FILES =
-TEST_ZEROCOPY01_O_FILES += testsuite/zerocopy01/test_main.o
-TEST_ZEROCOPY01_D_FILES += testsuite/zerocopy01/test_main.d
-$(TEST_ZEROCOPY01): $(TEST_ZEROCOPY01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/zerocopy01/zerocopy01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_ZEROCOPY01)
-O_FILES += $(TEST_ZEROCOPY01_O_FILES)
-D_FILES += $(TEST_ZEROCOPY01_D_FILES)
-
-TEST_SMP01 = testsuite/smp01/smp01.exe
-TEST_SMP01_O_FILES =
-TEST_SMP01_D_FILES =
-TEST_SMP01_O_FILES += testsuite/smp01/test_main.o
-TEST_SMP01_D_FILES += testsuite/smp01/test_main.d
-$(TEST_SMP01): $(TEST_SMP01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/smp01/smp01.map $^ -lm -lz -o $@
-TESTS += $(TEST_SMP01)
-O_FILES += $(TEST_SMP01_O_FILES)
-D_FILES += $(TEST_SMP01_D_FILES)
-RUN_TESTS += $(TEST_SMP01)
-
-TEST_MEDIA01 = testsuite/media01/media01.exe
-TEST_MEDIA01_O_FILES =
-TEST_MEDIA01_D_FILES =
-TEST_MEDIA01_O_FILES += testsuite/media01/test_main.o
-TEST_MEDIA01_D_FILES += testsuite/media01/test_main.d
-$(TEST_MEDIA01): $(TEST_MEDIA01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/media01/media01.map $^ -lm -lz -o $@
-TESTS += $(TEST_MEDIA01)
-O_FILES += $(TEST_MEDIA01_O_FILES)
-D_FILES += $(TEST_MEDIA01_D_FILES)
-
-TEST_VLAN01 = testsuite/vlan01/vlan01.exe
-TEST_VLAN01_O_FILES =
-TEST_VLAN01_D_FILES =
-TEST_VLAN01_O_FILES += testsuite/vlan01/test_main.o
-TEST_VLAN01_D_FILES += testsuite/vlan01/test_main.d
-$(TEST_VLAN01): $(TEST_VLAN01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/vlan01/vlan01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_VLAN01)
-O_FILES += $(TEST_VLAN01_O_FILES)
-D_FILES += $(TEST_VLAN01_D_FILES)
-RUN_NET_TESTS += $(TEST_VLAN01)
-
-TEST_LAGG01 = testsuite/lagg01/lagg01.exe
-TEST_LAGG01_O_FILES =
-TEST_LAGG01_D_FILES =
-TEST_LAGG01_O_FILES += testsuite/lagg01/test_main.o
-TEST_LAGG01_D_FILES += testsuite/lagg01/test_main.d
-$(TEST_LAGG01): $(TEST_LAGG01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/lagg01/lagg01.map $^ -lm -lz -o $@
-NET_TESTS += $(TEST_LAGG01)
-O_FILES += $(TEST_LAGG01_O_FILES)
-D_FILES += $(TEST_LAGG01_D_FILES)
-RUN_NET_TESTS += $(TEST_LAGG01)
-LIB_C_FILES += dhcpcd/arp.c
-dhcpcd/arp.o: dhcpcd/arp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/auth.c
-dhcpcd/auth.o: dhcpcd/auth.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/bpf.c
-dhcpcd/bpf.o: dhcpcd/bpf.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/common.c
-dhcpcd/common.o: dhcpcd/common.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/dhcp6.c
-dhcpcd/dhcp6.o: dhcpcd/dhcp6.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/dhcp.c
-dhcpcd/dhcp.o: dhcpcd/dhcp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/dhcpcd.c
-dhcpcd/dhcpcd.o: dhcpcd/dhcpcd.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/dhcpcd-embedded.c
-dhcpcd/dhcpcd-embedded.o: dhcpcd/dhcpcd-embedded.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/dhcp-common.c
-dhcpcd/dhcp-common.o: dhcpcd/dhcp-common.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/duid.c
-dhcpcd/duid.o: dhcpcd/duid.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/eloop.c
-dhcpcd/eloop.o: dhcpcd/eloop.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/if-bsd.c
-dhcpcd/if-bsd.o: dhcpcd/if-bsd.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/if-options.c
-dhcpcd/if-options.o: dhcpcd/if-options.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/if-pref.c
-dhcpcd/if-pref.o: dhcpcd/if-pref.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/ipv4.c
-dhcpcd/ipv4.o: dhcpcd/ipv4.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/ipv4ll.c
-dhcpcd/ipv4ll.o: dhcpcd/ipv4ll.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/ipv6.c
-dhcpcd/ipv6.o: dhcpcd/ipv6.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/ipv6nd.c
-dhcpcd/ipv6nd.o: dhcpcd/ipv6nd.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/net.c
-dhcpcd/net.o: dhcpcd/net.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/platform-bsd.c
-dhcpcd/platform-bsd.o: dhcpcd/platform-bsd.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/compat/pselect.c
-dhcpcd/compat/pselect.o: dhcpcd/compat/pselect.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += dhcpcd/crypt/hmac_md5.c
-dhcpcd/crypt/hmac_md5.o: dhcpcd/crypt/hmac_md5.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6 -c $< -o $@
-LIB_C_FILES += rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c
-LIB_C_FILES += rtemsbsd/mghttpd/mongoose.c
-rtemsbsd/mghttpd/mongoose.o: rtemsbsd/mghttpd/mongoose.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET -c $< -o $@
-LIB_C_FILES += mDNSResponder/mDNSCore/anonymous.c
-LIB_C_FILES += mDNSResponder/mDNSCore/CryptoAlg.c
-LIB_C_FILES += mDNSResponder/mDNSCore/DNSCommon.c
-LIB_C_FILES += mDNSResponder/mDNSCore/DNSDigest.c
-LIB_C_FILES += mDNSResponder/mDNSCore/mDNS.c
-LIB_C_FILES += mDNSResponder/mDNSCore/uDNS.c
-LIB_C_FILES += mDNSResponder/mDNSShared/dnssd_clientshim.c
-LIB_C_FILES += mDNSResponder/mDNSShared/mDNSDebug.c
-LIB_C_FILES += mDNSResponder/mDNSShared/PlatformCommon.c
-LIB_C_FILES += mDNSResponder/mDNSShared/GenLinkedList.c
-LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSPosix.c
-LIB_C_FILES += mDNSResponder/mDNSPosix/mDNSUNP.c
 
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include

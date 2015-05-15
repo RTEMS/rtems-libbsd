@@ -32,21 +32,21 @@
 #define _RTEMS_BSD_SYS_TIME_H_
 
 #include <sys/time.h>
-#include <rtems.h>
+#include <rtems/timecounter.h>
 
-static inline time_t
-rtems_bsd_time_second(void)
-{
-	return time(NULL);
-}
-
-static inline time_t
-rtems_bsd_time_uptime(void)
-{
-	return rtems_clock_get_uptime_seconds();
-}
-
-#define time_second rtems_bsd_time_second()
-#define time_uptime rtems_bsd_time_uptime()
+#define bintime(_x) _Timecounter_Bintime(_x)
+#define nanotime(_x) _Timecounter_Nanotime(_x)
+#define microtime(_x) _Timecounter_Microtime(_x)
+#define binuptime(_x) _Timecounter_Binuptime(_x)
+#define nanouptime(_x) _Timecounter_Nanouptime(_x)
+#define microuptime(_x) _Timecounter_Microuptime(_x)
+#define getbintime(_x) _Timecounter_Getbintime(_x)
+#define getnanotime(_x) _Timecounter_Getnanotime(_x)
+#define getmicrotime(_x) _Timecounter_Getmicrotime(_x)
+#define getbinuptime(_x) _Timecounter_Getbinuptime(_x)
+#define getnanouptime(_x) _Timecounter_Getnanouptime(_x)
+#define getmicrouptime(_x) _Timecounter_Getmicrouptime(_x)
+#define time_second _Timecounter_Time_second
+#define time_uptime _Timecounter_Time_uptime
 
 #endif /* _RTEMS_BSD_SYS_TIME_H_ */

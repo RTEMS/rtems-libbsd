@@ -71,9 +71,6 @@ int hz;
 int tick;
 int maxusers;     /* base tunable */
 
-struct bintime boottimebin;
-struct timeval boottime;
-
 static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
     "Kernel SMP");
 
@@ -102,9 +99,6 @@ rtems_bsd_initialize(void)
 	tick = 1000000 / hz;
 	maxusers = 1;
 	maxid_maxcpus = (int) rtems_get_processor_count();
-
-	gettimeofday(&boottime, NULL);
-	timeval2bintime(&boottime, &boottimebin);
 
 	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
 

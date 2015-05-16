@@ -73,13 +73,13 @@ class TestFragementComposer(builder.BuildSystemFragmentComposer):
         for fileFragment in self.fileFragments:
             makefileFragment += testOFiles + ' += ' + testDir + '/' + fileFragment + '.o\n' \
                                + testDFiles + ' += ' + testDir + '/' + fileFragment + '.d\n'
-            makefileFragment += '$(' + testPrefix + '): $(' + testOFiles + ') $(LIB)\n' \
-                               '\t$(LINK.c) -Wl,-Map,' + testMap + ' $^ -lm -lz -o $@\n' \
-                               + testCollection + ' += $(' + testPrefix + ')\n' \
-                               'O_FILES += $(' + testOFiles + ')\n' \
-                               'D_FILES += $(' + testDFiles + ')\n'
-            if self.runTest:
-                makefileFragment += 'RUN_' + testCollection + ' += $(' + testPrefix + ')\n'
+        makefileFragment += '$(' + testPrefix + '): $(' + testOFiles + ') $(LIB)\n' \
+                            '\t$(LINK.c) -Wl,-Map,' + testMap + ' $^ -lm -lz -o $@\n' \
+                            + testCollection + ' += $(' + testPrefix + ')\n' \
+                            'O_FILES += $(' + testOFiles + ')\n' \
+                            'D_FILES += $(' + testDFiles + ')\n'
+        if self.runTest:
+            makefileFragment += 'RUN_' + testCollection + ' += $(' + testPrefix + ')\n'
         return makefileFragment
 
 class KVMSymbolsFragmentComposer(builder.BuildSystemFragmentComposer):

@@ -863,11 +863,6 @@ TEST_USB01_O_FILES =
 TEST_USB01_D_FILES =
 TEST_USB01_O_FILES += testsuite/usb01/init.o
 TEST_USB01_D_FILES += testsuite/usb01/init.d
-$(TEST_USB01): $(TEST_USB01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/usb01/usb01.map $^ -lm -lz -o $@
-TESTS += $(TEST_USB01)
-O_FILES += $(TEST_USB01_O_FILES)
-D_FILES += $(TEST_USB01_D_FILES)
 TEST_USB01_O_FILES += testsuite/usb01/test-file-system.o
 TEST_USB01_D_FILES += testsuite/usb01/test-file-system.d
 $(TEST_USB01): $(TEST_USB01_O_FILES) $(LIB)
@@ -893,11 +888,6 @@ TEST_NETSHELL01_O_FILES =
 TEST_NETSHELL01_D_FILES =
 TEST_NETSHELL01_O_FILES += testsuite/netshell01/test_main.o
 TEST_NETSHELL01_D_FILES += testsuite/netshell01/test_main.d
-$(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/netshell01/netshell01.map $^ -lm -lz -o $@
-TESTS += $(TEST_NETSHELL01)
-O_FILES += $(TEST_NETSHELL01_O_FILES)
-D_FILES += $(TEST_NETSHELL01_D_FILES)
 TEST_NETSHELL01_O_FILES += testsuite/netshell01/shellconfig.o
 TEST_NETSHELL01_D_FILES += testsuite/netshell01/shellconfig.d
 $(TEST_NETSHELL01): $(TEST_NETSHELL01_O_FILES) $(LIB)
@@ -911,12 +901,6 @@ TEST_SWI01_O_FILES =
 TEST_SWI01_D_FILES =
 TEST_SWI01_O_FILES += testsuite/swi01/init.o
 TEST_SWI01_D_FILES += testsuite/swi01/init.d
-$(TEST_SWI01): $(TEST_SWI01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/swi01/swi01.map $^ -lm -lz -o $@
-TESTS += $(TEST_SWI01)
-O_FILES += $(TEST_SWI01_O_FILES)
-D_FILES += $(TEST_SWI01_D_FILES)
-RUN_TESTS += $(TEST_SWI01)
 TEST_SWI01_O_FILES += testsuite/swi01/swi_test.o
 TEST_SWI01_D_FILES += testsuite/swi01/swi_test.d
 $(TEST_SWI01): $(TEST_SWI01_O_FILES) $(LIB)
@@ -931,12 +915,6 @@ TEST_TIMEOUT01_O_FILES =
 TEST_TIMEOUT01_D_FILES =
 TEST_TIMEOUT01_O_FILES += testsuite/timeout01/init.o
 TEST_TIMEOUT01_D_FILES += testsuite/timeout01/init.d
-$(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)
-	$(LINK.c) -Wl,-Map,testsuite/timeout01/timeout01.map $^ -lm -lz -o $@
-TESTS += $(TEST_TIMEOUT01)
-O_FILES += $(TEST_TIMEOUT01_O_FILES)
-D_FILES += $(TEST_TIMEOUT01_D_FILES)
-RUN_TESTS += $(TEST_TIMEOUT01)
 TEST_TIMEOUT01_O_FILES += testsuite/timeout01/timeout_test.o
 TEST_TIMEOUT01_D_FILES += testsuite/timeout01/timeout_test.d
 $(TEST_TIMEOUT01): $(TEST_TIMEOUT01_O_FILES) $(LIB)

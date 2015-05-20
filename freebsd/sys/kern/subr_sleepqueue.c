@@ -635,7 +635,7 @@ sleepq_switch(void *wchan, int pri)
 		Per_CPU_Control *cpu_self;
 		bool unblock;
 
-		cpu_self = _Thread_Dispatch_disable_critical();
+		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
 		_Thread_Lock_release_default(executing, &lock_context);
 
 		_Thread_Set_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
@@ -919,7 +919,8 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 #ifdef __rtems__
 	(void)sc;
 	thread = td->td_thread;
-	_Thread_Lock_acquire_default(thread, &lock_context);
+	_ISR_lock_ISR_disable(&lock_context);
+	_Thread_Lock_acquire_default_critical(thread, &lock_context);
 #endif /* __rtems__ */
 
 	td->td_wmesg = NULL;
@@ -965,7 +966,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 	if (unblock) {
 		Per_CPU_Control *cpu_self;
 
-		cpu_self = _Thread_Dispatch_disable_critical();
+		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
 		_Thread_Lock_release_default(thread, &lock_context);
 
 		_Watchdog_Remove_ticks(&thread->Timer);
@@ -1174,7 +1175,8 @@ sleepq_timeout(Objects_Id id, void *arg)
 	td = rtems_bsd_get_thread(thread);
 	BSD_ASSERT(td != NULL);
 
-	_Thread_Lock_acquire_default(thread, &lock_context);
+	_ISR_lock_ISR_disable(&lock_context);
+	_Thread_Lock_acquire_default_critical(thread, &lock_context);
 
 	unblock = false;
 	switch (td->td_sq_state) {
@@ -1193,7 +1195,7 @@ sleepq_timeout(Objects_Id id, void *arg)
 	if (unblock) {
 		Per_CPU_Control *cpu_self;
 
-		cpu_self = _Thread_Dispatch_disable_critical();
+		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
 		_Thread_Lock_release_default(thread, &lock_context);
 
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);

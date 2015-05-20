@@ -73,7 +73,7 @@ def common_warnings():
             '-Wno-format']
 
 def common_no_warnings():
-    return ['-Wno-implicit-function-declaration']
+    return ['-w']
 
 def includes():
     return ['-Irtemsbsd/include',

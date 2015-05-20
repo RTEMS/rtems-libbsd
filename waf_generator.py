@@ -204,7 +204,11 @@ class ModuleManager(builder.ModuleManager):
         self.restart()
 
         self.add('#')
-        self.add('# Generated waf script.')
+        self.add('# RTEMS Project (https://www.rtems.org)')
+        self.add('#')
+        self.add('# Generated waf script. Do not edit, run ./freebsd-to-rtems.py -m')
+        self.add('#')
+        self.add('# To use see README.waf shipped with this file.')
         self.add('#')
         self.add('')
         self.add('try:')
@@ -219,11 +223,24 @@ class ModuleManager(builder.ModuleManager):
         self.add('')
         self.add('def options(opt):')
         self.add('    rtems.options(opt)')
+        self.add('    opt.add_option("--enable-auto-regen",')
+        self.add('                   action = "store_true",')
+        self.add('                   default = False,')
+        self.add('                   dest = "auto_regen",')
+        self.add('                   help = "Enable auto-regeneration of LEX, RPC and YACC files.")')
+        self.add('    opt.add_option("--enable-warnings",')
+        self.add('                   action = "store_true",')
+        self.add('                   default = False,')
+        self.add('                   dest = "warnings",')
+        self.add('                   help = "Enable all warnings. The default is quiet builds.")')
         self.add('')
         self.add('def configure(conf):')
-        self.add('    conf.find_program("lex", mandatory = True)')
-        self.add('    conf.find_program("rpcgen", mandatory = True)')
-        self.add('    conf.find_program("yacc", mandatory = True)')
+        self.add('    if conf.options.auto_regen:')
+        self.add('        conf.find_program("lex", mandatory = True)')
+        self.add('        conf.find_program("rpcgen", mandatory = True)')
+        self.add('        conf.find_program("yacc", mandatory = True)')
+        self.add('    conf.env.AUTO_REGEN = conf.options.auto_regen')
+        self.add('    conf.env.WARNINGS = conf.options.warnings')
         self.add('    rtems.configure(conf)')
         self.add('    if rtems.check_networking(conf):')
         self.add('        conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")')
@@ -235,8 +252,12 @@ class ModuleManager(builder.ModuleManager):
         self.add('    common_flags = []')
         for f in builder.common_flags():
             self.add('    common_flags += ["%s"]' % (f))
+        self.add('    if bld.env.WARNINGS:')
+        for f in builder.common_warnings():
+            self.add('        common_flags += ["%s"]' % (f))
+        self.add('    else:')
         for f in builder.common_no_warnings():
-            self.add('    common_flags += ["%s"]' % (f))
+            self.add('        common_flags += ["%s"]' % (f))
         self.add('    cflags = %r + common_flags' % (builder.cflags()))
         self.add('    cxxflags = %r + common_flags' % (builder.cxxflags()))
         self.add('')
@@ -262,9 +283,10 @@ class ModuleManager(builder.ModuleManager):
         if 'KVMSymbols' in data:
             kvmsymbols = data['KVMSymbols']
             self.add('    # KVM Symbols')
-            self.add('    bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
-            self.add('        source = "rtemsbsd/rtems/generate_kvm_symbols",')
-            self.add('        rule = "./${SRC} > ${TGT}")')
+            self.add('    if bld.env.AUTO_REGEN:')
+            self.add('        bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
+            self.add('            source = "rtemsbsd/rtems/generate_kvm_symbols",')
+            self.add('            rule = "./${SRC} > ${TGT}")')
             self.add('    bld.objects(target = "kvmsymbols",')
             self.add('                features = "c",')
             self.add('                cflags = cflags,')
@@ -277,22 +299,24 @@ class ModuleManager(builder.ModuleManager):
             rpcgen = data['RPCGen']
             rpcname = rpcgen['files']['all'][0][:-2]
             self.add('    # RPC Generation')
-            self.add('    bld(target = "%s.h",' % (rpcname))
-            self.add('        source = "%s.x",' % (rpcname))
-            self.add('        rule = "${RPCGEN} -h -o ${TGT} ${SRC}")')
+            self.add('    if bld.env.AUTO_REGEN:')
+            self.add('        bld(target = "%s.h",' % (rpcname))
+            self.add('            source = "%s.x",' % (rpcname))
+            self.add('            rule = "${RPCGEN} -h -o ${TGT} ${SRC}")')
             self.add('')
 
         if 'RouteKeywords' in data:
             routekw = data['RouteKeywords']
             rkwname = routekw['files']['all'][0]
             self.add('    # Route keywords')
-            self.add('    rkw_rule = "cat ${SRC} | ' + \
+            self.add('    if bld.env.AUTO_REGEN:')
+            self.add('        rkw_rule = "cat ${SRC} | ' + \
                      'awk \'BEGIN { r = 0 } { if (NF == 1) ' + \
                      'printf \\"#define\\\\tK_%%s\\\\t%%d\\\\n\\\\t{\\\\\\"%%s\\\\\\", K_%%s},\\\\n\\", ' + \
                      'toupper($1), ++r, $1, toupper($1)}\' > ${TGT}"')
-            self.add('    bld(target = "%s.h",' % (rkwname))
-            self.add('        source = "%s",' % (rkwname))
-            self.add('        rule = rkw_rule)')
+            self.add('        bld(target = "%s.h",' % (rkwname))
+            self.add('            source = "%s",' % (rkwname))
+            self.add('            rule = rkw_rule)')
             self.add('')
 
         if 'lex' in data:
@@ -300,9 +324,10 @@ class ModuleManager(builder.ModuleManager):
             self.add('    # Lex')
             for l in lexes:
                 lex = lexes[l]['all']
-                self.add('    bld(target = "%s.c",' % (lex['file'][:-2]))
-                self.add('        source = "%s",' % (lex['file']))
-                self.add('        rule = "${LEX} -P %s -t ${SRC} | ' % (lex['sym']) + \
+                self.add('    if bld.env.AUTO_REGEN:')
+                self.add('        bld(target = "%s.c",' % (lex['file'][:-2]))
+                self.add('            source = "%s",' % (lex['file']))
+                self.add('            rule = "${LEX} -P %s -t ${SRC} | ' % (lex['sym']) + \
                          'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > ${TGT}")')
                 self.add('    bld.objects(target = "lex_%s",' % (lex['sym']))
                 self.add('                features = "c",')
@@ -320,9 +345,10 @@ class ModuleManager(builder.ModuleManager):
                 yacc_file = yacc['file']
                 yacc_sym = yacc['sym']
                 yacc_header = '%s/%s' % (os.path.dirname(yacc_file), yacc['header'])
-                self.add('    bld(target = "%s.c",' % (yacc_file[:-2]))
-                self.add('        source = "%s",' % (yacc_file))
-                self.add('        rule = "${YACC} -b %s -d -p %s ${SRC} && ' % (yacc_sym, yacc_sym) + \
+                self.add('    if bld.env.AUTO_REGEN:')
+                self.add('        bld(target = "%s.c",' % (yacc_file[:-2]))
+                self.add('            source = "%s",' % (yacc_file))
+                self.add('            rule = "${YACC} -b %s -d -p %s ${SRC} && ' % (yacc_sym, yacc_sym) + \
                          'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' < %s.tab.c > ${TGT} && ' % (yacc_sym) + \
                          'rm -f %s.tab.c && mv %s.tab.h %s")' % (yacc_sym, yacc_sym, yacc_header))
                 self.add('    bld.objects(target = "yacc_%s",' % (yacc_sym))

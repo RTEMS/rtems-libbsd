@@ -52,6 +52,58 @@ isDryRun = False
 isDiffMode = False
 filesProcessed = 0
 
+class error(Exception):
+    """Base class for exceptions."""
+    def __init(self, msg):
+        self.msg = 'error: %s' % (msg)
+    def set_output(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+
+def common_flags():
+    return ['-O',
+            '-g',
+            '-fno-strict-aliasing',
+            '-ffreestanding',
+            '-fno-common']
+
+def common_warnings():
+    return ['-Wall',
+            '-Wno-format']
+
+def common_no_warnings():
+    return ['-Wno-implicit-function-declaration']
+
+def includes():
+    return ['-Irtemsbsd/include',
+            '-Ifreebsd/sys',
+            '-Ifreebsd/sys/contrib/altq',
+            '-Ifreebsd/sys/contrib/pf',
+            '-Ifreebsd/include',
+            '-Ifreebsd/lib/libc/include',
+            '-Ifreebsd/lib/libc/isc/include',
+            '-Ifreebsd/lib/libc/resolv',
+            '-Ifreebsd/lib/libutil',
+            '-Ifreebsd/lib/libkvm',
+            '-Ifreebsd/lib/libmemstat',
+            '-Ifreebsd/lib/libipsec',
+            '-Irtemsbsd/sys',
+            '-ImDNSResponder/mDNSCore',
+            '-ImDNSResponder/mDNSShared',
+            '-ImDNSResponder/mDNSPosix',
+            '-Itestsuite/include']
+
+def cpu_includes():
+    return ['-Irtemsbsd/@CPU@/include',
+            '-Ifreebsd/sys/@CPU@/include']
+
+def cflags():
+    return ['-std=gnu11']
+
+def cxxflags():
+    return ['-std=gnu++11']
+
 # compare and process file only if different
 #  + copy or diff depending on execution mode
 def processIfDifferent(new, old, src):

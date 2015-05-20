@@ -41,6 +41,7 @@ import getopt
 
 import builder
 import makefile
+import waf_generator
 import libbsd
 
 isForward = True
@@ -141,17 +142,20 @@ if isEarlyExit == True:
     print "Early exit at user request"
     sys.exit(0)
 
-makefile_generator = makefile.ModuleManager()
+makefile_gen = makefile.ModuleManager()
+waf_gen = waf_generator.ModuleManager()
 
-libbsd.sources(makefile_generator)
+libbsd.sources(makefile_gen)
+libbsd.sources(waf_gen)
 
 # Perform the actual file manipulation
 if isForward:
     if not isOnlyMakefile:
-        makefile_generator.copyFromFreeBSDToRTEMS()
-    makefile_generator.generate()
+        makefile_gen.copyFromFreeBSDToRTEMS()
+    makefile_gen.generate()
+    waf_gen.generate()
 else:
-    makefile_generator.copyFromRTEMSToFreeBSD()
+    makefile_gen.copyFromRTEMSToFreeBSD()
 
 # Print a summary if changing files
 if builder.isDiffMode == False:

@@ -698,6 +698,7 @@ def build(bld):
               'freebsd/sys/opencrypto/skipjack.c',
               'freebsd/sys/opencrypto/xform.c',
               'freebsd/sys/vm/uma_core.c',
+              'freebsd/sys/vm/uma_dbg.c',
               'mDNSResponder/mDNSCore/CryptoAlg.c',
               'mDNSResponder/mDNSCore/DNSCommon.c',
               'mDNSResponder/mDNSCore/DNSDigest.c',

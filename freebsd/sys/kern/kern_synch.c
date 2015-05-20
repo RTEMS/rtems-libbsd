@@ -179,7 +179,9 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	    "Sleeping on \"%s\"", wmesg);
 	KASSERT(timo != 0 || mtx_owned(&Giant) || lock != NULL,
 	    ("sleeping without a lock"));
+#ifndef __rtems__
 	KASSERT(p != NULL, ("msleep1"));
+#endif /* __rtems__ */
 	KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
 #ifndef __rtems__
 	if (priority & PDROP)
@@ -415,8 +417,10 @@ wakeup(void *ident)
 	wakeup_swapper = sleepq_broadcast(ident, SLEEPQ_SLEEP, 0, 0);
 	sleepq_release(ident);
 	if (wakeup_swapper) {
+#ifndef __rtems__
 		KASSERT(ident != &proc0,
 		    ("wakeup and wakeup_swapper and proc0"));
+#endif /* __rtems__ */
 		kick_proc0();
 	}
 }

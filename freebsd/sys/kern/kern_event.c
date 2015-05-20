@@ -2275,7 +2275,9 @@ knote_fdclose(struct thread *td, int fd)
 	struct knote *kn;
 	int influx;
 
+#ifndef __rtems__
 	FILEDESC_XLOCK_ASSERT(fdp);
+#endif /* __rtems__ */
 
 	/*
 	 * We shouldn't have to worry about new kevents appearing on fd

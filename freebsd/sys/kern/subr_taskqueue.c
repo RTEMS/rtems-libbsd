@@ -268,7 +268,9 @@ taskqueue_enqueue_timeout(struct taskqueue *queue,
 	TQ_LOCK(queue);
 	KASSERT(timeout_task->q == NULL || timeout_task->q == queue,
 	    ("Migrated queue"));
+#ifndef __rtems__
 	KASSERT(!queue->tq_spin, ("Timeout for spin-queue"));
+#endif /* __rtems__ */
 	timeout_task->q = queue;
 	res = timeout_task->t.ta_pending;
 	if (ticks == 0) {

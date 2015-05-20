@@ -328,6 +328,7 @@ def base(mm):
             'sys/libkern/inet_ntoa.c',
             'sys/libkern/random.c',
             'sys/vm/uma_core.c',
+            'sys/vm/uma_dbg.c',
         ],
 	mm.generator['source']()
     )

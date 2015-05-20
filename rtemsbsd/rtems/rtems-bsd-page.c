@@ -93,6 +93,12 @@ rtems_bsd_page_alloc(uintptr_t size_in_bytes, int wait)
 
 	mtx_unlock(&page_heap_mtx);
 
+#ifdef INVARIANTS
+	if (addr != NULL) {
+		memset(addr, 0, size_in_bytes);
+	}
+#endif
+
 	return (addr);
 }
 

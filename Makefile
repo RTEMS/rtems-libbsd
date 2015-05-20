@@ -103,6 +103,7 @@ LIB_C_FILES += freebsd/sys/libkern/fls.c
 LIB_C_FILES += freebsd/sys/libkern/inet_ntoa.c
 LIB_C_FILES += freebsd/sys/libkern/random.c
 LIB_C_FILES += freebsd/sys/vm/uma_core.c
+LIB_C_FILES += freebsd/sys/vm/uma_dbg.c
 LIB_C_FILES += freebsd/sys/cam/cam.c
 LIB_C_FILES += freebsd/sys/cam/scsi/scsi_all.c
 LIB_C_FILES += freebsd/sys/crypto/sha1.c

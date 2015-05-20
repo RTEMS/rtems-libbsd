@@ -947,7 +947,9 @@ intr_event_schedule_thread(struct intr_event *ie)
 		    RANDOM_INTERRUPT);
 	}
 
+#ifndef __rtems__
 	KASSERT(p != NULL, ("ithread %s has no process", ie->ie_name));
+#endif /* __rtems__ */
 
 	/*
 	 * Set it_need to tell the thread to keep running if it is already

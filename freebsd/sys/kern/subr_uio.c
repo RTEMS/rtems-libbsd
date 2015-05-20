@@ -235,8 +235,10 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 
 	KASSERT(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE,
 	    ("uiomove: mode"));
+#ifndef __rtems__
 	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == td,
 	    ("uiomove proc"));
+#endif /* __rtems__ */
 	if (!nofault)
 		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
 		    "Calling uiomove()");

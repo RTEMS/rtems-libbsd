@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -39,6 +39,7 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-muteximpl.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
@@ -70,6 +71,10 @@ struct lock_class lock_class_sx = {
   .lc_owner = owner_sx,
 #endif
 };
+
+#define sx_xholder(sx) ((sx)->mutex.owner)
+
+#define sx_recursed(sx) ((sx)->mutex.nest_level != 0)
 
 void
 assert_sx(struct lock_object *lock, int what)
@@ -177,9 +182,11 @@ _sx_downgrade(struct sx *sx, const char *file, int line)
 void
 _sx_assert(struct sx *sx, int what, const char *file, int line)
 {
+#ifndef __rtems__
 #ifndef WITNESS
   int slocked = 0;
 #endif
+#endif /* __rtems__ */
 
   if (panicstr != NULL)
     return;
@@ -187,13 +194,16 @@ _sx_assert(struct sx *sx, int what, const char *file, int line)
   case SA_SLOCKED:
   case SA_SLOCKED | SA_NOTRECURSED:
   case SA_SLOCKED | SA_RECURSED:
+#ifndef __rtems__
 #ifndef WITNESS
     slocked = 1;
     /* FALLTHROUGH */
 #endif
+#endif /* __rtems__ */
   case SA_LOCKED:
   case SA_LOCKED | SA_NOTRECURSED:
   case SA_LOCKED | SA_RECURSED:
+#ifndef __rtems__
 #ifdef WITNESS
     witness_assert(&sx->lock_object, what, file, line);
 #else
@@ -221,10 +231,13 @@ _sx_assert(struct sx *sx, int what, const char *file, int line)
     }
 #endif
     break;
+#else /* __rtems__ */
+    /* FALLTHROUGH */
+#endif /* __rtems__ */
   case SA_XLOCKED:
   case SA_XLOCKED | SA_NOTRECURSED:
   case SA_XLOCKED | SA_RECURSED:
-    if (sx_xholder(sx) != curthread)
+    if (sx_xholder(sx) != _Thread_Get_executing())
       panic("Lock %s not exclusively locked @ %s:%d\n",
           sx->lock_object.lo_name, file, line);
     if (sx_recursed(sx)) {
@@ -244,7 +257,7 @@ _sx_assert(struct sx *sx, int what, const char *file, int line)
      * reliably check to see if we hold a shared lock or
      * not.
      */
-    if (sx_xholder(sx) == curthread)
+    if (sx_xholder(sx) == _Thread_Get_executing())
       panic("Lock %s exclusively locked @ %s:%d\n",
           sx->lock_object.lo_name, file, line);
 #endif

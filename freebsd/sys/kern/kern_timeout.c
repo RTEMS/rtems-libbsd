@@ -1095,7 +1095,9 @@ again:
 			KASSERT(!cc_cme_migrating(cc),
 			    ("callout wrongly scheduled for migration"));
 			CC_UNLOCK(cc);
+#ifndef __rtems__
 			KASSERT(!sq_locked, ("sleepqueue chain locked"));
+#endif /* __rtems__ */
 			return (1);
 		} else if ((c->c_flags & CALLOUT_DFRMIGRATION) != 0) {
 			c->c_flags &= ~CALLOUT_DFRMIGRATION;
@@ -1107,7 +1109,9 @@ again:
 		CTR3(KTR_CALLOUT, "failed to stop %p func %p arg %p",
 		    c, c->c_func, c->c_arg);
 		CC_UNLOCK(cc);
+#ifndef __rtems__
 		KASSERT(!sq_locked, ("sleepqueue chain still locked"));
+#endif /* __rtems__ */
 		return (0);
 	}
 #ifndef __rtems__

@@ -352,7 +352,11 @@ int set_dumper(struct dumperinfo *);
 int dump_write(struct dumperinfo *, void *, vm_offset_t, off_t, size_t);
 void dumpsys(struct dumperinfo *);
 int doadump(boolean_t);
+#ifndef __rtems__
 extern int dumping;		/* system is dumping */
+#else /* __rtems__ */
+#define dumping 0
+#endif /* __rtems__ */
 
 #endif /* _KERNEL */
 

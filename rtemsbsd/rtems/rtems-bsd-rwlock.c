@@ -15,7 +15,7 @@
  *  USA
  *  <kevin.kirspel@optimedical.com>
  *
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -78,6 +78,10 @@ struct lock_class lock_class_rw = {
   .lc_owner = owner_rw,
 #endif
 };
+
+#define rw_wowner(rw) ((rw)->mutex.owner)
+
+#define rw_recursed(rw) ((rw)->mutex.nest_level != 0)
 
 void
 assert_rw(struct lock_object *lock, int what)
@@ -223,6 +227,7 @@ _rw_assert(struct rwlock *rw, int what, const char *file, int line)
   case RA_LOCKED | RA_RECURSED:
   case RA_LOCKED | RA_NOTRECURSED:
   case RA_RLOCKED:
+#ifndef __rtems__
 #ifdef WITNESS
     witness_assert(&rw->lock_object, what, file, line);
 #else
@@ -250,10 +255,13 @@ _rw_assert(struct rwlock *rw, int what, const char *file, int line)
     }
 #endif
     break;
+#else /* __rtems__ */
+    /* FALLTHROUGH */
+#endif /* __rtems__ */
   case RA_WLOCKED:
   case RA_WLOCKED | RA_RECURSED:
   case RA_WLOCKED | RA_NOTRECURSED:
-    if (rw_wowner(rw) != curthread)
+    if (rw_wowner(rw) != _Thread_Get_executing())
       panic("Lock %s not exclusively locked @ %s:%d\n",
           rw->lock_object.lo_name, file, line);
     if (rw_recursed(rw)) {
@@ -272,7 +280,7 @@ _rw_assert(struct rwlock *rw, int what, const char *file, int line)
      * If we hold a write lock fail.  We can't reliably check
      * to see if we hold a read lock or not.
      */
-    if (rw_wowner(rw) == curthread)
+    if (rw_wowner(rw) == _Thread_Get_executing())
       panic("Lock %s exclusively locked @ %s:%d\n",
           rw->lock_object.lo_name, file, line);
 #endif

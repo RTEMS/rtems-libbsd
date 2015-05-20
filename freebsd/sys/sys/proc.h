@@ -478,7 +478,11 @@ do {									\
 #define	TD_IS_SWAPPED(td)	((td)->td_inhibitors & TDI_SWAPPED)
 #define	TD_ON_LOCK(td)		((td)->td_inhibitors & TDI_LOCK)
 #define	TD_AWAITING_INTR(td)	((td)->td_inhibitors & TDI_IWAIT)
+#ifndef __rtems__
 #define	TD_IS_RUNNING(td)	((td)->td_state == TDS_RUNNING)
+#else /* __rtems__ */
+#define	TD_IS_RUNNING(td)	(1)
+#endif /* __rtems__ */
 #define	TD_ON_RUNQ(td)		((td)->td_state == TDS_RUNQ)
 #define	TD_CAN_RUN(td)		((td)->td_state == TDS_CAN_RUN)
 #define	TD_IS_INHIBITED(td)	((td)->td_state == TDS_INHIBITED)

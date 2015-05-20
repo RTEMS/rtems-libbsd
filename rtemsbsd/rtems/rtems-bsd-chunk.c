@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013-2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -44,6 +44,7 @@
 #include <sys/malloc.h>
 
 #include <rtems/score/apimutex.h>
+#include <rtems.h>
 
 #define chunk_of_node(n) ((rtems_bsd_chunk_info *) n)
 

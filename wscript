@@ -1,5 +1,9 @@
 #
-# Generated waf script.
+# RTEMS Project (https://www.rtems.org)
+#
+# Generated waf script. Do not edit, run ./freebsd-to-rtems.py -m
+#
+# To use see README.waf shipped with this file.
 #
 
 try:
@@ -14,11 +18,24 @@ def init(ctx):
 
 def options(opt):
     rtems.options(opt)
+    opt.add_option("--enable-auto-regen",
+                   action = "store_true",
+                   default = False,
+                   dest = "auto_regen",
+                   help = "Enable auto-regeneration of LEX, RPC and YACC files.")
+    opt.add_option("--enable-warnings",
+                   action = "store_true",
+                   default = False,
+                   dest = "warnings",
+                   help = "Enable all warnings. The default is quiet builds.")
 
 def configure(conf):
-    conf.find_program("lex", mandatory = True)
-    conf.find_program("rpcgen", mandatory = True)
-    conf.find_program("yacc", mandatory = True)
+    if conf.options.auto_regen:
+        conf.find_program("lex", mandatory = True)
+        conf.find_program("rpcgen", mandatory = True)
+        conf.find_program("yacc", mandatory = True)
+    conf.env.AUTO_REGEN = conf.options.auto_regen
+    conf.env.WARNINGS = conf.options.warnings
     rtems.configure(conf)
     if rtems.check_networking(conf):
         conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
@@ -33,7 +50,11 @@ def build(bld):
     common_flags += ["-fno-strict-aliasing"]
     common_flags += ["-ffreestanding"]
     common_flags += ["-fno-common"]
-    common_flags += ["-Wno-implicit-function-declaration"]
+    if bld.env.WARNINGS:
+        common_flags += ["-Wall"]
+        common_flags += ["-Wno-format"]
+    else:
+        common_flags += ["-w"]
     cflags = ['-std=gnu11'] + common_flags
     cxxflags = ['-std=gnu++11'] + common_flags
 
@@ -67,9 +88,10 @@ def build(bld):
     libbsd_use = []
 
     # KVM Symbols
-    bld(target = "rtemsbsd/rtems/rtems-kvm-symbols.c",
-        source = "rtemsbsd/rtems/generate_kvm_symbols",
-        rule = "./${SRC} > ${TGT}")
+    if bld.env.AUTO_REGEN:
+        bld(target = "rtemsbsd/rtems/rtems-kvm-symbols.c",
+            source = "rtemsbsd/rtems/generate_kvm_symbols",
+            rule = "./${SRC} > ${TGT}")
     bld.objects(target = "kvmsymbols",
                 features = "c",
                 cflags = cflags,
@@ -78,20 +100,23 @@ def build(bld):
     libbsd_use += ["kvmsymbols"]
 
     # RPC Generation
-    bld(target = "freebsd/include/rpc/rpcb_prot.h",
-        source = "freebsd/include/rpc/rpcb_prot.x",
-        rule = "${RPCGEN} -h -o ${TGT} ${SRC}")
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/include/rpc/rpcb_prot.h",
+            source = "freebsd/include/rpc/rpcb_prot.x",
+            rule = "${RPCGEN} -h -o ${TGT} ${SRC}")
 
     # Route keywords
-    rkw_rule = "cat ${SRC} | awk 'BEGIN { r = 0 } { if (NF == 1) printf \"#define\\tK_%%s\\t%%d\\n\\t{\\\"%%s\\\", K_%%s},\\n\", toupper($1), ++r, $1, toupper($1)}' > ${TGT}"
-    bld(target = "freebsd/sbin/route/keywords.h",
-        source = "freebsd/sbin/route/keywords",
-        rule = rkw_rule)
+    if bld.env.AUTO_REGEN:
+        rkw_rule = "cat ${SRC} | awk 'BEGIN { r = 0 } { if (NF == 1) printf \"#define\\tK_%%s\\t%%d\\n\\t{\\\"%%s\\\", K_%%s},\\n\", toupper($1), ++r, $1, toupper($1)}' > ${TGT}"
+        bld(target = "freebsd/sbin/route/keywords.h",
+            source = "freebsd/sbin/route/keywords",
+            rule = rkw_rule)
 
     # Lex
-    bld(target = "freebsd/lib/libc/net/nslexer.c",
-        source = "freebsd/lib/libc/net/nslexer.l",
-        rule = "${LEX} -P _nsyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libc/net/nslexer.c",
+            source = "freebsd/lib/libc/net/nslexer.l",
+            rule = "${LEX} -P _nsyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
     bld.objects(target = "lex__nsyy",
                 features = "c",
                 cflags = cflags,
@@ -99,9 +124,10 @@ def build(bld):
                 source = "freebsd/lib/libc/net/nslexer.c")
     libbsd_use += ["lex__nsyy"]
 
-    bld(target = "freebsd/lib/libipsec/policy_token.c",
-        source = "freebsd/lib/libipsec/policy_token.l",
-        rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libipsec/policy_token.c",
+            source = "freebsd/lib/libipsec/policy_token.l",
+            rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
     bld.objects(target = "lex___libipsecyy",
                 features = "c",
                 cflags = cflags,
@@ -110,18 +136,20 @@ def build(bld):
     libbsd_use += ["lex___libipsecyy"]
 
     # Yacc
-    bld(target = "freebsd/lib/libipsec/policy_parse.c",
-        source = "freebsd/lib/libipsec/policy_parse.y",
-        rule = "${YACC} -b __libipsecyy -d -p __libipsecyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < __libipsecyy.tab.c > ${TGT} && rm -f __libipsecyy.tab.c && mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h")
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libipsec/policy_parse.c",
+            source = "freebsd/lib/libipsec/policy_parse.y",
+            rule = "${YACC} -b __libipsecyy -d -p __libipsecyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < __libipsecyy.tab.c > ${TGT} && rm -f __libipsecyy.tab.c && mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h")
     bld.objects(target = "yacc___libipsecyy",
                 features = "c",
                 cflags = cflags,
                 includes = includes,
                 source = "freebsd/lib/libipsec/policy_parse.c")
     libbsd_use += ["yacc___libipsecyy"]
-    bld(target = "freebsd/lib/libc/net/nsparser.c",
-        source = "freebsd/lib/libc/net/nsparser.y",
-        rule = "${YACC} -b _nsyy -d -p _nsyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < _nsyy.tab.c > ${TGT} && rm -f _nsyy.tab.c && mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h")
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libc/net/nsparser.c",
+            source = "freebsd/lib/libc/net/nsparser.y",
+            rule = "${YACC} -b _nsyy -d -p _nsyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < _nsyy.tab.c > ${TGT} && rm -f _nsyy.tab.c && mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h")
     bld.objects(target = "yacc__nsyy",
                 features = "c",
                 cflags = cflags,

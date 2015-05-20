@@ -1579,6 +1579,8 @@ install: $(LIB)
 	cd rtemsbsd/include ; for i in `find . -type d` ; do \
 	  install -d $(INCLUDE_DIR)/$$i ; \
 	  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done
+	install -d $(INCLUDE_DIR)/mghttpd
+	install -m 644 rtemsbsd/mghttpd/mongoose.h $(INCLUDE_DIR)/mghttpd
 	cd freebsd/include ; for i in `find . -type d` ; do \
 	  install -d $(INCLUDE_DIR)/$$i ; \
 	  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done

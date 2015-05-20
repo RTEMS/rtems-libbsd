@@ -276,6 +276,8 @@ class ModuleManager(builder.ModuleManager):
                 '\tcd rtemsbsd/include ; for i in `find . -type d` ; do \\\n' \
                 '\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
                 '\t  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \
+                '\tinstall -d $(INCLUDE_DIR)/mghttpd\n' \
+                '\tinstall -m 644 rtemsbsd/mghttpd/mongoose.h $(INCLUDE_DIR)/mghttpd\n' \
                 '\tcd freebsd/include ; for i in `find . -type d` ; do \\\n' \
                 '\t  install -d $(INCLUDE_DIR)/$$i ; \\\n' \
                 '\t  install -m 644 $$i/*.h $(INCLUDE_DIR)/$$i ; done\n' \

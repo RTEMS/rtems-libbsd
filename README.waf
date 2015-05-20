@@ -37,11 +37,14 @@ Steps
     $ make
     $ make install
 
-3. Populate the git submodule:
+3. Populate the rtems_waf git submodule:
 
     $ rtems-libbsd
     $ git submodule init
-    $ git submodule update
+    $ git submodule update rtems_waf
+
+   Note, make sure you specify 'rtems_waf' or the FreeBSD kernel source will be
+   cloned.
 
 5. Configure with your specific settings. In this case the path to the tools
    and RTEMS are provided on the command line and so do not need to be in your

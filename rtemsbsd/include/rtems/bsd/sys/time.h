@@ -46,7 +46,10 @@
 #define getbinuptime(_x) _Timecounter_Getbinuptime(_x)
 #define getnanouptime(_x) _Timecounter_Getnanouptime(_x)
 #define getmicrouptime(_x) _Timecounter_Getmicrouptime(_x)
+#define boottimebin _Timecounter_Boottimebin
 #define time_second _Timecounter_Time_second
 #define time_uptime _Timecounter_Time_uptime
+
+extern struct bintime _Timecounter_Boottimebin;
 
 #endif /* _RTEMS_BSD_SYS_TIME_H_ */

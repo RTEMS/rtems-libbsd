@@ -211,6 +211,8 @@ class ModuleManager(builder.ModuleManager):
         self.add('# To use see README.waf shipped with this file.')
         self.add('#')
         self.add('')
+        self.add('import os.path')
+        self.add('')
         self.add('try:')
         self.add('    import rtems_waf.rtems as rtems')
         self.add('except:')
@@ -233,6 +235,10 @@ class ModuleManager(builder.ModuleManager):
         self.add('                   default = False,')
         self.add('                   dest = "warnings",')
         self.add('                   help = "Enable all warnings. The default is quiet builds.")')
+        self.add('    opt.add_option("--net-test-config",')
+        self.add('                   default = "config.inc",')
+        self.add('                   dest = "net_config",')
+        self.add('                   help = "Network test configuration.")')
         self.add('')
         self.add('def configure(conf):')
         self.add('    if conf.options.auto_regen:')
@@ -241,6 +247,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('        conf.find_program("yacc", mandatory = True)')
         self.add('    conf.env.AUTO_REGEN = conf.options.auto_regen')
         self.add('    conf.env.WARNINGS = conf.options.warnings')
+        self.add('    conf.env.NET_CONFIG = conf.options.net_config')
         self.add('    rtems.configure(conf)')
         self.add('    if rtems.check_networking(conf):')
         self.add('        conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")')
@@ -278,19 +285,62 @@ class ModuleManager(builder.ModuleManager):
         self.add('')
 
         #
+        # Support the existing Makefile based network configuration file.
+        #
+        self.add('    # Network test configuration')
+        self.add('    if not os.path.exists(bld.env.NET_CONFIG):')
+        self.add('        bld.fatal("network configuraiton \'%s\' not found" % (bld.env.NET_CONFIG))')
+        self.add('    net_cfg_self_ip = None')
+        self.add('    net_cfg_netmask = None')
+        self.add('    net_cfg_peer_ip = None')
+        self.add('    net_cfg_gateway_ip = None')
+        self.add('    net_tap_interface = None')
+        self.add('    try:')
+        self.add('        net_cfg_lines = open(bld.env.NET_CONFIG).readlines()')
+        self.add('    except:')
+        self.add('        bld.fatal("network configuraiton \'%s\' read failed" % (bld.env.NET_CONFIG))')
+        self.add('    lc = 0')
+        self.add('    for l in net_cfg_lines:')
+        self.add('        lc += 1')
+        self.add('        if l.strip().startswith("NET_CFG_"):')
+        self.add('            ls = l.split("=")')
+        self.add('            if len(ls) != 2:')
+        self.add('                bld.fatal("network configuraiton \'%s\' parse error: %d: %s" % ' + \
+                 '(bld.env.NET_CONFIG, lc, l))')
+        self.add('            lhs = ls[0].strip()')
+        self.add('            rhs = ls[1].strip()')
+        self.add('            if lhs == "NET_CFG_SELF_IP":')
+        self.add('                net_cfg_self_ip = rhs')
+        self.add('            if lhs == "NET_CFG_NETMASK":')
+        self.add('                net_cfg_netmask = rhs')
+        self.add('            if lhs == "NET_CFG_PEER_IP":')
+        self.add('                net_cfg_peer_ip = rhs')
+        self.add('            if lhs == "NET_CFG_GATEWAY_IP_IP":')
+        self.add('                net_cfg_gateway_ip = rhs')
+        self.add('            if lhs == "NET_TAP_INTERFACE_IP_IP":')
+        self.add('                net_tap_interface = rhs')
+        self.add('    bld(target = "testsuite/include/rtems/bsd/test/network-config.h",')
+        self.add('        source = "testsuite/include/rtems/bsd/test/network-config.h.in",')
+        self.add('        rule = "sed -e \'s/@NET_CFG_SELF_IP@/%s/\' ' + \
+                 '-e \'s/@NET_CFG_NETMASK@/%s/\' ' + \
+                 '-e \'s/@NET_CFG_PEER_IP@/%s/\' ' + \
+                 '-e \'s/@NET_CFG_GATEWAY_IP@/%s/\' < ${SRC} > ${TGT}" % ' + \
+                 '(net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask))')
+        self.add('')
+
+        #
         # Add the specific rule based builders for generating files.
         #
         if 'KVMSymbols' in data:
             kvmsymbols = data['KVMSymbols']
             self.add('    # KVM Symbols')
-            self.add('    if bld.env.AUTO_REGEN:')
-            self.add('        bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
-            self.add('            source = "rtemsbsd/rtems/generate_kvm_symbols",')
-            self.add('            rule = "./${SRC} > ${TGT}")')
+            self.add('    bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
+            self.add('        source = "rtemsbsd/rtems/generate_kvm_symbols",')
+            self.add('        rule = "./${SRC} > ${TGT}")')
             self.add('    bld.objects(target = "kvmsymbols",')
             self.add('                features = "c",')
             self.add('                cflags = cflags,')
-            self.add('                includes = includes,')
+            self.add('                includes = includes + ["rtemsbsd/rtems"],')
             self.add('                source = "%s")' % (kvmsymbols['files']['all'][0]))
             self.add('    libbsd_use += ["kvmsymbols"]')
             self.add('')

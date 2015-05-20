@@ -514,9 +514,9 @@
  * instead of the effective uid, and whether or not the check should be
  * allowed in jail.
  */
-#ifndef __rtems__
 struct thread;
 struct ucred;
+#ifndef __rtems__
 int	priv_check(struct thread *td, int priv);
 int	priv_check_cred(struct ucred *cred, int priv, int flags);
 #else /* __rtems__ */

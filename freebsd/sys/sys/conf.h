@@ -50,6 +50,9 @@ struct snapdata;
 struct devfs_dirent;
 struct cdevsw;
 struct file;
+#ifdef __rtems__
+struct ucred;
+#endif /* __rtems__ */
 
 struct cdev {
 	struct mount	*si_mountpt;

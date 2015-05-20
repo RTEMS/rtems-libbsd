@@ -6,6 +6,8 @@
 # To use see README.waf shipped with this file.
 #
 
+import os.path
+
 try:
     import rtems_waf.rtems as rtems
 except:
@@ -28,6 +30,10 @@ def options(opt):
                    default = False,
                    dest = "warnings",
                    help = "Enable all warnings. The default is quiet builds.")
+    opt.add_option("--net-test-config",
+                   default = "config.inc",
+                   dest = "net_config",
+                   help = "Network test configuration.")
 
 def configure(conf):
     if conf.options.auto_regen:
@@ -36,6 +42,7 @@ def configure(conf):
         conf.find_program("yacc", mandatory = True)
     conf.env.AUTO_REGEN = conf.options.auto_regen
     conf.env.WARNINGS = conf.options.warnings
+    conf.env.NET_CONFIG = conf.options.net_config
     rtems.configure(conf)
     if rtems.check_networking(conf):
         conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
@@ -87,15 +94,49 @@ def build(bld):
     # Collect the libbsd uses
     libbsd_use = []
 
+    # Network test configuration
+    if not os.path.exists(bld.env.NET_CONFIG):
+        bld.fatal("network configuraiton '%s' not found" % (bld.env.NET_CONFIG))
+    net_cfg_self_ip = None
+    net_cfg_netmask = None
+    net_cfg_peer_ip = None
+    net_cfg_gateway_ip = None
+    net_tap_interface = None
+    try:
+        net_cfg_lines = open(bld.env.NET_CONFIG).readlines()
+    except:
+        bld.fatal("network configuraiton '%s' read failed" % (bld.env.NET_CONFIG))
+    lc = 0
+    for l in net_cfg_lines:
+        lc += 1
+        if l.strip().startswith("NET_CFG_"):
+            ls = l.split("=")
+            if len(ls) != 2:
+                bld.fatal("network configuraiton '%s' parse error: %d: %s" % (bld.env.NET_CONFIG, lc, l))
+            lhs = ls[0].strip()
+            rhs = ls[1].strip()
+            if lhs == "NET_CFG_SELF_IP":
+                net_cfg_self_ip = rhs
+            if lhs == "NET_CFG_NETMASK":
+                net_cfg_netmask = rhs
+            if lhs == "NET_CFG_PEER_IP":
+                net_cfg_peer_ip = rhs
+            if lhs == "NET_CFG_GATEWAY_IP_IP":
+                net_cfg_gateway_ip = rhs
+            if lhs == "NET_TAP_INTERFACE_IP_IP":
+                net_tap_interface = rhs
+    bld(target = "testsuite/include/rtems/bsd/test/network-config.h",
+        source = "testsuite/include/rtems/bsd/test/network-config.h.in",
+        rule = "sed -e 's/@NET_CFG_SELF_IP@/%s/' -e 's/@NET_CFG_NETMASK@/%s/' -e 's/@NET_CFG_PEER_IP@/%s/' -e 's/@NET_CFG_GATEWAY_IP@/%s/' < ${SRC} > ${TGT}" % (net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask))
+
     # KVM Symbols
-    if bld.env.AUTO_REGEN:
-        bld(target = "rtemsbsd/rtems/rtems-kvm-symbols.c",
-            source = "rtemsbsd/rtems/generate_kvm_symbols",
-            rule = "./${SRC} > ${TGT}")
+    bld(target = "rtemsbsd/rtems/rtems-kvm-symbols.c",
+        source = "rtemsbsd/rtems/generate_kvm_symbols",
+        rule = "./${SRC} > ${TGT}")
     bld.objects(target = "kvmsymbols",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = includes + ["rtemsbsd/rtems"],
                 source = "rtemsbsd/rtems/rtems-kvm-symbols.c")
     libbsd_use += ["kvmsymbols"]
 

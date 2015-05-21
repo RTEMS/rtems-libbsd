@@ -127,12 +127,14 @@ def build(bld):
                 net_tap_interface = rhs
     bld(target = "testsuite/include/rtems/bsd/test/network-config.h",
         source = "testsuite/include/rtems/bsd/test/network-config.h.in",
-        rule = "sed -e 's/@NET_CFG_SELF_IP@/%s/' -e 's/@NET_CFG_NETMASK@/%s/' -e 's/@NET_CFG_PEER_IP@/%s/' -e 's/@NET_CFG_GATEWAY_IP@/%s/' < ${SRC} > ${TGT}" % (net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask))
+        rule = "sed -e 's/@NET_CFG_SELF_IP@/%s/' -e 's/@NET_CFG_NETMASK@/%s/' -e 's/@NET_CFG_PEER_IP@/%s/' -e 's/@NET_CFG_GATEWAY_IP@/%s/' < ${SRC} > ${TGT}" % (net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask),
+        update_outputs = True)
 
     # KVM Symbols
     bld(target = "rtemsbsd/rtems/rtems-kvm-symbols.c",
         source = "rtemsbsd/rtems/generate_kvm_symbols",
-        rule = "./${SRC} > ${TGT}")
+        rule = "./${SRC} > ${TGT}",
+        update_outputs = True)
     bld.objects(target = "kvmsymbols",
                 features = "c",
                 cflags = cflags,
@@ -140,6 +142,7 @@ def build(bld):
                 source = "rtemsbsd/rtems/rtems-kvm-symbols.c")
     libbsd_use += ["kvmsymbols"]
 
+    bld.add_group()
     # RPC Generation
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/include/rpc/rpcb_prot.h",
@@ -915,6 +918,35 @@ def build(bld):
               source = source,
               use = libbsd_use)
 
+    # Installs.    
+    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])
+    header_paths = [('rtemsbsd/include', '*.h', ''),
+                     ('rtemsbsd/mghttpd', 'mongoose.h', 'mghttpd'),
+                     ('freebsd/include', '*.h', ''),
+                     ('freebsd/sys/contrib/altq/altq', '*.h', 'altq'),
+                     ('freebsd/sys/bsm', '*.h', 'bsm'),
+                     ('freebsd/sys/cam', '*.h', 'cam'),
+                     ('freebsd/sys/net', '*.h', 'net'),
+                     ('freebsd/sys/net80211', '*.h', 'net80211'),
+                     ('freebsd/sys/netatalk', '*.h', 'netatalk'),
+                     ('freebsd/sys/netinet', '*.h', 'netinet'),
+                     ('freebsd/sys/netinet6', '*.h', 'netinet6'),
+                     ('freebsd/sys/netipsec', '*.h', 'netipsec'),
+                     ('freebsd/sys/sys', '*.h', 'sys'),
+                     ('freebsd/sys/vm', '*.h', 'vm'),
+                     ('freebsd/sys/dev/mii', '*.h', 'dev/mii'),
+                     ('mDNSResponder/mDNSCore', 'mDNSDebug.h', ''),
+                     ('mDNSResponder/mDNSCore', 'mDNSEmbeddedAPI.h', ''),
+                     ('mDNSResponder/mDNSShared', 'dns_sd.h', ''),
+                     ('mDNSResponder/mDNSPosix', 'mDNSPosix.h', '')]
+    for headers in header_paths:
+        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_ARCH_BSP), headers[2])
+        start_dir = bld.path.find_dir(headers[0])
+        bld.install_files("${PREFIX}/" + ipath,
+                          start_dir.ant_glob("**/" + headers[1]),
+                          cwd = start_dir,
+                          relative_trick = True)
+
     # Tests
     test_init01 = ['testsuite/init01/test_main.c']
     bld.program(target = "init01",
@@ -923,7 +955,8 @@ def build(bld):
                 includes = includes,
                 source = test_init01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_syscalls01 = ['testsuite/syscalls01/test_main.c']
     bld.program(target = "syscalls01",
@@ -932,7 +965,8 @@ def build(bld):
                 includes = includes,
                 source = test_syscalls01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_thread01 = ['testsuite/thread01/test_main.c']
     bld.program(target = "thread01",
@@ -941,7 +975,8 @@ def build(bld):
                 includes = includes,
                 source = test_thread01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_loopback01 = ['testsuite/loopback01/test_main.c']
     bld.program(target = "loopback01",
@@ -950,7 +985,8 @@ def build(bld):
                 includes = includes,
                 source = test_loopback01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_foobarclient = ['testsuite/foobarclient/test_main.c']
     bld.program(target = "foobarclient",
@@ -959,7 +995,8 @@ def build(bld):
                 includes = includes,
                 source = test_foobarclient,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_lagg01 = ['testsuite/lagg01/test_main.c']
     bld.program(target = "lagg01",
@@ -968,7 +1005,8 @@ def build(bld):
                 includes = includes,
                 source = test_lagg01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_timeout01 = ['testsuite/timeout01/init.c',
                       'testsuite/timeout01/timeout_test.c']
@@ -978,7 +1016,8 @@ def build(bld):
                 includes = includes,
                 source = test_timeout01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_dhcpcd02 = ['testsuite/dhcpcd02/test_main.c']
     bld.program(target = "dhcpcd02",
@@ -987,7 +1026,8 @@ def build(bld):
                 includes = includes,
                 source = test_dhcpcd02,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_ftpd01 = ['testsuite/ftpd01/test_main.c']
     bld.program(target = "ftpd01",
@@ -996,7 +1036,8 @@ def build(bld):
                 includes = includes,
                 source = test_ftpd01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_vlan01 = ['testsuite/vlan01/test_main.c']
     bld.program(target = "vlan01",
@@ -1005,7 +1046,8 @@ def build(bld):
                 includes = includes,
                 source = test_vlan01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_foobarserver = ['testsuite/foobarserver/test_main.c']
     bld.program(target = "foobarserver",
@@ -1014,7 +1056,8 @@ def build(bld):
                 includes = includes,
                 source = test_foobarserver,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_selectpollkqueue01 = ['testsuite/selectpollkqueue01/test_main.c']
     bld.program(target = "selectpollkqueue01",
@@ -1023,7 +1066,8 @@ def build(bld):
                 includes = includes,
                 source = test_selectpollkqueue01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_zerocopy01 = ['testsuite/zerocopy01/test_main.c']
     bld.program(target = "zerocopy01",
@@ -1032,7 +1076,8 @@ def build(bld):
                 includes = includes,
                 source = test_zerocopy01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_smp01 = ['testsuite/smp01/test_main.c']
     bld.program(target = "smp01",
@@ -1041,7 +1086,8 @@ def build(bld):
                 includes = includes,
                 source = test_smp01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_media01 = ['testsuite/media01/test_main.c']
     bld.program(target = "media01",
@@ -1050,7 +1096,8 @@ def build(bld):
                 includes = includes,
                 source = test_media01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_condvar01 = ['testsuite/condvar01/test_main.c']
     bld.program(target = "condvar01",
@@ -1059,7 +1106,8 @@ def build(bld):
                 includes = includes,
                 source = test_condvar01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_telnetd01 = ['testsuite/telnetd01/test_main.c']
     bld.program(target = "telnetd01",
@@ -1068,7 +1116,8 @@ def build(bld):
                 includes = includes,
                 source = test_telnetd01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_ppp01 = ['testsuite/ppp01/test_main.c']
     bld.program(target = "ppp01",
@@ -1077,7 +1126,8 @@ def build(bld):
                 includes = includes,
                 source = test_ppp01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_swi01 = ['testsuite/swi01/init.c',
                   'testsuite/swi01/swi_test.c']
@@ -1087,7 +1137,8 @@ def build(bld):
                 includes = includes,
                 source = test_swi01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_netshell01 = ['testsuite/netshell01/shellconfig.c',
                        'testsuite/netshell01/test_main.c']
@@ -1097,7 +1148,8 @@ def build(bld):
                 includes = includes,
                 source = test_netshell01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_rwlock01 = ['testsuite/rwlock01/test_main.c']
     bld.program(target = "rwlock01",
@@ -1106,7 +1158,8 @@ def build(bld):
                 includes = includes,
                 source = test_rwlock01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_mutex01 = ['testsuite/mutex01/test_main.c']
     bld.program(target = "mutex01",
@@ -1115,7 +1168,8 @@ def build(bld):
                 includes = includes,
                 source = test_mutex01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_dhcpcd01 = ['testsuite/dhcpcd01/test_main.c']
     bld.program(target = "dhcpcd01",
@@ -1124,7 +1178,8 @@ def build(bld):
                 includes = includes,
                 source = test_dhcpcd01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_unix01 = ['testsuite/unix01/test_main.c']
     bld.program(target = "unix01",
@@ -1133,7 +1188,8 @@ def build(bld):
                 includes = includes,
                 source = test_unix01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_commands01 = ['testsuite/commands01/test_main.c']
     bld.program(target = "commands01",
@@ -1142,7 +1198,8 @@ def build(bld):
                 includes = includes,
                 source = test_commands01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_ping01 = ['testsuite/ping01/test_main.c']
     bld.program(target = "ping01",
@@ -1151,7 +1208,8 @@ def build(bld):
                 includes = includes,
                 source = test_ping01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_usb01 = ['testsuite/usb01/init.c',
                   'testsuite/usb01/test-file-system.c']
@@ -1161,7 +1219,8 @@ def build(bld):
                 includes = includes,
                 source = test_usb01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_arphole = ['testsuite/arphole/test_main.c']
     bld.program(target = "arphole",
@@ -1170,7 +1229,8 @@ def build(bld):
                 includes = includes,
                 source = test_arphole,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 
     test_sleep01 = ['testsuite/sleep01/test_main.c']
     bld.program(target = "sleep01",
@@ -1179,5 +1239,6 @@ def build(bld):
                 includes = includes,
                 source = test_sleep01,
                 use = ["bsd"],
-                lib = ["m", "z"])
+                lib = ["m", "z"],
+                install_path = None)
 

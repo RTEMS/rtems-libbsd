@@ -325,7 +325,8 @@ class ModuleManager(builder.ModuleManager):
                  '-e \'s/@NET_CFG_NETMASK@/%s/\' ' + \
                  '-e \'s/@NET_CFG_PEER_IP@/%s/\' ' + \
                  '-e \'s/@NET_CFG_GATEWAY_IP@/%s/\' < ${SRC} > ${TGT}" % ' + \
-                 '(net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask))')
+                 '(net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask),')
+        self.add('        update_outputs = True)')
         self.add('')
 
         #
@@ -336,7 +337,8 @@ class ModuleManager(builder.ModuleManager):
             self.add('    # KVM Symbols')
             self.add('    bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
             self.add('        source = "rtemsbsd/rtems/generate_kvm_symbols",')
-            self.add('        rule = "./${SRC} > ${TGT}")')
+            self.add('        rule = "./${SRC} > ${TGT}",')
+            self.add('        update_outputs = True)')
             self.add('    bld.objects(target = "kvmsymbols",')
             self.add('                features = "c",')
             self.add('                cflags = cflags,')
@@ -344,6 +346,8 @@ class ModuleManager(builder.ModuleManager):
             self.add('                source = "%s")' % (kvmsymbols['files']['all'][0]))
             self.add('    libbsd_use += ["kvmsymbols"]')
             self.add('')
+
+        self.add('    bld.add_group()')
 
         if 'RPCGen' in data:
             rpcgen = data['RPCGen']
@@ -457,6 +461,25 @@ class ModuleManager(builder.ModuleManager):
         self.add('              use = libbsd_use)')
         self.add('')
 
+        #
+        # Head file collector.
+        #
+        self.add('    # Installs.    ')
+        self.add('    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])')
+        header_paths = builder.header_paths()
+        self.add('    header_paths = [%s,' % (str(header_paths[0])))
+        for hp in header_paths[1:-1]:
+            self.add('                     %s,' % (str(hp)))
+        self.add('                     %s]' % (str(header_paths[-1])))
+        self.add('    for headers in header_paths:')
+        self.add('        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_ARCH_BSP), headers[2])')
+        self.add('        start_dir = bld.path.find_dir(headers[0])')
+        self.add('        bld.install_files("${PREFIX}/" + ipath,')
+        self.add('                          start_dir.ant_glob("**/" + headers[1]),')
+        self.add('                          cwd = start_dir,')
+        self.add('                          relative_trick = True)')
+        self.add('')
+
         self.add('    # Tests')
         tests = data['tests']
         for test_name in tests:
@@ -468,7 +491,8 @@ class ModuleManager(builder.ModuleManager):
             self.add('                includes = includes,')
             self.add('                source = test_%s,' % (test_name))
             self.add('                use = ["bsd"],')
-            self.add('                lib = ["m", "z"])')
+            self.add('                lib = ["m", "z"],')
+            self.add('                install_path = None)')
             self.add('')
 
         self.write()

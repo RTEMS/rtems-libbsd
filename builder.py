@@ -104,6 +104,28 @@ def cflags():
 def cxxflags():
     return ['-std=gnu++11']
 
+def header_paths():
+    #         local path                      wildcard             dest path
+    return [('rtemsbsd/include',              '*.h',               ''),
+            ('rtemsbsd/mghttpd',              'mongoose.h',        'mghttpd'),
+            ('freebsd/include',               '*.h',               ''),
+            ('freebsd/sys/contrib/altq/altq', '*.h',               'altq'),
+            ('freebsd/sys/bsm',               '*.h',               'bsm'),
+            ('freebsd/sys/cam',               '*.h',               'cam'),
+            ('freebsd/sys/net',               '*.h',               'net'),
+            ('freebsd/sys/net80211',          '*.h',               'net80211'),
+            ('freebsd/sys/netatalk',          '*.h',               'netatalk'),
+            ('freebsd/sys/netinet',           '*.h',               'netinet'),
+            ('freebsd/sys/netinet6',          '*.h',               'netinet6'),
+            ('freebsd/sys/netipsec',          '*.h',               'netipsec'),
+            ('freebsd/sys/sys',               '*.h',               'sys'),
+            ('freebsd/sys/vm',                '*.h',               'vm'),
+            ('freebsd/sys/dev/mii',           '*.h',               'dev/mii'),
+            ('mDNSResponder/mDNSCore',        'mDNSDebug.h',       ''),
+            ('mDNSResponder/mDNSCore',        'mDNSEmbeddedAPI.h', ''),
+            ('mDNSResponder/mDNSShared',      'dns_sd.h',          ''),
+            ('mDNSResponder/mDNSPosix',       'mDNSPosix.h',       '')]
+
 # compare and process file only if different
 #  + copy or diff depending on execution mode
 def processIfDifferent(new, old, src):

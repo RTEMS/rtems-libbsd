@@ -35,6 +35,9 @@ def options(opt):
                    dest = "net_config",
                    help = "Network test configuration.")
 
+def bsp_configure(conf, arch_bsp):
+    conf.check(header_name = "dlfcn.h", features = "c")
+
 def configure(conf):
     if conf.options.auto_regen:
         conf.find_program("lex", mandatory = True)
@@ -43,7 +46,7 @@ def configure(conf):
     conf.env.AUTO_REGEN = conf.options.auto_regen
     conf.env.WARNINGS = conf.options.warnings
     conf.env.NET_CONFIG = conf.options.net_config
-    rtems.configure(conf)
+    rtems.configure(conf, bsp_configure)
     if rtems.check_networking(conf):
         conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
 

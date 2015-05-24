@@ -1,20 +1,48 @@
 RTEMS LibBSD Waf
 ~~~~~~~~~~~~~~~~
 
-You can find the Waf project here:
+Welcome to building LibBSD for RTEMS using Waf. This package is a library
+containing various parts of the FreeBSD kernel ported to RTEMS. The library
+replaces the networking port of FreeBSD in the RTEMS kernel sources. This
+package is designed to be updated from the FreeBSD kernel sources and contains
+more than just the networking code.
 
- http://code.google.com/p/waf/
+To build this package you need a current RTEMS tool set for your architecture,
+and a recent RTEMS kernel for your BSP configured with networking disabled
+built and installed. If you already have this you can skip to step 3 of the
+build procedure.
 
-Simple instructions on How to set up Waf is here:
+Waf Setup
+~~~~~~~~~
 
- https://ftp.rtems.org/pub/rtems/people/chrisj/rtl/rtems-linker/waf.html
+You can find the Waf project at:
 
-These instructions show you how to build and install RTEMS Tools, RTEMS kernel
-for your BSP in separate paths. Using separate paths for the tools and BSPs
-lets you manage what you have installed. If you are happy with a single path
-you can just the same path in each stage.
+ https://waf.io/
 
-We will build an ARM Realview PBX A9 QEMU BSP (arm/realview_pbx_a9_qemu).
+Waf is not intended to be installed by distribution packages so we recommend
+you download a recent waf version and install it in your home directory.
+
+Waf is a Python program so you will also need to have a current Python version
+installed and in your path.
+
+Download the latest signed executable file version to $HOME/bin and symlink it
+to waf. Add the directory $HOME/bin to your path if it is not already in your
+default path.
+
+Building and Installing LibBSD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following instructions show you how to build and install RTEMS Tools and
+RTEMS kernel for your BSP in separate paths. Using separate paths for the tools
+and BSPs lets you manage what you have installed. If you are happy with a
+single path you can use the same path in each stage.
+
+The waf build support for RTEMS requires you provide your BSP name as an
+architecture and BSP pair. You must provide both or waf will generate an error
+message during the configure phase.
+
+We will build an ARM Realview PBX A9 QEMU BSP using the name
+'arm/realview_pbx_a9_qemu'.
 
 Steps
 -----
@@ -39,18 +67,19 @@ Steps
 
 3. Populate the rtems_waf git submodule:
 
-    $ rtems-libbsd
+    $ cd rtems-libbsd
     $ git submodule init
     $ git submodule update rtems_waf
 
    Note, make sure you specify 'rtems_waf' or the FreeBSD kernel source will be
    cloned.
 
-5. Configure with your specific settings. In this case the path to the tools
-   and RTEMS are provided on the command line and so do not need to be in your
-   path or environment [1]:
+4. Run Waf's configure with your specific settings. In this case the path to
+   the tools and RTEMS are provided on the command line and so do not need to
+   be in your path or environment [1]:
 
-    $ waf configure --rtems=/opt/rtems/4.11/bsps \
+    $ waf configure --prefix=/opt/rtems/4.11/bsps \
+                    --rtems=/opt/rtems/4.11/bsps \
                     --rtems-tools=/opt/rtems/4.11/tools \
                     --rtems-bsps=arm/realview_pbx_a9_qemu
 
@@ -58,7 +87,12 @@ Steps
    '--rtems-bsps=arm/realview_pbx_a9_qemu,sparc/sis,i386/pc586' to build for
    more than BSP at a time.
 
+   Note, you must provide the architecture and BSP as a pair. Providing just the
+   BSP name will fail.
+
 6. Build and install:
+
+   The LibBSD package will be installed into the prefix provided to configure.
 
    $ waf
    $ waf install

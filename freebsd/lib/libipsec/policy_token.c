@@ -34,6 +34,16 @@
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
 
+#if defined(__FreeBSD__)
+#ifndef __STDC_LIMIT_MACROS
+#define	__STDC_LIMIT_MACROS
+#endif
+#include <sys/cdefs.h>
+#include <stdint.h>
+#else
+#define	__dead2
+#endif
+
 /* begin standard C headers. */
 #include <stdio.h>
 #include <string.h>
@@ -49,7 +59,8 @@
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#if defined(__FreeBSD__) || \
+    (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
 
 /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
  * if you want the limit (max/min) macros for int types. 
@@ -185,20 +196,7 @@ extern FILE *__libipsecyyin, *__libipsecyyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
-     *       access to the local variable yy_act. Since yyless() is a macro, it would break
-     *       existing scanners that call yyless() from OUTSIDE __libipsecyylex. 
-     *       One obvious solution it to make yy_act a global. I tried that, and saw
-     *       a 5% performance hit in a non-__libipsecyylineno scanner, because yy_act is
-     *       normally declared as a register variable-- so it is not worth it.
-     */
-    #define  YY_LESS_LINENO(n) \
-            do { \
-                int yyl;\
-                for ( yyl = n; yyl < __libipsecyyleng; ++yyl )\
-                    if ( __libipsecyytext[yyl] == '\n' )\
-                        --__libipsecyylineno;\
-            }while(0)
+    #define YY_LESS_LINENO(n)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -295,6 +293,7 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 #define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
                           ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
                           : NULL)
+#define yy_current_buffer YY_CURRENT_BUFFER
 
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
@@ -373,17 +372,17 @@ FILE *__libipsecyyin = (FILE *) 0, *__libipsecyyout = (FILE *) 0;
 
 typedef int yy_state_type;
 
-#define YY_FLEX_LEX_COMPAT
 extern int __libipsecyylineno;
 
 int __libipsecyylineno = 1;
 
-extern char __libipsecyytext[];
+extern char *__libipsecyytext;
+#define yytext_ptr __libipsecyytext
 
 static yy_state_type yy_get_previous_state (void );
 static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
 static int yy_get_next_buffer (void );
-static void yy_fatal_error (yyconst char msg[]  );
+static void yy_fatal_error (yyconst char msg[]  ) __dead2;
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up __libipsecyytext.
@@ -393,12 +392,6 @@ static void yy_fatal_error (yyconst char msg[]  );
 	__libipsecyyleng = (size_t) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
-	if ( __libipsecyyleng + (yy_more_offset) >= YYLMAX ) \
-		YY_FATAL_ERROR( "token too large, exceeds YYLMAX" ); \
-	yy_flex_strncpy( &__libipsecyytext[(yy_more_offset)], (yytext_ptr), __libipsecyyleng + 1 ); \
-	__libipsecyyleng += (yy_more_offset); \
-	(yy_prev_more_offset) = (yy_more_offset); \
-	(yy_more_offset) = 0; \
 	(yy_c_buf_p) = yy_cp;
 
 #define YY_NUM_RULES 26
@@ -410,36 +403,18 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_acclist[131] =
+static yyconst flex_int16_t yy_accept[99] =
     {   0,
-       27,   26,   24,   26,   25,   26,   23,   26,   22,   26,
-       21,   26,   22,   26,   22,   26,   22,   26,   22,   26,
-       22,   26,   22,   26,   22,   26,   22,   26,   22,   26,
-       22,   26,   22,   26,   24,   22,    9,   22,   22,   22,
-       22,   22,   22,   22,    1,   22,   22,   14,   22,   22,
-       22,   22,   22,   22,   22,   22,   22,   22,   15,   22,
-       22,   22,   22,   22,    8,   22,   22,   22,   22,    2,
-       22,   22,   11,   22,   22,   22,   22,   17,   22,   22,
-       22,   22,   22,   22,   22,    4,   22,   22,   22,   22,
-       22,   22,   22,   22,   22,   22,    5,   22,   22,   22,
-
-       22,   22,    6,   22,   22,   22,   22,   10,   22,   22,
-       22,   13,   22,   20,   22,   16,   22,    3,   22,    7,
-       22,   18,   22,   22,   22,   22,   19,   22,   12,   22
-    } ;
-
-static yyconst flex_int16_t yy_accept[100] =
-    {   0,
-        1,    1,    1,    2,    3,    5,    7,    9,   11,   13,
-       15,   17,   19,   21,   23,   25,   27,   29,   31,   33,
-       35,   36,   36,   37,   39,   40,   41,   42,   43,   44,
-       45,   47,   48,   50,   51,   52,   53,   54,   55,   56,
-       57,   58,   59,   61,   62,   63,   64,   65,   67,   68,
-       69,   70,   72,   73,   75,   76,   77,   78,   80,   81,
-       82,   83,   84,   85,   86,   88,   89,   90,   91,   92,
-       93,   94,   95,   96,   97,   99,  100,  101,  102,  103,
-      105,  106,  107,  108,  110,  111,  112,  114,  116,  118,
-      120,  122,  124,  125,  126,  127,  129,  131,  131
+        0,    0,   27,   26,   24,   25,   23,   22,   21,   22,
+       22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
+       24,    0,   22,    9,   22,   22,   22,   22,   22,   22,
+        1,   22,   14,   22,   22,   22,   22,   22,   22,   22,
+       22,   22,   15,   22,   22,   22,   22,    8,   22,   22,
+       22,    2,   22,   11,   22,   22,   22,   17,   22,   22,
+       22,   22,   22,   22,    4,   22,   22,   22,   22,   22,
+       22,   22,   22,   22,    5,   22,   22,   22,   22,    6,
+       22,   22,   22,   10,   22,   22,   13,   20,   16,    3,
+        7,   18,   22,   22,   22,   19,   12,    0
 
     } ;
 
@@ -570,43 +545,21 @@ static yyconst flex_int16_t yy_chk[226] =
        98,   98,   98,   98,   98
     } ;
 
-/* Table of booleans, true if rule could match eol. */
-static yyconst flex_int32_t yy_rule_can_match_eol[27] =
-    {   0,
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 1, 0,     };
+static yy_state_type yy_last_accepting_state;
+static char *yy_last_accepting_cpos;
 
 extern int __libipsecyy_flex_debug;
 int __libipsecyy_flex_debug = 0;
 
-static yy_state_type *yy_state_buf=0, *yy_state_ptr=0;
-static char *yy_full_match;
-static int yy_lp;
-#define REJECT \
-{ \
-*yy_cp = (yy_hold_char); /* undo effects of setting up __libipsecyytext */ \
-yy_cp = (yy_full_match); /* restore poss. backed-over text */ \
-++(yy_lp); \
-goto find_rule; \
-}
-
-static int yy_more_offset = 0;
-static int yy_prev_more_offset = 0;
-#define yymore() ((yy_more_offset) = yy_flex_strlen( __libipsecyytext ))
-#define YY_NEED_STRLEN
+/* The intent behind this definition is that it'll catch
+ * any uses of REJECT which flex missed.
+ */
+#define REJECT reject_used_but_not_detected
+#define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
-#define YY_RESTORE_YY_MORE_OFFSET \
-	{ \
-	(yy_more_offset) = (yy_prev_more_offset); \
-	__libipsecyyleng -= (yy_more_offset); \
-	}
-#ifndef YYLMAX
-#define YYLMAX 8192
-#endif
-
-char __libipsecyytext[YYLMAX];
-char *yytext_ptr;
-#line 1 "freebsd/lib/libipsec/policy_token.l"
+#define YY_RESTORE_YY_MORE_OFFSET
+char *__libipsecyytext;
+#line 1 "../../freebsd/lib/libipsec/policy_token.l"
 /*	$FreeBSD$	*/
 /*	$KAME: policy_token.l,v 1.13 2003/05/09 05:19:55 sakane Exp $	*/
 /*
@@ -637,7 +590,7 @@ char *yytext_ptr;
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#line 34 "freebsd/lib/libipsec/policy_token.l"
+#line 34 "../../freebsd/lib/libipsec/policy_token.l"
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -653,17 +606,13 @@ char *yytext_ptr;
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef __rtems__
-/* XXX - Jennifer doesn't know where to get this from */
-static YY_BUFFER_STATE yy_current_buffer;
-#endif /* __rtems__ */
 #include "y.tab.h"
 #define yylval __libipsecyylval	/* XXX */
 
 int __libipsecyylex(void);
 #define YY_NO_INPUT 1
 /* common section */
-#line 667 "<stdout>"
+#line 616 "<stdout>"
 
 #define INITIAL 0
 
@@ -839,14 +788,14 @@ extern int __libipsecyylex (void);
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
     
-#line 91 "freebsd/lib/libipsec/policy_token.l"
+#line 87 "../../freebsd/lib/libipsec/policy_token.l"
 
 
-#line 850 "<stdout>"
+#line 799 "<stdout>"
 
 	if ( !(yy_init) )
 		{
@@ -855,12 +804,6 @@ YY_DECL
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
-
-        /* Create the reject buffer large enough to save one state per allowed character. */
-        if ( ! (yy_state_buf) )
-            (yy_state_buf) = (yy_state_type *)__libipsecyyalloc(YY_STATE_BUF_SIZE  );
-            if ( ! (yy_state_buf) )
-                YY_FATAL_ERROR( "out of dynamic memory in __libipsecyylex()" );
 
 		if ( ! (yy_start) )
 			(yy_start) = 1;	/* first start state */
@@ -893,14 +836,15 @@ YY_DECL
 		yy_bp = yy_cp;
 
 		yy_current_state = (yy_start);
-
-		(yy_state_ptr) = (yy_state_buf);
-		*(yy_state_ptr)++ = yy_current_state;
-
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
+			if ( yy_accept[yy_current_state] )
+				{
+				(yy_last_accepting_state) = yy_current_state;
+				(yy_last_accepting_cpos) = yy_cp;
+				}
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
@@ -908,139 +852,125 @@ yy_match:
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-			*(yy_state_ptr)++ = yy_current_state;
 			++yy_cp;
 			}
 		while ( yy_base[yy_current_state] != 196 );
 
 yy_find_action:
-		yy_current_state = *--(yy_state_ptr);
-		(yy_lp) = yy_accept[yy_current_state];
-find_rule: /* we branch to this label when backing up */
-		for ( ; ; ) /* until we find what rule we matched */
-			{
-			if ( (yy_lp) && (yy_lp) < yy_accept[yy_current_state + 1] )
-				{
-				yy_act = yy_acclist[(yy_lp)];
-					{
-					(yy_full_match) = yy_cp;
-					break;
-					}
-				}
-			--yy_cp;
-			yy_current_state = *--(yy_state_ptr);
-			(yy_lp) = yy_accept[yy_current_state];
+		yy_act = yy_accept[yy_current_state];
+		if ( yy_act == 0 )
+			{ /* have to back up */
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			yy_act = yy_accept[yy_current_state];
 			}
 
 		YY_DO_BEFORE_ACTION;
-
-		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
-			{
-			int yyl;
-			for ( yyl = (yy_prev_more_offset); yyl < __libipsecyyleng; ++yyl )
-				if ( __libipsecyytext[yyl] == '\n' )
-					   
-    __libipsecyylineno++;
-;
-			}
 
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
 	{ /* beginning of action switch */
+			case 0: /* must back up */
+			/* undo the effects of YY_DO_BEFORE_ACTION */
+			*yy_cp = (yy_hold_char);
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			goto yy_find_action;
+
 case 1:
 YY_RULE_SETUP
-#line 93 "freebsd/lib/libipsec/policy_token.l"
+#line 89 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_DIR_INBOUND; return(DIR); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 94 "freebsd/lib/libipsec/policy_token.l"
+#line 90 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_DIR_OUTBOUND; return(DIR); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 96 "freebsd/lib/libipsec/policy_token.l"
+#line 92 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_DISCARD; return(ACTION); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 97 "freebsd/lib/libipsec/policy_token.l"
+#line 93 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_NONE; return(ACTION); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 98 "freebsd/lib/libipsec/policy_token.l"
+#line 94 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_IPSEC; return(ACTION); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 99 "freebsd/lib/libipsec/policy_token.l"
+#line 95 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_BYPASS; return(ACTION); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 100 "freebsd/lib/libipsec/policy_token.l"
+#line 96 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_ENTRUST; return(ACTION); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 102 "freebsd/lib/libipsec/policy_token.l"
+#line 98 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPPROTO_ESP; return(PROTOCOL); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 103 "freebsd/lib/libipsec/policy_token.l"
+#line 99 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPPROTO_AH; return(PROTOCOL); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 104 "freebsd/lib/libipsec/policy_token.l"
+#line 100 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPPROTO_IPCOMP; return(PROTOCOL); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 105 "freebsd/lib/libipsec/policy_token.l"
+#line 101 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPPROTO_TCP; return(PROTOCOL); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 107 "freebsd/lib/libipsec/policy_token.l"
+#line 103 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_MODE_TRANSPORT; return(MODE); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 108 "freebsd/lib/libipsec/policy_token.l"
+#line 104 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_MODE_TUNNEL; return(MODE); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 110 "freebsd/lib/libipsec/policy_token.l"
+#line 106 "../../freebsd/lib/libipsec/policy_token.l"
 { return(ME); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 111 "freebsd/lib/libipsec/policy_token.l"
+#line 107 "../../freebsd/lib/libipsec/policy_token.l"
 { return(ANY); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 113 "freebsd/lib/libipsec/policy_token.l"
+#line 109 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_DEFAULT; return(LEVEL); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 114 "freebsd/lib/libipsec/policy_token.l"
+#line 110 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_USE; return(LEVEL); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 115 "freebsd/lib/libipsec/policy_token.l"
+#line 111 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_REQUIRE; return(LEVEL); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 116 "freebsd/lib/libipsec/policy_token.l"
+#line 112 "../../freebsd/lib/libipsec/policy_token.l"
 {
 			yylval.val.len = strlen(__libipsecyytext + 7);
 			yylval.val.buf = __libipsecyytext + 7;
@@ -1049,17 +979,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 121 "freebsd/lib/libipsec/policy_token.l"
+#line 117 "../../freebsd/lib/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_UNIQUE; return(LEVEL); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 122 "freebsd/lib/libipsec/policy_token.l"
+#line 118 "../../freebsd/lib/libipsec/policy_token.l"
 { return(SLASH); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 124 "freebsd/lib/libipsec/policy_token.l"
+#line 120 "../../freebsd/lib/libipsec/policy_token.l"
 {
 			yylval.val.len = strlen(__libipsecyytext);
 			yylval.val.buf = __libipsecyytext;
@@ -1068,28 +998,28 @@ YY_RULE_SETUP
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 130 "freebsd/lib/libipsec/policy_token.l"
+#line 126 "../../freebsd/lib/libipsec/policy_token.l"
 { return(HYPHEN); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 132 "freebsd/lib/libipsec/policy_token.l"
+#line 128 "../../freebsd/lib/libipsec/policy_token.l"
 { ; }
 	YY_BREAK
 case 25:
 /* rule 25 can match eol */
 YY_RULE_SETUP
-#line 133 "freebsd/lib/libipsec/policy_token.l"
+#line 129 "../../freebsd/lib/libipsec/policy_token.l"
 { ; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 135 "freebsd/lib/libipsec/policy_token.l"
+#line 131 "../../freebsd/lib/libipsec/policy_token.l"
 ECHO;
 	YY_BREAK
-#line 1091 "<stdout>"
-			case YY_STATE_EOF(INITIAL):
-				yyterminate();
+#line 1021 "<stdout>"
+case YY_STATE_EOF(INITIAL):
+	yyterminate();
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1229,9 +1159,9 @@ ECHO;
  */
 static int yy_get_next_buffer (void)
 {
-    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = (yytext_ptr);
-	register int number_to_move, i;
+    	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = (yytext_ptr);
+	int number_to_move, i;
 	int ret_val;
 
 	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
@@ -1279,8 +1209,37 @@ static int yy_get_next_buffer (void)
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
-			YY_FATAL_ERROR(
-"input buffer overflow, can't enlarge buffer because scanner uses REJECT" );
+			/* just a shorter name for the current buffer */
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
+
+			int yy_c_buf_p_offset =
+				(int) ((yy_c_buf_p) - b->yy_ch_buf);
+
+			if ( b->yy_is_our_buffer )
+				{
+				yy_size_t new_size = b->yy_buf_size * 2;
+
+				if ( new_size <= 0 )
+					b->yy_buf_size += b->yy_buf_size / 8;
+				else
+					b->yy_buf_size *= 2;
+
+				b->yy_ch_buf = (char *)
+					/* Include room in for 2 EOB chars. */
+					__libipsecyyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
+				}
+			else
+				/* Can't grow it, we don't own it. */
+				b->yy_ch_buf = 0;
+
+			if ( ! b->yy_ch_buf )
+				YY_FATAL_ERROR(
+				"fatal error - scanner input buffer overflow" );
+
+			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+
+			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+						number_to_move - 1;
 
 			}
 
@@ -1334,17 +1293,19 @@ static int yy_get_next_buffer (void)
 
     static yy_state_type yy_get_previous_state (void)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
+	yy_state_type yy_current_state;
+	char *yy_cp;
     
 	yy_current_state = (yy_start);
 
-	(yy_state_ptr) = (yy_state_buf);
-	*(yy_state_ptr)++ = yy_current_state;
-
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		if ( yy_accept[yy_current_state] )
+			{
+			(yy_last_accepting_state) = yy_current_state;
+			(yy_last_accepting_cpos) = yy_cp;
+			}
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
@@ -1352,7 +1313,6 @@ static int yy_get_next_buffer (void)
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-		*(yy_state_ptr)++ = yy_current_state;
 		}
 
 	return yy_current_state;
@@ -1365,9 +1325,15 @@ static int yy_get_next_buffer (void)
  */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
-	register int yy_is_jam;
-    
-	register YY_CHAR yy_c = 1;
+	int yy_is_jam;
+    	char *yy_cp = (yy_c_buf_p);
+
+	YY_CHAR yy_c = 1;
+	if ( yy_accept[yy_current_state] )
+		{
+		(yy_last_accepting_state) = yy_current_state;
+		(yy_last_accepting_cpos) = yy_cp;
+		}
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
@@ -1376,8 +1342,6 @@ static int yy_get_next_buffer (void)
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 98);
-	if ( ! yy_is_jam )
-		*(yy_state_ptr)++ = yy_current_state;
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1451,11 +1415,6 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve __libipsecyytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
-
-	if ( c == '\n' )
-		   
-    __libipsecyylineno++;
-;
 
 	return c;
 }
@@ -1785,7 +1744,7 @@ YY_BUFFER_STATE __libipsecyy_scan_bytes  (yyconst char * yybytes, yy_size_t  _yy
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
@@ -1923,20 +1882,12 @@ static int yy_init_globals (void)
      * This function is called from __libipsecyylex_destroy(), so don't allocate here.
      */
 
-    /* We do not touch __libipsecyylineno unless the option is enabled. */
-    __libipsecyylineno =  1;
-    
     (yy_buffer_stack) = 0;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
     (yy_c_buf_p) = (char *) 0;
     (yy_init) = 0;
     (yy_start) = 0;
-
-    (yy_state_buf) = 0;
-    (yy_state_ptr) = 0;
-    (yy_full_match) = 0;
-    (yy_lp) = 0;
 
 /* Defined in main.c */
 #ifdef YY_STDINIT
@@ -1968,9 +1919,6 @@ int __libipsecyylex_destroy  (void)
 	__libipsecyyfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
 
-    __libipsecyyfree ( (yy_state_buf) );
-    (yy_state_buf)  = NULL;
-
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * __libipsecyylex() is called, initialization will occur. */
     yy_init_globals( );
@@ -1985,7 +1933,7 @@ int __libipsecyylex_destroy  (void)
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 {
-	register int i;
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
@@ -1994,7 +1942,7 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen (yyconst char * s )
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -2026,7 +1974,7 @@ void __libipsecyyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 135 "freebsd/lib/libipsec/policy_token.l"
+#line 131 "../../freebsd/lib/libipsec/policy_token.l"
 
 
 

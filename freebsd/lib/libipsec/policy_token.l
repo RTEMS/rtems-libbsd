@@ -46,10 +46,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef __rtems__
-/* XXX - Jennifer doesn't know where to get this from */
-static YY_BUFFER_STATE yy_current_buffer;
-#endif /* __rtems__ */
 #include "y.tab.h"
 #define yylval __libipsecyylval	/* XXX */
 

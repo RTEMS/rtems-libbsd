@@ -34,6 +34,16 @@
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
 
+#if defined(__FreeBSD__)
+#ifndef __STDC_LIMIT_MACROS
+#define	__STDC_LIMIT_MACROS
+#endif
+#include <sys/cdefs.h>
+#include <stdint.h>
+#else
+#define	__dead2
+#endif
+
 /* begin standard C headers. */
 #include <stdio.h>
 #include <string.h>
@@ -49,7 +59,8 @@
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#if defined(__FreeBSD__) || \
+    (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
 
 /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
  * if you want the limit (max/min) macros for int types. 
@@ -295,6 +306,7 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 #define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
                           ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
                           : NULL)
+#define yy_current_buffer YY_CURRENT_BUFFER
 
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
@@ -370,17 +382,17 @@ FILE *_nsyyin = (FILE *) 0, *_nsyyout = (FILE *) 0;
 
 typedef int yy_state_type;
 
-#define YY_FLEX_LEX_COMPAT
 extern int _nsyylineno;
 
 int _nsyylineno = 1;
 
-extern char _nsyytext[];
+extern char *_nsyytext;
+#define yytext_ptr _nsyytext
 
 static yy_state_type yy_get_previous_state (void );
 static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
 static int yy_get_next_buffer (void );
-static void yy_fatal_error (yyconst char msg[]  );
+static void yy_fatal_error (yyconst char msg[]  ) __dead2;
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up _nsyytext.
@@ -390,12 +402,6 @@ static void yy_fatal_error (yyconst char msg[]  );
 	_nsyyleng = (size_t) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
-	if ( _nsyyleng + (yy_more_offset) >= YYLMAX ) \
-		YY_FATAL_ERROR( "token too large, exceeds YYLMAX" ); \
-	yy_flex_strncpy( &_nsyytext[(yy_more_offset)], (yytext_ptr), _nsyyleng + 1 ); \
-	_nsyyleng += (yy_more_offset); \
-	(yy_prev_more_offset) = (yy_more_offset); \
-	(yy_more_offset) = 0; \
 	(yy_c_buf_p) = yy_cp;
 
 #define YY_NUM_RULES 13
@@ -407,27 +413,14 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_acclist[83] =
+static yyconst flex_int16_t yy_accept[59] =
     {   0,
-       14,   12,   13,    1,   12,   13,    4,   13,    2,   12,
-       13,   11,   12,   13,   11,   12,   13,   11,   12,   13,
-       11,   12,   13,   11,   12,   13,   11,   12,   13,   11,
-       12,   13,   12,   13,    1,    2,   11,   11,   11,   11,
-       11,   11,   11,    3,   11,   11,   11,   11,   11,   11,
+        0,    0,   14,   12,    1,    4,    2,   11,   11,   11,
+       11,   11,   11,   11,   12,    1,    2,   11,   11,   11,
+       11,   11,   11,   11,    3,   11,   11,   11,   11,   11,
        11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
-       11,   11,   11,   11,    9,   11,   11,   11,   11,   11,
-       11,    5,   11,   11,    6,   11,   10,   11,    7,   11,
-        8,   11
-    } ;
-
-static yyconst flex_int16_t yy_accept[60] =
-    {   0,
-        1,    1,    1,    2,    4,    7,    9,   12,   15,   18,
-       21,   24,   27,   30,   33,   35,   36,   37,   38,   39,
-       40,   41,   42,   43,   44,   45,   46,   47,   48,   49,
-       50,   51,   52,   53,   54,   55,   56,   57,   58,   59,
-       60,   61,   62,   63,   64,   65,   67,   68,   69,   70,
-       71,   72,   74,   75,   77,   79,   81,   83,   83
+       11,   11,   11,   11,   11,    9,   11,   11,   11,   11,
+       11,    5,   11,    6,   10,    7,    8,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -524,38 +517,22 @@ static yyconst flex_int32_t yy_rule_can_match_eol[14] =
     {   0,
 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,     };
 
+static yy_state_type yy_last_accepting_state;
+static char *yy_last_accepting_cpos;
+
 extern int _nsyy_flex_debug;
 int _nsyy_flex_debug = 0;
 
-static yy_state_type *yy_state_buf=0, *yy_state_ptr=0;
-static char *yy_full_match;
-static int yy_lp;
-#define REJECT \
-{ \
-*yy_cp = (yy_hold_char); /* undo effects of setting up _nsyytext */ \
-yy_cp = (yy_full_match); /* restore poss. backed-over text */ \
-++(yy_lp); \
-goto find_rule; \
-}
-
-static int yy_more_offset = 0;
-static int yy_prev_more_offset = 0;
-#define yymore() ((yy_more_offset) = yy_flex_strlen( _nsyytext ))
-#define YY_NEED_STRLEN
+/* The intent behind this definition is that it'll catch
+ * any uses of REJECT which flex missed.
+ */
+#define REJECT reject_used_but_not_detected
+#define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
-#define YY_RESTORE_YY_MORE_OFFSET \
-	{ \
-	(yy_more_offset) = (yy_prev_more_offset); \
-	_nsyyleng -= (yy_more_offset); \
-	}
-#ifndef YYLMAX
-#define YYLMAX 8192
-#endif
-
-char _nsyytext[YYLMAX];
-char *yytext_ptr;
-#line 1 "freebsd/lib/libc/net/nslexer.l"
-#line 2 "freebsd/lib/libc/net/nslexer.l"
+#define YY_RESTORE_YY_MORE_OFFSET
+char *_nsyytext;
+#line 1 "../../freebsd/lib/libc/net/nslexer.l"
+#line 2 "../../freebsd/lib/libc/net/nslexer.l"
 /*	$NetBSD: nslexer.l,v 1.3 1999/01/25 00:16:17 lukem Exp $	*/
 
 /*-
@@ -611,7 +588,7 @@ static char *rcsid =
 #include "nsparser.h"
 
 #define YY_NO_INPUT 1
-#line 615 "<stdout>"
+#line 592 "<stdout>"
 
 #define INITIAL 0
 
@@ -787,14 +764,14 @@ extern int _nsyylex (void);
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
     
-#line 66 "freebsd/lib/libc/net/nslexer.l"
+#line 66 "../../freebsd/lib/libc/net/nslexer.l"
 
 
-#line 798 "<stdout>"
+#line 775 "<stdout>"
 
 	if ( !(yy_init) )
 		{
@@ -803,12 +780,6 @@ YY_DECL
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
-
-        /* Create the reject buffer large enough to save one state per allowed character. */
-        if ( ! (yy_state_buf) )
-            (yy_state_buf) = (yy_state_type *)_nsyyalloc(YY_STATE_BUF_SIZE  );
-            if ( ! (yy_state_buf) )
-                YY_FATAL_ERROR( "out of dynamic memory in _nsyylex()" );
 
 		if ( ! (yy_start) )
 			(yy_start) = 1;	/* first start state */
@@ -841,14 +812,15 @@ YY_DECL
 		yy_bp = yy_cp;
 
 		yy_current_state = (yy_start);
-
-		(yy_state_ptr) = (yy_state_buf);
-		*(yy_state_ptr)++ = yy_current_state;
-
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
+			if ( yy_accept[yy_current_state] )
+				{
+				(yy_last_accepting_state) = yy_current_state;
+				(yy_last_accepting_cpos) = yy_cp;
+				}
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
@@ -856,36 +828,25 @@ yy_match:
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-			*(yy_state_ptr)++ = yy_current_state;
 			++yy_cp;
 			}
 		while ( yy_base[yy_current_state] != 69 );
 
 yy_find_action:
-		yy_current_state = *--(yy_state_ptr);
-		(yy_lp) = yy_accept[yy_current_state];
-find_rule: /* we branch to this label when backing up */
-		for ( ; ; ) /* until we find what rule we matched */
-			{
-			if ( (yy_lp) && (yy_lp) < yy_accept[yy_current_state + 1] )
-				{
-				yy_act = yy_acclist[(yy_lp)];
-					{
-					(yy_full_match) = yy_cp;
-					break;
-					}
-				}
-			--yy_cp;
-			yy_current_state = *--(yy_state_ptr);
-			(yy_lp) = yy_accept[yy_current_state];
+		yy_act = yy_accept[yy_current_state];
+		if ( yy_act == 0 )
+			{ /* have to back up */
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			yy_act = yy_accept[yy_current_state];
 			}
 
 		YY_DO_BEFORE_ACTION;
 
 		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
 			{
-			int yyl;
-			for ( yyl = (yy_prev_more_offset); yyl < _nsyyleng; ++yyl )
+			yy_size_t yyl;
+			for ( yyl = 0; yyl < _nsyyleng; ++yyl )
 				if ( _nsyytext[yyl] == '\n' )
 					   
     _nsyylineno++;
@@ -896,61 +857,68 @@ do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
 	{ /* beginning of action switch */
+			case 0: /* must back up */
+			/* undo the effects of YY_DO_BEFORE_ACTION */
+			*yy_cp = (yy_hold_char);
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			goto yy_find_action;
+
 case 1:
 YY_RULE_SETUP
-#line 68 "freebsd/lib/libc/net/nslexer.l"
+#line 68 "../../freebsd/lib/libc/net/nslexer.l"
 ;			/* skip whitespace */
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 70 "freebsd/lib/libc/net/nslexer.l"
+#line 70 "../../freebsd/lib/libc/net/nslexer.l"
 ;			/* skip comments */
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 72 "freebsd/lib/libc/net/nslexer.l"
+#line 72 "../../freebsd/lib/libc/net/nslexer.l"
 ;			/* allow continuation */
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 74 "freebsd/lib/libc/net/nslexer.l"
+#line 74 "../../freebsd/lib/libc/net/nslexer.l"
 return NL;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 76 "freebsd/lib/libc/net/nslexer.l"
+#line 76 "../../freebsd/lib/libc/net/nslexer.l"
 return SUCCESS;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 77 "freebsd/lib/libc/net/nslexer.l"
+#line 77 "../../freebsd/lib/libc/net/nslexer.l"
 return UNAVAIL;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 78 "freebsd/lib/libc/net/nslexer.l"
+#line 78 "../../freebsd/lib/libc/net/nslexer.l"
 return NOTFOUND;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 79 "freebsd/lib/libc/net/nslexer.l"
+#line 79 "../../freebsd/lib/libc/net/nslexer.l"
 return TRYAGAIN;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 81 "freebsd/lib/libc/net/nslexer.l"
+#line 81 "../../freebsd/lib/libc/net/nslexer.l"
 return RETURN;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 82 "freebsd/lib/libc/net/nslexer.l"
+#line 82 "../../freebsd/lib/libc/net/nslexer.l"
 return CONTINUE;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 84 "freebsd/lib/libc/net/nslexer.l"
+#line 84 "../../freebsd/lib/libc/net/nslexer.l"
 {
 			char *p;
 			int i;
@@ -970,17 +938,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 101 "freebsd/lib/libc/net/nslexer.l"
+#line 101 "../../freebsd/lib/libc/net/nslexer.l"
 return _nsyytext[0];
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 103 "freebsd/lib/libc/net/nslexer.l"
+#line 103 "../../freebsd/lib/libc/net/nslexer.l"
 ECHO;
 	YY_BREAK
-#line 982 "<stdout>"
-			case YY_STATE_EOF(INITIAL):
-				yyterminate();
+#line 950 "<stdout>"
+case YY_STATE_EOF(INITIAL):
+	yyterminate();
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1120,9 +1088,9 @@ ECHO;
  */
 static int yy_get_next_buffer (void)
 {
-    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = (yytext_ptr);
-	register int number_to_move, i;
+    	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = (yytext_ptr);
+	int number_to_move, i;
 	int ret_val;
 
 	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
@@ -1170,8 +1138,37 @@ static int yy_get_next_buffer (void)
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
-			YY_FATAL_ERROR(
-"input buffer overflow, can't enlarge buffer because scanner uses REJECT" );
+			/* just a shorter name for the current buffer */
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
+
+			int yy_c_buf_p_offset =
+				(int) ((yy_c_buf_p) - b->yy_ch_buf);
+
+			if ( b->yy_is_our_buffer )
+				{
+				yy_size_t new_size = b->yy_buf_size * 2;
+
+				if ( new_size <= 0 )
+					b->yy_buf_size += b->yy_buf_size / 8;
+				else
+					b->yy_buf_size *= 2;
+
+				b->yy_ch_buf = (char *)
+					/* Include room in for 2 EOB chars. */
+					_nsyyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
+				}
+			else
+				/* Can't grow it, we don't own it. */
+				b->yy_ch_buf = 0;
+
+			if ( ! b->yy_ch_buf )
+				YY_FATAL_ERROR(
+				"fatal error - scanner input buffer overflow" );
+
+			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+
+			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+						number_to_move - 1;
 
 			}
 
@@ -1225,17 +1222,19 @@ static int yy_get_next_buffer (void)
 
     static yy_state_type yy_get_previous_state (void)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
+	yy_state_type yy_current_state;
+	char *yy_cp;
     
 	yy_current_state = (yy_start);
 
-	(yy_state_ptr) = (yy_state_buf);
-	*(yy_state_ptr)++ = yy_current_state;
-
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		if ( yy_accept[yy_current_state] )
+			{
+			(yy_last_accepting_state) = yy_current_state;
+			(yy_last_accepting_cpos) = yy_cp;
+			}
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
@@ -1243,7 +1242,6 @@ static int yy_get_next_buffer (void)
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-		*(yy_state_ptr)++ = yy_current_state;
 		}
 
 	return yy_current_state;
@@ -1256,9 +1254,15 @@ static int yy_get_next_buffer (void)
  */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
-	register int yy_is_jam;
-    
-	register YY_CHAR yy_c = 1;
+	int yy_is_jam;
+    	char *yy_cp = (yy_c_buf_p);
+
+	YY_CHAR yy_c = 1;
+	if ( yy_accept[yy_current_state] )
+		{
+		(yy_last_accepting_state) = yy_current_state;
+		(yy_last_accepting_cpos) = yy_cp;
+		}
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
@@ -1267,8 +1271,6 @@ static int yy_get_next_buffer (void)
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 58);
-	if ( ! yy_is_jam )
-		*(yy_state_ptr)++ = yy_current_state;
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1676,7 +1678,7 @@ YY_BUFFER_STATE _nsyy_scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_l
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
@@ -1824,11 +1826,6 @@ static int yy_init_globals (void)
     (yy_init) = 0;
     (yy_start) = 0;
 
-    (yy_state_buf) = 0;
-    (yy_state_ptr) = 0;
-    (yy_full_match) = 0;
-    (yy_lp) = 0;
-
 /* Defined in main.c */
 #ifdef YY_STDINIT
     _nsyyin = stdin;
@@ -1859,9 +1856,6 @@ int _nsyylex_destroy  (void)
 	_nsyyfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
 
-    _nsyyfree ( (yy_state_buf) );
-    (yy_state_buf)  = NULL;
-
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * _nsyylex() is called, initialization will occur. */
     yy_init_globals( );
@@ -1876,7 +1870,7 @@ int _nsyylex_destroy  (void)
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 {
-	register int i;
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
@@ -1885,7 +1879,7 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen (yyconst char * s )
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -1917,7 +1911,7 @@ void _nsyyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 103 "freebsd/lib/libc/net/nslexer.l"
+#line 103 "../../freebsd/lib/libc/net/nslexer.l"
 
 
 

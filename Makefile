@@ -27,6 +27,7 @@ COMMON_FLAGS += -ImDNSResponder/mDNSCore
 COMMON_FLAGS += -ImDNSResponder/mDNSShared
 COMMON_FLAGS += -ImDNSResponder/mDNSPosix
 COMMON_FLAGS += -Itestsuite/include
+COMMON_FLAGS += -DHAVE_RTEMS_PCI_H=1
 COMMON_FLAGS += -Wall
 COMMON_FLAGS += -Wno-format
 COMMON_FLAGS += -MT $@ -MD -MP -MF $(basename $@).d

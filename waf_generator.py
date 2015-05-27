@@ -242,6 +242,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('')
         self.add('def bsp_configure(conf, arch_bsp):')
         self.add('    conf.check(header_name = "dlfcn.h", features = "c")')
+        self.add('    conf.check(header_name = "rtems/pci.h", features = "c", mandatory = False)')
         self.add('')
         self.add('def configure(conf):')
         self.add('    if conf.options.auto_regen:')

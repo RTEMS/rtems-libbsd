@@ -49,11 +49,12 @@ __FBSDID("$FreeBSD$");
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 #define pci_find_device rtems_pci_find_device
+#if HAVE_RTEMS_PCI_H
 #include <rtems/pci.h>
+#endif
 
-
-/* 
- * Initialise access to PCI configuration space 
+/*
+ * Initialise access to PCI configuration space
  */
 int
 pci_cfgregopen(void)
@@ -61,12 +62,13 @@ pci_cfgregopen(void)
   return(1);
 }
 
-/* 
+/*
  * Read configuration space register
  */
 u_int32_t
 pci_cfgregread(int bus, int slot, int func, int reg, int bytes)
 {
+#if HAVE_RTEMS_PCI_H
   u_int32_t value;
   uint8_t   v8;
   uint16_t  v16;
@@ -89,14 +91,18 @@ pci_cfgregread(int bus, int slot, int func, int reg, int bytes)
   }
 
   return value;
+#else
+  return 0;
+#endif
 }
 
-/* 
- * Write configuration space register 
+/*
+ * Write configuration space register
  */
 void
 pci_cfgregwrite(int bus, int slot, int func, int reg, u_int32_t data, int bytes)
 {
+#if HAVE_RTEMS_PCI_H
   uint8_t   v8  = data & 0xff;
   uint16_t  v16 = data & 0xffff;
   uint32_t  v32 = data;
@@ -112,4 +118,5 @@ pci_cfgregwrite(int bus, int slot, int func, int reg, u_int32_t data, int bytes)
       pci_write_config_dword( bus, slot, func, reg, v32 );
       break;
   }
+#endif
 }

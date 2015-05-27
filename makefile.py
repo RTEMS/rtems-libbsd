@@ -191,6 +191,7 @@ class ModuleManager(builder.ModuleManager):
                'COMMON_FLAGS += -ImDNSResponder/mDNSShared\n' \
                'COMMON_FLAGS += -ImDNSResponder/mDNSPosix\n' \
                'COMMON_FLAGS += -Itestsuite/include\n' \
+               'COMMON_FLAGS += -DHAVE_RTEMS_PCI_H=1\n' \
                'COMMON_FLAGS += -Wall\n' \
                'COMMON_FLAGS += -Wno-format\n' \
                'COMMON_FLAGS += -MT $@ -MD -MP -MF $(basename $@).d\n' \

@@ -52,21 +52,27 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/pcib_if.h>
 #define pci_find_device rtems_pci_find_device
+#if HAVE_RTEMS_PCI_H
 #include <rtems/pci.h>
+#endif
 #include <machine/bus.h>
 
 int
 pcibios_pcib_route_interrupt(device_t pcib, device_t dev, int pin)
 {
+#if HAVE_RTEMS_PCI_H
   int     bus;
   int     slot;
   int     func;
   uint8_t irq;
- 
+
   bus  = pci_get_bus(dev);
   slot = pci_get_slot(dev);
   func = pci_get_function(dev);
 
   pci_read_config_byte(bus, slot, func, PCI_INTERRUPT_LINE, &irq);
   return irq;
+#else
+  return 0;
+#endif
 }

@@ -37,6 +37,7 @@ def options(opt):
 
 def bsp_configure(conf, arch_bsp):
     conf.check(header_name = "dlfcn.h", features = "c")
+    conf.check(header_name = "rtems/pci.h", features = "c", mandatory = False)
 
 def configure(conf):
     if conf.options.auto_regen:

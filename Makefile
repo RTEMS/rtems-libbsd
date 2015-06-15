@@ -107,6 +107,58 @@ LIB_C_FILES += freebsd/sys/vm/uma_core.c
 LIB_C_FILES += freebsd/sys/vm/uma_dbg.c
 LIB_C_FILES += freebsd/sys/cam/cam.c
 LIB_C_FILES += freebsd/sys/cam/scsi/scsi_all.c
+LIB_C_FILES += freebsd/contrib/libpcap/scanner.c
+freebsd/contrib/libpcap/scanner.c: freebsd/contrib/libpcap/scanner.l freebsd/contrib/libpcap/scanner.c
+	${LEX} -P pcap -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
+freebsd/contrib/libpcap/scanner.o: freebsd/contrib/libpcap/scanner.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -DNEED_YYPARSE_WRAPPER=1 -Dyylval=pcap_lval -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/grammar.c
+freebsd/contrib/libpcap/grammar.c: freebsd/contrib/libpcap/grammar.y
+	yacc -b -b pcap -d -p -b pcap $<
+	sed -e /YY_BUF_SIZE/s/16384/1024/ < -b pcap.tab.c > $@
+	rm -f -b pcap.tab.c
+	mv -b pcap.tab.h freebsd/contrib/libpcap/tokdefs.h
+freebsd/contrib/libpcap/grammar.o: freebsd/contrib/libpcap/grammar.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -DNEED_YYPARSE_WRAPPER=1 -Dyylval=pcap_lval -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/bpf_image.c
+freebsd/contrib/libpcap/bpf_image.o: freebsd/contrib/libpcap/bpf_image.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/etherent.c
+freebsd/contrib/libpcap/etherent.o: freebsd/contrib/libpcap/etherent.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/fad-getad.c
+freebsd/contrib/libpcap/fad-getad.o: freebsd/contrib/libpcap/fad-getad.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/gencode.c
+freebsd/contrib/libpcap/gencode.o: freebsd/contrib/libpcap/gencode.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/inet.c
+freebsd/contrib/libpcap/inet.o: freebsd/contrib/libpcap/inet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/pcap.c
+freebsd/contrib/libpcap/pcap.o: freebsd/contrib/libpcap/pcap.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/pcap-bpf.c
+freebsd/contrib/libpcap/pcap-bpf.o: freebsd/contrib/libpcap/pcap-bpf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/pcap-common.c
+freebsd/contrib/libpcap/pcap-common.o: freebsd/contrib/libpcap/pcap-common.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/optimize.c
+freebsd/contrib/libpcap/optimize.o: freebsd/contrib/libpcap/optimize.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/nametoaddr.c
+freebsd/contrib/libpcap/nametoaddr.o: freebsd/contrib/libpcap/nametoaddr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/savefile.c
+freebsd/contrib/libpcap/savefile.o: freebsd/contrib/libpcap/savefile.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/sf-pcap.c
+freebsd/contrib/libpcap/sf-pcap.o: freebsd/contrib/libpcap/sf-pcap.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/libpcap/sf-pcap-ng.c
+freebsd/contrib/libpcap/sf-pcap-ng.o: freebsd/contrib/libpcap/sf-pcap-ng.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -D_U_=__attribute__((unused)) -DHAVE_INTTYPES=1 -DHAVE_STDINT=1 -DHAVE_STRERROR=1 -DHAVE_STRLCPY=1 -DHAVE_SNPRINTF=1 -DHAVE_VSNPRINTF=1 -c $< -o $@
 LIB_C_FILES += freebsd/sys/crypto/sha1.c
 LIB_C_FILES += freebsd/sys/crypto/sha2/sha2.c
 LIB_C_FILES += freebsd/sys/crypto/rijndael/rijndael-alg-fst.c
@@ -684,19 +736,19 @@ freebsd/lib/libc/net/nslexer.c: freebsd/lib/libc/net/nslexer.l freebsd/lib/libc/
 	${LEX} -P _nsyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
 LIB_C_FILES += freebsd/lib/libc/net/nsparser.c
 freebsd/lib/libc/net/nsparser.c: freebsd/lib/libc/net/nsparser.y
-	yacc -b _nsyy -d -p _nsyy $<
-	sed -e /YY_BUF_SIZE/s/16384/1024/ < _nsyy.tab.c > $@
-	rm -f _nsyy.tab.c
-	mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h
+	yacc -b -b _nsyy -d -p -b _nsyy $<
+	sed -e /YY_BUF_SIZE/s/16384/1024/ < -b _nsyy.tab.c > $@
+	rm -f -b _nsyy.tab.c
+	mv -b _nsyy.tab.h freebsd/lib/libc/net/nsparser.h
 LIB_C_FILES += freebsd/lib/libipsec/policy_token.c
 freebsd/lib/libipsec/policy_token.c: freebsd/lib/libipsec/policy_token.l freebsd/lib/libipsec/policy_parse.c
 	${LEX} -P __libipsecyy -t $< | sed -e '/YY_BUF_SIZE/s/16384/1024/' > $@
 LIB_C_FILES += freebsd/lib/libipsec/policy_parse.c
 freebsd/lib/libipsec/policy_parse.c: freebsd/lib/libipsec/policy_parse.y
-	yacc -b __libipsecyy -d -p __libipsecyy $<
-	sed -e /YY_BUF_SIZE/s/16384/1024/ < __libipsecyy.tab.c > $@
-	rm -f __libipsecyy.tab.c
-	mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
+	yacc -b -b __libipsecyy -d -p -b __libipsecyy $<
+	sed -e /YY_BUF_SIZE/s/16384/1024/ < -b __libipsecyy.tab.c > $@
+	rm -f -b __libipsecyy.tab.c
+	mv -b __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h
 
 TEST_FOOBARCLIENT = testsuite/foobarclient/foobarclient.exe
 TEST_FOOBARCLIENT_O_FILES =
@@ -1536,6 +1588,435 @@ freebsd/usr.bin/netstat/sctp.o: freebsd/usr.bin/netstat/sctp.c
 LIB_C_FILES += freebsd/usr.bin/netstat/unix.c
 freebsd/usr.bin/netstat/unix.o: freebsd/usr.bin/netstat/unix.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DINET6 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/addrtoname.c
+freebsd/contrib/tcpdump/addrtoname.o: freebsd/contrib/tcpdump/addrtoname.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/af.c
+freebsd/contrib/tcpdump/af.o: freebsd/contrib/tcpdump/af.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/bpf_dump.c
+freebsd/contrib/tcpdump/bpf_dump.o: freebsd/contrib/tcpdump/bpf_dump.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/checksum.c
+freebsd/contrib/tcpdump/checksum.o: freebsd/contrib/tcpdump/checksum.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/cpack.c
+freebsd/contrib/tcpdump/cpack.o: freebsd/contrib/tcpdump/cpack.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/gmpls.c
+freebsd/contrib/tcpdump/gmpls.o: freebsd/contrib/tcpdump/gmpls.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/gmt2local.c
+freebsd/contrib/tcpdump/gmt2local.o: freebsd/contrib/tcpdump/gmt2local.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/in_cksum.c
+freebsd/contrib/tcpdump/in_cksum.o: freebsd/contrib/tcpdump/in_cksum.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/ipproto.c
+freebsd/contrib/tcpdump/ipproto.o: freebsd/contrib/tcpdump/ipproto.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/machdep.c
+freebsd/contrib/tcpdump/machdep.o: freebsd/contrib/tcpdump/machdep.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/nlpid.c
+freebsd/contrib/tcpdump/nlpid.o: freebsd/contrib/tcpdump/nlpid.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/l2vpn.c
+freebsd/contrib/tcpdump/l2vpn.o: freebsd/contrib/tcpdump/l2vpn.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/oui.c
+freebsd/contrib/tcpdump/oui.o: freebsd/contrib/tcpdump/oui.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/parsenfsfh.c
+freebsd/contrib/tcpdump/parsenfsfh.o: freebsd/contrib/tcpdump/parsenfsfh.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-802_11.c
+freebsd/contrib/tcpdump/print-802_11.o: freebsd/contrib/tcpdump/print-802_11.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-802_15_4.c
+freebsd/contrib/tcpdump/print-802_15_4.o: freebsd/contrib/tcpdump/print-802_15_4.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ah.c
+freebsd/contrib/tcpdump/print-ah.o: freebsd/contrib/tcpdump/print-ah.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-aodv.c
+freebsd/contrib/tcpdump/print-aodv.o: freebsd/contrib/tcpdump/print-aodv.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ap1394.c
+freebsd/contrib/tcpdump/print-ap1394.o: freebsd/contrib/tcpdump/print-ap1394.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-arcnet.c
+freebsd/contrib/tcpdump/print-arcnet.o: freebsd/contrib/tcpdump/print-arcnet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-arp.c
+freebsd/contrib/tcpdump/print-arp.o: freebsd/contrib/tcpdump/print-arp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ascii.c
+freebsd/contrib/tcpdump/print-ascii.o: freebsd/contrib/tcpdump/print-ascii.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-atalk.c
+freebsd/contrib/tcpdump/print-atalk.o: freebsd/contrib/tcpdump/print-atalk.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-atm.c
+freebsd/contrib/tcpdump/print-atm.o: freebsd/contrib/tcpdump/print-atm.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-babel.c
+freebsd/contrib/tcpdump/print-babel.o: freebsd/contrib/tcpdump/print-babel.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-beep.c
+freebsd/contrib/tcpdump/print-beep.o: freebsd/contrib/tcpdump/print-beep.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-bfd.c
+freebsd/contrib/tcpdump/print-bfd.o: freebsd/contrib/tcpdump/print-bfd.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-bgp.c
+freebsd/contrib/tcpdump/print-bgp.o: freebsd/contrib/tcpdump/print-bgp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-bootp.c
+freebsd/contrib/tcpdump/print-bootp.o: freebsd/contrib/tcpdump/print-bootp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-bt.c
+freebsd/contrib/tcpdump/print-bt.o: freebsd/contrib/tcpdump/print-bt.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-carp.c
+freebsd/contrib/tcpdump/print-carp.o: freebsd/contrib/tcpdump/print-carp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-cdp.c
+freebsd/contrib/tcpdump/print-cdp.o: freebsd/contrib/tcpdump/print-cdp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-cfm.c
+freebsd/contrib/tcpdump/print-cfm.o: freebsd/contrib/tcpdump/print-cfm.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-chdlc.c
+freebsd/contrib/tcpdump/print-chdlc.o: freebsd/contrib/tcpdump/print-chdlc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-cip.c
+freebsd/contrib/tcpdump/print-cip.o: freebsd/contrib/tcpdump/print-cip.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-cnfp.c
+freebsd/contrib/tcpdump/print-cnfp.o: freebsd/contrib/tcpdump/print-cnfp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-dccp.c
+freebsd/contrib/tcpdump/print-dccp.o: freebsd/contrib/tcpdump/print-dccp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-decnet.c
+freebsd/contrib/tcpdump/print-decnet.o: freebsd/contrib/tcpdump/print-decnet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-dhcp6.c
+freebsd/contrib/tcpdump/print-dhcp6.o: freebsd/contrib/tcpdump/print-dhcp6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-domain.c
+freebsd/contrib/tcpdump/print-domain.o: freebsd/contrib/tcpdump/print-domain.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-dtp.c
+freebsd/contrib/tcpdump/print-dtp.o: freebsd/contrib/tcpdump/print-dtp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-dvmrp.c
+freebsd/contrib/tcpdump/print-dvmrp.o: freebsd/contrib/tcpdump/print-dvmrp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-eap.c
+freebsd/contrib/tcpdump/print-eap.o: freebsd/contrib/tcpdump/print-eap.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-egp.c
+freebsd/contrib/tcpdump/print-egp.o: freebsd/contrib/tcpdump/print-egp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-eigrp.c
+freebsd/contrib/tcpdump/print-eigrp.o: freebsd/contrib/tcpdump/print-eigrp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-enc.c
+freebsd/contrib/tcpdump/print-enc.o: freebsd/contrib/tcpdump/print-enc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-esp.c
+freebsd/contrib/tcpdump/print-esp.o: freebsd/contrib/tcpdump/print-esp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ether.c
+freebsd/contrib/tcpdump/print-ether.o: freebsd/contrib/tcpdump/print-ether.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-fddi.c
+freebsd/contrib/tcpdump/print-fddi.o: freebsd/contrib/tcpdump/print-fddi.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-forces.c
+freebsd/contrib/tcpdump/print-forces.o: freebsd/contrib/tcpdump/print-forces.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-fr.c
+freebsd/contrib/tcpdump/print-fr.o: freebsd/contrib/tcpdump/print-fr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-frag6.c
+freebsd/contrib/tcpdump/print-frag6.o: freebsd/contrib/tcpdump/print-frag6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-gre.c
+freebsd/contrib/tcpdump/print-gre.o: freebsd/contrib/tcpdump/print-gre.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-hsrp.c
+freebsd/contrib/tcpdump/print-hsrp.o: freebsd/contrib/tcpdump/print-hsrp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-icmp.c
+freebsd/contrib/tcpdump/print-icmp.o: freebsd/contrib/tcpdump/print-icmp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-icmp6.c
+freebsd/contrib/tcpdump/print-icmp6.o: freebsd/contrib/tcpdump/print-icmp6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-igmp.c
+freebsd/contrib/tcpdump/print-igmp.o: freebsd/contrib/tcpdump/print-igmp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-igrp.c
+freebsd/contrib/tcpdump/print-igrp.o: freebsd/contrib/tcpdump/print-igrp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ip.c
+freebsd/contrib/tcpdump/print-ip.o: freebsd/contrib/tcpdump/print-ip.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ip6.c
+freebsd/contrib/tcpdump/print-ip6.o: freebsd/contrib/tcpdump/print-ip6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ip6opts.c
+freebsd/contrib/tcpdump/print-ip6opts.o: freebsd/contrib/tcpdump/print-ip6opts.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ipcomp.c
+freebsd/contrib/tcpdump/print-ipcomp.o: freebsd/contrib/tcpdump/print-ipcomp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ipfc.c
+freebsd/contrib/tcpdump/print-ipfc.o: freebsd/contrib/tcpdump/print-ipfc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ipnet.c
+freebsd/contrib/tcpdump/print-ipnet.o: freebsd/contrib/tcpdump/print-ipnet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ipx.c
+freebsd/contrib/tcpdump/print-ipx.o: freebsd/contrib/tcpdump/print-ipx.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-isakmp.c
+freebsd/contrib/tcpdump/print-isakmp.o: freebsd/contrib/tcpdump/print-isakmp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-isoclns.c
+freebsd/contrib/tcpdump/print-isoclns.o: freebsd/contrib/tcpdump/print-isoclns.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-juniper.c
+freebsd/contrib/tcpdump/print-juniper.o: freebsd/contrib/tcpdump/print-juniper.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-krb.c
+freebsd/contrib/tcpdump/print-krb.o: freebsd/contrib/tcpdump/print-krb.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-l2tp.c
+freebsd/contrib/tcpdump/print-l2tp.o: freebsd/contrib/tcpdump/print-l2tp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-lane.c
+freebsd/contrib/tcpdump/print-lane.o: freebsd/contrib/tcpdump/print-lane.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ldp.c
+freebsd/contrib/tcpdump/print-ldp.o: freebsd/contrib/tcpdump/print-ldp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-llc.c
+freebsd/contrib/tcpdump/print-llc.o: freebsd/contrib/tcpdump/print-llc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-lldp.c
+freebsd/contrib/tcpdump/print-lldp.o: freebsd/contrib/tcpdump/print-lldp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-lmp.c
+freebsd/contrib/tcpdump/print-lmp.o: freebsd/contrib/tcpdump/print-lmp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-lspping.c
+freebsd/contrib/tcpdump/print-lspping.o: freebsd/contrib/tcpdump/print-lspping.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-lwapp.c
+freebsd/contrib/tcpdump/print-lwapp.o: freebsd/contrib/tcpdump/print-lwapp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-lwres.c
+freebsd/contrib/tcpdump/print-lwres.o: freebsd/contrib/tcpdump/print-lwres.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-mobile.c
+freebsd/contrib/tcpdump/print-mobile.o: freebsd/contrib/tcpdump/print-mobile.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-mobility.c
+freebsd/contrib/tcpdump/print-mobility.o: freebsd/contrib/tcpdump/print-mobility.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-mpcp.c
+freebsd/contrib/tcpdump/print-mpcp.o: freebsd/contrib/tcpdump/print-mpcp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-mpls.c
+freebsd/contrib/tcpdump/print-mpls.o: freebsd/contrib/tcpdump/print-mpls.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-msdp.c
+freebsd/contrib/tcpdump/print-msdp.o: freebsd/contrib/tcpdump/print-msdp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-msnlb.c
+freebsd/contrib/tcpdump/print-msnlb.o: freebsd/contrib/tcpdump/print-msnlb.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-netbios.c
+freebsd/contrib/tcpdump/print-netbios.o: freebsd/contrib/tcpdump/print-netbios.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-nfs.c
+freebsd/contrib/tcpdump/print-nfs.o: freebsd/contrib/tcpdump/print-nfs.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ntp.c
+freebsd/contrib/tcpdump/print-ntp.o: freebsd/contrib/tcpdump/print-ntp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-null.c
+freebsd/contrib/tcpdump/print-null.o: freebsd/contrib/tcpdump/print-null.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-olsr.c
+freebsd/contrib/tcpdump/print-olsr.o: freebsd/contrib/tcpdump/print-olsr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ospf.c
+freebsd/contrib/tcpdump/print-ospf.o: freebsd/contrib/tcpdump/print-ospf.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ospf6.c
+freebsd/contrib/tcpdump/print-ospf6.o: freebsd/contrib/tcpdump/print-ospf6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-otv.c
+freebsd/contrib/tcpdump/print-otv.o: freebsd/contrib/tcpdump/print-otv.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-pflog.c
+freebsd/contrib/tcpdump/print-pflog.o: freebsd/contrib/tcpdump/print-pflog.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-pfsync.c
+freebsd/contrib/tcpdump/print-pfsync.o: freebsd/contrib/tcpdump/print-pfsync.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-pgm.c
+freebsd/contrib/tcpdump/print-pgm.o: freebsd/contrib/tcpdump/print-pgm.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-pim.c
+freebsd/contrib/tcpdump/print-pim.o: freebsd/contrib/tcpdump/print-pim.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ppi.c
+freebsd/contrib/tcpdump/print-ppi.o: freebsd/contrib/tcpdump/print-ppi.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ppp.c
+freebsd/contrib/tcpdump/print-ppp.o: freebsd/contrib/tcpdump/print-ppp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-pppoe.c
+freebsd/contrib/tcpdump/print-pppoe.o: freebsd/contrib/tcpdump/print-pppoe.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-pptp.c
+freebsd/contrib/tcpdump/print-pptp.o: freebsd/contrib/tcpdump/print-pptp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-radius.c
+freebsd/contrib/tcpdump/print-radius.o: freebsd/contrib/tcpdump/print-radius.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-raw.c
+freebsd/contrib/tcpdump/print-raw.o: freebsd/contrib/tcpdump/print-raw.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-rip.c
+freebsd/contrib/tcpdump/print-rip.o: freebsd/contrib/tcpdump/print-rip.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-ripng.c
+freebsd/contrib/tcpdump/print-ripng.o: freebsd/contrib/tcpdump/print-ripng.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-rpki-rtr.c
+freebsd/contrib/tcpdump/print-rpki-rtr.o: freebsd/contrib/tcpdump/print-rpki-rtr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-rrcp.c
+freebsd/contrib/tcpdump/print-rrcp.o: freebsd/contrib/tcpdump/print-rrcp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-rsvp.c
+freebsd/contrib/tcpdump/print-rsvp.o: freebsd/contrib/tcpdump/print-rsvp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-rt6.c
+freebsd/contrib/tcpdump/print-rt6.o: freebsd/contrib/tcpdump/print-rt6.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-rx.c
+freebsd/contrib/tcpdump/print-rx.o: freebsd/contrib/tcpdump/print-rx.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-sctp.c
+freebsd/contrib/tcpdump/print-sctp.o: freebsd/contrib/tcpdump/print-sctp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-sflow.c
+freebsd/contrib/tcpdump/print-sflow.o: freebsd/contrib/tcpdump/print-sflow.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-sip.c
+freebsd/contrib/tcpdump/print-sip.o: freebsd/contrib/tcpdump/print-sip.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-sl.c
+freebsd/contrib/tcpdump/print-sl.o: freebsd/contrib/tcpdump/print-sl.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-sll.c
+freebsd/contrib/tcpdump/print-sll.o: freebsd/contrib/tcpdump/print-sll.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-slow.c
+freebsd/contrib/tcpdump/print-slow.o: freebsd/contrib/tcpdump/print-slow.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-smb.c
+freebsd/contrib/tcpdump/print-smb.o: freebsd/contrib/tcpdump/print-smb.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-snmp.c
+freebsd/contrib/tcpdump/print-snmp.o: freebsd/contrib/tcpdump/print-snmp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-stp.c
+freebsd/contrib/tcpdump/print-stp.o: freebsd/contrib/tcpdump/print-stp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-sunatm.c
+freebsd/contrib/tcpdump/print-sunatm.o: freebsd/contrib/tcpdump/print-sunatm.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-symantec.c
+freebsd/contrib/tcpdump/print-symantec.o: freebsd/contrib/tcpdump/print-symantec.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-syslog.c
+freebsd/contrib/tcpdump/print-syslog.o: freebsd/contrib/tcpdump/print-syslog.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-tcp.c
+freebsd/contrib/tcpdump/print-tcp.o: freebsd/contrib/tcpdump/print-tcp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-telnet.c
+freebsd/contrib/tcpdump/print-telnet.o: freebsd/contrib/tcpdump/print-telnet.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-tftp.c
+freebsd/contrib/tcpdump/print-tftp.o: freebsd/contrib/tcpdump/print-tftp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-timed.c
+freebsd/contrib/tcpdump/print-timed.o: freebsd/contrib/tcpdump/print-timed.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-tipc.c
+freebsd/contrib/tcpdump/print-tipc.o: freebsd/contrib/tcpdump/print-tipc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-token.c
+freebsd/contrib/tcpdump/print-token.o: freebsd/contrib/tcpdump/print-token.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-udld.c
+freebsd/contrib/tcpdump/print-udld.o: freebsd/contrib/tcpdump/print-udld.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-udp.c
+freebsd/contrib/tcpdump/print-udp.o: freebsd/contrib/tcpdump/print-udp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-usb.c
+freebsd/contrib/tcpdump/print-usb.o: freebsd/contrib/tcpdump/print-usb.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-vjc.c
+freebsd/contrib/tcpdump/print-vjc.o: freebsd/contrib/tcpdump/print-vjc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-vqp.c
+freebsd/contrib/tcpdump/print-vqp.o: freebsd/contrib/tcpdump/print-vqp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-vrrp.c
+freebsd/contrib/tcpdump/print-vrrp.o: freebsd/contrib/tcpdump/print-vrrp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-vtp.c
+freebsd/contrib/tcpdump/print-vtp.o: freebsd/contrib/tcpdump/print-vtp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-vxlan.c
+freebsd/contrib/tcpdump/print-vxlan.o: freebsd/contrib/tcpdump/print-vxlan.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-wb.c
+freebsd/contrib/tcpdump/print-wb.o: freebsd/contrib/tcpdump/print-wb.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-zephyr.c
+freebsd/contrib/tcpdump/print-zephyr.o: freebsd/contrib/tcpdump/print-zephyr.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/print-zeromq.c
+freebsd/contrib/tcpdump/print-zeromq.o: freebsd/contrib/tcpdump/print-zeromq.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/setsignal.c
+freebsd/contrib/tcpdump/setsignal.o: freebsd/contrib/tcpdump/setsignal.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/signature.c
+freebsd/contrib/tcpdump/signature.o: freebsd/contrib/tcpdump/signature.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/smbutil.c
+freebsd/contrib/tcpdump/smbutil.o: freebsd/contrib/tcpdump/smbutil.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/tcpdump.c
+freebsd/contrib/tcpdump/tcpdump.o: freebsd/contrib/tcpdump/tcpdump.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
+LIB_C_FILES += freebsd/contrib/tcpdump/util.c
+freebsd/contrib/tcpdump/util.o: freebsd/contrib/tcpdump/util.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) freebsd/contrib/tcpdump freebsd/usr.sbin/tcpdump/tcpdump-DINET6 -D_U_=__attribute__((unused)) -DHAVE_CONFIG_H=1 -DHAVE_NET_PFVAR_H=1 -c $< -o $@
 
 ifeq ($(NEED_DUMMY_PIC_IRQ),yes)
 CFLAGS += -I rtems-dummy-pic-irq/include

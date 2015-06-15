@@ -88,6 +88,7 @@ def includes():
             '-Ifreebsd/lib/libkvm',
             '-Ifreebsd/lib/libmemstat',
             '-Ifreebsd/lib/libipsec',
+            '-Ifreebsd/contrib/libpcap',
             '-Irtemsbsd/sys',
             '-ImDNSResponder/mDNSCore',
             '-ImDNSResponder/mDNSShared',
@@ -302,6 +303,12 @@ class TargetSourceCPUDependentPathComposer(CPUDependentPathComposer):
         return path
 
 class BuildSystemFragmentComposer(object):
+    def __init__(self, includes = None):
+        if type(includes) is not list:
+            self.includes = [includes]
+        else:
+            self.includes = includes
+
     def compose(self, path):
         return ''
 

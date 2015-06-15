@@ -38,14 +38,26 @@ import builder
 
 class SourceFileFragmentComposer(builder.BuildSystemFragmentComposer):
 
-    def __init__(self, cflags = None):
+    def __init__(self, cflags = None, includes = None):
         self.cflags = cflags
+        self.includes = includes
 
     def compose(self, path):
         fragment = 'LIB_C_FILES += ' + path + '\n'
+        cflags = ''
+        if self.includes != None:
+            if type(self.includes) is list:
+                cflags += ' '.join(self.includes)
+            else:
+                cflags += self.includes
         if self.cflags != None:
+            if type(self.cflags) is list:
+                cflags += ' '.join(self.cflags)
+            else:
+                cflags += self.cflags
+        if len(cflags) > 0:
             fragment = fragment + path[:-1] + 'o: ' + path + '\n' \
-                       + '\t$(CC) $(CPPFLAGS) $(CFLAGS) ' + self.cflags + ' -c $< -o $@\n'
+                       + '\t$(CC) $(CPPFLAGS) $(CFLAGS) ' + cflags + ' -c $< -o $@\n'
         return fragment
 
 class TestFragementComposer(builder.BuildSystemFragmentComposer):
@@ -111,32 +123,54 @@ class RouteKeywordsFragmentComposer(builder.BuildSystemFragmentComposer):
 
 class LexFragmentComposer(builder.BuildSystemFragmentComposer):
 
-    def __init__(self, sym, dep):
+    def __init__(self, sym, dep, cflags = None, includes = None):
         self.sym = sym
         self.dep = dep
+        self.cflags = ''
+        if cflags is not None:
+            self.cflags += ' '.join(cflags)
+        if includes is not None:
+            self.cflags += ' -I'.join(includes)
 
     def compose(self, path):
         src = path[:-2] + '.c'
         dep = path[:path.rfind('/')] + '/' + self.dep
-        return 'LIB_C_FILES += ' + src + '\n' \
+        fragment = 'LIB_C_FILES += ' + src + '\n' \
             + src + ': ' + path + ' ' + dep + '\n' \
             '\t${LEX} -P ' + self.sym + ' -t $< | sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > $@\n'
+        if len(self.cflags) > 0:
+            fragment = fragment + src[:-1] + 'o: ' + src + '\n' \
+                       + '\t$(CC) $(CPPFLAGS) $(CFLAGS) ' + self.cflags + ' -c $< -o $@\n'
+        return fragment
 
 class YaccFragmentComposer(builder.BuildSystemFragmentComposer):
 
-    def __init__(self, sym, header):
+    def __init__(self, sym, header, cflags = None, includes = None):
         self.sym = sym
         self.header = header
+        self.cflags = ''
+        if cflags is not None:
+            self.cflags += ' '.join(cflags)
+        if includes is not None:
+            self.cflags += ' -I'.join(includes)
 
     def compose(self, path):
         src = path[:-2] + '.c'
         hdr = path[:path.rfind('/')] + '/' + self.header
-        return 'LIB_C_FILES += ' + src + '\n' \
+        if self.sym is not None:
+            sym = '-b %s' % (self.sym)
+        else:
+            sym = os.path.basename(src)[:-2]
+        fragment = 'LIB_C_FILES += ' + src + '\n' \
             + src + ': ' + path + '\n' \
-            '\tyacc -b ' + self.sym + ' -d -p ' + self.sym + ' $<\n' \
-            '\tsed -e ''/YY_BUF_SIZE/s/16384/1024/'' < ' + self.sym + '.tab.c > $@\n' \
-            '\trm -f ' + self.sym + '.tab.c\n' \
-            '\tmv ' + self.sym + '.tab.h ' + hdr + '\n'
+            '\tyacc -b ' + sym + ' -d -p ' + sym + ' $<\n' \
+            '\tsed -e ''/YY_BUF_SIZE/s/16384/1024/'' < ' + sym + '.tab.c > $@\n' \
+            '\trm -f ' + sym + '.tab.c\n' \
+            '\tmv ' + sym + '.tab.h ' + hdr + '\n'
+        if len(self.cflags) > 0:
+            fragment = fragment + src[:-1] + 'o: ' + src + '\n' \
+                       + '\t$(CC) $(CPPFLAGS) $(CFLAGS) ' + self.cflags + ' -c $< -o $@\n'
+        return fragment
 
 # Module Manager - Collection of Modules
 class ModuleManager(builder.ModuleManager):

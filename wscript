@@ -70,7 +70,7 @@ def build(bld):
     cxxflags = ['-std=gnu++11'] + common_flags
 
     # Include paths
-    includes = []
+    includes = ["."]
     includes += ["rtemsbsd/include"]
     includes += ["freebsd/sys"]
     includes += ["freebsd/sys/contrib/altq"]
@@ -83,6 +83,7 @@ def build(bld):
     includes += ["freebsd/lib/libkvm"]
     includes += ["freebsd/lib/libmemstat"]
     includes += ["freebsd/lib/libipsec"]
+    includes += ["freebsd/contrib/libpcap"]
     includes += ["rtemsbsd/sys"]
     includes += ["mDNSResponder/mDNSCore"]
     includes += ["mDNSResponder/mDNSShared"]
@@ -142,7 +143,7 @@ def build(bld):
     bld.objects(target = "kvmsymbols",
                 features = "c",
                 cflags = cflags,
-                includes = includes + ["rtemsbsd/rtems"],
+                includes = ['rtemsbsd/rtems'] + includes,
                 source = "rtemsbsd/rtems/rtems-kvm-symbols.c")
     libbsd_use += ["kvmsymbols"]
 
@@ -168,7 +169,8 @@ def build(bld):
     bld.objects(target = "lex__nsyy",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
+                defines = [],
                 source = "freebsd/lib/libc/net/nslexer.c")
     libbsd_use += ["lex__nsyy"]
 
@@ -179,9 +181,22 @@ def build(bld):
     bld.objects(target = "lex___libipsecyy",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
+                defines = [],
                 source = "freebsd/lib/libipsec/policy_token.c")
     libbsd_use += ["lex___libipsecyy"]
+
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/contrib/libpcap/scanner.c",
+            source = "freebsd/contrib/libpcap/scanner.l",
+            rule = "${LEX} -P pcap -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+    bld.objects(target = "lex_pcap",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
+                source = "freebsd/contrib/libpcap/scanner.c")
+    libbsd_use += ["lex_pcap"]
 
     # Yacc
     if bld.env.AUTO_REGEN:
@@ -191,7 +206,8 @@ def build(bld):
     bld.objects(target = "yacc___libipsecyy",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
+                defines = [],
                 source = "freebsd/lib/libipsec/policy_parse.c")
     libbsd_use += ["yacc___libipsecyy"]
     if bld.env.AUTO_REGEN:
@@ -201,9 +217,21 @@ def build(bld):
     bld.objects(target = "yacc__nsyy",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
+                defines = [],
                 source = "freebsd/lib/libc/net/nsparser.c")
     libbsd_use += ["yacc__nsyy"]
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/contrib/libpcap/grammar.c",
+            source = "freebsd/contrib/libpcap/grammar.y",
+            rule = "${YACC} -b pcap -d -p pcap ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < pcap.tab.c > ${TGT} && rm -f pcap.tab.c && mv pcap.tab.h freebsd/contrib/libpcap/tokdefs.h")
+    bld.objects(target = "yacc_pcap",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
+                source = "freebsd/contrib/libpcap/grammar.c")
+    libbsd_use += ["yacc_pcap"]
 
     # Objects built with different CFLAGS
     objs01_source = ['freebsd/bin/hostname/hostname.c',
@@ -347,21 +375,193 @@ def build(bld):
     bld.objects(target = "objs01",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
                 defines = ['INET6'],
                 source = objs01_source)
     libbsd_use += ["objs01"]
 
-    objs02_source = ['rtemsbsd/mghttpd/mongoose.c']
+    objs02_source = ['freebsd/contrib/tcpdump/addrtoname.c',
+                     'freebsd/contrib/tcpdump/af.c',
+                     'freebsd/contrib/tcpdump/bpf_dump.c',
+                     'freebsd/contrib/tcpdump/checksum.c',
+                     'freebsd/contrib/tcpdump/cpack.c',
+                     'freebsd/contrib/tcpdump/gmpls.c',
+                     'freebsd/contrib/tcpdump/gmt2local.c',
+                     'freebsd/contrib/tcpdump/in_cksum.c',
+                     'freebsd/contrib/tcpdump/ipproto.c',
+                     'freebsd/contrib/tcpdump/l2vpn.c',
+                     'freebsd/contrib/tcpdump/machdep.c',
+                     'freebsd/contrib/tcpdump/nlpid.c',
+                     'freebsd/contrib/tcpdump/oui.c',
+                     'freebsd/contrib/tcpdump/parsenfsfh.c',
+                     'freebsd/contrib/tcpdump/print-802_11.c',
+                     'freebsd/contrib/tcpdump/print-802_15_4.c',
+                     'freebsd/contrib/tcpdump/print-ah.c',
+                     'freebsd/contrib/tcpdump/print-aodv.c',
+                     'freebsd/contrib/tcpdump/print-ap1394.c',
+                     'freebsd/contrib/tcpdump/print-arcnet.c',
+                     'freebsd/contrib/tcpdump/print-arp.c',
+                     'freebsd/contrib/tcpdump/print-ascii.c',
+                     'freebsd/contrib/tcpdump/print-atalk.c',
+                     'freebsd/contrib/tcpdump/print-atm.c',
+                     'freebsd/contrib/tcpdump/print-babel.c',
+                     'freebsd/contrib/tcpdump/print-beep.c',
+                     'freebsd/contrib/tcpdump/print-bfd.c',
+                     'freebsd/contrib/tcpdump/print-bgp.c',
+                     'freebsd/contrib/tcpdump/print-bootp.c',
+                     'freebsd/contrib/tcpdump/print-bt.c',
+                     'freebsd/contrib/tcpdump/print-carp.c',
+                     'freebsd/contrib/tcpdump/print-cdp.c',
+                     'freebsd/contrib/tcpdump/print-cfm.c',
+                     'freebsd/contrib/tcpdump/print-chdlc.c',
+                     'freebsd/contrib/tcpdump/print-cip.c',
+                     'freebsd/contrib/tcpdump/print-cnfp.c',
+                     'freebsd/contrib/tcpdump/print-dccp.c',
+                     'freebsd/contrib/tcpdump/print-decnet.c',
+                     'freebsd/contrib/tcpdump/print-dhcp6.c',
+                     'freebsd/contrib/tcpdump/print-domain.c',
+                     'freebsd/contrib/tcpdump/print-dtp.c',
+                     'freebsd/contrib/tcpdump/print-dvmrp.c',
+                     'freebsd/contrib/tcpdump/print-eap.c',
+                     'freebsd/contrib/tcpdump/print-egp.c',
+                     'freebsd/contrib/tcpdump/print-eigrp.c',
+                     'freebsd/contrib/tcpdump/print-enc.c',
+                     'freebsd/contrib/tcpdump/print-esp.c',
+                     'freebsd/contrib/tcpdump/print-ether.c',
+                     'freebsd/contrib/tcpdump/print-fddi.c',
+                     'freebsd/contrib/tcpdump/print-forces.c',
+                     'freebsd/contrib/tcpdump/print-fr.c',
+                     'freebsd/contrib/tcpdump/print-frag6.c',
+                     'freebsd/contrib/tcpdump/print-gre.c',
+                     'freebsd/contrib/tcpdump/print-hsrp.c',
+                     'freebsd/contrib/tcpdump/print-icmp.c',
+                     'freebsd/contrib/tcpdump/print-icmp6.c',
+                     'freebsd/contrib/tcpdump/print-igmp.c',
+                     'freebsd/contrib/tcpdump/print-igrp.c',
+                     'freebsd/contrib/tcpdump/print-ip.c',
+                     'freebsd/contrib/tcpdump/print-ip6.c',
+                     'freebsd/contrib/tcpdump/print-ip6opts.c',
+                     'freebsd/contrib/tcpdump/print-ipcomp.c',
+                     'freebsd/contrib/tcpdump/print-ipfc.c',
+                     'freebsd/contrib/tcpdump/print-ipnet.c',
+                     'freebsd/contrib/tcpdump/print-ipx.c',
+                     'freebsd/contrib/tcpdump/print-isakmp.c',
+                     'freebsd/contrib/tcpdump/print-isoclns.c',
+                     'freebsd/contrib/tcpdump/print-juniper.c',
+                     'freebsd/contrib/tcpdump/print-krb.c',
+                     'freebsd/contrib/tcpdump/print-l2tp.c',
+                     'freebsd/contrib/tcpdump/print-lane.c',
+                     'freebsd/contrib/tcpdump/print-ldp.c',
+                     'freebsd/contrib/tcpdump/print-llc.c',
+                     'freebsd/contrib/tcpdump/print-lldp.c',
+                     'freebsd/contrib/tcpdump/print-lmp.c',
+                     'freebsd/contrib/tcpdump/print-lspping.c',
+                     'freebsd/contrib/tcpdump/print-lwapp.c',
+                     'freebsd/contrib/tcpdump/print-lwres.c',
+                     'freebsd/contrib/tcpdump/print-mobile.c',
+                     'freebsd/contrib/tcpdump/print-mobility.c',
+                     'freebsd/contrib/tcpdump/print-mpcp.c',
+                     'freebsd/contrib/tcpdump/print-mpls.c',
+                     'freebsd/contrib/tcpdump/print-msdp.c',
+                     'freebsd/contrib/tcpdump/print-msnlb.c',
+                     'freebsd/contrib/tcpdump/print-netbios.c',
+                     'freebsd/contrib/tcpdump/print-nfs.c',
+                     'freebsd/contrib/tcpdump/print-ntp.c',
+                     'freebsd/contrib/tcpdump/print-null.c',
+                     'freebsd/contrib/tcpdump/print-olsr.c',
+                     'freebsd/contrib/tcpdump/print-ospf.c',
+                     'freebsd/contrib/tcpdump/print-ospf6.c',
+                     'freebsd/contrib/tcpdump/print-otv.c',
+                     'freebsd/contrib/tcpdump/print-pflog.c',
+                     'freebsd/contrib/tcpdump/print-pfsync.c',
+                     'freebsd/contrib/tcpdump/print-pgm.c',
+                     'freebsd/contrib/tcpdump/print-pim.c',
+                     'freebsd/contrib/tcpdump/print-ppi.c',
+                     'freebsd/contrib/tcpdump/print-ppp.c',
+                     'freebsd/contrib/tcpdump/print-pppoe.c',
+                     'freebsd/contrib/tcpdump/print-pptp.c',
+                     'freebsd/contrib/tcpdump/print-radius.c',
+                     'freebsd/contrib/tcpdump/print-raw.c',
+                     'freebsd/contrib/tcpdump/print-rip.c',
+                     'freebsd/contrib/tcpdump/print-ripng.c',
+                     'freebsd/contrib/tcpdump/print-rpki-rtr.c',
+                     'freebsd/contrib/tcpdump/print-rrcp.c',
+                     'freebsd/contrib/tcpdump/print-rsvp.c',
+                     'freebsd/contrib/tcpdump/print-rt6.c',
+                     'freebsd/contrib/tcpdump/print-rx.c',
+                     'freebsd/contrib/tcpdump/print-sctp.c',
+                     'freebsd/contrib/tcpdump/print-sflow.c',
+                     'freebsd/contrib/tcpdump/print-sip.c',
+                     'freebsd/contrib/tcpdump/print-sl.c',
+                     'freebsd/contrib/tcpdump/print-sll.c',
+                     'freebsd/contrib/tcpdump/print-slow.c',
+                     'freebsd/contrib/tcpdump/print-smb.c',
+                     'freebsd/contrib/tcpdump/print-snmp.c',
+                     'freebsd/contrib/tcpdump/print-stp.c',
+                     'freebsd/contrib/tcpdump/print-sunatm.c',
+                     'freebsd/contrib/tcpdump/print-symantec.c',
+                     'freebsd/contrib/tcpdump/print-syslog.c',
+                     'freebsd/contrib/tcpdump/print-tcp.c',
+                     'freebsd/contrib/tcpdump/print-telnet.c',
+                     'freebsd/contrib/tcpdump/print-tftp.c',
+                     'freebsd/contrib/tcpdump/print-timed.c',
+                     'freebsd/contrib/tcpdump/print-tipc.c',
+                     'freebsd/contrib/tcpdump/print-token.c',
+                     'freebsd/contrib/tcpdump/print-udld.c',
+                     'freebsd/contrib/tcpdump/print-udp.c',
+                     'freebsd/contrib/tcpdump/print-usb.c',
+                     'freebsd/contrib/tcpdump/print-vjc.c',
+                     'freebsd/contrib/tcpdump/print-vqp.c',
+                     'freebsd/contrib/tcpdump/print-vrrp.c',
+                     'freebsd/contrib/tcpdump/print-vtp.c',
+                     'freebsd/contrib/tcpdump/print-vxlan.c',
+                     'freebsd/contrib/tcpdump/print-wb.c',
+                     'freebsd/contrib/tcpdump/print-zephyr.c',
+                     'freebsd/contrib/tcpdump/print-zeromq.c',
+                     'freebsd/contrib/tcpdump/setsignal.c',
+                     'freebsd/contrib/tcpdump/signature.c',
+                     'freebsd/contrib/tcpdump/smbutil.c',
+                     'freebsd/contrib/tcpdump/tcpdump.c',
+                     'freebsd/contrib/tcpdump/util.c']
     bld.objects(target = "objs02",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
-                defines = ['NO_SSL', 'NO_POPEN', 'NO_CGI', 'USE_WEBSOCKET'],
+                includes = ['freebsd/contrib/tcpdump', 'freebsd/usr.sbin/tcpdump/tcpdump'] + includes,
+                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_CONFIG_H=1', 'HAVE_NET_PFVAR_H=1'],
                 source = objs02_source)
     libbsd_use += ["objs02"]
 
-    objs03_source = ['freebsd/lib/libc/db/btree/bt_close.c',
+    objs03_source = ['freebsd/contrib/libpcap/bpf_image.c',
+                     'freebsd/contrib/libpcap/etherent.c',
+                     'freebsd/contrib/libpcap/fad-getad.c',
+                     'freebsd/contrib/libpcap/gencode.c',
+                     'freebsd/contrib/libpcap/inet.c',
+                     'freebsd/contrib/libpcap/nametoaddr.c',
+                     'freebsd/contrib/libpcap/optimize.c',
+                     'freebsd/contrib/libpcap/pcap-bpf.c',
+                     'freebsd/contrib/libpcap/pcap-common.c',
+                     'freebsd/contrib/libpcap/pcap.c',
+                     'freebsd/contrib/libpcap/savefile.c',
+                     'freebsd/contrib/libpcap/sf-pcap-ng.c',
+                     'freebsd/contrib/libpcap/sf-pcap.c']
+    bld.objects(target = "objs03",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1'],
+                source = objs03_source)
+    libbsd_use += ["objs03"]
+
+    objs04_source = ['rtemsbsd/mghttpd/mongoose.c']
+    bld.objects(target = "objs04",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['NO_SSL', 'NO_POPEN', 'NO_CGI', 'USE_WEBSOCKET'],
+                source = objs04_source)
+    libbsd_use += ["objs04"]
+
+    objs05_source = ['freebsd/lib/libc/db/btree/bt_close.c',
                      'freebsd/lib/libc/db/btree/bt_conv.c',
                      'freebsd/lib/libc/db/btree/bt_debug.c',
                      'freebsd/lib/libc/db/btree/bt_delete.c',
@@ -385,15 +585,15 @@ def build(bld):
                      'freebsd/lib/libc/db/recno/rec_search.c',
                      'freebsd/lib/libc/db/recno/rec_seq.c',
                      'freebsd/lib/libc/db/recno/rec_utils.c']
-    bld.objects(target = "objs03",
+    bld.objects(target = "objs05",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
                 defines = ['__DBINTERFACE_PRIVATE', 'INET6'],
-                source = objs03_source)
-    libbsd_use += ["objs03"]
+                source = objs05_source)
+    libbsd_use += ["objs05"]
 
-    objs04_source = ['dhcpcd/arp.c',
+    objs06_source = ['dhcpcd/arp.c',
                      'dhcpcd/auth.c',
                      'dhcpcd/bpf.c',
                      'dhcpcd/common.c',
@@ -415,13 +615,13 @@ def build(bld):
                      'dhcpcd/ipv6nd.c',
                      'dhcpcd/net.c',
                      'dhcpcd/platform-bsd.c']
-    bld.objects(target = "objs04",
+    bld.objects(target = "objs06",
                 features = "c",
                 cflags = cflags,
-                includes = includes,
+                includes = [] + includes,
                 defines = ['__FreeBSD__', 'THERE_IS_NO_FORK', 'MASTER_ONLY', 'INET', 'INET6'],
-                source = objs04_source)
-    libbsd_use += ["objs04"]
+                source = objs06_source)
+    libbsd_use += ["objs06"]
 
     source = ['freebsd/sys/arm/xilinx/zy7_slcr.c',
               'freebsd/sys/cam/cam.c',
@@ -861,6 +1061,8 @@ def build(bld):
         source += ['freebsd/sys/bfin/bfin/in_cksum.c',
                    'freebsd/sys/bfin/bfin/legacy.c',
                    'freebsd/sys/bfin/pci/pci_bus.c']
+    if bld.get_env()["RTEMS_ARCH"] == "cflags":
+        source += ['default']
     if bld.get_env()["RTEMS_ARCH"] == "h8300":
         source += ['freebsd/sys/h8300/h8300/in_cksum.c',
                    'freebsd/sys/h8300/h8300/legacy.c',

@@ -142,21 +142,23 @@ if isEarlyExit == True:
     print "Early exit at user request"
     sys.exit(0)
 
-makefile_gen = makefile.ModuleManager()
-waf_gen = waf_generator.ModuleManager()
+try:
+    makefile_gen = makefile.ModuleManager()
+    waf_gen = waf_generator.ModuleManager()
 
-libbsd.sources(makefile_gen)
-libbsd.sources(waf_gen)
+    libbsd.sources(makefile_gen)
+    libbsd.sources(waf_gen)
 
-# Perform the actual file manipulation
-if isForward:
-    if not isOnlyMakefile:
-        makefile_gen.copyFromFreeBSDToRTEMS()
-    makefile_gen.generate()
-    waf_gen.generate()
-else:
-    makefile_gen.copyFromRTEMSToFreeBSD()
-
-# Print a summary if changing files
-if builder.isDiffMode == False:
-    print '%d file(s) were changed.' % (builder.filesProcessed)
+    # Perform the actual file manipulation
+    if isForward:
+        if not isOnlyMakefile:
+            makefile_gen.copyFromFreeBSDToRTEMS()
+        makefile_gen.generate()
+        waf_gen.generate()
+    else:
+        makefile_gen.copyFromRTEMSToFreeBSD()
+    # Print a summary if changing files
+    if builder.isDiffMode == False:
+        print '%d file(s) were changed.' % (builder.filesProcessed)
+except IOError, ioe:
+    print 'error: %s' % (ioe)

@@ -48,13 +48,29 @@ def _add_files(name, files):
         data[name] = []
     data[name] += files
 
+def _clfags_includes(cflags, includes):
+    if type(cflags) is not list:
+        if cflags is not None:
+            _cflags = cflags.split(' ')
+        else:
+            _cflags = [None]
+    else:
+        _cflags = cflags
+    if type(includes) is not list:
+        _includes = [includes]
+    else:
+        _includes = includes
+    return _cflags, _includes
+
 class SourceFileFragmentComposer(builder.BuildSystemFragmentComposer):
 
-    def __init__(self, cflags = "default"):
-        self.cflags = cflags
+    def __init__(self, cflags = "default", includes = None):
+        self.cflags, self.includes = _clfags_includes(cflags, includes)
 
     def compose(self, path):
-        return ['sources', self.cflags], [path]
+        if None in self.includes:
+            return ['sources', self.cflags], [path], self.cflags, self.includes
+        return ['sources', self.cflags + self.includes], [path], self.cflags, self.includes
 
 class TestFragementComposer(builder.BuildSystemFragmentComposer):
 
@@ -72,7 +88,7 @@ class TestFragementComposer(builder.BuildSystemFragmentComposer):
 class KVMSymbolsFragmentComposer(builder.BuildSystemFragmentComposer):
 
     def compose(self, path):
-        return ['KVMSymbols', 'files'], [path]
+        return ['KVMSymbols', 'files'], [path], self.includes
 
 class RPCGENFragmentComposer(builder.BuildSystemFragmentComposer):
 
@@ -86,25 +102,37 @@ class RouteKeywordsFragmentComposer(builder.BuildSystemFragmentComposer):
 
 class LexFragmentComposer(builder.BuildSystemFragmentComposer):
 
-    def __init__(self, sym, dep):
+    def __init__(self, sym, dep, cflags = None, includes = None):
         self.sym = sym
         self.dep = dep
+        self.cflags, self.includes = _clfags_includes(cflags, includes)
 
     def compose(self, path):
-        return ['lex', path], { 'file': path,
-                                'sym': self.sym,
-                                'dep': self.dep }
+        d = { 'file': path,
+              'sym': self.sym,
+              'dep': self.dep }
+        if None not in self.cflags:
+            d['cflags'] = self.cflags
+        if None not in self.includes:
+            d['includes'] = self.includes
+        return ['lex', path], d
 
 class YaccFragmentComposer(builder.BuildSystemFragmentComposer):
 
-    def __init__(self, sym, header):
+    def __init__(self, sym, header, cflags = None, includes = None):
         self.sym = sym
         self.header = header
+        self.cflags, self.includes = _clfags_includes(cflags, includes)
 
     def compose(self, path):
-        return ['yacc', path], { 'file': path,
-                                 'sym': self.sym,
-                                 'header': self.header }
+        d = { 'file': path,
+              'sym': self.sym,
+              'header': self.header }
+        if None not in self.cflags:
+            d['cflags'] = self.cflags
+        if None not in self.includes:
+            d['includes'] = self.includes
+        return ['yacc', path], d
 
 # Module Manager - Collection of Modules
 class ModuleManager(builder.ModuleManager):
@@ -174,17 +202,35 @@ class ModuleManager(builder.ModuleManager):
             # The default handler returns an empty string. Skip it.
             #
             if type(frag) is not str:
+                # Start at the top of the tree
                 d = data
-                for p in frag[0]:
-                    if p not in d:
-                        d[p] = {}
-                    d = d[p]
+                path = frag[0]
+                if path[0] not in d:
+                    d[path[0]] = {}
+                # Select the sub-part of the tree as the compile options
+                # specialise how files are built.
+                d = d[path[0]]
+                if type(path[1]) is list:
+                    p = ' '.join(path[1])
+                else:
+                    p = path[1]
+                if p not in d:
+                    d[p] = {}
+                d = d[p]
+                if cpu not in d:
+                    d[cpu] = []
                 if type(frag[1]) is list:
-                    if cpu not in d:
-                        d[cpu] = []
                     d[cpu] += frag[1]
                 else:
                     d[cpu] = frag[1]
+                if len(frag) > 3:
+                    if 'cflags' not in d[cpu]:
+                        d['cflags'] = []
+                    d['cflags'] += frag[2]
+                if len(frag) >= 3 and None not in frag[-1]:
+                    if 'includes' not in d[cpu]:
+                        d['includes'] = []
+                    d['includes'] += frag[-1]
 
         data = { }
 
@@ -273,7 +319,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('    cxxflags = %r + common_flags' % (builder.cxxflags()))
         self.add('')
         self.add('    # Include paths')
-        self.add('    includes = []')
+        self.add('    includes = ["."]')
         for i in builder.includes():
             self.add('    includes += ["%s"]' % (i[2:]))
         self.add('    for i in %r:' % (builder.cpu_includes()))
@@ -338,6 +384,10 @@ class ModuleManager(builder.ModuleManager):
         #
         if 'KVMSymbols' in data:
             kvmsymbols = data['KVMSymbols']
+            if 'includes' in kvmsymbols['files']:
+                includes = kvmsymbols['files']['includes']
+            else:
+                includes = []
             self.add('    # KVM Symbols')
             self.add('    bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
             self.add('        source = "rtemsbsd/rtems/generate_kvm_symbols",')
@@ -346,7 +396,7 @@ class ModuleManager(builder.ModuleManager):
             self.add('    bld.objects(target = "kvmsymbols",')
             self.add('                features = "c",')
             self.add('                cflags = cflags,')
-            self.add('                includes = includes + ["rtemsbsd/rtems"],')
+            self.add('                includes = %r + includes,' % (includes))
             self.add('                source = "%s")' % (kvmsymbols['files']['all'][0]))
             self.add('    libbsd_use += ["kvmsymbols"]')
             self.add('')
@@ -382,6 +432,14 @@ class ModuleManager(builder.ModuleManager):
             self.add('    # Lex')
             for l in lexes:
                 lex = lexes[l]['all']
+                if 'cflags' in lex:
+                    lex_defines = [d[2:] for d in lex['cflags']]
+                else:
+                    lex_defines = []
+                if 'includes' in lex:
+                    lex_includes = lex['includes']
+                else:
+                    lex_includes = []
                 self.add('    if bld.env.AUTO_REGEN:')
                 self.add('        bld(target = "%s.c",' % (lex['file'][:-2]))
                 self.add('            source = "%s",' % (lex['file']))
@@ -390,7 +448,8 @@ class ModuleManager(builder.ModuleManager):
                 self.add('    bld.objects(target = "lex_%s",' % (lex['sym']))
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
-                self.add('                includes = includes,')
+                self.add('                includes = %r + includes,' % (lex_includes))
+                self.add('                defines = %r,' % (lex_defines))
                 self.add('                source = "%s.c")' % (lex['file'][:-2]))
                 self.add('    libbsd_use += ["lex_%s"]' % (lex['sym']))
                 self.add('')
@@ -401,8 +460,19 @@ class ModuleManager(builder.ModuleManager):
             for y in yaccs:
                 yacc = yaccs[y]['all']
                 yacc_file = yacc['file']
-                yacc_sym = yacc['sym']
+                if yacc['sym'] is not None:
+                    yacc_sym = yacc['sym']
+                else:
+                    yacc_sym = os.path.basename(yacc_file)[:-2]
                 yacc_header = '%s/%s' % (os.path.dirname(yacc_file), yacc['header'])
+                if 'cflags' in yacc:
+                    yacc_defines = [d[2:] for d in yacc['cflags']]
+                else:
+                    yacc_defines = []
+                if 'includes' in yacc:
+                    yacc_includes = yacc['includes']
+                else:
+                    yacc_includes = []
                 self.add('    if bld.env.AUTO_REGEN:')
                 self.add('        bld(target = "%s.c",' % (yacc_file[:-2]))
                 self.add('            source = "%s",' % (yacc_file))
@@ -412,7 +482,8 @@ class ModuleManager(builder.ModuleManager):
                 self.add('    bld.objects(target = "yacc_%s",' % (yacc_sym))
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
-                self.add('                includes = includes,')
+                self.add('                includes = %r + includes,' % (yacc_includes))
+                self.add('                defines = %r,' % (yacc_defines))
                 self.add('                source = "%s.c")' % (yacc_file[:-2]))
                 self.add('    libbsd_use += ["yacc_%s"]' % (yacc_sym))
             self.add('')
@@ -423,22 +494,29 @@ class ModuleManager(builder.ModuleManager):
         #
         objs = 0
         self.add('    # Objects built with different CFLAGS')
-        for cflags in sorted(data['sources']):
-            if cflags is not 'default':
+        for flags in sorted(data['sources']):
+            if flags is not 'default':
                 objs += 1
-                _source_list('    objs%02d_source' % objs, sorted(data['sources'][cflags]['all']))
-                archs = sorted(data['sources'][cflags])
+                _source_list('    objs%02d_source' % objs, sorted(data['sources'][flags]['all']))
+                archs = sorted(data['sources'][flags])
                 for arch in archs:
-                    if arch is not 'all':
+                    if arch not in ['all', 'cflags', 'includes']:
                         self.add('    if bld.get_env()["RTEMS_ARCH"] == "%s":' % arch)
                         _source_list('        objs%02d_source' % objs,
-                                     sorted(data['sources'][cflags][arch]),
+                                     sorted(data['sources'][flags][arch]),
                                      append = True)
-                defines = [d[2:] for d in cflags.split(' ')]
+                if 'cflags' in data['sources'][flags]:
+                    defines = [d[2:] for d in data['sources'][flags]['cflags']]
+                else:
+                    defines = []
+                if 'includes' in data['sources'][flags]:
+                    includes = data['sources'][flags]['includes']
+                else:
+                    includes = []
                 self.add('    bld.objects(target = "objs%02d",' % (objs))
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
-                self.add('                includes = includes,')
+                self.add('                includes = %r + includes,' % (includes))
                 self.add('                defines = %r,' % (defines))
                 self.add('                source = objs%02d_source)' % objs)
                 self.add('    libbsd_use += ["objs%02d"]' % (objs))

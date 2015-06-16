@@ -3005,7 +3005,7 @@ bpf_drvinit(void *unused)
 	/* For compatibility */
 	make_dev_alias(dev, "bpf0");
 #else /* __rtems__ */
-	rv = IMFS_make_generic_node("/dev/bpf", mode, &bpf_imfs_control, NULL);
+	rv = IMFS_make_generic_node("/dev/bpf0", mode, &bpf_imfs_control, NULL);
 	BSD_ASSERT(rv == 0);
 #endif /* __rtems__ */
 

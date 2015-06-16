@@ -2048,14 +2048,21 @@ def user_space(mm):
 #
 def contrib_libpcap(mm):
     mod = builder.Module('contrib_libpcap')
-    cflags = ['-DINET6',
+    cflags = ['-D__FreeBSD__=1',
+              '-DBSD=1',
+              '-DINET6',
               '-D_U_=__attribute__((unused))',
+              '-DHAVE_LIMITS_H=1',
               '-DHAVE_INTTYPES=1',
               '-DHAVE_STDINT=1',
               '-DHAVE_STRERROR=1',
               '-DHAVE_STRLCPY=1',
               '-DHAVE_SNPRINTF=1',
-              '-DHAVE_VSNPRINTF=1']
+              '-DHAVE_VSNPRINTF=1',
+              '-DHAVE_SOCKADDR_SA_LEN=1',
+              #'-DHAVE_ZEROCOPY_BPF=1',
+              '-DHAVE_NET_IF_MEDIA_H=1',
+              '-DHAVE_SYS_IOCCOM_H=1']
     mod.addUserSpaceHeaderFiles(
         [
             'contrib/libpcap/arcnet.h',
@@ -2350,7 +2357,8 @@ def usr_sbin_tcpdump(mm):
             'contrib/tcpdump/tcpdump.c',
             'contrib/tcpdump/util.c',
         ],
-        mm.generator['source'](['-DINET6',
+        mm.generator['source'](['-D__FreeBSD__=1',
+                                '-DINET6',
                                 '-D_U_=__attribute__((unused))',
                                 '-DHAVE_CONFIG_H=1',
                                 '-DHAVE_NET_PFVAR_H=1'],

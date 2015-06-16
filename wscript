@@ -194,7 +194,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
+                defines = ['__FreeBSD__=1', 'BSD=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_LIMITS_H=1', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SYS_IOCCOM_H=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
                 source = "freebsd/contrib/libpcap/scanner.c")
     libbsd_use += ["lex_pcap"]
 
@@ -229,7 +229,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
+                defines = ['__FreeBSD__=1', 'BSD=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_LIMITS_H=1', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SYS_IOCCOM_H=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
                 source = "freebsd/contrib/libpcap/grammar.c")
     libbsd_use += ["yacc_pcap"]
 
@@ -380,7 +380,99 @@ def build(bld):
                 source = objs01_source)
     libbsd_use += ["objs01"]
 
-    objs02_source = ['freebsd/contrib/tcpdump/addrtoname.c',
+    objs02_source = ['rtemsbsd/mghttpd/mongoose.c']
+    bld.objects(target = "objs02",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['NO_SSL', 'NO_POPEN', 'NO_CGI', 'USE_WEBSOCKET'],
+                source = objs02_source)
+    libbsd_use += ["objs02"]
+
+    objs03_source = ['freebsd/lib/libc/db/btree/bt_close.c',
+                     'freebsd/lib/libc/db/btree/bt_conv.c',
+                     'freebsd/lib/libc/db/btree/bt_debug.c',
+                     'freebsd/lib/libc/db/btree/bt_delete.c',
+                     'freebsd/lib/libc/db/btree/bt_get.c',
+                     'freebsd/lib/libc/db/btree/bt_open.c',
+                     'freebsd/lib/libc/db/btree/bt_overflow.c',
+                     'freebsd/lib/libc/db/btree/bt_page.c',
+                     'freebsd/lib/libc/db/btree/bt_put.c',
+                     'freebsd/lib/libc/db/btree/bt_search.c',
+                     'freebsd/lib/libc/db/btree/bt_seq.c',
+                     'freebsd/lib/libc/db/btree/bt_split.c',
+                     'freebsd/lib/libc/db/btree/bt_utils.c',
+                     'freebsd/lib/libc/db/db/db.c',
+                     'freebsd/lib/libc/db/mpool/mpool-compat.c',
+                     'freebsd/lib/libc/db/mpool/mpool.c',
+                     'freebsd/lib/libc/db/recno/rec_close.c',
+                     'freebsd/lib/libc/db/recno/rec_delete.c',
+                     'freebsd/lib/libc/db/recno/rec_get.c',
+                     'freebsd/lib/libc/db/recno/rec_open.c',
+                     'freebsd/lib/libc/db/recno/rec_put.c',
+                     'freebsd/lib/libc/db/recno/rec_search.c',
+                     'freebsd/lib/libc/db/recno/rec_seq.c',
+                     'freebsd/lib/libc/db/recno/rec_utils.c']
+    bld.objects(target = "objs03",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['__DBINTERFACE_PRIVATE', 'INET6'],
+                source = objs03_source)
+    libbsd_use += ["objs03"]
+
+    objs04_source = ['dhcpcd/arp.c',
+                     'dhcpcd/auth.c',
+                     'dhcpcd/bpf.c',
+                     'dhcpcd/common.c',
+                     'dhcpcd/compat/pselect.c',
+                     'dhcpcd/crypt/hmac_md5.c',
+                     'dhcpcd/dhcp-common.c',
+                     'dhcpcd/dhcp.c',
+                     'dhcpcd/dhcp6.c',
+                     'dhcpcd/dhcpcd-embedded.c',
+                     'dhcpcd/dhcpcd.c',
+                     'dhcpcd/duid.c',
+                     'dhcpcd/eloop.c',
+                     'dhcpcd/if-bsd.c',
+                     'dhcpcd/if-options.c',
+                     'dhcpcd/if-pref.c',
+                     'dhcpcd/ipv4.c',
+                     'dhcpcd/ipv4ll.c',
+                     'dhcpcd/ipv6.c',
+                     'dhcpcd/ipv6nd.c',
+                     'dhcpcd/net.c',
+                     'dhcpcd/platform-bsd.c']
+    bld.objects(target = "objs04",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['__FreeBSD__', 'THERE_IS_NO_FORK', 'MASTER_ONLY', 'INET', 'INET6'],
+                source = objs04_source)
+    libbsd_use += ["objs04"]
+
+    objs05_source = ['freebsd/contrib/libpcap/bpf_image.c',
+                     'freebsd/contrib/libpcap/etherent.c',
+                     'freebsd/contrib/libpcap/fad-getad.c',
+                     'freebsd/contrib/libpcap/gencode.c',
+                     'freebsd/contrib/libpcap/inet.c',
+                     'freebsd/contrib/libpcap/nametoaddr.c',
+                     'freebsd/contrib/libpcap/optimize.c',
+                     'freebsd/contrib/libpcap/pcap-bpf.c',
+                     'freebsd/contrib/libpcap/pcap-common.c',
+                     'freebsd/contrib/libpcap/pcap.c',
+                     'freebsd/contrib/libpcap/savefile.c',
+                     'freebsd/contrib/libpcap/sf-pcap-ng.c',
+                     'freebsd/contrib/libpcap/sf-pcap.c']
+    bld.objects(target = "objs05",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = ['__FreeBSD__=1', 'BSD=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_LIMITS_H=1', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SYS_IOCCOM_H=1'],
+                source = objs05_source)
+    libbsd_use += ["objs05"]
+
+    objs06_source = ['freebsd/contrib/tcpdump/addrtoname.c',
                      'freebsd/contrib/tcpdump/af.c',
                      'freebsd/contrib/tcpdump/bpf_dump.c',
                      'freebsd/contrib/tcpdump/checksum.c',
@@ -523,103 +615,11 @@ def build(bld):
                      'freebsd/contrib/tcpdump/smbutil.c',
                      'freebsd/contrib/tcpdump/tcpdump.c',
                      'freebsd/contrib/tcpdump/util.c']
-    bld.objects(target = "objs02",
-                features = "c",
-                cflags = cflags,
-                includes = ['freebsd/contrib/tcpdump', 'freebsd/usr.sbin/tcpdump/tcpdump'] + includes,
-                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_CONFIG_H=1', 'HAVE_NET_PFVAR_H=1'],
-                source = objs02_source)
-    libbsd_use += ["objs02"]
-
-    objs03_source = ['freebsd/contrib/libpcap/bpf_image.c',
-                     'freebsd/contrib/libpcap/etherent.c',
-                     'freebsd/contrib/libpcap/fad-getad.c',
-                     'freebsd/contrib/libpcap/gencode.c',
-                     'freebsd/contrib/libpcap/inet.c',
-                     'freebsd/contrib/libpcap/nametoaddr.c',
-                     'freebsd/contrib/libpcap/optimize.c',
-                     'freebsd/contrib/libpcap/pcap-bpf.c',
-                     'freebsd/contrib/libpcap/pcap-common.c',
-                     'freebsd/contrib/libpcap/pcap.c',
-                     'freebsd/contrib/libpcap/savefile.c',
-                     'freebsd/contrib/libpcap/sf-pcap-ng.c',
-                     'freebsd/contrib/libpcap/sf-pcap.c']
-    bld.objects(target = "objs03",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = ['INET6', '_U_=__attribute__((unused))', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1'],
-                source = objs03_source)
-    libbsd_use += ["objs03"]
-
-    objs04_source = ['rtemsbsd/mghttpd/mongoose.c']
-    bld.objects(target = "objs04",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = ['NO_SSL', 'NO_POPEN', 'NO_CGI', 'USE_WEBSOCKET'],
-                source = objs04_source)
-    libbsd_use += ["objs04"]
-
-    objs05_source = ['freebsd/lib/libc/db/btree/bt_close.c',
-                     'freebsd/lib/libc/db/btree/bt_conv.c',
-                     'freebsd/lib/libc/db/btree/bt_debug.c',
-                     'freebsd/lib/libc/db/btree/bt_delete.c',
-                     'freebsd/lib/libc/db/btree/bt_get.c',
-                     'freebsd/lib/libc/db/btree/bt_open.c',
-                     'freebsd/lib/libc/db/btree/bt_overflow.c',
-                     'freebsd/lib/libc/db/btree/bt_page.c',
-                     'freebsd/lib/libc/db/btree/bt_put.c',
-                     'freebsd/lib/libc/db/btree/bt_search.c',
-                     'freebsd/lib/libc/db/btree/bt_seq.c',
-                     'freebsd/lib/libc/db/btree/bt_split.c',
-                     'freebsd/lib/libc/db/btree/bt_utils.c',
-                     'freebsd/lib/libc/db/db/db.c',
-                     'freebsd/lib/libc/db/mpool/mpool-compat.c',
-                     'freebsd/lib/libc/db/mpool/mpool.c',
-                     'freebsd/lib/libc/db/recno/rec_close.c',
-                     'freebsd/lib/libc/db/recno/rec_delete.c',
-                     'freebsd/lib/libc/db/recno/rec_get.c',
-                     'freebsd/lib/libc/db/recno/rec_open.c',
-                     'freebsd/lib/libc/db/recno/rec_put.c',
-                     'freebsd/lib/libc/db/recno/rec_search.c',
-                     'freebsd/lib/libc/db/recno/rec_seq.c',
-                     'freebsd/lib/libc/db/recno/rec_utils.c']
-    bld.objects(target = "objs05",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = ['__DBINTERFACE_PRIVATE', 'INET6'],
-                source = objs05_source)
-    libbsd_use += ["objs05"]
-
-    objs06_source = ['dhcpcd/arp.c',
-                     'dhcpcd/auth.c',
-                     'dhcpcd/bpf.c',
-                     'dhcpcd/common.c',
-                     'dhcpcd/compat/pselect.c',
-                     'dhcpcd/crypt/hmac_md5.c',
-                     'dhcpcd/dhcp-common.c',
-                     'dhcpcd/dhcp.c',
-                     'dhcpcd/dhcp6.c',
-                     'dhcpcd/dhcpcd-embedded.c',
-                     'dhcpcd/dhcpcd.c',
-                     'dhcpcd/duid.c',
-                     'dhcpcd/eloop.c',
-                     'dhcpcd/if-bsd.c',
-                     'dhcpcd/if-options.c',
-                     'dhcpcd/if-pref.c',
-                     'dhcpcd/ipv4.c',
-                     'dhcpcd/ipv4ll.c',
-                     'dhcpcd/ipv6.c',
-                     'dhcpcd/ipv6nd.c',
-                     'dhcpcd/net.c',
-                     'dhcpcd/platform-bsd.c']
     bld.objects(target = "objs06",
                 features = "c",
                 cflags = cflags,
-                includes = [] + includes,
-                defines = ['__FreeBSD__', 'THERE_IS_NO_FORK', 'MASTER_ONLY', 'INET', 'INET6'],
+                includes = ['freebsd/contrib/tcpdump', 'freebsd/usr.sbin/tcpdump/tcpdump'] + includes,
+                defines = ['__FreeBSD__=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_CONFIG_H=1', 'HAVE_NET_PFVAR_H=1'],
                 source = objs06_source)
     libbsd_use += ["objs06"]
 

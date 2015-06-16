@@ -139,4 +139,7 @@ void _sethosthtent(int, struct hostent_data *);
 void _setnetdnsent(int);
 void _setnethtent(int, struct netent_data *);
 
+int _nsdispatch(void *retval, const ns_dtab disp_tab[], const char *database,
+                const char *method_name, const ns_src defaults[], ...);
+
 #endif /* _NETDB_PRIVATE_H_ */

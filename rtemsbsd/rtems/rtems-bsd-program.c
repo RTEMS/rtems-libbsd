@@ -52,6 +52,8 @@
 #include <setjmp.h>
 #include <stdlib.h>
 
+#include <machine/rtems-bsd-program.h>
+
 struct rtems_bsd_program_control {
 	void *context;
 	int exit_code;
@@ -114,6 +116,17 @@ rtems_bsd_program_exit(int exit_code)
 	}
 
 	panic("unexpected BSD program exit");
+}
+
+void
+rtems_bsd_program_error(const char *fmt, ...)
+{
+  va_list list;
+  va_start(list, fmt);
+  vfprintf(stderr, fmt, list);
+  fprintf(stderr, "\n");
+  va_end(list);
+  rtems_bsd_program_exit(1);
 }
 
 const char *

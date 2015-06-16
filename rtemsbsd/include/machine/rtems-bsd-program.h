@@ -56,6 +56,9 @@ rtems_bsd_program_call_main(const char *name, int (*main)(int, char **),
 void
 rtems_bsd_program_exit(int exit_code) __dead2;
 
+void
+rtems_bsd_program_error(const char *, ...) __attribute__ ((__format__ (__printf__, 1, 2)));
+
 const char *
 rtems_bsd_program_get_name(void);
 
@@ -69,14 +72,22 @@ void
 rtems_bsd_program_unlock(void);
 
 #ifndef RTEMS_BSD_PROGRAM_NO_EXIT_WRAP
+  #undef exit
   #define exit(code) rtems_bsd_program_exit(code)
 #endif
 
+#ifndef RTEMS_BSD_PROGRAM_NO_ERROR_WRAP
+  #undef error
+  #define error(fmt, ...) rtems_bsd_program_error(fmt, ## __VA_ARGS__)
+#endif
+
 #ifndef RTEMS_BSD_PROGRAM_NO_GETPROGNAME_WRAP
+  #undef getprogname
   #define getprogname() rtems_bsd_program_get_name()
 #endif
 
 #ifndef RTEMS_BSD_PROGRAM_NO_PRINTF_WRAP
+  #undef printf
   #define printf(...) fprintf(stdout, __VA_ARGS__)
 #endif
 

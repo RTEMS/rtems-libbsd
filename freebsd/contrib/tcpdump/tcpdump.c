@@ -55,6 +55,8 @@ static const char rcsid[] _U_ =
 #define __need_getopt_newlib
 #include <getopt.h>
 #define setpriority(a, b, c)
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
 #endif
 
 #include <tcpdump-stdinc.h>
@@ -357,7 +359,7 @@ static const struct ndo_printer ndo_printers[] = {
 if_printer
 lookup_printer(int type)
 {
-	struct printer *p;
+	const struct printer *p;
 
 	for (p = printers; p->f; ++p)
 		if (type == p->type)
@@ -370,7 +372,7 @@ lookup_printer(int type)
 if_ndo_printer
 lookup_ndo_printer(int type)
 {
-	struct ndo_printer *p;
+	const struct ndo_printer *p;
 
 	for (p = ndo_printers; p->f; ++p)
 		if (type == p->type)

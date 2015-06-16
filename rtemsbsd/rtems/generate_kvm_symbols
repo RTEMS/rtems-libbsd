@@ -99,10 +99,10 @@ EOF
 for sym in ${symbols}
 do
   no_underscore=`echo $sym | sed -e 's/^_//' `
-  echo "  { \"${sym}\", &${no_underscore} },"
+  echo "  { \"${sym}\", (uintptr_t) &${no_underscore} },"
 done
 
 cat <<EOF
-  { "", NULL }
+  { "", (uintptr_t) NULL }
 };
 EOF

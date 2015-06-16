@@ -45,3 +45,12 @@ rtems_shell_cmd_t rtems_shell_ROUTE_Command = {
   NULL,                          /* alias */
   NULL                           /* next */
 };
+
+rtems_shell_cmd_t rtems_shell_TCPDUMP_Command = {
+  "tcpdump",                     /* name */
+  "tcpdump [args]",              /* usage */
+  "net",                         /* topic */
+  rtems_bsd_command_tcpdump,     /* command */
+  NULL,                          /* alias */
+  NULL                           /* next */
+};

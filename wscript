@@ -38,6 +38,10 @@ def options(opt):
 def bsp_configure(conf, arch_bsp):
     conf.check(header_name = "dlfcn.h", features = "c")
     conf.check(header_name = "rtems/pci.h", features = "c", mandatory = False)
+    if not rtems.check_posix(conf):
+        conf.fatal("RTEMS kernel POSIX support is disabled; configure RTEMS with --enable-posix")
+    if rtems.check_networking(conf):
+        conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
 
 def configure(conf):
     if conf.options.auto_regen:
@@ -48,8 +52,6 @@ def configure(conf):
     conf.env.WARNINGS = conf.options.warnings
     conf.env.NET_CONFIG = conf.options.net_config
     rtems.configure(conf, bsp_configure)
-    if rtems.check_networking(conf):
-        conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
 
 def build(bld):
     rtems.build(bld)

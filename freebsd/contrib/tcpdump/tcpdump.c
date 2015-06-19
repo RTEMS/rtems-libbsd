@@ -39,6 +39,14 @@ static const char rcsid[] _U_ =
 
 /* $FreeBSD$ */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#define setpriority(a, b, c)
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
+
 /*
  * tcpdump - monitor tcp/ip traffic on an ethernet.
  *
@@ -49,14 +57,6 @@ static const char rcsid[] _U_ =
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
-#if __rtems__
-#define __need_getopt_newlib
-#include <getopt.h>
-#define setpriority(a, b, c)
-#include <machine/rtems-bsd-program.h>
-#include <machine/rtems-bsd-commands.h>
 #endif
 
 #include <tcpdump-stdinc.h>
@@ -2120,11 +2120,11 @@ static void verbose_stats_dump(int sig _U_)
 static void
 usage(void)
 {
-#if __rtems__
+#ifdef __rtems__
   #define version "RTEMS Version"
 #else
 	extern char version[];
-#endif
+#endif /* __rtems__ */
 #ifndef HAVE_PCAP_LIB_VERSION
 #if defined(WIN32) || defined(HAVE_PCAP_VERSION)
 	extern char pcap_version[];

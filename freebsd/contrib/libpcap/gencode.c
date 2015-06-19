@@ -433,11 +433,11 @@ pcap_compile(pcap_t *p, struct bpf_program *program,
 	     const char *buf, int optimize, bpf_u_int32 mask)
 #endif /* WIN32 */
 {
-#if __rtems__
+#ifdef __rtems__
 	int n_errors;
 #else
 	extern int n_errors;
-#endif
+#endif /* __rtems__ */
 	const char * volatile xbuf = buf;
 	u_int len;
 

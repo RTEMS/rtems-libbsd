@@ -329,7 +329,7 @@ cgem_rx_filter(struct cgem_softc *sc)
 	net_cfg = RD4(sc, CGEM_NET_CFG);
 
 	net_cfg &= ~(CGEM_NET_CFG_MULTI_HASH_EN |
-		     CGEM_NET_CFG_NO_BCAST | 
+		     CGEM_NET_CFG_NO_BCAST |
 		     CGEM_NET_CFG_COPY_ALL);
 
 	if ((ifp->if_flags & IFF_PROMISC) != 0)
@@ -462,7 +462,7 @@ cgem_setup_descs(struct cgem_softc *sc)
 	err = bus_dmamap_load(sc->desc_dma_tag, sc->txring_dma_map,
 			      (void *)sc->txring,
 			      CGEM_NUM_TX_DESCS*sizeof(struct cgem_tx_desc),
-			      cgem_getaddr, &sc->txring_physaddr, 
+			      cgem_getaddr, &sc->txring_physaddr,
 			      BUS_DMA_NOWAIT);
 	if (err)
 		return (err);
@@ -514,7 +514,7 @@ cgem_fill_rqueue(struct cgem_softc *sc)
 
 #ifndef __rtems__
 		/* Load map and plug in physical address. */
-		if (bus_dmamap_load_mbuf_sg(sc->mbuf_dma_tag, 
+		if (bus_dmamap_load_mbuf_sg(sc->mbuf_dma_tag,
 			      sc->rxring_m_dmamap[sc->rxring_hd_ptr], m,
 			      segs, &nsegs, BUS_DMA_NOWAIT)) {
 			sc->rxdmamapfails++;
@@ -542,7 +542,7 @@ cgem_fill_rqueue(struct cgem_softc *sc)
 			sc->rxring_hd_ptr = 0;
 		} else
 			sc->rxring[sc->rxring_hd_ptr++].addr = segs[0].ds_addr;
-			
+
 		sc->rxring_queued++;
 	}
 }
@@ -1129,7 +1129,7 @@ cgem_config(struct cgem_softc *sc)
 	/* Write the rx and tx descriptor ring addresses to the QBAR regs. */
 	WR4(sc, CGEM_RX_QBAR, (uint32_t) sc->rxring_physaddr);
 	WR4(sc, CGEM_TX_QBAR, (uint32_t) sc->txring_physaddr);
-	
+
 	/* Enable rx and tx. */
 	sc->net_ctl_shadow |= (CGEM_NET_CTRL_TX_EN | CGEM_NET_CTRL_RX_EN);
 	WR4(sc, CGEM_NET_CTRL, sc->net_ctl_shadow);
@@ -1323,7 +1323,7 @@ cgem_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 				     ~CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN);
 			}
 		}
-		if ((ifp->if_capenable & (IFCAP_RXCSUM | IFCAP_TXCSUM)) == 
+		if ((ifp->if_capenable & (IFCAP_RXCSUM | IFCAP_TXCSUM)) ==
 		    (IFCAP_RXCSUM | IFCAP_TXCSUM))
 			ifp->if_capenable |= IFCAP_VLAN_HWCSUM;
 		else
@@ -1423,7 +1423,7 @@ cgem_miibus_writereg(device_t dev, int phy, int reg, int data)
 {
 	struct cgem_softc *sc = device_get_softc(dev);
 	int tries;
-	
+
 	WR4(sc, CGEM_PHY_MAINT,
 	    CGEM_PHY_MAINT_CLAUSE_22 | CGEM_PHY_MAINT_MUST_10 |
 	    CGEM_PHY_MAINT_OP_WRITE |
@@ -1778,15 +1778,10 @@ cgem_attach(device_t dev)
 	ifp->if_init = cgem_init;
 	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
 		IFCAP_VLAN_MTU | IFCAP_VLAN_HWCSUM;
-#ifndef __rtems__
 	/* Disable hardware checksumming by default. */
 	ifp->if_hwassist = 0;
 	ifp->if_capenable = ifp->if_capabilities &
 		~(IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 | IFCAP_VLAN_HWCSUM);
-#else /* __rtems__ */
-	ifp->if_hwassist = CGEM_CKSUM_ASSIST;
-	ifp->if_capenable = ifp->if_capabilities;
-#endif /* __rtems__ */
 	ifp->if_snd.ifq_drv_maxlen = CGEM_NUM_TX_DESCS;
 	IFQ_SET_MAXLEN(&ifp->if_snd, ifp->if_snd.ifq_drv_maxlen);
 	IFQ_SET_READY(&ifp->if_snd);

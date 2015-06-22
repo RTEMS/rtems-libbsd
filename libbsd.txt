@@ -1075,11 +1075,23 @@ Broadcom BCM4401	_bsd_bfe_pcimodule_sys_init	Links
 Broadcom BCM570x 	_bsd_bge_pcimodule_sys_init	Needs Symbols (A)
 E1000 IGB 		_bsd_igb_pcimodule_sys_init	Links
 E1000 EM		_bsd_em_pcimodule_sys_init	Links
+Cadence			?				Links, works.
 ----
-
 
 Symbols (A)
          pci_get_vpd_ident
+
+=== Cadence ===
+
+The cadence driver works on the Xilinx Zynq platform. The hardware checksum
+support works on real hardware but does not seem to be supported on qemu
+therefore the default state is to disable TXCSUM and RXCSUM and this can be
+enabled from the shell with:
+
+  # ifconfig cgem0 rxcsum txcsum
+
+or with an ioctl call to the network interface driver with SIOCSIFCAP and the
+mask IFCAP_TXCSUM and IFCAP_RXCSUM set.
 
 == Problems to report to FreeBSD ==
 

@@ -1778,15 +1778,10 @@ cgem_attach(device_t dev)
 	ifp->if_init = cgem_init;
 	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
 		IFCAP_VLAN_MTU | IFCAP_VLAN_HWCSUM;
-#ifndef __rtems__
 	/* Disable hardware checksumming by default. */
 	ifp->if_hwassist = 0;
 	ifp->if_capenable = ifp->if_capabilities &
 		~(IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 | IFCAP_VLAN_HWCSUM);
-#else /* __rtems__ */
-	ifp->if_hwassist = CGEM_CKSUM_ASSIST;
-	ifp->if_capenable = ifp->if_capabilities;
-#endif /* __rtems__ */
 	ifp->if_snd.ifq_drv_maxlen = CGEM_NUM_TX_DESCS;
 	IFQ_SET_MAXLEN(&ifp->if_snd, ifp->if_snd.ifq_drv_maxlen);
 	IFQ_SET_READY(&ifp->if_snd);

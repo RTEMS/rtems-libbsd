@@ -371,6 +371,7 @@ test_main(void)
 
 	rtems_resource_snapshot_take(&snapshot);
 
+	mtx_init(&ctx->mtx, "test", NULL, MTX_DEF);
 	cv_init(&ctx->cv, "test");
 	assert(strcmp(cv_wmesg(&ctx->cv), "test") == 0);
 

@@ -79,10 +79,10 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 
 	owner = m->owner;
 	executing = _Thread_Executing;
-	++executing->resource_count;
 
 	if (__predict_true(owner == NULL)) {
 		m->owner = executing;
+		++executing->resource_count;
 
 		_Thread_queue_Release(&m->queue, &lock_context);
 	} else {

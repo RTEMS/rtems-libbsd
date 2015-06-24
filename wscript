@@ -128,13 +128,13 @@ def build(bld):
                 net_cfg_netmask = rhs
             if lhs == "NET_CFG_PEER_IP":
                 net_cfg_peer_ip = rhs
-            if lhs == "NET_CFG_GATEWAY_IP_IP":
+            if lhs == "NET_CFG_GATEWAY_IP":
                 net_cfg_gateway_ip = rhs
-            if lhs == "NET_TAP_INTERFACE_IP_IP":
+            if lhs == "NET_TAP_INTERFACE":
                 net_tap_interface = rhs
     bld(target = "testsuite/include/rtems/bsd/test/network-config.h",
         source = "testsuite/include/rtems/bsd/test/network-config.h.in",
-        rule = "sed -e 's/@NET_CFG_SELF_IP@/%s/' -e 's/@NET_CFG_NETMASK@/%s/' -e 's/@NET_CFG_PEER_IP@/%s/' -e 's/@NET_CFG_GATEWAY_IP@/%s/' < ${SRC} > ${TGT}" % (net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask),
+        rule = "sed -e 's/@NET_CFG_SELF_IP@/%s/' -e 's/@NET_CFG_NETMASK@/%s/' -e 's/@NET_CFG_PEER_IP@/%s/' -e 's/@NET_CFG_GATEWAY_IP@/%s/' < ${SRC} > ${TGT}" % (net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_gateway_ip),
         update_outputs = True)
 
     # KVM Symbols

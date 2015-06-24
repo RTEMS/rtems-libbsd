@@ -367,9 +367,9 @@ class ModuleManager(builder.ModuleManager):
         self.add('                net_cfg_netmask = rhs')
         self.add('            if lhs == "NET_CFG_PEER_IP":')
         self.add('                net_cfg_peer_ip = rhs')
-        self.add('            if lhs == "NET_CFG_GATEWAY_IP_IP":')
+        self.add('            if lhs == "NET_CFG_GATEWAY_IP":')
         self.add('                net_cfg_gateway_ip = rhs')
-        self.add('            if lhs == "NET_TAP_INTERFACE_IP_IP":')
+        self.add('            if lhs == "NET_TAP_INTERFACE":')
         self.add('                net_tap_interface = rhs')
         self.add('    bld(target = "testsuite/include/rtems/bsd/test/network-config.h",')
         self.add('        source = "testsuite/include/rtems/bsd/test/network-config.h.in",')
@@ -377,7 +377,7 @@ class ModuleManager(builder.ModuleManager):
                  '-e \'s/@NET_CFG_NETMASK@/%s/\' ' + \
                  '-e \'s/@NET_CFG_PEER_IP@/%s/\' ' + \
                  '-e \'s/@NET_CFG_GATEWAY_IP@/%s/\' < ${SRC} > ${TGT}" % ' + \
-                 '(net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_netmask),')
+                 '(net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_gateway_ip),')
         self.add('        update_outputs = True)')
         self.add('')
 

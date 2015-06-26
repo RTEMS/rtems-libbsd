@@ -169,7 +169,7 @@ rtems_pcap_loop(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
 
     name = rtems_build_name('T', 'C', 'P', 'D');
 
-    sc = rtems_task_create (name, priority, 4 * 1024,
+    sc = rtems_task_create (name, priority, 8 * 1024,
                             RTEMS_NO_FLOATING_POINT | RTEMS_LOCAL,
                             RTEMS_PREEMPT | RTEMS_TIMESLICE | RTEMS_NO_ASR,
                             &id);
@@ -211,7 +211,7 @@ rtems_pcap_loop(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
         }
     }
 
-    return 0;
+    return pcap_loop_args.ret;
 }
 #define pcap_loop rtems_pcap_loop
 #endif /* __rtems__ */

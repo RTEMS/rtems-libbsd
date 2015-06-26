@@ -45,6 +45,7 @@ static const char rcsid[] _U_ =
 #define setpriority(a, b, c)
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
+#include <rtems.h>
 #endif /* __rtems__ */
 
 /*
@@ -110,6 +111,110 @@ extern int SIZE_BUF;
 #elif SIGUSR1
 #define SIGNAL_REQ_INFO SIGUSR1
 #endif
+
+#ifdef __rtems__
+/*
+ * Run the PCAP loop in a separate task and have the shell thread block on the
+ * input.
+ */
+typedef struct
+{
+    volatile bool running;
+    pcap_t *pd;
+    int cnt;
+    pcap_handler cb;
+    u_char *ud;
+    int ret;
+} rtems_pcap_loop_args;
+
+static void
+rtems_pcap_loop_thread (rtems_task_argument arg)
+{
+    rtems_pcap_loop_args* pcap_loop_arg = (rtems_pcap_loop_args*) arg;
+
+    pcap_loop_arg->ret = pcap_loop(pcap_loop_arg->pd,
+                                   pcap_loop_arg->cnt,
+                                   pcap_loop_arg->cb,
+                                   pcap_loop_arg->ud);
+
+    pcap_loop_arg->running = false;
+
+    rtems_task_delete(RTEMS_SELF);
+}
+
+static int
+rtems_pcap_loop(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
+{
+    rtems_status_code   sc;
+    rtems_task_priority priority;
+    rtems_name          name;
+    rtems_id            id;
+
+    rtems_pcap_loop_args pcap_loop_args;
+
+    pcap_loop_args.running = true;
+    pcap_loop_args.pd = pd;
+    pcap_loop_args.cnt = cnt;
+    pcap_loop_args.cb = cb;
+    pcap_loop_args.ud = ud;
+    pcap_loop_args.ret = 0;
+
+    sc = rtems_task_set_priority (RTEMS_SELF, RTEMS_CURRENT_PRIORITY, &priority);
+
+    if (sc != RTEMS_SUCCESSFUL) {
+        fprintf(stderr, "error: cannot get current priority: %s\n",
+                rtems_status_text (sc));
+        return -1;
+    }
+
+    name = rtems_build_name('T', 'C', 'P', 'D');
+
+    sc = rtems_task_create (name, priority, 4 * 1024,
+                            RTEMS_NO_FLOATING_POINT | RTEMS_LOCAL,
+                            RTEMS_PREEMPT | RTEMS_TIMESLICE | RTEMS_NO_ASR,
+                            &id);
+
+    if (sc != RTEMS_SUCCESSFUL)
+    {
+        fprintf(stderr, "error: cannot create helper thread: %s\n",
+                rtems_status_text (sc));
+        return -1;
+    }
+
+    sc = rtems_task_start (id,
+                           rtems_pcap_loop_thread,
+                           &pcap_loop_args);
+    if (sc != RTEMS_SUCCESSFUL)
+    {
+        fprintf(stderr, "error: cannot start helper thread: %s\n",
+                rtems_status_text (sc));
+        rtems_task_delete (id);
+        return -1;
+    }
+
+    printf("Press ENTER to end\n");
+
+    while (true)
+    {
+        int c = getchar ();
+
+        if ((c == '\r') || (c == '\n') || (c == 'q') || (c == 'Q'))
+        {
+            pcap_breakloop(pd);
+            while (true)
+            {
+                if (!pcap_loop_args.running)
+                    break;
+                usleep(10000);
+            }
+            break;
+        }
+    }
+
+    return 0;
+}
+#define pcap_loop rtems_pcap_loop
+#endif /* __rtems__ */
 
 netdissect_options Gndo;
 netdissect_options *gndo = &Gndo;

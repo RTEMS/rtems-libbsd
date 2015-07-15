@@ -434,8 +434,9 @@ http://www.freebsd.org/cgi/man.cgi?query=kobj&sektion=9&apropos=0&manpath=FreeBS
 
 === Rules for Modifying FreeBSD Source
 
-Only add lines.  Subtract code by added `#ifndef __rtems__`.  This makes
-merging easier in the future.  For example:
+Only add lines.  If your patch contains lines starting with a '-', then this is
+wrong.  Subtract code by added `#ifndef __rtems__`.  This makes merging easier
+in the future.  For example:
 
 -------------------------------------------------------------------------------
 /* Global variables for the kernel. */
@@ -479,7 +480,16 @@ extern volatile int ticks;
 -------------------------------------------------------------------------------
 
 Add nothing (even blank lines) before or after the `__rtems__` guards.  Always
-include a `__rtems__` in the guards to make searches easy.
+include a `__rtems__` in the guards to make searches easy, so use
+
+* `#ifndef __rtems__`,
+* `#ifdef __rtems__`,
+* `#else /* __rtems__ */`, and
+* `#endif /* __rtems__ */`.
+
+For new code use
+http://www.freebsd.org/cgi/man.cgi?query=style&apropos=0&sektion=9&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[STYLE(9)].
+Do not format original FreeBSD code.
 
 == BSD Library Source
 

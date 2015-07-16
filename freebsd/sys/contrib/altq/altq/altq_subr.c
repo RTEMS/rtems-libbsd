@@ -930,6 +930,7 @@ init_machclk_setup(void)
 #if defined(__NetBSD__) && defined(MULTIPROCESSOR)
 	machclk_usepcc = 0;
 #endif
+#if !defined(__rtems__)
 #if defined(__amd64__) || defined(__i386__)
 	/* check if TSC is available */
 #ifdef __FreeBSD__
@@ -938,6 +939,7 @@ init_machclk_setup(void)
 #else
 	if ((cpu_feature & CPUID_TSC) == 0)
 #endif
+#endif /* __rtems__ */
 		machclk_usepcc = 0;
 #endif
 }
@@ -968,6 +970,7 @@ init_machclk(void)
 	 * accessible, just use it.
 	 */
 #if defined(__amd64__) || defined(__i386__)
+#ifndef __rtems__
 #ifdef __FreeBSD__
 	machclk_freq = atomic_load_acq_64(&tsc_freq);
 #elif defined(__NetBSD__)
@@ -975,6 +978,7 @@ init_machclk(void)
 #elif defined(__OpenBSD__) && (defined(I586_CPU) || defined(I686_CPU))
 	machclk_freq = pentium_mhz * 1000000;
 #endif
+#endif /* __rtems */
 #endif
 
 	/*

@@ -52,7 +52,7 @@ static const rtems_bsd_device_resource smc0_res[] = {
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(smc, 0, RTEMS_ARRAY_SIZE(smc0_res),
     &smc0_res[0]);
 
-#elif defined(__GENMCF548X_BSP_H)
+#elif defined(LIBBSP_M68K_GENMCF548X_BSP_H)
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(fec, 0, 0, NULL);
 

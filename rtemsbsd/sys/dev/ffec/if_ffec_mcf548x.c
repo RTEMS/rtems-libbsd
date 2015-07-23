@@ -39,7 +39,7 @@
 
 #include <bsp.h>
 
-#ifdef __GENMCF548X_BSP_H
+#ifdef LIBBSP_M68K_GENMCF548X_BSP_H
 
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic ignored "-Wpointer-sign"
@@ -1575,4 +1575,4 @@ DRIVER_MODULE(fec, nexus, fec_nexus_driver, fec_devclass, 0, 0);
 MODULE_DEPEND(fec, nexus, 1, 1, 1);
 MODULE_DEPEND(fec, ether, 1, 1, 1);
 
-#endif /* __GENMCF548X_BSP_H */
+#endif /* LIBBSP_M68K_GENMCF548X_BSP_H */

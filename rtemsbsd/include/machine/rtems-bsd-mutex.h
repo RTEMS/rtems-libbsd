@@ -48,7 +48,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 typedef struct {
-	Thread_queue_Control queue;
+	Thread_queue_Queue queue;
 	Thread_Control *owner;
 	int nest_level;
 } rtems_bsd_mutex;

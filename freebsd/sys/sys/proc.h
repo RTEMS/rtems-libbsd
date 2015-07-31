@@ -940,8 +940,13 @@ void	proc_reparent(struct proc *child, struct proc *newparent);
 struct	pstats *pstats_alloc(void);
 void	pstats_fork(struct pstats *src, struct pstats *dst);
 void	pstats_free(struct pstats *ps);
+#ifndef __rtems__
 int	securelevel_ge(struct ucred *cr, int level);
 int	securelevel_gt(struct ucred *cr, int level);
+#else /* __rtems__ */
+#define securelevel_ge(x, y) 0
+#define securelevel_gt(x, y) 0
+#endif /* __rtems__ */
 void	sess_hold(struct session *);
 void	sess_release(struct session *);
 int	setrunnable(struct thread *);

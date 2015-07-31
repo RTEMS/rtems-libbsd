@@ -260,7 +260,9 @@ static struct resource_list *cpu_get_rlist(device_t dev, device_t child);
 
 struct cpu_device {
 	struct resource_list cd_rl;
+#ifndef __rtems__
 	struct pcpu *cd_pcpu;
+#endif /* __rtems__ */
 };
 
 static device_method_t cpu_methods[] = {
@@ -320,18 +322,24 @@ cpu_add_child(device_t bus, u_int order, const char *name, int unit)
 {
 	struct cpu_device *cd;
 	device_t child;
+#ifndef __rtems__
 	struct pcpu *pc;
+#endif /* __rtems__ */
 
 	if ((cd = malloc(sizeof(*cd), M_DEVBUF, M_NOWAIT | M_ZERO)) == NULL)
 		return (NULL);
 
 	resource_list_init(&cd->cd_rl);
+#ifndef __rtems__
 	pc = pcpu_find(device_get_unit(bus));
 	cd->cd_pcpu = pc;
+#endif /* __rtems__ */
 
 	child = device_add_child_ordered(bus, order, name, unit);
 	if (child != NULL) {
+#ifndef __rtems__
 		pc->pc_device = child;
+#endif /* __rtems__ */
 		device_set_ivars(child, cd);
 	} else
 		free(cd, M_DEVBUF);
@@ -353,11 +361,11 @@ cpu_read_ivar(device_t dev, device_t child, int index, uintptr_t *result)
 	struct cpu_device *cpdev;
 
 	switch (index) {
+#ifndef __rtems__
 	case CPU_IVAR_PCPU:
 		cpdev = device_get_ivars(child);
 		*result = (uintptr_t)cpdev->cd_pcpu;
 		break;
-#ifndef __rtems__
 	case CPU_IVAR_NOMINAL_MHZ:
 		if (tsc_is_invariant) {
 			*result = (uintptr_t)(atomic_load_acq_64(&tsc_freq) /

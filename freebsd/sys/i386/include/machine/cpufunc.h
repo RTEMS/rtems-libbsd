@@ -172,6 +172,7 @@ mfence(void)
 
 #ifdef _KERNEL
 
+#ifndef __rtems__
 #define	HAVE_INLINE_FFS
 
 static __inline int
@@ -187,6 +188,7 @@ ffs(int mask)
 }
 
 #define	HAVE_INLINE_FLS
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 static __inline int
@@ -685,6 +687,7 @@ write_cyrix_reg(u_char reg, u_char data)
 	outb(0x23, data);
 }
 
+#ifndef __rtems__
 static __inline register_t
 intr_disable(void)
 {
@@ -700,6 +703,7 @@ intr_restore(register_t eflags)
 {
 	write_eflags(eflags);
 }
+#endif /* __rtems__ */
 
 #else /* !(__GNUCLIKE_ASM && __CC_SUPPORTS___INLINE) */
 

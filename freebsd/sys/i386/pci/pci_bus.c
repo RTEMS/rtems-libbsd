@@ -645,6 +645,7 @@ DEFINE_CLASS_0(pcib, legacy_pcib_driver, legacy_pcib_methods, 1);
 DRIVER_MODULE(pcib, legacy, legacy_pcib_driver, hostb_devclass, 0, 0);
 
 
+#ifndef __rtems__
 /*
  * Install placeholder to claim the resources owned by the
  * PCI bus interface.  This could be used to extract the
@@ -692,6 +693,7 @@ static devclass_t pcibus_pnp_devclass;
 
 DEFINE_CLASS_0(pcibus_pnp, pcibus_pnp_driver, pcibus_pnp_methods, 1);
 DRIVER_MODULE(pcibus_pnp, isa, pcibus_pnp_driver, pcibus_pnp_devclass, 0, 0);
+#endif /* __rtems__ */
 
 #ifdef __HAVE_PIR
 /*

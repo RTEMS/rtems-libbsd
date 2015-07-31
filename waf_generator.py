@@ -322,10 +322,10 @@ class ModuleManager(builder.ModuleManager):
         self.add('')
         self.add('    # Include paths')
         self.add('    includes = ["."]')
-        for i in builder.includes():
-            self.add('    includes += ["%s"]' % (i[2:]))
         self.add('    for i in %r:' % (builder.cpu_includes()))
         self.add('        includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]')
+        for i in builder.includes():
+            self.add('    includes += ["%s"]' % (i[2:]))
         self.add('')
         self.add('    # Support dummy PIC IRQ includes')
         self.add('    if bld.get_env()["RTEMS_ARCH"] not in ("arm", "i386", "lm32", "mips", "powerpc", "sparc", "m68k"):')

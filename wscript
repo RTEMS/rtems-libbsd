@@ -73,6 +73,8 @@ def build(bld):
 
     # Include paths
     includes = ["."]
+    for i in ['-Irtemsbsd/@CPU@/include', '-Ifreebsd/sys/@CPU@/include']:
+        includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]
     includes += ["rtemsbsd/include"]
     includes += ["freebsd/sys"]
     includes += ["freebsd/sys/contrib/altq"]
@@ -91,8 +93,6 @@ def build(bld):
     includes += ["mDNSResponder/mDNSShared"]
     includes += ["mDNSResponder/mDNSPosix"]
     includes += ["testsuite/include"]
-    for i in ['-Irtemsbsd/@CPU@/include', '-Ifreebsd/sys/@CPU@/include']:
-        includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]
 
     # Support dummy PIC IRQ includes
     if bld.get_env()["RTEMS_ARCH"] not in ("arm", "i386", "lm32", "mips", "powerpc", "sparc", "m68k"):

@@ -677,6 +677,7 @@ def build(bld):
               'freebsd/sys/dev/e1000/e1000_82571.c',
               'freebsd/sys/dev/e1000/e1000_82575.c',
               'freebsd/sys/dev/e1000/e1000_api.c',
+              'freebsd/sys/dev/e1000/e1000_i210.c',
               'freebsd/sys/dev/e1000/e1000_ich8lan.c',
               'freebsd/sys/dev/e1000/e1000_mac.c',
               'freebsd/sys/dev/e1000/e1000_manage.c',

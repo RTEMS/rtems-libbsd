@@ -388,6 +388,7 @@ resource_find_dev(int *anchor, const char *name, int *unit,
 	*anchor = newln;
 	return ret;
 }
+#endif /* __rtems__ */
 
 /*
  * Check to see if a device is disabled via a disabled hint.
@@ -402,4 +403,3 @@ resource_disabled(const char *name, int unit)
 	       return (0);
 	return (value);
 }
-#endif /* __rtems__ */

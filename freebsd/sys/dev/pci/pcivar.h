@@ -326,7 +326,6 @@ pci_enable_busmaster(device_t dev)
     return(PCI_ENABLE_BUSMASTER(device_get_parent(dev), dev));
 }
 
-#ifndef __rtems__
 static __inline int
 pci_disable_busmaster(device_t dev)
 {
@@ -356,7 +355,6 @@ pci_get_vpd_readonly(device_t dev, const char *kw, const char **identptr)
 {
     return(PCI_GET_VPD_READONLY(device_get_parent(dev), dev, kw, identptr));
 }
-#endif /* __rtems__ */
 
 /*
  * Check if the address range falls within the VGA defined address range(s)

@@ -1759,15 +1759,6 @@ def pci(mm):
 	mm.generator['source']()
     )
     mod.addTargetSourceCPUDependentSourceFiles(
-        [ 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
-          'mips', 'nios2', 'powerpc', 'sh', 'sparc', 'sparc64', 'v850' ],
-        'i386',
-        [
-		'sys/i386/i386/legacy.c',
-        ],
-	mm.generator['source']()
-    )
-    mod.addTargetSourceCPUDependentSourceFiles(
         [ 'arm', 'avr', 'bfin', 'h8300', 'i386', 'lm32', 'm32c', 'm32r',
           'm68k', 'mips', 'nios2', 'powerpc', 'sh', 'sparc', 'sparc64', 'v850' ],
         'x86',

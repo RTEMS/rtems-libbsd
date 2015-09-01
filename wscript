@@ -1054,21 +1054,17 @@ def build(bld):
               'rtemsbsd/telnetd/telnetd.c']
     if bld.get_env()["RTEMS_ARCH"] == "arm":
         source += ['freebsd/sys/arm/arm/in_cksum.c',
-                   'freebsd/sys/arm/arm/legacy.c',
                    'freebsd/sys/arm/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "avr":
         source += ['freebsd/sys/avr/avr/in_cksum.c',
-                   'freebsd/sys/avr/avr/legacy.c',
                    'freebsd/sys/avr/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "bfin":
         source += ['freebsd/sys/bfin/bfin/in_cksum.c',
-                   'freebsd/sys/bfin/bfin/legacy.c',
                    'freebsd/sys/bfin/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "cflags":
         source += ['default']
     if bld.get_env()["RTEMS_ARCH"] == "h8300":
         source += ['freebsd/sys/h8300/h8300/in_cksum.c',
-                   'freebsd/sys/h8300/h8300/legacy.c',
                    'freebsd/sys/h8300/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "i386":
         source += ['freebsd/sys/i386/i386/in_cksum.c',
@@ -1076,49 +1072,38 @@ def build(bld):
                    'freebsd/sys/i386/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "lm32":
         source += ['freebsd/sys/lm32/lm32/in_cksum.c',
-                   'freebsd/sys/lm32/lm32/legacy.c',
                    'freebsd/sys/lm32/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "m32c":
         source += ['freebsd/sys/m32c/m32c/in_cksum.c',
-                   'freebsd/sys/m32c/m32c/legacy.c',
                    'freebsd/sys/m32c/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "m32r":
         source += ['freebsd/sys/m32r/m32r/in_cksum.c',
-                   'freebsd/sys/m32r/m32r/legacy.c',
                    'freebsd/sys/m32r/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "m68k":
         source += ['freebsd/sys/m68k/m68k/in_cksum.c',
-                   'freebsd/sys/m68k/m68k/legacy.c',
                    'freebsd/sys/m68k/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "mips":
         source += ['freebsd/sys/mips/mips/in_cksum.c',
-                   'freebsd/sys/mips/mips/legacy.c',
                    'freebsd/sys/mips/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "nios2":
         source += ['freebsd/sys/nios2/nios2/in_cksum.c',
-                   'freebsd/sys/nios2/nios2/legacy.c',
                    'freebsd/sys/nios2/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "powerpc":
         source += ['freebsd/sys/powerpc/pci/pci_bus.c',
-                   'freebsd/sys/powerpc/powerpc/in_cksum.c',
-                   'freebsd/sys/powerpc/powerpc/legacy.c']
+                   'freebsd/sys/powerpc/powerpc/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sh":
         source += ['freebsd/sys/sh/pci/pci_bus.c',
-                   'freebsd/sys/sh/sh/in_cksum.c',
-                   'freebsd/sys/sh/sh/legacy.c']
+                   'freebsd/sys/sh/sh/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sparc":
         source += ['freebsd/sys/mips/mips/in_cksum.c',
                    'freebsd/sys/sparc/pci/pci_bus.c',
-                   'freebsd/sys/sparc/sparc/in_cksum.c',
-                   'freebsd/sys/sparc/sparc/legacy.c']
+                   'freebsd/sys/sparc/sparc/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sparc64":
         source += ['freebsd/sys/sparc64/pci/pci_bus.c',
-                   'freebsd/sys/sparc64/sparc64/in_cksum.c',
-                   'freebsd/sys/sparc64/sparc64/legacy.c']
+                   'freebsd/sys/sparc64/sparc64/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "v850":
         source += ['freebsd/sys/v850/pci/pci_bus.c',
-                   'freebsd/sys/v850/v850/in_cksum.c',
-                   'freebsd/sys/v850/v850/legacy.c']
+                   'freebsd/sys/v850/v850/in_cksum.c']
     bld.stlib(target = "bsd",
               features = "c cxx",
               cflags = cflags,

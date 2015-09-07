@@ -925,6 +925,9 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 			/* Remove trailing FCS */
 			m_adj(m, -ETHER_CRC_LEN);
 
+#ifdef __rtems__
+			rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+#endif /* __rtems__ */
 			DWC_UNLOCK(sc);
 			(*ifp->if_input)(ifp, m);
 			DWC_LOCK(sc);

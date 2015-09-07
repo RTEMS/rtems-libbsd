@@ -231,6 +231,7 @@
 #define	 DMA_STATUS_NIS		(1 << 16)
 #define	 DMA_STATUS_AIS		(1 << 15)
 #define	 DMA_STATUS_FBI		(1 << 13)
+#define	 DMA_STATUS_RU		(1 << 7)
 #define	 DMA_STATUS_RI		(1 << 6)
 #define	 DMA_STATUS_TI		(1 << 0)
 #define	 DMA_STATUS_INTR_MASK	0x1ffff

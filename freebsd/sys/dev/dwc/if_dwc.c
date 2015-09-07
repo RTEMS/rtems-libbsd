@@ -985,6 +985,7 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 			if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 #else /* __rtems__ */
 			++ifp->if_ipackets;
+			rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
 #endif /* __rtems__ */
 
 			DWC_UNLOCK(sc);

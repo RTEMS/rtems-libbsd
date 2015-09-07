@@ -1014,25 +1014,22 @@ dwc_intr(void *arg)
 	}
 
 	reg = READ4(sc, DMA_STATUS);
-	if (reg & DMA_STATUS_NIS) {
-		if (reg & DMA_STATUS_RI)
-			dwc_rxfinish_locked(sc);
-
-		if (reg & DMA_STATUS_TI)
-			dwc_txfinish_locked(sc);
-	}
-
-	if (reg & DMA_STATUS_AIS) {
-		if (reg & DMA_STATUS_FBI) {
-			/* Fatal bus error */
-			device_printf(sc->dev,
-			    "Ethernet DMA error, restarting controller.\n");
-			dwc_stop_locked(sc);
-			dwc_init_locked(sc);
-		}
-	}
-
 	WRITE4(sc, DMA_STATUS, reg & DMA_STATUS_INTR_MASK);
+
+	if (reg & (DMA_STATUS_RI | DMA_STATUS_RU))
+		dwc_rxfinish_locked(sc);
+
+	if (reg & DMA_STATUS_TI)
+		dwc_txfinish_locked(sc);
+
+	if (reg & DMA_STATUS_FBI) {
+		/* Fatal bus error */
+		device_printf(sc->dev,
+		    "Ethernet DMA error, restarting controller.\n");
+		dwc_stop_locked(sc);
+		dwc_init_locked(sc);
+	}
+
 	DWC_UNLOCK(sc);
 }
 

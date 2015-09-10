@@ -239,7 +239,9 @@ struct uma_slab_head {
 	uma_keg_t	us_keg;			/* Keg we live in */
 	union {
 		LIST_ENTRY(uma_slab)	_us_link;	/* slabs in zone */
+#ifndef __rtems__
 		unsigned long	_us_size;	/* Size of allocation */
+#endif /* __rtems__ */
 	} us_type;
 	SLIST_ENTRY(uma_slab)	us_hlink;	/* Link for hash table */
 	u_int8_t	*us_data;		/* First item */
@@ -270,7 +272,9 @@ struct uma_slab_refcnt {
 
 #define	us_keg		us_head.us_keg
 #define	us_link		us_head.us_type._us_link
+#ifndef __rtems__
 #define	us_size		us_head.us_type._us_size
+#endif /* __rtems__ */
 #define	us_hlink	us_head.us_hlink
 #define	us_data		us_head.us_data
 #define	us_flags	us_head.us_flags

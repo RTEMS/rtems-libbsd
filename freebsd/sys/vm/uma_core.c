@@ -722,11 +722,13 @@ keg_drain(uma_keg_t keg)
 	while (slab) {
 		n = LIST_NEXT(slab, us_link);
 
+#ifndef __rtems__
 		/* We have no where to free these to */
 		if (slab->us_flags & UMA_SLAB_BOOT) {
 			slab = n;
 			continue;
 		}
+#endif /* __rtems__ */
 
 		LIST_REMOVE(slab, us_link);
 		keg->uk_pages -= keg->uk_ppera;
@@ -1023,10 +1025,11 @@ page_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 {
 	void *p;	/* Returned page */
 
-	*pflag = UMA_SLAB_KMEM;
 #ifndef __rtems__
+	*pflag = UMA_SLAB_KMEM;
 	p = (void *) kmem_malloc(kmem_map, bytes, wait);
 #else /* __rtems__ */
+	*pflag = 0;
 	p = rtems_bsd_page_alloc(bytes, wait);
 #endif /* __rtems__ */
 
@@ -1121,7 +1124,10 @@ page_free(void *mem, int size, u_int8_t flags)
 
 	kmem_free(map, (vm_offset_t)mem, size);
 #else /* __rtems__ */
-	rtems_bsd_page_free(mem);
+	if (flags & UMA_SLAB_KERNEL)
+		free(mem, M_TEMP);
+	else
+		rtems_bsd_page_free(mem);
 #endif /* __rtems__ */
 }
 

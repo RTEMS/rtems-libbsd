@@ -1065,7 +1065,7 @@ def build(bld):
     if bld.get_env()["RTEMS_ARCH"] == "i386":
         source += ['freebsd/sys/i386/i386/in_cksum.c',
                    'freebsd/sys/i386/i386/legacy.c',
-                   'freebsd/sys/i386/pci/pci_bus.c']
+                   'freebsd/sys/x86/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "lm32":
         source += ['freebsd/sys/lm32/lm32/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "m32c":

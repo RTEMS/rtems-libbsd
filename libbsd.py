@@ -1746,14 +1746,7 @@ def pci(mm):
         'i386',
         [
             'sys/i386/i386/legacy.c',
-        ],
-	mm.generator['source']()
-    )
-    mod.addTargetSourceCPUDependentSourceFiles(
-        [ 'i386' ],
-        'x86',
-        [
-		'sys/x86/pci/pci_bus.c',
+            'sys/x86/pci/pci_bus.c',
         ],
 	mm.generator['source']()
     )

@@ -153,7 +153,6 @@ try:
     if isForward:
         if not isOnlyMakefile:
             makefile_gen.copyFromFreeBSDToRTEMS()
-        makefile_gen.generate()
         waf_gen.generate()
     else:
         makefile_gen.copyFromRTEMSToFreeBSD()

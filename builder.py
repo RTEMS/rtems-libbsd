@@ -450,23 +450,14 @@ class Module:
                                     RTEMSPathComposer(), NoConverter(), NoConverter(),
                                     assertSourceFile, sourceFileFragmentComposer)
 
-    def addCPUDependentSourceFiles(self, cpu, files, sourceFileFragmentComposer):
-        self.initCPUDependencies(cpu)
-        self.cpuDependentSourceFiles[cpu] += \
-            self.addFiles(files,
-                          CPUDependentPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
-                          FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
-                          sourceFileFragmentComposer)
-
-    def addTargetSourceCPUDependentSourceFiles(self, targetCPUs, sourceCPU, files,
-                                               sourceFileFragmentComposer):
-        for cpu in targetCPUs:
+    def addCPUDependentSourceFiles(self, cpus, files, sourceFileFragmentComposer):
+        for cpu in cpus:
             self.initCPUDependencies(cpu)
             self.cpuDependentSourceFiles[cpu] += \
                 self.addFiles(files,
-                              TargetSourceCPUDependentPathComposer(cpu, sourceCPU),
-                              FromFreeBSDToRTEMSSourceConverter(), NoConverter(),
-                              assertSourceFile, sourceFileFragmentComposer)
+                              CPUDependentPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
+                              FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
+                              sourceFileFragmentComposer)
 
     def addTest(self, testFragementComposer):
         self.files += [File(testFragementComposer.testName,

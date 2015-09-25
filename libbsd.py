@@ -1743,7 +1743,7 @@ def pci(mm):
         ]
     )
     mod.addCPUDependentSourceFiles(
-        'i386',
+        [ 'i386' ],
         [
             'sys/i386/i386/legacy.c',
             'sys/x86/pci/pci_bus.c',
@@ -2367,48 +2367,35 @@ def in_cksum(mm):
             'sys/mips/include/in_cksum.h',
         ]
     )
-    mod.addTargetSourceCPUDependentSourceFiles(
-        [ 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
-          'nios2', 'sh', 'sparc', 'v850' ],
-        'mips',
-        [
-            'sys/mips/mips/in_cksum.c',
-        ],
-	mm.generator['source']()
-    )
     mod.addCPUDependentSourceFiles(
-        'i386',
+        [ 'i386' ],
         [
             'sys/i386/i386/in_cksum.c',
         ],
 	mm.generator['source']()
     )
     mod.addCPUDependentSourceFiles(
-        'mips',
-        [
-            'sys/mips/mips/in_cksum.c',
-        ],
-	mm.generator['source']()
-    )
-    mod.addCPUDependentSourceFiles(
-        'powerpc',
+        [ 'powerpc' ],
         [
             'sys/powerpc/powerpc/in_cksum.c',
         ],
 	mm.generator['source']()
     )
     mod.addCPUDependentSourceFiles(
-	'sparc',
+	[ 'sparc64' ],
 	[
-            'sys/mips/mips/in_cksum.c',
+            'sys/sparc64/sparc64/in_cksum.c',
 	],
 	mm.generator['source']()
     )
     mod.addCPUDependentSourceFiles(
-	'sparc64',
-	[
-            'sys/sparc64/sparc64/in_cksum.c',
-	],
+        [
+            'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
+            'mips', 'nios2', 'sh', 'sparc', 'v850'
+        ],
+        [
+            'sys/mips/mips/in_cksum.c',
+        ],
 	mm.generator['source']()
     )
     return mod

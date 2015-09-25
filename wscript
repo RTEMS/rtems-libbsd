@@ -1053,42 +1053,41 @@ def build(bld):
               'rtemsbsd/telnetd/pty.c',
               'rtemsbsd/telnetd/telnetd.c']
     if bld.get_env()["RTEMS_ARCH"] == "arm":
-        source += ['freebsd/sys/arm/arm/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "avr":
-        source += ['freebsd/sys/avr/avr/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "bfin":
-        source += ['freebsd/sys/bfin/bfin/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "cflags":
         source += ['default']
     if bld.get_env()["RTEMS_ARCH"] == "h8300":
-        source += ['freebsd/sys/h8300/h8300/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "i386":
         source += ['freebsd/sys/i386/i386/in_cksum.c',
                    'freebsd/sys/i386/i386/legacy.c',
                    'freebsd/sys/x86/pci/pci_bus.c']
     if bld.get_env()["RTEMS_ARCH"] == "lm32":
-        source += ['freebsd/sys/lm32/lm32/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "m32c":
-        source += ['freebsd/sys/m32c/m32c/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "m32r":
-        source += ['freebsd/sys/m32r/m32r/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "m68k":
-        source += ['freebsd/sys/m68k/m68k/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "mips":
         source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "nios2":
-        source += ['freebsd/sys/nios2/nios2/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "powerpc":
         source += ['freebsd/sys/powerpc/powerpc/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sh":
-        source += ['freebsd/sys/sh/sh/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sparc":
-        source += ['freebsd/sys/mips/mips/in_cksum.c',
-                   'freebsd/sys/sparc/sparc/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sparc64":
         source += ['freebsd/sys/sparc64/sparc64/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "v850":
-        source += ['freebsd/sys/v850/v850/in_cksum.c']
+        source += ['freebsd/sys/mips/mips/in_cksum.c']
     bld.stlib(target = "bsd",
               features = "c cxx",
               cflags = cflags,

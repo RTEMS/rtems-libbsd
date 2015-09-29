@@ -1732,14 +1732,8 @@ def pci(mm):
     )
     mod.addCPUDependentHeaderFiles(
         [
-		'sys/i386/include/legacyvar.h',
-        ]
-    )
-    mod.addTargetSourceCPUDependentHeaderFiles(
-        [ 'i386' ],
-        'x86',
-        [
-		'sys/x86/include/pci_cfgreg.h',
+            'sys/i386/include/legacyvar.h',
+            'sys/x86/include/pci_cfgreg.h',
         ]
     )
     mod.addCPUDependentSourceFiles(

@@ -321,7 +321,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('    cxxflags = %r + common_flags' % (builder.cxxflags()))
         self.add('')
         self.add('    # Include paths')
-        self.add('    includes = ["."]')
+        self.add('    includes = []')
         self.add('    for i in %r:' % (builder.cpu_includes()))
         self.add('        includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]')
         for i in builder.includes():

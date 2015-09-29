@@ -72,7 +72,7 @@ def build(bld):
     cxxflags = ['-std=gnu++11'] + common_flags
 
     # Include paths
-    includes = ["."]
+    includes = []
     for i in ['-Irtemsbsd/@CPU@/include', '-Ifreebsd/sys/@CPU@/include']:
         includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]
     includes += ["rtemsbsd/include"]

@@ -75,6 +75,9 @@ def build(bld):
     includes = []
     for i in ['-Irtemsbsd/@CPU@/include', '-Ifreebsd/sys/@CPU@/include']:
         includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]
+    if bld.get_env()["RTEMS_ARCH"] == "i386":
+        for i in ['-Irtemsbsd/@CPU@/include', '-Ifreebsd/sys/@CPU@/include']:
+            includes += ["%s" % (i[2:].replace("@CPU@", "x86"))]
     includes += ["rtemsbsd/include"]
     includes += ["freebsd/sys"]
     includes += ["freebsd/sys/contrib/altq"]

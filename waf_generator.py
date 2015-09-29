@@ -324,6 +324,9 @@ class ModuleManager(builder.ModuleManager):
         self.add('    includes = []')
         self.add('    for i in %r:' % (builder.cpu_includes()))
         self.add('        includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]')
+        self.add('    if bld.get_env()["RTEMS_ARCH"] == "i386":')
+        self.add('        for i in %r:' % (builder.cpu_includes()))
+        self.add('            includes += ["%s" % (i[2:].replace("@CPU@", "x86"))]')
         for i in builder.includes():
             self.add('    includes += ["%s"]' % (i[2:]))
         self.add('')

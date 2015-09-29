@@ -1,13 +1,3 @@
-/**
- * @file
- *
- * @ingroup rtems_bsd_machine
- *
- * @brief TODO.
- *
- * File origin from FreeBSD 'sys/i386/include/bus.h'.
- */
-
 /*-
  * Copyright (c) KATO Takenori, 1999.
  *
@@ -59,13 +49,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -111,19 +94,109 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_MACHINE_BUS_I386_H_
-#define _RTEMS_BSD_MACHINE_BUS_I386_H_
+#ifndef _X86_BUS_H_
+#define _X86_BUS_H_
 
 #include <machine/_bus.h>
 #include <machine/cpufunc.h>
-#include <machine/resource.h>
 
-#if 0
-#define I386_BUS_SPACE_IO SYS_RES_IOPORT
-#else
-#define I386_BUS_SPACE_IO       0       /* space is i/o space */
-#define I386_BUS_SPACE_MEM      1       /* space is mem space */  
+#ifndef __GNUCLIKE_ASM
+# ifndef lint
+#  error "no assembler code for your compiler"
+# endif
 #endif
+
+/*
+ * Values for the x86 bus space tag, not to be used directly by MI code.
+ */
+#define	X86_BUS_SPACE_IO	0	/* space is i/o space */
+#define	X86_BUS_SPACE_MEM	1	/* space is mem space */
+
+#define BUS_SPACE_MAXSIZE_24BIT	0xFFFFFF
+#define BUS_SPACE_MAXSIZE_32BIT 0xFFFFFFFF
+#define BUS_SPACE_MAXSIZE	0xFFFFFFFF
+#define BUS_SPACE_MAXADDR_24BIT	0xFFFFFF
+#define BUS_SPACE_MAXADDR_32BIT 0xFFFFFFFF
+#if defined(__amd64__) || defined(PAE)
+#define BUS_SPACE_MAXADDR	0xFFFFFFFFFFFFFFFFULL
+#else
+#define BUS_SPACE_MAXADDR	0xFFFFFFFF
+#endif
+
+#define BUS_SPACE_UNRESTRICTED	(~0)
+
+/*
+ * Map a region of device bus space into CPU virtual address space.
+ */
+
+static __inline int bus_space_map(bus_space_tag_t t, bus_addr_t addr,
+				  bus_size_t size, int flags,
+				  bus_space_handle_t *bshp);
+
+static __inline int
+bus_space_map(bus_space_tag_t t __unused, bus_addr_t addr,
+	      bus_size_t size __unused, int flags __unused,
+	      bus_space_handle_t *bshp)
+{
+
+	*bshp = addr;
+	return (0);
+}
+
+/*
+ * Unmap a region of device bus space.
+ */
+
+static __inline void bus_space_unmap(bus_space_tag_t t, bus_space_handle_t bsh,
+				     bus_size_t size);
+
+static __inline void
+bus_space_unmap(bus_space_tag_t t __unused, bus_space_handle_t bsh __unused,
+		bus_size_t size __unused)
+{
+}
+
+/*
+ * Get a new handle for a subregion of an already-mapped area of bus space.
+ */
+
+static __inline int bus_space_subregion(bus_space_tag_t t,
+					bus_space_handle_t bsh,
+					bus_size_t offset, bus_size_t size,
+					bus_space_handle_t *nbshp);
+
+static __inline int
+bus_space_subregion(bus_space_tag_t t __unused, bus_space_handle_t bsh,
+		    bus_size_t offset, bus_size_t size __unused,
+		    bus_space_handle_t *nbshp)
+{
+
+	*nbshp = bsh + offset;
+	return (0);
+}
+
+/*
+ * Allocate a region of memory that is accessible to devices in bus space.
+ */
+
+int	bus_space_alloc(bus_space_tag_t t, bus_addr_t rstart,
+			bus_addr_t rend, bus_size_t size, bus_size_t align,
+			bus_size_t boundary, int flags, bus_addr_t *addrp,
+			bus_space_handle_t *bshp);
+
+/*
+ * Free a region of bus space accessible memory.
+ */
+
+static __inline void bus_space_free(bus_space_tag_t t, bus_space_handle_t bsh,
+				    bus_size_t size);
+
+static __inline void
+bus_space_free(bus_space_tag_t t __unused, bus_space_handle_t bsh __unused,
+	       bus_size_t size __unused)
+{
+}
+
 
 /*
  * Read a 1, 2, 4, or 8 byte quantity from bus space
@@ -146,7 +219,7 @@ bus_space_read_1(bus_space_tag_t tag, bus_space_handle_t handle,
 		 bus_size_t offset)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		return (inb(handle + offset));
 	return (*(volatile u_int8_t *)(handle + offset));
 }
@@ -156,7 +229,7 @@ bus_space_read_2(bus_space_tag_t tag, bus_space_handle_t handle,
 		 bus_size_t offset)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		return (inw(handle + offset));
 	return (*(volatile u_int16_t *)(handle + offset));
 }
@@ -166,7 +239,7 @@ bus_space_read_4(bus_space_tag_t tag, bus_space_handle_t handle,
 		 bus_size_t offset)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		return (inl(handle + offset));
 	return (*(volatile u_int32_t *)(handle + offset));
 }
@@ -199,7 +272,7 @@ bus_space_read_multi_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		       bus_size_t offset, u_int8_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		insb(bsh + offset, addr, count);
 	else {
 #ifdef __GNUCLIKE_ASM
@@ -211,10 +284,6 @@ bus_space_read_multi_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count)			:
 		    "r" (bsh + offset), "0" (addr), "1" (count)	:
 		    "%eax", "memory");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -224,7 +293,7 @@ bus_space_read_multi_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		       bus_size_t offset, u_int16_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		insw(bsh + offset, addr, count);
 	else {
 #ifdef __GNUCLIKE_ASM
@@ -236,10 +305,6 @@ bus_space_read_multi_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count)			:
 		    "r" (bsh + offset), "0" (addr), "1" (count)	:
 		    "%eax", "memory");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -249,7 +314,7 @@ bus_space_read_multi_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		       bus_size_t offset, u_int32_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		insl(bsh + offset, addr, count);
 	else {
 #ifdef __GNUCLIKE_ASM
@@ -261,10 +326,6 @@ bus_space_read_multi_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count)			:
 		    "r" (bsh + offset), "0" (addr), "1" (count)	:
 		    "%eax", "memory");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -299,7 +360,7 @@ bus_space_read_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 			bus_size_t offset, u_int8_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		int _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
@@ -311,13 +372,9 @@ bus_space_read_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count), "=d" (_port_)	:
 		    "0" (addr), "1" (count), "2" (_port_)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	} else {
-		int _port_ = bsh + offset;
+		bus_space_handle_t _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
 			cld					\n\
@@ -326,10 +383,6 @@ bus_space_read_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count), "=S" (_port_)	:
 		    "0" (addr), "1" (count), "2" (_port_)	:
 		    "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -339,7 +392,7 @@ bus_space_read_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 			bus_size_t offset, u_int16_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		int _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
@@ -351,13 +404,9 @@ bus_space_read_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count), "=d" (_port_)	:
 		    "0" (addr), "1" (count), "2" (_port_)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	} else {
-		int _port_ = bsh + offset;
+		bus_space_handle_t _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
 			cld					\n\
@@ -366,10 +415,6 @@ bus_space_read_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count), "=S" (_port_)	:
 		    "0" (addr), "1" (count), "2" (_port_)	:
 		    "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -379,7 +424,7 @@ bus_space_read_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 			bus_size_t offset, u_int32_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		int _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
@@ -391,13 +436,9 @@ bus_space_read_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count), "=d" (_port_)	:
 		    "0" (addr), "1" (count), "2" (_port_)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	} else {
-		int _port_ = bsh + offset;
+		bus_space_handle_t _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
 			cld					\n\
@@ -406,10 +447,6 @@ bus_space_read_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (addr), "=c" (count), "=S" (_port_)	:
 		    "0" (addr), "1" (count), "2" (_port_)	:
 		    "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -440,7 +477,7 @@ bus_space_write_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		       bus_size_t offset, u_int8_t value)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		outb(bsh + offset, value);
 	else
 		*(volatile u_int8_t *)(bsh + offset) = value;
@@ -451,7 +488,7 @@ bus_space_write_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		       bus_size_t offset, u_int16_t value)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		outw(bsh + offset, value);
 	else
 		*(volatile u_int16_t *)(bsh + offset) = value;
@@ -462,7 +499,7 @@ bus_space_write_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		       bus_size_t offset, u_int32_t value)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		outl(bsh + offset, value);
 	else
 		*(volatile u_int32_t *)(bsh + offset) = value;
@@ -499,7 +536,7 @@ bus_space_write_multi_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 			bus_size_t offset, const u_int8_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		outsb(bsh + offset, addr, count);
 	else {
 #ifdef __GNUCLIKE_ASM
@@ -511,10 +548,6 @@ bus_space_write_multi_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=S" (addr), "=c" (count)			:
 		    "r" (bsh + offset), "0" (addr), "1" (count)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -524,7 +557,7 @@ bus_space_write_multi_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 			bus_size_t offset, const u_int16_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		outsw(bsh + offset, addr, count);
 	else {
 #ifdef __GNUCLIKE_ASM
@@ -536,10 +569,6 @@ bus_space_write_multi_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=S" (addr), "=c" (count)			:
 		    "r" (bsh + offset), "0" (addr), "1" (count)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -549,7 +578,7 @@ bus_space_write_multi_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 			bus_size_t offset, const u_int32_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		outsl(bsh + offset, addr, count);
 	else {
 #ifdef __GNUCLIKE_ASM
@@ -561,10 +590,6 @@ bus_space_write_multi_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=S" (addr), "=c" (count)			:
 		    "r" (bsh + offset), "0" (addr), "1" (count)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -600,7 +625,7 @@ bus_space_write_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 			 bus_size_t offset, const u_int8_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		int _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
@@ -612,13 +637,9 @@ bus_space_write_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=d" (_port_), "=S" (addr), "=c" (count)	:
 		    "0" (_port_), "1" (addr), "2" (count)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	} else {
-		int _port_ = bsh + offset;
+		bus_space_handle_t _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
 			cld					\n\
@@ -627,10 +648,6 @@ bus_space_write_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (_port_), "=S" (addr), "=c" (count)	:
 		    "0" (_port_), "1" (addr), "2" (count)	:
 		    "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -640,7 +657,7 @@ bus_space_write_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 			 bus_size_t offset, const u_int16_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		int _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
@@ -652,13 +669,9 @@ bus_space_write_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=d" (_port_), "=S" (addr), "=c" (count)	:
 		    "0" (_port_), "1" (addr), "2" (count)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	} else {
-		int _port_ = bsh + offset;
+		bus_space_handle_t _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
 			cld					\n\
@@ -667,10 +680,6 @@ bus_space_write_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (_port_), "=S" (addr), "=c" (count)	:
 		    "0" (_port_), "1" (addr), "2" (count)	:
 		    "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -680,7 +689,7 @@ bus_space_write_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 			 bus_size_t offset, const u_int32_t *addr, size_t count)
 {
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		int _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
@@ -692,13 +701,9 @@ bus_space_write_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=d" (_port_), "=S" (addr), "=c" (count)	:
 		    "0" (_port_), "1" (addr), "2" (count)	:
 		    "%eax", "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	} else {
-		int _port_ = bsh + offset;
+		bus_space_handle_t _port_ = bsh + offset;
 #ifdef __GNUCLIKE_ASM
 		__asm __volatile("				\n\
 			cld					\n\
@@ -707,10 +712,6 @@ bus_space_write_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 		    "=D" (_port_), "=S" (addr), "=c" (count)	:
 		    "0" (_port_), "1" (addr), "2" (count)	:
 		    "memory", "cc");
-#else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
 #endif
 	}
 }
@@ -744,7 +745,7 @@ bus_space_set_multi_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 {
 	bus_space_handle_t addr = bsh + offset;
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		while (count--)
 			outb(addr, value);
 	else
@@ -758,7 +759,7 @@ bus_space_set_multi_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 {
 	bus_space_handle_t addr = bsh + offset;
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		while (count--)
 			outw(addr, value);
 	else
@@ -772,7 +773,7 @@ bus_space_set_multi_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 {
 	bus_space_handle_t addr = bsh + offset;
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		while (count--)
 			outl(addr, value);
 	else
@@ -808,7 +809,7 @@ bus_space_set_region_1(bus_space_tag_t tag, bus_space_handle_t bsh,
 {
 	bus_space_handle_t addr = bsh + offset;
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		for (; count != 0; count--, addr++)
 			outb(addr, value);
 	else
@@ -822,7 +823,7 @@ bus_space_set_region_2(bus_space_tag_t tag, bus_space_handle_t bsh,
 {
 	bus_space_handle_t addr = bsh + offset;
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		for (; count != 0; count--, addr += 2)
 			outw(addr, value);
 	else
@@ -836,7 +837,7 @@ bus_space_set_region_4(bus_space_tag_t tag, bus_space_handle_t bsh,
 {
 	bus_space_handle_t addr = bsh + offset;
 
-	if (tag == I386_BUS_SPACE_IO)
+	if (tag == X86_BUS_SPACE_IO)
 		for (; count != 0; count--, addr += 4)
 			outl(addr, value);
 	else
@@ -879,7 +880,7 @@ bus_space_copy_region_1(bus_space_tag_t tag, bus_space_handle_t bsh1,
 	bus_space_handle_t addr1 = bsh1 + off1;
 	bus_space_handle_t addr2 = bsh2 + off2;
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		if (addr1 >= addr2) {
 			/* src after dest: copy forward */
 			for (; count != 0; count--, addr1++, addr2++)
@@ -914,7 +915,7 @@ bus_space_copy_region_2(bus_space_tag_t tag, bus_space_handle_t bsh1,
 	bus_space_handle_t addr1 = bsh1 + off1;
 	bus_space_handle_t addr2 = bsh2 + off2;
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		if (addr1 >= addr2) {
 			/* src after dest: copy forward */
 			for (; count != 0; count--, addr1 += 2, addr2 += 2)
@@ -949,7 +950,7 @@ bus_space_copy_region_4(bus_space_tag_t tag, bus_space_handle_t bsh1,
 	bus_space_handle_t addr1 = bsh1 + off1;
 	bus_space_handle_t addr2 = bsh2 + off2;
 
-	if (tag == I386_BUS_SPACE_IO) {
+	if (tag == X86_BUS_SPACE_IO) {
 		if (addr1 >= addr2) {
 			/* src after dest: copy forward */
 			for (; count != 0; count--, addr1 += 4, addr2 += 4)
@@ -1000,13 +1001,13 @@ bus_space_barrier(bus_space_tag_t tag __unused, bus_space_handle_t bsh __unused,
 {
 #ifdef __GNUCLIKE_ASM
 	if (flags & BUS_SPACE_BARRIER_READ)
-		__asm __volatile("lock; addl $0,0(%%esp)" : : : "memory");
-	else
-		__asm __volatile("" : : : "memory");
+#ifdef __amd64__
+		__asm __volatile("lock; addl $0,0(%%rsp)" : : : "memory");
 #else
-# ifndef lint
-#  error "no assembler code for your compiler"
-# endif
+		__asm __volatile("lock; addl $0,0(%%esp)" : : : "memory");
+#endif
+	else
+		__compiler_membar();
 #endif
 }
 
@@ -1021,12 +1022,10 @@ bus_space_barrier(bus_space_tag_t tag __unused, bus_space_handle_t bsh __unused,
 #define outl(a, b) compiler_error
 #endif
 
-#ifndef __rtems__
 #include <machine/bus_dma.h>
-#endif
 
 /*
- * Stream accesses are the same as normal accesses on i386/pc98; there are no
+ * Stream accesses are the same as normal accesses on x86; there are no
  * supported bus systems with an endianess different from the host one.
  */
 #define	bus_space_read_stream_1(t, h, o)	bus_space_read_1((t), (h), (o))
@@ -1089,4 +1088,4 @@ bus_space_barrier(bus_space_tag_t tag __unused, bus_space_handle_t bsh __unused,
 #define	bus_space_copy_region_stream_4(t, h1, o1, h2, o2, c) \
 	bus_space_copy_region_4((t), (h1), (o1), (h2), (o2), (c))
 
-#endif /* _RTEMS_BSD_MACHINE_BUS_I386_H_ */
+#endif /* _X86_BUS_H_ */

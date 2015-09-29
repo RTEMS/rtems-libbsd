@@ -1732,7 +1732,9 @@ def pci(mm):
     )
     mod.addCPUDependentHeaderFiles(
         [
+            'sys/i386/include/_bus.h',
             'sys/i386/include/legacyvar.h',
+            'sys/x86/include/bus.h',
             'sys/x86/include/pci_cfgreg.h',
         ]
     )

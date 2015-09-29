@@ -9,10 +9,10 @@
  */
 
 /*-
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -122,6 +122,10 @@
 #error "the header file <machine/rtems-bsd-kernel-space.h> must be included first"
 #endif
 
+#ifdef __i386__
+  #error "your include paths are wrong"
+#endif
+
 /*
  * Bus address alignment.
  */
@@ -211,16 +215,568 @@ bus_space_alloc(bus_space_tag_t bst __unused, bus_addr_t rstart, bus_addr_t rend
 void
 bus_space_free(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t size);
 
+static __inline void
+bus_space_barrier(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+    bus_size_t size, int flags)
+{
+	/* Do nothing */
+}
 
-#if defined(__i386__)
-  #include <machine/bus_space-i386.h>
-#elif defined(__PPC__) || defined(__arm__) || defined(__m68k__)
-  #include <machine/bus_space-simple_memory.h>
-#else
-  #warning "Bus space routines not implemented for this architecture!!"
-  #warning "Defaulting to simple-memory Bus space routines!!"
-  #include <machine/bus_space-simple_memory.h>
-#endif
+/*
+ * Read 1 unit of data from bus space described by the tag, handle and ofs
+ * tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is returned.
+ */
+static __inline uint8_t
+bus_space_read_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+{
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+	return (*bsp);
+}
+
+static __inline uint16_t
+bus_space_read_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+{
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+	return (*bsp);
+}
+
+static __inline uint32_t
+bus_space_read_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+{
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+	return (*bsp);
+}
+
+static __inline uint64_t
+bus_space_read_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+{
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+	return (*bsp);
+}
+
+
+/*
+ * Write 1 unit of data to bus space described by the tag, handle and ofs
+ * tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is passed by value.
+ */
+static __inline void
+bus_space_write_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+    uint8_t val)
+{
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+	*bsp = val;
+}
+
+static __inline void
+bus_space_write_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+    uint16_t val)
+{
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+	*bsp = val;
+}
+
+static __inline void
+bus_space_write_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+    uint32_t val)
+{
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+	*bsp = val;
+}
+
+static __inline void
+bus_space_write_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+    uint64_t val)
+{
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+	*bsp = val;
+}
+
+
+/*
+ * Read count units of data from bus space described by the tag, handle and
+ * ofs tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is returned in the buffer passed by reference.
+ */
+static __inline void
+bus_space_read_multi_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint8_t *bufp, bus_size_t count)
+{
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bufp++ = *bsp;
+	}
+}
+
+static __inline void
+bus_space_read_multi_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint16_t *bufp, bus_size_t count)
+{
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bufp++ = *bsp;
+	}
+}
+
+static __inline void
+bus_space_read_multi_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint32_t *bufp, bus_size_t count)
+{
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bufp++ = *bsp;
+	}
+}
+
+static __inline void
+bus_space_read_multi_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint64_t *bufp, bus_size_t count)
+{
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bufp++ = *bsp;
+	}
+}
+
+
+/*
+ * Write count units of data to bus space described by the tag, handle and
+ * ofs tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is read from the buffer passed by reference.
+ */
+static __inline void
+bus_space_write_multi_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint8_t *bufp, bus_size_t count)
+{
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = *bufp++;
+	}
+}
+
+static __inline void
+bus_space_write_multi_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint16_t *bufp, bus_size_t count)
+{
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = *bufp++;
+	}
+}
+
+static __inline void
+bus_space_write_multi_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint32_t *bufp, bus_size_t count)
+{
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = *bufp++;
+	}
+}
+
+static __inline void
+bus_space_write_multi_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint64_t *bufp, bus_size_t count)
+{
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = *bufp++;
+	}
+}
+
+
+/*
+ * Read count units of data from bus space described by the tag, handle and
+ * ofs tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is written to the buffer passed by reference and read from successive
+ * bus space addresses. Access is unordered.
+ */
+static __inline void
+bus_space_read_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint8_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+		*bufp++ = *bsp;
+		ofs += 1;
+	}
+}
+
+static __inline void
+bus_space_read_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint16_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+		*bufp++ = *bsp;
+		ofs += 2;
+	}
+}
+
+static __inline void
+bus_space_read_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint32_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+		*bufp++ = *bsp;
+		ofs += 4;
+	}
+}
+
+static __inline void
+bus_space_read_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint64_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+		*bufp++ = *bsp;
+		ofs += 8;
+	}
+}
+
+
+/*
+ * Write count units of data from bus space described by the tag, handle and
+ * ofs tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is read from the buffer passed by reference and written to successive
+ * bus space addresses. Access is unordered.
+ */
+static __inline void
+bus_space_write_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint8_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+		*bsp = *bufp++;
+		ofs += 1;
+	}
+}
+
+static __inline void
+bus_space_write_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint16_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+		*bsp = *bufp++;
+		ofs += 2;
+	}
+}
+
+static __inline void
+bus_space_write_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint32_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+		*bsp = *bufp++;
+		ofs += 4;
+	}
+}
+
+static __inline void
+bus_space_write_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, const uint64_t *bufp, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+		*bsp = *bufp++;
+		ofs += 8;
+	}
+}
+
+
+/*
+ * Write count units of data from bus space described by the tag, handle and
+ * ofs tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is passed by value. Writes are unordered.
+ */
+static __inline void
+bus_space_set_multi_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint8_t val, bus_size_t count)
+{
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = val;
+	}
+}
+
+static __inline void
+bus_space_set_multi_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint16_t val, bus_size_t count)
+{
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = val;
+	}
+}
+
+static __inline void
+bus_space_set_multi_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint32_t val, bus_size_t count)
+{
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = val;
+	}
+}
+
+static __inline void
+bus_space_set_multi_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint64_t val, bus_size_t count)
+{
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+	while (count-- > 0) {
+		*bsp = val;
+	}
+}
+
+
+/*
+ * Write count units of data from bus space described by the tag, handle and
+ * ofs tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
+ * data is passed by value and written to successive bus space addresses.
+ * Writes are unordered.
+ */
+static __inline void
+bus_space_set_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint8_t val, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
+		*bsp = val;
+		ofs += 1;
+	}
+}
+
+static __inline void
+bus_space_set_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint16_t val, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
+		*bsp = val;
+		ofs += 2;
+	}
+}
+
+static __inline void
+bus_space_set_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint32_t val, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
+		*bsp = val;
+		ofs += 4;
+	}
+}
+
+static __inline void
+bus_space_set_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
+    bus_size_t ofs, uint64_t val, bus_size_t count)
+{
+	while (count-- > 0) {
+		uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
+		*bsp = val;
+		ofs += 8;
+	}
+}
+
+
+/*
+ * Copy count units of data from bus space described by the tag and the first
+ * handle and ofs pair to bus space described by the tag and the second handle
+ * and ofs pair. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes.
+ * The data is read from successive bus space addresses and also written to
+ * successive bus space addresses. Both reads and writes are unordered.
+ */
+static __inline void
+bus_space_copy_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
+    bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
+{
+	bus_addr_t dst = bsh1 + ofs1;
+	bus_addr_t src = bsh2 + ofs2;
+	uint8_t __volatile *dstp = (uint8_t __volatile *) dst;
+	uint8_t __volatile *srcp = (uint8_t __volatile *) src;
+	if (dst > src) {
+		src += count - 1;
+		dst += count - 1;
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src -= 1;
+			dst -= 1;
+		}
+	} else {
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src += 1;
+			dst += 1;
+		}
+	}
+}
+
+static __inline void
+bus_space_copy_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
+    bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
+{
+	bus_addr_t dst = bsh1 + ofs1;
+	bus_addr_t src = bsh2 + ofs2;
+	uint16_t __volatile *dstp = (uint16_t __volatile *) dst;
+	uint16_t __volatile *srcp = (uint16_t __volatile *) src;
+	if (dst > src) {
+		src += (count - 1) << 1;
+		dst += (count - 1) << 1;
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src -= 2;
+			dst -= 2;
+		}
+	} else {
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src += 2;
+			dst += 2;
+		}
+	}
+}
+
+static __inline void
+bus_space_copy_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
+    bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
+{
+	bus_addr_t dst = bsh1 + ofs1;
+	bus_addr_t src = bsh2 + ofs2;
+	uint32_t __volatile *dstp = (uint32_t __volatile *) dst;
+	uint32_t __volatile *srcp = (uint32_t __volatile *) src;
+	if (dst > src) {
+		src += (count - 1) << 2;
+		dst += (count - 1) << 2;
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src -= 4;
+			dst -= 4;
+		}
+	} else {
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src += 4;
+			dst += 4;
+		}
+	}
+}
+
+static __inline void
+bus_space_copy_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
+    bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
+{
+	bus_addr_t dst = bsh1 + ofs1;
+	bus_addr_t src = bsh2 + ofs2;
+	uint64_t __volatile *dstp = (uint64_t __volatile *) dst;
+	uint64_t __volatile *srcp = (uint64_t __volatile *) src;
+	if (dst > src) {
+		src += (count - 1) << 3;
+		dst += (count - 1) << 3;
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src -= 8;
+			dst -= 8;
+		}
+	} else {
+		while (count-- > 0) {
+			*dstp = *srcp;
+			src += 8;
+			dst += 8;
+		}
+	}
+}
+
+
+/*
+ * Stream accesses are the same as normal accesses on RTEMS; there are no
+ * supported bus systems with an endianess different from the host one.
+ */
+#define	bus_space_read_stream_1(t, h, o)	\
+	bus_space_read_1(t, h, o)
+#define	bus_space_read_stream_2(t, h, o)	\
+	bus_space_read_2(t, h, o)
+#define	bus_space_read_stream_4(t, h, o)	\
+	bus_space_read_4(t, h, o)
+#define	bus_space_read_stream_8(t, h, o)	\
+	bus_space_read_8(t, h, o)
+
+#define	bus_space_read_multi_stream_1(t, h, o, a, c)	\
+	bus_space_read_multi_1(t, h, o, a, c)
+#define	bus_space_read_multi_stream_2(t, h, o, a, c)	\
+	bus_space_read_multi_2(t, h, o, a, c)
+#define	bus_space_read_multi_stream_4(t, h, o, a, c)	\
+	bus_space_read_multi_4(t, h, o, a, c)
+#define	bus_space_read_multi_stream_8(t, h, o, a, c)	\
+	bus_space_read_multi_8(t, h, o, a, c)
+
+#define	bus_space_write_stream_1(t, h, o, v)	\
+	bus_space_write_1(t, h, o, v)
+#define	bus_space_write_stream_2(t, h, o, v)	\
+	bus_space_write_2(t, h, o, v)
+#define	bus_space_write_stream_4(t, h, o, v)	\
+	bus_space_write_4(t, h, o, v)
+#define	bus_space_write_stream_8(t, h, o, v)	\
+	bus_space_write_8(t, h, o, v)
+
+#define	bus_space_write_multi_stream_1(t, h, o, a, c)	\
+	bus_space_write_multi_1(t, h, o, a, c)
+#define	bus_space_write_multi_stream_2(t, h, o, a, c)	\
+	bus_space_write_multi_2(t, h, o, a, c)
+#define	bus_space_write_multi_stream_4(t, h, o, a, c)	\
+	bus_space_write_multi_4(t, h, o, a, c)
+#define	bus_space_write_multi_stream_8(t, h, o, a, c)	\
+	bus_space_write_multi_8(t, h, o, a, c)
+
+#define	bus_space_set_multi_stream_1(t, h, o, v, c)	\
+	bus_space_set_multi_1(t, h, o, v, c)
+#define	bus_space_set_multi_stream_2(t, h, o, v, c)	\
+	bus_space_set_multi_2(t, h, o, v, c)
+#define	bus_space_set_multi_stream_4(t, h, o, v, c)	\
+	bus_space_set_multi_4(t, h, o, v, c)
+#define	bus_space_set_multi_stream_8(t, h, o, v, c)	\
+	bus_space_set_multi_8(t, h, o, v, c)
+
+#define	bus_space_read_region_stream_1(t, h, o, a, c)	\
+	bus_space_read_region_1(t, h, o, a, c)
+#define	bus_space_read_region_stream_2(t, h, o, a, c)	\
+	bus_space_read_region_2(t, h, o, a, c)
+#define	bus_space_read_region_stream_4(t, h, o, a, c)	\
+	bus_space_read_region_4(t, h, o, a, c)
+#define	bus_space_read_region_stream_8(t, h, o, a, c)	\
+	bus_space_read_region_8(t, h, o, a, c)
+
+#define	bus_space_write_region_stream_1(t, h, o, a, c)	\
+	bus_space_write_region_1(t, h, o, a, c)
+#define	bus_space_write_region_stream_2(t, h, o, a, c)	\
+	bus_space_write_region_2(t, h, o, a, c)
+#define	bus_space_write_region_stream_4(t, h, o, a, c)	\
+	bus_space_write_region_4(t, h, o, a, c)
+#define	bus_space_write_region_stream_8(t, h, o, a, c)	\
+	bus_space_write_region_8(t, h, o, a, c)
+
+#define	bus_space_set_region_stream_1(t, h, o, v, c)	\
+	bus_space_set_region_1(t, h, o, v, c)
+#define	bus_space_set_region_stream_2(t, h, o, v, c)	\
+	bus_space_set_region_2(t, h, o, v, c)
+#define	bus_space_set_region_stream_4(t, h, o, v, c)	\
+	bus_space_set_region_4(t, h, o, v, c)
+#define	bus_space_set_region_stream_8(t, h, o, v, c)	\
+	bus_space_set_region_8(t, h, o, v, c)
+
+#define	bus_space_copy_region_stream_1(t, h1, o1, h2, o2, c)	\
+	bus_space_copy_region_1(t, h1, o1, h2, o2, c)
+#define	bus_space_copy_region_stream_2(t, h1, o1, h2, o2, c)	\
+	bus_space_copy_region_2(t, h1, o1, h2, o2, c)
+#define	bus_space_copy_region_stream_4(t, h1, o1, h2, o2, c)	\
+	bus_space_copy_region_4(t, h1, o1, h2, o2, c)
+#define	bus_space_copy_region_stream_8(t, h1, o1, h2, o2, c)	\
+	bus_space_copy_region_8(t, h1, o1, h2, o2, c)
 
 #include <machine/bus_dma.h>
 

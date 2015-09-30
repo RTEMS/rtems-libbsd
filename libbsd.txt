@@ -326,6 +326,8 @@ rtems_mdns_gethostname().
 
 == Issues and TODO
 
+* PCI support on x86 uses a quick and dirty hack, see pci_reserve_map().
+
 * Priority queues are broken with clustered scheduling.
 
 * Per-CPU data should be enabled once the new stack is ready for SMP.

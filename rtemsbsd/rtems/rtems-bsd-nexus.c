@@ -48,6 +48,7 @@
 #include <sys/module.h>
 #include <sys/rman.h>
 #include <sys/malloc.h>
+#include <machine/bus.h>
 
 #include <rtems/bsd/bsd.h>
 #include <rtems/irq-extension.h>
@@ -65,6 +66,10 @@ RTEMS_STATIC_ASSERT(SYS_RES_IRQ == RTEMS_BSD_RES_IRQ, RTEMS_BSD_RES_IRQ);
 static struct rman mem_rman;
 
 static struct rman irq_rman;
+
+#ifdef __i386__
+static struct rman port_rman;
+#endif
 
 static int
 nexus_probe(device_t dev)
@@ -105,6 +110,18 @@ nexus_probe(device_t dev)
 	err = rman_manage_region(&irq_rman, irq_rman.rm_start, irq_rman.rm_end);
 	BSD_ASSERT(err == 0);
 
+#ifdef __i386__
+	port_rman.rm_start = 0;
+	port_rman.rm_end = 0xffff;
+	port_rman.rm_type = RMAN_ARRAY;
+	port_rman.rm_descr = "I/O ports";
+	err = rman_init(&port_rman) != 0;
+	BSD_ASSERT(err == 0);
+	err = rman_manage_region(&port_rman, port_rman.rm_start,
+	    port_rman.rm_end);
+	BSD_ASSERT(err == 0);
+#endif
+
 	SET_FOREACH(nd, nexus) {
 		device_add_child(dev, nd->name, nd->unit);
 	}
@@ -135,6 +152,7 @@ static struct resource *
 nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
     u_long start, u_long end, u_long count, u_int flags)
 {
+	struct resource *res = NULL;
 	struct rman *rm;
 	const rtems_bsd_device *nd;
 
@@ -145,15 +163,18 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 	case SYS_RES_IRQ:
 		rm = &irq_rman;
 		break;
+#ifdef __i386__
+	case SYS_RES_IOPORT:
+		rm = &port_rman;
+		break;
+#endif
 	default:
-		return (NULL);
+		return (res);
 	}
 
 	SET_FOREACH(nd, nexus) {
 		if (strcmp(device_get_name(child), nd->name) == 0
 		    && device_get_unit(child) == nd->unit) {
-			struct resource *res = NULL;
-
 			if (nexus_get_start(nd, type, &start)) {
 				res = rman_reserve_resource(rm, start, end,
 				    count, flags, child);
@@ -168,7 +189,22 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 		}
 	}
 
-	return (NULL);
+#ifdef __i386__
+	/*
+	 * FIXME: This is a quick and dirty hack.  Simply reserve resources of
+	 * this kind.  See also pci_reserve_map().
+	 */
+	if (start + count - end <= 1UL) {
+		res = rman_reserve_resource(rm, start, end, count, flags,
+		    child);
+		if (res != NULL) {
+			rman_set_rid(res, *rid);
+			rman_set_bushandle(res, rman_get_start(res));
+		}
+	}
+#endif
+
+	return (res);
 }
 
 static int
@@ -177,6 +213,31 @@ nexus_release_resource(device_t bus, device_t child, int type, int rid,
 {
 	return (rman_release_resource(res));
 }
+
+#ifdef __i386__
+static int
+nexus_activate_resource(device_t bus, device_t child, int type, int rid,
+    struct resource *res)
+{
+	switch (type) {
+	case SYS_RES_IOPORT:
+		rman_set_bustag(res, X86_BUS_SPACE_IO);
+		break;
+	case SYS_RES_MEMORY:
+		rman_set_bustag(res, X86_BUS_SPACE_MEM);
+		break;
+	}
+	return (rman_activate_resource(res));
+}
+
+static int
+nexus_deactivate_resource(device_t bus, device_t child, int type, int rid,
+    struct resource *res)
+{
+
+	return (rman_deactivate_resource(res));
+}
+#endif
 
 struct nexus_intr {
 	driver_filter_t *filt;
@@ -292,6 +353,10 @@ static device_method_t nexus_methods[] = {
 	DEVMETHOD(bus_add_child, bus_generic_add_child),
 	DEVMETHOD(bus_alloc_resource, nexus_alloc_resource),
 	DEVMETHOD(bus_release_resource, nexus_release_resource),
+#ifdef __i386__
+	DEVMETHOD(bus_activate_resource, nexus_activate_resource),
+	DEVMETHOD(bus_deactivate_resource, nexus_deactivate_resource),
+#endif
 	DEVMETHOD(bus_setup_intr, nexus_setup_intr),
 	DEVMETHOD(bus_teardown_intr, nexus_teardown_intr),
 

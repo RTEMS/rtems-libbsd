@@ -600,7 +600,13 @@ legacy_pcib_alloc_resource(device_t dev, device_t child, int type, int *rid,
     u_long start, u_long end, u_long count, u_int flags)
 {
 
+#if defined(__rtems__) && defined(__i386__)
+    /*
+     * FIXME: This is a quick and dirty hack.  See pci_reserve_map().
+     */
+#else /* __rtems__ */
     start = hostb_alloc_start(type, start, end, count);
+#endif /* __rtems__ */
     return (bus_generic_alloc_resource(dev, child, type, rid, start, end,
 	count, flags));
 }

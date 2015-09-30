@@ -4206,6 +4206,15 @@ pci_reserve_map(device_t dev, device_t child, int type, int *rid,
 	 * Allocate enough resource, and then write back the
 	 * appropriate BAR for that resource.
 	 */
+#if defined(__rtems__) && defined(__i386__)
+	/*
+	 * FIXME: This is a quick and dirty hack.  Use the BIOS or whoever
+	 * provided values.  The nexus device reserves such allocation requests
+	 * offhandedly.
+	 */
+	start = map;
+	end = map + count;
+#endif /* __rtems__ */
 	resource_list_add(rl, type, *rid, start, end, count);
 	res = resource_list_reserve(rl, dev, child, type, rid, start, end,
 	    count, flags & ~RF_ACTIVE);

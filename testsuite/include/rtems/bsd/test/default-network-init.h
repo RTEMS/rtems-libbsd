@@ -196,7 +196,7 @@ default_network_dhcpcd(void)
 	sc = rtems_task_create(
 		rtems_build_name('D', 'H', 'C', 'P'),
 		RTEMS_MAXIMUM_PRIORITY - 1,
-		RTEMS_MINIMUM_STACK_SIZE,
+		2 * RTEMS_MINIMUM_STACK_SIZE,
 		RTEMS_DEFAULT_MODES,
 		RTEMS_FLOATING_POINT,
 		&id

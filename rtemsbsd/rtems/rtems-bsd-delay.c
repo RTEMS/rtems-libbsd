@@ -7,11 +7,11 @@
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  
+ * Copyright (c) 2009, 2015 embedded brains GmbH
  * All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -40,24 +40,14 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
-#include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/systm.h>
-#include <sys/kernel.h>
+#include <rtems/counter.h>
 
 void
 DELAY(int usec)
 {
-	rtems_status_code sc = RTEMS_SUCCESSFUL;
-
-	/* FIXME: Integer conversion */
-	rtems_interval ticks =
-		((rtems_interval) usec * (rtems_interval) hz) / 1000000;
-
-	if (ticks == 0) {
-		ticks = 1;
-	}
-
-	sc = rtems_task_wake_after(ticks);
-	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+	uint32_t ns = 1000 * (uint32_t)usec;
+	BSD_ASSERT((uint32_t)usec <= UINT32_MAX / 1000);
+	rtems_counter_delay_nanoseconds(ns);
 }

@@ -373,6 +373,15 @@ qemu-system-i386 -m 512 -boot a -cpu pentium3 \
 Make sure that each Qemu instance uses its own MAC address to avoid an address
 conflict (or otherwise use it as a test).
 
+To connect the Qemu instances with your local network use the following
+(replace 'eth0' with the network interface of your host).
+
+-------------------------------------------------------------------------------
+ifconfig eth0 0.0.0.0
+brctl addif qbri eth0
+dhclient qbri
+-------------------------------------------------------------------------------
+
 == Issues and TODO
 
 * PCI support on x86 uses a quick and dirty hack, see pci_reserve_map().

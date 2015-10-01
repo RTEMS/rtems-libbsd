@@ -324,6 +324,55 @@ command supports the -m flag to set/get the multicast hostname of the
 mDNS resolver instance.  See also rtems_mdns_sethostname() and
 rtems_mdns_gethostname().
 
+== Qemu
+
+Use the following script to set up a virtual network with three tap devices
+connected via one bridge device.
+
+-------------------------------------------------------------------------------
+#!/bin/sh -x
+
+user=`whoami`
+interfaces=(1 2 3)
+
+tap=qtap
+bri=qbri
+
+case $1 in
+	up)
+		sudo -i brctl addbr $bri
+		for i in ${interfaces[@]} ; do
+			sudo -i tunctl -t $tap$i -u $user ;
+			sudo -i ifconfig $tap$i up ;
+			sudo -i brctl addif $bri $tap$i ;
+		done
+		sudo -i ifconfig $bri up
+		;;
+	down)
+		for i in ${interfaces[@]} ; do
+			sudo -i ifconfig $tap$i down ;
+			sudo -i tunctl -d $tap$i ;
+		done
+		sudo -i ifconfig $bri down
+		sudo -i brctl delbr $bri
+		;;
+esac
+-------------------------------------------------------------------------------
+
+Connect your Qemu instance to one of the tap devices, e.g.
+
+-------------------------------------------------------------------------------
+qemu-system-i386 -m 512 -boot a -cpu pentium3 \
+	-drive file=$HOME/qemu/pc386_fda,index=0,if=floppy,format=raw \
+	-drive file=fat:$HOME/qemu/hd,format=raw \
+	-net nic,model=e1000,macaddr=0e:b0:ba:5e:ba:11 \
+	-net tap,ifname=qtap1,script=no,downscript=no \
+	-nodefaults -nographic -serial stdio
+-------------------------------------------------------------------------------
+
+Make sure that each Qemu instance uses its own MAC address to avoid an address
+conflict (or otherwise use it as a test).
+
 == Issues and TODO
 
 * PCI support on x86 uses a quick and dirty hack, see pci_reserve_map().

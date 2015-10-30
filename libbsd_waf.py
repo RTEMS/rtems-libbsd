@@ -986,6 +986,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-get-task-priority.c',
               'rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c',
               'rtemsbsd/rtems/rtems-bsd-init.c',
+              'rtemsbsd/rtems/rtems-bsd-irqs.c',
               'rtemsbsd/rtems/rtems-bsd-jail.c',
               'rtemsbsd/rtems/rtems-bsd-log.c',
               'rtemsbsd/rtems/rtems-bsd-malloc.c',

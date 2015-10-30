@@ -71,26 +71,17 @@ static struct rman irq_rman;
 static struct rman port_rman;
 #endif
 
+#ifndef DISABLE_INTERRUPT_EXTENSION
+SYSINIT_REFERENCE(irqs);
+#endif
+
 static int
 nexus_probe(device_t dev)
 {
-	static const char name[] = "IRQS";
-	rtems_status_code status;
 	int err;
 	const rtems_bsd_device *nd;
 
 	device_set_desc(dev, "RTEMS Nexus device");
-
-#ifndef DISABLE_INTERRUPT_EXTENSION
-	status = rtems_interrupt_server_initialize(
-		rtems_bsd_get_task_priority(name),
-		rtems_bsd_get_task_stack_size(name),
-		RTEMS_DEFAULT_MODES,
-		RTEMS_DEFAULT_ATTRIBUTES,
-		NULL
-	);
-	BSD_ASSERT(status == RTEMS_SUCCESSFUL);
-#endif
 
 	mem_rman.rm_start = 0;
 	mem_rman.rm_end = ~0UL;

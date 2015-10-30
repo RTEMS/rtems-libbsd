@@ -74,6 +74,7 @@ def rtems(mm):
             'rtems/rtems-bsd-get-task-priority.c',
             'rtems/rtems-bsd-get-task-stack-size.c',
             'rtems/rtems-bsd-init.c',
+            'rtems/rtems-bsd-irqs.c',
             'rtems/rtems-bsd-jail.c',
             'rtems/rtems-bsd-log.c',
             'rtems/rtems-bsd-malloc.c',

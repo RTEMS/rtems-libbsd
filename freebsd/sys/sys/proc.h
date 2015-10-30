@@ -795,6 +795,7 @@ extern pid_t pid_max;
 #define	SESS_LOCKED(s)	mtx_owned(&(s)->s_mtx)
 #define	SESS_LOCK_ASSERT(s, type)	mtx_assert(&(s)->s_mtx, (type))
 
+#ifndef __rtems__
 /* Hold process U-area in memory, normally for ptrace/procfs work. */
 #define	PHOLD(p) do {							\
 	PROC_LOCK(p);							\
@@ -828,6 +829,10 @@ extern pid_t pid_max;
 #define PROC_ASSERT_NOT_HELD(p) do {					\
 	KASSERT((p)->p_lock == 0, ("process held"));			\
 } while (0)
+#else /* __rtems__ */
+#define	PHOLD(x) do { } while (0)
+#define	PRELE(x) do { } while (0)
+#endif /* __rtems__ */
 
 /* Check whether a thread is safe to be swapped out. */
 #define	thread_safetoswapout(td)	((td)->td_flags & TDF_CANSWAP)

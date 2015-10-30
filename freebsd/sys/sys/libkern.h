@@ -88,12 +88,17 @@ void	 arc4rand(void *ptr, u_int len, int reseed);
 int	 bcmp(const void *, const void *, size_t);
 void	*bsearch(const void *, const void *, size_t,
 	    size_t, int (*)(const void *, const void *));
+#ifndef __rtems__
 #ifndef	HAVE_INLINE_FFS
 int	 ffs(int);
 #endif
 #ifndef	HAVE_INLINE_FFSL
 int	 ffsl(long);
 #endif
+#else /* __rtems__ */
+#define	ffs(_x) __builtin_ffs((unsigned int)(_x))
+#define	ffsl(_x) __builtin_ffsl((unsigned long)(_x))
+#endif /* __rtems__ */
 #ifndef	HAVE_INLINE_FLS
 int	 fls(int);
 #endif

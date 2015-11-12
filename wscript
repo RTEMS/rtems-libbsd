@@ -58,7 +58,7 @@ def build(bld):
 
     # C/C++ flags
     common_flags = []
-    common_flags += ["-O"]
+    common_flags += ["-O2"]
     common_flags += ["-g"]
     common_flags += ["-fno-strict-aliasing"]
     common_flags += ["-ffreestanding"]

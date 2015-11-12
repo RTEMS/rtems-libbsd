@@ -62,7 +62,7 @@ class error(Exception):
         return self.msg
 
 def common_flags():
-    return ['-O',
+    return ['-O2',
             '-g',
             '-fno-strict-aliasing',
             '-ffreestanding',

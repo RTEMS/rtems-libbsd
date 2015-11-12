@@ -115,6 +115,25 @@ RTEMS_BSD_DEFINE_NEXUS_DEVICE(dw_mmc, 0, 0, NULL);
 SYSINIT_DRIVER_REFERENCE(mmc, dw_mmc);
 SYSINIT_DRIVER_REFERENCE(mmcsd, mmc);
 
+static const rtems_bsd_device_resource dwcotg0_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = (unsigned long)ALT_USB1_ADDR
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 0,
+		.start_actual = ALT_INT_INTERRUPT_USB1_IRQ
+	}
+};
+
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwcotg, 0, RTEMS_ARRAY_SIZE(dwcotg0_res),
+    &dwcotg0_res[0]);
+
+SYSINIT_REFERENCE(usb_quirk_init);
+SYSINIT_DRIVER_REFERENCE(uhub, usbus);
+SYSINIT_DRIVER_REFERENCE(umass, uhub);
+
 #elif defined(LIBBSP_I386_PC386_BSP_H)
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(legacy, 0, 0, NULL);

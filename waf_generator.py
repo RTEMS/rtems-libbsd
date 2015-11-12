@@ -262,7 +262,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('try:')
         self.add('    import rtems_waf.rtems as rtems')
         self.add('except:')
-        self.add('    print "error: no rtems_waf git submodule; see README.waf"')
+        self.add('    print("error: no rtems_waf git submodule; see README.waf")')
         self.add('    import sys')
         self.add('    sys.exit(1)')
         self.add('')

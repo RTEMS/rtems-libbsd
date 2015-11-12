@@ -11,7 +11,7 @@ import os.path
 try:
     import rtems_waf.rtems as rtems
 except:
-    print "error: no rtems_waf git submodule; see README.waf"
+    print("error: no rtems_waf git submodule; see README.waf")
     import sys
     sys.exit(1)
 

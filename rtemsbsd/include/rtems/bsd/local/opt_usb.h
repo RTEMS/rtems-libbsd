@@ -17,3 +17,5 @@
 #define USB_HAVE_TT_SUPPORT 1
 
 #define USB_HAVE_POWERD 1
+
+#define USB_HAVE_PER_BUS_PROCESS 1

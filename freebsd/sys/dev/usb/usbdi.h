@@ -102,7 +102,9 @@ typedef void (usb_fifo_filter_t)(struct usb_fifo *fifo, struct usb_mbuf *m);
 
 
 /* USB events */
+#ifndef USB_GLOBAL_INCLUDE_FILE
 #include <sys/eventhandler.h>
+#endif
 typedef void (*usb_dev_configured_t)(void *, struct usb_device *,
     struct usb_attach_arg *);
 EVENTHANDLER_DECLARE(usb_dev_configured, usb_dev_configured_t);
@@ -126,6 +128,8 @@ struct usb_xfer_queue {
 	void    (*command) (struct usb_xfer_queue *pq);
 	uint8_t	recurse_1:1;
 	uint8_t	recurse_2:1;
+	uint8_t	recurse_3:1;
+	uint8_t	reserved:5;
 };
 
 /*
@@ -133,11 +137,12 @@ struct usb_xfer_queue {
  * USB endpoint.
  */
 struct usb_endpoint {
-	struct usb_xfer_queue endpoint_q;	/* queue of USB transfers */
+	/* queue of USB transfers */
+	struct usb_xfer_queue endpoint_q[USB_MAX_EP_STREAMS];
 
 	struct usb_endpoint_descriptor *edesc;
 	struct usb_endpoint_ss_comp_descriptor *ecomp;
-	struct usb_pipe_methods *methods;	/* set by HC driver */
+	const struct usb_pipe_methods *methods;	/* set by HC driver */
 
 	uint16_t isoc_next;
 
@@ -156,6 +161,10 @@ struct usb_endpoint {
 	uint8_t	usb_smask;		/* USB start mask */
 	uint8_t	usb_cmask;		/* USB complete mask */
 	uint8_t	usb_uframe;		/* USB microframe */
+
+	/* USB endpoint mode, see USB_EP_MODE_XXX */
+
+	uint8_t ep_mode;
 };
 
 /*
@@ -220,6 +229,7 @@ struct usb_config {
 #define	USB_DEFAULT_INTERVAL	0
 	usb_timeout_t timeout;		/* transfer timeout in milliseconds */
 	struct usb_xfer_flags flags;	/* transfer flags */
+	usb_stream_t stream_id;		/* USB3.0 specific */
 	enum usb_hc_mode usb_mode;	/* host or device mode */
 	uint8_t	type;			/* pipe type */
 	uint8_t	endpoint;		/* pipe number */
@@ -233,21 +243,21 @@ struct usb_config {
  * have your driver module automatically loaded in host, device or
  * both modes respectivly:
  */
-#ifndef __rtems__
+#if USB_HAVE_ID_SECTION
 #define	STRUCT_USB_HOST_ID \
     struct usb_device_id __section("usb_host_id")
 #define	STRUCT_USB_DEVICE_ID \
     struct usb_device_id __section("usb_device_id")
 #define	STRUCT_USB_DUAL_ID \
     struct usb_device_id __section("usb_dual_id")
-#else /* __rtems__ */
+#else
 #define	STRUCT_USB_HOST_ID \
     struct usb_device_id
 #define	STRUCT_USB_DEVICE_ID \
     struct usb_device_id
 #define	STRUCT_USB_DUAL_ID \
     struct usb_device_id
-#endif /* __rtems__ */
+#endif			/* USB_HAVE_ID_SECTION */
 
 /*
  * The following structure is used when looking up an USB driver for
@@ -486,6 +496,10 @@ usb_error_t	usbd_set_pnpinfo(struct usb_device *udev,
 			uint8_t iface_index, const char *pnpinfo);
 usb_error_t	usbd_add_dynamic_quirk(struct usb_device *udev,
 			uint16_t quirk);
+usb_error_t	usbd_set_endpoint_mode(struct usb_device *udev,
+			struct usb_endpoint *ep, uint8_t ep_mode);
+uint8_t		usbd_get_endpoint_mode(struct usb_device *udev,
+			struct usb_endpoint *ep);
 
 const struct usb_device_id *usbd_lookup_id_by_info(
 	    const struct usb_device_id *id, usb_size_t sizeof_id,
@@ -529,8 +543,7 @@ usb_frlength_t
 	usbd_xfer_old_frame_length(struct usb_xfer *xfer, usb_frcount_t frindex);
 void	usbd_xfer_status(struct usb_xfer *xfer, int *actlen, int *sumlen,
 	    int *aframes, int *nframes);
-struct usb_page_cache *usbd_xfer_get_frame(struct usb_xfer *xfer,
-	    usb_frcount_t frindex);
+struct usb_page_cache *usbd_xfer_get_frame(struct usb_xfer *, usb_frcount_t);
 void	*usbd_xfer_get_frame_buffer(struct usb_xfer *, usb_frcount_t);
 void	*usbd_xfer_softc(struct usb_xfer *xfer);
 void	*usbd_xfer_get_priv(struct usb_xfer *xfer);

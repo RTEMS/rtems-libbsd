@@ -29,6 +29,9 @@
  * usb_dev.c - An abstraction layer for creating devices under /dev/...
  */
 
+#ifdef USB_GLOBAL_INCLUDE_FILE
+#include USB_GLOBAL_INCLUDE_FILE
+#else
 #include <sys/stdint.h>
 #include <sys/stddef.h>
 #include <rtems/bsd/sys/param.h>
@@ -77,6 +80,7 @@
 #include <sys/syscallsubr.h>
 
 #include <machine/stdarg.h>
+#endif			/* USB_GLOBAL_INCLUDE_FILE */
 
 #if USB_HAVE_UGEN
 
@@ -84,9 +88,8 @@
 static int usb_fifo_debug = 0;
 
 static SYSCTL_NODE(_hw_usb, OID_AUTO, dev, CTLFLAG_RW, 0, "USB device");
-SYSCTL_INT(_hw_usb_dev, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN,
+SYSCTL_INT(_hw_usb_dev, OID_AUTO, debug, CTLFLAG_RWTUN,
     &usb_fifo_debug, 0, "Debug Level");
-TUNABLE_INT("hw.usb.dev.debug", &usb_fifo_debug);
 #endif
 
 #if ((__FreeBSD_version >= 700001) || (__FreeBSD_version == 0) || \
@@ -829,7 +832,8 @@ usb_fifo_close(struct usb_fifo *f, int fflags)
 			    (!f->flag_iserror)) {
 				/* wait until all data has been written */
 				f->flag_sleeping = 1;
-				err = cv_wait_sig(&f->cv_io, f->priv_mtx);
+				err = cv_timedwait_sig(&f->cv_io, f->priv_mtx,
+				    USB_MS_TO_TICKS(USB_DEFAULT_TIMEOUT));
 				if (err) {
 					DPRINTF("signal received\n");
 					break;

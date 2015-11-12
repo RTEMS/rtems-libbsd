@@ -42,7 +42,7 @@ struct usb_symlink;		/* UGEN */
 
 #define	USB_CTRL_XFER_MAX 2
 
-/* "usb_parse_config()" commands */
+/* "usb_config_parse()" commands */
 
 #define	USB_CFG_ALLOC 0
 #define	USB_CFG_FREE 1
@@ -139,7 +139,7 @@ struct usb_hw_ep_scratch {
 	struct usb_hw_ep_scratch_sub *ep_max;
 	struct usb_config_descriptor *cd;
 	struct usb_device *udev;
-	struct usb_bus_methods *methods;
+	const struct usb_bus_methods *methods;
 	uint8_t	bmOutAlloc[(USB_EP_MAX + 15) / 16];
 	uint8_t	bmInAlloc[(USB_EP_MAX + 15) / 16];
 };
@@ -186,9 +186,17 @@ struct usb_device {
 	struct mtx device_mtx;
 	struct cv ctrlreq_cv;
 	struct cv ref_cv;
+#if (USB_HAVE_FIXED_IFACE == 0)
 	struct usb_interface *ifaces;
+#else
+	struct usb_interface ifaces[USB_IFACE_MAX];
+#endif
 	struct usb_endpoint ctrl_ep;	/* Control Endpoint 0 */
+#if (USB_HAVE_FIXED_ENDPOINT == 0)
 	struct usb_endpoint *endpoints;
+#else
+	struct usb_endpoint endpoints[USB_MAX_EP_UNITS];
+#endif
 	struct usb_power_save pwr_save;/* power save data */
 	struct usb_bus *bus;		/* our USB BUS */
 	device_t parent_dev;		/* parent device */
@@ -264,6 +272,10 @@ struct usb_device {
 	uint32_t clear_stall_errors;	/* number of clear-stall failures */
 
 	union usb_device_scratch scratch;
+
+#if (USB_HAVE_FIXED_CONFIG != 0)
+	uint32_t config_data[(USB_CONFIG_MAX + 3) / 4];
+#endif
 };
 
 /* globals */

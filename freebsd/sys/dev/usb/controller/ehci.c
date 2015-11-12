@@ -1,5 +1,6 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
+/* $FreeBSD$ */
 /*-
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  * Copyright (c) 2004 The NetBSD Foundation, Inc. All rights reserved.
@@ -45,9 +46,9 @@
  * 1) command failures are not recovered correctly
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
+#ifdef USB_GLOBAL_INCLUDE_FILE
+#include USB_GLOBAL_INCLUDE_FILE
+#else
 #include <sys/stdint.h>
 #include <sys/stddef.h>
 #include <rtems/bsd/sys/param.h>
@@ -83,6 +84,8 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/usb/usb_controller.h>
 #include <dev/usb/usb_bus.h>
+#endif			/* USB_GLOBAL_INCLUDE_FILE */
+
 #include <dev/usb/controller/ehci.h>
 #include <dev/usb/controller/ehcireg.h>
 
@@ -97,19 +100,14 @@ static int ehciiaadbug = 0;
 static int ehcilostintrbug = 0;
 
 static SYSCTL_NODE(_hw_usb, OID_AUTO, ehci, CTLFLAG_RW, 0, "USB ehci");
-SYSCTL_INT(_hw_usb_ehci, OID_AUTO, debug, CTLFLAG_RW | CTLFLAG_TUN,
+SYSCTL_INT(_hw_usb_ehci, OID_AUTO, debug, CTLFLAG_RWTUN,
     &ehcidebug, 0, "Debug level");
-TUNABLE_INT("hw.usb.ehci.debug", &ehcidebug);
-SYSCTL_INT(_hw_usb_ehci, OID_AUTO, no_hs, CTLFLAG_RW | CTLFLAG_TUN,
+SYSCTL_INT(_hw_usb_ehci, OID_AUTO, no_hs, CTLFLAG_RWTUN,
     &ehcinohighspeed, 0, "Disable High Speed USB");
-TUNABLE_INT("hw.usb.ehci.no_hs", &ehcinohighspeed);
-SYSCTL_INT(_hw_usb_ehci, OID_AUTO, iaadbug, CTLFLAG_RW | CTLFLAG_TUN,
+SYSCTL_INT(_hw_usb_ehci, OID_AUTO, iaadbug, CTLFLAG_RWTUN,
     &ehciiaadbug, 0, "Enable doorbell bug workaround");
-TUNABLE_INT("hw.usb.ehci.iaadbug", &ehciiaadbug);
-SYSCTL_INT(_hw_usb_ehci, OID_AUTO, lostintrbug, CTLFLAG_RW | CTLFLAG_TUN,
+SYSCTL_INT(_hw_usb_ehci, OID_AUTO, lostintrbug, CTLFLAG_RWTUN,
     &ehcilostintrbug, 0, "Enable lost interrupt bug workaround");
-TUNABLE_INT("hw.usb.ehci.lostintrbug", &ehcilostintrbug);
-
 
 static void ehci_dump_regs(ehci_softc_t *sc);
 static void ehci_dump_sqh(ehci_softc_t *sc, ehci_qh_t *sqh);
@@ -118,12 +116,12 @@ static void ehci_dump_sqh(ehci_softc_t *sc, ehci_qh_t *sqh);
 
 #define	EHCI_INTR_ENDPT 1
 
-extern struct usb_bus_methods ehci_bus_methods;
-extern struct usb_pipe_methods ehci_device_bulk_methods;
-extern struct usb_pipe_methods ehci_device_ctrl_methods;
-extern struct usb_pipe_methods ehci_device_intr_methods;
-extern struct usb_pipe_methods ehci_device_isoc_fs_methods;
-extern struct usb_pipe_methods ehci_device_isoc_hs_methods;
+static const struct usb_bus_methods ehci_bus_methods;
+static const struct usb_pipe_methods ehci_device_bulk_methods;
+static const struct usb_pipe_methods ehci_device_ctrl_methods;
+static const struct usb_pipe_methods ehci_device_intr_methods;
+static const struct usb_pipe_methods ehci_device_isoc_fs_methods;
+static const struct usb_pipe_methods ehci_device_isoc_hs_methods;
 
 static void ehci_do_poll(struct usb_bus *);
 static void ehci_device_done(struct usb_xfer *, usb_error_t);
@@ -1289,7 +1287,7 @@ done:
 static uint8_t
 ehci_check_transfer(struct usb_xfer *xfer)
 {
-	struct usb_pipe_methods *methods = xfer->endpoint->methods;
+	const struct usb_pipe_methods *methods = xfer->endpoint->methods;
 	ehci_softc_t *sc = EHCI_BUS2SC(xfer->xroot->bus);
 
 	uint32_t status;
@@ -1781,7 +1779,7 @@ static void
 ehci_setup_standard_chain(struct usb_xfer *xfer, ehci_qh_t **qh_last)
 {
 	struct ehci_std_temp temp;
-	struct usb_pipe_methods *methods;
+	const struct usb_pipe_methods *methods;
 	ehci_qh_t *qh;
 	ehci_qtd_t *td;
 	uint32_t qh_endp;
@@ -2201,7 +2199,7 @@ ehci_isoc_hs_done(ehci_softc_t *sc, struct usb_xfer *xfer)
 static void
 ehci_device_done(struct usb_xfer *xfer, usb_error_t error)
 {
-	struct usb_pipe_methods *methods = xfer->endpoint->methods;
+	const struct usb_pipe_methods *methods = xfer->endpoint->methods;
 	ehci_softc_t *sc = EHCI_BUS2SC(xfer->xroot->bus);
 
 	USB_BUS_LOCK_ASSERT(&sc->sc_bus, MA_OWNED);
@@ -2305,7 +2303,7 @@ ehci_device_bulk_start(struct usb_xfer *xfer)
 	ehci_doorbell_async(sc);
 }
 
-struct usb_pipe_methods ehci_device_bulk_methods =
+static const struct usb_pipe_methods ehci_device_bulk_methods =
 {
 	.open = ehci_device_bulk_open,
 	.close = ehci_device_bulk_close,
@@ -2346,7 +2344,7 @@ ehci_device_ctrl_start(struct usb_xfer *xfer)
 	ehci_transfer_intr_enqueue(xfer);
 }
 
-struct usb_pipe_methods ehci_device_ctrl_methods =
+static const struct usb_pipe_methods ehci_device_ctrl_methods =
 {
 	.open = ehci_device_ctrl_open,
 	.close = ehci_device_ctrl_close,
@@ -2427,7 +2425,7 @@ ehci_device_intr_start(struct usb_xfer *xfer)
 	ehci_transfer_intr_enqueue(xfer);
 }
 
-struct usb_pipe_methods ehci_device_intr_methods =
+static const struct usb_pipe_methods ehci_device_intr_methods =
 {
 	.open = ehci_device_intr_open,
 	.close = ehci_device_intr_close,
@@ -2719,7 +2717,7 @@ ehci_device_isoc_fs_start(struct usb_xfer *xfer)
 	ehci_transfer_intr_enqueue(xfer);
 }
 
-struct usb_pipe_methods ehci_device_isoc_fs_methods =
+static const struct usb_pipe_methods ehci_device_isoc_fs_methods =
 {
 	.open = ehci_device_isoc_fs_open,
 	.close = ehci_device_isoc_fs_close,
@@ -2999,7 +2997,7 @@ ehci_device_isoc_hs_start(struct usb_xfer *xfer)
 	ehci_transfer_intr_enqueue(xfer);
 }
 
-struct usb_pipe_methods ehci_device_isoc_hs_methods =
+static const struct usb_pipe_methods ehci_device_isoc_hs_methods =
 {
 	.open = ehci_device_isoc_hs_open,
 	.close = ehci_device_isoc_hs_close,
@@ -3806,7 +3804,7 @@ ehci_device_resume(struct usb_device *udev)
 {
 	ehci_softc_t *sc = EHCI_BUS2SC(udev->bus);
 	struct usb_xfer *xfer;
-	struct usb_pipe_methods *methods;
+	const struct usb_pipe_methods *methods;
 
 	DPRINTF("\n");
 
@@ -3840,7 +3838,7 @@ ehci_device_suspend(struct usb_device *udev)
 {
 	ehci_softc_t *sc = EHCI_BUS2SC(udev->bus);
 	struct usb_xfer *xfer;
-	struct usb_pipe_methods *methods;
+	const struct usb_pipe_methods *methods;
 
 	DPRINTF("\n");
 
@@ -3954,7 +3952,7 @@ ehci_start_dma_delay(struct usb_xfer *xfer)
 	    (void (*)(void *))&ehci_start_dma_delay_second, 4);
 }
 
-struct usb_bus_methods ehci_bus_methods =
+static const struct usb_bus_methods ehci_bus_methods =
 {
 	.endpoint_init = ehci_ep_init,
 	.xfer_setup = ehci_xfer_setup,

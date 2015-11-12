@@ -40,22 +40,27 @@
 #define	_USB_STANDARD_H_
 
 #if defined(_KERNEL)
+#ifndef USB_GLOBAL_INCLUDE_FILE
 #include <rtems/bsd/local/opt_usb.h>
+#endif
 
 /* Declare parent SYSCTL USB node. */
 #ifdef SYSCTL_DECL
 SYSCTL_DECL(_hw_usb);
 #endif
 
+#ifndef USB_GLOBAL_INCLUDE_FILE
 #include <sys/malloc.h>
+#endif
 
 MALLOC_DECLARE(M_USB);
 MALLOC_DECLARE(M_USBDEV);
-MALLOC_DECLARE(M_USBHC);
 #endif /* _KERNEL */
 
+#ifndef USB_GLOBAL_INCLUDE_FILE
 #include <dev/usb/usb_endian.h>
 #include <dev/usb/usb_freebsd.h>
+#endif
 
 #define	USB_STACK_VERSION 2000		/* 2.0 */
 
@@ -107,7 +112,7 @@ MALLOC_DECLARE(M_USBHC);
 
 /* Allow for marginal and non-conforming devices. */
 #define	USB_PORT_RESET_DELAY		50	/* ms */
-#define	USB_PORT_ROOT_RESET_DELAY	250	/* ms */
+#define	USB_PORT_ROOT_RESET_DELAY	200	/* ms */
 #define	USB_PORT_RESET_RECOVERY		250	/* ms */
 #define	USB_PORT_POWERUP_DELAY		300	/* ms */
 #define	USB_PORT_RESUME_DELAY		(20*2)	/* ms */
@@ -435,6 +440,7 @@ typedef struct usb_interface_assoc_descriptor usb_interface_assoc_descriptor_t;
 #define	UISUBCLASS_ETHERNET_EMULATION_MODEL 12
 #define	UISUBCLASS_NETWORK_CONTROL_MODEL 13
 
+#define	UIPROTO_CDC_NONE		0
 #define	UIPROTO_CDC_AT			1
 
 #define	UICLASS_HID		0x03
@@ -536,6 +542,11 @@ struct usb_endpoint_descriptor {
 #define	UE_ISO_ADAPT	0x08
 #define	UE_ISO_SYNC	0x0c
 #define	UE_GET_ISO_TYPE(a)	((a) & UE_ISO_TYPE)
+#define	UE_ISO_USAGE	0x30
+#define	UE_ISO_USAGE_DATA	0x00
+#define	UE_ISO_USAGE_FEEDBACK	0x10
+#define	UE_ISO_USAGE_IMPLICT_FB	0x20
+#define	UE_GET_ISO_USAGE(a)	((a) & UE_ISO_USAGE)
 	uWord	wMaxPacketSize;
 #define	UE_ZERO_MPS 0xFFFF		/* for internal use only */
 	uByte	bInterval;
@@ -547,6 +558,8 @@ struct usb_endpoint_ss_comp_descriptor {
 	uByte	bDescriptorType;
 	uByte	bMaxBurst;
 	uByte	bmAttributes;
+#define	UE_GET_BULK_STREAMS(x) ((x) & 0x0F)
+#define	UE_GET_SS_ISO_MULT(x) ((x) & 0x03)
 	uWord	wBytesPerInterval;
 } __packed;
 typedef struct usb_endpoint_ss_comp_descriptor
@@ -561,16 +574,22 @@ struct usb_string_descriptor {
 typedef struct usb_string_descriptor usb_string_descriptor_t;
 
 #define	USB_MAKE_STRING_DESC(m,name)	\
-struct name {				\
+static const struct {			\
   uByte bLength;			\
   uByte bDescriptorType;		\
   uByte bData[sizeof((uint8_t []){m})];	\
-} __packed;				\
-static const struct name name = {	\
-  .bLength = sizeof(struct name),	\
+} __packed name = {			\
+  .bLength = sizeof(name),		\
   .bDescriptorType = UDESC_STRING,	\
   .bData = { m },			\
 }
+
+struct usb_string_lang {
+	uByte bLength;
+	uByte bDescriptorType;
+	uByte bData[2];
+} __packed;
+typedef struct usb_string_lang usb_string_lang_t;
 
 struct usb_hub_descriptor {
 	uByte	bDescLength;
@@ -745,7 +764,7 @@ enum usb_revision {
 #define	USB_REV_MAX	(USB_REV_3_0+1)
 
 /*
- * Supported host contoller modes.
+ * Supported host controller modes.
  */
 enum usb_hc_mode {
 	USB_MODE_HOST,		/* initiates transfers */
@@ -755,7 +774,7 @@ enum usb_hc_mode {
 #define	USB_MODE_MAX	(USB_MODE_DUAL+1)
 
 /*
- * The "USB_MODE" macros defines all the supported device states.
+ * The "USB_STATE" enums define all the supported device states.
  */
 enum usb_dev_state {
 	USB_STATE_DETACHED,
@@ -765,4 +784,18 @@ enum usb_dev_state {
 	USB_STATE_CONFIGURED,
 };
 #define	USB_STATE_MAX	(USB_STATE_CONFIGURED+1)
+
+/*
+ * The "USB_EP_MODE" macros define all the currently supported
+ * endpoint modes.
+ */
+enum usb_ep_mode {
+	USB_EP_MODE_DEFAULT,
+	USB_EP_MODE_STREAMS,	/* USB3.0 specific */
+	USB_EP_MODE_HW_MASS_STORAGE,
+	USB_EP_MODE_HW_SERIAL,
+	USB_EP_MODE_HW_ETHERNET_CDC,
+	USB_EP_MODE_HW_ETHERNET_NCM,
+	USB_EP_MODE_MAX
+};
 #endif					/* _USB_STANDARD_H_ */

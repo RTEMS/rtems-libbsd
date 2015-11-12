@@ -54,7 +54,6 @@ enum {
 	UQ_MS_LEADING_BYTE,	/* mouse sends an unknown leading byte */
 	UQ_MS_REVZ,		/* mouse has Z-axis reversed */
 	UQ_NO_STRINGS,		/* string descriptors are broken */
-	UQ_OPEN_CLEARSTALL,	/* device needs clear endpoint stall */
 	UQ_POWER_CLAIM,		/* hub lies about power status */
 	UQ_SPUR_BUT_UP,		/* spurious mouse button up events */
 	UQ_SWAP_UNICODE,	/* has some Unicode strings swapped */
@@ -109,6 +108,7 @@ enum {
 	UQ_BAD_MIDI,		/* device claims MIDI class, but isn't */
 	UQ_AU_VENDOR_CLASS,	/* audio device uses vendor and not audio class */
 	UQ_SINGLE_CMD_MIDI,	/* at most one command per USB packet */
+	UQ_MSC_DYMO_EJECT,	/* ejects Dymo MSC device */
 
 	USB_QUIRK_MAX
 };

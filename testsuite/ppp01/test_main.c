@@ -59,6 +59,8 @@
 
 #define TEST_NAME "LIBBSD PPP 1"
 
+#ifndef RTEMS_SMP
+
 static void
 set_pppd_options(void)
 {
@@ -271,6 +273,17 @@ test_main(void)
 }
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(ppp, 0, 0, NULL);
+
+#else /* RTEMS_SMP */
+
+static void
+test_main(void)
+{
+	printf("PPP is not support on SMP configurations");
+	exit(0);
+}
+
+#endif /* RTEMS_SMP */
 
 #define CONFIGURE_MAXIMUM_DRIVERS 32
 

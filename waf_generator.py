@@ -549,14 +549,14 @@ class ModuleManager(builder.ModuleManager):
         # Head file collector.
         #
         self.add('    # Installs.    ')
-        self.add('    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])')
+        self.add('    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])')
         header_paths = builder.header_paths()
         self.add('    header_paths = [%s,' % (str(header_paths[0])))
         for hp in header_paths[1:-1]:
             self.add('                     %s,' % (str(hp)))
         self.add('                     %s]' % (str(header_paths[-1])))
         self.add('    for headers in header_paths:')
-        self.add('        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_ARCH_BSP), headers[2])')
+        self.add('        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), headers[2])')
         self.add('        start_dir = bld.path.find_dir(headers[0])')
         self.add('        bld.install_files("${PREFIX}/" + ipath,')
         self.add('                          start_dir.ant_glob("**/" + headers[1]),')

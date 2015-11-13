@@ -1102,7 +1102,7 @@ def build(bld):
               use = libbsd_use)
 
     # Installs.    
-    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])
+    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])
     header_paths = [('rtemsbsd/include', '*.h', ''),
                      ('rtemsbsd/mghttpd', 'mongoose.h', 'mghttpd'),
                      ('freebsd/include', '*.h', ''),
@@ -1123,7 +1123,7 @@ def build(bld):
                      ('mDNSResponder/mDNSShared', 'dns_sd.h', ''),
                      ('mDNSResponder/mDNSPosix', 'mDNSPosix.h', '')]
     for headers in header_paths:
-        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_ARCH_BSP), headers[2])
+        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), headers[2])
         start_dir = bld.path.find_dir(headers[0])
         bld.install_files("${PREFIX}/" + ipath,
                           start_dir.ant_glob("**/" + headers[1]),

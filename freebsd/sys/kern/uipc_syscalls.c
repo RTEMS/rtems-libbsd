@@ -815,12 +815,13 @@ done1:
 	return (error);
 }
 
-#ifndef __rtems__
 int
 kern_socketpair(struct thread *td, int domain, int type, int protocol,
     int *rsv)
 {
+#ifndef __rtems__
 	struct filedesc *fdp = td->td_proc->p_fd;
+#endif /* __rtems__ */
 	struct file *fp1, *fp2;
 	struct socket *so1, *so2;
 	int fd, error, oflag, fflag;
@@ -829,10 +830,12 @@ kern_socketpair(struct thread *td, int domain, int type, int protocol,
 
 	oflag = 0;
 	fflag = 0;
+#ifndef __rtems__
 	if ((type & SOCK_CLOEXEC) != 0) {
 		type &= ~SOCK_CLOEXEC;
 		oflag |= O_CLOEXEC;
 	}
+#endif /* __rtems__ */
 	if ((type & SOCK_NONBLOCK) != 0) {
 		type &= ~SOCK_NONBLOCK;
 		fflag |= FNONBLOCK;
@@ -898,21 +901,52 @@ free1:
 	return (error);
 }
 
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 sys_socketpair(struct thread *td, struct socketpair_args *uap)
 {
+#ifndef __rtems__
 	int error, sv[2];
+#else /* __rtems__ */
+	int error;
+	int *sv = uap->rsv;
+#endif /* __rtems__ */
 
 	error = kern_socketpair(td, uap->domain, uap->type,
 	    uap->protocol, sv);
 	if (error)
 		return (error);
+#ifndef __rtems__
 	error = copyout(sv, uap->rsv, 2 * sizeof(int));
 	if (error) {
 		(void)kern_close(td, sv[0]);
 		(void)kern_close(td, sv[1]);
 	}
+#endif /* __rtems__ */
 	return (error);
+}
+#ifdef __rtems__
+int
+socketpair(int domain, int type, int protocol, int *socket_vector)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct socketpair_args ua = {
+		.domain = domain,
+		.type = type,
+		.protocol = protocol,
+		.rsv = socket_vector
+	};
+	int error;
+
+	if (td != NULL) {
+		error = sys_socketpair(td, &ua);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
 }
 #endif /* __rtems__ */
 

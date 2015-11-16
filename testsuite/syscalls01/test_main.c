@@ -1359,6 +1359,53 @@ test_socket_poll(void)
 
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
+static void
+no_mem_socket_pair(int fd)
+{
+	int sd[2];
+	int rv;
+
+	errno = 0;
+	rv = socketpair(PF_UNIX, SOCK_DGRAM, 0, &sd[0]);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_pair(void)
+{
+	rtems_resource_snapshot snapshot;
+	int sd[2];
+	int rv;
+	char in[] = { 'x' };
+	char out[] = { 'o' };
+	ssize_t n;
+
+	puts("test socket pair");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	rv = socketpair(PF_UNIX, SOCK_DGRAM, 0, &sd[0]);
+	assert(rv == 0);
+
+	n = write(sd[0], &out[0], sizeof(out));
+	assert(n == (ssize_t)sizeof(out));
+
+	n = read(sd[1], &in[0], sizeof(in));
+	assert(n == (ssize_t)sizeof(in));
+
+	assert(memcmp(&in[0], &out[0], sizeof(in)) == 0);
+
+	rv = close(sd[0]);
+	assert(rv == 0);
+
+	rv = close(sd[1]);
+	assert(rv == 0);
+
+	do_no_mem_test(no_mem_socket_pair, -1);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
 
 static void
 test_kqueue_unsupported_ops(void)
@@ -1754,6 +1801,7 @@ test_main(void)
 	test_socket_recv_and_recvfrom_and_recvmsg();
 	test_socket_select();
 	test_socket_poll();
+	test_socket_pair();
 
 	test_kqueue_unsupported_ops();
 	test_kqueue_fstat();

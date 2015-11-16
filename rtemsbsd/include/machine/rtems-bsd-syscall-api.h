@@ -98,6 +98,8 @@ int	shutdown(int, int);
 
 int	socket(int, int, int);
 
+int	socketpair(int, int, int, int *);
+
 int	sysctl(const int *, u_int, void *, size_t *, const void *, size_t);
 
 int	sysctlbyname(const char *, void *, size_t *, const void *, size_t);

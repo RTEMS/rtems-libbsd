@@ -481,13 +481,13 @@ struct shutdown_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char how_l_[PADL_(int)]; int how; char how_r_[PADR_(int)];
 };
-#ifndef __rtems__
 struct socketpair_args {
 	char domain_l_[PADL_(int)]; int domain; char domain_r_[PADR_(int)];
 	char type_l_[PADL_(int)]; int type; char type_r_[PADR_(int)];
 	char protocol_l_[PADL_(int)]; int protocol; char protocol_r_[PADR_(int)];
 	char rsv_l_[PADL_(int *)]; int * rsv; char rsv_r_[PADR_(int *)];
 };
+#ifndef __rtems__
 struct mkdir_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(int)]; int mode; char mode_r_[PADR_(int)];

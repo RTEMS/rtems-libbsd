@@ -189,7 +189,6 @@ def base(mm):
             'sys/sys/cpu.h',
             'sys/sys/ctype.h',
             'sys/sys/domain.h',
-            'sys/sys/endian.h',
             'sys/sys/eventhandler.h',
             'sys/sys/filedesc.h',
             'sys/sys/file.h',

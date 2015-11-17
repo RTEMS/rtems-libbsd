@@ -41,6 +41,7 @@
 #define _RTEMS_BSD_MACHINE_ENDIAN_H
 
 #include <machine/endian.h>
+#include <rtems/endian.h>
 #include <stdint.h>
 
 #if __BSD_VISIBLE
@@ -64,6 +65,8 @@
 #define __htonl(x) (__bswap32(x))
 #define __htons(x) (__bswap16(x))
 #endif
+
+#define _BYTEORDER_FUNC_DEFINED
 
 static inline uint16_t
 __bswap16(uint16_t v)

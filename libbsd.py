@@ -268,7 +268,6 @@ def base(mm):
             'sys/sys/nlist_aout.h',
             'sys/rpc/types.h',
             'sys/sys/tree.h',
-            'sys/sys/ttycom.h',
             'sys/sys/ucred.h',
             'sys/sys/un.h',
             'sys/sys/unpcb.h',

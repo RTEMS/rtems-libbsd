@@ -223,7 +223,6 @@ def base(mm):
             'sys/sys/_null.h',
             'sys/sys/osd.h',
             'sys/sys/pcpu.h',
-            'sys/sys/priority.h',
             'sys/sys/priv.h',
             'sys/sys/proc.h',
             'sys/sys/protosw.h',

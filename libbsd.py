@@ -253,7 +253,6 @@ def base(mm):
             'sys/sys/sockbuf.h',
             'sys/sys/socket.h',
             'sys/sys/socketvar.h',
-            'sys/sys/sockio.h',
             'sys/sys/sockopt.h',
             'sys/sys/sockstate.h',
             'sys/sys/stddef.h',

@@ -231,7 +231,14 @@ mroutepr(u_long pmfchashtbl, u_long pmfctablesize, u_long pviftbl)
 			return;
 		}
 	} else
+#ifndef __rtems__
 		kread(pviftbl, (char *)viftable, sizeof(viftable));
+#else /* __rtems__ */
+	{
+		warnx("mroutepr: not implemented");
+		return;
+	}
+#endif /* __rtems__ */
 
 	banner_printed = 0;
 	for (vifi = 0, v = viftable; vifi < MAXVIFS; ++vifi, ++v) {
@@ -302,6 +309,7 @@ mroutepr(u_long pmfchashtbl, u_long pmfctablesize, u_long pviftbl)
 
 		free(mfctable);
 	} else {
+#ifndef __rtems__
 		LIST_HEAD(, mfc) *mfchashtbl;
 		u_long i, mfctablesize;
 		struct mfc mfc;
@@ -330,6 +338,10 @@ mroutepr(u_long pmfchashtbl, u_long pmfctablesize, u_long pviftbl)
 		}
 
 		free(mfchashtbl);
+#else /* __rtems__ */
+		warnx("mroutepr: not implemented");
+		return;
+#endif /* __rtems__ */
 	}
 
 	if (!banner_printed)
@@ -352,7 +364,14 @@ mrt_stats(u_long mstaddr)
 			return;
 		}
 	} else
+#ifndef __rtems__
 		kread(mstaddr, (char *)&mrtstat, sizeof(mrtstat));
+#else /* __rtems__ */
+	{
+		warnx("mrt_stats: not implemented");
+		return;
+	}
+#endif /* __rtems__ */
 
 	printf("IPv4 multicast forwarding:\n");
 

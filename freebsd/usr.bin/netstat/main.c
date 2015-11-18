@@ -387,6 +387,9 @@ int rtems_bsd_command_netstat(int argc, char *argv[])
 
 	rtems_bsd_program_lock();
 
+	nlistf = NULL;
+	memf = NULL;
+
 	Aflag = 0;
 	aflag = 0;
 	Bflag = 0;

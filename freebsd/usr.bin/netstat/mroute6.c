@@ -124,7 +124,14 @@ mroute6pr(u_long mfcaddr, u_long mifaddr)
 			return;
 		}
 	} else
+#ifndef __rtems__
 		kread(mifaddr, (char *)mif6table, sizeof(mif6table));
+#else /* __rtems__ */
+	{
+		warnx("mroute6pr: not implemented");
+		return;
+	}
+#endif /* __rtems__ */
 
 	saved_numeric_addr = numeric_addr;
 	numeric_addr = 1;
@@ -167,7 +174,14 @@ mroute6pr(u_long mfcaddr, u_long mifaddr)
 			return;
 		}
 	} else
+#ifndef __rtems__
 		kread(mfcaddr, (char *)mf6ctable, sizeof(mf6ctable));
+#else /* __rtems__ */
+	{
+		warnx("mroute6pr: not implemented");
+		return;
+	}
+#endif /* __rtems__ */
 
 	banner_printed = 0;
 
@@ -231,7 +245,14 @@ mrt6_stats(u_long mstaddr)
 			return;
 		}
 	} else
+#ifndef __rtems__
 		kread(mstaddr, (char *)&mrtstat, sizeof(mrtstat));
+#else /* __rtems__ */
+	{
+		warnx("mrt6_stats: not implemented");
+		return;
+	}
+#endif /* __rtems__ */
 
 	printf("IPv6 multicast forwarding:\n");
 

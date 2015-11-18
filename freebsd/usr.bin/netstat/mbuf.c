@@ -116,7 +116,8 @@ mbpr(void *kvmd, u_long mbaddr)
 			goto out;
 		}
 #else /* __rtems__ */
-		;
+		warnx("mbpr: not implemented");
+		goto out;
 #endif /* __rtems__ */
 	}
 

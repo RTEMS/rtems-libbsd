@@ -192,7 +192,9 @@ struct kinfo_proc {
 	int	ki_jid;			/* Process jail ID */
 	int	ki_numthreads;		/* XXXKSE number of threads in total */
 	lwpid_t	ki_tid;			/* XXXKSE thread id */
+#ifndef __rtems__
 	struct	priority ki_pri;	/* process priority */
+#endif /* __rtems__ */
 	struct	rusage ki_rusage;	/* process rusage statistics */
 	/* XXX - most fields in ki_rusage_ch are not (yet) filled in */
 	struct	rusage ki_rusage_ch;	/* rusage of children processes */

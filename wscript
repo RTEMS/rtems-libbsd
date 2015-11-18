@@ -1132,7 +1132,7 @@ def build(bld):
 
     # Tests
     test_init01 = ['testsuite/init01/test_main.c']
-    bld.program(target = "init01",
+    bld.program(target = "init01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1142,7 +1142,7 @@ def build(bld):
                 install_path = None)
 
     test_syscalls01 = ['testsuite/syscalls01/test_main.c']
-    bld.program(target = "syscalls01",
+    bld.program(target = "syscalls01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1152,7 +1152,7 @@ def build(bld):
                 install_path = None)
 
     test_thread01 = ['testsuite/thread01/test_main.c']
-    bld.program(target = "thread01",
+    bld.program(target = "thread01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1162,7 +1162,7 @@ def build(bld):
                 install_path = None)
 
     test_loopback01 = ['testsuite/loopback01/test_main.c']
-    bld.program(target = "loopback01",
+    bld.program(target = "loopback01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1172,7 +1172,7 @@ def build(bld):
                 install_path = None)
 
     test_foobarclient = ['testsuite/foobarclient/test_main.c']
-    bld.program(target = "foobarclient",
+    bld.program(target = "foobarclient.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1182,7 +1182,7 @@ def build(bld):
                 install_path = None)
 
     test_lagg01 = ['testsuite/lagg01/test_main.c']
-    bld.program(target = "lagg01",
+    bld.program(target = "lagg01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1193,7 +1193,7 @@ def build(bld):
 
     test_timeout01 = ['testsuite/timeout01/init.c',
                       'testsuite/timeout01/timeout_test.c']
-    bld.program(target = "timeout01",
+    bld.program(target = "timeout01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1203,7 +1203,7 @@ def build(bld):
                 install_path = None)
 
     test_dhcpcd02 = ['testsuite/dhcpcd02/test_main.c']
-    bld.program(target = "dhcpcd02",
+    bld.program(target = "dhcpcd02.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1213,7 +1213,7 @@ def build(bld):
                 install_path = None)
 
     test_ftpd01 = ['testsuite/ftpd01/test_main.c']
-    bld.program(target = "ftpd01",
+    bld.program(target = "ftpd01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1223,7 +1223,7 @@ def build(bld):
                 install_path = None)
 
     test_vlan01 = ['testsuite/vlan01/test_main.c']
-    bld.program(target = "vlan01",
+    bld.program(target = "vlan01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1233,7 +1233,7 @@ def build(bld):
                 install_path = None)
 
     test_foobarserver = ['testsuite/foobarserver/test_main.c']
-    bld.program(target = "foobarserver",
+    bld.program(target = "foobarserver.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1243,7 +1243,7 @@ def build(bld):
                 install_path = None)
 
     test_selectpollkqueue01 = ['testsuite/selectpollkqueue01/test_main.c']
-    bld.program(target = "selectpollkqueue01",
+    bld.program(target = "selectpollkqueue01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1253,7 +1253,7 @@ def build(bld):
                 install_path = None)
 
     test_zerocopy01 = ['testsuite/zerocopy01/test_main.c']
-    bld.program(target = "zerocopy01",
+    bld.program(target = "zerocopy01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1263,7 +1263,7 @@ def build(bld):
                 install_path = None)
 
     test_smp01 = ['testsuite/smp01/test_main.c']
-    bld.program(target = "smp01",
+    bld.program(target = "smp01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1273,7 +1273,7 @@ def build(bld):
                 install_path = None)
 
     test_media01 = ['testsuite/media01/test_main.c']
-    bld.program(target = "media01",
+    bld.program(target = "media01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1283,7 +1283,7 @@ def build(bld):
                 install_path = None)
 
     test_condvar01 = ['testsuite/condvar01/test_main.c']
-    bld.program(target = "condvar01",
+    bld.program(target = "condvar01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1293,7 +1293,7 @@ def build(bld):
                 install_path = None)
 
     test_telnetd01 = ['testsuite/telnetd01/test_main.c']
-    bld.program(target = "telnetd01",
+    bld.program(target = "telnetd01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1303,7 +1303,7 @@ def build(bld):
                 install_path = None)
 
     test_ppp01 = ['testsuite/ppp01/test_main.c']
-    bld.program(target = "ppp01",
+    bld.program(target = "ppp01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1314,7 +1314,7 @@ def build(bld):
 
     test_swi01 = ['testsuite/swi01/init.c',
                   'testsuite/swi01/swi_test.c']
-    bld.program(target = "swi01",
+    bld.program(target = "swi01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1325,7 +1325,7 @@ def build(bld):
 
     test_netshell01 = ['testsuite/netshell01/shellconfig.c',
                        'testsuite/netshell01/test_main.c']
-    bld.program(target = "netshell01",
+    bld.program(target = "netshell01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1335,7 +1335,7 @@ def build(bld):
                 install_path = None)
 
     test_rwlock01 = ['testsuite/rwlock01/test_main.c']
-    bld.program(target = "rwlock01",
+    bld.program(target = "rwlock01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1345,7 +1345,7 @@ def build(bld):
                 install_path = None)
 
     test_mutex01 = ['testsuite/mutex01/test_main.c']
-    bld.program(target = "mutex01",
+    bld.program(target = "mutex01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1355,7 +1355,7 @@ def build(bld):
                 install_path = None)
 
     test_dhcpcd01 = ['testsuite/dhcpcd01/test_main.c']
-    bld.program(target = "dhcpcd01",
+    bld.program(target = "dhcpcd01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1365,7 +1365,7 @@ def build(bld):
                 install_path = None)
 
     test_unix01 = ['testsuite/unix01/test_main.c']
-    bld.program(target = "unix01",
+    bld.program(target = "unix01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1375,7 +1375,7 @@ def build(bld):
                 install_path = None)
 
     test_commands01 = ['testsuite/commands01/test_main.c']
-    bld.program(target = "commands01",
+    bld.program(target = "commands01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1385,7 +1385,7 @@ def build(bld):
                 install_path = None)
 
     test_ping01 = ['testsuite/ping01/test_main.c']
-    bld.program(target = "ping01",
+    bld.program(target = "ping01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1396,7 +1396,7 @@ def build(bld):
 
     test_usb01 = ['testsuite/usb01/init.c',
                   'testsuite/usb01/test-file-system.c']
-    bld.program(target = "usb01",
+    bld.program(target = "usb01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1406,7 +1406,7 @@ def build(bld):
                 install_path = None)
 
     test_arphole = ['testsuite/arphole/test_main.c']
-    bld.program(target = "arphole",
+    bld.program(target = "arphole.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
@@ -1416,7 +1416,7 @@ def build(bld):
                 install_path = None)
 
     test_sleep01 = ['testsuite/sleep01/test_main.c']
-    bld.program(target = "sleep01",
+    bld.program(target = "sleep01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,

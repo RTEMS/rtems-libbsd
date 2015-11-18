@@ -572,7 +572,7 @@ class ModuleManager(builder.ModuleManager):
         for test_name in tests:
             files = ['testsuite/%s/%s.c' % (test_name, f) for f in  data['tests'][test_name]['all']['files']]
             _source_list('    test_%s' % (test_name), sorted(files))
-            self.add('    bld.program(target = "%s",' % (test_name))
+            self.add('    bld.program(target = "%s.exe",' % (test_name))
             self.add('                features = "cprogram",')
             self.add('                cflags = cflags,')
             self.add('                includes = includes,')

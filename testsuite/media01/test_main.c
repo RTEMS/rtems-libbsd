@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2010-2016 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -37,6 +37,7 @@
 #include <rtems/ftpd.h>
 #include <rtems/media.h>
 #include <rtems/shell.h>
+#include <rtems/telnetd.h>
 
 #define TEST_NAME "LIBBSD MEDIA 1"
 
@@ -108,6 +109,30 @@ media_listener(rtems_media_event event, rtems_media_state state,
 }
 
 static void
+telnet_shell(char *name, void *arg)
+{
+	rtems_shell_env_t env;
+
+	memset(&env, 0, sizeof(env));
+
+	env.devname = name;
+	env.taskname = "TLNT";
+	env.login_check = NULL;
+	env.forever = false;
+
+	rtems_shell_main_loop(&env);
+}
+
+rtems_telnetd_config_table rtems_telnetd_config = {
+	.command = telnet_shell,
+	.arg = NULL,
+	.priority = 0,
+	.stack_size = 0,
+	.login_check = NULL,
+	.keep_stdio = false
+};
+
+static void
 test_main(void)
 {
 	int rv;
@@ -115,6 +140,9 @@ test_main(void)
 
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
+
+	sc = rtems_telnetd_initialize();
+	assert(sc == RTEMS_SUCCESSFUL);
 
 	sc = rtems_shell_init("SHLL", 16 * 1024, 1, CONSOLE_DEVICE_NAME,
 	    false, true, NULL);
@@ -149,6 +177,10 @@ early_initialization(void)
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE
+
+#define CONFIGURE_MICROSECONDS_PER_TICK 1000
+
+#define CONFIGURE_MAXIMUM_DRIVERS 32
 
 #define CONFIGURE_FILESYSTEM_DOSFS
 

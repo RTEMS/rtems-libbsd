@@ -219,8 +219,9 @@ rtems_bsd_threads_init_late(void *arg)
 		Thread_Control *thread = (Thread_Control *) node;
 		rtems_status_code sc;
 
-		sc = rtems_task_start(thread->Object.id, (rtems_task_entry)
-		    thread->Start.entry_point, thread->Start.numeric_argument);
+		sc = rtems_task_start(thread->Object.id,
+		    thread->Start.Entry.Kinds.Numeric.entry,
+		    thread->Start.Entry.Kinds.Numeric.argument);
 		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 	}
 
@@ -271,9 +272,10 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 			    (rtems_task_argument) arg);
 			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 		} else {
-			thread->Start.entry_point = (Thread_Entry) func;
-			thread->Start.numeric_argument =
-			    (Thread_Entry_numeric_type) arg;
+			thread->Start.Entry.Kinds.Numeric.entry =
+			    (void (*)(Thread_Entry_numeric_type))func;
+			thread->Start.Entry.Kinds.Numeric.argument =
+			    (Thread_Entry_numeric_type)arg;
 			_Chain_Append_unprotected(
 			    &rtems_bsd_thread_delay_start_chain,
 			    &thread->Object.Node);

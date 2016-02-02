@@ -1440,10 +1440,10 @@ unp_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 		goto bad;
 	VFS_UNLOCK_GIANT(vfslocked);
 #else /* __rtems__ */
-	soun->sun_path[len] = '\0';
 	eval_flags = RTEMS_FS_FOLLOW_LINK;
-	currentloc = rtems_filesystem_eval_path_start(&ctx,
-	    &soun->sun_path[0], eval_flags);
+	currentloc = rtems_filesystem_eval_path_start_with_root_and_current(
+	    &ctx, &soun->sun_path[0], (size_t)len, eval_flags,
+	    &rtems_filesystem_root, &rtems_filesystem_current);
 
 	if (currentloc->handlers == &socketops) {
 		vp = currentloc->node_access;

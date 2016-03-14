@@ -88,6 +88,7 @@ __FBSDID("$FreeBSD$");
 #endif
 #ifdef __rtems__
 #include <machine/rtems-bsd-thread.h>
+#undef ticks
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/watchdogimpl.h>
 #endif /* __rtems__ */
@@ -176,7 +177,7 @@ static void	sleepq_switch(void *wchan, int pri);
 #ifndef __rtems__
 static void	sleepq_timeout(void *arg);
 #else /* __rtems__ */
-static void	sleepq_timeout(Objects_Id id, void *arg);
+static void	sleepq_timeout(Watchdog_Control *watchdog);
 #endif /* __rtems__ */
 
 SDT_PROBE_DECLARE(sched, , , sleep);
@@ -417,15 +418,16 @@ sleepq_set_timeout(void *wchan, int timo)
 	MPASS(wchan != NULL);
 	callout_reset_curcpu(&td->td_slpcallout, timo, sleepq_timeout, td);
 #else /* __rtems__ */
+	Per_CPU_Control *cpu_self;
 	Thread_Control *executing;
 
-	_Thread_Disable_dispatch();
-	executing = _Thread_Executing;
-	BSD_ASSERT(executing->Timer.state == WATCHDOG_INACTIVE);
-	_Watchdog_Initialize(&executing->Timer, sleepq_timeout,
-	    0, executing);
-	_Watchdog_Insert_ticks(&executing->Timer, (Watchdog_Interval)timo);
-	_Thread_Enable_dispatch();
+	cpu_self = _Thread_Dispatch_disable();
+	executing = _Per_CPU_Get_executing(cpu_self);
+	BSD_ASSERT(_Watchdog_Get_state(&executing->Timer.Watchdog) ==
+	    WATCHDOG_INACTIVE);
+	_Thread_Timer_insert_relative(executing, cpu_self, sleepq_timeout,
+	    (Watchdog_Interval)timo);
+	_Thread_Dispatch_enable(cpu_self);
 #endif /* __rtems__ */
 }
 
@@ -666,7 +668,7 @@ sleepq_switch(void *wchan, int pri)
 		_Thread_Lock_release_default(executing, &lock_context);
 
 		if (unblock) {
-			_Watchdog_Remove_ticks(&executing->Timer);
+			_Thread_Timer_remove(executing);
 			_Thread_Clear_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
 		}
 
@@ -950,7 +952,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		return (setrunnable(td));
 	}
 #else /* __rtems__ */
-	unblock = _Watchdog_Is_active(&thread->Timer);
+	unblock = _Watchdog_Is_scheduled(&thread->Timer.Watchdog);
 	switch (td->td_sq_state) {
 	case TD_SQ_SLEEPING:
 		unblock = true;
@@ -971,7 +973,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
 		_Thread_Lock_release_default(thread, &lock_context);
 
-		_Watchdog_Remove_ticks(&thread->Timer);
+		_Thread_Timer_remove(thread);
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
 		_Thread_Dispatch_enable(cpu_self);
@@ -1166,14 +1168,14 @@ sleepq_timeout(void *arg)
 }
 #else /* __rtems__ */
 static void
-sleepq_timeout(Objects_Id id, void *arg)
+sleepq_timeout(Watchdog_Control *watchdog)
 {
 	Thread_Control *thread;
 	struct thread *td;
 	ISR_lock_Context lock_context;
 	bool unblock;
 
-	thread = arg;
+	thread = RTEMS_CONTAINER_OF(watchdog, Thread_Control, Timer.Watchdog);
 	td = rtems_bsd_get_thread(thread);
 	BSD_ASSERT(td != NULL);
 

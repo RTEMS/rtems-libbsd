@@ -1898,6 +1898,8 @@ selectinit(void *dummy __unused)
 #ifdef __rtems__
 #include <machine/rtems-bsd-thread.h>
 
+#undef ticks
+
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/threadimpl.h>
 

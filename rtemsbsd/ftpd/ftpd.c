@@ -1983,7 +1983,7 @@ session(rtems_task_argument arg)
 
 
 /*
- * daemon
+ * ftpd_daemon
  *
  * This task runs forever.  It waits for service requests on the FTP port
  * (port 21 by default).  When a request is received, it opens a new session
@@ -1996,7 +1996,7 @@ session(rtems_task_argument arg)
  *   NONE
  */
 static void
-daemon(rtems_task_argument args __attribute__((unused)))
+ftpd_daemon(rtems_task_argument args __attribute__((unused)))
 {
   int                 s;
   socklen_t	      addrLen;
@@ -2144,7 +2144,7 @@ rtems_initialize_ftpd(void)
 
   if (sc == RTEMS_SUCCESSFUL)
   {
-    sc = rtems_task_start(tid, daemon, 0);
+    sc = rtems_task_start(tid, ftpd_daemon, 0);
     if (sc != RTEMS_SUCCESSFUL)
       rtems_task_delete(tid);
   }

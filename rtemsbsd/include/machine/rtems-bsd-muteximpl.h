@@ -196,7 +196,7 @@ rtems_bsd_mutex_destroy(struct lock_object *lock, rtems_bsd_mutex *m)
 		rtems_bsd_mutex_unlock(m);
 	}
 
-	_Thread_queue_Dequeue(&m->queue);
+	_Thread_queue_Destroy(&m->queue);
 	lock_destroy(lock);
 }
 

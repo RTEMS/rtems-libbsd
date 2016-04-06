@@ -57,7 +57,7 @@ static inline void
 rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
     struct lock_class *class, const char *name, const char *type, int flags)
 {
-	_Thread_queue_Initialize(&m->queue, THREAD_QUEUE_DISCIPLINE_PRIORITY);
+	_Thread_queue_Initialize(&m->queue);
 	m->owner = NULL;
 	m->nest_level = 0;
 

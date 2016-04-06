@@ -80,7 +80,7 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 		new_owner = ( *operations->first )( heads );
 		m->owner = new_owner;
 		_Thread_queue_Extract_critical(&m->queue, operations,
-		    new_owner, lock_context);
+		    new_owner, NULL, 0, lock_context);
 	} else {
 		_Thread_queue_Release(&m->queue, lock_context);
 	}

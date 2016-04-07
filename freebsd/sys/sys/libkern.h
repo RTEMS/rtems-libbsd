@@ -113,12 +113,23 @@ void	 qsort(void *base, size_t nmemb, size_t size,
 	    int (*compar)(const void *, const void *));
 void	 qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
 	    int (*compar)(void *, const void *, const void *));
+#ifndef __rtems__
 u_long	 random(void);
+#else /* __rtems__ */
+#include <stdlib.h>
+u_long	 _bsd_random(void);
+#define	random() _bsd_random()
+#endif /* __rtems__ */
 char	*index(const char *, int);
 char	*rindex(const char *, int);
 int	 scanc(u_int, const u_char *, const u_char *, int);
 int	 skpc(int, int, char *);
+#ifndef __rtems__
 void	 srandom(u_long);
+#else /* __rtems__ */
+void	 _bsd_srandom(u_long);
+#define	srandom(_x) _bsd_srandom(_x)
+#endif /* __rtems__ */
 int	 strcasecmp(const char *, const char *);
 char	*strcat(char * __restrict, const char * __restrict);
 int	 strcmp(const char *, const char *);

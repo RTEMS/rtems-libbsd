@@ -44,7 +44,7 @@
   #include <sys/socket.h>  /* u_int, u_char etc. */
 #else /* UN*X */
   #include <rtems/bsd/sys/types.h>
-  #include <rtems/bsd/sys/time.h>
+  #include <sys/time.h>
 #endif /* WIN32/MSDOS/UN*X */
 
 #include <net/bpf.h>

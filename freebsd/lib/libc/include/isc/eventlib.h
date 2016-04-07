@@ -26,7 +26,7 @@
 
 #include <rtems/bsd/sys/types.h>
 #include <sys/uio.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <stdio.h>
 
 #include <isc/platform.h>

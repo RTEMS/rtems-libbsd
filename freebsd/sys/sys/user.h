@@ -39,7 +39,7 @@
 #ifndef _KERNEL
 /* stuff that *used* to be included by user.h, or is now needed */
 #include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <rtems/bsd/sys/resource.h>
 #include <sys/ucred.h>
 #include <sys/uio.h>

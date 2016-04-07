@@ -64,7 +64,7 @@
 
 #include <sys/queue.h>
 #include <rtems/bsd/sys/types.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 
 #include <netinet/in_systm.h>
 #include <netinet/in.h>

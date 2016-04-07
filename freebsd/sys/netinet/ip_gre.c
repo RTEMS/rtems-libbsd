@@ -53,7 +53,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 #include <net/bpf.h>

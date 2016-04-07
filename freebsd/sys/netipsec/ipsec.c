@@ -50,7 +50,7 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 #include <sys/sysctl.h>

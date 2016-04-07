@@ -71,7 +71,7 @@ MALLOC_DECLARE(M_RPC);
 #define mem_free(ptr, bsize)	free(ptr)
 #endif
 
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #ifdef _KERNEL
 #include <rpc/netconfig.h>
 #else

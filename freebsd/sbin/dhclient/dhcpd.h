@@ -46,7 +46,7 @@
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/stat.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/un.h>
 #include <sys/wait.h>
 

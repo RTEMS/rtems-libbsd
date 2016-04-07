@@ -52,7 +52,7 @@
 #include <sys/socket.h>
 #include <rtems/bsd/sys/errno.h>
 #include <sys/sockio.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/queue.h>
 #include <rtems/bsd/sys/types.h>
 #include <sys/malloc.h>

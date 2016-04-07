@@ -45,7 +45,7 @@
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <sys/priv.h>

@@ -68,7 +68,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 
 #include <net/ethernet.h>
 #include <net/if.h>

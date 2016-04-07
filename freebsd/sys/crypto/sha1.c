@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/types.h>
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/systm.h>
 
 #include <crypto/sha1.h>

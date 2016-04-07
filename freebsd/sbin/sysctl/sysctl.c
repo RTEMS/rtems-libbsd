@@ -50,7 +50,7 @@ static const char rcsid[] =
 #endif /* __rtems__ */
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <rtems/bsd/sys/resource.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>

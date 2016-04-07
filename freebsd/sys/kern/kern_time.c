@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/priv.h>
 #include <sys/proc.h>
 #include <sys/posix4.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/timers.h>
 #include <sys/timetc.h>
 #include <sys/vnode.h>

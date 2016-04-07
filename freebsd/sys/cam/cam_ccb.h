@@ -33,7 +33,7 @@
 
 #include <sys/queue.h>
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/limits.h>
 #ifndef _KERNEL
 #include <sys/callout.h>

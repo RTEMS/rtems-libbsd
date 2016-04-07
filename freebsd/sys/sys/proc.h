@@ -57,7 +57,7 @@
 #include <sys/signal.h>
 #include <sys/signalvar.h>
 #ifndef _KERNEL
-#include <rtems/bsd/sys/time.h>			/* For structs itimerval, timeval. */
+#include <sys/time.h>			/* For structs itimerval, timeval. */
 #else
 #include <sys/pcpu.h>
 #endif

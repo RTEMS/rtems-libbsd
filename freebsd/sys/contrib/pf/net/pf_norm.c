@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/fcntl.h>
 #include <sys/socket.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #ifndef __FreeBSD__
 #include <sys/pool.h>
 

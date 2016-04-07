@@ -157,7 +157,7 @@ __FBSDID("$FreeBSD$");
 #include <stdlib.h>
 #include <stdio.h>
 #include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <unistd.h> 
 #endif
 

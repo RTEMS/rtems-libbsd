@@ -42,7 +42,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>

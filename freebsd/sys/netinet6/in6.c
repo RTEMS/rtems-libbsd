@@ -79,7 +79,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 

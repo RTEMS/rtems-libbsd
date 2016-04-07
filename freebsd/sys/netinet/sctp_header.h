@@ -36,7 +36,7 @@ __FBSDID("$FreeBSD$");
 #ifndef _NETINET_SCTP_HEADER_H_
 #define _NETINET_SCTP_HEADER_H_
 
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_constants.h>
 

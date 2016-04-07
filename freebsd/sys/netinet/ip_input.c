@@ -47,7 +47,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/rwlock.h>

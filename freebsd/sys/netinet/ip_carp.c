@@ -42,7 +42,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/module.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
 #include <sys/protosw.h>

@@ -115,7 +115,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 
 #include <net/if.h>
 #include <net/route.h>

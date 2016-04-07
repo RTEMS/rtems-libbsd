@@ -94,7 +94,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 
 #include <net/if.h>
 #include <net/netisr.h>

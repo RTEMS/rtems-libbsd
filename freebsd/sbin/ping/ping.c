@@ -73,7 +73,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>		/* NB: we rely on this for <sys/types.h> */
 #include <sys/socket.h>
 #include <sys/sysctl.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/uio.h>
 
 #include <netinet/in.h>

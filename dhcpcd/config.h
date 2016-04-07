@@ -8,7 +8,7 @@
 #define LIBEXECDIR	"/libexec"
 #define DBDIR		"/var/db"
 #define RUNDIR		"/var/run"
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #include <spawn.h>

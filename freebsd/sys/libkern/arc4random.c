@@ -20,7 +20,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/libkern.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 
 #define	ARC4_RESEED_BYTES 65536
 #define	ARC4_RESEED_SECONDS 300

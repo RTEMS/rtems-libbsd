@@ -40,7 +40,7 @@
 __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/types.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #ifdef _KERNEL
 #include <sys/systm.h>
 #else

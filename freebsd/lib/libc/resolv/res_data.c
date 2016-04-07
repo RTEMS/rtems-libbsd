@@ -28,7 +28,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>

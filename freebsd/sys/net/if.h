@@ -46,7 +46,7 @@
  * The same holds for <sys/socket.h>.  (struct sockaddr ifru_addr)
  */
 #ifndef _KERNEL
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #endif
 

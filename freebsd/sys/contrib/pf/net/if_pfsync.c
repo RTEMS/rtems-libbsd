@@ -80,7 +80,7 @@ __FBSDID("$FreeBSD$");
 #endif
 #include <sys/proc.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #ifdef __FreeBSD__

@@ -95,7 +95,7 @@ __FBSDID("$FreeBSD$");
 #include "namespace.h"
 #include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/queue.h>
 #include <netinet/in.h>
 #ifdef INET6

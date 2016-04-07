@@ -87,7 +87,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #ifdef  __FreeBSD__
 #include <sys/sysctl.h>
 #endif

@@ -83,7 +83,7 @@
 #include <sys/kernel.h>
 #ifdef ALTQ_FLOWVALVE
 #include <sys/queue.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #endif
 #endif /* ALTQ3_COMPAT */
 

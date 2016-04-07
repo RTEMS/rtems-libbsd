@@ -97,7 +97,7 @@
 #include <sys/cdefs.h>
 #include <rtems/bsd/sys/errno.h>
 #ifndef LOCORE
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/priority.h>
 #endif
 

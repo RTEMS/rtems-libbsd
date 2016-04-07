@@ -119,7 +119,7 @@ typedef char* caddr_t;
 #endif
 #include <rtems/bsd/sys/param.h>
 #include <rtems/bsd/sys/types.h>			/* concession to AIX */
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 

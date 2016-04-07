@@ -49,7 +49,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/time.h>
+#include <sys/time.h>
 #ifdef ALTQ3_COMPAT
 #include <sys/uio.h>
 #include <sys/kernel.h>

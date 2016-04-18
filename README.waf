@@ -134,4 +134,5 @@ versions:
  $ cd rtems_waf
  $ git checkout master
  $ git pull
+ $ cd ..
  $ git commit -m "Update rtems_waf" rtems_waf

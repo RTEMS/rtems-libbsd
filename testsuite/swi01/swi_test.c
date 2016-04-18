@@ -29,12 +29,12 @@
  * SUCH DAMAGE.
  */
 
+#include <machine/rtems-bsd-kernel-space.h>
+
 #include <assert.h>
 
 #include <stdio.h>
 #include <unistd.h>
-
-#include <machine/rtems-bsd-kernel-space.h>
 
 #include <sys/types.h>
 #include <sys/systm.h>

@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2015 Chris Johns <chrisj@rtems.org>. All rights reserved.
+#  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
 #  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
 #
@@ -34,6 +34,8 @@
 
 # FreeBSD: http://svn.freebsd.org/base/releng/8.2/sys (revision 222485)
 
+from __future__ import print_function
+
 import shutil
 import os
 import re
@@ -50,7 +52,14 @@ FreeBSD_DIR = "freebsd-org"
 isVerbose = False
 isDryRun = False
 isDiffMode = False
-filesProcessed = 0
+filesProcessedCount = 0
+filesProcessed = []
+
+def changedFileSummary():
+    if isDiffMode == False:
+        print('%d file(s) were changed:' % (filesProcessedCount))
+        for f in sorted(filesProcessed):
+            print(' %s' % (f))
 
 class error(Exception):
     """Base class for exceptions."""
@@ -131,20 +140,22 @@ def header_paths():
 #  + copy or diff depending on execution mode
 def processIfDifferent(new, old, src):
 
+    global filesProcessedCount
     global filesProcessed
     global isVerbose, isDryRun, isEarlyExit
 
     if not os.path.exists(old) or \
        filecmp.cmp(new, old, shallow = False) == False:
-        filesProcessed += 1
+        filesProcessed += [old]
+        filesProcessedCount += 1
         if isDiffMode == False:
             if isVerbose == True:
-                print "Move " + src + " to " + old
+                print("Move " + src + " to " + old)
             if isDryRun == False:
                 shutil.move(new, old)
         else:
             if isVerbose == True:
-                print "Diff %s => %s" % (src, new)
+                print("Diff %s => %s" % (src, new))
             old_contents = open(old).readlines()
             new_contents = open(new).readlines()
             for line in \
@@ -191,14 +202,14 @@ def revertFixLocalIncludes(data):
 
 def assertHeaderFile(path):
     if path[-2] != '.' or path[-1] != 'h':
-        print "*** " + path + " does not end in .h"
-        print "*** Move it to a C source file list"
+        print("*** " + path + " does not end in .h")
+        print("*** Move it to a C source file list")
         sys.exit(2)
 
 def assertSourceFile(path):
     if path[-2] != '.' or (path[-1] != 'c' and path[-1] != 'S'):
-        print "*** " + path + " does not end in .c"
-        print "*** Move it to a header file list"
+        print("*** " + path + " does not end in .c")
+        print("*** Move it to a header file list")
         sys.exit(2)
 
 class Converter(object):

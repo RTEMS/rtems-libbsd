@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2015 Chris Johns <chrisj@rtems.org>. All rights reserved.
+#  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
 #  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
 #
@@ -32,7 +32,10 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
 import os
+import sys
 import tempfile
 
 import builder
@@ -146,7 +149,10 @@ class ModuleManager(builder.ModuleManager):
     def write(self):
         try:
             out = tempfile.NamedTemporaryFile(delete = False)
-            out.write(self.script)
+            try:
+                out.write(bytes(self.script, sys.stdin.encoding))
+            except:
+                out.write(self.script)
             out.close()
             wscript = builder.RTEMS_DIR + '/wscript'
             builder.processIfDifferent(out.name, wscript, "wscript")
@@ -176,7 +182,7 @@ class ModuleManager(builder.ModuleManager):
         self.generator['lex'] = LexFragmentComposer
         self.generator['yacc'] = YaccFragmentComposer
 
-    def generate(self):
+    def generate(self, rtems_version):
 
         def _source_list(lhs, files, append = False):
             if append:
@@ -257,7 +263,11 @@ class ModuleManager(builder.ModuleManager):
         self.add('# To use see README.waf shipped with this file.')
         self.add('#')
         self.add('')
+        self.add('from __future__ import print_function')
+        self.add('')
         self.add('import os.path')
+        self.add('')
+        self.add('rtems_version = "%s"' % (rtems_version))
         self.add('')
         self.add('try:')
         self.add('    import rtems_waf.rtems as rtems')
@@ -267,7 +277,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('    sys.exit(1)')
         self.add('')
         self.add('def init(ctx):')
-        self.add('    rtems.init(ctx)')
+        self.add('    rtems.init(ctx, version = rtems_version)')
         self.add('')
         self.add('def options(opt):')
         self.add('    rtems.options(opt)')
@@ -569,7 +579,7 @@ class ModuleManager(builder.ModuleManager):
 
         self.add('    # Tests')
         tests = data['tests']
-        for test_name in tests:
+        for test_name in sorted(tests):
             files = ['testsuite/%s/%s.c' % (test_name, f) for f in  data['tests'][test_name]['all']['files']]
             _source_list('    test_%s' % (test_name), sorted(files))
             self.add('    bld.program(target = "%s.exe",' % (test_name))

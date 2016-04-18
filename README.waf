@@ -105,3 +105,33 @@ Steps
     configuration information. If you have a few source trees working at any
     one time with different tool sets or configurations you can easly move
     between them safe in the knowledge that one build will not infect another.
+
+
+Updating RTEMS Waf Support
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have a working libbsd repository and new changes to the `rtems_waf`
+submodule has been made, you will need update. A `git status` will indicate
+there are new commits with:
+
+  $ git status
+      [ snip output ]
+            modified:   rtems_waf (new commits)
+      [ snip output ]
+
+To update:
+
+  $ git submodule update rtems_waf
+
+Please make sure you use the exact command or you might find you are cloning
+the whole of the FreeBSD source tree. If that happens simply git ^C and try
+again.
+
+The following is for developers only who need to move libbsd to a newer
+versions:
+
+ $ git submodule update rtems_waf
+ $ cd rtems_waf
+ $ git checkout master
+ $ git pull
+ $ git commit -m "Update rtems_waf" rtems_waf

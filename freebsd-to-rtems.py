@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-#  Copyright (c) 2015 Chris Johns <chrisj@rtems.org>. All rights reserved.
+#  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
 #  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
 #
@@ -35,51 +35,54 @@
 
 # FreeBSD: http://svn.freebsd.org/base/releng/8.2/sys (revision 222485)
 
+from __future__ import print_function
+
 import os
 import sys
 import getopt
 
 import builder
-import makefile
 import waf_generator
 import libbsd
 
 isForward = True
 isEarlyExit = False
-isOnlyMakefile = False
+isOnlyBuildScripts = False
 
 def usage():
-    print "freebsd-to-rtems.py [args]"
-    print "  -?|-h|--help     print this and exit"
-    print "  -d|--dry-run     run program but no modifications"
-    print "  -D|--diff        provide diff of files between trees"
-    print "  -e|--early-exit  evaluate arguments, print results, and exit"
-    print "  -m|--makefile    just generate Makefile"
-    print "  -R|--reverse     default FreeBSD -> RTEMS, reverse that"
-    print "  -r|--rtems       RTEMS Libbsd directory (default: '.')"
-    print "  -f|--freebsd     FreeBSD SVN directory (default: 'freebsd-org')"
-    print "  -v|--verbose     enable verbose output mode"
+    print("freebsd-to-rtems.py [args]")
+    print("  -?|-h|--help      print this and exit")
+    print("  -d|--dry-run      run program but no modifications")
+    print("  -D|--diff         provide diff of files between trees")
+    print("  -e|--early-exit   evaluate arguments, print results, and exit")
+    print("  -m|--makefile     Warning: depreciated and will be removed ")
+    print("  -b|--buildscripts just generate the build scripts")
+    print("  -R|--reverse      default FreeBSD -> RTEMS, reverse that")
+    print("  -r|--rtems        RTEMS Libbsd directory (default: '.')")
+    print("  -f|--freebsd      FreeBSD SVN directory (default: 'freebsd-org')")
+    print("  -v|--verbose      enable verbose output mode")
 
 # Parse the arguments
 def parseArguments():
     global isForward, isEarlyExit
-    global isOnlyMakefile
+    global isOnlyBuildScripts
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   "?hdDemRr:f:v",
+                                   "?hdDembRr:f:v",
                                    [ "help",
                                      "help",
                                      "dry-run"
                                      "diff"
                                      "early-exit"
                                      "makefile"
+                                     "buildscripts"
                                      "reverse"
                                      "rtems="
                                      "freebsd="
                                      "verbose" ])
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         # print help information and exit:
-        print str(err) # will print something like "option -a not recognized"
+        print(str(err)) # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
     for o, a in opts:
@@ -94,8 +97,8 @@ def parseArguments():
             builder.isDiffMode = True
         elif o in ("-e", "--early-exit"):
             isEarlyExit = True
-        elif o in ("-m", "--makefile"):
-            isOnlyMakefile = True
+        elif o in ("-b", "--buildscripts") or o in ("-m", "--makefile"):
+            isOnlyBuildScripts = True
         elif o in ("-R", "--reverse"):
             isForward = False
         elif o in ("-r", "--rtems"):
@@ -107,22 +110,22 @@ def parseArguments():
 
 parseArguments()
 
-print "Verbose:                " + ("no", "yes")[builder.isVerbose]
-print "Dry Run:                " + ("no", "yes")[builder.isDryRun]
-print "Diff Mode Enabled:      " + ("no", "yes")[builder.isDiffMode]
-print "Only Generate Makefile: " + ("no", "yes")[isOnlyMakefile]
-print "RTEMS Libbsd Directory: " + builder.RTEMS_DIR
-print "FreeBSD SVN Directory:  " + builder.FreeBSD_DIR
-print "Direction:              " + ("reverse", "forward")[isForward]
+print("Verbose:                     " + ("no", "yes")[builder.isVerbose])
+print("Dry Run:                     " + ("no", "yes")[builder.isDryRun])
+print("Diff Mode Enabled:           " + ("no", "yes")[builder.isDiffMode])
+print("Only Generate Build Scripts: " + ("no", "yes")[isOnlyBuildScripts])
+print("RTEMS Libbsd Directory:      " + builder.RTEMS_DIR)
+print("FreeBSD SVN Directory:       " + builder.FreeBSD_DIR)
+print("Direction:                   " + ("reverse", "forward")[isForward])
 
 # Check directory argument was set and exist
 def wasDirectorySet(desc, path):
     if path == "not_set":
-        print "error:" + desc + " Directory was not specified on command line"
+        print("error:" + desc + " Directory was not specified on command line")
         sys.exit(2)
 
     if os.path.isdir( path ) != True:
-        print "error:" + desc + " Directory (" + path + ") does not exist"
+        print("error:" + desc + " Directory (" + path + ") does not exist")
         sys.exit(2)
 
 # Were RTEMS and FreeBSD directories specified
@@ -131,33 +134,29 @@ wasDirectorySet( "FreeBSD", builder.FreeBSD_DIR )
 
 # Are we generating or reverting?
 if isForward == True:
-    print "Forward from FreeBSD GIT into ", builder.RTEMS_DIR
+    print("Forward from FreeBSD GIT into ", builder.RTEMS_DIR)
 else:
-    print "Reverting from ", builder.RTEMS_DIR
-    if isOnlyMakefile == True:
-        print "error: Makefile Mode and Reverse are contradictory"
+    print("Reverting from ", builder.RTEMS_DIR)
+    if isOnlyBuildScripts == True:
+        print("error: Build Script generation and Reverse are contradictory")
         sys.exit(2)
 
 if isEarlyExit == True:
-    print "Early exit at user request"
+    print("Early exit at user request")
     sys.exit(0)
 
 try:
-    makefile_gen = makefile.ModuleManager()
     waf_gen = waf_generator.ModuleManager()
 
-    libbsd.sources(makefile_gen)
     libbsd.sources(waf_gen)
 
     # Perform the actual file manipulation
     if isForward:
-        if not isOnlyMakefile:
-            makefile_gen.copyFromFreeBSDToRTEMS()
-        waf_gen.generate()
+        if not isOnlyBuildScripts:
+            waf_gen.copyFromFreeBSDToRTEMS()
+        waf_gen.generate(libbsd.rtems_version())
     else:
-        makefile_gen.copyFromRTEMSToFreeBSD()
-    # Print a summary if changing files
-    if builder.isDiffMode == False:
-        print '%d file(s) were changed.' % (builder.filesProcessed)
-except IOError, ioe:
-    print 'error: %s' % (ioe)
+        waf_gen.copyFromRTEMSToFreeBSD()
+    builder.changedFileSummary()
+except IOError as ioe:
+    print('error: %s' % (ioe))

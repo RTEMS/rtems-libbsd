@@ -6,7 +6,11 @@
 # To use see README.waf shipped with this file.
 #
 
+from __future__ import print_function
+
 import os.path
+
+rtems_version = "4.12"
 
 try:
     import rtems_waf.rtems as rtems
@@ -16,7 +20,7 @@ except:
     sys.exit(1)
 
 def init(ctx):
-    rtems.init(ctx)
+    rtems.init(ctx, version = rtems_version)
 
 def options(opt):
     rtems.options(opt)
@@ -180,18 +184,6 @@ def build(bld):
     libbsd_use += ["lex__nsyy"]
 
     if bld.env.AUTO_REGEN:
-        bld(target = "freebsd/lib/libipsec/policy_token.c",
-            source = "freebsd/lib/libipsec/policy_token.l",
-            rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
-    bld.objects(target = "lex___libipsecyy",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = [],
-                source = "freebsd/lib/libipsec/policy_token.c")
-    libbsd_use += ["lex___libipsecyy"]
-
-    if bld.env.AUTO_REGEN:
         bld(target = "freebsd/contrib/libpcap/scanner.c",
             source = "freebsd/contrib/libpcap/scanner.l",
             rule = "${LEX} -P pcap -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
@@ -202,6 +194,18 @@ def build(bld):
                 defines = ['__FreeBSD__=1', 'BSD=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_LIMITS_H=1', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SYS_IOCCOM_H=1', 'NEED_YYPARSE_WRAPPER=1', 'yylval=pcap_lval'],
                 source = "freebsd/contrib/libpcap/scanner.c")
     libbsd_use += ["lex_pcap"]
+
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libipsec/policy_token.c",
+            source = "freebsd/lib/libipsec/policy_token.l",
+            rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+    bld.objects(target = "lex___libipsecyy",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = [],
+                source = "freebsd/lib/libipsec/policy_token.c")
+    libbsd_use += ["lex___libipsecyy"]
 
     # Yacc
     if bld.env.AUTO_REGEN:
@@ -1131,153 +1135,22 @@ def build(bld):
                           relative_trick = True)
 
     # Tests
-    test_init01 = ['testsuite/init01/test_main.c']
-    bld.program(target = "init01.exe",
+    test_arphole = ['testsuite/arphole/test_main.c']
+    bld.program(target = "arphole.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_init01,
+                source = test_arphole,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_syscalls01 = ['testsuite/syscalls01/test_main.c']
-    bld.program(target = "syscalls01.exe",
+    test_commands01 = ['testsuite/commands01/test_main.c']
+    bld.program(target = "commands01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_syscalls01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_thread01 = ['testsuite/thread01/test_main.c']
-    bld.program(target = "thread01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_thread01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_loopback01 = ['testsuite/loopback01/test_main.c']
-    bld.program(target = "loopback01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_loopback01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_foobarclient = ['testsuite/foobarclient/test_main.c']
-    bld.program(target = "foobarclient.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_foobarclient,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_lagg01 = ['testsuite/lagg01/test_main.c']
-    bld.program(target = "lagg01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_lagg01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_timeout01 = ['testsuite/timeout01/init.c',
-                      'testsuite/timeout01/timeout_test.c']
-    bld.program(target = "timeout01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_timeout01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_dhcpcd02 = ['testsuite/dhcpcd02/test_main.c']
-    bld.program(target = "dhcpcd02.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_dhcpcd02,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_ftpd01 = ['testsuite/ftpd01/test_main.c']
-    bld.program(target = "ftpd01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_ftpd01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_vlan01 = ['testsuite/vlan01/test_main.c']
-    bld.program(target = "vlan01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_vlan01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_foobarserver = ['testsuite/foobarserver/test_main.c']
-    bld.program(target = "foobarserver.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_foobarserver,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_selectpollkqueue01 = ['testsuite/selectpollkqueue01/test_main.c']
-    bld.program(target = "selectpollkqueue01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_selectpollkqueue01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_zerocopy01 = ['testsuite/zerocopy01/test_main.c']
-    bld.program(target = "zerocopy01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_zerocopy01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_smp01 = ['testsuite/smp01/test_main.c']
-    bld.program(target = "smp01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_smp01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_media01 = ['testsuite/media01/test_main.c']
-    bld.program(target = "media01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_media01,
+                source = test_commands01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
@@ -1292,33 +1165,102 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_telnetd01 = ['testsuite/telnetd01/test_main.c']
-    bld.program(target = "telnetd01.exe",
+    test_dhcpcd01 = ['testsuite/dhcpcd01/test_main.c']
+    bld.program(target = "dhcpcd01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_telnetd01,
+                source = test_dhcpcd01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_ppp01 = ['testsuite/ppp01/test_main.c']
-    bld.program(target = "ppp01.exe",
+    test_dhcpcd02 = ['testsuite/dhcpcd02/test_main.c']
+    bld.program(target = "dhcpcd02.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_ppp01,
+                source = test_dhcpcd02,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_swi01 = ['testsuite/swi01/init.c',
-                  'testsuite/swi01/swi_test.c']
-    bld.program(target = "swi01.exe",
+    test_foobarclient = ['testsuite/foobarclient/test_main.c']
+    bld.program(target = "foobarclient.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_swi01,
+                source = test_foobarclient,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_foobarserver = ['testsuite/foobarserver/test_main.c']
+    bld.program(target = "foobarserver.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_foobarserver,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_ftpd01 = ['testsuite/ftpd01/test_main.c']
+    bld.program(target = "ftpd01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_ftpd01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_init01 = ['testsuite/init01/test_main.c']
+    bld.program(target = "init01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_init01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_lagg01 = ['testsuite/lagg01/test_main.c']
+    bld.program(target = "lagg01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_lagg01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_loopback01 = ['testsuite/loopback01/test_main.c']
+    bld.program(target = "loopback01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_loopback01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_media01 = ['testsuite/media01/test_main.c']
+    bld.program(target = "media01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_media01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_mutex01 = ['testsuite/mutex01/test_main.c']
+    bld.program(target = "mutex01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_mutex01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
@@ -1334,6 +1276,26 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
+    test_ping01 = ['testsuite/ping01/test_main.c']
+    bld.program(target = "ping01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_ping01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_ppp01 = ['testsuite/ppp01/test_main.c']
+    bld.program(target = "ppp01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_ppp01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
     test_rwlock01 = ['testsuite/rwlock01/test_main.c']
     bld.program(target = "rwlock01.exe",
                 features = "cprogram",
@@ -1344,22 +1306,84 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_mutex01 = ['testsuite/mutex01/test_main.c']
-    bld.program(target = "mutex01.exe",
+    test_selectpollkqueue01 = ['testsuite/selectpollkqueue01/test_main.c']
+    bld.program(target = "selectpollkqueue01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_mutex01,
+                source = test_selectpollkqueue01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_dhcpcd01 = ['testsuite/dhcpcd01/test_main.c']
-    bld.program(target = "dhcpcd01.exe",
+    test_sleep01 = ['testsuite/sleep01/test_main.c']
+    bld.program(target = "sleep01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_dhcpcd01,
+                source = test_sleep01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_smp01 = ['testsuite/smp01/test_main.c']
+    bld.program(target = "smp01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_smp01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_swi01 = ['testsuite/swi01/init.c',
+                  'testsuite/swi01/swi_test.c']
+    bld.program(target = "swi01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_swi01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_syscalls01 = ['testsuite/syscalls01/test_main.c']
+    bld.program(target = "syscalls01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_syscalls01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_telnetd01 = ['testsuite/telnetd01/test_main.c']
+    bld.program(target = "telnetd01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_telnetd01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_thread01 = ['testsuite/thread01/test_main.c']
+    bld.program(target = "thread01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_thread01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_timeout01 = ['testsuite/timeout01/init.c',
+                      'testsuite/timeout01/timeout_test.c']
+    bld.program(target = "timeout01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_timeout01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
@@ -1370,26 +1394,6 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_unix01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_commands01 = ['testsuite/commands01/test_main.c']
-    bld.program(target = "commands01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_commands01,
-                use = ["bsd"],
-                lib = ["m", "z"],
-                install_path = None)
-
-    test_ping01 = ['testsuite/ping01/test_main.c']
-    bld.program(target = "ping01.exe",
-                features = "cprogram",
-                cflags = cflags,
-                includes = includes,
-                source = test_ping01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
@@ -1405,22 +1409,22 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_arphole = ['testsuite/arphole/test_main.c']
-    bld.program(target = "arphole.exe",
+    test_vlan01 = ['testsuite/vlan01/test_main.c']
+    bld.program(target = "vlan01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_arphole,
+                source = test_vlan01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_sleep01 = ['testsuite/sleep01/test_main.c']
-    bld.program(target = "sleep01.exe",
+    test_zerocopy01 = ['testsuite/zerocopy01/test_main.c']
+    bld.program(target = "zerocopy01.exe",
                 features = "cprogram",
                 cflags = cflags,
                 includes = includes,
-                source = test_sleep01,
+                source = test_zerocopy01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

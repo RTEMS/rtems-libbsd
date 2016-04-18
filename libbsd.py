@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2015 Chris Johns <chrisj@rtems.org>. All rights reserved.
+#  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
 #  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
 #
@@ -33,6 +33,12 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import builder
+
+#
+# RTEMS version
+#
+def rtems_version():
+    return '4.12'
 
 #
 # RTEMS

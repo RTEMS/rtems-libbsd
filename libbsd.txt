@@ -32,26 +32,26 @@ Please help by adding to it.
 
 === Tool Chain ===
 
-You need a tool chain for RTEMS based on at least
-
-* Binutils 2.24, and
-* Newlib 2.1.0.
-
-The Binutils version is required to ease the handling of linker command files.
-The Newlib version is required since some standard files like `<sys/types.h>`
-must be compatible enough for the files provided by the FreeBSD sources, e.g.
-`<sys/socket.h>`.
-
+You need a tool chain for RTEMS based on at least RSB 4.12 April 2016 or later.
 === Installation Overview ===
 
 . You must configure your BSP with the +--disable-networking+ option to disable
 the old network stack.  Make sure no header files of the old network stack are
 installed.
+
 . Clone the Git repository +git clone git://git.rtems.org/rtems-libbsd.git+.
 . Change into the RTEMS BSD library root directory.
-. Edit the `config.inc` Makefile configuration file and adjust it to your environment.
-. Run +make clean+.
-. Run +make install+.
+. Edit the `config.inc` configuration file and adjust it to your environment.
+. Run +waf configure ...+.
+. Run +waf+.
+. Run +waf install+.
+
+Refer to the README.waf for Waf building instructions.
+
+Make sure the submodules have been initialised and are updated. If a 'git
+status' says `rtems_waf` need updating run the submodule update command:
+
+ $ git submodule rtems_waf update
 
 === Board Support Package Requirements ===
 
@@ -115,15 +115,10 @@ devices (you can run multiple test instances on one virtual network).
 
 === BSD Library Configuration and Build ===
 
-There are currently 2 build systems supported. The first is based on the RTEMS
-Makefile support in RTEMS and installed with the BSP and the second is a stand
-alone environment based on the Waf build system. The Makefile build system will
-be removed when RTEMS moves away from its existing build system and Waf will
-be the preferred build environment.
+The build system based on the Waf build system. To build with Waf please refer
+to the README.waf file.
 
-To build with Waf please refer to the README.waf file.
-
-===== Makefile Building =====
+===== Example Configuration =====
 
 In the BSD library source directory edit the file `config.inc`.  Continuing on
 the above, the `config.inc` used to match the above is:
@@ -144,36 +139,6 @@ NET_CFG_NETMASK = 255.255.0.0
 NET_CFG_PEER_IP = 10.0.0.1
 NET_CFG_GATEWAY_IP = 10.0.0.1
 NET_TAP_INTERFACE = tap0
--------------------------------------------------------------------------------
-
-Now you can build the BSD library and run the tests:
-
--------------------------------------------------------------------------------
-make clean
-make
-make run_tests
--------------------------------------------------------------------------------
-
-You can only run the tests directly in case a test runner is available.  The
-following tests run without an external network.  It is strongly advised to run
-them.
-
-* commands01
-* init01
-* loopback01
-* rwlock01
-* selectpollkqueue01
-* sleep01
-* swi01
-* syscalls01
-* thread01
-* timeout01
-* unix01
-
-To install the BSD library use this:
-
--------------------------------------------------------------------------------
-make install
 -------------------------------------------------------------------------------
 
 === BSD Library Initialization ===
@@ -556,7 +521,7 @@ Do not format original FreeBSD code.
 === What is in the Git Repository
 
 There is a self-contained kit with FreeBSD and RTEMS components pre-merged. The
-Makefile in this kit is automatically generated.
+Waf wscript in this kit is automatically generated.
 
 Any changes to source in the `freebsd` directories will need to be merged
 upstream into our master FreeBSD checkout, the `freebsd-org` submodule.
@@ -578,7 +543,7 @@ The top level directory contains a few directories and files. The following
 are important to understand
 
 * `freebsd-to-rtems.py` - script to convert to and free FreeBSD and RTEMS trees,
-* `Makefile` - automatically generated,
+* `wscript` - automatically generated,
 * `freebsd/` - from FreeBSD by script,
 * `rtemsbsd/` - RTEMS specific implementations of FreeBSD kernel support routines,
 * `testsuite/` - RTEMS specific tests, and
@@ -593,20 +558,21 @@ on the FreeBSD code. Its command line arguments are shown below:
 
 ----
 freebsd-to-rtems.py [args]
-  -?|-h|--help     print this and exit
-  -d|--dry-run     run program but no modifications
-  -D|--diff        provide diff of files between trees
-  -e|--early-exit  evaluate arguments, print results, and exit
-  -m|--makefile    just generate Makefile
-  -R|--reverse     default FreeBSD -> RTEMS, reverse that
-  -r|--rtems       RTEMS directory
-  -f|--freebsd     FreeBSD directory
-  -v|--verbose     enable verbose output mode
+  -?|-h|--help      print this and exit
+  -d|--dry-run      run program but no modifications
+  -D|--diff         provide diff of files between trees
+  -e|--early-exit   evaluate arguments, print results, and exit
+  -m|--makefile     Warning: depreciated and will be removed
+  -b|--buildscripts just generate the build scripts
+  -R|--reverse      default FreeBSD -> RTEMS, reverse that
+  -r|--rtems        RTEMS directory
+  -f|--freebsd      FreeBSD directory
+  -v|--verbose      enable verbose output mode
 ----
 
 In its default mode of operation, freebsd-to-rtems.py is used to copy code
 from FreeBSD to the rtems-libbsd tree and perform transformations.  In forward
-mode, the script may be requested to just generate the Makefile and Waf script.
+mode, the script may be requested to just generate the Waf script.
 
 In "reverse mode", this script undoes those transformations and copies
 the source code back to the FreeBSD SVN tree. This allows us to do

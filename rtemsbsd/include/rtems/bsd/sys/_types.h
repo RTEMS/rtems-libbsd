@@ -143,8 +143,6 @@ typedef float __float_t;
 typedef intptr_t intfptr_t;
 typedef uintptr_t uintfptr_t;
 
-typedef uint32_t intrmask_t;
-
 typedef time_t __time_t;
 
 typedef ptrdiff_t __ptrdiff_t;

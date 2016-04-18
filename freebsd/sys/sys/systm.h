@@ -435,6 +435,9 @@ caddr_t	kern_timeout_callwheel_alloc(caddr_t v);
 void	kern_timeout_callwheel_init(void);
 
 /* Stubs for obsolete functions that used to be for interrupt management */
+#ifdef __rtems__
+typedef int intrmask_t;
+#endif /* __rtems__ */
 static __inline void		spl0(void)		{ return; }
 static __inline intrmask_t	splbio(void)		{ return 0; }
 static __inline intrmask_t	splcam(void)		{ return 0; }

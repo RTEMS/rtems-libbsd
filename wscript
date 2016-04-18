@@ -172,6 +172,18 @@ def build(bld):
 
     # Lex
     if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libipsec/policy_token.c",
+            source = "freebsd/lib/libipsec/policy_token.l",
+            rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+    bld.objects(target = "lex___libipsecyy",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = [],
+                source = "freebsd/lib/libipsec/policy_token.c")
+    libbsd_use += ["lex___libipsecyy"]
+
+    if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libc/net/nslexer.c",
             source = "freebsd/lib/libc/net/nslexer.l",
             rule = "${LEX} -P _nsyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
@@ -195,30 +207,7 @@ def build(bld):
                 source = "freebsd/contrib/libpcap/scanner.c")
     libbsd_use += ["lex_pcap"]
 
-    if bld.env.AUTO_REGEN:
-        bld(target = "freebsd/lib/libipsec/policy_token.c",
-            source = "freebsd/lib/libipsec/policy_token.l",
-            rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
-    bld.objects(target = "lex___libipsecyy",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = [],
-                source = "freebsd/lib/libipsec/policy_token.c")
-    libbsd_use += ["lex___libipsecyy"]
-
     # Yacc
-    if bld.env.AUTO_REGEN:
-        bld(target = "freebsd/lib/libipsec/policy_parse.c",
-            source = "freebsd/lib/libipsec/policy_parse.y",
-            rule = "${YACC} -b __libipsecyy -d -p __libipsecyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < __libipsecyy.tab.c > ${TGT} && rm -f __libipsecyy.tab.c && mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h")
-    bld.objects(target = "yacc___libipsecyy",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = [],
-                source = "freebsd/lib/libipsec/policy_parse.c")
-    libbsd_use += ["yacc___libipsecyy"]
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libc/net/nsparser.c",
             source = "freebsd/lib/libc/net/nsparser.y",
@@ -230,6 +219,17 @@ def build(bld):
                 defines = [],
                 source = "freebsd/lib/libc/net/nsparser.c")
     libbsd_use += ["yacc__nsyy"]
+    if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/lib/libipsec/policy_parse.c",
+            source = "freebsd/lib/libipsec/policy_parse.y",
+            rule = "${YACC} -b __libipsecyy -d -p __libipsecyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < __libipsecyy.tab.c > ${TGT} && rm -f __libipsecyy.tab.c && mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h")
+    bld.objects(target = "yacc___libipsecyy",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = [],
+                source = "freebsd/lib/libipsec/policy_parse.c")
+    libbsd_use += ["yacc___libipsecyy"]
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/contrib/libpcap/grammar.c",
             source = "freebsd/contrib/libpcap/grammar.y",

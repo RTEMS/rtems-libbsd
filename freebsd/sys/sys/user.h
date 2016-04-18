@@ -327,6 +327,7 @@ struct kinfo_ofile {
 #endif
 
 struct kinfo_file {
+#ifndef __rtems__
 	int		kf_structsize;		/* Variable size of record. */
 	int		kf_type;		/* Descriptor type. */
 	int		kf_fd;			/* Array index. */
@@ -397,6 +398,9 @@ struct kinfo_file {
 	int		_kf_ispare[4];		/* Space for more stuff. */
 	/* Truncated before copyout in sysctl */
 	char		kf_path[PATH_MAX];	/* Path to file, if any. */
+#else /* __rtems__ */
+	int		kf_dummy;
+#endif /* __rtems__ */
 };
 
 /*

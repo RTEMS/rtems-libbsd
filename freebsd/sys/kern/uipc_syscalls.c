@@ -1033,18 +1033,22 @@ kern_sendit(td, s, mp, flags, control, segflg)
 	struct socket *so;
 	int i, error;
 	ssize_t len;
+#ifndef __rtems__
 	cap_rights_t rights;
+#endif /* __rtems__ */
 #ifdef KTRACE
 	struct uio *ktruio = NULL;
 #endif
 
 	AUDIT_ARG_FD(s);
+#ifndef __rtems__
 	rights = CAP_WRITE;
 	if (mp->msg_name != NULL)
 		rights |= CAP_CONNECT;
 	error = getsock_cap(td->td_proc->p_fd, s, rights, &fp, NULL);
 	if (error)
 		return (error);
+#endif /* __rtems__ */
 	so = (struct socket *)fp->f_data;
 
 #ifdef KTRACE

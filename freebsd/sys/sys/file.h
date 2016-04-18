@@ -309,17 +309,16 @@ int fget(struct thread *td, int fd, cap_rights_t rights, struct file **fpp);
 struct file *rtems_bsd_get_file(int fd);
 
 static inline int
-fget(struct thread *td, int fd, cap_rights_t rights, struct file **fpp)
+rtems_bsd_do_fget(int fd, struct file **fpp)
 {
 	struct file *fp = rtems_bsd_get_file(fd);
-
-	(void) td;
-	(void) rights;
 
 	*fpp = fp;
 
 	return fp != NULL ? 0 : EBADF;
 }
+
+#define	fget(td, fd, rights, fpp)	rtems_bsd_do_fget(fd, fpp)
 #endif /* __rtems__ */
 int fget_mmap(struct thread *td, int fd, cap_rights_t rights,
     u_char *maxprotp, struct file **fpp);

@@ -23,6 +23,9 @@ __FBSDID("$FreeBSD$");
 
 #include "dhcpd.h"
 #include "privsep.h"
+#ifdef __rtems__
+#define	SIZE_T_MAX	SIZE_MAX
+#endif /* __rtems__ */
 
 struct buf *
 buf_open(size_t len)

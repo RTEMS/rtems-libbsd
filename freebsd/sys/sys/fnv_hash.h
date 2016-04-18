@@ -44,6 +44,7 @@ fnv_32_str(const char *str, Fnv32_t hval)
 	return hval;
 }
 
+#ifndef __rtems__
 static __inline Fnv64_t
 fnv_64_buf(const void *buf, size_t len, Fnv64_t hval)
 {
@@ -68,4 +69,5 @@ fnv_64_str(const char *str, Fnv64_t hval)
 	}
 	return hval;
 }
+#endif /* __rtems__ */
 #endif /* _SYS_FNV_HASH_H_ */

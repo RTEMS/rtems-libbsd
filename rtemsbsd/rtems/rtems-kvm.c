@@ -1,5 +1,6 @@
 #include "port_before.h"
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <kvm.h>
 #include <nlist.h>
 #include <assert.h>

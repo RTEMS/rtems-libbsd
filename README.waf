@@ -106,7 +106,6 @@ Steps
     one time with different tool sets or configurations you can easly move
     between them safe in the knowledge that one build will not infect another.
 
-
 Updating RTEMS Waf Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -136,3 +135,22 @@ versions:
  $ git pull
  $ cd ..
  $ git commit -m "Update rtems_waf" rtems_waf
+
+FreeBSD Developer Support
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The --freebsd-option provides a tool you can set special kernel options. This
+is a developer tool and should only be used if you are familiar with the
+internals of the FreeBSD kernel and what these options do.
+
+The options are listed in:
+
+ https://github.com/freebsd/freebsd/blob/master/sys/conf/NOTES
+
+An example to turn on a verbose kernel boot, verbose sysinit and bus debugging
+configure with:
+
+ --freebsd-options=bootverbose,verbose_sysinit,bus_debug
+
+The LibBSD waf support splits the options and converts them to uppercase and
+adds them -D options on the compiler command line.

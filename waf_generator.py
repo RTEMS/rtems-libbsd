@@ -294,6 +294,11 @@ class ModuleManager(builder.ModuleManager):
         self.add('    cflags = %r + common_flags' % (builder.cflags()))
         self.add('    cxxflags = %r + common_flags' % (builder.cxxflags()))
         self.add('')
+        self.add('    # Defines')
+        self.add('    defines = []')
+        self.add('    for o in bld.env.FREEBSD_OPTIONS.split(","):')
+        self.add('        defines += ["%s=1" % (o.strip().upper())]')
+        self.add('')
         self.add('    # Include paths')
         self.add('    includes = []')
         self.add('    for i in %r:' % (builder.cpu_includes()))
@@ -409,7 +414,7 @@ class ModuleManager(builder.ModuleManager):
         if 'lex' in data:
             lexes = data['lex']
             self.add('    # Lex')
-            for l in lexes:
+            for l in sorted(lexes.keys()):
                 lex = lexes[l]['all']
                 if 'cflags' in lex:
                     lex_defines = [d[2:] for d in lex['cflags']]
@@ -428,7 +433,7 @@ class ModuleManager(builder.ModuleManager):
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
                 self.add('                includes = %r + includes,' % (lex_includes))
-                self.add('                defines = %r,' % (lex_defines))
+                self.add('                defines = defines + %r,' % (lex_defines))
                 self.add('                source = "%s.c")' % (lex['file'][:-2]))
                 self.add('    libbsd_use += ["lex_%s"]' % (lex['sym']))
                 self.add('')
@@ -436,7 +441,7 @@ class ModuleManager(builder.ModuleManager):
         if 'yacc' in data:
             yaccs = data['yacc']
             self.add('    # Yacc')
-            for y in yaccs:
+            for y in sorted(yaccs.keys()):
                 yacc = yaccs[y]['all']
                 yacc_file = yacc['file']
                 if yacc['sym'] is not None:
@@ -462,7 +467,7 @@ class ModuleManager(builder.ModuleManager):
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
                 self.add('                includes = %r + includes,' % (yacc_includes))
-                self.add('                defines = %r,' % (yacc_defines))
+                self.add('                defines = defines + %r,' % (yacc_defines))
                 self.add('                source = "%s.c")' % (yacc_file[:-2]))
                 self.add('    libbsd_use += ["yacc_%s"]' % (yacc_sym))
             self.add('')
@@ -496,7 +501,7 @@ class ModuleManager(builder.ModuleManager):
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
                 self.add('                includes = %r + includes,' % (includes))
-                self.add('                defines = %r,' % (defines))
+                self.add('                defines = defines + %r,' % (defines))
                 self.add('                source = objs%02d_source)' % objs)
                 self.add('    libbsd_use += ["objs%02d"]' % (objs))
                 self.add('')
@@ -518,6 +523,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('              cflags = cflags,')
         self.add('              cxxflags = cxxflags,')
         self.add('              includes = includes,')
+        self.add('              defines = defines,')
         self.add('              source = source,')
         self.add('              use = libbsd_use)')
         self.add('')

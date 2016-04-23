@@ -73,7 +73,11 @@ extern int boothowto;		/* reboot flags, from console subsystem */
 #ifndef __rtems__
 extern int bootverbose;		/* nonzero to print verbose messages */
 #else /* __rtems__ */
-#define bootverbose    0        /* XXX RTEMS doesn't support verbose */
+#ifdef BOOTVERBOSE
+extern int bootverbose;		/* nonzero to print verbose messages */
+#else
+#define bootverbose    0        /* Remove all verbose code for the standard RTEMS build */
+#endif /* BOOTVERBOSE */
 #endif /* __rtems__ */
 
 

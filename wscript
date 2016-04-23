@@ -63,6 +63,11 @@ def options(opt):
                    default = "config.inc",
                    dest = "net_config",
                    help = "Network test configuration.")
+    opt.add_option("--freebsd-options",
+                   action = "store",
+                   default = "",
+                   dest = "freebsd_options",
+                   help = "Set FreeBSD options (developer option).")
     libbsd_waf.options(opt)
 
 def bsp_configure(conf, arch_bsp):
@@ -82,8 +87,9 @@ def configure(conf):
     conf.env.AUTO_REGEN = conf.options.auto_regen
     conf.env.WARNINGS = conf.options.warnings
     conf.env.NET_CONFIG = conf.options.net_config
+    conf.env.FREEBSD_OPTIONS =conf.options.freebsd_options
     rtems.configure(conf, bsp_configure)
-    libbsd_waf.configure(conf, arch_bsp)
+    libbsd_waf.configure(conf)
 
 def build(bld):
     rtems.build(bld)

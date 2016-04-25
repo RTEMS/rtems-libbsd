@@ -1045,10 +1045,10 @@ kern_sendit(td, s, mp, flags, control, segflg)
 	rights = CAP_WRITE;
 	if (mp->msg_name != NULL)
 		rights |= CAP_CONNECT;
+#endif /* __rtems__ */
 	error = getsock_cap(td->td_proc->p_fd, s, rights, &fp, NULL);
 	if (error)
 		return (error);
-#endif /* __rtems__ */
 	so = (struct socket *)fp->f_data;
 
 #ifdef KTRACE

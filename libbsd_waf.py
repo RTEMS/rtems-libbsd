@@ -41,8 +41,9 @@ def build(bld):
 
     # Defines
     defines = []
-    for o in bld.env.FREEBSD_OPTIONS.split(","):
-        defines += ["%s=1" % (o.strip().upper())]
+    if len(bld.env.FREEBSD_OPTIONS) > 0:
+        for o in bld.env.FREEBSD_OPTIONS.split(","):
+            defines += ["%s=1" % (o.strip().upper())]
 
     # Include paths
     includes = []

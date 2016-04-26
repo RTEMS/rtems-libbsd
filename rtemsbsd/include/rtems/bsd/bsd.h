@@ -143,6 +143,38 @@ uintptr_t rtems_bsd_get_allocator_domain_size(
 void rtems_bsd_get_mac_address(const char *name, int unit,
     uint8_t mac_addr[6]);
 
+/**
+ * @brief Attach the root bus.
+ *
+ * @retval 0 Successful operation.
+ * @retval errno Otherwise.
+ */
+int rtems_bsd_bus_root_attach(void);
+
+/**
+ * @brief Suspend the root bus.
+ *
+ * @retval 0 Successful operation.
+ * @retval errno Otherwise.
+ */
+int rtems_bsd_bus_root_suspend(void);
+
+/**
+ * @brief Resume the root bus.
+ *
+ * @retval 0 Successful operation.
+ * @retval errno Otherwise.
+ */
+int rtems_bsd_bus_root_resume(void);
+
+/**
+ * @brief Detach the root bus.
+ *
+ * @retval 0 Successful operation.
+ * @retval errno Otherwise.
+ */
+int rtems_bsd_bus_root_detach(void);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

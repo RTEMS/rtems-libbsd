@@ -974,6 +974,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-autoconf.c',
               'rtemsbsd/rtems/rtems-bsd-bus-dma-mbuf.c',
               'rtemsbsd/rtems/rtems-bsd-bus-dma.c',
+              'rtemsbsd/rtems/rtems-bsd-bus-root.c',
               'rtemsbsd/rtems/rtems-bsd-cam.c',
               'rtemsbsd/rtems/rtems-bsd-chunk.c',
               'rtemsbsd/rtems/rtems-bsd-conf.c',

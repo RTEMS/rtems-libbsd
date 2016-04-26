@@ -62,6 +62,7 @@ def rtems(mm):
             'rtems/rtems-bsd-autoconf.c',
             'rtems/rtems-bsd-bus-dma.c',
             'rtems/rtems-bsd-bus-dma-mbuf.c',
+            'rtems/rtems-bsd-bus-root.c',
             'rtems/rtems-bsd-cam.c',
             'rtems/rtems-bsd-chunk.c',
             'rtems/rtems-bsd-conf.c',

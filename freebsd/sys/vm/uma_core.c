@@ -3016,6 +3016,15 @@ uma_zone_set_max(uma_zone_t zone, int nitems)
 	if (keg == NULL)
 		return (0);
 	KEG_LOCK(keg);
+#ifdef __rtems__
+#ifdef SMP
+	/*
+	 * Ensure we have enough items to fill the per-processor caches.  This
+	 * is a heuristic approach and works not under all conditions.
+	 */
+	nitems += 2 * BUCKET_MAX * (mp_maxid + 1);
+#endif
+#endif /* __rtems__ */
 	keg->uk_maxpages = (nitems / keg->uk_ipers) * keg->uk_ppera;
 	if (keg->uk_maxpages * keg->uk_ipers < nitems)
 		keg->uk_maxpages += keg->uk_ppera;

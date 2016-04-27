@@ -299,11 +299,6 @@ class ModuleManager(builder.ModuleManager):
         for i in builder.includes():
             self.add('    includes += ["%s"]' % (i[2:]))
         self.add('')
-        self.add('    # Support dummy PIC IRQ includes')
-        self.add('    if bld.get_env()["RTEMS_ARCH"] not in ("arm", "i386", "lm32", "mips", "powerpc", "sparc", "m68k"):')
-        self.add('        includes += ["rtems-dummy-pic-irq/include"]')
-        self.add('')
-
         self.add('    # Collect the libbsd uses')
         self.add('    libbsd_use = []')
         self.add('')

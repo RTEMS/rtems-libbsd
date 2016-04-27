@@ -71,10 +71,6 @@ def build(bld):
     includes += ["mDNSResponder/mDNSPosix"]
     includes += ["testsuite/include"]
 
-    # Support dummy PIC IRQ includes
-    if bld.get_env()["RTEMS_ARCH"] not in ("arm", "i386", "lm32", "mips", "powerpc", "sparc", "m68k"):
-        includes += ["rtems-dummy-pic-irq/include"]
-
     # Collect the libbsd uses
     libbsd_use = []
 

@@ -87,7 +87,7 @@ def parseArguments():
         sys.exit(2)
     for o, a in opts:
         if o in ("-v", "--verbose"):
-            builder.isVerbose = True
+            builder.verboseLevel += 1
         elif o in ("-h", "--help", "-?"):
             usage()
             sys.exit()
@@ -110,13 +110,14 @@ def parseArguments():
 
 parseArguments()
 
-print("Verbose:                     " + ("no", "yes")[builder.isVerbose])
-print("Dry Run:                     " + ("no", "yes")[builder.isDryRun])
-print("Diff Mode Enabled:           " + ("no", "yes")[builder.isDiffMode])
-print("Only Generate Build Scripts: " + ("no", "yes")[isOnlyBuildScripts])
-print("RTEMS Libbsd Directory:      " + builder.RTEMS_DIR)
-print("FreeBSD SVN Directory:       " + builder.FreeBSD_DIR)
-print("Direction:                   " + ("reverse", "forward")[isForward])
+print("Verbose:                     %s (%d)" % (("no", "yes")[builder.verbose()],
+                                                builder.verboseLevel))
+print("Dry Run:                     %s" % (("no", "yes")[builder.isDryRun]))
+print("Diff Mode Enabled:           %s" % (("no", "yes")[builder.isDiffMode]))
+print("Only Generate Build Scripts: %s" % (("no", "yes")[isOnlyBuildScripts]))
+print("RTEMS Libbsd Directory:      %s" % (builder.RTEMS_DIR))
+print("FreeBSD SVN Directory:       %s" % (builder.FreeBSD_DIR))
+print("Direction:                   %s" % (("reverse", "forward")[isForward]))
 
 # Check directory argument was set and exist
 def wasDirectorySet(desc, path):
@@ -147,16 +148,14 @@ if isEarlyExit == True:
 
 try:
     waf_gen = waf_generator.ModuleManager()
-
     libbsd.sources(waf_gen)
-
-    # Perform the actual file manipulation
-    if isForward:
-        if not isOnlyBuildScripts:
-            waf_gen.copyFromFreeBSDToRTEMS()
-        waf_gen.generate(libbsd.rtems_version())
-    else:
-        waf_gen.copyFromRTEMSToFreeBSD()
+    if not isOnlyBuildScripts:
+        waf_gen.processSource(isForward)
+    waf_gen.generate(libbsd.rtems_version())
     builder.changedFileSummary()
 except IOError as ioe:
-    print('error: %s' % (ioe))
+    print('error: %s' % (str(ioe)))
+except builder.error as be:
+    print('error: %s' % (be))
+except KeyboardInterrupt:
+    print('user abort')

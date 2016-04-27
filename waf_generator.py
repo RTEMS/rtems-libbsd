@@ -147,20 +147,9 @@ class ModuleManager(builder.ModuleManager):
         self.script += line + os.linesep
 
     def write(self):
-        try:
-            out = tempfile.NamedTemporaryFile(delete = False)
-            try:
-                out.write(bytes(self.script, sys.stdin.encoding))
-            except:
-                out.write(self.script)
-            out.close()
-            wscript = builder.RTEMS_DIR + '/libbsd_waf.py'
-            builder.processIfDifferent(out.name, wscript, "libbsd_waf.py")
-        finally:
-            try:
-                os.remove(out.name)
-            except:
-                pass
+        name = os.path.join(builder.RTEMS_DIR, 'libbsd_waf.py')
+        converter = builder.Converter()
+        converter.convert(name, name, src_contents = self.script)
 
     def setGenerators(self):
         self.generator['convert'] = builder.Converter

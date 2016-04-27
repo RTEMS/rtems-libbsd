@@ -43,33 +43,71 @@ import sys
 import getopt
 import filecmp
 import difflib
+import codecs
 
 #
 # Global controls.
 #
 RTEMS_DIR = "."
 FreeBSD_DIR = "freebsd-org"
-isVerbose = False
+verboseLevel = 0
 isDryRun = False
 isDiffMode = False
 filesProcessedCount = 0
 filesProcessed = []
 
+verboseInfo = 1
+verboseDetail = 2
+verboseMoreDetail = 3
+verboseDebug = 4
+
+def verbose(level = verboseInfo):
+    return verboseLevel >= level
+
 def changedFileSummary():
     if isDiffMode == False:
         print('%d file(s) were changed:' % (filesProcessedCount))
-        for f in sorted(filesProcessed):
-            print(' %s' % (f))
+        if verbose():
+            for f in sorted(filesProcessed):
+                print(' %s' % (f))
 
+def read_file(name):
+    try:
+        contents = codecs.open(name, mode = 'r', encoding = 'utf-8', errors = 'ignore').read()
+    except UnicodeDecodeError as ude:
+        print('error: reading: %s: %s' % (name, ude))
+        sys.exit(1)
+    return contents
+
+def write_file(name, contents):
+    path = os.path.dirname(name)
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path)
+        except OSError as oe:
+            print('error: cannot create directory: %s: %s' % (dst_path, oe))
+            sys.exit(1)
+    try:
+        codecs.open(name, mode = 'w',  encoding = 'utf-8', errors = 'ignore').write(contents)
+    except UnicodeDecodeError as ude:
+        print('error: write: %s: %s' % (name, ude))
+        sys.exit(1)
+
+#
+# A builder error.
+#
 class error(Exception):
     """Base class for exceptions."""
-    def __init(self, msg):
+    def __init__(self, msg):
         self.msg = 'error: %s' % (msg)
     def set_output(self, msg):
         self.msg = msg
     def __str__(self):
         return self.msg
 
+#
+# This stuff needs to move to libbsd.py.
+#
 def common_flags():
     return ['-O2',
             '-g',
@@ -136,61 +174,34 @@ def header_paths():
             ('mDNSResponder/mDNSShared',      'dns_sd.h',          ''),
             ('mDNSResponder/mDNSPosix',       'mDNSPosix.h',       '')]
 
-# compare and process file only if different
-#  + copy or diff depending on execution mode
-def processIfDifferent(new, old, src):
-
-    global filesProcessedCount
-    global filesProcessed
-    global isVerbose, isDryRun, isEarlyExit
-
-    if not os.path.exists(old) or \
-       filecmp.cmp(new, old, shallow = False) == False:
-        filesProcessed += [old]
-        filesProcessedCount += 1
-        if isDiffMode == False:
-            if isVerbose == True:
-                print("Move " + src + " to " + old)
-            if isDryRun == False:
-                shutil.move(new, old)
-        else:
-            if isVerbose == True:
-                print("Diff %s => %s" % (src, new))
-            old_contents = open(old).readlines()
-            new_contents = open(new).readlines()
-            for line in \
-                difflib.unified_diff(old_contents, new_contents,
-                                     fromfile = src, tofile = new, n = 5):
-                sys.stdout.write(line)
-
 # Move target dependent files under a machine directory
 def mapCPUDependentPath(path):
   return path.replace("include/", "include/machine/")
 
 def fixIncludes(data):
-    data = re.sub('#include <sys/lock.h>', '#include <rtems/bsd/sys/lock.h>', data)
-    data = re.sub('#include <sys/time.h>', '#include <rtems/bsd/sys/time.h>', data)
-    data = re.sub('#include <sys/cpuset.h>', '#include <rtems/bsd/sys/cpuset.h>', data)
-    data = re.sub('#include <sys/errno.h>', '#include <rtems/bsd/sys/errno.h>', data)
-    data = re.sub('#include <sys/param.h>', '#include <rtems/bsd/sys/param.h>', data)
-    data = re.sub('#include <sys/types.h>', '#include <rtems/bsd/sys/types.h>', data)
+    data = re.sub('#include <sys/lock.h>',     '#include <rtems/bsd/sys/lock.h>', data)
+    data = re.sub('#include <sys/time.h>',     '#include <rtems/bsd/sys/time.h>', data)
+    data = re.sub('#include <sys/cpuset.h>',   '#include <rtems/bsd/sys/cpuset.h>', data)
+    data = re.sub('#include <sys/errno.h>',    '#include <rtems/bsd/sys/errno.h>', data)
+    data = re.sub('#include <sys/param.h>',    '#include <rtems/bsd/sys/param.h>', data)
+    data = re.sub('#include <sys/types.h>',    '#include <rtems/bsd/sys/types.h>', data)
     data = re.sub('#include <sys/resource.h>', '#include <rtems/bsd/sys/resource.h>', data)
-    data = re.sub('#include <sys/unistd.h>', '#include <rtems/bsd/sys/unistd.h>', data)
-    data = re.sub('#include <sys/_types.h>', '#include <rtems/bsd/sys/_types.h>', data)
+    data = re.sub('#include <sys/unistd.h>',   '#include <rtems/bsd/sys/unistd.h>', data)
+    data = re.sub('#include <sys/_types.h>',   '#include <rtems/bsd/sys/_types.h>', data)
     return data
 
 # revert fixing the include paths inside a C or .h file
 def revertFixIncludes(data):
-    data = re.sub('#include <rtems/bsd/', '#include <', data)
-    data = re.sub('#include <util.h>', '#include <rtems/bsd/util.h>', data)
-    data = re.sub('#include <bsd.h>', '#include <rtems/bsd/bsd.h>', data)
+    data = re.sub('#include <rtems/bsd/',  '#include <', data)
+    data = re.sub('#include <util.h>',     '#include <rtems/bsd/util.h>', data)
+    data = re.sub('#include <bsd.h>',      '#include <rtems/bsd/bsd.h>', data)
     data = re.sub('#include <zerocopy.h>', '#include <rtems/bsd/zerocopy.h>', data)
     return data
 
 # fix include paths inside a C or .h file
 def fixLocalIncludes(data):
-    data = re.sub('#include "opt_([^"]*)"', '#include <rtems/bsd/local/opt_\\1>', data)
-    data = re.sub('#include "([^"]*)_if.h"', '#include <rtems/bsd/local/\\1_if.h>', data)
+    data = re.sub('#include "opt_([^"]*)"',    '#include <rtems/bsd/local/opt_\\1>', data)
+    data = re.sub('#include "([^"]*)_if.h"',   '#include <rtems/bsd/local/\\1_if.h>', data)
     data = re.sub('#include "miidevs([^"]*)"', '#include <rtems/bsd/local/miidevs\\1>', data)
     data = re.sub('#include "usbdevs([^"]*)"', '#include <rtems/bsd/local/usbdevs\\1>', data)
     return data
@@ -212,90 +223,178 @@ def assertSourceFile(path):
         print("*** Move it to a header file list")
         sys.exit(2)
 
+#
+# Converters provide a way to alter the various types of code. The conversion
+# process filters a file as it is copies from the source path to the
+# destination path. Specialised versions are provided for different types of
+# source.
+#
 class Converter(object):
-    def convert(self, src):
-        return open(src).read()
 
-    def isConvertible(self):
-        return True
+    def convert(self, src, dst, has_source = True, source_filter = None, src_contents = None):
+
+        global filesProcessed, filesProcessedCount
+
+        if verbose(verboseDebug):
+            print("convert: filter:%s: %s -> %s" % \
+                  (['yes', 'no'][source_filter is None], src, dst))
+
+        #
+        # If there is no source raise an error if we expect source else print a
+        # warning and do not try and convert.
+        #
+        if src_contents is None:
+            if not os.path.exists(src):
+                if has_source:
+                    raise error('source not found: %s' % (src))
+                else:
+                    print('warning: no source: %s' % (src))
+                    return
+
+            #
+            # Files read as a single string if not passed in.
+            #
+            src_contents = read_file(src)
+
+        if os.path.exists(dst):
+            dst_contents = read_file(dst)
+        else:
+            print('warning: no destination: %s' % (dst))
+            dst_contents = ''
+
+        #
+        # Filter the source.
+        #
+        if source_filter is not None:
+            src_contents = source_filter(src_contents)
+
+        #
+        # Split into a list of lines.
+        #
+        src_lines = src_contents.split(os.linesep)
+        dst_lines = dst_contents.split(os.linesep)
+
+        if verbose(verboseDebug):
+            print('Unified diff: %s (lines:%d)' % (src, len(src_lines)))
+
+        #
+        # Diff, note there is no line termination on each string.  Expand the
+        # generator to list because the generator is not reusable.
+        #
+        diff = list(difflib.unified_diff(dst_lines,
+                                         src_lines,
+                                         fromfile = src,
+                                         tofile = dst,
+                                         n = 5,
+                                         lineterm = ''))
+
+        #
+        # The diff list is empty if the files are the same.
+        #
+        if len(diff) > 0:
+
+            if verbose(verboseDebug):
+                print('Unified diff length: %d' % len(diff))
+
+            filesProcessed += [dst]
+            filesProcessedCount += 1
+            if isDiffMode == False:
+                if verbose(verboseDetail):
+                    print("UPDATE: %s -> %s" % (src, dst))
+                if isDryRun == False:
+                    write_file(dst, src_contents)
+            else:
+                print("diff -u %s %s" % (src, dst))
+                for l in diff:
+                    print(l)
 
 class NoConverter(Converter):
-    def convert(self, src):
-        raise
-
-    def isConvertible(self):
-        return False
-
-class EmptyConverter(Converter):
-    def convert(self, src):
+    def convert(self, src, dst, has_source = True, source_filter = None):
         return '/* EMPTY */\n'
 
 class FromFreeBSDToRTEMSHeaderConverter(Converter):
-    def convert(self, src):
-        data = super(FromFreeBSDToRTEMSHeaderConverter, self).convert(src)
+    def source_filter(self, data):
         data = fixLocalIncludes(data)
         data = fixIncludes(data)
         return data
 
+    def convert(self, src, dst):
+        sconverter = super(FromFreeBSDToRTEMSHeaderConverter, self)
+        sconverter.convert(src, dst, source_filter = self.source_filter)
+
 class FromFreeBSDToRTEMSUserSpaceHeaderConverter(Converter):
-    def convert(self, src):
-        data = super(FromFreeBSDToRTEMSUserSpaceHeaderConverter, self).convert(src)
+    def source_filter(self, data):
         data = fixIncludes(data)
         return data
 
+    def convert(self, src, dst):
+        sconverter = super(FromFreeBSDToRTEMSUserSpaceHeaderConverter, self)
+        sconverter.convert(src, dst, source_filter = self.source_filter)
+
 class FromFreeBSDToRTEMSSourceConverter(Converter):
-    def convert(self, src):
-        data = super(FromFreeBSDToRTEMSSourceConverter, self).convert(src)
+    def source_filter(self, data):
         data = fixLocalIncludes(data)
         data = fixIncludes(data)
         data = '#include <machine/rtems-bsd-kernel-space.h>\n\n' + data
         return data
 
+    def convert(self, src, dst):
+        sconverter = super(FromFreeBSDToRTEMSSourceConverter, self)
+        sconverter.convert(src, dst, source_filter = self.source_filter)
+
 class FromFreeBSDToRTEMSUserSpaceSourceConverter(Converter):
-    def convert(self, src):
-        data = super(FromFreeBSDToRTEMSUserSpaceSourceConverter, self).convert(src)
+    def source_filter(self, data):
         data = fixIncludes(data)
         data = '#include <machine/rtems-bsd-user-space.h>\n\n' + data
         return data
 
+    def convert(self, src, dst):
+        sconverter = super(FromFreeBSDToRTEMSUserSpaceSourceConverter, self)
+        sconverter.convert(src, dst, source_filter = self.source_filter)
+
 class FromRTEMSToFreeBSDHeaderConverter(Converter):
-    def convert(self, src):
-        data = super(FromRTEMSToFreeBSDHeaderConverter, self).convert(src)
+    def source_filter(self, data):
         data = revertFixLocalIncludes(data)
         data = revertFixIncludes(data)
         return data
+
+    def convert(self, src, dst):
+        sconverter = super(FromRTEMSToFreeBSDHeaderConverter, self)
+        sconverter.convert(src, dst, has_source = False,  source_filter = self.source_filter)
 
 class FromRTEMSToFreeBSDSourceConverter(Converter):
-    def convert(self, src):
-        data = super(FromRTEMSToFreeBSDSourceConverter, self).convert(src)
+    def source_filter(self, data):
         data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '', data)
         data = re.sub('#include <machine/rtems-bsd-user-space.h>\n\n', '', data)
-        data = revertFixLocalIncludes(data)
-        data = revertFixIncludes(data)
         return data
 
+    def convert(self, src, dst):
+        sconverter = super(FromRTEMSToFreeBSDSourceConverter, self)
+        sconverter.convert(src, dst, has_source = False, source_filter = self.source_filter)
+
+#
+# Compose a path based for the various parts of the source tree.
+#
 class PathComposer(object):
     def composeFreeBSDPath(self, path):
         return path
 
     def composeRTEMSPath(self, path, prefix):
-        path = prefix + path
-        return path
+        return os.path.join(prefix, path)
 
 class FreeBSDPathComposer(PathComposer):
     def composeFreeBSDPath(self, path):
-        return FreeBSD_DIR + '/' + path
+        return os.path.join(FreeBSD_DIR, path)
 
     def composeRTEMSPath(self, path, prefix):
-        return prefix + 'freebsd/' + path
+        return os.path.join(prefix, 'freebsd', path)
 
 class RTEMSPathComposer(PathComposer):
     def composeFreeBSDPath(self, path):
         return path
 
     def composeRTEMSPath(self, path, prefix):
-        path = prefix + 'rtemsbsd/' + path
-        return path
+        return os.path.join(prefix, 'rtemsbsd', path)
 
 class CPUDependentPathComposer(FreeBSDPathComposer):
     def composeRTEMSPath(self, path, prefix):
@@ -323,49 +422,42 @@ class BuildSystemFragmentComposer(object):
     def compose(self, path):
         return ''
 
+#
+# File - a file in the source we move backwards and forwards.
+#
 class File(object):
     def __init__(self, path, pathComposer,
-                 fromFreeBSDToRTEMSConverter, fromRTEMSToFreeBSDConverter, buildSystemComposer):
+                 forwardConverter, reverseConverter, buildSystemComposer):
+        if verbose(verboseMoreDetail):
+            print("FILE: %-50s F:%-45s R:%-45s" % \
+                  (path,
+                   forwardConverter.__class__.__name__,
+                   reverseConverter.__class__.__name__))
         self.path = path
         self.pathComposer = pathComposer
-        self.fromFreeBSDToRTEMSConverter = fromFreeBSDToRTEMSConverter
-        self.fromRTEMSToFreeBSDConverter = fromRTEMSToFreeBSDConverter
+        self.freebsdPath = self.pathComposer.composeFreeBSDPath(self.path)
+        self.rtemsPath = self.pathComposer.composeRTEMSPath(self.path, RTEMS_DIR)
+        self.forwardConverter = forwardConverter
+        self.reverseConverter = reverseConverter
         self.buildSystemComposer = buildSystemComposer
 
-    def copy(self, dst, src, converter = None):
-        import tempfile
-        if converter is not None and converter.isConvertible():
-            try:
-                if isDryRun == False:
-                    os.makedirs(os.path.dirname(dst))
-            except OSError:
-                pass
-            data = converter.convert(src)
-            try:
-                out = tempfile.NamedTemporaryFile(delete = False)
-                out.write(data)
-                out.close()
-                processIfDifferent(out.name, dst, src)
-            finally:
-                try:
-                    os.remove(out.name)
-                except:
-                    pass
-
-    def copyFromFreeBSDToRTEMS(self):
-        src = self.pathComposer.composeFreeBSDPath(self.path)
-        dst = self.pathComposer.composeRTEMSPath(self.path, RTEMS_DIR + '/')
-        self.copy(dst, src, self.fromFreeBSDToRTEMSConverter)
-
-    def copyFromRTEMSToFreeBSD(self):
-        src = self.pathComposer.composeRTEMSPath(self.path, RTEMS_DIR + '/')
-        dst = self.pathComposer.composeFreeBSDPath(self.path)
-        self.copy(dst, src, self.fromRTEMSToFreeBSDConverter)
+    def processSource(self, forward):
+        if forward:
+            if verbose(verboseDetail):
+                print("process source: %s => %s" % (self.freebsdPath, self.rtemsPath))
+            self.forwardConverter.convert(self.freebsdPath, self.rtemsPath)
+        else:
+            if verbose(verboseDetail):
+                print("process source: %s => %s converter:%s" % \
+                      (self.rtemsPath, self.freebsdPath, self.reverseConverter.__class__.__name__))
+            self.reverseConverter.convert(self.rtemsPath, self.freebsdPath)
 
     def getFragment(self):
         return self.buildSystemComposer.compose(self.pathComposer.composeRTEMSPath(self.path, ''))
 
+#
 # Module - logical group of related files we can perform actions on
+#
 class Module:
     def __init__(self, name):
         self.name = name
@@ -378,19 +470,14 @@ class Module:
         if cpu not in self.cpuDependentSourceFiles:
             self.cpuDependentSourceFiles[cpu] = []
 
-    def copyFromFreeBSDToRTEMS(self):
+    def processSource(self, direction):
+        if verbose(verboseDetail):
+            print("process module: %s" % (self.name))
         for f in self.files:
-            f.copyFromFreeBSDToRTEMS()
+            f.processSource(direction)
         for cpu, files in self.cpuDependentSourceFiles.items():
             for f in files:
-                f.copyFromFreeBSDToRTEMS()
-
-    def copyFromRTEMSToFreeBSD(self):
-        for f in self.files:
-            f.copyFromRTEMSToFreeBSD()
-        for cpu, files in self.cpuDependentSourceFiles.items():
-            for f in files:
-                f.copyFromRTEMSToFreeBSD()
+                f.processSource(direction)
 
     def addFiles(self, newFiles, buildSystemComposer = BuildSystemFragmentComposer()):
         files = []
@@ -478,6 +565,9 @@ class Module:
     def addDependency(self, dep):
         self.dependencies += [dep]
 
+#
+# Manager - a collection of modules.
+#
 class ModuleManager:
     def __init__(self):
         self.modules = {}
@@ -495,10 +585,8 @@ class ModuleManager:
     def addModule(self, module):
         self.modules[module.name] = module
 
-    def copyFromFreeBSDToRTEMS(self):
+    def processSource(self, direction):
+        if verbose(verboseDetail):
+            print("process modules:")
         for m in sorted(self.modules):
-            self.modules[m].copyFromFreeBSDToRTEMS()
-
-    def copyFromRTEMSToFreeBSD(self):
-        for m in sorted(self.modules):
-            self.modules[m].copyFromRTEMSToFreeBSD()
+            self.modules[m].processSource(direction)

@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD$");
 #else
 #include <string.h>
 #endif
-#include <machine/rtems-bsd-endian.h>
+#include <machine/endian.h>
 #include <crypto/sha2/sha2.h>
 
 /*

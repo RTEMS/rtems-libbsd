@@ -40,7 +40,7 @@
 #ifndef __rtems__
 #include <machine/endian.h>
 #else /* __rtems__ */
-#include <machine/rtems-bsd-endian.h>
+#include <machine/endian.h>
 #endif /* __rtems__ */
 
 #if !defined(_BYTE_ORDER) || \

@@ -26,6 +26,6 @@
 #ifndef _ATALK_ENDIAN_H_
 #define _ATALK_ENDIAN_H_
 
-#include <machine/rtems-bsd-endian.h>
+#include <machine/endian.h>
 
 #endif /* !_ATALK_ENDIAN_H_ */

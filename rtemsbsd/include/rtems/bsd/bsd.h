@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2016 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -144,6 +144,22 @@ void rtems_bsd_get_mac_address(const char *name, int unit,
     uint8_t mac_addr[6]);
 
 /**
+ * @defgroup BSDBusRoot Bus Root Functions
+ *
+ * @brief Functions to perform bus root operations.
+ *
+ * Suspend and resume can be used to go into or exit a power saving state.
+ * Detach may be used to shutdown the system and do a warm reset.
+ *
+ * All functions must be called from task context.  They perform complex
+ * operations affecting all devices of the bus tree and work only if all
+ * drivers are written properly and no resources used by the drivers are
+ * blocked.
+ *
+ * @{
+ */
+
+/**
  * @brief Attach the root bus.
  *
  * @retval 0 Successful operation.
@@ -174,6 +190,8 @@ int rtems_bsd_bus_root_resume(void);
  * @retval errno Otherwise.
  */
 int rtems_bsd_bus_root_detach(void);
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -44,6 +44,12 @@
   #define NET_CFG_INTERFACE_0 "fec0"
 #elif defined(LIBBSP_ARM_LPC32XX_BSP_H)
   #define NET_CFG_INTERFACE_0 "lpe0"
+#elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
+  #if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
+    #define NET_CFG_INTERFACE_0 "fm1m3"
+  #else
+    #define NET_CFG_INTERFACE_0 "tsec0"
+  #endif
 #else
   #define NET_CFG_INTERFACE_0 "lo0"
 #endif

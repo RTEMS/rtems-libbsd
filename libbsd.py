@@ -4175,7 +4175,51 @@ def mghttpd(mm):
     )
     return mod
 
+def dpaa(mm):
+    mod = builder.Module('dpaa')
+    mod.addCPUDependentLinuxSourceFiles(
+        [ 'powerpc' ],
+        [
+            'drivers/net/ethernet/freescale/dpaa/dpaa_eth.c',
+            'drivers/net/ethernet/freescale/dpaa/dpaa_eth_common.c',
+            'drivers/net/ethernet/freescale/fman/fman.c',
+            'drivers/net/ethernet/freescale/fman/fman_dtsec.c',
+            'drivers/net/ethernet/freescale/fman/fman_memac.c',
+            'drivers/net/ethernet/freescale/fman/fman_port.c',
+            'drivers/net/ethernet/freescale/fman/fman_sp.c',
+            'drivers/net/ethernet/freescale/fman/fman_tgec.c',
+            'drivers/net/ethernet/freescale/fman/mac.c',
+            'drivers/soc/fsl/qbman/bman_api.c',
+            'drivers/soc/fsl/qbman/bman.c',
+            'drivers/soc/fsl/qbman/bman_test_api.c',
+            'drivers/soc/fsl/qbman/bman_test.c',
+            'drivers/soc/fsl/qbman/bman_test_thresh.c',
+            'drivers/soc/fsl/qbman/bman_utils.c',
+            'drivers/soc/fsl/qbman/dpaa_resource.c',
+            'drivers/soc/fsl/qbman/qman_api.c',
+            'drivers/soc/fsl/qbman/qman.c',
+            'drivers/soc/fsl/qbman/qman_portal.c',
+            'drivers/soc/fsl/qbman/qman_test_api.c',
+            'drivers/soc/fsl/qbman/qman_test_stash.c',
+            'drivers/soc/fsl/qbman/qman_utils.c',
+        ],
+        mm.generator['source']()
+    )
+    mod.addCPUDependentRTEMSSourceFiles(
+        [ 'powerpc' ],
+        [
+            'sys/powerpc/compat.c',
+            'sys/powerpc/fdt_phy.c',
+            'sys/powerpc/fman_muram.c',
+            'sys/powerpc/linux_compat.c',
+            'sys/powerpc/drivers/net/ethernet/freescale/dpaa/if_fmanmac.c',
+        ],
+        mm.generator['source']()
+    )
+    return mod
+
 def sources(mm):
+    mm.addModule(dpaa(mm))
     mm.addModule(rtems(mm))
     mm.addModule(base(mm))
 

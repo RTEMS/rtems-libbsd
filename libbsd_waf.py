@@ -78,6 +78,8 @@ def build(bld):
     includes += ["freebsd/contrib/expat/lib"]
     includes += ["freebsd/contrib/libpcap"]
     includes += ["freebsd/contrib/libxo"]
+    includes += ["linux/include"]
+    includes += ["linux/drivers/net/ethernet/freescale/fman"]
     includes += ["rtemsbsd/sys"]
     includes += ["mDNSResponder/mDNSCore"]
     includes += ["mDNSResponder/mDNSShared"]
@@ -2300,7 +2302,34 @@ def build(bld):
     if bld.get_env()["RTEMS_ARCH"] == "nios2":
         source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "powerpc":
-        source += ['freebsd/sys/powerpc/powerpc/in_cksum.c']
+        source += ['freebsd/sys/powerpc/powerpc/in_cksum.c',
+                   'linux/drivers/net/ethernet/freescale/dpaa/dpaa_eth.c',
+                   'linux/drivers/net/ethernet/freescale/dpaa/dpaa_eth_common.c',
+                   'linux/drivers/net/ethernet/freescale/fman/fman.c',
+                   'linux/drivers/net/ethernet/freescale/fman/fman_dtsec.c',
+                   'linux/drivers/net/ethernet/freescale/fman/fman_memac.c',
+                   'linux/drivers/net/ethernet/freescale/fman/fman_port.c',
+                   'linux/drivers/net/ethernet/freescale/fman/fman_sp.c',
+                   'linux/drivers/net/ethernet/freescale/fman/fman_tgec.c',
+                   'linux/drivers/net/ethernet/freescale/fman/mac.c',
+                   'linux/drivers/soc/fsl/qbman/bman.c',
+                   'linux/drivers/soc/fsl/qbman/bman_api.c',
+                   'linux/drivers/soc/fsl/qbman/bman_test.c',
+                   'linux/drivers/soc/fsl/qbman/bman_test_api.c',
+                   'linux/drivers/soc/fsl/qbman/bman_test_thresh.c',
+                   'linux/drivers/soc/fsl/qbman/bman_utils.c',
+                   'linux/drivers/soc/fsl/qbman/dpaa_resource.c',
+                   'linux/drivers/soc/fsl/qbman/qman.c',
+                   'linux/drivers/soc/fsl/qbman/qman_api.c',
+                   'linux/drivers/soc/fsl/qbman/qman_portal.c',
+                   'linux/drivers/soc/fsl/qbman/qman_test_api.c',
+                   'linux/drivers/soc/fsl/qbman/qman_test_stash.c',
+                   'linux/drivers/soc/fsl/qbman/qman_utils.c',
+                   'rtemsbsd/sys/powerpc/compat.c',
+                   'rtemsbsd/sys/powerpc/drivers/net/ethernet/freescale/dpaa/if_fmanmac.c',
+                   'rtemsbsd/sys/powerpc/fdt_phy.c',
+                   'rtemsbsd/sys/powerpc/fman_muram.c',
+                   'rtemsbsd/sys/powerpc/linux_compat.c']
     if bld.get_env()["RTEMS_ARCH"] == "sh":
         source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "sparc":

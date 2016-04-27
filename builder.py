@@ -188,6 +188,8 @@ def includes():
             '-Ifreebsd/contrib/expat/lib',
             '-Ifreebsd/contrib/libpcap',
             '-Ifreebsd/contrib/libxo',
+            '-Ilinux/include',
+            '-Ilinux/drivers/net/ethernet/freescale/fman',
             '-Irtemsbsd/sys',
             '-ImDNSResponder/mDNSCore',
             '-ImDNSResponder/mDNSShared',

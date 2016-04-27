@@ -119,7 +119,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/mbuf.h>
 #include <sys/sysctl.h>
 #else
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>

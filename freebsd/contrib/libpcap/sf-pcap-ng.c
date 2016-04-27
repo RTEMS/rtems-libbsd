@@ -43,7 +43,7 @@ static const char rcsid[] _U_ =
 #ifdef HAVE_SYS_BITYPES_H
 #include <sys/bitypes.h>
 #endif
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #endif /* WIN32 */
 
 #include <errno.h>

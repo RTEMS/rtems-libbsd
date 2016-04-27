@@ -70,7 +70,7 @@ static const char rcsid[] _U_ =
  */
 #define PCAP_DONT_INCLUDE_PCAP_BPF_H
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 /*
  * Prevent bpf.h from redefining the DLT_ values to their

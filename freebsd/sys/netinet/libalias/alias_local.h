@@ -46,7 +46,7 @@
 #ifndef _ALIAS_LOCAL_H_
 #define	_ALIAS_LOCAL_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/sysctl.h>
 
 #ifdef _KERNEL

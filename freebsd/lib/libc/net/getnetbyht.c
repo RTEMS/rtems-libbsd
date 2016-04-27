@@ -46,7 +46,7 @@ static char orig_rcsid[] = "From: Id: getnetent.c,v 8.4 1997/06/01 20:34:37 vixi
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

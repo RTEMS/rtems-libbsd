@@ -19,7 +19,7 @@
 #ifndef _SYS_AIO_H_
 #define	_SYS_AIO_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/signal.h>
 
 /*

@@ -36,7 +36,7 @@ static const char rcsid[] _U_ =
 #endif
 
 #ifdef DECNETLIB
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <netdnet/dnetdb.h>
 #endif
 
@@ -46,7 +46,7 @@ static const char rcsid[] _U_ =
 #else /* WIN32 */
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>				/* concession to AIX */
+#include <sys/types.h>				/* concession to AIX */
 #include <sys/socket.h>
 #include <sys/time.h>
 

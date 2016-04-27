@@ -42,7 +42,7 @@
 #include <machine/rtems-bsd-thread.h>
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/sx.h>

@@ -60,10 +60,10 @@
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
 #endif // #ifdef	_KERNEL 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 #include <sys/queue.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/time.h>
 
 #include <netinet/in_systm.h>

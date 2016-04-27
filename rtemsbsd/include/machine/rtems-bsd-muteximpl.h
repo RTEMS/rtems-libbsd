@@ -44,7 +44,7 @@
 #include <machine/rtems-bsd-mutex.h>
 #include <machine/rtems-bsd-support.h>
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <rtems/bsd/sys/lock.h>
 
 #include <rtems/score/threadimpl.h>

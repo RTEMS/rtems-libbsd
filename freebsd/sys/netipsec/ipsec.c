@@ -79,7 +79,7 @@
 #include <netinet/icmp6.h>
 #endif
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <netipsec/ipsec.h>
 #ifdef INET6
 #include <netipsec/ipsec6.h>

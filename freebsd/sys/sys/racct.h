@@ -38,7 +38,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 struct proc;
 struct rctl_rule_link;

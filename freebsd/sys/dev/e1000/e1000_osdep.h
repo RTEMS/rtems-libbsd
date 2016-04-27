@@ -36,7 +36,7 @@
 #ifndef _FREEBSD_OS_H_
 #define _FREEBSD_OS_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>

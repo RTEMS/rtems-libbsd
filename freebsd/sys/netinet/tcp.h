@@ -34,7 +34,7 @@
 #define _NETINET_TCP_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 #if __BSD_VISIBLE
 

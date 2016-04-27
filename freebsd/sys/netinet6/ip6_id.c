@@ -91,7 +91,7 @@ __FBSDID("$FreeBSD$");
  * This avoids reuse issues caused by reseeding.
  */
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>

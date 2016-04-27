@@ -27,7 +27,7 @@
 #define _EVENTLIB_P_H
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/un.h>

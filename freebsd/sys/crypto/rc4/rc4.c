@@ -42,7 +42,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/kernel.h>
 #include <sys/module.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <crypto/rc4/rc4.h>
 
 static __inline void

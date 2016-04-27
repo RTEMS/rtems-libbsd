@@ -33,7 +33,7 @@ static const char rcsid[] _U_ =
 #ifndef HAVE_NET_PFVAR_H
 #error "No pf headers available"
 #endif
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/pfvar.h>

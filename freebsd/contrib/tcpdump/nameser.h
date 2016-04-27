@@ -57,7 +57,7 @@
 #ifndef _NAMESER_H_
 #define	_NAMESER_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 /*
  * Define constants based on rfc883

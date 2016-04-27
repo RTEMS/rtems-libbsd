@@ -34,7 +34,7 @@
 #define	_SYS_LIBKERN_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #ifdef _KERNEL
 #include <sys/systm.h>
 #endif

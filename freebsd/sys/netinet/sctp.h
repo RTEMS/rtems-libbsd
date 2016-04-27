@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD$");
 #define _NETINET_SCTP_H_
 
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 
 #define SCTP_PACKED __attribute__((packed))

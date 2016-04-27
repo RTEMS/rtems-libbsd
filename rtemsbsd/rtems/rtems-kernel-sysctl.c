@@ -40,7 +40,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-syscall-api.h>
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/errno.h>
 #include <string.h>

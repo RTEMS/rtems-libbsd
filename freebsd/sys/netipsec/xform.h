@@ -41,7 +41,7 @@
 #ifndef _NETIPSEC_XFORM_H_
 #define _NETIPSEC_XFORM_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <opencrypto/xform.h>
 

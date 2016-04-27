@@ -30,7 +30,7 @@
 #ifdef HAVE_OS_PROTO_H
 #include "os-proto.h"
 #endif
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 #ifndef HAVE___ATTRIBUTE__
 #define __attribute__(x)

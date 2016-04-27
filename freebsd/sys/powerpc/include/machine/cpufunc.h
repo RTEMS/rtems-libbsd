@@ -41,7 +41,7 @@ powerpc_mb(void)
 
 #ifdef _KERNEL
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 #include <machine/psl.h>
 #include <machine/spr.h>

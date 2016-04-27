@@ -36,7 +36,7 @@
 
 /* This code has derived from sys/net/rtsock.c on FreeBSD2.2.5 */
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <sys/domain.h>
 #include <rtems/bsd/sys/errno.h>

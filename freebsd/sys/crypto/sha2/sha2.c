@@ -39,7 +39,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/time.h>
 #ifdef _KERNEL
 #include <sys/systm.h>

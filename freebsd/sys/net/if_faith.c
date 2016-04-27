@@ -54,7 +54,7 @@
 #include <sys/sockio.h>
 #include <sys/time.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/malloc.h>
 
 #include <net/if.h>

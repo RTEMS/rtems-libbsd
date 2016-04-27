@@ -49,7 +49,7 @@
 #include <stdio.h>
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>

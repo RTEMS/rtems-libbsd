@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)getservent.c	8.1 (Berkeley) 6/4/93";
 __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <db.h>

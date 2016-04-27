@@ -69,7 +69,7 @@
 #endif
 
 #ifndef LOCORE
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #endif
 
 /*

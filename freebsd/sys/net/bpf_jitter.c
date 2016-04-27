@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD$");
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #endif
 
 #include <net/bpf.h>

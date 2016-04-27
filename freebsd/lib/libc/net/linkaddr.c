@@ -35,7 +35,7 @@ static char sccsid[] = "@(#)linkaddr.c	8.1 (Berkeley) 6/4/93";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if_dl.h>
 #include <string.h>

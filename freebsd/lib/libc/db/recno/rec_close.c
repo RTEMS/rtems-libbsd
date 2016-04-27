@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)rec_close.c	8.6 (Berkeley) 8/18/94";
 __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/mman.h>
 

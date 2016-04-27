@@ -37,10 +37,10 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/bsd/sys/types.h> //needed for fd_mask and such
+#include <sys/types.h> //needed for fd_mask and such
 #include <machine/rtems-bsd-kernel-space.h>
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/selinfo.h>
 #include <sys/fcntl.h>

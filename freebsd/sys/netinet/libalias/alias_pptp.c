@@ -50,7 +50,7 @@ __FBSDID("$FreeBSD$");
 #else
 #include <errno.h>
 #include <limits.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <stdio.h>
 #endif
 

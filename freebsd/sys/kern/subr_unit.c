@@ -69,7 +69,7 @@
  *	N is the number of the highest unit allocated.
  */
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/bitstring.h>
 

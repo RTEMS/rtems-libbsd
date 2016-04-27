@@ -39,7 +39,7 @@
 #include <sys/mutex.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <net/if.h>

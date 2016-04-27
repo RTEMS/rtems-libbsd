@@ -40,10 +40,10 @@
 #if defined(WIN32)
   #include <pcap-stdinc.h>
 #elif defined(MSDOS)
-  #include <rtems/bsd/sys/types.h>
+  #include <sys/types.h>
   #include <sys/socket.h>  /* u_int, u_char etc. */
 #else /* UN*X */
-  #include <rtems/bsd/sys/types.h>
+  #include <sys/types.h>
   #include <sys/time.h>
 #endif /* WIN32/MSDOS/UN*X */
 

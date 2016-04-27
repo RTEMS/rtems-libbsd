@@ -28,7 +28,7 @@
 
 #ifndef _SYS_HASH_H_
 #define	_SYS_HASH_H_
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 /* Convenience */
 #ifndef	HASHINIT

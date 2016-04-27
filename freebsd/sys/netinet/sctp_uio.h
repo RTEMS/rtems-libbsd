@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD$");
 #if ! defined(_KERNEL)
 #include <stdint.h>
 #endif
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 

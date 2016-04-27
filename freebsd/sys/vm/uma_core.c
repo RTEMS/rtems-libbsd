@@ -65,7 +65,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/malloc.h>
 #include <sys/ktr.h>

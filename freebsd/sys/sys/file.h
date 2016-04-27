@@ -34,7 +34,7 @@
 #define	_SYS_FILE_H_
 
 #ifndef _KERNEL
-#include <rtems/bsd/sys/types.h> /* XXX */
+#include <sys/types.h> /* XXX */
 #include <sys/fcntl.h>
 #include <rtems/bsd/sys/unistd.h>
 #else

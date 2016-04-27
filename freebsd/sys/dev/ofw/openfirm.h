@@ -60,7 +60,7 @@
 #ifndef _DEV_OPENFIRM_H_
 #define _DEV_OPENFIRM_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 /*
  * Prototypes for Open Firmware Interface Routines

@@ -24,7 +24,7 @@
 #ifndef _EVENTLIB_H
 #define _EVENTLIB_H
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/time.h>
 #include <stdio.h>

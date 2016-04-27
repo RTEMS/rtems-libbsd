@@ -59,7 +59,7 @@
 #ifndef _MACHINE_CPUFUNC_H_
 #define	_MACHINE_CPUFUNC_H_
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <machine/cpuregs.h>
 
 /* 

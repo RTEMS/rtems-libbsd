@@ -40,7 +40,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/sysctl.h>
 #include <string.h>
 

@@ -61,7 +61,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/blowfish/bf_locl.h>
 

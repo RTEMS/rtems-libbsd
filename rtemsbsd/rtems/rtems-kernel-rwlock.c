@@ -49,7 +49,7 @@
 #include <machine/rtems-bsd-muteximpl.h>
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/rwlock.h>

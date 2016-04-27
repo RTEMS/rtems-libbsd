@@ -47,7 +47,7 @@
 #ifdef _KERNEL
 #ifndef __rtems__
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <machine/cpuconf.h>
 #include <machine/katelib.h> /* For in[bwl] and out[bwl] */
 

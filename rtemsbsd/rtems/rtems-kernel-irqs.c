@@ -39,7 +39,7 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/kernel.h>
 
 #include <rtems/bsd/bsd.h>

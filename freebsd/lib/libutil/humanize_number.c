@@ -35,7 +35,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <inttypes.h>
 #include <stdio.h>

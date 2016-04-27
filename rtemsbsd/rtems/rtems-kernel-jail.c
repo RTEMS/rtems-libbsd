@@ -39,7 +39,7 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
-/*#include <rtems/bsd/sys/types.h>
+/*#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/jail.h>
@@ -47,7 +47,7 @@
 #include <sys/mutex.h>*/
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/errno.h>

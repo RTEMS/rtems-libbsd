@@ -62,7 +62,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/sysctl.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 
 #include <net/bpf.h>
 #include <net/ethernet.h>

@@ -52,7 +52,7 @@
 #include <time.h>
 #include <io.h>
 #include <fcntl.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <net/netdb.h>  /* in wpcap's Win32/include */
 
 #ifndef NBBY
@@ -118,7 +118,7 @@ typedef char* caddr_t;
 #include <sys/bitypes.h>
 #endif
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>			/* concession to AIX */
+#include <sys/types.h>			/* concession to AIX */
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

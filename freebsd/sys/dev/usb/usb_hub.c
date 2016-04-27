@@ -39,7 +39,7 @@
 #include <sys/stddef.h>
 #include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>

@@ -43,7 +43,7 @@ static const char rcsid[] _U_ =
 #include "config.h"
 #endif
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 

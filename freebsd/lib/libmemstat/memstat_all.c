@@ -28,7 +28,7 @@
  * $FreeBSD$
  */
 
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/queue.h>
 
 #include "memstat.h"

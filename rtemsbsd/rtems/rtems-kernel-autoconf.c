@@ -41,7 +41,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 #include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/types.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
 #include <sys/kernel.h>

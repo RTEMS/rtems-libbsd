@@ -90,7 +90,7 @@ struct vnode;
 struct vop_setlabel_args;
 
 #include <sys/acl.h>			/* XXX acl_type_t */
-#include <rtems/bsd/sys/types.h>			/* accmode_t */
+#include <sys/types.h>			/* accmode_t */
 
 /*
  * Entry points to the TrustedBSD MAC Framework from the remainder of the

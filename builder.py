@@ -186,7 +186,6 @@ def fixIncludes(data):
     data = re.sub('#include <sys/param.h>',    '#include <rtems/bsd/sys/param.h>', data)
     data = re.sub('#include <sys/resource.h>', '#include <rtems/bsd/sys/resource.h>', data)
     data = re.sub('#include <sys/unistd.h>',   '#include <rtems/bsd/sys/unistd.h>', data)
-    data = re.sub('#include <sys/_types.h>',   '#include <rtems/bsd/sys/_types.h>', data)
     return data
 
 # revert fixing the include paths inside a C or .h file

@@ -41,7 +41,7 @@
  * __va_list from <sys/_types.h> and use it.
  */
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/_types.h>
+#include <sys/_types.h>
 
 __BEGIN_DECLS
 void	err(int, const char *, ...) __dead2 __printf0like(2, 3);

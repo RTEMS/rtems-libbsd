@@ -30,7 +30,7 @@
 #define _SYS_STDINT_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/_types.h>
+#include <sys/_types.h>
 
 #ifndef __rtems__
 #include <machine/_stdint.h>

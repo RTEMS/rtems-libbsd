@@ -34,7 +34,7 @@
 #define	_NETINET_IN_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/_types.h>
+#include <sys/_types.h>
 #ifndef __rtems__
 #include <machine/endian.h>
 #else /* __rtems__ */

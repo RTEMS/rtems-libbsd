@@ -34,7 +34,7 @@
 #define	_SYS_SOCKET_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/_types.h>
+#include <sys/_types.h>
 #include <sys/_iovec.h>
 #include <machine/_align.h>
 

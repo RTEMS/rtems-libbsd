@@ -186,7 +186,7 @@ CODE facilitynames[] = {
  * __va_list from <sys/_types.h> and use it.
  */
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/_types.h>
+#include <sys/_types.h>
 
 __BEGIN_DECLS
 void	closelog(void);

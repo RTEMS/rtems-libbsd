@@ -34,7 +34,7 @@
 #define	_KVM_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/_types.h>
+#include <sys/_types.h>
 #include <nlist.h>
 
 /* Default version symbol. */

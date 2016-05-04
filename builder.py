@@ -166,6 +166,7 @@ def header_paths():
             ('freebsd/sys/netinet',           '*.h',               'netinet'),
             ('freebsd/sys/netinet6',          '*.h',               'netinet6'),
             ('freebsd/sys/netipsec',          '*.h',               'netipsec'),
+            ('freebsd/sys/rpc',               '*.h',               'rpc'),
             ('freebsd/sys/sys',               '*.h',               'sys'),
             ('freebsd/sys/vm',                '*.h',               'vm'),
             ('freebsd/sys/dev/mii',           '*.h',               'dev/mii'),

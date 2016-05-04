@@ -147,11 +147,11 @@ if isEarlyExit == True:
     sys.exit(0)
 
 try:
-    waf_gen = waf_generator.ModuleManager()
-    libbsd.sources(waf_gen)
+    wafGen = waf_generator.ModuleManager()
+    libbsd.sources(wafGen)
     if not isOnlyBuildScripts:
-        waf_gen.processSource(isForward)
-    waf_gen.generate(libbsd.rtems_version())
+        wafGen.processSource(isForward)
+    wafGen.generate(libbsd.rtems_version())
     builder.changedFileSummary()
 except IOError as ioe:
     print('error: %s' % (str(ioe)))

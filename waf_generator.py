@@ -44,14 +44,14 @@ trace = False
 
 data = { }
 
-def _add_files(name, files):
+def _addFiles(name, files):
     if type(files) is not list:
         files = [files]
     if name not in data:
         data[name] = []
     data[name] += files
 
-def _clfags_includes(cflags, includes):
+def _cflagsIncludes(cflags, includes):
     if type(cflags) is not list:
         if cflags is not None:
             _cflags = cflags.split(' ')
@@ -68,7 +68,7 @@ def _clfags_includes(cflags, includes):
 class SourceFileFragmentComposer(builder.BuildSystemFragmentComposer):
 
     def __init__(self, cflags = "default", includes = None):
-        self.cflags, self.includes = _clfags_includes(cflags, includes)
+        self.cflags, self.includes = _cflagsIncludes(cflags, includes)
 
     def compose(self, path):
         if None in self.includes:
@@ -108,7 +108,7 @@ class LexFragmentComposer(builder.BuildSystemFragmentComposer):
     def __init__(self, sym, dep, cflags = None, includes = None):
         self.sym = sym
         self.dep = dep
-        self.cflags, self.includes = _clfags_includes(cflags, includes)
+        self.cflags, self.includes = _cflagsIncludes(cflags, includes)
 
     def compose(self, path):
         d = { 'file': path,
@@ -125,7 +125,7 @@ class YaccFragmentComposer(builder.BuildSystemFragmentComposer):
     def __init__(self, sym, header, cflags = None, includes = None):
         self.sym = sym
         self.header = header
-        self.cflags, self.includes = _clfags_includes(cflags, includes)
+        self.cflags, self.includes = _cflagsIncludes(cflags, includes)
 
     def compose(self, path):
         d = { 'file': path,
@@ -149,7 +149,7 @@ class ModuleManager(builder.ModuleManager):
     def write(self):
         name = os.path.join(builder.RTEMS_DIR, 'libbsd_waf.py')
         converter = builder.Converter()
-        converter.convert(name, name, src_contents = self.script)
+        converter.convert(name, name, srcContents = self.script)
 
     def setGenerators(self):
         self.generator['convert'] = builder.Converter
@@ -173,26 +173,26 @@ class ModuleManager(builder.ModuleManager):
 
     def generate(self, rtems_version):
 
-        def _source_list(lhs, files, append = False):
+        def _sourceList(lhs, files, append = False):
             if append:
                 adder = '+'
-                adder_space = ' '
+                adderSpace = ' '
             else:
                 adder = ''
-                adder_space = ''
+                adderSpace = ''
             ll = len(lhs)
             if len(files) == 1:
                 self.add('%s %s= [%r]' % (lhs, adder, files[0]))
             elif len(files) == 2:
                 self.add('%s %s= [%r,' % (lhs, adder, files[0]))
-                self.add('%s %s   %r]' % (' ' * ll, adder_space, files[-1]))
+                self.add('%s %s   %r]' % (' ' * ll, adderSpace, files[-1]))
             elif len(files) > 0:
                 self.add('%s %s= [%r,' % (lhs, adder, files[0]))
                 for f in files[1:-1]:
-                    self.add('%s %s   %r,' % (' ' * ll, adder_space, f))
-                self.add('%s %s   %r]' % (' ' * ll, adder_space, files[-1]))
+                    self.add('%s %s   %r,' % (' ' * ll, adderSpace, f))
+                self.add('%s %s   %r]' % (' ' * ll, adderSpace, files[-1]))
 
-        def _data_insert(data, cpu, frag):
+        def _dataInsert(data, cpu, frag):
             #
             # The default handler returns an empty string. Skip it.
             #
@@ -233,10 +233,10 @@ class ModuleManager(builder.ModuleManager):
             m = self[mn]
             if m.conditionalOn == "none":
                 for f in m.files:
-                    _data_insert(data, 'all', f.getFragment())
+                    _dataInsert(data, 'all', f.getFragment())
             for cpu, files in sorted(m.cpuDependentSourceFiles.items()):
                 for f in files:
-                    _data_insert(data, cpu, f.getFragment())
+                    _dataInsert(data, cpu, f.getFragment())
 
         if trace:
             import pprint
@@ -272,13 +272,13 @@ class ModuleManager(builder.ModuleManager):
         self.add('def build(bld):')
         self.add('    # C/C++ flags')
         self.add('    common_flags = []')
-        for f in builder.common_flags():
+        for f in builder.commonFlags():
             self.add('    common_flags += ["%s"]' % (f))
         self.add('    if bld.env.WARNINGS:')
-        for f in builder.common_warnings():
+        for f in builder.commonWarnings():
             self.add('        common_flags += ["%s"]' % (f))
         self.add('    else:')
-        for f in builder.common_no_warnings():
+        for f in builder.commonNoWarnings():
             self.add('        common_flags += ["%s"]' % (f))
         self.add('    cflags = %r + common_flags' % (builder.cflags()))
         self.add('    cxxflags = %r + common_flags' % (builder.cxxflags()))
@@ -291,10 +291,10 @@ class ModuleManager(builder.ModuleManager):
         self.add('')
         self.add('    # Include paths')
         self.add('    includes = []')
-        self.add('    for i in %r:' % (builder.cpu_includes()))
+        self.add('    for i in %r:' % (builder.cpuIncludes()))
         self.add('        includes += ["%s" % (i[2:].replace("@CPU@", bld.get_env()["RTEMS_ARCH"]))]')
         self.add('    if bld.get_env()["RTEMS_ARCH"] == "i386":')
-        self.add('        for i in %r:' % (builder.cpu_includes()))
+        self.add('        for i in %r:' % (builder.cpuIncludes()))
         self.add('            includes += ["%s" % (i[2:].replace("@CPU@", "x86"))]')
         for i in builder.includes():
             self.add('    includes += ["%s"]' % (i[2:]))
@@ -402,13 +402,13 @@ class ModuleManager(builder.ModuleManager):
             for l in sorted(lexes.keys()):
                 lex = lexes[l]['all']
                 if 'cflags' in lex:
-                    lex_defines = [d[2:] for d in lex['cflags']]
+                    lexDefines = [d[2:] for d in lex['cflags']]
                 else:
-                    lex_defines = []
+                    lexDefines = []
                 if 'includes' in lex:
-                    lex_includes = lex['includes']
+                    lexIncludes = lex['includes']
                 else:
-                    lex_includes = []
+                    lexIncludes = []
                 self.add('    if bld.env.AUTO_REGEN:')
                 self.add('        bld(target = "%s.c",' % (lex['file'][:-2]))
                 self.add('            source = "%s",' % (lex['file']))
@@ -417,8 +417,8 @@ class ModuleManager(builder.ModuleManager):
                 self.add('    bld.objects(target = "lex_%s",' % (lex['sym']))
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
-                self.add('                includes = %r + includes,' % (lex_includes))
-                self.add('                defines = defines + %r,' % (lex_defines))
+                self.add('                includes = %r + includes,' % (lexIncludes))
+                self.add('                defines = defines + %r,' % (lexDefines))
                 self.add('                source = "%s.c")' % (lex['file'][:-2]))
                 self.add('    libbsd_use += ["lex_%s"]' % (lex['sym']))
                 self.add('')
@@ -428,33 +428,33 @@ class ModuleManager(builder.ModuleManager):
             self.add('    # Yacc')
             for y in sorted(yaccs.keys()):
                 yacc = yaccs[y]['all']
-                yacc_file = yacc['file']
+                yaccFile = yacc['file']
                 if yacc['sym'] is not None:
-                    yacc_sym = yacc['sym']
+                    yaccSym = yacc['sym']
                 else:
-                    yacc_sym = os.path.basename(yacc_file)[:-2]
-                yacc_header = '%s/%s' % (os.path.dirname(yacc_file), yacc['header'])
+                    yaccSym = os.path.basename(yaccFile)[:-2]
+                yaccHeader = '%s/%s' % (os.path.dirname(yaccFile), yacc['header'])
                 if 'cflags' in yacc:
-                    yacc_defines = [d[2:] for d in yacc['cflags']]
+                    yaccDefines = [d[2:] for d in yacc['cflags']]
                 else:
-                    yacc_defines = []
+                    yaccDefines = []
                 if 'includes' in yacc:
-                    yacc_includes = yacc['includes']
+                    yaccIncludes = yacc['includes']
                 else:
-                    yacc_includes = []
+                    yaccIncludes = []
                 self.add('    if bld.env.AUTO_REGEN:')
-                self.add('        bld(target = "%s.c",' % (yacc_file[:-2]))
-                self.add('            source = "%s",' % (yacc_file))
-                self.add('            rule = "${YACC} -b %s -d -p %s ${SRC} && ' % (yacc_sym, yacc_sym) + \
-                         'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' < %s.tab.c > ${TGT} && ' % (yacc_sym) + \
-                         'rm -f %s.tab.c && mv %s.tab.h %s")' % (yacc_sym, yacc_sym, yacc_header))
-                self.add('    bld.objects(target = "yacc_%s",' % (yacc_sym))
+                self.add('        bld(target = "%s.c",' % (yaccFile[:-2]))
+                self.add('            source = "%s",' % (yaccFile))
+                self.add('            rule = "${YACC} -b %s -d -p %s ${SRC} && ' % (yaccSym, yaccSym) + \
+                         'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' < %s.tab.c > ${TGT} && ' % (yaccSym) + \
+                         'rm -f %s.tab.c && mv %s.tab.h %s")' % (yaccSym, yaccSym, yaccHeader))
+                self.add('    bld.objects(target = "yacc_%s",' % (yaccSym))
                 self.add('                features = "c",')
                 self.add('                cflags = cflags,')
-                self.add('                includes = %r + includes,' % (yacc_includes))
-                self.add('                defines = defines + %r,' % (yacc_defines))
-                self.add('                source = "%s.c")' % (yacc_file[:-2]))
-                self.add('    libbsd_use += ["yacc_%s"]' % (yacc_sym))
+                self.add('                includes = %r + includes,' % (yaccIncludes))
+                self.add('                defines = defines + %r,' % (yaccDefines))
+                self.add('                source = "%s.c")' % (yaccFile[:-2]))
+                self.add('    libbsd_use += ["yacc_%s"]' % (yaccSym))
             self.add('')
 
         #
@@ -466,14 +466,14 @@ class ModuleManager(builder.ModuleManager):
         for flags in sorted(data['sources']):
             if flags is not 'default':
                 objs += 1
-                _source_list('    objs%02d_source' % objs, sorted(data['sources'][flags]['all']))
+                _sourceList('    objs%02d_source' % objs, sorted(data['sources'][flags]['all']))
                 archs = sorted(data['sources'][flags])
                 for arch in archs:
                     if arch not in ['all', 'cflags', 'includes']:
                         self.add('    if bld.get_env()["RTEMS_ARCH"] == "%s":' % arch)
-                        _source_list('        objs%02d_source' % objs,
-                                     sorted(data['sources'][flags][arch]),
-                                     append = True)
+                        _sourceList('        objs%02d_source' % objs,
+                                    sorted(data['sources'][flags][arch]),
+                                    append = True)
                 if 'cflags' in data['sources'][flags]:
                     defines = [d[2:] for d in data['sources'][flags]['cflags']]
                 else:
@@ -495,14 +495,14 @@ class ModuleManager(builder.ModuleManager):
         # We hold the 'default' cflags set of files to the end to create the
         # static library with.
         #
-        _source_list('    source', sorted(data['sources']['default']['all']))
+        _sourceList('    source', sorted(data['sources']['default']['all']))
         archs = sorted(data['sources']['default'])
         for arch in archs:
             if arch is not 'all':
                 self.add('    if bld.get_env()["RTEMS_ARCH"] == "%s":' % arch)
-                _source_list('        source',
-                             sorted(data['sources']['default'][arch]),
-                             append = True)
+                _sourceList('        source',
+                            sorted(data['sources']['default'][arch]),
+                            append = True)
         self.add('    bld.stlib(target = "bsd",')
         self.add('              features = "c cxx",')
         self.add('              cflags = cflags,')
@@ -518,11 +518,11 @@ class ModuleManager(builder.ModuleManager):
         #
         self.add('    # Installs.    ')
         self.add('    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])')
-        header_paths = builder.header_paths()
-        self.add('    header_paths = [%s,' % (str(header_paths[0])))
-        for hp in header_paths[1:-1]:
+        headerPaths = builder.headerPaths()
+        self.add('    header_paths = [%s,' % (str(headerPaths[0])))
+        for hp in headerPaths[1:-1]:
             self.add('                     %s,' % (str(hp)))
-        self.add('                     %s]' % (str(header_paths[-1])))
+        self.add('                     %s]' % (str(headerPaths[-1])))
         self.add('    for headers in header_paths:')
         self.add('        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), headers[2])')
         self.add('        start_dir = bld.path.find_dir(headers[0])')
@@ -534,14 +534,14 @@ class ModuleManager(builder.ModuleManager):
 
         self.add('    # Tests')
         tests = data['tests']
-        for test_name in sorted(tests):
-            files = ['testsuite/%s/%s.c' % (test_name, f) for f in  data['tests'][test_name]['all']['files']]
-            _source_list('    test_%s' % (test_name), sorted(files))
-            self.add('    bld.program(target = "%s.exe",' % (test_name))
+        for testName in sorted(tests):
+            files = ['testsuite/%s/%s.c' % (testName, f) for f in  data['tests'][testName]['all']['files']]
+            _sourceList('    test_%s' % (testName), sorted(files))
+            self.add('    bld.program(target = "%s.exe",' % (testName))
             self.add('                features = "cprogram",')
             self.add('                cflags = cflags,')
             self.add('                includes = includes,')
-            self.add('                source = test_%s,' % (test_name))
+            self.add('                source = test_%s,' % (testName))
             self.add('                use = ["bsd"],')
             self.add('                lib = ["m", "z"],')
             self.add('                install_path = None)')

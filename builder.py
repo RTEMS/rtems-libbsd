@@ -71,7 +71,7 @@ def changedFileSummary():
             for f in sorted(filesProcessed):
                 print(' %s' % (f))
 
-def read_file(name):
+def readFile(name):
     try:
         contents = codecs.open(name, mode = 'r', encoding = 'utf-8', errors = 'ignore').read()
     except UnicodeDecodeError as ude:
@@ -79,13 +79,13 @@ def read_file(name):
         sys.exit(1)
     return contents
 
-def write_file(name, contents):
+def writeFile(name, contents):
     path = os.path.dirname(name)
     if not os.path.exists(path):
         try:
             os.makedirs(path)
         except OSError as oe:
-            print('error: cannot create directory: %s: %s' % (dst_path, oe))
+            print('error: cannot create directory: %s: %s' % (path, oe))
             sys.exit(1)
     try:
         codecs.open(name, mode = 'w',  encoding = 'utf-8', errors = 'ignore').write(contents)
@@ -108,18 +108,18 @@ class error(Exception):
 #
 # This stuff needs to move to libbsd.py.
 #
-def common_flags():
+def commonFlags():
     return ['-O2',
             '-g',
             '-fno-strict-aliasing',
             '-ffreestanding',
             '-fno-common']
 
-def common_warnings():
+def commonWarnings():
     return ['-Wall',
             '-Wno-format']
 
-def common_no_warnings():
+def commonNoWarnings():
     return ['-w']
 
 def includes():
@@ -142,7 +142,7 @@ def includes():
             '-ImDNSResponder/mDNSPosix',
             '-Itestsuite/include']
 
-def cpu_includes():
+def cpuIncludes():
     return ['-Irtemsbsd/@CPU@/include',
             '-Ifreebsd/sys/@CPU@/include']
 
@@ -152,7 +152,7 @@ def cflags():
 def cxxflags():
     return ['-std=gnu++11']
 
-def header_paths():
+def headerPaths():
     #         local path                      wildcard             dest path
     return [('rtemsbsd/include',              '*.h',               ''),
             ('rtemsbsd/mghttpd',              'mongoose.h',        'mghttpd'),
@@ -232,21 +232,21 @@ def assertSourceFile(path):
 #
 class Converter(object):
 
-    def convert(self, src, dst, has_source = True, source_filter = None, src_contents = None):
+    def convert(self, src, dst, hasSource = True, sourceFilter = None, srcContents = None):
 
         global filesProcessed, filesProcessedCount
 
         if verbose(verboseDebug):
             print("convert: filter:%s: %s -> %s" % \
-                  (['yes', 'no'][source_filter is None], src, dst))
+                  (['yes', 'no'][sourceFilter is None], src, dst))
 
         #
         # If there is no source raise an error if we expect source else print a
         # warning and do not try and convert.
         #
-        if src_contents is None:
+        if srcContents is None:
             if not os.path.exists(src):
-                if has_source:
+                if hasSource:
                     raise error('source not found: %s' % (src))
                 else:
                     print('warning: no source: %s' % (src))
@@ -255,35 +255,35 @@ class Converter(object):
             #
             # Files read as a single string if not passed in.
             #
-            src_contents = read_file(src)
+            srcContents = readFile(src)
 
         if os.path.exists(dst):
-            dst_contents = read_file(dst)
+            dstContents = readFile(dst)
         else:
             print('warning: no destination: %s' % (dst))
-            dst_contents = ''
+            dstContents = ''
 
         #
         # Filter the source.
         #
-        if source_filter is not None:
-            src_contents = source_filter(src_contents)
+        if sourceFilter is not None:
+            srcContents = sourceFilter(srcContents)
 
         #
         # Split into a list of lines.
         #
-        src_lines = src_contents.split(os.linesep)
-        dst_lines = dst_contents.split(os.linesep)
+        srcLines = srcContents.split(os.linesep)
+        dstLines = dstContents.split(os.linesep)
 
         if verbose(verboseDebug):
-            print('Unified diff: %s (lines:%d)' % (src, len(src_lines)))
+            print('Unified diff: %s (lines:%d)' % (src, len(srcLines)))
 
         #
         # Diff, note there is no line termination on each string.  Expand the
         # generator to list because the generator is not reusable.
         #
-        diff = list(difflib.unified_diff(dst_lines,
-                                         src_lines,
+        diff = list(difflib.unified_diff(dstLines,
+                                         srcLines,
                                          fromfile = src,
                                          tofile = dst,
                                          n = 5,
@@ -303,37 +303,37 @@ class Converter(object):
                 if verbose(verboseDetail):
                     print("UPDATE: %s -> %s" % (src, dst))
                 if isDryRun == False:
-                    write_file(dst, src_contents)
+                    writeFile(dst, srcContents)
             else:
                 print("diff -u %s %s" % (src, dst))
                 for l in diff:
                     print(l)
 
 class NoConverter(Converter):
-    def convert(self, src, dst, has_source = True, source_filter = None):
+    def convert(self, src, dst, hasSource = True, sourceFilter = None):
         return '/* EMPTY */\n'
 
 class FromFreeBSDToRTEMSHeaderConverter(Converter):
-    def source_filter(self, data):
+    def sourceFilter(self, data):
         data = fixLocalIncludes(data)
         data = fixIncludes(data)
         return data
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSHeaderConverter, self)
-        sconverter.convert(src, dst, source_filter = self.source_filter)
+        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
 
 class FromFreeBSDToRTEMSUserSpaceHeaderConverter(Converter):
-    def source_filter(self, data):
+    def sourceFilter(self, data):
         data = fixIncludes(data)
         return data
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSUserSpaceHeaderConverter, self)
-        sconverter.convert(src, dst, source_filter = self.source_filter)
+        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
 
 class FromFreeBSDToRTEMSSourceConverter(Converter):
-    def source_filter(self, data):
+    def sourceFilter(self, data):
         data = fixLocalIncludes(data)
         data = fixIncludes(data)
         data = '#include <machine/rtems-bsd-kernel-space.h>\n\n' + data
@@ -341,37 +341,37 @@ class FromFreeBSDToRTEMSSourceConverter(Converter):
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSSourceConverter, self)
-        sconverter.convert(src, dst, source_filter = self.source_filter)
+        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
 
 class FromFreeBSDToRTEMSUserSpaceSourceConverter(Converter):
-    def source_filter(self, data):
+    def sourceFilter(self, data):
         data = fixIncludes(data)
         data = '#include <machine/rtems-bsd-user-space.h>\n\n' + data
         return data
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSUserSpaceSourceConverter, self)
-        sconverter.convert(src, dst, source_filter = self.source_filter)
+        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
 
 class FromRTEMSToFreeBSDHeaderConverter(Converter):
-    def source_filter(self, data):
+    def sourceFilter(self, data):
         data = revertFixLocalIncludes(data)
         data = revertFixIncludes(data)
         return data
 
     def convert(self, src, dst):
         sconverter = super(FromRTEMSToFreeBSDHeaderConverter, self)
-        sconverter.convert(src, dst, has_source = False,  source_filter = self.source_filter)
+        sconverter.convert(src, dst, hasSource = False,  sourceFilter = self.sourceFilter)
 
 class FromRTEMSToFreeBSDSourceConverter(Converter):
-    def source_filter(self, data):
+    def sourceFilter(self, data):
         data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '', data)
         data = re.sub('#include <machine/rtems-bsd-user-space.h>\n\n', '', data)
         return data
 
     def convert(self, src, dst):
         sconverter = super(FromRTEMSToFreeBSDSourceConverter, self)
-        sconverter.convert(src, dst, has_source = False, source_filter = self.source_filter)
+        sconverter.convert(src, dst, hasSource = False, sourceFilter = self.sourceFilter)
 
 #
 # Compose a path based for the various parts of the source tree.

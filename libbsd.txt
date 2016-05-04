@@ -586,13 +586,23 @@ not changed unless the contents change. The script will also report the
 number of files which changed. In verbose mode, the script will print
 the name of the files which are changed.
 
+To add or update files int the RTEMS FreeBSD tree first run the 'reverse mode'
+and move the current set of patches FreeBSD. The script may warn you if a file
+is not present at the destination for the direction. This can happen as files
+not avaliable at the FreeBSD snapshot point have been specially added to the
+RTEMS FreeBSD tree. Warnings can also appear if you have changed the list of
+files in libbsd.py. The reverse mode will result in the FreeBSD having
+uncommitted changes. You can ignore these. Once the reverse process has
+finished edit libbsd.py and add any new files then run the forwad mode to bring
+those files into the RTEMS FreeBSD tree.
+
 The following is an example forward run with no changes.
 
 ----
 $ ~/newbsd/git/libbsd-8.2/freebsd-to-rtems.py \
     -r /home/joel/newbsd/git/libbsd-8.2 \
     -f /home/joel/newbsd/libbsd/freebsd-8.2 -v
-Verbose:                yes
+Verbose:                yes (1)
 Dry Run:                no
 Only Generate Makefile: no
 RTEMS Directory:        /home/joel/newbsd/git/libbsd-8.2
@@ -604,6 +614,9 @@ Generating into /home/joel/newbsd/git/libbsd-8.2
 
 The script may also be used to generate a diff in either forward or reverse
 direction.
+
+You can add more than one verbose option (-v) to the command line and get more
+detail and debug level information from the command.
 
 == Initialization of the BSD Library
 
@@ -1113,6 +1126,18 @@ E1000 IGB 		_bsd_igb_pcimodule_sys_init	Links
 E1000 EM		_bsd_em_pcimodule_sys_init	Links
 Cadence			?				Links, works.
 ----
+
+To add a NIC edit rtemsbsd/include/bsp/nexus-devices.h and add the driver
+reference to the architecture and/or BSP. For example to add the RealTek driver
+add:
+
+SYSINIT_DRIVER_REFERENCE(re, pci);
+
+and to add the MII PHY driver add:
+
+SYSINIT_DRIVER_REFERENCE(rge, miibus);
+
+The PC BSP has these entries.
 
 Symbols (A)
          pci_get_vpd_ident

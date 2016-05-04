@@ -30,6 +30,7 @@
  */
 
 #include <sys/stat.h>
+#include <sys/socket.h>
 
 #include <net/if.h>
 
@@ -52,7 +53,7 @@
 #endif
 
 #ifndef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
-#include <rtems/bsd/test/network-config.h>
+#include "network-config.h"
 #endif
 
 #ifdef DEFAULT_NETWORK_SHELL
@@ -164,6 +165,8 @@ default_network_dhcpcd_task(rtems_task_argument arg)
 		NULL
 	};
 
+	(void)arg;
+
 #ifdef DEFAULT_NETWORK_DHCPCD_NO_DHCP_DISCOVERY
 	static const char cfg[] = "nodhcp\nnodhcp6\n";
 	int fd;
@@ -211,6 +214,7 @@ default_network_dhcpcd(void)
 static void
 default_network_on_exit(int exit_code, void *arg)
 {
+	(void)arg;
 	rtems_stack_checker_report_usage_with_plugin(NULL,
 	    rtems_printf_plugin);
 
@@ -230,6 +234,7 @@ Init(rtems_task_argument arg)
 	char *ifname;
 #endif
 
+	(void)arg;
 	puts("*** " TEST_NAME " TEST ***");
 
 	on_exit(default_network_on_exit, NULL);
@@ -239,7 +244,7 @@ Init(rtems_task_argument arg)
 #endif
 
 	/* Let other tasks run to complete background work */
-	default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1);
+	default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
 
 #ifdef DEFAULT_NETWORK_SHELL
 	sc = rtems_shell_init(

@@ -336,7 +336,8 @@ SYSINIT_NEED_NET_IF_VLAN;
   &rtems_shell_PING_Command, \
   &rtems_shell_ROUTE_Command, \
   &rtems_shell_NETSTAT_Command, \
-  &rtems_shell_IFCONFIG_Command
+  &rtems_shell_IFCONFIG_Command, \
+  &rtems_shell_TCPDUMP_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE

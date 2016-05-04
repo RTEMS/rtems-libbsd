@@ -37,41 +37,83 @@
  * SUCH DAMAGE.
  */
 
-#include <syslog.h>
+#include <machine/rtems-bsd-kernel-space.h>
+
+#include <rtems/bsd/sys/types.h>
+#include <sys/lock.h>
+#include <sys/systm.h>
+#include <sys/syslog.h>
+
+#include <stdio.h>
 
 #include <rtems/bsd/bsd.h>
 
-void
-syslog(int priority, const char *format, ...)
-{
-	va_list ap;
+#undef printf
 
-	va_start(ap, format);
-	vsyslog(priority, format, ap);
-	va_end(ap);
+#define	VPRINTF_LOCK() _Mutex_Acquire(&vprintf_mtx)
+#define	VPRINTF_UNLOCK() _Mutex_Release(&vprintf_mtx)
+
+static const char * const log_priorities[] = {
+	[LOG_EMERG] = "emerg",
+	[LOG_ALERT] = "alert",
+	[LOG_CRIT] = "crit",
+	[LOG_ERR] = "err",
+	[LOG_WARNING] = "warning",
+	[LOG_NOTICE] = "notice",
+	[LOG_INFO] = "info",
+	[LOG_DEBUG] = "debug"
+};
+
+/* Use a <sys/lock.h> mutex due to the static initialization capability */
+static struct _Mutex_Control vprintf_mtx = _MUTEX_INITIALIZER;
+
+static void
+vprintf_putchar(int c, void *arg)
+{
+	int *last;
+
+	last = arg;
+	*last = c;
+	putchar(c);
 }
 
-void
-vsyslog(int priority, const char *format, va_list ap)
+static int
+default_vprintf_handler(int level, const char *fmt, va_list ap)
 {
+	int n;
+	int last;
 
-	rtems_bsd_vprintf(priority, format, ap);
+	VPRINTF_LOCK();
+
+	if (level != LOG_PRINTF) {
+		printf("%s: ", log_priorities[LOG_PRI(level)]);
+	}
+
+	last = -1;
+	n = kvprintf(fmt, vprintf_putchar, &last, 10, ap);
+
+	if (level != LOG_PRINTF && last != '\n') {
+		putchar('\n');
+	}
+
+	VPRINTF_UNLOCK();
+	return (n);
 }
 
-void
-openlog(const char *ident, int option, int facility)
-{
-	/* TODO */
-}
+static int (*vprintf_handler)(int, const char *, va_list) =
+    default_vprintf_handler;
 
 void
-closelog(void)
+rtems_bsd_set_vprintf_handler(int (*new_vprintf_handler)
+    (int, const char *, va_list))
 {
-	/* TODO */
+
+	vprintf_handler = new_vprintf_handler;
 }
 
 int
-setlogmask(int mask)
+rtems_bsd_vprintf(int level, const char *fmt, va_list ap)
 {
-	/* TODO */
+
+	return ((*vprintf_handler)(level, fmt, ap));
 }

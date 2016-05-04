@@ -77,7 +77,6 @@ def rtems(mm):
             'rtems/rtems-bsd-init.c',
             'rtems/rtems-bsd-irqs.c',
             'rtems/rtems-bsd-jail.c',
-            'rtems/rtems-bsd-log.c',
             'rtems/rtems-bsd-malloc.c',
             'rtems/rtems-bsd-mbuf.c',
             'rtems/rtems-bsd-mutex.c',
@@ -100,10 +99,10 @@ def rtems(mm):
             'rtems/rtems-bsd-sysctlnametomib.c',
             'rtems/rtems-bsd-thread.c',
             'rtems/rtems-bsd-timesupport.c',
+            'rtems/rtems-bsd-vprintf.c',
             'rtems/rtems-bsdnet-rtrequest.c',
             'rtems/rtems-kvm.c',
             'rtems/rtems_mii_ioctl_kern.c',
-            'rtems/rtems-syslog-initialize.c',
             'rtems/syslog.c',
             'ftpd/ftpd.c',
             'mdns/mdns.c',
@@ -312,6 +311,7 @@ def base(mm):
             'sys/kern/subr_kobj.c',
             'sys/kern/subr_lock.c',
             'sys/kern/subr_module.c',
+            'sys/kern/subr_prf.c',
             'sys/kern/subr_rman.c',
             'sys/kern/subr_sbuf.c',
             'sys/kern/subr_sleepqueue.c',
@@ -326,6 +326,7 @@ def base(mm):
             'sys/kern/uipc_sockbuf.c',
             'sys/kern/uipc_socket.c',
             'sys/kern/uipc_usrreq.c',
+            'sys/libkern/bcd.c',
             'sys/libkern/arc4random.c',
             'sys/libkern/fls.c',
             'sys/libkern/inet_ntoa.c',
@@ -2447,6 +2448,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('media01', ['test_main'], runTest = False))
     mod.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('log01', ['test_main']))
     return mod
 
 #

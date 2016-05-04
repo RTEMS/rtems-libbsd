@@ -49,15 +49,21 @@ __FBSDID("$FreeBSD$");
 #include <sys/mutex.h>
 #include <sys/sx.h>
 #include <sys/kernel.h>
+#ifndef __rtems__
 #include <sys/msgbuf.h>
+#endif /* __rtems__ */
 #include <sys/malloc.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
 #include <sys/stddef.h>
 #include <sys/sysctl.h>
+#ifndef __rtems__
 #include <sys/tty.h>
+#endif /* __rtems__ */
 #include <sys/syslog.h>
+#ifndef __rtems__
 #include <sys/cons.h>
+#endif /* __rtems__ */
 #include <sys/uio.h>
 #include <sys/ctype.h>
 
@@ -71,13 +77,16 @@ __FBSDID("$FreeBSD$");
  */
 #include <machine/stdarg.h>
 
+#ifndef __rtems__
 #define TOCONS	0x01
 #define TOTTY	0x02
 #define TOLOG	0x04
+#endif /* __rtems__ */
 
 /* Max number conversion buffer length: a u_quad_t in base 2, plus NUL byte. */
 #define MAXNBUF	(sizeof(intmax_t) * NBBY + 1)
 
+#ifndef __rtems__
 struct putchar_arg {
 	int	flags;
 	int	pri;
@@ -87,20 +96,24 @@ struct putchar_arg {
 	char	*p_next;
 	size_t	remain;
 };
+#endif /* __rtems__ */
 
 struct snprintf_arg {
 	char	*str;
 	size_t	remain;
 };
 
+#ifndef __rtems__
 extern	int log_open;
 
 static void  msglogchar(int c, int pri);
 static void  msglogstr(char *str, int pri, int filter_cr);
 static void  putchar(int ch, void *arg);
+#endif /* __rtems__ */
 static char *ksprintn(char *nbuf, uintmax_t num, int base, int *len, int upper);
 static void  snprintf_func(int ch, void *arg);
 
+#ifndef __rtems__
 static int msgbufmapped;		/* Set when safe to use msgbuf */
 int msgbuftrigger;
 
@@ -281,6 +294,10 @@ _vprintf(int level, int flags, const char *fmt, va_list ap)
 
 	return (retval);
 }
+#else /* __rtems__ */
+#include <rtems/bsd/bsd.h>
+#define	_vprintf(level, flags, fmt, ap) rtems_bsd_vprintf(level, fmt, ap)
+#endif /* __rtems__ */
 
 /*
  * Log writes to the log buffer, and guarantees not to sleep (so can be
@@ -296,9 +313,12 @@ log(int level, const char *fmt, ...)
 	(void)_vprintf(level, log_open ? TOLOG : TOCONS, fmt, ap);
 	va_end(ap);
 
+#ifndef __rtems__
 	msgbuftrigger = 1;
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 #define CONSCHUNK 128
 
 void
@@ -364,6 +384,7 @@ log_console(struct uio *uio)
 	free(consbuffer, M_TEMP);
 	return;
 }
+#endif /* __rtems__ */
 
 int
 printf(const char *fmt, ...)
@@ -385,12 +406,15 @@ vprintf(const char *fmt, va_list ap)
 
 	retval = _vprintf(-1, TOCONS | TOLOG, fmt, ap);
 
+#ifndef __rtems__
 	if (!panicstr)
 		msgbuftrigger = 1;
+#endif /* __rtems__ */
 
 	return (retval);
 }
 
+#ifndef __rtems__
 static void
 putbuf(int c, struct putchar_arg *ap)
 {
@@ -474,6 +498,7 @@ putchar(int c, void *arg)
 			putbuf(c, ap);
 	}
 }
+#endif /* __rtems__ */
 
 /*
  * Scaled down version of sprintf(3).
@@ -927,6 +952,7 @@ number:
 #undef PCHAR
 }
 
+#ifndef __rtems__
 /*
  * Put character in log buffer with a particular priority.
  */
@@ -1124,3 +1150,4 @@ hexdump(const void *ptr, int length, const char *hdr, int flags)
 	}
 }
 
+#endif /* __rtems__ */

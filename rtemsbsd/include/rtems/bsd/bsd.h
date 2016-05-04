@@ -44,6 +44,8 @@
 #include <sys/queue.h>
 #include <sys/kernel.h>
 
+#include <stdarg.h>
+
 #include <rtems.h>
 
 #ifdef __cplusplus
@@ -190,6 +192,27 @@ int rtems_bsd_bus_root_resume(void);
  * @retval errno Otherwise.
  */
 int rtems_bsd_bus_root_detach(void);
+
+/**
+ * @brief Sets the output back-end for logging functions.
+ *
+ * @param new_vprintf_handler The new output back-end for logging functions.
+ *
+ * @see rtems_bsd_vprintf().
+ */
+void rtems_bsd_set_vprintf_handler(int (*new_vprintf_handler)
+    (int, const char *, va_list));
+
+/**
+ * @brief Output back-end for logging functions.
+ *
+ * Used by kernel space printf(), vprintf(), log() and vlog().  Used by user
+ * space syslog() and vsyslog().
+ *
+ * The default uses putchar() and uses a mutex to serialize the output.  It may
+ * be customized via rtems_bsd_set_vprintf_handler().
+ */
+int rtems_bsd_vprintf(int level, const char *fmt, va_list ap);
 
 /** @} */
 

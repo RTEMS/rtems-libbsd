@@ -619,6 +619,20 @@ direction.
 You can add more than one verbose option (-v) to the command line and get more
 detail and debug level information from the command.
 
+== How to import code from FreeBSD
+
+. Run `git status` and make sure your working directory is clean.
+. Run `./freebsd-to-rtems.py -R`
+. Run `./freebsd-to-rtems.py`
+. Run `git status` and make sure your working directory is clean.  If you see modified files, then the `freebsd-to-rtems.py` script needs to be fixed first.
+. Add the files to import to `libbsd.py`.
+. Run `./freebsd-to-rtems.py`
+. Immediately check in the imported files without the changes to `libbsd_waf.py`.  Do not touch the imported files yourself at this point.
+. Port the imported files to RTEMS.  See 'Rules for Modifying FreeBSD Source'.
+. Add a test to the testsuite if possible.
+. Run `./create-kernel-namespace.sh` if you imported kernel space headers.  Add only your new defines via `git add -p rtemsbsd/include/machine/rtems-bsd-kernel-namespace.h`.
+. Create one commit from this.
+
 == Initialization of the BSD Library
 
 The initialization of the BSD library is based on the FreeBSD SYSINIT(9)

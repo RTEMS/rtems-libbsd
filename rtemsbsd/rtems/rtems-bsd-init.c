@@ -82,6 +82,8 @@ SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD,
 SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD,
     &maxid_maxcpus, 0, "Max number of CPUs that the system was compiled for.");
 
+#undef _bsd_ticks
+
 RTEMS_STATIC_ASSERT(sizeof(int) == sizeof(int32_t), ticks);
 
 volatile uint32_t _Watchdog_Ticks_since_boot;

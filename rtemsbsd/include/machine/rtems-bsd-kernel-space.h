@@ -52,9 +52,7 @@
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1
 
-/* Symbol rename */
-
-#include <machine/rtems-bsd-symbols.h>
+#include <machine/rtems-bsd-kernel-namespace.h>
 
 #include <machine/rtems-bsd-printf-to-iprintf.h>
 

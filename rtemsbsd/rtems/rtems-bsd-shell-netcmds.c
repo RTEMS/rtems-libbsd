@@ -54,3 +54,12 @@ rtems_shell_cmd_t rtems_shell_TCPDUMP_Command = {
   NULL,                          /* alias */
   NULL                           /* next */
 };
+
+rtems_shell_cmd_t rtems_shell_SYSCTL_Command = {
+  "sysctl",                                                /* name */
+  "sysctl [-bdehiNnoRTqx] [-f filename] name[=value] ...", /* usage */
+  "net",                                                   /* topic */
+  rtems_bsd_command_sysctl,                                /* command */
+  NULL,                                                    /* alias */
+  NULL                                                     /* next */
+};

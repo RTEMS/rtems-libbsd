@@ -37,6 +37,8 @@ extern rtems_shell_cmd_t rtems_shell_HOSTNAME_Command;
 
 extern rtems_shell_cmd_t rtems_shell_TCPDUMP_Command;
 
+extern rtems_shell_cmd_t rtems_shell_SYSCTL_Command;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

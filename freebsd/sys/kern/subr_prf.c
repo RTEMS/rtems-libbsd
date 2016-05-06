@@ -800,6 +800,11 @@ reswitch:	switch (ch = (u_char)*fmt++) {
 			else
 				*(va_arg(ap, int *)) = retval;
 			break;
+#ifdef __rtems__
+		case 'm':
+			p = strerror(errno);
+			goto handle_string;
+#endif /* __rtems__ */
 		case 'o':
 			base = 8;
 			goto handle_nosign;
@@ -819,6 +824,9 @@ reswitch:	switch (ch = (u_char)*fmt++) {
 			goto handle_nosign;
 		case 's':
 			p = va_arg(ap, char *);
+#ifdef __rtems__
+handle_string:
+#endif /* __rtems__ */
 			if (p == NULL)
 				p = "(null)";
 			if (!dot)

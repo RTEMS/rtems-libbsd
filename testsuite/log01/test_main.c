@@ -36,6 +36,7 @@
 #include <syslog.h>
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,6 +138,11 @@ test_main(void)
 	reset(ctx, LOG_PRINTF);
 	printf("out:	%4D", "AAAA", ":");
 	check(ctx, "out:	41:41:41:41");
+
+	errno = ENOMSG;
+	reset(ctx, LOG_PRINTF);
+	printf("%m");
+	check(ctx, "No message of desired type");
 
 	exit(0);
 }

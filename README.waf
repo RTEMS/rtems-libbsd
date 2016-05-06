@@ -48,19 +48,19 @@ Steps
 -----
 
 1. Build and install the tools. In this example the path is
-   /opt/rtems/4.11/tools:
+   /opt/rtems/4.12/tools:
 
     $ cd rtems-source-builder/rtems
     $ ../source-builder/sb-set-builder \
-            --prefix=/opt/rtems/4.11/tools 4.11/rtems-arm
+            --prefix=/opt/rtems/4.12/tools 4.12/rtems-arm
 
 2. Build and install the RTEMS Board Support Packages (BSP) you want to use. In
-   this example the path is /opt/rtems/4.11/bsps:
+   this example the path is /opt/rtems/4.12/bsps:
 
     $ mkdir realview_pbx_a9_qemu
     $ cd realview_pbx_a9_qemu
-    $ ../rtems-4.11/configure \
-            --target=arm-rtems4.11 --prefix=/opt/rtems/4.11/bsps \
+    $ ../rtems-4.12/configure \
+            --target=arm-rtems4.12 --prefix=/opt/rtems/4.12/bsps \
             --disable-networking --enable-rtemsbsp=realview_pbx_a9_qemu
     $ make
     $ make install
@@ -78,9 +78,9 @@ Steps
    the tools and RTEMS are provided on the command line and so do not need to
    be in your path or environment [1]:
 
-    $ waf configure --prefix=/opt/rtems/4.11/bsps \
-                    --rtems=/opt/rtems/4.11/bsps \
-                    --rtems-tools=/opt/rtems/4.11/tools \
+    $ waf configure --prefix=/opt/rtems/4.12/bsps \
+                    --rtems=/opt/rtems/4.12/bsps \
+                    --rtems-tools=/opt/rtems/4.12/tools \
                     --rtems-bsps=arm/realview_pbx_a9_qemu
 
    You can use '--rtems-archs=arm,sparc,i386' or

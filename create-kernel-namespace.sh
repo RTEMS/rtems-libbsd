@@ -36,43 +36,10 @@
 # <machine/rtems-bsd-kernel-namespace.h>.
 #
 
-objdump --syms `for i in build/*rtems* ; do find $i/freebsd/sys/ -name '*.o' ; echo \
-	$i/rtemsbsd/rtems/rtems-bsd-assert*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-autoconf*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-bus-dma-mbuf*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-bus-dma*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-bus-root*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-cam*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-chunk*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-configintrhook*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-conf*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-delay*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-get-file*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-init*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-irqs*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-jail*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-log*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-malloc*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-mbuf*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-muteximpl*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-mutex*.o \
-	$i/rtemsbsd/rtems/rtems-bsdnet-rtrequest*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-nexus*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-page*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-panic*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-pci_bus*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-pci_cfgreg*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-program*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-rwlock*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-shell*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-signal*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-sx*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-sysctlbyname*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-sysctlnametomib*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-sysctl*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-thread*.o \
-	$i/rtemsbsd/rtems/rtems-bsd-timesupport*.o \
-	$i/rtemsbsd/rtems/rtems_mii_ioctl_kern*.o ; done` \
+objdump --syms `for i in build/*rtems* ; do \
+	find $i/freebsd/sys/ -name '*.o' ; \
+	echo $i/rtemsbsd/rtems/rtems-kernel-*.o ; \
+	done` \
 	| awk '/^[0-9a-f]+[[:blank:]]+g/ {print $6}' \
 	| sed 's/^_bsd_//' \
 	| sed '/^accept$/d' \

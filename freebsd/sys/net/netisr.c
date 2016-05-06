@@ -1366,7 +1366,11 @@ sysctl_netisr_workstream(SYSCTL_HANDLER_ARGS)
 	counter = 0;
 	NETISR_RLOCK(&tracker);
 	CPU_FOREACH(cpuid) {
+#ifndef __rtems__
 		nwsp = DPCPU_ID_PTR(cpuid, nws);
+#else /* __rtems__ */
+		nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 		if (nwsp->nws_intr_event == NULL)
 			continue;
 		NWS_LOCK(nwsp);
@@ -1420,7 +1424,11 @@ sysctl_netisr_work(SYSCTL_HANDLER_ARGS)
 	counter = 0;
 	NETISR_RLOCK(&tracker);
 	CPU_FOREACH(cpuid) {
+#ifndef __rtems__
 		nwsp = DPCPU_ID_PTR(cpuid, nws);
+#else /* __rtems__ */
+		nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 		if (nwsp->nws_intr_event == NULL)
 			continue;
 		NWS_LOCK(nwsp);
@@ -1469,7 +1477,11 @@ DB_SHOW_COMMAND(netisr, db_show_netisr)
 	db_printf("%3s %6s %5s %5s %5s %8s %8s %8s %8s\n", "CPU", "Proto",
 	    "Len", "WMark", "Max", "Disp", "HDisp", "Drop", "Queue");
 	CPU_FOREACH(cpuid) {
+#ifndef __rtems__
 		nwsp = DPCPU_ID_PTR(cpuid, nws);
+#else /* __rtems__ */
+		nwsp = &rtems_bsd_nws;
+#endif /* __rtems__ */
 		if (nwsp->nws_intr_event == NULL)
 			continue;
 		first = 1;

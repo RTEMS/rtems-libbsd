@@ -1877,7 +1877,6 @@
 #define	mb_free_ext _bsd_mb_free_ext
 #define	M_BPF _bsd_M_BPF
 #define	M_BPFJIT _bsd_M_BPFJIT
-#define	mbstat _bsd_mbstat
 #define	M_CAMSIM _bsd_M_CAMSIM
 #define	m_cat _bsd_m_cat
 #define	m_collapse _bsd_m_collapse

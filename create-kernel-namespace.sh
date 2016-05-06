@@ -102,6 +102,7 @@ objdump --syms `for i in build/*rtems* ; do find $i/freebsd/sys/ -name '*.o' ; e
 	| sed '/^max_linkhdr$/d' \
 	| sed '/^max_protohdr$/d' \
 	| sed '/^maxsockets$/d' \
+	| sed '/^mbstat$/d' \
 	| sed '/^nd6_debug$/d' \
 	| sed '/^nd6_delay$/d' \
 	| sed '/^nd6_gctimer$/d' \

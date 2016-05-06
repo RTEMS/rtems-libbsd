@@ -87,7 +87,7 @@ extern volatile int smp_started;
 
 extern cpuset_t all_cpus;
 #else /* __rtems__ */
-#define mp_maxid 1U
+#define mp_maxid 0U
 #define mp_maxcpus 1
 #define mp_ncpus 1
 #define all_cpus 1U

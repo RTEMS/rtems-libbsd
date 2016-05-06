@@ -141,7 +141,7 @@ def rtems(mm):
         ],
 	mm.generator['source']()
     )
-    mod.addFile(mm.generator['file']('rtems/rtems-kvm-symbols.c',
+    mod.addFile(mm.generator['file']('rtems/rtems-kernel-kvm-symbols.c',
                                      mm.generator['rtems-path'](),
                                      mm.generator['no-convert'](),
                                      mm.generator['no-convert'](),

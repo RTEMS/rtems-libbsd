@@ -73,8 +73,9 @@ cat <<EOF
  * This file contains the known list of symbols for the kvm subsystem.
  */
 
+#include <machine/rtems-bsd-kernel-space.h>
+
 #include "kvm_private.h"
-#include "stdio.h"
 
 /*
  *  The following is the known list of symbols that may be passed
@@ -94,7 +95,7 @@ cat <<EOF
  *  to the kvm family of calls.
  */
 
-kvm_symval_t rtems_kvm_symbols[] = {
+const kvm_symval_t rtems_kvm_symbols[] = {
 EOF
 for sym in ${symbols}
 do
@@ -103,6 +104,6 @@ do
 done
 
 cat <<EOF
-  { "", (uintptr_t) NULL }
+  { "", 0 }
 };
 EOF

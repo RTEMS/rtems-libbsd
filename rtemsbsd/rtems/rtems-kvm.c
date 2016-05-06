@@ -34,7 +34,7 @@ kvm_nlist(kvm_t *kd, struct nlist *nl)
 	struct nlist *p;
 	int nvalid;
 	int error;
-	kvm_symval_t *kvm;
+	const kvm_symval_t *kvm;
 
 	assert( kd != NULL );
 	assert( nl != NULL );

@@ -111,7 +111,7 @@ def build(bld):
         update_outputs = True)
 
     # KVM Symbols
-    bld(target = "rtemsbsd/rtems/rtems-kvm-symbols.c",
+    bld(target = "rtemsbsd/rtems/rtems-kernel-kvm-symbols.c",
         source = "rtemsbsd/rtems/generate_kvm_symbols",
         rule = "./${SRC} > ${TGT}",
         update_outputs = True)
@@ -119,7 +119,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = ['rtemsbsd/rtems'] + includes,
-                source = "rtemsbsd/rtems/rtems-kvm-symbols.c")
+                source = "rtemsbsd/rtems/rtems-kernel-kvm-symbols.c")
     libbsd_use += ["kvmsymbols"]
 
     bld.add_group()

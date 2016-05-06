@@ -330,7 +330,6 @@
 #define	BF_encrypt _bsd_BF_encrypt
 #define	BF_set_key _bsd_BF_set_key
 #define	bin2bcd_data _bsd_bin2bcd_data
-#define	blackhole _bsd_blackhole
 #define	bpfattach _bsd_bpfattach
 #define	bpfattach2 _bsd_bpfattach2
 #define	bpf_buffer_append_bytes _bsd_bpf_buffer_append_bytes
@@ -714,8 +713,6 @@
 #define	domains _bsd_domains
 #define	do_setopt_accept_filter _bsd_do_setopt_accept_filter
 #define	driver_module_handler _bsd_driver_module_handler
-#define	drop_redirect _bsd_drop_redirect
-#define	drop_synfin _bsd_drop_synfin
 #define	dummy_def _bsd_dummy_def
 #define	dummynet_get _bsd_dummynet_get
 #define	dummynet_io _bsd_dummynet_io
@@ -1307,7 +1304,6 @@
 #define	ifq_delete _bsd_ifq_delete
 #define	if_qflush _bsd_if_qflush
 #define	ifq_init _bsd_ifq_init
-#define	ifqmaxlen _bsd_ifqmaxlen
 #define	if_ref _bsd_if_ref
 #define	if_register_com_alloc _bsd_if_register_com_alloc
 #define	if_rele _bsd_if_rele
@@ -1877,11 +1873,6 @@
 #define	malloc_uninit _bsd_malloc_uninit
 #define	m_append _bsd_m_append
 #define	m_apply _bsd_m_apply
-#define	max_datalen _bsd_max_datalen
-#define	max_hdr _bsd_max_hdr
-#define	max_linkhdr _bsd_max_linkhdr
-#define	max_protohdr _bsd_max_protohdr
-#define	maxsockets _bsd_maxsockets
 #define	maxusers _bsd_maxusers
 #define	mb_free_ext _bsd_mb_free_ext
 #define	M_BPF _bsd_M_BPF
@@ -2012,10 +2003,7 @@
 #define	nd6_dad_duplicated _bsd_nd6_dad_duplicated
 #define	nd6_dad_start _bsd_nd6_dad_start
 #define	nd6_dad_stop _bsd_nd6_dad_stop
-#define	nd6_debug _bsd_nd6_debug
 #define	nd6_defifindex _bsd_nd6_defifindex
-#define	nd6_delay _bsd_nd6_delay
-#define	nd6_gctimer _bsd_nd6_gctimer
 #define	nd6_ifattach _bsd_nd6_ifattach
 #define	nd6_ifdetach _bsd_nd6_ifdetach
 #define	nd6_ifptomac _bsd_nd6_ifptomac
@@ -2025,15 +2013,12 @@
 #define	nd6_llinfo_settimer _bsd_nd6_llinfo_settimer
 #define	nd6_llinfo_settimer_locked _bsd_nd6_llinfo_settimer_locked
 #define	nd6_lookup _bsd_nd6_lookup
-#define	nd6_maxnudhint _bsd_nd6_maxnudhint
-#define	nd6_mmaxtries _bsd_nd6_mmaxtries
 #define	nd6_na_input _bsd_nd6_na_input
 #define	nd6_na_output _bsd_nd6_na_output
 #define	nd6_need_cache _bsd_nd6_need_cache
 #define	nd6_ns_input _bsd_nd6_ns_input
 #define	nd6_ns_output _bsd_nd6_ns_output
 #define	nd6_nud_hint _bsd_nd6_nud_hint
-#define	nd6_onlink_ns_rfc4861 _bsd_nd6_onlink_ns_rfc4861
 #define	nd6_option _bsd_nd6_option
 #define	nd6_option_init _bsd_nd6_option_init
 #define	nd6_options _bsd_nd6_options
@@ -2042,7 +2027,6 @@
 #define	nd6_output_lle _bsd_nd6_output_lle
 #define	nd6_prefix_lookup _bsd_nd6_prefix_lookup
 #define	nd6_prelist_add _bsd_nd6_prelist_add
-#define	nd6_prune _bsd_nd6_prune
 #define	nd6_purge _bsd_nd6_purge
 #define	nd6_ra_input _bsd_nd6_ra_input
 #define	nd6_recalc_reachtm_interval _bsd_nd6_recalc_reachtm_interval
@@ -2053,8 +2037,6 @@
 #define	nd6_storelladdr _bsd_nd6_storelladdr
 #define	nd6_timer _bsd_nd6_timer
 #define	nd6_timer_ch _bsd_nd6_timer_ch
-#define	nd6_umaxtries _bsd_nd6_umaxtries
-#define	nd6_useloopback _bsd_nd6_useloopback
 #define	nd_defrouter _bsd_nd_defrouter
 #define	nd_prefix _bsd_nd_prefix
 #define	netisr_clearqdrops _bsd_netisr_clearqdrops
@@ -2087,12 +2069,6 @@
 #define	ng_gif_input_orphan_p _bsd_ng_gif_input_orphan_p
 #define	ng_gif_input_p _bsd_ng_gif_input_p
 #define	ng_ipfw_input_p _bsd_ng_ipfw_input_p
-#define	nmbclusters _bsd_nmbclusters
-#define	nmbjumbo16 _bsd_nmbjumbo16
-#define	nmbjumbo9 _bsd_nmbjumbo9
-#define	nmbjumbop _bsd_nmbjumbop
-#define	nmbufs _bsd_nmbufs
-#define	nolocaltimewait _bsd_nolocaltimewait
 #define	norule_counter _bsd_norule_counter
 #define	nousrreqs _bsd_nousrreqs
 #define	null_class _bsd_null_class
@@ -2145,7 +2121,6 @@
 #define	osd_set _bsd_osd_set
 #define	page_heap_mtx _bsd_page_heap_mtx
 #define	panic _bsd_panic
-#define	path_mtu_discovery _bsd_path_mtu_discovery
 #define	pci_activate_resource _bsd_pci_activate_resource
 #define	pci_add_child _bsd_pci_add_child
 #define	pci_add_children _bsd_pci_add_children
@@ -3465,7 +3440,6 @@
 #define	soreceive _bsd_soreceive
 #define	soreceive_dgram _bsd_soreceive_dgram
 #define	soreceive_generic _bsd_soreceive_generic
-#define	soreceive_stream _bsd_soreceive_stream
 #define	soreserve _bsd_soreserve
 #define	sorflush _bsd_sorflush
 #define	sosend _bsd_sosend
@@ -3571,7 +3545,6 @@
 #define	sysctl_lock _bsd_sysctl_lock
 #define	sysctl_move_oid _bsd_sysctl_move_oid
 #define	sysctl_msec_to_ticks _bsd_sysctl_msec_to_ticks
-#define	sysctlnametomib _bsd_sysctlnametomib
 #define	sysctl__net_bpf_children _bsd_sysctl__net_bpf_children
 #define	sysctl__net_bpf_jitter_children _bsd_sysctl__net_bpf_jitter_children
 #define	sysctl__net_children _bsd_sysctl__net_children
@@ -4068,7 +4041,6 @@
 #define	usb_test_quirk _bsd_usb_test_quirk
 #define	usb_test_quirk_p _bsd_usb_test_quirk_p
 #define	usb_trim_spaces _bsd_usb_trim_spaces
-#define	useloopback _bsd_useloopback
 #define	verbose_limit _bsd_verbose_limit
 #define	vlan_cookie_p _bsd_vlan_cookie_p
 #define	vlan_devat_p _bsd_vlan_devat_p

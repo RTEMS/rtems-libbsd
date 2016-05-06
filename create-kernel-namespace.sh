@@ -78,21 +78,46 @@ objdump --syms `for i in build/*rtems* ; do find $i/freebsd/sys/ -name '*.o' ; e
 	| sed '/^accept$/d' \
 	| sed '/^arc4random$/d' \
 	| sed '/^bind$/d' \
+	| sed '/^blackhole$/d' \
 	| sed '/^bpf_filter$/d' \
 	| sed '/^bpf_jitter$/d' \
 	| sed '/^bpf_jitter_enable$/d' \
 	| sed '/^bpf_validate$/d' \
 	| sed '/^connect$/d' \
+	| sed '/^drop_redirect$/d' \
+	| sed '/^drop_synfin$/d' \
 	| sed '/^free$/d' \
 	| sed '/^getentropy$/d' \
 	| sed '/^getpeername$/d' \
 	| sed '/^getsockname$/d' \
 	| sed '/^getsockopt$/d' \
+	| sed '/^ifqmaxlen$/d' \
 	| sed '/^in6addr_any$/d' \
 	| sed '/^kevent$/d' \
 	| sed '/^kqueue$/d' \
 	| sed '/^listen$/d' \
 	| sed '/^malloc$/d' \
+	| sed '/^max_datalen$/d' \
+	| sed '/^max_hdr$/d' \
+	| sed '/^max_linkhdr$/d' \
+	| sed '/^max_protohdr$/d' \
+	| sed '/^maxsockets$/d' \
+	| sed '/^nd6_debug$/d' \
+	| sed '/^nd6_delay$/d' \
+	| sed '/^nd6_gctimer$/d' \
+	| sed '/^nd6_maxnudhint$/d' \
+	| sed '/^nd6_mmaxtries$/d' \
+	| sed '/^nd6_onlink_ns_rfc4861$/d' \
+	| sed '/^nd6_prune$/d' \
+	| sed '/^nd6_umaxtries$/d' \
+	| sed '/^nd6_useloopback$/d' \
+	| sed '/^nmbclusters$/d' \
+	| sed '/^nmbjumbo16$/d' \
+	| sed '/^nmbjumbo9$/d' \
+	| sed '/^nmbjumbop$/d' \
+	| sed '/^nmbufs$/d' \
+	| sed '/^nolocaltimewait$/d' \
+	| sed '/^path_mtu_discovery$/d' \
 	| sed '/^pause$/d' \
 	| sed '/^pf_osfp_entry_pl$/d' \
 	| sed '/^pf_osfp_pl$/d' \
@@ -111,15 +136,18 @@ objdump --syms `for i in build/*rtems* ; do find $i/freebsd/sys/ -name '*.o' ; e
 	| sed '/^shutdown$/d' \
 	| sed '/^socket$/d' \
 	| sed '/^socketpair$/d' \
+	| sed '/^soreceive_stream$/d' \
 	| sed '/^srandom$/d' \
 	| sed '/^strdup$/d' \
 	| sed '/^sysctlbyname$/d' \
 	| sed '/^sysctl$/d' \
+	| sed '/^sysctlnametomib$/d' \
 	| sed '/sys_init/d' \
 	| sed '/^taskqueue_/d' \
 	| sed '/^tcp_offload_listen_start$/d' \
 	| sed '/^tcp_offload_listen_stop$/d' \
 	| sed '/^ticks$/d' \
+	| sed '/^useloopback$/d' \
 	| sed '/^_Watchdog_Ticks_since_boot$/d' \
 	| sort -u > symbols.txt
 

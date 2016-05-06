@@ -47,66 +47,100 @@ We will build an ARM Realview PBX A9 QEMU BSP using the name
 Steps
 -----
 
-1. Clone the RTEMS Source Build (RSB):
+-------------------------------------------------------------------------------
+sandbox="$PWD/sandbox"
+mkdir sandbox
+cd "$sandbox"
+git clone git://git.rtems.org/rtems-source-builder.git
+git clone git://git.rtems.org/rtems.git
+git clone git://git.rtems.org/rtems-libbsd.git
+cd "$sandbox"
+cd rtems-source-builder/rtems
+../source-builder/sb-set-builder --prefix="$sandbox/rtems-4.12" 4.12/rtems-arm
+cd "$sandbox"
+cd rtems
+PATH="$sandbox/rtems-4.12/bin:$PATH" ./bootstrap
+cd "$sandbox"
+mkdir b-realview_pbx_a9_qemu
+cd b-realview_pbx_a9_qemu
+PATH="$sandbox/rtems-4.12/bin:$PATH" "$sandbox/rtems/configure" \
+  --target=arm-rtems4.12 --prefix="$sandbox/rtems-4.12" \
+  --disable-networking --enable-rtemsbsp=realview_pbx_a9_qemu
+PATH="$sandbox/rtems-4.12/bin:$PATH" make
+PATH="$sandbox/rtems-4.12/bin:$PATH" make install
+cd "$sandbox"
+cd rtems-libbsd
+git submodule init
+git submodule update rtems_waf
+waf configure --prefix="$sandbox/rtems-4.12" \
+  --rtems-bsps=arm/realview_pbx_a9_qemu
+waf
+waf install
+-------------------------------------------------------------------------------
 
+1. Create a sandbox directory:
+
+    $ sandbox="$PWD/sandbox"
+    $ mkdir sandbox
+
+1. Clone the repositories:
+
+    $ cd "$sandbox"
     $ git clone git://git.rtems.org/rtems-source-builder.git
+    $ git clone git://git.rtems.org/rtems.git
+    $ git clone git://git.rtems.org/rtems-libbsd.git
 
 2. Build and install the tools. In this example the path is
-   /opt/rtems/4.12/tools:
+   $sandbox/rtems-4.12:
 
+    $ cd "$sandbox"
     $ cd rtems-source-builder/rtems
-    $ ../source-builder/sb-set-builder \
-            --prefix=/opt/rtems/4.12/tools 4.12/rtems-arm
+    $ ../source-builder/sb-set-builder --prefix="$sandbox/rtems-4.12" 4.12/rtems-arm
 
-3. Clone RTEMS:
+3. Bootstrap the RTEMS sources:
 
-    $ git clone git://git.rtems.org/rtems.git rtems-4.12
-
-4. Bootstrap the RTEMS sources:
-
-    $ cd rtems-4.12
-    $ ./bootstrap
+    $ cd "$sandbox"
+    $ cd rtems
+    $ PATH="$sandbox/rtems-4.12/bin:$PATH" ./bootstrap
 
 5. Build and install the RTEMS Board Support Packages (BSP) you want to use. In
    this example the path is /opt/rtems/4.12/bsps:
 
+    $ cd "$sandbox"
     $ mkdir b-realview_pbx_a9_qemu
     $ cd b-realview_pbx_a9_qemu
-    $ ../rtems-4.12/configure \
-            --target=arm-rtems4.12 --prefix=/opt/rtems/4.12/bsps \
-            --disable-networking --enable-rtemsbsp=realview_pbx_a9_qemu
-    $ make
-    $ make install
+    $ PATH="$sandbox/rtems-4.12/bin:$PATH" "$sandbox/rtems/configure" \
+        --target=arm-rtems4.12 --prefix="$sandbox/rtems-4.12" \
+        --disable-networking --enable-rtemsbsp=realview_pbx_a9_qemu
+    $ PATH="$sandbox/rtems-4.12/bin:$PATH" make
+    $ PATH="$sandbox/rtems-4.12/bin:$PATH" make install
 
-6. Populate the rtems_waf git submodule:
+6. Populate the rtems_waf git submodule.  Note, make sure you specify
+   'rtems_waf' or the FreeBSD kernel source will be cloned:
 
-    $ cd rtems-libbsd
-    $ git submodule init
-    $ git submodule update rtems_waf
-
-   Note, make sure you specify 'rtems_waf' or the FreeBSD kernel source will be
-   cloned.
+   $ cd "$sandbox"
+   $ cd rtems-libbsd
+   $ git submodule init
+   $ git submodule update rtems_waf
 
 7. Run Waf's configure with your specific settings. In this case the path to
    the tools and RTEMS are provided on the command line and so do not need to
-   be in your path or environment [1]:
-
-    $ waf configure --prefix=/opt/rtems/4.12/bsps \
-                    --rtems=/opt/rtems/4.12/bsps \
-                    --rtems-tools=/opt/rtems/4.12/tools \
-                    --rtems-bsps=arm/realview_pbx_a9_qemu
-
-   You can use '--rtems-archs=arm,sparc,i386' or
+   be in your path or environment [1].  You can use
+   '--rtems-archs=arm,sparc,i386' or
    '--rtems-bsps=arm/realview_pbx_a9_qemu,sparc/sis,i386/pc586' to build for
-   more than BSP at a time.
+   more than BSP at a time.  Note, you must provide the architecture and BSP as
+   a pair. Providing just the BSP name will fail:
 
-   Note, you must provide the architecture and BSP as a pair. Providing just the
-   BSP name will fail.
+   $ cd "$sandbox"
+   $ cd rtems-libbsd
+   $ waf configure --prefix="$sandbox/rtems-4.12" \
+       --rtems-bsps=arm/realview_pbx_a9_qemu
 
-8. Build and install:
+8. Build and install.  The LibBSD package will be installed into the prefix
+   provided to configure:
 
-   The LibBSD package will be installed into the prefix provided to configure.
-
+   $ cd "$sandbox"
+   $ cd rtems-libbsd
    $ waf
    $ waf install
 

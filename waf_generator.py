@@ -338,7 +338,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('                net_cfg_gateway_ip = rhs')
         self.add('            if lhs == "NET_TAP_INTERFACE":')
         self.add('                net_tap_interface = rhs')
-        self.add('    bld(target = "testsuite/include/rtems/bsd/test/network-config.h",')
+        self.add('    bld(target = "testsuite/include/network-config.h",')
         self.add('        source = "testsuite/include/rtems/bsd/test/network-config.h.in",')
         self.add('        rule = "sed -e \'s/@NET_CFG_SELF_IP@/%s/\' ' + \
                  '-e \'s/@NET_CFG_NETMASK@/%s/\' ' + \

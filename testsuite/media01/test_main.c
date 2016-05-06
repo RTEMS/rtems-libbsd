@@ -203,6 +203,7 @@ early_initialization(void)
   &rtems_shell_PING_Command, \
   &rtems_shell_ROUTE_Command, \
   &rtems_shell_NETSTAT_Command, \
+  &rtems_shell_SYSCTL_Command, \
   &rtems_shell_IFCONFIG_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE

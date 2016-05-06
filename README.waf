@@ -51,7 +51,7 @@ Steps
    /opt/rtems/4.11/tools:
 
     $ cd rtems-source-builder/rtems
-    $ ../souce-builder/sb-set-builder \
+    $ ../source-builder/sb-set-builder \
             --prefix=/opt/rtems/4.11/tools 4.11/rtems-arm
 
 2. Build and install the RTEMS Board Support Packages (BSP) you want to use. In

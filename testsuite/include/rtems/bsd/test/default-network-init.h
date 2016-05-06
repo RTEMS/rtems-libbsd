@@ -53,7 +53,7 @@
 #endif
 
 #ifndef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
-#include "network-config.h"
+#include <rtems/bsd/test/network-config.h>
 #endif
 
 #ifdef DEFAULT_NETWORK_SHELL

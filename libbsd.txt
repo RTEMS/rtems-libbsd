@@ -143,7 +143,56 @@ NET_TAP_INTERFACE = tap0
 
 === BSD Library Initialization ===
 
-Use the following code to initialize the BSD library:
+To initialise the BSD Library create a suitable rc.conf file. The FreeBSD man
+page rc.conf(5) provides the details needed to create a suitable format file:
+
+ https://www.freebsd.org/cgi/man.cgi?rc.conf
+
+You can call one of three functions to run the initialisation once BSD has
+initialised:
+
+ - rtems_bsd_run_etc_rc_conf: Run /etc/rc.conf.
+ - rtems_bsd_run_rc_conf: Run a user supplied file.
+ - rtems_bsd_run_rc_conf_script: Run the in memory line feed separated text string.
+
+For exapmle:
+
+ void
+ network_init(void)
+ {
+   rtems_status_code sc;
+
+   sc = rtems_bsd_initialize();
+   assert(sc == RTEMS_SUCCESSFUL);
+
+   rtems_bsd_run_etc_rc_conf(true); /* verbose = true */
+
+}
+
+By default the networking support is builtin. Other directives can be added and
+are found in 'machine/rtems-bsd-rc-conf-directives.h'. Please check the file
+for the list.
+
+The following network names are supported:
+
+  cloned_interfaces
+  ifconfig_'interface'
+  defaultrouter
+  hostname
+
+For example:
+
+ #
+ # My BSD initialisation.
+ #
+ hostname="myhost"
+ cloned_interfaces="vlan0 vlan1"
+ ifconfig_re0="inet inet 10.10.10.10 netmask 255.255.255.0"
+ fconfig_vlan0="inet 10.11.10.10 255.255.255.0 vlan 101 vlandev re0"
+ defaultrouter="10.10.10.1"
+
+You can also intialise the BSD library using code. The following code to
+initialize the BSD library:
 
 -------------------------------------------------------------------------------
 #include <assert.h>

@@ -977,6 +977,8 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-get-mac-address.c',
               'rtemsbsd/rtems/rtems-bsd-get-task-priority.c',
               'rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c',
+              'rtemsbsd/rtems/rtems-bsd-rc-conf-net.c',
+              'rtemsbsd/rtems/rtems-bsd-rc-conf.c',
               'rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c',
               'rtemsbsd/rtems/rtems-bsd-shell-netcmds.c',
               'rtemsbsd/rtems/rtems-bsd-shell.c',
@@ -1277,6 +1279,16 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_ppp01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_rcconf01 = ['testsuite/rcconf01/test_main.c']
+    bld.program(target = "rcconf01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_rcconf01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

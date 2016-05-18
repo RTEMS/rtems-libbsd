@@ -63,6 +63,8 @@ def rtems(mm):
             'rtems/rtems-bsd-get-mac-address.c',
             'rtems/rtems-bsd-get-task-priority.c',
             'rtems/rtems-bsd-get-task-stack-size.c',
+            'rtems/rtems-bsd-rc-conf-net.c',
+            'rtems/rtems-bsd-rc-conf.c',
             'rtems/rtems-bsd-shell.c',
             'rtems/rtems-bsd-shell-netcmds.c',
             'rtems/rtems-bsd-syscall-api.c',
@@ -2449,6 +2451,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('log01', ['test_main']))
+    mod.addTest(mm.generator['test']('rcconf01', ['test_main']))
     return mod
 
 #

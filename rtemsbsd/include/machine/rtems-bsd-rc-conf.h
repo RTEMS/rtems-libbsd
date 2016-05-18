@@ -50,14 +50,14 @@ typedef struct rtems_bsd_rc_conf_ rtems_bsd_rc_conf;
  * if the name matches directive's regular expression.
  */
 typedef int (*rtems_bsd_rc_conf_directive)(rtems_bsd_rc_conf* rc_conf,
-					   int                argc,
-					   const char**       argv);
+                                           int                argc,
+                                           const char**       argv);
 
 /*
  * Register a directive handler.
  */
-extern int rtems_bsd_rc_conf_directive_add(const char*                 dir_regex,
-					   rtems_bsd_rc_conf_directive handler);
+extern int rtems_bsd_rc_conf_directive_add(const char*  dir_regex,
+                                           rtems_bsd_rc_conf_directive handler);
 
 /*
  * Run an rc.conf script loaded into memory.
@@ -88,9 +88,9 @@ extern int rtems_bsd_rc_conf_line(rtems_bsd_rc_conf* rc_conf);
  * Print the argv list. Helper for verbose modes.
  */
 extern void rtems_bsd_rc_conf_print_cmd(rtems_bsd_rc_conf* rc_conf,
-					const char*        name,
-					int                argc,
-					const char**       argv);
+                                        const char*        name,
+                                        int                argc,
+                                        const char**       argv);
 
 #ifdef __cplusplus
 }

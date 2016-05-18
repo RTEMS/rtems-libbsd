@@ -297,7 +297,7 @@ rc_conf_net_init(void* arg)
 {
   add_directive("cloned_interfaces", cloned_interfaces);
   add_directive("create_args_.*", create_args_);
-  add_directive("ifconfig_*", ifconfig_);
+  add_directive("ifconfig_.*", ifconfig_);
   add_directive("hostname", hostname);
   add_directive("defaultrouter", defaultrouter);
 }

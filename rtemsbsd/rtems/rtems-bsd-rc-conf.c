@@ -247,6 +247,7 @@ rc_conf_create(rtems_bsd_rc_conf* rc_conf,
 static void
 rc_conf_destroy(rtems_bsd_rc_conf* rc_conf)
 {
+  free((void*) rc_conf->lines);
   free((void*) rc_conf->data);
   rc_conf->data = NULL;
   rc_conf->name = NULL;

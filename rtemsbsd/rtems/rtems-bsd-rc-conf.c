@@ -41,6 +41,12 @@
 #include <rtems/chain.h>
 
 #include <machine/rtems-bsd-rc-conf.h>
+#include <machine/rtems-bsd-rc-conf-directives.h>
+
+/*
+ * By default the networking directives are available.
+ */
+RTEMS_BSD_RC_CONF_SYSINT(rc_conf_net);
 
 /*
  * Max line length.

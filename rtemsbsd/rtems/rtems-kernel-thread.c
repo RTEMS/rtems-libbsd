@@ -78,25 +78,14 @@ static Thread_Control *
 rtems_bsd_get_thread_by_id(rtems_id task_id)
 {
 	Thread_Control *thread;
-	Objects_Locations location;
+	ISR_lock_Context lock_context;
 
-	thread = _Thread_Get(task_id, &location);
-	switch (location) {
-		case OBJECTS_LOCAL:
-			_Objects_Put(&thread->Object);
-			break;
-#if defined(RTEMS_MULTIPROCESSING)
-		case OBJECTS_REMOTE:
-			_Thread_Dispatch();
-			thread = NULL;
-			break;
-#endif
-		default:
-			thread = NULL;
-			break;
+	thread = _Thread_Get(task_id, &lock_context);
+	if (thread != NULL) {
+		_ISR_lock_ISR_enable(&lock_context);
 	}
 
-	return thread;
+	return (thread);
 }
 
 struct thread *

@@ -1920,23 +1920,21 @@ force_select_timeout(Thread_Control *thread)
 rtems_status_code rtems_bsd_force_select_timeout(rtems_id task_id)
 {
 	Thread_Control *thread;
-	Objects_Locations location;
+	ISR_lock_Context lock_context;
 
-	thread = _Thread_Get(task_id, &location);
-	switch (location) {
-		case OBJECTS_LOCAL:
-			force_select_timeout(thread);
-			_Objects_Put(&thread->Object);
-			break;
+	thread = _Thread_Get(task_id, &lock_context);
+	if (thread == NULL) {
 #if defined(RTEMS_MULTIPROCESSING)
-		case OBJECTS_REMOTE:
-			_Thread_Dispatch();
+		if (_Thread_MP_Is_remote(id)) {
 			return (RTEMS_ILLEGAL_ON_REMOTE_OBJECT);
+		}
 #endif
-		default:
-			return (RTEMS_INVALID_ID);
+
+		return (RTEMS_INVALID_ID);
 	}
 
+	_ISR_lock_ISR_enable(&lock_context);
+	force_select_timeout(thread);
 	return (RTEMS_SUCCESSFUL);
 }
 #endif /* __rtems__ */

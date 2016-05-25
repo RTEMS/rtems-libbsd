@@ -48,13 +48,13 @@
 void
 rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
     Thread_Control *owner, Thread_Control *executing,
-    ISR_lock_Context *lock_context)
+    Thread_queue_Context *queue_context)
 {
 	if (owner == executing) {
 		BSD_ASSERT(lock->lo_flags & LO_RECURSABLE);
 		++m->nest_level;
 
-		_Thread_queue_Release(&m->queue, lock_context);
+		_Thread_queue_Release(&m->queue, &queue_context->Lock_context);
 	} else {
 		/* Priority inheritance */
 		_Thread_Raise_priority(owner, executing->current_priority);
@@ -63,14 +63,14 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 		_Thread_queue_Enqueue_critical(&m->queue,
 		    BSD_MUTEX_TQ_OPERATIONS, executing,
 		    STATES_WAITING_FOR_MUTEX, WATCHDOG_NO_TIMEOUT, 0,
-		    lock_context);
+		    &queue_context->Lock_context);
 	}
 }
 
 void
 rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
     int keep_priority, Thread_queue_Heads *heads,
-    ISR_lock_Context *lock_context)
+    Thread_queue_Context *queue_context)
 {
 	if (heads != NULL) {
 		const Thread_queue_Operations *operations;
@@ -80,9 +80,9 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 		new_owner = ( *operations->first )( heads );
 		m->owner = new_owner;
 		_Thread_queue_Extract_critical(&m->queue, operations,
-		    new_owner, NULL, 0, lock_context);
+		    new_owner, queue_context);
 	} else {
-		_Thread_queue_Release(&m->queue, lock_context);
+		_Thread_queue_Release(&m->queue, &queue_context->Lock_context);
 	}
 
 	if (!keep_priority) {

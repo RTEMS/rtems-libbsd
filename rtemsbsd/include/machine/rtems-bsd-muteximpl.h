@@ -66,16 +66,17 @@ rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
 
 void rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
     Thread_Control *owner, Thread_Control *executing,
-    ISR_lock_Context *lock_context);
+    Thread_queue_Context *queue_context);
 
 static inline void
 rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 {
-	ISR_lock_Context lock_context;
+	Thread_queue_Context queue_context;
 	Thread_Control *executing;
 	Thread_Control *owner;
 
-	_Thread_queue_Acquire(&m->queue, &lock_context);
+	_Thread_queue_Context_initialize(&queue_context, NULL);
+	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	owner = m->owner;
 	executing = _Thread_Executing;
@@ -84,10 +85,10 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 		m->owner = executing;
 		++executing->resource_count;
 
-		_Thread_queue_Release(&m->queue, &lock_context);
+		_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
 	} else {
 		rtems_bsd_mutex_lock_more(lock, m, owner, executing,
-		    &lock_context);
+		    &queue_context);
 	}
 }
 
@@ -95,11 +96,12 @@ static inline int
 rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 {
 	int success;
-	ISR_lock_Context lock_context;
+	Thread_queue_Context queue_context;
 	Thread_Control *executing;
 	Thread_Control *owner;
 
-	_Thread_queue_Acquire(&m->queue, &lock_context);
+	_Thread_queue_Context_initialize(&queue_context, NULL);
+	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	owner = m->owner;
 	executing = _Thread_Executing;
@@ -116,23 +118,24 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 		success = 0;
 	}
 
-	_Thread_queue_Release(&m->queue, &lock_context);
+	_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
 
 	return (success);
 }
 
 void rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
     int keep_priority, Thread_queue_Heads *heads,
-    ISR_lock_Context *lock_context);
+    Thread_queue_Context *queue_context);
 
 static inline void
 rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 {
-	ISR_lock_Context lock_context;
+	Thread_queue_Context queue_context;
 	Thread_Control *owner;
 	int nest_level;
 
-	_Thread_queue_Acquire(&m->queue, &lock_context);
+	_Thread_queue_Context_initialize(&queue_context, NULL);
+	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	nest_level = m->nest_level;
 	owner = m->owner;
@@ -159,16 +162,16 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 		m->owner = NULL;
 
 		if (__predict_true(heads == NULL && keep_priority)) {
-			_Thread_queue_Release(&m->queue, &lock_context);
+			_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
 		} else {
 			rtems_bsd_mutex_unlock_more(m, owner, keep_priority,
-			    heads, &lock_context);
+			    heads, &queue_context);
 		}
 
 	} else {
 		m->nest_level = nest_level - 1;
 
-		_Thread_queue_Release(&m->queue, &lock_context);
+		_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
 	}
 }
 

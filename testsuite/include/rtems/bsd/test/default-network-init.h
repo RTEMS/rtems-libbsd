@@ -214,9 +214,12 @@ default_network_dhcpcd(void)
 static void
 default_network_on_exit(int exit_code, void *arg)
 {
+	rtems_printer printer;
+
 	(void)arg;
-	rtems_stack_checker_report_usage_with_plugin(NULL,
-	    rtems_printf_plugin);
+
+	rtems_print_printer_printf(&printer);
+	rtems_stack_checker_report_usage_with_plugin(&printer);
 
 	if (exit_code == 0) {
 		puts("*** END OF TEST " TEST_NAME " ***");

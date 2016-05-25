@@ -22,10 +22,10 @@ static void default_set_self_prio( rtems_task_priority prio )
 
 static void default_on_exit( int exit_code, void *arg )
 {
-  rtems_stack_checker_report_usage_with_plugin(
-    NULL,
-    rtems_printf_plugin
-  );
+  rtems_printer printer;
+
+  rtems_print_printer_printf(&printer);
+  rtems_stack_checker_report_usage_with_plugin(&printer);
 
   if ( exit_code == 0 ) {
     puts( "*** END OF TEST " TEST_NAME " ***" );

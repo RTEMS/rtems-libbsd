@@ -48,6 +48,7 @@ import libbsd
 isForward = True
 isEarlyExit = False
 isOnlyBuildScripts = False
+statsReport = False
 
 def usage():
     print("freebsd-to-rtems.py [args]")
@@ -57,6 +58,7 @@ def usage():
     print("  -e|--early-exit   evaluate arguments, print results, and exit")
     print("  -m|--makefile     Warning: depreciated and will be removed ")
     print("  -b|--buildscripts just generate the build scripts")
+    print("  -S|--stats        Print a statistics report")
     print("  -R|--reverse      default FreeBSD -> RTEMS, reverse that")
     print("  -r|--rtems        RTEMS Libbsd directory (default: '.')")
     print("  -f|--freebsd      FreeBSD SVN directory (default: 'freebsd-org')")
@@ -64,11 +66,11 @@ def usage():
 
 # Parse the arguments
 def parseArguments():
-    global isForward, isEarlyExit
+    global isForward, isEarlyExit, statsReport
     global isOnlyBuildScripts
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   "?hdDembRr:f:v",
+                                   "?hdDembSRr:f:v",
                                    [ "help",
                                      "help",
                                      "dry-run"
@@ -77,6 +79,7 @@ def parseArguments():
                                      "makefile"
                                      "buildscripts"
                                      "reverse"
+                                     "stats"
                                      "rtems="
                                      "freebsd="
                                      "verbose" ])
@@ -99,6 +102,8 @@ def parseArguments():
             isEarlyExit = True
         elif o in ("-b", "--buildscripts") or o in ("-m", "--makefile"):
             isOnlyBuildScripts = True
+        elif o in ("-S", "--stats"):
+            statsReport = True
         elif o in ("-R", "--reverse"):
             isForward = False
         elif o in ("-r", "--rtems"):
@@ -152,7 +157,7 @@ try:
     if not isOnlyBuildScripts:
         wafGen.processSource(isForward)
     wafGen.generate(libbsd.rtems_version())
-    builder.changedFileSummary()
+    builder.changedFileSummary(statsReport)
 except IOError as ioe:
     print('error: %s' % (str(ioe)))
 except builder.error as be:

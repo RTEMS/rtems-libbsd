@@ -55,6 +55,11 @@ isDryRun = False
 isDiffMode = False
 filesProcessedCount = 0
 filesProcessed = []
+filesTotal = 0
+filesTotalLines = 0
+filesTotalInserts = 0
+filesTotalDeletes = 0
+diffDetails = { }
 
 verboseInfo = 1
 verboseDetail = 2
@@ -64,12 +69,32 @@ verboseDebug = 4
 def verbose(level = verboseInfo):
     return verboseLevel >= level
 
-def changedFileSummary():
+def changedFileSummary(statsReport = False):
+
+    global filesTotal, filesTotalLines, filesTotalInserts, filesTotalDeletes
+
     if isDiffMode == False:
-        print('%d file(s) were changed:' % (filesProcessedCount))
         if verbose():
+            print('%d file(s) were changed:' % (filesProcessedCount))
             for f in sorted(filesProcessed):
                 print(' %s' % (f))
+        else:
+            print('%d file(s) were changed.' % (filesProcessedCount))
+    if statsReport:
+        print('Stats Report:')
+        transparent = filesTotal - len(diffDetails)
+        changes = filesTotalInserts + filesTotalDeletes
+        opacity = (float(changes) / (filesTotalLines + changes)) * 100.0
+        print(' Total File(s):%d  Unchanged:%d (%.1f%%)  Changed:%d' \
+              '   Opacity:%5.1f%% Lines:%d Edits:%d (+):%d (-):%d'  % \
+              (filesTotal, transparent, (float(transparent) / filesTotal) * 100.0, len(diffDetails), \
+               opacity, filesTotalLines, changes, filesTotalInserts, filesTotalDeletes))
+        #
+        # Sort by opacity.
+        #
+        ordered_diffs = sorted(diffDetails.items(), key = lambda diff: diff[1].opacity, reverse = True)
+        for f in ordered_diffs:
+            print('  %s' % (diffDetails[f[0]].status()))
 
 def readFile(name):
     try:
@@ -104,6 +129,28 @@ class error(Exception):
         self.msg = msg
     def __str__(self):
         return self.msg
+
+#
+# Diff Record
+#
+class diffRecord:
+    def __init__(self, src, dst, orig, diff, inserts, deletes):
+        self.src = src
+        self.dst = dst
+        self.orig = orig
+        self.diff = diff
+        self.lines = len(orig)
+        self.inserts = inserts
+        self.deletes = deletes
+        self.changes = inserts + deletes
+        self.opacity = (float(self.changes) / (self.lines + self.changes)) * 100.0
+
+    def __repr__(self):
+        return self.src
+
+    def status(self):
+        return 'opacity:%5.1f%% edits:%4d (+):%-4d (-):%-4d %s' % \
+            (self.opacity, self.changes, self.inserts, self.deletes, self.src)
 
 #
 # This stuff needs to move to libbsd.py.
@@ -221,6 +268,41 @@ def assertSourceFile(path):
         print("*** Move it to a header file list")
         sys.exit(2)
 
+def diffSource(dstLines, srcLines, src, dst):
+    global filesTotal, filesTotalLines, filesTotalInserts, filesTotalDeletes
+    #
+    # Diff, note there is no line termination on each string.  Expand the
+    # generator to list because the generator is not reusable.
+    #
+    diff = list(difflib.unified_diff(dstLines,
+                                     srcLines,
+                                     fromfile = src,
+                                     tofile = dst,
+                                     n = 5,
+                                     lineterm = ''))
+    inserts = 0
+    deletes = 0
+    if len(diff) > 0:
+        if src in diffDetails and \
+           diffDetails[src].dst != dst and diffDetails[src].diff != diff:
+            raise error('repeated diff of file different: src:%s dst:%s' % (src, dst))
+        for l in diff:
+            if l[0] == '-':
+                deletes += 1
+            elif l[0] == '+':
+                inserts += 1
+        diffDetails[src] = diffRecord(src, dst, srcLines, diff, inserts, deletes)
+
+    #
+    # Count the total files, lines and the level of changes.
+    #
+    filesTotal += 1
+    filesTotalLines += len(srcLines)
+    filesTotalInserts += inserts
+    filesTotalDeletes += deletes
+
+    return diff
+
 #
 # Converters provide a way to alter the various types of code. The conversion
 # process filters a file as it is copies from the source path to the
@@ -276,15 +358,9 @@ class Converter(object):
             print('Unified diff: %s (lines:%d)' % (src, len(srcLines)))
 
         #
-        # Diff, note there is no line termination on each string.  Expand the
-        # generator to list because the generator is not reusable.
+        # Diff, note there is no line termination on each string.
         #
-        diff = list(difflib.unified_diff(dstLines,
-                                         srcLines,
-                                         fromfile = src,
-                                         tofile = dst,
-                                         n = 5,
-                                         lineterm = ''))
+        diff = diffSource(dstLines, srcLines, src, dst)
 
         #
         # The diff list is empty if the files are the same.

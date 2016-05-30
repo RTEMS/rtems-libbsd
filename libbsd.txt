@@ -614,9 +614,10 @@ freebsd-to-rtems.py [args]
   -e|--early-exit   evaluate arguments, print results, and exit
   -m|--makefile     Warning: depreciated and will be removed
   -b|--buildscripts just generate the build scripts
+  -S|--stats        Print a statistics report
   -R|--reverse      default FreeBSD -> RTEMS, reverse that
-  -r|--rtems        RTEMS directory
-  -f|--freebsd      FreeBSD directory
+  -r|--rtems        RTEMS Libbsd directory (default: '.')
+  -f|--freebsd      FreeBSD SVN directory (default: 'freebsd-org')
   -v|--verbose      enable verbose output mode
 ----
 
@@ -681,6 +682,19 @@ detail and debug level information from the command.
 . Add a test to the testsuite if possible.
 . Run `./create-kernel-namespace.sh` if you imported kernel space headers.  Add only your new defines via `git add -p rtemsbsd/include/machine/rtems-bsd-kernel-namespace.h`.
 . Create one commit from this.
+
+The -S or --stats option generates reports the changes we have made to
+FreeBSD. If the code has been reserved into the original FreeBSD tree it will
+show nothing has changed. To see what we have change:
+
+ $ cd freebsd-org
+ $ git checkout -- .
+ $ cd ..
+ $ ./freebsd-to-rtems.py -R -S -d
+
+The report lists the files change based on the opacity level. The opacity is a
+measure on how much of a file differs from the original FreeBSD source. The
+lower the value the more transparent the source file it.
 
 == Initialization of the BSD Library
 

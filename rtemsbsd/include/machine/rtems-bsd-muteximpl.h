@@ -75,7 +75,7 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 	Thread_Control *executing;
 	Thread_Control *owner;
 
-	_Thread_queue_Context_initialize(&queue_context, NULL);
+	_Thread_queue_Context_initialize(&queue_context);
 	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	owner = m->owner;
@@ -100,7 +100,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 	Thread_Control *executing;
 	Thread_Control *owner;
 
-	_Thread_queue_Context_initialize(&queue_context, NULL);
+	_Thread_queue_Context_initialize(&queue_context);
 	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	owner = m->owner;
@@ -134,7 +134,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	Thread_Control *owner;
 	int nest_level;
 
-	_Thread_queue_Context_initialize(&queue_context, NULL);
+	_Thread_queue_Context_initialize(&queue_context);
 	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	nest_level = m->nest_level;

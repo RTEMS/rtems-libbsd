@@ -60,10 +60,11 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 		_Thread_Raise_priority(owner, executing->current_priority);
 
 		++executing->resource_count;
+		_Thread_queue_Context_set_expected_level(queue_context, 1);
 		_Thread_queue_Enqueue_critical(&m->queue,
 		    BSD_MUTEX_TQ_OPERATIONS, executing,
-		    STATES_WAITING_FOR_MUTEX, WATCHDOG_NO_TIMEOUT, 0,
-		    &queue_context->Lock_context);
+		    STATES_WAITING_FOR_MUTEX, WATCHDOG_NO_TIMEOUT,
+		    queue_context);
 	}
 }
 

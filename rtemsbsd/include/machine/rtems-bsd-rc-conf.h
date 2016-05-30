@@ -31,6 +31,8 @@
 #ifndef _RTEMS_BSP_RC_CONF_h
 #define _RTEMS_BSP_RC_CONF_h
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

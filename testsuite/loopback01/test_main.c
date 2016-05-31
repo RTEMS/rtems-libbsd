@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sysexits.h>
+#include <unistd.h>
 
 #include <machine/rtems-bsd-commands.h>
 

@@ -67,5 +67,10 @@
 #define _getpeername			getpeername
 #define _getprogname			getprogname
 #define _getsockname			getsockname
+#ifdef __rtems__
+#define _pthread_mutex_lock		pthread_mutex_lock
+#define _getsockopt			getsockopt
+#define _bind				bind
+#endif /* __rtems__ */
 
 #endif /* _NAMESPACE_H_ */

@@ -69,6 +69,9 @@ __FBSDID("$FreeBSD$");
     defined(__arm26__) || defined(__sparc64__) || defined(__amd64__)
 #include <machine/endian.h>
 #define IEEEFP
+#else /* __rtems__ */
+#include <machine/endian.h>
+#define IEEEFP
 #endif
 
 #if defined(__vax__)

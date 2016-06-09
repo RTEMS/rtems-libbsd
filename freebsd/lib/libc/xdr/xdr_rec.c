@@ -513,7 +513,7 @@ xdrrec_eof(xdrs)
 bool_t
 xdrrec_endofrecord(xdrs, sendnow)
 	XDR *xdrs;
-	bool_t sendnow;
+	int sendnow;
 {
 	RECSTREAM *rstrm = (RECSTREAM *)(xdrs->x_private);
 	u_long len;  /* fragment length */

@@ -522,16 +522,14 @@ xdr_enum(xdrs, ep)
 	XDR *xdrs;
 	enum_t *ep;
 {
-	enum sizecheck { SIZEVAL };	/* used to find the size of an enum */
-
 	/*
 	 * enums are treated as ints
 	 */
-	/* LINTED */ if (sizeof (enum sizecheck) == sizeof (long)) {
+	/* LINTED */ if (sizeof (enum_t) == sizeof (long)) {
 		return (xdr_long(xdrs, (long *)(void *)ep));
-	} else /* LINTED */ if (sizeof (enum sizecheck) == sizeof (int)) {
+	} else /* LINTED */ if (sizeof (enum_t) == sizeof (int)) {
 		return (xdr_int(xdrs, (int *)(void *)ep));
-	} else /* LINTED */ if (sizeof (enum sizecheck) == sizeof (short)) {
+	} else /* LINTED */ if (sizeof (enum_t) == sizeof (short)) {
 		return (xdr_short(xdrs, (short *)(void *)ep));
 	} else {
 		return (FALSE);

@@ -943,6 +943,7 @@ def build(bld):
               'mDNSResponder/mDNSShared/dnssd_clientshim.c',
               'mDNSResponder/mDNSShared/mDNSDebug.c',
               'rtemsbsd/ftpd/ftpd.c',
+              'rtemsbsd/ftpfs/ftpfs.c',
               'rtemsbsd/local/bus_if.c',
               'rtemsbsd/local/cryptodev_if.c',
               'rtemsbsd/local/device_if.c',
@@ -1188,6 +1189,16 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_ftpd01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_ftpd02 = ['testsuite/ftpd02/test_main.c']
+    bld.program(target = "ftpd02.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_ftpd02,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

@@ -107,6 +107,7 @@ def rtems(mm):
             'rtems/rtems-kvm.c',
             'rtems/syslog.c',
             'ftpd/ftpd.c',
+            'ftpfs/ftpfs.c',
             'mdns/mdns.c',
             'mdns/mdns-hostname-default.c',
             'pppd/auth.c',
@@ -2428,6 +2429,7 @@ def tests(mm):
                                      runTest = False, netTest = True))
     mod.addTest(mm.generator['test']('unix01', ['test_main']))
     mod.addTest(mm.generator['test']('ftpd01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('ftpd02', ['test_main']))
     mod.addTest(mm.generator['test']('ping01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('selectpollkqueue01', ['test_main']))
     mod.addTest(mm.generator['test']('rwlock01', ['test_main']))

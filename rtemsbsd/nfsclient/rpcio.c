@@ -71,7 +71,7 @@
 
 #include <rtems.h>
 #include <rtems/error.h>
-#include <rtems/rtems_bsdnet.h>
+#include <rtems/bsd/bsd.h>
 #include <stdlib.h>
 #include <time.h>
 #include <rpc/rpc.h>
@@ -85,6 +85,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/cpuset.h>
+#include <sys/event.h>
 
 #include "rpcio.h"
 #include "nfsclient-private.h"
@@ -93,14 +94,14 @@
 /* CONFIGURABLE PARAMETERS                                      */
 /****************************************************************/
 
-#define MBUF_RX			/* If defined: use mbuf XDR stream for
+#undef MBUF_RX			/* If defined: use mbuf XDR stream for
 						 *  decoding directly out of mbufs
 						 *  Otherwise, the regular 'recvfrom()'
 						 *  interface will be used involving an
 						 *  extra buffer allocation + copy step.
 						 */
 
-#define MBUF_TX			/* If defined: avoid copying data when
+#undef MBUF_TX			/* If defined: avoid copying data when
 						 *  sending. Instead, use a wrapper to
 						 *  'sosend()' which will point an MBUF
 						 *  directly to our buffer space.
@@ -121,8 +122,7 @@
 						 */
 
 /* daemon task parameters */
-#define RPCIOD_STACK		10000
-#define RPCIOD_PRIO			100	/* *fallback* priority */
+#define RPCIOD_NAME		"RPCD"
 
 /* depth of the message queue for sending
  * RPC requests to the daemon
@@ -149,9 +149,10 @@ static struct timeval _rpc_default_timeout = { 10 /* secs */, 0 /* usecs */ };
 											 * RPC IO will receive this - hence it is
 											 * RESERVED
 											 */
-#define RPCIOD_RX_EVENT		RTEMS_EVENT_1	/* Events the RPCIOD is using/waiting for */
-#define RPCIOD_TX_EVENT		RTEMS_EVENT_2
-#define RPCIOD_KILL_EVENT	RTEMS_EVENT_3	/* send to the daemon to kill it          */
+#define RPCIOD_KQ_IDENT		0xeb
+#define RPCIOD_RX_EVENT		0x1	/* Events the RPCIOD is using/waiting for */
+#define RPCIOD_TX_EVENT		0x2
+#define RPCIOD_KILL_EVENT	0x4	/* send to the daemon to kill it          */
 
 #define LD_XACT_HASH		8				/* ld of the size of the transaction hash table  */
 
@@ -393,6 +394,7 @@ static RpcUdpServer		rpcUdpServers = 0;	/* linked list of all servers; protected
 
 static int				ourSock = -1;		/* the socket we are using for communication */
 static rtems_id			rpciod  = 0;		/* task id of the RPC daemon                 */
+static int	  		rpcKq = -1;		/* the kqueue of the RPC daemon */
 static rtems_id			msgQ    = 0;		/* message queue where the daemon picks up
 											 * requests
 											 */
@@ -406,12 +408,6 @@ static rtems_id			fini	= 0;		/* a synchronization semaphore we use during
 static rtems_interval	ticksPerSec;		/* cached system clock rate (WHO IS ASSUMED NOT
 											 * TO CHANGE)
 											 */
-
-rtems_task_priority		rpciodPriority = 0;
-#ifdef RTEMS_SMP
-const cpu_set_t			*rpciodCpuset = 0;
-size_t				rpciodCpusetSize = 0;
-#endif
 
 #if (DEBUG) & DEBUG_MALLOC
 /* malloc wrappers for debugging */
@@ -481,13 +477,32 @@ bool_t rval;
 }
 
 static inline bool_t
-locked_refresh(RpcUdpServer s)
+locked_refresh(RpcUdpServer s, struct rpc_msg *msg)
 {
 bool_t rval;
 	MU_LOCK(s->authlock);
-	rval = AUTH_REFRESH(s->auth);
+	rval = AUTH_REFRESH(s->auth, msg);
 	MU_UNLOCK(s->authlock);
 	return rval;
+}
+
+static void
+sendEventToRpcServer(u_int events)
+{
+struct kevent	trigger;
+int		s;
+
+	EV_SET(
+		&trigger,
+		RPCIOD_KQ_IDENT,
+		EVFILT_USER,
+		0,
+		NOTE_TRIGGER | NOTE_FFOR | events,
+		0,
+		0);
+
+	s = kevent(rpcKq, &trigger, 1, NULL, 0, NULL);
+	assert(s == 0);
 }
 
 /* Create a server object
@@ -507,7 +522,7 @@ RpcUdpServer	rval;
 u_short			port;
 char			hname[MAX_MACHINE_NAME + 1];
 int				theuid, thegid;
-int				thegids[NGRPS];
+u_int				thegids[NGRPS];
 gid_t			gids[NGROUPS];
 int				len,i;
 AUTH			*auth;
@@ -828,7 +843,7 @@ va_list			ap;
 		return RPC_CANTSEND;
 	}
 	/* wakeup the rpciod */
-	ASSERT( RTEMS_SUCCESSFUL==rtems_event_send(rpciod, RPCIOD_TX_EVENT) );
+	sendEventToRpcServer(RPCIOD_TX_EVENT);
 
 	return RPC_SUCCESS;
 }
@@ -911,30 +926,19 @@ rtems_event_set		gotEvents;
 	xact->ibufsize = 0;
 #endif
 
-	if (refresh && locked_refresh(xact->server)) {
+	if (refresh && locked_refresh(xact->server, &reply_msg)) {
 		rtems_task_ident(RTEMS_SELF, RTEMS_WHO_AM_I, &xact->requestor);
 		if ( rtems_message_queue_send(msgQ, &xact, sizeof(xact)) ) {
 			return RPC_CANTSEND;
 		}
 		/* wakeup the rpciod */
 		fprintf(stderr,"RPCIO INFO: refreshing my AUTH\n");
-		ASSERT( RTEMS_SUCCESSFUL==rtems_event_send(rpciod, RPCIOD_TX_EVENT) );
+		sendEventToRpcServer(RPCIOD_TX_EVENT);
 	}
 
 	} while ( 0 &&  refresh-- > 0 );
 
 	return xact->status.re_status;
-}
-
-
-/* On RTEMS, I'm told to avoid select(); this seems to
- * be more efficient
- */
-static void
-rxWakeupCB(struct socket *sock, void *arg)
-{
-  rtems_id *rpciod = (rtems_id*) arg;
-  rtems_event_send(*rpciod, RPCIOD_RX_EVENT);
 }
 
 void
@@ -955,7 +959,7 @@ rpcUdpInit(void)
 int			s;
 rtems_status_code	status;
 int			noblock = 1;
-struct sockwakeup	wkup;
+struct kevent		change;
 
 	if (ourSock < 0) {
     fprintf(stderr,"RTEMS-RPCIOD $Release$, " \
@@ -972,34 +976,41 @@ struct sockwakeup	wkup;
 			MU_CREAT( &hlock );
 			MU_CREAT( &llock );
 
-			if ( !rpciodPriority ) {
-				/* use configured networking priority */
-				if ( ! (rpciodPriority = rtems_bsdnet_config.network_task_priority) )
-					rpciodPriority = RPCIOD_PRIO;	/* fallback value */
-			}
+			rpcKq = kqueue();
+			assert( rpcKq >= 0 );
+
+			EV_SET(
+				&change,
+				RPCIOD_KQ_IDENT,
+				EVFILT_USER, EV_ADD | EV_ENABLE | EV_CLEAR,
+				NOTE_FFNOP,
+				0,
+				0);
+
+			s = kevent( rpcKq, &change, 1, NULL, 0, NULL );
+			assert( s == 0 );
+
+			EV_SET(
+				&change,
+				ourSock,
+				EVFILT_READ, EV_ADD | EV_ENABLE,
+				0,
+				0,
+				0);
+
+			s = kevent( rpcKq, &change, 1, NULL, 0, NULL );
+			assert( s == 0 );
 
 			status = rtems_task_create(
 											rtems_build_name('R','P','C','d'),
-											rpciodPriority,
-											RPCIOD_STACK,
+											rtems_bsd_get_task_priority(RPCIOD_NAME),
+											rtems_bsd_get_task_stack_size(RPCIOD_NAME),
 											RTEMS_DEFAULT_MODES,
 											/* fprintf saves/restores FP registers on PPC :-( */
 											RTEMS_DEFAULT_ATTRIBUTES | RTEMS_FLOATING_POINT,
 											&rpciod);
 			assert( status == RTEMS_SUCCESSFUL );
 
-#ifdef RTEMS_SMP
-			if ( rpciodCpuset == 0 ) {
-				rpciodCpuset = rtems_bsdnet_config.network_task_cpuset;
-				rpciodCpusetSize = rtems_bsdnet_config.network_task_cpuset_size;
-			}
-			if ( rpciodCpuset != 0 )
-				rtems_task_set_affinity( rpciod, rpciodCpusetSize, rpciodCpuset );
-#endif
-
-			wkup.sw_pfn = rxWakeupCB;
-			wkup.sw_arg = &rpciod;
-			assert( 0==setsockopt(ourSock, SOL_SOCKET, SO_RCVWAKEUP, &wkup, sizeof(wkup)) );
 			status = rtems_message_queue_create(
 											rtems_build_name('R','P','C','q'),
 											RPCIOD_QDEPTH,
@@ -1026,7 +1037,7 @@ rpcUdpCleanup(void)
 			RTEMS_DEFAULT_ATTRIBUTES,
 			0,
 			&fini);
-	rtems_event_send(rpciod, RPCIOD_KILL_EVENT);
+	sendEventToRpcServer(RPCIOD_KILL_EVENT);
 	/* synchronize with daemon */
 	rtems_semaphore_obtain(fini, RTEMS_WAIT, 5*ticksPerSec);
 	/* if the message queue is still there, something went wrong */
@@ -1175,12 +1186,11 @@ nodeAppend(ListNode l, ListNode n)
 static void
 rpcio_daemon(rtems_task_argument arg)
 {
-rtems_status_code stat;
 RpcUdpXact        xact;
 RpcUdpServer      srv;
 rtems_interval    next_retrans, then, unow;
 long			  			now;	/* need to do signed comparison with age! */
-rtems_event_set   events;
+u_int             events;
 ListNode          newList;
 size_t            size;
 rtems_id          q          =  0;
@@ -1193,15 +1203,27 @@ rtems_status_code	status;
         then = rtems_clock_get_ticks_since_boot();
 
 	for (next_retrans = epoch;;) {
+		{
+			struct timespec timeout = {
+				.tv_sec = (next_retrans + ticksPerSec - 1) / ticksPerSec,
+				.tv_nsec = 0
+			};
+			struct kevent event[2];
+			int i;
+			int n;
 
-		if ( RTEMS_SUCCESSFUL !=
-			 (stat = rtems_event_receive(
-						RPCIOD_RX_EVENT | RPCIOD_TX_EVENT | RPCIOD_KILL_EVENT,
-						RTEMS_WAIT | RTEMS_EVENT_ANY,
-						next_retrans,
-						&events)) ) {
-			ASSERT( RTEMS_TIMEOUT == stat );
+			n = kevent(rpcKq, NULL, 0, &event[0], 2, &timeout);
+			assert(n >= 0);
+
 			events = 0;
+
+			for (i = 0; i < n; ++i) {
+				if (event[i].filter == EVFILT_USER) {
+					events |= event[i].fflags;
+				} else {
+					events |= RPCIOD_RX_EVENT;
+				}
+			}
 		}
 
 		if (events & RPCIOD_KILL_EVENT) {
@@ -1498,6 +1520,7 @@ rtems_status_code	status;
 	}
 	/* close our socket; shut down the receiver */
 	close(ourSock);
+	close(rpcKq);
 
 #if 0 /* if we get here, no transactions exist, hence there can be none
 	   * in the queue whatsoever
@@ -1625,7 +1648,7 @@ RpcUdpXactPool pool;
  *             the RTEMS/BSDNET headers redefine those :-(
  */
 
-#define _KERNEL
+#include <machine/rtems-bsd-kernel-space.h>
 #include <sys/mbuf.h>
 
 static void
@@ -1687,7 +1710,7 @@ union {
 	struct sockaddr_in	sin;
 	struct sockaddr     sa;
 }					fromAddr;
-int					fromLen  = sizeof(fromAddr.sin);
+socklen_t				fromLen  = sizeof(fromAddr.sin);
 RxBuf				ibuf     = 0;
 RpcUdpXact			xact     = 0;
 
@@ -1800,15 +1823,3 @@ cleanup:
 
 	return 0;
 }
-
-
-#include <rtems/rtems_bsdnet_internal.h>
-/* double check the event configuration; should probably globally
- * manage system events!!
- * We do this at the end of the file for the same reason we had
- * included mbuf.h only a couple of lines above - see comment up
- * there...
- */
-#if RTEMS_RPC_EVENT & SOSLEEP_EVENT & SBWAIT_EVENT & NETISR_EVENTS
-#error ILLEGAL EVENT CONFIGURATION
-#endif

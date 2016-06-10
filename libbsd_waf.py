@@ -1018,6 +1018,10 @@ def build(bld):
               'rtemsbsd/local/usb_if.c',
               'rtemsbsd/mdns/mdns-hostname-default.c',
               'rtemsbsd/mdns/mdns.c',
+              'rtemsbsd/nfsclient/mount_prot_xdr.c',
+              'rtemsbsd/nfsclient/nfs.c',
+              'rtemsbsd/nfsclient/nfs_prot_xdr.c',
+              'rtemsbsd/nfsclient/rpcio.c',
               'rtemsbsd/pppd/auth.c',
               'rtemsbsd/pppd/ccp.c',
               'rtemsbsd/pppd/chap.c',
@@ -1333,6 +1337,16 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_netshell01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_nfs01 = ['testsuite/nfs01/test_main.c']
+    bld.program(target = "nfs01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_nfs01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

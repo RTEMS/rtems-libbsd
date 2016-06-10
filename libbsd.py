@@ -110,6 +110,10 @@ def rtems(mm):
             'ftpfs/ftpfs.c',
             'mdns/mdns.c',
             'mdns/mdns-hostname-default.c',
+            'nfsclient/mount_prot_xdr.c',
+            'nfsclient/nfs.c',
+            'nfsclient/nfs_prot_xdr.c',
+            'nfsclient/rpcio.c',
             'pppd/auth.c',
             'pppd/ccp.c',
             'pppd/chap.c',
@@ -2496,6 +2500,7 @@ def in_cksum(mm):
 #
 def tests(mm):
     mod = builder.Module('tests')
+    mod.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('foobarclient', ['test_main'],
                                      runTest = False, netTest = True))
     mod.addTest(mm.generator['test']('foobarserver', ['test_main'],

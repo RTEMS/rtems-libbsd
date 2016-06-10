@@ -957,6 +957,54 @@ test_kqueue_close(test_context *ctx)
 }
 
 static void
+test_kqueue_user(test_context *ctx)
+{
+	int kq;
+	uintptr_t ident;
+	u_int flag;
+	struct kevent change;
+	struct kevent trigger;
+	struct kevent event;
+	const struct timespec *timeout = NULL;
+	int rv;
+	ssize_t n;
+
+	puts("test kqueue user");
+
+	ident = 0xabc;
+	flag = 0x1;
+
+	kq = kqueue();
+	assert(kq >= 0);
+
+	EV_SET(&change, ident, EVFILT_USER, EV_ADD | EV_ENABLE, NOTE_FFNOP, 0,
+	    TEST_UDATA);
+
+	rv = kevent(kq, &change, 1, NULL, 0, timeout);
+	assert(rv == 0);
+
+	ident = 0xabc;
+	EV_SET(&trigger, ident, EVFILT_USER, 0, NOTE_TRIGGER | NOTE_FFCOPY |
+	    flag, 0, TEST_UDATA);
+
+	rv = kevent(kq, &trigger, 1, NULL, 0, timeout);
+	assert(rv == 0);
+
+	memset(&event, 0, sizeof(event));
+	rv = kevent(kq, NULL, 0, &event, 1, timeout);
+	assert(rv == 1);
+	assert(event.ident == ident);
+	assert(event.filter == EVFILT_USER);
+	assert(event.flags == 0);
+	assert(event.fflags == flag);
+	assert(event.data == 0);
+	assert(event.udata == TEST_UDATA);
+
+	rv = close(kq);
+	assert(rv == 0);
+}
+
+static void
 test_main(void)
 {
 	test_context *ctx = &test_instance;
@@ -985,6 +1033,7 @@ test_main(void)
 	test_kqueue_read(ctx);
 	test_kqueue_write(ctx);
 	test_kqueue_close(ctx);
+	test_kqueue_user(ctx);
 
 	exit(0);
 }

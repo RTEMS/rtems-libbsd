@@ -56,7 +56,7 @@ status' says `rtems_waf` need updating run the submodule update command:
 
 === Board Support Package Requirements ===
 
-The RTEMS version must be at least 4.11.  The Board Support Package (BSP)
+The RTEMS version must be at least 4.12.  The Board Support Package (BSP)
 should support the
 http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__extension.html[Interrupt Manager Extension]
 // The first underscores have to be masked to stop asciidoc interpreting them
@@ -86,26 +86,26 @@ be configured with a disabled network stack.  The BSD library containing the
 new network stack is a separate package.  Using a BSP installation containing
 the old network stack may lead to confusion and unpredictable results.
 
-The following script is used to build the `arm/realview_pbx_a9_qemu` BSP for
+The following script is used to build the `arm/xilinx_zynq_a9_qemu` BSP for
 our internal testing purposes:
 
 -------------------------------------------------------------------------------
 #!/bin/sh
 
 cd ${HOME}/sandbox
-rm -rf b-realview_pbx_a9_qemu
-mkdir b-realview_pbx_a9_qemu
-cd b-realview_pbx_a9_qemu
+rm -rf b-xilinx_zynq_a9_qemu
+mkdir b-xilinx_zynq_a9_qemu
+cd b-xilinx_zynq_a9_qemu
 ${HOME}/git-rtems/configure \
         --prefix=${HOME}/sandbox/install \
-        --target=arm-rtems4.11 \
-        --enable-rtemsbsp=realview_pbx_a9_qemu \
+        --target=arm-rtems4.12 \
+        --enable-rtemsbsp=xilinx_zynq_a9_qemu \
         --disable-networking && \
         make && \
         make install
 -------------------------------------------------------------------------------
 
-The `arm/realview_pbx_a9_qemu` BSP running on the Qemu simulator has some
+The `arm/xilinx_zynq_a9_qemu` BSP running on the Qemu simulator has some
 benefits for development and test of the BSD library
 
 * it offers a NULL pointer read and write protection,
@@ -126,8 +126,8 @@ the above, the `config.inc` used to match the above is:
 
 -------------------------------------------------------------------------------
 # Mandatory: Select your BSP and installation prefix
-TARGET = arm-rtems4.11
-BSP = realview_pbx_a9_qemu
+TARGET = arm-rtems4.12
+BSP = xilinx_zynq_a9_qemu
 PREFIX = $(HOME)/sandbox/install
 
 # Optional: Separate installation base directory
@@ -383,6 +383,18 @@ qemu-system-i386 -m 512 -boot a -cpu pentium3 \
 	-net nic,model=e1000,macaddr=0e:b0:ba:5e:ba:11 \
 	-net tap,ifname=qtap1,script=no,downscript=no \
 	-nodefaults -nographic -serial stdio
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+qemu-system-arm \
+	-serial null \
+	-serial mon:stdio \
+	-nographic \
+	-M xilinx-zynq-a9 \
+	-net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:11 \
+	-net tap,ifname=qtap1,script=no,downscript=no \
+	-m 256M \
+	-kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/media01.exe
 -------------------------------------------------------------------------------
 
 Make sure that each Qemu instance uses its own MAC address to avoid an address

@@ -125,4 +125,8 @@
 #define thr_once(o, i)		_pthread_once(o, i)
 #define thr_self()		_pthread_self()
 #define thr_exit(x)		_pthread_exit(x)
+#ifdef __rtems__
+#define thr_main()		(0)
+#else /* __rtems__ */
 #define thr_main()		_pthread_main_np()
+#endif /* __rtems__ */

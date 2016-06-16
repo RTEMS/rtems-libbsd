@@ -44,7 +44,7 @@ except:
 import libbsd_waf
 
 def init(ctx):
-    rtems.init(ctx, version = rtems_version)
+    rtems.init(ctx, version = rtems_version, long_commands = True)
     libbsd_waf.init(ctx)
 
 def options(opt):

@@ -8,8 +8,16 @@
 
 from __future__ import print_function
 
+import os
 import os.path
 import rtems_waf.rtems as rtems
+
+windows = os.name == "nt"
+
+if windows:
+    host_shell = "sh -c "
+else:
+    host_shell = ""
 
 def init(ctx):
     pass
@@ -113,7 +121,7 @@ def build(bld):
     # KVM Symbols
     bld(target = "rtemsbsd/rtems/rtems-kernel-kvm-symbols.c",
         source = "rtemsbsd/rtems/generate_kvm_symbols",
-        rule = "./${SRC} > ${TGT}",
+        rule = host_shell + "./${SRC} > ${TGT}",
         update_outputs = True)
     bld.objects(target = "kvmsymbols",
                 features = "c",
@@ -127,11 +135,11 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/include/rpc/rpcb_prot.h",
             source = "freebsd/include/rpc/rpcb_prot.x",
-            rule = "${RPCGEN} -h -o ${TGT} ${SRC}")
+            rule = host_shell + "${RPCGEN} -h -o ${TGT} ${SRC}")
 
     # Route keywords
     if bld.env.AUTO_REGEN:
-        rkw_rule = "cat ${SRC} | awk 'BEGIN { r = 0 } { if (NF == 1) printf \"#define\\tK_%%s\\t%%d\\n\\t{\\\"%%s\\\", K_%%s},\\n\", toupper($1), ++r, $1, toupper($1)}' > ${TGT}"
+        rkw_rule = host_shell + "cat ${SRC} | awk 'BEGIN { r = 0 } { if (NF == 1) printf \"#define\\tK_%%s\\t%%d\\n\\t{\\\"%%s\\\", K_%%s},\\n\", toupper($1), ++r, $1, toupper($1)}' > ${TGT}"
         bld(target = "freebsd/sbin/route/keywords.h",
             source = "freebsd/sbin/route/keywords",
             rule = rkw_rule)
@@ -140,7 +148,7 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/contrib/libpcap/scanner.c",
             source = "freebsd/contrib/libpcap/scanner.l",
-            rule = "${LEX} -P pcap -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+            rule = host_shell + "${LEX} -P pcap -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
     bld.objects(target = "lex_pcap",
                 features = "c",
                 cflags = cflags,
@@ -152,7 +160,7 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libc/net/nslexer.c",
             source = "freebsd/lib/libc/net/nslexer.l",
-            rule = "${LEX} -P _nsyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+            rule = host_shell + "${LEX} -P _nsyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
     bld.objects(target = "lex__nsyy",
                 features = "c",
                 cflags = cflags,
@@ -164,7 +172,7 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libipsec/policy_token.c",
             source = "freebsd/lib/libipsec/policy_token.l",
-            rule = "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
+            rule = host_shell + "${LEX} -P __libipsecyy -t ${SRC} | sed -e '/YY_BUF_SIZE/s/16384/1024/' > ${TGT}")
     bld.objects(target = "lex___libipsecyy",
                 features = "c",
                 cflags = cflags,
@@ -177,7 +185,7 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/contrib/libpcap/grammar.c",
             source = "freebsd/contrib/libpcap/grammar.y",
-            rule = "${YACC} -b pcap -d -p pcap ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < pcap.tab.c > ${TGT} && rm -f pcap.tab.c && mv pcap.tab.h freebsd/contrib/libpcap/tokdefs.h")
+            rule = host_shell + "${YACC} -b pcap -d -p pcap ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < pcap.tab.c > ${TGT} && rm -f pcap.tab.c && mv pcap.tab.h freebsd/contrib/libpcap/tokdefs.h")
     bld.objects(target = "yacc_pcap",
                 features = "c",
                 cflags = cflags,
@@ -188,7 +196,7 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libc/net/nsparser.c",
             source = "freebsd/lib/libc/net/nsparser.y",
-            rule = "${YACC} -b _nsyy -d -p _nsyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < _nsyy.tab.c > ${TGT} && rm -f _nsyy.tab.c && mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h")
+            rule = host_shell + "${YACC} -b _nsyy -d -p _nsyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < _nsyy.tab.c > ${TGT} && rm -f _nsyy.tab.c && mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h")
     bld.objects(target = "yacc__nsyy",
                 features = "c",
                 cflags = cflags,
@@ -199,7 +207,7 @@ def build(bld):
     if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libipsec/policy_parse.c",
             source = "freebsd/lib/libipsec/policy_parse.y",
-            rule = "${YACC} -b __libipsecyy -d -p __libipsecyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < __libipsecyy.tab.c > ${TGT} && rm -f __libipsecyy.tab.c && mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h")
+            rule = host_shell + "${YACC} -b __libipsecyy -d -p __libipsecyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < __libipsecyy.tab.c > ${TGT} && rm -f __libipsecyy.tab.c && mv __libipsecyy.tab.h freebsd/lib/libipsec/y.tab.h")
     bld.objects(target = "yacc___libipsecyy",
                 features = "c",
                 cflags = cflags,

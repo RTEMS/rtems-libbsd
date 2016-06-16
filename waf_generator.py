@@ -254,8 +254,17 @@ class ModuleManager(builder.ModuleManager):
         self.add('')
         self.add('from __future__ import print_function')
         self.add('')
+        self.add('import os')
         self.add('import os.path')
+        # Import check done in the top level wscript file.
         self.add('import rtems_waf.rtems as rtems')
+        self.add('')
+        self.add('windows = os.name == "nt"')
+        self.add('')
+        self.add('if windows:')
+        self.add('    host_shell = "sh -c "')
+        self.add('else:')
+        self.add('    host_shell = ""')
         self.add('')
         self.add('def init(ctx):')
         self.add('    pass')
@@ -360,7 +369,7 @@ class ModuleManager(builder.ModuleManager):
             self.add('    # KVM Symbols')
             self.add('    bld(target = "%s",' % (kvmsymbols['files']['all'][0]))
             self.add('        source = "rtemsbsd/rtems/generate_kvm_symbols",')
-            self.add('        rule = "./${SRC} > ${TGT}",')
+            self.add('        rule = host_shell + "./${SRC} > ${TGT}",')
             self.add('        update_outputs = True)')
             self.add('    bld.objects(target = "kvmsymbols",')
             self.add('                features = "c",')
@@ -379,7 +388,7 @@ class ModuleManager(builder.ModuleManager):
             self.add('    if bld.env.AUTO_REGEN:')
             self.add('        bld(target = "%s.h",' % (rpcname))
             self.add('            source = "%s.x",' % (rpcname))
-            self.add('            rule = "${RPCGEN} -h -o ${TGT} ${SRC}")')
+            self.add('            rule = host_shell + "${RPCGEN} -h -o ${TGT} ${SRC}")')
             self.add('')
 
         if 'RouteKeywords' in data:
@@ -387,7 +396,7 @@ class ModuleManager(builder.ModuleManager):
             rkwname = routekw['files']['all'][0]
             self.add('    # Route keywords')
             self.add('    if bld.env.AUTO_REGEN:')
-            self.add('        rkw_rule = "cat ${SRC} | ' + \
+            self.add('        rkw_rule = host_shell + "cat ${SRC} | ' + \
                      'awk \'BEGIN { r = 0 } { if (NF == 1) ' + \
                      'printf \\"#define\\\\tK_%%s\\\\t%%d\\\\n\\\\t{\\\\\\"%%s\\\\\\", K_%%s},\\\\n\\", ' + \
                      'toupper($1), ++r, $1, toupper($1)}\' > ${TGT}"')
@@ -412,7 +421,7 @@ class ModuleManager(builder.ModuleManager):
                 self.add('    if bld.env.AUTO_REGEN:')
                 self.add('        bld(target = "%s.c",' % (lex['file'][:-2]))
                 self.add('            source = "%s",' % (lex['file']))
-                self.add('            rule = "${LEX} -P %s -t ${SRC} | ' % (lex['sym']) + \
+                self.add('            rule = host_shell + "${LEX} -P %s -t ${SRC} | ' % (lex['sym']) + \
                          'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > ${TGT}")')
                 self.add('    bld.objects(target = "lex_%s",' % (lex['sym']))
                 self.add('                features = "c",')
@@ -445,7 +454,8 @@ class ModuleManager(builder.ModuleManager):
                 self.add('    if bld.env.AUTO_REGEN:')
                 self.add('        bld(target = "%s.c",' % (yaccFile[:-2]))
                 self.add('            source = "%s",' % (yaccFile))
-                self.add('            rule = "${YACC} -b %s -d -p %s ${SRC} && ' % (yaccSym, yaccSym) + \
+                self.add('            rule = host_shell + "${YACC} -b %s -d -p %s ${SRC} && ' % \
+                         (yaccSym, yaccSym) + \
                          'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' < %s.tab.c > ${TGT} && ' % (yaccSym) + \
                          'rm -f %s.tab.c && mv %s.tab.h %s")' % (yaccSym, yaccSym, yaccHeader))
                 self.add('    bld.objects(target = "yacc_%s",' % (yaccSym))

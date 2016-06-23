@@ -59,7 +59,6 @@ __FBSDID("$FreeBSD$");
 #include <machine/cpu.h>
 #ifndef __rtems__
 #include <machine/md_var.h>
-#include <machine/stdarg.h>
 #else /* __rtems__ */
   #ifdef INTR_FILTER
     #error INTR_FILTER is currently not suppported with RTEMS
@@ -67,6 +66,7 @@ __FBSDID("$FreeBSD$");
   #include <machine/rtems-bsd-thread.h>
   #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
 #endif /* __rtems__ */
+#include <machine/stdarg.h>
 #ifdef DDB
 #include <ddb/ddb.h>
 #include <ddb/db_sym.h>

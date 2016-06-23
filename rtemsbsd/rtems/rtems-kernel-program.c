@@ -50,6 +50,7 @@
 #include <sys/mutex.h>
 
 #include <setjmp.h>
+#include <stdarg.h>
 #include <stdlib.h>
 
 #undef printf

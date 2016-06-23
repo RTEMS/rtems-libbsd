@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <rtems/printer.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
 

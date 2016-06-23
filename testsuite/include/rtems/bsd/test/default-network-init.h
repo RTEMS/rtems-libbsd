@@ -44,6 +44,7 @@
 #include <machine/rtems-bsd-commands.h>
 
 #include <rtems.h>
+#include <rtems/printer.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
 

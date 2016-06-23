@@ -1,1 +1,1 @@
-/* EMPTY */
+#include <stdarg.h>

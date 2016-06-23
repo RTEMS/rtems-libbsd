@@ -44,6 +44,8 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 
+#include <stdarg.h>
+
 void
 panic(const char *fmt, ...)
 {

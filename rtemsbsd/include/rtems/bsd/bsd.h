@@ -112,6 +112,13 @@ typedef enum {
 } rtems_bsd_allocator_domain;
 
 /**
+ * @brief The size for the page/mbufs default allocator domain.
+ *
+ * Applications may set this value to change the value returned by the default.
+ */
+extern uintptr_t rtems_bsd_allocator_domain_page_mbuf_size;
+
+/**
  * @brief Returns the size for a specific allocator domain.
  *
  * Applications may provide their own implementation of this function.  For

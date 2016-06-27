@@ -263,6 +263,11 @@ Init(rtems_task_argument arg)
 	assert(sc == RTEMS_SUCCESSFUL);
 #endif
 
+#ifdef DEFAULT_NETWORK_PAGE_MBUFS_SIZE
+	rtems_bsd_allocator_domain_page_mbuf_size =
+	  DEFAULT_NETWORK_PAGE_MBUFS_SIZE;
+#endif
+
 	rtems_bsd_initialize();
 
 #ifndef DEFAULT_NETWORK_NO_INTERFACE_0
@@ -367,6 +372,7 @@ SYSINIT_NEED_NET_IF_VLAN;
 #define CONFIGURE_SHELL_COMMAND_MV
 #define CONFIGURE_SHELL_COMMAND_RM
 #define CONFIGURE_SHELL_COMMAND_MALLOC_INFO
+#define CONFIGURE_SHELL_COMMAND_SHUTDOWN
 
 #include <rtems/shellconfig.h>
 

@@ -1169,6 +1169,16 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
+    test_pf01 = ['testsuite/pf01/test_main.c']
+    bld.program(target = "pf01",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_pf01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
     test_syscalls01 = ['testsuite/syscalls01/test_main.c']
     bld.program(target = "syscalls01",
                 features = "cprogram",

@@ -38,6 +38,8 @@
 #include <sys/kernel.h>
 #include <sysexits.h>
 
+#include <ifaddrs.h>
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -48,7 +50,22 @@
 #include <rtems/chain.h>
 
 #include <machine/rtems-bsd-commands.h>
-#include <machine/rtems-bsd-rc-conf.h>
+#include <machine/rtems-bsd-rc-conf-services.h>
+
+/*
+ * Default defaultroute_delay is 30seconds.
+ */
+static int defaultroute_delay_secs = 30;
+
+/*
+ * Show a result.
+ */
+static void
+show_result(const char* label, int r)
+{
+  if (r < 0)
+    fprintf(stderr, "error: %s: %s\n", label, strerror(errno));
+}
 
 /*
  * cloned_interfaces
@@ -58,23 +75,26 @@
  * See 'man rc.conf(5)' on FreeBSD.
  */
 static int
-cloned_interfaces(rtems_bsd_rc_conf* rc_conf,
-                  int                argc,
-                  const char**       argv)
+cloned_interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 {
   int arg;
-  for (arg = 1; arg < argc; ++arg) {
-    const char* ifconfg_args[] = {
-      "ifconfig", argv[arg], "create", NULL
-    };
-    int r;
-    rtems_bsd_rc_conf_print_cmd(rc_conf, "cloning_interfaces", 3, ifconfg_args);
-    r = rtems_bsd_command_ifconfig(3, (char**) ifconfg_args);
-    if (r != EX_OK) {
-      errno = ECANCELED;
-      return -1;
-    }
+  int r = 0;
+
+  r = rtems_bsd_rc_conf_find(rc_conf, "cloned_interfaces", aa);
+  if (r < 0) {
+    if (errno == ENOENT)
+      r = 0;
+    return r;
   }
+
+  for (arg = 1; arg < aa->argc; ++arg) {
+    const char* ifconfg_args[] = {
+      "ifconfig", aa->argv[arg], "create", NULL
+    };
+    rtems_bsd_rc_conf_print_cmd(rc_conf, "cloning_interfaces", 3, ifconfg_args);
+    rtems_bsd_command_ifconfig(3, (char**) ifconfg_args);
+  }
+
   return 0;
 }
 
@@ -95,71 +115,62 @@ typedef struct {
 static RTEMS_CHAIN_DEFINE_EMPTY(create_args_items);
 
 static int
-create_args_(rtems_bsd_rc_conf* rc_conf,
-             int                argc,
-             const char**       argv)
+load_create_args(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 {
-  rtems_chain_node*       node = rtems_chain_first(&create_args_items);
-  const rtems_chain_node* tail = rtems_chain_tail(&create_args_items);
-  const char*             label = argv[0] + strlen("create_args_");
-  create_args_item*       item;
-  int                     arg;
+  int r = 0;
 
-  while (node != tail) {
-    item = (create_args_item*) node;
-    if (strcasecmp(item->label, label) == 0) {
-      fprintf(stderr, "error: %s:%d: duplicate create args entry: %s\n",
+  r = rtems_bsd_rc_conf_find(rc_conf, "create_args_.*", aa);
+
+  while (r == 0) {
+    rtems_chain_node* node;
+    const char*       label;
+    create_args_item* item;
+    int               arg;
+
+    rtems_bsd_rc_conf_print_cmd(rc_conf, "create_args_", aa->argc, aa->argv);
+
+    label = aa->argv[0] + strlen("create_args_");
+
+    node = rtems_chain_first(&create_args_items);
+
+    while (!rtems_chain_is_tail(&create_args_items, node)) {
+      item = (create_args_item*) node;
+      if (strcasecmp(item->label, label) == 0) {
+        fprintf(stderr, "error: %s:%d: duplicate create args entry: %s\n",
+                rtems_bsd_rc_conf_name(rc_conf),
+                rtems_bsd_rc_conf_line(rc_conf),
+                aa->argv[0]);
+        errno = EEXIST;
+        return -1;
+      }
+      node = rtems_chain_next(node);
+    }
+
+    item = calloc(1, sizeof(*item));
+    if (item == NULL) {
+      errno = ENOMEM;
+      fprintf(stderr, "error: %s:%d: %s\n",
               rtems_bsd_rc_conf_name(rc_conf),
               rtems_bsd_rc_conf_line(rc_conf),
-              argv[0]);
-      errno = EEXIST;
+              strerror(errno));
       return -1;
     }
-    node = rtems_chain_next(node);
-  }
 
-  item = calloc(1, sizeof(*item));
-  if (item == NULL) {
-    errno = ENOMEM;
-    fprintf(stderr, "error: %s:%d: %s\n",
-            rtems_bsd_rc_conf_name(rc_conf),
-            rtems_bsd_rc_conf_line(rc_conf),
-            strerror(errno));
-    return -1;
-  }
+    item->argc = aa->argc;
 
-  item->argc = argc;
+    item->label = strdup(label);
+    if (item->label == NULL) {
+      free(item);
+      errno = ENOMEM;
+      fprintf(stderr, "error: %s:%d: %s\n",
+              rtems_bsd_rc_conf_name(rc_conf),
+              rtems_bsd_rc_conf_line(rc_conf),
+              strerror(errno));
+      return -1;
+    }
 
-  item->label = strdup(label);
-  if (item->label == NULL) {
-    free(item);
-    errno = ENOMEM;
-    fprintf(stderr, "error: %s:%d: %s\n",
-            rtems_bsd_rc_conf_name(rc_conf),
-            rtems_bsd_rc_conf_line(rc_conf),
-            strerror(errno));
-    return -1;
-  }
-
-  item->argv = calloc(argc + 1, sizeof(char*));
-  if (item->argv == NULL) {
-    free((void*) item->label);
-    free(item);
-    errno = ENOMEM;
-    fprintf(stderr, "error: %s:%d: %s\n",
-            rtems_bsd_rc_conf_name(rc_conf),
-            rtems_bsd_rc_conf_line(rc_conf),
-            strerror(errno));
-    return -1;
-  }
-
-  for (arg = 0; arg < argc; ++arg) {
-    item->argv[arg] = strdup(argv[0]);
-    if (item->argv[arg] == NULL) {
-      int a;
-      for (a = 0; a < arg; ++a)
-        free((void*) item->argv[a]);
-      free(item->argv);
+    item->argv = calloc(aa->argc + 1, sizeof(char*));
+    if (item->argv == NULL) {
       free((void*) item->label);
       free(item);
       errno = ENOMEM;
@@ -169,9 +180,35 @@ create_args_(rtems_bsd_rc_conf* rc_conf,
               strerror(errno));
       return -1;
     }
+
+    for (arg = 0; arg < aa->argc; ++arg) {
+      item->argv[arg] = strdup(aa->argv[0]);
+      if (item->argv[arg] == NULL) {
+        int a;
+        for (a = 0; a < arg; ++a)
+          free((void*) item->argv[a]);
+        free(item->argv);
+        free((void*) item->label);
+        free(item);
+        errno = ENOMEM;
+        fprintf(stderr, "error: %s:%d: %s\n",
+                rtems_bsd_rc_conf_name(rc_conf),
+                rtems_bsd_rc_conf_line(rc_conf),
+                strerror(errno));
+        return -1;
+      }
+    }
+
+    rtems_chain_append(&create_args_items, &item->node);
+
+    r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
   }
 
-  rtems_chain_append(&create_args_items, &item->node);
+  /*
+   * ignore not found.
+   */
+  if (r < 0 && errno == ENOENT)
+    r = 0;
 
   return 0;
 }
@@ -185,12 +222,14 @@ create_args_(rtems_bsd_rc_conf* rc_conf,
  */
 static int
 ifconfig_(rtems_bsd_rc_conf* rc_conf,
+          const char*        ifname,
           int                argc,
           const char**       argv)
 {
-  const char** args;
-  int          arg;
-  int          r;
+  const char**      args;
+  int               arg;
+  int               r;
+  const char const* ifconfig_show[] = { "ifconfig", ifname, NULL };
 
   for (arg = 1; arg < argc; ++arg) {
     if (strcasecmp(argv[arg], "NOAUTO") == 0)
@@ -204,7 +243,7 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
   }
 
   args[0] = "ifconfig";
-  args[1] = argv[0] + strlen("ifconfig_");
+  args[1] = ifname;
 
   for (arg = 1; arg < argc; ++arg)
     args[arg + 1] = argv[arg];
@@ -222,7 +261,9 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
     return -1;
   }
 
-  return 0;
+  r = rtems_bsd_command_ifconfig(2, (char**) ifconfig_show);
+
+  return r;
 }
 
 /*
@@ -233,16 +274,24 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
  * See 'man rc.conf(5)' on FreeBSD.
  */
 static int
-hostname(rtems_bsd_rc_conf* rc_conf,
-         int                argc,
-         const char**       argv)
+hostname(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 {
-  if (argc > 2) {
-    errno = EINVAL;
+  const char**      argv;
+  int               r;
+  const char const* default_argv[] = { "hostname", "Amnesiac", NULL };
+
+  r = rtems_bsd_rc_conf_find(rc_conf, "hostname", aa);
+  if (r < 0 && errno != ENOENT)
     return -1;
+
+  if (r < 0 || (r == 0 && aa->argc != 2)) {
+    argv = default_argv;
+  }
+  else {
+    argv = aa->argv;
   }
 
-  rtems_bsd_rc_conf_print_cmd(rc_conf, "hostname", argc, argv);
+  fprintf(stdout, "Setting hostname: %s.\n", argv[1]);
 
   return sethostname(argv[1], strlen(argv[1]));
 }
@@ -255,48 +304,250 @@ hostname(rtems_bsd_rc_conf* rc_conf,
  * See 'man rc.conf(5)' on FreeBSD.
  */
 static int
-defaultrouter(rtems_bsd_rc_conf* rc_conf,
-              int                argc,
-              const char**       argv)
+defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 {
-  if (argc > 2) {
-    errno = EINVAL;
+  int r;
+
+  r = rtems_bsd_rc_conf_find(rc_conf, "defaultrouter", aa);
+  if (r < 0 && errno != ENOENT)
     return -1;
-  }
 
-  if (strcasecmp(argv[1], "NO") != 0) {
-    const char* args[] = {
-      "route", "add", "default", argv[1], NULL
-    };
-    int r;
-
-    rtems_bsd_rc_conf_print_cmd(rc_conf, "defaultrouter", 4, args);
-
-    r = rtems_bsd_command_route(4, (char**) args);
-    if (r != EX_OK) {
-      errno = ECANCELED;
+  if (r == 0) {
+    if (aa->argc > 2) {
+      errno = EINVAL;
       return -1;
+    }
+
+    if (strcasecmp(aa->argv[1], "NO") != 0) {
+      const char* args[] = { "route", "add", "default", aa->argv[1], NULL };
+      int         r;
+
+      rtems_bsd_rc_conf_print_cmd(rc_conf, "defaultrouter", 4, args);
+
+      r = rtems_bsd_command_route(4, (char**) args);
+      if (r != EX_OK) {
+        errno = ECANCELED;
+        return -1;
+      }
     }
   }
 
   return 0;
 }
 
-static void
-add_directive(const char* name, rtems_bsd_rc_conf_directive handler)
+/*
+ * defaultroute_delay
+ *
+ * eg defaultroute=120
+ *
+ * See 'man rc.conf(5)' on FreeBSD.
+ */
+static int
+defaultroute_delay(rtems_bsd_rc_conf* rc_conf,
+                   int                argc,
+                   const char**       argv)
 {
-  int r;
-  r = rtems_bsd_rc_conf_directive_add(name, handler);
-  if (r < 0)
-    fprintf(stderr, "error: cannot register rc.conf handler: %s\n", name);
+  int   value;
+  char* end = NULL;
+
+  if (argc != 2) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  value = strtol(argv[1], &end, 10);
+
+  if (end == NULL) {
+      const char* args[] = {
+        "defaultrouter_delay", argv[1], NULL
+    };
+
+    rtems_bsd_rc_conf_print_cmd(rc_conf, "defaultrouter", 2, args);
+
+    defaultroute_delay_secs = value;
+  }
+  else {
+    errno = EINVAL;
+    return -1;
+  }
+
+  return 0;
+}
+
+static int
+show_interfaces(const char* msg, struct ifaddrs* ifap)
+{
+  struct ifaddrs* ifa;
+
+  fprintf(stdout, msg);
+
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    if (strcasecmp("lo0", ifa->ifa_name) == 0) {
+      fprintf(stdout, "%s ", ifa->ifa_name);
+      break;
+    }
+  }
+
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    if (strcasecmp("lo0", ifa->ifa_name) != 0) {
+      fprintf(stdout, "%s ", ifa->ifa_name);
+    }
+  }
+
+  fprintf(stdout, "\b.\n");
+
+  return 0;
+}
+
+static int
+setup_lo0(rtems_bsd_rc_conf* rc_conf, struct ifaddrs* ifap)
+{
+  struct ifaddrs* ifa;
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    if (strcasecmp("lo0", ifa->ifa_name) == 0) {
+      const char* lo0_argv[] = {
+        "ifconfig_lo0", "inet", "127.0.0.1", "netmask", "255.0.0.0", NULL
+      };
+      show_result("lo0", ifconfig_(rc_conf, "lo0", 5, lo0_argv));
+      return 0;
+    }
+  }
+  fprintf(stderr, "warning: no loopback interface found\n");
+  return -1;
+}
+
+static int
+setup_interfaces(rtems_bsd_rc_conf*           rc_conf,
+                 rtems_bsd_rc_conf_argc_argv* aa,
+                 struct ifaddrs*              ifap)
+{
+  struct ifaddrs* ifa;
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    if (strcasecmp("lo0", ifa->ifa_name) != 0) {
+      char iface[64];
+      int  r;
+      snprintf(iface, sizeof(iface), "ifconfig_%s", ifa->ifa_name);
+      r = rtems_bsd_rc_conf_find(rc_conf, iface, aa);
+      if (r == 0) {
+        show_result(iface, ifconfig_(rc_conf, ifa->ifa_name, aa->argc, aa->argv));
+      }
+    }
+  }
+  return 0;
+}
+
+static int
+setup_vlans(rtems_bsd_rc_conf*           rc_conf,
+            rtems_bsd_rc_conf_argc_argv* aa,
+            struct ifaddrs*              ifap)
+{
+  rtems_bsd_rc_conf_argc_argv* vaa;
+  struct ifaddrs*              ifa;
+
+  vaa = rtems_bsd_rc_conf_argc_argv_create();
+  if (vaa == NULL)
+    return -1;
+
+  show_result("create_args", load_create_args(rc_conf, aa));
+
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    if (strcasecmp("lo0", ifa->ifa_name) != 0) {
+      char expr[128];
+      int  r;
+      /*
+       * Look for vlans_'iface'="101 102 103"
+       */
+      snprintf(expr, sizeof(expr), "vlans_%s", ifa->ifa_name);
+      r = rtems_bsd_rc_conf_find(rc_conf, expr, aa);
+      if (r == 0) {
+        int arg;
+        for (arg = 1; arg < aa->argc; ++arg) {
+          char vlan_name[64];
+          const char* vlan_create[] = {
+            "ifconfig", vlan_name, "create", NULL
+          };
+          /*
+           * Create the VLAN name as 'iface'.'vlan'.
+           */
+          snprintf(vlan_name, sizeof(vlan_name),
+                   "%s.%s", ifa->ifa_name, aa->argv[arg]);
+          rtems_bsd_rc_conf_print_cmd(rc_conf, "vlan", 3, vlan_create);
+          r = rtems_bsd_command_ifconfig(3, (char**) vlan_create);
+          if (r == 0) {
+            /*
+             * Look for ifconfig_'iface'_'vlan'="..."
+             */
+            snprintf(expr, sizeof(expr),
+                     "ifconfig_%s_%s", ifa->ifa_name, aa->argv[arg]);
+            r = rtems_bsd_rc_conf_find(rc_conf, expr, vaa);
+            if (r == 0) {
+              show_result(vlan_name, ifconfig_(rc_conf, vlan_name,
+                                               vaa->argc, vaa->argv));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  rtems_bsd_rc_conf_argc_argv_destroy(vaa);
+
+  return 0;
+}
+
+static int
+interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
+{
+  struct ifaddrs* ifap;
+
+  if (getifaddrs(&ifap) != 0) {
+    fprintf(stderr, "error: interfaces: getifaddrs: %s\n", strerror(errno));
+    return -1;
+  }
+
+  show_interfaces("Starting network: ", ifap);
+  show_result("cloned_interfaces", cloned_interfaces(rc_conf, aa));
+  show_result("lo0", setup_lo0(rc_conf, ifap));
+  show_result("ifaces", setup_interfaces(rc_conf, aa, ifap));
+  show_result("vlans", setup_vlans(rc_conf, aa, ifap));
+
+  free(ifap);
+
+  return 0;
+}
+
+static int
+network_service(rtems_bsd_rc_conf* rc_conf)
+{
+  rtems_bsd_rc_conf_argc_argv* aa;
+  int                          r;
+
+  aa = rtems_bsd_rc_conf_argc_argv_create();
+  if (aa == NULL)
+    return -1;
+
+  show_result("hostname",    hostname(rc_conf, aa));
+
+  r = interfaces(rc_conf, aa);
+  if (r < 0) {
+    rtems_bsd_rc_conf_argc_argv_destroy(aa);
+    return -1;
+  }
+
+  show_result("defaultrouter", defaultrouter(rc_conf, aa));
+
+  rtems_bsd_rc_conf_argc_argv_destroy(aa);
+
+  return 0;
 }
 
 void
 rc_conf_net_init(void* arg)
 {
-  add_directive("cloned_interfaces", cloned_interfaces);
-  add_directive("create_args_.*", create_args_);
-  add_directive("ifconfig_.*", ifconfig_);
-  add_directive("hostname", hostname);
-  add_directive("defaultrouter", defaultrouter);
+  int r;
+  r = rtems_bsd_rc_conf_service_add("network",
+                                    "after:first;",
+                                    network_service);
+  if (r < 0)
+    fprintf(stderr, "error: network service add failed: %s\n", strerror(errno));
 }

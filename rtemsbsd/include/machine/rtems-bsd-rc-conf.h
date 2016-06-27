@@ -24,12 +24,16 @@
  */
 
 /*
- * Parse a FreeBSD /etc/rc.conf format file and execute the configuration
- * options we want to support.
+ * FreeBSD /etc/rc.conf initialisation. Initialise the software stack using the
+ * the configuration options held in your rc.conf file. The file conforms to the
+ * format defined in the FreeBSD man page rc.conf(5).
+ *
+ * The services and configuration present in your rc.conf will only work if the
+ * services have been configured into your application.
  */
 
-#ifndef _RTEMS_BSP_RC_CONF_h
-#define _RTEMS_BSP_RC_CONF_h
+#ifndef _RTEMS_BSD_RC_CONF_h
+#define _RTEMS_BSD_RC_CONF_h
 
 #include <stdbool.h>
 
@@ -43,56 +47,33 @@ extern "C" {
 #define RTEMS_BSD_RC_CONF_MAX_SIZE (8 * 1024)
 
 /*
- * Directive processing data. This data is opaque externally.
+ * The rc.conf  data. It is externally opaque.
  */
 typedef struct rtems_bsd_rc_conf_ rtems_bsd_rc_conf;
 
 /*
- * A directive is a line in rc.conf and is 'name=value'. The handler is invoked
- * if the name matches directive's regular expression.
- */
-typedef int (*rtems_bsd_rc_conf_directive)(rtems_bsd_rc_conf* rc_conf,
-                                           int                argc,
-                                           const char**       argv);
-
-/*
- * Register a directive handler.
- */
-extern int rtems_bsd_rc_conf_directive_add(const char*  dir_regex,
-                                           rtems_bsd_rc_conf_directive handler);
-
-/*
  * Run an rc.conf script loaded into memory.
+ *
+ * The timeout can be -1 for no wait, 0 to wait forever or a timeout in seconds.
  */
-extern int rtems_bsd_run_rc_conf_script(const char* name, const char* text, bool verbose);
+extern int rtems_bsd_run_rc_conf_script(const char* name,
+                                        const char* text,
+                                        int         timeout,
+                                        bool        verbose);
 
 /*
  * Run the rc.conf file.
+ *
+ * The timeout can be -1 for no wait, 0 to wait forever or a timeout in seconds.
  */
-extern int rtems_bsd_run_rc_conf(const char* name, bool verbose);
+extern int rtems_bsd_run_rc_conf(const char* name, int timeout, bool verbose);
 
 /*
  * Run /etc/rc.conf.
+ *
+ * The timeout can be -1 for no wait, 0 to wait forever or a timeout in seconds.
  */
-extern int rtems_bsd_run_etc_rc_conf(bool verbose);
-
-/*
- * Return the name of the file being processed.
- */
-extern const char* rtems_bsd_rc_conf_name(rtems_bsd_rc_conf* rc_conf);
-
-/*
- * Return the line number being processed.
- */
-extern int rtems_bsd_rc_conf_line(rtems_bsd_rc_conf* rc_conf);
-
-/*
- * Print the argv list. Helper for verbose modes.
- */
-extern void rtems_bsd_rc_conf_print_cmd(rtems_bsd_rc_conf* rc_conf,
-                                        const char*        name,
-                                        int                argc,
-                                        const char**       argv);
+extern int rtems_bsd_run_etc_rc_conf(int timeout, bool verbose);
 
 #ifdef __cplusplus
 }

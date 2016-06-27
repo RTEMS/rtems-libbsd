@@ -26,14 +26,17 @@
 #include <rtems/bsd/sys/param.h>
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sysexits.h>
+#include <unistd.h>
 
 #include <machine/rtems-bsd-rc-conf.h>
+#include <machine/rtems-bsd-rc-conf-services.h>
 
 #define TEST_NAME "LIBBSD RC.CONF 1"
 
@@ -52,37 +55,95 @@ static const char* rc_conf_regex = \
 #define NUM_OF_TEST_REGEX_ 6
 static bool test_regex_results[NUM_OF_TEST_REGEX_];
 static int  test_regex_last_num;
+static int  test_service_last_num;
 
 static const char* rc_conf_not_found = \
   "# invalid directive.\n" \
   "abc_def_0=\"not found\"\n";
 
 static int
-test_regex_(rtems_bsd_rc_conf* rc_conf, int argc, const char** argv)
+test_service(rtems_bsd_rc_conf* rc_conf)
 {
-  int num;
-  int arg;
+  rtems_bsd_rc_conf_argc_argv* aa;
+  int                          r;
 
-  rtems_bsd_rc_conf_print_cmd(rc_conf, "test_regex_", argc, argv);
+  test_service_last_num = 1;
 
-  assert(strncasecmp(argv[0], "test_regex_", strlen("test_regex_")) == 0);
-  num = atoi(argv[0] + strlen("test_regex_"));
-  assert(num == (test_regex_last_num + 1));
-  assert((num - 1) < NUM_OF_TEST_REGEX_);
-  for (arg = 0; arg < argc; ++arg) {
-    const char* a = argv[arg];
-    size_t      l = strlen(a);
-    if (l > 0) {
-      assert(!isspace(a[0]));
-      assert(!isspace(a[l - 1]));
-      assert(a[0] != '"');
-      assert(a[l - 1] != '"');
+  assert((aa = rtems_bsd_rc_conf_argc_argv_create()) != NULL);
+  r = rtems_bsd_rc_conf_find(rc_conf, "test_regex_.*", aa);
+  assert(r == 0 || (r < 0 && errno == ENOENT));
+  if (r < 0 && errno == ENOENT)
+    return -1;
+
+  while (r == 0) {
+    int num;
+    int arg;
+    rtems_bsd_rc_conf_print_cmd(rc_conf, "test_service", aa->argc, aa->argv);
+    assert(strncasecmp(aa->argv[0], "test_regex_", strlen("test_regex_")) == 0);
+    num = atoi(aa->argv[0] + strlen("test_regex_"));
+    assert(num == (test_regex_last_num + 1));
+    assert((num - 1) < NUM_OF_TEST_REGEX_);
+    for (arg = 0; arg < aa->argc; ++arg) {
+      const char* a = aa->argv[arg];
+      size_t      l = strlen(a);
+      if (l > 0) {
+        assert(!isspace(a[0]));
+        assert(!isspace(a[l - 1]));
+        assert(a[0] != '"');
+        assert(a[l - 1] != '"');
+      }
     }
+    test_regex_results[num - 1] = true;
+    ++test_regex_last_num;
+    r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
+    assert(r == 0 || (r < 0 && errno == ENOENT));
   }
-  test_regex_results[num - 1] = true;
-  ++test_regex_last_num;
-
+  rtems_bsd_rc_conf_argc_argv_destroy(aa);
+  puts("test_service done");
   return 0;
+}
+
+static int
+test_service_2(rtems_bsd_rc_conf* rc_conf)
+{
+  puts("test_service_2");
+  assert(test_service_last_num == 1);
+  test_service_last_num = 2;
+  return 0;
+}
+
+static int
+test_service_3(rtems_bsd_rc_conf* rc_conf)
+{
+  puts("test_service_3");
+  assert(test_service_last_num == 2);
+  test_service_last_num = 3;
+  return 0;
+}
+
+static int
+test_service_4(rtems_bsd_rc_conf* rc_conf)
+{
+  puts("test_service_4");
+  assert(test_service_last_num == 3);
+  test_service_last_num = 4;
+  return 0;
+}
+
+static int
+test_service_5(rtems_bsd_rc_conf* rc_conf)
+{
+  puts("test_service_5");
+  assert(test_service_last_num == 4);
+  test_service_last_num = 5;
+  return 0;
+}
+
+static int
+test_service_bad(rtems_bsd_rc_conf* rc_conf)
+{
+  puts("test_service_bad");
+  return -1;
 }
 
 static void
@@ -105,38 +166,49 @@ test_regex_check(void)
 }
 
 static void
-test_etc_rc_conf(void)
+test_regex_reset(void)
 {
   memset(&test_regex_results[0], 0, sizeof(test_regex_results));
   test_regex_last_num = 0;
+  test_service_last_num = 0;
+ }
+
+static void
+test_etc_rc_conf(void)
+{
+  puts("test_etc_rc_conf");
   make_rc_conf("/etc/rc.conf");
-  assert(rtems_bsd_run_etc_rc_conf(true) == 0);
+  test_regex_reset();
+  assert(rtems_bsd_run_etc_rc_conf(0, true) == 0);
   test_regex_check();
 }
 
 static void
 test_rc_conf(void)
 {
-  memset(&test_regex_results[0], 0, sizeof(test_regex_results));
-  test_regex_last_num = 0;
+  puts("test_rc_conf");
   make_rc_conf("/my_rc.conf");
-  assert(rtems_bsd_run_rc_conf("/my_rc.conf", true) == 0);
+  test_regex_reset();
+  assert(rtems_bsd_run_rc_conf("/my_rc.conf", 0, true) == 0);
   test_regex_check();
 }
 
 static void
 test_rc_conf_script(void)
 {
-  memset(&test_regex_results[0], 0, sizeof(test_regex_results));
-  test_regex_last_num = 0;
-  assert(rtems_bsd_run_rc_conf_script("internal", rc_conf_regex, true) == 0);
+  puts("test_rc_conf_conf");
+  test_regex_reset();
+  assert(rtems_bsd_run_rc_conf_script("internal", rc_conf_regex, 0, true) == 0);
   test_regex_check();
 }
 
 static void
 test_rc_conf_script_not_found(void)
 {
-  assert(rtems_bsd_run_rc_conf_script("internal", rc_conf_not_found, true) < 0);
+  puts("test_rc_conf_conf_not_found");
+  test_regex_reset();
+  assert(rtems_bsd_run_rc_conf_script("internal", rc_conf_not_found, 0, true) < 0);
+  assert(test_regex_last_num == 0);
 }
 
 static void
@@ -146,7 +218,33 @@ setup(void)
   mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO); /* ignore errors, check the dir after. */
   assert(stat("/etc", &sb) == 0);
   assert(S_ISDIR(sb.st_mode));
-  assert(rtems_bsd_rc_conf_directive_add("test_regex_.*", test_regex_) == 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_2",
+                                       "before:last;",
+                                       test_service_2) == 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_5",
+                                       "after:test_service_2;",
+                                       test_service_5) == 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_4",
+                                       "before:test_service_5;",
+                                       test_service_4) == 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_3",
+                                       "before:test_service_4;after:test_service_2;",
+                                       test_service_3) == 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_bad",
+                                       "before:first;",
+                                       test_service_bad) < 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_bad",
+                                       "after:last;",
+                                       test_service_bad) < 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_bad",
+                                       "after:xxxx,xxxx",
+                                       test_service_bad) < 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service_bad",
+                                       "yyyy:xxxx;",
+                                       test_service_bad) < 0);
+  assert(rtems_bsd_rc_conf_service_add("test_service",
+                                       "after:first;",
+                                       test_service) == 0);
 }
 
 static void

@@ -46,7 +46,7 @@ def rtems_version():
 def rtems(mm):
     mod = builder.Module('rtems')
     mod.addRTEMSSourceFiles(
-	[
+        [
             'local/bus_if.c',
             'local/cryptodev_if.c',
             'local/device_if.c',
@@ -146,7 +146,7 @@ def rtems(mm):
             'telnetd/telnetd.c',
             'sys/dev/tsec/if_tsec_nexus.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     mod.addFile(mm.generator['file']('rtems/rtems-kernel-kvm-symbols.c',
                                      mm.generator['rtems-path'](),
@@ -181,7 +181,7 @@ def rtems(mm):
 def base(mm):
     mod = builder.Module('base')
     mod.addKernelSpaceHeaderFiles(
-	[
+        [
             'sys/bsm/audit.h',
             'sys/bsm/audit_kevents.h',
             'sys/fs/devfs/devfs_int.h',
@@ -293,7 +293,7 @@ def base(mm):
         ]
     )
     mod.addKernelSpaceSourceFiles(
-	[
+        [
             'sys/kern/init_main.c',
             'sys/kern/kern_condvar.c',
             'sys/kern/kern_event.c',
@@ -341,7 +341,7 @@ def base(mm):
             'sys/vm/uma_core.c',
             'sys/vm/uma_dbg.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -365,7 +365,7 @@ def mmc(mm):
             'sys/dev/mmc/mmcsd.c',
             'sys/dev/sdhci/sdhci.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -426,7 +426,7 @@ def dev_usb(mm):
             'sys/dev/usb/usb_transfer.c',
             'sys/dev/usb/usb_util.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -445,7 +445,7 @@ def dev_usb_add_on(mm):
         [
             'sys/dev/usb/usb_compat_linux.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -465,7 +465,7 @@ def dev_usb_bluetooth(mm):
             'sys/dev/usb/bluetooth/ng_ubt.c',
             'sys/dev/usb/bluetooth/ubtbcmfw.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -494,7 +494,7 @@ def dev_usb_controller(mm):
             'sys/dev/usb/controller/usb_controller.c',
             'sys/dev/usb/controller/dwc_otg.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -529,7 +529,7 @@ def dev_usb_controller_add_on(mm):
             'sys/dev/usb/controller/uss820dci_atmelarm.c',
             'sys/dev/usb/controller/uss820dci.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -541,7 +541,7 @@ def dev_usb_input(mm):
     mod.addDependency(mm['dev_usb'])
     mod.addKernelSpaceHeaderFiles(
         [
-		'sys/dev/usb/input/usb_rdesc.h',
+    'sys/dev/usb/input/usb_rdesc.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
@@ -549,7 +549,7 @@ def dev_usb_input(mm):
             'sys/dev/usb/input/uhid.c',
             'sys/dev/usb/input/ukbd.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -574,7 +574,7 @@ def dev_usb_mouse(mm):
         [
             'sys/dev/usb/input/ums.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -594,7 +594,7 @@ def dev_usb_misc(mm):
             'sys/dev/usb/misc/udbp.c',
             'sys/dev/usb/misc/ufm.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -617,7 +617,7 @@ def dev_usb_net(mm):
             'sys/dev/usb/net/if_cdce.c',
             'sys/dev/usb/net/usb_ethernet.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -636,7 +636,7 @@ def dev_usb_quirk(mm):
         [
             'sys/dev/usb/quirk/usb_quirk.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -674,7 +674,7 @@ def dev_usb_serial(mm):
             'sys/dev/usb/serial/uvisor.c',
             'sys/dev/usb/serial/uvscom.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -688,7 +688,7 @@ def dev_usb_storage(mm):
         [
             'sys/dev/usb/storage/umass.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -708,7 +708,7 @@ def dev_usb_storage_add_on(mm):
             'sys/dev/usb/storage/urio.c',
             'sys/dev/usb/storage/ustorage_fs.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -730,7 +730,7 @@ def dev_usb_template(mm):
             'sys/dev/usb/template/usb_template_msc.c',
             'sys/dev/usb/template/usb_template_mtp.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -762,7 +762,7 @@ def dev_usb_wlan(mm):
             'sys/dev/usb/wlan/if_ural.c',
             'sys/dev/usb/wlan/if_zyd.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -791,7 +791,7 @@ def cam(mm):
             'sys/cam/cam.c',
             'sys/cam/scsi/scsi_all.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -844,7 +844,7 @@ def dev_net(mm):
             'sys/dev/dwc/if_dwc.c',
             'sys/arm/xilinx/zy7_slcr.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -911,7 +911,7 @@ def dev_nic(mm):
             'sys/netatalk/at_proto.c',
             'sys/netatalk/ddp_output.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -929,7 +929,7 @@ def dev_nic_re(mm):
         [
             'sys/dev/re/if_re.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -949,7 +949,7 @@ def dev_nic_fxp(mm):
         [
             'sys/dev/fxp/if_fxp.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1006,7 +1006,7 @@ def dev_nic_e1000(mm):
             'sys/dev/e1000/if_igb.c',
             'sys/dev/e1000/if_lem.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1026,7 +1026,7 @@ def dev_nic_dc(mm):
             'sys/dev/dc/if_dc.c',
             'sys/dev/dc/pnphy.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1045,7 +1045,7 @@ def dev_nic_smc(mm):
         [
             'sys/dev/smc/if_smc.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1066,7 +1066,7 @@ def dev_nic_cs(mm):
             'sys/dev/cs/if_cs_isa.c',
             'sys/dev/cs/if_cs_pccard.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1089,7 +1089,7 @@ def dev_nic_broadcomm(mm):
             'sys/dev/bfe/if_bfe.c',
             'sys/dev/bge/if_bge.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1196,7 +1196,7 @@ def net(mm):
             'sys/net/if_ethersubr.c',
             'sys/net/netisr.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1372,7 +1372,7 @@ def netinet(mm):
             'sys/netinet/libalias/alias_skinny.c',
             'sys/netinet/libalias/alias_sctp.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1438,7 +1438,7 @@ def netinet6(mm):
             'sys/netinet6/sctp6_usrreq.c',
             'sys/netinet6/udp6_usrreq.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1483,7 +1483,7 @@ def netipsec(mm):
             'sys/netipsec/xform_ipip.c',
             'sys/netipsec/xform_tcp.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1527,7 +1527,7 @@ def net80211(mm):
     )
     mod.addKernelSpaceSourceFiles(
         [
-		'sys/net80211/ieee80211_acl.c',
+            'sys/net80211/ieee80211_acl.c',
             'sys/net80211/ieee80211_action.c',
             'sys/net80211/ieee80211_adhoc.c',
             'sys/net80211/ieee80211_ageq.c',
@@ -1566,7 +1566,7 @@ def net80211(mm):
             'sys/net80211/ieee80211_wds.c',
             'sys/net80211/ieee80211_xauth.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1589,7 +1589,7 @@ def opencrypto(mm):
     )
     mod.addKernelSpaceSourceFiles(
         [
-		'sys/opencrypto/crypto.c',
+      'sys/opencrypto/crypto.c',
             'sys/opencrypto/deflate.c',
             'sys/opencrypto/cryptosoft.c',
             'sys/opencrypto/criov.c',
@@ -1598,7 +1598,7 @@ def opencrypto(mm):
             'sys/opencrypto/skipjack.c',
             'sys/opencrypto/cast.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1650,7 +1650,7 @@ def crypto(mm):
             'sys/crypto/camellia/camellia-api.c',
             'sys/crypto/camellia/camellia.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1687,7 +1687,7 @@ def altq(mm):
             'sys/contrib/altq/altq/altq_hfsc.c',
             'sys/contrib/altq/altq/altq_red.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1719,7 +1719,7 @@ def pf(mm):
             'sys/contrib/pf/net/pf_table.c',
             'sys/contrib/pf/netinet/in4_cksum.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1734,7 +1734,7 @@ def pci(mm):
             'sys/dev/pci/pci_user.c',
             'sys/dev/pci/pci_pci.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     mod.addKernelSpaceHeaderFiles(
         [
@@ -1759,7 +1759,7 @@ def pci(mm):
             'sys/i386/i386/legacy.c',
             'sys/x86/pci/pci_bus.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -1900,7 +1900,7 @@ def user_space(mm):
             'lib/libc/db/recno/rec_seq.c',
             'lib/libc/db/recno/rec_utils.c',
         ],
-	mm.generator['source']('-D__DBINTERFACE_PRIVATE -DINET6')
+        mm.generator['source']('-D__DBINTERFACE_PRIVATE -DINET6')
     )
     mod.addUserSpaceSourceFiles(
         [
@@ -2109,7 +2109,7 @@ def user_space(mm):
             'usr.bin/netstat/sctp.c',
             'usr.bin/netstat/unix.c',
         ],
-	mm.generator['source']('-DINET6')
+        mm.generator['source']('-DINET6')
     )
     return mod
 
@@ -2189,7 +2189,7 @@ def contrib_libpcap(mm):
             'contrib/libpcap/sf-pcap.c',
             'contrib/libpcap/sf-pcap-ng.c',
         ],
-	mm.generator['source'](cflags)
+        mm.generator['source'](cflags)
     )
     return mod
 
@@ -2467,21 +2467,21 @@ def in_cksum(mm):
         [
             'sys/i386/i386/in_cksum.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     mod.addCPUDependentSourceFiles(
         [ 'powerpc' ],
         [
             'sys/powerpc/powerpc/in_cksum.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     mod.addCPUDependentSourceFiles(
-	[ 'sparc64' ],
-	[
+        [ 'sparc64' ],
+        [
             'sys/sparc64/sparc64/in_cksum.c',
-	],
-	mm.generator['source']()
+        ],
+        mm.generator['source']()
     )
     mod.addCPUDependentSourceFiles(
         [
@@ -2491,7 +2491,7 @@ def in_cksum(mm):
         [
             'sys/mips/mips/in_cksum.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -2540,6 +2540,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('log01', ['test_main']))
     mod.addTest(mm.generator['test']('rcconf01', ['test_main']))
+    mod.addTest(mm.generator['test']('rcconf02', ['test_main']))
     return mod
 
 #
@@ -2578,7 +2579,7 @@ def dhcpcd(mm):
         [
             'rtems/rtems-bsd-shell-dhcpcd.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -2602,7 +2603,7 @@ def mdnsresponder(mm):
             'mDNSResponder/mDNSPosix/mDNSPosix.c',
             'mDNSResponder/mDNSPosix/mDNSUNP.c',
         ],
-	mm.generator['source']()
+        mm.generator['source']()
     )
     return mod
 
@@ -2615,7 +2616,7 @@ def mghttpd(mm):
         [
             'rtemsbsd/mghttpd/mongoose.c',
         ],
-	mm.generator['source']('-DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET')
+        mm.generator['source']('-DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET')
     )
     return mod
 

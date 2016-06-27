@@ -1389,6 +1389,16 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
+    test_rcconf02 = ['testsuite/rcconf02/test_main.c']
+    bld.program(target = "rcconf02.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_rcconf02,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
     test_rwlock01 = ['testsuite/rwlock01/test_main.c']
     bld.program(target = "rwlock01.exe",
                 features = "cprogram",

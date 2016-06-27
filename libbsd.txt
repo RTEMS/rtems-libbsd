@@ -409,6 +409,57 @@ brctl addif qbri eth0
 dhclient qbri
 -------------------------------------------------------------------------------
 
+=== VDE and QEMU
+
+On FreeBSD you can create VDE or the Virtual Distributed Ethernet to create a
+network environment that does not need to run qemu as root or needing to drop
+the tap's privileges to run qemu.
+
+VDE creates a software switch with a default of 32 ports which means a single
+kernel tap can support 32 qemu networking sessions.
+
+To use VDE you need to build qemu with VDE support. The RSB can detect a VDE
+plug and enable VDE support in qemu when building. On FreeBSD install the VDE
+support with:
+
+ # pkg install -u vde2
+
+Build qemu with the RSB.
+
+To network create a bridge and a tap. The network is 10.10.1.0/24. On FreeBSD
+add to your /etc/rc.conf:
+
+ cloned_interfaces="bridge0 tap0"
+ autobridge_interfaces="bridge0"
+ autobridge_bridge0="re0 tap0"
+ ifconfig_re0="up"
+ ifconfig_tap0="up"
+ ifconfig_bridge0="inet 10.1.1.2 netmask 255.255.255.0"
+ defaultrouter="10.10.1.1"
+
+Start the VDE switch as root:
+
+ # sysctl net.link.tap.user_open=1
+ # sysctl net.link.tap.up_on_open=1
+ # vde_switch -d -s /tmp/vde1 -M /tmp/mgmt1 -tap tap0 -m 660 --mgmtmode 660
+ # chmod 660 /dev/tap0
+
+You can connect to the VDE switch's management channel using:
+
+ $ vdeterm /tmp/mgmt1
+
+To run qemu:
+
+ $ qemu-system-arm \
+	-serial null \
+	-serial mon:stdio \
+	-nographic \
+	-M xilinx-zynq-a9 \
+	-net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:11 \
+	-net vde,id=vde0,sock=/tmp/vde1
+	-m 256M \
+	-kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/rcconf02.exe
+
 == Issues and TODO
 
 * PCI support on x86 uses a quick and dirty hack, see pci_reserve_map().

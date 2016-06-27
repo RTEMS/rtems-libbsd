@@ -308,6 +308,27 @@ prison_check_af(struct ucred *cred, int af)
 }
 
 /*
+ * Return the correct hostname (domainname, et al) for the passed credential.
+ */
+void
+getcredhostname(struct ucred *cred, char *buf, size_t size)
+{
+  gethostname(buf, size);
+}
+
+void
+getcreddomainname(struct ucred *cred, char *buf, size_t size)
+{
+  getdomainname(buf, size);
+}
+
+void
+getcredhostid(struct ucred *cred, unsigned long *hostid)
+{
+  *hostid = 0;
+}
+
+/*
  * Return 1 if the passed credential is in a jail, otherwise 0.
  */
 int

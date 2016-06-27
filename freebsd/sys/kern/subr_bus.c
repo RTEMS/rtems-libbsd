@@ -92,10 +92,8 @@ struct devclass {
 	int		flags;
 #define DC_HAS_CHILDREN		1
 
-#ifndef __rtems__
 	struct sysctl_ctx_list sysctl_ctx;
 	struct sysctl_oid *sysctl_tree;
-#endif /* __rtems__ */
 };
 
 /**
@@ -140,10 +138,8 @@ struct device {
 	void	*ivars;			/**< instance variables  */
 	void	*softc;			/**< current driver's variables  */
 
-#ifndef __rtems__
 	struct sysctl_ctx_list sysctl_ctx; /**< state for sysctl variables  */
 	struct sysctl_oid *sysctl_tree;	/**< state for sysctl variables */
-#endif /* __rtems__ */
 };
 
 static MALLOC_DEFINE(M_BUS, "bus", "Bus data structures");
@@ -201,7 +197,6 @@ void print_devclass_list(void);
 #define print_devclass_list()		/* nop */
 #endif
 
-#ifndef __rtems__
 /*
  * dev sysctl tree
  */
@@ -285,12 +280,10 @@ device_sysctl_handler(SYSCTL_HANDLER_ARGS)
 		free(buf, M_BUS);
 	return (error);
 }
-#endif /* __rtems__ */
 
 static void
 device_sysctl_init(device_t dev)
 {
-#ifndef __rtems__
 	devclass_t dc = dev->devclass;
 
 	if (dev->sysctl_tree != NULL)
@@ -321,7 +314,6 @@ device_sysctl_init(device_t dev)
 	    OID_AUTO, "%parent", CTLTYPE_STRING | CTLFLAG_RD,
 	    dev, DEVICE_SYSCTL_PARENT, device_sysctl_handler, "A",
 	    "parent device");
-#endif /* __rtems__ */
 }
 
 static void
@@ -339,12 +331,10 @@ device_sysctl_update(device_t dev)
 static void
 device_sysctl_fini(device_t dev)
 {
-#ifndef __rtems__
 	if (dev->sysctl_tree == NULL)
 		return;
 	sysctl_ctx_free(&dev->sysctl_ctx);
 	dev->sysctl_tree = NULL;
-#endif /* __rtems__ */
 }
 
 /*
@@ -1545,11 +1535,7 @@ devclass_get_parent(devclass_t dc)
 struct sysctl_ctx_list *
 devclass_get_sysctl_ctx(devclass_t dc)
 {
-#ifndef __rtems__
 	return (&dc->sysctl_ctx);
-#else /* __rtems__ */
-	return (NULL);
-#endif /* __rtems__ */
 }
 
 struct sysctl_oid *
@@ -2327,21 +2313,13 @@ device_get_flags(device_t dev)
 struct sysctl_ctx_list *
 device_get_sysctl_ctx(device_t dev)
 {
-#ifndef __rtems__
 	return (&dev->sysctl_ctx);
-#else /* __rtems__ */
-	return (NULL);
-#endif /* __rtems__ */
 }
 
 struct sysctl_oid *
 device_get_sysctl_tree(device_t dev)
 {
-#ifndef __rtems__
 	return (dev->sysctl_tree);
-#else /* __rtems__ */
-	return (NULL);
-#endif /* __rtems__ */
 }
 
 /**

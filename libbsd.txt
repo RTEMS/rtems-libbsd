@@ -650,7 +650,7 @@ not changed unless the contents change. The script will also report the
 number of files which changed. In verbose mode, the script will print
 the name of the files which are changed.
 
-To add or update files int the RTEMS FreeBSD tree first run the 'reverse mode'
+To add or update files in the RTEMS FreeBSD tree first run the 'reverse mode'
 and move the current set of patches FreeBSD. The script may warn you if a file
 is not present at the destination for the direction. This can happen as files
 not avaliable at the FreeBSD snapshot point have been specially added to the

@@ -280,7 +280,7 @@ nexus_setup_intr(device_t dev, device_t child, struct resource *res, int flags,
 
 		sc = rtems_interrupt_server_handler_install(RTEMS_ID_NONE,
 		    rman_get_start(res), device_get_nameunit(child),
-		    RTEMS_INTERRUPT_UNIQUE, rh, ra);
+		    RTEMS_INTERRUPT_SHARED, rh, ra);
 		if (sc == RTEMS_SUCCESSFUL) {
 			err = 0;
 		} else {
@@ -321,7 +321,7 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 
 	sc = rtems_interrupt_server_handler_install(RTEMS_ID_NONE,
 	    rman_get_start(res), device_get_nameunit(child),
-	    RTEMS_INTERRUPT_UNIQUE, rh, ra);
+	    RTEMS_INTERRUPT_SHARED, rh, ra);
 	err = sc == RTEMS_SUCCESSFUL ? 0 : EINVAL;
 #else
 	err = EINVAL;

@@ -7,6 +7,8 @@
  *  Germany
  *  <rtems@embedded-brains.de>
  *
+ * Copyright (c) 2016 Chris Johns <chrisj@rtems.org> All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -29,6 +31,9 @@
  * SUCH DAMAGE.
  */
 
+#if !defined(BSP_NEXUS_DEVICES_h)
+#define BSP_NEXUS_DEVICES_h
+
 #include <rtems/bsd/bsd.h>
 
 #include <bsp.h>
@@ -37,115 +42,48 @@
 
 #include <bsp/irq.h>
 
-static const rtems_bsd_device_resource smc0_res[] = {
-	{
-		.type = RTEMS_BSD_RES_MEMORY,
-		.start_request = 0,
-		.start_actual = 0x4e000000
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 0,
-		.start_actual = RVPBXA9_IRQ_ETHERNET
-	}
-};
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(smc, 0, RTEMS_ARRAY_SIZE(smc0_res),
-    &smc0_res[0]);
+#define RTEMS_BSD_DRIVER_SMC0
+#define RTEMS_BSD_DRIVER_SMC0_BASE_ADDR 0x4e000000
+#define RTEMS_BSD_DRIVER_SMC0_IRQ       RVPBXA9_IRQ_ETHERNET
 
 #elif defined(LIBBSP_M68K_GENMCF548X_BSP_H)
 
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(fec, 0, 0, NULL);
+#define RTEMS_BSD_DRIVER_FEC
 
 #elif defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
 
 #include <bsp/irq.h>
 
-static const rtems_bsd_device_resource zy7_slcr0_res[] = {
-	{
-		.type = RTEMS_BSD_RES_MEMORY,
-		.start_request = 0,
-		.start_actual = 0xf8000000
-	}
-};
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(zy7_slcr, 0, RTEMS_ARRAY_SIZE(zy7_slcr0_res),
-    &zy7_slcr0_res[0]);
-
-static const rtems_bsd_device_resource cgem0_res[] = {
-	{
-		.type = RTEMS_BSD_RES_MEMORY,
-		.start_request = 0,
-		.start_actual = 0xe000b000
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 0,
-		.start_actual = ZYNQ_IRQ_ETHERNET_0
-	}
-};
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(cgem, 0, RTEMS_ARRAY_SIZE(cgem0_res),
-    &cgem0_res[0]);
-
-SYSINIT_DRIVER_REFERENCE(e1000phy, miibus);
+#define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR0
+#define RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM0
+#define RTEMS_BSD_DRIVER_CGEM0_IRQ         ZYNQ_IRQ_ETHERNET_0
+#define RTEMS_BSD_DRIVER_E1000PHY
 
 #elif defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H)
 
 #include <bsp/socal/hps.h>
 #include <bsp/irq.h>
 
-static const rtems_bsd_device_resource dwc0_res[] = {
-	{
-		.type = RTEMS_BSD_RES_MEMORY,
-		.start_request = 0,
-		.start_actual = (unsigned long)ALT_EMAC1_ADDR
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 0,
-		.start_actual = ALT_INT_INTERRUPT_EMAC1_IRQ
-	}
-};
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwc, 0, RTEMS_ARRAY_SIZE(dwc0_res),
-    &dwc0_res[0]);
-
-SYSINIT_DRIVER_REFERENCE(micphy, miibus);
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(dw_mmc, 0, 0, NULL);
-
-SYSINIT_DRIVER_REFERENCE(mmc, dw_mmc);
-SYSINIT_DRIVER_REFERENCE(mmcsd, mmc);
-
-static const rtems_bsd_device_resource dwcotg0_res[] = {
-	{
-		.type = RTEMS_BSD_RES_MEMORY,
-		.start_request = 0,
-		.start_actual = (unsigned long)ALT_USB1_ADDR
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 0,
-		.start_actual = ALT_INT_INTERRUPT_USB1_IRQ
-	}
-};
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwcotg, 0, RTEMS_ARRAY_SIZE(dwcotg0_res),
-    &dwcotg0_res[0]);
-
-SYSINIT_REFERENCE(usb_quirk_init);
-SYSINIT_DRIVER_REFERENCE(uhub, usbus);
-SYSINIT_DRIVER_REFERENCE(umass, uhub);
+#define RTEMS_BSD_DRIVER_DWC0
+#define RTEMS_BSD_DRIVER_DWC0_BASE_ADDR    (unsigned long) ALT_EMAC1_ADDR
+#define RTEMS_BSD_DRIVER_DWC0_IRQ          ALT_INT_INTERRUPT_EMAC1_IRQ
+#define RTEMS_BSD_DRIVER_MIPHY
+#define RTEMS_BSD_DRIVER_DWCOTG0
+#define RTEMS_BSD_DRIVER_DWCOTG0_BASE_ADDR (unsigned long) ALT_USB1_ADDR
+#define RTEMS_BSD_DRIVER_DWCOTG0_IRQ       ALT_INT_INTERRUPT_USB1_IRQ
+#define RTEMS_BSD_DRIVER_DWC_MMC
+#define RTEMS_BSD_DRIVER_MMC
+#define RTEMS_BSD_DRIVER_USB
+#define RTEMS_BSD_DRIVER_USB_MASS
 
 #elif defined(LIBBSP_I386_PC386_BSP_H)
 
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(legacy, 0, 0, NULL);
-
-SYSINIT_DRIVER_REFERENCE(pcib, legacy);
-SYSINIT_DRIVER_REFERENCE(pci, pcib);
-SYSINIT_DRIVER_REFERENCE(lem, pci);
-SYSINIT_DRIVER_REFERENCE(igb, pci);
-SYSINIT_DRIVER_REFERENCE(em, pci);
-SYSINIT_DRIVER_REFERENCE(re, pci);
-
-SYSINIT_DRIVER_REFERENCE(rgephy, miibus);
+#define RTEMS_BSD_DRIVER_PC_LEGACY
+#define RTEMS_BSD_DRIVER_PCI_LEM
+#define RTEMS_BSD_DRIVER_PCI_IGB
+#define RTEMS_BSD_DRIVER_PCI_EM
+#define RTEMS_BSD_DRIVER_PCI_RE
+#define RTEMS_BSD_DRIVER_REPHY
 
 #elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
 
@@ -153,29 +91,19 @@ SYSINIT_DRIVER_REFERENCE(rgephy, miibus);
 
 #include <bsp/irq.h>
 
-static const rtems_bsd_device_resource tsec0_res[] = {
-	{
-		.type = RTEMS_BSD_RES_MEMORY,
-		.start_request = 0,
-		.start_actual = 0xffeb0000
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 0,
-		.start_actual = QORIQ_IRQ_ETSEC_TX_1
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 1,
-		.start_actual = QORIQ_IRQ_ETSEC_RX_1
-	}, {
-		.type = RTEMS_BSD_RES_IRQ,
-		.start_request = 2,
-		.start_actual = QORIQ_IRQ_ETSEC_ER_1
-	}
-};
-
-RTEMS_BSD_DEFINE_NEXUS_DEVICE(tsec, 0, RTEMS_ARRAY_SIZE(tsec0_res),
-    &tsec0_res[0]);
+#define RTEMS_BSD_DRIVER_TSEC
+#define RTEMS_BSD_DRIVER_TSEC_BASE_ADDR 0xffeb0000
+#define RTEMS_BSD_DRIVER_TSEC_TX_IRQ    QORIQ_IRQ_ETSEC_TX_1
+#define RTEMS_BSD_DRIVER_TSEC_RX_IRQ    QORIQ_IRQ_ETSEC_RX_1
+#define RTEMS_BSD_DRIVER_TSEC_ER_IRQ    QORIQ_IRQ_ETSEC_ER_1
 
 #endif /* !QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) */
+
+#endif
+
+/*
+ * Include the supported Nexus bus devices.
+ */
+#include <machine/rtems-bsd-nexus-bus.h>
 
 #endif

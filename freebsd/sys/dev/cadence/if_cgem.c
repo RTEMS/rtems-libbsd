@@ -1529,7 +1529,6 @@ cgem_mediachange(struct cgem_softc *sc,	struct mii_data *mii)
 static void
 cgem_add_sysctls(device_t dev)
 {
-#ifndef __rtems__
 	struct cgem_softc *sc = device_get_softc(dev);
 	struct sysctl_ctx_list *ctx;
 	struct sysctl_oid_list *child;
@@ -1702,7 +1701,6 @@ cgem_add_sysctls(device_t dev)
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_frames_udp_csum_errs",
 			CTLFLAG_RD, &sc->stats.rx_udp_csum_errs, 0,
 			"Number frames received with UDP checksum errors");
-#endif /* __rtems__ */
 }
 
 

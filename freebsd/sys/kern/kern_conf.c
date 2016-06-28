@@ -51,12 +51,18 @@ __FBSDID("$FreeBSD$");
 #include <fs/devfs/devfs_int.h>
 #include <vm/vm.h>
 
+#ifdef __rtems__
+#define	PRIBIO			(0)
+#endif /* __rtems__ */
+
 static MALLOC_DEFINE(M_DEVT, "cdev", "cdev storage");
 
 struct mtx devmtx;
 static void destroy_devl(struct cdev *dev);
+#ifndef __rtems__
 static int destroy_dev_sched_cbl(struct cdev *dev,
     void (*cb)(void *), void *arg);
+#endif /* __rtems__ */
 static int make_dev_credv(int flags, struct cdev **dres, struct cdevsw *devsw,
     int unit, struct ucred *cr, uid_t uid, gid_t gid, int mode, const char *fmt,
     va_list ap);
@@ -137,6 +143,7 @@ dev_unlock(void)
 	mtx_unlock(&devmtx);
 }
 
+#ifndef __rtems__
 void
 dev_ref(struct cdev *dev)
 {
@@ -146,6 +153,7 @@ dev_ref(struct cdev *dev)
 	dev->si_refcount++;
 	mtx_unlock(&devmtx);
 }
+#endif /* __rtems__ */
 
 void
 dev_refl(struct cdev *dev)
@@ -155,6 +163,7 @@ dev_refl(struct cdev *dev)
 	dev->si_refcount++;
 }
 
+#ifndef __rtems__
 void
 dev_rel(struct cdev *dev)
 {
@@ -179,6 +188,7 @@ dev_rel(struct cdev *dev)
 	if (flag)
 		devfs_free(dev);
 }
+#endif /* __rtems__ */
 
 struct cdevsw *
 dev_refthread(struct cdev *dev, int *ref)
@@ -205,6 +215,7 @@ dev_refthread(struct cdev *dev, int *ref)
 	return (csw);
 }
 
+#ifndef __rtems__
 struct cdevsw *
 devvn_refthread(struct vnode *vp, struct cdev **devp, int *ref)
 {
@@ -246,6 +257,7 @@ devvn_refthread(struct vnode *vp, struct cdev **devp, int *ref)
 	}
 	return (csw);
 }
+#endif /* __rtems__ */
 
 void	
 dev_relthread(struct cdev *dev, int ref)
@@ -297,12 +309,14 @@ enodev(void)
 #define dead_poll	(d_poll_t *)enodev
 #define dead_mmap	(d_mmap_t *)enodev
 
+#ifndef __rtems__
 static void
 dead_strategy(struct bio *bp)
 {
 
 	biofinish(bp, NULL, ENXIO);
 }
+#endif /* __rtems__ */
 
 #define dead_dump	(dumper_t *)enxio
 #define dead_kqfilter	(d_kqfilter_t *)enxio
@@ -316,12 +330,18 @@ static struct cdevsw dead_cdevsw = {
 	.d_write =	dead_write,
 	.d_ioctl =	dead_ioctl,
 	.d_poll =	dead_poll,
+#ifndef __rtems__
 	.d_mmap =	dead_mmap,
 	.d_strategy =	dead_strategy,
+#endif /* __rtems__ */
 	.d_name =	"dead",
+#ifndef __rtems__
 	.d_dump =	dead_dump,
+#endif /* __rtems__ */
 	.d_kqfilter =	dead_kqfilter,
+#ifndef __rtems__
 	.d_mmap_single = dead_mmap_single
+#endif /* __rtems__ */
 };
 
 /* Default methods if driver does not specify method */
@@ -335,12 +355,14 @@ static struct cdevsw dead_cdevsw = {
 #define no_kqfilter	(d_kqfilter_t *)enodev
 #define no_mmap_single	(d_mmap_single_t *)enodev
 
+#ifndef __rtems__
 static void
 no_strategy(struct bio *bp)
 {
 
 	biofinish(bp, NULL, ENODEV);
 }
+#endif /* __rtems__ */
 
 static int
 no_poll(struct cdev *dev __unused, int events, struct thread *td __unused)
@@ -367,6 +389,7 @@ giant_open(struct cdev *dev, int oflags, int devtype, struct thread *td)
 	return (retval);
 }
 
+#ifndef __rtems__
 static int
 giant_fdopen(struct cdev *dev, int oflags, struct thread *td, struct file *fp)
 {
@@ -382,6 +405,7 @@ giant_fdopen(struct cdev *dev, int oflags, struct thread *td, struct file *fp)
 	dev_relthread(dev, ref);
 	return (retval);
 }
+#endif /* __rtems__ */
 
 static int
 giant_close(struct cdev *dev, int fflag, int devtype, struct thread *td)
@@ -399,6 +423,7 @@ giant_close(struct cdev *dev, int fflag, int devtype, struct thread *td)
 	return (retval);
 }
 
+#ifndef __rtems__
 static void
 giant_strategy(struct bio *bp)
 {
@@ -417,6 +442,7 @@ giant_strategy(struct bio *bp)
 	mtx_unlock(&Giant);
 	dev_relthread(dev, ref);
 }
+#endif /* __rtems__ */
 
 static int
 giant_ioctl(struct cdev *dev, u_long cmd, caddr_t data, int fflag, struct thread *td)
@@ -498,6 +524,7 @@ giant_kqfilter(struct cdev *dev, struct knote *kn)
 	return (retval);
 }
 
+#ifndef __rtems__
 static int
 giant_mmap(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr, int nprot,
     vm_memattr_t *memattr)
@@ -533,6 +560,7 @@ giant_mmap_single(struct cdev *dev, vm_ooffset_t *offset, vm_size_t size,
 	dev_relthread(dev, ref);
 	return (retval);
 }
+#endif /* __rtems__ */
 
 static void
 notify(struct cdev *dev, const char *ev, int flags)
@@ -637,10 +665,12 @@ prep_cdevsw(struct cdevsw *devsw, int flags)
 		devsw->d_write = dead_write;
 		devsw->d_ioctl = dead_ioctl;
 		devsw->d_poll = dead_poll;
+#ifndef __rtems__
 		devsw->d_mmap = dead_mmap;
 		devsw->d_mmap_single = dead_mmap_single;
 		devsw->d_strategy = dead_strategy;
 		devsw->d_dump = dead_dump;
+#endif /* __rtems__ */
 		devsw->d_kqfilter = dead_kqfilter;
 	}
 	
@@ -662,18 +692,24 @@ prep_cdevsw(struct cdevsw *devsw, int flags)
 	while (0)
 
 	FIXUP(d_open,		null_open,	giant_open);
+#ifndef __rtems__
 	FIXUP(d_fdopen,		NULL,		giant_fdopen);
+#endif /* __rtems__ */
 	FIXUP(d_close,		null_close,	giant_close);
 	FIXUP(d_read,		no_read,	giant_read);
 	FIXUP(d_write,		no_write,	giant_write);
 	FIXUP(d_ioctl,		no_ioctl,	giant_ioctl);
 	FIXUP(d_poll,		no_poll,	giant_poll);
+#ifndef __rtems__
 	FIXUP(d_mmap,		no_mmap,	giant_mmap);
 	FIXUP(d_strategy,	no_strategy,	giant_strategy);
+#endif /* __rtems__ */
 	FIXUP(d_kqfilter,	no_kqfilter,	giant_kqfilter);
+#ifndef __rtems__
 	FIXUP(d_mmap_single,	no_mmap_single,	giant_mmap_single);
 
 	if (devsw->d_dump == NULL)	devsw->d_dump = no_dump;
+#endif /* __rtems__ */
 
 	LIST_INIT(&devsw->d_devs);
 
@@ -791,14 +827,18 @@ make_dev_credv(int flags, struct cdev **dres, struct cdevsw *devsw, int unit,
 	    ("make_dev() by driver %s on pre-existing device (min=%x, name=%s)",
 	    devsw->d_name, dev2unit(dev), devtoname(dev)));
 	dev->si_flags |= SI_NAMED;
+#ifndef __rtems__
 	if (cr != NULL)
 		dev->si_cred = crhold(cr);
 	dev->si_uid = uid;
 	dev->si_gid = gid;
 	dev->si_mode = mode;
+#endif /* __rtems__ */
 
 	devfs_create(dev);
+#ifndef __rtems__
 	clean_unrhdrl(devfs_inos);
+#endif /* __rtems__ */
 	dev_unlock_and_free();
 
 	notify_create(dev, flags);
@@ -824,6 +864,7 @@ make_dev(struct cdevsw *devsw, int unit, uid_t uid, gid_t gid, int mode,
 	return (dev);
 }
 
+#ifndef __rtems__
 struct cdev *
 make_dev_cred(struct cdevsw *devsw, int unit, struct ucred *cr, uid_t uid,
     gid_t gid, int mode, const char *fmt, ...)
@@ -929,7 +970,9 @@ make_dev_alias_v(int flags, struct cdev **cdev, struct cdev *pdev,
 	dev->si_flags |= SI_NAMED;
 	devfs_create(dev);
 	dev_dependsl(pdev, dev);
+#ifndef __rtems__
 	clean_unrhdrl(devfs_inos);
+#endif /* __rtems__ */
 	dev_unlock();
 
 	notify_create(dev, flags);
@@ -1028,6 +1071,7 @@ out:
 		free(devfspath, M_DEVBUF);
 	return (ret);
 }
+#endif /* __rtems__ */
 
 static void
 destroy_devl(struct cdev *dev)
@@ -1059,6 +1103,7 @@ destroy_devl(struct cdev *dev)
 	/* Remove name marking */
 	dev->si_flags &= ~SI_NAMED;
 
+#ifndef __rtems__
 	/* If we are a child, remove us from the parents list */
 	if (dev->si_flags & SI_CHILD) {
 		LIST_REMOVE(dev, si_siblings);
@@ -1074,9 +1119,11 @@ destroy_devl(struct cdev *dev)
 		LIST_REMOVE(dev, si_clone);
 		dev->si_flags &= ~SI_CLONELIST;
 	}
+#endif /* __rtems__ */
 
 	csw = dev->si_devsw;
 	dev->si_devsw = NULL;	/* already NULL for SI_ALIAS */
+#ifndef __rtems__
 	while (csw != NULL && csw->d_purge != NULL && dev->si_threadcount) {
 		csw->d_purge(dev);
 		msleep(csw, &devmtx, PRIBIO, "devprg", hz/10);
@@ -1084,6 +1131,7 @@ destroy_devl(struct cdev *dev)
 			printf("Still %lu threads in %s\n",
 			    dev->si_threadcount, devtoname(dev));
 	}
+#endif /* __rtems__ */
 	while (dev->si_threadcount != 0) {
 		/* Use unique dummy wait ident */
 		msleep(&csw, &devmtx, PRIBIO, "devdrn", hz / 10);
@@ -1094,17 +1142,21 @@ destroy_devl(struct cdev *dev)
 		/* avoid out of order notify events */
 		notify_destroy(dev);
 	}
+#ifndef __rtems__
 	mtx_lock(&cdevpriv_mtx);
 	while ((p = LIST_FIRST(&cdp->cdp_fdpriv)) != NULL) {
 		devfs_destroy_cdevpriv(p);
 		mtx_lock(&cdevpriv_mtx);
 	}
 	mtx_unlock(&cdevpriv_mtx);
+#endif /* __rtems__ */
 	dev_lock();
 
 	dev->si_drv1 = 0;
 	dev->si_drv2 = 0;
+#ifndef __rtems__
 	bzero(&dev->__si_u, sizeof(dev->__si_u));
+#endif /* __rtems__ */
 
 	if (!(dev->si_flags & SI_ALIAS)) {
 		/* Remove from cdevsw list */
@@ -1126,6 +1178,7 @@ destroy_devl(struct cdev *dev)
 		dev_free_devlocked(dev);
 }
 
+#ifndef __rtems__
 static void
 delist_dev_locked(struct cdev *dev)
 {
@@ -1164,6 +1217,7 @@ delist_dev(struct cdev *dev)
 	delist_dev_locked(dev);
 	dev_unlock();
 }
+#endif /* __rtems__ */
 
 void
 destroy_dev(struct cdev *dev)
@@ -1175,6 +1229,7 @@ destroy_dev(struct cdev *dev)
 	dev_unlock_and_free();
 }
 
+#ifndef __rtems__
 const char *
 devtoname(struct cdev *dev)
 {
@@ -1518,3 +1573,4 @@ DB_SHOW_COMMAND(cdev, db_show_cdev)
 	db_printf("cdp_flags %s\n", buf);
 }
 #endif
+#endif /* __rtems__ */

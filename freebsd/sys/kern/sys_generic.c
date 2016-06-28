@@ -781,6 +781,7 @@ out:
 	fdrop(fp, td);
 	return (error);
 }
+#endif /* __rtems__ */
 
 int
 poll_no_poll(int events)
@@ -798,6 +799,7 @@ poll_no_poll(int events)
 	return (events & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
 }
 
+#ifndef __rtems__
 int
 sys_pselect(struct thread *td, struct pselect_args *uap)
 {

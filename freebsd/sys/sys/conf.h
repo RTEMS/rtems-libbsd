@@ -82,9 +82,9 @@ struct cdev {
 	struct ucred	*si_cred;	/* cached clone-time credential */
 #endif /* __rtems__ */
 	int		si_drv0;
-#ifndef __rtems__
 	int		si_refcount;
 	LIST_ENTRY(cdev)	si_list;
+#ifndef __rtems__
 	LIST_ENTRY(cdev)	si_clone;
 	LIST_HEAD(, cdev)	si_children;
 	LIST_ENTRY(cdev)	si_siblings;
@@ -96,7 +96,9 @@ struct cdev {
 #ifndef __rtems__
 	int		si_iosize_max;	/* maximum I/O size (for physio &al) */
 	u_long		si_usecount;
+#endif /* __rtems__ */
 	u_long		si_threadcount;
+#ifndef __rtems__
 	union {
 		struct snapdata *__sid_snapdata;
 	} __si_u;
@@ -108,6 +110,7 @@ struct cdev {
 		char		__si_name[SPECNAMELEN + 1];
 	} __si_pathstruct;
 #endif /* __rtems__ */
+	char		__si_namebuf[SPECNAMELEN + 1];
 };
 
 #ifdef __rtems__
@@ -219,25 +222,33 @@ struct cdevsw {
 	u_int			d_flags;
 	const char		*d_name;
 	d_open_t		*d_open;
+#ifndef __rtems__
 	d_fdopen_t		*d_fdopen;
+#endif /* __rtems__ */
 	d_close_t		*d_close;
 	d_read_t		*d_read;
 	d_write_t		*d_write;
 	d_ioctl_t		*d_ioctl;
 	d_poll_t		*d_poll;
+#ifndef __rtems__
 	d_mmap_t		*d_mmap;
 	d_strategy_t		*d_strategy;
 	dumper_t		*d_dump;
+#endif /* __rtems__ */
 	d_kqfilter_t		*d_kqfilter;
+#ifndef __rtems__
 	d_purge_t		*d_purge;
 	d_mmap_single_t		*d_mmap_single;
 
 	int32_t			d_spare0[3];
 	void			*d_spare1[3];
 
+#endif /* __rtems__ */
 	/* These fields should not be messed with by drivers */
 	LIST_HEAD(, cdev)	d_devs;
+#ifndef __rtems__
 	int			d_spare2;
+#endif /* __rtems__ */
 	union {
 		struct cdevsw		*gianttrick;
 		SLIST_ENTRY(cdevsw)	postfree_list;

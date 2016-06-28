@@ -2482,6 +2482,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('media01', ['test_main'], runTest = False))
     mod.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
     mod.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
     return mod
 
 #

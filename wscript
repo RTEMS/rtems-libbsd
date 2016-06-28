@@ -1250,6 +1250,17 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
+    test_cdev01 = ['testsuite/cdev01/test_cdev.c',
+                   'testsuite/cdev01/test_main.c']
+    bld.program(target = "cdev01",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_cdev01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
     test_vlan01 = ['testsuite/vlan01/test_main.c']
     bld.program(target = "vlan01",
                 features = "cprogram",

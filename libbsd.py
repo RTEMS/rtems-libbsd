@@ -76,7 +76,6 @@ def rtems(mm):
             'rtems/rtems-kernel-bus-root.c',
             'rtems/rtems-kernel-cam.c',
             'rtems/rtems-kernel-chunk.c',
-            'rtems/rtems-kernel-conf.c',
             'rtems/rtems-kernel-configintrhook.c',
             'rtems/rtems-kernel-delay.c',
             'rtems/rtems-kernel-get-file.c',
@@ -303,6 +302,7 @@ def base(mm):
         [
             'sys/kern/init_main.c',
             'sys/kern/kern_condvar.c',
+            'sys/kern/kern_conf.c',
             'sys/kern/kern_event.c',
             'sys/kern/kern_hhook.c',
             'sys/kern/kern_intr.c',

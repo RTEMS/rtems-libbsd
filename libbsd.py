@@ -2548,6 +2548,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('log01', ['test_main']))
     mod.addTest(mm.generator['test']('rcconf01', ['test_main']))
     mod.addTest(mm.generator['test']('rcconf02', ['test_main']))
+    mod.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
     return mod
 
 #

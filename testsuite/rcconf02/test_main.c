@@ -44,6 +44,8 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 
+#define RCCONF02_HAS_SHELL
+
 #define TEST_NAME "LIBBSD RC.CONF 2"
 
 #define IFACE_IPV4(iface) \
@@ -70,20 +72,23 @@
   IFACE_VLAN(em0)   \
   IFACE_VLAN(re0)
 
-static const char* rc_conf_text =              \
-  "#\n"                                        \
-  "# Tests rc.conf. Add every NIC\n"           \
-  "#\n"                                        \
-  "hostname=\"rctest\"\n"                      \
-  "\n"                                         \
-  "create_args_myvlan=\"vlan 102\"\n"          \
-  "create_args_yourvlan=\"vlan 202\"\n"        \
-  "\n"                                         \
-  RC_CONF_IFACES                               \
-  "\n"                                         \
-  RC_CONF_VLANS                                \
-  "\n"                                         \
-  "defaultrouter=\"" NET_CFG_GATEWAY_IP "\"\n" \
+static const char* rc_conf_text =                       \
+  "#\n"                                                 \
+  "# Tests rc.conf. Add every NIC\n"                    \
+  "#\n"                                                 \
+  "hostname=\"rctest\"\n"                               \
+  "\n"                                                  \
+  "create_args_myvlan=\"vlan 102\"\n"                   \
+  "create_args_yourvlan=\"vlan 202\"\n"                 \
+  "\n"                                                  \
+  RC_CONF_IFACES                                        \
+  "\n"                                                  \
+  RC_CONF_VLANS                                         \
+  "\n"                                                  \
+  "defaultrouter=\"" NET_CFG_GATEWAY_IP "\"\n"          \
+  "\n"                                                  \
+  "ftpd_enable=\"YES\"\n"                               \
+  "ftpd_options=\"-v -p 21 -C 10 -P 150 -L -I 10 -R /\"\n" \
   "n";
 
 static void
@@ -113,6 +118,8 @@ static void
 test_main(void)
 {
   test_rc_conf_script();
+
+#if defined(RCCONF02_HAS_SHELL)
   rtems_shell_init(
     "SHLL",
     32 * 1024,
@@ -122,8 +129,15 @@ test_main(void)
     true,
     NULL
     );
+#endif /* RCCONF02_HAS_SHELL */
+
   exit(0);
 }
+
+/*
+ * Optional shell for testing this test.
+ */
+#if defined(RCCONF02_HAS_SHELL)
 
 #define CONFIGURE_SHELL_COMMANDS_INIT
 
@@ -163,5 +177,9 @@ test_main(void)
 #define CONFIGURE_SHELL_COMMAND_SHUTDOWN
 
 #include <rtems/shellconfig.h>
+#endif /* RCCONF02_HAS_SHELL */
+
+#define RTEMS_BSD_CONFIG_BSP_CONFIG
+#define RTEMS_BSD_CONFIG_SERVICE_FTPD
 
 #include <rtems/bsd/test/default-init.h>

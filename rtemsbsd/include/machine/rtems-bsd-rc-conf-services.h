@@ -154,7 +154,8 @@ extern void rtems_bsd_rc_conf_print_cmd(rtems_bsd_rc_conf* rc_conf,
 /*
  * Decls for the handlers.
  */
-void rc_conf_net_init(void* arg);   /* Installed by default. */
+void rc_conf_net_init(void* arg);    /* Installed by default. */
+void rc_conf_ftpd_init(void* arg);   /* ftpd_enabled="YES" */
 
 /*
  * Added services.

@@ -73,14 +73,19 @@ rtems_task Init(
   assert( 0 );
 }
 
-#include <machine/rtems-bsd-sysinit.h>
+/*
+ * Configure LibBSD.
+ */
+#define RTEMS_BSD_CONFIG_NET_PF_UNIX
+#define RTEMS_BSD_CONFIG_NET_IF_LAGG
+#define RTEMS_BSD_CONFIG_NET_IF_VLAN
+#define RTEMS_BSD_CONFIG_INIT
 
-SYSINIT_NEED_NET_PF_UNIX;
-SYSINIT_NEED_NET_IF_LAGG;
-SYSINIT_NEED_NET_IF_VLAN;
+#include <machine/rtems-bsd-config.h>
 
-#include <bsp/nexus-devices.h>
-
+/*
+ * Configure RTEMS.
+ */
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER

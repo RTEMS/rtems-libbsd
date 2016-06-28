@@ -107,6 +107,8 @@ def rtems(mm):
             'rtems/rtems-kvm.c',
             'rtems/syslog.c',
             'ftpd/ftpd.c',
+            'ftpd/ftpd-init.c',
+            'ftpd/ftpd-service.c',
             'ftpfs/ftpfs.c',
             'mdns/mdns.c',
             'mdns/mdns-hostname-default.c',

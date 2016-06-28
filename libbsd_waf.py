@@ -1013,6 +1013,8 @@ def build(bld):
               'mDNSResponder/mDNSShared/PlatformCommon.c',
               'mDNSResponder/mDNSShared/dnssd_clientshim.c',
               'mDNSResponder/mDNSShared/mDNSDebug.c',
+              'rtemsbsd/ftpd/ftpd-init.c',
+              'rtemsbsd/ftpd/ftpd-service.c',
               'rtemsbsd/ftpd/ftpd.c',
               'rtemsbsd/ftpfs/ftpfs.c',
               'rtemsbsd/local/bus_if.c',

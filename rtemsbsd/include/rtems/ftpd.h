@@ -54,6 +54,7 @@ struct rtems_ftpd_configuration
                                                   3 - browse-only */
    rtems_shell_login_check_t login;            /* Login check or 0 to ignore
                                                   user/passwd. */
+   bool                      verbose;          /* Say hello! */
 };
 
 /*

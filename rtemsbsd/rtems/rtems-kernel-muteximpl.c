@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -43,7 +43,7 @@
 #include <rtems/score/schedulerimpl.h>
 #include <rtems/score/threadqimpl.h>
 
-#define BSD_MUTEX_TQ_OPERATIONS &_Thread_queue_Operations_priority
+#define BSD_MUTEX_TQ_OPERATIONS &_Thread_queue_Operations_priority_inherit
 
 void
 rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
@@ -56,15 +56,14 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 
 		_Thread_queue_Release(&m->queue, &queue_context->Lock_context);
 	} else {
-		/* Priority inheritance */
-		_Thread_Raise_priority(owner, executing->current_priority);
-
 		++executing->resource_count;
 		_Thread_queue_Context_set_expected_level(queue_context, 1);
 		_Thread_queue_Context_set_no_timeout(queue_context);
-		_Thread_queue_Enqueue_critical(&m->queue,
+		_Thread_queue_Context_set_deadlock_callout(queue_context,
+		    _Thread_queue_Deadlock_fatal);
+		_Thread_queue_Enqueue_critical(&m->queue.Queue,
 		    BSD_MUTEX_TQ_OPERATIONS, executing,
-		    STATES_WAITING_FOR_MUTEX, queue_context);
+		    STATES_WAITING_FOR_SYS_LOCK_MUTEX, queue_context);
 	}
 }
 
@@ -79,8 +78,8 @@ rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
 
 		operations = BSD_MUTEX_TQ_OPERATIONS;
 		new_owner = ( *operations->first )( heads );
-		m->owner = new_owner;
-		_Thread_queue_Extract_critical(&m->queue, operations,
+		m->queue.Queue.owner = new_owner;
+		_Thread_queue_Extract_critical(&m->queue.Queue, operations,
 		    new_owner, queue_context);
 	} else {
 		_Thread_queue_Release(&m->queue, &queue_context->Lock_context);

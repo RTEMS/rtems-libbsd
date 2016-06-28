@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -48,8 +48,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 typedef struct {
-	Thread_queue_Queue queue;
-	Thread_Control *owner;
+	Thread_queue_Control queue;
 	int nest_level;
 } rtems_bsd_mutex;
 

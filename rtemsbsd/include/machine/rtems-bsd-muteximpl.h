@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -58,7 +58,6 @@ rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
     struct lock_class *class, const char *name, const char *type, int flags)
 {
 	_Thread_queue_Initialize(&m->queue);
-	m->owner = NULL;
 	m->nest_level = 0;
 
 	lock_init(lock, class, name, type, flags);
@@ -78,11 +77,11 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 	_Thread_queue_Context_initialize(&queue_context);
 	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
-	owner = m->owner;
+	owner = m->queue.Queue.owner;
 	executing = _Thread_Executing;
 
 	if (__predict_true(owner == NULL)) {
-		m->owner = executing;
+		m->queue.Queue.owner = executing;
 		++executing->resource_count;
 
 		_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
@@ -103,11 +102,11 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 	_Thread_queue_Context_initialize(&queue_context);
 	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
-	owner = m->owner;
+	owner = m->queue.Queue.owner;
 	executing = _Thread_Executing;
 
 	if (owner == NULL) {
-		m->owner = executing;
+		m->queue.Queue.owner = executing;
 		++executing->resource_count;
 		success = 1;
 	} else if (owner == executing) {
@@ -138,7 +137,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
 
 	nest_level = m->nest_level;
-	owner = m->owner;
+	owner = m->queue.Queue.owner;
 
 	BSD_ASSERT(owner == _Thread_Executing);
 
@@ -155,11 +154,11 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 		 */
 		_Atomic_Fence( ATOMIC_ORDER_ACQ_REL );
 
-		heads = m->queue.heads;
+		heads = m->queue.Queue.heads;
 		keep_priority = _Thread_Owns_resources(owner)
 		    || !owner->priority_restore_hint;
 
-		m->owner = NULL;
+		m->queue.Queue.owner = NULL;
 
 		if (__predict_true(heads == NULL && keep_priority)) {
 			_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
@@ -179,7 +178,7 @@ static inline int
 rtems_bsd_mutex_owned(rtems_bsd_mutex *m)
 {
 
-	return (m->owner == _Thread_Get_executing());
+	return (m->queue.Queue.owner == _Thread_Get_executing());
 }
 
 static inline int
@@ -192,7 +191,7 @@ rtems_bsd_mutex_recursed(rtems_bsd_mutex *m)
 static inline void
 rtems_bsd_mutex_destroy(struct lock_object *lock, rtems_bsd_mutex *m)
 {
-	BSD_ASSERT(m->queue.heads == NULL);
+	BSD_ASSERT(m->queue.Queue.heads == NULL);
 
 	if (rtems_bsd_mutex_owned(m)) {
 		m->nest_level = 0;

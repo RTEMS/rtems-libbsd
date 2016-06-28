@@ -103,12 +103,16 @@ default_vprintf_handler(int level, const char *fmt, va_list ap)
 static int (*vprintf_handler)(int, const char *, va_list) =
     default_vprintf_handler;
 
-void
-rtems_bsd_set_vprintf_handler(int (*new_vprintf_handler)
-    (int, const char *, va_list))
+rtems_bsd_vprintf_handler
+rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler new_handler)
 {
+	rtems_bsd_vprintf_handler old_handler;
 
-	vprintf_handler = new_vprintf_handler;
+	VPRINTF_LOCK();
+	old_handler = vprintf_handler;
+	vprintf_handler = new_handler;
+	VPRINTF_UNLOCK();
+	return (old_handler);
 }
 
 int

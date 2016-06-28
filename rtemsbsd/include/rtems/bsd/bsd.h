@@ -207,14 +207,21 @@ int rtems_bsd_bus_root_resume(void);
 int rtems_bsd_bus_root_detach(void);
 
 /**
+ * @brief The output back-end for logging functions.
+ */
+typedef int (*rtems_bsd_vprintf_handler)(int, const char *, va_list);
+
+/**
  * @brief Sets the output back-end for logging functions.
  *
- * @param new_vprintf_handler The new output back-end for logging functions.
+ * @param new_handler The new output back-end for logging functions.
+ *
+ * @return The previous handler.
  *
  * @see rtems_bsd_vprintf().
  */
-void rtems_bsd_set_vprintf_handler(int (*new_vprintf_handler)
-    (int, const char *, va_list));
+rtems_bsd_vprintf_handler rtems_bsd_set_vprintf_handler(
+    rtems_bsd_vprintf_handler new_handler);
 
 /**
  * @brief Output back-end for logging functions.

@@ -682,8 +682,8 @@ static rtems_task rc_conf_worker(rtems_task_argument task_argument)
   while (!rtems_chain_is_tail(&services, node)) {
     service* srv = (service*) node;
     int      rr;
-    if (rc_conf->verbose)
-      printf("BSD service: %s\n", srv->name);
+    if (strcmp("network", srv->name) != 0)
+      printf("Starting %s.\n", srv->name);
     rr = srv->entry(rc_conf);
     if (rr < 0) {
       fprintf(stderr, "error: bsd service: %s: %s\n", srv->name, strerror(errno));

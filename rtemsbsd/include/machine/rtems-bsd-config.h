@@ -64,7 +64,7 @@
 #include <machine/rtems-bsd-rc-conf-services.h>
 
 #ifdef __cplusplus
-//extern "C" {
+extern "C" {
 #endif /* __cplusplus */
 
 /*
@@ -76,7 +76,7 @@
  *  https://www.freebsd.org/doc/handbook/firewalls-pf.html
  */
 #if defined(RTEMS_BSD_CONFIG_NET_PF_UNIX)
- #define RTEMS_BSD_CFGDECL_NET_PF_UNIX SYSINIT_NEED_NET_PF_UNIX
+  #define RTEMS_BSD_CFGDECL_NET_PF_UNIX SYSINIT_NEED_NET_PF_UNIX
 #endif /* RTEMS_BSD_CONFIG_NET_PF_UNIX */
 
 /*
@@ -84,7 +84,7 @@
  *  https://www.freebsd.org/doc/handbook/network-aggregation.html
  */
 #if defined(RTEMS_BSD_CONFIG_NET_IF_LAGG)
- #define RTEMS_BSD_CFGDECL_IF_LAGG SYSINIT_NEED_NET_IF_LAGG
+  #define RTEMS_BSD_CFGDECL_IF_LAGG SYSINIT_NEED_NET_IF_LAGG
 #endif /* RTEMS_BSD_CONFIG_NET_IF_LAGG */
 
 /*
@@ -92,14 +92,14 @@
  *  https://www.freebsd.org/cgi/man.cgi?query=rc.conf then 'network_interfaces'.
  */
 #if defined(RTEMS_BSD_CONFIG_NET_IF_VLAN)
- #define RTEMS_BSD_CFGDECL_NET_IF_VLAN SYSINIT_NEED_NET_IF_VLAN
+  #define RTEMS_BSD_CFGDECL_NET_IF_VLAN SYSINIT_NEED_NET_IF_VLAN
 #endif /* RTEMS_BSD_CONFIG_NET_IF_VLAN */
 
 /*
  * FTPD
  */
 #if defined(RTEMS_BSD_CONFIG_SERVICE_FTPD)
- #define RTEMS_BSD_CFGDECL_FTPD RTEMS_BSD_RC_CONF_SYSINT(rc_conf_ftpd)
+  #define RTEMS_BSD_CFGDECL_FTPD RTEMS_BSD_RC_CONF_SYSINT(rc_conf_ftpd)
 #endif /* RTEMS_BSD_CONFIG_SERVICE_FTPD */
 
 /*

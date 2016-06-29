@@ -37,6 +37,8 @@
 #include <sys/stat.h>
 #include <regex.h>
 
+#include <syslog.h>
+
 #include <rtems.h>
 #include <rtems/chain.h>
 
@@ -108,6 +110,7 @@ argc_argv_clean(rtems_bsd_rc_conf_argc_argv* aa)
     free(aa->command);
     aa->argv = NULL;
     aa->command = NULL;
+    aa->argc = 0;
   }
 }
 
@@ -422,6 +425,8 @@ int rtems_bsd_rc_conf_find_next(rtems_bsd_rc_conf*           rc_conf,
     regfree(&rege);
   }
 
+  argc_argv_clean(argc_argv);
+
   errno = ENOENT;
 
   return -1;
@@ -669,12 +674,41 @@ rtems_bsd_rc_conf_service_remove(const char* name)
   return -1;
 }
 
-static rtems_task rc_conf_worker(rtems_task_argument task_argument)
+static void
+rc_conf_syslog(rtems_bsd_rc_conf* rc_conf)
+{
+  rtems_bsd_rc_conf_argc_argv* aa;
+  int                          r = 0;
+  aa = rtems_bsd_rc_conf_argc_argv_create();
+  if (aa != NULL) {
+    r = rtems_bsd_rc_conf_find(rc_conf, "syslog_priority", aa);
+    if (r == 0) {
+      if (aa->argc == 2) {
+        r = rtems_bsd_setlogpriority(aa->argv[1]);
+        if (r < 0)
+          fprintf(stderr,
+                  "error: syslog: invalid priority: %s\n", aa->argv[1]);
+      }
+      else {
+        fprintf(stderr, "error: syslog: invalid priority\n");
+      }
+    }
+    rtems_bsd_rc_conf_argc_argv_destroy(aa);
+  }
+}
+
+static rtems_task
+rc_conf_worker(rtems_task_argument task_argument)
 {
   rtems_bsd_rc_conf* rc_conf = (rtems_bsd_rc_conf*) task_argument;
-  rtems_chain_node* node = rtems_chain_first(&services);
-  int               r = 0;
-  int               error;
+  rtems_chain_node*  node = rtems_chain_first(&services);
+  int                r = 0;
+  int                error;
+
+  /*
+   * Check for a syslog priority before any services are run.
+   */
+  rc_conf_syslog(rc_conf);
 
   if (rc_conf->verbose)
     printf("rc.conf: running\n");
@@ -686,7 +720,8 @@ static rtems_task rc_conf_worker(rtems_task_argument task_argument)
       printf("Starting %s.\n", srv->name);
     rr = srv->entry(rc_conf);
     if (rr < 0) {
-      fprintf(stderr, "error: bsd service: %s: %s\n", srv->name, strerror(errno));
+      fprintf(stderr,
+              "error: bsd service: %s: %s\n", srv->name, strerror(errno));
       if (r == 0) {
         r = rr;
         error = errno;

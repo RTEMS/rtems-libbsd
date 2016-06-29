@@ -39,11 +39,16 @@
 #include <sysexits.h>
 
 #include <ifaddrs.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <rtems.h>
@@ -51,6 +56,8 @@
 
 #include <machine/rtems-bsd-commands.h>
 #include <machine/rtems-bsd-rc-conf-services.h>
+
+#include <rtems/rtems-routes.h>
 
 /*
  * Default defaultroute_delay is 30seconds.
@@ -335,51 +342,16 @@ defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   return 0;
 }
 
-/*
- * defaultroute_delay
- *
- * eg defaultroute=120
- *
- * See 'man rc.conf(5)' on FreeBSD.
- */
-static int
-defaultroute_delay(rtems_bsd_rc_conf* rc_conf,
-                   int                argc,
-                   const char**       argv)
-{
-  int   value;
-  char* end = NULL;
-
-  if (argc != 2) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  value = strtol(argv[1], &end, 10);
-
-  if (end == NULL) {
-      const char* args[] = {
-        "defaultrouter_delay", argv[1], NULL
-    };
-
-    rtems_bsd_rc_conf_print_cmd(rc_conf, "defaultrouter", 2, args);
-
-    defaultroute_delay_secs = value;
-  }
-  else {
-    errno = EINVAL;
-    return -1;
-  }
-
-  return 0;
-}
-
 static int
 show_interfaces(const char* msg, struct ifaddrs* ifap)
 {
   struct ifaddrs* ifa;
 
   fprintf(stdout, msg);
+
+  /*
+   * Always have lo0 first.
+   */
 
   for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
     if (strcasecmp("lo0", ifa->ifa_name) == 0) {
@@ -400,9 +372,20 @@ show_interfaces(const char* msg, struct ifaddrs* ifap)
 }
 
 static int
+dhcp_check(rtems_bsd_rc_conf_argc_argv* aa)
+{
+  if (aa->argc == 2 &&
+      (strcasecmp("DHCP",     aa->argv[1]) == 0 ||
+       strcasecmp("SYNCDHCP", aa->argv[1]) == 0))
+    return true;
+  return false;
+}
+
+static int
 setup_lo0(rtems_bsd_rc_conf* rc_conf, struct ifaddrs* ifap)
 {
   struct ifaddrs* ifa;
+
   for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
     if (strcasecmp("lo0", ifa->ifa_name) == 0) {
       const char* lo0_argv[] = {
@@ -412,34 +395,45 @@ setup_lo0(rtems_bsd_rc_conf* rc_conf, struct ifaddrs* ifap)
       return 0;
     }
   }
+
   fprintf(stderr, "warning: no loopback interface found\n");
+
   return -1;
 }
 
 static int
 setup_interfaces(rtems_bsd_rc_conf*           rc_conf,
                  rtems_bsd_rc_conf_argc_argv* aa,
-                 struct ifaddrs*              ifap)
+                 struct ifaddrs*              ifap,
+                 bool*                        dhcp)
 {
   struct ifaddrs* ifa;
+  int             r;
+
   for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
     if (strcasecmp("lo0", ifa->ifa_name) != 0) {
       char iface[64];
-      int  r;
       snprintf(iface, sizeof(iface), "ifconfig_%s", ifa->ifa_name);
       r = rtems_bsd_rc_conf_find(rc_conf, iface, aa);
       if (r == 0) {
-        show_result(iface, ifconfig_(rc_conf, ifa->ifa_name, aa->argc, aa->argv));
+        if (dhcp_check(aa)) {
+          *dhcp = true;
+        }
+        else {
+          show_result(iface, ifconfig_(rc_conf, ifa->ifa_name, aa->argc, aa->argv));
+        }
       }
     }
   }
+
   return 0;
 }
 
 static int
 setup_vlans(rtems_bsd_rc_conf*           rc_conf,
             rtems_bsd_rc_conf_argc_argv* aa,
-            struct ifaddrs*              ifap)
+            struct ifaddrs*              ifap,
+            bool*                        dhcp)
 {
   rtems_bsd_rc_conf_argc_argv* vaa;
   struct ifaddrs*              ifa;
@@ -481,8 +475,13 @@ setup_vlans(rtems_bsd_rc_conf*           rc_conf,
                      "ifconfig_%s_%s", ifa->ifa_name, aa->argv[arg]);
             r = rtems_bsd_rc_conf_find(rc_conf, expr, vaa);
             if (r == 0) {
-              show_result(vlan_name, ifconfig_(rc_conf, vlan_name,
-                                               vaa->argc, vaa->argv));
+              if (dhcp_check(vaa)) {
+                *dhcp = true;
+              }
+              else {
+                show_result(vlan_name, ifconfig_(rc_conf, vlan_name,
+                                                 vaa->argc, vaa->argv));
+              }
             }
           }
         }
@@ -495,10 +494,189 @@ setup_vlans(rtems_bsd_rc_conf*           rc_conf,
   return 0;
 }
 
+/*
+ * The rc_conf struct cannot be passed to a thread as a pointer. It can only be
+ * used in the rc.conf worker thread. As a result the values need to print a
+ * verbose message to aid debugging needs to have local oopies made and passed
+ * to the dhcpcd worker. The dhcpcd worker runs for ever.
+ */
+typedef struct dhcpcd_data {
+  rtems_bsd_rc_conf_argc_argv* argc_argv;
+  bool                         verbose;
+  const char*                  name;
+} dhcpcd_data;
+
+static void
+dhcpcd_worker(rtems_task_argument arg)
+{
+  dhcpcd_data*  dd = (dhcpcd_data*) arg;
+  int           argc;
+  const char**  argv;
+  const char*   dhcpcd_argv[] = { "dhcpcd", NULL };
+  struct stat   sb;
+  int           r;
+
+  r = stat("/var", &sb);
+  if (r < 0) {
+    mkdir("/var", S_IRWXU | S_IRWXG | S_IRWXO);
+  }
+
+  r = stat("/var/db", &sb);
+  if (r < 0) {
+    mkdir("/var/db", S_IRWXU | S_IRWXG | S_IRWXO);
+  }
+
+  if (dd->argc_argv->argc > 0) {
+    argc = dd->argc_argv->argc;
+    argv = dd->argc_argv->argv;
+  }
+  else {
+    argc = 1;
+    argv = dhcpcd_argv;
+  }
+
+  if (dd->verbose) {
+    fprintf(stdout, "rc.conf: %s: dhcpcd ", dd->name);
+    for (r = 1; r < argc; ++r)
+      fprintf(stdout, "%s ", argv[r]);
+    fprintf(stdout, "\n");
+  }
+
+  r = rtems_bsd_command_dhcpcd(argc, argv);
+  if (r != EX_OK)
+    fprintf(stderr, "error: dhcpcd: stopped\n");
+
+  free(dd->name);
+  rtems_bsd_rc_conf_argc_argv_destroy(dd->argc_argv);
+  free(dd);
+
+  rtems_task_delete(RTEMS_SELF);
+}
+
+static int
+run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
+{
+  dhcpcd_data*        dd;
+  rtems_status_code   sc;
+  rtems_id            id;
+  rtems_task_priority priority = RTEMS_MAXIMUM_PRIORITY - 1;
+  char*               end = NULL;
+  int                 delay = 30;
+  int                 r;
+
+  /*
+   * These are passed to the worker and cleaned up there if it ever exits. Do
+   * not destroy here unless an error before the thread runs.
+   */
+  dd = calloc(1, sizeof(*dd));
+  if (dd == NULL) {
+    fprintf(stderr, "error: dhcpcd data: no memory\n");
+    errno = ENOMEM;
+    return -1;
+  }
+
+  dd->name = strdup(rtems_bsd_rc_conf_name(rc_conf));
+  if (dd == NULL) {
+    free(dd);
+    fprintf(stderr, "error: dhcpcd data: no memory\n");
+    errno = ENOMEM;
+    return -1;
+  }
+
+  dd->argc_argv = rtems_bsd_rc_conf_argc_argv_create();
+  if (dd->argc_argv == NULL) {
+    free(dd->name);
+    free(dd);
+    errno = ENOMEM;
+    return -1;
+  }
+
+  dd->verbose = rtems_bsd_rc_conf_verbose(rc_conf);
+
+  r = rtems_bsd_rc_conf_find(rc_conf, "dhcpcd_priority", dd->argc_argv);
+  if (r == 0) {
+    if (dd->argc_argv->argc == 2) {
+      priority = strtoul(dd->argc_argv->argv[1], &end, 10);
+      if (priority == 0 || *end != '\0')
+        priority = RTEMS_MAXIMUM_PRIORITY - 1;
+    }
+  }
+
+  rtems_bsd_rc_conf_find(rc_conf, "dhcpcd_options", dd->argc_argv);
+
+  sc = rtems_task_create(rtems_build_name('D', 'H', 'C', 'P'),
+                         priority,
+                         2 * RTEMS_MINIMUM_STACK_SIZE,
+                         RTEMS_DEFAULT_MODES,
+                         RTEMS_FLOATING_POINT,
+                         &id);
+  if (sc == RTEMS_SUCCESSFUL)
+    sc = rtems_task_start(id, dhcpcd_worker, (rtems_task_argument) dd);
+  if (sc != RTEMS_SUCCESSFUL) {
+    fprintf(stderr,
+            "error: dhcpcd: thread create/start: %s\n", rtems_status_text(sc));
+    rtems_bsd_rc_conf_argc_argv_destroy(dd->argc_argv);
+    free(dd->name);
+    free(dd);
+    errno = EIO;
+    return -1;
+  }
+
+  /*
+   * See if a delay is specified else use default to 30 seconds. Wait for a
+   * valid default route.
+   */
+  r = rtems_bsd_rc_conf_find(rc_conf, "defaultroute_delay", aa);
+  if (r == 0 && aa->argc == 2) {
+    delay = (int) strtol(aa->argv[1], &end, 10);
+    if (*end != '\0') {
+      fprintf(stderr, "error: defaultroute_delay: invalid delay value\n");
+      delay = 30;
+    }
+  }
+
+  printf("Waiting %ds for default route interface: ", delay);
+  fflush(stdout);
+
+  while (delay > 0) {
+    struct sockaddr_in sin;
+    struct sockaddr*   rti_info[RTAX_MAX];
+
+    --delay;
+
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    inet_pton(AF_INET, "0.0.0.0.", &sin.sin_addr);
+
+    r = rtems_get_route(&sin, rti_info);
+    if (r == 0 && rti_info[RTAX_GATEWAY] != NULL) {
+      break;
+    }
+    else if (r < 0 && errno != ESRCH) {
+      fprintf(stderr,
+              "error: get routes %d: %d %s\n", r, errno, strerror(errno));
+    }
+
+    sleep(1);
+  }
+
+  /*
+   * We should print the interface but I cannot see how to get the interface
+   * with the default route without a lot of code.
+   */
+  if (delay > 0)
+    printf("found.\n");
+  else
+    printf("\nerror: no default route found\n");
+
+  return 0;
+}
+
 static int
 interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 {
   struct ifaddrs* ifap;
+  bool            dhcp = false;
 
   if (getifaddrs(&ifap) != 0) {
     fprintf(stderr, "error: interfaces: getifaddrs: %s\n", strerror(errno));
@@ -508,8 +686,11 @@ interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   show_interfaces("Starting network: ", ifap);
   show_result("cloned_interfaces", cloned_interfaces(rc_conf, aa));
   show_result("lo0", setup_lo0(rc_conf, ifap));
-  show_result("ifaces", setup_interfaces(rc_conf, aa, ifap));
-  show_result("vlans", setup_vlans(rc_conf, aa, ifap));
+  show_result("ifaces", setup_interfaces(rc_conf, aa, ifap, &dhcp));
+  show_result("vlans", setup_vlans(rc_conf, aa, ifap, &dhcp));
+  show_result("defaultrouter", defaultrouter(rc_conf, aa));
+  if (dhcp)
+    show_result("dhcp", run_dhcp(rc_conf, aa));
 
   free(ifap);
 
@@ -534,8 +715,6 @@ network_service(rtems_bsd_rc_conf* rc_conf)
     return -1;
   }
 
-  show_result("defaultrouter", defaultrouter(rc_conf, aa));
-
   rtems_bsd_rc_conf_argc_argv_destroy(aa);
 
   return 0;
@@ -549,5 +728,6 @@ rc_conf_net_init(void* arg)
                                     "after:first;",
                                     network_service);
   if (r < 0)
-    fprintf(stderr, "error: network service add failed: %s\n", strerror(errno));
+    fprintf(stderr,
+            "error: network service add failed: %s\n", strerror(errno));
 }

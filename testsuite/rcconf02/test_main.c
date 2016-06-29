@@ -23,6 +23,31 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * Tests:
+ *
+ * 1. rc.conf processing
+ *  1.1  syslog_priority
+ *  1.2  create_args_*
+ *  1.3  hostname
+ *  1.4  ifconfig_<iface>
+ *  1.5  vlans_<iface>
+ *  1.6  ifconfig_<iface>.<vlan>
+ *  1.7  defaultrouter
+ *  1.8  defaultroute_delay
+ *  1.9  ftp_enable
+ *  1.10 ftp_options
+ *  1.11 dhcpcd_priority
+ *  1.12 dhcpcd_options
+ *
+ * 2. dhcpcd (via vlan, should timeout unless VLAN is present)
+ *
+ * 3. get route, the defaultrouter sets a default route and the vlan DHCP
+ *    interface requires the default route be probed and found.
+ *
+ * 4. ftpd
+ */
+
 #include <rtems/bsd/sys/param.h>
 
 #include <assert.h>
@@ -44,12 +69,15 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 
+#if DEFINE_FOR_TESTING
 #define RCCONF02_HAS_SHELL
+#endif
 
 #define TEST_NAME "LIBBSD RC.CONF 2"
 
 #define IFACE_IPV4(iface) \
-  "ifconfig_" # iface " inet " NET_CFG_SELF_IP " netmask " NET_CFG_NETMASK "\n"
+  "ifconfig_" # iface "=\"inet " NET_CFG_SELF_IP " netmask " NET_CFG_NETMASK "\"\n"
+
 
 #define RC_CONF_IFACES \
   IFACE_IPV4(dmc0)  \
@@ -61,8 +89,8 @@
 
 #define IFACE_VLAN(iface) \
   "vlans_" # iface "=\"101 102\"\n" \
-  "ifconfig_" # iface "_101=\"inet 192.0.101.1/24\n" \
-  "ifconfig_" # iface "_102=\"inet 192.0.102.1/24\n"
+  "ifconfig_" # iface "_101=\"inet 192.0.101.1/24\"\n" \
+  "ifconfig_" # iface "_102=\"DHCP\"\n"
 
 #define RC_CONF_VLANS \
   IFACE_VLAN(dmc0)  \
@@ -72,22 +100,28 @@
   IFACE_VLAN(em0)   \
   IFACE_VLAN(re0)
 
-static const char* rc_conf_text =                       \
-  "#\n"                                                 \
-  "# Tests rc.conf. Add every NIC\n"                    \
-  "#\n"                                                 \
-  "hostname=\"rctest\"\n"                               \
-  "\n"                                                  \
-  "create_args_myvlan=\"vlan 102\"\n"                   \
-  "create_args_yourvlan=\"vlan 202\"\n"                 \
-  "\n"                                                  \
-  RC_CONF_IFACES                                        \
-  "\n"                                                  \
-  RC_CONF_VLANS                                         \
-  "\n"                                                  \
-  "defaultrouter=\"" NET_CFG_GATEWAY_IP "\"\n"          \
-  "\n"                                                  \
-  "ftpd_enable=\"YES\"\n"                               \
+static const char* rc_conf_text =                          \
+  "#\n"                                                    \
+  "# Tests rc.conf. Add every NIC\n"                       \
+  "#\n"                                                    \
+  "\n"                                                     \
+  "syslog_priority=\"debug\"\n"                            \
+  "\n"                                                     \
+  "hostname=\"rctest\"\n"                                  \
+  "\n"                                                     \
+  "create_args_myvlan=\"vlan 102\"\n"                      \
+  "create_args_yourvlan=\"vlan 202\"\n"                    \
+  "\n"                                                     \
+  RC_CONF_IFACES                                           \
+  "\n"                                                     \
+  RC_CONF_VLANS                                            \
+  "\n"                                                     \
+  "defaultrouter=\"" NET_CFG_GATEWAY_IP "\"\n"             \
+  "defaultroute_delay=\"5\"\n"                             \
+  "\n"                                                     \
+  "dhcpcd_options=\"-h foobar\"\n"                         \
+  "\n"                                                     \
+  "ftpd_enable=\"YES\"\n"                                  \
   "ftpd_options=\"-v -p 21 -C 10 -P 150 -L -I 10 -R /\"\n" \
   "n";
 
@@ -129,6 +163,9 @@ test_main(void)
     true,
     NULL
     );
+#else
+  printf("RCCONF02 sleeping for 10s\n");
+  sleep(10);
 #endif /* RCCONF02_HAS_SHELL */
 
   exit(0);

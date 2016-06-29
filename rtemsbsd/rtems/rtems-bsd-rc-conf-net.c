@@ -496,9 +496,10 @@ setup_vlans(rtems_bsd_rc_conf*           rc_conf,
 
 /*
  * The rc_conf struct cannot be passed to a thread as a pointer. It can only be
- * used in the rc.conf worker thread. As a result the values need to print a
- * verbose message to aid debugging needs to have local oopies made and passed
- * to the dhcpcd worker. The dhcpcd worker runs for ever.
+ * used in the rc.conf worker thread. As a result the values needed to print a
+ * verbose message to aid debugging need to have local copies made and passed
+ * to the dhcpcd worker. The dhcpcd worker should run for ever. Clean up the
+ * memory if it exits.
  */
 typedef struct dhcpcd_data {
   rtems_bsd_rc_conf_argc_argv* argc_argv;

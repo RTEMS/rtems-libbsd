@@ -105,6 +105,7 @@ def rtems(mm):
             'rtems/rtems-legacy-newproc.c',
             'rtems/rtems-legacy-mii.c',
             'rtems/rtems-kvm.c',
+            'rtems/rtems-routes.c',
             'rtems/syslog.c',
             'ftpd/ftpd.c',
             'ftpd/ftpd-init.c',

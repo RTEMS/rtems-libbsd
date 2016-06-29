@@ -37,25 +37,35 @@
  * SUCH DAMAGE.
  */
 
+#include <errno.h>
+#include <stddef.h>
+#include <strings.h>
+
+#define SYSLOG_NAMES
 #include <syslog.h>
 
 #include <rtems/bsd/bsd.h>
 
+static int syslog_priority = LOG_NOTICE;
+
 void
 syslog(int priority, const char *format, ...)
 {
-	va_list ap;
+	if (priority <= syslog_priority) {
+		va_list ap;
 
-	va_start(ap, format);
-	vsyslog(priority, format, ap);
-	va_end(ap);
+		va_start(ap, format);
+		vsyslog(priority, format, ap);
+		va_end(ap);
+	}
 }
 
 void
 vsyslog(int priority, const char *format, va_list ap)
 {
-
-	rtems_bsd_vprintf(priority, format, ap);
+	if (priority <= syslog_priority) {
+		rtems_bsd_vprintf(priority, format, ap);
+	}
 }
 
 void
@@ -74,4 +84,19 @@ int
 setlogmask(int mask)
 {
 	/* TODO */
+}
+
+int
+rtems_bsd_setlogpriority(const char* priority)
+{
+	CODE* c = &prioritynames[0];
+	while (c->c_name != NULL) {
+		if (strcasecmp(c->c_name, priority) == 0) {
+			syslog_priority = c->c_val;
+			return 0;
+		}
+		++c;
+	}
+	errno = ENOENT;
+	return -1;
 }

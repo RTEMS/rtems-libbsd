@@ -221,6 +221,15 @@ void rtems_bsd_set_vprintf_handler(int (*new_vprintf_handler)
  */
 int rtems_bsd_vprintf(int level, const char *fmt, va_list ap);
 
+/**
+ * @brief Set the syslog priority. See syslog.h for the names.
+ *
+ * @param priority One of the standard names.
+ * @retval 0 Priority set.
+ * @retval errno Otherwise.
+ */
+int rtems_bsd_setlogpriority(const char* priority);
+
 /** @} */
 
 #ifdef __cplusplus

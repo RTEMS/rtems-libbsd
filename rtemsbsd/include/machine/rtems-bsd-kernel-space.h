@@ -70,7 +70,7 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 
 #define BSD_DEFAULT_FIB 0
 
-#define BSD_DEFAULT_PID 0
+#define BSD_DEFAULT_PID 1 /* Must match getid() */
 
 #define BSD_DEFAULT_UID 0
 

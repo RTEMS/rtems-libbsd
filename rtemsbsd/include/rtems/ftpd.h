@@ -66,6 +66,11 @@ struct rtems_ftpd_configuration
 #define TRANSIENT       4       /* transient negative completion */
 #define ERROR           5       /* permanent negative completion */
 
+/*
+ * Initialise with the global table.
+ *
+ * Note, use rc.conf, this function will be removed at some point.
+ */
 int rtems_initialize_ftpd(void);
 
 #ifdef __cplusplus

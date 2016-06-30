@@ -1110,6 +1110,7 @@ def build(bld):
               'rtemsbsd/sys/dev/usb/controller/ohci_lpc.c',
               'rtemsbsd/sys/dev/usb/controller/usb_otg_transceiver.c',
               'rtemsbsd/sys/dev/usb/controller/usb_otg_transceiver_dump.c',
+              'rtemsbsd/sys/fs/devfs/devfs_devs.c',
               'rtemsbsd/sys/net/if_ppp.c',
               'rtemsbsd/sys/net/ppp_tty.c',
               'rtemsbsd/telnetd/check_passwd.c',

@@ -954,7 +954,7 @@ rpcSetXIDs(uint32_t xid)
 }
 
 int
-rpcUdpInit(void)
+rpcUdpInit(bool verbose)
 {
 int			s;
 rtems_status_code	status;
@@ -962,9 +962,11 @@ int			noblock = 1;
 struct kevent		change;
 
 	if (ourSock < 0) {
-    fprintf(stderr,"RTEMS-RPCIOD $Release$, " \
-            "Till Straumann, Stanford/SLAC/SSRL 2002, " \
-            "See LICENSE file for licensing info.\n");
+
+		if (verbose)
+			fprintf(stderr,"RTEMS-RPCIOD, "				\
+					"Till Straumann, Stanford/SLAC/SSRL 2002, " \
+					"See LICENSE for licensing info.\n");
 
 		ourSock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (ourSock>=0) {

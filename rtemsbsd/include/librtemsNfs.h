@@ -132,7 +132,7 @@ rpcSetXIDs(uint32_t xid);
  * @retval 0 on success, -1 on failure
  */
 int
-rpcUdpInit(void);
+rpcUdpInit(bool verbose);
 
 /**
  * @brief RPC cleanup and stop.
@@ -167,7 +167,7 @@ rpcUdpCleanup(void);
  * @retval -1 An error occurred.  The errno is set to indicate the error.
  */
 int
-nfsInit(int smallPoolDepth, int bigPoolDepth);
+nfsInit(int smallPoolDepth, int bigPoolDepth, bool verbose);
 
 /**
  * @brief Driver cleanup code.

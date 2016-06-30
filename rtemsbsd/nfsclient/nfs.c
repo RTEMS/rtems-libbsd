@@ -1007,7 +1007,7 @@ NfsNode rval = nfsNodeCreate(node->nfs, 0);
  * 			on the fly).
  */
 int
-nfsInit(int smallPoolDepth, int bigPoolDepth)
+nfsInit(int smallPoolDepth, int bigPoolDepth, bool verbose)
 {
 static int initialised = 0;
 entry	dummy;
@@ -1018,10 +1018,11 @@ rtems_status_code status;
 
 	initialised = 1;
 
-	fprintf(stderr,
-          "RTEMS-NFS $Release$, "                       \
-          "Till Straumann, Stanford/SLAC/SSRL 2002, " \
-          "See LICENSE file for licensing info.\n");
+	if (verbose)
+		fprintf(stderr,
+				"RTEMS-NFS, "							\
+				"Till Straumann, Stanford/SLAC/SSRL 2002, " \
+				"See LICENSE for licensing info.\n");
 
 	/* Get a major number */
 
@@ -1807,13 +1808,15 @@ NfsNode				rootNode  = 0;
 RpcUdpServer		nfsServer = 0;
 int					e         = -1;
 char				*path     = mt_entry->dev;
+const char          *options = (const char*) data;
+bool                verbose = strstr(options, "-v") != NULL;
 
-  if (rpcUdpInit () < 0) {
-    fprintf (stderr, "error: initialising RPC\n");
-    return -1;
-  }
+	if (rpcUdpInit (verbose) < 0) {
+		fprintf (stderr, "error: initialising RPC\n");
+		return -1;
+	}
 
-	if (nfsInit(0, 0) != 0) {
+	if (nfsInit(0, 0, verbose) != 0) {
 		fprintf (stderr, "error: initialising NFS\n");
 		return -1;
 	};

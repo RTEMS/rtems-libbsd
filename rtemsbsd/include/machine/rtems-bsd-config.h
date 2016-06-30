@@ -28,12 +28,13 @@
  *
  * Configuration defines:
  *
- *  RTEMS_BSD_CONFIG_NET_PF_UNIX     : Packet Filter.
- *  RTEMS_BSD_CONFIG_NET_IF_LAGG     : Link Aggregetion and Failover.
- *  RTEMS_BSD_CONFIG_NET_IF_VLAN     : Virtual LAN.
- *  RTEMS_BSD_CONFIG_SERVICE_FTPD    : File Transfer Protocol (FTP).
- *  RTEMS_BSD_CONFIG_BSP_CONFIG      : Configure default BSP devices.
- *  RTEMS_BSD_CONFIG_INIT            : Configure the LibBSD support.
+ *  RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE : Memory in bytes for mbufs
+ *  RTEMS_BSD_CONFIG_NET_PF_UNIX            : Packet Filter.
+ *  RTEMS_BSD_CONFIG_NET_IF_LAGG            : Link Aggregetion and Failover.
+ *  RTEMS_BSD_CONFIG_NET_IF_VLAN            : Virtual LAN.
+ *  RTEMS_BSD_CONFIG_SERVICE_FTPD           : File Transfer Protocol (FTP).
+ *  RTEMS_BSD_CONFIG_BSP_CONFIG             : Configure default BSP devices.
+ *  RTEMS_BSD_CONFIG_INIT                   : Configure the LibBSD support.
  *
  * Rules for adding to this file:
  *  1. All user visible defines start with 'RTEMS_BSD_CONFIG_'.
@@ -63,9 +64,23 @@
  */
 #include <machine/rtems-bsd-rc-conf-services.h>
 
+/*
+ * Include the RTEMS BSD support.
+ */
+#include <rtems/bsd/bsd.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+/*
+ * BSD Kernel configuration.
+ */
+#if defined(RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE)
+  #define RTEMS_BSD_CFGDECL_DOMAIN_PAGE_MBUFS_SIZE RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE
+#else
+  #define RTEMS_BSD_CFGDECL_DOMAIN_PAGE_MBUFS_SIZE RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT
+#endif
 
 /*
  * BSD Kernel modules.
@@ -106,24 +121,31 @@ extern "C" {
  * Configure the system.
  */
 #if defined(RTEMS_BSD_CONFIG_INIT)
- /*
-  * If a BSP configuration is requested include the Nexus bus BSP configuration.
-  */
- #if defined(RTEMS_BSD_CONFIG_BSP_CONFIG)
-  #include <bsp/nexus-devices.h>
- #endif
+  /*
+   * Configure the domain allocation memory size.
+   */
+  uintptr_t rtems_bsd_allocator_domain_page_mbuf_size = \
+    RTEMS_BSD_CFGDECL_DOMAIN_PAGE_MBUFS_SIZE;
 
- /*
-  * Create the networking modules and interfaces.
-  */
- RTEMS_BSD_CFGDECL_NET_PF_UNIX;
- RTEMS_BSD_CFGDECL_IF_LAGG;
- RTEMS_BSD_CFGDECL_NET_IF_VLAN;
+  /*
+   * If a BSP configuration is requested include the Nexus bus BSP
+   * configuration.
+   */
+  #if defined(RTEMS_BSD_CONFIG_BSP_CONFIG)
+    #include <bsp/nexus-devices.h>
+  #endif /* RTEMS_BSD_CONFIG_BSP_CONFIG */
 
- /*
-  * Create the services.
-  */
- RTEMS_BSD_CFGDECL_FTPD;
+  /*
+   * Create the networking modules and interfaces.
+   */
+  RTEMS_BSD_CFGDECL_NET_PF_UNIX;
+  RTEMS_BSD_CFGDECL_IF_LAGG;
+  RTEMS_BSD_CFGDECL_NET_IF_VLAN;
+
+  /*
+   * Create the services.
+   */
+  RTEMS_BSD_CFGDECL_FTPD;
 #endif /* RTEMS_BSD_CONFIG_INIT */
 
 #ifdef __cplusplus

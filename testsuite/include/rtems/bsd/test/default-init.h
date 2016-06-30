@@ -53,11 +53,6 @@ rtems_task Init(
   early_initialization();
 #endif
 
-#ifdef DEFAULT_NETWORK_PAGE_MBUFS_SIZE
-  rtems_bsd_allocator_domain_page_mbuf_size =
-    DEFAULT_NETWORK_PAGE_MBUFS_SIZE;
-#endif
-
   /* Let other tasks run to complete background work */
   default_set_self_prio( RTEMS_MAXIMUM_PRIORITY - 1 );
 

@@ -1,5 +1,14 @@
+/**
+ * @file
+ *
+ * @ingroup rtems_bsd_rtems
+ *
+ * @brief The rtems_bsd_allocator_domain_page_mbuf_size variable with the
+ *        default for those users who do not use <rtems-bsd-config.h>.
+ */
+
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -29,33 +38,6 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_TEST_NETWORK_CONFIG_H_
-#define _RTEMS_BSD_TEST_NETWORK_CONFIG_H_
+#include <rtems/bsd/bsd.h>
 
-#include <bsp.h>
-
-#if defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H)
-  #define NET_CFG_INTERFACE_0 "dwc0"
-#elif defined(LIBBSP_ARM_REALVIEW_PBX_A9_BSP_H)
-  #define NET_CFG_INTERFACE_0 "smc0"
-#elif defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
-  #define NET_CFG_INTERFACE_0 "cgem0"
-#elif defined(LIBBSP_M68K_GENMCF548X_BSP_H)
-  #define NET_CFG_INTERFACE_0 "fec0"
-#else
-  #define NET_CFG_INTERFACE_0 "lo0"
-#endif
-
-#if defined(LIBBSP_I386_PC386_BSP_H)
-#define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (64 * 1024 * 1024)
-#endif
-
-#define NET_CFG_SELF_IP "@NET_CFG_SELF_IP@"
-
-#define NET_CFG_NETMASK "@NET_CFG_NETMASK@"
-
-#define NET_CFG_PEER_IP "@NET_CFG_PEER_IP@"
-
-#define NET_CFG_GATEWAY_IP "@NET_CFG_GATEWAY_IP@"
-
-#endif /* _RTEMS_BSD_TEST_NETWORK_CONFIG_H_ */
+uintptr_t rtems_bsd_allocator_domain_page_mbuf_size = RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT;

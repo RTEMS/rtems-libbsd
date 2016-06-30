@@ -263,11 +263,6 @@ Init(rtems_task_argument arg)
 	assert(sc == RTEMS_SUCCESSFUL);
 #endif
 
-#ifdef DEFAULT_NETWORK_PAGE_MBUFS_SIZE
-	rtems_bsd_allocator_domain_page_mbuf_size =
-	  DEFAULT_NETWORK_PAGE_MBUFS_SIZE;
-#endif
-
 	rtems_bsd_initialize();
 
 #ifndef DEFAULT_NETWORK_NO_INTERFACE_0
@@ -295,13 +290,16 @@ Init(rtems_task_argument arg)
 	assert(0);
 }
 
-#include <machine/rtems-bsd-sysinit.h>
+/*
+ * Configure LibBSD.
+ */
+#define RTEMS_BSD_CONFIG_NET_PF_UNIX
+#define RTEMS_BSD_CONFIG_NET_IF_LAGG
+#define RTEMS_BSD_CONFIG_NET_IF_VLAN
+#define RTEMS_BSD_CONFIG_BSP_CONFIG
+#define RTEMS_BSD_CONFIG_INIT
 
-SYSINIT_NEED_NET_PF_UNIX;
-SYSINIT_NEED_NET_IF_LAGG;
-SYSINIT_NEED_NET_IF_VLAN;
-
-#include <bsp/nexus-devices.h>
+#include <machine/rtems-bsd-config.h>
 
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER

@@ -1049,6 +1049,7 @@ def build(bld):
               'rtemsbsd/pppd/upap.c',
               'rtemsbsd/pppd/utils.c',
               'rtemsbsd/rtems/ipsec_get_policylen.c',
+              'rtemsbsd/rtems/rtems-bsd-allocator-domain-size.c',
               'rtemsbsd/rtems/rtems-bsd-arp-processor.c',
               'rtemsbsd/rtems/rtems-bsd-get-allocator-domain-size.c',
               'rtemsbsd/rtems/rtems-bsd-get-ethernet-addr.c',

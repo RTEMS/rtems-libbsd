@@ -39,8 +39,6 @@
 
 #include <rtems/bsd/bsd.h>
 
-uintptr_t rtems_bsd_allocator_domain_page_mbuf_size = 8 * 1024 * 1024;
-
 uintptr_t
 rtems_bsd_get_allocator_domain_size(rtems_bsd_allocator_domain domain)
 {

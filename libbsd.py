@@ -58,6 +58,7 @@ def rtems(mm):
             'local/mmcbr_if.c',
             'rtems/ipsec_get_policylen.c',
             'rtems/rtems-bsd-arp-processor.c',
+            'rtems/rtems-bsd-allocator-domain-size.c',
             'rtems/rtems-bsd-get-allocator-domain-size.c',
             'rtems/rtems-bsd-get-ethernet-addr.c',
             'rtems/rtems-bsd-get-mac-address.c',

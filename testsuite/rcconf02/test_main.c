@@ -148,20 +148,41 @@ test_rc_conf_script(void)
 }
 
 static void
+waiter(int fd, int secs, void *arg)
+{
+  int*        toggle = (int*) arg;
+  const char* toggles = "|/-|\-";
+  printf("\b%c", toggles[*toggle]);
+  fflush(stdout);
+  ++(*toggle);
+  if (*toggle >= 6)
+    *toggle = 0;
+}
+
+static void
+shell(void)
+{
+  int               toggle = 1;
+  rtems_status_code sc;
+  printf("Press any key for the shell .... -");
+  fflush(stdout);
+  sc = rtems_shell_wait_for_input(STDIN_FILENO, 10, waiter, &toggle);
+  if (sc == RTEMS_SUCCESSFUL) {
+    rtems_shell_init("SHLL",
+                     32 * 1024,
+                     1,
+                     CONSOLE_DEVICE_NAME,
+                     false,
+                     true,
+                     NULL);
+  }
+}
+
+static void
 test_main(void)
 {
   test_rc_conf_script();
-
-  rtems_shell_init(
-    "SHLL",
-    32 * 1024,
-    1,
-    CONSOLE_DEVICE_NAME,
-    false,
-    true,
-    NULL
-    );
-
+  shell();
   exit(0);
 }
 

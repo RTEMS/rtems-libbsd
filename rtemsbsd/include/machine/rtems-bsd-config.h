@@ -32,6 +32,8 @@
  *  RTEMS_BSD_CONFIG_NET_PF_UNIX            : Packet Filter.
  *  RTEMS_BSD_CONFIG_NET_IF_LAGG            : Link Aggregetion and Failover.
  *  RTEMS_BSD_CONFIG_NET_IF_VLAN            : Virtual LAN.
+ *  RTEMS_BSD_CONFIG_SERVICE_TELNETD        : Telnet Protocol (TELNET).
+ *   RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE    : Telnet shell task stack size.
  *  RTEMS_BSD_CONFIG_SERVICE_FTPD           : File Transfer Protocol (FTP).
  *  RTEMS_BSD_CONFIG_BSP_CONFIG             : Configure default BSP devices.
  *  RTEMS_BSD_CONFIG_INIT                   : Configure the LibBSD support.
@@ -118,6 +120,17 @@ extern "C" {
 #endif /* RTEMS_BSD_CONFIG_SERVICE_FTPD */
 
 /*
+ * Telnetd
+ */
+#if defined(RTEMS_BSD_CONFIG_SERVICE_TELNETD)
+  #if defined(RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE)
+    #define RTEMS_BSD_CFGDECL_TELNETD_STACK_SIZE \
+      int rtems_telnetd_stack_size = RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE
+  #endif /* RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE */
+  #define RTEMS_BSD_CFGDECL_TELNETD RTEMS_BSD_RC_CONF_SYSINT(rc_conf_telnetd)
+#endif /* RTEMS_BSD_CONFIG_SERVICE_TELNETD */
+
+/*
  * Configure the system.
  */
 #if defined(RTEMS_BSD_CONFIG_INIT)
@@ -145,6 +158,8 @@ extern "C" {
   /*
    * Create the services.
    */
+  RTEMS_BSD_CFGDECL_TELNETD;
+  RTEMS_BSD_CFGDECL_TELNETD_STACK_SIZE;
   RTEMS_BSD_CFGDECL_FTPD;
 #endif /* RTEMS_BSD_CONFIG_INIT */
 

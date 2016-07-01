@@ -1115,6 +1115,8 @@ def build(bld):
               'rtemsbsd/telnetd/check_passwd.c',
               'rtemsbsd/telnetd/des.c',
               'rtemsbsd/telnetd/pty.c',
+              'rtemsbsd/telnetd/telnetd-init.c',
+              'rtemsbsd/telnetd/telnetd-service.c',
               'rtemsbsd/telnetd/telnetd.c']
     if bld.get_env()["RTEMS_ARCH"] == "arm":
         source += ['freebsd/sys/mips/mips/in_cksum.c']

@@ -148,6 +148,8 @@ def rtems(mm):
             'telnetd/des.c',
             'telnetd/pty.c',
             'telnetd/telnetd.c',
+            'telnetd/telnetd-init.c',
+            'telnetd/telnetd-service.c',
             'sys/dev/tsec/if_tsec_nexus.c',
         ],
         mm.generator['source']()

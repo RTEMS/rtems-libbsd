@@ -69,10 +69,6 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 
-#if DEFINE_FOR_TESTING
-#define RCCONF02_HAS_SHELL
-#endif
-
 #define TEST_NAME "LIBBSD RC.CONF 2"
 
 #define IFACE_IPV4(iface) \
@@ -121,6 +117,9 @@ static const char* rc_conf_text =                          \
   "\n"                                                     \
   "dhcpcd_options=\"-h foobar\"\n"                         \
   "\n"                                                     \
+  "telnetd_enable=\"YES\"\n"                               \
+  "telnetd_options=\"-v -C 10 -P 50 -L\"\n"                \
+  "\n"                                                     \
   "ftpd_enable=\"YES\"\n"                                  \
   "ftpd_options=\"-v -p 21 -C 10 -P 150 -L -I 10 -R /\"\n" \
   "n";
@@ -153,7 +152,6 @@ test_main(void)
 {
   test_rc_conf_script();
 
-#if defined(RCCONF02_HAS_SHELL)
   rtems_shell_init(
     "SHLL",
     32 * 1024,
@@ -163,18 +161,9 @@ test_main(void)
     true,
     NULL
     );
-#else
-  printf("RCCONF02 sleeping for 10s\n");
-  sleep(10);
-#endif /* RCCONF02_HAS_SHELL */
 
   exit(0);
 }
-
-/*
- * Optional shell for testing this test.
- */
-#if defined(RCCONF02_HAS_SHELL)
 
 #define CONFIGURE_SHELL_COMMANDS_INIT
 
@@ -214,9 +203,12 @@ test_main(void)
 #define CONFIGURE_SHELL_COMMAND_SHUTDOWN
 
 #include <rtems/shellconfig.h>
-#endif /* RCCONF02_HAS_SHELL */
 
 #define RTEMS_BSD_CONFIG_BSP_CONFIG
+#define RTEMS_BSD_CONFIG_SERVICE_TELNETD
+#define RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE (16 * 1024)
 #define RTEMS_BSD_CONFIG_SERVICE_FTPD
+
+#define CONFIGURE_MAXIMUM_DRIVERS 32
 
 #include <rtems/bsd/test/default-init.h>

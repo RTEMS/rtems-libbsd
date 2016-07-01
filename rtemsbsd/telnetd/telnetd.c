@@ -87,9 +87,16 @@ rtems_id telnetd_dflt_spawn(
 );
 
 /***********************************************************/
-static rtems_id telnetd_task_id = RTEMS_ID_NONE;
+static rtems_telnetd_config_table* telnetd_config;
+static rtems_id                    telnetd_task_id;
 
-rtems_id (*telnetd_spawn_task)(
+/*
+ * chrisj: this variable was global and with no declared interface in a header
+ *         file and with no means to set it so I have stopped it being global;
+ *         if this breaks any user they will have be to provide a formal
+ *         interface to get this change reverted.
+ */
+static const rtems_id (*telnetd_spawn_task)(
   const char *,
   unsigned,
   unsigned,
@@ -207,24 +214,24 @@ rtems_task_telnetd(void *task_argument)
   };
 
   /* we don't redirect stdio as this probably
-   * was started from the console anyways..
+   * was started from the console anyway ..
    */
   do {
-    if (rtems_telnetd_config.keep_stdio) {
+    if (telnetd_config->keep_stdio) {
       bool start = true;
       char device_name [32];
 
       ttyname_r( 1, device_name, sizeof( device_name));
-      if (rtems_telnetd_config.login_check != NULL) {
+      if (telnetd_config->login_check != NULL) {
         start = rtems_shell_login_prompt(
           stdin,
           stderr,
           device_name,
-          rtems_telnetd_config.login_check
+          telnetd_config->login_check
         );
       }
       if (start) {
-        rtems_telnetd_config.command( device_name, arg->arg);
+        telnetd_config->command( device_name, arg->arg);
       } else {
         syslog(
           LOG_AUTHPRIV | LOG_WARNING,
@@ -244,13 +251,13 @@ rtems_task_telnetd(void *task_argument)
       arg = malloc( sizeof(*arg) );
 
       arg->devname = devname;
-      arg->arg = rtems_telnetd_config.arg;
+      arg->arg = telnetd_config->arg;
       strncpy(arg->peername, peername, sizeof(arg->peername));
 
       telnetd_task_id = telnetd_spawn_task(
         devname,
-        rtems_telnetd_config.priority,
-        rtems_telnetd_config.stack_size,
+        telnetd_config->priority,
+        telnetd_config->stack_size,
         spawned_shell,
         arg
       );
@@ -287,52 +294,65 @@ rtems_task_telnetd(void *task_argument)
   telnetd_task_id = RTEMS_ID_NONE;
 }
 
-rtems_status_code rtems_telnetd_initialize( void)
+rtems_status_code rtems_telnetd_start(const rtems_telnetd_config_table* config)
 {
-  if (telnetd_task_id != RTEMS_ID_NONE) {
+  if (telnetd_config != NULL) {
     fprintf(stderr, "telnetd already started\n");
     return RTEMS_RESOURCE_IN_USE;
   }
 
-  if (rtems_telnetd_config.command == NULL) {
+  if (config->command == NULL) {
     fprintf(stderr, "telnetd setup with invalid command\n");
     return RTEMS_IO_ERROR;
   }
 
+  telnetd_config = calloc(1, sizeof(*telnetd_config));
+  if (telnetd_config == NULL) {
+    fprintf(stderr, "telnetd cannot alloc telnetd config table\n");
+    return RTEMS_NO_MEMORY;
+  }
+
+
   if ( !telnet_pty_initialize() ) {
     fprintf(stderr, "telnetd cannot initialize PTY driver\n");
+    free(telnetd_config);
+    telnetd_config = NULL;
     return RTEMS_IO_ERROR;
   }
 
+  *telnetd_config = *config;
+
   /* Check priority */
-  if (rtems_telnetd_config.priority < 2) {
-    rtems_telnetd_config.priority = 100;
+  if (telnetd_config->priority < 2) {
+    telnetd_config->priority = 100;
   }
 
   /* Check stack size */
-  if (rtems_telnetd_config.stack_size <= 0) {
-    rtems_telnetd_config.stack_size = (size_t)32 * 1024;
+  if (telnetd_config->stack_size <= 0) {
+    telnetd_config->stack_size = (size_t)32 * 1024;
   }
 
   /* Spawn task */
   telnetd_task_id = telnetd_spawn_task(
     "TNTD",
-    rtems_telnetd_config.priority,
-    rtems_telnetd_config.stack_size,
+    telnetd_config->priority,
+    telnetd_config->stack_size,
     rtems_task_telnetd,
     0
   );
   if (telnetd_task_id == RTEMS_ID_NONE) {
+    free(telnetd_config);
+    telnetd_config = NULL;
     return RTEMS_IO_ERROR;
   }
 
   /* Print status */
-  if (!rtems_telnetd_config.keep_stdio) {
+  if (!telnetd_config->keep_stdio) {
     fprintf(
       stderr,
       "telnetd started with stacksize = %u and priority = %d\n",
-      (unsigned) rtems_telnetd_config.stack_size,
-      (unsigned) rtems_telnetd_config.priority
+      (unsigned) telnetd_config->stack_size,
+      (unsigned) telnetd_config->priority
     );
   }
 
@@ -386,17 +406,17 @@ spawned_shell(void *targ)
   #endif
 
   /* call their routine */
-  if (rtems_telnetd_config.login_check != NULL) {
+  if (telnetd_config->login_check != NULL) {
     start = rtems_shell_login_prompt(
       stdin,
       stderr,
       arg->devname,
-      rtems_telnetd_config.login_check
+      telnetd_config->login_check
     );
     login_failed = !start;
   }
   if (start) {
-    rtems_telnetd_config.command( arg->devname, arg->arg);
+    telnetd_config->command( arg->devname, arg->arg);
   }
 
   stdin  = ostd[0];

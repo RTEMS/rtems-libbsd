@@ -94,6 +94,8 @@ extern "C" {
  */
 #if defined(RTEMS_BSD_CONFIG_NET_PF_UNIX)
   #define RTEMS_BSD_CFGDECL_NET_PF_UNIX SYSINIT_NEED_NET_PF_UNIX
+#else
+  #define RTEMS_BSD_CFGDECL_NET_PF_UNIX
 #endif /* RTEMS_BSD_CONFIG_NET_PF_UNIX */
 
 /*
@@ -102,6 +104,8 @@ extern "C" {
  */
 #if defined(RTEMS_BSD_CONFIG_NET_IF_LAGG)
   #define RTEMS_BSD_CFGDECL_IF_LAGG SYSINIT_NEED_NET_IF_LAGG
+#else
+  #define RTEMS_BSD_CFGDECL_IF_LAGG
 #endif /* RTEMS_BSD_CONFIG_NET_IF_LAGG */
 
 /*
@@ -110,6 +114,8 @@ extern "C" {
  */
 #if defined(RTEMS_BSD_CONFIG_NET_IF_VLAN)
   #define RTEMS_BSD_CFGDECL_NET_IF_VLAN SYSINIT_NEED_NET_IF_VLAN
+#else
+  #define RTEMS_BSD_CFGDECL_NET_IF_VLAN
 #endif /* RTEMS_BSD_CONFIG_NET_IF_VLAN */
 
 /*
@@ -117,6 +123,8 @@ extern "C" {
  */
 #if defined(RTEMS_BSD_CONFIG_SERVICE_FTPD)
   #define RTEMS_BSD_CFGDECL_FTPD RTEMS_BSD_RC_CONF_SYSINT(rc_conf_ftpd)
+#else
+  #define RTEMS_BSD_CFGDECL_FTPD
 #endif /* RTEMS_BSD_CONFIG_SERVICE_FTPD */
 
 /*
@@ -128,6 +136,9 @@ extern "C" {
       int rtems_telnetd_stack_size = RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE
   #endif /* RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE */
   #define RTEMS_BSD_CFGDECL_TELNETD RTEMS_BSD_RC_CONF_SYSINT(rc_conf_telnetd)
+#else
+  #define RTEMS_BSD_CFGDECL_TELNETD_STACK_SIZE
+  #define RTEMS_BSD_CFGDECL_TELNETD
 #endif /* RTEMS_BSD_CONFIG_SERVICE_TELNETD */
 
 /*

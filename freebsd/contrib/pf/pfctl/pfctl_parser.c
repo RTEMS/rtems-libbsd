@@ -33,6 +33,9 @@
  *
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -40,6 +43,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <rtems/bsd/sys/param.h>
+#ifdef __rtems__
+#include <rtems/bsd/sys/errno.h>
+#endif /* __rtems__ */
 #include <sys/proc.h>
 #include <net/if.h>
 #include <netinet/in.h>
@@ -1767,3 +1773,6 @@ pfctl_trans(int dev, struct pfr_buffer *buf, u_long cmd, int from)
 	trans.array = ((struct pfioc_trans_e *)buf->pfrb_caddr) + from;
 	return ioctl(dev, cmd, &trans);
 }
+#ifdef __rtems__
+#include "pfctl_parser-data.h"
+#endif /* __rtems__ */

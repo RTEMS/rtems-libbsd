@@ -29,6 +29,7 @@
 %{
 #ifdef __rtems__
 #include <machine/rtems-bsd-user-space.h>
+#include <machine/rtems-bsd-program.h>
 #define	pf_find_or_create_ruleset _bsd_pf_find_or_create_ruleset
 #define	pf_anchor_setup _bsd_pf_anchor_setup
 #define	pf_remove_if_empty_ruleset _bsd_pf_remove_if_empty_ruleset
@@ -6133,3 +6134,6 @@ rt_tableid_max(void)
 	return (RT_TABLEID_MAX);
 #endif
 }
+#ifdef __rtems__
+#include "parse-data.h"
+#endif /* __rtems__ */

@@ -32,6 +32,9 @@
  *
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -48,6 +51,9 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#ifdef __rtems__
+#define SIZE_T_MAX SIZE_MAX
+#endif /* __rtems__ */
 #include <err.h>
 
 #include "pfctl.h"
@@ -594,3 +600,6 @@ pfr_strerror(int errnum)
 		return strerror(errnum);
 	}
 }
+#ifdef __rtems__
+#include "pfctl_radix-data.h"
+#endif /* __rtems__ */

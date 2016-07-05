@@ -18,6 +18,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+
+/* We need some functions from kernel space. */
+#define	pf_find_or_create_ruleset _bsd_pf_find_or_create_ruleset
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -1692,4 +1698,6 @@ superblock_free(struct pfctl *pf, struct superblock *block)
 		superblock_free(pf, block->sb_profiled_block);
 	free(block);
 }
-
+#ifdef __rtems__
+#include "pfctl_optimize-data.h"
+#endif /* __rtems__ */

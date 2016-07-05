@@ -18,6 +18,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -1125,3 +1128,6 @@ print_ioctl(struct pf_osfp_ioctl *fp)
 
 	return (buf);
 }
+#ifdef __rtems__
+#include "pfctl_osfp-data.h"
+#endif /* __rtems__ */

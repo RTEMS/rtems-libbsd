@@ -32,6 +32,9 @@
  *
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -495,7 +498,11 @@ print_astats(struct pfr_astats *as, int dns)
 void
 radix_perror(void)
 {
+#ifndef __rtems__
 	extern char *__progname;
+#else /* __rtems__ */
+#define __progname "pfctl"
+#endif /* __rtems__ */
 	fprintf(stderr, "%s: %s.\n", __progname, pfr_strerror(errno));
 }
 

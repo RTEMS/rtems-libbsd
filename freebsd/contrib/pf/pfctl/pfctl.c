@@ -86,7 +86,11 @@ int	 pfctl_load_limit(struct pfctl *, unsigned int, unsigned int);
 int	 pfctl_load_timeout(struct pfctl *, unsigned int, unsigned int);
 int	 pfctl_load_debug(struct pfctl *, unsigned int);
 int	 pfctl_load_logif(struct pfctl *, char *);
+#ifndef __rtems__
 int	 pfctl_load_hostid(struct pfctl *, unsigned int);
+#else /* __rtems__ */
+int	 pfctl_load_hostid(struct pfctl *, u_int32_t);
+#endif /* __rtems__ */
 int	 pfctl_get_pool(int, struct pf_pool *, u_int32_t, u_int32_t, int,
 	    char *);
 void	 pfctl_print_rule_counters(struct pf_rule *, int);

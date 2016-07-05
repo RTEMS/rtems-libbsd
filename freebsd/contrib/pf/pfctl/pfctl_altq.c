@@ -20,6 +20,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -1276,3 +1279,6 @@ print_hfsc_sc(const char *scname, u_int m1, u_int d, u_int m2,
 	if (d != 0)
 		printf(")");
 }
+#ifdef __rtems__
+#include "pfctl_altq-data.h"
+#endif /* __rtems__ */

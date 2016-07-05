@@ -33,6 +33,19 @@
  *
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+
+#define __need_getopt_newlib
+#include <getopt.h>
+
+/* We need some functions from kernel space. */
+#define	pf_get_ruleset_number _bsd_pf_get_ruleset_number
+#define	pf_init_ruleset _bsd_pf_init_ruleset
+
+#include <rtems/linkersets.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -292,7 +305,11 @@ static const int nattype[3] = { PF_NAT, PF_RDR, PF_BINAT };
 void
 usage(void)
 {
+#ifndef __rtems__
 	extern char *__progname;
+#else /* __rtems__ */
+#define __progname "pfctl"
+#endif /* __rtems__ */
 
 	fprintf(stderr, "usage: %s [-AdeghmNnOPqRrvz] ", __progname);
 	fprintf(stderr, "[-a anchor] [-D macro=value] [-F modifier]\n");
@@ -1645,6 +1662,7 @@ pfctl_init_options(struct pfctl *pf)
 	pf->limit[PF_LIMIT_TABLES] = PFR_KTABLE_HIWAT;
 	pf->limit[PF_LIMIT_TABLE_ENTRIES] = PFR_KENTRY_HIWAT;
 
+#ifndef __rtems__
 	mib[0] = CTL_HW;
 #ifdef __FreeBSD__
 	mib[1] = HW_PHYSMEM;
@@ -1655,6 +1673,7 @@ pfctl_init_options(struct pfctl *pf)
 	if (sysctl(mib, 2, &mem, &size, NULL, 0) == -1)
 		err(1, "sysctl");
 	if (mem <= 100*1024*1024)
+#endif /* __rtems__ */
 		pf->limit[PF_LIMIT_TABLE_ENTRIES] = PFR_KENTRY_HIWAT_SMALL; 
 
 	pf->debug = PF_DEBUG_URGENT;
@@ -2069,6 +2088,27 @@ pfctl_lookup_option(char *cmd, const char * const *list)
 	return (NULL);
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_pfctl, char);
+
+int
+rtems_bsd_command_pfctl(int argc, char *argv[])
+{
+	int exit_code = EXIT_FAILURE;
+	const void *data_buf = RTEMS_LINKER_SET_BEGIN(bsd_prog_pfctl);
+	const size_t data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_pfctl);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("pfctl",
+	    main, argc, argv, data_buf, data_size);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+
+#endif /* __rtems__ */
 int
 main(int argc, char *argv[])
 {
@@ -2079,6 +2119,16 @@ main(int argc, char *argv[])
 	int	 optimize = PF_OPTIMIZE_BASIC;
 	char	 anchorname[MAXPATHLEN];
 	char	*path;
+
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	if (argc < 2)
 		usage();
@@ -2471,3 +2521,6 @@ main(int argc, char *argv[])
 
 	exit(error);
 }
+#ifdef __rtems__
+#include "pfctl-data.h"
+#endif /* __rtems__ */

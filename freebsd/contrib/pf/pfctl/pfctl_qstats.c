@@ -18,6 +18,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -455,3 +458,6 @@ update_avg(struct pf_altq_node *a)
 	if (n < AVGN_MAX)
 		qs->avgn++;
 }
+#ifdef __rtems__
+#include "pfctl_qstats-data.h"
+#endif /* __rtems__ */

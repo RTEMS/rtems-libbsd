@@ -194,6 +194,17 @@ def build(bld):
                 source = "freebsd/contrib/libpcap/grammar.c")
     libbsd_use += ["yacc_pcap"]
     if bld.env.AUTO_REGEN:
+        bld(target = "freebsd/contrib/pf/pfctl/parse.c",
+            source = "freebsd/contrib/pf/pfctl/parse.y",
+            rule = host_shell + "${YACC} -b pfctly -d -p pfctly ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < pfctly.tab.c > ${TGT} && rm -f pfctly.tab.c && mv pfctly.tab.h freebsd/contrib/pf/pfctl/parse.h")
+    bld.objects(target = "yacc_pfctly",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = defines + [],
+                source = "freebsd/contrib/pf/pfctl/parse.c")
+    libbsd_use += ["yacc_pfctly"]
+    if bld.env.AUTO_REGEN:
         bld(target = "freebsd/lib/libc/net/nsparser.c",
             source = "freebsd/lib/libc/net/nsparser.y",
             rule = host_shell + "${YACC} -b _nsyy -d -p _nsyy ${SRC} && sed -e '/YY_BUF_SIZE/s/16384/1024/' < _nsyy.tab.c > ${TGT} && rm -f _nsyy.tab.c && mv _nsyy.tab.h freebsd/lib/libc/net/nsparser.h")
@@ -218,6 +229,15 @@ def build(bld):
 
     # Objects built with different CFLAGS
     objs01_source = ['freebsd/bin/hostname/hostname.c',
+                     'freebsd/contrib/pf/pfctl/pf_print_state.c',
+                     'freebsd/contrib/pf/pfctl/pfctl.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_altq.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_optimize.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_osfp.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_parser.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_qstats.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_radix.c',
+                     'freebsd/contrib/pf/pfctl/pfctl_table.c',
                      'freebsd/lib/libc/gen/err.c',
                      'freebsd/lib/libc/gen/feature_present.c',
                      'freebsd/lib/libc/gen/gethostname.c',

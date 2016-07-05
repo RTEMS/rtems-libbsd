@@ -1777,6 +1777,8 @@ def user_space(mm):
     mod = builder.Module('user_space')
     mod.addUserSpaceHeaderFiles(
         [
+            'contrib/pf/pfctl/pfctl.h',
+            'contrib/pf/pfctl/pfctl_parser.h',
             'include/arpa/ftp.h',
             'include/arpa/inet.h',
             'include/arpa/nameser_compat.h',
@@ -1880,6 +1882,12 @@ def user_space(mm):
                                      mm.generator['convert'](),
                                      mm.generator['convert'](),
                                      mm.generator['route-keywords']()))
+    mod.addFile(mm.generator['file']('contrib/pf/pfctl/parse.y',
+                                     mm.generator['freebsd-path'](),
+                                     mm.generator['convert'](),
+                                     mm.generator['convert'](),
+                                     mm.generator['yacc']('pfctly',
+                                                          'parse.h')))
     mod.addUserSpaceSourceFiles(
         [
             'lib/libc/db/btree/bt_close.c',
@@ -1912,6 +1920,15 @@ def user_space(mm):
     mod.addUserSpaceSourceFiles(
         [
             'bin/hostname/hostname.c',
+            'contrib/pf/pfctl/pfctl_altq.c',
+            'contrib/pf/pfctl/pfctl.c',
+            'contrib/pf/pfctl/pfctl_optimize.c',
+            'contrib/pf/pfctl/pfctl_osfp.c',
+            'contrib/pf/pfctl/pfctl_parser.c',
+            'contrib/pf/pfctl/pfctl_qstats.c',
+            'contrib/pf/pfctl/pfctl_radix.c',
+            'contrib/pf/pfctl/pfctl_table.c',
+            'contrib/pf/pfctl/pf_print_state.c',
             'lib/libc/gen/err.c',
             'lib/libc/gen/feature_present.c',
             'lib/libc/gen/gethostname.c',

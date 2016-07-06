@@ -39,6 +39,11 @@ rtems_task Init(
 {
   rtems_status_code sc;
 
+  /*
+   * Default the syslog priority to 'debug' to aid developers.
+   */
+  rtems_bsd_setlogpriority("debug");
+
   puts( "*** " TEST_NAME " TEST ***" );
 
   /*

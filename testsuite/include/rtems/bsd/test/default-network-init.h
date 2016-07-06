@@ -238,6 +238,11 @@ Init(rtems_task_argument arg)
 	char *ifname;
 #endif
 
+	/*
+	 * Default the syslog priority to 'debug' to aid developers.
+	 */
+	rtems_bsd_setlogpriority("debug");
+
 	(void)arg;
 	puts("*** " TEST_NAME " TEST ***");
 

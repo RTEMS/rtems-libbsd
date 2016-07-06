@@ -760,6 +760,36 @@ The report lists the files change based on the opacity level. The opacity is a
 measure on how much of a file differs from the original FreeBSD source. The
 lower the value the more transparent the source file it.
 
+== Porting of user space utilities
+
+The theory behind the described method is to put all BSS and initialized data
+objects into a named section. This section then will be saved before the code is
+executed and restored after it has finished. This method limits to a single
+threaded execution of the application but minimizes the necessary changes to the
+original FreeBSD code.
+
+. Import and commit the unchanged source files like described above.
+. Add the files to the libbsd.py and build them.
+. Use nm on the generated object files to find out which objects are initialized
+  (either in BSS -- type b or B -- or in the initialized data segment -- type d
+  or D). An example call could look like follows:
+  `arm-rtems4.12-nm build/arm-rtems4.12-xilinx_zynq_a9_qemu/freebsd/contrib/pf/pfctl/pfctl.c.10.o | grep ' [DdbB] '`
+. Check the sources for everything that can be made const. This type of patches
+  should go back to the upstream FreeBSD sources.
+. Check the sources for every global variable that can be made static. This type
+  of patches should go back to the upstream FreeBSD sources.
+. Move static variables out of functions. This patches should also go upstream.
+. Create one `xxx-data.h` file per c module. This header should contain
+  declarations for the remaining initialized objects matching the original
+  declarations but adding a section attribute. The section name has to match the
+  name of the RTEMS_LINKER_RWSET defined further below. For an example look at
+  `freebsd/contrib/pf/pfctl/pfctl-data.h`.
+. Include the header files at the end of the corresponding c files.
+. Add a rtems_bsd_command_xxx wrapper function to the c file containing the main
+  function. For an example look at `rtems_bsd_command_pfctl(...)` in
+  `freebsd/contrib/pf/pfctl/pfctl.c`.
+. Create one compilable commit.
+
 == Initialization of the BSD Library
 
 The initialization of the BSD library is based on the FreeBSD SYSINIT(9)

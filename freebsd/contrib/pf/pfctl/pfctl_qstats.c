@@ -69,6 +69,10 @@ struct pf_altq_node {
 	struct queue_stats	 qstats;
 };
 
+#ifdef __rtems__
+static	u_int32_t	 last_ticket;
+
+#endif /* __rtems__ */
 int			 pfctl_update_qstats(int, struct pf_altq_node **);
 void			 pfctl_insert_altq_node(struct pf_altq_node **,
 			    const struct pf_altq, const struct queue_stats);
@@ -139,7 +143,9 @@ pfctl_update_qstats(int dev, struct pf_altq_node **root)
 	struct pfioc_qstats	 pq;
 	u_int32_t		 mnr, nr;
 	struct queue_stats	 qstats;
+#ifndef __rtems__
 	static	u_int32_t	 last_ticket;
+#endif /* __rtems__ */
 
 	memset(&pa, 0, sizeof(pa));
 	memset(&pq, 0, sizeof(pq));

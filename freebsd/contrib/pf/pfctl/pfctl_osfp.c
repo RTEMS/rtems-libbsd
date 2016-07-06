@@ -1010,7 +1010,18 @@ get_field(char **line, size_t *len, int *fieldlen)
 const char *
 print_ioctl(struct pf_osfp_ioctl *fp)
 {
+#ifndef __rtems__
 	static char buf[1024];
+#else /* __rtems__ */
+	/* Note on RTEMS port:
+	 * This buffer is static. So normally it would have to be initialized to
+	 * zero every time the program starts. But in this special case it is
+	 * set to zero inside the function. Therefore it is not necessary to
+	 * move it. If it would be moved out of the function, the name would
+	 * have to be changed. This would be a lot of change in this function!
+	 */
+	static char buf[1024];
+#endif /* __rtems__ */
 	char tmp[32];
 	int i, opt;
 

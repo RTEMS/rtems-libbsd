@@ -108,7 +108,11 @@ int	 pfctl_ruleset_trans(struct pfctl *, char *, struct pf_anchor *);
 int	 pfctl_load_ruleset(struct pfctl *, char *,
 		struct pf_ruleset *, int, int);
 int	 pfctl_load_rule(struct pfctl *, char *, struct pf_rule *, int);
+#ifndef __rtems__
 const char	*pfctl_lookup_option(char *, const char **);
+#else /* __rtems__ */
+const char	*pfctl_lookup_option(char *, const char * const *);
+#endif /* __rtems__ */
 
 struct pf_anchor_global	 pf_anchors;
 struct pf_anchor	 pf_main_anchor;
@@ -119,7 +123,11 @@ const char	*showopt;
 const char	*debugopt;
 char		*anchoropt;
 const char	*optiopt = NULL;
+#ifndef __rtems__
 char		*pf_device = "/dev/pf";
+#else /* __rtems__ */
+const char	*pf_device = "/dev/pf";
+#endif /* __rtems__ */
 char		*ifaceopt;
 char		*tableopt;
 const char	*tblcmdopt;
@@ -212,29 +220,53 @@ static const struct {
 	{ NULL,			NULL }
 };
 
+#ifndef __rtems__
 static const char *clearopt_list[] = {
+#else /* __rtems__ */
+static const char * const clearopt_list[] = {
+#endif /* __rtems__ */
 	"nat", "queue", "rules", "Sources",
 	"states", "info", "Tables", "osfp", "all", NULL
 };
 
+#ifndef __rtems__
 static const char *showopt_list[] = {
+#else /* __rtems__ */
+static const char * const showopt_list[] = {
+#endif /* __rtems__ */
 	"nat", "queue", "rules", "Anchors", "Sources", "states", "info",
 	"Interfaces", "labels", "timeouts", "memory", "Tables", "osfp",
 	"all", NULL
 };
 
+#ifndef __rtems__
 static const char *tblcmdopt_list[] = {
+#else /* __rtems__ */
+static const char * const tblcmdopt_list[] = {
+#endif /* __rtems__ */
 	"kill", "flush", "add", "delete", "load", "replace", "show",
 	"test", "zero", "expire", NULL
 };
 
+#ifndef __rtems__
 static const char *debugopt_list[] = {
+#else /* __rtems__ */
+static const char * const debugopt_list[] = {
+#endif /* __rtems__ */
 	"none", "urgent", "misc", "loud", NULL
 };
 
+#ifndef __rtems__
 static const char *optiopt_list[] = {
+#else /* __rtems__ */
+static const char * const optiopt_list[] = {
+#endif /* __rtems__ */
 	"none", "basic", "profile", NULL
 };
+#ifdef __rtems__
+
+static const int nattype[3] = { PF_NAT, PF_RDR, PF_BINAT };
+#endif /* __rtems__ */
 
 void
 usage(void)
@@ -978,7 +1010,9 @@ pfctl_show_nat(int dev, int opts, char *anchorname)
 {
 	struct pfioc_rule pr;
 	u_int32_t mnr, nr;
+#ifndef __rtems__
 	static int nattype[3] = { PF_NAT, PF_RDR, PF_BINAT };
+#endif /* __rtems__ */
 	int i, dotitle = opts & PF_OPT_SHOWALL;
 
 	memset(&pr, 0, sizeof(pr));
@@ -2001,7 +2035,11 @@ pfctl_show_anchors(int dev, int opts, char *anchorname)
 }
 
 const char *
+#ifndef __rtems__
 pfctl_lookup_option(char *cmd, const char **list)
+#else /* __rtems__ */
+pfctl_lookup_option(char *cmd, const char * const *list)
+#endif /* __rtems__ */
 {
 	if (cmd != NULL && *cmd)
 		for (; *list; list++)

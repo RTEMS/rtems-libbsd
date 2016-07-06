@@ -1073,18 +1073,31 @@ sc_x2y(struct service_curve *sc, double x)
 #define	R2S_BUFS	8
 #define	RATESTR_MAX	16
 
+#ifdef __rtems__
+static char	 r2sbuf[R2S_BUFS][RATESTR_MAX];  /* ring bufer */
+static int	 r2sidx = 0;
+
+#endif /* __rtems__ */
 char *
 rate2str(double rate)
 {
 	char		*buf;
+#ifndef __rtems__
 	static char	 r2sbuf[R2S_BUFS][RATESTR_MAX];  /* ring bufer */
 	static int	 idx = 0;
+#endif /* __rtems__ */
 	int		 i;
 	static const char unit[] = " KMG";
 
+#ifndef __rtems__
 	buf = r2sbuf[idx++];
 	if (idx == R2S_BUFS)
 		idx = 0;
+#else /* __rtems__ */
+	buf = r2sbuf[r2sidx++];
+	if (r2sidx == R2S_BUFS)
+		r2sidx = 0;
+#endif /* __rtems__ */
 
 	for (i = 0; rate >= 1000 && i <= 3; i++)
 		rate /= 1000;

@@ -403,7 +403,11 @@ pfi_get_ifaces(const char *filter, struct pfi_kif *buf, int *size)
 
 /* buffer management code */
 
+#ifndef __rtems__
 size_t buf_esize[PFRB_MAX] = { 0,
+#else /* __rtems__ */
+const size_t buf_esize[PFRB_MAX] = { 0,
+#endif /* __rtems__ */
 	sizeof(struct pfr_table), sizeof(struct pfr_tstats),
 	sizeof(struct pfr_addr), sizeof(struct pfr_astats),
 	sizeof(struct pfi_kif), sizeof(struct pfioc_trans_e)
@@ -536,10 +540,15 @@ pfr_buf_load(struct pfr_buffer *b, char *file, int nonetwork,
 	return (rv);
 }
 
+#ifdef __rtems__
+static char	next_ch = ' ';
+#endif /* __rtems__ */
 int
 pfr_next_token(char buf[BUF_SIZE], FILE *fp)
 {
+#ifndef __rtems__
 	static char	next_ch = ' ';
+#endif /* __rtems__ */
 	int		i = 0;
 
 	for (;;) {

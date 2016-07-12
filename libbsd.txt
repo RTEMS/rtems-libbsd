@@ -1133,6 +1133,50 @@ enabled from the shell with:
 or with an ioctl call to the network interface driver with SIOCSIFCAP and the
 mask IFCAP_TXCSUM and IFCAP_RXCSUM set.
 
+== PF (Firewall) ==
+
+It is possible to use PF as a firewall. See
+[https://www.freebsd.org/doc/handbook/firewalls-pf.html] for details on the
+range of functions and for how to configure the firewall.
+
+The following is necessary to use PF on RTEMS:
+
+- You have to provide a +/etc/pf.os+ file. The firewall can use it for passive
+  OS fingerprinting. If you don't want to use this feature, the file may contain
+  nothing except a line of comment (for example "# empty").
+
+- If some filters use protocol names (like tcp or udp) you have to provide a
+  +/etc/protocols+ file.
+
+- If some filters use service names (like ssh or http) you have to provide a
+  +/etc/services+ file.
+
+- Create a rule file (normally +/etc/pf.conf+). See the FreeBSD manual for the
+  syntax.
+
+- Load the rule file using the pfctl command and enable pf. An example
+  initialisation can look like follows:
+
+----
+	int exit_code;
+	char *params[] = {
+		"pfctl",
+		"-f",
+		"/etc/pf.conf",
+		"-e",
+		NULL
+	};
+
+	exit_code = rtems_bsd_command_pfctl(ARGC(params), params);
+	assert(exit_code == EXIT_SUCCSESS);
+----
+
+=== Known restrictions ===
+
+- Currently PF on RTEMS always uses the configuration for memory restricted
+  systems (on FreeBSD that means systems with less than 100 MB RAM). This is
+  fixed in +pfctl_init_options()+.
+
 == Problems to report to FreeBSD ==
 
 The MMAP_NOT_AVAILABLE define is inverted on its usage.  When it is

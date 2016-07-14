@@ -34,7 +34,7 @@ def configure(conf):
 def build(bld):
     # C/C++ flags
     common_flags = []
-    common_flags += ["-O2"]
+    common_flags += ["-O0"]
     common_flags += ["-g"]
     common_flags += ["-fno-strict-aliasing"]
     common_flags += ["-ffreestanding"]
@@ -1403,6 +1403,16 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_ppp01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_program01 = ['testsuite/program01/test_main.c']
+    bld.program(target = "program01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_program01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

@@ -2528,6 +2528,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('rwlock01', ['test_main']))
     mod.addTest(mm.generator['test']('sleep01', ['test_main']))
     mod.addTest(mm.generator['test']('syscalls01', ['test_main']))
+    mod.addTest(mm.generator['test']('program01', ['test_main']))
     mod.addTest(mm.generator['test']('commands01', ['test_main']))
     mod.addTest(mm.generator['test']('usb01', ['init', 'test-file-system'], False))
     mod.addTest(mm.generator['test']('loopback01', ['test_main']))

@@ -1361,6 +1361,16 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
+    test_program01 = ['testsuite/program01/test_main.c']
+    bld.program(target = "program01",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_program01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
     test_swi01 = ['testsuite/swi01/init.c',
                   'testsuite/swi01/swi_test.c']
     bld.program(target = "swi01",

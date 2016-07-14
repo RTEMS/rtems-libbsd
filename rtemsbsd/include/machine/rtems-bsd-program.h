@@ -43,6 +43,7 @@
 #include <sys/cdefs.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 __BEGIN_DECLS
 
@@ -56,7 +57,7 @@ rtems_bsd_program_call_main(const char *name, int (*main)(int, char **),
 int
 rtems_bsd_program_call_main_with_data_restore(const char *name,
     int (*main)(int, char **), int argc, char **argv,
-    const void *data_buf, const size_t data_size);
+    void *data_buf, const size_t data_size);
 
 void
 rtems_bsd_program_exit(int exit_code) __dead2;
@@ -76,6 +77,43 @@ rtems_bsd_program_lock(void);
 void
 rtems_bsd_program_unlock(void);
 
+int
+rtems_bsd_program_open(const char *path, int oflag, ...);
+
+int
+rtems_bsd_program_socket(int domain, int type, int protocol);
+
+int
+rtems_bsd_program_close(int fd);
+
+FILE *
+rtems_bsd_program_fopen(const char *restrict filename,
+    const char *restrict mode);
+
+int
+rtems_bsd_program_fclose(FILE *file);
+
+void *
+rtems_bsd_program_malloc(size_t size);
+
+void *
+rtems_bsd_program_calloc(size_t nelem, size_t elsize);
+
+void *
+rtems_bsd_program_realloc(void *ptr, size_t size);
+
+char *
+rtems_bsd_program_strdup(const char *s1);
+
+int
+rtems_bsd_program_vasprintf(char **strp, const char *fmt, va_list ap);
+
+int
+rtems_bsd_program_asprintf(char **strp, const char *fmt, ...);
+
+void
+rtems_bsd_program_free(void *ptr);
+
 #ifndef RTEMS_BSD_PROGRAM_NO_EXIT_WRAP
   #define exit(code) rtems_bsd_program_exit(code)
 #endif
@@ -90,6 +128,58 @@ rtems_bsd_program_unlock(void);
 
 #ifndef RTEMS_BSD_PROGRAM_NO_PRINTF_WRAP
   #define printf(...) fprintf(stdout, __VA_ARGS__)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
+  #define open(path, oflag, ...) \
+      rtems_bsd_program_open(path, oflag, ## __VA_ARGS__)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
+  #define socket(domain, type, protocol) \
+      rtems_bsd_program_socket(domain, type, protocol)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
+  #define close(fildes) rtems_bsd_program_close(fildes)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
+  #define fopen(filename, mode) rtems_bsd_program_fopen(filename, mode)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
+  #define fclose(file) rtems_bsd_program_fclose(file)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_MALLOC_WRAP
+  #define malloc(size) rtems_bsd_program_malloc(size)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_CALLOC_WRAP
+  #define calloc(nelem, elsize) rtems_bsd_program_calloc(nelem, elsize)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
+  #define realloc(ptr, size) rtems_bsd_program_realloc(ptr, size)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_STRDUP_WRAP
+  #define strdup(s1) rtems_bsd_program_strdup(s1)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_VASPRINTF_WRAP
+  #define vasprintf(strp, fmt, ap) \
+      rtems_bsd_program_vasprintf(strp, fmt, ap)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_ASPRINTF_WRAP
+  #define asprintf(strp, fmt, ...) \
+      rtems_bsd_program_asprintf(strp, fmt, ## __VA_ARGS__)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_FREE_WRAP
+  #define free(ptr) rtems_bsd_program_free(ptr);
 #endif
 
 __END_DECLS

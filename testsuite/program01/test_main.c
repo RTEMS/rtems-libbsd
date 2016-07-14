@@ -48,6 +48,25 @@
 
 #define TEST_NAME "LIBBSD SYSCALLS 1"
 
+struct alloc_ctx {
+	enum alloc_type {
+		ALLOC_MALLOC = 0,
+		ALLOC_CALLOC = 1,
+		ALLOC_REALLOC = 2,
+		ALLOC_STRDUP = 3,
+		ALLOC_ASPRINTF = 4,
+		ALLOC_LAST = 5,
+	} type;
+	unsigned free;
+#define ALLOC_FREE_NONE		0x0
+#define ALLOC_FREE_FIRST	0x1
+#define ALLOC_FREE_SECOND	0x2
+#define ALLOC_FREE_THIRD	0x4
+#define ALLOC_FREE_ALL		(ALLOC_FREE_FIRST | \
+				ALLOC_FREE_SECOND | \
+				ALLOC_FREE_THIRD)
+};
+
 typedef void (*no_mem_test_body)(int fd);
 
 typedef struct {
@@ -339,12 +358,228 @@ test_err(void)
 	assert(exit_code == 15);
 }
 
+static int
+call_socket(void *ctx)
+{
+	int fd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert (fd != -1);
+	return 0;
+}
+
+static int
+call_socket_close(void *ctx)
+{
+	int rv;
+	int fd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert (fd != -1);
+
+	rv = close(fd);
+	assert(rv == 0);
+
+	return 0;
+}
+
+static int
+call_open(void *ctx)
+{
+	int fd = open("/testfile", O_RDWR | O_CREAT, S_IRWXU);
+	assert (fd != -1);
+	return 0;
+}
+
+static int
+call_open_close(void *ctx)
+{
+	int rv;
+	int fd = open("/testfile", O_RDWR);
+	assert (fd != -1);
+
+	rv = close(fd);
+	assert(rv == 0);
+
+	return 0;
+}
+
+static int
+call_fopen(void *ctx)
+{
+	FILE *file = fopen("/testfile", "rw");
+	assert (file != NULL);
+	return 0;
+}
+
+static int
+call_fopen_fclose(void *ctx)
+{
+	int rv;
+
+	FILE *file = fopen("/testfile", "rw");
+	assert (file != NULL);
+
+	rv = fclose(file);
+	assert(rv == 0);
+
+	return 0;
+}
+
+static void
+test_open_close(void)
+{
+	int exit_code;
+	rtems_resource_snapshot snapshot;
+
+	puts("test open, socket and close");
+
+	/* Call a first time to create all resources before taking a memory
+	 * snapshot. */
+	exit_code = rtems_bsd_program_call("socket", call_socket, NULL);
+	assert(exit_code == 0);
+	exit_code = rtems_bsd_program_call("open", call_open, NULL);
+	assert(exit_code == 0);
+	exit_code = rtems_bsd_program_call("fopen", call_fopen, NULL);
+	assert(exit_code == 0);
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	exit_code = rtems_bsd_program_call("open", call_open, NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+
+	exit_code = rtems_bsd_program_call("open_close", call_open_close, NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	exit_code = rtems_bsd_program_call("socket", call_socket, NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+
+	exit_code = rtems_bsd_program_call("socket_close", call_socket_close,
+	    NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+
+	exit_code = rtems_bsd_program_call("fopen", call_fopen, NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+
+	exit_code = rtems_bsd_program_call("fopen_fclose", call_fopen_fclose,
+	    NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static int
+call_alloc(void *ctx)
+{
+	struct alloc_ctx *context = ctx;
+	char *first, *second, *third;
+	const int random_size = 64;
+	const char teststring[] = "test";
+
+	switch(context->type) {
+	case ALLOC_MALLOC:
+		first = malloc(random_size * sizeof(int));
+		second = malloc(random_size * sizeof(int));
+		third = malloc(random_size * sizeof(int));
+		break;
+	case ALLOC_CALLOC:
+		first = calloc(random_size, sizeof(int));
+		second = calloc(random_size, sizeof(int));
+		third = calloc(random_size, sizeof(int));
+		break;
+	case ALLOC_REALLOC:
+		first = malloc(sizeof(int));
+		second = malloc(sizeof(int));
+		third = malloc(sizeof(int));
+		assert(first != NULL);
+		assert(second != NULL);
+		assert(third != NULL);
+		first = realloc(first, sizeof(int) * random_size);
+		second = realloc(second, sizeof(int) * random_size);
+		third = realloc(third, sizeof(int) * random_size);
+		break;
+	case ALLOC_STRDUP:
+		first = strdup(teststring);
+		second = strdup(teststring);
+		third = strdup(teststring);
+		break;
+	case ALLOC_ASPRINTF:
+		asprintf(&first, "a number %d", 0x123456);
+		asprintf(&second, "some string: %s", "abcdefghijklm");
+		asprintf(&third, "just something");
+		break;
+	default:
+		assert(false);
+		break;
+	}
+
+	assert(first != NULL);
+	assert(second != NULL);
+	assert(third != NULL);
+
+	if((context->free & ALLOC_FREE_FIRST) != 0) {
+		free(first);
+	}
+	if((context->free & ALLOC_FREE_SECOND) != 0) {
+		free(second);
+	}
+	if((context->free & ALLOC_FREE_THIRD) != 0) {
+		free(third);
+	}
+
+	return 0;
+}
+
+static int
+call_free_on_null(void *ctx)
+{
+	void *new = NULL;
+	free(new);
+	return 0;
+}
+
+static void
+test_alloc_free(void)
+{
+	int exit_code;
+	rtems_resource_snapshot snapshot;
+	struct alloc_ctx context;
+	enum alloc_type type;
+
+	puts("test alloc and free");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	for(type = ALLOC_MALLOC; type < ALLOC_LAST; ++type) {
+		unsigned free;
+
+		for(free = ALLOC_FREE_NONE; free < ALLOC_FREE_ALL; ++free) {
+			context.type = type;
+			context.free = free;
+
+			exit_code = rtems_bsd_program_call("alloc", call_alloc,
+			    &context);
+			assert(exit_code == 0);
+			assert(rtems_resource_snapshot_check(&snapshot));
+		}
+	}
+
+	exit_code = rtems_bsd_program_call("free_on_null", call_free_on_null,
+	    NULL);
+	assert(exit_code == 0);
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
 static void
 test_main(void)
 {
 	test_bsd_program();
 	test_warn();
 	test_err();
+	test_open_close();
+	test_alloc_free();
 
 	exit(0);
 }

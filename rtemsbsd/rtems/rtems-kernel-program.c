@@ -200,6 +200,29 @@ rtems_bsd_program_call_main(const char *name, int (*main)(int, char **),
 	return exit_code;
 }
 
+int
+rtems_bsd_program_call_main_with_data_restore(const char *name,
+    int (*main)(int, char **), int argc, char **argv,
+    const void *data_buf, const size_t data_size)
+{
+	int exit_code = EXIT_FAILURE;
+	void *savebuf;
+
+	savebuf = malloc(data_size, M_TEMP, 0);
+	if(savebuf == NULL) {
+		errno = ENOMEM;
+		exit_code = EXIT_FAILURE;
+	} else {
+		memcpy(savebuf, data_buf, data_size);
+		exit_code = rtems_bsd_program_call_main(name, main, argc,
+		    argv);
+		memcpy(data_buf, savebuf, data_size);
+		free(savebuf, M_TEMP);
+	}
+
+	return exit_code;
+}
+
 static struct mtx program_mtx;
 
 MTX_SYSINIT(rtems_bsd_program, &program_mtx, "BSD program", MTX_DEF);

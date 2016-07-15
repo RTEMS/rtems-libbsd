@@ -44,6 +44,15 @@ static char sccsid[] = "@(#)hostname.c	8.1 (Berkeley) 5/31/93";
 #define __need_getopt_newlib
 #include <getopt.h>
 #include <rtems/netcmds-config.h>
+#define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
+#define RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
+#define RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
+#define RTEMS_BSD_PROGRAM_NO_MALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_CALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FREE_WRAP
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #include <rtems/mdns.h>

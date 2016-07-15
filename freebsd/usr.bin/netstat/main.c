@@ -44,6 +44,15 @@ static char sccsid[] = "@(#)main.c	8.4 (Berkeley) 3/1/94";
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
+#define RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
+#define RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
+#define RTEMS_BSD_PROGRAM_NO_MALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_CALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FREE_WRAP
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */

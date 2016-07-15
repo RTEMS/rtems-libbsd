@@ -50,6 +50,15 @@ __FBSDID("$FreeBSD$");
 static FILE *err_file; /* file to use for error output */
 static void (*err_exit)(int);
 #else /* __rtems__ */
+#define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
+#define RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
+#define RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
+#define RTEMS_BSD_PROGRAM_NO_MALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_CALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
+#define RTEMS_BSD_PROGRAM_NO_FREE_WRAP
 #include <machine/rtems-bsd-program.h>
 #define err_file stderr
 #define err_set_file(x) do { } while (0)

@@ -170,6 +170,23 @@ no_mem_bsd_program(int fd)
 	assert(rtems_bsd_program_get_context() == NULL);
 }
 
+#define OVERWRITE_CONTENT	"Some test pattern"
+#define OVERWRITE_AFTER_RESTORE	"xxxxxtestxxxxxxxx"
+#define OVERWRITE_RESTORE_FIRST (5)
+#define OVERWRITE_RESTORE_SIZE (4)
+static const char overwrite_compare[] = OVERWRITE_AFTER_RESTORE;
+static char overwrite_me[] = OVERWRITE_CONTENT;
+
+static int
+overwrite_main(int argc, char **argv)
+{
+	size_t len = strlen(overwrite_me);
+	memset(overwrite_me, 'x', len);
+	assert(strcmp(overwrite_me, overwrite_compare) != 0);
+	errno = 0;
+	rtems_bsd_program_exit(1012);
+}
+
 static void
 test_bsd_program(void)
 {
@@ -196,10 +213,14 @@ test_bsd_program(void)
 	no_mem_bsd_program(-1);
 	rtems_workspace_greedy_free(greedy);
 
+	assert(rtems_resource_snapshot_check(&snapshot));
+
 	errno = 0;
 	exit_code = rtems_bsd_program_call_main(prog_name, NULL, 1, invalid_argv);
 	assert(errno == EFAULT);
 	assert(exit_code == EXIT_FAILURE);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
 
 	errno = EINVAL;
 	exit_code = rtems_bsd_program_call(prog_name, some_prog, some_context);
@@ -208,6 +229,8 @@ test_bsd_program(void)
 	assert(strcmp(rtems_bsd_program_get_name(), "?") == 0);
 	assert(rtems_bsd_program_get_context() == NULL);
 
+	assert(rtems_resource_snapshot_check(&snapshot));
+
 	errno = EINVAL;
 	exit_code = rtems_bsd_program_call_main(prog_name, some_main,
 	    some_argc, some_argv);
@@ -215,6 +238,17 @@ test_bsd_program(void)
 	assert(exit_code == 789);
 	assert(strcmp(rtems_bsd_program_get_name(), "?") == 0);
 	assert(rtems_bsd_program_get_context() == NULL);
+
+	assert(rtems_resource_snapshot_check(&snapshot));
+
+	exit_code = rtems_bsd_program_call_main_with_data_restore(prog_name,
+	    overwrite_main, some_argc, some_argv,
+	    overwrite_me + OVERWRITE_RESTORE_FIRST, OVERWRITE_RESTORE_SIZE);
+	assert(errno == 0);
+	assert(exit_code == 1012);
+	assert(strcmp(rtems_bsd_program_get_name(), "?") == 0);
+	assert(rtems_bsd_program_get_context() == NULL);
+	assert(strcmp(overwrite_me, overwrite_compare) == 0);
 
 	assert(rtems_resource_snapshot_check(&snapshot));
 }

@@ -53,6 +53,11 @@ int
 rtems_bsd_program_call_main(const char *name, int (*main)(int, char **),
     int argc, char **argv);
 
+int
+rtems_bsd_program_call_main_with_data_restore(const char *name,
+    int (*main)(int, char **), int argc, char **argv,
+    const void *data_buf, const size_t data_size);
+
 void
 rtems_bsd_program_exit(int exit_code) __dead2;
 

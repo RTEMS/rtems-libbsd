@@ -28,6 +28,15 @@ rtems_shell_cmd_t rtems_shell_NETSTAT_Command = {
   NULL                           /* next */
 };
 
+rtems_shell_cmd_t rtems_shell_PFCTL_Command = {
+  "pfctl",                       /* name */
+  "pfctl [args]",                /* usage */
+  "net",                         /* topic */
+  rtems_bsd_command_pfctl,       /* command */
+  NULL,                          /* alias */
+  NULL                           /* next */
+};
+
 rtems_shell_cmd_t rtems_shell_PING_Command = {
   "ping",                        /* name */
   "ping [args]",                 /* usage */

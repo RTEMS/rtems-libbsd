@@ -202,7 +202,7 @@ init_sleepqueues(void)
 		    MTX_SPIN | MTX_RECURSE);
 #ifdef SLEEPQUEUE_PROFILING
 		snprintf(chain_name, sizeof(chain_name), "%d", i);
-		chain_oid = SYSCTL_ADD_NODE(NULL, 
+		chain_oid = SYSCTL_ADD_NODE(NULL,
 		    SYSCTL_STATIC_CHILDREN(_debug_sleepq_chains), OID_AUTO,
 		    chain_name, CTLFLAG_RD, NULL, "sleepq chain stats");
 		SYSCTL_ADD_UINT(NULL, SYSCTL_CHILDREN(chain_oid), OID_AUTO,
@@ -218,7 +218,7 @@ init_sleepqueues(void)
 #else
 	    NULL, NULL, sleepq_init, NULL, UMA_ALIGN_CACHE, 0);
 #endif
-	
+
 #ifndef __rtems__
 	thread0.td_sleepqueue = sleepq_alloc();
 #endif /* __rtems__ */
@@ -381,7 +381,7 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 	sq->sq_blockedcnt[queue]++;
 #ifdef __rtems__
 	executing = td->td_thread;
-	_Thread_Lock_acquire_default(executing, &lock_context);
+	_Thread_Wait_acquire_default(executing, &lock_context);
 	td->td_sq_state = TD_SQ_TIRED;
 #endif /* __rtems__ */
 	td->td_sleepqueue = NULL;
@@ -395,7 +395,7 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 	}
 	thread_unlock(td);
 #else /* __rtems__ */
-	_Thread_Lock_release_default(executing, &lock_context);
+	_Thread_Wait_release_default(executing, &lock_context);
 #endif /* __rtems__ */
 }
 
@@ -561,7 +561,7 @@ sleepq_switch(void *wchan, int pri)
 	mtx_assert(&sc->sc_lock, MA_OWNED);
 	THREAD_LOCK_ASSERT(td, MA_OWNED);
 
-	/* 
+	/*
 	 * If we have a sleep queue, then we've already been woken up, so
 	 * just return.
 	 */
@@ -588,7 +588,7 @@ sleepq_switch(void *wchan, int pri)
 #endif
 		}
 		mtx_unlock_spin(&sc->sc_lock);
-		return;		
+		return;
 	}
 #ifdef SLEEPQUEUE_PROFILING
 	if (prof_enabled)
@@ -612,7 +612,7 @@ sleepq_switch(void *wchan, int pri)
 
 	sleepq_release(wchan);
 
-	executing = _Thread_Lock_acquire_default_for_executing(&lock_context);
+	executing = _Thread_Wait_acquire_default_for_executing(&lock_context);
 	td = rtems_bsd_get_thread(executing);
 	BSD_ASSERT(td != NULL);
 
@@ -640,11 +640,11 @@ sleepq_switch(void *wchan, int pri)
 		bool unblock;
 
 		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
-		_Thread_Lock_release_default(executing, &lock_context);
+		_Thread_Wait_release_default(executing, &lock_context);
 
 		_Thread_Set_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
 
-		_Thread_Lock_acquire_default(executing, &lock_context);
+		_Thread_Wait_acquire_default(executing, &lock_context);
 
 		unblock = false;
 		switch (td->td_sq_state) {
@@ -665,7 +665,7 @@ sleepq_switch(void *wchan, int pri)
 			break;
 		}
 
-		_Thread_Lock_release_default(executing, &lock_context);
+		_Thread_Wait_release_default(executing, &lock_context);
 
 		if (unblock) {
 			_Thread_Timer_remove(executing);
@@ -674,7 +674,7 @@ sleepq_switch(void *wchan, int pri)
 
 		_Thread_Dispatch_enable(cpu_self);
 
-		_Thread_Lock_acquire_default(executing, &lock_context);
+		_Thread_Wait_acquire_default(executing, &lock_context);
 
 		switch (td->td_sq_state) {
 		case TD_SQ_NIGHTMARE:
@@ -689,7 +689,7 @@ sleepq_switch(void *wchan, int pri)
 		}
 	}
 
-	_Thread_Lock_release_default(executing, &lock_context);
+	_Thread_Wait_release_default(executing, &lock_context);
 
 	if (remove) {
 		sleepq_remove(td, wchan);
@@ -924,7 +924,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 	(void)sc;
 	thread = td->td_thread;
 	_ISR_lock_ISR_disable(&lock_context);
-	_Thread_Lock_acquire_default_critical(thread, &lock_context);
+	_Thread_Wait_acquire_default_critical(thread, &lock_context);
 #endif /* __rtems__ */
 
 	td->td_wmesg = NULL;
@@ -971,14 +971,14 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		Per_CPU_Control *cpu_self;
 
 		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
-		_Thread_Lock_release_default(thread, &lock_context);
+		_Thread_Wait_release_default(thread, &lock_context);
 
 		_Thread_Timer_remove(thread);
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
 		_Thread_Dispatch_enable(cpu_self);
 	} else {
-		_Thread_Lock_release_default(thread, &lock_context);
+		_Thread_Wait_release_default(thread, &lock_context);
 	}
 #endif /* __rtems__ */
 	return (0);
@@ -1180,7 +1180,7 @@ sleepq_timeout(Watchdog_Control *watchdog)
 	BSD_ASSERT(td != NULL);
 
 	_ISR_lock_ISR_disable(&lock_context);
-	_Thread_Lock_acquire_default_critical(thread, &lock_context);
+	_Thread_Wait_acquire_default_critical(thread, &lock_context);
 
 	unblock = false;
 	switch (td->td_sq_state) {
@@ -1200,13 +1200,13 @@ sleepq_timeout(Watchdog_Control *watchdog)
 		Per_CPU_Control *cpu_self;
 
 		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
-		_Thread_Lock_release_default(thread, &lock_context);
+		_Thread_Wait_release_default(thread, &lock_context);
 
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
 		_Thread_Dispatch_enable(cpu_self);
 	} else {
-		_Thread_Lock_release_default(thread, &lock_context);
+		_Thread_Wait_release_default(thread, &lock_context);
 	}
 }
 #endif /* __rtems__ */

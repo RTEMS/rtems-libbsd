@@ -92,7 +92,11 @@ enum {
     COMBINED,	/* the field may itself be combined with other rules */
     DC,		/* we just don't care about the field */
     NEVER};	/* we should never see this field set?!? */
+#ifndef __rtems__
 struct pf_rule_field {
+#else /* __rtems__ */
+static struct pf_rule_field {
+#endif /* __rtems__ */
 	const char	*prf_name;
 	int		 prf_type;
 	size_t		 prf_offset;
@@ -248,8 +252,14 @@ int	superblock_inclusive(struct superblock *, struct pf_opt_rule *);
 void	superblock_free(struct pfctl *, struct superblock *);
 
 
+#ifndef __rtems__
 int (*skip_comparitors[PF_SKIP_COUNT])(struct pf_rule *, struct pf_rule *);
 const char *skip_comparitors_names[PF_SKIP_COUNT];
+#else /* __rtems__ */
+static int (*skip_comparitors[PF_SKIP_COUNT])(struct pf_rule *,
+    struct pf_rule *);
+static const char *skip_comparitors_names[PF_SKIP_COUNT];
+#endif /* __rtems__ */
 #define PF_SKIP_COMPARITORS {				\
     { "ifp", PF_SKIP_IFP, skip_cmp_ifp },		\
     { "dir", PF_SKIP_DIR, skip_cmp_dir },		\
@@ -261,8 +271,13 @@ const char *skip_comparitors_names[PF_SKIP_COUNT];
     { "dport", PF_SKIP_DST_PORT, skip_cmp_dst_port }	\
 }
 
+#ifndef __rtems__
 struct pfr_buffer table_buffer;
 int table_identifier;
+#else /* __rtems__ */
+static struct pfr_buffer table_buffer;
+static int table_identifier;
+#endif /* __rtems__ */
 
 
 int

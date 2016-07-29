@@ -84,7 +84,11 @@ static int		 blockpolicy = PFRULE_DROP;
 static int		 require_order = 1;
 static int		 default_statelock;
 
+#ifndef __rtems__
 TAILQ_HEAD(files, file)		 files = TAILQ_HEAD_INITIALIZER(files);
+#else /* __rtems__ */
+static TAILQ_HEAD(files, file)	 files = TAILQ_HEAD_INITIALIZER(files);
+#endif /* __rtems__ */
 static struct file {
 	TAILQ_ENTRY(file)	 entry;
 	FILE			*stream;
@@ -104,7 +108,11 @@ int		 lgetc(int);
 int		 lungetc(int);
 int		 findeol(void);
 
+#ifndef __rtems__
 TAILQ_HEAD(symhead, sym)	 symhead = TAILQ_HEAD_INITIALIZER(symhead);
+#else /* __rtems__ */
+static TAILQ_HEAD(symhead, sym)	 symhead = TAILQ_HEAD_INITIALIZER(symhead);
+#endif /* __rtems__ */
 struct sym {
 	TAILQ_ENTRY(sym)	 entry;
 	int			 used;
@@ -201,7 +209,11 @@ struct peer {
 	struct node_port	*port;
 };
 
+#ifndef __rtems__
 struct node_queue {
+#else /* __rtems__ */
+static struct node_queue {
+#endif /* __rtems__ */
 	char			 queue[PF_QNAME_SIZE];
 	char			 parent[PF_QNAME_SIZE];
 	char			 ifname[IFNAMSIZ];
@@ -215,7 +227,11 @@ struct node_qassign {
 	char		*pqname;
 };
 
+#ifndef __rtems__
 struct filter_opts {
+#else /* __rtems__ */
+static struct filter_opts {
+#endif /* __rtems__ */
 	int			 marker;
 #define FOM_FLAGS	0x01
 #define FOM_ICMP	0x02
@@ -251,12 +267,20 @@ struct filter_opts {
 	}			 divert;
 } filter_opts;
 
+#ifndef __rtems__
 struct antispoof_opts {
+#else /* __rtems__ */
+static struct antispoof_opts {
+#endif /* __rtems__ */
 	char			*label;
 	u_int			 rtableid;
 } antispoof_opts;
 
+#ifndef __rtems__
 struct scrub_opts {
+#else /* __rtems__ */
+static struct scrub_opts {
+#endif /* __rtems__ */
 	int			 marker;
 #define SOM_MINTTL	0x01
 #define SOM_MAXMSS	0x02
@@ -274,7 +298,11 @@ struct scrub_opts {
 	u_int			 rtableid;
 } scrub_opts;
 
+#ifndef __rtems__
 struct queue_opts {
+#else /* __rtems__ */
+static struct queue_opts {
+#endif /* __rtems__ */
 	int			marker;
 #define QOM_BWSPEC	0x01
 #define QOM_SCHEDULER	0x02
@@ -288,13 +316,21 @@ struct queue_opts {
 	int			qlimit;
 } queue_opts;
 
+#ifndef __rtems__
 struct table_opts {
+#else /* __rtems__ */
+static struct table_opts {
+#endif /* __rtems__ */
 	int			flags;
 	int			init_addr;
 	struct node_tinithead	init_nodes;
 } table_opts;
 
+#ifndef __rtems__
 struct pool_opts {
+#else /* __rtems__ */
+static struct pool_opts {
+#endif /* __rtems__ */
 	int			 marker;
 #define POM_TYPE		0x01
 #define POM_STICKYADDRESS	0x02
@@ -306,8 +342,13 @@ struct pool_opts {
 } pool_opts;
 
 
+#ifndef __rtems__
 struct node_hfsc_opts	 hfsc_opts;
 struct node_state_opt	*keep_state_defaults = NULL;
+#else /* __rtems__ */
+static struct node_hfsc_opts	 hfsc_opts;
+static struct node_state_opt	*keep_state_defaults = NULL;
+#endif /* __rtems__ */
 
 int		 disallow_table(struct node_host *, const char *);
 int		 disallow_urpf_failed(struct node_host *, const char *);
@@ -352,7 +393,11 @@ void	 remove_invalid_hosts(struct node_host **, sa_family_t *);
 int	 invalid_redirect(struct node_host *, sa_family_t);
 u_int16_t parseicmpspec(char *, sa_family_t);
 
+#ifndef __rtems__
 TAILQ_HEAD(loadanchorshead, loadanchors)
+#else /* __rtems__ */
+static TAILQ_HEAD(loadanchorshead, loadanchors)
+#endif /* __rtems__ */
     loadanchorshead = TAILQ_HEAD_INITIALIZER(loadanchorshead);
 
 struct loadanchors {
@@ -5396,10 +5441,17 @@ lookup(char *s)
 
 #define MAXPUSHBACK	128
 
+#ifndef __rtems__
 char	*parsebuf;
 int	 parseindex;
 char	 pushback_buffer[MAXPUSHBACK];
 int	 pushback_index = 0;
+#else /* __rtems__ */
+static char	*parsebuf;
+static int	 parseindex;
+static char	 pushback_buffer[MAXPUSHBACK];
+static int	 pushback_index = 0;
+#endif /* __rtems__ */
 
 int
 lgetc(int quotec)

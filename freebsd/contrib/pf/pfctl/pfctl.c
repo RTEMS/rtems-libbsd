@@ -114,6 +114,7 @@ const char	*pfctl_lookup_option(char *, const char **);
 const char	*pfctl_lookup_option(char *, const char * const *);
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 struct pf_anchor_global	 pf_anchors;
 struct pf_anchor	 pf_main_anchor;
 
@@ -123,11 +124,7 @@ const char	*showopt;
 const char	*debugopt;
 char		*anchoropt;
 const char	*optiopt = NULL;
-#ifndef __rtems__
 char		*pf_device = "/dev/pf";
-#else /* __rtems__ */
-const char	*pf_device = "/dev/pf";
-#endif /* __rtems__ */
 char		*ifaceopt;
 char		*tableopt;
 const char	*tblcmdopt;
@@ -135,12 +132,36 @@ int		 src_node_killers;
 char		*src_node_kill[2];
 int		 state_killers;
 char		*state_kill[2];
+#else /* __rtems__ */
+static struct pf_anchor_global	 pf_anchors;
+static struct pf_anchor	 pf_main_anchor;
+
+static const char	*clearopt;
+static char		*rulesopt;
+static const char	*showopt;
+static const char	*debugopt;
+static char		*anchoropt;
+static const char	*optiopt = NULL;
+static const char	*pf_device = "/dev/pf";
+static char		*ifaceopt;
+static char		*tableopt;
+static const char	*tblcmdopt;
+static int		 src_node_killers;
+static char		*src_node_kill[2];
+static int		 state_killers;
+static char		*state_kill[2];
+#endif /* __rtems__ */
 int		 loadopt;
 int		 altqsupport;
 
 int		 dev = -1;
+#ifndef __rtems__
 int		 first_title = 1;
 int		 labels = 0;
+#else /* __rtems__ */
+static int	 first_title = 1;
+static int	 labels = 0;
+#endif /* __rtems__ */
 
 #define INDENT(d, o)	do {						\
 				if (o) {				\

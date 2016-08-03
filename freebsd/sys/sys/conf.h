@@ -52,10 +52,14 @@ struct cdevsw;
 struct file;
 #ifdef __rtems__
 struct ucred;
+#define RTEMS_CDEV_DIRECTORY "/dev/"
+extern const char rtems_cdev_directory[sizeof(RTEMS_CDEV_DIRECTORY)];
 #endif /* __rtems__ */
 
 struct cdev {
+#ifndef __rtems__
 	struct mount	*si_mountpt;
+#endif /* __rtems__ */
 	u_int		si_flags;
 #define	SI_ETERNAL	0x0001	/* never destroyed */
 #define SI_ALIAS	0x0002	/* carrier of alias name */
@@ -85,11 +89,11 @@ struct cdev {
 	LIST_HEAD(, cdev)	si_children;
 	LIST_ENTRY(cdev)	si_siblings;
 	struct cdev *si_parent;
-	char		*si_name;
 #endif /* __rtems__ */
+	char		*si_name;
 	void		*si_drv1, *si_drv2;
-#ifndef __rtems__
 	struct cdevsw	*si_devsw;
+#ifndef __rtems__
 	int		si_iosize_max;	/* maximum I/O size (for physio &al) */
 	u_long		si_usecount;
 	u_long		si_threadcount;
@@ -97,9 +101,19 @@ struct cdev {
 		struct snapdata *__sid_snapdata;
 	} __si_u;
 	char		__si_namebuf[SPECNAMELEN + 1];
+#else /* __rtems__ */
+	struct {
+		/* Keep this two together. They will be used as one string. */
+		char		__si_dir[sizeof(rtems_cdev_directory) - 1];
+		char		__si_name[SPECNAMELEN + 1];
+	} __si_pathstruct;
 #endif /* __rtems__ */
 };
 
+#ifdef __rtems__
+#define __si_namebuf	__si_pathstruct.__si_name
+#define si_path		__si_pathstruct.__si_dir
+#endif /* __rtems__ */
 #define si_snapdata	__si_u.__sid_snapdata
 
 #ifdef _KERNEL

@@ -21,6 +21,25 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/**
+ * @brief Instructs the compiler to place a specific variable or function in
+ * the specified section.
+ */
+#if defined(__GNUC__)
+  #define RTEMS_SECTION( _section ) __attribute__((__section__(_section)))
+#else
+  #define RTEMS_SECTION( _section )
+#endif
+
+/**
+ * @brief Instructs the compiler that a specific variable or function is used.
+ */
+#if defined(__GNUC__)
+  #define RTEMS_USED __attribute__((__used__))
+#else
+  #define RTEMS_USED
+#endif
+
 #define RTEMS_LINKER_SET_BEGIN( set ) \
   _Linker_set_##set##_begin
 

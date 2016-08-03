@@ -1179,6 +1179,16 @@ def build(bld):
                           relative_trick = True)
 
     # Tests
+    test_pf02 = ['testsuite/pf02/test_main.c']
+    bld.program(target = "pf02",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_pf02,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
     test_init01 = ['testsuite/init01/test_main.c']
     bld.program(target = "init01",
                 features = "cprogram",

@@ -113,12 +113,14 @@ VNET_DECLARE(int, icmp6_nodeinfo_oldmcprefix);
 /*
  * Definitions of some costant IP6 addresses.
  */
+#ifndef __rtems__
 const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
 const struct in6_addr in6addr_nodelocal_allnodes =
 	IN6ADDR_NODELOCAL_ALLNODES_INIT;
 const struct in6_addr in6addr_linklocal_allnodes =
 	IN6ADDR_LINKLOCAL_ALLNODES_INIT;
+#endif /* __rtems__ */
 const struct in6_addr in6addr_linklocal_allrouters =
 	IN6ADDR_LINKLOCAL_ALLROUTERS_INIT;
 const struct in6_addr in6addr_linklocal_allv2routers =

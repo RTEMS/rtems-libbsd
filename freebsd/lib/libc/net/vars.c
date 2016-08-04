@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$KAME: vars.c,v 1.2 2001/08/20 02:32:41 itojun Exp $	*/
 
 /*

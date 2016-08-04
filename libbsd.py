@@ -1978,6 +1978,7 @@ def user_space(mm):
             'lib/libc/net/recv.c',
             'lib/libc/net/rthdr.c',
             'lib/libc/net/send.c',
+            'lib/libc/net/vars.c',
             'lib/libc/posix1e/mac.c',
             'lib/libc/resolv/h_errno.c',
             'lib/libc/resolv/herror.c',

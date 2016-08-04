@@ -93,9 +93,11 @@ static int udp_done, tcp_done, sdp_done;
 void
 rtems_bsd_netstat_inet_init(void)
 {
+#ifdef INET6
 	udp_done = 0;
 	tcp_done = 0;
 	sdp_done = 0;
+#endif /* INET6 */
 }
 #endif /* __rtems__ */
 

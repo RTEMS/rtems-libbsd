@@ -53,6 +53,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,7 +123,39 @@ static const char* rc_conf_text =                          \
   "\n"                                                     \
   "ftpd_enable=\"YES\"\n"                                  \
   "ftpd_options=\"-v -p 21 -C 10 -P 150 -L -I 10 -R /\"\n" \
-  "n";
+  "\n"                                                     \
+  "pf_enable=\"YES\"\n"                                    \
+  "pf_rules=\"/etc/mypf.conf\"\n"                          \
+  "pf_flags=\"-q -z\"\n"                                   \
+  "\n";
+
+static const char* pf_conf_text = "pass all\n";
+static const char* pf_os_text = "# empty\n";
+
+static void
+prepare_files(void)
+{
+  size_t len;
+  size_t written;
+  int fd;
+  int rv;
+
+  len = strlen(pf_conf_text);
+  fd = open("/etc/mypf.conf", O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+  assert(fd != -1);
+  written = write(fd, pf_conf_text, len);
+  assert(written == len);
+  rv = close(fd);
+  assert(rv == 0);
+
+  len = strlen(pf_os_text);
+  fd = open("/etc/pf.os", O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+  assert(fd != -1);
+  written = write(fd, pf_os_text, len);
+  assert(written == len);
+  rv = close(fd);
+  assert(rv == 0);
+}
 
 static void
 test_rc_conf_script(void)
@@ -132,6 +165,9 @@ test_rc_conf_script(void)
   };
   const char* netstat_args[] = {
     "netstat", "-rn", NULL
+  };
+  const char* pfctl_args[] = {
+    "pfctl", "-s", "rules", NULL
   };
 
   printf("--------------- rc.conf -----------------\n");
@@ -144,6 +180,8 @@ test_rc_conf_script(void)
   rtems_bsd_command_ifconfig(1, (char**) ifconfg_args);
   printf("-------------- NETSTAT ------------------\n");
   rtems_bsd_command_netstat(2, (char**) netstat_args);
+  printf("-------------- PFCTL --------------------\n");
+  rtems_bsd_command_pfctl(RTEMS_BSD_ARGC(pfctl_args), (char **) pfctl_args);
   printf("-----------------------------------------\n");
 }
 
@@ -181,6 +219,7 @@ shell(void)
 static void
 test_main(void)
 {
+  prepare_files();
   test_rc_conf_script();
   shell();
   exit(0);
@@ -201,6 +240,7 @@ test_main(void)
   &rtems_shell_NETSTAT_Command, \
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_TCPDUMP_Command, \
+  &rtems_shell_PFCTL_Command, \
   &rtems_shell_SYSCTL_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
@@ -229,6 +269,7 @@ test_main(void)
 #define RTEMS_BSD_CONFIG_SERVICE_TELNETD
 #define RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE (16 * 1024)
 #define RTEMS_BSD_CONFIG_SERVICE_FTPD
+#define RTEMS_BSD_CONFIG_FIREWALL_PF
 
 #define CONFIGURE_MAXIMUM_DRIVERS 32
 

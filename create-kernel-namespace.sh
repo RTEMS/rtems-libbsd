@@ -60,6 +60,9 @@ objdump --syms `for i in build/*rtems* ; do \
 	| sed '/^getsockopt$/d' \
 	| sed '/^ifqmaxlen$/d' \
 	| sed '/^in6addr_any$/d' \
+	| sed '/^in6addr_loopback$/d' \
+	| sed '/^in6addr_nodelocal_allnodes$/d' \
+	| sed '/^in6addr_linklocal_allnodes$/d' \
 	| sed '/^kevent$/d' \
 	| sed '/^kqueue$/d' \
 	| sed '/^listen$/d' \

@@ -1326,11 +1326,8 @@
 #define	im6o_mc_filter _bsd_im6o_mc_filter
 #define	imo_multi_filter _bsd_imo_multi_filter
 #define	in4_cksum _bsd_in4_cksum
-#define	in6addr_linklocal_allnodes _bsd_in6addr_linklocal_allnodes
 #define	in6addr_linklocal_allrouters _bsd_in6addr_linklocal_allrouters
 #define	in6addr_linklocal_allv2routers _bsd_in6addr_linklocal_allv2routers
-#define	in6addr_loopback _bsd_in6addr_loopback
-#define	in6addr_nodelocal_allnodes _bsd_in6addr_nodelocal_allnodes
 #define	in6_addrscope _bsd_in6_addrscope
 #define	in6_are_prefix_equal _bsd_in6_are_prefix_equal
 #define	in6_cksum _bsd_in6_cksum

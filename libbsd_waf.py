@@ -295,6 +295,7 @@ def build(bld):
                      'freebsd/lib/libc/net/recv.c',
                      'freebsd/lib/libc/net/rthdr.c',
                      'freebsd/lib/libc/net/send.c',
+                     'freebsd/lib/libc/net/vars.c',
                      'freebsd/lib/libc/posix1e/mac.c',
                      'freebsd/lib/libc/resolv/h_errno.c',
                      'freebsd/lib/libc/resolv/herror.c',

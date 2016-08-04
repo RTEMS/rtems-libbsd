@@ -492,6 +492,5 @@ test_main(void)
 #include <machine/rtems-bsd-sysinit.h>
 
 #define RTEMS_BSD_CONFIG_FIREWALL_PF
-#define RTEMS_BSD_CONFIG_FIREWALL_PFLOG
 
 #include <rtems/bsd/test/default-network-init.h>

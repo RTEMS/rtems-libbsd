@@ -1379,6 +1379,14 @@ static int mcf548x_fec_ioctl (struct ifnet *ifp, ioctl_command_t command, caddr_
 
   switch(command)
     {
+    case SIOCSIFFLAGS:
+      if (ifp->if_flags & IFF_UP) {
+        if (!(ifp->if_drv_flags & IFF_DRV_RUNNING)) {
+          mcf548x_fec_init(sc);
+        }
+      }
+      break;
+
     case SIO_RTEMS_SHOW_STATS:
 
       enet_stats(sc);

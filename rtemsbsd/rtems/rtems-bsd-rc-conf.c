@@ -789,7 +789,7 @@ rtems_bsd_run_rc_conf_script(const char* name,
 
   sc = rtems_task_create(rtems_build_name('B', 'S', 'D', 'r' ),
                          priority,
-                         8 * 1024,
+                         32 * 1024,
                          RTEMS_PREEMPT | RTEMS_NO_TIMESLICE | RTEMS_NO_ASR,
                          RTEMS_LOCAL | RTEMS_FLOATING_POINT,
                          &worker);

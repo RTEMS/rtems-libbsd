@@ -1347,8 +1347,10 @@ The following is necessary to use PF on RTEMS:
 - Create a rule file (normally +/etc/pf.conf+). See the FreeBSD manual for the
   syntax.
 
-- Load the rule file using the pfctl command and enable pf. An example
-  initialisation can look like follows:
+- Load the rule file using the pfctl command and enable pf. Please note that the
+  pfctl command needs a lot of stack. You should use at least
+  RTEMS_MINIMUM_STACK_SIZE + 8192 Bytes of stack. An example initialisation can
+  look like follows:
 
 ----
 	int exit_code;

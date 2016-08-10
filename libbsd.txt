@@ -733,8 +733,15 @@ direction.
 You can add more than one verbose option (-v) to the command line and get more
 detail and debug level information from the command.
 
+== FreeBSD version of imported files and directories
+
+. sys/dev/dwc/*, trunk, 2015-03-26, cfc3df2b8f708ce8494d9d556e3472a5c8c21b8a
+. sys/dev/usb/*, trunk, 2015-10-30, 968dafb4fcf133cb8beb6fa3c558fecd7dc00ef0
+. *, stable/9, 2015-04-08, 99a648a912e81e29d9c4c159cbbe263462f2d719
+
 == How to import code from FreeBSD
 
+. In case you import files from a special FreeBSD version, then update the list above.
 . Run `git status` and make sure your working directory is clean.
 . Run `./freebsd-to-rtems.py -R`
 . Run `./freebsd-to-rtems.py`

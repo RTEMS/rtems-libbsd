@@ -809,7 +809,7 @@ The report lists the files change based on the opacity level. The opacity is a
 measure on how much of a file differs from the original FreeBSD source. The
 lower the value the more transparent the source file it.
 
-== Porting of user space utilities
+== Porting of userspace utilities
 
 The theory behind the described method is to put all BSS and initialized data
 objects into a named section. This section then will be saved before the code is
@@ -819,24 +819,33 @@ original FreeBSD code.
 
 . Import and commit the unchanged source files like described above.
 . Add the files to the libbsd.py and build them.
-. Use nm on the generated object files to find out which objects are initialized
-  (either in BSS -- type b or B -- or in the initialized data segment -- type d
-  or D). An example call could look like follows:
-  `arm-rtems4.12-nm build/arm-rtems4.12-xilinx_zynq_a9_qemu/freebsd/contrib/pf/pfctl/pfctl.c.10.o | grep ' [DdbB] '`
 . Check the sources for everything that can be made const. This type of patches
   should go back to the upstream FreeBSD sources.
-. Check the sources for every global variable that can be made static. This type
-  of patches should go back to the upstream FreeBSD sources.
-. Move static variables out of functions. This patches should also go upstream.
-. Create one `xxx-data.h` file per c module. This header should contain
-  declarations for the remaining initialized objects matching the original
-  declarations but adding a section attribute. The section name has to match the
-  name of the RTEMS_LINKER_RWSET defined further below. For an example look at
-  `freebsd/contrib/pf/pfctl/pfctl-data.h`.
-. Include the header files at the end of the corresponding c files.
-. Add a rtems_bsd_command_xxx wrapper function to the c file containing the main
-  function. For an example look at `rtems_bsd_command_pfctl(...)` in
-  `freebsd/contrib/pf/pfctl/pfctl.c`.
+. Move static variables out of functions if necessary (search for
+  "<TAB>static"). These patches most likely will not be accepted into FreeBSD.
+. Add a rtems_bsd_command_PROGNAME() wrapper function to the source file
+  containing the main function (e.g. PROGNAME = pfctl). For an example look at
+  `rtems_bsd_command_pfctl()` in `freebsd/sbin/pfctl/pfctl.c`.
+. You probably have to use getopt_r() instead of getopt(). Have a look at
+  `freebsd/sbin/pfctl/pfctl.c`.
+. Build the libbsd without optimization.
+. Use the `userspace-header-gen.py` to generate some necessary header
+  files. It will generate one `rtems-bsd-PROGNAME-MODULE-data.h` per object file, one
+  `rtems-bsd-PROGNAME-namespace.h` and one `rtems-bsd-PROGNAME-data.h`. To call
+  the script, you have to compile the objects and afterwards run the helper
+  script with a call similar to this one:
+  `python ./userspace-header-gen.py build/arm-rtems4.12-xilinx_zynq_a9_qemu/freebsd/sbin/pfctl/*.o -p pfctl`
+  Replace the name (given via -p option) by the name of the userspace tool. It
+  has to match the name that is used in the RTEMS linker set further below.
+. If you regenerated files that have already been generated, you may have to
+  remove RTEMS-specific names from the namespace. The defaults (linker set names
+  and rtems_bsd_program_xxx) should already be filtered.
+. Put the generated header files into the same folder like the source files.
+. Include `PROGNAME-rtems-bsd-namespace.h` at the top of each source file and
+  the `PROGNAME-rtems-bsd-MODULE-data.h` after the include section of the
+  corresponding source files.
+. Include `machine/rtems-bsd-program.h` at the top of the include block in each
+  source file.
 . Create one compilable commit.
 
 == Initialization of the BSD Library

@@ -60,6 +60,12 @@ __FBSDID("$FreeBSD$");
 #include <dev/mii/miivar.h>
 #include <rtems/bsd/local/miidevs.h>
 
+#ifdef __rtems__
+ /* hacked into here to avoid having to touch the geerated header file. */
+ #define MII_MODEL_xxMARVELL_E1512       0x001d
+ #define MII_STR_xxMARVELL_E1512 "Marvell 88E1512 Gigabit PHY"
+#endif /* __rtems__ */
+
 #include <dev/mii/e1000phyreg.h>
 
 #include <rtems/bsd/local/miibus_if.h>
@@ -112,6 +118,9 @@ static const struct mii_phydesc e1000phys[] = {
 	MII_PHY_DESC(xxMARVELL, E1149R),
 	MII_PHY_DESC(xxMARVELL, E3016),
 	MII_PHY_DESC(xxMARVELL, PHYG65G),
+#if __rtems__
+	MII_PHY_DESC(xxMARVELL, E1512),
+#endif /* __rtems__ */
 	MII_PHY_END
 };
 

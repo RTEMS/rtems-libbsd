@@ -41,9 +41,6 @@
 #include <machine/rtems-bsd-muteximpl.h>
 
 #include <rtems/score/schedulerimpl.h>
-#include <rtems/score/threadqimpl.h>
-
-#define BSD_MUTEX_TQ_OPERATIONS &_Thread_queue_Operations_priority_inherit
 
 void
 rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
@@ -56,40 +53,12 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 
 		_Thread_queue_Release(&m->queue, &queue_context->Lock_context);
 	} else {
-		++executing->resource_count;
 		_Thread_queue_Context_set_expected_level(queue_context, 1);
 		_Thread_queue_Context_set_no_timeout(queue_context);
 		_Thread_queue_Context_set_deadlock_callout(queue_context,
 		    _Thread_queue_Deadlock_fatal);
 		_Thread_queue_Enqueue_critical(&m->queue.Queue,
-		    BSD_MUTEX_TQ_OPERATIONS, executing,
+		    RTEMS_BSD_MUTEX_TQ_OPERATIONS, executing,
 		    STATES_WAITING_FOR_SYS_LOCK_MUTEX, queue_context);
-	}
-}
-
-void
-rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
-    int keep_priority, Thread_queue_Heads *heads,
-    Thread_queue_Context *queue_context)
-{
-	if (heads != NULL) {
-		const Thread_queue_Operations *operations;
-		Thread_Control *new_owner;
-
-		operations = BSD_MUTEX_TQ_OPERATIONS;
-		new_owner = ( *operations->first )( heads );
-		m->queue.Queue.owner = new_owner;
-		_Thread_queue_Extract_critical(&m->queue.Queue, operations,
-		    new_owner, queue_context);
-	} else {
-		_Thread_queue_Release(&m->queue, &queue_context->Lock_context);
-	}
-
-	if (!keep_priority) {
-		Per_CPU_Control *cpu_self;
-
-		cpu_self = _Thread_Dispatch_disable();
-		_Thread_Restore_priority(owner);
-		_Thread_Dispatch_enable(cpu_self);
 	}
 }

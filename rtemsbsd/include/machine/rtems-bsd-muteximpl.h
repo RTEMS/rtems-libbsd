@@ -48,10 +48,14 @@
 #include <rtems/bsd/sys/lock.h>
 
 #include <rtems/score/threadimpl.h>
+#include <rtems/score/threadqimpl.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#define	RTEMS_BSD_MUTEX_TQ_OPERATIONS \
+    &_Thread_queue_Operations_priority_inherit
 
 static inline void
 rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
@@ -122,10 +126,6 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 	return (success);
 }
 
-void rtems_bsd_mutex_unlock_more(rtems_bsd_mutex *m, Thread_Control *owner,
-    int keep_priority, Thread_queue_Heads *heads,
-    Thread_queue_Context *queue_context);
-
 static inline void
 rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 {
@@ -163,8 +163,9 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 		if (__predict_true(heads == NULL && keep_priority)) {
 			_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
 		} else {
-			rtems_bsd_mutex_unlock_more(m, owner, keep_priority,
-			    heads, &queue_context);
+			_Thread_queue_Surrender(&m->queue.Queue,
+			    RTEMS_BSD_MUTEX_TQ_OPERATIONS, heads, owner,
+			    keep_priority, &queue_context);
 		}
 
 	} else {

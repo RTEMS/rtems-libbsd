@@ -235,6 +235,8 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
 {
   const char**      args;
   int               arg;
+  int               ifconfig_argc = 0;
+  bool              add_up = true;
   int               r;
   const char const* ifconfig_show[] = { "ifconfig", ifname, NULL };
 
@@ -249,17 +251,25 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
     return -1;
   }
 
-  args[0] = "ifconfig";
-  args[1] = ifname;
+  args[ifconfig_argc++] = "ifconfig";
+  args[ifconfig_argc++] = ifname;
 
-  for (arg = 1; arg < argc; ++arg)
-    args[arg + 1] = argv[arg];
+  for (arg = 1; arg < argc; ++arg) {
+    if (strcasecmp("DHCP",     argv[arg]) == 0 ||
+        strcasecmp("SYNCDHCP", argv[arg]) == 0) {
+      add_up = false;
+    }
+    else {
+      args[ifconfig_argc++] = argv[arg];
+    }
+  }
 
-  args[argc + 1] = "up";
+  if (add_up)
+    args[ifconfig_argc++] = "up";
 
-  rtems_bsd_rc_conf_print_cmd(rc_conf, "ifconfig", argc + 2, args);
+  rtems_bsd_rc_conf_print_cmd(rc_conf, "ifconfig", ifconfig_argc, args);
 
-  r = rtems_bsd_command_ifconfig(argc + 2, (char**) args);
+  r = rtems_bsd_command_ifconfig(ifconfig_argc, (char**) args);
 
   free(args);
 
@@ -374,10 +384,12 @@ show_interfaces(const char* msg, struct ifaddrs* ifap)
 static int
 dhcp_check(rtems_bsd_rc_conf_argc_argv* aa)
 {
-  if (aa->argc == 2 &&
-      (strcasecmp("DHCP",     aa->argv[1]) == 0 ||
-       strcasecmp("SYNCDHCP", aa->argv[1]) == 0))
-    return true;
+  int arg;
+  for (arg = 0; arg < aa->argc; ++arg) {
+    if (strcasestr(aa->argv[1], "DHCP") != NULL ||
+        strcasestr(aa->argv[1], "SYNCDHCP") != NULL)
+      return true;
+  }
   return false;
 }
 
@@ -419,9 +431,11 @@ setup_interfaces(rtems_bsd_rc_conf*           rc_conf,
         if (dhcp_check(aa)) {
           *dhcp = true;
         }
-        else {
-          show_result(iface, ifconfig_(rc_conf, ifa->ifa_name, aa->argc, aa->argv));
-        }
+        /*
+         * A DHCP ifconfig can have other options we need to set on the
+         * interface.
+         */
+        show_result(iface, ifconfig_(rc_conf, ifa->ifa_name, aa->argc, aa->argv));
       }
     }
   }

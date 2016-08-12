@@ -1809,7 +1809,10 @@ RpcUdpServer		nfsServer = 0;
 int					e         = -1;
 char				*path     = mt_entry->dev;
 const char          *options = (const char*) data;
-bool                verbose = strstr(options, "-v") != NULL;
+bool                verbose = false;
+
+	if (options != NULL)
+		verbose = strstr(options, "-v") != NULL;
 
 	if (rpcUdpInit (verbose) < 0) {
 		fprintf (stderr, "error: initialising RPC\n");

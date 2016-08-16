@@ -1046,7 +1046,15 @@ TBD.
 
 === devfs (Device file system) ===
 
-Dummy, IMFS or new implementation (currently dummy).
+There is a minimal implementation based on IMFS. The mount point is fixed to
+"/dev". Note that the devfs is only used by the cdev subsystem. cdev has been
+adapted so that the full path (including the leading "/dev") is given to devfs.
+This saves some copy operations.
+
+devfs_create() first creates the full path and then creates an IMFS generic node
+for the device.
+
+TBD: remove empty paths on devfs_destroy().
 
 === psignal (Signals) ===
 

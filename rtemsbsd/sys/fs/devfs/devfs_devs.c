@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/file.h>
+#include <sys/malloc.h>
 #include <unistd.h>
 
 #include <sys/conf.h>
@@ -228,7 +229,7 @@ devfs_alloc(int flags)
 {
 	struct cdev *cdev;
 
-	cdev = malloc(sizeof *cdev);
+	cdev = malloc(sizeof *cdev, M_TEMP, 0);
 	if (cdev == NULL)
 		return (NULL);
 
@@ -243,7 +244,33 @@ devfs_alloc(int flags)
 void
 devfs_free(struct cdev *cdev)
 {
-	free(cdev);
+	free(cdev, M_TEMP);
+}
+
+/*
+ * Create the directory for a device.
+ * Note: This don't uses dirname() because this function is not defined thread
+ * save in POSIX.
+ */
+static void
+devfs_create_directory(const char *devname)
+{
+	char *dir = NULL;
+	char *lastsep = NULL;
+	int rv;
+	mode_t mode = S_IRWXU | S_IRWXG | S_IRWXO;
+
+	dir = strdup(devname, M_TEMP);
+	BSD_ASSERT(dir != NULL);
+
+	lastsep = strrchr(dir, '/');
+	if(lastsep != NULL) {
+		*lastsep = 0;
+		rv = rtems_mkdir(dir, mode);
+		BSD_ASSERT(rv == 0);
+	}
+
+	free(dir, M_TEMP);
 }
 
 /*
@@ -258,6 +285,8 @@ devfs_create(struct cdev *dev)
 	int rv;
 	mode_t mode = S_IFCHR | S_IRWXU | S_IRWXG | S_IRWXO;
 
+	devfs_create_directory(dev->si_path);
+
 	rv = IMFS_make_generic_node(dev->si_path, mode, &devfs_imfs_control,
 	    dev);
 	BSD_ASSERT(rv == 0);
@@ -270,6 +299,8 @@ devfs_destroy(struct cdev *dev)
 
 	rv = unlink(dev->si_path);
 	BSD_ASSERT(rv == 0);
+
+	/* FIXME: Check if directory is empty and remove it. */
 }
 
 int

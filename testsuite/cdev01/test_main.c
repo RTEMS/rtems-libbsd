@@ -40,18 +40,24 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "test_cdev01.h"
 
 #define TEST_NAME "LIBBSD CDEV 1"
 
-static void test_cdev(void)
+static void test_cdev(const char *path)
 {
-	const char *name = "test";
-	const char *path = "/dev/test";
 	const struct timespec *timeout = NULL;
+	const char *name;
+
+	/* Remove leading "/dev/" and use the rest as a name. */
+	name = path + sizeof("/dev/") - 1;
+
+	printf("Test creating a cdev named \"%s\" at \"%s\".\n", name, path);
 
 	test_state state = TEST_NEW;
 	int rv = 0;
@@ -131,7 +137,8 @@ static void test_cdev(void)
 static void
 test_main(void)
 {
-	test_cdev();
+	test_cdev("/dev/test");
+	test_cdev("/dev/some/sub/dir/somedev");
 
 	exit(0);
 }

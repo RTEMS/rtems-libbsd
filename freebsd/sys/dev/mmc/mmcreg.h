@@ -85,8 +85,11 @@ struct mmc_command {
 #define	MMC_RSP_R1B	(MMC_RSP_PRESENT | MMC_RSP_CRC | MMC_RSP_OPCODE | MMC_RSP_BUSY)
 #define	MMC_RSP_R2	(MMC_RSP_PRESENT | MMC_RSP_136 | MMC_RSP_CRC)
 #define	MMC_RSP_R3	(MMC_RSP_PRESENT)
-#define	MMC_RSP_R6	(MMC_RSP_PRESENT | MMC_RSP_CRC)
-#define	MMC_RSP_R7	(MMC_RSP_PRESENT | MMC_RSP_CRC)
+#define	MMC_RSP_R4	(MMC_RSP_PRESENT)
+#define	MMC_RSP_R5	(MMC_RSP_PRESENT | MMC_RSP_CRC | MMC_RSP_OPCODE)
+#define	MMC_RSP_R5B	(MMC_RSP_PRESENT | MMC_RSP_CRC | MMC_RSP_OPCODE | MMC_RSP_BUSY)
+#define	MMC_RSP_R6	(MMC_RSP_PRESENT | MMC_RSP_CRC | MMC_RSP_OPCODE)
+#define	MMC_RSP_R7	(MMC_RSP_PRESENT | MMC_RSP_CRC | MMC_RSP_OPCODE)
 #define	MMC_RSP(x)	((x) & MMC_RSP_MASK)
 	uint32_t	retries;
 	uint32_t	error;
@@ -353,6 +356,7 @@ struct mmc_request {
 #define	MMC_OCR_VOLTAGE	0x3fffffffU	/* Vdd Voltage mask */
 #define	MMC_OCR_LOW_VOLTAGE (1u << 7)	/* Low Voltage Range -- tbd */
 #define	MMC_OCR_200_210	(1U << 8)	/* Vdd voltage 2.00 ~ 2.10 */
+#define	MMC_OCR_MIN_VOLTAGE_SHIFT	8
 #define	MMC_OCR_210_220	(1U << 9)	/* Vdd voltage 2.10 ~ 2.20 */
 #define	MMC_OCR_220_230	(1U << 10)	/* Vdd voltage 2.20 ~ 2.30 */
 #define	MMC_OCR_230_240	(1U << 11)	/* Vdd voltage 2.30 ~ 2.40 */
@@ -368,6 +372,7 @@ struct mmc_request {
 #define	MMC_OCR_330_340	(1U << 21)	/* Vdd voltage 3.30 ~ 3.40 */
 #define	MMC_OCR_340_350	(1U << 22)	/* Vdd voltage 3.40 ~ 3.50 */
 #define	MMC_OCR_350_360	(1U << 23)	/* Vdd voltage 3.50 ~ 3.60 */
+#define	MMC_OCR_MAX_VOLTAGE_SHIFT	23
 #define	MMC_OCR_CCS	(1u << 30)	/* Card Capacity status (SD vs SDHC) */
 #define	MMC_OCR_CARD_BUSY (1U << 31)	/* Card Power up status */
 
@@ -436,7 +441,7 @@ struct mmc_sd_status
  * Older versions of the MMC standard had a variable sector size.  However,
  * I've been able to find no old MMC or SD cards that have a non 512
  * byte sector size anywhere, so we assume that such cards are very rare
- * and only note their existance in passing here...
+ * and only note their existence in passing here...
  */
 #define MMC_SECTOR_SIZE	512
 

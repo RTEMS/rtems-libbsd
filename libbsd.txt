@@ -651,12 +651,23 @@ missing_rtems_comments_in_the_guards(int j)
 }
 -------------------------------------------------------------------------------
 
-Do not disable option header includes via guards.  Instead, add an empty option
-header, e.g. `rtemsbsd/include/rtems/bsd/local/opt_xyz.h`.  In general, provide
-empty header files and do not guard includes.
+The FreeBSD build and configuration system uses option header files, e.g.
+`#include "opt_xyz.h"` in an unmodified FreeBSD file.  This include is
+transformed by the import script into `#include <rtems/bsd/local/opt_xyz.h>`.  Do
+not disable option header includes via guards.  Instead, add an empty option
+header, e.g. `touch rtemsbsd/include/rtems/bsd/local/opt_xyz.h`.
+-------------------------------------------------------------------------------
+/* WRONG */
+#ifndef __rtems__
+#include <rtems/bsd/local/opt_xyz.h>
+#endif /* __rtems__ */
+-------------------------------------------------------------------------------
+
+In general, provide empty header files and do not guard includes.
 
 For new code use
 http://www.freebsd.org/cgi/man.cgi?query=style&apropos=0&sektion=9&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[STYLE(9)].
+
 Do not format original FreeBSD code.
 
 == BSD Library Source

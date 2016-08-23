@@ -1734,6 +1734,7 @@ uhub_child_pnpinfo_string(device_t parent, device_t child,
 	if (iface && iface->idesc) {
 		snprintf(buf, buflen, "vendor=0x%04x product=0x%04x "
 		    "devclass=0x%02x devsubclass=0x%02x "
+		    "devproto=0x%02x "
 		    "sernum=\"%s\" "
 		    "release=0x%04x "
 		    "mode=%s "
@@ -1743,6 +1744,7 @@ uhub_child_pnpinfo_string(device_t parent, device_t child,
 		    UGETW(res.udev->ddesc.idProduct),
 		    res.udev->ddesc.bDeviceClass,
 		    res.udev->ddesc.bDeviceSubClass,
+		    res.udev->ddesc.bDeviceProtocol,
 		    usb_get_serial(res.udev),
 		    UGETW(res.udev->ddesc.bcdDevice),
 		    (res.udev->flags.usb_mode == USB_MODE_HOST) ? "host" : "device",
@@ -1767,7 +1769,7 @@ done:
  * The USB Transaction Translator:
  * ===============================
  *
- * When doing LOW- and FULL-speed USB transfers accross a HIGH-speed
+ * When doing LOW- and FULL-speed USB transfers across a HIGH-speed
  * USB HUB, bandwidth must be allocated for ISOCHRONOUS and INTERRUPT
  * USB transfers. To utilize bandwidth dynamically the "scatter and
  * gather" principle must be applied. This means that bandwidth must
@@ -1839,7 +1841,7 @@ usb_intr_find_best_slot(usb_size_t *ptr, uint8_t start,
 /*------------------------------------------------------------------------*
  *	usb_hs_bandwidth_adjust
  *
- * This function will update the bandwith usage for the microframe
+ * This function will update the bandwidth usage for the microframe
  * having index "slot" by "len" bytes. "len" can be negative.  If the
  * "slot" argument is greater or equal to "USB_HS_MICRO_FRAMES_MAX"
  * the "slot" argument will be replaced by the slot having least used
@@ -2311,7 +2313,7 @@ usb_needs_explore_all(void)
 		return;
 	}
 	/*
-	 * Explore all USB busses in parallell.
+	 * Explore all USB busses in parallel.
 	 */
 	max = devclass_get_maxunit(dc);
 	while (max >= 0) {

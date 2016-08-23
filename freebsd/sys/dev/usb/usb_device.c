@@ -196,7 +196,7 @@ usbd_get_ep_by_addr(struct usb_device *udev, uint8_t ea_val)
 	ea_val &= EA_MASK;
 
 	/*
-	 * Iterate accross all the USB endpoints searching for a match
+	 * Iterate across all the USB endpoints searching for a match
 	 * based on the endpoint address:
 	 */
 	for (; ep != ep_end; ep++) {
@@ -306,7 +306,7 @@ usbd_get_endpoint(struct usb_device *udev, uint8_t iface_index,
 	}
 
 	/*
-	 * Iterate accross all the USB endpoints searching for a match
+	 * Iterate across all the USB endpoints searching for a match
 	 * based on the endpoint address. Note that we are searching
 	 * the endpoints from the beginning of the "udev->endpoints" array.
 	 */
@@ -1730,8 +1730,8 @@ usb_alloc_device(device_t parent_dev, struct usb_bus *bus,
 		/* Setup USB descriptors */
 		err = (usb_temp_setup_by_index_p) (udev, usb_template);
 		if (err) {
-			DPRINTFN(0, "setting up USB template failed maybe the USB "
-			    "template module has not been loaded\n");
+			DPRINTFN(0, "setting up USB template failed - "
+			    "usb_template(4) not loaded?\n");
 			goto done;
 		}
 	}
@@ -1780,7 +1780,9 @@ usb_alloc_device(device_t parent_dev, struct usb_bus *bus,
 
 	scratch_ptr = udev->scratch.data;
 
-	if (udev->ddesc.iManufacturer ||
+	if (udev->flags.no_strings) {
+		err = USB_ERR_INVAL;
+	} else if (udev->ddesc.iManufacturer ||
 	    udev->ddesc.iProduct ||
 	    udev->ddesc.iSerialNumber) {
 		/* read out the language ID string */
@@ -1968,6 +1970,7 @@ usb_make_dev(struct usb_device *udev, const char *devname, int ep,
     int fi, int rwmode, uid_t uid, gid_t gid, int mode)
 {
 	struct usb_fs_privdata* pd;
+	struct make_dev_args args;
 	char buffer[32];
 
 	/* Store information to locate ourselves again later */
@@ -1986,17 +1989,19 @@ usb_make_dev(struct usb_device *udev, const char *devname, int ep,
 		    pd->bus_index, pd->dev_index, pd->ep_addr);
 	}
 
-	pd->cdev = make_dev(&usb_devsw, 0, uid, gid, mode, "%s", devname);
+	/* Setup arguments for make_dev_s() */
+	make_dev_args_init(&args);
+	args.mda_devsw = &usb_devsw;
+	args.mda_uid = uid;
+	args.mda_gid = gid;
+	args.mda_mode = mode;
+	args.mda_si_drv1 = pd;
 
-	if (pd->cdev == NULL) {
+	if (make_dev_s(&args, &pd->cdev, "%s", devname) != 0) {
 		DPRINTFN(0, "Failed to create device %s\n", devname);
 		free(pd, M_USBDEV);
 		return (NULL);
 	}
-
-	/* XXX setting si_drv1 and creating the device is not atomic! */
-	pd->cdev->si_drv1 = pd;
-
 	return (pd);
 }
 
@@ -2741,7 +2746,7 @@ usbd_device_attached(struct usb_device *udev)
 /*
  * The following function locks enumerating the given USB device. If
  * the lock is already grabbed this function returns zero. Else a
- * non-zero value is returned.
+ * a value of one is returned.
  */
 uint8_t
 usbd_enum_lock(struct usb_device *udev)
@@ -2759,6 +2764,27 @@ usbd_enum_lock(struct usb_device *udev)
 	mtx_lock(&Giant);
 	return (1);
 }
+
+#if USB_HAVE_UGEN
+/*
+ * This function is the same like usbd_enum_lock() except a value of
+ * 255 is returned when a signal is pending:
+ */
+uint8_t
+usbd_enum_lock_sig(struct usb_device *udev)
+{
+	if (sx_xlocked(&udev->enum_sx))
+		return (0);
+	if (sx_xlock_sig(&udev->enum_sx))
+		return (255);
+	if (sx_xlock_sig(&udev->sr_sx)) {
+		sx_xunlock(&udev->enum_sx);
+		return (255);
+	}
+	mtx_lock(&Giant);
+	return (1);
+}
+#endif
 
 /* The following function unlocks enumerating the given USB device. */
 

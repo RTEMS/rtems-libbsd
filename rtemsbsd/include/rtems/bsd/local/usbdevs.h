@@ -141,7 +141,7 @@
 #define	USB_VENDOR_LOGITECH	0x046d		/* Logitech */
 #define	USB_VENDOR_BTC	0x046e		/* Behavior Tech. Computer */
 #define	USB_VENDOR_PHILIPS	0x0471		/* Philips */
-#define	USB_VENDOR_SUN2	0x0472		/* Sun Microsystems (offical) */
+#define	USB_VENDOR_SUN2	0x0472		/* Sun Microsystems (official) */
 #define	USB_VENDOR_SANYO	0x0474		/* Sanyo Electric */
 #define	USB_VENDOR_SEAGATE	0x0477		/* Seagate */
 #define	USB_VENDOR_CONNECTIX	0x0478		/* Connectix */
@@ -842,6 +842,7 @@
 #define	USB_PRODUCT_ABOCOM_RTL8188CU_1	0x8188		/* RTL8188CU */
 #define	USB_PRODUCT_ABOCOM_RTL8188CU_2	0x8189		/* RTL8188CU */
 #define	USB_PRODUCT_ABOCOM_RTL8192CU	0x8178		/* RTL8192CU */
+#define	USB_PRODUCT_ABOCOM_RTL8188EU	0x8179		/* RTL8188EU */
 #define	USB_PRODUCT_ABOCOM_WUG2700	0xb21f		/* WUG2700 */
 
 /* Acton Research Corp. */
@@ -1138,6 +1139,10 @@
 #define	USB_PRODUCT_APPLE_WELLSPRING8_ANSI	0x0290		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING8_ISO	0x0291		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING8_JIS	0x0292		/* Apple Internal Keyboard/Trackpad */
+/* MacbookPro12,1 */
+#define	USB_PRODUCT_APPLE_WELLSPRING9_ANSI	0x0272		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRING9_ISO	0x0273		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRING9_JIS	0x0274		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_MOUSE	0x0301		/* Mouse M4848 */
 #define	USB_PRODUCT_APPLE_OPTMOUSE	0x0302		/* Optical mouse */
 #define	USB_PRODUCT_APPLE_MIGHTYMOUSE	0x0304		/* Mighty Mouse */
@@ -1512,6 +1517,7 @@
 /* Corsair products */
 #define	USB_PRODUCT_CORSAIR_K60	0x0a60		/* Corsair Vengeance K60 keyboard */
 #define	USB_PRODUCT_CORSAIR_K70	0x1b09		/* Corsair Vengeance K70 keyboard */
+#define	USB_PRODUCT_CORSAIR_STRAFE	0x1b15		/* Cossair STRAFE Gaming keyboard */
 
 /* Creative products */
 #define	USB_PRODUCT_CREATIVE_NOMAD_II	0x1002		/* Nomad II MP3 player */
@@ -1702,6 +1708,7 @@
 #define	USB_PRODUCT_DISPLAYLINK_LT1421	0x03e0		/* Lenovo ThinkVision LT1421 */
 #define	USB_PRODUCT_DISPLAYLINK_POLARIS2	0x0117		/* Polaris2 USB dock */
 #define	USB_PRODUCT_DISPLAYLINK_PLUGABLE	0x0377		/* Plugable docking station */
+#define	USB_PRODUCT_DISPLAYLINK_ITEC	0x02e9		/* i-tec USB 2.0 Docking Station */
 
 /* DMI products */
 #define	USB_PRODUCT_DMI_CFSM_RW	0xa109		/* CF/SM Reader/Writer */
@@ -2151,6 +2158,7 @@
 #define	USB_PRODUCT_FUJITSUSIEMENS_SCR	0x0009		/* Fujitsu-Siemens SCR USB Reader */
 
 /* Garmin products */
+#define	USB_PRODUCT_GARMIN_FORERUNNER230	0x086d		/* ForeRunner 230 */
 #define	USB_PRODUCT_GARMIN_IQUE_3600	0x0004		/* iQue 3600 */
 
 /* Gemalto products */
@@ -2268,6 +2276,9 @@
 /* Hitachi, Ltd. products */
 #define	USB_PRODUCT_HITACHI_DVDCAM_DZ_MV100A	0x0004		/* DVD-CAM DZ-MV100A Camcorder */
 #define	USB_PRODUCT_HITACHI_DVDCAM_USB	0x001e		/* DVDCAM USB HS Interface */
+
+/* Holtek products */
+#define	USB_PRODUCT_HOLTEK_F85	0xa030		/* Holtek USB gaming keyboard */
 
 /* HP products */
 #define	USB_PRODUCT_HP_895C	0x0004		/* DeskJet 895C */
@@ -2725,6 +2736,7 @@
 #define	USB_PRODUCT_LOGITECH_RK53	0xc501		/* Cordless mouse */
 #define	USB_PRODUCT_LOGITECH_RB6	0xc503		/* Cordless keyboard */
 #define	USB_PRODUCT_LOGITECH_MX700	0xc506		/* Cordless optical mouse */
+#define	USB_PRODUCT_LOGITECH_UNIFYING	0xc52b		/* Logitech Unifying Receiver */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMPRO2	0xd001		/* QuickCam Pro */
 
 /* Logitec Corp. products */
@@ -3787,6 +3799,7 @@
 #define	USB_PRODUCT_REALTEK_RTL8188ETV	0x0179		/* RTL8188ETV */
 #define	USB_PRODUCT_REALTEK_RTL8188CTV	0x018a		/* RTL8188CTV */
 #define	USB_PRODUCT_REALTEK_USBKR100	0x8150		/* USBKR100 USB Ethernet */
+#define	USB_PRODUCT_REALTEK_RTL8152	0x8152		/* RTL8152 USB Ethernet */
 #define	USB_PRODUCT_REALTEK_RTL8153	0x8153		/* RTL8153 USB Ethernet */
 #define	USB_PRODUCT_REALTEK_RTL8188CE_0	0x8170		/* RTL8188CE */
 #define	USB_PRODUCT_REALTEK_RTL8171	0x8171		/* RTL8171 */
@@ -4205,6 +4218,7 @@
 #define	USB_PRODUCT_SITECOMEU_RTL8188CU_2	0x005c		/* RTL8188CU */
 #define	USB_PRODUCT_SITECOMEU_RTL8192CU	0x0061		/* RTL8192CU */
 #define	USB_PRODUCT_SITECOMEU_LN032	0x0072		/* LN-032 */
+#define	USB_PRODUCT_SITECOMEU_LN031	0x0056		/* LN-031 */
 #define	USB_PRODUCT_SITECOMEU_LN028	0x061c		/* LN-028 */
 #define	USB_PRODUCT_SITECOMEU_WL113	0x9071		/* WL-113 */
 #define	USB_PRODUCT_SITECOMEU_ZD1211B	0x9075		/* ZD1211B */

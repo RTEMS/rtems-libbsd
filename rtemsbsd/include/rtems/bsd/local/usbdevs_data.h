@@ -304,6 +304,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8192CU",
 	},
 	{
+	    USB_VENDOR_ABOCOM, USB_PRODUCT_ABOCOM_RTL8188EU,
+	    0,
+	    "AboCom Systems",
+	    "RTL8188EU",
+	},
+	{
 	    USB_VENDOR_ABOCOM, USB_PRODUCT_ABOCOM_WUG2700,
 	    0,
 	    "AboCom Systems",
@@ -1391,6 +1397,24 @@ const struct usb_knowndev usb_knowndevs[] = {
 	},
 	{
 	    USB_VENDOR_APPLE, USB_PRODUCT_APPLE_WELLSPRING8_JIS,
+	    0,
+	    "Apple Computer",
+	    "Apple Internal Keyboard/Trackpad",
+	},
+	{
+	    USB_VENDOR_APPLE, USB_PRODUCT_APPLE_WELLSPRING9_ANSI,
+	    0,
+	    "Apple Computer",
+	    "Apple Internal Keyboard/Trackpad",
+	},
+	{
+	    USB_VENDOR_APPLE, USB_PRODUCT_APPLE_WELLSPRING9_ISO,
+	    0,
+	    "Apple Computer",
+	    "Apple Internal Keyboard/Trackpad",
+	},
+	{
+	    USB_VENDOR_APPLE, USB_PRODUCT_APPLE_WELLSPRING9_JIS,
 	    0,
 	    "Apple Computer",
 	    "Apple Internal Keyboard/Trackpad",
@@ -3118,6 +3142,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Corsair Vengeance K70 keyboard",
 	},
 	{
+	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_STRAFE,
+	    0,
+	    "Corsair",
+	    "Cossair STRAFE Gaming keyboard",
+	},
+	{
 	    USB_VENDOR_CREATIVE, USB_PRODUCT_CREATIVE_NOMAD_II,
 	    0,
 	    "Creative Labs",
@@ -4004,6 +4034,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "DisplayLink",
 	    "Plugable docking station",
+	},
+	{
+	    USB_VENDOR_DISPLAYLINK, USB_PRODUCT_DISPLAYLINK_ITEC,
+	    0,
+	    "DisplayLink",
+	    "i-tec USB 2.0 Docking Station",
 	},
 	{
 	    USB_VENDOR_DMI, USB_PRODUCT_DMI_CFSM_RW,
@@ -6202,6 +6238,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Fujitsu-Siemens SCR USB Reader",
 	},
 	{
+	    USB_VENDOR_GARMIN, USB_PRODUCT_GARMIN_FORERUNNER230,
+	    0,
+	    "Garmin International",
+	    "ForeRunner 230",
+	},
+	{
 	    USB_VENDOR_GARMIN, USB_PRODUCT_GARMIN_IQUE_3600,
 	    0,
 	    "Garmin International",
@@ -6626,6 +6668,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Hitachi",
 	    "DVDCAM USB HS Interface",
+	},
+	{
+	    USB_VENDOR_HOLTEK, USB_PRODUCT_HOLTEK_F85,
+	    0,
+	    "Holtek Semiconductor, Inc.",
+	    "Holtek USB gaming keyboard",
 	},
 	{
 	    USB_VENDOR_HP, USB_PRODUCT_HP_895C,
@@ -8744,6 +8792,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Logitech",
 	    "Cordless optical mouse",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_UNIFYING,
+	    0,
+	    "Logitech",
+	    "Logitech Unifying Receiver",
 	},
 	{
 	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO2,
@@ -13942,6 +13996,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USBKR100 USB Ethernet",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8152,
+	    0,
+	    "Realtek",
+	    "RTL8152 USB Ethernet",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8153,
 	    0,
 	    "Realtek",
@@ -16058,6 +16118,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Sitecom Europe",
 	    "LN-032",
+	},
+	{
+	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_LN031,
+	    0,
+	    "Sitecom Europe",
+	    "LN-031",
 	},
 	{
 	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_LN028,
@@ -18402,7 +18468,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_SUN2, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "Sun Microsystems (offical)",
+	    "Sun Microsystems (official)",
 	    NULL,
 	},
 	{

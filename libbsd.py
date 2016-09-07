@@ -1932,6 +1932,7 @@ def user_space(mm):
             'contrib/pf/pfctl/pf_print_state.c',
             'lib/libc/gen/err.c',
             'lib/libc/gen/feature_present.c',
+            'lib/libc/gen/getdomainname.c',
             'lib/libc/gen/gethostname.c',
             'lib/libc/gen/sethostname.c',
             'lib/libc/inet/inet_addr.c',

@@ -240,6 +240,7 @@ def build(bld):
                      'freebsd/contrib/pf/pfctl/pfctl_table.c',
                      'freebsd/lib/libc/gen/err.c',
                      'freebsd/lib/libc/gen/feature_present.c',
+                     'freebsd/lib/libc/gen/getdomainname.c',
                      'freebsd/lib/libc/gen/gethostname.c',
                      'freebsd/lib/libc/gen/sethostname.c',
                      'freebsd/lib/libc/inet/inet_addr.c',

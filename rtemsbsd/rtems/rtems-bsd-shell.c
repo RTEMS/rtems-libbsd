@@ -49,6 +49,7 @@
 #include <inttypes.h>
 
 #include <rtems/netcmds-config.h>
+#include <rtems/score/threadimpl.h>
 
 static void
 rtems_bsd_dump_thread(Thread_Control *thread)
@@ -68,7 +69,7 @@ rtems_bsd_dump_thread(Thread_Control *thread)
 			stdout,
 			" 0x%08" PRIx32 " | %8" PRIu32 " | %s\n",
 			thread->Object.id,
-			thread->current_priority,
+			_Thread_Get_priority(thread),
 			name
 		);
 	}

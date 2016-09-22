@@ -369,8 +369,8 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 	/* FIXME: This is broken with clustered scheduling */
 	succ = NULL;
 	TAILQ_FOREACH(succ, &sq->sq_blocked[queue], td_slpq) {
-		if (td->td_thread->current_priority <
-		    succ->td_thread->current_priority)
+		if (_Thread_Get_priority(td->td_thread) <
+		    _Thread_Get_priority(succ->td_thread))
 			break;
 	}
 	if (succ == NULL)

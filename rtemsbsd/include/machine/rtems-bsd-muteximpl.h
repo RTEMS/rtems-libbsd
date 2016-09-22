@@ -79,7 +79,7 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 	Thread_Control *owner;
 
 	_Thread_queue_Context_initialize(&queue_context);
-	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
+	_Thread_queue_Acquire(&m->queue, &queue_context);
 
 	owner = m->queue.Queue.owner;
 	executing = _Thread_Executing;
@@ -88,7 +88,7 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 		m->queue.Queue.owner = executing;
 		++executing->resource_count;
 
-		_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
+		_Thread_queue_Release(&m->queue, &queue_context);
 	} else {
 		rtems_bsd_mutex_lock_more(lock, m, owner, executing,
 		    &queue_context);
@@ -104,7 +104,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 	Thread_Control *owner;
 
 	_Thread_queue_Context_initialize(&queue_context);
-	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
+	_Thread_queue_Acquire(&m->queue, &queue_context);
 
 	owner = m->queue.Queue.owner;
 	executing = _Thread_Executing;
@@ -121,7 +121,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 		success = 0;
 	}
 
-	_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
+	_Thread_queue_Release(&m->queue, &queue_context);
 
 	return (success);
 }
@@ -134,7 +134,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	int nest_level;
 
 	_Thread_queue_Context_initialize(&queue_context);
-	_Thread_queue_Acquire(&m->queue, &queue_context.Lock_context);
+	_Thread_queue_Acquire(&m->queue, &queue_context);
 
 	nest_level = m->nest_level;
 	owner = m->queue.Queue.owner;
@@ -143,35 +143,21 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 
 	if (__predict_true(nest_level == 0)) {
 		Thread_queue_Heads *heads;
-		int keep_priority;
-
-		--owner->resource_count;
-
-		/*
-		 * Ensure that the owner resource count is visible to all other
-		 * processors and that we read the latest priority restore
-		 * hint.
-		 */
-		_Atomic_Fence( ATOMIC_ORDER_ACQ_REL );
 
 		heads = m->queue.Queue.heads;
-		keep_priority = _Thread_Owns_resources(owner)
-		    || !owner->priority_restore_hint;
-
 		m->queue.Queue.owner = NULL;
+		--owner->resource_count;
 
-		if (__predict_true(heads == NULL && keep_priority)) {
-			_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
+		if (__predict_true(heads == NULL)) {
+			_Thread_queue_Release(&m->queue, &queue_context);
 		} else {
-			_Thread_queue_Surrender(&m->queue.Queue,
-			    RTEMS_BSD_MUTEX_TQ_OPERATIONS, heads, owner,
-			    keep_priority, &queue_context);
+			_Thread_queue_Surrender(&m->queue.Queue, heads, owner,
+			    &queue_context, RTEMS_BSD_MUTEX_TQ_OPERATIONS);
 		}
-
 	} else {
 		m->nest_level = nest_level - 1;
 
-		_Thread_queue_Release(&m->queue, &queue_context.Lock_context);
+		_Thread_queue_Release(&m->queue, &queue_context);
 	}
 }
 

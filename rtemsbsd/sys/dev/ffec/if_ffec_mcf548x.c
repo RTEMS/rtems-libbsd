@@ -37,14 +37,14 @@
  *
  */
 
+#include <machine/rtems-bsd-kernel-space.h>
+
 #include <bsp.h>
 
 #ifdef LIBBSP_M68K_GENMCF548X_BSP_H
 
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic ignored "-Wpointer-sign"
-
-#include <machine/rtems-bsd-kernel-space.h>
 
 #include <stdio.h>
 

@@ -70,6 +70,7 @@ def rtems(mm):
             'rtems/rtems-bsd-shell.c',
             'rtems/rtems-bsd-shell-ifconfig.c',
             'rtems/rtems-bsd-shell-netstat.c',
+            'rtems/rtems-bsd-shell-pfctl.c',
             'rtems/rtems-bsd-shell-ping.c',
             'rtems/rtems-bsd-shell-route.c',
             'rtems/rtems-bsd-shell-sysctl.c',

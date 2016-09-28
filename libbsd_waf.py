@@ -1085,6 +1085,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c',
               'rtemsbsd/rtems/rtems-bsd-shell-ifconfig.c',
               'rtemsbsd/rtems/rtems-bsd-shell-netstat.c',
+              'rtemsbsd/rtems/rtems-bsd-shell-pfctl.c',
               'rtemsbsd/rtems/rtems-bsd-shell-ping.c',
               'rtemsbsd/rtems/rtems-bsd-shell-route.c',
               'rtemsbsd/rtems/rtems-bsd-shell-sysctl.c',

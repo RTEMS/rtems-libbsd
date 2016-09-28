@@ -37,67 +37,41 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-thread.h>
-
+#include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
-#include <sys/mutex.h>
+#include <sys/queue.h>
 
-#undef printf
-#define RTEMS_BSD_PROGRAM_NO_STRDUP_WRAP
-#include <machine/rtems-bsd-program.h>
+#include <setjmp.h>
 
-struct rtems_bsd_program_control *
-rtems_bsd_program_get_control_or_null(void)
-{
-	struct thread *td;
+__BEGIN_DECLS
 
-	td = rtems_bsd_get_curthread_or_null();
+struct program_fd_item {
+	int	fd;
+	LIST_ENTRY(program_fd_item) entries;
+};
 
-	if (td != NULL) {
-		return (td->td_prog_ctrl);
-	} else {
-		return (NULL);
-	}
-}
+struct program_file_item {
+	FILE	*file;
+	LIST_ENTRY(program_file_item) entries;
+};
 
-int
-rtems_bsd_program_set_control(struct rtems_bsd_program_control *prog_ctrl)
-{
-	struct thread *td;
-	int error;
+struct program_allocmem_item {
+	void	*ptr;
+	LIST_ENTRY(program_allocmem_item) entries;
+};
 
-	td = rtems_bsd_get_curthread_or_null();
+struct rtems_bsd_program_control {
+	void *context;
+	int exit_code;
+	const char *name;
+	jmp_buf return_context;
+	LIST_HEAD(, program_fd_item) open_fd;
+	LIST_HEAD(, program_file_item) open_file;
+	LIST_HEAD(, program_allocmem_item) allocated_mem;
+};
 
-	if (td != NULL) {
-		if (td->td_prog_ctrl == NULL) {
-			error = 0;
-		} else {
-			error = EBUSY;
-		}
+struct rtems_bsd_program_control *rtems_bsd_program_get_control_or_null(void);
 
-		td->td_prog_ctrl = prog_ctrl;
-	} else {
-		error = ENOMEM;
-	}
+int rtems_bsd_program_set_control(struct rtems_bsd_program_control *);
 
-	return (error);
-}
-
-static struct mtx program_mtx;
-
-MTX_SYSINIT(rtems_bsd_program, &program_mtx, "BSD program", MTX_DEF);
-
-void
-rtems_bsd_program_lock(void)
-{
-	mtx_lock(&program_mtx);
-}
-
-void
-rtems_bsd_program_unlock(void)
-{
-	mtx_unlock(&program_mtx);
-}
+__END_DECLS

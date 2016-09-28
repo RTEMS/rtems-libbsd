@@ -1128,6 +1128,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-legacy-mii.c',
               'rtemsbsd/rtems/rtems-legacy-newproc.c',
               'rtemsbsd/rtems/rtems-legacy-rtrequest.c',
+              'rtemsbsd/rtems/rtems-program.c',
               'rtemsbsd/rtems/rtems-routes.c',
               'rtemsbsd/rtems/syslog.c',
               'rtemsbsd/sys/dev/dw_mmc/dw_mmc.c',

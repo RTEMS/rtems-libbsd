@@ -113,6 +113,7 @@ def rtems(mm):
             'rtems/rtems-legacy-mii.c',
             'rtems/rtems-kvm.c',
             'rtems/rtems-program.c',
+            'rtems/rtems-program-socket.c',
             'rtems/rtems-routes.c',
             'rtems/syslog.c',
             'ftpd/ftpd.c',

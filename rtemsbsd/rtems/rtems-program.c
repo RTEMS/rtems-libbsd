@@ -38,7 +38,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/socket.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -50,7 +49,6 @@
 #include <unistd.h>
 
 #define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
-#define RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
 #define RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
 #define RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
 #define RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
@@ -399,37 +397,6 @@ rtems_bsd_program_open(const char *path, int oflag, ...)
 			fd = open(path, oflag, mode);
 
 			va_end(list);
-
-			if (fd != -1) {
-				item->fd = fd;
-				LIST_INSERT_HEAD(&(prog_ctrl->open_fd),
-				    item, entries);
-			} else {
-				free(item);
-			}
-		} else {
-			errno = ENOMEM;
-		}
-	}
-
-	return fd;
-}
-
-int
-rtems_bsd_program_socket(int domain, int type, int protocol)
-{
-	struct rtems_bsd_program_control *prog_ctrl =
-	    rtems_bsd_program_get_control_or_null();
-	int fd = -1;
-
-	if (prog_ctrl != NULL) {
-		struct program_fd_item *item =
-		    malloc(sizeof(*item));
-
-		if (item != NULL) {
-			/* FIXME: Why is there an implicit declaration warning?
-			 */
-			fd = socket(domain, type, protocol);
 
 			if (fd != -1) {
 				item->fd = fd;

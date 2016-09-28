@@ -1580,8 +1580,7 @@ def build(bld):
                 lib = ["m", "z"],
                 install_path = None)
 
-    test_usb01 = ['testsuite/usb01/init.c',
-                  'testsuite/usb01/test-file-system.c']
+    test_usb01 = ['testsuite/usb01/init.c']
     bld.program(target = "usb01.exe",
                 features = "cprogram",
                 cflags = cflags,

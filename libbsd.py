@@ -2558,7 +2558,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('syscalls01', ['test_main']))
     mod.addTest(mm.generator['test']('program01', ['test_main']))
     mod.addTest(mm.generator['test']('commands01', ['test_main']))
-    mod.addTest(mm.generator['test']('usb01', ['init', 'test-file-system'], False))
+    mod.addTest(mm.generator['test']('usb01', ['init'], False))
     mod.addTest(mm.generator['test']('loopback01', ['test_main']))
     mod.addTest(mm.generator['test']('netshell01', ['test_main', 'shellconfig'], False))
     mod.addTest(mm.generator['test']('swi01', ['init', 'swi_test']))

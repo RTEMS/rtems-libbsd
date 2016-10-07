@@ -1145,7 +1145,7 @@ static MCD_bufDescFec *fec_init_rx_dma(
   for (bdIndex = 0; bdIndex < bdCount; ++bdIndex) {
     bool bdIsLast = bdIndex == bdCount - 1;
 
-    mbufs[bdIndex] = fec_add_mbuf(M_WAIT, ifp, &bdRing[bdIndex], bdIsLast);
+    mbufs[bdIndex] = fec_add_mbuf(M_WAITOK, ifp, &bdRing[bdIndex], bdIsLast);
   }
 
   return bdRing;
@@ -1539,7 +1539,6 @@ static int fec_attach(device_t dev)
   IFQ_SET_MAXLEN(&ifp->if_snd, TX_BUF_COUNT - 1);
   ifp->if_snd.ifq_drv_maxlen = TX_BUF_COUNT - 1;
   IFQ_SET_READY(&ifp->if_snd);
-  ifp->if_data.ifi_hdrlen = sizeof(struct ether_header);
 
   /*
    * Attach the interface

@@ -37,7 +37,7 @@
  * Driver Summary is:
  *
  *  Devices:
- *   RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR0
+ *   RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR
  *
  *  Buses:
  *   RTEMS_BSD_DRIVER_PC_LEGACY
@@ -96,14 +96,14 @@ extern "C" {
  **/
 
 /*
- * Xilinx Zynq System Level Control Core 0 (SLCR0).
+ * Xilinx Zynq System Level Control Registers (SLCR).
  */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR)
   /*
    * Hard IP part of the Zynq so a fixed address.
    */
-  #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR0                            \
-    static const rtems_bsd_device_resource zy7_slcr0_res[] = {          \
+  #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR                            \
+    static const rtems_bsd_device_resource zy7_slcr_res[] = {          \
       {                                                                 \
         .type = RTEMS_BSD_RES_MEMORY,                                   \
         .start_request = 0,                                             \
@@ -111,9 +111,9 @@ extern "C" {
       }                                                                 \
     };                                                                  \
     RTEMS_BSD_DEFINE_NEXUS_DEVICE(zy7_slcr, 0,                          \
-                                  RTEMS_ARRAY_SIZE(zy7_slcr0_res),      \
-                                  &zy7_slcr0_res[0])
-#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR0 */
+                                  RTEMS_ARRAY_SIZE(zy7_slcr_res),      \
+                                  &zy7_slcr_res[0])
+#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR */
 
 /**
  ** Physical Buses

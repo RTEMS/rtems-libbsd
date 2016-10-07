@@ -1,8 +1,16 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*
- * Copyright (c) 1999
- *	Bill Paul <wpaul@ctr.columbia.edu>.  All rights reserved.
+ * Copyright (c) 1999 Bill Paul <wpaul@ctr.columbia.edu>
+ * Copyright (c) 2012 ADARA Networks, Inc.
+ * All rights reserved.
+  *
+ * Portions of this software were developed by Robert N. M. Watson under
+ * contract to ADARA Networks, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +40,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -42,7 +53,6 @@
 
 #include <net/ethernet.h>
 #include <net/if.h>
-#include <net/if_var.h>
 #include <net/if_vlan_var.h>
 #include <net/route.h>
 
@@ -55,6 +65,9 @@
 #include <errno.h>
 
 #include "ifconfig.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifvlan-data.h"
+#endif /* __rtems__ */
 
 #ifndef lint
 static const char rcsid[] =
@@ -81,10 +94,14 @@ vlan_status(int s)
 {
 	struct vlanreq		vreq;
 
-	if (getvlan(s, &ifr, &vreq) != -1)
-		printf("\tvlan: %d parent interface: %s\n",
-		    vreq.vlr_tag, vreq.vlr_parent[0] == '\0' ?
-		    "<none>" : vreq.vlr_parent);
+	if (getvlan(s, &ifr, &vreq) == -1)
+		return;
+	printf("\tvlan: %d", vreq.vlr_tag);
+	if (ioctl(s, SIOCGVLANPCP, (caddr_t)&ifr) != -1)
+		printf(" vlanpcp: %u", ifr.ifr_vlan_pcp);
+	printf(" parent interface: %s", vreq.vlr_parent[0] == '\0' ?
+	    "<none>" : vreq.vlr_parent);
+	printf("\n");
 }
 
 static void
@@ -152,6 +169,22 @@ DECL_CMD_FUNC(setvlandev, val, d)
 }
 
 static
+DECL_CMD_FUNC(setvlanpcp, val, d)
+{
+	u_long ul;
+	char *endp;
+
+	ul = strtoul(val, &endp, 0);
+	if (*endp != '\0')
+		errx(1, "invalid value for vlanpcp");
+	if (ul > 7)
+		errx(1, "value for vlanpcp out of range");
+	ifr.ifr_vlan_pcp = ul;
+	if (ioctl(s, SIOCSVLANPCP, (caddr_t)&ifr) == -1)
+		err(1, "SIOCSVLANPCP");
+}
+
+static
 DECL_CMD_FUNC(unsetvlandev, val, d)
 {
 	struct vlanreq		vreq;
@@ -172,6 +205,7 @@ DECL_CMD_FUNC(unsetvlandev, val, d)
 static struct cmd vlan_cmds[] = {
 	DEF_CLONE_CMD_ARG("vlan",			setvlantag),
 	DEF_CLONE_CMD_ARG("vlandev",			setvlandev),
+	DEF_CMD_ARG("vlanpcp",				setvlanpcp),
 	/* NB: non-clone cmds */
 	DEF_CMD_ARG("vlan",				setvlantag),
 	DEF_CMD_ARG("vlandev",				setvlandev),
@@ -201,17 +235,11 @@ void
 #endif /* __rtems__ */
 vlan_ctor(void)
 {
-#ifdef __rtems__
-	memset(&params, 0, sizeof(params));
-	params.vlr_tag = NOTAG;
-#endif /* __rtems__ */
-#define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 
-	for (i = 0; i < N(vlan_cmds);  i++)
+	for (i = 0; i < nitems(vlan_cmds);  i++)
 		cmd_register(&vlan_cmds[i]);
 	af_register(&af_vlan);
 	callback_register(vlan_cb, NULL);
 	clone_setdefcallback("vlan", vlan_create);
-#undef N
 }

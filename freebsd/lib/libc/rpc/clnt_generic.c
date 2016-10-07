@@ -404,7 +404,7 @@ clnt_tli_create(int fd, const struct netconfig *nconf,
 	if (madefd) {
 		(void) CLNT_CONTROL(cl, CLSET_FD_CLOSE, NULL);
 /*		(void) CLNT_CONTROL(cl, CLSET_POP_TIMOD, NULL);  */
-	};
+	}
 
 	return (cl);
 

@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*
  * Copyright (c) 2003 Ryan McBride. All rights reserved.
  * Copyright (c) 2004 Max Laier. All rights reserved.
@@ -28,7 +32,10 @@
  * $FreeBSD$
  */
 
-#include <sys/types.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
@@ -47,6 +54,9 @@
 #include <unistd.h>
 
 #include "ifconfig.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifpfsync-data.h"
+#endif /* __rtems__ */
 
 void setpfsync_syncdev(const char *, int, int, const struct afswtch *);
 void unsetpfsync_syncdev(const char *, int, int, const struct afswtch *);
@@ -54,6 +64,7 @@ void setpfsync_syncpeer(const char *, int, int, const struct afswtch *);
 void unsetpfsync_syncpeer(const char *, int, int, const struct afswtch *);
 void setpfsync_syncpeer(const char *, int, int, const struct afswtch *);
 void setpfsync_maxupd(const char *, int, int, const struct afswtch *);
+void setpfsync_defer(const char *, int, int, const struct afswtch *);
 void pfsync_status(int);
 
 void
@@ -164,6 +175,23 @@ setpfsync_maxupd(const char *val, int d, int s, const struct afswtch *rafp)
 		err(1, "SIOCSETPFSYNC");
 }
 
+/* ARGSUSED */
+void
+setpfsync_defer(const char *val, int d, int s, const struct afswtch *rafp)
+{
+	struct pfsyncreq preq;
+
+	memset((char *)&preq, 0, sizeof(struct pfsyncreq));
+	ifr.ifr_data = (caddr_t)&preq;
+
+	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
+		err(1, "SIOCGETPFSYNC");
+
+	preq.pfsyncr_defer = d;
+	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
+		err(1, "SIOCSETPFSYNC");
+}
+
 void
 pfsync_status(int s)
 {
@@ -185,8 +213,10 @@ pfsync_status(int s)
 		printf("syncpeer: %s ", inet_ntoa(preq.pfsyncr_syncpeer));
 
 	if (preq.pfsyncr_syncdev[0] != '\0' ||
-	    preq.pfsyncr_syncpeer.s_addr != INADDR_PFSYNC_GROUP)
-		printf("maxupd: %d\n", preq.pfsyncr_maxupdates);
+	    preq.pfsyncr_syncpeer.s_addr != INADDR_PFSYNC_GROUP) {
+		printf("maxupd: %d ", preq.pfsyncr_maxupdates);
+		printf("defer: %s\n", preq.pfsyncr_defer ? "on" : "off");
+	}
 }
 
 static struct cmd pfsync_cmds[] = {
@@ -196,7 +226,9 @@ static struct cmd pfsync_cmds[] = {
 	DEF_CMD("-syncif",	1,	unsetpfsync_syncdev),
 	DEF_CMD_ARG("syncpeer",		setpfsync_syncpeer),
 	DEF_CMD("-syncpeer",	1,	unsetpfsync_syncpeer),
-	DEF_CMD_ARG("maxupd",		setpfsync_maxupd)
+	DEF_CMD_ARG("maxupd",		setpfsync_maxupd),
+	DEF_CMD("defer",	1,	setpfsync_defer),
+	DEF_CMD("-defer",	0,	setpfsync_defer),
 };
 static struct afswtch af_pfsync = {
 	.af_name	= "af_pfsync",
@@ -211,11 +243,9 @@ void
 #endif /* __rtems__ */
 pfsync_ctor(void)
 {
-#define	N(a)	(sizeof(a) / sizeof(a[0]))
 	int i;
 
-	for (i = 0; i < N(pfsync_cmds);  i++)
+	for (i = 0; i < nitems(pfsync_cmds);  i++)
 		cmd_register(&pfsync_cmds[i]);
 	af_register(&af_pfsync);
-#undef N
 }

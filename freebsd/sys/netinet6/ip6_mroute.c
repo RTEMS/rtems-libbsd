@@ -95,6 +95,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/module.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
+#include <sys/sdt.h>
 #include <sys/signalvar.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -106,6 +107,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/time.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_types.h>
 #include <net/raw_cb.h>
 #include <net/vnet.h>
@@ -116,18 +118,15 @@ __FBSDID("$FreeBSD$");
 #include <netinet/ip_encap.h>
 
 #include <netinet/ip6.h>
+#include <netinet/in_kdtrace.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/scope6_var.h>
 #include <netinet6/nd6.h>
 #include <netinet6/ip6_mroute.h>
-#include <netinet6/ip6protosw.h>
 #include <netinet6/pim6.h>
 #include <netinet6/pim6_var.h>
 
 static MALLOC_DEFINE(M_MRTABLE6, "mf6c", "multicast forwarding cache entry");
-
-/* XXX: this is a very common idiom; move to <sys/mbuf.h> ? */
-#define M_HASCL(m) ((m)->m_flags & M_EXT)
 
 static int	ip6_mdq(struct mbuf *, struct ifnet *, struct mf6c *);
 static void	phyint_send(struct ip6_hdr *, struct mif6 *, struct mbuf *);
@@ -140,7 +139,7 @@ extern int in6_mcast_loop;
 extern struct domain inet6domain;
 
 static const struct encaptab *pim6_encap_cookie;
-static const struct ip6protosw in6_pim_protosw = {
+static const struct protosw in6_pim_protosw = {
 	.pr_type =		SOCK_RAW,
 	.pr_domain =		&inet6domain,
 	.pr_protocol =		IPPROTO_PIM,
@@ -199,9 +198,34 @@ static struct mtx mfc6_mtx;
 static u_char n6expire[MF6CTBLSIZ];
 
 static struct mif6 mif6table[MAXMIFS];
-SYSCTL_OPAQUE(_net_inet6_ip6, OID_AUTO, mif6table, CTLFLAG_RD,
-    &mif6table, sizeof(mif6table), "S,mif6[MAXMIFS]",
-    "IPv6 Multicast Interfaces (struct mif6[MAXMIFS], netinet6/ip6_mroute.h)");
+static int
+sysctl_mif6table(SYSCTL_HANDLER_ARGS)
+{
+	struct mif6_sctl *out;
+	int error;
+
+	out = malloc(sizeof(struct mif6_sctl) * MAXMIFS, M_TEMP, M_WAITOK);
+	for (int i = 0; i < MAXMIFS; i++) {
+		out[i].m6_flags		= mif6table[i].m6_flags;
+		out[i].m6_rate_limit	= mif6table[i].m6_rate_limit;
+		out[i].m6_lcl_addr	= mif6table[i].m6_lcl_addr;
+		if (mif6table[i].m6_ifp != NULL)
+			out[i].m6_ifp	= mif6table[i].m6_ifp->if_index;
+		else
+			out[i].m6_ifp	= 0;
+		out[i].m6_pkt_in	= mif6table[i].m6_pkt_in;
+		out[i].m6_pkt_out	= mif6table[i].m6_pkt_out;
+		out[i].m6_bytes_in	= mif6table[i].m6_bytes_in;
+		out[i].m6_bytes_out	= mif6table[i].m6_bytes_out;
+	}
+	error = SYSCTL_OUT(req, out, sizeof(struct mif6_sctl) * MAXMIFS);
+	free(out, M_TEMP);
+	return (error);
+}
+SYSCTL_PROC(_net_inet6_ip6, OID_AUTO, mif6table, CTLTYPE_OPAQUE | CTLFLAG_RD,
+    NULL, 0, sysctl_mif6table, "S,mif6_sctl[MAXMIFS]",
+    "IPv6 Multicast Interfaces (struct mif6_sctl[MAXMIFS], "
+    "netinet6/ip6_mroute.h)");
 
 static struct mtx mif6_mtx;
 #define	MIF6_LOCK()		mtx_lock(&mif6_mtx)
@@ -359,7 +383,7 @@ X_ip6_mrouter_set(struct socket *so, struct sockopt *sopt)
 	mifi_t mifi;
 
 	if (so != V_ip6_mrouter && sopt->sopt_name != MRT6_INIT)
-		return (EACCES);
+		return (EPERM);
 
 	switch (sopt->sopt_name) {
 	case MRT6_INIT:
@@ -614,7 +638,7 @@ X_ip6_mrouter_done(void)
 			for (rte = rt->mf6c_stall; rte != NULL; ) {
 				struct rtdetq *n = rte->next;
 
-				m_free(rte->m);
+				m_freem(rte->m);
 				free(rte, M_MRTABLE6);
 				rte = n;
 			}
@@ -1078,8 +1102,8 @@ X_ip6_mforward(struct ip6_hdr *ip6, struct ifnet *ifp, struct mbuf *m)
 	 */
 	if (IN6_IS_ADDR_UNSPECIFIED(&ip6->ip6_src)) {
 		IP6STAT_INC(ip6s_cantforward);
-		if (V_ip6_log_time + V_ip6_log_interval < time_second) {
-			V_ip6_log_time = time_second;
+		if (V_ip6_log_time + V_ip6_log_interval < time_uptime) {
+			V_ip6_log_time = time_uptime;
 			log(LOG_DEBUG,
 			    "cannot forward "
 			    "from %s to %s nxt %d received on %s\n",
@@ -1128,7 +1152,7 @@ X_ip6_mforward(struct ip6_hdr *ip6, struct ifnet *ifp, struct mbuf *m)
 	 * Pullup packet header if needed before storing it,
 	 * as other references may modify it in the meantime.
 	 */
-	if (mb0 && (M_HASCL(mb0) || mb0->m_len < sizeof(struct ip6_hdr)))
+	if (mb0 && (!M_WRITABLE(mb0) || mb0->m_len < sizeof(struct ip6_hdr)))
 		mb0 = m_pullup(mb0, sizeof(struct ip6_hdr));
 	if (mb0 == NULL) {
 		free(rte, M_MRTABLE6);
@@ -1397,7 +1421,7 @@ ip6_mdq(struct mbuf *m, struct ifnet *ifp, struct mf6c *rt)
 
 				mm = m_copy(m, 0, sizeof(struct ip6_hdr));
 				if (mm &&
-				    (M_HASCL(mm) ||
+				    (!M_WRITABLE(mm) ||
 				     mm->m_len < sizeof(struct ip6_hdr)))
 					mm = m_pullup(mm, sizeof(struct ip6_hdr));
 				if (mm == NULL)
@@ -1527,7 +1551,7 @@ phyint_send(struct ip6_hdr *ip6, struct mif6 *mifp, struct mbuf *m)
 	 */
 	mb_copy = m_copy(m, 0, M_COPYALL);
 	if (mb_copy &&
-	    (M_HASCL(mb_copy) || mb_copy->m_len < sizeof(struct ip6_hdr)))
+	    (!M_WRITABLE(mb_copy) || mb_copy->m_len < sizeof(struct ip6_hdr)))
 		mb_copy = m_pullup(mb_copy, sizeof(struct ip6_hdr));
 	if (mb_copy == NULL) {
 		return;
@@ -1561,15 +1585,8 @@ phyint_send(struct ip6_hdr *ip6, struct mif6 *mifp, struct mbuf *m)
 	 * If configured to loop back multicasts by default,
 	 * loop back a copy now.
 	 */
-	if (in6_mcast_loop) {
-		struct sockaddr_in6 dst6;
-
-		bzero(&dst6, sizeof(dst6));
-		dst6.sin6_len = sizeof(struct sockaddr_in6);
-		dst6.sin6_family = AF_INET6;
-		dst6.sin6_addr = ip6->ip6_dst;
-		ip6_mloopback(ifp, m, &dst6);
-	}
+	if (in6_mcast_loop)
+		ip6_mloopback(ifp, m);
 
 	/*
 	 * Put the packet into the sending queue of the outgoing interface
@@ -1583,10 +1600,13 @@ phyint_send(struct ip6_hdr *ip6, struct mif6 *mifp, struct mbuf *m)
 		dst6.sin6_len = sizeof(struct sockaddr_in6);
 		dst6.sin6_family = AF_INET6;
 		dst6.sin6_addr = ip6->ip6_dst;
+
+		IP_PROBE(send, NULL, NULL, ip6, ifp, NULL, ip6);
 		/*
 		 * We just call if_output instead of nd6_output here, since
 		 * we need no ND for a multicast forwarded packet...right?
 		 */
+		m_clrprotoflags(m);	/* Avoid confusing lower layers. */
 		error = (*ifp->if_output)(ifp, mb_copy,
 		    (struct sockaddr *)&dst6, NULL);
 		MRT6_DLOG(DEBUG_XMIT, "mif %u err %d",
@@ -1626,11 +1646,10 @@ register_send(struct ip6_hdr *ip6, struct mif6 *mif, struct mbuf *m)
 	    ip6_sprintf(ip6bufd, &ip6->ip6_dst));
 	PIM6STAT_INC(pim6s_snd_registers);
 
-	/* Make a copy of the packet to send to the user level process */
-	MGETHDR(mm, M_DONTWAIT, MT_HEADER);
+	/* Make a copy of the packet to send to the user level process. */
+	mm = m_gethdr(M_NOWAIT, MT_DATA);
 	if (mm == NULL)
 		return (ENOBUFS);
-	mm->m_pkthdr.rcvif = NULL;
 	mm->m_data += max_linkhdr;
 	mm->m_len = sizeof(struct ip6_hdr);
 
@@ -1949,4 +1968,4 @@ static moduledata_t ip6_mroutemod = {
 	0
 };
 
-DECLARE_MODULE(ip6_mroute, ip6_mroutemod, SI_SUB_PSEUDO, SI_ORDER_ANY);
+DECLARE_MODULE(ip6_mroute, ip6_mroutemod, SI_SUB_PROTO_MC, SI_ORDER_ANY);

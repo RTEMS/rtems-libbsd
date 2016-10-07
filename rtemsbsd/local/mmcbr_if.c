@@ -22,43 +22,23 @@
 #include <dev/mmc/mmcreg.h>
 #include <rtems/bsd/local/mmcbr_if.h>
 
-struct kobj_method mmcbr_update_ios_method_default = {
-	&mmcbr_update_ios_desc, (kobjop_t) kobj_error_method
-};
-
 struct kobjop_desc mmcbr_update_ios_desc = {
-	0, &mmcbr_update_ios_method_default
-};
-
-struct kobj_method mmcbr_request_method_default = {
-	&mmcbr_request_desc, (kobjop_t) kobj_error_method
+	0, { &mmcbr_update_ios_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbr_request_desc = {
-	0, &mmcbr_request_method_default
-};
-
-struct kobj_method mmcbr_get_ro_method_default = {
-	&mmcbr_get_ro_desc, (kobjop_t) kobj_error_method
+	0, { &mmcbr_request_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbr_get_ro_desc = {
-	0, &mmcbr_get_ro_method_default
-};
-
-struct kobj_method mmcbr_acquire_host_method_default = {
-	&mmcbr_acquire_host_desc, (kobjop_t) kobj_error_method
+	0, { &mmcbr_get_ro_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbr_acquire_host_desc = {
-	0, &mmcbr_acquire_host_method_default
-};
-
-struct kobj_method mmcbr_release_host_method_default = {
-	&mmcbr_release_host_desc, (kobjop_t) kobj_error_method
+	0, { &mmcbr_acquire_host_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbr_release_host_desc = {
-	0, &mmcbr_release_host_method_default
+	0, { &mmcbr_release_host_desc, (kobjop_t)kobj_error_method }
 };
 

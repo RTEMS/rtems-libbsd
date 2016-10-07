@@ -27,11 +27,12 @@
 
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
-#include <rtems/bsd/local/opt_ipx.h>
 
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
 #include <sys/module.h>
+#include <sys/rmlock.h>
 #include <sys/sockio.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
@@ -42,6 +43,7 @@
 #include <sys/md5.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/netisr.h>
 #include <net/if_types.h>
 #include <net/route.h>
@@ -65,11 +67,6 @@
 #endif
 
 #include <netinet/if_ether.h>
-
-#ifdef IPX
-#include <netipx/ipx.h>
-#include <netipx/ipx_if.h>
-#endif
 
 #include <net/if_sppp.h>
 
@@ -264,7 +261,7 @@ static const u_short interactive_ports[8] = {
 	int debug = ifp->if_flags & IFF_DEBUG
 
 static int sppp_output(struct ifnet *ifp, struct mbuf *m,
-		       struct sockaddr *dst, struct route *ro);
+	const struct sockaddr *dst, struct route *ro);
 
 static void sppp_cisco_send(struct sppp *sp, int type, long par1, long par2);
 static void sppp_cisco_input(struct sppp *sp, struct mbuf *m);
@@ -525,7 +522,7 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 
 	if (ifp->if_flags & IFF_UP)
 		/* Count received bytes, add FCS and one flag */
-		ifp->if_ibytes += m->m_pkthdr.len + 3;
+		if_inc_counter(ifp, IFCOUNTER_IBYTES, m->m_pkthdr.len + 3);
 
 	if (m->m_pkthdr.len <= PPP_HEADER_LEN) {
 		/* Too small packet, drop it. */
@@ -537,8 +534,8 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 		m_freem (m);
 		SPPP_UNLOCK(sp);
 	  drop2:
-		++ifp->if_ierrors;
-		++ifp->if_iqdrops;
+		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
+		if_inc_counter(ifp, IFCOUNTER_IQDROPS, 1);
 		return;
 	}
 
@@ -577,7 +574,7 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 				sppp_cp_send (sp, PPP_LCP, PROTO_REJ,
 					++sp->pp_seq[IDX_LCP], m->m_pkthdr.len + 2,
 					&h->protocol);
-			++ifp->if_noproto;
+			if_inc_counter(ifp, IFCOUNTER_NOPROTO, 1);
 			goto drop;
 		case PPP_LCP:
 			sppp_cp_input(&lcp, sp, m);
@@ -631,7 +628,7 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 				 * enough leading space in the existing mbuf).
 				 */
 				m_adj(m, vjlen);
-				M_PREPEND(m, hlen, M_DONTWAIT);
+				M_PREPEND(m, hlen, M_NOWAIT);
 				if (m == NULL) {
 					SPPP_UNLOCK(sp);
 					goto drop2;
@@ -673,14 +670,6 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 			do_account++;
 			break;
 #endif
-#ifdef IPX
-		case PPP_IPX:
-			/* IPX IPXCP not implemented yet */
-			if (sp->pp_phase == PHASE_NETWORK)
-				isr = NETISR_IPX;
-			do_account++;
-			break;
-#endif
 		}
 		break;
 	case CISCO_MULTICAST:
@@ -697,7 +686,7 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 		}
 		switch (ntohs (h->protocol)) {
 		default:
-			++ifp->if_noproto;
+			if_inc_counter(ifp, IFCOUNTER_NOPROTO, 1);
 			goto invalid;
 		case CISCO_KEEPALIVE:
 			sppp_cisco_input (sp, m);
@@ -713,12 +702,6 @@ sppp_input(struct ifnet *ifp, struct mbuf *m)
 #ifdef INET6
 		case ETHERTYPE_IPV6:
 			isr = NETISR_IPV6;
-			do_account++;
-			break;
-#endif
-#ifdef IPX
-		case ETHERTYPE_IPX:
-			isr = NETISR_IPX;
 			do_account++;
 			break;
 #endif
@@ -787,19 +770,18 @@ sppp_ifstart(struct ifnet *ifp)
  * Enqueue transmit packet.
  */
 static int
-sppp_output(struct ifnet *ifp, struct mbuf *m,
-	    struct sockaddr *dst, struct route *ro)
+sppp_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
+	struct route *ro)
 {
 	struct sppp *sp = IFP2SP(ifp);
 	struct ppp_header *h;
 	struct ifqueue *ifq = NULL;
-	int s, error, rv = 0;
+	int error, rv = 0;
 #ifdef INET
 	int ipproto = PPP_IP;
 #endif
 	int debug = ifp->if_flags & IFF_DEBUG;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 
 	if (!(ifp->if_flags & IFF_UP) ||
@@ -810,7 +792,6 @@ sppp_output(struct ifnet *ifp, struct mbuf *m,
 #endif
 		m_freem (m);
 		SPPP_UNLOCK(sp);
-		splx (s);
 		return (ENETDOWN);
 	}
 
@@ -834,9 +815,7 @@ sppp_output(struct ifnet *ifp, struct mbuf *m,
 		 * to start LCP for it.
 		 */
 		ifp->if_drv_flags |= IFF_DRV_RUNNING;
-		splx(s);
 		lcp.Open(sp);
-		s = splimp();
 	}
 
 #ifdef INET
@@ -860,7 +839,6 @@ sppp_output(struct ifnet *ifp, struct mbuf *m,
 		{
 			m_freem(m);
 			SPPP_UNLOCK(sp);
-			splx(s);
 			if(ip->ip_p == IPPROTO_TCP)
 				return(EADDRNOTAVAIL);
 			else
@@ -905,7 +883,6 @@ sppp_output(struct ifnet *ifp, struct mbuf *m,
 			default:
 				m_freem(m);
 				SPPP_UNLOCK(sp);
-				splx(s);
 				return (EINVAL);
 			}
 	}
@@ -928,14 +905,13 @@ sppp_output(struct ifnet *ifp, struct mbuf *m,
 	/*
 	 * Prepend general data packet PPP header. For now, IP only.
 	 */
-	M_PREPEND (m, PPP_HEADER_LEN, M_DONTWAIT);
+	M_PREPEND (m, PPP_HEADER_LEN, M_NOWAIT);
 	if (! m) {
 nobufs:		if (debug)
 			log(LOG_DEBUG, SPP_FMT "no memory for transmit header\n",
 				SPP_ARGS(ifp));
-		++ifp->if_oerrors;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 		SPPP_UNLOCK(sp);
-		splx (s);
 		return (ENOBUFS);
 	}
 	/*
@@ -992,17 +968,10 @@ nobufs:		if (debug)
 		}
 		break;
 #endif
-#ifdef IPX
-	case AF_IPX:     /* Novell IPX Protocol */
-		h->protocol = htons (sp->pp_mode == IFF_CISCO ?
-			ETHERTYPE_IPX : PPP_IPX);
-		break;
-#endif
 	default:
 		m_freem (m);
-		++ifp->if_oerrors;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 		SPPP_UNLOCK(sp);
-		splx (s);
 		return (EAFNOSUPPORT);
 	}
 
@@ -1016,13 +985,11 @@ out:
 	else
 		IFQ_HANDOFF_ADJ(ifp, m, 3, error);
 	if (error) {
-		++ifp->if_oerrors;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 		SPPP_UNLOCK(sp);
-		splx (s);
 		return (rv? rv: ENOBUFS);
 	}
 	SPPP_UNLOCK(sp);
-	splx (s);
 	/*
 	 * Unlike in sppp_input(), we can always bump the timestamp
 	 * here since sppp_output() is only called on behalf of
@@ -1042,7 +1009,7 @@ sppp_attach(struct ifnet *ifp)
 	mtx_init(&sp->mtx, "sppp", MTX_NETWORK_LOCK, MTX_DEF | MTX_RECURSE);
 	
 	/* Initialize keepalive handler. */
- 	callout_init(&sp->keepalive_callout, CALLOUT_MPSAFE);
+ 	callout_init(&sp->keepalive_callout, 1);
 	callout_reset(&sp->keepalive_callout, hz * 10, sppp_keepalive,
  		    (void *)sp); 
 
@@ -1074,7 +1041,7 @@ sppp_attach(struct ifnet *ifp)
 #ifdef INET6
 	sp->confflags |= CONF_ENABLE_IPV6;
 #endif
- 	callout_init(&sp->ifstart_callout, CALLOUT_MPSAFE);
+ 	callout_init(&sp->ifstart_callout, 1);
 	sp->if_start = ifp->if_start;
 	ifp->if_start = sppp_ifstart;
 	sp->pp_comp = malloc(sizeof(struct slcompress), M_TEMP, M_WAITOK);
@@ -1139,14 +1106,12 @@ int
 sppp_isempty(struct ifnet *ifp)
 {
 	struct sppp *sp = IFP2SP(ifp);
-	int empty, s;
+	int empty;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	empty = !sp->pp_fastq.ifq_head && !sp->pp_cpq.ifq_head &&
 		!SP2IFP(sp)->if_snd.ifq_head;
 	SPPP_UNLOCK(sp);
-	splx(s);
 	return (empty);
 }
 
@@ -1158,9 +1123,7 @@ sppp_dequeue(struct ifnet *ifp)
 {
 	struct sppp *sp = IFP2SP(ifp);
 	struct mbuf *m;
-	int s;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	/*
 	 * Process only the control protocol queue until we have at
@@ -1177,7 +1140,6 @@ sppp_dequeue(struct ifnet *ifp)
 			IF_DEQUEUE (&SP2IFP(sp)->if_snd, m);
 	}
 	SPPP_UNLOCK(sp);
-	splx(s);
 	return m;
 }
 
@@ -1189,9 +1151,7 @@ sppp_pick(struct ifnet *ifp)
 {
 	struct sppp *sp = IFP2SP(ifp);
 	struct mbuf *m;
-	int s;
 
-	s = splimp ();
 	SPPP_LOCK(sp);
 
 	m = sp->pp_cpq.ifq_head;
@@ -1202,7 +1162,6 @@ sppp_pick(struct ifnet *ifp)
 		if ((m = sp->pp_fastq.ifq_head) == NULL)
 			m = SP2IFP(sp)->if_snd.ifq_head;
 	SPPP_UNLOCK(sp);
-	splx (s);
 	return (m);
 }
 
@@ -1214,14 +1173,12 @@ sppp_ioctl(struct ifnet *ifp, IOCTL_CMD_T cmd, void *data)
 {
 	struct ifreq *ifr = (struct ifreq*) data;
 	struct sppp *sp = IFP2SP(ifp);
-	int s, rv, going_up, going_down, newmode;
+	int rv, going_up, going_down, newmode;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	rv = 0;
 	switch (cmd) {
 	case SIOCAIFADDR:
-	case SIOCSIFDSTADDR:
 		break;
 
 	case SIOCSIFADDR:
@@ -1322,7 +1279,6 @@ sppp_ioctl(struct ifnet *ifp, IOCTL_CMD_T cmd, void *data)
 		rv = ENOTTY;
 	}
 	SPPP_UNLOCK(sp);
-	splx(s);
 	return rv;
 }
 
@@ -1414,7 +1370,7 @@ sppp_cisco_send(struct sppp *sp, int type, long par1, long par2)
 
 	getmicrouptime(&tv);
 
-	MGETHDR (m, M_DONTWAIT, MT_DATA);
+	MGETHDR (m, M_NOWAIT, MT_DATA);
 	if (! m)
 		return;
 	m->m_pkthdr.len = m->m_len = PPP_HEADER_LEN + CISCO_PACKET_LEN;
@@ -1441,7 +1397,7 @@ sppp_cisco_send(struct sppp *sp, int type, long par1, long par2)
 			(u_long)ch->par2, (u_int)ch->rel, (u_int)ch->time0, (u_int)ch->time1);
 
 	if (! IF_HANDOFF_ADJ(&sp->pp_cpq, m, ifp, 3))
-		ifp->if_oerrors++;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 }
 
 /*
@@ -1462,7 +1418,7 @@ sppp_cp_send(struct sppp *sp, u_short proto, u_char type,
 
 	if (len > MHLEN - PPP_HEADER_LEN - LCP_HEADER_LEN)
 		len = MHLEN - PPP_HEADER_LEN - LCP_HEADER_LEN;
-	MGETHDR (m, M_DONTWAIT, MT_DATA);
+	MGETHDR (m, M_NOWAIT, MT_DATA);
 	if (! m)
 		return;
 	m->m_pkthdr.len = m->m_len = PPP_HEADER_LEN + LCP_HEADER_LEN + len;
@@ -1490,7 +1446,7 @@ sppp_cp_send(struct sppp *sp, u_short proto, u_char type,
 		log(-1, ">\n");
 	}
 	if (! IF_HANDOFF_ADJ(&sp->pp_cpq, m, ifp, 3))
-		ifp->if_oerrors++;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 }
 
 /*
@@ -1532,7 +1488,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 				log(-1, SPP_FMT "%s invalid conf-req length %d\n",
 				       SPP_ARGS(ifp), cp->name,
 				       len);
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			break;
 		}
 		/* handle states where RCR doesn't get a SCA/SCN */
@@ -1588,7 +1544,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 	case CONF_ACK:
@@ -1597,7 +1553,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 				log(-1, SPP_FMT "%s id mismatch 0x%x != 0x%x\n",
 				       SPP_ARGS(ifp), cp->name,
 				       h->ident, sp->confid[cp->protoidx]);
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			break;
 		}
 		switch (sp->state[cp->protoidx]) {
@@ -1632,7 +1588,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 	case CONF_NAK:
@@ -1642,7 +1598,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 				log(-1, SPP_FMT "%s id mismatch 0x%x != 0x%x\n",
 				       SPP_ARGS(ifp), cp->name,
 				       h->ident, sp->confid[cp->protoidx]);
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			break;
 		}
 		if (h->type == CONF_NAK)
@@ -1682,7 +1638,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 
@@ -1715,7 +1671,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 	case TERM_ACK:
@@ -1746,7 +1702,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 	case CODE_REJ:
@@ -1773,7 +1729,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 	case PROTO_REJ:
@@ -1832,7 +1788,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name,
 			       sppp_cp_type_name(h->type),
 			       sppp_state_name(sp->state[cp->protoidx]));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		}
 		break;
 	    }
@@ -1848,7 +1804,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			if (debug)
 				log(-1, SPP_FMT "lcp echo req but lcp closed\n",
 				       SPP_ARGS(ifp));
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			break;
 		}
 		if (len < 8) {
@@ -1882,7 +1838,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 		if (cp->proto != PPP_LCP)
 			goto illegal;
 		if (h->ident != sp->lcp.echoid) {
-			++ifp->if_ierrors;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			break;
 		}
 		if (len < 8) {
@@ -1907,7 +1863,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 			       SPP_ARGS(ifp), cp->name, h->type);
 		sppp_cp_send(sp, cp->proto, CODE_REJ,
 			     ++sp->pp_seq[cp->protoidx], m->m_pkthdr.len, h);
-		++ifp->if_ierrors;
+		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 	}
 }
 
@@ -2072,9 +2028,7 @@ static void
 sppp_to_event(const struct cp *cp, struct sppp *sp)
 {
 	STDDCL;
-	int s;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	if (debug)
 		log(LOG_DEBUG, SPP_FMT "%s TO(%s) rst_counter = %d\n",
@@ -2124,7 +2078,6 @@ sppp_to_event(const struct cp *cp, struct sppp *sp)
 		}
 
 	SPPP_UNLOCK(sp);
-	splx(s);
 }
 
 /*
@@ -2196,7 +2149,7 @@ sppp_lcp_init(struct sppp *sp)
 	sp->lcp.max_terminate = 2;
 	sp->lcp.max_configure = 10;
 	sp->lcp.max_failure = 10;
- 	callout_init(&sp->ch[IDX_LCP], CALLOUT_MPSAFE);
+ 	callout_init(&sp->ch[IDX_LCP], 1);
 }
 
 static void
@@ -2887,7 +2840,7 @@ sppp_ipcp_init(struct sppp *sp)
 	sp->fail_counter[IDX_IPCP] = 0;
 	sp->pp_seq[IDX_IPCP] = 0;
 	sp->pp_rseq[IDX_IPCP] = 0;
- 	callout_init(&sp->ch[IDX_IPCP], CALLOUT_MPSAFE);
+ 	callout_init(&sp->ch[IDX_IPCP], 1);
 }
 
 static void
@@ -3011,7 +2964,7 @@ sppp_ipcp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 			 * since our algorithm always uses the
 			 * original option to NAK it with new values,
 			 * things would become more complicated.  In
-			 * pratice, the only commonly implemented IP
+			 * practice, the only commonly implemented IP
 			 * compression option is VJ anyway, so the
 			 * difference is negligible.
 			 */
@@ -3446,7 +3399,7 @@ sppp_ipv6cp_init(struct sppp *sp)
 	sp->fail_counter[IDX_IPV6CP] = 0;
 	sp->pp_seq[IDX_IPV6CP] = 0;
 	sp->pp_rseq[IDX_IPV6CP] = 0;
- 	callout_init(&sp->ch[IDX_IPV6CP], CALLOUT_MPSAFE);
+ 	callout_init(&sp->ch[IDX_IPV6CP], 1);
 }
 
 static void
@@ -4027,7 +3980,7 @@ sppp_chap_input(struct sppp *sp, struct mbuf *m)
 {
 	STDDCL;
 	struct lcp_header *h;
-	int len, x;
+	int len;
 	u_char *value, *name, digest[AUTHKEYLEN], dsize;
 	int value_len, name_len;
 	MD5_CTX ctx;
@@ -4104,7 +4057,6 @@ sppp_chap_input(struct sppp *sp, struct mbuf *m)
 			}
 			log(-1, "\n");
 		}
-		x = splimp();
 		SPPP_LOCK(sp);
 		sp->pp_flags &= ~PP_NEEDAUTH;
 		if (sp->myauth.proto == PPP_CHAP &&
@@ -4116,11 +4068,9 @@ sppp_chap_input(struct sppp *sp, struct mbuf *m)
 			 * to network phase.
 			 */
 			SPPP_UNLOCK(sp);
-			splx(x);
 			break;
 		}
 		SPPP_UNLOCK(sp);
-		splx(x);
 		sppp_phase_network(sp);
 		break;
 
@@ -4254,7 +4204,7 @@ sppp_chap_init(struct sppp *sp)
 	sp->fail_counter[IDX_CHAP] = 0;
 	sp->pp_seq[IDX_CHAP] = 0;
 	sp->pp_rseq[IDX_CHAP] = 0;
- 	callout_init(&sp->ch[IDX_CHAP], CALLOUT_MPSAFE);
+ 	callout_init(&sp->ch[IDX_CHAP], 1);
 }
 
 static void
@@ -4282,9 +4232,7 @@ sppp_chap_TO(void *cookie)
 {
 	struct sppp *sp = (struct sppp *)cookie;
 	STDDCL;
-	int s;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	if (debug)
 		log(LOG_DEBUG, SPP_FMT "chap TO(%s) rst_counter = %d\n",
@@ -4315,14 +4263,13 @@ sppp_chap_TO(void *cookie)
 		}
 
 	SPPP_UNLOCK(sp);
-	splx(s);
 }
 
 static void
 sppp_chap_tlu(struct sppp *sp)
 {
 	STDDCL;
-	int i, x;
+	int i;
 
 	i = 0;
 	sp->rst_counter[IDX_CHAP] = sp->lcp.max_configure;
@@ -4350,10 +4297,9 @@ sppp_chap_tlu(struct sppp *sp)
 		if ((sp->hisauth.flags & AUTHFLAG_NORECHALLENGE) == 0)
 			log(-1, "next re-challenge in %d seconds\n", i);
 		else
-			log(-1, "re-challenging supressed\n");
+			log(-1, "re-challenging suppressed\n");
 	}
 
-	x = splimp();
 	SPPP_LOCK(sp);
 	/* indicate to LCP that we need to be closed down */
 	sp->lcp.protos |= (1 << IDX_CHAP);
@@ -4365,11 +4311,9 @@ sppp_chap_tlu(struct sppp *sp)
 		 * phase.
 		 */
 		SPPP_UNLOCK(sp);
-		splx(x);
 		return;
 	}
 	SPPP_UNLOCK(sp);
-	splx(x);
 
 	/*
 	 * If we are already in phase network, we are done here.  This
@@ -4438,7 +4382,7 @@ sppp_pap_input(struct sppp *sp, struct mbuf *m)
 {
 	STDDCL;
 	struct lcp_header *h;
-	int len, x;
+	int len;
 	u_char *name, *passwd, mlen;
 	int name_len, passwd_len;
 
@@ -4525,7 +4469,6 @@ sppp_pap_input(struct sppp *sp, struct mbuf *m)
 			}
 			log(-1, "\n");
 		}
-		x = splimp();
 		SPPP_LOCK(sp);
 		sp->pp_flags &= ~PP_NEEDAUTH;
 		if (sp->myauth.proto == PPP_PAP &&
@@ -4537,11 +4480,9 @@ sppp_pap_input(struct sppp *sp, struct mbuf *m)
 			 * to network phase.
 			 */
 			SPPP_UNLOCK(sp);
-			splx(x);
 			break;
 		}
 		SPPP_UNLOCK(sp);
-		splx(x);
 		sppp_phase_network(sp);
 		break;
 
@@ -4585,8 +4526,8 @@ sppp_pap_init(struct sppp *sp)
 	sp->fail_counter[IDX_PAP] = 0;
 	sp->pp_seq[IDX_PAP] = 0;
 	sp->pp_rseq[IDX_PAP] = 0;
- 	callout_init(&sp->ch[IDX_PAP], CALLOUT_MPSAFE);
- 	callout_init(&sp->pap_my_to_ch, CALLOUT_MPSAFE);
+ 	callout_init(&sp->ch[IDX_PAP], 1);
+ 	callout_init(&sp->pap_my_to_ch, 1);
 }
 
 static void
@@ -4622,9 +4563,7 @@ sppp_pap_TO(void *cookie)
 {
 	struct sppp *sp = (struct sppp *)cookie;
 	STDDCL;
-	int s;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	if (debug)
 		log(LOG_DEBUG, SPP_FMT "pap TO(%s) rst_counter = %d\n",
@@ -4650,7 +4589,6 @@ sppp_pap_TO(void *cookie)
 		}
 
 	SPPP_UNLOCK(sp);
-	splx(s);
 }
 
 /*
@@ -4677,7 +4615,6 @@ static void
 sppp_pap_tlu(struct sppp *sp)
 {
 	STDDCL;
-	int x;
 
 	sp->rst_counter[IDX_PAP] = sp->lcp.max_configure;
 
@@ -4685,7 +4622,6 @@ sppp_pap_tlu(struct sppp *sp)
 		log(LOG_DEBUG, SPP_FMT "%s tlu\n",
 		    SPP_ARGS(ifp), pap.name);
 
-	x = splimp();
 	SPPP_LOCK(sp);
 	/* indicate to LCP that we need to be closed down */
 	sp->lcp.protos |= (1 << IDX_PAP);
@@ -4697,11 +4633,9 @@ sppp_pap_tlu(struct sppp *sp)
 		 * phase.
 		 */
 		SPPP_UNLOCK(sp);
-		splx(x);
 		return;
 	}
 	SPPP_UNLOCK(sp);
-	splx(x);
 	sppp_phase_network(sp);
 }
 
@@ -4766,7 +4700,7 @@ sppp_auth_send(const struct cp *cp, struct sppp *sp,
 	const char *msg;
 	va_list ap;
 
-	MGETHDR (m, M_DONTWAIT, MT_DATA);
+	MGETHDR (m, M_NOWAIT, MT_DATA);
 	if (! m)
 		return;
 	m->m_pkthdr.rcvif = 0;
@@ -4810,7 +4744,7 @@ sppp_auth_send(const struct cp *cp, struct sppp *sp,
 		log(-1, ">\n");
 	}
 	if (! IF_HANDOFF_ADJ(&sp->pp_cpq, m, ifp, 3))
-		ifp->if_oerrors++;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 }
 
 /*
@@ -4823,7 +4757,7 @@ sppp_qflush(struct ifqueue *ifq)
 
 	n = ifq->ifq_head;
 	while ((m = n)) {
-		n = m->m_act;
+		n = m->m_nextpkt;
 		m_freem (m);
 	}
 	ifq->ifq_head = 0;
@@ -4839,9 +4773,7 @@ sppp_keepalive(void *dummy)
 {
 	struct sppp *sp = (struct sppp*)dummy;
 	struct ifnet *ifp = SP2IFP(sp);
-	int s;
 
-	s = splimp();
 	SPPP_LOCK(sp);
 	/* Keepalive mode disabled or channel down? */
 	if (! (sp->pp_flags & PP_KEEPALIVE) ||
@@ -4884,7 +4816,6 @@ sppp_keepalive(void *dummy)
 	}
 out:
 	SPPP_UNLOCK(sp);
-	splx(s);
  	callout_reset(&sp->keepalive_callout, hz * 10, sppp_keepalive,
 		      (void *)sp);
 }
@@ -4906,7 +4837,7 @@ sppp_get_ip_addrs(struct sppp *sp, u_long *src, u_long *dst, u_long *srcmask)
 	 * Pick the first AF_INET address from the list,
 	 * aliases don't make any sense on a p2p link anyway.
 	 */
-	si = 0;
+	si = NULL;
 	if_addr_rlock(ifp);
 	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
 		if (ifa->ifa_addr->sa_family == AF_INET) {
@@ -4934,7 +4865,7 @@ sppp_get_ip_addrs(struct sppp *sp, u_long *src, u_long *dst, u_long *srcmask)
 
 #ifdef INET
 /*
- * Set my IP address.  Must be called at splimp.
+ * Set my IP address.
  */
 static void
 sppp_set_ip_addr(struct sppp *sp, u_long src)
@@ -4948,7 +4879,7 @@ sppp_set_ip_addr(struct sppp *sp, u_long src)
 	 * Pick the first AF_INET address from the list,
 	 * aliases don't make any sense on a p2p link anyway.
 	 */
-	si = 0;
+	si = NULL;
 	if_addr_rlock(ifp);
 	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa->ifa_addr->sa_family == AF_INET) {
@@ -5051,7 +4982,7 @@ sppp_gen_ip6_addr(struct sppp *sp, struct in6_addr *addr)
 }
 
 /*
- * Set my IPv6 address.  Must be called at splimp.
+ * Set my IPv6 address.
  */
 static void
 sppp_set_ip6_addr(struct sppp *sp, const struct in6_addr *src)
@@ -5126,14 +5057,15 @@ sppp_params(struct sppp *sp, u_long cmd, void *data)
 	struct spppreq *spr;
 	int rv = 0;
 
-	if ((spr = malloc(sizeof(struct spppreq), M_TEMP, M_NOWAIT)) == 0)
+	if ((spr = malloc(sizeof(struct spppreq), M_TEMP, M_NOWAIT)) == NULL)
 		return (EAGAIN);
 	/*
 	 * ifr->ifr_data is supposed to point to a struct spppreq.
 	 * Check the cmd word first before attempting to fetch all the
 	 * data.
 	 */
-	if ((subcmd = fuword(ifr->ifr_data)) == -1) {
+	rv = fueword(ifr->ifr_data, &subcmd);
+	if (rv == -1) {
 		rv = EFAULT;
 		goto quit;
 	}

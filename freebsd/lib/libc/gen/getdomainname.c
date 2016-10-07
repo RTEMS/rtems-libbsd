@@ -41,12 +41,10 @@ __FBSDID("$FreeBSD$");
 #include <unistd.h>
 
 int
-getdomainname(name, namelen)
-	char *name;
 #ifndef __rtems__
-	int namelen;
+getdomainname(char *name, int namelen)
 #else /* __rtems__ */
-	size_t namelen;
+getdomainname(char *name, size_t namelen)
 #endif /* __rtems__ */
 {
 	int mib[2];

@@ -40,6 +40,7 @@
 
 #ifdef __rtems__
 #include <sys/param.h>
+#include <sys/_bitset.h>
 #endif /* __rtems__ */
 #include <sys/_null.h>
 
@@ -61,11 +62,16 @@
  *		in the range 5 to 9.
  */
 #undef __FreeBSD_version
-#define __FreeBSD_version 903000	/* Master, propagated to newvers */
+#define __FreeBSD_version 1200003	/* Master, propagated to newvers */
 
 #ifdef _KERNEL
-#define	P_OSREL_SIGSEGV		700004
-#define	P_OSREL_MAP_ANON	800104
+#define	P_OSREL_SIGWAIT			700000
+#define	P_OSREL_SIGSEGV			700004
+#define	P_OSREL_MAP_ANON		800104
+#define	P_OSREL_MAP_FSTRICT		1100036
+#define	P_OSREL_SHUTDOWN_ENOTCONN	1100077
+
+#define	P_OSREL_MAJOR(x)		((x) / 100000)
 #endif
 
 #ifndef LOCORE

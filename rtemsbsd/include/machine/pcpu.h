@@ -40,6 +40,8 @@
 #ifndef _RTEMS_BSD_MACHINE_PCPU_H_
 #define _RTEMS_BSD_MACHINE_PCPU_H_
 
+#include <rtems/score/smp.h>
+
 struct thread;
 
 struct thread *

@@ -2,6 +2,7 @@
 
 /*-
  * Copyright (c) 1996 John S. Dyson
+ * Copyright (c) 2012 Giovanni Trematerra
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,6 +91,8 @@
  * in the structure may have changed.
  */
 
+#include <rtems/bsd/local/opt_compat.h>
+
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -116,6 +119,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/uio.h>
+#include <sys/user.h>
 #include <sys/event.h>
 
 #include <security/mac/mac_framework.h>
@@ -130,18 +134,15 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_page.h>
 #include <vm/uma.h>
 
-/* XXX */
-#ifdef __rtems__
-static
-#endif /* __rtems__ */
-int	do_pipe(struct thread *td, int fildes[2], int flags);
-
 /*
  * Use this define if you want to disable *fancy* VM things.  Expect an
  * approx 30% decrease in transfer rate.  This could be useful for
  * NetBSD or OpenBSD.
  */
 /* #define PIPE_NODIRECT */
+
+#define PIPE_PEER(pipe)	\
+	(((pipe)->pipe_state & PIPE_NAMED) ? (pipe) : ((pipe)->pipe_peer))
 
 /*
  * interfaces to the outside world
@@ -155,8 +156,11 @@ static fo_poll_t	pipe_poll;
 static fo_kqfilter_t	pipe_kqfilter;
 static fo_stat_t	pipe_stat;
 static fo_close_t	pipe_close;
+static fo_chmod_t	pipe_chmod;
+static fo_chown_t	pipe_chown;
+static fo_fill_kinfo_t	pipe_fill_kinfo;
 
-static struct fileops pipeops = {
+struct fileops pipeops = {
 	.fo_read = pipe_read,
 	.fo_write = pipe_write,
 	.fo_truncate = pipe_truncate,
@@ -165,8 +169,10 @@ static struct fileops pipeops = {
 	.fo_kqfilter = pipe_kqfilter,
 	.fo_stat = pipe_stat,
 	.fo_close = pipe_close,
-	.fo_chmod = invfo_chmod,
-	.fo_chown = invfo_chown,
+	.fo_chmod = pipe_chmod,
+	.fo_chown = pipe_chown,
+	.fo_sendfile = invfo_sendfile,
+	.fo_fill_kinfo = pipe_fill_kinfo,
 	.fo_flags = DFLAG_PASSABLE
 };
 #else /* __rtems__ */
@@ -204,9 +210,16 @@ long	maxpipekva;			/* Limit on pipe KVA */
 #endif /* __rtems__ */
 
 static void	filt_pipedetach(struct knote *kn);
+static void	filt_pipedetach_notsup(struct knote *kn);
+static int	filt_pipenotsup(struct knote *kn, long hint);
 static int	filt_piperead(struct knote *kn, long hint);
 static int	filt_pipewrite(struct knote *kn, long hint);
 
+static struct filterops pipe_nfiltops = {
+	.f_isfd = 1,
+	.f_detach = filt_pipedetach_notsup,
+	.f_event = filt_pipenotsup
+};
 static struct filterops pipe_rfiltops = {
 	.f_isfd = 1,
 	.f_detach = filt_pipedetach,
@@ -233,7 +246,7 @@ static int pipeallocfail;
 static int piperesizefail;
 static int piperesizeallowed = 1;
 
-SYSCTL_LONG(_kern_ipc, OID_AUTO, maxpipekva, CTLFLAG_RDTUN,
+SYSCTL_LONG(_kern_ipc, OID_AUTO, maxpipekva, CTLFLAG_RDTUN | CTLFLAG_NOFETCH,
 	   &maxpipekva, 0, "Pipe KVA limit");
 SYSCTL_LONG(_kern_ipc, OID_AUTO, pipekva, CTLFLAG_RD,
 	   &amountpipekva, 0, "Pipe KVA usage");
@@ -249,10 +262,10 @@ SYSCTL_INT(_kern_ipc, OID_AUTO, piperesizeallowed, CTLFLAG_RW,
 static void pipeinit(void *dummy __unused);
 static void pipeclose(struct pipe *cpipe);
 static void pipe_free_kmem(struct pipe *cpipe);
-static int pipe_create(struct pipe *pipe, int backing);
+static void pipe_create(struct pipe *pipe, int backing);
+static void pipe_paircreate(struct thread *td, struct pipepair **p_pp);
 static __inline int pipelock(struct pipe *cpipe, int catch);
 static __inline void pipeunlock(struct pipe *cpipe);
-static __inline void pipeselwakeup(struct pipe *cpipe);
 #ifndef PIPE_NODIRECT
 static int pipe_build_write_buffer(struct pipe *wpipe, struct uio *uio);
 static void pipe_destroy_write_buffer(struct pipe *wpipe);
@@ -347,7 +360,7 @@ pipe_zone_init(void *mem, int size, int flags)
 
 	pp = (struct pipepair *)mem;
 
-	mtx_init(&pp->pp_mtx, "pipe mutex", NULL, MTX_DEF | MTX_RECURSE);
+	mtx_init(&pp->pp_mtx, "pipe mutex", NULL, MTX_DEF | MTX_NEW);
 	return (0);
 }
 
@@ -363,31 +376,13 @@ pipe_zone_fini(void *mem, int size)
 	mtx_destroy(&pp->pp_mtx);
 }
 
-/*
- * The pipe system call for the DTYPE_PIPE type of pipes.  If we fail, let
- * the zone pick up the pieces via pipeclose().
- */
-int
-kern_pipe(struct thread *td, int fildes[2])
+static void
+pipe_paircreate(struct thread *td, struct pipepair **p_pp)
 {
-
-	return (do_pipe(td, fildes, 0));
-}
-
-int
-do_pipe(struct thread *td, int fildes[2], int flags)
-{
-#ifndef __rtems__
-	struct filedesc *fdp = td->td_proc->p_fd;
-#else /* __rtems__ */
-	struct filedesc *fdp = NULL;
-#endif /* __rtems__ */
-	struct file *rf, *wf;
 	struct pipepair *pp;
 	struct pipe *rpipe, *wpipe;
-	int fd, fflags, error;
 
-	pp = uma_zalloc(pipe_zone, M_WAITOK);
+	*p_pp = pp = uma_zalloc(pipe_zone, M_WAITOK);
 #ifdef MAC
 	/*
 	 * The MAC label is shared between the connected endpoints.  As a
@@ -404,23 +399,64 @@ do_pipe(struct thread *td, int fildes[2], int flags)
 	knlist_init_mtx(&wpipe->pipe_sel.si_note, PIPE_MTX(wpipe));
 
 	/* Only the forward direction pipe is backed by default */
-	if ((error = pipe_create(rpipe, 1)) != 0 ||
-	    (error = pipe_create(wpipe, 0)) != 0) {
-		pipeclose(rpipe);
-		pipeclose(wpipe);
-		return (error);
-	}
+	pipe_create(rpipe, 1);
+	pipe_create(wpipe, 0);
 
 	rpipe->pipe_state |= PIPE_DIRECTOK;
 	wpipe->pipe_state |= PIPE_DIRECTOK;
+}
 
-	error = falloc(td, &rf, &fd, flags);
+void
+pipe_named_ctor(struct pipe **ppipe, struct thread *td)
+{
+	struct pipepair *pp;
+
+	pipe_paircreate(td, &pp);
+	pp->pp_rpipe.pipe_state |= PIPE_NAMED;
+	*ppipe = &pp->pp_rpipe;
+}
+
+void
+pipe_dtor(struct pipe *dpipe)
+{
+	struct pipe *peer;
+	ino_t ino;
+
+	ino = dpipe->pipe_ino;
+	peer = (dpipe->pipe_state & PIPE_NAMED) != 0 ? dpipe->pipe_peer : NULL;
+	funsetown(&dpipe->pipe_sigio);
+	pipeclose(dpipe);
+	if (peer != NULL) {
+		funsetown(&peer->pipe_sigio);
+		pipeclose(peer);
+	}
+	if (ino != 0 && ino != (ino_t)-1)
+		free_unr(pipeino_unr, ino);
+}
+
+/*
+ * The pipe system call for the DTYPE_PIPE type of pipes.  If we fail, let
+ * the zone pick up the pieces via pipeclose().
+ */
+int
+kern_pipe(struct thread *td, int fildes[2], int flags, struct filecaps *fcaps1,
+    struct filecaps *fcaps2)
+{
+	struct file *rf, *wf;
+	struct pipe *rpipe, *wpipe;
+	struct pipepair *pp;
+	int fd, fflags, error;
+
+	pipe_paircreate(td, &pp);
+	rpipe = &pp->pp_rpipe;
+	wpipe = &pp->pp_wpipe;
+	error = falloc_caps(td, &rf, &fd, flags, fcaps1);
 	if (error) {
 		pipeclose(rpipe);
 		pipeclose(wpipe);
 		return (error);
 	}
-	/* An extra reference on `rf' has been held for us by falloc(). */
+	/* An extra reference on `rf' has been held for us by falloc_caps(). */
 	fildes[0] = fd;
 
 	fflags = FREAD | FWRITE;
@@ -434,15 +470,15 @@ do_pipe(struct thread *td, int fildes[2], int flags)
 	 * side while we are blocked trying to allocate the write side.
 	 */
 	finit(rf, fflags, DTYPE_PIPE, rpipe, &pipeops);
-	error = falloc(td, &wf, &fd, flags);
+	error = falloc_caps(td, &wf, &fd, flags, fcaps2);
 	if (error) {
-		fdclose(fdp, rf, fildes[0], td);
+		fdclose(td, rf, fildes[0]);
 		fdrop(rf, td);
 		/* rpipe has been closed by fdrop(). */
 		pipeclose(wpipe);
 		return (error);
 	}
-	/* An extra reference on `wf' has been held for us by falloc(). */
+	/* An extra reference on `wf' has been held for us by falloc_caps(). */
 	finit(wf, fflags, DTYPE_PIPE, wpipe, &pipeops);
 	fdrop(wf, td);
 	fildes[1] = fd;
@@ -451,14 +487,15 @@ do_pipe(struct thread *td, int fildes[2], int flags)
 	return (0);
 }
 
+#ifdef COMPAT_FREEBSD10
 /* ARGSUSED */
 int
-sys_pipe(struct thread *td, struct pipe_args *uap)
+freebsd10_pipe(struct thread *td, struct freebsd10_pipe_args *uap __unused)
 {
 	int error;
 	int fildes[2];
 
-	error = kern_pipe(td, fildes);
+	error = kern_pipe(td, fildes, 0, NULL, NULL);
 	if (error)
 		return (error);
 
@@ -467,6 +504,28 @@ sys_pipe(struct thread *td, struct pipe_args *uap)
 
 	return (0);
 }
+#endif
+
+#ifndef __rtems__
+int
+sys_pipe2(struct thread *td, struct pipe2_args *uap)
+{
+	int error, fildes[2];
+
+	if (uap->flags & ~(O_CLOEXEC | O_NONBLOCK))
+		return (EINVAL);
+	error = kern_pipe(td, fildes, uap->flags, NULL, NULL);
+	if (error)
+		return (error);
+	error = copyout(fildes, uap->fildes, 2 * sizeof(int));
+	if (error) {
+		(void)kern_close(td, fildes[0]);
+		(void)kern_close(td, fildes[1]);
+	}
+	return (error);
+}
+#endif /* __rtems__ */
+
 #ifdef __rtems__
 int
 pipe(int fildes[2])
@@ -475,14 +534,12 @@ pipe(int fildes[2])
 	int error;
 
 	if (td != NULL) {
-		error = sys_pipe(td, NULL);
+		error = kern_pipe(td, fildes, 0, NULL, NULL);
 	} else {
 		error = ENOMEM;
 	}
 
 	if (error == 0) {
-		fildes[0] = td->td_retval[0];
-		fildes[1] = td->td_retval[1];
 		return error;
 	} else {
 		rtems_set_errno_and_return_minus_one(error);
@@ -519,10 +576,11 @@ retry:
 	buffer = (caddr_t) vm_map_min(pipe_map);
 
 	error = vm_map_find(pipe_map, NULL, 0,
-		(vm_offset_t *) &buffer, size, 1,
+		(vm_offset_t *) &buffer, size, 0, VMFS_ANY_SPACE,
 		VM_PROT_ALL, VM_PROT_ALL, 0);
 	if (error != KERN_SUCCESS) {
 #else /* __rtems__ */
+	(void)error;
 	buffer = malloc(size, M_TEMP, M_WAITOK | M_ZERO);
 	if (buffer == NULL) {
 #endif /* __rtems__ */
@@ -621,7 +679,7 @@ pipeunlock(cpipe)
 	}
 }
 
-static __inline void
+void
 pipeselwakeup(cpipe)
 	struct pipe *cpipe;
 {
@@ -632,8 +690,10 @@ pipeselwakeup(cpipe)
 		if (!SEL_WAITING(&cpipe->pipe_sel))
 			cpipe->pipe_state &= ~PIPE_SEL;
 	}
+#ifndef __rtems__
 	if ((cpipe->pipe_state & PIPE_ASYNC) && cpipe->pipe_sigio)
 		pgsigio(&cpipe->pipe_sigio, SIGIO, 0);
+#endif /* __rtems__ */
 	KNOTE_LOCKED(&cpipe->pipe_sel.si_note, 0);
 }
 
@@ -641,24 +701,27 @@ pipeselwakeup(cpipe)
  * Initialize and allocate VM and memory for pipe.  The structure
  * will start out zero'd from the ctor, so we just manage the kmem.
  */
-static int
+static void
 pipe_create(pipe, backing)
 	struct pipe *pipe;
 	int backing;
 {
-	int error;
 
 	if (backing) {
+		/*
+		 * Note that these functions can fail if pipe map is exhausted
+		 * (as a result of too many pipes created), but we ignore the
+		 * error as it is not fatal and could be provoked by
+		 * unprivileged users. The only consequence is worse performance
+		 * with given pipe.
+		 */
 		if (amountpipekva > maxpipekva / 2)
-			error = pipespace_new(pipe, SMALL_PIPE_SIZE);
+			(void)pipespace_new(pipe, SMALL_PIPE_SIZE);
 		else
-			error = pipespace_new(pipe, PIPE_SIZE);
-	} else {
-		/* If we're not backing this pipe, no need to do anything. */
-		error = 0;
+			(void)pipespace_new(pipe, PIPE_SIZE);
 	}
+
 	pipe->pipe_ino = -1;
-	return (error);
 }
 
 /* ARGSUSED */
@@ -670,11 +733,12 @@ pipe_read(fp, uio, active_cred, flags, td)
 	struct thread *td;
 	int flags;
 {
-	struct pipe *rpipe = fp->f_data;
+	struct pipe *rpipe;
 	int error;
 	int nread = 0;
 	int size;
 
+	rpipe = fp->f_data;
 	PIPE_LOCK(rpipe);
 	++rpipe->pipe_busy;
 	error = pipelock(rpipe, 1);
@@ -751,7 +815,7 @@ pipe_read(fp, uio, active_cred, flags, td)
 			rpipe->pipe_map.pos += size;
 			rpipe->pipe_map.cnt -= size;
 			if (rpipe->pipe_map.cnt == 0) {
-				rpipe->pipe_state &= ~PIPE_DIRECTW;
+				rpipe->pipe_state &= ~(PIPE_DIRECTW|PIPE_WANTW);
 				wakeup(rpipe);
 			}
 #endif
@@ -993,9 +1057,10 @@ pipe_direct_write(wpipe, uio)
 retry:
 	PIPE_LOCK_ASSERT(wpipe, MA_OWNED);
 	error = pipelock(wpipe, 1);
-	if (wpipe->pipe_state & PIPE_EOF)
+	if (error != 0)
+		goto error1;
+	if ((wpipe->pipe_state & PIPE_EOF) != 0) {
 		error = EPIPE;
-	if (error) {
 		pipeunlock(wpipe);
 		goto error1;
 	}
@@ -1056,6 +1121,7 @@ retry:
 			wakeup(wpipe);
 		}
 		pipeselwakeup(wpipe);
+		wpipe->pipe_state |= PIPE_WANTW;
 		pipeunlock(wpipe);
 		error = msleep(wpipe, PIPE_MTX(wpipe), PRIBIO | PCATCH,
 		    "pipdwt", 0);
@@ -1096,8 +1162,7 @@ pipe_write(fp, uio, active_cred, flags, td)
 	struct pipe *wpipe, *rpipe;
 
 	rpipe = fp->f_data;
-	wpipe = rpipe->pipe_peer;
-
+	wpipe = PIPE_PEER(rpipe);
 	PIPE_LOCK(rpipe);
 	error = pipelock(wpipe, 1);
 	if (error) {
@@ -1346,13 +1411,13 @@ pipe_write(fp, uio, active_cred, flags, td)
 	}
 
 	/*
-	 * Don't return EPIPE if I/O was successful
+	 * Don't return EPIPE if any byte was written.
+	 * EINTR and other interrupts are handled by generic I/O layer.
+	 * Do not pretend that I/O succeeded for obvious user error
+	 * like EFAULT.
 	 */
-	if ((wpipe->pipe_buffer.cnt == 0) &&
-	    (uio->uio_resid == 0) &&
-	    (error == EPIPE)) {
+	if (uio->uio_resid != orig_resid && error == EPIPE)
 		error = 0;
-	}
 
 	if (error == 0)
 #ifndef __rtems__
@@ -1416,8 +1481,15 @@ pipe_truncate(fp, length, active_cred, td)
 	struct ucred *active_cred;
 	struct thread *td;
 {
+	struct pipe *cpipe;
+	int error;
 
-	return (EINVAL);
+	cpipe = fp->f_data;
+	if (cpipe->pipe_state & PIPE_NAMED)
+		error = vnops.fo_truncate(fp, length, active_cred, td);
+	else
+		error = invfo_truncate(fp, length, active_cred, td);
+	return (error);
 }
 #endif /* __rtems__ */
 
@@ -1460,6 +1532,15 @@ pipe_ioctl(fp, cmd, data, active_cred, td)
 		break;
 
 	case FIONREAD:
+#ifndef __rtems__
+		if (!(fp->f_flag & FREAD)) {
+#else /* __rtems__ */
+		if (!(rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FREAD)) {
+#endif /* __rtems__ */
+			*(int *)data = 0;
+			PIPE_UNLOCK(mpipe);
+			return (0);
+		}
 		if (mpipe->pipe_state & PIPE_DIRECTW)
 			*(int *)data = mpipe->pipe_map.cnt;
 		else
@@ -1519,32 +1600,52 @@ pipe_poll(fp, events, active_cred, td)
 	struct ucred *active_cred;
 	struct thread *td;
 {
-	struct pipe *rpipe = fp->f_data;
+	struct pipe *rpipe;
 	struct pipe *wpipe;
-	int revents = 0;
+	int levents, revents;
 #ifdef MAC
 	int error;
 #endif
 
-	wpipe = rpipe->pipe_peer;
+	revents = 0;
+	rpipe = fp->f_data;
+	wpipe = PIPE_PEER(rpipe);
 	PIPE_LOCK(rpipe);
 #ifdef MAC
 	error = mac_pipe_check_poll(active_cred, rpipe->pipe_pair);
 	if (error)
 		goto locked_error;
 #endif
-	if (events & (POLLIN | POLLRDNORM))
+#ifndef __rtems__
+	if (fp->f_flag & FREAD && events & (POLLIN | POLLRDNORM))
+#else /* __rtems__ */
+	if (rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FREAD && events & (POLLIN | POLLRDNORM))
+#endif /* __rtems__ */
 		if ((rpipe->pipe_state & PIPE_DIRECTW) ||
 		    (rpipe->pipe_buffer.cnt > 0))
 			revents |= events & (POLLIN | POLLRDNORM);
 
-	if (events & (POLLOUT | POLLWRNORM))
+#ifndef __rtems__
+	if (fp->f_flag & FWRITE && events & (POLLOUT | POLLWRNORM))
+#else /* __rtems__ */
+	if (rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FWRITE && events & (POLLOUT | POLLWRNORM))
+#endif /* __rtems__ */
 		if (wpipe->pipe_present != PIPE_ACTIVE ||
 		    (wpipe->pipe_state & PIPE_EOF) ||
 		    (((wpipe->pipe_state & PIPE_DIRECTW) == 0) &&
 		     ((wpipe->pipe_buffer.size - wpipe->pipe_buffer.cnt) >= PIPE_BUF ||
 			 wpipe->pipe_buffer.size == 0)))
 			revents |= events & (POLLOUT | POLLWRNORM);
+
+	levents = events &
+	    (POLLIN | POLLINIGNEOF | POLLPRI | POLLRDNORM | POLLRDBAND);
+#ifndef __rtems__
+	if (rpipe->pipe_state & PIPE_NAMED && fp->f_flag & FREAD && levents &&
+	    fp->f_seqcount == rpipe->pipe_wgen)
+#else /* __rtems__ */
+	if (rpipe->pipe_state & PIPE_NAMED && rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FREAD && levents)
+#endif /* __rtems__ */
+		events |= POLLINIGNEOF;
 
 	if ((events & POLLINIGNEOF) == 0) {
 		if (rpipe->pipe_state & PIPE_EOF) {
@@ -1556,13 +1657,21 @@ pipe_poll(fp, events, active_cred, td)
 	}
 
 	if (revents == 0) {
-		if (events & (POLLIN | POLLRDNORM)) {
+#ifndef __rtems__
+		if (fp->f_flag & FREAD && events & (POLLIN | POLLRDNORM)) {
+#else /* __rtems__ */
+		if (rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FREAD && events & (POLLIN | POLLRDNORM)) {
+#endif /* __rtems__ */
 			selrecord(td, &rpipe->pipe_sel);
 			if (SEL_WAITING(&rpipe->pipe_sel))
 				rpipe->pipe_state |= PIPE_SEL;
 		}
 
-		if (events & (POLLOUT | POLLWRNORM)) {
+#ifndef __rtems__
+		if (fp->f_flag & FWRITE && events & (POLLOUT | POLLWRNORM)) {
+#else /* __rtems__ */
+		if (rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FWRITE && events & (POLLOUT | POLLWRNORM)) {
+#endif /* __rtems__ */
 			selrecord(td, &wpipe->pipe_sel);
 			if (SEL_WAITING(&wpipe->pipe_sel))
 				wpipe->pipe_state |= PIPE_SEL;
@@ -1627,6 +1736,17 @@ pipe_stat(struct pipe *pipe, struct stat *ub)
 		return (error);
 	}
 #endif
+
+	/* For named pipes ask the underlying filesystem. */
+	if (pipe->pipe_state & PIPE_NAMED) {
+		PIPE_UNLOCK(pipe);
+#ifndef __rtems__
+		return (vnops.fo_stat(fp, ub, active_cred, td));
+#else /* __rtems__ */
+		return (ENXIO);
+#endif /* __rtems__ */
+	}
+
 	/*
 	 * Lazily allocate an inode number for the pipe.  Most pipe
 	 * users do not call fstat(2) on the pipe, which means that
@@ -1655,7 +1775,7 @@ pipe_stat(struct pipe *pipe, struct stat *ub)
 		ub->st_size = pipe->pipe_map.cnt;
 	else
 		ub->st_size = pipe->pipe_buffer.cnt;
-	ub->st_blocks = (ub->st_size + ub->st_blksize - 1) / ub->st_blksize;
+	ub->st_blocks = howmany(ub->st_size, ub->st_blksize);
 	ub->st_atim = pipe->pipe_atime;
 	ub->st_mtim = pipe->pipe_mtime;
 	ub->st_ctim = pipe->pipe_ctime;
@@ -1695,18 +1815,68 @@ pipe_close(fp, td)
 	struct file *fp;
 	struct thread *td;
 {
-	struct pipe *cpipe = fp->f_data;
 
 #ifndef __rtems__
+	if (fp->f_vnode != NULL) 
+		return vnops.fo_close(fp, td);
 	fp->f_ops = &badfileops;
 #else /* __rtems__ */
 	fp->f_io.pathinfo.handlers = &rtems_filesystem_handlers_default;
 #endif /* __rtems__ */
+	pipe_dtor(fp->f_data);
 	fp->f_data = NULL;
-	funsetown(&cpipe->pipe_sigio);
-	pipeclose(cpipe);
 	return (0);
 }
+
+#ifndef __rtems__
+static int
+pipe_chmod(struct file *fp, mode_t mode, struct ucred *active_cred, struct thread *td)
+{
+	struct pipe *cpipe;
+	int error;
+
+	cpipe = fp->f_data;
+	if (cpipe->pipe_state & PIPE_NAMED)
+		error = vn_chmod(fp, mode, active_cred, td);
+	else
+		error = invfo_chmod(fp, mode, active_cred, td);
+	return (error);
+}
+
+static int
+pipe_chown(fp, uid, gid, active_cred, td)
+	struct file *fp;
+	uid_t uid;
+	gid_t gid;
+	struct ucred *active_cred;
+	struct thread *td;
+{
+	struct pipe *cpipe;
+	int error;
+
+	cpipe = fp->f_data;
+	if (cpipe->pipe_state & PIPE_NAMED)
+		error = vn_chown(fp, uid, gid, active_cred, td);
+	else
+		error = invfo_chown(fp, uid, gid, active_cred, td);
+	return (error);
+}
+
+static int
+pipe_fill_kinfo(struct file *fp, struct kinfo_file *kif, struct filedesc *fdp)
+{
+	struct pipe *pi;
+
+	if (fp->f_type == DTYPE_FIFO)
+		return (vn_fill_kinfo(fp, kif, fdp));
+	kif->kf_type = KF_TYPE_PIPE;
+	pi = fp->f_data;
+	kif->kf_un.kf_pipe.kf_pipe_addr = (uintptr_t)pi;
+	kif->kf_un.kf_pipe.kf_pipe_peer = (uintptr_t)pi->pipe_peer;
+	kif->kf_un.kf_pipe.kf_pipe_buffer_cnt = pi->pipe_buffer.cnt;
+	return (0);
+}
+#endif /* __rtems__ */
 
 static void
 pipe_free_kmem(cpipe)
@@ -1745,7 +1915,6 @@ pipeclose(cpipe)
 {
 	struct pipepair *pp;
 	struct pipe *ppipe;
-	ino_t ino;
 
 	KASSERT(cpipe != NULL, ("pipeclose: cpipe == NULL"));
 
@@ -1804,12 +1973,6 @@ pipeclose(cpipe)
 	knlist_destroy(&cpipe->pipe_sel.si_note);
 
 	/*
-	 * Postpone the destroy of the fake inode number allocated for
-	 * our end, until pipe mtx is unlocked.
-	 */
-	ino = cpipe->pipe_ino;
-
-	/*
 	 * If both endpoints are now closed, release the memory for the
 	 * pipe pair.  If not, unlock.
 	 */
@@ -1821,9 +1984,6 @@ pipeclose(cpipe)
 		uma_zfree(pipe_zone, cpipe->pipe_pair);
 	} else
 		PIPE_UNLOCK(cpipe);
-
-	if (ino != 0 && ino != (ino_t)-1)
-		free_unr(pipeino_unr, ino);
 }
 
 /*ARGSUSED*/
@@ -1832,7 +1992,28 @@ pipe_kqfilter(struct file *fp, struct knote *kn)
 {
 	struct pipe *cpipe;
 
-	cpipe = kn->kn_fp->f_data;
+	/*
+	 * If a filter is requested that is not supported by this file
+	 * descriptor, don't return an error, but also don't ever generate an
+	 * event.
+	 */
+#ifndef __rtems__
+	if ((kn->kn_filter == EVFILT_READ) && !(fp->f_flag & FREAD)) {
+#else /* __rtems__ */
+	if ((kn->kn_filter == EVFILT_READ) && !(rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FREAD)) {
+#endif /* __rtems__ */
+		kn->kn_fop = &pipe_nfiltops;
+		return (0);
+	}
+#ifndef __rtems__
+	if ((kn->kn_filter == EVFILT_WRITE) && !(fp->f_flag & FWRITE)) {
+#else /* __rtems__ */
+	if ((kn->kn_filter == EVFILT_WRITE) && !(rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FWRITE)) {
+#endif /* __rtems__ */
+		kn->kn_fop = &pipe_nfiltops;
+		return (0);
+	}
+	cpipe = fp->f_data;
 	PIPE_LOCK(cpipe);
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
@@ -1845,13 +2026,14 @@ pipe_kqfilter(struct file *fp, struct knote *kn)
 			PIPE_UNLOCK(cpipe);
 			return (EPIPE);
 		}
-		cpipe = cpipe->pipe_peer;
+		cpipe = PIPE_PEER(cpipe);
 		break;
 	default:
 		PIPE_UNLOCK(cpipe);
 		return (EINVAL);
 	}
 
+	kn->kn_hook = cpipe; 
 	knlist_add(&cpipe->pipe_sel.si_note, kn, 1);
 	PIPE_UNLOCK(cpipe);
 	return (0);
@@ -1869,11 +2051,9 @@ rtems_bsd_pipe_kqfilter(rtems_libio_t *iop, struct knote *kn)
 static void
 filt_pipedetach(struct knote *kn)
 {
-	struct pipe *cpipe = (struct pipe *)kn->kn_fp->f_data;
+	struct pipe *cpipe = kn->kn_hook;
 
 	PIPE_LOCK(cpipe);
-	if (kn->kn_filter == EVFILT_WRITE)
-		cpipe = cpipe->pipe_peer;
 	knlist_remove(&cpipe->pipe_sel.si_note, kn, 1);
 	PIPE_UNLOCK(cpipe);
 }
@@ -1882,11 +2062,11 @@ filt_pipedetach(struct knote *kn)
 static int
 filt_piperead(struct knote *kn, long hint)
 {
-	struct pipe *rpipe = kn->kn_fp->f_data;
+	struct pipe *rpipe = kn->kn_hook;
 	struct pipe *wpipe = rpipe->pipe_peer;
 	int ret;
 
-	PIPE_LOCK(rpipe);
+	PIPE_LOCK_ASSERT(rpipe, MA_OWNED);
 	kn->kn_data = rpipe->pipe_buffer.cnt;
 	if ((kn->kn_data == 0) && (rpipe->pipe_state & PIPE_DIRECTW))
 		kn->kn_data = rpipe->pipe_map.cnt;
@@ -1895,11 +2075,9 @@ filt_piperead(struct knote *kn, long hint)
 	    wpipe->pipe_present != PIPE_ACTIVE ||
 	    (wpipe->pipe_state & PIPE_EOF)) {
 		kn->kn_flags |= EV_EOF;
-		PIPE_UNLOCK(rpipe);
 		return (1);
 	}
 	ret = kn->kn_data > 0;
-	PIPE_UNLOCK(rpipe);
 	return ret;
 }
 
@@ -1907,15 +2085,14 @@ filt_piperead(struct knote *kn, long hint)
 static int
 filt_pipewrite(struct knote *kn, long hint)
 {
-	struct pipe *rpipe = kn->kn_fp->f_data;
-	struct pipe *wpipe = rpipe->pipe_peer;
-
-	PIPE_LOCK(rpipe);
+	struct pipe *wpipe;
+   
+	wpipe = kn->kn_hook;
+	PIPE_LOCK_ASSERT(wpipe, MA_OWNED);
 	if (wpipe->pipe_present != PIPE_ACTIVE ||
 	    (wpipe->pipe_state & PIPE_EOF)) {
 		kn->kn_data = 0;
 		kn->kn_flags |= EV_EOF;
-		PIPE_UNLOCK(rpipe);
 		return (1);
 	}
 	kn->kn_data = (wpipe->pipe_buffer.size > 0) ?
@@ -1923,8 +2100,20 @@ filt_pipewrite(struct knote *kn, long hint)
 	if (wpipe->pipe_state & PIPE_DIRECTW)
 		kn->kn_data = 0;
 
-	PIPE_UNLOCK(rpipe);
 	return (kn->kn_data >= PIPE_BUF);
+}
+
+static void
+filt_pipedetach_notsup(struct knote *kn)
+{
+
+}
+
+static int
+filt_pipenotsup(struct knote *kn, long hint)
+{
+
+	return (0);
 }
 #ifdef __rtems__
 static int

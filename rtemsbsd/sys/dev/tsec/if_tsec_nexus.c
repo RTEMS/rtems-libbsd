@@ -152,7 +152,6 @@ tsec_fdt_attach(device_t dev)
 	sc->dev = dev;
 
 	/* FIXME */
-	sc->phy_sc = sc;
 	sc->phyaddr = -1;
 
 	/* Init timer */

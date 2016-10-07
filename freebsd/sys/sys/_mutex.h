@@ -34,8 +34,16 @@
 #include <machine/rtems-bsd-mutex.h>
 #endif /* __rtems__ */
 
+#include <machine/param.h>
+
 /*
  * Sleep/spin mutex.
+ *
+ * All mutex implementations must always have a member called mtx_lock.
+ * Other locking primitive structures are not allowed to use this name
+ * for their members.
+ * If this rule needs to change, the bits in the mutex implementation must
+ * be modified appropriately.
  */
 struct mtx {
 	struct lock_object	lock_object;	/* Common lock properties. */
@@ -45,5 +53,23 @@ struct mtx {
 	rtems_bsd_mutex mutex;
 #endif /* __rtems__ */
 };
+
+/*
+ * Members of struct mtx_padalign must mirror members of struct mtx.
+ * mtx_padalign mutexes can use the mtx(9) API transparently without
+ * modification.
+ * Pad-aligned mutexes used within structures should generally be the
+ * first member of the struct.  Otherwise, the compiler can generate
+ * additional padding for the struct to keep a correct alignment for
+ * the mutex.
+ */
+#ifndef __rtems__
+struct mtx_padalign {
+	struct lock_object	lock_object;	/* Common lock properties. */
+	volatile uintptr_t	mtx_lock;	/* Owner and flags. */
+} __aligned(CACHE_LINE_SIZE);
+#else /* __rtems__ */
+#define	mtx_padalign mtx
+#endif /* __rtems__ */
 
 #endif /* !_SYS__MUTEX_H_ */

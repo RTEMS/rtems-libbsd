@@ -776,10 +776,7 @@ detail and debug level information from the command.
 
 == FreeBSD version of imported files and directories
 
-. sys/dev/dwc/*, trunk, 2015-03-26, cfc3df2b8f708ce8494d9d556e3472a5c8c21b8a
-. sys/dev/mmc/*, trunk, 2016-08-23, 9fe7c416e6abb28b1398fd3e5687099846800cfd
-. sys/dev/usb/*, trunk, 2016-08-23, 9fe7c416e6abb28b1398fd3e5687099846800cfd
-. *, stable/9, 2015-04-08, 99a648a912e81e29d9c4c159cbbe263462f2d719
+. *, trunk, 2016-08-23, 9fe7c416e6abb28b1398fd3e5687099846800cfd
 
 == How to import code from FreeBSD
 

@@ -65,6 +65,7 @@
 #include <net/bpf.h>
 #include <net/ethernet.h>
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_clone.h>
 #include <net/if_dl.h>
 #include <net/if_media.h>
@@ -81,8 +82,8 @@
 #define CDEV_NAME	"tap"
 #define TAPDEBUG	if (tapdebug) printf
 
-#define TAP		"tap"
-#define VMNET		"vmnet"
+static const char tapname[] = "tap";
+static const char vmnetname[] = "vmnet";
 #define TAPMAXUNIT	0x7fff
 #define VMNET_DEV_MASK	CLONE_FLAG0
 
@@ -101,11 +102,10 @@ static void		tapifinit(void *);
 
 static int		tap_clone_create(struct if_clone *, int, caddr_t);
 static void		tap_clone_destroy(struct ifnet *);
+static struct if_clone *tap_cloner;
 static int		vmnet_clone_create(struct if_clone *, int, caddr_t);
 static void		vmnet_clone_destroy(struct ifnet *);
-
-IFC_SIMPLE_DECLARE(tap, 0);
-IFC_SIMPLE_DECLARE(vmnet, 0);
+static struct if_clone *vmnet_cloner;
 
 /* character device */
 static d_open_t		tapopen;
@@ -137,7 +137,7 @@ static struct filterops	tap_write_filterops = {
 
 static struct cdevsw	tap_cdevsw = {
 	.d_version =	D_VERSION,
-	.d_flags =	D_PSEUDO | D_NEEDMINOR,
+	.d_flags =	D_NEEDMINOR,
 	.d_open =	tapopen,
 	.d_close =	tapclose,
 	.d_read =	tapread,
@@ -172,11 +172,9 @@ SYSCTL_INT(_net_link_tap, OID_AUTO, user_open, CTLFLAG_RW, &tapuopen, 0,
 	"Allow user to open /dev/tap (based on node permissions)");
 SYSCTL_INT(_net_link_tap, OID_AUTO, up_on_open, CTLFLAG_RW, &tapuponopen, 0,
 	"Bring interface up when /dev/tap is opened");
-SYSCTL_INT(_net_link_tap, OID_AUTO, devfs_cloning, CTLFLAG_RW, &tapdclone, 0,
-	"Enably legacy devfs interface creation");
+SYSCTL_INT(_net_link_tap, OID_AUTO, devfs_cloning, CTLFLAG_RWTUN, &tapdclone, 0,
+	"Enable legacy devfs interface creation");
 SYSCTL_INT(_net_link_tap, OID_AUTO, debug, CTLFLAG_RW, &tapdebug, 0, "");
-
-TUNABLE_INT("net.link.tap.devfs_cloning", &tapdclone);
 
 DEV_MODULE(if_tap, tapmodevent, NULL);
 
@@ -185,18 +183,12 @@ tap_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 {
 	struct cdev *dev;
 	int i;
-	int extra;
 
-	if (strcmp(ifc->ifc_name, VMNET) == 0)
-		extra = VMNET_DEV_MASK;
-	else
-		extra = 0;
-
-	/* find any existing device, or allocate new unit number */
-	i = clone_create(&tapclones, &tap_cdevsw, &unit, &dev, extra);
+	/* Find any existing device, or allocate new unit number. */
+	i = clone_create(&tapclones, &tap_cdevsw, &unit, &dev, 0);
 	if (i) {
-		dev = make_dev(&tap_cdevsw, unit | extra,
-		     UID_ROOT, GID_WHEEL, 0600, "%s%d", ifc->ifc_name, unit);
+		dev = make_dev(&tap_cdevsw, unit, UID_ROOT, GID_WHEEL, 0600,
+		    "%s%d", tapname, unit);
 	}
 
 	tapcreate(dev);
@@ -207,7 +199,18 @@ tap_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 static int
 vmnet_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 {
-	return tap_clone_create(ifc, unit, params);
+	struct cdev *dev;
+	int i;
+
+	/* Find any existing device, or allocate new unit number. */
+	i = clone_create(&tapclones, &tap_cdevsw, &unit, &dev, VMNET_DEV_MASK);
+	if (i) {
+		dev = make_dev(&tap_cdevsw, unit | VMNET_DEV_MASK, UID_ROOT,
+		    GID_WHEEL, 0600, "%s%d", vmnetname, unit);
+	}
+
+	tapcreate(dev);
+	return (0);
 }
 
 static void
@@ -218,9 +221,10 @@ tap_destroy(struct tap_softc *tp)
 	CURVNET_SET(ifp->if_vnet);
 	destroy_dev(tp->tap_dev);
 	seldrain(&tp->tap_rsel);
+	knlist_clear(&tp->tap_rsel.si_note, 0);
 	knlist_destroy(&tp->tap_rsel.si_note);
 	ether_ifdetach(ifp);
-	if_free_type(ifp, IFT_ETHER);
+	if_free(ifp);
 
 	mtx_destroy(&tp->tap_mtx);
 	free(tp, M_TAP);
@@ -272,8 +276,10 @@ tapmodevent(module_t mod, int type, void *data)
 			mtx_destroy(&tapmtx);
 			return (ENOMEM);
 		}
-		if_clone_attach(&tap_cloner);
-		if_clone_attach(&vmnet_cloner);
+		tap_cloner = if_clone_simple(tapname, tap_clone_create,
+		    tap_clone_destroy, 0);
+		vmnet_cloner = if_clone_simple(vmnetname, vmnet_clone_create,
+		    vmnet_clone_destroy, 0);
 		return (0);
 
 	case MOD_UNLOAD:
@@ -295,8 +301,8 @@ tapmodevent(module_t mod, int type, void *data)
 		mtx_unlock(&tapmtx);
 
 		EVENTHANDLER_DEREGISTER(dev_clone, eh_tag);
-		if_clone_detach(&tap_cloner);
-		if_clone_detach(&vmnet_cloner);
+		if_clone_detach(tap_cloner);
+		if_clone_detach(vmnet_cloner);
 		drain_dev_clone_events();
 
 		mtx_lock(&tapmtx);
@@ -350,13 +356,13 @@ tapclone(void *arg, struct ucred *cred, char *name, int namelen, struct cdev **d
 	extra = 0;
 
 	/* We're interested in only tap/vmnet devices. */
-	if (strcmp(name, TAP) == 0) {
+	if (strcmp(name, tapname) == 0) {
 		unit = -1;
-	} else if (strcmp(name, VMNET) == 0) {
+	} else if (strcmp(name, vmnetname) == 0) {
 		unit = -1;
 		extra = VMNET_DEV_MASK;
-	} else if (dev_stdclone(name, NULL, TAP, &unit) != 1) {
-		if (dev_stdclone(name, NULL, VMNET, &unit) != 1) {
+	} else if (dev_stdclone(name, NULL, tapname, &unit) != 1) {
+		if (dev_stdclone(name, NULL, vmnetname, &unit) != 1) {
 			return;
 		} else {
 			extra = VMNET_DEV_MASK;
@@ -402,10 +408,8 @@ tapcreate(struct cdev *dev)
 	unsigned short		 macaddr_hi;
 	uint32_t		 macaddr_mid;
 	int			 unit;
-	char			*name = NULL;
+	const char		*name = NULL;
 	u_char			eaddr[6];
-
-	dev->si_flags &= ~SI_CHEAPCLONE;
 
 	/* allocate driver storage and create device */
 	tp = malloc(sizeof(*tp), M_TAP, M_WAITOK | M_ZERO);
@@ -418,10 +422,10 @@ tapcreate(struct cdev *dev)
 
 	/* select device: tap or vmnet */
 	if (unit & VMNET_DEV_MASK) {
-		name = VMNET;
+		name = vmnetname;
 		tp->tap_flags |= TAP_VMNET;
 	} else
-		name = TAP;
+		name = tapname;
 
 	unit &= TAPMAXUNIT;
 
@@ -534,11 +538,11 @@ tapclose(struct cdev *dev, int foo, int bar, struct thread *td)
 	IF_DRAIN(&ifp->if_snd);
 
 	/*
-	 * do not bring the interface down, and do not anything with
-	 * interface, if we are in VMnet mode. just close the device.
+	 * Do not bring the interface down, and do not anything with
+	 * interface, if we are in VMnet mode. Just close the device.
 	 */
-
-	if (((tp->tap_flags & TAP_VMNET) == 0) && (ifp->if_flags & IFF_UP)) {
+	if (((tp->tap_flags & TAP_VMNET) == 0) &&
+	    (ifp->if_flags & (IFF_UP | IFF_LINK0)) == IFF_UP) {
 		mtx_unlock(&tp->tap_mtx);
 		if_down(ifp);
 		mtx_lock(&tp->tap_mtx);
@@ -636,12 +640,12 @@ tapifioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 
 		case SIOCGIFSTATUS:
 			ifs = (struct ifstat *)data;
-			dummy = strlen(ifs->ascii);
 			mtx_lock(&tp->tap_mtx);
-			if (tp->tap_pid != 0 && dummy < sizeof(ifs->ascii))
-				snprintf(ifs->ascii + dummy,
-					sizeof(ifs->ascii) - dummy,
+			if (tp->tap_pid != 0)
+				snprintf(ifs->ascii, sizeof(ifs->ascii),
 					"\tOpened by PID %d\n", tp->tap_pid);
+			else
+				ifs->ascii[0] = '\0';
 			mtx_unlock(&tp->tap_mtx);
 			break;
 
@@ -684,7 +688,7 @@ tapifstart(struct ifnet *ifp)
 			IF_DEQUEUE(&ifp->if_snd, m);
 			if (m != NULL) {
 				m_freem(m);
-				ifp->if_oerrors++;
+				if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 			} else
 				break;
 		}
@@ -709,7 +713,7 @@ tapifstart(struct ifnet *ifp)
 
 		selwakeuppri(&tp->tap_rsel, PZERO+1);
 		KNOTE_LOCKED(&tp->tap_rsel.si_note, 0);
-		ifp->if_opackets ++; /* obytes are counted in ether_output */
+		if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1); /* obytes are counted in ether_output */
 	}
 
 	ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
@@ -829,8 +833,7 @@ tapioctl(struct cdev *dev, u_long cmd, caddr_t data, int flag, struct thread *td
 			mtx_unlock(&tp->tap_mtx);
 			break;
 
-		case OSIOCGIFADDR:	/* get MAC address of the remote side */
-		case SIOCGIFADDR:
+		case SIOCGIFADDR:	/* get MAC address of the remote side */
 			mtx_lock(&tp->tap_mtx);
 			bcopy(tp->ether_addr, data, sizeof(tp->ether_addr));
 			mtx_unlock(&tp->tap_mtx);
@@ -948,9 +951,9 @@ tapwrite(struct cdev *dev, struct uio *uio, int flag)
 		return (EIO);
 	}
 
-	if ((m = m_uiotombuf(uio, M_DONTWAIT, 0, ETHER_ALIGN,
+	if ((m = m_uiotombuf(uio, M_NOWAIT, 0, ETHER_ALIGN,
 	    M_PKTHDR)) == NULL) {
-		ifp->if_ierrors ++;
+		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		return (ENOBUFS);
 	}
 
@@ -977,7 +980,7 @@ tapwrite(struct cdev *dev, struct uio *uio, int flag)
 	CURVNET_SET(ifp->if_vnet);
 	(*ifp->if_input)(ifp, m);
 	CURVNET_RESTORE();
-	ifp->if_ipackets ++; /* ibytes are counted in parent */
+	if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1); /* ibytes are counted in parent */
 
 	return (0);
 } /* tapwrite */

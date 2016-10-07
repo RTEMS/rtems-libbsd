@@ -33,6 +33,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
+#include <sys/limits.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
@@ -47,6 +48,17 @@ __FBSDID("$FreeBSD$");
 #include <sys/uio.h>
 #include <sys/ktrace.h>
 #endif
+
+/*
+ * A bound below which cv_waiters is valid.  Once cv_waiters reaches this bound,
+ * cv_signal must manually check the wait queue for threads.
+ */
+#define	CV_WAITERS_BOUND	INT_MAX
+
+#define	CV_WAITERS_INC(cvp) do {					\
+	if ((cvp)->cv_waiters < CV_WAITERS_BOUND)			\
+		(cvp)->cv_waiters++;					\
+} while (0)
 
 /*
  * Common sanity checks for cv_wait* functions.
@@ -99,7 +111,7 @@ _cv_wait(struct cv *cvp, struct lock_object *lock)
 	WITNESS_SAVE_DECL(lock_witness);
 	struct lock_class *class;
 	struct thread *td;
-	int lock_state;
+	uintptr_t lock_state;
 
 	td = curthread;
 	lock_state = 0;
@@ -112,19 +124,12 @@ _cv_wait(struct cv *cvp, struct lock_object *lock)
 	    "Waiting on \"%s\"", cvp->cv_description);
 	class = LOCK_CLASS(lock);
 
-	if (cold || panicstr) {
-		/*
-		 * During autoconfiguration, just give interrupts
-		 * a chance, then just return.  Don't run any other
-		 * thread or panic below, in case this is the idle
-		 * process and already asleep.
-		 */
+	if (SCHEDULER_STOPPED())
 		return;
-	}
 
 	sleepq_lock(cvp);
 
-	cvp->cv_waiters++;
+	CV_WAITERS_INC(cvp);
 	if (lock == &Giant.lock_object)
 		mtx_assert(&Giant, MA_OWNED);
 	DROP_GIANT();
@@ -153,7 +158,7 @@ _cv_wait(struct cv *cvp, struct lock_object *lock)
 
 /*
  * Wait on a condition variable.  This function differs from cv_wait by
- * not aquiring the mutex after condition variable was signaled.
+ * not acquiring the mutex after condition variable was signaled.
  */
 void
 _cv_wait_unlock(struct cv *cvp, struct lock_object *lock)
@@ -173,20 +178,14 @@ _cv_wait_unlock(struct cv *cvp, struct lock_object *lock)
 	    ("cv_wait_unlock cannot be used with Giant"));
 	class = LOCK_CLASS(lock);
 
-	if (cold || panicstr) {
-		/*
-		 * During autoconfiguration, just give interrupts
-		 * a chance, then just return.  Don't run any other
-		 * thread or panic below, in case this is the idle
-		 * process and already asleep.
-		 */
+	if (SCHEDULER_STOPPED()) {
 		class->lc_unlock(lock);
 		return;
 	}
 
 	sleepq_lock(cvp);
 
-	cvp->cv_waiters++;
+	CV_WAITERS_INC(cvp);
 	DROP_GIANT();
 
 	sleepq_add(cvp, lock, cvp->cv_description, SLEEPQ_CONDVAR, 0);
@@ -217,7 +216,8 @@ _cv_wait_sig(struct cv *cvp, struct lock_object *lock)
 	WITNESS_SAVE_DECL(lock_witness);
 	struct lock_class *class;
 	struct thread *td;
-	int lock_state, rval;
+	uintptr_t lock_state;
+	int rval;
 
 	td = curthread;
 	lock_state = 0;
@@ -230,19 +230,12 @@ _cv_wait_sig(struct cv *cvp, struct lock_object *lock)
 	    "Waiting on \"%s\"", cvp->cv_description);
 	class = LOCK_CLASS(lock);
 
-	if (cold || panicstr) {
-		/*
-		 * After a panic, or during autoconfiguration, just give
-		 * interrupts a chance, then just return; don't run any other
-		 * procs or panic below, in case this is the idle process and
-		 * already asleep.
-		 */
+	if (SCHEDULER_STOPPED())
 		return (0);
-	}
 
 	sleepq_lock(cvp);
 
-	cvp->cv_waiters++;
+	CV_WAITERS_INC(cvp);
 	if (lock == &Giant.lock_object)
 		mtx_assert(&Giant, MA_OWNED);
 	DROP_GIANT();
@@ -278,12 +271,13 @@ _cv_wait_sig(struct cv *cvp, struct lock_object *lock)
 }
 
 /*
- * Wait on a condition variable for at most timo/hz seconds.  Returns 0 if the
- * process was resumed by cv_signal or cv_broadcast, EWOULDBLOCK if the timeout
- * expires.
+ * Wait on a condition variable for (at most) the value specified in sbt
+ * argument. Returns 0 if the process was resumed by cv_signal or cv_broadcast,
+ * EWOULDBLOCK if the timeout expires.
  */
 int
-_cv_timedwait(struct cv *cvp, struct lock_object *lock, int timo)
+_cv_timedwait_sbt(struct cv *cvp, struct lock_object *lock, sbintime_t sbt,
+    sbintime_t pr, int flags)
 {
 	WITNESS_SAVE_DECL(lock_witness);
 	struct lock_class *class;
@@ -301,25 +295,18 @@ _cv_timedwait(struct cv *cvp, struct lock_object *lock, int timo)
 	    "Waiting on \"%s\"", cvp->cv_description);
 	class = LOCK_CLASS(lock);
 
-	if (cold || panicstr) {
-		/*
-		 * After a panic, or during autoconfiguration, just give
-		 * interrupts a chance, then just return; don't run any other
-		 * thread or panic below, in case this is the idle process and
-		 * already asleep.
-		 */
-		return 0;
-	}
+	if (SCHEDULER_STOPPED())
+		return (0);
 
 	sleepq_lock(cvp);
 
-	cvp->cv_waiters++;
+	CV_WAITERS_INC(cvp);
 	if (lock == &Giant.lock_object)
 		mtx_assert(&Giant, MA_OWNED);
 	DROP_GIANT();
 
 	sleepq_add(cvp, lock, cvp->cv_description, SLEEPQ_CONDVAR, 0);
-	sleepq_set_timeout(cvp, timo);
+	sleepq_set_timeout_sbt(cvp, sbt, pr, flags);
 	if (lock != &Giant.lock_object) {
 		if (class->lc_flags & LC_SLEEPABLE)
 			sleepq_release(cvp);
@@ -345,13 +332,15 @@ _cv_timedwait(struct cv *cvp, struct lock_object *lock, int timo)
 
 #ifndef __rtems__
 /*
- * Wait on a condition variable for at most timo/hz seconds, allowing
- * interruption by signals.  Returns 0 if the thread was resumed by cv_signal
- * or cv_broadcast, EWOULDBLOCK if the timeout expires, and EINTR or ERESTART if
- * a signal was caught.
+ * Wait on a condition variable for (at most) the value specified in sbt 
+ * argument, allowing interruption by signals.
+ * Returns 0 if the thread was resumed by cv_signal or cv_broadcast,
+ * EWOULDBLOCK if the timeout expires, and EINTR or ERESTART if a signal
+ * was caught.
  */
 int
-_cv_timedwait_sig(struct cv *cvp, struct lock_object *lock, int timo)
+_cv_timedwait_sig_sbt(struct cv *cvp, struct lock_object *lock,
+    sbintime_t sbt, sbintime_t pr, int flags)
 {
 	WITNESS_SAVE_DECL(lock_witness);
 	struct lock_class *class;
@@ -369,26 +358,19 @@ _cv_timedwait_sig(struct cv *cvp, struct lock_object *lock, int timo)
 	    "Waiting on \"%s\"", cvp->cv_description);
 	class = LOCK_CLASS(lock);
 
-	if (cold || panicstr) {
-		/*
-		 * After a panic, or during autoconfiguration, just give
-		 * interrupts a chance, then just return; don't run any other
-		 * thread or panic below, in case this is the idle process and
-		 * already asleep.
-		 */
-		return 0;
-	}
+	if (SCHEDULER_STOPPED())
+		return (0);
 
 	sleepq_lock(cvp);
 
-	cvp->cv_waiters++;
+	CV_WAITERS_INC(cvp);
 	if (lock == &Giant.lock_object)
 		mtx_assert(&Giant, MA_OWNED);
 	DROP_GIANT();
 
 	sleepq_add(cvp, lock, cvp->cv_description, SLEEPQ_CONDVAR |
 	    SLEEPQ_INTERRUPTIBLE, 0);
-	sleepq_set_timeout(cvp, timo);
+	sleepq_set_timeout_sbt(cvp, sbt, pr, flags);
 	if (lock != &Giant.lock_object) {
 		if (class->lc_flags & LC_SLEEPABLE)
 			sleepq_release(cvp);
@@ -428,8 +410,15 @@ cv_signal(struct cv *cvp)
 	wakeup_swapper = 0;
 	sleepq_lock(cvp);
 	if (cvp->cv_waiters > 0) {
-		cvp->cv_waiters--;
-		wakeup_swapper = sleepq_signal(cvp, SLEEPQ_CONDVAR, 0, 0);
+		if (cvp->cv_waiters == CV_WAITERS_BOUND &&
+		    sleepq_lookup(cvp) == NULL) {
+			cvp->cv_waiters = 0;
+		} else {
+			if (cvp->cv_waiters < CV_WAITERS_BOUND)
+				cvp->cv_waiters--;
+			wakeup_swapper = sleepq_signal(cvp, SLEEPQ_CONDVAR, 0,
+			    0);
+		}
 	}
 	sleepq_release(cvp);
 	if (wakeup_swapper)

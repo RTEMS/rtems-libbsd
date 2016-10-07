@@ -64,8 +64,8 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_sleepqueue_profiling.h>
 #include <rtems/bsd/local/opt_ddb.h>
-#include <rtems/bsd/local/opt_kdtrace.h>
 #include <rtems/bsd/local/opt_sched.h>
+#include <rtems/bsd/local/opt_stack.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
@@ -79,6 +79,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sdt.h>
 #include <sys/signalvar.h>
 #include <sys/sleepqueue.h>
+#include <sys/stack.h>
 #include <sys/sysctl.h>
 
 #include <vm/uma.h>
@@ -93,17 +94,16 @@ __FBSDID("$FreeBSD$");
 #include <rtems/score/watchdogimpl.h>
 #endif /* __rtems__ */
 
+
 /*
- * Constants for the hash table of sleep queue chains.  These constants are
- * the same ones that 4BSD (and possibly earlier versions of BSD) used.
- * Basically, we ignore the lower 8 bits of the address since most wait
- * channel pointers are aligned and only look at the next 7 bits for the
- * hash.  SC_TABLESIZE must be a power of two for SC_MASK to work properly.
+ * Constants for the hash table of sleep queue chains.
+ * SC_TABLESIZE must be a power of two for SC_MASK to work properly.
  */
-#define	SC_TABLESIZE	128			/* Must be power of 2. */
+#define	SC_TABLESIZE	256			/* Must be power of 2. */
 #define	SC_MASK		(SC_TABLESIZE - 1)
 #define	SC_SHIFT	8
-#define	SC_HASH(wc)	(((uintptr_t)(wc) >> SC_SHIFT) & SC_MASK)
+#define	SC_HASH(wc)	((((uintptr_t)(wc) >> SC_SHIFT) ^ (uintptr_t)(wc)) & \
+			    SC_MASK)
 #define	SC_LOOKUP(wc)	&sleepq_chains[SC_HASH(wc)]
 #define NR_SLEEPQS      2
 /*
@@ -184,24 +184,20 @@ SDT_PROBE_DECLARE(sched, , , sleep);
 SDT_PROBE_DECLARE(sched, , , wakeup);
 
 /*
- * Early initialization of sleep queues that is called from the sleepinit()
- * SYSINIT.
+ * Initialize SLEEPQUEUE_PROFILING specific sysctl nodes.
+ * Note that it must happen after sleepinit() has been fully executed, so
+ * it must happen after SI_SUB_KMEM SYSINIT() subsystem setup.
  */
-void
-init_sleepqueues(void)
-{
 #ifdef SLEEPQUEUE_PROFILING
-	struct sysctl_oid *chain_oid;
+static void
+init_sleepqueue_profiling(void)
+{
 	char chain_name[10];
-#endif
-	int i;
+	struct sysctl_oid *chain_oid;
+	u_int i;
 
 	for (i = 0; i < SC_TABLESIZE; i++) {
-		LIST_INIT(&sleepq_chains[i].sc_queues);
-		mtx_init(&sleepq_chains[i].sc_lock, "sleepq chain", NULL,
-		    MTX_SPIN | MTX_RECURSE);
-#ifdef SLEEPQUEUE_PROFILING
-		snprintf(chain_name, sizeof(chain_name), "%d", i);
+		snprintf(chain_name, sizeof(chain_name), "%u", i);
 		chain_oid = SYSCTL_ADD_NODE(NULL, 
 		    SYSCTL_STATIC_CHILDREN(_debug_sleepq_chains), OID_AUTO,
 		    chain_name, CTLFLAG_RD, NULL, "sleepq chain stats");
@@ -210,7 +206,26 @@ init_sleepqueues(void)
 		SYSCTL_ADD_UINT(NULL, SYSCTL_CHILDREN(chain_oid), OID_AUTO,
 		    "max_depth", CTLFLAG_RD, &sleepq_chains[i].sc_max_depth, 0,
 		    NULL);
+	}
+}
+
+SYSINIT(sleepqueue_profiling, SI_SUB_LOCK, SI_ORDER_ANY,
+    init_sleepqueue_profiling, NULL);
 #endif
+
+/*
+ * Early initialization of sleep queues that is called from the sleepinit()
+ * SYSINIT.
+ */
+void
+init_sleepqueues(void)
+{
+	int i;
+
+	for (i = 0; i < SC_TABLESIZE; i++) {
+		LIST_INIT(&sleepq_chains[i].sc_queues);
+		mtx_init(&sleepq_chains[i].sc_lock, "sleepq chain", NULL,
+		    MTX_SPIN | MTX_RECURSE);
 	}
 	sleepq_zone = uma_zcreate("SLEEPQUEUE", sizeof(struct sleepqueue),
 #ifdef INVARIANTS
@@ -316,8 +331,9 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 
 	/* If this thread is not allowed to sleep, die a horrible death. */
 #ifndef __rtems__
-	KASSERT(!(td->td_pflags & TDP_NOSLEEPING),
-	    ("Trying sleep, but thread marked as sleeping prohibited"));
+	KASSERT(td->td_no_sleeping == 0,
+	    ("%s: td %p to sleep on wchan %p with sleeping prohibited",
+	    __func__, td, wchan));
 #endif /* __rtems__ */
 
 	/* Look up the sleep queue associated with the wait channel 'wchan'. */
@@ -404,11 +420,13 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
  * sleep queue after timo ticks if the thread has not already been awakened.
  */
 void
-sleepq_set_timeout(void *wchan, int timo)
+sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
+    int flags)
 {
 #ifndef __rtems__
 	struct sleepqueue_chain *sc;
 	struct thread *td;
+	sbintime_t pr1;
 
 	td = curthread;
 	sc = SC_LOOKUP(wchan);
@@ -416,7 +434,16 @@ sleepq_set_timeout(void *wchan, int timo)
 	MPASS(TD_ON_SLEEPQ(td));
 	MPASS(td->td_sleepqueue == NULL);
 	MPASS(wchan != NULL);
-	callout_reset_curcpu(&td->td_slpcallout, timo, sleepq_timeout, td);
+	if (cold)
+		panic("timed sleep before timers are working");
+	KASSERT(td->td_sleeptimo == 0, ("td %d %p td_sleeptimo %jx",
+	    td->td_tid, td, (uintmax_t)td->td_sleeptimo));
+	thread_lock(td);
+	callout_when(sbt, pr, flags, &td->td_sleeptimo, &pr1);
+	thread_unlock(td);
+	callout_reset_sbt_on(&td->td_slpcallout, td->td_sleeptimo, pr1,
+	    sleepq_timeout, td, PCPU_GET(cpuid), flags | C_PRECALC |
+	    C_DIRECT_EXEC);
 #else /* __rtems__ */
 	Per_CPU_Control *cpu_self;
 	Thread_Control *executing;
@@ -425,8 +452,15 @@ sleepq_set_timeout(void *wchan, int timo)
 	executing = _Per_CPU_Get_executing(cpu_self);
 	BSD_ASSERT(_Watchdog_Get_state(&executing->Timer.Watchdog) ==
 	    WATCHDOG_INACTIVE);
-	_Thread_Timer_insert_relative(executing, cpu_self, sleepq_timeout,
-	    (Watchdog_Interval)timo);
+
+	if ((flags & C_ABSOLUTE) == 0) {
+		_Thread_Timer_insert_relative(executing, cpu_self, sleepq_timeout,
+		    (Watchdog_Interval)((sbt + tick_sbt - 1) / tick_sbt));
+	} else {
+		_Thread_Timer_insert_absolute(executing, cpu_self, sleepq_timeout,
+		    _Watchdog_Ticks_from_sbintime(sbt));
+	}
+
 	_Thread_Dispatch_direct(cpu_self);
 #endif /* __rtems__ */
 }
@@ -462,7 +496,7 @@ sleepq_catch_signals(void *wchan, int pri)
 	struct thread *td;
 	struct proc *p;
 	struct sigacts *ps;
-	int sig, ret, stop_allowed;
+	int sig, ret;
 
 	td = curthread;
 	p = curproc;
@@ -486,8 +520,6 @@ sleepq_catch_signals(void *wchan, int pri)
 		sleepq_switch(wchan, pri);
 		return (0);
 	}
-	stop_allowed = (td->td_flags & TDF_SBDRY) ? SIG_STOP_NOT_ALLOWED :
-	    SIG_STOP_ALLOWED;
 	thread_unlock(td);
 	mtx_unlock_spin(&sc->sc_lock);
 	CTR3(KTR_PROC, "sleepq catching signals: thread %p (pid %ld, %s)",
@@ -495,8 +527,17 @@ sleepq_catch_signals(void *wchan, int pri)
 	PROC_LOCK(p);
 	ps = p->p_sigacts;
 	mtx_lock(&ps->ps_mtx);
-	sig = cursig(td, stop_allowed);
-	if (sig == 0) {
+	sig = cursig(td);
+	if (sig == -1) {
+		mtx_unlock(&ps->ps_mtx);
+		KASSERT((td->td_flags & TDF_SBDRY) != 0, ("lost TDF_SBDRY"));
+		KASSERT(TD_SBDRY_INTR(td),
+		    ("lost TDF_SERESTART of TDF_SEINTR"));
+		KASSERT((td->td_flags & (TDF_SEINTR | TDF_SERESTART)) !=
+		    (TDF_SEINTR | TDF_SERESTART),
+		    ("both TDF_SEINTR and TDF_SERESTART"));
+		ret = TD_SBDRY_ERRNO(td);
+	} else if (sig == 0) {
 		mtx_unlock(&ps->ps_mtx);
 		ret = thread_suspend_check(1);
 		MPASS(ret == 0 || ret == EINTR || ret == ERESTART);
@@ -703,38 +744,39 @@ static int
 sleepq_check_timeout(void)
 {
 	struct thread *td;
+	int res;
 
 	td = curthread;
 #ifndef __rtems__
 	THREAD_LOCK_ASSERT(td, MA_OWNED);
 
 	/*
-	 * If TDF_TIMEOUT is set, we timed out.
+	 * If TDF_TIMEOUT is set, we timed out.  But recheck
+	 * td_sleeptimo anyway.
 	 */
-	if (td->td_flags & TDF_TIMEOUT) {
+	res = 0;
+	if (td->td_sleeptimo != 0) {
+		if (td->td_sleeptimo <= sbinuptime())
+			res = EWOULDBLOCK;
+		td->td_sleeptimo = 0;
+	}
+	if (td->td_flags & TDF_TIMEOUT)
 		td->td_flags &= ~TDF_TIMEOUT;
-		return (EWOULDBLOCK);
-	}
-
-	/*
-	 * If TDF_TIMOFAIL is set, the timeout ran after we had
-	 * already been woken up.
-	 */
-	if (td->td_flags & TDF_TIMOFAIL)
-		td->td_flags &= ~TDF_TIMOFAIL;
-
-	/*
-	 * If callout_stop() fails, then the timeout is running on
-	 * another CPU, so synchronize with it to avoid having it
-	 * accidentally wake up a subsequent sleep.
-	 */
-	else if (callout_stop(&td->td_slpcallout) == 0) {
-		td->td_flags |= TDF_TIMEOUT;
-		TD_SET_SLEEPING(td);
-		mi_switch(SW_INVOL | SWT_SLEEPQTIMO, NULL);
-	}
-	return (0);
+	else
+		/*
+		 * We ignore the situation where timeout subsystem was
+		 * unable to stop our callout.  The struct thread is
+		 * type-stable, the callout will use the correct
+		 * memory when running.  The checks of the
+		 * td_sleeptimo value in this function and in
+		 * sleepq_timeout() ensure that the thread does not
+		 * get spurious wakeups, even if the callout was reset
+		 * or thread reused.
+		 */
+		callout_stop(&td->td_slpcallout);
+	return (res);
 #else /* __rtems__ */
+	(void)res;
 	return (td->td_sq_state);
 #endif /* __rtems__ */
 }
@@ -1069,7 +1111,7 @@ int
 sleepq_broadcast(void *wchan, int flags, int pri, int queue)
 {
 	struct sleepqueue *sq;
-	struct thread *td, *tdn;
+	struct thread *td;
 	int wakeup_swapper;
 
 	CTR2(KTR_PROC, "sleepq_broadcast(%p, %d)", wchan, flags);
@@ -1083,10 +1125,9 @@ sleepq_broadcast(void *wchan, int flags, int pri, int queue)
 
 	/* Resume all blocked threads on the sleep queue. */
 	wakeup_swapper = 0;
-	TAILQ_FOREACH_SAFE(td, &sq->sq_blocked[queue], td_slpq, tdn) {
+	while ((td = TAILQ_FIRST(&sq->sq_blocked[queue])) != NULL) {
 		thread_lock(td);
-		if (sleepq_resume_thread(sq, td, pri))
-			wakeup_swapper = 1;
+		wakeup_swapper |= sleepq_resume_thread(sq, td, pri);
 		thread_unlock(td);
 	}
 	return (wakeup_swapper);
@@ -1111,12 +1152,17 @@ sleepq_timeout(void *arg)
 	CTR3(KTR_PROC, "sleepq_timeout: thread %p (pid %ld, %s)",
 	    (void *)td, (long)td->td_proc->p_pid, (void *)td->td_name);
 
-	/*
-	 * First, see if the thread is asleep and get the wait channel if
-	 * it is.
-	 */
 	thread_lock(td);
-	if (TD_IS_SLEEPING(td) && TD_ON_SLEEPQ(td)) {
+
+	if (td->td_sleeptimo > sbinuptime() || td->td_sleeptimo == 0) {
+		/*
+		 * The thread does not want a timeout (yet).
+		 */
+	} else if (TD_IS_SLEEPING(td) && TD_ON_SLEEPQ(td)) {
+		/*
+		 * See if the thread is asleep and get the wait
+		 * channel if it is.
+		 */
 		wchan = td->td_wchan;
 		sc = SC_LOOKUP(wchan);
 		THREAD_LOCKPTR_ASSERT(td, &sc->sc_lock);
@@ -1124,40 +1170,16 @@ sleepq_timeout(void *arg)
 		MPASS(sq != NULL);
 		td->td_flags |= TDF_TIMEOUT;
 		wakeup_swapper = sleepq_resume_thread(sq, td, 0);
-		thread_unlock(td);
-		if (wakeup_swapper)
-			kick_proc0();
-		return;
-	}
-
-	/*
-	 * If the thread is on the SLEEPQ but isn't sleeping yet, it
-	 * can either be on another CPU in between sleepq_add() and
-	 * one of the sleepq_*wait*() routines or it can be in
-	 * sleepq_catch_signals().
-	 */
-	if (TD_ON_SLEEPQ(td)) {
+	} else if (TD_ON_SLEEPQ(td)) {
+		/*
+		 * If the thread is on the SLEEPQ but isn't sleeping
+		 * yet, it can either be on another CPU in between
+		 * sleepq_add() and one of the sleepq_*wait*()
+		 * routines or it can be in sleepq_catch_signals().
+		 */
 		td->td_flags |= TDF_TIMEOUT;
-		thread_unlock(td);
-		return;
 	}
 
-	/*
-	 * Now check for the edge cases.  First, if TDF_TIMEOUT is set,
-	 * then the other thread has already yielded to us, so clear
-	 * the flag and resume it.  If TDF_TIMEOUT is not set, then the
-	 * we know that the other thread is not on a sleep queue, but it
-	 * hasn't resumed execution yet.  In that case, set TDF_TIMOFAIL
-	 * to let it know that the timeout has already run and doesn't
-	 * need to be canceled.
-	 */
-	if (td->td_flags & TDF_TIMEOUT) {
-		MPASS(TD_IS_SLEEPING(td));
-		td->td_flags &= ~TDF_TIMEOUT;
-		TD_CLR_SLEEPING(td);
-		wakeup_swapper = setrunnable(td);
-	} else
-		td->td_flags |= TDF_TIMOFAIL;
 	thread_unlock(td);
 	if (wakeup_swapper)
 		kick_proc0();
@@ -1289,6 +1311,122 @@ sleepq_abort(struct thread *td, int intrval)
 	return (sleepq_resume_thread(sq, td, 0));
 }
 #endif /* __rtems__ */
+
+/*
+ * Prints the stacks of all threads presently sleeping on wchan/queue to
+ * the sbuf sb.  Sets count_stacks_printed to the number of stacks actually
+ * printed.  Typically, this will equal the number of threads sleeping on the
+ * queue, but may be less if sb overflowed before all stacks were printed.
+ */
+#ifdef STACK
+int
+sleepq_sbuf_print_stacks(struct sbuf *sb, void *wchan, int queue,
+    int *count_stacks_printed)
+{
+	struct thread *td, *td_next;
+	struct sleepqueue *sq;
+	struct stack **st;
+	struct sbuf **td_infos;
+	int i, stack_idx, error, stacks_to_allocate;
+	bool finished, partial_print;
+
+	error = 0;
+	finished = false;
+	partial_print = false;
+
+	KASSERT(wchan != NULL, ("%s: invalid NULL wait channel", __func__));
+	MPASS((queue >= 0) && (queue < NR_SLEEPQS));
+
+	stacks_to_allocate = 10;
+	for (i = 0; i < 3 && !finished ; i++) {
+		/* We cannot malloc while holding the queue's spinlock, so
+		 * we do our mallocs now, and hope it is enough.  If it
+		 * isn't, we will free these, drop the lock, malloc more,
+		 * and try again, up to a point.  After that point we will
+		 * give up and report ENOMEM. We also cannot write to sb
+		 * during this time since the client may have set the
+		 * SBUF_AUTOEXTEND flag on their sbuf, which could cause a
+		 * malloc as we print to it.  So we defer actually printing
+		 * to sb until after we drop the spinlock.
+		 */
+
+		/* Where we will store the stacks. */
+		st = malloc(sizeof(struct stack *) * stacks_to_allocate,
+		    M_TEMP, M_WAITOK);
+		for (stack_idx = 0; stack_idx < stacks_to_allocate;
+		    stack_idx++)
+			st[stack_idx] = stack_create();
+
+		/* Where we will store the td name, tid, etc. */
+		td_infos = malloc(sizeof(struct sbuf *) * stacks_to_allocate,
+		    M_TEMP, M_WAITOK);
+		for (stack_idx = 0; stack_idx < stacks_to_allocate;
+		    stack_idx++)
+			td_infos[stack_idx] = sbuf_new(NULL, NULL,
+			    MAXCOMLEN + sizeof(struct thread *) * 2 + 40,
+			    SBUF_FIXEDLEN);
+
+		sleepq_lock(wchan);
+		sq = sleepq_lookup(wchan);
+		if (sq == NULL) {
+			/* This sleepq does not exist; exit and return ENOENT. */
+			error = ENOENT;
+			finished = true;
+			sleepq_release(wchan);
+			goto loop_end;
+		}
+
+		stack_idx = 0;
+		/* Save thread info */
+		TAILQ_FOREACH_SAFE(td, &sq->sq_blocked[queue], td_slpq,
+		    td_next) {
+			if (stack_idx >= stacks_to_allocate)
+				goto loop_end;
+
+			/* Note the td_lock is equal to the sleepq_lock here. */
+			stack_save_td(st[stack_idx], td);
+
+			sbuf_printf(td_infos[stack_idx], "%d: %s %p",
+			    td->td_tid, td->td_name, td);
+
+			++stack_idx;
+		}
+
+		finished = true;
+		sleepq_release(wchan);
+
+		/* Print the stacks */
+		for (i = 0; i < stack_idx; i++) {
+			sbuf_finish(td_infos[i]);
+			sbuf_printf(sb, "--- thread %s: ---\n", sbuf_data(td_infos[i]));
+			stack_sbuf_print(sb, st[i]);
+			sbuf_printf(sb, "\n");
+
+			error = sbuf_error(sb);
+			if (error == 0)
+				*count_stacks_printed = stack_idx;
+		}
+
+loop_end:
+		if (!finished)
+			sleepq_release(wchan);
+		for (stack_idx = 0; stack_idx < stacks_to_allocate;
+		    stack_idx++)
+			stack_destroy(st[stack_idx]);
+		for (stack_idx = 0; stack_idx < stacks_to_allocate;
+		    stack_idx++)
+			sbuf_delete(td_infos[stack_idx]);
+		free(st, M_TEMP);
+		free(td_infos, M_TEMP);
+		stacks_to_allocate *= 10;
+	}
+
+	if (!finished && error == 0)
+		error = ENOMEM;
+
+	return (error);
+}
+#endif
 
 #ifdef SLEEPQUEUE_PROFILING
 #define	SLEEPQ_PROF_LOCATIONS	1024

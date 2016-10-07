@@ -162,7 +162,7 @@ prison_saddrsel_ip6(struct ucred *cred, struct in6_addr *ia6)
  * doesn't allow IPv4.  Address passed in in NBO.
  */
 int
-prison_check_ip4(struct ucred *cred, struct in_addr *ia)
+prison_check_ip4(const struct ucred *cred, const struct in_addr *ia)
 {
   return 0;
 }
@@ -173,7 +173,7 @@ prison_check_ip4(struct ucred *cred, struct in_addr *ia)
  * NOTE: RTEMS does not restrict via a jail so return 0.
  */
 int
-prison_check_ip6(struct ucred *cred, struct in6_addr *ia6)
+prison_check_ip6(const struct ucred *cred, const struct in6_addr *ia6)
 {
   return 0;
 }

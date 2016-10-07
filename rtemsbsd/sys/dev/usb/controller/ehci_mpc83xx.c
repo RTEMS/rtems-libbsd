@@ -254,7 +254,7 @@ ehci_mpc83xx_attach(device_t self)
 	);
 	BSD_ASSERT_SC(sc);
 
-	e->sc_flags |= EHCI_SCFLG_SETMODE | EHCI_SCFLG_NORESTERM | EHCI_SCFLG_TT;
+	e->sc_flags |= EHCI_SCFLG_NORESTERM | EHCI_SCFLG_TT;
 
 	/* EHCI intitialization */
 	ue = ehci_init(e);

@@ -146,7 +146,7 @@ _mtx_lock_flags(struct mtx *m, int opts, const char *file, int line)
 }
 
 int
-_mtx_trylock(struct mtx *m, int opts, const char *file, int line)
+mtx_trylock_flags_(struct mtx *m, int opts, const char *file, int line)
 {
 	return (rtems_bsd_mutex_trylock(&m->lock_object, &m->mutex));
 }

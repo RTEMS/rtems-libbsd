@@ -72,17 +72,17 @@ __FBSDID("$FreeBSD$");
 #define NETBIOS_DGM_PORT_NUMBER 138
 
 static int
-AliasHandleUdpNbt(struct libalias *, struct ip *, struct alias_link *, 
+AliasHandleUdpNbt(struct libalias *, struct ip *, struct alias_link *,
 		  struct in_addr *, u_short);
 
 static int
 AliasHandleUdpNbtNS(struct libalias *, struct ip *, struct alias_link *,
 		    struct in_addr *, u_short *, struct in_addr *, u_short *);
-static int 
+static int
 fingerprint1(struct libalias *la, struct alias_data *ah)
 {
 
-	if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL || 
+	if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
 	    ah->aaddr == NULL || ah->aport == NULL)
 		return (-1);
 	if (ntohs(*ah->dport) == NETBIOS_DGM_PORT_NUMBER
@@ -91,18 +91,18 @@ fingerprint1(struct libalias *la, struct alias_data *ah)
 	return (-1);
 }
 
-static int 
+static int
 protohandler1(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 	
 	return (AliasHandleUdpNbt(la, pip, ah->lnk, ah->aaddr, *ah->aport));
 }
 
-static int 
+static int
 fingerprint2(struct libalias *la, struct alias_data *ah)
 {
 
-	if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL || 
+	if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
 	    ah->aaddr == NULL || ah->aport == NULL)
 		return (-1);
 	if (ntohs(*ah->dport) == NETBIOS_NS_PORT_NUMBER
@@ -111,7 +111,7 @@ fingerprint2(struct libalias *la, struct alias_data *ah)
 	return (-1);
 }
 
-static int 
+static int
 protohandler2in(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 	
@@ -120,7 +120,7 @@ protohandler2in(struct libalias *la, struct ip *pip, struct alias_data *ah)
 	return (0);
 }
 
-static int 
+static int
 protohandler2out(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 	
@@ -130,27 +130,27 @@ protohandler2out(struct libalias *la, struct ip *pip, struct alias_data *ah)
 
 /* Kernel module definition. */
 struct proto_handler handlers[] = {
-	{ 
-	  .pri = 130, 
-	  .dir = IN|OUT, 
-	  .proto = UDP, 
-	  .fingerprint = &fingerprint1, 
+	{
+	  .pri = 130,
+	  .dir = IN|OUT,
+	  .proto = UDP,
+	  .fingerprint = &fingerprint1,
 	  .protohandler = &protohandler1
-	}, 
-	{ 
-	  .pri = 140, 
-	  .dir = IN, 
-	  .proto = UDP, 
-	  .fingerprint = &fingerprint2, 
+	},
+	{
+	  .pri = 140,
+	  .dir = IN,
+	  .proto = UDP,
+	  .fingerprint = &fingerprint2,
 	  .protohandler = &protohandler2in
-	}, 
-	{ 
-	  .pri = 140, 
-	  .dir = OUT, 
-	  .proto = UDP, 
-	  .fingerprint = &fingerprint2, 
+	},
+	{
+	  .pri = 140,
+	  .dir = OUT,
+	  .proto = UDP,
+	  .fingerprint = &fingerprint2,
 	  .protohandler = &protohandler2out
-	}, 
+	},
 	{ EOH }
 };
 
@@ -175,7 +175,7 @@ mod_handler(module_t mod, int type, void *data)
 }
 
 #ifdef	_KERNEL
-static 
+static
 #endif
 moduledata_t alias_mod = {
        "alias_nbt", mod_handler, NULL

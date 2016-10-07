@@ -104,3 +104,43 @@ $(LOCAL_INC)/mmcbr_if.h: $(FREEBSD_SRC)/sys/dev/mmc/mmcbr_if.m
 $(LOCAL_SRC)/mmcbr_if.c: $(FREEBSD_SRC)/sys/dev/mmc/mmcbr_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c
 	mv mmcbr_if.c $@
+
+$(LOCAL_INC)/if_dwc_if.h: $(FREEBSD_SRC)/sys/dev/dwc/if_dwc_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv if_dwc_if.h $@
+
+$(LOCAL_SRC)/if_dwc_if.c: $(FREEBSD_SRC)/sys/dev/dwc/if_dwc_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv if_dwc_if.c $@
+
+$(LOCAL_INC)/gpio_if.h: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv gpio_if.h $@
+
+$(LOCAL_SRC)/gpio_if.c: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv gpio_if.c $@
+
+freebsd/usr.bin/netstat/nl_symbols.c: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
+	awk '\
+	    BEGIN { \
+		print "#include <sys/param.h>"; \
+		print "#include <nlist.h>"; \
+		print "const struct nlist nl[] = {"; \
+	    } \
+	    !/^\#/ { printf("\t{ .n_name = \"%s\" },\n", $$2); } \
+	    END { print "\t{ .n_name = NULL },\n};" } \
+	    ' < $< > $@ || rm -f $@
+
+freebsd/usr.bin/netstat/nl_defs.h: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
+	awk '\
+	    BEGIN { \
+		print "#include <nlist.h>"; \
+		print "extern const struct nlist nl[];"; \
+		i = 0; \
+	    } \
+	    !/^\#/ { printf("\#define\tN%s\t%s\n", toupper($$2), i++); }' \
+	    < $< > $@ || rm -f $@
+
+clean:
+	rm $(GENERATED)

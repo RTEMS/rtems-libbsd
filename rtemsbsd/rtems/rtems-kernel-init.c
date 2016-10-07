@@ -69,6 +69,14 @@ void mi_startup(void);
 
 int hz;
 int tick;
+sbintime_t tick_sbt;
+struct bintime bt_timethreshold;
+struct bintime bt_tickthreshold;
+sbintime_t sbt_timethreshold;
+sbintime_t sbt_tickthreshold;
+struct bintime tc_tick_bt;
+sbintime_t tc_tick_sbt;
+int tc_precexp;
 int maxusers;     /* base tunable */
 
 static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
@@ -91,6 +99,18 @@ volatile uint32_t _Watchdog_Ticks_since_boot;
 extern volatile int32_t _bsd_ticks
     __attribute__ ((__alias__("_Watchdog_Ticks_since_boot")));
 
+__attribute__((__weak__)) void _arc4random_getentropy_fail(void)
+{
+
+}
+
+__attribute__((__weak__)) int getentropy(void *buf, size_t n)
+{
+
+	memset(buf, 0, n);
+	return (0);
+}
+
 rtems_status_code
 rtems_bsd_initialize(void)
 {
@@ -99,6 +119,15 @@ rtems_bsd_initialize(void)
 
 	hz = (int) rtems_clock_get_ticks_per_second();
 	tick = 1000000 / hz;
+	tick_sbt = SBT_1S / hz;
+	FREQ2BT(hz, &tc_tick_bt);
+	tc_tick_sbt = bttosbt(tc_tick_bt);
+	tc_precexp = 31;
+	bt_timethreshold.sec = INT_MAX;
+	bt_timethreshold.frac = ~(uint64_t)0;
+	bt_tickthreshold = bt_timethreshold;
+	sbt_timethreshold = bttosbt(bt_timethreshold);
+	sbt_tickthreshold = bttosbt(bt_tickthreshold);
 	maxusers = 1;
 	maxid_maxcpus = (int) rtems_get_processor_count();
 

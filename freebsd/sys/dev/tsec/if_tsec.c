@@ -50,6 +50,7 @@ __FBSDID("$FreeBSD$");
 #include <net/bpf.h>
 #include <net/ethernet.h>
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_arp.h>
 #include <net/if_dl.h>
 #include <net/if_media.h>
@@ -115,6 +116,8 @@ DRIVER_MODULE(miibus, tsec, miibus_driver, miibus_devclass, 0, 0);
 MODULE_DEPEND(tsec, ether, 1, 1, 1);
 MODULE_DEPEND(tsec, miibus, 1, 1, 1);
 
+struct mtx tsec_phy_mtx;
+
 int
 tsec_attach(struct tsec_softc *sc)
 {
@@ -124,6 +127,10 @@ tsec_attach(struct tsec_softc *sc)
 	bus_dmamap_t **map_pptr;
 	int error = 0;
 	int i;
+
+	/* Initialize global (because potentially shared) MII lock */
+	if (!mtx_initialized(&tsec_phy_mtx))
+		mtx_init(&tsec_phy_mtx, "tsec mii", NULL, MTX_DEF);
 
 	/* Reset all TSEC counters */
 	TSEC_TX_RX_COUNTERS_INIT(sc);
@@ -251,7 +258,6 @@ tsec_attach(struct tsec_softc *sc)
 
 	ifp->if_softc = sc;
 	if_initname(ifp, device_get_name(sc->dev), device_get_unit(sc->dev));
-	ifp->if_mtu = ETHERMTU;
 	ifp->if_flags = IFF_SIMPLEX | IFF_MULTICAST | IFF_BROADCAST;
 	ifp->if_init = tsec_init;
 	ifp->if_start = tsec_start;
@@ -420,21 +426,24 @@ tsec_init_locked(struct tsec_softc *sc)
 	 */
 	TSEC_WRITE(sc, TSEC_REG_TBIPA, 5);
 
+	TSEC_PHY_LOCK(sc);
+
 	/* Step 6: Reset the management interface */
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMCFG, TSEC_MIIMCFG_RESETMGMT);
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMCFG, TSEC_MIIMCFG_RESETMGMT);
 
 	/* Step 7: Setup the MII Mgmt clock speed */
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMCFG, TSEC_MIIMCFG_CLKDIV28);
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMCFG, TSEC_MIIMCFG_CLKDIV28);
 
 	/* Step 8: Read MII Mgmt indicator register and check for Busy = 0 */
 	timeout = TSEC_READ_RETRY;
-	while (--timeout && (TSEC_READ(sc->phy_sc, TSEC_REG_MIIMIND) &
+	while (--timeout && (TSEC_PHY_READ(sc, TSEC_REG_MIIMIND) &
 	    TSEC_MIIMIND_BUSY))
 		DELAY(TSEC_READ_DELAY);
 	if (timeout == 0) {
 		if_printf(ifp, "tsec_init_locked(): Mgmt busy timeout\n");
 		return;
 	}
+	TSEC_PHY_UNLOCK(sc);
 
 	/* Step 9: Setup the MII Mgmt */
 #ifdef __rtems__
@@ -568,7 +577,7 @@ tsec_set_mac_address(struct tsec_softc *sc)
 	TSEC_GLOBAL_LOCK_ASSERT(sc);
 
 	KASSERT((ETHER_ADDR_LEN <= sizeof(macbuf)),
-	    ("tsec_set_mac_address: (%d <= %d", ETHER_ADDR_LEN,
+	    ("tsec_set_mac_address: (%d <= %zd", ETHER_ADDR_LEN,
 	    sizeof(macbuf)));
 
 	macbufp = (char *)macbuf;
@@ -694,7 +703,7 @@ tsec_watchdog(struct tsec_softc *sc)
 		return;
 
 	ifp = sc->tsec_ifp;
-	ifp->if_oerrors++;
+	if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 	if_printf(ifp, "watchdog timeout\n");
 
 	tsec_stop(sc);
@@ -1372,7 +1381,7 @@ tsec_receive_intr_locked(struct tsec_softc *sc, int count)
 
 		if (tsec_new_rxbuf(sc->tsec_rx_mtag, rx_data[i].map,
 		    &rx_data[i].mbuf, &rx_data[i].paddr)) {
-			ifp->if_ierrors++;
+			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			/*
 			 * We ran out of mbufs; didn't consume current
 			 * descriptor and have to return it to the queue.
@@ -1453,7 +1462,7 @@ tsec_transmit_intr_locked(struct tsec_softc *sc)
 	ifp = sc->tsec_ifp;
 
 	/* Update collision statistics */
-	ifp->if_collisions += TSEC_READ(sc, TSEC_REG_MON_TNCL);
+	if_inc_counter(ifp, IFCOUNTER_COLLISIONS, TSEC_READ(sc, TSEC_REG_MON_TNCL));
 
 	/* Reset collision counters in hardware */
 	TSEC_WRITE(sc, TSEC_REG_MON_TSCL, 0);
@@ -1488,7 +1497,7 @@ tsec_transmit_intr_locked(struct tsec_softc *sc)
 		TSEC_FREE_TX_MAP(sc, mapp);
 		m_freem(m0);
 
-		ifp->if_opackets++;
+		if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1);
 		send = 1;
 	}
 	bus_dmamap_sync(sc->tsec_tx_dtag, sc->tsec_tx_dmap,
@@ -1545,18 +1554,18 @@ tsec_error_intr_locked(struct tsec_softc *sc, int count)
 
 	/* Check transmitter errors */
 	if (eflags & TSEC_IEVENT_TXE) {
-		ifp->if_oerrors++;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 
 		if (eflags & TSEC_IEVENT_LC)
-			ifp->if_collisions++;
+			if_inc_counter(ifp, IFCOUNTER_COLLISIONS, 1);
 
 		TSEC_WRITE(sc, TSEC_REG_TSTAT, TSEC_TSTAT_THLT);
 	}
 
 	/* Check receiver errors */
 	if (eflags & TSEC_IEVENT_BSY) {
-		ifp->if_ierrors++;
-		ifp->if_iqdrops++;
+		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
+		if_inc_counter(ifp, IFCOUNTER_IQDROPS, 1);
 
 		/* Get data from RX buffers */
 		tsec_receive_intr_locked(sc, count);
@@ -1573,10 +1582,10 @@ tsec_error_intr_locked(struct tsec_softc *sc, int count)
 	}
 
 	if (eflags & TSEC_IEVENT_BABT)
-		ifp->if_oerrors++;
+		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 
 	if (eflags & TSEC_IEVENT_BABR)
-		ifp->if_ierrors++;
+		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 }
 
 void
@@ -1594,22 +1603,27 @@ tsec_miibus_readreg(device_t dev, int phy, int reg)
 {
 	struct tsec_softc *sc;
 	uint32_t timeout;
+	int rv;
 
 	sc = device_get_softc(dev);
 
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMADD, (phy << 8) | reg);
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMCOM, 0);
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMCOM, TSEC_MIIMCOM_READCYCLE);
+	TSEC_PHY_LOCK();
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMADD, (phy << 8) | reg);
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMCOM, 0);
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMCOM, TSEC_MIIMCOM_READCYCLE);
 
 	timeout = TSEC_READ_RETRY;
-	while (--timeout && TSEC_READ(sc->phy_sc, TSEC_REG_MIIMIND) &
+	while (--timeout && TSEC_PHY_READ(sc, TSEC_REG_MIIMIND) &
 	    (TSEC_MIIMIND_NOTVALID | TSEC_MIIMIND_BUSY))
 		DELAY(TSEC_READ_DELAY);
 
 	if (timeout == 0)
 		device_printf(dev, "Timeout while reading from PHY!\n");
 
-	return (TSEC_READ(sc->phy_sc, TSEC_REG_MIIMSTAT));
+	rv = TSEC_PHY_READ(sc, TSEC_REG_MIIMSTAT);
+	TSEC_PHY_UNLOCK();
+
+	return (rv);
 }
 
 int
@@ -1620,13 +1634,15 @@ tsec_miibus_writereg(device_t dev, int phy, int reg, int value)
 
 	sc = device_get_softc(dev);
 
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMADD, (phy << 8) | reg);
-	TSEC_WRITE(sc->phy_sc, TSEC_REG_MIIMCON, value);
+	TSEC_PHY_LOCK();
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMADD, (phy << 8) | reg);
+	TSEC_PHY_WRITE(sc, TSEC_REG_MIIMCON, value);
 
 	timeout = TSEC_READ_RETRY;
-	while (--timeout && (TSEC_READ(sc->phy_sc, TSEC_REG_MIIMIND) &
+	while (--timeout && (TSEC_READ(sc, TSEC_REG_MIIMIND) &
 	    TSEC_MIIMIND_BUSY))
 		DELAY(TSEC_READ_DELAY);
+	TSEC_PHY_UNLOCK();
 
 	if (timeout == 0)
 		device_printf(dev, "Timeout while writing to PHY!\n");

@@ -62,12 +62,12 @@ struct tsec_softc {
 	bus_dma_tag_t	tsec_tx_dtag;	/* TX descriptors tag */
 	bus_dmamap_t	tsec_tx_dmap;	/* TX descriptors map */
 	struct tsec_desc *tsec_tx_vaddr;/* vadress of TX descriptors */
-	uint32_t	tsec_tx_raddr;	/* real adress of TX descriptors */
+	uint32_t	tsec_tx_raddr;	/* real address of TX descriptors */
 
 	bus_dma_tag_t	tsec_rx_dtag;	/* RX descriptors tag */
 	bus_dmamap_t	tsec_rx_dmap;	/* RX descriptors map */
 	struct tsec_desc *tsec_rx_vaddr; /* vadress of RX descriptors */
-	uint32_t	tsec_rx_raddr;	/* real adress of RX descriptors */
+	uint32_t	tsec_rx_raddr;	/* real address of RX descriptors */
 
 	bus_dma_tag_t	tsec_tx_mtag;	/* TX mbufs tag */
 	bus_dma_tag_t	tsec_rx_mtag;	/* TX mbufs tag */
@@ -75,7 +75,7 @@ struct tsec_softc {
 	struct rx_data_type {
 		bus_dmamap_t	map;	/* mbuf map */
 		struct mbuf	*mbuf;
-		uint32_t	paddr;	/* DMA addres of buffer */
+		uint32_t	paddr;	/* DMA address of buffer */
 	} rx_data[TSEC_RX_NUM_DESC];
 
 	uint32_t	tx_cur_desc_cnt;
@@ -135,7 +135,8 @@ struct tsec_softc {
 	struct mbuf	*frame;
 
 	int		phyaddr;
-	struct tsec_softc *phy_sc;
+	bus_space_tag_t phy_bst;
+	bus_space_handle_t phy_bsh;
 };
 
 /* interface to get/put generic objects */
@@ -254,6 +255,14 @@ struct tsec_softc {
 		bus_space_read_4((sc)->sc_bas.bst, (sc)->sc_bas.bsh, (reg))
 #define TSEC_WRITE(sc, reg, val)	\
 		bus_space_write_4((sc)->sc_bas.bst, (sc)->sc_bas.bsh, (reg), (val))
+
+extern struct mtx tsec_phy_mtx;
+#define TSEC_PHY_LOCK(sc)	mtx_lock(&tsec_phy_mtx)
+#define TSEC_PHY_UNLOCK(sc)	mtx_unlock(&tsec_phy_mtx)
+#define TSEC_PHY_READ(sc, reg)		\
+		bus_space_read_4((sc)->phy_bst, (sc)->phy_bsh, (reg))
+#define TSEC_PHY_WRITE(sc, reg, val)	\
+		bus_space_write_4((sc)->phy_bst, (sc)->phy_bsh, (reg), (val))
 
 /* Lock for transmitter */
 #define TSEC_TRANSMIT_LOCK(sc) do {					\

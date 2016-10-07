@@ -44,7 +44,8 @@ rtems_bsdnet_rtrequest(int req, struct sockaddr *dst, struct sockaddr *gateway,
 {
 	int error;
 
-	error = rtrequest(req, dst, gateway, netmask, flags, net_nrt);
+	error = rtrequest_fib(req, dst, gateway, netmask, flags, net_nrt,
+	    BSD_DEFAULT_FIB);
 	if (error != 0) {
 		errno = error;
 

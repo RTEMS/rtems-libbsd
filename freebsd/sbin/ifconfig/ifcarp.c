@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*	$FreeBSD$ */
 /*	from $OpenBSD: ifconfig.c,v 1.82 2003/10/19 05:43:35 mcbride Exp $ */
 
@@ -29,6 +33,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -51,6 +58,9 @@
 #include <errno.h>
 
 #include "ifconfig.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifcarp-data.h"
+#endif /* __rtems__ */
 
 static const char *const carp_states[] = { CARP_STATES };
 

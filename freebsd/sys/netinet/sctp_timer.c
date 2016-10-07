@@ -51,7 +51,9 @@ __FBSDID("$FreeBSD$");
 #include <netinet/sctp_input.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
+#if defined(INET) || defined(INET6)
 #include <netinet/udp.h>
+#endif
 
 
 void
@@ -85,7 +87,7 @@ sctp_audit_retranmission_queue(struct sctp_association *asoc)
 	    asoc->sent_queue_cnt);
 }
 
-int
+static int
 sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
     struct sctp_nets *net, uint16_t threshold)
 {
@@ -110,8 +112,10 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				net->dest_state |= SCTP_ADDR_PF;
 				net->last_active = sctp_get_tick_count();
 				sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
-				sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
-				sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
+				sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+				    inp, stcb, net,
+				    SCTP_FROM_SCTP_TIMER + SCTP_LOC_1);
+				sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 			}
 		}
 	}
@@ -151,9 +155,9 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		/* Abort notification sends a ULP notify */
 		struct mbuf *op_err;
 
-		op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION,
-		    "Association error couter exceeded");
-		inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_1;
+		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+		    "Association error counter exceeded");
+		inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_2;
 		sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
@@ -337,7 +341,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			return (NULL);
 		}
 	}
-	do {
+	for (;;) {
 		alt = TAILQ_NEXT(mnet, sctp_next);
 		if (alt == NULL) {
 			once++;
@@ -356,7 +360,6 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			}
 			alt->src_addr_selected = 0;
 		}
-		/* sa_ignore NO_NULL_CHK */
 		if (((alt->dest_state & SCTP_ADDR_REACHABLE) == SCTP_ADDR_REACHABLE) &&
 		    (alt->ro.ro_rt != NULL) &&
 		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED))) {
@@ -364,14 +367,14 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			break;
 		}
 		mnet = alt;
-	} while (alt != NULL);
+	}
 
 	if (alt == NULL) {
 		/* Case where NO insv network exists (dormant state) */
 		/* we rotate destinations */
 		once = 0;
 		mnet = net;
-		do {
+		for (;;) {
 			if (mnet == NULL) {
 				return (TAILQ_FIRST(&stcb->asoc.nets));
 			}
@@ -382,15 +385,17 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 					break;
 				}
 				alt = TAILQ_FIRST(&stcb->asoc.nets);
+				if (alt == NULL) {
+					break;
+				}
 			}
-			/* sa_ignore NO_NULL_CHK */
 			if ((!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
 			    (alt != net)) {
 				/* Found an alternate address */
 				break;
 			}
 			mnet = alt;
-		} while (alt != NULL);
+		}
 	}
 	if (alt == NULL) {
 		return (net);
@@ -405,7 +410,11 @@ sctp_backoff_on_timeout(struct sctp_tcb *stcb,
     int num_marked, int num_abandoned)
 {
 	if (net->RTO == 0) {
-		net->RTO = stcb->asoc.minrto;
+		if (net->RTO_measured) {
+			net->RTO = stcb->asoc.minrto;
+		} else {
+			net->RTO = stcb->asoc.initial_rto;
+		}
 	}
 	net->RTO <<= 1;
 	if (net->RTO > stcb->asoc.maxrto) {
@@ -435,6 +444,11 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 					asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
 				}
 			}
+			if ((asoc->strmout[chk->rec.data.stream_number].chunks_on_queues == 0) &&
+			    (asoc->strmout[chk->rec.data.stream_number].state == SCTP_STREAM_RESET_PENDING) &&
+			    TAILQ_EMPTY(&asoc->strmout[chk->rec.data.stream_number].outqueue)) {
+				asoc->trigger_reset = 1;
+			}
 			TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
 			if (PR_SCTP_ENABLED(chk->flags)) {
 				if (asoc->pr_sctp_cnt != 0)
@@ -445,7 +459,7 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 				sctp_free_bufspace(stcb, asoc, chk, 1);
 				sctp_m_freem(chk->data);
 				chk->data = NULL;
-				if (asoc->peer_supports_prsctp && PR_SCTP_BUF_ENABLED(chk->flags)) {
+				if (asoc->prsctp_supported && PR_SCTP_BUF_ENABLED(chk->flags)) {
 					asoc->sent_queue_cnt_removeable--;
 				}
 			}
@@ -600,7 +614,7 @@ start_again:
 					continue;
 				}
 			}
-			if (stcb->asoc.peer_supports_prsctp && PR_SCTP_TTL_ENABLED(chk->flags)) {
+			if (stcb->asoc.prsctp_supported && PR_SCTP_TTL_ENABLED(chk->flags)) {
 				/* Is it expired? */
 				if (timevalcmp(&now, &chk->rec.data.timetodrop, >)) {
 					/* Yes so drop it */
@@ -614,7 +628,7 @@ start_again:
 					continue;
 				}
 			}
-			if (stcb->asoc.peer_supports_prsctp && PR_SCTP_RTX_ENABLED(chk->flags)) {
+			if (stcb->asoc.prsctp_supported && PR_SCTP_RTX_ENABLED(chk->flags)) {
 				/* Has it been retransmitted tv_sec times? */
 				if (chk->snd_count > chk->rec.data.timetodrop.tv_sec) {
 					if (chk->data) {
@@ -650,7 +664,7 @@ start_again:
 					sctp_misc_ints(SCTP_FLIGHT_LOG_DOWN_RSND_TO,
 					    chk->whoTo->flight_size,
 					    chk->book_size,
-					    (uintptr_t) chk->whoTo,
+					    (uint32_t) (uintptr_t) chk->whoTo,
 					    chk->rec.data.TSN_seq);
 				}
 				sctp_flight_size_decrease(chk);
@@ -778,7 +792,7 @@ start_again:
 					sctp_misc_ints(SCTP_FLIGHT_LOG_UP,
 					    chk->whoTo->flight_size,
 					    chk->book_size,
-					    (uintptr_t) chk->whoTo,
+					    (uint32_t) (uintptr_t) chk->whoTo,
 					    chk->rec.data.TSN_seq);
 				}
 				sctp_flight_size_increase(chk);
@@ -957,7 +971,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 		sctp_timer_start(SCTP_TIMER_TYPE_SEND, inp, stcb, net);
 		return (0);
 	}
-	if (stcb->asoc.peer_supports_prsctp) {
+	if (stcb->asoc.prsctp_supported) {
 		struct sctp_tmit_chunk *lchk;
 
 		lchk = sctp_try_advance_peer_ack_point(stcb, &stcb->asoc);
@@ -1043,9 +1057,9 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 			/* FOOBAR! */
 			struct mbuf *op_err;
 
-			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION,
+			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			    "Cookie timer expired, but no cookie");
-			inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_4;
+			inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_3;
 			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		} else {
 #ifdef INVARIANTS
@@ -1064,8 +1078,8 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 		return (1);
 	}
 	/*
-	 * cleared theshold management now lets backoff the address & select
-	 * an alternate
+	 * Cleared threshold management, now lets backoff the address and
+	 * select an alternate
 	 */
 	stcb->asoc.dropped_special_cnt = 0;
 	sctp_backoff_on_timeout(stcb, cookie->whoTo, 1, 0, 0);
@@ -1110,8 +1124,8 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		return (1);
 	}
 	/*
-	 * cleared theshold management now lets backoff the address & select
-	 * an alternate
+	 * Cleared threshold management, now lets backoff the address and
+	 * select an alternate
 	 */
 	sctp_backoff_on_timeout(stcb, strrst->whoTo, 1, 0, 0);
 	alt = sctp_find_alternate_net(stcb, strrst->whoTo, 0);
@@ -1270,7 +1284,7 @@ sctp_shutdown_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 {
 	struct sctp_nets *alt;
 
-	/* first threshold managment */
+	/* first threshold management */
 	if (sctp_threshold_management(inp, stcb, net, stcb->asoc.max_send_times)) {
 		/* Assoc is over */
 		return (1);
@@ -1293,7 +1307,7 @@ sctp_shutdownack_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 {
 	struct sctp_nets *alt;
 
-	/* first threshold managment */
+	/* first threshold management */
 	if (sctp_threshold_management(inp, stcb, net, stcb->asoc.max_send_times)) {
 		/* Assoc is over */
 		return (1);
@@ -1482,11 +1496,15 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 		}
 		if (net->ro._s_addr) {
 			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
+#if defined(INET) || defined(INET6)
 			if (net->port) {
 				mtu -= sizeof(struct udphdr);
 			}
+#endif
 			if (mtu > next_mtu) {
 				net->mtu = next_mtu;
+			} else {
+				net->mtu = mtu;
 			}
 		}
 	}

@@ -74,7 +74,6 @@ static const char rcsid[] = "$Id: res_mkquery.c,v 1.10 2008/12/11 09:59:00 marka
 __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
-#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -85,7 +84,9 @@ __FBSDID("$FreeBSD$");
 #include "port_after.h"
 
 /* Options.  Leave them on. */
-#define DEBUG
+#ifndef	DEBUG
+#define	DEBUG
+#endif
 
 extern const char *_res_opcodes[];
 
@@ -133,7 +134,7 @@ res_nmkquery(res_state statp,
 	dpp = dnptrs;
 	*dpp++ = buf;
 	*dpp++ = NULL;
-	lastdnptr = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
+	lastdnptr = dnptrs + nitems(dnptrs);
 	/*
 	 * perform opcode specific processing
 	 */

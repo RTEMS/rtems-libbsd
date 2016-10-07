@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*
  * Copyright 2001 The Aerospace Corporation.  All rights reserved.
  *
@@ -64,6 +70,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -98,6 +107,9 @@
 
 #include "ifconfig.h"
 #include "regdomain.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifieee80211-data.h"
+#endif /* __rtems__ */
 
 #ifndef IEEE80211_FIXED_RATE_NONE
 #define	IEEE80211_FIXED_RATE_NONE	0xff
@@ -207,12 +219,22 @@ getchaninfo(int s)
 	gethtconf(s);
 }
 
+#ifdef __rtems__
+static struct regdata *getregdata_rdp = NULL;
+#endif /* __rtems__ */
 static struct regdata *
 getregdata(void)
 {
+#ifndef __rtems__
 	static struct regdata *rdp = NULL;
+#else /* __rtems__ */
+	struct regdata *rdp = getregdata_rdp;
+#endif /* __rtems__ */
 	if (rdp == NULL) {
 		rdp = lib80211_alloc_regdata();
+#ifdef __rtems__
+		getregdata_rdp = rdp;
+#endif /* __rtems__ */
 		if (rdp == NULL)
 			errx(-1, "missing or corrupted regdomain database");
 	}
@@ -5269,7 +5291,11 @@ static struct afswtch af_ieee80211 = {
 	.af_other_status = ieee80211_status,
 };
 
+#ifndef __rtems__
 static __constructor void
+#else /* __rtems__ */
+void
+#endif /* __rtems__ */
 ieee80211_ctor(void)
 {
 #define	N(a)	(sizeof(a) / sizeof(a[0]))

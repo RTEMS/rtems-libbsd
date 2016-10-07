@@ -107,6 +107,7 @@
 #include <machine/bus.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_types.h>
 #include <net/netisr.h>
 #include <net/route.h>
@@ -918,7 +919,7 @@ pppsioctl(struct ifnet *ifp, ioctl_command_t cmd, caddr_t data)
  * Packet is placed in Information field of PPP frame.
  */
 int
-pppoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
+pppoutput(struct ifnet *ifp, struct mbuf *m0, const struct sockaddr *dst,
     struct route *rtp)
 {
     register struct ppp_softc *sc = ifp->if_softc;
@@ -987,7 +988,7 @@ pppoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
      * (This assumes M_LEADINGSPACE is always 0 for a cluster mbuf.)
      */
     if (M_LEADINGSPACE(m0) < PPP_HDRLEN) {
-	m0 = m_prepend(m0, PPP_HDRLEN, M_DONTWAIT);
+	m0 = m_prepend(m0, PPP_HDRLEN, M_NOWAIT);
 	if (m0 == 0) {
 	    error = ENOBUFS;
 	    goto bad;
@@ -1063,9 +1064,9 @@ pppoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
     } else {
 	ifq = (m0->m_flags & M_HIGHPRI)? &sc->sc_fastq: &ifp->if_snd;
 	if (_IF_QFULL(ifq) && dst->sa_family != AF_UNSPEC) {
-	    IFQ_INC_DROPS(ifq);
+	    if_inc_counter(ifp, IFCOUNTER_IQDROPS, 1);
 	    splx(s);
-	    sc->sc_ifp->if_oerrors++;
+	    if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 	    sc->sc_stats.ppp_oerrors++;
 	    error = ENOBUFS;
 	    goto bad;
@@ -1074,8 +1075,8 @@ pppoutput(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 	(*sc->sc_start)(sc);
     }
     ifp->if_lastchange = ppp_time;
-    ifp->if_opackets++;
-    ifp->if_obytes += len;
+    if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1);
+    if_inc_counter(ifp, IFCOUNTER_OBYTES, len);
 
     splx(s);
     return (0);
@@ -1115,8 +1116,8 @@ ppp_requeue(struct ppp_softc *sc)
 	    m->m_nextpkt = NULL;
 	    ifq = (m->m_flags & M_HIGHPRI)? &sc->sc_fastq: &sc->sc_ifp->if_snd;
 	    if (_IF_QFULL(ifq)) {
-		IFQ_INC_DROPS(ifq);
-		sc->sc_ifp->if_oerrors++;
+		if_inc_counter(sc->sc_ifp, IFCOUNTER_OQDROPS, 1);
+		if_inc_counter(sc->sc_ifp, IFCOUNTER_OERRORS, 1);
 		sc->sc_stats.ppp_oerrors++;
 	    } else
 		IF_ENQUEUE(ifq, m);
@@ -1517,13 +1518,13 @@ ppp_inproc(struct ppp_softc *sc, struct mbuf *m)
 	}
 
 	/* Copy the PPP and IP headers into a new mbuf. */
-	MGETHDR(mp, M_DONTWAIT, MT_DATA);
+	MGETHDR(mp, M_NOWAIT, MT_DATA);
 	if (mp == NULL)
 	    goto bad;
 	mp->m_len = 0;
 	mp->m_next = NULL;
 	if (hlen + PPP_HDRLEN > MHLEN) {
-	    MCLGET(mp, M_DONTWAIT);
+	    MCLGET(mp, M_NOWAIT);
 	    if (M_TRAILINGSPACE(mp) < hlen + PPP_HDRLEN) {
 		m_freem(mp);
 		goto bad;	/* lose if big headers and no clusters */
@@ -1581,7 +1582,7 @@ ppp_inproc(struct ppp_softc *sc, struct mbuf *m)
      * whole cluster on it.
      */
     if (ilen <= MHLEN && M_IS_CLUSTER(m)) {
-	MGETHDR(mp, M_DONTWAIT, MT_DATA);
+	MGETHDR(mp, M_NOWAIT, MT_DATA);
 	if (mp != NULL) {
 	    m_copydata(m, 0, ilen, mtod(mp, caddr_t));
             /* instead of freeing - return cluster mbuf so it can be reused */
@@ -1661,11 +1662,10 @@ ppp_inproc(struct ppp_softc *sc, struct mbuf *m)
 	 */
 	s = splimp();
 	if (_IF_QFULL(inq)) {
-	    IFQ_INC_DROPS(inq);
 	    splx(s);
 	    if (sc->sc_flags & SC_DEBUG)
 		printf("ppp%d: input queue full\n", ppp_unit(sc));
-	    ifp->if_iqdrops++;
+	    if_inc_counter(ifp, IFCOUNTER_IQDROPS, 1);
 	    goto bad;
 	}
 	IF_ENQUEUE(inq, m);
@@ -1674,8 +1674,8 @@ ppp_inproc(struct ppp_softc *sc, struct mbuf *m)
 	break;
     }
 
-    ifp->if_ipackets++;
-    ifp->if_ibytes += ilen;
+    if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
+    if_inc_counter(ifp, IFCOUNTER_IBYTES, ilen);
     microtime(&ppp_time);
     ifp->if_lastchange = ppp_time;
 
@@ -1687,7 +1687,7 @@ ppp_inproc(struct ppp_softc *sc, struct mbuf *m)
 
  bad:
     m_freem(m);
-    sc->sc_ifp->if_ierrors++;
+    if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
     sc->sc_stats.ppp_ierrors++;
     return mf;
 }

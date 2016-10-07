@@ -72,7 +72,6 @@ objdump --syms `for i in build/*rtems* ; do \
 	| sed '/^max_linkhdr$/d' \
 	| sed '/^max_protohdr$/d' \
 	| sed '/^maxsockets$/d' \
-	| sed '/^mbstat$/d' \
 	| sed '/^nd6_debug$/d' \
 	| sed '/^nd6_delay$/d' \
 	| sed '/^nd6_gctimer$/d' \
@@ -92,6 +91,7 @@ objdump --syms `for i in build/*rtems* ; do \
 	| sed '/^pause$/d' \
 	| sed '/^pf_osfp_entry_pl$/d' \
 	| sed '/^pf_osfp_pl$/d' \
+	| sed '/^pipe$/d' \
 	| sed '/^poll$/d' \
 	| sed '/^random$/d' \
 	| sed '/^realloc$/d' \

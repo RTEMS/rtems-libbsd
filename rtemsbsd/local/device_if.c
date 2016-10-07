@@ -37,70 +37,47 @@ static int null_resume(device_t dev)
 
 static int null_quiesce(device_t dev)
 {
-    return EOPNOTSUPP;
+    return 0;
 }
 
-struct kobj_method device_probe_method_default = {
-	&device_probe_desc, (kobjop_t) kobj_error_method
-};
+static void * null_register(device_t dev)
+{
+	return NULL;
+}
 
 struct kobjop_desc device_probe_desc = {
-	0, &device_probe_method_default
-};
-
-struct kobj_method device_identify_method_default = {
-	&device_identify_desc, (kobjop_t) kobj_error_method
+	0, { &device_probe_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc device_identify_desc = {
-	0, &device_identify_method_default
-};
-
-struct kobj_method device_attach_method_default = {
-	&device_attach_desc, (kobjop_t) kobj_error_method
+	0, { &device_identify_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc device_attach_desc = {
-	0, &device_attach_method_default
-};
-
-struct kobj_method device_detach_method_default = {
-	&device_detach_desc, (kobjop_t) kobj_error_method
+	0, { &device_attach_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc device_detach_desc = {
-	0, &device_detach_method_default
-};
-
-struct kobj_method device_shutdown_method_default = {
-	&device_shutdown_desc, (kobjop_t) null_shutdown
+	0, { &device_detach_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc device_shutdown_desc = {
-	0, &device_shutdown_method_default
-};
-
-struct kobj_method device_suspend_method_default = {
-	&device_suspend_desc, (kobjop_t) null_suspend
+	0, { &device_shutdown_desc, (kobjop_t)null_shutdown }
 };
 
 struct kobjop_desc device_suspend_desc = {
-	0, &device_suspend_method_default
-};
-
-struct kobj_method device_resume_method_default = {
-	&device_resume_desc, (kobjop_t) null_resume
+	0, { &device_suspend_desc, (kobjop_t)null_suspend }
 };
 
 struct kobjop_desc device_resume_desc = {
-	0, &device_resume_method_default
-};
-
-struct kobj_method device_quiesce_method_default = {
-	&device_quiesce_desc, (kobjop_t) null_quiesce
+	0, { &device_resume_desc, (kobjop_t)null_resume }
 };
 
 struct kobjop_desc device_quiesce_desc = {
-	0, &device_quiesce_method_default
+	0, { &device_quiesce_desc, (kobjop_t)null_quiesce }
+};
+
+struct kobjop_desc device_register_desc = {
+	0, { &device_register_desc, (kobjop_t)null_register }
 };
 

@@ -34,11 +34,7 @@
  * $FreeBSD$
  */
 
-#ifndef __rtems__
 #define	__constructor	__attribute__((constructor))
-#else /* __rtems__ */
-#define	__constructor
-#endif /* __rtems__ */
 
 struct afswtch;
 struct cmd;
@@ -78,6 +74,7 @@ void	callback_register(callback_func *, void *);
 #define	DEF_CMD_ARG2(name, func)	{ name, NEXTARG2, { .c_func2 = func }, 0, NULL }
 #define	DEF_CLONE_CMD(name, param, func) { name, param, { .c_func = func }, 1, NULL }
 #define	DEF_CLONE_CMD_ARG(name, func)	{ name, NEXTARG, { .c_func = func }, 1, NULL }
+#define	DEF_CLONE_CMD_ARG2(name, func)	{ name, NEXTARG2, { .c_func2 = func }, 1, NULL }
 
 struct ifaddrs;
 struct addrinfo;
@@ -136,6 +133,7 @@ extern	int supmedia;
 extern	int printkeys;
 extern	int newaddr;
 extern	int verbose;
+extern	int printifname;
 
 void	setifcap(const char *, int value, int s, const struct afswtch *);
 
@@ -147,19 +145,23 @@ void	ifmaybeload(const char *name);
 typedef void clone_callback_func(int, struct ifreq *);
 void	clone_setdefcallback(const char *, clone_callback_func *);
 
+void	sfp_status(int s, struct ifreq *ifr, int verbose);
+
 /*
  * XXX expose this so modules that neeed to know of any pending
  * operations on ifmedia can avoid cmd line ordering confusion.
  */
 struct ifmediareq *ifmedia_getstate(int s);
+
+void print_vhid(const struct ifaddrs *, const char *);
 #ifdef __rtems__
-void atalk_ctor(void);
 void bridge_ctor(void);
 void carp_ctor(void);
 void clone_ctor(void);
 void gif_ctor(void);
 void gre_ctor(void);
 void group_ctor(void);
+void ieee80211_ctor(void);
 void ifmedia_ctor(void);
 void inet6_ctor(void);
 void inet_ctor(void);
@@ -169,5 +171,6 @@ void mac_ctor(void);
 void pfsync_ctor(void);
 void vlan_ctor(void);
 
-void clone_dtor(void);
+/* Necessary for struct ifmedia_description */
+#include <if_media.h>
 #endif /* __rtems__ */

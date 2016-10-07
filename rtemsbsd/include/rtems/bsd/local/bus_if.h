@@ -92,7 +92,7 @@ typedef int bus_read_ivar_t(device_t _dev, device_t _child, int _index,
  * @param _child	the child device whose instance variable is
  *			being read
  * @param _index	the instance variable to read
- * @param _result	a loction to recieve the instance variable
+ * @param _result	a location to receive the instance variable
  *			value
  * 
  * @retval 0		success
@@ -215,7 +215,9 @@ typedef device_t bus_add_child_t(device_t _dev, u_int _order, const char *_name,
  * For busses which use use drivers supporting DEVICE_IDENTIFY() to
  * enumerate their devices, this method is used to create new
  * device instances. The new device will be added after the last
- * existing child with the same order.
+ * existing child with the same order. Implementations of bus_add_child
+ * call device_add_child_ordered to add the child and often add
+ * a suitable ivar to the device specific to that bus.
  * 
  * @param _dev		the bus device which will be the parent of the
  *			new child device
@@ -237,13 +239,35 @@ static __inline device_t BUS_ADD_CHILD(device_t _dev, u_int _order,
 	return ((bus_add_child_t *) _m)(_dev, _order, _name, _unit);
 }
 
+/** @brief Unique descriptor for the BUS_RESCAN() method */
+extern struct kobjop_desc bus_rescan_desc;
+/** @brief A function implementing the BUS_RESCAN() method */
+typedef int bus_rescan_t(device_t _dev);
+/**
+ * @brief Rescan the bus
+ *
+ * This method is called by a parent bridge or devctl to trigger a bus
+ * rescan.  The rescan should delete devices no longer present and
+ * enumerate devices that have newly arrived.
+ *
+ * @param _dev		the bus device
+ */
+
+static __inline int BUS_RESCAN(device_t _dev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_rescan);
+	return ((bus_rescan_t *) _m)(_dev);
+}
+
 /** @brief Unique descriptor for the BUS_ALLOC_RESOURCE() method */
 extern struct kobjop_desc bus_alloc_resource_desc;
 /** @brief A function implementing the BUS_ALLOC_RESOURCE() method */
 typedef struct resource * bus_alloc_resource_t(device_t _dev, device_t _child,
                                                int _type, int *_rid,
-                                               u_long _start, u_long _end,
-                                               u_long _count, u_int _flags);
+                                               rman_res_t _start,
+                                               rman_res_t _end,
+                                               rman_res_t _count, u_int _flags);
 /**
  * @brief Allocate a system resource
  *
@@ -260,9 +284,9 @@ typedef struct resource * bus_alloc_resource_t(device_t _dev, device_t _child,
  * @param _type		the type of resource to allocate
  * @param _rid		a pointer to the resource identifier
  * @param _start	hint at the start of the resource range - pass
- *			@c 0UL for any start address
+ *			@c 0 for any start address
  * @param _end		hint at the end of the resource range - pass
- *			@c ~0UL for any end address
+ *			@c ~0 for any end address
  * @param _count	hint at the size of range required - pass @c 1
  *			for any size
  * @param _flags	any extra flags to control the resource
@@ -275,8 +299,10 @@ typedef struct resource * bus_alloc_resource_t(device_t _dev, device_t _child,
 
 static __inline struct resource * BUS_ALLOC_RESOURCE(device_t _dev,
                                                      device_t _child, int _type,
-                                                     int *_rid, u_long _start,
-                                                     u_long _end, u_long _count,
+                                                     int *_rid,
+                                                     rman_res_t _start,
+                                                     rman_res_t _end,
+                                                     rman_res_t _count,
                                                      u_int _flags)
 {
 	kobjop_t _m;
@@ -293,8 +319,9 @@ typedef int bus_activate_resource_t(device_t _dev, device_t _child, int _type,
  * @brief Activate a resource
  *
  * Activate a resource previously allocated with
- * BUS_ALLOC_RESOURCE(). This may for instance map a memory region
- * into the kernel's virtual address space.
+ * BUS_ALLOC_RESOURCE().  This may enable decoding of this resource in a
+ * device for instance.  It will also establish a mapping for the resource
+ * unless RF_UNMAPPED was set when allocating the resource.
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
@@ -312,6 +339,67 @@ static __inline int BUS_ACTIVATE_RESOURCE(device_t _dev, device_t _child,
 	return ((bus_activate_resource_t *) _m)(_dev, _child, _type, _rid, _r);
 }
 
+/** @brief Unique descriptor for the BUS_MAP_RESOURCE() method */
+extern struct kobjop_desc bus_map_resource_desc;
+/** @brief A function implementing the BUS_MAP_RESOURCE() method */
+typedef int bus_map_resource_t(device_t _dev, device_t _child, int _type,
+                               struct resource *_r,
+                               struct resource_map_request *_args,
+                               struct resource_map *_map);
+/**
+ * @brief Map a resource
+ *
+ * Allocate a mapping for a range of an active resource.  The mapping
+ * is described by a struct resource_map object.  This may for instance
+ * map a memory region into the kernel's virtual address space.
+ *
+ * @param _dev		the parent device of @p _child
+ * @param _child	the device which allocated the resource
+ * @param _type		the type of resource
+ * @param _r		the resource to map
+ * @param _args		optional attributes of the mapping
+ * @param _map		the mapping
+ */
+
+static __inline int BUS_MAP_RESOURCE(device_t _dev, device_t _child, int _type,
+                                     struct resource *_r,
+                                     struct resource_map_request *_args,
+                                     struct resource_map *_map)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_map_resource);
+	return ((bus_map_resource_t *) _m)(_dev, _child, _type, _r, _args, _map);
+}
+
+/** @brief Unique descriptor for the BUS_UNMAP_RESOURCE() method */
+extern struct kobjop_desc bus_unmap_resource_desc;
+/** @brief A function implementing the BUS_UNMAP_RESOURCE() method */
+typedef int bus_unmap_resource_t(device_t _dev, device_t _child, int _type,
+                                 struct resource *_r,
+                                 struct resource_map *_map);
+/**
+ * @brief Unmap a resource
+ *
+ * Release a mapping previously allocated with
+ * BUS_MAP_RESOURCE(). This may for instance unmap a memory region
+ * from the kernel's virtual address space.
+ *
+ * @param _dev		the parent device of @p _child
+ * @param _child	the device which allocated the resource
+ * @param _type		the type of resource
+ * @param _r		the resource
+ * @param _map		the mapping to release
+ */
+
+static __inline int BUS_UNMAP_RESOURCE(device_t _dev, device_t _child,
+                                       int _type, struct resource *_r,
+                                       struct resource_map *_map)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_unmap_resource);
+	return ((bus_unmap_resource_t *) _m)(_dev, _child, _type, _r, _map);
+}
+
 /** @brief Unique descriptor for the BUS_DEACTIVATE_RESOURCE() method */
 extern struct kobjop_desc bus_deactivate_resource_desc;
 /** @brief A function implementing the BUS_DEACTIVATE_RESOURCE() method */
@@ -321,8 +409,7 @@ typedef int bus_deactivate_resource_t(device_t _dev, device_t _child, int _type,
  * @brief Deactivate a resource
  *
  * Deactivate a resource previously allocated with
- * BUS_ALLOC_RESOURCE(). This may for instance unmap a memory region
- * from the kernel's virtual address space.
+ * BUS_ALLOC_RESOURCE(). 
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
@@ -344,8 +431,8 @@ static __inline int BUS_DEACTIVATE_RESOURCE(device_t _dev, device_t _child,
 extern struct kobjop_desc bus_adjust_resource_desc;
 /** @brief A function implementing the BUS_ADJUST_RESOURCE() method */
 typedef int bus_adjust_resource_t(device_t _dev, device_t _child, int _type,
-                                  struct resource *_res, u_long _start,
-                                  u_long _end);
+                                  struct resource *_res, rman_res_t _start,
+                                  rman_res_t _end);
 /**
  * @brief Adjust a resource
  *
@@ -364,7 +451,7 @@ typedef int bus_adjust_resource_t(device_t _dev, device_t _child, int _type,
 
 static __inline int BUS_ADJUST_RESOURCE(device_t _dev, device_t _child,
                                         int _type, struct resource *_res,
-                                        u_long _start, u_long _end)
+                                        rman_res_t _start, rman_res_t _end)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_adjust_resource);
@@ -425,7 +512,7 @@ typedef int bus_setup_intr_t(device_t _dev, device_t _child,
  *			triggers
  * @param _arg		a value to use as the single argument in calls
  *			to @p _intr
- * @param _cookiep	a pointer to a location to recieve a cookie
+ * @param _cookiep	a pointer to a location to receive a cookie
  *			value that may be used to remove the interrupt
  *			handler
  */
@@ -472,7 +559,7 @@ static __inline int BUS_TEARDOWN_INTR(device_t _dev, device_t _child,
 extern struct kobjop_desc bus_set_resource_desc;
 /** @brief A function implementing the BUS_SET_RESOURCE() method */
 typedef int bus_set_resource_t(device_t _dev, device_t _child, int _type,
-                               int _rid, u_long _start, u_long _count);
+                               int _rid, rman_res_t _start, rman_res_t _count);
 /**
  * @brief Define a resource which can be allocated with
  * BUS_ALLOC_RESOURCE().
@@ -492,7 +579,8 @@ typedef int bus_set_resource_t(device_t _dev, device_t _child, int _type,
  */
 
 static __inline int BUS_SET_RESOURCE(device_t _dev, device_t _child, int _type,
-                                     int _rid, u_long _start, u_long _count)
+                                     int _rid, rman_res_t _start,
+                                     rman_res_t _count)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_set_resource);
@@ -503,7 +591,8 @@ static __inline int BUS_SET_RESOURCE(device_t _dev, device_t _child, int _type,
 extern struct kobjop_desc bus_get_resource_desc;
 /** @brief A function implementing the BUS_GET_RESOURCE() method */
 typedef int bus_get_resource_t(device_t _dev, device_t _child, int _type,
-                               int _rid, u_long *_startp, u_long *_countp);
+                               int _rid, rman_res_t *_startp,
+                               rman_res_t *_countp);
 /**
  * @brief Describe a resource
  *
@@ -514,14 +603,15 @@ typedef int bus_get_resource_t(device_t _dev, device_t _child, int _type,
  * @param _child	the device which owns the resource
  * @param _type		the type of resource
  * @param _rid		the resource identifier
- * @param _start	the address of a location to recieve the start
+ * @param _start	the address of a location to receive the start
  *			index of the resource range
- * @param _count	the address of a location to recieve the size
+ * @param _count	the address of a location to receive the size
  *			of the resource range
  */
 
 static __inline int BUS_GET_RESOURCE(device_t _dev, device_t _child, int _type,
-                                     int _rid, u_long *_startp, u_long *_countp)
+                                     int _rid, rman_res_t *_startp,
+                                     rman_res_t *_countp)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_resource);
@@ -612,8 +702,15 @@ typedef int bus_child_pnpinfo_str_t(device_t _dev, device_t _child, char *_buf,
 /**
  * @brief Returns the pnp info for this device.
  *
- * Return it as a string.  If the string is insufficient for the
- * storage, then return EOVERFLOW.
+ * Return it as a string.  If the storage is insufficient for the
+ * string, then return EOVERFLOW.
+ *
+ * The string must be formatted as a space-separated list of
+ * name=value pairs.  Names may only contain alphanumeric characters,
+ * underscores ('_') and hyphens ('-').  Values can contain any
+ * non-whitespace characters.  Values containing whitespace can be
+ * quoted with double quotes ('"').  Double quotes and backslashes in
+ * quoted values can be escaped with backslashes ('\').
  * 
  * @param _dev		the parent device of @p _child
  * @param _child	the device which is being examined
@@ -638,9 +735,16 @@ typedef int bus_child_location_str_t(device_t _dev, device_t _child, char *_buf,
 /**
  * @brief Returns the location for this device.
  *
- * Return it as a string.  If the string is insufficient for the
- * storage, then return EOVERFLOW.
- * 
+ * Return it as a string.  If the storage is insufficient for the
+ * string, then return EOVERFLOW.
+ *
+ * The string must be formatted as a space-separated list of
+ * name=value pairs.  Names may only contain alphanumeric characters,
+ * underscores ('_') and hyphens ('-').  Values can contain any
+ * non-whitespace characters.  Values containing whitespace can be
+ * quoted with double quotes ('"').  Double quotes and backslashes in
+ * quoted values can be escaped with backslashes ('\').
+ *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which is being examined
  * @param _buf		the address of a buffer to receive the location
@@ -777,6 +881,24 @@ static __inline bus_dma_tag_t BUS_GET_DMA_TAG(device_t _dev, device_t _child)
 	return ((bus_get_dma_tag_t *) _m)(_dev, _child);
 }
 
+/** @brief Unique descriptor for the BUS_GET_BUS_TAG() method */
+extern struct kobjop_desc bus_get_bus_tag_desc;
+/** @brief A function implementing the BUS_GET_BUS_TAG() method */
+typedef bus_space_tag_t bus_get_bus_tag_t(device_t _dev, device_t _child);
+/**
+ * @brief Returns bus_space_tag_t for use w/ devices on the bus.
+ *
+ * @param _dev		the parent device of @p _child
+ * @param _child	the device to which the tag will belong
+ */
+
+static __inline bus_space_tag_t BUS_GET_BUS_TAG(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_bus_tag);
+	return ((bus_get_bus_tag_t *) _m)(_dev, _child);
+}
+
 /** @brief Unique descriptor for the BUS_HINT_DEVICE_UNIT() method */
 extern struct kobjop_desc bus_hint_device_unit_desc;
 /** @brief A function implementing the BUS_HINT_DEVICE_UNIT() method */
@@ -833,6 +955,86 @@ static __inline int BUS_REMAP_INTR(device_t _dev, device_t _child, u_int _irq)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_remap_intr);
 	return ((bus_remap_intr_t *) _m)(_dev, _child, _irq);
+}
+
+/** @brief Unique descriptor for the BUS_SUSPEND_CHILD() method */
+extern struct kobjop_desc bus_suspend_child_desc;
+/** @brief A function implementing the BUS_SUSPEND_CHILD() method */
+typedef int bus_suspend_child_t(device_t _dev, device_t _child);
+/**
+ * @brief Suspend a given child
+ *
+ * @param _dev		the parent device of @p _child
+ * @param _child	the device to suspend
+ */
+
+static __inline int BUS_SUSPEND_CHILD(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_suspend_child);
+	return ((bus_suspend_child_t *) _m)(_dev, _child);
+}
+
+/** @brief Unique descriptor for the BUS_RESUME_CHILD() method */
+extern struct kobjop_desc bus_resume_child_desc;
+/** @brief A function implementing the BUS_RESUME_CHILD() method */
+typedef int bus_resume_child_t(device_t _dev, device_t _child);
+/**
+ * @brief Resume a given child
+ *
+ * @param _dev		the parent device of @p _child
+ * @param _child	the device to resume
+ */
+
+static __inline int BUS_RESUME_CHILD(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_resume_child);
+	return ((bus_resume_child_t *) _m)(_dev, _child);
+}
+
+/** @brief Unique descriptor for the BUS_GET_DOMAIN() method */
+extern struct kobjop_desc bus_get_domain_desc;
+/** @brief A function implementing the BUS_GET_DOMAIN() method */
+typedef int bus_get_domain_t(device_t _dev, device_t _child, int *_domain);
+/**
+ * @brief Get the VM domain handle for the given bus and child.
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ * @param _domain	a pointer to the bus's domain handle identifier
+ */
+
+static __inline int BUS_GET_DOMAIN(device_t _dev, device_t _child, int *_domain)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_domain);
+	return ((bus_get_domain_t *) _m)(_dev, _child, _domain);
+}
+
+/** @brief Unique descriptor for the BUS_GET_CPUS() method */
+extern struct kobjop_desc bus_get_cpus_desc;
+/** @brief A function implementing the BUS_GET_CPUS() method */
+typedef int bus_get_cpus_t(device_t _dev, device_t _child, enum cpu_sets _op,
+                           size_t _setsize, cpuset_t *_cpuset);
+/**
+ * @brief Request a set of CPUs
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ * @param _op		type of CPUs to request
+ * @param _setsize	the size of the set passed in _cpuset
+ * @param _cpuset	a pointer to a cpuset to receive the requested
+ *			set of CPUs
+ */
+
+static __inline int BUS_GET_CPUS(device_t _dev, device_t _child,
+                                 enum cpu_sets _op, size_t _setsize,
+                                 cpuset_t *_cpuset)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_cpus);
+	return ((bus_get_cpus_t *) _m)(_dev, _child, _op, _setsize, _cpuset);
 }
 
 #endif /* _bus_if_h_ */

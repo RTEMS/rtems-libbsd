@@ -32,16 +32,15 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#if !defined(KLD_MODULE)
 #include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_sctp.h>
 #ifndef INET
-#error "IPDIVERT requires INET."
+#error "IPDIVERT requires INET"
 #endif
-#endif
-#include <rtems/bsd/local/opt_inet6.h>
 
 #include <rtems/bsd/sys/param.h>
+#include <sys/eventhandler.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/malloc.h>
@@ -57,6 +56,7 @@ __FBSDID("$FreeBSD$");
 #include <net/vnet.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/netisr.h> 
 
 #include <netinet/in.h>
@@ -160,27 +160,30 @@ div_init(void)
 	 * place for hashbase == NULL.
 	 */
 	in_pcbinfo_init(&V_divcbinfo, "div", &V_divcb, 1, 1, "divcb",
-	    div_inpcb_init, div_inpcb_fini, UMA_ZONE_NOFREE,
-	    IPI_HASHFIELDS_NONE);
+	    div_inpcb_init, div_inpcb_fini, 0, IPI_HASHFIELDS_NONE);
 }
 
 static void
-div_destroy(void)
+div_destroy(void *unused __unused)
 {
 
 	in_pcbinfo_destroy(&V_divcbinfo);
 }
+VNET_SYSUNINIT(divert, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY,
+    div_destroy, NULL);
 
 /*
  * IPPROTO_DIVERT is not in the real IP protocol number space; this
  * function should never be called.  Just in case, drop any packets.
  */
-static void
-div_input(struct mbuf *m, int off)
+static int
+div_input(struct mbuf **mp, int *offp, int proto)
 {
+	struct mbuf *m = *mp;
 
 	KMOD_IPSTAT_INC(ips_noproto);
 	m_freem(m);
+	return (IPPROTO_DONE);
 }
 
 /*
@@ -206,23 +209,19 @@ divert_packet(struct mbuf *m, int incoming)
 	}
 	/* Assure header */
 	if (m->m_len < sizeof(struct ip) &&
-	    (m = m_pullup(m, sizeof(struct ip))) == 0)
+	    (m = m_pullup(m, sizeof(struct ip))) == NULL)
 		return;
 	ip = mtod(m, struct ip *);
 
 	/* Delayed checksums are currently not compatible with divert. */
 	if (m->m_pkthdr.csum_flags & CSUM_DELAY_DATA) {
-		ip->ip_len = ntohs(ip->ip_len);
 		in_delayed_cksum(m);
 		m->m_pkthdr.csum_flags &= ~CSUM_DELAY_DATA;
-		ip->ip_len = htons(ip->ip_len);
 	}
 #ifdef SCTP
 	if (m->m_pkthdr.csum_flags & CSUM_SCTP) {
-		ip->ip_len = ntohs(ip->ip_len);
 		sctp_delayed_cksum(m, (uint32_t)(ip->ip_hl << 2));
 		m->m_pkthdr.csum_flags &= ~CSUM_SCTP;
-		ip->ip_len = htons(ip->ip_len);
 	}
 #endif
 	bzero(&divsrc, sizeof(divsrc));
@@ -394,10 +393,6 @@ div_output(struct socket *so, struct mbuf *m, struct sockaddr_in *sin,
 				INP_RUNLOCK(inp);
 				goto cantsend;
 			}
-
-			/* Convert fields to host order for ip_output() */
-			ip->ip_len = ntohs(ip->ip_len);
-			ip->ip_off = ntohs(ip->ip_off);
 			break;
 #ifdef INET6
 		case IPV6_VERSION >> 4:
@@ -410,8 +405,6 @@ div_output(struct socket *so, struct mbuf *m, struct sockaddr_in *sin,
 				INP_RUNLOCK(inp);
 				goto cantsend;
 			}
-
-			ip6->ip6_plen = ntohs(ip6->ip6_plen);
 			break;
 		    }
 #endif
@@ -611,7 +604,7 @@ div_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 
 	/* Packet must have a header (but that's about it) */
 	if (m->m_len < sizeof (struct ip) &&
-	    (m = m_pullup(m, sizeof (struct ip))) == 0) {
+	    (m = m_pullup(m, sizeof (struct ip))) == NULL) {
 		KMOD_IPSTAT_INC(ips_toosmall);
 		m_freem(m);
 		return EINVAL;
@@ -677,7 +670,7 @@ div_pcblist(SYSCTL_HANDLER_ARGS)
 		return error;
 
 	inp_list = malloc(n * sizeof *inp_list, M_TEMP, M_WAITOK);
-	if (inp_list == 0)
+	if (inp_list == NULL)
 		return ENOMEM;
 	
 	INP_INFO_RLOCK(&V_divcbinfo);
@@ -766,9 +759,6 @@ struct protosw div_protosw = {
 	.pr_ctlinput =		div_ctlinput,
 	.pr_ctloutput =		ip_ctloutput,
 	.pr_init =		div_init,
-#ifdef VIMAGE
-	.pr_destroy =		div_destroy,
-#endif
 	.pr_usrreqs =		&div_usrreqs
 };
 
@@ -776,9 +766,6 @@ static int
 div_modevent(module_t mod, int type, void *unused)
 {
 	int err = 0;
-#ifndef VIMAGE
-	int n;
-#endif
 
 	switch (type) {
 	case MOD_LOAD:
@@ -803,10 +790,6 @@ div_modevent(module_t mod, int type, void *unused)
 		err = EPERM;
 		break;
 	case MOD_UNLOAD:
-#ifdef VIMAGE
-		err = EPERM;
-		break;
-#else
 		/*
 		 * Forced unload.
 		 *
@@ -819,8 +802,7 @@ div_modevent(module_t mod, int type, void *unused)
 		 * we destroy the lock.
 		 */
 		INP_INFO_WLOCK(&V_divcbinfo);
-		n = V_divcbinfo.ipi_count;
-		if (n != 0) {
+		if (V_divcbinfo.ipi_count != 0) {
 			err = EBUSY;
 			INP_INFO_WUNLOCK(&V_divcbinfo);
 			break;
@@ -828,10 +810,11 @@ div_modevent(module_t mod, int type, void *unused)
 		ip_divert_ptr = NULL;
 		err = pf_proto_unregister(PF_INET, IPPROTO_DIVERT, SOCK_RAW);
 		INP_INFO_WUNLOCK(&V_divcbinfo);
-		div_destroy();
+#ifndef VIMAGE
+		div_destroy(NULL);
+#endif
 		EVENTHANDLER_DEREGISTER(maxsockets_change, ip_divert_event_tag);
 		break;
-#endif /* !VIMAGE */
 	default:
 		err = EOPNOTSUPP;
 		break;
@@ -845,6 +828,6 @@ static moduledata_t ipdivertmod = {
         0
 };
 
-DECLARE_MODULE(ipdivert, ipdivertmod, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_ANY);
-MODULE_DEPEND(ipdivert, ipfw, 2, 2, 2);
+DECLARE_MODULE(ipdivert, ipdivertmod, SI_SUB_PROTO_FIREWALL, SI_ORDER_ANY);
+MODULE_DEPEND(ipdivert, ipfw, 3, 3, 3);
 MODULE_VERSION(ipdivert, 1);

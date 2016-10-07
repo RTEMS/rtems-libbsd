@@ -47,6 +47,8 @@
 #define	__GLOBL1(sym)	__asm__(".globl " #sym)
 #define	__GLOBL(sym)	__GLOBL1(sym)
 
+#define O_CLOEXEC 0
+
 #define __FreeBSD__ 1
 
 /* General define to activate BSD kernel parts */

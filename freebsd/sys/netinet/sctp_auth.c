@@ -135,11 +135,6 @@ sctp_auth_delete_chunk(uint8_t chunk, sctp_auth_chklist_t * list)
 	if (list == NULL)
 		return (-1);
 
-	/* is chunk restricted? */
-	if ((chunk == SCTP_ASCONF) ||
-	    (chunk == SCTP_ASCONF_ACK)) {
-		return (-1);
-	}
 	if (list->chunks[chunk] == 1) {
 		list->chunks[chunk] = 0;
 		list->num_chunks--;
@@ -157,16 +152,6 @@ sctp_auth_get_chklist_size(const sctp_auth_chklist_t * list)
 		return (0);
 	else
 		return (list->num_chunks);
-}
-
-/*
- * set the default list of chunks requiring AUTH
- */
-void
-sctp_auth_set_default_chunks(sctp_auth_chklist_t * list)
-{
-	(void)sctp_auth_add_chunk(SCTP_ASCONF, list);
-	(void)sctp_auth_add_chunk(SCTP_ASCONF_ACK, list);
 }
 
 /*
@@ -559,7 +544,7 @@ sctp_insert_sharedkey(struct sctp_keyhead *shared_keys,
 		}
 	}
 	/* shouldn't reach here */
-	return (0);
+	return (EINVAL);
 }
 
 void
@@ -575,7 +560,7 @@ sctp_auth_key_acquire(struct sctp_tcb *stcb, uint16_t key_id)
 		atomic_add_int(&skey->refcount, 1);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 		    "%s: stcb %p key %u refcount acquire to %d\n",
-		    __FUNCTION__, (void *)stcb, key_id, skey->refcount);
+		    __func__, (void *)stcb, key_id, skey->refcount);
 	}
 }
 
@@ -593,20 +578,20 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
 
 	/* decrement the ref count */
 	if (skey) {
-		sctp_free_sharedkey(skey);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 		    "%s: stcb %p key %u refcount release to %d\n",
-		    __FUNCTION__, (void *)stcb, key_id, skey->refcount);
+		    __func__, (void *)stcb, key_id, skey->refcount);
 
 		/* see if a notification should be generated */
-		if ((skey->refcount <= 1) && (skey->deactivated)) {
+		if ((skey->refcount <= 2) && (skey->deactivated)) {
 			/* notify ULP that key is no longer used */
 			sctp_ulp_notify(SCTP_NOTIFY_AUTH_FREE_KEY, stcb,
 			    key_id, 0, so_locked);
 			SCTPDBG(SCTP_DEBUG_AUTH2,
 			    "%s: stcb %p key %u no longer used, %d\n",
-			    __FUNCTION__, (void *)stcb, key_id, skey->refcount);
+			    __func__, (void *)stcb, key_id, skey->refcount);
 		}
+		sctp_free_sharedkey(skey);
 	}
 }
 
@@ -639,8 +624,11 @@ sctp_copy_skeylist(const struct sctp_keyhead *src, struct sctp_keyhead *dest)
 	LIST_FOREACH(skey, src, next) {
 		new_skey = sctp_copy_sharedkey(skey);
 		if (new_skey != NULL) {
-			(void)sctp_insert_sharedkey(dest, new_skey);
-			count++;
+			if (sctp_insert_sharedkey(dest, new_skey)) {
+				sctp_free_sharedkey(new_skey);
+			} else {
+				count++;
+			}
 		}
 	}
 	return (count);
@@ -648,7 +636,7 @@ sctp_copy_skeylist(const struct sctp_keyhead *src, struct sctp_keyhead *dest)
 
 
 sctp_hmaclist_t *
-sctp_alloc_hmaclist(uint8_t num_hmacs)
+sctp_alloc_hmaclist(uint16_t num_hmacs)
 {
 	sctp_hmaclist_t *new_list;
 	int alloc_size;
@@ -1455,8 +1443,8 @@ sctp_auth_get_cookie_params(struct sctp_tcb *stcb, struct mbuf *m,
 			p_random = (struct sctp_auth_random *)phdr;
 			random_len = plen - sizeof(*p_random);
 		} else if (ptype == SCTP_HMAC_LIST) {
-			int num_hmacs;
-			int i;
+			uint16_t num_hmacs;
+			uint16_t i;
 
 			if (plen > sizeof(hmacs_store))
 				break;
@@ -1668,8 +1656,8 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 
 	/* is the indicated HMAC supported? */
 	if (!sctp_auth_is_supported_hmac(stcb->asoc.local_hmacs, hmac_id)) {
-		struct mbuf *m_err;
-		struct sctp_auth_invalid_hmac *err;
+		struct mbuf *op_err;
+		struct sctp_error_auth_invalid_hmac *cause;
 
 		SCTP_STAT_INCR(sctps_recvivalhmacid);
 		SCTPDBG(SCTP_DEBUG_AUTH1,
@@ -1679,20 +1667,19 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 		 * report this in an Error Chunk: Unsupported HMAC
 		 * Identifier
 		 */
-		m_err = sctp_get_mbuf_for_msg(sizeof(*err), 0, M_DONTWAIT,
-		    1, MT_HEADER);
-		if (m_err != NULL) {
+		op_err = sctp_get_mbuf_for_msg(sizeof(struct sctp_error_auth_invalid_hmac),
+		    0, M_NOWAIT, 1, MT_HEADER);
+		if (op_err != NULL) {
 			/* pre-reserve some space */
-			SCTP_BUF_RESV_UF(m_err, sizeof(struct sctp_chunkhdr));
+			SCTP_BUF_RESV_UF(op_err, sizeof(struct sctp_chunkhdr));
 			/* fill in the error */
-			err = mtod(m_err, struct sctp_auth_invalid_hmac *);
-			bzero(err, sizeof(*err));
-			err->ph.param_type = htons(SCTP_CAUSE_UNSUPPORTED_HMACID);
-			err->ph.param_length = htons(sizeof(*err));
-			err->hmac_id = ntohs(hmac_id);
-			SCTP_BUF_LEN(m_err) = sizeof(*err);
+			cause = mtod(op_err, struct sctp_error_auth_invalid_hmac *);
+			cause->cause.code = htons(SCTP_CAUSE_UNSUPPORTED_HMACID);
+			cause->cause.length = htons(sizeof(struct sctp_error_auth_invalid_hmac));
+			cause->hmac_id = ntohs(hmac_id);
+			SCTP_BUF_LEN(op_err) = sizeof(struct sctp_error_auth_invalid_hmac);
 			/* queue it */
-			sctp_queue_op_err(stcb, m_err);
+			sctp_queue_op_err(stcb, op_err);
 		}
 		return (-1);
 	}
@@ -1785,7 +1772,7 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 		return;
 
 	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_authkey_event),
-	    0, M_DONTWAIT, 1, MT_HEADER);
+	    0, M_NOWAIT, 1, MT_HEADER);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -1951,8 +1938,7 @@ sctp_validate_init_auth_params(struct mbuf *m, int offset, int limit)
 		    "SCTP: peer sent chunk list w/o AUTH\n");
 		return (-1);
 	}
-	if (!SCTP_BASE_SYSCTL(sctp_asconf_auth_nochk) && peer_supports_asconf &&
-	    !peer_supports_auth) {
+	if (peer_supports_asconf && !peer_supports_auth) {
 		SCTPDBG(SCTP_DEBUG_AUTH1,
 		    "SCTP: peer supports ASCONF but not AUTH\n");
 		return (-1);

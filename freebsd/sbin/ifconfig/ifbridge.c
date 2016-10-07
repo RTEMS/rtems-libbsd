@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*-
  * Copyright 2001 Wasabi Systems, Inc.
  * All rights reserved.
@@ -40,6 +44,9 @@ static const char rcsid[] =
   "$FreeBSD$";
 #endif /* not lint */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -62,6 +69,9 @@ static const char rcsid[] =
 #include <errno.h>
 
 #include "ifconfig.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifbridge-data.h"
+#endif /* __rtems__ */
 
 #define PV2ID(pv, epri, eaddr)  do {		\
 		epri     = pv >> 48;		\
@@ -73,7 +83,7 @@ static const char rcsid[] =
 		eaddr[5] = pv >> 0;		\
 } while (0)
 
-static const char *const stpstates[] = {
+static const char *stpstates[] = {
 	"disabled",
 	"listening",
 	"learning",
@@ -81,12 +91,12 @@ static const char *const stpstates[] = {
 	"blocking",
 	"discarding"
 };
-static const char *const stpproto[] = {
+static const char *stpproto[] = {
 	"stp",
 	"-",
 	"rstp"
 };
-static const char *const stproles[] = {
+static const char *stproles[] = {
 	"disabled",
 	"root",
 	"designated",
@@ -157,7 +167,11 @@ bridge_interfaces(int s, const char *prefix)
 		err(1, "strdup");
 	/* replace the prefix with whitespace */
 	for (p = pad; *p != '\0'; p++) {
+#ifndef __rtems__
+		if(isprint(*p))
+#else /* __rtems__ */
 		if(isprint((unsigned char)*p))
+#endif /* __rtems__ */
 			*p = ' ';
 	}
 
@@ -187,22 +201,19 @@ bridge_interfaces(int s, const char *prefix)
 		printf(" path cost %u", req->ifbr_path_cost);
 
 		if (req->ifbr_ifsflags & IFBIF_STP) {
-			if (req->ifbr_proto <
-			    sizeof(stpproto) / sizeof(stpproto[0]))
+			if (req->ifbr_proto < nitems(stpproto))
 				printf(" proto %s", stpproto[req->ifbr_proto]);
 			else
 				printf(" <unknown proto %d>",
 				    req->ifbr_proto);
 
 			printf("\n%s", pad);
-			if (req->ifbr_role <
-			    sizeof(stproles) / sizeof(stproles[0]))
+			if (req->ifbr_role < nitems(stproles))
 				printf("role %s", stproles[req->ifbr_role]);
 			else
 				printf("<unknown role %d>",
 				    req->ifbr_role);
-			if (req->ifbr_state <
-			    sizeof(stpstates) / sizeof(stpstates[0]))
+			if (req->ifbr_state < nitems(stpstates))
 				printf(" state %s", stpstates[req->ifbr_state]);
 			else
 				printf(" <unknown state %d>",
@@ -755,11 +766,9 @@ void
 #endif /* __rtems__ */
 bridge_ctor(void)
 {
-#define	N(a)	(sizeof(a) / sizeof(a[0]))
 	int i;
 
-	for (i = 0; i < N(bridge_cmds);  i++)
+	for (i = 0; i < nitems(bridge_cmds);  i++)
 		cmd_register(&bridge_cmds[i]);
 	af_register(&af_bridge);
-#undef N
 }

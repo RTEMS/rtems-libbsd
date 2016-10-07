@@ -121,9 +121,9 @@ nexus_probe(device_t dev)
 }
 
 static bool
-nexus_get_start(const rtems_bsd_device *nd, int type, u_long *start)
+nexus_get_start(const rtems_bsd_device *nd, int type, rman_res_t *start)
 {
-	u_long sr = *start;
+	u_long sr = (u_long)*start;
 	size_t i;
 
 	for (i = 0; i < nd->resource_count; ++i) {
@@ -141,7 +141,7 @@ nexus_get_start(const rtems_bsd_device *nd, int type, u_long *start)
 
 static struct resource *
 nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
-    u_long start, u_long end, u_long count, u_int flags)
+    rman_res_t start, rman_res_t end, rman_res_t count, u_int flags)
 {
 	struct resource *res = NULL;
 	struct rman *rm;

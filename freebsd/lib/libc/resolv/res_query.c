@@ -74,7 +74,6 @@ static const char rcsid[] = "$Id: res_query.c,v 1.11 2008/11/14 02:36:51 marka E
 __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
-#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -90,7 +89,9 @@ __FBSDID("$FreeBSD$");
 #include "port_after.h"
 
 /* Options.  Leave them on. */
-#define DEBUG
+#ifndef	DEBUG
+#define	DEBUG
+#endif
 
 #if PACKETSZ > 1024
 #define MAXPACKET	PACKETSZ
@@ -136,8 +137,8 @@ again:
 	if (n > 0 && (statp->_flags & RES_F_EDNS0ERR) == 0 &&
 	    (statp->options & (RES_USE_EDNS0|RES_USE_DNSSEC|RES_NSID))) {
 		n = res_nopt(statp, n, buf, sizeof(buf), anslen);
-		rdata = &buf[n];
 		if (n > 0 && (statp->options & RES_NSID) != 0U) {
+			rdata = &buf[n];
 			n = res_nopt_rdata(statp, n, buf, sizeof(buf), rdata,
 					   NS_OPT_NSID, 0, NULL);
 		}
@@ -459,7 +460,7 @@ res_hostalias(const res_state statp, const char *name, char *dst, size_t siz) {
 	if (issetugid())
 		return (NULL);
 	file = getenv("HOSTALIASES");
-	if (file == NULL || (fp = fopen(file, "r")) == NULL)
+	if (file == NULL || (fp = fopen(file, "re")) == NULL)
 		return (NULL);
 	setbuf(fp, NULL);
 	buf[sizeof(buf) - 1] = '\0';

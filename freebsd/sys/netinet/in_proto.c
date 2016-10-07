@@ -34,7 +34,6 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/local/opt_ipx.h>
 #include <rtems/bsd/local/opt_mrouting.h>
 #include <rtems/bsd/local/opt_ipsec.h>
 #include <rtems/bsd/local/opt_inet.h>
@@ -45,6 +44,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/malloc.h>
 #include <sys/socket.h>
 #include <sys/domain.h>
 #include <sys/proc.h>
@@ -60,6 +60,7 @@ __FBSDID("$FreeBSD$");
  */
 #ifdef INET
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/route.h>
 #ifdef RADIX_MPATH
 #include <net/radix_mpath.h>
@@ -120,9 +121,6 @@ struct protosw inetsw[] = {
 	.pr_domain =		&inetdomain,
 	.pr_protocol =		IPPROTO_IP,
 	.pr_init =		ip_init,
-#ifdef VIMAGE
-	.pr_destroy =		ip_destroy,
-#endif
 	.pr_slowtimo =		ip_slowtimo,
 	.pr_drain =		ip_drain,
 	.pr_usrreqs =		&nousrreqs
@@ -136,9 +134,6 @@ struct protosw inetsw[] = {
 	.pr_ctlinput =		udp_ctlinput,
 	.pr_ctloutput =		udp_ctloutput,
 	.pr_init =		udp_init,
-#ifdef VIMAGE
-	.pr_destroy =		udp_destroy,
-#endif
 	.pr_usrreqs =		&udp_usrreqs
 },
 {
@@ -150,9 +145,6 @@ struct protosw inetsw[] = {
 	.pr_ctlinput =		tcp_ctlinput,
 	.pr_ctloutput =		tcp_ctloutput,
 	.pr_init =		tcp_init,
-#ifdef VIMAGE
-	.pr_destroy =		tcp_destroy,
-#endif
 	.pr_slowtimo =		tcp_slowtimo,
 	.pr_drain =		tcp_drain,
 	.pr_usrreqs =		&tcp_usrreqs
@@ -167,9 +159,6 @@ struct protosw inetsw[] = {
 	.pr_ctlinput =		sctp_ctlinput,
 	.pr_ctloutput =		sctp_ctloutput,
 	.pr_init =		sctp_init,
-#ifdef VIMAGE
-	.pr_destroy =		sctp_finish,
-#endif
 	.pr_drain =		sctp_drain,
 	.pr_usrreqs =		&sctp_usrreqs
 },
@@ -177,7 +166,7 @@ struct protosw inetsw[] = {
 	.pr_type =		SOCK_STREAM,
 	.pr_domain =		&inetdomain,
 	.pr_protocol =		IPPROTO_SCTP,
-	.pr_flags =		PR_WANTRCVD,
+	.pr_flags =		PR_CONNREQUIRED|PR_WANTRCVD,
 	.pr_input =		sctp_input,
 	.pr_ctlinput =		sctp_ctlinput,
 	.pr_ctloutput =		sctp_ctloutput,
@@ -185,6 +174,17 @@ struct protosw inetsw[] = {
 	.pr_usrreqs =		&sctp_usrreqs
 },
 #endif /* SCTP */
+{
+	.pr_type =		SOCK_DGRAM,
+	.pr_domain =		&inetdomain,
+	.pr_protocol =		IPPROTO_UDPLITE,
+	.pr_flags =		PR_ATOMIC|PR_ADDR,
+	.pr_input =		udp_input,
+	.pr_ctlinput =		udplite_ctlinput,
+	.pr_ctloutput =		udp_ctloutput,
+	.pr_init =		udplite_init,
+	.pr_usrreqs =		&udp_usrreqs
+},
 {
 	.pr_type =		SOCK_RAW,
 	.pr_domain =		&inetdomain,
@@ -330,9 +330,6 @@ IPPROTOSPACER,
 	.pr_input =		rip_input,
 	.pr_ctloutput =		rip_ctloutput,
 	.pr_init =		rip_init,
-#ifdef VIMAGE
-	.pr_destroy =		rip_destroy,
-#endif
 	.pr_usrreqs =		&rip_usrreqs
 },
 };
@@ -344,7 +341,7 @@ struct domain inetdomain = {
 	.dom_family =		AF_INET,
 	.dom_name =		"internet",
 	.dom_protosw =		inetsw,
-	.dom_protoswNPROTOSW =	&inetsw[sizeof(inetsw)/sizeof(inetsw[0])],
+	.dom_protoswNPROTOSW =	&inetsw[nitems(inetsw)],
 #ifdef RADIX_MPATH
 	.dom_rtattach =		rn4_mpath_inithead,
 #else
@@ -353,8 +350,6 @@ struct domain inetdomain = {
 #ifdef VIMAGE
 	.dom_rtdetach =		in_detachhead,
 #endif
-	.dom_rtoffset =		32,
-	.dom_maxrtkey =		sizeof(struct sockaddr_in),
 	.dom_ifattach =		in_domifattach,
 	.dom_ifdetach =		in_domifdetach
 };
@@ -382,3 +377,5 @@ SYSCTL_NODE(_net_inet, IPPROTO_IPCOMP,	ipcomp,	CTLFLAG_RW, 0,	"IPCOMP");
 SYSCTL_NODE(_net_inet, IPPROTO_IPIP,	ipip,	CTLFLAG_RW, 0,	"IPIP");
 #endif /* IPSEC */
 SYSCTL_NODE(_net_inet, IPPROTO_RAW,	raw,	CTLFLAG_RW, 0,	"RAW");
+SYSCTL_NODE(_net_inet, OID_AUTO,	accf,	CTLFLAG_RW, 0,
+    "Accept filters");

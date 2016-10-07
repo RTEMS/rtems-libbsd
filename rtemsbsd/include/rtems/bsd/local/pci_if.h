@@ -14,6 +14,14 @@
 #ifndef _pci_if_h_
 #define _pci_if_h_
 
+
+struct nvlist;
+
+enum pci_id_type {
+    PCI_ID_RID,
+    PCI_ID_MSI,
+};
+
 /** @brief Unique descriptor for the PCI_READ_CONFIG() method */
 extern struct kobjop_desc pci_read_config_desc;
 /** @brief A function implementing the PCI_READ_CONFIG() method */
@@ -154,6 +162,20 @@ static __inline int PCI_ASSIGN_INTERRUPT(device_t dev, device_t child)
 	return ((pci_assign_interrupt_t *) _m)(dev, child);
 }
 
+/** @brief Unique descriptor for the PCI_FIND_CAP() method */
+extern struct kobjop_desc pci_find_cap_desc;
+/** @brief A function implementing the PCI_FIND_CAP() method */
+typedef int pci_find_cap_t(device_t dev, device_t child, int capability,
+                           int *capreg);
+
+static __inline int PCI_FIND_CAP(device_t dev, device_t child, int capability,
+                                 int *capreg)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_cap);
+	return ((pci_find_cap_t *) _m)(dev, child, capability, capreg);
+}
+
 /** @brief Unique descriptor for the PCI_FIND_EXTCAP() method */
 extern struct kobjop_desc pci_find_extcap_desc;
 /** @brief A function implementing the PCI_FIND_EXTCAP() method */
@@ -166,6 +188,20 @@ static __inline int PCI_FIND_EXTCAP(device_t dev, device_t child,
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_extcap);
 	return ((pci_find_extcap_t *) _m)(dev, child, capability, capreg);
+}
+
+/** @brief Unique descriptor for the PCI_FIND_HTCAP() method */
+extern struct kobjop_desc pci_find_htcap_desc;
+/** @brief A function implementing the PCI_FIND_HTCAP() method */
+typedef int pci_find_htcap_t(device_t dev, device_t child, int capability,
+                             int *capreg);
+
+static __inline int PCI_FIND_HTCAP(device_t dev, device_t child, int capability,
+                                   int *capreg)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_htcap);
+	return ((pci_find_htcap_t *) _m)(dev, child, capability, capreg);
 }
 
 /** @brief Unique descriptor for the PCI_ALLOC_MSI() method */
@@ -190,6 +226,46 @@ static __inline int PCI_ALLOC_MSIX(device_t dev, device_t child, int *count)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_alloc_msix);
 	return ((pci_alloc_msix_t *) _m)(dev, child, count);
+}
+
+/** @brief Unique descriptor for the PCI_ENABLE_MSI() method */
+extern struct kobjop_desc pci_enable_msi_desc;
+/** @brief A function implementing the PCI_ENABLE_MSI() method */
+typedef void pci_enable_msi_t(device_t dev, device_t child, uint64_t address,
+                              uint16_t data);
+
+static __inline void PCI_ENABLE_MSI(device_t dev, device_t child,
+                                    uint64_t address, uint16_t data)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_enable_msi);
+	((pci_enable_msi_t *) _m)(dev, child, address, data);
+}
+
+/** @brief Unique descriptor for the PCI_ENABLE_MSIX() method */
+extern struct kobjop_desc pci_enable_msix_desc;
+/** @brief A function implementing the PCI_ENABLE_MSIX() method */
+typedef void pci_enable_msix_t(device_t dev, device_t child, u_int index,
+                               uint64_t address, uint32_t data);
+
+static __inline void PCI_ENABLE_MSIX(device_t dev, device_t child, u_int index,
+                                     uint64_t address, uint32_t data)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_enable_msix);
+	((pci_enable_msix_t *) _m)(dev, child, index, address, data);
+}
+
+/** @brief Unique descriptor for the PCI_DISABLE_MSI() method */
+extern struct kobjop_desc pci_disable_msi_desc;
+/** @brief A function implementing the PCI_DISABLE_MSI() method */
+typedef void pci_disable_msi_t(device_t dev, device_t child);
+
+static __inline void PCI_DISABLE_MSI(device_t dev, device_t child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_disable_msi);
+	((pci_disable_msi_t *) _m)(dev, child);
 }
 
 /** @brief Unique descriptor for the PCI_REMAP_MSIX() method */
@@ -240,6 +316,111 @@ static __inline int PCI_MSIX_COUNT(device_t dev, device_t child)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msix_count);
 	return ((pci_msix_count_t *) _m)(dev, child);
+}
+
+/** @brief Unique descriptor for the PCI_MSIX_PBA_BAR() method */
+extern struct kobjop_desc pci_msix_pba_bar_desc;
+/** @brief A function implementing the PCI_MSIX_PBA_BAR() method */
+typedef int pci_msix_pba_bar_t(device_t dev, device_t child);
+
+static __inline int PCI_MSIX_PBA_BAR(device_t dev, device_t child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msix_pba_bar);
+	return ((pci_msix_pba_bar_t *) _m)(dev, child);
+}
+
+/** @brief Unique descriptor for the PCI_MSIX_TABLE_BAR() method */
+extern struct kobjop_desc pci_msix_table_bar_desc;
+/** @brief A function implementing the PCI_MSIX_TABLE_BAR() method */
+typedef int pci_msix_table_bar_t(device_t dev, device_t child);
+
+static __inline int PCI_MSIX_TABLE_BAR(device_t dev, device_t child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msix_table_bar);
+	return ((pci_msix_table_bar_t *) _m)(dev, child);
+}
+
+/** @brief Unique descriptor for the PCI_GET_ID() method */
+extern struct kobjop_desc pci_get_id_desc;
+/** @brief A function implementing the PCI_GET_ID() method */
+typedef int pci_get_id_t(device_t dev, device_t child, enum pci_id_type type,
+                         uintptr_t *id);
+
+static __inline int PCI_GET_ID(device_t dev, device_t child,
+                               enum pci_id_type type, uintptr_t *id)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_get_id);
+	return ((pci_get_id_t *) _m)(dev, child, type, id);
+}
+
+/** @brief Unique descriptor for the PCI_ALLOC_DEVINFO() method */
+extern struct kobjop_desc pci_alloc_devinfo_desc;
+/** @brief A function implementing the PCI_ALLOC_DEVINFO() method */
+typedef struct pci_devinfo * pci_alloc_devinfo_t(device_t dev);
+
+static __inline struct pci_devinfo * PCI_ALLOC_DEVINFO(device_t dev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_alloc_devinfo);
+	return ((pci_alloc_devinfo_t *) _m)(dev);
+}
+
+/** @brief Unique descriptor for the PCI_CHILD_ADDED() method */
+extern struct kobjop_desc pci_child_added_desc;
+/** @brief A function implementing the PCI_CHILD_ADDED() method */
+typedef void pci_child_added_t(device_t dev, device_t child);
+
+static __inline void PCI_CHILD_ADDED(device_t dev, device_t child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_child_added);
+	((pci_child_added_t *) _m)(dev, child);
+}
+
+/** @brief Unique descriptor for the PCI_IOV_ATTACH() method */
+extern struct kobjop_desc pci_iov_attach_desc;
+/** @brief A function implementing the PCI_IOV_ATTACH() method */
+typedef int pci_iov_attach_t(device_t dev, device_t child,
+                             struct nvlist *pf_schema, struct nvlist *vf_schema,
+                             const char *name);
+
+static __inline int PCI_IOV_ATTACH(device_t dev, device_t child,
+                                   struct nvlist *pf_schema,
+                                   struct nvlist *vf_schema, const char *name)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_iov_attach);
+	return ((pci_iov_attach_t *) _m)(dev, child, pf_schema, vf_schema, name);
+}
+
+/** @brief Unique descriptor for the PCI_IOV_DETACH() method */
+extern struct kobjop_desc pci_iov_detach_desc;
+/** @brief A function implementing the PCI_IOV_DETACH() method */
+typedef int pci_iov_detach_t(device_t dev, device_t child);
+
+static __inline int PCI_IOV_DETACH(device_t dev, device_t child)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_iov_detach);
+	return ((pci_iov_detach_t *) _m)(dev, child);
+}
+
+/** @brief Unique descriptor for the PCI_CREATE_IOV_CHILD() method */
+extern struct kobjop_desc pci_create_iov_child_desc;
+/** @brief A function implementing the PCI_CREATE_IOV_CHILD() method */
+typedef device_t pci_create_iov_child_t(device_t bus, device_t pf, uint16_t rid,
+                                        uint16_t vid, uint16_t did);
+
+static __inline device_t PCI_CREATE_IOV_CHILD(device_t bus, device_t pf,
+                                              uint16_t rid, uint16_t vid,
+                                              uint16_t did)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)bus)->ops,pci_create_iov_child);
+	return ((pci_create_iov_child_t *) _m)(bus, pf, rid, vid, did);
 }
 
 #endif /* _pci_if_h_ */

@@ -21,27 +21,15 @@
 #include <dev/mmc/bridge.h>
 #include <rtems/bsd/local/mmcbus_if.h>
 
-struct kobj_method mmcbus_wait_for_request_method_default = {
-	&mmcbus_wait_for_request_desc, (kobjop_t) kobj_error_method
-};
-
 struct kobjop_desc mmcbus_wait_for_request_desc = {
-	0, &mmcbus_wait_for_request_method_default
-};
-
-struct kobj_method mmcbus_acquire_bus_method_default = {
-	&mmcbus_acquire_bus_desc, (kobjop_t) kobj_error_method
+	0, { &mmcbus_wait_for_request_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbus_acquire_bus_desc = {
-	0, &mmcbus_acquire_bus_method_default
-};
-
-struct kobj_method mmcbus_release_bus_method_default = {
-	&mmcbus_release_bus_desc, (kobjop_t) kobj_error_method
+	0, { &mmcbus_acquire_bus_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbus_release_bus_desc = {
-	0, &mmcbus_release_bus_method_default
+	0, { &mmcbus_release_bus_desc, (kobjop_t)kobj_error_method }
 };
 

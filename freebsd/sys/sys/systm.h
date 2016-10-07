@@ -47,6 +47,7 @@
 
 #ifndef __rtems__
 extern int cold;		/* nonzero if we are doing a cold boot */
+extern int suspend_blocked;	/* block suspend due to pending shutdown */
 extern int rebooting;		/* kern_reboot() has been called. */
 #else /* __rtems__ */
 /* In RTEMS there is no cold boot and reboot */
@@ -93,18 +94,24 @@ extern int vm_guest;		/* Running as virtual machine guest? */
  * Detected virtual machine guest types. The intention is to expand
  * and/or add to the VM_GUEST_VM type if specific VM functionality is
  * ever implemented (e.g. vendor-specific paravirtualization features).
+ * Keep in sync with vm_guest_sysctl_names[].
  */
-enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN };
+enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN, VM_GUEST_HV,
+		VM_GUEST_VMWARE, VM_GUEST_KVM, VM_LAST };
+
+#if defined(WITNESS) || defined(INVARIANT_SUPPORT)
+void	kassert_panic(const char *fmt, ...)  __printflike(1, 2);
+#endif
 
 #ifdef	INVARIANTS		/* The option is always available */
 #define	KASSERT(exp,msg) do {						\
 	if (__predict_false(!(exp)))					\
-		panic msg;						\
+		kassert_panic msg;					\
 } while (0)
 #define	VNASSERT(exp, vp, msg) do {					\
 	if (__predict_false(!(exp))) {					\
 		vn_printf(vp, "VNASSERT failed\n");			\
-		panic msg;						\
+		kassert_panic msg;					\
 	}								\
 } while (0)
 #else
@@ -130,6 +137,12 @@ enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN };
 	KASSERT(sizeof(var) == sizeof(void *) &&			\
 	    ((uintptr_t)&(var) & (sizeof(void *) - 1)) == 0, msg)
 
+/*
+ * Assert that a thread is in critical(9) section.
+ */
+#define	CRITICAL_ASSERT(td)						\
+	KASSERT((td)->td_critnest >= 1, ("Not in critical section"));
+ 
 /*
  * If we have already panic'd and this is the thread that called
  * panic(), then don't block on any mutexes but silently succeed.
@@ -162,10 +175,14 @@ extern char **kenvp;
 extern const void *zero_region;	/* address space maps to a zeroed page	*/
 
 extern int unmapped_buf_allowed;
-extern int iosize_max_clamp;
-extern int devfs_iosize_max_clamp;
-#define	IOSIZE_MAX	(iosize_max_clamp ? INT_MAX : SSIZE_MAX)
-#define	DEVFS_IOSIZE_MAX	(devfs_iosize_max_clamp ? INT_MAX : SSIZE_MAX)
+
+#ifdef __LP64__
+#define	IOSIZE_MAX		iosize_max()
+#define	DEVFS_IOSIZE_MAX	devfs_iosize_max()
+#else
+#define	IOSIZE_MAX		SSIZE_MAX
+#define	DEVFS_IOSIZE_MAX	SSIZE_MAX
+#endif
 
 /*
  * General function declarations.
@@ -183,6 +200,7 @@ struct ucred;
 struct uio;
 struct _jmp_buf;
 struct trapframe;
+struct eventtimer;
 
 #ifndef __rtems__
 int	setjmp(struct _jmp_buf *) __returns_twice;
@@ -200,9 +218,12 @@ void	*hashinit_flags(int count, struct malloc_type *type,
 #define	HASH_WAITOK	0x00000002
 
 void	*phashinit(int count, struct malloc_type *type, u_long *nentries);
+void	*phashinit_flags(int count, struct malloc_type *type, u_long *nentries,
+    int flags);
 void	g_waitidle(void);
 
 void	panic(const char *, ...) __dead2 __printflike(1, 2);
+void	vpanic(const char *, __va_list) __dead2 __printflike(1, 0);
 
 void	cpu_boot(int);
 void	cpu_flush_dcache(void *, size_t);
@@ -229,15 +250,24 @@ void	init_param1(void);
 void	init_param2(long physpages);
 void	init_static_kenv(char *, size_t);
 void	tablefull(const char *);
+#ifdef  EARLY_PRINTF
+typedef void early_putc_t(int ch);
+extern early_putc_t *early_putc;
+#endif
 int	kvprintf(char const *, void (*)(int, void*), void *, int,
 	    __va_list) __printflike(1, 0);
 void	log(int, const char *, ...) __printflike(2, 3);
 void	log_console(struct uio *);
+void	vlog(int, const char *, __va_list) __printflike(2, 0);
+int	asprintf(char **ret, struct malloc_type *mtp, const char *format, 
+	    ...) __printflike(3, 4);
 int	printf(const char *, ...) __printflike(1, 2);
 int	snprintf(char *, size_t, const char *, ...) __printflike(3, 4);
 int	sprintf(char *buf, const char *, ...) __printflike(2, 3);
 int	uprintf(const char *, ...) __printflike(1, 2);
 int	vprintf(const char *, __va_list) __printflike(1, 0);
+int	vasprintf(char **ret, struct malloc_type *mtp, const char *format,
+	    __va_list ap) __printflike(3, 0);
 int	vsnprintf(char *, size_t, const char *, __va_list) __printflike(3, 0);
 int	vsnrprintf(char *, size_t, int, const char *, __va_list) __printflike(4, 0);
 int	vsprintf(char *buf, const char *, __va_list) __printflike(2, 0);
@@ -249,6 +279,7 @@ u_long	strtoul(const char *, char **, int) __nonnull(1);
 quad_t	strtoq(const char *, char **, int) __nonnull(1);
 u_quad_t strtouq(const char *, char **, int) __nonnull(1);
 void	tprintf(struct proc *p, int pri, const char *, ...) __printflike(3, 4);
+void	vtprintf(struct proc *, int, const char *, __va_list) __printflike(3, 0);
 void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_COLUMN_MASK	0xff
 #define	HD_DELIM_MASK	0xff00
@@ -264,6 +295,7 @@ void	bzero(void *buf, size_t len) __nonnull(1);
 #define bcopy(src, dst, len) memmove((dst), (src), (len))
 #define bzero(buf, size) memset((buf), 0, (size))
 #endif /* __rtems__ */
+void	explicit_bzero(void *, size_t) __nonnull(1);
 
 void	*memcpy(void *to, const void *from, size_t len) __nonnull(1) __nonnull(2);
 void	*memmove(void *dest, const void *src, size_t n) __nonnull(1) __nonnull(2);
@@ -331,7 +363,7 @@ copyout_nofault(const void * __restrict kaddr, void * __restrict udaddr,
 #endif /* __rtems__ */
 
 #ifndef __rtems__
-int	fubyte(const void *base);
+int	fubyte(volatile const void *base);
 #else /* __rtems__ */
 static inline int
 fubyte(const void *base)
@@ -341,17 +373,24 @@ fubyte(const void *base)
   return byte_base[0];
 }
 #endif /* __rtems__ */
-long	fuword(const void *base);
-int	fuword16(void *base);
-int32_t	fuword32(const void *base);
-int64_t	fuword64(const void *base);
-int	subyte(void *base, int byte);
-int	suword(void *base, long word);
-int	suword16(void *base, int word);
-int	suword32(void *base, int32_t word);
-int	suword64(void *base, int64_t word);
+long	fuword(volatile const void *base);
+int	fuword16(volatile const void *base);
+int32_t	fuword32(volatile const void *base);
+int64_t	fuword64(volatile const void *base);
+int	fueword(volatile const void *base, long *val);
+int	fueword32(volatile const void *base, int32_t *val);
+int	fueword64(volatile const void *base, int64_t *val);
+int	subyte(volatile void *base, int byte);
+int	suword(volatile void *base, long word);
+int	suword16(volatile void *base, int word);
+int	suword32(volatile void *base, int32_t word);
+int	suword64(volatile void *base, int64_t word);
 uint32_t casuword32(volatile uint32_t *base, uint32_t oldval, uint32_t newval);
-u_long	 casuword(volatile u_long *p, u_long oldval, u_long newval);
+u_long	casuword(volatile u_long *p, u_long oldval, u_long newval);
+int	casueword32(volatile uint32_t *base, uint32_t oldval, uint32_t *oldvalp,
+	    uint32_t newval);
+int	casueword(volatile u_long *p, u_long oldval, u_long *oldvalp,
+	    u_long newval);
 
 void	realitexpire(void *);
 
@@ -361,7 +400,9 @@ void	hardclock(int usermode, uintfptr_t pc);
 void	hardclock_cnt(int cnt, int usermode);
 void	hardclock_cpu(int usermode);
 void	hardclock_sync(int cpu);
+#ifndef __rtems__
 void	softclock(void *);
+#endif /* __rtems__ */
 void	statclock(int usermode);
 void	statclock_cnt(int cnt, int usermode);
 void	profclock(int usermode, uintfptr_t pc);
@@ -373,34 +414,26 @@ void	startprofclock(struct proc *);
 void	stopprofclock(struct proc *);
 void	cpu_startprofclock(void);
 void	cpu_stopprofclock(void);
-void	cpu_idleclock(void);
+sbintime_t 	cpu_idleclock(void);
 void	cpu_activeclock(void);
+void	cpu_new_callout(int cpu, sbintime_t bt, sbintime_t bt_opt);
+void	cpu_et_frequency(struct eventtimer *et, uint64_t newfreq);
 extern int	cpu_deepest_sleep;
 extern int	cpu_disable_c2_sleep;
 extern int	cpu_disable_c3_sleep;
 
-#ifndef __rtems__
-int	cr_cansee(struct ucred *u1, struct ucred *u2);
-int	cr_canseesocket(struct ucred *cred, struct socket *so);
-int	cr_canseeinpcb(struct ucred *cred, struct inpcb *inp);
-#else /* __rtems__ */
-#define cr_cansee(u1, u2) 0
-#define cr_canseesocket(cred, so) 0
-#define cr_canseeinpcb(cred, inp) 0
-#endif /* __rtems__ */
-
-char	*getenv(const char *name);
+char	*kern_getenv(const char *name);
 void	freeenv(char *env);
 int	getenv_int(const char *name, int *data);
 int	getenv_uint(const char *name, unsigned int *data);
 int	getenv_long(const char *name, long *data);
 int	getenv_ulong(const char *name, unsigned long *data);
 int	getenv_string(const char *name, char *data, int size);
+int	getenv_int64(const char *name, int64_t *data);
+int	getenv_uint64(const char *name, uint64_t *data);
 int	getenv_quad(const char *name, quad_t *data);
-#ifndef __rtems__
-int	setenv(const char *name, const char *value);
-#endif /* __rtems__ */
-int	unsetenv(const char *name);
+int	kern_setenv(const char *name, const char *value);
+int	kern_unsetenv(const char *name);
 int	testenv(const char *name);
 
 typedef uint64_t (cpu_tick_f)(void);
@@ -435,28 +468,18 @@ typedef void timeout_t(void *);	/* timeout function type */
 void	callout_handle_init(struct callout_handle *);
 struct	callout_handle timeout(timeout_t *, void *, int);
 void	untimeout(timeout_t *, void *, struct callout_handle);
-caddr_t	kern_timeout_callwheel_alloc(caddr_t v);
-void	kern_timeout_callwheel_init(void);
 
 /* Stubs for obsolete functions that used to be for interrupt management */
 #ifdef __rtems__
 typedef int intrmask_t;
 #endif /* __rtems__ */
-static __inline void		spl0(void)		{ return; }
 static __inline intrmask_t	splbio(void)		{ return 0; }
 static __inline intrmask_t	splcam(void)		{ return 0; }
 static __inline intrmask_t	splclock(void)		{ return 0; }
 static __inline intrmask_t	splhigh(void)		{ return 0; }
 static __inline intrmask_t	splimp(void)		{ return 0; }
 static __inline intrmask_t	splnet(void)		{ return 0; }
-static __inline intrmask_t	splsoftcam(void)	{ return 0; }
-static __inline intrmask_t	splsoftclock(void)	{ return 0; }
-static __inline intrmask_t	splsofttty(void)	{ return 0; }
-static __inline intrmask_t	splsoftvm(void)		{ return 0; }
-static __inline intrmask_t	splsofttq(void)		{ return 0; }
-static __inline intrmask_t	splstatclock(void)	{ return 0; }
 static __inline intrmask_t	spltty(void)		{ return 0; }
-static __inline intrmask_t	splvm(void)		{ return 0; }
 static __inline void		splx(intrmask_t ipl __unused)	{ return; }
 
 /*
@@ -464,23 +487,35 @@ static __inline void		splx(intrmask_t ipl __unused)	{ return; }
  * less often.
  */
 int	_sleep(void *chan, struct lock_object *lock, int pri, const char *wmesg,
-	    int timo) __nonnull(1);
+	   sbintime_t sbt, sbintime_t pr, int flags) __nonnull(1);
 #define	msleep(chan, mtx, pri, wmesg, timo)				\
-	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg), (timo))
+	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg),		\
+	    tick_sbt * (timo), 0, C_HARDCLOCK)
+#define	msleep_sbt(chan, mtx, pri, wmesg, bt, pr, flags)		\
+	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg), (bt), (pr),	\
+	    (flags))
 #ifndef __rtems__
-int	msleep_spin(void *chan, struct mtx *mtx, const char *wmesg, int timo)
-	    __nonnull(1);
+int	msleep_spin_sbt(void *chan, struct mtx *mtx, const char *wmesg,
+	    sbintime_t sbt, sbintime_t pr, int flags) __nonnull(1);
 #else /* __rtems__ */
-#define	msleep_spin(chan, mtx, wmesg, timo)				\
-	msleep((chan), (mtx), 0, (wmesg), (timo))
+#define	msleep_spin_sbt(chan, mtx, wmesg, sbt, pr, flags)		\
+	msleep_sbt(chan, mtx, 0, wmesg, sbt, pr, flags)
 #endif /* __rtems__ */
+#define	msleep_spin(chan, mtx, wmesg, timo)				\
+	msleep_spin_sbt((chan), (mtx), (wmesg), tick_sbt * (timo),	\
+	    0, C_HARDCLOCK)
+int	pause_sbt(const char *wmesg, sbintime_t sbt, sbintime_t pr,
+	    int flags);
 #ifdef __rtems__
 #include <unistd.h>
-#define pause _bsd_pause
 #endif /* __rtems__ */
-int	pause(const char *wmesg, int timo);
+#define	pause(wmesg, timo)						\
+	pause_sbt((wmesg), tick_sbt * (timo), 0, C_HARDCLOCK)
 #define	tsleep(chan, pri, wmesg, timo)					\
-	_sleep((chan), NULL, (pri), (wmesg), (timo))
+	_sleep((chan), NULL, (pri), (wmesg), tick_sbt * (timo),		\
+	    0, C_HARDCLOCK)
+#define	tsleep_sbt(chan, pri, wmesg, bt, pr, flags)			\
+	_sleep((chan), NULL, (pri), (wmesg), (bt), (pr), (flags))
 void	wakeup(void *chan) __nonnull(1);
 void	wakeup_one(void *chan) __nonnull(1);
 
@@ -492,6 +527,11 @@ struct cdev;
 dev_t dev2udev(struct cdev *x);
 const char *devtoname(struct cdev *cdev);
 
+#ifdef __LP64__
+size_t	devfs_iosize_max(void);
+size_t	iosize_max(void);
+#endif
+
 int poll_no_poll(int events);
 
 /* XXX: Should be void nanodelay(u_int nsec); */
@@ -502,7 +542,6 @@ struct root_hold_token;
 
 struct root_hold_token *root_mount_hold(const char *identifier);
 void root_mount_rel(struct root_hold_token *h);
-void root_mount_wait(void);
 int root_mounted(void);
 
 
@@ -511,6 +550,7 @@ int root_mounted(void);
  */
 struct unrhdr;
 struct unrhdr *new_unrhdr(int low, int high, struct mtx *mutex);
+void init_unrhdr(struct unrhdr *uh, int low, int high, struct mtx *mutex);
 void delete_unrhdr(struct unrhdr *uh);
 void clean_unrhdr(struct unrhdr *uh);
 void clean_unrhdrl(struct unrhdr *uh);
@@ -519,31 +559,10 @@ int alloc_unr_specific(struct unrhdr *uh, u_int item);
 int alloc_unrl(struct unrhdr *uh);
 void free_unr(struct unrhdr *uh, u_int item);
 
-/*
- * Population count algorithm using SWAR approach
- * - "SIMD Within A Register".
- */
-static __inline uint32_t
-bitcount32(uint32_t x)
-{
+void	intr_prof_stack_use(struct thread *td, struct trapframe *frame);
 
-	x = (x & 0x55555555) + ((x & 0xaaaaaaaa) >> 1);
-	x = (x & 0x33333333) + ((x & 0xcccccccc) >> 2);
-	x = (x + (x >> 4)) & 0x0f0f0f0f;
-	x = (x + (x >> 8));
-	x = (x + (x >> 16)) & 0x000000ff;
-	return (x);
-}
+extern void (*softdep_ast_cleanup)(void);
 
-static __inline uint16_t
-bitcount16(uint32_t x)
-{
-
-	x = (x & 0x5555) + ((x & 0xaaaa) >> 1);
-	x = (x & 0x3333) + ((x & 0xcccc) >> 2);
-	x = (x + (x >> 4)) & 0x0f0f;
-	x = (x + (x >> 8)) & 0x00ff;
-	return (x);
-}
+void counted_warning(unsigned *counter, const char *msg);
 
 #endif /* !_SYS_SYSTM_H_ */

@@ -40,6 +40,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/aio.h> /* for aio_swake proto */
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
@@ -67,8 +68,142 @@ u_long sb_max_adj =
 
 static	u_long sb_efficiency = 8;	/* parameter for sbreserve() */
 
-static void	sbdrop_internal(struct sockbuf *sb, int len);
+static struct mbuf	*sbcut_internal(struct sockbuf *sb, int len);
 static void	sbflush_internal(struct sockbuf *sb);
+
+/*
+ * Our own version of m_clrprotoflags(), that can preserve M_NOTREADY.
+ */
+static void
+sbm_clrprotoflags(struct mbuf *m, int flags)
+{
+	int mask;
+
+	mask = ~M_PROTOFLAGS;
+	if (flags & PRUS_NOTREADY)
+		mask |= M_NOTREADY;
+	while (m) {
+		m->m_flags &= mask;
+		m = m->m_next;
+	}
+}
+
+/*
+ * Mark ready "count" mbufs starting with "m".
+ */
+int
+sbready(struct sockbuf *sb, struct mbuf *m, int count)
+{
+	u_int blocker;
+
+	SOCKBUF_LOCK_ASSERT(sb);
+	KASSERT(sb->sb_fnrdy != NULL, ("%s: sb %p NULL fnrdy", __func__, sb));
+
+	blocker = (sb->sb_fnrdy == m) ? M_BLOCKED : 0;
+
+	for (int i = 0; i < count; i++, m = m->m_next) {
+		KASSERT(m->m_flags & M_NOTREADY,
+		    ("%s: m %p !M_NOTREADY", __func__, m));
+		m->m_flags &= ~(M_NOTREADY | blocker);
+		if (blocker)
+			sb->sb_acc += m->m_len;
+	}
+
+	if (!blocker)
+		return (EINPROGRESS);
+
+	/* This one was blocking all the queue. */
+	for (; m && (m->m_flags & M_NOTREADY) == 0; m = m->m_next) {
+		KASSERT(m->m_flags & M_BLOCKED,
+		    ("%s: m %p !M_BLOCKED", __func__, m));
+		m->m_flags &= ~M_BLOCKED;
+		sb->sb_acc += m->m_len;
+	}
+
+	sb->sb_fnrdy = m;
+
+	return (0);
+}
+
+/*
+ * Adjust sockbuf state reflecting allocation of m.
+ */
+void
+sballoc(struct sockbuf *sb, struct mbuf *m)
+{
+
+	SOCKBUF_LOCK_ASSERT(sb);
+
+	sb->sb_ccc += m->m_len;
+
+	if (sb->sb_fnrdy == NULL) {
+		if (m->m_flags & M_NOTREADY)
+			sb->sb_fnrdy = m;
+		else
+			sb->sb_acc += m->m_len;
+	} else
+		m->m_flags |= M_BLOCKED;
+
+	if (m->m_type != MT_DATA && m->m_type != MT_OOBDATA)
+		sb->sb_ctl += m->m_len;
+
+	sb->sb_mbcnt += MSIZE;
+	sb->sb_mcnt += 1;
+
+	if (m->m_flags & M_EXT) {
+		sb->sb_mbcnt += m->m_ext.ext_size;
+		sb->sb_ccnt += 1;
+	}
+}
+
+/*
+ * Adjust sockbuf state reflecting freeing of m.
+ */
+void
+sbfree(struct sockbuf *sb, struct mbuf *m)
+{
+
+#if 0	/* XXX: not yet: soclose() call path comes here w/o lock. */
+	SOCKBUF_LOCK_ASSERT(sb);
+#endif
+
+	sb->sb_ccc -= m->m_len;
+
+	if (!(m->m_flags & M_NOTAVAIL))
+		sb->sb_acc -= m->m_len;
+
+	if (m == sb->sb_fnrdy) {
+		struct mbuf *n;
+
+		KASSERT(m->m_flags & M_NOTREADY,
+		    ("%s: m %p !M_NOTREADY", __func__, m));
+
+		n = m->m_next;
+		while (n != NULL && !(n->m_flags & M_NOTREADY)) {
+			n->m_flags &= ~M_BLOCKED;
+			sb->sb_acc += n->m_len;
+			n = n->m_next;
+		}
+		sb->sb_fnrdy = n;
+	}
+
+	if (m->m_type != MT_DATA && m->m_type != MT_OOBDATA)
+		sb->sb_ctl -= m->m_len;
+
+	sb->sb_mbcnt -= MSIZE;
+	sb->sb_mcnt -= 1;
+	if (m->m_flags & M_EXT) {
+		sb->sb_mbcnt -= m->m_ext.ext_size;
+		sb->sb_ccnt -= 1;
+	}
+
+	if (sb->sb_sndptr == m) {
+		sb->sb_sndptr = NULL;
+		sb->sb_sndptroff = 0;
+	}
+	if (sb->sb_sndptroff != 0)
+		sb->sb_sndptroff -= m->m_len;
+}
 
 /*
  * Socantsendmore indicates that no more data will be sent on the socket; it
@@ -129,9 +264,9 @@ sbwait(struct sockbuf *sb)
 	SOCKBUF_LOCK_ASSERT(sb);
 
 	sb->sb_flags |= SB_WAIT;
-	return (msleep(&sb->sb_cc, &sb->sb_mtx,
+	return (msleep_sbt(&sb->sb_acc, &sb->sb_mtx,
 	    (sb->sb_flags & SB_NOINTR) ? PSOCK : PSOCK | PCATCH, "sbwait",
-	    sb->sb_timeo));
+	    sb->sb_timeo, 0, 0));
 }
 
 int
@@ -186,11 +321,11 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 		sb->sb_flags &= ~SB_SEL;
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
-		wakeup(&sb->sb_cc);
+		wakeup(&sb->sb_acc);
 	}
 	KNOTE_LOCKED(&sb->sb_sel.si_note, 0);
 	if (sb->sb_upcall != NULL) {
-		ret = sb->sb_upcall(so, sb->sb_upcallarg, M_DONTWAIT);
+		ret = sb->sb_upcall(so, sb->sb_upcallarg, M_NOWAIT);
 		if (ret == SU_ISCONNECTED) {
 			KASSERT(sb == &so->so_rcv,
 			    ("SO_SND upcall returned SU_ISCONNECTED"));
@@ -199,7 +334,7 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 	} else
 		ret = SU_OK;
 	if (sb->sb_flags & SB_AIO)
-		aio_swake(so, sb);
+		sowakeup_aio(so, sb);
 	SOCKBUF_UNLOCK(sb);
 	if (ret == SU_ISCONNECTED)
 		soisconnected(so);
@@ -306,9 +441,7 @@ sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 		return (0);
 	if (td != NULL) {
 #ifndef __rtems__
-		PROC_LOCK(td->td_proc);
-		sbsize_limit = lim_cur(td->td_proc, RLIMIT_SBSIZE);
-		PROC_UNLOCK(td->td_proc);
+		sbsize_limit = lim_cur(td, RLIMIT_SBSIZE);
 #else /* __rtems__ */
 		sbsize_limit = RLIM_INFINITY;
 #endif /* __rtems__ */
@@ -460,15 +593,15 @@ sblastmbufchk(struct sockbuf *sb, const char *file, int line)
  * are discarded and mbufs are compacted where possible.
  */
 void
-sbappend_locked(struct sockbuf *sb, struct mbuf *m)
+sbappend_locked(struct sockbuf *sb, struct mbuf *m, int flags)
 {
 	struct mbuf *n;
 
 	SOCKBUF_LOCK_ASSERT(sb);
 
-	if (m == 0)
+	if (m == NULL)
 		return;
-
+	sbm_clrprotoflags(m, flags);
 	SBLASTRECORDCHK(sb);
 	n = sb->sb_mb;
 	if (n) {
@@ -511,11 +644,11 @@ sbappend_locked(struct sockbuf *sb, struct mbuf *m)
  * are discarded and mbufs are compacted where possible.
  */
 void
-sbappend(struct sockbuf *sb, struct mbuf *m)
+sbappend(struct sockbuf *sb, struct mbuf *m, int flags)
 {
 
 	SOCKBUF_LOCK(sb);
-	sbappend_locked(sb, m);
+	sbappend_locked(sb, m, flags);
 	SOCKBUF_UNLOCK(sb);
 }
 
@@ -525,7 +658,7 @@ sbappend(struct sockbuf *sb, struct mbuf *m)
  * that is, a stream protocol (such as TCP).
  */
 void
-sbappendstream_locked(struct sockbuf *sb, struct mbuf *m)
+sbappendstream_locked(struct sockbuf *sb, struct mbuf *m, int flags)
 {
 	SOCKBUF_LOCK_ASSERT(sb);
 
@@ -533,6 +666,9 @@ sbappendstream_locked(struct sockbuf *sb, struct mbuf *m)
 	KASSERT(sb->sb_mb == sb->sb_lastrecord,("sbappendstream 1"));
 
 	SBLASTMBUFCHK(sb);
+
+	/* Remove all packet headers and mbuf tags to get a pure data chain. */
+	m_demote(m, 1, flags & PRUS_NOTREADY ? M_NOTREADY : 0);
 
 	sbcompress(sb, m, sb->sb_mbtail);
 
@@ -546,38 +682,63 @@ sbappendstream_locked(struct sockbuf *sb, struct mbuf *m)
  * that is, a stream protocol (such as TCP).
  */
 void
-sbappendstream(struct sockbuf *sb, struct mbuf *m)
+sbappendstream(struct sockbuf *sb, struct mbuf *m, int flags)
 {
 
 	SOCKBUF_LOCK(sb);
-	sbappendstream_locked(sb, m);
+	sbappendstream_locked(sb, m, flags);
 	SOCKBUF_UNLOCK(sb);
 }
 
 #ifdef SOCKBUF_DEBUG
 void
-sbcheck(struct sockbuf *sb)
+sbcheck(struct sockbuf *sb, const char *file, int line)
 {
-	struct mbuf *m;
-	struct mbuf *n = 0;
-	u_long len = 0, mbcnt = 0;
+	struct mbuf *m, *n, *fnrdy;
+	u_long acc, ccc, mbcnt;
 
 	SOCKBUF_LOCK_ASSERT(sb);
+
+	acc = ccc = mbcnt = 0;
+	fnrdy = NULL;
 
 	for (m = sb->sb_mb; m; m = n) {
 	    n = m->m_nextpkt;
 	    for (; m; m = m->m_next) {
-		len += m->m_len;
+		if (m->m_len == 0) {
+			printf("sb %p empty mbuf %p\n", sb, m);
+			goto fail;
+		}
+		if ((m->m_flags & M_NOTREADY) && fnrdy == NULL) {
+			if (m != sb->sb_fnrdy) {
+				printf("sb %p: fnrdy %p != m %p\n",
+				    sb, sb->sb_fnrdy, m);
+				goto fail;
+			}
+			fnrdy = m;
+		}
+		if (fnrdy) {
+			if (!(m->m_flags & M_NOTAVAIL)) {
+				printf("sb %p: fnrdy %p, m %p is avail\n",
+				    sb, sb->sb_fnrdy, m);
+				goto fail;
+			}
+		} else
+			acc += m->m_len;
+		ccc += m->m_len;
 		mbcnt += MSIZE;
 		if (m->m_flags & M_EXT) /*XXX*/ /* pretty sure this is bogus */
 			mbcnt += m->m_ext.ext_size;
 	    }
 	}
-	if (len != sb->sb_cc || mbcnt != sb->sb_mbcnt) {
-		printf("cc %ld != %u || mbcnt %ld != %u\n", len, sb->sb_cc,
-		    mbcnt, sb->sb_mbcnt);
-		panic("sbcheck");
+	if (acc != sb->sb_acc || ccc != sb->sb_ccc || mbcnt != sb->sb_mbcnt) {
+		printf("acc %ld/%u ccc %ld/%u mbcnt %ld/%u\n",
+		    acc, sb->sb_acc, ccc, sb->sb_ccc, mbcnt, sb->sb_mbcnt);
+		goto fail;
 	}
+	return;
+fail:
+	panic("%s from %s:%u", __func__, file, line);
 }
 #endif
 
@@ -591,8 +752,9 @@ sbappendrecord_locked(struct sockbuf *sb, struct mbuf *m0)
 
 	SOCKBUF_LOCK_ASSERT(sb);
 
-	if (m0 == 0)
+	if (m0 == NULL)
 		return;
+	m_clrprotoflags(m0);
 	/*
 	 * Put the first mbuf on the queue.  Note this permits zero length
 	 * records.
@@ -633,11 +795,13 @@ sbappendaddr_locked_internal(struct sockbuf *sb, const struct sockaddr *asa,
 	if (asa->sa_len > MLEN)
 		return (0);
 #endif
-	MGET(m, M_DONTWAIT, MT_SONAME);
-	if (m == 0)
+	m = m_get(M_NOWAIT, MT_SONAME);
+	if (m == NULL)
 		return (0);
 	m->m_len = asa->sa_len;
 	bcopy(asa, mtod(m, caddr_t), asa->sa_len);
+	if (m0)
+		m_clrprotoflags(m0);
 	if (ctrl_last)
 		ctrl_last->m_next = m0;	/* concatenate data to control */
 	else
@@ -727,12 +891,13 @@ sbappendcontrol_locked(struct sockbuf *sb, struct mbuf *m0,
 
 	SOCKBUF_LOCK_ASSERT(sb);
 
-	if (control == 0)
+	if (control == NULL)
 		panic("sbappendcontrol_locked");
 	space = m_length(control, &n) + m_length(m0, NULL);
 
 	if (space > sbspace(sb))
 		return (0);
+	m_clrprotoflags(m0);
 	n->m_next = m0;			/* concatenate data to control */
 
 	SBLASTRECORDCHK(sb);
@@ -773,8 +938,8 @@ sbappendcontrol(struct sockbuf *sb, struct mbuf *m0, struct mbuf *control)
  *
  * (2) The mbuf may be coalesced -- i.e., data in the mbuf may be copied into
  *     an mbuf already in the socket buffer.  This can occur if an
- *     appropriate mbuf exists, there is room, and no merging of data types
- *     will occur.
+ *     appropriate mbuf exists, there is room, both mbufs are not marked as
+ *     not ready, and no merging of data types will occur.
  *
  * (3) The mbuf may be appended to the end of the existing mbuf chain.
  *
@@ -803,13 +968,17 @@ sbcompress(struct sockbuf *sb, struct mbuf *m, struct mbuf *n)
 		if (n && (n->m_flags & M_EOR) == 0 &&
 		    M_WRITABLE(n) &&
 		    ((sb->sb_flags & SB_NOCOALESCE) == 0) &&
+		    !(m->m_flags & M_NOTREADY) &&
+		    !(n->m_flags & M_NOTREADY) &&
 		    m->m_len <= MCLBYTES / 4 && /* XXX: Don't copy too much */
 		    m->m_len <= M_TRAILINGSPACE(n) &&
 		    n->m_type == m->m_type) {
 			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
 			    (unsigned)m->m_len);
 			n->m_len += m->m_len;
-			sb->sb_cc += m->m_len;
+			sb->sb_ccc += m->m_len;
+			if (sb->sb_fnrdy == NULL)
+				sb->sb_acc += m->m_len;
 			if (m->m_type != MT_DATA && m->m_type != MT_OOBDATA)
 				/* XXX: Probably don't need.*/
 				sb->sb_ctl += m->m_len;
@@ -843,16 +1012,16 @@ sbflush_internal(struct sockbuf *sb)
 
 	while (sb->sb_mbcnt) {
 		/*
-		 * Don't call sbdrop(sb, 0) if the leading mbuf is non-empty:
+		 * Don't call sbcut(sb, 0) if the leading mbuf is non-empty:
 		 * we would loop forever. Panic instead.
 		 */
-		if (!sb->sb_cc && (sb->sb_mb == NULL || sb->sb_mb->m_len))
+		if (sb->sb_ccc == 0 && (sb->sb_mb == NULL || sb->sb_mb->m_len))
 			break;
-		sbdrop_internal(sb, (int)sb->sb_cc);
+		m_freem(sbcut_internal(sb, (int)sb->sb_ccc));
 	}
-	if (sb->sb_cc || sb->sb_mb || sb->sb_mbcnt)
-		panic("sbflush_internal: cc %u || mb %p || mbcnt %u",
-		    sb->sb_cc, (void *)sb->sb_mb, sb->sb_mbcnt);
+	KASSERT(sb->sb_ccc == 0 && sb->sb_mb == 0 && sb->sb_mbcnt == 0,
+	    ("%s: ccc %u mb %p mbcnt %u", __func__,
+	    sb->sb_ccc, (void *)sb->sb_mb, sb->sb_mbcnt));
 }
 
 void
@@ -873,27 +1042,29 @@ sbflush(struct sockbuf *sb)
 }
 
 /*
- * Drop data from (the front of) a sockbuf.
+ * Cut data from (the front of) a sockbuf.
  */
-static void
-sbdrop_internal(struct sockbuf *sb, int len)
+static struct mbuf *
+sbcut_internal(struct sockbuf *sb, int len)
 {
-	struct mbuf *m;
-	struct mbuf *next;
+	struct mbuf *m, *next, *mfree;
 
 	next = (m = sb->sb_mb) ? m->m_nextpkt : 0;
+	mfree = NULL;
+
 	while (len > 0) {
-		if (m == 0) {
-			if (next == 0)
-				panic("sbdrop");
+		if (m == NULL) {
+			KASSERT(next, ("%s: no next, len %d", __func__, len));
 			m = next;
 			next = m->m_nextpkt;
-			continue;
 		}
 		if (m->m_len > len) {
+			KASSERT(!(m->m_flags & M_NOTAVAIL),
+			    ("%s: m %p M_NOTAVAIL", __func__, m));
 			m->m_len -= len;
 			m->m_data += len;
-			sb->sb_cc -= len;
+			sb->sb_ccc -= len;
+			sb->sb_acc -= len;
 			if (sb->sb_sndptroff != 0)
 				sb->sb_sndptroff -= len;
 			if (m->m_type != MT_DATA && m->m_type != MT_OOBDATA)
@@ -902,11 +1073,35 @@ sbdrop_internal(struct sockbuf *sb, int len)
 		}
 		len -= m->m_len;
 		sbfree(sb, m);
-		m = m_free(m);
+		/*
+		 * Do not put M_NOTREADY buffers to the free list, they
+		 * are referenced from outside.
+		 */
+		if (m->m_flags & M_NOTREADY)
+			m = m->m_next;
+		else {
+			struct mbuf *n;
+
+			n = m->m_next;
+			m->m_next = mfree;
+			mfree = m;
+			m = n;
+		}
 	}
+	/*
+	 * Free any zero-length mbufs from the buffer.
+	 * For SOCK_DGRAM sockets such mbufs represent empty records.
+	 * XXX: For SOCK_STREAM sockets such mbufs can appear in the buffer,
+	 * when sosend_generic() needs to send only control data.
+	 */
 	while (m && m->m_len == 0) {
+		struct mbuf *n;
+
 		sbfree(sb, m);
-		m = m_free(m);
+		n = m->m_next;
+		m->m_next = mfree;
+		mfree = m;
+		m = n;
 	}
 	if (m) {
 		sb->sb_mb = m;
@@ -924,6 +1119,8 @@ sbdrop_internal(struct sockbuf *sb, int len)
 	} else if (m->m_nextpkt == NULL) {
 		sb->sb_lastrecord = m;
 	}
+
+	return (mfree);
 }
 
 /*
@@ -934,17 +1131,31 @@ sbdrop_locked(struct sockbuf *sb, int len)
 {
 
 	SOCKBUF_LOCK_ASSERT(sb);
+	m_freem(sbcut_internal(sb, len));
+}
 
-	sbdrop_internal(sb, len);
+/*
+ * Drop data from (the front of) a sockbuf,
+ * and return it to caller.
+ */
+struct mbuf *
+sbcut_locked(struct sockbuf *sb, int len)
+{
+
+	SOCKBUF_LOCK_ASSERT(sb);
+	return (sbcut_internal(sb, len));
 }
 
 void
 sbdrop(struct sockbuf *sb, int len)
 {
+	struct mbuf *mfree;
 
 	SOCKBUF_LOCK(sb);
-	sbdrop_locked(sb, len);
+	mfree = sbcut_internal(sb, len);
 	SOCKBUF_UNLOCK(sb);
+
+	m_freem(mfree);
 }
 
 /*
@@ -957,8 +1168,8 @@ sbsndptr(struct sockbuf *sb, u_int off, u_int len, u_int *moff)
 	struct mbuf *m, *ret;
 
 	KASSERT(sb->sb_mb != NULL, ("%s: sb_mb is NULL", __func__));
-	KASSERT(off + len <= sb->sb_cc, ("%s: beyond sb", __func__));
-	KASSERT(sb->sb_sndptroff <= sb->sb_cc, ("%s: sndptroff broken", __func__));
+	KASSERT(off + len <= sb->sb_acc, ("%s: beyond sb", __func__));
+	KASSERT(sb->sb_sndptroff <= sb->sb_acc, ("%s: sndptroff broken", __func__));
 
 	/*
 	 * Is off below stored offset? Happens on retransmits.
@@ -1073,9 +1284,9 @@ sbcreatecontrol(caddr_t p, int size, int type, int level)
 	if (CMSG_SPACE((u_int)size) > MCLBYTES)
 		return ((struct mbuf *) NULL);
 	if (CMSG_SPACE((u_int)size) > MLEN)
-		m = m_getcl(M_DONTWAIT, MT_CONTROL, 0);
+		m = m_getcl(M_NOWAIT, MT_CONTROL, 0);
 	else
-		m = m_get(M_DONTWAIT, MT_CONTROL);
+		m = m_get(M_NOWAIT, MT_CONTROL);
 	if (m == NULL)
 		return ((struct mbuf *) NULL);
 	cp = mtod(m, struct cmsghdr *);
@@ -1107,7 +1318,7 @@ void
 sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb)
 {
 
-	xsb->sb_cc = sb->sb_cc;
+	xsb->sb_cc = sb->sb_ccc;
 	xsb->sb_hiwat = sb->sb_hiwat;
 	xsb->sb_mbcnt = sb->sb_mbcnt;
 	xsb->sb_mcnt = sb->sb_mcnt;	
@@ -1124,4 +1335,4 @@ SYSCTL_INT(_kern, KERN_DUMMY, dummy, CTLFLAG_RW, &dummy, 0, "");
 SYSCTL_OID(_kern_ipc, KIPC_MAXSOCKBUF, maxsockbuf, CTLTYPE_ULONG|CTLFLAG_RW,
     &sb_max, 0, sysctl_handle_sb_max, "LU", "Maximum socket buffer size");
 SYSCTL_ULONG(_kern_ipc, KIPC_SOCKBUF_WASTE, sockbuf_waste_factor, CTLFLAG_RW,
-    &sb_efficiency, 0, "");
+    &sb_efficiency, 0, "Socket buffer size waste factor");

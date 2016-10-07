@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -35,20 +39,11 @@ static const char rcsid[] =
 #endif /* not lint */
 
 #ifdef __rtems__
-#define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
-#define RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
-#define RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
-#define RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
-#define RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
-#define RTEMS_BSD_PROGRAM_NO_MALLOC_WRAP
-#define RTEMS_BSD_PROGRAM_NO_CALLOC_WRAP
-#define RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
-#define RTEMS_BSD_PROGRAM_NO_FREE_WRAP
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <sys/queue.h>
-#include <sys/types.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
+#include <sys/queue.h>
 #include <sys/socket.h>
 #include <net/if.h>
 
@@ -59,6 +54,9 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "ifconfig.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifclone-data.h"
+#endif /* __rtems__ */
 
 static void
 list_cloners(void)
@@ -84,10 +82,8 @@ list_cloners(void)
 	ifcr.ifcr_count = ifcr.ifcr_total;
 	ifcr.ifcr_buffer = buf;
 
-	if (ioctl(s, SIOCIFGCLONERS, &ifcr) < 0) {
-		free(buf);
+	if (ioctl(s, SIOCIFGCLONERS, &ifcr) < 0)
 		err(1, "SIOCIFGCLONERS for names");
-	}
 
 	/*
 	 * In case some disappeared in the mean time, clamp it down.
@@ -111,7 +107,11 @@ struct clone_defcb {
 	SLIST_ENTRY(clone_defcb) next;
 };
 
+#ifndef __rtems__
 static SLIST_HEAD(, clone_defcb) clone_defcbh =
+#else /* __rtems__ */
+static SLIST_HEAD(clone_defcb_list, clone_defcb) clone_defcbh =
+#endif /* __rtems__ */
    SLIST_HEAD_INITIALIZER(clone_defcbh);
 
 void
@@ -165,11 +165,12 @@ ifclonecreate(int s, void *arg)
 	}
 
 	/*
-	 * If we get a different name back than we put in, print it.
+	 * If we get a different name back than we put in, update record and
+	 * indicate it should be printed later.
 	 */
 	if (strncmp(name, ifr.ifr_name, sizeof(name)) != 0) {
 		strlcpy(name, ifr.ifr_name, sizeof(name));
-		printf("%s\n", name);
+		printifname = 1;
 	}
 }
 
@@ -182,7 +183,7 @@ DECL_CMD_FUNC(clone_create, arg, d)
 static
 DECL_CMD_FUNC(clone_destroy, arg, d)
 {
-	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	(void) strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCIFDESTROY, &ifr) < 0)
 		err(1, "SIOCIFDESTROY");
 }
@@ -209,26 +210,9 @@ void
 #endif /* __rtems__ */
 clone_ctor(void)
 {
-#ifdef __rtems__
-	SLIST_INIT(&clone_defcbh);
-#endif /* __rtems__ */
-#define	N(a)	(sizeof(a) / sizeof(a[0]))
 	size_t i;
 
-	for (i = 0; i < N(clone_cmds);  i++)
+	for (i = 0; i < nitems(clone_cmds);  i++)
 		cmd_register(&clone_cmds[i]);
 	opt_register(&clone_Copt);
-#undef N
 }
-#ifdef __rtems__
-void
-clone_dtor(void)
-{
-	struct clone_defcb *dcp;
-	struct clone_defcb *dcp_tmp;
-
-	SLIST_FOREACH_SAFE(dcp, &clone_defcbh, next, dcp_tmp) {
-		free(dcp);
-	}
-}
-#endif /* __rtems__ */

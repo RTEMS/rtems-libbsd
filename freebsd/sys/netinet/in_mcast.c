@@ -40,23 +40,28 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <rtems/bsd/sys/lock.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
+#include <sys/rmlock.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <sys/sysctl.h>
 #include <sys/ktr.h>
+#include <sys/taskqueue.h>
 #include <sys/tree.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_dl.h>
 #include <net/route.h>
 #include <net/vnet.h>
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
+#include <netinet/in_fib.h>
 #include <netinet/in_pcb.h>
 #include <netinet/in_var.h>
 #include <netinet/ip_var.h>
@@ -148,6 +153,8 @@ static void	inm_purge(struct in_multi *);
 static void	inm_reap(struct in_multi *);
 static struct ip_moptions *
 		inp_findmoptions(struct inpcb *);
+static void	inp_freemoptions_internal(struct ip_moptions *);
+static void	inp_gcmoptions(void *, int);
 static int	inp_get_source_filters(struct inpcb *, struct sockopt *);
 static int	inp_join_group(struct inpcb *, struct sockopt *);
 static int	inp_leave_group(struct inpcb *, struct sockopt *);
@@ -164,24 +171,25 @@ static SYSCTL_NODE(_net_inet_ip, OID_AUTO, mcast, CTLFLAG_RW, 0,
 
 static u_long in_mcast_maxgrpsrc = IP_MAX_GROUP_SRC_FILTER;
 SYSCTL_ULONG(_net_inet_ip_mcast, OID_AUTO, maxgrpsrc,
-    CTLFLAG_RW | CTLFLAG_TUN, &in_mcast_maxgrpsrc, 0,
+    CTLFLAG_RWTUN, &in_mcast_maxgrpsrc, 0,
     "Max source filters per group");
-TUNABLE_ULONG("net.inet.ip.mcast.maxgrpsrc", &in_mcast_maxgrpsrc);
 
 static u_long in_mcast_maxsocksrc = IP_MAX_SOCK_SRC_FILTER;
 SYSCTL_ULONG(_net_inet_ip_mcast, OID_AUTO, maxsocksrc,
-    CTLFLAG_RW | CTLFLAG_TUN, &in_mcast_maxsocksrc, 0,
+    CTLFLAG_RWTUN, &in_mcast_maxsocksrc, 0,
     "Max source filters per socket");
-TUNABLE_ULONG("net.inet.ip.mcast.maxsocksrc", &in_mcast_maxsocksrc);
 
 int in_mcast_loop = IP_DEFAULT_MULTICAST_LOOP;
-SYSCTL_INT(_net_inet_ip_mcast, OID_AUTO, loop, CTLFLAG_RW | CTLFLAG_TUN,
+SYSCTL_INT(_net_inet_ip_mcast, OID_AUTO, loop, CTLFLAG_RWTUN,
     &in_mcast_loop, 0, "Loopback multicast datagrams by default");
-TUNABLE_INT("net.inet.ip.mcast.loop", &in_mcast_loop);
 
 static SYSCTL_NODE(_net_inet_ip_mcast, OID_AUTO, filters,
     CTLFLAG_RD | CTLFLAG_MPSAFE, sysctl_ip_mcast_filters,
     "Per-interface stack-wide source filters");
+
+static STAILQ_HEAD(, ip_moptions) imo_gc_list =
+    STAILQ_HEAD_INITIALIZER(imo_gc_list);
+static struct task imo_gc_task = TASK_INITIALIZER(0, inp_gcmoptions, NULL);
 
 #ifdef KTR
 /*
@@ -219,6 +227,49 @@ imf_init(struct in_mfilter *imf, const int st0, const int st1)
 	RB_INIT(&imf->imf_sources);
 	imf->imf_st[0] = st0;
 	imf->imf_st[1] = st1;
+}
+
+/*
+ * Function for looking up an in_multi record for an IPv4 multicast address
+ * on a given interface. ifp must be valid. If no record found, return NULL.
+ * The IN_MULTI_LOCK and IF_ADDR_LOCK on ifp must be held.
+ */
+struct in_multi *
+inm_lookup_locked(struct ifnet *ifp, const struct in_addr ina)
+{
+	struct ifmultiaddr *ifma;
+	struct in_multi *inm;
+
+	IN_MULTI_LOCK_ASSERT();
+	IF_ADDR_LOCK_ASSERT(ifp);
+
+	inm = NULL;
+	TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
+		if (ifma->ifma_addr->sa_family == AF_INET) {
+			inm = (struct in_multi *)ifma->ifma_protospec;
+			if (inm->inm_addr.s_addr == ina.s_addr)
+				break;
+			inm = NULL;
+		}
+	}
+	return (inm);
+}
+
+/*
+ * Wrapper for inm_lookup_locked().
+ * The IF_ADDR_LOCK will be taken on ifp and released on return.
+ */
+struct in_multi *
+inm_lookup(struct ifnet *ifp, const struct in_addr ina)
+{
+	struct in_multi *inm;
+
+	IN_MULTI_LOCK_ASSERT();
+	IF_ADDR_RLOCK(ifp);
+	inm = inm_lookup_locked(ifp, ina);
+	IF_ADDR_RUNLOCK(ifp);
+
+	return (inm);
 }
 
 /*
@@ -467,8 +518,8 @@ in_getmulti(struct ifnet *ifp, const struct in_addr *group,
 	 */
 	inm = malloc(sizeof(*inm), M_IPMADDR, M_NOWAIT | M_ZERO);
 	if (inm == NULL) {
-		if_delmulti_ifma(ifma);
 		IF_ADDR_WUNLOCK(ifp);
+		if_delmulti_ifma(ifma);
 		return (ENOMEM);
 	}
 	inm->inm_addr = *group;
@@ -477,12 +528,7 @@ in_getmulti(struct ifnet *ifp, const struct in_addr *group,
 	inm->inm_ifma = ifma;
 	inm->inm_refcount = 1;
 	inm->inm_state = IGMP_NOT_MEMBER;
-
-	/*
-	 * Pending state-changes per group are subject to a bounds check.
-	 */
-	IFQ_SET_MAXLEN(&inm->inm_scq, IGMP_MAX_STATE_CHANGES);
-
+	mbufq_init(&inm->inm_scq, IGMP_MAX_STATE_CHANGES);
 	inm->inm_st[0].iss_fmode = MCAST_UNDEFINED;
 	inm->inm_st[1].iss_fmode = MCAST_UNDEFINED;
 	RB_INIT(&inm->inm_srcs);
@@ -575,7 +621,7 @@ inm_clear_recorded(struct in_multi *inm)
  *
  * Return 0 if the source didn't exist or was already marked as recorded.
  * Return 1 if the source was marked as recorded by this function.
- * Return <0 if any error occured (negated errno code).
+ * Return <0 if any error occurred (negated errno code).
  */
 int
 inm_record_source(struct in_multi *inm, const in_addr_t naddr)
@@ -1177,10 +1223,7 @@ out_inm_release:
 int
 in_leavegroup(struct in_multi *inm, /*const*/ struct in_mfilter *imf)
 {
-	struct ifnet *ifp;
 	int error;
-
-	ifp = inm->inm_ifp;
 
 	IN_MULTI_LOCK();
 	error = in_leavegroup_locked(inm, imf);
@@ -1238,7 +1281,9 @@ in_leavegroup_locked(struct in_multi *inm, /*const*/ struct in_mfilter *imf)
 	KASSERT(error == 0, ("%s: failed to merge inm state", __func__));
 
 	CTR1(KTR_IGMPV3, "%s: doing igmp downcall", __func__);
+	CURVNET_SET(inm->inm_ifp->if_vnet);
 	error = igmp_change_state(inm);
+	CURVNET_RESTORE();
 	if (error)
 		CTR1(KTR_IGMPV3, "%s: failed igmp downcall", __func__);
 
@@ -1526,17 +1571,29 @@ inp_findmoptions(struct inpcb *inp)
 }
 
 /*
- * Discard the IP multicast options (and source filters).
+ * Discard the IP multicast options (and source filters).  To minimize
+ * the amount of work done while holding locks such as the INP's
+ * pcbinfo lock (which is used in the receive path), the free
+ * operation is performed asynchronously in a separate task.
  *
  * SMPng: NOTE: assumes INP write lock is held.
  */
 void
 inp_freemoptions(struct ip_moptions *imo)
 {
-	struct in_mfilter	*imf;
-	size_t			 idx, nmships;
 
 	KASSERT(imo != NULL, ("%s: ip_moptions is NULL", __func__));
+	IN_MULTI_LOCK();
+	STAILQ_INSERT_TAIL(&imo_gc_list, imo, imo_link);
+	IN_MULTI_UNLOCK();
+	taskqueue_enqueue(taskqueue_thread, &imo_gc_task);
+}
+
+static void
+inp_freemoptions_internal(struct ip_moptions *imo)
+{
+	struct in_mfilter	*imf;
+	size_t			 idx, nmships;
 
 	nmships = imo->imo_num_memberships;
 	for (idx = 0; idx < nmships; ++idx) {
@@ -1552,6 +1609,22 @@ inp_freemoptions(struct ip_moptions *imo)
 		free(imo->imo_mfilters, M_INMFILTER);
 	free(imo->imo_membership, M_IPMOPTS);
 	free(imo, M_IPMOPTS);
+}
+
+static void
+inp_gcmoptions(void *context, int pending)
+{
+	struct ip_moptions *imo;
+
+	IN_MULTI_LOCK();
+	while (!STAILQ_EMPTY(&imo_gc_list)) {
+		imo = STAILQ_FIRST(&imo_gc_list);
+		STAILQ_REMOVE_HEAD(&imo_gc_list, imo_link);
+		IN_MULTI_UNLOCK();
+		inp_freemoptions_internal(imo);
+		IN_MULTI_LOCK();
+	}
+	IN_MULTI_UNLOCK();
 }
 
 /*
@@ -1680,6 +1753,7 @@ inp_get_source_filters(struct inpcb *inp, struct sockopt *sopt)
 int
 inp_getmoptions(struct inpcb *inp, struct sockopt *sopt)
 {
+	struct rm_priotracker	 in_ifa_tracker;
 	struct ip_mreqn		 mreqn;
 	struct ip_moptions	*imo;
 	struct ifnet		*ifp;
@@ -1719,7 +1793,7 @@ inp_getmoptions(struct inpcb *inp, struct sockopt *sopt)
 				mreqn.imr_address = imo->imo_multicast_addr;
 			} else if (ifp != NULL) {
 				mreqn.imr_ifindex = ifp->if_index;
-				IFP_TO_IA(ifp, ia);
+				IFP_TO_IA(ifp, ia, &in_ifa_tracker);
 				if (ia != NULL) {
 					mreqn.imr_address =
 					    IA_SIN(ia)->sin_addr;
@@ -1738,7 +1812,7 @@ inp_getmoptions(struct inpcb *inp, struct sockopt *sopt)
 		break;
 
 	case IP_MULTICAST_TTL:
-		if (imo == 0)
+		if (imo == NULL)
 			optval = coptval = IP_DEFAULT_MULTICAST_TTL;
 		else
 			optval = coptval = imo->imo_multicast_ttl;
@@ -1750,7 +1824,7 @@ inp_getmoptions(struct inpcb *inp, struct sockopt *sopt)
 		break;
 
 	case IP_MULTICAST_LOOP:
-		if (imo == 0)
+		if (imo == NULL)
 			optval = coptval = IP_DEFAULT_MULTICAST_LOOP;
 		else
 			optval = coptval = imo->imo_multicast_loop;
@@ -1810,7 +1884,10 @@ static struct ifnet *
 inp_lookup_mcast_ifp(const struct inpcb *inp,
     const struct sockaddr_in *gsin, const struct in_addr ina)
 {
+	struct rm_priotracker in_ifa_tracker;
 	struct ifnet *ifp;
+	struct nhop4_basic nh4;
+	uint32_t fibnum;
 
 	KASSERT(gsin->sin_family == AF_INET, ("%s: not AF_INET", __func__));
 	KASSERT(IN_MULTICAST(ntohl(gsin->sin_addr.s_addr)),
@@ -1820,21 +1897,15 @@ inp_lookup_mcast_ifp(const struct inpcb *inp,
 	if (!in_nullhost(ina)) {
 		INADDR_TO_IFP(ina, ifp);
 	} else {
-		struct route ro;
-
-		ro.ro_rt = NULL;
-		memcpy(&ro.ro_dst, gsin, sizeof(struct sockaddr_in));
-		in_rtalloc_ign(&ro, 0, inp ? inp->inp_inc.inc_fibnum : 0);
-		if (ro.ro_rt != NULL) {
-			ifp = ro.ro_rt->rt_ifp;
-			KASSERT(ifp != NULL, ("%s: null ifp", __func__));
-			RTFREE(ro.ro_rt);
-		} else {
+		fibnum = inp ? inp->inp_inc.inc_fibnum : 0;
+		if (fib4_lookup_nh_basic(fibnum, gsin->sin_addr, 0, 0, &nh4)==0)
+			ifp = nh4.nh_ifp;
+		else {
 			struct in_ifaddr *ia;
 			struct ifnet *mifp;
 
 			mifp = NULL;
-			IN_IFADDR_RLOCK();
+			IN_IFADDR_RLOCK(&in_ifa_tracker);
 			TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 				mifp = ia->ia_ifp;
 				if (!(mifp->if_flags & IFF_LOOPBACK) &&
@@ -1843,7 +1914,7 @@ inp_lookup_mcast_ifp(const struct inpcb *inp,
 					break;
 				}
 			}
-			IN_IFADDR_RUNLOCK();
+			IN_IFADDR_RUNLOCK(&in_ifa_tracker);
 		}
 	}
 
@@ -2855,7 +2926,7 @@ sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 	return (retval);
 }
 
-#ifdef KTR
+#if defined(KTR) && (KTR_COMPILE & KTR_IGMPV3)
 
 static const char *inm_modestrs[] = { "un", "in", "ex" };
 
@@ -2910,7 +2981,7 @@ inm_print(const struct in_multi *inm)
 	    inm->inm_timer,
 	    inm_state_str(inm->inm_state),
 	    inm->inm_refcount,
-	    inm->inm_scq.ifq_len);
+	    inm->inm_scq.mq_len);
 	printf("igi %p nsrc %lu sctimer %u scrv %u\n",
 	    inm->inm_igi,
 	    inm->inm_nsrc,
@@ -2927,7 +2998,7 @@ inm_print(const struct in_multi *inm)
 	printf("%s: --- end inm %p ---\n", __func__, inm);
 }
 
-#else /* !KTR */
+#else /* !KTR || !(KTR_COMPILE & KTR_IGMPV3) */
 
 void
 inm_print(const struct in_multi *inm)
@@ -2935,6 +3006,6 @@ inm_print(const struct in_multi *inm)
 
 }
 
-#endif /* KTR */
+#endif /* KTR && (KTR_COMPILE & KTR_IGMPV3) */
 
 RB_GENERATE(ip_msource_tree, ip_msource, ims_link, ip_msource_cmp);

@@ -63,11 +63,17 @@
 #define	CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
 #endif
 
+#ifndef CLOCK_REALTIME_FAST
+#define	CLOCK_REALTIME_FAST CLOCK_REALTIME
+#endif
+
 #ifndef CLOCK_UPTIME
 #define	CLOCK_UPTIME CLOCK_MONOTONIC
 #endif
 
 #define	SIZE_T_MAX SIZE_MAX
+
+#define	__libc_sigprocmask(a, b, c) sigprocmask(a, b, c)
 
 __BEGIN_DECLS
 

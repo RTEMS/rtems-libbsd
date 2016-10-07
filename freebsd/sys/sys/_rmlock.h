@@ -32,16 +32,16 @@
 #ifndef _SYS__RMLOCK_H_
 #define	_SYS__RMLOCK_H_
 
-/* 
- * XXXUPS remove as soon as we have per cpu variable
- * linker sets and  can define rm_queue in _rm_lock.h
-*/
-#include <sys/pcpu.h>
 /*
  * Mostly reader/occasional writer lock.
  */
 
 LIST_HEAD(rmpriolist,rm_priotracker);
+
+struct rm_queue {
+	struct rm_queue	*volatile rmq_next;
+	struct rm_queue	*volatile rmq_prev;
+};
 
 #ifndef __rtems__
 struct rmlock {
@@ -59,8 +59,8 @@ struct rmlock {
 #define	rm_lock_mtx	_rm_lock._rm_lock_mtx
 #define	rm_lock_sx	_rm_lock._rm_lock_sx
 #else /* __rtems__ */
-#include <sys/rwlock.h>
-#define rmlock rwlock
+#include <sys/_rwlock.h>
+#define	rmlock rwlock
 #endif /* __rtems__ */
 
 struct rm_priotracker {

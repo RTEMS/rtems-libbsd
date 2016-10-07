@@ -79,12 +79,11 @@ __FBSDID("$FreeBSD$");
  */
 
 #include "port_before.h"
-#ifndef USE_KQUEUE
+#if !defined(USE_KQUEUE) && !defined(USE_POLL)
 #include "fd_setsize.h"
 #endif
 
 #include "namespace.h"
-#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -121,7 +120,9 @@ __FBSDID("$FreeBSD$");
 #include "un-namespace.h"
 
 /* Options.  Leave them on. */
-#define DEBUG
+#ifndef	DEBUG
+#define	DEBUG
+#endif
 #include "res_debug.h"
 #include "res_private.h"
 
@@ -576,8 +577,7 @@ res_nsend(res_state statp,
 /* Private */
 
 static int
-get_salen(sa)
-	const struct sockaddr *sa;
+get_salen(const struct sockaddr *sa)
 {
 
 #ifdef HAVE_SA_LEN
@@ -598,9 +598,7 @@ get_salen(sa)
  * pick appropriate nsaddr_list for use.  see res_init() for initialization.
  */
 static struct sockaddr *
-get_nsaddr(statp, n)
-	res_state statp;
-	size_t n;
+get_nsaddr(res_state statp, size_t n)
 {
 
 	if (!statp->nsaddr_list[n].sin_family && EXT(statp).ext) {
@@ -662,7 +660,8 @@ send_vc(res_state statp,
 		if (statp->_vcsock >= 0)
 			res_nclose(statp);
 
-		statp->_vcsock = _socket(nsap->sa_family, SOCK_STREAM, 0);
+		statp->_vcsock = _socket(nsap->sa_family, SOCK_STREAM |
+		    SOCK_CLOEXEC, 0);
 #if !defined(USE_POLL) && !defined(USE_KQUEUE)
 		if (statp->_vcsock > highestFD) {
 			res_nclose(statp);
@@ -853,7 +852,7 @@ send_dg(res_state statp,
 	nsaplen = get_salen(nsap);
 	if (EXT(statp).nssocks[ns] == -1) {
 		EXT(statp).nssocks[ns] = _socket(nsap->sa_family,
-		    SOCK_DGRAM, 0);
+		    SOCK_DGRAM | SOCK_CLOEXEC, 0);
 #if !defined(USE_POLL) && !defined(USE_KQUEUE)
 		if (EXT(statp).nssocks[ns] > highestFD) {
 			res_nclose(statp);
@@ -964,7 +963,7 @@ send_dg(res_state statp,
 		timeout.tv_nsec/1000000;
 	pollfd.fd = s;
 	pollfd.events = POLLRDNORM;
-	n = poll(&pollfd, 1, polltimeout);
+	n = _poll(&pollfd, 1, polltimeout);
 #endif /* USE_POLL */
 
 	if (n == 0) {

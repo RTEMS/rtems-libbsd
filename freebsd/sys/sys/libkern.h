@@ -65,8 +65,20 @@ static __inline u_int max(u_int a, u_int b) { return (a > b ? a : b); }
 static __inline u_int min(u_int a, u_int b) { return (a < b ? a : b); }
 static __inline quad_t qmax(quad_t a, quad_t b) { return (a > b ? a : b); }
 static __inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
+static __inline u_quad_t uqmax(u_quad_t a, u_quad_t b) { return (a > b ? a : b); }
+static __inline u_quad_t uqmin(u_quad_t a, u_quad_t b) { return (a < b ? a : b); }
 static __inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
 static __inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
+static __inline __uintmax_t ummax(__uintmax_t a, __uintmax_t b)
+{
+
+	return (a > b ? a : b);
+}
+static __inline __uintmax_t ummin(__uintmax_t a, __uintmax_t b)
+{
+
+	return (a < b ? a : b);
+}
 static __inline off_t omax(off_t a, off_t b) { return (a > b ? a : b); }
 static __inline off_t omin(off_t a, off_t b) { return (a < b ? a : b); }
 
@@ -84,8 +96,21 @@ extern int arc4rand_iniseed_state;
 /* Prototypes for non-quad routines. */
 struct malloc_type;
 uint32_t arc4random(void);
+#ifndef __rtems__
 void	 arc4rand(void *ptr, u_int len, int reseed);
+#else /* __rtems__ */
+void arc4random_buf(void *, size_t);
+
+static inline void
+arc4rand(void *ptr, u_int len, int reseed)
+{
+
+	(void)reseed;
+	arc4random_buf(ptr, len);
+}
+#endif /* __rtems__ */
 int	 bcmp(const void *, const void *, size_t);
+int	 timingsafe_bcmp(const void *, const void *, size_t);
 void	*bsearch(const void *, const void *, size_t,
 	    size_t, int (*)(const void *, const void *));
 #ifndef __rtems__
@@ -95,10 +120,9 @@ int	 ffs(int);
 #ifndef	HAVE_INLINE_FFSL
 int	 ffsl(long);
 #endif
-#else /* __rtems__ */
-#define	ffs(_x) __builtin_ffs((unsigned int)(_x))
-#define	ffsl(_x) __builtin_ffsl((unsigned long)(_x))
-#endif /* __rtems__ */
+#ifndef	HAVE_INLINE_FFSLL
+int	 ffsll(long long);
+#endif
 #ifndef	HAVE_INLINE_FLS
 int	 fls(int);
 #endif
@@ -108,10 +132,36 @@ int	 flsl(long);
 #ifndef	HAVE_INLINE_FLSLL
 int	 flsll(long long);
 #endif
+#else /* __rtems__ */
+#define	ffs(_x) __builtin_ffs((unsigned int)(_x))
+#define	ffsl(_x) __builtin_ffsl((unsigned long)(_x))
+
+static inline int
+fls(int x)
+{
+
+  return (x != 0 ? sizeof(x) * 8 - __builtin_clz((unsigned int)x) : 0);
+}
+
+static inline int
+flsl(long x)
+{
+
+  return (x != 0 ? sizeof(x) * 8 - __builtin_clzl((unsigned long)x) : 0);
+}
+#endif /* __rtems__ */
+#define	bitcount64(x)	__bitcount64((uint64_t)(x))
+#define	bitcount32(x)	__bitcount32((uint32_t)(x))
+#define	bitcount16(x)	__bitcount16((uint16_t)(x))
+#define	bitcountl(x)	__bitcountl((u_long)(x))
+#define	bitcount(x)	__bitcount((u_int)(x))
+
 int	 fnmatch(const char *, const char *, int);
 int	 locc(int, char *, u_int);
 void	*memchr(const void *s, int c, size_t n);
+void	*memcchr(const void *s, int c, size_t n);
 int	 memcmp(const void *b1, const void *b2, size_t len);
+void	*memmem(const void *l, size_t l_len, const void *s, size_t s_len);
 void	 qsort(void *base, size_t nmemb, size_t size,
 	    int (*compar)(const void *, const void *));
 void	 qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
@@ -123,10 +173,7 @@ u_long	 random(void);
 u_long	 _bsd_random(void);
 #define	random() _bsd_random()
 #endif /* __rtems__ */
-char	*index(const char *, int);
-char	*rindex(const char *, int);
 int	 scanc(u_int, const u_char *, const u_char *, int);
-int	 skpc(int, int, char *);
 #ifndef __rtems__
 void	 srandom(u_long);
 #else /* __rtems__ */
@@ -135,14 +182,18 @@ void	 _bsd_srandom(u_long);
 #endif /* __rtems__ */
 int	 strcasecmp(const char *, const char *);
 char	*strcat(char * __restrict, const char * __restrict);
+char	*strchr(const char *, int);
 int	 strcmp(const char *, const char *);
 char	*strcpy(char * __restrict, const char * __restrict);
 size_t	 strcspn(const char * __restrict, const char * __restrict) __pure;
 #ifdef __rtems__
 #include <string.h>
-#define strdup _bsd_strdup
+#define	strdup _bsd_strdup
+#define	strndup _bsd_strndup
 #endif /* __rtems__ */
 char	*strdup(const char *__restrict, struct malloc_type *);
+char	*strncat(char *, const char *, size_t);
+char	*strndup(const char *__restrict, size_t, struct malloc_type *);
 size_t	 strlcat(char *, const char *, size_t);
 size_t	 strlcpy(char *, const char *, size_t);
 size_t	 strlen(const char *);
@@ -150,12 +201,13 @@ int	 strncasecmp(const char *, const char *, size_t);
 int	 strncmp(const char *, const char *, size_t);
 char	*strncpy(char * __restrict, const char * __restrict, size_t);
 size_t	 strnlen(const char *, size_t);
+char	*strrchr(const char *, int);
 char	*strsep(char **, const char *delim);
 size_t	 strspn(const char *, const char *);
 char	*strstr(const char *, const char *);
 int	 strvalid(const char *, size_t);
 
-extern uint32_t crc32_tab[];
+extern const uint32_t crc32_tab[];
 
 static __inline uint32_t
 crc32_raw(const void *buf, size_t size, uint32_t crc)
@@ -177,8 +229,8 @@ crc32(const void *buf, size_t size)
 }
 
 uint32_t
-calculate_crc32c(uint32_t crc32c, const unsigned char *buffer, 
-        unsigned int length);
+calculate_crc32c(uint32_t crc32c, const unsigned char *buffer,
+    unsigned int length);
 
 
 LIBKERN_INLINE void *memset(void *, int, size_t);
@@ -199,15 +251,17 @@ memset(void *b, int c, size_t len)
 
 #ifndef __rtems__
 static __inline char *
-strchr(const char *p, int ch)
+index(const char *p, int ch)
 {
-	return (index(p, ch));
+
+	return (strchr(p, ch));
 }
 
 static __inline char *
-strrchr(const char *p, int ch)
+rindex(const char *p, int ch)
 {
-	return (rindex(p, ch));
+
+	return (strrchr(p, ch));
 }
 #endif /* __rtems__ */
 

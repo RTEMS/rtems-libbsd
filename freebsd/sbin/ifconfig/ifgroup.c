@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-namespace.h"
+#endif /* __rtems__ */
+
 /*-
  * Copyright (c) 2006 Max Laier. All rights reserved.
  *
@@ -31,18 +35,9 @@ static const char rcsid[] =
 #endif /* not lint */
 
 #ifdef __rtems__
-#define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
-#define RTEMS_BSD_PROGRAM_NO_SOCKET_WRAP
-#define RTEMS_BSD_PROGRAM_NO_CLOSE_WRAP
-#define RTEMS_BSD_PROGRAM_NO_FOPEN_WRAP
-#define RTEMS_BSD_PROGRAM_NO_FCLOSE_WRAP
-#define RTEMS_BSD_PROGRAM_NO_MALLOC_WRAP
-#define RTEMS_BSD_PROGRAM_NO_CALLOC_WRAP
-#define RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
-#define RTEMS_BSD_PROGRAM_NO_FREE_WRAP
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <sys/types.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -56,6 +51,9 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "ifconfig.h"
+#ifdef __rtems__
+#include "rtems-bsd-ifconfig-ifgroup-data.h"
+#endif /* __rtems__ */
 
 /* ARGSUSED */
 static void
@@ -66,7 +64,12 @@ setifgroup(const char *group_name, int d, int s, const struct afswtch *rafp)
 	memset(&ifgr, 0, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, name, IFNAMSIZ);
 
-	if (group_name[0] && isdigit((unsigned char)group_name[strlen(group_name) - 1]))
+#ifndef __rtems__
+	if (group_name[0] && isdigit(group_name[strlen(group_name) - 1]))
+#else /* __rtems__ */
+	if (group_name[0] && isdigit(
+	    (unsigned char)group_name[strlen(group_name) - 1]))
+#endif /* __rtems__ */
 		errx(1, "setifgroup: group names may not end in a digit");
 
 	if (strlcpy(ifgr.ifgr_group, group_name, IFNAMSIZ) >= IFNAMSIZ)
@@ -84,7 +87,12 @@ unsetifgroup(const char *group_name, int d, int s, const struct afswtch *rafp)
 	memset(&ifgr, 0, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, name, IFNAMSIZ);
 
-	if (group_name[0] && isdigit((unsigned char)group_name[strlen(group_name) - 1]))
+#ifndef __rtems__
+	if (group_name[0] && isdigit(group_name[strlen(group_name) - 1]))
+#else /* __rtems__ */
+	if (group_name[0] && isdigit(
+	    (unsigned char)group_name[strlen(group_name) - 1]))
+#endif /* __rtems__ */
 		errx(1, "unsetifgroup: group names may not end in a digit");
 
 	if (strlcpy(ifgr.ifgr_group, group_name, IFNAMSIZ) >= IFNAMSIZ)
@@ -99,9 +107,6 @@ getifgroups(int s)
 	int			 len, cnt;
 	struct ifgroupreq	 ifgr;
 	struct ifg_req		*ifg;
-
-	if (!verbose)
-		return;
 
 	memset(&ifgr, 0, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, name, IFNAMSIZ);
@@ -135,6 +140,8 @@ getifgroups(int s)
 	}
 	if (cnt)
 		printf("\n");
+
+	free(ifgr.ifgr_groups);
 }
 
 static void
@@ -151,7 +158,6 @@ printgroup(const char *groupname)
 	bzero(&ifgr, sizeof(ifgr));
 	strlcpy(ifgr.ifgr_name, groupname, sizeof(ifgr.ifgr_name));
 	if (ioctl(s, SIOCGIFGMEMB, (caddr_t)&ifgr) == -1) {
-		close(s);
 		if (errno == EINVAL || errno == ENOTTY ||
 		    errno == ENOENT)
 			exit(0);
@@ -160,15 +166,10 @@ printgroup(const char *groupname)
 	}
 
 	len = ifgr.ifgr_len;
-	if ((ifgr.ifgr_groups = calloc(1, len)) == NULL) {
-		close(s);
+	if ((ifgr.ifgr_groups = calloc(1, len)) == NULL)
 		err(1, "printgroup");
-	}
-	if (ioctl(s, SIOCGIFGMEMB, (caddr_t)&ifgr) == -1) {
-		free(ifgr.ifgr_groups);
-		close(s);
+	if (ioctl(s, SIOCGIFGMEMB, (caddr_t)&ifgr) == -1)
 		err(1, "SIOCGIFGMEMB");
-	}
 
 	for (ifg = ifgr.ifgr_groups; ifg && len >= sizeof(struct ifg_req);
 	    ifg++) {
@@ -177,7 +178,6 @@ printgroup(const char *groupname)
 		cnt++;
 	}
 	free(ifgr.ifgr_groups);
-	close(s);
 
 	exit(0);
 }
@@ -200,12 +200,10 @@ void
 #endif /* __rtems__ */
 group_ctor(void)
 {
-#define	N(a)	(sizeof(a) / sizeof(a[0]))
 	int i;
 
-	for (i = 0; i < N(group_cmds);  i++)
+	for (i = 0; i < nitems(group_cmds);  i++)
 		cmd_register(&group_cmds[i]);
 	af_register(&af_group);
 	opt_register(&group_gopt);
-#undef N
 }

@@ -45,62 +45,60 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_config.h>
 
 #include <rtems/bsd/sys/param.h>
+#include <sys/jail.h>
 #include <sys/kernel.h>
-#include <sys/sbuf.h>
-#include <sys/systm.h>
-#include <sys/sysctl.h>
-#include <sys/proc.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
-#include <sys/jail.h>
+#include <sys/proc.h>
+#include <sys/random.h>
+#include <sys/sbuf.h>
 #include <sys/smp.h>
 #include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
 #include <rtems/bsd/sys/unistd.h>
 
-SYSCTL_NODE(, 0,	  sysctl, CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(0,	  sysctl, CTLFLAG_RW, 0,
 	"Sysctl internal magic");
-SYSCTL_NODE(, CTL_KERN,	  kern,   CTLFLAG_RW|CTLFLAG_CAPRD, 0,
+SYSCTL_ROOT_NODE(CTL_KERN,	  kern,   CTLFLAG_RW|CTLFLAG_CAPRD, 0,
 	"High kernel, proc, limits &c");
-SYSCTL_NODE(, CTL_VM,	  vm,     CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_VM,	  vm,     CTLFLAG_RW, 0,
 	"Virtual memory");
 #ifndef __rtems__
-SYSCTL_NODE(, CTL_VFS,	  vfs,     CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_VFS,	  vfs,     CTLFLAG_RW, 0,
 	"File system");
 #endif /* __rtems__ */
-SYSCTL_NODE(, CTL_NET,	  net,    CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_NET,	  net,    CTLFLAG_RW, 0,
 	"Network, (see socket.h)");
-SYSCTL_NODE(, CTL_DEBUG,  debug,  CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_DEBUG,  debug,  CTLFLAG_RW, 0,
 	"Debugging");
 #ifndef __rtems__
 SYSCTL_NODE(_debug, OID_AUTO,  sizeof,  CTLFLAG_RW, 0,
 	"Sizeof various things");
 #endif /* __rtems__ */
-SYSCTL_NODE(, CTL_HW,	  hw,     CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_HW,	  hw,     CTLFLAG_RW, 0,
 	"hardware");
 #ifndef __rtems__
-SYSCTL_NODE(, CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
 	"machine dependent");
-SYSCTL_NODE(, CTL_USER,	  user,   CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_USER,	  user,   CTLFLAG_RW, 0,
 	"user-level");
-SYSCTL_NODE(, CTL_P1003_1B,  p1003_1b,   CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(CTL_P1003_1B,  p1003_1b,   CTLFLAG_RW, 0,
 	"p1003_1b, (see p1003_1b.h)");
 
-SYSCTL_NODE(, OID_AUTO,  compat, CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(OID_AUTO,  compat, CTLFLAG_RW, 0,
 	"Compatibility code");
 #endif /* __rtems__ */
-SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0, 
+SYSCTL_ROOT_NODE(OID_AUTO, security, CTLFLAG_RW, 0, 
      	"Security");
 #ifndef __rtems__
 #ifdef REGRESSION
-SYSCTL_NODE(, OID_AUTO, regression, CTLFLAG_RW, 0,
+SYSCTL_ROOT_NODE(OID_AUTO, regression, CTLFLAG_RW, 0,
      "Regression test MIB");
 #endif
 
 SYSCTL_STRING(_kern, OID_AUTO, ident, CTLFLAG_RD|CTLFLAG_MPSAFE,
     kern_ident, 0, "Kernel identifier");
-
-SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE|
-    CTLFLAG_CAPRD, osrelease, 0, "Operating system release");
 
 SYSCTL_INT(_kern, KERN_OSREV, osrevision, CTLFLAG_RD|CTLFLAG_CAPRD,
     SYSCTL_NULL_INT_PTR, BSD, "Operating system revision");
@@ -114,20 +112,13 @@ SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD|CTLFLAG_MPSAFE,
 SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD|CTLFLAG_MPSAFE|
     CTLFLAG_CAPRD, ostype, 0, "Operating system type");
 
-/*
- * NOTICE: The *userland* release date is available in
- * /usr/include/osreldate.h
- */
-SYSCTL_INT(_kern, KERN_OSRELDATE, osreldate, CTLFLAG_RD|CTLFLAG_CAPRD,
-    &osreldate, 0, "Kernel release date");
-
-SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RDTUN,
+SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RDTUN | CTLFLAG_NOFETCH,
     &maxproc, 0, "Maximum number of processes");
 
 SYSCTL_INT(_kern, KERN_MAXPROCPERUID, maxprocperuid, CTLFLAG_RW,
     &maxprocperuid, 0, "Maximum processes allowed per userid");
 
-SYSCTL_INT(_kern, OID_AUTO, maxusers, CTLFLAG_RDTUN,
+SYSCTL_INT(_kern, OID_AUTO, maxusers, CTLFLAG_RDTUN | CTLFLAG_NOFETCH,
     &maxusers, 0, "Hint for kernel tuning");
 
 SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD|CTLFLAG_CAPRD,
@@ -136,8 +127,8 @@ SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD|CTLFLAG_CAPRD,
 SYSCTL_INT(_kern, KERN_POSIX1, posix1version, CTLFLAG_RD|CTLFLAG_CAPRD,
     SYSCTL_NULL_INT_PTR, _POSIX_VERSION, "Version of POSIX attempting to comply to");
 
-SYSCTL_INT(_kern, KERN_NGROUPS, ngroups, CTLFLAG_RDTUN|CTLFLAG_CAPRD,
-    &ngroups_max, 0,
+SYSCTL_INT(_kern, KERN_NGROUPS, ngroups, CTLFLAG_RDTUN |
+    CTLFLAG_NOFETCH | CTLFLAG_CAPRD, &ngroups_max, 0,
     "Maximum number of supplemental groups a user can belong to");
 
 SYSCTL_INT(_kern, KERN_JOB_CONTROL, job_control, CTLFLAG_RD|CTLFLAG_CAPRD,
@@ -171,10 +162,15 @@ sysctl_kern_arnd(SYSCTL_HANDLER_ARGS)
 	char buf[256];
 	size_t len;
 
-	len = req->oldlen;
-	if (len > sizeof(buf))
-		len = sizeof(buf);
-	arc4rand(buf, len, 0);
+	/*-
+	 * This is one of the very few legitimate uses of read_random(9).
+	 * Use of arc4random(9) is not recommended as that will ignore
+	 * an unsafe (i.e. unseeded) random(4).
+	 *
+	 * If random(4) is not seeded, then this returns 0, so the
+	 * sysctl will return a zero-length buffer.
+	 */
+	len = read_random(buf, MIN(req->oldlen, sizeof(buf)));
 	return (SYSCTL_OUT(req, buf, len));
 }
 
@@ -208,7 +204,7 @@ sysctl_hw_usermem(SYSCTL_HANDLER_ARGS)
 {
 	u_long val;
 
-	val = ctob(physmem - cnt.v_wire_count);
+	val = ctob(physmem - vm_cnt.v_wire_count);
 	return (sysctl_handle_long(oidp, &val, 0, req));
 }
 
@@ -411,15 +407,8 @@ SYSCTL_PROC(_kern, KERN_SECURELVL, securelevel,
 /* Actual kernel configuration options. */
 extern char kernconfstring[];
 
-static int
-sysctl_kern_config(SYSCTL_HANDLER_ARGS)
-{
-	return (sysctl_handle_string(oidp, kernconfstring,
-	    strlen(kernconfstring), req));
-}
-
-SYSCTL_PROC(_kern, OID_AUTO, conftxt, CTLTYPE_STRING|CTLFLAG_RW, 
-    0, 0, sysctl_kern_config, "", "Kernel configuration file");
+SYSCTL_STRING(_kern, OID_AUTO, conftxt, CTLFLAG_RD, kernconfstring, 0,
+    "Kernel configuration file");
 #endif
 
 static int
@@ -457,8 +446,50 @@ sysctl_hostid(SYSCTL_HANDLER_ARGS)
 }
 
 SYSCTL_PROC(_kern, KERN_HOSTID, hostid,
-    CTLTYPE_ULONG | CTLFLAG_RW | CTLFLAG_PRISON | CTLFLAG_MPSAFE,
+    CTLTYPE_ULONG | CTLFLAG_RW | CTLFLAG_PRISON | CTLFLAG_MPSAFE | CTLFLAG_CAPRD,
     NULL, 0, sysctl_hostid, "LU", "Host ID");
+
+/*
+ * The osrelease string is copied from the global (osrelease in vers.c) into
+ * prison0 by a sysinit and is inherited by child jails if not changed at jail
+ * creation, so we always return the copy from the current prison data.
+ */
+static int
+sysctl_osrelease(SYSCTL_HANDLER_ARGS)
+{
+	struct prison *pr;
+
+	pr = req->td->td_ucred->cr_prison;
+	return (SYSCTL_OUT(req, pr->pr_osrelease, strlen(pr->pr_osrelease) + 1));
+
+}
+
+SYSCTL_PROC(_kern, KERN_OSRELEASE, osrelease,
+    CTLTYPE_STRING | CTLFLAG_CAPRD | CTLFLAG_RD | CTLFLAG_MPSAFE,
+    NULL, 0, sysctl_osrelease, "A", "Operating system release");
+
+/*
+ * The osreldate number is copied from the global (osreldate in vers.c) into
+ * prison0 by a sysinit and is inherited by child jails if not changed at jail
+ * creation, so we always return the value from the current prison data.
+ */
+static int
+sysctl_osreldate(SYSCTL_HANDLER_ARGS)
+{
+	struct prison *pr;
+
+	pr = req->td->td_ucred->cr_prison;
+	return (SYSCTL_OUT(req, &pr->pr_osreldate, sizeof(pr->pr_osreldate)));
+
+}
+
+/*
+ * NOTICE: The *userland* release date is available in
+ * /usr/include/osreldate.h
+ */
+SYSCTL_PROC(_kern, KERN_OSRELDATE, osreldate,
+    CTLTYPE_INT | CTLFLAG_CAPRD | CTLFLAG_RD | CTLFLAG_MPSAFE,
+    NULL, 0, sysctl_osreldate, "I", "Kernel release date");
 #endif /* __rtems__ */
 
 SYSCTL_NODE(_kern, OID_AUTO, features, CTLFLAG_RD, 0, "Kernel Features");
@@ -560,9 +591,9 @@ sysctl_kern_pid_max(SYSCTL_HANDLER_ARGS)
 	sx_xunlock(&proctree_lock);
 	return (error);
 }
-SYSCTL_PROC(_kern, OID_AUTO, pid_max, CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_TUN |
-    CTLFLAG_MPSAFE, 0, 0, sysctl_kern_pid_max, "I",
-    "Maximum allowed pid");
+SYSCTL_PROC(_kern, OID_AUTO, pid_max, CTLTYPE_INT |
+    CTLFLAG_RWTUN | CTLFLAG_NOFETCH | CTLFLAG_MPSAFE,
+    0, 0, sysctl_kern_pid_max, "I", "Maximum allowed pid");
 
 #include <sys/bio.h>
 #include <sys/buf.h>
@@ -574,6 +605,11 @@ SYSCTL_INT(_debug_sizeof, OID_AUTO, buf, CTLFLAG_RD,
 #include <sys/user.h>
 SYSCTL_INT(_debug_sizeof, OID_AUTO, kinfo_proc, CTLFLAG_RD,
     SYSCTL_NULL_INT_PTR, sizeof(struct kinfo_proc), "sizeof(struct kinfo_proc)");
+
+/* Used by kernel debuggers. */
+const int pcb_size = sizeof(struct pcb);
+SYSCTL_INT(_debug_sizeof, OID_AUTO, pcb, CTLFLAG_RD,
+    SYSCTL_NULL_INT_PTR, sizeof(struct pcb), "sizeof(struct pcb)");
 
 /* XXX compatibility, remove for 6.0 */
 #include <sys/imgact.h>

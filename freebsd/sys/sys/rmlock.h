@@ -40,17 +40,18 @@
 #ifdef _KERNEL
 
 /*
- * Flags passed to rm_init(9).
+ * Flags passed to rm_init_flags(9).
  */
 #define	RM_NOWITNESS	0x00000001
 #define	RM_RECURSE	0x00000002
 #define	RM_SLEEPABLE	0x00000004
+#define	RM_NEW		0x00000008
 
 #ifndef __rtems__
 void	rm_init(struct rmlock *rm, const char *name);
 void	rm_init_flags(struct rmlock *rm, const char *name, int opts);
 void	rm_destroy(struct rmlock *rm);
-int	rm_wowned(struct rmlock *rm);
+int	rm_wowned(const struct rmlock *rm);
 void	rm_sysinit(void *arg);
 void	rm_sysinit_flags(void *arg);
 
@@ -67,7 +68,7 @@ int	_rm_rlock(struct rmlock *rm, struct rm_priotracker *tracker,
 	    int trylock);
 void	_rm_runlock(struct rmlock *rm,  struct rm_priotracker *tracker);
 #if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
-void	_rm_assert(struct rmlock *rm, int what, const char *file,
+void	_rm_assert(const struct rmlock *rm, int what, const char *file,
 	    int line);
 #endif
 
@@ -99,17 +100,18 @@ void	_rm_assert(struct rmlock *rm, int what, const char *file,
 	    tick_sbt * (timo), 0, C_HARDCLOCK)
 
 #else /* __rtems__ */
-  #define rm_init(rm, name)                rw_init(rm, name)
-  #define rm_init_flags(rm, name, opts)    rw_init_flags(rm, name, opts)
-  #define rm_destroy(rm)                   rw_destroy(rm)
-  #define rm_wowned(rm)                    rw_wowned(rm)
-  #define rm_sysinit(arg)                  rw_sysinit(arg)
-  #define rm_sysinit_flags(arg)            rw_sysinit_flags(arg)
-
-  #define rm_wlock(rm)                     rw_wlock((rm))
-  #define rm_wunlock(rm)                   rw_wunlock((rm))
-  #define rm_rlock(rm,tracker)             rw_rlock((rm))
-  #define rm_runlock(rm,tracker)           rw_runlock((rm))
+#include <sys/rwlock.h>
+#define	rm_init rw_init
+#define	rm_init_flags rw_init_flags
+#define	rm_destroy rw_destroy
+#define	rm_wowned rw_wowned
+#define	rm_sysinit rw_sysinit
+#define	rm_sysinit_flags rw_sysinit_flags
+#define	rm_wlock rw_wlock
+#define	rm_wunlock rw_wunlock
+#define	rm_rlock(rm, tracker) do { (void)tracker; rw_rlock(rm); } while (0)
+#define	rm_runlock(rm, tracker) do { (void)tracker; rw_runlock(rm); } while (0)
+#define	rm_sleep rw_sleep
 #endif /* __rtems__ */
 
 

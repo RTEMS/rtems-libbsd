@@ -109,8 +109,9 @@ typedef struct vm_object *vm_object_t;
 typedef int boolean_t;
 
 /*
- * The exact set of memory attributes is machine dependent.  However, every
- * machine is required to define VM_MEMATTR_DEFAULT.
+ * The exact set of memory attributes is machine dependent.  However,
+ * every machine is required to define VM_MEMATTR_DEFAULT and
+ * VM_MEMATTR_UNCACHEABLE.
  */
 typedef	char vm_memattr_t;	/* memory attribute codes */
 
@@ -134,10 +135,6 @@ struct kva_md_info {
 	vm_offset_t	buffer_eva;
 	vm_offset_t	clean_sva;
 	vm_offset_t	clean_eva;
-	vm_offset_t	pager_sva;
-	vm_offset_t	pager_eva;
-	vm_offset_t	bio_transient_sva;
-	vm_offset_t	bio_transient_eva;
 };
 
 extern struct kva_md_info	kmi;

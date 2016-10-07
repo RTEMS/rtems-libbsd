@@ -71,8 +71,8 @@ __FBSDID("$FreeBSD$");
 #include <geom/geom_disk.h>
 
 #include <dev/mmc/mmcbrvar.h>
-#include <dev/mmc/mmcvar.h>
 #include <dev/mmc/mmcreg.h>
+#include <dev/mmc/mmcvar.h>
 
 #include <rtems/bsd/local/mmcbus_if.h>
 #ifdef __rtems__

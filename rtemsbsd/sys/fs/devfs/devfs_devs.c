@@ -98,7 +98,7 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct uio uio = {
-		.uio_iov = iov,
+		.uio_iov = __DECONST(struct iovec *, iov),
 		.uio_iovcnt = iovcnt,
 		.uio_offset = 0,
 		.uio_resid = total,
@@ -140,7 +140,7 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct uio uio = {
-		.uio_iov = iov,
+		.uio_iov = __DECONST(struct iovec *, iov),
 		.uio_iovcnt = iovcnt,
 		.uio_offset = 0,
 		.uio_resid = total,
@@ -168,7 +168,7 @@ static ssize_t
 devfs_imfs_write(rtems_libio_t *iop, const void *buffer, size_t count)
 {
 	struct iovec iov = {
-		.iov_base = buffer,
+		.iov_base = __DECONST(void *, buffer),
 		.iov_len = count
 	};
 
@@ -237,15 +237,11 @@ devfs_alloc(int flags)
 {
 	struct cdev *cdev;
 
-	cdev = malloc(sizeof *cdev, M_TEMP, 0);
-	if (cdev == NULL)
+	cdev = malloc(sizeof *cdev, M_TEMP, M_ZERO);
+	if (cdev != NULL)
 		return (NULL);
 
-	memset(cdev, 0, sizeof *cdev);
-	cdev->si_name = cdev->__si_namebuf;
-	memcpy(cdev->__si_pathstruct.__si_dir, rtems_cdev_directory,
-	    sizeof(rtems_cdev_directory) - 1);
-
+	memcpy(cdev->si_path, rtems_cdev_directory, sizeof(cdev->si_path));
 	return (cdev);
 }
 

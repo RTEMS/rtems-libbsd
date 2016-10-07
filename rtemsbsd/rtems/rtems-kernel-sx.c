@@ -146,7 +146,7 @@ _sx_xlock(struct sx *sx, int opts, const char *file, int line)
 }
 
 int
-_sx_try_xlock(struct sx *sx, const char *file, int line)
+sx_try_xlock_(struct sx *sx, const char *file, int line)
 {
 	return (rtems_bsd_mutex_trylock(&sx->lock_object, &sx->mutex));
 }
@@ -158,13 +158,13 @@ _sx_xunlock(struct sx *sx, const char *file, int line)
 }
 
 int
-_sx_try_upgrade(struct sx *sx, const char *file, int line)
+sx_try_upgrade_(struct sx *sx, const char *file, int line)
 {
 	return (1);
 }
 
 void
-_sx_downgrade(struct sx *sx, const char *file, int line)
+sx_downgrade_(struct sx *sx, const char *file, int line)
 {
 	/* Do nothing */
 }

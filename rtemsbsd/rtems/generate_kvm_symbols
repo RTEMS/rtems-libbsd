@@ -8,62 +8,76 @@ while read sym
 do
   symbols="${symbols} ${sym}"
 done <<EOF
-_ifnet
-_rtstat
-_rt_tables
-_mrtstat
-_mfchashtbl
-_viftable
-_ipxpcb_list
-_ipxstat
-_spx_istat
-_ddpstat
+_ahstat
+_arpstat
+_carpstats
+_clust_hiwm
+_clust_lowm
 _ddpcb
-_ngsocklist
-_ip6stat
+_ddpstat
+_divcbinfo
+_espstat
 _icmp6stat
+_icmpstat
+_ifnet
+_igmpstat
+_ip6stat
+_ipcompstat
 _ipsec4stat
 _ipsec6stat
-_pim6stat
-_mrt6stat
-_mf6ctable
-_mif6table
-_pfkeystat
+_ipstat
+_ipxpcb_list
+_ipxstat
 _mbstat
+_mb_statpcpu
 _mbtypes
+_mbuf_hiwm
+_mbuf_lowm
+_mf6ctable
+_mfchashtbl
+_mfctablesize
+_mif6table
+_mrt6stat
+_mrtstat
+_netisr_bindthreads
+_netisr_defaultqlimit
+_netisr_dispatch_policy
+_netisr_maxprot
+_netisr_maxqlimit
+_netisr_maxthreads
+_netisr_proto
+_ngsocklist
 _nmbclusters
 _nmbufs
-_mbuf_hiwm
-_clust_hiwm
-_smp_cpus
+_nws
+_nws_array
+_nws_count
 _pagesize
-_mb_statpcpu
-_rttrash
-_mbuf_lowm
-_clust_lowm
-_carpstats
+_pfkeystat
 _pfsyncstats
-_ahstat
-_espstat
-_ipcompstat
-_tcpstat
-_udpstat
-_ipstat
-_icmpstat
-_igmpstat
+_pim6stat
 _pimstat
-_tcbinfo
-_udbinfo
-_divcbinfo
-_ripcbinfo
-_unp_count
-_unp_gencnt
-_unp_dhead
-_unp_shead
 _rip6stat
+_ripcbinfo
+_rtree
+_rtstat
+_rt_tables
+_rttrash
 _sctpstat
-_mfctablesize
-_arpstat
+_sfstat
+_smp_cpus
+_spx_istat
+_tcbinfo
+_tcps_states
+_tcpstat
+_udbinfo
+_udpstat
+_unp_count
+_unp_dhead
+_unp_gencnt
+_unp_shead
+_unp_sphead
+_viftable
 EOF
 
 cat <<EOF
@@ -85,8 +99,7 @@ cat <<EOF
 EOF
 for sym in ${symbols}
 do
-  no_underscore=`echo $sym | sed -e 's/^_//' `
-  echo "extern int ${no_underscore} __attribute((weak));"
+  echo "extern int _bsd${sym} __attribute((weak));"
 done
 
 cat <<EOF
@@ -99,8 +112,7 @@ const kvm_symval_t rtems_kvm_symbols[] = {
 EOF
 for sym in ${symbols}
 do
-  no_underscore=`echo $sym | sed -e 's/^_//' `
-  echo "  { \"${sym}\", (uintptr_t) &${no_underscore} },"
+  echo "  { \"${sym}\", (uintptr_t) &_bsd${sym} },"
 done
 
 cat <<EOF

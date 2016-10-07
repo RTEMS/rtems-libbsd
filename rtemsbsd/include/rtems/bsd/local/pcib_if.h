@@ -14,6 +14,9 @@
 #ifndef _pcib_if_h_
 #define _pcib_if_h_
 
+
+#include "pci_if.h"
+
 /** @brief Unique descriptor for the PCIB_MAXSLOTS() method */
 extern struct kobjop_desc pcib_maxslots_desc;
 /** @brief A function implementing the PCIB_MAXSLOTS() method */
@@ -24,6 +27,18 @@ static __inline int PCIB_MAXSLOTS(device_t dev)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pcib_maxslots);
 	return ((pcib_maxslots_t *) _m)(dev);
+}
+
+/** @brief Unique descriptor for the PCIB_MAXFUNCS() method */
+extern struct kobjop_desc pcib_maxfuncs_desc;
+/** @brief A function implementing the PCIB_MAXFUNCS() method */
+typedef int pcib_maxfuncs_t(device_t dev);
+
+static __inline int PCIB_MAXFUNCS(device_t dev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pcib_maxfuncs);
+	return ((pcib_maxfuncs_t *) _m)(dev);
 }
 
 /** @brief Unique descriptor for the PCIB_READ_CONFIG() method */
@@ -145,6 +160,58 @@ static __inline int PCIB_POWER_FOR_SLEEP(device_t pcib, device_t dev,
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_power_for_sleep);
 	return ((pcib_power_for_sleep_t *) _m)(pcib, dev, pstate);
+}
+
+/** @brief Unique descriptor for the PCIB_GET_ID() method */
+extern struct kobjop_desc pcib_get_id_desc;
+/** @brief A function implementing the PCIB_GET_ID() method */
+typedef int pcib_get_id_t(device_t pcib, device_t dev, enum pci_id_type type,
+                          uintptr_t *id);
+
+static __inline int PCIB_GET_ID(device_t pcib, device_t dev,
+                                enum pci_id_type type, uintptr_t *id)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_get_id);
+	return ((pcib_get_id_t *) _m)(pcib, dev, type, id);
+}
+
+/** @brief Unique descriptor for the PCIB_TRY_ENABLE_ARI() method */
+extern struct kobjop_desc pcib_try_enable_ari_desc;
+/** @brief A function implementing the PCIB_TRY_ENABLE_ARI() method */
+typedef int pcib_try_enable_ari_t(device_t pcib, device_t dev);
+
+static __inline int PCIB_TRY_ENABLE_ARI(device_t pcib, device_t dev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_try_enable_ari);
+	return ((pcib_try_enable_ari_t *) _m)(pcib, dev);
+}
+
+/** @brief Unique descriptor for the PCIB_ARI_ENABLED() method */
+extern struct kobjop_desc pcib_ari_enabled_desc;
+/** @brief A function implementing the PCIB_ARI_ENABLED() method */
+typedef int pcib_ari_enabled_t(device_t pcib);
+
+static __inline int PCIB_ARI_ENABLED(device_t pcib)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_ari_enabled);
+	return ((pcib_ari_enabled_t *) _m)(pcib);
+}
+
+/** @brief Unique descriptor for the PCIB_DECODE_RID() method */
+extern struct kobjop_desc pcib_decode_rid_desc;
+/** @brief A function implementing the PCIB_DECODE_RID() method */
+typedef void pcib_decode_rid_t(device_t pcib, uint16_t rid, int *bus, int *slot,
+                               int *func);
+
+static __inline void PCIB_DECODE_RID(device_t pcib, uint16_t rid, int *bus,
+                                     int *slot, int *func)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_decode_rid);
+	((pcib_decode_rid_t *) _m)(pcib, rid, bus, slot, func);
 }
 
 #endif /* _pcib_if_h_ */

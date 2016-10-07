@@ -41,16 +41,15 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
-#include <sys/mbuf.h>
 #include <sys/kernel.h>
+#include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <net/ethernet.h> /* for ETHERTYPE_IP */
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/vnet.h>
-#include <net/if_types.h>	/* for IFT_ETHER */
-#include <net/bpf.h>		/* for BPF */
 
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -83,111 +82,48 @@ __FBSDID("$FreeBSD$");
 #define	ICMP(p)		((struct icmphdr *)(p))
 #define	ICMP6(p)	((struct icmp6_hdr *)(p))
 
+#ifdef __APPLE__
+#undef snprintf
+#define snprintf	sprintf
+#define SNPARGS(buf, len) buf + len
+#define SNP(buf) buf
+#else	/* !__APPLE__ */
 #define SNPARGS(buf, len) buf + len, sizeof(buf) > len ? sizeof(buf) - len : 0
 #define SNP(buf) buf, sizeof(buf)
+#endif /* !__APPLE__ */
 
-#ifdef WITHOUT_BPF
-void
-ipfw_log_bpf(int onoff)
-{
-}
-#else /* !WITHOUT_BPF */
-static struct ifnet *log_if;	/* hook to attach to bpf */
-
-/* we use this dummy function for all ifnet callbacks */
-static int
-log_dummy(struct ifnet *ifp, u_long cmd, caddr_t addr)
-{
-	return EINVAL;
-}
-
-static int
-ipfw_log_output(struct ifnet *ifp, struct mbuf *m,
-	struct sockaddr *dst, struct route *ro)
-{
-	if (m != NULL)
-		m_freem(m);
-	return EINVAL;
-}
-
-static void
-ipfw_log_start(struct ifnet* ifp)
-{
-	panic("ipfw_log_start() must not be called");
-}
-
-static const u_char ipfwbroadcastaddr[6] =
-	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
-void
-ipfw_log_bpf(int onoff)
-{
-	struct ifnet *ifp;
-
-	if (onoff) {
-		if (log_if)
-			return;
-		ifp = if_alloc(IFT_ETHER);
-		if (ifp == NULL)
-			return;
-		if_initname(ifp, "ipfw", 0);
-		ifp->if_mtu = 65536;
-		ifp->if_flags = IFF_UP | IFF_SIMPLEX | IFF_MULTICAST;
-		ifp->if_init = (void *)log_dummy;
-		ifp->if_ioctl = log_dummy;
-		ifp->if_start = ipfw_log_start;
-		ifp->if_output = ipfw_log_output;
-		ifp->if_addrlen = 6;
-		ifp->if_hdrlen = 14;
-		if_attach(ifp);
-		ifp->if_broadcastaddr = ipfwbroadcastaddr;
-		ifp->if_baudrate = IF_Mbps(10);
-		bpfattach(ifp, DLT_EN10MB, 14);
-		log_if = ifp;
-	} else {
-		if (log_if) {
-			ether_ifdetach(log_if);
-			if_free(log_if);
-		}
-		log_if = NULL;
-	}
-}
-#endif /* !WITHOUT_BPF */
-
+#define	TARG(k, f)	IP_FW_ARG_TABLEARG(chain, k, f)
 /*
  * We enter here when we have a rule with O_LOG.
  * XXX this function alone takes about 2Kbytes of code!
  */
 void
-ipfw_log(struct ip_fw *f, u_int hlen, struct ip_fw_args *args,
-    struct mbuf *m, struct ifnet *oif, u_short offset, uint32_t tablearg,
-    struct ip *ip)
+ipfw_log(struct ip_fw_chain *chain, struct ip_fw *f, u_int hlen,
+    struct ip_fw_args *args, struct mbuf *m, struct ifnet *oif,
+    u_short offset, uint32_t tablearg, struct ip *ip)
 {
 	char *action;
 	int limit_reached = 0;
 	char action2[92], proto[128], fragment[32];
 
 	if (V_fw_verbose == 0) {
-#ifndef WITHOUT_BPF
-
-		if (log_if == NULL || log_if->if_bpf == NULL)
-			return;
-
 		if (args->eh) /* layer2, use orig hdr */
-			BPF_MTAP2(log_if, args->eh, ETHER_HDR_LEN, m);
+			ipfw_bpf_mtap2(args->eh, ETHER_HDR_LEN, m);
 		else {
 			/* Add fake header. Later we will store
 			 * more info in the header.
 			 */
 			if (ip->ip_v == 4)
-				BPF_MTAP2(log_if, "DDDDDDSSSSSS\x08\x00", ETHER_HDR_LEN, m);
-			else if  (ip->ip_v == 6)
-				BPF_MTAP2(log_if, "DDDDDDSSSSSS\x86\xdd", ETHER_HDR_LEN, m);
+				ipfw_bpf_mtap2("DDDDDDSSSSSS\x08\x00",
+				    ETHER_HDR_LEN, m);
+			else if (ip->ip_v == 6)
+				ipfw_bpf_mtap2("DDDDDDSSSSSS\x86\xdd",
+				    ETHER_HDR_LEN, m);
 			else
 				/* Obviously bogus EtherType. */
-				BPF_MTAP2(log_if, "DDDDDDSSSSSS\xff\xff", ETHER_HDR_LEN, m);
+				ipfw_bpf_mtap2("DDDDDDSSSSSS\xff\xff",
+				    ETHER_HDR_LEN, m);
 		}
-#endif /* !WITHOUT_BPF */
 		return;
 	}
 	/* the old 'log' function */
@@ -254,27 +190,27 @@ ipfw_log(struct ip_fw *f, u_int hlen, struct ip_fw_args *args,
 			break;
 		case O_DIVERT:
 			snprintf(SNPARGS(action2, 0), "Divert %d",
-				cmd->arg1);
+				TARG(cmd->arg1, divert));
 			break;
 		case O_TEE:
 			snprintf(SNPARGS(action2, 0), "Tee %d",
-				cmd->arg1);
+				TARG(cmd->arg1, divert));
 			break;
 		case O_SETFIB:
 			snprintf(SNPARGS(action2, 0), "SetFib %d",
-				IP_FW_ARG_TABLEARG(cmd->arg1));
+				TARG(cmd->arg1, fib) & 0x7FFF);
 			break;
 		case O_SKIPTO:
 			snprintf(SNPARGS(action2, 0), "SkipTo %d",
-				IP_FW_ARG_TABLEARG(cmd->arg1));
+				TARG(cmd->arg1, skipto));
 			break;
 		case O_PIPE:
 			snprintf(SNPARGS(action2, 0), "Pipe %d",
-				IP_FW_ARG_TABLEARG(cmd->arg1));
+				TARG(cmd->arg1, pipe));
 			break;
 		case O_QUEUE:
 			snprintf(SNPARGS(action2, 0), "Queue %d",
-				IP_FW_ARG_TABLEARG(cmd->arg1));
+				TARG(cmd->arg1, pipe));
 			break;
 		case O_FORWARD_IP: {
 			ipfw_insn_sa *sa = (ipfw_insn_sa *)cmd;
@@ -435,7 +371,7 @@ ipfw_log(struct ip_fw *f, u_int hlen, struct ip_fw_args *args,
 
 #ifdef INET6
 		if (IS_IP6_FLOW_ID(&(args->f_id))) {
-			if (offset & (IP6F_OFF_MASK | IP6F_MORE_FRAG))
+			if (offset || ip6f_mf)
 				snprintf(SNPARGS(fragment, 0),
 				    " (frag %08x:%d@%d%s)",
 				    args->f_id.extra,

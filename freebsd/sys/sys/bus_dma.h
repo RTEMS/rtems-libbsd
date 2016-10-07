@@ -168,7 +168,7 @@ void busdma_lock_mutex(void *arg, bus_dma_lock_op_t op);
  */
 /* XXX Should probably allow specification of alignment */
 int bus_dma_tag_create(bus_dma_tag_t parent, bus_size_t alignment,
-		       bus_size_t boundary, bus_addr_t lowaddr,
+		       bus_addr_t boundary, bus_addr_t lowaddr,
 		       bus_addr_t highaddr, bus_dma_filter_t *filtfunc,
 		       void *filtfuncarg, bus_size_t maxsize, int nsegments,
 		       bus_size_t maxsegsz, int flags, bus_dma_lock_t *lockfunc,
@@ -240,6 +240,15 @@ int bus_dmamap_load_mem(bus_dma_tag_t dmat, bus_dmamap_t map,
 			void *callback_arg, int flags);
 
 /*
+ * Placeholder for use by busdma implementations which do not benefit
+ * from optimized procedure to load an array of vm_page_t.  Falls back
+ * to do _bus_dmamap_load_phys() in loop.
+ */
+int bus_dmamap_load_ma_triv(bus_dma_tag_t dmat, bus_dmamap_t map,
+    struct vm_page **ma, bus_size_t tlen, int ma_offs, int flags,
+    bus_dma_segment_t *segs, int *segp);
+
+/*
  * XXX sparc64 uses the same interface, but a much different implementation.
  *     <machine/bus_dma.h> for the sparc64 arch contains the equivalent
  *     declarations.
@@ -273,13 +282,25 @@ int bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 void bus_dmamem_free(bus_dma_tag_t dmat, void *vaddr, bus_dmamap_t map);
 
 /*
- * Perform a synchronization operation on the given map.
+ * Perform a synchronization operation on the given map. If the map
+ * is NULL we have a fully IO-coherent system. On every ARM architecture
+ * there must be a memory barrier placed to ensure that all data
+ * accesses are visible before going any further.
  */
 void _bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
+#if defined(__arm__)
+	#define __BUS_DMAMAP_SYNC_DEFAULT		mb()
+#elif defined(__aarch64__)
+	#define	__BUS_DMAMAP_SYNC_DEFAULT		dmb(sy)
+#else
+	#define	__BUS_DMAMAP_SYNC_DEFAULT		do {} while (0)
+#endif
 #define bus_dmamap_sync(dmat, dmamap, op) 			\
 	do {							\
 		if ((dmamap) != NULL)				\
 			_bus_dmamap_sync(dmat, dmamap, op);	\
+		else						\
+			__BUS_DMAMAP_SYNC_DEFAULT;		\
 	} while (0)
 
 /*
@@ -316,6 +337,10 @@ int _bus_dmamap_load_buffer(bus_dma_tag_t dmat, bus_dmamap_t map,
 int _bus_dmamap_load_phys(bus_dma_tag_t dmat, bus_dmamap_t map,
 			  vm_paddr_t paddr, bus_size_t buflen,
 			  int flags, bus_dma_segment_t *segs, int *segp);
+
+int _bus_dmamap_load_ma(bus_dma_tag_t dmat, bus_dmamap_t map,
+    struct vm_page **ma, bus_size_t tlen, int ma_offs, int flags,
+    bus_dma_segment_t *segs, int *segp);
 
 bus_dma_segment_t *_bus_dmamap_complete(bus_dma_tag_t dmat,
 			   		bus_dmamap_t map,

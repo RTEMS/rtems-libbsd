@@ -71,7 +71,7 @@ __FBSDID("$FreeBSD$");
 
 extern bool_t xdr_authdes_cred( XDR *, struct authdes_cred *);
 extern bool_t xdr_authdes_verf( XDR *, struct authdes_verf *);
-extern int key_encryptsession_pk();
+extern int key_encryptsession_pk(char *, netobj *, des_block *);
 
 extern bool_t __rpc_get_time_offset(struct timeval *, nis_server *, char *,
 	char **, char **);
@@ -261,7 +261,7 @@ failed:
  */	
 /*ARGSUSED*/
 static void
-authdes_nextverf(AUTH *auth)
+authdes_nextverf(AUTH *auth __unused)
 {
 	/* what the heck am I supposed to do??? */
 }
@@ -287,7 +287,7 @@ authdes_marshal(AUTH *auth, XDR *xdrs)
 	 * Figure out the "time", accounting for any time difference
 	 * with the server if necessary.
 	 */
-	(void) gettimeofday(&ad->ad_timestamp, (struct timezone *)NULL);
+	(void)gettimeofday(&ad->ad_timestamp, NULL);
 	ad->ad_timestamp.tv_sec += ad->ad_timediff.tv_sec;
 	ad->ad_timestamp.tv_usec += ad->ad_timediff.tv_usec;
 	while (ad->ad_timestamp.tv_usec >= USEC_PER_SEC) {
@@ -422,7 +422,7 @@ authdes_validate(AUTH *auth, struct opaque_auth *rverf)
  */
 /*ARGSUSED*/
 static bool_t
-authdes_refresh(AUTH *auth, void *dummy)
+authdes_refresh(AUTH *auth, void *dummy __unused)
 {
 /* LINTED pointer alignment */
 	struct ad_private *ad = AUTH_PRIVATE(auth);

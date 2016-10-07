@@ -19,19 +19,11 @@
 #include <sys/bus.h>
 #include <rtems/bsd/local/usb_if.h>
 
-struct kobj_method usb_handle_request_method_default = {
-	&usb_handle_request_desc, (kobjop_t) kobj_error_method
-};
-
 struct kobjop_desc usb_handle_request_desc = {
-	0, &usb_handle_request_method_default
-};
-
-struct kobj_method usb_take_controller_method_default = {
-	&usb_take_controller_desc, (kobjop_t) kobj_error_method
+	0, { &usb_handle_request_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc usb_take_controller_desc = {
-	0, &usb_take_controller_method_default
+	0, { &usb_take_controller_desc, (kobjop_t)kobj_error_method }
 };
 

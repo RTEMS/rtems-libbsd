@@ -181,7 +181,7 @@ mac_init_internal(int ignore_errors)
 		filename = getenv("MAC_CONFFILE");
 	else
 		filename = MAC_CONFFILE;
-	file = fopen(filename, "r");
+	file = fopen(filename, "re");
 	if (file == NULL)
 		return (0);
 

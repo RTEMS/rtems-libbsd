@@ -74,7 +74,6 @@ static const char rcsid[] = "$Id: res_comp.c,v 1.5 2005/07/28 06:51:50 marka Exp
 __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
-#include <sys/types.h>
 #include <rtems/bsd/sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -88,7 +87,7 @@ __FBSDID("$FreeBSD$");
 /*%
  * Expand compressed domain name 'src' to full domain name.
  *
- * \li 'msg' is a pointer to the begining of the message,
+ * \li 'msg' is a pointer to the beginning of the message,
  * \li 'eom' points to the first location after the message,
  * \li 'dst' is a pointer to a buffer of size 'dstsiz' for the result.
  * \li Return size of compressed name or -1 if there was an error.
@@ -149,12 +148,12 @@ dn_skipname(const u_char *ptr, const u_char *eom) {
 		   || ((c) >= 0x61 && (c) <= 0x7a))
 #define digitchar(c) ((c) >= 0x30 && (c) <= 0x39)
 
-#define borderchar(c) (alphachar(c) || digitchar(c))
 #ifdef	RES_ENFORCE_RFC1034
-#define middlechar(c) (borderchar(c) || hyphenchar(c))
+#define borderchar(c) (alphachar(c) || digitchar(c))
 #else
-#define middlechar(c) (borderchar(c) || hyphenchar(c) || underscorechar(c))
+#define borderchar(c) (alphachar(c) || digitchar(c) || underscorechar(c))
 #endif
+#define middlechar(c) (borderchar(c) || hyphenchar(c))
 #define	domainchar(c) ((c) > 0x20 && (c) < 0x7f)
 
 int

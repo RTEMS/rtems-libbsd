@@ -377,14 +377,14 @@ pppwrite(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args)
     struct mbuf                 **mp;
 
     for (mp = &m0; maximum; mp = &m->m_next) {
-	MGET(m, M_WAIT, MT_DATA);
+	MGET(m, M_WAITOK, MT_DATA);
 	if ((*mp = m) == NULL) {
 	    m_freem(m0);
 	    return (ENOBUFS);
 	}
 	m->m_len = 0;
 	if (maximum >= MCLBYTES / 2) {
-	    MCLGET(m, M_DONTWAIT);
+	    MCLGET(m, M_NOWAIT);
         }
 	len = M_TRAILINGSPACE(m);
 	if (len > maximum) {
@@ -683,11 +683,11 @@ pppgetm(struct ppp_softc *sc)
     mp = &sc->sc_m;
     for (len = sc->sc_mru + PPP_HDRLEN + PPP_FCSLEN; len > 0; ){
 	if ((m = *mp) == NULL) {
-	    MGETHDR(m, M_DONTWAIT, MT_DATA);
+	    MGETHDR(m, M_NOWAIT, MT_DATA);
 	    if (m == NULL)
 		break;
 	    *mp = m;
-	    MCLGET(m, M_DONTWAIT);
+	    MCLGET(m, M_NOWAIT);
 	}
 	len -= M_DATASIZE(m);
 	mp = &m->m_next;
@@ -708,8 +708,8 @@ pppallocmbuf(struct ppp_softc *sc, struct mbuf **mp)
     m = *mp;
     if ( m == NULL ) {
       /* get mbuf header */
-      MGETHDR(m, M_WAIT, MT_DATA);
-      MCLGET(m, M_WAIT);
+      MGETHDR(m, M_WAITOK, MT_DATA);
+      MCLGET(m, M_WAITOK);
       *mp = m;
     }
 
@@ -769,7 +769,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 	    sc->sc_flags |= SC_PKTLOST;	/* note the dropped packet */
 	    if ((sc->sc_flags & (SC_FLUSH | SC_ESCAPED)) == 0){
                 /* bad fcs error */
-		sc->sc_ifp->if_ierrors++;
+		if_inc_counter(sc->sc_ifp, IFCOUNTER_IERRORS, 1);
 		sc->sc_stats.ppp_ierrors++;
 	    } else
 		sc->sc_flags &= ~(SC_FLUSH | SC_ESCAPED);
@@ -779,7 +779,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 	if (ilen < PPP_HDRLEN + PPP_FCSLEN) {
 	    if (ilen) {
                 /* too short error */
-		sc->sc_ifp->if_ierrors++;
+		if_inc_counter(sc->sc_ifp, IFCOUNTER_IERRORS, 1);
 		sc->sc_stats.ppp_ierrors++;
 		sc->sc_flags |= SC_PKTLOST;
 	    }
@@ -898,7 +898,7 @@ pppinput(int c, struct rtems_termios_tty *tp)
 
  flush:
     if (!(sc->sc_flags & SC_FLUSH)) {
-	sc->sc_ifp->if_ierrors++;
+	if_inc_counter(sc->sc_ifp, IFCOUNTER_IERRORS, 1);
 	sc->sc_stats.ppp_ierrors++;
 	sc->sc_flags |= SC_FLUSH;
     }

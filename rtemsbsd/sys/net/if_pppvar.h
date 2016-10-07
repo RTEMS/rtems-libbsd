@@ -131,8 +131,8 @@ struct ppp_softc {
 
 struct	ppp_softc *pppalloc(pid_t pid);
 void	pppdealloc(struct ppp_softc *sc);
-int	pppoutput(struct ifnet *, struct mbuf *,
-		       struct sockaddr *, struct route *);
+int	pppoutput(struct ifnet *, struct mbuf *, const struct sockaddr *,
+	    struct route *);
 int	pppioctl(struct ppp_softc *sc, ioctl_command_t cmd, caddr_t data,
 		      int flag, struct proc *p);
 struct	mbuf *ppp_dequeue(struct ppp_softc *sc);

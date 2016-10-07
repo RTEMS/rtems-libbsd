@@ -439,6 +439,8 @@ class FromRTEMSToFreeBSDSourceConverter(Converter):
     def sourceFilter(self, data):
         data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '', data)
         data = re.sub('#include <machine/rtems-bsd-user-space.h>\n\n', '', data)
+        data = revertFixLocalIncludes(data)
+        data = revertFixIncludes(data)
         return data
 
     def convert(self, src, dst):

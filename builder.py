@@ -209,7 +209,6 @@ def headerPaths():
             ('freebsd/sys/cam',               '*.h',               'cam'),
             ('freebsd/sys/net',               '*.h',               'net'),
             ('freebsd/sys/net80211',          '*.h',               'net80211'),
-            ('freebsd/sys/netatalk',          '*.h',               'netatalk'),
             ('freebsd/sys/netinet',           '*.h',               'netinet'),
             ('freebsd/sys/netinet6',          '*.h',               'netinet6'),
             ('freebsd/sys/netipsec',          '*.h',               'netipsec'),

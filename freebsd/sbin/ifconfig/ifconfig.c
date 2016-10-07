@@ -171,7 +171,6 @@ int rtems_bsd_command_ifconfig(int argc, char *argv[])
 
 	ifconfig_ctor();
 
-	atalk_ctor();
 	bridge_ctor();
 	carp_ctor();
 	clone_ctor();

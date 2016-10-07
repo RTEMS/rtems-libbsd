@@ -147,7 +147,7 @@ static rtems_task serverTask(rtems_task_argument arg)
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0)
     rtems_panic("Can't create socket: %s\n", strerror(errno));
-    memset(&myAddr, 0, sizeof myAddr);
+  memset(&myAddr, 0, sizeof myAddr);
   myAddr.sin_family = AF_INET;
   myAddr.sin_port = htons(1234);
   myAddr.sin_addr.s_addr = htonl(INADDR_ANY);

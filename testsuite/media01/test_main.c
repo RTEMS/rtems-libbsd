@@ -31,6 +31,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <rtems/bdbuf.h>
 #include <rtems/console.h>

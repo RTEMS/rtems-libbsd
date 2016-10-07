@@ -967,7 +967,6 @@ test_kqueue_user(test_context *ctx)
 	struct kevent event;
 	const struct timespec *timeout = NULL;
 	int rv;
-	ssize_t n;
 
 	puts("test kqueue user");
 

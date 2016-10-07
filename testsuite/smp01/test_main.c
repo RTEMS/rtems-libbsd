@@ -260,8 +260,6 @@ test_main(void)
 {
 	test_context *ctx = &test_instance;
 	size_t i;
-	rtems_id id;
-	rtems_status_code sc;
 
 	for (i = 0; i < OBJ_COUNT; ++i) {
 		ctx->value[i] = i;

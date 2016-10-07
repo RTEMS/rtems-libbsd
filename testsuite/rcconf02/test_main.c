@@ -189,7 +189,7 @@ static void
 waiter(int fd, int secs, void *arg)
 {
   int*        toggle = (int*) arg;
-  const char* toggles = "|/-|\-";
+  const char* toggles = "|/-|\\-";
   printf("\b%c", toggles[*toggle]);
   fflush(stdout);
   ++(*toggle);

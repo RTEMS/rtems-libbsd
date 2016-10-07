@@ -253,6 +253,12 @@ typedef struct ohci_softc {
 	uint8_t	sc_hub_idata[32];
 
 	char	sc_vendor[16];
+#ifdef __rtems__
+	int sc_init_done;
+#ifdef BSP_USB_OTG_TRANSCEIVER_I2C_ADDR
+	struct usb_otg_transceiver sc_otg_trans;
+#endif /* BSP_USB_OTG_TRANSCEIVER_I2C_ADDR */
+#endif /* __rtems__ */
 
 } ohci_softc_t;
 

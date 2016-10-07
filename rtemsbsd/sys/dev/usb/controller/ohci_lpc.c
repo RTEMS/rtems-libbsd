@@ -34,6 +34,8 @@
 
 #include <bsp.h>
 
+#include <errno.h>
+
 #if defined(LIBBSP_ARM_LPC24XX_BSP_H) || defined(LIBBSP_ARM_LPC32XX_BSP_H)
 
 #include <bsp/irq.h>
@@ -224,7 +226,7 @@ static int lpc_otg_clk_ctrl(uint32_t otg_clk_ctrl)
 #include <sys/cdefs.h>
 #include <sys/stdint.h>
 #include <sys/stddef.h>
-#include <sys/param.h>
+#include <rtems/bsd/sys/param.h>
 #include <sys/queue.h>
 #include <sys/types.h>
 #include <sys/systm.h>
@@ -232,7 +234,7 @@ static int lpc_otg_clk_ctrl(uint32_t otg_clk_ctrl)
 #include <sys/bus.h>
 #include <sys/linker_set.h>
 #include <sys/module.h>
-#include <sys/lock.h>
+#include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/condvar.h>
 #include <sys/sysctl.h>
@@ -362,7 +364,6 @@ static int i2c_write(
 static device_probe_t ohci_lpc_probe;
 static device_attach_t ohci_lpc_attach;
 static device_detach_t ohci_lpc_detach;
-static device_suspend_t ohci_lpc_suspend;
 static device_resume_t ohci_lpc_resume;
 
 static int
@@ -394,22 +395,8 @@ ohci_lpc_otg_transceiver_suspend(ohci_softc_t *e)
 }
 
 static int
-ohci_lpc_suspend(device_t self)
-{
-	ohci_softc_t *e = device_get_softc(self);
-	int eno = bus_generic_suspend(self);
-
-	if (eno == 0) {
-		ohci_suspend(e);
-	}
-
-	return (eno);
-}
-
-static int
 ohci_lpc_resume(device_t self)
 {
-	ohci_softc_t *e = device_get_softc(self);
 	int eno = 0;
 
 #ifdef BSP_USB_OTG_TRANSCEIVER_I2C_ADDR
@@ -442,8 +429,6 @@ ohci_lpc_resume(device_t self)
 #endif /* BSP_USB_OTG_TRANSCEIVER_I2C_ADDR */
 
 	if (eno == 0) {
-		ohci_resume(e);
-
 		eno = bus_generic_resume(self);
 	}
 
@@ -472,6 +457,7 @@ ohci_lpc_attach(device_t self)
 	e->sc_bus.parent = self;
 	e->sc_bus.devices = e->sc_devices;
 	e->sc_bus.devices_max = OHCI_MAX_DEVICES;
+	e->sc_bus.dma_bits = 32;
 
 	/* Get all DMA memory */
 	if (usb_bus_mem_alloc_all(&e->sc_bus, USB_GET_DMA_TAG(self), &ohci_iterate_hw_softc)) {
@@ -602,7 +588,7 @@ ohci_lpc_detach(device_t self)
 		device_delete_child(self, bdev);
 	}
 
-	device_delete_all_children(self);
+	device_delete_children(self);
 
 	if (e->sc_init_done) {
 		ohci_detach(e);
@@ -632,7 +618,7 @@ static device_method_t ohci_methods [] = {
 	DEVMETHOD(device_probe, ohci_lpc_probe),
 	DEVMETHOD(device_attach, ohci_lpc_attach),
 	DEVMETHOD(device_detach, ohci_lpc_detach),
-	DEVMETHOD(device_suspend, ohci_lpc_suspend),
+	DEVMETHOD(device_suspend, bus_generic_suspend),
 	DEVMETHOD(device_resume, ohci_lpc_resume),
 	DEVMETHOD(device_shutdown, bus_generic_shutdown),
 

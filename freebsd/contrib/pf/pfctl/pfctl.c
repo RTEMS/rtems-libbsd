@@ -2096,13 +2096,16 @@ RTEMS_LINKER_RWSET(bsd_prog_pfctl, char);
 int
 rtems_bsd_command_pfctl(int argc, char *argv[])
 {
-	int exit_code = EXIT_FAILURE;
-	const void *data_buf = RTEMS_LINKER_SET_BEGIN(bsd_prog_pfctl);
-	const size_t data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_pfctl);
+	int exit_code;
+	const void *data_begin;
+	size_t data_size;
+
+	RTEMS_LINKER_SET_ASSIGN_BEGIN(bsd_prog_pfctl, data_begin);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_pfctl);
 
 	rtems_bsd_program_lock();
 	exit_code = rtems_bsd_program_call_main_with_data_restore("pfctl",
-	    main, argc, argv, data_buf, data_size);
+	    main, argc, argv, data_begin, data_size);
 	rtems_bsd_program_unlock();
 
 	return exit_code;

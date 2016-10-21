@@ -57,6 +57,10 @@
 
 #define _POSIX2_LINE_MAX 128
 
+#ifndef CLOCK_MONOTONIC_FAST
+#define	CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
+#endif
+
 __BEGIN_DECLS
 
 /* FIXME: Add to Newlib */

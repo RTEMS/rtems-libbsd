@@ -102,6 +102,9 @@ rtems_bsd_program_calloc(size_t nelem, size_t elsize);
 void *
 rtems_bsd_program_realloc(void *ptr, size_t size);
 
+void *
+rtems_bsd_program_reallocf(void *ptr, size_t size);
+
 char *
 rtems_bsd_program_strdup(const char *s1);
 
@@ -162,6 +165,10 @@ rtems_bsd_program_free(void *ptr);
 
 #ifndef RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
   #define realloc(ptr, size) rtems_bsd_program_realloc(ptr, size)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_REALLOC_WRAP
+  #define reallocf(ptr, size) rtems_bsd_program_reallocf(ptr, size)
 #endif
 
 #ifndef RTEMS_BSD_PROGRAM_NO_STRDUP_WRAP

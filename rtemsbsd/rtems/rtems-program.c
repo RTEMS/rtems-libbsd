@@ -535,6 +535,16 @@ rtems_bsd_program_realloc(void *ptr, size_t size)
 	return rtems_bsd_program_alloc(size, ptr);
 }
 
+void *
+rtems_bsd_program_reallocf(void *ptr, size_t size)
+{
+	void *ret = rtems_bsd_program_alloc(size, ptr);
+	if (ret == NULL) {
+		free(ptr);
+	}
+	return ret;
+}
+
 char *
 rtems_bsd_program_strdup(const char *s1)
 {

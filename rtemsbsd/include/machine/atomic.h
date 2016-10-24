@@ -1399,4 +1399,56 @@ atomic_store_rel_long(volatile long *p, long v)
 #endif
 }
 
+static inline void
+atomic_thread_fence_acq(void)
+{
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_thread_fence(std::memory_order_acquire);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_thread_fence(memory_order_acquire);
+#else
+	RTEMS_COMPILER_MEMORY_BARRIER();
+#endif
+}
+
+static inline void
+atomic_thread_fence_rel(void)
+{
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_thread_fence(std::memory_order_release);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_thread_fence(memory_order_release);
+#else
+	RTEMS_COMPILER_MEMORY_BARRIER();
+#endif
+}
+
+static inline void
+atomic_thread_fence_acq_rel(void)
+{
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_thread_fence(std::memory_order_acq_rel);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_thread_fence(memory_order_acq_rel);
+#else
+	RTEMS_COMPILER_MEMORY_BARRIER();
+#endif
+}
+
+static inline void
+atomic_thread_fence_seq_cst(void)
+{
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_thread_fence(std::memory_order_seq_cst);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_thread_fence(memory_order_seq_cst);
+#else
+	RTEMS_COMPILER_MEMORY_BARRIER();
+#endif
+}
+
 #endif /* _RTEMS_BSD_MACHINE_ATOMIC_H_ */

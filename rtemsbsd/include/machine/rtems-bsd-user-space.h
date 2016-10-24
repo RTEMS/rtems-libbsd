@@ -46,6 +46,8 @@
 
 #include <stdio.h>
 
+#define O_CLOEXEC 0
+
 /* FIXME: Add lock capabilities to RTEMS file system */
 #define O_EXLOCK 0
 #define O_SHLOCK 0

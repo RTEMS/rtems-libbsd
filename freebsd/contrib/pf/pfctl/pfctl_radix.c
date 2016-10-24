@@ -51,9 +51,6 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#ifdef __rtems__
-#define SIZE_T_MAX SIZE_MAX
-#endif /* __rtems__ */
 #include <err.h>
 
 #include "pfctl.h"

@@ -61,6 +61,8 @@
 #define	CLOCK_MONOTONIC_FAST CLOCK_MONOTONIC
 #endif
 
+#define	SIZE_T_MAX SIZE_MAX
+
 __BEGIN_DECLS
 
 /* FIXME: Add to Newlib */

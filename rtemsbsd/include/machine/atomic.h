@@ -40,10 +40,6 @@
 #ifndef _RTEMS_BSD_MACHINE_ATOMIC_H_
 #define _RTEMS_BSD_MACHINE_ATOMIC_H_
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_KERNEL_SPACE_H_
-#error "the header file <machine/rtems-bsd-kernel-space.h> must be included first"
-#endif
-
 #include <rtems.h>
 
 #ifdef RTEMS_SMP

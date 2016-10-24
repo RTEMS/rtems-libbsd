@@ -196,6 +196,8 @@ struct rusage_ext {
 	uint64_t	rux_tu;         /* (c) Previous total time in usec. */
 };
 #ifdef __rtems__
+#include <errno.h>
+
 enum thread_sq_states {
 	TD_SQ_WAKEUP,
 	TD_SQ_PANIC = EWOULDBLOCK,

@@ -164,7 +164,8 @@ def commonFlags():
 
 def commonWarnings():
     return ['-Wall',
-            '-Wno-format']
+            '-Wno-format',
+            '-Wno-pointer-sign']
 
 def commonNoWarnings():
     return ['-w']

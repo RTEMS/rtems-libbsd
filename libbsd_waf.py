@@ -42,6 +42,7 @@ def build(bld):
     if bld.env.WARNINGS:
         common_flags += ["-Wall"]
         common_flags += ["-Wno-format"]
+        common_flags += ["-Wno-pointer-sign"]
     else:
         common_flags += ["-w"]
     cflags = ['-std=gnu11'] + common_flags

@@ -33,6 +33,9 @@
 #ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
 #endif
+#ifdef __rtems__
+#include <sys/_types.h>
+#endif /* __rtems__ */
 
 /*
  * The following macros are used to declare global sets of objects, which
@@ -52,17 +55,17 @@
 	__section("set_" #set) __used = &sym
 #else /* __rtems__ */
 #define RTEMS_BSD_DEFINE_SET(set, type)					\
-	type volatile const __CONCAT(_bsd__start_set_,set)[0]		\
+	type const __CONCAT(_bsd__start_set_,set)[0]		\
 	__section(".rtemsroset.bsd." __STRING(set) ".begin") __used;	\
-	type volatile const __CONCAT(_bsd__stop_set_,set)[0]		\
+	type const __CONCAT(_bsd__stop_set_,set)[0]		\
 	__section(".rtemsroset.bsd." __STRING(set) ".end") __used
 
 #define RTEMS_BSD_DECLARE_SET(set, type)				\
-	extern type volatile const __CONCAT(_bsd__start_set_,set)[0];	\
-	extern type volatile const __CONCAT(_bsd__stop_set_,set)[0]
+	extern type const __CONCAT(_bsd__start_set_,set)[0];		\
+	extern type const __CONCAT(_bsd__stop_set_,set)[0]
 
 #define RTEMS_BSD_DEFINE_SET_ITEM(set, sym, type)			\
-	static type volatile const __set_##set##_sym_##sym		\
+	static type const __set_##set##_sym_##sym			\
 	__section(".rtemsroset.bsd." __STRING(set) ".content") __used
 
 #define __MAKE_SET(set, sym)						\
@@ -75,11 +78,11 @@
 	__section(".rtemsrwset.bsd." __STRING(set) ".end") __used
 
 #define RTEMS_BSD_DECLARE_RWSET(set, type)				\
-	extern type volatile __CONCAT(_bsd__start_set_,set)[0];		\
-	extern type volatile __CONCAT(_bsd__stop_set_,set)[0]
+	extern type __CONCAT(_bsd__start_set_,set)[0];			\
+	extern type __CONCAT(_bsd__stop_set_,set)[0]
 
 #define RTEMS_BSD_DEFINE_RWSET_ITEM(set, sym, type)			\
-	static type volatile __set_##set##_sym_##sym 			\
+	static type __set_##set##_sym_##sym 				\
 	__section(".rtemsrwset.bsd." __STRING(set) ".content") __used
 
 #define __MAKE_RWSET(set, sym)						\
@@ -136,8 +139,21 @@
  * containing those addresses.  Thus is must be declared as "type **pvar",
  * and the address of each set item is obtained inside the loop by "*pvar".
  */
+#ifndef __rtems__
 #define SET_FOREACH(pvar, set)						\
 	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set); pvar++)
+#else /* __rtems__ */
+static __inline void *
+_set_next(__uintptr_t pvar, __size_t s)
+{
+
+	__asm__("" : "+r" (pvar));
+	return (void *)(pvar + s);
+}
+#define SET_FOREACH(pvar, set)						\
+	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set);		\
+	    pvar = _set_next((__uintptr_t)pvar, sizeof(*pvar)))
+#endif /* __rtems__ */
 
 #define SET_ITEM(set, i)						\
 	((SET_BEGIN(set))[i])

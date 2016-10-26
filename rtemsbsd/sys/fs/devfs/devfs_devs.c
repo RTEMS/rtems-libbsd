@@ -31,16 +31,19 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
-#include <machine/pcpu.h>
-#include <rtems/imfs.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sys/types.h>
+#include <sys/conf.h>
 #include <sys/file.h>
 #include <sys/malloc.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-#include <sys/conf.h>
 #include <fs/devfs/devfs_int.h>
+
+#include <machine/pcpu.h>
+
+#include <rtems/imfs.h>
 
 const char rtems_cdev_directory[] = RTEMS_CDEV_DIRECTORY;
 

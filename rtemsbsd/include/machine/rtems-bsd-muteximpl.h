@@ -86,7 +86,7 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 
 	if (__predict_true(owner == NULL)) {
 		m->queue.Queue.owner = executing;
-		++executing->resource_count;
+		_Thread_Resource_count_increment(executing);
 
 		_Thread_queue_Release(&m->queue, &queue_context);
 	} else {
@@ -111,7 +111,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 
 	if (owner == NULL) {
 		m->queue.Queue.owner = executing;
-		++executing->resource_count;
+		_Thread_Resource_count_increment(executing);
 		success = 1;
 	} else if (owner == executing) {
 		BSD_ASSERT(lock->lo_flags & LO_RECURSABLE);
@@ -146,7 +146,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 
 		heads = m->queue.Queue.heads;
 		m->queue.Queue.owner = NULL;
-		--owner->resource_count;
+		_Thread_Resource_count_decrement(owner);
 
 		if (__predict_true(heads == NULL)) {
 			_Thread_queue_Release(&m->queue, &queue_context);

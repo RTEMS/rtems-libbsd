@@ -71,25 +71,62 @@ void rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
     Thread_Control *owner, Thread_Control *executing,
     Thread_queue_Context *queue_context);
 
+#define	rtems_bsd_mutex_isr_disable(isr_level, queue_context)	\
+do {								\
+	_ISR_Local_disable(isr_level);				\
+	_ISR_lock_ISR_disable_profile(				\
+	      &(queue_context)->Lock_context.Lock_context)	\
+} while (0)
+
+static inline void
+rtems_bsd_mutex_acquire_critical(rtems_bsd_mutex *m,
+    Thread_queue_Context *queue_context)
+{
+
+	_Thread_queue_Queue_acquire_critical(&m->queue.Queue,
+	    &m->queue.Lock_stats, &queue_context->Lock_context.Lock_context);
+}
+
+static inline void
+rtems_bsd_mutex_release(rtems_bsd_mutex *m, ISR_Level isr_level,
+    Thread_queue_Context *queue_context)
+{
+
+	_Thread_queue_Queue_release_critical(&m->queue.Queue,
+	    &queue_context->Lock_context.Lock_context);
+	_ISR_Local_enable(isr_level);
+}
+
+static inline void
+rtems_bsd_mutex_set_isr_level(Thread_queue_Context *queue_context,
+    ISR_Level isr_level)
+{
+
+	_ISR_lock_Context_set_level(&queue_context->Lock_context.Lock_context,
+	    isr_level);
+}
+
 static inline void
 rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 {
+	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *executing;
 	Thread_Control *owner;
 
 	_Thread_queue_Context_initialize(&queue_context);
-	_Thread_queue_Acquire(&m->queue, &queue_context);
+	rtems_bsd_mutex_isr_disable(isr_level, &queue_context);
+	executing = _Thread_Executing;
+	rtems_bsd_mutex_acquire_critical(m, &queue_context);
 
 	owner = m->queue.Queue.owner;
-	executing = _Thread_Executing;
 
 	if (__predict_true(owner == NULL)) {
 		m->queue.Queue.owner = executing;
 		_Thread_Resource_count_increment(executing);
-
-		_Thread_queue_Release(&m->queue, &queue_context);
+		rtems_bsd_mutex_release(m, isr_level, &queue_context);
 	} else {
+		rtems_bsd_mutex_set_isr_level(&queue_context, isr_level);
 		rtems_bsd_mutex_lock_more(lock, m, owner, executing,
 		    &queue_context);
 	}
@@ -99,15 +136,17 @@ static inline int
 rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 {
 	int success;
+	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *executing;
 	Thread_Control *owner;
 
 	_Thread_queue_Context_initialize(&queue_context);
-	_Thread_queue_Acquire(&m->queue, &queue_context);
+	rtems_bsd_mutex_isr_disable(isr_level, &queue_context);
+	executing = _Thread_Executing;
+	rtems_bsd_mutex_acquire_critical(m, &queue_context);
 
 	owner = m->queue.Queue.owner;
-	executing = _Thread_Executing;
 
 	if (owner == NULL) {
 		m->queue.Queue.owner = executing;
@@ -121,7 +160,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 		success = 0;
 	}
 
-	_Thread_queue_Release(&m->queue, &queue_context);
+	rtems_bsd_mutex_release(m, isr_level, &queue_context);
 
 	return (success);
 }
@@ -129,12 +168,14 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 static inline void
 rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 {
+	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *owner;
 	int nest_level;
 
 	_Thread_queue_Context_initialize(&queue_context);
-	_Thread_queue_Acquire(&m->queue, &queue_context);
+	rtems_bsd_mutex_isr_disable(isr_level, &queue_context);
+	rtems_bsd_mutex_acquire_critical(m, &queue_context);
 
 	nest_level = m->nest_level;
 	owner = m->queue.Queue.owner;
@@ -149,15 +190,15 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 		_Thread_Resource_count_decrement(owner);
 
 		if (__predict_true(heads == NULL)) {
-			_Thread_queue_Release(&m->queue, &queue_context);
+			rtems_bsd_mutex_release(m, isr_level, &queue_context);
 		} else {
+			rtems_bsd_mutex_set_isr_level(&queue_context, isr_level);
 			_Thread_queue_Surrender(&m->queue.Queue, heads, owner,
 			    &queue_context, RTEMS_BSD_MUTEX_TQ_OPERATIONS);
 		}
 	} else {
 		m->nest_level = nest_level - 1;
-
-		_Thread_queue_Release(&m->queue, &queue_context);
+		rtems_bsd_mutex_release(m, isr_level, &queue_context);
 	}
 }
 

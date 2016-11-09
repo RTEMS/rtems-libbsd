@@ -372,14 +372,12 @@ def mmc(mm):
             'sys/dev/mmc/mmcbrvar.h',
             'sys/dev/mmc/mmcreg.h',
             'sys/dev/mmc/mmcvar.h',
-            'sys/dev/sdhci/sdhci.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
         [
             'sys/dev/mmc/mmc.c',
             'sys/dev/mmc/mmcsd.c',
-            'sys/dev/sdhci/sdhci.c',
         ],
         mm.generator['source']()
     )

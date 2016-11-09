@@ -775,7 +775,6 @@ def build(bld):
               'freebsd/sys/dev/pci/pci_user.c',
               'freebsd/sys/dev/random/harvest.c',
               'freebsd/sys/dev/re/if_re.c',
-              'freebsd/sys/dev/sdhci/sdhci.c',
               'freebsd/sys/dev/smc/if_smc.c',
               'freebsd/sys/dev/tsec/if_tsec.c',
               'freebsd/sys/dev/usb/controller/dwc_otg.c',

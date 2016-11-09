@@ -126,10 +126,19 @@
 #define RWSET_DECLARE(set, ptype)					\
 	RTEMS_BSD_DECLARE_RWSET(set, ptype *)
 
+static __inline void *
+_linker_set_obfuscate(const void *marker)
+{
+
+	/* Obfuscate the variable, so that the compiler cannot optimize */
+	__asm__("" : "+r" (marker));
+	return (__DECONST(void *, marker));
+}
+
 #define SET_BEGIN(set)							\
-	(__CONCAT(_bsd__start_set_,set))
+	_linker_set_obfuscate(__CONCAT(_bsd__start_set_,set))
 #define SET_LIMIT(set)							\
-	(__CONCAT(_bsd__stop_set_,set))
+	_linker_set_obfuscate(__CONCAT(_bsd__stop_set_,set))
 #endif /* __rtems__ */
 
 /*
@@ -139,21 +148,8 @@
  * containing those addresses.  Thus is must be declared as "type **pvar",
  * and the address of each set item is obtained inside the loop by "*pvar".
  */
-#ifndef __rtems__
 #define SET_FOREACH(pvar, set)						\
 	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set); pvar++)
-#else /* __rtems__ */
-static __inline void *
-_set_next(__uintptr_t pvar, __size_t s)
-{
-
-	__asm__("" : "+r" (pvar));
-	return (void *)(pvar + s);
-}
-#define SET_FOREACH(pvar, set)						\
-	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set);		\
-	    pvar = _set_next((__uintptr_t)pvar, sizeof(*pvar)))
-#endif /* __rtems__ */
 
 #define SET_ITEM(set, i)						\
 	((SET_BEGIN(set))[i])

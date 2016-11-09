@@ -126,19 +126,21 @@
 #define RWSET_DECLARE(set, ptype)					\
 	RTEMS_BSD_DECLARE_RWSET(set, ptype *)
 
-static __inline void *
+static __inline __uintptr_t
 _linker_set_obfuscate(const void *marker)
 {
 
 	/* Obfuscate the variable, so that the compiler cannot optimize */
 	__asm__("" : "+r" (marker));
-	return (__DECONST(void *, marker));
+	return ((__uintptr_t)marker);
 }
 
 #define SET_BEGIN(set)							\
-	_linker_set_obfuscate(__CONCAT(_bsd__start_set_,set))
+	((__typeof(&__CONCAT(_bsd__start_set_,set)[0]))			\
+	     _linker_set_obfuscate(__CONCAT(_bsd__start_set_,set)))
 #define SET_LIMIT(set)							\
-	_linker_set_obfuscate(__CONCAT(_bsd__stop_set_,set))
+	((__typeof(&__CONCAT(_bsd__stop_set_,set)[0]))			\
+	     _linker_set_obfuscate(__CONCAT(_bsd__stop_set_,set)))
 #endif /* __rtems__ */
 
 /*

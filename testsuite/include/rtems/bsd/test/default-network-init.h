@@ -298,6 +298,13 @@ Init(rtems_task_argument arg)
 /*
  * Configure LibBSD.
  */
+
+#if defined(LIBBSP_I386_PC386_BSP_H)
+#define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (64 * 1024 * 1024)
+#elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
+#define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (32 * 1024 * 1024)
+#endif
+
 #define RTEMS_BSD_CONFIG_NET_PF_UNIX
 #define RTEMS_BSD_CONFIG_NET_IF_LAGG
 #define RTEMS_BSD_CONFIG_NET_IF_VLAN

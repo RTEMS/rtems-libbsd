@@ -46,10 +46,6 @@
   #define NET_CFG_INTERFACE_0 "lo0"
 #endif
 
-#if defined(LIBBSP_I386_PC386_BSP_H)
-#define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (64 * 1024 * 1024)
-#endif
-
 #define NET_CFG_SELF_IP "@NET_CFG_SELF_IP@"
 
 #define NET_CFG_NETMASK "@NET_CFG_NETMASK@"

@@ -40,10 +40,12 @@
 
 #ifndef _KERNEL
 #include <sys/cdefs.h>
+#ifndef __rtems__
 __BEGIN_DECLS
 int *	__error(void);
 __END_DECLS
 #define	errno		(* __error())
+#endif /* __rtems__ */
 #endif
 
 #ifndef __rtems__

@@ -364,7 +364,8 @@ Init(rtems_task_argument arg)
   &rtems_shell_NETSTAT_Command, \
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_TCPDUMP_Command, \
-  &rtems_shell_SYSCTL_Command
+  &rtems_shell_SYSCTL_Command, \
+  &rtems_shell_VMSTAT_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE

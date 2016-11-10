@@ -41,6 +41,12 @@ static char sccsid[] = "@(#)vmstat.c	8.1 (Berkeley) 6/6/93";
 #endif /* not lint */
 #endif
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -82,6 +88,7 @@ __FBSDID("$FreeBSD$");
 
 #define VMSTAT_XO_VERSION "1"
 
+#ifndef __rtems__
 static char da[] = "da";
 
 static struct nlist namelist[] = {
@@ -141,6 +148,9 @@ static int	Pflag;
 static int	hflag;
 
 static kvm_t   *kd;
+#else /* __rtems__ */
+#define	kd ((kvm_t *)0)
+#endif /* __rtems__ */
 
 #define	FORKSTAT	0x01
 #define	INTRSTAT	0x02
@@ -151,6 +161,7 @@ static kvm_t   *kd;
 #define ZMEMSTAT	0x40
 #define	OBJSTAT		0x80
 
+#ifndef __rtems__
 static void	cpustats(void);
 static void	pcpustats(int, u_long, int);
 static void	devstats(void);
@@ -160,7 +171,9 @@ static void	doobjstat(void);
 static void	dosum(void);
 static void	dovmstat(unsigned int, int);
 static void	domemstat_malloc(void);
+#endif /* __rtems__ */
 static void	domemstat_zone(void);
+#ifndef __rtems__
 static void	kread(int, void *, size_t);
 static void	kreado(int, void *, size_t, size_t);
 static char    *kgetstr(const char *);
@@ -168,13 +181,30 @@ static void	needhdr(int);
 static void	needresize(int);
 static void	doresize(void);
 static void	printhdr(int, u_long);
+#endif /* __rtems__ */
 static void	usage(void);
 
+#ifndef __rtems__
 static long	pct(long, long);
 static long long	getuptime(void);
 
 static char   **getdrivedata(char **);
+#endif /* __rtems__ */
 
+#ifdef __rtems__
+static int main(int , char *argv[]);
+
+int
+rtems_bsd_command_vmstat(int argc, char *argv[])
+{
+	int exit_code;
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main("ping", main, argc, argv);
+	rtems_bsd_program_unlock();
+	return (exit_code);
+}
+#endif /* __rtems__ */
 int
 main(int argc, char *argv[])
 {
@@ -182,13 +212,28 @@ main(int argc, char *argv[])
 	unsigned int interval;
 	float f;
 	int reps;
+#ifndef __rtems__
 	char *memf, *nlistf;
 	char errbuf[_POSIX2_LINE_MAX];
+#endif /* __rtems__ */
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 	memf = nlistf = NULL;
+#endif /* __rtems__ */
 	interval = reps = todo = 0;
+#ifndef __rtems__
 	maxshowdevs = 2;
 	hflag = isatty(1);
+#endif /* __rtems__ */
 
 	argc = xo_parse_args(argc, argv);
 	if (argc < 0)
@@ -196,6 +241,7 @@ main(int argc, char *argv[])
 
 	while ((c = getopt(argc, argv, "ac:fhHiM:mN:n:oPp:stw:z")) != -1) {
 		switch (c) {
+#ifndef __rtems__
 		case 'a':
 			aflag++;
 			break;
@@ -255,6 +301,7 @@ main(int argc, char *argv[])
 			f = atof(optarg);
 			interval = f * 1000;
 			break;
+#endif /* __rtems__ */
 		case 'z':
 			todo |= ZMEMSTAT;
 			break;
@@ -270,6 +317,7 @@ main(int argc, char *argv[])
 	if (todo == 0)
 		todo = VMSTAT;
 
+#ifndef __rtems__
 	if (memf != NULL) {
 		kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);
 		if (kd == NULL)
@@ -331,6 +379,7 @@ retry_nlist:
 
 		argv = getdrivedata(argv);
 	}
+#endif /* __rtems__ */
 
 	if (*argv) {
 		f = atof(*argv);
@@ -345,12 +394,15 @@ retry_nlist:
 	} else if (reps)
 		interval = 1 * 1000;
 
+#ifndef __rtems__
 	if (todo & FORKSTAT)
 		doforkst();
 	if (todo & MEMSTAT)
 		domemstat_malloc();
+#endif /* __rtems__ */
 	if (todo & ZMEMSTAT)
 		domemstat_zone();
+#ifndef __rtems__
 	if (todo & SUMSTAT)
 		dosum();
 	if (todo & OBJSTAT)
@@ -363,10 +415,12 @@ retry_nlist:
 		dointr(interval, reps);
 	if (todo & VMSTAT)
 		dovmstat(interval, reps);
+#endif /* __rtems__ */
 	xo_finish();
 	exit(0);
 }
 
+#ifndef __rtems__
 static int
 mysysctl(const char *name, void *oldp, size_t *oldlenp,
     void *newp, size_t newlen)
@@ -1487,6 +1541,7 @@ domemstat_malloc(void)
 	xo_close_container("malloc-statistics");
 	memstat_mtl_free(mtlp);
 }
+#endif /* __rtems__ */
 
 static void
 domemstat_zone(void)
@@ -1494,7 +1549,9 @@ domemstat_zone(void)
 	struct memory_type_list *mtlp;
 	struct memory_type *mtp;
 	char name[MEMTYPE_MAXNAME + 1];
+#ifndef __rtems__
 	int error;
+#endif /* __rtems__ */
 
 	mtlp = memstat_mtl_alloc();
 	if (mtlp == NULL) {
@@ -1508,6 +1565,7 @@ domemstat_zone(void)
 			return;
 		}
 	} else {
+#ifndef __rtems__
 		if (memstat_kvm_uma(mtlp, kd) < 0) {
 			error = memstat_mtl_geterror(mtlp);
 			if (error == MEMSTAT_ERROR_KVM)
@@ -1517,6 +1575,10 @@ domemstat_zone(void)
 				xo_warnx("memstat_kvm_uma: %s",
 				    memstat_strerror(error));
 		}
+#else /* __rtems__ */
+		xo_warn("memstat_kvm_uma");
+		return;
+#endif /* __rtems__ */
 	}
 	xo_open_container("memory-zone-statistics");
 	xo_emit("{T:/%-20s} {T:/%6s} {T:/%6s} {T:/%8s} {T:/%8s} {T:/%8s} "
@@ -1545,6 +1607,7 @@ domemstat_zone(void)
 	xo_emit("\n");
 }
 
+#ifndef __rtems__
 static void
 display_object(struct kinfo_vmobject *kvo)
 {
@@ -1719,6 +1782,7 @@ kgetstr(const char *strp)
 	} while (ret[n++] != '\0');
 	return (ret);
 }
+#endif /* __rtems__ */
 
 static void
 usage(void)

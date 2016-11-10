@@ -15,7 +15,8 @@
     &rtems_shell_PING_Command, \
     &rtems_shell_ROUTE_Command, \
     &rtems_shell_NETSTAT_Command, \
-    &rtems_shell_IFCONFIG_Command
+    &rtems_shell_IFCONFIG_Command, \
+    &rtems_shell_VMSTAT_Command
 
 #include <rtems/shellconfig.h>
 

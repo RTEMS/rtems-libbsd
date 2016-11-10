@@ -77,6 +77,7 @@ def rtems(mm):
             'rtems/rtems-bsd-shell-route.c',
             'rtems/rtems-bsd-shell-sysctl.c',
             'rtems/rtems-bsd-shell-tcpdump.c',
+            'rtems/rtems-bsd-shell-vmstat.c',
             'rtems/rtems-bsd-syscall-api.c',
             'rtems/rtems-kernel-assert.c',
             'rtems/rtems-kernel-autoconf.c',
@@ -2216,6 +2217,7 @@ def user_space(mm):
             'usr.bin/netstat/pfkey.c',
             'usr.bin/netstat/sctp.c',
             'usr.bin/netstat/unix.c',
+            'usr.bin/vmstat/vmstat.c',
         ],
         mm.generator['source'](['-DINET6', '-DINET'])
     )

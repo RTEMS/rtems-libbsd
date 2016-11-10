@@ -446,7 +446,8 @@ def build(bld):
                      'freebsd/usr.bin/netstat/pfkey.c',
                      'freebsd/usr.bin/netstat/route.c',
                      'freebsd/usr.bin/netstat/sctp.c',
-                     'freebsd/usr.bin/netstat/unix.c']
+                     'freebsd/usr.bin/netstat/unix.c',
+                     'freebsd/usr.bin/vmstat/vmstat.c']
     bld.objects(target = "objs01",
                 features = "c",
                 cflags = cflags,
@@ -1105,6 +1106,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-shell-route.c',
               'rtemsbsd/rtems/rtems-bsd-shell-sysctl.c',
               'rtemsbsd/rtems/rtems-bsd-shell-tcpdump.c',
+              'rtemsbsd/rtems/rtems-bsd-shell-vmstat.c',
               'rtemsbsd/rtems/rtems-bsd-shell.c',
               'rtemsbsd/rtems/rtems-bsd-syscall-api.c',
               'rtemsbsd/rtems/rtems-kernel-assert.c',

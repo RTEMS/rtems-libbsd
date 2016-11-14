@@ -55,7 +55,7 @@
 #include <net80211/ieee80211_radiotap.h>
 #include <net80211/ieee80211_scan.h>
 
-#define	IEEE80211_TXPOWER_MAX	100	/* .5 dbM (XXX units?) */
+#define	IEEE80211_TXPOWER_MAX	100	/* .5 dBm (XXX units?) */
 #define	IEEE80211_TXPOWER_MIN	0	/* kill radio */
 
 #define	IEEE80211_DTIM_DEFAULT	1	/* default DTIM period */
@@ -84,7 +84,16 @@
 
 #define	IEEE80211_MS_TO_TU(x)	(((x) * 1000) / 1024)
 #define	IEEE80211_TU_TO_MS(x)	(((x) * 1024) / 1000)
-#define	IEEE80211_TU_TO_TICKS(x)(((x) * 1024 * hz) / (1000 * 1000))
+/* XXX TODO: cap this at 1, in case hz is not 1000 */
+#define	IEEE80211_TU_TO_TICKS(x)(((uint64_t)(x) * 1024 * hz) / (1000 * 1000))
+
+/*
+ * Technically, vhtflags may be 0 /and/ 11ac is enabled.
+ * At some point ic should just grow a flag somewhere that
+ * says that VHT is supported - and then this macro can be
+ * changed.
+ */
+#define	IEEE80211_CONF_VHT(ic)		((ic)->ic_vhtcaps != 0)
 
 /*
  * 802.11 control state is split into a common portion that maps
@@ -116,13 +125,16 @@ struct ieee80211_superg;
 struct ieee80211_frame;
 
 struct ieee80211com {
-	struct ifnet		*ic_ifp;	/* associated device */
+	void			*ic_softc;	/* driver softc */
+	const char		*ic_name;	/* usually device name */
 	ieee80211_com_lock_t	ic_comlock;	/* state update lock */
+	ieee80211_tx_lock_t	ic_txlock;	/* ic/vap TX lock */
+	ieee80211_ff_lock_t	ic_fflock;	/* stageq/ni_tx_superg lock */
+	LIST_ENTRY(ieee80211com)   ic_next;	/* on global list */
 	TAILQ_HEAD(, ieee80211vap) ic_vaps;	/* list of vap instances */
 	int			ic_headroom;	/* driver tx headroom needs */
 	enum ieee80211_phytype	ic_phytype;	/* XXX wrong for multi-mode */
 	enum ieee80211_opmode	ic_opmode;	/* operation mode */
-	struct ifmedia		ic_media;	/* interface media config */
 	struct callout		ic_inact;	/* inactivity processing */
 	struct taskqueue	*ic_tq;		/* deferred state thread */
 	struct task		ic_parent_task;	/* deferred parent processing */
@@ -130,6 +142,12 @@ struct ieee80211com {
 	struct task		ic_mcast_task;	/* deferred mcast update */
 	struct task		ic_chan_task;	/* deferred channel change */
 	struct task		ic_bmiss_task;	/* deferred beacon miss hndlr */
+	struct task		ic_chw_task;	/* deferred HT CHW update */
+	struct task		ic_wme_task;	/* deferred WME update */
+	struct task		ic_restart_task; /* deferred device restart */
+
+	counter_u64_t		ic_ierrors;	/* input errors */
+	counter_u64_t		ic_oerrors;	/* output errors */
 
 	uint32_t		ic_flags;	/* state flags */
 	uint32_t		ic_flags_ext;	/* extended state flags */
@@ -139,11 +157,13 @@ struct ieee80211com {
 	uint32_t		ic_htcaps;	/* HT capabilities */
 	uint32_t		ic_htextcaps;	/* HT extended capabilities */
 	uint32_t		ic_cryptocaps;	/* crypto capabilities */
-	uint8_t			ic_modecaps[2];	/* set of mode capabilities */
+						/* set of mode capabilities */
+	uint8_t			ic_modecaps[IEEE80211_MODE_BYTES];
 	uint8_t			ic_promisc;	/* vap's needing promisc mode */
 	uint8_t			ic_allmulti;	/* vap's needing all multicast*/
 	uint8_t			ic_nrunning;	/* vap's marked running */
 	uint8_t			ic_curmode;	/* current mode */
+	uint8_t			ic_macaddr[IEEE80211_ADDR_LEN];
 	uint16_t		ic_bintval;	/* beacon interval */
 	uint16_t		ic_lintval;	/* listen interval */
 	uint16_t		ic_holdover;	/* PM hold over duration */
@@ -190,6 +210,7 @@ struct ieee80211com {
 	struct ieee80211_dfs_state ic_dfs;	/* DFS state */
 
 	struct ieee80211_scan_state *ic_scan;	/* scan state */
+	struct ieee80211_scan_methods *ic_scan_methods;	/* scan methods */
 	int			ic_lastdata;	/* time of last data frame */
 	int			ic_lastscan;	/* time last scan completed */
 
@@ -216,6 +237,13 @@ struct ieee80211com {
 	uint8_t			ic_rxstream;    /* # RX streams */
 	uint8_t			ic_txstream;    /* # TX streams */
 
+	/* VHT information */
+	uint32_t		ic_vhtcaps;	/* VHT capabilities */
+	uint32_t		ic_vhtextcaps;	/* VHT extended capabilities (TODO) */
+	struct ieee80211_vht_mcs_info	ic_vht_mcsinfo; /* Support TX/RX VHT MCS */
+	uint32_t		ic_flags_vht;	/* VHT state flags */
+	uint32_t		ic_vht_spare[3];
+
 	/* optional state for Atheros SuperG protocol extensions */
 	struct ieee80211_superg	*ic_superg;
 
@@ -233,6 +261,11 @@ struct ieee80211com {
 				    const uint8_t [IEEE80211_ADDR_LEN],
 				    const uint8_t [IEEE80211_ADDR_LEN]);
 	void			(*ic_vap_delete)(struct ieee80211vap *);
+	/* device specific ioctls */
+	int			(*ic_ioctl)(struct ieee80211com *,
+				    u_long, void *);
+	/* start/stop device */
+	void			(*ic_parent)(struct ieee80211com *);
 	/* operating mode attachment */
 	ieee80211vap_attach	ic_vattach[IEEE80211_OPMODE_MAX];
 	/* return hardware/radio capabilities */
@@ -242,6 +275,13 @@ struct ieee80211com {
 	int			(*ic_setregdomain)(struct ieee80211com *,
 				    struct ieee80211_regdomain *,
 				    int, struct ieee80211_channel []);
+
+	int			(*ic_set_quiet)(struct ieee80211_node *,
+				    u_int8_t *quiet_elm);
+
+	/* regular transmit */
+	int			(*ic_transmit)(struct ieee80211com *,
+				    struct mbuf *);
 	/* send/recv 802.11 management frame */
 	int			(*ic_send_mgmt)(struct ieee80211_node *,
 				     int, int);
@@ -250,11 +290,11 @@ struct ieee80211com {
 				    struct mbuf *,
 				    const struct ieee80211_bpf_params *);
 	/* update device state for 802.11 slot time change */
-	void			(*ic_updateslot)(struct ifnet *);
+	void			(*ic_updateslot)(struct ieee80211com *);
 	/* handle multicast state changes */
-	void			(*ic_update_mcast)(struct ifnet *);
+	void			(*ic_update_mcast)(struct ieee80211com *);
 	/* handle promiscuous mode changes */
-	void			(*ic_update_promisc)(struct ifnet *);
+	void			(*ic_update_promisc)(struct ieee80211com *);
 	/* new station association callback/notification */
 	void			(*ic_newassoc)(struct ieee80211_node *, int);
 	/* TDMA update notification */
@@ -318,6 +358,10 @@ struct ieee80211com {
 				    int batimeout, int baseqctl);
 	void			(*ic_ampdu_rx_stop)(struct ieee80211_node *,
 				    struct ieee80211_rx_ampdu *);
+
+	/* The channel width has changed (20<->2040) */
+	void			(*ic_update_chw)(struct ieee80211com *);
+
 	uint64_t		ic_spare[7];
 };
 
@@ -335,14 +379,16 @@ struct ieee80211vap {
 
 	TAILQ_ENTRY(ieee80211vap) iv_next;	/* list of vap instances */
 	struct ieee80211com	*iv_ic;		/* back ptr to common state */
+	/* MAC address: ifp or ic */
+	uint8_t			iv_myaddr[IEEE80211_ADDR_LEN];
 	uint32_t		iv_debug;	/* debug msg flags */
 	struct ieee80211_stats	iv_stats;	/* statistics */
 
-	uint8_t			iv_myaddr[IEEE80211_ADDR_LEN];
 	uint32_t		iv_flags;	/* state flags */
 	uint32_t		iv_flags_ext;	/* extended state flags */
 	uint32_t		iv_flags_ht;	/* HT state flags */
 	uint32_t		iv_flags_ven;	/* vendor state flags */
+	uint32_t		iv_ifflags;	/* ifnet flags */
 	uint32_t		iv_caps;	/* capabilities */
 	uint32_t		iv_htcaps;	/* HT capabilities */
 	uint32_t		iv_htextcaps;	/* HT extended capabilities */
@@ -358,6 +404,13 @@ struct ieee80211vap {
 	int			iv_inact_auth;	/* auth but not assoc setting */
 	int			iv_inact_run;	/* authorized setting */
 	int			iv_inact_probe;	/* inactive probe time */
+
+	/* VHT flags */
+	uint32_t		iv_flags_vht;	/* VHT state flags */
+	uint32_t		iv_vhtcaps;	/* VHT capabilities */
+	uint32_t		iv_vhtextcaps;	/* VHT extended capabilities (TODO) */
+	struct ieee80211_vht_mcs_info	iv_vht_mcsinfo;
+	uint32_t		iv_vht_spare[4];
 
 	int			iv_des_nssid;	/* # desired ssids */
 	struct ieee80211_scan_ssid iv_des_ssid[1];/* desired ssid table */
@@ -392,6 +445,7 @@ struct ieee80211vap {
 	int			iv_amsdu_limit;	/* A-MSDU tx limit (bytes) */
 	u_int			iv_ampdu_mintraffic[WME_NUM_AC];
 
+	struct ieee80211_beacon_offsets iv_bcn_off;
 	uint32_t		*iv_aid_bitmap;	/* association id map */
 	uint16_t		iv_max_aid;
 	uint16_t		iv_sta_assoc;	/* stations associated */
@@ -403,6 +457,12 @@ struct ieee80211vap {
 	uint8_t			iv_dtim_period;	/* DTIM period */
 	uint8_t			iv_dtim_count;	/* DTIM count from last bcn */
 						/* set/unset aid pwrsav state */
+	uint8_t			iv_quiet;	/* Quiet Element */
+	uint8_t			iv_quiet_count;	/* constant count for Quiet Element */
+	uint8_t			iv_quiet_count_value;	/* variable count for Quiet Element */
+	uint8_t			iv_quiet_period;	/* period for Quiet Element */
+	uint16_t		iv_quiet_duration;	/* duration for Quiet Element */
+	uint16_t		iv_quiet_offset;	/* offset for Quiet Element */
 	int			iv_csa_count;	/* count for doing CSA */
 
 	struct ieee80211_node	*iv_bss;	/* information for this node */
@@ -419,6 +479,8 @@ struct ieee80211vap {
 	struct ieee80211_appie	*iv_appie_wpa;
 	uint8_t			*iv_wpa_ie;
 	uint8_t			*iv_rsn_ie;
+
+	/* Key management */
 	uint16_t		iv_max_keyix;	/* max h/w key index */
 	ieee80211_keyix		iv_def_txkey;	/* default/group tx key index */
 	struct ieee80211_key	iv_nw_keys[IEEE80211_WEP_NKID];
@@ -428,10 +490,11 @@ struct ieee80211vap {
 	int			(*iv_key_delete)(struct ieee80211vap *, 
 				    const struct ieee80211_key *);
 	int			(*iv_key_set)(struct ieee80211vap *,
-				    const struct ieee80211_key *,
-				    const uint8_t mac[IEEE80211_ADDR_LEN]);
+				    const struct ieee80211_key *);
 	void			(*iv_key_update_begin)(struct ieee80211vap *);
 	void			(*iv_key_update_end)(struct ieee80211vap *);
+	void			(*iv_update_deftxkey)(struct ieee80211vap *,
+				    ieee80211_keyix deftxkey);
 
 	const struct ieee80211_authenticator *iv_auth; /* authenticator glue */
 	void			*iv_ec;		/* private auth state */
@@ -450,9 +513,13 @@ struct ieee80211vap {
 	void			(*iv_opdetach)(struct ieee80211vap *);
 	/* receive processing */
 	int			(*iv_input)(struct ieee80211_node *,
-				    struct mbuf *, int, int);
+				    struct mbuf *,
+				    const struct ieee80211_rx_stats *,
+				    int, int);
 	void			(*iv_recv_mgmt)(struct ieee80211_node *,
-				    struct mbuf *, int, int, int);
+				    struct mbuf *, int,
+				    const struct ieee80211_rx_stats *,
+				    int, int);
 	void			(*iv_recv_ctl)(struct ieee80211_node *,
 				    struct mbuf *, int);
 	void			(*iv_deliver_data)(struct ieee80211vap *,
@@ -471,12 +538,18 @@ struct ieee80211vap {
 	/* power save handling */
 	void			(*iv_update_ps)(struct ieee80211vap *, int);
 	int			(*iv_set_tim)(struct ieee80211_node *, int);
+	void			(*iv_node_ps)(struct ieee80211_node *, int);
+	void			(*iv_sta_ps)(struct ieee80211vap *, int);
+	void			(*iv_recv_pspoll)(struct ieee80211_node *,
+				    struct mbuf *);
+
 	/* state machine processing */
 	int			(*iv_newstate)(struct ieee80211vap *,
 				    enum ieee80211_state, int);
 	/* 802.3 output method for raw frame xmit */
 	int			(*iv_output)(struct ifnet *, struct mbuf *,
-				    struct sockaddr *, struct route *);
+				    const struct sockaddr *, struct route *);
+
 	uint64_t		iv_spare[6];
 };
 MALLOC_DECLARE(M_80211_VAP);
@@ -555,11 +628,12 @@ MALLOC_DECLARE(M_80211_VAP);
 #define	IEEE80211_FEXT_WDSLEGACY 0x00010000	/* CONF: legacy WDS operation */
 #define	IEEE80211_FEXT_PROBECHAN 0x00020000	/* CONF: probe passive channel*/
 #define	IEEE80211_FEXT_UNIQMAC	 0x00040000	/* CONF: user or computed mac */
+#define	IEEE80211_FEXT_SCAN_OFFLOAD	0x00080000	/* CONF: scan is fully offloaded */
 
 #define	IEEE80211_FEXT_BITS \
 	"\20\2INACT\3SCANWAIT\4BGSCAN\5WPS\6TSN\7SCANREQ\10RESUME" \
 	"\0114ADDR\12NONEPR_PR\13SWBMISS\14DFS\15DOTD\16STATEWAIT\17REINIT" \
-	"\20BPF\21WDSLEGACY\22PROBECHAN\23UNIQMAC"
+	"\20BPF\21WDSLEGACY\22PROBECHAN\23UNIQMAC\24SCAN_OFFLOAD"
 
 /* ic_flags_ht/iv_flags_ht */
 #define	IEEE80211_FHT_NONHT_PR	 0x00000001	/* STATUS: non-HT sta present */
@@ -586,86 +660,35 @@ MALLOC_DECLARE(M_80211_VAP);
 
 #define	IEEE80211_FVEN_BITS	"\20"
 
-/* ic_caps/iv_caps: device driver capabilities */
-/* 0x2e available */
-#define	IEEE80211_C_STA		0x00000001	/* CAPABILITY: STA available */
-#define	IEEE80211_C_8023ENCAP	0x00000002	/* CAPABILITY: 802.3 encap */
-#define	IEEE80211_C_FF		0x00000040	/* CAPABILITY: ATH FF avail */
-#define	IEEE80211_C_TURBOP	0x00000080	/* CAPABILITY: ATH Turbo avail*/
-#define	IEEE80211_C_IBSS	0x00000100	/* CAPABILITY: IBSS available */
-#define	IEEE80211_C_PMGT	0x00000200	/* CAPABILITY: Power mgmt */
-#define	IEEE80211_C_HOSTAP	0x00000400	/* CAPABILITY: HOSTAP avail */
-#define	IEEE80211_C_AHDEMO	0x00000800	/* CAPABILITY: Old Adhoc Demo */
-#define	IEEE80211_C_SWRETRY	0x00001000	/* CAPABILITY: sw tx retry */
-#define	IEEE80211_C_TXPMGT	0x00002000	/* CAPABILITY: tx power mgmt */
-#define	IEEE80211_C_SHSLOT	0x00004000	/* CAPABILITY: short slottime */
-#define	IEEE80211_C_SHPREAMBLE	0x00008000	/* CAPABILITY: short preamble */
-#define	IEEE80211_C_MONITOR	0x00010000	/* CAPABILITY: monitor mode */
-#define	IEEE80211_C_DFS		0x00020000	/* CAPABILITY: DFS/radar avail*/
-#define	IEEE80211_C_MBSS	0x00040000	/* CAPABILITY: MBSS available */
-/* 0x7c0000 available */
-#define	IEEE80211_C_WPA1	0x00800000	/* CAPABILITY: WPA1 avail */
-#define	IEEE80211_C_WPA2	0x01000000	/* CAPABILITY: WPA2 avail */
-#define	IEEE80211_C_WPA		0x01800000	/* CAPABILITY: WPA1+WPA2 avail*/
-#define	IEEE80211_C_BURST	0x02000000	/* CAPABILITY: frame bursting */
-#define	IEEE80211_C_WME		0x04000000	/* CAPABILITY: WME avail */
-#define	IEEE80211_C_WDS		0x08000000	/* CAPABILITY: 4-addr support */
-/* 0x10000000 reserved */
-#define	IEEE80211_C_BGSCAN	0x20000000	/* CAPABILITY: bg scanning */
-#define	IEEE80211_C_TXFRAG	0x40000000	/* CAPABILITY: tx fragments */
-#define	IEEE80211_C_TDMA	0x80000000	/* CAPABILITY: TDMA avail */
-/* XXX protection/barker? */
+#define	IEEE80211_FVHT_VHT	0x000000001	/* CONF: VHT supported */
+#define	IEEE80211_FVHT_USEVHT40	0x000000002	/* CONF: Use VHT40 */
+#define	IEEE80211_FVHT_USEVHT80	0x000000004	/* CONF: Use VHT80 */
+#define	IEEE80211_FVHT_USEVHT80P80	0x000000008	/* CONF: Use VHT 80+80 */
+#define	IEEE80211_FVHT_USEVHT160	0x000000010	/* CONF: Use VHT160 */
+#define	IEEE80211_VFHT_BITS \
+	"\20\1VHT\2VHT40\3VHT80\4VHT80P80\5VHT160"
 
-#define	IEEE80211_C_OPMODE \
-	(IEEE80211_C_STA | IEEE80211_C_IBSS | IEEE80211_C_HOSTAP | \
-	 IEEE80211_C_AHDEMO | IEEE80211_C_MONITOR | IEEE80211_C_WDS | \
-	 IEEE80211_C_TDMA | IEEE80211_C_MBSS)
-
-#define	IEEE80211_C_BITS \
-	"\20\1STA\002803ENCAP\7FF\10TURBOP\11IBSS\12PMGT" \
-	"\13HOSTAP\14AHDEMO\15SWRETRY\16TXPMGT\17SHSLOT\20SHPREAMBLE" \
-	"\21MONITOR\22DFS\23MBSS\30WPA1\31WPA2\32BURST\33WME\34WDS\36BGSCAN" \
-	"\37TXFRAG\40TDMA"
-
-/*
- * ic_htcaps/iv_htcaps: HT-specific device/driver capabilities
- *
- * NB: the low 16-bits are the 802.11 definitions, the upper
- *     16-bits are used to define s/w/driver capabilities.
- */
-#define	IEEE80211_HTC_AMPDU	0x00010000	/* CAPABILITY: A-MPDU tx */
-#define	IEEE80211_HTC_AMSDU	0x00020000	/* CAPABILITY: A-MSDU tx */
-/* NB: HT40 is implied by IEEE80211_HTCAP_CHWIDTH40 */
-#define	IEEE80211_HTC_HT	0x00040000	/* CAPABILITY: HT operation */
-#define	IEEE80211_HTC_SMPS	0x00080000	/* CAPABILITY: MIMO power save*/
-#define	IEEE80211_HTC_RIFS	0x00100000	/* CAPABILITY: RIFS support */
-#define	IEEE80211_HTC_RXUNEQUAL	0x00200000	/* CAPABILITY: RX unequal MCS */
-#define	IEEE80211_HTC_RXMCS32	0x00400000	/* CAPABILITY: MCS32 support */
-#define	IEEE80211_HTC_TXUNEQUAL	0x00800000	/* CAPABILITY: TX unequal MCS */
-#define	IEEE80211_HTC_TXMCS32	0x01000000	/* CAPABILITY: MCS32 suport */
-
-#define	IEEE80211_C_HTCAP_BITS \
-	"\20\1LDPC\2CHWIDTH40\5GREENFIELD\6SHORTGI20\7SHORTGI40\10TXSTBC" \
-	"\21AMPDU\22AMSDU\23HT\24SMPS\25RIFS"
-
-void	ieee80211_ifattach(struct ieee80211com *,
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
+int	ic_printf(struct ieee80211com *, const char *, ...) __printflike(2, 3);
+void	ieee80211_ifattach(struct ieee80211com *);
 void	ieee80211_ifdetach(struct ieee80211com *);
 int	ieee80211_vap_setup(struct ieee80211com *, struct ieee80211vap *,
 		const char name[IFNAMSIZ], int unit,
 		enum ieee80211_opmode opmode, int flags,
-		const uint8_t bssid[IEEE80211_ADDR_LEN],
-		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
+		const uint8_t bssid[IEEE80211_ADDR_LEN]);
 int	ieee80211_vap_attach(struct ieee80211vap *,
-		ifm_change_cb_t, ifm_stat_cb_t);
+		ifm_change_cb_t, ifm_stat_cb_t,
+		const uint8_t macaddr[IEEE80211_ADDR_LEN]);
 void	ieee80211_vap_detach(struct ieee80211vap *);
 const struct ieee80211_rateset *ieee80211_get_suprates(struct ieee80211com *ic,
 		const struct ieee80211_channel *);
 void	ieee80211_announce(struct ieee80211com *);
 void	ieee80211_announce_channels(struct ieee80211com *);
 void	ieee80211_drain(struct ieee80211com *);
-void	ieee80211_media_init(struct ieee80211com *);
+void	ieee80211_chan_init(struct ieee80211com *);
 struct ieee80211com *ieee80211_find_vap(const uint8_t mac[IEEE80211_ADDR_LEN]);
+struct ieee80211com *ieee80211_find_com(const char *name);
+typedef void ieee80211_com_iter_func(void *, struct ieee80211com *);
+void	ieee80211_iterate_coms(ieee80211_com_iter_func *, void *);
 int	ieee80211_media_change(struct ifnet *);
 void	ieee80211_media_status(struct ifnet *, struct ifmediareq *);
 int	ieee80211_ioctl(struct ifnet *, u_long, caddr_t);
@@ -676,20 +699,43 @@ int	ieee80211_mhz2ieee(u_int, u_int);
 int	ieee80211_chan2ieee(struct ieee80211com *,
 		const struct ieee80211_channel *);
 u_int	ieee80211_ieee2mhz(u_int, u_int);
+int	ieee80211_add_channel(struct ieee80211_channel[], int, int *,
+	    uint8_t, uint16_t, int8_t, uint32_t, const uint8_t[]);
+int	ieee80211_add_channel_ht40(struct ieee80211_channel[], int, int *,
+	    uint8_t, int8_t, uint32_t);
+uint32_t ieee80211_get_channel_center_freq(const struct ieee80211_channel *);
+uint32_t ieee80211_get_channel_center_freq1(const struct ieee80211_channel *);
+uint32_t ieee80211_get_channel_center_freq2(const struct ieee80211_channel *);
+int	ieee80211_add_channel_list_2ghz(struct ieee80211_channel[], int, int *,
+	    const uint8_t[], int, const uint8_t[], int);
+int	ieee80211_add_channel_list_5ghz(struct ieee80211_channel[], int, int *,
+	    const uint8_t[], int, const uint8_t[], int);
 struct ieee80211_channel *ieee80211_find_channel(struct ieee80211com *,
 		int freq, int flags);
 struct ieee80211_channel *ieee80211_find_channel_byieee(struct ieee80211com *,
 		int ieee, int flags);
+struct ieee80211_channel *ieee80211_lookup_channel_rxstatus(struct ieee80211vap *,
+		const struct ieee80211_rx_stats *);
 int	ieee80211_setmode(struct ieee80211com *, enum ieee80211_phymode);
 enum ieee80211_phymode ieee80211_chan2mode(const struct ieee80211_channel *);
 uint32_t ieee80211_mac_hash(const struct ieee80211com *,
 		const uint8_t addr[IEEE80211_ADDR_LEN]);
+char	ieee80211_channel_type_char(const struct ieee80211_channel *c);
+
+#define	ieee80211_get_current_channel(_ic)	((_ic)->ic_curchan)
+#define	ieee80211_get_home_channel(_ic)		((_ic)->ic_bsschan)
+#define	ieee80211_get_vap_desired_channel(_iv)	((_iv)->iv_des_chan)
 
 void	ieee80211_radiotap_attach(struct ieee80211com *,
 	    struct ieee80211_radiotap_header *th, int tlen,
 		uint32_t tx_radiotap,
 	    struct ieee80211_radiotap_header *rh, int rlen,
 		uint32_t rx_radiotap);
+void	ieee80211_radiotap_attachv(struct ieee80211com *,
+	    struct ieee80211_radiotap_header *th,
+	    int tlen, int n_tx_v, uint32_t tx_radiotap,
+	    struct ieee80211_radiotap_header *rh,
+	    int rlen, int n_rx_v, uint32_t rx_radiotap);
 void	ieee80211_radiotap_detach(struct ieee80211com *);
 void	ieee80211_radiotap_vattach(struct ieee80211vap *);
 void	ieee80211_radiotap_vdetach(struct ieee80211vap *);
@@ -793,6 +839,49 @@ ieee80211_htchanflags(const struct ieee80211_channel *c)
 	return IEEE80211_IS_CHAN_HT40(c) ?
 	    IEEE80211_FHT_HT | IEEE80211_FHT_USEHT40 :
 	    IEEE80211_IS_CHAN_HT(c) ?  IEEE80211_FHT_HT : 0;
+}
+
+/*
+ * Calculate VHT channel promotion flags for a channel.
+ * XXX belongs in ieee80211_vht.h but needs IEEE80211_FVHT_*
+ */
+static __inline int
+ieee80211_vhtchanflags(const struct ieee80211_channel *c)
+{
+
+	if (IEEE80211_IS_CHAN_VHT160(c))
+		return IEEE80211_FVHT_USEVHT160;
+	if (IEEE80211_IS_CHAN_VHT80_80(c))
+		return IEEE80211_FVHT_USEVHT80P80;
+	if (IEEE80211_IS_CHAN_VHT80(c))
+		return IEEE80211_FVHT_USEVHT80;
+	if (IEEE80211_IS_CHAN_VHT40(c))
+		return IEEE80211_FVHT_USEVHT40;
+	if (IEEE80211_IS_CHAN_VHT(c))
+		return IEEE80211_FVHT_VHT;
+	return (0);
+}
+
+/*
+ * Fetch the current TX power (cap) for the given node.
+ *
+ * This includes the node and ic/vap TX power limit as needed,
+ * but it doesn't take into account any per-rate limit.
+ */
+static __inline uint16_t
+ieee80211_get_node_txpower(struct ieee80211_node *ni)
+{
+	struct ieee80211com *ic = ni->ni_ic;
+	uint16_t txpower;
+
+	txpower = ni->ni_txpower;
+	txpower = MIN(txpower, ic->ic_txpowlimit);
+	if (ic->ic_curchan != NULL) {
+		txpower = MIN(txpower, 2 * ic->ic_curchan->ic_maxregpower);
+		txpower = MIN(txpower, ic->ic_curchan->ic_maxpower);
+	}
+
+	return (txpower);
 }
 
 /*

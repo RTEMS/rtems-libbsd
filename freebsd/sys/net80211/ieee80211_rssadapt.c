@@ -35,13 +35,17 @@
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/malloc.h>
 #include <sys/module.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_media.h>
+#include <net/ethernet.h>
 
 #include <net80211/ieee80211_var.h>
 #include <net80211/ieee80211_rssadapt.h>
@@ -85,9 +89,8 @@ static int	rssadapt_rate(struct ieee80211_node *, void *, uint32_t);
 static void	rssadapt_lower_rate(struct ieee80211_rssadapt_node *, int, int);
 static void	rssadapt_raise_rate(struct ieee80211_rssadapt_node *,
 			int, int);
-static void	rssadapt_tx_complete(const struct ieee80211vap *,
-    			const struct ieee80211_node *, int,
-			void *, void *);
+static void	rssadapt_tx_complete(const struct ieee80211_node *,
+			const struct ieee80211_ratectl_tx_status *);
 static void	rssadapt_sysctlattach(struct ieee80211vap *,
 			struct sysctl_ctx_list *, struct sysctl_oid *);
 
@@ -130,8 +133,8 @@ rssadapt_init(struct ieee80211vap *vap)
 	KASSERT(vap->iv_rs == NULL, ("%s: iv_rs already initialized",
 	    __func__));
 	
-	vap->iv_rs = rs = malloc(sizeof(struct ieee80211_rssadapt),
-	    M_80211_RATECTL, M_NOWAIT|M_ZERO);
+	vap->iv_rs = rs = IEEE80211_MALLOC(sizeof(struct ieee80211_rssadapt),
+	    M_80211_RATECTL, IEEE80211_M_NOWAIT | IEEE80211_M_ZERO);
 	if (rs == NULL) {
 		if_printf(vap->iv_ifp, "couldn't alloc ratectl structure\n");
 		return;
@@ -144,7 +147,7 @@ rssadapt_init(struct ieee80211vap *vap)
 static void
 rssadapt_deinit(struct ieee80211vap *vap)
 {
-	free(vap->iv_rs, M_80211_RATECTL);
+	IEEE80211_FREE(vap->iv_rs, M_80211_RATECTL);
 }
 
 static void
@@ -173,8 +176,8 @@ rssadapt_node_init(struct ieee80211_node *ni)
 
 	if (ni->ni_rctls == NULL) {
 		ni->ni_rctls = ra = 
-		    malloc(sizeof(struct ieee80211_rssadapt_node),
-		        M_80211_RATECTL, M_NOWAIT|M_ZERO);
+		    IEEE80211_MALLOC(sizeof(struct ieee80211_rssadapt_node),
+		        M_80211_RATECTL, IEEE80211_M_NOWAIT | IEEE80211_M_ZERO);
 		if (ra == NULL) {
 			if_printf(vap->iv_ifp, "couldn't alloc per-node ratectl "
 			    "structure\n");
@@ -202,7 +205,7 @@ static void
 rssadapt_node_deinit(struct ieee80211_node *ni)
 {
 
-	free(ni->ni_rctls, M_80211_RATECTL);
+	IEEE80211_FREE(ni->ni_rctls, M_80211_RATECTL);
 }
 
 static __inline int
@@ -308,13 +311,21 @@ rssadapt_raise_rate(struct ieee80211_rssadapt_node *ra, int pktlen, int rssi)
 }
 
 static void
-rssadapt_tx_complete(const struct ieee80211vap *vap,
-    const struct ieee80211_node *ni, int success, void *arg1, void *arg2)
+rssadapt_tx_complete(const struct ieee80211_node *ni,
+    const struct ieee80211_ratectl_tx_status *status)
 {
 	struct ieee80211_rssadapt_node *ra = ni->ni_rctls;
-	int pktlen = *(int *)arg1, rssi = *(int *)arg2;
+	int pktlen, rssi;
 
-	if (success) {
+	if ((status->flags &
+	    (IEEE80211_RATECTL_STATUS_PKTLEN|IEEE80211_RATECTL_STATUS_RSSI)) !=
+	    (IEEE80211_RATECTL_STATUS_PKTLEN|IEEE80211_RATECTL_STATUS_RSSI))
+		return;
+
+	pktlen = status->pktlen;
+	rssi = status->rssi;
+
+	if (status->status == IEEE80211_RATECTL_TX_SUCCESS) {
 		ra->ra_nok++;
 		if ((ra->ra_rix + 1) < ra->ra_rates.rs_nrates &&
 		    (ticks - ra->ra_last_raise) >= ra->ra_raise_interval)

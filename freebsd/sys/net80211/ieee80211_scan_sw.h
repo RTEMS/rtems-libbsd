@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
+ * Copyright (c) 2015 Adrian Chadd <adrian@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,40 +24,9 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_DFS_H_
-#define _NET80211_IEEE80211_DFS_H_
+#ifndef	__NET80211_IEEE80211_SCAN_SW_H__
+#define	__NET80211_IEEE80211_SCAN_SW_H__
 
-/*
- * 802.11h/DFS definitions.
- */
+extern	void ieee80211_swscan_attach(struct ieee80211com *ic);
 
-typedef enum {
-	DFS_DBG_NONE		= 0,
-	DFS_DBG_NONOL		= 1,
-	DFS_DBG_NOCSANOL	= 2
-} dfs_debug_t;
-
-struct ieee80211_dfs_state {
-	int		nol_event[IEEE80211_CHAN_MAX];
-	struct callout	nol_timer;		/* NOL list processing */
-	struct callout	cac_timer;		/* CAC timer */
-	struct timeval	lastevent;		/* time of last radar event */
-	int		cureps;			/* current events/second */
-	const struct ieee80211_channel *lastchan;/* chan w/ last radar event */
-	struct ieee80211_channel *newchan;	/* chan selected next */
-};
-
-void	ieee80211_dfs_attach(struct ieee80211com *);
-void	ieee80211_dfs_detach(struct ieee80211com *);
-
-void	ieee80211_dfs_reset(struct ieee80211com *);
-
-void	ieee80211_dfs_cac_start(struct ieee80211vap *);
-void	ieee80211_dfs_cac_stop(struct ieee80211vap *);
-void	ieee80211_dfs_cac_clear(struct ieee80211com *,
-		const struct ieee80211_channel *);
-
-void	ieee80211_dfs_notify_radar(struct ieee80211com *,
-		struct ieee80211_channel *);
-struct ieee80211_channel *ieee80211_dfs_pickchannel(struct ieee80211com *);
-#endif /* _NET80211_IEEE80211_DFS_H_ */
+#endif	/* __NET80211_IEEE80211_SCAN_SW_H__ */

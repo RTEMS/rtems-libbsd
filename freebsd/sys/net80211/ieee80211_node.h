@@ -36,7 +36,7 @@
  * IEEE80211_INACT_WAIT seconds to handle "inactivity processing".
  * This is used to do node inactivity processing when operating
  * as an AP, adhoc or mesh mode.  For inactivity processing each node
- * has a timeout set in it's ni_inact field that is decremented
+ * has a timeout set in its ni_inact field that is decremented
  * on each timeout and the node is reclaimed when the counter goes
  * to zero.  We use different inactivity timeout values depending
  * on whether the node is associated and authorized (either by
@@ -65,6 +65,7 @@
 struct ieee80211_node_table;
 struct ieee80211com;
 struct ieee80211vap;
+struct ieee80211_scanparams;
 
 /*
  * Information element ``blob''.  We use this structure
@@ -82,6 +83,11 @@ struct ieee80211_ies {
 	uint8_t	*htinfo_ie;	/* captured HTINFO ie */
 	uint8_t	*tdma_ie;	/* captured TDMA ie */
 	uint8_t *meshid_ie;	/* captured MESH ID ie */
+	uint8_t	*vhtcap_ie;	/* captured VHTCAP ie */
+	uint8_t	*vhtopmode_ie;	/* captured VHTOPMODE ie */
+	uint8_t	*vhtpwrenv_ie;	/* captured VHTPWRENV ie */
+	uint8_t	*apchanrep_ie;	/* captured APCHANREP ie */
+	uint8_t	*bssload_ie;	/* captured BSSLOAD ie */
 	uint8_t	*spare[4];
 	/* NB: these must be the last members of this structure */
 	uint8_t	*data;		/* frame data > 802.11 header */
@@ -115,7 +121,6 @@ struct ieee80211_node {
 	TAILQ_ENTRY(ieee80211_node) ni_list;	/* list of all nodes */
 	LIST_ENTRY(ieee80211_node) ni_hash;	/* hash collision list */
 	u_int			ni_refcnt;	/* count of held references */
-	u_int			ni_scangen;	/* gen# for timeout scan */
 	u_int			ni_flags;
 #define	IEEE80211_NODE_AUTH	0x000001	/* authorized for data */
 #define	IEEE80211_NODE_QOS	0x000002	/* QoS enabled */
@@ -137,6 +142,7 @@ struct ieee80211_node {
 #define	IEEE80211_NODE_ASSOCID	0x020000	/* xmit requires associd */
 #define	IEEE80211_NODE_AMSDU_RX	0x040000	/* AMSDU rx enabled */
 #define	IEEE80211_NODE_AMSDU_TX	0x080000	/* AMSDU tx enabled */
+#define	IEEE80211_NODE_VHT	0x100000	/* VHT enabled */
 	uint16_t		ni_associd;	/* association ID */
 	uint16_t		ni_vlan;	/* vlan tag */
 	uint16_t		ni_txpower;	/* current transmit power */
@@ -204,6 +210,8 @@ struct ieee80211_node {
 	struct callout		ni_mltimer;	/* link mesh timer */
 	uint8_t			ni_mlrcnt;	/* link mesh retry counter */
 	uint8_t			ni_mltval;	/* link mesh timer value */
+	struct callout		ni_mlhtimer;	/* link mesh backoff timer */
+	uint8_t			ni_mlhcnt;	/* link mesh holding counter */
 
 	/* 11n state */
 	uint16_t		ni_htcap;	/* HT capabilities */
@@ -214,8 +222,22 @@ struct ieee80211_node {
 	uint8_t			ni_htstbc;	/* HT */
 	uint8_t			ni_chw;		/* negotiated channel width */
 	struct ieee80211_htrateset ni_htrates;	/* negotiated ht rate set */
-	struct ieee80211_tx_ampdu ni_tx_ampdu[WME_NUM_AC];
+	struct ieee80211_tx_ampdu ni_tx_ampdu[WME_NUM_TID];
 	struct ieee80211_rx_ampdu ni_rx_ampdu[WME_NUM_TID];
+
+	/* VHT state */
+	uint32_t		ni_vhtcap;
+	uint16_t		ni_vht_basicmcs;
+	uint16_t		ni_vht_pad2;
+	struct ieee80211_vht_mcs_info	ni_vht_mcsinfo;
+	uint8_t			ni_vht_chan1;	/* 20/40/80/160 - VHT chan1 */
+	uint8_t			ni_vht_chan2;	/* 80+80 - VHT chan2 */
+	uint8_t			ni_vht_chanwidth;	/* IEEE80211_VHT_CHANWIDTH_ */
+	uint8_t			ni_vht_pad1;
+	uint32_t		ni_vht_spare[8];
+
+	/* fast-frames state */
+	struct mbuf *		ni_tx_superg[WME_NUM_TID];
 
 	/* others */
 	short			ni_inact;	/* inactivity mark count */
@@ -299,8 +321,6 @@ ieee80211_unref_node(struct ieee80211_node **ni)
 	*ni = NULL;			/* guard against use */
 }
 
-struct ieee80211com;
-
 void	ieee80211_node_attach(struct ieee80211com *);
 void	ieee80211_node_lateattach(struct ieee80211com *);
 void	ieee80211_node_detach(struct ieee80211com *);
@@ -326,6 +346,10 @@ void	ieee80211_sync_curchan(struct ieee80211com *);
 void	ieee80211_setupcurchan(struct ieee80211com *,
 	    struct ieee80211_channel *);
 void	ieee80211_setcurchan(struct ieee80211com *, struct ieee80211_channel *);
+void	ieee80211_update_chw(struct ieee80211com *);
+int	ieee80211_ibss_merge_check(struct ieee80211_node *);
+int	ieee80211_ibss_node_check_new(struct ieee80211_node *ni,
+	    const struct ieee80211_scanparams *);
 int	ieee80211_ibss_merge(struct ieee80211_node *);
 struct ieee80211_scan_entry;
 int	ieee80211_sta_join(struct ieee80211vap *, struct ieee80211_channel *,
@@ -352,11 +376,10 @@ struct ieee80211_node_table {
 	ieee80211_node_lock_t	nt_nodelock;	/* on node table */
 	TAILQ_HEAD(, ieee80211_node) nt_node;	/* information of all nodes */
 	LIST_HEAD(, ieee80211_node) nt_hash[IEEE80211_NODE_HASHSIZE];
+	int			nt_count;	/* number of nodes */
 	struct ieee80211_node	**nt_keyixmap;	/* key ix -> node map */
 	int			nt_keyixmax;	/* keyixmap size */
 	const char		*nt_name;	/* table name for debug msgs */
-	ieee80211_scan_lock_t	nt_scanlock;	/* on nt_scangen */
-	u_int			nt_scangen;	/* gen# for iterators */
 	int			nt_inact_init;	/* initial node inact setting */
 };
 
@@ -439,6 +462,8 @@ int	ieee80211_node_delucastkey(struct ieee80211_node *);
 void	ieee80211_node_timeout(void *arg);
 
 typedef void ieee80211_iter_func(void *, struct ieee80211_node *);
+int	ieee80211_iterate_nodes_vap(struct ieee80211_node_table *,
+		struct ieee80211vap *, ieee80211_iter_func *, void *);
 void	ieee80211_iterate_nodes(struct ieee80211_node_table *,
 		ieee80211_iter_func *, void *);
 

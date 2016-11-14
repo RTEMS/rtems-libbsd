@@ -31,13 +31,16 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <rtems/bsd/sys/param.h>
+#include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/malloc.h>
 #include <sys/module.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 
 #include <net/if.h>
 #include <net/if_media.h>
+#include <net/ethernet.h>
 
 #ifdef INET
 #include <netinet/in.h>
@@ -55,7 +58,7 @@ none_init(struct ieee80211vap *vap)
 static void
 none_deinit(struct ieee80211vap *vap)
 {
-	free(vap->iv_rs, M_80211_RATECTL);
+	IEEE80211_FREE(vap->iv_rs, M_80211_RATECTL);
 }
 
 static void
@@ -79,15 +82,14 @@ none_rate(struct ieee80211_node *ni, void *arg __unused, uint32_t iarg __unused)
 }
 
 static void
-none_tx_complete(const struct ieee80211vap *vap,
-    const struct ieee80211_node *ni, int ok,
-    void *arg1, void *arg2 __unused)
+none_tx_complete(const struct ieee80211_node *ni,
+    const struct ieee80211_ratectl_tx_status *status)
 {
 }
 
 static void
-none_tx_update(const struct ieee80211vap *vap, const struct ieee80211_node *ni,
-    void *arg1, void *arg2, void *arg3)
+none_tx_update(struct ieee80211vap *vap,
+    struct ieee80211_ratectl_tx_stats *stats)
 {
 }
 

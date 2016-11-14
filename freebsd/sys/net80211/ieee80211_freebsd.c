@@ -34,9 +34,11 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <rtems/bsd/sys/param.h>
-#include <sys/kernel.h>
 #include <sys/systm.h> 
+#include <sys/eventhandler.h>
+#include <sys/kernel.h>
 #include <sys/linker.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>   
 #include <sys/module.h>
 #include <sys/proc.h>
@@ -46,6 +48,7 @@ __FBSDID("$FreeBSD$");
 
 #include <net/bpf.h>
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_dl.h>
 #include <net/if_clone.h>
 #include <net/if_media.h>
@@ -60,35 +63,15 @@ __FBSDID("$FreeBSD$");
 SYSCTL_NODE(_net, OID_AUTO, wlan, CTLFLAG_RD, 0, "IEEE 80211 parameters");
 
 #ifdef IEEE80211_DEBUG
-int	ieee80211_debug = 0;
+static int	ieee80211_debug = 0;
 SYSCTL_INT(_net_wlan, OID_AUTO, debug, CTLFLAG_RW, &ieee80211_debug,
 	    0, "debugging printfs");
 #endif
 
 static MALLOC_DEFINE(M_80211_COM, "80211com", "802.11 com state");
 
-/*
- * Allocate/free com structure in conjunction with ifnet;
- * these routines are registered with if_register_com_alloc
- * below and are called automatically by the ifnet code
- * when the ifnet of the parent device is created.
- */
-static void *
-wlan_alloc(u_char type, struct ifnet *ifp)
-{
-	struct ieee80211com *ic;
-
-	ic = malloc(sizeof(struct ieee80211com), M_80211_COM, M_WAITOK|M_ZERO);
-	ic->ic_ifp = ifp;
-
-	return (ic);
-}
-
-static void
-wlan_free(void *ic, u_char type)
-{
-	free(ic, M_80211_COM);
-}
+static const char wlanname[] = "wlan";
+static struct if_clone *wlan_cloner;
 
 static int
 wlan_clone_create(struct if_clone *ifc, int unit, caddr_t params)
@@ -96,28 +79,21 @@ wlan_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct ieee80211_clone_params cp;
 	struct ieee80211vap *vap;
 	struct ieee80211com *ic;
-	struct ifnet *ifp;
 	int error;
 
 	error = copyin(params, &cp, sizeof(cp));
 	if (error)
 		return error;
-	ifp = ifunit(cp.icp_parent);
-	if (ifp == NULL)
+	ic = ieee80211_find_com(cp.icp_parent);
+	if (ic == NULL)
 		return ENXIO;
-	/* XXX move printfs to DIAGNOSTIC before release */
-	if (ifp->if_type != IFT_IEEE80211) {
-		if_printf(ifp, "%s: reject, not an 802.11 device\n", __func__);
-		return ENXIO;
-	}
 	if (cp.icp_opmode >= IEEE80211_OPMODE_MAX) {
-		if_printf(ifp, "%s: invalid opmode %d\n",
-		    __func__, cp.icp_opmode);
+		ic_printf(ic, "%s: invalid opmode %d\n", __func__,
+		    cp.icp_opmode);
 		return EINVAL;
 	}
-	ic = ifp->if_l2com;
 	if ((ic->ic_caps & ieee80211_opcap[cp.icp_opmode]) == 0) {
-		if_printf(ifp, "%s mode not supported\n",
+		ic_printf(ic, "%s mode not supported\n",
 		    ieee80211_opmode_name[cp.icp_opmode]);
 		return EOPNOTSUPP;
 	}
@@ -128,13 +104,14 @@ wlan_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	    (1)
 #endif
 	) {
-		if_printf(ifp, "TDMA not supported\n");
+		ic_printf(ic, "TDMA not supported\n");
 		return EOPNOTSUPP;
 	}
-	vap = ic->ic_vap_create(ic, ifc->ifc_name, unit,
+	vap = ic->ic_vap_create(ic, wlanname, unit,
 			cp.icp_opmode, cp.icp_flags, cp.icp_bssid,
 			cp.icp_flags & IEEE80211_CLONE_MACADDR ?
-			    cp.icp_macaddr : (const uint8_t *)IF_LLADDR(ifp));
+			    cp.icp_macaddr : ic->ic_macaddr);
+
 	return (vap == NULL ? EIO : 0);
 }
 
@@ -146,12 +123,13 @@ wlan_clone_destroy(struct ifnet *ifp)
 
 	ic->ic_vap_delete(vap);
 }
-IFC_SIMPLE_DECLARE(wlan, 0);
 
 void
 ieee80211_vap_destroy(struct ieee80211vap *vap)
 {
-	if_clone_destroyif(&wlan_cloner, vap->iv_ifp);
+	CURVNET_SET(vap->iv_ifp->if_vnet);
+	if_clone_destroyif(wlan_cloner, vap->iv_ifp);
+	CURVNET_RESTORE();
 }
 
 int
@@ -185,9 +163,8 @@ static int
 ieee80211_sysctl_parent(SYSCTL_HANDLER_ARGS)
 {
 	struct ieee80211com *ic = arg1;
-	const char *name = ic->ic_ifp->if_xname;
 
-	return SYSCTL_OUT(req, name, strlen(name));
+	return SYSCTL_OUT_STR(req, ic->ic_name);
 }
 
 static int
@@ -223,8 +200,8 @@ ieee80211_sysctl_vattach(struct ieee80211vap *vap)
 	struct sysctl_oid *oid;
 	char num[14];			/* sufficient for 32 bits */
 
-	ctx = (struct sysctl_ctx_list *) malloc(sizeof(struct sysctl_ctx_list),
-		M_DEVBUF, M_NOWAIT | M_ZERO);
+	ctx = (struct sysctl_ctx_list *) IEEE80211_MALLOC(sizeof(struct sysctl_ctx_list),
+		M_DEVBUF, IEEE80211_M_NOWAIT | IEEE80211_M_ZERO);
 	if (ctx == NULL) {
 		if_printf(ifp, "%s: cannot allocate sysctl context!\n",
 			__func__);
@@ -299,7 +276,7 @@ ieee80211_sysctl_vdetach(struct ieee80211vap *vap)
 
 	if (vap->iv_sysctl != NULL) {
 		sysctl_ctx_free(vap->iv_sysctl);
-		free(vap->iv_sysctl, M_DEVBUF);
+		IEEE80211_FREE(vap->iv_sysctl, M_DEVBUF);
 		vap->iv_sysctl = NULL;
 	}
 }
@@ -365,7 +342,7 @@ ieee80211_flush_ifq(struct ifqueue *ifq, struct ieee80211vap *vap)
  */
 #define	MC_ALIGN(m, len)						\
 do {									\
-	(m)->m_data += (MCLBYTES - (len)) &~ (sizeof(long) - 1);	\
+	(m)->m_data += rounddown2(MCLBYTES - (len), sizeof(long));	\
 } while (/* CONSTCOND */ 0)
 
 /*
@@ -398,7 +375,7 @@ ieee80211_getmgtframe(uint8_t **frm, int headroom, int pktlen)
 		 * frames which all fit in MHLEN.
 		 */
 		if (m != NULL)
-			MH_ALIGN(m, len);
+			M_ALIGN(m, len);
 	} else {
 		m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
 		if (m != NULL)
@@ -411,6 +388,7 @@ ieee80211_getmgtframe(uint8_t **frm, int headroom, int pktlen)
 	return m;
 }
 
+#ifndef __NO_STRICT_ALIGNMENT
 /*
  * Re-align the payload in the mbuf.  This is mainly used (right now)
  * to handle IP header alignment requirements on certain architectures.
@@ -424,9 +402,9 @@ ieee80211_realign(struct ieee80211vap *vap, struct mbuf *m, size_t align)
 	pktlen = m->m_pkthdr.len;
 	space = pktlen + align;
 	if (space < MINCLSIZE)
-		n = m_gethdr(M_DONTWAIT, MT_DATA);
+		n = m_gethdr(M_NOWAIT, MT_DATA);
 	else {
-		n = m_getjcl(M_DONTWAIT, MT_DATA, M_PKTHDR,
+		n = m_getjcl(M_NOWAIT, MT_DATA, M_PKTHDR,
 		    space <= MCLBYTES ?     MCLBYTES :
 #if MJUMPAGESIZE != MCLBYTES
 		    space <= MJUMPAGESIZE ? MJUMPAGESIZE :
@@ -447,6 +425,7 @@ ieee80211_realign(struct ieee80211vap *vap, struct mbuf *m, size_t align)
 	m_freem(m);
 	return n;
 }
+#endif /* !__NO_STRICT_ALIGNMENT */
 
 int
 ieee80211_add_callback(struct mbuf *m,
@@ -468,6 +447,40 @@ ieee80211_add_callback(struct mbuf *m,
 	return 1;
 }
 
+int
+ieee80211_add_xmit_params(struct mbuf *m,
+    const struct ieee80211_bpf_params *params)
+{
+	struct m_tag *mtag;
+	struct ieee80211_tx_params *tx;
+
+	mtag = m_tag_alloc(MTAG_ABI_NET80211, NET80211_TAG_XMIT_PARAMS,
+	    sizeof(struct ieee80211_tx_params), M_NOWAIT);
+	if (mtag == NULL)
+		return (0);
+
+	tx = (struct ieee80211_tx_params *)(mtag+1);
+	memcpy(&tx->params, params, sizeof(struct ieee80211_bpf_params));
+	m_tag_prepend(m, mtag);
+	return (1);
+}
+
+int
+ieee80211_get_xmit_params(struct mbuf *m,
+    struct ieee80211_bpf_params *params)
+{
+	struct m_tag *mtag;
+	struct ieee80211_tx_params *tx;
+
+	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_XMIT_PARAMS,
+	    NULL);
+	if (mtag == NULL)
+		return (-1);
+	tx = (struct ieee80211_tx_params *)(mtag + 1);
+	memcpy(params, &tx->params, sizeof(struct ieee80211_bpf_params));
+	return (0);
+}
+
 void
 ieee80211_process_callback(struct ieee80211_node *ni,
 	struct mbuf *m, int status)
@@ -479,6 +492,139 @@ ieee80211_process_callback(struct ieee80211_node *ni,
 		struct ieee80211_cb *cb = (struct ieee80211_cb *)(mtag+1);
 		cb->func(ni, cb->arg, status);
 	}
+}
+
+/*
+ * Add RX parameters to the given mbuf.
+ *
+ * Returns 1 if OK, 0 on error.
+ */
+int
+ieee80211_add_rx_params(struct mbuf *m, const struct ieee80211_rx_stats *rxs)
+{
+	struct m_tag *mtag;
+	struct ieee80211_rx_params *rx;
+
+	mtag = m_tag_alloc(MTAG_ABI_NET80211, NET80211_TAG_RECV_PARAMS,
+	    sizeof(struct ieee80211_rx_stats), M_NOWAIT);
+	if (mtag == NULL)
+		return (0);
+
+	rx = (struct ieee80211_rx_params *)(mtag + 1);
+	memcpy(&rx->params, rxs, sizeof(*rxs));
+	m_tag_prepend(m, mtag);
+	return (1);
+}
+
+int
+ieee80211_get_rx_params(struct mbuf *m, struct ieee80211_rx_stats *rxs)
+{
+	struct m_tag *mtag;
+	struct ieee80211_rx_params *rx;
+
+	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_RECV_PARAMS,
+	    NULL);
+	if (mtag == NULL)
+		return (-1);
+	rx = (struct ieee80211_rx_params *)(mtag + 1);
+	memcpy(rxs, &rx->params, sizeof(*rxs));
+	return (0);
+}
+
+const struct ieee80211_rx_stats *
+ieee80211_get_rx_params_ptr(struct mbuf *m)
+{
+	struct m_tag *mtag;
+	struct ieee80211_rx_params *rx;
+
+	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_RECV_PARAMS,
+	    NULL);
+	if (mtag == NULL)
+		return (NULL);
+	rx = (struct ieee80211_rx_params *)(mtag + 1);
+	return (&rx->params);
+}
+
+
+/*
+ * Add TOA parameters to the given mbuf.
+ */
+int
+ieee80211_add_toa_params(struct mbuf *m, const struct ieee80211_toa_params *p)
+{
+	struct m_tag *mtag;
+	struct ieee80211_toa_params *rp;
+
+	mtag = m_tag_alloc(MTAG_ABI_NET80211, NET80211_TAG_TOA_PARAMS,
+	    sizeof(struct ieee80211_toa_params), M_NOWAIT);
+	if (mtag == NULL)
+		return (0);
+
+	rp = (struct ieee80211_toa_params *)(mtag + 1);
+	memcpy(rp, p, sizeof(*rp));
+	m_tag_prepend(m, mtag);
+	return (1);
+}
+
+int
+ieee80211_get_toa_params(struct mbuf *m, struct ieee80211_toa_params *p)
+{
+	struct m_tag *mtag;
+	struct ieee80211_toa_params *rp;
+
+	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_TOA_PARAMS,
+	    NULL);
+	if (mtag == NULL)
+		return (0);
+	rp = (struct ieee80211_toa_params *)(mtag + 1);
+	if (p != NULL)
+		memcpy(p, rp, sizeof(*p));
+	return (1);
+}
+
+/*
+ * Transmit a frame to the parent interface.
+ */
+int
+ieee80211_parent_xmitpkt(struct ieee80211com *ic, struct mbuf *m)
+{
+	int error;
+
+	/*
+	 * Assert the IC TX lock is held - this enforces the
+	 * processing -> queuing order is maintained
+	 */
+	IEEE80211_TX_LOCK_ASSERT(ic);
+	error = ic->ic_transmit(ic, m);
+	if (error) {
+		struct ieee80211_node *ni;
+
+		ni = (struct ieee80211_node *)m->m_pkthdr.rcvif;
+
+		/* XXX number of fragments */
+		if_inc_counter(ni->ni_vap->iv_ifp, IFCOUNTER_OERRORS, 1);
+		ieee80211_free_node(ni);
+		ieee80211_free_mbuf(m);
+	}
+	return (error);
+}
+
+/*
+ * Transmit a frame to the VAP interface.
+ */
+int
+ieee80211_vap_xmitpkt(struct ieee80211vap *vap, struct mbuf *m)
+{
+	struct ifnet *ifp = vap->iv_ifp;
+
+	/*
+	 * When transmitting via the VAP, we shouldn't hold
+	 * any IC TX lock as the VAP TX path will acquire it.
+	 */
+	IEEE80211_TX_UNLOCK_ASSERT(vap->iv_ic);
+
+	return (ifp->if_transmit(ifp, m));
+
 }
 
 #include <sys/libkern.h>
@@ -573,8 +719,8 @@ ieee80211_notify_replay_failure(struct ieee80211vap *vap,
 	struct ifnet *ifp = vap->iv_ifp;
 
 	IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_CRYPTO, wh->i_addr2,
-	    "%s replay detected <rsc %ju, csc %ju, keyix %u rxkeyix %u>",
-	    k->wk_cipher->ic_name, (intmax_t) rsc,
+	    "%s replay detected tid %d <rsc %ju, csc %ju, keyix %u rxkeyix %u>",
+	    k->wk_cipher->ic_name, tid, (intmax_t) rsc,
 	    (intmax_t) k->wk_keyrsc[tid],
 	    k->wk_keyix, k->wk_rxkeyix);
 
@@ -632,8 +778,9 @@ void
 ieee80211_notify_csa(struct ieee80211com *ic,
 	const struct ieee80211_channel *c, int mode, int count)
 {
-	struct ifnet *ifp = ic->ic_ifp;
 	struct ieee80211_csa_event iev;
+	struct ieee80211vap *vap;
+	struct ifnet *ifp;
 
 	memset(&iev, 0, sizeof(iev));
 	iev.iev_flags = c->ic_flags;
@@ -641,36 +788,53 @@ ieee80211_notify_csa(struct ieee80211com *ic,
 	iev.iev_ieee = c->ic_ieee;
 	iev.iev_mode = mode;
 	iev.iev_count = count;
-	rt_ieee80211msg(ifp, RTM_IEEE80211_CSA, &iev, sizeof(iev));
+	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
+		ifp = vap->iv_ifp;
+		CURVNET_SET(ifp->if_vnet);
+		rt_ieee80211msg(ifp, RTM_IEEE80211_CSA, &iev, sizeof(iev));
+		CURVNET_RESTORE();
+	}
 }
 
 void
 ieee80211_notify_radar(struct ieee80211com *ic,
 	const struct ieee80211_channel *c)
 {
-	struct ifnet *ifp = ic->ic_ifp;
 	struct ieee80211_radar_event iev;
+	struct ieee80211vap *vap;
+	struct ifnet *ifp;
 
 	memset(&iev, 0, sizeof(iev));
 	iev.iev_flags = c->ic_flags;
 	iev.iev_freq = c->ic_freq;
 	iev.iev_ieee = c->ic_ieee;
-	rt_ieee80211msg(ifp, RTM_IEEE80211_RADAR, &iev, sizeof(iev));
+	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
+		ifp = vap->iv_ifp;
+		CURVNET_SET(ifp->if_vnet);
+		rt_ieee80211msg(ifp, RTM_IEEE80211_RADAR, &iev, sizeof(iev));
+		CURVNET_RESTORE();
+	}
 }
 
 void
 ieee80211_notify_cac(struct ieee80211com *ic,
 	const struct ieee80211_channel *c, enum ieee80211_notify_cac_event type)
 {
-	struct ifnet *ifp = ic->ic_ifp;
 	struct ieee80211_cac_event iev;
+	struct ieee80211vap *vap;
+	struct ifnet *ifp;
 
 	memset(&iev, 0, sizeof(iev));
 	iev.iev_flags = c->ic_flags;
 	iev.iev_freq = c->ic_freq;
 	iev.iev_ieee = c->ic_ieee;
 	iev.iev_type = type;
-	rt_ieee80211msg(ifp, RTM_IEEE80211_CAC, &iev, sizeof(iev));
+	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
+		ifp = vap->iv_ifp;
+		CURVNET_SET(ifp->if_vnet);
+		rt_ieee80211msg(ifp, RTM_IEEE80211_CAC, &iev, sizeof(iev));
+		CURVNET_RESTORE();
+	}
 }
 
 void
@@ -706,18 +870,26 @@ ieee80211_notify_country(struct ieee80211vap *vap,
 	IEEE80211_ADDR_COPY(iev.iev_addr, bssid);
 	iev.iev_cc[0] = cc[0];
 	iev.iev_cc[1] = cc[1];
+	CURVNET_SET(ifp->if_vnet);
 	rt_ieee80211msg(ifp, RTM_IEEE80211_COUNTRY, &iev, sizeof(iev));
+	CURVNET_RESTORE();
 }
 
 void
 ieee80211_notify_radio(struct ieee80211com *ic, int state)
 {
-	struct ifnet *ifp = ic->ic_ifp;
 	struct ieee80211_radio_event iev;
+	struct ieee80211vap *vap;
+	struct ifnet *ifp;
 
 	memset(&iev, 0, sizeof(iev));
 	iev.iev_state = state;
-	rt_ieee80211msg(ifp, RTM_IEEE80211_RADIO, &iev, sizeof(iev));
+	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
+		ifp = vap->iv_ifp;
+		CURVNET_SET(ifp->if_vnet);
+		rt_ieee80211msg(ifp, RTM_IEEE80211_RADIO, &iev, sizeof(iev));
+		CURVNET_RESTORE();
+	}
 }
 
 void
@@ -737,8 +909,9 @@ static eventhandler_tag wlan_ifllevent;
 static void
 bpf_track(void *arg, struct ifnet *ifp, int dlt, int attach)
 {
-	/* NB: identify vap's by if_start */
-	if (dlt == DLT_IEEE802_11_RADIO && ifp->if_start == ieee80211_start) {
+	/* NB: identify vap's by if_init */
+	if (dlt == DLT_IEEE802_11_RADIO &&
+	    ifp->if_init == ieee80211_init) {
 		struct ieee80211vap *vap = ifp->if_softc;
 		/*
 		 * Track bpf radiotap listener state.  We mark the vap
@@ -759,31 +932,19 @@ bpf_track(void *arg, struct ifnet *ifp, int dlt, int attach)
 	}
 }
 
+/*
+ * Change MAC address on the vap (if was not started).
+ */
 static void
 wlan_iflladdr(void *arg __unused, struct ifnet *ifp)
 {
-	struct ieee80211com *ic = ifp->if_l2com;
-	struct ieee80211vap *vap, *next;
+	/* NB: identify vap's by if_init */
+	if (ifp->if_init == ieee80211_init &&
+	    (ifp->if_flags & IFF_UP) == 0) {
+		struct ieee80211vap *vap = ifp->if_softc;
 
-	if (ifp->if_type != IFT_IEEE80211 || ic == NULL)
-		return;
-
-	IEEE80211_LOCK(ic);
-	TAILQ_FOREACH_SAFE(vap, &ic->ic_vaps, iv_next, next) {
-		/*
-		 * If the MAC address has changed on the parent and it was
-		 * copied to the vap on creation then re-sync.
-		 */
-		if (vap->iv_ic == ic &&
-		    (vap->iv_flags_ext & IEEE80211_FEXT_UNIQMAC) == 0) {
-			IEEE80211_ADDR_COPY(vap->iv_myaddr, IF_LLADDR(ifp));
-			IEEE80211_UNLOCK(ic);
-			if_setlladdr(vap->iv_ifp, IF_LLADDR(ifp),
-			    IEEE80211_ADDR_LEN);
-			IEEE80211_LOCK(ic);
-		}
+		IEEE80211_ADDR_COPY(vap->iv_myaddr, IF_LLADDR(ifp));
 	}
-	IEEE80211_UNLOCK(ic);
 }
 
 /*
@@ -800,20 +961,13 @@ wlan_modevent(module_t mod, int type, void *unused)
 			printf("wlan: <802.11 Link Layer>\n");
 		wlan_bpfevent = EVENTHANDLER_REGISTER(bpf_track,
 		    bpf_track, 0, EVENTHANDLER_PRI_ANY);
-		if (wlan_bpfevent == NULL)
-			return ENOMEM;
 		wlan_ifllevent = EVENTHANDLER_REGISTER(iflladdr_event,
 		    wlan_iflladdr, NULL, EVENTHANDLER_PRI_ANY);
-		if (wlan_ifllevent == NULL) {
-			EVENTHANDLER_DEREGISTER(bpf_track, wlan_bpfevent);
-			return ENOMEM;
-		}
-		if_clone_attach(&wlan_cloner);
-		if_register_com_alloc(IFT_IEEE80211, wlan_alloc, wlan_free);
+		wlan_cloner = if_clone_simple(wlanname, wlan_clone_create,
+		    wlan_clone_destroy, 0);
 		return 0;
 	case MOD_UNLOAD:
-		if_deregister_com_alloc(IFT_IEEE80211);
-		if_clone_detach(&wlan_cloner);
+		if_clone_detach(wlan_cloner);
 		EVENTHANDLER_DEREGISTER(bpf_track, wlan_bpfevent);
 		EVENTHANDLER_DEREGISTER(iflladdr_event, wlan_ifllevent);
 		return 0;
@@ -822,10 +976,14 @@ wlan_modevent(module_t mod, int type, void *unused)
 }
 
 static moduledata_t wlan_mod = {
-	"wlan",
+	wlanname,
 	wlan_modevent,
 	0
 };
 DECLARE_MODULE(wlan, wlan_mod, SI_SUB_DRIVERS, SI_ORDER_FIRST);
 MODULE_VERSION(wlan, 1);
 MODULE_DEPEND(wlan, ether, 1, 1, 1);
+#ifdef	IEEE80211_ALQ
+MODULE_DEPEND(wlan, alq, 1, 1, 1);
+#endif	/* IEEE80211_ALQ */
+

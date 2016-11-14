@@ -50,6 +50,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_media.h>
 #include <net/if_llc.h>
 #include <net/ethernet.h>
@@ -69,13 +70,13 @@ __FBSDID("$FreeBSD$");
 static	void hostap_vattach(struct ieee80211vap *);
 static	int hostap_newstate(struct ieee80211vap *, enum ieee80211_state, int);
 static	int hostap_input(struct ieee80211_node *ni, struct mbuf *m,
+	    const struct ieee80211_rx_stats *,
 	    int rssi, int nf);
 static void hostap_deliver_data(struct ieee80211vap *,
 	    struct ieee80211_node *, struct mbuf *);
 static void hostap_recv_mgmt(struct ieee80211_node *, struct mbuf *,
-	    int subtype, int rssi, int nf);
+	    int subtype, const struct ieee80211_rx_stats *rxs, int rssi, int nf);
 static void hostap_recv_ctl(struct ieee80211_node *, struct mbuf *, int);
-static void hostap_recv_pspoll(struct ieee80211_node *, struct mbuf *);
 
 void
 ieee80211_hostap_attach(struct ieee80211com *ic)
@@ -102,14 +103,14 @@ hostap_vattach(struct ieee80211vap *vap)
 	vap->iv_recv_ctl = hostap_recv_ctl;
 	vap->iv_opdetach = hostap_vdetach;
 	vap->iv_deliver_data = hostap_deliver_data;
+	vap->iv_recv_pspoll = ieee80211_recv_pspoll;
 }
 
 static void
 sta_disassoc(void *arg, struct ieee80211_node *ni)
 {
-	struct ieee80211vap *vap = arg;
 
-	if (ni->ni_vap == vap && ni->ni_associd != 0) {
+	if (ni->ni_associd != 0) {
 		IEEE80211_SEND_MGMT(ni, IEEE80211_FC0_SUBTYPE_DISASSOC,
 			IEEE80211_REASON_ASSOC_LEAVE);
 		ieee80211_node_leave(ni);
@@ -119,9 +120,9 @@ sta_disassoc(void *arg, struct ieee80211_node *ni)
 static void
 sta_csa(void *arg, struct ieee80211_node *ni)
 {
-	struct ieee80211vap *vap = arg;
+	struct ieee80211vap *vap = ni->ni_vap;
 
-	if (ni->ni_vap == vap && ni->ni_associd != 0)
+	if (ni->ni_associd != 0)
 		if (ni->ni_inact > vap->iv_inact_init) {
 			ni->ni_inact = vap->iv_inact_init;
 			IEEE80211_NOTE(vap, IEEE80211_MSG_INACT, ni,
@@ -132,9 +133,8 @@ sta_csa(void *arg, struct ieee80211_node *ni)
 static void
 sta_drop(void *arg, struct ieee80211_node *ni)
 {
-	struct ieee80211vap *vap = arg;
 
-	if (ni->ni_vap == vap && ni->ni_associd != 0)
+	if (ni->ni_associd != 0)
 		ieee80211_node_leave(ni);
 }
 
@@ -179,7 +179,8 @@ hostap_newstate(struct ieee80211vap *vap, enum ieee80211_state nstate, int arg)
 			ieee80211_dfs_cac_stop(vap);
 			break;
 		case IEEE80211_S_RUN:
-			ieee80211_iterate_nodes(&ic->ic_sta, sta_disassoc, vap);
+			ieee80211_iterate_nodes_vap(&ic->ic_sta, vap,
+			    sta_disassoc, NULL);
 			break;
 		default:
 			break;
@@ -195,7 +196,8 @@ hostap_newstate(struct ieee80211vap *vap, enum ieee80211_state nstate, int arg)
 		switch (ostate) {
 		case IEEE80211_S_CSA:
 		case IEEE80211_S_RUN:
-			ieee80211_iterate_nodes(&ic->ic_sta, sta_disassoc, vap);
+			ieee80211_iterate_nodes_vap(&ic->ic_sta, vap,
+			    sta_disassoc, NULL);
 			/*
 			 * Clear overlapping BSS state; the beacon frame
 			 * will be reconstructed on transition to the RUN
@@ -289,7 +291,8 @@ hostap_newstate(struct ieee80211vap *vap, enum ieee80211_state nstate, int arg)
 			 * Shorten inactivity timer of associated stations
 			 * to weed out sta's that don't follow a CSA.
 			 */
-			ieee80211_iterate_nodes(&ic->ic_sta, sta_csa, vap);
+			ieee80211_iterate_nodes_vap(&ic->ic_sta, vap,
+			    sta_csa, NULL);
 			/*
 			 * Update bss node channel to reflect where
 			 * we landed after CSA.
@@ -340,7 +343,8 @@ hostap_newstate(struct ieee80211vap *vap, enum ieee80211_state nstate, int arg)
 			 * such as capabilities and the negotiated rate
 			 * set may/will be wrong).
 			 */
-			ieee80211_iterate_nodes(&ic->ic_sta, sta_drop, vap);
+			ieee80211_iterate_nodes_vap(&ic->ic_sta, vap,
+			    sta_drop, NULL);
 		}
 		break;
 	default:
@@ -357,14 +361,15 @@ hostap_deliver_data(struct ieee80211vap *vap,
 	struct ifnet *ifp = vap->iv_ifp;
 
 	/* clear driver/net80211 flags before passing up */
-	m->m_flags &= ~(M_80211_RX | M_MCAST | M_BCAST);
+	m->m_flags &= ~(M_MCAST | M_BCAST);
+	m_clrprotoflags(m);
 
 	KASSERT(vap->iv_opmode == IEEE80211_M_HOSTAP,
 	    ("gack, opmode %d", vap->iv_opmode));
 	/*
 	 * Do accounting.
 	 */
-	ifp->if_ipackets++;
+	if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 	IEEE80211_NODE_STAT(ni, rx_data);
 	IEEE80211_NODE_STAT_ADD(ni, rx_bytes, m->m_pkthdr.len);
 	if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
@@ -378,9 +383,9 @@ hostap_deliver_data(struct ieee80211vap *vap,
 		struct mbuf *mcopy = NULL;
 
 		if (m->m_flags & M_MCAST) {
-			mcopy = m_dup(m, M_DONTWAIT);
+			mcopy = m_dup(m, M_NOWAIT);
 			if (mcopy == NULL)
-				ifp->if_oerrors++;
+				if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 			else
 				mcopy->m_flags |= M_MCAST;
 		} else {
@@ -411,16 +416,8 @@ hostap_deliver_data(struct ieee80211vap *vap,
 				ieee80211_free_node(sta);
 			}
 		}
-		if (mcopy != NULL) {
-			int len, err;
-			len = mcopy->m_pkthdr.len;
-			err = ifp->if_transmit(ifp, mcopy);
-			if (err) {
-				/* NB: IFQ_HANDOFF reclaims mcopy */
-			} else {
-				ifp->if_opackets++;
-			}
-		}
+		if (mcopy != NULL)
+			(void) ieee80211_vap_xmitpkt(vap, mcopy);
 	}
 	if (m != NULL) {
 		/*
@@ -472,9 +469,9 @@ doprint(struct ieee80211vap *vap, int subtype)
  * by the 802.11 layer.
  */
 static int
-hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
+hostap_input(struct ieee80211_node *ni, struct mbuf *m,
+    const struct ieee80211_rx_stats *rxs, int rssi, int nf)
 {
-#define	HAS_SEQ(type)	((type & 0x4) == 0)
 	struct ieee80211vap *vap = ni->ni_vap;
 	struct ieee80211com *ic = ni->ni_ic;
 	struct ifnet *ifp = vap->iv_ifp;
@@ -484,7 +481,16 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 	int hdrspace, need_tap = 1;	/* mbuf need to be tapped. */
 	uint8_t dir, type, subtype, qos;
 	uint8_t *bssid;
-	uint16_t rxseq;
+	int is_hw_decrypted = 0;
+	int has_decrypted = 0;
+
+	/*
+	 * Some devices do hardware decryption all the way through
+	 * to pretending the frame wasn't encrypted in the first place.
+	 * So, tag it appropriately so it isn't discarded inappropriately.
+	 */
+	if ((rxs != NULL) && (rxs->c_pktflags & IEEE80211_RX_F_DECRYPTED))
+		is_hw_decrypted = 1;
 
 	if (m->m_flags & M_AMPDU_MPDU) {
 		/*
@@ -567,29 +573,13 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 
 		IEEE80211_RSSI_LPF(ni->ni_avgrssi, rssi);
 		ni->ni_noise = nf;
-		if (HAS_SEQ(type)) {
+		if (IEEE80211_HAS_SEQ(type, subtype)) {
 			uint8_t tid = ieee80211_gettid(wh);
 			if (IEEE80211_QOS_HAS_SEQ(wh) &&
 			    TID_TO_WME_AC(tid) >= WME_AC_VI)
 				ic->ic_wme.wme_hipri_traffic++;
-			rxseq = le16toh(*(uint16_t *)wh->i_seq);
-			if (! ieee80211_check_rxseq(ni, wh)) {
-				/* duplicate, discard */
-				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
-				    bssid, "duplicate",
-				    "seqno <%u,%u> fragno <%u,%u> tid %u",
-				    rxseq >> IEEE80211_SEQ_SEQ_SHIFT,
-				    ni->ni_rxseqs[tid] >>
-					IEEE80211_SEQ_SEQ_SHIFT,
-				    rxseq & IEEE80211_SEQ_FRAG_MASK,
-				    ni->ni_rxseqs[tid] &
-					IEEE80211_SEQ_FRAG_MASK,
-				    tid);
-				vap->iv_stats.is_rx_dup++;
-				IEEE80211_NODE_STAT(ni, rx_dup);
+			if (! ieee80211_check_rxseq(ni, wh, bssid))
 				goto out;
-			}
-			ni->ni_rxseqs[tid] = rxseq;
 		}
 	}
 
@@ -647,7 +637,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 		 */
 		if (((wh->i_fc[1] & IEEE80211_FC1_PWR_MGT) ^
 		    (ni->ni_flags & IEEE80211_NODE_PWR_MGT)))
-			ieee80211_node_pwrsave(ni,
+			vap->iv_node_ps(ni,
 				wh->i_fc[1] & IEEE80211_FC1_PWR_MGT);
 		/*
 		 * For 4-address packets handle WDS discovery
@@ -690,7 +680,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 		 * crypto cipher modules used to do delayed update
 		 * of replay sequence numbers.
 		 */
-		if (wh->i_fc[1] & IEEE80211_FC1_WEP) {
+		if (is_hw_decrypted || wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
 			if ((vap->iv_flags & IEEE80211_F_PRIVACY) == 0) {
 				/*
 				 * Discard encrypted frames when privacy is off.
@@ -701,14 +691,14 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 				IEEE80211_NODE_STAT(ni, rx_noprivacy);
 				goto out;
 			}
-			key = ieee80211_crypto_decap(ni, m, hdrspace);
-			if (key == NULL) {
+			if (ieee80211_crypto_decap(ni, m, hdrspace, &key) == 0) {
 				/* NB: stats+msgs handled in crypto_decap */
 				IEEE80211_NODE_STAT(ni, rx_wepfail);
 				goto out;
 			}
 			wh = mtod(m, struct ieee80211_frame *);
-			wh->i_fc[1] &= ~IEEE80211_FC1_WEP;
+			wh->i_fc[1] &= ~IEEE80211_FC1_PROTECTED;
+			has_decrypted = 1;
 		} else {
 			/* XXX M_WEP and IEEE80211_F_PRIVACY */
 			key = NULL;
@@ -791,7 +781,8 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 			 * any non-PAE frames received without encryption.
 			 */
 			if ((vap->iv_flags & IEEE80211_F_DROPUNENC) &&
-			    (key == NULL && (m->m_flags & M_WEP) == 0) &&
+			    ((has_decrypted == 0) && (m->m_flags & M_WEP) == 0) &&
+			    (is_hw_decrypted == 0) &&
 			    eh->ether_type != htons(ETHERTYPE_PAE)) {
 				/*
 				 * Drop unencrypted frames.
@@ -847,12 +838,11 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 		if ((ieee80211_msg_debug(vap) && doprint(vap, subtype)) ||
 		    ieee80211_msg_dumppkts(vap)) {
 			if_printf(ifp, "received %s from %s rssi %d\n",
-			    ieee80211_mgt_subtype_name[subtype >>
-				IEEE80211_FC0_SUBTYPE_SHIFT],
+			    ieee80211_mgt_subtype_name(subtype),
 			    ether_sprintf(wh->i_addr2), rssi);
 		}
 #endif
-		if (wh->i_fc[1] & IEEE80211_FC1_WEP) {
+		if (wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
 			if (subtype != IEEE80211_FC0_SUBTYPE_AUTH) {
 				/*
 				 * Only shared key auth frames with a challenge
@@ -874,13 +864,13 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 				goto out;
 			}
 			hdrspace = ieee80211_hdrspace(ic, wh);
-			key = ieee80211_crypto_decap(ni, m, hdrspace);
-			if (key == NULL) {
+			if (ieee80211_crypto_decap(ni, m, hdrspace, &key) == 0) {
 				/* NB: stats+msgs handled in crypto_decap */
 				goto out;
 			}
 			wh = mtod(m, struct ieee80211_frame *);
-			wh->i_fc[1] &= ~IEEE80211_FC1_WEP;
+			wh->i_fc[1] &= ~IEEE80211_FC1_PROTECTED;
+			has_decrypted = 1;
 		}
 		/*
 		 * Pass the packet to radiotap before calling iv_recv_mgmt().
@@ -890,7 +880,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 		if (ieee80211_radiotap_active_vap(vap))
 			ieee80211_radiotap_rx(vap, m);
 		need_tap = 0;
-		vap->iv_recv_mgmt(ni, m, subtype, rssi, nf);
+		vap->iv_recv_mgmt(ni, m, subtype, rxs, rssi, nf);
 		goto out;
 
 	case IEEE80211_FC0_TYPE_CTL:
@@ -905,7 +895,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m, int rssi, int nf)
 		break;
 	}
 err:
-	ifp->if_ierrors++;
+	if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 out:
 	if (m != NULL) {
 		if (need_tap && ieee80211_radiotap_active_vap(vap))
@@ -934,7 +924,7 @@ hostap_auth_open(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 		 * open auth is attempted.
 		 */
 		if (ni->ni_challenge != NULL) {
-			free(ni->ni_challenge, M_80211_NODE);
+			IEEE80211_FREE(ni->ni_challenge, M_80211_NODE);
 			ni->ni_challenge = NULL;
 		}
 		/* XXX hack to workaround calling convention */
@@ -1092,7 +1082,7 @@ hostap_auth_shared(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 		 */
 		ni->ni_flags |= IEEE80211_NODE_AREF;
 		/*
-		 * Mark the node as requiring a valid associatio id
+		 * Mark the node as requiring a valid association id
 		 * before outbound traffic is permitted.
 		 */
 		ni->ni_flags |= IEEE80211_NODE_ASSOCID;
@@ -1178,28 +1168,36 @@ bad:
  * record any key length.
  */
 static int
-wpa_cipher(const uint8_t *sel, uint8_t *keylen)
+wpa_cipher(const uint8_t *sel, uint8_t *keylen, uint8_t *cipher)
 {
 #define	WPA_SEL(x)	(((x)<<24)|WPA_OUI)
-	uint32_t w = LE_READ_4(sel);
+	uint32_t w = le32dec(sel);
 
 	switch (w) {
 	case WPA_SEL(WPA_CSE_NULL):
-		return IEEE80211_CIPHER_NONE;
+		*cipher = IEEE80211_CIPHER_NONE;
+		break;
 	case WPA_SEL(WPA_CSE_WEP40):
 		if (keylen)
 			*keylen = 40 / NBBY;
-		return IEEE80211_CIPHER_WEP;
+		*cipher = IEEE80211_CIPHER_WEP;
+		break;
 	case WPA_SEL(WPA_CSE_WEP104):
 		if (keylen)
 			*keylen = 104 / NBBY;
-		return IEEE80211_CIPHER_WEP;
+		*cipher = IEEE80211_CIPHER_WEP;
+		break;
 	case WPA_SEL(WPA_CSE_TKIP):
-		return IEEE80211_CIPHER_TKIP;
+		*cipher = IEEE80211_CIPHER_TKIP;
+		break;
 	case WPA_SEL(WPA_CSE_CCMP):
-		return IEEE80211_CIPHER_AES_CCM;
+		*cipher = IEEE80211_CIPHER_AES_CCM;
+		break;
+	default:
+		return (EINVAL);
 	}
-	return 32;		/* NB: so 1<< is discarded */
+
+	return (0);
 #undef WPA_SEL
 }
 
@@ -1211,7 +1209,7 @@ static int
 wpa_keymgmt(const uint8_t *sel)
 {
 #define	WPA_SEL(x)	(((x)<<24)|WPA_OUI)
-	uint32_t w = LE_READ_4(sel);
+	uint32_t w = le32dec(sel);
 
 	switch (w) {
 	case WPA_SEL(WPA_ASE_8021X_UNSPEC):
@@ -1237,7 +1235,7 @@ ieee80211_parse_wpa(struct ieee80211vap *vap, const uint8_t *frm,
 {
 	uint8_t len = frm[1];
 	uint32_t w;
-	int n;
+	int error, n;
 
 	/*
 	 * Check the length once for fixed parts: OUI, type,
@@ -1258,7 +1256,7 @@ ieee80211_parse_wpa(struct ieee80211vap *vap, const uint8_t *frm,
 	}
 	frm += 6, len -= 4;		/* NB: len is payload only */
 	/* NB: iswpaoui already validated the OUI and type */
-	w = LE_READ_2(frm);
+	w = le16dec(frm);
 	if (w != WPA_VERSION) {
 		IEEE80211_DISCARD_IE(vap,
 		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
@@ -1270,11 +1268,18 @@ ieee80211_parse_wpa(struct ieee80211vap *vap, const uint8_t *frm,
 	memset(rsn, 0, sizeof(*rsn));
 
 	/* multicast/group cipher */
-	rsn->rsn_mcastcipher = wpa_cipher(frm, &rsn->rsn_mcastkeylen);
+	error = wpa_cipher(frm, &rsn->rsn_mcastkeylen, &rsn->rsn_mcastcipher);
+	if (error != 0) {
+		IEEE80211_DISCARD_IE(vap,
+		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
+		    wh, "WPA", "unknown mcast cipher suite %08X",
+		    le32dec(frm));
+		return IEEE80211_REASON_GROUP_CIPHER_INVALID;
+	}
 	frm += 4, len -= 4;
 
 	/* unicast ciphers */
-	n = LE_READ_2(frm);
+	n = le16dec(frm);
 	frm += 2, len -= 2;
 	if (len < n*4+2) {
 		IEEE80211_DISCARD_IE(vap,
@@ -1285,16 +1290,29 @@ ieee80211_parse_wpa(struct ieee80211vap *vap, const uint8_t *frm,
 	}
 	w = 0;
 	for (; n > 0; n--) {
-		w |= 1<<wpa_cipher(frm, &rsn->rsn_ucastkeylen);
+		uint8_t cipher;
+
+		error = wpa_cipher(frm, &rsn->rsn_ucastkeylen, &cipher);
+		if (error == 0)
+			w |= 1 << cipher;
+
 		frm += 4, len -= 4;
 	}
-	if (w & (1<<IEEE80211_CIPHER_TKIP))
-		rsn->rsn_ucastcipher = IEEE80211_CIPHER_TKIP;
-	else
+	if (w == 0) {
+		IEEE80211_DISCARD_IE(vap,
+		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
+		    wh, "WPA", "no usable pairwise cipher suite found (w=%d)",
+		    w);
+		return IEEE80211_REASON_PAIRWISE_CIPHER_INVALID;
+	}
+	/* XXX other? */
+	if (w & (1 << IEEE80211_CIPHER_AES_CCM))
 		rsn->rsn_ucastcipher = IEEE80211_CIPHER_AES_CCM;
+	else
+		rsn->rsn_ucastcipher = IEEE80211_CIPHER_TKIP;
 
 	/* key management algorithms */
-	n = LE_READ_2(frm);
+	n = le16dec(frm);
 	frm += 2, len -= 2;
 	if (len < n*4) {
 		IEEE80211_DISCARD_IE(vap,
@@ -1314,7 +1332,7 @@ ieee80211_parse_wpa(struct ieee80211vap *vap, const uint8_t *frm,
 		rsn->rsn_keymgmt = WPA_ASE_8021X_PSK;
 
 	if (len > 2)		/* optional capabilities */
-		rsn->rsn_caps = LE_READ_2(frm);
+		rsn->rsn_caps = le16dec(frm);
 
 	return 0;
 }
@@ -1325,30 +1343,39 @@ ieee80211_parse_wpa(struct ieee80211vap *vap, const uint8_t *frm,
  * record any key length.
  */
 static int
-rsn_cipher(const uint8_t *sel, uint8_t *keylen)
+rsn_cipher(const uint8_t *sel, uint8_t *keylen, uint8_t *cipher)
 {
 #define	RSN_SEL(x)	(((x)<<24)|RSN_OUI)
-	uint32_t w = LE_READ_4(sel);
+	uint32_t w = le32dec(sel);
 
 	switch (w) {
 	case RSN_SEL(RSN_CSE_NULL):
-		return IEEE80211_CIPHER_NONE;
+		*cipher = IEEE80211_CIPHER_NONE;
+		break;
 	case RSN_SEL(RSN_CSE_WEP40):
 		if (keylen)
 			*keylen = 40 / NBBY;
-		return IEEE80211_CIPHER_WEP;
+		*cipher = IEEE80211_CIPHER_WEP;
+		break;
 	case RSN_SEL(RSN_CSE_WEP104):
 		if (keylen)
 			*keylen = 104 / NBBY;
-		return IEEE80211_CIPHER_WEP;
+		*cipher = IEEE80211_CIPHER_WEP;
+		break;
 	case RSN_SEL(RSN_CSE_TKIP):
-		return IEEE80211_CIPHER_TKIP;
+		*cipher = IEEE80211_CIPHER_TKIP;
+		break;
 	case RSN_SEL(RSN_CSE_CCMP):
-		return IEEE80211_CIPHER_AES_CCM;
+		*cipher = IEEE80211_CIPHER_AES_CCM;
+		break;
 	case RSN_SEL(RSN_CSE_WRAP):
-		return IEEE80211_CIPHER_AES_OCB;
+		*cipher = IEEE80211_CIPHER_AES_OCB;
+		break;
+	default:
+		return (EINVAL);
 	}
-	return 32;		/* NB: so 1<< is discarded */
+
+	return (0);
 #undef WPA_SEL
 }
 
@@ -1360,7 +1387,7 @@ static int
 rsn_keymgmt(const uint8_t *sel)
 {
 #define	RSN_SEL(x)	(((x)<<24)|RSN_OUI)
-	uint32_t w = LE_READ_4(sel);
+	uint32_t w = le32dec(sel);
 
 	switch (w) {
 	case RSN_SEL(RSN_ASE_8021X_UNSPEC):
@@ -1385,7 +1412,7 @@ ieee80211_parse_rsn(struct ieee80211vap *vap, const uint8_t *frm,
 {
 	uint8_t len = frm[1];
 	uint32_t w;
-	int n;
+	int error, n;
 
 	/*
 	 * Check the length once for fixed parts: 
@@ -1398,6 +1425,7 @@ ieee80211_parse_rsn(struct ieee80211vap *vap, const uint8_t *frm,
 		    wh, "WPA", "not RSN, flags 0x%x", vap->iv_flags);
 		return IEEE80211_REASON_IE_INVALID;
 	}
+	/* XXX may be shorter */
 	if (len < 10) {
 		IEEE80211_DISCARD_IE(vap,
 		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
@@ -1405,23 +1433,37 @@ ieee80211_parse_rsn(struct ieee80211vap *vap, const uint8_t *frm,
 		return IEEE80211_REASON_IE_INVALID;
 	}
 	frm += 2;
-	w = LE_READ_2(frm);
+	w = le16dec(frm);
 	if (w != RSN_VERSION) {
 		IEEE80211_DISCARD_IE(vap,
 		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
 		    wh, "RSN", "bad version %u", w);
-		return IEEE80211_REASON_IE_INVALID;
+		return IEEE80211_REASON_UNSUPP_RSN_IE_VERSION;
 	}
 	frm += 2, len -= 2;
 
 	memset(rsn, 0, sizeof(*rsn));
 
 	/* multicast/group cipher */
-	rsn->rsn_mcastcipher = rsn_cipher(frm, &rsn->rsn_mcastkeylen);
+	error = rsn_cipher(frm, &rsn->rsn_mcastkeylen, &rsn->rsn_mcastcipher);
+	if (error != 0) {
+		IEEE80211_DISCARD_IE(vap,
+		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
+		    wh, "RSN", "unknown mcast cipher suite %08X",
+		    le32dec(frm));
+		return IEEE80211_REASON_GROUP_CIPHER_INVALID;
+	}
+	if (rsn->rsn_mcastcipher == IEEE80211_CIPHER_NONE) {
+		IEEE80211_DISCARD_IE(vap,
+		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
+		    wh, "RSN", "invalid mcast cipher suite %d",
+		    rsn->rsn_mcastcipher);
+		return IEEE80211_REASON_GROUP_CIPHER_INVALID;
+	}
 	frm += 4, len -= 4;
 
 	/* unicast ciphers */
-	n = LE_READ_2(frm);
+	n = le16dec(frm);
 	frm += 2, len -= 2;
 	if (len < n*4+2) {
 		IEEE80211_DISCARD_IE(vap,
@@ -1431,17 +1473,36 @@ ieee80211_parse_rsn(struct ieee80211vap *vap, const uint8_t *frm,
 		return IEEE80211_REASON_IE_INVALID;
 	}
 	w = 0;
+
 	for (; n > 0; n--) {
-		w |= 1<<rsn_cipher(frm, &rsn->rsn_ucastkeylen);
+		uint8_t cipher;
+
+		error = rsn_cipher(frm, &rsn->rsn_ucastkeylen, &cipher);
+		if (error == 0)
+			w |= 1 << cipher;
+
 		frm += 4, len -= 4;
 	}
-	if (w & (1<<IEEE80211_CIPHER_TKIP))
+        if (w & (1 << IEEE80211_CIPHER_AES_CCM))
+                rsn->rsn_ucastcipher = IEEE80211_CIPHER_AES_CCM;
+	else if (w & (1 << IEEE80211_CIPHER_AES_OCB))
+		rsn->rsn_ucastcipher = IEEE80211_CIPHER_AES_OCB;
+	else if (w & (1 << IEEE80211_CIPHER_TKIP))
 		rsn->rsn_ucastcipher = IEEE80211_CIPHER_TKIP;
-	else
-		rsn->rsn_ucastcipher = IEEE80211_CIPHER_AES_CCM;
+	else if ((w & (1 << IEEE80211_CIPHER_NONE)) &&
+	    (rsn->rsn_mcastcipher == IEEE80211_CIPHER_WEP ||
+	     rsn->rsn_mcastcipher == IEEE80211_CIPHER_TKIP))
+		rsn->rsn_ucastcipher = IEEE80211_CIPHER_NONE;
+	else {
+		IEEE80211_DISCARD_IE(vap,
+		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_WPA,
+		    wh, "RSN", "no usable pairwise cipher suite found (w=%d)",
+		    w);
+		return IEEE80211_REASON_PAIRWISE_CIPHER_INVALID;
+	}
 
 	/* key management algorithms */
-	n = LE_READ_2(frm);
+	n = le16dec(frm);
 	frm += 2, len -= 2;
 	if (len < n*4) {
 		IEEE80211_DISCARD_IE(vap,
@@ -1462,14 +1523,14 @@ ieee80211_parse_rsn(struct ieee80211vap *vap, const uint8_t *frm,
 
 	/* optional RSN capabilities */
 	if (len > 2)
-		rsn->rsn_caps = LE_READ_2(frm);
+		rsn->rsn_caps = le16dec(frm);
 	/* XXXPMKID */
 
 	return 0;
 }
 
 /*
- * WPA/802.11i assocation request processing.
+ * WPA/802.11i association request processing.
  */
 static int
 wpa_assocreq(struct ieee80211_node *ni, struct ieee80211_rsnparms *rsnparms,
@@ -1535,6 +1596,7 @@ wpa_assocreq(struct ieee80211_node *ni, struct ieee80211_rsnparms *rsnparms,
 	else
 		reason = ieee80211_parse_rsn(vap, rsn, rsnparms, wh);
 	if (reason != 0) {
+		/* XXX wpa->rsn fallback? */
 		/* XXX distinguish WPA/RSN? */
 		vap->iv_stats.is_rx_assoc_badwpaie++;
 		goto bad;
@@ -1678,7 +1740,7 @@ is11bclient(const uint8_t *rates, const uint8_t *xrates)
 
 static void
 hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
-	int subtype, int rssi, int nf)
+	int subtype, const struct ieee80211_rx_stats *rxs, int rssi, int nf)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
 	struct ieee80211com *ic = ni->ni_ic;
@@ -1693,20 +1755,22 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 	efrm = mtod(m0, uint8_t *) + m0->m_len;
 	switch (subtype) {
 	case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
-	case IEEE80211_FC0_SUBTYPE_BEACON: {
-		struct ieee80211_scanparams scan;
 		/*
 		 * We process beacon/probe response frames when scanning;
 		 * otherwise we check beacon frames for overlapping non-ERP
 		 * BSS in 11g and/or overlapping legacy BSS when in HT.
-		 */ 
-		if ((ic->ic_flags & IEEE80211_F_SCAN) == 0 &&
-		    subtype == IEEE80211_FC0_SUBTYPE_PROBE_RESP) {
+		 */
+		if ((ic->ic_flags & IEEE80211_F_SCAN) == 0) {
 			vap->iv_stats.is_rx_mgtdiscard++;
 			return;
 		}
+		/* FALLTHROUGH */
+	case IEEE80211_FC0_SUBTYPE_BEACON: {
+		struct ieee80211_scanparams scan;
+
 		/* NB: accept off-channel frames */
-		if (ieee80211_parse_beacon(ni, m0, &scan) &~ IEEE80211_BPARSE_OFFCHAN)
+		/* XXX TODO: use rxstatus to determine off-channel details */
+		if (ieee80211_parse_beacon(ni, m0, ic->ic_curchan, &scan) &~ IEEE80211_BPARSE_OFFCHAN)
 			return;
 		/*
 		 * Count frame now that we know it's to be processed.
@@ -1733,7 +1797,8 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 				ieee80211_probe_curchan(vap, 1);
 				ic->ic_flags_ext &= ~IEEE80211_FEXT_PROBECHAN;
 			}
-			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, nf);
+			ieee80211_add_scan(vap, ic->ic_curchan, &scan, wh,
+			    subtype, rssi, nf);
 			return;
 		}
 		/*
@@ -1797,13 +1862,21 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 			return;
 		}
 		/*
+		 * Consult the ACL policy module if setup.
+		 */
+		if (vap->iv_acl != NULL && !vap->iv_acl->iac_check(vap, wh)) {
+			IEEE80211_DISCARD(vap, IEEE80211_MSG_ACL,
+			    wh, NULL, "%s", "disallowed by ACL");
+			vap->iv_stats.is_rx_acl++;
+			return;
+		}
+		/*
 		 * prreq frame format
 		 *	[tlv] ssid
 		 *	[tlv] supported rates
 		 *	[tlv] extended supported rates
 		 */
 		ssid = rates = xrates = NULL;
-		sfrm = frm;
 		while (efrm - frm > 1) {
 			IEEE80211_VERIFY_LENGTH(efrm - frm, frm[1] + 2, return);
 			switch (*frm) {
@@ -1875,8 +1948,7 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 		/*
 		 * Consult the ACL policy module if setup.
 		 */
-		if (vap->iv_acl != NULL &&
-		    !vap->iv_acl->iac_check(vap, wh->i_addr2)) {
+		if (vap->iv_acl != NULL && !vap->iv_acl->iac_check(vap, wh)) {
 			IEEE80211_DISCARD(vap, IEEE80211_MSG_ACL,
 			    wh, NULL, "%s", "disallowed by ACL");
 			vap->iv_stats.is_rx_acl++;
@@ -2027,7 +2099,7 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 			return;
 		/* discard challenge after association */
 		if (ni->ni_challenge != NULL) {
-			free(ni->ni_challenge, M_80211_NODE);
+			IEEE80211_FREE(ni->ni_challenge, M_80211_NODE);
 			ni->ni_challenge = NULL;
 		}
 		/* NB: 802.11 spec says to ignore station's privacy bit */
@@ -2084,8 +2156,8 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 		} else if (ni->ni_flags & IEEE80211_NODE_HT)
 			ieee80211_ht_node_cleanup(ni);
 #ifdef IEEE80211_SUPPORT_SUPERG
-		else if (ni->ni_ath_flags & IEEE80211_NODE_ATH)
-			ieee80211_ff_node_cleanup(ni);
+		/* Always do ff node cleanup; for A-MSDU */
+		ieee80211_ff_node_cleanup(ni);
 #endif
 		/*
 		 * Allow AMPDU operation only with unencrypted traffic
@@ -2103,6 +2175,10 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 			    "capinfo 0x%x ucastcipher %d", capinfo,
 			    rsnparms.rsn_ucastcipher);
 			ieee80211_ht_node_cleanup(ni);
+#ifdef IEEE80211_SUPPORT_SUPERG
+			/* Always do ff node cleanup; for A-MSDU */
+			ieee80211_ff_node_cleanup(ni);
+#endif
 			vap->iv_stats.is_ht_assoc_downgrade++;
 		}
 		/*
@@ -2184,8 +2260,9 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 			IEEE80211_NODE_STAT(ni, rx_disassoc);
 		}
 		IEEE80211_NOTE(vap, IEEE80211_MSG_AUTH, ni,
-		    "recv %s (reason %d)", ieee80211_mgt_subtype_name[subtype >>
-			IEEE80211_FC0_SUBTYPE_SHIFT], reason);
+		    "recv %s (reason: %d (%s))",
+		    ieee80211_mgt_subtype_name(subtype),
+		    reason, ieee80211_reason_to_string(reason));
 		if (ni != vap->iv_bss)
 			ieee80211_node_leave(ni);
 		break;
@@ -2215,6 +2292,7 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 
 	case IEEE80211_FC0_SUBTYPE_ASSOC_RESP:
 	case IEEE80211_FC0_SUBTYPE_REASSOC_RESP:
+	case IEEE80211_FC0_SUBTYPE_TIMING_ADV:
 	case IEEE80211_FC0_SUBTYPE_ATIM:
 		IEEE80211_DISCARD(vap, IEEE80211_MSG_INPUT,
 		    wh, NULL, "%s", "not handled");
@@ -2234,7 +2312,7 @@ hostap_recv_ctl(struct ieee80211_node *ni, struct mbuf *m, int subtype)
 {
 	switch (subtype) {
 	case IEEE80211_FC0_SUBTYPE_PS_POLL:
-		hostap_recv_pspoll(ni, m);
+		ni->ni_vap->iv_recv_pspoll(ni, m);
 		break;
 	case IEEE80211_FC0_SUBTYPE_BAR:
 		ieee80211_recv_bar(ni, m);
@@ -2245,12 +2323,12 @@ hostap_recv_ctl(struct ieee80211_node *ni, struct mbuf *m, int subtype)
 /*
  * Process a received ps-poll frame.
  */
-static void
-hostap_recv_pspoll(struct ieee80211_node *ni, struct mbuf *m0)
+void
+ieee80211_recv_pspoll(struct ieee80211_node *ni, struct mbuf *m0)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
+	struct ieee80211com *ic = vap->iv_ic;
 	struct ieee80211_frame_min *wh;
-	struct ifnet *ifp;
 	struct mbuf *m;
 	uint16_t aid;
 	int qlen;
@@ -2314,10 +2392,14 @@ hostap_recv_pspoll(struct ieee80211_node *ni, struct mbuf *m0)
 	}
 	m->m_flags |= M_PWR_SAV;		/* bypass PS handling */
 
-	if (m->m_flags & M_ENCAP)
-		ifp = vap->iv_ic->ic_ifp;
-	else
-		ifp = vap->iv_ifp;
-	IF_ENQUEUE(&ifp->if_snd, m);
-	if_start(ifp);
+	/*
+	 * Do the right thing; if it's an encap'ed frame then
+	 * call ieee80211_parent_xmitpkt() else
+	 * call ieee80211_vap_xmitpkt().
+	 */
+	if (m->m_flags & M_ENCAP) {
+		(void) ieee80211_parent_xmitpkt(ic, m);
+	} else {
+		(void) ieee80211_vap_xmitpkt(vap, m);
+	}
 }

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
+ * Copyright (c) 2011 Adrian Chadd, Xenion Lty Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,40 +24,36 @@
  *
  * $FreeBSD$
  */
-#ifndef _NET80211_IEEE80211_DFS_H_
-#define _NET80211_IEEE80211_DFS_H_
+#ifndef	__IEEE80211_ALQ_H__
+#define	__IEEE80211_ALQ_H__
+
+#define	IEEE80211_ALQ_MAX_PAYLOAD	1024
 
 /*
- * 802.11h/DFS definitions.
+ * timestamp
+ * wlan interface
+ * operation
+ * sub-operation
+ * rest of structure - operation specific
  */
 
-typedef enum {
-	DFS_DBG_NONE		= 0,
-	DFS_DBG_NONOL		= 1,
-	DFS_DBG_NOCSANOL	= 2
-} dfs_debug_t;
+#define	IEEE80211_ALQ_SRC_NET80211	0x0001
+/* Drivers define their own numbers above 0xff */
 
-struct ieee80211_dfs_state {
-	int		nol_event[IEEE80211_CHAN_MAX];
-	struct callout	nol_timer;		/* NOL list processing */
-	struct callout	cac_timer;		/* CAC timer */
-	struct timeval	lastevent;		/* time of last radar event */
-	int		cureps;			/* current events/second */
-	const struct ieee80211_channel *lastchan;/* chan w/ last radar event */
-	struct ieee80211_channel *newchan;	/* chan selected next */
+struct ieee80211_alq_rec {
+	uint64_t	r_timestamp;	/* XXX may wrap! */
+	uint32_t	r_threadid;	/* current thread id */
+	uint16_t	r_wlan;		/* wlan interface number */
+	uint16_t	r_src;		/* source - driver, net80211 */
+	uint32_t	r_flags;	/* flags */
+	uint32_t	r_op;		/* top-level operation id */
+	uint32_t	r_len;		/* length of hdr + payload */
+	/* Operation payload follows here */
 };
 
-void	ieee80211_dfs_attach(struct ieee80211com *);
-void	ieee80211_dfs_detach(struct ieee80211com *);
+/* General logging function */
+extern	int ieee80211_alq_log(struct ieee80211com *ic,
+	    struct ieee80211vap *vap, uint32_t op, uint32_t flags,
+	    uint16_t srcid, const uint8_t *src, size_t len);
 
-void	ieee80211_dfs_reset(struct ieee80211com *);
-
-void	ieee80211_dfs_cac_start(struct ieee80211vap *);
-void	ieee80211_dfs_cac_stop(struct ieee80211vap *);
-void	ieee80211_dfs_cac_clear(struct ieee80211com *,
-		const struct ieee80211_channel *);
-
-void	ieee80211_dfs_notify_radar(struct ieee80211com *,
-		struct ieee80211_channel *);
-struct ieee80211_channel *ieee80211_dfs_pickchannel(struct ieee80211com *);
-#endif /* _NET80211_IEEE80211_DFS_H_ */
+#endif	/* __IEEE80211_ALQ_H__ */

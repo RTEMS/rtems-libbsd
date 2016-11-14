@@ -42,6 +42,7 @@ __FBSDID("$FreeBSD$");
  
 #include <net/ethernet.h>
 #include <net/if.h>
+#include <net/if_var.h>
 #include <net/if_llc.h>
 #include <net/if_media.h>
 #include <net/if_vlan_var.h>
@@ -84,12 +85,20 @@ ieee80211_process_mimo(struct ieee80211_node *ni, struct ieee80211_rx_stats *rx)
 }
 
 int
-ieee80211_input_mimo(struct ieee80211_node *ni, struct mbuf *m,
-    struct ieee80211_rx_stats *rx)
+ieee80211_input_mimo(struct ieee80211_node *ni, struct mbuf *m)
 {
+	struct ieee80211_rx_stats rxs;
+
+	/* try to read stats from mbuf */
+	bzero(&rxs, sizeof(rxs));
+	if (ieee80211_get_rx_params(m, &rxs) != 0)
+		return (-1);
+
 	/* XXX should assert IEEE80211_R_NF and IEEE80211_R_RSSI are set */
-	ieee80211_process_mimo(ni, rx);
-	return ieee80211_input(ni, m, rx->rssi, rx->nf);
+	ieee80211_process_mimo(ni, &rxs);
+
+	//return ieee80211_input(ni, m, rx->rssi, rx->nf);
+	return ni->ni_vap->iv_input(ni, m, &rxs, rxs.c_rssi, rxs.c_nf);
 }
 
 int
@@ -98,14 +107,17 @@ ieee80211_input_all(struct ieee80211com *ic, struct mbuf *m, int rssi, int nf)
 	struct ieee80211_rx_stats rx;
 
 	rx.r_flags = IEEE80211_R_NF | IEEE80211_R_RSSI;
-	rx.nf = nf;
-	rx.rssi = rssi;
-	return ieee80211_input_mimo_all(ic, m, &rx);
+	rx.c_nf = nf;
+	rx.c_rssi = rssi;
+
+	if (!ieee80211_add_rx_params(m, &rx))
+		return (-1);
+
+	return ieee80211_input_mimo_all(ic, m);
 }
 
 int
-ieee80211_input_mimo_all(struct ieee80211com *ic, struct mbuf *m,
-    struct ieee80211_rx_stats *rx)
+ieee80211_input_mimo_all(struct ieee80211com *ic, struct mbuf *m)
 {
 	struct ieee80211vap *vap;
 	int type = -1;
@@ -132,8 +144,9 @@ ieee80211_input_mimo_all(struct ieee80211com *ic, struct mbuf *m,
 			/*
 			 * Packet contents are changed by ieee80211_decap
 			 * so do a deep copy of the packet.
+			 * NB: tags are copied too.
 			 */
-			mcopy = m_dup(m, M_DONTWAIT);
+			mcopy = m_dup(m, M_NOWAIT);
 			if (mcopy == NULL) {
 				/* XXX stat+msg */
 				continue;
@@ -143,7 +156,7 @@ ieee80211_input_mimo_all(struct ieee80211com *ic, struct mbuf *m,
 			m = NULL;
 		}
 		ni = ieee80211_ref_node(vap->iv_bss);
-		type = ieee80211_input_mimo(ni, mcopy, rx);
+		type = ieee80211_input_mimo(ni, mcopy);
 		ieee80211_free_node(ni);
 	}
 	if (m != NULL)			/* no vaps, reclaim mbuf */
@@ -207,9 +220,16 @@ ieee80211_defrag(struct ieee80211_node *ni, struct mbuf *m, int hdrspace)
 		lwh = mtod(mfrag, struct ieee80211_frame *);
 		last_rxseq = le16toh(*(uint16_t *)lwh->i_seq);
 		/* NB: check seq # and frag together */
-		if (rxseq != last_rxseq+1 ||
-		    !IEEE80211_ADDR_EQ(wh->i_addr1, lwh->i_addr1) ||
-		    !IEEE80211_ADDR_EQ(wh->i_addr2, lwh->i_addr2)) {
+		if (rxseq == last_rxseq+1 &&
+		    IEEE80211_ADDR_EQ(wh->i_addr1, lwh->i_addr1) &&
+		    IEEE80211_ADDR_EQ(wh->i_addr2, lwh->i_addr2)) {
+			/* XXX clear MORE_FRAG bit? */
+			/* track last seqnum and fragno */
+			*(uint16_t *) lwh->i_seq = *(uint16_t *) wh->i_seq;
+
+			m_adj(m, hdrspace);		/* strip header */
+			m_catpkt(mfrag, m);		/* concatenate */
+		} else {
 			/*
 			 * Unrelated fragment or no space for it,
 			 * clear current fragments.
@@ -227,14 +247,6 @@ ieee80211_defrag(struct ieee80211_node *ni, struct mbuf *m, int hdrspace)
 			return NULL;
 		}
 		mfrag = m;
-	} else {				/* concatenate */
-		m_adj(m, hdrspace);		/* strip header */
-		m_cat(mfrag, m);
-		/* NB: m_cat doesn't update the packet header */
-		mfrag->m_pkthdr.len += m->m_pkthdr.len;
-		/* track last seqnum and fragno */
-		lwh = mtod(mfrag, struct ieee80211_frame *);
-		*(uint16_t *) lwh->i_seq = *(uint16_t *) wh->i_seq;
 	}
 	if (more_frag) {			/* more to come, save */
 		ni->ni_rxfragstamp = ticks;
@@ -252,18 +264,22 @@ ieee80211_deliver_data(struct ieee80211vap *vap,
 	struct ifnet *ifp = vap->iv_ifp;
 
 	/* clear driver/net80211 flags before passing up */
-	m->m_flags &= ~(M_80211_RX | M_MCAST | M_BCAST);
+	m->m_flags &= ~(M_MCAST | M_BCAST);
+	m_clrprotoflags(m);
 
 	/* NB: see hostap_deliver_data, this path doesn't handle hostap */
 	KASSERT(vap->iv_opmode != IEEE80211_M_HOSTAP, ("gack, hostap"));
 	/*
 	 * Do accounting.
 	 */
-	ifp->if_ipackets++;
+	if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 	IEEE80211_NODE_STAT(ni, rx_data);
 	IEEE80211_NODE_STAT_ADD(ni, rx_bytes, m->m_pkthdr.len);
 	if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
-		m->m_flags |= M_MCAST;		/* XXX M_BCAST? */
+		if (ETHER_IS_BROADCAST(eh->ether_dhost))
+			m->m_flags |= M_BCAST;
+		else
+			m->m_flags |= M_MCAST;
 		IEEE80211_NODE_STAT(ni, rx_mcast);
 	} else
 		IEEE80211_NODE_STAT(ni, rx_ucast);
@@ -325,13 +341,13 @@ ieee80211_decap(struct ieee80211vap *vap, struct mbuf *m, int hdrlen)
 		IEEE80211_ADDR_COPY(eh->ether_shost, wh.i_addr4);
 		break;
 	}
-#ifdef ALIGNED_POINTER
+#ifndef __NO_STRICT_ALIGNMENT
 	if (!ALIGNED_POINTER(mtod(m, caddr_t) + sizeof(*eh), uint32_t)) {
 		m = ieee80211_realign(vap, m, sizeof(*eh));
 		if (m == NULL)
 			return NULL;
 	}
-#endif /* ALIGNED_POINTER */
+#endif /* !__NO_STRICT_ALIGNMENT */
 	if (llc != NULL) {
 		eh = mtod(m, struct ether_header *);
 		eh->ether_type = htons(m->m_pkthdr.len - sizeof(*eh));
@@ -446,8 +462,9 @@ int
 ieee80211_alloc_challenge(struct ieee80211_node *ni)
 {
 	if (ni->ni_challenge == NULL)
-		ni->ni_challenge = (uint32_t *) malloc(IEEE80211_CHALLENGE_LEN,
-		    M_80211_NODE, M_NOWAIT);
+		ni->ni_challenge = (uint32_t *)
+		    IEEE80211_MALLOC(IEEE80211_CHALLENGE_LEN,
+		      M_80211_NODE, IEEE80211_M_NOWAIT);
 	if (ni->ni_challenge == NULL) {
 		IEEE80211_NOTE(ni->ni_vap,
 		    IEEE80211_MSG_DEBUG | IEEE80211_MSG_AUTH, ni,
@@ -466,7 +483,7 @@ ieee80211_alloc_challenge(struct ieee80211_node *ni)
  */
 int
 ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
-	struct ieee80211_scanparams *scan)
+	struct ieee80211_channel *rxchan, struct ieee80211_scanparams *scan)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
 	struct ieee80211com *ic = ni->ni_ic;
@@ -503,7 +520,7 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 	scan->tstamp  = frm;				frm += 8;
 	scan->bintval = le16toh(*(uint16_t *)frm);	frm += 2;
 	scan->capinfo = le16toh(*(uint16_t *)frm);	frm += 2;
-	scan->bchan = ieee80211_chan2ieee(ic, ic->ic_curchan);
+	scan->bchan = ieee80211_chan2ieee(ic, rxchan);
 	scan->chan = scan->bchan;
 	scan->ies = frm;
 	scan->ies_len = efrm - frm;
@@ -524,9 +541,12 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 		case IEEE80211_ELEMID_CSA:
 			scan->csa = frm;
 			break;
+		case IEEE80211_ELEMID_QUIET:
+			scan->quiet = frm;
+			break;
 		case IEEE80211_ELEMID_FHPARMS:
 			if (ic->ic_phytype == IEEE80211_T_FH) {
-				scan->fhdwell = LE_READ_2(&frm[2]);
+				scan->fhdwell = le16dec(&frm[2]);
 				scan->chan = IEEE80211_FH_CHAN(frm[4], frm[5]);
 				scan->fhindex = frm[6];
 			}
@@ -547,6 +567,8 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 		case IEEE80211_ELEMID_IBSSPARMS:
 		case IEEE80211_ELEMID_CFPARMS:
 		case IEEE80211_ELEMID_PWRCNSTR:
+		case IEEE80211_ELEMID_BSSLOAD:
+		case IEEE80211_ELEMID_APCHANREP:
 			/* NB: avoid debugging complaints */
 			break;
 		case IEEE80211_ELEMID_XRATES:
@@ -579,6 +601,9 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 			scan->meshconf = frm;
 			break;
 #endif
+		/* Extended capabilities; nothing handles it for now */
+		case IEEE80211_ELEMID_EXTCAP:
+			break;
 		case IEEE80211_ELEMID_VENDOR:
 			if (iswpaoui(frm))
 				scan->wpa = frm;
@@ -643,7 +668,8 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 		 */
 		IEEE80211_DISCARD(vap,
 		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_INPUT,
-		    wh, NULL, "for off-channel %u", scan->chan);
+		    wh, NULL, "for off-channel %u (bchan=%u)",
+		    scan->chan, scan->bchan);
 		vap->iv_stats.is_rx_chanmismatch++;
 		scan->status |= IEEE80211_BPARSE_OFFCHAN;
 	}
@@ -651,7 +677,8 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 	      scan->bintval <= IEEE80211_BINTVAL_MAX)) {
 		IEEE80211_DISCARD(vap,
 		    IEEE80211_MSG_ELEMID | IEEE80211_MSG_INPUT,
-		    wh, NULL, "bogus beacon interval", scan->bintval);
+		    wh, NULL, "bogus beacon interval (%d TU)",
+		    (int) scan->bintval);
 		vap->iv_stats.is_rx_badbintval++;
 		scan->status |= IEEE80211_BPARSE_BINTVAL_INVALID;
 	}
@@ -758,6 +785,61 @@ ieee80211_parse_action(struct ieee80211_node *ni, struct mbuf *m)
 			break;
 		}
 		break;
+#ifdef IEEE80211_SUPPORT_MESH
+	case IEEE80211_ACTION_CAT_MESH:
+		switch (ia->ia_action) {
+		case IEEE80211_ACTION_MESH_LMETRIC:
+			/*
+			 * XXX: verification is true only if we are using
+			 * Airtime link metric (default)
+			 */
+			IEEE80211_VERIFY_LENGTH(efrm - frm,
+			    sizeof(struct ieee80211_meshlmetric_ie),
+			    return EINVAL);
+			break;
+		case IEEE80211_ACTION_MESH_HWMP:
+			/* verify something */
+			break;
+		case IEEE80211_ACTION_MESH_GANN:
+			IEEE80211_VERIFY_LENGTH(efrm - frm,
+			    sizeof(struct ieee80211_meshgann_ie),
+			    return EINVAL);
+			break;
+		case IEEE80211_ACTION_MESH_CC:
+		case IEEE80211_ACTION_MESH_MCCA_SREQ:
+		case IEEE80211_ACTION_MESH_MCCA_SREP:
+		case IEEE80211_ACTION_MESH_MCCA_AREQ:
+		case IEEE80211_ACTION_MESH_MCCA_ADVER:
+		case IEEE80211_ACTION_MESH_MCCA_TRDOWN:
+		case IEEE80211_ACTION_MESH_TBTT_REQ:
+		case IEEE80211_ACTION_MESH_TBTT_RES:
+			/* reject these early on, not implemented */
+			IEEE80211_DISCARD(vap,
+			    IEEE80211_MSG_ELEMID | IEEE80211_MSG_INPUT,
+			    wh, NULL, "not implemented yet, act=0x%02X",
+			    ia->ia_action);
+			return EINVAL;
+		}
+		break;
+	case IEEE80211_ACTION_CAT_SELF_PROT:
+		/* If TA or RA group address discard silently */
+		if (IEEE80211_IS_MULTICAST(wh->i_addr1) ||
+			IEEE80211_IS_MULTICAST(wh->i_addr2))
+			return EINVAL;
+		/*
+		 * XXX: Should we verify complete length now or it is
+		 * to varying in sizes?
+		 */
+		switch (ia->ia_action) {
+		case IEEE80211_ACTION_MESHPEERING_CONFIRM:
+		case IEEE80211_ACTION_MESHPEERING_CLOSE:
+			/* is not a peering candidate (yet) */
+			if (ni == vap->iv_bss)
+				return EINVAL;
+			break;
+		}
+		break;
+#endif
 	}
 	return 0;
 }
@@ -845,12 +927,8 @@ ieee80211_discard_frame(const struct ieee80211vap *vap,
 
 	if_printf(vap->iv_ifp, "[%s] discard ",
 		ether_sprintf(ieee80211_getbssid(vap, wh)));
-	if (type == NULL) {
-		printf("%s frame, ", ieee80211_mgt_subtype_name[
-			(wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) >>
-			IEEE80211_FC0_SUBTYPE_SHIFT]);
-	} else
-		printf("%s frame, ", type);
+	printf("%s frame, ", type != NULL ? type :
+	    ieee80211_mgt_subtype_name(wh->i_fc[0]));
 	va_start(ap, fmt);
 	vprintf(fmt, ap);
 	va_end(ap);

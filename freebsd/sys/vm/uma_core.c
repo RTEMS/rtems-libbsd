@@ -1902,7 +1902,7 @@ rtems_bsd_uma_startup(void *unused)
 {
 	(void) unused;
 
-	sx_init(&uma_drain_lock, "umadrain");
+	sx_init_flags(&uma_drain_lock, "umadrain", SX_RECURSE);
 	uma_startup(NULL, 0);
 }
 

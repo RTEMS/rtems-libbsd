@@ -58,51 +58,40 @@ void **rtems_bsd_page_object_table;
 
 uintptr_t rtems_bsd_page_area_begin;
 
-static struct {
-	struct mtx mtx;
-	rtems_rbheap_control heap;
-	bool reclaim_in_progress;
-} page_alloc;
+static rtems_rbheap_control page_heap;
+
+struct mtx page_heap_mtx;
 
 void *
 rtems_bsd_page_alloc(uintptr_t size_in_bytes, int wait)
 {
 	void *addr;
 
-	mtx_lock(&page_alloc.mtx);
+	mtx_lock(&page_heap_mtx);
 
-	addr = rtems_rbheap_allocate(&page_alloc.heap, size_in_bytes);
+	addr = rtems_rbheap_allocate(&page_heap, size_in_bytes);
 	if (addr == NULL && wait) {
 		int i;
 
-		if (page_alloc.reclaim_in_progress) {
-			panic("rtems_bsd_page_alloc: recursive reclaim");
-		}
-
-		page_alloc.reclaim_in_progress = true;
-
 		for (i = 0; i < 8; i++) {
-			mtx_unlock(&page_alloc.mtx);
+			mtx_unlock(&page_heap_mtx);
 			uma_reclaim();
-			mtx_lock(&page_alloc.mtx);
+			mtx_lock(&page_heap_mtx);
 
-			addr = rtems_rbheap_allocate(&page_alloc.heap,
-			    size_in_bytes);
+			addr = rtems_rbheap_allocate(&page_heap, size_in_bytes);
 			if (addr != NULL)
 				break;
 
-			msleep(&page_alloc.heap, &page_alloc.mtx, 0,
+			msleep(&page_heap, &page_heap_mtx, 0,
 			    "page alloc", (hz / 4) * (i + 1));
 		}
 
-		page_alloc.reclaim_in_progress = false;
-
-		if (addr == NULL) {
+		if (i == 8) {
 			panic("rtems_bsd_page_alloc: page starvation");
 		}
 	}
 
-	mtx_unlock(&page_alloc.mtx);
+	mtx_unlock(&page_heap_mtx);
 
 #ifdef INVARIANTS
 	if (addr != NULL) {
@@ -116,10 +105,10 @@ rtems_bsd_page_alloc(uintptr_t size_in_bytes, int wait)
 void
 rtems_bsd_page_free(void *addr)
 {
-	mtx_lock(&page_alloc.mtx);
-	rtems_rbheap_free(&page_alloc.heap, addr);
-	wakeup(&page_alloc.heap);
-	mtx_unlock(&page_alloc.mtx);
+	mtx_lock(&page_heap_mtx);
+	rtems_rbheap_free(&page_heap, addr);
+	wakeup(&page_heap);
+	mtx_unlock(&page_heap_mtx);
 }
 
 static void
@@ -133,7 +122,7 @@ rtems_bsd_page_init(void *arg)
 	size_t n;
 	uintptr_t heap_size;
 
-	mtx_init(&page_alloc.mtx, "page heap", NULL, MTX_DEF);
+	mtx_init(&page_heap_mtx, "page heap", NULL, MTX_DEF);
 
 	heap_size = rtems_bsd_get_allocator_domain_size(
 	    RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE);
@@ -142,11 +131,11 @@ rtems_bsd_page_init(void *arg)
 	    0);
 	BSD_ASSERT(area != NULL);
 
-	sc = rtems_rbheap_initialize(&page_alloc.heap, area, heap_size,
-	    PAGE_SIZE, rtems_rbheap_extend_descriptors_with_malloc, NULL);
+	sc = rtems_rbheap_initialize(&page_heap, area, heap_size, PAGE_SIZE,
+	    rtems_rbheap_extend_descriptors_with_malloc, NULL);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 
-	rtems_rbheap_set_extend_descriptors(&page_alloc.heap,
+	rtems_rbheap_set_extend_descriptors(&page_heap,
 	    rtems_rbheap_extend_descriptors_never);
 
 	n = heap_size / PAGE_SIZE;
@@ -155,7 +144,7 @@ rtems_bsd_page_init(void *arg)
 	BSD_ASSERT(chunks != NULL);
 
 	for (i = 0; i < n; ++i) {
-		rtems_rbheap_add_to_spare_descriptor_chain(&page_alloc.heap,
+		rtems_rbheap_add_to_spare_descriptor_chain(&page_heap,
 		    &chunks[i]);
 	}
 

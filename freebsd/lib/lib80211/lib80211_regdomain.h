@@ -24,8 +24,8 @@
  *
  * $FreeBSD$
  */
-#ifndef _LIB80211_H_
-#define _LIB80211_H_
+#ifndef _LIB80211_REGDOMAIN_H_
+#define _LIB80211_REGDOMAIN_H_
 
 #include <sys/cdefs.h>
 #include <sys/queue.h>
@@ -75,6 +75,8 @@ struct regdomain {
 	netband_head	 bands_11a;	/* 11a operation */
 	netband_head	 bands_11ng;/* 11ng operation */
 	netband_head	 bands_11na;/* 11na operation */
+	netband_head	 bands_11ac;/* 11ac 5GHz operation */
+	netband_head	 bands_11acg;/* 11ac 2GHz operation */
 
 	LIST_ENTRY(regdomain)	next;
 };
@@ -118,4 +120,4 @@ const struct country *lib80211_country_findbyname(const struct regdata *,
 
 __END_DECLS
 
-#endif /* _LIB80211_H_ */
+#endif /* _LIB80211_REGDOMAIN_H_ */

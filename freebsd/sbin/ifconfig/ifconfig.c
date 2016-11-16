@@ -382,6 +382,7 @@ mainwrapper(int argc, char *argv[])
 	gre_ctor();
 	group_ctor();
 	ifmedia_ctor();
+	ieee80211_ctor();
 	inet6_ctor();
 	inet_ctor();
 	lagg_ctor();

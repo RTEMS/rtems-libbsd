@@ -7,11 +7,11 @@
 /* ifbridge.c */
 /* ifclone.c */
 /* ifconfig.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int setaddr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern struct ifreq ifr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char name[16]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char *descr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern size_t descrlen);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int setaddr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int setmask);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int doalias);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int clearaddr);
@@ -28,6 +28,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char *f_addr);
 /* ifgif.c */
 /* ifgre.c */
 /* ifgroup.c */
+/* ifieee80211.c */
 /* iflagg.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char lacpbuf[120]);
 /* ifmac.c */

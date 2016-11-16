@@ -15,11 +15,11 @@
 #define clone_ctor _bsd_ifconfig_clone_ctor
 #define clone_setdefcallback _bsd_ifconfig_clone_setdefcallback
 /* ifconfig.c */
-#define setaddr _bsd_ifconfig_setaddr
 #define ifr _bsd_ifconfig_ifr
 #define name _bsd_ifconfig_name
 #define descr _bsd_ifconfig_descr
 #define descrlen _bsd_ifconfig_descrlen
+#define setaddr _bsd_ifconfig_setaddr
 #define setmask _bsd_ifconfig_setmask
 #define doalias _bsd_ifconfig_doalias
 #define clearaddr _bsd_ifconfig_clearaddr
@@ -49,6 +49,8 @@
 #define gre_ctor _bsd_ifconfig_gre_ctor
 /* ifgroup.c */
 #define group_ctor _bsd_ifconfig_group_ctor
+/* ifieee80211.c */
+#define ieee80211_ctor _bsd_ifconfig_ieee80211_ctor
 /* iflagg.c */
 #define lacpbuf _bsd_ifconfig_lacpbuf
 #define lagg_ctor _bsd_ifconfig_lagg_ctor

@@ -1945,6 +1945,8 @@ def user_space(mm):
             'include/rpcsvc/ypclnt.h',
             'include/rpcsvc/yp_prot.h',
             'include/sysexits.h',
+            'lib/lib80211/lib80211_ioctl.h',
+            'lib/lib80211/lib80211_regdomain.h',
             'lib/libc/db/btree/btree.h',
             'lib/libc/db/btree/extern.h',
             'lib/libc/db/recno/extern.h',
@@ -2040,6 +2042,8 @@ def user_space(mm):
             'bin/hostname/hostname.c',
             'contrib/libxo/libxo/libxo.c',
             'contrib/libxo/libxo/xo_encoder.c',
+            'lib/lib80211/lib80211_ioctl.c',
+            'lib/lib80211/lib80211_regdomain.c',
             'lib/libc/gen/err.c',
             'lib/libc/gen/feature_present.c',
             'lib/libc/gen/getdomainname.c',
@@ -2220,6 +2224,7 @@ def user_space(mm):
             'sbin/ifconfig/ifgif.c',
             'sbin/ifconfig/ifgre.c',
             'sbin/ifconfig/ifgroup.c',
+            'sbin/ifconfig/ifieee80211.c',
             'sbin/ifconfig/iflagg.c',
             'sbin/ifconfig/ifmac.c',
             'sbin/ifconfig/ifmedia.c',
@@ -2258,6 +2263,45 @@ def user_space(mm):
             'usr.sbin/arp/arp.c',
         ],
         mm.generator['source'](['-DINET6', '-DINET'])
+    )
+    return mod
+
+#
+# Contrib expat
+#
+def contrib_expat(mm):
+    mod = builder.Module('contrib_expat')
+    cflags = ['-DHAVE_MEMMOVE=1']
+    mod.addRTEMSHeaderFiles(
+        [
+            'include/bsdxml.h',
+        ]
+    )
+    mod.addUserSpaceHeaderFiles(
+        [
+            'contrib/expat/lib/ascii.h',
+            'contrib/expat/lib/asciitab.h',
+            'contrib/expat/lib/expat_external.h',
+            'contrib/expat/lib/expat.h',
+            'contrib/expat/lib/iasciitab.h',
+            'contrib/expat/lib/internal.h',
+            'contrib/expat/lib/latin1tab.h',
+            'contrib/expat/lib/nametab.h',
+            'contrib/expat/lib/utf8tab.h',
+            'contrib/expat/lib/xmlrole.h',
+            'contrib/expat/lib/xmltok.h',
+            'contrib/expat/lib/xmltok_impl.h',
+        ]
+    )
+    mod.addUserSpaceSourceFiles(
+        [
+            'contrib/expat/lib/xmlparse.c',
+            'contrib/expat/lib/xmlrole.c',
+            'contrib/expat/lib/xmltok.c',
+            'contrib/expat/lib/xmltok_impl.c',
+            'contrib/expat/lib/xmltok_ns.c',
+        ],
+        mm.generator['source'](cflags)
     )
     return mod
 
@@ -2830,6 +2874,7 @@ def sources(mm):
     mm.addModule(in_cksum(mm))
 
     mm.addModule(user_space(mm))
+    mm.addModule(contrib_expat(mm))
     mm.addModule(contrib_libpcap(mm))
     mm.addModule(usr_sbin_tcpdump(mm))
 

@@ -66,6 +66,7 @@ def build(bld):
     includes += ["freebsd/sys/contrib/pf"]
     includes += ["freebsd/sys/net"]
     includes += ["freebsd/include"]
+    includes += ["freebsd/lib"]
     includes += ["freebsd/lib/libc/include"]
     includes += ["freebsd/lib/libc/isc/include"]
     includes += ["freebsd/lib/libc/resolv"]
@@ -73,6 +74,7 @@ def build(bld):
     includes += ["freebsd/lib/libkvm"]
     includes += ["freebsd/lib/libmemstat"]
     includes += ["freebsd/lib/libipsec"]
+    includes += ["freebsd/contrib/expat/lib"]
     includes += ["freebsd/contrib/libpcap"]
     includes += ["freebsd/contrib/libxo"]
     includes += ["rtemsbsd/sys"]
@@ -230,9 +232,24 @@ def build(bld):
     libbsd_use += ["yacc_pfctly"]
 
     # Objects built with different CFLAGS
-    objs01_source = ['freebsd/bin/hostname/hostname.c',
+    objs01_source = ['freebsd/contrib/expat/lib/xmlparse.c',
+                     'freebsd/contrib/expat/lib/xmlrole.c',
+                     'freebsd/contrib/expat/lib/xmltok.c',
+                     'freebsd/contrib/expat/lib/xmltok_impl.c',
+                     'freebsd/contrib/expat/lib/xmltok_ns.c']
+    bld.objects(target = "objs01",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = defines + ['HAVE_MEMMOVE=1'],
+                source = objs01_source)
+    libbsd_use += ["objs01"]
+
+    objs02_source = ['freebsd/bin/hostname/hostname.c',
                      'freebsd/contrib/libxo/libxo/libxo.c',
                      'freebsd/contrib/libxo/libxo/xo_encoder.c',
+                     'freebsd/lib/lib80211/lib80211_ioctl.c',
+                     'freebsd/lib/lib80211/lib80211_regdomain.c',
                      'freebsd/lib/libc/gen/err.c',
                      'freebsd/lib/libc/gen/feature_present.c',
                      'freebsd/lib/libc/gen/getdomainname.c',
@@ -413,6 +430,7 @@ def build(bld):
                      'freebsd/sbin/ifconfig/ifgif.c',
                      'freebsd/sbin/ifconfig/ifgre.c',
                      'freebsd/sbin/ifconfig/ifgroup.c',
+                     'freebsd/sbin/ifconfig/ifieee80211.c',
                      'freebsd/sbin/ifconfig/iflagg.c',
                      'freebsd/sbin/ifconfig/ifmac.c',
                      'freebsd/sbin/ifconfig/ifmedia.c',
@@ -449,24 +467,24 @@ def build(bld):
                      'freebsd/usr.bin/netstat/unix.c',
                      'freebsd/usr.bin/vmstat/vmstat.c',
                      'freebsd/usr.sbin/arp/arp.c']
-    bld.objects(target = "objs01",
-                features = "c",
-                cflags = cflags,
-                includes = [] + includes,
-                defines = defines + ['INET', 'INET6'],
-                source = objs01_source)
-    libbsd_use += ["objs01"]
-
-    objs02_source = ['rtemsbsd/mghttpd/mongoose.c']
     bld.objects(target = "objs02",
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = defines + ['NO_CGI', 'NO_POPEN', 'NO_SSL', 'USE_WEBSOCKET'],
+                defines = defines + ['INET', 'INET6'],
                 source = objs02_source)
     libbsd_use += ["objs02"]
 
-    objs03_source = ['freebsd/lib/libc/db/btree/bt_close.c',
+    objs03_source = ['rtemsbsd/mghttpd/mongoose.c']
+    bld.objects(target = "objs03",
+                features = "c",
+                cflags = cflags,
+                includes = [] + includes,
+                defines = defines + ['NO_CGI', 'NO_POPEN', 'NO_SSL', 'USE_WEBSOCKET'],
+                source = objs03_source)
+    libbsd_use += ["objs03"]
+
+    objs04_source = ['freebsd/lib/libc/db/btree/bt_close.c',
                      'freebsd/lib/libc/db/btree/bt_conv.c',
                      'freebsd/lib/libc/db/btree/bt_debug.c',
                      'freebsd/lib/libc/db/btree/bt_delete.c',
@@ -490,15 +508,15 @@ def build(bld):
                      'freebsd/lib/libc/db/recno/rec_search.c',
                      'freebsd/lib/libc/db/recno/rec_seq.c',
                      'freebsd/lib/libc/db/recno/rec_utils.c']
-    bld.objects(target = "objs03",
+    bld.objects(target = "objs04",
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
                 defines = defines + ['INET6', '__DBINTERFACE_PRIVATE'],
-                source = objs03_source)
-    libbsd_use += ["objs03"]
+                source = objs04_source)
+    libbsd_use += ["objs04"]
 
-    objs04_source = ['dhcpcd/arp.c',
+    objs05_source = ['dhcpcd/arp.c',
                      'dhcpcd/auth.c',
                      'dhcpcd/bpf.c',
                      'dhcpcd/common.c',
@@ -520,15 +538,15 @@ def build(bld):
                      'dhcpcd/ipv6nd.c',
                      'dhcpcd/net.c',
                      'dhcpcd/platform-bsd.c']
-    bld.objects(target = "objs04",
+    bld.objects(target = "objs05",
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
                 defines = defines + ['INET', 'INET6', 'MASTER_ONLY', 'THERE_IS_NO_FORK', '__FreeBSD__'],
-                source = objs04_source)
-    libbsd_use += ["objs04"]
+                source = objs05_source)
+    libbsd_use += ["objs05"]
 
-    objs05_source = ['freebsd/contrib/libpcap/bpf_image.c',
+    objs06_source = ['freebsd/contrib/libpcap/bpf_image.c',
                      'freebsd/contrib/libpcap/etherent.c',
                      'freebsd/contrib/libpcap/fad-getad.c',
                      'freebsd/contrib/libpcap/gencode.c',
@@ -541,15 +559,15 @@ def build(bld):
                      'freebsd/contrib/libpcap/savefile.c',
                      'freebsd/contrib/libpcap/sf-pcap-ng.c',
                      'freebsd/contrib/libpcap/sf-pcap.c']
-    bld.objects(target = "objs05",
+    bld.objects(target = "objs06",
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
                 defines = defines + ['BSD=1', 'HAVE_INTTYPES=1', 'HAVE_LIMITS_H=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SYS_IOCCOM_H=1', 'HAVE_VSNPRINTF=1', 'INET6', '_U_=__attribute__((unused))', '__FreeBSD__=1'],
-                source = objs05_source)
-    libbsd_use += ["objs05"]
+                source = objs06_source)
+    libbsd_use += ["objs06"]
 
-    objs06_source = ['freebsd/contrib/tcpdump/addrtoname.c',
+    objs07_source = ['freebsd/contrib/tcpdump/addrtoname.c',
                      'freebsd/contrib/tcpdump/af.c',
                      'freebsd/contrib/tcpdump/bpf_dump.c',
                      'freebsd/contrib/tcpdump/checksum.c',
@@ -692,13 +710,13 @@ def build(bld):
                      'freebsd/contrib/tcpdump/smbutil.c',
                      'freebsd/contrib/tcpdump/tcpdump.c',
                      'freebsd/contrib/tcpdump/util.c']
-    bld.objects(target = "objs06",
+    bld.objects(target = "objs07",
                 features = "c",
                 cflags = cflags,
                 includes = ['freebsd/contrib/tcpdump', 'freebsd/usr.sbin/tcpdump/tcpdump'] + includes,
                 defines = defines + ['HAVE_CONFIG_H=1', 'HAVE_NET_PFVAR_H=1', 'INET6', '_U_=__attribute__((unused))', '__FreeBSD__=1'],
-                source = objs06_source)
-    libbsd_use += ["objs06"]
+                source = objs07_source)
+    libbsd_use += ["objs07"]
 
     source = ['freebsd/sys/arm/xilinx/zy7_slcr.c',
               'freebsd/sys/cam/cam.c',

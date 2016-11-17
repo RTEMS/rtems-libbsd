@@ -62,9 +62,13 @@ SYSINIT_MODULE_REFERENCE(rootbus);
 SYSINIT_DRIVER_REFERENCE(nexus, root);
 
 RTEMS_BSD_DEFINE_SET(modmetadata_set, struct mod_metadata *);
-RTEMS_BSD_DEFINE_SET(sysctl_set, struct sysctl_oid *);
 RTEMS_BSD_DEFINE_SET(ieee80211_ioctl_getset, ieee80211_ioctl_getfunc *);
 RTEMS_BSD_DEFINE_SET(ieee80211_ioctl_setset, ieee80211_ioctl_setfunc *);
+typedef void (*ratectl_modevent)(int);
+RTEMS_BSD_DEFINE_SET(ratectl_set, ratectl_modevent);
+typedef void (*scanner_modevent)(int);
+RTEMS_BSD_DEFINE_SET(scanner_set, scanner_modevent);
+RTEMS_BSD_DEFINE_SET(sysctl_set, struct sysctl_oid *);
 
 RTEMS_BSD_DEFINE_RWSET(sysinit_set, struct sysinit *);
 

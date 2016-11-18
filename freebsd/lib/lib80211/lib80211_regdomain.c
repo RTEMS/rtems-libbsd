@@ -28,15 +28,6 @@
 static const char rcsid[] = "$FreeBSD$";
 #endif /* not lint */
 
-#ifdef __rtems__
-/* We need some functions from kernel name space */
-#define sbuf_bcat	_bsd_sbuf_bcat
-#define sbuf_finish	_bsd_sbuf_finish
-#define sbuf_data	_bsd_sbuf_data
-#define sbuf_len	_bsd_sbuf_len
-#define sbuf_delete	_bsd_sbuf_delete
-#define sbuf_new	_bsd_sbuf_new
-#endif /* __rtems__ */
 #include <sys/types.h>
 #include <rtems/bsd/sys/errno.h>
 #include <rtems/bsd/sys/param.h>

@@ -26,6 +26,7 @@ GENERATED += $(LOCAL_INC)/mmcbr_if.h
 GENERATED += $(LOCAL_SRC)/mmcbr_if.c
 GENERATED += $(LOCAL_INC)/mmcbus_if.h
 GENERATED += $(LOCAL_SRC)/mmcbus_if.c
+GENERATED += $(LOCAL_SRC)/urtwn-rtl8192cfwT.fw.c
 
 all: $(GENERATED)
 
@@ -120,6 +121,11 @@ $(LOCAL_INC)/gpio_if.h: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
 $(LOCAL_SRC)/gpio_if.c: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c
 	mv gpio_if.c $@
+
+$(LOCAL_SRC)/urtwn-rtl8192cfwT.c: $(FREEBSD_SRC)/sys/contrib/dev/urtwn/urtwn-rtl8192cfwT.fw.uu
+	uudecode -o /dev/stdout $< | python firmware-gen.py \
+	    -l "$(FREEBSD_SRC)/sys/contrib/dev/urtwn/LICENSE" \
+	    urtwn-rtl8192cfwT - $@
 
 freebsd/usr.bin/netstat/nl_symbols.c: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
 	awk '\

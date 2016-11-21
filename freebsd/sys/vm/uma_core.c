@@ -226,7 +226,11 @@ struct uma_bucket_zone {
 #define	BUCKET_SIZE(n)						\
     (((sizeof(void *) * (n)) - sizeof(struct uma_bucket)) / sizeof(void *))
 
+#ifndef __rtems__
 #define	BUCKET_MAX	BUCKET_SIZE(256)
+#else /* __rtems__ */
+#define	BUCKET_MAX	BUCKET_SIZE(128)
+#endif /* __rtems__ */
 
 struct uma_bucket_zone bucket_zones[] = {
 	{ NULL, "4 Bucket", BUCKET_SIZE(4), 4096 },
@@ -237,7 +241,9 @@ struct uma_bucket_zone bucket_zones[] = {
 	{ NULL, "32 Bucket", BUCKET_SIZE(32), 512 },
 	{ NULL, "64 Bucket", BUCKET_SIZE(64), 256 },
 	{ NULL, "128 Bucket", BUCKET_SIZE(128), 128 },
+#ifndef __rtems__
 	{ NULL, "256 Bucket", BUCKET_SIZE(256), 64 },
+#endif /* __rtems__ */
 	{ NULL, NULL, 0}
 };
 
@@ -733,6 +739,7 @@ cache_drain(uma_zone_t zone)
 	ZONE_UNLOCK(zone);
 }
 
+#ifndef __rtems__
 static void
 cache_shrink(uma_zone_t zone)
 {
@@ -782,7 +789,6 @@ cache_drain_safe_cpu(uma_zone_t zone)
 		bucket_free(zone, b2, NULL);
 }
 
-#ifndef __rtems__
 /*
  * Safely drain per-CPU caches of a zone(s) to alloc bucket.
  * This is an expensive call because it needs to bind to all CPUs

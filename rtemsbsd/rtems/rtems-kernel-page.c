@@ -61,21 +61,24 @@ uintptr_t rtems_bsd_page_area_begin;
 static struct {
 	struct mtx mtx;
 	rtems_rbheap_control heap;
-	size_t used;
+	size_t free;
+	uint32_t reclaims;
 } page_alloc;
 
 void *
-rtems_bsd_page_alloc(uintptr_t size_in_bytes, int wait)
+rtems_bsd_page_alloc(uintptr_t size_in_bytes, int flags)
 {
 	void *addr;
 
 	mtx_lock(&page_alloc.mtx);
 
 	addr = rtems_rbheap_allocate(&page_alloc.heap, size_in_bytes);
-	if (addr == NULL && wait) {
+	if (addr == NULL && ((flags & M_WAITOK) != 0 ||
+	    page_alloc.free < 32)) {
 		int i;
 
 		for (i = 0; i < 8; i++) {
+			++page_alloc.reclaims;
 			mtx_unlock(&page_alloc.mtx);
 			uma_reclaim();
 			mtx_lock(&page_alloc.mtx);
@@ -89,19 +92,19 @@ rtems_bsd_page_alloc(uintptr_t size_in_bytes, int wait)
 			    "page alloc", (hz / 4) * (i + 1));
 		}
 
-		if (i == 8) {
+		if (addr == NULL && (flags & M_WAITOK) != 0) {
 			panic("rtems_bsd_page_alloc: page starvation");
 		}
 	}
 
-	page_alloc.used += (addr != NULL) ? 1 : 0;
+	page_alloc.free -= (addr != NULL) ? 1 : 0;
 	mtx_unlock(&page_alloc.mtx);
 
 #ifdef INVARIANTS
-	wait |= M_ZERO;
+	flags |= M_ZERO;
 #endif
 
-	if (addr != NULL && (wait & M_ZERO) != 0) {
+	if (addr != NULL && (flags & M_ZERO) != 0) {
 		memset(addr, 0, size_in_bytes);
 	}
 
@@ -113,7 +116,7 @@ rtems_bsd_page_free(void *addr)
 {
 
 	mtx_lock(&page_alloc.mtx);
-	--page_alloc.used;
+	++page_alloc.free;
 	rtems_rbheap_free(&page_alloc.heap, addr);
 	wakeup(&page_alloc.heap);
 	mtx_unlock(&page_alloc.mtx);
@@ -130,7 +133,7 @@ rtems_bsd_page_init(void *arg)
 	size_t n;
 	uintptr_t heap_size;
 
-	mtx_init(&page_alloc.mtx, "page heap", NULL, MTX_DEF);
+	mtx_init(&page_alloc.mtx, "page heap", NULL, MTX_RECURSE);
 
 	heap_size = rtems_bsd_get_allocator_domain_size(
 	    RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE);
@@ -147,6 +150,7 @@ rtems_bsd_page_init(void *arg)
 	    rtems_rbheap_extend_descriptors_never);
 
 	n = heap_size / PAGE_SIZE;
+	page_alloc.free = n;
 
 	chunks = malloc(n * sizeof(*chunks), M_RTEMS_HEAP, M_NOWAIT);
 	BSD_ASSERT(chunks != NULL);

@@ -778,8 +778,6 @@ detail and debug level information from the command.
 
 . *, trunk, 2017-01-09, 1f8e4a995a6ede4bdb24e6d335ccda2bdb0175ab.
 
-== How to import code from FreeBSD
-
 . In case you import files from a special FreeBSD version, then update the list above.
 . Run `git status` and make sure your working directory is clean.
 . Run `./freebsd-to-rtems.py -R`

@@ -29,6 +29,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/param.h>
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,8 +61,8 @@ struct rtems_ftpd_configuration rtems_ftpd_configuration = {
 	/* Root for FTPD or NULL for "/" */
 	.root = NULL,
 
-	/* Max. connections */
-	.tasks_count = 4,
+	/* Max. connections depending on processor count */
+	.tasks_count = 0,
 
 	/* Idle timeout in seconds  or 0 for no (infinite) timeout */
 	.idle = 5 * 60,
@@ -140,6 +142,8 @@ test_main(void)
 	int rv;
 	rtems_status_code sc;
 
+	rtems_ftpd_configuration.tasks_count = MAX(4,
+	    rtems_get_processor_count());
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
 

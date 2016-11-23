@@ -427,7 +427,7 @@ sleepq_set_timeout(void *wchan, int timo)
 	    WATCHDOG_INACTIVE);
 	_Thread_Timer_insert_relative(executing, cpu_self, sleepq_timeout,
 	    (Watchdog_Interval)timo);
-	_Thread_Dispatch_enable(cpu_self);
+	_Thread_Dispatch_direct(cpu_self);
 #endif /* __rtems__ */
 }
 
@@ -672,8 +672,7 @@ sleepq_switch(void *wchan, int pri)
 			_Thread_Clear_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
 		}
 
-		_Thread_Dispatch_enable(cpu_self);
-
+		_Thread_Dispatch_direct(cpu_self);
 		_Thread_Wait_acquire_default(executing, &lock_context);
 
 		switch (td->td_sq_state) {
@@ -976,7 +975,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		_Thread_Timer_remove(thread);
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
 
-		_Thread_Dispatch_enable(cpu_self);
+		_Thread_Dispatch_direct(cpu_self);
 	} else {
 		_Thread_Wait_release_default(thread, &lock_context);
 	}

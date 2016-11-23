@@ -668,7 +668,6 @@ sleepq_switch(void *wchan, int pri)
 		_Thread_Wait_release_default(executing, &lock_context);
 
 		if (unblock) {
-			_Thread_Timer_remove(executing);
 			_Thread_Clear_state(executing, STATES_WAITING_FOR_BSD_WAKEUP);
 		}
 
@@ -689,6 +688,7 @@ sleepq_switch(void *wchan, int pri)
 	}
 
 	_Thread_Wait_release_default(executing, &lock_context);
+	_Thread_Timer_remove(executing);
 
 	if (remove) {
 		sleepq_remove(td, wchan);
@@ -951,7 +951,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		return (setrunnable(td));
 	}
 #else /* __rtems__ */
-	unblock = _Watchdog_Is_scheduled(&thread->Timer.Watchdog);
+	unblock = false;
 	switch (td->td_sq_state) {
 	case TD_SQ_SLEEPING:
 		unblock = true;
@@ -971,10 +971,7 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 
 		cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
 		_Thread_Wait_release_default(thread, &lock_context);
-
-		_Thread_Timer_remove(thread);
 		_Thread_Clear_state(thread, STATES_WAITING_FOR_BSD_WAKEUP);
-
 		_Thread_Dispatch_direct(cpu_self);
 	} else {
 		_Thread_Wait_release_default(thread, &lock_context);

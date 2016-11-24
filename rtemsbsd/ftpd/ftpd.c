@@ -215,8 +215,6 @@
 
 #include <rtems/ftpd.h>
 
-#include <machine/rtems-bsd-printf-to-iprintf.h>
-
 #ifdef __GNUC__
 /* change to #if 1 to disable syslog entirely */
 #if 0
@@ -446,7 +444,7 @@ task_pool_init(int count, rtems_task_priority priority)
       priority, FTPD_STACKSIZE,
       RTEMS_PREEMPT | RTEMS_NO_TIMESLICE |
       RTEMS_NO_ASR | RTEMS_INTERRUPT_LEVEL(0),
-      RTEMS_NO_FLOATING_POINT | RTEMS_LOCAL,
+      RTEMS_FLOATING_POINT | RTEMS_LOCAL,
       &info->tid);
     if (sc == RTEMS_SUCCESSFUL)
     {
@@ -2147,7 +2145,7 @@ rtems_ftpd_start(const struct rtems_ftpd_configuration* config)
     priority, RTEMS_MINIMUM_STACK_SIZE,
     RTEMS_PREEMPT | RTEMS_NO_TIMESLICE | RTEMS_NO_ASR |
     RTEMS_INTERRUPT_LEVEL(0),
-    RTEMS_NO_FLOATING_POINT | RTEMS_LOCAL,
+    RTEMS_FLOATING_POINT | RTEMS_LOCAL,
     &tid);
 
   if (sc == RTEMS_SUCCESSFUL)

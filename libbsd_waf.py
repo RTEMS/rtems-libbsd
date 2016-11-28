@@ -26,10 +26,10 @@ def options(opt):
     pass
 
 def bsp_configure(conf, arch_bsp):
-    pass
+    conf.check(header_name = "rtems/rtems-debugger.h", features = "c", includes = conf.env.IFLAGS, mandatory = False)
 
 def configure(conf):
-    pass
+    rtems.configure(conf, bsp_configure)
 
 def build(bld):
     # C/C++ flags
@@ -455,7 +455,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = defines + ['NO_SSL', 'NO_POPEN', 'NO_CGI', 'USE_WEBSOCKET'],
+                defines = defines + ['NO_CGI', 'NO_POPEN', 'NO_SSL', 'USE_WEBSOCKET'],
                 source = objs02_source)
     libbsd_use += ["objs02"]
 
@@ -487,7 +487,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = defines + ['__DBINTERFACE_PRIVATE', 'INET6'],
+                defines = defines + ['INET6', '__DBINTERFACE_PRIVATE'],
                 source = objs03_source)
     libbsd_use += ["objs03"]
 
@@ -517,7 +517,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = defines + ['__FreeBSD__', 'THERE_IS_NO_FORK', 'MASTER_ONLY', 'INET', 'INET6'],
+                defines = defines + ['INET', 'INET6', 'MASTER_ONLY', 'THERE_IS_NO_FORK', '__FreeBSD__'],
                 source = objs04_source)
     libbsd_use += ["objs04"]
 
@@ -538,7 +538,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = [] + includes,
-                defines = defines + ['__FreeBSD__=1', 'BSD=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_LIMITS_H=1', 'HAVE_INTTYPES=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SNPRINTF=1', 'HAVE_VSNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SYS_IOCCOM_H=1'],
+                defines = defines + ['BSD=1', 'HAVE_INTTYPES=1', 'HAVE_LIMITS_H=1', 'HAVE_NET_IF_MEDIA_H=1', 'HAVE_SNPRINTF=1', 'HAVE_SOCKADDR_SA_LEN=1', 'HAVE_STDINT=1', 'HAVE_STRERROR=1', 'HAVE_STRLCPY=1', 'HAVE_SYS_IOCCOM_H=1', 'HAVE_VSNPRINTF=1', 'INET6', '_U_=__attribute__((unused))', '__FreeBSD__=1'],
                 source = objs05_source)
     libbsd_use += ["objs05"]
 
@@ -689,7 +689,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = ['freebsd/contrib/tcpdump', 'freebsd/usr.sbin/tcpdump/tcpdump'] + includes,
-                defines = defines + ['__FreeBSD__=1', 'INET6', '_U_=__attribute__((unused))', 'HAVE_CONFIG_H=1', 'HAVE_NET_PFVAR_H=1'],
+                defines = defines + ['HAVE_CONFIG_H=1', 'HAVE_NET_PFVAR_H=1', 'INET6', '_U_=__attribute__((unused))', '__FreeBSD__=1'],
                 source = objs06_source)
     libbsd_use += ["objs06"]
 
@@ -1140,6 +1140,8 @@ def build(bld):
               'rtemsbsd/telnetd/telnetd-init.c',
               'rtemsbsd/telnetd/telnetd-service.c',
               'rtemsbsd/telnetd/telnetd.c']
+    if bld.env["HAVE_RTEMS_RTEMS_DEBUGGER_H"]:
+        source += ['rtemsbsd/debugger/rtems-debugger-remote-tcp.c']
     if bld.get_env()["RTEMS_ARCH"] == "arm":
         source += ['freebsd/sys/mips/mips/in_cksum.c']
     if bld.get_env()["RTEMS_ARCH"] == "avr":
@@ -1255,6 +1257,17 @@ def build(bld):
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
+
+    if bld.env["HAVE_RTEMS_RTEMS_DEBUGGER_H"]:
+        test_debugger01 = ['testsuite/debugger01/test_main.c']
+        bld.program(target = "debugger01.exe",
+                    features = "cprogram",
+                    cflags = cflags,
+                    includes = includes,
+                    source = test_debugger01,
+                    use = ["bsd"],
+                    lib = ["m", "z"],
+                    install_path = None)
 
     test_dhcpcd01 = ['testsuite/dhcpcd01/test_main.c']
     bld.program(target = "dhcpcd01.exe",

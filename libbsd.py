@@ -163,6 +163,12 @@ def rtems(mm):
         ],
         mm.generator['source']()
     )
+    mod.addRTEMSSourceFiles(
+        [
+            'debugger/rtems-debugger-remote-tcp.c',
+        ],
+        mm.generator['source-if-header']('rtems/rtems-debugger.h')
+    )
     mod.addFile(mm.generator['file']('rtems/rtems-kernel-kvm-symbols.c',
                                      mm.generator['rtems-path'](),
                                      mm.generator['no-convert'](),
@@ -2559,6 +2565,8 @@ def tests(mm):
     mod.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
     mod.addTest(mm.generator['test']('pf01', ['test_main']))
     mod.addTest(mm.generator['test']('pf02', ['test_main'], runTest = False))
+    mod.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
+                                               ['test_main'], runTest = False, netTest = True))
     return mod
 
 #

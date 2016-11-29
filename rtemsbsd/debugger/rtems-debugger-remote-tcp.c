@@ -276,6 +276,7 @@ tcp_remote_disconnect(rtems_debugger_remote* remote)
 
   tcp = (rtems_debugger_remote_tcp*) remote->data;
   close(tcp->fd);
+  tcp->fd = -1;
 
   rtems_debugger_unlock();
 

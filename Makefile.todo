@@ -27,6 +27,7 @@ GENERATED += $(LOCAL_SRC)/mmcbr_if.c
 GENERATED += $(LOCAL_INC)/mmcbus_if.h
 GENERATED += $(LOCAL_SRC)/mmcbus_if.c
 GENERATED += $(LOCAL_SRC)/rtwn-rtl8192cfwT.c
+GENERATED += $(LOCAL_SRC)/runfw.c
 GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
 GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
 
@@ -128,6 +129,11 @@ $(LOCAL_SRC)/rtwn-rtl8192cfwT.c: $(FREEBSD_SRC)/sys/contrib/dev/rtwn/rtwn-rtl819
 	uudecode -o /dev/stdout $< | python firmware-gen.py \
 	    -l "$(FREEBSD_SRC)/sys/contrib/dev/rtwn/LICENSE" \
 	    rtwn-rtl8192cfwT - $@
+
+$(LOCAL_SRC)/runfw.c: $(FREEBSD_SRC)/sys/contrib/dev/run/rt2870.fw.uu
+	uudecode -o /dev/stdout $< | python firmware-gen.py \
+	    -l "$(FREEBSD_SRC)/sys/contrib/dev/run/LICENSE" \
+	    runfw - $@
 
 freebsd/usr.bin/netstat/nl_symbols.c: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
 	awk '\

@@ -827,6 +827,12 @@ def dev_usb_wlan(mm):
             'sys/dev/usb/wlan/if_zydreg.h',
         ]
     )
+    mod.addRTEMSSourceFiles(
+        [
+            'local/runfw.c',
+        ],
+        mm.generator['source']()
+    )
     mod.addKernelSpaceSourceFiles(
         [
             'sys/dev/usb/wlan/if_rsu.c',

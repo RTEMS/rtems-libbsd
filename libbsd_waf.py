@@ -1226,6 +1226,7 @@ def build(bld):
               'rtemsbsd/local/pci_if.c',
               'rtemsbsd/local/pcib_if.c',
               'rtemsbsd/local/rtwn-rtl8192cfwT.c',
+              'rtemsbsd/local/runfw.c',
               'rtemsbsd/local/usb_if.c',
               'rtemsbsd/mdns/mdns-hostname-default.c',
               'rtemsbsd/mdns/mdns.c',

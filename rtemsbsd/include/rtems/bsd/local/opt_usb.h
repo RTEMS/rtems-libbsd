@@ -8,7 +8,7 @@
 
 #define USB_HAVE_USER_IO 0
 
-#define USB_HAVE_MBUF 0
+#define USB_HAVE_MBUF 1
 
 #undef USB_VERBOSE
 

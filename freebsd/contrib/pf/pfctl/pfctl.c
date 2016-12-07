@@ -2100,7 +2100,7 @@ rtems_bsd_command_pfctl(int argc, char *argv[])
 	const void *data_begin;
 	size_t data_size;
 
-	RTEMS_LINKER_SET_ASSIGN_BEGIN(bsd_prog_pfctl, data_begin);
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_pfctl);
 	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_pfctl);
 
 	rtems_bsd_program_lock();

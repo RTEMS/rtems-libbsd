@@ -96,7 +96,7 @@ rtems_shell_cmd_t rtems_shell_HOSTNAME_Command = {
 int
 main(int argc, char *argv[])
 {
-	int ch, sflag;
+	int ch, sflag, dflag;
 	char *p, hostname[MAXHOSTNAMELEN];
 #ifdef __rtems__
 	struct getopt_data getopt_data;
@@ -107,10 +107,11 @@ main(int argc, char *argv[])
 #endif /* __rtems__ */
 
 	sflag = 0;
+	dflag = 0;
 #ifndef __rtems__
-	while ((ch = getopt(argc, argv, "fs")) != -1)
+	while ((ch = getopt(argc, argv, "fsd")) != -1)
 #else /* __rtems__ */
-	while ((ch = getopt(argc, argv, "fms")) != -1)
+	while ((ch = getopt(argc, argv, "fdms")) != -1)
 #endif /* __rtems__ */
 		switch (ch) {
 		case 'f':
@@ -122,6 +123,9 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			sflag = 1;
+			break;
+		case 'd':
+			dflag = 1;
 			break;
 #ifdef __rtems__
 		case 'm':
@@ -135,7 +139,7 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc > 1)
+	if (argc > 1 || (sflag && dflag))
 		usage();
 
 	if (*argv) {
@@ -164,6 +168,10 @@ main(int argc, char *argv[])
 			p = strchr(hostname, '.');
 			if (p != NULL)
 				*p = '\0';
+		} else if (dflag) {
+			p = strchr(hostname, '.');
+			if (p != NULL)
+				strcpy(hostname, ++p);
 		}
 		(void)printf("%s\n", hostname);
 	}
@@ -174,6 +182,10 @@ static void
 usage(void)
 {
 
-	(void)fprintf(stderr, "usage: hostname [-fms] [name-of-host]\n");
+#ifndef __rtems__
+	(void)fprintf(stderr, "usage: hostname [-f] [-s | -d] [name-of-host]\n");
+#else /* __rtems__ */
+	(void)fprintf(stderr, "usage: hostname [-f] [-m | -s | -d] [name-of-host]\n");
+#endif /* __rtems__ */
 	exit(1);
 }

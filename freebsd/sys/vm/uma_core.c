@@ -880,8 +880,7 @@ static void
 keg_drain(uma_keg_t keg)
 {
 	struct slabhead freeslabs = { 0 };
-	uma_slab_t slab;
-	uma_slab_t n;
+	uma_slab_t slab, tmp;
 
 	/*
 	 * We don't want to take pages from statically allocated kegs at this
@@ -897,16 +896,11 @@ keg_drain(uma_keg_t keg)
 	if (keg->uk_free == 0)
 		goto finished;
 
-	slab = LIST_FIRST(&keg->uk_free_slab);
-	while (slab) {
-		n = LIST_NEXT(slab, us_link);
-
+	LIST_FOREACH_SAFE(slab, &keg->uk_free_slab, us_link, tmp) {
 #ifndef __rtems__
-		/* We have no where to free these to */
-		if (slab->us_flags & UMA_SLAB_BOOT) {
-			slab = n;
+		/* We have nowhere to free these to. */
+		if (slab->us_flags & UMA_SLAB_BOOT)
 			continue;
-		}
 #endif /* __rtems__ */
 
 		LIST_REMOVE(slab, us_link);
@@ -917,8 +911,6 @@ keg_drain(uma_keg_t keg)
 			UMA_HASH_REMOVE(&keg->uk_hash, slab, slab->us_data);
 
 		SLIST_INSERT_HEAD(&freeslabs, slab, us_hlink);
-
-		slab = n;
 	}
 finished:
 	KEG_UNLOCK(keg);

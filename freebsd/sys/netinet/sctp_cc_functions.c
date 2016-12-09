@@ -162,17 +162,13 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 						uint32_t srtt;
 
 						srtt = net->lastsa;
-						/*
-						 * lastsa>>3;  we don't need
-						 * to devide ...
-						 */
+						/* lastsa>>3;  we don't need
+						 * to devide ... */
 						if (srtt == 0) {
 							srtt = 1;
 						}
-						/*
-						 * Short Version => Equal to
-						 * Contel Version MBe
-						 */
+						/* Short Version => Equal to
+						 * Contel Version MBe */
 						net->ssthresh = (uint32_t) (((uint64_t) 4 *
 						    (uint64_t) net->mtu *
 						    (uint64_t) net->cwnd) /
@@ -211,7 +207,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					asoc->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					asoc->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					asoc->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				/*
@@ -224,7 +220,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					net->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					net->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					net->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				sctp_timer_stop(SCTP_TIMER_TYPE_SEND,
@@ -407,10 +403,8 @@ cc_bw_decrease(struct sctp_tcb *stcb, struct sctp_nets *net, uint64_t nbw, uint6
 			    net->flight_size,
 			    probepoint);
 			if (net->cc_mod.rtcc.ret_from_eq) {
-				/*
-				 * Switch over to CA if we are less
-				 * aggressive
-				 */
+				/* Switch over to CA if we are less
+				 * aggressive */
 				net->ssthresh = net->cwnd - 1;
 				net->partial_bytes_acked = 0;
 			}
@@ -786,9 +780,9 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 			/*
 			 * At this point our bw_bytes has been updated by
 			 * incoming sack information.
-			 * 
+			 *
 			 * But our bw may not yet be set.
-			 * 
+			 *
 			 */
 			if ((net->cc_mod.rtcc.new_tot_time / 1000) > 0) {
 				nbw = net->cc_mod.rtcc.bw_bytes / (net->cc_mod.rtcc.new_tot_time / 1000);
@@ -853,10 +847,8 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 						}
 						break;
 					case SCTP_CMT_RPV2:
-						/*
-						 * lastsa>>3;  we don't need
-						 * to divide ...
-						 */
+						/* lastsa>>3;  we don't need
+						 * to divide ... */
 						srtt = net->lastsa;
 						if (srtt == 0) {
 							srtt = 1;
@@ -940,10 +932,8 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 						}
 						break;
 					case SCTP_CMT_RPV2:
-						/*
-						 * lastsa>>3;  we don't need
-						 * to divide ...
-						 */
+						/* lastsa>>3;  we don't need
+						 * to divide ... */
 						srtt = net->lastsa;
 						if (srtt == 0) {
 							srtt = 1;
@@ -1110,10 +1100,8 @@ sctp_cwnd_update_after_ecn_echo_common(struct sctp_tcb *stcb, struct sctp_nets *
 				sctp_log_cwnd(stcb, net, (net->cwnd - old_cwnd), SCTP_CWND_LOG_FROM_SAT);
 			}
 		} else {
-			/*
-			 * Further tuning down required over the drastic
-			 * original cut
-			 */
+			/* Further tuning down required over the drastic
+			 * original cut */
 			net->ssthresh -= (net->mtu * num_pkt_lost);
 			net->cwnd -= (net->mtu * num_pkt_lost);
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_MONITOR_ENABLE) {
@@ -1127,10 +1115,8 @@ sctp_cwnd_update_after_ecn_echo_common(struct sctp_tcb *stcb, struct sctp_nets *
 			net->ssthresh = net->cwnd / 2;
 			if (net->ssthresh < net->mtu) {
 				net->ssthresh = net->mtu;
-				/*
-				 * here back off the timer as well, to slow
-				 * us down
-				 */
+				/* here back off the timer as well, to slow
+				 * us down */
 				net->RTO <<= 1;
 			}
 			net->cwnd = net->ssthresh;
@@ -1377,10 +1363,8 @@ sctp_cwnd_new_rtcc_transmission_begins(struct sctp_tcb *stcb,
 
 			cwnd_in_mtu = SCTP_BASE_SYSCTL(sctp_initial_cwnd);
 			if (cwnd_in_mtu == 0) {
-				/*
-				 * Using 0 means that the value of RFC 4960
-				 * is used.
-				 */
+				/* Using 0 means that the value of RFC 4960
+				 * is used. */
 				cwnd = min((net->mtu * 4), max((2 * net->mtu), SCTP_INITIAL_CWND));
 			} else {
 				/*
@@ -1392,10 +1376,8 @@ sctp_cwnd_new_rtcc_transmission_begins(struct sctp_tcb *stcb,
 				cwnd = (net->mtu - sizeof(struct sctphdr)) * cwnd_in_mtu;
 			}
 			if (net->cwnd > cwnd) {
-				/*
-				 * Only set if we are not a timeout (i.e.
-				 * down to 1 mtu)
-				 */
+				/* Only set if we are not a timeout (i.e.
+				 * down to 1 mtu) */
 				net->cwnd = cwnd;
 			}
 		}
@@ -1718,7 +1700,7 @@ sctp_hs_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					asoc->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					asoc->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					asoc->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				/*
@@ -1731,7 +1713,7 @@ sctp_hs_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					net->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					net->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					net->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				sctp_timer_stop(SCTP_TIMER_TYPE_SEND,
@@ -2025,10 +2007,8 @@ htcp_param_update(struct sctp_nets *net)
 	htcp_beta_update(&net->cc_mod.htcp_ca, minRTT, maxRTT);
 	htcp_alpha_update(&net->cc_mod.htcp_ca);
 
-	/*
-	 * add slowly fading memory for maxRTT to accommodate routing
-	 * changes etc
-	 */
+	/* add slowly fading memory for maxRTT to accommodate routing
+	 * changes etc */
 	if (minRTT > 0 && maxRTT > minRTT)
 		net->cc_mod.htcp_ca.maxRTT = minRTT + ((maxRTT - minRTT) * 95) / 100;
 }
@@ -2111,7 +2091,6 @@ htcp_min_cwnd(struct sctp_tcb *stcb, struct sctp_nets *net)
 {
 	return (net->ssthresh);
 }
-
 #endif
 
 static void
@@ -2251,7 +2230,7 @@ sctp_htcp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					asoc->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					asoc->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					asoc->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				/*
@@ -2264,7 +2243,7 @@ sctp_htcp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					/* Mark end of the window */
 					net->fast_recovery_tsn = asoc->sending_seq - 1;
 				} else {
-					net->fast_recovery_tsn = lchk->rec.data.TSN_seq - 1;
+					net->fast_recovery_tsn = lchk->rec.data.tsn - 1;
 				}
 
 				sctp_timer_stop(SCTP_TIMER_TYPE_SEND,

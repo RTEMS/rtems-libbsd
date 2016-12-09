@@ -12,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -986,7 +986,7 @@ m_devget(char *buf, int totlen, int off, struct ifnet *ifp,
 				len = MHLEN;
 
 				/* Place initial small packet/header at end of mbuf */
-				if (m && totlen + off + max_linkhdr <= MLEN) {
+				if (m && totlen + off + max_linkhdr <= MHLEN) {
 					m->m_data += max_linkhdr;
 					len -= max_linkhdr;
 				}
@@ -1338,7 +1338,7 @@ nospace:
 /*
  * Defragment an mbuf chain, returning at most maxfrags separate
  * mbufs+clusters.  If this is not possible NULL is returned and
- * the original mbuf chain is left in it's present (potentially
+ * the original mbuf chain is left in its present (potentially
  * modified) state.  We use two techniques: collapsing consecutive
  * mbufs and replacing consecutive mbufs by a cluster.
  *

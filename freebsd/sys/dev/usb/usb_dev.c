@@ -1161,7 +1161,7 @@ usb_filter_write(struct knote *kn, long hint)
 
 	f = kn->kn_hook;
 
-	mtx_assert(f->priv_mtx, MA_OWNED);
+	USB_MTX_ASSERT(f->priv_mtx, MA_OWNED);
 
 	cpd = f->curr_cpd;
 	if (cpd == NULL) {
@@ -1202,7 +1202,7 @@ usb_filter_read(struct knote *kn, long hint)
 
 	f = kn->kn_hook;
 
-	mtx_assert(f->priv_mtx, MA_OWNED);
+	USB_MTX_ASSERT(f->priv_mtx, MA_OWNED);
 
 	cpd = f->curr_cpd;
 	if (cpd == NULL) {
@@ -1732,7 +1732,7 @@ usb_fifo_wait(struct usb_fifo *f)
 {
 	int err;
 
-	mtx_assert(f->priv_mtx, MA_OWNED);
+	USB_MTX_ASSERT(f->priv_mtx, MA_OWNED);
 
 	if (f->flag_iserror) {
 		/* we are gone */

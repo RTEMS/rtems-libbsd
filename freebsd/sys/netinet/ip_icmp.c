@@ -459,6 +459,8 @@ icmp_input(struct mbuf **mp, int *offp, int proto)
 			 * Treat subcodes 2,3 as immediate RST
 			 */
 			case ICMP_UNREACH_PROTOCOL:
+				code = PRC_UNREACH_PROTOCOL;
+				break;
 			case ICMP_UNREACH_PORT:
 				code = PRC_UNREACH_PORT;
 				break;

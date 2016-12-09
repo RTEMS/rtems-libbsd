@@ -257,7 +257,6 @@ sctp_log_mbc(struct mbuf *m, int from)
 		sctp_log_mb(mat, from);
 	}
 }
-
 #endif
 
 void
@@ -271,11 +270,11 @@ sctp_log_strm_del(struct sctp_queued_to_read *control, struct sctp_queued_to_rea
 	}
 	sctp_clog.x.strlog.stcb = control->stcb;
 	sctp_clog.x.strlog.n_tsn = control->sinfo_tsn;
-	sctp_clog.x.strlog.n_sseq = control->sinfo_ssn;
+	sctp_clog.x.strlog.n_sseq = (uint16_t) control->mid;
 	sctp_clog.x.strlog.strm = control->sinfo_stream;
 	if (poschk != NULL) {
 		sctp_clog.x.strlog.e_tsn = poschk->sinfo_tsn;
-		sctp_clog.x.strlog.e_sseq = poschk->sinfo_ssn;
+		sctp_clog.x.strlog.e_sseq = (uint16_t) poschk->mid;
 	} else {
 		sctp_clog.x.strlog.e_tsn = 0;
 		sctp_clog.x.strlog.e_sseq = 0;
@@ -449,7 +448,6 @@ sctp_log_mbcnt(uint8_t from, uint32_t total_oq, uint32_t book, uint32_t total_mb
 	    sctp_clog.x.misc.log3,
 	    sctp_clog.x.misc.log4);
 }
-
 #endif
 
 void
@@ -959,10 +957,8 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	 * caller in the sctp_aloc_assoc() function.
 	 */
 	int i;
-
 #if defined(SCTP_DETAILED_STR_STATS)
 	int j;
-
 #endif
 
 	asoc = &stcb->asoc;
@@ -1137,7 +1133,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		asoc->strmout[i].abandoned_sent[0] = 0;
 		asoc->strmout[i].abandoned_unsent[0] = 0;
 #endif
-		asoc->strmout[i].stream_no = i;
+		asoc->strmout[i].sid = i;
 		asoc->strmout[i].last_msg_incomplete = 0;
 		asoc->strmout[i].state = SCTP_STREAM_OPENING;
 		asoc->ss_functions.sctp_ss_init_stream(stcb, &asoc->strmout[i], NULL);
@@ -1488,10 +1484,8 @@ sctp_handle_addr_wq(void)
 		    sctp_asconf_iterator_end, NULL, 0);
 		if (ret) {
 			SCTP_PRINTF("Failed to initiate iterator for handle_addr_wq\n");
-			/*
-			 * Freeing if we are stopping or put back on the
-			 * addr_wq.
-			 */
+			/* Freeing if we are stopping or put back on the
+			 * addr_wq. */
 			if (SCTP_BASE_VAR(sctp_pcb_initialized) == 0) {
 				sctp_asconf_iterator_end(asc, 0);
 			} else {
@@ -1514,10 +1508,8 @@ sctp_timeout_handler(void *t)
 	struct sctp_nets *net;
 	struct sctp_timer *tmr;
 	struct mbuf *op_err;
-
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
-
 #endif
 	int did_output;
 	int type;
@@ -2493,10 +2485,8 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	/* compute rtt in ms */
 	rtt = (int32_t) (net->rtt / 1000);
 	if ((asoc->cc_functions.sctp_rtt_calculated) && (rtt_from_sack == SCTP_RTT_FROM_DATA)) {
-		/*
-		 * Tell the CC module that a new update has just occurred
-		 * from a sack
-		 */
+		/* Tell the CC module that a new update has just occurred
+		 * from a sack */
 		(*asoc->cc_functions.sctp_rtt_calculated) (stcb, net, &now);
 	}
 	/*
@@ -2688,10 +2678,8 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 	unsigned int notif_len;
 	uint16_t abort_len;
 	unsigned int i;
-
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
-
 #endif
 
 	if (stcb == NULL) {
@@ -2989,9 +2977,9 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 		ssfe->ssfe_length = (uint32_t) (notifhdr_len + payload_len);
 		ssfe->ssfe_error = error;
 		/* not exactly what the user sent in, but should be close :) */
-		ssfe->ssfe_info.snd_sid = chk->rec.data.stream_number;
+		ssfe->ssfe_info.snd_sid = chk->rec.data.sid;
 		ssfe->ssfe_info.snd_flags = chk->rec.data.rcv_flags;
-		ssfe->ssfe_info.snd_ppid = chk->rec.data.payloadtype;
+		ssfe->ssfe_info.snd_ppid = chk->rec.data.ppid;
 		ssfe->ssfe_info.snd_context = chk->rec.data.context;
 		ssfe->ssfe_info.snd_assoc_id = sctp_get_associd(stcb);
 		ssfe->ssfe_assoc_id = sctp_get_associd(stcb);
@@ -3007,10 +2995,10 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 		ssf->ssf_length = (uint32_t) (notifhdr_len + payload_len);
 		ssf->ssf_error = error;
 		/* not exactly what the user sent in, but should be close :) */
-		ssf->ssf_info.sinfo_stream = chk->rec.data.stream_number;
-		ssf->ssf_info.sinfo_ssn = (uint16_t) chk->rec.data.stream_seq;
+		ssf->ssf_info.sinfo_stream = chk->rec.data.sid;
+		ssf->ssf_info.sinfo_ssn = (uint16_t) chk->rec.data.mid;
 		ssf->ssf_info.sinfo_flags = chk->rec.data.rcv_flags;
-		ssf->ssf_info.sinfo_ppid = chk->rec.data.payloadtype;
+		ssf->ssf_info.sinfo_ppid = chk->rec.data.ppid;
 		ssf->ssf_info.sinfo_context = chk->rec.data.context;
 		ssf->ssf_info.sinfo_assoc_id = sctp_get_associd(stcb);
 		ssf->ssf_assoc_id = sctp_get_associd(stcb);
@@ -3093,7 +3081,7 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 		ssfe->ssfe_length = (uint32_t) (notifhdr_len + sp->length);
 		ssfe->ssfe_error = error;
 		/* not exactly what the user sent in, but should be close :) */
-		ssfe->ssfe_info.snd_sid = sp->stream;
+		ssfe->ssfe_info.snd_sid = sp->sid;
 		if (sp->some_taken) {
 			ssfe->ssfe_info.snd_flags = SCTP_DATA_LAST_FRAG;
 		} else {
@@ -3111,7 +3099,7 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 		ssf->ssf_length = (uint32_t) (notifhdr_len + sp->length);
 		ssf->ssf_error = error;
 		/* not exactly what the user sent in, but should be close :) */
-		ssf->ssf_info.sinfo_stream = sp->stream;
+		ssf->ssf_info.sinfo_stream = sp->sid;
 		ssf->ssf_info.sinfo_ssn = 0;
 		if (sp->some_taken) {
 			ssf->ssf_info.sinfo_flags = SCTP_DATA_LAST_FRAG;
@@ -3861,11 +3849,11 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 		TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
 		asoc->sent_queue_cnt--;
 		if (chk->sent != SCTP_DATAGRAM_NR_ACKED) {
-			if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
-				asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
+			if (asoc->strmout[chk->rec.data.sid].chunks_on_queues > 0) {
+				asoc->strmout[chk->rec.data.sid].chunks_on_queues--;
 #ifdef INVARIANTS
 			} else {
-				panic("No chunks on the queues for sid %u.", chk->rec.data.stream_number);
+				panic("No chunks on the queues for sid %u.", chk->rec.data.sid);
 #endif
 			}
 		}
@@ -3885,11 +3873,11 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 	TAILQ_FOREACH_SAFE(chk, &asoc->send_queue, sctp_next, nchk) {
 		TAILQ_REMOVE(&asoc->send_queue, chk, sctp_next);
 		asoc->send_queue_cnt--;
-		if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
-			asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
+		if (asoc->strmout[chk->rec.data.sid].chunks_on_queues > 0) {
+			asoc->strmout[chk->rec.data.sid].chunks_on_queues--;
 #ifdef INVARIANTS
 		} else {
-			panic("No chunks on the queues for sid %u.", chk->rec.data.stream_number);
+			panic("No chunks on the queues for sid %u.", chk->rec.data.sid);
 #endif
 		}
 		if (chk->data != NULL) {
@@ -3977,25 +3965,22 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
     uint32_t vrf_id, uint16_t port)
 {
 	uint32_t vtag;
-
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
-
 #endif
 
 	vtag = 0;
 	if (stcb != NULL) {
-		/* We have a TCB to abort, send notification too */
 		vtag = stcb->asoc.peer_vtag;
-		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
-		/* get the assoc vrf id and table id */
 		vrf_id = stcb->asoc.vrf_id;
-		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 	}
 	sctp_send_abort(m, iphlen, src, dst, sh, vtag, op_err,
 	    mflowtype, mflowid, inp->fibnum,
 	    vrf_id, port);
 	if (stcb != NULL) {
+		/* We have a TCB to abort, send notification too */
+		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
+		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 		/* Ok, now lets free it */
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
@@ -4017,7 +4002,6 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 	}
 }
-
 #ifdef SCTP_ASOCLOG_OF_TSNS
 void
 sctp_print_out_track_log(struct sctp_tcb *stcb)
@@ -4079,7 +4063,6 @@ none_in:
 	}
 #endif
 }
-
 #endif
 
 void
@@ -4093,7 +4076,6 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 {
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
-
 #endif
 
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -4111,16 +4093,16 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	} else {
 		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 	}
-	/* notify the ulp */
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
-		sctp_abort_notification(stcb, 0, 0, NULL, so_locked);
-	}
 	/* notify the peer */
 	sctp_send_abort_tcb(stcb, op_err, so_locked);
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 	if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_OPEN) ||
 	    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 		SCTP_STAT_DECR_GAUGE32(sctps_currestab);
+	}
+	/* notify the ulp */
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
+		sctp_abort_notification(stcb, 0, 0, NULL, so_locked);
 	}
 	/* now free the asoc */
 #ifdef SCTP_ASOCLOG_OF_TSNS
@@ -4305,7 +4287,6 @@ sctp_recover_scope(struct sockaddr_in6 *addr, struct sockaddr_in6 *store)
 	}
 	return (addr);
 }
-
 #endif
 
 /*
@@ -4359,7 +4340,6 @@ sctp_print_address(struct sockaddr *sa)
 {
 #ifdef INET6
 	char ip6buf[INET6_ADDRSTRLEN];
-
 #endif
 
 	switch (sa->sa_family) {
@@ -4712,25 +4692,26 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 	struct sctp_stream_out *strq;
 	struct sctp_tmit_chunk *chk = NULL, *tp2;
 	struct sctp_stream_queue_pending *sp;
-	uint16_t stream = 0, seq = 0;
+	uint32_t mid;
+	uint16_t sid;
 	uint8_t foundeom = 0;
 	int ret_sz = 0;
 	int notdone;
 	int do_wakeup_routine = 0;
 
-	stream = tp1->rec.data.stream_number;
-	seq = tp1->rec.data.stream_seq;
+	sid = tp1->rec.data.sid;
+	mid = tp1->rec.data.mid;
 	if (sent || !(tp1->rec.data.rcv_flags & SCTP_DATA_FIRST_FRAG)) {
 		stcb->asoc.abandoned_sent[0]++;
 		stcb->asoc.abandoned_sent[PR_SCTP_POLICY(tp1->flags)]++;
-		stcb->asoc.strmout[stream].abandoned_sent[0]++;
+		stcb->asoc.strmout[sid].abandoned_sent[0]++;
 #if defined(SCTP_DETAILED_STR_STATS)
 		stcb->asoc.strmout[stream].abandoned_sent[PR_SCTP_POLICY(tp1->flags)]++;
 #endif
 	} else {
 		stcb->asoc.abandoned_unsent[0]++;
 		stcb->asoc.abandoned_unsent[PR_SCTP_POLICY(tp1->flags)]++;
-		stcb->asoc.strmout[stream].abandoned_unsent[0]++;
+		stcb->asoc.strmout[sid].abandoned_unsent[0]++;
 #if defined(SCTP_DETAILED_STR_STATS)
 		stcb->asoc.strmout[stream].abandoned_unsent[PR_SCTP_POLICY(tp1->flags)]++;
 #endif
@@ -4784,8 +4765,8 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 		 * sent queue.
 		 */
 		TAILQ_FOREACH_SAFE(tp1, &stcb->asoc.send_queue, sctp_next, tp2) {
-			if ((tp1->rec.data.stream_number != stream) ||
-			    (tp1->rec.data.stream_seq != seq)) {
+			if ((tp1->rec.data.sid != sid) ||
+			    (!SCTP_MID_EQ(stcb->asoc.idata_supported, tp1->rec.data.mid, mid))) {
 				break;
 			}
 			/*
@@ -4813,10 +4794,8 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 			do_wakeup_routine = 1;
 			tp1->sent = SCTP_FORWARD_TSN_SKIP;
 			TAILQ_REMOVE(&stcb->asoc.send_queue, tp1, sctp_next);
-			/*
-			 * on to the sent queue so we can wait for it to be
-			 * passed by.
-			 */
+			/* on to the sent queue so we can wait for it to be
+			 * passed by. */
 			TAILQ_INSERT_TAIL(&stcb->asoc.sent_queue, tp1,
 			    sctp_next);
 			stcb->asoc.send_queue_cnt--;
@@ -4829,7 +4808,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 		 * stream out queue.. yuck.
 		 */
 		SCTP_TCB_SEND_LOCK(stcb);
-		strq = &stcb->asoc.strmout[stream];
+		strq = &stcb->asoc.strmout[sid];
 		sp = TAILQ_FIRST(&strq->outqueue);
 		if (sp != NULL) {
 			sp->discard_rest = 1;
@@ -4856,23 +4835,23 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 				chk->asoc = &stcb->asoc;
 				if (stcb->asoc.idata_supported == 0) {
 					if (sp->sinfo_flags & SCTP_UNORDERED) {
-						chk->rec.data.stream_seq = 0;
+						chk->rec.data.mid = 0;
 					} else {
-						chk->rec.data.stream_seq = strq->next_mid_ordered;
+						chk->rec.data.mid = strq->next_mid_ordered;
 					}
 				} else {
 					if (sp->sinfo_flags & SCTP_UNORDERED) {
-						chk->rec.data.stream_seq = strq->next_mid_unordered;
+						chk->rec.data.mid = strq->next_mid_unordered;
 					} else {
-						chk->rec.data.stream_seq = strq->next_mid_ordered;
+						chk->rec.data.mid = strq->next_mid_ordered;
 					}
 				}
-				chk->rec.data.stream_number = sp->stream;
-				chk->rec.data.payloadtype = sp->ppid;
+				chk->rec.data.sid = sp->sid;
+				chk->rec.data.ppid = sp->ppid;
 				chk->rec.data.context = sp->context;
 				chk->flags = sp->act_flags;
 				chk->whoTo = NULL;
-				chk->rec.data.TSN_seq = atomic_fetchadd_int(&stcb->asoc.sending_seq, 1);
+				chk->rec.data.tsn = atomic_fetchadd_int(&stcb->asoc.sending_seq, 1);
 				strq->chunks_on_queues++;
 				TAILQ_INSERT_TAIL(&stcb->asoc.sent_queue, chk, sctp_next);
 				stcb->asoc.sent_queue_cnt++;
@@ -5190,7 +5169,7 @@ sctp_sorecvmsg(struct socket *so,
 	 * mp=NULL thus uio is the copy method to userland) MSG_WAITALL - ??
 	 * On the way out we may send out any combination of:
 	 * MSG_NOTIFICATION MSG_EOR
-	 * 
+	 *
 	 */
 	struct sctp_inpcb *inp = NULL;
 	int my_len = 0;
@@ -5309,10 +5288,8 @@ restart_nosblocks:
 				 * connect.
 				 */
 				if (inp->sctp_flags & SCTP_PCB_FLAGS_WAS_ABORTED) {
-					/*
-					 * You were aborted, passive side
-					 * always hits here
-					 */
+					/* You were aborted, passive side
+					 * always hits here */
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, ECONNRESET);
 					error = ECONNRESET;
 				}
@@ -5411,10 +5388,8 @@ restart_nosblocks:
 	}
 	if ((control->length == 0) &&
 	    (control->end_added == 1)) {
-		/*
-		 * Do we also need to check for (control->pdapi_aborted ==
-		 * 1)?
-		 */
+		/* Do we also need to check for (control->pdapi_aborted ==
+		 * 1)? */
 		if (hold_rlock == 0) {
 			hold_rlock = 1;
 			SCTP_INP_READ_LOCK(inp);
@@ -5555,7 +5530,7 @@ found_one:
 	/* First lets get off the sinfo and sockaddr info */
 	if ((sinfo != NULL) && (filling_sinfo != 0)) {
 		sinfo->sinfo_stream = control->sinfo_stream;
-		sinfo->sinfo_ssn = (uint16_t) control->sinfo_ssn;
+		sinfo->sinfo_ssn = (uint16_t) control->mid;
 		sinfo->sinfo_flags = control->sinfo_flags;
 		sinfo->sinfo_ppid = control->sinfo_ppid;
 		sinfo->sinfo_context = control->sinfo_context;
@@ -5631,7 +5606,7 @@ found_one:
 		entry = &inp->readlog[index];
 		entry->vtag = control->sinfo_assoc_id;
 		entry->strm = control->sinfo_stream;
-		entry->seq = control->sinfo_ssn;
+		entry->seq = (uint16_t) control->mid;
 		entry->sz = control->length;
 		entry->flgs = control->sinfo_flags;
 	}
@@ -5757,10 +5732,8 @@ get_more_data:
 					atomic_subtract_int(&control->length, cp_len);
 					control->data = sctp_m_free(m);
 					m = control->data;
-					/*
-					 * been through it all, must hold sb
-					 * lock ok to null tail
-					 */
+					/* been through it all, must hold sb
+					 * lock ok to null tail */
 					if (control->data == NULL) {
 #ifdef INVARIANTS
 						if ((control->end_added == 0) ||
@@ -5979,10 +5952,8 @@ wait_some_more:
 			 */
 			SCTP_INP_READ_LOCK(inp);
 			if ((control->length > 0) && (control->data == NULL)) {
-				/*
-				 * big trouble.. we have the lock and its
-				 * corrupt?
-				 */
+				/* big trouble.. we have the lock and its
+				 * corrupt? */
 #ifdef INVARIANTS
 				panic("Impossible data==NULL length !=0");
 #endif
@@ -6273,14 +6244,11 @@ sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 	struct sctp_inpcb *inp;
 	struct sockaddr *sa;
 	size_t incr = 0;
-
 #ifdef INET
 	struct sockaddr_in *sin;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
-
 #endif
 
 	sa = addr;
@@ -6402,6 +6370,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 #endif
 		default:
 			*totaddr = i;
+			incr = 0;
 			/* we are done */
 			break;
 		}
@@ -6435,10 +6404,8 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
     uint32_t vrf_id, int *error, void *p)
 {
 	struct sockaddr *addr_touse;
-
 #if defined(INET) && defined(INET6)
 	struct sockaddr_in sin;
-
 #endif
 
 	/* see if we're bound all already! */
@@ -6567,10 +6534,8 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
     uint32_t vrf_id, int *error)
 {
 	struct sockaddr *addr_touse;
-
 #if defined(INET) && defined(INET6)
 	struct sockaddr_in sin;
-
 #endif
 
 	/* see if we're bound all already! */
@@ -6584,7 +6549,6 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 	if (sa->sa_family == AF_INET6) {
 #ifdef INET
 		struct sockaddr_in6 *sin6;
-
 #endif
 
 		if (sa->sa_len != sizeof(struct sockaddr_in6)) {
@@ -6655,14 +6619,11 @@ int
 sctp_local_addr_count(struct sctp_tcb *stcb)
 {
 	int loopback_scope;
-
 #if defined(INET)
 	int ipv4_local_scope, ipv4_addr_legal;
-
 #endif
 #if defined (INET6)
 	int local_scope, site_scope, ipv6_addr_legal;
-
 #endif
 	struct sctp_vrf *vrf;
 	struct sctp_ifn *sctp_ifn;
@@ -6707,10 +6668,8 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 
 						sin = &sctp_ifa->address.sin;
 						if (sin->sin_addr.s_addr == 0) {
-							/*
-							 * skip unspecified
-							 * addrs
-							 */
+							/* skip unspecified
+							 * addrs */
 							continue;
 						}
 						if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
@@ -6747,19 +6706,14 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 							if (sin6->sin6_scope_id == 0) {
 								if (sa6_recoverscope(sin6) != 0)
 									/*
-									 * 
+									 *
 									 * bad
-									 * 
-									 * li
-									 * nk
-									 * 
-									 * loc
-									 * al
-									 * 
-									 * add
-									 * re
-									 * ss
-									 * */
+									 * link
+									 *
+									 * local
+									 *
+									 * address
+									 */
 									continue;
 							}
 						}
@@ -6831,10 +6785,8 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *inp,
     const struct sockaddr *sa SCTP_UNUSED, void *ctx SCTP_UNUSED)
 {
 	struct ip *iph;
-
 #ifdef INET6
 	struct ip6_hdr *ip6;
-
 #endif
 	struct mbuf *sp, *last;
 	struct udphdr *uhdr;
@@ -7019,7 +6971,6 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 	}
 	return;
 }
-
 #endif
 
 #ifdef INET6
@@ -7161,7 +7112,6 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 		}
 	}
 }
-
 #endif
 
 void
@@ -7190,14 +7140,11 @@ sctp_over_udp_start(void)
 {
 	uint16_t port;
 	int ret;
-
 #ifdef INET
 	struct sockaddr_in sin;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 sin6;
-
 #endif
 	/*
 	 * This function assumes sysctl caller holds sctp_sysctl_info_lock()

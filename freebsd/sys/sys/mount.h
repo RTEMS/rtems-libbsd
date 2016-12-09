@@ -147,6 +147,7 @@ struct vfsopt {
  * put on a doubly linked list.
  *
  * Lock reference:
+ * 	l - mnt_listmtx
  *	m - mountlist_mtx
  *	i - interlock
  *	v - vnode freelist mutex
@@ -166,8 +167,6 @@ struct mount {
 	int		mnt_ref;		/* (i) Reference count */
 	struct vnodelst	mnt_nvnodelist;		/* (i) list of vnodes */
 	int		mnt_nvnodelistsize;	/* (i) # of vnodes */
-	struct vnodelst	mnt_activevnodelist;	/* (v) list of active vnodes */
-	int		mnt_activevnodelistsize;/* (v) # of active vnodes */
 	int		mnt_writeopcount;	/* (i) write syscalls pending */
 	int		mnt_kern_flag;		/* (i) kernel only flags */
 	uint64_t	mnt_flag;		/* (i) flags shared with user */
@@ -188,6 +187,11 @@ struct mount {
 	struct thread	*mnt_susp_owner;	/* (i) thread owning suspension */
 #define	mnt_endzero	mnt_gjprovider
 	char		*mnt_gjprovider;	/* gjournal provider name */
+	struct mtx	mnt_listmtx;
+	struct vnodelst	mnt_activevnodelist;	/* (l) list of active vnodes */
+	int		mnt_activevnodelistsize;/* (l) # of active vnodes */
+	struct vnodelst	mnt_tmpfreevnodelist;	/* (l) list of free vnodes */
+	int		mnt_tmpfreevnodelistsize;/* (l) # of free vnodes */
 	struct lock	mnt_explock;		/* vfs_export walkers lock */
 	TAILQ_ENTRY(mount) mnt_upper_link;	/* (m) we in the all uppers */
 	TAILQ_HEAD(, mount) mnt_uppers;		/* (m) upper mounts over us*/
@@ -366,7 +370,8 @@ void          __mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *);
 #define	MNTK_SUSPEND	0x08000000	/* request write suspension */
 #define	MNTK_SUSPEND2	0x04000000	/* block secondary writes */
 #define	MNTK_SUSPENDED	0x10000000	/* write operations are suspended */
-#define	MNTK_UNUSED1	0x20000000
+#define	MNTK_NULL_NOCACHE	0x20000000 /* auto disable cache for nullfs
+					      mounts over this fs */
 #define MNTK_LOOKUP_SHARED	0x40000000 /* FS supports shared lock lookups */
 #define	MNTK_NOKNOTE	0x80000000	/* Don't send KNOTEs from VOP hooks */
 

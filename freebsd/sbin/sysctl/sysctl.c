@@ -677,9 +677,6 @@ S_vmtotal(size_t l2, void *p)
 }
 
 #ifdef __amd64__
-#define efi_next_descriptor(ptr, size) \
-	((struct efi_md *)(((uint8_t *) ptr) + size))
-
 static int
 S_efi_map(size_t l2, void *p)
 {

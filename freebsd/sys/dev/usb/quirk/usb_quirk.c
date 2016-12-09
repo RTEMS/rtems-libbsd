@@ -661,7 +661,7 @@ usb_test_quirk_by_info(const struct usbd_lookup_info *info, uint16_t quirk)
 	if (quirk == UQ_NONE)
 		goto done;
 
-	mtx_lock(&usb_quirk_mtx);
+	USB_MTX_LOCK(&usb_quirk_mtx);
 
 	for (x = 0; x != USB_DEV_QUIRKS_MAX; x++) {
 		/* see if quirk information does not match */
@@ -685,13 +685,13 @@ usb_test_quirk_by_info(const struct usbd_lookup_info *info, uint16_t quirk)
 		/* lookup quirk */
 		for (y = 0; y != USB_SUB_QUIRKS_MAX; y++) {
 			if (usb_quirks[x].quirks[y] == quirk) {
-				mtx_unlock(&usb_quirk_mtx);
+				USB_MTX_UNLOCK(&usb_quirk_mtx);
 				DPRINTF("Found quirk '%s'.\n", usb_quirkstr(quirk));
 				return (1);
 			}
 		}
 	}
-	mtx_unlock(&usb_quirk_mtx);
+	USB_MTX_UNLOCK(&usb_quirk_mtx);
 done:
 	return (0);			/* no quirk match */
 }
@@ -702,7 +702,7 @@ usb_quirk_get_entry(uint16_t vid, uint16_t pid,
 {
 	uint16_t x;
 
-	mtx_assert(&usb_quirk_mtx, MA_OWNED);
+	USB_MTX_ASSERT(&usb_quirk_mtx, MA_OWNED);
 
 	if ((vid | pid | lo_rev | hi_rev) == 0) {
 		/* all zero - special case */
@@ -770,7 +770,7 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 		if (y >= USB_DEV_QUIRKS_MAX) {
 			return (EINVAL);
 		}
-		mtx_lock(&usb_quirk_mtx);
+		USB_MTX_LOCK(&usb_quirk_mtx);
 		/* copy out data */
 		pgq->vid = usb_quirks[y].vid;
 		pgq->pid = usb_quirks[y].pid;
@@ -779,7 +779,7 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 		strlcpy(pgq->quirkname,
 		    usb_quirkstr(usb_quirks[y].quirks[x]),
 		    sizeof(pgq->quirkname));
-		mtx_unlock(&usb_quirk_mtx);
+		USB_MTX_UNLOCK(&usb_quirk_mtx);
 		return (0);		/* success */
 
 	case USB_QUIRK_NAME_GET:
@@ -812,11 +812,11 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 		if (y == UQ_NONE) {
 			return (EINVAL);
 		}
-		mtx_lock(&usb_quirk_mtx);
+		USB_MTX_LOCK(&usb_quirk_mtx);
 		pqe = usb_quirk_get_entry(pgq->vid, pgq->pid,
 		    pgq->bcdDeviceLow, pgq->bcdDeviceHigh, 1);
 		if (pqe == NULL) {
-			mtx_unlock(&usb_quirk_mtx);
+			USB_MTX_UNLOCK(&usb_quirk_mtx);
 			return (EINVAL);
 		}
 		for (x = 0; x != USB_SUB_QUIRKS_MAX; x++) {
@@ -825,7 +825,7 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 				break;
 			}
 		}
-		mtx_unlock(&usb_quirk_mtx);
+		USB_MTX_UNLOCK(&usb_quirk_mtx);
 		if (x == USB_SUB_QUIRKS_MAX) {
 			return (ENOMEM);
 		}
@@ -850,11 +850,11 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 		if (y == UQ_NONE) {
 			return (EINVAL);
 		}
-		mtx_lock(&usb_quirk_mtx);
+		USB_MTX_LOCK(&usb_quirk_mtx);
 		pqe = usb_quirk_get_entry(pgq->vid, pgq->pid,
 		    pgq->bcdDeviceLow, pgq->bcdDeviceHigh, 0);
 		if (pqe == NULL) {
-			mtx_unlock(&usb_quirk_mtx);
+			USB_MTX_UNLOCK(&usb_quirk_mtx);
 			return (EINVAL);
 		}
 		for (x = 0; x != USB_SUB_QUIRKS_MAX; x++) {
@@ -864,7 +864,7 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 			}
 		}
 		if (x == USB_SUB_QUIRKS_MAX) {
-			mtx_unlock(&usb_quirk_mtx);
+			USB_MTX_UNLOCK(&usb_quirk_mtx);
 			return (ENOMEM);
 		}
 		for (x = 0; x != USB_SUB_QUIRKS_MAX; x++) {
@@ -876,7 +876,7 @@ usb_quirk_ioctl(unsigned long cmd, caddr_t data,
 			/* all quirk entries are unused - release */
 			memset(pqe, 0, sizeof(*pqe));
 		}
-		mtx_unlock(&usb_quirk_mtx);
+		USB_MTX_UNLOCK(&usb_quirk_mtx);
 		return (0);		/* success */
 
 	default:
@@ -967,14 +967,14 @@ usb_quirk_add_entry_from_str(const char *name, const char *env)
 			printf("%s: Too many USB quirks, only %d allowed!\n",
 			    name, USB_SUB_QUIRKS_MAX);
 		}
-		mtx_lock(&usb_quirk_mtx);
+		USB_MTX_LOCK(&usb_quirk_mtx);
 		new = usb_quirk_get_entry(entry.vid, entry.pid,
 		    entry.lo_rev, entry.hi_rev, 1);
 		if (new == NULL)
 			printf("%s: USB quirks table is full!\n", name);
 		else
 			memcpy(new->quirks, entry.quirks, sizeof(entry.quirks));
-		mtx_unlock(&usb_quirk_mtx);
+		USB_MTX_UNLOCK(&usb_quirk_mtx);
 	} else {
 		printf("%s: No USB quirks found!\n", name);
 	}

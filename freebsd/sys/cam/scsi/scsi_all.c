@@ -1063,7 +1063,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x00, 0x1C, SS_RDEF,	/* XXX TBD */
 	    "Verify operation in progress") },
 	/* DT        B    */
-	{ SST(0x00, 0x1D, SS_RDEF,	/* XXX TBD */
+	{ SST(0x00, 0x1D, SS_NOP,
 	    "ATA pass through information available") },
 	/* DT   R MAEBKV  */
 	{ SST(0x00, 0x1E, SS_RDEF,	/* XXX TBD */
@@ -1072,7 +1072,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x00, 0x1F, SS_RDEF,	/* XXX TBD */
 	    "Logical unit transitioning to another power condition") },
 	/* DT P      B    */
-	{ SST(0x00, 0x20, SS_RDEF,	/* XXX TBD */
+	{ SST(0x00, 0x20, SS_NOP,
 	    "Extended copy information available") },
 	/* D              */
 	{ SST(0x00, 0x21, SS_RDEF,	/* XXX TBD */
@@ -2338,7 +2338,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x43, 0x00, SS_RDEF,
 	    "Message error") },
 	/* DTLPWROMAEBKVF */
-	{ SST(0x44, 0x00, SS_RDEF,
+	{ SST(0x44, 0x00, SS_FATAL | EIO,
 	    "Internal target failure") },
 	/* DT P   MAEBKVF */
 	{ SST(0x44, 0x01, SS_RDEF,	/* XXX TBD */
@@ -3199,10 +3199,10 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x74, 0x6F, SS_RDEF,	/* XXX TBD */
 	    "External data encryption control error") },
 	/* DT   R M E  V  */
-	{ SST(0x74, 0x71, SS_RDEF,	/* XXX TBD */
+	{ SST(0x74, 0x71, SS_FATAL | EACCES,
 	    "Logical unit access not authorized") },
 	/* D              */
-	{ SST(0x74, 0x79, SS_RDEF,	/* XXX TBD */
+	{ SST(0x74, 0x79, SS_FATAL | EACCES,
 	    "Security conflict in translated device") }
 };
 
@@ -4661,6 +4661,53 @@ scsi_sense_progress_sbuf(struct sbuf *sb, struct scsi_sense_data *sense,
 	scsi_progress_sbuf(sb, progress_val);
 }
 
+void
+scsi_sense_ata_sbuf(struct sbuf *sb, struct scsi_sense_data *sense,
+			 u_int sense_len, uint8_t *cdb, int cdb_len,
+			 struct scsi_inquiry_data *inq_data,
+			 struct scsi_sense_desc_header *header)
+{
+	struct scsi_sense_ata_ret_desc *res;
+
+	res = (struct scsi_sense_ata_ret_desc *)header;
+
+	sbuf_printf(sb, "ATA status: %02x (%s%s%s%s%s%s%s%s), ",
+	    res->status,
+	    (res->status & 0x80) ? "BSY " : "",
+	    (res->status & 0x40) ? "DRDY " : "",
+	    (res->status & 0x20) ? "DF " : "",
+	    (res->status & 0x10) ? "SERV " : "",
+	    (res->status & 0x08) ? "DRQ " : "",
+	    (res->status & 0x04) ? "CORR " : "",
+	    (res->status & 0x02) ? "IDX " : "",
+	    (res->status & 0x01) ? "ERR" : "");
+	if (res->status & 1) {
+	    sbuf_printf(sb, "error: %02x (%s%s%s%s%s%s%s%s), ",
+		res->error,
+		(res->error & 0x80) ? "ICRC " : "",
+		(res->error & 0x40) ? "UNC " : "",
+		(res->error & 0x20) ? "MC " : "",
+		(res->error & 0x10) ? "IDNF " : "",
+		(res->error & 0x08) ? "MCR " : "",
+		(res->error & 0x04) ? "ABRT " : "",
+		(res->error & 0x02) ? "NM " : "",
+		(res->error & 0x01) ? "ILI" : "");
+	}
+
+	if (res->flags & SSD_DESC_ATA_FLAG_EXTEND) {
+		sbuf_printf(sb, "count: %02x%02x, ",
+		    res->count_15_8, res->count_7_0);
+		sbuf_printf(sb, "LBA: %02x%02x%02x%02x%02x%02x, ",
+		    res->lba_47_40, res->lba_39_32, res->lba_31_24,
+		    res->lba_23_16, res->lba_15_8, res->lba_7_0);
+	} else {
+		sbuf_printf(sb, "count: %02x, ", res->count_7_0);
+		sbuf_printf(sb, "LBA: %02x%02x%02x, ",
+		    res->lba_23_16, res->lba_15_8, res->lba_7_0);
+	}
+	sbuf_printf(sb, "device: %02x, ", res->device);
+}
+
 /*
  * Generic sense descriptor printing routine.  This is used when we have
  * not yet implemented a specific printing routine for this descriptor.
@@ -4707,6 +4754,7 @@ struct scsi_sense_desc_printer {
 	{SSD_DESC_FRU, scsi_sense_fru_sbuf},
 	{SSD_DESC_STREAM, scsi_sense_stream_sbuf},
 	{SSD_DESC_BLOCK, scsi_sense_block_sbuf},
+	{SSD_DESC_ATA, scsi_sense_ata_sbuf},
 	{SSD_DESC_PROGRESS, scsi_sense_progress_sbuf}
 };
 
@@ -7914,6 +7962,32 @@ scsi_report_target_group(struct ccb_scsiio *csio, u_int32_t retries,
 }
 
 void
+scsi_report_timestamp(struct ccb_scsiio *csio, u_int32_t retries,
+		 void (*cbfcnp)(struct cam_periph *, union ccb *),
+		 u_int8_t tag_action, u_int8_t pdf,
+		 void *buf, u_int32_t alloc_len,
+		 u_int8_t sense_len, u_int32_t timeout)
+{
+	struct scsi_timestamp *scsi_cmd;
+
+	cam_fill_csio(csio,
+		      retries,
+		      cbfcnp,
+		      /*flags*/CAM_DIR_IN,
+		      tag_action,
+		      /*data_ptr*/(u_int8_t *)buf,
+		      /*dxfer_len*/alloc_len,
+		      sense_len,
+		      sizeof(*scsi_cmd),
+		      timeout);
+	scsi_cmd = (struct scsi_timestamp *)&csio->cdb_io.cdb_bytes;
+	bzero(scsi_cmd, sizeof(*scsi_cmd));
+	scsi_cmd->opcode = MAINTENANCE_IN;
+	scsi_cmd->service_action = REPORT_TIMESTAMP | pdf;
+	scsi_ulto4b(alloc_len, scsi_cmd->length);
+}
+
+void
 scsi_set_target_group(struct ccb_scsiio *csio, u_int32_t retries,
 		 void (*cbfcnp)(struct cam_periph *, union ccb *),
 		 u_int8_t tag_action, void *buf, u_int32_t alloc_len,
@@ -7935,6 +8009,45 @@ scsi_set_target_group(struct ccb_scsiio *csio, u_int32_t retries,
 	bzero(scsi_cmd, sizeof(*scsi_cmd));
 	scsi_cmd->opcode = MAINTENANCE_OUT;
 	scsi_cmd->service_action = SET_TARGET_PORT_GROUPS;
+	scsi_ulto4b(alloc_len, scsi_cmd->length);
+}
+
+void
+scsi_create_timestamp(uint8_t *timestamp_6b_buf,
+		      uint64_t timestamp)
+{
+	uint8_t buf[8];
+	scsi_u64to8b(timestamp, buf);
+	/*
+	 * Using memcopy starting at buf[2] because the set timestamp parameters
+	 * only has six bytes for the timestamp to fit into, and we don't have a
+	 * scsi_u64to6b function.
+	 */
+	memcpy(timestamp_6b_buf, &buf[2], 6);
+}
+
+void
+scsi_set_timestamp(struct ccb_scsiio *csio, u_int32_t retries,
+		   void (*cbfcnp)(struct cam_periph *, union ccb *),
+		   u_int8_t tag_action, void *buf, u_int32_t alloc_len,
+		   u_int8_t sense_len, u_int32_t timeout)
+{
+	struct scsi_timestamp *scsi_cmd;
+
+	cam_fill_csio(csio,
+		      retries,
+		      cbfcnp,
+		      /*flags*/CAM_DIR_OUT,
+		      tag_action,
+		      /*data_ptr*/(u_int8_t *) buf,
+		      /*dxfer_len*/alloc_len,
+		      sense_len,
+		      sizeof(*scsi_cmd),
+		      timeout);
+	scsi_cmd = (struct scsi_timestamp *)&csio->cdb_io.cdb_bytes;
+	bzero(scsi_cmd, sizeof(*scsi_cmd));
+	scsi_cmd->opcode = MAINTENANCE_OUT;
+	scsi_cmd->service_action = SET_TIMESTAMP;
 	scsi_ulto4b(alloc_len, scsi_cmd->length);
 }
 

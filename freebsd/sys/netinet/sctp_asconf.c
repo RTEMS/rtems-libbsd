@@ -153,24 +153,19 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 	union sctp_sockstore store;
 	struct sctp_paramhdr *ph;
 	uint16_t param_type, aparam_length;
-
 #if defined(INET) || defined(INET6)
 	uint16_t param_length;
-
 #endif
 	struct sockaddr *sa;
 	int zero_address = 0;
 	int bad_address = 0;
-
 #ifdef INET
 	struct sockaddr_in *sin;
 	struct sctp_ipv4addr_param *v4addr;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 	struct sctp_ipv6addr_param *v6addr;
-
 #endif
 
 	aparam_length = ntohs(aph->ph.param_length);
@@ -308,24 +303,19 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 	union sctp_sockstore store;
 	struct sctp_paramhdr *ph;
 	uint16_t param_type, aparam_length;
-
 #if defined(INET) || defined(INET6)
 	uint16_t param_length;
-
 #endif
 	struct sockaddr *sa;
 	int zero_address = 0;
 	int result;
-
 #ifdef INET
 	struct sockaddr_in *sin;
 	struct sctp_ipv4addr_param *v4addr;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 	struct sctp_ipv6addr_param *v6addr;
-
 #endif
 
 	aparam_length = ntohs(aph->ph.param_length);
@@ -443,23 +433,18 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 	union sctp_sockstore store;
 	struct sctp_paramhdr *ph;
 	uint16_t param_type, aparam_length;
-
 #if defined(INET) || defined(INET6)
 	uint16_t param_length;
-
 #endif
 	struct sockaddr *sa;
 	int zero_address = 0;
-
 #ifdef INET
 	struct sockaddr_in *sin;
 	struct sctp_ipv4addr_param *v4addr;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 	struct sctp_ipv6addr_param *v6addr;
-
 #endif
 
 	aparam_length = ntohs(aph->ph.param_length);
@@ -1787,7 +1772,7 @@ sctp_handle_asconf_ack(struct mbuf *m, int offset,
 	 * if there are any "sent" params still on the queue, these are
 	 * implicitly "success", or "failed" (if we got an error back) ...
 	 * so process these appropriately
-	 * 
+	 *
 	 * we assume that the correlation_id's are monotonically increasing
 	 * beginning from 1 and that we don't have *that* many outstanding
 	 * at any given time
@@ -1863,7 +1848,6 @@ sctp_is_scopeid_in_nets(struct sctp_tcb *stcb, struct sockaddr *sa)
 	/* didn't find one */
 	return (0);
 }
-
 #endif
 
 /*
@@ -2437,10 +2421,8 @@ sctp_is_addr_pending(struct sctp_tcb *stcb, struct sctp_ifa *sctp_ifa)
 		}
 	}
 
-	/*
-	 * we want to find the sequences which consist of ADD -> DEL -> ADD
-	 * or DEL -> ADD
-	 */
+	/* we want to find the sequences which consist of ADD -> DEL -> ADD
+	 * or DEL -> ADD */
 	if (add_cnt > del_cnt ||
 	    (add_cnt == del_cnt && last_param_type == SCTP_ADD_IP_ADDRESS)) {
 		return (1);
@@ -2492,10 +2474,8 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 					if (sctp_is_addr_restricted(stcb, sctp_ifa) &&
 					    (!sctp_is_addr_pending(stcb, sctp_ifa)))
 						continue;
-					/*
-					 * found a valid local v4 address to
-					 * use
-					 */
+					/* found a valid local v4 address to
+					 * use */
 					if (addr_locked == SCTP_ADDR_NOT_LOCKED)
 						SCTP_IPI_ADDR_RUNLOCK();
 					return (&sctp_ifa->address.sa);
@@ -2512,10 +2492,8 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 					}
 					sin6 = &sctp_ifa->address.sin6;
 					if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
-						/*
-						 * we skip unspecifed
-						 * addresses
-						 */
+						/* we skip unspecifed
+						 * addresses */
 						continue;
 					}
 					if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
@@ -2532,10 +2510,8 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 					if (sctp_is_addr_restricted(stcb, sctp_ifa) &&
 					    (!sctp_is_addr_pending(stcb, sctp_ifa)))
 						continue;
-					/*
-					 * found a valid local v6 address to
-					 * use
-					 */
+					/* found a valid local v6 address to
+					 * use */
 					if (addr_locked == SCTP_ADDR_NOT_LOCKED)
 						SCTP_IPI_ADDR_RUNLOCK();
 					return (&sctp_ifa->address.sa);
@@ -2783,14 +2759,11 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 	uint16_t plen, ptype;
 	struct sctp_ifa *sctp_ifa;
 	union sctp_sockstore store;
-
 #ifdef INET6
 	struct sctp_ipv6addr_param addr6_store;
-
 #endif
 #ifdef INET
 	struct sctp_ipv4addr_param addr4_store;
-
 #endif
 
 	SCTPDBG(SCTP_DEBUG_ASCONF2, "processing init-ack addresses\n");
@@ -2917,19 +2890,16 @@ sctp_addr_in_initack(struct mbuf *m, uint32_t offset, uint32_t length, struct so
 {
 	struct sctp_paramhdr tmp_param, *ph;
 	uint16_t plen, ptype;
-
 #ifdef INET
 	struct sockaddr_in *sin;
 	struct sctp_ipv4addr_param *a4p;
 	struct sctp_ipv6addr_param addr4_store;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 	struct sctp_ipv6addr_param *a6p;
 	struct sctp_ipv6addr_param addr6_store;
 	struct sockaddr_in6 sin6_tmp;
-
 #endif
 
 	switch (sa->sa_family) {
@@ -3081,14 +3051,11 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 	struct sctp_ifn *sctp_ifn;
 	struct sctp_ifa *sctp_ifa;
 	uint32_t vrf_id;
-
 #ifdef INET
 	struct sockaddr_in *sin;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
-
 #endif
 
 	if (stcb) {
@@ -3303,14 +3270,11 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 	struct sctp_asconf_addr *aa;
 	struct sctp_ifa *sctp_ifap;
 	struct sctp_asconf_tag_param *vtag;
-
 #ifdef INET
 	struct sockaddr_in *to;
-
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *to6;
-
 #endif
 	if (net == NULL) {
 		SCTPDBG(SCTP_DEBUG_ASCONF1, "sctp_asconf_send_nat_state_update: Missing net\n");

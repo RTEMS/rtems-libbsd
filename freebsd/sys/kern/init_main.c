@@ -215,9 +215,9 @@ void
 mi_startup(void)
 {
 
-	register struct sysinit **sipp;		/* system initialization*/
-	register struct sysinit **xipp;		/* interior loop of sort*/
-	register struct sysinit *save;		/* bubble*/
+	struct sysinit **sipp;	/* system initialization*/
+	struct sysinit **xipp;	/* interior loop of sort*/
+	struct sysinit *save;	/* bubble*/
 #ifdef __rtems__
 	struct sysinit **sysinit = NULL;
 	struct sysinit **sysinit_end = NULL;
@@ -339,16 +339,7 @@ restart:
 #endif /* __rtems__ */
 }
 
-
 #ifndef __rtems__
-/*
- ***************************************************************************
- ****
- **** The following SYSINIT's belong elsewhere, but have not yet
- **** been moved.
- ****
- ***************************************************************************
- */
 static void
 print_caddr_t(void *data)
 {
@@ -442,17 +433,10 @@ struct sysentvec null_sysvec = {
 };
 
 /*
- ***************************************************************************
- ****
- **** The two following SYSINIT's are proc0 specific glue code.  I am not
- **** convinced that they can not be safely combined, but their order of
- **** operation has been maintained as the same as the original init_main.c
- **** for right now.
- ****
- **** These probably belong in init_proc.c or kern_proc.c, since they
- **** deal with proc0 (the fork template process).
- ****
- ***************************************************************************
+ * The two following SYSINIT's are proc0 specific glue code.  I am not
+ * convinced that they can not be safely combined, but their order of
+ * operation has been maintained as the same as the original init_main.c
+ * for right now.
  */
 /* ARGSUSED*/
 static void
@@ -686,16 +670,6 @@ SYSINIT(random, SI_SUB_RANDOM, SI_ORDER_FIRST, random_init, NULL);
  ***************************************************************************
  */
 
-
-/*
- ***************************************************************************
- ****
- **** The following code probably belongs in another file, like
- **** kern/init_init.c.
- ****
- ***************************************************************************
- */
-
 /*
  * List of paths to try when searching for "init".
  */
@@ -843,7 +817,7 @@ start_init(void *dummy)
 }
 
 /*
- * Like kproc_create(), but runs in it's own address space.
+ * Like kproc_create(), but runs in its own address space.
  * We do this early to reserve pid 1.
  *
  * Note special case - do not make it runnable yet.  Other work

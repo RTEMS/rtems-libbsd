@@ -776,7 +776,7 @@ detail and debug level information from the command.
 
 == FreeBSD version of imported files and directories
 
-. *, trunk, 2016-08-23, 9fe7c416e6abb28b1398fd3e5687099846800cfd
+. *, trunk, 2016-12-10, 80c55f08a05ab3b26a73b226ccb56adc3122a55c.
 
 == How to import code from FreeBSD
 

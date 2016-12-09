@@ -83,7 +83,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/bus.h>
 #include <rtems/bsd/local/cryptodev_if.h>
 
-#if defined(__i386__) || defined(__amd64__)
+#if defined(__i386__) || defined(__amd64__) || defined(__aarch64__)
 #include <machine/pcb.h>
 #endif
 
@@ -1254,7 +1254,7 @@ crypto_proc(void)
 	int result, hint;
 
 #ifndef __rtems__
-#if defined(__i386__) || defined(__amd64__)
+#if defined(__i386__) || defined(__amd64__) || defined(__aarch64__)
 	fpu_kern_thread(FPU_KERN_NORMAL);
 #endif
 #endif /* __rtems__ */

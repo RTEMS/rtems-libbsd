@@ -40,6 +40,7 @@ static const char rcsid[] _U_ =
 /* $FreeBSD$ */
 
 #ifdef __rtems__
+#define HAVE_GETOPT_LONG
 #define __need_getopt_newlib
 #include <getopt.h>
 #define setpriority(a, b, c)
@@ -84,6 +85,32 @@ extern int SIZE_BUF;
 #include <smi.h>
 #endif
 
+#ifdef HAVE_LIBCRYPTO
+#include <openssl/crypto.h>
+#endif
+
+#ifdef HAVE_GETOPT_LONG
+#include <getopt.h>
+#else
+#include "getopt_long.h"
+#endif
+/* Capsicum-specific code requires macros from <net/bpf.h>, which will fail
+ * to compile if <pcap.h> has already been included; including the headers
+ * in the opposite order works fine.
+ */
+#ifdef __FreeBSD__
+#include <sys/capsicum.h>
+#include <sys/sysctl.h>
+#include <libgen.h>
+#endif /* __FreeBSD__ */
+#ifdef HAVE_CASPER
+#include <libcasper.h>
+#include <casper/cap_dns.h>
+#include <sys/nv.h>
+#include <sys/ioccom.h>
+#include <net/bpf.h>
+#include <fcntl.h>
+#endif	/* HAVE_CASPER */
 #include <pcap.h>
 #include <signal.h>
 #include <stdio.h>
@@ -1619,6 +1646,26 @@ main(int argc, char **argv)
 
 	if (pcap_setfilter(pd, &fcode) < 0)
 		error("%s", pcap_geterr(pd));
+#ifdef HAVE_CASPER
+	if (RFileName == NULL && VFileName == NULL) {
+		static const unsigned long cmds[] = { BIOCGSTATS, BIOCROTZBUF };
+
+		/*
+		 * The various libpcap devices use a combination of
+		 * read (bpf), ioctl (bpf, netmap), poll (netmap).
+		 * Grant the relevant access rights, sorted by name.
+		 */
+		cap_rights_init(&rights, CAP_EVENT, CAP_IOCTL, CAP_READ);
+		if (cap_rights_limit(pcap_fileno(pd), &rights) < 0 &&
+		    errno != ENOSYS) {
+			error("unable to limit pcap descriptor");
+		}
+		if (cap_ioctls_limit(pcap_fileno(pd), cmds,
+		    sizeof(cmds) / sizeof(cmds[0])) < 0 && errno != ENOSYS) {
+			error("unable to limit ioctls on pcap descriptor");
+		}
+	}
+#endif
 	if (WFileName) {
 		pcap_dumper_t *p;
 		/* Do not exceed the default PATH_MAX for files. */

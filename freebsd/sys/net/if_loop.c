@@ -38,6 +38,7 @@
 
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_rss.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
@@ -225,6 +226,10 @@ looutput(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 
 	if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1);
 	if_inc_counter(ifp, IFCOUNTER_OBYTES, m->m_pkthdr.len);
+
+#ifdef RSS
+	M_HASHTYPE_CLEAR(m);
+#endif
 
 	/* BPF writes need to be handled specially. */
 	if (dst->sa_family == AF_UNSPEC || dst->sa_family == pseudo_AF_HDRCMPLT)

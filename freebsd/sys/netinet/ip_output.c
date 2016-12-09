@@ -352,7 +352,8 @@ again:
 		have_ia_ref = 1;
 		ifp = ia->ia_ifp;
 		ip->ip_ttl = 1;
-		isbroadcast = in_ifaddr_broadcast(dst->sin_addr, ia);
+		isbroadcast = ifp->if_flags & IFF_BROADCAST ?
+		    in_ifaddr_broadcast(dst->sin_addr, ia) : 0;
 	} else if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr)) &&
 	    imo != NULL && imo->imo_multicast_ifp != NULL) {
 		/*
@@ -405,8 +406,10 @@ again:
 			gw = (struct sockaddr_in *)rte->rt_gateway;
 		if (rte->rt_flags & RTF_HOST)
 			isbroadcast = (rte->rt_flags & RTF_BROADCAST);
-		else
+		else if (ifp->if_flags & IFF_BROADCAST)
 			isbroadcast = in_ifaddr_broadcast(gw->sin_addr, ia);
+		else
+			isbroadcast = 0;
 	}
 
 	/*
@@ -706,11 +709,7 @@ sendit:
 		IPSTAT_INC(ips_fragmented);
 
 done:
-	/*
-	 * Release the route if using our private route, or if
-	 * (with flowtable) we don't have our own reference.
-	 */
-	if (ro == &iproute || ro->ro_flags & RT_NORTREF)
+	if (ro == &iproute)
 		RO_RTFREE(ro);
 	else if (rte == NULL)
 		/*

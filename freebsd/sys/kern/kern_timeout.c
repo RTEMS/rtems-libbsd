@@ -17,7 +17,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -1059,6 +1059,8 @@ callout_when(sbintime_t sbt, sbintime_t precision, int flags,
 		spinlock_exit();
 #endif
 #endif
+		if (cold && to_sbt == 0)
+			to_sbt = sbinuptime();
 		if ((flags & C_HARDCLOCK) == 0)
 			to_sbt += tick_sbt;
 	} else

@@ -14,7 +14,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -291,8 +291,8 @@ static int	unp_connectat(int, struct socket *, struct sockaddr *,
 static int	unp_connect2(struct socket *so, struct socket *so2, int);
 static void	unp_disconnect(struct unpcb *unp, struct unpcb *unp2);
 #ifndef __rtems__
-static void	unp_dispose(struct mbuf *);
-static void	unp_dispose_so(struct socket *so);
+static void	unp_dispose(struct socket *so);
+static void	unp_dispose_mbuf(struct mbuf *);
 #endif /* __rtems__ */
 static void	unp_shutdown(struct unpcb *);
 static void	unp_drop(struct unpcb *);
@@ -355,7 +355,7 @@ static struct domain localdomain = {
 	.dom_init =		unp_init,
 #ifndef __rtems__
 	.dom_externalize =	unp_externalize,
-	.dom_dispose =		unp_dispose_so,
+	.dom_dispose =		unp_dispose,
 #endif /* __rtems__ */
 	.dom_protosw =		localsw,
 	.dom_protoswNPROTOSW =	&localsw[nitems(localsw)]
@@ -1164,7 +1164,7 @@ uipc_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 
 	if (control != NULL && error != 0)
 #ifndef __rtems__
-		unp_dispose(control);
+		unp_dispose_mbuf(control);
 #else /* __rtems__ */
 		BSD_ASSERT(0);
 #endif /* __rtems__ */
@@ -2511,7 +2511,7 @@ unp_gc(__unused void *arg, int pending)
 }
 
 static void
-unp_dispose(struct mbuf *m)
+unp_dispose_mbuf(struct mbuf *m)
 {
 
 	if (m)
@@ -2522,7 +2522,7 @@ unp_dispose(struct mbuf *m)
  * Synchronize against unp_gc, which can trip over data as we are freeing it.
  */
 static void
-unp_dispose_so(struct socket *so)
+unp_dispose(struct socket *so)
 {
 	struct unpcb *unp;
 
@@ -2530,7 +2530,7 @@ unp_dispose_so(struct socket *so)
 	UNP_LIST_LOCK();
 	unp->unp_gcflag |= UNPGC_IGNORE_RIGHTS;
 	UNP_LIST_UNLOCK();
-	unp_dispose(so->so_rcv.sb_mb);
+	unp_dispose_mbuf(so->so_rcv.sb_mb);
 }
 
 static void

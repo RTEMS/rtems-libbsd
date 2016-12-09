@@ -58,7 +58,6 @@ __FBSDID("$FreeBSD$");
 #include <machine/stdarg.h>
 
 #ifndef __rtems__
-#include <dev/fdt/fdt_common.h>
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
 #endif /* __rtems__ */
@@ -639,8 +638,8 @@ zy7_slcr_attach(device_t dev)
 	/* Derive PLL frequencies from PS_CLK. */
 #ifndef __rtems__
 	node = ofw_bus_get_node(dev);
-	if (OF_getprop(node, "clock-frequency", &cell, sizeof(cell)) > 0)
-		ps_clk_frequency = fdt32_to_cpu(cell);
+	if (OF_getencprop(node, "clock-frequency", &cell, sizeof(cell)) > 0)
+		ps_clk_frequency = cell;
 	else
 #endif /* __rtems__ */
 		ps_clk_frequency = ZYNQ_DEFAULT_PS_CLK_FREQUENCY;

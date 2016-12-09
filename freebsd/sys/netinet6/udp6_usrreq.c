@@ -368,7 +368,8 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 			if (last != NULL) {
 				struct mbuf *n;
 
-				if ((n = m_copy(m, 0, M_COPYALL)) != NULL) {
+				if ((n = m_copym(m, 0, M_COPYALL, M_NOWAIT)) !=
+				    NULL) {
 					INP_RLOCK(last);
 					UDP_PROBE(receive, NULL, last, ip6,
 					    last, uh);
@@ -900,7 +901,7 @@ udp6_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr6,
 
 		UDP_PROBE(send, NULL, inp, ip6, inp, udp6);
 		UDPSTAT_INC(udps_opackets);
-		error = ip6_output(m, optp, NULL, flags,
+		error = ip6_output(m, optp, &inp->inp_route6, flags,
 		    inp->in6p_moptions, NULL, inp);
 		break;
 	case AF_INET:

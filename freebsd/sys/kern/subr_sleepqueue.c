@@ -434,7 +434,7 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
 	MPASS(TD_ON_SLEEPQ(td));
 	MPASS(td->td_sleepqueue == NULL);
 	MPASS(wchan != NULL);
-	if (cold)
+	if (cold && td == &thread0)
 		panic("timed sleep before timers are working");
 	KASSERT(td->td_sleeptimo == 0, ("td %d %p td_sleeptimo %jx",
 	    td->td_tid, td, (uintmax_t)td->td_sleeptimo));
@@ -1089,9 +1089,9 @@ sleepq_signal(void *wchan, int flags, int pri, int queue)
 	 * been sleeping the longest since threads are always added to
 	 * the tail of sleep queues.
 	 */
-	besttd = NULL;
+	besttd = TAILQ_FIRST(&sq->sq_blocked[queue]);
 	TAILQ_FOREACH(td, &sq->sq_blocked[queue], td_slpq) {
-		if (besttd == NULL || td->td_priority < besttd->td_priority)
+		if (td->td_priority < besttd->td_priority)
 			besttd = td;
 	}
 #else /* __rtems__ */

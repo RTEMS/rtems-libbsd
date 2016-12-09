@@ -43,6 +43,8 @@ extern rtems_shell_cmd_t rtems_shell_SYSCTL_Command;
 
 extern rtems_shell_cmd_t rtems_shell_VMSTAT_Command;
 
+extern rtems_shell_cmd_t rtems_shell_WLANSTATS_Command;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

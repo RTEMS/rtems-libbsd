@@ -177,6 +177,7 @@ def includes():
             '-Ifreebsd/sys/net',
             '-Ifreebsd/include',
             '-Ifreebsd/lib',
+            '-Ifreebsd/lib/libbsdstat',
             '-Ifreebsd/lib/libc/include',
             '-Ifreebsd/lib/libc/isc/include',
             '-Ifreebsd/lib/libc/resolv',

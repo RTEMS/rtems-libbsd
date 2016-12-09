@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-wlanstats-namespace.h"
+#endif /* __rtems__ */
+
 /*-
  * Copyright (c) 2002-2007 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -35,6 +39,9 @@
  * net80211 statistics class.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/file.h>
 #include <sys/sockio.h>
@@ -57,6 +64,9 @@
 #include "../../../../sys/net80211/ieee80211_ioctl.h"
 
 #include "wlanstats.h"
+#ifdef __rtems__
+#include "rtems-bsd-wlanstats-wlanstats-data.h"
+#endif /* __rtems__ */
 
 #ifndef IEEE80211_ADDR_COPY
 #define	IEEE80211_ADDR_COPY(dst, src)	memcpy(dst, src, IEEE80211_ADDR_LEN)

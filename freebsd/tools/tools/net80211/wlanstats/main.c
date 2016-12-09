@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-wlanstats-namespace.h"
+#endif /* __rtems__ */
+
 /*-
  * Copyright (c) 2002-2007 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -36,6 +40,12 @@
  * (default interface is wlan0).
  */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/socket.h>
 
@@ -50,8 +60,15 @@
 #include <unistd.h>
 
 #include "wlanstats.h"
+#ifdef __rtems__
+#include "rtems-bsd-wlanstats-main-data.h"
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 static struct {
+#else /* __rtems__ */
+static const struct {
+#endif /* __rtems__ */
 	const char *tag;
 	const char *fmt;
 } tags[] = {
@@ -163,6 +180,29 @@ usage(void) {
 	printf("wlanstats: [-ah] [-i ifname] [-l] [-o fmt] [interval]\n");
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_wlanstats, char);
+
+int
+rtems_bsd_command_wlanstats(int argc, char *argv[])
+{
+	int exit_code;
+	void *data_begin;
+	size_t data_size;
+
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_wlanstats);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_wlanstats);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("wlanstats",
+	    main, argc, argv, data_begin, data_size);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
 int
 main(int argc, char *argv[])
 {
@@ -172,6 +212,15 @@ main(int argc, char *argv[])
 	const char *ifname;
 	int allnodes = 0;
 	int c, mode;
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	ifname = getenv("WLAN");
 	if (ifname == NULL)
@@ -234,10 +283,24 @@ main(int argc, char *argv[])
 			wf->print_total(wf, stdout);
 		}
 		fflush(stdout);
+#ifndef __rtems__
 		omask = sigblock(sigmask(SIGALRM));
 		if (!signalled)
 			sigpause(0);
 		sigsetmask(omask);
+#else /* __rtems__ */
+		{
+		sigset_t oldmask, desired, empty;
+
+		sigemptyset(&empty);
+		sigemptyset(&desired);
+		sigaddset(&desired, SIGALRM);
+		sigprocmask(SIG_BLOCK, &desired, &oldmask);
+		while (!signalled)
+			sigsuspend(&desired);
+		sigprocmask(SIG_SETMASK, &oldmask, NULL);
+		}
+#endif /* __rtems__ */
 		signalled = 0;
 		alarm(interval);
 		line++;

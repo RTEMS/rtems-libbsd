@@ -67,6 +67,7 @@ def build(bld):
     includes += ["freebsd/sys/net"]
     includes += ["freebsd/include"]
     includes += ["freebsd/lib"]
+    includes += ["freebsd/lib/libbsdstat"]
     includes += ["freebsd/lib/libc/include"]
     includes += ["freebsd/lib/libc/isc/include"]
     includes += ["freebsd/lib/libc/resolv"]
@@ -250,6 +251,7 @@ def build(bld):
                      'freebsd/contrib/libxo/libxo/xo_encoder.c',
                      'freebsd/lib/lib80211/lib80211_ioctl.c',
                      'freebsd/lib/lib80211/lib80211_regdomain.c',
+                     'freebsd/lib/libbsdstat/bsdstat.c',
                      'freebsd/lib/libc/gen/err.c',
                      'freebsd/lib/libc/gen/feature_present.c',
                      'freebsd/lib/libc/gen/getdomainname.c',
@@ -450,6 +452,8 @@ def build(bld):
                      'freebsd/sbin/ping6/ping6.c',
                      'freebsd/sbin/route/route.c',
                      'freebsd/sbin/sysctl/sysctl.c',
+                     'freebsd/tools/tools/net80211/wlanstats/main.c',
+                     'freebsd/tools/tools/net80211/wlanstats/wlanstats.c',
                      'freebsd/usr.bin/netstat/bpf.c',
                      'freebsd/usr.bin/netstat/flowtable.c',
                      'freebsd/usr.bin/netstat/if.c',
@@ -1272,6 +1276,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-shell-sysctl.c',
               'rtemsbsd/rtems/rtems-bsd-shell-tcpdump.c',
               'rtemsbsd/rtems/rtems-bsd-shell-vmstat.c',
+              'rtemsbsd/rtems/rtems-bsd-shell-wlanstats.c',
               'rtemsbsd/rtems/rtems-bsd-syscall-api.c',
               'rtemsbsd/rtems/rtems-kernel-assert.c',
               'rtemsbsd/rtems/rtems-kernel-autoconf.c',

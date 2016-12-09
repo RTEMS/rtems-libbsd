@@ -78,6 +78,7 @@ def rtems(mm):
             'rtems/rtems-bsd-shell-sysctl.c',
             'rtems/rtems-bsd-shell-tcpdump.c',
             'rtems/rtems-bsd-shell-vmstat.c',
+            'rtems/rtems-bsd-shell-wlanstats.c',
             'rtems/rtems-bsd-syscall-api.c',
             'rtems/rtems-kernel-assert.c',
             'rtems/rtems-kernel-autoconf.c',
@@ -2455,6 +2456,27 @@ def user_space(mm):
     return mod
 
 #
+# User space: wlanstats utility
+#
+def user_space_wlanstats(mm):
+    mod = builder.Module('user_space_wlanstats')
+    mod.addUserSpaceHeaderFiles(
+        [
+            'tools/tools/net80211/wlanstats/wlanstats.h',
+            'lib/libbsdstat/bsdstat.h',
+        ]
+    )
+    mod.addUserSpaceSourceFiles(
+        [
+            'tools/tools/net80211/wlanstats/main.c',
+            'tools/tools/net80211/wlanstats/wlanstats.c',
+            'lib/libbsdstat/bsdstat.c',
+        ],
+        mm.generator['source'](['-DINET6', '-DINET'])
+    )
+    return mod
+
+#
 # Contrib expat
 #
 def contrib_expat(mm):
@@ -3063,6 +3085,7 @@ def sources(mm):
     mm.addModule(in_cksum(mm))
 
     mm.addModule(user_space(mm))
+    mm.addModule(user_space_wlanstats(mm))
     mm.addModule(contrib_expat(mm))
     mm.addModule(contrib_libpcap(mm))
     mm.addModule(usr_sbin_tcpdump(mm))

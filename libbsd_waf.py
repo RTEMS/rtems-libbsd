@@ -816,6 +816,7 @@ def build(bld):
               'freebsd/sys/kern/subr_bus.c',
               'freebsd/sys/kern/subr_counter.c',
               'freebsd/sys/kern/subr_eventhandler.c',
+              'freebsd/sys/kern/subr_firmware.c',
               'freebsd/sys/kern/subr_hash.c',
               'freebsd/sys/kern/subr_hints.c',
               'freebsd/sys/kern/subr_kobj.c',

@@ -231,7 +231,7 @@ firmware_unregister(const char *imagename)
 		/*
 		 * It is ok for the lookup to fail; this can happen
 		 * when a module is unloaded on last reference and the
-		 * module unload handler unregister's each of its
+		 * module unload handler unregister's each of it's
 		 * firmware images.
 		 */
 		err = 0;
@@ -254,6 +254,7 @@ firmware_unregister(const char *imagename)
 	return err;
 }
 
+#ifndef __rtems__
 static void
 loadimage(void *arg, int npending)
 {
@@ -294,6 +295,7 @@ loadimage(void *arg, int npending)
 done:
 	wakeup_one(imagename);		/* we're done */
 }
+#endif /* __rtems__ */
 
 /*
  * Lookup and potentially load the specified firmware image.
@@ -305,14 +307,17 @@ done:
 const struct firmware *
 firmware_get(const char *imagename)
 {
+#ifndef __rtems__
 	struct task fwload_task;
 	struct thread *td;
+#endif /* __rtems__ */
 	struct priv_fw *fp;
 
 	mtx_lock(&firmware_mtx);
 	fp = lookup(imagename, NULL);
 	if (fp != NULL)
 		goto found;
+#ifndef __rtems__
 	/*
 	 * Image not present, try to load the module holding it.
 	 */
@@ -344,6 +349,9 @@ firmware_get(const char *imagename)
 		mtx_unlock(&firmware_mtx);
 		return NULL;
 	}
+#else /* __rtems__ */
+	return NULL;
+#endif /* __rtems__ */
 found:				/* common exit point on success */
 	if (fp->refcnt == 0 && fp->parent != NULL)
 		fp->parent->refcnt++;
@@ -379,6 +387,7 @@ firmware_put(const struct firmware *p, int flags)
 	mtx_unlock(&firmware_mtx);
 }
 
+#ifndef __rtems__
 /*
  * Setup directory state for the firmware_tq thread so we can do i/o.
  */
@@ -526,3 +535,4 @@ static moduledata_t firmware_mod = {
 };
 DECLARE_MODULE(firmware, firmware_mod, SI_SUB_DRIVERS, SI_ORDER_FIRST);
 MODULE_VERSION(firmware, 1);
+#endif /* __rtems__ */

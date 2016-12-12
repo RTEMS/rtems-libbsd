@@ -651,15 +651,38 @@ def dev_usb_net(mm):
     mod.addDependency(mm['dev_usb'])
     mod.addKernelSpaceHeaderFiles(
         [
-            'sys/dev/mii/mii.h',
-            'sys/dev/mii/miivar.h',
+            'sys/dev/usb/net/if_auereg.h',
+            'sys/dev/usb/net/if_axereg.h',
+            'sys/dev/usb/net/if_axgereg.h',
             'sys/dev/usb/net/if_cdcereg.h',
+            'sys/dev/usb/net/if_cuereg.h',
+            'sys/dev/usb/net/if_iphethvar.h',
+            'sys/dev/usb/net/if_kuefw.h',
+            'sys/dev/usb/net/if_kuereg.h',
+            'sys/dev/usb/net/if_mosreg.h',
+            'sys/dev/usb/net/if_ruereg.h',
+            'sys/dev/usb/net/if_smscreg.h',
+            'sys/dev/usb/net/if_udavreg.h',
+            'sys/dev/usb/net/if_urereg.h',
+            'sys/dev/usb/net/ruephyreg.h',
             'sys/dev/usb/net/usb_ethernet.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
         [
+            'sys/dev/usb/net/if_aue.c',
+            'sys/dev/usb/net/if_axe.c',
+            'sys/dev/usb/net/if_axge.c',
             'sys/dev/usb/net/if_cdce.c',
+            'sys/dev/usb/net/if_cue.c',
+            'sys/dev/usb/net/if_ipheth.c',
+            'sys/dev/usb/net/if_kue.c',
+            'sys/dev/usb/net/if_mos.c',
+            'sys/dev/usb/net/if_rue.c',
+            'sys/dev/usb/net/if_smsc.c',
+            'sys/dev/usb/net/if_udav.c',
+            'sys/dev/usb/net/if_ure.c',
+            'sys/dev/usb/net/ruephy.c',
             'sys/dev/usb/net/usb_ethernet.c',
         ],
         mm.generator['source']()
@@ -787,24 +810,32 @@ def dev_usb_wlan(mm):
     mod.addDependency(mm['dev_usb'])
     mod.addKernelSpaceHeaderFiles(
         [
+            'sys/dev/usb/wlan/if_rsureg.h',
             'sys/dev/usb/wlan/if_rumfw.h',
             'sys/dev/usb/wlan/if_rumreg.h',
             'sys/dev/usb/wlan/if_rumvar.h',
+            'sys/dev/usb/wlan/if_runreg.h',
+            'sys/dev/usb/wlan/if_runvar.h',
             'sys/dev/usb/wlan/if_uathreg.h',
             'sys/dev/usb/wlan/if_uathvar.h',
             'sys/dev/usb/wlan/if_upgtvar.h',
             'sys/dev/usb/wlan/if_uralreg.h',
             'sys/dev/usb/wlan/if_uralvar.h',
+            'sys/dev/usb/wlan/if_urtwreg.h',
+            'sys/dev/usb/wlan/if_urtwvar.h',
             'sys/dev/usb/wlan/if_zydfw.h',
             'sys/dev/usb/wlan/if_zydreg.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
         [
+            'sys/dev/usb/wlan/if_rsu.c',
             'sys/dev/usb/wlan/if_rum.c',
+            'sys/dev/usb/wlan/if_run.c',
             'sys/dev/usb/wlan/if_uath.c',
             'sys/dev/usb/wlan/if_upgt.c',
             'sys/dev/usb/wlan/if_ural.c',
+            'sys/dev/usb/wlan/if_urtw.c',
             'sys/dev/usb/wlan/if_zyd.c',
         ],
         mm.generator['source']()
@@ -2760,8 +2791,8 @@ def sources(mm):
     #mm.addModule(dev_usb_input(mm))
     #mm.addModule(dev_usb_mouse(mm))
     #mm.addModule(dev_usb_serial(mm))
-    #mm.addModule(dev_usb_net(mm))
-    #mm.addModule(dev_usb_wlan(mm))
+    mm.addModule(dev_usb_net(mm))
+    mm.addModule(dev_usb_wlan(mm))
 
     mm.addModule(cam(mm))
     mm.addModule(dev_usb_storage(mm))

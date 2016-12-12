@@ -1180,6 +1180,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-rc-conf-net.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf-pf.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf.c',
+              'rtemsbsd/rtems/rtems-bsd-regdomain.c',
               'rtemsbsd/rtems/rtems-bsd-shell-arp.c',
               'rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c',
               'rtemsbsd/rtems/rtems-bsd-shell-ifconfig.c',

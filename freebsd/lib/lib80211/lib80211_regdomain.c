@@ -28,6 +28,15 @@
 static const char rcsid[] = "$FreeBSD$";
 #endif /* not lint */
 
+#ifdef __rtems__
+/* We need some functions from kernel name space */
+#define sbuf_bcat	_bsd_sbuf_bcat
+#define sbuf_finish	_bsd_sbuf_finish
+#define sbuf_data	_bsd_sbuf_data
+#define sbuf_len	_bsd_sbuf_len
+#define sbuf_delete	_bsd_sbuf_delete
+#define sbuf_new	_bsd_sbuf_new
+#endif /* __rtems__ */
 #include <sys/types.h>
 #include <rtems/bsd/sys/errno.h>
 #include <rtems/bsd/sys/param.h>
@@ -47,6 +56,9 @@ static const char rcsid[] = "$FreeBSD$";
 #include "lib80211_regdomain.h"
 
 #include <net80211/_ieee80211.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-regdomain.h>
+#endif /* __rtems__ */
 
 #define	MAXLEVEL	20
 
@@ -627,6 +639,7 @@ lib80211_alloc_regdata(void)
 
 	rdp = calloc(1, sizeof(struct regdata));
 
+#ifndef __rtems__
 	fd = open(_PATH_REGDOMAIN, O_RDONLY);
 	if (fd < 0) {
 #ifdef DEBUG
@@ -652,6 +665,10 @@ lib80211_alloc_regdata(void)
 		free(rdp);
 		return NULL;
 	}
+#else /* __rtems__ */
+	sb.st_size = regdomain_xml_size;
+	xml = regdomain_xml;
+#endif /* __rtems__ */
 	if (lib80211_regdomain_readconfig(rdp, xml, sb.st_size) != 0) {
 #ifdef DEBUG
 		warn("%s: error reading regulatory database", __func__);
@@ -661,8 +678,10 @@ lib80211_alloc_regdata(void)
 		free(rdp);
 		return NULL;
 	}
+#ifndef __rtems__
 	munmap(xml, sb.st_size);
 	close(fd);
+#endif /* __rtems__ */
 
 	return rdp;
 }

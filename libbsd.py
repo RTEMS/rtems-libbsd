@@ -2037,6 +2037,17 @@ def user_space(mm):
         ],
         mm.generator['source']('-D__DBINTERFACE_PRIVATE -DINET6')
     )
+    mod.addRTEMSHeaderFiles(
+        [
+            'include/machine/rtems-bsd-regdomain.h',
+        ]
+    )
+    mod.addRTEMSSourceFiles(
+        [
+            'rtems/rtems-bsd-regdomain.c',
+        ],
+        mm.generator['source']()
+    )
     mod.addUserSpaceSourceFiles(
         [
             'bin/hostname/hostname.c',

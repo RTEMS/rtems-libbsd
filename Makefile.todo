@@ -27,6 +27,8 @@ GENERATED += $(LOCAL_SRC)/mmcbr_if.c
 GENERATED += $(LOCAL_INC)/mmcbus_if.h
 GENERATED += $(LOCAL_SRC)/mmcbus_if.c
 GENERATED += $(LOCAL_SRC)/urtwn-rtl8192cfwT.fw.c
+GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
+GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
 
 all: $(GENERATED)
 
@@ -147,6 +149,12 @@ freebsd/usr.bin/netstat/nl_defs.h: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
 	    } \
 	    !/^\#/ { printf("\#define\tN%s\t%s\n", toupper($$2), i++); }' \
 	    < $< > $@ || rm -f $@
+
+rtemsbsd/include/machine/rtems-bsd-regdomain.h: $(FREEBSD_SRC)/etc/regdomain.xml
+	rtems-bin2c -H $< $@
+
+rtemsbsd/rtems/rtems-bsd-regdomain.c: $(FREEBSD_SRC)/etc/regdomain.xml
+	rtems-bin2c -C $< $@
 
 clean:
 	rm $(GENERATED)

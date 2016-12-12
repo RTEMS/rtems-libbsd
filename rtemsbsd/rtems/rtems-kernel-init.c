@@ -50,6 +50,8 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 
+#include <net80211/ieee80211_freebsd.h>
+
 #include <rtems/bsd/bsd.h>
 
 SYSINIT_REFERENCE(configure1);
@@ -61,6 +63,8 @@ SYSINIT_DRIVER_REFERENCE(nexus, root);
 
 RTEMS_BSD_DEFINE_SET(modmetadata_set, struct mod_metadata *);
 RTEMS_BSD_DEFINE_SET(sysctl_set, struct sysctl_oid *);
+RTEMS_BSD_DEFINE_SET(ieee80211_ioctl_getset, ieee80211_ioctl_getfunc *);
+RTEMS_BSD_DEFINE_SET(ieee80211_ioctl_setset, ieee80211_ioctl_setfunc *);
 
 RTEMS_BSD_DEFINE_RWSET(sysinit_set, struct sysinit *);
 

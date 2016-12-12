@@ -1514,12 +1514,13 @@ def net80211(mm):
             'sys/net80211/ieee80211_action.h',
             'sys/net80211/ieee80211_adhoc.h',
             'sys/net80211/ieee80211_ageq.h',
+            'sys/net80211/ieee80211_alq.h',
             'sys/net80211/ieee80211_amrr.h',
             'sys/net80211/ieee80211_crypto.h',
             'sys/net80211/ieee80211_dfs.h',
             'sys/net80211/ieee80211_freebsd.h',
-            'sys/net80211/_ieee80211.h',
             'sys/net80211/ieee80211.h',
+            'sys/net80211/_ieee80211.h',
             'sys/net80211/ieee80211_hostap.h',
             'sys/net80211/ieee80211_ht.h',
             'sys/net80211/ieee80211_input.h',
@@ -1535,6 +1536,7 @@ def net80211(mm):
             'sys/net80211/ieee80211_regdomain.h',
             'sys/net80211/ieee80211_rssadapt.h',
             'sys/net80211/ieee80211_scan.h',
+            'sys/net80211/ieee80211_scan_sw.h',
             'sys/net80211/ieee80211_sta.h',
             'sys/net80211/ieee80211_superg.h',
             'sys/net80211/ieee80211_tdma.h',
@@ -1577,6 +1579,7 @@ def net80211(mm):
             'sys/net80211/ieee80211_rssadapt.c',
             'sys/net80211/ieee80211_scan.c',
             'sys/net80211/ieee80211_scan_sta.c',
+            'sys/net80211/ieee80211_scan_sw.c',
             'sys/net80211/ieee80211_sta.c',
             'sys/net80211/ieee80211_superg.c',
             'sys/net80211/ieee80211_tdma.c',
@@ -2768,7 +2771,7 @@ def sources(mm):
     mm.addModule(netinet(mm))
     mm.addModule(netinet6(mm))
     #mm.addModule(netipsec(mm))
-    #mm.addModule(net80211(mm))
+    mm.addModule(net80211(mm))
     mm.addModule(opencrypto(mm))
     mm.addModule(crypto(mm))
     mm.addModule(altq(mm))

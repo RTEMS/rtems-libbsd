@@ -258,6 +258,22 @@ test_netstat(void)
 }
 
 static void
+test_wlanstats(void)
+{
+	rtems_resource_snapshot snapshot;
+	char *wlanstats[] = {
+		"wlanstats",
+		NULL
+	};
+
+	/* Without a WLAN device, only the basic call can be tested. */
+	rtems_bsd_command_wlanstats(ARGC(wlanstats), wlanstats);
+	rtems_resource_snapshot_take(&snapshot);
+	rtems_bsd_command_wlanstats(ARGC(wlanstats), wlanstats);
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 test_main(void)
 {
 	test_route_without_if();
@@ -266,6 +282,7 @@ test_main(void)
 	test_ping();
 	test_ping6();
 	test_netstat();
+	test_wlanstats();
 
 	exit(0);
 }

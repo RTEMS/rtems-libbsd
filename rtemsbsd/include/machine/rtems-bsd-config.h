@@ -99,13 +99,23 @@ extern "C" {
 #endif /* RTEMS_BSD_CONFIG_NET_PF_UNIX */
 
 /*
+ * Bridging.
+ *  https://www.freebsd.org/doc/handbook/network-bridging.html
+ */
+#if defined(RTEMS_BSD_CONFIG_NET_IF_BRIDGE)
+  #define RTEMS_BSD_CFGDECL_NET_IF_BRIDGE SYSINIT_NEED_NET_IF_BRIDGE
+#else
+  #define RTEMS_BSD_CFGDECL_NET_IF_BRIDGE
+#endif /* RTEMS_BSD_CONFIG_NET_IF_BRIDGE */
+
+/*
  * Link Aggregation and Failover.
  *  https://www.freebsd.org/doc/handbook/network-aggregation.html
  */
 #if defined(RTEMS_BSD_CONFIG_NET_IF_LAGG)
-  #define RTEMS_BSD_CFGDECL_IF_LAGG SYSINIT_NEED_NET_IF_LAGG
+  #define RTEMS_BSD_CFGDECL_NET_IF_LAGG SYSINIT_NEED_NET_IF_LAGG
 #else
-  #define RTEMS_BSD_CFGDECL_IF_LAGG
+  #define RTEMS_BSD_CFGDECL_NET_IF_LAGG
 #endif /* RTEMS_BSD_CONFIG_NET_IF_LAGG */
 
 /*
@@ -188,7 +198,8 @@ extern "C" {
    * Create the networking modules and interfaces.
    */
   RTEMS_BSD_CFGDECL_NET_PF_UNIX;
-  RTEMS_BSD_CFGDECL_IF_LAGG;
+  RTEMS_BSD_CFGDECL_NET_IF_BRIDGE;
+  RTEMS_BSD_CFGDECL_NET_IF_LAGG;
   RTEMS_BSD_CFGDECL_NET_IF_VLAN;
 
   /*

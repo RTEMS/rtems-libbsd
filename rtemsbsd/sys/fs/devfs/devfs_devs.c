@@ -33,6 +33,7 @@
 
 #include <sys/types.h>
 #include <sys/conf.h>
+#include <sys/kernel.h>
 #include <sys/file.h>
 #include <sys/malloc.h>
 #include <stdlib.h>
@@ -45,7 +46,11 @@
 
 #include <rtems/imfs.h>
 
+#define DEVFS_ROOTINO 2
+
 const char rtems_cdev_directory[] = RTEMS_CDEV_DIRECTORY;
+
+struct unrhdr *devfs_inos;
 
 static struct cdev *
 devfs_imfs_get_context_by_iop(rtems_libio_t *iop)
@@ -325,3 +330,27 @@ devfs_dev_exists(const char *name)
 	else
 		return 0;
 }
+
+ino_t
+devfs_alloc_cdp_inode(void)
+{
+
+	return (alloc_unr(devfs_inos));
+}
+
+void
+devfs_free_cdp_inode(ino_t ino)
+{
+
+	if (ino > 0)
+		free_unr(devfs_inos, ino);
+}
+
+static void
+	devfs_devs_init(void *junk __unused)
+{
+
+	devfs_inos = new_unrhdr(DEVFS_ROOTINO + 1, INT_MAX, &devmtx);
+}
+
+SYSINIT(devfs_devs, SI_SUB_DEVFS, SI_ORDER_FIRST, devfs_devs_init, NULL);

@@ -78,7 +78,9 @@ struct pipemapping {
 	vm_size_t	cnt;		/* number of chars in buffer */
 	vm_size_t	pos;		/* current position of transfer */
 	int		npages;		/* number of pages */
+#ifndef __rtems__
 	vm_page_t	ms[PIPENPAGES];	/* pages in source process */
+#endif /* __rtems__ */
 };
 
 /*

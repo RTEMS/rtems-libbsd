@@ -131,6 +131,9 @@ __FBSDID("$FreeBSD$");
 #include <vm/uma.h>
 
 /* XXX */
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int	do_pipe(struct thread *td, int fildes[2], int flags);
 
 /*
@@ -143,6 +146,7 @@ int	do_pipe(struct thread *td, int fildes[2], int flags);
 /*
  * interfaces to the outside world
  */
+#ifndef __rtems__
 static fo_rdwr_t	pipe_read;
 static fo_rdwr_t	pipe_write;
 static fo_truncate_t	pipe_truncate;
@@ -165,6 +169,39 @@ static struct fileops pipeops = {
 	.fo_chown = invfo_chown,
 	.fo_flags = DFLAG_PASSABLE
 };
+#else /* __rtems__ */
+#define PIPE_NODIRECT
+#define	PRIBIO			(0)
+
+static int rtems_bsd_pipe_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
+static int rtems_bsd_pipe_close(rtems_libio_t *iop);
+static ssize_t rtems_bsd_pipe_read(rtems_libio_t *iop, void *buffer, size_t count);
+static ssize_t rtems_bsd_pipe_write(rtems_libio_t *iop, const void *buffer, size_t count);
+static int rtems_bsd_pipe_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer);
+static int rtems_bsd_pipe_stat(const rtems_filesystem_location_info_t *loc,	struct stat *buf);
+static int rtems_bsd_pipe_fcntl(rtems_libio_t *iop, int cmd);
+static int rtems_bsd_pipe_poll(rtems_libio_t *iop, int events);
+int rtems_bsd_pipe_kqfilter(rtems_libio_t *iop, struct knote *kn);
+
+static const rtems_filesystem_file_handlers_r pipeops = {
+	.open_h = rtems_bsd_pipe_open,
+	.close_h = rtems_bsd_pipe_close,
+	.read_h = rtems_bsd_pipe_read,
+	.write_h = rtems_bsd_pipe_write,
+	.ioctl_h = rtems_bsd_pipe_ioctl,
+	.lseek_h = rtems_filesystem_default_lseek,
+	.fstat_h = rtems_bsd_pipe_stat,
+	.ftruncate_h = rtems_filesystem_default_ftruncate,
+	.fsync_h = rtems_filesystem_default_fsync_or_fdatasync,
+	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
+	.fcntl_h = rtems_bsd_pipe_fcntl,
+	.poll_h = rtems_bsd_pipe_poll,
+	.kqfilter_h = rtems_bsd_pipe_kqfilter
+};
+
+long	maxpipekva;			/* Limit on pipe KVA */
+
+#endif /* __rtems__ */
 
 static void	filt_pipedetach(struct knote *kn);
 static int	filt_piperead(struct knote *kn, long hint);
@@ -266,7 +303,11 @@ pipe_zone_ctor(void *mem, int size, void *arg, int flags)
 	 */
 	rpipe = &pp->pp_rpipe;
 	bzero(rpipe, sizeof(*rpipe));
+#ifndef __rtems__
 	vfs_timestamp(&rpipe->pipe_ctime);
+#else /* __rtems__ */
+	rpipe->pipe_ctime.tv_sec = time(NULL);
+#endif /* __rtems__ */
 	rpipe->pipe_atime = rpipe->pipe_mtime = rpipe->pipe_ctime;
 
 	wpipe = &pp->pp_wpipe;
@@ -336,7 +377,11 @@ kern_pipe(struct thread *td, int fildes[2])
 int
 do_pipe(struct thread *td, int fildes[2], int flags)
 {
+#ifndef __rtems__
 	struct filedesc *fdp = td->td_proc->p_fd;
+#else /* __rtems__ */
+	struct filedesc *fdp = NULL;
+#endif /* __rtems__ */
 	struct file *rf, *wf;
 	struct pipepair *pp;
 	struct pipe *rpipe, *wpipe;
@@ -422,6 +467,28 @@ sys_pipe(struct thread *td, struct pipe_args *uap)
 
 	return (0);
 }
+#ifdef __rtems__
+int
+pipe(int fildes[2])
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	int error;
+
+	if (td != NULL) {
+		error = sys_pipe(td, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		fildes[0] = td->td_retval[0];
+		fildes[1] = td->td_retval[1];
+		return error;
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 
 /*
  * Allocate kva for pipe circular buffer, the space is pageable
@@ -448,12 +515,17 @@ retry:
 		size = cnt;
 
 	size = round_page(size);
+#ifndef __rtems__
 	buffer = (caddr_t) vm_map_min(pipe_map);
 
 	error = vm_map_find(pipe_map, NULL, 0,
 		(vm_offset_t *) &buffer, size, 1,
 		VM_PROT_ALL, VM_PROT_ALL, 0);
 	if (error != KERN_SUCCESS) {
+#else /* __rtems__ */
+	buffer = malloc(size, M_TEMP, M_WAITOK | M_ZERO);
+	if (buffer == NULL) {
+#endif /* __rtems__ */
 		if ((cpipe->pipe_buffer.buffer == NULL) &&
 			(size > SMALL_PIPE_SIZE)) {
 			size = SMALL_PIPE_SIZE;
@@ -716,7 +788,11 @@ pipe_read(fp, uio, active_cred, flags, td)
 			 * Handle non-blocking mode operation or
 			 * wait for more data.
 			 */
+#ifndef __rtems__
 			if (fp->f_flag & FNONBLOCK) {
+#else /* __rtems__ */
+			if (rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FNONBLOCK) {
+#endif /* __rtems__ */
 				error = EAGAIN;
 			} else {
 				rpipe->pipe_state |= PIPE_WANTR;
@@ -736,7 +812,11 @@ locked_error:
 
 	/* XXX: should probably do this before getting any locks. */
 	if (error == 0)
+#ifndef __rtems__
 		vfs_timestamp(&rpipe->pipe_atime);
+#else /* __rtems__ */
+		rpipe->pipe_atime.tv_sec = time(NULL);
+#endif /* __rtems__ */
 unlocked_error:
 	--rpipe->pipe_busy;
 
@@ -762,6 +842,40 @@ unlocked_error:
 	PIPE_UNLOCK(rpipe);
 	return (error);
 }
+#ifdef __rtems__
+static ssize_t
+rtems_bsd_pipe_read(rtems_libio_t *iop, void *buffer, size_t count)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct iovec iov = {
+		.iov_base = buffer,
+		.iov_len = count
+	};
+	struct uio auio = {
+		.uio_iov = &iov,
+		.uio_iovcnt = 1,
+		.uio_offset = 0,
+		.uio_resid = count,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_READ,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = pipe_read(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (count - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 
 #ifndef PIPE_NODIRECT
 /*
@@ -1189,7 +1303,11 @@ pipe_write(fp, uio, active_cred, flags, td)
 			/*
 			 * don't block on non-blocking I/O
 			 */
+#ifndef __rtems__
 			if (fp->f_flag & FNONBLOCK) {
+#else /* __rtems__ */
+			if (rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FNONBLOCK) {
+#endif /* __rtems__ */
 				error = EAGAIN;
 				pipeunlock(wpipe);
 				break;
@@ -1237,7 +1355,11 @@ pipe_write(fp, uio, active_cred, flags, td)
 	}
 
 	if (error == 0)
+#ifndef __rtems__
 		vfs_timestamp(&wpipe->pipe_mtime);
+#else /* __rtems__ */
+		wpipe->pipe_mtime.tv_sec = time(NULL);
+#endif /* __rtems__ */
 
 	/*
 	 * We have something to offer,
@@ -1250,8 +1372,43 @@ pipe_write(fp, uio, active_cred, flags, td)
 	PIPE_UNLOCK(rpipe);
 	return (error);
 }
+#ifdef __rtems__
+static ssize_t
+rtems_bsd_pipe_write(rtems_libio_t *iop, const void *buffer, size_t count)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct iovec iov = {
+		.iov_base = __DECONST(void *, buffer),
+		.iov_len = count
+	};
+	struct uio auio = {
+		.uio_iov = &iov,
+		.uio_iovcnt = 1,
+		.uio_offset = 0,
+		.uio_resid = count,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_WRITE,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = pipe_write(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (count - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+#endif /* __rtems__ */
 
 /* ARGSUSED */
+#ifndef __rtems__
 static int
 pipe_truncate(fp, length, active_cred, td)
 	struct file *fp;
@@ -1262,6 +1419,7 @@ pipe_truncate(fp, length, active_cred, td)
 
 	return (EINVAL);
 }
+#endif /* __rtems__ */
 
 /*
  * we implement a very minimal set of ioctls for compatibility with sockets.
@@ -1336,6 +1494,23 @@ pipe_ioctl(fp, cmd, data, active_cred, td)
 out_unlocked:
 	return (error);
 }
+#ifdef __rtems__
+static int
+rtems_bsd_pipe_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	int error;
+
+	if (td != NULL) {
+		error = pipe_ioctl(fp, request, buffer, NULL, td);
+	} else {
+		error = ENOMEM;
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 static int
 pipe_poll(fp, events, active_cred, td)
@@ -1400,11 +1575,29 @@ locked_error:
 
 	return (revents);
 }
+#ifdef __rtems__
+static int
+rtems_bsd_pipe_poll(rtems_libio_t *iop, int events)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	int error;
+
+	if (td != NULL) {
+		error = pipe_poll(fp, events, NULL, td);
+	} else {
+		error = ENOMEM;
+	}
+
+	return error;
+}
+#endif /* __rtems__ */
 
 /*
  * We shouldn't need locks here as we're doing a read and this should
  * be a natural race.
  */
+#ifndef __rtems__
 static int
 pipe_stat(fp, ub, active_cred, td)
 	struct file *fp;
@@ -1413,12 +1606,19 @@ pipe_stat(fp, ub, active_cred, td)
 	struct thread *td;
 {
 	struct pipe *pipe;
+#else /* __rtems__ */
+static int
+pipe_stat(struct pipe *pipe, struct stat *ub)
+{
+#endif /* __rtems__ */
 	int new_unr;
 #ifdef MAC
 	int error;
 #endif
 
+#ifndef __rtems__
 	pipe = fp->f_data;
+#endif /* __rtems__ */
 	PIPE_LOCK(pipe);
 #ifdef MAC
 	error = mac_pipe_check_stat(active_cred, pipe->pipe_pair);
@@ -1446,7 +1646,9 @@ pipe_stat(fp, ub, active_cred, td)
 	}
 	PIPE_UNLOCK(pipe);
 
+#ifndef __rtems__
 	bzero(ub, sizeof(*ub));
+#endif /* __rtems__ */
 	ub->st_mode = S_IFIFO;
 	ub->st_blksize = PAGE_SIZE;
 	if (pipe->pipe_state & PIPE_DIRECTW)
@@ -1457,15 +1659,35 @@ pipe_stat(fp, ub, active_cred, td)
 	ub->st_atim = pipe->pipe_atime;
 	ub->st_mtim = pipe->pipe_mtime;
 	ub->st_ctim = pipe->pipe_ctime;
+#ifndef __rtems__
 	ub->st_uid = fp->f_cred->cr_uid;
 	ub->st_gid = fp->f_cred->cr_gid;
 	ub->st_dev = pipedev_ino;
 	ub->st_ino = pipe->pipe_ino;
+#else /* __rtems__ */
+	ub->st_uid = BSD_DEFAULT_UID;
+	ub->st_gid = BSD_DEFAULT_GID;
+	ub->st_dev = rtems_filesystem_make_dev_t(0xcc494cd6U, 0x1d970b4dU);
+	ub->st_ino = pipe->pipe_ino;
+#endif /* __rtems__ */
 	/*
 	 * Left as 0: st_nlink, st_rdev, st_flags, st_gen.
 	 */
 	return (0);
 }
+#ifdef __rtems__
+static int
+rtems_bsd_pipe_stat(
+	const rtems_filesystem_location_info_t *loc,
+	struct stat *buf
+)
+{
+	struct pipe *pipe = rtems_bsd_loc_to_f_data(loc);
+	int error = pipe_stat(pipe, buf);
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */
 
 /* ARGSUSED */
 static int
@@ -1475,7 +1697,11 @@ pipe_close(fp, td)
 {
 	struct pipe *cpipe = fp->f_data;
 
+#ifndef __rtems__
 	fp->f_ops = &badfileops;
+#else /* __rtems__ */
+	fp->f_io.pathinfo.handlers = &rtems_filesystem_handlers_default;
+#endif /* __rtems__ */
 	fp->f_data = NULL;
 	funsetown(&cpipe->pipe_sigio);
 	pipeclose(cpipe);
@@ -1492,9 +1718,13 @@ pipe_free_kmem(cpipe)
 
 	if (cpipe->pipe_buffer.buffer != NULL) {
 		atomic_subtract_long(&amountpipekva, cpipe->pipe_buffer.size);
+#ifndef __rtems__
 		vm_map_remove(pipe_map,
 		    (vm_offset_t)cpipe->pipe_buffer.buffer,
 		    (vm_offset_t)cpipe->pipe_buffer.buffer + cpipe->pipe_buffer.size);
+#else /* __rtems__ */
+		free(cpipe->pipe_buffer.buffer, M_TEMP);
+#endif /* __rtems__ */
 		cpipe->pipe_buffer.buffer = NULL;
 	}
 #ifndef PIPE_NODIRECT
@@ -1626,6 +1856,15 @@ pipe_kqfilter(struct file *fp, struct knote *kn)
 	PIPE_UNLOCK(cpipe);
 	return (0);
 }
+#ifdef __rtems__
+int
+rtems_bsd_pipe_kqfilter(rtems_libio_t *iop, struct knote *kn)
+{
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+
+	return pipe_kqfilter(fp, kn);
+}
+#endif /* __rtems__ */
 
 static void
 filt_pipedetach(struct knote *kn)
@@ -1687,3 +1926,35 @@ filt_pipewrite(struct knote *kn, long hint)
 	PIPE_UNLOCK(rpipe);
 	return (kn->kn_data >= PIPE_BUF);
 }
+#ifdef __rtems__
+static int
+rtems_bsd_pipe_open(rtems_libio_t *iop, const char *path, int oflag,
+    mode_t mode)
+{
+	return rtems_bsd_error_to_status_and_errno(ENXIO);
+}
+
+static int
+rtems_bsd_pipe_close(rtems_libio_t *iop)
+{
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	int error = pipe_close(fp, NULL);
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+
+static int
+rtems_bsd_pipe_fcntl(rtems_libio_t *iop, int cmd)
+{
+	int error = 0;
+
+	if (cmd == F_SETFL) {
+		struct file *fp = rtems_bsd_iop_to_fp(iop);
+		int nbio = iop->flags & LIBIO_FLAGS_NO_DELAY;
+
+		error = pipe_ioctl(fp, FIONBIO, &nbio, NULL, NULL);
+	}
+
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+#endif /* __rtems__ */

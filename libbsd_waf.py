@@ -836,6 +836,7 @@ def build(bld):
               'freebsd/sys/kern/subr_uio.c',
               'freebsd/sys/kern/subr_unit.c',
               'freebsd/sys/kern/sys_generic.c',
+              'freebsd/sys/kern/sys_pipe.c',
               'freebsd/sys/kern/sys_socket.c',
               'freebsd/sys/kern/uipc_accf.c',
               'freebsd/sys/kern/uipc_domain.c',

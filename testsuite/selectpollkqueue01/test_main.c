@@ -55,7 +55,7 @@
 #include <rtems/libcsupport.h>
 #include <rtems.h>
 
-#define TEST_NAME "LIBBSD SELECT AND POLL AND KQUEUE 1"
+#define TEST_NAME "LIBBSD SELECT AND POLL AND KQUEUE AND PIPE 1"
 
 #define PRIO_MASTER 1
 
@@ -70,6 +70,8 @@
 #define EVENT_CLOSE RTEMS_EVENT_3
 
 #define EVENT_SHUTDOWN RTEMS_EVENT_4
+
+#define EVENT_CLOSE_PIPE RTEMS_EVENT_5
 
 #define BUF_SIZE 4096
 
@@ -88,6 +90,7 @@ typedef struct {
 	int afd;
 	int rfd;
 	int wfd;
+	int pfd[2];
 	struct sockaddr_in caddr;
 	rtems_id worker_task;
 } test_context;
@@ -173,6 +176,8 @@ worker_task(rtems_task_argument arg)
 		ssize_t n;
 		int rv;
 		int cfd = ctx->cfd;
+		int rfd = ctx->pfd[0];
+		int wfd = ctx->pfd[1];
 
 		sc = rtems_event_receive(
 			RTEMS_ALL_EVENTS,
@@ -236,6 +241,19 @@ worker_task(rtems_task_argument arg)
 			assert(rv == 0);
 		}
 
+		if ((events & EVENT_CLOSE_PIPE) != 0) {
+			puts("worker: close pipe");
+
+			ctx->pfd[0] = -1;
+			ctx->pfd[1] = -1;
+
+			rv = close(wfd);
+			assert(rv == 0);
+
+			rv = close(rfd);
+			assert(rv == 0);
+		}
+
 		if ((events & EVENT_SHUTDOWN) != 0) {
 			puts("worker: shutdown");
 
@@ -281,8 +299,13 @@ static void
 set_non_blocking(int fd, int enable)
 {
 	int rv;
+	int flags = fcntl(fd, F_GETFL, 0);
 
-	rv = ioctl(fd, FIONBIO, &enable);
+	if (enable) {
+		rv = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	} else {
+		rv = fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+	}
 	assert(rv == 0);
 }
 
@@ -1004,6 +1027,157 @@ test_kqueue_user(test_context *ctx)
 }
 
 static void
+test_pipe_timeout(test_context *ctx)
+{
+	struct pipe_poll_events
+	{
+		short event;
+		int rv;
+	};
+	const struct pipe_poll_events events[] = {
+		{ POLLIN, 0 },
+		{ POLLPRI, 0 },
+		{ POLLOUT, 1 },
+		{ POLLRDNORM, 0 },
+		{ POLLWRNORM, 1 },
+		{ POLLRDBAND, 0 },
+		{ POLLWRBAND, 0 },
+		{ POLLINIGNEOF, 0 }
+	};
+
+	int timeout = 100;
+	struct pollfd pfd;
+	size_t i;
+	int rv;
+
+	puts("test pipe timeout");
+
+	rv = pipe(ctx->pfd);
+	assert(rv == 0);
+
+	pfd.fd = ctx->pfd[1];
+
+	for (i = 0; i < nitems(events); ++i) {
+		int rv;
+
+		pfd.events = events[i].event;
+		pfd.revents = 0;
+
+		rv = poll(&pfd, 1, timeout);
+		assert(rv == events[i].rv);
+	}
+}
+
+static void
+test_pipe_read(test_context *ctx)
+{
+	int rfd = ctx->pfd[0];
+	int wfd = ctx->pfd[1];
+	struct pollfd pfd = {
+		.fd = rfd,
+		.events = POLLIN
+	};
+	int timeout = -1;
+	int rv;
+	ssize_t n;
+
+	puts("test pipe read");
+
+	assert(rfd >= 0);
+	assert(wfd >= 0);
+
+	ctx->wfd = wfd;
+	ctx->wbuf = &msg[0];
+	ctx->wn = sizeof(msg);
+	send_events(ctx, EVENT_WRITE);
+
+	set_non_blocking(rfd, 1);
+
+	errno = 0;
+	n = read(rfd, &ctx->buf[0], sizeof(ctx->buf));
+	assert(n == -1);
+	assert(errno == EAGAIN);
+
+	rv = poll(&pfd, 1, timeout);
+	assert(rv == 1);
+	assert(pfd.revents == POLLIN);
+
+	n = read(rfd, &ctx->buf[0], sizeof(ctx->buf));
+	assert(n == (ssize_t) sizeof(msg));
+	assert(memcmp(&msg[0], &ctx->buf[0], sizeof(msg)) == 0);
+}
+
+static void
+test_pipe_write(test_context *ctx)
+{
+	int rfd = ctx->pfd[0];
+	int wfd = ctx->pfd[1];
+	struct pollfd pfd = {
+		.fd = wfd,
+		.events = POLLOUT
+	};
+	int timeout = -1;
+	int rv;
+	ssize_t n;
+
+	puts("test pipe write");
+
+	assert(rfd >= 0);
+	assert(wfd >= 0);
+
+	ctx->rfd = rfd;
+	ctx->rbuf = &ctx->buf[0];
+	ctx->rn = sizeof(ctx->buf);
+	send_events(ctx, EVENT_READ);
+
+	set_non_blocking(wfd, 1);
+
+	do {
+		errno = 0;
+		n = write(wfd, &ctx->buf[0], sizeof(ctx->buf));
+		if (n == -1) {
+			assert(errno == EAGAIN);
+		}
+	} while (n > 0);
+
+	rv = poll(&pfd, 1, timeout);
+	assert(rv == 1);
+	assert(pfd.revents == POLLOUT);
+}
+
+static void
+test_pipe_close(test_context *ctx)
+{
+	int rfd = ctx->pfd[0];
+	int wfd = ctx->pfd[1];
+	struct pollfd pfd = {
+		.fd = rfd,
+		.events = POLLIN
+	};
+	int timeout = -1;
+	int rv;
+
+	puts("test pipe close");
+
+	assert(ctx->pfd[0] >= 0);
+	assert(ctx->pfd[1] >= 0);
+
+	send_events(ctx, EVENT_CLOSE_PIPE);
+
+	set_non_blocking(rfd, 0);
+
+	assert(ctx->pfd[0] >= 0);
+	assert(ctx->pfd[1] >= 0);
+
+	rv = poll(&pfd, 1, timeout);
+	assert(rv == 1);
+	assert(pfd.revents == (POLLIN | POLLHUP));
+
+	assert(ctx->pfd[0] == -1);
+	assert(ctx->pfd[1] == -1);
+}
+
+static void
 test_main(void)
 {
 	test_context *ctx = &test_instance;
@@ -1033,6 +1207,11 @@ test_main(void)
 	test_kqueue_write(ctx);
 	test_kqueue_close(ctx);
 	test_kqueue_user(ctx);
+
+	test_pipe_timeout(ctx);
+	test_pipe_read(ctx);
+	test_pipe_write(ctx);
+	test_pipe_close(ctx);
 
 	exit(0);
 }

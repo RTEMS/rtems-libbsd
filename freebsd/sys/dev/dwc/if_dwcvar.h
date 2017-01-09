@@ -45,9 +45,17 @@
  * Driver data and defines.
  */
 #define	RX_MAX_PACKET	0x7ff
+#ifndef __rtems__
 #define	RX_DESC_COUNT	1024
+#else /* __rtems__ */
+#define	RX_DESC_COUNT	64
+#endif /* __rtems__ */
 #define	RX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * RX_DESC_COUNT)
+#ifndef __rtems__
 #define	TX_DESC_COUNT	1024
+#else /* __rtems__ */
+#define	TX_DESC_COUNT	256
+#endif /* __rtems__ */
 #define	TX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * TX_DESC_COUNT)
 #define	TX_MAX_DMA_SEGS	8	/* maximum segs in a tx mbuf dma */
 

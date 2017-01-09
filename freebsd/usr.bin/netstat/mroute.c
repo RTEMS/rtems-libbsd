@@ -420,10 +420,12 @@ mrt_stats()
 
 	mstaddr = nl[N_MRTSTAT].n_value;
 
+#ifndef __rtems__
 	if (mstaddr == 0) {
 		fprintf(stderr, "No IPv4 MROUTING kernel support.\n");
 		return;
 	}
+#endif /* __rtems__ */
 
 	if (fetch_stats("net.inet.ip.mrtstat", mstaddr, &mrtstat,
 	    sizeof(mrtstat), kread_counters) != 0)

@@ -71,6 +71,8 @@ __FBSDID("$FreeBSD$");
 #ifdef __rtems__
 #include <machine/rtems-bsd-syscall-api.h>
 
+#define KN_INFLUX      0x10                    /* knote is in flux */
+
 /* Maintain a global kqueue list on RTEMS */
 static struct kqlist fd_kqlist;
 #endif /* __rtems__ */

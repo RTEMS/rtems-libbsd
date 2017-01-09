@@ -72,6 +72,8 @@ __FBSDID("$FreeBSD$");
 #ifndef __rtems__
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#else /* __rtems__ */
+#include <rtems/bsd/bsd.h>
 #endif /* __rtems__ */
 
 #ifdef EXT_RESOURCES
@@ -1085,7 +1087,11 @@ out:
 static int
 dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 {
+#ifndef __rtems__
 	uint32_t hi, lo, rnd;
+#else /* __rtems__ */
+	uint32_t hi, lo;
+#endif /* __rtems__ */
 
 	/*
 	 * Try to recover a MAC address from the running hardware. If there's
@@ -1106,6 +1112,7 @@ dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 		hwaddr[4] = (hi >>  0) & 0xff;
 		hwaddr[5] = (hi >>  8) & 0xff;
 	} else {
+#ifndef __rtems__
 		rnd = arc4random() & 0x00ffffff;
 		hwaddr[0] = 'b';
 		hwaddr[1] = 's';
@@ -1113,6 +1120,10 @@ dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 		hwaddr[3] = rnd >> 16;
 		hwaddr[4] = rnd >>  8;
 		hwaddr[5] = rnd >>  0;
+#else /* __rtems__ */
+		rtems_bsd_get_mac_address(device_get_name(sc->dev),
+		    device_get_unit(sc->dev), hwaddr);
+#endif /* __rtems__ */
 	}
 
 	return (0);

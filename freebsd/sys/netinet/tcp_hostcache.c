@@ -71,10 +71,12 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
+#include <sys/jail.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/malloc.h>
+#include <sys/proc.h>
 #include <sys/sbuf.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -626,6 +628,9 @@ sysctl_tcp_hc_list(SYSCTL_HANDLER_ARGS)
 #ifdef INET6
 	char ip6buf[INET6_ADDRSTRLEN];
 #endif
+
+	if (jailed_without_vnet(curthread->td_ucred) != 0)
+		return (EPERM);
 
 	sbuf_new(&sb, NULL, linesize * (V_tcp_hostcache.cache_count + 1),
 		SBUF_INCLUDENUL);

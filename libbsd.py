@@ -1439,6 +1439,7 @@ def netinet6(mm):
             'sys/netinet6/in6_proto.c',
             'sys/netinet6/in6_rmx.c',
             'sys/netinet6/in6_src.c',
+            'sys/netinet6/ip6_fastfwd.c',
             'sys/netinet6/ip6_forward.c',
             'sys/netinet6/ip6_id.c',
             'sys/netinet6/ip6_input.c',

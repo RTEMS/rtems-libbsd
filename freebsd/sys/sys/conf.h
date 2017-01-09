@@ -311,7 +311,6 @@ int	make_dev_physpath_alias(int _flags, struct cdev **_cdev,
 		const char *_physpath);
 void	dev_lock(void);
 void	dev_unlock(void);
-void	setconf(void);
 
 #ifdef KLD_MODULE
 #define	MAKEDEV_ETERNAL_KLD	0
@@ -351,6 +350,8 @@ int dev_stdclone(char *_name, char **_namep, const char *_stem, int *_unit);
 EVENTHANDLER_DECLARE(dev_clone, dev_clone_fn);
 
 /* Stuff relating to kernel-dump */
+struct kerneldumpcrypto;
+struct kerneldumpheader;
 
 struct dumperinfo {
 	dumper_t *dumper;	/* Dumping function. */
@@ -360,12 +361,18 @@ struct dumperinfo {
 	off_t	mediaoffset;	/* Initial offset in bytes. */
 	off_t	mediasize;	/* Space available in bytes. */
 	void	*blockbuf;	/* Buffer for padding shorter dump blocks */
+	struct kerneldumpcrypto	*kdc; /* Kernel dump crypto. */
 };
 
-int set_dumper(struct dumperinfo *, const char *_devname, struct thread *td);
+int set_dumper(struct dumperinfo *di, const char *devname, struct thread *td,
+    uint8_t encrypt, const uint8_t *key, uint32_t encryptedkeysize,
+    const uint8_t *encryptedkey);
 int dump_write(struct dumperinfo *, void *, vm_offset_t, off_t, size_t);
 int dump_write_pad(struct dumperinfo *, void *, vm_offset_t, off_t, size_t,
     size_t *);
+int dump_write_header(struct dumperinfo *di, struct kerneldumpheader *kdh,
+    vm_offset_t physical, off_t offset);
+int dump_write_key(struct dumperinfo *di, vm_offset_t physical, off_t offset);
 int doadump(boolean_t);
 #ifndef __rtems__
 extern int dumping;		/* system is dumping */

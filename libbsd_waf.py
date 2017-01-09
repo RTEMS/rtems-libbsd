@@ -981,6 +981,7 @@ def build(bld):
               'freebsd/sys/netinet6/in6_proto.c',
               'freebsd/sys/netinet6/in6_rmx.c',
               'freebsd/sys/netinet6/in6_src.c',
+              'freebsd/sys/netinet6/ip6_fastfwd.c',
               'freebsd/sys/netinet6/ip6_forward.c',
               'freebsd/sys/netinet6/ip6_id.c',
               'freebsd/sys/netinet6/ip6_input.c',

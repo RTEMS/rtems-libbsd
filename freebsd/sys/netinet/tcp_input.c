@@ -1410,7 +1410,7 @@ tfo_socket_result:
 			tcp_trace(TA_INPUT, ostate, tp,
 			    (void *)tcp_saveipgen, &tcp_savetcp, 0);
 #endif
-		TCP_PROBE3(debug__input, tp, th, mtod(m, const char *));
+		TCP_PROBE3(debug__input, tp, th, m);
 		tcp_dooptions(&to, optp, optlen, TO_SYN);
 #ifdef TCP_RFC7413
 		if (syncache_add(&inc, &to, th, inp, &so, m, NULL, NULL))
@@ -1458,7 +1458,7 @@ tfo_socket_result:
 	}
 #endif
 
-	TCP_PROBE5(receive, NULL, tp, mtod(m, const char *), tp, th);
+	TCP_PROBE5(receive, NULL, tp, m, tp, th);
 
 	/*
 	 * Segment belongs to a connection in SYN_SENT, ESTABLISHED or later
@@ -1470,7 +1470,7 @@ tfo_socket_result:
 	return (IPPROTO_DONE);
 
 dropwithreset:
-	TCP_PROBE5(receive, NULL, tp, mtod(m, const char *), tp, th);
+	TCP_PROBE5(receive, NULL, tp, m, tp, th);
 
 	if (ti_locked == TI_RLOCKED) {
 		INP_INFO_RUNLOCK(&V_tcbinfo);
@@ -1494,7 +1494,7 @@ dropwithreset:
 
 dropunlock:
 	if (m != NULL)
-		TCP_PROBE5(receive, NULL, tp, mtod(m, const char *), tp, th);
+		TCP_PROBE5(receive, NULL, tp, m, tp, th);
 
 	if (ti_locked == TI_RLOCKED) {
 		INP_INFO_RUNLOCK(&V_tcbinfo);
@@ -1828,8 +1828,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 					    (void *)tcp_saveipgen,
 					    &tcp_savetcp, 0);
 #endif
-				TCP_PROBE3(debug__input, tp, th,
-					mtod(m, const char *));
+				TCP_PROBE3(debug__input, tp, th, m);
 				if (tp->snd_una == tp->snd_max)
 					tcp_timer_activate(tp, TT_REXMT, 0);
 				else if (!tcp_timer_active(tp, TT_PERSIST))
@@ -1875,7 +1874,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 				tcp_trace(TA_INPUT, ostate, tp,
 				    (void *)tcp_saveipgen, &tcp_savetcp, 0);
 #endif
-			TCP_PROBE3(debug__input, tp, th, mtod(m, const char *));
+			TCP_PROBE3(debug__input, tp, th, m);
 
 		/*
 		 * Automatic sizing of receive socket buffer.  Often the send
@@ -2037,7 +2036,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 		}
 		if ((thflags & (TH_ACK|TH_RST)) == (TH_ACK|TH_RST)) {
 			TCP_PROBE5(connect__refused, NULL, tp,
-			    mtod(m, const char *), tp, th);
+			    m, tp, th);
 			tp = tcp_drop(tp, ECONNREFUSED);
 		}
 		if (thflags & TH_RST)
@@ -2090,7 +2089,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			} else {
 				tcp_state_change(tp, TCPS_ESTABLISHED);
 				TCP_PROBE5(connect__established, NULL, tp,
-				    mtod(m, const char *), tp, th);
+				    m, tp, th);
 				cc_conn_init(tp);
 				tcp_timer_activate(tp, TT_KEEP,
 				    TP_KEEPIDLE(tp));
@@ -2470,7 +2469,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 		} else {
 			tcp_state_change(tp, TCPS_ESTABLISHED);
 			TCP_PROBE5(accept__established, NULL, tp,
-			    mtod(m, const char *), tp, th);
+			    m, tp, th);
 #ifdef TCP_RFC7413
 			if (tp->t_tfo_pending) {
 				tcp_fastopen_decrement_counter(tp->t_tfo_pending);
@@ -3204,7 +3203,7 @@ dodata:							/* XXX */
 		tcp_trace(TA_INPUT, ostate, tp, (void *)tcp_saveipgen,
 			  &tcp_savetcp, 0);
 #endif
-	TCP_PROBE3(debug__input, tp, th, mtod(m, const char *));
+	TCP_PROBE3(debug__input, tp, th, m);
 
 	/*
 	 * Return any desired output.
@@ -3252,7 +3251,7 @@ dropafterack:
 		tcp_trace(TA_DROP, ostate, tp, (void *)tcp_saveipgen,
 			  &tcp_savetcp, 0);
 #endif
-	TCP_PROBE3(debug__input, tp, th, mtod(m, const char *));
+	TCP_PROBE3(debug__input, tp, th, m);
 	if (ti_locked == TI_RLOCKED)
 		INP_INFO_RUNLOCK(&V_tcbinfo);
 	ti_locked = TI_UNLOCKED;
@@ -3293,7 +3292,7 @@ drop:
 		tcp_trace(TA_DROP, ostate, tp, (void *)tcp_saveipgen,
 			  &tcp_savetcp, 0);
 #endif
-	TCP_PROBE3(debug__input, tp, th, mtod(m, const char *));
+	TCP_PROBE3(debug__input, tp, th, m);
 	if (tp != NULL)
 		INP_WUNLOCK(tp->t_inpcb);
 	m_freem(m);

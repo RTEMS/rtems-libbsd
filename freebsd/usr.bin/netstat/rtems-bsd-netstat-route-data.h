@@ -12,4 +12,3 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_pksent);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_mtu);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_if);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_expire);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int masktolen[]);

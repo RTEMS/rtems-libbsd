@@ -507,7 +507,7 @@ zy7_pl_fclk_enabled(int unit)
 }
 
 int
-zy7_pl_level_shifters_enabled()
+zy7_pl_level_shifters_enabled(void)
 {
 	struct zy7_slcr_softc *sc = zy7_slcr_softc_p;
 
@@ -524,7 +524,7 @@ zy7_pl_level_shifters_enabled()
 }
 
 void
-zy7_pl_level_shifters_enable()
+zy7_pl_level_shifters_enable(void)
 {
 	struct zy7_slcr_softc *sc = zy7_slcr_softc_p;
 
@@ -539,7 +539,7 @@ zy7_pl_level_shifters_enable()
 }
 
 void
-zy7_pl_level_shifters_disable()
+zy7_pl_level_shifters_disable(void)
 {
 	struct zy7_slcr_softc *sc = zy7_slcr_softc_p;
 

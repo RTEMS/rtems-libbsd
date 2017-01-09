@@ -353,7 +353,8 @@ pause_sbt(const char *wmesg, sbintime_t sbt, sbintime_t pr, int flags)
 		sbt = tick_sbt;
 
 #ifndef __rtems__
-	if (cold || kdb_active || SCHEDULER_STOPPED()) {
+	if ((cold && curthread == &thread0) || kdb_active ||
+	    SCHEDULER_STOPPED()) {
 		/*
 		 * We delay one second at a time to avoid overflowing the
 		 * system specific DELAY() function(s):

@@ -479,7 +479,7 @@ again_locked:
 	lenat++;
 	*lenat = value;
 	lenat++;
-	tick_tock = (uint32_t *) lenat;
+	tick_tock = (uint32_t *)lenat;
 	lenat++;
 	*tick_tock = sctp_get_tick_count();
 	copyto = (void *)lenat;
@@ -500,7 +500,7 @@ no_log:
 
 
 int
-sctp_copy_out_packet_log(uint8_t * target, int length)
+sctp_copy_out_packet_log(uint8_t *target, int length)
 {
 	/*
 	 * We wind through the packet log starting at start copying up to

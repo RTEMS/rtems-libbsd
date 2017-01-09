@@ -5,6 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
+#define YYPATCH 20160324
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -359,7 +360,7 @@ typedef union {
 	struct block *rblk;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-#line 363 "pcap.tab.c"
+#line 364 "pcap.tab.c"
 
 /* compatibility with bison */
 #ifdef YYPARSE_PARAM
@@ -504,7 +505,7 @@ extern int YYPARSE_DECL();
 #define AND 366
 #define UMINUS 367
 #define YYERRCODE 256
-typedef short YYINT;
+typedef int YYINT;
 static const YYINT pcaplhs[] = {                         -1,
     0,    0,   24,    1,    1,    1,    1,    1,   20,   21,
     2,    2,    2,    3,    3,    3,    3,    3,    3,    3,
@@ -2218,7 +2219,7 @@ case 204:
 #line 696 "../../freebsd/contrib/libpcap/grammar.y"
 	{ gen_or(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
-#line 2222 "pcap.tab.c"
+#line 2223 "pcap.tab.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;

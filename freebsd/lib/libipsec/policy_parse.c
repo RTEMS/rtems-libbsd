@@ -5,6 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
+#define YYPATCH 20160324
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -136,12 +137,11 @@ static caddr_t policy_parse(char *msg, int msglen);
 
 extern void __policy__strbuffer__init__(char *msg);
 extern void __policy__strbuffer__free__(void);
-extern int yyparse(void);
 extern int yylex(void);
 
 extern char *__libipsecyytext;	/*XXX*/
 
-#line 98 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 97 "../../freebsd/lib/libipsec/policy_parse.y"
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
@@ -201,7 +201,7 @@ extern int YYPARSE_DECL();
 #define SLASH 266
 #define HYPHEN 267
 #define YYERRCODE 256
-typedef short YYINT;
+typedef int YYINT;
 static const YYINT __libipsecyylhs[] = {                 -1,
     2,    0,    0,    1,    1,    3,    3,    3,    3,    3,
     3,    3,    3,    4,    5,    7,    7,    8,    6,    6,
@@ -372,7 +372,7 @@ typedef struct {
 } YYSTACKDATA;
 /* variables for the parser stack */
 static YYSTACKDATA yystack;
-#line 213 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 212 "../../freebsd/lib/libipsec/policy_parse.y"
 
 void
 yyerror(msg)
@@ -803,7 +803,7 @@ yyreduce:
     switch (yyn)
     {
 case 1:
-#line 116 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 115 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			p_dir = yystack.l_mark[-1].num;
 			p_type = yystack.l_mark[0].num;
@@ -813,7 +813,7 @@ case 1:
 		}
 break;
 case 3:
-#line 125 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 124 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			p_dir = yystack.l_mark[0].num;
 			p_type = 0;	/* ignored it by kernel */
@@ -823,7 +823,7 @@ case 3:
 		}
 break;
 case 5:
-#line 136 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 135 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			if (rule_check() < 0)
 				return -1;
@@ -835,43 +835,43 @@ case 5:
 		}
 break;
 case 12:
-#line 154 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 153 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			__ipsec_errcode = EIPSEC_FEW_ARGUMENTS;
 			return -1;
 		}
 break;
 case 13:
-#line 158 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 157 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			__ipsec_errcode = EIPSEC_FEW_ARGUMENTS;
 			return -1;
 		}
 break;
 case 14:
-#line 165 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 164 "../../freebsd/lib/libipsec/policy_parse.y"
 	{ p_protocol = yystack.l_mark[0].num; }
 break;
 case 15:
-#line 169 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 168 "../../freebsd/lib/libipsec/policy_parse.y"
 	{ p_mode = yystack.l_mark[0].num; }
 break;
 case 16:
-#line 173 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 172 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			p_level = yystack.l_mark[0].num;
 			p_reqid = 0;
 		}
 break;
 case 17:
-#line 177 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 176 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			p_level = IPSEC_LEVEL_UNIQUE;
 			p_reqid = atol(yystack.l_mark[0].val.buf);	/* atol() is good. */
 		}
 break;
 case 18:
-#line 184 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 183 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			p_src = parse_sockaddr(&yystack.l_mark[0].val);
 			if (p_src == NULL)
@@ -879,7 +879,7 @@ case 18:
 		}
 break;
 case 19:
-#line 190 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 189 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			p_dst = parse_sockaddr(&yystack.l_mark[0].val);
 			if (p_dst == NULL)
@@ -887,7 +887,7 @@ case 19:
 		}
 break;
 case 20:
-#line 195 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 194 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			if (p_dir != IPSEC_DIR_OUTBOUND) {
 				__ipsec_errcode = EIPSEC_INVAL_DIR;
@@ -896,7 +896,7 @@ case 20:
 		}
 break;
 case 21:
-#line 201 "../../freebsd/lib/libipsec/policy_parse.y"
+#line 200 "../../freebsd/lib/libipsec/policy_parse.y"
 	{
 			if (p_dir != IPSEC_DIR_INBOUND) {
 				__ipsec_errcode = EIPSEC_INVAL_DIR;

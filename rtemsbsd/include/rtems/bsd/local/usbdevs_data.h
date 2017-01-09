@@ -1780,6 +1780,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB-AC51",
 	},
 	{
+	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_USBAC56,
+	    0,
+	    "ASUSTeK Computer",
+	    "USB-AC56",
+	},
+	{
 	    USB_VENDOR_ASUS, USB_PRODUCT_ASUS_A730W,
 	    0,
 	    "ASUSTeK Computer",
@@ -1927,7 +1933,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_ATMEL, USB_PRODUCT_ATMEL_UHB124,
 	    0,
 	    "Atmel",
-	    "UHB124 hub",
+	    "AT43301 USB 1.1 Hub",
 	},
 	{
 	    USB_VENDOR_ATMEL, USB_PRODUCT_ATMEL_DWL120,
@@ -2752,6 +2758,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "AE1000",
 	},
 	{
+	    USB_VENDOR_CISCOLINKSYS, USB_PRODUCT_CISCOLINKSYS_WUSB6300,
+	    0,
+	    "Cisco-Linksys",
+	    "WUSB6300",
+	},
+	{
 	    USB_VENDOR_CISCOLINKSYS, USB_PRODUCT_CISCOLINKSYS_USB3GIGV1,
 	    0,
 	    "Cisco-Linksys",
@@ -3550,6 +3562,36 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DWL-120 rev E",
 	},
 	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8192CU_1,
+	    0,
+	    "D-Link",
+	    "RTL8192CU",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8188CU,
+	    0,
+	    "D-Link",
+	    "RTL8188CU",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8192CU_2,
+	    0,
+	    "D-Link",
+	    "RTL8192CU",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8192CU_3,
+	    0,
+	    "D-Link",
+	    "RTL8192CU",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA131B,
+	    0,
+	    "D-Link",
+	    "DWA-131 rev B",
+	},
+	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA125D1,
 	    0,
 	    "D-Link",
@@ -3560,6 +3602,36 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "D-Link",
 	    "DWA-123 rev D1",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA171A1,
+	    0,
+	    "D-Link",
+	    "DWA-171 rev A1",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA182C1,
+	    0,
+	    "D-Link",
+	    "DWA-182 rev C1",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA180A1,
+	    0,
+	    "D-Link",
+	    "DWA-180 rev A1",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA172A1,
+	    0,
+	    "D-Link",
+	    "DWA-172 rev A1",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA131E1,
+	    0,
+	    "D-Link",
+	    "DWA-131 rev E1",
 	},
 	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWL122,
@@ -3712,6 +3784,30 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "10/100/1000 Ethernet",
 	},
 	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157,
+	    0,
+	    "D-Link",
+	    "DWM-157",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWR510,
+	    0,
+	    "D-Link",
+	    "DWR-510",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157_CD,
+	    0,
+	    "D-Link",
+	    "DWM-157 CD-ROM Mode",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWR510_CD,
+	    0,
+	    "D-Link",
+	    "DWR-510 CD-ROM Mode",
+	},
+	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DSB650,
 	    0,
 	    "D-Link",
@@ -3722,60 +3818,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "D-Link",
 	    "DUB-H7 USB 2.0 7-Port Hub",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWR510_CD,
-	    0,
-	    "D-Link",
-	    "DWR-510 CD-ROM Mode",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWR510,
-	    0,
-	    "D-Link",
-	    "DWR-510",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157,
-	    0,
-	    "D-Link",
-	    "DWM-157",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157_CD,
-	    0,
-	    "D-Link",
-	    "DWM-157 CD-ROM Mode",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8188CU,
-	    0,
-	    "D-Link",
-	    "RTL8188CU",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8192CU_1,
-	    0,
-	    "D-Link",
-	    "RTL8192CU",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8192CU_2,
-	    0,
-	    "D-Link",
-	    "RTL8192CU",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_RTL8192CU_3,
-	    0,
-	    "D-Link",
-	    "RTL8192CU",
-	},
-	{
-	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA131B,
-	    0,
-	    "D-Link",
-	    "DWA-131 rev B",
 	},
 	{
 	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_RTL8192SU_1,
@@ -3838,16 +3880,16 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DWA-111",
 	},
 	{
-	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_RT2870_1,
-	    0,
-	    "D-Link",
-	    "RT2870",
-	},
-	{
 	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_DWA110,
 	    0,
 	    "D-Link",
 	    "DWA-110",
+	},
+	{
+	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_RT2870_1,
+	    0,
+	    "D-Link",
+	    "RT2870",
 	},
 	{
 	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_RT3072,
@@ -4172,6 +4214,24 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Edimax",
 	    "RTL8192CU",
+	},
+	{
+	    USB_VENDOR_EDIMAX, USB_PRODUCT_EDIMAX_EW7811UTC_1,
+	    0,
+	    "Edimax",
+	    "EW-7811UTC",
+	},
+	{
+	    USB_VENDOR_EDIMAX, USB_PRODUCT_EDIMAX_EW7811UTC_2,
+	    0,
+	    "Edimax",
+	    "EW-7811UTC",
+	},
+	{
+	    USB_VENDOR_EDIMAX, USB_PRODUCT_EDIMAX_EW7822UAC,
+	    0,
+	    "Edimax",
+	    "EW-7822UAC",
 	},
 	{
 	    USB_VENDOR_EGALAX, USB_PRODUCT_EGALAX_TPANEL,
@@ -6277,7 +6337,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL606,
 	    0,
 	    "Genesys Logic",
-	    "USB 2.0 HUB",
+	    "GL606 USB 2.0 HUB",
+	},
+	{
+	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL850G,
+	    0,
+	    "Genesys Logic",
+	    "GL850G USB 2.0 HUB",
 	},
 	{
 	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL641USB,
@@ -6644,6 +6710,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Hawking",
 	    "RTL8192SU",
+	},
+	{
+	    USB_VENDOR_HAWKING, USB_PRODUCT_HAWKING_HD65U,
+	    0,
+	    "Hawking",
+	    "HD65U",
 	},
 	{
 	    USB_VENDOR_HIDGLOBAL, USB_PRODUCT_HIDGLOBAL_CM2020,
@@ -7528,6 +7600,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "LTE modem",
 	},
 	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_ME909S,
+	    0,
+	    "Huawei Technologies",
+	    "LTE modem",
+	},
+	{
 	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_ETS2055,
 	    0,
 	    "Huawei Technologies",
@@ -7856,6 +7934,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "I-O Data",
 	    "RT3072",
+	},
+	{
+	    USB_VENDOR_IODATA, USB_PRODUCT_IODATA_WNAC867U,
+	    0,
+	    "I-O Data",
+	    "WN-AC867U",
 	},
 	{
 	    USB_VENDOR_IODATA, USB_PRODUCT_IODATA_USBRSAQ,
@@ -10618,6 +10702,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "WLI-UC-GNM2",
 	},
 	{
+	    USB_VENDOR_MELCO, USB_PRODUCT_MELCO_WIU2433DM,
+	    0,
+	    "Melco",
+	    "WI-U2-433DM",
+	},
+	{
+	    USB_VENDOR_MELCO, USB_PRODUCT_MELCO_WIU3866D,
+	    0,
+	    "Melco",
+	    "WI-U3-866D",
+	},
+	{
 	    USB_VENDOR_MERLIN, USB_PRODUCT_MERLIN_V620,
 	    0,
 	    "Merlin",
@@ -11368,6 +11464,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "WL300NU-G",
 	},
 	{
+	    USB_VENDOR_NEC, USB_PRODUCT_NEC_WL900U,
+	    0,
+	    "NEC",
+	    "Aterm WL900U",
+	},
+	{
 	    USB_VENDOR_NEC, USB_PRODUCT_NEC_HUB,
 	    0,
 	    "NEC",
@@ -11540,6 +11642,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "BayNETGEAR",
 	    "WNA1000M",
+	},
+	{
+	    USB_VENDOR_NETGEAR, USB_PRODUCT_NETGEAR_A6100,
+	    0,
+	    "BayNETGEAR",
+	    "A6100",
 	},
 	{
 	    USB_VENDOR_NETGEAR2, USB_PRODUCT_NETGEAR2_MA101,
@@ -12802,6 +12910,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "MZK-UE150N",
 	},
 	{
+	    USB_VENDOR_PLANEX2, USB_PRODUCT_PLANEX2_GW900D,
+	    0,
+	    "Planex Communications",
+	    "GW-900D",
+	},
+	{
 	    USB_VENDOR_PLANEX2, USB_PRODUCT_PLANEX2_GWUS54MINI2,
 	    0,
 	    "Planex Communications",
@@ -14044,6 +14158,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CU",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192CU_1,
+	    0,
+	    "Realtek",
+	    "RTL8192CU",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188EU,
 	    0,
 	    "Realtek",
@@ -14806,6 +14926,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "FTDI compatible adapter",
 	},
 	{
+	    USB_VENDOR_SENAO, USB_PRODUCT_SENAO_EUB1200AC,
+	    0,
+	    "Senao",
+	    "EnGenius EUB1200AC",
+	},
+	{
 	    USB_VENDOR_SENAO, USB_PRODUCT_SENAO_RT2870_3,
 	    0,
 	    "Senao",
@@ -15446,6 +15572,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Sierra Wireless",
 	    "MC7355",
+	},
+	{
+	    USB_VENDOR_SIERRA, USB_PRODUCT_SIERRA_MC7430,
+	    0,
+	    "Sierra Wireless",
+	    "Sierra Wireless MC7430 Qualcomm Snapdragon X7 LTE-A",
 	},
 	{
 	    USB_VENDOR_SIERRA, USB_PRODUCT_SIERRA_AC313U,
@@ -16118,6 +16250,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Sitecom Europe",
 	    "LN-032",
+	},
+	{
+	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_WLA7100,
+	    0,
+	    "Sitecom Europe",
+	    "WLA-7100",
 	},
 	{
 	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_LN031,
@@ -17038,6 +17176,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB ThumbDrive",
 	},
 	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4U,
+	    0,
+	    "TP-Link",
+	    "Archer T4U",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN823NV2,
+	    0,
+	    "TP-Link",
+	    "TL-WN823N v2",
+	},
+	{
 	    USB_VENDOR_TREK, USB_PRODUCT_TREK_THUMBDRIVE,
 	    0,
 	    "Trek Technology",
@@ -17072,6 +17222,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "TRENDnet",
 	    "RTL8188CU",
+	},
+	{
+	    USB_VENDOR_TRENDNET, USB_PRODUCT_TRENDNET_TEW805UB,
+	    0,
+	    "TRENDnet",
+	    "TEW-805UB",
 	},
 	{
 	    USB_VENDOR_TRIPPLITE, USB_PRODUCT_TRIPPLITE_U209,
@@ -17990,6 +18146,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "ZyXEL Communication",
 	    "NWD2705",
+	},
+	{
+	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_NWD6605,
+	    0,
+	    "ZyXEL Communication",
+	    "NWD6605",
 	},
 	{
 	    USB_VENDOR_UNKNOWN1, 0,
@@ -22093,6 +22255,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_WETELECOM, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "WeTelecom",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_TPLINK, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "TP-Link",
 	    NULL,
 	},
 	{

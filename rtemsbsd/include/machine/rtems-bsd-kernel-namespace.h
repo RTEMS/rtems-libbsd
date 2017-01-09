@@ -539,6 +539,7 @@
 #define	config_intrhook_disestablish _bsd_config_intrhook_disestablish
 #define	config_intrhook_establish _bsd_config_intrhook_establish
 #define	copyiniov _bsd_copyiniov
+#define	counter_ratecheck _bsd_counter_ratecheck
 #define	counter_u64_alloc _bsd_counter_u64_alloc
 #define	counter_u64_fetch _bsd_counter_u64_fetch
 #define	counter_u64_free _bsd_counter_u64_free
@@ -1165,7 +1166,6 @@
 #define	hhook_remove_hook _bsd_hhook_remove_hook
 #define	hhook_remove_hook_lookup _bsd_hhook_remove_hook_lookup
 #define	hhook_run_hooks _bsd_hhook_run_hooks
-#define	hhook_run_tcp_est_in _bsd_hhook_run_tcp_est_in
 #define	hhook_vhead_list _bsd_hhook_vhead_list
 #define	hid_end_parse _bsd_hid_end_parse
 #define	hid_get_data _bsd_hid_get_data
@@ -1646,6 +1646,7 @@
 #define	ip6_temp_preferred_lifetime _bsd_ip6_temp_preferred_lifetime
 #define	ip6_temp_regen_advance _bsd_ip6_temp_regen_advance
 #define	ip6_temp_valid_lifetime _bsd_ip6_temp_valid_lifetime
+#define	ip6_tryforward _bsd_ip6_tryforward
 #define	ip6_unknown_opt _bsd_ip6_unknown_opt
 #define	ip6_use_defzone _bsd_ip6_use_defzone
 #define	ip6_use_deprecated _bsd_ip6_use_deprecated
@@ -1989,7 +1990,6 @@
 #define	lltable_link _bsd_lltable_link
 #define	lltable_link_entry _bsd_lltable_link_entry
 #define	lltable_prefix_free _bsd_lltable_prefix_free
-#define	lltable_rwlock _bsd_lltable_rwlock
 #define	lltable_set_entry_addr _bsd_lltable_set_entry_addr
 #define	lltable_sysctl_dumparp _bsd_lltable_sysctl_dumparp
 #define	lltable_try_set_entry_addr _bsd_lltable_try_set_entry_addr
@@ -2190,6 +2190,7 @@
 #define	nd6_init _bsd_nd6_init
 #define	nd6_ioctl _bsd_nd6_ioctl
 #define	nd6_is_addr_neighbor _bsd_nd6_is_addr_neighbor
+#define	nd6_list_genid _bsd_nd6_list_genid
 #define	nd6_llinfo_setstate _bsd_nd6_llinfo_setstate
 #define	nd6_lock _bsd_nd6_lock
 #define	nd6_lookup _bsd_nd6_lookup
@@ -2197,11 +2198,18 @@
 #define	nd6_na_output _bsd_nd6_na_output
 #define	nd6_ns_input _bsd_nd6_ns_input
 #define	nd6_ns_output _bsd_nd6_ns_output
+#define	nd6_onlink_mtx _bsd_nd6_onlink_mtx
 #define	nd6_option _bsd_nd6_option
 #define	nd6_option_init _bsd_nd6_option_init
 #define	nd6_options _bsd_nd6_options
 #define	nd6_output_ifp _bsd_nd6_output_ifp
+#define	nd6_prefix_del _bsd_nd6_prefix_del
 #define	nd6_prefix_lookup _bsd_nd6_prefix_lookup
+#define	nd6_prefix_offlink _bsd_nd6_prefix_offlink
+#define	nd6_prefix_onlink _bsd_nd6_prefix_onlink
+#define	nd6_prefix_ref _bsd_nd6_prefix_ref
+#define	nd6_prefix_rele _bsd_nd6_prefix_rele
+#define	nd6_prefix_unlink _bsd_nd6_prefix_unlink
 #define	nd6_prelist_add _bsd_nd6_prelist_add
 #define	nd6_purge _bsd_nd6_purge
 #define	nd6_ra_input _bsd_nd6_ra_input
@@ -2328,11 +2336,14 @@
 #define	pci_driver_added _bsd_pci_driver_added
 #define	pcie_adjust_config _bsd_pcie_adjust_config
 #define	pci_ea_is_enabled _bsd_pci_ea_is_enabled
+#define	pcie_flr _bsd_pcie_flr
+#define	pcie_get_max_completion_timeout _bsd_pcie_get_max_completion_timeout
 #define	pci_enable_busmaster_method _bsd_pci_enable_busmaster_method
 #define	pci_enable_io_method _bsd_pci_enable_io_method
 #define	pci_enable_msi_method _bsd_pci_enable_msi_method
 #define	pci_enable_msix_method _bsd_pci_enable_msix_method
 #define	pcie_read_config _bsd_pcie_read_config
+#define	pcie_wait_for_pending_transactions _bsd_pcie_wait_for_pending_transactions
 #define	pcie_write_config _bsd_pcie_write_config
 #define	pci_fetch_vpd_list _bsd_pci_fetch_vpd_list
 #define	pci_find_bar _bsd_pci_find_bar
@@ -2634,7 +2645,6 @@
 #define	pmtu_probe _bsd_pmtu_probe
 #define	poll_no_poll _bsd_poll_no_poll
 #define	ppsratecheck _bsd_ppsratecheck
-#define	prelist_remove _bsd_prelist_remove
 #define	preload_addr_relocate _bsd_preload_addr_relocate
 #define	preload_bootstrap_relocate _bsd_preload_bootstrap_relocate
 #define	preload_delete_name _bsd_preload_delete_name
@@ -2967,9 +2977,11 @@
 #define	scsi_attrib_vendser_sbuf _bsd_scsi_attrib_vendser_sbuf
 #define	scsi_attrib_volcoh_sbuf _bsd_scsi_attrib_volcoh_sbuf
 #define	scsi_devid_is_lun_eui64 _bsd_scsi_devid_is_lun_eui64
+#define	scsi_devid_is_lun_md5 _bsd_scsi_devid_is_lun_md5
 #define	scsi_devid_is_lun_naa _bsd_scsi_devid_is_lun_naa
 #define	scsi_devid_is_lun_name _bsd_scsi_devid_is_lun_name
 #define	scsi_devid_is_lun_t10 _bsd_scsi_devid_is_lun_t10
+#define	scsi_devid_is_lun_uuid _bsd_scsi_devid_is_lun_uuid
 #define	scsi_devid_is_naa_ieee_reg _bsd_scsi_devid_is_naa_ieee_reg
 #define	scsi_devid_is_port_naa _bsd_scsi_devid_is_port_naa
 #define	scsi_devid_is_sas_target _bsd_scsi_devid_is_sas_target
@@ -2988,6 +3000,7 @@
 #define	scsi_mode_select_len _bsd_scsi_mode_select_len
 #define	scsi_mode_sense _bsd_scsi_mode_sense
 #define	scsi_mode_sense_len _bsd_scsi_mode_sense_len
+#define	scsi_mode_sense_subpage _bsd_scsi_mode_sense_subpage
 #define	scsi_nv_to_str _bsd_scsi_nv_to_str
 #define	scsi_parse_transportid _bsd_scsi_parse_transportid
 #define	scsi_parse_transportid_64bit _bsd_scsi_parse_transportid_64bit
@@ -3003,6 +3016,7 @@
 #define	scsi_read_write _bsd_scsi_read_write
 #define	scsi_request_sense _bsd_scsi_request_sense
 #define	scsi_set_sense_data _bsd_scsi_set_sense_data
+#define	scsi_set_sense_data_len _bsd_scsi_set_sense_data_len
 #define	scsi_set_sense_data_va _bsd_scsi_set_sense_data_va
 #define	scsi_test_unit_ready _bsd_scsi_test_unit_ready
 #define	scsi_transportid_sbuf _bsd_scsi_transportid_sbuf
@@ -3359,7 +3373,6 @@
 #define	SHA512_Final _bsd_SHA512_Final
 #define	SHA512_Init _bsd_SHA512_Init
 #define	SHA512_Update _bsd_SHA512_Update
-#define	SipHash24_TestVectors _bsd_SipHash24_TestVectors
 #define	SipHash_End _bsd_SipHash_End
 #define	SipHash_Final _bsd_SipHash_Final
 #define	SipHash_InitX _bsd_SipHash_InitX
@@ -3400,8 +3413,6 @@
 #define	Skein_512_Output _bsd_Skein_512_Output
 #define	Skein_512_Process_Block _bsd_Skein_512_Process_Block
 #define	Skein_512_Update _bsd_Skein_512_Update
-#define	Skein_Get64_LSB_First _bsd_Skein_Get64_LSB_First
-#define	Skein_Put64_LSB_First _bsd_Skein_Put64_LSB_First
 #define	skipjack_backwards _bsd_skipjack_backwards
 #define	skipjack_forwards _bsd_skipjack_forwards
 #define	sl_compress_init _bsd_sl_compress_init
@@ -3693,7 +3704,6 @@
 #define	tcp_hc_init _bsd_tcp_hc_init
 #define	tcp_hc_update _bsd_tcp_hc_update
 #define	tcp_hc_updatemtu _bsd_tcp_hc_updatemtu
-#define	tcp_hhh _bsd_tcp_hhh
 #define	tcp_init _bsd_tcp_init
 #define	tcp_initcwnd_segments _bsd_tcp_initcwnd_segments
 #define	tcp_inpinfo_lock_add _bsd_tcp_inpinfo_lock_add
@@ -3783,6 +3793,7 @@
 #define	tcp_twstart _bsd_tcp_twstart
 #define	tcp_tw_zone_change _bsd_tcp_tw_zone_change
 #define	tcp_update_sack_list _bsd_tcp_update_sack_list
+#define	tcp_use_hostcache _bsd_tcp_use_hostcache
 #define	tcp_usrreqs _bsd_tcp_usrreqs
 #define	tcp_v6mssdflt _bsd_tcp_v6mssdflt
 #define	tcp_xmit_timer _bsd_tcp_xmit_timer
@@ -3906,11 +3917,14 @@
 #define	usbd_clear_stall_locked _bsd_usbd_clear_stall_locked
 #define	usbd_copy_in _bsd_usbd_copy_in
 #define	usbd_copy_out _bsd_usbd_copy_out
+#define	usbd_ctrl_lock _bsd_usbd_ctrl_lock
 #define	usbd_ctrl_transfer_setup _bsd_usbd_ctrl_transfer_setup
+#define	usbd_ctrl_unlock _bsd_usbd_ctrl_unlock
 #define	usbd_device_attached _bsd_usbd_device_attached
 #define	usbd_do_request_callback _bsd_usbd_do_request_callback
 #define	usbd_do_request_flags _bsd_usbd_do_request_flags
 #define	usbd_do_request_proc _bsd_usbd_do_request_proc
+#define	usbd_dummy_timeout _bsd_usbd_dummy_timeout
 #define	usb_debug _bsd_usb_debug
 #define	usbd_enum_is_locked _bsd_usbd_enum_is_locked
 #define	usbd_enum_lock _bsd_usbd_enum_lock
@@ -3942,6 +3956,7 @@
 #define	usbd_get_no_descriptors _bsd_usbd_get_no_descriptors
 #define	usbd_get_page _bsd_usbd_get_page
 #define	usbd_get_speed _bsd_usbd_get_speed
+#define	usbd_in_polling_mode _bsd_usbd_in_polling_mode
 #define	usbd_interface_count _bsd_usbd_interface_count
 #define	usbd_lookup_id_by_info _bsd_usbd_lookup_id_by_info
 #define	usbd_lookup_id_by_uaa _bsd_usbd_lookup_id_by_uaa
@@ -4124,7 +4139,6 @@
 #define	usb_trim_spaces _bsd_usb_trim_spaces
 #define	uuid_ether_add _bsd_uuid_ether_add
 #define	uuid_ether_del _bsd_uuid_ether_del
-#define	vectors _bsd_vectors
 #define	verbose_limit _bsd_verbose_limit
 #define	vlan_cookie_p _bsd_vlan_cookie_p
 #define	vlan_devat_p _bsd_vlan_devat_p

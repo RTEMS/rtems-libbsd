@@ -5,6 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
+#define YYPATCH 20160324
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -114,13 +115,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -151,7 +145,7 @@ static	void	_nsaddsrctomap(const char *);
 
 static	ns_dbt		curdbt;
 static	ns_src		cursrc;
-#line 58 "../../freebsd/lib/libc/net/nsparser.y"
+#line 51 "../../freebsd/lib/libc/net/nsparser.y"
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
@@ -163,7 +157,7 @@ typedef union {
 	int   mapval;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-#line 167 "_nsyy.tab.c"
+#line 161 "_nsyy.tab.c"
 
 /* compatibility with bison */
 #ifdef YYPARSE_PARAM
@@ -206,7 +200,7 @@ extern int YYPARSE_DECL();
 #define ERRORTOKEN 264
 #define STRING 265
 #define YYERRCODE 256
-typedef short YYINT;
+typedef int YYINT;
 static const YYINT _nsyylhs[] = {                        -1,
     0,    0,    3,    3,    4,    4,    4,    4,    5,    6,
     6,    7,    9,    7,    8,    8,   10,    1,    1,    1,
@@ -362,11 +356,10 @@ typedef struct {
 } YYSTACKDATA;
 /* variables for the parser stack */
 static YYSTACKDATA yystack;
-#line 153 "../../freebsd/lib/libc/net/nsparser.y"
+#line 146 "../../freebsd/lib/libc/net/nsparser.y"
 
 static void
-_nsaddsrctomap(elem)
-	const char *elem;
+_nsaddsrctomap(const char *elem)
 {
 	int		i, lineno;
 	extern int	_nsyylineno;
@@ -396,7 +389,7 @@ _nsaddsrctomap(elem)
 	cursrc.name = elem;
 	_nsdbtaddsrc(&curdbt, &cursrc);
 }
-#line 400 "_nsyy.tab.c"
+#line 393 "_nsyy.tab.c"
 
 #if YYDEBUG
 #include <stdio.h>		/* needed for printf */
@@ -599,25 +592,25 @@ yyreduce:
     switch (yyn)
     {
 case 6:
-#line 86 "../../freebsd/lib/libc/net/nsparser.y"
+#line 79 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			free((char*)curdbt.name);
 		}
 break;
 case 7:
-#line 90 "../../freebsd/lib/libc/net/nsparser.y"
+#line 83 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			_nsdbtput(&curdbt);
 		}
 break;
 case 8:
-#line 94 "../../freebsd/lib/libc/net/nsparser.y"
+#line 87 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			yyerrok;
 		}
 break;
 case 9:
-#line 101 "../../freebsd/lib/libc/net/nsparser.y"
+#line 94 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			curdbt.name = yylval.str;
 			curdbt.srclist = NULL;
@@ -625,24 +618,24 @@ case 9:
 		}
 break;
 case 12:
-#line 115 "../../freebsd/lib/libc/net/nsparser.y"
+#line 108 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			cursrc.flags = NS_TERMINATE;
 			_nsaddsrctomap(yystack.l_mark[0].str);
 		}
 break;
 case 13:
-#line 119 "../../freebsd/lib/libc/net/nsparser.y"
+#line 112 "../../freebsd/lib/libc/net/nsparser.y"
 	{ cursrc.flags = NS_SUCCESS; }
 break;
 case 14:
-#line 120 "../../freebsd/lib/libc/net/nsparser.y"
+#line 113 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			_nsaddsrctomap(yystack.l_mark[-4].str);
 		}
 break;
 case 17:
-#line 132 "../../freebsd/lib/libc/net/nsparser.y"
+#line 125 "../../freebsd/lib/libc/net/nsparser.y"
 	{
 			if (yystack.l_mark[0].mapval)	     /* if action == RETURN set RETURN bit */
 				cursrc.flags |= yystack.l_mark[-2].mapval;  
@@ -651,30 +644,30 @@ case 17:
 		}
 break;
 case 18:
-#line 141 "../../freebsd/lib/libc/net/nsparser.y"
+#line 134 "../../freebsd/lib/libc/net/nsparser.y"
 	{ yyval.mapval = NS_SUCCESS; }
 break;
 case 19:
-#line 142 "../../freebsd/lib/libc/net/nsparser.y"
+#line 135 "../../freebsd/lib/libc/net/nsparser.y"
 	{ yyval.mapval = NS_UNAVAIL; }
 break;
 case 20:
-#line 143 "../../freebsd/lib/libc/net/nsparser.y"
+#line 136 "../../freebsd/lib/libc/net/nsparser.y"
 	{ yyval.mapval = NS_NOTFOUND; }
 break;
 case 21:
-#line 144 "../../freebsd/lib/libc/net/nsparser.y"
+#line 137 "../../freebsd/lib/libc/net/nsparser.y"
 	{ yyval.mapval = NS_TRYAGAIN; }
 break;
 case 22:
-#line 148 "../../freebsd/lib/libc/net/nsparser.y"
+#line 141 "../../freebsd/lib/libc/net/nsparser.y"
 	{ yyval.mapval = NS_ACTION_RETURN; }
 break;
 case 23:
-#line 149 "../../freebsd/lib/libc/net/nsparser.y"
+#line 142 "../../freebsd/lib/libc/net/nsparser.y"
 	{ yyval.mapval = NS_ACTION_CONTINUE; }
 break;
-#line 678 "_nsyy.tab.c"
+#line 671 "_nsyy.tab.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;

@@ -181,6 +181,7 @@ next_txidx(struct dwc_softc *sc, uint32_t curidx, int inc)
 	return ((curidx + (uint32_t)inc) % TX_DESC_COUNT);
 }
 
+#ifndef __rtems__
 static void
 dwc_get1paddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 {
@@ -189,6 +190,7 @@ dwc_get1paddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 		return;
 	*(bus_addr_t *)arg = segs[0].ds_addr;
 }
+#endif /* __rtems__ */
 
 static void
 dwc_setup_txdesc(struct dwc_softc *sc, int csum_flags, int idx,
@@ -255,6 +257,33 @@ dwc_setup_txdesc(struct dwc_softc *sc, int csum_flags, int idx,
 	}
 }
 
+#ifdef __rtems__
+static int
+dwc_get_segs_for_tx(struct mbuf *m, bus_dma_segment_t segs[TX_MAX_DMA_SEGS],
+    int *nsegs)
+{
+	int i = 0;
+
+	do {
+		if (m->m_len > 0) {
+			segs[i].ds_addr = mtod(m, bus_addr_t);
+			segs[i].ds_len = m->m_len;
+			rtems_cache_flush_multiple_data_lines(m->m_data, m->m_len);
+			++i;
+		}
+
+		m = m->m_next;
+
+		if (m == NULL) {
+			*nsegs = i;
+
+			return (0);
+		}
+	} while (i < TX_MAX_DMA_SEGS);
+
+	return (EFBIG);
+}
+#endif /* __rtems__ */
 static void
 dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
 {
@@ -262,9 +291,13 @@ dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
 	int error, nsegs, idx;
 
 	idx = sc->tx_idx_head;
+#ifndef __rtems__
 	error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, sc->txbuf_map[idx].map,
 	    m, &seg, &nsegs, BUS_DMA_NOWAIT);
 
+#else /* __rtems__ */
+	error = dwc_get_segs_for_tx(m, segs, &nsegs);
+#endif /* __rtems__ */
 	if (error == EFBIG) {
 		/* Too many segments!  Defrag and try again. */
 		struct mbuf *m2 = m_defrag(m, M_NOWAIT);
@@ -274,8 +307,12 @@ dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
 			return;
 		}
 		m = m2;
+#ifndef __rtems__
 		error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag,
 		    sc->txbuf_map[idx].map, m, &seg, &nsegs, BUS_DMA_NOWAIT);
+#else /* __rtems__ */
+		error = dwc_get_segs_for_tx(m, segs, &nsegs);
+#endif /* __rtems__ */
 	}
 	if (error != 0) {
 		/* Give up. */
@@ -285,8 +322,10 @@ dwc_setup_txbuf(struct dwc_softc *sc, struct mbuf *m, int *start_tx)
 
 	sc->txbuf_map[idx].mbuf = m;
 
+#ifndef __rtems__
 	bus_dmamap_sync(sc->txbuf_tag, sc->txbuf_map[idx].map,
 	    BUS_DMASYNC_PREWRITE);
+#endif /* __rtems__ */
 
 	dwc_setup_txdesc(sc, m->m_pkthdr.csum_flags, idx, segs, nsegs);
 
@@ -518,8 +557,12 @@ dwc_setup_rxdesc(struct dwc_softc *sc, int idx, bus_addr_t paddr)
 
 	sc->rxdesc_ring[idx].addr = (uint32_t)paddr;
 	nidx = next_rxidx(sc, idx);
+#ifndef __rtems__
 	sc->rxdesc_ring[idx].addr_next = sc->rxdesc_ring_paddr +	\
 	    (nidx * sizeof(struct dwc_hwdesc));
+#else /* __rtems__ */
+	sc->rxdesc_ring[idx].addr_next = (uint32_t)&sc->rxdesc_ring[nidx];
+#endif /* __rtems__ */
 	if (sc->mactype == DWC_GMAC_ALT_DESC)
 		sc->rxdesc_ring[idx].tdes1 = DDESC_CNTL_CHAINED | RX_MAX_PACKET;
 	else
@@ -536,10 +579,13 @@ static int
 dwc_setup_rxbuf(struct dwc_softc *sc, int idx, struct mbuf *m)
 {
 	bus_dma_segment_t seg;
+#ifndef __rtems__
 	int error, nsegs;
+#endif /* __rtems__ */
 
 	m_adj(m, ETHER_ALIGN);
 
+#ifndef __rtems__
 	error = bus_dmamap_load_mbuf_sg(sc->rxbuf_tag, sc->rxbuf_map[idx].map,
 	    m, &seg, &nsegs, 0);
 	if (error != 0) {
@@ -550,6 +596,10 @@ dwc_setup_rxbuf(struct dwc_softc *sc, int idx, struct mbuf *m)
 
 	bus_dmamap_sync(sc->rxbuf_tag, sc->rxbuf_map[idx].map,
 	    BUS_DMASYNC_PREREAD);
+#else /* __rtems__ */
+	rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+	seg.ds_addr = mtod(m, bus_addr_t);
+#endif /* __rtems__ */
 
 	sc->rxbuf_map[idx].mbuf = m;
 	dwc_setup_rxdesc(sc, idx, seg.ds_addr);
@@ -771,9 +821,11 @@ dwc_txfinish_locked(struct dwc_softc *sc)
 		if ((desc->tdes0 & DDESC_TDES0_OWN) != 0)
 			break;
 		bmap = &sc->txbuf_map[sc->tx_idx_tail];
+#ifndef __rtems__
 		bus_dmamap_sync(sc->txbuf_tag, bmap->map,
 		    BUS_DMASYNC_POSTWRITE);
 		bus_dmamap_unload(sc->txbuf_tag, bmap->map);
+#endif /* __rtems__ */
 		m_freem(bmap->mbuf);
 		bmap->mbuf = NULL;
 		--sc->txcount;
@@ -833,9 +885,11 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 			continue;
 		}
 
+#ifndef __rtems__
 		bus_dmamap_sync(sc->rxbuf_tag, sc->rxbuf_map[idx].map,
 		    BUS_DMASYNC_POSTREAD);
 		bus_dmamap_unload(sc->rxbuf_tag, sc->rxbuf_map[idx].map);
+#endif /* __rtems__ */
 
 		len = (rdes0 >> DDESC_RDES0_FL_SHIFT) & DDESC_RDES0_FL_MASK;
 		if (len != 0) {
@@ -951,6 +1005,7 @@ setup_dma(struct dwc_softc *sc)
 		goto out;
 	}
 
+#ifndef __rtems__
 	error = bus_dmamap_load(sc->txdesc_tag, sc->txdesc_map,
 	    sc->txdesc_ring, TX_DESC_SIZE, dwc_get1paddr,
 	    &sc->txdesc_ring_paddr, 0);
@@ -959,6 +1014,7 @@ setup_dma(struct dwc_softc *sc)
 		    "could not load TX descriptor ring map.\n");
 		goto out;
 	}
+#endif /* __rtems__ */
 
 	for (idx = 0; idx < TX_DESC_COUNT; idx++) {
 		sc->txdesc_ring[idx].addr = 0;
@@ -970,10 +1026,16 @@ setup_dma(struct dwc_softc *sc)
 			sc->txdesc_ring[idx].tdes1 = 0;
 		}
 		nidx = next_txidx(sc, idx, 1);
+#ifndef __rtems__
 		sc->txdesc_ring[idx].addr_next = sc->txdesc_ring_paddr +
 		    (nidx * sizeof(struct dwc_hwdesc));
+#else /* __rtems__ */
+		sc->txdesc_ring[idx].addr_next =
+		    (uint32_t)&sc->txdesc_ring[nidx];
+#endif /* __rtems__ */
 	}
 
+#ifndef __rtems__
 	error = bus_dma_tag_create(
 	    bus_get_dma_tag(sc->dev),	/* Parent tag. */
 	    1, 0,			/* alignment, boundary */
@@ -990,8 +1052,10 @@ setup_dma(struct dwc_softc *sc)
 		    "could not create TX ring DMA tag.\n");
 		goto out;
 	}
+#endif /* __rtems__ */
 
 	for (idx = 0; idx < TX_DESC_COUNT; idx++) {
+#ifndef __rtems__
 		error = bus_dmamap_create(sc->txbuf_tag, BUS_DMA_COHERENT,
 		    &sc->txbuf_map[idx].map);
 		if (error != 0) {
@@ -999,6 +1063,7 @@ setup_dma(struct dwc_softc *sc)
 			    "could not create TX buffer DMA map.\n");
 			goto out;
 		}
+#endif /* __rtems__ */
 	}
 
 	/*
@@ -1030,6 +1095,7 @@ setup_dma(struct dwc_softc *sc)
 		goto out;
 	}
 
+#ifndef __rtems__
 	error = bus_dmamap_load(sc->rxdesc_tag, sc->rxdesc_map,
 	    sc->rxdesc_ring, RX_DESC_SIZE, dwc_get1paddr,
 	    &sc->rxdesc_ring_paddr, 0);
@@ -1055,8 +1121,10 @@ setup_dma(struct dwc_softc *sc)
 		    "could not create RX buf DMA tag.\n");
 		goto out;
 	}
+#endif /* __rtems__ */
 
 	for (idx = 0; idx < RX_DESC_COUNT; idx++) {
+#ifndef __rtems__
 		error = bus_dmamap_create(sc->rxbuf_tag, BUS_DMA_COHERENT,
 		    &sc->rxbuf_map[idx].map);
 		if (error != 0) {
@@ -1064,6 +1132,7 @@ setup_dma(struct dwc_softc *sc)
 			    "could not create RX buffer DMA map.\n");
 			goto out;
 		}
+#endif /* __rtems__ */
 		if ((m = dwc_alloc_mbufcl(sc)) == NULL) {
 			device_printf(sc->dev, "Could not alloc mbuf\n");
 			error = ENOMEM;
@@ -1313,8 +1382,13 @@ dwc_attach(device_t dev)
 	        return (ENXIO);
 
 	/* Setup addresses */
+#ifndef __rtems__
 	WRITE4(sc, RX_DESCR_LIST_ADDR, sc->rxdesc_ring_paddr);
 	WRITE4(sc, TX_DESCR_LIST_ADDR, sc->txdesc_ring_paddr);
+#else /* __rtems__ */
+	WRITE4(sc, RX_DESCR_LIST_ADDR, (uint32_t)&sc->rxdesc_ring[0]);
+	WRITE4(sc, TX_DESCR_LIST_ADDR, (uint32_t)&sc->txdesc_ring[0]);
+#endif /* __rtems__ */
 
 	mtx_init(&sc->mtx, device_get_nameunit(sc->dev),
 	    MTX_NETWORK_LOCK, MTX_DEF);

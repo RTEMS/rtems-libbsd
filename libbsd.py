@@ -70,6 +70,7 @@ def rtems(mm):
             'rtems/rtems-bsd-rc-conf-pf.c',
             'rtems/rtems-bsd-rc-conf.c',
             'rtems/rtems-bsd-shell.c',
+            'rtems/rtems-bsd-shell-arp.c',
             'rtems/rtems-bsd-shell-ifconfig.c',
             'rtems/rtems-bsd-shell-netstat.c',
             'rtems/rtems-bsd-shell-pfctl.c',
@@ -2219,6 +2220,7 @@ def user_space(mm):
             'usr.bin/netstat/sctp.c',
             'usr.bin/netstat/unix.c',
             'usr.bin/vmstat/vmstat.c',
+            'usr.sbin/arp/arp.c',
         ],
         mm.generator['source'](['-DINET6', '-DINET'])
     )

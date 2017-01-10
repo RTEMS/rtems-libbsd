@@ -1,5 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-arp-namespace.h"
+#endif /* __rtems__ */
+
 /*
  * Copyright (c) 1984, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -51,6 +55,12 @@ __FBSDID("$FreeBSD$");
  */
 
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 #include <rtems/bsd/sys/param.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -81,6 +91,13 @@ __FBSDID("$FreeBSD$");
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#ifdef __rtems__
+#include "rtems-bsd-arp-arp-data.h"
+static struct timespec tp;
+static int seq;
+static int s = -1;
+static pid_t pid;
+#endif /* __rtems__ */
 
 typedef void (action_fn)(struct sockaddr_dl *sdl,
 	struct sockaddr_in *s_in, struct rt_msghdr *rtm);
@@ -106,7 +123,7 @@ static char *rifname;
 static time_t	expire_time;
 static int	flags, doing_proxy;
 
-struct if_nameindex *ifnameindex;
+static struct if_nameindex *ifnameindex;
 
 /* which function we're supposed to do */
 #define F_GET		1
@@ -117,12 +134,44 @@ struct if_nameindex *ifnameindex;
 
 #define SETFUNC(f)	{ if (func) usage(); func = (f); }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_arp, char);
+
+int
+rtems_bsd_command_arp(int argc, char *argv[])
+{
+	int exit_code;
+	void *data_begin;
+	size_t data_size;
+
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_arp);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_arp);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("arp",
+	    main, argc, argv, data_begin, data_size);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
 int
 main(int argc, char *argv[])
 {
 	int ch, func = 0;
 	int rtn = 0;
 	int aflag = 0;	/* do it for all entries */
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	while ((ch = getopt(argc, argv, "andfsSi:")) != -1)
 		switch(ch) {
@@ -619,7 +668,9 @@ print_entry(struct sockaddr_dl *sdl,
 	if (rtm->rtm_rmx.rmx_expire == 0)
 		printf(" permanent");
 	else {
+#ifndef __rtems__
 		static struct timespec tp;
+#endif /* __rtems__ */
 		if (tp.tv_sec == 0)
 			clock_gettime(CLOCK_MONOTONIC, &tp);
 		if ((expire_time = rtm->rtm_rmx.rmx_expire - tp.tv_sec) > 0)
@@ -703,12 +754,16 @@ usage(void)
 static struct rt_msghdr *
 rtmsg(int cmd, struct sockaddr_in *dst, struct sockaddr_dl *sdl)
 {
+#ifndef __rtems__
 	static int seq;
+#endif /* __rtems__ */
 	int rlen;
 	int l;
 	struct sockaddr_in so_mask, *som = &so_mask;
+#ifndef __rtems__
 	static int s = -1;
 	static pid_t pid;
+#endif /* __rtems__ */
 
 	static struct	{
 		struct	rt_msghdr m_rtm;

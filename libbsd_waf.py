@@ -447,7 +447,8 @@ def build(bld):
                      'freebsd/usr.bin/netstat/route.c',
                      'freebsd/usr.bin/netstat/sctp.c',
                      'freebsd/usr.bin/netstat/unix.c',
-                     'freebsd/usr.bin/vmstat/vmstat.c']
+                     'freebsd/usr.bin/vmstat/vmstat.c',
+                     'freebsd/usr.sbin/arp/arp.c']
     bld.objects(target = "objs01",
                 features = "c",
                 cflags = cflags,
@@ -1099,6 +1100,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-rc-conf-net.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf-pf.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf.c',
+              'rtemsbsd/rtems/rtems-bsd-shell-arp.c',
               'rtemsbsd/rtems/rtems-bsd-shell-dhcpcd.c',
               'rtemsbsd/rtems/rtems-bsd-shell-ifconfig.c',
               'rtemsbsd/rtems/rtems-bsd-shell-netstat.c',

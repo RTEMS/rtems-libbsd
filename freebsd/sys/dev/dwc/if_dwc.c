@@ -772,7 +772,6 @@ dwc_rxfinish_locked(struct dwc_softc *sc)
 			m->m_pkthdr.rcvif = ifp;
 			m->m_pkthdr.len = len;
 			m->m_len = len;
-			if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 
 			/* Remove trailing FCS */
 			m_adj(m, -ETHER_CRC_LEN);

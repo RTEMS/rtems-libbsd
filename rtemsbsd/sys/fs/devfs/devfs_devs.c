@@ -238,7 +238,7 @@ devfs_alloc(int flags)
 	struct cdev *cdev;
 
 	cdev = malloc(sizeof *cdev, M_TEMP, M_ZERO);
-	if (cdev != NULL)
+	if (cdev == NULL)
 		return (NULL);
 
 	memcpy(cdev->si_path, rtems_cdev_directory, sizeof(cdev->si_path));

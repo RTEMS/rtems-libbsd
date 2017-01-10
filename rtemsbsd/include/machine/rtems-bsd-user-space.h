@@ -84,6 +84,9 @@ long long strtonum(const char *numstr, long long minval, long long maxval,
 /* FIXME: Add to Newlib */
 char *fgetln(FILE *fp, size_t *lenp);
 
+/* FIXME: Add to Newlib */
+int	feature_present(const char *);
+
 __END_DECLS
 
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_ */

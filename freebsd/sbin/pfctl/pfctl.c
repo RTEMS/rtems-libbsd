@@ -2,6 +2,7 @@
 
 #ifdef __rtems__
 #include "rtems-bsd-pfctl-namespace.h"
+#define	ENABLE_ALTQ
 #endif /* __rtems__ */
 
 /*	$OpenBSD: pfctl.c,v 1.278 2008/08/31 20:18:17 jmc Exp $ */

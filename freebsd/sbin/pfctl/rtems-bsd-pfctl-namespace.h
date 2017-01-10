@@ -8,6 +8,8 @@
 #define pfctlylval _bsd_pfctl_pfctlylval
 #define pfctlyparse _bsd_pfctl_pfctlyparse
 #define rt_tableid_max _bsd_pfctl_rt_tableid_max
+#define map_tos _bsd_pfctl_map_tos
+#define kw_casecmp _bsd_pfctl_kw_casecmp
 #define pfctl_load_anchors _bsd_pfctl_pfctl_load_anchors
 #define parseport _bsd_pfctl_parseport
 #define parseicmpspec _bsd_pfctl_parseicmpspec

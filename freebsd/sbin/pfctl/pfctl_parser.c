@@ -2,6 +2,8 @@
 
 #ifdef __rtems__
 #include "rtems-bsd-pfctl-namespace.h"
+#define	WITH_INET6
+#define	WITH_INET
 #endif /* __rtems__ */
 
 /*	$OpenBSD: pfctl_parser.c,v 1.240 2008/06/10 20:55:02 mcbride Exp $ */

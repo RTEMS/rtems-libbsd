@@ -164,6 +164,7 @@ static int	fiboptlist_range(const char *, struct fibl_head_t *);
 
 static void usage(const char *) __dead2;
 
+#ifndef __rtems__
 #define	READ_TIMEOUT	10
 static volatile sig_atomic_t stop_read;
 
@@ -173,6 +174,9 @@ stopit(int sig __unused)
 
 	stop_read = 1;
 }
+#else /* __rtems__ */
+#define	stop_read 0
+#endif /* __rtems__ */
 
 static void
 usage(const char *cp)
@@ -838,7 +842,9 @@ set_metric(char *value, int key)
 static void
 newroute(int argc, char **argv)
 {
+#ifndef __rtems__
 	struct sigaction sa;
+#endif /* __rtems__ */
 	struct hostent *hp;
 	struct fibl *fl;
 	char *cmd;
@@ -854,11 +860,13 @@ newroute(int argc, char **argv)
 	hp = NULL;
 	TAILQ_INIT(&fibl_head);
 
+#ifndef __rtems__
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = stopit;
 	if (sigaction(SIGALRM, &sa, 0) == -1)
 		warn("sigaction SIGALRM");
+#endif /* __rtems__ */
 
 	cmd = argv[0];
 	if (*cmd != 'g' && *cmd != 's')
@@ -1610,17 +1618,21 @@ rtmsg(int cmd, int flags, int fib)
 		return (-1);
 	}
 	if (cmd == RTM_GET) {
+#ifndef __rtems__
 		stop_read = 0;
 		alarm(READ_TIMEOUT);
+#endif /* __rtems__ */
 		do {
 			l = read(s, (char *)&m_rtmsg, sizeof(m_rtmsg));
 		} while (l > 0 && stop_read == 0 &&
 		    (rtm.rtm_seq != rtm_seq || rtm.rtm_pid != pid));
+#ifndef __rtems__
 		if (stop_read != 0) {
 			warnx("read from routing socket timed out");
 			return (-1);
 		} else
 			alarm(0);
+#endif /* __rtems__ */
 		if (l < 0)
 			warn("read from routing socket");
 		else

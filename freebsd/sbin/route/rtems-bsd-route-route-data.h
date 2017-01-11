@@ -23,7 +23,6 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static _Bool domain_initialized);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static int rtm_seq);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static struct m_rtmsg m_rtmsg);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static struct fibl_head_t fibl_head);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static sig_atomic_t volatile stop_read);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static struct sockaddr_storage so[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static char domain[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_route, static char rt_line[]);

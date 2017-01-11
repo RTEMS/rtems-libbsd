@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -85,6 +85,9 @@ rtems_bsd_mutex_acquire_critical(rtems_bsd_mutex *m,
 
 	_Thread_queue_Queue_acquire_critical(&m->queue.Queue,
 	    &m->queue.Lock_stats, &queue_context->Lock_context.Lock_context);
+#if defined(RTEMS_SMP) && defined(RTEMS_DEBUG)
+	m->queue.owner = _SMP_lock_Who_am_I();
+#endif
 }
 
 static inline void
@@ -92,6 +95,10 @@ rtems_bsd_mutex_release(rtems_bsd_mutex *m, ISR_Level isr_level,
     Thread_queue_Context *queue_context)
 {
 
+#if defined(RTEMS_SMP) && defined(RTEMS_DEBUG)
+	_Assert( _Thread_queue_Is_lock_owner( &m->queue ) );
+	m->queue.owner = SMP_LOCK_NO_OWNER;
+#endif
 	_Thread_queue_Queue_release_critical(&m->queue.Queue,
 	    &queue_context->Lock_context.Lock_context);
 	_ISR_Local_enable(isr_level);

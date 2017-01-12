@@ -233,7 +233,6 @@ test_main(void)
 
 #define CONFIGURE_SHELL_USER_COMMANDS \
   &bsp_interrupt_shell_command, \
-  &rtems_shell_BSD_Command, \
   &rtems_shell_HOSTNAME_Command, \
   &rtems_shell_PING_Command, \
   &rtems_shell_ROUTE_Command, \

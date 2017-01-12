@@ -74,7 +74,7 @@ test_curthread(const char *name)
 	assert(td_0 != NULL);
 	assert(td_0 == td_1);
 	assert(td_0 == td_2);
-	assert(strcmp(&td_0->td_name[0], name) == 0);
+	assert(strcmp(td_0->td_thread->Join_queue.Queue.name, name) == 0);
 }
 
 static void

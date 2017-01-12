@@ -223,7 +223,6 @@ struct thread {
 #ifdef __rtems__
 	Thread_Control *td_thread;
 	struct rtems_bsd_program_control *td_prog_ctrl;
-	char td_name[32];
 #endif /* __rtems__ */
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */

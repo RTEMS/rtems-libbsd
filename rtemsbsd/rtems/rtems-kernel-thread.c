@@ -233,7 +233,7 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 	rtems_status_code sc;
 	rtems_id task_id;
 	struct thread *td;
-	char name[sizeof(td->td_name)];
+	char name[32];
 
 	BSD_ASSERT(pages >= 0);
 
@@ -256,7 +256,7 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 		td = rtems_bsd_get_thread(thread);
 		BSD_ASSERT(td != NULL);
 
-		memcpy(td->td_name, name, sizeof(name));
+		_Thread_Set_name(thread, name);
 
 		if (rtems_bsd_thread_ready_to_start) {
 			sc = rtems_task_start(task_id, (rtems_task_entry) func,

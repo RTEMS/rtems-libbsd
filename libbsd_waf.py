@@ -1110,7 +1110,6 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-shell-sysctl.c',
               'rtemsbsd/rtems/rtems-bsd-shell-tcpdump.c',
               'rtemsbsd/rtems/rtems-bsd-shell-vmstat.c',
-              'rtemsbsd/rtems/rtems-bsd-shell.c',
               'rtemsbsd/rtems/rtems-bsd-syscall-api.c',
               'rtemsbsd/rtems/rtems-kernel-assert.c',
               'rtemsbsd/rtems/rtems-kernel-autoconf.c',

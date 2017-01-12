@@ -69,7 +69,6 @@ def rtems(mm):
             'rtems/rtems-bsd-rc-conf-net.c',
             'rtems/rtems-bsd-rc-conf-pf.c',
             'rtems/rtems-bsd-rc-conf.c',
-            'rtems/rtems-bsd-shell.c',
             'rtems/rtems-bsd-shell-arp.c',
             'rtems/rtems-bsd-shell-ifconfig.c',
             'rtems/rtems-bsd-shell-netstat.c',

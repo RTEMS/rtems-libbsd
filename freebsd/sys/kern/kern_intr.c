@@ -66,6 +66,8 @@ __FBSDID("$FreeBSD$");
   #endif
   #include <machine/rtems-bsd-thread.h>
   #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
+  #undef ticks
+  #include <rtems/score/threadimpl.h>
 #endif /* __rtems__ */
 #include <machine/stdarg.h>
 #ifdef DDB
@@ -195,7 +197,11 @@ ithread_update(struct intr_thread *ithd)
 		pri = TAILQ_FIRST(&ie->ie_handlers)->ih_pri;
 
 	/* Update name and priority. */
+#ifndef __rtems__
 	strlcpy(td->td_name, ie->ie_fullname, sizeof(td->td_name));
+#else /* __rtems__ */
+	_Thread_Set_name(td->td_thread, ie->ie_fullname);
+#endif /* __rtems__ */
 #ifdef KTR
 	sched_clear_tdname(td);
 #endif

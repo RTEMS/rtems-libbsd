@@ -111,7 +111,7 @@ class HeaderGenCU:
     def _die_is_function(self, die):
         return (die.tag == "DW_TAG_subprogram")
 
-    def _get_type(self, die):
+    def _get_type(self, die, first_array = True):
         """Get the type of a variable DIE.
         Returns two strings: one prefix and one postfix for the variable name"""
         typepre = ""
@@ -139,11 +139,15 @@ class HeaderGenCU:
         elif (typedie.tag == "DW_TAG_array_type"):
             for child in typedie.iter_children():
                 if child.tag == "DW_TAG_subrange_type":
-                    try:
-                        upper_bound = child.attributes["DW_AT_upper_bound"].value
-                        arraysize = "%d" % (upper_bound + 1)
-                    except KeyError:
+                    if first_array == True:
                         arraysize = ""
+                        first_array = False
+                    else:
+                        try:
+                            upper_bound = child.attributes["DW_AT_upper_bound"].value
+                            arraysize = "%d" % (upper_bound + 1)
+                        except KeyError:
+                            arraysize = ""
                     typepost += "[%s]" % arraysize
 
         elif (typedie.tag == "DW_TAG_volatile_type"):
@@ -200,7 +204,7 @@ class HeaderGenCU:
                     raise TypenameNotFoundError(message)
 
         if last == False:
-            addpre, addpost = self._get_type(typedie)
+            addpre, addpost = self._get_type(typedie, first_array)
             typepre = addpre + typepre
             typepost = typepost + addpost
 

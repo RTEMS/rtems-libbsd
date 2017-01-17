@@ -3,5 +3,5 @@
 #include "rtems-bsd-ifconfig-data.h"
 /* ifclone.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct clone_defcb_list clone_defcbh);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct option clone_Copt);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd clone_cmds[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct option clone_Copt);

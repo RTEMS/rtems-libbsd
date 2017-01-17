@@ -2,5 +2,5 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-ifconfig-data.h"
 /* ifgre.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_gre);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd gre_cmds[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_gre);

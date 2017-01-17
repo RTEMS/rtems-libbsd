@@ -34,7 +34,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int live);
 /* mroute6.c */
 /* mroute.c */
 /* nl_symbols.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern struct nlist nl[53]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern struct nlist nl[]);
 /* pfkey.c */
 /* route.c */
 /* sctp.c */

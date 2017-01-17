@@ -2,7 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-ifconfig-data.h"
 /* sfp.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *sff_8024_id[23]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *sff_8024_id[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct _nv conn[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct _nv eth_10g[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct _nv eth_compat[]);

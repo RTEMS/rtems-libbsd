@@ -2,9 +2,9 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-pfctl-data.h"
 /* pfctl_optimize.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_rule_field pf_rule_desc[70]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int (*skip_comparitors[8])(struct pf_rule *, struct pf_rule *));
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *skip_comparitors_names[8]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_rule_field pf_rule_desc[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int (*skip_comparitors[])(struct pf_rule *, struct pf_rule *));
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *skip_comparitors_names[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pfr_buffer table_buffer);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int table_identifier);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int add_opt_tablenum);

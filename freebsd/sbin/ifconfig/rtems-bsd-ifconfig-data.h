@@ -8,7 +8,7 @@
 /* ifclone.c */
 /* ifconfig.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern struct ifreq ifr);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char name[16]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char name[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char *descr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern size_t descrlen);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int setaddr);
@@ -30,11 +30,11 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char *f_addr);
 /* ifgroup.c */
 /* ifieee80211.c */
 /* iflagg.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char lacpbuf[120]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char lacpbuf[]);
 /* ifmac.c */
 /* ifmedia.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern struct ifmedia_description ifm_subtype_ieee80211_mode_descriptions[8]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern struct ifmedia_description ifm_subtype_ieee80211_mode_aliases[2]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern struct ifmedia_description ifm_subtype_ieee80211_mode_descriptions[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern struct ifmedia_description ifm_subtype_ieee80211_mode_aliases[]);
 /* ifpfsync.c */
 /* ifvlan.c */
 /* sfp.c */

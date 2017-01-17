@@ -4,7 +4,6 @@
 /* ifmedia.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmediareq *ifmedia_getstate_ifmr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static int did_it);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_media);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmedia_description ifm_type_descriptions[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmedia_description ifm_subtype_ethernet_descriptions[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmedia_description ifm_subtype_ethernet_aliases[]);
@@ -27,3 +26,4 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmedia_description 
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmedia_description ifm_shared_option_aliases[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmedia_type_to_subtype ifmedia_types_to_subtypes[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd media_cmds[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_media);

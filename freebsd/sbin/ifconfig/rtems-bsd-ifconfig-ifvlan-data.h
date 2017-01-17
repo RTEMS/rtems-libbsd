@@ -3,5 +3,5 @@
 #include "rtems-bsd-ifconfig-data.h"
 /* ifvlan.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct vlanreq params);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_vlan);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd vlan_cmds[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_vlan);

@@ -318,6 +318,8 @@
 #define	MII_STR_ICS_1892	"ICS1892 10/100 media interface"
 #define	MII_MODEL_ICS_1893	0x0004
 #define	MII_STR_ICS_1893	"ICS1893 10/100 media interface"
+#define	MII_MODEL_ICS_1893C	0x0005
+#define	MII_STR_ICS_1893C	"ICS1893C 10/100 media interface"
 
 /* Intel Corporation PHYs */
 #define	MII_MODEL_xxINTEL_I82553	0x0000

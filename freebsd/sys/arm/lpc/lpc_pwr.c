@@ -38,10 +38,12 @@ __FBSDID("$FreeBSD$");
 #include <sys/malloc.h>
 #include <sys/rman.h>
 #include <machine/bus.h>
+#ifndef __rtems__
 #include <machine/intr.h>
 
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#endif /* __rtems__ */
 
 #include <arm/lpc/lpcreg.h>
 #include <arm/lpc/lpcvar.h>
@@ -67,11 +69,13 @@ static int
 lpc_pwr_probe(device_t dev)
 {
 	
+#ifndef __rtems__
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
 	if (!ofw_bus_is_compatible(dev, "lpc,pwr"))
 		return (ENXIO);
+#endif /* __rtems__ */
 
 	device_set_desc(dev, "LPC32x0 Power Controller");
 	return (BUS_PROBE_DEFAULT);
@@ -128,4 +132,8 @@ static driver_t lpc_pwr_driver = {
 	sizeof(struct lpc_pwr_softc),
 };
 
+#ifndef __rtems__
 DRIVER_MODULE(pwr, simplebus, lpc_pwr_driver, lpc_pwr_devclass, 0, 0);
+#else /* __rtems__ */
+DRIVER_MODULE(pwr, nexus, lpc_pwr_driver, lpc_pwr_devclass, 0, 0);
+#endif /* __rtems__ */

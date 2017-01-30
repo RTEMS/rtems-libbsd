@@ -88,6 +88,7 @@ struct usb_otg_transceiver {
 	uint16_t vendor_id;
 	uint16_t product_id;
 	uint8_t i2c_addr;
+	void *softc;
 };
 
 int usb_otg_transceiver_read(

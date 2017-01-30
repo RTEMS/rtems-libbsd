@@ -43,7 +43,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/bus.h>
 #include <sys/socket.h>
 #include <machine/bus.h>
+#ifndef __rtems__
 #include <machine/intr.h>
+#endif /* __rtems__ */
 
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -55,8 +57,10 @@ __FBSDID("$FreeBSD$");
 
 #include <net/bpf.h>
 
+#ifndef __rtems__
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#endif /* __rtems__ */
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
@@ -66,6 +70,9 @@ __FBSDID("$FreeBSD$");
 #include <arm/lpc/if_lpereg.h>
 
 #include <rtems/bsd/local/miibus_if.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-cache.h>
+#endif /* __rtems__ */
 
 #ifdef DEBUG
 #define debugf(fmt, args...) do { printf("%s(): ", __func__);   \
@@ -80,13 +87,17 @@ struct lpe_dmamap_arg {
 
 struct lpe_rxdesc {
 	struct mbuf *		lpe_rxdesc_mbuf;
+#ifndef __rtems__
 	bus_dmamap_t		lpe_rxdesc_dmamap;
+#endif /* __rtems__ */
 };
 
 struct lpe_txdesc {
 	int			lpe_txdesc_first;
 	struct mbuf *		lpe_txdesc_mbuf;
+#ifndef __rtems__
 	bus_dmamap_t		lpe_txdesc_dmamap;
+#endif /* __rtems__ */
 };
 
 struct lpe_chain_data {
@@ -122,7 +133,9 @@ struct lpe_ring_data {
 struct lpe_softc {
 	struct ifnet *		lpe_ifp;
 	struct mtx		lpe_mtx;
+#ifndef __rtems__
 	phandle_t		lpe_ofw;
+#endif /* __rtems__ */
 	device_t		lpe_dev;
 	device_t		lpe_miibus;
 	uint8_t			lpe_enaddr[6];
@@ -192,11 +205,13 @@ static int
 lpe_probe(device_t dev)
 {
 
+#ifndef __rtems__
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
 	if (!ofw_bus_is_compatible(dev, "lpc,ethernet"))
 		return (ENXIO);
+#endif /* __rtems__ */
 
 	device_set_desc(dev, "LPC32x0 10/100 Ethernet");
 	return (BUS_PROBE_DEFAULT);
@@ -211,6 +226,7 @@ lpe_attach(device_t dev)
 	uint32_t val;
 
 	sc->lpe_dev = dev;
+#ifndef __rtems__
 	sc->lpe_ofw = ofw_bus_get_node(dev);
 
 	i = OF_getprop(sc->lpe_ofw, "local-mac-address", (void *)&sc->lpe_enaddr, 6);
@@ -222,6 +238,9 @@ lpe_attach(device_t dev)
 		sc->lpe_enaddr[4] = 0x44;
 		sc->lpe_enaddr[5] = 0x55;
 	}
+#else /* __rtems__ */
+	rtems_bsd_get_mac_address(device_get_name(sc->lpe_dev), device_get_unit(sc->lpe_dev), &sc->lpe_enaddr);
+#endif /* __rtems__ */
 
 	mtx_init(&sc->lpe_mtx, device_get_nameunit(dev), MTX_NETWORK_LOCK,
 	    MTX_DEF);
@@ -275,16 +294,33 @@ lpe_attach(device_t dev)
 	}
 
 	/* Enable Ethernet clock */
+#ifndef __rtems__
 	lpc_pwr_write(dev, LPC_CLKPWR_MACCLK_CTRL,
 	    LPC_CLKPWR_MACCLK_CTRL_REG |
 	    LPC_CLKPWR_MACCLK_CTRL_SLAVE |
 	    LPC_CLKPWR_MACCLK_CTRL_MASTER |
 	    LPC_CLKPWR_MACCLK_CTRL_HDWINF(3));
+#else /* __rtems__ */
+#ifdef LPC32XX_ETHERNET_RMII
+	lpc_pwr_write(dev, LPC_CLKPWR_MACCLK_CTRL,
+	    LPC_CLKPWR_MACCLK_CTRL_REG |
+	    LPC_CLKPWR_MACCLK_CTRL_SLAVE |
+	    LPC_CLKPWR_MACCLK_CTRL_MASTER |
+	    LPC_CLKPWR_MACCLK_CTRL_HDWINF(3));
+#else
+	lpc_pwr_write(dev, LPC_CLKPWR_MACCLK_CTRL,
+	    LPC_CLKPWR_MACCLK_CTRL_REG |
+	    LPC_CLKPWR_MACCLK_CTRL_SLAVE |
+	    LPC_CLKPWR_MACCLK_CTRL_MASTER |
+	    LPC_CLKPWR_MACCLK_CTRL_HDWINF(1));
+#endif
+#endif /* __rtems__ */
 
 	/* Reset chip */
 	lpe_reset(sc);
 
 	/* Initialize MII */
+#ifndef __rtems__
 	val = lpe_read_4(sc, LPE_COMMAND);
 	lpe_write_4(sc, LPE_COMMAND, val | LPE_COMMAND_RMII);
 
@@ -294,6 +330,14 @@ lpe_attach(device_t dev)
 		device_printf(dev, "cannot find PHY\n");
 		goto fail;
 	}
+#else /* __rtems__ */
+	if (mii_attach(dev, &sc->lpe_miibus, ifp, lpe_ifmedia_upd,
+	    lpe_ifmedia_sts, BMSR_DEFCAPMASK, MII_PHY_ANY,
+	    MII_OFFSET_ANY, 0)) {
+		device_printf(dev, "cannot find PHY\n");
+		goto fail;
+	}
+#endif /* __rtems__ */
 
 	lpe_dma_alloc(sc);
 
@@ -388,7 +432,9 @@ lpe_miibus_statchg(device_t dev)
 	struct lpe_softc *sc = device_get_softc(dev);
 	struct mii_data *mii = device_get_softc(sc->lpe_miibus);
 
+#ifndef __rtems__
 	lpe_lock(sc);
+#endif /* __rtems__ */
 
 	if ((mii->mii_media_status & IFM_ACTIVE) &&
 	    (mii->mii_media_status & IFM_AVALID))
@@ -396,7 +442,9 @@ lpe_miibus_statchg(device_t dev)
 	else
 		sc->lpe_flags &= ~LPE_FLAG_LINK;
 
+#ifndef __rtems__
 	lpe_unlock(sc);
+#endif /* __rtems__ */
 }
 
 static void
@@ -404,6 +452,7 @@ lpe_reset(struct lpe_softc *sc)
 {
 	uint32_t mac1;
 
+#ifndef __rtems__
 	/* Enter soft reset mode */
 	mac1 = lpe_read_4(sc, LPE_MAC1);
 	lpe_write_4(sc, LPE_MAC1, mac1 | LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
@@ -422,6 +471,43 @@ lpe_reset(struct lpe_softc *sc)
 	mac1 = lpe_read_4(sc, LPE_MAC1);
 	lpe_write_4(sc, LPE_MAC1, mac1 & ~(LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
 	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX));
+#else /* __rtems__ */
+	/* Reset registers, Tx path and Rx path */
+	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_REGRESET | LPE_COMMAND_TXRESET | LPE_COMMAND_RXRESET);
+
+	/* Enter soft reset mode */
+	mac1 = lpe_read_4(sc, LPE_MAC1);
+	lpe_write_4(sc, LPE_MAC1, mac1 | LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
+	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX);
+
+	/* Leave soft reset mode */
+	mac1 = lpe_read_4(sc, LPE_MAC1);
+	lpe_write_4(sc, LPE_MAC1, mac1 & ~(LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
+	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX));
+
+	/* Reinitialize registers */
+	lpe_write_4(sc, LPE_MCFG, LPE_MCFG_CLKSEL(0x7));
+	lpe_write_4(sc, LPE_MAC2, LPE_MAC2_PADCRCENABLE | LPE_MAC2_CRCENABLE | LPE_MAC2_FULLDUPLEX);
+	lpe_write_4(sc, LPE_IPGT, 0x15);
+	lpe_write_4(sc, LPE_IPGR, 0x12);
+	lpe_write_4(sc, LPE_CLRT, 0x370f);
+	lpe_write_4(sc, LPE_MAXF, 0x0600);
+	lpe_write_4(sc, LPE_SUPP, LPE_SUPP_SPEED);
+	lpe_write_4(sc, LPE_TEST, 0x0);
+#ifdef LPC32XX_ETHERNET_RMII
+	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_FULLDUPLEX | LPE_COMMAND_RMII);
+#else
+	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_FULLDUPLEX);
+#endif
+	lpe_write_4(sc, LPE_INTENABLE, 0x0);
+	lpe_write_4(sc, LPE_INTCLEAR, 0x30ff);
+	lpe_write_4(sc, LPE_POWERDOWN, 0x0);
+
+	/* Set station address */
+	lpe_write_4(sc, LPE_SA2, sc->lpe_enaddr[1] << 8 | sc->lpe_enaddr[0]);
+	lpe_write_4(sc, LPE_SA1, sc->lpe_enaddr[3] << 8 | sc->lpe_enaddr[2]);
+	lpe_write_4(sc, LPE_SA0, sc->lpe_enaddr[5] << 8 | sc->lpe_enaddr[4]);
+#endif /* __rtems__ */
 }
 
 static void
@@ -533,6 +619,31 @@ lpe_start_locked(struct ifnet *ifp)
 	
 }
 
+#ifdef __rtems__
+static int
+lpe_get_segs_for_tx(struct mbuf *m, bus_dma_segment_t segs[LPE_MAXFRAGS],
+    int *nsegs)
+{
+	int i = 0;
+
+	do {
+		if (m->m_len > 0) {
+			segs[i].ds_addr = mtod(m, bus_addr_t);
+			segs[i].ds_len = m->m_len;
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+			rtems_cache_flush_multiple_data_lines(m->m_data, m->m_len);
+#endif
+			++i;
+		}
+		m = m->m_next;
+		if (m == NULL) {
+			*nsegs = i;
+			return (0);
+		}
+	} while (i < LPE_MAXFRAGS);
+	return (EFBIG);
+}
+#endif /* __rtems__ */
 static int
 lpe_encap(struct lpe_softc *sc, struct mbuf **m_head)
 {
@@ -549,8 +660,12 @@ lpe_encap(struct lpe_softc *sc, struct mbuf **m_head)
 
 	debugf("starting with prod=%d\n", prod);
 
+#ifndef __rtems__
 	err = bus_dmamap_load_mbuf_sg(sc->lpe_cdata.lpe_tx_buf_tag,
 	    txd->lpe_txdesc_dmamap, *m_head, segs, &nsegs, BUS_DMA_NOWAIT);
+#else /* __rtems__ */
+	err = lpe_get_segs_for_tx(*m_head, segs, &nsegs);
+#endif /* __rtems__ */
 
 	if (err)
 		return (err);
@@ -561,8 +676,10 @@ lpe_encap(struct lpe_softc *sc, struct mbuf **m_head)
 		return (EIO);
 	}
 
+#ifndef __rtems__
         bus_dmamap_sync(sc->lpe_cdata.lpe_tx_buf_tag, txd->lpe_txdesc_dmamap,
           BUS_DMASYNC_PREREAD);
+#endif /* __rtems__ */
         bus_dmamap_sync(sc->lpe_cdata.lpe_tx_ring_tag, sc->lpe_cdata.lpe_tx_ring_map,
             BUS_DMASYNC_POSTREAD | BUS_DMASYNC_POSTWRITE);
 
@@ -581,6 +698,11 @@ lpe_encap(struct lpe_softc *sc, struct mbuf **m_head)
 			hwd->lhr_control |= LPE_HWDESC_PAD;
 		}
 
+#ifdef __rtems__
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+		rtems_cache_flush_multiple_data_lines(hwd, sizeof(*hwd));
+#endif
+#endif /* __rtems__ */
 		LPE_INC(prod, LPE_TXDESC_NUM);
 	}
 
@@ -724,9 +846,19 @@ lpe_intr(void *arg)
 		if (intstatus & LPE_INT_RXDONE)
 			lpe_rxintr(sc);
 
+#ifndef __rtems__
 		if (intstatus & LPE_INT_TXDONE)
 			lpe_txintr(sc);
 	
+#else /* __rtems__ */
+		if (intstatus & LPE_INT_TXUNDERRUN) {
+			if_inc_counter(sc->lpe_ifp, IFCOUNTER_OERRORS, 1);
+			lpe_stop_locked(sc);
+			lpe_init_locked(sc);
+		}
+		else if (intstatus & (LPE_INT_TXERROR | LPE_INT_TXFINISH | LPE_INT_TXDONE))
+			lpe_txintr(sc);
+#endif /* __rtems__ */
 		lpe_write_4(sc, LPE_INTCLEAR, 0xffff);
 	}
 
@@ -753,6 +885,13 @@ lpe_rxintr(struct lpe_softc *sc)
 		rxd = &sc->lpe_cdata.lpe_rx_desc[cons];
 		hwd = &sc->lpe_rdata.lpe_rx_ring[cons];
 		hws = &sc->lpe_rdata.lpe_rx_status[cons];
+#ifdef __rtems__
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+		rtems_cache_invalidate_multiple_data_lines(rxd, sizeof(*rxd));
+		rtems_cache_invalidate_multiple_data_lines(hwd, sizeof(*hwd));
+		rtems_cache_invalidate_multiple_data_lines(hws, sizeof(*hws));
+#endif
+#endif /* __rtems__ */
 
 		/* Check received frame for errors */
 		if (hws->lhs_info & LPE_HWDESC_RXERRS) {
@@ -763,6 +902,11 @@ lpe_rxintr(struct lpe_softc *sc)
 		}
 
 		m = rxd->lpe_rxdesc_mbuf;
+#ifdef __rtems__
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+		rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+#endif
+#endif /* __rtems__ */
 		m->m_pkthdr.rcvif = ifp;
 		m->m_data += 2;
 
@@ -799,8 +943,16 @@ lpe_txintr(struct lpe_softc *sc)
 		hwd = &sc->lpe_rdata.lpe_tx_ring[last];
 		hws = &sc->lpe_rdata.lpe_tx_status[last];
 
+#ifndef __rtems__
 		bus_dmamap_sync(sc->lpe_cdata.lpe_tx_buf_tag,
 		    txd->lpe_txdesc_dmamap, BUS_DMASYNC_POSTWRITE);
+#else /* __rtems__ */
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+		rtems_cache_invalidate_multiple_data_lines(txd, sizeof(*txd));
+		rtems_cache_invalidate_multiple_data_lines(hwd, sizeof(*hwd));
+		rtems_cache_invalidate_multiple_data_lines(hws, sizeof(*hws));
+#endif
+#endif /* __rtems__ */
 
 		if_inc_counter(ifp, IFCOUNTER_COLLISIONS, LPE_HWDESC_COLLISIONS(hws->lhs_info));
 
@@ -810,8 +962,10 @@ lpe_txintr(struct lpe_softc *sc)
 			if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1);
 
 		if (txd->lpe_txdesc_first) {
+#ifndef __rtems__
 			bus_dmamap_unload(sc->lpe_cdata.lpe_tx_buf_tag,
 			    txd->lpe_txdesc_dmamap);	
+#endif /* __rtems__ */
 
 			m_freem(txd->lpe_txdesc_mbuf);
 			txd->lpe_txdesc_mbuf = NULL;
@@ -979,6 +1133,7 @@ lpe_dma_alloc_rx(struct lpe_softc *sc)
 	for (i = 0; i < LPE_RXDESC_NUM; i++) {
 		rxd = &sc->lpe_cdata.lpe_rx_desc[i];
 		rxd->lpe_rxdesc_mbuf = NULL;
+#ifndef __rtems__
 		rxd->lpe_rxdesc_dmamap = NULL;
 
 		err = bus_dmamap_create(sc->lpe_cdata.lpe_rx_buf_tag, 0,
@@ -988,6 +1143,7 @@ lpe_dma_alloc_rx(struct lpe_softc *sc)
 			device_printf(sc->lpe_dev, "cannot create Rx DMA map\n");
 			return (err);
 		}
+#endif /* __rtems__ */
 	}
 
 	return (0);
@@ -1081,11 +1237,15 @@ lpe_dma_alloc_tx(struct lpe_softc *sc)
 	for (i = 0; i < LPE_TXDESC_NUM; i++) {
 		txd = &sc->lpe_cdata.lpe_tx_desc[i];
 		txd->lpe_txdesc_mbuf = NULL;
+#ifndef __rtems__
 		txd->lpe_txdesc_dmamap = NULL;
+#endif /* __rtems__ */
 		txd->lpe_txdesc_first = 0;
 
+#ifndef __rtems__
 		err = bus_dmamap_create(sc->lpe_cdata.lpe_tx_buf_tag, 0,
 		    &txd->lpe_txdesc_dmamap);
+#endif /* __rtems__ */
 
 		if (err) {
 			device_printf(sc->lpe_dev, "cannot create Tx DMA map\n");
@@ -1134,6 +1294,7 @@ lpe_init_rxbuf(struct lpe_softc *sc, int n)
 
 	m->m_len = m->m_pkthdr.len = MCLBYTES;
 
+#ifndef __rtems__
 	bus_dmamap_unload(sc->lpe_cdata.lpe_rx_buf_tag, rxd->lpe_rxdesc_dmamap);
 
 	if (bus_dmamap_load_mbuf_sg(sc->lpe_cdata.lpe_rx_buf_tag, 
@@ -1144,10 +1305,21 @@ lpe_init_rxbuf(struct lpe_softc *sc, int n)
 
 	bus_dmamap_sync(sc->lpe_cdata.lpe_rx_buf_tag, rxd->lpe_rxdesc_dmamap, 
 	    BUS_DMASYNC_PREREAD);
+#else /* __rtems__ */
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+	rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+#endif
+	segs[0].ds_addr = mtod(m, bus_addr_t);
+#endif /* __rtems__ */
 
 	rxd->lpe_rxdesc_mbuf = m;
 	hwd->lhr_data = segs[0].ds_addr + 2;
 	hwd->lhr_control = (segs[0].ds_len - 1) | LPE_HWDESC_INTERRUPT;
+#ifdef __rtems__
+#ifdef CPU_DATA_CACHE_ALIGNMENT
+	rtems_cache_flush_multiple_data_lines(hwd, sizeof(*hwd));
+#endif
+#endif /* __rtems__ */
 
 	return (0);
 }
@@ -1161,7 +1333,9 @@ lpe_discard_rxbuf(struct lpe_softc *sc, int n)
 	rxd = &sc->lpe_cdata.lpe_rx_desc[n];
 	hwd = &sc->lpe_rdata.lpe_rx_ring[n];
 
+#ifndef __rtems__
 	bus_dmamap_unload(sc->lpe_cdata.lpe_rx_buf_tag, rxd->lpe_rxdesc_dmamap);
+#endif /* __rtems__ */
 
 	hwd->lhr_data = 0;
 	hwd->lhr_control = 0;
@@ -1227,7 +1401,11 @@ static driver_t lpe_driver = {
 
 static devclass_t lpe_devclass;
 
+#ifndef __rtems__
 DRIVER_MODULE(lpe, simplebus, lpe_driver, lpe_devclass, 0, 0);
+#else /* __rtems__ */
+DRIVER_MODULE(lpe, nexus, lpe_driver, lpe_devclass, 0, 0);
+#endif /* __rtems__ */
 DRIVER_MODULE(miibus, lpe, miibus_driver, miibus_devclass, 0, 0);
 MODULE_DEPEND(lpe, obio, 1, 1, 1);
 MODULE_DEPEND(lpe, miibus, 1, 1, 1);

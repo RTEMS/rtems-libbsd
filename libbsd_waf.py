@@ -722,7 +722,9 @@ def build(bld):
                 source = objs07_source)
     libbsd_use += ["objs07"]
 
-    source = ['freebsd/sys/arm/xilinx/zy7_slcr.c',
+    source = ['freebsd/sys/arm/lpc/if_lpe.c',
+              'freebsd/sys/arm/lpc/lpc_pwr.c',
+              'freebsd/sys/arm/xilinx/zy7_slcr.c',
               'freebsd/sys/cam/cam.c',
               'freebsd/sys/cam/scsi/scsi_all.c',
               'freebsd/sys/crypto/blowfish/bf_ecb.c',
@@ -1325,6 +1327,7 @@ def build(bld):
               'rtemsbsd/sys/dev/usb/controller/dwc_otg_nexus.c',
               'rtemsbsd/sys/dev/usb/controller/ehci_mpc83xx.c',
               'rtemsbsd/sys/dev/usb/controller/ohci_lpc.c',
+              'rtemsbsd/sys/dev/usb/controller/ohci_lpc32xx.c',
               'rtemsbsd/sys/dev/usb/controller/usb_otg_transceiver.c',
               'rtemsbsd/sys/dev/usb/controller/usb_otg_transceiver_dump.c',
               'rtemsbsd/sys/fs/devfs/devfs_devs.c',

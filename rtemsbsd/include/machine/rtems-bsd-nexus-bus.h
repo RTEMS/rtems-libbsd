@@ -38,6 +38,7 @@
  *
  *  Devices:
  *   RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR
+ *   RTEMS_BSD_DRIVER_LPC32XX_PWR
  *
  *  Buses:
  *   RTEMS_BSD_DRIVER_PC_LEGACY
@@ -46,6 +47,7 @@
  *   RTEMS_BSD_DRIVER_DWCOTG0
  *   RTEMS_BSD_DRIVER_DWCOTG0_BASE_ADDR
  *    RTEMS_BSD_DRIVER_DWCOTG0_IRQ
+ *   RTEMS_BSD_DRIVER_LPC32XX_OHCI
  *   RTEMS_BSD_DRIVER_DWC_MMC
  *   RTEMS_BSD_DRIVER_MMC
  *   RTEMS_BSD_DRIVER_USB
@@ -55,6 +57,7 @@
  *   RTEMS_BSD_DRIVER_SMC0
  *    RTEMS_BSD_DRIVER_SMC0_BASE_ADDR
  *    RTEMS_BSD_DRIVER_SMC0_IRQ
+ *   RTEMS_BSD_DRIVER_LPC32XX_LPE
  *   RTEMS_BSD_DRIVER_FEC
  *   RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM0
  *    RTEMS_BSD_DRIVER_CGEM0_IRQ
@@ -73,6 +76,7 @@
  *
  *  MMI PHY:
  *   RTEMS_BSD_DRIVER_E1000PHY
+ *   RTEMS_BSD_DRIVER_ICSPHY
  *   RTEMS_BSD_DRIVER_REPHY
  *   RTEMS_BSD_DRIVER_MIPHY
  */
@@ -115,6 +119,23 @@ extern "C" {
                                   &zy7_slcr_res[0])
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR */
 
+/*
+ * LPC32XX Power Control (PWR).
+ */
+#if !defined(RTEMS_BSD_DRIVER_LPC32XX_PWR)
+  #define RTEMS_BSD_DRIVER_LPC32XX_PWR                                        \
+    static const rtems_bsd_device_resource lpc_pwr0_res[] = {                 \
+      {                                                                       \
+        .type = RTEMS_BSD_RES_MEMORY,                                         \
+        .start_request = 0,                                                   \
+        .start_actual = LPC32XX_BASE_SYSCON                                   \
+      }                                                                       \
+    };                                                                        \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE_ORDERED(pwr, 0, RTEMS_SYSINIT_ORDER_FIRST,  \
+                                  RTEMS_ARRAY_SIZE(lpc_pwr0_res),             \
+                                  &lpc_pwr0_res[0])
+#endif /* RTEMS_BSD_DRIVER_LPC32XX_PWR */
+
 /**
  ** Physical Buses
  **/
@@ -153,6 +174,31 @@ extern "C" {
                                   RTEMS_ARRAY_SIZE(dwcotg0_res), \
                                   &dwcotg0_res[0])
 #endif /* RTEMS_BSD_DRIVER_DWCOTG0 */
+
+/*
+ * LPC32XX OHCI.
+ */
+#if !defined(RTEMS_BSD_DRIVER_LPC32XX_OHCI)
+  #define RTEMS_BSD_DRIVER_LPC32XX_OHCI                                     \
+    static const rtems_bsd_device_resource lpc_ohci0_res[] = {              \
+      {                                                                     \
+        .type = RTEMS_BSD_RES_MEMORY,                                       \
+        .start_request = 0,                                                 \
+        .start_actual = LPC32XX_BASE_USB                                    \
+      }, {                                                                  \
+        .type = RTEMS_BSD_RES_MEMORY,                                       \
+        .start_request = 0,                                                 \
+        .start_actual = (unsigned long)(&LPC32XX_I2C_RX)                    \
+      }, {                                                                  \
+        .type = RTEMS_BSD_RES_IRQ,                                          \
+        .start_request = 0,                                                 \
+        .start_actual = LPC32XX_IRQ_USB_HOST                                \
+      }                                                                     \
+    };                                                                      \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(ohci, 0,                                  \
+                                  RTEMS_ARRAY_SIZE(lpc_ohci0_res),          \
+                                  &lpc_ohci0_res[0])
+#endif /* RTEMS_BSD_DRIVER_LPC32XX_OHCI */
 
 /*
  * Designware/Synopsys MMC.
@@ -212,6 +258,27 @@ extern "C" {
                                   RTEMS_ARRAY_SIZE(smc0_res),    \
                                   &smc0_res[0])
 #endif /* RTEMS_BSD_DRIVER_SMC */
+
+/*
+ * LPC32XX LPE driver
+ */
+#if !defined(RTEMS_BSD_DRIVER_LPC32XX_LPE)
+  #define RTEMS_BSD_DRIVER_LPC32XX_LPE                           \
+    static const rtems_bsd_device_resource lpc_lpe0_res[] = {    \
+      {                                                          \
+        .type = RTEMS_BSD_RES_MEMORY,                            \
+        .start_request = 0,                                      \
+        .start_actual = LPC32XX_BASE_ETHERNET                    \
+      }, {                                                       \
+        .type = RTEMS_BSD_RES_IRQ,                               \
+        .start_request = 0,                                      \
+        .start_actual = LPC32XX_IRQ_ETHERNET                     \
+      }                                                          \
+    };                                                           \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(lpe, 0,                        \
+                                  RTEMS_ARRAY_SIZE(lpc_lpe0_res),    \
+                                  &lpc_lpe0_res[0])
+#endif /* RTEMS_BSD_DRIVER_LPC32XX_LPE */
 
 /*
  * Coldfire Fast Ethernet Controller (FEC) driver.
@@ -343,6 +410,14 @@ extern "C" {
   #define RTEMS_BSD_DRIVER_E1000PHY               \
     SYSINIT_DRIVER_REFERENCE(e1000phy, miibus);
 #endif /* RTEMS_BSD_DRIVER_E1000PHY */
+
+/*
+ * ICS PHY
+ */
+#if !defined(RTEMS_BSD_DRIVER_ICSPHY)
+  #define RTEMS_BSD_DRIVER_ICSPHY               \
+    SYSINIT_DRIVER_REFERENCE(icsphy, miibus);
+#endif /* RTEMS_BSD_DRIVER_ICSPHY */
 
 /*
  * Reltek PHY

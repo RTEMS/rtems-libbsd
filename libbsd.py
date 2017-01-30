@@ -148,6 +148,7 @@ def rtems(mm):
             'pppd/utils.c',
             'sys/dev/usb/controller/ehci_mpc83xx.c',
             'sys/dev/usb/controller/ohci_lpc.c',
+            'sys/dev/usb/controller/ohci_lpc32xx.c',
             'sys/dev/usb/controller/dwc_otg_nexus.c',
             'sys/dev/usb/controller/usb_otg_transceiver.c',
             'sys/dev/usb/controller/usb_otg_transceiver_dump.c',
@@ -1083,6 +1084,9 @@ def dev_net(mm):
             'sys/dev/dwc/if_dwc.h',
             'sys/dev/dwc/if_dwcvar.h',
             'sys/arm/xilinx/zy7_slcr.h',
+            'sys/arm/lpc/if_lpereg.h',
+            'sys/arm/lpc/lpcreg.h',
+            'sys/arm/lpc/lpcvar.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
@@ -1101,6 +1105,8 @@ def dev_net(mm):
             'sys/dev/cadence/if_cgem.c',
             'sys/dev/dwc/if_dwc.c',
             'sys/arm/xilinx/zy7_slcr.c',
+            'sys/arm/lpc/lpc_pwr.c',
+            'sys/arm/lpc/if_lpe.c',
         ],
         mm.generator['source']()
     )

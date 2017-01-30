@@ -36,12 +36,9 @@
 
 #include <errno.h>
 
-#if defined(LIBBSP_ARM_LPC24XX_BSP_H) || defined(LIBBSP_ARM_LPC32XX_BSP_H)
+#if defined(LIBBSP_ARM_LPC24XX_BSP_H)
 
 #include <bsp/irq.h>
-
-#ifdef LIBBSP_ARM_LPC24XX_BSP_H
-
 #include <bsp/io.h>
 #include <bsp/lpc24xx.h>
 
@@ -100,92 +97,6 @@ static void lpc_otg_status_and_control(void)
 {
 	OTG_STAT_CTRL = 0x3;
 }
-
-#endif /* LIBBSP_ARM_LPC24XX_BSP_H */
-
-#ifdef LIBBSP_ARM_LPC32XX_BSP_H
-
-#include <bsp/lpc32xx.h>
-
-#define LPC_USB_OHCI_BASE LPC32XX_BASE_USB
-
-#define LPC_USB_I2C_BASE (&LPC32XX_I2C_RX)
-
-#define LPC_OTG_CLK_CTRL LPC32XX_OTG_CLK_CTRL
-
-#define LPC_OTG_CLK_STAT LPC32XX_OTG_CLK_STAT
-
-#define LPC_USB_OHCI_IRQ LPC32XX_IRQ_USB_HOST
-
-#define USB_CTRL_SLAVE_HCLK_EN (1U << 24)
-#define USB_CTRL_I2C_EN (1U << 23)
-#define USB_CTRL_DEV_NEED_CLK_EN (1U << 22)
-#define USB_CTRL_HOST_NEED_CLK_EN (1U << 21)
-#define USB_CTRL_PC_MASK (0x3U << 19)
-#define USB_CTRL_PC_PULL_UP (0x0U << 19)
-#define USB_CTRL_PC_BUS_KEEPER (0x1U << 19)
-#define USB_CTRL_PC_NONE (0x2U << 19)
-#define USB_CTRL_PC_PULL_DOWN (0x3U << 19)
-#define USB_CTRL_CLKEN2 (1U << 18)
-#define USB_CTRL_CLKEN1 (1U << 17)
-#define USB_CTRL_POWER_UP (1U << 16)
-#define USB_CTRL_BYPASS (1U << 15)
-#define USB_CTRL_DIRECT (1U << 14)
-#define USB_CTRL_FEEDBACK (1U << 13)
-#define USB_CTRL_P_SHIFT 11
-#define USB_CTRL_P_MASK (0x3U << USB_CTRL_P_SHIFT)
-#define USB_CTRL_P_1 (0x0U << USB_CTRL_P_SHIFT)
-#define USB_CTRL_P_2 (0x1U << USB_CTRL_P_SHIFT)
-#define USB_CTRL_P_4 (0x2U << USB_CTRL_P_SHIFT)
-#define USB_CTRL_P_8 (0x3U << USB_CTRL_P_SHIFT)
-#define USB_CTRL_N_SHIFT 9
-#define USB_CTRL_N_MASK (0x3U << USB_CTRL_N_SHIFT)
-#define USB_CTRL_N_1 (0x0U << USB_CTRL_N_SHIFT)
-#define USB_CTRL_N_2 (0x1U << USB_CTRL_N_SHIFT)
-#define USB_CTRL_N_3 (0x2U << USB_CTRL_N_SHIFT)
-#define USB_CTRL_N_4 (0x3U << USB_CTRL_N_SHIFT)
-#define USB_CTRL_M_SHIFT 1
-#define USB_CTRL_M_MASK (0xffU << USB_CTRL_M_SHIFT)
-#define USB_CTRL_PLL_LOCK (1U << 0)
-
-static void lpc_usb_module_enable(void)
-{
-	LPC32XX_USB_DIV = 0xc;
-	LPC32XX_USB_CTRL = USB_CTRL_SLAVE_HCLK_EN
-		| USB_CTRL_PC_BUS_KEEPER
-		| USB_CTRL_CLKEN1
-		| USB_CTRL_POWER_UP
-		| USB_CTRL_P_2
-		| USB_CTRL_N_1
-		| (191U << USB_CTRL_M_SHIFT);
-	while ((LPC32XX_USB_CTRL & USB_CTRL_PLL_LOCK) == 0) {
-		/* Wait */
-	}
-	LPC32XX_USB_CTRL |= USB_CTRL_CLKEN2;
-}
-
-static void lpc_usb_module_disable(void)
-{
-	LPC32XX_OTG_CLK_CTRL = 0;
-	LPC32XX_USB_CTRL = USB_CTRL_PC_BUS_KEEPER;
-}
-
-static void lpc_usb_pin_config(void)
-{
-	/* Nothing to do */
-}
-
-static void lpc_usb_host_clock_enable(void)
-{
-	LPC32XX_USB_CTRL |= USB_CTRL_HOST_NEED_CLK_EN;
-}
-
-static void lpc_otg_status_and_control(void)
-{
-	LPC32XX_OTG_STAT_CTRL = 0x1;
-}
-
-#endif /* LIBBSP_ARM_LPC32XX_BSP_H */
 
 static rtems_interval lpc_usb_timeout_init(void)
 {
@@ -639,4 +550,4 @@ static devclass_t ohci_devclass;
 DRIVER_MODULE(ohci, nexus, ohci_driver, ohci_devclass, 0, 0);
 MODULE_DEPEND(ohci, usb, 1, 1, 1);
 
-#endif /* defined(LIBBSP_ARM_LPC24XX_BSP_H) || defined(LIBBSP_ARM_LPC32XX_BSP_H) */
+#endif /* defined(LIBBSP_ARM_LPC24XX_BSP_H) */

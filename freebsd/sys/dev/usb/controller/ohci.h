@@ -234,9 +234,7 @@ typedef struct ohci_softc {
 	struct ohci_ed *sc_bulk_p_last;
 	struct ohci_ed *sc_isoc_p_last;
 	struct ohci_ed *sc_intr_p_last[OHCI_NO_EDS];
-#ifndef __rtems__
 	void   *sc_intr_hdl;
-#endif /* __rtems__ */
 	device_t sc_dev;
 	bus_size_t sc_io_size;
 	bus_space_tag_t sc_io_tag;

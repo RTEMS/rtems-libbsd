@@ -83,6 +83,12 @@ typedef struct {
         { #name, unit, (resource_count), (resources), \
             &SYSINIT_ENTRY_NAME(name##_nexusmodule) }
 
+#define RTEMS_BSD_DEFINE_NEXUS_DEVICE_ORDERED(name, unit, order, resource_count, resources) \
+    extern struct sysinit SYSINIT_ENTRY_NAME(name##_nexusmodule); \
+    RTEMS_BSD_DEFINE_SET_ITEM_ORDERED(nexus, name##unit, order, rtems_bsd_device) = \
+        { #name, unit, (resource_count), (resources), \
+            &SYSINIT_ENTRY_NAME(name##_nexusmodule) }
+
 rtems_status_code rtems_bsd_initialize(void);
 
 /**

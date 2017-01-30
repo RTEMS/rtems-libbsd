@@ -77,7 +77,11 @@
 
 #define RTEMS_BSD_DEFINE_SET_ITEM(set, sym, type)			\
 	static type const __set_##set##_sym_##sym			\
-	__section(".rtemsroset.bsd." __STRING(set) ".content") __used
+       __section(".rtemsroset.bsd." __STRING(set) ".content.1") __used
+
+#define RTEMS_BSD_DEFINE_SET_ITEM_ORDERED(set, sym, order, type)     \
+	static type const __set_##set##_sym_##sym     \
+       __section(".rtemsroset.bsd." __STRING(set) ".content.0."  RTEMS_XSTRING( order )) __used
 
 #define __MAKE_SET(set, sym)						\
 	RTEMS_BSD_DEFINE_SET_ITEM(set, sym, const void *) = &sym

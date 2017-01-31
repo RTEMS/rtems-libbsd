@@ -93,7 +93,9 @@ lock_init(struct lock_object *lock, struct lock_class *class, const char *name,
 	KASSERT(i < LOCK_CLASS_MAX, ("unknown lock class %p", class));
 
 	/* Initialize the lock object. */
+#ifndef __rtems__
 	lock->lo_name = name;
+#endif /* __rtems__ */
 	lock->lo_flags |= flags | LO_INITIALIZED;
 	LOCK_LOG_INIT(lock, 0);
 	WITNESS_INIT(lock, (type != NULL) ? type : name);

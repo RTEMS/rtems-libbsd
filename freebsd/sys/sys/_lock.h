@@ -32,7 +32,9 @@
 #define	_SYS__LOCK_H_
 
 struct lock_object {
+#ifndef __rtems__
 	const	char *lo_name;		/* Individual lock name. */
+#endif /* __rtems__ */
 	u_int	lo_flags;
 #ifndef __rtems__
 	u_int	lo_data;		/* General class specific data. */

@@ -260,8 +260,8 @@ struct thread {
 #endif /* __rtems__ */
 	int		td_sqqueue;	/* (t) Sleepqueue queue blocked on. */
 	void		*td_wchan;	/* (t) Sleep address. */
-	const char	*td_wmesg;	/* (t) Reason for sleep. */
 #ifndef __rtems__
+	const char	*td_wmesg;	/* (t) Reason for sleep. */
 	volatile u_char td_owepreempt;  /* (k*) Preempt on last critical_exit */
 	u_char		td_tsqueue;	/* (t) Turnstile queue blocked on. */
 	short		td_locks;	/* (k) Debug: count of non-spin locks */

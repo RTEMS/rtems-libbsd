@@ -399,12 +399,13 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 	executing = td->td_thread;
 	_Thread_Wait_acquire_default(executing, &lock_context);
 	td->td_sq_state = TD_SQ_TIRED;
+	executing->Wait.return_argument_second.immutable_object = wmesg;
 #endif /* __rtems__ */
 	td->td_sleepqueue = NULL;
 	td->td_sqqueue = queue;
 	td->td_wchan = wchan;
-	td->td_wmesg = wmesg;
 #ifndef __rtems__
+	td->td_wmesg = wmesg;
 	if (flags & SLEEPQ_INTERRUPTIBLE) {
 		td->td_flags |= TDF_SINTR;
 		td->td_flags &= ~TDF_SLEEPABORT;
@@ -968,7 +969,9 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 	_Thread_Wait_acquire_default_critical(thread, &lock_context);
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 	td->td_wmesg = NULL;
+#endif /* __rtems__ */
 	td->td_wchan = NULL;
 #ifndef __rtems__
 	td->td_flags &= ~TDF_SINTR;

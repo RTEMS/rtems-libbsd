@@ -178,6 +178,15 @@ main(int argc, char **argv)
 {
 	int ch;
 	int warncount = 0;
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	setlocale(LC_NUMERIC, "");
 	setbuf(stdout,0);

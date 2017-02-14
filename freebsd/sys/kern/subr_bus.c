@@ -272,6 +272,9 @@ device_sysctl_handler(SYSCTL_HANDLER_ARGS)
 		break;
 	case DEVICE_SYSCTL_PARENT:
 		value = dev->parent ? dev->parent->nameunit : "";
+#ifdef __rtems__
+		value = value ? value : "";
+#endif /* __rtems__ */
 		break;
 	default:
 		return (EINVAL);

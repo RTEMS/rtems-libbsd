@@ -1309,6 +1309,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-kernel-sysctl.c',
               'rtemsbsd/rtems/rtems-kernel-sysctlbyname.c',
               'rtemsbsd/rtems/rtems-kernel-sysctlnametomib.c',
+              'rtemsbsd/rtems/rtems-kernel-termioskqueuepoll.c',
               'rtemsbsd/rtems/rtems-kernel-thread.c',
               'rtemsbsd/rtems/rtems-kernel-timesupport.c',
               'rtemsbsd/rtems/rtems-kernel-vprintf.c',

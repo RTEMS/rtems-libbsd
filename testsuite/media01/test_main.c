@@ -185,9 +185,7 @@ early_initialization(void)
 
 #define CONFIGURE_FILESYSTEM_DOSFS
 
-#define CONFIGURE_SMP_APPLICATION
-
-#define CONFIGURE_SMP_MAXIMUM_PROCESSORS 32
+#define CONFIGURE_MAXIMUM_PROCESSORS 32
 
 #include <rtems/bsd/test/default-network-init.h>
 

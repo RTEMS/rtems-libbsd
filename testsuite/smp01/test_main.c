@@ -280,8 +280,6 @@ test_main(void)
 	exit(0);
 }
 
-#define CONFIGURE_SMP_APPLICATION
-
-#define CONFIGURE_SMP_MAXIMUM_PROCESSORS CPU_COUNT
+#define CONFIGURE_MAXIMUM_PROCESSORS CPU_COUNT
 
 #include <rtems/bsd/test/default-init.h>

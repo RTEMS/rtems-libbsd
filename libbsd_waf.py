@@ -45,8 +45,8 @@ def build(bld):
         common_flags += ["-Wno-pointer-sign"]
     else:
         common_flags += ["-w"]
-    cflags = ['-std=gnu11'] + common_flags
-    cxxflags = ['-std=gnu++11'] + common_flags
+    cflags = [] + common_flags
+    cxxflags = [] + common_flags
 
     # Defines
     defines = []

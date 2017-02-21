@@ -199,10 +199,10 @@ def cpuIncludes():
             '-Ifreebsd/sys/@CPU@/include']
 
 def cflags():
-    return ['-std=gnu11']
+    return []
 
 def cxxflags():
-    return ['-std=gnu++11']
+    return []
 
 def headerPaths():
     #         local path                      wildcard             dest path

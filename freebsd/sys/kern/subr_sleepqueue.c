@@ -448,20 +448,39 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
 #else /* __rtems__ */
 	Per_CPU_Control *cpu_self;
 	Thread_Control *executing;
+	ISR_lock_Context lock_context;
+	ISR_lock_Context lock_context_2;
+	Watchdog_Header *header;
+	uint64_t expire;
 
 	cpu_self = _Thread_Dispatch_disable();
 	executing = _Per_CPU_Get_executing(cpu_self);
 	BSD_ASSERT(_Watchdog_Get_state(&executing->Timer.Watchdog) ==
 	    WATCHDOG_INACTIVE);
 
-	if ((flags & C_ABSOLUTE) == 0) {
-		_Thread_Timer_insert_relative(executing, cpu_self, sleepq_timeout,
-		    (Watchdog_Interval)((sbt + tick_sbt - 1) / tick_sbt));
+	_ISR_lock_ISR_disable_and_acquire(&executing->Timer.Lock, &lock_context);
+
+	header = &cpu_self->Watchdog.Header[PER_CPU_WATCHDOG_RELATIVE];
+	executing->Timer.header = header;
+	executing->Timer.Watchdog.routine = sleepq_timeout;
+	_Watchdog_Set_CPU(&executing->Timer.Watchdog, cpu_self);
+
+	_Watchdog_Per_CPU_acquire_critical(cpu_self, &lock_context_2);
+
+	if ((flags & C_ABSOLUTE) != 0) {
+		/*
+		 * The FreeBSD uptime starts at one second, however, the
+		 * relative watchdog ticks start at zero, see also TIMESEL().
+		 */
+		expire = (sbt - SBT_1S + tick_sbt - 1) / tick_sbt;
 	} else {
-		_Thread_Timer_insert_absolute(executing, cpu_self, sleepq_timeout,
-		    _Watchdog_Ticks_from_sbintime(sbt));
+		expire = (sbt + tick_sbt - 1) / tick_sbt;
+		expire += cpu_self->Watchdog.ticks;
 	}
 
+	_Watchdog_Insert(header, &executing->Timer.Watchdog, expire);
+	_Watchdog_Per_CPU_release_critical(cpu_self, &lock_context_2);
+	_ISR_lock_Release_and_ISR_enable(&executing->Timer.Lock, &lock_context);
 	_Thread_Dispatch_direct(cpu_self);
 #endif /* __rtems__ */
 }

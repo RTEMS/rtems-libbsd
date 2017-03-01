@@ -1103,3 +1103,5 @@ static driver_t dw_mmc_driver = {
 static devclass_t dw_mmc_devclass;
 
 DRIVER_MODULE(dw_mmc, nexus, dw_mmc_driver, dw_mmc_devclass, NULL, NULL);
+DRIVER_MODULE(mmc, dw_mmc, mmc_driver, mmc_devclass, NULL, NULL);
+MODULE_DEPEND(dw_mmc, mmc, 1, 1, 1);

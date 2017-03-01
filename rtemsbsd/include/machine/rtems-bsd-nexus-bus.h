@@ -205,8 +205,7 @@ extern "C" {
  */
 #if !defined(RTEMS_BSD_DRIVER_DWC_MMC)
   #define RTEMS_BSD_DRIVER_DWC_MMC                                \
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(dw_mmc, 0, 0, NULL);            \
-    SYSINIT_DRIVER_REFERENCE(mmc, dw_mmc)
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(dw_mmc, 0, 0, NULL)
 #endif /* RTEMS_BSD_DRIVER_DWC_MMC */
 
 /*

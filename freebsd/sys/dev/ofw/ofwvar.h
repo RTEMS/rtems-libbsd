@@ -80,6 +80,9 @@ struct ofw_kobj {
 
 typedef struct ofw_kobj		*ofw_t;
 typedef struct kobj_class	ofw_def_t;
+#ifdef __rtems__
+extern ofw_def_t ofw_fdt;
+#endif /* __rtems__ */
 
 #define	ofw_method_t	kobj_method_t
 #define	OFWMETHOD	KOBJMETHOD

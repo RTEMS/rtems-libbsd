@@ -97,12 +97,18 @@ static ofw_method_t ofw_fdt_methods[] = {
 	{ 0, 0 }
 };
 
+#ifndef __rtems__
 static ofw_def_t ofw_fdt = {
+#else /* __rtems__ */
+ofw_def_t ofw_fdt = {
+#endif /* __rtems__ */
 	OFW_FDT,
 	ofw_fdt_methods,
 	0
 };
+#ifndef __rtems__
 OFW_DEF(ofw_fdt);
+#endif /* __rtems__ */
 
 static void *fdtp = NULL;
 

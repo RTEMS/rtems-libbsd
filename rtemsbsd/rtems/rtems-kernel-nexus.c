@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -50,10 +50,20 @@
 #include <sys/malloc.h>
 #include <machine/bus.h>
 
+#include <rtems/bsd/local/opt_platform.h>
+
+#ifdef FDT
+#include <dev/ofw/ofw_bus.h>
+#endif
+
 #include <rtems/bsd/bsd.h>
 #include <rtems/irq-extension.h>
 
 /* #define DISABLE_INTERRUPT_EXTENSION */
+
+#if defined(__i386__) || defined(FDT)
+#define ENABLE_RESOURCE_ACTIVATE_DEACTIVATE
+#endif
 
 RTEMS_BSD_DECLARE_SET(nexus, rtems_bsd_device);
 
@@ -205,17 +215,24 @@ nexus_release_resource(device_t bus, device_t child, int type, int rid,
 	return (rman_release_resource(res));
 }
 
-#ifdef __i386__
+#ifdef ENABLE_RESOURCE_ACTIVATE_DEACTIVATE
 static int
 nexus_activate_resource(device_t bus, device_t child, int type, int rid,
     struct resource *res)
 {
+
 	switch (type) {
+#ifdef __i386__
 	case SYS_RES_IOPORT:
 		rman_set_bustag(res, X86_BUS_SPACE_IO);
 		break;
+#endif
 	case SYS_RES_MEMORY:
+#ifdef __i386__
 		rman_set_bustag(res, X86_BUS_SPACE_MEM);
+#else
+		rman_set_bushandle(res, rman_get_start(res));
+#endif
 		break;
 	}
 	return (rman_activate_resource(res));
@@ -330,6 +347,16 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 	return (err);
 }
 
+#ifdef FDT
+static int
+nexus_ofw_map_intr(device_t dev, device_t child, phandle_t iparent, int icells,
+    pcell_t *intr)
+{
+
+	return ((int)bsp_fdt_map_intr(intr[0]));
+}
+#endif /* FDT */
+
 static device_method_t nexus_methods[] = {
 	/* Device interface */
 	DEVMETHOD(device_probe, nexus_probe),
@@ -344,12 +371,17 @@ static device_method_t nexus_methods[] = {
 	DEVMETHOD(bus_add_child, bus_generic_add_child),
 	DEVMETHOD(bus_alloc_resource, nexus_alloc_resource),
 	DEVMETHOD(bus_release_resource, nexus_release_resource),
-#ifdef __i386__
+#ifdef ENABLE_RESOURCE_ACTIVATE_DEACTIVATE
 	DEVMETHOD(bus_activate_resource, nexus_activate_resource),
 	DEVMETHOD(bus_deactivate_resource, nexus_deactivate_resource),
 #endif
 	DEVMETHOD(bus_setup_intr, nexus_setup_intr),
 	DEVMETHOD(bus_teardown_intr, nexus_teardown_intr),
+
+#ifdef FDT
+	/* OFW interface */
+	DEVMETHOD(ofw_bus_map_intr, nexus_ofw_map_intr),
+#endif
 
 	{ 0, 0 }
 };

@@ -84,7 +84,11 @@ MALLOC_DEFINE(M_OFWPROP, "openfirm", "Open Firmware properties");
 
 static ihandle_t stdout;
 
+#ifndef __rtems__
 static ofw_def_t	*ofw_def_impl = NULL;
+#else /* __rtems__ */
+#define	ofw_def_impl (&ofw_fdt)
+#endif /* __rtems__ */
 static ofw_t		ofw_obj;
 static struct ofw_kobj	ofw_kernel_obj;
 static struct kobj_ops	ofw_kernel_kops;
@@ -144,6 +148,10 @@ static void
 xrefinfo_init(void *unsed)
 {
 
+#ifdef __rtems__
+	if (OF_init(__DECONST(void *, bsp_fdt_get())) != 0)
+		return (ENXIO);
+#endif /* __rtems__ */
 	/*
 	 * There is no locking during this init because it runs much earlier
 	 * than any of the clients/consumers of the xref list data, but we do
@@ -198,6 +206,7 @@ SET_DECLARE(ofw_set, ofw_def_t);
 boolean_t
 OF_install(char *name, int prio)
 {
+#ifndef __rtems__
 	ofw_def_t *ofwp, **ofwpp;
 	static int curr_prio = 0;
 
@@ -217,6 +226,9 @@ OF_install(char *name, int prio)
 	}
 
 	return (FALSE);
+#else /* __rtems__ */
+	return (TRUE);
+#endif /* __rtems__ */
 }
 
 /* Initializer */

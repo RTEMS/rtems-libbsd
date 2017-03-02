@@ -18,6 +18,10 @@ GENERATED += $(LOCAL_INC)/usbdevs.h
 GENERATED += $(LOCAL_INC)/miibus_if.h
 GENERATED += $(LOCAL_SRC)/miibus_if.c
 GENERATED += $(LOCAL_INC)/miidevs.h
+GENERATED += $(LOCAL_INC)/ofw_if.h
+GENERATED += $(LOCAL_SRC)/ofw_if.c
+GENERATED += $(LOCAL_INC)/ofw_bus_if.h
+GENERATED += $(LOCAL_SRC)/ofw_bus_if.c
 GENERATED += $(LOCAL_INC)/pci_if.h
 GENERATED += $(LOCAL_SRC)/pci_if.c
 GENERATED += $(LOCAL_INC)/pcib_if.h
@@ -108,6 +112,22 @@ $(LOCAL_INC)/mmcbr_if.h: $(FREEBSD_SRC)/sys/dev/mmc/mmcbr_if.m
 $(LOCAL_SRC)/mmcbr_if.c: $(FREEBSD_SRC)/sys/dev/mmc/mmcbr_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c
 	mv mmcbr_if.c $@
+
+$(LOCAL_INC)/ofw_if.h: $(FREEBSD_SRC)/sys/dev/ofw/ofw_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv ofw_if.h $@
+
+$(LOCAL_SRC)/ofw_if.c: $(FREEBSD_SRC)/sys/dev/ofw/ofw_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv ofw_if.c $@
+
+$(LOCAL_INC)/ofw_bus_if.h: $(FREEBSD_SRC)/sys/dev/ofw/ofw_bus_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv ofw_bus_if.h $@
+
+$(LOCAL_SRC)/ofw_bus_if.c: $(FREEBSD_SRC)/sys/dev/ofw/ofw_bus_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv ofw_bus_if.c $@
 
 $(LOCAL_INC)/if_dwc_if.h: $(FREEBSD_SRC)/sys/dev/dwc/if_dwc_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -h

@@ -1183,7 +1183,6 @@ hexdump(const void *ptr, int length, const char *hdr, int flags)
 #endif /* __rtems__ */
 #endif /* _KERNEL */
 
-#ifndef __rtems__
 void
 sbuf_hexdump(struct sbuf *sb, const void *ptr, int length, const char *hdr,
 	     int flags)
@@ -1238,6 +1237,7 @@ sbuf_hexdump(struct sbuf *sb, const void *ptr, int length, const char *hdr,
 	}
 }
 
+#ifndef __rtems__
 #ifdef _KERNEL
 void
 counted_warning(unsigned *counter, const char *msg)

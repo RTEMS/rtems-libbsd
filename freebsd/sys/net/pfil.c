@@ -105,6 +105,7 @@ pfil_chain_get(int dir, struct pfil_head *ph)
 		return (NULL);
 }
 
+#ifndef __rtems__
 /*
  * pfil_try_rlock() acquires rm reader lock for specified head
  * if this is immediately possible.
@@ -115,6 +116,7 @@ pfil_try_rlock(struct pfil_head *ph, struct rm_priotracker *tracker)
 
 	return (PFIL_TRY_RLOCK(ph, tracker));
 }
+#endif /* __rtems__ */
 
 /*
  * pfil_rlock() acquires rm reader lock for specified head.

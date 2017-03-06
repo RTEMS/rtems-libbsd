@@ -276,8 +276,27 @@ int	sscanf(const char *, char const *, ...) __nonnull(1) __nonnull(2) __scanflik
 int	vsscanf(const char *, char const *, __va_list) __nonnull(1) __nonnull(2) __scanflike(2, 0);
 long	strtol(const char *, char **, int) __nonnull(1);
 u_long	strtoul(const char *, char **, int) __nonnull(1);
+#ifndef __rtems__
 quad_t	strtoq(const char *, char **, int) __nonnull(1);
 u_quad_t strtouq(const char *, char **, int) __nonnull(1);
+#else /* __rtems__ */
+long long strtoll(const char *, char **, int);
+unsigned long long strtoull(const char *, char **, int);
+
+static inline quad_t __nonnull(1)
+strtoq(const char *nptr, char **endptr, int base)
+{
+
+	return (strtoll(nptr, endptr, base));
+}
+
+static inline u_quad_t __nonnull(1)
+strtouq(const char *nptr, char **endptr, int base)
+{
+
+	return (strtoull(nptr, endptr, base));
+}
+#endif /* __rtems__ */
 void	tprintf(struct proc *p, int pri, const char *, ...) __printflike(3, 4);
 void	vtprintf(struct proc *, int, const char *, __va_list) __printflike(3, 0);
 void	hexdump(const void *ptr, int length, const char *hdr, int flags);

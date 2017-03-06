@@ -206,6 +206,7 @@ early_initialization(void)
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_VMSTAT_Command
 
+#define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE
 #define CONFIGURE_SHELL_COMMAND_STACKUSE

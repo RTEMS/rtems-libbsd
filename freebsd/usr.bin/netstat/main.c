@@ -803,6 +803,7 @@ kresolve_list(struct nlist *_nl)
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * Wrapper of kvm_dpcpu_setcpu().
  */
@@ -818,6 +819,7 @@ kset_dpcpu(u_int cpuid)
 		    cpuid, kvm_geterr(kvmd)); 
 	return;
 }
+#endif /* __rtems__ */
 
 /*
  * Read kernel memory, return 0 on success.
@@ -838,6 +840,7 @@ kread(u_long addr, void *buf, size_t size)
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * Read single counter(9).
  */
@@ -850,6 +853,7 @@ kread_counter(u_long addr)
 
 	return (kvm_counter_u64_fetch(kvmd, addr));
 }
+#endif /* __rtems__ */
 
 /*
  * Read an array of N counters in kernel memory into array of N uint64_t's.

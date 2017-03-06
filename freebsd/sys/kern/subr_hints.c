@@ -511,5 +511,9 @@ resource_unset_value(const char *name, int unit, const char *resname)
 		return (ENAMETOOLONG);
 	memcpy(varname, retname, len);
 	varname[len] = '\0';
+#ifndef __rtems__
 	return (kern_unsetenv(varname));
+#else /* __rtems__ */
+	return (0);
+#endif /* __rtems__ */
 }

@@ -51,9 +51,7 @@ struct tsec_softc {
 	struct mtx	transmit_lock;	/* transmitter lock */
 	struct mtx	receive_lock;	/* receiver lock */
 
-#ifndef __rtems__
 	phandle_t	node;
-#endif /* __rtems__ */
 	device_t	dev;
 	device_t	tsec_miibus;
 	struct mii_data	*tsec_mii;	/* MII media control */

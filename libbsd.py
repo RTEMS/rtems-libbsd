@@ -1143,6 +1143,7 @@ def dev_net(mm):
             'sys/dev/mii/ukphy.c',
             'sys/dev/mii/ukphy_subr.c',
             'sys/dev/tsec/if_tsec.c',
+            'sys/dev/tsec/if_tsec_fdt.c',
             'sys/dev/cadence/if_cgem.c',
             'sys/dev/dwc/if_dwc.c',
             'sys/arm/xilinx/zy7_slcr.c',

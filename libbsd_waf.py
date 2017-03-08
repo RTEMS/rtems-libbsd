@@ -879,6 +879,7 @@ def build(bld):
               'freebsd/sys/dev/rtwn/usb/rtwn_usb_tx.c',
               'freebsd/sys/dev/smc/if_smc.c',
               'freebsd/sys/dev/tsec/if_tsec.c',
+              'freebsd/sys/dev/tsec/if_tsec_fdt.c',
               'freebsd/sys/dev/usb/controller/dwc_otg.c',
               'freebsd/sys/dev/usb/controller/ehci.c',
               'freebsd/sys/dev/usb/controller/ohci.c',

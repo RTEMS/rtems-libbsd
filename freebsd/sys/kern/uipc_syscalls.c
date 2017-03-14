@@ -176,12 +176,10 @@ sys_socket(struct thread *td, struct socket_args *uap)
 	type = uap->type;
 	oflag = 0;
 	fflag = 0;
-#ifndef __rtems__
 	if ((type & SOCK_CLOEXEC) != 0) {
 		type &= ~SOCK_CLOEXEC;
 		oflag |= O_CLOEXEC;
 	}
-#endif /* __rtems__ */
 	if ((type & SOCK_NONBLOCK) != 0) {
 		type &= ~SOCK_NONBLOCK;
 		fflag |= FNONBLOCK;
@@ -775,12 +773,10 @@ kern_socketpair(struct thread *td, int domain, int type, int protocol,
 
 	oflag = 0;
 	fflag = 0;
-#ifndef __rtems__
 	if ((type & SOCK_CLOEXEC) != 0) {
 		type &= ~SOCK_CLOEXEC;
 		oflag |= O_CLOEXEC;
 	}
-#endif /* __rtems__ */
 	if ((type & SOCK_NONBLOCK) != 0) {
 		type &= ~SOCK_NONBLOCK;
 		fflag |= FNONBLOCK;

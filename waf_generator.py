@@ -191,7 +191,7 @@ class ModuleManager(builder.ModuleManager):
         self.script += line + os.linesep
 
     def write(self):
-        name = os.path.join(builder.RTEMS_DIR, 'libbsd_waf.py')
+        name = os.path.join(builder.LIBBSD_DIR, 'libbsd_waf.py')
         converter = builder.Converter()
         converter.convert(name, name, srcContents = self.script)
 
@@ -207,7 +207,7 @@ class ModuleManager(builder.ModuleManager):
         self.generator['path'] = builder.PathComposer
         self.generator['freebsd-path'] = builder.FreeBSDPathComposer
         self.generator['rtems-path'] = builder.RTEMSPathComposer
-        self.generator['cpu-path'] = builder.CPUDependentPathComposer
+        self.generator['cpu-path'] = builder.CPUDependentFreeBSDPathComposer
         self.generator['target-src-cpu--path'] = builder.TargetSourceCPUDependentPathComposer
 
         self.generator['source'] = SourceFileFragmentComposer

@@ -59,9 +59,9 @@ def usage():
     print("  -m|--makefile     Warning: depreciated and will be removed ")
     print("  -b|--buildscripts just generate the build scripts")
     print("  -S|--stats        Print a statistics report")
-    print("  -R|--reverse      default FreeBSD -> RTEMS, reverse that")
-    print("  -r|--rtems        RTEMS Libbsd directory (default: '.')")
-    print("  -f|--freebsd      FreeBSD SVN directory (default: 'freebsd-org')")
+    print("  -R|--reverse      default origin -> LibBSD, reverse that")
+    print("  -r|--rtems        LibBSD directory (default: '.')")
+    print("  -f|--freebsd      FreeBSD origin directory (default: 'freebsd-org')")
     print("  -v|--verbose      enable verbose output mode")
 
 # Parse the arguments
@@ -107,7 +107,7 @@ def parseArguments():
         elif o in ("-R", "--reverse"):
             isForward = False
         elif o in ("-r", "--rtems"):
-            builder.RTEMS_DIR = a
+            builder.LIBBSD_DIR = a
         elif o in ("-f", "--freebsd"):
             builder.FreeBSD_DIR = a
         else:
@@ -120,8 +120,8 @@ print("Verbose:                     %s (%d)" % (("no", "yes")[builder.verbose()]
 print("Dry Run:                     %s" % (("no", "yes")[builder.isDryRun]))
 print("Diff Mode Enabled:           %s" % (("no", "yes")[builder.isDiffMode]))
 print("Only Generate Build Scripts: %s" % (("no", "yes")[isOnlyBuildScripts]))
-print("RTEMS Libbsd Directory:      %s" % (builder.RTEMS_DIR))
-print("FreeBSD SVN Directory:       %s" % (builder.FreeBSD_DIR))
+print("LibBSD Directory:            %s" % (builder.LIBBSD_DIR))
+print("FreeBSD Directory:           %s" % (builder.FreeBSD_DIR))
 print("Direction:                   %s" % (("reverse", "forward")[isForward]))
 
 # Check directory argument was set and exist
@@ -134,15 +134,15 @@ def wasDirectorySet(desc, path):
         print("error:" + desc + " Directory (" + path + ") does not exist")
         sys.exit(2)
 
-# Were RTEMS and FreeBSD directories specified
-wasDirectorySet( "RTEMS", builder.RTEMS_DIR )
+# Were directories specified?
+wasDirectorySet( "LibBSD", builder.LIBBSD_DIR )
 wasDirectorySet( "FreeBSD", builder.FreeBSD_DIR )
 
 # Are we generating or reverting?
 if isForward == True:
-    print("Forward from FreeBSD GIT into ", builder.RTEMS_DIR)
+    print("Forward from", builder.FreeBSD_DIR, "into", builder.LIBBSD_DIR)
 else:
-    print("Reverting from ", builder.RTEMS_DIR)
+    print("Reverting from", builder.LIBBSD_DIR)
     if isOnlyBuildScripts == True:
         print("error: Build Script generation and Reverse are contradictory")
         sys.exit(2)

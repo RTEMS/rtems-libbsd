@@ -1,7 +1,7 @@
 #
 #  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
-#  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+#  Copyright (c) 2009, 2017 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
 #   Dornierstr. 4
@@ -48,7 +48,7 @@ import codecs
 #
 # Global controls.
 #
-RTEMS_DIR = "."
+LIBBSD_DIR = "."
 FreeBSD_DIR = "freebsd-org"
 verboseLevel = 0
 isDryRun = False
@@ -524,39 +524,39 @@ class FromRTEMSToFreeBSDSourceConverter(Converter):
 # Compose a path based for the various parts of the source tree.
 #
 class PathComposer(object):
-    def composeFreeBSDPath(self, path):
+    def composeOriginPath(self, path):
         return path
 
-    def composeRTEMSPath(self, path, prefix):
+    def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, path)
 
 class FreeBSDPathComposer(PathComposer):
-    def composeFreeBSDPath(self, path):
+    def composeOriginPath(self, path):
         return os.path.join(FreeBSD_DIR, path)
 
-    def composeRTEMSPath(self, path, prefix):
+    def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, 'freebsd', path)
 
 class RTEMSPathComposer(PathComposer):
-    def composeFreeBSDPath(self, path):
+    def composeOriginPath(self, path):
         return path
 
-    def composeRTEMSPath(self, path, prefix):
+    def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, 'rtemsbsd', path)
 
-class CPUDependentPathComposer(FreeBSDPathComposer):
-    def composeRTEMSPath(self, path, prefix):
-        path = super(CPUDependentPathComposer, self).composeRTEMSPath(path, prefix)
+class CPUDependentFreeBSDPathComposer(FreeBSDPathComposer):
+    def composeLibBSDPath(self, path, prefix):
+        path = super(CPUDependentFreeBSDPathComposer, self).composeLibBSDPath(path, prefix)
         path = mapCPUDependentPath(path)
         return path
 
-class TargetSourceCPUDependentPathComposer(CPUDependentPathComposer):
+class TargetSourceCPUDependentPathComposer(CPUDependentFreeBSDPathComposer):
     def __init__(self, targetCPU, sourceCPU):
         self.targetCPU = targetCPU
         self.sourceCPU = sourceCPU
 
-    def composeRTEMSPath(self, path, prefix):
-        path = super(TargetSourceCPUDependentPathComposer, self).composeRTEMSPath(path, prefix)
+    def composeLibBSDPath(self, path, prefix):
+        path = super(TargetSourceCPUDependentPathComposer, self).composeLibBSDPath(path, prefix)
         path = path.replace(self.sourceCPU, self.targetCPU)
         return path
 
@@ -583,8 +583,8 @@ class File(object):
                    reverseConverter.__class__.__name__))
         self.path = path
         self.pathComposer = pathComposer
-        self.freebsdPath = self.pathComposer.composeFreeBSDPath(self.path)
-        self.rtemsPath = self.pathComposer.composeRTEMSPath(self.path, RTEMS_DIR)
+        self.originPath = self.pathComposer.composeOriginPath(self.path)
+        self.libbsdPath = self.pathComposer.composeLibBSDPath(self.path, LIBBSD_DIR)
         self.forwardConverter = forwardConverter
         self.reverseConverter = reverseConverter
         self.buildSystemComposer = buildSystemComposer
@@ -592,16 +592,16 @@ class File(object):
     def processSource(self, forward):
         if forward:
             if verbose(verboseDetail):
-                print("process source: %s => %s" % (self.freebsdPath, self.rtemsPath))
-            self.forwardConverter.convert(self.freebsdPath, self.rtemsPath)
+                print("process source: %s => %s" % (self.originPath, self.libbsdPath))
+            self.forwardConverter.convert(self.originPath, self.libbsdPath)
         else:
             if verbose(verboseDetail):
                 print("process source: %s => %s converter:%s" % \
-                      (self.rtemsPath, self.freebsdPath, self.reverseConverter.__class__.__name__))
-            self.reverseConverter.convert(self.rtemsPath, self.freebsdPath)
+                      (self.libbsdPath, self.originPath, self.reverseConverter.__class__.__name__))
+            self.reverseConverter.convert(self.libbsdPath, self.originPath)
 
     def getFragment(self):
-        return self.buildSystemComposer.compose(self.pathComposer.composeRTEMSPath(self.path, ''))
+        return self.buildSystemComposer.compose(self.pathComposer.composeLibBSDPath(self.path, ''))
 
 #
 # Module - logical group of related files we can perform actions on
@@ -638,13 +638,13 @@ class Module:
         self.files += [f]
 
     def addFiles(self, newFiles,
-                 pathComposer, fromFreeBSDToRTEMSConverter, fromRTEMSToFreeBSDConverter,
+                 pathComposer, forwardConverter, reverseConverter,
                  assertFile, buildSystemComposer = BuildSystemFragmentComposer()):
         files = []
         for newFile in newFiles:
             assertFile(newFile)
-            files += [File(newFile, pathComposer, fromFreeBSDToRTEMSConverter,
-                           fromRTEMSToFreeBSDConverter, buildSystemComposer)]
+            files += [File(newFile, pathComposer, forwardConverter,
+                           reverseConverter, buildSystemComposer)]
         return files
 
     def addKernelSpaceHeaderFiles(self, files):
@@ -661,9 +661,9 @@ class Module:
         self.files += self.addFiles(files, RTEMSPathComposer(),
                                     NoConverter(), NoConverter(), assertHeaderFile)
 
-    def addCPUDependentHeaderFiles(self, files):
+    def addCPUDependentFreeBSDHeaderFiles(self, files):
         self.files += self.addFiles(files,
-                                    CPUDependentPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
+                                    CPUDependentFreeBSDPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
                                     FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
 
     def addTargetSourceCPUDependentHeaderFiles(self, targetCPUs, sourceCPU, files):
@@ -696,12 +696,12 @@ class Module:
                                     RTEMSPathComposer(), NoConverter(), NoConverter(),
                                     assertSourceFile, sourceFileFragmentComposer)
 
-    def addCPUDependentSourceFiles(self, cpus, files, sourceFileFragmentComposer):
+    def addCPUDependentFreeBSDSourceFiles(self, cpus, files, sourceFileFragmentComposer):
         for cpu in cpus:
             self.initCPUDependencies(cpu)
             self.cpuDependentSourceFiles[cpu] += \
                 self.addFiles(files,
-                              CPUDependentPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
+                              CPUDependentFreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
                               FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
                               sourceFileFragmentComposer)
 

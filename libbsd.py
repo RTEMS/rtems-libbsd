@@ -1294,7 +1294,7 @@ def dev_nic(mm):
             'sys/sys/user.h',
         ]
     )
-    mod.addCPUDependentHeaderFiles(
+    mod.addCPUDependentFreeBSDHeaderFiles(
         [
             'sys/arm/include/cpufunc.h',
             'sys/i386/include/specialreg.h',
@@ -2207,7 +2207,7 @@ def pci(mm):
             'sys/dev/pci/pcivar.h',
         ]
     )
-    mod.addCPUDependentHeaderFiles(
+    mod.addCPUDependentFreeBSDHeaderFiles(
         [
             'sys/i386/include/_bus.h',
             'sys/i386/include/legacyvar.h',
@@ -2215,7 +2215,7 @@ def pci(mm):
             'sys/x86/include/pci_cfgreg.h',
         ]
     )
-    mod.addCPUDependentSourceFiles(
+    mod.addCPUDependentFreeBSDSourceFiles(
         [ 'i386' ],
         [
             'sys/i386/i386/legacy.c',
@@ -3967,7 +3967,7 @@ def in_cksum(mm):
         [
         ]
     )
-    mod.addCPUDependentHeaderFiles(
+    mod.addCPUDependentFreeBSDHeaderFiles(
         [
             'sys/i386/include/in_cksum.h',
             'sys/mips/include/in_cksum.h',
@@ -3983,28 +3983,28 @@ def in_cksum(mm):
             'sys/mips/include/in_cksum.h',
         ]
     )
-    mod.addCPUDependentSourceFiles(
+    mod.addCPUDependentFreeBSDSourceFiles(
         [ 'i386' ],
         [
             'sys/i386/i386/in_cksum.c',
         ],
         mm.generator['source']()
     )
-    mod.addCPUDependentSourceFiles(
+    mod.addCPUDependentFreeBSDSourceFiles(
         [ 'powerpc' ],
         [
             'sys/powerpc/powerpc/in_cksum.c',
         ],
         mm.generator['source']()
     )
-    mod.addCPUDependentSourceFiles(
+    mod.addCPUDependentFreeBSDSourceFiles(
         [ 'sparc64' ],
         [
             'sys/sparc64/sparc64/in_cksum.c',
         ],
         mm.generator['source']()
     )
-    mod.addCPUDependentSourceFiles(
+    mod.addCPUDependentFreeBSDSourceFiles(
         [
             'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
             'mips', 'nios2', 'sh', 'sparc', 'v850'

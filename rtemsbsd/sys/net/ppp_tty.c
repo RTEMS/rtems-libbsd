@@ -244,7 +244,7 @@ pppopen(struct rtems_termios_tty *tty)
     /* initialize values */
     sc->sc_ifp->if_drv_flags |= IFF_DRV_RUNNING;
     sc->sc_ifp->if_baudrate =
-	rtems_termios_baud_to_number(tty->termios.c_cflag & CBAUD);
+	rtems_termios_baud_to_number(tty->termios.c_ospeed);
 
     tty->t_sc = (void *)sc;
 
@@ -426,12 +426,15 @@ ppptioctl(struct rtems_termios_tty *tty, rtems_libio_ioctl_args_t *args)
     struct ppp_softc   *sc    = tty->t_sc;
 
     switch (cmd) {
-    case RTEMS_IO_GET_ATTRIBUTES:
-    case RTEMS_IO_SET_ATTRIBUTES:
-    case RTEMS_IO_TCDRAIN:
-    case RTEMS_IO_SNDWAKEUP:
     case RTEMS_IO_RCVWAKEUP:
+    case RTEMS_IO_SNDWAKEUP:
+    case TIOCDRAIN:
+    case TIOCFLUSH:
+    case TIOCGETA:
     case TIOCGETD:
+    case TIOCSETA:
+    case TIOCSETAF:
+    case TIOCSETAW:
     case TIOCSETD:
         error = rtems_termios_ioctl(args);
 	break;

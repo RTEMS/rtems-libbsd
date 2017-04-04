@@ -43,7 +43,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -163,6 +163,7 @@ in6_newaddrmsg(struct in6_ifaddr *ia, int cmd)
 	struct sockaddr_dl gateway;
 	struct sockaddr_in6 mask, addr;
 	struct rtentry rt;
+	int fibnum;
 
 	/*
 	 * initialize for rtmsg generation
@@ -180,8 +181,9 @@ in6_newaddrmsg(struct in6_ifaddr *ia, int cmd)
 	rt.rt_flags = RTF_HOST | RTF_STATIC;
 	if (cmd == RTM_ADD)
 		rt.rt_flags |= RTF_UP;
-	/* Announce arrival of local address to all FIBs. */
-	rt_newaddrmsg(cmd, &ia->ia_ifa, 0, &rt);
+	fibnum = V_rt_add_addr_allfibs ? RT_ALL_FIBS : ia62ifa(ia)->ifa_ifp->if_fib;
+	/* Announce arrival of local address to this FIB. */
+	rt_newaddrmsg_fib(cmd, &ia->ia_ifa, 0, &rt, fibnum);
 }
 
 int
@@ -558,8 +560,11 @@ in6_control(struct socket *so, u_long cmd, caddr_t data,
 		 */
 		if ((error = in6_update_ifa(ifp, ifra, ia, 0)) != 0)
 			goto out;
-		if (ia != NULL)
+		if (ia != NULL) {
+			if (ia->ia_ifa.ifa_carp)
+				(*carp_detach_p)(&ia->ia_ifa, true);
 			ifa_free(&ia->ia_ifa);
+		}
 		if ((ia = in6ifa_ifpwithaddr(ifp, &ifra->ifra_addr.sin6_addr))
 		    == NULL) {
 			/*
@@ -626,7 +631,7 @@ in6_control(struct socket *so, u_long cmd, caddr_t data,
 			 */
 			if ((error = nd6_prelist_add(&pr0, NULL, &pr)) != 0) {
 				if (carp_attached)
-					(*carp_detach_p)(&ia->ia_ifa);
+					(*carp_detach_p)(&ia->ia_ifa, false);
 				goto out;
 			}
 		}
@@ -1247,7 +1252,7 @@ in6_purgeaddr(struct ifaddr *ifa)
 	int plen, error;
 
 	if (ifa->ifa_carp)
-		(*carp_detach_p)(ifa);
+		(*carp_detach_p)(ifa, false);
 
 	/*
 	 * Remove the loopback route to the interface address.
@@ -1963,7 +1968,6 @@ in6_if2idlen(struct ifnet *ifp)
 	case IFT_ETHER:		/* RFC2464 */
 	case IFT_PROPVIRTUAL:	/* XXX: no RFC. treat it as ether */
 	case IFT_L2VLAN:	/* ditto */
-	case IFT_IEEE80211:	/* ditto */
 	case IFT_BRIDGE:	/* bridge(4) only does Ethernet-like links */
 	case IFT_INFINIBAND:
 		return (64);
@@ -2119,15 +2123,15 @@ in6_lltable_rtcheck(struct ifnet *ifp,
 	uint32_t scopeid;
 	int error;
 	char ip6buf[INET6_ADDRSTRLEN];
+	int fibnum;
 
 	KASSERT(l3addr->sa_family == AF_INET6,
 	    ("sin_family %d", l3addr->sa_family));
 
-	/* Our local addresses are always only installed on the default FIB. */
-
 	sin6 = (const struct sockaddr_in6 *)l3addr;
 	in6_splitscope(&sin6->sin6_addr, &dst, &scopeid);
-	error = fib6_lookup_nh_basic(RT_DEFAULT_FIB, &dst, scopeid, 0, 0, &nh6);
+	fibnum = V_rt_add_addr_allfibs ? RT_DEFAULT_FIB : ifp->if_fib;
+	error = fib6_lookup_nh_basic(fibnum, &dst, scopeid, 0, 0, &nh6);
 	if (error != 0 || (nh6.nh_flags & NHF_GATEWAY) || nh6.nh_ifp != ifp) {
 		struct ifaddr *ifa;
 		/*

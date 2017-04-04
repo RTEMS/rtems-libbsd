@@ -130,6 +130,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "U.S. Robotics 56000 Voice FaxModem Pro",
 	},
 	{
+	    USB_VENDOR_ABBOTT, USB_PRODUCT_ABBOTT_STEREO_PLUG,
+	    0,
+	    "Abbott Diabetics",
+	    "Abbott Diabetics Stereo Plug",
+	},
+	{
+	    USB_VENDOR_ABBOTT, USB_PRODUCT_ABBOTT_STRIP_PORT,
+	    0,
+	    "Abbott Diabetics",
+	    "Abbott Diabetics Strip Port",
+	},
+	{
 	    USB_VENDOR_ABOCOM, USB_PRODUCT_ABOCOM_XX1,
 	    0,
 	    "AboCom Systems",
@@ -2284,6 +2296,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "F7D2102 Wireless Adapter",
 	},
 	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F5U258,
+	    0,
+	    "Belkin Components",
+	    "F5U258 Host to Host cable",
+	},
+	{
 	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_ZD1211B,
 	    0,
 	    "Belkin Components",
@@ -2822,6 +2840,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Clipsal",
 	    "L51xx C-Bus Dimmer",
+	},
+	{
+	    USB_VENDOR_CMEDIA, USB_PRODUCT_CMEDIA_CM6206,
+	    0,
+	    "CMEDIA",
+	    "CM106 compatible sound device",
 	},
 	{
 	    USB_VENDOR_CMOTECH, USB_PRODUCT_CMOTECH_CNU510,
@@ -6748,6 +6772,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Holtek USB gaming keyboard",
 	},
 	{
+	    USB_VENDOR_HONEYWELL, USB_PRODUCT_HONEYWELL_HGI80,
+	    0,
+	    "Honeywell",
+	    "Honeywell HGI80 Wireless USB Gateway",
+	},
+	{
 	    USB_VENDOR_HP, USB_PRODUCT_HP_895C,
 	    0,
 	    "Hewlett Packard",
@@ -7522,10 +7552,22 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "E1820 HSPA+ USB Slider",
 	},
 	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3771_INIT,
+	    0,
+	    "Huawei Technologies",
+	    "K3771 Initial",
+	},
+	{
 	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3770,
 	    0,
 	    "Huawei Technologies",
 	    "3G modem",
+	},
+	{
+	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3771,
+	    0,
+	    "Huawei Technologies",
+	    "K3771",
 	},
 	{
 	    USB_VENDOR_HUAWEI, USB_PRODUCT_HUAWEI_K3772,
@@ -7640,6 +7682,24 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "IBM",
 	    "USB CD-ROM Drive",
+	},
+	{
+	    USB_VENDOR_IBM, USB_PRODUCT_IBM_USB4543,
+	    0,
+	    "IBM",
+	    "TI IBM USB 4543 Modem",
+	},
+	{
+	    USB_VENDOR_IBM, USB_PRODUCT_IBM_USB454B,
+	    0,
+	    "IBM",
+	    "TI IBM USB 454B Modem",
+	},
+	{
+	    USB_VENDOR_IBM, USB_PRODUCT_IBM_USB454C,
+	    0,
+	    "IBM",
+	    "TI IBM USB 454C Modem",
 	},
 	{
 	    USB_VENDOR_ICOM, USB_PRODUCT_ICOM_SP1,
@@ -11314,6 +11374,36 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RT3070",
 	},
 	{
+	    USB_VENDOR_MOXA, USB_PRODUCT_MOXA_MXU1_1110,
+	    0,
+	    "Moxa",
+	    "Moxa Uport 1110",
+	},
+	{
+	    USB_VENDOR_MOXA, USB_PRODUCT_MOXA_MXU1_1130,
+	    0,
+	    "Moxa",
+	    "Moxa Uport 1130",
+	},
+	{
+	    USB_VENDOR_MOXA, USB_PRODUCT_MOXA_MXU1_1131,
+	    0,
+	    "Moxa",
+	    "Moxa Uport 1131",
+	},
+	{
+	    USB_VENDOR_MOXA, USB_PRODUCT_MOXA_MXU1_1150,
+	    0,
+	    "Moxa",
+	    "Moxa Uport 1150",
+	},
+	{
+	    USB_VENDOR_MOXA, USB_PRODUCT_MOXA_MXU1_1151,
+	    0,
+	    "Moxa",
+	    "Moxa Uport 1151",
+	},
+	{
 	    USB_VENDOR_MPMAN, USB_PRODUCT_MPMAN_MPF400_2,
 	    0,
 	    "MpMan",
@@ -11326,10 +11416,58 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "MPF400 Music Player 1Go",
 	},
 	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_MT9234ZBA_2,
+	    0,
+	    "MultiTech",
+	    "MT9234ZBA USB modem (alt)",
+	},
+	{
 	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_ATLAS,
 	    0,
 	    "MultiTech",
 	    "MT5634ZBA-USB modem",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_GSM,
+	    0,
+	    "MultiTech",
+	    "GSM USB Modem",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_CDMA,
+	    0,
+	    "MultiTech",
+	    "CDMA USB Modem",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_CDMA_FW,
+	    0,
+	    "MultiTech",
+	    "CDMA USB Modem firmware running",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_GSM_FW,
+	    0,
+	    "MultiTech",
+	    "GSM USB Modem firmware running",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_EDGE,
+	    0,
+	    "MultiTech",
+	    "Edge USB Modem",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_MT9234MU,
+	    0,
+	    "MultiTech",
+	    "MT9234 MU",
+	},
+	{
+	    USB_VENDOR_MULTITECH, USB_PRODUCT_MULTITECH_MT9234ZBA,
+	    0,
+	    "MultiTech",
+	    "MT9234 ZBA",
 	},
 	{
 	    USB_VENDOR_MUSTEK, USB_PRODUCT_MUSTEK_1200CU,
@@ -14104,6 +14242,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CTV",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_2,
+	    0,
+	    "Realtek",
+	    "RTL8188RU",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_USBKR100,
 	    0,
 	    "Realtek",
@@ -14158,7 +14302,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CU",
 	},
 	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192CU_1,
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8191CU,
+	    0,
+	    "Realtek",
+	    "RTL8191CU",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192CU,
 	    0,
 	    "Realtek",
 	    "RTL8192CU",
@@ -14168,12 +14318,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Realtek",
 	    "RTL8188EU",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CE_1,
-	    0,
-	    "Realtek",
-	    "RTL8188CE",
 	},
 	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CU_1,
@@ -14188,6 +14332,30 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CU",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192CE,
+	    0,
+	    "Realtek",
+	    "RTL8192CE",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_1,
+	    0,
+	    "Realtek",
+	    "RTL8188RU",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CE_1,
+	    0,
+	    "Realtek",
+	    "RTL8188CE",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_3,
+	    0,
+	    "Realtek",
+	    "RTL8188RU",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8187,
 	    0,
 	    "Realtek",
@@ -14198,6 +14366,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Realtek",
 	    "RTL8187B Wireless Adapter",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CUS,
+	    0,
+	    "Realtek",
+	    "RTL8188CUS",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192EU,
+	    0,
+	    "Realtek",
+	    "RTL8192EU",
 	},
 	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CU_3,
@@ -14224,48 +14404,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8187B Wireless Adapter",
 	},
 	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CUS,
-	    0,
-	    "Realtek",
-	    "RTL8188CUS",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CU_COMBO,
-	    0,
-	    "Realtek",
-	    "RTL8188CU",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8191CU,
-	    0,
-	    "Realtek",
-	    "RTL8191CU",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192CU,
-	    0,
-	    "Realtek",
-	    "RTL8192CU",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192CE,
-	    0,
-	    "Realtek",
-	    "RTL8192CE",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_1,
-	    0,
-	    "Realtek",
-	    "RTL8188RU",
-	},
-	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_3,
-	    0,
-	    "Realtek",
-	    "RTL8188RU",
-	},
-	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8712,
 	    0,
 	    "Realtek",
@@ -14278,10 +14416,16 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8713",
 	},
 	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_2,
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188CU_COMBO,
 	    0,
 	    "Realtek",
-	    "RTL8188RU",
+	    "RTL8188CU",
+	},
+	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8723BU,
+	    0,
+	    "Realtek",
+	    "RTL8723BU",
 	},
 	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8192SU,
@@ -17116,6 +17260,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB audio headset",
 	},
 	{
+	    USB_VENDOR_THINGM, USB_PRODUCT_THINGM_BLINK1,
+	    0,
+	    "ThingM",
+	    "USB notification light",
+	},
+	{
 	    USB_VENDOR_TI, USB_PRODUCT_TI_UTUSB41,
 	    0,
 	    "Texas Instruments",
@@ -17126,6 +17276,48 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Texas Instruments",
 	    "TUSB2046 hub",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_USB3410,
+	    0,
+	    "Texas Instruments",
+	    "TI USB 3410 Modem",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_USB5052,
+	    0,
+	    "Texas Instruments",
+	    "TI USB 5250 Modem",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_FRI2,
+	    0,
+	    "Texas Instruments",
+	    "TI Fish River Island II",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_USB5052_EEPROM,
+	    0,
+	    "Texas Instruments",
+	    "TI USB 5250 Modem w/Eeprom",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_USB5052_FW,
+	    0,
+	    "Texas Instruments",
+	    "TI USB 5250 Modme w/Firmware running",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_USB5152,
+	    0,
+	    "Texas Instruments",
+	    "TI USB 5152 Modem",
+	},
+	{
+	    USB_VENDOR_TI, USB_PRODUCT_TI_EZ430,
+	    0,
+	    "Texas Instruments",
+	    "TI ex430 development tool",
 	},
 	{
 	    USB_VENDOR_THRUST, USB_PRODUCT_THRUST_FUSION_PAD,
@@ -17180,6 +17372,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "TP-Link",
 	    "Archer T4U",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN822NV4,
+	    0,
+	    "TP-Link",
+	    "TL-WN822N v4",
 	},
 	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN823NV2,
@@ -21346,6 +21544,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_HONEYWELL, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Honeywell",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_LIEBERT2, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Liebert",
@@ -21385,6 +21589,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_ACTIONS, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Actions",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_MOXA, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Moxa",
 	    NULL,
 	},
 	{
@@ -22012,6 +22222,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_ABBOTT, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Abbott Diabetics",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_BAYER, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Bayer",
@@ -22285,6 +22501,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_NHJ, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "NHJ",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_THINGM, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "ThingM",
 	    NULL,
 	},
 	{

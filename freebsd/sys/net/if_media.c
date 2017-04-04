@@ -109,6 +109,7 @@ ifmedia_removeall(ifm)
 		LIST_REMOVE(entry, ifm_list);
 		free(entry, M_IFADDR);
 	}
+	ifm->ifm_cur = NULL;
 }
 
 /*

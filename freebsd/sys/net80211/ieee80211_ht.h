@@ -177,8 +177,7 @@ struct ieee80211_mcs_rates {
 	uint16_t	ht40_rate_400ns;
 };
 extern const struct ieee80211_mcs_rates ieee80211_htrates[];
-const struct ieee80211_htrateset *ieee80211_get_suphtrates(
-		struct ieee80211com *, const struct ieee80211_channel *);
+void	ieee80211_init_suphtrates(struct ieee80211com *);
 
 struct ieee80211_node;
 int	ieee80211_setup_htrates(struct ieee80211_node *,
@@ -201,9 +200,12 @@ void	ieee80211_htprot_update(struct ieee80211com *, int protmode);
 void	ieee80211_ht_timeout(struct ieee80211com *);
 void	ieee80211_parse_htcap(struct ieee80211_node *, const uint8_t *);
 void	ieee80211_parse_htinfo(struct ieee80211_node *, const uint8_t *);
-int	ieee80211_ht_updateparams(struct ieee80211_node *, const uint8_t *,
+void	ieee80211_ht_updateparams(struct ieee80211_node *, const uint8_t *,
 		const uint8_t *);
+int	ieee80211_ht_updateparams_final(struct ieee80211_node *,
+	    const uint8_t *, const uint8_t *);
 void	ieee80211_ht_updatehtcap(struct ieee80211_node *, const uint8_t *);
+void	ieee80211_ht_updatehtcap_final(struct ieee80211_node *);
 int	ieee80211_ampdu_request(struct ieee80211_node *,
 		struct ieee80211_tx_ampdu *);
 void	ieee80211_ampdu_stop(struct ieee80211_node *,

@@ -54,9 +54,8 @@
 #include <sys/systm.h>
 
 #include <net/if.h>
-#include <net/raw_cb.h>
-#include <net/route.h>
 #include <net/vnet.h>
+#include <net/raw_cb.h>
 
 #include <netinet/in.h>
 
@@ -77,20 +76,25 @@ static VNET_DEFINE(struct key_cb, key_cb);
 
 static struct sockaddr key_src = { 2, PF_KEY, };
 
-static int key_sendup0 __P((struct rawcb *, struct mbuf *, int));
+static int key_sendup0(struct rawcb *, struct mbuf *, int);
 
-VNET_DEFINE(struct pfkeystat, pfkeystat);
+VNET_PCPUSTAT_DEFINE(struct pfkeystat, pfkeystat);
+VNET_PCPUSTAT_SYSINIT(pfkeystat);
+
+#ifdef VIMAGE
+VNET_PCPUSTAT_SYSUNINIT(pfkeystat);
+#endif /* VIMAGE */
 
 /*
  * key_output()
  */
 int
-key_output(struct mbuf *m, struct socket *so)
+key_output(struct mbuf *m, struct socket *so, ...)
 {
 	struct sadb_msg *msg;
 	int len, error = 0;
 
-	if (m == 0)
+	if (m == NULL)
 		panic("%s: NULL pointer was passed.\n", __func__);
 
 	PFKEYSTAT_INC(out_total);
@@ -104,7 +108,7 @@ key_output(struct mbuf *m, struct socket *so)
 	}
 
 	if (m->m_len < sizeof(struct sadb_msg)) {
-		if ((m = m_pullup(m, sizeof(struct sadb_msg))) == 0) {
+		if ((m = m_pullup(m, sizeof(struct sadb_msg))) == NULL) {
 			PFKEYSTAT_INC(out_nomem);
 			error = ENOBUFS;
 			goto end;
@@ -113,7 +117,7 @@ key_output(struct mbuf *m, struct socket *so)
 
 	M_ASSERTPKTHDR(m);
 
-	KEYDEBUG(KEYDEBUG_KEY_DUMP, kdebug_mbuf(m));
+	KEYDBG(KEY_DUMP, kdebug_mbuf(m));
 
 	msg = mtod(m, struct sadb_msg *);
 	PFKEYSTAT_INC(out_msgtype[msg->sadb_msg_type]);
@@ -135,26 +139,18 @@ end:
  * send message to the socket.
  */
 static int
-key_sendup0(rp, m, promisc)
-	struct rawcb *rp;
-	struct mbuf *m;
-	int promisc;
+key_sendup0(struct rawcb *rp, struct mbuf *m, int promisc)
 {
 	int error;
 
 	if (promisc) {
 		struct sadb_msg *pmsg;
 
-		M_PREPEND(m, sizeof(struct sadb_msg), M_DONTWAIT);
-		if (m && m->m_len < sizeof(struct sadb_msg))
-			m = m_pullup(m, sizeof(struct sadb_msg));
-		if (!m) {
+		M_PREPEND(m, sizeof(struct sadb_msg), M_NOWAIT);
+		if (m == NULL) {
 			PFKEYSTAT_INC(in_nomem);
-			m_freem(m);
-			return ENOBUFS;
+			return (ENOBUFS);
 		}
-		m->m_pkthdr.len += sizeof(*pmsg);
-
 		pmsg = mtod(m, struct sadb_msg *);
 		bzero(pmsg, sizeof(*pmsg));
 		pmsg->sadb_msg_version = PF_KEY_V2;
@@ -178,22 +174,18 @@ key_sendup0(rp, m, promisc)
 
 /* XXX this interface should be obsoleted. */
 int
-key_sendup(so, msg, len, target)
-	struct socket *so;
-	struct sadb_msg *msg;
-	u_int len;
-	int target;	/*target of the resulting message*/
+key_sendup(struct socket *so, struct sadb_msg *msg, u_int len, int target)
 {
 	struct mbuf *m, *n, *mprev;
 	int tlen;
 
 	/* sanity check */
-	if (so == 0 || msg == 0)
+	if (so == NULL || msg == NULL)
 		panic("%s: NULL pointer was passed.\n", __func__);
 
-	KEYDEBUG(KEYDEBUG_KEY_DUMP,
-		printf("%s: \n", __func__);
-		kdebug_sadb(msg));
+	KEYDBG(KEY_DUMP,
+	    printf("%s: \n", __func__);
+	    kdebug_sadb(msg));
 
 	/*
 	 * we increment statistics here, just in case we have ENOBUFS
@@ -216,14 +208,14 @@ key_sendup(so, msg, len, target)
 	m = mprev = NULL;
 	while (tlen > 0) {
 		if (tlen == len) {
-			MGETHDR(n, M_DONTWAIT, MT_DATA);
+			MGETHDR(n, M_NOWAIT, MT_DATA);
 			if (n == NULL) {
 				PFKEYSTAT_INC(in_nomem);
 				return ENOBUFS;
 			}
 			n->m_len = MHLEN;
 		} else {
-			MGET(n, M_DONTWAIT, MT_DATA);
+			MGET(n, M_NOWAIT, MT_DATA);
 			if (n == NULL) {
 				PFKEYSTAT_INC(in_nomem);
 				return ENOBUFS;
@@ -231,8 +223,7 @@ key_sendup(so, msg, len, target)
 			n->m_len = MLEN;
 		}
 		if (tlen >= MCLBYTES) {	/*XXX better threshold? */
-			MCLGET(n, M_DONTWAIT);
-			if ((n->m_flags & M_EXT) == 0) {
+			if (!(MCLGET(n, M_NOWAIT))) {
 				m_free(n);
 				m_freem(m);
 				PFKEYSTAT_INC(in_nomem);
@@ -267,10 +258,7 @@ key_sendup(so, msg, len, target)
 
 /* so can be NULL if target != KEY_SENDUP_ONE */
 int
-key_sendup_mbuf(so, m, target)
-	struct socket *so;
-	struct mbuf *m;
-	int target;
+key_sendup_mbuf(struct socket *so, struct mbuf *m, int target)
 {
 	struct mbuf *n;
 	struct keycb *kp;
@@ -315,7 +303,7 @@ key_sendup_mbuf(so, m, target)
 		 * (based on pf_key@inner.net message on 14 Oct 1998)
 		 */
 		if (((struct keycb *)rp)->kp_promisc) {
-			if ((n = m_copy(m, 0, (int)M_COPYALL)) != NULL) {
+			if ((n = m_copym(m, 0, M_COPYALL, M_NOWAIT)) != NULL) {
 				(void)key_sendup0(rp, n, 1);
 				n = NULL;
 			}
@@ -345,7 +333,7 @@ key_sendup_mbuf(so, m, target)
 		if (!sendup)
 			continue;
 
-		if ((n = m_copy(m, 0, (int)M_COPYALL)) == NULL) {
+		if ((n = m_copym(m, 0, M_COPYALL, M_NOWAIT)) == NULL) {
 			m_freem(m);
 			PFKEYSTAT_INC(in_nomem);
 			mtx_unlock(&rawcb_mtx);
@@ -402,7 +390,7 @@ key_attach(struct socket *so, int proto, struct thread *td)
 
 	/* XXX */
 	kp = malloc(sizeof *kp, M_PCB, M_WAITOK | M_ZERO); 
-	if (kp == 0)
+	if (kp == NULL)
 		return ENOBUFS;
 
 	so->so_pcb = (caddr_t)kp;
@@ -578,7 +566,7 @@ struct domain keydomain = {
 	.dom_destroy =		key_destroy,
 #endif
 	.dom_protosw =		keysw,
-	.dom_protoswNPROTOSW =	&keysw[sizeof(keysw)/sizeof(keysw[0])]
+	.dom_protoswNPROTOSW =	&keysw[nitems(keysw)]
 };
 
 VNET_DOMAIN_SET(key);

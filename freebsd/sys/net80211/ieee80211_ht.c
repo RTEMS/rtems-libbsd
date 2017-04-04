@@ -300,6 +300,11 @@ ieee80211_ht_vattach(struct ieee80211vap *vap)
 			vap->iv_flags_ht |= IEEE80211_FHT_STBC_TX;
 		if (vap->iv_htcaps & IEEE80211_HTCAP_RXSTBC)
 			vap->iv_flags_ht |= IEEE80211_FHT_STBC_RX;
+
+		if (vap->iv_htcaps & IEEE80211_HTCAP_LDPC)
+			vap->iv_flags_ht |= IEEE80211_FHT_LDPC_RX;
+		if (vap->iv_htcaps & IEEE80211_HTC_TXLDPC)
+			vap->iv_flags_ht |= IEEE80211_FHT_LDPC_TX;
 	}
 	/* NB: disable default legacy WDS, too many issues right now */
 	if (vap->iv_flags_ext & IEEE80211_FEXT_WDSLEGACY)
@@ -418,19 +423,17 @@ ieee80211_ht_announce(struct ieee80211com *ic)
 		ht_announce(ic, IEEE80211_MODE_11NG);
 }
 
-static struct ieee80211_htrateset htrateset;
-
-const struct ieee80211_htrateset *
-ieee80211_get_suphtrates(struct ieee80211com *ic,
-    const struct ieee80211_channel *c)
+void
+ieee80211_init_suphtrates(struct ieee80211com *ic)
 {
 #define	ADDRATE(x)	do {						\
-	htrateset.rs_rates[htrateset.rs_nrates] = x;			\
-	htrateset.rs_nrates++;						\
+	htrateset->rs_rates[htrateset->rs_nrates] = x;			\
+	htrateset->rs_nrates++;						\
 } while (0)
+	struct ieee80211_htrateset *htrateset = &ic->ic_sup_htrates;
 	int i;
 
-	memset(&htrateset, 0, sizeof(struct ieee80211_htrateset));
+	memset(htrateset, 0, sizeof(struct ieee80211_htrateset));
 	for (i = 0; i < ic->ic_txstream * 8; i++)
 		ADDRATE(i);
 	if ((ic->ic_htcaps & IEEE80211_HTCAP_CHWIDTH40) &&
@@ -450,7 +453,6 @@ ieee80211_get_suphtrates(struct ieee80211com *ic,
 				ADDRATE(i);
 		}
 	}
-	return &htrateset;
 #undef	ADDRATE
 }
 
@@ -644,6 +646,40 @@ ampdu_dispatch(struct ieee80211_node *ni, struct mbuf *m)
 	(void) ieee80211_input(ni, m, 0, 0);
 }
 
+static void
+ampdu_rx_moveup(struct ieee80211_rx_ampdu *rap, struct ieee80211_node *ni,
+    int i, int winstart)
+{
+	struct ieee80211vap *vap = ni->ni_vap;
+
+	if (rap->rxa_qframes != 0) {
+		int n = rap->rxa_qframes, j;
+
+		if (winstart != -1) {
+			/*
+			 * NB: in window-sliding mode, loop assumes i > 0
+			 * and/or rxa_m[0] is NULL
+			 */
+			KASSERT(rap->rxa_m[0] == NULL,
+			    ("%s: BA window slot 0 occupied", __func__));
+		}
+		for (j = i+1; j < rap->rxa_wnd; j++) {
+			if (rap->rxa_m[j] != NULL) {
+				rap->rxa_m[j-i] = rap->rxa_m[j];
+				rap->rxa_m[j] = NULL;
+				if (--n == 0)
+					break;
+			}
+		}
+		KASSERT(n == 0, ("%s: lost %d frames, qframes %d off %d "
+		    "BA win <%d:%d> winstart %d",
+		    __func__, n, rap->rxa_qframes, i, rap->rxa_start,
+		    IEEE80211_SEQ_ADD(rap->rxa_start, rap->rxa_wnd-1),
+		    winstart));
+		vap->iv_stats.is_ampdu_rx_copy += rap->rxa_qframes;
+	}
+}
+
 /*
  * Dispatch as many frames as possible from the re-order queue.
  * Frames will always be "at the front"; we process all frames
@@ -674,19 +710,8 @@ ampdu_rx_dispatch(struct ieee80211_rx_ampdu *rap, struct ieee80211_node *ni)
 	 * If frames remain, copy the mbuf pointers down so
 	 * they correspond to the offsets in the new window.
 	 */
-	if (rap->rxa_qframes != 0) {
-		int n = rap->rxa_qframes, j;
-		for (j = i+1; j < rap->rxa_wnd; j++) {
-			if (rap->rxa_m[j] != NULL) {
-				rap->rxa_m[j-i] = rap->rxa_m[j];
-				rap->rxa_m[j] = NULL;
-				if (--n == 0)
-					break;
-			}
-		}
-		KASSERT(n == 0, ("lost %d frames", n));
-		vap->iv_stats.is_ampdu_rx_copy += rap->rxa_qframes;
-	}
+	ampdu_rx_moveup(rap, ni, i, -1);
+
 	/*
 	 * Adjust the start of the BA window to
 	 * reflect the frames just dispatched.
@@ -761,27 +786,8 @@ ampdu_rx_flush_upto(struct ieee80211_node *ni,
 	 * If frames remain, copy the mbuf pointers down so
 	 * they correspond to the offsets in the new window.
 	 */
-	if (rap->rxa_qframes != 0) {
-		int n = rap->rxa_qframes, j;
+	ampdu_rx_moveup(rap, ni, i, winstart);
 
-		/* NB: this loop assumes i > 0 and/or rxa_m[0] is NULL */
-		KASSERT(rap->rxa_m[0] == NULL,
-		    ("%s: BA window slot 0 occupied", __func__));
-		for (j = i+1; j < rap->rxa_wnd; j++) {
-			if (rap->rxa_m[j] != NULL) {
-				rap->rxa_m[j-i] = rap->rxa_m[j];
-				rap->rxa_m[j] = NULL;
-				if (--n == 0)
-					break;
-			}
-		}
-		KASSERT(n == 0, ("%s: lost %d frames, qframes %d off %d "
-		    "BA win <%d:%d> winstart %d",
-		    __func__, n, rap->rxa_qframes, i, rap->rxa_start,
-		    IEEE80211_SEQ_ADD(rap->rxa_start, rap->rxa_wnd-1),
-		    winstart));
-		vap->iv_stats.is_ampdu_rx_copy += rap->rxa_qframes;
-	}
 	/*
 	 * Move the start of the BA window; we use the
 	 * sequence number of the last MSDU that was
@@ -824,6 +830,16 @@ ieee80211_ampdu_reorder(struct ieee80211_node *ni, struct mbuf *m)
 		 */
 		return PROCESS;
 	}
+
+	/*
+	 * 802.11-2012 9.3.2.10 - Duplicate detection and recovery.
+	 *
+	 * Multicast QoS data frames are checked against a different
+	 * counter, not the per-TID counter.
+	 */
+	if (IEEE80211_IS_MULTICAST(wh->i_addr1))
+		return PROCESS;
+
 	if (IEEE80211_IS_DSTODS(wh))
 		tid = ((struct ieee80211_qosframe_addr4 *)wh)->i_qos[0];
 	else
@@ -1492,52 +1508,117 @@ ieee80211_parse_htinfo(struct ieee80211_node *ni, const uint8_t *ie)
 }
 
 /*
- * Handle 11n channel switch.  Use the received HT ie's to
- * identify the right channel to use.  If we cannot locate it
- * in the channel table then fallback to legacy operation.
+ * Handle 11n/11ac channel switch.
+ *
+ * Use the received HT/VHT ie's to identify the right channel to use.
+ * If we cannot locate it in the channel table then fallback to
+ * legacy operation.
+ *
  * Note that we use this information to identify the node's
  * channel only; the caller is responsible for insuring any
  * required channel change is done (e.g. in sta mode when
  * parsing the contents of a beacon frame).
  */
 static int
-htinfo_update_chw(struct ieee80211_node *ni, int htflags)
+htinfo_update_chw(struct ieee80211_node *ni, int htflags, int vhtflags)
 {
 	struct ieee80211com *ic = ni->ni_ic;
 	struct ieee80211_channel *c;
 	int chanflags;
 	int ret = 0;
 
-	chanflags = (ni->ni_chan->ic_flags &~ IEEE80211_CHAN_HT) | htflags;
-	if (chanflags != ni->ni_chan->ic_flags) {
-		/* XXX not right for ht40- */
-		c = ieee80211_find_channel(ic, ni->ni_chan->ic_freq, chanflags);
-		if (c == NULL && (htflags & IEEE80211_CHAN_HT40)) {
-			/*
-			 * No HT40 channel entry in our table; fall back
-			 * to HT20 operation.  This should not happen.
-			 */
-			c = findhtchan(ic, ni->ni_chan, IEEE80211_CHAN_HT20);
+	/*
+	 * First step - do HT/VHT only channel lookup based on operating mode
+	 * flags.  This involves masking out the VHT flags as well.
+	 * Otherwise we end up doing the full channel walk each time
+	 * we trigger this, which is expensive.
+	 */
+	chanflags = (ni->ni_chan->ic_flags &~
+	    (IEEE80211_CHAN_HT | IEEE80211_CHAN_VHT)) | htflags | vhtflags;
+
+	if (chanflags == ni->ni_chan->ic_flags)
+		goto done;
+
+	/*
+	 * If HT /or/ VHT flags have changed then check both.
+	 * We need to start by picking a HT channel anyway.
+	 */
+
+	c = NULL;
+	chanflags = (ni->ni_chan->ic_flags &~
+	    (IEEE80211_CHAN_HT | IEEE80211_CHAN_VHT)) | htflags;
+	/* XXX not right for ht40- */
+	c = ieee80211_find_channel(ic, ni->ni_chan->ic_freq, chanflags);
+	if (c == NULL && (htflags & IEEE80211_CHAN_HT40)) {
+		/*
+		 * No HT40 channel entry in our table; fall back
+		 * to HT20 operation.  This should not happen.
+		 */
+		c = findhtchan(ic, ni->ni_chan, IEEE80211_CHAN_HT20);
 #if 0
-			IEEE80211_NOTE(ni->ni_vap,
-			    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N, ni,
-			    "no HT40 channel (freq %u), falling back to HT20",
-			    ni->ni_chan->ic_freq);
+		IEEE80211_NOTE(ni->ni_vap,
+		    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N, ni,
+		    "no HT40 channel (freq %u), falling back to HT20",
+		    ni->ni_chan->ic_freq);
 #endif
-			/* XXX stat */
-		}
-		if (c != NULL && c != ni->ni_chan) {
-			IEEE80211_NOTE(ni->ni_vap,
-			    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N, ni,
-			    "switch station to HT%d channel %u/0x%x",
-			    IEEE80211_IS_CHAN_HT40(c) ? 40 : 20,
-			    c->ic_freq, c->ic_flags);
-			ni->ni_chan = c;
-			ret = 1;
-		}
-		/* NB: caller responsible for forcing any channel change */
+		/* XXX stat */
 	}
-	/* update node's tx channel width */
+
+	/* Nothing found - leave it alone; move onto VHT */
+	if (c == NULL)
+		c = ni->ni_chan;
+
+	/*
+	 * If it's non-HT, then bail out now.
+	 */
+	if (! IEEE80211_IS_CHAN_HT(c)) {
+		IEEE80211_NOTE(ni->ni_vap,
+		    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N, ni,
+		    "not HT; skipping VHT check (%u/0x%x)",
+		    c->ic_freq, c->ic_flags);
+		goto done;
+	}
+
+	/*
+	 * Next step - look at the current VHT flags and determine
+	 * if we need to upgrade.  Mask out the VHT and HT flags since
+	 * the vhtflags field will already have the correct HT
+	 * flags to use.
+	 */
+	if (IEEE80211_CONF_VHT(ic) && ni->ni_vhtcap != 0 && vhtflags != 0) {
+		chanflags = (c->ic_flags
+		    &~ (IEEE80211_CHAN_HT | IEEE80211_CHAN_VHT))
+		    | vhtflags;
+		IEEE80211_NOTE(ni->ni_vap,
+		    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N,
+		    ni,
+		    "%s: VHT; chanwidth=0x%02x; vhtflags=0x%08x",
+		    __func__, ni->ni_vht_chanwidth, vhtflags);
+
+		IEEE80211_NOTE(ni->ni_vap,
+		    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N,
+		    ni,
+		    "%s: VHT; trying lookup for %d/0x%08x",
+		    __func__, c->ic_freq, chanflags);
+		c = ieee80211_find_channel(ic, c->ic_freq, chanflags);
+	}
+
+	/* Finally, if it's changed */
+	if (c != NULL && c != ni->ni_chan) {
+		IEEE80211_NOTE(ni->ni_vap,
+		    IEEE80211_MSG_ASSOC | IEEE80211_MSG_11N, ni,
+		    "switch station to %s%d channel %u/0x%x",
+		    IEEE80211_IS_CHAN_VHT(c) ? "VHT" : "HT",
+		    IEEE80211_IS_CHAN_VHT80(c) ? 80 :
+		      (IEEE80211_IS_CHAN_HT40(c) ? 40 : 20),
+		    c->ic_freq, c->ic_flags);
+		ni->ni_chan = c;
+		ret = 1;
+	}
+	/* NB: caller responsible for forcing any channel change */
+
+done:
+	/* update node's (11n) tx channel width */
 	ni->ni_chw = IEEE80211_IS_CHAN_HT40(ni->ni_chan)? 40 : 20;
 	return (ret);
 }
@@ -1587,30 +1668,155 @@ htcap_update_shortgi(struct ieee80211_node *ni)
 }
 
 /*
+ * Update LDPC state according to received htcap
+ * and local settings.
+ */
+static __inline void
+htcap_update_ldpc(struct ieee80211_node *ni)
+{
+	struct ieee80211vap *vap = ni->ni_vap;
+
+	if ((ni->ni_htcap & IEEE80211_HTCAP_LDPC) &&
+	    (vap->iv_flags_ht & IEEE80211_FHT_LDPC_TX))
+		ni->ni_flags |= IEEE80211_NODE_LDPC;
+}
+
+/*
  * Parse and update HT-related state extracted from
  * the HT cap and info ie's.
+ *
+ * This is called from the STA management path and
+ * the ieee80211_node_join() path.  It will take into
+ * account the IEs discovered during scanning and
+ * adjust things accordingly.
  */
-int
+void
 ieee80211_ht_updateparams(struct ieee80211_node *ni,
 	const uint8_t *htcapie, const uint8_t *htinfoie)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
 	const struct ieee80211_ie_htinfo *htinfo;
-	int htflags;
-	int ret = 0;
 
 	ieee80211_parse_htcap(ni, htcapie);
 	if (vap->iv_htcaps & IEEE80211_HTCAP_SMPS)
 		htcap_update_mimo_ps(ni);
 	htcap_update_shortgi(ni);
+	htcap_update_ldpc(ni);
 
 	if (htinfoie[0] == IEEE80211_ELEMID_VENDOR)
 		htinfoie += 4;
 	htinfo = (const struct ieee80211_ie_htinfo *) htinfoie;
 	htinfo_parse(ni, htinfo);
 
+	/*
+	 * Defer the node channel change; we need to now
+	 * update VHT parameters before we do it.
+	 */
+
+	if ((htinfo->hi_byte1 & IEEE80211_HTINFO_RIFSMODE_PERM) &&
+	    (vap->iv_flags_ht & IEEE80211_FHT_RIFS))
+		ni->ni_flags |= IEEE80211_NODE_RIFS;
+	else
+		ni->ni_flags &= ~IEEE80211_NODE_RIFS;
+}
+
+static uint32_t
+ieee80211_vht_get_vhtflags(struct ieee80211_node *ni, uint32_t htflags)
+{
+	struct ieee80211vap *vap = ni->ni_vap;
+	uint32_t vhtflags = 0;
+
+	vhtflags = 0;
+	if (ni->ni_flags & IEEE80211_NODE_VHT && vap->iv_flags_vht & IEEE80211_FVHT_VHT) {
+		if ((ni->ni_vht_chanwidth == IEEE80211_VHT_CHANWIDTH_160MHZ) &&
+		    /* XXX 2 means "160MHz and 80+80MHz", 1 means "160MHz" */
+		    (MS(vap->iv_vhtcaps,
+		     IEEE80211_VHTCAP_SUPP_CHAN_WIDTH_MASK) >= 1) &&
+		    (vap->iv_flags_vht & IEEE80211_FVHT_USEVHT160)) {
+			vhtflags = IEEE80211_CHAN_VHT160;
+			/* Mirror the HT40 flags */
+			if (htflags == IEEE80211_CHAN_HT40U) {
+				vhtflags |= IEEE80211_CHAN_HT40U;
+			} else if (htflags == IEEE80211_CHAN_HT40D) {
+				vhtflags |= IEEE80211_CHAN_HT40D;
+			}
+		} else if ((ni->ni_vht_chanwidth == IEEE80211_VHT_CHANWIDTH_80P80MHZ) &&
+		    /* XXX 2 means "160MHz and 80+80MHz" */
+		    (MS(vap->iv_vhtcaps,
+		     IEEE80211_VHTCAP_SUPP_CHAN_WIDTH_MASK) == 2) &&
+		    (vap->iv_flags_vht & IEEE80211_FVHT_USEVHT80P80)) {
+			vhtflags = IEEE80211_CHAN_VHT80_80;
+			/* Mirror the HT40 flags */
+			if (htflags == IEEE80211_CHAN_HT40U) {
+				vhtflags |= IEEE80211_CHAN_HT40U;
+			} else if (htflags == IEEE80211_CHAN_HT40D) {
+				vhtflags |= IEEE80211_CHAN_HT40D;
+			}
+		} else if ((ni->ni_vht_chanwidth == IEEE80211_VHT_CHANWIDTH_80MHZ) &&
+		    (vap->iv_flags_vht & IEEE80211_FVHT_USEVHT80)) {
+			vhtflags = IEEE80211_CHAN_VHT80;
+			/* Mirror the HT40 flags */
+			if (htflags == IEEE80211_CHAN_HT40U) {
+				vhtflags |= IEEE80211_CHAN_HT40U;
+			} else if (htflags == IEEE80211_CHAN_HT40D) {
+				vhtflags |= IEEE80211_CHAN_HT40D;
+			}
+		} else if (ni->ni_vht_chanwidth == IEEE80211_VHT_CHANWIDTH_USE_HT) {
+			/* Mirror the HT40 flags */
+			/*
+			 * XXX TODO: if ht40 is disabled, but vht40 isn't
+			 * disabled then this logic will get very, very sad.
+			 * It's quite possible the only sane thing to do is
+			 * to not have vht40 as an option, and just obey
+			 * 'ht40' as that flag.
+			 */
+			if ((htflags == IEEE80211_CHAN_HT40U) &&
+			    (vap->iv_flags_vht & IEEE80211_FVHT_USEVHT40)) {
+				vhtflags = IEEE80211_CHAN_VHT40U
+				    | IEEE80211_CHAN_HT40U;
+			} else if (htflags == IEEE80211_CHAN_HT40D &&
+			    (vap->iv_flags_vht & IEEE80211_FVHT_USEVHT40)) {
+				vhtflags = IEEE80211_CHAN_VHT40D
+				    | IEEE80211_CHAN_HT40D;
+			} else if (htflags == IEEE80211_CHAN_HT20) {
+				vhtflags = IEEE80211_CHAN_VHT20
+				    | IEEE80211_CHAN_HT20;
+			}
+		} else {
+			vhtflags = IEEE80211_CHAN_VHT20;
+		}
+	}
+	return (vhtflags);
+}
+
+/*
+ * Final part of updating the HT parameters.
+ *
+ * This is called from the STA management path and
+ * the ieee80211_node_join() path.  It will take into
+ * account the IEs discovered during scanning and
+ * adjust things accordingly.
+ *
+ * This is done after a call to ieee80211_ht_updateparams()
+ * because it (and the upcoming VHT version of updateparams)
+ * needs to ensure everything is parsed before htinfo_update_chw()
+ * is called - which will change the channel config for the
+ * node for us.
+ */
+int
+ieee80211_ht_updateparams_final(struct ieee80211_node *ni,
+	const uint8_t *htcapie, const uint8_t *htinfoie)
+{
+	struct ieee80211vap *vap = ni->ni_vap;
+	const struct ieee80211_ie_htinfo *htinfo;
+	int htflags, vhtflags;
+	int ret = 0;
+
+	htinfo = (const struct ieee80211_ie_htinfo *) htinfoie;
+
 	htflags = (vap->iv_flags_ht & IEEE80211_FHT_HT) ?
 	    IEEE80211_CHAN_HT20 : 0;
+
 	/* NB: honor operating mode constraint */
 	if ((htinfo->hi_byte1 & IEEE80211_HTINFO_TXWIDTH_2040) &&
 	    (vap->iv_flags_ht & IEEE80211_FHT_USEHT40)) {
@@ -1619,14 +1825,16 @@ ieee80211_ht_updateparams(struct ieee80211_node *ni,
 		else if (ni->ni_ht2ndchan == IEEE80211_HTINFO_2NDCHAN_BELOW)
 			htflags = IEEE80211_CHAN_HT40D;
 	}
-	if (htinfo_update_chw(ni, htflags))
-		ret = 1;
 
-	if ((htinfo->hi_byte1 & IEEE80211_HTINFO_RIFSMODE_PERM) &&
-	    (vap->iv_flags_ht & IEEE80211_FHT_RIFS))
-		ni->ni_flags |= IEEE80211_NODE_RIFS;
-	else
-		ni->ni_flags &= ~IEEE80211_NODE_RIFS;
+	/*
+	 * VHT flags - do much the same; check whether VHT is available
+	 * and if so, what our ideal channel use would be based on our
+	 * capabilities and the (pre-parsed) VHT info IE.
+	 */
+	vhtflags = ieee80211_vht_get_vhtflags(ni, htflags);
+
+	if (htinfo_update_chw(ni, htflags, vhtflags))
+		ret = 1;
 
 	return (ret);
 }
@@ -1634,17 +1842,32 @@ ieee80211_ht_updateparams(struct ieee80211_node *ni,
 /*
  * Parse and update HT-related state extracted from the HT cap ie
  * for a station joining an HT BSS.
+ *
+ * This is called from the hostap path for each station.
  */
 void
 ieee80211_ht_updatehtcap(struct ieee80211_node *ni, const uint8_t *htcapie)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
-	int htflags;
 
 	ieee80211_parse_htcap(ni, htcapie);
 	if (vap->iv_htcaps & IEEE80211_HTCAP_SMPS)
 		htcap_update_mimo_ps(ni);
 	htcap_update_shortgi(ni);
+	htcap_update_ldpc(ni);
+}
+
+/*
+ * Called once HT and VHT capabilities are parsed in hostap mode -
+ * this will adjust the channel configuration of the given node
+ * based on the configuration and capabilities.
+ */
+void
+ieee80211_ht_updatehtcap_final(struct ieee80211_node *ni)
+{
+	struct ieee80211vap *vap = ni->ni_vap;
+	int htflags;
+	int vhtflags;
 
 	/* NB: honor operating mode constraint */
 	/* XXX 40 MHz intolerant */
@@ -1657,7 +1880,14 @@ ieee80211_ht_updatehtcap(struct ieee80211_node *ni, const uint8_t *htcapie)
 		else if (IEEE80211_IS_CHAN_HT40D(vap->iv_bss->ni_chan))
 			htflags = IEEE80211_CHAN_HT40D;
 	}
-	(void) htinfo_update_chw(ni, htflags);
+	/*
+	 * VHT flags - do much the same; check whether VHT is available
+	 * and if so, what our ideal channel use would be based on our
+	 * capabilities and the (pre-parsed) VHT info IE.
+	 */
+	vhtflags = ieee80211_vht_get_vhtflags(ni, htflags);
+
+	(void) htinfo_update_chw(ni, htflags, vhtflags);
 }
 
 /*
@@ -2137,6 +2367,7 @@ ht_recv_action_ht_txchwidth(struct ieee80211_node *ni,
 	    "%s: HT txchwidth, width %d%s",
 	    __func__, chw, ni->ni_chw != chw ? "*" : "");
 	if (chw != ni->ni_chw) {
+		/* XXX does this need to change the ht40 station count? */
 		ni->ni_chw = chw;
 		/* XXX notify on change */
 	}
@@ -2231,6 +2462,10 @@ ieee80211_ampdu_request(struct ieee80211_node *ni,
 
 	dialogtoken = (tokens+1) % 63;		/* XXX */
 	tid = tap->txa_tid;
+
+	/*
+	 * XXX TODO: This is racy with any other parallel TX going on. :(
+	 */
 	tap->txa_start = ni->ni_txseqs[tid];
 
 	args[0] = dialogtoken;
@@ -2826,7 +3061,9 @@ ieee80211_add_htcap_body(uint8_t *frm, struct ieee80211_node *ni)
 	if ((vap->iv_flags_ht & IEEE80211_FHT_STBC_RX) == 0)
 		caps &= ~IEEE80211_HTCAP_RXSTBC;
 
-	/* XXX TODO: adjust LDPC based on receive capabilities */
+	/* adjust LDPC based on receive capabilites */
+	if ((vap->iv_flags_ht & IEEE80211_FHT_LDPC_RX) == 0)
+		caps &= ~IEEE80211_HTCAP_LDPC;
 
 	ADDSHORT(frm, caps);
 

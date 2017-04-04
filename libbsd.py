@@ -50,6 +50,7 @@ def rtems(mm):
             'local/bus_if.c',
             'local/cryptodev_if.c',
             'local/device_if.c',
+            'local/ifdi_if.c',
             'local/miibus_if.c',
             'local/ofw_bus_if.c',
             'local/ofw_if.c',
@@ -245,6 +246,7 @@ def base(mm):
             'sys/sys/firmware.h',
             'sys/sys/fnv_hash.h',
             'sys/sys/gpio.h',
+            'sys/sys/gtaskqueue.h',
             'sys/sys/hash.h',
             'sys/sys/hhook.h',
             'sys/sys/interrupt.h',
@@ -274,6 +276,7 @@ def base(mm):
             'sys/sys/_mutex.h',
             'sys/sys/mutex.h',
             'sys/sys/_null.h',
+            'sys/sys/nv.h',
             'sys/sys/osd.h',
             'sys/sys/pcpu.h',
             'sys/sys/_pctrie.h',
@@ -444,7 +447,10 @@ def mmc(mm):
         [
             'sys/dev/mmc/bridge.h',
             'sys/dev/mmc/mmcbrvar.h',
+            'sys/dev/mmc/mmc_ioctl.h',
+            'sys/dev/mmc/mmc_private.h',
             'sys/dev/mmc/mmcreg.h',
+            'sys/dev/mmc/mmc_subr.h',
             'sys/dev/mmc/mmcvar.h',
         ]
     )
@@ -452,6 +458,7 @@ def mmc(mm):
         [
             'sys/dev/mmc/mmc.c',
             'sys/dev/mmc/mmcsd.c',
+            'sys/dev/mmc/mmc_subr.c',
         ],
         mm.generator['source']()
     )
@@ -1109,10 +1116,12 @@ def dev_net(mm):
             'sys/dev/mii/rgephyreg.h',
             'sys/dev/led/led.h',
             'sys/net/bpf.h',
+            'sys/net/dlt.h',
             'sys/net/ethernet.h',
             'sys/net/if_arp.h',
             'sys/net/if_dl.h',
             'sys/net/if.h',
+            'sys/net/iflib.h',
             'sys/net/if_media.h',
             'sys/net/ifq.h',
             'sys/net/if_types.h',
@@ -1186,6 +1195,7 @@ def dev_nic(mm):
             'sys/mips/include/cpufunc.h',
             'sys/mips/include/cpuregs.h',
             'sys/powerpc/include/cpufunc.h',
+            'sys/powerpc/include/intr_machdep.h',
             'sys/powerpc/include/psl.h',
             'sys/powerpc/include/spr.h',
             'sys/sparc64/include/cpufunc.h',
@@ -1266,8 +1276,6 @@ def dev_nic_e1000(mm):
             'sys/dev/e1000/e1000_regs.h',
             'sys/dev/e1000/e1000_vf.h',
             'sys/dev/e1000/if_em.h',
-            'sys/dev/e1000/if_igb.h',
-            'sys/dev/e1000/if_lem.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
@@ -1289,9 +1297,9 @@ def dev_nic_e1000(mm):
             'sys/dev/e1000/e1000_osdep.c',
             'sys/dev/e1000/e1000_phy.c',
             'sys/dev/e1000/e1000_vf.c',
+            'sys/dev/e1000/em_txrx.c',
             'sys/dev/e1000/if_em.c',
-            'sys/dev/e1000/if_igb.c',
-            'sys/dev/e1000/if_lem.c',
+            'sys/dev/e1000/igb_txrx.c',
         ],
         mm.generator['source']()
     )
@@ -1520,7 +1528,6 @@ def netinet(mm):
             'sys/netinet/ip_fw.h',
             'sys/netinet/ip.h',
             'sys/netinet/ip_icmp.h',
-            'sys/netinet/ip_ipsec.h',
             'sys/netinet/ip_mroute.h',
             'sys/netinet/ip_options.h',
             'sys/netinet/ip_var.h',
@@ -1665,7 +1672,6 @@ def netinet6(mm):
             'sys/netinet6/in6_var.h',
             'sys/netinet6/ip6_ecn.h',
             'sys/netinet6/ip6.h',
-            'sys/netinet6/ip6_ipsec.h',
             'sys/netinet6/ip6_mroute.h',
             'sys/netinet6/ip6protosw.h',
             'sys/netinet6/ip6_var.h',
@@ -1731,9 +1737,9 @@ def netipsec(mm):
             'sys/netipsec/esp_var.h',
             'sys/netipsec/ipcomp.h',
             'sys/netipsec/ipcomp_var.h',
-            'sys/netipsec/ipip_var.h',
             'sys/netipsec/ipsec6.h',
             'sys/netipsec/ipsec.h',
+            'sys/netipsec/ipsec_support.h',
             'sys/netipsec/keydb.h',
             'sys/netipsec/key_debug.h',
             'sys/netipsec/key.h',
@@ -1744,19 +1750,20 @@ def netipsec(mm):
     )
     mod.addKernelSpaceSourceFiles(
         [
-            'sys/netinet/ip_ipsec.c',
-            'sys/netinet6/ip6_ipsec.c',
             'sys/netipsec/ipsec.c',
             'sys/netipsec/ipsec_input.c',
             'sys/netipsec/ipsec_mbuf.c',
+            'sys/netipsec/ipsec_mod.c',
             'sys/netipsec/ipsec_output.c',
+            'sys/netipsec/ipsec_pcb.c',
             'sys/netipsec/key.c',
             'sys/netipsec/key_debug.c',
             'sys/netipsec/keysock.c',
+            'sys/netipsec/subr_ipsec.c',
+            'sys/netipsec/udpencap.c',
             'sys/netipsec/xform_ah.c',
             'sys/netipsec/xform_esp.c',
             'sys/netipsec/xform_ipcomp.c',
-            'sys/netipsec/xform_ipip.c',
             'sys/netipsec/xform_tcp.c',
         ],
         mm.generator['source']()
@@ -1800,6 +1807,7 @@ def net80211(mm):
             'sys/net80211/ieee80211_superg.h',
             'sys/net80211/ieee80211_tdma.h',
             'sys/net80211/ieee80211_var.h',
+            'sys/net80211/ieee80211_vht.h',
             'sys/net80211/ieee80211_wds.h',
         ]
     )
@@ -1842,6 +1850,7 @@ def net80211(mm):
             'sys/net80211/ieee80211_sta.c',
             'sys/net80211/ieee80211_superg.c',
             'sys/net80211/ieee80211_tdma.c',
+            'sys/net80211/ieee80211_vht.c',
             'sys/net80211/ieee80211_wds.c',
             'sys/net80211/ieee80211_xauth.c',
         ],
@@ -1896,6 +1905,7 @@ def crypto(mm):
     mod = builder.Module('crypto')
     mod.addKernelSpaceHeaderFiles(
         [
+            'sys/crypto/intake.h',
             'sys/crypto/skein/skein_iv.h',
             'sys/crypto/skein/skein_freebsd.h',
             'sys/crypto/skein/skein.h',

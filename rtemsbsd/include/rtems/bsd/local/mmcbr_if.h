@@ -3,7 +3,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   dev/mmc/mmcbr_if.m
+ *   freebsd-org/sys/dev/mmc/mmcbr_if.m
  * with
  *   makeobjops.awk
  *
@@ -24,6 +24,18 @@ static __inline int MMCBR_UPDATE_IOS(device_t brdev, device_t reqdev)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_update_ios);
 	return ((mmcbr_update_ios_t *) _m)(brdev, reqdev);
+}
+
+/** @brief Unique descriptor for the MMCBR_SWITCH_VCCQ() method */
+extern struct kobjop_desc mmcbr_switch_vccq_desc;
+/** @brief A function implementing the MMCBR_SWITCH_VCCQ() method */
+typedef int mmcbr_switch_vccq_t(device_t brdev, device_t reqdev);
+
+static __inline int MMCBR_SWITCH_VCCQ(device_t brdev, device_t reqdev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_switch_vccq);
+	return ((mmcbr_switch_vccq_t *) _m)(brdev, reqdev);
 }
 
 /** @brief Unique descriptor for the MMCBR_REQUEST() method */

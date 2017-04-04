@@ -496,6 +496,8 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 	scan->status = 0;
 	/*
 	 * beacon/probe response frame format
+	 *
+	 * XXX Update from 802.11-2012 - eg where HT is
 	 *	[8] time stamp
 	 *	[2] beacon interval
 	 *	[2] capability information
@@ -510,6 +512,8 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 	 *	[tlv] WPA or RSN
 	 *	[tlv] HT capabilities
 	 *	[tlv] HT information
+	 *	[tlv] VHT capabilities
+	 *	[tlv] VHT information
 	 *	[tlv] Atheros capabilities
 	 *	[tlv] Mesh ID
 	 *	[tlv] Mesh Configuration
@@ -586,6 +590,12 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 			break;
 		case IEEE80211_ELEMID_HTCAP:
 			scan->htcap = frm;
+			break;
+		case IEEE80211_ELEMID_VHT_CAP:
+			scan->vhtcap = frm;
+			break;
+		case IEEE80211_ELEMID_VHT_OPMODE:
+			scan->vhtopmode = frm;
 			break;
 		case IEEE80211_ELEMID_RSN:
 			scan->rsn = frm;
@@ -720,6 +730,19 @@ ieee80211_parse_beacon(struct ieee80211_node *ni, struct mbuf *m,
 			 sizeof(struct ieee80211_ie_htinfo)-2,
 		     scan->htinfo = NULL);
 	}
+
+	/* Process VHT IEs */
+	if (scan->vhtcap != NULL) {
+		IEEE80211_VERIFY_LENGTH(scan->vhtcap[1],
+		    sizeof(struct ieee80211_ie_vhtcap) - 2,
+		    scan->vhtcap = NULL);
+	}
+	if (scan->vhtopmode != NULL) {
+		IEEE80211_VERIFY_LENGTH(scan->vhtopmode[1],
+		    sizeof(struct ieee80211_ie_vht_operation) - 2,
+		    scan->vhtopmode = NULL);
+	}
+
 	return scan->status;
 }
 
@@ -840,6 +863,9 @@ ieee80211_parse_action(struct ieee80211_node *ni, struct mbuf *m)
 		}
 		break;
 #endif
+	case IEEE80211_ACTION_CAT_VHT:
+		printf("%s: TODO: VHT handling!\n", __func__);
+		break;
 	}
 	return 0;
 }

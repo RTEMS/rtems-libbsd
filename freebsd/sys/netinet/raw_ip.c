@@ -13,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -75,9 +75,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet/ip_mroute.h>
 #include <netinet/ip_icmp.h>
 
-#ifdef IPSEC
-#include <netipsec/ipsec.h>
-#endif /*IPSEC*/
+#include <netipsec/ipsec_support.h>
 
 #include <machine/stdarg.h>
 #include <security/mac/mac_framework.h>
@@ -238,10 +236,11 @@ rip_append(struct inpcb *last, struct ip *ip, struct mbuf *n,
 
 	INP_LOCK_ASSERT(last);
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(IPSEC_SUPPORT)
 	/* check AH/ESP integrity. */
-	if (ipsec4_in_reject(n, last)) {
-		policyfail = 1;
+	if (IPSEC_ENABLED(ipv4)) {
+		if (IPSEC_CHECK_POLICY(ipv4, n, last) != 0)
+			policyfail = 1;
 	}
 #endif /* IPSEC */
 #ifdef MAC
@@ -510,7 +509,7 @@ rip_output(struct mbuf *m, struct socket *so, ...)
 		 * and don't allow packet length sizes that will crash.
 		 */
 		if (((ip->ip_hl != (sizeof (*ip) >> 2)) && inp->inp_options)
-		    || (ntohs(ip->ip_len) > m->m_pkthdr.len)
+		    || (ntohs(ip->ip_len) != m->m_pkthdr.len)
 		    || (ntohs(ip->ip_len) < (ip->ip_hl << 2))) {
 			INP_RUNLOCK(inp);
 			m_freem(m);
@@ -1080,12 +1079,7 @@ rip_pcblist(SYSCTL_HANDLER_ARGS)
 		if (inp->inp_gencnt <= gencnt) {
 			struct xinpcb xi;
 
-			bzero(&xi, sizeof(xi));
-			xi.xi_len = sizeof xi;
-			/* XXX should avoid extra copy */
-			bcopy(inp, &xi.xi_inp, sizeof *inp);
-			if (inp->inp_socket)
-				sotoxsocket(inp->inp_socket, &xi.xi_socket);
+			in_pcbtoxinpcb(inp, &xi);
 			INP_RUNLOCK(inp);
 			error = SYSCTL_OUT(req, &xi, sizeof xi);
 		} else

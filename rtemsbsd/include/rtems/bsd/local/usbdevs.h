@@ -594,6 +594,7 @@
 #define	USB_VENDOR_CURITEL	0x106c		/* Curitel Communications Inc */
 #define	USB_VENDOR_SILABS2	0x10a6		/* SILABS2 */
 #define	USB_VENDOR_USI	0x10ab		/* USI */
+#define	USB_VENDOR_HONEYWELL	0x10ac		/* Honeywell */
 #define	USB_VENDOR_LIEBERT2	0x10af		/* Liebert */
 #define	USB_VENDOR_PLX	0x10b5		/* PLX */
 #define	USB_VENDOR_ASANTE	0x10bd		/* Asante */
@@ -601,6 +602,7 @@
 #define	USB_VENDOR_SILABS3	0x10c5		/* Silicon Labs */
 #define	USB_VENDOR_SILABS4	0x10ce		/* Silicon Labs */
 #define	USB_VENDOR_ACTIONS	0x10d6		/* Actions */
+#define	USB_VENDOR_MOXA	0x110a		/* Moxa */
 #define	USB_VENDOR_ANALOG	0x1110		/* Analog Devices */
 #define	USB_VENDOR_TENX	0x1130		/* Ten X Technology, Inc. */
 #define	USB_VENDOR_ISSC	0x1131		/* Integrated System Solution Corp. */
@@ -705,6 +707,7 @@
 #define	USB_VENDOR_LINKSYS3	0x1915		/* Linksys */
 #define	USB_VENDOR_QUALCOMMINC	0x19d2		/* Qualcomm, Incorporated */
 #define	USB_VENDOR_QUALCOMM3	0x19f5		/* Qualcomm, Inc. */
+#define	USB_VENDOR_ABBOTT	0x1a61		/* Abbott Diabetics */
 #define	USB_VENDOR_BAYER	0x1a79		/* Bayer */
 #define	USB_VENDOR_WCH2	0x1a86		/* QinHeng Electronics */
 #define	USB_VENDOR_STELERA	0x1a8d		/* Stelera Wireless */
@@ -751,6 +754,7 @@
 #define	USB_VENDOR_TRIPPLITE	0x2478		/* Tripp-Lite */
 #define	USB_VENDOR_HIROSE	0x2631		/* Hirose Electric */
 #define	USB_VENDOR_NHJ	0x2770		/* NHJ */
+#define	USB_VENDOR_THINGM	0x27b8		/* ThingM */
 #define	USB_VENDOR_PLANEX	0x2c02		/* Planex Communications */
 #define	USB_VENDOR_VIDZMEDIA	0x3275		/* VidzMedia Pte Ltd */
 #define	USB_VENDOR_LINKINSTRUMENTS	0x3195		/* Link Instruments Inc. */
@@ -812,6 +816,10 @@
 #define	USB_PRODUCT_3COMUSR_USRISDN	0x008f		/* 3Com U.S. Robotics Pro ISDN TA */
 #define	USB_PRODUCT_3COMUSR_HOMECONN	0x009d		/* 3Com HomeConnect Camera */
 #define	USB_PRODUCT_3COMUSR_USR56K	0x3021		/* U.S. Robotics 56000 Voice FaxModem Pro */
+
+/* Abbott Diabetics */
+#define	USB_PRODUCT_ABBOTT_STEREO_PLUG	0x3410		/* Abbott Diabetics Stereo Plug */
+#define	USB_PRODUCT_ABBOTT_STRIP_PORT	0x3420		/* Abbott Diabetics Strip Port */
 
 /* AboCom products */
 #define	USB_PRODUCT_ABOCOM_XX1	0x110c		/* XX1 */
@@ -1325,6 +1333,7 @@
 #define	USB_PRODUCT_BELKIN_F9L1103	0x1103		/* F9L1103 Wireless Adapter */
 #define	USB_PRODUCT_BELKIN_RTL8192CU	0x2102		/* RTL8192CU Wireless Adapter */
 #define	USB_PRODUCT_BELKIN_F7D2102	0x2103		/* F7D2102 Wireless Adapter */
+#define	USB_PRODUCT_BELKIN_F5U258	0x258A		/* F5U258 Host to Host cable */
 #define	USB_PRODUCT_BELKIN_ZD1211B	0x4050		/* ZD1211B */
 #define	USB_PRODUCT_BELKIN_F5D5055	0x5055		/* F5D5055 */
 #define	USB_PRODUCT_BELKIN_F5D7050	0x7050		/* F5D7050 Wireless Adapter */
@@ -1448,6 +1457,9 @@
 #define	USB_PRODUCT_CLIPSAL_5000CT2	0x0304		/* 5000CT2 C-Bus Touch Screen */
 #define	USB_PRODUCT_CLIPSAL_C5000CT2	0x0305		/* C5000CT2 C-Bus Touch Screen */
 #define	USB_PRODUCT_CLIPSAL_L51xx	0x0401		/* L51xx C-Bus Dimmer */
+
+/* C-Media products */
+#define	USB_PRODUCT_CMEDIA_CM6206	0x0102		/* CM106 compatible sound device */
 
 /* CMOTECH products */
 #define	USB_PRODUCT_CMOTECH_CNU510	0x5141		/* CDMA Technologies USB modem */
@@ -2293,6 +2305,9 @@
 /* Holtek products */
 #define	USB_PRODUCT_HOLTEK_F85	0xa030		/* Holtek USB gaming keyboard */
 
+/* Honeywell */
+#define	USB_PRODUCT_HONEYWELL_HGI80	0x0102		/* Honeywell HGI80 Wireless USB Gateway */
+
 /* HP products */
 #define	USB_PRODUCT_HP_895C	0x0004		/* DeskJet 895C */
 #define	USB_PRODUCT_HP_4100C	0x0101		/* Scanjet 4100C */
@@ -2427,7 +2442,9 @@
 #define	USB_PRODUCT_HUAWEI_K4505	0x1464		/* 3G modem */
 #define	USB_PRODUCT_HUAWEI_K3765	0x1465		/* 3G modem */
 #define	USB_PRODUCT_HUAWEI_E1820	0x14ac		/* E1820 HSPA+ USB Slider */
+#define	USB_PRODUCT_HUAWEI_K3771_INIT	0x14c4		/* K3771 Initial */
 #define	USB_PRODUCT_HUAWEI_K3770	0x14c9		/* 3G modem */
+#define	USB_PRODUCT_HUAWEI_K3771	0x14ca		/* K3771 */
 #define	USB_PRODUCT_HUAWEI_K3772	0x14cf		/* K3772 */
 #define	USB_PRODUCT_HUAWEI_K3770_INIT	0x14d1		/* K3770 Initial */
 #define	USB_PRODUCT_HUAWEI_E3131_INIT	0x14fe		/* 3G modem initial */
@@ -2451,6 +2468,9 @@
 
 /* IBM Corporation */
 #define	USB_PRODUCT_IBM_USBCDROMDRIVE	0x4427		/* USB CD-ROM Drive */
+#define	USB_PRODUCT_IBM_USB4543	0x4543		/* TI IBM USB 4543 Modem */
+#define	USB_PRODUCT_IBM_USB454B	0x454b		/* TI IBM USB 454B Modem */
+#define	USB_PRODUCT_IBM_USB454C	0x454c		/* TI IBM USB 454C Modem */
 
 /* Icom products */
 #define	USB_PRODUCT_ICOM_SP1	0x0004		/* FTDI compatible adapter */
@@ -3225,12 +3245,27 @@
 #define	USB_PRODUCT_MOTOROLA4_RT2770	0x9031		/* RT2770 */
 #define	USB_PRODUCT_MOTOROLA4_RT3070	0x9032		/* RT3070 */
 
+/* Moxa */
+#define	USB_PRODUCT_MOXA_MXU1_1110	0x1110		/* Moxa Uport 1110 */
+#define	USB_PRODUCT_MOXA_MXU1_1130	0x1130		/* Moxa Uport 1130 */
+#define	USB_PRODUCT_MOXA_MXU1_1131	0x1131		/* Moxa Uport 1131 */
+#define	USB_PRODUCT_MOXA_MXU1_1150	0x1150		/* Moxa Uport 1150 */
+#define	USB_PRODUCT_MOXA_MXU1_1151	0x1151		/* Moxa Uport 1151 */
+
 /* MpMan products */
 #define	USB_PRODUCT_MPMAN_MPF400_2	0x25a8		/* MPF400 Music Player 2Go */
 #define	USB_PRODUCT_MPMAN_MPF400_1	0x36d0		/* MPF400 Music Player 1Go */
 
 /* MultiTech products */
+#define	USB_PRODUCT_MULTITECH_MT9234ZBA_2	0x0319		/* MT9234ZBA USB modem (alt) */
 #define	USB_PRODUCT_MULTITECH_ATLAS	0xf101		/* MT5634ZBA-USB modem */
+#define	USB_PRODUCT_MULTITECH_GSM	0xf108		/* GSM USB Modem */
+#define	USB_PRODUCT_MULTITECH_CDMA	0xf109		/* CDMA USB Modem */
+#define	USB_PRODUCT_MULTITECH_CDMA_FW	0xf110		/* CDMA USB Modem firmware running */
+#define	USB_PRODUCT_MULTITECH_GSM_FW	0xf111		/* GSM USB Modem firmware running */
+#define	USB_PRODUCT_MULTITECH_EDGE	0xf112		/* Edge USB Modem */
+#define	USB_PRODUCT_MULTITECH_MT9234MU	0xf114		/* MT9234 MU */
+#define	USB_PRODUCT_MULTITECH_MT9234ZBA	0xf115		/* MT9234 ZBA */
 
 /* Mustek products */
 #define	USB_PRODUCT_MUSTEK_1200CU	0x0001		/* 1200 CU scanner */
@@ -3818,6 +3853,7 @@
 #define	USB_PRODUCT_REALTEK_USB20CRW	0x0158		/* USB20CRW Card Reader */
 #define	USB_PRODUCT_REALTEK_RTL8188ETV	0x0179		/* RTL8188ETV */
 #define	USB_PRODUCT_REALTEK_RTL8188CTV	0x018a		/* RTL8188CTV */
+#define	USB_PRODUCT_REALTEK_RTL8188RU_2	0x317f		/* RTL8188RU */
 #define	USB_PRODUCT_REALTEK_USBKR100	0x8150		/* USBKR100 USB Ethernet */
 #define	USB_PRODUCT_REALTEK_RTL8152	0x8152		/* RTL8152 USB Ethernet */
 #define	USB_PRODUCT_REALTEK_RTL8153	0x8153		/* RTL8153 USB Ethernet */
@@ -3827,27 +3863,27 @@
 #define	USB_PRODUCT_REALTEK_RTL8173	0x8173		/* RTL8173 */
 #define	USB_PRODUCT_REALTEK_RTL8174	0x8174		/* RTL8174 */
 #define	USB_PRODUCT_REALTEK_RTL8188CU_0	0x8176		/* RTL8188CU */
-#define	USB_PRODUCT_REALTEK_RTL8192CU_1	0x8178		/* RTL8192CU */
+#define	USB_PRODUCT_REALTEK_RTL8191CU	0x8177		/* RTL8191CU */
+#define	USB_PRODUCT_REALTEK_RTL8192CU	0x8178		/* RTL8192CU */
 #define	USB_PRODUCT_REALTEK_RTL8188EU	0x8179		/* RTL8188EU */
-#define	USB_PRODUCT_REALTEK_RTL8188CE_1	0x817e		/* RTL8188CE */
 #define	USB_PRODUCT_REALTEK_RTL8188CU_1	0x817a		/* RTL8188CU */
 #define	USB_PRODUCT_REALTEK_RTL8188CU_2	0x817b		/* RTL8188CU */
+#define	USB_PRODUCT_REALTEK_RTL8192CE	0x817c		/* RTL8192CE */
+#define	USB_PRODUCT_REALTEK_RTL8188RU_1	0x817d		/* RTL8188RU */
+#define	USB_PRODUCT_REALTEK_RTL8188CE_1	0x817e		/* RTL8188CE */
+#define	USB_PRODUCT_REALTEK_RTL8188RU_3	0x817f		/* RTL8188RU */
 #define	USB_PRODUCT_REALTEK_RTL8187	0x8187		/* RTL8187 Wireless Adapter */
 #define	USB_PRODUCT_REALTEK_RTL8187B_0	0x8189		/* RTL8187B Wireless Adapter */
+#define	USB_PRODUCT_REALTEK_RTL8188CUS	0x818a		/* RTL8188CUS */
+#define	USB_PRODUCT_REALTEK_RTL8192EU	0x818b		/* RTL8192EU */
 #define	USB_PRODUCT_REALTEK_RTL8188CU_3	0x8191		/* RTL8188CU */
 #define	USB_PRODUCT_REALTEK_RTL8196EU	0x8196		/* RTL8196EU */
 #define	USB_PRODUCT_REALTEK_RTL8187B_1	0x8197		/* RTL8187B Wireless Adapter */
 #define	USB_PRODUCT_REALTEK_RTL8187B_2	0x8198		/* RTL8187B Wireless Adapter */
-#define	USB_PRODUCT_REALTEK_RTL8188CUS	0x818a		/* RTL8188CUS */
-#define	USB_PRODUCT_REALTEK_RTL8188CU_COMBO	0x8754		/* RTL8188CU */
-#define	USB_PRODUCT_REALTEK_RTL8191CU	0x8177		/* RTL8191CU */
-#define	USB_PRODUCT_REALTEK_RTL8192CU	0x8178		/* RTL8192CU */
-#define	USB_PRODUCT_REALTEK_RTL8192CE	0x817c		/* RTL8192CE */
-#define	USB_PRODUCT_REALTEK_RTL8188RU_1	0x817d		/* RTL8188RU */
-#define	USB_PRODUCT_REALTEK_RTL8188RU_3	0x817f		/* RTL8188RU */
 #define	USB_PRODUCT_REALTEK_RTL8712	0x8712		/* RTL8712 */
-#define	USB_PRODUCT_REALTEK_RTL8713	0x8712		/* RTL8713 */
-#define	USB_PRODUCT_REALTEK_RTL8188RU_2	0x317f		/* RTL8188RU */
+#define	USB_PRODUCT_REALTEK_RTL8713	0x8713		/* RTL8713 */
+#define	USB_PRODUCT_REALTEK_RTL8188CU_COMBO	0x8754		/* RTL8188CU */
+#define	USB_PRODUCT_REALTEK_RTL8723BU	0xb720		/* RTL8723BU */
 #define	USB_PRODUCT_REALTEK_RTL8192SU	0xc512		/* RTL8192SU */
 
 /* RedOctane products */
@@ -4465,9 +4501,19 @@
 /* Ten X Technology, Inc. */
 #define	USB_PRODUCT_TENX_UAUDIO0	0xf211		/* USB audio headset */
 
+/* ThingM products */
+#define	USB_PRODUCT_THINGM_BLINK1	0x01ed		/* USB notification light */
+
 /* Texas Intel products */
 #define	USB_PRODUCT_TI_UTUSB41	0x1446		/* UT-USB41 hub */
 #define	USB_PRODUCT_TI_TUSB2046	0x2046		/* TUSB2046 hub */
+#define	USB_PRODUCT_TI_USB3410	0x3410		/* TI USB 3410 Modem */
+#define	USB_PRODUCT_TI_USB5052	0x5052		/* TI USB 5250 Modem */
+#define	USB_PRODUCT_TI_FRI2	0x5053		/* TI Fish River Island II */
+#define	USB_PRODUCT_TI_USB5052_EEPROM	0x505a		/* TI USB 5250 Modem w/Eeprom */
+#define	USB_PRODUCT_TI_USB5052_FW	0x505f		/* TI USB 5250 Modme w/Firmware running */
+#define	USB_PRODUCT_TI_USB5152	0x5152		/* TI USB 5152 Modem */
+#define	USB_PRODUCT_TI_EZ430	0xf430		/* TI ex430 development tool */
 
 /* Thrustmaster products */
 #define	USB_PRODUCT_THRUST_FUSION_PAD	0xa0a3		/* Fusion Digital Gamepad */
@@ -4487,6 +4533,7 @@
 
 /* TP-Link products */
 #define	USB_PRODUCT_TPLINK_T4U	0x0101		/* Archer T4U */
+#define	USB_PRODUCT_TPLINK_WN822NV4	0x0108		/* TL-WN822N v4 */
 #define	USB_PRODUCT_TPLINK_WN823NV2	0x0109		/* TL-WN823N v2 */
 
 /* Trek Technology products */

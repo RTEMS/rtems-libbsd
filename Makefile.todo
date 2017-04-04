@@ -15,6 +15,8 @@ GENERATED += $(LOCAL_INC)/device_if.h
 GENERATED += $(LOCAL_SRC)/device_if.c
 GENERATED += $(LOCAL_INC)/usbdevs_data.h
 GENERATED += $(LOCAL_INC)/usbdevs.h
+GENERATED += $(LOCAL_INC)/ifdi_if.h
+GENERATED += $(LOCAL_SRC)/ifdi_if.c
 GENERATED += $(LOCAL_INC)/miibus_if.h
 GENERATED += $(LOCAL_SRC)/miibus_if.c
 GENERATED += $(LOCAL_INC)/miidevs.h
@@ -68,6 +70,14 @@ $(LOCAL_INC)/device_if.h: $(FREEBSD_SRC)/sys/kern/device_if.m
 $(LOCAL_SRC)/device_if.c: $(FREEBSD_SRC)/sys/kern/device_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c
 	mv device_if.c $@
+
+$(LOCAL_INC)/ifdi_if.h: $(FREEBSD_SRC)/sys/net/ifdi_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv ifdi_if.h $@
+
+$(LOCAL_SRC)/ifdi_if.c: $(FREEBSD_SRC)/sys/net/ifdi_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv ifdi_if.c $@
 
 $(LOCAL_INC)/miidevs.h: $(FREEBSD_SRC)/sys/dev/mii/miidevs
 	awk -f $(TOOLS)/miidevs2h.awk $<

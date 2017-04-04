@@ -60,7 +60,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8192c/usb/r92cu_reg.h>
 
 
-static struct usb_config rtwn_config[RTWN_N_TRANSFER] = {
+static const struct usb_config rtwn_config_common[RTWN_N_TRANSFER] = {
 	[RTWN_BULK_RX] = {
 		.type = UE_BULK,
 		.endpoint = UE_ADDR_ANY,
@@ -163,6 +163,7 @@ rtwn_usb_setup_queues(struct rtwn_usb_softc *uc)
 int
 rtwn_usb_setup_endpoints(struct rtwn_usb_softc *uc)
 {
+	struct usb_config *rtwn_config;
 	struct rtwn_softc *sc = &uc->uc_sc;
 	const uint8_t iface_index = RTWN_IFACE_INDEX;
 	struct usb_endpoint *ep, *ep_end;
@@ -199,6 +200,9 @@ rtwn_usb_setup_endpoints(struct rtwn_usb_softc *uc)
 		return (EINVAL);
 	}
 
+	rtwn_config = malloc(sizeof(rtwn_config_common), M_TEMP, M_WAITOK);
+	memcpy(rtwn_config, rtwn_config_common, sizeof(rtwn_config_common));
+
 	/* NB: keep in sync with rtwn_dma_init(). */
 	rtwn_config[RTWN_BULK_TX_VO].endpoint = addr[0];
 	switch (uc->ntx) {
@@ -226,6 +230,8 @@ rtwn_usb_setup_endpoints(struct rtwn_usb_softc *uc)
 	rtwn_config[RTWN_BULK_RX].bufsize = sc->rx_dma_size + 1024;
 	error = usbd_transfer_setup(uc->uc_udev, &iface_index,
 	    uc->uc_xfer, rtwn_config, RTWN_N_TRANSFER, uc, &sc->sc_mtx);
+	free(rtwn_config, M_TEMP);
+
 	if (error) {
 		device_printf(sc->sc_dev, "could not allocate USB transfers, "
 		    "err=%s\n", usbd_errstr(error));

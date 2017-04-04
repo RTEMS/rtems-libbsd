@@ -264,8 +264,7 @@ nd6_ns_input(struct mbuf *m, int off, int icmp6len)
 		bzero(&info, sizeof(info));
 		info.rti_info[RTAX_GATEWAY] = (struct sockaddr *)&rt_gateway;
 
-		/* Always use the default FIB. */
-		if (rib_lookup_info(RT_DEFAULT_FIB, (struct sockaddr *)&dst6,
+		if (rib_lookup_info(ifp->if_fib, (struct sockaddr *)&dst6,
 		    0, 0, &info) == 0) {
 			if ((info.rti_flags & RTF_ANNOUNCE) != 0 &&
 			    rt_gateway.sdl_family == AF_LINK) {
@@ -487,7 +486,7 @@ nd6_ns_output_fib(struct ifnet *ifp, const struct in6_addr *saddr6,
 			uint32_t scopeid;
 
 			in6_splitscope(&ip6->ip6_dst, &dst6, &scopeid);
-			error = in6_selectsrc_addr(RT_DEFAULT_FIB, &dst6,
+			error = in6_selectsrc_addr(fibnum, &dst6,
 			    scopeid, ifp, &src6, NULL);
 			if (error) {
 				char ip6buf[INET6_ADDRSTRLEN];
@@ -984,7 +983,7 @@ nd6_na_output_fib(struct ifnet *ifp, const struct in6_addr *daddr6_0,
 	 * Select a source whose scope is the same as that of the dest.
 	 */
 	in6_splitscope(&daddr6, &dst6, &scopeid);
-	error = in6_selectsrc_addr(RT_DEFAULT_FIB, &dst6,
+	error = in6_selectsrc_addr(fibnum, &dst6,
 	    scopeid, ifp, &src6, NULL);
 	if (error) {
 		char ip6buf[INET6_ADDRSTRLEN];
@@ -1088,7 +1087,6 @@ nd6_ifptomac(struct ifnet *ifp)
 	case IFT_FDDI:
 	case IFT_IEEE1394:
 	case IFT_L2VLAN:
-	case IFT_IEEE80211:
 	case IFT_INFINIBAND:
 	case IFT_BRIDGE:
 	case IFT_ISO88025:
@@ -1459,7 +1457,6 @@ nd6_dad_duplicated(struct ifaddr *ifa, struct dadq *dp)
 		case IFT_FDDI:
 		case IFT_ATM:
 		case IFT_IEEE1394:
-		case IFT_IEEE80211:
 		case IFT_INFINIBAND:
 			in6 = ia->ia_addr.sin6_addr;
 			if (in6_get_hw_ifid(ifp, &in6) == 0 &&

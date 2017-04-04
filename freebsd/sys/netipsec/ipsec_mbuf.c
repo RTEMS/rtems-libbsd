@@ -32,18 +32,14 @@
  * IPsec-specific mbuf routines.
  */
 
-#include <rtems/bsd/local/opt_param.h>
-
 #include <rtems/bsd/sys/param.h>
 #include <sys/systm.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 
-#include <net/route.h>
 #include <net/vnet.h>
-
 #include <netinet/in.h>
-
 #include <netipsec/ipsec.h>
 
 /*
@@ -76,7 +72,21 @@ m_makespace(struct mbuf *m0, int skip, int hlen, int *off)
 	 * the contents of m as needed.
 	 */
 	remain = m->m_len - skip;		/* data to move */
-	if (hlen > M_TRAILINGSPACE(m)) {
+	if (remain > skip &&
+	    hlen + max_linkhdr < M_LEADINGSPACE(m)) {
+		/*
+		 * mbuf has enough free space at the beginning.
+		 * XXX: which operation is the most heavy - copying of
+		 *	possible several hundred of bytes or allocation
+		 *	of new mbuf? We can remove max_linkhdr check
+		 *	here, but it is possible that this will lead
+		 *	to allocation of new mbuf in Layer 2 code.
+		 */
+		m->m_data -= hlen;
+		bcopy(mtodo(m, hlen), mtod(m, caddr_t), skip);
+		m->m_len += hlen;
+		*off = skip;
+	} else if (hlen > M_TRAILINGSPACE(m)) {
 		struct mbuf *n0, *n, **np;
 		int todo, len, done, alloc;
 
@@ -87,11 +97,11 @@ m_makespace(struct mbuf *m0, int skip, int hlen, int *off)
 		todo = remain;
 		while (todo > 0) {
 			if (todo > MHLEN) {
-				n = m_getcl(M_DONTWAIT, m->m_type, 0);
+				n = m_getcl(M_NOWAIT, m->m_type, 0);
 				len = MCLBYTES;
 			}
 			else {
-				n = m_get(M_DONTWAIT, m->m_type);
+				n = m_get(M_NOWAIT, m->m_type);
 				len = MHLEN;
 			}
 			if (n == NULL) {
@@ -117,7 +127,7 @@ m_makespace(struct mbuf *m0, int skip, int hlen, int *off)
 			}
 		}
 		else {
-			n = m_get(M_DONTWAIT, m->m_type);
+			n = m_get(M_NOWAIT, m->m_type);
 			if (n == NULL) {
 				m_freem(n0);
 				return NULL;
@@ -144,7 +154,7 @@ m_makespace(struct mbuf *m0, int skip, int hlen, int *off)
 		 * so there's space to write the new header.
 		 */
 		bcopy(mtod(m, caddr_t) + skip,
-		      mtod(m, caddr_t) + skip + hlen, remain);
+		    mtod(m, caddr_t) + skip + hlen, remain);
 		m->m_len += hlen;
 		*off = skip;
 	}
@@ -205,8 +215,8 @@ m_pad(struct mbuf *m, int n)
 
 	if (pad > M_TRAILINGSPACE(m0)) {
 		/* Add an mbuf to the chain. */
-		MGET(m1, M_DONTWAIT, MT_DATA);
-		if (m1 == 0) {
+		MGET(m1, M_NOWAIT, MT_DATA);
+		if (m1 == NULL) {
 			m_freem(m0);
 			DPRINTF(("%s: unable to get extra mbuf\n", __func__));
 			return NULL;

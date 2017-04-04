@@ -32,6 +32,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <rtems/bsd/local/opt_ratelimit.h>
+
 #include <rtems/bsd/sys/param.h>
 #include <sys/callout.h>
 #include <sys/eventhandler.h>
@@ -528,9 +530,6 @@ lacp_port_create(struct lagg_port *lgp)
 	struct ifmultiaddr *rifma = NULL;
 	int error;
 
-	boolean_t active = TRUE; /* XXX should be configurable */
-	boolean_t fast = FALSE; /* Configurable via ioctl */ 
-
 	link_init_sdl(ifp, (struct sockaddr *)&sdl, IFT_ETHER);
 	sdl.sdl_alen = ETHER_ADDR_LEN;
 
@@ -559,9 +558,7 @@ lacp_port_create(struct lagg_port *lgp)
 
 	lacp_fill_actorinfo(lp, &lp->lp_actor);
 	lacp_fill_markerinfo(lp, &lp->lp_marker);
-	lp->lp_state =
-	    (active ? LACP_STATE_ACTIVITY : 0) |
-	    (fast ? LACP_STATE_TIMEOUT : 0);
+	lp->lp_state = LACP_STATE_ACTIVITY;
 	lp->lp_aggregator = NULL;
 	lacp_sm_rx_set_expired(lp);
 	LACP_UNLOCK(lsc);
@@ -855,6 +852,35 @@ lacp_select_tx_port(struct lagg_softc *sc, struct mbuf *m)
 
 	return (lp->lp_lagg);
 }
+
+#ifdef RATELIMIT
+struct lagg_port *
+lacp_select_tx_port_by_hash(struct lagg_softc *sc, uint32_t flowid)
+{
+	struct lacp_softc *lsc = LACP_SOFTC(sc);
+	struct lacp_portmap *pm;
+	struct lacp_port *lp;
+	uint32_t hash;
+
+	if (__predict_false(lsc->lsc_suppress_distributing)) {
+		LACP_DPRINTF((NULL, "%s: waiting transit\n", __func__));
+		return (NULL);
+	}
+
+	pm = &lsc->lsc_pmap[lsc->lsc_activemap];
+	if (pm->pm_count == 0) {
+		LACP_DPRINTF((NULL, "%s: no active aggregator\n", __func__));
+		return (NULL);
+	}
+
+	hash = flowid >> sc->flowid_shift;
+	hash %= pm->pm_count;
+	lp = pm->pm_map[hash];
+
+	return (lp->lp_lagg);
+}
+#endif
+
 /*
  * lacp_suppress_distributing: drop transmit packets for a while
  * to preserve packet ordering.
@@ -1307,6 +1333,10 @@ lacp_select(struct lacp_port *lp)
 		return;
 	}
 
+	/* If we haven't heard from our peer, skip this step. */
+	if (lp->lp_state & LACP_STATE_DEFAULTED)
+		return;
+
 	KASSERT(!LACP_TIMER_ISARMED(lp, LACP_TIMER_WAIT_WHILE),
 	    ("timer_wait_while still active"));
 
@@ -1662,7 +1692,15 @@ lacp_sm_rx_record_pdu(struct lacp_port *lp, const struct lacpdu *du)
 	    LACP_STATE_AGGREGATION) &&
 	    !lacp_compare_peerinfo(&lp->lp_actor, &du->ldu_partner))
 	    || (du->ldu_partner.lip_state & LACP_STATE_AGGREGATION) == 0)) {
-		/* XXX nothing? */
+		/*
+		 * XXX Maintain legacy behavior of leaving the
+		 * LACP_STATE_SYNC bit unchanged from the partner's
+		 * advertisement if lsc_strict_mode is false.
+		 * TODO: We should re-examine the concept of the "strict mode"
+		 * to ensure it makes sense to maintain a non-strict mode.
+		 */
+		if (lp->lp_lsc->lsc_strict_mode)
+			lp->lp_partner.lip_state |= LACP_STATE_SYNC;
 	} else {
 		lp->lp_partner.lip_state &= ~LACP_STATE_SYNC;
 	}
@@ -1676,10 +1714,6 @@ lacp_sm_rx_record_pdu(struct lacp_port *lp, const struct lacpdu *du)
 		    lacp_format_state(lp->lp_partner.lip_state, buf,
 		    sizeof(buf))));
 	}
-
-	/* XXX Hack, still need to implement 5.4.9 para 2,3,4 */
-	if (lp->lp_lsc->lsc_strict_mode)
-		lp->lp_partner.lip_state |= LACP_STATE_SYNC;
 
 	lacp_sm_ptx_update_timeout(lp, oldpstate);
 }

@@ -212,7 +212,7 @@ typedef device_t bus_add_child_t(device_t _dev, u_int _order, const char *_name,
 /**
  * @brief Create a new child device
  *
- * For busses which use use drivers supporting DEVICE_IDENTIFY() to
+ * For buses which use use drivers supporting DEVICE_IDENTIFY() to
  * enumerate their devices, this method is used to create new
  * device instances. The new device will be added after the last
  * existing child with the same order. Implementations of bus_add_child
@@ -564,7 +564,7 @@ typedef int bus_set_resource_t(device_t _dev, device_t _child, int _type,
  * @brief Define a resource which can be allocated with
  * BUS_ALLOC_RESOURCE().
  *
- * This method is used by some busses (typically ISA) to allow a
+ * This method is used by some buses (typically ISA) to allow a
  * driver to describe a resource range that it would like to
  * allocate. The resource defined by @p _type and @p _rid is defined
  * to start at @p _start and to include @p _count indices in its
@@ -679,7 +679,7 @@ typedef int bus_child_present_t(device_t _dev, device_t _child);
  * should return -1 if it is present.  Any errors in determining
  * should be returned as a normal errno value.  Client drivers are to
  * assume that the device is present, even if there is an error
- * determining if it is there.  Busses are to try to avoid returning
+ * determining if it is there.  Buses are to try to avoid returning
  * errors, but newcard will return an error if the device fails to
  * implement this method.
  * 

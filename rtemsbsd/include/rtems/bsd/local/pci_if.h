@@ -22,6 +22,11 @@ enum pci_id_type {
     PCI_ID_MSI,
 };
 
+enum pci_feature {
+    PCI_FEATURE_HP,		/* Hot Plug feature */
+    PCI_FEATURE_AER,		/* Advanced Error Reporting */
+};
+
 /** @brief Unique descriptor for the PCI_READ_CONFIG() method */
 extern struct kobjop_desc pci_read_config_desc;
 /** @brief A function implementing the PCI_READ_CONFIG() method */

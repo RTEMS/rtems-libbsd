@@ -50,7 +50,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -122,10 +122,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/udp6_var.h>
 #include <netinet6/scope6_var.h>
 
-#ifdef IPSEC
-#include <netipsec/ipsec.h>
-#include <netipsec/ipsec6.h>
-#endif /* IPSEC */
+#include <netipsec/ipsec_support.h>
 
 #include <security/mac/mac_framework.h>
 
@@ -142,7 +139,7 @@ udp6_append(struct inpcb *inp, struct mbuf *n, int off,
     struct sockaddr_in6 *fromsa)
 {
 	struct socket *so;
-	struct mbuf *opts;
+	struct mbuf *opts = NULL, *tmp_opts;
 	struct udpcb *up;
 
 	INP_LOCK_ASSERT(inp);
@@ -154,16 +151,18 @@ udp6_append(struct inpcb *inp, struct mbuf *n, int off,
 	if (up->u_tun_func != NULL) {
 		in_pcbref(inp);
 		INP_RUNLOCK(inp);
-		(*up->u_tun_func)(n, off, inp, (struct sockaddr *)fromsa,
+		(*up->u_tun_func)(n, off, inp, (struct sockaddr *)&fromsa[0],
 		    up->u_tun_ctx);
 		INP_RLOCK(inp);
 		return (in_pcbrele_rlocked(inp));
 	}
-#ifdef IPSEC
+#if defined(IPSEC) || defined(IPSEC_SUPPORT)
 	/* Check AH/ESP integrity. */
-	if (ipsec6_in_reject(n, inp)) {
-		m_freem(n);
-		return (0);
+	if (IPSEC_ENABLED(ipv6)) {
+		if (IPSEC_CHECK_POLICY(ipv6, n, inp) != 0) {
+			m_freem(n);
+			return (0);
+		}
 	}
 #endif /* IPSEC */
 #ifdef MAC
@@ -176,11 +175,23 @@ udp6_append(struct inpcb *inp, struct mbuf *n, int off,
 	if (inp->inp_flags & INP_CONTROLOPTS ||
 	    inp->inp_socket->so_options & SO_TIMESTAMP)
 		ip6_savecontrol(inp, n, &opts);
+	if ((inp->inp_vflag & INP_IPV6) && (inp->inp_flags2 & INP_ORIGDSTADDR)) {
+		tmp_opts = sbcreatecontrol((caddr_t)&fromsa[1],
+                        sizeof(struct sockaddr_in6), IPV6_ORIGDSTADDR, IPPROTO_IPV6);
+                if (tmp_opts) {
+                        if (opts) {
+                                tmp_opts->m_next = opts;
+                                opts = tmp_opts;
+                        } else
+                                opts = tmp_opts;
+                }
+
+	}
 	m_adj(n, off + sizeof(struct udphdr));
 
 	so = inp->inp_socket;
 	SOCKBUF_LOCK(&so->so_rcv);
-	if (sbappendaddr_locked(&so->so_rcv, (struct sockaddr *)fromsa, n,
+	if (sbappendaddr_locked(&so->so_rcv, (struct sockaddr *)&fromsa[0], n,
 	    opts) == 0) {
 		SOCKBUF_UNLOCK(&so->so_rcv);
 		m_freem(n);
@@ -205,7 +216,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 	int off = *offp;
 	int cscov_partial;
 	int plen, ulen;
-	struct sockaddr_in6 fromsa;
+	struct sockaddr_in6 fromsa[2];
 	struct m_tag *fwd_tag;
 	uint16_t uh_sum;
 	uint8_t nxt;
@@ -280,8 +291,10 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 	/*
 	 * Construct sockaddr format source address.
 	 */
-	init_sin6(&fromsa, m);
-	fromsa.sin6_port = uh->uh_sport;
+	init_sin6(&fromsa[0], m, 0);
+	fromsa[0].sin6_port = uh->uh_sport;
+	init_sin6(&fromsa[1], m, 1);
+	fromsa[1].sin6_port = uh->uh_dport;
 
 	pcbinfo = udp_get_inpcbinfo(nxt);
 	if (IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst)) {
@@ -352,7 +365,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 
 				blocked = im6o_mc_filter(imo, ifp,
 					(struct sockaddr *)&mcaddr,
-					(struct sockaddr *)&fromsa);
+					(struct sockaddr *)&fromsa[0]);
 				if (blocked != MCAST_PASS) {
 					if (blocked == MCAST_NOTGMEMBER)
 						IP6STAT_INC(ip6s_notmember);
@@ -373,7 +386,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 					INP_RLOCK(last);
 					UDP_PROBE(receive, NULL, last, ip6,
 					    last, uh);
-					if (udp6_append(last, n, off, &fromsa))
+					if (udp6_append(last, n, off, fromsa))
 						goto inp_lost;
 					INP_RUNLOCK(last);
 				}
@@ -405,7 +418,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 		INP_RLOCK(last);
 		INP_INFO_RUNLOCK(pcbinfo);
 		UDP_PROBE(receive, NULL, last, ip6, last, uh);
-		if (udp6_append(last, m, off, &fromsa) == 0) 
+		if (udp6_append(last, m, off, fromsa) == 0) 
 			INP_RUNLOCK(last);
 	inp_lost:
 		return (IPPROTO_DONE);
@@ -485,7 +498,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 		}
 	}
 	UDP_PROBE(receive, NULL, inp, ip6, inp, uh);
-	if (udp6_append(inp, m, off, &fromsa) == 0)
+	if (udp6_append(inp, m, off, fromsa) == 0)
 		INP_RUNLOCK(inp);
 	return (IPPROTO_DONE);
 

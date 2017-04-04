@@ -43,7 +43,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -67,6 +67,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ratelimit.h>
 #include <rtems/bsd/local/opt_ipsec.h>
 #include <rtems/bsd/local/opt_sctp.h>
 #include <rtems/bsd/local/opt_route.h>
@@ -109,12 +110,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/nd6.h>
 #include <netinet6/in6_rss.h>
 
-#ifdef IPSEC
-#include <netipsec/ipsec.h>
-#include <netipsec/ipsec6.h>
-#include <netipsec/key.h>
-#include <netinet6/ip6_ipsec.h>
-#endif /* IPSEC */
+#include <netipsec/ipsec_support.h>
 #ifdef SCTP
 #include <netinet/sctp.h>
 #include <netinet/sctp_crc32.h>
@@ -337,6 +333,21 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 		}
 	}
 
+#if defined(IPSEC) || defined(IPSEC_SUPPORT)
+	/*
+	 * IPSec checking which handles several cases.
+	 * FAST IPSEC: We re-injected the packet.
+	 * XXX: need scope argument.
+	 */
+	if (IPSEC_ENABLED(ipv6)) {
+		if ((error = IPSEC_OUTPUT(ipv6, m, inp)) != 0) {
+			if (error == EINPROGRESS)
+				error = 0;
+			goto done;
+		}
+	}
+#endif /* IPSEC */
+
 	bzero(&exthdrs, sizeof(exthdrs));
 	if (opt) {
 		/* Hop-by-Hop options header */
@@ -360,24 +371,6 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 		/* Destination options header(2nd part) */
 		MAKE_EXTHDR(opt->ip6po_dest2, &exthdrs.ip6e_dest2);
 	}
-
-#ifdef IPSEC
-	/*
-	 * IPSec checking which handles several cases.
-	 * FAST IPSEC: We re-injected the packet.
-	 * XXX: need scope argument.
-	 */
-	switch(ip6_ipsec_output(&m, inp, &error))
-	{
-	case 1:                 /* Bad packet */
-		goto freehdrs;
-	case -1:                /* IPSec done */
-		goto done;
-	case 0:                 /* No IPSec */
-	default:
-		break;
-	}
-#endif /* IPSEC */
 
 	/*
 	 * Calculate the total length of the extension header chain.
@@ -503,8 +496,7 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 	if (ro == NULL) {
 		ro = &ip6route;
 		bzero((caddr_t)ro, sizeof(*ro));
-	} else
-		ro->ro_flags |= RT_LLE_CACHE;
+	}
 	ro_pmtu = ro;
 	if (opt && opt->ip6po_rthdr)
 		ro = &opt->ip6po_route;
@@ -956,8 +948,23 @@ passout:
 			    m->m_pkthdr.len);
 			ifa_free(&ia6->ia_ifa);
 		}
+#ifdef RATELIMIT
+		if (inp != NULL) {
+			if (inp->inp_flags2 & INP_RATE_LIMIT_CHANGED)
+				in_pcboutput_txrtlmt(inp, ifp, m);
+			/* stamp send tag on mbuf */
+			m->m_pkthdr.snd_tag = inp->inp_snd_tag;
+		} else {
+			m->m_pkthdr.snd_tag = NULL;
+		}
+#endif
 		error = nd6_output_ifp(ifp, origifp, m, dst,
 		    (struct route *)ro);
+#ifdef RATELIMIT
+		/* check for route change */
+		if (error == EAGAIN)
+			in_pcboutput_eagain(inp);
+#endif
 		goto done;
 	}
 
@@ -1056,8 +1063,23 @@ sendorfree:
 				counter_u64_add(ia->ia_ifa.ifa_obytes,
 				    m->m_pkthdr.len);
 			}
+#ifdef RATELIMIT
+			if (inp != NULL) {
+				if (inp->inp_flags2 & INP_RATE_LIMIT_CHANGED)
+					in_pcboutput_txrtlmt(inp, ifp, m);
+				/* stamp send tag on mbuf */
+				m->m_pkthdr.snd_tag = inp->inp_snd_tag;
+			} else {
+				m->m_pkthdr.snd_tag = NULL;
+			}
+#endif
 			error = nd6_output_ifp(ifp, origifp, m, dst,
 			    (struct route *)ro);
+#ifdef RATELIMIT
+			/* check for route change */
+			if (error == EAGAIN)
+				in_pcboutput_eagain(inp);
+#endif
 		} else
 			m_freem(m);
 	}
@@ -1443,6 +1465,16 @@ ip6_ctloutput(struct socket *so, struct sockopt *sopt)
 				INP_WUNLOCK(in6p);
 				error = 0;
 				break;
+			case SO_MAX_PACING_RATE:
+#ifdef RATELIMIT
+				INP_WLOCK(in6p);
+				in6p->inp_flags2 |= INP_RATE_LIMIT_CHANGED;
+				INP_WUNLOCK(in6p);
+				error = 0;
+#else
+				error = EOPNOTSUPP;
+#endif
+				break;
 			default:
 				break;
 			}
@@ -1514,6 +1546,7 @@ ip6_ctloutput(struct socket *so, struct sockopt *sopt)
 #endif
 			case IPV6_V6ONLY:
 			case IPV6_AUTOFLOWLABEL:
+			case IPV6_ORIGDSTADDR:
 			case IPV6_BINDANY:
 			case IPV6_BINDMULTI:
 #ifdef	RSS
@@ -1699,6 +1732,9 @@ do { \
 					OPTSET(IN6P_AUTOFLOWLABEL);
 					break;
 
+				case IPV6_ORIGDSTADDR:
+					OPTSET2(INP_ORIGDSTADDR, optval);
+					break;
 				case IPV6_BINDANY:
 					OPTSET(INP_BINDANY);
 					break;
@@ -1873,23 +1909,13 @@ do { \
 				INP_WUNLOCK(in6p);
 				break;
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(IPSEC_SUPPORT)
 			case IPV6_IPSEC_POLICY:
-			{
-				caddr_t req;
-				struct mbuf *m;
-
-				if ((error = soopt_getm(sopt, &m)) != 0) /* XXX */
+				if (IPSEC_ENABLED(ipv6)) {
+					error = IPSEC_PCBCTL(ipv6, in6p, sopt);
 					break;
-				if ((error = soopt_mcopyin(sopt, m)) != 0) /* XXX */
-					break;
-				req = mtod(m, caddr_t);
-				error = ipsec_set_policy(in6p, optname, req,
-				    m->m_len, (sopt->sopt_td != NULL) ?
-				    sopt->sopt_td->td_ucred : NULL);
-				m_freem(m);
-				break;
-			}
+				}
+				/* FALLTHROUGH */
 #endif /* IPSEC */
 
 			default:
@@ -1995,6 +2021,10 @@ do { \
 
 				case IPV6_AUTOFLOWLABEL:
 					optval = OPTBIT(IN6P_AUTOFLOWLABEL);
+					break;
+
+				case IPV6_ORIGDSTADDR:
+					optval = OPTBIT2(INP_ORIGDSTADDR);
 					break;
 
 				case IPV6_BINDANY:
@@ -2114,37 +2144,14 @@ do { \
 				error = ip6_getmoptions(in6p, sopt);
 				break;
 
-#ifdef IPSEC
+#if defined(IPSEC) || defined(IPSEC_SUPPORT)
 			case IPV6_IPSEC_POLICY:
-			  {
-				caddr_t req = NULL;
-				size_t len = 0;
-				struct mbuf *m = NULL;
-				struct mbuf **mp = &m;
-				size_t ovalsize = sopt->sopt_valsize;
-				caddr_t oval = (caddr_t)sopt->sopt_val;
-
-				error = soopt_getm(sopt, &m); /* XXX */
-				if (error != 0)
+				if (IPSEC_ENABLED(ipv6)) {
+					error = IPSEC_PCBCTL(ipv6, in6p, sopt);
 					break;
-				error = soopt_mcopyin(sopt, m); /* XXX */
-				if (error != 0)
-					break;
-				sopt->sopt_valsize = ovalsize;
-				sopt->sopt_val = oval;
-				if (m) {
-					req = mtod(m, caddr_t);
-					len = m->m_len;
 				}
-				error = ipsec_get_policy(in6p, req, len, mp);
-				if (error == 0)
-					error = soopt_mcopyout(sopt, m); /* XXX */
-				if (error == 0 && m)
-					m_freem(m);
-				break;
-			  }
+				/* FALLTHROUGH */
 #endif /* IPSEC */
-
 			default:
 				error = ENOPROTOOPT;
 				break;

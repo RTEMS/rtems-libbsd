@@ -12,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -466,9 +466,12 @@ arpresolve_full(struct ifnet *ifp, int is_gw, int flags, struct mbuf *m,
 	if (la == NULL && (ifp->if_flags & (IFF_NOARP | IFF_STATICARP)) == 0) {
 		la = lltable_alloc_entry(LLTABLE(ifp), 0, dst);
 		if (la == NULL) {
+			char addrbuf[INET_ADDRSTRLEN];
+
 			log(LOG_DEBUG,
 			    "arpresolve: can't allocate llinfo for %s on %s\n",
-			    inet_ntoa(SIN(dst)->sin_addr), if_name(ifp));
+			    inet_ntoa_r(SIN(dst)->sin_addr, addrbuf),
+			    if_name(ifp));
 			m_freem(m);
 			return (EINVAL);
 		}
@@ -805,6 +808,7 @@ in_arpinput(struct mbuf *m)
 	size_t linkhdrsize;
 	int lladdr_off;
 	int error;
+	char addrbuf[INET_ADDRSTRLEN];
 
 	sin.sin_len = sizeof(struct sockaddr_in);
 	sin.sin_family = AF_INET;
@@ -929,7 +933,7 @@ match:
 		goto drop;	/* it's from me, ignore it. */
 	if (!bcmp(ar_sha(ah), ifp->if_broadcastaddr, ifp->if_addrlen)) {
 		ARP_LOG(LOG_NOTICE, "link address is broadcast for IP address "
-		    "%s!\n", inet_ntoa(isaddr));
+		    "%s!\n", inet_ntoa_r(isaddr, addrbuf));
 		goto drop;
 	}
 
@@ -951,7 +955,7 @@ match:
 	    myaddr.s_addr != 0) {
 		ARP_LOG(LOG_ERR, "%*D is using my IP address %s on %s!\n",
 		   ifp->if_addrlen, (u_char *)ar_sha(ah), ":",
-		   inet_ntoa(isaddr), ifp->if_xname);
+		   inet_ntoa_r(isaddr, addrbuf), ifp->if_xname);
 		itaddr = myaddr;
 		ARPSTAT_INC(dupips);
 		goto reply;
@@ -1088,12 +1092,14 @@ reply:
 			if (nh4.nh_ifp != ifp) {
 				ARP_LOG(LOG_INFO, "proxy: ignoring request"
 				    " from %s via %s\n",
-				    inet_ntoa(isaddr), ifp->if_xname);
+				    inet_ntoa_r(isaddr, addrbuf),
+				    ifp->if_xname);
 				goto drop;
 			}
 
 #ifdef DEBUG_PROXY
-			printf("arp: proxying for %s\n", inet_ntoa(itaddr));
+			printf("arp: proxying for %s\n",
+			    inet_ntoa_r(itaddr, addrbuf));
 #endif
 		}
 	}
@@ -1103,7 +1109,7 @@ reply:
 		/* RFC 3927 link-local IPv4; always reply by broadcast. */
 #ifdef DEBUG_LINKLOCAL
 		printf("arp: sending reply for link-local addr %s\n",
-		    inet_ntoa(itaddr));
+		    inet_ntoa_r(itaddr, addrbuf));
 #endif
 		m->m_flags |= M_BCAST;
 		m->m_flags &= ~M_MCAST;
@@ -1164,6 +1170,7 @@ arp_check_update_lle(struct arphdr *ah, struct in_addr isaddr, struct ifnet *ifp
 	uint8_t linkhdr[LLE_MAX_LINKHDR];
 	size_t linkhdrsize;
 	int lladdr_off;
+	char addrbuf[INET_ADDRSTRLEN];
 
 	LLE_WLOCK_ASSERT(la);
 
@@ -1172,7 +1179,7 @@ arp_check_update_lle(struct arphdr *ah, struct in_addr isaddr, struct ifnet *ifp
 		if (log_arp_wrong_iface)
 			ARP_LOG(LOG_WARNING, "%s is on %s "
 			    "but got reply from %*D on %s\n",
-			    inet_ntoa(isaddr),
+			    inet_ntoa_r(isaddr, addrbuf),
 			    la->lle_tbl->llt_ifp->if_xname,
 			    ifp->if_addrlen, (u_char *)ar_sha(ah), ":",
 			    ifp->if_xname);
@@ -1189,15 +1196,16 @@ arp_check_update_lle(struct arphdr *ah, struct in_addr isaddr, struct ifnet *ifp
 				    "permanent entry for %s on %s\n",
 				    ifp->if_addrlen,
 				    (u_char *)ar_sha(ah), ":",
-				    inet_ntoa(isaddr), ifp->if_xname);
+				    inet_ntoa_r(isaddr, addrbuf),
+				    ifp->if_xname);
 			return;
 		}
 		if (log_arp_movements) {
 			ARP_LOG(LOG_INFO, "%s moved from %*D "
 			    "to %*D on %s\n",
-			    inet_ntoa(isaddr),
+			    inet_ntoa_r(isaddr, addrbuf),
 			    ifp->if_addrlen,
-			    (u_char *)&la->ll_addr, ":",
+			    (u_char *)la->ll_addr, ":",
 			    ifp->if_addrlen, (u_char *)ar_sha(ah), ":",
 			    ifp->if_xname);
 		}

@@ -96,3 +96,7 @@ struct kobjop_desc pcib_decode_rid_desc = {
 	0, { &pcib_decode_rid_desc, (kobjop_t)pcib_decode_rid }
 };
 
+struct kobjop_desc pcib_request_feature_desc = {
+	0, { &pcib_request_feature_desc, (kobjop_t)kobj_error_method }
+};
+

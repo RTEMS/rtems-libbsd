@@ -25,6 +25,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_ratelimit.h>
 
 #include <rtems/bsd/sys/param.h>
 #include <sys/kernel.h>
@@ -120,6 +121,11 @@ static void	lagg_port2req(struct lagg_port *, struct lagg_reqport *);
 static void	lagg_init(void *);
 static void	lagg_stop(struct lagg_softc *);
 static int	lagg_ioctl(struct ifnet *, u_long, caddr_t);
+#ifdef RATELIMIT
+static int	lagg_snd_tag_alloc(struct ifnet *,
+		    union if_snd_tag_alloc_params *,
+		    struct m_snd_tag **);
+#endif
 static int	lagg_ether_setmulti(struct lagg_softc *);
 static int	lagg_ether_cmdmulti(struct lagg_port *, int);
 static	int	lagg_setflag(struct lagg_port *, int, int,
@@ -505,7 +511,12 @@ lagg_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	ifp->if_ioctl = lagg_ioctl;
 	ifp->if_get_counter = lagg_get_counter;
 	ifp->if_flags = IFF_SIMPLEX | IFF_BROADCAST | IFF_MULTICAST;
+#ifdef RATELIMIT
+	ifp->if_snd_tag_alloc = lagg_snd_tag_alloc;
+	ifp->if_capenable = ifp->if_capabilities = IFCAP_HWSTATS | IFCAP_TXRTLMT;
+#else
 	ifp->if_capenable = ifp->if_capabilities = IFCAP_HWSTATS;
+#endif
 
 	/*
 	 * Attach as an ordinary ethernet device, children will be attached
@@ -541,12 +552,15 @@ lagg_clone_destroy(struct ifnet *ifp)
 	EVENTHANDLER_DEREGISTER(vlan_unconfig, sc->vlan_detach);
 
 	/* Shutdown and remove lagg ports */
-	while ((lp = SLIST_FIRST(&sc->sc_ports)) != NULL)
+	while ((lp = SLIST_FIRST(&sc->sc_ports)) != NULL) {
+		lp->lp_detaching = LAGG_CLONE_DESTROY;
 		lagg_port_destroy(lp, 1);
+	}
 	/* Unhook the aggregation protocol */
 	lagg_proto_detach(sc);
 	LAGG_UNLOCK_ASSERT(sc);
 
+	taskqueue_drain(taskqueue_swi, &sc->sc_lladdr_task);
 	ifmedia_removeall(&sc->sc_media);
 	ether_ifdetach(ifp);
 	if_free(ifp);
@@ -555,7 +569,6 @@ lagg_clone_destroy(struct ifnet *ifp)
 	SLIST_REMOVE(&V_lagg_list, sc, lagg_softc, sc_entries);
 	LAGG_LIST_UNLOCK();
 
-	taskqueue_drain(taskqueue_swi, &sc->sc_lladdr_task);
 	LAGG_LOCK_DESTROY(sc);
 	free(sc, M_DEVBUF);
 }
@@ -893,7 +906,7 @@ lagg_port_destroy(struct lagg_port *lp, int rundelport)
 	 * Remove multicast addresses and interface flags from this port and
 	 * reset the MAC address, skip if the interface is being detached.
 	 */
-	if (!lp->lp_detaching) {
+	if (lp->lp_detaching == 0) {
 		lagg_ether_cmdmulti(lp, 0);
 		lagg_setflags(lp, 0);
 		lagg_port_lladdr(lp, lp->lp_lladdr, LAGG_LLQTYPE_PHYS);
@@ -926,7 +939,8 @@ lagg_port_destroy(struct lagg_port *lp, int rundelport)
 			bcopy(lp0->lp_lladdr,
 			    lladdr, ETHER_ADDR_LEN);
 		}
-		lagg_lladdr(sc, lladdr);
+		if (lp->lp_detaching != LAGG_CLONE_DESTROY)
+			lagg_lladdr(sc, lladdr);
 
 		/* Mark lp0 as new primary */
 		sc->sc_primary = lp0;
@@ -941,7 +955,7 @@ lagg_port_destroy(struct lagg_port *lp, int rundelport)
 	}
 
 	/* Remove any pending lladdr changes from the queue */
-	if (lp->lp_detaching) {
+	if (lp->lp_detaching != 0) {
 		SLIST_FOREACH(llq, &sc->sc_llq_head, llq_entries) {
 			if (llq->llq_ifp == ifp) {
 				SLIST_REMOVE(&sc->sc_llq_head, llq, lagg_llq,
@@ -1120,7 +1134,7 @@ lagg_port_ifdetach(void *arg __unused, struct ifnet *ifp)
 	sc = lp->lp_softc;
 
 	LAGG_WLOCK(sc);
-	lp->lp_detaching = 1;
+	lp->lp_detaching = LAGG_PORT_DETACH;
 	lagg_port_destroy(lp, 1);
 	LAGG_WUNLOCK(sc);
 }
@@ -1551,6 +1565,52 @@ lagg_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	return (error);
 }
 
+#ifdef RATELIMIT
+static int
+lagg_snd_tag_alloc(struct ifnet *ifp,
+    union if_snd_tag_alloc_params *params,
+    struct m_snd_tag **ppmt)
+{
+	struct lagg_softc *sc = (struct lagg_softc *)ifp->if_softc;
+	struct lagg_port *lp;
+	struct lagg_lb *lb;
+	uint32_t p;
+
+	switch (sc->sc_proto) {
+	case LAGG_PROTO_FAILOVER:
+		lp = lagg_link_active(sc, sc->sc_primary);
+		break;
+	case LAGG_PROTO_LOADBALANCE:
+		if ((sc->sc_opts & LAGG_OPT_USE_FLOWID) == 0 ||
+		    params->hdr.flowtype == M_HASHTYPE_NONE)
+			return (EOPNOTSUPP);
+		p = params->hdr.flowid >> sc->flowid_shift;
+		p %= sc->sc_count;
+		lb = (struct lagg_lb *)sc->sc_psc;
+		lp = lb->lb_ports[p];
+		lp = lagg_link_active(sc, lp);
+		break;
+	case LAGG_PROTO_LACP:
+		if ((sc->sc_opts & LAGG_OPT_USE_FLOWID) == 0 ||
+		    params->hdr.flowtype == M_HASHTYPE_NONE)
+			return (EOPNOTSUPP);
+		lp = lacp_select_tx_port_by_hash(sc, params->hdr.flowid);
+		break;
+	default:
+		return (EOPNOTSUPP);
+	}
+	if (lp == NULL)
+		return (EOPNOTSUPP);
+	ifp = lp->lp_ifp;
+	if (ifp == NULL || ifp->if_snd_tag_alloc == NULL ||
+	    (ifp->if_capenable & IFCAP_TXRTLMT) == 0)
+		return (EOPNOTSUPP);
+
+	/* forward allocation request */
+	return (ifp->if_snd_tag_alloc(ifp, params, ppmt));
+}
+#endif
+
 static int
 lagg_ether_setmulti(struct lagg_softc *sc)
 {
@@ -1605,7 +1665,7 @@ lagg_ether_cmdmulti(struct lagg_port *lp, int set)
 	} else {
 		while ((mc = SLIST_FIRST(&lp->lp_mc_head)) != NULL) {
 			SLIST_REMOVE(&lp->lp_mc_head, mc, lagg_mc, mc_entries);
-			if (mc->mc_ifma && !lp->lp_detaching)
+			if (mc->mc_ifma && lp->lp_detaching == 0)
 				if_delmulti_ifma(mc->mc_ifma);
 			free(mc, M_DEVBUF);
 		}

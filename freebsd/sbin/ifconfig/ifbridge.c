@@ -221,7 +221,7 @@ bridge_interfaces(int s, const char *prefix)
 		}
 		printf("\n");
 	}
-
+	free(pad);
 	free(inbuf);
 }
 

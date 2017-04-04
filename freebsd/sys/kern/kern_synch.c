@@ -68,13 +68,6 @@ __FBSDID("$FreeBSD$");
 
 #include <machine/cpu.h>
 
-#define	KTDSTATE(td)							\
-	(((td)->td_inhibitors & TDI_SLEEPING) != 0 ? "sleep"  :		\
-	((td)->td_inhibitors & TDI_SUSPENDED) != 0 ? "suspended" :	\
-	((td)->td_inhibitors & TDI_SWAPPED) != 0 ? "swapped" :		\
-	((td)->td_inhibitors & TDI_LOCK) != 0 ? "blocked" :		\
-	((td)->td_inhibitors & TDI_IWAIT) != 0 ? "iwait" : "yielding")
-
 #ifndef __rtems__
 static void synch_setup(void *dummy);
 SYSINIT(synch_setup, SI_SUB_KICK_SCHEDULER, SI_ORDER_FIRST, synch_setup,
@@ -164,11 +157,9 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	    "Sleeping on \"%s\"", wmesg);
 	KASSERT(sbt != 0 || mtx_owned(&Giant) || lock != NULL,
 	    ("sleeping without a lock"));
+	KASSERT(ident != NULL, ("_sleep: NULL ident"));
 #ifndef __rtems__
-	KASSERT(p != NULL, ("msleep1"));
-#endif /* __rtems__ */
-	KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
-#ifndef __rtems__
+	KASSERT(TD_IS_RUNNING(td), ("_sleep: curthread not running"));
 	if (priority & PDROP)
 		KASSERT(lock != NULL && lock != &Giant.lock_object,
 		    ("PDROP requires a non-Giant lock"));
@@ -179,7 +170,7 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 		class = NULL;
 
 #ifndef __rtems__
-	if (SCHEDULER_STOPPED()) {
+	if (SCHEDULER_STOPPED_TD(td)) {
 		if (lock != NULL && priority & PDROP)
 			class->lc_unlock(lock);
 		return (0);
@@ -277,10 +268,10 @@ msleep_spin_sbt(void *ident, struct mtx *mtx, const char *wmesg,
 	td = curthread;
 	p = td->td_proc;
 	KASSERT(mtx != NULL, ("sleeping without a mutex"));
-	KASSERT(p != NULL, ("msleep1"));
-	KASSERT(ident != NULL && TD_IS_RUNNING(td), ("msleep"));
+	KASSERT(ident != NULL, ("msleep_spin_sbt: NULL ident"));
+	KASSERT(TD_IS_RUNNING(td), ("msleep_spin_sbt: curthread not running"));
 
-	if (SCHEDULER_STOPPED())
+	if (SCHEDULER_STOPPED_TD(td))
 		return (0);
 
 	sleepq_lock(ident);
@@ -447,7 +438,7 @@ mi_switch(int flags, struct thread *newtd)
 	 */
 	if (kdb_active)
 		kdb_switch();
-	if (SCHEDULER_STOPPED())
+	if (SCHEDULER_STOPPED_TD(td))
 		return;
 	if (flags & SW_VOL) {
 		td->td_ru.ru_nvcsw++;
@@ -473,20 +464,12 @@ mi_switch(int flags, struct thread *newtd)
 	PCPU_SET(switchticks, ticks);
 	CTR4(KTR_PROC, "mi_switch: old thread %ld (td_sched %p, pid %ld, %s)",
 	    td->td_tid, td_get_sched(td), td->td_proc->p_pid, td->td_name);
-#if (KTR_COMPILE & KTR_SCHED) != 0
-	if (TD_IS_IDLETHREAD(td))
-		KTR_STATE1(KTR_SCHED, "thread", sched_tdname(td), "idle",
-		    "prio:%d", td->td_priority);
-	else
-		KTR_STATE3(KTR_SCHED, "thread", sched_tdname(td), KTDSTATE(td),
-		    "prio:%d", td->td_priority, "wmesg:\"%s\"", td->td_wmesg,
-		    "lockname:\"%s\"", td->td_lockname);
+#ifdef KDTRACE_HOOKS
+	if ((flags & SW_PREEMPT) != 0 || ((flags & SW_INVOL) != 0 &&
+	    (flags & SW_TYPE_MASK) == SWT_NEEDRESCHED))
+		SDT_PROBE0(sched, , , preempt);
 #endif
-	SDT_PROBE0(sched, , , preempt);
 	sched_switch(td, newtd, flags);
-	KTR_STATE1(KTR_SCHED, "thread", sched_tdname(td), "running",
-	    "prio:%d", td->td_priority);
-
 	CTR4(KTR_PROC, "mi_switch: new thread %ld (td_sched %p, pid %ld, %s)",
 	    td->td_tid, td_get_sched(td), td->td_proc->p_pid, td->td_name);
 

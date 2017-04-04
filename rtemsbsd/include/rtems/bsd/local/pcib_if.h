@@ -214,4 +214,18 @@ static __inline void PCIB_DECODE_RID(device_t pcib, uint16_t rid, int *bus,
 	((pcib_decode_rid_t *) _m)(pcib, rid, bus, slot, func);
 }
 
+/** @brief Unique descriptor for the PCIB_REQUEST_FEATURE() method */
+extern struct kobjop_desc pcib_request_feature_desc;
+/** @brief A function implementing the PCIB_REQUEST_FEATURE() method */
+typedef int pcib_request_feature_t(device_t pcib, device_t dev,
+                                   enum pci_feature feature);
+
+static __inline int PCIB_REQUEST_FEATURE(device_t pcib, device_t dev,
+                                         enum pci_feature feature)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_request_feature);
+	return ((pcib_request_feature_t *) _m)(pcib, dev, feature);
+}
+
 #endif /* _pcib_if_h_ */

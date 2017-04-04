@@ -97,7 +97,6 @@ rtwn_pci_rx_frame(struct rtwn_softc *sc, struct r92ce_rx_stat *rx_desc,
 	struct ieee80211_node *ni;
 	uint32_t rxdw0;
 	struct mbuf *m, *m1;
-	int8_t rssi = 0, nf;
 	int infosz, pktlen, shift, error;
 
 	/* Dump Rx descriptor. */
@@ -164,12 +163,11 @@ rtwn_pci_rx_frame(struct rtwn_softc *sc, struct r92ce_rx_stat *rx_desc,
 	rx_data->m = m1;
 	m->m_pkthdr.len = m->m_len = pktlen + infosz + shift;
 
-	nf = RTWN_NOISE_FLOOR;
-	ni = rtwn_rx_common(sc, m, rx_desc, &rssi);
+	ni = rtwn_rx_common(sc, m, rx_desc);
 
 	RTWN_DPRINTF(sc, RTWN_DEBUG_RECV,
-	    "%s: Rx frame len %d, infosz %d, shift %d, rssi %d\n",
-	    __func__, pktlen, infosz, shift, rssi);
+	    "%s: Rx frame len %d, infosz %d, shift %d\n",
+	    __func__, pktlen, infosz, shift);
 
 	/* Update RX descriptor. */
 	rtwn_pci_setup_rx_desc(pc, rx_desc, rx_data->paddr, MJUMPAGESIZE,
@@ -178,11 +176,11 @@ rtwn_pci_rx_frame(struct rtwn_softc *sc, struct r92ce_rx_stat *rx_desc,
 	/* Send the frame to the 802.11 layer. */
 	RTWN_UNLOCK(sc);
 	if (ni != NULL) {
-		(void)ieee80211_input(ni, m, rssi - nf, nf);
+		(void)ieee80211_input_mimo(ni, m);
 		/* Node is no longer needed. */
 		ieee80211_free_node(ni);
 	} else
-		(void)ieee80211_input_all(ic, m, rssi - nf, nf);
+		(void)ieee80211_input_mimo_all(ic, m);
 
 	RTWN_LOCK(sc);
 
@@ -284,17 +282,6 @@ rtwn_pci_rx_done(struct rtwn_softc *sc)
 
 		ring->cur = (ring->cur + 1) % RTWN_PCI_RX_LIST_COUNT;
 	}
-
-	/* Finished receive; age anything left on the FF queue by a little bump */
-	/*
-	 * XXX TODO: just make this a callout timer schedule so we can
-	 * flush the FF staging queue if we're approaching idle.
-	 */
-#ifdef  IEEE80211_SUPPORT_SUPERG
-	if (!(sc->sc_flags & RTWN_FW_LOADED) ||
-	    sc->sc_ratectl != RTWN_RATECTL_NET80211)
-		rtwn_cmd_sleepable(sc, NULL, 0, rtwn_ff_flush_all);
-#endif
 }
 
 void

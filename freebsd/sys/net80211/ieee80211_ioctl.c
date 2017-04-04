@@ -1138,6 +1138,13 @@ ieee80211_ioctl_get80211(struct ieee80211vap *vap, u_long cmd,
 		if (vap->iv_flags_ht & IEEE80211_FHT_STBC_RX)
 			ireq->i_val |= 2;
 		break;
+	case IEEE80211_IOC_LDPC:
+		ireq->i_val = 0;
+		if (vap->iv_flags_ht & IEEE80211_FHT_LDPC_TX)
+			ireq->i_val |= 1;
+		if (vap->iv_flags_ht & IEEE80211_FHT_LDPC_RX)
+			ireq->i_val |= 2;
+		break;
 
 	/* VHT */
 	case IEEE80211_IOC_VHTCONF:
@@ -2221,13 +2228,19 @@ checkrate(const struct ieee80211_rateset *rs, int rate)
 }
 
 static int
-checkmcs(int mcs)
+checkmcs(const struct ieee80211_htrateset *rs, int mcs)
 {
+	int rate_val = IEEE80211_RV(mcs);
+	int i;
+
 	if (mcs == IEEE80211_FIXED_RATE_NONE)
 		return 1;
 	if ((mcs & IEEE80211_RATE_MCS) == 0)	/* MCS always have 0x80 set */
 		return 0;
-	return (mcs & 0x7f) <= 15;	/* XXX could search ht rate set */
+	for (i = 0; i < rs->rs_nrates; i++)
+		if (IEEE80211_RV(rs->rs_rates[i]) == rate_val)
+			return 1;
+	return 0;
 }
 
 static int
@@ -2237,6 +2250,7 @@ ieee80211_ioctl_settxparams(struct ieee80211vap *vap,
 	struct ieee80211com *ic = vap->iv_ic;
 	struct ieee80211_txparams_req parms;	/* XXX stack use? */
 	struct ieee80211_txparam *src, *dst;
+	const struct ieee80211_htrateset *rs_ht;
 	const struct ieee80211_rateset *rs;
 	int error, mode, changed, is11n, nmodes;
 
@@ -2255,23 +2269,24 @@ ieee80211_ioctl_settxparams(struct ieee80211vap *vap,
 		src = &parms.params[mode];
 		dst = &vap->iv_txparms[mode];
 		rs = &ic->ic_sup_rates[mode];	/* NB: 11n maps to legacy */
+		rs_ht = &ic->ic_sup_htrates;
 		is11n = (mode == IEEE80211_MODE_11NA ||
 			 mode == IEEE80211_MODE_11NG);
 		if (src->ucastrate != dst->ucastrate) {
 			if (!checkrate(rs, src->ucastrate) &&
-			    (!is11n || !checkmcs(src->ucastrate)))
+			    (!is11n || !checkmcs(rs_ht, src->ucastrate)))
 				return EINVAL;
 			changed++;
 		}
 		if (src->mcastrate != dst->mcastrate) {
 			if (!checkrate(rs, src->mcastrate) &&
-			    (!is11n || !checkmcs(src->mcastrate)))
+			    (!is11n || !checkmcs(rs_ht, src->mcastrate)))
 				return EINVAL;
 			changed++;
 		}
 		if (src->mgmtrate != dst->mgmtrate) {
 			if (!checkrate(rs, src->mgmtrate) &&
-			    (!is11n || !checkmcs(src->mgmtrate)))
+			    (!is11n || !checkmcs(rs_ht, src->mgmtrate)))
 				return EINVAL;
 			changed++;
 		}
@@ -3369,6 +3384,31 @@ ieee80211_ioctl_set80211(struct ieee80211vap *vap, u_long cmd, struct ieee80211r
 			vap->iv_flags_ht |= IEEE80211_FHT_STBC_RX;
 		else
 			vap->iv_flags_ht &= ~IEEE80211_FHT_STBC_RX;
+
+		/* NB: reset only if we're operating on an 11n channel */
+		if (isvapht(vap))
+			error = ERESTART;
+		break;
+	case IEEE80211_IOC_LDPC:
+		/* Check if we can do LDPC TX/RX before changing the setting */
+		if ((ireq->i_val & 1) &&
+		    (vap->iv_htcaps & IEEE80211_HTC_TXLDPC) == 0)
+			return EOPNOTSUPP;
+		if ((ireq->i_val & 2) &&
+		    (vap->iv_htcaps & IEEE80211_HTCAP_LDPC) == 0)
+			return EOPNOTSUPP;
+
+		/* TX */
+		if (ireq->i_val & 1)
+			vap->iv_flags_ht |= IEEE80211_FHT_LDPC_TX;
+		else
+			vap->iv_flags_ht &= ~IEEE80211_FHT_LDPC_TX;
+
+		/* RX */
+		if (ireq->i_val & 2)
+			vap->iv_flags_ht |= IEEE80211_FHT_LDPC_RX;
+		else
+			vap->iv_flags_ht &= ~IEEE80211_FHT_LDPC_RX;
 
 		/* NB: reset only if we're operating on an 11n channel */
 		if (isvapht(vap))

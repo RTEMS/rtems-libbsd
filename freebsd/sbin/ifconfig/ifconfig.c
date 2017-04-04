@@ -16,7 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -1221,7 +1221,7 @@ unsetifdescr(const char *val, int value, int s, const struct afswtch *afp)
 "\020\1RXCSUM\2TXCSUM\3NETCONS\4VLAN_MTU\5VLAN_HWTAGGING\6JUMBO_MTU\7POLLING" \
 "\10VLAN_HWCSUM\11TSO4\12TSO6\13LRO\14WOL_UCAST\15WOL_MCAST\16WOL_MAGIC" \
 "\17TOE4\20TOE6\21VLAN_HWFILTER\23VLAN_HWTSO\24LINKSTATE\25NETMAP" \
-"\26RXCSUM_IPV6\27TXCSUM_IPV6"
+"\26RXCSUM_IPV6\27TXCSUM_IPV6\31TXRTLMT"
 
 /*
  * Print the status of the interface.  If an address family was
@@ -1535,6 +1535,8 @@ static struct cmd basic_cmds[] = {
 	DEF_CMD("-wol_mcast",	-IFCAP_WOL_MCAST,	setifcap),
 	DEF_CMD("wol_magic",	IFCAP_WOL_MAGIC,	setifcap),
 	DEF_CMD("-wol_magic",	-IFCAP_WOL_MAGIC,	setifcap),
+	DEF_CMD("txrtlmt",	IFCAP_TXRTLMT,	setifcap),
+	DEF_CMD("-txrtlmt",	-IFCAP_TXRTLMT,	setifcap),
 	DEF_CMD("normal",	-IFF_LINK0,	setifflags),
 	DEF_CMD("compress",	IFF_LINK0,	setifflags),
 	DEF_CMD("noicmp",	IFF_LINK1,	setifflags),

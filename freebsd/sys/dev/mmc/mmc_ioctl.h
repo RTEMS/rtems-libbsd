@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1982, 1986, 1988, 1993
- *      The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 2017 Marius Strobl <marius@FreeBSD.org>
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,14 +10,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -29,14 +26,39 @@
  * $FreeBSD$
  */
 
-#ifndef _NETINET_IP6_IPSEC_H_
-#define _NETINET_IP6_IPSEC_H_
+#ifndef _DEV_MMC_MMC_IOCTL_H_
+#define	_DEV_MMC_MMC_IOCTL_H_
 
-int	ip6_ipsec_filtertunnel(struct mbuf *);
-int	ip6_ipsec_fwd(struct mbuf *);
-int	ip6_ipsec_input(struct mbuf *, int);
-int	ip6_ipsec_output(struct mbuf **, struct inpcb *, int *);
-#if 0
-int	ip6_ipsec_mtu(struct mbuf *);
-#endif
-#endif
+struct mmc_ioc_cmd {
+	int		write_flag; /* 0: RD, 1: WR, (1 << 31): reliable WR */
+	int		is_acmd;    /* 0: normal, 1: use CMD55 */
+	uint32_t	opcode;
+	uint32_t	arg;
+	uint32_t	response[4];
+	u_int		flags;
+	u_int		blksz;
+	u_int		blocks;
+	u_int		__spare[4];
+	uint32_t	__pad;
+	uint64_t	data_ptr;
+};
+
+#define	mmc_ioc_cmd_set_data(mic, ptr)					\
+    (mic).data_ptr = (uint64_t)(uintptr_t)(ptr)
+
+struct mmc_ioc_multi_cmd {
+	uint64_t		num_of_cmds;
+	struct mmc_ioc_cmd	cmds[0];
+};
+
+#define	MMC_IOC_BASE		'M'
+
+#define	MMC_IOC_CMD		_IOWR(MMC_IOC_BASE, 0, struct mmc_ioc_cmd)
+#define	MMC_IOC_CMD_MULTI	_IOWR(MMC_IOC_BASE, 1, struct mmc_ioc_multi_cmd)
+
+/* Maximum accepted data transfer size */
+#define	MMC_IOC_MAX_BYTES	(512  * 256)
+/* Maximum accepted number of commands */
+#define	MMC_IOC_MAX_CMDS	255
+
+#endif /* _DEV_MMC_MMC_IOCTL_H_ */

@@ -52,6 +52,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/eventhandler.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/pfil.h>
 #include <net/vnet.h>
 
 #include <netinet/in.h>

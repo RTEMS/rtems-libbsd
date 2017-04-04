@@ -1345,9 +1345,12 @@ again:
 	if (cc_exec_curr(cc, direct) == c) {
 		/*
 		 * Succeed we to stop it or not, we must clear the
-		 * active flag - this is what API users expect.
+		 * active flag - this is what API users expect.  If we're
+		 * draining and the callout is currently executing, first wait
+		 * until it finishes.
 		 */
-		c->c_flags &= ~CALLOUT_ACTIVE;
+		if ((flags & CS_DRAIN) == 0)
+			c->c_flags &= ~CALLOUT_ACTIVE;
 
 		if ((flags & CS_DRAIN) != 0) {
 			/*
@@ -1419,6 +1422,7 @@ again:
 				    &cc->cc_lock, "codrain", 0);
 #endif /* __rtems__ */
 			}
+			c->c_flags &= ~CALLOUT_ACTIVE;
 		} else if (use_lock &&
 			   !cc_exec_cancel(cc, direct) && (drain == NULL)) {
 			

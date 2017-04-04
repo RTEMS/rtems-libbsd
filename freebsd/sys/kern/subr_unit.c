@@ -218,7 +218,7 @@ ub_full(struct unrb *ub, int len)
  * Consistency check function.
  *
  * Checks the internal consistency as well as we can.
- * 
+ *
  * Called at all boundaries of this API.
  */
 static void
@@ -242,7 +242,7 @@ check_unrhdr(struct unrhdr *uh, int line)
 			w = 0;
 			bit_count(ub->map, 0, up->len, &w);
 			y += w;
-		} else if (up->ptr != NULL) 
+		} else if (up->ptr != NULL)
 			y += up->len;
 	}
 	KASSERT (y == uh->busy,
@@ -377,7 +377,7 @@ is_bitmap(struct unrhdr *uh, struct unr *up)
 /*
  * Look for sequence of items which can be combined into a bitmap, if
  * multiple are present, take the one which saves most memory.
- * 
+ *
  * Return (1) if a sequence was found to indicate that another call
  * might be able to do more.  Return (0) if we found no suitable sequence.
  *
@@ -593,7 +593,7 @@ alloc_unrl(struct unrhdr *uh)
 	}
 
 	/*
-	 * We can always allocate from the first list element, so if we have 
+	 * We can always allocate from the first list element, so if we have
 	 * nothing on the list, we must have run out of unit numbers.
 	 */
 	if (up == NULL)
@@ -805,7 +805,7 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 	/* Handle bitmap items */
 	if (is_bitmap(uh, up)) {
 		ub = up->ptr;
-		
+
 		KASSERT(bit_test(ub->map, item) != 0,
 		    ("UNR: Freeing free item %d (bitmap)\n", item));
 		bit_clear(ub->map, item);
@@ -911,7 +911,7 @@ print_unr(struct unrhdr *uh, struct unr *up)
 		for (x = 0; x < up->len; x++) {
 			if (bit_test(ub->map, x))
 				printf("#");
-			else 
+			else
 				printf(" ");
 		}
 		printf("]\n");
@@ -988,7 +988,7 @@ main(int argc, char **argv)
 	long count = 10000;	/* Number of unrs to test */
 	long reps = 1, m;
 	int ch;
-	u_int i, x, j;
+	u_int i, j;
 
 	verbose = false;
 
@@ -1001,7 +1001,7 @@ main(int argc, char **argv)
 				usage(argv);
 				exit(2);
 			}
-			
+
 			break;
 		case 'v':
 			verbose = true;
@@ -1028,7 +1028,6 @@ main(int argc, char **argv)
 	printf("sizeof(struct unrb) %zu\n", sizeof(struct unrb));
 	printf("sizeof(struct unrhdr) %zu\n", sizeof(struct unrhdr));
 	printf("NBITS %lu\n", (unsigned long)NBITS);
-	x = 1;
 	for (m = 0; m < count * reps; m++) {
 		j = random();
 		i = (j >> 1) % count;

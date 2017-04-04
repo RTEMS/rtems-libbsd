@@ -17,13 +17,24 @@
 #include <sys/kernel.h>
 #include <sys/kobj.h>
 #include <sys/types.h>
-#include <sys/bus.h>
 #include <dev/mmc/bridge.h>
 #include <dev/mmc/mmcreg.h>
 #include <rtems/bsd/local/mmcbr_if.h>
 
+
+static int
+null_switch_vccq(device_t brdev __unused, device_t reqdev __unused)
+{
+
+	return (0);
+}
+
 struct kobjop_desc mmcbr_update_ios_desc = {
 	0, { &mmcbr_update_ios_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc mmcbr_switch_vccq_desc = {
+	0, { &mmcbr_switch_vccq_desc, (kobjop_t)null_switch_vccq }
 };
 
 struct kobjop_desc mmcbr_request_desc = {

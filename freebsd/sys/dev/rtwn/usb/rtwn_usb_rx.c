@@ -238,7 +238,7 @@ rtwn_report_intr(struct rtwn_usb_softc *uc, struct usb_xfer *xfer,
 }
 
 static struct ieee80211_node *
-rtwn_rx_frame(struct rtwn_softc *sc, struct mbuf *m, int8_t *rssi)
+rtwn_rx_frame(struct rtwn_softc *sc, struct mbuf *m)
 {
 	struct r92c_rx_stat stat;
 
@@ -246,7 +246,7 @@ rtwn_rx_frame(struct rtwn_softc *sc, struct mbuf *m, int8_t *rssi)
 	m_copydata(m, 0, sizeof(struct r92c_rx_stat), (caddr_t)&stat);
 	m_adj(m, sizeof(struct r92c_rx_stat));
 
-	return (rtwn_rx_common(sc, m, &stat, rssi));
+	return (rtwn_rx_common(sc, m, &stat));
 }
 
 void
@@ -258,7 +258,6 @@ rtwn_bulk_rx_callback(struct usb_xfer *xfer, usb_error_t error)
 	struct ieee80211_node *ni;
 	struct mbuf *m = NULL, *next;
 	struct rtwn_data *data;
-	int8_t nf, rssi;
 
 	RTWN_ASSERT_LOCKED(sc);
 
@@ -293,19 +292,15 @@ tr_setup:
 			next = m->m_next;
 			m->m_next = NULL;
 
-			ni = rtwn_rx_frame(sc, m, &rssi);
+			ni = rtwn_rx_frame(sc, m);
 
 			RTWN_UNLOCK(sc);
 
-			nf = RTWN_NOISE_FLOOR;
 			if (ni != NULL) {
-				if (ni->ni_flags & IEEE80211_NODE_HT)
-					m->m_flags |= M_AMPDU;
-				(void)ieee80211_input(ni, m, rssi - nf, nf);
+				(void)ieee80211_input_mimo(ni, m);
 				ieee80211_free_node(ni);
 			} else {
-				(void)ieee80211_input_all(ic, m,
-				    rssi - nf, nf);
+				(void)ieee80211_input_mimo_all(ic, m);
 			}
 			RTWN_LOCK(sc);
 			m = next;
@@ -326,17 +321,6 @@ tr_setup:
 		break;
 	}
 finish:
-	/* Finished receive; age anything left on the FF queue by a little bump */
-	/*
-	 * XXX TODO: just make this a callout timer schedule so we can
-	 * flush the FF staging queue if we're approaching idle.
-	 */
-#ifdef	IEEE80211_SUPPORT_SUPERG
-	if (!(sc->sc_flags & RTWN_FW_LOADED) ||
-	    sc->sc_ratectl != RTWN_RATECTL_NET80211)
-		rtwn_cmd_sleepable(sc, NULL, 0, rtwn_ff_flush_all);
-#endif
-
 	/* Kick-start more transmit in case we stalled */
 	rtwn_start(sc);
 }

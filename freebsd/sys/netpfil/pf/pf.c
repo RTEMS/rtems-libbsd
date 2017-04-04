@@ -131,6 +131,8 @@ VNET_DEFINE(int,			 pf_tcp_secret_init);
 #define	V_pf_tcp_secret_init		 VNET(pf_tcp_secret_init)
 VNET_DEFINE(int,			 pf_tcp_iss_off);
 #define	V_pf_tcp_iss_off		 VNET(pf_tcp_iss_off)
+VNET_DECLARE(int,			 pf_vnet_active);
+#define	V_pf_vnet_active		 VNET(pf_vnet_active)
 
 /*
  * Queue for pf_intr() sends.
@@ -302,6 +304,7 @@ static void		 pf_route6(struct mbuf **, struct pf_rule *, int,
 int in4_cksum(struct mbuf *m, u_int8_t nxt, int off, int len);
 
 extern int pf_end_threads;
+extern struct proc *pf_purge_proc;
 
 VNET_DEFINE(struct pf_limit, pf_limits[PF_LIMIT_MAX]);
 
@@ -1428,42 +1431,51 @@ pf_purge_thread(void *unused __unused)
 	VNET_ITERATOR_DECL(vnet_iter);
 	u_int idx = 0;
 
-	for (;;) {
-		PF_RULES_RLOCK();
-		rw_sleep(pf_purge_thread, &pf_rules_lock, 0, "pftm", hz / 10);
-		PF_RULES_RUNLOCK();
+	sx_xlock(&pf_end_lock);
+	while (pf_end_threads == 0) {
+		sx_sleep(pf_purge_thread, &pf_end_lock, 0, "pftm", hz / 10);
 
 		VNET_LIST_RLOCK();
 		VNET_FOREACH(vnet_iter) {
 			CURVNET_SET(vnet_iter);
 
-		if (pf_end_threads) {
-			pf_end_threads++;
-			wakeup(pf_purge_thread);
-			kproc_exit(0);
-		}
 
-		/* Process 1/interval fraction of the state table every run. */
-		idx = pf_purge_expired_states(idx, pf_hashmask /
+			/* Wait until V_pf_default_rule is initialized. */
+			if (V_pf_vnet_active == 0) {
+				CURVNET_RESTORE();
+				continue;
+			}
+
+			/*
+			 *  Process 1/interval fraction of the state
+			 * table every run.
+			 */
+			idx = pf_purge_expired_states(idx, pf_hashmask /
 			    (V_pf_default_rule.timeout[PFTM_INTERVAL] * 10));
 
-		/* Purge other expired types every PFTM_INTERVAL seconds. */
-		if (idx == 0) {
 			/*
-			 * Order is important:
-			 * - states and src nodes reference rules
-			 * - states and rules reference kifs
+			 * Purge other expired types every
+			 * PFTM_INTERVAL seconds.
 			 */
-			pf_purge_expired_fragments();
-			pf_purge_expired_src_nodes();
-			pf_purge_unlinked_rules();
-			pfi_kif_purge();
-		}
-		CURVNET_RESTORE();
+			if (idx == 0) {
+				/*
+				 * Order is important:
+				 * - states and src nodes reference rules
+				 * - states and rules reference kifs
+				 */
+				pf_purge_expired_fragments();
+				pf_purge_expired_src_nodes();
+				pf_purge_unlinked_rules();
+				pfi_kif_purge();
+			}
+			CURVNET_RESTORE();
 		}
 		VNET_LIST_RUNLOCK();
 	}
-	/* not reached */
+
+	pf_end_threads++;
+	sx_xunlock(&pf_end_lock);
+	kproc_exit(0);
 }
 
 void
@@ -3559,7 +3571,7 @@ pf_create_state(struct pf_rule *r, struct pf_rule *nr, struct pf_rule *a,
 	    (counter_u64_fetch(r->states_cur) >= r->max_states)) {
 		counter_u64_add(V_pf_status.lcounters[LCNT_STATES], 1);
 		REASON_SET(&reason, PFRES_MAXSTATES);
-		return (PF_DROP);
+		goto csfailed;
 	}
 	/* src node for filter rule */
 	if ((r->rule_flag & PFRULE_SRCTRACK ||
@@ -6243,6 +6255,9 @@ pf_test6(int dir, struct ifnet *ifp, struct mbuf **m0, struct inpcb *inp)
 	    (m->m_pkthdr.rcvif->if_bridge != ifp->if_softc &&
 	    m->m_pkthdr.rcvif->if_bridge != ifp->if_bridge)))
 		fwdir = PF_FWD;
+
+	if (dir == PF_FWD)
+		dir = PF_OUT;
 
 	if (!V_pf_status.running)
 		return (PF_PASS);

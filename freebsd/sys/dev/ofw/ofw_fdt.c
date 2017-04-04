@@ -432,6 +432,7 @@ ofw_fdt_package_to_path(ofw_t ofw, phandle_t package, char *buf, size_t len)
 	return (-1);
 }
 
+#ifndef __rtems__
 #if defined(FDT_MARVELL) || defined(__powerpc__)
 static int
 ofw_fdt_fixup(ofw_t ofw)
@@ -467,11 +468,13 @@ ofw_fdt_fixup(ofw_t ofw)
 	return (0);
 }
 #endif
+#endif /* __rtems__ */
 
 static int
 ofw_fdt_interpret(ofw_t ofw, const char *cmd, int nret, cell_t *retvals)
 {
 #if defined(FDT_MARVELL) || defined(__powerpc__)
+#ifndef __rtems__
 	int rv;
 
 	/*
@@ -490,6 +493,9 @@ ofw_fdt_interpret(ofw_t ofw, const char *cmd, int nret, cell_t *retvals)
 		retvals[0] = rv;
 
 	return (rv);
+#else /* __rtems__ */
+	return (0);
+#endif /* __rtems__ */
 #else
 	return (0);
 #endif

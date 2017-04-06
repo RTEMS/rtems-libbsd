@@ -558,6 +558,12 @@ class CPUDependentFreeBSDPathComposer(FreeBSDPathComposer):
         path = mapCPUDependentPath(path)
         return path
 
+class CPUDependentRTEMSPathComposer(RTEMSPathComposer):
+    def composeLibBSDPath(self, path, prefix):
+        path = super(CPUDependentRTEMSPathComposer, self).composeLibBSDPath(path, prefix)
+        path = mapCPUDependentPath(path)
+        return path
+
 class CPUDependentLinuxPathComposer(LinuxPathComposer):
     def composeLibBSDPath(self, path, prefix):
         path = super(CPUDependentLinuxPathComposer, self).composeLibBSDPath(path, prefix)
@@ -733,6 +739,15 @@ class Module:
                 self.addFiles(files,
                               CPUDependentFreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
                               FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
+                              sourceFileFragmentComposer)
+
+    def addCPUDependentRTEMSSourceFiles(self, cpus, files, sourceFileFragmentComposer):
+        for cpu in cpus:
+            self.initCPUDependencies(cpu)
+            self.cpuDependentSourceFiles[cpu] += \
+                self.addFiles(files,
+                              CPUDependentRTEMSPathComposer(), NoConverter(),
+                              NoConverter(), assertSourceFile,
                               sourceFileFragmentComposer)
 
     def addCPUDependentLinuxSourceFiles(self, cpus, files, sourceFileFragmentComposer):

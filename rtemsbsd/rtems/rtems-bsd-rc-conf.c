@@ -208,7 +208,7 @@ lock(rtems_bsd_rc_conf* rc_conf)
   rtems_status_code sc;
   sc = rtems_semaphore_obtain(rc_conf->lock, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
   if (sc != RTEMS_SUCCESSFUL) {
-    fprintf(stderr, "error: rc_conf: locking: %s", rtems_status_text(sc));
+    fprintf(stderr, "error: rc_conf: locking: %s\n", rtems_status_text(sc));
     errno = EIO;
     return -1;
   }
@@ -221,7 +221,7 @@ unlock(rtems_bsd_rc_conf* rc_conf)
   rtems_status_code sc;
   sc = rtems_semaphore_release(rc_conf->lock);
   if (sc != RTEMS_SUCCESSFUL) {
-    fprintf(stderr, "error: rc_conf: locking: %s", rtems_status_text(sc));
+    fprintf(stderr, "error: rc_conf: locking: %s\n", rtems_status_text(sc));
     errno = EIO;
     return -1;
   }
@@ -229,22 +229,31 @@ unlock(rtems_bsd_rc_conf* rc_conf)
 }
 
 static int
-rc_conf_create(rtems_bsd_rc_conf* rc_conf,
-               const char*        name,
-               const char*        text,
-               int                timeout,
-               bool               verbose)
+rc_conf_create(rtems_bsd_rc_conf** rc_conf,
+               const char*         name,
+               const char*         text,
+               int                 timeout,
+               bool                verbose)
 {
-  size_t       length;
-  char*        line;
-  char*        end;
-  char*        copy;
-  char*        marker;
-  const char** lines;
-  size_t       line_count;
-  int          r;
+  rtems_bsd_rc_conf* _rc_conf;
+  size_t             length;
+  char*              line;
+  char*              end;
+  char*              copy;
+  char*              marker;
+  const char**       lines;
+  size_t             line_count;
+  int                r;
 
-  memset(rc_conf, 0, sizeof(*rc_conf));
+  *rc_conf = NULL;
+
+  _rc_conf = malloc(sizeof(rtems_bsd_rc_conf));
+  if (_rc_conf == NULL) {
+    errno = ENOMEM;
+    return -1;
+  }
+
+  memset(_rc_conf, 0, sizeof(rtems_bsd_rc_conf));
 
   /*
    * Range check, this makes the rest safer in respect to buffer overflows.
@@ -316,26 +325,28 @@ rc_conf_create(rtems_bsd_rc_conf* rc_conf,
     }
   }
 
-  rc_conf->name = strdup(name);
-  rc_conf->data = copy;
-  rc_conf->line_count = line_count;
-  rc_conf->lines = lines;
-  rc_conf->line = 0;
-  rc_conf->timeout = timeout;
-  rc_conf->verbose = verbose;
+  _rc_conf->name = strdup(name);
+  _rc_conf->data = copy;
+  _rc_conf->line_count = line_count;
+  _rc_conf->lines = lines;
+  _rc_conf->line = 0;
+  _rc_conf->timeout = timeout;
+  _rc_conf->verbose = verbose;
   if (timeout >= 0)
-    rc_conf->waiter = rtems_task_self();
+    _rc_conf->waiter = rtems_task_self();
 
   /*
    * Create the lock.
    */
-  r = lock_create(rc_conf);
+  r = lock_create(_rc_conf);
   if (r < 0) {
-    free((void*) rc_conf->name);
-    free((void*) rc_conf->lines);
-    free((void*) rc_conf->data);
+    free((void*) _rc_conf->name);
+    free((void*) _rc_conf->lines);
+    free((void*) _rc_conf->data);
     return -1;
   }
+
+  *rc_conf = _rc_conf;
 
   return 0;
 }
@@ -343,7 +354,7 @@ rc_conf_create(rtems_bsd_rc_conf* rc_conf,
 static void
 rc_conf_destroy(rtems_bsd_rc_conf* rc_conf)
 {
-  if (rc_conf->name != NULL) {
+  if (rc_conf != NULL && rc_conf->name != NULL) {
     free((void*) rc_conf->name);
     free((void*) rc_conf->lines);
     free((void*) rc_conf->data);
@@ -351,6 +362,7 @@ rc_conf_destroy(rtems_bsd_rc_conf* rc_conf)
     rc_conf->lines = NULL;
     rc_conf->data = NULL;
     lock_delete(rc_conf);
+    free((void*) rc_conf);
   }
 }
 
@@ -421,8 +433,6 @@ int rtems_bsd_rc_conf_find_next(rtems_bsd_rc_conf*           rc_conf,
      */
     if (r == 0)
       return 0;
-
-    regfree(&rege);
   }
 
   argc_argv_clean(argc_argv);
@@ -438,9 +448,9 @@ int rtems_bsd_rc_conf_find(rtems_bsd_rc_conf*           rc_conf,
 {
   if (argc_argv_valid(argc_argv) < 0)
     return -1;
+  rc_conf->line = 0;
   free(rc_conf->find_regex);
   rc_conf->find_regex = strdup(expression);
-  rc_conf->line = 0;
   if (rc_conf->find_regex == NULL) {
     errno = ENOMEM;
     return -1;
@@ -762,7 +772,7 @@ rtems_bsd_run_rc_conf_script(const char* name,
                              int         timeout,
                              bool        verbose)
 {
-  rtems_bsd_rc_conf   rc_conf;
+  rtems_bsd_rc_conf*  rc_conf;
   rtems_task_priority priority;
   rtems_id            worker;
   rtems_status_code   sc;
@@ -801,7 +811,7 @@ rtems_bsd_run_rc_conf_script(const char* name,
 
   sc = rtems_task_start(worker,
                         rc_conf_worker,
-                        (rtems_task_argument) &rc_conf);
+                        (rtems_task_argument) rc_conf);
   if (sc != RTEMS_SUCCESSFUL) {
     fprintf (stderr, "error: worker start: %s", rtems_status_text(sc));
     errno = EIO;
@@ -827,20 +837,20 @@ rtems_bsd_run_rc_conf_script(const char* name,
         errno = EIO;
       }
       else {
-        lock(&rc_conf);
-        rc_conf.waiter = 0;
-        unlock(&rc_conf);
+        lock(rc_conf);
+        rc_conf->waiter = 0;
+        unlock(rc_conf);
         errno = ETIMEDOUT;
       }
       r = -1;
     }
     else {
-      lock(&rc_conf);
-      errno = rc_conf.error_code;
+      lock(rc_conf);
+      errno = rc_conf->error_code;
       if (errno != 0)
         r = -1;
-      unlock(&rc_conf);
-      rc_conf_destroy(&rc_conf);
+      unlock(rc_conf);
+      rc_conf_destroy(rc_conf);
     }
   }
 

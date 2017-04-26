@@ -660,8 +660,9 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
     --delay;
 
     memset(&sin, 0, sizeof(sin));
+    memset(&rti_info[0], 0, sizeof(rti_info));
     sin.sin_family = AF_INET;
-    inet_pton(AF_INET, "0.0.0.0.", &sin.sin_addr);
+    inet_pton(AF_INET, "0.0.0.0", &sin.sin_addr);
 
     r = rtems_get_route(&sin, rti_info);
     if (r == 0 && rti_info[RTAX_GATEWAY] != NULL) {
@@ -722,7 +723,7 @@ network_service(rtems_bsd_rc_conf* rc_conf)
   if (aa == NULL)
     return -1;
 
-  show_result("hostname",    hostname(rc_conf, aa));
+  show_result("hostname", hostname(rc_conf, aa));
 
   r = interfaces(rc_conf, aa);
   if (r < 0) {

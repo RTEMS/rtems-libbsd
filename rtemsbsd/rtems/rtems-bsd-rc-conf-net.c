@@ -221,9 +221,22 @@ load_create_args(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 }
 
 /*
+ * ifconfig_show
+
+ */
+static int
+ifconfig_show(const char* ifname)
+{
+  const char const* ifconfig_show[] = { "ifconfig", ifname, NULL };
+  return rtems_bsd_command_ifconfig(2, (char**) ifconfig_show);
+}
+
+/*
  * ifconfig_'interface'
  *
  * eg ifconfig_em0="inet 10.10.5.33 netmask 255.255.255.0"
+ *    ifconfig_em0_alias0="ether 10:22:33:44:55:66"
+ *    ifconfig_em0_alias1="inet 10.1.1.111 netmask 0xffffffff"
  *
  * See 'man rc.conf(5)' on FreeBSD.
  */
@@ -231,21 +244,22 @@ static int
 ifconfig_(rtems_bsd_rc_conf* rc_conf,
           const char*        ifname,
           int                argc,
-          const char**       argv)
+          const char**       argv,
+          int                opt_argc,
+          const char**       opt_argv,
+          bool               add_up)
 {
   const char**      args;
   int               arg;
   int               ifconfig_argc = 0;
-  bool              add_up = true;
   int               r;
-  const char const* ifconfig_show[] = { "ifconfig", ifname, NULL };
 
   for (arg = 1; arg < argc; ++arg) {
     if (strcasecmp(argv[arg], "NOAUTO") == 0)
       return 0;
   }
 
-  args = calloc(argc + 3, sizeof(char*));
+  args = calloc(argc + opt_argc + 3, sizeof(char*));
   if (args == NULL) {
     errno = ENOMEM;
     return -1;
@@ -256,11 +270,18 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
 
   for (arg = 1; arg < argc; ++arg) {
     if (strcasecmp("DHCP",     argv[arg]) == 0 ||
-        strcasecmp("SYNCDHCP", argv[arg]) == 0) {
+        strcasecmp("SYNCDHCP", argv[arg]) == 0 ||
+        strcasecmp("UP",       argv[arg]) == 0) {
       add_up = false;
     }
     else {
       args[ifconfig_argc++] = argv[arg];
+    }
+  }
+
+  if (opt_argv != NULL) {
+    for (arg = 0; arg < opt_argc; ++arg) {
+      args[ifconfig_argc++] = opt_argv[arg];
     }
   }
 
@@ -277,8 +298,6 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
     errno = ECANCELED;
     return -1;
   }
-
-  r = rtems_bsd_command_ifconfig(2, (char**) ifconfig_show);
 
   return r;
 }
@@ -353,7 +372,7 @@ defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 }
 
 static int
-show_interfaces(const char* msg, struct ifaddrs* ifap)
+list_interfaces(const char* msg, struct ifaddrs* ifap)
 {
   struct ifaddrs* ifa;
 
@@ -382,6 +401,18 @@ show_interfaces(const char* msg, struct ifaddrs* ifap)
 }
 
 static int
+show_interfaces(struct ifaddrs* ifap)
+{
+  struct ifaddrs* ifa;
+
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+    ifconfig_show(ifa->ifa_name);
+  }
+
+  return 0;
+}
+
+static int
 dhcp_check(rtems_bsd_rc_conf_argc_argv* aa)
 {
   int arg;
@@ -403,7 +434,11 @@ setup_lo0(rtems_bsd_rc_conf* rc_conf, struct ifaddrs* ifap)
       const char* lo0_argv[] = {
         "ifconfig_lo0", "inet", "127.0.0.1", "netmask", "255.0.0.0", NULL
       };
-      show_result("lo0", ifconfig_(rc_conf, "lo0", 5, lo0_argv));
+      show_result("lo0",
+                  ifconfig_(rc_conf, "lo0",
+                            5, lo0_argv,
+                            0, NULL,
+                            true));
       return 0;
     }
   }
@@ -435,7 +470,23 @@ setup_interfaces(rtems_bsd_rc_conf*           rc_conf,
          * A DHCP ifconfig can have other options we need to set on the
          * interface.
          */
-        show_result(iface, ifconfig_(rc_conf, ifa->ifa_name, aa->argc, aa->argv));
+        show_result(iface, ifconfig_(rc_conf, ifa->ifa_name,
+                                     aa->argc, aa->argv,
+                                     0, NULL,
+                                     true));
+      }
+      snprintf(iface, sizeof(iface), "ifconfig_%s_alias[0-9]+", ifa->ifa_name);
+      if (r == 0) {
+        r = rtems_bsd_rc_conf_find(rc_conf, iface, aa);
+        while (r == 0) {
+          const char* alias_argv[] = { "alias", NULL };
+          show_result(iface,
+                      ifconfig_(rc_conf, ifa->ifa_name,
+                                aa->argc, aa->argv,
+                                1, alias_argv,
+                                false));
+          r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
+        }
       }
     }
   }
@@ -493,8 +544,11 @@ setup_vlans(rtems_bsd_rc_conf*           rc_conf,
                 *dhcp = true;
               }
               else {
-                show_result(vlan_name, ifconfig_(rc_conf, vlan_name,
-                                                 vaa->argc, vaa->argv));
+                show_result(vlan_name,
+                            ifconfig_(rc_conf, vlan_name,
+                                      vaa->argc, vaa->argv,
+                                      0, NULL,
+                                      true));
               }
             }
           }
@@ -699,12 +753,13 @@ interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
     return -1;
   }
 
-  show_interfaces("Starting network: ", ifap);
+  list_interfaces("Starting network: ", ifap);
   show_result("cloned_interfaces", cloned_interfaces(rc_conf, aa));
   show_result("lo0", setup_lo0(rc_conf, ifap));
   show_result("ifaces", setup_interfaces(rc_conf, aa, ifap, &dhcp));
   show_result("vlans", setup_vlans(rc_conf, aa, ifap, &dhcp));
   show_result("defaultrouter", defaultrouter(rc_conf, aa));
+  show_interfaces(ifap);
   if (dhcp)
     show_result("dhcp", run_dhcp(rc_conf, aa));
 

@@ -75,14 +75,29 @@
 #define IFACE_IPV4(iface) \
   "ifconfig_" # iface "=\"inet " NET_CFG_SELF_IP " netmask " NET_CFG_NETMASK "\"\n"
 
+#define IFACE_ALIAS(iface) \
+  "ifconfig_" # iface "_alias0=\"ether 10:22:33:44:55:66\"\n" \
+  "ifconfig_" # iface "_alias1=\"inet 10.1.1.111 netmask 0xffffffff\"\n"
 
-#define RC_CONF_IFACES \
+#define RC_CONF_IFACES_IPV4 \
   IFACE_IPV4(dmc0)  \
   IFACE_IPV4(sm0)   \
   IFACE_IPV4(cgem0) \
   IFACE_IPV4(fec0)  \
   IFACE_IPV4(em0)   \
   IFACE_IPV4(re0)
+
+#define RC_CONF_IFACES_ALIAS \
+  IFACE_ALIAS(dmc0)  \
+  IFACE_ALIAS(sm0)   \
+  IFACE_ALIAS(cgem0) \
+  IFACE_ALIAS(fec0)  \
+  IFACE_ALIAS(em0)   \
+  IFACE_ALIAS(re0)
+
+#define RC_CONF_IFACES \
+  RC_CONF_IFACES_IPV4 \
+  RC_CONF_IFACES_ALIAS
 
 #define IFACE_VLAN(iface) \
   "vlans_" # iface "=\"101 102\"\n" \

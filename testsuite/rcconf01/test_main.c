@@ -69,6 +69,12 @@ test_service(rtems_bsd_rc_conf* rc_conf)
 
   test_service_last_num = 1;
 
+  /*
+   * Fill match of anything.
+   */
+  puts("test_service regex: 'test_regex_.*'");
+  test_regex_last_num = 0;
+
   assert((aa = rtems_bsd_rc_conf_argc_argv_create()) != NULL);
   r = rtems_bsd_rc_conf_find(rc_conf, "test_regex_.*", aa);
   assert(r == 0 || (r < 0 && errno == ENOENT));
@@ -78,7 +84,7 @@ test_service(rtems_bsd_rc_conf* rc_conf)
   while (r == 0) {
     int num;
     int arg;
-    rtems_bsd_rc_conf_print_cmd(rc_conf, "test_service", aa->argc, aa->argv);
+    rtems_bsd_rc_conf_print_cmd(rc_conf, "test_service[1]", aa->argc, aa->argv);
     assert(strncasecmp(aa->argv[0], "test_regex_", strlen("test_regex_")) == 0);
     num = atoi(aa->argv[0] + strlen("test_regex_"));
     assert(num == (test_regex_last_num + 1));
@@ -98,6 +104,43 @@ test_service(rtems_bsd_rc_conf* rc_conf)
     r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
     assert(r == 0 || (r < 0 && errno == ENOENT));
   }
+
+  /*
+   * Specific match of only numbers.
+   */
+  puts("test_service regex: 'test_regex_[0-9]+'");
+  test_regex_last_num = 0;
+
+  assert((aa = rtems_bsd_rc_conf_argc_argv_create()) != NULL);
+  r = rtems_bsd_rc_conf_find(rc_conf, "test_regex_[0-9]+", aa);
+  assert(r == 0 || (r < 0 && errno == ENOENT));
+  if (r < 0 && errno == ENOENT)
+    return -1;
+
+  while (r == 0) {
+    int num;
+    int arg;
+    rtems_bsd_rc_conf_print_cmd(rc_conf, "test_service[2]", aa->argc, aa->argv);
+    assert(strncasecmp(aa->argv[0], "test_regex_", strlen("test_regex_")) == 0);
+    num = atoi(aa->argv[0] + strlen("test_regex_"));
+    assert(num == (test_regex_last_num + 1));
+    assert((num - 1) < NUM_OF_TEST_REGEX_);
+    for (arg = 0; arg < aa->argc; ++arg) {
+      const char* a = aa->argv[arg];
+      size_t      l = strlen(a);
+      if (l > 0) {
+        assert(!isspace(a[0]));
+        assert(!isspace(a[l - 1]));
+        assert(a[0] != '"');
+        assert(a[l - 1] != '"');
+      }
+    }
+    test_regex_results[num - 1] = true;
+    ++test_regex_last_num;
+    r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
+    assert(r == 0 || (r < 0 && errno == ENOENT));
+  }
+
   rtems_bsd_rc_conf_argc_argv_destroy(aa);
   puts("test_service done");
   return 0;

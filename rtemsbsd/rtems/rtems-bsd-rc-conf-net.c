@@ -340,9 +340,64 @@ hostname(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
  * See 'man rc.conf(5)' on FreeBSD.
  */
 static int
-defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
+defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa, bool dhcp)
 {
   int r;
+
+  if (dhcp) {
+    char* end = NULL;
+    int   delay = 30;
+
+    /*
+     * See if a delay is specified else use default to 30 seconds. Wait for a
+     * valid default route.
+     */
+    r = rtems_bsd_rc_conf_find(rc_conf, "defaultroute_delay", aa);
+    if (r == 0 && aa->argc == 2) {
+      delay = (int) strtol(aa->argv[1], &end, 10);
+      if (*end != '\0') {
+        fprintf(stderr, "error: defaultroute_delay: invalid delay value\n");
+        delay = 30;
+      }
+    }
+
+    printf("Waiting %ds for default route interface: ", delay);
+    fflush(stdout);
+
+    while (delay > 0) {
+      struct sockaddr_in sin;
+      struct sockaddr*   rti_info[RTAX_MAX];
+
+      --delay;
+
+      memset(&sin, 0, sizeof(sin));
+      memset(&rti_info[0], 0, sizeof(rti_info));
+      sin.sin_family = AF_INET;
+      inet_pton(AF_INET, "0.0.0.0", &sin.sin_addr);
+
+      r = rtems_get_route(&sin, rti_info);
+      if (r == 0 && rti_info[RTAX_GATEWAY] != NULL) {
+        break;
+      }
+      else if (r < 0 && errno != ESRCH) {
+        fprintf(stderr,
+                "error: get routes %d: %d %s\n", r, errno, strerror(errno));
+      }
+
+      sleep(1);
+    }
+
+    /*
+     * We should print the interface but I cannot see how to get the interface
+     * with the default route without a lot of code.
+     */
+    if (delay > 0) {
+      printf("found.\n");
+      return 0;
+    }
+
+    printf("\nerror: no default route found, try defaultrouter\n");
+  }
 
   r = rtems_bsd_rc_conf_find(rc_conf, "defaultrouter", aa);
   if (r < 0 && errno != ENOENT)
@@ -356,7 +411,6 @@ defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 
     if (strcasecmp(aa->argv[1], "NO") != 0) {
       const char* args[] = { "route", "add", "default", aa->argv[1], NULL };
-      int         r;
 
       rtems_bsd_rc_conf_print_cmd(rc_conf, "defaultrouter", 4, args);
 
@@ -630,7 +684,6 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   rtems_id            id;
   rtems_task_priority priority = RTEMS_MAXIMUM_PRIORITY - 1;
   char*               end = NULL;
-  int                 delay = 30;
   int                 r;
 
   /*
@@ -692,52 +745,9 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   }
 
   /*
-   * See if a delay is specified else use default to 30 seconds. Wait for a
-   * valid default route.
+   * Let it run before moving on.
    */
-  r = rtems_bsd_rc_conf_find(rc_conf, "defaultroute_delay", aa);
-  if (r == 0 && aa->argc == 2) {
-    delay = (int) strtol(aa->argv[1], &end, 10);
-    if (*end != '\0') {
-      fprintf(stderr, "error: defaultroute_delay: invalid delay value\n");
-      delay = 30;
-    }
-  }
-
-  printf("Waiting %ds for default route interface: ", delay);
-  fflush(stdout);
-
-  while (delay > 0) {
-    struct sockaddr_in sin;
-    struct sockaddr*   rti_info[RTAX_MAX];
-
-    --delay;
-
-    memset(&sin, 0, sizeof(sin));
-    memset(&rti_info[0], 0, sizeof(rti_info));
-    sin.sin_family = AF_INET;
-    inet_pton(AF_INET, "0.0.0.0", &sin.sin_addr);
-
-    r = rtems_get_route(&sin, rti_info);
-    if (r == 0 && rti_info[RTAX_GATEWAY] != NULL) {
-      break;
-    }
-    else if (r < 0 && errno != ESRCH) {
-      fprintf(stderr,
-              "error: get routes %d: %d %s\n", r, errno, strerror(errno));
-    }
-
-    sleep(1);
-  }
-
-  /*
-   * We should print the interface but I cannot see how to get the interface
-   * with the default route without a lot of code.
-   */
-  if (delay > 0)
-    printf("found.\n");
-  else
-    printf("\nerror: no default route found\n");
+  sleep(1);
 
   return 0;
 }
@@ -758,10 +768,11 @@ interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   show_result("lo0", setup_lo0(rc_conf, ifap));
   show_result("ifaces", setup_interfaces(rc_conf, aa, ifap, &dhcp));
   show_result("vlans", setup_vlans(rc_conf, aa, ifap, &dhcp));
-  show_result("defaultrouter", defaultrouter(rc_conf, aa));
   show_interfaces(ifap);
+
   if (dhcp)
     show_result("dhcp", run_dhcp(rc_conf, aa));
+  show_result("defaultrouter", defaultrouter(rc_conf, aa, dhcp));
 
   free(ifap);
 

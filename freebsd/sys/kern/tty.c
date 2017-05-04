@@ -235,9 +235,11 @@ ttydev_leave(struct tty *tp)
 	/* Stop asynchronous I/O. */
 	funsetown(&tp->t_sigio);
 
+#ifndef __rtems__
 	/* Remove console TTY. */
 	if (constty == tp)
 		constty_clear();
+#endif /* __rtems__ */
 
 	/* Drain any output. */
 	if (!tty_gone(tp))
@@ -388,9 +390,11 @@ ttydev_close(struct cdev *dev, int fflag, int devtype __unused,
 		return (0);
 	}
 
+#ifndef __rtems__
 	/* If revoking, flush output now to avoid draining it later. */
 	if (fflag & FREVOKE)
 		tty_flush(tp, FWRITE);
+#endif /* __rtems__ */
 
 	tp->t_flags &= ~TF_EXCLUDE;
 
@@ -405,6 +409,7 @@ ttydev_close(struct cdev *dev, int fflag, int devtype __unused,
 	return (0);
 }
 
+#ifndef __rtems__
 static __inline int
 tty_is_ctty(struct tty *tp, struct proc *p)
 {
@@ -413,10 +418,12 @@ tty_is_ctty(struct tty *tp, struct proc *p)
 
 	return (p->p_session == tp->t_session && p->p_flag & P_CONTROLT);
 }
+#endif /* __rtems__ */
 
 int
 tty_wait_background(struct tty *tp, struct thread *td, int sig)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
 	struct pgrp *pg;
 	ksiginfo_t ksi;
@@ -475,6 +482,9 @@ tty_wait_background(struct tty *tp, struct thread *td, int sig)
 		if (error)
 			return (error);
 	}
+#else /* __rtems__ */
+	return (0);
+#endif /* __rtems__ */
 }
 
 static int
@@ -779,7 +789,9 @@ static struct cdevsw ttydev_cdevsw = {
 	.d_ioctl	= ttydev_ioctl,
 	.d_kqfilter	= ttydev_kqfilter,
 	.d_poll		= ttydev_poll,
+#ifndef __rtems__
 	.d_mmap		= ttydev_mmap,
+#endif /* __rtems__ */
 	.d_name		= "ttydev",
 	.d_flags	= D_TTY,
 };
@@ -1189,6 +1201,7 @@ tty_rel_gone(struct tty *tp)
  * Exposing information about current TTY's through sysctl
  */
 
+#ifndef __rtems__
 static void
 tty_to_xtty(struct tty *tp, struct xtty *xt)
 {
@@ -1242,6 +1255,7 @@ sysctl_kern_ttys(SYSCTL_HANDLER_ARGS)
 
 SYSCTL_PROC(_kern, OID_AUTO, ttys, CTLTYPE_OPAQUE|CTLFLAG_RD|CTLFLAG_MPSAFE,
 	0, 0, sysctl_kern_ttys, "S,xtty", "List of TTYs");
+#endif /* __rtems__ */
 
 /*
  * Device node creation. Device has been set up, now we can expose it to
@@ -1270,6 +1284,7 @@ tty_makedevf(struct tty *tp, struct ucred *cred, int flags,
 	vsnrprintf(name, sizeof name, 32, fmt, ap);
 	va_end(ap);
 
+#ifndef __rtems__
 	if (cred == NULL) {
 		/* System device. */
 		uid = UID_ROOT;
@@ -1281,6 +1296,11 @@ tty_makedevf(struct tty *tp, struct ucred *cred, int flags,
 		gid = GID_TTY;
 		mode = S_IRUSR|S_IWUSR|S_IWGRP;
 	}
+#else /* __rtems__ */
+	uid = BSD_DEFAULT_UID;
+	gid = BSD_DEFAULT_GID;
+	mode = S_IRUSR|S_IWUSR|S_IWGRP;
+#endif /* __rtems__ */
 
 	flags = flags & TTYMK_CLONING ? MAKEDEV_REF : 0;
 	flags |= MAKEDEV_CHECKNAME;
@@ -1391,12 +1411,14 @@ tty_signal_sessleader(struct tty *tp, int sig)
 	/* Make signals start output again. */
 	tp->t_flags &= ~TF_STOPPED;
 
+#ifndef __rtems__
 	if (tp->t_session != NULL && tp->t_session->s_leader != NULL) {
 		p = tp->t_session->s_leader;
 		PROC_LOCK(p);
 		kern_psignal(p, sig);
 		PROC_UNLOCK(p);
 	}
+#endif /* __rtems__ */
 }
 
 void
@@ -1410,6 +1432,7 @@ tty_signal_pgrp(struct tty *tp, int sig)
 	/* Make signals start output again. */
 	tp->t_flags &= ~TF_STOPPED;
 
+#ifndef __rtems__
 	if (sig == SIGINFO && !(tp->t_termios.c_lflag & NOKERNINFO))
 		tty_info(tp);
 	if (tp->t_pgrp != NULL) {
@@ -1420,6 +1443,7 @@ tty_signal_pgrp(struct tty *tp, int sig)
 		pgsignal(tp->t_pgrp, sig, 1, &ksi);
 		PGRP_UNLOCK(tp->t_pgrp);
 	}
+#endif /* __rtems__ */
 }
 
 void
@@ -1516,7 +1540,9 @@ tty_set_winsize(struct tty *tp, const struct winsize *wsz)
 	if (memcmp(&tp->t_winsize, wsz, sizeof(*wsz)) == 0)
 		return;
 	tp->t_winsize = *wsz;
+#ifndef __rtems__
 	tty_signal_pgrp(tp, SIGWINCH);
+#endif /* __rtems__ */
 }
 
 static int
@@ -1575,9 +1601,11 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 		*(int *)data = ttyoutq_bytesused(&tp->t_outq);
 		return (0);
 	case FIOSETOWN:
+#ifndef __rtems__
 		if (tp->t_session != NULL && !tty_is_ctty(tp, td->td_proc))
 			/* Not allowed to set ownership. */
 			return (ENOTTY);
+#endif /* __rtems__ */
 
 		/* Temporarily unlock the TTY to set ownership. */
 		tty_unlock(tp);
@@ -1585,9 +1613,11 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 		tty_lock(tp);
 		return (error);
 	case FIOGETOWN:
+#ifndef __rtems__
 		if (tp->t_session != NULL && !tty_is_ctty(tp, td->td_proc))
 			/* Not allowed to set ownership. */
 			return (ENOTTY);
+#endif /* __rtems__ */
 
 		/* Get ownership. */
 		*(int *)data = fgetown(&tp->t_sigio);
@@ -1684,6 +1714,7 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 		*(int *)data = TTYDISC;
 		return (0);
 	case TIOCGPGRP:
+#ifndef __rtems__
 		if (!tty_is_ctty(tp, td->td_proc))
 			return (ENOTTY);
 
@@ -1691,15 +1722,23 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 			*(int *)data = tp->t_pgrp->pg_id;
 		else
 			*(int *)data = NO_PID;
+#else /* __rtems__ */
+		*(int *)data = NO_PID;
+#endif /* __rtems__ */
 		return (0);
 	case TIOCGSID:
+#ifndef __rtems__
 		if (!tty_is_ctty(tp, td->td_proc))
 			return (ENOTTY);
 
 		MPASS(tp->t_session);
 		*(int *)data = tp->t_session->s_sid;
+#else /* __rtems__ */
+		*(int *)data = NO_PID;
+#endif /* __rtems__ */
 		return (0);
 	case TIOCSCTTY: {
+#ifndef __rtems__
 		struct proc *p = td->td_proc;
 
 		/* XXX: This looks awful. */
@@ -1748,10 +1787,12 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 		PROC_LOCK(p);
 		p->p_flag |= P_CONTROLT;
 		PROC_UNLOCK(p);
+#endif /* __rtems__ */
 
 		return (0);
 	}
 	case TIOCSPGRP: {
+#ifndef __rtems__
 		struct pgrp *pg;
 
 		/*
@@ -1784,6 +1825,7 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 
 		/* Wake up the background process groups. */
 		cv_broadcast(&tp->t_bgwait);
+#endif /* __rtems__ */
 		return (0);
 	}
 	case TIOCFLUSH: {
@@ -1808,6 +1850,7 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 			tp->t_drainwait = *(int *)data;
 		return (error);
 	case TIOCCONS:
+#ifndef __rtems__
 		/* Set terminal as console TTY. */
 		if (*(int *)data) {
 			error = priv_check(td, PRIV_TTY_CONSOLE);
@@ -1830,6 +1873,7 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 		} else if (constty == tp) {
 			constty_clear();
 		}
+#endif /* __rtems__ */
 		return (0);
 	case TIOCGWINSZ:
 		/* Obtain window size. */
@@ -1855,14 +1899,18 @@ tty_generic_ioctl(struct tty *tp, u_long cmd, void *data, int fflag,
 		ttydevsw_pktnotify(tp, TIOCPKT_START);
 		return (0);
 	case TIOCSTAT:
+#ifndef __rtems__
 		tty_info(tp);
+#endif /* __rtems__ */
 		return (0);
 	case TIOCSTI:
+#ifndef __rtems__
 		if ((fflag & FREAD) == 0 && priv_check(td, PRIV_TTY_STI))
 			return (EPERM);
 		if (!tty_is_ctty(tp, td->td_proc) &&
 		    priv_check(td, PRIV_TTY_STI))
 			return (EACCES);
+#endif /* __rtems__ */
 		ttydisc_rint(tp, *(char *)data, 0);
 		ttydisc_rint_done(tp);
 		return (0);
@@ -1941,9 +1989,17 @@ tty_hiwat_in_unblock(struct tty *tp)
 		 * Input flow control. Only leave the high watermark when we
 		 * can successfully store the VSTART character.
 		 */
+#ifndef __rtems__
 		if (ttyoutq_write_nofrag(&tp->t_outq,
 		    &tp->t_termios.c_cc[VSTART], 1) == 0)
 			tp->t_flags &= ~TF_HIWAT_IN;
+#else /* __rtems__ */
+		if (ttyoutq_write_nofrag(&tp->t_outq,
+		    &tp->t_termios.c_cc[VSTART], 1) == 0) {
+			tp->t_flags &= ~TF_HIWAT_IN;
+			ttydevsw_outwakeup(tp);
+		}
+#endif /* __rtems__ */
 	} else {
 		/* No input flow control. */
 		tp->t_flags &= ~TF_HIWAT_IN;
@@ -1967,6 +2023,7 @@ ttyhook_defrint(struct tty *tp, char c, int flags)
 	return (0);
 }
 
+#ifndef __rtems__
 int
 ttyhook_register(struct tty **rtp, struct proc *p, int fd, struct ttyhook *th,
     void *softc)
@@ -2060,6 +2117,7 @@ ttyhook_unregister(struct tty *tp)
 	/* Maybe deallocate the TTY as well. */
 	tty_rel_free(tp);
 }
+#endif /* __rtems__ */
 
 /*
  * /dev/console handling.
@@ -2114,11 +2172,14 @@ static struct cdevsw ttyconsdev_cdevsw = {
 	.d_ioctl	= ttydev_ioctl,
 	.d_kqfilter	= ttydev_kqfilter,
 	.d_poll		= ttydev_poll,
+#ifndef __rtems__
 	.d_mmap		= ttydev_mmap,
+#endif /* __rtems__ */
 	.d_name		= "ttyconsdev",
 	.d_flags	= D_TTY,
 };
 
+#ifndef __rtems__
 static void
 ttyconsdev_init(void *unused __unused)
 {
@@ -2135,6 +2196,7 @@ ttyconsdev_select(const char *name)
 
 	dev_console_filename = name;
 }
+#endif /* __rtems__ */
 
 /*
  * Debugging routines.

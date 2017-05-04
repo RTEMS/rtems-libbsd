@@ -84,9 +84,11 @@ struct cdev {
 	LIST_ENTRY(cdev)	si_list;
 #ifndef __rtems__
 	LIST_ENTRY(cdev)	si_clone;
+#endif /* __rtems__ */
 	LIST_HEAD(, cdev)	si_children;
 	LIST_ENTRY(cdev)	si_siblings;
 	struct cdev *si_parent;
+#ifndef __rtems__
 	struct mount	*si_mountpt;
 #endif /* __rtems__ */
 	void		*si_drv1, *si_drv2;

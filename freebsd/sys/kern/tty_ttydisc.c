@@ -914,7 +914,9 @@ ttydisc_rint(struct tty *tp, char c, int flags)
 	if (CMP_FLAG(l, ISIG)) {
 		if (CMP_FLAG(l, ICANON|IEXTEN) == (ICANON|IEXTEN)) {
 			if (CMP_CC(VSTATUS, c)) {
+#ifndef __rtems__
 				tty_signal_pgrp(tp, SIGINFO);
+#endif /* __rtems__ */
 				return (0);
 			}
 		}

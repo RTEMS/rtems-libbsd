@@ -301,7 +301,9 @@ struct thread {
 	u_long		td_profil_addr;	/* (k) Temporary addr until AST. */
 	u_int		td_profil_ticks; /* (k) Temporary ticks until AST. */
 	char		td_name[MAXCOMLEN + 1];	/* (*) Thread name. */
+#endif /* __rtems__ */
 	struct file	*td_fpop;	/* (k) file referencing cdev under op */
+#ifndef __rtems__
 	int		td_dbgflags;	/* (c) Userland debugger flags */
 	siginfo_t	td_si;		/* (c) For debugger or core file */
 	int		td_ng_outbound;	/* (k) Thread entered ng from above. */

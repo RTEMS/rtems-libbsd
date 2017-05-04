@@ -59,11 +59,9 @@ static MALLOC_DEFINE(M_DEVT, "cdev", "cdev storage");
 
 struct mtx devmtx;
 static void destroy_devl(struct cdev *dev);
-#ifndef __rtems__
 static int destroy_dev_sched_cbl(struct cdev *dev,
     void (*cb)(void *), void *arg);
 static void destroy_dev_tq(void *ctx, int pending);
-#endif /* __rtems__ */
 static int make_dev_credv(int flags, struct cdev **dres, struct cdevsw *devsw,
     int unit, struct ucred *cr, uid_t uid, gid_t gid, int mode, const char *fmt,
     va_list ap);
@@ -164,7 +162,6 @@ dev_refl(struct cdev *dev)
 	dev->si_refcount++;
 }
 
-#ifndef __rtems__
 void
 dev_rel(struct cdev *dev)
 {
@@ -189,7 +186,6 @@ dev_rel(struct cdev *dev)
 	if (flag)
 		devfs_free(dev);
 }
-#endif /* __rtems__ */
 
 struct cdevsw *
 dev_refthread(struct cdev *dev, int *ref)
@@ -971,6 +967,7 @@ make_dev_p(int flags, struct cdev **cdev, struct cdevsw *devsw,
 	    ("make_dev_p: failed make_dev_credv (error=%d)", res));
 	return (res);
 }
+#endif /* __rtems__ */
 
 static void
 dev_dependsl(struct cdev *pdev, struct cdev *cdev)
@@ -1050,6 +1047,7 @@ make_dev_alias(struct cdev *pdev, const char *fmt, ...)
 	return (dev);
 }
 
+#ifndef __rtems__
 int
 make_dev_alias_p(int flags, struct cdev **cdev, struct cdev *pdev,
     const char *fmt, ...)
@@ -1156,7 +1154,6 @@ destroy_devl(struct cdev *dev)
 	/* Remove name marking */
 	dev->si_flags &= ~SI_NAMED;
 
-#ifndef __rtems__
 	/* If we are a child, remove us from the parents list */
 	if (dev->si_flags & SI_CHILD) {
 		LIST_REMOVE(dev, si_siblings);
@@ -1167,6 +1164,7 @@ destroy_devl(struct cdev *dev)
 	while (!LIST_EMPTY(&dev->si_children))
 		destroy_devl(LIST_FIRST(&dev->si_children));
 
+#ifndef __rtems__
 	/* Remove from clone list */
 	if (dev->si_flags & SI_CLONELIST) {
 		LIST_REMOVE(dev, si_clone);
@@ -1195,14 +1193,12 @@ destroy_devl(struct cdev *dev)
 		/* avoid out of order notify events */
 		notify_destroy(dev);
 	}
-#ifndef __rtems__
 	mtx_lock(&cdevpriv_mtx);
 	while ((p = LIST_FIRST(&cdp->cdp_fdpriv)) != NULL) {
 		devfs_destroy_cdevpriv(p);
 		mtx_lock(&cdevpriv_mtx);
 	}
 	mtx_unlock(&cdevpriv_mtx);
-#endif /* __rtems__ */
 	dev_lock();
 
 	dev->si_drv1 = 0;
@@ -1231,7 +1227,6 @@ destroy_devl(struct cdev *dev)
 		dev_free_devlocked(dev);
 }
 
-#ifndef __rtems__
 static void
 delist_dev_locked(struct cdev *dev)
 {
@@ -1270,7 +1265,6 @@ delist_dev(struct cdev *dev)
 	delist_dev_locked(dev);
 	dev_unlock();
 }
-#endif /* __rtems__ */
 
 void
 destroy_dev(struct cdev *dev)
@@ -1282,7 +1276,6 @@ destroy_dev(struct cdev *dev)
 	dev_unlock_and_free();
 }
 
-#ifndef __rtems__
 const char *
 devtoname(struct cdev *dev)
 {
@@ -1290,6 +1283,7 @@ devtoname(struct cdev *dev)
 	return (dev->si_name);
 }
 
+#ifndef __rtems__
 int
 dev_stdclone(char *name, char **namep, const char *stem, int *unit)
 {
@@ -1464,6 +1458,7 @@ clone_cleanup(struct clonedevs **cdp)
 	free(cd, M_DEVBUF);
 	*cdp = NULL;
 }
+#endif /* __rtems__ */
 
 static TAILQ_HEAD(, cdev_priv) dev_ddtr =
 	TAILQ_HEAD_INITIALIZER(dev_ddtr);
@@ -1536,6 +1531,7 @@ destroy_dev_sched(struct cdev *dev)
 	return (destroy_dev_sched_cb(dev, NULL, NULL));
 }
 
+#ifndef __rtems__
 void
 destroy_dev_drain(struct cdevsw *csw)
 {

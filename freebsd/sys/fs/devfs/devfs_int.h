@@ -63,13 +63,13 @@ struct cdev_priv {
 	u_int			cdp_maxdirent;
 	struct devfs_dirent	**cdp_dirents;
 	struct devfs_dirent	*cdp_dirent0;
+#endif /* __rtems__ */
 
 	TAILQ_ENTRY(cdev_priv)	cdp_dtr_list;
 	void			(*cdp_dtr_cb)(void *);
 	void			*cdp_dtr_cb_arg;
 
 	LIST_HEAD(, cdev_privdata) cdp_fdpriv;
-#endif /* __rtems__ */
 };
 
 #define	cdev2priv(c)	__containerof(c, struct cdev_priv, cdp_c)

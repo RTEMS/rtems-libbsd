@@ -49,15 +49,11 @@ __FBSDID("$FreeBSD$");
 #include <machine/stdarg.h>
 
 static MALLOC_DEFINE(M_TASKQUEUE, "taskqueue", "Task Queues");
-#ifndef __rtems__
 static void	*taskqueue_giant_ih;
-#endif /* __rtems__ */
 static void	*taskqueue_ih;
 static void	 taskqueue_fast_enqueue(void *);
 static void	 taskqueue_swi_enqueue(void *);
-#ifndef __rtems__
 static void	 taskqueue_swi_giant_enqueue(void *);
-#endif /* __rtems__ */
 
 struct taskqueue_busy {
 	struct task	*tb_running;
@@ -182,9 +178,7 @@ _taskqueue_create(const char *name, int mflags,
 	queue->tq_flags |= TQ_FLAGS_ACTIVE;
 	if (enqueue == taskqueue_fast_enqueue ||
 	    enqueue == taskqueue_swi_enqueue ||
-#ifndef __rtems__
 	    enqueue == taskqueue_swi_giant_enqueue ||
-#endif /* __rtems__ */
 	    enqueue == taskqueue_thread_enqueue)
 		queue->tq_flags |= TQ_FLAGS_UNLOCKED_ENQUEUE;
 	mtx_init(&queue->tq_mutex, tq_name, NULL, mtxflags);
@@ -652,7 +646,6 @@ taskqueue_swi_run(void *dummy)
 	taskqueue_run(taskqueue_swi);
 }
 
-#ifndef __rtems__
 static void
 taskqueue_swi_giant_enqueue(void *context)
 {
@@ -664,7 +657,6 @@ taskqueue_swi_giant_run(void *dummy)
 {
 	taskqueue_run(taskqueue_swi_giant);
 }
-#endif /* __rtems__ */
 
 static int
 _taskqueue_start_threads(struct taskqueue **tqp, int count, int pri,
@@ -829,11 +821,9 @@ TASKQUEUE_DEFINE(swi, taskqueue_swi_enqueue, NULL,
 		 swi_add(NULL, "task queue", taskqueue_swi_run, NULL, SWI_TQ,
 		     INTR_MPSAFE, &taskqueue_ih));
 
-#ifndef __rtems__
 TASKQUEUE_DEFINE(swi_giant, taskqueue_swi_giant_enqueue, NULL,
 		 swi_add(NULL, "Giant taskq", taskqueue_swi_giant_run,
 		     NULL, SWI_TQ_GIANT, 0, &taskqueue_giant_ih));
-#endif /* __rtems__ */
 
 TASKQUEUE_DEFINE_THREAD(thread);
 

@@ -64,6 +64,7 @@
 #include <sys/time.h>
 #include <sys/ttycom.h>
 #include <rtems/bsd/sys/unistd.h>
+#ifndef __rtems__
 #include <sys/vnode.h>
 
 static struct vop_vector devfs_vnodeops;
@@ -71,23 +72,29 @@ static struct vop_vector devfs_specops;
 static struct fileops devfs_ops_f;
 
 #include <fs/devfs/devfs.h>
+#endif /* __rtems__ */
 #include <fs/devfs/devfs_int.h>
 
+#ifndef __rtems__
 #include <security/mac/mac_framework.h>
 
 #include <vm/vm.h>
 #include <vm/vm_extern.h>
 #include <vm/vm_object.h>
+#endif /* __rtems__ */
 
 static MALLOC_DEFINE(M_CDEVPDATA, "DEVFSP", "Metainfo for cdev-fp data");
 
+#ifndef __rtems__
 struct mtx	devfs_de_interlock;
 MTX_SYSINIT(devfs_de_interlock, &devfs_de_interlock, "devfs interlock", MTX_DEF);
 struct sx	clone_drain_lock;
 SX_SYSINIT(clone_drain_lock, &clone_drain_lock, "clone events drain lock");
+#endif /* __rtems__ */
 struct mtx	cdevpriv_mtx;
 MTX_SYSINIT(cdevpriv_mtx, &cdevpriv_mtx, "cdevpriv lock", MTX_DEF);
 
+#ifndef __rtems__
 SYSCTL_DECL(_vfs_devfs);
 
 static int devfs_dotimes;
@@ -132,6 +139,7 @@ devfs_fp_check(struct file *fp, struct cdev **devp, struct cdevsw **dswp,
 	curthread->td_fpop = fp;
 	return (0);
 }
+#endif /* __rtems__ */
 
 int
 devfs_get_cdevpriv(void **datap)
@@ -220,6 +228,7 @@ devfs_clear_cdevpriv(void)
 	devfs_fpdrop(fp);
 }
 
+#ifndef __rtems__
 /*
  * On success devfs_populate_vp() returns with dmp->dm_lock held.
  */
@@ -1929,3 +1938,4 @@ static struct vop_vector devfs_specops = {
  */
 CTASSERT(O_NONBLOCK == IO_NDELAY);
 CTASSERT(O_FSYNC == IO_SYNC);
+#endif /* __rtems__ */

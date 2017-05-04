@@ -199,6 +199,10 @@ struct file {
 	void		*f_label;	/* Place-holder for MAC label. */
 #else /* __rtems__ */
 	rtems_libio_t	f_io;
+	union {
+		struct cdev_privdata *fvn_cdevpriv;
+					/* (d) Private data for the cdev. */
+	} f_vnun;
 #endif /* __rtems__ */
 };
 #ifdef __rtems__

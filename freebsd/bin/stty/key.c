@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-stty-namespace.h"
+#endif /* __rtems__ */
 /*-
  * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -37,6 +40,9 @@ static char sccsid[] = "@(#)key.c	8.3 (Berkeley) 4/2/94";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/types.h>
 
 #include <err.h>
@@ -96,6 +102,9 @@ static struct key {
 	{ "speed",	f_speed,	0 },
 	{ "tty",	f_tty,		0 },
 };
+#ifdef __rtems__
+#include "rtems-bsd-stty-key-data.h"
+#endif /* __rtems__ */
 
 static int
 c_key(const void *a, const void *b)

@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-stty-namespace.h"
+#endif /* __rtems__ */
 /*-
  * Copyright (c) 1989, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -43,6 +46,12 @@ static char sccsid[] = "@(#)stty.c	8.3 (Berkeley) 4/2/94";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 #include <sys/types.h>
 
 #include <ctype.h>
@@ -57,7 +66,33 @@ __FBSDID("$FreeBSD$");
 
 #include "stty.h"
 #include "extern.h"
+#ifdef __rtems__
+#include "rtems-bsd-stty-stty-data.h"
+#endif /* __rtems__ */
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_stty, char);
+
+int
+rtems_bsd_command_stty(int argc, char *argv[])
+{
+  int exit_code;
+  void *data_begin;
+  size_t data_size;
+
+  data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_stty);
+  data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_stty);
+
+  rtems_bsd_program_lock();
+  exit_code = rtems_bsd_program_call_main_with_data_restore("stty",
+      main, argc, argv, data_begin, data_size);
+  rtems_bsd_program_unlock();
+
+  return exit_code;
+}
+#endif /* __rtems__ */
 int
 main(int argc, char *argv[])
 {
@@ -65,6 +100,15 @@ main(int argc, char *argv[])
 	enum FMT fmt;
 	int ch;
 	const char *file, *errstr = NULL;
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	fmt = NOTSET;
 	i.fd = STDIN_FILENO;
@@ -72,7 +116,11 @@ main(int argc, char *argv[])
 
 	opterr = 0;
 	while (optind < argc &&
+#ifndef __rtems__
 	    strspn(argv[optind], "-aefg") == strlen(argv[optind]) &&
+#else /* __rtems__ */
+	    strspn(argv[optind == 0 ? 1 : optind], "-aefg") == strlen(argv[optind == 0 ? 1 : optind]) &&
+#endif /* __rtems__ */
 	    (ch = getopt(argc, argv, "aef:g")) != -1)
 		switch(ch) {
 		case 'a':		/* undocumented: POSIX compatibility */

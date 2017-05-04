@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+#include "rtems-bsd-stty-namespace.h"
+#endif /* __rtems__ */
 /*-
  * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -37,6 +40,9 @@ static char sccsid[] = "@(#)util.c	8.3 (Berkeley) 4/2/94";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -47,6 +53,9 @@ __FBSDID("$FreeBSD$");
 
 #include "stty.h"
 #include "extern.h"
+#ifdef __rtems__
+#include "rtems-bsd-stty-util-data.h"
+#endif /* __rtems__ */
 
 /*
  * Gross, but since we're changing the control descriptor from 1 to 0, most

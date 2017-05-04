@@ -78,6 +78,7 @@ def rtems(mm):
             'rtems/rtems-bsd-shell-pfctl.c',
             'rtems/rtems-bsd-shell-ping.c',
             'rtems/rtems-bsd-shell-route.c',
+            'rtems/rtems-bsd-shell-stty.c',
             'rtems/rtems-bsd-shell-sysctl.c',
             'rtems/rtems-bsd-shell-tcpdump.c',
             'rtems/rtems-bsd-shell-vmstat.c',
@@ -393,6 +394,7 @@ def base(mm):
             'sys/libkern/jenkins_hash.c',
             'sys/libkern/murmur3_32.c',
             'sys/libkern/random.c',
+            'sys/fs/devfs/devfs_vnops.c',
             'sys/vm/uma_core.c',
             'sys/vm/uma_dbg.c',
         ],
@@ -436,6 +438,39 @@ def fdt(mm):
         ],
         mm.generator['source']()
     )
+    return mod
+
+#
+# TTY
+#
+def tty(mm):
+    mod = builder.Module('tty')
+    mod.addKernelSpaceHeaderFiles(
+        [
+            'sys/sys/tty.h',
+            'sys/sys/ttyqueue.h',
+            'sys/sys/ttydisc.h',
+            'sys/sys/ttydevsw.h',
+            'sys/sys/ttyhook.h',
+            'sys/sys/cons.h',
+            'sys/sys/serial.h',
+        ]
+    )
+    mod.addKernelSpaceSourceFiles(
+        [
+            'sys/kern/tty.c',
+            'sys/kern/tty_inq.c',
+            'sys/kern/tty_outq.c',
+            'sys/kern/tty_ttydisc.c',
+        ],
+        mm.generator['source']()
+    )
+#    mod.addRTEMSSourceFiles(
+#        [
+#            'rtems/ofw_machdep.c',
+#        ],
+#        mm.generator['source']()
+#    )
     return mod
 
 #
@@ -656,13 +691,7 @@ def dev_usb_mouse(mm):
     mod.addDependency(mm['dev_usb'])
     mod.addKernelSpaceHeaderFiles(
         [
-            'sys/sys/tty.h',
             'sys/sys/mouse.h',
-            'sys/sys/ttyqueue.h',
-            'sys/sys/ttydefaults.h',
-            'sys/sys/ttydisc.h',
-            'sys/sys/ttydevsw.h',
-            'sys/sys/ttyhook.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
@@ -1177,11 +1206,6 @@ def dev_nic(mm):
             'sys/isa/pnpvar.h',
             'sys/sys/buf.h',
             'sys/sys/mqueue.h',
-            'sys/sys/tty.h',
-            'sys/sys/ttyqueue.h',
-            'sys/sys/ttydisc.h',
-            'sys/sys/ttydevsw.h',
-            'sys/sys/ttyhook.h',
             'sys/sys/user.h',
         ]
     )
@@ -2127,6 +2151,8 @@ def user_space(mm):
     mod = builder.Module('user_space')
     mod.addUserSpaceHeaderFiles(
         [
+            'bin/stty/extern.h',
+            'bin/stty/stty.h',
             'contrib/libxo/libxo/xo_buf.h',
             'contrib/libxo/libxo/xo_encoder.h',
             'contrib/libxo/libxo/xo.h',
@@ -2287,6 +2313,13 @@ def user_space(mm):
     mod.addUserSpaceSourceFiles(
         [
             'bin/hostname/hostname.c',
+            'bin/stty/cchar.c',
+            'bin/stty/gfmt.c',
+            'bin/stty/key.c',
+            'bin/stty/modes.c',
+            'bin/stty/print.c',
+            'bin/stty/stty.c',
+            'bin/stty/util.c',
             'contrib/libxo/libxo/libxo.c',
             'contrib/libxo/libxo/xo_encoder.c',
             'lib/lib80211/lib80211_ioctl.c',
@@ -3005,6 +3038,27 @@ def tests(mm):
     mod.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
     mod.addTest(mm.generator['test']('pf01', ['test_main']))
     mod.addTest(mm.generator['test']('pf02', ['test_main'], runTest = False))
+    mod.addTest(mm.generator['test']('termios', ['test_main',
+                                     'test_termios_driver',
+                                     'test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios01', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios02', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios03', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios04', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios05', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios06', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
     mod.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
                                                ['test_main'], runTest = False, netTest = True))
     return mod
@@ -3091,6 +3145,7 @@ def sources(mm):
     mm.addModule(base(mm))
 
     mm.addModule(fdt(mm))
+    mm.addModule(tty(mm))
     mm.addModule(mmc(mm))
 
     mm.addModule(dev_usb(mm))

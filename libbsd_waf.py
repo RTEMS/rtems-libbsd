@@ -247,6 +247,13 @@ def build(bld):
     libbsd_use += ["objs01"]
 
     objs02_source = ['freebsd/bin/hostname/hostname.c',
+                     'freebsd/bin/stty/cchar.c',
+                     'freebsd/bin/stty/gfmt.c',
+                     'freebsd/bin/stty/key.c',
+                     'freebsd/bin/stty/modes.c',
+                     'freebsd/bin/stty/print.c',
+                     'freebsd/bin/stty/stty.c',
+                     'freebsd/bin/stty/util.c',
                      'freebsd/contrib/libxo/libxo/libxo.c',
                      'freebsd/contrib/libxo/libxo/xo_encoder.c',
                      'freebsd/lib/lib80211/lib80211_ioctl.c',
@@ -928,6 +935,7 @@ def build(bld):
               'freebsd/sys/dev/usb/wlan/if_ural.c',
               'freebsd/sys/dev/usb/wlan/if_urtw.c',
               'freebsd/sys/dev/usb/wlan/if_zyd.c',
+              'freebsd/sys/fs/devfs/devfs_vnops.c',
               'freebsd/sys/kern/init_main.c',
               'freebsd/sys/kern/kern_condvar.c',
               'freebsd/sys/kern/kern_conf.c',
@@ -967,6 +975,10 @@ def build(bld):
               'freebsd/sys/kern/sys_generic.c',
               'freebsd/sys/kern/sys_pipe.c',
               'freebsd/sys/kern/sys_socket.c',
+              'freebsd/sys/kern/tty.c',
+              'freebsd/sys/kern/tty_inq.c',
+              'freebsd/sys/kern/tty_outq.c',
+              'freebsd/sys/kern/tty_ttydisc.c',
               'freebsd/sys/kern/uipc_accf.c',
               'freebsd/sys/kern/uipc_domain.c',
               'freebsd/sys/kern/uipc_mbuf.c',
@@ -1289,6 +1301,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-shell-pfctl.c',
               'rtemsbsd/rtems/rtems-bsd-shell-ping.c',
               'rtemsbsd/rtems/rtems-bsd-shell-route.c',
+              'rtemsbsd/rtems/rtems-bsd-shell-stty.c',
               'rtemsbsd/rtems/rtems-bsd-shell-sysctl.c',
               'rtemsbsd/rtems/rtems-bsd-shell-tcpdump.c',
               'rtemsbsd/rtems/rtems-bsd-shell-vmstat.c',
@@ -1760,6 +1773,90 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_telnetd01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios = ['testsuite/termios/test_main.c',
+                    'testsuite/termios/test_termios_driver.c',
+                    'testsuite/termios/test_termios_utilities.c']
+    bld.program(target = "termios.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios01 = ['testsuite/termios01/../termios/test_termios_driver.c',
+                      'testsuite/termios01/../termios/test_termios_utilities.c',
+                      'testsuite/termios01/test_main.c']
+    bld.program(target = "termios01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios02 = ['testsuite/termios02/../termios/test_termios_driver.c',
+                      'testsuite/termios02/../termios/test_termios_utilities.c',
+                      'testsuite/termios02/test_main.c']
+    bld.program(target = "termios02.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios02,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios03 = ['testsuite/termios03/../termios/test_termios_driver.c',
+                      'testsuite/termios03/../termios/test_termios_utilities.c',
+                      'testsuite/termios03/test_main.c']
+    bld.program(target = "termios03.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios03,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios04 = ['testsuite/termios04/../termios/test_termios_driver.c',
+                      'testsuite/termios04/../termios/test_termios_utilities.c',
+                      'testsuite/termios04/test_main.c']
+    bld.program(target = "termios04.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios04,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios05 = ['testsuite/termios05/../termios/test_termios_driver.c',
+                      'testsuite/termios05/../termios/test_termios_utilities.c',
+                      'testsuite/termios05/test_main.c']
+    bld.program(target = "termios05.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios05,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_termios06 = ['testsuite/termios06/../termios/test_termios_driver.c',
+                      'testsuite/termios06/../termios/test_termios_utilities.c',
+                      'testsuite/termios06/test_main.c']
+    bld.program(target = "termios06.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_termios06,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

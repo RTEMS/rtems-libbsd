@@ -70,6 +70,8 @@ int rtems_bsd_command_vmstat(int argc, char **argv);
 
 int rtems_bsd_command_wlanstats(int argc, char **argv);
 
+int rtems_bsd_command_stty(int argc, char **argv);
+
 __END_DECLS
 
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_ */

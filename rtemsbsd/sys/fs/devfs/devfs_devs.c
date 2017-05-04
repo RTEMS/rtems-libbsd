@@ -36,6 +36,7 @@
 #include <sys/kernel.h>
 #include <sys/file.h>
 #include <sys/malloc.h>
+#include <sys/proc.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -50,7 +51,15 @@
 
 const char rtems_cdev_directory[] = RTEMS_CDEV_DIRECTORY;
 
+/*
+ * The one true (but secret) list of active devices in the system.
+ * Locked by dev_lock()/devmtx
+ */
+struct cdev_priv_list cdevp_list = TAILQ_HEAD_INITIALIZER(cdevp_list);
+
 struct unrhdr *devfs_inos;
+
+static MALLOC_DEFINE(M_CDEVP, "DEVFS1", "DEVFS cdev_priv storage");
 
 static struct cdev *
 devfs_imfs_get_context_by_iop(rtems_libio_t *iop)
@@ -62,11 +71,19 @@ static int
 devfs_imfs_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fpop;
 	int error;
 
 	if (td != NULL) {
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
 		error = cdev->si_devsw->d_open(cdev, oflag, 0, td);
+		/* Clean up any cdevpriv upon error. */
+		if (error != 0)
+			devfs_clear_cdevpriv();
+		curthread->td_fpop = fpop;
 	} else {
 		error = ENOMEM;
 	}
@@ -78,12 +95,17 @@ static int
 devfs_imfs_close(rtems_libio_t *iop)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	int flags = rtems_libio_to_fcntl_flags(iop->flags);
+	struct file *fpop;
 	int error;
 
 	if (td != NULL) {
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
 		error = cdev->si_devsw->d_close(cdev, flags, 0, td);
+		curthread->td_fpop = fpop;
 	} else {
 		error = ENOMEM;
 	}
@@ -96,6 +118,7 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
     ssize_t total)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct uio uio = {
 		.uio_iov = __DECONST(struct iovec *, iov),
@@ -106,11 +129,15 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		.uio_rw = UIO_READ,
 		.uio_td = td
 	};
+	struct file *fpop;
 	int error;
 
 	if (td != NULL) {
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
 		error = cdev->si_devsw->d_read(cdev, &uio,
 		    rtems_libio_to_fcntl_flags(iop->flags));
+		td->td_fpop = fpop;
 	} else {
 		error = ENOMEM;
 	}
@@ -138,6 +165,7 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
     ssize_t total)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct uio uio = {
 		.uio_iov = __DECONST(struct iovec *, iov),
@@ -148,11 +176,15 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		.uio_rw = UIO_WRITE,
 		.uio_td = td
 	};
+	struct file *fpop;
 	int error;
 
 	if (td != NULL) {
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
 		error = cdev->si_devsw->d_write(cdev, &uio,
 		    rtems_libio_to_fcntl_flags(iop->flags));
+		td->td_fpop = fpop;
 	} else {
 		error = ENOMEM;
 	}
@@ -179,13 +211,18 @@ static int
 devfs_imfs_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fpop;
 	int error;
 	int flags = rtems_libio_to_fcntl_flags(iop->flags);
 
 	if (td != 0) {
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
 		error = cdev->si_devsw->d_ioctl(cdev, request, buffer, flags,
 		    td);
+		td->td_fpop = fpop;
 	} else {
 		error = ENOMEM;
 	}
@@ -197,17 +234,34 @@ static int
 devfs_imfs_poll(rtems_libio_t *iop, int events)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct thread *td = rtems_bsd_get_curthread_or_wait_forever();
+	struct file *fpop;
+	int error;
 
-	return (cdev->si_devsw->d_poll(cdev, events,
-	    rtems_bsd_get_curthread_or_wait_forever()));
+	fpop = td->td_fpop;
+	curthread->td_fpop = fp;
+	error = cdev->si_devsw->d_poll(cdev, events, td);
+	td->td_fpop = fpop;
+
+	return error;
 }
 
 static int
 devfs_imfs_kqfilter(rtems_libio_t *iop, struct knote *kn)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct thread *td = rtems_bsd_get_curthread_or_wait_forever();
+	struct file *fpop;
+	int error;
 
-	return (cdev->si_devsw->d_kqfilter(cdev, kn));
+	fpop = td->td_fpop;
+	curthread->td_fpop = fp;
+	error = cdev->si_devsw->d_kqfilter(cdev, kn);
+	td->td_fpop = fpop;
+
+	return error;
 }
 
 static const rtems_filesystem_file_handlers_r devfs_imfs_handlers = {
@@ -235,11 +289,16 @@ static const IMFS_node_control devfs_imfs_control = IMFS_GENERIC_INITIALIZER(
 struct cdev *
 devfs_alloc(int flags)
 {
+	struct cdev_priv *cdp;
 	struct cdev *cdev;
 
-	cdev = malloc(sizeof *cdev, M_TEMP, M_ZERO);
-	if (cdev == NULL)
+	cdp = malloc(sizeof *cdp, M_CDEVP, M_ZERO |
+	    ((flags & MAKEDEV_NOWAIT) ? M_NOWAIT : M_WAITOK));
+	if (cdp == NULL)
 		return (NULL);
+
+	cdev = &cdp->cdp_c;
+	LIST_INIT(&cdev->si_children);
 
 	memcpy(cdev->si_path, rtems_cdev_directory, sizeof(cdev->si_path));
 	return (cdev);
@@ -248,7 +307,11 @@ devfs_alloc(int flags)
 void
 devfs_free(struct cdev *cdev)
 {
-	free(cdev, M_TEMP);
+	struct cdev_priv *cdp;
+
+	cdp = cdev2priv(cdev);
+	devfs_free_cdp_inode(cdp->cdp_inode);
+	free(cdp, M_CDEVP);
 }
 
 /*
@@ -286,6 +349,7 @@ devfs_create_directory(const char *devname)
 void
 devfs_create(struct cdev *dev)
 {
+	struct cdev_priv *cdp;
 	int rv;
 	mode_t mode = S_IFCHR | S_IRWXU | S_IRWXG | S_IRWXO;
 
@@ -294,12 +358,22 @@ devfs_create(struct cdev *dev)
 	rv = IMFS_make_generic_node(dev->si_path, mode, &devfs_imfs_control,
 	    dev);
 	BSD_ASSERT(rv == 0);
+
+	cdp = cdev2priv(dev);
+	cdp->cdp_flags |= CDP_ACTIVE;
+	cdp->cdp_inode = alloc_unrl(devfs_inos);
+	dev_refl(dev);
+	TAILQ_INSERT_TAIL(&cdevp_list, cdp, cdp_list);
 }
 
 void
 devfs_destroy(struct cdev *dev)
 {
+	struct cdev_priv *cdp;
 	int rv;
+
+	cdp = cdev2priv(dev);
+	cdp->cdp_flags &= ~CDP_ACTIVE;
 
 	rv = unlink(dev->si_path);
 	BSD_ASSERT(rv == 0);

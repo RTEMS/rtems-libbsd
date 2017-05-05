@@ -45,7 +45,6 @@
 #include <linux/phy.h>
 
 #include "../../../../../../../../linux/drivers/net/ethernet/freescale/dpaa/dpaa_eth.h"
-#include "../../../../../../../../linux/drivers/net/ethernet/freescale/dpaa/dpaa_eth_common.h"
 
 #define	FMAN_MAC_LOCK(sc)		mtx_lock(&(sc)->mtx)
 #define	FMAN_MAC_UNLOCK(sc)		mtx_unlock(&(sc)->mtx)
@@ -55,9 +54,9 @@
     CSUM_UDP_IPV6)
 
 struct fman_mac_sgt {
-	char priv[DPA_TX_PRIV_DATA_SIZE];
+	char priv[DPAA_TX_PRIV_DATA_SIZE];
 	struct fman_prs_result prs;
-	struct qm_sg_entry sg[DPA_SGT_MAX_ENTRIES];
+	struct qm_sg_entry sg[DPAA_SGT_MAX_ENTRIES];
 	struct mbuf *m;
 };
 
@@ -109,11 +108,11 @@ fman_mac_txstart_locked(struct ifnet *ifp, struct fman_mac_softc *sc)
 		struct mbuf *m;
 		struct mbuf *n;
 		struct qm_fd fd;
-		struct dpa_priv_s *priv;
+		struct dpaa_priv *priv;
 		struct qman_fq *egress_fq;
 		int queue = 0;
 		size_t i;
-		uintptr_t addr;
+		int err;
 
 		IFQ_DRV_DEQUEUE(&ifp->if_snd, m);
 		if (m == NULL) {
@@ -122,20 +121,16 @@ fman_mac_txstart_locked(struct ifnet *ifp, struct fman_mac_softc *sc)
 
 		sgt = uma_zalloc(sc->sgt_zone, M_NOWAIT);
 		if (sgt == NULL) {
-			if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
+			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
 			m_freem(m);
 			continue;
 		}
 
-		clear_fd(&fd);
-		fd.bpid = 0xff;
-		fd.offset = offsetof(struct fman_mac_sgt, sg);
-		fd.format = qm_fd_sg;
-		fd.length20 = m->m_pkthdr.len;
-		fd.cmd |= FM_FD_CMD_FCO;
-		addr = (uintptr_t)sgt;
-		fd.addr_hi = (u8)upper_32_bits(addr);
-		fd.addr_lo = lower_32_bits(addr);
+		qm_fd_clear_fd(&fd);
+		qm_fd_set_sg(&fd, offsetof(struct fman_mac_sgt, sg), m->m_pkthdr.len);
+		fd.bpid = FSL_DPAA_BPID_INV;
+		fd.cmd |= cpu_to_be32(FM_FD_CMD_FCO);
+		qm_fd_addr_set64(&fd, (uintptr_t)sgt);
 		fman_mac_enable_tx_csum(m, &fd, &sgt->prs);
 
 repeat_with_collapsed_mbuf_chain:
@@ -143,31 +138,27 @@ repeat_with_collapsed_mbuf_chain:
 		i = 0;
 		n = m;
 
-		while (n != NULL && i < DPA_SGT_MAX_ENTRIES) {
+		while (n != NULL && i < DPAA_SGT_MAX_ENTRIES) {
 			int len = n->m_len;
 
 			if (len > 0) {
-				sgt->sg[i].bpid = 0xff;
+				qm_sg_entry_set_len(&sgt->sg[i], len);
+				sgt->sg[i].bpid = FSL_DPAA_BPID_INV;
 				sgt->sg[i].offset = 0;
-				sgt->sg[i].length = len;
-				sgt->sg[i].extension = 0;
-				sgt->sg[i].final = 0;
-				addr = mtod(n, uintptr_t);
-				sgt->sg[i].addr_hi = (u8)upper_32_bits(addr);
-				sgt->sg[i].addr_lo =
-				    cpu_to_be32(lower_32_bits(addr));
+				qm_sg_entry_set64(&sgt->sg[i],
+				    mtod(n, uintptr_t));
 				++i;
 			}
 
 			n = n->m_next;
 		}
 
-		if (n != NULL && i == DPA_SGT_MAX_ENTRIES) {
+		if (n != NULL && i == DPAA_SGT_MAX_ENTRIES) {
 			struct mbuf *c;
 
-			c = m_collapse(m, M_NOWAIT, DPA_SGT_MAX_ENTRIES);
+			c = m_collapse(m, M_NOWAIT, DPAA_SGT_MAX_ENTRIES);
 			if (c == NULL) {
-				if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
+				if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
 				m_freem(m);
 				uma_zfree(sc->sgt_zone, sgt);
 				continue;
@@ -177,12 +168,24 @@ repeat_with_collapsed_mbuf_chain:
 			goto repeat_with_collapsed_mbuf_chain;
 		}
 
-		sgt->sg[i - 1].final = 1;
+		sgt->sg[i - 1].cfg |= cpu_to_be32(QM_SG_FIN);
 		sgt->m = m;
 		priv = netdev_priv(&sc->mac_dev.net_dev);
 		egress_fq = priv->egress_fqs[queue];
-		fd.cmd |= qman_fq_fqid(priv->conf_fqs[queue]);
-		qman_enqueue(egress_fq, &fd, QMAN_ENQUEUE_FLAG_WAIT);
+		fd.cmd |= cpu_to_be32(qman_fq_fqid(priv->conf_fqs[queue]));
+
+		for (i = 0; i < DPAA_ENQUEUE_RETRIES; ++i) {
+			err = qman_enqueue(egress_fq, &fd);
+			if (err != -EBUSY) {
+				break;
+			}
+		}
+
+		if (unlikely(err < 0)) {
+			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
+			m_freem(m);
+			continue;
+		}
 	}
 }
 
@@ -273,8 +276,10 @@ fman_mac_init_locked(struct fman_mac_softc *sc)
 	error = dpa_eth_priv_start(&sc->mac_dev.net_dev);
 	BSD_ASSERT(error == 0);
 
-	mii_mediachg(sc->mii_softc);
-	callout_reset(&sc->fman_mac_callout, hz, fman_mac_tick, sc);
+	if (sc->mii_softc != NULL) {
+		mii_mediachg(sc->mii_softc);
+		callout_reset(&sc->fman_mac_callout, hz, fman_mac_tick, sc);
+	}
 
 	fman_mac_set_multi(sc);
 }
@@ -351,7 +356,13 @@ fman_mac_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	case SIOCSIFMEDIA:
 	case SIOCGIFMEDIA:
 		mii = sc->mii_softc;
-		error = ifmedia_ioctl(ifp, ifr, &mii->mii_media, cmd);
+
+		if (mii != NULL) {
+			error = ifmedia_ioctl(ifp, ifr, &mii->mii_media, cmd);
+		} else {
+			error = EINVAL;
+		}
+
 		break;
 	default:
 		error = ether_ioctl(ifp, cmd, data);
@@ -393,8 +404,8 @@ int
 fman_mac_dev_attach(device_t dev)
 {
 	struct fman_mac_softc *sc;
-	struct fman_ivars *ivars;
 	struct ifnet *ifp;
+	struct phy_device *phy_dev;
 	int error;
 
 	sc = device_get_softc(dev);
@@ -435,12 +446,11 @@ fman_mac_dev_attach(device_t dev)
 	ifp->if_hdrlen = sizeof(struct ether_vlan_header);
 
 	/* Attach the MII driver if necessary */
-	ivars = device_get_ivars(dev);
-	sc->phy_dev = fdt_phy_obtain(ivars->of_dev.dev.of_node->offset);
-	if (sc->phy_dev != NULL) {
+	phy_dev = sc->mac_dev.phy_dev;
+	if (phy_dev != NULL) {
 		error = mii_attach(dev, &sc->miibus, ifp,
 		    fman_mac_media_change, fman_mac_media_status,
-		    BMSR_DEFCAPMASK, sc->phy_dev->phy, MII_OFFSET_ANY, 0);
+		    BMSR_DEFCAPMASK, phy_dev->mdio.addr, MII_OFFSET_ANY, 0);
 		if (error != 0) {
 			goto error_2;
 		}
@@ -487,28 +497,24 @@ int
 fman_mac_miibus_read_reg(device_t dev, int phy, int reg)
 {
 	struct fman_mac_softc *sc;
-	struct fdt_phy_device *phy_dev;
-	struct fdt_mdio_device *mdio_dev;
+	struct phy_device *phy_dev;
 
 	sc = device_get_softc(dev);
-	phy_dev = sc->phy_dev;
-	BSD_ASSERT(phy == phy_dev->phy);
-	mdio_dev = phy_dev->mdio_dev;
-	return ((*mdio_dev->read)(mdio_dev, phy, reg));
+	phy_dev = sc->mac_dev.phy_dev;
+	BSD_ASSERT(phy == phy_dev->mdio.addr);
+	return (phy_read(phy_dev, reg));
 }
 
 int
 fman_mac_miibus_write_reg(device_t dev, int phy, int reg, int val)
 {
 	struct fman_mac_softc *sc;
-	struct fdt_phy_device *phy_dev;
-	struct fdt_mdio_device *mdio_dev;
+	struct phy_device *phy_dev;
 
 	sc = device_get_softc(dev);
-	phy_dev = sc->phy_dev;
-	BSD_ASSERT(phy == phy_dev->phy);
-	mdio_dev = phy_dev->mdio_dev;
-	return ((*mdio_dev->write)(mdio_dev, phy, reg, val));
+	phy_dev = sc->mac_dev.phy_dev;
+	BSD_ASSERT(phy == phy_dev->mdio.addr);
+	return (phy_write(phy_dev, reg, val));
 }
 
 void
@@ -562,236 +568,12 @@ fman_mac_miibus_statchg(device_t dev)
 	(*mac_dev->adjust_link)(mac_dev, speed);
 }
 
-static int _dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp)
-{
-	struct bm_buffer bmb[8];
-	u8 i;
-
-	memset(bmb, 0, sizeof(bmb));
-
-	for (i = 0; i < 8; ++i) {
-		struct mbuf *m;
-
-		m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
-		if (unlikely(m == NULL)) {
-			goto cl_alloc_failed;
-		}
-
-		RTEMS_STATIC_ASSERT(DPA_BP_RAW_SIZE == MCLBYTES, DPA_BP_RAW_SIZE);
-		*(struct mbuf **)(mtod(m, char *) + DPA_MBUF_POINTER_OFFSET) = m;
-
-		bm_buffer_set64(&bmb[i], mtod(m, uintptr_t));
-	}
-
-release_bufs:
-	/* Release the buffers. In case bman is busy, keep trying
-	 * until successful. bman_release() is guaranteed to succeed
-	 * in a reasonable amount of time
-	 */
-	while (unlikely(bman_release(dpa_bp->pool, bmb, i, 0)))
-		cpu_relax();
-	return i;
-
-cl_alloc_failed:
-	bm_buffer_set64(&bmb[i], 0);
-	/* Avoid releasing a completely null buffer; bman_release() requires
-	 * at least one buffer.
-	 */
-	if (likely(i))
-		goto release_bufs;
-
-	return 0;
-}
-
-/* Cold path wrapper over _dpa_bp_add_8_bufs(). */
-static void dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp, int cpu)
-{
-	int *count_ptr = per_cpu_ptr(dpa_bp->percpu_count, cpu);
-	*count_ptr += _dpa_bp_add_8_bufs(dpa_bp);
-}
-
-int dpa_bp_priv_seed(struct dpa_bp *dpa_bp)
-{
-	int i;
-
-	/* Give each CPU an allotment of "config_count" buffers */
-#ifndef __rtems__
-	for_each_possible_cpu(i) {
-#else /* __rtems__ */
-	for (i = 0; i < (int)rtems_get_processor_count(); ++i) {
-#endif /* __rtems__ */
-		int j;
-
-		/* Although we access another CPU's counters here
-		 * we do it at boot time so it is safe
-		 */
-		for (j = 0; j < dpa_bp->config_count; j += 8)
-			dpa_bp_add_8_bufs(dpa_bp, i);
-	}
-	return 0;
-}
-
-/* Add buffers/(pages) for Rx processing whenever bpool count falls below
- * REFILL_THRESHOLD.
- */
-int dpaa_eth_refill_bpools(struct dpa_bp *dpa_bp, int *countptr)
-{
-	int count = *countptr;
-	int new_bufs;
-
-	if (unlikely(count < FSL_DPAA_ETH_REFILL_THRESHOLD)) {
-		do {
-			new_bufs = _dpa_bp_add_8_bufs(dpa_bp);
-			if (unlikely(!new_bufs)) {
-				/* Avoid looping forever if we've temporarily
-				 * run out of memory. We'll try again at the
-				 * next NAPI cycle.
-				 */
-				break;
-			}
-			count += new_bufs;
-		} while (count < FSL_DPAA_ETH_MAX_BUF_COUNT);
-
-		*countptr = count;
-		if (unlikely(count < FSL_DPAA_ETH_MAX_BUF_COUNT))
-			return -ENOMEM;
-	}
-
-	return 0;
-}
-
-static struct mbuf *
-addr_to_mbuf(dma_addr_t addr)
-{
-	void *vaddr = phys_to_virt(addr);
-
-	return (*(struct mbuf **)(vaddr + DPA_MBUF_POINTER_OFFSET));
-}
-
-static struct mbuf *
-contig_fd_to_mbuf(const struct qm_fd *fd, struct ifnet *ifp)
-{
-	struct mbuf *m;
-	ssize_t fd_off = dpa_fd_offset(fd);
-	dma_addr_t addr = qm_fd_addr(fd);
-
-	m = addr_to_mbuf(addr);
-	m->m_pkthdr.rcvif = ifp;
-	m->m_pkthdr.len = m->m_len = dpa_fd_length(fd);
-	m->m_data = mtod(m, char *) + fd_off;
-
-	return (m);
-}
-
-static void
-dpa_bp_recycle_frag(struct dpa_bp *dpa_bp, dma_addr_t addr, int *count_ptr)
-{
-	struct bm_buffer bmb;
-
-	bm_buffer_set64(&bmb, addr);
-
-	while (bman_release(dpa_bp->pool, &bmb, 1, 0))
-		cpu_relax();
-
-	++(*count_ptr);
-}
-
-static struct mbuf *
-sg_fd_to_mbuf(struct dpa_bp *dpa_bp, const struct qm_fd *fd,
-    struct ifnet *ifp, int *count_ptr)
-{
-	ssize_t fd_off = dpa_fd_offset(fd);
-	dma_addr_t addr = qm_fd_addr(fd);
-	const struct qm_sg_entry *sgt;
-	int i;
-	int len;
-	struct mbuf *m;
-	struct mbuf *last;
-
-	sgt = (const struct qm_sg_entry *)((char *)phys_to_virt(addr) + fd_off);
-	len = 0;
-
-	for (i = 0; i < DPA_SGT_MAX_ENTRIES; ++i) {
-		dma_addr_t sg_addr;
-		int sg_len;
-		struct mbuf *n;
-
-		BSD_ASSERT(sgt[i].extension == 0);
-		BSD_ASSERT(dpa_bp == dpa_bpid2pool(sgt[i].bpid));
-
-		sg_addr = qm_sg_addr(&sgt[i]);
-		n = addr_to_mbuf(sg_addr);
-
-		sg_len = sgt[i].length;
-		len += sg_len;
-
-		if (i == 0) {
-			m = n;
-		} else {
-			last->m_next = n;
-		}
-
-		n->m_len = sg_len;
-		m->m_data = mtod(m, char *) + sgt[i].offset;
-		last = n;
-
-		--(*count_ptr);
-
-		if (sgt[i].final) {
-			break;
-		}
-	}
-
-	m->m_pkthdr.rcvif = ifp;
-	m->m_pkthdr.len = len;
-
-	dpa_bp_recycle_frag(dpa_bp, addr, count_ptr);
-
-	return (m);
-}
-
-void
-_dpa_rx(struct net_device *net_dev, struct qman_portal *portal,
-    const struct dpa_priv_s *priv, struct dpa_percpu_priv_s *percpu_priv,
-    const struct qm_fd *fd, u32 fqid, int *count_ptr)
-{
-	struct dpa_bp *dpa_bp;
-	struct mbuf *m;
-	struct ifnet *ifp;
-
-	ifp = net_dev->ifp;
-
-	if (unlikely(fd->status & FM_FD_STAT_RX_ERRORS) != 0) {
-		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
-		dpa_fd_release(net_dev, fd);
-		return;
-	}
-
-	dpa_bp = priv->dpa_bp;
-	BSD_ASSERT(dpa_bp == dpa_bpid2pool(fd->bpid));
-
-	if (likely(fd->format == qm_fd_contig)) {
-		m = contig_fd_to_mbuf(fd, ifp);
-	} else {
-		BSD_ASSERT(fd->format == qm_fd_sg);
-		m = sg_fd_to_mbuf(dpa_bp, fd, ifp, count_ptr);
-	}
-
-	/* Account for either the contig buffer or the SGT buffer (depending on
-	 * which case we were in) having been removed from the pool.
-	 */
-	(*count_ptr)--;
-
-	if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
-	(*ifp->if_input)(ifp, m);
-}
-
-void _dpa_cleanup_tx_fd(struct ifnet *ifp, const struct qm_fd *fd)
+void dpaa_cleanup_tx_fd(struct ifnet *ifp, const struct qm_fd *fd)
 {
 	struct fman_mac_softc *sc;
 	struct fman_mac_sgt *sgt;
 
-	BSD_ASSERT(fd->format == qm_fd_sg);
+	BSD_ASSERT(qm_fd_get_format(fd) == qm_fd_sg);
 
 	sc = ifp->if_softc;
 	sgt = (struct fman_mac_sgt *)qm_fd_addr(fd);

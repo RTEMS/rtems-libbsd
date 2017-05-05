@@ -39,52 +39,14 @@
 /* Structure for FM MURAM information */
 struct muram_info;
 
-/**
- * fman_muram_init
- * @base:	Pointer to base of memory mapped FM-MURAM.
- * @size:	Size of the FM-MURAM partition.
- *
- * Creates partition in the MURAM.
- * The routine returns a pointer to the MURAM partition.
- * This pointer must be passed as to all other FM-MURAM function calls.
- * No actual initialization or configuration of FM_MURAM hardware is done by
- * this routine.
- *
- * Return: pointer to FM-MURAM object, or NULL for Failure.
- */
 struct muram_info *fman_muram_init(phys_addr_t base, size_t size);
 
-/**
- * fman_muram_offset_to_vbase
- * @muram:	FM-MURAM module pointer.
- * @offset:	the offset of the memory block
- *
- * Gives the address of the memory region from specific offset
- *
- * Return: The address of the memory block
- */
 unsigned long fman_muram_offset_to_vbase(struct muram_info *muram,
 					 unsigned long offset);
 
-/**
- * fman_muram_alloc
- * @muram:	FM-MURAM module pointer.
- * @size:	Size of the memory to be allocated.
- *
- * Allocate some memory from FM-MURAM partition.
- *
- * Return: address of the allocated memory; NULL otherwise.
- */
-int fman_muram_alloc(struct muram_info *muram, size_t size);
+unsigned long fman_muram_alloc(struct muram_info *muram, size_t size);
 
-/**
- * fman_muram_free_mem
- * muram:	FM-MURAM module pointer.
- * offset:	offset of the memory region to be freed.
- * size:	size of the memory to be freed.
- *
- * Free an allocated memory from FM-MURAM partition.
- */
-void fman_muram_free_mem(struct muram_info *muram, u32 offset, size_t size);
+void fman_muram_free_mem(struct muram_info *muram, unsigned long offset,
+			 size_t size);
 
 #endif /* __FM_MURAM_EXT */

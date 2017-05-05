@@ -100,6 +100,8 @@ static inline int queue_work(struct workqueue_struct *q, struct work_struct *wor
 	return !taskqueue_enqueue((q)->taskqueue, &(work)->work_task);
 }
 
+#define	queue_work_on(cpu, q, work) queue_work(q, work)
+
 static inline void
 _delayed_work_fn(void *arg)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 embedded brains GmbH
+ * Copyright (c) 2017 embedded brains GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FDT_PHY
-#define	_FDT_PHY
+#ifndef _LINUX_CRC32_H
+#define	_LINUX_CRC32_H
+
+#include <linux/types.h>
+#include <sys/libkern.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-struct fdt_mdio_device {
-	int (*read)(struct fdt_mdio_device *dev, int phy, int reg);
-	int (*write)(struct fdt_mdio_device *dev, int phy, int reg, int val);
-};
+static inline u32
+crc32_le(u32 crc, unsigned char const *buf, size_t size)
+{
 
-struct fdt_phy_device {
-	int phy;
-  struct fdt_mdio_device *mdio_dev;
-};
-
-struct fdt_phy_device *fdt_phy_obtain(int device_node);
-
-void fdt_phy_release(struct fdt_phy_device *phy_dev);
+	return (crc32_raw(buf, size, crc));
+}
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* _FDT_PHY */
-
+#endif /* _LINUX_CRC32_H */

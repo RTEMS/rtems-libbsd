@@ -40,13 +40,14 @@
 #include "fman.h"
 #include "fman_sp.h"
 
-#include <asm/mpc85xx.h>
 #include <linux/io.h>
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/of_platform.h>
 #include <linux/of_address.h>
+#include <linux/delay.h>
+#include <linux/libfdt_env.h>
 
 /* Queue ID */
 #define DFLT_FQ_ID		0x00FFFFFF
@@ -107,14 +108,10 @@
 #define BMI_EBD_EN				0x80000000
 
 #define BMI_PORT_CFG_EN				0x80000000
-#define BMI_PORT_CFG_FDOVR			0x02000000
 
 #define BMI_PORT_STATUS_BSY			0x80000000
 
 #define BMI_DMA_ATTR_SWP_SHIFT			FMAN_SP_DMA_ATTR_SWP_SHIFT
-#define BMI_DMA_ATTR_IC_STASH_ON		0x10000000
-#define BMI_DMA_ATTR_HDR_STASH_ON		0x04000000
-#define BMI_DMA_ATTR_SG_STASH_ON		0x01000000
 #define BMI_DMA_ATTR_WRITE_OPTIMIZE		FMAN_SP_DMA_ATTR_WRITE_OPTIMIZE
 
 #define BMI_RX_FIFO_PRI_ELEVATION_SHIFT	16
@@ -165,15 +162,11 @@
 
 #define BMI_TX_FIFO_MIN_FILL_SHIFT		16
 
-#define BMI_SG_DISABLE				FMAN_SP_SG_DISABLE
-
 #define BMI_PRIORITY_ELEVATION_LEVEL ((0x3FF + 1) * PORT_BMI_FIFO_UNITS)
 #define BMI_FIFO_THRESHOLD	      ((0x3FF + 1) * PORT_BMI_FIFO_UNITS)
 
 #define BMI_DEQUEUE_PIPELINE_DEPTH(_type, _speed)		\
 	((_type == FMAN_PORT_TYPE_TX && _speed == 10000) ? 4 : 1)
-
-#define BMI_PORT_RFNE_FRWD_RPD                  0x40000000
 
 #define RX_ERRS_TO_ENQ				  \
 	(FM_PORT_FRM_ERR_DMA			| \
@@ -190,12 +183,10 @@
 
 /* NIA defines */
 #define NIA_ORDER_RESTOR				0x00800000
-#define NIA_ENG_FM_CTL					0x00000000
 #define NIA_ENG_BMI					0x00500000
 #define NIA_ENG_QMI_ENQ					0x00540000
 #define NIA_ENG_QMI_DEQ					0x00580000
 
-#define NIA_FM_CTL_AC_NO_IPACC_PRE_BMI_ENQ_FRAME	0x00000028
 #define NIA_BMI_AC_ENQ_FRAME				0x00000002
 #define NIA_BMI_AC_TX_RELEASE				0x000002C0
 #define NIA_BMI_AC_RELEASE				0x000000C0
@@ -401,8 +392,6 @@ struct fman_port_cfg {
 	u8 cheksum_last_bytes_ignore;
 	u8 rx_cut_end_bytes;
 	struct fman_buf_pool_depletion buf_pool_depletion;
-	bool discard_override;
-	bool en_buf_pool_depletion;
 	struct fman_ext_pools ext_buf_pools;
 	u32 tx_fifo_min_level;
 	u32 tx_fifo_low_comf_level;
@@ -413,32 +402,17 @@ struct fman_port_cfg {
 	struct fman_sp_int_context_data_copy int_context;
 	u32 discard_mask;
 	u32 err_mask;
-	bool forward_reuse_int_context;
 	struct fman_buffer_prefix_content buffer_prefix_content;
 	bool dont_release_buf;
-	bool set_num_of_tasks;
-	bool set_num_of_open_dmas;
-	bool set_size_of_fifo;
-	bool bcb_workaround;
 
 	u8 rx_fd_bits;
 	u32 tx_fifo_deq_pipeline_depth;
-	bool errata_A006675;
 	bool errata_A006320;
 	bool excessive_threshold_register;
-	bool fmbm_rebm_has_sgd;
 	bool fmbm_tfne_has_features;
-	bool qmi_deq_options_support;
 
 	enum fman_port_dma_swap dma_swap_data;
-	bool dma_ic_stash_on;
-	bool dma_header_stash_on;
-	bool dma_sg_stash_on;
-	bool dma_write_optimize;
 	enum fman_port_color color;
-	bool sync_req;
-
-	bool no_scatter_gather;
 };
 
 struct fman_port_rx_pools_params {
@@ -458,6 +432,7 @@ struct fman_port_dts_params {
 
 struct fman_port {
 	void *fm;
+	struct device *dev;
 	struct fman_rev_info rev_info;
 	u8 port_id;
 	enum fman_port_type port_type;
@@ -493,22 +468,10 @@ static int init_bmi_rx(struct fman_port *port)
 	struct fman_port_cfg *cfg = port->cfg;
 	u32 tmp;
 
-	/* Rx Configuration register */
-	tmp = 0;
-	if (cfg->discard_override)
-		tmp |= BMI_PORT_CFG_FDOVR;
-	iowrite32be(tmp, &regs->fmbm_rcfg);
-
 	/* DMA attributes */
 	tmp = (u32)cfg->dma_swap_data << BMI_DMA_ATTR_SWP_SHIFT;
-	if (cfg->dma_ic_stash_on)
-		tmp |= BMI_DMA_ATTR_IC_STASH_ON;
-	if (cfg->dma_header_stash_on)
-		tmp |= BMI_DMA_ATTR_HDR_STASH_ON;
-	if (cfg->dma_sg_stash_on)
-		tmp |= BMI_DMA_ATTR_SG_STASH_ON;
-	if (cfg->dma_write_optimize)
-		tmp |= BMI_DMA_ATTR_WRITE_OPTIMIZE;
+	/* Enable write optimization */
+	tmp |= BMI_DMA_ATTR_WRITE_OPTIMIZE;
 	iowrite32be(tmp, &regs->fmbm_rda);
 
 	/* Rx FIFO parameters */
@@ -548,27 +511,21 @@ static int init_bmi_rx(struct fman_port *port)
 	tmp = (cfg->buf_margins.start_margins & BMI_EXT_BUF_MARG_START_MASK) <<
 		BMI_EXT_BUF_MARG_START_SHIFT;
 	tmp |= cfg->buf_margins.end_margins & BMI_EXT_BUF_MARG_END_MASK;
-	if (cfg->fmbm_rebm_has_sgd && cfg->no_scatter_gather)
-		tmp |= BMI_SG_DISABLE;
 	iowrite32be(tmp, &regs->fmbm_rebm);
 
 	/* Frame attributes */
 	tmp = BMI_CMD_RX_MR_DEF;
 	tmp |= BMI_CMD_ATTR_ORDER;
 	tmp |= (u32)cfg->color << BMI_CMD_ATTR_COLOR_SHIFT;
-	if (cfg->sync_req)
-		tmp |= BMI_CMD_ATTR_SYNC;
+	/* Synchronization request */
+	tmp |= BMI_CMD_ATTR_SYNC;
 
 	iowrite32be(tmp, &regs->fmbm_rfca);
 
 	/* NIA */
 	tmp = (u32)cfg->rx_fd_bits << BMI_NEXT_ENG_FD_BITS_SHIFT;
 
-	if (cfg->errata_A006675)
-		tmp |= NIA_ENG_FM_CTL |
-		       NIA_FM_CTL_AC_NO_IPACC_PRE_BMI_ENQ_FRAME;
-	else
-		tmp |= NIA_ENG_BMI | NIA_BMI_AC_ENQ_FRAME;
+	tmp |= NIA_ENG_BMI | NIA_BMI_AC_ENQ_FRAME;
 	iowrite32be(tmp, &regs->fmbm_rfne);
 
 	/* Enqueue NIA */
@@ -597,12 +554,6 @@ static int init_bmi_tx(struct fman_port *port)
 
 	/* DMA attributes */
 	tmp = (u32)cfg->dma_swap_data << BMI_DMA_ATTR_SWP_SHIFT;
-	if (cfg->dma_ic_stash_on)
-		tmp |= BMI_DMA_ATTR_IC_STASH_ON;
-	if (cfg->dma_header_stash_on)
-		tmp |= BMI_DMA_ATTR_HDR_STASH_ON;
-	if (cfg->dma_sg_stash_on)
-		tmp |= BMI_DMA_ATTR_SG_STASH_ON;
 	iowrite32be(tmp, &regs->fmbm_tda);
 
 	/* Tx FIFO parameters */
@@ -698,20 +649,19 @@ static int init_qmi(struct fman_port *port)
 		return -EINVAL;
 	}
 
-	if (cfg->qmi_deq_options_support) {
-		switch (cfg->deq_prefetch_option) {
-		case FMAN_PORT_DEQ_NO_PREFETCH:
-			break;
-		case FMAN_PORT_DEQ_PART_PREFETCH:
-			tmp |= QMI_DEQ_CFG_PREFETCH_PARTIAL;
-			break;
-		case FMAN_PORT_DEQ_FULL_PREFETCH:
-			tmp |= QMI_DEQ_CFG_PREFETCH_FULL;
-			break;
-		default:
-			return -EINVAL;
-		}
+	switch (cfg->deq_prefetch_option) {
+	case FMAN_PORT_DEQ_NO_PREFETCH:
+		break;
+	case FMAN_PORT_DEQ_PART_PREFETCH:
+		tmp |= QMI_DEQ_CFG_PREFETCH_PARTIAL;
+		break;
+	case FMAN_PORT_DEQ_FULL_PREFETCH:
+		tmp |= QMI_DEQ_CFG_PREFETCH_FULL;
+		break;
+	default:
+		return -EINVAL;
 	}
+
 	tmp |= (cfg->deq_sp & QMI_DEQ_CFG_SP_MASK) << QMI_DEQ_CFG_SP_SHIFT;
 	tmp |= cfg->deq_byte_cnt;
 	iowrite32be(tmp, &regs->fmqm_pndc);
@@ -883,11 +833,11 @@ static int verify_size_of_fifo(struct fman_port *port)
 
 	/* Verify the size  */
 	if (port->fifo_bufs.num < min_fifo_size_required)
-		pr_debug("FIFO size should be enlarged to %d bytes\n",
-			 min_fifo_size_required);
+		dev_dbg(port->dev, "%s: FIFO size should be enlarged to %d bytes\n",
+			__func__, min_fifo_size_required);
 	else if (port->fifo_bufs.num < opt_fifo_size_for_b2b)
-		pr_debug("For b2b processing,FIFO may be enlarged to %d bytes\n",
-			 opt_fifo_size_for_b2b);
+		dev_dbg(port->dev, "%s: For b2b processing,FIFO may be enlarged to %d bytes\n",
+			__func__, opt_fifo_size_for_b2b);
 
 	return 0;
 }
@@ -961,7 +911,7 @@ static int set_ext_buffer_pools(struct fman_port *port)
 
 	err = set_bpools(port, &bpools);
 	if (err != 0) {
-		pr_err("FMan port: set_bpools\n");
+		dev_err(port->dev, "%s: set_bpools() failed\n", __func__);
 		return -EINVAL;
 	}
 
@@ -976,8 +926,6 @@ static int init_low_level_driver(struct fman_port *port)
 	switch (port->port_type) {
 	case FMAN_PORT_TYPE_RX:
 		cfg->err_mask = (RX_ERRS_TO_ENQ & ~cfg->discard_mask);
-		if (cfg->forward_reuse_int_context)
-			cfg->rx_fd_bits = (u8)(BMI_PORT_RFNE_FRWD_RPD >> 24);
 		break;
 	default:
 		break;
@@ -990,7 +938,8 @@ static int init_low_level_driver(struct fman_port *port)
 	port->cfg->int_buf_start_margin = port->internal_buf_offset;
 
 	if (init(port) != 0) {
-		pr_err("fman_port_init\n");
+		dev_err(port->dev, "%s: fman port initialization failed\n",
+			__func__);
 		return -ENODEV;
 	}
 
@@ -1004,9 +953,9 @@ static int init_low_level_driver(struct fman_port *port)
 			 * Otherwise, if fmbm_tcfqid is 0 the FM will release
 			 * buffers to BM regardless of fmbm_tfene
 			 */
-			out_be32(&port->bmi_regs->tx.fmbm_tcfqid, 0xFFFFFF);
-			out_be32(&port->bmi_regs->tx.fmbm_tfene,
-				 NIA_ENG_BMI | NIA_BMI_AC_TX_RELEASE);
+			iowrite32be(0xFFFFFF, &port->bmi_regs->tx.fmbm_tcfqid);
+			iowrite32be(NIA_ENG_BMI | NIA_BMI_AC_TX_RELEASE,
+				    &port->bmi_regs->tx.fmbm_tfene);
 		}
 	}
 
@@ -1038,7 +987,7 @@ static int fill_soc_specific_params(struct fman_port *port)
 		break;
 
 	default:
-		pr_err("Unsupported FMan version\n");
+		dev_err(port->dev, "%s: Unsupported FMan version\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1218,14 +1167,12 @@ static void set_dflt_cfg(struct fman_port *port,
 	struct fman_port_cfg *cfg = port->cfg;
 
 	cfg->dma_swap_data = FMAN_PORT_DMA_NO_SWAP;
-	cfg->dma_write_optimize = true;
 	cfg->color = FMAN_PORT_COLOR_GREEN;
 	cfg->rx_cut_end_bytes = DFLT_PORT_CUT_BYTES_FROM_END;
 	cfg->rx_pri_elevation = BMI_PRIORITY_ELEVATION_LEVEL;
 	cfg->rx_fifo_thr = BMI_FIFO_THRESHOLD;
 	cfg->tx_fifo_low_comf_level = (5 * 1024);
 	cfg->deq_type = FMAN_PORT_DEQ_BY_PRI;
-	cfg->sync_req = true;
 	cfg->deq_prefetch_option = FMAN_PORT_DEQ_FULL_PREFETCH;
 	cfg->tx_fifo_deq_pipeline_depth =
 		BMI_DEQUEUE_PIPELINE_DEPTH(port->port_type, port->port_speed);
@@ -1242,14 +1189,10 @@ static void set_dflt_cfg(struct fman_port *port,
 		cfg->errata_A006320 = true;
 
 	/* Excessive Threshold register - exists for pre-FMv3 chips only */
-	if (port->rev_info.major < 6) {
+	if (port->rev_info.major < 6)
 		cfg->excessive_threshold_register = true;
-	} else {
-		cfg->fmbm_rebm_has_sgd = true;
+	else
 		cfg->fmbm_tfne_has_features = true;
-	}
-
-	cfg->qmi_deq_options_support = true;
 
 	cfg->buffer_prefix_content.data_align =
 		DFLT_PORT_BUFFER_PREFIX_CONTEXT_DATA_ALIGN;
@@ -1267,15 +1210,6 @@ static void set_rx_dflt_cfg(struct fman_port *port,
 		port_params->specific_params.rx_params.err_fqid;
 	port->cfg->dflt_fqid =
 		port_params->specific_params.rx_params.dflt_fqid;
-
-	/* Set BCB workaround on Rx ports, only for B4860 rev1 */
-	if (port->rev_info.major >= 6) {
-		unsigned int svr;
-
-		svr = mfspr(SPRN_SVR);
-		if ((SVR_SOC_VER(svr) == SVR_B4860) && (SVR_MAJ(svr) == 1))
-			port->cfg->bcb_workaround = true;
-	}
 }
 
 static void set_tx_dflt_cfg(struct fman_port *port,
@@ -1295,6 +1229,20 @@ static void set_tx_dflt_cfg(struct fman_port *port,
 	port->cfg->deq_high_priority = true;
 }
 
+/**
+ * fman_port_config
+ * @port:	Pointer to the port structure
+ * @params:	Pointer to data structure of parameters
+ *
+ * Creates a descriptor for the FM PORT module.
+ * The routine returns a pointer to the FM PORT object.
+ * This descriptor must be passed as first parameter to all other FM PORT
+ * function calls.
+ * No actual initialization or configuration of FM hardware is done by this
+ * routine.
+ *
+ * Return: 0 on success; Error code otherwise.
+ */
 int fman_port_config(struct fman_port *port, struct fman_port_params *params)
 {
 	void __iomem *base_addr = port->dts_params.base_addr;
@@ -1330,10 +1278,8 @@ int fman_port_config(struct fman_port *port, struct fman_port_params *params)
 
 	/* Continue with other parameters */
 	/* set memory map pointers */
-	port->bmi_regs = (union fman_port_bmi_regs __iomem *)
-			 (base_addr + BMI_PORT_REGS_OFFSET);
-	port->qmi_regs = (struct fman_port_qmi_regs __iomem *)
-			 (base_addr + QMI_PORT_REGS_OFFSET);
+	port->bmi_regs = base_addr + BMI_PORT_REGS_OFFSET;
+	port->qmi_regs = base_addr + QMI_PORT_REGS_OFFSET;
 
 	port->max_frame_length = DFLT_PORT_MAX_FRAME_LENGTH;
 	/* resource distribution. */
@@ -1377,7 +1323,7 @@ int fman_port_config(struct fman_port *port, struct fman_port_params *params)
 			u32 reg;
 
 			reg = 0x00001013;
-			out_be32(&port->bmi_regs->tx.fmbm_tfp, reg);
+			iowrite32be(reg, &port->bmi_regs->tx.fmbm_tfp);
 		}
 	}
 
@@ -1391,6 +1337,14 @@ err_params:
 }
 EXPORT_SYMBOL(fman_port_config);
 
+/**
+ * fman_port_init
+ * port:	A pointer to a FM Port module.
+ * Initializes the FM PORT module by defining the software structure and
+ * configuring the hardware registers.
+ *
+ * Return: 0 on success; Error code otherwise.
+ */
 int fman_port_init(struct fman_port *port)
 {
 	struct fman_port_cfg *cfg;
@@ -1408,14 +1362,6 @@ int fman_port_init(struct fman_port *port)
 	if (err)
 		return err;
 
-	/* FM_HEAVY_TRAFFIC_HANG_ERRATA_FMAN_A005669 Errata workaround */
-	if (port->rev_info.major >= 6 && (port->cfg->bcb_workaround) &&
-	    ((port->port_type == FMAN_PORT_TYPE_RX) &&
-	    (port->port_speed == 1000))) {
-		port->cfg->discard_mask |= FM_PORT_FRM_ERR_PHYSICAL;
-		port->fifo_bufs.num += 4 * 1024;
-	}
-
 	cfg = port->cfg;
 
 	if (port->port_type == FMAN_PORT_TYPE_RX) {
@@ -1430,10 +1376,10 @@ int fman_port_init(struct fman_port *port)
 		if (cfg->buf_margins.start_margins + MIN_EXT_BUF_SIZE +
 		    cfg->buf_margins.end_margins >
 		    port->rx_pools_params.largest_buf_size) {
-			pr_err("buf_margins.start_margins (%d) + minimum buf size (64) + buf_margins.end_margins (%d) is larger than maximum external buffer size (%d)\n",
-			       cfg->buf_margins.start_margins,
-			       cfg->buf_margins.end_margins,
-			       port->rx_pools_params.largest_buf_size);
+			dev_err(port->dev, "%s: buf_margins.start_margins (%d) + minimum buf size (64) + buf_margins.end_margins (%d) is larger than maximum external buffer size (%d)\n",
+				__func__, cfg->buf_margins.start_margins,
+				cfg->buf_margins.end_margins,
+				port->rx_pools_params.largest_buf_size);
 			return -EINVAL;
 		}
 	}
@@ -1473,6 +1419,31 @@ int fman_port_init(struct fman_port *port)
 }
 EXPORT_SYMBOL(fman_port_init);
 
+/**
+ * fman_port_cfg_buf_prefix_content
+ * @port			A pointer to a FM Port module.
+ * @buffer_prefix_content	A structure of parameters describing
+ *				the structure of the buffer.
+ *				Out parameter:
+ *				Start margin - offset of data from
+ *				start of external buffer.
+ * Defines the structure, size and content of the application buffer.
+ * The prefix, in Tx ports, if 'pass_prs_result', the application should set
+ * a value to their offsets in the prefix of the FM will save the first
+ * 'priv_data_size', than, depending on 'pass_prs_result' and
+ * 'pass_time_stamp', copy parse result and timeStamp, and the packet itself
+ * (in this order), to the application buffer, and to offset.
+ * Calling this routine changes the buffer margins definitions in the internal
+ * driver data base from its default configuration:
+ * Data size:  [DEFAULT_PORT_BUFFER_PREFIX_CONTENT_PRIV_DATA_SIZE]
+ * Pass Parser result: [DEFAULT_PORT_BUFFER_PREFIX_CONTENT_PASS_PRS_RESULT].
+ * Pass timestamp: [DEFAULT_PORT_BUFFER_PREFIX_CONTENT_PASS_TIME_STAMP].
+ * May be used for all ports
+ *
+ * Allowed only following fman_port_config() and before fman_port_init().
+ *
+ * Return: 0 on success; Error code otherwise.
+ */
 int fman_port_cfg_buf_prefix_content(struct fman_port *port,
 				     struct fman_buffer_prefix_content *
 				     buffer_prefix_content)
@@ -1494,9 +1465,24 @@ int fman_port_cfg_buf_prefix_content(struct fman_port *port,
 }
 EXPORT_SYMBOL(fman_port_cfg_buf_prefix_content);
 
+/**
+ * fman_port_disable
+ * port:	A pointer to a FM Port module.
+ *
+ * Gracefully disable an FM port. The port will not start new	tasks after all
+ * tasks associated with the port are terminated.
+ *
+ * This is a blocking routine, it returns after port is gracefully stopped,
+ * i.e. the port will not except new frames, but it will finish all frames
+ * or tasks which were already began.
+ * Allowed only following fman_port_init().
+ *
+ * Return: 0 on success; Error code otherwise.
+ */
 int fman_port_disable(struct fman_port *port)
 {
-	u32 __iomem *bmi_cfg_reg, *bmi_status_reg, tmp;
+	u32 __iomem *bmi_cfg_reg, *bmi_status_reg;
+	u32 tmp;
 	bool rx_port, failure = false;
 	int count;
 
@@ -1553,16 +1539,27 @@ int fman_port_disable(struct fman_port *port)
 	}
 
 	if (failure)
-		pr_debug("FMan Port[%d]: BMI or QMI is Busy. Port forced down\n",
-			 port->port_id);
+		dev_dbg(port->dev, "%s: FMan Port[%d]: BMI or QMI is Busy. Port forced down\n",
+			__func__,  port->port_id);
 
 	return 0;
 }
 EXPORT_SYMBOL(fman_port_disable);
 
+/**
+ * fman_port_enable
+ * port:	A pointer to a FM Port module.
+ *
+ * A runtime routine provided to allow disable/enable of port.
+ *
+ * Allowed only following fman_port_init().
+ *
+ * Return: 0 on success; Error code otherwise.
+ */
 int fman_port_enable(struct fman_port *port)
 {
-	u32 __iomem *bmi_cfg_reg, tmp;
+	u32 __iomem *bmi_cfg_reg;
+	u32 tmp;
 	bool rx_port;
 
 	if (!is_init_done(port->cfg))
@@ -1595,12 +1592,30 @@ int fman_port_enable(struct fman_port *port)
 }
 EXPORT_SYMBOL(fman_port_enable);
 
+/**
+ * fman_port_bind
+ * dev:		FMan Port OF device pointer
+ *
+ * Bind to a specific FMan Port.
+ *
+ * Allowed only after the port was created.
+ *
+ * Return: A pointer to the FMan port device.
+ */
 struct fman_port *fman_port_bind(struct device *dev)
 {
 	return (struct fman_port *)(dev_get_drvdata(get_device(dev)));
 }
 EXPORT_SYMBOL(fman_port_bind);
 
+/**
+ * fman_port_get_qman_channel_id
+ * port:	Pointer to the FMan port devuce
+ *
+ * Get the QMan channel ID for the specific port
+ *
+ * Return: QMan channel ID
+ */
 u32 fman_port_get_qman_channel_id(struct fman_port *port)
 {
 	return port->dts_params.qman_channel_id;
@@ -1624,7 +1639,7 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 #ifndef __rtems__
 	struct resource *dev_res;
 #endif /* __rtems__ */
-	const u32 *u32_prop;
+	u32 val;
 	int err = 0, lenp;
 	enum fman_port_type port_type;
 	u16 port_speed;
@@ -1634,13 +1649,15 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 	if (!port)
 		return -ENOMEM;
 
+	port->dev = &of_dev->dev;
+
 	port_node = of_node_get(of_dev->dev.of_node);
 
 	/* Get the FM node */
 #ifndef __rtems__
 	fm_node = of_get_parent(port_node);
 	if (!fm_node) {
-		pr_err("of_get_parent() failed\n");
+		dev_err(port->dev, "%s: of_get_parent() failed\n", __func__);
 		err = -ENODEV;
 		goto return_err;
 	}
@@ -1653,28 +1670,20 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 	}
 #endif /* __rtems__ */
 
-	u32_prop = (const u32 *)of_get_property(port_node, "cell-index", &lenp);
-	if (!u32_prop) {
-		pr_err("of_get_property(%s, cell-index) failed\n",
-		       port_node->full_name);
+	err = of_property_read_u32(port_node, "cell-index", &val);
+	if (err) {
+		dev_err(port->dev, "%s: reading cell-index for %s failed\n",
+			__func__, port_node->full_name);
 		err = -EINVAL;
 		goto return_err;
 	}
-	if (WARN_ON(lenp != sizeof(u32))) {
-		err = -EINVAL;
-		goto return_err;
-	}
-	port_id = (u8)*u32_prop;
-
+	port_id = (u8)val;
 	port->dts_params.id = port_id;
 
 	if (of_device_is_compatible(port_node, "fsl,fman-v3-port-tx")) {
 		port_type = FMAN_PORT_TYPE_TX;
 		port_speed = 1000;
-		u32_prop = (const u32 *)of_get_property(port_node,
-							"fsl,fman-10g-port",
-							&lenp);
-		if (u32_prop)
+		if (of_find_property(port_node, "fsl,fman-10g-port", &lenp))
 			port_speed = 10000;
 
 	} else if (of_device_is_compatible(port_node, "fsl,fman-v2-port-tx")) {
@@ -1687,9 +1696,7 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 	} else if (of_device_is_compatible(port_node, "fsl,fman-v3-port-rx")) {
 		port_type = FMAN_PORT_TYPE_RX;
 		port_speed = 1000;
-		u32_prop = (const u32 *)of_get_property(port_node,
-						  "fsl,fman-10g-port", &lenp);
-		if (u32_prop)
+		if (of_find_property(port_node, "fsl,fman-10g-port", &lenp))
 			port_speed = 10000;
 
 	} else if (of_device_is_compatible(port_node, "fsl,fman-v2-port-rx")) {
@@ -1700,7 +1707,7 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 		port_type = FMAN_PORT_TYPE_RX;
 
 	}  else {
-		pr_err("Illegal port type\n");
+		dev_err(port->dev, "%s: Illegal port type\n", __func__);
 		err = -EINVAL;
 		goto return_err;
 	}
@@ -1713,7 +1720,8 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 
 		qman_channel_id = fman_get_qman_channel_id(fman, port_id);
 		if (qman_channel_id == 0) {
-			pr_err("incorrect qman-channel-id\n");
+			dev_err(port->dev, "%s: incorrect qman-channel-id\n",
+				__func__);
 			err = -EINVAL;
 			goto return_err;
 		}
@@ -1722,7 +1730,8 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 
 	err = of_address_to_resource(port_node, 0, &res);
 	if (err < 0) {
-		pr_err("of_address_to_resource() failed\n");
+		dev_err(port->dev, "%s: of_address_to_resource() failed\n",
+			__func__);
 		err = -ENOMEM;
 		goto return_err;
 	}
@@ -1732,21 +1741,20 @@ static int fman_port_probe(struct platform_device *of_dev, struct fman *fman)
 	of_node_put(port_node);
 
 #ifndef __rtems__
-	dev_res = __devm_request_region(fman_get_device(fman), &res,
-					res.start, (res.end + 1 - res.start),
-					"fman-port");
+	dev_res = __devm_request_region(port->dev, &res, res.start,
+					resource_size(&res), "fman-port");
 	if (!dev_res) {
-		pr_err("__devm_request_region() failed\n");
+		dev_err(port->dev, "%s: __devm_request_region() failed\n",
+			__func__);
 		err = -EINVAL;
 		goto free_port;
 	}
 #endif /* __rtems__ */
 
-	port->dts_params.base_addr = devm_ioremap(fman_get_device(fman),
-						  res.start,
-						  (res.end + 1 - res.start));
-	if (port->dts_params.base_addr == 0)
-		pr_err("devm_ioremap() failed\n");
+	port->dts_params.base_addr = devm_ioremap(port->dev, res.start,
+						  resource_size(&res));
+	if (!port->dts_params.base_addr)
+		dev_err(port->dev, "%s: devm_ioremap() failed\n", __func__);
 
 	dev_set_drvdata(&of_dev->dev, port);
 
@@ -1774,14 +1782,34 @@ MODULE_DEVICE_TABLE(of, fman_port_match);
 
 static struct platform_driver fman_port_driver = {
 	.driver = {
-		   .name = "fsl-fman-port",
-		   .of_match_table = fman_port_match,
-		   },
+		.name = "fsl-fman-port",
+		.of_match_table = fman_port_match,
+	},
 	.probe = fman_port_probe,
 };
 
-builtin_platform_driver(fman_port_driver);
+static int __init fman_port_load(void)
+{
+	int err;
 
+	pr_debug("FSL DPAA FMan driver\n");
+
+	err = platform_driver_register(&fman_port_driver);
+	if (err < 0)
+		pr_err("Error, platform_driver_register() = %d\n", err);
+
+	return err;
+}
+module_init(fman_port_load);
+
+static void __exit fman_port_unload(void)
+{
+	platform_driver_unregister(&fman_port_driver);
+}
+module_exit(fman_port_unload);
+
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_DESCRIPTION("Freescale DPAA Frame Manager Port driver");
 #else /* __rtems__ */
 #include <sys/cdefs.h>
 #include <sys/param.h>

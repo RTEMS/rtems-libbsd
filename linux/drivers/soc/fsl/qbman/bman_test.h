@@ -1,4 +1,4 @@
-/* Copyright 2008 - 2015 Freescale Semiconductor, Inc.
+/* Copyright 2008 - 2016 Freescale Semiconductor, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,5 +30,6 @@
 
 #include "bman_priv.h"
 
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
 void bman_test_api(void);
-void bman_test_thresh(void);

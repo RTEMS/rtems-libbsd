@@ -24,20 +24,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LINUX_OF_MDIO_H
-#define	_LINUX_OF_MDIO_H
+#ifndef _LINUX_MII_H
+#define	_LINUX_MII_H
 
-#include <linux/of.h>
-#include <linux/phy.h>
+#include <dev/mii/mii.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#define	BMCR_SPEED1000 BMCR_SPEED1
+#define	BMCR_SPEED100 BMCR_SPEED0
+#define	BMCR_SPEED10 0
+#define	BMCR_ANENABLE BMCR_AUTOEN
+#define	BMCR_ANRESTART BMCR_STARTNEG
+#define	BMCR_FULLDPLX BMCR_FDX
 
-struct phy_device *of_phy_find_device(struct device_node *dn);
+#define	MII_ADVERTISE MII_ANAR
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif /* _LINUX_OF_MDIO_H */
+#endif /* _LINUX_MII_H */

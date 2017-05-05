@@ -2,7 +2,7 @@
 
 #include <rtems/bsd/local/opt_dpaa.h>
 
-/* Copyright (c) 2009 - 2015 Freescale Semiconductor, Inc.
+/* Copyright 2008 - 2016 Freescale Semiconductor, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,659 +34,776 @@
 
 #include "bman_priv.h"
 
-/* Last updated for v00.79 of the BG */
+#define IRQNAME		"BMan portal %d"
+#define MAX_IRQNAME	16	/* big enough for "BMan portal %d" */
 
-struct bman;
+/* Portal register assists */
 
-/* Register offsets */
-#define REG_POOL_SWDET(n)	(0x0000 + ((n) * 0x04))
-#define REG_POOL_HWDET(n)	(0x0100 + ((n) * 0x04))
-#define REG_POOL_SWDXT(n)	(0x0200 + ((n) * 0x04))
-#define REG_POOL_HWDXT(n)	(0x0300 + ((n) * 0x04))
-#define REG_POOL_CONTENT(n)	(0x0600 + ((n) * 0x04))
-#define REG_FBPR_FPC		0x0800
-#define REG_ECSR		0x0a00
-#define REG_ECIR		0x0a04
-#define REG_EADR		0x0a08
-#define REG_EDATA(n)		(0x0a10 + ((n) * 0x04))
-#define REG_SBEC(n)		(0x0a80 + ((n) * 0x04))
-#define REG_IP_REV_1		0x0bf8
-#define REG_IP_REV_2		0x0bfc
-#define REG_FBPR_BARE		0x0c00
-#define REG_FBPR_BAR		0x0c04
-#define REG_FBPR_AR		0x0c10
-#define REG_SRCIDR		0x0d04
-#define REG_LIODNR		0x0d08
-#define REG_ERR_ISR		0x0e00	/* + "enum bm_isr_reg" */
+/* Cache-inhibited register offsets */
+#define BM_REG_RCR_PI_CINH	0x0000
+#define BM_REG_RCR_CI_CINH	0x0004
+#define BM_REG_RCR_ITR		0x0008
+#define BM_REG_CFG		0x0100
+#define BM_REG_SCN(n)		(0x0200 + ((n) << 2))
+#define BM_REG_ISR		0x0e00
+#define BM_REG_IER		0x0e04
+#define BM_REG_ISDR		0x0e08
+#define BM_REG_IIR		0x0e0c
 
-/* Used by all error interrupt registers except 'inhibit' */
-#define BM_EIRQ_IVCI	0x00000010	/* Invalid Command Verb */
-#define BM_EIRQ_FLWI	0x00000008	/* FBPR Low Watermark */
-#define BM_EIRQ_MBEI	0x00000004	/* Multi-bit ECC Error */
-#define BM_EIRQ_SBEI	0x00000002	/* Single-bit ECC Error */
-#define BM_EIRQ_BSCN	0x00000001	/* pool State Change Notification */
-
-/* BMAN_ECIR valid error bit */
-#define PORTAL_ECSR_ERR	(BM_EIRQ_IVCI)
-
-union bman_ecir {
-	u32 ecir_raw;
-	struct {
-		u32 __reserved1:4;
-		u32 portal_num:4;
-		u32 __reserved2:12;
-		u32 numb:4;
-		u32 __reserved3:2;
-		u32 pid:6;
-	} __packed info;
-};
-
-union bman_eadr {
-	u32 eadr_raw;
-	struct {
-		u32 __reserved1:5;
-		u32 memid:3;
-		u32 __reserved2:14;
-		u32 eadr:10;
-	} __packed info;
-};
-
-struct bman_hwerr_txt {
-	u32 mask;
-	const char *txt;
-};
-
-#define BMAN_HWE_TXT(a, b) { .mask = BM_EIRQ_##a, .txt = b }
-
-static const struct bman_hwerr_txt bman_hwerr_txts[] = {
-	BMAN_HWE_TXT(IVCI, "Invalid Command Verb"),
-	BMAN_HWE_TXT(FLWI, "FBPR Low Watermark"),
-	BMAN_HWE_TXT(MBEI, "Multi-bit ECC Error"),
-	BMAN_HWE_TXT(SBEI, "Single-bit ECC Error"),
-	BMAN_HWE_TXT(BSCN, "Pool State Change Notification"),
-};
-#define BMAN_HWE_COUNT (sizeof(bman_hwerr_txts)/sizeof(struct bman_hwerr_txt))
-
-struct bman_error_info_mdata {
-	u16 addr_mask;
-	u16 bits;
-	const char *txt;
-};
-
-#define BMAN_ERR_MDATA(a, b, c) { .addr_mask = a, .bits = b, .txt = c}
-static const struct bman_error_info_mdata error_mdata[] = {
-	BMAN_ERR_MDATA(0x03FF, 192, "Stockpile memory"),
-	BMAN_ERR_MDATA(0x00FF, 256, "SW portal ring memory port 1"),
-	BMAN_ERR_MDATA(0x00FF, 256, "SW portal ring memory port 2"),
-};
-#define BMAN_ERR_MDATA_COUNT \
-	(sizeof(error_mdata)/sizeof(struct bman_error_info_mdata))
-
-/* Add this in Kconfig */
-#define BMAN_ERRS_TO_UNENABLE (BM_EIRQ_FLWI)
-
-/**
- * bm_err_isr_<reg>_<verb> - Manipulate global interrupt registers
- * @v: for accessors that write values, this is the 32-bit value
- *
- * Manipulates BMAN_ERR_ISR, BMAN_ERR_IER, BMAN_ERR_ISDR, BMAN_ERR_IIR. All
- * manipulations except bm_err_isr_[un]inhibit() use 32-bit masks composed of
- * the BM_EIRQ_*** definitions. Note that "bm_err_isr_enable_write" means
- * "write the enable register" rather than "enable the write register"!
- */
-#define bm_err_isr_status_read(bm)	\
-		__bm_err_isr_read(bm, bm_isr_status)
-#define bm_err_isr_status_clear(bm, m)	\
-		__bm_err_isr_write(bm, bm_isr_status, m)
-#define bm_err_isr_enable_read(bm)	\
-		__bm_err_isr_read(bm, bm_isr_enable)
-#define bm_err_isr_enable_write(bm, v)	\
-		__bm_err_isr_write(bm, bm_isr_enable, v)
-#define bm_err_isr_disable_read(bm)	\
-		__bm_err_isr_read(bm, bm_isr_disable)
-#define bm_err_isr_disable_write(bm, v)	\
-		__bm_err_isr_write(bm, bm_isr_disable, v)
-#define bm_err_isr_inhibit(bm)		\
-		__bm_err_isr_write(bm, bm_isr_inhibit, 1)
-#define bm_err_isr_uninhibit(bm)	\
-		__bm_err_isr_write(bm, bm_isr_inhibit, 0)
-
-#ifndef __rtems__
-static u16 bman_pool_max;
-#else /* __rtems__ */
-/* FIXME */
-extern u16 bman_ip_rev;
-extern u16 bman_pool_max;
-#endif /* __rtems__ */
+/* Cache-enabled register offsets */
+#define BM_CL_CR		0x0000
+#define BM_CL_RR0		0x0100
+#define BM_CL_RR1		0x0140
+#define BM_CL_RCR		0x1000
+#define BM_CL_RCR_PI_CENA	0x3000
+#define BM_CL_RCR_CI_CENA	0x3100
 
 /*
- * TODO: unimplemented registers
- *
- * BMAN_POOLk_SDCNT, BMAN_POOLk_HDCNT, BMAN_FULT,
- * BMAN_VLDPL, BMAN_EECC, BMAN_SBET, BMAN_EINJ
+ * Portal modes.
+ *   Enum types;
+ *     pmode == production mode
+ *     cmode == consumption mode,
+ *   Enum values use 3 letter codes. First letter matches the portal mode,
+ *   remaining two letters indicate;
+ *     ci == cache-inhibited portal register
+ *     ce == cache-enabled portal register
+ *     vb == in-band valid-bit (cache-enabled)
  */
+enum bm_rcr_pmode {		/* matches BCSP_CFG::RPM */
+	bm_rcr_pci = 0,		/* PI index, cache-inhibited */
+	bm_rcr_pce = 1,		/* PI index, cache-enabled */
+	bm_rcr_pvb = 2		/* valid-bit */
+};
+enum bm_rcr_cmode {		/* s/w-only */
+	bm_rcr_cci,		/* CI index, cache-inhibited */
+	bm_rcr_cce		/* CI index, cache-enabled */
+};
 
-/* Encapsulate "struct bman *" as a cast of the register space address. */
 
-static struct bman *bm_create(void *regs)
+/* --- Portal structures --- */
+
+#define BM_RCR_SIZE		8
+
+/* Release Command */
+struct bm_rcr_entry {
+	union {
+		struct {
+			u8 _ncw_verb; /* writes to this are non-coherent */
+			u8 bpid; /* used with BM_RCR_VERB_CMD_BPID_SINGLE */
+			u8 __reserved1[62];
+		};
+		struct bm_buffer bufs[8];
+	};
+};
+#define BM_RCR_VERB_VBIT		0x80
+#define BM_RCR_VERB_CMD_MASK		0x70	/* one of two values; */
+#define BM_RCR_VERB_CMD_BPID_SINGLE	0x20
+#define BM_RCR_VERB_CMD_BPID_MULTI	0x30
+#define BM_RCR_VERB_BUFCOUNT_MASK	0x0f	/* values 1..8 */
+
+struct bm_rcr {
+	struct bm_rcr_entry *ring, *cursor;
+	u8 ci, available, ithresh, vbit;
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	u32 busy;
+	enum bm_rcr_pmode pmode;
+	enum bm_rcr_cmode cmode;
+#endif
+};
+
+/* MC (Management Command) command */
+struct bm_mc_command {
+	u8 _ncw_verb; /* writes to this are non-coherent */
+	u8 bpid; /* used by acquire command */
+	u8 __reserved[62];
+};
+#define BM_MCC_VERB_VBIT		0x80
+#define BM_MCC_VERB_CMD_MASK		0x70	/* where the verb contains; */
+#define BM_MCC_VERB_CMD_ACQUIRE		0x10
+#define BM_MCC_VERB_CMD_QUERY		0x40
+#define BM_MCC_VERB_ACQUIRE_BUFCOUNT	0x0f	/* values 1..8 go here */
+
+/* MC result, Acquire and Query Response */
+union bm_mc_result {
+	struct {
+		u8 verb;
+		u8 bpid;
+		u8 __reserved[62];
+	};
+	struct bm_buffer bufs[8];
+};
+#define BM_MCR_VERB_VBIT		0x80
+#define BM_MCR_VERB_CMD_MASK		BM_MCC_VERB_CMD_MASK
+#define BM_MCR_VERB_CMD_ACQUIRE		BM_MCC_VERB_CMD_ACQUIRE
+#define BM_MCR_VERB_CMD_QUERY		BM_MCC_VERB_CMD_QUERY
+#define BM_MCR_VERB_CMD_ERR_INVALID	0x60
+#define BM_MCR_VERB_CMD_ERR_ECC		0x70
+#define BM_MCR_VERB_ACQUIRE_BUFCOUNT	BM_MCC_VERB_ACQUIRE_BUFCOUNT /* 0..8 */
+#define BM_MCR_TIMEOUT			10000 /* us */
+
+struct bm_mc {
+	struct bm_mc_command *cr;
+	union bm_mc_result *rr;
+	u8 rridx, vbit;
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	enum {
+		/* Can only be _mc_start()ed */
+		mc_idle,
+		/* Can only be _mc_commit()ed or _mc_abort()ed */
+		mc_user,
+		/* Can only be _mc_retry()ed */
+		mc_hw
+	} state;
+#endif
+};
+
+struct bm_addr {
+	void __iomem *ce;	/* cache-enabled */
+	void __iomem *ci;	/* cache-inhibited */
+};
+
+struct bm_portal {
+	struct bm_addr addr;
+	struct bm_rcr rcr;
+	struct bm_mc mc;
+} ____cacheline_aligned;
+
+/* Cache-inhibited register access. */
+static inline u32 bm_in(struct bm_portal *p, u32 offset)
 {
-	return (struct bman *)regs;
+	return be32_to_cpu(__raw_readl(p->addr.ci + offset));
 }
 
-static inline u32 __bm_in(struct bman *bm, u32 offset)
+static inline void bm_out(struct bm_portal *p, u32 offset, u32 val)
 {
-	return ioread32be((void *)bm + offset);
-}
-static inline void __bm_out(struct bman *bm, u32 offset, u32 val)
-{
-	iowrite32be(val, (void*) bm + offset);
-}
-#define bm_in(reg)		__bm_in(bm, REG_##reg)
-#define bm_out(reg, val)	__bm_out(bm, REG_##reg, val)
-
-static u32 __bm_err_isr_read(struct bman *bm, enum bm_isr_reg n)
-{
-	return __bm_in(bm, REG_ERR_ISR + (n << 2));
+	__raw_writel(cpu_to_be32(val), p->addr.ci + offset);
 }
 
-static void __bm_err_isr_write(struct bman *bm, enum bm_isr_reg n, u32 val)
+/* Cache Enabled Portal Access */
+static inline void bm_cl_invalidate(struct bm_portal *p, u32 offset)
 {
-	__bm_out(bm, REG_ERR_ISR + (n << 2), val);
+	dpaa_invalidate(p->addr.ce + offset);
 }
 
-static void bm_get_version(struct bman *bm, u16 *id, u8 *major, u8 *minor)
+static inline void bm_cl_touch_ro(struct bm_portal *p, u32 offset)
 {
-	u32 v = bm_in(IP_REV_1);
-	*id = (v >> 16);
-	*major = (v >> 8) & 0xff;
-	*minor = v & 0xff;
+	dpaa_touch_ro(p->addr.ce + offset);
 }
 
-static u32 __generate_thresh(u32 val, int roundup)
+static inline u32 bm_ce_in(struct bm_portal *p, u32 offset)
 {
-	u32 e = 0;	/* co-efficient, exponent */
-	int oddbit = 0;
-
-	while (val > 0xff) {
-		oddbit = val & 1;
-		val >>= 1;
-		e++;
-		if (roundup && oddbit)
-			val++;
-	}
-	DPA_ASSERT(e < 0x10);
-	return val | (e << 8);
+	return be32_to_cpu(__raw_readl(p->addr.ce + offset));
 }
 
-static void bm_set_pool(struct bman *bm, u8 pool, u32 swdet, u32 swdxt,
-			u32 hwdet, u32 hwdxt)
-{
-	DPA_ASSERT(pool < bman_pool_max);
+struct bman_portal {
+	struct bm_portal p;
+	/* interrupt sources processed by portal_isr(), configurable */
+	unsigned long irq_sources;
+	/* probing time config params for cpu-affine portals */
+	const struct bm_portal_config *config;
+	char irqname[MAX_IRQNAME];
+};
 
-	bm_out(POOL_SWDET(pool), __generate_thresh(swdet, 0));
-	bm_out(POOL_SWDXT(pool), __generate_thresh(swdxt, 1));
-	bm_out(POOL_HWDET(pool), __generate_thresh(hwdet, 0));
-	bm_out(POOL_HWDXT(pool), __generate_thresh(hwdxt, 1));
-}
-
-static void bm_set_memory(struct bman *bm, u64 ba, int prio, u32 size)
-{
-	u32 exp = ilog2(size);
-	/* choke if size isn't within range */
-	DPA_ASSERT((size >= 4096) && (size <= 1073741824) &&
-			is_power_of_2(size));
-	/* choke if '[e]ba' has lower-alignment than 'size' */
-	DPA_ASSERT(!(ba & (size - 1)));
-	bm_out(FBPR_BARE, upper_32_bits(ba));
-	bm_out(FBPR_BAR, lower_32_bits(ba));
-	bm_out(FBPR_AR, (prio ? 0x40000000 : 0) | (exp - 1));
-}
-
-/*****************/
-/* Config driver */
-/*****************/
-
-/* We support only one of these. */
-static struct bman *bm;
-
-/* And this state belongs to 'bm' */
 #ifndef __rtems__
-static dma_addr_t fbpr_a;
-static size_t fbpr_sz;
-
-static int bman_fbpr(struct reserved_mem *rmem)
-{
-	fbpr_a = rmem->base;
-	fbpr_sz = rmem->size;
-
-	WARN_ON(!(fbpr_a && fbpr_sz));
-
-	return 0;
-}
-RESERVEDMEM_OF_DECLARE(bman_fbpr, "fsl,bman-fbpr", bman_fbpr);
-#else /* __rtems__ */
-static DPAA_NOCACHENOLOAD_ALIGNED_REGION(fbpr, 16777216);
-#define fbpr_a ((uintptr_t)&fbpr[0])
-#define fbpr_sz sizeof(fbpr)
+static cpumask_t affine_mask;
+static DEFINE_SPINLOCK(affine_mask_lock);
 #endif /* __rtems__ */
+static DEFINE_PER_CPU(struct bman_portal, bman_affine_portal);
 
-int bm_pool_set(u32 bpid, const u32 *thresholds)
+static inline struct bman_portal *get_affine_portal(void)
 {
-	if (!bm)
-		return -ENODEV;
-	bm_set_pool(bm, bpid, thresholds[0], thresholds[1],
-		thresholds[2], thresholds[3]);
-	return 0;
-}
-EXPORT_SYMBOL(bm_pool_set);
-
-static void log_edata_bits(u32 bit_count)
-{
-	u32 i, j, mask = 0xffffffff;
-
-	pr_warn("ErrInt, EDATA:\n");
-	i = bit_count/32;
-	if (bit_count%32) {
-		i++;
-		mask = ~(mask << bit_count%32);
-	}
-	j = 16-i;
-	pr_warn("  0x%08x\n", bm_in(EDATA(j)) & mask);
-	j++;
-	for (; j < 16; j++)
-		pr_warn("  0x%08x\n", bm_in(EDATA(j)));
+	return &get_cpu_var(bman_affine_portal);
 }
 
-static void log_additional_error_info(u32 isr_val, u32 ecsr_val)
+static inline void put_affine_portal(void)
 {
-	union bman_ecir ecir_val;
-	union bman_eadr eadr_val;
-
-	ecir_val.ecir_raw = bm_in(ECIR);
-	/* Is portal info valid */
-	if (ecsr_val & PORTAL_ECSR_ERR) {
-		pr_warn("ErrInt: SWP id %d, numb %d, pid %d\n",
-			ecir_val.info.portal_num, ecir_val.info.numb,
-			ecir_val.info.pid);
-	}
-	if (ecsr_val & (BM_EIRQ_SBEI|BM_EIRQ_MBEI)) {
-		eadr_val.eadr_raw = bm_in(EADR);
-		pr_warn("ErrInt: EADR Memory: %s, 0x%x\n",
-			error_mdata[eadr_val.info.memid].txt,
-			error_mdata[eadr_val.info.memid].addr_mask
-				& eadr_val.info.eadr);
-		log_edata_bits(error_mdata[eadr_val.info.memid].bits);
-	}
+	put_cpu_var(bman_affine_portal);
 }
 
-/* BMan interrupt handler */
-static irqreturn_t bman_isr(int irq, void *ptr)
+/*
+ * This object type refers to a pool, it isn't *the* pool. There may be
+ * more than one such object per BMan buffer pool, eg. if different users of the
+ * pool are operating via different portals.
+ */
+struct bman_pool {
+	/* index of the buffer pool to encapsulate (0-63) */
+	u32 bpid;
+	/* Used for hash-table admin when using depletion notifications. */
+	struct bman_portal *portal;
+	struct bman_pool *next;
+};
+
+static u32 poll_portal_slow(struct bman_portal *p, u32 is);
+
+static irqreturn_t portal_isr(int irq, void *ptr)
 {
-	u32 isr_val, ier_val, ecsr_val, isr_mask, i;
+	struct bman_portal *p = ptr;
+	struct bm_portal *portal = &p->p;
+	u32 clear = p->irq_sources;
+	u32 is = bm_in(portal, BM_REG_ISR) & p->irq_sources;
 
-	ier_val = bm_err_isr_enable_read(bm);
-	isr_val = bm_err_isr_status_read(bm);
-	ecsr_val = bm_in(ECSR);
-	isr_mask = isr_val & ier_val;
-
-	if (!isr_mask)
+	if (unlikely(!is))
 		return IRQ_NONE;
 
-	for (i = 0; i < BMAN_HWE_COUNT; i++) {
-		if (bman_hwerr_txts[i].mask & isr_mask) {
-			pr_warn("ErrInt: %s\n", bman_hwerr_txts[i].txt);
-			if (bman_hwerr_txts[i].mask & ecsr_val) {
-				log_additional_error_info(isr_mask, ecsr_val);
-				/* Re-arm error capture registers */
-				bm_out(ECSR, ecsr_val);
-			}
-			if (bman_hwerr_txts[i].mask & BMAN_ERRS_TO_UNENABLE) {
-				pr_devel("Un-enabling error 0x%x\n",
-					bman_hwerr_txts[i].mask);
-				ier_val &= ~bman_hwerr_txts[i].mask;
-				bm_err_isr_enable_write(bm, ier_val);
-			}
-		}
-	}
-	bm_err_isr_status_clear(bm, isr_val);
-
+	clear |= poll_portal_slow(p, is);
+	bm_out(portal, BM_REG_ISR, clear);
 	return IRQ_HANDLED;
 }
 
-u32 bm_pool_free_buffers(u32 bpid)
+/* --- RCR API --- */
+
+#define RCR_SHIFT	ilog2(sizeof(struct bm_rcr_entry))
+#define RCR_CARRY	(uintptr_t)(BM_RCR_SIZE << RCR_SHIFT)
+
+/* Bit-wise logic to wrap a ring pointer by clearing the "carry bit" */
+static struct bm_rcr_entry *rcr_carryclear(struct bm_rcr_entry *p)
 {
-	return bm_in(POOL_CONTENT(bpid));
+	uintptr_t addr = (uintptr_t)p;
+
+	addr &= ~RCR_CARRY;
+
+	return (struct bm_rcr_entry *)addr;
 }
-EXPORT_SYMBOL(bm_pool_free_buffers);
 
-#ifndef __rtems__
-static ssize_t show_fbpr_fpc(struct device *dev,
-	struct device_attribute *dev_attr, char *buf)
+#ifdef CONFIG_FSL_DPAA_CHECKING
+/* Bit-wise logic to convert a ring pointer to a ring index */
+static int rcr_ptr2idx(struct bm_rcr_entry *e)
 {
-	return snprintf(buf, PAGE_SIZE, "%u\n", bm_in(FBPR_FPC));
-};
+	return ((uintptr_t)e >> RCR_SHIFT) & (BM_RCR_SIZE - 1);
+}
+#endif
 
-static ssize_t show_pool_count(struct device *dev,
-	struct device_attribute *dev_attr, char *buf)
+/* Increment the 'cursor' ring pointer, taking 'vbit' into account */
+static inline void rcr_inc(struct bm_rcr *rcr)
 {
-	u32 data;
-	int i;
+	/* increment to the next RCR pointer and handle overflow and 'vbit' */
+	struct bm_rcr_entry *partial = rcr->cursor + 1;
 
-	if (kstrtoint(dev_attr->attr.name, 10, &i))
-		return -EINVAL;
-	data = bm_in(POOL_CONTENT(i));
-	return snprintf(buf, PAGE_SIZE, "%d\n", data);
-};
+	rcr->cursor = rcr_carryclear(partial);
+	if (partial != rcr->cursor)
+		rcr->vbit ^= BM_RCR_VERB_VBIT;
+}
 
-static ssize_t show_err_isr(struct device *dev,
-	struct device_attribute *dev_attr, char *buf)
+static int bm_rcr_get_avail(struct bm_portal *portal)
 {
-	return snprintf(buf, PAGE_SIZE, "0x%08x\n", bm_in(ERR_ISR));
-};
+	struct bm_rcr *rcr = &portal->rcr;
 
-static ssize_t show_sbec(struct device *dev,
-	struct device_attribute *dev_attr, char *buf)
+	return rcr->available;
+}
+
+static int bm_rcr_get_fill(struct bm_portal *portal)
 {
-	int i;
+	struct bm_rcr *rcr = &portal->rcr;
 
-	if (sscanf(dev_attr->attr.name, "sbec_%d", &i) != 1)
-		return -EINVAL;
-	return snprintf(buf, PAGE_SIZE, "%u\n", bm_in(SBEC(i)));
-};
+	return BM_RCR_SIZE - 1 - rcr->available;
+}
 
-static DEVICE_ATTR(err_isr, S_IRUSR, show_err_isr, NULL);
-static DEVICE_ATTR(fbpr_fpc, S_IRUSR, show_fbpr_fpc, NULL);
-
-/* Didn't use DEVICE_ATTR as 64 of this would be required.
- * Initialize them when needed. */
-static char *name_attrs_pool_count; /* "xx" + null-terminator */
-static struct device_attribute *dev_attr_buffer_pool_count;
-
-static DEVICE_ATTR(sbec_0, S_IRUSR, show_sbec, NULL);
-static DEVICE_ATTR(sbec_1, S_IRUSR, show_sbec, NULL);
-
-static struct attribute *bman_dev_attributes[] = {
-	&dev_attr_fbpr_fpc.attr,
-	&dev_attr_err_isr.attr,
-	NULL
-};
-
-static struct attribute *bman_dev_ecr_attributes[] = {
-	&dev_attr_sbec_0.attr,
-	&dev_attr_sbec_1.attr,
-	NULL
-};
-
-static struct attribute **bman_dev_pool_count_attributes;
-
-/* root level */
-static const struct attribute_group bman_dev_attr_grp = {
-	.name = NULL,
-	.attrs = bman_dev_attributes
-};
-static const struct attribute_group bman_dev_ecr_grp = {
-	.name = "error_capture",
-	.attrs = bman_dev_ecr_attributes
-};
-static struct attribute_group bman_dev_pool_countent_grp = {
-	.name = "pool_count",
-};
-
-static int of_fsl_bman_remove(struct platform_device *ofdev)
+static void bm_rcr_set_ithresh(struct bm_portal *portal, u8 ithresh)
 {
-	sysfs_remove_group(&ofdev->dev.kobj, &bman_dev_attr_grp);
+	struct bm_rcr *rcr = &portal->rcr;
+
+	rcr->ithresh = ithresh;
+	bm_out(portal, BM_REG_RCR_ITR, ithresh);
+}
+
+static void bm_rcr_cce_prefetch(struct bm_portal *portal)
+{
+	__maybe_unused struct bm_rcr *rcr = &portal->rcr;
+
+	DPAA_ASSERT(rcr->cmode == bm_rcr_cce);
+	bm_cl_touch_ro(portal, BM_CL_RCR_CI_CENA);
+}
+
+static u8 bm_rcr_cce_update(struct bm_portal *portal)
+{
+	struct bm_rcr *rcr = &portal->rcr;
+	u8 diff, old_ci = rcr->ci;
+
+	DPAA_ASSERT(rcr->cmode == bm_rcr_cce);
+	rcr->ci = bm_ce_in(portal, BM_CL_RCR_CI_CENA) & (BM_RCR_SIZE - 1);
+	bm_cl_invalidate(portal, BM_CL_RCR_CI_CENA);
+	diff = dpaa_cyc_diff(BM_RCR_SIZE, old_ci, rcr->ci);
+	rcr->available += diff;
+	return diff;
+}
+
+static inline struct bm_rcr_entry *bm_rcr_start(struct bm_portal *portal)
+{
+	struct bm_rcr *rcr = &portal->rcr;
+
+	DPAA_ASSERT(!rcr->busy);
+	if (!rcr->available)
+		return NULL;
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	rcr->busy = 1;
+#endif
+	dpaa_zero(rcr->cursor);
+	return rcr->cursor;
+}
+
+static inline void bm_rcr_pvb_commit(struct bm_portal *portal, u8 myverb)
+{
+	struct bm_rcr *rcr = &portal->rcr;
+	struct bm_rcr_entry *rcursor;
+
+	DPAA_ASSERT(rcr->busy);
+	DPAA_ASSERT(rcr->pmode == bm_rcr_pvb);
+	DPAA_ASSERT(rcr->available >= 1);
+	dma_wmb();
+	rcursor = rcr->cursor;
+	rcursor->_ncw_verb = myverb | rcr->vbit;
+	dpaa_flush(rcursor);
+	rcr_inc(rcr);
+	rcr->available--;
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	rcr->busy = 0;
+#endif
+}
+
+static int bm_rcr_init(struct bm_portal *portal, enum bm_rcr_pmode pmode,
+		       enum bm_rcr_cmode cmode)
+{
+	struct bm_rcr *rcr = &portal->rcr;
+	u32 cfg;
+	u8 pi;
+
+	rcr->ring = portal->addr.ce + BM_CL_RCR;
+	rcr->ci = bm_in(portal, BM_REG_RCR_CI_CINH) & (BM_RCR_SIZE - 1);
+	pi = bm_in(portal, BM_REG_RCR_PI_CINH) & (BM_RCR_SIZE - 1);
+	rcr->cursor = rcr->ring + pi;
+	rcr->vbit = (bm_in(portal, BM_REG_RCR_PI_CINH) & BM_RCR_SIZE) ?
+		BM_RCR_VERB_VBIT : 0;
+	rcr->available = BM_RCR_SIZE - 1
+		- dpaa_cyc_diff(BM_RCR_SIZE, rcr->ci, pi);
+	rcr->ithresh = bm_in(portal, BM_REG_RCR_ITR);
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	rcr->busy = 0;
+	rcr->pmode = pmode;
+	rcr->cmode = cmode;
+#endif
+	cfg = (bm_in(portal, BM_REG_CFG) & 0xffffffe0)
+		| (pmode & 0x3); /* BCSP_CFG::RPM */
+	bm_out(portal, BM_REG_CFG, cfg);
 	return 0;
-};
-#endif /* __rtems__ */
-
-static int of_fsl_bman_probe(struct platform_device *ofdev)
-{
-	int ret, err_irq, i;
-	struct device *dev = &ofdev->dev;
-	struct device_node *node = dev->of_node;
-	struct resource res;
-	u32 __iomem *regs;
-	u16 id;
-	u8 major, minor;
-
-	if (!of_device_is_available(node))
-		return -ENODEV;
-
-	ret = of_address_to_resource(node, 0, &res);
-	if (ret) {
-		dev_err(dev, "Can't get %s property 'reg'\n", node->full_name);
-		return ret;
-	}
-	regs = devm_ioremap(dev, res.start, res.end - res.start + 1);
-	if (!regs)
-		return -ENXIO;
-
-	bm = bm_create(regs);
-
-	bm_get_version(bm, &id, &major, &minor);
-	dev_info(dev, "Bman ver:%04x,%02x,%02x\n", id, major, minor);
-	if ((major == 1) && (minor == 0))
-		bman_pool_max = 64;
-	else if ((major == 2) && (minor == 0))
-		bman_pool_max = 8;
-	else if ((major == 2) && (minor == 1))
-		bman_pool_max = 64;
-	else
-		dev_warn(dev, "unknown Bman version, default to rev1.0\n");
-#ifdef __rtems__
-	bman_ip_rev = (u16)((major << 8) | minor);
-#endif /* __rtems__ */
-
-
-	bm_set_memory(bm, fbpr_a, 0, fbpr_sz);
-
-	err_irq = of_irq_to_resource(node, 0, NULL);
-	if (err_irq == NO_IRQ) {
-		dev_info(dev, "Can't get %s property 'interrupts'\n",
-			 node->full_name);
-		return -ENODEV;
-	}
-	ret = devm_request_irq(dev, err_irq, bman_isr, IRQF_SHARED, "bman-err",
-			       node);
-	if (ret)  {
-		dev_err(dev, "devm_request_irq() failed %d for '%s'\n",
-			ret, node->full_name);
-		return ret;
-	}
-	/* Disable Buffer Pool State Change */
-	bm_err_isr_disable_write(bm, BM_EIRQ_BSCN);
-	/* Write-to-clear any stale bits, (eg. starvation being asserted prior
-	 * to resource allocation during driver init). */
-	bm_err_isr_status_clear(bm, 0xffffffff);
-	/* Enable Error Interrupts */
-	bm_err_isr_enable_write(bm, 0xffffffff);
-
-#ifndef __rtems__
-	ret = sysfs_create_group(&dev->kobj, &bman_dev_attr_grp);
-	if (ret)
-		goto done;
-	ret = sysfs_create_group(&dev->kobj, &bman_dev_ecr_grp);
-	if (ret)
-		goto del_group_0;
-
-	name_attrs_pool_count = devm_kmalloc(dev,
-		sizeof(char) * bman_pool_max * 3, GFP_KERNEL);
-	if (!name_attrs_pool_count)
-		goto del_group_1;
-
-	dev_attr_buffer_pool_count = devm_kmalloc(dev,
-		sizeof(struct device_attribute) * bman_pool_max, GFP_KERNEL);
-	if (!dev_attr_buffer_pool_count)
-		goto del_group_1;
-
-	bman_dev_pool_count_attributes = devm_kmalloc(dev,
-		sizeof(struct attribute *) * (bman_pool_max + 1), GFP_KERNEL);
-	if (!bman_dev_pool_count_attributes)
-		goto del_group_1;
-
-	for (i = 0; i < bman_pool_max; i++) {
-		ret = scnprintf((name_attrs_pool_count + i * 3), 3, "%d", i);
-		if (!ret)
-			goto del_group_1;
-		dev_attr_buffer_pool_count[i].attr.name =
-			(name_attrs_pool_count + i * 3);
-		dev_attr_buffer_pool_count[i].attr.mode = S_IRUSR;
-		dev_attr_buffer_pool_count[i].show = show_pool_count;
-		bman_dev_pool_count_attributes[i] =
-			&dev_attr_buffer_pool_count[i].attr;
-	}
-	bman_dev_pool_count_attributes[bman_pool_max] = NULL;
-
-	bman_dev_pool_countent_grp.attrs = bman_dev_pool_count_attributes;
-
-	ret = sysfs_create_group(&dev->kobj, &bman_dev_pool_countent_grp);
-	if (ret)
-		goto del_group_1;
-
-	goto done;
-
-del_group_1:
-	sysfs_remove_group(&dev->kobj, &bman_dev_ecr_grp);
-del_group_0:
-	sysfs_remove_group(&dev->kobj, &bman_dev_attr_grp);
-done:
-	if (ret)
-		dev_err(dev, "Cannot create dev attributes ret=%d\n", ret);
-#else /* __rtems__ */
-	(void)i;
-#endif /* __rtems__ */
-
-	return ret;
-};
-
-#ifndef __rtems__
-static const struct of_device_id of_fsl_bman_ids[] = {
-	{
-		.compatible = "fsl,bman",
-	},
-	{}
-};
-
-static struct platform_driver of_fsl_bman_driver = {
-	.driver = {
-		.name = KBUILD_MODNAME,
-		.of_match_table = of_fsl_bman_ids,
-	},
-	.probe = of_fsl_bman_probe,
-	.remove = of_fsl_bman_remove,
-};
-
-builtin_platform_driver(of_fsl_bman_driver);
-#else /* __rtems__ */
-#include <sys/types.h>
-#include <sys/kernel.h>
-#include <rtems.h>
-#include <bsp/fdt.h>
-#include <bsp/qoriq.h>
-
-static struct bm_portal_config bman_configs[NR_CPUS];
-
-u16 bman_ip_rev;
-
-u16 bman_pool_max;
-
-SYSINIT_REFERENCE(irqs);
-
-static void
-bman_sysinit(void)
-{
-	const char *fdt = bsp_fdt_get();
-	struct device_node dn;
-	struct platform_device ofdev = {
-		.dev = {
-			.of_node = &dn,
-			.base = (uintptr_t)&qoriq
-		}
-	};
-	const char *name;
-	int cpu_count = (int)rtems_get_processor_count();
-	int cpu;
-	int ret;
-	int node;
-	int parent;
-
-	qoriq_reset_qman_and_bman();
-	qoriq_clear_ce_portal(&qoriq_bman_portal[0][0],
-	    sizeof(qoriq_bman_portal[0]));
-	qoriq_clear_ci_portal(&qoriq_bman_portal[1][0],
-	    sizeof(qoriq_bman_portal[1]));
-
-	memset(&dn, 0, sizeof(dn));
-
-	name = "fsl,bman";
-	node = fdt_node_offset_by_compatible(fdt, 0, name);
-	if (node < 0)
-		panic("bman: no bman in FDT");
-
-	dn.full_name = name;
-	dn.offset = node;
-	ret = of_fsl_bman_probe(&ofdev);
-	if (ret != 0)
-		panic("bman: probe failed");
-
-	name = "fsl,bman-portal";
-	node = fdt_node_offset_by_compatible(fdt, 0, name);
-	if (node < 0)
-		panic("bman: no portals in FDT");
-	parent = fdt_parent_offset(fdt, node);
-	if (parent < 0)
-		panic("bman: no parent of portals in FDT");
-	node = fdt_first_subnode(fdt, parent);
-
-	dn.full_name = name;
-	dn.offset = node;
-
-	for (cpu = 0; cpu < cpu_count; ++cpu) {
-		struct bm_portal_config *pcfg = &bman_configs[cpu];
-		struct bman_portal *portal;
-		struct resource res;
-
-		if (node < 0)
-			panic("bman: missing portal in FDT");
-
-		ret = of_address_to_resource(&dn, 0, &res);
-		if (ret != 0)
-			panic("bman: no portal CE address");
-		pcfg->addr_virt[0] = (__iomem void *)
-		    ((uintptr_t)&qoriq_bman_portal[0][0] + (uintptr_t)res.start);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
-		    (uintptr_t)&qoriq_bman_portal[0][0]);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
-		    (uintptr_t)&qoriq_bman_portal[1][0]);
-
-		ret = of_address_to_resource(&dn, 1, &res);
-		if (ret != 0)
-			panic("bman: no portal CI address");
-		pcfg->addr_virt[1] = (__iomem void *)
-		    ((uintptr_t)&qoriq_bman_portal[0][0] + (uintptr_t)res.start);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
-		    (uintptr_t)&qoriq_bman_portal[1][0]);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
-		    (uintptr_t)&qoriq_bman_portal[2][0]);
-
-		pcfg->public_cfg.irq = of_irq_to_resource(&dn, 0, NULL);
-		if (pcfg->public_cfg.irq == NO_IRQ)
-			panic("bman: no portal interrupt");
-
-		pcfg->public_cfg.cpu = cpu;
-		bman_depletion_fill(&pcfg->public_cfg.mask);
-
-		portal = bman_create_affine_portal(pcfg);
-		if (portal == NULL)
-			panic("bman: cannot create portal");
-
-		bman_p_irqsource_add(portal, BM_PIRQ_RCRI | BM_PIRQ_BSCN);
-
-		node = fdt_next_subnode(fdt, node);
-		dn.offset = node;
-	}
-
-	bman_seed_bpid_range(0, bman_pool_max);
 }
-SYSINIT(bman_sysinit, SI_SUB_CPU, SI_ORDER_FIRST, bman_sysinit, NULL);
+
+static void bm_rcr_finish(struct bm_portal *portal)
+{
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	struct bm_rcr *rcr = &portal->rcr;
+	int i;
+
+	DPAA_ASSERT(!rcr->busy);
+
+	i = bm_in(portal, BM_REG_RCR_PI_CINH) & (BM_RCR_SIZE - 1);
+	if (i != rcr_ptr2idx(rcr->cursor))
+		pr_crit("losing uncommitted RCR entries\n");
+
+	i = bm_in(portal, BM_REG_RCR_CI_CINH) & (BM_RCR_SIZE - 1);
+	if (i != rcr->ci)
+		pr_crit("missing existing RCR completions\n");
+	if (rcr->ci != rcr_ptr2idx(rcr->cursor))
+		pr_crit("RCR destroyed unquiesced\n");
+#endif
+}
+
+/* --- Management command API --- */
+static int bm_mc_init(struct bm_portal *portal)
+{
+	struct bm_mc *mc = &portal->mc;
+
+	mc->cr = portal->addr.ce + BM_CL_CR;
+	mc->rr = portal->addr.ce + BM_CL_RR0;
+	mc->rridx = (__raw_readb(&mc->cr->_ncw_verb) & BM_MCC_VERB_VBIT) ?
+		    0 : 1;
+	mc->vbit = mc->rridx ? BM_MCC_VERB_VBIT : 0;
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	mc->state = mc_idle;
+#endif
+	return 0;
+}
+
+static void bm_mc_finish(struct bm_portal *portal)
+{
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	struct bm_mc *mc = &portal->mc;
+
+	DPAA_ASSERT(mc->state == mc_idle);
+	if (mc->state != mc_idle)
+		pr_crit("Losing incomplete MC command\n");
+#endif
+}
+
+static inline struct bm_mc_command *bm_mc_start(struct bm_portal *portal)
+{
+	struct bm_mc *mc = &portal->mc;
+
+	DPAA_ASSERT(mc->state == mc_idle);
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	mc->state = mc_user;
+#endif
+	dpaa_zero(mc->cr);
+	return mc->cr;
+}
+
+static inline void bm_mc_commit(struct bm_portal *portal, u8 myverb)
+{
+	struct bm_mc *mc = &portal->mc;
+	union bm_mc_result *rr = mc->rr + mc->rridx;
+
+	DPAA_ASSERT(mc->state == mc_user);
+	dma_wmb();
+	mc->cr->_ncw_verb = myverb | mc->vbit;
+	dpaa_flush(mc->cr);
+	dpaa_invalidate_touch_ro(rr);
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	mc->state = mc_hw;
+#endif
+}
+
+static inline union bm_mc_result *bm_mc_result(struct bm_portal *portal)
+{
+	struct bm_mc *mc = &portal->mc;
+	union bm_mc_result *rr = mc->rr + mc->rridx;
+
+	DPAA_ASSERT(mc->state == mc_hw);
+	/*
+	 * The inactive response register's verb byte always returns zero until
+	 * its command is submitted and completed. This includes the valid-bit,
+	 * in case you were wondering...
+	 */
+	if (!__raw_readb(&rr->verb)) {
+		dpaa_invalidate_touch_ro(rr);
+		return NULL;
+	}
+	mc->rridx ^= 1;
+	mc->vbit ^= BM_MCC_VERB_VBIT;
+#ifdef CONFIG_FSL_DPAA_CHECKING
+	mc->state = mc_idle;
+#endif
+	return rr;
+}
+
+static inline int bm_mc_result_timeout(struct bm_portal *portal,
+				       union bm_mc_result **mcr)
+{
+	int timeout = BM_MCR_TIMEOUT;
+
+	do {
+		*mcr = bm_mc_result(portal);
+		if (*mcr)
+			break;
+		udelay(1);
+	} while (--timeout);
+
+	return timeout;
+}
+
+/* Disable all BSCN interrupts for the portal */
+static void bm_isr_bscn_disable(struct bm_portal *portal)
+{
+	bm_out(portal, BM_REG_SCN(0), 0);
+	bm_out(portal, BM_REG_SCN(1), 0);
+}
+
+static int bman_create_portal(struct bman_portal *portal,
+			      const struct bm_portal_config *c)
+{
+	struct bm_portal *p;
+	int ret;
+
+	p = &portal->p;
+	/*
+	 * prep the low-level portal struct with the mapped addresses from the
+	 * config, everything that follows depends on it and "config" is more
+	 * for (de)reference...
+	 */
+	p->addr.ce = c->addr_virt[DPAA_PORTAL_CE];
+	p->addr.ci = c->addr_virt[DPAA_PORTAL_CI];
+	if (bm_rcr_init(p, bm_rcr_pvb, bm_rcr_cce)) {
+		dev_err(c->dev, "RCR initialisation failed\n");
+		goto fail_rcr;
+	}
+	if (bm_mc_init(p)) {
+		dev_err(c->dev, "MC initialisation failed\n");
+		goto fail_mc;
+	}
+	/*
+	 * Default to all BPIDs disabled, we enable as required at
+	 * run-time.
+	 */
+	bm_isr_bscn_disable(p);
+
+	/* Write-to-clear any stale interrupt status bits */
+	bm_out(p, BM_REG_ISDR, 0xffffffff);
+	portal->irq_sources = 0;
+	bm_out(p, BM_REG_IER, 0);
+	bm_out(p, BM_REG_ISR, 0xffffffff);
+	snprintf(portal->irqname, MAX_IRQNAME, IRQNAME, c->cpu);
+	if (request_irq(c->irq, portal_isr, 0, portal->irqname,	portal)) {
+		dev_err(c->dev, "request_irq() failed\n");
+		goto fail_irq;
+	}
+#ifndef __rtems__
+	if (c->cpu != -1 && irq_can_set_affinity(c->irq) &&
+	    irq_set_affinity(c->irq, cpumask_of(c->cpu))) {
+		dev_err(c->dev, "irq_set_affinity() failed\n");
+		goto fail_affinity;
+	}
 #endif /* __rtems__ */
+
+	/* Need RCR to be empty before continuing */
+	ret = bm_rcr_get_fill(p);
+	if (ret) {
+		dev_err(c->dev, "RCR unclean\n");
+		goto fail_rcr_empty;
+	}
+	/* Success */
+	portal->config = c;
+
+	bm_out(p, BM_REG_ISDR, 0);
+	bm_out(p, BM_REG_IIR, 0);
+
+	return 0;
+
+fail_rcr_empty:
+#ifndef __rtems__
+fail_affinity:
+#endif /* __rtems__ */
+	free_irq(c->irq, portal);
+fail_irq:
+	bm_mc_finish(p);
+fail_mc:
+	bm_rcr_finish(p);
+fail_rcr:
+	return -EIO;
+}
+
+struct bman_portal *bman_create_affine_portal(const struct bm_portal_config *c)
+{
+	struct bman_portal *portal;
+	int err;
+
+	portal = &per_cpu(bman_affine_portal, c->cpu);
+	err = bman_create_portal(portal, c);
+	if (err)
+		return NULL;
+
+#ifndef __rtems__
+	spin_lock(&affine_mask_lock);
+	cpumask_set_cpu(c->cpu, &affine_mask);
+	spin_unlock(&affine_mask_lock);
+#endif /* __rtems__ */
+
+	return portal;
+}
+
+static u32 poll_portal_slow(struct bman_portal *p, u32 is)
+{
+	u32 ret = is;
+
+	if (is & BM_PIRQ_RCRI) {
+		bm_rcr_cce_update(&p->p);
+		bm_rcr_set_ithresh(&p->p, 0);
+		bm_out(&p->p, BM_REG_ISR, BM_PIRQ_RCRI);
+		is &= ~BM_PIRQ_RCRI;
+	}
+
+	/* There should be no status register bits left undefined */
+	DPAA_ASSERT(!is);
+	return ret;
+}
+
+int bman_p_irqsource_add(struct bman_portal *p, u32 bits)
+{
+	unsigned long irqflags;
+
+	local_irq_save(irqflags);
+	set_bits(bits & BM_PIRQ_VISIBLE, &p->irq_sources);
+	bm_out(&p->p, BM_REG_IER, p->irq_sources);
+	local_irq_restore(irqflags);
+	return 0;
+}
+
+static int bm_shutdown_pool(u32 bpid)
+{
+	struct bm_mc_command *bm_cmd;
+	union bm_mc_result *bm_res;
+
+	while (1) {
+		struct bman_portal *p = get_affine_portal();
+		/* Acquire buffers until empty */
+		bm_cmd = bm_mc_start(&p->p);
+		bm_cmd->bpid = bpid;
+		bm_mc_commit(&p->p, BM_MCC_VERB_CMD_ACQUIRE | 1);
+		if (!bm_mc_result_timeout(&p->p, &bm_res)) {
+			put_affine_portal();
+			pr_crit("BMan Acquire Command timedout\n");
+			return -ETIMEDOUT;
+		}
+		if (!(bm_res->verb & BM_MCR_VERB_ACQUIRE_BUFCOUNT)) {
+			put_affine_portal();
+			/* Pool is empty */
+			return 0;
+		}
+		put_affine_portal();
+	}
+
+	return 0;
+}
+
+struct gen_pool *bm_bpalloc;
+
+static int bm_alloc_bpid_range(u32 *result, u32 count)
+{
+	unsigned long addr;
+
+	addr = gen_pool_alloc(bm_bpalloc, count);
+	if (!addr)
+		return -ENOMEM;
+
+	*result = addr & ~DPAA_GENALLOC_OFF;
+
+	return 0;
+}
+
+static int bm_release_bpid(u32 bpid)
+{
+	int ret;
+
+	ret = bm_shutdown_pool(bpid);
+	if (ret) {
+		pr_debug("BPID %d leaked\n", bpid);
+		return ret;
+	}
+
+	gen_pool_free(bm_bpalloc, bpid | DPAA_GENALLOC_OFF, 1);
+	return 0;
+}
+
+struct bman_pool *bman_new_pool(void)
+{
+	struct bman_pool *pool = NULL;
+	u32 bpid;
+
+	if (bm_alloc_bpid_range(&bpid, 1))
+		return NULL;
+
+	pool = kmalloc(sizeof(*pool), GFP_KERNEL);
+	if (!pool)
+		goto err;
+
+	pool->bpid = bpid;
+
+	return pool;
+err:
+	bm_release_bpid(bpid);
+	kfree(pool);
+	return NULL;
+}
+EXPORT_SYMBOL(bman_new_pool);
+
+void bman_free_pool(struct bman_pool *pool)
+{
+	bm_release_bpid(pool->bpid);
+
+	kfree(pool);
+}
+EXPORT_SYMBOL(bman_free_pool);
+
+int bman_get_bpid(const struct bman_pool *pool)
+{
+	return pool->bpid;
+}
+EXPORT_SYMBOL(bman_get_bpid);
+
+static void update_rcr_ci(struct bman_portal *p, int avail)
+{
+	if (avail)
+		bm_rcr_cce_prefetch(&p->p);
+	else
+		bm_rcr_cce_update(&p->p);
+}
+
+int bman_release(struct bman_pool *pool, const struct bm_buffer *bufs, u8 num)
+{
+	struct bman_portal *p;
+	struct bm_rcr_entry *r;
+	unsigned long irqflags;
+	int avail, timeout = 1000; /* 1ms */
+	int i = num - 1;
+
+	DPAA_ASSERT(num > 0 && num <= 8);
+
+	do {
+		p = get_affine_portal();
+		local_irq_save(irqflags);
+		avail = bm_rcr_get_avail(&p->p);
+		if (avail < 2)
+			update_rcr_ci(p, avail);
+		r = bm_rcr_start(&p->p);
+		local_irq_restore(irqflags);
+		put_affine_portal();
+		if (likely(r))
+			break;
+
+		udelay(1);
+	} while (--timeout);
+
+	if (unlikely(!timeout))
+		return -ETIMEDOUT;
+
+	p = get_affine_portal();
+	local_irq_save(irqflags);
+	/*
+	 * we can copy all but the first entry, as this can trigger badness
+	 * with the valid-bit
+	 */
+	bm_buffer_set64(r->bufs, bm_buffer_get64(bufs));
+	bm_buffer_set_bpid(r->bufs, pool->bpid);
+	if (i)
+		memcpy(&r->bufs[1], &bufs[1], i * sizeof(bufs[0]));
+
+	bm_rcr_pvb_commit(&p->p, BM_RCR_VERB_CMD_BPID_SINGLE |
+			  (num & BM_RCR_VERB_BUFCOUNT_MASK));
+
+	local_irq_restore(irqflags);
+	put_affine_portal();
+	return 0;
+}
+EXPORT_SYMBOL(bman_release);
+
+int bman_acquire(struct bman_pool *pool, struct bm_buffer *bufs, u8 num)
+{
+	struct bman_portal *p = get_affine_portal();
+	struct bm_mc_command *mcc;
+	union bm_mc_result *mcr;
+	int ret;
+
+	DPAA_ASSERT(num > 0 && num <= 8);
+
+	mcc = bm_mc_start(&p->p);
+	mcc->bpid = pool->bpid;
+	bm_mc_commit(&p->p, BM_MCC_VERB_CMD_ACQUIRE |
+		     (num & BM_MCC_VERB_ACQUIRE_BUFCOUNT));
+	if (!bm_mc_result_timeout(&p->p, &mcr)) {
+		put_affine_portal();
+		pr_crit("BMan Acquire Timeout\n");
+		return -ETIMEDOUT;
+	}
+	ret = mcr->verb & BM_MCR_VERB_ACQUIRE_BUFCOUNT;
+	if (bufs)
+		memcpy(&bufs[0], &mcr->bufs[0], num * sizeof(bufs[0]));
+
+	put_affine_portal();
+	if (ret != num)
+		ret = -ENOMEM;
+	return ret;
+}
+EXPORT_SYMBOL(bman_acquire);
+
+const struct bm_portal_config *
+bman_get_bm_portal_config(const struct bman_portal *portal)
+{
+	return portal->config;
+}

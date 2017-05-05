@@ -43,8 +43,7 @@
 #include <dev/mii/miivar.h>
 
 #include <linux/netdevice.h>
-
-#include <fdt_phy.h>
+#include <linux/phy.h>
 
 #include "mac.h"
 

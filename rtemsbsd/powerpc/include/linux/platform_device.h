@@ -38,11 +38,10 @@ struct platform_device {
 	void *platform_data;
 };
 
-struct resource *platform_get_resource_impl(struct platform_device *dev,
-    unsigned int type, unsigned int num, struct resource *res);
+struct resource *platform_get_resource(struct resource *res,
+    struct platform_device *dev, unsigned int type, unsigned int num);
 
-#define	platform_get_resource(dev, type, num) \
-    platform_get_resource_impl(dev, type, num, &platform_resource)
+int platform_get_irq(struct platform_device *dev, unsigned int num);
 
 #ifdef __cplusplus
 }

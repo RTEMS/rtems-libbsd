@@ -1,4 +1,4 @@
-/* Copyright 2008 - 2015 Freescale Semiconductor, Inc.
+/* Copyright 2008 - 2016 Freescale Semiconductor, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,103 +34,49 @@
 
 #include <soc/fsl/bman.h>
 
-/* used by CCSR and portal interrupt code */
-enum bm_isr_reg {
-	bm_isr_status = 0,
-	bm_isr_enable = 1,
-	bm_isr_disable = 2,
-	bm_isr_inhibit = 3
-};
+/* Portal processing (interrupt) sources */
+#define BM_PIRQ_RCRI	0x00000002	/* RCR Ring (below threshold) */
 
-#ifdef CONFIG_FSL_BMAN
-/* Set depletion thresholds associated with a buffer pool. Requires that the
- * operating system have access to BMan CCSR (ie. compiled in support and
- * run-time access courtesy of the device-tree). */
-int bm_pool_set(u32 bpid, const u32 *thresholds);
-#define BM_POOL_THRESH_SW_ENTER 0
-#define BM_POOL_THRESH_SW_EXIT	1
-#define BM_POOL_THRESH_HW_ENTER 2
-#define BM_POOL_THRESH_HW_EXIT	3
-
-/* Read the free buffer count for a given buffer */
-u32 bm_pool_free_buffers(u32 bpid);
-
-#endif /* CONFIG_FSL_BMAN */
-
-#if defined(CONFIG_FSL_BMAN_PORTAL) || defined(CONFIG_FSL_BMAN_PORTAL_MODULE)
 /* Revision info (for errata and feature handling) */
 #define BMAN_REV10 0x0100
 #define BMAN_REV20 0x0200
 #define BMAN_REV21 0x0201
 extern u16 bman_ip_rev;	/* 0 if uninitialised, otherwise BMAN_REVx */
 
+extern struct gen_pool *bm_bpalloc;
+
 struct bm_portal_config {
-	/* Corenet portal addresses;
-	 * [0]==cache-enabled, [1]==cache-inhibited. */
-	__iomem void *addr_virt[2];
+	/*
+	 * Corenet portal addresses;
+	 * [0]==cache-enabled, [1]==cache-inhibited.
+	 */
+	void __iomem *addr_virt[2];
 #ifndef __rtems__
-	struct resource addr_phys[2];
 	/* Allow these to be joined in lists */
 	struct list_head list;
 #endif /* __rtems__ */
+	struct device *dev;
 	/* User-visible portal configuration settings */
-	struct bman_portal_config public_cfg;
+	/* portal is affined to this cpu */
+	int cpu;
+	/* portal interrupt line */
+	int irq;
 };
 
-/* Hooks from bman_driver.c in to bman_high.c */
-struct bman_portal *bman_create_portal(
-				       struct bman_portal *portal,
-				       const struct bm_portal_config *config);
 struct bman_portal *bman_create_affine_portal(
 			const struct bm_portal_config *config);
-struct bman_portal *bman_create_affine_slave(struct bman_portal *redirect,
-								int cpu);
-void bman_destroy_portal(struct bman_portal *bm);
-
-const struct bm_portal_config *bman_destroy_affine_portal(void);
-
-/* Stockpile build constants. The _LOW value: when bman_acquire() is called and
- * the stockpile fill-level is <= _LOW, an acquire is attempted from h/w but it
- * might fail (if the buffer pool is depleted). So this value provides some
- * "stagger" in that the bman_acquire() function will only fail if lots of bufs
- * are requested at once or if h/w has been tested a couple of times without
- * luck. The _HIGH value: when bman_release() is called and the stockpile
- * fill-level is >= _HIGH, a release is attempted to h/w but it might fail (if
- * the release ring is full). So this value provides some "stagger" so that
- * ring-access is retried a couple of times prior to the API returning a
- * failure. The following *must* be true;
- *   BMAN_STOCKPILE_HIGH-BMAN_STOCKPILE_LOW > 8
- *     (to avoid thrashing)
- *   BMAN_STOCKPILE_SZ >= 16
- *     (as the release logic expects to either send 8 buffers to hw prior to
- *     adding the given buffers to the stockpile or add the buffers to the
- *     stockpile before sending 8 to hw, as the API must be an all-or-nothing
- *     success/fail.)
+/*
+ * The below bman_p_***() variant might be called in a situation that the cpu
+ * which the portal affine to is not online yet.
+ * @bman_portal specifies which portal the API will use.
  */
-#define BMAN_STOCKPILE_SZ   16u /* number of bufs in per-pool cache */
-#define BMAN_STOCKPILE_LOW  2u	/* when fill is <= this, acquire from hw */
-#define BMAN_STOCKPILE_HIGH 14u /* when fill is >= this, release to hw */
+int bman_p_irqsource_add(struct bman_portal *p, u32 bits);
 
-/*************************************************/
-/*   BMan s/w corenet portal, low-level i/face	 */
-/*************************************************/
-
-/* Used by all portal interrupt registers except 'inhibit'
+/*
+ * Used by all portal interrupt registers except 'inhibit'
  * This mask contains all the "irqsource" bits visible to API users
  */
-#define BM_PIRQ_VISIBLE	(BM_PIRQ_RCRI | BM_PIRQ_BSCN)
-
-/* These are bm_<reg>_<verb>(). So for example, bm_disable_write() means "write
- * the disable register" rather than "disable the ability to write". */
-#define bm_isr_status_read(bm)		__bm_isr_read(bm, bm_isr_status)
-#define bm_isr_status_clear(bm, m)	__bm_isr_write(bm, bm_isr_status, m)
-#define bm_isr_enable_read(bm)		__bm_isr_read(bm, bm_isr_enable)
-#define bm_isr_enable_write(bm, v)	__bm_isr_write(bm, bm_isr_enable, v)
-#define bm_isr_disable_read(bm)		__bm_isr_read(bm, bm_isr_disable)
-#define bm_isr_disable_write(bm, v)	__bm_isr_write(bm, bm_isr_disable, v)
-#define bm_isr_inhibit(bm)		__bm_isr_write(bm, bm_isr_inhibit, 1)
-#define bm_isr_uninhibit(bm)		__bm_isr_write(bm, bm_isr_inhibit, 0)
+#define BM_PIRQ_VISIBLE	BM_PIRQ_RCRI
 
 const struct bm_portal_config *
 bman_get_bm_portal_config(const struct bman_portal *portal);
-#endif	/* CONFIG_FSL_BMAN_PORTAL* */

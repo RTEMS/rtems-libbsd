@@ -132,109 +132,20 @@ struct fman_port_params {
 	/* Additional parameters depending on port type. */
 };
 
-/**
- * fman_port_config
- * @port:	Pointer to the port structure
- * @params:	Pointer to data structure of parameters
- *
- * Creates a descriptor for the FM PORT module.
- * The routine returns a pointer to the FM PORT object.
- * This descriptor must be passed as first parameter to all other FM PORT
- * function calls.
- * No actual initialization or configuration of FM hardware is done by this
- * routine.
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_port_config(struct fman_port *port, struct fman_port_params *params);
 
-/**
- * fman_port_init
- * port:	A pointer to a FM Port module.
- * Initializes the FM PORT module by defining the software structure and
- * configuring the hardware registers.
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_port_init(struct fman_port *port);
 
-/**
- * fman_port_cfg_buf_prefix_content
- * @port			A pointer to a FM Port module.
- * @buffer_prefix_content	A structure of parameters describing
- *				the structure of the buffer.
- *				Out parameter:
- *				Start margin - offset of data from
- *				start of external buffer.
- * Defines the structure, size and content of the application buffer.
- * The prefix, in Tx ports, if 'pass_prs_result', the application should set
- * a value to their offsets in the prefix of the FM will save the first
- * 'priv_data_size', than, depending on 'pass_prs_result' and
- * 'pass_time_stamp', copy parse result and timeStamp, and the packet itself
- * (in this order), to the application buffer, and to offset.
- * Calling this routine changes the buffer margins definitions in the internal
- * driver data base from its default configuration:
- * Data size:  [DEFAULT_PORT_BUFFER_PREFIX_CONTENT_PRIV_DATA_SIZE]
- * Pass Parser result: [DEFAULT_PORT_BUFFER_PREFIX_CONTENT_PASS_PRS_RESULT].
- * Pass timestamp: [DEFAULT_PORT_BUFFER_PREFIX_CONTENT_PASS_TIME_STAMP].
- * May be used for all ports
- *
- * Allowed only following fman_port_config() and before fman_port_init().
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_port_cfg_buf_prefix_content(struct fman_port *port,
 				     struct fman_buffer_prefix_content
 				     *buffer_prefix_content);
 
-/**
- * fman_port_disable
- * port:	A pointer to a FM Port module.
- *
- * Gracefully disable an FM port. The port will not start new	tasks after all
- * tasks associated with the port are terminated.
- *
- * This is a blocking routine, it returns after port is gracefully stopped,
- * i.e. the port will not except new frames, but it will finish all frames
- * or tasks which were already began.
- * Allowed only following fman_port_init().
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_port_disable(struct fman_port *port);
 
-/**
- * fman_port_enable
- * port:	A pointer to a FM Port module.
- *
- * A runtime routine provided to allow disable/enable of port.
- *
- * Allowed only following fman_port_init().
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_port_enable(struct fman_port *port);
 
-/**
- * fman_port_get_qman_channel_id
- * port:	Pointer to the FMan port devuce
- *
- * Get the QMan channel ID for the specific port
- *
- * Return: QMan channel ID
- */
 u32 fman_port_get_qman_channel_id(struct fman_port *port);
 
-/**
- * fman_port_bind
- * dev:		FMan Port OF device pointer
- *
- * Bind to a specific FMan Port.
- *
- * Allowed only after the port was created.
- *
- * Return: A pointer to the FMan port device.
- */
 struct fman_port *fman_port_bind(struct device *dev);
 
 #endif /* __FMAN_PORT_H */

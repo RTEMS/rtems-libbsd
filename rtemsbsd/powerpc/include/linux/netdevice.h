@@ -50,6 +50,8 @@ netdev_priv(struct net_device *net_dev)
 #define	netdev_err(...)	do { } while (0)
 #define	netdev_dbg(...)	do { } while (0)
 
+#define	netif_msg_drv(p) 1
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

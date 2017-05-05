@@ -1,4 +1,4 @@
-/* Copyright 2008 - 2015 Freescale Semiconductor, Inc.
+/* Copyright 2008 - 2016 Freescale Semiconductor, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,17 +28,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <linux/kernel.h>
-#include <linux/errno.h>
-#include <linux/io.h>
-#include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/interrupt.h>
-#include <linux/delay.h>
-#include <linux/kthread.h>
-#include <linux/platform_device.h>
+#include "qman_priv.h"
 
-#include <soc/fsl/qman.h>
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-void qman_test_stash(void);
-void qman_test_api(void);
+int qman_test_stash(void);
+int qman_test_api(void);

@@ -93,6 +93,7 @@ do {									\
 	}								\
 } while (0)
 
+#ifndef __rtems__
 #define	wait_event_interruptible(q, cond)				\
 ({									\
 	void *c = &(q).wchan;						\
@@ -114,6 +115,13 @@ do {									\
 	}								\
 	-_error;							\
 })
+#else /* __rtems__ */
+#define	wait_event_interruptible(q, cond)				\
+({									\
+	wait_event(q, cond);						\
+	0;	        						\
+})
+#endif /* __rtems__ */
 
 static inline int
 waitqueue_active(wait_queue_head_t *q)

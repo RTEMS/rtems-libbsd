@@ -48,7 +48,7 @@
 enum irqreturn	{ IRQ_NONE = 0, IRQ_HANDLED, IRQ_WAKE_THREAD, };
 typedef enum irqreturn	irqreturn_t;
 
-#include <stdio.h>
+#include <sys/systm.h>
 
 #include <linux/ioport.h>
 #include <linux/of.h>
@@ -85,14 +85,20 @@ devm_ioremap(struct device *dev, resource_size_t offset, resource_size_t size)
 #define	devm_alloc_percpu(dev, type) \
     devm_kzalloc(dev, sizeof(type) * rtems_get_processor_count(), GFP_KERNEL)
 
+#define	dev_crit(dev, fmt, ...) \
+    do { (void)dev; printf(fmt, ##__VA_ARGS__); } while (0)
+
 #define	dev_err(dev, fmt, ...) \
-    do { (void)dev; fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+    do { (void)dev; printf(fmt, ##__VA_ARGS__); } while (0)
+
+#define	dev_dbg(dev, fmt, ...) \
+    do { (void)dev; printf(fmt, ##__VA_ARGS__); } while (0)
 
 #define	dev_warn(dev, fmt, ...) \
-    do { (void)dev; fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+    do { (void)dev; printf(fmt, ##__VA_ARGS__); } while (0)
 
 #define	dev_info(dev, fmt, ...) \
-    do { (void)dev; fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+    do { (void)dev; printf(fmt, ##__VA_ARGS__); } while (0)
 
 static inline struct device *
 get_device(struct device *dev)

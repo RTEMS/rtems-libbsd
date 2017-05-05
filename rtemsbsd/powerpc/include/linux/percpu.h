@@ -27,6 +27,7 @@
 #ifndef _LINUX_PERCPU_H
 #define	_LINUX_PERCPU_H
 
+#include <linux/cpumask.h>
 #include <linux/threads.h>
 
 #include <rtems/score/threaddispatch.h>
@@ -41,8 +42,8 @@ extern "C" {
 #define per_cpu(_designator, _cpu) \
     (_designator[_cpu])
 
-#define this_cpu_ptr(_ptr_designator) \
-    (&(*_ptr_designator)[_CPU_SMP_Get_current_processor()])
+#define this_cpu_ptr(_designator) \
+    (&_designator[_CPU_SMP_Get_current_processor()])
 
 #define get_cpu_var(_designator) \
     (*({ Per_CPU_Control *_cpu_self = _Thread_Dispatch_disable(); \

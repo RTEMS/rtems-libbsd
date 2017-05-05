@@ -34,4 +34,6 @@
 #define ____cacheline_aligned __cacheline_aligned
 #endif
 
+#define L1_CACHE_BYTES PPC_DEFAULT_CACHE_LINE_SIZE
+
 #endif /* __ASM_CACHE_H */

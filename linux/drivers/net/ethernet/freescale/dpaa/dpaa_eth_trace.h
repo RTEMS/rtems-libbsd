@@ -80,9 +80,9 @@ DECLARE_EVENT_CLASS(dpaa_eth_fd,
 	TP_fast_assign(
 		__entry->fqid = fq->fqid;
 		__entry->fd_addr = qm_fd_addr_get64(fd);
-		__entry->fd_format = fd->format;
-		__entry->fd_offset = dpa_fd_offset(fd);
-		__entry->fd_length = dpa_fd_length(fd);
+		__entry->fd_format = qm_fd_get_format(fd);
+		__entry->fd_offset = qm_fd_get_offset(fd);
+		__entry->fd_length = qm_fd_get_length(fd);
 		__entry->fd_status = fd->status;
 		__assign_str(name, netdev->name);
 	),
@@ -99,7 +99,7 @@ DECLARE_EVENT_CLASS(dpaa_eth_fd,
  */
 
 /* Tx (egress) fd */
-DEFINE_EVENT(dpaa_eth_fd, dpa_tx_fd,
+DEFINE_EVENT(dpaa_eth_fd, dpaa_tx_fd,
 
 	TP_PROTO(struct net_device *netdev,
 		 struct qman_fq *fq,
@@ -109,7 +109,7 @@ DEFINE_EVENT(dpaa_eth_fd, dpa_tx_fd,
 );
 
 /* Rx fd */
-DEFINE_EVENT(dpaa_eth_fd, dpa_rx_fd,
+DEFINE_EVENT(dpaa_eth_fd, dpaa_rx_fd,
 
 	TP_PROTO(struct net_device *netdev,
 		 struct qman_fq *fq,
@@ -119,7 +119,7 @@ DEFINE_EVENT(dpaa_eth_fd, dpa_rx_fd,
 );
 
 /* Tx confirmation fd */
-DEFINE_EVENT(dpaa_eth_fd, dpa_tx_conf_fd,
+DEFINE_EVENT(dpaa_eth_fd, dpaa_tx_conf_fd,
 
 	TP_PROTO(struct net_device *netdev,
 		 struct qman_fq *fq,

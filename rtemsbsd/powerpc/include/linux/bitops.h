@@ -45,7 +45,7 @@
 #define	BITS_TO_LONGS(n)	howmany((n), BITS_PER_LONG)
 #define	BIT_MASK(nr)		(1UL << ((nr) & (BITS_PER_LONG - 1)))
 #define BIT_WORD(nr)		((nr) / BITS_PER_LONG)
-#define	GENMASK(lo, hi)		(((2UL << ((hi) - (lo))) - 1UL) << (lo))
+#define	GENMASK(hi, lo)		(((2UL << ((hi) - (lo))) - 1UL) << (lo))
 #define BITS_PER_BYTE           8
 
 static inline int

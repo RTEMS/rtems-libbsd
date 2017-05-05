@@ -36,31 +36,22 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include "crc_mac_addr_ext.h"
-
 #include "fman_tgec.h"
 #include "fman.h"
 
 #include <linux/slab.h>
 #include <linux/bitrev.h>
 #include <linux/io.h>
+#include <linux/crc32.h>
 
 /* Transmit Inter-Packet Gap Length Register (TX_IPG_LENGTH) */
 #define TGEC_TX_IPG_LENGTH_MASK	0x000003ff
 
 /* Command and Configuration Register (COMMAND_CONFIG) */
-#define CMD_CFG_EN_TIMESTAMP		0x00100000
 #define CMD_CFG_NO_LEN_CHK		0x00020000
-#define CMD_CFG_SEND_IDLE		0x00010000
-#define CMD_CFG_RX_ER_DISC		0x00004000
-#define CMD_CFG_CMD_FRM_EN		0x00002000
-#define CMD_CFG_LOOPBACK_EN		0x00000400
-#define CMD_CFG_TX_ADDR_INS		0x00000200
 #define CMD_CFG_PAUSE_IGNORE		0x00000100
-#define CMD_CFG_PAUSE_FWD		0x00000080
 #define CMF_CFG_CRC_FWD			0x00000040
 #define CMD_CFG_PROMIS_EN		0x00000010
-#define CMD_CFG_WAN_MODE		0x00000008
 #define CMD_CFG_RX_EN			0x00000002
 #define CMD_CFG_TX_EN			0x00000001
 
@@ -91,23 +82,6 @@
 #define DEFAULT_TX_IPG_LENGTH			12
 #define DEFAULT_MAX_FRAME_LENGTH		0x600
 #define DEFAULT_PAUSE_QUANT			0xf000
-
-#define TGEC_DEFAULT_EXCEPTIONS			 \
-	((u32)((TGEC_IMASK_MDIO_SCAN_EVENT)		|\
-		(TGEC_IMASK_REM_FAULT)			|\
-		(TGEC_IMASK_LOC_FAULT)			|\
-		(TGEC_IMASK_TX_ECC_ER)			|\
-		(TGEC_IMASK_TX_FIFO_UNFL)		|\
-		(TGEC_IMASK_TX_FIFO_OVFL)		|\
-		(TGEC_IMASK_TX_ER)			|\
-		(TGEC_IMASK_RX_FIFO_OVFL)		|\
-		(TGEC_IMASK_RX_ECC_ER)			|\
-		(TGEC_IMASK_RX_JAB_FRM)			|\
-		(TGEC_IMASK_RX_OVRSZ_FRM)		|\
-		(TGEC_IMASK_RX_RUNT_FRM)		|\
-		(TGEC_IMASK_RX_FRAG_FRM)		|\
-		(TGEC_IMASK_RX_CRC_ER)			|\
-		(TGEC_IMASK_RX_ALIGN_ER)))
 
 /* number of pattern match registers (entries) */
 #define TGEC_NUM_OF_PADDRS          1
@@ -222,17 +196,8 @@ struct tgec_regs {
 };
 
 struct tgec_cfg {
-	bool rx_error_discard;
 	bool pause_ignore;
-	bool pause_forward_enable;
-	bool no_length_check_enable;
-	bool cmd_frame_enable;
-	bool send_idle_enable;
-	bool wan_mode_enable;
 	bool promiscuous_mode_enable;
-	bool tx_addr_ins_enable;
-	bool loopback_enable;
-	bool time_stamp_enable;
 	u16 max_frame_length;
 	u16 pause_quant;
 	u32 tx_ipg_length;
@@ -270,17 +235,8 @@ static void set_mac_address(struct tgec_regs __iomem *regs, u8 *adr)
 
 static void set_dflts(struct tgec_cfg *cfg)
 {
-	cfg->wan_mode_enable = false;
 	cfg->promiscuous_mode_enable = false;
-	cfg->pause_forward_enable = false;
 	cfg->pause_ignore = false;
-	cfg->tx_addr_ins_enable = false;
-	cfg->loopback_enable = false;
-	cfg->cmd_frame_enable = false;
-	cfg->rx_error_discard = false;
-	cfg->send_idle_enable = false;
-	cfg->no_length_check_enable = true;
-	cfg->time_stamp_enable = false;
 	cfg->tx_ipg_length = DEFAULT_TX_IPG_LENGTH;
 	cfg->max_frame_length = DEFAULT_MAX_FRAME_LENGTH;
 	cfg->pause_quant = DEFAULT_PAUSE_QUANT;
@@ -293,28 +249,12 @@ static int init(struct tgec_regs __iomem *regs, struct tgec_cfg *cfg,
 
 	/* Config */
 	tmp = CMF_CFG_CRC_FWD;
-	if (cfg->wan_mode_enable)
-		tmp |= CMD_CFG_WAN_MODE;
 	if (cfg->promiscuous_mode_enable)
 		tmp |= CMD_CFG_PROMIS_EN;
-	if (cfg->pause_forward_enable)
-		tmp |= CMD_CFG_PAUSE_FWD;
 	if (cfg->pause_ignore)
 		tmp |= CMD_CFG_PAUSE_IGNORE;
-	if (cfg->tx_addr_ins_enable)
-		tmp |= CMD_CFG_TX_ADDR_INS;
-	if (cfg->loopback_enable)
-		tmp |= CMD_CFG_LOOPBACK_EN;
-	if (cfg->cmd_frame_enable)
-		tmp |= CMD_CFG_CMD_FRM_EN;
-	if (cfg->rx_error_discard)
-		tmp |= CMD_CFG_RX_ER_DISC;
-	if (cfg->send_idle_enable)
-		tmp |= CMD_CFG_SEND_IDLE;
-	if (cfg->no_length_check_enable)
-		tmp |= CMD_CFG_NO_LEN_CHK;
-	if (cfg->time_stamp_enable)
-		tmp |= CMD_CFG_EN_TIMESTAMP;
+	/* Payload length check disable */
+	tmp |= CMD_CFG_NO_LEN_CHK;
 	iowrite32be(tmp, &regs->command_config);
 
 	/* Max Frame Length */
@@ -345,12 +285,6 @@ static int check_init_parameters(struct fman_mac *tgec)
 	}
 	if (!tgec->event_cb) {
 		pr_err("uninitialized event_cb\n");
-		return -EINVAL;
-	}
-
-	/* FM_LEN_CHECK_ERRATA_FMAN_SW002 Errata workaround */
-	if (!tgec->cfg->no_length_check_enable) {
-		pr_warn("Length Check!\n");
 		return -EINVAL;
 	}
 
@@ -419,18 +353,6 @@ static int get_exception_flag(enum fman_mac_exceptions exception)
 	}
 
 	return bit_mask;
-}
-
-static u32 get_mac_addr_hash_code(u64 eth_addr)
-{
-	u32 crc;
-
-	/* CRC calculation */
-	GET_MAC_ADDR_CRC(eth_addr, crc);
-
-	crc = bitrev32(crc);
-
-	return crc;
 }
 
 static void tgec_err_exception(void *handle)
@@ -613,7 +535,7 @@ int tgec_add_hash_mac_address(struct fman_mac *tgec, enet_addr_t *eth_addr)
 {
 	struct tgec_regs __iomem *regs = tgec->regs;
 	struct eth_hash_entry *hash_entry;
-	u32 crc, hash;
+	u32 crc = 0xFFFFFFFF, hash;
 	u64 addr;
 
 	if (!is_init_done(tgec->cfg))
@@ -627,8 +549,8 @@ int tgec_add_hash_mac_address(struct fman_mac *tgec, enet_addr_t *eth_addr)
 		return -EINVAL;
 	}
 	/* CRC calculation */
-	crc = get_mac_addr_hash_code(addr);
-
+	crc = crc32_le(crc, (u8 *)eth_addr, ETH_ALEN);
+	crc = bitrev32(crc);
 	/* Take 9 MSB bits */
 	hash = (crc >> TGEC_HASH_MCAST_SHIFT) & TGEC_HASH_ADR_MSK;
 
@@ -651,7 +573,7 @@ int tgec_del_hash_mac_address(struct fman_mac *tgec, enet_addr_t *eth_addr)
 	struct tgec_regs __iomem *regs = tgec->regs;
 	struct eth_hash_entry *hash_entry = NULL;
 	struct list_head *pos;
-	u32 crc, hash;
+	u32 crc = 0xFFFFFFFF, hash;
 	u64 addr;
 
 	if (!is_init_done(tgec->cfg))
@@ -660,7 +582,8 @@ int tgec_del_hash_mac_address(struct fman_mac *tgec, enet_addr_t *eth_addr)
 	addr = ((*(u64 *)eth_addr) >> 16);
 
 	/* CRC calculation */
-	crc = get_mac_addr_hash_code(addr);
+	crc = crc32_le(crc, (u8 *)eth_addr, ETH_ALEN);
+	crc = bitrev32(crc);
 	/* Take 9 MSB bits */
 	hash = (crc >> TGEC_HASH_MCAST_SHIFT) & TGEC_HASH_ADR_MSK;
 
@@ -803,9 +726,6 @@ int tgec_free(struct fman_mac *tgec)
 {
 	free_init_resources(tgec);
 
-	if (tgec->cfg)
-		tgec->cfg = NULL;
-
 	kfree(tgec->cfg);
 	kfree(tgec);
 
@@ -836,11 +756,25 @@ struct fman_mac *tgec_config(struct fman_mac_params *params)
 
 	set_dflts(cfg);
 
-	tgec->regs = (struct tgec_regs __iomem *)(base_addr);
+	tgec->regs = base_addr;
 	tgec->addr = ENET_ADDR_TO_UINT64(params->addr);
 	tgec->max_speed = params->max_speed;
 	tgec->mac_id = params->mac_id;
-	tgec->exceptions = TGEC_DEFAULT_EXCEPTIONS;
+	tgec->exceptions = (TGEC_IMASK_MDIO_SCAN_EVENT	|
+			    TGEC_IMASK_REM_FAULT	|
+			    TGEC_IMASK_LOC_FAULT	|
+			    TGEC_IMASK_TX_ECC_ER	|
+			    TGEC_IMASK_TX_FIFO_UNFL	|
+			    TGEC_IMASK_TX_FIFO_OVFL	|
+			    TGEC_IMASK_TX_ER		|
+			    TGEC_IMASK_RX_FIFO_OVFL	|
+			    TGEC_IMASK_RX_ECC_ER	|
+			    TGEC_IMASK_RX_JAB_FRM	|
+			    TGEC_IMASK_RX_OVRSZ_FRM	|
+			    TGEC_IMASK_RX_RUNT_FRM	|
+			    TGEC_IMASK_RX_FRAG_FRM	|
+			    TGEC_IMASK_RX_CRC_ER	|
+			    TGEC_IMASK_RX_ALIGN_ER);
 	tgec->exception_cb = params->exception_cb;
 	tgec->event_cb = params->event_cb;
 	tgec->dev_id = params->dev_id;

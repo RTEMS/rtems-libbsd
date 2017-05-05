@@ -24,20 +24,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LINUX_OF_MDIO_H
-#define	_LINUX_OF_MDIO_H
+#ifndef _LINUX_CPUMASK_H
+#define	_LINUX_CPUMASK_H
 
-#include <linux/of.h>
-#include <linux/phy.h>
+#include <rtems.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-struct phy_device *of_phy_find_device(struct device_node *dn);
+/* FIXME */
+#define	for_each_cpu(cpu, mask)						\
+    for ((cpu) = 0; (cpu) < rtems_get_processor_count(); ++(cpu))
+
+/* FIXME */
+#define	for_each_cpu_not(cpu, mask)					\
+    for ((cpu) = 0; (cpu) < rtems_get_processor_count(); ++(cpu))
+
+/* FIXME */
+#define	for_each_cpu_and(cpu, mask, and)				\
+    for ((cpu) = 0; (cpu) < rtems_get_processor_count(); ++(cpu))
+
+/* FIXME */
+#define	for_each_possible_cpu(cpu)					\
+    for_each_cpu((cpu), 0)
+
+/* FIXME */
+#define	for_each_online_cpu(cpu)					\
+    for_each_cpu((cpu), 0)
+
+/* FIXME */
+#define	for_each_present_cpu(cpu)					\
+    for_each_cpu((cpu), 0)
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* _LINUX_OF_MDIO_H */
+#endif /* _LINUX_CPUMASK_H */

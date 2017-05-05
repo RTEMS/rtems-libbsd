@@ -2,7 +2,7 @@
 
 #include <rtems/bsd/local/opt_dpaa.h>
 
-/* Copyright 2008 - 2015 Freescale Semiconductor, Inc.
+/* Copyright 2008 - 2016 Freescale Semiconductor, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,32 +34,14 @@
 
 #include "bman_test.h"
 
-/*************/
-/* constants */
-/*************/
-
-#define PORTAL_OPAQUE	((void *)0xf00dbeef)
-#define POOL_OPAQUE	((void *)0xdeadabba)
 #define NUM_BUFS	93
 #define LOOPS		3
 #define BMAN_TOKEN_MASK 0x00FFFFFFFFFFLLU
 
-/***************/
-/* global vars */
-/***************/
-
 static struct bman_pool *pool;
-static int depleted;
 static struct bm_buffer bufs_in[NUM_BUFS] ____cacheline_aligned;
 static struct bm_buffer bufs_out[NUM_BUFS] ____cacheline_aligned;
 static int bufs_received;
-
-/* Predeclare the callback so we can instantiate pool parameters */
-static void depletion_cb(struct bman_portal *, struct bman_pool *, void *, int);
-
-/**********************/
-/* internal functions */
-/**********************/
 
 static void bufs_init(void)
 {
@@ -72,9 +54,10 @@ static void bufs_init(void)
 
 static inline int bufs_cmp(const struct bm_buffer *a, const struct bm_buffer *b)
 {
-	if ((bman_ip_rev == BMAN_REV20) || (bman_ip_rev == BMAN_REV21)) {
+	if (bman_ip_rev == BMAN_REV20 || bman_ip_rev == BMAN_REV21) {
 
-		/* On SoCs with BMan revison 2.0, BMan only respects the 40
+		/*
+		 * On SoCs with BMan revison 2.0, BMan only respects the 40
 		 * LS-bits of buffer addresses, masking off the upper 8-bits on
 		 * release commands. The API provides for 48-bit addresses
 		 * because some SoCs support all 48-bits. When generating
@@ -84,11 +67,11 @@ static inline int bufs_cmp(const struct bm_buffer *a, const struct bm_buffer *b)
 		 * don't match), or we need to mask the upper 8-bits off when
 		 * comparing. We do the latter.
 		 */
-		if ((bm_buffer_get64(a) & BMAN_TOKEN_MASK)
-				< (bm_buffer_get64(b) & BMAN_TOKEN_MASK))
+		if ((bm_buffer_get64(a) & BMAN_TOKEN_MASK) <
+		    (bm_buffer_get64(b) & BMAN_TOKEN_MASK))
 			return -1;
-		if ((bm_buffer_get64(a) & BMAN_TOKEN_MASK)
-				> (bm_buffer_get64(b) & BMAN_TOKEN_MASK))
+		if ((bm_buffer_get64(a) & BMAN_TOKEN_MASK) >
+		    (bm_buffer_get64(b) & BMAN_TOKEN_MASK))
 			return 1;
 	} else {
 		if (bm_buffer_get64(a) < bm_buffer_get64(b))
@@ -110,79 +93,63 @@ static void bufs_confirm(void)
 		for (j = 0; j < NUM_BUFS; j++)
 			if (!bufs_cmp(&bufs_in[i], &bufs_out[j]))
 				matches++;
-		BUG_ON(matches != 1);
+		WARN_ON(matches != 1);
 	}
 }
 
-/********/
 /* test */
-/********/
-
-static void depletion_cb(struct bman_portal *__portal, struct bman_pool *__pool,
-			void *pool_ctx, int __depleted)
-{
-	BUG_ON(__pool != pool);
-	BUG_ON(pool_ctx != POOL_OPAQUE);
-	depleted = __depleted;
-}
-
 void bman_test_api(void)
 {
-	struct bman_pool_params pparams = {
-		.flags = BMAN_POOL_FLAG_DEPLETION | BMAN_POOL_FLAG_DYNAMIC_BPID,
-		.cb = depletion_cb,
-		.cb_ctx = POOL_OPAQUE,
-	};
 	int i, loops = LOOPS;
 
 	bufs_init();
 
-	pr_info("	--- Starting high-level test ---\n");
+	pr_info("%s(): Starting\n", __func__);
 
-	pool = bman_new_pool(&pparams);
-	BUG_ON(!pool);
+	pool = bman_new_pool();
+	if (!pool) {
+		pr_crit("bman_new_pool() failed\n");
+		goto failed;
+	}
 
-	/*******************/
 	/* Release buffers */
-	/*******************/
 do_loop:
 	i = 0;
 	while (i < NUM_BUFS) {
-		u32 flags = BMAN_RELEASE_FLAG_WAIT;
 		int num = 8;
 
-		if ((i + num) > NUM_BUFS)
+		if (i + num > NUM_BUFS)
 			num = NUM_BUFS - i;
-		if ((i + num) == NUM_BUFS)
-			flags |= BMAN_RELEASE_FLAG_WAIT_SYNC;
-		if (bman_release(pool, bufs_in + i, num, flags))
-			panic("bman_release() failed\n");
+		if (bman_release(pool, bufs_in + i, num)) {
+			pr_crit("bman_release() failed\n");
+			goto failed;
+		}
 		i += num;
 	}
 
-	/*******************/
 	/* Acquire buffers */
-	/*******************/
 	while (i > 0) {
 		int tmp, num = 8;
 
 		if (num > i)
 			num = i;
-		tmp = bman_acquire(pool, bufs_out + i - num, num, 0);
-		BUG_ON(tmp != num);
+		tmp = bman_acquire(pool, bufs_out + i - num, num);
+		WARN_ON(tmp != num);
 		i -= num;
 	}
-	i = bman_acquire(pool, NULL, 1, 0);
-	BUG_ON(i > 0);
+	i = bman_acquire(pool, NULL, 1);
+	WARN_ON(i > 0);
 
 	bufs_confirm();
 
 	if (--loops)
 		goto do_loop;
 
-	/************/
 	/* Clean up */
-	/************/
 	bman_free_pool(pool);
-	pr_info("	--- Finished high-level test ---\n");
+	pr_info("%s(): Finished\n", __func__);
+	return;
+
+failed:
+	WARN_ON(1);
 }

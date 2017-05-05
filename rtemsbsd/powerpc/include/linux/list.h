@@ -70,8 +70,6 @@
 #include <vm/vm.h>
 #include <vm/vm_object.h>
 
-#define	prefetch(x)
-
 struct list_head {
 	struct list_head *next;
 	struct list_head *prev;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 embedded brains GmbH
+ * Copyright (c) 2015, 2017 embedded brains GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 #ifndef _LINUX_OF_H
 #define	_LINUX_OF_H
 
-#include <stdbool.h>
+#include <linux/types.h>
 
 #include <libfdt.h>
 
@@ -58,6 +58,25 @@ of_node_put(struct device_node *dn)
 
 const void *of_get_property(const struct device_node *dn, const char *name,
     int *len);
+
+/* FIXME: If we need the property, then more work is to do */
+#define	of_find_property(dn, name, len) of_get_property(dn, name, len)
+
+int of_property_read_u32_array(const struct device_node *dn, const char *name,
+    u32 *vals, size_t nz);
+
+static inline int
+of_property_read_u32(const struct device_node *dn, const char *name, u32 *val)
+{
+
+	return (of_property_read_u32_array(dn, name, val, 1));
+}
+
+struct device_node *of_parse_phandle(struct device_node *dns,
+    struct device_node *dn, const char *phandle_name, int index);
+
+int of_count_phandle_with_args(struct device_node *dn, const char *list_name,
+    const char *cells_name);
 
 bool of_device_is_available(const struct device_node *dn);
 

@@ -58,7 +58,7 @@ typedef unsigned gfp_t;
 typedef uint64_t loff_t;
 typedef uint64_t resource_size_t;
 
-typedef u64 phys_addr_t;
+typedef uint64_t phys_addr_t;
 
 #define	DECLARE_BITMAP(n, bits)						\
 	unsigned long n[howmany(bits, sizeof(long) * 8)]

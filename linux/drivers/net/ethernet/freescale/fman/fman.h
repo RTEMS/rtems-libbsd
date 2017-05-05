@@ -58,7 +58,6 @@
 /* TX Port: Length Error */
 #define FM_FD_ERR_IPRE                  (FM_FD_ERR_IPR & ~FM_FD_IPR)
 
-
 /* Rx FIFO overflow, FCS error, code error, running disparity error
  * (SGMII and TBI modes), FIFO parity error. PHY Sequence error,
  * PHY error control character detected.
@@ -167,8 +166,8 @@ struct fman_prs_result {
 	u8 ip_off[2];		/* IP offset */
 	u8 gre_off;		/* GRE offset */
 	u8 l4_off;		/* Layer 4 offset */
-	u8 nxthdr_off;		/** Parser end point */
-} __attribute__((__packed__));
+	u8 nxthdr_off;		/* Parser end point */
+};
 
 /* A structure for defining buffer prefix area content. */
 struct fman_buffer_prefix_content {
@@ -237,29 +236,6 @@ struct fman_buf_pool_depletion {
 	bool pools_to_consider_for_single_mode[BM_MAX_NUM_OF_POOLS];
 };
 
-/** fman_exceptions_cb
- * fman		- Pointer to FMan
- * exception	- The exception.
- *
- * Exceptions user callback routine, will be called upon an exception
- * passing the exception identification.
- */
-typedef void (fman_exceptions_cb)(struct fman *fman,
-				  enum fman_exceptions exception);
-
-/** fman_bus_error_cb
- * fman		- Pointer to FMan
- * port_id	- Port id
- * addr		- Address that caused the error
- * tnum		- Owner of error
- * liodn	- Logical IO device number
- *
- * Bus error user callback routine, will be called upon bus error,
- * passing parameters describing the errors and the owner.
- */
-typedef void (fman_bus_error_cb)(struct fman *fman, u8 port_id, u64 addr,
-				 u8 tnum, u16 liodn);
-
 /* Enum for inter-module interrupts registration */
 enum fman_event_modules {
 	FMAN_MOD_MAC = 0,		/* MAC event */
@@ -325,176 +301,37 @@ struct fman_port_init_params {
 	/* LIODN base for this port, to be used together with LIODN offset. */
 };
 
-struct fman;
-
-/**
- * fman_get_revision
- * @fman		- Pointer to the FMan module
- * @rev_info		- A structure of revision information parameters.
- *
- * Returns the FM revision
- *
- * Allowed only following fman_init().
- *
- * Return: 0 on success; Error code otherwise.
- */
 void fman_get_revision(struct fman *fman, struct fman_rev_info *rev_info);
 
-/**
- * fman_register_intr
- * @fman:	A Pointer to FMan device
- * @mod:	Calling module
- * @mod_id:	Module id (if more than 1 exists, '0' if not)
- * @intr_type:	Interrupt type (error/normal) selection.
- * @f_isr:	The interrupt service routine.
- * @h_src_arg:	Argument to be passed to f_isr.
- *
- * Used to register an event handler to be processed by FMan
- *
- * Return: 0 on success; Error code otherwise.
- */
 void fman_register_intr(struct fman *fman, enum fman_event_modules mod,
 			u8 mod_id, enum fman_intr_type intr_type,
 			void (*f_isr)(void *h_src_arg), void *h_src_arg);
 
-/**
- * fman_unregister_intr
- * @fman:	A Pointer to FMan device
- * @mod:	Calling module
- * @mod_id:	Module id (if more than 1 exists, '0' if not)
- * @intr_type:	Interrupt type (error/normal) selection.
- *
- * Used to unregister an event handler to be processed by FMan
- *
- * Return: 0 on success; Error code otherwise.
- */
 void fman_unregister_intr(struct fman *fman, enum fman_event_modules mod,
 			  u8 mod_id, enum fman_intr_type intr_type);
 
-/**
- * fman_set_port_params
- * @fman:		A Pointer to FMan device
- * @port_params:	Port parameters
- *
- * Used by FMan Port to pass parameters to the FMan
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_set_port_params(struct fman *fman,
 			 struct fman_port_init_params *port_params);
 
-/**
- * fman_reset_mac
- * @fman:	A Pointer to FMan device
- * @mac_id:	MAC id to be reset
- *
- * Reset a specific MAC
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_reset_mac(struct fman *fman, u8 mac_id);
-
-/**
- * fman_get_clock_freq
- * @fman:	A Pointer to FMan device
- *
- * Get FMan clock frequency
- *
- * Return: FMan clock frequency
- */
 
 u16 fman_get_clock_freq(struct fman *fman);
 
-/**
- * fman_get_bmi_max_fifo_size
- * @fman:	A Pointer to FMan device
- *
- * Get FMan maximum FIFO size
- *
- * Return: FMan Maximum FIFO size
- */
 u32 fman_get_bmi_max_fifo_size(struct fman *fman);
 
-/**
- * fman_set_mac_max_frame
- * @fman:	A Pointer to FMan device
- * @mac_id:	MAC id
- * @mfl:	Maximum frame length
- *
- * Set maximum frame length of specific MAC in FMan driver
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_set_mac_max_frame(struct fman *fman, u8 mac_id, u16 mfl);
 
-/**
- * fman_get_qman_channel_id
- * @fman:	A Pointer to FMan device
- * @port_id:	Port id
- *
- * Get QMan channel ID associated to the Port id
- *
- * Return: QMan channel ID
- */
 u32 fman_get_qman_channel_id(struct fman *fman, u32 port_id);
 
-/**
- * fman_get_mem_region
- * @fman:	A Pointer to FMan device
- *
- * Get FMan memory region
- *
- * Return: A structure with FMan memory region information
- */
 struct resource *fman_get_mem_region(struct fman *fman);
 
-/**
- * fman_get_max_frm
- *
- * Return: Max frame length configured in the FM driver
- */
 u16 fman_get_max_frm(void);
 
-/**
- * fman_get_rx_extra_headroom
- *
- * Return: Extra headroom size configured in the FM driver
- */
 int fman_get_rx_extra_headroom(void);
 
-/**
- * fman_bind
- * @dev:	FMan OF device pointer
- *
- * Bind to a specific FMan device.
- *
- * Allowed only after the port was created.
- *
- * Return: A pointer to the FMan device
- */
 struct fman *fman_bind(struct device *dev);
-
-/**
- * fman_unbind
- * @fman:	Pointer to the FMan device
- *
- * Un-bind from a specific FMan device.
- *
- * Allowed only after the port was created.
- */
-void fman_unbind(struct fman *fman);
-
-/**
- * fman_get_device
- * @fman:	A pointer to the FMan device.
- *
- * Get the FMan device pointer
- *
- * Return: Pointer to FMan device.
- */
-struct device *fman_get_device(struct fman *fman);
 #ifdef __rtems__
-void fman_reset(struct fman *fman);
+int fman_reset(struct fman *fman);
 #endif /* __rtems__ */
 
 #endif /* __FM_H */

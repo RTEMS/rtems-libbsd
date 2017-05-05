@@ -33,6 +33,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+int of_get_phy_mode(struct device_node *dn);
+
 const void *of_get_mac_address(struct device_node *dn);
 
 #ifdef __cplusplus

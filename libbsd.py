@@ -4177,11 +4177,32 @@ def mghttpd(mm):
 
 def dpaa(mm):
     mod = builder.Module('dpaa')
+    mod.addLinuxHeaderFiles(
+        [
+            'include/soc/fsl/bman.h',
+            'include/soc/fsl/qman.h',
+            'drivers/net/ethernet/freescale/fman/mac.h',
+            'drivers/net/ethernet/freescale/fman/fman.h',
+            'drivers/net/ethernet/freescale/fman/fman_tgec.h',
+            'drivers/net/ethernet/freescale/fman/fman_mac.h',
+            'drivers/net/ethernet/freescale/fman/fman_muram.h',
+            'drivers/net/ethernet/freescale/fman/fman_port.h',
+            'drivers/net/ethernet/freescale/fman/fman_dtsec.h',
+            'drivers/net/ethernet/freescale/fman/fman_memac.h',
+            'drivers/net/ethernet/freescale/fman/fman_sp.h',
+            'drivers/net/ethernet/freescale/dpaa/dpaa_eth.h',
+            'drivers/net/ethernet/freescale/dpaa/dpaa_eth_trace.h',
+            'drivers/soc/fsl/qbman/qman_priv.h',
+            'drivers/soc/fsl/qbman/bman_test.h',
+            'drivers/soc/fsl/qbman/dpaa_sys.h',
+            'drivers/soc/fsl/qbman/bman_priv.h',
+            'drivers/soc/fsl/qbman/qman_test.h',
+        ]
+    )
     mod.addCPUDependentLinuxSourceFiles(
         [ 'powerpc' ],
         [
             'drivers/net/ethernet/freescale/dpaa/dpaa_eth.c',
-            'drivers/net/ethernet/freescale/dpaa/dpaa_eth_common.c',
             'drivers/net/ethernet/freescale/fman/fman.c',
             'drivers/net/ethernet/freescale/fman/fman_dtsec.c',
             'drivers/net/ethernet/freescale/fman/fman_memac.c',
@@ -4189,19 +4210,14 @@ def dpaa(mm):
             'drivers/net/ethernet/freescale/fman/fman_sp.c',
             'drivers/net/ethernet/freescale/fman/fman_tgec.c',
             'drivers/net/ethernet/freescale/fman/mac.c',
-            'drivers/soc/fsl/qbman/bman_api.c',
             'drivers/soc/fsl/qbman/bman.c',
+            'drivers/soc/fsl/qbman/bman_ccsr.c',
             'drivers/soc/fsl/qbman/bman_test_api.c',
-            'drivers/soc/fsl/qbman/bman_test.c',
-            'drivers/soc/fsl/qbman/bman_test_thresh.c',
-            'drivers/soc/fsl/qbman/bman_utils.c',
-            'drivers/soc/fsl/qbman/dpaa_resource.c',
-            'drivers/soc/fsl/qbman/qman_api.c',
             'drivers/soc/fsl/qbman/qman.c',
+            'drivers/soc/fsl/qbman/qman_ccsr.c',
             'drivers/soc/fsl/qbman/qman_portal.c',
             'drivers/soc/fsl/qbman/qman_test_api.c',
             'drivers/soc/fsl/qbman/qman_test_stash.c',
-            'drivers/soc/fsl/qbman/qman_utils.c',
         ],
         mm.generator['source']()
     )

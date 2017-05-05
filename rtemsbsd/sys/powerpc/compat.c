@@ -43,6 +43,32 @@ of_get_property(const struct device_node *dn, const char *name, int *len)
 	return (fdt_getprop(fdt, dn->offset, name, len));
 }
 
+int
+of_property_read_u32_array(const struct device_node *dn, const char *name,
+    u32 *vals, size_t n)
+{
+	const u32 *prop_vals;
+	int len;
+
+	prop_vals = of_get_property(dn, name, &len);
+	if (prop_vals == NULL) {
+		return (-EINVAL);
+	}
+
+	if (len != n * sizeof(*vals)) {
+		return (-EOVERFLOW);
+	}
+
+	while (n > 0) {
+		*vals = fdt32_to_cpu(*prop_vals);
+		++vals;
+		++prop_vals;
+		--n;
+	}
+
+	return (0);
+}
+
 bool
 of_device_is_available(const struct device_node *dn)
 {
@@ -93,6 +119,48 @@ of_find_compatible_node(struct device_node *dns, const struct device_node *dn,
 			return (dns);
 		}
 	}
+}
+
+struct device_node *
+of_parse_phandle(struct device_node *dns, struct device_node *dn,
+    const char *phandle_name, int index)
+{
+	const void *fdt = bsp_fdt_get();
+	const fdt32_t *phandle;
+	int node;
+	int len;
+
+	phandle = fdt_getprop(fdt, dn->offset, phandle_name, &len);
+	if (phandle == NULL || (len / (int) sizeof(*phandle)) <= index) {
+		return (NULL);
+	}
+
+	node = fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(phandle[index]));
+	if (node < 0) {
+		return (NULL);
+	}
+
+	dns->offset = node;
+	dns->full_name = NULL;
+	return (dns);
+}
+
+int
+of_count_phandle_with_args(struct device_node *dn, const char *list_name,
+    const char *cells_name)
+{
+	const void *fdt = bsp_fdt_get();
+	const fdt32_t *phandle;
+	int len;
+
+	BSD_ASSERT(cells_name == NULL);
+
+	phandle = fdt_getprop(fdt, dn->offset, list_name, &len);
+	if (phandle == NULL) {
+		return (-ENOENT);
+	}
+
+	return (len / (int)sizeof(*phandle));
 }
 
 #include <linux/of_address.h>
@@ -208,11 +276,63 @@ of_irq_to_resource(struct device_node *dn, int index,
 	/* FIXME */
 	irq -= 16;
 #endif
+
+	if (res != NULL) {
+		res->start = irq;
+		res->end = irq;
+	}
+
 	return (irq);
 }
 
 #include <linux/of_net.h>
 #include <linux/if_ether.h>
+#include <linux/phy.h>
+
+static const char * const phy_modes[] = {
+	[PHY_INTERFACE_MODE_MII]	= "mii",
+	[PHY_INTERFACE_MODE_GMII]	= "gmii",
+	[PHY_INTERFACE_MODE_SGMII]	= "sgmii",
+	[PHY_INTERFACE_MODE_TBI]	= "tbi",
+	[PHY_INTERFACE_MODE_REVMII]	= "rev-mii",
+	[PHY_INTERFACE_MODE_RMII]	= "rmii",
+	[PHY_INTERFACE_MODE_RGMII]	= "rgmii",
+	[PHY_INTERFACE_MODE_RGMII_ID]	= "rgmii-id",
+	[PHY_INTERFACE_MODE_RGMII_RXID]	= "rgmii-rxid",
+	[PHY_INTERFACE_MODE_RGMII_TXID]	= "rgmii-txid",
+	[PHY_INTERFACE_MODE_RTBI]	= "rtbi",
+	[PHY_INTERFACE_MODE_SMII]	= "smii",
+	[PHY_INTERFACE_MODE_XGMII]	= "xgmii",
+	[PHY_INTERFACE_MODE_MOCA]	= "moca",
+	[PHY_INTERFACE_MODE_QSGMII]	= "qsgmii"
+};
+
+int
+of_get_phy_mode(struct device_node *dn)
+{
+	const void *fdt = bsp_fdt_get();
+	int len;
+	const char *p;
+	int i;
+
+	p = fdt_getprop(fdt, dn->offset, "phy-mode", &len);
+
+	if (p == NULL) {
+		p = fdt_getprop(fdt, dn->offset, "phy-connection-type", &len);
+	}
+
+	if (p == NULL) {
+		return (-ENODEV);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(phy_modes); i++) {
+		if (phy_modes[i] != NULL && strcmp(p, phy_modes[i]) == 0) {
+			return (i);
+		}
+	}
+
+	return (-ENODEV);
+}
 
 static const void *
 get_mac_address(struct device_node *dn, const char *name)
@@ -289,9 +409,35 @@ const uint8_t bitrev_nibbles[16] = {
 #include <linux/platform_device.h>
 
 struct resource *
-platform_get_resource_impl(struct platform_device *dev,
-    unsigned int type, unsigned int num, struct resource *res)
+platform_get_resource(struct resource *res, struct platform_device *pdev,
+    unsigned int type, unsigned int num)
 {
+	struct device_node *dn;
+	int ret;
 
-	return (res);
+	dn = pdev->dev.of_node;
+
+	switch (type) {
+	case IORESOURCE_MEM:
+		ret = of_address_to_resource(dn, num, res);
+		if (ret == 0)
+			return res;
+	case IORESOURCE_IRQ:
+		ret = of_irq_to_resource(dn, num, res);
+		if (ret >= 0)
+			return res;
+	default:
+		break;
+	}
+
+	return (NULL);
+}
+
+int platform_get_irq(struct platform_device *pdev, unsigned int num)
+{
+	struct resource res_storage;
+	struct resource *res;
+
+	res = platform_get_resource(&res_storage, pdev, IORESOURCE_IRQ, num);
+	return (res != NULL ? res->start : -ENXIO);
 }

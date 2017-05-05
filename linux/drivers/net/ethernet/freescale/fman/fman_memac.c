@@ -42,59 +42,55 @@
 #include <linux/slab.h>
 #include <linux/io.h>
 #include <linux/phy.h>
+#include <linux/phy_fixed.h>
+#include <linux/of_mdio.h>
 
-/* MII Management Registers */
-#define MDIO_CFG_CLK_DIV_MASK		0x0080ff80
-#define MDIO_CFG_HOLD_MASK		0x0000001c
-#define MDIO_CFG_ENC45			0x00000040
-#define MDIO_CFG_BSY			0x00000001
+/* PCS registers */
+#define MDIO_SGMII_CR			0x00
+#define MDIO_SGMII_DEV_ABIL_SGMII	0x04
+#define MDIO_SGMII_LINK_TMR_L		0x12
+#define MDIO_SGMII_LINK_TMR_H		0x13
+#define MDIO_SGMII_IF_MODE		0x14
 
-#define MDIO_CTL_PHY_ADDR_SHIFT	5
+/* SGMII Control defines */
+#define SGMII_CR_AN_EN			0x1000
+#define SGMII_CR_RESTART_AN		0x0200
+#define SGMII_CR_FD			0x0100
+#define SGMII_CR_SPEED_SEL1_1G		0x0040
+#define SGMII_CR_DEF_VAL		(SGMII_CR_AN_EN | SGMII_CR_FD | \
+					 SGMII_CR_SPEED_SEL1_1G)
 
-#define MDIO_DATA_BSY			0x80000000
+/* SGMII Device Ability for SGMII defines */
+#define MDIO_SGMII_DEV_ABIL_SGMII_MODE	0x4001
+#define MDIO_SGMII_DEV_ABIL_BASEX_MODE	0x01A0
 
-/* Internal PHY access */
-#define PHY_MDIO_ADDR			0
+/* Link timer define */
+#define LINK_TMR_L			0xa120
+#define LINK_TMR_H			0x0007
+#define LINK_TMR_L_BASEX		0xaf08
+#define LINK_TMR_H_BASEX		0x002f
 
-/* Internal PHY Registers - SGMII */
-#define PHY_SGMII_CR_RESET_AN           0x0200
-#define PHY_SGMII_CR_AN_ENABLE          0x1000
-#define PHY_SGMII_CR_DEF_VAL            0x1140
-#define PHY_SGMII_DEV_ABILITY_SGMII     0x4001
-#define PHY_SGMII_DEV_ABILITY_1000X     0x01A0
-#define PHY_SGMII_IF_MODE_DUPLEX_FULL   0x0000
-#define PHY_SGMII_IF_MODE_DUPLEX_HALF   0x0010
-#define PHY_SGMII_IF_MODE_SPEED_GB      0x0008
-#define PHY_SGMII_IF_MODE_SPEED_100M    0x0004
-#define PHY_SGMII_IF_MODE_SPEED_10M     0x0000
-#define PHY_SGMII_IF_MODE_AN            0x0002
-#define PHY_SGMII_IF_MODE_SGMII         0x0001
-#define PHY_SGMII_IF_MODE_1000X         0x0000
+/* SGMII IF Mode defines */
+#define IF_MODE_USE_SGMII_AN		0x0002
+#define IF_MODE_SGMII_EN		0x0001
+#define IF_MODE_SGMII_SPEED_100M	0x0004
+#define IF_MODE_SGMII_SPEED_1G		0x0008
+#define IF_MODE_SGMII_DUPLEX_HALF	0x0010
 
-/* Offset from the MEM map to the MDIO mem map */
-#define MEMAC_TO_MII_OFFSET         0x030
 /* Num of additional exact match MAC adr regs */
 #define MEMAC_NUM_OF_PADDRS 7
 
 /* Control and Configuration Register (COMMAND_CONFIG) */
-#define CMD_CFG_MG		0x80000000 /* 00 Magic Packet detection */
 #define CMD_CFG_REG_LOWP_RXETY	0x01000000 /* 07 Rx low power indication */
 #define CMD_CFG_TX_LOWP_ENA	0x00800000 /* 08 Tx Low Power Idle Enable */
-#define CMD_CFG_SFD_ANY		0x00200000 /* 10 Disable SFD check */
 #define CMD_CFG_PFC_MODE	0x00080000 /* 12 Enable PFC */
 #define CMD_CFG_NO_LEN_CHK	0x00020000 /* 14 Payload length check disable */
-#define CMD_CFG_SEND_IDLE	0x00010000 /* 15 Force idle generation */
-#define CMD_CFG_CNT_FRM_EN	0x00002000 /* 18 Control frame rx enable */
 #define CMD_CFG_SW_RESET	0x00001000 /* 19 S/W Reset, self clearing bit */
 #define CMD_CFG_TX_PAD_EN	0x00000800 /* 20 Enable Tx padding of frames */
-#define CMD_CFG_LOOPBACK_EN	0x00000400 /* 21 XGMII/GMII loopback enable */
-#define CMD_CFG_TX_ADDR_INS	0x00000200 /* 22 Tx source MAC addr insertion */
 #define CMD_CFG_PAUSE_IGNORE	0x00000100 /* 23 Ignore Pause frame quanta */
-#define CMD_CFG_PAUSE_FWD	0x00000080 /* 24 Terminate/frwd Pause frames */
 #define CMD_CFG_CRC_FWD		0x00000040 /* 25 Terminate/frwd CRC of frames */
 #define CMD_CFG_PAD_EN		0x00000020 /* 26 Frame padding removal */
 #define CMD_CFG_PROMIS_EN	0x00000010 /* 27 Promiscuous operation enable */
-#define CMD_CFG_WAN_MODE	0x00000008 /* 28 WAN mode enable */
 #define CMD_CFG_RX_EN		0x00000002 /* 30 MAC receive path enable */
 #define CMD_CFG_TX_EN		0x00000001 /* 31 MAC transmit path enable */
 
@@ -171,10 +167,6 @@ do {									\
 #define DEFAULT_FRAME_LENGTH	0x600
 #define DEFAULT_TX_IPG_LENGTH	12
 
-#define MEMAC_DEFAULT_EXCEPTIONS				\
-	((u32)(MEMAC_IMASK_TSECC_ER | MEMAC_IMASK_TECC_ER |	\
-		MEMAC_IMASK_RECC_ER | MEMAC_IMASK_MGI))
-
 #define CLXY_PAUSE_QUANTA_CLX_PQNT	0x0000FFFF
 #define CLXY_PAUSE_QUANTA_CLY_PQNT	0xFFFF0000
 #define CLXY_PAUSE_THRESH_CLX_QTH	0x0000FFFF
@@ -185,14 +177,6 @@ struct mac_addr {
 	u32 mac_addr_l;
 	/* Upper 16 bits of 48-bit MAC address */
 	u32 mac_addr_u;
-};
-
-/* MII Configuration Control Memory Map Registers */
-struct memac_mii_regs {
-	u32 mdio_cfg;	/* 0x030  */
-	u32 mdio_ctrl;	/* 0x034  */
-	u32 mdio_data;	/* 0x038  */
-	u32 mdio_addr;	/* 0x03c  */
 };
 
 /* memory map */
@@ -340,25 +324,8 @@ struct memac_regs {
 
 struct memac_cfg {
 	bool reset_on_init;
-	bool rx_error_discard;
 	bool pause_ignore;
-	bool pause_forward_enable;
-	bool no_length_check_enable;
-	bool cmd_frame_enable;
-	bool send_idle_enable;
-	bool wan_mode_enable;
 	bool promiscuous_mode_enable;
-	bool tx_addr_ins_enable;
-	bool loopback_enable;
-	bool lgth_check_nostdr;
-	bool time_stamp_enable;
-	bool pad_enable;
-	bool phy_tx_ena_on;
-	bool rx_sfd_any;
-	bool rx_pbl_fwd;
-	bool tx_pbl_fwd;
-	bool debug_mode;
-	bool wake_on_lan;
 	struct fixed_phy_status *fixed_link;
 	u16 max_frame_length;
 	u16 pause_quanta;
@@ -368,8 +335,6 @@ struct memac_cfg {
 struct fman_mac {
 	/* Pointer to MAC memory mapped registers */
 	struct memac_regs __iomem *regs;
-	/* Pointer to MII memory mapped registers */
-	struct memac_mii_regs __iomem *mii_regs;
 	/* MAC address of device */
 	u64 addr;
 	/* Ethernet physical interface */
@@ -382,132 +347,14 @@ struct fman_mac {
 	struct eth_hash_t *multicast_addr_hash;
 	/* Pointer to driver's individual address hash table  */
 	struct eth_hash_t *unicast_addr_hash;
-	bool debug_mode;
 	u8 mac_id;
 	u32 exceptions;
 	struct memac_cfg *memac_drv_param;
 	void *fm;
 	struct fman_rev_info fm_rev_info;
 	bool basex_if;
+	struct phy_device *pcsphy;
 };
-
-static int write_phy_reg_10g(struct memac_mii_regs __iomem *mii_regs,
-			     u8 phy_addr, u8 reg, u16 data)
-{
-	u32 tmp_reg;
-	int count;
-
-	tmp_reg = ioread32be(&mii_regs->mdio_cfg);
-	/* Leave only MDIO_CLK_DIV bits set on */
-	tmp_reg &= MDIO_CFG_CLK_DIV_MASK;
-	/* Set maximum MDIO_HOLD value to allow phy to see
-	 * change of data signal
-	 */
-	tmp_reg |= MDIO_CFG_HOLD_MASK;
-	/* Add 10G interface mode */
-	tmp_reg |= MDIO_CFG_ENC45;
-	iowrite32be(tmp_reg, &mii_regs->mdio_cfg);
-
-	/* Wait for command completion */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&mii_regs->mdio_cfg)) & MDIO_CFG_BSY) && --count);
-
-	if (count == 0)
-		return -EBUSY;
-
-	/* Specify phy and register to be accessed */
-	iowrite32be(phy_addr, &mii_regs->mdio_ctrl);
-	iowrite32be(reg, &mii_regs->mdio_addr);
-
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&mii_regs->mdio_cfg)) & MDIO_CFG_BSY) && --count);
-
-	if (count == 0)
-		return -EBUSY;
-
-	/* Write data */
-	iowrite32be(data, &mii_regs->mdio_data);
-
-	/* Wait for write transaction end */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&mii_regs->mdio_data)) & MDIO_DATA_BSY) &&
-		 --count);
-
-	if (count == 0)
-		return -EBUSY;
-
-	return 0;
-}
-
-static int write_phy_reg_1g(struct memac_mii_regs __iomem *mii_regs,
-			    u8 phy_addr, u8 reg, u16 data)
-{
-	u32 tmp_reg;
-	int count;
-
-	/* Leave only MDIO_CLK_DIV and MDIO_HOLD bits set on */
-	tmp_reg = ioread32be(&mii_regs->mdio_cfg);
-	tmp_reg &= (MDIO_CFG_CLK_DIV_MASK | MDIO_CFG_HOLD_MASK);
-	iowrite32be(tmp_reg, &mii_regs->mdio_cfg);
-
-	/* Wait for command completion */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&mii_regs->mdio_cfg)) & MDIO_CFG_BSY) && --count);
-
-	if (count == 0)
-		return -EBUSY;
-
-	/* Write transaction */
-	tmp_reg = (phy_addr << MDIO_CTL_PHY_ADDR_SHIFT);
-	tmp_reg |= reg;
-	iowrite32be(tmp_reg, &mii_regs->mdio_ctrl);
-
-	/* Wait for command completion */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&mii_regs->mdio_cfg)) & MDIO_CFG_BSY) && --count);
-
-	if (count == 0)
-		return -EBUSY;
-
-	iowrite32be(data, &mii_regs->mdio_data);
-
-	/* Wait for write transaction to end */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&mii_regs->mdio_data)) & MDIO_DATA_BSY) &&
-		 --count);
-
-	if (count == 0)
-		return -EBUSY;
-
-	return 0;
-}
-
-static int mii_write_phy_reg(struct fman_mac *memac, u8 phy_addr, u8 reg,
-			     u16 data)
-{
-	int err = 0;
-	/* Figure out interface type - 10G vs 1G.
-	 * In 10G interface both phy_addr and devAddr present.
-	 */
-	if (memac->max_speed == SPEED_10000)
-		err = write_phy_reg_10g(memac->mii_regs, phy_addr, reg, data);
-	else
-		err = write_phy_reg_1g(memac->mii_regs, phy_addr, reg, data);
-
-	return err;
-}
 
 static void add_addr_in_paddr(struct memac_regs __iomem *regs, u8 *adr,
 			      u8 paddr_num)
@@ -571,30 +418,15 @@ static int init(struct memac_regs __iomem *regs, struct memac_cfg *cfg,
 
 	/* Config */
 	tmp = 0;
-	if (cfg->wan_mode_enable)
-		tmp |= CMD_CFG_WAN_MODE;
 	if (cfg->promiscuous_mode_enable)
 		tmp |= CMD_CFG_PROMIS_EN;
-	if (cfg->pause_forward_enable)
-		tmp |= CMD_CFG_PAUSE_FWD;
 	if (cfg->pause_ignore)
 		tmp |= CMD_CFG_PAUSE_IGNORE;
-	if (cfg->tx_addr_ins_enable)
-		tmp |= CMD_CFG_TX_ADDR_INS;
-	if (cfg->loopback_enable)
-		tmp |= CMD_CFG_LOOPBACK_EN;
-	if (cfg->cmd_frame_enable)
-		tmp |= CMD_CFG_CNT_FRM_EN;
-	if (cfg->send_idle_enable)
-		tmp |= CMD_CFG_SEND_IDLE;
-	if (cfg->no_length_check_enable)
-		tmp |= CMD_CFG_NO_LEN_CHK;
-	if (cfg->rx_sfd_any)
-		tmp |= CMD_CFG_SFD_ANY;
-	if (cfg->pad_enable)
-		tmp |= CMD_CFG_TX_PAD_EN;
-	if (cfg->wake_on_lan)
-		tmp |= CMD_CFG_MG;
+
+	/* Payload length check disable */
+	tmp |= CMD_CFG_NO_LEN_CHK;
+	/* Enable padding of frames in transmit direction */
+	tmp |= CMD_CFG_TX_PAD_EN;
 
 	tmp |= CMD_CFG_CRC_FWD;
 
@@ -615,7 +447,7 @@ static int init(struct memac_regs __iomem *regs, struct memac_cfg *cfg,
 		break;
 	default:
 		tmp |= IF_MODE_GMII;
-		if (phy_if == PHY_INTERFACE_MODE_RGMII && !cfg->loopback_enable)
+		if (phy_if == PHY_INTERFACE_MODE_RGMII)
 			tmp |= IF_MODE_RGMII | IF_MODE_RGMII_AUTO;
 	}
 	iowrite32be(tmp, &regs->if_mode);
@@ -646,28 +478,11 @@ static int init(struct memac_regs __iomem *regs, struct memac_cfg *cfg,
 static void set_dflts(struct memac_cfg *cfg)
 {
 	cfg->reset_on_init = false;
-	cfg->wan_mode_enable = false;
 	cfg->promiscuous_mode_enable = false;
-	cfg->pause_forward_enable = false;
 	cfg->pause_ignore = false;
-	cfg->tx_addr_ins_enable = false;
-	cfg->loopback_enable = false;
-	cfg->cmd_frame_enable = false;
-	cfg->rx_error_discard = false;
-	cfg->send_idle_enable = false;
-	cfg->no_length_check_enable = true;
-	cfg->lgth_check_nostdr = false;
-	cfg->time_stamp_enable = false;
 	cfg->tx_ipg_length = DEFAULT_TX_IPG_LENGTH;
 	cfg->max_frame_length = DEFAULT_FRAME_LENGTH;
 	cfg->pause_quanta = DEFAULT_PAUSE_QUANTA;
-	cfg->pad_enable = true;
-	cfg->phy_tx_ena_on = false;
-	cfg->rx_sfd_any = false;
-	cfg->rx_pbl_fwd = false;
-	cfg->tx_pbl_fwd = false;
-	cfg->debug_mode = false;
-	cfg->wake_on_lan = false;
 }
 
 static u32 get_mac_addr_hash_code(u64 eth_addr)
@@ -692,49 +507,42 @@ static u32 get_mac_addr_hash_code(u64 eth_addr)
 	return xor_val;
 }
 
-static void setup_sgmii_internal_phy(struct fman_mac *memac, u8 phy_addr,
+static void setup_sgmii_internal_phy(struct fman_mac *memac,
 				     struct fixed_phy_status *fixed_link)
 {
-	u16 tmp_reg16, speed;
+	u16 tmp_reg16;
 
-	/* In case the higher MACs are used (i.e. the MACs that should
-	 * support 10G), speed=10000 is provided for SGMII ports.
-	 * Temporary modify enet mode to 1G one, so MII functions can
-	 * work correctly.
-	 */
-	speed = memac->max_speed;
-	memac->max_speed = SPEED_1000;
+	if (WARN_ON(!memac->pcsphy))
+		return;
 
 	/* SGMII mode */
-	tmp_reg16 = PHY_SGMII_IF_MODE_SGMII;
+	tmp_reg16 = IF_MODE_SGMII_EN;
 	if (!fixed_link)
 		/* AN enable */
-		tmp_reg16 |= PHY_SGMII_IF_MODE_AN;
+		tmp_reg16 |= IF_MODE_USE_SGMII_AN;
 	else {
 #ifndef __rtems__
 		switch (fixed_link->speed) {
 		case 10:
-			tmp_reg16 |= PHY_SGMII_IF_MODE_SPEED_10M;
+			/* For 10M: IF_MODE[SPEED_10M] = 0 */
 		break;
 		case 100:
-			tmp_reg16 |= PHY_SGMII_IF_MODE_SPEED_100M;
+			tmp_reg16 |= IF_MODE_SGMII_SPEED_100M;
 		break;
 		case 1000: /* fallthrough */
 		default:
-			tmp_reg16 |= PHY_SGMII_IF_MODE_SPEED_GB;
+			tmp_reg16 |= IF_MODE_SGMII_SPEED_1G;
 		break;
 		}
-		if (fixed_link->duplex)
-			tmp_reg16 |= PHY_SGMII_IF_MODE_DUPLEX_FULL;
-		else
-			tmp_reg16 |= PHY_SGMII_IF_MODE_DUPLEX_HALF;
+		if (!fixed_link->duplex)
+			tmp_reg16 |= IF_MODE_SGMII_DUPLEX_HALF;
 #endif /* __rtems__ */
 	}
-	mii_write_phy_reg(memac, phy_addr, 0x14, tmp_reg16);
+	phy_write(memac->pcsphy, MDIO_SGMII_IF_MODE, tmp_reg16);
 
 	/* Device ability according to SGMII specification */
-	tmp_reg16 = PHY_SGMII_DEV_ABILITY_SGMII;
-	mii_write_phy_reg(memac, phy_addr, 0x4, tmp_reg16);
+	tmp_reg16 = MDIO_SGMII_DEV_ABIL_SGMII_MODE;
+	phy_write(memac->pcsphy, MDIO_SGMII_DEV_ABIL_SGMII, tmp_reg16);
 
 	/* Adjust link timer for SGMII  -
 	 * According to Cisco SGMII specification the timer should be 1.6 ms.
@@ -748,40 +556,25 @@ static void setup_sgmii_internal_phy(struct fman_mac *memac, u8 phy_addr,
 	 * Since link_timer value of 1G SGMII will be too short for 2.5 SGMII,
 	 * we always set up here a value of 2.5 SGMII.
 	 */
-	mii_write_phy_reg(memac, phy_addr, 0x13, 0x0007);
-	mii_write_phy_reg(memac, phy_addr, 0x12, 0xa120);
+	phy_write(memac->pcsphy, MDIO_SGMII_LINK_TMR_H, LINK_TMR_H);
+	phy_write(memac->pcsphy, MDIO_SGMII_LINK_TMR_L, LINK_TMR_L);
 
 	if (!fixed_link)
 		/* Restart AN */
-		tmp_reg16 = PHY_SGMII_CR_DEF_VAL | PHY_SGMII_CR_RESET_AN;
+		tmp_reg16 = SGMII_CR_DEF_VAL | SGMII_CR_RESTART_AN;
 	else
 		/* AN disabled */
-		tmp_reg16 = PHY_SGMII_CR_DEF_VAL & ~PHY_SGMII_CR_AN_ENABLE;
-	mii_write_phy_reg(memac, phy_addr, 0x0, tmp_reg16);
-
-	/* Restore original speed */
-	memac->max_speed = speed;
+		tmp_reg16 = SGMII_CR_DEF_VAL & ~SGMII_CR_AN_EN;
+	phy_write(memac->pcsphy, 0x0, tmp_reg16);
 }
 
-static void setup_sgmii_internal_phy_base_x(struct fman_mac *memac, u8 phy_addr)
+static void setup_sgmii_internal_phy_base_x(struct fman_mac *memac)
 {
-	u16 tmp_reg16, speed;
-
-	/* In case the higher MACs are used (i.e. the MACs that
-	 * should support 10G), speed=10000 is provided for SGMII ports.
-	 * Temporary modify enet mode to 1G one, so MII functions can
-	 * work correctly.
-	 */
-	speed = memac->max_speed;
-	memac->max_speed = SPEED_1000;
-
-	/* 1000BaseX mode */
-	tmp_reg16 = PHY_SGMII_IF_MODE_1000X;
-	mii_write_phy_reg(memac, phy_addr, 0x14, tmp_reg16);
+	u16 tmp_reg16;
 
 	/* AN Device capability  */
-	tmp_reg16 = PHY_SGMII_DEV_ABILITY_1000X;
-	mii_write_phy_reg(memac, phy_addr, 0x4, tmp_reg16);
+	tmp_reg16 = MDIO_SGMII_DEV_ABIL_BASEX_MODE;
+	phy_write(memac->pcsphy, MDIO_SGMII_DEV_ABIL_SGMII, tmp_reg16);
 
 	/* Adjust link timer for SGMII  -
 	 * For Serdes 1000BaseX auto-negotiation the timer should be 10 ms.
@@ -795,15 +588,12 @@ static void setup_sgmii_internal_phy_base_x(struct fman_mac *memac, u8 phy_addr)
 	 * Since link_timer value of 1G SGMII will be too short for 2.5 SGMII,
 	 * we always set up here a value of 2.5 SGMII.
 	 */
-	mii_write_phy_reg(memac, phy_addr, 0x13, 0x002f);
-	mii_write_phy_reg(memac, phy_addr, 0x12, 0xaf08);
+	phy_write(memac->pcsphy, MDIO_SGMII_LINK_TMR_H, LINK_TMR_H_BASEX);
+	phy_write(memac->pcsphy, MDIO_SGMII_LINK_TMR_L, LINK_TMR_L_BASEX);
 
 	/* Restart AN */
-	tmp_reg16 = PHY_SGMII_CR_DEF_VAL | PHY_SGMII_CR_RESET_AN;
-	mii_write_phy_reg(memac, phy_addr, 0x0, tmp_reg16);
-
-	/* Restore original speed */
-	memac->max_speed = speed;
+	tmp_reg16 = SGMII_CR_DEF_VAL | SGMII_CR_RESTART_AN;
+	phy_write(memac->pcsphy, 0x0, tmp_reg16);
 }
 
 static int check_init_parameters(struct fman_mac *memac)
@@ -818,12 +608,6 @@ static int check_init_parameters(struct fman_mac *memac)
 	}
 	if (!memac->event_cb) {
 		pr_warn("Uninitialize event handler\n");
-		return -EINVAL;
-	}
-
-	/* FM_LEN_CHECK_ERRATA_FMAN_SW002 Errata workaround */
-	if (!memac->memac_drv_param->no_length_check_enable) {
-		pr_err("Length Check!\n");
 		return -EINVAL;
 	}
 
@@ -1216,7 +1000,7 @@ int memac_set_exception(struct fman_mac *memac,
 int memac_init(struct fman_mac *memac)
 {
 	struct memac_cfg *memac_drv_param;
-	u8 i, phy_addr;
+	u8 i;
 	enet_addr_t eth_addr;
 	bool slow_10g_if = false;
 	struct fixed_phy_status *fixed_link;
@@ -1262,33 +1046,35 @@ int memac_init(struct fman_mac *memac)
 		/* MAC strips CRC from received frames - this workaround
 		 * should decrease the likelihood of bug appearance
 		 */
-		reg32 = in_be32(&memac->regs->command_config);
+		reg32 = ioread32be(&memac->regs->command_config);
 		reg32 &= ~CMD_CFG_CRC_FWD;
-		out_be32(&memac->regs->command_config, reg32);
+		iowrite32be(reg32, &memac->regs->command_config);
 	}
 
 	if (memac->phy_if == PHY_INTERFACE_MODE_SGMII) {
 		/* Configure internal SGMII PHY */
 		if (memac->basex_if)
-			setup_sgmii_internal_phy_base_x(memac, PHY_MDIO_ADDR);
+			setup_sgmii_internal_phy_base_x(memac);
 		else
-			setup_sgmii_internal_phy(memac, PHY_MDIO_ADDR,
-						 fixed_link);
+			setup_sgmii_internal_phy(memac, fixed_link);
 	} else if (memac->phy_if == PHY_INTERFACE_MODE_QSGMII) {
 		/* Configure 4 internal SGMII PHYs */
 		for (i = 0; i < 4; i++) {
+			u8 qsmgii_phy_addr, phy_addr;
 			/* QSGMII PHY address occupies 3 upper bits of 5-bit
 			 * phy_address; the lower 2 bits are used to extend
 			 * register address space and access each one of 4
 			 * ports inside QSGMII.
 			 */
-			phy_addr = (u8)((PHY_MDIO_ADDR << 2) | i);
+			phy_addr = memac->pcsphy->mdio.addr;
+			qsmgii_phy_addr = (u8)((phy_addr << 2) | i);
+			memac->pcsphy->mdio.addr = qsmgii_phy_addr;
 			if (memac->basex_if)
-				setup_sgmii_internal_phy_base_x(memac,
-								phy_addr);
+				setup_sgmii_internal_phy_base_x(memac);
 			else
-				setup_sgmii_internal_phy(memac, phy_addr,
-							 fixed_link);
+				setup_sgmii_internal_phy(memac, fixed_link);
+
+			memac->pcsphy->mdio.addr = phy_addr;
 		}
 	}
 
@@ -1330,6 +1116,9 @@ int memac_free(struct fman_mac *memac)
 {
 	free_init_resources(memac);
 
+	if (memac->pcsphy)
+		put_device(&memac->pcsphy->mdio.dev);
+
 	kfree(memac->memac_drv_param);
 	kfree(memac);
 
@@ -1362,13 +1151,12 @@ struct fman_mac *memac_config(struct fman_mac_params *params)
 
 	memac->addr = ENET_ADDR_TO_UINT64(params->addr);
 
-	memac->regs = (struct memac_regs __iomem *)(base_addr);
-	memac->mii_regs = (struct memac_mii_regs __iomem *)
-		(base_addr + MEMAC_TO_MII_OFFSET);
+	memac->regs = base_addr;
 	memac->max_speed = params->max_speed;
 	memac->phy_if = params->phy_if;
 	memac->mac_id = params->mac_id;
-	memac->exceptions = MEMAC_DEFAULT_EXCEPTIONS;
+	memac->exceptions = (MEMAC_IMASK_TSECC_ER | MEMAC_IMASK_TECC_ER |
+			     MEMAC_IMASK_RECC_ER | MEMAC_IMASK_MGI);
 	memac->exception_cb = params->exception_cb;
 	memac->event_cb = params->event_cb;
 	memac->dev_id = params->dev_id;
@@ -1377,6 +1165,22 @@ struct fman_mac *memac_config(struct fman_mac_params *params)
 
 	/* Save FMan revision */
 	fman_get_revision(memac->fm, &memac->fm_rev_info);
+
+	if (memac->phy_if == PHY_INTERFACE_MODE_SGMII ||
+	    memac->phy_if == PHY_INTERFACE_MODE_QSGMII) {
+		if (!params->internal_phy_node) {
+			pr_err("PCS PHY node is not available\n");
+			memac_free(memac);
+			return NULL;
+		}
+
+		memac->pcsphy = of_phy_find_device(params->internal_phy_node);
+		if (!memac->pcsphy) {
+			pr_err("of_phy_find_device (PCS PHY) failed\n");
+			memac_free(memac);
+			return NULL;
+		}
+	}
 
 	return memac;
 }

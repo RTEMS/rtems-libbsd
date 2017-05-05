@@ -29,8 +29,6 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
-#include <fdt_phy.h>
-
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/time.h>
@@ -45,17 +43,13 @@
 
 #include <bsp/fdt.h>
 
+#include <linux/of_mdio.h>
+
 #define	MDIO_LOCK()	mtx_lock(&mdio.mutex)
 #define	MDIO_UNLOCK()	mtx_unlock(&mdio.mutex)
 
-struct mdio_device {
-	struct fdt_mdio_device base;
-	SLIST_ENTRY(mdio_device) next;
-	int node;
-};
-
 static struct {
-	SLIST_HEAD(, mdio_device) instances;
+	SLIST_HEAD(, mdio_bus) instances;
 	struct mtx mutex;
 } mdio = {
 	.instances = SLIST_HEAD_INITIALIZER(mdio.instances)
@@ -133,8 +127,8 @@ struct fman_mdio_regs {
 #define	MDIO_CTRL_REG_ADDR(x)	((x) & 0x1fU)
 #define	MDIO_CTRL_PHY_ADDR(x)	(((x) & 0x1fU) << 5)
 
-struct fman_mdio_device {
-	struct mdio_device base;
+struct fman_mdio_bus {
+	struct mdio_bus base;
 	volatile struct fman_mdio_regs *regs;
 };
 
@@ -163,14 +157,14 @@ fman_mdio_wait(volatile struct fman_mdio_regs *regs)
 }
 
 static int
-fman_mdio_read(struct fdt_mdio_device *base, int phy, int reg)
+fman_mdio_read(struct mdio_bus *base, int phy, int reg)
 {
-	struct fman_mdio_device *fm;
+	struct fman_mdio_bus *fm;
 	volatile struct fman_mdio_regs *regs;
 	int val;
 	int err;
 
-	fm = (struct fman_mdio_device *)base;
+	fm = (struct fman_mdio_bus *)base;
 	regs = fm->regs;
 
 	MDIO_LOCK();
@@ -205,13 +199,13 @@ fman_mdio_read(struct fdt_mdio_device *base, int phy, int reg)
 }
 
 static int
-fman_mdio_write(struct fdt_mdio_device *base, int phy, int reg, int val)
+fman_mdio_write(struct mdio_bus *base, int phy, int reg, int val)
 {
-	struct fman_mdio_device *fm;
+	struct fman_mdio_bus *fm;
 	volatile struct fman_mdio_regs *regs;
 	int err;
 
-	fm = (struct fman_mdio_device *)base;
+	fm = (struct fman_mdio_bus *)base;
 	regs = fm->regs;
 
 	MDIO_LOCK();
@@ -238,26 +232,27 @@ fman_mdio_write(struct fdt_mdio_device *base, int phy, int reg, int val)
 	return (0);
 }
 
-static struct mdio_device *
+static struct mdio_bus *
 create_fman_mdio(const void *fdt, int mdio_node)
 {
-	struct fman_mdio_device *fm = NULL;
+	struct fman_mdio_bus *fm = NULL;
 
 	fm = malloc(sizeof(*fm), M_TEMP, M_WAITOK | M_ZERO);
 	if (fm == NULL) {
 		return (NULL);
 	}
 
+	fm->base.read = fman_mdio_read;
+	fm->base.write = fman_mdio_write;
+	fm->base.node = mdio_node;
 	fm->regs = (volatile struct fman_mdio_regs *)(uintptr_t)
 	    fdt_get_address(fdt, mdio_node);
-	fm->base.base.read = fman_mdio_read;
-	fm->base.base.write = fman_mdio_write;
 
 	return (&fm->base);
 }
 
-static struct mdio_device *
-create_mdio_device(const void *fdt, int mdio_node)
+static struct mdio_bus *
+create_mdio_bus(const void *fdt, int mdio_node)
 {
 
 	if (fdt_node_check_compatible(fdt, mdio_node,
@@ -271,33 +266,33 @@ create_mdio_device(const void *fdt, int mdio_node)
 }
 
 static int
-find_mdio_device(const void *fdt, int mdio_node,
-    struct fdt_phy_device *phy_dev)
+find_mdio_bus(const void *fdt, int mdio_node,
+    struct phy_device *phy_dev)
 {
-	struct mdio_device *mdio_dev = NULL;
+	struct mdio_bus *mdio_bus = NULL;
 
-	SLIST_FOREACH(mdio_dev, &mdio.instances, next) {
-		if (mdio_dev->node == mdio_node) {
+	SLIST_FOREACH(mdio_bus, &mdio.instances, next) {
+		if (mdio_bus->node == mdio_node) {
 			break;
 		}
 	}
 
-	if (mdio_dev == NULL) {
-		mdio_dev = create_mdio_device(fdt, mdio_node);
+	if (mdio_bus == NULL) {
+		mdio_bus = create_mdio_bus(fdt, mdio_node);
 	}
 
-	if (mdio_dev == NULL) {
+	if (mdio_bus == NULL) {
 		return (ENXIO);
 	}
 
-	phy_dev->mdio_dev = &mdio_dev->base;
+	phy_dev->mdio.bus = mdio_bus;
 	return (0);
 }
 
-static struct fdt_phy_device *
+static struct phy_device *
 phy_obtain(const void *fdt, int mdio_node, int phy)
 {
-	struct fdt_phy_device *phy_dev;
+	struct phy_device *phy_dev;
 	int err;
 
 	phy_dev = malloc(sizeof(*phy_dev), M_TEMP, M_WAITOK | M_ZERO);
@@ -305,9 +300,9 @@ phy_obtain(const void *fdt, int mdio_node, int phy)
 		return (NULL);
 	}
 
-	phy_dev->phy = phy;
+	phy_dev->mdio.addr = phy;
 	MDIO_LOCK();
-	err = find_mdio_device(fdt, mdio_node, phy_dev);
+	err = find_mdio_bus(fdt, mdio_node, phy_dev);
 	MDIO_UNLOCK();
 
 	if (err != 0) {
@@ -318,43 +313,25 @@ phy_obtain(const void *fdt, int mdio_node, int phy)
 	return (phy_dev);
 }
 
-struct fdt_phy_device *
-fdt_phy_obtain(int device_node)
+struct phy_device *
+of_phy_find_device(struct device_node *dn)
 {
 	const void *fdt;
-	const fdt32_t *phandle;
 	const fdt32_t *phy;
 	int len;
-	int node;
+	int mdio_node;
 
 	fdt = bsp_fdt_get();
 
-	phandle = fdt_getprop(fdt, device_node, "phy-handle", &len);
-	if (phandle == NULL || len != sizeof(*phandle)) {
-		return (NULL);
-	}
-
-	node = fdt_node_offset_by_phandle(fdt, fdt32_to_cpu(*phandle));
-	if (node < 0) {
-		return (NULL);
-	}
-
-	phy = fdt_getprop(fdt, node, "reg", &len);
+	phy = fdt_getprop(fdt, dn->offset, "reg", &len);
 	if (phy == NULL || len != sizeof(*phy)) {
 		return (NULL);
 	}
 
-	node = fdt_parent_offset(fdt, node);
-	if (node < 0) {
+	mdio_node = fdt_parent_offset(fdt, dn->offset);
+	if (mdio_node < 0) {
 		return (NULL);
 	}
 
-	return (phy_obtain(fdt, node, (int)fdt32_to_cpu(*phy)));
-}
-
-void
-fdt_phy_release(struct fdt_phy_device *phy_dev)
-{
-
-	free(phy_dev, M_TEMP);
+	return (phy_obtain(fdt, mdio_node, (int)fdt32_to_cpu(*phy)));
 }

@@ -36,8 +36,6 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include "crc_mac_addr_ext.h"
-
 #include "fman_dtsec.h"
 #include "fman.h"
 
@@ -46,30 +44,23 @@
 #include <linux/io.h>
 #include <linux/delay.h>
 #include <linux/phy.h>
+#include <linux/crc32.h>
+#include <linux/of_mdio.h>
+#include <linux/mii.h>
 
-/* MII	Management Command Register */
-#define MIIMCOM_READ_CYCLE		0x00000001
+/* TBI register addresses */
+#define MII_TBICON		0x11
 
-/* MII	Management Address Register */
-#define MIIMADD_PHY_ADDR_SHIFT		8
+/* TBICON register bit fields */
+#define TBICON_SOFT_RESET	0x8000	/* Soft reset */
+#define TBICON_DISABLE_RX_DIS	0x2000	/* Disable receive disparity */
+#define TBICON_DISABLE_TX_DIS	0x1000	/* Disable transmit disparity */
+#define TBICON_AN_SENSE		0x0100	/* Auto-negotiation sense enable */
+#define TBICON_CLK_SELECT	0x0020	/* Clock select */
+#define TBICON_MI_MODE		0x0010	/* GMII mode (TBI if not set) */
 
-/* MII Management Indicator Register */
-#define MIIMIND_BUSY			0x00000001
-
-/* PHY Control Register */
-#define PHY_CR_PHY_RESET	0x8000
-#define PHY_CR_SPEED0		0x2000
-#define PHY_CR_ANE		0x1000
-#define PHY_CR_RESET_AN		0x0200
-#define PHY_CR_FULLDUPLEX	0x0100
-#define PHY_CR_SPEED1		0x0040
-
-#define PHY_TBICON_SRESET	0x8000
-#define PHY_TBICON_CLK_SEL	0x0020
-#define PHY_TBIANA_SGMII	0x4001
-#define PHY_TBIANA_1000X	0x01a0
-
-#define DTSEC_TO_MII_OFFSET	0x1000
+#define TBIANA_SGMII		0x4001
+#define TBIANA_1000X		0x01a0
 
 /* Interrupt Mask Register (IMASK) */
 #define DTSEC_IMASK_BREN	0x80000000
@@ -116,9 +107,7 @@
 /* Defaults */
 #define DEFAULT_HALFDUP_RETRANSMIT		0xf
 #define DEFAULT_HALFDUP_COLL_WINDOW		0x37
-#define DEFAULT_HALFDUP_ALT_BACKOFF_VAL	0x0A
 #define DEFAULT_TX_PAUSE_TIME			0xf000
-#define DEFAULT_TBIPA				5
 #define DEFAULT_RX_PREPEND			0
 #define DEFAULT_PREAMBLE_LEN			7
 #define DEFAULT_TX_PAUSE_TIME_EXTD		0
@@ -127,22 +116,6 @@
 #define DEFAULT_MIN_IFG_ENFORCEMENT		0x50
 #define DEFAULT_BACK_TO_BACK_IPG		0x60
 #define DEFAULT_MAXIMUM_FRAME			0x600
-#define DEFAULT_TBI_PHY_ADDR			5
-
-#define DTSEC_DEFAULT_EXCEPTIONS		 \
-	((u32)((DTSEC_IMASK_BREN)		|\
-			(DTSEC_IMASK_RXCEN)	|\
-			(DTSEC_IMASK_BTEN)	|\
-			(DTSEC_IMASK_TXCEN)	|\
-			(DTSEC_IMASK_TXEEN)	|\
-			(DTSEC_IMASK_ABRTEN)	|\
-			(DTSEC_IMASK_LCEN)	|\
-			(DTSEC_IMASK_CRLEN)	|\
-			(DTSEC_IMASK_XFUNEN)	|\
-			(DTSEC_IMASK_IFERREN)	|\
-			(DTSEC_IMASK_MAGEN)	|\
-			(DTSEC_IMASK_TDPEEN)	|\
-			(DTSEC_IMASK_RDPEEN)))
 
 /* register related defines (bits, field offsets..) */
 #define DTSEC_ID2_INT_REDUCED_OFF	0x00010000
@@ -154,24 +127,17 @@
 #define DTSEC_ECNTRL_R100M		0x00000008
 #define DTSEC_ECNTRL_QSGMIIM		0x00000001
 
-#define DTSEC_TCTRL_THDF		0x00000800
-#define DTSEC_TCTRL_TTSE		0x00000040
 #define DTSEC_TCTRL_GTS			0x00000020
 
 #define RCTRL_PAL_MASK			0x001f0000
 #define RCTRL_PAL_SHIFT			16
-#define RCTRL_CFA			0x00008000
 #define RCTRL_GHTX			0x00000400
-#define RCTRL_RTSE			0x00000040
 #define RCTRL_GRS			0x00000020
-#define RCTRL_BC_REJ			0x00000010
 #define RCTRL_MPROM			0x00000008
 #define RCTRL_RSF			0x00000004
 #define RCTRL_UPROM			0x00000001
-#define RCTRL_PROM			(RCTRL_UPROM | RCTRL_MPROM)
 
 #define MACCFG1_SOFT_RESET		0x80000000
-#define MACCFG1_LOOPBACK		0x00000100
 #define MACCFG1_RX_FLOW			0x00000020
 #define MACCFG1_TX_FLOW			0x00000010
 #define MACCFG1_TX_EN			0x00000001
@@ -179,11 +145,7 @@
 
 #define MACCFG2_NIBBLE_MODE		0x00000100
 #define MACCFG2_BYTE_MODE		0x00000200
-#define MACCFG2_PRE_AM_RX_EN		0x00000080
-#define MACCFG2_PRE_AM_TX_EN		0x00000040
-#define MACCFG2_LENGTH_CHECK		0x00000010
 #define MACCFG2_PAD_CRC_EN		0x00000004
-#define MACCFG2_CRC_EN			0x00000002
 #define MACCFG2_FULL_DUPLEX		0x00000001
 #define MACCFG2_PREAMBLE_LENGTH_MASK	0x0000f000
 #define MACCFG2_PREAMBLE_LENGTH_SHIFT	12
@@ -197,13 +159,8 @@
 #define IPGIFG_MIN_IFG_ENFORCEMENT	0x0000FF00
 #define IPGIFG_BACK_TO_BACK_IPG	0x0000007F
 
-#define HAFDUP_ALT_BEB				0x00080000
-#define HAFDUP_BP_NO_BACKOFF			0x00040000
-#define HAFDUP_NO_BACKOFF			0x00020000
 #define HAFDUP_EXCESS_DEFER			0x00010000
 #define HAFDUP_COLLISION_WINDOW		0x000003ff
-#define HAFDUP_ALTERNATE_BEB_TRUNCATION_MASK	0x00f00000
-#define HAFDUP_ALTERNATE_BEB_TRUNCATION_SHIFT	20
 #define HAFDUP_RETRANSMISSION_MAX_SHIFT	12
 #define HAFDUP_RETRANSMISSION_MAX		0x0000f000
 
@@ -215,7 +172,6 @@
 
 #define MAX_PACKET_ALIGNMENT		31
 #define MAX_INTER_PACKET_GAP		0x7f
-#define MAX_INTER_PALTERNATE_BEB	0x0f
 #define MAX_RETRANSMISSION		0x0f
 #define MAX_COLLISION_WINDOW		0x03ff
 
@@ -223,20 +179,6 @@
 #define DTSEC_HASH_TABLE_SIZE		256
 /* Extended Hash table size (32 bits*16 regs) */
 #define EXTENDED_HASH_TABLE_SIZE	512
-
-/* maximum number of phys */
-#define MAX_PHYS			32
-
-/* MII Configuration Control Memory Map Registers */
-struct dtsec_mii_regs {
-	u32 reserved1[72];
-	u32 miimcfg;	/* MII Mgmt:configuration */
-	u32 miimcom;	/* MII Mgmt:command	  */
-	u32 miimadd;	/* MII Mgmt:address	  */
-	u32 miimcon;	/* MII Mgmt:control 3	  */
-	u32 miimstat;	/* MII Mgmt:status	  */
-	u32 miimind;	/* MII Mgmt:indicators	  */
-};
 
 /* dTSEC Memory Map registers */
 struct dtsec_regs {
@@ -340,43 +282,13 @@ struct dtsec_regs {
  * standard 512-bit slot time window. If collisions are detected after this
  * byte, the late collision event is asserted and transmission of current
  * frame is aborted.
- * rx_drop_bcast:
- * Discard broadcast frames. If set, all broadcast frames will be discarded
- * by dTSEC.
- * rx_short_frm:
- * Accept short frames. If set, dTSEC will accept frames of length 14-63 bytes.
- * rx_len_check:
- * Length check for received frames. If set, the MAC checks the frame's length
- * field on receive to ensure it matches the actual data field length.
- * This only works for received frames with length field less than 1500.
- * No check is performed for larger frames.
  * tx_pad_crc:
  * Pad and append CRC. If set, the MAC pads all ransmitted short frames and
  * appends a CRC to every frame regardless of padding requirement.
- * tx_crc:
- * Transmission CRC enable. If set, the MAC appends a CRC to all frames.
- * If frames presented to the MAC have a valid length and contain a valid CRC,
- * tx_crc should be reset. This field is ignored if tx_pad_crc is set.
- * rx_ctrl_acc:
- * Control frame accept. If set, this overrides 802.3 standard control frame
- * behavior, and all Ethernet frames that have an ethertype of 0x8808 are
- * treated as normal Ethernet frames and passed up to the packet interface on
- * a DA match. Received pause control frames are passed to the packet
- * interface only if Rx flow control is also disabled.
- * See dtsec_accept_rx_pause_frames() function.
  * tx_pause_time:
  * Transmit pause time value. This pause value is used as part of the pause
  * frame to be sent when a transmit pause frame is initiated.
  * If set to 0 this disables transmission of pause frames.
- * rx_preamble:
- * Receive preamble enable. If set, the MAC recovers the received Ethernet
- * 7-byte preamble and passes it to the packet interface at the start of each
- * received frame.
- * This field should be reset for internal MAC loop-back mode.
- * tx_preamble:
- * User defined preamble enable for transmitted frames.
- * If set, a user-defined preamble must passed to the MAC and it is
- * transmitted instead of the standard preamble.
  * preamble_len:
  * Length, in bytes, of the preamble field preceding each Ethernet
  * start-of-frame delimiter byte. The default value of 0x7 should be used in
@@ -393,36 +305,14 @@ struct dtsec_regs {
  * obtained by calling set_dflts().
  */
 struct dtsec_cfg {
-	bool halfdup_on;
-	bool halfdup_alt_backoff_en;
-	bool halfdup_excess_defer;
-	bool halfdup_no_backoff;
-	bool halfdup_bp_no_backoff;
-	u32 halfdup_alt_backoff_val;
 	u16 halfdup_retransmit;
 	u16 halfdup_coll_window;
-	bool rx_drop_bcast;
-	bool rx_short_frm;
-	bool rx_len_check;
 	bool tx_pad_crc;
-	bool tx_crc;
-	bool rx_ctrl_acc;
 	u16 tx_pause_time;
-	u16 tbipa;
 	bool ptp_tsu_en;
 	bool ptp_exception_en;
-	bool rx_preamble;
-	bool tx_preamble;
 	u32 preamble_len;
 	u32 rx_prepend;
-	bool loopback;
-	bool rx_time_stamp_en;
-	bool tx_time_stamp_en;
-	bool rx_flow;
-	bool tx_flow;
-	bool rx_group_hash_exd;
-	bool rx_promisc;
-	u8 tbi_phy_addr;
 	u16 tx_pause_time_extd;
 	u16 maximum_frame;
 	u32 non_back_to_back_ipg1;
@@ -434,10 +324,6 @@ struct dtsec_cfg {
 struct fman_mac {
 	/* pointer to dTSEC memory mapped registers */
 	struct dtsec_regs __iomem *regs;
-	/* pointer to dTSEC MII memory mapped registers */
-	struct dtsec_mii_regs __iomem *mii_regs;
-	/* MII management clock */
-	u16 mii_mgmt_clk;
 	/* MAC address of device */
 	u64 addr;
 	/* Ethernet physical interface */
@@ -453,169 +339,38 @@ struct fman_mac {
 	/* pointer to driver's individual address hash table */
 	struct eth_hash_t *unicast_addr_hash;
 	u8 mac_id;
-	u8 tbi_phy_addr;
 	u32 exceptions;
 	bool ptp_tsu_enabled;
-	bool en_tsu_err_exeption;
+	bool en_tsu_err_exception;
 	struct dtsec_cfg *dtsec_drv_param;
 	void *fm;
 	struct fman_rev_info fm_rev_info;
 	bool basex_if;
+	struct phy_device *tbiphy;
 };
-
-static u32 calc_mii_mgmt_clk(struct fman_mac *dtsec)
-{
-	u16 fm_clk_freq, dtsec_freq;
-	u32 mgmt_clk;
-
-	fm_clk_freq = fman_get_clock_freq(dtsec->fm);
-	if (fm_clk_freq  == 0) {
-		pr_err("Can't get clock for MAC!\n");
-		return 0;
-	}
-
-	dtsec_freq = (u16)(fm_clk_freq >> 1);
-
-	if (dtsec_freq < 80)
-		mgmt_clk = 1;
-	else if (dtsec_freq < 120)
-		mgmt_clk = 2;
-	else if (dtsec_freq < 160)
-		mgmt_clk = 3;
-	else if (dtsec_freq < 200)
-		mgmt_clk = 4;
-	else if (dtsec_freq < 280)
-		mgmt_clk = 5;
-	else if (dtsec_freq < 400)
-		mgmt_clk = 6;
-	else
-		mgmt_clk = 7;
-
-	return mgmt_clk;
-}
-
-static int mii_write_reg(struct fman_mac *dtsec, u8 addr, u8 reg, u16 data)
-{
-	struct dtsec_mii_regs __iomem *regs = dtsec->mii_regs;
-	u32 tmp;
-	int count;
-
-	/* Setup the MII Mgmt clock speed */
-	iowrite32be(dtsec->mii_mgmt_clk, &regs->miimcfg);
-
-	/* Stop the MII management read cycle */
-	iowrite32be(0, &regs->miimcom);
-	/* Dummy read to make sure MIIMCOM is written */
-	tmp = ioread32be(&regs->miimcom);
-
-	/* Setting up MII Management Address Register */
-	tmp = (u32)((addr << MIIMADD_PHY_ADDR_SHIFT) | reg);
-	iowrite32be(tmp, &regs->miimadd);
-
-	/* Setting up MII Management Control Register with data */
-	iowrite32be((u32)data, &regs->miimcon);
-	/* Dummy read to make sure MIIMCON is written */
-	tmp = ioread32be(&regs->miimcon);
-
-	/* Wait until MII management write is complete */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&regs->miimind)) & MIIMIND_BUSY) && count--);
-
-	if (count == 0)
-		return -EBUSY;
-
-	return 0;
-}
-
-static int mii_read_reg(struct fman_mac *dtsec, u8 addr, u8 reg, u16 *data)
-{
-	struct dtsec_mii_regs __iomem *regs = dtsec->mii_regs;
-	u32 tmp;
-	int count;
-
-	/* Setup the MII Mgmt clock speed */
-	iowrite32be(dtsec->mii_mgmt_clk, &regs->miimcfg);
-
-	/* Setting up the MII Management Address Register */
-	tmp = (u32)((addr << MIIMADD_PHY_ADDR_SHIFT) | reg);
-	iowrite32be(tmp, &regs->miimadd);
-
-	/* Perform an MII management read cycle */
-	iowrite32be(MIIMCOM_READ_CYCLE, &regs->miimcom);
-	/* Dummy read to make sure MIIMCOM is written */
-	tmp = ioread32be(&regs->miimcom);
-
-	/* Wait until MII management write is complete */
-	count = 100;
-	do {
-		udelay(1);
-	} while (((ioread32be(&regs->miimind)) & MIIMIND_BUSY) && count--);
-
-	if (count == 0)
-		return -EBUSY;
-
-	/* Read MII management status  */
-	*data = (u16)ioread32be(&regs->miimstat);
-
-	iowrite32be(0, &regs->miimcom);
-	/* Dummy read to make sure MIIMCOM is written */
-	tmp = ioread32be(&regs->miimcom);
-
-	if (*data == 0xffff) {
-		pr_warn("Read wrong data(0xffff):phy_addr 0x%x,reg 0x%x",
-			addr, reg);
-		return -ENXIO;
-	}
-
-	return 0;
-}
 
 static void set_dflts(struct dtsec_cfg *cfg)
 {
-	cfg->halfdup_on = false;
 	cfg->halfdup_retransmit = DEFAULT_HALFDUP_RETRANSMIT;
 	cfg->halfdup_coll_window = DEFAULT_HALFDUP_COLL_WINDOW;
-	cfg->halfdup_excess_defer = true;
-	cfg->halfdup_no_backoff = false;
-	cfg->halfdup_bp_no_backoff = false;
-	cfg->halfdup_alt_backoff_val = DEFAULT_HALFDUP_ALT_BACKOFF_VAL;
-	cfg->halfdup_alt_backoff_en = false;
-	cfg->rx_drop_bcast = false;
-	cfg->rx_short_frm = true;
-	cfg->rx_len_check = false;
 	cfg->tx_pad_crc = true;
-	cfg->tx_crc = false;
-	cfg->rx_ctrl_acc = false;
 	cfg->tx_pause_time = DEFAULT_TX_PAUSE_TIME;
 	/* PHY address 0 is reserved (DPAA RM) */
-	cfg->tbipa = DEFAULT_TBIPA;
 	cfg->rx_prepend = DEFAULT_RX_PREPEND;
 	cfg->ptp_tsu_en = true;
 	cfg->ptp_exception_en = true;
 	cfg->preamble_len = DEFAULT_PREAMBLE_LEN;
-	cfg->rx_preamble = false;
-	cfg->tx_preamble = false;
-	cfg->loopback = false;
-	cfg->rx_time_stamp_en = false;
-	cfg->tx_time_stamp_en = false;
-	cfg->rx_flow = true;
-	cfg->tx_flow = true;
-	cfg->rx_group_hash_exd = false;
 	cfg->tx_pause_time_extd = DEFAULT_TX_PAUSE_TIME_EXTD;
-	cfg->rx_promisc = false;
 	cfg->non_back_to_back_ipg1 = DEFAULT_NON_BACK_TO_BACK_IPG1;
 	cfg->non_back_to_back_ipg2 = DEFAULT_NON_BACK_TO_BACK_IPG2;
 	cfg->min_ifg_enforcement = DEFAULT_MIN_IFG_ENFORCEMENT;
 	cfg->back_to_back_ipg = DEFAULT_BACK_TO_BACK_IPG;
 	cfg->maximum_frame = DEFAULT_MAXIMUM_FRAME;
-	cfg->tbi_phy_addr = DEFAULT_TBI_PHY_ADDR;
 }
 
 static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 		phy_interface_t iface, u16 iface_speed, u8 *macaddr,
-		u32 exception_mask)
+		u32 exception_mask, u8 tbi_addr)
 {
 	bool is_rgmii, is_sgmii, is_qsgmii;
 	int i;
@@ -659,14 +414,6 @@ static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 	iowrite32be(tmp, &regs->ecntrl);
 
 	tmp = 0;
-	if (cfg->halfdup_on)
-		tmp |= DTSEC_TCTRL_THDF;
-	if (cfg->tx_time_stamp_en)
-		tmp |= DTSEC_TCTRL_TTSE;
-
-	iowrite32be(tmp, &regs->tctrl);
-
-	tmp = 0;
 
 	if (cfg->tx_pause_time)
 		tmp |= cfg->tx_pause_time;
@@ -676,18 +423,8 @@ static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 
 	tmp = 0;
 	tmp |= (cfg->rx_prepend << RCTRL_PAL_SHIFT) & RCTRL_PAL_MASK;
-	if (cfg->rx_ctrl_acc)
-		tmp |= RCTRL_CFA;
-	if (cfg->rx_group_hash_exd)
-		tmp |= RCTRL_GHTX;
-	if (cfg->rx_time_stamp_en)
-		tmp |= RCTRL_RTSE;
-	if (cfg->rx_drop_bcast)
-		tmp |= RCTRL_BC_REJ;
-	if (cfg->rx_short_frm)
-		tmp |= RCTRL_RSF;
-	if (cfg->rx_promisc)
-		tmp |= RCTRL_PROM;
+	/* Accept short frames */
+	tmp |= RCTRL_RSF;
 
 	iowrite32be(tmp, &regs->rctrl);
 
@@ -695,7 +432,7 @@ static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 	 * Done also in cases where TBI is not selected to avoid conflict with
 	 * the external PHY's Physical address
 	 */
-	iowrite32be(cfg->tbipa, &regs->tbipa);
+	iowrite32be(tbi_addr, &regs->tbipa);
 
 	iowrite32be(0, &regs->tmr_ctrl);
 
@@ -712,12 +449,8 @@ static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 	}
 
 	tmp = 0;
-	if (cfg->loopback)
-		tmp |= MACCFG1_LOOPBACK;
-	if (cfg->rx_flow)
-		tmp |= MACCFG1_RX_FLOW;
-	if (cfg->tx_flow)
-		tmp |= MACCFG1_TX_FLOW;
+	tmp |= MACCFG1_RX_FLOW;
+	tmp |= MACCFG1_TX_FLOW;
 	iowrite32be(tmp, &regs->maccfg1);
 
 	tmp = 0;
@@ -729,18 +462,10 @@ static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 
 	tmp |= (cfg->preamble_len << MACCFG2_PREAMBLE_LENGTH_SHIFT) &
 		MACCFG2_PREAMBLE_LENGTH_MASK;
-	if (cfg->rx_preamble)
-		tmp |= MACCFG2_PRE_AM_RX_EN;
-	if (cfg->tx_preamble)
-		tmp |= MACCFG2_PRE_AM_TX_EN;
-	if (cfg->rx_len_check)
-		tmp |= MACCFG2_LENGTH_CHECK;
 	if (cfg->tx_pad_crc)
 		tmp |= MACCFG2_PAD_CRC_EN;
-	if (cfg->tx_crc)
-		tmp |= MACCFG2_CRC_EN;
-	if (!cfg->halfdup_on)
-		tmp |= MACCFG2_FULL_DUPLEX;
+	/* Full Duplex */
+	tmp |= MACCFG2_FULL_DUPLEX;
 	iowrite32be(tmp, &regs->maccfg2);
 
 	tmp = (((cfg->non_back_to_back_ipg1 <<
@@ -755,19 +480,7 @@ static int init(struct dtsec_regs __iomem *regs, struct dtsec_cfg *cfg,
 	iowrite32be(tmp, &regs->ipgifg);
 
 	tmp = 0;
-
-	if (cfg->halfdup_alt_backoff_en) {
-		tmp = HAFDUP_ALT_BEB;
-		tmp |= (cfg->halfdup_alt_backoff_val <<
-			HAFDUP_ALTERNATE_BEB_TRUNCATION_SHIFT) &
-			HAFDUP_ALTERNATE_BEB_TRUNCATION_MASK;
-	}
-	if (cfg->halfdup_bp_no_backoff)
-		tmp |= HAFDUP_BP_NO_BACKOFF;
-	if (cfg->halfdup_no_backoff)
-		tmp |= HAFDUP_NO_BACKOFF;
-	if (cfg->halfdup_excess_defer)
-		tmp |= HAFDUP_EXCESS_DEFER;
+	tmp |= HAFDUP_EXCESS_DEFER;
 	tmp |= ((cfg->halfdup_retransmit << HAFDUP_RETRANSMISSION_MAX_SHIFT)
 		& HAFDUP_RETRANSMISSION_MAX);
 	tmp |= (cfg->halfdup_coll_window & HAFDUP_COLLISION_WINDOW);
@@ -843,35 +556,6 @@ static int check_init_parameters(struct fman_mac *dtsec)
 		pr_err("Ethernet MAC Must have a valid MAC Address\n");
 		return -EINVAL;
 	}
-	if (dtsec->max_speed >= SPEED_1000 &&
-	    dtsec->dtsec_drv_param->halfdup_on) {
-		pr_err("Ethernet MAC 1G can't work in half duplex\n");
-		return -EINVAL;
-	}
-
-	/* FM_RX_PREAM_4_ERRATA_DTSEC_A001 Errata workaround */
-	if (dtsec->dtsec_drv_param->rx_preamble) {
-		pr_err("preamble_rx_en\n");
-		return -EINVAL;
-	}
-
-	if (((dtsec->dtsec_drv_param)->tx_preamble ||
-	     (dtsec->dtsec_drv_param)->rx_preamble) &&
-	    ((dtsec->dtsec_drv_param)->preamble_len != 0x7)) {
-		pr_err("Preamble length should be 0x7 bytes\n");
-		return -EINVAL;
-	}
-	if ((dtsec->dtsec_drv_param)->halfdup_on &&
-	    (dtsec->dtsec_drv_param->tx_time_stamp_en ||
-	     dtsec->dtsec_drv_param->rx_time_stamp_en)) {
-		pr_err("1588 timeStamp disabled in half duplex mode\n");
-		return -EINVAL;
-	}
-	if ((dtsec->dtsec_drv_param)->rx_flow &&
-	    (dtsec->dtsec_drv_param)->rx_ctrl_acc) {
-		pr_err("Receive control frame can not be accepted\n");
-		return -EINVAL;
-	}
 	if ((dtsec->dtsec_drv_param)->rx_prepend >
 	    MAX_PACKET_ALIGNMENT) {
 		pr_err("packetAlignmentPadding can't be > than %d\n",
@@ -886,12 +570,6 @@ static int check_init_parameters(struct fman_mac *dtsec)
 	      MAX_INTER_PACKET_GAP)) {
 		pr_err("Inter packet gap can't be greater than %d\n",
 		       MAX_INTER_PACKET_GAP);
-		return -EINVAL;
-	}
-	if ((dtsec->dtsec_drv_param)->halfdup_alt_backoff_val >
-	    MAX_INTER_PALTERNATE_BEB) {
-		pr_err("alternateBackoffVal can't be greater than %d\n",
-		       MAX_INTER_PALTERNATE_BEB);
 		return -EINVAL;
 	}
 	if ((dtsec->dtsec_drv_param)->halfdup_retransmit >
@@ -909,22 +587,12 @@ static int check_init_parameters(struct fman_mac *dtsec)
 	 * using the MII Management Interface
 	 */
 	}
-	if (dtsec->dtsec_drv_param->tbipa > MAX_PHYS) {
-		pr_err("PHY address (should be 0-%d)\n", MAX_PHYS);
-		return -ERANGE;
-	}
 	if (!dtsec->exception_cb) {
 		pr_err("uninitialized exception_cb\n");
 		return -EINVAL;
 	}
 	if (!dtsec->event_cb) {
 		pr_err("uninitialized event_cb\n");
-		return -EINVAL;
-	}
-
-	/* FM_LEN_CHECK_ERRATA_FMAN_SW002 Errata workaround */
-	if (dtsec->dtsec_drv_param->rx_len_check) {
-		pr_warn("Length Check!\n");
 		return -EINVAL;
 	}
 
@@ -998,18 +666,6 @@ static bool is_init_done(struct dtsec_cfg *dtsec_drv_params)
 	return false;
 }
 
-static u32 get_mac_addr_hash_code(u64 eth_addr)
-{
-	u32 crc;
-
-	/* CRC calculation */
-	GET_MAC_ADDR_CRC(eth_addr, crc);
-
-	crc = bitrev32(crc);
-
-	return crc;
-}
-
 static u16 dtsec_get_max_frame_length(struct fman_mac *dtsec)
 {
 	struct dtsec_regs __iomem *regs = dtsec->regs;
@@ -1059,10 +715,10 @@ static void dtsec_isr(void *handle)
 			 *	This is a read only register
 			 * b. Read and save the value of TPKT
 			 */
-			tpkt1 = in_be32(&regs->tpkt);
+			tpkt1 = ioread32be(&regs->tpkt);
 
 			/* c. Read the register at dTSEC address offset 0x32C */
-			tmp_reg1 = in_be32(&regs->reserved02c0[27]);
+			tmp_reg1 = ioread32be(&regs->reserved02c0[27]);
 
 			/* d. Compare bits [9:15] to bits [25:31] of the
 			 * register at address offset 0x32C.
@@ -1083,8 +739,8 @@ static void dtsec_isr(void *handle)
 			/* e. Read and save TPKT again and read the register
 			 * at dTSEC address offset 0x32C again
 			 */
-			tpkt2 = in_be32(&regs->tpkt);
-			tmp_reg2 = in_be32(&regs->reserved02c0[27]);
+			tpkt2 = ioread32be(&regs->tpkt);
+			tmp_reg2 = ioread32be(&regs->reserved02c0[27]);
 
 			/* f. Compare the value of TPKT saved in step b to
 			 * value read in step e. Also compare bits [9:15] of
@@ -1100,21 +756,22 @@ static void dtsec_isr(void *handle)
 
 				/* a.Write a 1 to RCTRL[GRS] */
 
-				out_be32(&regs->rctrl,
-					 in_be32(&regs->rctrl) | RCTRL_GRS);
+				iowrite32be(ioread32be(&regs->rctrl) |
+					    RCTRL_GRS, &regs->rctrl);
 
 				/* b.Wait until IEVENT[GRSC]=1, or at least
 				 * 100 us has elapsed.
 				 */
 				for (i = 0; i < 100; i++) {
-					if (in_be32(&regs->ievent) &
+					if (ioread32be(&regs->ievent) &
 					    DTSEC_IMASK_GRSCEN)
 						break;
 					udelay(1);
 				}
-				if (in_be32(&regs->ievent) & DTSEC_IMASK_GRSCEN)
-					out_be32(&regs->ievent,
-						 DTSEC_IMASK_GRSCEN);
+				if (ioread32be(&regs->ievent) &
+				    DTSEC_IMASK_GRSCEN)
+					iowrite32be(DTSEC_IMASK_GRSCEN,
+						    &regs->ievent);
 				else
 					pr_debug("Rx lockup due to Tx lockup\n");
 
@@ -1279,15 +936,14 @@ int dtsec_set_tx_pause_frames(struct fman_mac *dtsec,
 	if (!is_init_done(dtsec->dtsec_drv_param))
 		return -EINVAL;
 
-	/* FM_BAD_TX_TS_IN_B_2_B_ERRATA_DTSEC_A003 Errata workaround */
-	if (dtsec->fm_rev_info.major == 2)
-		if (0 < pause_time && pause_time <= 320) {
+	if (pause_time) {
+		/* FM_BAD_TX_TS_IN_B_2_B_ERRATA_DTSEC_A003 Errata workaround */
+		if (dtsec->fm_rev_info.major == 2 && pause_time <= 320) {
 			pr_warn("pause-time: %d illegal.Should be > 320\n",
 				pause_time);
 			return -EINVAL;
 		}
 
-	if (pause_time) {
 		ptv = ioread32be(&regs->ptv);
 		ptv &= PTV_PTE_MASK;
 		ptv |= pause_time & PTV_PT_MASK;
@@ -1341,7 +997,7 @@ int dtsec_add_hash_mac_address(struct fman_mac *dtsec, enet_addr_t *eth_addr)
 	struct eth_hash_entry *hash_entry;
 	u64 addr;
 	s32 bucket;
-	u32 crc;
+	u32 crc = 0xFFFFFFFF;
 	bool mcast, ghtx;
 
 	if (!is_init_done(dtsec->dtsec_drv_param))
@@ -1357,7 +1013,8 @@ int dtsec_add_hash_mac_address(struct fman_mac *dtsec, enet_addr_t *eth_addr)
 		pr_err("Could not compute hash bucket\n");
 		return -EINVAL;
 	}
-	crc = get_mac_addr_hash_code(addr);
+	crc = crc32_le(crc, (u8 *)eth_addr, ETH_ALEN);
+	crc = bitrev32(crc);
 
 	/* considering the 9 highest order bits in crc H[8:0]:
 	 *if ghtx = 0 H[8:6] (highest order 3 bits) identify the hash register
@@ -1407,7 +1064,7 @@ int dtsec_del_hash_mac_address(struct fman_mac *dtsec, enet_addr_t *eth_addr)
 	struct eth_hash_entry *hash_entry = NULL;
 	u64 addr;
 	s32 bucket;
-	u32 crc;
+	u32 crc = 0xFFFFFFFF;
 	bool mcast, ghtx;
 
 	if (!is_init_done(dtsec->dtsec_drv_param))
@@ -1423,7 +1080,8 @@ int dtsec_del_hash_mac_address(struct fman_mac *dtsec, enet_addr_t *eth_addr)
 		pr_err("Could not compute hash bucket\n");
 		return -EINVAL;
 	}
-	crc = get_mac_addr_hash_code(addr);
+	crc = crc32_le(crc, (u8 *)eth_addr, ETH_ALEN);
+	crc = bitrev32(crc);
 
 	if (ghtx) {
 		bucket = (s32)((crc >> 23) & 0x1ff);
@@ -1532,22 +1190,17 @@ int dtsec_adjust_link(struct fman_mac *dtsec, u16 speed)
 int dtsec_restart_autoneg(struct fman_mac *dtsec)
 {
 	u16 tmp_reg16;
-	int err;
 
 	if (!is_init_done(dtsec->dtsec_drv_param))
 		return -EINVAL;
 
-	err = mii_read_reg(dtsec, dtsec->tbi_phy_addr, 0, &tmp_reg16);
-	if (err) {
-		pr_err("Autonegotiation restart failed\n");
-		return err;
-	}
+	tmp_reg16 = phy_read(dtsec->tbiphy, MII_BMCR);
 
-	tmp_reg16 &= ~(PHY_CR_SPEED0 | PHY_CR_SPEED1);
-	tmp_reg16 |=
-	    (PHY_CR_ANE | PHY_CR_RESET_AN | PHY_CR_FULLDUPLEX | PHY_CR_SPEED1);
+	tmp_reg16 &= ~(BMCR_SPEED100 | BMCR_SPEED1000);
+	tmp_reg16 |= (BMCR_ANENABLE | BMCR_ANRESTART |
+		      BMCR_FULLDPLX | BMCR_SPEED1000);
 
-	mii_write_reg(dtsec, dtsec->tbi_phy_addr, 0, tmp_reg16);
+	phy_write(dtsec->tbiphy, MII_BMCR, tmp_reg16);
 
 	return 0;
 }
@@ -1598,12 +1251,12 @@ int dtsec_set_exception(struct fman_mac *dtsec,
 		switch (exception) {
 		case FM_MAC_EX_1G_1588_TS_RX_ERR:
 			if (enable) {
-				dtsec->en_tsu_err_exeption = true;
+				dtsec->en_tsu_err_exception = true;
 				iowrite32be(ioread32be(&regs->tmr_pemask) |
 					    TMR_PEMASK_TSREEN,
 					    &regs->tmr_pemask);
 			} else {
-				dtsec->en_tsu_err_exeption = false;
+				dtsec->en_tsu_err_exception = false;
 				iowrite32be(ioread32be(&regs->tmr_pemask) &
 					    ~TMR_PEMASK_TSREEN,
 					    &regs->tmr_pemask);
@@ -1644,7 +1297,8 @@ int dtsec_init(struct fman_mac *dtsec)
 	MAKE_ENET_ADDR_FROM_UINT64(dtsec->addr, eth_addr);
 
 	err = init(dtsec->regs, dtsec_drv_param, dtsec->phy_if,
-		   dtsec->max_speed, (u8 *)eth_addr, dtsec->exceptions);
+		   dtsec->max_speed, (u8 *)eth_addr, dtsec->exceptions,
+		   dtsec->tbiphy->mdio.addr);
 	if (err) {
 		free_init_resources(dtsec);
 		pr_err("DTSEC version doesn't support this i/f mode\n");
@@ -1655,30 +1309,26 @@ int dtsec_init(struct fman_mac *dtsec)
 		u16 tmp_reg16;
 
 		/* Configure the TBI PHY Control Register */
-		tmp_reg16 = PHY_TBICON_CLK_SEL | PHY_TBICON_SRESET;
-		mii_write_reg(dtsec, (u8)dtsec_drv_param->tbipa, 17,
-			      tmp_reg16);
+		tmp_reg16 = TBICON_CLK_SELECT | TBICON_SOFT_RESET;
+		phy_write(dtsec->tbiphy, MII_TBICON, tmp_reg16);
 
-		tmp_reg16 = PHY_TBICON_CLK_SEL;
-		mii_write_reg(dtsec, (u8)dtsec_drv_param->tbipa, 17,
-			      tmp_reg16);
+		tmp_reg16 = TBICON_CLK_SELECT;
+		phy_write(dtsec->tbiphy, MII_TBICON, tmp_reg16);
 
-		tmp_reg16 =
-		    (PHY_CR_PHY_RESET | PHY_CR_ANE | PHY_CR_FULLDUPLEX |
-		     PHY_CR_SPEED1);
-		mii_write_reg(dtsec, (u8)dtsec_drv_param->tbipa, 0, tmp_reg16);
+		tmp_reg16 = (BMCR_RESET | BMCR_ANENABLE |
+			     BMCR_FULLDPLX | BMCR_SPEED1000);
+		phy_write(dtsec->tbiphy, MII_BMCR, tmp_reg16);
 
 		if (dtsec->basex_if)
-			tmp_reg16 = PHY_TBIANA_1000X;
+			tmp_reg16 = TBIANA_1000X;
 		else
-			tmp_reg16 = PHY_TBIANA_SGMII;
-		mii_write_reg(dtsec, (u8)dtsec_drv_param->tbipa, 4, tmp_reg16);
+			tmp_reg16 = TBIANA_SGMII;
+		phy_write(dtsec->tbiphy, MII_ADVERTISE, tmp_reg16);
 
-		tmp_reg16 =
-		    (PHY_CR_ANE | PHY_CR_RESET_AN | PHY_CR_FULLDUPLEX |
-		     PHY_CR_SPEED1);
+		tmp_reg16 = (BMCR_ANENABLE | BMCR_ANRESTART |
+			     BMCR_FULLDPLX | BMCR_SPEED1000);
 
-		mii_write_reg(dtsec, (u8)dtsec_drv_param->tbipa, 0, tmp_reg16);
+		phy_write(dtsec->tbiphy, MII_BMCR, tmp_reg16);
 	}
 
 	/* Max Frame Length */
@@ -1752,34 +1402,53 @@ struct fman_mac *dtsec_config(struct fman_mac_params *params)
 
 	set_dflts(dtsec_drv_param);
 
-	dtsec->regs = (struct dtsec_regs __iomem *)(base_addr);
-	dtsec->mii_regs = (struct dtsec_mii_regs __iomem *)
-		(base_addr + DTSEC_TO_MII_OFFSET);
+	dtsec->regs = base_addr;
 	dtsec->addr = ENET_ADDR_TO_UINT64(params->addr);
 	dtsec->max_speed = params->max_speed;
 	dtsec->phy_if = params->phy_if;
 	dtsec->mac_id = params->mac_id;
-	dtsec->exceptions = DTSEC_DEFAULT_EXCEPTIONS;
+	dtsec->exceptions = (DTSEC_IMASK_BREN	|
+			     DTSEC_IMASK_RXCEN	|
+			     DTSEC_IMASK_BTEN	|
+			     DTSEC_IMASK_TXCEN	|
+			     DTSEC_IMASK_TXEEN	|
+			     DTSEC_IMASK_ABRTEN	|
+			     DTSEC_IMASK_LCEN	|
+			     DTSEC_IMASK_CRLEN	|
+			     DTSEC_IMASK_XFUNEN	|
+			     DTSEC_IMASK_IFERREN |
+			     DTSEC_IMASK_MAGEN	|
+			     DTSEC_IMASK_TDPEEN	|
+			     DTSEC_IMASK_RDPEEN);
 	dtsec->exception_cb = params->exception_cb;
 	dtsec->event_cb = params->event_cb;
 	dtsec->dev_id = params->dev_id;
 	dtsec->ptp_tsu_enabled = dtsec->dtsec_drv_param->ptp_tsu_en;
-	dtsec->en_tsu_err_exeption = dtsec->dtsec_drv_param->ptp_exception_en;
-	dtsec->tbi_phy_addr = dtsec->dtsec_drv_param->tbi_phy_addr;
+	dtsec->en_tsu_err_exception = dtsec->dtsec_drv_param->ptp_exception_en;
 
 	dtsec->fm = params->fm;
 	dtsec->basex_if = params->basex_if;
-	dtsec->mii_mgmt_clk = calc_mii_mgmt_clk(dtsec);
-	if (dtsec->mii_mgmt_clk == 0) {
-		pr_err("Can't calculate MII management clock\n");
-		goto err_dtsec;
+
+	if (!params->internal_phy_node) {
+		pr_err("TBI PHY node is not available\n");
+		goto err_dtsec_drv_param;
 	}
+
+	dtsec->tbiphy = of_phy_find_device(params->internal_phy_node);
+	if (!dtsec->tbiphy) {
+		pr_err("of_phy_find_device (TBI PHY) failed\n");
+		goto err_dtsec_drv_param;
+	}
+
+	put_device(&dtsec->tbiphy->mdio.dev);
 
 	/* Save FMan revision */
 	fman_get_revision(dtsec->fm, &dtsec->fm_rev_info);
 
 	return dtsec;
 
+err_dtsec_drv_param:
+	kfree(dtsec_drv_param);
 err_dtsec:
 	kfree(dtsec);
 	return NULL;

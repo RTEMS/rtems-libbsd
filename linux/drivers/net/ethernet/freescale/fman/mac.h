@@ -65,11 +65,10 @@ struct mac_device {
 #endif /* __rtems__ */
 	u8			 addr[ETH_ALEN];
 	struct fman_port	*port[2];
-#ifndef __rtems__
 	u32			 if_support;
 	struct phy_device	*phy_dev;
-#endif /* __rtems__ */
 #ifdef __rtems__
+	struct fman_ivars	 ivars[2];
 	struct platform_device	 pdev;
 	struct dpaa_eth_data	 data;
 	struct net_device	 net_dev;
@@ -83,7 +82,8 @@ struct mac_device {
 	bool promisc;
 
 #ifndef __rtems__
-	int (*init_phy)(struct net_device *net_dev, struct mac_device *mac_dev);
+	struct phy_device *(*init_phy)(struct net_device *net_dev,
+				       struct mac_device *mac_dev);
 #else /* __rtems__ */
 	void (*adjust_link)(struct mac_device *mac_dev, u16 speed);
 #endif /* __rtems__ */
@@ -119,28 +119,8 @@ struct dpaa_eth_data {
 
 extern const char	*mac_driver_description;
 
-/**
- * fman_set_mac_active_pause
- * @mac_dev:	A pointer to the MAC device
- * @rx:		Pause frame setting for RX
- * @tx:		Pause frame setting for TX
- *
- * Set the MAC RX/TX PAUSE frames settings
- *
- * Return: 0 on success; Error code otherwise.
- */
 int fman_set_mac_active_pause(struct mac_device *mac_dev, bool rx, bool tx);
 
-/**
- * fman_get_pause_cfg
- * @mac_dev:	A pointer to the MAC device
- * @rx:		Return value for RX setting
- * @tx:		Return value for TX setting
- *
- * Determine the MAC RX/TX PAUSE frames settings
- *
- * Return: Pointer to FMan device.
- */
 void fman_get_pause_cfg(struct mac_device *mac_dev, bool *rx_pause,
 			bool *tx_pause);
 

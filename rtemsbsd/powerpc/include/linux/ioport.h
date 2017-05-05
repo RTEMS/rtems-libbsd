@@ -41,6 +41,13 @@ struct resource {
 #define	IORESOURCE_IRQ	0x00000400
 #define	IORESOURCE_MEM	0x00000420
 
+static inline resource_size_t
+resource_size(const struct resource *res)
+{
+
+	return (res->end - res->start + 1);
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

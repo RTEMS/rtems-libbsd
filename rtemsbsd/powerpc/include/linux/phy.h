@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 embedded brains GmbH
+ * Copyright (c) 2015, 2017 embedded brains GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,10 @@
 #ifndef _LINUX_PHY_H
 #define	_LINUX_PHY_H
 
+#include <sys/queue.h>
+#include <linux/device.h>
 #include <linux/list.h>
+#include <linux/netdevice.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +68,50 @@ typedef enum {
 #define	SPEED_50000 50000
 #define	SPEED_56000 56000
 #define	SPEED_100000 100000
+
+#define	SUPPORTED_10000baseT_Full	(1U << 0)
+#define	SUPPORTED_1000baseT_Full	(1U << 1)
+#define	SUPPORTED_100baseT_Full		(1U << 2)
+#define	SUPPORTED_100baseT_Half		(1U << 3)
+#define	SUPPORTED_10baseT_Full		(1U << 4)
+#define	SUPPORTED_10baseT_Half		(1U << 5)
+#define	SUPPORTED_Asym_Pause		(1U << 6)
+#define	SUPPORTED_Autoneg		(1U << 7)
+#define	SUPPORTED_MII			(1U << 8)
+#define	SUPPORTED_Pause			(1U << 9)
+
+struct mdio_bus {
+	int (*read)(struct mdio_bus *bus, int phy, int reg);
+	int (*write)(struct mdio_bus *bus, int phy, int reg, int val);
+	SLIST_ENTRY(mdio_bus) next;
+	int node;
+};
+
+struct phy_device {
+	struct {
+		struct device dev;
+		int addr;
+		struct mdio_bus *bus;
+	} mdio;
+};
+
+static inline int
+phy_read(struct phy_device *phy_dev, int reg)
+{
+	struct mdio_bus *mdio_dev;
+
+	mdio_dev = phy_dev->mdio.bus;
+	return ((*mdio_dev->read)(mdio_dev, phy_dev->mdio.addr, (int)reg));
+}
+
+static inline int
+phy_write(struct phy_device *phy_dev, int reg, int val)
+{
+	struct mdio_bus *mdio_dev;
+
+	mdio_dev = phy_dev->mdio.bus;
+	return ((*mdio_dev->write)(mdio_dev, phy_dev->mdio.addr, reg, val));
+}
 
 #ifdef __cplusplus
 }

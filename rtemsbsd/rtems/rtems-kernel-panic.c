@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -42,6 +42,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
+#include <sys/syslog.h>
 #include <sys/systm.h>
 
 #include <stdarg.h>
@@ -51,13 +52,9 @@ panic(const char *fmt, ...)
 {
 	va_list ap;
 
-	printf("\n*** BSD PANIC *** ");
-
 	va_start(ap, fmt);
-	vprintf(fmt, ap);
+	vlog(LOG_EMERG, fmt, ap);
 	va_end(ap);
-
-	printf("\n");
 
 	rtems_task_suspend(RTEMS_SELF);
 

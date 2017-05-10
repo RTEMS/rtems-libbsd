@@ -318,6 +318,12 @@
 #define	BF_encrypt _bsd_BF_encrypt
 #define	BF_set_key _bsd_BF_set_key
 #define	bin2bcd_data _bsd_bin2bcd_data
+#define	blist_alloc _bsd_blist_alloc
+#define	blist_create _bsd_blist_create
+#define	blist_destroy _bsd_blist_destroy
+#define	blist_fill _bsd_blist_fill
+#define	blist_free _bsd_blist_free
+#define	blist_resize _bsd_blist_resize
 #define	bpfattach _bsd_bpfattach
 #define	bpfattach2 _bsd_bpfattach2
 #define	bpf_buffer_append_bytes _bsd_bpf_buffer_append_bytes

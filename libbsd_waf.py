@@ -1852,6 +1852,7 @@ def build(bld):
               'freebsd/sys/kern/kern_time.c',
               'freebsd/sys/kern/kern_timeout.c',
               'freebsd/sys/kern/kern_uuid.c',
+              'freebsd/sys/kern/subr_blist.c',
               'freebsd/sys/kern/subr_bufring.c',
               'freebsd/sys/kern/subr_bus.c',
               'freebsd/sys/kern/subr_counter.c',

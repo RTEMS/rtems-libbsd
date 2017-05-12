@@ -854,9 +854,7 @@ make_dev_sv(struct make_dev_args *args1, struct cdev **dres,
 #endif /* __rtems__ */
 
 	devfs_create(dev);
-#ifndef __rtems__
 	clean_unrhdrl(devfs_inos);
-#endif /* __rtems__ */
 	dev_unlock_and_free();
 
 	notify_create(dev, args.mda_flags);
@@ -1020,9 +1018,7 @@ make_dev_alias_v(int flags, struct cdev **cdev, struct cdev *pdev,
 	dev->si_flags |= SI_NAMED;
 	devfs_create(dev);
 	dev_dependsl(pdev, dev);
-#ifndef __rtems__
 	clean_unrhdrl(devfs_inos);
-#endif /* __rtems__ */
 	dev_unlock();
 
 	notify_create(dev, flags);

@@ -796,7 +796,9 @@ def dev_usb_serial(mm):
     mod.addKernelSpaceHeaderFiles(
         [
             'sys/dev/usb/serial/uftdi_reg.h',
+            'sys/dev/usb/serial/umcs.h',
             'sys/dev/usb/serial/usb_serial.h',
+            'sys/dev/usb/uftdiio.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
@@ -812,6 +814,7 @@ def dev_usb_serial(mm):
             'sys/dev/usb/serial/ugensa.c',
             'sys/dev/usb/serial/uipaq.c',
             'sys/dev/usb/serial/ulpt.c',
+            'sys/dev/usb/serial/umcs.c',
             'sys/dev/usb/serial/umct.c',
             'sys/dev/usb/serial/umodem.c',
             'sys/dev/usb/serial/umoscom.c',
@@ -3017,6 +3020,7 @@ def tests(mm):
     mod.addTest(mm.generator['test']('program01', ['test_main']))
     mod.addTest(mm.generator['test']('commands01', ['test_main']))
     mod.addTest(mm.generator['test']('usb01', ['init'], False))
+    mod.addTest(mm.generator['test']('usbserial01', ['init'], False))
     mod.addTest(mm.generator['test']('loopback01', ['test_main']))
     mod.addTest(mm.generator['test']('netshell01', ['test_main', 'shellconfig'], False))
     mod.addTest(mm.generator['test']('swi01', ['init', 'swi_test']))
@@ -3158,7 +3162,7 @@ def sources(mm):
     #mm.addModule(dev_usb_bluetooth(mm))
     #mm.addModule(dev_usb_input(mm))
     #mm.addModule(dev_usb_mouse(mm))
-    #mm.addModule(dev_usb_serial(mm))
+    mm.addModule(dev_usb_serial(mm))
     mm.addModule(dev_usb_net(mm))
     mm.addModule(dev_usb_wlan(mm))
     mm.addModule(dev_wlan_rtwn(mm))

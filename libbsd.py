@@ -388,6 +388,7 @@ def base(mm):
             'sys/kern/uipc_sockbuf.c',
             'sys/kern/uipc_socket.c',
             'sys/kern/uipc_usrreq.c',
+            'sys/libkern/crc32.c',
             'sys/libkern/bcd.c',
             'sys/libkern/inet_ntoa.c',
             'sys/libkern/jenkins_hash.c',

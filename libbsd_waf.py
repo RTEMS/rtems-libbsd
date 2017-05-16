@@ -1888,6 +1888,7 @@ def build(bld):
               'freebsd/sys/kern/uipc_syscalls.c',
               'freebsd/sys/kern/uipc_usrreq.c',
               'freebsd/sys/libkern/bcd.c',
+              'freebsd/sys/libkern/crc32.c',
               'freebsd/sys/libkern/inet_ntoa.c',
               'freebsd/sys/libkern/jenkins_hash.c',
               'freebsd/sys/libkern/murmur3_32.c',

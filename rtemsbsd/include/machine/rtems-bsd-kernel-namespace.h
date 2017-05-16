@@ -461,6 +461,7 @@
 #define	bus_setup_intr _bsd_bus_setup_intr
 #define	bus_teardown_intr _bsd_bus_teardown_intr
 #define	bus_unmap_resource _bsd_bus_unmap_resource
+#define	calculate_crc32c _bsd_calculate_crc32c
 #define	callout_handle_init _bsd_callout_handle_init
 #define	callout_init _bsd_callout_init
 #define	_callout_init_lock _bsd__callout_init_lock
@@ -550,6 +551,7 @@
 #define	counter_u64_fetch _bsd_counter_u64_fetch
 #define	counter_u64_free _bsd_counter_u64_free
 #define	counter_u64_zero _bsd_counter_u64_zero
+#define	crc32_tab _bsd_crc32_tab
 #define	create_objects_compat _bsd_create_objects_compat
 #define	crypto_apply _bsd_crypto_apply
 #define	crypto_copyback _bsd_crypto_copyback

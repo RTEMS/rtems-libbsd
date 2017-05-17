@@ -278,7 +278,7 @@ static int qman_portal_probe(struct platform_device *pdev)
 	pcfg->channel = val;
 	pcfg->cpu = -1;
 	irq = platform_get_irq(pdev, 0);
-	if (irq <= 0) {
+	if (irq < 0) {
 		dev_err(dev, "Can't get %s IRQ\n", node->full_name);
 		return -ENXIO;
 	}

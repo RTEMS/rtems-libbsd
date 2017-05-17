@@ -769,7 +769,7 @@ static int fsl_qman_probe(struct platform_device *pdev)
 	}
 
 	err_irq = platform_get_irq(pdev, 0);
-	if (err_irq <= 0) {
+	if (err_irq < 0) {
 		dev_info(dev, "Can't get %s property 'interrupts'\n",
 			 node->full_name);
 		return -ENODEV;

@@ -223,7 +223,7 @@ static int fsl_bman_probe(struct platform_device *pdev)
 	bm_set_memory(fbpr_a, fbpr_sz);
 
 	err_irq = platform_get_irq(pdev, 0);
-	if (err_irq <= 0) {
+	if (err_irq < 0) {
 		dev_info(dev, "Can't get %s IRQ\n", node->full_name);
 		return -ENODEV;
 	}

@@ -1994,8 +1994,10 @@ ukbd_ioctl(keyboard_t *kbd, u_long cmd, caddr_t arg)
 	/*
 	 * XXX Check if someone is calling us from a critical section:
 	 */
+#ifndef __rtems__
 	if (curthread->td_critnest != 0)
 		return (EDEADLK);
+#endif /* __rtems__ */
 
 	/*
 	 * XXX KDGKBSTATE, KDSKBSTATE and KDSETLED can be called from any

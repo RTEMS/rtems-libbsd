@@ -151,6 +151,7 @@ def rtems(mm):
             'pppd/sys-rtems.c',
             'pppd/upap.c',
             'pppd/utils.c',
+            'sys/dev/input/touchscreen/tsc_lpc32xx.c',
             'sys/dev/usb/controller/ehci_mpc83xx.c',
             'sys/dev/usb/controller/ohci_lpc.c',
             'sys/dev/usb/controller/ohci_lpc32xx.c',
@@ -500,6 +501,53 @@ def mmc(mm):
     return mod
 
 #
+# Input
+#
+def dev_input(mm):
+    mod = builder.Module('dev_input')
+    mod.addKernelSpaceHeaderFiles(
+        [
+            'sys/sys/kbio.h',
+            'sys/dev/kbd/kbdreg.h',
+            'sys/dev/kbd/kbdtables.h',
+            'sys/sys/mouse.h',
+        ]
+    )
+    mod.addKernelSpaceSourceFiles(
+        [
+            'sys/dev/kbd/kbd.c',
+        ],
+        mm.generator['source']()
+    )
+    return mod
+
+#
+# EVDEV
+#
+def evdev(mm):
+    mod = builder.Module('evdev')
+    mod.addKernelSpaceHeaderFiles(
+        [
+            'sys/dev/evdev/evdev.h',
+            'sys/dev/evdev/evdev_private.h',
+            'sys/dev/evdev/input.h',
+            'sys/dev/evdev/input-event-codes.h',
+            'sys/dev/evdev/uinput.h',
+        ]
+    )
+    mod.addKernelSpaceSourceFiles(
+        [
+            'sys/dev/evdev/cdev.c',
+            'sys/dev/evdev/evdev.c',
+            'sys/dev/evdev/evdev_mt.c',
+            'sys/dev/evdev/evdev_utils.c',
+            'sys/dev/evdev/uinput.c',
+        ],
+        mm.generator['source']()
+    )
+    return mod
+
+#
 # USB
 #
 def dev_usb(mm):
@@ -671,32 +719,17 @@ def dev_usb_input(mm):
     mod.addDependency(mm['dev_usb'])
     mod.addKernelSpaceHeaderFiles(
         [
-    'sys/dev/usb/input/usb_rdesc.h',
+            'sys/dev/usb/input/usb_rdesc.h',
         ]
     )
     mod.addKernelSpaceSourceFiles(
         [
+            'sys/dev/usb/input/atp.c',
+            'sys/dev/usb/input/uep.c',
             'sys/dev/usb/input/uhid.c',
             'sys/dev/usb/input/ukbd.c',
-        ],
-        mm.generator['source']()
-    )
-    return mod
-
-#
-# USB Mouse
-#
-def dev_usb_mouse(mm):
-    mod = builder.Module('dev_usb_mouse')
-    mod.addDependency(mm['dev_usb'])
-    mod.addKernelSpaceHeaderFiles(
-        [
-            'sys/sys/mouse.h',
-        ]
-    )
-    mod.addKernelSpaceSourceFiles(
-        [
             'sys/dev/usb/input/ums.c',
+            'sys/dev/usb/input/wsp.c',
         ],
         mm.generator['source']()
     )
@@ -3021,6 +3054,9 @@ def tests(mm):
     mod.addTest(mm.generator['test']('commands01', ['test_main']))
     mod.addTest(mm.generator['test']('usb01', ['init'], False))
     mod.addTest(mm.generator['test']('usbserial01', ['init'], False))
+    mod.addTest(mm.generator['test']('usbkbd01', ['init'], False))
+    mod.addTest(mm.generator['test']('usbmouse01', ['init'], False))
+    mod.addTest(mm.generator['test']('evdev01', ['init'], False))
     mod.addTest(mm.generator['test']('loopback01', ['test_main']))
     mod.addTest(mm.generator['test']('netshell01', ['test_main', 'shellconfig'], False))
     mod.addTest(mm.generator['test']('swi01', ['init', 'swi_test']))
@@ -3151,6 +3187,8 @@ def sources(mm):
     mm.addModule(fdt(mm))
     mm.addModule(tty(mm))
     mm.addModule(mmc(mm))
+    mm.addModule(dev_input(mm))
+    mm.addModule(evdev(mm))
 
     mm.addModule(dev_usb(mm))
     #mm.addModule(dev_usb_add_on(mm))
@@ -3160,8 +3198,7 @@ def sources(mm):
     #mm.addModule(dev_usb_misc(mm))
 
     #mm.addModule(dev_usb_bluetooth(mm))
-    #mm.addModule(dev_usb_input(mm))
-    #mm.addModule(dev_usb_mouse(mm))
+    mm.addModule(dev_usb_input(mm))
     mm.addModule(dev_usb_serial(mm))
     mm.addModule(dev_usb_net(mm))
     mm.addModule(dev_usb_wlan(mm))

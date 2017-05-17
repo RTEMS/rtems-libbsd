@@ -780,9 +780,15 @@ def build(bld):
               'freebsd/sys/dev/e1000/em_txrx.c',
               'freebsd/sys/dev/e1000/if_em.c',
               'freebsd/sys/dev/e1000/igb_txrx.c',
+              'freebsd/sys/dev/evdev/cdev.c',
+              'freebsd/sys/dev/evdev/evdev.c',
+              'freebsd/sys/dev/evdev/evdev_mt.c',
+              'freebsd/sys/dev/evdev/evdev_utils.c',
+              'freebsd/sys/dev/evdev/uinput.c',
               'freebsd/sys/dev/fdt/fdt_common.c',
               'freebsd/sys/dev/fdt/simplebus.c',
               'freebsd/sys/dev/fxp/if_fxp.c',
+              'freebsd/sys/dev/kbd/kbd.c',
               'freebsd/sys/dev/led/led.c',
               'freebsd/sys/dev/mii/brgphy.c',
               'freebsd/sys/dev/mii/e1000phy.c',
@@ -892,6 +898,12 @@ def build(bld):
               'freebsd/sys/dev/usb/controller/ehci.c',
               'freebsd/sys/dev/usb/controller/ohci.c',
               'freebsd/sys/dev/usb/controller/usb_controller.c',
+              'freebsd/sys/dev/usb/input/atp.c',
+              'freebsd/sys/dev/usb/input/uep.c',
+              'freebsd/sys/dev/usb/input/uhid.c',
+              'freebsd/sys/dev/usb/input/ukbd.c',
+              'freebsd/sys/dev/usb/input/ums.c',
+              'freebsd/sys/dev/usb/input/wsp.c',
               'freebsd/sys/dev/usb/net/if_aue.c',
               'freebsd/sys/dev/usb/net/if_axe.c',
               'freebsd/sys/dev/usb/net/if_axge.c',
@@ -1370,6 +1382,7 @@ def build(bld):
               'rtemsbsd/rtems/syslog.c',
               'rtemsbsd/sys/dev/dw_mmc/dw_mmc.c',
               'rtemsbsd/sys/dev/ffec/if_ffec_mcf548x.c',
+              'rtemsbsd/sys/dev/input/touchscreen/tsc_lpc32xx.c',
               'rtemsbsd/sys/dev/smc/if_smc_nexus.c',
               'rtemsbsd/sys/dev/tsec/if_tsec_nexus.c',
               'rtemsbsd/sys/dev/usb/controller/dwc_otg_nexus.c',
@@ -1531,6 +1544,16 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_dhcpcd02,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_evdev01 = ['testsuite/evdev01/init.c']
+    bld.program(target = "evdev01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_evdev01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)
@@ -1918,6 +1941,26 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_usb01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_usbkbd01 = ['testsuite/usbkbd01/init.c']
+    bld.program(target = "usbkbd01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_usbkbd01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_usbmouse01 = ['testsuite/usbmouse01/init.c']
+    bld.program(target = "usbmouse01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_usbmouse01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

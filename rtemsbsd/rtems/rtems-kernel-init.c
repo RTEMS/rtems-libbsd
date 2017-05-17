@@ -49,6 +49,9 @@
 #include <sys/mutex.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/kbio.h>
+
+#include <dev/kbd/kbdreg.h>
 
 #include <net80211/ieee80211_freebsd.h>
 
@@ -61,6 +64,7 @@ SYSINIT_REFERENCE(linker_kernel);
 SYSINIT_MODULE_REFERENCE(rootbus);
 SYSINIT_DRIVER_REFERENCE(nexus, root);
 
+RTEMS_BSD_DEFINE_SET(kbddriver_set, const keyboard_driver_t *);
 RTEMS_BSD_DEFINE_SET(modmetadata_set, struct mod_metadata *);
 RTEMS_BSD_DEFINE_SET(ieee80211_ioctl_getset, ieee80211_ioctl_getfunc *);
 RTEMS_BSD_DEFINE_SET(ieee80211_ioctl_setset, ieee80211_ioctl_setfunc *);

@@ -219,7 +219,7 @@ rtems_bsd_threads_init_late(void *arg)
 	rtems_bsd_thread_ready_to_start = true;
 }
 
-SYSINIT(rtems_bsd_threads_early, SI_SUB_INTRINSIC, SI_ORDER_ANY,
+SYSINIT(rtems_bsd_threads_early, SI_SUB_TUNABLES, SI_ORDER_ANY,
     rtems_bsd_threads_init_early, NULL);
 
 SYSINIT(rtems_bsd_threads_late, SI_SUB_LAST, SI_ORDER_ANY,

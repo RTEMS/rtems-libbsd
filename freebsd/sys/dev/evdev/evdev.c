@@ -64,7 +64,11 @@ enum evdev_sparse_result
 
 MALLOC_DEFINE(M_EVDEV, "evdev", "evdev memory");
 
+#ifndef __rtems__
 int evdev_rcpt_mask = EVDEV_RCPT_SYSMOUSE | EVDEV_RCPT_KBDMUX;
+#else /* __rtems__ */
+int evdev_rcpt_mask = EVDEV_RCPT_HW_MOUSE | EVDEV_RCPT_HW_KBD;
+#endif /* __rtems__ */
 int evdev_sysmouse_t_axis = 0;
 
 SYSCTL_NODE(_kern, OID_AUTO, evdev, CTLFLAG_RW, 0, "Evdev args");

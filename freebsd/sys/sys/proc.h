@@ -1055,10 +1055,11 @@ void	fork_exit(void (*)(void *, struct trapframe *), void *,
 	    struct trapframe *);
 void	fork_return(struct thread *, struct trapframe *);
 int	inferior(struct proc *p);
-void	kern_yield(int);
 #ifndef __rtems__
+void	kern_yield(int);
 void 	kick_proc0(void);
 #else /* __rtems__ */
+#define	kern_yield(x) sched_yield()
 #define	kick_proc0()
 #endif /* __rtems__ */
 void	killjobc(void);

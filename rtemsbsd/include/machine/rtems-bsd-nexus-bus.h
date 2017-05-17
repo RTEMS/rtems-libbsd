@@ -39,6 +39,7 @@
  *  Devices:
  *   RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR
  *   RTEMS_BSD_DRIVER_LPC32XX_PWR
+ *   RTEMS_BSD_DRIVER_LPC32XX_TSC
  *
  *  Buses:
  *   RTEMS_BSD_DRIVER_PC_LEGACY
@@ -135,6 +136,27 @@ extern "C" {
                                   RTEMS_ARRAY_SIZE(lpc_pwr0_res),             \
                                   &lpc_pwr0_res[0])
 #endif /* RTEMS_BSD_DRIVER_LPC32XX_PWR */
+
+/*
+ * LPC32XX TSC.
+ */
+#if !defined(RTEMS_BSD_DRIVER_LPC32XX_TSC)
+  #define RTEMS_BSD_DRIVER_LPC32XX_TSC                                      \
+    static const rtems_bsd_device_resource lpc_tsc0_res[] = {               \
+      {                                                                     \
+        .type = RTEMS_BSD_RES_MEMORY,                                       \
+        .start_request = 0,                                                 \
+        .start_actual = LPC32XX_BASE_ADC                                    \
+      }, {                                                                  \
+        .type = RTEMS_BSD_RES_IRQ,                                          \
+        .start_request = 0,                                                 \
+        .start_actual = LPC32XX_IRQ_TS_IRQ_OR_ADC                           \
+      }                                                                     \
+    };                                                                      \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(lpctsc, 0,                                \
+                                  RTEMS_ARRAY_SIZE(lpc_tsc0_res),           \
+                                  &lpc_tsc0_res[0])
+#endif /* RTEMS_BSD_DRIVER_LPC32XX_TSC */
 
 /**
  ** Physical Buses

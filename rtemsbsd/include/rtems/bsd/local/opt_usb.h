@@ -1,6 +1,6 @@
 #define USB_HAVE_CONDVAR 1
 
-#define USB_HAVE_UGEN 0
+#define USB_HAVE_UGEN 1
 
 #define USB_HAVE_BUSDMA 1
 

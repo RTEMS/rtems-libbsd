@@ -1071,15 +1071,17 @@ static irqreturn_t portal_isr(int irq, void *ptr)
 {
 	struct qman_portal *p = ptr;
 
-	u32 clear = QM_DQAVAIL_MASK | p->irq_sources;
+	u32 clear = QM_DQAVAIL_MASK;
 	u32 is = qm_in(&p->p, QM_REG_ISR) & p->irq_sources;
 
 	if (unlikely(!is))
 		return IRQ_NONE;
 
 	/* DQRR-handling if it's interrupt-driven */
-	if (is & QM_PIRQ_DQRI)
+	if (is & QM_PIRQ_DQRI) {
+		clear |= QM_PIRQ_DQRI;
 		__poll_portal_fast(p, QMAN_POLL_LIMIT);
+	}
 	/* Handling of anything else that's interrupt-driven */
 	clear |= __poll_portal_slow(p, is);
 	qm_out(&p->p, QM_REG_ISR, clear);

@@ -39,7 +39,12 @@
 #include "mac.h"
 #include "dpaa_eth_trace.h"
 
-#define DPAA_ETH_TXQ_NUM	NR_CPUS
+/* Number of prioritised traffic classes */
+#define DPAA_TC_NUM		4
+/* Number of Tx queues per traffic class */
+#define DPAA_TC_TXQ_NUM		NR_CPUS
+/* Total number of Tx queues */
+#define DPAA_ETH_TXQ_NUM	(DPAA_TC_NUM * DPAA_TC_TXQ_NUM)
 
 #ifndef __rtems__
 #define DPAA_BPS_NUM 3 /* number of bpools per interface */
@@ -161,6 +166,7 @@ struct dpaa_priv {
 	struct list_head dpaa_fq_list;
 
 #ifndef __rtems__
+	u8 num_tc;
 	u32 msg_enable;	/* net_device message level */
 #endif /* __rtems__ */
 

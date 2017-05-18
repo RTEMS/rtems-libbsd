@@ -67,6 +67,7 @@
 #define DMA_OFFSET		0x000C2000
 #define FPM_OFFSET		0x000C3000
 #define IMEM_OFFSET		0x000C4000
+#define HWP_OFFSET		0x000C7000
 #define CGP_OFFSET		0x000DB000
 
 /* Exceptions bit map */
@@ -225,6 +226,9 @@
 #define QMI_INTR_EN_SINGLE_ECC		0x80000000
 
 #define QMI_GS_HALT_NOT_BUSY		0x00000002
+
+/* HWP defines */
+#define HWP_RPIMAC_PEN			0x00000001
 
 /* IRAM defines */
 #define IRAM_IADD_AIE			0x80000000
@@ -483,6 +487,12 @@ struct fman_dma_regs {
 	u32 res00e0[0x400 - 56];
 };
 
+struct fman_hwp_regs {
+	u32 res0000[0x844 / 4];		/* 0x000..0x843 */
+	u32 fmprrpimac;	/* FM Parser Internal memory access control */
+	u32 res[(0x1000 - 0x848) / 4];	/* 0x848..0xFFF */
+};
+
 /* Structure that holds current FMan state.
  * Used for saving run time information.
  */
@@ -616,6 +626,7 @@ struct fman {
 	struct fman_bmi_regs __iomem *bmi_regs;
 	struct fman_qmi_regs __iomem *qmi_regs;
 	struct fman_dma_regs __iomem *dma_regs;
+	struct fman_hwp_regs __iomem *hwp_regs;
 	fman_exceptions_cb *exception_cb;
 	fman_bus_error_cb *bus_error_cb;
 	/* Spinlock for FMan use */
@@ -1009,6 +1020,12 @@ static void qmi_init(struct fman_qmi_regs __iomem *qmi_rg,
 	iowrite32be(tmp_reg, &qmi_rg->fmqm_ien);
 }
 
+static void hwp_init(struct fman_hwp_regs __iomem *hwp_rg)
+{
+	/* enable HW Parser */
+	iowrite32be(HWP_RPIMAC_PEN, &hwp_rg->fmprrpimac);
+}
+
 static int enable(struct fman *fman, struct fman_cfg *cfg)
 {
 	u32 cfg_reg = 0;
@@ -1205,7 +1222,7 @@ static int fill_soc_specific_params(struct fman_state_struct *state)
 		state->max_num_of_open_dmas	= 32;
 		state->fm_port_num_of_cg	= 256;
 		state->num_of_rx_ports	= 6;
-		state->total_fifo_size	= 122 * 1024;
+		state->total_fifo_size	= 136 * 1024;
 		break;
 
 	case 2:
@@ -1805,6 +1822,7 @@ static int fman_config(struct fman *fman)
 	fman->bmi_regs = base_addr + BMI_OFFSET;
 	fman->qmi_regs = base_addr + QMI_OFFSET;
 	fman->dma_regs = base_addr + DMA_OFFSET;
+	fman->hwp_regs = base_addr + HWP_OFFSET;
 	fman->base_addr = base_addr;
 
 	spin_lock_init(&fman->spinlock);
@@ -2075,6 +2093,9 @@ static int fman_init(struct fman *fman)
 
 	/* Init QMI Registers */
 	qmi_init(fman->qmi_regs, fman->cfg);
+
+	/* Init HW Parser */
+	hwp_init(fman->hwp_regs);
 
 	err = enable(fman, cfg);
 	if (err != 0)

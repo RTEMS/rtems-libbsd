@@ -164,6 +164,10 @@ int	_rw_try_rlock(struct rwlock *rw, const char *file, int line);
 void	_rw_runlock(struct rwlock *rw, const char *file, int line);
 int	_rw_try_upgrade(struct rwlock *rw, const char *file, int line);
 void	_rw_downgrade(struct rwlock *rw, const char *file, int line);
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
+void	_rw_assert(const struct rwlock *rw, int what, const char *file,
+	    int line);
+#endif
 #endif /* __rtems__ */
 
 #ifndef __rtems__

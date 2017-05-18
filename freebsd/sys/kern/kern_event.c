@@ -2108,8 +2108,10 @@ static void
 kqueue_destroy(struct kqueue *kq)
 {
 
+#ifndef __rtems__
 	KASSERT(kq->kq_fdp == NULL,
 	    ("kqueue still attached to a file descriptor"));
+#endif /* __rtems__ */
 	seldrain(&kq->kq_sel);
 	knlist_destroy(&kq->kq_sel.si_note);
 	mtx_destroy(&kq->kq_lock);

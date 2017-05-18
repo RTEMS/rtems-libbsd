@@ -112,6 +112,7 @@ void	_rm_assert(const struct rmlock *rm, int what, const char *file,
 #define	rm_rlock(rm, tracker) do { (void)tracker; rw_rlock(rm); } while (0)
 #define	rm_runlock(rm, tracker) do { (void)tracker; rw_runlock(rm); } while (0)
 #define	rm_sleep rw_sleep
+#define	_rm_assert _rw_assert
 #endif /* __rtems__ */
 
 

@@ -79,9 +79,9 @@ struct lock_class lock_class_rw = {
 #endif
 };
 
-#define rw_wowner(rw) ((rw)->mutex.owner)
+#define	rw_wowner(rw) rtems_bsd_mutex_owner(&(rw)->mutex)
 
-#define rw_recursed(rw) ((rw)->mutex.nest_level != 0)
+#define	rw_recursed(rw) rtems_bsd_mutex_recursed(&(rw)->mutex)
 
 void
 assert_rw(struct lock_object *lock, int what)
@@ -207,87 +207,53 @@ _rw_downgrade(struct rwlock *rw, const char *file, int line)
 }
 
 #ifdef INVARIANT_SUPPORT
-#ifndef INVARIANTS
-#undef _rw_assert
-#endif
-
 /*
  * In the non-WITNESS case, rw_assert() can only detect that at least
  * *some* thread owns an rlock, but it cannot guarantee that *this*
  * thread owns an rlock.
  */
 void
-_rw_assert(struct rwlock *rw, int what, const char *file, int line)
+_rw_assert(const struct rwlock *rw, int what, const char *file, int line)
 {
+	const char *name = rtems_bsd_mutex_name(&rw->mutex);
 
-  if (panicstr != NULL)
-    return;
-  switch (what) {
-  case RA_LOCKED:
-  case RA_LOCKED | RA_RECURSED:
-  case RA_LOCKED | RA_NOTRECURSED:
-  case RA_RLOCKED:
-#ifndef __rtems__
+	switch (what) {
+	case RA_LOCKED:
+	case RA_LOCKED | RA_RECURSED:
+	case RA_LOCKED | RA_NOTRECURSED:
+	case RA_RLOCKED:
+	case RA_RLOCKED | RA_RECURSED:
+	case RA_RLOCKED | RA_NOTRECURSED:
+	case RA_WLOCKED:
+	case RA_WLOCKED | RA_RECURSED:
+	case RA_WLOCKED | RA_NOTRECURSED:
+		if (rw_wowner(rw) != _Thread_Get_executing())
+			panic("Lock %s not exclusively locked @ %s:%d\n",
+			    name, file, line);
+		if (rw_recursed(rw)) {
+			if (what & RA_NOTRECURSED)
+				panic("Lock %s recursed @ %s:%d\n", name, file,
+				    line);
+		} else if (what & RA_RECURSED)
+			panic("Lock %s not recursed @ %s:%d\n", name, file,
+			    line);
+		break;
+	case RA_UNLOCKED:
 #ifdef WITNESS
-    witness_assert(&rw->lock_object, what, file, line);
+		witness_assert(&rw->lock_object, what, file, line);
 #else
-    /*
-     * If some other thread has a write lock or we have one
-     * and are asserting a read lock, fail.  Also, if no one
-     * has a lock at all, fail.
-     */
-    if (rw->rw_lock == RW_UNLOCKED ||
-        (!(rw->rw_lock & RW_LOCK_READ) && (what == RA_RLOCKED ||
-        rw_wowner(rw) != curthread)))
-      panic("Lock %s not %slocked @ %s:%d\n",
-          rw->lock_object.lo_name, (what == RA_RLOCKED) ?
-          "read " : "", file, line);
-
-    if (!(rw->rw_lock & RW_LOCK_READ)) {
-      if (rw_recursed(rw)) {
-        if (what & RA_NOTRECURSED)
-          panic("Lock %s recursed @ %s:%d\n",
-              rw->lock_object.lo_name, file,
-              line);
-      } else if (what & RA_RECURSED)
-        panic("Lock %s not recursed @ %s:%d\n",
-            rw->lock_object.lo_name, file, line);
-    }
+		/*
+		 * If we hold a write lock fail.  We can't reliably check
+		 * to see if we hold a read lock or not.
+		 */
+		if (rw_wowner(rw) == _Thread_Get_executing())
+			panic("Lock %s exclusively locked @ %s:%d\n", name,
+			    file, line);
 #endif
-    break;
-#else /* __rtems__ */
-    /* FALLTHROUGH */
-#endif /* __rtems__ */
-  case RA_WLOCKED:
-  case RA_WLOCKED | RA_RECURSED:
-  case RA_WLOCKED | RA_NOTRECURSED:
-    if (rw_wowner(rw) != _Thread_Get_executing())
-      panic("Lock %s not exclusively locked @ %s:%d\n",
-          rw->lock_object.lo_name, file, line);
-    if (rw_recursed(rw)) {
-      if (what & RA_NOTRECURSED)
-        panic("Lock %s recursed @ %s:%d\n",
-            rw->lock_object.lo_name, file, line);
-    } else if (what & RA_RECURSED)
-      panic("Lock %s not recursed @ %s:%d\n",
-          rw->lock_object.lo_name, file, line);
-    break;
-  case RA_UNLOCKED:
-#ifdef WITNESS
-    witness_assert(&rw->lock_object, what, file, line);
-#else
-    /*
-     * If we hold a write lock fail.  We can't reliably check
-     * to see if we hold a read lock or not.
-     */
-    if (rw_wowner(rw) == _Thread_Get_executing())
-      panic("Lock %s exclusively locked @ %s:%d\n",
-          rw->lock_object.lo_name, file, line);
-#endif
-    break;
-  default:
-    panic("Unknown rw lock assertion: %d @ %s:%d", what, file,
-        line);
-  }
+		break;
+	default:
+		panic("Unknown rw lock assertion: %d @ %s:%d", what, file,
+		    line);
+	}
 }
 #endif /* INVARIANT_SUPPORT */

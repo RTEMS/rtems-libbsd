@@ -209,18 +209,32 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	}
 }
 
-static inline int
-rtems_bsd_mutex_owned(rtems_bsd_mutex *m)
+static inline Thread_Control *
+rtems_bsd_mutex_owner(const rtems_bsd_mutex *m)
 {
 
-	return (m->queue.Queue.owner == _Thread_Get_executing());
+	return (m->queue.Queue.owner);
 }
 
 static inline int
-rtems_bsd_mutex_recursed(rtems_bsd_mutex *m)
+rtems_bsd_mutex_owned(const rtems_bsd_mutex *m)
 {
 
-	return (m->nest_level);
+	return (rtems_bsd_mutex_owner(m) == _Thread_Get_executing());
+}
+
+static inline int
+rtems_bsd_mutex_recursed(const rtems_bsd_mutex *m)
+{
+
+	return (m->nest_level != 0);
+}
+
+static inline const char *
+rtems_bsd_mutex_name(const rtems_bsd_mutex *m)
+{
+
+	return (m->queue.Queue.name);
 }
 
 static inline void

@@ -47,10 +47,6 @@
 #include <sys/lock.h>
 #include <sys/sx.h>
 
-#ifndef INVARIANTS
-#define _sx_assert(sx, what, file, line)
-#endif
-
 static void assert_sx(struct lock_object *lock, int what);
 static void lock_sx(struct lock_object *lock, int how);
 #ifdef KDTRACE_HOOKS
@@ -72,9 +68,9 @@ struct lock_class lock_class_sx = {
 #endif
 };
 
-#define sx_xholder(sx) ((sx)->mutex.owner)
+#define	sx_xholder(sx) rtems_bsd_mutex_owner(&(sx)->mutex)
 
-#define sx_recursed(sx) ((sx)->mutex.nest_level != 0)
+#define	sx_recursed(sx) rtems_bsd_mutex_recursed(&(sx)->mutex)
 
 void
 assert_sx(struct lock_object *lock, int what)
@@ -170,102 +166,55 @@ sx_downgrade_(struct sx *sx, const char *file, int line)
 }
 
 #ifdef INVARIANT_SUPPORT
-#ifndef INVARIANTS
-#undef  _sx_assert
-#endif
-
 /*
  * In the non-WITNESS case, sx_assert() can only detect that at least
  * *some* thread owns an slock, but it cannot guarantee that *this*
  * thread owns an slock.
  */
 void
-_sx_assert(struct sx *sx, int what, const char *file, int line)
+_sx_assert(const struct sx *sx, int what, const char *file, int line)
 {
-#ifndef __rtems__
-#ifndef WITNESS
-  int slocked = 0;
-#endif
-#endif /* __rtems__ */
+	const char *name = rtems_bsd_mutex_name(&sx->mutex);
 
-  if (panicstr != NULL)
-    return;
-  switch (what) {
-  case SA_SLOCKED:
-  case SA_SLOCKED | SA_NOTRECURSED:
-  case SA_SLOCKED | SA_RECURSED:
-#ifndef __rtems__
-#ifndef WITNESS
-    slocked = 1;
-    /* FALLTHROUGH */
-#endif
-#endif /* __rtems__ */
-  case SA_LOCKED:
-  case SA_LOCKED | SA_NOTRECURSED:
-  case SA_LOCKED | SA_RECURSED:
-#ifndef __rtems__
+	switch (what) {
+	case SA_SLOCKED:
+	case SA_SLOCKED | SA_NOTRECURSED:
+	case SA_SLOCKED | SA_RECURSED:
+	case SA_LOCKED:
+	case SA_LOCKED | SA_NOTRECURSED:
+	case SA_LOCKED | SA_RECURSED:
+	case SA_XLOCKED:
+	case SA_XLOCKED | SA_NOTRECURSED:
+	case SA_XLOCKED | SA_RECURSED:
+		if (sx_xholder(sx) != _Thread_Get_executing())
+			panic("Lock %s not exclusively locked @ %s:%d\n", name,
+			    file, line);
+		if (sx_recursed(sx)) {
+			if (what & SA_NOTRECURSED)
+				panic("Lock %s recursed @ %s:%d\n", name, file,
+				    line);
+		} else if (what & SA_RECURSED)
+			panic("Lock %s not recursed @ %s:%d\n", name, file,
+			    line);
+		break;
+	case SA_UNLOCKED:
 #ifdef WITNESS
-    witness_assert(&sx->lock_object, what, file, line);
+		witness_assert(&sx->lock_object, what, file, line);
 #else
-    /*
-     * If some other thread has an exclusive lock or we
-     * have one and are asserting a shared lock, fail.
-     * Also, if no one has a lock at all, fail.
-     */
-    if (sx->sx_lock == SX_LOCK_UNLOCKED ||
-        (!(sx->sx_lock & SX_LOCK_SHARED) && (slocked ||
-        sx_xholder(sx) != curthread)))
-      panic("Lock %s not %slocked @ %s:%d\n",
-          sx->lock_object.lo_name, slocked ? "share " : "",
-          file, line);
-
-    if (!(sx->sx_lock & SX_LOCK_SHARED)) {
-      if (sx_recursed(sx)) {
-        if (what & SA_NOTRECURSED)
-          panic("Lock %s recursed @ %s:%d\n",
-              sx->lock_object.lo_name, file,
-              line);
-      } else if (what & SA_RECURSED)
-        panic("Lock %s not recursed @ %s:%d\n",
-            sx->lock_object.lo_name, file, line);
-    }
+		/*
+		 * If we hold an exclusve lock fail.  We can't
+		 * reliably check to see if we hold a shared lock or
+		 * not.
+		 */
+		if (sx_xholder(sx) == _Thread_Get_executing())
+			panic("Lock %s exclusively locked @ %s:%d\n", name,
+			    file, line);
 #endif
-    break;
-#else /* __rtems__ */
-    /* FALLTHROUGH */
-#endif /* __rtems__ */
-  case SA_XLOCKED:
-  case SA_XLOCKED | SA_NOTRECURSED:
-  case SA_XLOCKED | SA_RECURSED:
-    if (sx_xholder(sx) != _Thread_Get_executing())
-      panic("Lock %s not exclusively locked @ %s:%d\n",
-          sx->lock_object.lo_name, file, line);
-    if (sx_recursed(sx)) {
-      if (what & SA_NOTRECURSED)
-        panic("Lock %s recursed @ %s:%d\n",
-            sx->lock_object.lo_name, file, line);
-    } else if (what & SA_RECURSED)
-      panic("Lock %s not recursed @ %s:%d\n",
-          sx->lock_object.lo_name, file, line);
-    break;
-  case SA_UNLOCKED:
-#ifdef WITNESS
-    witness_assert(&sx->lock_object, what, file, line);
-#else
-    /*
-     * If we hold an exclusve lock fail.  We can't
-     * reliably check to see if we hold a shared lock or
-     * not.
-     */
-    if (sx_xholder(sx) == _Thread_Get_executing())
-      panic("Lock %s exclusively locked @ %s:%d\n",
-          sx->lock_object.lo_name, file, line);
-#endif
-    break;
-  default:
-    panic("Unknown sx lock assertion: %d @ %s:%d", what, file,
-        line);
-  }
+		break;
+	default:
+		panic("Unknown sx lock assertion: %d @ %s:%d", what, file,
+		    line);
+	}
 }
 #endif  /* INVARIANT_SUPPORT */
 

@@ -84,8 +84,10 @@ lock_init(struct lock_object *lock, struct lock_class *class, const char *name,
 	int i;
 
 	/* Check for double-init and zero object. */
+#ifndef __rtems__
 	KASSERT(flags & LO_NEW || !lock_initialized(lock),
 	    ("lock \"%s\" %p already initialized", name, lock));
+#endif /* __rtems__ */
 
 	/* Look up lock class to find its index. */
 	for (i = 0; i < LOCK_CLASS_MAX; i++)

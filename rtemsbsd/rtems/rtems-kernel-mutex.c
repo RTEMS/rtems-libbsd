@@ -164,33 +164,30 @@ _mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line)
 void
 _mtx_assert(struct mtx *m, int what, const char *file, int line)
 {
+	const char *name = rtems_bsd_mutex_name(&m->mutex);
 
-  if (panicstr != NULL || dumping)
-    return;
-  switch (what) {
-  case MA_OWNED:
-  case MA_OWNED | MA_RECURSED:
-  case MA_OWNED | MA_NOTRECURSED:
-    if (!mtx_owned(m))
-      panic("mutex %s not owned at %s:%d",
-          m->lock_object.lo_name, file, line);
-    if (mtx_recursed(m)) {
-      if ((what & MA_NOTRECURSED) != 0)
-        panic("mutex %s recursed at %s:%d",
-            m->lock_object.lo_name, file, line);
-    } else if ((what & MA_RECURSED) != 0) {
-      panic("mutex %s unrecursed at %s:%d",
-          m->lock_object.lo_name, file, line);
-    }
-    break;
-  case MA_NOTOWNED:
-    if (mtx_owned(m))
-      panic("mutex %s owned at %s:%d",
-          m->lock_object.lo_name, file, line);
-    break;
-  default:
-    panic("unknown mtx_assert at %s:%d", file, line);
-  }
+	switch (what) {
+	case MA_OWNED:
+	case MA_OWNED | MA_RECURSED:
+	case MA_OWNED | MA_NOTRECURSED:
+		if (!mtx_owned(m))
+			panic("mutex %s not owned at %s:%d", name, file, line);
+		if (mtx_recursed(m)) {
+			if ((what & MA_NOTRECURSED) != 0)
+				panic("mutex %s recursed at %s:%d", name, file,
+				    line);
+		} else if ((what & MA_RECURSED) != 0) {
+			panic("mutex %s unrecursed at %s:%d", name, file,
+			    line);
+		}
+		break;
+	case MA_NOTOWNED:
+		if (mtx_owned(m))
+			panic("mutex %s owned at %s:%d", name, file, line);
+		break;
+	default:
+		panic("unknown mtx_assert at %s:%d", file, line);
+	}
 }
 #endif
 

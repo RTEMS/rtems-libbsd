@@ -105,7 +105,11 @@ enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN, VM_GUEST_HV,
 		VM_GUEST_VMWARE, VM_GUEST_KVM, VM_LAST };
 
 #if defined(WITNESS) || defined(INVARIANT_SUPPORT)
+#ifndef __rtems__
 void	kassert_panic(const char *fmt, ...)  __printflike(1, 2);
+#else /* __rtems__ */
+#define	kassert_panic panic
+#endif /* __rtems__ */
 #endif
 
 #ifdef	INVARIANTS		/* The option is always available */

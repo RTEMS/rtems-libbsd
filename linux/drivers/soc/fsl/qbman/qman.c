@@ -957,8 +957,10 @@ struct qman_portal {
 	struct list_head cgr_cbs;
 	/* list lock */
 	spinlock_t cgr_lock;
+#ifndef __rtems__
 	struct work_struct congestion_work;
 	struct work_struct mr_work;
+#endif /* __rtems__ */
 	char irqname[MAX_IRQNAME];
 };
 
@@ -980,13 +982,17 @@ static inline void put_affine_portal(void)
 	put_cpu_var(qman_affine_portal);
 }
 
+#ifndef __rtems__
 static struct workqueue_struct *qm_portal_wq;
+#endif /* __rtems__ */
 
 int qman_wq_alloc(void)
 {
+#ifndef __rtems__
 	qm_portal_wq = alloc_workqueue("qman_portal_wq", 0, 1);
 	if (!qm_portal_wq)
 		return -ENOMEM;
+#endif /* __rtems__ */
 	return 0;
 }
 
@@ -1056,8 +1062,10 @@ static u32 fq_to_tag(struct qman_fq *fq)
 static u32 __poll_portal_slow(struct qman_portal *p, u32 is);
 static inline unsigned int __poll_portal_fast(struct qman_portal *p,
 					unsigned int poll_limit);
+#ifndef __rtems__
 static void qm_congestion_task(struct work_struct *work);
 static void qm_mr_process_task(struct work_struct *work);
+#endif /* __rtems__ */
 
 static irqreturn_t portal_isr(int irq, void *ptr)
 {
@@ -1178,8 +1186,10 @@ static int qman_create_portal(struct qman_portal *portal,
 		qman_cgrs_fill(&portal->cgrs[0]);
 	INIT_LIST_HEAD(&portal->cgr_cbs);
 	spin_lock_init(&portal->cgr_lock);
+#ifndef __rtems__
 	INIT_WORK(&portal->congestion_work, qm_congestion_task);
 	INIT_WORK(&portal->mr_work, qm_mr_process_task);
+#endif /* __rtems__ */
 	portal->bits = 0;
 	portal->sdqcr = QM_SDQCR_SOURCE_CHANNELS | QM_SDQCR_COUNT_UPTO3 |
 			QM_SDQCR_DEDICATED_PRECEDENCE | QM_SDQCR_TYPE_PRIO_QOS |
@@ -1356,10 +1366,15 @@ static inline void fq_state_change(struct qman_portal *p, struct qman_fq *fq,
 	}
 }
 
+#ifndef __rtems__
 static void qm_congestion_task(struct work_struct *work)
 {
 	struct qman_portal *p = container_of(work, struct qman_portal,
 					     congestion_work);
+#else /* __rtems__ */
+static void qm_congestion_task(struct qman_portal *p)
+{
+#endif /* __rtems__ */
 	struct qman_cgrs rr, c;
 	union qm_mc_result *mcr;
 	struct qman_cgr *cgr;
@@ -1388,15 +1403,22 @@ static void qm_congestion_task(struct work_struct *work)
 	qman_p_irqsource_add(p, QM_PIRQ_CSCI);
 }
 
+#ifndef __rtems__
 static void qm_mr_process_task(struct work_struct *work)
 {
 	struct qman_portal *p = container_of(work, struct qman_portal,
 					     mr_work);
+#else /* __rtems__ */
+static void qm_mr_process_task(struct qman_portal *p)
+{
+#endif /* __rtems__ */
 	const union qm_mr_entry *msg;
 	struct qman_fq *fq;
 	u8 verb, num = 0;
 
+#ifndef __rtems__
 	preempt_disable();
+#endif /* __rtems__ */
 
 	while (1) {
 		qm_mr_pvb_update(&p->p);
@@ -1438,13 +1460,7 @@ static void qm_mr_process_task(struct work_struct *work)
 		} else {
 			/* Its a software ERN */
 			fq = tag_to_fq(be32_to_cpu(msg->ern.tag));
-#ifdef __rtems__
-			preempt_enable();
-#endif /* __rtems__ */
 			fq->cb.ern(p, fq, msg);
-#ifdef __rtems__
-			preempt_disable();
-#endif /* __rtems__ */
 		}
 		num++;
 		qm_mr_next(&p->p);
@@ -1452,15 +1468,21 @@ static void qm_mr_process_task(struct work_struct *work)
 
 	qm_mr_cci_consume(&p->p, num);
 	qman_p_irqsource_add(p, QM_PIRQ_MRI);
+#ifndef __rtems__
 	preempt_enable();
+#endif /* __rtems__ */
 }
 
 static u32 __poll_portal_slow(struct qman_portal *p, u32 is)
 {
 	if (is & QM_PIRQ_CSCI) {
 		qman_p_irqsource_remove(p, QM_PIRQ_CSCI);
+#ifndef __rtems__
 		queue_work_on(smp_processor_id(), qm_portal_wq,
 			      &p->congestion_work);
+#else /* __rtems__ */
+		qm_congestion_task(p);
+#endif /* __rtems__ */
 	}
 
 	if (is & QM_PIRQ_EQRI) {
@@ -1471,8 +1493,12 @@ static u32 __poll_portal_slow(struct qman_portal *p, u32 is)
 
 	if (is & QM_PIRQ_MRI) {
 		qman_p_irqsource_remove(p, QM_PIRQ_MRI);
+#ifndef __rtems__
 		queue_work_on(smp_processor_id(), qm_portal_wq,
 			      &p->mr_work);
+#else /* __rtems__ */
+		qm_mr_process_task(p);
+#endif /* __rtems__ */
 	}
 
 	return is;

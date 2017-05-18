@@ -1438,7 +1438,13 @@ static void qm_mr_process_task(struct work_struct *work)
 		} else {
 			/* Its a software ERN */
 			fq = tag_to_fq(be32_to_cpu(msg->ern.tag));
+#ifdef __rtems__
+			preempt_enable();
+#endif /* __rtems__ */
 			fq->cb.ern(p, fq, msg);
+#ifdef __rtems__
+			preempt_disable();
+#endif /* __rtems__ */
 		}
 		num++;
 		qm_mr_next(&p->p);

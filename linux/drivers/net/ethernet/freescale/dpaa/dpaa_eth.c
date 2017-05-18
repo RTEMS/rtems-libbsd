@@ -2272,7 +2272,7 @@ static void dpaa_tx_conf(struct net_device *net_dev,
 #else /* __rtems__ */
 	struct ifnet *ifp = net_dev->ifp;
 
-	if (unlikely(fd->status & FM_FD_STAT_TX_ERRORS) != 0) {
+	if (unlikely(be32_to_cpu(fd->status) & FM_FD_STAT_TX_ERRORS) != 0) {
 		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 	}
 
@@ -2427,13 +2427,15 @@ dpaa_rx(struct net_device *net_dev, struct qman_portal *portal,
     const struct qm_fd *fd, u32 fqid, int *count_ptr)
 {
 	struct dpaa_bp *dpaa_bp;
+	u32 fd_status;
 	enum qm_fd_format fd_format;
 	struct mbuf *m;
 	struct ifnet *ifp;
 
+	fd_status = be32_to_cpu(fd->status);
 	ifp = net_dev->ifp;
 
-	if (unlikely(fd->status & FM_FD_STAT_RX_ERRORS) != 0) {
+	if (unlikely(fd_status & FM_FD_STAT_RX_ERRORS) != 0) {
 		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 		dpaa_fd_release(net_dev, fd);
 		return;
@@ -2447,6 +2449,12 @@ dpaa_rx(struct net_device *net_dev, struct qman_portal *portal,
 	} else {
 		BSD_ASSERT(fd_format == qm_fd_sg);
 		m = sg_fd_to_mbuf(dpaa_bp, fd, ifp, count_ptr);
+	}
+
+	if ((be32_to_cpu(fd->status) & FM_FD_STAT_L4CV) != 0) {
+		m->m_pkthdr.csum_flags |= CSUM_IP_CHECKED | CSUM_IP_VALID |
+		    CSUM_DATA_VALID | CSUM_PSEUDO_HDR;
+		m->m_pkthdr.csum_data = 0xffff;
 	}
 
 	/* Account for either the contig buffer or the SGT buffer (depending on

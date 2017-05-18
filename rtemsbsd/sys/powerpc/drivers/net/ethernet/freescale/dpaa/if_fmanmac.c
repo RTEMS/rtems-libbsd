@@ -433,7 +433,7 @@ fman_mac_dev_attach(device_t dev)
 	ifp->if_softc = sc;
 	if_initname(ifp, &sc->name[0], sc->mac_dev.data.mac_hw_id);
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-	ifp->if_capabilities = IFCAP_TXCSUM | IFCAP_TXCSUM_IPV6 |
+	ifp->if_capabilities = IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
 	    IFCAP_VLAN_MTU | IFCAP_JUMBO_MTU;
 	ifp->if_capenable = ifp->if_capabilities;
 	ifp->if_hwassist = FMAN_MAC_CSUM;

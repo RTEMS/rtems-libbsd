@@ -2194,10 +2194,12 @@ static int wait_vdqcr_start(struct qman_portal **p, struct qman_fq *fq,
 {
 	int ret = 0;
 
+#ifndef __rtems__
 	if (flags & QMAN_VOLATILE_FLAG_WAIT_INT)
 		ret = wait_event_interruptible(affine_queue,
 				!set_vdqcr(p, fq, vdqcr));
 	else
+#endif /* __rtems__ */
 		wait_event(affine_queue, !set_vdqcr(p, fq, vdqcr));
 	return ret;
 }
@@ -2223,6 +2225,7 @@ int qman_volatile_dequeue(struct qman_fq *fq, u32 flags, u32 vdqcr)
 		return ret;
 	/* VDQCR is set */
 	if (flags & QMAN_VOLATILE_FLAG_FINISH) {
+#ifndef __rtems__
 		if (flags & QMAN_VOLATILE_FLAG_WAIT_INT)
 			/*
 			 * NB: don't propagate any error - the caller wouldn't
@@ -2233,6 +2236,7 @@ int qman_volatile_dequeue(struct qman_fq *fq, u32 flags, u32 vdqcr)
 			wait_event_interruptible(affine_queue,
 				!fq_isset(fq, QMAN_FQ_STATE_VDQCR));
 		else
+#endif /* __rtems__ */
 			wait_event(affine_queue,
 				!fq_isset(fq, QMAN_FQ_STATE_VDQCR));
 	}

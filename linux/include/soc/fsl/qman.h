@@ -811,7 +811,9 @@ struct qman_cgr {
 #define QM_VDQCR_NUMFRAMES_TILLEMPTY	QM_VDQCR_NUMFRAMES_SET(0)
 
 #define QMAN_VOLATILE_FLAG_WAIT	     0x00000001 /* wait if VDQCR is in use */
+#ifndef __rtems__
 #define QMAN_VOLATILE_FLAG_WAIT_INT  0x00000002 /* if wait, interruptible? */
+#endif /* __rtems__ */
 #define QMAN_VOLATILE_FLAG_FINISH    0x00000004 /* wait till VDQCR completes */
 
 /* "Query FQ Non-Programmable Fields" */

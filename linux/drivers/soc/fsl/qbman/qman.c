@@ -2300,6 +2300,7 @@ static void qm_cgr_cscn_targ_set(struct __qm_mc_cgr *cgr, int pi, u32 val)
 		cgr->cscn_targ = cpu_to_be32(val | QM_CGR_TARG_PORTAL(pi));
 }
 
+#ifndef __rtems__
 static void qm_cgr_cscn_targ_clear(struct __qm_mc_cgr *cgr, int pi, u32 val)
 {
 	if (qman_ip_rev >= QMAN_REV30)
@@ -2307,6 +2308,7 @@ static void qm_cgr_cscn_targ_clear(struct __qm_mc_cgr *cgr, int pi, u32 val)
 	else
 		cgr->cscn_targ = cpu_to_be32(val & ~QM_CGR_TARG_PORTAL(pi));
 }
+#endif /* __rtems__ */
 
 static u8 qman_cgr_cpus[CGR_NUM];
 
@@ -2390,6 +2392,7 @@ out:
 }
 EXPORT_SYMBOL(qman_create_cgr);
 
+#ifndef __rtems__
 int qman_delete_cgr(struct qman_cgr *cgr)
 {
 	unsigned long irqflags;
@@ -2483,6 +2486,7 @@ out:
 	preempt_enable();
 }
 EXPORT_SYMBOL(qman_delete_cgr_safe);
+#endif /* __rtems__ */
 
 /* Cleanup FQs */
 

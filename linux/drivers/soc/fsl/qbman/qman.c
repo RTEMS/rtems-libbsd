@@ -607,7 +607,9 @@ static inline int qm_dqrr_init(struct qm_portal *portal,
 		((max_fill & (QM_DQRR_SIZE - 1)) << 20) | /* DQRR_MF */
 		((dmode & 1) << 18) |			/* DP */
 		((cmode & 3) << 16) |			/* DCM */
+#ifndef CONFIG_FSL_PAMU
 		0xa0 |					/* RE+SE */
+#endif
 		(0 ? 0x40 : 0) |			/* Ignore RP */
 		(0 ? 0x10 : 0);				/* Ignore SP */
 	qm_out(portal, QM_REG_CFG, cfg);

@@ -735,26 +735,23 @@ int bman_release(struct bman_pool *pool, const struct bm_buffer *bufs, u8 num)
 
 	DPAA_ASSERT(num > 0 && num <= 8);
 
-	do {
+	while (1) {
 		p = get_affine_portal();
 		local_irq_save(irqflags);
 		avail = bm_rcr_get_avail(&p->p);
 		if (avail < 2)
 			update_rcr_ci(p, avail);
 		r = bm_rcr_start(&p->p);
-		local_irq_restore(irqflags);
-		put_affine_portal();
 		if (likely(r))
 			break;
 
+		local_irq_restore(irqflags);
+		put_affine_portal();
+		if (unlikely(--timeout == 0))
+			return -ETIMEDOUT;
 		udelay(1);
-	} while (--timeout);
+	}
 
-	if (unlikely(!timeout))
-		return -ETIMEDOUT;
-
-	p = get_affine_portal();
-	local_irq_save(irqflags);
 	/*
 	 * we can copy all but the first entry, as this can trigger badness
 	 * with the valid-bit

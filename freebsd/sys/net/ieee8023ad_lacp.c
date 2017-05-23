@@ -34,7 +34,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_ratelimit.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/callout.h>
 #include <sys/eventhandler.h>
 #include <sys/mbuf.h>

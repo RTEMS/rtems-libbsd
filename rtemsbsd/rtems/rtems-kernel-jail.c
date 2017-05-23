@@ -46,11 +46,11 @@
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>*/
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/sysproto.h>
 #include <sys/malloc.h>
 #include <sys/osd.h>

@@ -37,9 +37,9 @@
 /* This code has derived from sys/net/rtsock.c on FreeBSD2.2.5 */
 
 #include <sys/types.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/domain.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/malloc.h>

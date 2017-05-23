@@ -44,12 +44,12 @@
 #include <rtems/bsd/local/opt_inet6.h>
 #ifdef ALTQ_CBQ	/* cbq is enabled by ALTQ_CBQ option in opt_altq.h */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/time.h>
 #ifdef ALTQ3_COMPAT
 #include <sys/kernel.h>

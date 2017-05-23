@@ -33,7 +33,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_wlan.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h> 
 #include <sys/kernel.h>
 #include <sys/malloc.h>

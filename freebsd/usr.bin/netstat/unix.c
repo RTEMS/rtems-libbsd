@@ -48,7 +48,7 @@ __FBSDID("$FreeBSD$");
 /*
  * Display protocol blocks in the unix domain.
  */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>

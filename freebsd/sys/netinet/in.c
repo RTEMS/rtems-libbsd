@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_mpath.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/eventhandler.h>
 #include <sys/systm.h>
 #include <sys/sockio.h>

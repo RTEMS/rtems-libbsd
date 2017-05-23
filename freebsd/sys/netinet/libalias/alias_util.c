@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/proc.h>
 #else
 #include <sys/types.h>

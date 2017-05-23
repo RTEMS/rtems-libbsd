@@ -50,7 +50,7 @@
 
 #include <rtems/bsd/local/opt_ifmedia.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>

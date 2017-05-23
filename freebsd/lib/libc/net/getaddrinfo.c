@@ -57,7 +57,7 @@
 __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <net/if.h>
 #include <netinet/in.h>

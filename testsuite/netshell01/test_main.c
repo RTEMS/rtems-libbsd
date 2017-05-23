@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include <rtems/shell.h>
+#include <rtems/termiostypes.h>
 
 #define TEST_NAME "LIBBSD NETSHELL 1"
 

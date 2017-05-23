@@ -36,7 +36,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_route.h>
 #include <rtems/bsd/local/opt_mpath.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/rwlock.h>

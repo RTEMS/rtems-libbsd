@@ -16,7 +16,7 @@
 
 #ifndef LOCORE
 
-#include <rtems/bsd/sys/cpuset.h>
+#include <sys/cpuset.h>
 #include <sys/queue.h>
 
 /*

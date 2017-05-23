@@ -48,7 +48,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-muteximpl.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>

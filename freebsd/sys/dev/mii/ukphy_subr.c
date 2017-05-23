@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD$");
  * Subroutines shared by the ukphy driver and other PHY drivers.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
 #include <sys/module.h>

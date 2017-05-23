@@ -37,13 +37,13 @@
 #include <rtems/bsd/local/opt_ipsec.h>
 #include <rtems/bsd/local/opt_sctp.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/hhook.h>
 #include <sys/syslog.h>
 

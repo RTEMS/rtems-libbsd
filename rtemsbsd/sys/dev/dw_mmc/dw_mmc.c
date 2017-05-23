@@ -28,7 +28,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bio.h>
 #include <sys/bus.h>

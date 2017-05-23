@@ -79,7 +79,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_pcbgroup.h>
 #include <rtems/bsd/local/opt_rss.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
@@ -88,7 +88,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sockio.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/priv.h>
 #include <sys/proc.h>

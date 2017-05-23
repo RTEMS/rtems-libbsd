@@ -84,7 +84,7 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #include "namespace.h"
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/uio.h>

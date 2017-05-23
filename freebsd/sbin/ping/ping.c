@@ -74,7 +74,7 @@ __FBSDID("$FreeBSD$");
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
-#include <rtems/bsd/sys/param.h>		/* NB: we rely on this for <sys/types.h> */
+#include <sys/param.h>		/* NB: we rely on this for <sys/types.h> */
 #include <sys/capsicum.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>

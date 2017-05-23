@@ -32,7 +32,7 @@
  *  http://www.eeti.com.tw/pdf/Software%20Programming%20Guide_v2.0.pdf
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/callout.h>
 #include <sys/conf.h>

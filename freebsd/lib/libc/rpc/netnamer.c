@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
  * architecture.
  */
 #include "namespace.h"
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <rpc/rpc.h>
 #include <rpc/rpc_com.h>
 #ifdef YP

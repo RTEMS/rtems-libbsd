@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/jail.h>
 #include <sys/kernel.h>
@@ -49,7 +49,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/sx.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>

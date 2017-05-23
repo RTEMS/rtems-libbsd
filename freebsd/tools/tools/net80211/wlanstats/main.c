@@ -46,7 +46,7 @@
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 
 #include <net/ethernet.h>

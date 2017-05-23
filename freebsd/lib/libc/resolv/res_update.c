@@ -32,7 +32,7 @@ __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 

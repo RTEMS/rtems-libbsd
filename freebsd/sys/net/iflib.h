@@ -31,7 +31,7 @@
 
 #include <sys/kobj.h>
 #include <sys/bus.h>
-#include <rtems/bsd/sys/cpuset.h>
+#include <sys/cpuset.h>
 #include <machine/bus.h>
 #include <sys/bus_dma.h>
 #include <sys/nv.h>

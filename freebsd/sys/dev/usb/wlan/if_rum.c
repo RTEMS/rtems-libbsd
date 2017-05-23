@@ -29,7 +29,7 @@ __FBSDID("$FreeBSD$");
  * http://www.ralinktech.com.tw/
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/sockio.h>
 #include <sys/sysctl.h>
 #include <rtems/bsd/sys/lock.h>

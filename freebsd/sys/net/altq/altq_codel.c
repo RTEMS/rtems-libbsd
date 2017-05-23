@@ -47,7 +47,7 @@
 
 #ifdef ALTQ_CODEL  /* CoDel is enabled by ALTQ_CODEL option in opt_altq.h */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>

@@ -38,7 +38,7 @@
 #include <assert.h>
 
 #include <sys/types.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/kthread.h>
 #include <sys/errno.h>

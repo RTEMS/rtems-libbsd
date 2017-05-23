@@ -62,7 +62,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_ddb.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/capsicum.h>
 #include <sys/domain.h>
 #include <sys/fcntl.h>

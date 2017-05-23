@@ -98,7 +98,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/endian.h>
 #include <sys/systm.h>
 #include <sys/sockio.h>

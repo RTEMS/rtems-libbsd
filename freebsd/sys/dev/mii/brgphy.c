@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD$");
  * Driver for the Broadcom BCM54xx/57xx 1000baseTX PHY.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/module.h>

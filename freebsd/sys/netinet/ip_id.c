@@ -76,7 +76,7 @@ __FBSDID("$FreeBSD$");
  * enabled.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/counter.h>
 #include <sys/kernel.h>

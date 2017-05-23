@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD$");
 #include <unistd.h>
 #include <netdb.h>
 #include <sys/signal.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

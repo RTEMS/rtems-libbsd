@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD$");
 #ifdef _KERNEL
 #include <rtems/bsd/local/opt_bpf.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD$");
 #else
 #include <stdlib.h>
 #include <sys/mman.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #endif
 

@@ -33,7 +33,7 @@
 #ifndef _NET_PFVAR_H_
 #define _NET_PFVAR_H_
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/counter.h>
 #include <sys/malloc.h>

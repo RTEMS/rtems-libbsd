@@ -35,7 +35,7 @@
 /*
  * Routines to build and maintain radix trees for routing lookups.
  */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #ifdef	_KERNEL
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>

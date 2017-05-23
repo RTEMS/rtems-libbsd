@@ -33,10 +33,10 @@
 __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_platform.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/libkern.h>
 
 #include <machine/resource.h>

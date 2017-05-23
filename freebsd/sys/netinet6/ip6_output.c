@@ -73,11 +73,11 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_route.h>
 #include <rtems/bsd/local/opt_rss.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
 #include <sys/protosw.h>

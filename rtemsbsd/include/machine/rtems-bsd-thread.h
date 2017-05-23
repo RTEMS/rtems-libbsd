@@ -40,7 +40,7 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_THREAD_H_
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/proc.h>
 

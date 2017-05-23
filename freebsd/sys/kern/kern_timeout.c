@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD$");
 #endif
 #include <rtems/bsd/local/opt_rss.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
 #include <sys/callout.h>

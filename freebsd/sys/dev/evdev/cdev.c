@@ -34,7 +34,7 @@
 #include <sys/types.h>
 #include <sys/bitstring.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
 #include <sys/uio.h>

@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD$");
  * Jung-uk Kim <jkim@niksun.com>
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/module.h>

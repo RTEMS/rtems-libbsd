@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_bce.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/endian.h>
 #include <sys/systm.h>
 #include <sys/sockio.h>

@@ -29,7 +29,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 
 #include <assert.h>
 #include <errno.h>

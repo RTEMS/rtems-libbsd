@@ -55,7 +55,7 @@ __FBSDID("$FreeBSD$");
  * MROUTING 1.0
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>

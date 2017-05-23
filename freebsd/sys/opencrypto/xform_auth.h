@@ -32,7 +32,7 @@
 #define _CRYPTO_XFORM_AUTH_H_
 
 #include <sys/malloc.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 
 #include <sys/md5.h>
 #include <crypto/sha1.h>

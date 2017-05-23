@@ -219,7 +219,7 @@ struct pcap_opt {
  * line up on a nice boundary.
  */
 #ifdef __NetBSD__
-#include <rtems/bsd/sys/param.h>	/* needed to declare __NetBSD_Version__ */
+#include <sys/param.h>	/* needed to declare __NetBSD_Version__ */
 #endif
 
 #if defined(ultrix) || defined(__osf__) || (defined(__NetBSD__) && __NetBSD_Version__ > 106000000)

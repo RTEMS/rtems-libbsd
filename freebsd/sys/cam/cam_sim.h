@@ -33,7 +33,7 @@
 
 #ifdef _KERNEL
 #ifdef __rtems__
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/condvar.h>
 #endif /* __rtems__ */

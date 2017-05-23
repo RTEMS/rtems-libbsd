@@ -38,8 +38,8 @@ static const char rcsid[] = "$FreeBSD$";
 #define sbuf_new	_bsd_sbuf_new
 #endif /* __rtems__ */
 #include <sys/types.h>
-#include <rtems/bsd/sys/errno.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/errno.h>
+#include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/sbuf.h>
 #include <sys/stat.h>

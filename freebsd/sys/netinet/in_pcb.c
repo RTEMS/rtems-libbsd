@@ -52,7 +52,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_pcbgroup.h>
 #include <rtems/bsd/local/opt_rss.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/malloc.h>

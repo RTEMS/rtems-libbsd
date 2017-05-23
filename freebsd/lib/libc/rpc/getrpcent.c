@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD$");
  * Copyright (c) 1984 by Sun Microsystems, Inc.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <assert.h>

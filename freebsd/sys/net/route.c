@@ -43,7 +43,7 @@
 #include <rtems/bsd/local/opt_mrouting.h>
 #include <rtems/bsd/local/opt_mpath.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>

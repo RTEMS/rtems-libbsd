@@ -32,7 +32,7 @@
 #ifndef _SYS_FAIL_H_
 #define _SYS_FAIL_H_
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/cdefs.h>
 #include <sys/linker_set.h>
 #include <sys/queue.h>

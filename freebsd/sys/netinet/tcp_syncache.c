@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_ipsec.h>
 #include <rtems/bsd/local/opt_pcbgroup.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/hash.h>
 #include <sys/refcount.h>

@@ -67,7 +67,7 @@ __FBSDID("$FreeBSD$");
 
 /*#define PULLDOWN_DEBUG*/
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>

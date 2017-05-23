@@ -33,7 +33,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_bus.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/module.h>

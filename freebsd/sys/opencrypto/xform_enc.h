@@ -32,7 +32,7 @@
 #define _CRYPTO_XFORM_ENC_H_
 
 #include <sys/malloc.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/des/des.h>
 #include <crypto/rijndael/rijndael.h>

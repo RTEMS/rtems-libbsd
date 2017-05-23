@@ -101,7 +101,7 @@ __FBSDID("$FreeBSD$");
 */
 
 #ifdef _KERNEL
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/module.h>

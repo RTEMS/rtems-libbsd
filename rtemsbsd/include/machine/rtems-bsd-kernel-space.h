@@ -55,6 +55,7 @@
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1
 
+#include <machine/rtems-bsd-version.h>
 #include <machine/rtems-bsd-kernel-namespace.h>
 
 /* Assert */
@@ -69,6 +70,8 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 
 /* General definitions */
 
+#define MACHINE_ARCH "rtems"
+
 #define M_RTEMS_HEAP 0
 
 #define BSD_DEFAULT_FIB 0
@@ -82,5 +85,11 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 #define BSD_DEFAULT_PRISON (&prison0)
 
 #define kdb_active 0
+
+/* pseudo-errors returned inside kernel to modify return to process */
+#define	ERESTART	(-1)		/* restart syscall */
+#define	EJUSTRETURN	(-2)		/* don't modify regs, just return */
+#define	ENOIOCTL	(-3)		/* ioctl not handled by this layer */
+#define	EDIRIOCTL	(-4)		/* do direct ioctl in GEOM */
 
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_KERNEL_SPACE_H_ */

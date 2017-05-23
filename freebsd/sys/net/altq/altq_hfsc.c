@@ -50,12 +50,12 @@
 
 #ifdef ALTQ_HFSC  /* hfsc is enabled by ALTQ_HFSC option in opt_altq.h */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/queue.h>
 #if 1 /* ALTQ3_COMPAT */
 #include <sys/sockio.h>

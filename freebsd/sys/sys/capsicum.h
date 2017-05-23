@@ -40,7 +40,7 @@
 #define	_SYS_CAPSICUM_H_
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 
 #include <sys/caprights.h>
 #include <sys/file.h>

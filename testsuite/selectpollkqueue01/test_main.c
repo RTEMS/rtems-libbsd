@@ -29,7 +29,7 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/filio.h>

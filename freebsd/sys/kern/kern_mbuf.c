@@ -32,7 +32,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_param.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/types.h>
 #include <sys/systm.h>

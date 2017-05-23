@@ -7,7 +7,7 @@
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <nlist.h>
 #ifdef __rtems__
 #include "rtems-bsd-netstat-nl_symbols-data.h"

@@ -47,7 +47,7 @@ static const char rcsid[] _U_ =
 #include <pcap-stdinc.h>
 #else /* WIN32 */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #ifndef MSDOS
 #include <sys/file.h>
 #endif

@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD$");
 
 #if defined(INET) || defined(INET6)
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/queue.h>
 #include <sys/mbuf.h>

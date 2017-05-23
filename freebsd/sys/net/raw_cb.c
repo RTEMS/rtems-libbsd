@@ -33,7 +33,7 @@
  * $FreeBSD$
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/domain.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/kernel.h>

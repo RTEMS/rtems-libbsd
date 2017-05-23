@@ -31,7 +31,7 @@ __FBSDID("$FreeBSD$");
 
 #define ACCEPT_FILTER_MOD
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/module.h>
 #include <sys/sysctl.h>

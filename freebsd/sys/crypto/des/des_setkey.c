@@ -61,7 +61,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <crypto/des/des_locl.h>
 #include <crypto/des/podd.h>

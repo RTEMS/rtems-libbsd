@@ -84,12 +84,12 @@
 
 #if NPPP > 0
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/filio.h>
 #include <sys/file.h>
 #include <sys/kernel.h>
 

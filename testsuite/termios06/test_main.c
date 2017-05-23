@@ -396,7 +396,7 @@ static void test_xtabs(void)
   tt_softc.tp->t_column = 0;
   tcflush(Test_fd, TCOFLUSH);
 
-  change_oflag("OPOST|XTABS", 0, OPOST|XTABS);
+  change_oflag("OPOST|OXTABS", 0, OPOST|OXTABS);
 
   c = 'a';
   n = write(Test_fd, &c, sizeof(c));
@@ -420,7 +420,7 @@ static void test_xtabs(void)
   assert(Tx_Buffer[5] == ' ');
   assert(Tx_Buffer[6] == ' ');
 
-  change_oflag("~(OPOST|XTABS)", OPOST|XTABS, 0);
+  change_oflag("~(OPOST|OXTABS)", OPOST|OXTABS, 0);
 }
 
 static void test_olcuc(void)

@@ -8,7 +8,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/libkern.h>
 
 u_char const bcd2bin_data[] = {

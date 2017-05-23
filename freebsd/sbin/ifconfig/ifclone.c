@@ -41,7 +41,7 @@ static const char rcsid[] =
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
 #include <sys/socket.h>

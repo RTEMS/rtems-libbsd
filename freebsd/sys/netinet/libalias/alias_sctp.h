@@ -50,7 +50,7 @@
 #ifndef _ALIAS_SCTP_H_
 #define _ALIAS_SCTP_H_
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #ifdef	_KERNEL 
 #include <sys/malloc.h>
 #include <sys/module.h>

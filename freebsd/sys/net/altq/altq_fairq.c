@@ -93,14 +93,14 @@
 
 #ifdef ALTQ_FAIRQ  /* fairq is enabled in the kernel conf */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/kernel.h>
 #include <sys/queue.h>
 

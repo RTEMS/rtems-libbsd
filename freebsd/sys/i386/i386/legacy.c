@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD$");
  * support ACPI or when ACPI support is not present in the kernel.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
 #include <sys/cpu.h>

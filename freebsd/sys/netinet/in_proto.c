@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_sctp.h>
 #include <rtems/bsd/local/opt_mpath.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>

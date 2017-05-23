@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD$");
 #error "IPDIVERT requires INET"
 #endif
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/eventhandler.h>
 #include <sys/kernel.h>
 #include <rtems/bsd/sys/lock.h>

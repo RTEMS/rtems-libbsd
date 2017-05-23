@@ -39,7 +39,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 
 #if !defined(_KERNEL)
 #include <strings.h>

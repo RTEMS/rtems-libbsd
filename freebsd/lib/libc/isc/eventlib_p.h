@@ -26,7 +26,7 @@
 #ifndef _EVENTLIB_P_H
 #define _EVENTLIB_P_H
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/un.h>

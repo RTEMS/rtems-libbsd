@@ -28,8 +28,8 @@
  * $FreeBSD$
  */
 
-#include <rtems/bsd/sys/param.h>
-#include <rtems/bsd/sys/cpuset.h>
+#include <sys/param.h>
+#include <sys/cpuset.h>
 #include <sys/sysctl.h>
 
 #include <vm/uma.h>

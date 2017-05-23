@@ -32,7 +32,7 @@
 #ifndef _SYS_TTY_H_
 #define	_SYS_TTY_H_
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>

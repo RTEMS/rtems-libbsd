@@ -117,7 +117,7 @@ typedef char* caddr_t;
 #ifdef HAVE_SYS_BITYPES_H
 #include <sys/bitypes.h>
 #endif
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>			/* concession to AIX */
 #include <sys/time.h>
 #include <sys/socket.h>

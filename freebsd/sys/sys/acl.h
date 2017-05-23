@@ -36,7 +36,7 @@
 #ifndef _SYS_ACL_H_
 #define	_SYS_ACL_H_
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <vm/uma.h>
 

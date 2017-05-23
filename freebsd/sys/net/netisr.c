@@ -68,7 +68,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_ddb.h>
 #include <rtems/bsd/local/opt_device_polling.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/kernel.h>
 #include <sys/kthread.h>

@@ -40,7 +40,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-page.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>

@@ -76,7 +76,7 @@ __FBSDID("$FreeBSD$");
 
 #define _PIM_VT 1
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/stddef.h>
 #include <sys/eventhandler.h>

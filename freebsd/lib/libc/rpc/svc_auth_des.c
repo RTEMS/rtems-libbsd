@@ -54,7 +54,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <rpc/des_crypt.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <netinet/in.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>

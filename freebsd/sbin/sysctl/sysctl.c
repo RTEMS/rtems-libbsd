@@ -53,7 +53,7 @@ static const char rcsid[] =
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/time.h>
 #include <rtems/bsd/sys/resource.h>
 #include <sys/stat.h>

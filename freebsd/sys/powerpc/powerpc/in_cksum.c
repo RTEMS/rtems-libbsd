@@ -42,7 +42,7 @@
 
 #include <sys/cdefs.h>			/* RCS ID & Copyright macro defns */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/mbuf.h>
 #include <sys/systm.h>
 #include <netinet/in_systm.h>

@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_ddb.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/module.h>
 #include <sys/malloc.h>

@@ -32,7 +32,7 @@
 #define _CRYPTO_XFORM_COMP_H_
 
 #include <sys/malloc.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 
 #include <opencrypto/deflate.h>
 #include <opencrypto/cryptodev.h>

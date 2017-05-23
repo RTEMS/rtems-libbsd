@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_ipsec.h>
 #include <rtems/bsd/local/opt_mpath.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/libkern.h>
@@ -50,7 +50,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sockio.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <sys/queue.h>

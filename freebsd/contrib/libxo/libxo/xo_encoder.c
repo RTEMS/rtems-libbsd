@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <dlfcn.h>
 
 #include "xo_config.h"

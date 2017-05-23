@@ -40,7 +40,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-chunk.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 
 #include <rtems/score/apimutex.h>

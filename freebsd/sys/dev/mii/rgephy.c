@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD$");
  * Driver for the RealTek 8169S/8110S/8211B/8211C internal 10/100/1000 PHY.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/module.h>

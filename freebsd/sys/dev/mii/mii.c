@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
  * plus some NetBSD extensions.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
 #include <sys/malloc.h>

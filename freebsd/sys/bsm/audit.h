@@ -38,7 +38,7 @@
 #ifndef	_BSM_AUDIT_H
 #define	_BSM_AUDIT_H
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>
 
 #define	AUDIT_RECORD_MAGIC	0x828a0f1b

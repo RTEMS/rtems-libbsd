@@ -43,7 +43,7 @@
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/module.h>
@@ -52,7 +52,7 @@
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/syslog.h>
 
 #include <machine/cpu.h>

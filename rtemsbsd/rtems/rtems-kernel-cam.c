@@ -41,7 +41,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-support.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>

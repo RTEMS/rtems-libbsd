@@ -35,9 +35,9 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_device_polling.h>
 #endif
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/kernel.h>
 #include <sys/sockio.h>
 #include <sys/malloc.h>

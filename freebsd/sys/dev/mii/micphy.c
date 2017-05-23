@@ -37,11 +37,11 @@ __FBSDID("$FreeBSD$");
  * Micrel KSZ9021 Gigabit Ethernet Transceiver
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/module.h>
 #include <sys/bus.h>
 #include <sys/malloc.h>

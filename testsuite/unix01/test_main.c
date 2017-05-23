@@ -30,7 +30,7 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <sys/socket.h>

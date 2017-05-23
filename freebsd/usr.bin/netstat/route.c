@@ -45,7 +45,7 @@ static char sccsid[] = "From: @(#)route.c	8.6 (Berkeley) 4/28/95";
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #ifdef __rtems__
 #include <rtems/rtems/clock.h>
 #endif /* __rtems__ */

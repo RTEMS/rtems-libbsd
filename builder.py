@@ -231,9 +231,6 @@ def mapCPUDependentPath(path):
 
 def fixIncludes(data):
     data = re.sub('#include <sys/lock.h>',     '#include <rtems/bsd/sys/lock.h>', data)
-    data = re.sub('#include <sys/cpuset.h>',   '#include <rtems/bsd/sys/cpuset.h>', data)
-    data = re.sub('#include <sys/errno.h>',    '#include <rtems/bsd/sys/errno.h>', data)
-    data = re.sub('#include <sys/param.h>',    '#include <rtems/bsd/sys/param.h>', data)
     data = re.sub('#include <sys/resource.h>', '#include <rtems/bsd/sys/resource.h>', data)
     data = re.sub('#include <sys/unistd.h>',   '#include <rtems/bsd/sys/unistd.h>', data)
     return data

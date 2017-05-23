@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)mpool.c	8.7 (Berkeley) 11/2/95";
 __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/stat.h>
 

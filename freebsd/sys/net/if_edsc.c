@@ -37,7 +37,7 @@
  * Mimics an Ethernet device so that VLANs can be attached to it etc.
  */
 
-#include <rtems/bsd/sys/param.h>		/* types, important constants */
+#include <sys/param.h>		/* types, important constants */
 #include <sys/kernel.h>		/* SYSINIT for load-time initializations */
 #include <sys/malloc.h>		/* malloc(9) */
 #include <sys/module.h>		/* module(9) */

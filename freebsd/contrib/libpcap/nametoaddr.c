@@ -45,7 +45,7 @@ static const char rcsid[] _U_ =
 
 #else /* WIN32 */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/types.h>				/* concession to AIX */
 #include <sys/socket.h>
 #include <sys/time.h>

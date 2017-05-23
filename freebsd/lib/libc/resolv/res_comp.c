@@ -74,7 +74,7 @@ static const char rcsid[] = "$Id: res_comp.c,v 1.5 2005/07/28 06:51:50 marka Exp
 __FBSDID("$FreeBSD$");
 
 #include "port_before.h"
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <ctype.h>

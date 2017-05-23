@@ -25,7 +25,7 @@
  * $FreeBSD$
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 
 #if defined(__FreeBSD__)
 #include <rtems/bsd/local/opt_inet.h>

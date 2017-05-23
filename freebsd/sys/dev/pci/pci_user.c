@@ -32,7 +32,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_bus.h>	/* XXX trim includes */
 #include <rtems/bsd/local/opt_compat.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/module.h>

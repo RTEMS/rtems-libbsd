@@ -36,7 +36,7 @@
 #ifndef _VM_UMA_H_
 #define _VM_UMA_H_
 
-#include <rtems/bsd/sys/param.h>		/* For NULL */
+#include <sys/param.h>		/* For NULL */
 #include <sys/malloc.h>		/* For M_* */
 
 /* User visible parameters */

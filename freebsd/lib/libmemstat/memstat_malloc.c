@@ -29,7 +29,7 @@
  */
 
 #include <sys/cdefs.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/sysctl.h>
 

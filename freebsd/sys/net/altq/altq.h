@@ -39,7 +39,7 @@
 #endif
 
 #ifdef ALTQ3_COMPAT
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/ioccom.h>
 #include <sys/queue.h>
 #include <netinet/in.h>

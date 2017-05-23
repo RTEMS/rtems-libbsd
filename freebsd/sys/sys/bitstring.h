@@ -68,9 +68,6 @@
 #endif
 
 #include <sys/types.h>
-#ifdef __rtems__
-#include <machine/bitstring.h>
-#endif /* __rtems__ */
 
 typedef	unsigned long bitstr_t;
 

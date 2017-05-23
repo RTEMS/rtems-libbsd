@@ -35,7 +35,7 @@
 __FBSDID("$FreeBSD$");
 
 #include <sys/types.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 
 #include <string.h>
 #include <netipsec/ipsec.h>

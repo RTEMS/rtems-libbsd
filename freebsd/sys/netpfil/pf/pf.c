@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_bpf.h>
 #include <rtems/bsd/local/opt_pf.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/endian.h>
 #include <sys/hash.h>

@@ -31,7 +31,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_cpu.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
 #include <sys/kernel.h>

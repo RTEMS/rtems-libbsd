@@ -67,7 +67,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_sched.h>
 #include <rtems/bsd/local/opt_stack.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/kernel.h>

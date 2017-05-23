@@ -21,7 +21,7 @@
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
 #include <sys/systm.h>

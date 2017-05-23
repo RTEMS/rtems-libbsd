@@ -24,7 +24,7 @@ __FBSDID("$FreeBSD$");
 #ifdef __rtems__
 #define __LINUX_ERRNO_EXTENSIONS__
 #endif /* __rtems__ */
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <rtems/bsd/sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/mbuf.h>

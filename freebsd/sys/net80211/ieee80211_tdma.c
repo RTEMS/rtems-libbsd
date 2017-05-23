@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD$");
 
 #ifdef	IEEE80211_SUPPORT_TDMA
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h> 
 #include <sys/mbuf.h>   
 #include <sys/malloc.h>
@@ -49,7 +49,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/endian.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
 

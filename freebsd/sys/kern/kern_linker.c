@@ -33,7 +33,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_kld.h>
 #include <rtems/bsd/local/opt_hwpmc_hooks.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>

@@ -57,7 +57,7 @@ static const char rcsid[] _U_ =
 #ifndef WIN32
 
 #ifdef __NetBSD__
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #endif
 
 #include <netinet/in.h>

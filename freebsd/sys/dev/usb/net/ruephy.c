@@ -34,7 +34,7 @@ __FBSDID("$FreeBSD$");
  * driver for RealTek RTL8150 internal PHY
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>

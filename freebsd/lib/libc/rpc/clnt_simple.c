@@ -48,7 +48,7 @@ __FBSDID("$FreeBSD$");
 
 #include "namespace.h"
 #include "reentrant.h"
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <errno.h>
 #include <rpc/rpc.h>

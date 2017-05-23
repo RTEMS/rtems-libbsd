@@ -40,7 +40,7 @@
 #include <rtems/bsd/local/opt_compat.h>
 #include <rtems/bsd/local/opt_inet.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/fcntl.h>
 #include <sys/filio.h>

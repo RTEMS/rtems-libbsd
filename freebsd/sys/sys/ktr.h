@@ -48,7 +48,7 @@
 
 #ifndef LOCORE
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/_cpuset.h>
 
 struct ktr_entry {

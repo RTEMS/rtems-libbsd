@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_ipsec.h>
 #include <rtems/bsd/local/opt_tcpdebug.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/domain.h>
 #ifdef TCP_HHOOK

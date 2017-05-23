@@ -40,9 +40,9 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_kdtrace.h>
 
 #include <sys/types.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/sdt.h>
 #include <sys/systm.h>

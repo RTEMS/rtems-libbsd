@@ -39,11 +39,11 @@ __FBSDID("$FreeBSD$");
  * Subroutines common to all PHYs.
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #include <sys/module.h>
 #include <sys/bus.h>
 

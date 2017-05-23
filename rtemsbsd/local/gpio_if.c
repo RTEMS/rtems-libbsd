@@ -12,7 +12,7 @@
  * See the source file for legal information
  */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/kernel.h>
 #include <sys/kobj.h>

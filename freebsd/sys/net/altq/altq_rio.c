@@ -66,12 +66,12 @@
 #include <rtems/bsd/local/opt_inet6.h>
 #ifdef ALTQ_RIO	/* rio is enabled by ALTQ_RIO option in opt_altq.h */
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/errno.h>
+#include <sys/errno.h>
 #if 1 /* ALTQ3_COMPAT */
 #include <sys/proc.h>
 #include <sys/sockio.h>

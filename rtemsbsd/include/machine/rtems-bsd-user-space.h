@@ -42,6 +42,7 @@
 
 #define __FreeBSD__ 1
 
+#include <machine/rtems-bsd-version.h>
 #include <sys/cdefs.h>
 
 #include <stdio.h>

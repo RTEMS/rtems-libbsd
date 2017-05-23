@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #endif
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 
 #define	NVME_PASSTHROUGH_CMD		_IOWR('n', 0, struct nvme_pt_command)
 #define	NVME_RESET_CONTROLLER		_IO('n', 1)

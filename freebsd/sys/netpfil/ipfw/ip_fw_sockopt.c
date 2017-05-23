@@ -44,7 +44,7 @@ __FBSDID("$FreeBSD$");
 #endif /* INET */
 #include <rtems/bsd/local/opt_inet6.h>
 
-#include <rtems/bsd/sys/param.h>
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>	/* struct m_tag used by nested headers */

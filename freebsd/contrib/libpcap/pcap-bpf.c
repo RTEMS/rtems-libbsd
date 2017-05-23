@@ -31,7 +31,7 @@ static const char rcsid[] _U_ =
 #include "config.h"
 #endif
 
-#include <rtems/bsd/sys/param.h>			/* optionally get BSD define */
+#include <sys/param.h>			/* optionally get BSD define */
 #ifdef HAVE_ZEROCOPY_BPF
 #include <sys/mman.h>
 #endif

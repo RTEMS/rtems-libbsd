@@ -80,9 +80,11 @@ typedef enum {
 #define	SUPPORTED_MII			(1U << 8)
 #define	SUPPORTED_Pause			(1U << 9)
 
+#define MII_ADDR_C45 (1 << 30)
+
 struct mdio_bus {
-	int (*read)(struct mdio_bus *bus, int phy, int reg);
-	int (*write)(struct mdio_bus *bus, int phy, int reg, int val);
+	int (*read)(struct mdio_bus *bus, int addr, int reg);
+	int (*write)(struct mdio_bus *bus, int addr, int reg, int val);
 	SLIST_ENTRY(mdio_bus) next;
 	int node;
 };
@@ -91,27 +93,14 @@ struct phy_device {
 	struct {
 		struct device dev;
 		int addr;
+		int is_c45;
 		struct mdio_bus *bus;
 	} mdio;
 };
 
-static inline int
-phy_read(struct phy_device *phy_dev, int reg)
-{
-	struct mdio_bus *mdio_dev;
+int phy_read(struct phy_device *phy_dev, int reg);
 
-	mdio_dev = phy_dev->mdio.bus;
-	return ((*mdio_dev->read)(mdio_dev, phy_dev->mdio.addr, (int)reg));
-}
-
-static inline int
-phy_write(struct phy_device *phy_dev, int reg, int val)
-{
-	struct mdio_bus *mdio_dev;
-
-	mdio_dev = phy_dev->mdio.bus;
-	return ((*mdio_dev->write)(mdio_dev, phy_dev->mdio.addr, reg, val));
-}
+int phy_write(struct phy_device *phy_dev, int reg, int val);
 
 #ifdef __cplusplus
 }

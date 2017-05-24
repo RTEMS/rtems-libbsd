@@ -451,10 +451,9 @@ fman_mac_dev_attach(device_t dev)
 		error = mii_attach(dev, &sc->miibus, ifp,
 		    fman_mac_media_change, fman_mac_media_status,
 		    BMSR_DEFCAPMASK, phy_dev->mdio.addr, MII_OFFSET_ANY, 0);
-		if (error != 0) {
-			goto error_2;
+		if (error == 0) {
+			sc->mii_softc = device_get_softc(sc->miibus);
 		}
-		sc->mii_softc = device_get_softc(sc->miibus);
 	}
 
 	sc->mac_dev.net_dev.ifp = ifp;
@@ -466,7 +465,6 @@ fman_mac_dev_attach(device_t dev)
 
 	return (0);
 
-error_2:
 	if_free(ifp);
 error_1:
 	uma_zdestroy(sc->sgt_zone);

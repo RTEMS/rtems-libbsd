@@ -331,6 +331,108 @@ find_mdio_bus(const void *fdt, int mdio_node,
 	return (0);
 }
 
+#define	MDIO_C45_DEVID1 2
+#define	MDIO_C45_DEVID2 3
+#define	MDIO_C45_DEVINPKG1 5
+#define	MDIO_C45_DEVINPKG2 6
+
+struct phy_c45_device_ids {
+	uint32_t devices_in_package;
+	uint32_t device_ids[8];
+};
+
+static int
+c45_get_devices_in_package(struct phy_device *phy_dev, int dev, uint32_t *dip)
+{
+	int val;
+	int reg;
+
+	reg = (dev << 16) | MDIO_C45_DEVINPKG2;
+	val = phy_read(phy_dev, reg);
+	if (val < 0) {
+		return (-EIO);
+	}
+	*dip = (uint32_t)((val & 0xffff) << 16);
+
+	reg = (dev << 16) | MDIO_C45_DEVINPKG1;
+	val = phy_read(phy_dev, reg);
+	if (val < 0) {
+		return (-EIO);
+	}
+	*dip |= (uint32_t)(val & 0xffff);
+	return (0);
+}
+
+static int
+c45_get_id(struct phy_device *phy_dev, int dev, uint32_t *id)
+{
+	int val;
+	int reg;
+
+	reg = (dev << 16) | MDIO_C45_DEVID1;
+	val = phy_read(phy_dev, reg);
+	if (val < 0) {
+		return (-EIO);
+	}
+	*id = (uint32_t)((val & 0xffff) << 16);
+
+	reg = (dev << 16) | MDIO_C45_DEVID2;
+	val = phy_read(phy_dev, reg);
+	if (val < 0) {
+		return (-EIO);
+	}
+	*id |= (uint32_t)(val & 0xffff);
+	return (0);
+}
+
+static bool
+c45_has_no_dip(const uint32_t *dip)
+{
+
+	return ((*dip & 0x1fffffff) == 0x1fffffff);
+}
+
+static int
+c45_get_ids(struct phy_device *phy_dev, struct phy_c45_device_ids *ids)
+{
+	int i;
+	int err;
+
+	for (i = 1; i < ARRAY_SIZE(ids->device_ids) &&
+	    ids->devices_in_package == 0; ++i) {
+		err = c45_get_devices_in_package(phy_dev, i,
+		    &ids->devices_in_package);
+		if (err != 0) {
+			return (err);
+		}
+
+		if (c45_has_no_dip(&ids->devices_in_package)) {
+			err = c45_get_devices_in_package(phy_dev, 0,
+			    &ids->devices_in_package);
+			if (err != 0) {
+				return (err);
+			}
+
+			if (c45_has_no_dip(&ids->devices_in_package)) {
+				return (-EIO);
+			}
+
+			break;
+		}
+	}
+
+	for (i = 1; i < ARRAY_SIZE(ids->device_ids); ++i) {
+		if ((ids->devices_in_package & (1U << i)) != 0) {
+			err = c45_get_id(phy_dev, i, &ids->device_ids[i]);
+			if (err != 0) {
+				return (err);
+			}
+		}
+	}
+
+	return (0);
+}
+
 static struct phy_device *
 phy_obtain(const void *fdt, int is_c45, int mdio_node, int addr)
 {
@@ -351,6 +453,12 @@ phy_obtain(const void *fdt, int is_c45, int mdio_node, int addr)
 	if (err != 0) {
 		free(phy_dev, M_TEMP);
 		return (NULL);
+	}
+
+	if (is_c45) {
+		struct phy_c45_device_ids ids = { 0 };
+
+		c45_get_ids(phy_dev, &ids);
 	}
 
 	return (phy_dev);

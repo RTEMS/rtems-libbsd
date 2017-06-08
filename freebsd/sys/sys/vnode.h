@@ -35,7 +35,7 @@
 
 #include <sys/bufobj.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/lockmgr.h>
 #include <sys/mutex.h>
 #include <sys/rangelock.h>

@@ -64,7 +64,7 @@ typedef uint32_t seq_t;
  */		
 
 /* A hack to get MPASS macro */
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 
 #include <machine/cpu.h>
 

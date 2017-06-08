@@ -30,7 +30,7 @@
 
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/module.h>
 #include <sys/rmlock.h>
 #include <sys/sockio.h>

@@ -45,7 +45,7 @@
 #include <net/route.h>
 
 #ifdef _KERNEL
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/rwlock.h>
 #include <net/vnet.h>
 #include <vm/uma.h>

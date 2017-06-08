@@ -35,7 +35,7 @@
 
 #ifdef _KERNEL
 #include <sys/counter.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 
 #include <netipsec/key_var.h>

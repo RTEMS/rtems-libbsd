@@ -29,20 +29,15 @@
  * SUCH DAMAGE.
  */
 
-#include <assert.h>
-
-#include <stdio.h>
-#include <unistd.h>
-
 #include <machine/rtems-bsd-kernel-space.h>
 
-#include <sys/types.h>
-#include <sys/systm.h>
-
 #include <sys/param.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/systm.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/rwlock.h>
+
+#include <assert.h>
 
 #define TIMEOUT_MILLISECONDS	(100)
 

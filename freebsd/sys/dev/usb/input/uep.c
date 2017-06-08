@@ -37,7 +37,7 @@
 #include <sys/callout.h>
 #include <sys/conf.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/module.h>
 #include <sys/mutex.h>
 #include <sys/sysctl.h>

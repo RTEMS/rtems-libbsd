@@ -34,7 +34,7 @@
 
 #include <sys/param.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/condvar.h>
 #include <sys/selinfo.h>

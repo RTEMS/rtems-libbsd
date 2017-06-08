@@ -43,7 +43,7 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/jail.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>*/
 
 #include <sys/param.h>
@@ -59,7 +59,7 @@
 #include <sys/taskqueue.h>
 #include <sys/fcntl.h>
 #include <sys/jail.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/sx.h>
 #include <sys/sysent.h>

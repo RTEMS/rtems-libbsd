@@ -49,7 +49,7 @@
 
 #include <sys/param.h>
 #include <sys/types.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/systm.h>
 #include <machine/bus.h>

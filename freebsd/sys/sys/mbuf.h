@@ -40,7 +40,7 @@
 #include <sys/systm.h>
 #include <vm/uma.h>
 #ifdef WITNESS
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #endif
 #endif
 

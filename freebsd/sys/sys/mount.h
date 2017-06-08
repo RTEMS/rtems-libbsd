@@ -36,7 +36,7 @@
 #include <sys/ucred.h>
 #include <sys/queue.h>
 #ifdef _KERNEL
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/lockmgr.h>
 #include <sys/_mutex.h>
 #include <sys/_sx.h>

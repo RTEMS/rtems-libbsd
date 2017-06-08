@@ -31,7 +31,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/counter.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/rwlock.h>
 #include <sys/sysctl.h>

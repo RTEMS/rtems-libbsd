@@ -230,7 +230,6 @@ def mapCPUDependentPath(path):
   return path.replace("include/", "include/machine/")
 
 def fixIncludes(data):
-    data = re.sub('#include <sys/lock.h>',     '#include <rtems/bsd/sys/lock.h>', data)
     data = re.sub('#include <sys/resource.h>', '#include <rtems/bsd/sys/resource.h>', data)
     data = re.sub('#include <sys/unistd.h>',   '#include <rtems/bsd/sys/unistd.h>', data)
     return data

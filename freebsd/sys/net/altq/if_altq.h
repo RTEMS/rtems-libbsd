@@ -29,7 +29,7 @@
 #ifndef _ALTQ_IF_ALTQ_H_
 #define	_ALTQ_IF_ALTQ_H_
 
-#include <rtems/bsd/sys/lock.h>		/* XXX */
+#include <sys/lock.h>		/* XXX */
 #include <sys/mutex.h>		/* XXX */
 #include <sys/event.h>		/* XXX */
 

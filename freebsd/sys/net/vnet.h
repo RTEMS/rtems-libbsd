@@ -142,7 +142,7 @@ SYSCTL_PROC(parent, nbr, name, CTLFLAG_VNET | CTLTYPE_OPAQUE | CTLFLAG_RW, \
 #endif /* SYSCTL_OID */
 
 #ifdef VIMAGE
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/proc.h>			/* for struct thread */
 #include <sys/rwlock.h>
 #include <sys/sx.h>

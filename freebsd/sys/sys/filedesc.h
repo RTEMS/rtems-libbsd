@@ -36,7 +36,7 @@
 #include <sys/caprights.h>
 #include <sys/queue.h>
 #include <sys/event.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/priority.h>
 #include <sys/seq.h>
 #include <sys/sx.h>

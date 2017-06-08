@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/filio.h>
 #include <sys/fcntl.h>
 #include <sys/file.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/proc.h>
 #include <sys/signalvar.h>
 #include <sys/socketvar.h>

@@ -38,7 +38,7 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/rwlock.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>

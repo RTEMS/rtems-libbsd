@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sockio.h>
 #include <sys/sysctl.h>
 #include <machine/stdarg.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/rwlock.h>
 #include <sys/taskqueue.h>
 

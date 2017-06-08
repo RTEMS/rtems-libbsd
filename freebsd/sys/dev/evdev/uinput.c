@@ -43,7 +43,7 @@
 #include <sys/poll.h>
 #include <sys/selinfo.h>
 #include <sys/malloc.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/sx.h>
 
 #include <dev/evdev/input.h>

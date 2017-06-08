@@ -34,7 +34,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/systm.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/rwlock.h>
 
 #include <assert.h>

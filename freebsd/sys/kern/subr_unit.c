@@ -80,7 +80,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/limits.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 
 /*

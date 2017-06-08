@@ -55,7 +55,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/endian.h>
 #include <sys/systm.h>
 #include <sys/sockio.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>

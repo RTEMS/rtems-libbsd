@@ -45,7 +45,7 @@
 #include <machine/rtems-bsd-support.h>
 
 #include <sys/types.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/threadqimpl.h>

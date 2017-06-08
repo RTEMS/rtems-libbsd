@@ -123,7 +123,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/module.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>

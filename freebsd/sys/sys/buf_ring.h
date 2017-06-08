@@ -37,7 +37,7 @@
 #endif
 
 #ifdef DEBUG_BUFRING
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #endif
 

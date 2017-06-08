@@ -85,7 +85,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/rmlock.h>
 #include <sys/syslog.h>
 #include <sys/sysctl.h>

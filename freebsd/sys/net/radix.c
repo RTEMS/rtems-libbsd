@@ -37,7 +37,7 @@
  */
 #include <sys/param.h>
 #ifdef	_KERNEL
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/rwlock.h>
 #include <sys/systm.h>

@@ -50,7 +50,7 @@
 #define _SYS_HHOOK_H_
 
 /* XXXLAS: Is there a way around this? */
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/rmlock.h>
 
 /* hhook_head flags. */

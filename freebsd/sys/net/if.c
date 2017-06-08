@@ -50,7 +50,7 @@
 #include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/refcount.h>
 #include <sys/module.h>
 #include <sys/rwlock.h>

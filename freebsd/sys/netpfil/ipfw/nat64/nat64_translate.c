@@ -37,7 +37,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/counter.h>
 #include <sys/errno.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mbuf.h>
 #include <sys/module.h>
 #include <sys/rmlock.h>

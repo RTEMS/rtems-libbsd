@@ -37,7 +37,7 @@ LIST_HEAD(lpohead, lock_profile_object);
 #ifdef _KERNEL
 #ifdef LOCK_PROFILING
 #include <machine/cpufunc.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 
 #ifndef USE_CPU_NANOSECONDS
 u_int64_t nanoseconds(void);

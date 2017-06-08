@@ -40,7 +40,7 @@
 #include <sys/kernel.h>
 #include <sys/bus.h>
 #include <sys/module.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/condvar.h>
 #include <sys/sysctl.h>

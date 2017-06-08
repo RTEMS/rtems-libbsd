@@ -45,7 +45,7 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/fnv_hash.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/mbuf.h>
 #include <sys/domain.h>

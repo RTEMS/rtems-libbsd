@@ -83,7 +83,7 @@
 #include <sys/mbuf.h>
 #include <sys/errno.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/module.h>
 #include <sys/protosw.h>
 #include <sys/proc.h>

@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/jail.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/proc.h>
 #include <sys/rmlock.h>
 #include <sys/sysctl.h>

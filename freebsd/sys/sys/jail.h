@@ -118,7 +118,7 @@ int jail_remove(int);
 
 #include <sys/queue.h>
 #include <sys/sysctl.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/_task.h>
 

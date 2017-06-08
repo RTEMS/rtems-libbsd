@@ -46,7 +46,7 @@
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/random.h>
 #include <sys/mutex.h>
 #include <sys/sysctl.h>

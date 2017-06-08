@@ -47,7 +47,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #ifdef _KERNEL
 #include <sys/systm.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/kdb.h>
 #include <sys/mutex.h>
 #include <sys/sx.h>

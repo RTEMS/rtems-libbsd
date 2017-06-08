@@ -29,7 +29,7 @@
 #ifndef _SYS_EVENTHANDLER_H_
 #define _SYS_EVENTHANDLER_H_
 
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/ktr.h>
 #include <sys/mutex.h>
 #include <sys/queue.h>

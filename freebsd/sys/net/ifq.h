@@ -38,7 +38,7 @@
 #include <sys/buf_ring.h>
 #include <net/vnet.h>
 #endif /* _KERNEL */
-#include <rtems/bsd/sys/lock.h>		/* XXX */
+#include <sys/lock.h>		/* XXX */
 #include <sys/mutex.h>		/* struct ifqueue */
 
 /*

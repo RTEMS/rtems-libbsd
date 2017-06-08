@@ -40,7 +40,7 @@
 
 #include <sys/bufobj.h>
 #include <sys/queue.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/lockmgr.h>
 
 struct bio;

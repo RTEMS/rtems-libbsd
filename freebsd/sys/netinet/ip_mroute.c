@@ -80,7 +80,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/kernel.h>
 #include <sys/stddef.h>
 #include <sys/eventhandler.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/ktr.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>

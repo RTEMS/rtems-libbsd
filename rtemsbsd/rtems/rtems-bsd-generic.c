@@ -49,7 +49,7 @@
 #include <sys/protosw.h>
 #include <sys/select.h>
 #include <sys/kernel.h>
-#include <rtems/bsd/sys/lock.h>
+#include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/malloc.h>
 

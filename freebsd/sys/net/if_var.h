@@ -75,7 +75,7 @@ struct	netmap_adapter;
 #include <net/vnet.h>
 #endif /* _KERNEL */
 #include <sys/counter.h>
-#include <rtems/bsd/sys/lock.h>		/* XXX */
+#include <sys/lock.h>		/* XXX */
 #include <sys/mutex.h>		/* struct ifqueue */
 #include <sys/rwlock.h>		/* XXX */
 #include <sys/sx.h>		/* XXX */

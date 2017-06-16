@@ -408,11 +408,13 @@ inet_net_pton(int af, const char *src, void *dst, size_t size) {
 	}
 }
 
+#ifndef __rtems__
 /*
  * Weak aliases for applications that use certain private entry points,
  * and fail to include <arpa/inet.h>.
  */
 #undef inet_net_pton
 __weak_reference(__inet_net_pton, inet_net_pton);
+#endif /* __rtems__ */
 
 /*! \file */

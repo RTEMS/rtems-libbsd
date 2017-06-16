@@ -102,11 +102,13 @@ again:
 	return (val);
 }
 
+#ifndef __rtems__
 /*
  * Weak aliases for applications that use certain private entry points,
  * and fail to include <arpa/inet.h>.
  */
 #undef inet_network
 __weak_reference(__inet_network, inet_network);
+#endif /* __rtems__ */
 
 /*! \file */

@@ -60,11 +60,13 @@ inet_netof(struct in_addr in)
 		return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
+#ifndef __rtems__
 /*
  * Weak aliases for applications that use certain private entry points,
  * and fail to include <arpa/inet.h>.
  */
 #undef inet_netof
 __weak_reference(__inet_netof, inet_netof);
+#endif /* __rtems__ */
 
 /*! \file */

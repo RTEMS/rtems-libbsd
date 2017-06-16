@@ -61,11 +61,13 @@ inet_lnaof(struct in_addr in)
 		return ((i)&IN_CLASSC_HOST);
 }
 
+#ifndef __rtems__
 /*
  * Weak aliases for applications that use certain private entry points,
  * and fail to include <arpa/inet.h>.
  */
 #undef inet_lnaof
 __weak_reference(__inet_lnaof, inet_lnaof);
+#endif /* __rtems__ */
 
 /*! \file */

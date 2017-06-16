@@ -87,11 +87,13 @@ inet_neta(in_addr_t src, char *dst, size_t size)
 	return (NULL);
 }
 
+#ifndef __rtems__
 /*
  * Weak aliases for applications that use certain private entry points,
  * and fail to include <arpa/inet.h>.
  */
 #undef inet_neta
 __weak_reference(__inet_neta, inet_neta);
+#endif /* __rtems__ */
 
 /*! \file */

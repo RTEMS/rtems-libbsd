@@ -2698,6 +2698,22 @@ ifhwioctl(u_long cmd, struct ifnet *ifp, caddr_t data, struct thread *td)
 		break;
 	}
 
+#ifdef __rtems__
+	case RTEMS_SIOSIFINPUT:
+		if (ifp->if_input_arg == NULL) {
+			struct rtems_ifinputreq *ifipfr;
+
+			ifipfr = (struct rtems_ifinputreq *)data;
+			ifipfr->old_if_input = ifp->if_input;
+			ifp->if_input_arg = ifipfr->arg;
+			(*ifipfr->init)(ifp, ifipfr->arg);
+			ifp->if_input = ifipfr->new_if_input;
+			error = 0;
+		} else {
+			return (EEXIST);
+		}
+		break;
+#endif /* __rtems__ */
 	default:
 		error = ENOIOCTL;
 		break;

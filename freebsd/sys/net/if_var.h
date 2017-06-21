@@ -354,13 +354,27 @@ struct ifnet {
 	if_snd_tag_query_t *if_snd_tag_query;
 	if_snd_tag_free_t *if_snd_tag_free;
 
+#ifndef __rtems__
 	/*
 	 * Spare fields to be added before branching a stable branch, so
 	 * that structure can be enhanced without changing the kernel
 	 * binary interface.
 	 */
 	int	if_ispare[4];		/* general use */
+#else /* __rtems__ */
+	void	*if_input_arg;
+#endif /* __rtems__ */
 };
+#ifdef __rtems__
+struct rtems_ifinputreq {
+	char	ifr_name[IFNAMSIZ];
+	void 	*arg;
+	void	(*init)(struct ifnet *, void *);
+	void	(*new_if_input)(struct ifnet *, struct mbuf *);
+	void	(*old_if_input)(struct ifnet *, struct mbuf *);
+};
+#define	RTEMS_SIOSIFINPUT	_IOWR('i', 255, struct rtems_ifinputreq)
+#endif /* __rtems__ */
 
 /* for compatibility with other BSDs */
 #define	if_name(ifp)	((ifp)->if_xname)

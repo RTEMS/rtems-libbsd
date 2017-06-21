@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2015, 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -60,6 +60,29 @@ void rtems_bsd_m_free(struct mbuf *m);
 
 int rtems_bsd_sendto(int socket, struct mbuf *m, int flags,
     const struct sockaddr *dest_addr);
+
+struct ifnet;
+
+typedef void (*rtems_bsd_if_input_init)(struct ifnet *, void *);
+
+typedef void (*rtems_bsd_if_input)(struct ifnet *, struct mbuf *);
+
+/**
+ * @brief Sets the interface input handler of the specified network interface.
+ *
+ * @param ifname The network interface name.
+ * @param init Initialization routine called right before the new interface
+ *   input handler is registered in the context of the executing thread.
+ * @param if_input The new interface input handler.
+ * @param arg The interface input handler argument available via struct
+ * ifnet::if_input_arg.
+ *
+ * @retval NULL An error occurred.
+ * @retval other The old interface input handler.
+ */
+rtems_bsd_if_input rtems_bsd_set_if_input(const char *ifname,
+    rtems_bsd_if_input_init init, rtems_bsd_if_input if_input,
+    void *arg);
 
 #ifdef __cplusplus
 }

@@ -381,7 +381,19 @@ module_driver(qman_portal_driver,
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 
-static struct qm_portal_config qman_configs[NR_CPUS];
+#define MAX_QMAN_PORTALS 50
+
+static struct qm_portal_config qman_configs[MAX_QMAN_PORTALS];
+
+static bool
+is_dequeue_enabled(const struct device_node *dn)
+{
+	const char *dequeue;
+	int len;
+
+	dequeue = of_get_property(dn, "libbsd,dequeue", &len);
+	return (len <= 0 || strcmp(dequeue, "disabled") != 0);
+}
 
 void
 qman_sysinit_portals(void)
@@ -390,7 +402,7 @@ qman_sysinit_portals(void)
 	struct device_node dn;
 	const char *name;
 	int cpu_count = (int)rtems_get_processor_count();
-	int cpu;
+	int i;
 	int ret;
 	int node;
 	int parent;
@@ -414,14 +426,11 @@ qman_sysinit_portals(void)
 	qoriq_clear_ci_portal(&qoriq_qman_portal[1][0],
 	    sizeof(qoriq_qman_portal[1]));
 
-	for (cpu = 0; cpu < cpu_count; ++cpu) {
-		struct qm_portal_config *pcfg = &qman_configs[cpu];
+	for (i = 0; node >= 0 && i < MAX_QMAN_PORTALS; ++i) {
+		struct qm_portal_config *pcfg = &qman_configs[i];
 		struct qman_portal *portal;
 		struct resource res;
 		u32 val;
-
-		if (node < 0)
-			panic("qman: missing portal in FDT");
 
 		ret = of_address_to_resource(&dn, 0, &res);
 		if (ret != 0)
@@ -452,18 +461,28 @@ qman_sysinit_portals(void)
 		if (pcfg->irq == NO_IRQ)
 			panic("qman: no portal interrupt");
 
-		pcfg->cpu = cpu;
-		pcfg->pools = qm_get_pools_sdqcr();
+		if (val < cpu_count) {
+			pcfg->cpu = val;
 
-		portal = init_pcfg(pcfg);
-		if (portal == NULL)
-			panic("qman: cannot create portal");
+			if (is_dequeue_enabled(&dn)) {
+				pcfg->pools = qm_get_pools_sdqcr();
+			}
 
-		qman_portal_update_sdest(pcfg, cpu);
+			portal = init_pcfg(pcfg);
+			if (portal == NULL)
+				panic("qman: cannot create portal");
+
+			qman_portal_update_sdest(pcfg, val);
+		} else {
+			pcfg->cpu = -1;
+		}
 
 		node = fdt_next_subnode(fdt, node);
 		dn.offset = node;
 	}
+
+	if (i < cpu_count)
+		panic("qman: not enough portals in FDT");
 
 	/* all assigned portals are initialized now */
 	qman_init_cgr_all();

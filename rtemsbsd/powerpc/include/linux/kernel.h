@@ -182,10 +182,6 @@ int __must_check kstrtoint(const char *, unsigned int, int *);
 #define clamp_t(type, _x, min, max)	min_t(type, max_t(type, _x, min), max)
 #define clamp(x, lo, hi)		min( max(x,lo), hi)
 
-#define upper_32_bits(n)	((u32)(((n) >> 16) >> 16))
-
-#define lower_32_bits(n)	((u32)(n))
-
 /*
  * This looks more complex than it should be. But we need to
  * get the type for the ~ right in round_down (it needs to be

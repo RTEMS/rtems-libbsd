@@ -91,4 +91,8 @@ be16_add_cpu(u16 *var, u16 val)
 	*var = cpu_to_be16(be16_to_cpu(*var) + val);
 }
 
+#define upper_32_bits(n)	((u32)(((n) >> 16) >> 16))
+
+#define lower_32_bits(n)	((u32)(n))
+
 #endif	/* _ASM_BYTEORDER_H_ */

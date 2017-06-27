@@ -56,6 +56,8 @@
 #include <linux/percpu.h>
 #include <linux/dma-mapping.h>
 #include <linux/sort.h>
+#else /* __rtems__ */
+#include <soc/fsl/dpaa.h>
 #endif /* __rtems__ */
 #include <soc/fsl/bman.h>
 #include <soc/fsl/qman.h>
@@ -1606,6 +1608,35 @@ release_previous_buffs:
 
 	return 0;
 }
+#ifdef __rtems__
+void
+dpaa_recycle_mcluster(struct dpaa_priv *dpaa_priv,
+    dpaa_buffer_recycle_context *rc, struct mbuf *m)
+{
+	size_t i;
+	dma_addr_t addr;
+
+	i = rc->count;
+	m->m_data = m->m_ext.ext_buf;
+	*(struct mbuf **)(mtod(m, char *) + DPAA_MBUF_POINTER_OFFSET) = m;
+	addr = mtod(m, dma_addr_t);
+	rc->bmb[i].data = 0;
+	bm_buffer_set64(&rc->bmb[i], addr);
+
+	if (i < ARRAY_SIZE(rc->bmb) - 1) {
+		rc->count = i + 1;
+	} else {
+		struct dpaa_bp *dpaa_bp;
+		int *countptr;
+
+		rc->count = 0;
+		dpaa_bp = dpaa_priv->dpaa_bps[0];
+		countptr = this_cpu_ptr(dpaa_bp->percpu_count);
+		*countptr += dpaa_bman_release(dpaa_bp, rc->bmb,
+		    ARRAY_SIZE(rc->bmb));
+	}
+}
+#endif /* __rtems__ */
 
 static int dpaa_bp_seed(struct dpaa_bp *dpaa_bp)
 {

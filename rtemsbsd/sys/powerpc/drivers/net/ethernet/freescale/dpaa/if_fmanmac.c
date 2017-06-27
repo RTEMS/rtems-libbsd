@@ -44,6 +44,8 @@
 
 #include <linux/phy.h>
 
+#include <soc/fsl/dpaa.h>
+
 #include "../../../../../../../../linux/drivers/net/ethernet/freescale/dpaa/dpaa_eth.h"
 
 #define	FMAN_MAC_LOCK(sc)		mtx_lock(&(sc)->mtx)
@@ -578,4 +580,13 @@ void dpaa_cleanup_tx_fd(struct ifnet *ifp, const struct qm_fd *fd)
 
 	m_freem(sgt->m);
 	uma_zfree(sc->sgt_zone, sgt);
+}
+
+struct dpaa_priv *
+dpaa_get_priv_of_ifp(struct ifnet *ifp)
+{
+	struct fman_mac_softc *sc;
+
+	sc = ifp->if_softc;
+	return (netdev_priv(&sc->mac_dev.net_dev));
 }

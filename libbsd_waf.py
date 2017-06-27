@@ -2419,6 +2419,7 @@ def build(bld):
                      ('freebsd/sys/sys', '**/*.h', 'sys'),
                      ('freebsd/sys/vm', '**/*.h', 'vm'),
                      ('freebsd/sys/dev/mii', '**/*.h', 'dev/mii'),
+                     ('linux/include', '**/*.h', ''),
                      ('mDNSResponder/mDNSCore', 'mDNSDebug.h', ''),
                      ('mDNSResponder/mDNSCore', 'mDNSEmbeddedAPI.h', ''),
                      ('mDNSResponder/mDNSShared', 'dns_sd.h', ''),

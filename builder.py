@@ -223,6 +223,7 @@ def headerPaths():
 
     #         local path                      wildcard             dest path
     return [('rtemsbsd/include',              '**/*.h',            ''),
+            ('rtemsbsd/\' + bld.env.RTEMS_ARCH + \'/include', '**/*.h', ''),
             ('rtemsbsd/mghttpd',              'mongoose.h',        'mghttpd'),
             ('freebsd/include',               '**/*.h',            ''),
             ('freebsd/sys/bsm',               '**/*.h',            'bsm'),

@@ -181,6 +181,9 @@ class YaccFragmentComposer(builder.BuildSystemFragmentComposer):
             d['includes'] = self.includes
         return ['yacc', path, ('default', None)], d
 
+def headerPathSpec(headerPath):
+    return '(\'%s\', \'%s\', \'%s\')' % (headerPath[0], headerPath[1], headerPath[2])
+
 # Module Manager - Collection of Modules
 class ModuleManager(builder.ModuleManager):
 
@@ -644,10 +647,10 @@ class ModuleManager(builder.ModuleManager):
         self.add('    # Installs.    ')
         self.add('    bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])')
         headerPaths = builder.headerPaths()
-        self.add('    header_paths = [%s,' % (str(headerPaths[0])))
+        self.add('    header_paths = [%s,' % (headerPathSpec(headerPaths[0])))
         for hp in headerPaths[1:-1]:
-            self.add('                     %s,' % (str(hp)))
-        self.add('                     %s]' % (str(headerPaths[-1])))
+            self.add('                     %s,' % (headerPathSpec(hp)))
+        self.add('                     %s]' % (headerPathSpec(headerPaths[-1])))
         self.add('    for headers in header_paths:')
         self.add('        ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), headers[2])')
         self.add('        start_dir = bld.path.find_dir(headers[0])')

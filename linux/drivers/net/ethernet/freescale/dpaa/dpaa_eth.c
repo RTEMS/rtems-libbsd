@@ -3036,7 +3036,7 @@ dpaa_eth_priv_probe(struct platform_device *pdev, struct mac_device *mac_dev)
 
 #ifndef __rtems__
 	/* device used for DMA mapping */
-	arch_setup_dma_ops(dev, 0, 0, NULL, false);
+	set_dma_ops(dev, get_dma_ops(&pdev->dev));
 	err = dma_coerce_mask_and_coherent(dev, DMA_BIT_MASK(40));
 	if (err) {
 		dev_err(dev, "dma_coerce_mask_and_coherent() failed\n");

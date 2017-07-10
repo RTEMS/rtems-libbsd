@@ -164,18 +164,29 @@ int	 flsll(long long);
 #define	ffsl(_x) __builtin_ffsl((unsigned long)(_x))
 
 static inline int
-fls(int x)
+builtin_fls(int x)
 {
 
   return (x != 0 ? sizeof(x) * 8 - __builtin_clz((unsigned int)x) : 0);
 }
 
 static inline int
-flsl(long x)
+builtin_flsl(long x)
 {
 
   return (x != 0 ? sizeof(x) * 8 - __builtin_clzl((unsigned long)x) : 0);
 }
+
+static inline int
+builtin_flsll(long long x)
+{
+
+  return (x != 0 ? sizeof(x) * 8 - __builtin_clzll((unsigned long long)x) : 0);
+}
+
+#define	fls(_x)		builtin_fls(_x)
+#define	flsl(_x)	builtin_flsl(_x)
+#define	flsll(_x)	builtin_flsll(_x)
 #endif /* __rtems__ */
 #define	bitcount64(x)	__bitcount64((uint64_t)(x))
 #define	bitcount32(x)	__bitcount32((uint32_t)(x))

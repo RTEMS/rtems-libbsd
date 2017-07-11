@@ -192,7 +192,7 @@ termios_wakeup(struct termios *term, void *arg)
 {
 	termios_selinfo *ts = arg;
 
-	rtems_interrupt_server_request_submit(RTEMS_ID_NONE, &ts->request);
+	rtems_interrupt_server_request_submit(&ts->request);
 }
 
 static struct selinfo *
@@ -205,8 +205,8 @@ termios_get_selinfo(rtems_termios_tty *tty, struct ttywakeup *wk,
 		BSD_ASSERT(wk->sw_pfn == NULL);
 		ts = malloc(sizeof(*ts), M_TEMP, M_WAITOK | M_ZERO);
 		ts->tty = tty;
-		rtems_interrupt_server_request_initialize(&ts->request,
-		    handler, ts);
+		rtems_interrupt_server_request_initialize(RTEMS_INTERRUPT_SERVER_DEFAULT,
+		    &ts->request, handler, ts);
 		wk->sw_arg = ts;
 		wk->sw_pfn = termios_wakeup;
 	} else {

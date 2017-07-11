@@ -1214,6 +1214,22 @@ static int qman_create_portal(struct qman_portal *portal,
 		dev_err(c->dev, "irq_set_affinity() failed\n");
 		goto fail_affinity;
 	}
+#else /* __rtems__ */
+	{
+		rtems_status_code sc;
+		cpu_set_t cpu;
+
+		sc = rtems_interrupt_server_move(
+		    RTEMS_INTERRUPT_SERVER_DEFAULT, (uint32_t)c->irq,
+		    (uint32_t)c->cpu);
+		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+
+		CPU_ZERO(&cpu);
+		CPU_SET(c->cpu, &cpu);
+		sc = rtems_interrupt_set_affinity((uint32_t)c->irq,
+		    sizeof(cpu), &cpu);
+		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+	}
 #endif /* __rtems__ */
 
 	/* Need EQCR to be empty before continuing */

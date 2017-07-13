@@ -438,7 +438,9 @@ am335x_prcm_attach(device_t dev)
 	sc->bsh = rman_get_bushandle(sc->res[0]);
 
 	am335x_prcm_sc = sc;
+#ifndef __rtems__
 	ti_cpu_reset = am335x_prcm_reset;
+#endif /* __rtems__ */
 
 	if (am335x_clk_get_sysclk_freq(NULL, &sysclk) != 0)
 		sysclk = 0;

@@ -46,6 +46,20 @@
 
 RTEMS_BSD_DRIVER_SMC0(0x4e000000,  RVPBXA9_IRQ_ETHERNET);
 
+#elif defined(LIBBSP_ARM_BEAGLE_BSP_H)
+
+#include <bsp/irq.h>
+
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(ofwbus, 0, 0, NULL);
+SYSINIT_DRIVER_REFERENCE(simplebus, ofwbus);
+SYSINIT_DRIVER_REFERENCE(ti_scm, simplebus);
+SYSINIT_DRIVER_REFERENCE(am335x_prcm, simplebus);
+SYSINIT_DRIVER_REFERENCE(usbss, simplebus);
+SYSINIT_DRIVER_REFERENCE(musbotg, usbss);
+
+RTEMS_BSD_DRIVER_USB;
+RTEMS_BSD_DRIVER_USB_MASS;
+
 #elif defined(LIBBSP_ARM_LPC32XX_BSP_H)
 
 #include <bsp/irq.h>

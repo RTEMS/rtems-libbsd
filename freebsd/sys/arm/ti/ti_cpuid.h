@@ -29,6 +29,9 @@
 
 #ifndef _TI_CPUID_H_
 #define	_TI_CPUID_H_
+#ifdef __rtems__
+#include <bsp.h>
+#endif /* __rtems__ */
 
 #define	OMAP_MAKEREV(d, a, b, c) \
 	(uint32_t)(((d) << 16) | (((a) & 0xf) << 8) | (((b) & 0xf) << 4) | ((c) & 0xf))
@@ -70,7 +73,23 @@
 #define	CHIP_OMAP_4	0
 #define	CHIP_AM335X	1
 
+#ifdef __rtems__
+#ifdef IS_AM335X
+#define SOC_TI_AM335X
+#else
+#warning Unknown SOC.
+#endif
+
+#if defined(SOC_TI_AM335X)
+#define _ti_chip CHIP_AM335X
+#elif defined(SOC_OMAP4)
+#define _ti_chip CHIP_OMAP_4
+#else
+#define _ti_chip -1
+#endif
+#else /* __rtems__ */
 extern int _ti_chip;
+#endif /* __rtems__ */
 
 static __inline int ti_chip(void)
 {

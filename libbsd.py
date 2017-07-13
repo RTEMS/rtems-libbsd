@@ -890,6 +890,39 @@ def dev_usb_storage_add_on(mm):
     return mod
 
 #
+# BBB USB
+#
+def dev_usb_controller_bbb(mm):
+    mod = builder.Module('dev_usb_controller_bbb')
+    mod.addDependency(mm['dev_usb'])
+    mod.addKernelSpaceHeaderFiles(
+        [
+            'sys/arm/ti/ti_cpuid.h',
+            'sys/arm/ti/ti_prcm.h',
+            'sys/arm/ti/ti_scm.h',
+            'sys/arm/ti/tivar.h',
+            'sys/arm/ti/am335x/am335x_scm.h',
+            'sys/dev/usb/controller/musb_otg.h',
+            'sys/sys/timeet.h',
+            'sys/sys/watchdog.h',
+            'sys/dev/fdt/fdt_pinctrl.h',
+
+        ]
+    )
+    mod.addKernelSpaceSourceFiles(
+        [
+            'sys/arm/ti/ti_scm.c',
+            'sys/arm/ti/am335x/am335x_prcm.c',
+            'sys/arm/ti/am335x/am335x_usbss.c',
+            'sys/arm/ti/ti_prcm.c',
+            'sys/arm/ti/am335x/am335x_musb.c',
+            'sys/dev/usb/controller/musb_otg.c',
+        ],
+        mm.generator['source']()
+    )
+    return mod
+
+#
 # USB Template
 #
 def dev_usb_template(mm):
@@ -3195,6 +3228,7 @@ def sources(mm):
     mm.addModule(cam(mm))
     mm.addModule(dev_usb_storage(mm))
     #mm.addModule(dev_usb_storage_add_on(mm))
+    mm.addModule(dev_usb_controller_bbb(mm))
 
     #mm.addModule(dev_usb_template(mm))
 

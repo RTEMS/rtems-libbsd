@@ -40,6 +40,8 @@ struct mbuf;
 
 struct dpaa_priv *dpaa_get_priv_of_ifp(struct ifnet *);
 
+int dpaa_get_qman_portal_irq_of_ifp(struct ifnet *);
+
 typedef struct {
 	size_t count;
 	struct bm_buffer bmb[8];

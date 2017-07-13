@@ -85,6 +85,8 @@ struct mac_device {
 	struct phy_device *(*init_phy)(struct net_device *net_dev,
 				       struct mac_device *mac_dev);
 #else /* __rtems__ */
+	bool use_dedicated_portal;
+	struct qman_portal *portal;
 	void (*adjust_link)(struct mac_device *mac_dev, u16 speed);
 #endif /* __rtems__ */
 	int (*init)(struct mac_device *mac_dev);

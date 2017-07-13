@@ -590,3 +590,12 @@ dpaa_get_priv_of_ifp(struct ifnet *ifp)
 	sc = ifp->if_softc;
 	return (netdev_priv(&sc->mac_dev.net_dev));
 }
+
+int
+dpaa_get_qman_portal_irq_of_ifp(struct ifnet *ifp)
+{
+	struct fman_mac_softc *sc;
+
+	sc = ifp->if_softc;
+	return (qman_portal_get_irq(sc->mac_dev.portal));
+}

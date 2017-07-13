@@ -385,6 +385,33 @@ module_driver(qman_portal_driver,
 
 static struct qm_portal_config qman_configs[MAX_QMAN_PORTALS];
 
+static LIST_HEAD(qman_free_portals);
+
+struct qman_portal *
+qman_get_dedicated_portal(int cpu)
+{
+	struct qm_portal_config *pcfg;
+	struct qman_portal *p;
+	u32 irq_sources;
+
+	if (list_empty(&qman_free_portals))
+		return (NULL);
+
+	pcfg = list_first_entry(&qman_free_portals, struct qm_portal_config,
+	   node);
+	pcfg->cpu = cpu;
+	p = qman_create_dedicated_portal(pcfg, NULL);
+	if (p == NULL)
+		return (NULL);
+
+	list_del(&pcfg->node);
+
+	irq_sources = QM_PIRQ_EQCI | QM_PIRQ_EQRI | QM_PIRQ_MRI | QM_PIRQ_CSCI
+	    | QM_PIRQ_DQRI;
+	qman_p_irqsource_add(p, irq_sources);
+	return (p);
+}
+
 static bool
 is_dequeue_enabled(const struct device_node *dn)
 {
@@ -475,6 +502,7 @@ qman_sysinit_portals(void)
 			qman_portal_update_sdest(pcfg, val);
 		} else {
 			pcfg->cpu = -1;
+			list_add_tail(&pcfg->node, &qman_free_portals);
 		}
 
 		node = fdt_next_subnode(fdt, node);

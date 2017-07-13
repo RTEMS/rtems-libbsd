@@ -1281,6 +1281,49 @@ fail_dqrr:
 fail_eqcr:
 	return -EIO;
 }
+#ifdef __rtems__
+int
+qman_portal_get_channel(const struct qman_portal *portal)
+{
+
+	if (portal == NULL) {
+		return (-1);
+	}
+
+	return (portal->config->channel);
+}
+
+int
+qman_portal_get_irq(const struct qman_portal *portal)
+{
+
+	if (portal == NULL) {
+		return (-1);
+	}
+
+	return (portal->config->irq);
+}
+
+struct qman_portal *
+qman_create_dedicated_portal(const struct qm_portal_config *c,
+    const struct qman_cgrs *cgrs)
+{
+	struct qman_portal *portal;
+	int err;
+
+	portal = kmalloc(sizeof(*portal), GFP_KERNEL);
+	if (portal == NULL)
+		return (NULL);
+
+	err = qman_create_portal(portal, c, cgrs);
+	if (err != 0) {
+		kfree(portal);
+		return (NULL);
+	}
+
+	return (portal);
+}
+#endif /* __rtems__ */
 
 struct qman_portal *qman_create_affine_portal(const struct qm_portal_config *c,
 					      const struct qman_cgrs *cgrs)

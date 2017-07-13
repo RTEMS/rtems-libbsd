@@ -918,6 +918,13 @@ u16 qman_affine_channel(int cpu);
  * @cpu: the cpu whose affine portal is the subject of the query
  */
 struct qman_portal *qman_get_affine_portal(int cpu);
+#ifdef __rtems__
+struct qman_portal *qman_get_dedicated_portal(int cpu);
+
+int qman_portal_get_channel(const struct qman_portal *portal);
+
+int qman_portal_get_irq(const struct qman_portal *portal);
+#endif /* __rtems__ */
 
 /**
  * qman_p_poll_dqrr - process DQRR (fast-path) entries

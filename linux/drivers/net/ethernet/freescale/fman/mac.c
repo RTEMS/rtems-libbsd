@@ -748,6 +748,16 @@ MODULE_DEVICE_TABLE(of, mac_match);
 #ifndef __rtems__
 static int mac_probe(struct platform_device *_of_dev)
 #else /* __rtems__ */
+static bool
+use_dedicated_portal(const struct device_node *mac_node)
+{
+	const char *dp;
+	int len;
+
+	dp = of_get_property(mac_node, "libbsd,dedicated-portal", &len);
+	return (len > 0 && strcmp(dp, "enabled") == 0);
+}
+
 static int mac_probe(device_t _dev, struct platform_device *_of_dev, struct fman *fman)
 #endif /* __rtems__ */
 {
@@ -1096,6 +1106,9 @@ static int mac_probe(device_t _dev, struct platform_device *_of_dev, struct fman
 		 mac_dev->addr[0], mac_dev->addr[1], mac_dev->addr[2],
 		 mac_dev->addr[3], mac_dev->addr[4], mac_dev->addr[5]);
 
+#ifdef __rtems__
+	mac_dev->use_dedicated_portal = use_dedicated_portal(mac_node);
+#endif /* __rtems__ */
 	priv->eth_dev = dpaa_eth_add_device(fman_id, mac_dev, mac_node);
 	if (IS_ERR(priv->eth_dev)) {
 		dev_err(dev, "failed to add Ethernet platform device for MAC %d\n",

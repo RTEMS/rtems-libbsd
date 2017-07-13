@@ -3078,6 +3078,17 @@ dpaa_eth_priv_probe(struct platform_device *pdev, struct mac_device *mac_dev)
 
 	priv->mac_dev = mac_dev;
 
+#ifdef __rtems__
+	if (mac_dev->use_dedicated_portal) {
+		struct qman_portal *portal;
+
+		portal = qman_get_dedicated_portal(0);
+		BSD_ASSERT(portal != NULL);
+		mac_dev->portal = portal;
+		channel = qman_portal_get_channel(portal);
+		priv->channel = (u16)channel;
+	} else {
+#endif /* __rtems__ */
 	channel = dpaa_get_channel();
 	if (channel < 0) {
 		dev_err(dev, "dpaa_get_channel() failed\n");
@@ -3091,6 +3102,9 @@ dpaa_eth_priv_probe(struct platform_device *pdev, struct mac_device *mac_dev)
 	 * and add this pool channel to each's dequeue mask.
 	 */
 	dpaa_eth_add_channel(priv->channel);
+#ifdef __rtems__
+	}
+#endif /* __rtems__ */
 
 	dpaa_fq_setup(priv, &dpaa_fq_cbs, priv->mac_dev->port[TX]);
 

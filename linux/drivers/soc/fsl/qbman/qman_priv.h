@@ -165,6 +165,8 @@ struct qm_portal_config {
 	struct iommu_domain *iommu_domain;
 	/* Allow these to be joined in lists */
 	struct list_head list;
+#else /* __rtems__ */
+	struct list_head node;
 #endif /* __rtems__ */
 	/* User-visible portal configuration settings */
 	/* portal is affined to this cpu */
@@ -201,6 +203,10 @@ int qman_wq_alloc(void);
 void qman_liodn_fixup(u16 channel);
 void qman_set_sdest(u16 channel, unsigned int cpu_idx);
 
+#ifdef __rtems__
+struct qman_portal *qman_create_dedicated_portal(
+    const struct qm_portal_config *c, const struct qman_cgrs *cgrs);
+#endif /* __rtems__ */
 struct qman_portal *qman_create_affine_portal(
 			const struct qm_portal_config *config,
 			const struct qman_cgrs *cgrs);

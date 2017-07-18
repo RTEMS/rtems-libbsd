@@ -311,6 +311,8 @@ ohci_lpc_resume(device_t self)
 	int eno = 0;
 
 #ifdef BSP_USB_OTG_TRANSCEIVER_I2C_ADDR
+	ohci_softc_t *e = device_get_softc(self);
+
 	if (eno == 0) {
 		eno = lpc_otg_clk_ctrl(
 			LPC_OTG_CLK_AHB | LPC_OTG_CLK_HOST | LPC_OTG_CLK_I2C

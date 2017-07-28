@@ -2764,6 +2764,9 @@ static const rtems_filesystem_file_handlers_r kqueueops = {
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fcntl_h = rtems_filesystem_default_fcntl,
 	.poll_h = rtems_bsd_kqueue_poll,
-	.kqfilter_h = rtems_bsd_kqueue_kqfilter
+	.kqfilter_h = rtems_bsd_kqueue_kqfilter,
+	.readv_h = rtems_filesystem_default_readv,
+	.writev_h = rtems_filesystem_default_writev,
+	.mmap_h = rtems_filesystem_default_mmap
 };
 #endif /* __rtems__ */

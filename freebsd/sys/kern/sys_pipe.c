@@ -179,12 +179,21 @@ struct fileops pipeops = {
 #define PIPE_NODIRECT
 #define	PRIBIO			(0)
 
-static int rtems_bsd_pipe_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
+static int rtems_bsd_pipe_open(rtems_libio_t *iop, const char *path,
+    int oflag, mode_t mode);
 static int rtems_bsd_pipe_close(rtems_libio_t *iop);
-static ssize_t rtems_bsd_pipe_read(rtems_libio_t *iop, void *buffer, size_t count);
-static ssize_t rtems_bsd_pipe_write(rtems_libio_t *iop, const void *buffer, size_t count);
-static int rtems_bsd_pipe_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer);
-static int rtems_bsd_pipe_stat(const rtems_filesystem_location_info_t *loc,	struct stat *buf);
+static ssize_t rtems_bsd_pipe_read(rtems_libio_t *iop, void *buffer,
+    size_t count);
+static ssize_t rtems_bsd_pipe_readv(rtems_libio_t *iop,
+    const struct iovec *iov, int iovcnt, ssize_t total);
+static ssize_t rtems_bsd_pipe_write(rtems_libio_t *iop, const void *buffer,
+    size_t count);
+static ssize_t rtems_bsd_pipe_writev(rtems_libio_t *iop,
+    const struct iovec *iov, int iovcnt, ssize_t total);
+static int rtems_bsd_pipe_ioctl(rtems_libio_t *iop, ioctl_command_t request,
+    void *buffer);
+static int rtems_bsd_pipe_stat(const rtems_filesystem_location_info_t *loc,
+    struct stat *buf);
 static int rtems_bsd_pipe_fcntl(rtems_libio_t *iop, int cmd);
 static int rtems_bsd_pipe_poll(rtems_libio_t *iop, int events);
 int rtems_bsd_pipe_kqfilter(rtems_libio_t *iop, struct knote *kn);
@@ -202,7 +211,10 @@ static const rtems_filesystem_file_handlers_r pipeops = {
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fcntl_h = rtems_bsd_pipe_fcntl,
 	.poll_h = rtems_bsd_pipe_poll,
-	.kqfilter_h = rtems_bsd_pipe_kqfilter
+	.kqfilter_h = rtems_bsd_pipe_kqfilter,
+	.readv_h = rtems_bsd_pipe_readv,
+	.writev_h = rtems_bsd_pipe_writev,
+	.mmap_h = rtems_filesystem_default_mmap
 };
 
 long	maxpipekva;			/* Limit on pipe KVA */
@@ -939,6 +951,36 @@ rtems_bsd_pipe_read(rtems_libio_t *iop, void *buffer, size_t count)
 		rtems_set_errno_and_return_minus_one(error);
 	}
 }
+
+static ssize_t
+rtems_bsd_pipe_readv(rtems_libio_t *iop, const struct iovec *iov,
+    int iovcnt, ssize_t total)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct uio auio = {
+		.uio_iov = __DECONST(struct iovec *, iov),
+		.uio_iovcnt = iovcnt,
+		.uio_offset = 0,
+		.uio_resid = total,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_READ,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = pipe_read(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (total - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
 #endif /* __rtems__ */
 
 #ifndef PIPE_NODIRECT
@@ -1466,6 +1508,36 @@ rtems_bsd_pipe_write(rtems_libio_t *iop, const void *buffer, size_t count)
 
 	if (error == 0) {
 		return (count - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+
+static ssize_t
+rtems_bsd_pipe_writev(rtems_libio_t *iop, const struct iovec *iov,
+    int iovcnt, ssize_t total)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct uio auio = {
+		.uio_iov = __DECONST(struct iovec *, iov),
+		.uio_iovcnt = iovcnt,
+		.uio_offset = 0,
+		.uio_resid = total,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_WRITE,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = pipe_write(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (total - auio.uio_resid);
 	} else {
 		rtems_set_errno_and_return_minus_one(error);
 	}

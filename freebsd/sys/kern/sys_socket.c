@@ -171,6 +171,36 @@ rtems_bsd_soo_read(rtems_libio_t *iop, void *buffer, size_t count)
 		rtems_set_errno_and_return_minus_one(error);
 	}
 }
+
+static ssize_t
+rtems_bsd_soo_readv(rtems_libio_t *iop, const struct iovec *iov,
+    int iovcnt, ssize_t total)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct uio auio = {
+		.uio_iov = __DECONST(struct iovec *, iov),
+		.uio_iovcnt = iovcnt,
+		.uio_offset = 0,
+		.uio_resid = total,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_READ,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = soo_read(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (total - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
 #endif /* __rtems__ */
 
 #ifdef __rtems__
@@ -230,6 +260,36 @@ rtems_bsd_soo_write(rtems_libio_t *iop, const void *buffer, size_t count)
 
 	if (error == 0) {
 		return (count - auio.uio_resid);
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
+
+static ssize_t
+rtems_bsd_soo_writev(rtems_libio_t *iop, const struct iovec *iov,
+    int iovcnt, ssize_t total)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct uio auio = {
+		.uio_iov = __DECONST(struct iovec *, iov),
+		.uio_iovcnt = iovcnt,
+		.uio_offset = 0,
+		.uio_resid = total,
+		.uio_segflg = UIO_USERSPACE,
+		.uio_rw = UIO_WRITE,
+		.uio_td = td
+	};
+	int error;
+
+	if (td != NULL) {
+		error = soo_write(fp, &auio, NULL, 0, NULL);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return (total - auio.uio_resid);
 	} else {
 		rtems_set_errno_and_return_minus_one(error);
 	}
@@ -1018,6 +1078,9 @@ const rtems_filesystem_file_handlers_r socketops = {
 	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
 	.fcntl_h = rtems_bsd_soo_fcntl,
 	.poll_h = rtems_bsd_soo_poll,
-	.kqfilter_h = rtems_bsd_soo_kqfilter
+	.kqfilter_h = rtems_bsd_soo_kqfilter,
+	.readv_h = rtems_bsd_soo_readv,
+	.writev_h = rtems_bsd_soo_writev,
+	.mmap_h = rtems_filesystem_default_mmap
 };
 #endif /* __rtems__ */

@@ -72,6 +72,8 @@ typedef void (*ratectl_modevent)(int);
 RTEMS_BSD_DEFINE_SET(ratectl_set, ratectl_modevent);
 typedef void (*scanner_modevent)(int);
 RTEMS_BSD_DEFINE_SET(scanner_set, scanner_modevent);
+typedef void (*crypto_modevent)(int);
+RTEMS_BSD_DEFINE_SET(crypto_set, crypto_modevent);
 RTEMS_BSD_DEFINE_SET(sysctl_set, struct sysctl_oid *);
 
 RTEMS_BSD_DEFINE_RWSET(sysinit_set, struct sysinit *);

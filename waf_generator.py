@@ -198,6 +198,9 @@ class ModuleManager(builder.ModuleManager):
     def setGenerators(self):
         self.generator['convert'] = builder.Converter
         self.generator['no-convert'] = builder.NoConverter
+        self.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'] = builder.FromFreeBSDToRTEMSUserSpaceSourceConverter
+        self.generator['from-RTEMS-To-FreeBSD-SourceConverter'] = builder.FromRTEMSToFreeBSDSourceConverter
+        self.generator['buildSystemFragmentComposer'] = builder.BuildSystemFragmentComposer
 
         self.generator['file'] = builder.File
 

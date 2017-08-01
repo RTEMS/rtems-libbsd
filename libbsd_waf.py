@@ -1304,6 +1304,7 @@ def build(bld):
               'rtemsbsd/local/ofw_if.c',
               'rtemsbsd/local/pci_if.c',
               'rtemsbsd/local/pcib_if.c',
+              'rtemsbsd/local/rtwn-rtl8188eufw.c',
               'rtemsbsd/local/rtwn-rtl8192cfwT.c',
               'rtemsbsd/local/runfw.c',
               'rtemsbsd/local/usb_if.c',

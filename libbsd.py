@@ -1080,6 +1080,7 @@ def dev_wlan_rtwn(mm):
     mod.addRTEMSSourceFiles(
         [
             'local/rtwn-rtl8192cfwT.c',
+            'local/rtwn-rtl8188eufw.c',
         ],
         mm.generator['source']()
     )

@@ -472,8 +472,6 @@
 #define	callout_schedule_on _bsd_callout_schedule_on
 #define	_callout_stop_safe _bsd__callout_stop_safe
 #define	callout_when _bsd_callout_when
-#define	callwheelmask _bsd_callwheelmask
-#define	callwheelsize _bsd_callwheelsize
 #define	camellia_decrypt _bsd_camellia_decrypt
 #define	camellia_decrypt128 _bsd_camellia_decrypt128
 #define	camellia_decrypt256 _bsd_camellia_decrypt256

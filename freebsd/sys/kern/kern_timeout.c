@@ -128,11 +128,16 @@ SYSCTL_INT(_kern, OID_AUTO, pin_default_swi, CTLFLAG_RDTUN | CTLFLAG_NOFETCH, &p
 SYSCTL_INT(_kern, OID_AUTO, pin_pcpu_swi, CTLFLAG_RDTUN | CTLFLAG_NOFETCH, &pin_pcpu_swi,
     0, "Pin the per-CPU swis (except PCPU 0, which is also default");
 
+#ifndef __rtems__
 /*
  * TODO:
  *	allocate more timeout table slots when table overflows.
  */
 u_int callwheelsize, callwheelmask;
+#else /* __rtems__ */
+#define	callwheelsize (2 * ncallout)
+#define	callwheelmask (callwheelsize - 1)
+#endif /* __rtems__ */
 
 /*
  * The callout cpu exec entities represent informations necessary for
@@ -170,10 +175,13 @@ struct callout_cpu {
 	struct cc_exec 		cc_exec_entity;
 #endif /* __rtems__ */
 	struct callout		*cc_next;
+#ifndef __rtems__
 	struct callout		*cc_callout;
 	struct callout_list	*cc_callwheel;
-#ifndef __rtems__
 	struct callout_tailq	cc_expireq;
+#else /* __rtems__ */
+	struct callout		cc_callout[ncallout];
+	struct callout_list	cc_callwheel[callwheelsize];
 #endif /* __rtems__ */
 	struct callout_slist	cc_callfree;
 	sbintime_t		cc_firstevent;
@@ -359,8 +367,10 @@ callout_callwheel_init(void *dummy)
 	 * Calculate callout wheel size, should be next power of two higher
 	 * than 'ncallout'.
 	 */
+#ifndef __rtems__
 	callwheelsize = 1 << fls(ncallout);
 	callwheelmask = callwheelsize - 1;
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 	/*
@@ -380,8 +390,10 @@ callout_callwheel_init(void *dummy)
 	timeout_cpu = PCPU_GET(cpuid);
 #endif /* __rtems__ */
 	cc = CC_CPU(timeout_cpu);
+#ifndef __rtems__
 	cc->cc_callout = malloc(ncallout * sizeof(struct callout),
 	    M_CALLOUT, M_WAITOK);
+#endif /* __rtems__ */
 	callout_cpu_init(cc, timeout_cpu);
 }
 #ifndef __rtems__
@@ -400,8 +412,10 @@ callout_cpu_init(struct callout_cpu *cc, int cpu)
 	mtx_init(&cc->cc_lock, "callout", NULL, MTX_SPIN | MTX_RECURSE);
 	SLIST_INIT(&cc->cc_callfree);
 	cc->cc_inited = 1;
+#ifndef __rtems__
 	cc->cc_callwheel = malloc(sizeof(struct callout_list) * callwheelsize,
 	    M_CALLOUT, M_WAITOK);
+#endif /* __rtems__ */
 	for (i = 0; i < callwheelsize; i++)
 		LIST_INIT(&cc->cc_callwheel[i]);
 #ifndef __rtems__
@@ -412,8 +426,10 @@ callout_cpu_init(struct callout_cpu *cc, int cpu)
 		cc_cce_cleanup(cc, i);
 	snprintf(cc->cc_ktr_event_name, sizeof(cc->cc_ktr_event_name),
 	    "callwheel cpu %d", cpu);
+#ifndef __rtems__
 	if (cc->cc_callout == NULL)	/* Only cpu0 handles timeout(9) */
 		return;
+#endif /* __rtems__ */
 	for (i = 0; i < ncallout; i++) {
 		c = &cc->cc_callout[i];
 		callout_init(c, 0);

@@ -155,14 +155,14 @@
 /*
  * Bus address and size types
  */
-typedef unsigned int bus_addr_t;
-typedef unsigned int bus_size_t;
+typedef uintptr_t bus_addr_t;
+typedef uintptr_t bus_size_t;
 
 /*
  * Access methods for bus resources and address space.
  */
 typedef	int bus_space_tag_t;
-typedef	unsigned int bus_space_handle_t;
+typedef	uintptr_t bus_space_handle_t;
 
 /*
  * Map a region of device bus space into CPU virtual address space.

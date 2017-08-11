@@ -194,6 +194,10 @@ def includes():
             '-ImDNSResponder/mDNSPosix',
             '-Itestsuite/include']
 
+def buildInclude():
+    """ Returns the path where headers will be copied during build. """
+    return 'build-include'
+
 def cpuIncludes():
     return ['-Irtemsbsd/@CPU@/include',
             '-Ifreebsd/sys/@CPU@/include']
@@ -205,6 +209,16 @@ def cxxflags():
     return []
 
 def headerPaths():
+    """ Returns a list of information about what header files should be
+    installed.
+
+    The list is also used to find headers with a local path that doesn't match
+    it's dest path. Due to the difference in the path name such files are
+    problematic during the build if they are included using their later
+    installation path (dest path) name. Therefore they are copied into a
+    sub-directory of the build path so that they can be included with their
+    normal installation path. """
+
     #         local path                      wildcard             dest path
     return [('rtemsbsd/include',              '*.h',               ''),
             ('rtemsbsd/mghttpd',              'mongoose.h',        'mghttpd'),

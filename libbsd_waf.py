@@ -83,6 +83,7 @@ def build(bld):
     includes += ["mDNSResponder/mDNSShared"]
     includes += ["mDNSResponder/mDNSPosix"]
     includes += ["testsuite/include"]
+    includes += ["build-include"]
 
     # Collect the libbsd uses
     libbsd_use = []
@@ -122,6 +123,20 @@ def build(bld):
         source = "testsuite/include/rtems/bsd/test/network-config.h.in",
         rule = "sed -e 's/@NET_CFG_SELF_IP@/%s/' -e 's/@NET_CFG_NETMASK@/%s/' -e 's/@NET_CFG_PEER_IP@/%s/' -e 's/@NET_CFG_GATEWAY_IP@/%s/' < ${SRC} > ${TGT}" % (net_cfg_self_ip, net_cfg_netmask, net_cfg_peer_ip, net_cfg_gateway_ip),
         update_outputs = True)
+
+    # copy headers if necessary
+    header_build_copy_paths = [
+                              ]
+    for headers in header_build_copy_paths:
+        target = os.path.join("build-include", headers[2])
+        start_dir = bld.path.find_dir(headers[0])
+        for header in start_dir.ant_glob(os.path.join("**/", headers[1])):
+            relsourcepath = header.path_from(start_dir)
+            targetheader = os.path.join(target, relsourcepath)
+            bld(features = 'subst',
+                target = targetheader,
+                source = header,
+                is_copy = True)
 
     # KVM Symbols
     bld(target = "rtemsbsd/rtems/rtems-kernel-kvm-symbols.c",

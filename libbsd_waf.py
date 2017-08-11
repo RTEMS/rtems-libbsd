@@ -130,7 +130,7 @@ def build(bld):
     for headers in header_build_copy_paths:
         target = os.path.join("build-include", headers[2])
         start_dir = bld.path.find_dir(headers[0])
-        for header in start_dir.ant_glob(os.path.join("**/", headers[1])):
+        for header in start_dir.ant_glob(headers[1]):
             relsourcepath = header.path_from(start_dir)
             targetheader = os.path.join(target, relsourcepath)
             bld(features = 'subst',
@@ -1481,20 +1481,20 @@ def build(bld):
 
     # Installs.    
     bld.install_files("${PREFIX}/" + rtems.arch_bsp_lib_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), ["libbsd.a"])
-    header_paths = [('rtemsbsd/include', '*.h', ''),
+    header_paths = [('rtemsbsd/include', '**/*.h', ''),
                      ('rtemsbsd/mghttpd', 'mongoose.h', 'mghttpd'),
-                     ('freebsd/include', '*.h', ''),
-                     ('freebsd/sys/bsm', '*.h', 'bsm'),
-                     ('freebsd/sys/cam', '*.h', 'cam'),
-                     ('freebsd/sys/net', '*.h', 'net'),
-                     ('freebsd/sys/net80211', '*.h', 'net80211'),
-                     ('freebsd/sys/netinet', '*.h', 'netinet'),
-                     ('freebsd/sys/netinet6', '*.h', 'netinet6'),
-                     ('freebsd/sys/netipsec', '*.h', 'netipsec'),
-                     ('freebsd/sys/rpc', '*.h', 'rpc'),
-                     ('freebsd/sys/sys', '*.h', 'sys'),
-                     ('freebsd/sys/vm', '*.h', 'vm'),
-                     ('freebsd/sys/dev/mii', '*.h', 'dev/mii'),
+                     ('freebsd/include', '**/*.h', ''),
+                     ('freebsd/sys/bsm', '**/*.h', 'bsm'),
+                     ('freebsd/sys/cam', '**/*.h', 'cam'),
+                     ('freebsd/sys/net', '**/*.h', 'net'),
+                     ('freebsd/sys/net80211', '**/*.h', 'net80211'),
+                     ('freebsd/sys/netinet', '**/*.h', 'netinet'),
+                     ('freebsd/sys/netinet6', '**/*.h', 'netinet6'),
+                     ('freebsd/sys/netipsec', '**/*.h', 'netipsec'),
+                     ('freebsd/sys/rpc', '**/*.h', 'rpc'),
+                     ('freebsd/sys/sys', '**/*.h', 'sys'),
+                     ('freebsd/sys/vm', '**/*.h', 'vm'),
+                     ('freebsd/sys/dev/mii', '**/*.h', 'dev/mii'),
                      ('mDNSResponder/mDNSCore', 'mDNSDebug.h', ''),
                      ('mDNSResponder/mDNSCore', 'mDNSEmbeddedAPI.h', ''),
                      ('mDNSResponder/mDNSShared', 'dns_sd.h', ''),
@@ -1503,7 +1503,7 @@ def build(bld):
         ipath = os.path.join(rtems.arch_bsp_include_path(bld.env.RTEMS_VERSION, bld.env.RTEMS_ARCH_BSP), headers[2])
         start_dir = bld.path.find_dir(headers[0])
         bld.install_files("${PREFIX}/" + ipath,
-                          start_dir.ant_glob("**/" + headers[1]),
+                          start_dir.ant_glob(headers[1]),
                           cwd = start_dir,
                           relative_trick = True)
 

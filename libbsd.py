@@ -1220,6 +1220,7 @@ def dev_net(mm):
     mod = builder.Module('dev_net')
     mod.addKernelSpaceHeaderFiles(
         [
+            'sys/dev/ffec/if_ffecreg.h',
             'sys/dev/mii/mii.h',
             'sys/dev/mii/mii_bitbang.h',
             'sys/dev/mii/miivar.h',
@@ -1253,6 +1254,7 @@ def dev_net(mm):
     )
     mod.addKernelSpaceSourceFiles(
         [
+            'sys/dev/ffec/if_ffec.c',
             'sys/dev/mii/mii.c',
             'sys/dev/mii/mii_bitbang.c',
             'sys/dev/mii/mii_physubr.c',

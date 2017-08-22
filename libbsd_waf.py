@@ -1616,6 +1616,7 @@ def build(bld):
               'freebsd/sys/dev/evdev/uinput.c',
               'freebsd/sys/dev/fdt/fdt_common.c',
               'freebsd/sys/dev/fdt/simplebus.c',
+              'freebsd/sys/dev/ffec/if_ffec.c',
               'freebsd/sys/dev/fxp/if_fxp.c',
               'freebsd/sys/dev/kbd/kbd.c',
               'freebsd/sys/dev/led/led.c',

@@ -1464,7 +1464,11 @@ ffec_attach(device_t dev)
 	if (sc->phy_conn_type == PHY_CONN_UNKNOWN) {
 		device_printf(sc->dev, "No valid 'phy-mode' "
 		    "property found in FDT data for device.\n");
+#ifndef __rtems__
 		error = ENOATTR;
+#else /* __rtems__ */
+		error = ENXIO;
+#endif /* __rtems__ */
 		goto out;
 	}
 

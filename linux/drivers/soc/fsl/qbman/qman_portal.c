@@ -422,6 +422,62 @@ is_dequeue_enabled(const struct device_node *dn)
 	return (len <= 0 || strcmp(dequeue, "disabled") != 0);
 }
 
+static void
+do_init_pcfg(struct device_node *dn, struct qm_portal_config *pcfg,
+    int cpu_count)
+{
+	struct qman_portal *portal;
+	struct resource res;
+	int ret;
+	u32 val;
+
+	ret = of_address_to_resource(dn, 0, &res);
+	if (ret != 0)
+		panic("qman: no portal CE address");
+	pcfg->addr_virt[0] = (__iomem void *)
+	    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
+	BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
+	    (uintptr_t)&qoriq_qman_portal[0][0]);
+	BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
+	    (uintptr_t)&qoriq_qman_portal[1][0]);
+
+	ret = of_address_to_resource(dn, 1, &res);
+	if (ret != 0)
+		panic("qman: no portal CI address");
+	pcfg->addr_virt[1] = (__iomem void *)
+	    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
+	BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
+	    (uintptr_t)&qoriq_qman_portal[1][0]);
+	BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
+	    (uintptr_t)&qoriq_qman_portal[2][0]);
+
+	ret = of_property_read_u32(dn, "cell-index", &val);
+	if (ret != 0)
+		panic("qman: no cell-index");
+	pcfg->channel = val;
+
+	pcfg->irq = of_irq_to_resource(dn, 0, NULL);
+	if (pcfg->irq == NO_IRQ)
+		panic("qman: no portal interrupt");
+
+	if (val < cpu_count) {
+		pcfg->cpu = val;
+
+		if (is_dequeue_enabled(dn)) {
+			pcfg->pools = qm_get_pools_sdqcr();
+		}
+
+		portal = init_pcfg(pcfg);
+		if (portal == NULL)
+			panic("qman: cannot create portal");
+
+		qman_portal_update_sdest(pcfg, val);
+	} else {
+		pcfg->cpu = -1;
+		list_add_tail(&pcfg->node, &qman_free_portals);
+	}
+}
+
 void
 qman_sysinit_portals(void)
 {
@@ -430,7 +486,6 @@ qman_sysinit_portals(void)
 	const char *name;
 	int cpu_count = (int)rtems_get_processor_count();
 	int i;
-	int ret;
 	int node;
 	int parent;
 
@@ -453,56 +508,11 @@ qman_sysinit_portals(void)
 	qoriq_clear_ci_portal(&qoriq_qman_portal[1][0],
 	    sizeof(qoriq_qman_portal[1]));
 
-	for (i = 0; node >= 0 && i < MAX_QMAN_PORTALS; ++i) {
-		struct qm_portal_config *pcfg = &qman_configs[i];
-		struct qman_portal *portal;
-		struct resource res;
-		u32 val;
-
-		ret = of_address_to_resource(&dn, 0, &res);
-		if (ret != 0)
-			panic("qman: no portal CE address");
-		pcfg->addr_virt[0] = (__iomem void *)
-		    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
-		    (uintptr_t)&qoriq_qman_portal[0][0]);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
-		    (uintptr_t)&qoriq_qman_portal[1][0]);
-
-		ret = of_address_to_resource(&dn, 1, &res);
-		if (ret != 0)
-			panic("qman: no portal CI address");
-		pcfg->addr_virt[1] = (__iomem void *)
-		    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
-		    (uintptr_t)&qoriq_qman_portal[1][0]);
-		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
-		    (uintptr_t)&qoriq_qman_portal[2][0]);
-
-		ret = of_property_read_u32(&dn, "cell-index", &val);
-		if (ret != 0)
-			panic("qman: no cell-index");
-		pcfg->channel = val;
-
-		pcfg->irq = of_irq_to_resource(&dn, 0, NULL);
-		if (pcfg->irq == NO_IRQ)
-			panic("qman: no portal interrupt");
-
-		if (val < cpu_count) {
-			pcfg->cpu = val;
-
-			if (is_dequeue_enabled(&dn)) {
-				pcfg->pools = qm_get_pools_sdqcr();
-			}
-
-			portal = init_pcfg(pcfg);
-			if (portal == NULL)
-				panic("qman: cannot create portal");
-
-			qman_portal_update_sdest(pcfg, val);
-		} else {
-			pcfg->cpu = -1;
-			list_add_tail(&pcfg->node, &qman_free_portals);
+	i = 0;
+	while (node >= 0 && i < MAX_QMAN_PORTALS) {
+		if (fdt_node_check_compatible(fdt, node, name) == 0) {
+			do_init_pcfg(&dn, &qman_configs[i], cpu_count);
+			++i;
 		}
 
 		node = fdt_next_subnode(fdt, node);

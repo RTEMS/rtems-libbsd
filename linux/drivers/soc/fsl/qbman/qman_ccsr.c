@@ -447,7 +447,7 @@ RESERVEDMEM_OF_DECLARE(qman_pfdr, "fsl,qman-pfdr", qman_pfdr);
 static DPAA_NOCACHENOLOAD_ALIGNED_REGION(fqd, 4194304);
 #define fqd_a ((uintptr_t)&fqd[0])
 #define fqd_sz sizeof(fqd)
-static DPAA_NOCACHENOLOAD_ALIGNED_REGION(pfdr, 33554432);
+static DPAA_NOCACHENOLOAD_ALIGNED_REGION(pfdr, 16777216);
 #define pfdr_a ((uintptr_t)&pfdr[0])
 #define pfdr_sz sizeof(pfdr)
 #endif /* __rtems__ */

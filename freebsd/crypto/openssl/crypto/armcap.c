@@ -9,6 +9,7 @@
 
 #include "arm_arch.h"
 
+#if defined(__rtems__) && defined(__arm__)
 unsigned int OPENSSL_armcap_P = 0;
 
 #if __ARM_MAX_ARCH__<7
@@ -164,3 +165,4 @@ void OPENSSL_cpuid_setup(void)
     sigprocmask(SIG_SETMASK, &oset, NULL);
 }
 #endif
+#endif /* __rtems__ */

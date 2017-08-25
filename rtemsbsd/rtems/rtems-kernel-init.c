@@ -51,6 +51,8 @@
 #include <sys/stat.h>
 #include <sys/kbio.h>
 
+#include <limits.h>
+
 #include <dev/kbd/kbdreg.h>
 
 #include <net80211/ieee80211_freebsd.h>

@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <rtems/telnetd.h>
 #include <rtems/ftpd.h>

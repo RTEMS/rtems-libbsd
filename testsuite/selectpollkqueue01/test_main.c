@@ -1149,7 +1149,6 @@ static void
 test_pipe_close(test_context *ctx)
 {
 	int rfd = ctx->pfd[0];
-	int wfd = ctx->pfd[1];
 	struct pollfd pfd = {
 		.fd = rfd,
 		.events = POLLIN

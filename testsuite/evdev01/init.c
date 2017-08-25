@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <dev/evdev/input.h>
@@ -293,7 +294,7 @@ check_device_type(char* device)
 	return ret;
 }
 
-static int
+static void
 scan_for_devices(void)
 {
 	int device_count;
@@ -318,7 +319,7 @@ evdev_scan_task(rtems_task_argument arg)
 {
 	rtems_status_code sc;
 	struct evdev_test_message msg;
-	uint32_t size;
+	size_t size;
 
 	otask_active = true;
 	kill_otask = false;
@@ -350,7 +351,7 @@ evdev_keyboard_task(rtems_task_argument arg)
 	struct input_event buffer[32];
 	rtems_status_code sc;
 	struct evdev_test_message msg;
-	uint32_t size;
+	size_t size;
 
 	ktask_active = true;
 	kill_ktask = false;
@@ -433,7 +434,7 @@ evdev_mouse_task(rtems_task_argument arg)
 	struct input_event buffer[32];
 	rtems_status_code sc;
 	struct evdev_test_message msg;
-	uint32_t size;
+	size_t size;
 
 	mtask_active = true;
 	kill_mtask = false;
@@ -510,7 +511,7 @@ evdev_touch_task(rtems_task_argument arg)
 	struct input_event buffer[32];
 	rtems_status_code sc;
 	struct evdev_test_message msg;
-	uint32_t size;
+	size_t size;
 
 	ttask_active = true;
 	kill_ttask = false;
@@ -648,16 +649,16 @@ Init(rtems_task_argument arg)
 	);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(oid, evdev_scan_task, NULL);
+	sc = rtems_task_start(oid, evdev_scan_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(kid, evdev_keyboard_task, NULL);
+	sc = rtems_task_start(kid, evdev_keyboard_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(mid, evdev_mouse_task, NULL);
+	sc = rtems_task_start(mid, evdev_mouse_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(tid, evdev_touch_task, NULL);
+	sc = rtems_task_start(tid, evdev_touch_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
 	sc = rtems_bsd_initialize();

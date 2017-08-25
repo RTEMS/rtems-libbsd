@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 
@@ -56,7 +57,8 @@ static void
 usb_serial_read_task(rtems_task_argument arg)
 {
 	struct usb_test_message msg;
-	uint32_t size, end_time;
+	size_t size;
+	uint32_t end_time;
 	int bytes, index;
 
 	rtask_active = true;
@@ -90,7 +92,7 @@ static void
 usb_serial_write_task(rtems_task_argument arg)
 {
 	struct usb_test_message msg;
-	uint32_t size;
+	size_t size;
 	int bytes, write_len, count = 0;
 
 	wtask_active = true;
@@ -121,7 +123,7 @@ usb_serial_open_task(rtems_task_argument arg)
 	rtems_status_code sc;
 	struct usb_test_message msg;
 	struct termios t;
-	uint32_t size;
+	size_t size;
 	int fd, iret;
 
 	fd = -2;
@@ -173,7 +175,6 @@ Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;
 	struct usb_test_message msg;
-	int ii;
 
 	(void) arg;
 	puts("*** " TEST_NAME " TEST ***");
@@ -235,13 +236,13 @@ Init(rtems_task_argument arg)
 	);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(rid, usb_serial_read_task, NULL);
+	sc = rtems_task_start(rid, usb_serial_read_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(oid, usb_serial_open_task, NULL);
+	sc = rtems_task_start(oid, usb_serial_open_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(wid, usb_serial_write_task, NULL);
+	sc = rtems_task_start(wid, usb_serial_write_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
 	sc = rtems_bsd_initialize();

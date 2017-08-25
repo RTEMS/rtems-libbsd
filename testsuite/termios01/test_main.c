@@ -10,8 +10,10 @@
 #define TTYDEFCHARS
 #include <sys/ttydefaults.h>
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -576,8 +578,6 @@ static void
 test_main(void)
 {
   int                       rc;
-  rtems_status_code         sc;
-  rtems_device_major_number registered;
   int                       test;
   struct termios            t;
   int index = 0;

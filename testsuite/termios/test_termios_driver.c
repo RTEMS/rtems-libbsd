@@ -13,6 +13,7 @@
 #include <sys/tty.h>
 #include <sys/serial.h>
 #include <assert.h>
+#include <string.h>
 #include <rtems/seterr.h>
 
 #include "../termios/test_termios_driver.h"

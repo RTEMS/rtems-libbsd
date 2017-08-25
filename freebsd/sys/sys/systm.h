@@ -44,6 +44,9 @@
 #include <sys/cdefs.h>
 #include <sys/queue.h>
 #include <sys/stdint.h>		/* for people using printf mainly */
+#ifdef __rtems__
+#include <string.h>
+#endif /* __rtems__ */
 
 __NULLABILITY_PRAGMA_PUSH
 

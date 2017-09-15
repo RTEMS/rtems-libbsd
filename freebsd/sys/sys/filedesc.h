@@ -192,19 +192,20 @@ static inline int
 falloc_caps(struct thread *td, struct file **resultfp, int *resultfd,
     int flags, struct filecaps *fcaps)
 {
-	rtems_libio_t *iop = rtems_libio_allocate();
+	rtems_libio_t *iop;
 
-	(void) td;
-	(void) flags;
-	(void) fcaps;
+	(void)td;
+	(void)flags;
+	(void)fcaps;
 
+	iop = rtems_libio_allocate();
 	*resultfp = rtems_bsd_iop_to_fp(iop);
 
 	if (iop != NULL) {
+		rtems_libio_iop_hold(iop);
 		iop->pathinfo.mt_entry = &rtems_filesystem_null_mt_entry;
 		rtems_filesystem_location_add_to_mt_entry(&iop->pathinfo);
 		*resultfd = rtems_libio_iop_to_descriptor(iop);
-
 		return (0);
 	} else {
 		return (ENFILE);
@@ -263,17 +264,14 @@ static inline int
 fget_unlocked(struct filedesc *fdp, int fd, cap_rights_t *needrightsp,
     struct file **fpp, seq_t *seqp)
 {
+	struct file *fp;
+
 	(void)fdp;
 	(void)needrightsp;
 	(void)seqp;
-
-	*fpp = rtems_bsd_get_file(fd);
-
-	if (*fpp != NULL) {
-		return (0);
-	} else {
-		return (EBADF);
-	}
+	fp = rtems_bsd_get_file(fd);
+	*fpp = fp;
+	return (fp != NULL ? 0 : EBADF);
 }
 #endif /* __rtems__ */
 

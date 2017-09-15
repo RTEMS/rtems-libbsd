@@ -1614,6 +1614,9 @@ pollrescan(struct thread *td)
 		 * POLLERR if appropriate.
 		 */
 		fd->revents = fo_poll(fp, fd->events, td->td_ucred, td);
+#ifdef __rtems__
+		rtems_libio_iop_drop(&fp->f_io);
+#endif /* __rtems__ */
 		if (fd->revents != 0)
 			n++;
 	}
@@ -1671,7 +1674,7 @@ pollscan(td, fds, nfd)
 #ifndef __rtems__
 		if (fds->fd > fdp->fd_lastfile) {
 #else /* __rtems__ */
-		if (fds->fd >= rtems_libio_number_iops) {
+		if ((uint32_t)fds->fd >= rtems_libio_number_iops) {
 #endif /* __rtems__ */
 			fds->revents = POLLNVAL;
 			n++;
@@ -1701,6 +1704,9 @@ pollscan(td, fds, nfd)
 				selfdalloc(td, fds);
 				fds->revents = fo_poll(fp, fds->events,
 				    td->td_ucred, td);
+#ifdef __rtems__
+				rtems_libio_iop_drop(&fp->f_io);
+#endif /* __rtems__ */
 				/*
 				 * POSIX requires POLLOUT to be never
 				 * set simultaneously with POLLHUP.

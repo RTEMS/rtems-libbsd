@@ -330,11 +330,11 @@ struct file *rtems_bsd_get_file(int fd);
 static inline int
 rtems_bsd_do_fget(int fd, struct file **fpp)
 {
-	struct file *fp = rtems_bsd_get_file(fd);
+	struct file *fp;
 
+	fp = rtems_bsd_get_file(fd);
 	*fpp = fp;
-
-	return fp != NULL ? 0 : EBADF;
+	return (fp != NULL ? 0 : EBADF);
 }
 
 #define	fget(td, fd, rights, fpp)	rtems_bsd_do_fget(fd, fpp)
@@ -374,14 +374,12 @@ static inline void
 finit(struct file *fp, u_int fflag, short type, void *data,
     const rtems_filesystem_file_handlers_r *ops)
 {
-	rtems_filesystem_location_info_t *pathinfo = &fp->f_io.pathinfo;
 
-	(void) type;
-
+	(void)type;
 	fp->f_data = data;
-	fp->f_io.flags |= rtems_bsd_fflag_to_libio_flags(fflag);
-
-	pathinfo->handlers = ops;
+	fp->f_io.pathinfo.handlers = ops;
+	rtems_libio_iop_flags_set(&fp->f_io, LIBIO_FLAGS_OPEN |
+	    rtems_bsd_fflag_to_libio_flags(fflag));
 }
 #endif /* __rtems__ */
 int fgetvp(struct thread *td, int fd, cap_rights_t *rightsp,
@@ -408,7 +406,14 @@ _fnoop(void)
 #define	fdrop(fp, td)							\
 	(refcount_release(&(fp)->f_count) ? _fdrop((fp), (td)) : _fnoop())
 #else /* __rtems__ */
-#define	fdrop(fp, td) do { } while (0)
+static inline void
+rtems_bsd_fdrop(struct file *fp)
+{
+
+	rtems_libio_iop_drop(&fp->f_io);
+}
+
+#define	fdrop(fp, td) rtems_bsd_fdrop(fp)
 #endif /* __rtems__ */
 
 #ifndef __rtems__

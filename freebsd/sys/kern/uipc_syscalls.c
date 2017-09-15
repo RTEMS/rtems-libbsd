@@ -126,11 +126,16 @@ rtems_bsd_getsock(int fd, struct file **fpp, u_int *fflagp)
 	int error;
 
 	if ((uint32_t) fd < rtems_libio_number_iops) {
+		unsigned int flags;
+
 		fp = rtems_bsd_fd_to_fp(fd);
-		if ((fp->f_io.flags & LIBIO_FLAGS_OPEN) != LIBIO_FLAGS_OPEN) {
+		flags = rtems_libio_iop_hold(&fp->f_io);
+		if ((flags & LIBIO_FLAGS_OPEN) == 0) {
+			rtems_libio_iop_drop(&fp->f_io);
 			fp = NULL;
 			error = EBADF;
 		} else if (fp->f_io.pathinfo.handlers != &socketops) {
+			rtems_libio_iop_drop(&fp->f_io);
 			fp = NULL;
 			error = ENOTSOCK;
 		} else {

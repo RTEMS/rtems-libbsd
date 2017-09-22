@@ -161,6 +161,7 @@ def rtems(mm):
             'sys/dev/smc/if_smc_nexus.c',
             'sys/dev/ffec/if_ffec_mcf548x.c',
             'sys/dev/atsam/if_atsam.c',
+            'sys/dev/atsam/if_atsam_media.c',
             'sys/dev/dw_mmc/dw_mmc.c',
             'sys/fs/devfs/devfs_devs.c',
             'sys/net/if_ppp.c',

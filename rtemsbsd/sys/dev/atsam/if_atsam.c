@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2016 - 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -64,8 +64,8 @@
 #include <libchip/include/gmacd.h>
 #include <libchip/include/pio.h>
 
-#include <rtems/rtems_mii_ioctl.h>
 #include <rtems/bsd/local/miibus_if.h>
+#include <rtems/bsd/if_atsam.h>
 
 /*
  * Number of interfaces supported by the driver
@@ -130,7 +130,6 @@
 #define TXBUF_COUNT 64
 #define IGNORE_RX_ERR false
 
-
 /** The PINs for GMAC */
 static const Pin gmacPins[] = { BOARD_GMAC_RUN_PINS };
 
@@ -171,7 +170,15 @@ typedef struct if_atsam_softc {
 	struct callout tick_ch;
 
 	/*
-	 * mii bus
+	 * Settings for a fixed speed.
+	 */
+	bool fixed_speed;
+	uint32_t media;
+	uint32_t duplex;
+	struct ifmedia ifmedia;
+
+	/*
+	 * MII bus (only used if no fixed speed)
 	 */
 	device_t miibus;
 	uint8_t link_speed;
@@ -285,7 +292,6 @@ static struct mbuf *if_atsam_new_mbuf(struct ifnet *ifp)
 	return (m);
 }
 
-
 static uint8_t if_atsam_wait_phy(Gmac *pHw, uint32_t retry)
 {
 	volatile uint32_t retry_count = 0;
@@ -331,35 +337,6 @@ if_atsam_read_phy(Gmac *pHw,
 }
 
 
-static uint8_t
-if_atsam_init_phy(if_atsam_gmac *gmac_inst, uint32_t mck,
-    const Pin *pResetPins, uint32_t nbResetPins, const Pin *pGmacPins,
-    uint32_t nbGmacPins)
-{
-	uint8_t rc = 1;
-	Gmac *pHw = gmac_inst->gGmacd.pHw;
-
-	/* Perform RESET */
-	if (pResetPins) {
-		/* Configure PINS */
-		PIO_Configure(pResetPins, nbResetPins);
-		PIO_Clear(pResetPins);
-		rtems_task_wake_after(1);
-		PIO_Set(pResetPins);
-	}
-	/* Configure GMAC runtime pins */
-	if (rc) {
-		PIO_Configure(pGmacPins, nbGmacPins);
-		rc = GMAC_SetMdcClock(pHw, mck);
-
-		if (!rc) {
-			return (0);
-		}
-	}
-	return (rc);
-}
-
-
 static int
 if_atsam_miibus_readreg(device_t dev, int phy, int reg)
 {
@@ -388,6 +365,35 @@ if_atsam_miibus_writereg(device_t dev, int phy, int reg, int data)
 	IF_ATSAM_UNLOCK(sc);
 
 	return 0;
+}
+
+
+static uint8_t
+if_atsam_init_phy(if_atsam_gmac *gmac_inst, uint32_t mck,
+    const Pin *pResetPins, uint32_t nbResetPins, const Pin *pGmacPins,
+    uint32_t nbGmacPins)
+{
+	uint8_t rc = 1;
+	Gmac *pHw = gmac_inst->gGmacd.pHw;
+
+	/* Perform RESET */
+	if (pResetPins) {
+		/* Configure PINS */
+		PIO_Configure(pResetPins, nbResetPins);
+		PIO_Clear(pResetPins);
+		rtems_task_wake_after(1);
+		PIO_Set(pResetPins);
+	}
+	/* Configure GMAC runtime pins */
+	if (rc) {
+		PIO_Configure(pGmacPins, nbGmacPins);
+		rc = GMAC_SetMdcClock(pHw, mck);
+
+		if (!rc) {
+			return (0);
+		}
+	}
+	return (rc);
 }
 
 
@@ -821,6 +827,35 @@ static void if_atsam_enet_start(struct ifnet *ifp)
 }
 
 
+static uint8_t if_atsam_get_gmac_linkspeed_from_media(uint32_t media_subtype)
+{
+	switch (media_subtype) {
+	case IFM_10_T:
+		return GMAC_SPEED_10M;
+		break;
+	case IFM_100_TX:
+		return GMAC_SPEED_100M;
+		break;
+	case IFM_1000_T:
+		return GMAC_SPEED_1000M;
+		break;
+	default:
+		return 0xFF;
+		break;
+	}
+}
+
+
+static uint8_t if_atsam_get_gmac_duplex_from_media(uint32_t media_options)
+{
+	if (media_options & IFM_FDX) {
+		return GMAC_DUPLEX_FULL;
+	} else {
+		return GMAC_DUPLEX_HALF;
+	}
+}
+
+
 static void if_atsam_miibus_statchg(device_t dev)
 {
 	uint8_t link_speed = GMAC_SPEED_100M;
@@ -828,28 +863,16 @@ static void if_atsam_miibus_statchg(device_t dev)
 	if_atsam_softc *sc = device_get_softc(dev);
 	struct mii_data *mii = device_get_softc(sc->miibus);
 
+	if(sc->fixed_speed)
+		return;
+
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
-	if (IFM_OPTIONS(mii->mii_media_active) & IFM_FDX) {
-		link_duplex = GMAC_DUPLEX_FULL;
-	} else {
-		link_duplex = GMAC_DUPLEX_HALF;
-	}
+	link_duplex = if_atsam_get_gmac_duplex_from_media(
+	    IFM_OPTIONS(mii->mii_media_active));
 
-	switch (IFM_SUBTYPE(mii->mii_media_active)) {
-	case IFM_10_T:
-		link_speed = GMAC_SPEED_10M;
-		break;
-	case IFM_100_TX:
-		link_speed = GMAC_SPEED_100M;
-		break;
-	case IFM_1000_T:
-		link_speed = GMAC_SPEED_1000M;
-		break;
-	default:
-		/* FIXME: What to do in that case? */
-		break;
-	}
+	link_speed = if_atsam_get_gmac_linkspeed_from_media(
+	    IFM_SUBTYPE(mii->mii_media_active));
 
 	if (sc->link_speed != link_speed || sc->link_duplex != link_duplex) {
 		GMAC_SetLinkSpeed(pHw, link_speed, link_duplex);
@@ -866,7 +889,7 @@ if_atsam_mii_ifmedia_upd(struct ifnet *ifp)
 	struct mii_data *mii;
 
 	sc = ifp->if_softc;
-	if (sc->miibus == NULL)
+	if (sc->fixed_speed || sc->miibus == NULL)
 		return (ENXIO);
 
 	mii = device_get_softc(sc->miibus);
@@ -881,13 +904,31 @@ if_atsam_mii_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 	struct mii_data *mii;
 
 	sc = ifp->if_softc;
-	if (sc->miibus == NULL)
+	if (sc->fixed_speed || sc->miibus == NULL)
 		return;
 
 	mii = device_get_softc(sc->miibus);
 	mii_pollstat(mii);
 	ifmr->ifm_active = mii->mii_media_active;
 	ifmr->ifm_status = mii->mii_media_status;
+}
+
+
+static int
+if_atsam_media_change(struct ifnet *ifp __unused)
+{
+	/* Do nothing. */
+	return (0);
+}
+
+
+static void
+if_atsam_media_status(struct ifnet *ifp, struct ifmediareq *imr)
+{
+	if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
+
+	imr->ifm_status = IFM_AVALID | IFM_ACTIVE;
+	imr->ifm_active = IFM_ETHER | sc->media | sc->duplex;
 }
 
 
@@ -900,7 +941,9 @@ if_atsam_tick(void *context)
 
 	IF_ATSAM_UNLOCK(sc);
 
-	mii_tick(device_get_softc(sc->miibus));
+	if (!sc->fixed_speed) {
+		mii_tick(device_get_softc(sc->miibus));
+	}
 	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
 }
 
@@ -1285,13 +1328,17 @@ static void if_atsam_promiscuous_mode(if_atsam_softc *sc, bool enable)
 static int
 if_atsam_mediaioctl(if_atsam_softc *sc, struct ifreq *ifr, u_long command)
 {
-	struct mii_data *mii;
+	if (sc->fixed_speed) {
+		return ifmedia_ioctl(sc->ifp, ifr, &sc->ifmedia, command);
+	} else {
+		struct mii_data *mii;
 
-	if (sc->miibus == NULL)
-		return (EINVAL);
+		if (sc->miibus == NULL)
+			return (EINVAL);
 
-	mii = device_get_softc(sc->miibus);
-	return (ifmedia_ioctl(sc->ifp, ifr, &mii->mii_media, command));
+		mii = device_get_softc(sc->miibus);
+		return (ifmedia_ioctl(sc->ifp, ifr, &mii->mii_media, command));
+	}
 }
 
 
@@ -1353,6 +1400,8 @@ static int if_atsam_driver_attach(device_t dev)
 	mtx_init(&sc->mtx, device_get_nameunit(sc->dev), MTX_NETWORK_LOCK,
 	    MTX_DEF);
 
+	rtems_bsd_if_atsam_get_if_media_props(device_get_name(sc->dev), unit,
+	    &sc->fixed_speed, &sc->media, &sc->duplex);
 	rtems_bsd_get_mac_address(device_get_name(sc->dev), unit, eaddr);
 
 	sc->Gmac_inst.retries = MDIO_RETRIES;
@@ -1384,9 +1433,24 @@ static int if_atsam_driver_attach(device_t dev)
 	 * MII Bus
 	 */
 	callout_init_mtx(&sc->tick_ch, &sc->mtx, CALLOUT_RETURNUNLOCKED);
-	mii_attach(dev, &sc->miibus, ifp,
-	    if_atsam_mii_ifmedia_upd, if_atsam_mii_ifmedia_sts, BMSR_DEFCAPMASK,
-	    MDIO_PHY, MII_OFFSET_ANY, 0);
+	if (!sc->fixed_speed) {
+		mii_attach(dev, &sc->miibus, ifp, if_atsam_mii_ifmedia_upd,
+		    if_atsam_mii_ifmedia_sts, BMSR_DEFCAPMASK,
+		    MDIO_PHY, MII_OFFSET_ANY, 0);
+	} else {
+		ifmedia_init(&sc->ifmedia, 0, if_atsam_media_change,
+		    if_atsam_media_status);
+		ifmedia_add(&sc->ifmedia, IFM_ETHER | sc->media
+		    | sc->duplex, 0, NULL);
+		ifmedia_set(&sc->ifmedia, IFM_ETHER | sc->media
+		    | sc->duplex);
+
+		GMAC_SetLinkSpeed(sc->Gmac_inst.gGmacd.pHw,
+		    if_atsam_get_gmac_linkspeed_from_media(sc->media),
+		    if_atsam_get_gmac_duplex_from_media(sc->duplex));
+
+		if_link_state_change(sc->ifp, LINK_STATE_UP);
+	}
 
 	/*
 	 * Set up network interface values
@@ -1443,9 +1507,9 @@ static driver_t if_atsam_nexus_driver = {
 
 static devclass_t if_atsam_devclass;
 DRIVER_MODULE(if_atsam, nexus, if_atsam_nexus_driver, if_atsam_devclass, 0, 0);
-MODULE_DEPEND(if_atsam, miibus, 1, 1, 1);
 MODULE_DEPEND(if_atsam, nexus, 1, 1, 1);
 MODULE_DEPEND(if_atsam, ether, 1, 1, 1);
+MODULE_DEPEND(if_atsam, miibus, 1, 1, 1);
 DRIVER_MODULE(miibus, if_atsam, miibus_driver, miibus_devclass, NULL, NULL);
 
 #endif /* LIBBSP_ARM_ATSAM_BSP_H */

@@ -2222,6 +2222,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-routes.c',
               'rtemsbsd/rtems/syslog.c',
               'rtemsbsd/sys/dev/atsam/if_atsam.c',
+              'rtemsbsd/sys/dev/atsam/if_atsam_media.c',
               'rtemsbsd/sys/dev/dw_mmc/dw_mmc.c',
               'rtemsbsd/sys/dev/ffec/if_ffec_mcf548x.c',
               'rtemsbsd/sys/dev/input/touchscreen/tsc_lpc32xx.c',

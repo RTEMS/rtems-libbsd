@@ -47,6 +47,7 @@
 #include <sys/kernel.h>
 #include <sys/module.h>
 #include <sys/bus.h>
+#include <sys/sysctl.h>
 
 #include <net/if.h>
 #include <net/if_var.h>
@@ -122,8 +123,6 @@
 
 #define WATCHDOG_TIMEOUT			5
 
-#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
-
 /* FIXME: Make these configurable */
 #define MDIO_RETRIES 10
 #define MDIO_PHY MII_PHY_ANY
@@ -169,6 +168,7 @@ typedef struct if_atsam_softc {
 	size_t amount_rx_buf;
 	size_t amount_tx_buf;
 	ring_buffer tx_ring;
+	struct callout tick_ch;
 
 	/*
 	 * mii bus
@@ -176,22 +176,69 @@ typedef struct if_atsam_softc {
 	device_t miibus;
 	uint8_t link_speed;
 	uint8_t link_duplex;
-	struct callout mii_tick_ch;
 
 	/*
 	 * Statistics
 	 */
-	unsigned rx_overrun_errors;
-	unsigned rx_interrupts;
-	unsigned tx_complete_int;
-	unsigned tx_tur_errors;
-	unsigned tx_rlex_errors;
-	unsigned tx_tfc_errors;
-	unsigned tx_hresp_errors;
-	unsigned tx_interrupts;
+	struct if_atsam_stats {
+		/* Software */
+		uint32_t rx_overrun_errors;
+		uint32_t rx_interrupts;
+		uint32_t tx_complete_int;
+		uint32_t tx_tur_errors;
+		uint32_t tx_rlex_errors;
+		uint32_t tx_tfc_errors;
+		uint32_t tx_hresp_errors;
+		uint32_t tx_interrupts;
+
+		/* Hardware */
+		uint64_t octets_transm;
+		uint32_t frames_transm;
+		uint32_t broadcast_frames_transm;
+		uint32_t multicast_frames_transm;
+		uint32_t pause_frames_transm;
+		uint32_t frames_64_byte_transm;
+		uint32_t frames_65_to_127_byte_transm;
+		uint32_t frames_128_to_255_byte_transm;
+		uint32_t frames_256_to_511_byte_transm;
+		uint32_t frames_512_to_1023_byte_transm;
+		uint32_t frames_1024_to_1518_byte_transm;
+		uint32_t frames_greater_1518_byte_transm;
+		uint32_t transmit_underruns;
+		uint32_t single_collision_frames;
+		uint32_t multiple_collision_frames;
+		uint32_t excessive_collisions;
+		uint32_t late_collisions;
+		uint32_t deferred_transmission_frames;
+		uint32_t carrier_sense_errors;
+		uint64_t octets_rec;
+		uint32_t frames_rec;
+		uint32_t broadcast_frames_rec;
+		uint32_t multicast_frames_rec;
+		uint32_t pause_frames_rec;
+		uint32_t frames_64_byte_rec;
+		uint32_t frames_65_to_127_byte_rec;
+		uint32_t frames_128_to_255_byte_rec;
+		uint32_t frames_256_to_511_byte_rec;
+		uint32_t frames_512_to_1023_byte_rec;
+		uint32_t frames_1024_to_1518_byte_rec;
+		uint32_t frames_1519_to_maximum_byte_rec;
+		uint32_t undersize_frames_rec;
+		uint32_t oversize_frames_rec;
+		uint32_t jabbers_rec;
+		uint32_t frame_check_sequence_errors;
+		uint32_t length_field_frame_errors;
+		uint32_t receive_symbol_errors;
+		uint32_t alignment_errors;
+		uint32_t receive_resource_errors;
+		uint32_t receive_overrun;
+		uint32_t ip_header_checksum_errors;
+		uint32_t tcp_checksum_errors;
+		uint32_t udp_checksum_errors;
+	} stats;
 } if_atsam_softc;
 
-static void if_atsam_watchdog(void *arg);
+static void if_atsam_poll_hw_stats(struct if_atsam_softc *sc);
 
 #define IF_ATSAM_LOCK(sc) mtx_lock(&(sc)->mtx)
 
@@ -360,7 +407,7 @@ static void if_atsam_interrupt_handler(void *arg)
 
 	/* Check receive interrupts */
 	if ((irq_status_val & GMAC_IER_ROVR) != 0) {
-		++sc->rx_overrun_errors;
+		++sc->stats.rx_overrun_errors;
 		rx_event = ATSAMV7_ETH_RX_EVENT_INTERRUPT;
 	}
 	if ((irq_status_val & GMAC_IER_RCOMP) != 0) {
@@ -368,34 +415,34 @@ static void if_atsam_interrupt_handler(void *arg)
 	}
 	/* Send events to receive task and switch off rx interrupts */
 	if (rx_event != 0) {
-		++sc->rx_interrupts;
+		++sc->stats.rx_interrupts;
 		/* Erase the interrupts for RX completion and errors */
 		GMAC_DisableIt(pHw, GMAC_IER_RCOMP | GMAC_IER_ROVR, 0);
 		(void)if_atsam_event_send(sc->rx_daemon_tid, rx_event);
 	}
 	if ((irq_status_val & GMAC_IER_TUR) != 0) {
-		++sc->tx_tur_errors;
+		++sc->stats.tx_tur_errors;
 		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
 	}
 	if ((irq_status_val & GMAC_IER_RLEX) != 0) {
-		++sc->tx_rlex_errors;
+		++sc->stats.tx_rlex_errors;
 		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
 	}
 	if ((irq_status_val & GMAC_IER_TFC) != 0) {
-		++sc->tx_tfc_errors;
+		++sc->stats.tx_tfc_errors;
 		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
 	}
 	if ((irq_status_val & GMAC_IER_HRESP) != 0) {
-		++sc->tx_hresp_errors;
+		++sc->stats.tx_hresp_errors;
 		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
 	}
 	if ((irq_status_val & GMAC_IER_TCOMP) != 0) {
-		++sc->tx_complete_int;
+		++sc->stats.tx_complete_int;
 		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
 	}
 	/* Send events to transmit task and switch off tx interrupts */
 	if (tx_event != 0) {
-		++sc->tx_interrupts;
+		++sc->stats.tx_interrupts;
 		/* Erase the interrupts for TX completion and errors */
 		GMAC_DisableIt(pHw, GMAC_INT_TX_BITS, 0);
 		(void)if_atsam_event_send(sc->tx_daemon_tid, tx_event);
@@ -845,17 +892,16 @@ if_atsam_mii_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 
 
 static void
-if_atsam_mii_tick(void *context)
+if_atsam_tick(void *context)
 {
 	if_atsam_softc *sc = context;
 
-	if (sc->miibus == NULL)
-		return;
+	if_atsam_poll_hw_stats(sc);
 
 	IF_ATSAM_UNLOCK(sc);
 
 	mii_tick(device_get_softc(sc->miibus));
-	callout_reset(&sc->mii_tick_ch, hz, if_atsam_mii_tick, sc);
+	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
 }
 
 
@@ -923,7 +969,7 @@ static void if_atsam_init(void *arg)
 	sc->tx_daemon_tid = rtems_bsdnet_newproc("SCtx", 4096,
 		if_atsam_tx_daemon, sc);
 
-	callout_reset(&sc->mii_tick_ch, hz, if_atsam_mii_tick, sc);
+	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
 
 	ifp->if_drv_flags |= IFF_DRV_RUNNING;
 }
@@ -945,74 +991,252 @@ static void if_atsam_stop(struct if_atsam_softc *sc)
 }
 
 
-/*
- * Show interface statistics
- */
-static void if_atsam_stats(struct if_atsam_softc *sc)
+static void
+if_atsam_poll_hw_stats(struct if_atsam_softc *sc)
 {
-	int eno = EIO;
-	Gmac *pHw;
+	uint64_t octets;
+	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
-	pHw = sc->Gmac_inst.gGmacd.pHw;
+	octets = pHw->GMAC_OTLO;
+	octets |= pHw->GMAC_OTHI << 32;
+	sc->stats.octets_transm += octets;
+	sc->stats.frames_transm += pHw->GMAC_FT;
+	sc->stats.broadcast_frames_transm += pHw->GMAC_BCFT;
+	sc->stats.multicast_frames_transm += pHw->GMAC_MFT;
+	sc->stats.pause_frames_transm += pHw->GMAC_PFT;
+	sc->stats.frames_64_byte_transm += pHw->GMAC_BFT64;
+	sc->stats.frames_65_to_127_byte_transm += pHw->GMAC_TBFT127;
+	sc->stats.frames_128_to_255_byte_transm += pHw->GMAC_TBFT255;
+	sc->stats.frames_256_to_511_byte_transm += pHw->GMAC_TBFT511;
+	sc->stats.frames_512_to_1023_byte_transm += pHw->GMAC_TBFT1023;
+	sc->stats.frames_1024_to_1518_byte_transm += pHw->GMAC_TBFT1518;
+	sc->stats.frames_greater_1518_byte_transm += pHw->GMAC_GTBFT1518;
+	sc->stats.transmit_underruns += pHw->GMAC_TUR;
+	sc->stats.single_collision_frames += pHw->GMAC_SCF;
+	sc->stats.multiple_collision_frames += pHw->GMAC_MCF;
+	sc->stats.excessive_collisions += pHw->GMAC_EC;
+	sc->stats.late_collisions += pHw->GMAC_LC;
+	sc->stats.deferred_transmission_frames += pHw->GMAC_DTF;
+	sc->stats.carrier_sense_errors += pHw->GMAC_CSE;
 
-	printf("\n** Context Statistics **\n");
-	printf("Rx interrupts: %u\n", sc->rx_interrupts);
-	printf("Tx interrupts: %u\n", sc->tx_interrupts);
-	printf("Error Tur Tx interrupts: %u\n\n", sc->tx_tur_errors);
-	printf("Error Rlex Tx interrupts: %u\n\n", sc->tx_rlex_errors);
-	printf("Error Tfc Tx interrupts: %u\n\n", sc->tx_tfc_errors);
-	printf("Error Hresp Tx interrupts: %u\n\n", sc->tx_hresp_errors);
-	printf("Tx complete interrupts: %u\n\n", sc->tx_complete_int);
-	printf("\n** Statistics **\n");
-	printf("Octets Transmitted Low: %lu\n", pHw->GMAC_OTLO);
-	printf("Octets Transmitted High: %lu\n", pHw->GMAC_OTHI);
-	printf("Frames Transmitted: %lu\n", pHw->GMAC_FT);
-	printf("Broadcast Frames Transmitted: %lu\n", pHw->GMAC_BCFT);
-	printf("Multicast Frames Transmitted: %lu\n", pHw->GMAC_MFT);
-	printf("Pause Frames Transmitted: %lu\n", pHw->GMAC_PFT);
-	printf("64 Byte Frames Transmitted: %lu\n", pHw->GMAC_BFT64);
-	printf("65 to 127 Byte Frames Transmitted: %lu\n", pHw->GMAC_TBFT127);
-	printf("128 to 255 Byte Frames Transmitted: %lu\n", pHw->GMAC_TBFR255);
-	printf("256 to 511 Byte Frames Transmitted: %lu\n", pHw->GMAC_TBFT511);
-	printf("512 to 1023 Byte Frames Transmitted: %lu\n",
-	    pHw->GMAC_TBFT1023);
-	printf("1024 to 1518 Byte Frames Transmitted: %lu\n",
-	    pHw->GMAC_TBFT1518);
-	printf("Greater Than 1518 Byte Frames Transmitted: %lu\n",
-	    pHw->GMAC_GTBFT1518);
-	printf("Transmit Underruns: %lu\n", pHw->GMAC_TUR);
-	printf("Single Collision Frames: %lu\n", pHw->GMAC_SCF);
-	printf("Multiple Collision Frames: %lu\n", pHw->GMAC_MCF);
-	printf("Excessive Collisions: %lu\n", pHw->GMAC_EC);
-	printf("Late Collisions: %lu\n", pHw->GMAC_LC);
-	printf("Deferred Transmission Frames: %lu\n", pHw->GMAC_DTF);
-	printf("Carrier Sense Errors: %lu\n", pHw->GMAC_CSE);
-	printf("Octets Received Low: %lu\n", pHw->GMAC_ORLO);
-	printf("Octets Received High: %lu\n", pHw->GMAC_ORHI);
-	printf("Frames Received: %lu\n", pHw->GMAC_FR);
-	printf("Broadcast Frames Received: %lu\n", pHw->GMAC_BCFR);
-	printf("Multicast Frames Received: %lu\n", pHw->GMAC_MFR);
-	printf("Pause Frames Received: %lu\n", pHw->GMAC_PFR);
-	printf("64 Byte Frames Received: %lu\n", pHw->GMAC_BFR64);
-	printf("65 to 127 Byte Frames Received: %lu\n", pHw->GMAC_TBFR127);
-	printf("128 to 255 Byte Frames Received: %lu\n", pHw->GMAC_TBFR255);
-	printf("256 to 511 Byte Frames Received: %lu\n", pHw->GMAC_TBFR511);
-	printf("512 to 1023 Byte Frames Received: %lu\n", pHw->GMAC_TBFR1023);
-	printf("1024 to 1518 Byte Frames Received: %lu\n", pHw->GMAC_TBFR1518);
-	printf("1519 to Maximum Byte Frames Received: %lu\n",
-	    pHw->GMAC_TBFR1518);
-	printf("Undersize Frames Received: %lu\n", pHw->GMAC_UFR);
-	printf("Oversize Frames Received: %lu\n", pHw->GMAC_OFR);
-	printf("Jabbers Received: %lu\n", pHw->GMAC_JR);
-	printf("Frame Check Sequence Errors: %lu\n", pHw->GMAC_FCSE);
-	printf("Length Field Frame Errors: %lu\n", pHw->GMAC_LFFE);
-	printf("Receive Symbol Errors: %lu\n", pHw->GMAC_RSE);
-	printf("Alignment Errors: %lu\n", pHw->GMAC_AE);
-	printf("Receive Resource Errors: %lu\n", pHw->GMAC_RRE);
-	printf("Receive Overrun: %lu\n", pHw->GMAC_ROE);
-	printf("IP Header Checksum Errors: %lu\n", pHw->GMAC_IHCE);
-	printf("TCP Checksum Errors: %lu\n", pHw->GMAC_TCE);
-	printf("UDP Checksum Errors: %lu\n", pHw->GMAC_UCE);
+	octets = pHw->GMAC_ORLO;
+	octets |= pHw->GMAC_ORHI << 32;
+	sc->stats.octets_rec += octets;
+	sc->stats.frames_rec += pHw->GMAC_FR;
+	sc->stats.broadcast_frames_rec += pHw->GMAC_BCFR;
+	sc->stats.multicast_frames_rec += pHw->GMAC_MFR;
+	sc->stats.pause_frames_rec += pHw->GMAC_PFR;
+	sc->stats.frames_64_byte_rec += pHw->GMAC_BFR64;
+	sc->stats.frames_65_to_127_byte_rec += pHw->GMAC_TBFR127;
+	sc->stats.frames_128_to_255_byte_rec += pHw->GMAC_TBFR255;
+	sc->stats.frames_256_to_511_byte_rec += pHw->GMAC_TBFR511;
+	sc->stats.frames_512_to_1023_byte_rec += pHw->GMAC_TBFR1023;
+	sc->stats.frames_1024_to_1518_byte_rec += pHw->GMAC_TBFR1518;
+	sc->stats.frames_1519_to_maximum_byte_rec += pHw->GMAC_TMXBFR;
+	sc->stats.undersize_frames_rec += pHw->GMAC_UFR;
+	sc->stats.oversize_frames_rec += pHw->GMAC_OFR;
+	sc->stats.jabbers_rec += pHw->GMAC_JR;
+	sc->stats.frame_check_sequence_errors += pHw->GMAC_FCSE;
+	sc->stats.length_field_frame_errors += pHw->GMAC_LFFE;
+	sc->stats.receive_symbol_errors += pHw->GMAC_RSE;
+	sc->stats.alignment_errors += pHw->GMAC_AE;
+	sc->stats.receive_resource_errors += pHw->GMAC_RRE;
+	sc->stats.receive_overrun += pHw->GMAC_ROE;
+
+	sc->stats.ip_header_checksum_errors += pHw->GMAC_IHCE;
+	sc->stats.tcp_checksum_errors += pHw->GMAC_TCE;
+	sc->stats.udp_checksum_errors += pHw->GMAC_UCE;
+}
+
+
+static void
+if_atsam_add_sysctls(device_t dev)
+{
+	struct if_atsam_softc *sc = device_get_softc(dev);
+	struct sysctl_ctx_list *ctx;
+	struct sysctl_oid_list *statsnode;
+	struct sysctl_oid_list *hwstatsnode;
+	struct sysctl_oid_list *child;
+	struct sysctl_oid *tree;
+
+	ctx = device_get_sysctl_ctx(dev);
+	child = SYSCTL_CHILDREN(device_get_sysctl_tree(dev));
+
+	tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "stats", CTLFLAG_RD,
+			       NULL, "if_atsam statistics");
+	statsnode = SYSCTL_CHILDREN(tree);
+
+	tree = SYSCTL_ADD_NODE(ctx, statsnode, OID_AUTO, "sw", CTLFLAG_RD,
+			       NULL, "if_atsam software statistics");
+	child = SYSCTL_CHILDREN(tree);
+
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_overrun_errors",
+	    CTLFLAG_RD, &sc->stats.rx_overrun_errors, 0,
+	    "RX overrun errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_interrupts",
+	    CTLFLAG_RD, &sc->stats.rx_interrupts, 0,
+	    "Rx interrupts");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_complete_int",
+	    CTLFLAG_RD, &sc->stats.tx_complete_int, 0,
+	    "Tx complete interrupts");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_tur_errors",
+	    CTLFLAG_RD, &sc->stats.tx_tur_errors, 0,
+	    "Error Tur Tx interrupts");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_rlex_errors",
+	    CTLFLAG_RD, &sc->stats.tx_rlex_errors, 0,
+	    "Error Rlex Tx interrupts");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_tfc_errors",
+	    CTLFLAG_RD, &sc->stats.tx_tfc_errors, 0,
+	    "Error Tfc Tx interrupts");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_hresp_errors",
+	    CTLFLAG_RD, &sc->stats.tx_hresp_errors, 0,
+	    "Error Hresp Tx interrupts");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_interrupts",
+	    CTLFLAG_RD, &sc->stats.tx_interrupts, 0,
+	    "Tx interrupts");
+
+	tree = SYSCTL_ADD_NODE(ctx, statsnode, OID_AUTO, "hw", CTLFLAG_RD,
+			       NULL, "if_atsam hardware statistics");
+	hwstatsnode = SYSCTL_CHILDREN(tree);
+
+	tree = SYSCTL_ADD_NODE(ctx, hwstatsnode, OID_AUTO, "tx", CTLFLAG_RD,
+			       NULL, "if_atsam hardware transmit statistics");
+	child = SYSCTL_CHILDREN(tree);
+
+	SYSCTL_ADD_UQUAD(ctx, child, OID_AUTO, "octets_transm",
+	    CTLFLAG_RD, &sc->stats.octets_transm,
+	    "Octets Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_transm",
+	    CTLFLAG_RD, &sc->stats.frames_transm, 0,
+	    "Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "broadcast_frames_transm",
+	    CTLFLAG_RD, &sc->stats.broadcast_frames_transm, 0,
+	    "Broadcast Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multicast_frames_transm",
+	    CTLFLAG_RD, &sc->stats.multicast_frames_transm, 0,
+	    "Multicast Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "pause_frames_transm",
+	    CTLFLAG_RD, &sc->stats.pause_frames_transm, 0,
+	    "Pause Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_64_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_64_byte_transm, 0,
+	    "64 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_65_to_127_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_65_to_127_byte_transm, 0,
+	    "65 to 127 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_128_to_255_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_128_to_255_byte_transm, 0,
+	    "128 to 255 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_256_to_511_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_256_to_511_byte_transm, 0,
+	    "256 to 511 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_512_to_1023_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_512_to_1023_byte_transm, 0,
+	    "512 to 1023 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1024_to_1518_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_1024_to_1518_byte_transm, 0,
+	    "1024 to 1518 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_greater_1518_byte_transm",
+	    CTLFLAG_RD, &sc->stats.frames_greater_1518_byte_transm, 0,
+	    "Greater Than 1518 Byte Frames Transmitted");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "transmit_underruns",
+	    CTLFLAG_RD, &sc->stats.transmit_underruns, 0,
+	    "Transmit Underruns");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "single_collision_frames",
+	    CTLFLAG_RD, &sc->stats.single_collision_frames, 0,
+	    "Single Collision Frames");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multiple_collision_frames",
+	    CTLFLAG_RD, &sc->stats.multiple_collision_frames, 0,
+	    "Multiple Collision Frames");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "excessive_collisions",
+	    CTLFLAG_RD, &sc->stats.excessive_collisions, 0,
+	    "Excessive Collisions");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "late_collisions",
+	    CTLFLAG_RD, &sc->stats.late_collisions, 0,
+	    "Late Collisions");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "deferred_transmission_frames",
+	    CTLFLAG_RD, &sc->stats.deferred_transmission_frames, 0,
+	    "Deferred Transmission Frames");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "carrier_sense_errors",
+	    CTLFLAG_RD, &sc->stats.carrier_sense_errors, 0,
+	    "Carrier Sense Errors");
+
+	tree = SYSCTL_ADD_NODE(ctx, hwstatsnode, OID_AUTO, "rx", CTLFLAG_RD,
+			       NULL, "if_atsam hardware receive statistics");
+	child = SYSCTL_CHILDREN(tree);
+
+	SYSCTL_ADD_UQUAD(ctx, child, OID_AUTO, "octets_rec",
+	    CTLFLAG_RD, &sc->stats.octets_rec,
+	    "Octets Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_rec",
+	    CTLFLAG_RD, &sc->stats.frames_rec, 0,
+	    "Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "broadcast_frames_rec",
+	    CTLFLAG_RD, &sc->stats.broadcast_frames_rec, 0,
+	    "Broadcast Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multicast_frames_rec",
+	    CTLFLAG_RD, &sc->stats.multicast_frames_rec, 0,
+	    "Multicast Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "pause_frames_rec",
+	    CTLFLAG_RD, &sc->stats.pause_frames_rec, 0,
+	    "Pause Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_64_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_64_byte_rec, 0,
+	    "64 Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_65_to_127_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_65_to_127_byte_rec, 0,
+	    "65 to 127 Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_128_to_255_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_128_to_255_byte_rec, 0,
+	    "128 to 255 Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_256_to_511_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_256_to_511_byte_rec, 0,
+	    "256 to 511 Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_512_to_1023_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_512_to_1023_byte_rec, 0,
+	    "512 to 1023 Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1024_to_1518_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_1024_to_1518_byte_rec, 0,
+	    "1024 to 1518 Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1519_to_maximum_byte_rec",
+	    CTLFLAG_RD, &sc->stats.frames_1519_to_maximum_byte_rec, 0,
+	    "1519 to Maximum Byte Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "undersize_frames_rec",
+	    CTLFLAG_RD, &sc->stats.undersize_frames_rec, 0,
+	    "Undersize Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "oversize_frames_rec",
+	    CTLFLAG_RD, &sc->stats.oversize_frames_rec, 0,
+	    "Oversize Frames Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "jabbers_rec",
+	    CTLFLAG_RD, &sc->stats.jabbers_rec, 0,
+	    "Jabbers Received");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frame_check_sequence_errors",
+	    CTLFLAG_RD, &sc->stats.frame_check_sequence_errors, 0,
+	    "Frame Check Sequence Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "length_field_frame_errors",
+	    CTLFLAG_RD, &sc->stats.length_field_frame_errors, 0,
+	    "Length Field Frame Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "receive_symbol_errors",
+	    CTLFLAG_RD, &sc->stats.receive_symbol_errors, 0,
+	    "Receive Symbol Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "alignment_errors",
+	    CTLFLAG_RD, &sc->stats.alignment_errors, 0,
+	    "Alignment Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "receive_resource_errors",
+	    CTLFLAG_RD, &sc->stats.receive_resource_errors, 0,
+	    "Receive Resource Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "receive_overrun",
+	    CTLFLAG_RD, &sc->stats.receive_overrun, 0,
+	    "Receive Overrun");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "ip_header_checksum_errors",
+	    CTLFLAG_RD, &sc->stats.ip_header_checksum_errors, 0,
+	    "IP Header Checksum Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tcp_checksum_errors",
+	    CTLFLAG_RD, &sc->stats.tcp_checksum_errors, 0,
+	    "TCP Checksum Errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "udp_checksum_errors",
+	    CTLFLAG_RD, &sc->stats.udp_checksum_errors, 0,
+	    "UDP Checksum Errors");
 }
 
 
@@ -1101,9 +1325,6 @@ if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 			}
 		}
 		break;
-	case SIO_RTEMS_SHOW_STATS:
-		if_atsam_stats(sc);
-		break;
 	default:
 		rv = ether_ioctl(ifp, command, data);
 		break;
@@ -1162,7 +1383,7 @@ static int if_atsam_driver_attach(device_t dev)
 	/*
 	 * MII Bus
 	 */
-	callout_init_mtx(&sc->mii_tick_ch, &sc->mtx, CALLOUT_RETURNUNLOCKED);
+	callout_init_mtx(&sc->tick_ch, &sc->mtx, CALLOUT_RETURNUNLOCKED);
 	mii_attach(dev, &sc->miibus, ifp,
 	    if_atsam_mii_ifmedia_upd, if_atsam_mii_ifmedia_sts, BMSR_DEFCAPMASK,
 	    MDIO_PHY, MII_OFFSET_ANY, 0);
@@ -1184,6 +1405,8 @@ static int if_atsam_driver_attach(device_t dev)
 	 * Attach the interface
 	 */
 	ether_ifattach(ifp, eaddr);
+
+	if_atsam_add_sysctls(dev);
 
 	return (0);
 }

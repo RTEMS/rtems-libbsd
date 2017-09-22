@@ -353,7 +353,7 @@ nexus_ofw_map_intr(device_t dev, device_t child, phandle_t iparent, int icells,
     pcell_t *intr)
 {
 
-	return ((int)bsp_fdt_map_intr(intr[0]));
+	return ((int)bsp_fdt_map_intr(intr, (size_t)icells));
 }
 #endif /* FDT */
 

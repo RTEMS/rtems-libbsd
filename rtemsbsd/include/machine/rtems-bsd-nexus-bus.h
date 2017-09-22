@@ -310,6 +310,14 @@ extern "C" {
 #endif /* RTEMS_BSD_DRIVER_FEC */
 
 /*
+ * Atmel SAMv71 Ethernet Controller (sam) driver.
+ */
+#if !defined(RTEMS_BSD_DRIVER_IF_ATSAM)
+  #define RTEMS_BSD_DRIVER_IF_ATSAM                       \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(if_atsam, 0, 0, NULL);
+#endif /* RTEMS_BSD_DRIVER_IF_ATSAM */
+
+/*
  * Xilinx Zynq Cadence Gigbit Ethernet MAC (CGEM).
  */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM)

@@ -29,36 +29,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libchip/chip.h>
-#include <libchip/include/gmacd.h>
-#include <libchip/include/pio.h>
-
-#define __INSIDE_RTEMS_BSD_TCPIP_STACK__	1
-#define __BSD_VISIBLE				1
+#include <machine/rtems-bsd-kernel-space.h>
 
 #include <bsp.h>
+
+#ifdef LIBBSP_ARM_ATSAM_BSP_H
+
 #include <bsp/irq.h>
 
 #include <stdio.h>
-
-#include <rtems/error.h>
-#include <rtems/rtems_bsdnet.h>
-#include <rtems/rtems_mii_ioctl.h>
 
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
+#include <sys/bus.h>
 
 #include <net/if.h>
 #include <net/if_var.h>
 #include <net/if_types.h>
+#include <net/if_media.h>
 
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
 
 #include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
+
+#include <libchip/chip.h>
+#include <libchip/include/gmacd.h>
+#include <libchip/include/pio.h>
+
+#include <rtems/rtems_mii_ioctl.h>
+#include <rtems/bsd/local/miibus_if.h>
 
 /*
  * Number of interfaces supported by the driver
@@ -82,12 +88,6 @@
 	  PIO_DEFAULT }
 /** The runtime pin configure list for GMAC */
 #define BOARD_GMAC_RUN_PINS			BOARD_GMAC_PINS
-
-/** The PIN list of PIO for GMAC */
-#define BOARD_GMAC_RESET_PIN						   \
-						{ PIO_PC10, PIOC, ID_PIOC, \
-							  PIO_OUTPUT_1,	   \
-							  PIO_PULLUP }
 
 /** Multicast Enable */
 #define GMAC_MC_ENABLE				(1u << 6)
@@ -122,16 +122,23 @@
 
 #define WATCHDOG_TIMEOUT			5
 
+#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
+
+/* FIXME: Make these configurable */
+#define MDIO_RETRIES 10
+#define MDIO_PHY MII_PHY_ANY
+#define RXBUF_COUNT 8
+#define TXBUF_COUNT 64
+#define IGNORE_RX_ERR false
+
+
 /** The PINs for GMAC */
 static const Pin gmacPins[] = { BOARD_GMAC_RUN_PINS };
-
-static const Pin gmacResetPin = BOARD_GMAC_RESET_PIN;
 
 typedef struct if_atsam_gmac {
 	/** The GMAC driver instance */
 	sGmacd gGmacd;
 	uint32_t retries;
-	uint8_t phy_address;
 } if_atsam_gmac;
 
 typedef struct ring_buffer {
@@ -147,9 +154,10 @@ typedef struct if_atsam_softc {
 	/*
 	 * Data
 	 */
-	struct arpcom arpcom;
+	device_t dev;
+	struct ifnet *ifp;
+	struct mtx mtx;
 	if_atsam_gmac Gmac_inst;
-	struct rtems_mdio_info mdio;
 	uint8_t GMacAddress[6];
 	rtems_id rx_daemon_tid;
 	rtems_id tx_daemon_tid;
@@ -157,11 +165,18 @@ typedef struct if_atsam_softc {
 	struct mbuf **rx_mbuf;
 	struct mbuf **tx_mbuf;
 	volatile sGmacTxDescriptor *tx_bd_base;
-	uint32_t anlpar;
 	size_t rx_bd_fill_idx;
 	size_t amount_rx_buf;
 	size_t amount_tx_buf;
 	ring_buffer tx_ring;
+
+	/*
+	 * mii bus
+	 */
+	device_t miibus;
+	uint8_t link_speed;
+	uint8_t link_duplex;
+	struct callout mii_tick_ch;
 
 	/*
 	 * Statistics
@@ -176,15 +191,40 @@ typedef struct if_atsam_softc {
 	unsigned tx_interrupts;
 } if_atsam_softc;
 
-static struct if_atsam_softc if_atsam_softc_inst;
+static void if_atsam_watchdog(void *arg);
+
+#define IF_ATSAM_LOCK(sc) mtx_lock(&(sc)->mtx)
+
+#define IF_ATSAM_UNLOCK(sc) mtx_unlock(&(sc)->mtx)
+
+static void if_atsam_event_send(rtems_id task, rtems_event_set event)
+{
+	rtems_event_send(task, event);
+}
+
+
+static void if_atsam_event_receive(if_atsam_softc *sc, rtems_event_set in)
+{
+	rtems_event_set out;
+
+	IF_ATSAM_UNLOCK(sc);
+	rtems_event_receive(
+	    in,
+	    RTEMS_EVENT_ANY | RTEMS_WAIT,
+	    RTEMS_NO_TIMEOUT,
+	    &out
+	);
+	IF_ATSAM_LOCK(sc);
+}
+
 
 static struct mbuf *if_atsam_new_mbuf(struct ifnet *ifp)
 {
 	struct mbuf *m;
 
-	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	MGETHDR(m, M_NOWAIT, MT_DATA);
 	if (m != NULL) {
-		MCLGET(m, M_DONTWAIT);
+		MCLGET(m, M_NOWAIT);
 		if ((m->m_flags & M_EXT) != 0) {
 			m->m_pkthdr.rcvif = ifp;
 			m->m_data = mtod(m, char *);
@@ -244,69 +284,6 @@ if_atsam_read_phy(Gmac *pHw,
 }
 
 
-static void atsamv7_find_valid_phy(if_atsam_gmac *gmac_inst)
-{
-	Gmac *pHw = gmac_inst->gGmacd.pHw;
-	uint32_t value = 0;
-	uint8_t phy_address;
-	int i;
-
-	if (gmac_inst->phy_address != 0xFF) {
-		return;
-	}
-
-	/* Find another one */
-	phy_address = 0xFF;
-
-	for (i = 31; i >= 0; --i) {
-		int rv;
-
-		rv = if_atsam_read_phy(pHw, (uint8_t)i, MII_PHYIDR1,
-		    &value, gmac_inst->retries);
-		if (rv == 0 && value != 0 && value < 0xffff) {
-			phy_address = (uint8_t)i;
-			break;
-		}
-	}
-
-	if (phy_address != 0xFF) {
-		if_atsam_read_phy(pHw, phy_address, MII_PHYIDR1, &value,
-		    gmac_inst->retries);
-		if_atsam_read_phy(pHw, phy_address, MII_PHYIDR2, &value,
-		    gmac_inst->retries);
-		gmac_inst->phy_address = phy_address;
-	}
-}
-
-
-static uint8_t if_atsam_reset_phy(if_atsam_gmac *gmac_inst)
-{
-	uint32_t retry_max;
-	uint32_t bmcr;
-	uint8_t phy_address;
-	uint32_t timeout = 10;
-	uint8_t ret = 0;
-
-	Gmac *pHw = gmac_inst->gGmacd.pHw;
-
-	phy_address = gmac_inst->phy_address;
-	retry_max = gmac_inst->retries;
-
-	bmcr = BMCR_RESET;
-	if_atsam_write_phy(pHw, phy_address, MII_BMCR, bmcr, retry_max);
-	do {
-		if_atsam_read_phy(pHw, phy_address, MII_BMCR, &bmcr,
-		    retry_max);
-		timeout--;
-	} while ((bmcr & BMCR_RESET) && timeout);
-
-	if (!timeout) {
-		ret = 1;
-	}
-	return (ret);
-}
-
-
 static uint8_t
 if_atsam_init_phy(if_atsam_gmac *gmac_inst, uint32_t mck,
     const Pin *pResetPins, uint32_t nbResetPins, const Pin *pGmacPins,
@@ -331,39 +308,39 @@ if_atsam_init_phy(if_atsam_gmac *gmac_inst, uint32_t mck,
 		if (!rc) {
 			return (0);
 		}
-		if_atsam_reset_phy(gmac_inst);
 	}
 	return (rc);
 }
 
-static bool if_atsam_is_valid_phy(int phy)
+
+static int
+if_atsam_miibus_readreg(device_t dev, int phy, int reg)
 {
-	return phy >= 0 && phy <= 31;
+	uint32_t val;
+	uint8_t err;
+	if_atsam_softc *sc = device_get_softc(dev);
+
+	IF_ATSAM_LOCK(sc);
+	err = if_atsam_read_phy(sc->Gmac_inst.gGmacd.pHw,
+	    (uint8_t)phy, (uint8_t)reg, &val, sc->Gmac_inst.retries);
+	IF_ATSAM_UNLOCK(sc);
+
+	return (err == 0 ? val : 0);
 }
 
-static int if_atsam_mdio_read(int phy, void *arg, unsigned reg, uint32_t *pval)
+
+static int
+if_atsam_miibus_writereg(device_t dev, int phy, int reg, int data)
 {
-	if_atsam_softc *sc = (if_atsam_softc *)arg;
+	uint8_t err;
+	if_atsam_softc *sc = device_get_softc(dev);
 
-	if (!if_atsam_is_valid_phy(phy)) {
-		return (EINVAL);
-	}
+	IF_ATSAM_LOCK(sc);
+	err = if_atsam_write_phy(sc->Gmac_inst.gGmacd.pHw,
+	    (uint8_t)phy, (uint8_t)reg, data, sc->Gmac_inst.retries);
+	IF_ATSAM_UNLOCK(sc);
 
-	return (if_atsam_read_phy(sc->Gmac_inst.gGmacd.pHw,
-	    (uint8_t)phy, (uint8_t)reg, pval, sc->Gmac_inst.retries));
-}
-
-
-static int if_atsam_mdio_write(int phy, void *arg, unsigned reg, uint32_t pval)
-{
-	if_atsam_softc *sc = (if_atsam_softc *)arg;
-
-	if (!if_atsam_is_valid_phy(phy)) {
-		return (EINVAL);
-	}
-
-	return if_atsam_write_phy(sc->Gmac_inst.gGmacd.pHw,
-	    (uint8_t)phy, (uint8_t)reg, pval, sc->Gmac_inst.retries);
+	return 0;
 }
 
 
@@ -394,7 +371,7 @@ static void if_atsam_interrupt_handler(void *arg)
 		++sc->rx_interrupts;
 		/* Erase the interrupts for RX completion and errors */
 		GMAC_DisableIt(pHw, GMAC_IER_RCOMP | GMAC_IER_ROVR, 0);
-		(void)rtems_bsdnet_event_send(sc->rx_daemon_tid, rx_event);
+		(void)if_atsam_event_send(sc->rx_daemon_tid, rx_event);
 	}
 	if ((irq_status_val & GMAC_IER_TUR) != 0) {
 		++sc->tx_tur_errors;
@@ -421,7 +398,7 @@ static void if_atsam_interrupt_handler(void *arg)
 		++sc->tx_interrupts;
 		/* Erase the interrupts for TX completion and errors */
 		GMAC_DisableIt(pHw, GMAC_INT_TX_BITS, 0);
-		(void)rtems_bsdnet_event_send(sc->tx_daemon_tid, tx_event);
+		(void)if_atsam_event_send(sc->tx_daemon_tid, tx_event);
 	}
 }
 /*
@@ -430,16 +407,24 @@ static void if_atsam_interrupt_handler(void *arg)
 static void if_atsam_rx_daemon(void *arg)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
+	struct ifnet *ifp = sc->ifp;
 	rtems_event_set events = 0;
 	void *rx_bd_base;
 	struct mbuf *m;
 	struct mbuf *n;
 	volatile sGmacRxDescriptor *buffer_desc;
 	int frame_len;
-	struct ether_header *eh;
 	uint32_t tmp_rx_bd_address;
-
+	size_t i;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+
+	IF_ATSAM_LOCK(sc);
+
+	if (IGNORE_RX_ERR) {
+		pHw->GMAC_NCFGR |= GMAC_NCFGR_IRXER;
+	} else {
+		pHw->GMAC_NCFGR &= ~GMAC_NCFGR_IRXER;
+	}
 
 	/* Allocate memory space for priority queue descriptor list */
 	rx_bd_base = rtems_cache_coherent_allocate(sizeof(sGmacRxDescriptor),
@@ -463,7 +448,7 @@ static void if_atsam_rx_daemon(void *arg)
 	/* Create descriptor list and mark as empty */
 	for (sc->rx_bd_fill_idx = 0; sc->rx_bd_fill_idx < sc->amount_rx_buf;
 	    ++sc->rx_bd_fill_idx) {
-		m = if_atsam_new_mbuf(&sc->arpcom.ac_if);
+		m = if_atsam_new_mbuf(ifp);
 		assert(m != NULL);
 		sc->rx_mbuf[sc->rx_bd_fill_idx] = m;
 		buffer_desc->addr.val = ((uint32_t)m->m_data) &
@@ -497,9 +482,7 @@ static void if_atsam_rx_daemon(void *arg)
 
 	while (true) {
 		/* Wait for events */
-		rtems_bsdnet_event_receive(ATSAMV7_ETH_RX_EVENT_INTERRUPT,
-		    RTEMS_EVENT_ANY | RTEMS_WAIT,
-		    RTEMS_NO_TIMEOUT, &events);
+		if_atsam_event_receive(sc, ATSAMV7_ETH_RX_EVENT_INTERRUPT);
 
 		/*
 		 * Check for all packets with a set ownership bit
@@ -509,24 +492,21 @@ static void if_atsam_rx_daemon(void *arg)
 				m = sc->rx_mbuf[sc->rx_bd_fill_idx];
 
 				/* New mbuf for desc */
-				n = if_atsam_new_mbuf(&sc->arpcom.ac_if);
+				n = if_atsam_new_mbuf(ifp);
 				if (n != NULL) {
 					frame_len = (int)
 					    (buffer_desc->status.bm.len);
 
-					/* Discard Ethernet header */
-					int sz = frame_len - ETHER_HDR_LEN;
-
 					/* Update mbuf */
-					eh = (struct ether_header *)
-					    (mtod(m, char *) + 2);
-					m->m_len = sz;
-					m->m_pkthdr.len = sz;
-					m->m_data = (void *)(eh + 1);
-					ether_input(&sc->arpcom.ac_if, eh, m);
+					m->m_data = mtod(m, char*)+ETHER_ALIGN;
+					m->m_len = frame_len;
+					m->m_pkthdr.len = frame_len;
+					IF_ATSAM_UNLOCK(sc);
+					sc->ifp->if_input(ifp, m);
+					IF_ATSAM_LOCK(sc);
 					m = n;
 				} else {
-					(void)rtems_bsdnet_event_send(
+					(void)if_atsam_event_send(
 					    sc->tx_daemon_tid, ATSAMV7_ETH_START_TRANSMIT_EVENT);
 				}
 				sc->rx_mbuf[sc->rx_bd_fill_idx] = m;
@@ -705,8 +685,10 @@ static void if_atsam_tx_daemon(void *arg)
 	struct mbuf *m;
 	bool success;
 
+	IF_ATSAM_LOCK(sc);
+
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
-	struct ifnet *ifp = &sc->arpcom.ac_if;
+	struct ifnet *ifp = sc->ifp;
 
 	GMAC_TransmitEnable(pHw, 0);
 
@@ -752,9 +734,9 @@ static void if_atsam_tx_daemon(void *arg)
 
 	while (true) {
 		/* Wait for events */
-		rtems_bsdnet_event_receive(ATSAMV7_ETH_START_TRANSMIT_EVENT | ATSAMV7_ETH_TX_EVENT_INTERRUPT,
-		    RTEMS_EVENT_ANY | RTEMS_WAIT,
-		    RTEMS_NO_TIMEOUT, &events);
+		if_atsam_event_receive(sc,
+		    ATSAMV7_ETH_START_TRANSMIT_EVENT |
+		    ATSAMV7_ETH_TX_EVENT_INTERRUPT);
 		//printf("TX Transmit Event received\n");
 
 		/*
@@ -765,9 +747,9 @@ static void if_atsam_tx_daemon(void *arg)
 			 * Get the mbuf chain to transmit
 			 */
 			if_atsam_tx_bd_cleanup(sc);
-			IF_DEQUEUE(&sc->arpcom.ac_if.if_snd, m);
+			IF_DEQUEUE(&ifp->if_snd, m);
 			if (!m) {
-				ifp->if_flags &= ~IFF_OACTIVE;
+				ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
 				break;
 			}
 			success = if_atsam_send_packet(sc, m);
@@ -786,56 +768,94 @@ static void if_atsam_enet_start(struct ifnet *ifp)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
 
-	ifp->if_flags |= IFF_OACTIVE;
-	rtems_bsdnet_event_send(sc->tx_daemon_tid,
+	ifp->if_drv_flags |= IFF_DRV_OACTIVE;
+	if_atsam_event_send(sc->tx_daemon_tid,
 	    ATSAMV7_ETH_START_TRANSMIT_EVENT);
 }
 
 
-/*
- * Attach a watchdog for autonegotiation to the system
- */
-static void if_atsam_interface_watchdog(struct ifnet *ifp)
+static void if_atsam_miibus_statchg(device_t dev)
 {
-	uint32_t anlpar;
-	uint8_t speed = GMAC_SPEED_100M;
-	uint8_t full_duplex = GMAC_DUPLEX_FULL;
+	uint8_t link_speed = GMAC_SPEED_100M;
+	uint8_t link_duplex = GMAC_DUPLEX_FULL;
+	if_atsam_softc *sc = device_get_softc(dev);
+	struct mii_data *mii = device_get_softc(sc->miibus);
 
-	if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
-	uint8_t phy = sc->Gmac_inst.phy_address;
-	uint32_t retries = sc->Gmac_inst.retries;
 
-	if (if_atsam_read_phy(pHw, phy, MII_ANLPAR, &anlpar, retries)) {
-		anlpar = 0;
+	if (IFM_OPTIONS(mii->mii_media_active) & IFM_FDX) {
+		link_duplex = GMAC_DUPLEX_FULL;
+	} else {
+		link_duplex = GMAC_DUPLEX_HALF;
 	}
-	if (sc->anlpar != anlpar) {
-		/* Set up the GMAC link speed */
-		if (anlpar & ANLPAR_TX_FD) {
-			/* Set MII for 100BaseTx and Full Duplex */
-			speed = GMAC_SPEED_100M;
-			full_duplex = GMAC_DUPLEX_FULL;
-		} else if (anlpar & ANLPAR_10_FD) {
-			/* Set MII for 10BaseTx and Full Duplex */
-			speed = GMAC_SPEED_10M;
-			full_duplex = GMAC_DUPLEX_FULL;
-		} else if (anlpar & ANLPAR_TX) {
-			/* Set MII for 100BaseTx and half Duplex */
-			speed = GMAC_SPEED_100M;
-			full_duplex = GMAC_DUPLEX_HALF;
-		} else if (anlpar & ANLPAR_10) {
-			/* Set MII for 10BaseTx and half Duplex */
-			speed = GMAC_SPEED_10M;
-			full_duplex = GMAC_DUPLEX_HALF;
-		} else {
-			/* Set MII for 100BaseTx and Full Duplex */
-			speed = GMAC_SPEED_100M;
-			full_duplex = GMAC_DUPLEX_FULL;
-		}
-		GMAC_SetLinkSpeed(pHw, speed, full_duplex);
-		sc->anlpar = anlpar;
+
+	switch (IFM_SUBTYPE(mii->mii_media_active)) {
+	case IFM_10_T:
+		link_speed = GMAC_SPEED_10M;
+		break;
+	case IFM_100_TX:
+		link_speed = GMAC_SPEED_100M;
+		break;
+	case IFM_1000_T:
+		link_speed = GMAC_SPEED_1000M;
+		break;
+	default:
+		/* FIXME: What to do in that case? */
+		break;
 	}
-	ifp->if_timer = WATCHDOG_TIMEOUT;
+
+	if (sc->link_speed != link_speed || sc->link_duplex != link_duplex) {
+		GMAC_SetLinkSpeed(pHw, link_speed, link_duplex);
+		sc->link_speed = link_speed;
+		sc->link_duplex = link_duplex;
+	}
+}
+
+
+static int
+if_atsam_mii_ifmedia_upd(struct ifnet *ifp)
+{
+	if_atsam_softc *sc;
+	struct mii_data *mii;
+
+	sc = ifp->if_softc;
+	if (sc->miibus == NULL)
+		return (ENXIO);
+
+	mii = device_get_softc(sc->miibus);
+	return (mii_mediachg(mii));
+}
+
+
+static void
+if_atsam_mii_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
+{
+	if_atsam_softc *sc;
+	struct mii_data *mii;
+
+	sc = ifp->if_softc;
+	if (sc->miibus == NULL)
+		return;
+
+	mii = device_get_softc(sc->miibus);
+	mii_pollstat(mii);
+	ifmr->ifm_active = mii->mii_media_active;
+	ifmr->ifm_status = mii->mii_media_status;
+}
+
+
+static void
+if_atsam_mii_tick(void *context)
+{
+	if_atsam_softc *sc = context;
+
+	if (sc->miibus == NULL)
+		return;
+
+	IF_ATSAM_UNLOCK(sc);
+
+	mii_tick(device_get_softc(sc->miibus));
+	callout_reset(&sc->mii_tick_ch, hz, if_atsam_mii_tick, sc);
 }
 
 
@@ -847,14 +867,14 @@ static void if_atsam_init(void *arg)
 	rtems_status_code status;
 
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
-	struct ifnet *ifp = &sc->arpcom.ac_if;
+	struct ifnet *ifp = sc->ifp;
 	uint32_t dmac_cfg = 0;
 	uint32_t gmii_val = 0;
 
-	if (sc->arpcom.ac_if.if_flags & IFF_RUNNING) {
+	if (ifp->if_flags & IFF_DRV_RUNNING) {
 		return;
 	}
-	sc->arpcom.ac_if.if_flags |= IFF_RUNNING;
+	ifp->if_flags |= IFF_DRV_RUNNING;
 	sc->interrupt_number = GMAC_IRQn;
 
 	/* Disable Watchdog */
@@ -867,28 +887,6 @@ static void if_atsam_init(void *arg)
 	/* Setup interrupts */
 	NVIC_ClearPendingIRQ(GMAC_IRQn);
 	NVIC_EnableIRQ(GMAC_IRQn);
-
-	GMACD_Init(&sc->Gmac_inst.gGmacd, GMAC, ID_GMAC, GMAC_CAF_ENABLE,
-	    GMAC_NBC_DISABLE);
-
-	/* Enable MDIO interface */
-	GMAC_EnableMdio(sc->Gmac_inst.gGmacd.pHw);
-
-	/* PHY initialize */
-	if_atsam_init_phy(&sc->Gmac_inst, BOARD_MCK, &gmacResetPin, 1,
-	    gmacPins, PIO_LISTSIZE(gmacPins));
-	/* Find valid Phy */
-	atsamv7_find_valid_phy(&sc->Gmac_inst);
-
-	/* Set Link Speed */
-	sc->anlpar = 0xFFFFFFFF;
-	if_atsam_interface_watchdog(ifp);
-
-	/* Enable autonegotation */
-	if_atsam_read_phy(sc->Gmac_inst.gGmacd.pHw, sc->Gmac_inst.phy_address,
-	    MII_BMCR, &gmii_val, sc->Gmac_inst.retries);
-	if_atsam_write_phy(sc->Gmac_inst.gGmacd.pHw, sc->Gmac_inst.phy_address,
-	    MII_BMCR, (gmii_val | BMCR_AUTOEN), sc->Gmac_inst.retries);
 
 	/* Configuration of DMAC */
 	dmac_cfg = (GMAC_DCFGR_DRBS(GMAC_RX_BUFFER_SIZE >> 6)) |
@@ -905,9 +903,9 @@ static void if_atsam_init(void *arg)
 	 * Allocate mbuf pointers
 	 */
 	sc->rx_mbuf = malloc(sc->amount_rx_buf * sizeof *sc->rx_mbuf,
-		M_MBUF, M_NOWAIT);
+		M_TEMP, M_NOWAIT);
 	sc->tx_mbuf = malloc(sc->amount_tx_buf * sizeof *sc->tx_mbuf,
-		M_MBUF, M_NOWAIT);
+		M_TEMP, M_NOWAIT);
 
 	/* Install interrupt handler */
 	status = rtems_interrupt_handler_install(sc->interrupt_number,
@@ -925,8 +923,9 @@ static void if_atsam_init(void *arg)
 	sc->tx_daemon_tid = rtems_bsdnet_newproc("SCtx", 4096,
 		if_atsam_tx_daemon, sc);
 
-	/* Start Watchdog Timer */
-	ifp->if_timer = 1;
+	callout_reset(&sc->mii_tick_ch, hz, if_atsam_mii_tick, sc);
+
+	ifp->if_drv_flags |= IFF_DRV_RUNNING;
 }
 
 
@@ -935,10 +934,10 @@ static void if_atsam_init(void *arg)
  */
 static void if_atsam_stop(struct if_atsam_softc *sc)
 {
-	struct ifnet *ifp = &sc->arpcom.ac_if;
+	struct ifnet *ifp = sc->ifp;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
-	ifp->if_flags &= ~IFF_RUNNING;
+	ifp->if_flags &= ~IFF_DRV_RUNNING;
 
 	/* Disable MDIO interface and TX/RX */
 	pHw->GMAC_NCR &= ~(GMAC_NCR_RXEN | GMAC_NCR_TXEN);
@@ -952,18 +951,8 @@ static void if_atsam_stop(struct if_atsam_softc *sc)
 static void if_atsam_stats(struct if_atsam_softc *sc)
 {
 	int eno = EIO;
-	int media = 0;
 	Gmac *pHw;
 
-	media = (int)IFM_MAKEWORD(0, 0, 0, sc->Gmac_inst.phy_address);
-	eno = rtems_mii_ioctl(&sc->mdio, sc, SIOCGIFMEDIA, &media);
-
-	rtems_bsdnet_semaphore_release();
-
-	if (eno == 0) {
-		rtems_ifmedia2str(media, NULL, 0);
-		printf("\n");
-	}
 	pHw = sc->Gmac_inst.gGmacd.pHw;
 
 	printf("\n** Context Statistics **\n");
@@ -1024,8 +1013,6 @@ static void if_atsam_stats(struct if_atsam_softc *sc)
 	printf("IP Header Checksum Errors: %lu\n", pHw->GMAC_IHCE);
 	printf("TCP Checksum Errors: %lu\n", pHw->GMAC_TCE);
 	printf("UDP Checksum Errors: %lu\n", pHw->GMAC_UCE);
-
-	rtems_bsdnet_semaphore_obtain();
 }
 
 
@@ -1071,57 +1058,16 @@ static void if_atsam_promiscuous_mode(if_atsam_softc *sc, bool enable)
 }
 
 
-/*
- * Multicast handler
- */
 static int
-if_atsam_multicast_control(bool add, struct ifreq *ifr, if_atsam_softc *sc)
+if_atsam_mediaioctl(if_atsam_softc *sc, struct ifreq *ifr, u_long command)
 {
-	int eno = 0;
-	struct arpcom *ac = &sc->arpcom;
-	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	struct mii_data *mii;
 
-	/* Switch off Multicast Hashing */
-	pHw->GMAC_NCFGR &= ~GMAC_MC_ENABLE;
+	if (sc->miibus == NULL)
+		return (EINVAL);
 
-	if (add) {
-		eno = ether_addmulti(ifr, ac);
-	} else {
-		eno = ether_delmulti(ifr, ac);
-	}
-
-	if (eno == ENETRESET) {
-		struct ether_multistep step;
-		struct ether_multi *enm;
-
-		eno = 0;
-
-		pHw->GMAC_HRB = 0;
-		pHw->GMAC_HRT = 0;
-
-		ETHER_FIRST_MULTI(step, ac, enm);
-		while (enm != NULL) {
-			uint64_t addrlo = 0;
-			uint64_t addrhi = 0;
-			uint32_t val = 0;
-
-			memcpy(&addrlo, enm->enm_addrlo, ETHER_ADDR_LEN);
-			memcpy(&addrhi, enm->enm_addrhi, ETHER_ADDR_LEN);
-			while (addrlo <= addrhi) {
-				if_atsam_get_hash_index(addrlo, &val);
-				if (val < 32) {
-					pHw->GMAC_HRB |= (1u << val);
-				} else {
-					pHw->GMAC_HRT |= (1u << (val - 32));
-				}
-				++addrlo;
-			}
-			ETHER_NEXT_MULTI(step, enm);
-		}
-	}
-	/* Switch on Multicast Hashing */
-	pHw->GMAC_NCFGR |= GMAC_MC_ENABLE;
-	return (eno);
+	mii = device_get_softc(sc->miibus);
+	return (ifmedia_ioctl(sc->ifp, ifr, &mii->mii_media, command));
 }
 
 
@@ -1131,129 +1077,152 @@ if_atsam_multicast_control(bool add, struct ifreq *ifr, if_atsam_softc *sc)
 static int
 if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 {
-	struct if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
+	if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
 	struct ifreq *ifr = (struct ifreq *)data;
 	int rv = 0;
 	bool prom_enable;
+	struct mii_data *mii;
 
 	switch (command) {
 	case SIOCGIFMEDIA:
 	case SIOCSIFMEDIA:
-		rtems_mii_ioctl(&sc->mdio, sc, command, &ifr->ifr_media);
-		break;
-	case SIOCGIFADDR:
-	case SIOCSIFADDR:
-		ether_ioctl(ifp, command, data);
+		rv = if_atsam_mediaioctl(sc, ifr, command);
 		break;
 	case SIOCSIFFLAGS:
 		if (ifp->if_flags & IFF_UP) {
-			if (ifp->if_flags & IFF_RUNNING) {
-				/* Don't do anything */
-			} else {
+			if (!(ifp->if_drv_flags & IFF_DRV_RUNNING)) {
 				if_atsam_init(sc);
 			}
 			prom_enable = ((ifp->if_flags & IFF_PROMISC) != 0);
 			if_atsam_promiscuous_mode(sc, prom_enable);
 		} else {
-			if (ifp->if_flags & IFF_RUNNING) {
+			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
 				if_atsam_stop(sc);
 			}
 		}
-		break;
-	case SIOCADDMULTI:
-	case SIOCDELMULTI:
-		if_atsam_multicast_control(command == SIOCADDMULTI, ifr, sc);
 		break;
 	case SIO_RTEMS_SHOW_STATS:
 		if_atsam_stats(sc);
 		break;
 	default:
-		rv = EINVAL;
+		rv = ether_ioctl(ifp, command, data);
 		break;
 	}
 	return (rv);
 }
 
-
 /*
  * Attach an SAMV71 driver to the system
  */
-static int if_atsam_driver_attach(struct rtems_bsdnet_ifconfig *config)
+static int if_atsam_driver_attach(device_t dev)
 {
-	if_atsam_softc *sc = &if_atsam_softc_inst;
-	struct ifnet *ifp = &sc->arpcom.ac_if;
-	const if_atsam_config *conf = config->drv_ctrl;
-	int unitNumber;
+	if_atsam_softc *sc;
+	struct ifnet *ifp;
+	int unit;
 	char *unitName;
+	uint8_t eaddr[ETHER_ADDR_LEN];
 
-	if (conf != NULL) {
-		sc->Gmac_inst.retries = conf->mdio_retries;
-		sc->Gmac_inst.phy_address = conf->phy_addr;
-	} else {
-		sc->Gmac_inst.retries = 10;
-		sc->Gmac_inst.phy_address = 0xFF;
-	}
+	sc = device_get_softc(dev);
+	unit = device_get_unit(dev);
+	assert(unit == 0);
 
-	/* The MAC address used */
-	memcpy(sc->GMacAddress, config->hardware_address, ETHER_ADDR_LEN);
-	memcpy(sc->arpcom.ac_enaddr, sc->GMacAddress, ETHER_ADDR_LEN);
+	sc->dev = dev;
+	sc->ifp = ifp = if_alloc(IFT_ETHER);
 
-	/*
-	 * Parse driver name
-	 */
-	unitNumber = rtems_bsdnet_parse_driver_name(config, &unitName);
-	assert(unitNumber == 0);
+	mtx_init(&sc->mtx, device_get_nameunit(sc->dev), MTX_NETWORK_LOCK,
+	    MTX_DEF);
 
-	assert(ifp->if_softc == NULL);
+	rtems_bsd_get_mac_address(device_get_name(sc->dev), unit, eaddr);
 
-	/* MDIO */
-	sc->mdio.mdio_r = if_atsam_mdio_read;
-	sc->mdio.mdio_w = if_atsam_mdio_write;
-	sc->mdio.has_gmii = 1;
+	sc->Gmac_inst.retries = MDIO_RETRIES;
 
-	if (config->rbuf_count > 0) {
-		sc->amount_rx_buf = config->rbuf_count;
-	} else {
-		sc->amount_rx_buf = 8;
-	}
+	memcpy(sc->GMacAddress, eaddr, ETHER_ADDR_LEN);
 
-	if (config->xbuf_count > 0) {
-		sc->amount_tx_buf = config->xbuf_count;
-	} else {
-		sc->amount_tx_buf = 64;
-	}
+	sc->amount_rx_buf = RXBUF_COUNT;
+	sc->amount_tx_buf = TXBUF_COUNT;
 
 	sc->tx_ring.tx_bd_used = 0;
 	sc->tx_ring.tx_bd_free = 0;
 	sc->tx_ring.length = sc->amount_tx_buf;
 
+	/* Set Initial Link Speed */
+	sc->link_speed = GMAC_SPEED_100M;
+	sc->link_duplex = GMAC_DUPLEX_FULL;
+
+	GMACD_Init(&sc->Gmac_inst.gGmacd, GMAC, ID_GMAC, GMAC_CAF_ENABLE,
+	    GMAC_NBC_DISABLE);
+
+	/* Enable MDIO interface */
+	GMAC_EnableMdio(sc->Gmac_inst.gGmacd.pHw);
+
+	/* PHY initialize */
+	if_atsam_init_phy(&sc->Gmac_inst, BOARD_MCK, NULL, 0,
+	    gmacPins, PIO_LISTSIZE(gmacPins));
+
+	/*
+	 * MII Bus
+	 */
+	callout_init_mtx(&sc->mii_tick_ch, &sc->mtx, CALLOUT_RETURNUNLOCKED);
+	mii_attach(dev, &sc->miibus, ifp,
+	    if_atsam_mii_ifmedia_upd, if_atsam_mii_ifmedia_sts, BMSR_DEFCAPMASK,
+	    MDIO_PHY, MII_OFFSET_ANY, 0);
+
 	/*
 	 * Set up network interface values
 	 */
 	ifp->if_softc = sc;
-	ifp->if_unit = (short int)unitNumber;
-	ifp->if_name = unitName;
-	ifp->if_mtu = ETHERMTU;
+	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
 	ifp->if_init = if_atsam_init;
 	ifp->if_ioctl = if_atsam_ioctl;
 	ifp->if_start = if_atsam_enet_start;
-	ifp->if_output = ether_output;
-	ifp->if_watchdog = if_atsam_interface_watchdog;
-	ifp->if_flags = IFF_MULTICAST | IFF_BROADCAST | IFF_SIMPLEX;
-	ifp->if_snd.ifq_maxlen = ifqmaxlen;
-	ifp->if_timer = 0;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
+	IFQ_SET_MAXLEN(&ifp->if_snd, TXBUF_COUNT - 1);
+	ifp->if_snd.ifq_drv_maxlen = TXBUF_COUNT - 1;
+	IFQ_SET_READY(&ifp->if_snd);
 
 	/*
 	 * Attach the interface
 	 */
-	if_attach(ifp);
-	ether_ifattach(ifp);
-	return (1);
+	ether_ifattach(ifp, eaddr);
+
+	return (0);
 }
 
-
-int if_atsam_attach(struct rtems_bsdnet_ifconfig *config, int attaching)
+static int
+if_atsam_probe(device_t dev)
 {
-	(void)attaching;
-	return (if_atsam_driver_attach(config));
+	int unit = device_get_unit(dev);
+	int error;
+
+	if (unit >= 0 && unit < NIFACES) {
+		error = BUS_PROBE_DEFAULT;
+	} else {
+		error = ENXIO;
+	}
+
+	return (error);
 }
+
+static device_method_t if_atsam_methods[] = {
+	DEVMETHOD(device_probe,		if_atsam_probe),
+	DEVMETHOD(device_attach,	if_atsam_driver_attach),
+	DEVMETHOD(miibus_readreg,	if_atsam_miibus_readreg),
+	DEVMETHOD(miibus_writereg,	if_atsam_miibus_writereg),
+	DEVMETHOD(miibus_statchg,	if_atsam_miibus_statchg),
+	DEVMETHOD_END
+};
+
+static driver_t if_atsam_nexus_driver = {
+	"if_atsam",
+	if_atsam_methods,
+	sizeof(struct if_atsam_softc)
+};
+
+static devclass_t if_atsam_devclass;
+DRIVER_MODULE(if_atsam, nexus, if_atsam_nexus_driver, if_atsam_devclass, 0, 0);
+MODULE_DEPEND(if_atsam, miibus, 1, 1, 1);
+MODULE_DEPEND(if_atsam, nexus, 1, 1, 1);
+MODULE_DEPEND(if_atsam, ether, 1, 1, 1);
+DRIVER_MODULE(miibus, if_atsam, miibus_driver, miibus_devclass, NULL, NULL);
+
+#endif /* LIBBSP_ARM_ATSAM_BSP_H */

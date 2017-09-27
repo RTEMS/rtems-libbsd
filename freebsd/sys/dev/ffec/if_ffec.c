@@ -1458,7 +1458,11 @@ ffec_attach(device_t dev)
 			sc->phy_conn_type = PHY_CONN_MII;
 		else if (strcasecmp(phy_conn_name, "rmii") == 0)
 			sc->phy_conn_type = PHY_CONN_RMII;
+#ifndef __rtems__
 		else if (strcasecmp(phy_conn_name, "rgmii") == 0)
+#else /* __rtems__ */
+		else if (strncasecmp(phy_conn_name, "rgmii", 5) == 0)
+#endif /* __rtems__ */
 			sc->phy_conn_type = PHY_CONN_RGMII;
 	}
 	if (sc->phy_conn_type == PHY_CONN_UNKNOWN) {

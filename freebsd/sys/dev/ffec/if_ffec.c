@@ -1656,7 +1656,14 @@ ffec_attach(device_t dev)
 	ffec_get_hwaddr(sc, eaddr);
 
 	/* Reset the hardware.  Disables all interrupts. */
-	WR4(sc, FEC_ECR_REG, FEC_ECR_RESET);
+	if (sc->fectype & FECFLAG_AVB)
+		/*
+		 * Avoid AXI bus issues due to a MAC reset, see Linux for more
+		 * details.
+		 */
+		WR4(sc, FEC_ECR_REG, 0);
+	else
+		WR4(sc, FEC_ECR_REG, FEC_ECR_RESET);
 
 	/* Setup interrupt handler. */
 	error = bus_setup_intr(dev, sc->irq_res, INTR_TYPE_NET | INTR_MPSAFE,

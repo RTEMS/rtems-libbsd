@@ -607,8 +607,12 @@ ffec_setup_txbuf(struct ffec_softc *sc, int idx, struct mbuf **mp)
 	if (error != 0) {
 		return (ENOMEM);
 	}
+#ifndef __rtems__
 	bus_dmamap_sync(sc->txbuf_tag, sc->txbuf_map[idx].map, 
 	    BUS_DMASYNC_PREWRITE);
+#else /* __rtems__ */
+	rtems_cache_flush_multiple_data_lines((void *)seg.ds_addr, seg.ds_len);
+#endif /* __rtems__ */
 
 	sc->txbuf_map[idx].mbuf = m;
 	ffec_setup_txdesc(sc, idx, seg.ds_addr, seg.ds_len);
@@ -771,6 +775,9 @@ ffec_alloc_mbufcl(struct ffec_softc *sc)
 
 	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
 	m->m_pkthdr.len = m->m_len = m->m_ext.ext_size;
+#ifdef __rtems__
+	rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
+#endif /* __rtems__ */
 
 	return (m);
 }

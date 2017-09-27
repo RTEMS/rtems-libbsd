@@ -593,6 +593,7 @@ ffec_setup_txdesc(struct ffec_softc *sc, int idx, bus_addr_t paddr,
 	 * significant bits.
 	 */
 	sc->txdesc_ring[idx].buf_paddr = (uint32_t)paddr;
+	wmb();
 	sc->txdesc_ring[idx].flags_len = flags | len; /* Must be set last! */
 
 	return (nidx);
@@ -739,6 +740,7 @@ ffec_setup_rxdesc(struct ffec_softc *sc, int idx, bus_addr_t paddr)
 	 */
 	nidx = next_rxidx(sc, idx);
 	sc->rxdesc_ring[idx].buf_paddr = (uint32_t)paddr;
+	wmb();
 	sc->rxdesc_ring[idx].flags_len = FEC_RXDESC_EMPTY | 
 		((nidx == 0) ? FEC_RXDESC_WRAP : 0);
 

@@ -68,6 +68,11 @@ def options(opt):
                    default = "",
                    dest = "freebsd_options",
                    help = "Set FreeBSD options (developer option).")
+    opt.add_option("--optimization",
+                   action = "store",
+                   default = "2",
+                   dest = "optimization",
+                   help = "Set optimization level to OPTIMIZATION (-On compiler flag). Default is 2 (-O2).")
     libbsd_waf.options(opt)
 
 def bsp_configure(conf, arch_bsp):
@@ -88,6 +93,7 @@ def configure(conf):
     conf.env.WARNINGS = conf.options.warnings
     conf.env.NET_CONFIG = conf.options.net_config
     conf.env.FREEBSD_OPTIONS =conf.options.freebsd_options
+    conf.env.OPTIMIZATION = conf.options.optimization
     rtems.configure(conf, bsp_configure)
     libbsd_waf.configure(conf)
 

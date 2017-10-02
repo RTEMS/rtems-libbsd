@@ -156,8 +156,7 @@ class diffRecord:
 # This stuff needs to move to libbsd.py.
 #
 def commonFlags():
-    return ['-O2',
-            '-g',
+    return ['-g',
             '-fno-strict-aliasing',
             '-ffreestanding',
             '-fno-common']

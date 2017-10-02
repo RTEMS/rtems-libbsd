@@ -371,6 +371,7 @@ class ModuleManager(builder.ModuleManager):
         self.add('def build(bld):')
         self.add('    # C/C++ flags')
         self.add('    common_flags = []')
+        self.add('    common_flags += ["-O%s" % (bld.env.OPTIMIZATION)]')
         for f in builder.commonFlags():
             self.add('    common_flags += ["%s"]' % (f))
         self.add('    if bld.env.WARNINGS:')

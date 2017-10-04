@@ -108,6 +108,7 @@ enum {
 #define	FECTYPE_MASK		0x0000ffff
 #define	FECFLAG_GBE		(1 << 16)
 #define	FECFLAG_AVB		(1 << 17)
+#define	FECFLAG_RACC		(1 << 18)
 
 /*
  * Table of supported FDT compat strings and their associated FECTYPE values.
@@ -115,10 +116,11 @@ enum {
 static struct ofw_compat_data compat_data[] = {
 	{"fsl,imx51-fec",	FECTYPE_GENERIC},
 	{"fsl,imx53-fec",	FECTYPE_IMX53},
-	{"fsl,imx6q-fec",	FECTYPE_IMX6 | FECFLAG_GBE},
-	{"fsl,mvf600-fec",	FECTYPE_MVF},
+	{"fsl,imx6q-fec",	FECTYPE_IMX6 | FECFLAG_GBE | FECFLAG_RACC},
+	{"fsl,mvf600-fec",	FECTYPE_MVF | FECFLAG_RACC},
 	{"fsl,mvf-fec",		FECTYPE_MVF},
-	{"fsl,imx7d-fec",	FECTYPE_IMX6 | FECFLAG_GBE | FECFLAG_AVB},
+	{"fsl,imx7d-fec",	FECTYPE_IMX6 | FECFLAG_GBE | FECFLAG_AVB |
+				    FECFLAG_RACC},
 	{NULL,		 	FECTYPE_NONE},
 };
 
@@ -753,14 +755,17 @@ ffec_setup_rxbuf(struct ffec_softc *sc, int idx, struct mbuf * m)
 	int error, nsegs;
 	struct bus_dma_segment seg;
 
-	/*
-	 * We need to leave at least ETHER_ALIGN bytes free at the beginning of
-	 * the buffer to allow the data to be re-aligned after receiving it (by
-	 * copying it backwards ETHER_ALIGN bytes in the same buffer).  We also
-	 * have to ensure that the beginning of the buffer is aligned to the
-	 * hardware's requirements.
-	 */
-	m_adj(m, roundup(ETHER_ALIGN, sc->rxbuf_align));
+	if ((sc->fectype & FECFLAG_RACC) == 0) {
+		/*
+		 * The RACC[SHIFT16] feature is not used.  So, we need to leave
+		 * at least ETHER_ALIGN bytes free at the beginning of the
+		 * buffer to allow the data to be re-aligned after receiving it
+		 * (by copying it backwards ETHER_ALIGN bytes in the same
+		 * buffer).  We also have to ensure that the beginning of the
+		 * buffer is aligned to the hardware's requirements.
+		 */
+		m_adj(m, roundup(ETHER_ALIGN, sc->rxbuf_align));
+	}
 
 	error = bus_dmamap_load_mbuf_sg(sc->rxbuf_tag, sc->rxbuf_map[idx].map,
 	    m, &seg, &nsegs, 0);
@@ -796,7 +801,6 @@ ffec_rxfinish_onebuf(struct ffec_softc *sc, int len)
 {
 	struct mbuf *m, *newmbuf;
 	struct ffec_bufmap *bmap;
-	uint8_t *dst, *src;
 	int error;
 
 	/*
@@ -840,10 +844,17 @@ ffec_rxfinish_onebuf(struct ffec_softc *sc, int len)
 	m->m_pkthdr.len = len;
 	m->m_pkthdr.rcvif = sc->ifp;
 
-	src = mtod(m, uint8_t*);
-	dst = src - ETHER_ALIGN;
-	bcopy(src, dst, len);
-	m->m_data = dst;
+	if (sc->fectype & FECFLAG_RACC) {
+		/* We use the RACC[SHIFT16] feature */
+		m->m_data = mtod(m, uint8_t *) + 2;
+	} else {
+		uint8_t *dst, *src;
+
+		src = mtod(m, uint8_t*);
+		dst = src - ETHER_ALIGN;
+		bcopy(src, dst, len);
+		m->m_data = dst;
+	}
 	sc->ifp->if_input(sc->ifp, m);
 
 	FFEC_LOCK(sc);
@@ -1216,6 +1227,14 @@ ffec_init_locked(struct ffec_softc *sc)
 	WR4(sc, FEC_MIBC_REG, regval | FEC_MIBC_DIS);
 	ffec_clear_stats(sc);
 	WR4(sc, FEC_MIBC_REG, regval & ~FEC_MIBC_DIS);
+
+	if (sc->fectype & FECFLAG_RACC) {
+		/*
+		 * RACC - Receive Accelerator Function Configuration.
+		 */
+		regval = RD4(sc, FEC_RACC_REG);
+		WR4(sc, FEC_RACC_REG, regval | FEC_RACC_SHIFT16);
+	}
 
 	/*
 	 * ECR - Ethernet control register.

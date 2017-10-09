@@ -1384,6 +1384,7 @@ def build(bld):
     objs07_source = ['freebsd/contrib/libpcap/bpf_image.c',
                      'freebsd/contrib/libpcap/etherent.c',
                      'freebsd/contrib/libpcap/fad-getad.c',
+                     'freebsd/contrib/libpcap/fad-helpers.c',
                      'freebsd/contrib/libpcap/gencode.c',
                      'freebsd/contrib/libpcap/inet.c',
                      'freebsd/contrib/libpcap/nametoaddr.c',

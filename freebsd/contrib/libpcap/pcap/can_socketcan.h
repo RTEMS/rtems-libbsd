@@ -1,6 +1,11 @@
-/*
- * Copyright (c) 1993, 1994, 1995, 1996, 1997
+/*-
+ * Copyright (c) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from the Stanford/CMU enet packet filter,
+ * (net/enet.c) distributed as part of 4.3BSD, and code contributed
+ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence
+ * Berkeley Laboratory.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,11 +17,11 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the Computer Systems
- *	Engineering Group at Lawrence Berkeley Laboratory.
- * 4. Neither the name of the University nor of the Laboratory may be used
- *    to endorse or promote products derived from this software without
- *    specific prior written permission.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -31,13 +36,19 @@
  * SUCH DAMAGE.
  */
 
+#ifndef lib_pcap_can_socketcan_h
+#define lib_pcap_can_socketcan_h
+
 /*
- * For backwards compatibility.
- *
- * Note to OS vendors: do NOT get rid of this file!  Many applications
- * expect to be able to include <pcap.h>, and at least some of them
- * go through contortions in their configure scripts to try to detect
- * OSes that have "helpfully" moved pcap.h to <pcap/pcap.h> without
- * leaving behind a <pcap.h> file.
+ * SocketCAN header, as per Documentation/networking/can.txt in the
+ * Linux source.
  */
-#include <pcap/pcap.h>
+typedef struct {
+	u_int32_t can_id;
+	u_int8_t payload_length;
+	u_int8_t pad;
+	u_int8_t reserved1;
+	u_int8_t reserved2;
+} pcap_can_socketcan_hdr;
+
+#endif

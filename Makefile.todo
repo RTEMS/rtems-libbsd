@@ -37,6 +37,11 @@ GENERATED += $(LOCAL_SRC)/rtwn-rtl8188eufw.c
 GENERATED += $(LOCAL_SRC)/runfw.c
 GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
 GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
+GENERATED += freebsd/contrib/libpcap/grammar.h
+GENERATED += freebsd/contrib/libpcap/grammar.c
+GENERATED += freebsd/contrib/libpcap/pcap_version.h
+GENERATED += freebsd/contrib/libpcap/scanner.h
+GENERATED += freebsd/contrib/libpcap/scanner.c
 
 all: $(GENERATED)
 
@@ -197,6 +202,23 @@ rtemsbsd/include/machine/rtems-bsd-regdomain.h: $(FREEBSD_SRC)/etc/regdomain.xml
 
 rtemsbsd/rtems/rtems-bsd-regdomain.c: $(FREEBSD_SRC)/etc/regdomain.xml
 	rtems-bin2c -C $< $@
+
+freebsd/contrib/libpcap/grammar.h: freebsd/contrib/libpcap/grammar.c
+
+freebsd/contrib/libpcap/grammar.c: freebsd-org/contrib/libpcap/grammar.y
+	cd freebsd-org/contrib/libpcap && yacc -p pcap_ -o grammar.c -d grammar.y
+	mv freebsd-org/contrib/libpcap/grammar.h freebsd/contrib/libpcap/grammar.h
+	mv freebsd-org/contrib/libpcap/grammar.c $@
+
+freebsd/contrib/libpcap/pcap_version.h: freebsd-org/contrib/libpcap/VERSION
+	freebsd-org/contrib/libpcap/gen_version_header.sh $< freebsd-org/contrib/libpcap/pcap_version.h.in $@
+
+freebsd/contrib/libpcap/scanner.h: freebsd/contrib/libpcap/scanner.c
+
+freebsd/contrib/libpcap/scanner.c: freebsd-org/contrib/libpcap/scanner.l
+	cd freebsd-org/contrib/libpcap && lex -P pcap_ --header-file=scanner.h --nounput -o scanner.c scanner.l
+	mv freebsd-org/contrib/libpcap/scanner.h freebsd/contrib/libpcap/scanner.h
+	mv freebsd-org/contrib/libpcap/scanner.c $@
 
 clean:
 	rm $(GENERATED)

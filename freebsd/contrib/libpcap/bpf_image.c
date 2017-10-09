@@ -21,18 +21,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/libpcap/bpf_image.c,v 1.28 2008-01-02 04:16:46 guy Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <pcap-stdinc.h>
-#else /* WIN32 */
+#else /* _WIN32 */
 #if HAVE_INTTYPES_H
 #include <inttypes.h>
 #elif HAVE_STDINT_H
@@ -42,7 +37,7 @@ static const char rcsid[] _U_ =
 #include <sys/bitypes.h>
 #endif
 #include <sys/types.h>
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 #include <stdio.h>
 #include <string.h>
@@ -55,7 +50,7 @@ static const char rcsid[] _U_ =
 
 char *
 bpf_image(p, n)
-	struct bpf_insn *p;
+	const struct bpf_insn *p;
 	int n;
 {
 	int v;
@@ -218,6 +213,11 @@ bpf_image(p, n)
 		fmt = "x";
 		break;
 
+	case BPF_ALU|BPF_MOD|BPF_X:
+		op = "mod";
+		fmt = "x";
+		break;
+
 	case BPF_ALU|BPF_AND|BPF_X:
 		op = "and";
 		fmt = "x";
@@ -225,6 +225,11 @@ bpf_image(p, n)
 
 	case BPF_ALU|BPF_OR|BPF_X:
 		op = "or";
+		fmt = "x";
+		break;
+
+	case BPF_ALU|BPF_XOR|BPF_X:
+		op = "xor";
 		fmt = "x";
 		break;
 
@@ -258,6 +263,11 @@ bpf_image(p, n)
 		fmt = "#%d";
 		break;
 
+	case BPF_ALU|BPF_MOD|BPF_K:
+		op = "mod";
+		fmt = "#%d";
+		break;
+
 	case BPF_ALU|BPF_AND|BPF_K:
 		op = "and";
 		fmt = "#0x%x";
@@ -265,6 +275,11 @@ bpf_image(p, n)
 
 	case BPF_ALU|BPF_OR|BPF_K:
 		op = "or";
+		fmt = "#0x%x";
+		break;
+
+	case BPF_ALU|BPF_XOR|BPF_K:
+		op = "xor";
 		fmt = "#0x%x";
 		break;
 
@@ -293,13 +308,13 @@ bpf_image(p, n)
 		fmt = "";
 		break;
 	}
-	(void)snprintf(operand, sizeof operand, fmt, v);
+	(void)pcap_snprintf(operand, sizeof operand, fmt, v);
 	if (BPF_CLASS(p->code) == BPF_JMP && BPF_OP(p->code) != BPF_JA) {
-		(void)snprintf(image, sizeof image,
+		(void)pcap_snprintf(image, sizeof image,
 			      "(%03d) %-8s %-16s jt %d\tjf %d",
 			      n, op, operand, n + 1 + p->jt, n + 1 + p->jf);
 	} else {
-		(void)snprintf(image, sizeof image,
+		(void)pcap_snprintf(image, sizeof image,
 			      "(%03d) %-8s %s",
 			      n, op, operand);
 	}

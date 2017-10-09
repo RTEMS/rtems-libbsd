@@ -34,7 +34,7 @@ def configure(conf):
 def build(bld):
     # C/C++ flags
     common_flags = []
-    common_flags += ["-O" + bld.env.OPTIMIZATION]
+    common_flags += ["-O%s" % (bld.env.OPTIMIZATION)]
     common_flags += ["-g"]
     common_flags += ["-fno-strict-aliasing"]
     common_flags += ["-ffreestanding"]

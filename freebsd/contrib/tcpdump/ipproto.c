@@ -1,6 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
-
-/* 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
+/*
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code
  * distributions retain the above copyright notice and this paragraph
@@ -15,18 +18,13 @@
  * Original code by Hannes Gredler (hannes@juniper.net)
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/ipproto.c,v 1.6 2005-09-20 06:01:22 guy Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
+#include <netdissect-stdinc.h>
 
-#include "interface.h"
+#include "netdissect.h"
 #include "ipproto.h"
 
 const struct tok ipproto_values[] = {
@@ -62,3 +60,6 @@ const struct tok ipproto_values[] = {
     { 0, NULL }
 };
 
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-ipproto-data.h"
+#endif /* __rtems__ */

@@ -30,12 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /tcpdump/master/tcpdump/ipproto.h,v 1.6 2005-09-20 06:01:22 guy Exp $ (LBL)
- *
  * From:
  *	@(#)in.h	8.3 (Berkeley) 1/3/94
- * $FreeBSD$
- * FreeBSD: src/sys/netinet/in.h,v 1.38.2.3 1999/08/29 16:29:34 peter Exp
+ * $FreeBSD: projects/clang400-import/contrib/tcpdump/ipproto.h 276788 2015-01-07 19:55:18Z delphij $
  */
 
 extern const struct tok ipproto_values[];

@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
-
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
 /*
  * Copyright (c) 1997 Yen Yen Lim and North Dakota State University
  * All rights reserved.
@@ -31,29 +34,22 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-sunatm.c,v 1.8 2004-03-17 23:24:38 guy Exp $ (LBL)";
-#endif
+
+/* \summary: SunATM DLPI capture printer */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
- 
+#include <netdissect-stdinc.h>
+
 struct mbuf;
 struct rtentry;
- 
-#include <stdio.h>
-#include <pcap.h>
 
-#include "interface.h"
+#include "netdissect.h"
 #include "extract.h"
-#include "addrtoname.h"
 
 #include "atm.h"
-#include "atmuni31.h"
 
 /* SunATM header for ATM packet */
 #define DIR_POS		0	/* Direction (0x80 = transmit, 0x00 = receive) */
@@ -72,7 +68,8 @@ struct rtentry;
  * is the number of bytes actually captured.
  */
 u_int
-sunatm_if_print(const struct pcap_pkthdr *h, const u_char *p)
+sunatm_if_print(netdissect_options *ndo,
+                const struct pcap_pkthdr *h, const u_char *p)
 {
 	u_int caplen = h->caplen;
 	u_int length = h->len;
@@ -81,15 +78,12 @@ sunatm_if_print(const struct pcap_pkthdr *h, const u_char *p)
 	u_int traftype;
 
 	if (caplen < PKT_BEGIN_POS) {
-		printf("[|atm]");
+		ND_PRINT((ndo, "[|atm]"));
 		return (caplen);
 	}
 
-	if (eflag) {
-		if (p[DIR_POS] & 0x80)
-			printf("Tx: ");
-		else
-			printf("Rx: ");
+	if (ndo->ndo_eflag) {
+		ND_PRINT((ndo, p[DIR_POS] & 0x80 ? "Tx: " : "Rx: "));
 	}
 
 	switch (p[DIR_POS] & 0x0f) {
@@ -113,7 +107,10 @@ sunatm_if_print(const struct pcap_pkthdr *h, const u_char *p)
 	p += PKT_BEGIN_POS;
 	caplen -= PKT_BEGIN_POS;
 	length -= PKT_BEGIN_POS;
-	atm_print(vpi, vci, traftype, p, length, caplen);
+	atm_print(ndo, vpi, vci, traftype, p, length, caplen);
 
 	return (PKT_BEGIN_POS);
 }
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-print-sunatm-data.h"
+#endif /* __rtems__ */

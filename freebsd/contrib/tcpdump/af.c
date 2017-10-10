@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
-
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
 /*
  * Copyright (c) 1998-2006 The TCPDUMP project
  *
@@ -17,17 +20,12 @@
  * Original code by Hannes Gredler (hannes@juniper.net)
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/af.c,v 1.3 2006-03-23 14:58:44 hannes Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
-#include "interface.h"
+#include <netdissect-stdinc.h>
+#include "netdissect.h"
 #include "af.h"
 
 const struct tok af_values[] = {
@@ -63,3 +61,6 @@ const struct tok bsd_af_values[] = {
     { BSD_AFNUM_INET6_DARWIN, "IPv6" },
     { 0, NULL}
 };
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-af-data.h"
+#endif /* __rtems__ */

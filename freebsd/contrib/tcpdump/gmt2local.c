@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
-
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
 /*
  * Copyright (c) 1997
  *	The Regents of the University of California.  All rights reserved.
@@ -21,16 +24,11 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/gmt2local.c,v 1.9 2003-11-16 09:36:09 guy Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
+#include <netdissect-stdinc.h>
 
 #include <stdio.h>
 
@@ -71,3 +69,6 @@ gmt2local(time_t t)
 
 	return (dt);
 }
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-gmt2local-data.h"
+#endif /* __rtems__ */

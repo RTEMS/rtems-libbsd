@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
-
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
 /*
  * Copyright (c) 1996
  *	The Regents of the University of California.  All rights reserved.
@@ -21,35 +24,30 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-raw.c,v 1.41 2003-11-16 09:36:34 guy Exp $ (LBL)";
-#endif
+/* \summary: Raw IP printer */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
+#include <netdissect-stdinc.h>
 
-#include <pcap.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "addrtoname.h"
-#include "interface.h"
+#include "netdissect.h"
 
 /*
  * The DLT_RAW packet has no header. It contains a raw IP packet.
  */
 
 u_int
-raw_if_print(const struct pcap_pkthdr *h, const u_char *p)
+raw_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char *p)
 {
-	if (eflag)
-		printf("ip: ");
+	if (ndo->ndo_eflag)
+		ND_PRINT((ndo, "ip: "));
 
-	ipN_print(p, h->len);
+	ipN_print(ndo, p, h->len);
 
 	return (0);
 }
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-print-raw-data.h"
+#endif /* __rtems__ */

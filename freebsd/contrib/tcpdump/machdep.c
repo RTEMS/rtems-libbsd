@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
-
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
 /*
  * Copyright (c) 1996, 1997
  *	The Regents of the University of California.  All rights reserved.
@@ -21,11 +24,6 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/machdep.c,v 1.13 2003-12-15 03:53:21 guy Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -36,7 +34,7 @@ static const char rcsid[] _U_ =
  * need to do to get it defined?  This is clearly wrong, as we shouldn't
  * have to include UNIX or Windows system header files to get it.
  */
-#include <tcpdump-stdinc.h>
+#include <netdissect-stdinc.h>
 
 #ifndef HAVE___ATTRIBUTE__
 #define __attribute__(x)
@@ -48,12 +46,24 @@ static const char rcsid[] _U_ =
 
 #if !defined(HAVE_SNPRINTF)
 int snprintf(char *, size_t, const char *, ...)
-     __attribute__((format(printf, 3, 4)));
+#ifdef __ATTRIBUTE___FORMAT_OK
+     __attribute__((format(printf, 3, 4)))
+#endif /* __ATTRIBUTE___FORMAT_OK */
+     ;
 #endif /* !defined(HAVE_SNPRINTF) */
 #endif /* __osf__ */
 
 #include "machdep.h"
 
+/*
+ * On platforms where the CPU doesn't support unaligned loads, force
+ * unaligned accesses to abort with SIGBUS, rather than being fixed
+ * up (slowly) by the OS kernel; on those platforms, misaligned accesses
+ * are bugs, and we want tcpdump to crash so that the bugs are reported.
+ *
+ * The only OS on which this is necessary is DEC OSF/1^W^WDigital
+ * UNIX^W^WTru64 UNIX.
+ */
 int
 abort_on_misalignment(char *ebuf _U_, size_t ebufsiz _U_)
 {
@@ -67,3 +77,6 @@ abort_on_misalignment(char *ebuf _U_, size_t ebufsiz _U_)
 #endif
 	return (0);
 }
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-machdep-data.h"
+#endif /* __rtems__ */

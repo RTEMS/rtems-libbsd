@@ -1,5 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
-
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-tcpdump-namespace.h"
+#endif /* __rtems__ */
 /*	$NetBSD: print-ah.c,v 1.4 1996/05/20 00:41:16 fvdl Exp $	*/
 
 /*
@@ -23,51 +26,47 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-ah.c,v 1.22 2003-11-19 00:36:06 guy Exp $ (LBL)";
-#endif
+/* \summary: IPSEC Authentication Header printer */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
-
-#include <stdio.h>
+#include <netdissect-stdinc.h>
 
 #include "ah.h"
 
-#include "interface.h"
-#include "addrtoname.h"
+#include "netdissect.h"
 #include "extract.h"
 
 int
-ah_print(register const u_char *bp)
+ah_print(netdissect_options *ndo, register const u_char *bp)
 {
 	register const struct ah *ah;
-	register const u_char *ep;
 	int sumlen;
-	u_int32_t spi;
 
 	ah = (const struct ah *)bp;
-	ep = snapend;		/* 'ep' points to the end of available data. */
 
-	TCHECK(*ah);
+	ND_TCHECK(*ah);
 
 	sumlen = ah->ah_len << 2;
-	spi = EXTRACT_32BITS(&ah->ah_spi);
 
-	printf("AH(spi=0x%08x", spi);
-	if (vflag)
-		printf(",sumlen=%d", sumlen);
-	printf(",seq=0x%x", EXTRACT_32BITS(ah + 1));
-	if (bp + sizeof(struct ah) + sumlen > ep)
-		fputs("[truncated]", stdout);
-	fputs("): ", stdout);
+	ND_PRINT((ndo, "AH(spi=0x%08x", EXTRACT_32BITS(&ah->ah_spi)));
+	if (ndo->ndo_vflag)
+		ND_PRINT((ndo, ",sumlen=%d", sumlen));
+	ND_TCHECK_32BITS(ah + 1);
+	ND_PRINT((ndo, ",seq=0x%x", EXTRACT_32BITS(ah + 1)));
+	if (!ND_TTEST2(*bp, sizeof(struct ah) + sumlen)) {
+		ND_PRINT((ndo, "[truncated]):"));
+		return -1;
+	}
+	ND_PRINT((ndo, "): "));
 
 	return sizeof(struct ah) + sumlen;
  trunc:
-	fputs("[|AH]", stdout);
+	ND_PRINT((ndo, "[|AH]"));
 	return -1;
 }
+#ifdef __rtems__
+#include "rtems-bsd-tcpdump-print-ah-data.h"
+#endif /* __rtems__ */

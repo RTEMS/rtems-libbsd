@@ -159,16 +159,16 @@ threaded execution of the application but minimizes the necessary changes to the
 original FreeBSD code.
 
 * Import and commit the unchanged source files like described above.
-* Add the files to the libbsd.py and build them.
+* Add the files to the [libbsd.py](libbsd.py) and build them.
 * Check the sources for everything that can be made const. This type of patches
   should go back to the upstream FreeBSD sources.
 * Move static variables out of functions if necessary (search for
-  "<TAB>static"). These patches most likely will not be accepted into FreeBSD.
+  "\tstatic"). These patches most likely will not be accepted into FreeBSD.
 * Add a rtems_bsd_command_PROGNAME() wrapper function to the source file
   containing the main function (e.g. PROGNAME = pfctl). For an example look at
-  `rtems_bsd_command_pfctl()` in `freebsd/sbin/pfctl/pfctl.c`.
+  `rtems_bsd_command_pfctl()` in [pfctl.c](freebsd/sbin/pfctl/pfctl.c).
 * You probably have to use getopt_r() instead of getopt(). Have a look at
-  `freebsd/sbin/pfctl/pfctl.c`.
+  [pfctl.c](freebsd/sbin/pfctl/pfctl.c).
 * Build the libbsd without optimization.
 * Use the `userspace-header-gen.py` to generate some necessary header
   files. It will generate one `rtems-bsd-PROGNAME-MODULE-data.h` per object file, one
@@ -180,13 +180,29 @@ original FreeBSD code.
   has to match the name that is used in the RTEMS linker set further below.
 * If you regenerated files that have already been generated, you may have to
   remove RTEMS-specific names from the namespace. The defaults (linker set names
-  and rtems_bsd_program_xxx) should already be filtered.
+  and rtems_bsd_program_.*) should already be filtered.
 * Put the generated header files into the same folder like the source files.
-* Include `PROGNAME-rtems-bsd-namespace.h` at the top of each source file and
-  the `PROGNAME-rtems-bsd-MODULE-data.h` after the include section of the
-  corresponding source files.
-* Include `machine/rtems-bsd-program.h` at the top of the include block in each
-  source file.
+* At the top of each source file place the following right after the user-space header:
+  ```c
+  #ifdef __rtems__
+  #include <machine/rtems-bsd-program.h>
+  #include "rtems-bsd-PROGNAME-namespace.h"
+  #endif /* __rtems__ */
+  ```
+  The following command may be useful:
+  ```
+  sed -i 's%#include <machine/rtems-bsd-user-space.h>%#include <machine/rtems-bsd-user-space.h>\n#ifdef __rtems__\n#include <machine/rtems-bsd-program.h>\n#include "rtems-bsd-PROGNAME-namespace.h"\n#endif /* __rtems__ */%' *.c
+  ```
+* At the bottom of each source file place the follwing:
+  ```c
+  #ifdef __rtems__
+  #include "rtems-bsd-PROGNAME-FILE-data.h"
+  #endif /* __rtems__ */
+  ```
+  The following command may be useful:
+  ```
+  for i in *.c ; do n=$(basename $i .c) ; echo -e "#ifdef __rtems__\n#include \"rtems-bsd-PROGNAME-$n-data.h\"\n#endif /* __rtems__ */" >> $i ; done
+  ```
 * Create one compilable commit.
 
 Rules for Modifying FreeBSD Source

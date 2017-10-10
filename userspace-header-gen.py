@@ -342,7 +342,7 @@ class HeaderGenCU:
             # get file and line
             try:
                 decl_file_idx = child.attributes["DW_AT_decl_file"].value - 1
-                decl_file = self._lineprogram['file_entry'][decl_file_idx].name
+                decl_file = self._lineprogram['file_entry'][decl_file_idx].name.decode('ascii')
             except KeyError:
                 decl_file = "<unknown>"
             try:

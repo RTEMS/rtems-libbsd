@@ -173,6 +173,7 @@ def includes():
     return ['-Irtemsbsd/include',
             '-Ifreebsd/sys',
             '-Ifreebsd/sys/contrib/pf',
+            '-Ifreebsd/crypto',
             '-Ifreebsd/sys/net',
             '-Ifreebsd/include',
             '-Ifreebsd/lib',

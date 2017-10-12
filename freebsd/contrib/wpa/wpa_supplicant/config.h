@@ -45,6 +45,9 @@
 #include "common/ieee802_11_defs.h"
 #include "common/ieee802_11_common.h"
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 
 struct wpa_cred {
 	/**

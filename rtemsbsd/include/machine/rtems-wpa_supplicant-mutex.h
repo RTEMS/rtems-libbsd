@@ -7,13 +7,9 @@
  */
 
 /*
- * Copyright (c) 2013, 2016 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2017 Sichen Zhao.  All rights reserved.
  *
- *  embedded brains GmbH
- *  Dornierstr. 4
- *  82178 Puchheim
- *  Germany
- *  <rtems@embedded-brains.de>
+ *  <zsc19940506@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,43 +33,9 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
-#define _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
+#ifndef _RTEMS_BSD_MACHINE_RTEMS_WPA_SUPPLICANT_MUTEX_H_
+#define _RTEMS_BSD_MACHINE_RTEMS_WPA_SUPPLICANT_MUTEX_H_
 
-#include <sys/cdefs.h>
+extern struct mtx wpa_supplicant_mtx;
 
-#define RTEMS_BSD_ARGC(array) (sizeof(array) / sizeof((array)[0]) - 1)
-
-__BEGIN_DECLS
-
-int rtems_bsd_command_arp(int argc, char **argv);
-
-int rtems_bsd_command_ifconfig(int argc, char **argv);
-
-int rtems_bsd_command_netstat(int argc, char **argv);
-
-int rtems_bsd_command_pfctl(int argc, char **argv);
-
-int rtems_bsd_command_ping(int argc, char **argv);
-
-int rtems_bsd_command_ping6(int argc, char **argv);
-
-int rtems_bsd_command_route(int argc, char **argv);
-
-int rtems_bsd_command_dhcpcd(int argc, char **argv);
-
-int rtems_bsd_command_wpa_supplicant(int argc, char **argv);
-
-int rtems_bsd_command_tcpdump(int argc, char **argv);
-
-int rtems_bsd_command_sysctl(int argc, char **argv);
-
-int rtems_bsd_command_vmstat(int argc, char **argv);
-
-int rtems_bsd_command_wlanstats(int argc, char **argv);
-
-int rtems_bsd_command_stty(int argc, char **argv);
-
-__END_DECLS
-
-#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_ */
+#endif /* _RTEMS_BSD_MACHINE_RTEMS_WPA_SUPPLICANT_MUTEX_H_ */

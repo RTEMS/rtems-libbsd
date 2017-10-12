@@ -2426,19 +2426,12 @@ bpf_hdrlen(struct bpf_d *d)
 static void
 bpf_bintime2ts(struct bintime *bt, struct bpf_ts *ts, int tstype)
 {
-#ifndef __rtems__
 	struct bintime bt2, boottimebin;
-#else /* __rtems__ */
-	struct bintime bt2;
-#endif /* __rtems__ */
 	struct timeval tsm;
 	struct timespec tsn;
 
 	if ((tstype & BPF_T_MONOTONIC) == 0) {
 		bt2 = *bt;
-#ifndef __rtems__
-		getboottimebin(&boottimebin);
-#endif /* __rtems__ */
 		bintime_add(&bt2, &boottimebin);
 		bt = &bt2;
 	}

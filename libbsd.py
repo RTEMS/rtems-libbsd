@@ -4278,6 +4278,7 @@ def usr_sbin_wpa_supplicant(mm):
         [
             'rtems/rtems-bsd-shell-wpa_supplicant.c',
             'rtems/rtems-wpa_supplicant_mutex.c',
+            'rtems/rtems-bsd-shell-wpa_supplicant_fork.c',
         ],
         mm.generator['source']()
     )

@@ -210,7 +210,8 @@ early_initialization(void)
   &rtems_shell_SYSCTL_Command, \
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_VMSTAT_Command, \
-  &rtems_shell_WPA_SUPPLICANT_Command
+  &rtems_shell_WPA_SUPPLICANT_Command, \
+  &rtems_shell_WPA_SUPPLICANT_FORK_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE

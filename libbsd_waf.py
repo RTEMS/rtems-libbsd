@@ -2325,6 +2325,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-shell-vmstat.c',
               'rtemsbsd/rtems/rtems-bsd-shell-wlanstats.c',
               'rtemsbsd/rtems/rtems-bsd-shell-wpa_supplicant.c',
+              'rtemsbsd/rtems/rtems-bsd-shell-wpa_supplicant_fork.c',
               'rtemsbsd/rtems/rtems-bsd-syscall-api.c',
               'rtemsbsd/rtems/rtems-kernel-assert.c',
               'rtemsbsd/rtems/rtems-kernel-autoconf.c',

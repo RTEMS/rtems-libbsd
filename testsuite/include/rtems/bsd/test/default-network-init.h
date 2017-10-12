@@ -334,7 +334,8 @@ Init(rtems_task_argument arg)
   &rtems_shell_TCPDUMP_Command, \
   &rtems_shell_SYSCTL_Command, \
   &rtems_shell_VMSTAT_Command, \
-  &rtems_shell_WLANSTATS_Command
+  &rtems_shell_WLANSTATS_Command, \
+  &rtems_shell_WPA_SUPPLICANT_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE

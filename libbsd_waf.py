@@ -2328,6 +2328,8 @@ def build(bld):
                      ('freebsd/sys/netinet', '**/*.h', 'netinet'),
                      ('freebsd/sys/netinet6', '**/*.h', 'netinet6'),
                      ('freebsd/sys/netipsec', '**/*.h', 'netipsec'),
+                     ('freebsd/contrib/libpcap', '*.h', ''),
+                     ('freebsd/contrib/libpcap/pcap', '*.h', 'pcap'),
                      ('freebsd/crypto/openssl', '*.h', 'openssl'),
                      ('freebsd/crypto/openssl/crypto', '*.h', 'openssl'),
                      ('freebsd/crypto/openssl/ssl', '(ssl|kssl|ssl2).h', 'openssl'),

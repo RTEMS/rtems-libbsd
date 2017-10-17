@@ -463,7 +463,7 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
 
 	_ISR_lock_ISR_disable_and_acquire(&executing->Timer.Lock, &lock_context);
 
-	header = &cpu_self->Watchdog.Header[PER_CPU_WATCHDOG_RELATIVE];
+	header = &cpu_self->Watchdog.Header[PER_CPU_WATCHDOG_MONOTONIC];
 	executing->Timer.header = header;
 	executing->Timer.Watchdog.routine = sleepq_timeout;
 	_Watchdog_Set_CPU(&executing->Timer.Watchdog, cpu_self);

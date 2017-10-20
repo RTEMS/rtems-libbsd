@@ -2880,7 +2880,11 @@ static struct dpaa_bp *dpaa_bp_alloc(struct device *dev)
 
 	dpaa_bp->bpid = FSL_DPAA_BPID_INV;
 	dpaa_bp->percpu_count = devm_alloc_percpu(dev, *dpaa_bp->percpu_count);
+#ifndef __rtems__
 	dpaa_bp->config_count = FSL_DPAA_ETH_MAX_BUF_COUNT;
+#else /* __rtems__ */
+	dpaa_bp->config_count = 8;
+#endif /* __rtems__ */
 
 	dpaa_bp->seed_cb = dpaa_bp_seed;
 	dpaa_bp->free_buf_cb = dpaa_bp_free_pf;

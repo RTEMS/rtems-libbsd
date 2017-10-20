@@ -553,6 +553,9 @@
 #define	SPR_LDSTCR		0x3f8	/* .6. Load/Store Control Register */
 #define	SPR_L2PM		0x3f8	/* .6. L2 Private Memory Control Register */
 #define	SPR_L2CR		0x3f9	/* .6. L2 Control Register */
+#ifdef __rtems__
+#undef L2CR_L2E
+#endif /* __rtems__ */
 #define	  L2CR_L2E		  0x80000000 /* 0: L2 enable */
 #define	  L2CR_L2PE		  0x40000000 /* 1: L2 data parity enable */
 #define	  L2CR_L2SIZ		  0x30000000 /* 2-3: L2 size */
@@ -574,6 +577,9 @@
 #define	  L2CR_L2DO		  0x00400000 /* 9: L2 data-only.
 				      Setting this bit disables instruction
 				      caching. */
+#ifdef __rtems__
+#undef L2CR_L2I
+#endif /* __rtems__ */
 #define	  L2CR_L2I		  0x00200000 /* 10: L2 global invalidate. */
 #define	  L2CR_L2IO_7450	  0x00010000 /* 11: L2 instruction-only (MPC745x). */
 #define	  L2CR_L2CTL		  0x00100000 /* 11: L2 RAM control (ZZ enable).
@@ -614,6 +620,9 @@
 #define	  L3CR_L3NIRCA		  0x00000080
 #define	  L3CR_L3DO		  0x00000040
 #define	  L3CR_PMEN		  0x00000004
+#ifdef __rtems__
+#undef L3CR_PMSIZ
+#endif /* __rtems__ */
 #define	  L3CR_PMSIZ		  0x00000003
 
 #define	SPR_DCCR		0x3fa	/* 4.. Data Cache Cachability Register */

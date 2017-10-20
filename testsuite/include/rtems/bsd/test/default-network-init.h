@@ -367,6 +367,7 @@ Init(rtems_task_argument arg)
   &rtems_shell_VMSTAT_Command, \
   &rtems_shell_WLANSTATS_Command
 
+#define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE
 #define CONFIGURE_SHELL_COMMAND_STACKUSE

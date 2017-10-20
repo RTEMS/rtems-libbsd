@@ -35,18 +35,32 @@
 #include <unistd.h>
 
 #include "pollts.h"
+#ifdef __rtems__
+#include <string.h>
+#include <rtems/libio_.h>
+#endif /* __rtems__ */
 
 int
 pollts(struct pollfd *restrict fds, nfds_t nfds,
     const struct timespec *restrict ts, const sigset_t *restrict sigmask)
 {
+#ifndef __rtems__
 	fd_set read_fds;
+#else /* __rtems__ */
+	fd_set big_enough_read_fs[howmany(rtems_libio_number_iops,
+	    sizeof(fd_set) * 8)];
+#define	read_fds (*(fd_set *)(&big_enough_read_fs[0]))
+#endif /* __rtems__ */
 	nfds_t n;
 	int maxfd, r;
 	struct timeval tv;
 	struct timeval *tvp;
 
+#ifndef __rtems__
 	FD_ZERO(&read_fds);
+#else /* __rtems__ */
+	memset(big_enough_read_fs, 0, sizeof(big_enough_read_fs));
+#endif /* __rtems__ */
 	maxfd = 0;
 	for (n = 0; n < nfds; n++) {
 		if (fds[n].events & POLLIN) {

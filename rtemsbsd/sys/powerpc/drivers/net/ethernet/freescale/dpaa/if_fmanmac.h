@@ -59,7 +59,6 @@ struct fman_mac_softc {
 	struct ifnet		*ifp;
 	int			if_flags;
 	struct mtx		mtx;
-	uma_zone_t		sgt_zone;
 	struct callout		fman_mac_callout;
 	char			name[8];
 };

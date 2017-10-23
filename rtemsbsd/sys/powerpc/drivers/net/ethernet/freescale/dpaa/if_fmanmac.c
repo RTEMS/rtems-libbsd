@@ -62,6 +62,20 @@ struct fman_mac_sgt {
 	struct mbuf *m;
 };
 
+static uma_zone_t fman_mac_sgt_zone;
+
+static void
+fman_mac_sgt_init(void)
+{
+
+	fman_mac_sgt_zone = uma_zcreate("FMan MAC SGT", sizeof(struct fman_mac_sgt),
+	    NULL, NULL, NULL, NULL, 16, 0);
+	if (fman_mac_sgt_zone == NULL) {
+		panic("Cannot create FMan MAC SGT zone");
+	}
+}
+SYSINIT(fman_mac_sgt, SI_SUB_MBUF, SI_ORDER_ANY, fman_mac_sgt_init, NULL);
+
 static void
 fman_mac_enable_tx_csum(struct mbuf *m, struct qm_fd *fd,
     struct fman_prs_result *prs)
@@ -121,7 +135,7 @@ fman_mac_txstart_locked(struct ifnet *ifp, struct fman_mac_softc *sc)
 			break;
 		}
 
-		sgt = uma_zalloc(sc->sgt_zone, M_NOWAIT);
+		sgt = uma_zalloc(fman_mac_sgt_zone, M_NOWAIT);
 		if (sgt == NULL) {
 			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
 			m_freem(m);
@@ -162,7 +176,7 @@ repeat_with_collapsed_mbuf_chain:
 			if (c == NULL) {
 				if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
 				m_freem(m);
-				uma_zfree(sc->sgt_zone, sgt);
+				uma_zfree(fman_mac_sgt_zone, sgt);
 				continue;
 			}
 
@@ -417,16 +431,10 @@ fman_mac_dev_attach(device_t dev)
 
 	callout_init_mtx(&sc->fman_mac_callout, &sc->mtx, 0);
 
-	sc->sgt_zone = uma_zcreate("FMan MAC SGT", sizeof(struct fman_mac_sgt),
-	    NULL, NULL, NULL, NULL, 16, 0);
-	if (sc->sgt_zone == NULL) {
-		goto error_0;
-	}
-
 	/* Set up the Ethernet interface */
 	sc->ifp = ifp = if_alloc(IFT_ETHER);
 	if (sc->ifp == NULL) {
-		goto error_1;
+		goto error;
 	}
 
 	snprintf(&sc->name[0], sizeof(sc->name), "fm%im",
@@ -468,9 +476,7 @@ fman_mac_dev_attach(device_t dev)
 	return (0);
 
 	if_free(ifp);
-error_1:
-	uma_zdestroy(sc->sgt_zone);
-error_0:
+error:
 	mtx_destroy(&sc->mtx);
 	return (ENXIO);
 }
@@ -487,7 +493,6 @@ fman_mac_dev_detach(device_t _dev)
 	FMAN_MAC_UNLOCK(sc);
 
 	if_free(sc->ifp);
-	uma_zdestroy(sc->sgt_zone);
 	mtx_destroy(&sc->mtx);
 
 	return (bus_generic_detach(_dev));
@@ -570,16 +575,14 @@ fman_mac_miibus_statchg(device_t dev)
 
 void dpaa_cleanup_tx_fd(struct ifnet *ifp, const struct qm_fd *fd)
 {
-	struct fman_mac_softc *sc;
 	struct fman_mac_sgt *sgt;
 
 	BSD_ASSERT(qm_fd_get_format(fd) == qm_fd_sg);
 
-	sc = ifp->if_softc;
 	sgt = (struct fman_mac_sgt *)qm_fd_addr(fd);
 
 	m_freem(sgt->m);
-	uma_zfree(sc->sgt_zone, sgt);
+	uma_zfree(fman_mac_sgt_zone, sgt);
 }
 
 struct dpaa_priv *

@@ -125,12 +125,13 @@ static struct ofw_compat_data compat_data[] = {
 };
 
 /*
- * Driver data and defines.
+ * Driver data and defines.  The descriptor counts must be a power of two.
  */
 #define	RX_DESC_COUNT	64
 #define	RX_DESC_SIZE	(sizeof(struct ffec_hwdesc) * RX_DESC_COUNT)
 #define	TX_DESC_COUNT	64
 #define	TX_DESC_SIZE	(sizeof(struct ffec_hwdesc) * TX_DESC_COUNT)
+#define	TX_MAX_DMA_SEGS	8
 
 #define	WATCHDOG_TIMEOUT_SECS	5
 #define	STATS_HARVEST_INTERVAL	3
@@ -187,7 +188,6 @@ struct ffec_softc {
 	struct ffec_bufmap	txbuf_map[TX_DESC_COUNT];
 	uint32_t		tx_idx_head;
 	uint32_t		tx_idx_tail;
-	int			txcount;
 };
 
 #define	FFEC_LOCK(sc)			mtx_lock(&(sc)->mtx)
@@ -200,6 +200,8 @@ struct ffec_softc {
 
 static void ffec_init_locked(struct ffec_softc *sc);
 static void ffec_stop_locked(struct ffec_softc *sc);
+static void ffec_encap(struct ifnet *ifp, struct ffec_softc *sc,
+    struct mbuf *m0, int *start_tx);
 static void ffec_txstart_locked(struct ffec_softc *sc);
 static void ffec_txfinish_locked(struct ffec_softc *sc);
 
@@ -232,17 +234,39 @@ WR4(struct ffec_softc *sc, bus_size_t off, uint32_t val)
 }
 
 static inline uint32_t
-next_rxidx(struct ffec_softc *sc, uint32_t curidx)
+next_rxidx(uint32_t curidx)
 {
 
-	return ((curidx == RX_DESC_COUNT - 1) ? 0 : curidx + 1);
+	return ((curidx + 1) & (RX_DESC_COUNT - 1));
 }
 
 static inline uint32_t
-next_txidx(struct ffec_softc *sc, uint32_t curidx)
+next_txidx(uint32_t curidx)
 {
 
-	return ((curidx == TX_DESC_COUNT - 1) ? 0 : curidx + 1);
+	return ((curidx + 1) & (TX_DESC_COUNT - 1));
+}
+
+static inline uint32_t
+prev_txidx(uint32_t curidx)
+{
+
+	return ((curidx - 1) & (TX_DESC_COUNT - 1));
+}
+
+static inline uint32_t
+inc_txidx(uint32_t curidx, uint32_t inc)
+{
+
+	return ((curidx + inc) & (TX_DESC_COUNT - 1));
+}
+
+static inline uint32_t
+free_txdesc(struct ffec_softc *sc)
+{
+
+	return (((sc)->tx_idx_tail - (sc)->tx_idx_head - 1) &
+	    (TX_DESC_COUNT - 1));
 }
 
 static void
@@ -569,105 +593,110 @@ ffec_tick(void *arg)
 	callout_reset(&sc->ffec_callout, hz, ffec_tick, sc);
 }
 
-inline static uint32_t
-ffec_setup_txdesc(struct ffec_softc *sc, int idx, bus_addr_t paddr, 
-    uint32_t len)
+static void
+ffec_encap(struct ifnet *ifp, struct ffec_softc *sc, struct mbuf *m0,
+    int *start_tx)
 {
-	uint32_t nidx;
+	bus_dma_segment_t segs[TX_MAX_DMA_SEGS];
+	int error, i, nsegs;
+	struct ffec_bufmap *bmap;
+	uint32_t tx_idx;
 	uint32_t flags;
 
-	nidx = next_txidx(sc, idx);
+	FFEC_ASSERT_LOCKED(sc);
 
-	/* Addr/len 0 means we're clearing the descriptor after xmit done. */
-	if (paddr == 0 || len == 0) {
-		flags = 0;
-		--sc->txcount;
-	} else {
-		flags = FEC_TXDESC_READY | FEC_TXDESC_L | FEC_TXDESC_TC;
-		++sc->txcount;
+	tx_idx = sc->tx_idx_head;
+	bmap = &sc->txbuf_map[tx_idx];
+
+	/* Create mapping in DMA memory */
+	error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, bmap->map, m0,
+	    segs, &nsegs, BUS_DMA_NOWAIT);
+	if (error == EFBIG) {
+		/* Too many segments!  Defrag and try again. */
+		struct mbuf *m = m_defrag(m0, M_NOWAIT);
+
+		if (m == NULL) {
+			m_freem(m0);
+			return;
+		}
+		m0 = m;
+		error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag,
+		    bmap->map, m0, segs, &nsegs, BUS_DMA_NOWAIT);
 	}
-	if (nidx == 0)
-		flags |= FEC_TXDESC_WRAP;
+	if (error != 0) {
+		/* Give up. */
+		m_freem(m0);
+		return;
+	}
+
+#ifndef __rtems__
+	bus_dmamap_sync(sc->txbuf_tag, bmap->map, BUS_DMASYNC_PREWRITE);
+#endif /* __rtems__ */
+	bmap->mbuf = m0;
 
 	/*
-	 * The hardware requires 32-bit physical addresses.  We set up the dma
-	 * tag to indicate that, so the cast to uint32_t should never lose
-	 * significant bits.
+	 * Fill in the TX descriptors back to front so that READY bit in first
+	 * descriptor is set last.
 	 */
-	sc->txdesc_ring[idx].buf_paddr = (uint32_t)paddr;
-	wmb();
-	sc->txdesc_ring[idx].flags_len = flags | len; /* Must be set last! */
+	tx_idx = inc_txidx(tx_idx, (uint32_t)nsegs);
+	sc->tx_idx_head = tx_idx;
+	flags = FEC_TXDESC_L | FEC_TXDESC_READY | FEC_TXDESC_TC;
+	for (i = nsegs - 1; i >= 0; i--) {
+		struct ffec_hwdesc *tx_desc;
 
-	return (nidx);
-}
-
-static int
-ffec_setup_txbuf(struct ffec_softc *sc, int idx, struct mbuf **mp)
-{
-	struct mbuf * m;
-	int error, nsegs;
-	struct bus_dma_segment seg;
-
-	if ((m = m_defrag(*mp, M_NOWAIT)) == NULL)
-		return (ENOMEM);
-	*mp = m;
-
-	error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, sc->txbuf_map[idx].map,
-	    m, &seg, &nsegs, 0);
-	if (error != 0) {
-		return (ENOMEM);
-	}
-#ifndef __rtems__
-	bus_dmamap_sync(sc->txbuf_tag, sc->txbuf_map[idx].map, 
-	    BUS_DMASYNC_PREWRITE);
-#else /* __rtems__ */
-	rtems_cache_flush_multiple_data_lines((void *)seg.ds_addr, seg.ds_len);
+		tx_idx = prev_txidx(tx_idx);;
+		tx_desc = &sc->txdesc_ring[tx_idx];
+		tx_desc->buf_paddr = segs[i].ds_addr;
+#ifdef __rtems__
+		rtems_cache_flush_multiple_data_lines((void *)segs[i].ds_addr,
+		    segs[i].ds_len);
 #endif /* __rtems__ */
 
-	sc->txbuf_map[idx].mbuf = m;
-	ffec_setup_txdesc(sc, idx, seg.ds_addr, seg.ds_len);
+		if (i == 0) {
+			wmb();
+		}
 
-	return (0);
+		tx_desc->flags_len = (tx_idx == (TX_DESC_COUNT - 1) ?
+		    FEC_TXDESC_WRAP : 0) | flags | segs[i].ds_len;
 
+		flags &= ~FEC_TXDESC_L;
+	}
+
+	BPF_MTAP(ifp, m0);
+	*start_tx = 1;
 }
 
 static void
 ffec_txstart_locked(struct ffec_softc *sc)
 {
 	struct ifnet *ifp;
-	struct mbuf *m;
-	int enqueued;
+	struct mbuf *m0;
+	int start_tx;
 
 	FFEC_ASSERT_LOCKED(sc);
+
+	ifp = sc->ifp;
+	start_tx = 0;
 
 	if (!sc->link_is_up)
 		return;
 
-	ifp = sc->ifp;
-
-	if (ifp->if_drv_flags & IFF_DRV_OACTIVE)
-		return;
-
-	enqueued = 0;
-
 	for (;;) {
-		if (sc->txcount == (TX_DESC_COUNT-1)) {
+		if (free_txdesc(sc) < TX_MAX_DMA_SEGS) {
+			/* No free descriptors */
 			ifp->if_drv_flags |= IFF_DRV_OACTIVE;
 			break;
 		}
-		IFQ_DRV_DEQUEUE(&ifp->if_snd, m);
-		if (m == NULL)
+
+		/* Get packet from the queue */
+		IFQ_DRV_DEQUEUE(&ifp->if_snd, m0);
+		if (m0 == NULL)
 			break;
-		if (ffec_setup_txbuf(sc, sc->tx_idx_head, &m) != 0) {
-			IFQ_DRV_PREPEND(&ifp->if_snd, m);
-			break;
-		}
-		BPF_MTAP(ifp, m);
-		sc->tx_idx_head = next_txidx(sc, sc->tx_idx_head);
-		++enqueued;
+
+		ffec_encap(ifp, sc, m0, &start_tx);
 	}
 
-	if (enqueued != 0) {
+	if (start_tx ) {
 		bus_dmamap_sync(sc->txdesc_tag, sc->txdesc_map, BUS_DMASYNC_PREWRITE);
 		WR4(sc, FEC_TDAR_REG, FEC_TDAR_TDAR);
 		bus_dmamap_sync(sc->txdesc_tag, sc->txdesc_map, BUS_DMASYNC_POSTWRITE);
@@ -689,40 +718,43 @@ static void
 ffec_txfinish_locked(struct ffec_softc *sc)
 {
 	struct ifnet *ifp;
-	struct ffec_hwdesc *desc;
-	struct ffec_bufmap *bmap;
-	boolean_t retired_buffer;
+	uint32_t tx_idx;
 
 	FFEC_ASSERT_LOCKED(sc);
+
+	ifp = sc->ifp;
 
 	/* XXX Can't set PRE|POST right now, but we need both. */
 	bus_dmamap_sync(sc->txdesc_tag, sc->txdesc_map, BUS_DMASYNC_PREREAD);
 	bus_dmamap_sync(sc->txdesc_tag, sc->txdesc_map, BUS_DMASYNC_POSTREAD);
-	ifp = sc->ifp;
-	retired_buffer = false;
-	while (sc->tx_idx_tail != sc->tx_idx_head) {
-		desc = &sc->txdesc_ring[sc->tx_idx_tail];
+
+	tx_idx = sc->tx_idx_tail;
+	while (tx_idx != sc->tx_idx_head) {
+		struct ffec_hwdesc *desc;
+		struct ffec_bufmap *bmap;
+
+		desc = &sc->txdesc_ring[tx_idx];
 		if (desc->flags_len & FEC_TXDESC_READY)
 			break;
-		retired_buffer = true;
-		bmap = &sc->txbuf_map[sc->tx_idx_tail];
-		bus_dmamap_sync(sc->txbuf_tag, bmap->map, 
+
+		bmap = &sc->txbuf_map[tx_idx];
+		tx_idx = next_txidx(tx_idx);
+		if (bmap->mbuf == NULL)
+			continue;
+
+		/*
+		 * This is the last buf in this packet, so unmap and free it.
+		 */
+		bus_dmamap_sync(sc->txbuf_tag, bmap->map,
 		    BUS_DMASYNC_POSTWRITE);
 		bus_dmamap_unload(sc->txbuf_tag, bmap->map);
 		m_freem(bmap->mbuf);
 		bmap->mbuf = NULL;
-		ffec_setup_txdesc(sc, sc->tx_idx_tail, 0, 0);
-		sc->tx_idx_tail = next_txidx(sc, sc->tx_idx_tail);
 	}
+	sc->tx_idx_tail = tx_idx;
 
-	/*
-	 * If we retired any buffers, there will be open tx slots available in
-	 * the descriptor ring, go try to start some new output.
-	 */
-	if (retired_buffer) {
-		ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
-		ffec_txstart_locked(sc);
-	}
+	ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+	ffec_txstart_locked(sc);
 
 	/* If there are no buffers outstanding, muzzle the watchdog. */
 	if (sc->tx_idx_tail == sc->tx_idx_head) {
@@ -740,7 +772,7 @@ ffec_setup_rxdesc(struct ffec_softc *sc, int idx, bus_addr_t paddr)
 	 * tag to indicate that, so the cast to uint32_t should never lose
 	 * significant bits.
 	 */
-	nidx = next_rxidx(sc, idx);
+	nidx = next_rxidx(idx);
 	sc->rxdesc_ring[idx].buf_paddr = (uint32_t)paddr;
 	wmb();
 	sc->rxdesc_ring[idx].flags_len = FEC_RXDESC_EMPTY | 
@@ -924,7 +956,7 @@ ffec_rxfinish_locked(struct ffec_softc *sc)
 			 */
 			ffec_rxfinish_onebuf(sc, len);
 		}
-		sc->rx_idx = next_rxidx(sc, sc->rx_idx);
+		sc->rx_idx = next_rxidx(sc->rx_idx);
 	}
 
 	if (produced_empty_buffer) {
@@ -1076,13 +1108,15 @@ ffec_stop_locked(struct ffec_softc *sc)
 	while (idx != sc->tx_idx_head) {
 		desc = &sc->txdesc_ring[idx];
 		bmap = &sc->txbuf_map[idx];
-		if (desc->buf_paddr != 0) {
-			bus_dmamap_unload(sc->txbuf_tag, bmap->map);
-			m_freem(bmap->mbuf);
-			bmap->mbuf = NULL;
-			ffec_setup_txdesc(sc, idx, 0, 0);
-		}
-		idx = next_txidx(sc, idx);
+		idx = next_txidx(idx);
+		if (bmap->mbuf == NULL)
+			continue;
+
+		bus_dmamap_sync(sc->txbuf_tag, bmap->map,
+		    BUS_DMASYNC_POSTWRITE);
+		bus_dmamap_unload(sc->txbuf_tag, bmap->map);
+		m_freem(bmap->mbuf);
+		bmap->mbuf = NULL;
 	}
 
 	/*
@@ -1210,7 +1244,6 @@ ffec_init_locked(struct ffec_softc *sc)
 	 */
 	sc->rx_idx = 0;
 	sc->tx_idx_head = sc->tx_idx_tail = 0;
-	sc->txcount = 0;
 	WR4(sc, FEC_RDSR_REG, sc->rxdesc_ring_paddr);
 	WR4(sc, FEC_TDSR_REG, sc->txdesc_ring_paddr);
 
@@ -1593,7 +1626,7 @@ ffec_attach(device_t dev)
 	    BUS_SPACE_MAXADDR_32BIT,	/* lowaddr */
 	    BUS_SPACE_MAXADDR,		/* highaddr */
 	    NULL, NULL,			/* filter, filterarg */
-	    MCLBYTES, 1, 		/* maxsize, nsegments */
+	    MCLBYTES, TX_MAX_DMA_SEGS, 	/* maxsize, nsegments */
 	    MCLBYTES,			/* maxsegsize */
 	    0,				/* flags */
 	    NULL, NULL,			/* lockfunc, lockarg */
@@ -1612,7 +1645,9 @@ ffec_attach(device_t dev)
 			    "could not create TX buffer DMA map.\n");
 			goto out;
 		}
-		ffec_setup_txdesc(sc, idx, 0, 0);
+		sc->txdesc_ring[idx].buf_paddr = 0;
+		sc->txdesc_ring[idx].flags_len =
+		    ((idx == TX_DESC_COUNT - 1) ?  FEC_TXDESC_WRAP : 0);
 	}
 
 	/*

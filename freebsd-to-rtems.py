@@ -122,7 +122,6 @@ print("Diff Mode Enabled:           %s" % (("no", "yes")[builder.isDiffMode]))
 print("Only Generate Build Scripts: %s" % (("no", "yes")[isOnlyBuildScripts]))
 print("LibBSD Directory:            %s" % (builder.LIBBSD_DIR))
 print("FreeBSD Directory:           %s" % (builder.FreeBSD_DIR))
-print("Linux Directory:             %s" % (builder.Linux_DIR))
 print("Direction:                   %s" % (("reverse", "forward")[isForward]))
 
 # Check directory argument was set and exist
@@ -138,11 +137,10 @@ def wasDirectorySet(desc, path):
 # Were directories specified?
 wasDirectorySet( "LibBSD", builder.LIBBSD_DIR )
 wasDirectorySet( "FreeBSD", builder.FreeBSD_DIR )
-wasDirectorySet( "Linux", builder.Linux_DIR )
 
 # Are we generating or reverting?
 if isForward == True:
-    print("Forward from", builder.FreeBSD_DIR, "and", builder.Linux_DIR, "into", builder.LIBBSD_DIR)
+    print("Forward from", builder.FreeBSD_DIR, "into", builder.LIBBSD_DIR)
 else:
     print("Reverting from", builder.LIBBSD_DIR)
     if isOnlyBuildScripts == True:

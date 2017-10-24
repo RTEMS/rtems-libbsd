@@ -50,7 +50,6 @@ import codecs
 #
 LIBBSD_DIR = "."
 FreeBSD_DIR = "freebsd-org"
-Linux_DIR = "linux-org"
 verboseLevel = 0
 isDryRun = False
 isDiffMode = False
@@ -551,7 +550,7 @@ class RTEMSPathComposer(PathComposer):
 
 class LinuxPathComposer(PathComposer):
     def composeOriginPath(self, path):
-        return os.path.join(Linux_DIR, path)
+        return path
 
     def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, 'linux', path)
@@ -687,8 +686,8 @@ class Module:
 
     def addLinuxHeaderFiles(self, files):
         self.files += self.addFiles(files,
-                                    LinuxPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
-                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+                                    PathComposer(), NoConverter(),
+                                    NoConverter(), assertHeaderFile)
 
     def addCPUDependentFreeBSDHeaderFiles(self, files):
         self.files += self.addFiles(files,
@@ -697,8 +696,8 @@ class Module:
 
     def addCPUDependentLinuxHeaderFiles(self, files):
         self.files += self.addFiles(files,
-                                    CPUDependentLinuxPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
-                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+                                    CPUDependentLinuxPathComposer(), NoConverter(),
+                                    NoConverter(), assertHeaderFile)
 
     def addTargetSourceCPUDependentHeaderFiles(self, targetCPUs, sourceCPU, files):
         for cpu in targetCPUs:
@@ -732,8 +731,8 @@ class Module:
 
     def addLinuxSourceFiles(self, files, sourceFileFragmentComposer):
         self.files += self.addFiles(files,
-                                    LinuxPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
-                                    FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
+                                    PathComposer(), NoConverter(),
+                                    NoConverter(), assertSourceFile,
                                     sourceFileFragmentComposer)
 
     def addCPUDependentFreeBSDSourceFiles(self, cpus, files, sourceFileFragmentComposer):
@@ -759,8 +758,8 @@ class Module:
             self.initCPUDependencies(cpu)
             self.cpuDependentSourceFiles[cpu] += \
                 self.addFiles(files,
-                              CPUDependentLinuxPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
-                              FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
+                              CPUDependentLinuxPathComposer(), NoConverter(),
+                              NoConverter(), assertSourceFile,
                               sourceFileFragmentComposer)
 
     def addTest(self, testFragementComposer):

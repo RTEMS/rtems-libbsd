@@ -4,6 +4,3 @@
 [submodule "rtems_waf"]
 	path = rtems_waf
 	url = git://git.rtems.org/chrisj/rtems_waf.git
-[submodule "linux-org"]
-	path = linux-org
-	url = git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git

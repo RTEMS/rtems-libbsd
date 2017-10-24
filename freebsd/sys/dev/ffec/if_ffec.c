@@ -788,6 +788,9 @@ ffec_alloc_mbufcl(struct ffec_softc *sc)
 	struct mbuf *m;
 
 	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
+	if (m == NULL)
+		return (m);
+
 	m->m_pkthdr.len = m->m_len = m->m_ext.ext_size;
 #ifdef __rtems__
 	rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);

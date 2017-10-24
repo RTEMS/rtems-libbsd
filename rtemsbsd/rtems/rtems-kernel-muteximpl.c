@@ -55,8 +55,7 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
 	} else {
 		_Thread_queue_Context_set_thread_state(queue_context,
 		    STATES_WAITING_FOR_MUTEX);
-		_Thread_queue_Context_set_no_timeout(queue_context);
-		_Thread_queue_Context_set_do_nothing_enqueue_callout(
+		_Thread_queue_Context_set_enqueue_do_nothing_extra(
 		    queue_context);
 		_Thread_queue_Context_set_deadlock_callout(queue_context,
 		    _Thread_queue_Deadlock_fatal);

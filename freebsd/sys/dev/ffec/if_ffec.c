@@ -81,6 +81,8 @@ __FBSDID("$FreeBSD$");
 #include <net/if_types.h>
 #include <net/if_var.h>
 #include <net/if_vlan_var.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 #include <dev/ffec/if_ffecreg.h>
 #include <dev/ofw/ofw_bus.h>
@@ -620,7 +622,9 @@ ffec_encap(struct ifnet *ifp, struct ffec_softc *sc, struct mbuf *m0,
 	int error, i, nsegs;
 	struct ffec_bufmap *bmap;
 	uint32_t tx_idx;
+	int csum_flags;
 	uint32_t flags;
+	uint32_t flags2;
 
 	FFEC_ASSERT_LOCKED(sc);
 
@@ -653,6 +657,27 @@ ffec_encap(struct ifnet *ifp, struct ffec_softc *sc, struct mbuf *m0,
 #endif /* __rtems__ */
 	bmap->mbuf = m0;
 
+	flags2 = FEC_TXDESC_INT;
+	csum_flags = m0->m_pkthdr.csum_flags;
+
+	if ((csum_flags & CSUM_IP) != 0) {
+		struct mbuf *n;
+		int off;
+		int off2;
+		struct ip *ip;
+
+		flags2 |= FEC_TXDESC_IINS;
+		n = m_getptr(m0, sizeof(struct ether_header), &off);
+		ip = (struct ip *)mtodo(n, off);
+		ip->ip_sum = 0;
+
+		off2 = m0->m_pkthdr.csum_data;
+		if ((csum_flags & (CSUM_TCP | CSUM_UDP)) != 0 && off2 != 0) {
+			flags2 |= FEC_TXDESC_PINS;
+			*(uint16_t *)((caddr_t)(ip + 1) + off2) = 0;
+		}
+	}
+
 	/*
 	 * Fill in the TX descriptors back to front so that READY bit in first
 	 * descriptor is set last.
@@ -666,6 +691,7 @@ ffec_encap(struct ifnet *ifp, struct ffec_softc *sc, struct mbuf *m0,
 		tx_idx = prev_txidx(tx_idx);;
 		tx_desc = &sc->txdesc_ring[tx_idx];
 		tx_desc->buf_paddr = segs[i].ds_addr;
+		tx_desc->flags2 = flags2;
 #ifdef __rtems__
 		rtems_cache_flush_multiple_data_lines((void *)segs[i].ds_addr,
 		    segs[i].ds_len);
@@ -793,6 +819,7 @@ ffec_setup_rxdesc(struct ffec_softc *sc, int idx, bus_addr_t paddr)
 	 */
 	nidx = next_rxidx(idx);
 	sc->rxdesc_ring[idx].buf_paddr = (uint32_t)paddr;
+	sc->rxdesc_ring[idx].flags2 = FEC_RXDESC_INT;
 	wmb();
 	sc->rxdesc_ring[idx].flags_len = FEC_RXDESC_EMPTY | 
 		((nidx == 0) ? FEC_RXDESC_WRAP : 0);
@@ -851,7 +878,7 @@ ffec_alloc_mbufcl(struct ffec_softc *sc)
 }
 
 static void
-ffec_rxfinish_onebuf(struct ffec_softc *sc, int len)
+ffec_rxfinish_onebuf(struct ffec_softc *sc, int len, uint32_t flags2)
 {
 	struct mbuf *m, *newmbuf;
 	struct ffec_bufmap *bmap;
@@ -897,6 +924,12 @@ ffec_rxfinish_onebuf(struct ffec_softc *sc, int len)
 	m->m_len = len;
 	m->m_pkthdr.len = len;
 	m->m_pkthdr.rcvif = sc->ifp;
+
+	if ((flags2 & (FEC_RXDESC_ICE | FEC_RXDESC_PCR)) == 0) {
+		m->m_pkthdr.csum_flags |= CSUM_IP_CHECKED | CSUM_IP_VALID |
+		    CSUM_DATA_VALID | CSUM_PSEUDO_HDR;
+		m->m_pkthdr.csum_data = 0xffff;
+	}
 
 	if (sc->fectype & FECFLAG_RACC) {
 		/* We use the RACC[SHIFT16] feature */
@@ -973,7 +1006,7 @@ ffec_rxfinish_locked(struct ffec_softc *sc)
 			/*
 			 *  Normal case: a good frame all in one buffer.
 			 */
-			ffec_rxfinish_onebuf(sc, len);
+			ffec_rxfinish_onebuf(sc, len, desc->flags2);
 		}
 		sc->rx_idx = next_rxidx(sc->rx_idx);
 	}
@@ -1305,6 +1338,7 @@ ffec_init_locked(struct ffec_softc *sc)
 	regval |= FEC_ECR_DBSWP;
 #endif
 	regval |= FEC_ECR_ETHEREN;
+	regval |= FEC_ECR_EN1588;
 	WR4(sc, FEC_ECR_REG, regval);
 
 	ifp->if_drv_flags |= IFF_DRV_RUNNING;
@@ -1962,8 +1996,10 @@ ffec_attach(device_t dev)
 	ifp->if_softc = sc;
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-	ifp->if_capabilities = IFCAP_VLAN_MTU;
+	ifp->if_capabilities = IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
+	    IFCAP_VLAN_MTU;
 	ifp->if_capenable = ifp->if_capabilities;
+	ifp->if_hwassist = CSUM_IP | CSUM_TCP | CSUM_UDP;
 	ifp->if_start = ffec_txstart;
 	ifp->if_ioctl = ffec_ioctl;
 	ifp->if_init = ffec_init;

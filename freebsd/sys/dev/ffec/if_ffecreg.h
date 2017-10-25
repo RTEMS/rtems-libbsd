@@ -295,6 +295,11 @@ struct ffec_hwdesc
 {
 	uint32_t	flags_len;
 	uint32_t	buf_paddr;
+	uint32_t	flags2;
+	uint32_t	hlen_proto;
+	uint32_t	bdu;
+	uint32_t	ts;
+	uint32_t	res[2];
 };
 
 #define	FEC_TXDESC_READY		(1U << 31)
@@ -305,6 +310,11 @@ struct ffec_hwdesc
 #define	FEC_TXDESC_TC			(1 << 26)
 #define	FEC_TXDESC_ABC			(1 << 25)
 #define	FEC_TXDESC_LEN_MASK		(0xffff)
+
+#define	FEC_TXDESC_INT			(1 << 30)
+#define	FEC_TXDESC_TS			(1 << 29)
+#define	FEC_TXDESC_PINS			(1 << 28)
+#define	FEC_TXDESC_IINS			(1 << 27)
 
 #define	FEC_RXDESC_EMPTY		(1U << 31)
 #define	FEC_RXDESC_R01			(1 << 30)
@@ -320,6 +330,10 @@ struct ffec_hwdesc
 #define	FEC_RXDESC_OV			(1 << 17)
 #define	FEC_RXDESC_TR			(1 << 16)
 #define	FEC_RXDESC_LEN_MASK		(0xffff)
+
+#define	FEC_RXDESC_INT			(1 << 23)
+#define	FEC_RXDESC_ICE			(1 << 5)
+#define	FEC_RXDESC_PCR			(1 << 4)
 
 #define	FEC_RXDESC_ERROR_BITS	(FEC_RXDESC_LG | FEC_RXDESC_NO | \
     FEC_RXDESC_OV | FEC_RXDESC_TR)

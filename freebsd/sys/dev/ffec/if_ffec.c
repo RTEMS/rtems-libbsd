@@ -2,6 +2,8 @@
 
 /*-
  * Copyright (c) 2013 Ian Lepore <ian@freebsd.org>
+ * Copyright (C) 2007-2008 Semihalf, Rafal Jaworowski
+ * Copyright (C) 2006-2007 Semihalf, Piotr Kruszynski
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -138,6 +140,10 @@ static struct ofw_compat_data compat_data[] = {
 
 #define	MAX_IRQ_COUNT 3
 
+/* Interrupt Coalescing types */
+#define	FEC_IC_RX		0
+#define	FEC_IC_TX		1
+
 struct ffec_bufmap {
 	struct mbuf	*mbuf;
 	bus_dmamap_t	map;
@@ -188,6 +194,12 @@ struct ffec_softc {
 	struct ffec_bufmap	txbuf_map[TX_DESC_COUNT];
 	uint32_t		tx_idx_head;
 	uint32_t		tx_idx_tail;
+
+	/* interrupt coalescing */
+	int		rx_ic_time;	/* RW, valid values 0..65535 */
+	int		rx_ic_count;	/* RW, valid values 0..255 */
+	int		tx_ic_time;
+	int		tx_ic_count;
 };
 
 #define	FFEC_LOCK(sc)			mtx_lock(&(sc)->mtx)
@@ -204,6 +216,13 @@ static void ffec_encap(struct ifnet *ifp, struct ffec_softc *sc,
     struct mbuf *m0, int *start_tx);
 static void ffec_txstart_locked(struct ffec_softc *sc);
 static void ffec_txfinish_locked(struct ffec_softc *sc);
+static void ffec_add_sysctls(struct ffec_softc *sc);
+static int ffec_sysctl_ic_time(SYSCTL_HANDLER_ARGS);
+static int ffec_sysctl_ic_count(SYSCTL_HANDLER_ARGS);
+static void ffec_set_ic(struct ffec_softc *sc, bus_size_t off, int count,
+    int time);
+static void ffec_set_rxic(struct ffec_softc *sc);
+static void ffec_set_txic(struct ffec_softc *sc);
 
 static inline uint16_t
 RD2(struct ffec_softc *sc, bus_size_t off)
@@ -1302,6 +1321,9 @@ ffec_init_locked(struct ffec_softc *sc)
 	 * available in ffec_attach() or ffec_stop().
 	 */
 	WR4(sc, FEC_RDAR_REG, FEC_RDAR_RDAR);
+
+	ffec_set_rxic(sc);
+	ffec_set_txic(sc);
 }
 
 static void
@@ -1493,6 +1515,151 @@ ffec_detach(device_t dev)
 
 	FFEC_LOCK_DESTROY(sc);
 	return (0);
+}
+
+static void
+ffec_add_sysctls(struct ffec_softc *sc)
+{
+	struct sysctl_ctx_list *ctx;
+	struct sysctl_oid_list *children;
+	struct sysctl_oid *tree;
+
+	ctx = device_get_sysctl_ctx(sc->dev);
+	children = SYSCTL_CHILDREN(device_get_sysctl_tree(sc->dev));
+	tree = SYSCTL_ADD_NODE(ctx, children, OID_AUTO, "int_coal",
+	    CTLFLAG_RD, 0, "FEC Interrupts coalescing");
+	children = SYSCTL_CHILDREN(tree);
+
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "rx_time",
+	    CTLTYPE_UINT | CTLFLAG_RW, sc, FEC_IC_RX, ffec_sysctl_ic_time,
+	    "I", "IC RX time threshold (0-65535)");
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "rx_count",
+	    CTLTYPE_UINT | CTLFLAG_RW, sc, FEC_IC_RX, ffec_sysctl_ic_count,
+	    "I", "IC RX frame count threshold (0-255)");
+
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "tx_time",
+	    CTLTYPE_UINT | CTLFLAG_RW, sc, FEC_IC_TX, ffec_sysctl_ic_time,
+	    "I", "IC TX time threshold (0-65535)");
+	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "tx_count",
+	    CTLTYPE_UINT | CTLFLAG_RW, sc, FEC_IC_TX, ffec_sysctl_ic_count,
+	    "I", "IC TX frame count threshold (0-255)");
+}
+
+/*
+ * With Interrupt Coalescing (IC) active, a transmit/receive frame
+ * interrupt is raised either upon:
+ *
+ * - threshold-defined period of time elapsed, or
+ * - threshold-defined number of frames is received/transmitted,
+ *   whichever occurs first.
+ *
+ * The following sysctls regulate IC behaviour (for TX/RX separately):
+ *
+ * dev.tsec.<unit>.int_coal.rx_time
+ * dev.tsec.<unit>.int_coal.rx_count
+ * dev.tsec.<unit>.int_coal.tx_time
+ * dev.tsec.<unit>.int_coal.tx_count
+ *
+ * Values:
+ *
+ * - 0 for either time or count disables IC on the given TX/RX path
+ *
+ * - count: 1-255 (expresses frame count number; note that value of 1 is
+ *   effectively IC off)
+ *
+ * - time: 1-65535 (value corresponds to a real time period and is
+ *   expressed in units equivalent to 64 FEC interface clocks, i.e. one timer
+ *   threshold unit is 26.5 us, 2.56 us, or 512 ns, corresponding to 10 Mbps,
+ *   100 Mbps, or 1Gbps, respectively. For detailed discussion consult the
+ *   FEC reference manual.
+ */
+static int
+ffec_sysctl_ic_time(SYSCTL_HANDLER_ARGS)
+{
+	int error;
+	uint32_t time;
+	struct ffec_softc *sc = (struct ffec_softc *)arg1;
+
+	time = (arg2 == FEC_IC_RX) ? sc->rx_ic_time : sc->tx_ic_time;
+
+	error = sysctl_handle_int(oidp, &time, 0, req);
+	if (error != 0)
+		return (error);
+
+	if (time > 65535)
+		return (EINVAL);
+
+	FFEC_LOCK(sc);
+	if (arg2 == FEC_IC_RX) {
+		sc->rx_ic_time = time;
+		ffec_set_rxic(sc);
+	} else {
+		sc->tx_ic_time = time;
+		ffec_set_txic(sc);
+	}
+	FFEC_UNLOCK(sc);
+
+	return (0);
+}
+
+static int
+ffec_sysctl_ic_count(SYSCTL_HANDLER_ARGS)
+{
+	int error;
+	uint32_t count;
+	struct ffec_softc *sc = (struct ffec_softc *)arg1;
+
+	count = (arg2 == FEC_IC_RX) ? sc->rx_ic_count : sc->tx_ic_count;
+
+	error = sysctl_handle_int(oidp, &count, 0, req);
+	if (error != 0)
+		return (error);
+
+	if (count > 255)
+		return (EINVAL);
+
+	FFEC_LOCK(sc);
+	if (arg2 == FEC_IC_RX) {
+		sc->rx_ic_count = count;
+		ffec_set_rxic(sc);
+	} else {
+		sc->tx_ic_count = count;
+		ffec_set_txic(sc);
+	}
+	FFEC_UNLOCK(sc);
+
+	return (0);
+}
+
+static void
+ffec_set_ic(struct ffec_softc *sc, bus_size_t off, int count, int time)
+{
+	uint32_t ic;
+
+	if (count == 0 || time == 0)
+		/* Disable RX IC */
+		ic = 0;
+	else {
+		ic = FEC_IC_ICEN;
+		ic |= FEC_IC_ICFT(count);
+		ic |= FEC_IC_ICTT(time);
+	}
+
+	WR4(sc, off, ic);
+}
+
+static void
+ffec_set_rxic(struct ffec_softc *sc)
+{
+
+	ffec_set_ic(sc, FEC_RXIC0_REG, sc->rx_ic_count, sc->rx_ic_time);
+}
+
+static void
+ffec_set_txic(struct ffec_softc *sc)
+{
+
+	ffec_set_ic(sc, FEC_TXIC0_REG, sc->tx_ic_count, sc->tx_ic_time);
 }
 
 static int
@@ -1780,6 +1947,14 @@ ffec_attach(device_t dev)
 			device_printf(dev, "PHY preamble disabled\n");
 	}
 	WR4(sc, FEC_MSCR_REG, mscr);
+
+	/* Configure defaults for interrupts coalescing */
+	sc->rx_ic_time = 768;
+	sc->rx_ic_count = RX_DESC_COUNT / 4;
+	sc->tx_ic_time = 768;
+	sc->tx_ic_count = TX_DESC_COUNT / 4;
+
+	ffec_add_sysctls(sc);
 
 	/* Set up the ethernet interface. */
 	sc->ifp = ifp = if_alloc(IFT_ETHER);

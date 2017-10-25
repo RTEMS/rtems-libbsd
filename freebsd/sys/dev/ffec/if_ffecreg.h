@@ -143,6 +143,17 @@ __FBSDID("$FreeBSD$");
 #define	  FEC_OPD_PAUSE_DUR_SHIFT	  0
 #define	  FEC_OPD_PAUSE_DUR_MASK	  (0xffff << FEC_OPD_PAUSE_DUR_SHIFT)
 
+#define	FEC_TXIC0_REG			0x00f0
+#define	FEC_TXIC1_REG			0x00f4
+#define	FEC_TXIC2_REG			0x00f8
+#define	FEC_RXIC0_REG			0x0100
+#define	FEC_RXIC1_REG			0x0104
+#define	FEC_RXIC2_REG			0x0108
+#define	  FEC_IC_ICEN			  (1 <<  31)
+#define	  FEC_IC_ICCS			  (1 <<  30)
+#define	  FEC_IC_ICFT(x)		  (((x) & 0xff) << 20)
+#define	  FEC_IC_ICTT(x)		  ((x) & 0xffff)
+
 #define	FEC_IAUR_REG			0x0118
 #define	FEC_IALR_REG			0x011c
 

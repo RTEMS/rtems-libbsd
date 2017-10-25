@@ -127,9 +127,9 @@ static struct ofw_compat_data compat_data[] = {
 /*
  * Driver data and defines.  The descriptor counts must be a power of two.
  */
-#define	RX_DESC_COUNT	64
+#define	RX_DESC_COUNT	512
 #define	RX_DESC_SIZE	(sizeof(struct ffec_hwdesc) * RX_DESC_COUNT)
-#define	TX_DESC_COUNT	64
+#define	TX_DESC_COUNT	512
 #define	TX_DESC_SIZE	(sizeof(struct ffec_hwdesc) * TX_DESC_COUNT)
 #define	TX_MAX_DMA_SEGS	8
 

@@ -1589,10 +1589,10 @@ ffec_add_sysctls(struct ffec_softc *sc)
  *
  * The following sysctls regulate IC behaviour (for TX/RX separately):
  *
- * dev.tsec.<unit>.int_coal.rx_time
- * dev.tsec.<unit>.int_coal.rx_count
- * dev.tsec.<unit>.int_coal.tx_time
- * dev.tsec.<unit>.int_coal.tx_count
+ * dev.ffec.<unit>.int_coal.rx_time
+ * dev.ffec.<unit>.int_coal.rx_count
+ * dev.ffec.<unit>.int_coal.tx_time
+ * dev.ffec.<unit>.int_coal.tx_count
  *
  * Values:
  *

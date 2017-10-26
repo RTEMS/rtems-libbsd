@@ -51,7 +51,6 @@
 #include <linux/libfdt_env.h>
 #ifdef __rtems__
 #include <bsp/fdt.h>
-#include <bsp/qoriq.h>
 #endif /* __rtems__ */
 
 /* General defines */
@@ -3118,7 +3117,9 @@ fman_dev_probe_fdt(struct fman_softc *sc, int unit)
 					sc->dn.offset = node;
 					sc->dn.full_name = name;
 					sc->of_dev.dev.of_node = &sc->dn;
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 					sc->of_dev.dev.base = (uintptr_t)&qoriq.fman[unit];
+#endif
 					return (BUS_PROBE_DEFAULT);
 				}
 			} else {

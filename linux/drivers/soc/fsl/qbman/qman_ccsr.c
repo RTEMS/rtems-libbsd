@@ -850,7 +850,6 @@ static struct platform_driver fsl_qman_driver = {
 builtin_platform_driver(fsl_qman_driver);
 #else /* __rtems__ */
 #include <bsp/fdt.h>
-#include <bsp/qoriq.h>
 
 SYSINIT_REFERENCE(bman);
 
@@ -873,7 +872,9 @@ qman_sysinit(void)
 
 	memset(&dev, 0, sizeof(dev));
 	dev.pdev.dev.of_node = &dev.of_node;
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 	dev.pdev.dev.base = (uintptr_t)&qoriq;
+#endif
 	dev.of_node.offset = node;
 	dev.of_node.full_name = name;
 

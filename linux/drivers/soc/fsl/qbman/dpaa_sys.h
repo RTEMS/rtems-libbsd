@@ -84,8 +84,11 @@ static inline void dpaa_flush(void *p)
 	__flush_dcache_area(p, 64);
 #endif
 #else /* __rtems__ */
-#ifdef __PPC_CPU_E6500__
+#if PPC_DEFAULT_CACHE_LINE_SIZE == 64
 	ppc_data_cache_block_flush(p);
+#elif PPC_DEFAULT_CACHE_LINE_SIZE == 32
+	ppc_data_cache_block_flush(p);
+	ppc_data_cache_block_flush((char *)p + 32);
 #else
 #error "Unsupported platform"
 #endif

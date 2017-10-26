@@ -285,7 +285,6 @@ builtin_platform_driver(fsl_bman_driver);
 #include <sys/kernel.h>
 #include <rtems.h>
 #include <bsp/fdt.h>
-#include <bsp/qoriq.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 
@@ -303,7 +302,9 @@ bman_sysinit(void)
 	struct platform_device ofdev = {
 		.dev = {
 			.of_node = &dn,
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 			.base = (uintptr_t)&qoriq
+#endif
 		}
 	};
 	const char *name;
@@ -313,11 +314,13 @@ bman_sysinit(void)
 	int node;
 	int parent;
 
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 	qoriq_reset_qman_and_bman();
 	qoriq_clear_ce_portal(&qoriq_bman_portal[0][0],
 	    sizeof(qoriq_bman_portal[0]));
 	qoriq_clear_ci_portal(&qoriq_bman_portal[1][0],
 	    sizeof(qoriq_bman_portal[1]));
+#endif
 
 	memset(&dn, 0, sizeof(dn));
 
@@ -355,22 +358,26 @@ bman_sysinit(void)
 		ret = of_address_to_resource(&dn, 0, &res);
 		if (ret != 0)
 			panic("bman: no portal CE address");
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 		pcfg->addr_virt[0] = (__iomem void *)
 		    ((uintptr_t)&qoriq_bman_portal[0][0] + (uintptr_t)res.start);
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
 		    (uintptr_t)&qoriq_bman_portal[0][0]);
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
 		    (uintptr_t)&qoriq_bman_portal[1][0]);
+#endif
 
 		ret = of_address_to_resource(&dn, 1, &res);
 		if (ret != 0)
 			panic("bman: no portal CI address");
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 		pcfg->addr_virt[1] = (__iomem void *)
 		    ((uintptr_t)&qoriq_bman_portal[0][0] + (uintptr_t)res.start);
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
 		    (uintptr_t)&qoriq_bman_portal[1][0]);
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
 		    (uintptr_t)&qoriq_bman_portal[2][0]);
+#endif
 
 		pcfg->irq = of_irq_to_resource(&dn, 0, NULL);
 		if (pcfg->irq == NO_IRQ)

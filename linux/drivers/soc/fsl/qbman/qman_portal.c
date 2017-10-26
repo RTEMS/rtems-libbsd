@@ -34,7 +34,6 @@
 
 #include "qman_priv.h"
 #ifdef __rtems__
-#include <bsp/qoriq.h>
 #undef dev_crit
 #undef dev_info
 #define	dev_crit(dev, fmt, ...) printf(fmt, ##__VA_ARGS__)
@@ -434,22 +433,26 @@ do_init_pcfg(struct device_node *dn, struct qm_portal_config *pcfg,
 	ret = of_address_to_resource(dn, 0, &res);
 	if (ret != 0)
 		panic("qman: no portal CE address");
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 	pcfg->addr_virt[0] = (__iomem void *)
 	    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
 	    (uintptr_t)&qoriq_qman_portal[0][0]);
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
 	    (uintptr_t)&qoriq_qman_portal[1][0]);
+#endif
 
 	ret = of_address_to_resource(dn, 1, &res);
 	if (ret != 0)
 		panic("qman: no portal CI address");
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 	pcfg->addr_virt[1] = (__iomem void *)
 	    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
 	    (uintptr_t)&qoriq_qman_portal[1][0]);
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
 	    (uintptr_t)&qoriq_qman_portal[2][0]);
+#endif
 
 	ret = of_property_read_u32(dn, "cell-index", &val);
 	if (ret != 0)
@@ -503,10 +506,12 @@ qman_sysinit_portals(void)
 	dn.full_name = name;
 	dn.offset = node;
 
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
 	qoriq_clear_ce_portal(&qoriq_qman_portal[0][0],
 	    sizeof(qoriq_qman_portal[0]));
 	qoriq_clear_ci_portal(&qoriq_qman_portal[1][0],
 	    sizeof(qoriq_qman_portal[1]));
+#endif
 
 	i = 0;
 	while (node >= 0 && i < MAX_QMAN_PORTALS) {

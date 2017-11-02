@@ -8,6 +8,9 @@
  * See README for more details.
  */
 
+#ifdef __rtems__
+#define RTEMS_BSD_PROGRAM_NO_FREE_WRAP
+#endif /* __rtems__ */
 #include "includes.h"
 #ifdef CONFIG_DYNAMIC_EAP_METHODS
 #include <dlfcn.h>

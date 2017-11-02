@@ -13,6 +13,13 @@
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#define os_malloc(x) rtems_bsd_program_malloc((x))
+#define os_realloc(x, y) rtems_bsd_program_realloc((x), (y))
+#define os_free(x) rtems_bsd_program_free((x))
+#define os_strdup(x) rtems_bsd_program_strdup((x))
+#endif /* __rtems__ */
 /* Include possible build time configuration before including anything else */
 #include "build_config.h"
 

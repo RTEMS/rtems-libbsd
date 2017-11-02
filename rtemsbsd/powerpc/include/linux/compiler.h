@@ -42,6 +42,7 @@
 #define __iomem
 #define __chk_user_ptr(x)		0
 #define __chk_io_ptr(x)			0
+#define __cold		        	__attribute__((__cold__))
 #define __builtin_warning(x, y...)	(1)
 #define __acquires(x)
 #define __releases(x)

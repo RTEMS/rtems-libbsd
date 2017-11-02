@@ -119,6 +119,7 @@ def rtems(mm):
             'rtems/rtems-kernel-termioskqueuepoll.c',
             'rtems/rtems-kernel-thread.c',
             'rtems/rtems-kernel-vprintf.c',
+            'rtems/rtems-kernel-wpa-supplicant.c',
             'rtems/rtems-legacy-rtrequest.c',
             'rtems/rtems-legacy-newproc.c',
             'rtems/rtems-legacy-mii.c',

@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <sys/mutex.h>
 #include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-wpa-supplicant.h>
 #endif /* __rtems__ */
 
 static void usage(void)
@@ -170,7 +171,10 @@ int rtems_bsd_command_wpa_supplicant(int argc, char **argv)
 	int exit_code;
 	rtems_status_code sc;
 
-	exit_code = rtems_bsd_program_call_main("wpa_supplicant", main, argc, argv);
+	rtems_bsd_wpa_supplicant_lock();
+	exit_code = rtems_bsd_program_call_main("wpa_supplicant", main,
+	    argc, argv);
+	rtems_bsd_wpa_supplicant_unlock();
 
 	return exit_code;
 }

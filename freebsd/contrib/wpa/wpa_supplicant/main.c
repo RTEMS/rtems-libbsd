@@ -20,6 +20,8 @@
 #include "p2p_supplicant.h"
 
 #ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
 #include <assert.h>
 #include <sys/mutex.h>
 #include <machine/rtems-bsd-program.h>
@@ -187,6 +189,15 @@ int main(int argc, char *argv[])
 	int iface_count, exitcode = -1;
 	struct wpa_params params;
 	struct wpa_global *global;
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	if (os_program_init())
 		return -1;

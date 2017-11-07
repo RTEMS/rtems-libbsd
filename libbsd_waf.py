@@ -1876,6 +1876,8 @@ def build(bld):
               'freebsd/sys/dev/usb/controller/ehci.c',
               'freebsd/sys/dev/usb/controller/musb_otg.c',
               'freebsd/sys/dev/usb/controller/ohci.c',
+              'freebsd/sys/dev/usb/controller/saf1761_otg.c',
+              'freebsd/sys/dev/usb/controller/saf1761_otg_fdt.c',
               'freebsd/sys/dev/usb/controller/usb_controller.c',
               'freebsd/sys/dev/usb/input/atp.c',
               'freebsd/sys/dev/usb/input/uep.c',

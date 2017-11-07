@@ -255,6 +255,27 @@ extern "C" {
     SYSINIT_DRIVER_REFERENCE(umass, uhub)
 #endif /* RTEMS_BSD_DRIVER_USB_MASS */
 
+/*
+ * USB SAF1761 host controller driver.
+ */
+#if !defined(RTEMS_BSD_DRIVER_USB_SAF1761_OTG)
+  #define RTEMS_BSD_DRIVER_USB_SAF1761_OTG(_base, _irq)                  \
+    static const rtems_bsd_device_resource usb_saf1761_otg_res[] = {     \
+      {                                                                  \
+        .type = RTEMS_BSD_RES_MEMORY,                                    \
+        .start_request = 0,                                              \
+        .start_actual = (_base)                                          \
+      }, {                                                               \
+        .type = RTEMS_BSD_RES_IRQ,                                       \
+        .start_request = 0,                                              \
+        .start_actual = (_irq)                                           \
+      }                                                                  \
+    };                                                                   \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(saf1761otg, 0,                         \
+                                  RTEMS_ARRAY_SIZE(usb_saf1761_otg_res), \
+                                  &usb_saf1761_otg_res[0])
+#endif /* RTEMS_BSD_DRIVER_USB_SAF1761_OTG */
+
 /**
  ** Networking
  **/

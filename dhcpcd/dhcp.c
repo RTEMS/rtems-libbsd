@@ -1487,6 +1487,9 @@ send_message(struct interface *iface, int type,
 	struct in_addr from, to;
 	in_addr_t a = 0;
 	struct timeval tv;
+#ifdef __rtems__
+	int errno_save;
+#endif /* __rtems__ */
 
 	if (!callback)
 		syslog(LOG_DEBUG, "%s: sending %s with xid 0x%x",
@@ -1544,6 +1547,9 @@ send_message(struct interface *iface, int type,
 		if (len == -1)
 			return;
 		r = ipv4_sendrawpacket(iface, ETHERTYPE_IP, udp, len);
+#ifdef __rtems__
+		errno_save = errno;
+#endif /* __rtems__ */
 		free(udp);
 		/* If we failed to send a raw packet this normally means
 		 * we don't have the ability to work beneath the IP layer
@@ -1553,11 +1559,20 @@ send_message(struct interface *iface, int type,
 		if (r == -1) {
 			syslog(LOG_ERR, "%s: ipv4_sendrawpacket: %m",
 			    iface->name);
+#ifdef __rtems__
+			if (errno_save != ENETDOWN &&
+			    errno_save != ENETRESET &&
+			    errno_save != ENETUNREACH &&
+			    errno_save != ENOBUFS) {
+#endif /* __rtems__ */
 			if (!(options & DHCPCD_TEST))
 				dhcp_drop(iface, "FAIL");
 			dhcp_close(iface);
 			eloop_timeout_delete(NULL, iface);
 			callback = NULL;
+#ifdef __rtems__
+			}
+#endif /* __rtems__ */
 		}
 	}
 	free(dhcp);

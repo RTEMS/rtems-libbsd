@@ -231,6 +231,27 @@ extern "C" {
 #endif /* RTEMS_BSD_DRIVER_DWC_MMC */
 
 /*
+ * Atmel Media Card Interface (MCI).
+ */
+#if !defined(RTEMS_BSD_DRIVER_AT91_MCI0)
+  #define RTEMS_BSD_DRIVER_AT91_MCI0(_base, _irq)                  \
+    static const rtems_bsd_device_resource at91_mci0_res[] = {     \
+      {                                                            \
+        .type = RTEMS_BSD_RES_MEMORY,                              \
+        .start_request = 0,                                        \
+        .start_actual = (_base)                                    \
+      }, {                                                         \
+        .type = RTEMS_BSD_RES_IRQ,                                 \
+        .start_request = 0,                                        \
+        .start_actual = (_irq)                                     \
+      }                                                            \
+    };                                                             \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(at91_mci, 0,                     \
+                                  RTEMS_ARRAY_SIZE(at91_mci0_res), \
+                                  &at91_mci0_res[0])
+#endif /* RTEMS_BSD_DRIVER_DWC0 */
+
+/*
  * MMC Driver.
  */
 #if !defined(RTEMS_BSD_DRIVER_MMC)

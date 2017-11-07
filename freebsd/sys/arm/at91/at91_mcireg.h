@@ -37,6 +37,9 @@
 #define MCI_SDCR	0x0c 	/* MCI SD Card Register */
 #define MCI_ARGR	0x10 	/* MCI Argument Register */
 #define MCI_CMDR	0x14 	/* MCI Command Register */
+#ifdef __rtems__
+#define MCI_BLKR	0x18 	/* MCI Block Register */
+#endif /* __rtems__ */
 #define MCI_RSPR	0x20 	/* MCI Response Registers - 4 of them */
 #define MCI_RDR		0x30 	/* MCI Receive Data Register */
 #define MCI_TDR		0x34 	/* MCI Transmit Data Register */
@@ -44,6 +47,9 @@
 #define MCI_IER		0x44 	/* MCI Interrupt Enable Register */
 #define MCI_IDR		0x48 	/* MCI Interrupt Disable Register */
 #define MCI_IMR		0x4c 	/* MCI Interrupt Mask Register */
+#ifdef __rtems__
+#define MCI_DMA		0x50 	/* MCI DMA Control Register */
+#endif /* __rtems__ */
 
 /* -------- MCI_CR : (MCI Offset: 0x0) MCI Control Register --------  */
 #define	MCI_CR_MCIEN       (0x1u <<  0) /* (MCI) Multimedia Interface Enable */
@@ -59,6 +65,7 @@
 #define	MCI_MR_PDCFBYTE	(0x1u << 13)	/* (MCI) PDC Force Byte Transfer */
 #define	MCI_MR_PDCPADV     (0x1u << 14) /* (MCI) PDC Padding Value */
 #define	MCI_MR_PDCMODE     (0x1u << 15) /* (MCI) PDC Oriented Mode */
+#define	MCI_MR_CLKODD      (0x1u << 16) /* (MCI) Clock Divider is Odd */
 #define	MCI_MR_BLKLEN      0x3fff0000ul /* (MCI) Data Block Length */
 /* -------- MCI_DTOR : (MCI Offset: 0x8) MCI Data Timeout Register --------  */
 #define	MCI_DTOR_DTOCYC      (0xfu <<  0) /* (MCI) Data Timeout Cycle Number */
@@ -97,6 +104,11 @@
 #define		MCI_CMDR_TRTYP_BLOCK                (0x0u << 19) /* (MCI) Block Transfer type */
 #define		MCI_CMDR_TRTYP_MULTIPLE             (0x1u << 19) /* (MCI) Multiple Block transfer type */
 #define		MCI_CMDR_TRTYP_STREAM               (0x2u << 19) /* (MCI) Stream transfer type */
+#ifdef __rtems__
+/* -------- MCI_BLKR : (MCI Offset: 0x18) MCI Block Register --------  */
+#define	MCI_BLKR_BCNT        (0xFFFFu << 0)
+#define	MCI_BLKR_BLKLEN      (0xFFFFu << 16)
+#endif /* __rtems__ */
 /* -------- MCI_SR : (MCI Offset: 0x40) MCI Status Register --------  */
 #define	MCI_SR_CMDRDY   (0x1u <<  0) /* (MCI) Command Ready flag */
 #define	MCI_SR_RXRDY    (0x1u <<  1) /* (MCI) RX Ready flag */
@@ -117,6 +129,19 @@
 #define	MCI_SR_DTOE     (0x1u << 22) /* (MCI) Data timeout Error flag */
 #define	MCI_SR_OVRE     (0x1u << 30) /* (MCI) Overrun flag */
 #define	MCI_SR_UNRE     (0x1u << 31) /* (MCI) Underrun flag */
+#ifdef __rtems__
+#define	MCI_SR_XFRDONE  (0x1u << 27) /* (MCI) Underrun flag */
+#endif /* __rtems__ */
+#ifdef __rtems__
+/* -------- MCI_DMA : (MCI Offset: 0x50) MCI DMA Control Register --------  */
+#define	MCI_DMA_DMAEN        (0x1u << 8)
+#define	MCI_DMA_CHKSIZE      (0x7u << 4)
+#define		MCI_DMA_CHKSIZE_1      (0x0u << 4)
+#define		MCI_DMA_CHKSIZE_2      (0x1u << 4)
+#define		MCI_DMA_CHKSIZE_4      (0x2u << 4)
+#define		MCI_DMA_CHKSIZE_8      (0x3u << 4)
+#define		MCI_DMA_CHKSIZE_16     (0x4u << 4)
+#endif /* __rtems__ */
 
 /*	TXRDY,DTIP,ENDTX,TXBUFE,RTOE */
 

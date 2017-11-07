@@ -1685,7 +1685,8 @@ def build(bld):
                 source = objs09_source)
     libbsd_use += ["objs09"]
 
-    source = ['freebsd/sys/arm/lpc/if_lpe.c',
+    source = ['freebsd/sys/arm/at91/at91_mci.c',
+              'freebsd/sys/arm/lpc/if_lpe.c',
               'freebsd/sys/arm/lpc/lpc_pwr.c',
               'freebsd/sys/arm/ti/am335x/am335x_musb.c',
               'freebsd/sys/arm/ti/am335x/am335x_prcm.c',

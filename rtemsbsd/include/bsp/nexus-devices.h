@@ -56,6 +56,8 @@ SYSINIT_DRIVER_REFERENCE(ti_scm, simplebus);
 SYSINIT_DRIVER_REFERENCE(am335x_prcm, simplebus);
 SYSINIT_DRIVER_REFERENCE(usbss, simplebus);
 SYSINIT_DRIVER_REFERENCE(musbotg, usbss);
+SYSINIT_DRIVER_REFERENCE(sdhci_ti, simplebus);
+SYSINIT_DRIVER_REFERENCE(mmcsd, mmc);
 SYSINIT_DRIVER_REFERENCE(rtwn_usb, uhub);
 SYSINIT_MODULE_REFERENCE(wlan_ratectl_none);
 SYSINIT_MODULE_REFERENCE(wlan_sta);

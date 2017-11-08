@@ -502,6 +502,41 @@ def mmc(mm):
     return mod
 
 #
+# MMC
+#
+def mmc_ti(mm):
+    mod = builder.Module('mmc_ti')
+    mod.addKernelSpaceHeaderFiles(
+        [
+            'sys/arm/ti/ti_cpuid.h',
+            'sys/arm/ti/ti_prcm.h',
+            'sys/arm/ti/ti_hwmods.h',
+            'sys/dev/sdhci/sdhci.h',
+            'sys/dev/sdhci/sdhci_fdt_gpio.h',
+            'sys/dev/gpio/gpiobusvar.h',
+        ]
+    )
+    mod.addKernelSpaceSourceFiles(
+        [
+            'sys/dev/sdhci/sdhci.c',
+            'sys/arm/ti/ti_sdhci.c',
+            'sys/arm/ti/ti_hwmods.c',
+            'sys/dev/sdhci/sdhci_fdt_gpio.c',
+            'sys/dev/gpio/ofw_gpiobus.c',
+            'sys/dev/gpio/gpiobus.c',
+        ],
+        mm.generator['source']()
+    )
+    mod.addRTEMSSourceFiles(
+        [
+            'local/sdhci_if.c',
+            'local/gpiobus_if.c',
+        ],
+        mm.generator['source']()
+    )
+    return mod
+
+#
 # Input
 #
 def dev_input(mm):
@@ -4244,6 +4279,7 @@ def sources(mm):
     mm.addModule(fdt(mm))
     mm.addModule(tty(mm))
     mm.addModule(mmc(mm))
+    mm.addModule(mmc_ti(mm))
     mm.addModule(dev_input(mm))
     mm.addModule(evdev(mm))
 

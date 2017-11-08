@@ -1557,6 +1557,11 @@ at91_mci_read_ivar(device_t bus, device_t child, int which, uintptr_t *result)
 		}
 		*(int *)result = sc->host.caps;
 		break;
+#ifdef __rtems__
+	case MMCBR_IVAR_TIMING:
+		*result = sc->host.ios.timing;
+		break;
+#endif /* __rtems__ */
 	case MMCBR_IVAR_MAX_DATA:
 		/*
 		 * Something is wrong with the 2x parts and multiblock, so
@@ -1604,6 +1609,11 @@ at91_mci_write_ivar(device_t bus, device_t child, int which, uintptr_t value)
 	case MMCBR_IVAR_VDD:
 		sc->host.ios.vdd = value;
 		break;
+#ifdef __rtems__
+	case MMCBR_IVAR_TIMING:
+		sc->host.ios.timing = value;
+		break;
+#endif /* __rtems__ */
 	/* These are read-only */
 	case MMCBR_IVAR_CAPS:
 	case MMCBR_IVAR_HOST_OCR:

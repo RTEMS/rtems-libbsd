@@ -26,6 +26,7 @@
 #define MAX_TFS_IE_LEN  1024
 #define WNM_MAX_NEIGHBOR_REPORT 10
 
+#if defined(__rtems__) && defined(CONFIG_WNM)
 
 /* get the TFS IE from driver */
 static int ieee80211_11_get_tfs_ie(struct wpa_supplicant *wpa_s, u8 *buf,
@@ -1148,3 +1149,4 @@ void ieee802_11_rx_wnm_action(struct wpa_supplicant *wpa_s,
 		break;
 	}
 }
+#endif /* __rtems__ && CONFIG_WNM */

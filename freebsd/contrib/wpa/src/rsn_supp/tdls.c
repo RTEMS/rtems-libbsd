@@ -24,6 +24,7 @@
 #include "drivers/driver.h"
 #include "l2_packet/l2_packet.h"
 
+#if defined(__rtems__) && defined(CONFIG_TDLS)
 #ifdef CONFIG_TDLS_TESTING
 #define TDLS_TESTING_LONG_FRAME BIT(0)
 #define TDLS_TESTING_ALT_RSN_IE BIT(1)
@@ -3008,3 +3009,4 @@ int wpa_tdls_disable_chan_switch(struct wpa_sm *sm, const u8 *addr)
 	peer->chan_switch_enabled = 0;
 	return 0;
 }
+#endif /* __rtems__ && CONFIG_TDLS */

@@ -32,7 +32,7 @@
 
 from __future__ import print_function
 
-rtems_version = "4.12"
+rtems_version = "5"
 
 try:
     import rtems_waf.rtems as rtems

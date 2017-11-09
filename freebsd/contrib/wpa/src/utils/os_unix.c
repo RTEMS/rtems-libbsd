@@ -26,7 +26,7 @@
 #endif /* __MACH__ */
 
 #ifdef __rtems__
-#include <unistd.h>
+#include <stdlib.h>
 #endif /* __rtems__ */
 
 
@@ -288,7 +288,8 @@ int os_get_random(unsigned char *buf, size_t len)
 		return -1;
 
 #ifdef __rtems__
-	return getentropy(buf, len);
+	arc4random_buf(buf, len);
+	return 0;
 #else /* __rtems__ */
 	f = fopen("/dev/urandom", "rb");
 	if (f == NULL) {

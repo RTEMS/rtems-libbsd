@@ -47,7 +47,7 @@
 #include <rtems.h>
 #include <rtems/libcsupport.h>
 
-#define TEST_NAME "LIBBSD SYSCALLS 1"
+#define TEST_NAME "LIBBSD PROGRAM 1"
 
 struct alloc_ctx {
 	enum alloc_type {

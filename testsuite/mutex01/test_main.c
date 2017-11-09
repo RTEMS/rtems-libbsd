@@ -194,15 +194,15 @@ test_mtx_non_recursive(test_context *ctx)
 	assert(mtx_initialized(mtx));
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	mtx_unlock(mtx);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	mtx_destroy(mtx);
 	assert(!mtx_initialized(mtx));
@@ -220,31 +220,31 @@ test_mtx_recursive(test_context *ctx)
 	assert(mtx_initialized(mtx));
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 1);
+	assert(mtx_recursed(mtx));
 	mtx_lock(mtx);
 
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 2);
+	assert(mtx_recursed(mtx));
 
 	mtx_unlock(mtx);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 1);
+	assert(mtx_recursed(mtx));
 
 	mtx_unlock(mtx);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	mtx_unlock(mtx);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	mtx_destroy(mtx);
 	assert(!mtx_initialized(mtx));
@@ -264,21 +264,21 @@ test_mtx_trylock(test_context *ctx)
 	assert(mtx_initialized(mtx));
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	ok = mtx_trylock(mtx);
 	assert(ok != 0);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	mtx_unlock(mtx);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	ctx->done[index] = false;
 	ctx->rv = 1;
@@ -287,10 +287,10 @@ test_mtx_trylock(test_context *ctx)
 	assert(ctx->rv == 0);
 
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_unlock(mtx);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	mtx_destroy(mtx);
 	assert(!mtx_initialized(mtx));
@@ -317,10 +317,10 @@ test_mtx_lock(test_context *ctx)
 	/* Resource count one */
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == PRIO_MASTER);
 
 	ctx->done[low] = false;
@@ -330,21 +330,21 @@ test_mtx_lock(test_context *ctx)
 	assert(!ctx->done[low]);
 	assert(!ctx->done[high]);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == prio_worker[low]);
 
 	send_events(ctx, EVENT_LOCK, high);
 	assert(!ctx->done[low]);
 	assert(!ctx->done[high]);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == prio_worker[high]);
 
 	mtx_unlock(mtx);
 	assert(!ctx->done[low]);
 	assert(ctx->done[high]);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == PRIO_MASTER);
 
 	ctx->done[high] = false;
@@ -359,35 +359,35 @@ test_mtx_lock(test_context *ctx)
 	/* Resource count two */
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == PRIO_MASTER);
 
 	assert(!mtx_owned(mtx2));
-	assert(mtx_recursed(mtx2) == 0);
+	assert(!mtx_recursed(mtx2));
 	mtx_lock(mtx2);
 	assert(mtx_owned(mtx2));
-	assert(mtx_recursed(mtx2) == 0);
+	assert(!mtx_recursed(mtx2));
 	assert(get_self_prio() == PRIO_MASTER);
 
 	ctx->done[low] = false;
 	send_events(ctx, EVENT_LOCK, low);
 	assert(!ctx->done[low]);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == prio_worker[low]);
 
 	mtx_unlock(mtx2);
 	assert(!mtx_owned(mtx2));
-	assert(mtx_recursed(mtx2) == 0);
+	assert(!mtx_recursed(mtx2));
 	assert(get_self_prio() == prio_worker[low]);
 
 	mtx_unlock(mtx);
 	assert(ctx->done[low]);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	assert(get_self_prio() == PRIO_MASTER);
 
 	ctx->done[low] = false;
@@ -423,10 +423,10 @@ test_mtx_sleep_with_lock(test_context *ctx)
 	assert(!ctx->done[index]);
 
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 	mtx_lock(mtx);
 	assert(mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	wakeup(ctx);
 	assert(!ctx->done[index]);
@@ -434,7 +434,7 @@ test_mtx_sleep_with_lock(test_context *ctx)
 	mtx_unlock(mtx);
 	assert(ctx->done[index]);
 	assert(!mtx_owned(mtx));
-	assert(mtx_recursed(mtx) == 0);
+	assert(!mtx_recursed(mtx));
 
 	ctx->done[index] = false;
 	send_events(ctx, EVENT_UNLOCK, index);

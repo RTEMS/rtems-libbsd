@@ -939,7 +939,9 @@ kern_kqueue(struct thread *td, int flags, struct filecaps *fcaps)
 #endif /* __rtems__ */
 
 	finit(fp, FREAD | FWRITE, DTYPE_KQUEUE, kq, &kqueueops);
+#ifndef __rtems__
 	fdrop(fp, td);
+#endif /* __rtems__ */
 
 	td->td_retval[0] = fd;
 	return (0);

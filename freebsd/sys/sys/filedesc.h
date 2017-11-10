@@ -202,7 +202,6 @@ falloc_caps(struct thread *td, struct file **resultfp, int *resultfd,
 	*resultfp = rtems_bsd_iop_to_fp(iop);
 
 	if (iop != NULL) {
-		rtems_libio_iop_hold(iop);
 		iop->pathinfo.mt_entry = &rtems_filesystem_null_mt_entry;
 		rtems_filesystem_location_add_to_mt_entry(&iop->pathinfo);
 		*resultfd = rtems_libio_iop_to_descriptor(iop);
@@ -223,6 +222,10 @@ int	fdcheckstd(struct thread *td);
 #ifndef __rtems__
 void	fdclose(struct thread *td, struct file *fp, int idx);
 #else /* __rtems__ */
+/*
+ * WARNING: Use of fdrop() after fclose() corrupts the file descriptor.  See
+ * fdrop() comment.
+ */
 static inline void
 fdclose(struct thread *td, struct file *fp, int idx)
 {

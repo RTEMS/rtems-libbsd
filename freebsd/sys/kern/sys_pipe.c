@@ -485,16 +485,22 @@ kern_pipe(struct thread *td, int fildes[2], int flags, struct filecaps *fcaps1,
 	error = falloc_caps(td, &wf, &fd, flags, fcaps2);
 	if (error) {
 		fdclose(td, rf, fildes[0]);
+#ifndef __rtems__
 		fdrop(rf, td);
+#endif /* __rtems__ */
 		/* rpipe has been closed by fdrop(). */
 		pipeclose(wpipe);
 		return (error);
 	}
 	/* An extra reference on `wf' has been held for us by falloc_caps(). */
 	finit(wf, fflags, DTYPE_PIPE, wpipe, &pipeops);
+#ifndef __rtems__
 	fdrop(wf, td);
+#endif /* __rtems__ */
 	fildes[1] = fd;
+#ifndef __rtems__
 	fdrop(rf, td);
+#endif /* __rtems__ */
 
 	return (0);
 }

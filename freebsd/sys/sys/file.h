@@ -413,6 +413,13 @@ rtems_bsd_fdrop(struct file *fp)
 	rtems_libio_iop_drop(&fp->f_io);
 }
 
+/*
+ * WARNING: fdalloc() and falloc_caps() do not increment the reference count of
+ * the file descriptor in contrast to FreeBSD.  We must not call the fdrop()
+ * corresponding to a fdalloc() or falloc_caps().  The reason for this is that
+ * FreeBSD performs a lazy cleanup once the reference count reaches zero.
+ * RTEMS uses the reference count to determine if a cleanup is allowed.
+ */
 #define	fdrop(fp, td) rtems_bsd_fdrop(fp)
 #endif /* __rtems__ */
 

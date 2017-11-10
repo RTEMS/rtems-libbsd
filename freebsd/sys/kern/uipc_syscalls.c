@@ -214,7 +214,9 @@ kern_socket(struct thread *td, int domain, int type, int protocol)
 			(void) fo_ioctl(fp, FIONBIO, &fflag, td->td_ucred, td);
 		td->td_retval[0] = fd;
 	}
+#ifndef __rtems__
 	fdrop(fp, td);
+#endif /* __rtems__ */
 	return (error);
 }
 #ifdef __rtems__
@@ -616,8 +618,10 @@ done:
 		} else
 			*fp = NULL;
 	}
+#ifndef __rtems__
 	if (nfp != NULL)
 		fdrop(nfp, td);
+#endif /* __rtems__ */
 	fdrop(headfp, td);
 	return (error);
 }
@@ -840,15 +844,21 @@ kern_socketpair(struct thread *td, int domain, int type, int protocol,
 		(void) fo_ioctl(fp1, FIONBIO, &fflag, td->td_ucred, td);
 		(void) fo_ioctl(fp2, FIONBIO, &fflag, td->td_ucred, td);
 	}
+#ifndef __rtems__
 	fdrop(fp1, td);
 	fdrop(fp2, td);
+#endif /* __rtems__ */
 	return (0);
 free4:
 	fdclose(td, fp2, rsv[1]);
+#ifndef __rtems__
 	fdrop(fp2, td);
+#endif /* __rtems__ */
 free3:
 	fdclose(td, fp1, rsv[0]);
+#ifndef __rtems__
 	fdrop(fp1, td);
+#endif /* __rtems__ */
 free2:
 	if (so2 != NULL)
 		(void)soclose(so2);

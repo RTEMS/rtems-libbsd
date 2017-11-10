@@ -53,6 +53,7 @@
 #include <syslog.h>
 
 #include <rtems.h>
+#include <rtems/bsd/bsd.h>
 #include <rtems/libcsupport.h>
 
 #define TEST_NAME "LIBBSD SYSCALLS 1"
@@ -422,6 +423,7 @@ test_socket_fstat_and_shutdown(void)
 	mode_t canrecv = S_IRUSR | S_IRGRP | S_IROTH;
 	mode_t cansend = S_IWUSR | S_IWGRP | S_IWOTH;
 	rtems_resource_snapshot snapshot;
+	struct sockaddr_in addr;
 	struct stat st;
 	int sd;
 	int rv;
@@ -429,6 +431,8 @@ test_socket_fstat_and_shutdown(void)
 	puts("test socket fstat and shutdown");
 
 	rtems_resource_snapshot_take(&snapshot);
+
+	init_addr(&addr);
 
 	sd = socket(PF_INET, SOCK_DGRAM, 0);
 	assert(sd >= 0);
@@ -438,6 +442,9 @@ test_socket_fstat_and_shutdown(void)
 	rv = fstat(sd, &st);
 	assert(rv == 0);
 	assert(st.st_mode == (S_IFSOCK | canrecv | cansend));
+
+	rv = connect(sd, (struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == 0);
 
 	rv = shutdown(sd, SHUT_RD);
 	assert(rv == 0);
@@ -463,6 +470,9 @@ test_socket_fstat_and_shutdown(void)
 
 	sd = socket(PF_INET, SOCK_DGRAM, 0);
 	assert(sd >= 0);
+
+	rv = connect(sd, (struct sockaddr *) &addr, sizeof(addr));
+	assert(rv == 0);
 
 	do_no_mem_test(no_mem_socket_shutdown, sd);
 
@@ -1592,11 +1602,11 @@ test_setgethostname(void)
 static void
 test_main(void)
 {
+
 	/* Must be first test to ensure resource checks work */
 	test_sockets();
 
 	test_socket_unsupported_ops();
-	test_socket_fstat_and_shutdown();
 	test_socket_ioctl();
 	test_socket_bind();
 	test_socket_connect();
@@ -1618,6 +1628,9 @@ test_main(void)
 
 	test_syslog();
 	test_setgethostname();
+
+	rtems_bsd_ifconfig_lo0();
+	test_socket_fstat_and_shutdown();
 
 	exit(0);
 }

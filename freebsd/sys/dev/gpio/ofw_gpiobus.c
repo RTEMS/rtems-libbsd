@@ -38,6 +38,10 @@ __FBSDID("$FreeBSD$");
 #include <sys/malloc.h>
 #include <sys/module.h>
 
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_platform.h>
+#endif /* __rtems__ */
+#if defined(__rtems__) && defined(FDT)
 #include <dev/gpio/gpiobusvar.h>
 #include <dev/ofw/ofw_bus.h>
 
@@ -591,3 +595,4 @@ EARLY_DRIVER_MODULE(ofw_gpiobus, gpio, ofw_gpiobus_driver, ofwgpiobus_devclass,
     0, 0, BUS_PASS_BUS);
 MODULE_VERSION(ofw_gpiobus, 1);
 MODULE_DEPEND(ofw_gpiobus, gpiobus, 1, 1, 1);
+#endif /* __rtems__ && FDT */

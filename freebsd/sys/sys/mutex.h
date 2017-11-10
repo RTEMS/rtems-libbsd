@@ -103,7 +103,9 @@ void	mtx_sysinit(void *arg);
 #ifndef __rtems__
 int	_mtx_trylock_flags_(volatile uintptr_t *c, int opts, const char *file,
 	    int line);
+#endif /* __rtems__ */
 void	mutex_init(void);
+#ifndef __rtems__
 #if LOCK_DEBUG > 0
 void	__mtx_lock_sleep(volatile uintptr_t *c, uintptr_t v, uintptr_t tid,
 	    int opts, const char *file, int line);

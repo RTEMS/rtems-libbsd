@@ -1,4 +1,5 @@
 #include <machine/rtems-bsd-user-space.h>
+
 #ifdef __rtems__
 #define RTEMS_BSD_PROGRAM_NO_ERROR_WRAP
 #include <machine/rtems-bsd-program.h>

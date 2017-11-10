@@ -1,4 +1,5 @@
 #include <machine/rtems-bsd-user-space.h>
+
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #include "rtems-bsd-tcpdump-namespace.h"

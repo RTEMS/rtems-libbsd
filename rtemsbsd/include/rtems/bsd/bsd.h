@@ -92,6 +92,13 @@ typedef struct {
 rtems_status_code rtems_bsd_initialize(void);
 
 /**
+ * @brief Configures the lo0 (loopback) interface.
+ *
+ * @return Returns an exit code, see also <sysexits.h>.
+ */
+int rtems_bsd_ifconfig_lo0(void);
+
+/**
  * @brief Returns the initial priority for a task specified by its name.
  *
  * Applications may provide their own implementation of this function.  For

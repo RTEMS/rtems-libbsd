@@ -2193,6 +2193,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-get-mac-address.c',
               'rtemsbsd/rtems/rtems-bsd-get-task-priority.c',
               'rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c',
+              'rtemsbsd/rtems/rtems-bsd-ifconfig-lo0.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf-net.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf-pf.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf.c',

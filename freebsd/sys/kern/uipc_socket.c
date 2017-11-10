@@ -197,8 +197,10 @@ MALLOC_DEFINE(M_PCB, "pcb", "protocol control block");
 	VNET_ASSERT(curvnet != NULL,					\
 	    ("%s:%d curvnet is NULL, so=%p", __func__, __LINE__, (so)));
 
+#ifndef __rtems__
 VNET_DEFINE(struct hhook_head *, socket_hhh[HHOOK_SOCKET_LAST + 1]);
 #define	V_socket_hhh		VNET(socket_hhh)
+#endif /* __rtems__ */
 
 /*
  * Limit on the number of connections in the listen queue waiting
@@ -2455,6 +2457,7 @@ sorflush(struct socket *so)
 static int inline
 hhook_run_socket(struct socket *so, void *hctx, int32_t h_id)
 {
+#ifndef __rtems__
 	struct socket_hhook_data hhook_data = {
 		.so = so,
 		.hctx = hctx,
@@ -2468,6 +2471,9 @@ hhook_run_socket(struct socket *so, void *hctx, int32_t h_id)
 
 	/* Ugly but needed, since hhooks return void for now */
 	return (hhook_data.status);
+#else /* __rtems__ */
+	return (0);
+#endif /* __rtems__ */
 }
 
 /*
@@ -2735,10 +2741,12 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			break;
 
 		default:
+#ifndef __rtems__
 			if (V_socket_hhh[HHOOK_SOCKET_OPT]->hhh_nhooks > 0)
 				error = hhook_run_socket(so, sopt,
 				    HHOOK_SOCKET_OPT);
 			else
+#endif /* __rtems__ */
 				error = ENOPROTOOPT;
 			break;
 		}
@@ -2930,10 +2938,12 @@ integer:
 			goto integer;
 
 		default:
+#ifndef __rtems__
 			if (V_socket_hhh[HHOOK_SOCKET_OPT]->hhh_nhooks > 0)
 				error = hhook_run_socket(so, sopt,
 				    HHOOK_SOCKET_OPT);
 			else
+#endif /* __rtems__ */
 				error = ENOPROTOOPT;
 			break;
 		}

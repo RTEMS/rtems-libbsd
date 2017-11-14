@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -67,8 +67,11 @@ typedef struct {
 	struct rwlock rw;
 	bool done;
 	int rv;
+	bool done2;
+	int rv2;
 	int timo;
 	rtems_id worker_task;
+	rtems_id worker2_task;
 } test_context;
 
 static test_context test_instance;
@@ -83,9 +86,8 @@ set_self_prio(rtems_task_priority prio)
 }
 
 static void
-worker_task(rtems_task_argument arg)
+worker(test_context *ctx, int *rv, bool *done)
 {
-	test_context *ctx = (test_context *) arg;
 	struct rwlock *rw = &ctx->rw;
 
 	while (true) {
@@ -102,34 +104,50 @@ worker_task(rtems_task_argument arg)
 
 		if ((events & EVENT_RLOCK) != 0) {
 			rw_rlock(rw);
-			ctx->done = true;
+			*done = true;
 		}
 
 		if ((events & EVENT_WLOCK) != 0) {
 			rw_wlock(rw);
-			ctx->done = true;
+			*done = true;
 		}
 
 		if ((events & EVENT_TRY_RLOCK) != 0) {
-			ctx->rv = rw_try_rlock(rw);
-			ctx->done = true;
+			*rv = rw_try_rlock(rw);
+			*done = true;
 		}
 
 		if ((events & EVENT_TRY_WLOCK) != 0) {
-			ctx->rv = rw_try_wlock(rw);
-			ctx->done = true;
+			*rv = rw_try_wlock(rw);
+			*done = true;
 		}
 
 		if ((events & EVENT_UNLOCK) != 0) {
 			rw_unlock(rw);
-			ctx->done = true;
+			*done = true;
 		}
 
 		if ((events & EVENT_SLEEP) != 0) {
-			ctx->rv = rw_sleep(ctx, rw, 0, "worker", ctx->timo);
-			ctx->done = true;
+			*rv = rw_sleep(ctx, rw, 0, "worker", ctx->timo);
+			*done = true;
 		}
 	}
+}
+
+static void
+worker_task(rtems_task_argument arg)
+{
+	test_context *ctx = (test_context *) arg;
+
+	worker(ctx, &ctx->rv, &ctx->done);
+}
+
+static void
+worker2_task(rtems_task_argument arg)
+{
+	test_context *ctx = (test_context *) arg;
+
+	worker(ctx, &ctx->rv2, &ctx->done2);
 }
 
 static void
@@ -142,12 +160,21 @@ send_events(test_context *ctx, rtems_event_set events)
 }
 
 static void
+send_events2(test_context *ctx, rtems_event_set events)
+{
+	rtems_status_code sc;
+
+	sc = rtems_event_send(ctx->worker2_task, events);
+	assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void
 start_worker(test_context *ctx)
 {
 	rtems_status_code sc;
 
 	sc = rtems_task_create(
-		rtems_build_name('W', 'O', 'R', 'K'),
+		rtems_build_name('W', 'R', 'K', '1'),
 		PRIO_WORKER,
 		RTEMS_MINIMUM_STACK_SIZE,
 		RTEMS_DEFAULT_MODES,
@@ -162,6 +189,23 @@ start_worker(test_context *ctx)
 		(rtems_task_argument) ctx
 	);
 	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_create(
+		rtems_build_name('W', 'R', 'K', '2'),
+		PRIO_WORKER,
+		RTEMS_MINIMUM_STACK_SIZE,
+		RTEMS_DEFAULT_MODES,
+		RTEMS_FLOATING_POINT,
+		&ctx->worker2_task
+	);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_start(
+		ctx->worker2_task,
+		worker2_task,
+		(rtems_task_argument) ctx
+	);
+	assert(sc == RTEMS_SUCCESSFUL);
 }
 
 static void
@@ -170,6 +214,9 @@ delete_worker(test_context *ctx)
 	rtems_status_code sc;
 
 	sc = rtems_task_delete(ctx->worker_task);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_delete(ctx->worker2_task);
 	assert(sc == RTEMS_SUCCESSFUL);
 }
 
@@ -186,12 +233,16 @@ test_rw_non_recursive(test_context *ctx)
 	assert(rw_initialized(rw));
 
 	rw_rlock(rw);
-	/* FIXME: We use a mutex implementation */
-	assert(rw_wowned(rw));
+	assert(!rw_wowned(rw));
 	rw_runlock(rw);
 
 	rw_rlock(rw);
 	rw_unlock(rw);
+
+	rw_rlock(rw);
+	rw_rlock(rw);
+	rw_runlock(rw);
+	rw_runlock(rw);
 
 	rw_rlock(rw);
 	ok = rw_try_upgrade(rw);
@@ -210,8 +261,7 @@ test_rw_non_recursive(test_context *ctx)
 	assert(ok != 0);
 	assert(rw_wowned(rw));
 	rw_downgrade(rw);
-	/* FIXME: We use a mutex implementation */
-	assert(rw_wowned(rw));
+	assert(!rw_wowned(rw));
 	rw_runlock(rw);
 
 	rw_rlock(rw);
@@ -219,8 +269,7 @@ test_rw_non_recursive(test_context *ctx)
 	assert(ok != 0);
 	assert(rw_wowned(rw));
 	rw_downgrade(rw);
-	/* FIXME: We use a mutex implementation */
-	assert(rw_wowned(rw));
+	assert(!rw_wowned(rw));
 	rw_unlock(rw);
 
 	rw_wlock(rw);
@@ -252,11 +301,6 @@ test_rw_recursive(test_context *ctx)
 	rw_init_flags(rw, "test", RW_RECURSE);
 	assert(rw_initialized(rw));
 
-	rw_rlock(rw);
-	rw_rlock(rw);
-	rw_runlock(rw);
-	rw_runlock(rw);
-
 	rw_wlock(rw);
 	rw_wlock(rw);
 	rw_wunlock(rw);
@@ -275,13 +319,15 @@ test_rw_try_rlock(test_context *ctx)
 	rw_init(rw, "test");
 
 	rw_rlock(rw);
-	/* FIXME: We use a mutex implementation */
 	ctx->done = false;
-	ctx->rv = 1;
+	ctx->rv = 0;
 	send_events(ctx, EVENT_TRY_RLOCK);
 	assert(ctx->done);
-	assert(ctx->rv == 0);
+	assert(ctx->rv == 1);
 	rw_unlock(rw);
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
 
 	rw_wlock(rw);
 	ctx->done = false;
@@ -332,10 +378,9 @@ test_rw_rlock(test_context *ctx)
 	rw_init(rw, "test");
 
 	rw_rlock(rw);
-	/* FIXME: We use a mutex implementation */
 	ctx->done = false;
 	send_events(ctx, EVENT_RLOCK);
-	assert(!ctx->done);
+	assert(ctx->done);
 	rw_unlock(rw);
 	assert(ctx->done);
 	ctx->done = false;
@@ -388,6 +433,202 @@ test_rw_wlock(test_context *ctx)
 }
 
 static void
+test_rw_rlock_phase_fair(test_context *ctx)
+{
+	struct rwlock *rw = &ctx->rw;
+
+	puts("test rw rlock phase fair");
+
+	rw_init(rw, "test");
+
+	rw_rlock(rw);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_WLOCK);
+	assert(!ctx->done);
+
+	ctx->done2 = false;
+	send_events2(ctx, EVENT_RLOCK);
+	assert(!ctx->done2);
+
+	rw_unlock(rw);
+	assert(ctx->done);
+	assert(!ctx->done2);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
+	assert(ctx->done2);
+
+	ctx->done2 = false;
+	send_events2(ctx, EVENT_UNLOCK);
+	assert(ctx->done2);
+
+	rw_destroy(rw);
+}
+
+static void
+test_rw_wlock_phase_fair(test_context *ctx)
+{
+	struct rwlock *rw = &ctx->rw;
+
+	puts("test rw wlock phase fair");
+
+	rw_init(rw, "test");
+
+	rw_wlock(rw);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_WLOCK);
+	assert(!ctx->done);
+
+	ctx->done2 = false;
+	send_events2(ctx, EVENT_RLOCK);
+	assert(!ctx->done2);
+
+	rw_unlock(rw);
+	assert(!ctx->done);
+	assert(ctx->done2);
+
+	ctx->done2 = false;
+	send_events2(ctx, EVENT_UNLOCK);
+	assert(ctx->done2);
+	assert(ctx->done);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
+
+	rw_destroy(rw);
+}
+
+static void
+test_rw_try_upgrade(test_context *ctx)
+{
+	struct rwlock *rw = &ctx->rw;
+	int ok;
+
+	puts("test rw try upgrade");
+
+	rw_init(rw, "test");
+
+	rw_rlock(rw);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_WLOCK);
+	assert(!ctx->done);
+
+	assert(!rw_wowned(rw));
+	ok = rw_try_upgrade(rw);
+	assert(ok != 0);
+	assert(rw_wowned(rw));
+	assert(!ctx->done);
+
+	rw_unlock(rw);
+	assert(!rw_wowned(rw));
+	assert(ctx->done);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
+
+	rw_rlock(rw);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_WLOCK);
+	assert(!ctx->done);
+
+	ctx->done2 = false;
+	send_events2(ctx, EVENT_RLOCK);
+	assert(!ctx->done2);
+
+	assert(!rw_wowned(rw));
+	ok = rw_try_upgrade(rw);
+	assert(ok != 0);
+	assert(rw_wowned(rw));
+	assert(!ctx->done);
+	assert(!ctx->done2);
+
+	rw_unlock(rw);
+	assert(!rw_wowned(rw));
+	assert(!ctx->done);
+	assert(ctx->done2);
+
+	ctx->done2 = false;
+	send_events2(ctx, EVENT_UNLOCK);
+	assert(ctx->done2);
+	assert(ctx->done);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
+
+	rw_rlock(rw);
+
+	ctx->done = false;
+	send_events(ctx, EVENT_RLOCK);
+	assert(ctx->done);
+
+	assert(!rw_wowned(rw));
+	ok = rw_try_upgrade(rw);
+	assert(ok == 0);
+	assert(!rw_wowned(rw));
+
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
+
+	assert(!rw_wowned(rw));
+	ok = rw_try_upgrade(rw);
+	assert(ok != 0);
+	assert(rw_wowned(rw));
+
+	rw_unlock(rw);
+	assert(!rw_wowned(rw));
+
+	rw_destroy(rw);
+}
+
+static void
+test_rw_downgrade(test_context *ctx)
+{
+	struct rwlock *rw = &ctx->rw;
+
+	puts("test rw downgrade");
+
+	rw_init(rw, "test");
+
+	rw_wlock(rw);
+	assert(rw_wowned(rw));
+
+	rw_downgrade(rw);
+	assert(!rw_wowned(rw));
+
+	rw_unlock(rw);
+	assert(!rw_wowned(rw));
+
+	rw_wlock(rw);
+	assert(rw_wowned(rw));
+
+	ctx->done = false;
+	send_events(ctx, EVENT_RLOCK);
+	assert(!ctx->done);
+
+	rw_downgrade(rw);
+	assert(!rw_wowned(rw));
+	assert(ctx->done);
+
+	rw_unlock(rw);
+	assert(!rw_wowned(rw));
+
+	ctx->done = false;
+	send_events(ctx, EVENT_UNLOCK);
+	assert(ctx->done);
+
+	rw_destroy(rw);
+}
+
+static void
 test_rw_sleep_with_rlock(test_context *ctx)
 {
 	struct rwlock *rw = &ctx->rw;
@@ -407,11 +648,8 @@ test_rw_sleep_with_rlock(test_context *ctx)
 
 	rw_rlock(rw);
 	wakeup(ctx);
-	/* FIXME: We use a mutex implementation */
-	assert(!ctx->done);
-	rw_unlock(rw);
-	/* FIXME: We use a mutex implementation */
 	assert(ctx->done);
+	rw_unlock(rw);
 
 	ctx->done = false;
 	send_events(ctx, EVENT_UNLOCK);
@@ -511,6 +749,10 @@ test_main(void)
 	test_rw_try_wlock(ctx);
 	test_rw_rlock(ctx);
 	test_rw_wlock(ctx);
+	test_rw_rlock_phase_fair(ctx);
+	test_rw_wlock_phase_fair(ctx);
+	test_rw_try_upgrade(ctx);
+	test_rw_downgrade(ctx);
 
 	assert(rtems_resource_snapshot_check(&snapshot_1));
 

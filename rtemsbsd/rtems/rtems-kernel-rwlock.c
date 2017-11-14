@@ -58,24 +58,24 @@
 #define _rw_assert(rw, what, file, line)
 #endif
 
-static void assert_rw(struct lock_object *lock, int what);
-static void lock_rw(struct lock_object *lock, int how);
+static void	assert_rw(const struct lock_object *lock, int what);
+static void	lock_rw(struct lock_object *lock, uintptr_t how);
 #ifdef KDTRACE_HOOKS
-static int  owner_rw(struct lock_object *lock, struct thread **owner);
+static int	owner_rw(const struct lock_object *lock, struct thread **owner);
 #endif
-static int  unlock_rw(struct lock_object *lock);
+static uintptr_t unlock_rw(struct lock_object *lock);
 
 struct lock_class lock_class_rw = {
-  .lc_name = "rw",
-  .lc_flags = LC_SLEEPLOCK | LC_RECURSABLE | LC_UPGRADABLE,
-  .lc_assert = assert_rw,
+	.lc_name = "rw",
+	.lc_flags = LC_SLEEPLOCK | LC_RECURSABLE | LC_UPGRADABLE,
+	.lc_assert = assert_rw,
 #ifdef DDB
-  .lc_ddb_show = db_show_rwlock,
+	.lc_ddb_show = db_show_rwlock,
 #endif
-  .lc_lock = lock_rw,
-  .lc_unlock = unlock_rw,
+	.lc_lock = lock_rw,
+	.lc_unlock = unlock_rw,
 #ifdef KDTRACE_HOOKS
-  .lc_owner = owner_rw,
+	.lc_owner = owner_rw,
 #endif
 };
 
@@ -84,23 +84,25 @@ struct lock_class lock_class_rw = {
 #define	rw_recursed(rw) rtems_bsd_mutex_recursed(&(rw)->mutex)
 
 void
-assert_rw(struct lock_object *lock, int what)
+assert_rw(const struct lock_object *lock, int what)
 {
-  rw_assert((struct rwlock *)lock, what);
+
+	rw_assert((const struct rwlock *)lock, what);
 }
 
 void
-lock_rw(struct lock_object *lock, int how)
+lock_rw(struct lock_object *lock, uintptr_t how)
 {
-  rw_wlock((struct rwlock *)lock);
+
+	rw_wlock((struct rwlock *)lock);
 }
 
-int
+uintptr_t
 unlock_rw(struct lock_object *lock)
 {
-  rw_unlock((struct rwlock *)lock);
 
-  return (0);
+	rw_unlock((struct rwlock *)lock);
+	return (0);
 }
 
 #ifdef KDTRACE_HOOKS

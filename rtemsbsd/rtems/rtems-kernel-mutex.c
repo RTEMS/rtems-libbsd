@@ -48,66 +48,68 @@
 #include <sys/proc.h>
 #include <sys/conf.h>
 
-static void assert_mtx(struct lock_object *lock, int what);
-static void lock_mtx(struct lock_object *lock, int how);
+static void	assert_mtx(const struct lock_object *lock, int what);
+static void	lock_mtx(struct lock_object *lock, uintptr_t how);
 #ifdef KDTRACE_HOOKS
-static int  owner_mtx(struct lock_object *lock, struct thread **owner);
+static int	owner_mtx(const struct lock_object *lock,
+		    struct thread **owner);
 #endif
-static int  unlock_mtx(struct lock_object *lock);
+static uintptr_t unlock_mtx(struct lock_object *lock);
 
 /*
  * Lock classes for sleep and spin mutexes.
  */
 struct lock_class lock_class_mtx_sleep = {
-  .lc_name = "sleep mutex",
-  .lc_flags = LC_SLEEPLOCK | LC_RECURSABLE,
-  .lc_assert = assert_mtx,
+	.lc_name = "sleep mutex",
+	.lc_flags = LC_SLEEPLOCK | LC_RECURSABLE,
+	.lc_assert = assert_mtx,
 #ifdef DDB
-  .lc_ddb_show = db_show_mtx,
+	.lc_ddb_show = db_show_mtx,
 #endif
-  .lc_lock = lock_mtx,
-  .lc_unlock = unlock_mtx,
+	.lc_lock = lock_mtx,
+	.lc_unlock = unlock_mtx,
 #ifdef KDTRACE_HOOKS
-  .lc_owner = owner_mtx,
+	.lc_owner = owner_mtx,
 #endif
 };
 
 struct lock_class lock_class_mtx_spin = {
-  .lc_name = "spin mutex",
-  .lc_flags = LC_SPINLOCK | LC_RECURSABLE,
-  .lc_assert = assert_mtx,
+	.lc_name = "spin mutex",
+	.lc_flags = LC_SPINLOCK | LC_RECURSABLE,
+	.lc_assert = assert_mtx,
 #ifdef DDB
-  .lc_ddb_show = db_show_mtx,
+	.lc_ddb_show = db_show_mtx,
 #endif
-  .lc_lock = lock_mtx,
-  .lc_unlock = unlock_mtx,
+	.lc_lock = lock_mtx,
+	.lc_unlock = unlock_mtx,
 #ifdef KDTRACE_HOOKS
-  .lc_owner = owner_mtx,
+	.lc_owner = owner_mtx,
 #endif
 };
 
 struct mtx Giant;
 
 void
-assert_mtx(struct lock_object *lock, int what)
+assert_mtx(const struct lock_object *lock, int what)
 {
-  mtx_assert((struct mtx *)lock, what);
+
+	mtx_assert((const struct mtx *)lock, what);
 }
 
 void
-lock_mtx(struct lock_object *lock, int how)
+lock_mtx(struct lock_object *lock, uintptr_t how)
 {
+
 	mtx_lock((struct mtx *)lock);
 }
 
-int
+uintptr_t
 unlock_mtx(struct lock_object *lock)
 {
-	mtx_unlock((struct mtx *)lock);
 
+	mtx_unlock((struct mtx *)lock);
 	return (0);
 }
-
 
 #ifdef KDTRACE_HOOKS
 int

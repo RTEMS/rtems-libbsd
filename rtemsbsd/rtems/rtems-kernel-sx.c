@@ -47,24 +47,24 @@
 #include <sys/lock.h>
 #include <sys/sx.h>
 
-static void assert_sx(struct lock_object *lock, int what);
-static void lock_sx(struct lock_object *lock, int how);
+static void	assert_sx(const struct lock_object *lock, int what);
+static void	lock_sx(struct lock_object *lock, uintptr_t how);
 #ifdef KDTRACE_HOOKS
-static int  owner_sx(struct lock_object *lock, struct thread **owner);
+static int	owner_sx(const struct lock_object *lock, struct thread **owner);
 #endif
-static int  unlock_sx(struct lock_object *lock);
+static uintptr_t unlock_sx(struct lock_object *lock);
 
 struct lock_class lock_class_sx = {
-  .lc_name = "sx",
-  .lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_RECURSABLE | LC_UPGRADABLE,
-  .lc_assert = assert_sx,
+	.lc_name = "sx",
+	.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_RECURSABLE | LC_UPGRADABLE,
+	.lc_assert = assert_sx,
 #ifdef DDB
-  .lc_ddb_show = db_show_sx,
+	.lc_ddb_show = db_show_sx,
 #endif
-  .lc_lock = lock_sx,
-  .lc_unlock = unlock_sx,
+	.lc_lock = lock_sx,
+	.lc_unlock = unlock_sx,
 #ifdef KDTRACE_HOOKS
-  .lc_owner = owner_sx,
+	.lc_owner = owner_sx,
 #endif
 };
 
@@ -73,22 +73,24 @@ struct lock_class lock_class_sx = {
 #define	sx_recursed(sx) rtems_bsd_mutex_recursed(&(sx)->mutex)
 
 void
-assert_sx(struct lock_object *lock, int what)
+assert_sx(const struct lock_object *lock, int what)
 {
-  sx_assert((struct sx *)lock, what);
+
+	sx_assert((const struct sx *)lock, what);
 }
 
 void
-lock_sx(struct lock_object *lock, int how)
+lock_sx(struct lock_object *lock, uintptr_t how)
 {
+
 	sx_xlock((struct sx *)lock);
 }
 
-int
+uintptr_t
 unlock_sx(struct lock_object *lock)
 {
-	sx_xunlock((struct sx *)lock);
 
+	sx_xunlock((struct sx *)lock);
 	return (0);
 }
 

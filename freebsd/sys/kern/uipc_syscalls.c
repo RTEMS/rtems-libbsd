@@ -432,7 +432,9 @@ accept1(td, s, uname, anamelen, flags)
 		    sizeof(namelen));
 	if (error != 0)
 		fdclose(td, fp, td->td_retval[0]);
+#ifndef __rtems__
 	fdrop(fp, td);
+#endif /* __rtems__ */
 	free(name, M_SONAME);
 	return (error);
 }

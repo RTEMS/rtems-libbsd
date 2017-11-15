@@ -7,13 +7,16 @@
  */
 
 /*
- * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2017 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
+ *
+ * Copyright (c) 2006 John Baldwin <jhb@FreeBSD.org>
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +41,7 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-muteximpl.h>
+#include <machine/rtems-bsd-rwlockimpl.h>
 #include <machine/rtems-bsd-thread.h>
 
 #include <sys/param.h>
@@ -59,9 +62,9 @@ struct lock_class lock_class_sx = {
 	.lc_unlock = unlock_sx,
 };
 
-#define	sx_xholder(sx) rtems_bsd_mutex_owner(&(sx)->mutex)
+#define	sx_xholder(sx) rtems_bsd_rwlock_wowner(&(sx)->rwlock)
 
-#define	sx_recursed(sx) rtems_bsd_mutex_recursed(&(sx)->mutex)
+#define	sx_recursed(sx) rtems_bsd_rwlock_recursed(&(sx)->rwlock)
 
 void
 assert_sx(const struct lock_object *lock, int what)
@@ -73,16 +76,29 @@ assert_sx(const struct lock_object *lock, int what)
 void
 lock_sx(struct lock_object *lock, uintptr_t how)
 {
+	struct sx *sx;
 
-	sx_xlock((struct sx *)lock);
+	sx = (struct sx *)lock;
+	if (how)
+		sx_slock(sx);
+	else
+		sx_xlock(sx);
 }
 
 uintptr_t
 unlock_sx(struct lock_object *lock)
 {
+	struct sx *sx;
 
-	sx_xunlock((struct sx *)lock);
-	return (0);
+	sx = (struct sx *)lock;
+	sx_assert(sx, SA_LOCKED | SA_NOTRECURSED);
+	if (sx->rwlock.readers > 0) {
+		sx_sunlock(sx);
+		return (1);
+	} else {
+		sx_xunlock(sx);
+		return (0);
+	}
 }
 
 void
@@ -102,7 +118,7 @@ sx_init_flags(struct sx *sx, const char *description, int opts)
 	if (opts & SX_RECURSE)
 		flags |= LO_RECURSABLE;
 
-	rtems_bsd_mutex_init(&sx->lock_object, &sx->mutex, &lock_class_sx,
+	rtems_bsd_rwlock_init(&sx->lock_object, &sx->rwlock, &lock_class_sx,
 	    description, NULL, flags);
 }
 
@@ -110,39 +126,65 @@ void
 sx_destroy(struct sx *sx)
 {
 
-	rtems_bsd_mutex_destroy(&sx->lock_object, &sx->mutex);
+	rtems_bsd_rwlock_destroy(&sx->lock_object, &sx->rwlock);
 }
 
 int
 _sx_xlock(struct sx *sx, int opts, const char *file, int line)
 {
-	rtems_bsd_mutex_lock(&sx->lock_object, &sx->mutex);
 
+	rtems_bsd_rwlock_wlock(&sx->lock_object, &sx->rwlock);
 	return (0);
 }
 
 int
 sx_try_xlock_(struct sx *sx, const char *file, int line)
 {
-	return (rtems_bsd_mutex_trylock(&sx->lock_object, &sx->mutex));
+
+	return (rtems_bsd_rwlock_try_wlock(&sx->lock_object, &sx->rwlock));
 }
 
 void
 _sx_xunlock(struct sx *sx, const char *file, int line)
 {
-	rtems_bsd_mutex_unlock(&sx->mutex);
+
+	rtems_bsd_rwlock_wunlock(&sx->rwlock);
 }
 
 int
 sx_try_upgrade_(struct sx *sx, const char *file, int line)
 {
-	return (1);
+
+	return (rtems_bsd_rwlock_try_upgrade(&sx->rwlock));
 }
 
 void
 sx_downgrade_(struct sx *sx, const char *file, int line)
 {
-	/* Do nothing */
+
+	rtems_bsd_rwlock_downgrade(&sx->rwlock);
+}
+
+int
+_sx_slock(struct sx *sx, int opts, const char *file, int line)
+{
+
+	rtems_bsd_rwlock_rlock(&sx->lock_object, &sx->rwlock);
+	return (0);
+}
+
+int
+sx_try_slock_(struct sx *sx, const char *file, int line)
+{
+
+	return (rtems_bsd_rwlock_try_rlock(&sx->lock_object, &sx->rwlock));
+}
+
+void
+_sx_sunlock(struct sx *sx, const char *file, int line)
+{
+
+	rtems_bsd_rwlock_runlock(&sx->rwlock);
 }
 
 #ifdef INVARIANT_SUPPORT
@@ -154,42 +196,64 @@ sx_downgrade_(struct sx *sx, const char *file, int line)
 void
 _sx_assert(const struct sx *sx, int what, const char *file, int line)
 {
-	const char *name = rtems_bsd_mutex_name(&sx->mutex);
+	const char *name = rtems_bsd_rwlock_name(&sx->rwlock);
+	int slocked = 0;
 
 	switch (what) {
 	case SA_SLOCKED:
 	case SA_SLOCKED | SA_NOTRECURSED:
 	case SA_SLOCKED | SA_RECURSED:
+		slocked = 1;
+		/* FALLTHROUGH */
 	case SA_LOCKED:
 	case SA_LOCKED | SA_NOTRECURSED:
 	case SA_LOCKED | SA_RECURSED:
+		/*
+		 * If some other thread has an exclusive lock or we
+		 * have one and are asserting a shared lock, fail.
+		 * Also, if no one has a lock at all, fail.
+		 */
+		if ((sx->rwlock.readers == 0 && sx_xholder(sx) == NULL) ||
+		    (sx->rwlock.readers == 0 && (slocked ||
+		    sx_xholder(sx) != _Thread_Get_executing())))
+			panic("Lock %s not %slocked @ %s:%d\n",
+			    name, slocked ? "share " : "",
+			    file, line);
+
+		if (sx->rwlock.readers == 0) {
+			if (sx_recursed(sx)) {
+				if (what & SA_NOTRECURSED)
+					panic("Lock %s recursed @ %s:%d\n",
+					    name, file,
+					    line);
+			} else if (what & SA_RECURSED)
+				panic("Lock %s not recursed @ %s:%d\n",
+				    name, file, line);
+		}
+		break;
 	case SA_XLOCKED:
 	case SA_XLOCKED | SA_NOTRECURSED:
 	case SA_XLOCKED | SA_RECURSED:
 		if (sx_xholder(sx) != _Thread_Get_executing())
-			panic("Lock %s not exclusively locked @ %s:%d\n", name,
-			    file, line);
+			panic("Lock %s not exclusively locked @ %s:%d\n",
+			    name, file, line);
 		if (sx_recursed(sx)) {
 			if (what & SA_NOTRECURSED)
-				panic("Lock %s recursed @ %s:%d\n", name, file,
-				    line);
+				panic("Lock %s recursed @ %s:%d\n",
+				    name, file, line);
 		} else if (what & SA_RECURSED)
-			panic("Lock %s not recursed @ %s:%d\n", name, file,
-			    line);
+			panic("Lock %s not recursed @ %s:%d\n",
+			    name, file, line);
 		break;
 	case SA_UNLOCKED:
-#ifdef WITNESS
-		witness_assert(&sx->lock_object, what, file, line);
-#else
 		/*
 		 * If we hold an exclusve lock fail.  We can't
 		 * reliably check to see if we hold a shared lock or
 		 * not.
 		 */
 		if (sx_xholder(sx) == _Thread_Get_executing())
-			panic("Lock %s exclusively locked @ %s:%d\n", name,
-			    file, line);
-#endif
+			panic("Lock %s exclusively locked @ %s:%d\n",
+			    name, file, line);
 		break;
 	default:
 		panic("Unknown sx lock assertion: %d @ %s:%d", what, file,
@@ -201,5 +265,6 @@ _sx_assert(const struct sx *sx, int what, const char *file, int line)
 int
 sx_xlocked(struct sx *sx)
 {
-	return (rtems_bsd_mutex_owned(&sx->mutex));
+
+	return (rtems_bsd_rwlock_wowned(&sx->rwlock));
 }

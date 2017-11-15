@@ -44,9 +44,6 @@
 
 #ifdef __rtems__
 #define SX_NOINLINE 1
-#define _sx_slock _bsd__sx_xlock
-#define sx_try_slock_ _bsd_sx_try_xlock_
-#define _sx_sunlock _bsd__sx_xunlock
 #endif /* __rtems__ */
 /*
  * In general, the sx locks and rwlocks use very similar algorithms.

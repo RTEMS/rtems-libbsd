@@ -31,7 +31,7 @@
 #ifndef	_SYS__SX_H_
 #define	_SYS__SX_H_
 #ifdef __rtems__
-#include <machine/rtems-bsd-mutex.h>
+#include <machine/rtems-bsd-rwlock.h>
 #endif /* __rtems__ */
 
 /*
@@ -42,7 +42,7 @@ struct sx {
 #ifndef __rtems__
 	volatile uintptr_t	sx_lock;
 #else /* __rtems__ */
-	rtems_bsd_mutex mutex;
+	rtems_bsd_rwlock	rwlock;
 #endif /* __rtems__ */
 };
 

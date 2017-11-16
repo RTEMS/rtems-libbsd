@@ -59,9 +59,6 @@ struct lock_class lock_class_mtx_sleep = {
 	.lc_name = "sleep mutex",
 	.lc_flags = LC_SLEEPLOCK | LC_RECURSABLE,
 	.lc_assert = assert_mtx,
-#ifdef DDB
-	.lc_ddb_show = db_show_mtx,
-#endif
 	.lc_lock = lock_mtx,
 	.lc_unlock = unlock_mtx,
 };
@@ -70,9 +67,6 @@ struct lock_class lock_class_mtx_spin = {
 	.lc_name = "spin mutex",
 	.lc_flags = LC_SPINLOCK | LC_RECURSABLE,
 	.lc_assert = assert_mtx,
-#ifdef DDB
-	.lc_ddb_show = db_show_mtx,
-#endif
 	.lc_lock = lock_mtx,
 	.lc_unlock = unlock_mtx,
 };

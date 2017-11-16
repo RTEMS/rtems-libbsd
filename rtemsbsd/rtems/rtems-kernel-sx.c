@@ -55,9 +55,6 @@ struct lock_class lock_class_sx = {
 	.lc_name = "sx",
 	.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_RECURSABLE | LC_UPGRADABLE,
 	.lc_assert = assert_sx,
-#ifdef DDB
-	.lc_ddb_show = db_show_sx,
-#endif
 	.lc_lock = lock_sx,
 	.lc_unlock = unlock_sx,
 };

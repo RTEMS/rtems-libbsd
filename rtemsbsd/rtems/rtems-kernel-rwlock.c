@@ -66,9 +66,6 @@ struct lock_class lock_class_rw = {
 	.lc_name = "rw",
 	.lc_flags = LC_SLEEPLOCK | LC_RECURSABLE | LC_UPGRADABLE,
 	.lc_assert = assert_rw,
-#ifdef DDB
-	.lc_ddb_show = db_show_rwlock,
-#endif
 	.lc_lock = lock_rw,
 	.lc_unlock = unlock_rw,
 };

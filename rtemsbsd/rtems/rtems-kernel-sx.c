@@ -49,9 +49,6 @@
 
 static void	assert_sx(const struct lock_object *lock, int what);
 static void	lock_sx(struct lock_object *lock, uintptr_t how);
-#ifdef KDTRACE_HOOKS
-static int	owner_sx(const struct lock_object *lock, struct thread **owner);
-#endif
 static uintptr_t unlock_sx(struct lock_object *lock);
 
 struct lock_class lock_class_sx = {
@@ -63,9 +60,6 @@ struct lock_class lock_class_sx = {
 #endif
 	.lc_lock = lock_sx,
 	.lc_unlock = unlock_sx,
-#ifdef KDTRACE_HOOKS
-	.lc_owner = owner_sx,
-#endif
 };
 
 #define	sx_xholder(sx) rtems_bsd_mutex_owner(&(sx)->mutex)
@@ -93,19 +87,6 @@ unlock_sx(struct lock_object *lock)
 	sx_xunlock((struct sx *)lock);
 	return (0);
 }
-
-#ifdef KDTRACE_HOOKS
-int
-owner_sx(struct lock_object *lock, struct thread **owner)
-{
-        struct sx *sx = (struct sx *)lock;
-  uintptr_t x = sx->sx_lock;
-
-        *owner = (struct thread *)SX_OWNER(x);
-        return ((x & SX_LOCK_SHARED) != 0 ? (SX_SHARERS(x) != 0) :
-      (*owner != NULL));
-}
-#endif
 
 void
 sx_sysinit(void *arg)

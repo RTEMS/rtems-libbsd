@@ -60,9 +60,6 @@
 
 static void	assert_rw(const struct lock_object *lock, int what);
 static void	lock_rw(struct lock_object *lock, uintptr_t how);
-#ifdef KDTRACE_HOOKS
-static int	owner_rw(const struct lock_object *lock, struct thread **owner);
-#endif
 static uintptr_t unlock_rw(struct lock_object *lock);
 
 struct lock_class lock_class_rw = {
@@ -74,9 +71,6 @@ struct lock_class lock_class_rw = {
 #endif
 	.lc_lock = lock_rw,
 	.lc_unlock = unlock_rw,
-#ifdef KDTRACE_HOOKS
-	.lc_owner = owner_rw,
-#endif
 };
 
 #define	rw_wowner(rw) rtems_bsd_mutex_owner(&(rw)->mutex)
@@ -104,19 +98,6 @@ unlock_rw(struct lock_object *lock)
 	rw_unlock((struct rwlock *)lock);
 	return (0);
 }
-
-#ifdef KDTRACE_HOOKS
-int
-owner_rw(struct lock_object *lock, struct thread **owner)
-{
-  struct rwlock *rw = (struct rwlock *)lock;
-  uintptr_t x = rw->rw_lock;
-
-  *owner = rw_wowner(rw);
-  return ((x & RW_LOCK_READ) != 0 ?  (RW_READERS(x) != 0) :
-      (*owner != NULL));
-}
-#endif
 
 void
 rw_init_flags(struct rwlock *rw, const char *name, int opts)

@@ -50,10 +50,6 @@
 
 static void	assert_mtx(const struct lock_object *lock, int what);
 static void	lock_mtx(struct lock_object *lock, uintptr_t how);
-#ifdef KDTRACE_HOOKS
-static int	owner_mtx(const struct lock_object *lock,
-		    struct thread **owner);
-#endif
 static uintptr_t unlock_mtx(struct lock_object *lock);
 
 /*
@@ -68,9 +64,6 @@ struct lock_class lock_class_mtx_sleep = {
 #endif
 	.lc_lock = lock_mtx,
 	.lc_unlock = unlock_mtx,
-#ifdef KDTRACE_HOOKS
-	.lc_owner = owner_mtx,
-#endif
 };
 
 struct lock_class lock_class_mtx_spin = {
@@ -82,9 +75,6 @@ struct lock_class lock_class_mtx_spin = {
 #endif
 	.lc_lock = lock_mtx,
 	.lc_unlock = unlock_mtx,
-#ifdef KDTRACE_HOOKS
-	.lc_owner = owner_mtx,
-#endif
 };
 
 struct mtx Giant;
@@ -110,17 +100,6 @@ unlock_mtx(struct lock_object *lock)
 	mtx_unlock((struct mtx *)lock);
 	return (0);
 }
-
-#ifdef KDTRACE_HOOKS
-int
-owner_mtx(struct lock_object *lock, struct thread **owner)
-{
-  struct mtx *m = (struct mtx *)lock;
-
-  *owner = mtx_owner(m);
-  return (mtx_unowned(m) == 0);
-}
-#endif
 
 void
 mtx_init(struct mtx *m, const char *name, const char *type, int opts)

@@ -2358,7 +2358,6 @@ def build(bld):
               'rtemsbsd/rtems/rtems-kernel-pci_cfgreg.c',
               'rtemsbsd/rtems/rtems-kernel-program.c',
               'rtemsbsd/rtems/rtems-kernel-rwlock.c',
-              'rtemsbsd/rtems/rtems-kernel-rwlockimpl.c',
               'rtemsbsd/rtems/rtems-kernel-signal.c',
               'rtemsbsd/rtems/rtems-kernel-sx.c',
               'rtemsbsd/rtems/rtems-kernel-sysctl.c',

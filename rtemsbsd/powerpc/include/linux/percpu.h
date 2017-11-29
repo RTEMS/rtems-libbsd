@@ -30,6 +30,7 @@
 #include <linux/cpumask.h>
 #include <linux/threads.h>
 
+#include <rtems/score/smp.h>
 #include <rtems/score/threaddispatch.h>
 
 #ifdef __cplusplus
@@ -43,7 +44,7 @@ extern "C" {
     (_designator[_cpu])
 
 #define this_cpu_ptr(_designator) \
-    (&_designator[_CPU_SMP_Get_current_processor()])
+    (&_designator[_SMP_Get_current_processor()])
 
 #define get_cpu_var(_designator) \
     (*({ Per_CPU_Control *_cpu_self = _Thread_Dispatch_disable(); \
@@ -56,7 +57,7 @@ extern "C" {
     ((_ptr) + (_index))
 
 #define	raw_cpu_ptr(_ptr) \
-    per_cpu_ptr(_ptr, _CPU_SMP_Get_current_processor())
+    per_cpu_ptr(_ptr, _SMP_Get_current_processor())
 
 #ifdef __cplusplus
 }

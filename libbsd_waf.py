@@ -655,7 +655,6 @@ def build(bld):
                      'freebsd/crypto/openssl/crypto/asn1/x_val.c',
                      'freebsd/crypto/openssl/crypto/asn1/x_x509.c',
                      'freebsd/crypto/openssl/crypto/asn1/x_x509a.c',
-                     'freebsd/crypto/openssl/crypto/bf/bf_cbc.c',
                      'freebsd/crypto/openssl/crypto/bf/bf_cfb64.c',
                      'freebsd/crypto/openssl/crypto/bf/bf_ecb.c',
                      'freebsd/crypto/openssl/crypto/bf/bf_enc.c',

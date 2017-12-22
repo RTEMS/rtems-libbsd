@@ -3334,7 +3334,6 @@ def crypto_openssl(mm):
             'crypto/openssl/crypto/bf/bf_enc.c',
             'crypto/openssl/crypto/bf/bfspeed.c',
             'crypto/openssl/crypto/bf/bf_cfb64.c',
-            'crypto/openssl/crypto/bf/bf_cbc.c',
             'crypto/openssl/crypto/bf/bf_ecb.c',
             'crypto/openssl/crypto/rc4/rc4_utl.c',
             'crypto/openssl/crypto/rc4/rc4_enc.c',

@@ -154,18 +154,13 @@ termios_receive_wakeup(void *arg)
 {
 	termios_selinfo *ts;
 	rtems_termios_tty *tty;
-	rtems_status_code sc;
 
 	ts = arg;
 	tty = ts->tty;
 
-	sc = rtems_semaphore_obtain(tty->isem, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
-
+	rtems_mutex_lock(&tty->isem);
 	selwakeup(&ts->sel);
-
-	sc = rtems_semaphore_release(tty->isem);
-	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+	rtems_mutex_unlock(&tty->isem);
 }
 
 static void
@@ -173,18 +168,13 @@ termios_transmit_wakeup(void *arg)
 {
 	termios_selinfo *ts;
 	rtems_termios_tty *tty;
-	rtems_status_code sc;
 
 	ts = arg;
 	tty = ts->tty;
 
-	sc = rtems_semaphore_obtain(tty->osem, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
-
+	rtems_mutex_lock(&tty->osem);
 	selwakeup(&ts->sel);
-
-	sc = rtems_semaphore_release(tty->osem);
-	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+	rtems_mutex_unlock(&tty->osem);
 }
 
 static void
@@ -229,7 +219,6 @@ rtems_termios_poll(rtems_libio_t *iop, int events)
 	struct thread *td = rtems_bsd_get_curthread_or_wait_forever();
 	struct selinfo *sel;
 	rtems_termios_tty *tty;
-	rtems_status_code sc;
 	int revents;
 
 	revents = 0;
@@ -239,8 +228,7 @@ rtems_termios_poll(rtems_libio_t *iop, int events)
 		sel = termios_get_selinfo(tty, &tty->tty_rcv,
 		    termios_receive_wakeup);
 
-		sc = rtems_semaphore_obtain(tty->isem, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+		rtems_mutex_lock(&tty->isem);
 
 		if (termios_can_read(tty)) {
 			revents |= events & (POLLIN | POLLRDNORM);
@@ -248,16 +236,14 @@ rtems_termios_poll(rtems_libio_t *iop, int events)
 			selrecord(td, sel);
 		}
 
-		sc = rtems_semaphore_release(tty->isem);
-		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+		rtems_mutex_unlock(&tty->isem);
 	}
 
 	if ((events & (POLLOUT | POLLWRNORM)) != 0) {
 		sel = termios_get_selinfo(tty, &tty->tty_snd,
 		    termios_transmit_wakeup);
 
-		sc = rtems_semaphore_obtain(tty->osem, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
-		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+		rtems_mutex_lock(&tty->osem);
 
 		if (termios_can_write(tty)) {
 			revents |= events & (POLLOUT | POLLWRNORM);
@@ -265,8 +251,7 @@ rtems_termios_poll(rtems_libio_t *iop, int events)
 			selrecord(td, sel);
 		}
 
-		sc = rtems_semaphore_release(tty->osem);
-		BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+		rtems_mutex_unlock(&tty->osem);
 	}
 
 	return (revents);

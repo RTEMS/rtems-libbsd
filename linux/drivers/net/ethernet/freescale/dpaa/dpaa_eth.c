@@ -693,6 +693,11 @@ static inline void dpaa_assign_wq(struct dpaa_fq *fq, int idx)
 			     DPAA_ETH_TXQ_NUM);
 		}
 		break;
+#ifdef __rtems__
+	case FQ_TYPE_RX_PCD:
+		fq->wq = 5;
+		break;
+#endif /* __rtems__ */
 	default:
 		WARN(1, "Invalid FQ type %d for FQID %d!\n",
 		     fq->fq_type, fq->fqid);
@@ -924,6 +929,8 @@ static void dpaa_fq_setup(struct dpaa_priv *priv,
 	u16 portals[NR_CPUS];
 #else /* __rtems__ */
 	int egress_cnt = 0, conf_cnt = 0;
+	struct qman_portal *p;
+	int cpu;
 #endif /* __rtems__ */
 	struct dpaa_fq *fq;
 
@@ -933,6 +940,8 @@ static void dpaa_fq_setup(struct dpaa_priv *priv,
 	if (num_portals == 0)
 		dev_err(priv->net_dev->dev.parent,
 			"No Qman software (affine) channels found");
+#else /* __rtems__ */
+	cpu = 0;
 #endif /* __rtems__ */
 
 	/* Initialize each FQ in the list */
@@ -944,6 +953,16 @@ static void dpaa_fq_setup(struct dpaa_priv *priv,
 		case FQ_TYPE_RX_ERROR:
 			dpaa_setup_ingress(priv, fq, &fq_cbs->rx_errq);
 			break;
+#ifdef __rtems__
+		case FQ_TYPE_RX_PCD:
+			/* For MACless we can't have dynamic Rx queues */
+			BUG_ON(priv->mac_dev != NULL || fq->fqid == 0);
+			dpaa_setup_ingress(priv, fq, &fq_cbs->rx_defq);
+			p = qman_get_affine_portal(cpu);
+			fq->channel = qman_portal_get_channel(p);
+			cpu = (cpu + 1) % (int)rtems_get_processor_count();
+			break;
+#endif /* __rtems__ */
 		case FQ_TYPE_TX:
 			dpaa_setup_egress(priv, fq, tx_port,
 					  &fq_cbs->egress_ern);
@@ -1109,6 +1128,9 @@ static int dpaa_fq_init(struct dpaa_fq *dpaa_fq, bool td_enable)
 		/* Put all the ingress queues in our "ingress CGR". */
 		if (priv->use_ingress_cgr &&
 		    (dpaa_fq->fq_type == FQ_TYPE_RX_DEFAULT ||
+#ifdef __rtems__
+		     dpaa_fq->fq_type == FQ_TYPE_RX_PCD ||
+#endif /* __rtems__ */
 		     dpaa_fq->fq_type == FQ_TYPE_RX_ERROR)) {
 			initfq.we_mask |= cpu_to_be16(QM_INITFQ_WE_CGID);
 			initfq.fqd.fq_ctrl |= cpu_to_be16(QM_FQCTRL_CGE);

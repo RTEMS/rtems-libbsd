@@ -56,6 +56,9 @@
 enum dpaa_fq_type {
 	FQ_TYPE_RX_DEFAULT = 1, /* Rx Default FQs */
 	FQ_TYPE_RX_ERROR,	/* Rx Error FQs */
+#ifdef __rtems__
+	FQ_TYPE_RX_PCD,		/* User-defined PCDs */
+#endif /* __rtems__ */
 	FQ_TYPE_TX,		/* "Real" Tx FQs */
 	FQ_TYPE_TX_CONFIRM,	/* Tx default Conf FQ (actually an Rx FQ) */
 	FQ_TYPE_TX_CONF_MQ,	/* Tx conf FQs (one for each Tx FQ) */

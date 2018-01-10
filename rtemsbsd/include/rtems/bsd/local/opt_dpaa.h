@@ -18,3 +18,7 @@
 #define __ppc_generic
 
 #define KBUILD_MODNAME "dpaa"
+
+#ifndef QORIQ_IS_HYPERVISOR_GUEST
+#define CONFIG_FSL_QMAN_CONFIG
+#endif

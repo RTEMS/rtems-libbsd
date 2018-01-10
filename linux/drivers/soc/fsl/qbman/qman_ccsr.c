@@ -49,6 +49,7 @@ EXPORT_SYMBOL(qm_channel_pool1);
 u16 qm_channel_caam = QMAN_CHANNEL_CAAM;
 EXPORT_SYMBOL(qm_channel_caam);
 
+#ifdef CONFIG_FSL_QMAN_CONFIG
 /* Register offsets */
 #define REG_QCSP_LIO_CFG(n)	(0x0000 + ((n) * 0x10))
 #define REG_QCSP_IO_CFG(n)	(0x0004 + ((n) * 0x10))
@@ -283,9 +284,11 @@ static const struct qman_error_info_mdata error_mdata[] = {
 
 /* Pointer to the start of the QMan's CCSR space */
 static u32 __iomem *qm_ccsr_start;
+#endif /* CONFIG_FSL_QMAN_CONFIG */
 /* A SDQCR mask comprising all the available/visible pool channels */
 static u32 qm_pools_sdqcr;
 
+#ifdef CONFIG_FSL_QMAN_CONFIG
 static inline u32 qm_ccsr_in(u32 offset)
 {
 	return ioread32be(qm_ccsr_start + offset/4);
@@ -295,12 +298,14 @@ static inline void qm_ccsr_out(u32 offset, u32 val)
 {
 	iowrite32be(val, qm_ccsr_start + offset/4);
 }
+#endif /* CONFIG_FSL_QMAN_CONFIG */
 
 u32 qm_get_pools_sdqcr(void)
 {
 	return qm_pools_sdqcr;
 }
 
+#ifdef CONFIG_FSL_QMAN_CONFIG
 enum qm_dc_portal {
 	qm_dc_portal_fman0 = 0,
 	qm_dc_portal_fman1 = 1
@@ -661,6 +666,20 @@ void qman_set_sdest(u16 channel, unsigned int cpu_idx)
 		qm_ccsr_out(REG_QCSP_IO_CFG(idx), after);
 	}
 }
+#else /* !CONFIG_FSL_QMAN_CONFIG */
+static unsigned int qm_get_fqid_maxcnt(void)
+{
+	return 1U << 16;
+}
+
+void qman_liodn_fixup(u16 channel)
+{
+}
+
+void qman_set_sdest(u16 channel, unsigned int cpu_idx)
+{
+}
+#endif /* CONFIG_FSL_QMAN_CONFIG */
 
 static int qman_resource_init(struct device *dev)
 {
@@ -711,6 +730,7 @@ static int qman_resource_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_FSL_QMAN_CONFIG
 static int fsl_qman_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -829,6 +849,7 @@ static int fsl_qman_probe(struct platform_device *pdev)
 
 	return 0;
 }
+#endif /* CONFIG_FSL_QMAN_CONFIG */
 
 #ifndef __rtems__
 static const struct of_device_id fsl_qman_ids[] = {
@@ -857,18 +878,20 @@ static void
 qman_sysinit(void)
 {
 	const char *fdt = bsp_fdt_get();
+	const char *name;
+	int node;
+	int ret;
+#ifdef CONFIG_FSL_QMAN_CONFIG
 	struct {
 		struct platform_device pdev;
 		struct device_node of_node;
 	} dev;
-	const char *name;
-	int node;
-	int ret;
+#endif
 
 	name = "fsl,qman";
-	node = fdt_node_offset_by_compatible(fdt, 0, name);
-	if (node < 0)
-		panic("qman: no qman in FDT");
+	node = fdt_node_offset_by_compatible(fdt, -1, name);
+#ifdef CONFIG_FSL_QMAN_CONFIG
+	BSD_ASSERT(node >= 0);
 
 	memset(&dev, 0, sizeof(dev));
 	dev.pdev.dev.of_node = &dev.of_node;
@@ -876,8 +899,34 @@ qman_sysinit(void)
 	dev.of_node.full_name = name;
 
 	ret = fsl_qman_probe(&dev.pdev);
-	if (ret != 0)
-		panic("qman: init failed");
+	BSD_ASSERT(ret == 0);
+#else /* !CONFIG_FSL_QMAN_CONFIG */
+	BSD_ASSERT(node < 0);
+	BSD_ASSERT(fdt_node_offset_by_compatible(fdt, -1,
+	    "fsl,qman-portal-3.1.2") >= 0);
+
+	qman_ip_rev = QMAN_REV31;
+	qm_channel_pool1 = QMAN_CHANNEL_POOL1_REV3;
+	qm_channel_caam = QMAN_CHANNEL_CAAM_REV3;
+
+	qm_fqalloc = devm_gen_pool_create(NULL, 0, -1, "qman-fqalloc");
+	BSD_ASSERT(!IS_ERR(qm_fqalloc));
+
+	qm_qpalloc = devm_gen_pool_create(NULL, 0, -1, "qman-qpalloc");
+	BSD_ASSERT(!IS_ERR(qm_qpalloc));
+
+	qm_cgralloc = devm_gen_pool_create(NULL, 0, -1, "qman-cgralloc");
+	BSD_ASSERT(!IS_ERR(qm_cgralloc));
+
+	ret = qman_resource_init(NULL);
+	BSD_ASSERT(ret == 0);
+
+	ret = qman_alloc_fq_table(qm_get_fqid_maxcnt());
+	BSD_ASSERT(ret == 0);
+
+	ret = qman_wq_alloc();
+	BSD_ASSERT(ret == 0);
+#endif /* CONFIG_FSL_QMAN_CONFIG */
 
 	qman_sysinit_portals();
 }

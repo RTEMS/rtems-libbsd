@@ -403,7 +403,7 @@ qman_get_dedicated_portal(int cpu)
 	if (p == NULL)
 		return (NULL);
 
-	list_del(&pcfg->node);
+	list_del_init(&pcfg->node);
 
 	irq_sources = QM_PIRQ_EQCI | QM_PIRQ_EQRI | QM_PIRQ_MRI | QM_PIRQ_CSCI
 	    | QM_PIRQ_DQRI;
@@ -433,9 +433,9 @@ do_init_pcfg(struct device_node *dn, struct qm_portal_config *pcfg,
 	ret = of_address_to_resource(dn, 0, &res);
 	if (ret != 0)
 		panic("qman: no portal CE address");
-#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
-	pcfg->addr_virt[0] = (__iomem void *)
-	    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
+	pcfg->addr_virt[0] = (__iomem void *)(uintptr_t)res.start;
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) && \
+    !defined(QORIQ_IS_HYPERVISOR_GUEST)
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
 	    (uintptr_t)&qoriq_qman_portal[0][0]);
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
@@ -445,9 +445,9 @@ do_init_pcfg(struct device_node *dn, struct qm_portal_config *pcfg,
 	ret = of_address_to_resource(dn, 1, &res);
 	if (ret != 0)
 		panic("qman: no portal CI address");
-#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
-	pcfg->addr_virt[1] = (__iomem void *)
-	    ((uintptr_t)&qoriq_qman_portal[0][0] + (uintptr_t)res.start);
+	pcfg->addr_virt[1] = (__iomem void *)(uintptr_t)res.start;
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) && \
+    !defined(QORIQ_IS_HYPERVISOR_GUEST)
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
 	    (uintptr_t)&qoriq_qman_portal[1][0]);
 	BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
@@ -471,8 +471,7 @@ do_init_pcfg(struct device_node *dn, struct qm_portal_config *pcfg,
 		}
 
 		portal = init_pcfg(pcfg);
-		if (portal == NULL)
-			panic("qman: cannot create portal");
+		BSD_ASSERT(portal != NULL);
 
 		qman_portal_update_sdest(pcfg, val);
 	} else {
@@ -490,42 +489,65 @@ qman_sysinit_portals(void)
 	int cpu_count = (int)rtems_get_processor_count();
 	int i;
 	int node;
-	int parent;
 
-	memset(&dn, 0, sizeof(dn));
-
-	name = "fsl,qman-portal";
-	node = fdt_node_offset_by_compatible(fdt, 0, name);
-	if (node < 0)
-		panic("qman: no portals in FDT");
-	parent = fdt_parent_offset(fdt, node);
-	if (parent < 0)
-		panic("qman: no parent of portals in FDT");
-	node = fdt_first_subnode(fdt, parent);
-
-	dn.full_name = name;
-	dn.offset = node;
-
-#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) && \
+    !defined(QORIQ_IS_HYPERVISOR_GUEST)
 	qoriq_clear_ce_portal(&qoriq_qman_portal[0][0],
 	    sizeof(qoriq_qman_portal[0]));
 	qoriq_clear_ci_portal(&qoriq_qman_portal[1][0],
 	    sizeof(qoriq_qman_portal[1]));
 #endif
 
+	memset(&dn, 0, sizeof(dn));
+	name = "fsl,qman-portal";
+	node = -1;
+	dn.full_name = name;
 	i = 0;
-	while (node >= 0 && i < MAX_QMAN_PORTALS) {
-		if (fdt_node_check_compatible(fdt, node, name) == 0) {
-			do_init_pcfg(&dn, &qman_configs[i], cpu_count);
-			++i;
-		}
 
-		node = fdt_next_subnode(fdt, node);
+	while (i < MAX_QMAN_PORTALS) {
+		node = fdt_node_offset_by_compatible(fdt, node, name);
+		if (node < 0)
+			break;
+
 		dn.offset = node;
+		do_init_pcfg(&dn, &qman_configs[i], cpu_count);
+		++i;
 	}
 
 	if (i < cpu_count)
-		panic("qman: not enough portals in FDT");
+		panic("qman: not enough affine portals");
+
+	/*
+	 * We try to use the "cell-index" for the affine portal processor
+	 * index.  This is not always possible, so equip the remaining
+	 * processors with portals from the free list.  Ignore the
+	 * "libbsd,dequeue" property.
+	 */
+	for (i = 0; i < cpu_count; ++i) {
+		struct qman_portal *p;
+
+		p = affine_portals[i];
+		if (p == NULL) {
+			struct qm_portal_config *pcfg;
+			struct qman_portal *portal;
+
+			if (list_empty(&qman_free_portals))
+				panic("qman: no free affine portal");
+
+			pcfg = list_first_entry(&qman_free_portals,
+			    struct qm_portal_config, node);
+			list_del_init(&pcfg->node);
+
+			pcfg->cpu = i;
+			pcfg->pools = qm_get_pools_sdqcr();
+
+			portal = init_pcfg(pcfg);
+			BSD_ASSERT(portal != NULL);
+
+			qman_portal_update_sdest(pcfg, i);
+
+		}
+	}
 
 	/* all assigned portals are initialized now */
 	qman_init_cgr_all();

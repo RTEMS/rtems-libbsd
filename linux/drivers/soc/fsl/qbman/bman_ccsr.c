@@ -312,55 +312,48 @@ bman_sysinit(void)
 	int cpu;
 	int ret;
 	int node;
-	int parent;
-
-#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
-	qoriq_reset_qman_and_bman();
-	qoriq_clear_ce_portal(&qoriq_bman_portal[0][0],
-	    sizeof(qoriq_bman_portal[0]));
-	qoriq_clear_ci_portal(&qoriq_bman_portal[1][0],
-	    sizeof(qoriq_bman_portal[1]));
-#endif
 
 	memset(&dn, 0, sizeof(dn));
 
 	name = "fsl,bman";
-	node = fdt_node_offset_by_compatible(fdt, 0, name);
-	if (node < 0)
-		panic("bman: no bman in FDT");
+	node = fdt_node_offset_by_compatible(fdt, -1, name);
+	if (node >= 0) {
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
+		qoriq_reset_qman_and_bman();
+		qoriq_clear_ce_portal(&qoriq_bman_portal[0][0],
+		    sizeof(qoriq_bman_portal[0]));
+		qoriq_clear_ci_portal(&qoriq_bman_portal[1][0],
+		    sizeof(qoriq_bman_portal[1]));
+#endif
 
-	dn.full_name = name;
-	dn.offset = node;
-	ret = fsl_bman_probe(&ofdev);
-	if (ret != 0)
-		panic("bman: probe failed");
+		dn.full_name = name;
+		dn.offset = node;
+		ret = fsl_bman_probe(&ofdev);
+		if (ret != 0)
+			panic("bman: probe failed");
+	}
 
 	name = "fsl,bman-portal";
-	node = fdt_node_offset_by_compatible(fdt, 0, name);
-	if (node < 0)
-		panic("bman: no portals in FDT");
-	parent = fdt_parent_offset(fdt, node);
-	if (parent < 0)
-		panic("bman: no parent of portals in FDT");
-	node = fdt_first_subnode(fdt, parent);
-
+	node = -1;
 	dn.full_name = name;
-	dn.offset = node;
 
 	for (cpu = 0; cpu < cpu_count; ++cpu) {
 		struct bm_portal_config *pcfg = &bman_configs[cpu];
 		struct bman_portal *portal;
 		struct resource res;
 
+		node = fdt_node_offset_by_compatible(fdt, node, name);
 		if (node < 0)
-			panic("bman: missing portal in FDT");
+			panic("bman: no affine portal for processor %i", cpu);
+
+		dn.offset = node;
 
 		ret = of_address_to_resource(&dn, 0, &res);
 		if (ret != 0)
 			panic("bman: no portal CE address");
-#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
-		pcfg->addr_virt[0] = (__iomem void *)
-		    ((uintptr_t)&qoriq_bman_portal[0][0] + (uintptr_t)res.start);
+		pcfg->addr_virt[0] = (__iomem void *)(uintptr_t)res.start;
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) && \
+    !defined(QORIQ_IS_HYPERVISOR_GUEST)
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] >=
 		    (uintptr_t)&qoriq_bman_portal[0][0]);
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[0] <
@@ -370,9 +363,9 @@ bman_sysinit(void)
 		ret = of_address_to_resource(&dn, 1, &res);
 		if (ret != 0)
 			panic("bman: no portal CI address");
-#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT)
-		pcfg->addr_virt[1] = (__iomem void *)
-		    ((uintptr_t)&qoriq_bman_portal[0][0] + (uintptr_t)res.start);
+		pcfg->addr_virt[1] = (__iomem void *)(uintptr_t)res.start;
+#if QORIQ_CHIP_IS_T_VARIANT(QORIQ_CHIP_VARIANT) && \
+    !defined(QORIQ_IS_HYPERVISOR_GUEST)
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] >=
 		    (uintptr_t)&qoriq_bman_portal[1][0]);
 		BSD_ASSERT((uintptr_t)pcfg->addr_virt[1] <
@@ -390,9 +383,6 @@ bman_sysinit(void)
 			panic("bman: cannot create portal");
 
 		bman_p_irqsource_add(portal, BM_PIRQ_RCRI);
-
-		node = fdt_next_subnode(fdt, node);
-		dn.offset = node;
 	}
 }
 SYSINIT(bman, SI_SUB_CPU, SI_ORDER_FIRST, bman_sysinit, NULL);

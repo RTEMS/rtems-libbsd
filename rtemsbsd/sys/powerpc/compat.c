@@ -362,32 +362,73 @@ of_address_to_resource(struct device_node *dn, int index,
 	return (0);
 }
 
+static int
+get_interrupt_cells(const void *fdt, int node)
+{
+	do {
+		const fdt32_t *p;
+		int len;
+
+		p = fdt_getprop(fdt, node, "interrupt-parent", &len);
+		if (p != NULL) {
+			if (len != sizeof(*p))
+				return (-EINVAL);
+
+			node = fdt_node_offset_by_phandle(fdt,
+			    fdt32_to_cpu(*p));
+		} else {
+			node = fdt_parent_offset(fdt, node);
+		}
+
+		p = fdt_getprop(fdt, node, "#interrupt-cells", &len);
+		if (p != NULL) {
+			if (len != sizeof(*p))
+				return (-EINVAL);
+
+			return ((int)fdt32_to_cpu(*p));
+		}
+	} while (node >= 0);
+
+	return (-EINVAL);
+}
+
 int
 of_irq_to_resource(struct device_node *dn, int index,
     struct resource *res)
 {
 	const void *fdt = bsp_fdt_get();
 	int len;
-	const fdt32_t *p;
+	uint32_t spec_buf[8];
+	const fdt32_t *spec;
+	int node;
+	int ic;
 	int i;
+	int j;
+	int item_len;
 	int irq;
 
 	if (res != NULL)
 		memset(res, 0, sizeof(*res));
 
-	p = fdt_getprop(fdt, dn->offset, "interrupts", &len);
-	if (p == NULL)
+	node = dn->offset;
+
+	spec = fdt_getprop(fdt, node, "interrupts", &len);
+	if (spec == NULL)
 		return (-EINVAL);
 
-	i = index * 16;
-	if (i + 16 > len)
+	ic = get_interrupt_cells(fdt, node);
+	if (ic < 0 || ic >= RTEMS_ARRAY_SIZE(spec_buf))
+		return (EINVAL);
+
+	item_len = ic * 4;
+	i = index * item_len;
+	if (i + item_len > len)
 		return (-EINVAL);
 
-	irq = (int)fdt32_to_cpu(p[i / sizeof(*p)]);
-#ifdef __PPC__
-	/* FIXME */
-	irq -= 16;
-#endif
+	for (j = 0; j < ic; ++j)
+		spec_buf[j] = fdt32_to_cpu(spec[i / sizeof(*spec)]);
+
+	irq = bsp_fdt_map_intr(spec_buf, (size_t)ic);
 
 	if (res != NULL) {
 		res->start = irq;

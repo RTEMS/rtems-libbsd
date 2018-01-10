@@ -2,7 +2,7 @@
 #include <rtems/bsd/local/opt_dpaa.h>
 
 /*
- * Copyright (c) 2015 embedded brains GmbH
+ * Copyright (c) 2015, 2018 embedded brains GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -248,6 +248,80 @@ of_n_size_cells(struct device_node *dn)
 {
 
 	return (get_size_cells(bsp_fdt_get(), dn->offset));
+}
+
+static uint64_t
+translate_address(const char *fdt, int node, int ac, int sc,
+    const uint32_t *addr)
+{
+	int pac;
+	int psc;
+	uint64_t taddr;
+
+	taddr = of_read_number(addr, ac);
+
+	node = fdt_parent_offset(fdt, node);
+	if (node < 0)
+		return (OF_BAD_ADDR);
+
+	for (;;) {
+		int len;
+		int parent;
+		const uint32_t *ranges;
+		uint64_t offset;
+
+		parent = fdt_parent_offset(fdt, node);
+		if (parent < 0)
+			break;
+
+		pac = get_address_cells(fdt, parent);
+		if (pac < 0)
+			return (OF_BAD_ADDR);
+
+		psc = get_size_cells(fdt, parent);
+		if (psc < 0)
+			return (OF_BAD_ADDR);
+
+		ranges = fdt_getprop(fdt, node, "ranges", &len);
+		if (ranges == NULL || len == 0)
+			break;
+
+		if (len != (ac + pac + sc) * 4)
+			return (OF_BAD_ADDR);
+
+		if (of_read_number(&ranges[0], ac) != 0)
+			return (OF_BAD_ADDR);
+
+		offset = of_read_number(&ranges[ac], pac);
+		taddr += offset;
+
+		node = parent;
+		ac = pac;
+		sc = psc;
+	}
+
+	return (taddr);
+}
+
+uint64_t
+of_translate_address(struct device_node *dn, const uint32_t *addr)
+{
+	const void *fdt = bsp_fdt_get();
+	int node;
+	int ac;
+	int sc;
+
+	node = dn->offset;
+
+	ac = get_address_cells(fdt, node);
+	if (ac < 0)
+		return (OF_BAD_ADDR);
+
+	sc = get_size_cells(fdt, node);
+	if (sc < 0)
+		return (OF_BAD_ADDR);
+
+	return (translate_address(fdt, node, ac, sc, addr));
 }
 
 int

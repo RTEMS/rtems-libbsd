@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 embedded brains GmbH
+ * Copyright (c) 2015, 2018 embedded brains GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+uint64_t of_translate_address(struct device_node *dn, const uint32_t *addr);
 
 int of_address_to_resource(struct device_node *dn, int index,
     struct resource *res);

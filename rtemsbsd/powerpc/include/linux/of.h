@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017 embedded brains GmbH
+ * Copyright (c) 2015, 2018 embedded brains GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#define	OF_BAD_ADDR ((uint64_t)-1)
 
 typedef uint32_t phandle;
 

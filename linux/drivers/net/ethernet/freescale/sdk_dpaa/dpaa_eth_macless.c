@@ -475,7 +475,7 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 		goto fq_alloc_failed;
 #else /* __rtems__ */
 	list_for_each_entry_safe(dpaa_fq, tmp, &priv->dpaa_fq_list, list) {
-		err = dpaa_fq_init(dpaa_fq, true);
+		err = dpaa_fq_init(dpaa_fq, false);
 		if (err < 0)
 			goto fq_alloc_failed;
 	}

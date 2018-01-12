@@ -571,6 +571,11 @@ static int dpaa_bp_alloc_pool(struct dpaa_bp *dpaa_bp)
 
 		dpaa_bp->bpid = (u8)bman_get_bpid(dpaa_bp->pool);
 	}
+#ifdef __rtems__
+	else {
+		dpaa_bp->pool = bman_new_pool_for_bpid(dpaa_bp->bpid);
+	}
+#endif /* __rtems__ */
 
 	if (dpaa_bp->seed_cb) {
 		err = dpaa_bp->seed_cb(dpaa_bp);

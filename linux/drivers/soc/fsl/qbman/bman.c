@@ -720,6 +720,17 @@ err:
 	return NULL;
 }
 EXPORT_SYMBOL(bman_new_pool);
+#ifdef __rtems__
+struct bman_pool *
+bman_new_pool_for_bpid(u8 bpid)
+{
+	struct bman_pool *pool;
+
+	pool = malloc(sizeof(*pool), M_KMALLOC, M_WAITOK | M_ZERO);
+	pool->bpid = bpid;
+	return (pool);
+}
+#endif /* __rtems__ */
 
 void bman_free_pool(struct bman_pool *pool)
 {

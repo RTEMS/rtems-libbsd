@@ -86,6 +86,9 @@ struct bman_pool;
  * Creates a pool object, and returns a reference to it or NULL on error.
  */
 struct bman_pool *bman_new_pool(void);
+#ifdef __rtems__
+struct bman_pool *bman_new_pool_for_bpid(u8 bpid);
+#endif /* __rtems__ */
 
 /**
  * bman_free_pool - Deallocates a Buffer Pool object

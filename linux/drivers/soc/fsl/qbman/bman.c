@@ -228,9 +228,11 @@ static inline void put_affine_portal(void)
 struct bman_pool {
 	/* index of the buffer pool to encapsulate (0-63) */
 	u32 bpid;
+#ifndef __rtems__
 	/* Used for hash-table admin when using depletion notifications. */
 	struct bman_portal *portal;
 	struct bman_pool *next;
+#endif /* __rtems__ */
 };
 
 static u32 poll_portal_slow(struct bman_portal *p, u32 is);

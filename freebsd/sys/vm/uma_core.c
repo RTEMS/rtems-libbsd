@@ -99,12 +99,14 @@ __FBSDID("$FreeBSD$");
 #include <ddb/ddb.h>
 #ifdef __rtems__
   #ifdef RTEMS_SMP
+    #include <rtems/score/smp.h>
+
     /*
      * It is essential that we have a per-processor cache, otherwise the
      * critical_enter()/critical_exit() protection would be insufficient.
      */
     #undef curcpu
-    #define curcpu rtems_get_current_processor()
+    #define curcpu _SMP_Get_current_processor()
     #undef mp_maxid
     #define mp_maxid (rtems_get_processor_count() - 1)
     #define SMP

@@ -34,7 +34,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#define smp_processor_id() ((int)rtems_get_current_processor())
+#define smp_processor_id() ((int)_SMP_Get_current_processor())
 
 typedef void (*smp_call_func_t)(void *arg);
 

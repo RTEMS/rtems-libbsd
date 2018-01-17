@@ -34,7 +34,8 @@
 
 #include <bsp.h>
 
-#if defined(__GEN83xx_BSP_h) || defined(LIBBSP_POWERPC_QORIQ_BSP_H)
+#if defined(__GEN83xx_BSP_h) || (defined(LIBBSP_POWERPC_QORIQ_BSP_H) && \
+    !defined(QORIQ_IS_HYPERVISOR_GUEST))
 
 #include <bsp/irq.h>
 #include <bsp/utility.h>

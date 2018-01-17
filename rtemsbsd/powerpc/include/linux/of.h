@@ -61,6 +61,8 @@ const void *of_get_property(const struct device_node *dn, const char *name,
 
 int of_n_addr_cells(struct device_node *dn);
 
+int of_n_size_cells(struct device_node *dn);
+
 /* FIXME: If we need the property, then more work is to do */
 #define	of_find_property(dn, name, len) of_get_property(dn, name, len)
 

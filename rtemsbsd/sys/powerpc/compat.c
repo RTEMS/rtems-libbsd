@@ -205,6 +205,13 @@ get_size_cells(const void *fdt, int node)
 }
 
 int
+of_n_addr_cells(struct device_node *dn)
+{
+
+	return (get_address_cells(bsp_fdt_get(), dn->offset));
+}
+
+int
 of_address_to_resource(struct device_node *dn, int index,
     struct resource *res)
 {

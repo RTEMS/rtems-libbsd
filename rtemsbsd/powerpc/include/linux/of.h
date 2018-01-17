@@ -59,6 +59,8 @@ of_node_put(struct device_node *dn)
 const void *of_get_property(const struct device_node *dn, const char *name,
     int *len);
 
+int of_n_addr_cells(struct device_node *dn);
+
 /* FIXME: If we need the property, then more work is to do */
 #define	of_find_property(dn, name, len) of_get_property(dn, name, len)
 

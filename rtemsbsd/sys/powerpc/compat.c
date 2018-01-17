@@ -90,6 +90,22 @@ of_device_is_compatible(const struct device_node *dn, const char *name)
 }
 
 struct device_node *
+of_find_node_by_path(struct device_node *dns, const char *path)
+{
+	const void *fdt = bsp_fdt_get();
+	int node;
+
+	memset(dns, 0, sizeof(*dns));
+
+	node = fdt_path_offset(fdt, path);
+	if (node < 0)
+		return (NULL);
+
+	dns->offset = node;
+	return (dns);
+}
+
+struct device_node *
 of_find_compatible_node(struct device_node *dns, const struct device_node *dn,
     const char *type, const char *compatible)
 {

@@ -88,6 +88,9 @@ bool of_device_is_available(const struct device_node *dn);
 
 int of_device_is_compatible(const struct device_node *dn, const char *name);
 
+struct device_node *of_find_node_by_path(struct device_node *dns,
+    const char *path);
+
 struct device_node *of_find_compatible_node(struct device_node *dns,
     const struct device_node *dn, const char *type, const char *compatible);
 

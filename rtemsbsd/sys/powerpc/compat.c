@@ -329,6 +329,7 @@ of_address_to_resource(struct device_node *dn, int index,
     struct resource *res)
 {
 	const void *fdt = bsp_fdt_get();
+	int node;
 	int ac;
 	int sc;
 	int len;
@@ -336,16 +337,17 @@ of_address_to_resource(struct device_node *dn, int index,
 	int i;
 
 	memset(res, 0, sizeof(*res));
+	node = dn->offset;
 
-	ac = get_address_cells(fdt, dn->offset);
+	ac = get_address_cells(fdt, node);
 	if (ac < 0)
 		return (-EINVAL);
 
-	sc = get_size_cells(fdt, dn->offset);
+	sc = get_size_cells(fdt, node);
 	if (sc < 0)
 		return (-EINVAL);
 
-	p = fdt_getprop(fdt, dn->offset, "reg", &len);
+	p = fdt_getprop(fdt, node, "reg", &len);
 	if (p == NULL)
 		return (-EINVAL);
 
@@ -354,19 +356,9 @@ of_address_to_resource(struct device_node *dn, int index,
 	if (i + ac + sc > len)
 		return (-EINVAL);
 
-	while (ac > 0) {
-		res->start = (res->start << 32) | fdt32_to_cpu(p[i]);
-		++i;
-		--ac;
-	}
-
-	while (sc > 0) {
-		res->end = (res->end << 32) | fdt32_to_cpu(p[i]);
-		++i;
-		--sc;
-	}
+	res->start = translate_address(fdt, node, ac, sc, &p[i]);
+	res->end = of_read_number(&p[i + ac], sc);
 	res->end += res->start;
-
 	return (0);
 }
 

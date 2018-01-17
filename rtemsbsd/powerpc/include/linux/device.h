@@ -79,7 +79,7 @@ static inline void __iomem *
 devm_ioremap(struct device *dev, resource_size_t offset, resource_size_t size)
 {
 
-	return (void __iomem *)(dev->base + (uintptr_t)offset);
+	return (void __iomem *)(uintptr_t)offset;
 }
 
 #define	devm_alloc_percpu(dev, type) \

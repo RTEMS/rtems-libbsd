@@ -2788,6 +2788,8 @@ static struct fman *read_dts_node(struct platform_device *of_dev)
 #else /* __rtems__ */
 	const char *fdt = bsp_fdt_get();
 	struct device_node *fm_node;
+	struct device_node muram_node_storage;
+	struct device_node *muram_node;
 #endif /* __rtems__ */
 	u32 val, range[2];
 	int err, irq;
@@ -2891,6 +2893,12 @@ static struct fman *read_dts_node(struct platform_device *of_dev)
 			__func__);
 		goto fman_node_put;
 	}
+#else /* __rtems__ */
+	memset(&muram_node_storage, 0, sizeof(muram_node_storage));
+	muram_node = &muram_node_storage;
+	muram_node->offset = fdt_node_offset_by_compatible(fdt,
+	    fm_node->offset, "fsl,fman-muram");
+#endif /* __rtems__ */
 
 	err = of_address_to_resource(muram_node, 0,
 				     &fman->dts_params.muram_res);
@@ -2900,27 +2908,7 @@ static struct fman *read_dts_node(struct platform_device *of_dev)
 			__func__, err);
 		goto fman_node_put;
 	}
-#else /* __rtems__ */
-	{
-		int node = fdt_node_offset_by_compatible(fdt,
-		    fm_node->offset, "fsl,fman-muram");
-		struct device_node muram_node = {
-			.offset = node
-		};
-		struct resource res;
-
-		err = of_address_to_resource(&muram_node, 0, &res);
-		if (err != 0) {
-			pr_err("could not find MURAM node\n");
-			goto fman_node_put;
-		}
-		fman->dts_params.muram_res.start = phys_base_addr + res.start;
-		fman->dts_params.muram_res.end = phys_base_addr + res.end - 1;
-	}
-#endif /* __rtems__ */
-#ifndef __rtems__
 	of_node_put(muram_node);
-#endif /* __rtems__ */
 
 	err = devm_request_irq(&of_dev->dev, irq, fman_irq, 0, "fman", fman);
 	if (err < 0) {

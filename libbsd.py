@@ -4539,6 +4539,9 @@ def dpaa(mm):
             'drivers/net/ethernet/freescale/fman/fman_sp.h',
             'drivers/net/ethernet/freescale/dpaa/dpaa_eth.h',
             'drivers/net/ethernet/freescale/dpaa/dpaa_eth_trace.h',
+            'drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth.h',
+            'drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_base.h',
+            'drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_common.h',
             'drivers/soc/fsl/qbman/qman_priv.h',
             'drivers/soc/fsl/qbman/bman_test.h',
             'drivers/soc/fsl/qbman/dpaa_sys.h',
@@ -4557,6 +4560,8 @@ def dpaa(mm):
             'drivers/net/ethernet/freescale/fman/fman_sp.c',
             'drivers/net/ethernet/freescale/fman/fman_tgec.c',
             'drivers/net/ethernet/freescale/fman/mac.c',
+            'drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_base.c',
+            'drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_macless.c',
             'drivers/soc/fsl/qbman/bman.c',
             'drivers/soc/fsl/qbman/bman_ccsr.c',
             'drivers/soc/fsl/qbman/bman_test_api.c',
@@ -4576,6 +4581,7 @@ def dpaa(mm):
             'sys/powerpc/fman_muram.c',
             'sys/powerpc/linux_compat.c',
             'sys/powerpc/drivers/net/ethernet/freescale/dpaa/if_fmanmac.c',
+            'sys/powerpc/drivers/net/ethernet/freescale/sdk_dpaa/if_ml.c',
         ],
         mm.generator['source']()
     )

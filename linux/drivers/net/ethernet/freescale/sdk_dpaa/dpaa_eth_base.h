@@ -39,7 +39,9 @@
 
 extern uint8_t advanced_debug;
 extern const struct dpa_fq_cbs_t shared_fq_cbs;
+#ifndef __rtems__
 extern int __hot dpa_shared_tx(struct sk_buff *skb, struct net_device *net_dev);
+#endif /* __rtems__ */
 
 struct dpa_bp * __cold __must_check /* __attribute__((nonnull)) */
 dpa_bp_probe(struct platform_device *_of_dev, size_t *count);

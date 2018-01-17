@@ -3373,3 +3373,85 @@ module_exit(dpaa_unload);
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("FSL DPAA Ethernet driver");
 #endif /* __rtems__ */
+#ifdef __rtems__
+static enum qman_cb_dqrr_result
+shared_rx_dqrr(struct qman_portal *portal, struct qman_fq *fq,
+    const struct qm_dqrr_entry *dq)
+{
+	const struct qm_fd *fd;
+	struct net_device *net_dev;
+	struct ifnet *ifp;
+	u32 fd_status;
+	enum qm_fd_format fd_format;
+	struct mbuf *m;
+	int len;
+	void *dst;
+
+	fd = &dq->fd;
+	fd_status = be32_to_cpu(fd->status);
+	fd_format = qm_fd_get_format(fd);
+	net_dev = ((struct dpaa_fq *)fq)->net_dev;
+	ifp = net_dev->ifp;
+
+	if (unlikely(fd_status & FM_FD_STAT_RX_ERRORS) != 0) {
+		if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
+		goto out;
+	}
+
+	BSD_ASSERT((be32_to_cpu(fd->status) & FM_FD_STAT_L4CV) == 0);
+	BSD_ASSERT(fd_format == qm_fd_contig);
+
+	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
+	if (unlikely(m == NULL)) {
+		if_inc_counter(ifp, IFCOUNTER_IQDROPS, 1);
+		goto out;
+	}
+
+	len = qm_fd_get_length(fd);
+	dst = mtod(m, char *) + ETHER_ALIGN;
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = len;
+	m->m_len = len;
+	m->m_data = dst;
+	memcpy(dst, (const void *)(qm_fd_addr(fd) +
+	    qm_fd_get_offset(fd)), (size_t)len);
+
+	if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
+	(*ifp->if_input)(ifp, m);
+
+out:
+
+	dpaa_fd_release(net_dev, fd);
+	return (qman_cb_dqrr_consume);
+}
+
+static enum qman_cb_dqrr_result
+shared_tx_error_dqrr(struct qman_portal *portal, struct qman_fq *fq,
+    const struct qm_dqrr_entry *dq)
+{
+	BSD_ASSERT(0);
+	return (qman_cb_dqrr_consume);
+}
+
+static enum qman_cb_dqrr_result
+shared_tx_default_dqrr(struct qman_portal *portal, struct qman_fq *fq,
+    const struct qm_dqrr_entry *dq)
+{
+	BSD_ASSERT(0);
+	return (qman_cb_dqrr_consume);
+}
+
+static void shared_ern(struct qman_portal *portal, struct qman_fq *fq,
+    const union qm_mr_entry *msg)
+{
+	BSD_ASSERT(0);
+}
+
+const struct dpaa_fq_cbs shared_fq_cbs = {
+	.rx_defq = { .cb = { .dqrr = shared_rx_dqrr } },
+	.tx_defq = { .cb = { .dqrr = shared_tx_default_dqrr } },
+	.rx_errq = { .cb = { .dqrr = shared_rx_dqrr } },
+	.tx_errq = { .cb = { .dqrr = shared_tx_error_dqrr } },
+	.egress_ern = { .cb = { .ern = shared_ern } }
+};
+#endif /* __rtems__ */

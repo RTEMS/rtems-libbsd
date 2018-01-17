@@ -40,6 +40,7 @@
 #include "dpaa_eth.h"
 #include "lnxwrp_fsl_fman.h"
 
+#ifndef __rtems__
 #define dpaa_eth_init_port(type, port, param, errq_id, defq_id, buf_layout,\
 			   frag_enabled) \
 { \
@@ -167,10 +168,12 @@ int dpa_set_mac_address(struct net_device *net_dev, void *addr);
 void dpa_set_rx_mode(struct net_device *net_dev);
 void dpa_set_buffers_layout(struct mac_device *mac_dev,
 		struct dpa_buffer_layout_s *layout);
+#endif /* __rtems__ */
 int __attribute__((nonnull))
 dpa_bp_alloc(struct dpa_bp *dpa_bp);
 void __cold __attribute__((nonnull))
 dpa_bp_free(struct dpa_priv_s *priv);
+#ifndef __rtems__
 struct dpa_bp *dpa_bpid2pool(int bpid);
 void dpa_bpid2pool_map(int bpid, struct dpa_bp *dpa_bp);
 bool dpa_bpid2pool_use(int bpid);
@@ -225,5 +228,6 @@ int dpa_proxy_set_mac_address(struct proxy_device *proxy_dev,
 			  struct net_device *net_dev);
 int dpa_proxy_set_rx_mode(struct proxy_device *proxy_dev,
 		      struct net_device *net_dev);
+#endif /* __rtems__ */
 
 #endif /* __DPAA_ETH_COMMON_H */

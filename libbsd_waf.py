@@ -2438,6 +2438,8 @@ def build(bld):
                    'linux/drivers/net/ethernet/freescale/fman/fman_sp.c',
                    'linux/drivers/net/ethernet/freescale/fman/fman_tgec.c',
                    'linux/drivers/net/ethernet/freescale/fman/mac.c',
+                   'linux/drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_base.c',
+                   'linux/drivers/net/ethernet/freescale/sdk_dpaa/dpaa_eth_macless.c',
                    'linux/drivers/soc/fsl/qbman/bman.c',
                    'linux/drivers/soc/fsl/qbman/bman_ccsr.c',
                    'linux/drivers/soc/fsl/qbman/bman_test_api.c',
@@ -2448,6 +2450,7 @@ def build(bld):
                    'linux/drivers/soc/fsl/qbman/qman_test_stash.c',
                    'rtemsbsd/sys/powerpc/compat.c',
                    'rtemsbsd/sys/powerpc/drivers/net/ethernet/freescale/dpaa/if_fmanmac.c',
+                   'rtemsbsd/sys/powerpc/drivers/net/ethernet/freescale/sdk_dpaa/if_ml.c',
                    'rtemsbsd/sys/powerpc/fdt_phy.c',
                    'rtemsbsd/sys/powerpc/fman_muram.c',
                    'rtemsbsd/sys/powerpc/linux_compat.c']

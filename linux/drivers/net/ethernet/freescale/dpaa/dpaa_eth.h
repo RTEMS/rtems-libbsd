@@ -215,6 +215,10 @@ void dpaa_eth_sysfs_init(struct device *dev);
 
 void dpaa_cleanup_tx_fd(struct ifnet *ifp, const struct qm_fd *fd);
 
+/* Compatibility for SDK DPAA */
+
+extern const struct dpaa_fq_cbs shared_fq_cbs;
+
 #ifdef QORIQ_IS_HYPERVISOR_GUEST
 int dpaa_bp_alloc_pool(struct dpaa_bp *dpaa_bp);
 

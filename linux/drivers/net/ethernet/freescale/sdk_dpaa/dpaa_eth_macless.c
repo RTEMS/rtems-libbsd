@@ -1,5 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
+#include <rtems/bsd/local/opt_dpaa.h>
+
 /* Copyright 2008-2013 Freescale Semiconductor Inc.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +63,7 @@
  */
 #define DPA_DEFAULT_TX_HEADROOM	64
 
+#ifndef __rtems__
 #define DPA_DESCRIPTION "FSL DPAA MACless Ethernet driver"
 
 MODULE_LICENSE("Dual BSD/GPL");
@@ -78,8 +81,10 @@ static int __cold dpa_macless_stop(struct net_device *net_dev);
 static int __cold dpa_macless_set_address(struct net_device *net_dev,
 					  void *addr);
 static void __cold dpa_macless_set_rx_mode(struct net_device *net_dev);
+#endif /* __rtems__ */
 
 static int dpaa_eth_macless_probe(struct platform_device *_of_dev);
+#ifndef __rtems__
 static netdev_features_t
 dpa_macless_fix_features(struct net_device *dev, netdev_features_t features);
 
@@ -118,12 +123,14 @@ static struct platform_driver dpa_macless_driver = {
 	.probe		= dpaa_eth_macless_probe,
 	.remove		= dpa_remove
 };
+#endif /* __rtems__ */
 
 static const char macless_frame_queues[][25] = {
 	[RX] = "fsl,qman-frame-queues-rx",
 	[TX] = "fsl,qman-frame-queues-tx"
 };
 
+#ifndef __rtems__
 static int __cold dpa_macless_start(struct net_device *net_dev)
 {
 	const struct dpa_priv_s *priv = netdev_priv(net_dev);
@@ -235,6 +242,7 @@ static int dpa_macless_netdev_init(struct device_node *dpa_node,
 				macless_tx_timeout);
 	}
 }
+#endif /* __rtems__ */
 
 /* Probing of FQs for MACless ports */
 static int dpa_fq_probe_macless(struct device *dev, struct list_head *list,
@@ -271,9 +279,11 @@ dpa_macless_proxy_probe(struct platform_device *_of_dev)
 {
 	struct device		*dev;
 	const phandle		*proxy_prop;
+#ifndef __rtems__
 	struct proxy_device	*proxy_dev;
 	struct device_node	*proxy_node;
 	struct platform_device  *proxy_pdev;
+#endif /* __rtems__ */
 	int lenp;
 
 	dev = &_of_dev->dev;
@@ -282,6 +292,7 @@ dpa_macless_proxy_probe(struct platform_device *_of_dev)
 	if (!proxy_prop)
 		return NULL;
 
+#ifndef __rtems__
 	proxy_node = of_find_node_by_phandle(*proxy_prop);
 	if (!proxy_node) {
 		dev_err(dev, "Cannot find proxy node\n");
@@ -300,6 +311,10 @@ dpa_macless_proxy_probe(struct platform_device *_of_dev)
 	of_node_put(proxy_node);
 
 	return proxy_dev;
+#else /* __rtems__ */
+	BSD_ASSERT(0);
+	return (NULL);
+#endif /* __rtems__ */
 }
 
 static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
@@ -313,8 +328,12 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 	struct dpa_priv_s *priv = NULL;
 	struct dpa_percpu_priv_s *percpu_priv;
 	static struct proxy_device *proxy_dev;
+#ifndef __rtems__
 	struct task_struct *kth;
 	static u8 macless_idx;
+#else /* __rtems__ */
+	struct dpaa_fq *dpaa_fq, *tmp;
+#endif /* __rtems__ */
 
 	dev = &_of_dev->dev;
 
@@ -328,12 +347,15 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 	if (IS_ERR(dpa_bp))
 		return PTR_ERR(dpa_bp);
 
+#ifndef __rtems__
 	for (i = 0; i < count; i++)
 		dpa_bp[i].seed_cb = dpa_bp_shared_port_seed;
+#endif /* __rtems__ */
 
 	proxy_dev = dpa_macless_proxy_probe(_of_dev);
 
 
+#ifndef __rtems__
 	/* Allocate this early, so we can store relevant information in
 	 * the private area (needed by 1588 code in dpa_mac_probe)
 	 */
@@ -345,10 +367,19 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 
 	/* Do this here, so we can be verbose early */
 	SET_NETDEV_DEV(net_dev, dev);
+#else /* __rtems__ */
+	net_dev = _of_dev->platform_data;
+#endif /* __rtems__ */
 	dev_set_drvdata(dev, net_dev);
 
+#ifndef __rtems__
 	priv = netdev_priv(net_dev);
+#else /* __rtems__ */
+	priv = malloc(sizeof(*priv), M_KMALLOC, M_WAITOK | M_ZERO);
+	net_dev->priv = priv;
+#endif /* __rtems__ */
 	priv->net_dev = net_dev;
+#ifndef __rtems__
 	sprintf(priv->if_type, "macless%d", macless_idx++);
 
 	priv->msg_enable = netif_msg_init(advanced_debug, -1);
@@ -370,6 +401,9 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 		/* control over proxy's mac device */
 		priv->peer = (void *)proxy_dev;
 	}
+#else /* __rtems__ */
+	(void)proxy_dev;
+#endif /* __rtems__ */
 
 	INIT_LIST_HEAD(&priv->dpa_fq_list);
 
@@ -381,10 +415,24 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 		goto fq_probe_failed;
 
 	/* bp init */
+#ifndef __rtems__
 	priv->bp_count = count;
 	err = dpa_bp_create(net_dev, dpa_bp, count);
 	if (err < 0)
 		goto bp_create_failed;
+#else /* __rtems__ */
+	BSD_ASSERT(count == DPAA_BPS_NUM);
+	for (i = 0; i < DPAA_BPS_NUM; i++) {
+		int err;
+
+		dpa_bp[i].raw_size = dpa_bp[i].size;
+		dpa_bp[i].dev = dev;
+
+		err = dpaa_bp_alloc_pool(&dpa_bp[i]);
+		BSD_ASSERT(err == 0);
+		priv->dpaa_bps[i] = &dpa_bp[i];
+	}
+#endif /* __rtems__ */
 
 	channel = dpa_get_channel();
 
@@ -398,6 +446,7 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 	/* Start a thread that will walk the cpus with affine portals
 	 * and add this pool channel to each's dequeue mask.
 	 */
+#ifndef __rtems__
 	kth = kthread_run(dpaa_eth_add_channel,
 			  (void *)(unsigned long)priv->channel,
 			  "dpaa_%p:%d", net_dev, priv->channel);
@@ -405,6 +454,9 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 		err = -ENOMEM;
 		goto add_channel_failed;
 	}
+#else /* __rtems__ */
+	dpaa_eth_add_channel(priv->channel);
+#endif /* __rtems__ */
 
 	dpa_fq_setup(priv, &shared_fq_cbs, NULL);
 
@@ -417,9 +469,17 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 	 * because the ERN notifications will be received by the
 	 * partition doing qman_enqueue.
 	 */
+#ifndef __rtems__
 	err = dpa_fqs_init(dev,  &priv->dpa_fq_list, true);
 	if (err < 0)
 		goto fq_alloc_failed;
+#else /* __rtems__ */
+	list_for_each_entry_safe(dpaa_fq, tmp, &priv->dpaa_fq_list, list) {
+		err = dpaa_fq_init(dpaa_fq, true);
+		if (err < 0)
+			goto fq_alloc_failed;
+	}
+#endif /* __rtems__ */
 
 	priv->tx_headroom = DPA_DEFAULT_TX_HEADROOM;
 
@@ -435,6 +495,7 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 		memset(percpu_priv, 0, sizeof(*percpu_priv));
 	}
 
+#ifndef __rtems__
 	err = dpa_macless_netdev_init(dpa_node, net_dev);
 	if (err < 0)
 		goto netdev_init_failed;
@@ -443,27 +504,39 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 
 	pr_info("fsl_dpa_macless: Probed %s interface as %s\n",
 			priv->if_type, net_dev->name);
+#endif /* __rtems__ */
 
 	return 0;
 
+#ifndef __rtems__
 netdev_init_failed:
+#endif /* __rtems__ */
 alloc_percpu_failed:
 fq_alloc_failed:
+#ifndef __rtems__
 	if (net_dev)
 		dpa_fq_free(dev, &priv->dpa_fq_list);
 add_channel_failed:
+#endif /* __rtems__ */
 get_channel_failed:
+#ifndef __rtems__
 	if (net_dev)
 		dpa_bp_free(priv);
 bp_create_failed:
+#endif /* __rtems__ */
 fq_probe_failed:
+#ifndef __rtems__
 	dev_set_drvdata(dev, NULL);
 	if (net_dev)
 		free_netdev(net_dev);
+#else /* __rtems__ */
+	BSD_ASSERT(0);
+#endif /* __rtems__ */
 
 	return err;
 }
 
+#ifndef __rtems__
 static int __init __cold dpa_macless_load(void)
 {
 	int	 _errno;
@@ -496,3 +569,76 @@ static void __exit __cold dpa_macless_unload(void)
 		KBUILD_BASENAME".c", __func__);
 }
 module_exit(dpa_macless_unload);
+#else /* __rtems__ */
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/bus.h>
+#include <sys/kernel.h>
+
+#include <bsp/fdt.h>
+
+static const char dpaa_ml_compatible[] = "fsl,dpa-ethernet-macless";
+
+static int
+dpaa_ml_attach(device_t dev)
+{
+	const char *fdt;
+	int node;
+	int unit;
+
+	fdt = bsp_fdt_get();
+	node = -1;
+	unit = 0;
+
+	while (true) {
+		struct if_ml_softc *sc;
+		struct platform_device of_dev;
+		struct device_node dn;
+		int err;
+
+		node = fdt_node_offset_by_compatible(fdt, node, dpaa_ml_compatible);
+		if (node < 0) {
+			break;
+		}
+
+		sc = malloc(sizeof(*sc), M_KMALLOC, M_WAITOK | M_ZERO);
+
+		memset(&of_dev, 0, sizeof(of_dev));
+		memset(&dn, 0, sizeof(dn));
+		dn.offset = node;
+		dn.full_name = dpaa_ml_compatible;
+		of_dev.dev.of_node = &dn;
+		of_dev.platform_data = &sc->net_dev;
+
+		err = dpaa_eth_macless_probe(&of_dev);
+		BSD_ASSERT(err == 0);
+
+		if_ml_attach(sc, unit, of_get_mac_address(&dn));
+		++unit;
+	}
+
+	return (0);
+}
+
+static device_method_t dpaa_ml_methods[] = {
+	/* Device interface */
+	DEVMETHOD(device_probe, bus_generic_probe),
+	DEVMETHOD(device_attach, dpaa_ml_attach),
+	DEVMETHOD(device_detach, bus_generic_detach),
+	DEVMETHOD(device_suspend, bus_generic_suspend),
+	DEVMETHOD(device_resume, bus_generic_resume),
+	DEVMETHOD(device_shutdown, bus_generic_shutdown),
+
+	DEVMETHOD_END
+};
+
+driver_t dpaa_ml_driver = {
+	.name = "dpaa_ml",
+	.methods = dpaa_ml_methods
+};
+
+static devclass_t dpaa_ml_devclass;
+
+DRIVER_MODULE(dpaa_ml, nexus, dpaa_ml_driver, dpaa_ml_devclass, 0, 0);
+#endif /* __rtems__ */

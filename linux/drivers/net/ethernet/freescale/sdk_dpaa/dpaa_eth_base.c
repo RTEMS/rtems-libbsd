@@ -59,10 +59,12 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 
+#ifndef __rtems__
 uint8_t advanced_debug = -1;
 module_param(advanced_debug, byte, S_IRUGO);
 MODULE_PARM_DESC(advanced_debug, "Module/Driver verbosity level");
 EXPORT_SYMBOL(advanced_debug);
+#endif /* __rtems__ */
 
 static int dpa_bp_cmp(const void *dpa_bp0, const void *dpa_bp1)
 {
@@ -76,6 +78,9 @@ dpa_bp_probe(struct platform_device *_of_dev, size_t *count)
 	int			 i, lenp, na, ns, err;
 	struct device		*dev;
 	struct device_node	*dev_node;
+#ifdef __rtems__
+	struct device_node	dns;
+#endif /* __rtems__ */
 	const __be32		*bpool_cfg;
 	struct dpa_bp		*dpa_bp;
 	u32			bpid;
@@ -95,7 +100,11 @@ dpa_bp_probe(struct platform_device *_of_dev, size_t *count)
 		return ERR_PTR(-ENOMEM);
 	}
 
+#ifndef __rtems__
 	dev_node = of_find_node_by_path("/");
+#else /* __rtems__ */
+	dev_node = of_find_node_by_path(&dns, "/");
+#endif /* __rtems__ */
 	if (unlikely(dev_node == NULL)) {
 		dev_err(dev, "of_find_node_by_path(/) failed\n");
 		return ERR_PTR(-EINVAL);
@@ -107,8 +116,13 @@ dpa_bp_probe(struct platform_device *_of_dev, size_t *count)
 	for (i = 0; i < *count; i++) {
 		of_node_put(dev_node);
 
+#ifndef __rtems__
 		dev_node = of_parse_phandle(dev->of_node,
 				"fsl,bman-buffer-pools", i);
+#else /* __rtems__ */
+		dev_node = of_parse_phandle(&dns, dev->of_node,
+				"fsl,bman-buffer-pools", i);
+#endif /* __rtems__ */
 		if (dev_node == NULL) {
 			dev_err(dev, "of_find_node_by_phandle() failed\n");
 			return ERR_PTR(-EFAULT);
@@ -133,18 +147,22 @@ dpa_bp_probe(struct platform_device *_of_dev, size_t *count)
 		bpool_cfg = of_get_property(dev_node, "fsl,bpool-ethernet-cfg",
 					&lenp);
 		if (bpool_cfg && (lenp == (2 * ns + na) * sizeof(*bpool_cfg))) {
+#ifndef __rtems__
 			const uint32_t *seed_pool;
+#endif /* __rtems__ */
 
 			dpa_bp[i].config_count =
 				(int)of_read_number(bpool_cfg, ns);
 			dpa_bp[i].size	=
 				(size_t)of_read_number(bpool_cfg + ns, ns);
+#ifndef __rtems__
 			dpa_bp[i].paddr	=
 				of_read_number(bpool_cfg + 2 * ns, na);
 
 			seed_pool = of_get_property(dev_node,
 					"fsl,bpool-ethernet-seeds", &lenp);
 			dpa_bp[i].seed_pool = !!seed_pool;
+#endif /* __rtems__ */
 
 		} else {
 			dev_err(dev,
@@ -167,6 +185,7 @@ _return_of_node_put:
 }
 EXPORT_SYMBOL(dpa_bp_probe);
 
+#ifndef __rtems__
 int dpa_bp_shared_port_seed(struct dpa_bp *bp)
 {
 	void __iomem **ptr;
@@ -263,3 +282,4 @@ static void __exit __cold dpa_advanced_unload(void)
 
 }
 module_exit(dpa_advanced_unload);
+#endif /* __rtems__ */

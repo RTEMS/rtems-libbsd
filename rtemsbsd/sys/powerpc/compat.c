@@ -121,6 +121,22 @@ of_find_compatible_node(struct device_node *dns, const struct device_node *dn,
 	}
 }
 
+uint64_t
+of_read_number(const uint32_t *cell, int size)
+{
+	uint64_t number;
+
+	number = 0;
+
+	while (size > 0) {
+		number = (number << 32) | fdt32_to_cpu(*cell);
+		++cell;
+		--size;
+	}
+
+	return (number);
+}
+
 struct device_node *
 of_parse_phandle(struct device_node *dns, struct device_node *dn,
     const char *phandle_name, int index)

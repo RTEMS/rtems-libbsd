@@ -76,6 +76,8 @@ of_property_read_u32(const struct device_node *dn, const char *name, u32 *val)
 	return (of_property_read_u32_array(dn, name, val, 1));
 }
 
+uint64_t of_read_number(const uint32_t *cell, int size);
+
 struct device_node *of_parse_phandle(struct device_node *dns,
     struct device_node *dn, const char *phandle_name, int index);
 

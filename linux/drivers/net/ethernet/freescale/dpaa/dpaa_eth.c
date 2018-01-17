@@ -540,7 +540,13 @@ static void dpaa_bpid2pool_map(int bpid, struct dpaa_bp *dpaa_bp)
 	atomic_set(&dpaa_bp->refs, 1);
 }
 
+#ifdef __rtems__
+#define	static SDK_DPAA_COMPAT_STATIC
+#endif /* __rtems__ */
 static int dpaa_bp_alloc_pool(struct dpaa_bp *dpaa_bp)
+#ifdef __rtems__
+#undef static
+#endif /* __rtems__ */
 {
 	int err;
 
@@ -704,10 +710,16 @@ static inline void dpaa_assign_wq(struct dpaa_fq *fq, int idx)
 	}
 }
 
+#ifdef __rtems__
+#define	static SDK_DPAA_COMPAT_STATIC
+#endif /* __rtems__ */
 static struct dpaa_fq *dpaa_fq_alloc(struct device *dev,
 				     u32 start, u32 count,
 				     struct list_head *list,
 				     enum dpaa_fq_type fq_type)
+#ifdef __rtems__
+#undef static
+#endif /* __rtems__ */
 {
 	struct dpaa_fq *dpaa_fq;
 	int i;
@@ -774,7 +786,13 @@ fq_alloc_failed:
 static u32 rx_pool_channel;
 static DEFINE_SPINLOCK(rx_pool_channel_init);
 
+#ifdef __rtems__
+#define	static SDK_DPAA_COMPAT_STATIC
+#endif /* __rtems__ */
 static int dpaa_get_channel(void)
+#ifdef __rtems__
+#undef static
+#endif /* __rtems__ */
 {
 	spin_lock(&rx_pool_channel_init);
 	if (!rx_pool_channel) {
@@ -799,7 +817,13 @@ static void dpaa_release_channel(void)
 }
 #endif /* __rtems__ */
 
+#ifdef __rtems__
+#define	static SDK_DPAA_COMPAT_STATIC
+#endif /* __rtems__ */
 static void dpaa_eth_add_channel(u16 channel)
+#ifdef __rtems__
+#undef static
+#endif /* __rtems__ */
 {
 	u32 pool = QM_SDQCR_CHANNELS_POOL_CONV(channel);
 #ifndef __rtems__
@@ -919,9 +943,15 @@ static inline void dpaa_setup_egress(const struct dpaa_priv *priv,
 	}
 }
 
+#ifdef __rtems__
+#define	static SDK_DPAA_COMPAT_STATIC
+#endif /* __rtems__ */
 static void dpaa_fq_setup(struct dpaa_priv *priv,
 			  const struct dpaa_fq_cbs *fq_cbs,
 			  struct fman_port *tx_port)
+#ifdef __rtems__
+#undef static
+#endif /* __rtems__ */
 {
 #ifndef __rtems__
 	int egress_cnt = 0, conf_cnt = 0, num_portals = 0, cpu;
@@ -1016,7 +1046,13 @@ static inline int dpaa_tx_fq_to_id(const struct dpaa_priv *priv,
 	return -EINVAL;
 }
 
+#ifdef __rtems__
+#define	static SDK_DPAA_COMPAT_STATIC
+#endif /* __rtems__ */
 static int dpaa_fq_init(struct dpaa_fq *dpaa_fq, bool td_enable)
+#ifdef __rtems__
+#undef static
+#endif /* __rtems__ */
 {
 	const struct dpaa_priv	*priv;
 	struct qman_fq *confq = NULL;

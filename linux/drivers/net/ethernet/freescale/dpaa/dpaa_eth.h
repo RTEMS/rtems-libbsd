@@ -214,5 +214,21 @@ void dpaa_eth_sysfs_init(struct device *dev);
 #define	FSL_DPAA_BPID_INV 0xff
 
 void dpaa_cleanup_tx_fd(struct ifnet *ifp, const struct qm_fd *fd);
+
+#ifdef QORIQ_IS_HYPERVISOR_GUEST
+int dpaa_bp_alloc_pool(struct dpaa_bp *dpaa_bp);
+
+struct dpaa_fq *dpaa_fq_alloc(struct device *dev, u32 start, u32 count,
+    struct list_head *list, enum dpaa_fq_type fq_type);
+
+int dpaa_get_channel(void);
+
+void dpaa_eth_add_channel(u16 channel);
+
+void dpaa_fq_setup(struct dpaa_priv *priv, const struct dpaa_fq_cbs *fq_cbs,
+    struct fman_port *tx_port);
+
+int dpaa_fq_init(struct dpaa_fq *dpaa_fq, bool td_enable);
+#endif /* QORIQ_IS_HYPERVISOR_GUEST */
 #endif /* __rtems__ */
 #endif	/* __DPAA_H */

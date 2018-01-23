@@ -2313,6 +2313,7 @@ def build(bld):
               'rtemsbsd/rtems/rtems-bsd-get-task-priority.c',
               'rtemsbsd/rtems/rtems-bsd-get-task-stack-size.c',
               'rtemsbsd/rtems/rtems-bsd-ifconfig-lo0.c',
+              'rtemsbsd/rtems/rtems-bsd-ifconfig.c',
               'rtemsbsd/rtems/rtems-bsd-init-dhcp.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf-net.c',
               'rtemsbsd/rtems/rtems-bsd-rc-conf-pf.c',

@@ -121,6 +121,22 @@ rtems_status_code rtems_bsd_initialize_dhcp(void);
 int rtems_bsd_ifconfig_lo0(void);
 
 /**
+ * @brief Configures an interface.
+ *
+ * In case addr_gateway is not NULL, then it will be used as the default
+ * gateway.
+ *
+ * @param[in] ifname The interface name.
+ * @param[in] addr_self The address of the interface.
+ * @param[in] netmask The sub-network mask.
+ * @param[in] addr_gateway The address of the gateway.  May be NULL.
+ *
+ * @return Returns an exit code, see also <sysexits.h>.
+ */
+int rtems_bsd_ifconfig(const char *ifname, const char *addr_self,
+    const char *netmask, const char *addr_gateway);
+
+/**
  * @brief Returns the initial priority for a task specified by its name.
  *
  * Applications may provide their own implementation of this function.  For

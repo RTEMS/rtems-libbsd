@@ -69,6 +69,7 @@ def rtems(mm):
             'rtems/rtems-bsd-get-mac-address.c',
             'rtems/rtems-bsd-get-task-priority.c',
             'rtems/rtems-bsd-get-task-stack-size.c',
+            'rtems/rtems-bsd-ifconfig.c',
             'rtems/rtems-bsd-ifconfig-lo0.c',
             'rtems/rtems-bsd-init-dhcp.c',
             'rtems/rtems-bsd-rc-conf-net.c',

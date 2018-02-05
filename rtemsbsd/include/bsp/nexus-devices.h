@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -104,18 +104,18 @@ SYSINIT_DRIVER_REFERENCE(ukphy, miibus);
 
 #elif defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H)
 
-#include <bsp/socal/hps.h>
-#include <bsp/irq.h>
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(ofwbus, 0, 0, NULL);
+SYSINIT_DRIVER_REFERENCE(simplebus, ofwbus);
 
-RTEMS_BSD_DRIVER_DWC0((unsigned long) ALT_EMAC1_ADDR,
-		      ALT_INT_INTERRUPT_EMAC1_IRQ);
-RTEMS_BSD_DRIVER_MIPHY;
-RTEMS_BSD_DRIVER_DWCOTG0((unsigned long) ALT_USB1_ADDR,
-			 ALT_INT_INTERRUPT_USB1_IRQ);
-RTEMS_BSD_DRIVER_DWC_MMC;
-RTEMS_BSD_DRIVER_MMC;
+RTEMS_BSD_DRIVER_DW_ETH;
+RTEMS_BSD_DRIVER_PHY_MIC;
+
+RTEMS_BSD_DRIVER_DW_OTG;
 RTEMS_BSD_DRIVER_USB;
 RTEMS_BSD_DRIVER_USB_MASS;
+
+RTEMS_BSD_DRIVER_DW_MMC;
+RTEMS_BSD_DRIVER_MMC;
 
 #elif defined(LIBBSP_ARM_IMX_BSP_H)
 

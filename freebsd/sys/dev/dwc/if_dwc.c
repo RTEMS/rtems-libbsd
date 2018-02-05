@@ -69,12 +69,8 @@ __FBSDID("$FreeBSD$");
 #include <dev/dwc/if_dwcvar.h>
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
-#ifndef __rtems__
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
-#else /* __rtems__ */
-#include <rtems/bsd/bsd.h>
-#endif /* __rtems__ */
 
 #ifdef EXT_RESOURCES
 #include <dev/extres/clk/clk.h>
@@ -1159,10 +1155,14 @@ out:
 static int
 dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 {
-#ifndef __rtems__
 	uint32_t hi, lo, rnd;
-#else /* __rtems__ */
-	uint32_t hi, lo;
+#ifdef __rtems__
+	int i;
+
+	i = OF_getprop(ofw_bus_get_node(sc->dev), "local-mac-address",
+	    hwaddr, 6);
+	if (i == 6)
+		return (0);
 #endif /* __rtems__ */
 
 	/*
@@ -1184,7 +1184,6 @@ dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 		hwaddr[4] = (hi >>  0) & 0xff;
 		hwaddr[5] = (hi >>  8) & 0xff;
 	} else {
-#ifndef __rtems__
 		rnd = arc4random() & 0x00ffffff;
 		hwaddr[0] = 'b';
 		hwaddr[1] = 's';
@@ -1192,10 +1191,6 @@ dwc_get_hwaddr(struct dwc_softc *sc, uint8_t *hwaddr)
 		hwaddr[3] = rnd >> 16;
 		hwaddr[4] = rnd >>  8;
 		hwaddr[5] = rnd >>  0;
-#else /* __rtems__ */
-		rtems_bsd_get_mac_address(device_get_name(sc->dev),
-		    device_get_unit(sc->dev), hwaddr);
-#endif /* __rtems__ */
 	}
 
 	return (0);
@@ -1293,13 +1288,11 @@ static int
 dwc_probe(device_t dev)
 {
 
-#ifndef __rtems__
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
 	if (!ofw_bus_is_compatible(dev, "snps,dwmac"))
 		return (ENXIO);
-#endif /* __rtems__ */
 
 	device_set_desc(dev, "Gigabit Ethernet Controller");
 	return (BUS_PROBE_DEFAULT);
@@ -1568,11 +1561,7 @@ driver_t dwc_driver = {
 
 static devclass_t dwc_devclass;
 
-#ifndef __rtems__
 DRIVER_MODULE(dwc, simplebus, dwc_driver, dwc_devclass, 0, 0);
-#else /* __rtems__ */
-DRIVER_MODULE(dwc, nexus, dwc_driver, dwc_devclass, 0, 0);
-#endif /* __rtems__ */
 DRIVER_MODULE(miibus, dwc, miibus_driver, miibus_devclass, 0, 0);
 
 MODULE_DEPEND(dwc, ether, 1, 1, 1);

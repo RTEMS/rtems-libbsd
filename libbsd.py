@@ -1,7 +1,7 @@
 #
 #  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
-#  Copyright (c) 2009, 2016 embedded brains GmbH.  All rights reserved.
+#  Copyright (c) 2009, 2018 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
 #   Dornierstr. 4
@@ -160,7 +160,6 @@ def rtems(mm):
             'sys/dev/usb/controller/ehci_mpc83xx.c',
             'sys/dev/usb/controller/ohci_lpc.c',
             'sys/dev/usb/controller/ohci_lpc32xx.c',
-            'sys/dev/usb/controller/dwc_otg_nexus.c',
             'sys/dev/usb/controller/usb_otg_transceiver.c',
             'sys/dev/usb/controller/usb_otg_transceiver_dump.c',
             'sys/dev/smc/if_smc_nexus.c',
@@ -706,6 +705,7 @@ def dev_usb_controller(mm):
             'sys/dev/usb/controller/ehcireg.h',
             'sys/dev/usb/controller/uhcireg.h',
             'sys/dev/usb/controller/xhcireg.h',
+            'sys/dev/usb/controller/dwc_otg_fdt.h',
             'sys/dev/usb/controller/dwc_otg.h',
             'sys/dev/usb/controller/dwc_otgreg.h',
             'sys/dev/usb/controller/saf1761_otg.h',
@@ -718,6 +718,7 @@ def dev_usb_controller(mm):
             'sys/dev/usb/controller/ehci.c',
             'sys/dev/usb/controller/usb_controller.c',
             'sys/dev/usb/controller/dwc_otg.c',
+            'sys/dev/usb/controller/dwc_otg_fdt.c',
             'sys/dev/usb/controller/saf1761_otg.c',
             'sys/dev/usb/controller/saf1761_otg_fdt.c',
         ],

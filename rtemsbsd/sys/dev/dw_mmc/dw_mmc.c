@@ -51,6 +51,10 @@
 #include <machine/cpufunc.h>
 #include <machine/resource.h>
 
+#include <dev/ofw/openfirm.h>
+#include <dev/ofw/ofw_bus.h>
+#include <dev/ofw/ofw_bus_subr.h>
+
 #include <dev/dw_mmc/dw_mmcreg.h>
 
 #include <dev/mmc/bridge.h>
@@ -222,9 +226,20 @@ dw_mmc_fini(struct dw_mmc_softc *sc)
 	WR4(sc, DW_MMC_CTRL, DW_MMC_CTRL_FIFO_RESET | DW_MMC_CTRL_RESET);
 }
 
+static struct ofw_compat_data compat_data[] = {
+	{"altr,socfpga-dw-mshc",	1},
+	{NULL,				0},
+};
+
 static int
 dw_mmc_probe(device_t dev)
 {
+
+	if (!ofw_bus_status_okay(dev))
+		return (ENXIO);
+
+	if (!ofw_bus_search_compatible(dev, compat_data)->ocd_data)
+		return (ENXIO);
 
 	device_set_desc(dev, "DesignWare Mobile Storage Host");
 	return (0);
@@ -1102,6 +1117,6 @@ static driver_t dw_mmc_driver = {
 
 static devclass_t dw_mmc_devclass;
 
-DRIVER_MODULE(dw_mmc, nexus, dw_mmc_driver, dw_mmc_devclass, NULL, NULL);
+DRIVER_MODULE(dw_mmc, simplebus, dw_mmc_driver, dw_mmc_devclass, NULL, NULL);
 DRIVER_MODULE(mmc, dw_mmc, mmc_driver, mmc_devclass, NULL, NULL);
 MODULE_DEPEND(dw_mmc, mmc, 1, 1, 1);

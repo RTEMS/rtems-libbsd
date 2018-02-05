@@ -57,12 +57,10 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/miibus_if.h>
 
-#ifndef __rtems__
 #include <dev/fdt/fdt_common.h>
 #include <dev/ofw/openfirm.h>
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
-#endif /* __rtems__ */
 
 #define	MII_KSZPHY_EXTREG			0x0b
 #define	 KSZPHY_EXTREG_WRITE			(1 << 15)
@@ -117,7 +115,6 @@ static const struct mii_phy_funcs micphy_funcs = {
 	mii_phy_reset
 };
 
-#ifndef __rtems__
 static uint32_t
 ksz9031_read(struct mii_softc *sc, uint32_t devaddr, uint32_t reg)
 {
@@ -131,7 +128,6 @@ ksz9031_read(struct mii_softc *sc, uint32_t devaddr, uint32_t reg)
 
 	return (PHY_READ(sc, MII_KSZ9031_MMD_ACCESS_DATA));
 }
-#endif /* __rtems__ */
 
 static void
 ksz9031_write(struct mii_softc *sc, uint32_t devaddr, uint32_t reg,
@@ -148,7 +144,6 @@ ksz9031_write(struct mii_softc *sc, uint32_t devaddr, uint32_t reg,
 	PHY_WRITE(sc, MII_KSZ9031_MMD_ACCESS_DATA, val);
 }
 
-#ifndef __rtems__
 static uint32_t
 ksz9021_read(struct mii_softc *sc, uint32_t reg)
 {
@@ -157,7 +152,6 @@ ksz9021_read(struct mii_softc *sc, uint32_t reg)
 
 	return (PHY_READ(sc, MII_KSZPHY_EXTREG_READ));
 }
-#endif /* __rtems__ */
 
 static void
 ksz9021_write(struct mii_softc *sc, uint32_t reg, uint32_t val)
@@ -167,7 +161,6 @@ ksz9021_write(struct mii_softc *sc, uint32_t reg, uint32_t val)
 	PHY_WRITE(sc, MII_KSZPHY_EXTREG_WRITE, val);
 }
 
-#ifndef __rtems__
 static void
 ksz90x1_load_values(struct mii_softc *sc, phandle_t node,
     uint32_t dev, uint32_t reg, char *field1, uint32_t f1mask, int f1off,
@@ -245,7 +238,6 @@ ksz9021_load_values(struct mii_softc *sc, phandle_t node)
 	    "txd0-skew-ps", 0xf, 0, "txd1-skew-ps", 0xf, 4,
 	    "txd2-skew-ps", 0xf, 8, "txd3-skew-ps", 0xf, 12);
 }
-#endif /* __rtems__ */
 
 static int
 micphy_probe(device_t dev)
@@ -258,18 +250,15 @@ static int
 micphy_attach(device_t dev)
 {
 	struct mii_softc *sc;
-#ifndef __rtems__
 	phandle_t node;
 	device_t miibus;
 	device_t parent;
-#endif /* __rtems__ */
 
 	sc = device_get_softc(dev);
 
 	mii_phy_dev_attach(dev, MIIF_NOMANPAUSE, &micphy_funcs, 1);
 	mii_phy_setmedia(sc);
 
-#ifndef __rtems__
 	miibus = device_get_parent(dev);
 	parent = device_get_parent(miibus);
 
@@ -280,16 +269,6 @@ micphy_attach(device_t dev)
 		ksz9031_load_values(sc, node);
 	else
 		ksz9021_load_values(sc, node);
-#else /* __rtems__ */
-	/* FIXME */
-	if (sc->mii_mpd_model == MII_MODEL_MICREL_KSZ9031) {
-		BSD_ASSERT(0);
-	} else {
-		ksz9021_write(sc, MII_KSZPHY_CLK_CONTROL_PAD_SKEW, 0xf0f0);
-		ksz9021_write(sc, MII_KSZPHY_RX_DATA_PAD_SKEW, 0x0000);
-		ksz9021_write(sc, MII_KSZPHY_TX_DATA_PAD_SKEW, 0x0000);
-	}
-#endif /* __rtems__ */
 
 	return (0);
 }

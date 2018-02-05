@@ -45,11 +45,8 @@
  *   RTEMS_BSD_DRIVER_PC_LEGACY
  *
  *  USB:
- *   RTEMS_BSD_DRIVER_DWCOTG0
- *   RTEMS_BSD_DRIVER_DWCOTG0_BASE_ADDR
- *    RTEMS_BSD_DRIVER_DWCOTG0_IRQ
+ *   RTEMS_BSD_DRIVER_DW_OTG
  *   RTEMS_BSD_DRIVER_LPC32XX_OHCI
- *   RTEMS_BSD_DRIVER_DWC_MMC
  *   RTEMS_BSD_DRIVER_MMC
  *   RTEMS_BSD_DRIVER_USB
  *   RTEMS_BSD_DRIVER_USB_MASS
@@ -79,7 +76,7 @@
  *   RTEMS_BSD_DRIVER_E1000PHY
  *   RTEMS_BSD_DRIVER_ICSPHY
  *   RTEMS_BSD_DRIVER_REPHY
- *   RTEMS_BSD_DRIVER_MIPHY
+ *   RTEMS_BSD_DRIVER_PHY_MIC
  */
 
 #if !defined(RTEMS_BSD_NEXUS_BUS_h)
@@ -179,23 +176,10 @@ extern "C" {
 /*
  * Designware/Synopsys OTG USB Controller.
  */
-#if !defined(RTEMS_BSD_DRIVER_DWCOTG0)
-  #define RTEMS_BSD_DRIVER_DWCOTG0(_base, _irq)                  \
-    static const rtems_bsd_device_resource dwcotg0_res[] = {     \
-      {                                                          \
-        .type = RTEMS_BSD_RES_MEMORY,                            \
-        .start_request = 0,                                      \
-        .start_actual = (_base)                                  \
-      }, {                                                       \
-        .type = RTEMS_BSD_RES_IRQ,                               \
-        .start_request = 0,                                      \
-        .start_actual = (_irq)                                   \
-      }                                                          \
-    };                                                           \
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwcotg, 0,                     \
-                                  RTEMS_ARRAY_SIZE(dwcotg0_res), \
-                                  &dwcotg0_res[0])
-#endif /* RTEMS_BSD_DRIVER_DWCOTG0 */
+#if !defined(RTEMS_BSD_DRIVER_DW_OTG)
+  #define RTEMS_BSD_DRIVER_DW_OTG                                           \
+    SYSINIT_DRIVER_REFERENCE(dwcotg, simplebus)
+#endif /* RTEMS_BSD_DRIVER_DW_OTG */
 
 /*
  * LPC32XX OHCI.
@@ -225,10 +209,10 @@ extern "C" {
 /*
  * Designware/Synopsys MMC.
  */
-#if !defined(RTEMS_BSD_DRIVER_DWC_MMC)
-  #define RTEMS_BSD_DRIVER_DWC_MMC                                \
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(dw_mmc, 0, 0, NULL)
-#endif /* RTEMS_BSD_DRIVER_DWC_MMC */
+#if !defined(RTEMS_BSD_DRIVER_DW_MMC)
+  #define RTEMS_BSD_DRIVER_DW_MMC                                \
+    SYSINIT_DRIVER_REFERENCE(dw_mmc, simplebus)
+#endif /* RTEMS_BSD_DRIVER_DW_MMC */
 
 /*
  * Atmel Media Card Interface (MCI).
@@ -249,7 +233,7 @@ extern "C" {
     RTEMS_BSD_DEFINE_NEXUS_DEVICE(at91_mci, 0,                     \
                                   RTEMS_ARRAY_SIZE(at91_mci0_res), \
                                   &at91_mci0_res[0])
-#endif /* RTEMS_BSD_DRIVER_DWC0 */
+#endif /* RTEMS_BSD_DRIVER_AT91_MCI0 */
 
 /*
  * MMC Driver.
@@ -391,23 +375,10 @@ extern "C" {
 /*
  * Designware/Synopsys Ethernet MAC Controller.
  */
-#if !defined(RTEMS_BSD_DRIVER_DWC0)
-  #define RTEMS_BSD_DRIVER_DWC0(_base, _irq)                     \
-    static const rtems_bsd_device_resource dwc0_res[] = {        \
-      {                                                          \
-        .type = RTEMS_BSD_RES_MEMORY,                            \
-        .start_request = 0,                                      \
-        .start_actual = (_base)                                  \
-      }, {                                                       \
-        .type = RTEMS_BSD_RES_IRQ,                               \
-        .start_request = 0,                                      \
-        .start_actual = (_irq)                                   \
-      }                                                          \
-    };                                                           \
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwc, 0,                        \
-                                  RTEMS_ARRAY_SIZE(dwc0_res),    \
-                                  &dwc0_res[0])
-#endif /* RTEMS_BSD_DRIVER_DWC0 */
+#if !defined(RTEMS_BSD_DRIVER_DW_ETH)
+  #define RTEMS_BSD_DRIVER_DW_ETH                                   \
+    SYSINIT_DRIVER_REFERENCE(dwc, simplebus);
+#endif /* RTEMS_BSD_DRIVER_DW_ETH */
 
 /*
  * NXP QorIQ Network Driver.
@@ -501,10 +472,10 @@ extern "C" {
 /*
  * MI PHY.
  */
-#if !defined(RTEMS_BSD_DRIVER_MIPHY)
-  #define RTEMS_BSD_DRIVER_MIPHY                  \
+#if !defined(RTEMS_BSD_DRIVER_PHY_MIC)
+  #define RTEMS_BSD_DRIVER_PHY_MIC                  \
     SYSINIT_DRIVER_REFERENCE(micphy, miibus);
-#endif /* RTEMS_BSD_DRIVER_MIPHY */
+#endif /* RTEMS_BSD_DRIVER_PHY_MIC */
 
 #ifdef __cplusplus
 }

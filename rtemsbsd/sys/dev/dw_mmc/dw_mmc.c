@@ -1039,6 +1039,9 @@ dw_mmc_read_ivar(device_t bus, device_t child, int which, uintptr_t *result)
 	case MMCBR_IVAR_CAPS:
 		*(int *)result = sc->host.caps;
 		break;
+	case MMCBR_IVAR_TIMING:
+		*result = sc->host.ios.timing;
+		break;
 	case MMCBR_IVAR_MAX_DATA:
 		*(int *)result = 1;
 		break;
@@ -1077,6 +1080,9 @@ dw_mmc_write_ivar(device_t bus, device_t child, int which, uintptr_t value)
 		break;
 	case MMCBR_IVAR_VDD:
 		sc->host.ios.vdd = value;
+		break;
+	case MMCBR_IVAR_TIMING:
+		sc->host.ios.timing = value;
 		break;
 	/* These are read-only */
 	case MMCBR_IVAR_CAPS:

@@ -177,6 +177,13 @@ dw_mmc_wait_for_interrupt(struct dw_mmc_softc *sc, uint32_t intmask)
 	BSD_ASSERT(rs == RTEMS_SUCCESSFUL);
 }
 
+static void
+dw_mmc_configure_dma(struct dw_mmc_softc *sc)
+{
+
+	WR4(sc, DW_MMC_BMOD, DW_MMC_BMOD_DE | DW_MMC_BMOD_FB);
+}
+
 static int
 dw_mmc_init(struct dw_mmc_softc *sc)
 {
@@ -184,12 +191,15 @@ dw_mmc_init(struct dw_mmc_softc *sc)
 	uint32_t fifoth;
 	int err;
 
-	err = dw_mmc_poll_reset_completion(sc, DW_MMC_CTRL_RESET);
+	err = dw_mmc_poll_reset_completion(sc, DW_MMC_CTRL_DMA_RESET |
+	    DW_MMC_CTRL_FIFO_RESET | DW_MMC_CTRL_RESET);
 	if (err != 0) {
 		return err;
 	}
 
 	sc->card_clock = UINT32_MAX;
+
+	dw_mmc_configure_dma(sc);
 
 	/* Clear interrupt status */
 	WR4(sc, DW_MMC_RINTSTS, 0xffffffff);
@@ -223,7 +233,10 @@ dw_mmc_init(struct dw_mmc_softc *sc)
 static void
 dw_mmc_fini(struct dw_mmc_softc *sc)
 {
-	WR4(sc, DW_MMC_CTRL, DW_MMC_CTRL_FIFO_RESET | DW_MMC_CTRL_RESET);
+	WR4(sc, DW_MMC_CTRL, DW_MMC_CTRL_DMA_RESET | DW_MMC_CTRL_FIFO_RESET |
+	    DW_MMC_CTRL_RESET);
+	wmb();
+	WR4(sc, DW_MMC_BMOD, DW_MMC_BMOD_SWR);
 }
 
 static struct ofw_compat_data compat_data[] = {
@@ -533,12 +546,19 @@ dw_mmc_fifo_and_dma_reset(struct dw_mmc_softc *sc)
 {
 	uint32_t ctrl_resets = DW_MMC_CTRL_FIFO_RESET | DW_MMC_CTRL_DMA_RESET;
 	uint32_t ctrl = RD4(sc, DW_MMC_CTRL);
+	int err;
 
+	ctrl &= ~DW_MMC_CTRL_DMA_ENABLE;
 	ctrl |= ctrl_resets;
 
 	WR4(sc, DW_MMC_CTRL, ctrl);
 
-	return dw_mmc_poll_reset_completion(sc, ctrl_resets);
+	err = dw_mmc_poll_reset_completion(sc, ctrl_resets);
+	if (err != 0)
+		return (err);
+
+	WR4(sc, DW_MMC_BMOD, DW_MMC_BMOD_SWR);
+	return (0);
 }
 
 static int
@@ -832,12 +852,7 @@ dw_mmc_dma_setup(struct dw_mmc_softc *sc, struct mmc_data *data)
 	}
 
 	des[i].des0 = DW_MMC_DES0_OWN | DW_MMC_DES0_ER | fs | DW_MMC_DES0_LD;
-
-#ifdef __arm__
-	_ARM_Data_synchronization_barrier();
-#else
-	/* TODO */
-#endif
+	wmb();
 }
 
 
@@ -897,11 +912,11 @@ dw_mmc_cmd_do(struct dw_mmc_softc *sc, struct mmc_request *req,
 
 		if (use_dma) {
 			ctrl |= DW_MMC_CTRL_DMA_ENABLE;
-		} else {
-			ctrl &= ~DW_MMC_CTRL_DMA_ENABLE;
+			WR4(sc, DW_MMC_CTRL, ctrl);
+			wmb();
+			dw_mmc_configure_dma(sc);
 		}
 
-		WR4(sc, DW_MMC_CTRL, ctrl);
 		WR4(sc, DW_MMC_BLKSIZ, MIN(count_bytes, MMC_SECTOR_SIZE));
 		WR4(sc, DW_MMC_BYTCNT, count_bytes);
 

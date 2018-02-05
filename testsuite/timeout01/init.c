@@ -39,6 +39,9 @@
 
 #include "timeout_test.h"
 
+uintptr_t rtems_bsd_allocator_domain_page_mbuf_size =
+    RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT;
+
 static void Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;

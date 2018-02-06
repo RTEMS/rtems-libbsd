@@ -110,6 +110,8 @@ dwc_otg_attach(device_t dev)
 			device_printf(dev, "Invalid FDT dr_mode: %s\n",
 			    usb_mode);
 		}
+	} else {
+		sc->sc_otg.sc_mode = DWC_MODE_HOST;
 	}
 
 	/* get all DMA memory */

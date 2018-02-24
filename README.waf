@@ -47,7 +47,7 @@ We will build an Xilinx Zynq QEMU BSP using the name
 Steps
 -----
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------
 sandbox="$PWD/sandbox"
 mkdir sandbox
 cd "$sandbox"
@@ -56,30 +56,29 @@ git clone git://git.rtems.org/rtems.git
 git clone git://git.rtems.org/rtems-libbsd.git
 cd "$sandbox"
 cd rtems-source-builder/rtems
-../source-builder/sb-set-builder --prefix="$sandbox/rtems-4.12" 4.12/rtems-arm
+../source-builder/sb-set-builder --prefix="$sandbox/5" 5/rtems-arm
 cd "$sandbox"
 cd rtems
-PATH="$sandbox/rtems-4.12/bin:$PATH" ./bootstrap
+PATH="$sandbox/5/bin:$PATH" 
+./bootstrap -c &&  ./bootstrap -p
+../rtems-source-builder/source-builder/sb-bootstrap 
 cd "$sandbox"
 mkdir b-xilinx_zynq_a9_qemu
 cd b-xilinx_zynq_a9_qemu
-PATH="$sandbox/rtems-4.12/bin:$PATH" "$sandbox/rtems/configure" \
-  --target=arm-rtems4.12 --prefix="$sandbox/rtems-4.12" \
-  --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
-PATH="$sandbox/rtems-4.12/bin:$PATH" make
-PATH="$sandbox/rtems-4.12/bin:$PATH" make install
+ ../rtems/configure --prefix=$sandbox/5 --target=arm-rtems5 --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
+make
+make install
 cd "$sandbox"
 cd rtems-libbsd
 git submodule init
 git submodule update rtems_waf
-waf configure --prefix="$sandbox/rtems-4.12" \
-  --rtems-bsps=arm/xilinx_zynq_a9_qemu
+waf configure --prefix="$sandbox/5" --rtems-bsps=arm/xilinx_zynq_a9_qemu
 waf
 waf install
 qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
   -nographic -M xilinx-zynq-a9 -m 256M \
-  -kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
--------------------------------------------------------------------------------
+  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+------------------------------------------------------------------------------------------------------------------------
 
 1. Create a sandbox directory:
 
@@ -94,29 +93,29 @@ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
     $ git clone git://git.rtems.org/rtems-libbsd.git
 
 2. Build and install the tools. In this example the path is
-   $sandbox/rtems-4.12:
+   $sandbox/5:
 
     $ cd "$sandbox"
     $ cd rtems-source-builder/rtems
-    $ ../source-builder/sb-set-builder --prefix="$sandbox/rtems-4.12" 4.12/rtems-arm
+    $ ../source-builder/sb-set-builder --prefix="$sandbox/5" 5/rtems-arm
 
 3. Bootstrap the RTEMS sources:
 
     $ cd "$sandbox"
     $ cd rtems
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" ./bootstrap
+    $ PATH="$sandbox/5/bin:$PATH" ./bootstrap
+    $ ./bootstrap -c &&  ./bootstrap -p
+    $ ../rtems-source-builder/source-builder/sb-bootstrap 
 
 5. Build and install the RTEMS Board Support Packages (BSP) you want to use. In
-   this example the path is /opt/rtems/4.12/bsps:
+   this example the path is /opt/rtems/5/bsps:
 
     $ cd "$sandbox"
     $ mkdir b-xilinx_zynq_a9_qemu
     $ cd b-xilinx_zynq_a9_qemu
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" "$sandbox/rtems/configure" \
-        --target=arm-rtems4.12 --prefix="$sandbox/rtems-4.12" \
-        --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" make
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" make install
+    $ ../rtems/configure --prefix=$sandbox/5 --target=arm-rtems5 --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
+    $ make
+    $ make install
 
 6. Populate the rtems_waf git submodule.  Note, make sure you specify
    'rtems_waf' or the FreeBSD kernel source will be cloned:
@@ -136,8 +135,7 @@ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
 
    $ cd "$sandbox"
    $ cd rtems-libbsd
-   $ waf configure --prefix="$sandbox/rtems-4.12" \
-       --rtems-bsps=arm/xilinx_zynq_a9_qemu
+   $ waf configure --prefix="$sandbox/5" --rtems-bsps=arm/xilinx_zynq_a9_qemu
 
 8. Build and install.  The LibBSD package will be installed into the prefix
    provided to configure:
@@ -151,7 +149,7 @@ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
 
    $ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
    $   -nographic -M xilinx-zynq-a9 -m 256M \
-   $   -kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+   $   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
 
 [1] It is good practice to keep your environment as empty as possible. Setting
     paths to tools or specific values to configure or control a build is

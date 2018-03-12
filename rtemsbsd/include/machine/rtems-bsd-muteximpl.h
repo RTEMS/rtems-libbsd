@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2017 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -46,6 +46,9 @@
 
 #include <sys/types.h>
 #include <sys/lock.h>
+#include <sys/systm.h>
+
+#include <inttypes.h>
 
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/threadqimpl.h>
@@ -160,7 +163,12 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 		_Thread_Resource_count_increment(executing);
 		success = 1;
 	} else if (owner == executing) {
-		BSD_ASSERT(lock->lo_flags & LO_RECURSABLE);
+		if ((lock->lo_flags & LO_RECURSABLE) == 0) {
+			rtems_bsd_mutex_release(m, isr_level, &queue_context);
+			panic("mutex trylock: %s: not LO_RECURSABLE\n",
+			    m->queue.Queue.name);
+		}
+
 		++m->nest_level;
 		success = 1;
 	} else {
@@ -178,6 +186,7 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *owner;
+	Thread_Control *executing;
 	int nest_level;
 
 	_Thread_queue_Context_initialize(&queue_context);
@@ -186,8 +195,14 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 
 	nest_level = m->nest_level;
 	owner = m->queue.Queue.owner;
+	executing = _Thread_Executing;
 
-	BSD_ASSERT(owner == _Thread_Executing);
+	if (__predict_false(owner != executing)) {
+		rtems_bsd_mutex_release(m, isr_level, &queue_context);
+		panic("mutex unlock: %s: owner 0x%08" PRIx32
+		    " != executing 0x%08" PRIx32 "\n", m->queue.Queue.name,
+		    owner->Object.id, executing->Object.id);
+	}
 
 	if (__predict_true(nest_level == 0)) {
 		Thread_queue_Heads *heads;

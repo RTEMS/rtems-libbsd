@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -48,9 +48,13 @@ rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
     Thread_queue_Context *queue_context)
 {
 	if (owner == executing) {
-		BSD_ASSERT(lock->lo_flags & LO_RECURSABLE);
-		++m->nest_level;
+		if ((lock->lo_flags & LO_RECURSABLE) == 0) {
+			_Thread_queue_Release(&m->queue, queue_context);
+			panic("mutex lock: %s: not LO_RECURSABLE\n",
+			    m->queue.Queue.name);
+		}
 
+		++m->nest_level;
 		_Thread_queue_Release(&m->queue, queue_context);
 	} else {
 		_Thread_queue_Context_set_thread_state(queue_context,

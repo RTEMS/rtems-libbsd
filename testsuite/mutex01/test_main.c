@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -66,6 +66,7 @@ typedef struct {
 	int timo;
 	rtems_id worker_task[WORKER_COUNT];
 	bool done[WORKER_COUNT];
+	rtems_id panic_task;
 } test_context;
 
 static test_context test_instance;
@@ -478,6 +479,102 @@ test_mtx_sleep_timeout(test_context *ctx)
 	assert(!mtx_initialized(mtx));
 }
 
+#define PANIC_DO_LOCK 0
+
+#define PANIC_DO_TRYLOCK 1
+
+#define PANIC_DO_UNLOCK 2
+
+static void
+panic_task(rtems_task_argument arg)
+{
+	test_context *ctx = &test_instance;
+	struct mtx *mtx = &ctx->mtx;
+
+	switch (arg) {
+	case PANIC_DO_LOCK:
+		mtx_lock(mtx);
+		mtx_lock(mtx);
+		break;
+	case PANIC_DO_TRYLOCK:
+		mtx_lock(mtx);
+		mtx_trylock(mtx);
+		break;
+	case PANIC_DO_UNLOCK:
+		mtx_unlock(mtx);
+		break;
+	default:
+		assert(0);
+		break;
+	}
+
+	rtems_task_suspend(RTEMS_SELF);
+}
+
+static void
+test_mtx_panic(test_context *ctx)
+{
+	struct mtx *mtx = &ctx->mtx;
+	rtems_status_code sc;
+
+	puts("test mtx panic");
+
+	sc = rtems_task_create(rtems_build_name('P', 'A', 'N', 'I'),
+	    get_self_prio(), RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+	    RTEMS_FLOATING_POINT, &ctx->panic_task);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	assert(!mtx_initialized(mtx));
+	mtx_init(mtx, "test", NULL, MTX_DEF);
+	assert(mtx_initialized(mtx));
+
+	/* Lock recursive panic */
+
+	sc = rtems_task_start(ctx->panic_task, panic_task, PANIC_DO_LOCK);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_restart(ctx->panic_task, PANIC_DO_UNLOCK);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	/* Try lock recursive panic */
+
+	sc = rtems_task_restart(ctx->panic_task, PANIC_DO_TRYLOCK);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_restart(ctx->panic_task, PANIC_DO_UNLOCK);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	/* Unlock not owner panic */
+
+	mtx_lock(mtx);
+
+	sc = rtems_task_restart(ctx->panic_task, PANIC_DO_UNLOCK);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	sc = rtems_task_wake_after(RTEMS_YIELD_PROCESSOR);
+	assert(sc == RTEMS_SUCCESSFUL);
+
+	mtx_unlock(mtx);
+
+	mtx_destroy(mtx);
+	assert(!mtx_initialized(mtx));
+
+	sc = rtems_task_delete(ctx->panic_task);
+	assert(sc == RTEMS_SUCCESSFUL);
+}
+
 static void
 alloc_basic_resources(void)
 {
@@ -504,6 +601,7 @@ test_main(void)
 	test_mtx_recursive(ctx);
 	test_mtx_trylock(ctx);
 	test_mtx_lock(ctx);
+	test_mtx_panic(ctx);
 
 	assert(rtems_resource_snapshot_check(&snapshot_1));
 

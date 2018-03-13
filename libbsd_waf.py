@@ -1317,7 +1317,7 @@ def build(bld):
                 features = "c",
                 cflags = cflags,
                 includes = ['freebsd/crypto', 'freebsd/crypto/openssl', 'freebsd/crypto/openssl/crypto', 'freebsd/crypto/openssl/crypto/asn1', 'freebsd/crypto/openssl/crypto/evp', 'freebsd/crypto/openssl/crypto/modes'] + includes,
-                defines = defines + ['NO_WINDOWS_BRAINDEATH=1', 'OPENSSL_DISABLE_OLD_DES_SUPPORT=1', 'OPENSSL_NO_DEPRECATED=1', 'OPENSSL_NO_EC_NISTP_64_GCC_128=1', 'OPENSSL_NO_GMP=1', 'OPENSSL_NO_JPAKE=1', 'OPENSSL_NO_LIBUNBOUND=1', 'OPENSSL_NO_MD2=1', 'OPENSSL_NO_RC5=1', 'OPENSSL_NO_RFC3779=1', 'OPENSSL_NO_SCTP=1', 'OPENSSL_NO_SSL2=1', 'OPENSSL_NO_SSL_TRACE=1', 'OPENSSL_NO_STORE=1', 'OPENSSL_NO_UNIT_TEST=1', 'OPENSSL_NO_WEAK_SSL_CIPHERS=1'],
+                defines = defines + ['NO_WINDOWS_BRAINDEATH=1', 'OPENSSL_DISABLE_OLD_DES_SUPPORT=1', 'OPENSSL_NO_EC_NISTP_64_GCC_128=1', 'OPENSSL_NO_GMP=1', 'OPENSSL_NO_JPAKE=1', 'OPENSSL_NO_LIBUNBOUND=1', 'OPENSSL_NO_MD2=1', 'OPENSSL_NO_RC5=1', 'OPENSSL_NO_RFC3779=1', 'OPENSSL_NO_SCTP=1', 'OPENSSL_NO_SSL2=1', 'OPENSSL_NO_SSL_TRACE=1', 'OPENSSL_NO_STORE=1', 'OPENSSL_NO_UNIT_TEST=1', 'OPENSSL_NO_WEAK_SSL_CIPHERS=1'],
                 source = objs04_source)
     libbsd_use += ["objs04"]
 

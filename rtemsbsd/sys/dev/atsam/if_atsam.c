@@ -454,6 +454,33 @@ static void if_atsam_interrupt_handler(void *arg)
 		(void)if_atsam_event_send(sc->tx_daemon_tid, tx_event);
 	}
 }
+
+static void rx_update_mbuf(struct mbuf *m, sGmacRxDescriptor *buffer_desc)
+{
+	int frame_len;
+
+	frame_len = (int) (buffer_desc->status.bm.len);
+
+	m->m_data = mtod(m, char*)+ETHER_ALIGN;
+	m->m_len = frame_len;
+	m->m_pkthdr.len = frame_len;
+
+	/* check checksum offload result */
+	m->m_pkthdr.csum_flags = 0;
+	switch (buffer_desc->status.bm.typeIDMatchOrCksumResult) {
+	case GMAC_RXDESC_ST_CKSUM_RESULT_IP_CHECKED:
+		m->m_pkthdr.csum_flags = CSUM_IP_CHECKED | CSUM_IP_VALID;
+		m->m_pkthdr.csum_data = 0xffff;
+		break;
+	case GMAC_RXDESC_ST_CKSUM_RESULT_IP_AND_TCP_CHECKED:
+	case GMAC_RXDESC_ST_CKSUM_RESULT_IP_AND_UDP_CHECKED:
+		m->m_pkthdr.csum_flags = CSUM_IP_CHECKED | CSUM_IP_VALID |
+		    CSUM_L4_VALID | CSUM_L4_CALC;
+		m->m_pkthdr.csum_data = 0xffff;
+		break;
+	}
+}
+
 /*
  * Receive daemon
  */
@@ -466,7 +493,6 @@ static void if_atsam_rx_daemon(void *arg)
 	struct mbuf *m;
 	struct mbuf *n;
 	volatile sGmacRxDescriptor *buffer_desc;
-	int frame_len;
 	uint32_t tmp_rx_bd_address;
 	size_t i;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
@@ -547,13 +573,8 @@ static void if_atsam_rx_daemon(void *arg)
 				/* New mbuf for desc */
 				n = if_atsam_new_mbuf(ifp);
 				if (n != NULL) {
-					frame_len = (int)
-					    (buffer_desc->status.bm.len);
+					rx_update_mbuf(m, buffer_desc);
 
-					/* Update mbuf */
-					m->m_data = mtod(m, char*)+ETHER_ALIGN;
-					m->m_len = frame_len;
-					m->m_pkthdr.len = frame_len;
 					IF_ATSAM_UNLOCK(sc);
 					sc->ifp->if_input(ifp, m);
 					IF_ATSAM_LOCK(sc);
@@ -658,6 +679,7 @@ static bool if_atsam_send_packet(if_atsam_softc *sc, struct mbuf *m)
 	uint32_t tmp_val = 0;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 	bool success;
+	int csum_flags = m->m_pkthdr.csum_flags;
 
 	if_atsam_tx_bd_cleanup(sc);
 	/* Wait for interrupt in case no buffer descriptors are available */
@@ -706,6 +728,12 @@ static bool if_atsam_send_packet(if_atsam_softc *sc, struct mbuf *m)
 		if (m == NULL) {
 			tmp_val |= GMAC_TX_SET_EOF;
 			tmp_val &= ~GMAC_TX_SET_USED;
+			if ((csum_flags & (CSUM_IP | CSUM_TCP | CSUM_UDP |
+			    CSUM_TCP_IPV6 | CSUM_UDP_IPV6)) != 0) {
+				start_packet_tx_bd->status.bm.bNoCRC = 0;
+			} else {
+				start_packet_tx_bd->status.bm.bNoCRC = 1;
+			}
 			_ARM_Data_synchronization_barrier();
 			cur->status.val = tmp_val;
 			start_packet_tx_bd->status.val &= ~GMAC_TX_SET_USED;
@@ -979,8 +1007,12 @@ static void if_atsam_init(void *arg)
 
 	/* Configuration of DMAC */
 	dmac_cfg = (GMAC_DCFGR_DRBS(GMAC_RX_BUFFER_SIZE >> 6)) |
-	    GMAC_DCFGR_RXBMS(3) | GMAC_DCFGR_TXPBMS | GMAC_DCFGR_FBLDO_INCR16;
+	    GMAC_DCFGR_RXBMS(3) | GMAC_DCFGR_TXPBMS | GMAC_DCFGR_FBLDO_INCR16 |
+	    GMAC_DCFGR_TXCOEN;
 	GMAC_SetDMAConfig(sc->Gmac_inst.gGmacd.pHw, dmac_cfg, 0);
+
+	/* Enable hardware checksum offload for receive */
+	sc->Gmac_inst.gGmacd.pHw->GMAC_NCFGR |= GMAC_NCFGR_RXCOEN;
 
 	/* Shut down Transmit and Receive */
 	GMAC_ReceiveEnable(sc->Gmac_inst.gGmacd.pHw, 0);
@@ -1461,6 +1493,10 @@ static int if_atsam_driver_attach(device_t dev)
 	ifp->if_ioctl = if_atsam_ioctl;
 	ifp->if_start = if_atsam_enet_start;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
+	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
+	    IFCAP_VLAN_HWCSUM;
+	ifp->if_hwassist = CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP |
+	    CSUM_IP6_UDP | CSUM_IP6_TCP;
 	IFQ_SET_MAXLEN(&ifp->if_snd, TXBUF_COUNT - 1);
 	ifp->if_snd.ifq_drv_maxlen = TXBUF_COUNT - 1;
 	IFQ_SET_READY(&ifp->if_snd);

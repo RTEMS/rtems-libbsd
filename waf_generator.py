@@ -416,7 +416,6 @@ class ModuleManager(builder.ModuleManager):
         self.add('    net_cfg_netmask = None')
         self.add('    net_cfg_peer_ip = None')
         self.add('    net_cfg_gateway_ip = None')
-        self.add('    net_tap_interface = None')
         self.add('    try:')
         self.add('        net_cfg_lines = open(bld.env.NET_CONFIG).readlines()')
         self.add('    except:')
@@ -439,8 +438,6 @@ class ModuleManager(builder.ModuleManager):
         self.add('                net_cfg_peer_ip = rhs')
         self.add('            if lhs == "NET_CFG_GATEWAY_IP":')
         self.add('                net_cfg_gateway_ip = rhs')
-        self.add('            if lhs == "NET_TAP_INTERFACE":')
-        self.add('                net_tap_interface = rhs')
         self.add('    bld(target = "testsuite/include/rtems/bsd/test/network-config.h",')
         self.add('        source = "testsuite/include/rtems/bsd/test/network-config.h.in",')
         self.add('        rule = "sed -e \'s/@NET_CFG_SELF_IP@/%s/\' ' + \

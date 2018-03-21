@@ -42,7 +42,8 @@ installed.
 
 . Clone the Git repository +git clone git://git.rtems.org/rtems-libbsd.git+.
 . Change into the RTEMS BSD library root directory.
-. Edit the `config.inc` configuration file and adjust it to your environment.
+. If you want to run tests with a custom IP configuration instead of the default
+  one you can use an adjusted `config.inc` configuration file.
 . Run +waf configure ...+.
 . Run +waf+.
 . Run +waf install+.
@@ -119,27 +120,18 @@ devices (you can run multiple test instances on one virtual network).
 The build system based on the Waf build system. To build with Waf please refer
 to the README.waf file.
 
-===== Example Configuration =====
+===== Example Configuration for Network Tests =====
 
-In the BSD library source directory edit the file `config.inc`.  Continuing on
-the above, the `config.inc` used to match the above is:
+If you need some other IP configuration for the network tests that use a fixed
+IP config you can copy `config.inc` to a location outside to the source tree and
+adapt it. Then use the option `--net-test-config=NET_CONFIG` to pass the file to
+waf's configure command.
 
 -------------------------------------------------------------------------------
-# Mandatory: Select your BSP and installation prefix
-TARGET = arm-rtems4.12
-BSP = xilinx_zynq_a9_qemu
-PREFIX = $(HOME)/sandbox/install
-
-# Optional: Separate installation base directory
-INSTALL_BASE = $(PREFIX)/$(TARGET)/$(BSP)
-
-# Optional: Network test configuration
-TEST_RUNNER = $(BSP)
 NET_CFG_SELF_IP = 10.0.0.2
 NET_CFG_NETMASK = 255.255.0.0
 NET_CFG_PEER_IP = 10.0.0.1
 NET_CFG_GATEWAY_IP = 10.0.0.1
-NET_TAP_INTERFACE = tap0
 -------------------------------------------------------------------------------
 
 === BSD Library Initialization ===

@@ -59,6 +59,7 @@ rtems_bsd_ifconfig(const char *ifname, const char *addr_self,
 	};
 	char *dflt_route[] = {
 	    "route",
+	    "-q",
 	    "add",
 	    "default",
 	    __DECONST(char *, addr_gateway),

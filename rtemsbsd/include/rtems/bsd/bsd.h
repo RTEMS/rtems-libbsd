@@ -294,6 +294,15 @@ int rtems_bsd_vprintf(int level, const char *fmt, va_list ap);
  */
 int rtems_bsd_setlogpriority(const char* priority);
 
+/**
+ * @brief Set this vprintf handler to suppress all output.
+ *
+ * @retval Allways 0.
+ *
+ * @see rtems_bsd_vprintf() for the parameters.
+ */
+int rtems_bsd_vprintf_handler_mute(int level, const char *fmt, va_list ap);
+
 /** @} */
 
 #ifdef __cplusplus

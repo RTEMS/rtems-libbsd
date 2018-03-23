@@ -103,6 +103,16 @@ default_vprintf_handler(int level, const char *fmt, va_list ap)
 static int (*vprintf_handler)(int, const char *, va_list) =
     default_vprintf_handler;
 
+int
+rtems_bsd_vprintf_handler_mute(int level, const char *fmt, va_list ap)
+{
+	(void) level;
+	(void) fmt;
+	(void) ap;
+
+	return 0;
+}
+
 rtems_bsd_vprintf_handler
 rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler new_handler)
 {

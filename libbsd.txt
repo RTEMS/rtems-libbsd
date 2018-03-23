@@ -265,6 +265,30 @@ their own implementation of the `rtems_bsd_get_allocator_domain_size()`
 function (for example in the module which calls `rtems_bsd_initialize()`) if
 different values are desired.  The default size is 8MiB for all domains.
 
+=== Redirecting or Disabling the Output ===
+
+A lot of system messages are printed to the stdout by default. If you want to
+redirect them you can overwrite the default print handler. That can even be done
+before the libbsd initialization to catch all messages. An example would look
+like follows:
+
+-------------------------------------------------------------------------------
+int my_vprintf_handler(int level, const char *fmt, va_list ap) {
+	/* Do something with the messages. */
+
+	return number_of_printed_chars;
+}
+
+...
+	/* In your initialization: */
+	rtems_bsd_vprintf_handler old;
+	old = rtems_bsd_set_vprintf_handler(my_vprintf_handler);
+...
+-------------------------------------------------------------------------------
+
+As a special case, you can set the `rtems_bsd_vprintf_handler_mute(...)`
+provided by libbsd to suppress all output.
+
 == Network Stack Features
 
 http://roy.marples.name/projects/dhcpcd/index[DHCPCD(8)]:: DHCP client

@@ -155,153 +155,6 @@ class diffRecord:
 #
 # This stuff needs to move to libbsd.py.
 #
-def commonFlags():
-    return ['-g',
-            '-fno-strict-aliasing',
-            '-ffreestanding',
-            '-fno-common']
-
-def commonWarnings():
-    return ['-Wall',
-            '-Wno-format',
-            '-Wno-pointer-sign']
-
-def commonNoWarnings():
-    return ['-w']
-
-def includes():
-    return ['-Irtemsbsd/include',
-            '-Ifreebsd/sys',
-            '-Ifreebsd/sys/contrib/pf',
-            '-Ifreebsd/crypto',
-            '-Ifreebsd/sys/net',
-            '-Ifreebsd/include',
-            '-Ifreebsd/lib',
-            '-Ifreebsd/lib/libbsdstat',
-            '-Ifreebsd/lib/libc/include',
-            '-Ifreebsd/lib/libc/isc/include',
-            '-Ifreebsd/lib/libc/resolv',
-            '-Ifreebsd/lib/libutil',
-            '-Ifreebsd/lib/libkvm',
-            '-Ifreebsd/lib/libmemstat',
-            '-Ifreebsd/lib/libipsec',
-            '-Ifreebsd/contrib/expat/lib',
-            '-Ifreebsd/contrib/libpcap',
-            '-Ifreebsd/contrib/libxo',
-            '-Ilinux/include',
-            '-Ilinux/drivers/net/ethernet/freescale/fman',
-            '-Irtemsbsd/sys',
-            '-ImDNSResponder/mDNSCore',
-            '-ImDNSResponder/mDNSShared',
-            '-ImDNSResponder/mDNSPosix',
-            '-Itestsuite/include']
-
-def buildInclude():
-    """ Returns the path where headers will be copied during build. """
-    return 'build-include'
-
-def cpuIncludes():
-    return ['-Irtemsbsd/@CPU@/include',
-            '-Ifreebsd/sys/@CPU@/include']
-
-def cflags():
-    return []
-
-def cxxflags():
-    return []
-
-def headerPaths():
-    """ Returns a list of information about what header files should be
-    installed.
-
-    The list is also used to find headers with a local path that doesn't match
-    it's dest path. Due to the difference in the path name such files are
-    problematic during the build if they are included using their later
-    installation path (dest path) name. Therefore they are copied into a
-    sub-directory of the build path so that they can be included with their
-    normal installation path. """
-
-    #         local path                      wildcard             dest path
-    return [('rtemsbsd/include',              '**/*.h',            ''),
-            ('rtemsbsd/\' + bld.env.RTEMS_ARCH + \'/include', '**/*.h', ''),
-            ('rtemsbsd/mghttpd',              'mongoose.h',        'mghttpd'),
-            ('freebsd/include',               '**/*.h',            ''),
-            ('freebsd/sys/bsm',               '**/*.h',            'bsm'),
-            ('freebsd/sys/cam',               '**/*.h',            'cam'),
-            ('freebsd/sys/net',               '**/*.h',            'net'),
-            ('freebsd/sys/net80211',          '**/*.h',            'net80211'),
-            ('freebsd/sys/netinet',           '**/*.h',            'netinet'),
-            ('freebsd/sys/netinet6',          '**/*.h',            'netinet6'),
-            ('freebsd/sys/netipsec',          '**/*.h',            'netipsec'),
-            ('freebsd/contrib/libpcap',       '*.h',               ''),
-            ('freebsd/contrib/libpcap/pcap',  '*.h',               'pcap'),
-            ('freebsd/crypto/openssl',        '*.h',               'openssl'),
-            ('freebsd/crypto/openssl/crypto', '*.h',               'openssl'),
-            ('freebsd/crypto/openssl/ssl',    '(ssl|kssl|ssl2).h', 'openssl'),
-            ('freebsd/crypto/openssl/crypto/aes', 'aes.h',         'openssl'),
-            ('freebsd/crypto/openssl/crypto/err', 'err.h',         'openssl'),
-            ('freebsd/crypto/openssl/crypto/bio', '*.h',           'openssl'),
-            ('freebsd/crypto/openssl/crypto/dsa', '*.h',           'openssl'),
-            ('freebsd/crypto/openssl/ssl',        '*.h',           'openssl'),
-            ('freebsd/crypto/openssl/crypto/bn',  'bn.h',          'openssl'),
-            ('freebsd/crypto/openssl/crypto/x509',  'x509.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/cast',  'cast.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/lhash', 'lhash.h',     'openssl'),
-            ('freebsd/crypto/openssl/crypto/ecdh',  'ecdh.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/ecdsa', 'ecdsa.h',     'openssl'),
-            ('freebsd/crypto/openssl/crypto/idea',  'idea.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/mdc2',  'mdc2.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/md4',   'md4.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/md5',   'md5.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/rc2',   'rc2.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/rc4',   'rc4.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/ripemd','ripemd.h',    'openssl'),
-            ('freebsd/crypto/openssl/crypto/seed',  'seed.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/sha',   'sha.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/x509v3','x509v3.h',    'openssl'),
-            ('freebsd/crypto/openssl/crypto/x509',  'x509_vfy.h',  'openssl'),
-            ('freebsd/crypto/openssl/crypto/buffer','buffer.h',    'openssl'),
-            ('freebsd/crypto/openssl/crypto/comp',  'comp.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/asn1',  'asn1_mac.h',  'openssl'),
-            ('freebsd/crypto/openssl/crypto/pem',  '(pem|pem2).h', 'openssl'),
-            ('freebsd/crypto/openssl/crypto/rsa',   'rsa.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/evp',   'evp.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/ec',    'ec.h',        'openssl'),
-            ('freebsd/crypto/openssl/crypto/engine', 'engine.h',   'openssl'),
-            ('freebsd/crypto/openssl/crypto/pkcs7', 'pkcs7.h',     'openssl'),
-            ('freebsd/crypto/openssl/crypto/hmac',  'hmac.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/pqueue', 'pqueue.h',   'openssl'),
-            ('freebsd/crypto/openssl/crypto/ocsp',  'ocsp.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/rand',  'rand.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/srp',   'srp.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/dh',    'dh.h',        'openssl'),
-            ('freebsd/crypto/openssl/crypto/dso',   'dso.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/krb5',  'krb5_asn.h',  'openssl'),
-            ('freebsd/crypto/openssl/crypto/cms',   'cms.h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/txt_db', 'txt_db.h',   'openssl'),
-            ('freebsd/crypto/openssl/crypto/ts',    'ts.h',        'openssl'),
-            ('freebsd/crypto/openssl/crypto/modes', 'modes.h',     'openssl'),
-            ('freebsd/crypto/openssl/crypto/pkcs12', 'pkcs12.h',   'openssl'),
-            ('freebsd/crypto/openssl/crypto/bf',    'blowfish.h',  'openssl'),
-            ('freebsd/crypto/openssl/crypto/cmac',  'cmac.h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/asn1',  '(asn1|asn1t).h',            'openssl'),
-            ('freebsd/crypto/openssl/crypto/camellia', 'camellia.h',             'openssl'),
-            ('freebsd/crypto/openssl/crypto/objects',  '(objects|obj_mac).h',    'openssl'),
-            ('freebsd/crypto/openssl/crypto/conf',     '(conf|conf_api).h',      'openssl'),
-            ('freebsd/crypto/openssl/crypto/des',      '(des|des_old).h',        'openssl'),
-            ('freebsd/crypto/openssl/crypto/ui',       '(ui_compat|ui).h',       'openssl'),
-            ('freebsd/crypto/openssl/crypto/whrlpool', 'whrlpool.h',             'openssl'),
-            ('freebsd/crypto/openssl/crypto/stack',    '(stack|safestack).h',    'openssl'),
-            ('freebsd/crypto/openssl/crypto', '(opensslconf|opensslv|crypto).h', 'openssl'),
-            ('freebsd/sys/rpc',               '**/*.h',            'rpc'),
-            ('freebsd/sys/sys',               '**/*.h',            'sys'),
-            ('freebsd/sys/vm',                '**/*.h',            'vm'),
-            ('freebsd/sys/dev/mii',           '**/*.h',            'dev/mii'),
-            ('linux/include',                 '**/*.h',            ''),
-            ('mDNSResponder/mDNSCore',        'mDNSDebug.h',       ''),
-            ('mDNSResponder/mDNSCore',        'mDNSEmbeddedAPI.h', ''),
-            ('mDNSResponder/mDNSShared',      'dns_sd.h',          ''),
-            ('mDNSResponder/mDNSPosix',       'mDNSPosix.h',       '')]
 
 # Move target dependent files under a machine directory
 def mapCPUDependentPath(path):
@@ -630,7 +483,7 @@ class File(object):
 #
 # Module - logical group of related files we can perform actions on
 #
-class Module:
+class Module(object):
     def __init__(self, name):
         self.name = name
         self.conditionalOn = "none"
@@ -774,10 +627,11 @@ class Module:
 #
 # Manager - a collection of modules.
 #
-class ModuleManager:
+class ModuleManager(object):
     def __init__(self):
         self.modules = {}
         self.generator = {}
+        self.configuration = {}
         self.setGenerators()
 
     def __getitem__(self, key):
@@ -796,3 +650,9 @@ class ModuleManager:
             print("process modules:")
         for m in sorted(self.modules):
             self.modules[m].processSource(direction)
+
+    def setConfiguration(self, config):
+        self.configuration = config
+
+    def getConfiguration(self):
+        return self.configuration

@@ -1,5 +1,6 @@
 #
-#  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
+#  Copyright (c) 2015-2016, 2018 Chris Johns <chrisj@rtems.org>.
+#  All rights reserved.
 #
 #  Copyright (c) 2009, 2018 embedded brains GmbH.  All rights reserved.
 #
@@ -35,10 +36,152 @@
 import builder
 
 #
-# RTEMS version
+# Default configuration.
 #
-def rtems_version():
-    return '4.12'
+_defaults = {
+    #
+    # Compile flags
+    #
+    'common-flags': ['-g',
+                     '-fno-strict-aliasing',
+                     '-ffreestanding',
+                     '-fno-common'],
+    'common-warnings' : ['-Wall',
+                         '-Wno-format',
+                         '-Wno-pointer-sign'],
+    'common-no-warnings': ['-w'],
+    'cflags': [],
+    'cxxflags': [],
+
+    #
+    # Includes
+    #
+    'include-paths': ['rtemsbsd/include',
+                      'freebsd/sys',
+                      'freebsd/sys/contrib/pf',
+                      'freebsd/crypto',
+                      'freebsd/sys/net',
+                      'freebsd/include',
+                      'freebsd/lib',
+                      'freebsd/lib/libbsdstat',
+                      'freebsd/lib/libc/include',
+                      'freebsd/lib/libc/isc/include',
+                      'freebsd/lib/libc/resolv',
+                      'freebsd/lib/libutil',
+                      'freebsd/lib/libkvm',
+                      'freebsd/lib/libmemstat',
+                      'freebsd/lib/libipsec',
+                      'freebsd/contrib/expat/lib',
+                      'freebsd/contrib/libpcap',
+                      'freebsd/contrib/libxo',
+                      'linux/include',
+                      'linux/drivers/net/ethernet/freescale/fman',
+                      'rtemsbsd/sys',
+                      'mDNSResponder/mDNSCore',
+                      'mDNSResponder/mDNSShared',
+                      'mDNSResponder/mDNSPosix',
+                      'testsuite/include'],
+    'cpu-include-paths': ['rtemsbsd/@CPU@/include',
+                          'freebsd/sys/@CPU@/include'],
+
+    # The path where headers will be copied during build.
+    'build-include-path': ['build-include'],
+
+    #
+    # Install headers
+    #
+    # A list of information about what header files should be installed.
+    #
+    # The list is also used to find headers with a local path that doesn't
+    # match it's dest path. Due to the difference in the path name such files
+    # are problematic during the build if they are included using their later
+    # installation path (dest path) name. Therefore they are copied into a
+    # sub-directory of the build path so that they can be included with their
+    # normal installation path.
+    #
+    'header-paths':
+    #  local path                               wildcard                           dest path
+    [('rtemsbsd/include',                       '**/*.h',                          ''),
+     ('rtemsbsd/@CPU@/include',                 '**/*.h',                          ''),
+     ('rtemsbsd/mghttpd',                       'mongoose.h',                      'mghttpd'),
+     ('freebsd/include',                        '**/*.h',                          ''),
+     ('freebsd/sys/bsm',                        '**/*.h',                          'bsm'),
+     ('freebsd/sys/cam',                        '**/*.h',                          'cam'),
+     ('freebsd/sys/net',                        '**/*.h',                          'net'),
+     ('freebsd/sys/net80211',                   '**/*.h',                          'net80211'),
+     ('freebsd/sys/netinet',                    '**/*.h',                          'netinet'),
+     ('freebsd/sys/netinet6',                   '**/*.h',                          'netinet6'),
+     ('freebsd/sys/netipsec',                   '**/*.h',                          'netipsec'),
+     ('freebsd/contrib/libpcap',                '*.h',                             ''),
+     ('freebsd/contrib/libpcap/pcap',           '*.h',                             'pcap'),
+     ('freebsd/crypto/openssl',                 '*.h',                             'openssl'),
+     ('freebsd/crypto/openssl/crypto',          '*.h',                             'openssl'),
+     ('freebsd/crypto/openssl/ssl',             '(ssl|kssl|ssl2).h',               'openssl'),
+     ('freebsd/crypto/openssl/crypto/aes',      'aes.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/err',      'err.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/bio',      '*.h',                             'openssl'),
+     ('freebsd/crypto/openssl/crypto/dsa',      '*.h',                             'openssl'),
+     ('freebsd/crypto/openssl/ssl',             '*.h',                             'openssl'),
+     ('freebsd/crypto/openssl/crypto/bn',       'bn.h',                            'openssl'),
+     ('freebsd/crypto/openssl/crypto/x509',     'x509.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/cast',     'cast.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/lhash',    'lhash.h',                         'openssl'),
+     ('freebsd/crypto/openssl/crypto/ecdh',     'ecdh.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/ecdsa',    'ecdsa.h',                         'openssl'),
+     ('freebsd/crypto/openssl/crypto/idea',     'idea.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/mdc2',     'mdc2.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/md4',      'md4.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/md5',      'md5.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/rc2',      'rc2.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/rc4',      'rc4.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/ripemd',   'ripemd.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/seed',     'seed.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/sha',      'sha.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/x509v3',   'x509v3.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/x509',     'x509_vfy.h',                      'openssl'),
+     ('freebsd/crypto/openssl/crypto/buffer',   'buffer.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/comp',     'comp.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/asn1',     'asn1_mac.h',                      'openssl'),
+     ('freebsd/crypto/openssl/crypto/pem',      '(pem|pem2).h',                    'openssl'),
+     ('freebsd/crypto/openssl/crypto/rsa',      'rsa.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/evp',      'evp.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/ec',       'ec.h',                            'openssl'),
+     ('freebsd/crypto/openssl/crypto/engine',   'engine.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/pkcs7',    'pkcs7.h',                         'openssl'),
+     ('freebsd/crypto/openssl/crypto/hmac',     'hmac.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/pqueue',   'pqueue.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/ocsp',     'ocsp.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/rand',     'rand.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/srp',      'srp.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/dh',       'dh.h',                            'openssl'),
+     ('freebsd/crypto/openssl/crypto/dso',      'dso.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/krb5',     'krb5_asn.h',                      'openssl'),
+     ('freebsd/crypto/openssl/crypto/cms',      'cms.h',                           'openssl'),
+     ('freebsd/crypto/openssl/crypto/txt_db',   'txt_db.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/ts',       'ts.h',                            'openssl'),
+     ('freebsd/crypto/openssl/crypto/modes',    'modes.h',                         'openssl'),
+     ('freebsd/crypto/openssl/crypto/pkcs12',   'pkcs12.h',                        'openssl'),
+     ('freebsd/crypto/openssl/crypto/bf',       'blowfish.h',                      'openssl'),
+     ('freebsd/crypto/openssl/crypto/cmac',     'cmac.h',                          'openssl'),
+     ('freebsd/crypto/openssl/crypto/asn1',     '(asn1|asn1t).h',                  'openssl'),
+     ('freebsd/crypto/openssl/crypto/camellia', 'camellia.h',                      'openssl'),
+     ('freebsd/crypto/openssl/crypto/objects',  '(objects|obj_mac).h',             'openssl'),
+     ('freebsd/crypto/openssl/crypto/conf',     '(conf|conf_api).h',               'openssl'),
+     ('freebsd/crypto/openssl/crypto/des',      '(des|des_old).h',                 'openssl'),
+     ('freebsd/crypto/openssl/crypto/ui',       '(ui_compat|ui).h',                'openssl'),
+     ('freebsd/crypto/openssl/crypto/whrlpool', 'whrlpool.h',                      'openssl'),
+     ('freebsd/crypto/openssl/crypto/stack',    '(stack|safestack).h',             'openssl'),
+     ('freebsd/crypto/openssl/crypto',          '(opensslconf|opensslv|crypto).h', 'openssl'),
+     ('freebsd/sys/rpc',                        '**/*.h',                          'rpc'),
+     ('freebsd/sys/sys',                        '**/*.h',                          'sys'),
+     ('freebsd/sys/vm',                         '**/*.h',                          'vm'),
+     ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),
+     ('linux/include',                          '**/*.h',                          ''),
+     ('mDNSResponder/mDNSCore',                 'mDNSDebug.h',                     ''),
+     ('mDNSResponder/mDNSCore',                 'mDNSEmbeddedAPI.h',               ''),
+     ('mDNSResponder/mDNSShared',               'dns_sd.h',                        ''),
+     ('mDNSResponder/mDNSPosix',                'mDNSPosix.h',                     '')]
+}
 
 #
 # RTEMS
@@ -4368,86 +4511,6 @@ def in_cksum(mm):
     return mod
 
 #
-# Tests
-#
-def tests(mm):
-    mod = builder.Module('tests')
-    mod.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True))
-    mod.addTest(mm.generator['test']('foobarclient', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('foobarserver', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('dhcpcd01', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('dhcpcd02', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('arphole', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('telnetd01', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('unix01', ['test_main']))
-    mod.addTest(mm.generator['test']('ftpd01', ['test_main'], netTest = True))
-    mod.addTest(mm.generator['test']('ftpd02', ['test_main']))
-    mod.addTest(mm.generator['test']('ping01', ['test_main'], netTest = True))
-    mod.addTest(mm.generator['test']('selectpollkqueue01', ['test_main']))
-    mod.addTest(mm.generator['test']('rwlock01', ['test_main']))
-    mod.addTest(mm.generator['test']('sleep01', ['test_main']))
-    mod.addTest(mm.generator['test']('syscalls01', ['test_main']))
-    mod.addTest(mm.generator['test']('program01', ['test_main']))
-    mod.addTest(mm.generator['test']('commands01', ['test_main']))
-    mod.addTest(mm.generator['test']('usb01', ['init'], False))
-    mod.addTest(mm.generator['test']('usbserial01', ['init'], False))
-    mod.addTest(mm.generator['test']('usbkbd01', ['init'], False))
-    mod.addTest(mm.generator['test']('usbmouse01', ['init'], False))
-    mod.addTest(mm.generator['test']('evdev01', ['init'], False))
-    mod.addTest(mm.generator['test']('loopback01', ['test_main']))
-    mod.addTest(mm.generator['test']('netshell01', ['test_main', 'shellconfig'], False))
-    mod.addTest(mm.generator['test']('swi01', ['init', 'swi_test']))
-    mod.addTest(mm.generator['test']('timeout01', ['init', 'timeout_test']))
-    mod.addTest(mm.generator['test']('init01', ['test_main']))
-    mod.addTest(mm.generator['test']('thread01', ['test_main']))
-    mod.addTest(mm.generator['test']('mutex01', ['test_main']))
-    mod.addTest(mm.generator['test']('condvar01', ['test_main']))
-    mod.addTest(mm.generator['test']('ppp01', ['test_main'], runTest = False))
-    mod.addTest(mm.generator['test']('zerocopy01', ['test_main'],
-                                     runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('smp01', ['test_main']))
-    mod.addTest(mm.generator['test']('media01', ['test_main'], runTest = False))
-    mod.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
-    mod.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
-    mod.addTest(mm.generator['test']('log01', ['test_main']))
-    mod.addTest(mm.generator['test']('rcconf01', ['test_main']))
-    mod.addTest(mm.generator['test']('rcconf02', ['test_main']))
-    mod.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
-    mod.addTest(mm.generator['test']('pf01', ['test_main']))
-    mod.addTest(mm.generator['test']('pf02', ['test_main'], runTest = False))
-    mod.addTest(mm.generator['test']('termios', ['test_main',
-                                     'test_termios_driver',
-                                     'test_termios_utilities']))
-    mod.addTest(mm.generator['test']('termios01', ['test_main',
-                                     '../termios/test_termios_driver',
-                                     '../termios/test_termios_utilities']))
-    mod.addTest(mm.generator['test']('termios02', ['test_main',
-                                     '../termios/test_termios_driver',
-                                     '../termios/test_termios_utilities']))
-    mod.addTest(mm.generator['test']('termios03', ['test_main',
-                                     '../termios/test_termios_driver',
-                                     '../termios/test_termios_utilities']))
-    mod.addTest(mm.generator['test']('termios04', ['test_main',
-                                     '../termios/test_termios_driver',
-                                     '../termios/test_termios_utilities']))
-    mod.addTest(mm.generator['test']('termios05', ['test_main',
-                                     '../termios/test_termios_driver',
-                                     '../termios/test_termios_utilities']))
-    mod.addTest(mm.generator['test']('termios06', ['test_main',
-                                     '../termios/test_termios_driver',
-                                     '../termios/test_termios_utilities']))
-    mod.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
-                                               ['test_main'], runTest = False, netTest = True))
-    mod.addTest(mm.generator['test']('crypto01', ['test_main']))
-    return mod
-
-#
 # DHCP
 #
 def dhcpcd(mm):
@@ -4589,7 +4652,92 @@ def dpaa(mm):
     )
     return mod
 
-def sources(mm):
+#
+# Tests
+#
+#  Note: Keep as the last module
+#
+def tests(mm):
+    mod = builder.Module('tests')
+    mod.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('foobarclient', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('foobarserver', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('dhcpcd01', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('dhcpcd02', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('arphole', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('telnetd01', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('unix01', ['test_main']))
+    mod.addTest(mm.generator['test']('ftpd01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('ftpd02', ['test_main']))
+    mod.addTest(mm.generator['test']('ping01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('selectpollkqueue01', ['test_main']))
+    mod.addTest(mm.generator['test']('rwlock01', ['test_main']))
+    mod.addTest(mm.generator['test']('sleep01', ['test_main']))
+    mod.addTest(mm.generator['test']('syscalls01', ['test_main']))
+    mod.addTest(mm.generator['test']('program01', ['test_main']))
+    mod.addTest(mm.generator['test']('commands01', ['test_main']))
+    mod.addTest(mm.generator['test']('usb01', ['init'], False))
+    mod.addTest(mm.generator['test']('usbserial01', ['init'], False))
+    mod.addTest(mm.generator['test']('usbkbd01', ['init'], False))
+    mod.addTest(mm.generator['test']('usbmouse01', ['init'], False))
+    mod.addTest(mm.generator['test']('evdev01', ['init'], False))
+    mod.addTest(mm.generator['test']('loopback01', ['test_main']))
+    mod.addTest(mm.generator['test']('netshell01', ['test_main', 'shellconfig'], False))
+    mod.addTest(mm.generator['test']('swi01', ['init', 'swi_test']))
+    mod.addTest(mm.generator['test']('timeout01', ['init', 'timeout_test']))
+    mod.addTest(mm.generator['test']('init01', ['test_main']))
+    mod.addTest(mm.generator['test']('thread01', ['test_main']))
+    mod.addTest(mm.generator['test']('mutex01', ['test_main']))
+    mod.addTest(mm.generator['test']('condvar01', ['test_main']))
+    mod.addTest(mm.generator['test']('ppp01', ['test_main'], runTest = False))
+    mod.addTest(mm.generator['test']('zerocopy01', ['test_main'],
+                                     runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('smp01', ['test_main']))
+    mod.addTest(mm.generator['test']('media01', ['test_main'], runTest = False))
+    mod.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
+    mod.addTest(mm.generator['test']('log01', ['test_main']))
+    mod.addTest(mm.generator['test']('rcconf01', ['test_main']))
+    mod.addTest(mm.generator['test']('rcconf02', ['test_main']))
+    mod.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
+    mod.addTest(mm.generator['test']('pf01', ['test_main']))
+    mod.addTest(mm.generator['test']('pf02', ['test_main'], runTest = False))
+    mod.addTest(mm.generator['test']('termios', ['test_main',
+                                     'test_termios_driver',
+                                     'test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios01', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios02', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios03', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios04', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios05', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test']('termios06', ['test_main',
+                                     '../termios/test_termios_driver',
+                                     '../termios/test_termios_utilities']))
+    mod.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
+                                               ['test_main'], runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('crypto01', ['test_main']))
+    return mod
+
+def load(mm):
+
+    mm.setConfiguration(_defaults)
+
     mm.addModule(dpaa(mm))
     mm.addModule(rtems(mm))
     mm.addModule(base(mm))
@@ -4659,10 +4807,11 @@ def sources(mm):
     mm.addModule(usr_sbin_wpa_supplicant(mm))
     mm.addModule(crypto_openssl(mm))
 
-    mm.addModule(tests(mm))
     mm.addModule(dhcpcd(mm))
     mm.addModule(mghttpd(mm))
     mm.addModule(mdnsresponder(mm))
+
+    mm.addModule(tests(mm))
 
     # XXX TODO Check that no file is also listed in empty
     # XXX TODO Check that no file in in two modules

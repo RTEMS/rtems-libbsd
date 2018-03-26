@@ -42,12 +42,10 @@ import sys
 import getopt
 
 import builder
-import waf_generator
 import libbsd
 
 isForward = True
 isEarlyExit = False
-isOnlyBuildScripts = False
 statsReport = False
 
 def usage():
@@ -57,7 +55,6 @@ def usage():
     print("  -D|--diff         provide diff of files between trees")
     print("  -e|--early-exit   evaluate arguments, print results, and exit")
     print("  -m|--makefile     Warning: depreciated and will be removed ")
-    print("  -b|--buildscripts just generate the build scripts")
     print("  -S|--stats        Print a statistics report")
     print("  -R|--reverse      default origin -> LibBSD, reverse that")
     print("  -r|--rtems        LibBSD directory (default: '.')")
@@ -67,7 +64,6 @@ def usage():
 # Parse the arguments
 def parseArguments():
     global isForward, isEarlyExit, statsReport
-    global isOnlyBuildScripts
     try:
         opts, args = getopt.getopt(sys.argv[1:],
                                    "?hdDembSRr:f:v",
@@ -100,8 +96,6 @@ def parseArguments():
             builder.isDiffMode = True
         elif o in ("-e", "--early-exit"):
             isEarlyExit = True
-        elif o in ("-b", "--buildscripts") or o in ("-m", "--makefile"):
-            isOnlyBuildScripts = True
         elif o in ("-S", "--stats"):
             statsReport = True
         elif o in ("-R", "--reverse"):
@@ -119,7 +113,6 @@ print("Verbose:                     %s (%d)" % (("no", "yes")[builder.verbose()]
                                                 builder.verboseLevel))
 print("Dry Run:                     %s" % (("no", "yes")[builder.isDryRun]))
 print("Diff Mode Enabled:           %s" % (("no", "yes")[builder.isDiffMode]))
-print("Only Generate Build Scripts: %s" % (("no", "yes")[isOnlyBuildScripts]))
 print("LibBSD Directory:            %s" % (builder.LIBBSD_DIR))
 print("FreeBSD Directory:           %s" % (builder.FreeBSD_DIR))
 print("Direction:                   %s" % (("reverse", "forward")[isForward]))
@@ -143,20 +136,15 @@ if isForward == True:
     print("Forward from", builder.FreeBSD_DIR, "into", builder.LIBBSD_DIR)
 else:
     print("Reverting from", builder.LIBBSD_DIR)
-    if isOnlyBuildScripts == True:
-        print("error: Build Script generation and Reverse are contradictory")
-        sys.exit(2)
 
 if isEarlyExit == True:
     print("Early exit at user request")
     sys.exit(0)
 
 try:
-    wafGen = waf_generator.ModuleManager()
-    libbsd.sources(wafGen)
-    if not isOnlyBuildScripts:
-        wafGen.processSource(isForward)
-    wafGen.generate(libbsd.rtems_version())
+    build = builder.ModuleManager()
+    libbsd.loadModules(build)
+    build.processSource(isForward)
     builder.changedFileSummary(statsReport)
 except IOError as ioe:
     print('error: %s' % (str(ioe)))

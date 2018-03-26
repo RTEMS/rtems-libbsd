@@ -32,7 +32,7 @@ Please help by adding to it.
 
 === Tool Chain ===
 
-You need a tool chain for RTEMS based on at least RSB 4.12 April 2016 or later.
+You need a tool chain for RTEMS based on at least RSB 5 April 2016 or later.
 
 === Installation Overview ===
 
@@ -57,7 +57,7 @@ status' says `rtems_waf` need updating run the submodule update command:
 
 === Board Support Package Requirements ===
 
-The RTEMS version must be at least 4.12.  The Board Support Package (BSP)
+The RTEMS version must be at least 5.  The Board Support Package (BSP)
 should support the
 http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__extension.html[Interrupt Manager Extension]
 // The first underscores have to be masked to stop asciidoc interpreting them
@@ -99,7 +99,7 @@ mkdir b-xilinx_zynq_a9_qemu
 cd b-xilinx_zynq_a9_qemu
 ${HOME}/git-rtems/configure \
         --prefix=${HOME}/sandbox/install \
-        --target=arm-rtems4.12 \
+        --target=arm-rtems5 \
         --enable-rtemsbsp=xilinx_zynq_a9_qemu \
         --disable-networking && \
         make && \
@@ -410,7 +410,7 @@ qemu-system-arm \
 	-net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:11 \
 	-net tap,ifname=qtap1,script=no,downscript=no \
 	-m 256M \
-	-kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/media01.exe
+	-kernel build/arm-rtems5-xilinx_zynq_a9_qemu/media01.exe
 -------------------------------------------------------------------------------
 
 Make sure that each Qemu instance uses its own MAC address to avoid an address
@@ -474,7 +474,7 @@ To run qemu:
 	-net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:11 \
 	-net vde,id=vde0,sock=/tmp/vde1
 	-m 256M \
-	-kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/rcconf02.exe
+	-kernel build/arm-rtems5-xilinx_zynq_a9_qemu/rcconf02.exe
 
 == Issues and TODO
 

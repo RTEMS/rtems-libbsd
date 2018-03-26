@@ -41,13 +41,25 @@ except:
     import sys
     sys.exit(1)
 
-import libbsd_waf
+import libbsd
+import waf_libbsd
+
+builder = None
+
+def create_builder():
+    global builder
+    if builder is None:
+        builder = waf_libbsd.Builder()
+        libbsd.load(builder)
+        builder.generate(rtems_version)
 
 def init(ctx):
+    create_builder();
     rtems.init(ctx, version = rtems_version, long_commands = True)
-    libbsd_waf.init(ctx)
+    builder.init(ctx)
 
 def options(opt):
+    create_builder();
     rtems.options(opt)
     opt.add_option("--enable-auto-regen",
                    action = "store_true",
@@ -73,18 +85,20 @@ def options(opt):
                    default = "2",
                    dest = "optimization",
                    help = "Set optimization level to OPTIMIZATION (-On compiler flag). Default is 2 (-O2).")
-    libbsd_waf.options(opt)
+    builder.options(opt)
 
 def bsp_configure(conf, arch_bsp):
+    create_builder();
     conf.check(header_name = "dlfcn.h", features = "c")
     conf.check(header_name = "rtems/pci.h", features = "c", mandatory = False)
     if not rtems.check_posix(conf):
         conf.fatal("RTEMS kernel POSIX support is disabled; configure RTEMS with --enable-posix")
     if rtems.check_networking(conf):
         conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
-    libbsd_waf.bsp_configure(conf, arch_bsp)
+    builder.bsp_configure(conf, arch_bsp)
 
 def configure(conf):
+    create_builder();
     if conf.options.auto_regen:
         conf.find_program("lex", mandatory = True)
         conf.find_program("rpcgen", mandatory = True)
@@ -95,8 +109,9 @@ def configure(conf):
     conf.env.FREEBSD_OPTIONS =conf.options.freebsd_options
     conf.env.OPTIMIZATION = conf.options.optimization
     rtems.configure(conf, bsp_configure)
-    libbsd_waf.configure(conf)
+    builder.configure(conf)
 
 def build(bld):
+    create_builder();
     rtems.build(bld)
-    libbsd_waf.build(bld)
+    builder.build(bld)

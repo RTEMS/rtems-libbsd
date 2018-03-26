@@ -484,12 +484,17 @@ class File(object):
 # Module - logical group of related files we can perform actions on
 #
 class Module(object):
-    def __init__(self, name):
+    def __init__(self, manager, name, enabled = True):
+        self.manager = manager
         self.name = name
+        self.enabled = enabled
         self.conditionalOn = "none"
         self.files = []
         self.cpuDependentSourceFiles = {}
         self.dependencies = []
+
+    def isEnabled(self):
+        return self.enabled
 
     def initCPUDependencies(self, cpu):
         if cpu not in self.cpuDependentSourceFiles:
@@ -639,8 +644,15 @@ class ModuleManager(object):
             raise KeyError('module %s not found' % (key))
         return self.modules[key]
 
-    def getModules(self):
-        return sorted(self.modules.keys())
+    def getAllModules(self):
+        if 'modules' in self.configuration:
+            return self.configuration['modules']
+        return []
+
+    def getEnabledModules(self):
+        if 'modules-enabled' in self.configuration:
+            return self.configuration['modules-enabled']
+        return []
 
     def addModule(self, module):
         self.modules[module.name] = module
@@ -656,3 +668,12 @@ class ModuleManager(object):
 
     def getConfiguration(self):
         return self.configuration
+
+    def setModuleConfigiuration(self):
+        mods = sorted(self.modules.keys())
+        self.configuration['modules'] = mods
+        self.configuration['modules-enabled'] = [m for m in mods if self.modules[m].isEnabled()]
+
+    def generateBuild(self):
+        for m in self.getEnabledModules():
+            self.modules[m].generate()

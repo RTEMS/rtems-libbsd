@@ -143,7 +143,8 @@ if isEarlyExit == True:
 
 try:
     build = builder.ModuleManager()
-    libbsd.loadModules(build)
+    libbsd.load(build)
+    build.generateBuild()
     build.processSource(isForward)
     builder.changedFileSummary(statsReport)
 except IOError as ioe:

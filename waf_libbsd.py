@@ -280,9 +280,11 @@ class Builder(builder.ModuleManager):
                     d['includes'] += frag[-1]
                     d['includes'] = list(set(d['includes']))
 
+        self.generateBuild()
+
         self.data = {}
 
-        for mn in self.getModules():
+        for mn in self.getEnabledModules():
             m = self[mn]
             if m.conditionalOn == "none":
                 for f in m.files:

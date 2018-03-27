@@ -2236,6 +2236,7 @@ def build(bld):
               'freebsd/sys/opencrypto/criov.c',
               'freebsd/sys/opencrypto/crypto.c',
               'freebsd/sys/opencrypto/cryptodeflate.c',
+              'freebsd/sys/opencrypto/cryptodev.c',
               'freebsd/sys/opencrypto/cryptosoft.c',
               'freebsd/sys/opencrypto/gfmult.c',
               'freebsd/sys/opencrypto/gmac.c',
@@ -2597,6 +2598,16 @@ def build(bld):
                 cflags = cflags,
                 includes = includes,
                 source = test_condvar01,
+                use = ["bsd"],
+                lib = ["m", "z"],
+                install_path = None)
+
+    test_crypto01 = ['testsuite/crypto01/test_main.c']
+    bld.program(target = "crypto01.exe",
+                features = "cprogram",
+                cflags = cflags,
+                includes = includes,
+                source = test_crypto01,
                 use = ["bsd"],
                 lib = ["m", "z"],
                 install_path = None)

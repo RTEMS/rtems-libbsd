@@ -2046,6 +2046,7 @@ def opencrypto(mm):
             'sys/opencrypto/criov.c',
             'sys/opencrypto/crypto.c',
             'sys/opencrypto/cryptodeflate.c',
+            'sys/opencrypto/cryptodev.c',
             'sys/opencrypto/cryptosoft.c',
             'sys/opencrypto/gfmult.c',
             'sys/opencrypto/gmac.c',
@@ -4443,6 +4444,7 @@ def tests(mm):
                                      '../termios/test_termios_utilities']))
     mod.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
                                                ['test_main'], runTest = False, netTest = True))
+    mod.addTest(mm.generator['test']('crypto01', ['test_main']))
     return mod
 
 #

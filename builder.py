@@ -66,6 +66,20 @@ verboseDetail = 2
 verboseMoreDetail = 3
 verboseDebug = 4
 
+def _cflagsIncludes(cflags, includes):
+    if type(cflags) is not list:
+        if cflags is not None:
+            _cflags = cflags.split(' ')
+        else:
+            _cflags = [None]
+    else:
+        _cflags = cflags
+    if type(includes) is not list:
+        _includes = [includes]
+    else:
+        _includes = includes
+    return _cflags, _includes
+
 def verbose(level = verboseInfo):
     return verboseLevel >= level
 
@@ -447,6 +461,119 @@ class BuildSystemFragmentComposer(object):
     def compose(self, path):
         return ''
 
+class SourceFileFragmentComposer(BuildSystemFragmentComposer):
+
+    def __init__(self, cflags = "default", includes = None):
+        self.cflags, self.includes = _cflagsIncludes(cflags, includes)
+
+    def compose(self, path):
+        if None in self.includes:
+            flags = self.cflags
+        else:
+            flags = self.cflags + self.includes
+        return ['sources', flags, ('default', None)], [path], self.cflags, self.includes
+
+class SourceFileIfHeaderComposer(SourceFileFragmentComposer):
+
+    def __init__(self, headers, cflags = "default", includes = None):
+        if headers is not list:
+            headers = [headers]
+        self.headers = headers
+        super(SourceFileIfHeaderComposer, self).__init__(cflags = cflags, includes = includes)
+
+    def compose(self, path):
+        r = SourceFileFragmentComposer.compose(self, path)
+        define_keys = ''
+        for h in self.headers:
+            h = h.upper()
+            for c in '\/-.':
+                h = h.replace(c, '_')
+            define_keys += ' ' + h
+        r[0][2] = (define_keys.strip(), self.headers)
+        return r
+
+class TestFragementComposer(BuildSystemFragmentComposer):
+
+    def __init__(self, testName, fileFragments, runTest = True, netTest = False):
+        self.testName = testName
+        self.fileFragments = fileFragments
+        self.runTest = runTest
+        self.netTest = netTest
+
+    def compose(self, path):
+        return ['tests', self.testName, ('default', None)], { 'files': self.fileFragments,
+                                                              'run': self.runTest,
+                                                              'net': self.netTest }
+
+class TestIfHeaderComposer(TestFragementComposer):
+
+    def __init__(self, testName, headers, fileFragments, runTest = True, netTest = False):
+        if headers is not list:
+            headers = [headers]
+        self.headers = headers
+        super(TestIfHeaderComposer, self).__init__(testName, fileFragments,
+                                                   runTest = runTest, netTest = netTest)
+
+    def compose(self, path):
+        r = TestFragementComposer.compose(self, path)
+        define_keys = ''
+        for h in self.headers:
+            h = h.upper()
+            for c in '\/-.':
+                h = h.replace(c, '_')
+            define_keys += ' ' + h
+        r[0][2] = (define_keys.strip(), self.headers)
+        return r
+
+class KVMSymbolsFragmentComposer(BuildSystemFragmentComposer):
+
+    def compose(self, path):
+        return ['KVMSymbols', 'files', ('default', None)], [path], self.includes
+
+class RPCGENFragmentComposer(BuildSystemFragmentComposer):
+
+    def compose(self, path):
+        return ['RPCGen', 'files', ('default', None)], [path]
+
+class RouteKeywordsFragmentComposer(BuildSystemFragmentComposer):
+
+    def compose(self, path):
+        return ['RouteKeywords', 'files', ('default', None)], [path]
+
+class LexFragmentComposer(BuildSystemFragmentComposer):
+
+    def __init__(self, sym, dep, cflags = None, includes = None):
+        self.sym = sym
+        self.dep = dep
+        self.cflags, self.includes = _cflagsIncludes(cflags, includes)
+
+    def compose(self, path):
+        d = { 'file': path,
+              'sym': self.sym,
+              'dep': self.dep }
+        if None not in self.cflags:
+            d['cflags'] = self.cflags
+        if None not in self.includes:
+            d['includes'] = self.includes
+        return ['lex', path, ('default', None)], d
+
+class YaccFragmentComposer(BuildSystemFragmentComposer):
+
+    def __init__(self, sym, header, cflags = None, includes = None):
+        self.sym = sym
+        self.header = header
+        self.cflags, self.includes = _cflagsIncludes(cflags, includes)
+
+    def compose(self, path):
+        d = { 'file': path,
+              'sym': self.sym,
+              'header': self.header }
+        if None not in self.cflags:
+            d['cflags'] = self.cflags
+        if None not in self.includes:
+            d['includes'] = self.includes
+        return ['yacc', path, ('default', None)], d
+
 #
 # File - a file in the source we move backwards and forwards.
 #
@@ -677,3 +804,29 @@ class ModuleManager(object):
     def generateBuild(self):
         for m in self.getEnabledModules():
             self.modules[m].generate()
+
+    def setGenerators(self):
+        self.generator['convert'] = Converter
+        self.generator['no-convert'] = NoConverter
+        self.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'] = FromFreeBSDToRTEMSUserSpaceSourceConverter
+        self.generator['from-RTEMS-To-FreeBSD-SourceConverter'] = FromRTEMSToFreeBSDSourceConverter
+        self.generator['buildSystemFragmentComposer'] = BuildSystemFragmentComposer
+
+        self.generator['file'] = File
+
+        self.generator['path'] = PathComposer
+        self.generator['freebsd-path'] = FreeBSDPathComposer
+        self.generator['rtems-path'] = RTEMSPathComposer
+        self.generator['cpu-path'] = CPUDependentFreeBSDPathComposer
+        self.generator['target-src-cpu--path'] = TargetSourceCPUDependentPathComposer
+
+        self.generator['source'] = SourceFileFragmentComposer
+        self.generator['test'] = TestFragementComposer
+        self.generator['kvm-symbols'] = KVMSymbolsFragmentComposer
+        self.generator['rpc-gen'] = RPCGENFragmentComposer
+        self.generator['route-keywords'] = RouteKeywordsFragmentComposer
+        self.generator['lex'] = LexFragmentComposer
+        self.generator['yacc'] = YaccFragmentComposer
+
+        self.generator['source-if-header'] = SourceFileIfHeaderComposer
+        self.generator['test-if-header'] = TestIfHeaderComposer

@@ -92,6 +92,9 @@ extern struct mtx devfs_de_interlock;
 extern struct sx clone_drain_lock;
 extern struct mtx cdevpriv_mtx;
 extern TAILQ_HEAD(cdev_priv_list, cdev_priv) cdevp_list;
+#ifdef __rtems__
+void devfs_fpdrop(struct file *);
+#endif /* __rtems__ */
 
 #endif /* _KERNEL */
 

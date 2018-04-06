@@ -801,8 +801,12 @@ class ModuleManager(object):
         self.configuration['modules'] = mods
         self.configuration['modules-enabled'] = [m for m in mods if self.modules[m].isEnabled()]
 
-    def generateBuild(self):
-        for m in self.getEnabledModules():
+    def generateBuild(self, only_enabled=True):
+        modules_to_process = self.getEnabledModules()
+        # Used for copy between FreeBSD and RTEMS
+        if only_enabled == False:
+            modules_to_process = self.getAllModules()
+        for m in modules_to_process:
             self.modules[m].generate()
 
     def setGenerators(self):

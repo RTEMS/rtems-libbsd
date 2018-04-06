@@ -43,23 +43,126 @@ except:
 
 import libbsd
 import waf_libbsd
+import os.path
+import runpy
+import sys
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+import waflib.Options
 
-builder = None
+builders = {}
 
-def create_builder():
-    global builder
-    if builder is None:
+BUILDSET_DIR = "buildset"
+BUILDSET_DEFAULT = "buildset/default.ini"
+
+def load_ini(conf, f):
+    ini = configparser.ConfigParser()
+    ini.read(f)
+    if not ini.has_section('general'):
+        conf.fatal("'{}' is missing a general section.".format(f))
+    if not ini.has_option('general', 'name'):
+        conf.fatal("'{}' is missing a general/name.".format(f))
+    if ini.has_option('general', 'extends'):
+        extends = ini.get('general', 'extends')
+        extendfile = None
+        basepath = os.path.dirname(f)
+        if os.path.isfile(os.path.join(basepath, extends)):
+            extendfile = os.path.join(basepath, extends)
+        elif os.path.isfile(os.path.join(BUILDSET_DIR, extends)):
+            extendfile = os.path.join(BUILDSET_DIR, extends)
+        else:
+            conf.fatal("'{}': Invalid file given for general/extends:'{}'"
+                .format(f, extends))
+        base = load_ini(conf, extendfile)
+        for s in ini.sections():
+            if not base.has_section(s):
+                base.add_section(s)
+            for o in ini.options(s):
+                val = ini.get(s, o)
+                base.set(s, o, val)
+        ini = base
+    return ini
+
+def load_config(conf, f):
+    ini = load_ini(conf, f)
+    config = {}
+
+    config['name'] = ini.get('general', 'name')
+
+    config['modules-enabled'] = []
+    mods = []
+    if ini.has_section('modules'):
+        mods = ini.options('modules')
+    for mod in mods:
+        if ini.getboolean('modules', mod):
+            config['modules-enabled'].append(mod)
+    return config
+
+def update_builders(ctx, buildset_opt):
+    global builders
+    builders = {}
+
+    buildsets = []
+    if buildset_opt == []:
+        buildset_opt.append(BUILDSET_DEFAULT)
+    for bs in buildset_opt:
+        if os.path.isdir(bs):
+            for f in os.listdir(bs):
+                if f[-4:] == ".ini":
+                    buildsets += [os.path.join(bs,f)]
+        else:
+            for f in bs.split(','):
+                buildsets += [f]
+
+    for bs in buildsets:
         builder = waf_libbsd.Builder()
         libbsd.load(builder)
+        bsconfig = load_config(ctx, bs)
+        bsname = bsconfig['name']
+        builder.updateConfiguration(bsconfig)
         builder.generate(rtems_version)
+        builders[bsname]=builder
+
+def bsp_init(ctx, env, contexts):
+    # This function generates the builders and adds build-xxx, clean-xxx and
+    # install-xxx targets for them.
+
+    if not 'buildset' in env.options:
+        # This happens if 'waf configure' hasn't been executed. In that case we
+        # create the builders during the configure phase. After the first time
+        # 'waf configure' is executed 'buildset' is read from the .lock_xxx
+        # file. In that case the builders are overwritten during configure
+        # phase. This is not really the cleanest solution but it works.
+        return
+
+    update_builders(ctx, env.options['buildset'])
+    for builder in builders:
+        # Update the contextes for build variants
+        for y in contexts:
+            newcmd = y.cmd + '-' + builder
+            newvariant = y.variant + '-' + builder
+            class context(y):
+                cmd = newcmd
+                variant = newvariant
+                libbsd_buildset_name = builder
+
+    # Transform the commands to per build variant commands
+    commands = []
+    for cmd in waflib.Options.commands:
+        if cmd.startswith(('build', 'clean', 'install')):
+            for builder in builders:
+                commands += [cmd + '-' + builder]
+        else:
+            commands += [cmd]
+    waflib.Options.commands = commands
 
 def init(ctx):
-    create_builder();
-    rtems.init(ctx, version = rtems_version, long_commands = True)
-    builder.init(ctx)
+    rtems.init(ctx, version = rtems_version, long_commands = True,
+               bsp_init = bsp_init)
 
 def options(opt):
-    create_builder();
     rtems.options(opt)
     opt.add_option("--enable-auto-regen",
                    action = "store_true",
@@ -85,20 +188,29 @@ def options(opt):
                    default = "2",
                    dest = "optimization",
                    help = "Set optimization level to OPTIMIZATION (-On compiler flag). Default is 2 (-O2).")
-    builder.options(opt)
+    opt.add_option("--buildset",
+                   action = "append",
+                   default = [],
+                   dest = "buildset",
+                   help = "Select build sets to build. If set to a directory, all .ini file in this directory will be used.")
 
 def bsp_configure(conf, arch_bsp):
-    create_builder();
     conf.check(header_name = "dlfcn.h", features = "c")
     conf.check(header_name = "rtems/pci.h", features = "c", mandatory = False)
     if not rtems.check_posix(conf):
         conf.fatal("RTEMS kernel POSIX support is disabled; configure RTEMS with --enable-posix")
     if rtems.check_networking(conf):
         conf.fatal("RTEMS kernel contains the old network support; configure RTEMS with --disable-networking")
-    builder.bsp_configure(conf, arch_bsp)
+    env = conf.env.derive()
+    for builder in builders:
+        ab = conf.env.RTEMS_ARCH_BSP
+        variant = ab + "-" + builder
+        conf.msg('Configure variant: ', variant)
+        conf.setenv(variant, env)
+        builders[builder].bsp_configure(conf, arch_bsp)
+        conf.setenv(ab)
 
 def configure(conf):
-    create_builder();
     if conf.options.auto_regen:
         conf.find_program("lex", mandatory = True)
         conf.find_program("rpcgen", mandatory = True)
@@ -108,10 +220,12 @@ def configure(conf):
     conf.env.NET_CONFIG = conf.options.net_config
     conf.env.FREEBSD_OPTIONS =conf.options.freebsd_options
     conf.env.OPTIMIZATION = conf.options.optimization
+    conf.env.BUILDSET = conf.options.buildset
+    if len(conf.env.BUILDSET) == 0:
+        conf.env.BUILDSET += [BUILDSET_DEFAULT]
+    update_builders(conf, conf.env.BUILDSET)
     rtems.configure(conf, bsp_configure)
-    builder.configure(conf)
 
 def build(bld):
-    create_builder();
     rtems.build(bld)
-    builder.build(bld)
+    builders[bld.libbsd_buildset_name].build(bld)

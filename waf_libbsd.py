@@ -141,12 +141,6 @@ class Builder(builder.ModuleManager):
             import pprint
             pprint.pprint(self.data)
 
-    def init(self, ctx):
-        pass
-
-    def options(self, opt):
-        pass
-
     def bsp_configure(self, conf, arch_bsp):
         if 'configure' in self.data:
             for cfg in self.data['configure']:
@@ -155,9 +149,6 @@ class Builder(builder.ModuleManager):
                                features = "c",
                                includes = conf.env.IFLAGS,
                                mandatory = False)
-
-    def configure(self, conf):
-        pass
 
     def build(self, bld):
         #

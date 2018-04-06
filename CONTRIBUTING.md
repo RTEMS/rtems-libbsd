@@ -67,8 +67,7 @@ freebsd-to-rtems.py [args]
 ```
 
 In its default mode of operation, freebsd-to-rtems.py is used to copy code
-from FreeBSD to the rtems-libbsd tree and perform transformations.  In forward
-mode, the script may be requested to just generate the Waf script.
+from FreeBSD to the rtems-libbsd tree and perform transformations.
 
 In *reverse mode*, this script undoes those transformations and copies
 the source code back to the *master* FreeBSD tree. This allows us to do
@@ -126,9 +125,9 @@ How to import code from FreeBSD
 * Run `./freebsd-to-rtems.py -R`
 * Run `./freebsd-to-rtems.py`
 * Run `git status` and make sure your working directory is clean.  If you see modified files, then the `freebsd-to-rtems.py` script needs to be fixed first.
-* Add the files to import to `libbsd.py`.
+* Add the files to import to `libbsd.py` and your intended build set (for example `buildset/default.ini`.
 * Run `./freebsd-to-rtems.py`
-* Immediately check in the imported files without the changes to `libbsd_waf.py`.  Do not touch the imported files yourself at this point.
+* Immediately check in the imported files without the changes to `libbsd.py` and the buildsets.  Do not touch the imported files yourself at this point.
 * Port the imported files to RTEMS.  See 'Rules for Modifying FreeBSD Source'.
 * Add a test to the testsuite if possible.
 * Run `./create-kernel-namespace.sh` if you imported kernel space headers.  Add only your new defines via `git add -p rtemsbsd/include/machine/rtems-bsd-kernel-namespace.h`.

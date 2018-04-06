@@ -1996,7 +1996,7 @@ class netinet6(builder.Module):
 class netipsec(builder.Module):
 
     def __init__(self, manager):
-        super(netipsec, self).__init__(manager, type(self).__name__, enabled = False)
+        super(netipsec, self).__init__(manager, type(self).__name__)
 
     def generate(self):
         mm = self.manager

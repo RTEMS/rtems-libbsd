@@ -44,6 +44,7 @@ import getopt
 import filecmp
 import difflib
 import codecs
+import copy
 
 #
 # Global controls.
@@ -614,14 +615,10 @@ class Module(object):
     def __init__(self, manager, name, enabled = True):
         self.manager = manager
         self.name = name
-        self.enabled = enabled
         self.conditionalOn = "none"
         self.files = []
         self.cpuDependentSourceFiles = {}
         self.dependencies = []
-
-    def isEnabled(self):
-        return self.enabled
 
     def initCPUDependencies(self, cpu):
         if cpu not in self.cpuDependentSourceFiles:
@@ -791,15 +788,19 @@ class ModuleManager(object):
             self.modules[m].processSource(direction)
 
     def setConfiguration(self, config):
-        self.configuration = config
+        self.configuration = copy.deepcopy(config)
 
     def getConfiguration(self):
         return self.configuration
 
+    def updateConfiguration(self, config):
+        self.configuration.update(config)
+
     def setModuleConfigiuration(self):
         mods = sorted(self.modules.keys())
         self.configuration['modules'] = mods
-        self.configuration['modules-enabled'] = [m for m in mods if self.modules[m].isEnabled()]
+        # Enabled modules are overwritten by config file. Default to all.
+        self.configuration['modules-enabled'] = mods
 
     def generateBuild(self, only_enabled=True):
         modules_to_process = self.getEnabledModules()

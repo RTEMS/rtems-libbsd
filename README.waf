@@ -73,7 +73,8 @@ cd rtems-libbsd
 git submodule init
 git submodule update rtems_waf
 waf configure --prefix="$sandbox/rtems-4.12" \
-  --rtems-bsps=arm/xilinx_zynq_a9_qemu
+  --rtems-bsps=arm/xilinx_zynq_a9_qemu \
+  --buildset=buildset/default.ini
 waf
 waf install
 qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
@@ -132,12 +133,17 @@ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
    '--rtems-archs=arm,sparc,i386' or
    '--rtems-bsps=arm/xilinx_zynq_a9_qemu,sparc/sis,i386/pc586' to build for
    more than BSP at a time.  Note, you must provide the architecture and BSP as
-   a pair. Providing just the BSP name will fail:
+   a pair. Providing just the BSP name will fail. This call also explicitly
+   provides a buildset via the '--buildset=buildset/default.ini' option. If no
+   buildset is provided the default one (which is the same as the one provided
+   explicitly here) will be used. You can also provide multiple buildsets as a
+   coma separated list or via multiple '--buildset=x' options.
 
    $ cd "$sandbox"
    $ cd rtems-libbsd
    $ waf configure --prefix="$sandbox/rtems-4.12" \
-       --rtems-bsps=arm/xilinx_zynq_a9_qemu
+       --rtems-bsps=arm/xilinx_zynq_a9_qemu \
+       --buildset=buildset/default.ini
 
 8. Build and install.  The LibBSD package will be installed into the prefix
    provided to configure:

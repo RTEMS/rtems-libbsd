@@ -833,53 +833,6 @@ class dev_usb(builder.Module):
         )
 
 #
-# USB Add Ons
-#
-class dev_usb_add_on(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_usb_add_on, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/usb/usb_pci.h',
-                'sys/dev/usb/usb_compat_linux.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/usb/usb_compat_linux.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
-# USB Bluetooth
-#
-class dev_usb_bluetooth(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_usb_bluetooth, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addDependency(mm['dev_usb'])
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/usb/bluetooth/ng_ubt_var.h'
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/usb/bluetooth/ng_ubt.c',
-                'sys/dev/usb/bluetooth/ubtbcmfw.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
 # USB Controller.
 #
 class dev_usb_controller(builder.Module):
@@ -919,45 +872,6 @@ class dev_usb_controller(builder.Module):
         )
 
 #
-# USB Controller Add Ons
-#
-class dev_usb_controller_add_on(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_usb_controller_add_on, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addDependency(mm['dev_usb'])
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/usb/controller/at91dci.h',
-                'sys/dev/usb/controller/atmegadci.h',
-                'sys/dev/usb/controller/musb_otg.h',
-                'sys/dev/usb/controller/uss820dci.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/usb/controller/at91dci_atmelarm.c',
-                'sys/dev/usb/controller/at91dci.c',
-                'sys/dev/usb/controller/atmegadci_atmelarm.c',
-                'sys/dev/usb/controller/atmegadci.c',
-                'sys/dev/usb/controller/ehci_ixp4xx.c',
-                'sys/dev/usb/controller/ehci_pci.c',
-                'sys/dev/usb/controller/musb_otg.c',
-                'sys/dev/usb/controller/ehci_mbus.c',
-                'sys/dev/usb/controller/musb_otg_atmelarm.c',
-                'sys/dev/usb/controller/ohci_atmelarm.c',
-                'sys/dev/usb/controller/ohci_pci.c',
-                'sys/dev/usb/controller/uhci_pci.c',
-                'sys/dev/usb/controller/uss820dci_atmelarm.c',
-                'sys/dev/usb/controller/uss820dci.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
 # USB Input
 #
 class dev_usb_input(builder.Module):
@@ -981,30 +895,6 @@ class dev_usb_input(builder.Module):
                 'sys/dev/usb/input/ukbd.c',
                 'sys/dev/usb/input/ums.c',
                 'sys/dev/usb/input/wsp.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
-# USB Misc.
-#
-class dev_usb_misc(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_usb_misc, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addDependency(mm['dev_usb'])
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/usb/misc/udbp.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/usb/misc/udbp.c',
-                'sys/dev/usb/misc/ufm.c',
             ],
             mm.generator['source']()
         )
@@ -1146,30 +1036,6 @@ class dev_usb_storage(builder.Module):
         )
 
 #
-# USB Storage Add Ons
-#
-class dev_usb_storage_add_on(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_usb_storage_add_on, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addDependency(mm['dev_usb'])
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/usb/storage/rio500_usb.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/usb/storage/urio.c',
-                'sys/dev/usb/storage/ustorage_fs.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
 # BBB USB
 #
 class dev_usb_controller_bbb(builder.Module):
@@ -1202,32 +1068,6 @@ class dev_usb_controller_bbb(builder.Module):
                 'sys/arm/ti/ti_prcm.c',
                 'sys/arm/ti/am335x/am335x_musb.c',
                 'sys/dev/usb/controller/musb_otg.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
-# USB Template
-#
-class dev_usb_template(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_usb_template, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addDependency(mm['dev_usb'])
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/usb/template/usb_template.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/usb/template/usb_template.c',
-                'sys/dev/usb/template/usb_template_cdce.c',
-                'sys/dev/usb/template/usb_template_msc.c',
-                'sys/dev/usb/template/usb_template_mtp.c',
             ],
             mm.generator['source']()
         )
@@ -1775,31 +1615,6 @@ class dev_nic_smc(builder.Module):
         self.addKernelSpaceSourceFiles(
             [
                 'sys/dev/smc/if_smc.c',
-            ],
-            mm.generator['source']()
-        )
-
-#
-# Crystal Semiconductor CS8900
-#
-class dev_nic_cs(builder.Module):
-
-    def __init__(self, manager):
-        super(dev_nic_cs, self).__init__(manager, type(self).__name__, enabled = False)
-
-    def generate(self):
-        mm = self.manager
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/dev/cs/if_csreg.h',
-                'sys/dev/cs/if_csvar.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/dev/cs/if_cs.c',
-                'sys/dev/cs/if_cs_isa.c',
-                'sys/dev/cs/if_cs_pccard.c',
             ],
             mm.generator['source']()
         )
@@ -4983,13 +4798,9 @@ def load(mm):
     mm.addModule(evdev(mm))
 
     mm.addModule(dev_usb(mm))
-    mm.addModule(dev_usb_add_on(mm))
     mm.addModule(dev_usb_controller(mm))
-    mm.addModule(dev_usb_controller_add_on(mm))
     mm.addModule(dev_usb_quirk(mm))
-    mm.addModule(dev_usb_misc(mm))
 
-    mm.addModule(dev_usb_bluetooth(mm))
     mm.addModule(dev_usb_input(mm))
     mm.addModule(dev_usb_serial(mm))
     mm.addModule(dev_usb_net(mm))
@@ -4998,10 +4809,7 @@ def load(mm):
 
     mm.addModule(cam(mm))
     mm.addModule(dev_usb_storage(mm))
-    mm.addModule(dev_usb_storage_add_on(mm))
     mm.addModule(dev_usb_controller_bbb(mm))
-
-    mm.addModule(dev_usb_template(mm))
 
     mm.addModule(net(mm))
     mm.addModule(netinet(mm))
@@ -5026,8 +4834,6 @@ def load(mm):
     mm.addModule(dev_nic_dc(mm))
     mm.addModule(dev_nic_smc(mm))
     mm.addModule(dev_nic_broadcomm(mm))
-    # TBD Requires ISA and PCCard Support to be pulled in.
-    mm.addModule(dev_nic_cs(mm))
 
     # Add in_chksum
     mm.addModule(in_cksum(mm))

@@ -37,6 +37,7 @@ from __future__ import print_function
 import os
 import sys
 import tempfile
+import re
 
 import builder
 
@@ -155,6 +156,8 @@ class Builder(builder.ModuleManager):
         # Localize the config.
         #
         config = self.getConfiguration()
+        module_header_path = "rtems/bsd"
+        module_header_name = "modules.h"
 
         #
         #
@@ -255,6 +258,30 @@ class Builder(builder.ModuleManager):
                         target = targetheader,
                         source = header,
                         is_copy = True)
+
+        #
+        # Generate a header that contains information about enabled modules
+        #
+        def rtems_libbsd_modules_h_gen(self):
+            output = ""
+            output += '/*\n'
+            output += ' * This file contains a list of modules that have been\n'
+            output += ' * enabled during libbsd build. It is a generated file\n'
+            output += ' * DO NOT EDIT MANUALLY.\n'
+            output += ' */'
+            output += '\n'
+            output += '#ifndef RTEMS_BSD_MODULES_H\n'
+            for mod in config['modules-enabled']:
+                modname = re.sub("[^A-Za-z0-9]", "_", mod.upper())
+                output += '#define RTEMS_BSD_MODULE_{} 1\n'.format(modname)
+            output += '#endif /* RTEMS_BSD_MODULES_H */\n'
+            self.outputs[0].write(output)
+        modules_h_file_with_path = os.path.join(buildinclude,
+                                                module_header_path,
+                                                module_header_name)
+        bld(rule = rtems_libbsd_modules_h_gen,
+            target = modules_h_file_with_path,
+            before = ['c', 'cxx'])
 
         #
         # Add the specific rule based builders
@@ -456,6 +483,11 @@ class Builder(builder.ModuleManager):
                                       start_dir.ant_glob(headers[1]),
                                       cwd = start_dir,
                                       relative_trick = True)
+
+        bld.install_files(os.path.join("${PREFIX}", arch_inc_path,
+                                       module_header_path),
+                          modules_h_file_with_path,
+                          cwd = bld.path)
 
         #
         # Tests

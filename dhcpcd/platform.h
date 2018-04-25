@@ -27,6 +27,9 @@
 
 #ifndef PLATFORM_H
 #define PLATFORM_H
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_inet6.h>
+#endif /* __rtems__ */
 
 char *hardware_platform(void);
 #ifdef INET6

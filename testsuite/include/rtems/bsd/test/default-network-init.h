@@ -47,6 +47,7 @@
 #include <rtems/printer.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/modules.h>
 
 #if defined(DEFAULT_NETWORK_DHCPCD_ENABLE) && \
     !defined(DEFAULT_NETWORK_NO_STATIC_IFCONFIG)
@@ -327,7 +328,21 @@ Init(rtems_task_argument arg)
 
 #include <rtems/netcmds-config.h>
 
+#ifdef RTEMS_BSD_MODULE_USER_SPACE_WLANSTATS
+  #define SHELL_WLANSTATS_COMMAND &rtems_shell_WLANSTATS_Command,
+#else
+  #define SHELL_WLANSTATS_COMMAND
+#endif
+
+#ifdef RTEMS_BSD_MODULE_USR_SBIN_WPA_SUPPLICANT
+  #define SHELL_WPA_SUPPLICANT_COMMAND &rtems_shell_WPA_SUPPLICANT_Command,
+#else
+  #define SHELL_WPA_SUPPLICANT_COMMAND
+#endif
+
 #define CONFIGURE_SHELL_USER_COMMANDS \
+  SHELL_WLANSTATS_COMMAND \
+  SHELL_WPA_SUPPLICANT_COMMAND \
   &bsp_interrupt_shell_command, \
   &rtems_shell_ARP_Command, \
   &rtems_shell_HOSTNAME_Command, \
@@ -337,9 +352,7 @@ Init(rtems_task_argument arg)
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_TCPDUMP_Command, \
   &rtems_shell_SYSCTL_Command, \
-  &rtems_shell_VMSTAT_Command, \
-  &rtems_shell_WLANSTATS_Command, \
-  &rtems_shell_WPA_SUPPLICANT_Command
+  &rtems_shell_VMSTAT_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE

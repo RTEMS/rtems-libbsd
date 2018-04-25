@@ -42,6 +42,7 @@
 
 #define __FreeBSD__ 1
 
+#include <rtems/bsd/local/opt_inet6.h>
 #include <machine/rtems-bsd-version.h>
 #include <sys/cdefs.h>
 

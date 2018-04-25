@@ -2561,7 +2561,7 @@ class user_space(builder.Module):
                 'lib/libc/db/recno/rec_seq.c',
                 'lib/libc/db/recno/rec_utils.c',
             ],
-            mm.generator['source']('-D__DBINTERFACE_PRIVATE -DINET6')
+            mm.generator['source']('-D__DBINTERFACE_PRIVATE')
         )
         self.addRTEMSHeaderFiles(
             [
@@ -2804,7 +2804,7 @@ class user_space(builder.Module):
                 'usr.bin/vmstat/vmstat.c',
                 'usr.sbin/arp/arp.c',
             ],
-            mm.generator['source'](['-DINET6', '-DINET'])
+            mm.generator['source'](['-DINET'])
         )
 
 #
@@ -2829,7 +2829,7 @@ class user_space_wlanstats(builder.Module):
                 'tools/tools/net80211/wlanstats/wlanstats.c',
                 'lib/libbsdstat/bsdstat.c',
             ],
-            mm.generator['source'](['-DINET6', '-DINET'])
+            mm.generator['source']([])
         )
 
 #
@@ -3840,7 +3840,6 @@ class contrib_libpcap(builder.Module):
         mm = self.manager
         cflags = ['-D__FreeBSD__=1',
                   '-DBSD=1',
-                  '-DINET6',
                   '-D_U_=__attribute__((unused))',
                   '-DHAVE_LIMITS_H=1',
                   '-DHAVE_INTTYPES=1',
@@ -4151,7 +4150,6 @@ class usr_sbin_tcpdump(builder.Module):
                 'contrib/tcpdump/util-print.c',
             ],
             mm.generator['source'](['-D__FreeBSD__=1',
-                                    '-DINET6',
                                     '-D_U_=__attribute__((unused))',
                                     '-DHAVE_CONFIG_H=1',
                                     '-DHAVE_NET_PFVAR_H=1'],
@@ -4558,7 +4556,7 @@ class dhcpcd(builder.Module):
                 'dhcpcd/compat/pselect.c',
                 'dhcpcd/crypt/hmac_md5.c',
             ],
-            mm.generator['source']('-D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -DINET6')
+            mm.generator['source']('-D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET')
         )
         self.addRTEMSSourceFiles(
             [

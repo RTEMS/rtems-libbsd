@@ -186,6 +186,7 @@ def revertFixIncludes(data):
     data = re.sub('#include <util.h>',     '#include <rtems/bsd/util.h>', data)
     data = re.sub('#include <bsd.h>',      '#include <rtems/bsd/bsd.h>', data)
     data = re.sub('#include <zerocopy.h>', '#include <rtems/bsd/zerocopy.h>', data)
+    data = re.sub('#include <modules.h>',  '#include <rtems/bsd/modules.h>', data)
     return data
 
 # fix include paths inside a C or .h file

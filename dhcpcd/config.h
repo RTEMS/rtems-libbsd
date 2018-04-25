@@ -14,6 +14,7 @@
 #include <spawn.h>
 #include <stdint.h>
 #include "compat/pollts.h"
+#include <rtems/bsd/local/opt_inet6.h>
 uint32_t arc4random(void);
 static inline int dhcpcd_flock(int a, int b) { return -1; }
 #define flock(a, b) dhcpcd_flock(a, b)

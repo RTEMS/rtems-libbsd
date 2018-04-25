@@ -27,6 +27,10 @@
 
 /* TODO: We should decline dupliate addresses detected */
 
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_inet6.h>
+#endif /* __rtems__ */
+#if defined(__rtems__) && defined(INET6)
 #include <sys/stat.h>
 #include <sys/utsname.h>
 
@@ -2809,3 +2813,4 @@ dhcp6_env(char **env, const char *prefix, const struct interface *ifp,
 
 	return n;
 }
+#endif /* defined(__rtems__) && defined(INET6) */

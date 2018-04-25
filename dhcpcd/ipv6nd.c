@@ -25,6 +25,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_inet6.h>
+#endif /* __rtems__ */
+#if defined(__rtems__) && defined(INET6)
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -1833,3 +1837,4 @@ ipv6nd_startrs(struct interface *ifp)
 	ipv6nd_sendrsprobe(ifp);
 	return 0;
 }
+#endif /* defined(__rtems__) && defined(INET6) */

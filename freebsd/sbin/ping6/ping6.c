@@ -69,6 +69,7 @@
  * SUCH DAMAGE.
  */
 
+#if defined(__rtems__) && defined(INET6)
 #ifndef lint
 static const char copyright[] =
 "@(#) Copyright (c) 1989, 1993\n\
@@ -2835,3 +2836,4 @@ usage(void)
 	    "             [-X timeout] [hops ...] host\n");
 	exit(1);
 }
+#endif /* defined(__rtems__) && defined(INET6) */

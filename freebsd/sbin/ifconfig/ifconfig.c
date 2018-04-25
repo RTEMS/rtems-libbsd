@@ -54,6 +54,7 @@ static const char rcsid[] =
 #undef option
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
+#include <rtems/bsd/modules.h>
 #endif /* __rtems__ */
 #include <sys/param.h>
 #include <sys/ioctl.h>
@@ -382,8 +383,12 @@ mainwrapper(int argc, char *argv[])
 	gre_ctor();
 	group_ctor();
 	ifmedia_ctor();
+#ifdef RTEMS_BSD_MODULE_IEEE80211
 	ieee80211_ctor();
+#endif
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	inet6_ctor();
+#endif
 	inet_ctor();
 	lagg_ctor();
 	link_ctor();

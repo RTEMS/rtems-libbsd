@@ -120,6 +120,14 @@ devices (you can run multiple test instances on one virtual network).
 The build system based on the Waf build system. To build with Waf please refer
 to the README.waf file.
 
+Note that the libbsd supports different buildsets. These can be selected with
+the `--buildset=xxx.ini` option during the configure phase. Take a look at the
+comments in `buildset/*.ini` to see which build sets are officially supported.
+
+You can also create and provide your own buildset configuration. But remember
+that it's quite easy to break something by disabling the wrong modules. Only the
+configurations in the `buildset` directory are officially maintained.
+
 ===== Example Configuration for Network Tests =====
 
 If you need some other IP configuration for the network tests that use a fixed
@@ -1173,9 +1181,12 @@ The following is necessary to use PF on RTEMS:
 == Wireless Network (WLAN) ==
 
 The libbsd provides a basic support for WLAN. Note that currently this support
-is still in an early state. The following gives a rough overview over the
-necessary steps to connect to an encrypted network with an RTL8188EU based WiFi
-dongle:
+is still in an early state. The WLAN support is _not_ enabled in the default
+buildset. You have to configure libbsd with the
+`--buildset=buildset/everything.ini` to enable that feature.
+
+The following gives a rough overview over the necessary steps to connect to an
+encrypted network with an RTL8188EU based WiFi dongle:
 
 - Reference all necessary module for your BSP. For some BSPs this is already
   done in the nexus-devices.h:

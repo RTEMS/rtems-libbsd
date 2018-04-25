@@ -200,7 +200,16 @@ early_initialization(void)
 
 #include <rtems/netcmds-config.h>
 
+#ifdef RTEMS_BSD_MODULE_USR_SBIN_WPA_SUPPLICANT
+  #define SHELL_WPA_SUPPLICANT_COMMANDS \
+    &rtems_shell_WPA_SUPPLICANT_Command, \
+    &rtems_shell_WPA_SUPPLICANT_FORK_Command,
+#else
+  #define SHELL_WPA_SUPPLICANT_COMMANDS
+#endif
+
 #define CONFIGURE_SHELL_USER_COMMANDS \
+  SHELL_WPA_SUPPLICANT_COMMANDS \
   &bsp_interrupt_shell_command, \
   &rtems_shell_ARP_Command, \
   &rtems_shell_HOSTNAME_Command, \
@@ -209,9 +218,7 @@ early_initialization(void)
   &rtems_shell_NETSTAT_Command, \
   &rtems_shell_SYSCTL_Command, \
   &rtems_shell_IFCONFIG_Command, \
-  &rtems_shell_VMSTAT_Command, \
-  &rtems_shell_WPA_SUPPLICANT_Command, \
-  &rtems_shell_WPA_SUPPLICANT_FORK_Command
+  &rtems_shell_VMSTAT_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE

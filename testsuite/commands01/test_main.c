@@ -40,6 +40,7 @@
 #include <machine/rtems-bsd-commands.h>
 
 #include <rtems/libcsupport.h>
+#include <rtems/bsd/modules.h>
 
 #define TEST_NAME "LIBBSD COMMANDS 1"
 
@@ -108,6 +109,7 @@ test_ifconfig_lo0(void)
 		"255.255.255.0",
 		NULL
 	};
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	char *lo0_inet6[] = {
 		"ifconfig",
 		"lo0",
@@ -117,37 +119,46 @@ test_ifconfig_lo0(void)
 		"128",
 		NULL
 	};
+#endif /* RTEMS_BSD_MODULE_NETINET6 */
 	char *status[] = {
 		"ifconfig",
 		"lo0",
 		"inet",
 		NULL
 	};
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	char *status_inet6[] = {
 		"ifconfig",
 		"lo0",
 		"inet6",
 		NULL
 	};
+#endif /* RTEMS_BSD_MODULE_NETINET6 */
 
 	exit_code = rtems_bsd_command_ifconfig(ARGC(lo0), lo0);
 	assert(exit_code == EX_OK);
 
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	exit_code = rtems_bsd_command_ifconfig(ARGC(lo0_inet6), lo0_inet6);
 	assert(exit_code == EX_OK);
+#endif /* RTEMS_BSD_MODULE_NETINET6 */
 
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_ifconfig(ARGC(status), status);
 	assert(exit_code == EX_OK);
 
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	exit_code = rtems_bsd_command_ifconfig(ARGC(status_inet6), status_inet6);
 	assert(exit_code == EX_OK);
+#endif /* RTEMS_BSD_MODULE_NETINET6 */
 
 	rtems_resource_snapshot_take(&snapshot);
 
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	exit_code = rtems_bsd_command_ifconfig(ARGC(status_inet6), status_inet6);
 	assert(exit_code == EX_OK);
+#endif /* RTEMS_BSD_MODULE_NETINET6 */
 
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
@@ -195,6 +206,7 @@ test_ping(void)
 static void
 test_ping6(void)
 {
+#ifdef RTEMS_BSD_MODULE_NETINET6
 	rtems_resource_snapshot snapshot;
 	int exit_code;
 	char *ping6[] = {
@@ -214,6 +226,7 @@ test_ping6(void)
 	assert(exit_code == EXIT_SUCCESS);
 
 	assert(rtems_resource_snapshot_check(&snapshot));
+#endif
 }
 
 static void
@@ -260,6 +273,7 @@ test_netstat(void)
 static void
 test_wlanstats(void)
 {
+#ifdef RTEMS_BSD_MODULE_USER_SPACE_WLANSTATS
 	rtems_resource_snapshot snapshot;
 	char *wlanstats[] = {
 		"wlanstats",
@@ -271,6 +285,7 @@ test_wlanstats(void)
 	rtems_resource_snapshot_take(&snapshot);
 	rtems_bsd_command_wlanstats(ARGC(wlanstats), wlanstats);
 	assert(rtems_resource_snapshot_check(&snapshot));
+#endif /* RTEMS_BSD_MODULE_USER_SPACE_WLANSTATS */
 }
 
 static void

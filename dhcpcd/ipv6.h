@@ -31,6 +31,9 @@
 #include <sys/queue.h>
 
 #include <netinet/in.h>
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_inet6.h>
+#endif /* __rtems__ */
 
 #define ALLROUTERS "ff02::2"
 #define HOPLIMIT 255

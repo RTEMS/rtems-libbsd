@@ -25,6 +25,10 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_inet6.h>
+#endif /* __rtems__ */
+#if defined(__rtems__) && defined(INET6)
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1045,3 +1049,4 @@ ipv6_buildroutes(void)
 	free(routes);
 	routes = nrs;
 }
+#endif /* defined(__rtems__) && defined(INET6) */

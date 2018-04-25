@@ -32,7 +32,6 @@
 
 /* #ident	"@(#)rpcb_clnt.c	1.27	94/04/24 SMI" */
 
-
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)rpcb_clnt.c 1.30 89/06/21 Copyr 1988 Sun Micro";
 #endif

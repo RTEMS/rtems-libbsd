@@ -185,6 +185,7 @@ class Builder(builder.ModuleManager):
         # Include paths
         #
         includes = []
+        buildinclude = 'build-include'
         if 'cpu-include-paths' in config:
             cpu = bld.get_env()['RTEMS_ARCH']
             if cpu == "i386":
@@ -194,7 +195,10 @@ class Builder(builder.ModuleManager):
         if 'include-paths' in config:
             includes += config['include-paths']
         if 'build-include-path' in config:
-            includes += config['build-include-path']
+            buildinclude = config['build-include-path']
+            if not isinstance(buildinclude, basestring):
+                buildinclude = buildinclude[0]
+        includes += [buildinclude]
 
         #
         # Collect the libbsd uses
@@ -242,7 +246,7 @@ class Builder(builder.ModuleManager):
                 hp for hp in config['header-paths'] if hp[2] != '' and not hp[0].endswith(hp[2])
             ]
             for headers in header_build_copy_paths:
-                target = os.path.join("build-include", headers[2])
+                target = os.path.join(buildinclude, headers[2])
                 start_dir = bld.path.find_dir(headers[0])
                 for header in start_dir.ant_glob(headers[1]):
                     relsourcepath = header.path_from(start_dir)

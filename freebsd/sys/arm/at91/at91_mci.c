@@ -74,7 +74,7 @@ __FBSDID("$FreeBSD$");
 
 #define AT91_MCI_HAS_4WIRE 1
 
-uint32_t at91_master_clock = BOARD_MCK;
+#define at91_master_clock BOARD_MCK
 
 static sXdmad *pXdmad = &XDMAD_Instance;
 #endif /* __rtems__ */

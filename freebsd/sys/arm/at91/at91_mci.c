@@ -70,6 +70,7 @@ __FBSDID("$FreeBSD$");
 #endif /* __rtems__ */
 #if defined(__rtems__) && defined(LIBBSP_ARM_ATSAM_BSP_H)
 #ifdef __rtems__
+#include <rtems/irq-extension.h>
 #include <libchip/chip.h>
 
 #define AT91_MCI_HAS_4WIRE 1
@@ -150,7 +151,11 @@ static sXdmad *pXdmad = &XDMAD_Instance;
  * original driver. But that would need some rework. */
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 static int mci_debug;
+#else /* __rtems__ */
+#define	mci_debug 0
+#endif /* __rtems__ */
 
 struct at91_mci_softc {
 	void *intrhand;			/* Interrupt handle */
@@ -169,6 +174,9 @@ struct at91_mci_softc {
 	struct resource *irq_res;	/* IRQ resource */
 	struct resource	*mem_res;	/* Memory resource */
 	struct mtx sc_mtx;
+#ifdef __rtems__
+	RTEMS_INTERRUPT_LOCK_MEMBER(sc_lock)
+#endif /* __rtems__ */
 	bus_dma_tag_t dmatag;
 	struct mmc_host host;
 	int bus_busy;
@@ -204,6 +212,7 @@ static void at91_mci_read_done(struct at91_mci_softc *sc, uint32_t sr);
 static void at91_mci_write_done(struct at91_mci_softc *sc, uint32_t sr);
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 #define AT91_MCI_LOCK(_sc)		mtx_lock(&(_sc)->sc_mtx)
 #define	AT91_MCI_UNLOCK(_sc)		mtx_unlock(&(_sc)->sc_mtx)
 #define AT91_MCI_LOCK_INIT(_sc) \
@@ -212,6 +221,23 @@ static void at91_mci_write_done(struct at91_mci_softc *sc, uint32_t sr);
 #define AT91_MCI_LOCK_DESTROY(_sc)	mtx_destroy(&_sc->sc_mtx);
 #define AT91_MCI_ASSERT_LOCKED(_sc)	mtx_assert(&_sc->sc_mtx, MA_OWNED);
 #define AT91_MCI_ASSERT_UNLOCKED(_sc) mtx_assert(&_sc->sc_mtx, MA_NOTOWNED);
+#else /* __rtems__ */
+#define AT91_MCI_LOCK(_sc) \
+	rtems_interrupt_lock_context at91_mci_lock_context; \
+	rtems_interrupt_lock_acquire(&(_sc)->sc_lock, &at91_mci_lock_context)
+#define	AT91_MCI_UNLOCK(_sc) \
+	rtems_interrupt_lock_release(&(_sc)->sc_lock, &at91_mci_lock_context)
+#define AT91_MCI_LOCK_INIT(_sc) \
+	rtems_interrupt_lock_initialize(&(_sc)->sc_lock, \
+	    device_get_nameunit((_sc)->dev))
+#define AT91_MCI_LOCK_DESTROY(_sc) \
+	rtems_interrupt_lock_destroy(&(_sc)->sc_mtx)
+#define AT91_MCI_BUS_LOCK(_sc)		mtx_lock(&(_sc)->sc_mtx)
+#define	AT91_MCI_BUS_UNLOCK(_sc)		mtx_unlock(&(_sc)->sc_mtx)
+#define AT91_MCI_BUS_LOCK_INIT(_sc) \
+	mtx_init(&_sc->sc_mtx, device_get_nameunit((_sc)->dev), \
+	    "mci", MTX_DEF)
+#endif /* __rtems__ */
 
 static inline uint32_t
 RD4(struct at91_mci_softc *sc, bus_size_t off)
@@ -482,6 +508,7 @@ at91_mci_attach(device_t dev)
 	if (rc != XDMAD_OK)
 		goto out;
 
+	AT91_MCI_BUS_LOCK_INIT(sc);
 #endif /* __rtems__ */
 	AT91_MCI_LOCK_INIT(sc);
 
@@ -516,8 +543,14 @@ at91_mci_attach(device_t dev)
 	/*
 	 * Activate the interrupt
 	 */
+#ifndef __rtems__
 	err = bus_setup_intr(dev, sc->irq_res, INTR_TYPE_MISC | INTR_MPSAFE,
 	    NULL, at91_mci_intr, sc, &sc->intrhand);
+#else /* __rtems__ */
+	err = rtems_interrupt_handler_install(rman_get_start(sc->irq_res),
+	    device_get_nameunit(dev), RTEMS_INTERRUPT_SHARED, at91_mci_intr,
+	    sc);
+#endif /* __rtems__ */
 	if (err) {
 		AT91_MCI_LOCK_DESTROY(sc);
 		goto out;
@@ -545,8 +578,10 @@ at91_mci_attach(device_t dev)
 	    CTLFLAG_RW, &sc->allow_overclock, 0,
 	    "Allow up to 30MHz clock for 25MHz request when next highest speed 15MHz or less.");
 
+#ifndef __rtems__
 	SYSCTL_ADD_UINT(sctx, SYSCTL_CHILDREN(soid), OID_AUTO, "debug",
 	    CTLFLAG_RWTUN, &mci_debug, 0, "enable debug output");
+#endif /* __rtems__ */
 
 	/*
 	 * Our real min freq is master_clock/512, but upper driver layers are
@@ -1119,11 +1154,19 @@ at91_mci_acquire_host(device_t brdev, device_t reqdev)
 	struct at91_mci_softc *sc = device_get_softc(brdev);
 	int err = 0;
 
+#ifndef __rtems__
 	AT91_MCI_LOCK(sc);
+#else /* __rtems__ */
+	AT91_MCI_BUS_LOCK(sc);
+#endif /* __rtems__ */
 	while (sc->bus_busy)
 		msleep(sc, &sc->sc_mtx, PZERO, "mciah", hz / 5);
 	sc->bus_busy++;
+#ifndef __rtems__
 	AT91_MCI_UNLOCK(sc);
+#else /* __rtems__ */
+	AT91_MCI_BUS_UNLOCK(sc);
+#endif /* __rtems__ */
 	return (err);
 }
 
@@ -1132,10 +1175,18 @@ at91_mci_release_host(device_t brdev, device_t reqdev)
 {
 	struct at91_mci_softc *sc = device_get_softc(brdev);
 
+#ifndef __rtems__
 	AT91_MCI_LOCK(sc);
+#else /* __rtems__ */
+	AT91_MCI_BUS_LOCK(sc);
+#endif /* __rtems__ */
 	sc->bus_busy--;
 	wakeup(sc);
+#ifndef __rtems__
 	AT91_MCI_UNLOCK(sc);
+#else /* __rtems__ */
+	AT91_MCI_BUS_UNLOCK(sc);
+#endif /* __rtems__ */
 	return (0);
 }
 

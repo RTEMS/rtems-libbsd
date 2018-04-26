@@ -68,7 +68,7 @@ __FBSDID("$FreeBSD$");
 #ifdef __rtems__
 #include <bsp.h>
 #endif /* __rtems__ */
-#if defined(__rtems) && defined(LIBBSP_ARM_ATSAM_BSP_H)
+#if defined(__rtems__) && defined(LIBBSP_ARM_ATSAM_BSP_H)
 #ifdef __rtems__
 #include <libchip/chip.h>
 

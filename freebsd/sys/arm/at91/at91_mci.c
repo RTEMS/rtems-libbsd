@@ -147,7 +147,7 @@ static sXdmad *pXdmad = &XDMAD_Instance;
 /* FIXME: It would be better to split the DMA up in that case like in the
  * original driver. But that would need some rework. */
 #else /* __rtems__ */
-#define	MAX_BLOCKS 32
+#define	MAX_BLOCKS 256
 #endif /* __rtems__ */
 
 #ifndef __rtems__
@@ -190,6 +190,7 @@ struct at91_mci_softc {
 	uint32_t     bbuf_curidx;	  /* which bbuf is the active DMA buffer */
 	uint32_t     xfer_offset;	  /* offset so far into caller's buf */
 #else /* __rtems__ */
+	LinkedListDescriporView1 xdma_desc;
 	uint32_t xdma_tx_channel;
 	uint32_t xdma_rx_channel;
 	uint8_t xdma_tx_perid;
@@ -770,69 +771,54 @@ at91_mci_update_ios(device_t brdev, device_t reqdev)
 }
 
 #ifdef __rtems__
-static LinkedListDescriporView1 dma_desc[MAX_BLOCKS];
-
 static void
-at91_mci_setup_xdma(struct at91_mci_softc *sc, bool read, uint32_t block_size,
-    uint32_t block_count, void *data, uint32_t len)
+at91_mci_setup_xdma(struct at91_mci_softc *sc, bool read, void *data,
+    uint32_t len)
 {
-	sXdmadCfg *xdma_cfg;
-	uint32_t xdma_channel;
 	const uint32_t xdma_cndc = XDMAC_CNDC_NDVIEW_NDV1 |
 	    XDMAC_CNDC_NDE_DSCR_FETCH_EN |
 	    XDMAC_CNDC_NDSUP_SRC_PARAMS_UPDATED |
 	    XDMAC_CNDC_NDDUP_DST_PARAMS_UPDATED;
-	const uint32_t sa_rdr = (uint32_t)(sc->mem_res->r_bushandle + MCI_RDR);
-	const uint32_t da_tdr = (uint32_t)(sc->mem_res->r_bushandle + MCI_TDR);
 	const uint32_t xdma_interrupt = XDMAC_CIE_BIE | XDMAC_CIE_DIE |
 	    XDMAC_CIE_FIE | XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE;
+	sXdmadCfg *xdma_cfg;
+	uint32_t xdma_channel;
 	eXdmadRC rc;
-	size_t i;
+
+	if (len % 4 != 0)
+		panic("invalid XDMA transfer length");
 
 	if (read) {
 		xdma_cfg = &sc->xdma_rx_cfg;
 		xdma_channel = sc->xdma_rx_channel;
+		sc->xdma_desc.mbr_sa = (uint32_t)(sc->mem_res->r_bushandle +
+		    MCI_RDR);
+		sc->xdma_desc.mbr_da = (uint32_t)data;
+		rtems_cache_invalidate_multiple_data_lines(data, len);
 	} else {
 		xdma_cfg = &sc->xdma_tx_cfg;
 		xdma_channel = sc->xdma_tx_channel;
-	}
-
-	for (i = 0; i < block_count; ++i) {
-		if (read) {
-			dma_desc[i].mbr_sa = sa_rdr;
-			dma_desc[i].mbr_da = ((uint32_t)data) + i * block_size;
-		} else {
-			dma_desc[i].mbr_sa = ((uint32_t)data) + i * block_size;
-			dma_desc[i].mbr_da = da_tdr;
-		}
-		dma_desc[i].mbr_ubc = XDMA_UBC_NVIEW_NDV1 |
-		    XDMA_UBC_NDEN_UPDATED | (block_size/4);
-		if (i == block_count - 1) {
-			dma_desc[i].mbr_ubc |= XDMA_UBC_NDE_FETCH_DIS;
-			dma_desc[i].mbr_nda = 0;
-		} else {
-			dma_desc[i].mbr_ubc |= XDMA_UBC_NDE_FETCH_EN;
-			dma_desc[i].mbr_nda = (uint32_t) &dma_desc[i+1];
-		}
-	}
-
-	rc = XDMAD_ConfigureTransfer(pXdmad, xdma_channel, xdma_cfg, xdma_cndc,
-	    (uint32_t)dma_desc, xdma_interrupt);
-	if (rc != XDMAD_OK)
-		panic("Could not configure XDMA: %d.", rc);
-
-	/* FIXME: Is that correct? */
-	if (read) {
-		rtems_cache_invalidate_multiple_data_lines(data, len);
-	} else {
+		sc->xdma_desc.mbr_sa = (uint32_t)data;
+		sc->xdma_desc.mbr_da = (uint32_t)(sc->mem_res->r_bushandle +
+		    MCI_TDR);
 		rtems_cache_flush_multiple_data_lines(data, len);
 	}
-	rtems_cache_flush_multiple_data_lines(dma_desc, sizeof(dma_desc));
+
+	sc->xdma_desc.mbr_ubc = XDMA_UBC_NVIEW_NDV1 |
+	    XDMA_UBC_NDEN_UPDATED | (len / 4);
+	sc->xdma_desc.mbr_ubc |= XDMA_UBC_NDE_FETCH_DIS;
+	sc->xdma_desc.mbr_nda = 0;
+
+	rc = XDMAD_ConfigureTransfer(pXdmad, xdma_channel, xdma_cfg, xdma_cndc,
+	    (uint32_t)&sc->xdma_desc, xdma_interrupt);
+	if (rc != XDMAD_OK)
+		panic("configure XDMA failed: %d", rc);
+
+	rtems_cache_flush_multiple_data_lines(&sc->xdma_desc, sizeof(sc->xdma_desc));
 
 	rc = XDMAD_StartTransfer(pXdmad, xdma_channel);
 	if (rc != XDMAD_OK)
-		panic("Could not start XDMA: %d.", rc);
-
+		panic("start XDMA failed: %d", rc);
 }
 #endif /* __rtems__ */
 static void
@@ -1031,8 +1017,7 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 			}
 			WR4(sc, PDC_PTCR, PDC_PTCR_RXTEN);
 #else /* __rtems__ */
-			at91_mci_setup_xdma(sc, true, block_size, block_count,
-			    data->data, data->len);
+			at91_mci_setup_xdma(sc, true, data->data, data->len);
 #endif /* __rtems__ */
 		} else {
 #ifndef __rtems__
@@ -1074,8 +1059,7 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 			}
 			/* do not enable PDC xfer until CMDRDY asserted */
 #else /* __rtems__ */
-			at91_mci_setup_xdma(sc, false, block_size, block_count,
-			    data->data, data->len);
+			at91_mci_setup_xdma(sc, false, data->data, data->len);
 #endif /* __rtems__ */
 		}
 		data->xfer_len = 0; /* XXX what's this? appears to be unused. */

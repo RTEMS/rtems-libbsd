@@ -174,7 +174,11 @@ ipsec_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct ifnet *ifp;
 
 	sc = malloc(sizeof(*sc), M_IPSEC, M_WAITOK | M_ZERO);
+#ifndef __rtems__
 	sc->fibnum = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+	sc->fibnum = BSD_DEFAULT_FIB;
+#endif /* __rtems__ */
 	sc->ifp = ifp = if_alloc(IFT_TUNNEL);
 	IPSEC_LOCK_INIT(sc);
 	ifp->if_softc = sc;

@@ -1988,6 +1988,7 @@ class netipsec(builder.Module):
         mm = self.manager
         self.addKernelSpaceHeaderFiles(
             [
+                'sys/net/if_ipsec.h',
                 'sys/netipsec/ah.h',
                 'sys/netipsec/ah_var.h',
                 'sys/netipsec/esp.h',
@@ -2007,6 +2008,7 @@ class netipsec(builder.Module):
         )
         self.addKernelSpaceSourceFiles(
             [
+                'sys/net/if_ipsec.c',
                 'sys/netipsec/ipsec.c',
                 'sys/netipsec/ipsec_input.c',
                 'sys/netipsec/ipsec_mbuf.c',

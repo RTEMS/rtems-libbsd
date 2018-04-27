@@ -140,15 +140,14 @@ static sXdmad *pXdmad = &XDMAD_Instance;
  * than 16K gets turned into a dcache_wbinv_all().  That needlessly flushes the
  * entire data cache, impacting overall system performance.
  */
-#define BBCOUNT     2
 #ifndef __rtems__
-#define BBSIZE      (16*1024)
-#define MAX_BLOCKS  ((BBSIZE*BBCOUNT)/512)
-#else /* __rtems__ */
+#define BBCOUNT     2
 #define BBSIZE      (32*1024)
 #define MAX_BLOCKS  ((BBSIZE)/512)
 /* FIXME: It would be better to split the DMA up in that case like in the
  * original driver. But that would need some rework. */
+#else /* __rtems__ */
+#define	MAX_BLOCKS 32
 #endif /* __rtems__ */
 
 #ifndef __rtems__
@@ -177,17 +176,20 @@ struct at91_mci_softc {
 #ifdef __rtems__
 	RTEMS_INTERRUPT_LOCK_MEMBER(sc_lock)
 #endif /* __rtems__ */
+#ifndef __rtems__
 	bus_dma_tag_t dmatag;
+#endif /* __rtems__ */
 	struct mmc_host host;
 	int bus_busy;
 	struct mmc_request *req;
 	struct mmc_command *curcmd;
+#ifndef __rtems__
 	bus_dmamap_t bbuf_map[BBCOUNT];
 	char      *  bbuf_vaddr[BBCOUNT]; /* bounce bufs in KVA space */
 	uint32_t     bbuf_len[BBCOUNT];	  /* len currently queued for bounce buf */
 	uint32_t     bbuf_curidx;	  /* which bbuf is the active DMA buffer */
 	uint32_t     xfer_offset;	  /* offset so far into caller's buf */
-#ifdef __rtems__
+#else /* __rtems__ */
 	uint32_t xdma_tx_channel;
 	uint32_t xdma_rx_channel;
 	uint8_t xdma_tx_perid;
@@ -207,10 +209,10 @@ static void at91_mci_intr(void *);
 static int at91_mci_activate(device_t dev);
 static void at91_mci_deactivate(device_t dev);
 static int at91_mci_is_mci1rev2xx(void);
-#ifdef __rtems__
+#ifndef __rtems__
 static void at91_mci_read_done(struct at91_mci_softc *sc, uint32_t sr);
-static void at91_mci_write_done(struct at91_mci_softc *sc, uint32_t sr);
 #endif /* __rtems__ */
+static void at91_mci_write_done(struct at91_mci_softc *sc, uint32_t sr);
 
 #ifndef __rtems__
 #define AT91_MCI_LOCK(_sc)		mtx_lock(&(_sc)->sc_mtx)
@@ -251,6 +253,7 @@ WR4(struct at91_mci_softc *sc, bus_size_t off, uint32_t val)
 	bus_write_4(sc->mem_res, off, val);
 }
 
+#ifndef __rtems__
 static void
 at91_bswap_buf(struct at91_mci_softc *sc, void * dptr, void * sptr, uint32_t memsize)
 {
@@ -295,6 +298,7 @@ at91_mci_getaddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 		return;
 	*(bus_addr_t *)arg = segs[0].ds_addr;
 }
+#endif /* __rtems__ */
 
 static void
 at91_mci_pdc_disable(struct at91_mci_softc *sc)
@@ -430,7 +434,11 @@ at91_mci_attach(device_t dev)
 	struct sysctl_ctx_list *sctx;
 	struct sysctl_oid *soid;
 	device_t child;
+#ifndef __rtems__
 	int err, i;
+#else /* __rtems__ */
+	int err;
+#endif /* __rtems__ */
 
 #ifdef __rtems__
 #ifdef LIBBSP_ARM_ATSAM_BSP_H
@@ -515,6 +523,7 @@ at91_mci_attach(device_t dev)
 	at91_mci_fini(dev);
 	at91_mci_init(dev);
 
+#ifndef __rtems__
 	/*
 	 * Allocate DMA tags and maps and bounce buffers.
 	 *
@@ -543,7 +552,6 @@ at91_mci_attach(device_t dev)
 	/*
 	 * Activate the interrupt
 	 */
-#ifndef __rtems__
 	err = bus_setup_intr(dev, sc->irq_res, INTR_TYPE_MISC | INTR_MPSAFE,
 	    NULL, at91_mci_intr, sc, &sc->intrhand);
 #else /* __rtems__ */
@@ -604,6 +612,9 @@ at91_mci_attach(device_t dev)
 		sc->host.caps |= MMC_CAP_4_BIT_DATA;
 
 	child = device_add_child(dev, "mmc", 0);
+#ifdef __rtems__
+	(void)child;
+#endif /* __rtems__ */
 	device_set_ivars(dev, &sc->host);
 	err = bus_generic_attach(dev);
 out:
@@ -615,14 +626,18 @@ out:
 static int
 at91_mci_detach(device_t dev)
 {
+#ifndef __rtems__
 	struct at91_mci_softc *sc = device_get_softc(dev);
+#endif /* __rtems__ */
 
 	at91_mci_fini(dev);
 	at91_mci_deactivate(dev);
 
+#ifndef __rtems__
 	bus_dmamem_free(sc->dmatag, sc->bbuf_vaddr[0], sc->bbuf_map[0]);
 	bus_dmamem_free(sc->dmatag, sc->bbuf_vaddr[1], sc->bbuf_map[1]);
 	bus_dma_tag_destroy(sc->dmatag);
+#endif /* __rtems__ */
 
 	return (EBUSY);	/* XXX */
 }
@@ -759,7 +774,7 @@ static LinkedListDescriporView1 dma_desc[MAX_BLOCKS];
 
 static void
 at91_mci_setup_xdma(struct at91_mci_softc *sc, bool read, uint32_t block_size,
-    uint32_t number_blocks, bus_addr_t paddr, uint32_t len)
+    uint32_t block_count, void *data, uint32_t len)
 {
 	sXdmadCfg *xdma_cfg;
 	uint32_t xdma_channel;
@@ -782,17 +797,17 @@ at91_mci_setup_xdma(struct at91_mci_softc *sc, bool read, uint32_t block_size,
 		xdma_channel = sc->xdma_tx_channel;
 	}
 
-	for (i = 0; i < number_blocks; ++i) {
+	for (i = 0; i < block_count; ++i) {
 		if (read) {
 			dma_desc[i].mbr_sa = sa_rdr;
-			dma_desc[i].mbr_da = ((uint32_t)paddr) + i * block_size;
+			dma_desc[i].mbr_da = ((uint32_t)data) + i * block_size;
 		} else {
-			dma_desc[i].mbr_sa = ((uint32_t)paddr) + i * block_size;
+			dma_desc[i].mbr_sa = ((uint32_t)data) + i * block_size;
 			dma_desc[i].mbr_da = da_tdr;
 		}
 		dma_desc[i].mbr_ubc = XDMA_UBC_NVIEW_NDV1 |
 		    XDMA_UBC_NDEN_UPDATED | (block_size/4);
-		if (i == number_blocks - 1) {
+		if (i == block_count - 1) {
 			dma_desc[i].mbr_ubc |= XDMA_UBC_NDE_FETCH_DIS;
 			dma_desc[i].mbr_nda = 0;
 		} else {
@@ -808,9 +823,9 @@ at91_mci_setup_xdma(struct at91_mci_softc *sc, bool read, uint32_t block_size,
 
 	/* FIXME: Is that correct? */
 	if (read) {
-		rtems_cache_invalidate_multiple_data_lines(paddr, len);
+		rtems_cache_invalidate_multiple_data_lines(data, len);
 	} else {
-		rtems_cache_flush_multiple_data_lines(paddr, len);
+		rtems_cache_flush_multiple_data_lines(data, len);
 	}
 	rtems_cache_flush_multiple_data_lines(dma_desc, sizeof(dma_desc));
 
@@ -819,17 +834,16 @@ at91_mci_setup_xdma(struct at91_mci_softc *sc, bool read, uint32_t block_size,
 		panic("Could not start XDMA: %d.", rc);
 
 }
-
 #endif /* __rtems__ */
 static void
 at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 {
 	uint32_t cmdr, mr;
+	struct mmc_data *data;
 #ifdef __rtems__
-	uint32_t number_blocks;
+	uint32_t block_count;
 	uint32_t block_size;
 #endif /* __rtems__ */
-	struct mmc_data *data;
 
 	sc->curcmd = cmd;
 	data = cmd->data;
@@ -927,16 +941,6 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 	mr = RD4(sc,MCI_MR) & ~MCI_MR_BLKLEN;
 	mr |=  min(data->len, 512) << 16;
 	WR4(sc, MCI_MR, mr | MCI_MR_PDCMODE|MCI_MR_PDCPADV);
-#else /* __rtems__ */
-	mr = RD4(sc,MCI_MR);
-	WR4(sc, MCI_MR, mr | MCI_MR_PDCPADV);
-
-	WR4(sc, MCI_DMA, MCI_DMA_DMAEN | MCI_DMA_CHKSIZE_1);
-
-	block_size = min(data->len, 512);
-	number_blocks = data->len / block_size;
-	WR4(sc, MCI_BLKR, block_size << 16 | number_blocks);
-#endif /* __rtems__ */
 
 	/*
 	 * Set up DMA.
@@ -970,29 +974,33 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 	 */
 	sc->xfer_offset = 0;
 	sc->bbuf_curidx = 0;
+#else /* __rtems__ */
+	mr = RD4(sc,MCI_MR);
+	WR4(sc, MCI_MR, mr | MCI_MR_PDCPADV);
+
+	WR4(sc, MCI_DMA, MCI_DMA_DMAEN | MCI_DMA_CHKSIZE_1);
+
+	block_size = min(data->len, 512);
+	block_count = data->len / block_size;
+	WR4(sc, MCI_BLKR, (block_size << 16) | block_count);
+#endif /* __rtems__ */
 
 	if (data->flags & (MMC_DATA_READ | MMC_DATA_WRITE)) {
+#ifndef __rtems__
 		uint32_t len;
 		uint32_t remaining = data->len;
 		bus_addr_t paddr;
 		int err;
 
-#ifndef __rtems__
 		if (remaining > (BBCOUNT*BBSIZE))
-#else /* __rtems__ */
-		if (remaining > (BBSIZE))
-#endif /* __rtems__ */
 			panic("IO read size exceeds MAXDATA\n");
+#endif /* __rtems__ */
 
 		if (data->flags & MMC_DATA_READ) {
 #ifndef __rtems__
 			if (remaining > 2048) // XXX
 				len = remaining / 2;
 			else
-#else
-			/* FIXME: This reduces performance. Set up DMA in two
-			 * parts instead like done on AT91. */
-#endif /* __rtems__ */
 				len = remaining;
 			err = bus_dmamap_load(sc->dmatag, sc->bbuf_map[0],
 			    sc->bbuf_vaddr[0], len, at91_mci_getaddr,
@@ -1001,7 +1009,6 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 				panic("IO read dmamap_load failed\n");
 			bus_dmamap_sync(sc->dmatag, sc->bbuf_map[0],
 			    BUS_DMASYNC_PREREAD);
-#ifndef __rtems__
 			WR4(sc, PDC_RPR, paddr);
 			WR4(sc, PDC_RCR, len / 4);
 			sc->bbuf_len[0] = len;
@@ -1024,16 +1031,11 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 			}
 			WR4(sc, PDC_PTCR, PDC_PTCR_RXTEN);
 #else /* __rtems__ */
-			at91_mci_setup_xdma(sc, true, block_size,
-			    number_blocks, paddr, len);
-
-			sc->bbuf_len[0] = len;
-			remaining -= len;
-			sc->bbuf_len[1] = 0;
-			if (remaining != 0)
-				panic("Still rx-data left. This should never happen.");
+			at91_mci_setup_xdma(sc, true, block_size, block_count,
+			    data->data, data->len);
 #endif /* __rtems__ */
 		} else {
+#ifndef __rtems__
 			len = min(BBSIZE, remaining);
 			at91_bswap_buf(sc, sc->bbuf_vaddr[0], data->data, len);
 			err = bus_dmamap_load(sc->dmatag, sc->bbuf_map[0],
@@ -1043,7 +1045,6 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 				panic("IO write dmamap_load failed\n");
 			bus_dmamap_sync(sc->dmatag, sc->bbuf_map[0],
 			    BUS_DMASYNC_PREWRITE);
-#ifndef __rtems__
 			/*
 			 * Erratum workaround:  PDC transfer length on a write
 			 * must not be smaller than 12 bytes (3 words); only
@@ -1073,15 +1074,8 @@ at91_mci_start_cmd(struct at91_mci_softc *sc, struct mmc_command *cmd)
 			}
 			/* do not enable PDC xfer until CMDRDY asserted */
 #else /* __rtems__ */
-			at91_mci_setup_xdma(sc, false, block_size,
-			    number_blocks, paddr, len);
-
-			sc->bbuf_len[0] = len;
-			remaining -= len;
-			sc->bbuf_len[1] = 0;
-			if (remaining != 0)
-				panic("Still tx-data left. This should never happen.");
-
+			at91_mci_setup_xdma(sc, false, block_size, block_count,
+			    data->data, data->len);
 #endif /* __rtems__ */
 		}
 		data->xfer_len = 0; /* XXX what's this? appears to be unused. */
@@ -1190,6 +1184,7 @@ at91_mci_release_host(device_t brdev, device_t reqdev)
 	return (0);
 }
 
+#ifndef __rtems__
 static void
 at91_mci_read_done(struct at91_mci_softc *sc, uint32_t sr)
 {
@@ -1207,10 +1202,8 @@ at91_mci_read_done(struct at91_mci_softc *sc, uint32_t sr)
 	 * operation, otherwise we wait for another ENDRX for the next bufer.
 	 */
 
-#ifndef __rtems__
 	bus_dmamap_sync(sc->dmatag, sc->bbuf_map[curidx], BUS_DMASYNC_POSTREAD);
 	bus_dmamap_unload(sc->dmatag, sc->bbuf_map[curidx]);
-#endif /* __rtems__ */
 
 	at91_bswap_buf(sc, dataptr + sc->xfer_offset, sc->bbuf_vaddr[curidx], len);
 
@@ -1235,13 +1228,10 @@ at91_mci_read_done(struct at91_mci_softc *sc, uint32_t sr)
 		at91_mci_next_operation(sc);
 	} else {
 		WR4(sc, PDC_RNCR, 0);
-#ifndef __rtems__
 		WR4(sc, MCI_IER, MCI_SR_ERROR | MCI_SR_ENDRX);
-#else /* __rtems__ */
-		WR4(sc, MCI_IER, MCI_SR_ERROR | MCI_SR_XFRDONE);
-#endif /* __rtems__ */
 	}
 }
+#endif /* __rtems__ */
 
 static void
 at91_mci_write_done(struct at91_mci_softc *sc, uint32_t sr)
@@ -1259,9 +1249,11 @@ at91_mci_write_done(struct at91_mci_softc *sc, uint32_t sr)
 
 	WR4(sc, PDC_PTCR, PDC_PTCR_RXTDIS | PDC_PTCR_TXTDIS);
 
+#ifndef __rtems__
 	bus_dmamap_sync(sc->dmatag, sc->bbuf_map[sc->bbuf_curidx],
 	    BUS_DMASYNC_POSTWRITE);
 	bus_dmamap_unload(sc->dmatag, sc->bbuf_map[sc->bbuf_curidx]);
+#endif /* __rtems__ */
 
 	if ((cmd->data->flags & MMC_DATA_MULTI) || (sr & MCI_SR_NOTBUSY)) {
 		cmd->error = MMC_ERR_NONE;
@@ -1532,9 +1524,11 @@ at91_mci_intr(void *arg)
 		}
 #else /* __rtems__ */
 		if (isr & MCI_SR_XFRDONE) {
-			struct mmc_command *cmd = sc->curcmd;
 			if (cmd->data->flags & MMC_DATA_READ) {
-				at91_mci_read_done(sc, sr);
+				WR4(sc, PDC_PTCR, PDC_PTCR_RXTDIS |
+				    PDC_PTCR_TXTDIS);
+				cmd->error = MMC_ERR_NONE;
+				at91_mci_next_operation(sc);
 			} else {
 				if (sr & MCI_SR_BLKE)
 					isr |= MCI_SR_BLKE;

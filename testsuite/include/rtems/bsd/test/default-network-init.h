@@ -129,30 +129,34 @@ default_network_route_hwif0(char *ifname)
 static void
 default_network_dhcpcd_task(rtems_task_argument arg)
 {
+	static const char default_cfg[] = "clientid libbsd test client\n";
 	int exit_code;
 	char *dhcpcd[] = {
 		"dhcpcd",
 		NULL
 	};
-
-	(void)arg;
-
-#ifdef DEFAULT_NETWORK_DHCPCD_NO_DHCP_DISCOVERY
-	static const char cfg[] = "nodhcp\nnodhcp6\n";
 	int fd;
 	int rv;
 	ssize_t n;
+
+	(void)arg;
 
 	fd = open("/etc/dhcpcd.conf", O_CREAT | O_WRONLY,
 	    S_IRWXU | S_IRWXG | S_IRWXO);
 	assert(fd >= 0);
 
-	n = write(fd, cfg, sizeof(cfg));
-	assert(n == (ssize_t) sizeof(cfg));
+	n = write(fd, default_cfg, sizeof(default_cfg));
+	assert(n == (ssize_t) sizeof(default_cfg));
+
+#ifdef DEFAULT_NETWORK_DHCPCD_NO_DHCP_DISCOVERY
+	static const char nodhcp_cfg[] = "nodhcp\nnodhcp6\n";
+
+	n = write(fd, nodhcp_cfg, sizeof(nodhcp_cfg));
+	assert(n == (ssize_t) sizeof(nodhcp_cfg));
+#endif
 
 	rv = close(fd);
 	assert(rv == 0);
-#endif
 
 	exit_code = rtems_bsd_command_dhcpcd(RTEMS_BSD_ARGC(dhcpcd), dhcpcd);
 	assert(exit_code == EXIT_SUCCESS);

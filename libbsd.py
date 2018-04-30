@@ -278,10 +278,7 @@ class rtems(builder.Module):
                 'rtems/rtems-program-socket.c',
                 'rtems/rtems-routes.c',
                 'rtems/syslog.c',
-                'ftpd/ftpd.c',
-                'ftpd/ftpd-init.c',
                 'ftpd/ftpd-service.c',
-                'ftpfs/ftpfs.c',
                 'mdns/mdns.c',
                 'mdns/mdns-hostname-default.c',
                 'nfsclient/mount_prot_xdr.c',
@@ -318,21 +315,10 @@ class rtems(builder.Module):
                 'sys/fs/devfs/devfs_devs.c',
                 'sys/net/if_ppp.c',
                 'sys/net/ppp_tty.c',
-                'telnetd/check_passwd.c',
-                'telnetd/des.c',
-                'telnetd/pty.c',
-                'telnetd/telnetd.c',
-                'telnetd/telnetd-init.c',
                 'telnetd/telnetd-service.c',
                 'sys/dev/tsec/if_tsec_nexus.c',
             ],
             mm.generator['source']()
-        )
-        self.addRTEMSSourceFiles(
-            [
-                'debugger/rtems-debugger-remote-tcp.c',
-            ],
-            mm.generator['source-if-header']('rtems/rtems-debugger.h')
         )
         self.addFile(mm.generator['file']('rtems/rtems-kernel-kvm-symbols.c',
                                           mm.generator['rtems-path'](),
@@ -2440,7 +2426,6 @@ class user_space(builder.Module):
                 'contrib/libxo/libxo/xo_wcwidth.h',
                 'sbin/pfctl/pfctl.h',
                 'sbin/pfctl/pfctl_parser.h',
-                'include/arpa/ftp.h',
                 'include/arpa/nameser_compat.h',
                 'include/arpa/nameser.h',
                 'include/db.h',

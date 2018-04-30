@@ -477,5 +477,5 @@ class Builder(builder.ModuleManager):
                             includes = includes,
                             source = test_sources,
                             use = ['bsd'],
-                            lib = ['m', 'z'],
+                            lib = ['ftpfs', 'ftpd', 'telnetd', 'bsd', 'm', 'z'],
                             install_path = None)

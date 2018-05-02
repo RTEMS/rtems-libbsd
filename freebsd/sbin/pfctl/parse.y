@@ -29,6 +29,7 @@
 %{
 #ifdef __rtems__
 #include <machine/rtems-bsd-user-space.h>
+#undef INET6
 #endif /* __rtems__ */
 
 #ifdef __rtems__

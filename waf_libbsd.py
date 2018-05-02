@@ -496,6 +496,7 @@ class Builder(builder.ModuleManager):
         for testName in sorted(tests):
             test = self.data['tests'][testName]['all']
             test_source = []
+            libs = ['bsd', 'm', 'z']
             for cfg in test:
                 build_test = True
                 if cfg != 'default':
@@ -506,6 +507,7 @@ class Builder(builder.ModuleManager):
                 if build_test:
                     test_sources = ['testsuite/%s/%s.c' % (testName, f) \
                                     for f in test[cfg]['files']]
+                    libs = test[cfg]['libs'] + libs
             if build_test:
                 bld.program(target = '%s.exe' % (testName),
                             features = 'cprogram',
@@ -513,5 +515,5 @@ class Builder(builder.ModuleManager):
                             includes = includes,
                             source = test_sources,
                             use = ['bsd'],
-                            lib = ['ftpfs', 'ftpd', 'telnetd', 'bsd', 'm', 'z'],
+                            lib = libs,
                             install_path = None)

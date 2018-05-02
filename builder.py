@@ -496,25 +496,28 @@ class SourceFileIfHeaderComposer(SourceFileFragmentComposer):
 
 class TestFragementComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, testName, fileFragments, runTest = True, netTest = False):
+    def __init__(self, testName, fileFragments, runTest = True, netTest = False, extraLibs = []):
         self.testName = testName
         self.fileFragments = fileFragments
         self.runTest = runTest
         self.netTest = netTest
+        self.extraLibs = extraLibs
 
     def compose(self, path):
         return ['tests', self.testName, ('default', None)], { 'files': self.fileFragments,
                                                               'run': self.runTest,
-                                                              'net': self.netTest }
+                                                              'net': self.netTest,
+                                                              'libs': self.extraLibs}
 
 class TestIfHeaderComposer(TestFragementComposer):
 
-    def __init__(self, testName, headers, fileFragments, runTest = True, netTest = False):
+    def __init__(self, testName, headers, fileFragments, runTest = True, netTest = False, extraLibs = []):
         if headers is not list:
             headers = [headers]
         self.headers = headers
         super(TestIfHeaderComposer, self).__init__(testName, fileFragments,
-                                                   runTest = runTest, netTest = netTest)
+                                                   runTest = runTest, netTest = netTest,
+                                                   extraLibs = extraLibs)
 
     def compose(self, path):
         r = TestFragementComposer.compose(self, path)

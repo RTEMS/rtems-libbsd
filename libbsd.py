@@ -4703,10 +4703,14 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('arphole', ['test_main'],
                                           runTest = False, netTest = True))
         self.addTest(mm.generator['test']('telnetd01', ['test_main'],
-                                          runTest = False, netTest = True))
+                                          runTest = False, netTest = True,
+                                          extraLibs = ['telnetd']))
         self.addTest(mm.generator['test']('unix01', ['test_main']))
-        self.addTest(mm.generator['test']('ftpd01', ['test_main'], netTest = True))
-        self.addTest(mm.generator['test']('ftpd02', ['test_main']))
+        self.addTest(mm.generator['test']('ftpd01', ['test_main'],
+                                          netTest = True,
+                                          extraLibs = ['ftpd']))
+        self.addTest(mm.generator['test']('ftpd02', ['test_main'],
+                                          extraLibs = ['ftpfs', 'ftpd']))
         self.addTest(mm.generator['test']('ping01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('selectpollkqueue01', ['test_main']))
         self.addTest(mm.generator['test']('rwlock01', ['test_main']))
@@ -4727,19 +4731,27 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('thread01', ['test_main']))
         self.addTest(mm.generator['test']('mutex01', ['test_main']))
         self.addTest(mm.generator['test']('condvar01', ['test_main']))
-        self.addTest(mm.generator['test']('ppp01', ['test_main'], runTest = False))
+        self.addTest(mm.generator['test']('ppp01', ['test_main'], runTest = False,
+                                          extraLibs = ['ftpd', 'telnetd']))
         self.addTest(mm.generator['test']('zerocopy01', ['test_main'],
-                                          runTest = False, netTest = True))
+                                          runTest = False, netTest = True,
+                                          extraLibs = ['telnetd']))
         self.addTest(mm.generator['test']('smp01', ['test_main']))
-        self.addTest(mm.generator['test']('media01', ['test_main'], runTest = False))
+        self.addTest(mm.generator['test']('media01', ['test_main'],
+                                          runTest = False,
+                                          extraLibs = ['ftpd', 'telnetd']))
         self.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('log01', ['test_main']))
         self.addTest(mm.generator['test']('rcconf01', ['test_main']))
-        self.addTest(mm.generator['test']('rcconf02', ['test_main']))
+        self.addTest(mm.generator['test']('rcconf02', ['test_main'],
+                                          extraLibs = ['ftpd', 'telnetd']))
         self.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
-        self.addTest(mm.generator['test']('pf01', ['test_main']))
-        self.addTest(mm.generator['test']('pf02', ['test_main'], runTest = False))
+        self.addTest(mm.generator['test']('pf01', ['test_main'],
+                                          extraLibs = ['ftpd', 'telnetd']))
+        self.addTest(mm.generator['test']('pf02', ['test_main'],
+                                          runTest = False,
+                                          extraLibs = ['ftpd', 'telnetd']))
         self.addTest(mm.generator['test']('termios', ['test_main',
                                                       'test_termios_driver',
                                                       'test_termios_utilities']))
@@ -4762,7 +4774,8 @@ class tests(builder.Module):
                                                         '../termios/test_termios_driver',
                                                         '../termios/test_termios_utilities']))
         self.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
-                                                    ['test_main'], runTest = False, netTest = True))
+                                                    ['test_main'], runTest = False, netTest = True,
+                                                    extraLibs = ['debugger']))
         self.addTest(mm.generator['test']('crypto01', ['test_main']))
 
 def load(mm):

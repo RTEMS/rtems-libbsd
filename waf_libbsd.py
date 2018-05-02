@@ -290,7 +290,7 @@ class Builder(builder.ModuleManager):
                 rpcgen = self.data['RPCGen']
                 rpcname = rpcgen['files']['all']['default'][0][:-2]
                 bld(target = rpcname + '.h',
-                    source = y + '.x',
+                    source = rpcname + '.x',
                     rule = host_shell + '${RPCGEN} -h -o ${TGT} ${SRC}')
 
         #
@@ -300,10 +300,10 @@ class Builder(builder.ModuleManager):
             if bld.env.AUTO_REGEN:
                 routekw = self.data['RouteKeywords']
                 rkwname = routekw['files']['all']['default'][0]
-                rkw_rule = host_shell + 'cat ${SRC} | ' + \
-                           'awk \'BEGIN { r = 0 } { if (NF == 1) ' + \
-                           'printf \\"#define\\\\tK_%%s\\\\t%%d\\\\n\\\\t{\\\\\\"%%s\\\\\\", K_%%s},\\\\n\\", ' + \
-                           'toupper($1), ++r, $1, toupper($1)}\' > ${TGT}'
+                rkw_rule = host_shell + "cat ${SRC} | " + \
+                           "awk 'BEGIN { r = 0 } { if (NF == 1) " + \
+                           "printf \"#define\\tK_%%s\\t%%d\\n\\t{\\\"%%s\\\", K_%%s},\\n\", " + \
+                           "toupper($1), ++r, $1, toupper($1)}' > ${TGT}"
                 bld(target = rkwname + '.h',
                     source = rkwname,
                     rule = rkw_rule)
@@ -324,7 +324,7 @@ class Builder(builder.ModuleManager):
                 else:
                     lexIncludes = []
                 lex_rule = host_shell + '${LEX} -P ' + lex['sym'] + ' -t ${SRC} | ' + \
-                           'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > ${TGT}")'
+                           'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > ${TGT}'
                 if bld.env.AUTO_REGEN:
                     bld(target = lex['file'][:-2]+ '.c',
                         source = lex['file'],

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -30,14 +30,36 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
 
 #include <rtems.h>
+#include <rtems/dhcpcd.h>
 
 #define TEST_NAME "LIBBSD DHCPCD 1"
 
 static void
+dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
+{
+
+	(void)hook;
+
+	while (*env != NULL) {
+		printf("%s\n", *env);
+		++env;
+	}
+}
+
+static rtems_dhcpcd_hook dhcpcd_hook = {
+	.name = "test",
+	.handler = dhcpcd_hook_handler
+};
+
+static void
 test_main(void)
 {
+
+	rtems_dhcpcd_add_hook(&dhcpcd_hook);
+
 	rtems_task_delete(RTEMS_SELF);
 	assert(0);
 }

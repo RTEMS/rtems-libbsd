@@ -33,16 +33,12 @@
 void if_printoptions(void);
 #ifndef __rtems__
 int send_interface(int, const struct interface *);
-int script_runreason(const struct interface *, const char *);
 #else /* __rtems__ */
 static inline int send_interface(int fd, const struct interface *iface)
 {
 	return 0;
 }
-static inline int script_runreason(const struct interface *ifp, const char *reason)
-{
-	return 0;
-}
 #endif /* __rtems__ */
+int script_runreason(const struct interface *, const char *);
 
 #endif

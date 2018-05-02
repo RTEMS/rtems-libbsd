@@ -4553,6 +4553,7 @@ class dhcpcd(builder.Module):
                 'dhcpcd/ipv6nd.c',
                 'dhcpcd/net.c',
                 'dhcpcd/platform-bsd.c',
+                'dhcpcd/script.c',
                 'dhcpcd/compat/pselect.c',
                 'dhcpcd/crypt/hmac_md5.c',
             ],

@@ -156,6 +156,7 @@ extern rtems_recursive_mutex dhcpcd_mutex;
 #define print_string dhcpcd_print_string
 #define read_config dhcpcd_read_config
 #define read_lease dhcpcd_read_lease
+#define script_runreason dhcpcd_script_runreason
 #define select_profile dhcpcd_select_profile
 #define set_cloexec dhcpcd_set_cloexec
 #define set_nonblock dhcpcd_set_nonblock

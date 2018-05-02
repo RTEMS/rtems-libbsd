@@ -40,6 +40,9 @@
 #ifndef _RTEMS_DHCPCD_H_
 #define _RTEMS_DHCPCD_H_
 
+#include <sys/cdefs.h>
+#include <sys/queue.h>
+
 #include <rtems.h>
 
 #ifdef __cplusplus
@@ -74,6 +77,29 @@ typedef struct rtems_dhcpcd_config {
  * @retval RTEMS_INVALID_PRIORITY Invalid task priority.
  */
 rtems_status_code rtems_dhcpcd_start(const rtems_dhcpcd_config *config);
+
+typedef struct rtems_dhcpcd_hook {
+	SLIST_ENTRY(rtems_dhcpcd_hook) node;
+	const char *name;
+	void (*handler)(struct rtems_dhcpcd_hook *hook, char *const *env);
+} rtems_dhcpcd_hook;
+
+/**
+ * @brief Adds a DHCP client hook.
+ *
+ * The hook handler is invoked with an environment list (NULL terminated) of
+ * strings ('\0' terminated).  Each string of the environment list has usually
+ * the format "key=value", e.g. "interface=eth0", "reason=BOUND".
+ *
+ * The hook handler are called by the DHCP client task.  It is safe to
+ * add/remove hooks in the hook handler.
+ */
+void rtems_dhcpcd_add_hook(rtems_dhcpcd_hook *hook);
+
+/**
+ * @brief Removes a DHCP client hook.
+ */
+void rtems_dhcpcd_remove_hook(rtems_dhcpcd_hook *hook);
 
 /** @} */
 

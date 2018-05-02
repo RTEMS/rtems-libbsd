@@ -51,7 +51,30 @@
 #include "ipv6nd.h"
 #include "net.h"
 #include "script.h"
+#ifdef __rtems__
+#include <rtems/dhcpcd.h>
 
+static SLIST_HEAD(, rtems_dhcpcd_hook) dhcpcd_hooks =
+  SLIST_HEAD_INITIALIZER(dhcpcd_hooks);
+
+void
+rtems_dhcpcd_add_hook(rtems_dhcpcd_hook *hook)
+{
+	rtems_recursive_mutex_lock(&dhcpcd_mutex);
+	SLIST_INSERT_HEAD(&dhcpcd_hooks, hook, node);
+	rtems_recursive_mutex_unlock(&dhcpcd_mutex);
+}
+
+void
+rtems_dhcpcd_remove_hook(rtems_dhcpcd_hook *hook)
+{
+	rtems_recursive_mutex_lock(&dhcpcd_mutex);
+	SLIST_REMOVE(&dhcpcd_hooks, hook, rtems_dhcpcd_hook, node);
+	rtems_recursive_mutex_unlock(&dhcpcd_mutex);
+}
+#endif /* __rtems__ */
+
+#ifndef __rtems__
 #define DEFAULT_PATH	"PATH=/usr/bin:/usr/sbin:/bin:/sbin"
 
 static const char * const if_params[] = {
@@ -104,6 +127,7 @@ exec_script(char *const *argv, char *const *env)
 	}
 	return pid;
 }
+#endif /* __rtems__ */
 
 #ifdef INET
 static char *
@@ -168,6 +192,7 @@ append_config(char ***env, ssize_t *len,
 }
 #endif
 
+#ifndef __rtems__
 static size_t
 arraytostr(const char *const *argv, char **s)
 {
@@ -191,6 +216,7 @@ arraytostr(const char *const *argv, char **s)
 	}
 	return len;
 }
+#endif /* __rtems__ */
 
 static ssize_t
 make_env(const struct interface *ifp, const char *reason, char ***argv)
@@ -435,6 +461,7 @@ eexit:
 	return -1;
 }
 
+#ifndef __rtems__
 static int
 send_interface1(int fd, const struct interface *iface, const char *reason)
 {
@@ -507,29 +534,43 @@ send_interface(int fd, const struct interface *iface)
 	}
 	return retval;
 }
+#endif /* __rtems__ */
 
 int
 script_runreason(const struct interface *ifp, const char *reason)
 {
+#ifndef __rtems__
 	char *const argv[2] = { UNCONST(ifp->options->script), NULL };
+#endif /* __rtems__ */
 	char **env = NULL, **ep;
+#ifndef __rtems__
 	char *path, *bigenv;
 	ssize_t e, elen = 0;
 	pid_t pid;
+#else /* __rtems__ */
+	ssize_t elen;
+	rtems_dhcpcd_hook *hook;
+	rtems_dhcpcd_hook *hook2;
+#endif /* __rtems__ */
 	int status = 0;
+#ifndef __rtems__
 	const struct fd_list *fd;
 	struct iovec iov[2];
+#endif /* __rtems__ */
 
 	if (ifp->options->script == NULL ||
 	    ifp->options->script[0] == '\0' ||
 	    strcmp(ifp->options->script, "/dev/null") == 0)
 		return 0;
 
+#ifndef __rtems__
 	syslog(LOG_DEBUG, "%s: executing `%s' %s",
 	    ifp->name, argv[0], reason);
+#endif /* __rtems__ */
 
 	/* Make our env */
 	elen = make_env(ifp, reason, &env);
+#ifndef __rtems__
 	ep = realloc(env, sizeof(char *) * (elen + 2));
 	if (ep == NULL) {
 		elen = -1;
@@ -596,6 +637,17 @@ script_runreason(const struct interface *ifp, const char *reason)
 	free(bigenv);
 
 out:
+#else /* __rtems__ */
+	rtems_recursive_mutex_lock(&dhcpcd_mutex);
+
+	SLIST_FOREACH_SAFE(hook, &dhcpcd_hooks, node, hook2) {
+		syslog(LOG_DEBUG, "%s: executing `%s' %s", ifp->name,
+		    hook->name, reason);
+		(*hook->handler)(hook, env);
+	}
+
+	rtems_recursive_mutex_unlock(&dhcpcd_mutex);
+#endif /* __rtems__ */
 	/* Cleanup */
 	ep = env;
 	while (*ep)

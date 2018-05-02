@@ -1599,3 +1599,17 @@ main(int argc, char **argv)
 	eloop_start(&dhcpcd_sigset);
 	exit(EXIT_SUCCESS);
 }
+#ifdef __rtems__
+int
+dhcpcd_script_runreason_do_nothing(const struct interface *ifp,
+    const char *reason)
+{
+	return 0;
+}
+
+/*
+ * Do not pull in the script support if it is not used, e.g. no call to
+ * rtems_dhcpcd_add_hook() is present.
+ */
+__weak_reference(dhcpcd_script_runreason_do_nothing, dhcpcd_script_runreason);
+#endif /* __rtems__ */

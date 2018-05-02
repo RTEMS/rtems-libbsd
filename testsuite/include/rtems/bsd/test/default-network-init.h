@@ -48,6 +48,7 @@
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
 #include <rtems/bsd/modules.h>
+#include <rtems/dhcpcd.h>
 
 #if defined(DEFAULT_NETWORK_DHCPCD_ENABLE) && \
     !defined(DEFAULT_NETWORK_NO_STATIC_IFCONFIG)
@@ -126,21 +127,15 @@ default_network_route_hwif0(char *ifname)
 }
 #endif
 
-#ifdef DEFAULT_NETWORK_DHCPCD_ENABLE
 static void
-default_network_dhcpcd_task(rtems_task_argument arg)
+default_network_dhcpcd(void)
 {
+#ifdef DEFAULT_NETWORK_DHCPCD_ENABLE
 	static const char default_cfg[] = "clientid libbsd test client\n";
-	int exit_code;
-	char *dhcpcd[] = {
-		"dhcpcd",
-		NULL
-	};
+	rtems_status_code sc;
 	int fd;
 	int rv;
 	ssize_t n;
-
-	(void)arg;
 
 	fd = open("/etc/dhcpcd.conf", O_CREAT | O_WRONLY,
 	    S_IRWXU | S_IRWXG | S_IRWXO);
@@ -159,29 +154,7 @@ default_network_dhcpcd_task(rtems_task_argument arg)
 	rv = close(fd);
 	assert(rv == 0);
 
-	exit_code = rtems_bsd_command_dhcpcd(RTEMS_BSD_ARGC(dhcpcd), dhcpcd);
-	assert(exit_code == EXIT_SUCCESS);
-}
-#endif
-
-static void
-default_network_dhcpcd(void)
-{
-#ifdef DEFAULT_NETWORK_DHCPCD_ENABLE
-	rtems_status_code sc;
-	rtems_id id;
-
-	sc = rtems_task_create(
-		rtems_build_name('D', 'H', 'C', 'P'),
-		RTEMS_MAXIMUM_PRIORITY - 1,
-		2 * RTEMS_MINIMUM_STACK_SIZE,
-		RTEMS_DEFAULT_MODES,
-		RTEMS_FLOATING_POINT,
-		&id
-	);
-	assert(sc == RTEMS_SUCCESSFUL);
-
-	sc = rtems_task_start(id, default_network_dhcpcd_task, 0);
+	sc = rtems_dhcpcd_start(NULL);
 	assert(sc == RTEMS_SUCCESSFUL);
 #endif
 }

@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -38,36 +38,17 @@
  */
 
 #include <rtems/bsd/bsd.h>
+#include <rtems/dhcpcd.h>
 
-#include <assert.h>
 #include <sysexits.h>
 
-#include <machine/rtems-bsd-commands.h>
-
 #include <bsp.h>
-
-static void
-dhcpcd_task(rtems_task_argument arg)
-{
-	int exit_code;
-	char *dhcpcd[] = {
-	    "dhcpcd",
-	    NULL
-	};
-
-	(void)arg;
-
-	exit_code = rtems_bsd_command_dhcpcd(RTEMS_BSD_ARGC(dhcpcd), dhcpcd);
-	assert(exit_code == EX_OK);
-	(void)exit_code;
-}
 
 rtems_status_code
 rtems_bsd_initialize_dhcp(void)
 {
 	rtems_status_code sc;
 	int exit_code;
-	rtems_id id;
 
 	sc = rtems_bsd_initialize();
 	if (sc != RTEMS_SUCCESSFUL) {
@@ -79,20 +60,10 @@ rtems_bsd_initialize_dhcp(void)
 		return (RTEMS_UNSATISFIED);
 	}
 
-	sc = rtems_task_create(
-		rtems_build_name('D', 'H', 'C', 'P'),
-		RTEMS_MAXIMUM_PRIORITY - 1,
-		2 * RTEMS_MINIMUM_STACK_SIZE,
-		RTEMS_DEFAULT_MODES,
-		RTEMS_FLOATING_POINT,
-		&id
-	);
+	sc = rtems_dhcpcd_start(NULL);
 	if (sc != RTEMS_SUCCESSFUL) {
 		return (RTEMS_UNSATISFIED);
 	}
-
-	sc = rtems_task_start(id, dhcpcd_task, 0);
-	assert(sc == RTEMS_SUCCESSFUL);
 
 	return (RTEMS_SUCCESSFUL);
 }

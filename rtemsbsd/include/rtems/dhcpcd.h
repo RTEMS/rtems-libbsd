@@ -1,13 +1,13 @@
 /**
  * @file
  *
- * @ingroup rtems_bsd_machine
+ * @ingroup rtems_bsd
  *
  * @brief TODO.
  */
 
 /*
- * Copyright (c) 2013, 2016 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -37,43 +37,48 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
-#define _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_
+#ifndef _RTEMS_DHCPCD_H_
+#define _RTEMS_DHCPCD_H_
 
-#include <sys/cdefs.h>
+#include <rtems.h>
 
-#define RTEMS_BSD_ARGC(array) (sizeof(array) / sizeof((array)[0]) - 1)
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-__BEGIN_DECLS
+/**
+ * @brief The DHCP client configuration (dhcpcd).
+ *
+ * Zero initialize the structure to allow future extensions.
+ */
+typedef struct rtems_dhcpcd_config {
+	rtems_task_priority priority;
+	int argc;
+	char **argv;
+	void (*prepare)(const struct rtems_dhcpcd_config *config,
+	    int argc, char **argv);
+	void (*destroy)(const struct rtems_dhcpcd_config *config,
+	    int exit_code);
+} rtems_dhcpcd_config;
 
-int rtems_bsd_command_arp(int argc, char **argv);
+/**
+ * @brief Starts the DHCP client (dhcpcd).
+ *
+ * @param config The DHCP client configuration.  Use NULL for a default
+ * configuration.
+ *
+ * @retval RTEMS_SUCCESSFUL Successful operation.
+ * @retval RTEMS_INCORRECT_STATE The DHCP client runs already.
+ * @retval RTEMS_TOO_MANY No task control block available.
+ * @retval RTEMS_UNSATISFIED Not enough resources to create task.
+ * @retval RTEMS_INVALID_PRIORITY Invalid task priority.
+ */
+rtems_status_code rtems_dhcpcd_start(const rtems_dhcpcd_config *config);
 
-int rtems_bsd_command_ifconfig(int argc, char **argv);
+/** @} */
 
-int rtems_bsd_command_netstat(int argc, char **argv);
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
-int rtems_bsd_command_pfctl(int argc, char **argv);
-
-int rtems_bsd_command_ping(int argc, char **argv);
-
-int rtems_bsd_command_ping6(int argc, char **argv);
-
-int rtems_bsd_command_route(int argc, char **argv);
-
-int rtems_bsd_command_wpa_supplicant(int argc, char **argv);
-
-int rtems_bsd_command_wpa_supplicant_fork(int argc, char **argv);
-
-int rtems_bsd_command_tcpdump(int argc, char **argv);
-
-int rtems_bsd_command_sysctl(int argc, char **argv);
-
-int rtems_bsd_command_vmstat(int argc, char **argv);
-
-int rtems_bsd_command_wlanstats(int argc, char **argv);
-
-int rtems_bsd_command_stty(int argc, char **argv);
-
-__END_DECLS
-
-#endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_COMMANDS_H_ */
+#endif /* _RTEMS_DHCPCD_H_ */

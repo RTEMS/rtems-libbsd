@@ -61,6 +61,7 @@
 #include <machine/rtems-bsd-rc-conf-services.h>
 
 #include <rtems/rtems-routes.h>
+#include <rtems/dhcpcd.h>
 
 /*
  * Default defaultroute_delay is 30seconds.
@@ -627,45 +628,38 @@ setup_vlans(rtems_bsd_rc_conf*           rc_conf,
  * memory if it exits.
  */
 typedef struct dhcpcd_data {
+  rtems_dhcpcd_config          config;
   rtems_bsd_rc_conf_argc_argv* argc_argv;
   bool                         verbose;
   const char*                  name;
 } dhcpcd_data;
 
 static void
-dhcpcd_worker(rtems_task_argument arg)
+dhcpcd_prepare(const rtems_dhcpcd_config *config, int argc, char **argv)
 {
-  dhcpcd_data*  dd = (dhcpcd_data*) arg;
-  int           argc;
-  const char**  argv;
-  const char*   dhcpcd_argv[] = { "dhcpcd", NULL };
-  int           r;
-
-  if (dd->argc_argv->argc > 0) {
-    argc = dd->argc_argv->argc;
-    argv = dd->argc_argv->argv;
-  }
-  else {
-    argc = 1;
-    argv = dhcpcd_argv;
-  }
+  const dhcpcd_data* dd = (const dhcpcd_data*) config;
 
   if (dd->verbose) {
+    int r;
+
     fprintf(stdout, "rc.conf: %s: dhcpcd ", dd->name);
     for (r = 1; r < argc; ++r)
       fprintf(stdout, "%s ", argv[r]);
     fprintf(stdout, "\n");
   }
+}
 
-  r = rtems_bsd_command_dhcpcd(argc, argv);
-  if (r != EX_OK)
+static void
+dhcpcd_destroy(const rtems_dhcpcd_config *config, int exit_code)
+{
+  dhcpcd_data* dd = (dhcpcd_data*) config;
+
+  if (exit_code != EX_OK)
     fprintf(stderr, "error: dhcpcd: stopped\n");
 
   free(dd->name);
   rtems_bsd_rc_conf_argc_argv_destroy(dd->argc_argv);
   free(dd);
-
-  rtems_task_delete(RTEMS_SELF);
 }
 
 static int
@@ -673,8 +667,7 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 {
   dhcpcd_data*        dd;
   rtems_status_code   sc;
-  rtems_id            id;
-  rtems_task_priority priority = RTEMS_MAXIMUM_PRIORITY - 1;
+  rtems_task_priority priority = 0;
   char*               end = NULL;
   int                 r;
 
@@ -711,21 +704,23 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   if (r == 0) {
     if (dd->argc_argv->argc == 2) {
       priority = strtoul(dd->argc_argv->argv[1], &end, 10);
-      if (priority == 0 || *end != '\0')
-        priority = RTEMS_MAXIMUM_PRIORITY - 1;
+      if (*end != '\0')
+        priority = 0;
     }
   }
+  dd->config.priority = priority;
 
   rtems_bsd_rc_conf_find(rc_conf, "dhcpcd_options", dd->argc_argv);
 
-  sc = rtems_task_create(rtems_build_name('D', 'H', 'C', 'P'),
-                         priority,
-                         2 * RTEMS_MINIMUM_STACK_SIZE,
-                         RTEMS_DEFAULT_MODES,
-                         RTEMS_FLOATING_POINT,
-                         &id);
-  if (sc == RTEMS_SUCCESSFUL)
-    sc = rtems_task_start(id, dhcpcd_worker, (rtems_task_argument) dd);
+  if (dd->argc_argv->argc > 0) {
+    dd->config.argc = dd->argc_argv->argc;
+    dd->config.argv = dd->argc_argv->argv;
+  }
+
+  dd->config.prepare = dhcpcd_prepare;
+  dd->config.destroy = dhcpcd_destroy;
+
+  sc = rtems_dhcpcd_start(&dd->config);
   if (sc != RTEMS_SUCCESSFUL) {
     fprintf(stderr,
             "error: dhcpcd: thread create/start: %s\n", rtems_status_text(sc));

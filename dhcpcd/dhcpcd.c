@@ -1110,22 +1110,86 @@ signal_init(void (*func)(int, siginfo_t *, void *), sigset_t *oldset)
 #endif
 
 #ifdef __rtems__
+#include <rtems/dhcpcd.h>
 #include <rtems/libio.h>
+
+#include <assert.h>
+
+rtems_recursive_mutex dhcpcd_mutex =
+    RTEMS_RECURSIVE_MUTEX_INITIALIZER("dhcpcd");
+
+static bool dhcpcd_initialized;
 
 struct getopt_data dhcpcd_getopt_data;
 
 static int
 main(int argc, char **argv);
 
-int rtems_bsd_command_dhcpcd(int argc, char **argv)
+static void
+dhcpcd_task(rtems_task_argument arg)
 {
+	char *default_argv[] = { "dhcpcd", NULL };
+	const rtems_dhcpcd_config *config;
+	int argc;
+	char **argv;
 	int exit_code;
 
-	rtems_mkdir(DBDIR, S_IRWXU | S_IRWXG | S_IRWXO);
+	config = (const rtems_dhcpcd_config *)arg;
 
+	if (config != NULL) {
+		argc = config->argc;
+		argv = config->argv;
+	} else {
+		argc = RTEMS_BSD_ARGC(default_argv);
+		argv = default_argv;
+	}
+
+	if (config != NULL && config->prepare != NULL) {
+		(*config->prepare)(config, argc, argv);
+	}
+
+	rtems_mkdir(DBDIR, S_IRWXU | S_IRWXG | S_IRWXO);
 	exit_code = rtems_bsd_program_call_main("dhcpcd", main, argc, argv);
 
-	return exit_code;
+	if (config != NULL && config->destroy != NULL) {
+		(*config->destroy)(config, exit_code);
+	}
+
+	rtems_task_delete(RTEMS_SELF);
+}
+
+rtems_status_code
+rtems_dhcpcd_start(const rtems_dhcpcd_config *config)
+{
+	rtems_status_code sc;
+
+	rtems_recursive_mutex_lock(&dhcpcd_mutex);
+
+	if (!dhcpcd_initialized) {
+		rtems_task_priority priority;
+		rtems_id id;
+
+		if (config != NULL && config->priority != 0) {
+			priority = config->priority;
+		} else {
+			priority = RTEMS_MAXIMUM_PRIORITY - 1;
+		}
+
+		sc = rtems_task_create(rtems_build_name('D', 'H', 'C', 'P'), priority,
+		    2 * RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+		    RTEMS_FLOATING_POINT, &id);
+		if (sc == RTEMS_SUCCESSFUL) {
+			dhcpcd_initialized = true;
+
+			sc = rtems_task_start(id, dhcpcd_task, 0);
+			assert(sc == RTEMS_SUCCESSFUL);
+		}
+	} else {
+		sc = RTEMS_INCORRECT_STATE;
+	}
+
+	rtems_recursive_mutex_unlock(&dhcpcd_mutex);
+	return sc;
 }
 #endif /* __rtems__ */
 

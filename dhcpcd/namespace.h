@@ -1,3 +1,7 @@
+#include <rtems/thread.h>
+
+extern rtems_recursive_mutex dhcpcd_mutex;
+
 #define add_options dhcpcd_add_options
 #define arp_announce dhcpcd_arp_announce
 #define arp_probe dhcpcd_arp_probe

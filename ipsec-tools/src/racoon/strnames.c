@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: strnames.c,v 1.9 2008/07/14 05:40:13 tteras Exp $	*/
 
 /*	$KAME: strnames.c,v 1.25 2003/11/13 10:53:26 itojun Exp $	*/
@@ -1034,3 +1040,6 @@ s_switch (int k)
       return num2str(k);
   }
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-strnames-data.h"
+#endif /* __rtems__ */

@@ -33,6 +33,9 @@
 
 #ifndef _SOCKMISC_H
 #define _SOCKMISC_H
+#ifdef __rtems__
+#include <netinet/in.h>
+#endif /* __rtems__ */
 
 #ifndef IP_IPSEC_POLICY
 #define IP_IPSEC_POLICY 16	/* XXX: from linux/in.h */

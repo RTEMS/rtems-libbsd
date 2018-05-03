@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: localconf.c,v 1.7 2008/12/23 14:04:42 tteras Exp $	*/
 
 /*	$KAME: localconf.c,v 1.33 2001/08/09 07:32:19 sakane Exp $	*/
@@ -357,3 +363,6 @@ save_params()
 {
 	saverestore_params(0);
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-localconf-data.h"
+#endif /* __rtems__ */

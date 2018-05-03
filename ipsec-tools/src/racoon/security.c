@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*
  * Copyright (C) 2005 International Business Machines Corporation
  * Copyright (c) 2005 by Trusted Computer Solutions, Inc.

@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: remoteconf.c,v 1.26 2011/03/14 15:50:36 vanhu Exp $	*/
 
 /* Id: remoteconf.c,v 1.38 2006/05/06 15:52:44 manubsd Exp */
@@ -1246,3 +1252,6 @@ checkisakmpsa(pcheck_level, proposal, acceptable)
 
 	return NULL;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-remoteconf-data.h"
+#endif /* __rtems__ */

@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_inf.c,v 1.47.2.3 2013/04/12 09:53:52 tteras Exp $	*/
 
 /* Id: isakmp_inf.c,v 1.44 2006/05/06 20:45:52 manubsd Exp */
@@ -1604,3 +1610,6 @@ isakmp_sched_r_u(iph1, retry)
 	return 0;
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_inf-data.h"
+#endif /* __rtems__ */

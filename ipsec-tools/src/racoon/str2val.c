@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: str2val.c,v 1.4 2006/09/09 16:22:10 manu Exp $	*/
 
 /*	$KAME: str2val.c,v 1.11 2001/08/16 14:37:29 itojun Exp $	*/
@@ -124,3 +130,6 @@ str2val(str, base, len)
 
 	return(dst);
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-str2val-data.h"
+#endif /* __rtems__ */

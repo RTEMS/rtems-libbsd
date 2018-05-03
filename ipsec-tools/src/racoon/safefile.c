@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: safefile.c,v 1.4 2006/09/09 16:22:10 manu Exp $	*/
 
 /*	$KAME: safefile.c,v 1.5 2001/03/05 19:54:06 thorpej Exp $	*/
@@ -80,6 +86,7 @@ safefile(path, secret)
 		return -1;
 	}
 
+#ifndef __rtems__
 	/* secret file should not be read by others */
 	if (secret) {
 		if ((s.st_mode & S_IRWXG) != 0 || (s.st_mode & S_IRWXO) != 0) {
@@ -88,6 +95,15 @@ safefile(path, secret)
 			return -1;
 		}
 	}
+#else /* __rtems__ */
+	/* We don't have a single address space anyway. So user permissions
+	 * don't really add security. */
+	plog(LLV_WARNING, LOCATION, NULL,
+	    "File permissions of %s not checked.\n", path);
+#endif /* __rtems__ */
 
 	return 0;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-safefile-data.h"
+#endif /* __rtems__ */

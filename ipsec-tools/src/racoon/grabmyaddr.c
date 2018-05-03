@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: grabmyaddr.c,v 1.28.2.2 2013/04/12 09:53:52 tteras Exp $	*/
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -879,3 +885,6 @@ kernel_sync()
 #error No supported interface to monitor local addresses.
 
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-grabmyaddr-data.h"
+#endif /* __rtems__ */

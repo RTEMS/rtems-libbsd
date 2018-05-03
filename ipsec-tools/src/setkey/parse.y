@@ -67,6 +67,7 @@
   (isdigit((int)c) ? (c - '0') : \
     (isupper((int)c) ? (c - 'A' + 10) : (c - 'a' + 10)))
 
+#ifndef __rtems__
 u_int32_t p_spi;
 u_int p_ext, p_alg_enc, p_alg_auth, p_replay, p_mode;
 u_int32_t p_reqid;
@@ -75,6 +76,16 @@ const char *p_key_enc;
 const char *p_key_auth;
 time_t p_lt_hard, p_lt_soft;
 size_t p_lb_hard, p_lb_soft;
+#else /* __rtems__ */
+static u_int32_t p_spi;
+static u_int p_ext, p_alg_enc, p_alg_auth, p_replay, p_mode;
+static u_int32_t p_reqid;
+static u_int p_key_enc_len, p_key_auth_len;
+static const char *p_key_enc;
+static const char *p_key_auth;
+static time_t p_lt_hard, p_lt_soft;
+static size_t p_lb_hard, p_lb_soft;
+#endif /* __rtems__ */
 
 struct security_ctx {
 	u_int8_t doi;
@@ -83,7 +94,7 @@ struct security_ctx {
 	char *buf;
 };
 
-struct security_ctx sec_ctx;
+static struct security_ctx sec_ctx;
 
 static u_int p_natt_type;
 static struct addrinfo * p_natt_oa = NULL;

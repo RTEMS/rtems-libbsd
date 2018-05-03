@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: logger.c,v 1.4 2006/09/09 16:22:09 manu Exp $	*/
 
 /*	$KAME: logger.c,v 1.9 2002/09/03 14:37:03 itojun Exp $	*/
@@ -260,3 +266,6 @@ main(argc, argv)
 
 #endif
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-logger-data.h"
+#endif /* __rtems__ */

@@ -34,7 +34,11 @@
 #ifndef _ALGORITHM_H
 #define _ALGORITHM_H
 
+#ifndef __rtems__
 #include <gnuc.h>
+#else /* __rtems__ */
+#include "gnuc.h"
+#endif /* __rtems__ */
 
 /* algorithm class */
 enum {

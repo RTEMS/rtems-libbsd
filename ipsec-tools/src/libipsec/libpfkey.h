@@ -93,7 +93,11 @@ struct pfkey_send_sa_args {
 };
 
 /* The options built into libipsec */
+#ifndef __rtems__
 extern int libipsec_opt;
+#else /* __rtems__ */
+extern const int libipsec_opt;
+#endif /* __rtems__ */
 #define LIBIPSEC_OPT_NATT		0x01
 #define LIBIPSEC_OPT_FRAG		0x02
 #define LIBIPSEC_OPT_SEC_CTX		0x04
@@ -108,6 +112,9 @@ void ipsec_hexdump __P((const void *, int));
 const char *ipsec_strerror __P((void));
 void kdebug_sadb __P((struct sadb_msg *));
 ipsec_policy_t ipsec_set_policy __P((__ipsec_const char *, int));
+#ifdef __rtems__
+extern void ipsec_free_policy(ipsec_policy_t buf);
+#endif /* __rtems__ */
 int  ipsec_get_policylen __P((ipsec_policy_t));
 char *ipsec_dump_policy __P((ipsec_policy_t, __ipsec_const char *));
 

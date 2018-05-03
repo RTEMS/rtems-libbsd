@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: dnssec.c,v 1.5 2009/03/12 10:57:26 tteras Exp $	*/
 
 /*	$KAME: dnssec.c,v 1.2 2001/08/05 18:46:07 itojun Exp $	*/
@@ -135,3 +141,6 @@ err:
 		freecertinfo(res);
 	return cert;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-dnssec-data.h"
+#endif /* __rtems__ */

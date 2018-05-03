@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: ipsec_doi.c,v 1.46.4.1 2013/06/18 05:40:36 tteras Exp $	*/
 
 /* Id: ipsec_doi.c,v 1.55 2006/08/17 09:20:41 vanhu Exp */
@@ -4794,3 +4800,6 @@ doi2idtype(doi)
 	}
 	/*NOTREACHED*/
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-ipsec_doi-data.h"
+#endif /* __rtems__ */

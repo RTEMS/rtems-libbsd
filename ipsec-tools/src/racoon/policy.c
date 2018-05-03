@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: policy.c,v 1.12 2011/03/14 17:18:13 tteras Exp $	*/
 
 /*	$KAME: policy.c,v 1.46 2001/11/16 04:08:10 sakane Exp $	*/
@@ -496,3 +502,6 @@ spidx2str(spidx)
 #endif
 	return buf;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-policy-data.h"
+#endif /* __rtems__ */

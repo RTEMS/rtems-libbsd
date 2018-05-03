@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: pfkey.c,v 1.57 2011/03/15 13:20:14 vanhu Exp $	*/
 
 /* $Id: pfkey.c,v 1.57 2011/03/15 13:20:14 vanhu Exp $ */
@@ -3993,3 +3999,6 @@ sadbsecas2str(src, dst, proto, spi, mode)
 
 	return buf;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-pfkey-data.h"
+#endif /* __rtems__ */

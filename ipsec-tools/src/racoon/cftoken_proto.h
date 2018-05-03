@@ -34,6 +34,19 @@
 #ifndef _CFTOKEN_PROTO_H
 #define _CFTOKEN_PROTO_H
 
+#ifdef __rtems__
+#define yylval     racoonyylval
+#define yyerror    racoonyyerror
+#define yywrap     racoonyywrap
+/*
+ * No idea where yywrap is defined for racoon on FreeBSD but after compilation it
+ * just is implemented as a function that always returns 1.
+ */
+static inline int yywrap()
+{
+	return 1;
+}
+#endif /* __rtems__ */
 extern int yyerrorcount;
 
 extern int yylex __P((void));

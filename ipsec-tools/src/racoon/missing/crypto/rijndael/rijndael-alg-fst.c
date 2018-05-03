@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: rijndael-alg-fst.c,v 1.4 2006/09/09 16:22:36 manu Exp $	*/
 
 /*	$KAME: rijndael-alg-fst.c,v 1.1.1.1 2001/08/08 09:56:23 sakane Exp $	*/

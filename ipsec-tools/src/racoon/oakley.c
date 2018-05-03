@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: oakley.c,v 1.22.2.2 2012/08/29 11:35:09 tteras Exp $	*/
 
 /* Id: oakley.c,v 1.32 2006/05/26 12:19:46 manubsd Exp */
@@ -3209,3 +3215,6 @@ oakley_padlen(len, base)
 	return padlen;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-oakley-data.h"
+#endif /* __rtems__ */

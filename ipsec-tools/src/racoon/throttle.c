@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: throttle.c,v 1.7 2011/03/14 17:18:13 tteras Exp $	*/
 
 /* Id: throttle.c,v 1.5 2006/04/05 20:54:50 manubsd Exp */

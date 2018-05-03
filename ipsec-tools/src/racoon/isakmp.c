@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp.c,v 1.71.2.2 2012/08/29 08:55:26 tteras Exp $	*/
 
 /* Id: isakmp.c,v 1.74 2006/05/07 21:32:59 manubsd Exp */
@@ -3698,3 +3704,6 @@ setscopeid(sp_addr0, sa_addr0)
 	return 0;
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp-data.h"
+#endif /* __rtems__ */

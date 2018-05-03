@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: pfkey.c,v 1.21.2.1 2011/11/14 13:25:06 tteras Exp $	*/
 
 /*	$KAME: pfkey.c,v 1.47 2003/10/02 19:52:12 itojun Exp $	*/
@@ -95,7 +97,11 @@ static caddr_t pfkey_setsecctx __P((caddr_t, caddr_t, u_int, u_int8_t, u_int8_t,
 				    caddr_t, u_int16_t));
 #endif
 
+#ifndef __rtems__
 int libipsec_opt = 0
+#else /* __rtems__ */
+const int libipsec_opt = 0
+#endif /* __rtems__ */
 #ifdef SADB_X_EXT_NAT_T_TYPE
 	| LIBIPSEC_OPT_NATT
 #endif
@@ -116,7 +122,11 @@ static struct sadb_supported *ipsec_supported[] = { NULL, NULL, NULL,
 #endif
 };
 
+#ifndef __rtems__
 static int supported_map[] = {
+#else /* __rtems__ */
+static const int supported_map[] = {
+#endif /* __rtems__ */
 	SADB_SATYPE_AH,
 	SADB_SATYPE_ESP,
 	SADB_X_SATYPE_IPCOMP,

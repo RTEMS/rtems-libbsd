@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: rsalist.c,v 1.6 2011/03/14 15:50:36 vanhu Exp $	*/
 
 /* Id: rsalist.c,v 1.3 2004/11/08 12:04:23 ludvigm Exp */
@@ -273,3 +279,6 @@ rsa_try_check_rsasign(vchar_t *source, vchar_t *sig, struct genlist *list)
 	}
 	return NULL;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-rsalist-data.h"
+#endif /* __rtems__ */

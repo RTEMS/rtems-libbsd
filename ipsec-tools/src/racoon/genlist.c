@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: genlist.c,v 1.4 2006/09/09 16:22:09 manu Exp $	*/
 
 /* Id: genlist.c,v 1.2 2004/07/12 20:43:50 ludvigm Exp */
@@ -172,3 +178,6 @@ int main()
 	return 0;
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-genlist-data.h"
+#endif /* __rtems__ */

@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: getcertsbyname.c,v 1.4 2006/09/09 16:22:09 manu Exp $	*/
 
 /*	$KAME: getcertsbyname.c,v 1.7 2001/11/16 04:12:59 sakane Exp $	*/
@@ -416,3 +422,6 @@ main(ac, av)
 	exit(0);
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-getcertsbyname-data.h"
+#endif /* __rtems__ */

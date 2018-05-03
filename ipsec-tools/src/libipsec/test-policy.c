@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: test-policy.c,v 1.4 2006/09/09 16:22:09 manu Exp $	*/
 
 /*	$KAME: test-policy.c,v 1.16 2003/08/26 03:24:08 itojun Exp $	*/
@@ -51,7 +53,13 @@
 struct req_t {
 	int result;	/* expected result; 0:ok 1:ng */
 	char *str;
+#ifndef __rtems__
 } reqs[] = {
+#else /* __rtems__ */
+};
+
+static const struct req_t reqs[] = {
+#endif /* __rtems__ */
 { 0, "out ipsec" },
 { 1, "must_error" },
 { 1, "in ipsec must_error" },
@@ -124,7 +132,11 @@ test1()
 
 int
 test1sub1(req)
+#ifndef __rtems__
 	struct req_t *req;
+#else /* __rtems__ */
+	const struct req_t *req;
+#endif /* __rtems__ */
 {
 	char *buf;
 

@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: algorithm.c,v 1.8 2006/10/06 12:02:27 manu Exp $	*/
 
 /* Id: algorithm.c,v 1.15 2006/05/23 20:23:09 manubsd Exp */
@@ -955,3 +961,6 @@ algclass2doi(class)
 	/*NOTREACHED*/
 	return -1;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-algorithm-data.h"
+#endif /* __rtems__ */

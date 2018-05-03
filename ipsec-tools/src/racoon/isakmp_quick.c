@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_quick.c,v 1.29 2011/03/14 17:18:13 tteras Exp $	*/
 
 /* Id: isakmp_quick.c,v 1.29 2006/08/22 18:17:17 manubsd Exp */
@@ -2629,3 +2635,6 @@ ph2_recv_n(iph2, gen)
 	return 0;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_quick-data.h"
+#endif /* __rtems__ */

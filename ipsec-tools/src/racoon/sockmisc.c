@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: sockmisc.c,v 1.19 2011/03/14 17:18:13 tteras Exp $	*/
 
 /* Id: sockmisc.c,v 1.24 2006/05/07 21:32:59 manubsd Exp */
@@ -633,7 +639,11 @@ setsockopt_bypass(so, family)
 			strerror(errno));
 		return -1;
 	}
+#ifndef __rtems__
 	racoon_free(buf);
+#else /* __rtems__ */
+	ipsec_free_policy(buf);
+#endif /* __rtems__ */
 
 	policy = "out bypass";
 	buf = ipsec_set_policy(policy, strlen(policy));
@@ -652,7 +662,11 @@ setsockopt_bypass(so, family)
 			strerror(errno));
 		return -1;
 	}
+#ifndef __rtems__
 	racoon_free(buf);
+#else /* __rtems__ */
+	ipsec_free_policy(buf);
+#endif /* __rtems__ */
 
 	return 0;
 }
@@ -1004,3 +1018,6 @@ set_port (struct sockaddr *addr, u_int16_t new_port)
 
   return port_ptr;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-sockmisc-data.h"
+#endif /* __rtems__ */

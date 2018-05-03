@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: crypto_openssl.c,v 1.20.4.3 2012/12/24 14:50:39 tteras Exp $	*/
 
 /* Id: crypto_openssl.c,v 1.47 2006/05/06 20:42:09 manubsd Exp */
@@ -86,7 +92,14 @@
 #ifdef HAVE_OPENSSL_SHA2_H
 #include <openssl/sha2.h>
 #else
+#ifndef __rtems__
 #include "crypto/sha2/sha2.h"
+#else /* __rtems__ */
+#define SHA384_Init _bsd_SHA384_Init
+#define SHA384_Update _bsd_SHA384_Update
+#define SHA384_Final _bsd_SHA384_Final
+#include <openssl/sha2/sha384.h>
+#endif /* __rtems__ */
 #endif
 #endif
 #include "plog.h"
@@ -2584,3 +2597,6 @@ eay_version()
 {
 	return SSLeay_version(SSLEAY_VERSION);
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-crypto_openssl-data.h"
+#endif /* __rtems__ */

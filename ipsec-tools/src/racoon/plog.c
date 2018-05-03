@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: plog.c,v 1.7 2011/01/28 12:51:40 tteras Exp $	*/
 
 /* Id: plog.c,v 1.11 2006/06/20 09:57:31 vanhu Exp */
@@ -58,6 +64,9 @@
 #endif
 #include <ctype.h>
 #include <err.h>
+#ifdef __rtems__
+#include <netinet/in.h>
+#endif /* __rtems__ */
 
 #include "var.h"
 #include "misc.h"
@@ -293,3 +302,6 @@ binsanitize(binstr, n)
 	return d;
 }
 	
+#ifdef __rtems__
+#include "rtems-bsd-racoon-plog-data.h"
+#endif /* __rtems__ */

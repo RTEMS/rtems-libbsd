@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_ident.c,v 1.13 2009/09/18 10:31:11 tteras Exp $	*/
 
 /* Id: isakmp_ident.c,v 1.21 2006/04/06 16:46:08 manubsd Exp */
@@ -1898,3 +1904,6 @@ ident_recv_n(iph1, gen)
 	return 0;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_ident-data.h"
+#endif /* __rtems__ */

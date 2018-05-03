@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: plainrsa-gen.c,v 1.6 2011/02/11 10:07:19 tteras Exp $	*/
 
 /* Id: plainrsa-gen.c,v 1.6 2005/04/21 09:08:40 monas Exp */

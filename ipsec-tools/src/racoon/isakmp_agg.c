@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_agg.c,v 1.16 2009/09/18 10:31:11 tteras Exp $	*/
 
 /* Id: isakmp_agg.c,v 1.28 2006/04/06 16:46:08 manubsd Exp */
@@ -1449,3 +1455,6 @@ agg_r2send(iph1, msg)
 end:
 	return error;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_agg-data.h"
+#endif /* __rtems__ */

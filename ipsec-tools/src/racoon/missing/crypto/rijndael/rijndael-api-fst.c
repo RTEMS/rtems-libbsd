@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: rijndael-api-fst.c,v 1.4 2006/09/09 16:22:36 manu Exp $	*/
 
 /*	$KAME: rijndael-api-fst.c,v 1.8 2002/11/18 23:32:54 itojun Exp $	*/

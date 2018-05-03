@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: pfkey_dump.c,v 1.18 2010/12/03 14:32:52 tteras Exp $	*/
 
 /*	$KAME: pfkey_dump.c,v 1.45 2003/09/08 10:14:56 itojun Exp $	*/
@@ -122,7 +124,11 @@ struct val2str {
 /*
  * Must to be re-written about following strings.
  */
+#ifndef __rtems__
 static char *str_satype[] = {
+#else /* __rtems__ */
+static const char *str_satype[] = {
+#endif /* __rtems__ */
 	"unspec",
 	"unknown",
 	"ah",
@@ -137,20 +143,32 @@ static char *str_satype[] = {
 	"tcp",
 };
 
+#ifndef __rtems__
 static char *str_mode[] = {
+#else /* __rtems__ */
+static const char *str_mode[] = {
+#endif /* __rtems__ */
 	"any",
 	"transport",
 	"tunnel",
 };
 
+#ifndef __rtems__
 static char *str_state[] = {
+#else /* __rtems__ */
+static const char *str_state[] = {
+#endif /* __rtems__ */
 	"larval",
 	"mature",
 	"dying",
 	"dead",
 };
 
+#ifndef __rtems__
 static struct val2str str_alg_auth[] = {
+#else /* __rtems__ */
+static const struct val2str str_alg_auth[] = {
+#endif /* __rtems__ */
 	{ SADB_AALG_NONE, "none", },
 	{ SADB_AALG_MD5HMAC, "hmac-md5", },
 	{ SADB_AALG_SHA1HMAC, "hmac-sha1", },
@@ -178,7 +196,11 @@ static struct val2str str_alg_auth[] = {
 	{ -1, NULL, },
 };
 
+#ifndef __rtems__
 static struct val2str str_alg_enc[] = {
+#else /* __rtems__ */
+static const struct val2str str_alg_enc[] = {
+#endif /* __rtems__ */
 	{ SADB_EALG_NONE, "none", },
 	{ SADB_EALG_DESCBC, "des-cbc", },
 	{ SADB_EALG_3DESCBC, "3des-cbc", },
@@ -203,7 +225,11 @@ static struct val2str str_alg_enc[] = {
 	{ -1, NULL, },
 };
 
+#ifndef __rtems__
 static struct val2str str_alg_comp[] = {
+#else /* __rtems__ */
+static const struct val2str str_alg_comp[] = {
+#endif /* __rtems__ */
 	{ SADB_X_CALG_NONE, "none", },
 	{ SADB_X_CALG_OUI, "oui", },
 	{ SADB_X_CALG_DEFLATE, "deflate", },

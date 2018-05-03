@@ -70,10 +70,10 @@ _defaults = {
                       'freebsd/lib/libutil',
                       'freebsd/lib/libkvm',
                       'freebsd/lib/libmemstat',
-                      'freebsd/lib/libipsec',
                       'freebsd/contrib/expat/lib',
                       'freebsd/contrib/libpcap',
                       'freebsd/contrib/libxo',
+                      'ipsec-tools/src/libipsec',
                       'linux/include',
                       'linux/drivers/net/ethernet/freescale/fman',
                       'rtemsbsd/sys',
@@ -107,6 +107,7 @@ _defaults = {
      ('freebsd/include',                        '**/*.h',                          ''),
      ('freebsd/sys/bsm',                        '**/*.h',                          'bsm'),
      ('freebsd/sys/cam',                        '**/*.h',                          'cam'),
+     ('freebsd/sys/crypto',                     '*/*.h',                           'openssl'),
      ('freebsd/sys/net',                        '**/*.h',                          'net'),
      ('freebsd/sys/net80211',                   '**/*.h',                          'net80211'),
      ('freebsd/sys/netinet',                    '**/*.h',                          'netinet'),
@@ -335,16 +336,6 @@ class rtems(builder.Module):
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['yacc']('_nsyy', 'nsparser.h')))
-        self.addFile(mm.generator['file']('lib/libipsec/policy_token.l',
-                                          mm.generator['freebsd-path'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['lex']('__libipsecyy', 'policy_parse.c')))
-        self.addFile(mm.generator['file']('lib/libipsec/policy_parse.y',
-                                          mm.generator['freebsd-path'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['yacc']('__libipsecyy', 'y.tab.h')))
 
 
 #
@@ -2028,6 +2019,161 @@ class netipsec(builder.Module):
             mm.generator['source']()
         )
 
+        # libipsec
+        libipsec_cflags = ['-D__FreeBSD__=1', '-DHAVE_CONFIG_H=1']
+        self.addSourceFiles(
+            [
+                'ipsec-tools/src/libipsec/ipsec_dump_policy.c',
+                'ipsec-tools/src/libipsec/ipsec_get_policylen.c',
+                'ipsec-tools/src/libipsec/ipsec_strerror.c',
+                'ipsec-tools/src/libipsec/key_debug.c',
+                'ipsec-tools/src/libipsec/pfkey.c',
+                'ipsec-tools/src/libipsec/pfkey_dump.c',
+            ],
+            mm.generator['source'](libipsec_cflags)
+        )
+        self.addFile(mm.generator['file']('ipsec-tools/src/libipsec/policy_token.l',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['lex']('__libipsec',
+                                                              'policy_parse.c',
+                                                              libipsec_cflags)))
+        self.addFile(mm.generator['file']('ipsec-tools/src/libipsec/policy_parse.y',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['yacc']('__libipsec',
+                                                               'policy_parse.h',
+                                                               libipsec_cflags)))
+
+        # raccoon
+        racoon_cflags = ['-D__FreeBSD__=1']
+        self.addSourceFiles(
+            [
+                'ipsec-tools/src/racoon/admin.c',
+                'ipsec-tools/src/racoon/algorithm.c',
+                'ipsec-tools/src/racoon/backupsa.c',
+                'ipsec-tools/src/racoon/cfparse_wrapper.c',
+                'ipsec-tools/src/racoon/cftoken_wrapper.c',
+                'ipsec-tools/src/racoon/crypto_openssl.c',
+                'ipsec-tools/src/racoon/dnssec.c',
+                'ipsec-tools/src/racoon/evt.c',
+                'ipsec-tools/src/racoon/genlist.c',
+                'ipsec-tools/src/racoon/getcertsbyname.c',
+                'ipsec-tools/src/racoon/grabmyaddr.c',
+                'ipsec-tools/src/racoon/gssapi.c',
+                'ipsec-tools/src/racoon/handler.c',
+                'ipsec-tools/src/racoon/ipsec_doi.c',
+                'ipsec-tools/src/racoon/isakmp.c',
+                'ipsec-tools/src/racoon/isakmp_agg.c',
+                'ipsec-tools/src/racoon/isakmp_base.c',
+                'ipsec-tools/src/racoon/isakmp_frag.c',
+                'ipsec-tools/src/racoon/isakmp_ident.c',
+                'ipsec-tools/src/racoon/isakmp_inf.c',
+                'ipsec-tools/src/racoon/isakmp_newg.c',
+                'ipsec-tools/src/racoon/isakmp_quick.c',
+                'ipsec-tools/src/racoon/localconf.c',
+                'ipsec-tools/src/racoon/logger.c',
+                'ipsec-tools/src/racoon/main.c',
+                'ipsec-tools/src/racoon/misc.c',
+                'ipsec-tools/src/racoon/missing/crypto/sha2/sha2.c',
+                'ipsec-tools/src/racoon/nattraversal.c',
+                'ipsec-tools/src/racoon/oakley.c',
+                'ipsec-tools/src/racoon/pfkey.c',
+                'ipsec-tools/src/racoon/plog.c',
+                'ipsec-tools/src/racoon/policy.c',
+                'ipsec-tools/src/racoon/privsep.c',
+                'ipsec-tools/src/racoon/proposal.c',
+                'ipsec-tools/src/racoon/prsa_par_wrapper.c',
+                'ipsec-tools/src/racoon/prsa_tok_wrapper.c',
+                'ipsec-tools/src/racoon/remoteconf.c',
+                'ipsec-tools/src/racoon/rsalist.c',
+                'ipsec-tools/src/racoon/safefile.c',
+                'ipsec-tools/src/racoon/sainfo.c',
+                'ipsec-tools/src/racoon/schedule.c',
+                'ipsec-tools/src/racoon/session.c',
+                'ipsec-tools/src/racoon/sockmisc.c',
+                'ipsec-tools/src/racoon/str2val.c',
+                'ipsec-tools/src/racoon/strnames.c',
+                'ipsec-tools/src/racoon/vendorid.c',
+                'ipsec-tools/src/racoon/vmbuf.c',
+            ],
+            mm.generator['source'](racoon_cflags)
+        )
+        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/cftoken.l',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['lex']('racoonyy',
+                                                              'cftoken.c',
+                                                              racoon_cflags,
+                                                              build=False)))
+        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/cfparse.y',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['yacc']('racoonyy',
+                                                               'cfparse.h',
+                                                               racoon_cflags,
+                                                               build=False)))
+        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/prsa_tok.l',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['lex']('racoonprsa',
+                                                              'prsa_tok.c',
+                                                              racoon_cflags,
+                                                              build=False)))
+        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/prsa_par.y',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['yacc']('racoonprsa',
+                                                               'prsa_par.h',
+                                                               racoon_cflags,
+                                                               build=False)))
+        self.addRTEMSSourceFiles(
+            [
+                'rtems/rtems-bsd-shell-racoon.c',
+                'rtems/rtems-racoon-mutex.c',
+            ],
+            mm.generator['source']()
+        )
+
+        # setkey
+        setkey_cflags = ['-D__FreeBSD__=1', '-DHAVE_CONFIG_H=1']
+        self.addSourceFiles(
+            [
+                'ipsec-tools/src/setkey/parse_wrapper.c',
+                'ipsec-tools/src/setkey/setkey.c',
+                'ipsec-tools/src/setkey/token_wrapper.c',
+            ],
+            mm.generator['source'](setkey_cflags)
+        )
+        self.addFile(mm.generator['file']('ipsec-tools/src/setkey/token.l',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['lex']('setkeyyy',
+                                                              'token.c',
+                                                              setkey_cflags,
+                                                              build=False)))
+        self.addFile(mm.generator['file']('ipsec-tools/src/setkey/parse.y',
+                                          mm.generator['path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['yacc']('setkeyyy',
+                                                               'parse.h',
+                                                               setkey_cflags,
+                                                               build=False)))
+        self.addRTEMSSourceFiles(
+            [
+                'rtems/rtems-bsd-shell-setkey.c',
+            ],
+            mm.generator['source']()
+        )
+
 #
 # IEEE 802.11
 #
@@ -2500,8 +2646,6 @@ class user_space(builder.Module):
                 'lib/libc/rpc/mt_misc.h',
                 'lib/libc/rpc/rpc_com.h',
                 'lib/libc/stdio/local.h',
-                'lib/libipsec/ipsec_strerror.h',
-                'lib/libipsec/libpfkey.h',
                 'lib/libkvm/kvm.h',
                 'lib/libmemstat/memstat.h',
                 'lib/libmemstat/memstat_internal.h',
@@ -2730,11 +2874,6 @@ class user_space(builder.Module):
                 'lib/libc/xdr/xdr_reference.c',
                 'lib/libc/xdr/xdr_sizeof.c',
                 'lib/libc/xdr/xdr_stdio.c',
-                'lib/libipsec/ipsec_dump_policy.c',
-                'lib/libipsec/ipsec_get_policylen.c',
-                'lib/libipsec/ipsec_strerror.c',
-                'lib/libipsec/pfkey.c',
-                'lib/libipsec/pfkey_dump.c',
                 'lib/libmemstat/memstat_all.c',
                 'lib/libmemstat/memstat.c',
                 'lib/libmemstat/memstat_malloc.c',

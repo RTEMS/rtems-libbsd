@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: vmbuf.c,v 1.4 2006/09/09 16:22:10 manu Exp $	*/
 
 /*	$KAME: vmbuf.c,v 1.11 2001/11/26 16:54:29 sakane Exp $	*/
@@ -135,3 +141,6 @@ vdup(src)
 
 	return new;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-vmbuf-data.h"
+#endif /* __rtems__ */

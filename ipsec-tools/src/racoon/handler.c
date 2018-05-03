@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: handler.c,v 1.39.2.1 2011/11/17 14:46:31 vanhu Exp $	*/
 
 /* Id: handler.c,v 1.28 2006/05/26 12:17:29 manubsd Exp */
@@ -1581,3 +1587,6 @@ purgeph1bylogin(login)
 	return found;
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-handler-data.h"
+#endif /* __rtems__ */

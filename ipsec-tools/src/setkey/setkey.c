@@ -1,3 +1,10 @@
+#include <machine/rtems-bsd-user-space.h>
+
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-setkey-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: setkey.c,v 1.14 2009/08/06 04:44:43 tteras Exp $	*/
 
 /*	$KAME: setkey.c,v 1.36 2003/09/24 23:52:51 itojun Exp $	*/
@@ -35,6 +42,12 @@
 #include "config.h"
 #endif
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-commands.h>
+#include <rtems/linkersets.h>
+#endif /* __rtems__ */
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -68,11 +81,16 @@
 #include "package_version.h"
 #define extern /* so that variables in extern.h are not extern... */
 #include "extern.h"
+#ifdef __rtems__
+#undef extern /* so that we can rely on the C-standard again... */
+#endif /* __rtems__ */
 
 #define strlcpy(d,s,l) (strncpy(d,s,l), (d)[(l)-1] = '\0')
 
 void usage __P((int));
+#ifndef __rtems__
 int main __P((int, char **));
+#endif /* __rtems__ */
 int get_supported __P((void));
 void sendkeyshort __P((u_int));
 void promisc __P((void));
@@ -139,6 +157,29 @@ usage(int only_version)
 	exit(1);
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_setkey, char);
+
+int
+rtems_bsd_command_setkey(int argc, char *argv[])
+{
+	int exit_code;
+	void *data_begin;
+	size_t data_size;
+
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_setkey);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_setkey);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("setkey",
+	    main, argc, argv, data_begin, data_size);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
 int
 main(argc, argv)
 	int argc;
@@ -146,6 +187,15 @@ main(argc, argv)
 {
 	FILE *fp = stdin;
 	int c;
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	if (argc == 1) {
 		usage(0);
@@ -382,7 +432,11 @@ void
 promisc()
 {
 	struct sadb_msg msg;
+#ifndef __rtems__
 	u_char rbuf[1024 * 32];	/* XXX: Enough ? Should I do MSG_PEEK ? */
+#else /* __rtems__ */
+	u_char rbuf[1024 * 20];
+#endif /* __rtems__ */
 	ssize_t l;
 
 	msg.sadb_msg_version = PF_KEY_V2;
@@ -460,7 +514,11 @@ sendkeymsg_spigrep(satype, srcs, dsts, num_spi)
 	char *buf;
 	size_t len;
 	ssize_t l;
+#ifndef __rtems__
 	u_char rbuf[1024 * 32];
+#else /* __rtems__ */
+	u_char rbuf[1024 * 20];
+#endif /* __rtems__ */
 	caddr_t mhp[SADB_EXT_MAX + 1];
 	struct sadb_address *saddr;
 	struct sockaddr *s;
@@ -610,7 +668,11 @@ sendkeymsg(buf, len)
 	char *buf;
 	size_t len;
 {
+#ifndef __rtems__
 	u_char rbuf[1024 * 32];	/* XXX: Enough ? Should I do MSG_PEEK ? */
+#else /* __rtems__ */
+	u_char rbuf[1024 * 20];
+#endif /* __rtems__ */
 	ssize_t l;
 	struct sadb_msg *msg;
 
@@ -837,7 +899,11 @@ fileproc(filename)
 	ssize_t len, l;
 	u_char *p, *ep;
 	struct sadb_msg *msg;
+#ifndef __rtems__
 	u_char rbuf[1024 * 32];	/* XXX: Enough ? Should I do MSG_PEEK ? */
+#else /* __rtems__ */
+	u_char rbuf[1024 * 20];
+#endif /* __rtems__ */
 
 	fd = open(filename, O_RDONLY);
 	if (fd < 0)
@@ -1060,3 +1126,6 @@ gmt2local(time_t t)
 
 	return (dt);
 }
+#ifdef __rtems__
+#include "rtems-bsd-setkey-setkey-data.h"
+#endif /* __rtems__ */

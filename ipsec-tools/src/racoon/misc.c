@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: misc.c,v 1.6 2008/07/15 00:47:09 mgrooms Exp $	*/
 
 /*	$KAME: misc.c,v 1.23 2001/08/16 14:37:29 itojun Exp $	*/
@@ -180,3 +186,6 @@ timedelta(t1, t2)
 	return t2->tv_sec - t1->tv_sec - 1 +
 		(double)(1000000 + t2->tv_usec - t1->tv_usec) / 1000000;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-misc-data.h"
+#endif /* __rtems__ */

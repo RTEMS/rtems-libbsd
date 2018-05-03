@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_base.c,v 1.12 2009/03/12 10:57:26 tteras Exp $	*/
 
 /*	$KAME: isakmp_base.c,v 1.49 2003/11/13 02:30:20 sakane Exp $	*/
@@ -1392,3 +1398,6 @@ end:
 		vfree(vid);
 	return error;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_base-data.h"
+#endif /* __rtems__ */

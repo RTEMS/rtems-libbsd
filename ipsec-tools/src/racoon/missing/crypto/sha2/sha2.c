@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "../../../rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: sha2.c,v 1.4.40.1 2012/12/24 08:48:08 tteras Exp $	*/
 
 /* Id: sha2.c,v 1.6 2004/09/21 14:35:25 ludvigm Exp */
@@ -44,7 +50,22 @@
 #ifndef __linux__
 #include <machine/endian.h>
 #endif
+#ifndef __rtems__
 #include <crypto/sha2/sha2.h>
+#else /* __rtems__ */
+#define SHA256_Init _bsd_SHA256_Init
+#define SHA256_Update _bsd_SHA256_Update
+#define SHA256_Final _bsd_SHA256_Final
+#include <crypto/sha2/sha256.h>
+#define SHA384_Init _bsd_SHA384_Init
+#define SHA384_Update _bsd_SHA384_Update
+#define SHA384_Final _bsd_SHA384_Final
+#include <crypto/sha2/sha384.h>
+#define SHA512_Init _bsd_SHA512_Init
+#define SHA512_Update _bsd_SHA512_Update
+#define SHA512_Final _bsd_SHA512_Final
+#include <crypto/sha2/sha512.h>
+#endif /* __rtems__ */
 #include <openssl/evp.h>
 
 /* get openssl/ssleay version number */
@@ -58,6 +79,7 @@
 
 #define HAVE_EVP_097
 
+#ifndef __rtems__
 /*
  * ASSERT NOTE:
  * Some sanity checking code is included using assert().  On my FreeBSD
@@ -984,7 +1006,6 @@ char* SHA512_Data(const sha2_byte* data, size_t len, char digest[SHA512_DIGEST_S
 	return SHA512_End(&context, digest);
 }
 
-
 /*** SHA-384: *********************************************************/
 void SHA384_Init(SHA384_CTX* context) {
 	if (context == (SHA384_CTX*)0) {
@@ -1058,6 +1079,8 @@ char* SHA384_Data(const sha2_byte* data, size_t len, char digest[SHA384_DIGEST_S
 	SHA384_Update(&context, data, len);
 	return SHA384_End(&context, digest);
 }
+
+#endif /* __rtems__ */
 
 /*glue*/
 #ifdef HAVE_EVP_097
@@ -1197,3 +1220,7 @@ struct env_md_st *EVP_sha2_512(void)
 {
 	return(&sha2_512_md);
 }
+
+#ifdef __rtems__
+#include "../../../rtems-bsd-racoon-main-data.h"
+#endif /* __rtems__ */

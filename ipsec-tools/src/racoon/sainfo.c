@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: sainfo.c,v 1.14 2011/02/02 15:21:34 vanhu Exp $	*/
 
 /*	$KAME: sainfo.c,v 1.16 2003/06/27 07:32:39 sakane Exp $	*/
@@ -411,3 +417,6 @@ void save_sainfotree_restore(void){
 	flushsainfo();
 	sitree=sitree_save;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-sainfo-data.h"
+#endif /* __rtems__ */

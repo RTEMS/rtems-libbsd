@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: evt.c,v 1.10 2010/10/21 06:15:28 tteras Exp $	*/
 
 /* Id: evt.c,v 1.5 2006/06/22 20:11:35 manubsd Exp */
@@ -397,3 +403,6 @@ evt_list_cleanup(list)
 }
 
 #endif /* ENABLE_ADMINPORT */
+#ifdef __rtems__
+#include "rtems-bsd-racoon-evt-data.h"
+#endif /* __rtems__ */

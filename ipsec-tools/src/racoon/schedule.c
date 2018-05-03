@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: schedule.c,v 1.7 2009/01/23 09:10:13 tteras Exp $	*/
 
 /*	$KAME: schedule.c,v 1.19 2001/11/05 10:53:19 sakane Exp $	*/
@@ -309,3 +315,6 @@ main()
 	}
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-schedule-data.h"
+#endif /* __rtems__ */

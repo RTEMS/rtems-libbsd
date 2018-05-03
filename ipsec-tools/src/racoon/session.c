@@ -1,3 +1,8 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
 /*	$NetBSD: session.c,v 1.32 2011/03/02 15:09:16 vanhu Exp $	*/
 
 /*	$KAME: session.c,v 1.32 2003/09/24 02:01:17 jinmei Exp $	*/
@@ -250,6 +255,7 @@ session(void)
 	natt_keepalive_init ();
 #endif
 
+#ifndef __rtems__
 	/* write .pid file */
 	if (lcconf->pathinfo[LC_PATHTYPE_PIDFILE] == NULL)
 		strlcpy(pid_file, _PATH_VARRUN "racoon.pid", MAXPATHLEN);
@@ -271,10 +277,12 @@ session(void)
 		plog(LLV_ERROR, LOCATION, NULL,
 			"cannot open %s", pid_file);
 	}
+#endif /* __rtems__ */
 
 	if (privsep_init() != 0)
 		exit(1);
 
+#ifndef __rtems__
 	/*
 	 * The fork()'ed privileged side will close its copy of fp.  We wait
 	 * until here to get the correct child pid.
@@ -282,6 +290,7 @@ session(void)
 	racoon_pid = getpid();
 	fprintf(fp, "%ld\n", (long)racoon_pid);
 	fclose(fp);
+#endif /* __rtems__ */
 
 	for (i = 0; i <= NSIG; i++)
 		sigreq[i] = 0;
@@ -516,7 +525,11 @@ set_signal(sig, func)
 
 	memset((caddr_t)&sa, 0, sizeof(sa));
 	sa.sa_handler = func;
+#ifndef __rtems__
 	sa.sa_flags = SA_RESTART;
+#else /* __rtems__ */
+	sa.sa_flags = 0;
+#endif /* __rtems__ */
 
 	if (sigemptyset(&sa.sa_mask) < 0)
 		return -1;
@@ -538,3 +551,6 @@ close_sockets()
 	return 0;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-session-data.h"
+#endif /* __rtems__ */

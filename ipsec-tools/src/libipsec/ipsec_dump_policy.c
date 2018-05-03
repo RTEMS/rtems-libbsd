@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*	$NetBSD: ipsec_dump_policy.c,v 1.9 2010/12/03 15:01:11 tteras Exp $	*/
 
 /* Id: ipsec_dump_policy.c,v 1.10 2005/06/29 09:12:37 manubsd Exp */

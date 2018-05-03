@@ -1,6 +1,5 @@
-#line 2 "policy_token.c"
 
-#line 4 "policy_token.c"
+#line 3 "<stdout>"
 
 #define  YY_INT_ALIGNED short int
 
@@ -35,6 +34,16 @@
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
 
+#if defined(__FreeBSD__)
+#ifndef __STDC_LIMIT_MACROS
+#define	__STDC_LIMIT_MACROS
+#endif
+#include <sys/cdefs.h>
+#include <stdint.h>
+#else
+#define	__dead2
+#endif
+
 /* begin standard C headers. */
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +59,8 @@
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#if defined(__FreeBSD__) || \
+    (defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
 
 /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
  * if you want the limit (max/min) macros for int types. 
@@ -161,7 +171,7 @@ typedef unsigned int flex_uint32_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
-#define YY_BUF_SIZE 16384
+#define YY_BUF_SIZE 1024
 #endif
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
@@ -283,6 +293,7 @@ static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 #define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
                           ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
                           : NULL)
+#define yy_current_buffer YY_CURRENT_BUFFER
 
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
@@ -371,7 +382,7 @@ extern char *__libipsectext;
 static yy_state_type yy_get_previous_state (void );
 static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
 static int yy_get_next_buffer (void );
-static void yy_fatal_error (yyconst char msg[]  );
+static void yy_fatal_error (yyconst char msg[]  ) __dead2;
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up __libipsectext.
@@ -565,7 +576,7 @@ int __libipsec_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *__libipsectext;
-#line 1 "policy_token.l"
+#line 1 "../../ipsec-tools/src/libipsec/policy_token.l"
 /*	$NetBSD: policy_token.l,v 1.7 2007/07/18 12:07:50 vanhu Exp $	*/
 /* Id: policy_token.l,v 1.12 2005/05/05 12:32:18 manubsd Exp */
 /*
@@ -596,7 +607,10 @@ char *__libipsectext;
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#line 35 "policy_token.l"
+#line 35 "../../ipsec-tools/src/libipsec/policy_token.l"
+#ifdef __rtems__
+#include <machine/rtems-bsd-user-space.h>
+#endif /* __rtems__ */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -626,7 +640,7 @@ char *__libipsectext;
 
 int __libipseclex __P((void));
 /* common section */
-#line 630 "policy_token.c"
+#line 644 "<stdout>"
 
 #define INITIAL 0
 
@@ -802,14 +816,14 @@ extern int __libipseclex (void);
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
     
-#line 97 "policy_token.l"
+#line 100 "../../ipsec-tools/src/libipsec/policy_token.l"
 
 
-#line 813 "policy_token.c"
+#line 827 "<stdout>"
 
 	if ( !(yy_init) )
 		{
@@ -853,7 +867,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				(yy_last_accepting_state) = yy_current_state;
@@ -894,17 +908,17 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 99 "policy_token.l"
+#line 102 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_DIR_INBOUND; return(DIR); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 100 "policy_token.l"
+#line 103 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_DIR_OUTBOUND; return(DIR); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 101 "policy_token.l"
+#line 104 "../../ipsec-tools/src/libipsec/policy_token.l"
 { 
 #ifdef HAVE_POLICY_FWD
 		  yylval.num = IPSEC_DIR_FWD; return(DIR); 
@@ -915,37 +929,37 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 109 "policy_token.l"
+#line 112 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(PRIORITY); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 110 "policy_token.l"
+#line 113 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(PRIORITY); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 111 "policy_token.l"
+#line 114 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num32 = PRIORITY_LOW; return(PRIO_BASE); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 112 "policy_token.l"
+#line 115 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num32 = PRIORITY_DEFAULT; return(PRIO_BASE); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 113 "policy_token.l"
+#line 116 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num32 = PRIORITY_HIGH; return(PRIO_BASE); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 114 "policy_token.l"
+#line 117 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(PLUS); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 115 "policy_token.l"
+#line 118 "../../ipsec-tools/src/libipsec/policy_token.l"
 {
 			yylval.val.len = strlen(__libipsectext);
 			yylval.val.buf = __libipsectext;
@@ -954,82 +968,82 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 121 "policy_token.l"
+#line 124 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_DISCARD; return(ACTION); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 122 "policy_token.l"
+#line 125 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_NONE; return(ACTION); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 123 "policy_token.l"
+#line 126 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_IPSEC; return(ACTION); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 124 "policy_token.l"
+#line 127 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_BYPASS; return(ACTION); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 125 "policy_token.l"
+#line 128 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_POLICY_ENTRUST; return(ACTION); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 127 "policy_token.l"
+#line 130 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPPROTO_ESP; return(PROTOCOL); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 128 "policy_token.l"
+#line 131 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPPROTO_AH; return(PROTOCOL); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 129 "policy_token.l"
+#line 132 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPPROTO_IPCOMP; return(PROTOCOL); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 131 "policy_token.l"
+#line 134 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_MODE_TRANSPORT; return(MODE); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 132 "policy_token.l"
+#line 135 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_MODE_TUNNEL; return(MODE); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 134 "policy_token.l"
+#line 137 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(ME); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 135 "policy_token.l"
+#line 138 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(ANY); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 137 "policy_token.l"
+#line 140 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_DEFAULT; return(LEVEL); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 138 "policy_token.l"
+#line 141 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_USE; return(LEVEL); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 139 "policy_token.l"
+#line 142 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_REQUIRE; return(LEVEL); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 140 "policy_token.l"
+#line 143 "../../ipsec-tools/src/libipsec/policy_token.l"
 {
 			yylval.val.len = strlen(__libipsectext + 7);
 			yylval.val.buf = __libipsectext + 7;
@@ -1038,17 +1052,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 145 "policy_token.l"
+#line 148 "../../ipsec-tools/src/libipsec/policy_token.l"
 { yylval.num = IPSEC_LEVEL_UNIQUE; return(LEVEL); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 146 "policy_token.l"
+#line 149 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(SLASH); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 148 "policy_token.l"
+#line 151 "../../ipsec-tools/src/libipsec/policy_token.l"
 {
 			yylval.val.len = strlen(__libipsectext);
 			yylval.val.buf = __libipsectext;
@@ -1057,12 +1071,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 154 "policy_token.l"
+#line 157 "../../ipsec-tools/src/libipsec/policy_token.l"
 { return(HYPHEN); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 156 "policy_token.l"
+#line 159 "../../ipsec-tools/src/libipsec/policy_token.l"
 {
 			/* Remove leading '[' and trailing ']' */
 			yylval.val.buf = __libipsectext + 1;
@@ -1073,21 +1087,21 @@ YY_RULE_SETUP
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 164 "policy_token.l"
+#line 167 "../../ipsec-tools/src/libipsec/policy_token.l"
 { ; }
 	YY_BREAK
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 165 "policy_token.l"
+#line 168 "../../ipsec-tools/src/libipsec/policy_token.l"
 { ; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 167 "policy_token.l"
+#line 170 "../../ipsec-tools/src/libipsec/policy_token.l"
 ECHO;
 	YY_BREAK
-#line 1091 "policy_token.c"
+#line 1105 "<stdout>"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1229,9 +1243,9 @@ case YY_STATE_EOF(INITIAL):
  */
 static int yy_get_next_buffer (void)
 {
-    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = (yytext_ptr);
-	register int number_to_move, i;
+    	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = (yytext_ptr);
+	int number_to_move, i;
 	int ret_val;
 
 	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
@@ -1363,14 +1377,14 @@ static int yy_get_next_buffer (void)
 
     static yy_state_type yy_get_previous_state (void)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
+	yy_state_type yy_current_state;
+	char *yy_cp;
     
 	yy_current_state = (yy_start);
 
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
 		if ( yy_accept[yy_current_state] )
 			{
 			(yy_last_accepting_state) = yy_current_state;
@@ -1395,10 +1409,10 @@ static int yy_get_next_buffer (void)
  */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
-	register int yy_is_jam;
-    	register char *yy_cp = (yy_c_buf_p);
+	int yy_is_jam;
+    	char *yy_cp = (yy_c_buf_p);
 
-	register YY_CHAR yy_c = 1;
+	YY_CHAR yy_c = 1;
 	if ( yy_accept[yy_current_state] )
 		{
 		(yy_last_accepting_state) = yy_current_state;
@@ -1814,7 +1828,7 @@ YY_BUFFER_STATE __libipsec_scan_bytes  (yyconst char * yybytes, yy_size_t  _yyby
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
@@ -2003,7 +2017,7 @@ int __libipseclex_destroy  (void)
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 {
-	register int i;
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
@@ -2012,7 +2026,7 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen (yyconst char * s )
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -2044,7 +2058,7 @@ void __libipsecfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 167 "policy_token.l"
+#line 170 "../../ipsec-tools/src/libipsec/policy_token.l"
 
 
 

@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: proposal.c,v 1.17 2008/09/19 11:14:49 tteras Exp $	*/
 
 /* $Id: proposal.c,v 1.17 2008/09/19 11:14:49 tteras Exp $ */
@@ -1288,3 +1294,6 @@ end:
 		free_proppair(pair);
 	return error;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-proposal-data.h"
+#endif /* __rtems__ */

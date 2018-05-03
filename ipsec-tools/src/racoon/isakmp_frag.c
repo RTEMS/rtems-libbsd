@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_frag.c,v 1.7 2017/07/23 05:40:27 christos Exp $	*/
 
 /* Id: isakmp_frag.c,v 1.4 2004/11/13 17:31:36 manubsd Exp */
@@ -390,3 +396,6 @@ isakmp_frag_addcap(buf, cap)
 	return buf;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_frag-data.h"
+#endif /* __rtems__ */

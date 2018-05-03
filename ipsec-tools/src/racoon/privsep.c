@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: privsep.c,v 1.21.2.1 2011/08/12 05:46:06 tteras Exp $	*/
 
 /* Id: privsep.c,v 1.15 2005/08/08 11:23:44 vanhu Exp */
@@ -311,9 +317,11 @@ privsep_init(void)
 	plog(LLV_INFO, LOCATION, NULL,
 	    "racoon unprivileged process running with PID %d\n", child_pid);
 
+#ifndef __rtems__
 #if defined(__NetBSD__) || defined(__FreeBSD__)
 	setproctitle("[priv]");
 #endif
+#endif /* __rtems__ */
 	
 	/*
 	 * Don't catch any signal
@@ -1805,3 +1813,6 @@ privsep_cleanup_pam(port)
 	return;
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-privsep-data.h"
+#endif /* __rtems__ */

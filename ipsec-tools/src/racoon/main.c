@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: main.c,v 1.12.6.1 2013/07/12 13:12:24 tteras Exp $	*/
 
 /* Id: main.c,v 1.25 2006/06/20 20:31:34 manubsd Exp */
@@ -31,6 +37,14 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <rtems.h>
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-commands.h>
+#include <machine/rtems-bsd-racoon.h>
+#include <rtems/linkersets.h>
+#endif /* __rtems__ */
 #include "config.h"
 
 #include <sys/types.h>
@@ -172,6 +186,15 @@ parse(ac, av)
 #ifdef YYDEBUG
 	extern int yydebug;
 #endif
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	pname = strrchr(*av, '/');
 	if (pname)
@@ -263,6 +286,30 @@ parse(ac, av)
 	}
 }
 
+#ifdef __rtems__
+static int
+main(int argc, char **argv);
+
+RTEMS_LINKER_RWSET(bsd_prog_racoon, char);
+
+int rtems_bsd_command_racoon(int argc, char **argv)
+{
+	int exit_code;
+	void *data_begin;
+	size_t data_size;
+
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_racoon);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_racoon);
+
+	rtems_bsd_racoon_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("racoon",
+	    main, argc, argv, data_begin, data_size);
+	rtems_bsd_racoon_unlock();
+
+	return exit_code;
+}
+
+#endif /* __rtems__ */
 int
 main(ac, av)
 	int ac;
@@ -321,9 +368,15 @@ main(ac, av)
 				"SA recovering.");
 	}
 
+#ifdef __rtems__
+	/* FIXME: RTEMS currently does not support daemon mode. */
+	f_foreground = 1;
+	plog(LLV_INFO, LOCATION, NULL, "RTEMS: Force foreground mode.\n");
+#endif /* __rtems__ */
 	if (f_foreground)
 		close(0);
 	else {
+#ifndef __rtems__
 		if (daemon(0, 0) < 0) {
 			errx(1, "failed to be daemon. (%s)",
 				strerror(errno));
@@ -340,6 +393,9 @@ main(ac, av)
 			/* no big deal if it fails.. */
 		}
 #endif
+#else /* __rtems__ */
+		errx(1, "Daemon mode currently not supported in RTEMS.");
+#endif /* __rtems__ */
 	}
 
 	session();
@@ -347,3 +403,6 @@ main(ac, av)
 	return 0;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-main-data.h"
+#endif /* __rtems__ */

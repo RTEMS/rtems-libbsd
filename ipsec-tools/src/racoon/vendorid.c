@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: vendorid.c,v 1.8 2009/09/01 12:22:09 tteras Exp $	*/
 
 /* Id: vendorid.c,v 1.10 2006/02/22 16:10:21 vanhu Exp */
@@ -318,3 +324,6 @@ vendorid_fixup(vendorid, vidhash)
 	
 	return vidhash;
 }			 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-vendorid-data.h"
+#endif /* __rtems__ */

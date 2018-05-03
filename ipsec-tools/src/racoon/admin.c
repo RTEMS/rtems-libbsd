@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: admin.c,v 1.38.4.1 2013/06/03 05:49:59 tteras Exp $	*/
 
 /* Id: admin.c,v 1.25 2006/04/06 14:31:04 manubsd Exp */
@@ -773,3 +779,6 @@ admin_close()
 }
 
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-admin-data.h"
+#endif /* __rtems__ */

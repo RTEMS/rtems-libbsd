@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: nattraversal.c,v 1.14 2011/03/14 17:18:13 tteras Exp $	*/
 
 /*
@@ -548,3 +554,6 @@ isakmp_plist_append_natt_vids (struct payload_list *plist, vchar_t *vid_natt[MAX
 	
 	return plist;
 }
+#ifdef __rtems__
+#include "rtems-bsd-racoon-nattraversal-data.h"
+#endif /* __rtems__ */

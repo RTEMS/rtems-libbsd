@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: isakmp_newg.c,v 1.4 2006/09/09 16:22:09 manu Exp $	*/
 
 /*	$KAME: isakmp_newg.c,v 1.10 2002/09/27 05:55:52 itojun Exp $	*/
@@ -230,3 +236,6 @@ end:
 	return 0;
 }
 
+#ifdef __rtems__
+#include "rtems-bsd-racoon-isakmp_newg-data.h"
+#endif /* __rtems__ */

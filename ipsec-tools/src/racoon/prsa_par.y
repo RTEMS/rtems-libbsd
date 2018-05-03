@@ -70,6 +70,12 @@
 #include "crypto_openssl.h"
 #include "sockmisc.h"
 #include "rsalist.h"
+#ifdef __rtems__
+#define prsaparse yyparse
+#define prsaerror yyerror
+#define prsain racoonprsain
+#define prsawrap racoonprsawrap
+#endif /* __rtems__ */
 
 extern void prsaerror(const char *str, ...);
 extern int prsawrap (void);

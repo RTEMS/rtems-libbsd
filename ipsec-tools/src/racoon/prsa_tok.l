@@ -39,6 +39,10 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include "prsa_par.h"
+#ifdef __rtems__
+#define prsatext racoonprsatext
+#define prsalval racoonprsalval
+#endif /* __rtems__ */
 
 extern int prsalex (void);
 extern int prsa_cur_lineno;

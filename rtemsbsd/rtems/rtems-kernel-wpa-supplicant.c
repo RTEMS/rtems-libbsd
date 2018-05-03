@@ -40,14 +40,11 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-thread.h>
+#include <machine/rtems-bsd-wpa-supplicant.h>
 
 #include <sys/types.h>
 #include <sys/kernel.h>
-#include <sys/lock.h>
 #include <sys/mutex.h>
-
-#include <machine/rtems-bsd-wpa-supplicant.h>
 
 static struct mtx wpa_supplicant_mtx;
 

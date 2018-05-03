@@ -63,6 +63,9 @@
  */
 
 %{
+#ifdef __rtems__
+#include <machine/rtems-bsd-user-space.h>
+#endif /* __rtems__ */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -600,6 +603,10 @@ policy_parse(msg, msglen)
 
 	error = yyparse();	/* it must be set errcode. */
 	__policy__strbuffer__free__();
+	#ifdef __rtems__
+	/* This frees the p_src and p_dst buffers. */
+	policy_parse_request_init();
+	#endif /* __rtems__ */
 
 	if (error) {
 		if (pbuf != NULL)
@@ -632,3 +639,11 @@ ipsec_set_policy(msg, msglen)
 	__ipsec_errcode = EIPSEC_NO_ERROR;
 	return policy;
 }
+#ifdef __rtems__
+
+void
+ipsec_free_policy(ipsec_policy_t buf)
+{
+	free(buf);
+}
+#endif /* __rtems__ */

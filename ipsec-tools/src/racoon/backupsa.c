@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: backupsa.c,v 1.10 2010/04/02 15:15:00 christos Exp $	*/
 
 /*	$KAME: backupsa.c,v 1.16 2001/12/31 20:13:40 thorpej Exp $	*/
@@ -36,6 +42,9 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#ifdef __rtems__
+#define strtouq strtoull
+#endif /* __rtems__ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -467,3 +476,6 @@ main()
 	exit(0);
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-backupsa-data.h"
+#endif /* __rtems__ */

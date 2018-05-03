@@ -1,3 +1,9 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-racoon-namespace.h"
+#endif /* __rtems__ */
+
 /*	$NetBSD: gssapi.c,v 1.4 2006/09/09 16:22:09 manu Exp $	*/
 
 /*	$KAME: gssapi.c,v 1.19 2001/04/03 15:51:55 thorpej Exp $	*/
@@ -752,3 +758,6 @@ gssapi_get_id(struct ph1handle *iph1)
 #else
 int __gssapi_dUmMy;
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-racoon-gssapi-data.h"
+#endif /* __rtems__ */

@@ -51,7 +51,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -640,18 +639,7 @@ dhcpcd_worker(rtems_task_argument arg)
   int           argc;
   const char**  argv;
   const char*   dhcpcd_argv[] = { "dhcpcd", NULL };
-  struct stat   sb;
   int           r;
-
-  r = stat("/var", &sb);
-  if (r < 0) {
-    mkdir("/var", S_IRWXU | S_IRWXG | S_IRWXO);
-  }
-
-  r = stat("/var/db", &sb);
-  if (r < 0) {
-    mkdir("/var/db", S_IRWXU | S_IRWXG | S_IRWXO);
-  }
 
   if (dd->argc_argv->argc > 0) {
     argc = dd->argc_argv->argc;

@@ -32,6 +32,8 @@
  *  - defaultrouter
  */
 
+#define _GNU_SOURCE
+
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/queue.h>
@@ -39,6 +41,7 @@
 #include <sysexits.h>
 
 #include <ifaddrs.h>
+#include <arpa/inet.h>
 #include <net/if.h>
 #include <net/route.h>
 #include <netinet/in.h>
@@ -49,6 +52,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <rtems.h>

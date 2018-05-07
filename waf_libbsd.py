@@ -361,12 +361,13 @@ class Builder(builder.ModuleManager):
                     bld(target = lex['file'][:-2]+ '.c',
                         source = lex['file'],
                         rule = lex_rule)
-                bld.objects(target = 'lex_%s' % (lex['sym']),
-                            features = 'c',
-                            cflags = cflags,
-                            includes = lexIncludes + includes,
-                            defines = defines + lexDefines,
-                            source = lex['file'][:-2] + '.c')
+                if lex['build']:
+                    bld.objects(target = 'lex_%s' % (lex['sym']),
+                                features = 'c',
+                                cflags = cflags,
+                                includes = lexIncludes + includes,
+                                defines = defines + lexDefines,
+                                source = lex['file'][:-2] + '.c')
                 libbsd_use += ['lex_%s' % (lex['sym'])]
 
         #
@@ -398,12 +399,13 @@ class Builder(builder.ModuleManager):
                     bld(target = yaccFile[:-2] + '.c',
                         source = yaccFile,
                         rule = yacc_rule)
-                bld.objects(target = 'yacc_%s' % (yaccSym),
-                            features = 'c',
-                            cflags = cflags,
-                            includes = yaccIncludes + includes,
-                            defines = defines + yaccDefines,
-                            source = yaccFile[:-2] + '.c')
+                if yacc['build']:
+                    bld.objects(target = 'yacc_%s' % (yaccSym),
+                                features = 'c',
+                                cflags = cflags,
+                                includes = yaccIncludes + includes,
+                                defines = defines + yaccDefines,
+                                source = yaccFile[:-2] + '.c')
                 libbsd_use += ['yacc_%s' % (yaccSym)]
 
         #

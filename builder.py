@@ -547,15 +547,17 @@ class RouteKeywordsFragmentComposer(BuildSystemFragmentComposer):
 
 class LexFragmentComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, sym, dep, cflags = None, includes = None):
+    def __init__(self, sym, dep, cflags = None, includes = None, build = True):
         self.sym = sym
         self.dep = dep
         self.cflags, self.includes = _cflagsIncludes(cflags, includes)
+        self.build = build
 
     def compose(self, path):
         d = { 'file': path,
               'sym': self.sym,
-              'dep': self.dep }
+              'dep': self.dep,
+              'build': self.build }
         if None not in self.cflags:
             d['cflags'] = self.cflags
         if None not in self.includes:
@@ -564,15 +566,17 @@ class LexFragmentComposer(BuildSystemFragmentComposer):
 
 class YaccFragmentComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, sym, header, cflags = None, includes = None):
+    def __init__(self, sym, header, cflags = None, includes = None, build = True):
         self.sym = sym
         self.header = header
         self.cflags, self.includes = _cflagsIncludes(cflags, includes)
+        self.build = build
 
     def compose(self, path):
         d = { 'file': path,
               'sym': self.sym,
-              'header': self.header }
+              'header': self.header,
+              'build': self.build }
         if None not in self.cflags:
             d['cflags'] = self.cflags
         if None not in self.includes:

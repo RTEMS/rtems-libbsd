@@ -33,6 +33,11 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
+# Python 3 does no longer know the basestring class. Catch that.
+try:
+    basestring
+except NameError:
+    basestring = (str, bytes)
 
 import os
 import sys

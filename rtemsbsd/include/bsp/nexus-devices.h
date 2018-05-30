@@ -37,6 +37,7 @@
 #include <bsp.h>
 
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/modules.h>
 #include <machine/rtems-bsd-nexus-bus.h>
 
 
@@ -58,6 +59,7 @@ SYSINIT_DRIVER_REFERENCE(usbss, simplebus);
 SYSINIT_DRIVER_REFERENCE(musbotg, usbss);
 SYSINIT_DRIVER_REFERENCE(sdhci_ti, simplebus);
 SYSINIT_DRIVER_REFERENCE(mmcsd, mmc);
+#ifdef RTEMS_BSD_MODULE_IEEE80211
 SYSINIT_DRIVER_REFERENCE(rtwn_usb, uhub);
 SYSINIT_MODULE_REFERENCE(wlan_ratectl_none);
 SYSINIT_MODULE_REFERENCE(wlan_sta);
@@ -66,6 +68,7 @@ SYSINIT_MODULE_REFERENCE(wlan_wep);
 SYSINIT_MODULE_REFERENCE(wlan_tkip);
 SYSINIT_MODULE_REFERENCE(wlan_ccmp);
 SYSINIT_REFERENCE(rtwn_rtl8188eufw);
+#endif /* RTEMS_BSD_MODULE_IEEE80211 */
 
 RTEMS_BSD_DRIVER_USB;
 RTEMS_BSD_DRIVER_USB_MASS;

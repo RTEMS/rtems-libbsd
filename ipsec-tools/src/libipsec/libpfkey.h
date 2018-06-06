@@ -85,7 +85,7 @@ struct pfkey_send_sa_args {
 	u_int32_t	seq;
 	u_int8_t	l_natt_type;
 	u_int16_t	l_natt_sport, l_natt_dport;
-	struct sockaddr *l_natt_oa;
+	struct sockaddr *l_natt_oai, *l_natt_oar;
 	u_int16_t	l_natt_frag;
 	u_int8_t ctxdoi, ctxalg;	/* Security context DOI and algorithm */
 	caddr_t ctxstr;			/* Security context string */

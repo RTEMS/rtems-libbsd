@@ -1335,9 +1335,12 @@ pfkey_send_x1(struct pfkey_send_sa_args *sa_parms)
 		len += sizeof(struct sadb_x_nat_t_type);
 		len += sizeof(struct sadb_x_nat_t_port);
 		len += sizeof(struct sadb_x_nat_t_port);
-		if (sa_parms->l_natt_oa)
+		if (sa_parms->l_natt_oai)
 			len += sizeof(struct sadb_address) +
-			  PFKEY_ALIGN8(sysdep_sa_len(sa_parms->l_natt_oa));
+			  PFKEY_ALIGN8(sysdep_sa_len(sa_parms->l_natt_oai));
+		if (sa_parms->l_natt_oar)
+			len += sizeof(struct sadb_address) +
+			  PFKEY_ALIGN8(sysdep_sa_len(sa_parms->l_natt_oar));
 #ifdef SADB_X_EXT_NAT_T_FRAG
 		if (sa_parms->l_natt_frag)
 			len += sizeof(struct sadb_x_nat_t_frag);
@@ -1452,10 +1455,21 @@ pfkey_send_x1(struct pfkey_send_sa_args *sa_parms)
 			return -1;
 		}
 
-		if (sa_parms->l_natt_oa) {
-			p = pfkey_setsadbaddr(p, ep, SADB_X_EXT_NAT_T_OA,
-					      sa_parms->l_natt_oa,
-					      (u_int)PFKEY_ALIGN8(sysdep_sa_len(sa_parms->l_natt_oa)),
+		if (sa_parms->l_natt_oai) {
+			p = pfkey_setsadbaddr(p, ep, SADB_X_EXT_NAT_T_OAI,
+					      sa_parms->l_natt_oai,
+					      (u_int)PFKEY_ALIGN8(sysdep_sa_len(sa_parms->l_natt_oai)),
+					      IPSEC_ULPROTO_ANY);
+			if (!p) {
+				free(newmsg);
+				return -1;
+			}
+		}
+
+		if (sa_parms->l_natt_oar) {
+			p = pfkey_setsadbaddr(p, ep, SADB_X_EXT_NAT_T_OAR,
+					      sa_parms->l_natt_oar,
+					      (u_int)PFKEY_ALIGN8(sysdep_sa_len(sa_parms->l_natt_oar)),
 					      IPSEC_ULPROTO_ANY);
 			if (!p) {
 				free(newmsg);
@@ -2034,7 +2048,8 @@ pfkey_align(struct sadb_msg *msg, caddr_t *mhp)
 		case SADB_X_EXT_NAT_T_TYPE:
 		case SADB_X_EXT_NAT_T_SPORT:
 		case SADB_X_EXT_NAT_T_DPORT:
-		case SADB_X_EXT_NAT_T_OA:
+		case SADB_X_EXT_NAT_T_OAI:
+		case SADB_X_EXT_NAT_T_OAR:
 #endif
 #ifdef SADB_X_EXT_TAG
 		case SADB_X_EXT_TAG:
@@ -2592,7 +2607,7 @@ pfkey_send_update_nat(int so, u_int satype, u_int mode, struct sockaddr *src,
 	psaa.l_natt_type = l_natt_type;
 	psaa.l_natt_sport = l_natt_sport;
 	psaa.l_natt_dport = l_natt_dport;
-	psaa.l_natt_oa = l_natt_oa;
+	psaa.l_natt_oar = l_natt_oa;
 	psaa.l_natt_frag = l_natt_frag;
 
 	return pfkey_send_update2(&psaa);
@@ -2667,7 +2682,7 @@ pfkey_send_add_nat(int so, u_int satype, u_int mode, struct sockaddr *src,
 	psaa.l_natt_type = l_natt_type;
 	psaa.l_natt_sport = l_natt_sport;
 	psaa.l_natt_dport = l_natt_dport;
-	psaa.l_natt_oa = l_natt_oa;
+	psaa.l_natt_oai = l_natt_oa;
 	psaa.l_natt_frag = l_natt_frag;
 
 	return pfkey_send_add2(&psaa);

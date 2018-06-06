@@ -720,6 +720,7 @@ isakmp_info_send_nx(isakmp, remote, local, type, data)
 #endif
 #ifdef ENABLE_FRAG
 	iph1->frag = 0;
+	iph1->frag_last_index = 0;
 	iph1->frag_chain = NULL;
 #endif
 

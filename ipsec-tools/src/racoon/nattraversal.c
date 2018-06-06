@@ -436,10 +436,7 @@ natt_keepalive_add_ph1 (struct ph1handle *iph1)
 {
   int ret = 0;
   
-  /* Should only the NATed host send keepalives?
-     If yes, add '(iph1->natt_flags & NAT_DETECTED_ME)'
-     to the following condition. */
-  if (iph1->natt_flags & NAT_DETECTED &&
+  if (iph1->natt_flags & NAT_DETECTED_ME &&
       ! (iph1->natt_flags & NAT_KA_QUEUED)) {
     ret = natt_keepalive_add (iph1->local, iph1->remote);
     if (ret == 0)

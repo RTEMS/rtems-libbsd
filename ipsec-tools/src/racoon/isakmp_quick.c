@@ -2390,6 +2390,32 @@ get_proposal_r(iph2)
 			     spidx.src.ss_family, spidx.dst.ss_family,
 			     _XIDT(iph2->id_p),idi2type);
 		}
+#ifdef ENABLE_NATT
+		if (iph2->ph1->natt_flags & NAT_DETECTED_PEER) {
+			u_int16_t port;
+
+			port = extract_port(&spidx.src);
+			memcpy(&spidx.src, iph2->ph1->remote,
+			    sysdep_sa_len(iph2->ph1->remote));
+			set_port(&spidx.src, port);
+			switch (spidx.src.ss_family) {
+			case AF_INET:
+				spidx.prefs = sizeof(struct in_addr) << 3;
+				break;
+#ifdef INET6
+			case AF_INET6:
+				spidx.prefs = sizeof(struct in6_addr) << 3;
+				break;
+#endif
+			default:
+				spidx.prefs = 0;
+				break;
+			}
+			plog(LLV_DEBUG, LOCATION,
+				NULL, "use NAT address %s as src\n",
+				saddr2str((struct sockaddr *)&spidx.src));
+		}
+#endif
 	} else {
 		plog(LLV_DEBUG, LOCATION, NULL,
 		     "get a source address of SP index from Phase 1"

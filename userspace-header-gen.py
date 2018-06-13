@@ -81,6 +81,25 @@ class HeaderGenCU:
         self._rtems_port_names.append("_Linker_set_bsd_prog_%s_end" % progname)
         self._rtems_port_names.append("rtems_bsd_command_%s" % progname)
 
+        self._filter_special_vars = []
+        # Take some special care for some yacc variables. This matches the yyval
+        # and yylval. These two always make trouble in the generated headers.
+        # yyval is initialized by Yacc generated code so it's not
+        # necessary to move them into the copy back region. yylval is used only
+        # for transporting a value. It will be set when used.
+        self._filter_special_vars.append({
+            "re":re.compile('extern YYSTYPE .*val'),
+            "reason":"Lex / Yacc variable initialized by generated code",
+            "action":"no_section"
+            })
+        # Lex generates an external variable that shouldn't be extern. Move it
+        # to the current data header file.
+        self._filter_special_vars.append({
+            "re":re.compile('extern yy_size_t .*len'),
+            "reason":"Lex adds an extern to this variable that is not necessary.",
+            "action":"ignore_extern"
+            })
+
         self._err = err
         self._verbose = verbose
         self._cu = cu
@@ -381,6 +400,17 @@ class HeaderGenCU:
                     var_with_type = "extern " + var_with_type
                     outfile = glob_data_out
 
+                for flt in self._filter_special_vars:
+                    if flt["re"].match(var_with_type) is not None:
+                        if flt["action"] == "no_section":
+                            self._err.write('Don\'t put "%s" into section. Reason: %s.\n' % \
+                                            (var_with_type, flt["reason"]))
+                            outfile = None
+                        if flt["action"] == "ignore_extern":
+                            self._err.write('Ignore extern of variable "%s". Reason: %s.\n' % \
+                                            (var_with_type, flt["reason"]))
+                            outfile = data_out
+
             # write output
             if self._verbose >= VERBOSE_SOME:
                 if not is_function:
@@ -389,7 +419,7 @@ class HeaderGenCU:
                 else:
                     self._err.write('Found a function "%s" at %s (DIE offset %s); extern: %r\n' % \
                                     (varname, var_decl, child.offset, is_extern))
-            if not is_function:
+            if (not is_function) and (outfile is not None):
                 outfile.write("RTEMS_LINKER_RWSET_CONTENT(bsd_prog_%s, %s);\n" % \
                         (self._progname, var_with_type))
             if is_extern:

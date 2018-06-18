@@ -3,4 +3,4 @@
 	url = https://github.com/freebsd/freebsd.git
 [submodule "rtems_waf"]
 	path = rtems_waf
-	url = git://git.rtems.org/chrisj/rtems_waf.git
+	url = git://git.rtems.org/rtems_waf.git

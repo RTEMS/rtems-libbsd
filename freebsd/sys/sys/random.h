@@ -50,11 +50,21 @@ read_random_uio(void *a __unused, u_int b __unused)
 {
 	return (0);
 }
+#ifndef __rtems__
 static __inline u_int
 read_random(void *a __unused, u_int b __unused)
 {
 	return (0);
 }
+#else /* __rtems__ */
+#include <unistd.h>
+static __inline u_int
+read_random(void *ptr, u_int n)
+{
+	getentropy(ptr, n);
+	return (n);
+}
+#endif /* __rtems__ */
 #endif
 
 /*

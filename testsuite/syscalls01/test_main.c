@@ -1599,9 +1599,23 @@ test_setgethostname(void)
 	assert(in[sizeof(in) - 1] == '\0');
 }
 
+static void set_self_prio(rtems_task_priority prio)
+{
+  rtems_status_code sc;
+
+  sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
+  assert(sc == RTEMS_SUCCESSFUL);
+}
+
 static void
 test_main(void)
 {
+
+	/*
+	 * No interruptions by the timer server.  The uma_timeout() may need
+	 * some dynamic memory.  This could disturb the no memory tests.
+	 */
+	set_self_prio(1);
 
 	/* Must be first test to ensure resource checks work */
 	test_sockets();

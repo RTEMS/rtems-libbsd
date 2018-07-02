@@ -1178,7 +1178,6 @@
 #define	GetProxyAddress _bsd_GetProxyAddress
 #define	GetProxyPort _bsd_GetProxyPort
 #define	get_random_bytes _bsd_get_random_bytes
-#define	getsockaddr _bsd_getsockaddr
 #define	GetStateIn _bsd_GetStateIn
 #define	GetStateOut _bsd_GetStateOut
 #define	gf128_genmultable _bsd_gf128_genmultable

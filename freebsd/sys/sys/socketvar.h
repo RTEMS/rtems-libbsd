@@ -342,7 +342,9 @@ struct uio;
 /*
  * From uipc_socket and friends
  */
+#ifndef __rtems__
 int	getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len);
+#endif /* __rtems__ */
 int	getsock_cap(struct thread *td, int fd, cap_rights_t *rightsp,
 	    struct file **fpp, u_int *fflagp, struct filecaps *havecaps);
 void	soabort(struct socket *so);

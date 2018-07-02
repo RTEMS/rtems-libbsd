@@ -87,6 +87,13 @@ static int getsockname1(struct thread *td, struct getsockname_args *uap,
 			int compat);
 static int getpeername1(struct thread *td, struct getpeername_args *uap,
 			int compat);
+#else /* __rtems__ */
+struct getsockaddr_sockaddr {
+	struct sockaddr	header;
+	char		data[SOCK_MAXADDRLEN - sizeof(struct sockaddr)];
+};
+
+static int getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len);
 #endif /* __rtems__ */
 static int sockargs(struct mbuf **, char *, socklen_t, int);
 
@@ -256,11 +263,17 @@ sys_bind(struct thread *td, struct bind_args *uap)
 {
 	struct sockaddr *sa;
 	int error;
+#ifdef __rtems__
+	struct getsockaddr_sockaddr gsa;
+	sa = &gsa.header;
+#endif /* __rtems__ */
 
 	error = getsockaddr(&sa, uap->name, uap->namelen);
 	if (error == 0) {
 		error = kern_bindat(td, AT_FDCWD, uap->s, sa);
+#ifndef __rtems__
 		free(sa, M_SONAME);
+#endif /* __rtems__ */
 	}
 	return (error);
 }
@@ -327,11 +340,17 @@ sys_bindat(struct thread *td, struct bindat_args *uap)
 {
 	struct sockaddr *sa;
 	int error;
+#ifdef __rtems__
+	struct getsockaddr_sockaddr gsa;
+	sa = &gsa.header;
+#endif /* __rtems__ */
 
 	error = getsockaddr(&sa, uap->name, uap->namelen);
 	if (error == 0) {
 		error = kern_bindat(td, uap->fd, uap->s, sa);
+#ifndef __rtems__
 		free(sa, M_SONAME);
+#endif /* __rtems__ */
 	}
 	return (error);
 }
@@ -674,11 +693,17 @@ sys_connect(struct thread *td, struct connect_args *uap)
 {
 	struct sockaddr *sa;
 	int error;
+#ifdef __rtems__
+	struct getsockaddr_sockaddr gsa;
+	sa = &gsa.header;
+#endif /* __rtems__ */
 
 	error = getsockaddr(&sa, uap->name, uap->namelen);
 	if (error == 0) {
 		error = kern_connectat(td, AT_FDCWD, uap->s, sa);
+#ifndef __rtems__
 		free(sa, M_SONAME);
+#endif /* __rtems__ */
 	}
 	return (error);
 }
@@ -773,11 +798,17 @@ sys_connectat(struct thread *td, struct connectat_args *uap)
 {
 	struct sockaddr *sa;
 	int error;
+#ifdef __rtems__
+	struct getsockaddr_sockaddr gsa;
+	sa = &gsa.header;
+#endif /* __rtems__ */
 
 	error = getsockaddr(&sa, uap->name, uap->namelen);
 	if (error == 0) {
 		error = kern_connectat(td, uap->fd, uap->s, sa);
+#ifndef __rtems__
 		free(sa, M_SONAME);
+#endif /* __rtems__ */
 	}
 	return (error);
 }
@@ -930,6 +961,10 @@ sendit(struct thread *td, int s, struct msghdr *mp, int flags)
 	struct mbuf *control;
 	struct sockaddr *to;
 	int error;
+#ifdef __rtems__
+	struct getsockaddr_sockaddr gto;
+	to = &gto.header;
+#endif /* __rtems__ */
 
 #ifdef CAPABILITY_MODE
 	if (IN_CAPABILITY_MODE(td) && (mp->msg_name != NULL))
@@ -978,7 +1013,9 @@ sendit(struct thread *td, int s, struct msghdr *mp, int flags)
 	error = kern_sendit(td, s, mp, flags, control, UIO_USERSPACE);
 
 bad:
+#ifndef __rtems__
 	free(to, M_SONAME);
+#endif /* __rtems__ */
 	return (error);
 }
 
@@ -2111,12 +2148,15 @@ int
 getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len)
 {
 	struct sockaddr *sa;
+#ifndef __rtems__
 	int error;
+#endif /* __rtems__ */
 
 	if (len > SOCK_MAXADDRLEN)
 		return (ENAMETOOLONG);
 	if (len < offsetof(struct sockaddr, sa_data[0]))
 		return (EINVAL);
+#ifndef __rtems__
 	sa = malloc(len, M_SONAME, M_WAITOK);
 	error = copyin(uaddr, sa, len);
 	if (error != 0) {
@@ -2130,4 +2170,9 @@ getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len)
 		*namp = sa;
 	}
 	return (error);
+#else /* __rtems__ */
+	sa = memcpy(*namp, uaddr, len);
+	sa->sa_len = len;
+	return (0);
+#endif /* __rtems__ */
 }

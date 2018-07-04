@@ -2907,7 +2907,7 @@ bpf_imfs_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
 {
 	struct bpf_d *d;
 
-	d = bpfopen(NULL, 0, 0, NULL);
+	d = bpfopen(NULL, oflag + 1, 0, NULL);
 	iop->data1 = d;
 
 	if (d != NULL) {

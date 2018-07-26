@@ -164,7 +164,11 @@ struct cc_exec {
  */
 struct callout_cpu {
 	struct mtx_padalign	cc_lock;
+#ifndef __rtems__
 	struct cc_exec 		cc_exec_entity[2];
+#else /* __rtems__ */
+	struct cc_exec 		cc_exec_entity;
+#endif /* __rtems__ */
 	struct callout		*cc_next;
 	struct callout		*cc_callout;
 	struct callout_list	*cc_callwheel;
@@ -182,11 +186,21 @@ struct callout_cpu {
 
 #define	callout_migrating(c)	((c)->c_iflags & CALLOUT_DFRMIGRATION)
 
+#ifndef __rtems__
 #define	cc_exec_curr(cc, dir)		cc->cc_exec_entity[dir].cc_curr
 #define	cc_exec_drain(cc, dir)		cc->cc_exec_entity[dir].cc_drain
+#else /* __rtems__ */
+#define	cc_exec_curr(cc, dir)		cc->cc_exec_entity.cc_curr
+#define	cc_exec_drain(cc, dir)		cc->cc_exec_entity.cc_drain
+#endif /* __rtems__ */
 #define	cc_exec_next(cc)		cc->cc_next
+#ifndef __rtems__
 #define	cc_exec_cancel(cc, dir)		cc->cc_exec_entity[dir].cc_cancel
 #define	cc_exec_waiting(cc, dir)	cc->cc_exec_entity[dir].cc_waiting
+#else /* __rtems__ */
+#define	cc_exec_cancel(cc, dir)		cc->cc_exec_entity.cc_cancel
+#define	cc_exec_waiting(cc, dir)	cc->cc_exec_entity.cc_waiting
+#endif /* __rtems__ */
 #ifdef SMP
 #define	cc_migration_func(cc, dir)	cc->cc_exec_entity[dir].ce_migration_func
 #define	cc_migration_arg(cc, dir)	cc->cc_exec_entity[dir].ce_migration_arg
@@ -497,7 +511,11 @@ callout_get_bucket(sbintime_t sbt)
 void
 callout_process(sbintime_t now)
 {
+#ifndef __rtems__
 	struct callout *tmp, *tmpn;
+#else /* __rtems__ */
+	struct callout *tmp;
+#endif /* __rtems__ */
 	struct callout_cpu *cc;
 	struct callout_list *sc;
 	sbintime_t first, last, max, tmp_max;
@@ -665,8 +683,10 @@ callout_cc_add(struct callout *c, struct callout_cpu *cc,
 	c->c_iflags |= CALLOUT_PENDING;
 	c->c_iflags &= ~CALLOUT_PROCESSED;
 	c->c_flags |= CALLOUT_ACTIVE;
+#ifndef __rtems__
 	if (flags & C_DIRECT_EXEC)
 		c->c_iflags |= CALLOUT_DIRECT;
+#endif /* __rtems__ */
 	c->c_func = func;
 	c->c_time = sbt;
 	c->c_precision = precision;
@@ -1097,7 +1117,11 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 {
 	sbintime_t to_sbt, precision;
 	struct callout_cpu *cc;
+#ifndef __rtems__
 	int cancelled, direct;
+#else /* __rtems__ */
+	int cancelled;
+#endif /* __rtems__ */
 	int ignore_cpu=0;
 
 	cancelled = 0;
@@ -1110,6 +1134,7 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 	}
 	callout_when(sbt, prec, flags, &to_sbt, &precision);
 
+#ifndef __rtems__
 	/* 
 	 * This flag used to be added by callout_cc_add, but the
 	 * first time you call this we could end up with the
@@ -1122,6 +1147,7 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 	}
 	KASSERT(!direct || c->c_lock == NULL,
 	    ("%s: direct callout %p has lock", __func__, c));
+#endif /* __rtems__ */
 	cc = callout_lock(c);
 	/*
 	 * Don't allow migration of pre-allocated callouts lest they
@@ -1260,7 +1286,11 @@ _callout_stop_safe(struct callout *c, int flags, void (*drain)(void *))
 {
 	struct callout_cpu *cc, *old_cc;
 	struct lock_class *class;
+#ifndef __rtems__
 	int direct, sq_locked, use_lock;
+#else /* __rtems__ */
+	int sq_locked, use_lock;
+#endif /* __rtems__ */
 	int cancelled, not_on_a_list;
 #ifdef __rtems__
 	(void)old_cc;
@@ -1285,13 +1315,13 @@ _callout_stop_safe(struct callout *c, int flags, void (*drain)(void *))
 		}
 	} else
 		use_lock = 0;
+#ifndef __rtems__
 	if (c->c_iflags & CALLOUT_DIRECT) {
 		direct = 1;
 	} else {
 		direct = 0;
 	}
 
-#ifndef __rtems__
 	sq_locked = 0;
 	old_cc = NULL;
 again:

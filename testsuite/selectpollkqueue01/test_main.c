@@ -364,6 +364,8 @@ test_select_connect(test_context *ctx)
 	puts("test select connect");
 
 	if (afd >= 0) {
+		ctx->afd = -1;
+
 		rv = close(afd);
 		assert(rv == 0);
 	}
@@ -566,6 +568,8 @@ test_poll_connect(test_context *ctx)
 	puts("test poll connect");
 
 	if (afd >= 0) {
+		ctx->afd = -1;
+
 		rv = close(afd);
 		assert(rv == 0);
 	}
@@ -756,6 +760,8 @@ test_kqueue_connect(test_context *ctx)
 	puts("test kqueue connect");
 
 	if (afd >= 0) {
+		ctx->afd = -1;
+
 		rv = close(afd);
 		assert(rv == 0);
 	}

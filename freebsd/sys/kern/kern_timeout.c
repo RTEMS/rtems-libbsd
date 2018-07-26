@@ -681,7 +681,9 @@ callout_cc_add(struct callout *c, struct callout_cpu *cc,
 		sbt = cc->cc_lastscan;
 	c->c_arg = arg;
 	c->c_iflags |= CALLOUT_PENDING;
+#ifndef __rtems__
 	c->c_iflags &= ~CALLOUT_PROCESSED;
+#endif /* __rtems__ */
 	c->c_flags |= CALLOUT_ACTIVE;
 #ifndef __rtems__
 	if (flags & C_DIRECT_EXEC)

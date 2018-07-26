@@ -695,4 +695,7 @@ struct uma_percpu_stat {
 void uma_reclaim_wakeup(void);
 void uma_reclaim_worker(void *);
 
+#ifdef __rtems__
+void rtems_uma_drain_timeout(void);
+#endif /* __rtems__ */
 #endif	/* _VM_UMA_H_ */

@@ -3814,3 +3814,15 @@ DB_SHOW_COMMAND(umacache, db_show_umacache)
 }
 #endif	/* DDB */
 #endif /* __rtems__ */
+#ifdef __rtems__
+/*
+ * This is a helper routine for test programs.  The uma_timeout() may need some
+ * dynamic memory.  This could disturb out of memory tests.
+ */
+void
+rtems_uma_drain_timeout(void)
+{
+
+	callout_drain(&uma_callout);
+}
+#endif /* __rtems__ */

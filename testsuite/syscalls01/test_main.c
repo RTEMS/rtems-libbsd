@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -38,6 +38,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/filio.h>
+#include <vm/uma.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <err.h>
@@ -1599,23 +1600,15 @@ test_setgethostname(void)
 	assert(in[sizeof(in) - 1] == '\0');
 }
 
-static void set_self_prio(rtems_task_priority prio)
-{
-  rtems_status_code sc;
-
-  sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
-  assert(sc == RTEMS_SUCCESSFUL);
-}
-
 static void
 test_main(void)
 {
 
 	/*
-	 * No interruptions by the timer server.  The uma_timeout() may need
-	 * some dynamic memory.  This could disturb the no memory tests.
+	 * Stop interferences of uma_timeout() which may need some dynamic
+	 * memory.  This could disturb the no memory tests.
 	 */
-	set_self_prio(1);
+	rtems_uma_drain_timeout();
 
 	/* Must be first test to ensure resource checks work */
 	test_sockets();

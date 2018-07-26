@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -42,6 +42,8 @@
 #include <sys/proc.h>
 #include <sys/kthread.h>
 #include <sys/errno.h>
+
+#include <vm/uma.h>
 
 #include <rtems/bsd/bsd.h>
 
@@ -284,7 +286,14 @@ test_rtems_bsd_get_curthread_or_null(void)
 static void
 test_main(void)
 {
+
 	main_task_id = rtems_task_self();
+
+	/*
+	 * Stop interferences of uma_timeout() which may need some dynamic
+	 * memory.  This could disturb the no memory tests.
+	 */
+	rtems_uma_drain_timeout();
 
 	test_non_bsd_thread();
 	test_kproc_start();

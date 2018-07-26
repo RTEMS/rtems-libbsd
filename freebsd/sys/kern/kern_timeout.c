@@ -184,7 +184,9 @@ struct callout_cpu {
 	char			cc_ktr_event_name[20];
 };
 
+#ifndef __rtems__
 #define	callout_migrating(c)	((c)->c_iflags & CALLOUT_DFRMIGRATION)
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 #define	cc_exec_curr(cc, dir)		cc->cc_exec_entity[dir].cc_curr
@@ -268,6 +270,7 @@ cc_cce_cleanup(struct callout_cpu *cc, int direct)
 #endif
 }
 
+#ifndef __rtems__
 /*
  * Checks if migration is requested by a specific callout cpu.
  */
@@ -281,6 +284,7 @@ cc_cce_migrating(struct callout_cpu *cc, int direct)
 	return (0);
 #endif
 }
+#endif /* __rtems__ */
 
 /*
  * Kernel low level callwheel initialization
@@ -859,6 +863,7 @@ skip:
 		CC_LOCK(cc);
 	}
 	if (cc_exec_waiting(cc, direct)) {
+#ifndef __rtems__
 		/*
 		 * There is someone waiting for the
 		 * callout to complete.
@@ -874,10 +879,12 @@ skip:
 			 */
 			c->c_iflags &= ~CALLOUT_DFRMIGRATION;
 		}
+#endif /* __rtems__ */
 		cc_exec_waiting(cc, direct) = false;
 		CC_UNLOCK(cc);
 		wakeup(&cc_exec_waiting(cc, direct));
 		CC_LOCK(cc);
+#ifndef __rtems__
 	} else if (cc_cce_migrating(cc, direct)) {
 		KASSERT((c_iflags & CALLOUT_LOCAL_ALLOC) == 0,
 		    ("Migrating legacy callout %p", c));
@@ -917,6 +924,7 @@ skip:
 #else
 		panic("migration should not happen");
 #endif
+#endif /* __rtems__ */
 	}
 	/*
 	 * If the current callout is locally allocated (from
@@ -1286,17 +1294,16 @@ callout_schedule(struct callout *c, int to_ticks)
 int
 _callout_stop_safe(struct callout *c, int flags, void (*drain)(void *))
 {
+#ifndef __rtems__
 	struct callout_cpu *cc, *old_cc;
 	struct lock_class *class;
-#ifndef __rtems__
 	int direct, sq_locked, use_lock;
-#else /* __rtems__ */
-	int sq_locked, use_lock;
-#endif /* __rtems__ */
 	int cancelled, not_on_a_list;
-#ifdef __rtems__
-	(void)old_cc;
-	(void)sq_locked;
+#else /* __rtems__ */
+	struct callout_cpu *cc;
+	struct lock_class *class;
+	int use_lock;
+	int cancelled;
 #endif /* __rtems__ */
 
 	if ((flags & CS_DRAIN) != 0)
@@ -1330,6 +1337,7 @@ again:
 #endif /* __rtems__ */
 	cc = callout_lock(c);
 
+#ifndef __rtems__
 	if ((c->c_iflags & (CALLOUT_DFRMIGRATION | CALLOUT_PENDING)) ==
 	    (CALLOUT_DFRMIGRATION | CALLOUT_PENDING) &&
 	    ((c->c_flags & CALLOUT_ACTIVE) == CALLOUT_ACTIVE)) {
@@ -1352,7 +1360,6 @@ again:
 		not_on_a_list = 0;
 	}
 
-#ifndef __rtems__
 	/*
 	 * If the callout was migrating while the callout cpu lock was
 	 * dropped,  just drop the sleepqueue lock and check the states
@@ -1470,6 +1477,7 @@ again:
 			cc_exec_cancel(cc, direct) = true;
 			CTR3(KTR_CALLOUT, "cancelled %p func %p arg %p",
 			    c, c->c_func, c->c_arg);
+#ifndef __rtems__
 			KASSERT(!cc_cce_migrating(cc, direct),
 			    ("callout wrongly scheduled for migration"));
 			if (callout_migrating(c)) {
@@ -1482,11 +1490,13 @@ again:
 				cc_migration_arg(cc, direct) = NULL;
 #endif
 			}
+#endif /* __rtems__ */
 			CC_UNLOCK(cc);
 #ifndef __rtems__
 			KASSERT(!sq_locked, ("sleepqueue chain locked"));
 #endif /* __rtems__ */
 			return (1);
+#ifndef __rtems__
 		} else if (callout_migrating(c)) {
 			/*
 			 * The callout is currently being serviced
@@ -1518,6 +1528,7 @@ again:
 			}
 			CC_UNLOCK(cc);
 			return ((flags & CS_EXECUTING) != 0);
+#endif /* __rtems__ */
 		}
 		CTR3(KTR_CALLOUT, "failed to stop %p func %p arg %p",
 		    c, c->c_func, c->c_arg);
@@ -1554,8 +1565,8 @@ again:
 
 	CTR3(KTR_CALLOUT, "cancelled %p func %p arg %p",
 	    c, c->c_func, c->c_arg);
-	if (not_on_a_list == 0) {
 #ifndef __rtems__
+	if (not_on_a_list == 0) {
 		if ((c->c_iflags & CALLOUT_PROCESSED) == 0) {
 #endif /* __rtems__ */
 			if (cc_exec_next(cc) == c)
@@ -1565,8 +1576,8 @@ again:
 		} else {
 			TAILQ_REMOVE(&cc->cc_expireq, c, c_links.tqe);
 		}
-#endif /* __rtems__ */
 	}
+#endif /* __rtems__ */
 	callout_cc_del(c, cc);
 	CC_UNLOCK(cc);
 	return (cancelled);

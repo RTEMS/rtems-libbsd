@@ -158,6 +158,8 @@ void rc_conf_net_init(void* arg);           /* Installed by default. */
 void rc_conf_firewall_pf_init(void* arg);   /* pf_enabled="YES" */
 void rc_conf_telnetd_init(void* arg);       /* telnetd_enabled="YES" */
 void rc_conf_ftpd_init(void* arg);          /* ftpd_enabled="YES" */
+void rc_conf_ipsec_init(void* arg);         /* ipsec_enabled="YES"
+                                               and ike_enabled="YES" */
 
 /*
  * Added services.

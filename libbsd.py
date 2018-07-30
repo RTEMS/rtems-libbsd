@@ -2133,8 +2133,15 @@ class netipsec(builder.Module):
                                                                'prsa_par.h',
                                                                racoon_cflags,
                                                                build=False)))
+        self.addRTEMSHeaderFiles(
+            [
+                'rtems/ipsec.h',
+            ]
+        )
         self.addRTEMSSourceFiles(
             [
+                'rtems/rtems-bsd-racoon.c',
+                'rtems/rtems-bsd-rc-conf-ipsec.c',
                 'rtems/rtems-bsd-shell-racoon.c',
                 'rtems/rtems-racoon-mutex.c',
             ],

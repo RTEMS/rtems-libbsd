@@ -44,6 +44,9 @@
 #include <sys/queue.h>
 #include <sys/kernel.h>
 
+#define SYSINIT_NEED_CRYPTODEV \
+	SYSINIT_MODULE_REFERENCE(cryptodev)
+
 #define SYSINIT_NEED_USB_CORE \
 	SYSINIT_REFERENCE(usb_quirk_init); \
 	SYSINIT_DRIVER_REFERENCE(uhub, usbus)
@@ -92,6 +95,9 @@
 
 #define SYSINIT_NEED_NET_IF_BFE \
 	SYSINIT_DRIVER_REFERENCE(bfe, pci)
+
+#define SYSINIT_NEED_NET_IF_GIF \
+	SYSINIT_MODULE_REFERENCE(if_gif)
 
 #define SYSINIT_NEED_NET_IF_RE \
 	SYSINIT_DRIVER_REFERENCE(re, pci)

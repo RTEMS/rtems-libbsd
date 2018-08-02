@@ -29,6 +29,7 @@
  * Configuration defines:
  *
  *  RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE : Memory in bytes for mbufs
+ *  RTEMS_BSD_CONFIG_IPSEC                  : IPSec support.
  *  RTEMS_BSD_CONFIG_NET_PF_UNIX            : Packet Filter.
  *  RTEMS_BSD_CONFIG_NET_IF_LAGG            : Link Aggregetion and Failover.
  *  RTEMS_BSD_CONFIG_NET_IF_VLAN            : Virtual LAN.
@@ -165,6 +166,20 @@ extern "C" {
 #endif /* RTEMS_BSD_CONFIG_FIREWALL_PFSYNC */
 
 /*
+ * IPSec
+ */
+#if defined(RTEMS_BSD_CONFIG_IPSEC)
+  #define RTEMS_BSD_CFGDECL_IPSEC \
+      SYSINIT_NEED_NET_IF_GIF; \
+      SYSINIT_NEED_CRYPTODEV
+  #define RTEMS_BSD_CFGDECL_IPSEC_SERVICE \
+      RTEMS_BSD_RC_CONF_SYSINT(rc_conf_ipsec)
+#else
+  #define RTEMS_BSD_CFGDECL_IPSEC
+  #define RTEMS_BSD_CFGDECL_IPSEC_SERVICE
+#endif /* RTEMS_BSD_CONFIG_FIREWALL_PF */
+
+/*
  * FTPD
  */
 #if defined(RTEMS_BSD_CONFIG_SERVICE_FTPD)
@@ -232,6 +247,12 @@ extern "C" {
   RTEMS_BSD_CFGDECL_FIREWALL_PF_SERVICE;
   RTEMS_BSD_CFGDECL_FIREWALL_PFLOG;
   RTEMS_BSD_CFGDECL_FIREWALL_PFSYNC;
+
+  /*
+   * IPSec related stuff.
+   */
+  RTEMS_BSD_CFGDECL_IPSEC;
+  RTEMS_BSD_CFGDECL_IPSEC_SERVICE;
 
   /*
    * Create the services.

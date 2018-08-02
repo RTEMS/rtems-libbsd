@@ -745,13 +745,14 @@ interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   struct ifaddrs* ifap;
   bool            dhcp = false;
 
+  show_result("cloned_interfaces", cloned_interfaces(rc_conf, aa));
+
   if (getifaddrs(&ifap) != 0) {
     fprintf(stderr, "error: interfaces: getifaddrs: %s\n", strerror(errno));
     return -1;
   }
 
   list_interfaces("Starting network: ", ifap);
-  show_result("cloned_interfaces", cloned_interfaces(rc_conf, aa));
   show_result("lo0", setup_lo0(rc_conf, ifap));
   show_result("ifaces", setup_interfaces(rc_conf, aa, ifap, &dhcp));
   show_result("vlans", setup_vlans(rc_conf, aa, ifap, &dhcp));

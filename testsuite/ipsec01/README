@@ -1,0 +1,5 @@
+Note that this tests needs some communication partner. You can use the
+`setup_FreeBSD_as_communication_partner.sh` script to set up a FreeBSD as this
+partner. The interface that is connected to the RTEMS system should have an IP
+set up to the IPSEC_LOC_EXT of the script. Note that the script is quite
+reckless in creating config files. Don't use it on some production system.

@@ -50,6 +50,8 @@
   #else
     #define NET_CFG_INTERFACE_0 "tsec0"
   #endif
+#elif defined(LIBBSP_ARM_ATSAM_BSP_H)
+  #define NET_CFG_INTERFACE_0 "if_atsam0"
 #else
   #define NET_CFG_INTERFACE_0 "lo0"
 #endif

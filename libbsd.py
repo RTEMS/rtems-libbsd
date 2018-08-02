@@ -4926,6 +4926,7 @@ class tests(builder.Module):
                                                     ['test_main'], runTest = False, netTest = True,
                                                     extraLibs = ['debugger']))
         self.addTest(mm.generator['test']('crypto01', ['test_main']))
+        self.addTest(mm.generator['test']('ipsec01', ['test_main']))
 
 def load(mm):
 

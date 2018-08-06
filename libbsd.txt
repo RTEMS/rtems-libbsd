@@ -5,7 +5,13 @@ RTEMS BSD Library Guide
 :numbered:
 :website: http://www.rtems.org/
 
-RTEMS uses FreeBSD 9.2 as the source of its TCP/IP and USB stacks.
+The libbsd makes FreeBSD subsystems like TCP/IP, USB, SD and some more usable
+for RTEMS. It tries to follow the FreeBSD development as close as possible and
+therefore is updated to the latest FreeBSD HEAD revision from time to time.
+To find out which version of FreeBSD is currently used as the base version for
+libbsd please take a look at the
+https://git.rtems.org/rtems-libbsd/log/freebsd-org[freebsd-org] submodule.
+
 This is a guide which captures information on the
 process of merging code from FreeBSD, building this library,
 RTEMS specific support files, and general guidelines on what
@@ -247,9 +253,9 @@ network_init(void)
 This performs the basic network stack initialization with a loopback interface.
 Further initialization must be done using the standard BSD network
 configuration commands
-http://www.freebsd.org/cgi/man.cgi?query=ifconfig&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[IFCONFIG(8)]
+http://www.freebsd.org/cgi/man.cgi?query=ifconfig&sektion=8[IFCONFIG(8)]
 using `rtems_bsd_command_ifconfig()` and
-http://www.freebsd.org/cgi/man.cgi?query=route&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[ROUTE(8)]
+http://www.freebsd.org/cgi/man.cgi?query=route&sektion=8[ROUTE(8)]
 using `rtems_bsd_command_route()`.  For an example please have a look at
 `testsuite/include/rtems/bsd/test/default-network-init.h`.
 
@@ -305,43 +311,43 @@ https://developer.apple.com/library/mac/documentation/Networking/Reference/DNSSe
 
 http://www.opensource.apple.com/source/mDNSResponder/mDNSResponder-320.10/mDNSCore/mDNSEmbeddedAPI.h[mDNS]:: Multi-Cast DNS
 
-http://www.freebsd.org/cgi/man.cgi?query=unix&sektion=4&apropos=0&manpath=FreeBSD+9.2-RELEASE[UNIX(4)]:: UNIX-domain protocol family
+http://www.freebsd.org/cgi/man.cgi?query=unix&sektion=4[UNIX(4)]:: UNIX-domain protocol family
 
-http://www.freebsd.org/cgi/man.cgi?query=inet&sektion=4&apropos=0&manpath=FreeBSD+9.2-RELEASE[INET(4)]:: Internet protocol family
+http://www.freebsd.org/cgi/man.cgi?query=inet&sektion=4[INET(4)]:: Internet protocol family
 
-http://www.freebsd.org/cgi/man.cgi?query=inet6&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[INET6(4)]:: Internet protocol version 6 family
+http://www.freebsd.org/cgi/man.cgi?query=inet6&sektion=4[INET6(4)]:: Internet protocol version 6 family
 
-http://www.freebsd.org/cgi/man.cgi?query=tcp&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[TCP(4)]:: Internet Transmission Control Protocol
+http://www.freebsd.org/cgi/man.cgi?query=tcp&sektion=4[TCP(4)]:: Internet Transmission Control Protocol
 
-http://www.freebsd.org/cgi/man.cgi?query=udp&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[UDP(4)]:: Internet User Datagram Protocol
+http://www.freebsd.org/cgi/man.cgi?query=udp&sektion=4[UDP(4)]:: Internet User Datagram Protocol
 
-http://www.freebsd.org/cgi/man.cgi?query=route&sektion=4&apropos=0&manpath=FreeBSD+9.2-RELEASE[ROUTE(4)]:: Kernel packet forwarding database
+http://www.freebsd.org/cgi/man.cgi?query=route&sektion=4[ROUTE(4)]:: Kernel packet forwarding database
 
-http://www.freebsd.org/cgi/man.cgi?query=bpf&apropos=0&sektion=4&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[BPF(4)]:: Berkeley Packet Filter
+http://www.freebsd.org/cgi/man.cgi?query=bpf&sektion=4[BPF(4)]:: Berkeley Packet Filter
 
-http://www.freebsd.org/cgi/man.cgi?query=socket&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[SOCKET(2)]:: Create an endpoint for communication
+http://www.freebsd.org/cgi/man.cgi?query=socket&sektion=2[SOCKET(2)]:: Create an endpoint for communication
 
-http://www.freebsd.org/cgi/man.cgi?query=kqueue&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[KQUEUE(2)]:: Kernel event notification mechanism
+http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2[KQUEUE(2)]:: Kernel event notification mechanism
 
-http://www.freebsd.org/cgi/man.cgi?query=select&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[SELECT(2)]:: Synchronous I/O multiplexing
+http://www.freebsd.org/cgi/man.cgi?query=select&sektion=2[SELECT(2)]:: Synchronous I/O multiplexing
 
-http://www.freebsd.org/cgi/man.cgi?query=poll&apropos=0&sektion=2&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[POLL(2)]:: Synchronous I/O multiplexing
+http://www.freebsd.org/cgi/man.cgi?query=poll&sektion=2[POLL(2)]:: Synchronous I/O multiplexing
 
-http://www.freebsd.org/cgi/man.cgi?query=route&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[ROUTE(8)]:: Manually manipulate the routing tables
+http://www.freebsd.org/cgi/man.cgi?query=route&sektion=8[ROUTE(8)]:: Manually manipulate the routing tables
 
-http://www.freebsd.org/cgi/man.cgi?query=ifconfig&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[IFCONFIG(8)]:: Configure network interface parameters
+http://www.freebsd.org/cgi/man.cgi?query=ifconfig&sektion=8[IFCONFIG(8)]:: Configure network interface parameters
 
-http://www.freebsd.org/cgi/man.cgi?query=netstat&apropos=0&sektion=1&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[NETSTAT(1)]:: Show network status
+http://www.freebsd.org/cgi/man.cgi?query=netstat&sektion=1[NETSTAT(1)]:: Show network status
 
-http://www.freebsd.org/cgi/man.cgi?query=ping&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[PING(8)]:: Send ICMP ECHO_REQUEST packets to network hosts
+http://www.freebsd.org/cgi/man.cgi?query=ping&sektion=8[PING(8)]:: Send ICMP ECHO_REQUEST packets to network hosts
 
-http://www.freebsd.org/cgi/man.cgi?query=ping6&apropos=0&sektion=8&manpath=FreeBSD+9.2-RELEASE&arch=default&format=html[PING6(8)]:: Send ICMPv6 ECHO_REQUEST packets to network hosts
+http://www.freebsd.org/cgi/man.cgi?query=ping6&sektion=8[PING6(8)]:: Send ICMPv6 ECHO_REQUEST packets to network hosts
 
-http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[SYSCTL(3)]:: Get or set system information
+http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=3[SYSCTL(3)]:: Get or set system information
 
-http://www.freebsd.org/cgi/man.cgi?query=resolver&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[RESOLVER(3)]:: Resolver routines
+http://www.freebsd.org/cgi/man.cgi?query=resolver&sektion=3[RESOLVER(3)]:: Resolver routines
 
-http://www.freebsd.org/cgi/man.cgi?query=gethostbyname&sektion=3&apropos=0&manpath=FreeBSD+9.2-RELEASE[GETHOSTBYNAME(3)]:: Get network host entry
+http://www.freebsd.org/cgi/man.cgi?query=gethostbyname&sektion=3[GETHOSTBYNAME(3)]:: Get network host entry
 
 == Network Interface Drivers
 

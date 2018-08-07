@@ -974,6 +974,36 @@ show_var(int *oid, int nlen)
 		printf("%s", buf);
 		return (0);
 	}
+
+	/* don't fetch opaques that we don't know how to print */
+	if (ctltype == CTLTYPE_OPAQUE) {
+		if (strcmp(fmt, "S,clockinfo") == 0)
+#ifndef __rtems__
+			func = S_clockinfo;
+#else /* __rtems__ */
+			func = NULL;
+#endif /* __rtems__ */
+		else if (strcmp(fmt, "S,timeval") == 0)
+			func = S_timeval;
+		else if (strcmp(fmt, "S,loadavg") == 0)
+			func = S_loadavg;
+		else if (strcmp(fmt, "S,vmtotal") == 0)
+			func = S_vmtotal;
+#ifdef __amd64__
+		else if (strcmp(fmt, "S,efi_map_header") == 0)
+			func = S_efi_map;
+#endif
+#if defined(__amd64__) || defined(__i386__)
+		else if (strcmp(fmt, "S,bios_smap_xattr") == 0)
+			func = S_bios_smap_xattr;
+#endif
+		else {
+			func = NULL;
+			if (!bflag && !oflag && !xflag)
+				return (1);
+		}
+	}
+
 	/* find an estimate of how much we need for this var */
 	if (Bflag)
 		j = Bflag;
@@ -1094,28 +1124,6 @@ show_var(int *oid, int nlen)
 
 	case CTLTYPE_OPAQUE:
 		i = 0;
-		if (strcmp(fmt, "S,clockinfo") == 0)
-#ifndef __rtems__
-			func = S_clockinfo;
-#else /* __rtems__ */
-			func = NULL;
-#endif /* __rtems__ */
-		else if (strcmp(fmt, "S,timeval") == 0)
-			func = S_timeval;
-		else if (strcmp(fmt, "S,loadavg") == 0)
-			func = S_loadavg;
-		else if (strcmp(fmt, "S,vmtotal") == 0)
-			func = S_vmtotal;
-#ifdef __amd64__
-		else if (strcmp(fmt, "S,efi_map_header") == 0)
-			func = S_efi_map;
-#endif
-#if defined(__amd64__) || defined(__i386__)
-		else if (strcmp(fmt, "S,bios_smap_xattr") == 0)
-			func = S_bios_smap_xattr;
-#endif
-		else
-			func = NULL;
 		if (func) {
 			if (!nflag)
 				printf("%s%s", name, sep);

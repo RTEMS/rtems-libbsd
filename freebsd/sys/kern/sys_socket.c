@@ -318,32 +318,36 @@ soo_ioctl(struct file *fp, u_long cmd, void *data, struct ucred *active_cred,
 		break;
 
 	case FIOASYNC:
-		/*
-		 * XXXRW: This code separately acquires SOCK_LOCK(so) and
-		 * SOCKBUF_LOCK(&so->so_rcv) even though they are the same
-		 * mutex to avoid introducing the assumption that they are
-		 * the same.
-		 */
 		if (*(int *)data) {
 			SOCK_LOCK(so);
 			so->so_state |= SS_ASYNC;
+			if (SOLISTENING(so)) {
+				so->sol_sbrcv_flags |= SB_ASYNC;
+				so->sol_sbsnd_flags |= SB_ASYNC;
+			} else {
+				SOCKBUF_LOCK(&so->so_rcv);
+				so->so_rcv.sb_flags |= SB_ASYNC;
+				SOCKBUF_UNLOCK(&so->so_rcv);
+				SOCKBUF_LOCK(&so->so_snd);
+				so->so_snd.sb_flags |= SB_ASYNC;
+				SOCKBUF_UNLOCK(&so->so_snd);
+			}
 			SOCK_UNLOCK(so);
-			SOCKBUF_LOCK(&so->so_rcv);
-			so->so_rcv.sb_flags |= SB_ASYNC;
-			SOCKBUF_UNLOCK(&so->so_rcv);
-			SOCKBUF_LOCK(&so->so_snd);
-			so->so_snd.sb_flags |= SB_ASYNC;
-			SOCKBUF_UNLOCK(&so->so_snd);
 		} else {
 			SOCK_LOCK(so);
 			so->so_state &= ~SS_ASYNC;
+			if (SOLISTENING(so)) {
+				so->sol_sbrcv_flags &= ~SB_ASYNC;
+				so->sol_sbsnd_flags &= ~SB_ASYNC;
+			} else {
+				SOCKBUF_LOCK(&so->so_rcv);
+				so->so_rcv.sb_flags &= ~SB_ASYNC;
+				SOCKBUF_UNLOCK(&so->so_rcv);
+				SOCKBUF_LOCK(&so->so_snd);
+				so->so_snd.sb_flags &= ~SB_ASYNC;
+				SOCKBUF_UNLOCK(&so->so_snd);
+			}
 			SOCK_UNLOCK(so);
-			SOCKBUF_LOCK(&so->so_rcv);
-			so->so_rcv.sb_flags &= ~SB_ASYNC;
-			SOCKBUF_UNLOCK(&so->so_rcv);
-			SOCKBUF_LOCK(&so->so_snd);
-			so->so_snd.sb_flags &= ~SB_ASYNC;
-			SOCKBUF_UNLOCK(&so->so_snd);
 		}
 		break;
 
@@ -477,7 +481,6 @@ static int
 soo_stat(struct socket *so, struct stat *ub)
 {
 #endif /* __rtems__ */
-	struct sockbuf *sb;
 #ifdef MAC
 	int error;
 #endif
@@ -491,22 +494,26 @@ soo_stat(struct socket *so, struct stat *ub)
 	if (error)
 		return (error);
 #endif
-	/*
-	 * If SBS_CANTRCVMORE is set, but there's still data left in the
-	 * receive buffer, the socket is still readable.
-	 */
-	sb = &so->so_rcv;
-	SOCKBUF_LOCK(sb);
-	if ((sb->sb_state & SBS_CANTRCVMORE) == 0 || sbavail(sb))
-		ub->st_mode |= S_IRUSR | S_IRGRP | S_IROTH;
-	ub->st_size = sbavail(sb) - sb->sb_ctl;
-	SOCKBUF_UNLOCK(sb);
+	if (!SOLISTENING(so)) {
+		struct sockbuf *sb;
 
-	sb = &so->so_snd;
-	SOCKBUF_LOCK(sb);
-	if ((sb->sb_state & SBS_CANTSENDMORE) == 0)
-		ub->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
-	SOCKBUF_UNLOCK(sb);
+		/*
+		 * If SBS_CANTRCVMORE is set, but there's still data left
+		 * in the receive buffer, the socket is still readable.
+		 */
+		sb = &so->so_rcv;
+		SOCKBUF_LOCK(sb);
+		if ((sb->sb_state & SBS_CANTRCVMORE) == 0 || sbavail(sb))
+			ub->st_mode |= S_IRUSR | S_IRGRP | S_IROTH;
+		ub->st_size = sbavail(sb) - sb->sb_ctl;
+		SOCKBUF_UNLOCK(sb);
+	
+		sb = &so->so_snd;
+		SOCKBUF_LOCK(sb);
+		if ((sb->sb_state & SBS_CANTSENDMORE) == 0)
+			ub->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+		SOCKBUF_UNLOCK(sb);
+	}
 #ifndef __rtems__
 	ub->st_uid = so->so_cred->cr_uid;
 	ub->st_gid = so->so_cred->cr_gid;
@@ -916,6 +923,7 @@ soaio_process_sb(struct socket *so, struct sockbuf *sb)
 {
 	struct kaiocb *job;
 
+	CURVNET_SET(so->so_vnet);
 	SOCKBUF_LOCK(sb);
 	while (!TAILQ_EMPTY(&sb->sb_aiojobq) && soaio_ready(so, sb)) {
 		job = TAILQ_FIRST(&sb->sb_aiojobq);
@@ -936,9 +944,9 @@ soaio_process_sb(struct socket *so, struct sockbuf *sb)
 	sb->sb_flags &= ~SB_AIO_RUNNING;
 	SOCKBUF_UNLOCK(sb);
 
-	ACCEPT_LOCK();
 	SOCK_LOCK(so);
 	sorele(so);
+	CURVNET_RESTORE();
 }
 
 void

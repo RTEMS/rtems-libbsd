@@ -52,13 +52,6 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-/* I should really use ktr.. */
-/*
-#define UMA_DEBUG 1
-#define UMA_DEBUG_ALLOC 1
-#define UMA_DEBUG_ALLOC_1 1
-*/
-
 #include <rtems/bsd/local/opt_ddb.h>
 #include <rtems/bsd/local/opt_param.h>
 #include <rtems/bsd/local/opt_vm.h>
@@ -162,12 +155,15 @@ static LIST_HEAD(,uma_zone) uma_cachezones =
 static struct rwlock_padalign uma_rwlock;
 
 #ifndef __rtems__
-/* Linked list of boot time pages */
-static LIST_HEAD(,uma_slab) uma_boot_pages =
-    LIST_HEAD_INITIALIZER(uma_boot_pages);
-
-/* This mutex protects the boot time pages list */
-static struct mtx_padalign uma_boot_pages_mtx;
+/*
+ * Pointer and counter to pool of pages, that is preallocated at
+ * startup to bootstrap UMA.  Early zones continue to use the pool
+ * until it is depleted, so allocations may happen after boot, thus
+ * we need a mutex to protect it.
+ */
+static char *bootmem;
+static int boot_pages;
+static struct mtx uma_boot_pages_mtx;
 #endif /* __rtems__ */
 
 static struct sx uma_drain_lock;
@@ -862,6 +858,9 @@ keg_free_slab(uma_keg_t keg, uma_slab_t slab, int start)
 	int i;
 	uint8_t flags;
 
+	CTR4(KTR_UMA, "keg_free_slab keg %s(%p) slab %p, returning %d bytes",
+	    keg->uk_name, keg, slab, PAGE_SIZE * keg->uk_ppera);
+
 	mem = slab->us_data;
 	flags = slab->us_flags;
 	i = start;
@@ -872,10 +871,6 @@ keg_free_slab(uma_keg_t keg, uma_slab_t slab, int start)
 	}
 	if (keg->uk_flags & UMA_ZONE_OFFPAGE)
 		zone_free_item(keg->uk_slabzone, slab, NULL, SKIP_NONE);
-#ifdef UMA_DEBUG
-	printf("%s: Returning %d bytes.\n", keg->uk_name,
-	    PAGE_SIZE * keg->uk_ppera);
-#endif
 	keg->uk_freef(mem, PAGE_SIZE * keg->uk_ppera, flags);
 }
 
@@ -898,9 +893,8 @@ keg_drain(uma_keg_t keg)
 	if (keg->uk_flags & UMA_ZONE_NOFREE || keg->uk_freef == NULL)
 		return;
 
-#ifdef UMA_DEBUG
-	printf("%s free items: %u\n", keg->uk_name, keg->uk_free);
-#endif
+	CTR3(KTR_UMA, "keg_drain %s(%p) free items: %u",
+	    keg->uk_name, keg, keg->uk_free);
 	KEG_LOCK(keg);
 	if (keg->uk_free == 0)
 		goto finished;
@@ -992,9 +986,6 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 	slab = NULL;
 	mem = NULL;
 
-#ifdef UMA_DEBUG
-	printf("alloc_slab:  Allocating a new slab for %s\n", keg->uk_name);
-#endif
 	allocf = keg->uk_allocf;
 	KEG_UNLOCK(keg);
 
@@ -1059,6 +1050,9 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int wait)
 out:
 	KEG_LOCK(keg);
 
+	CTR3(KTR_UMA, "keg_alloc_slab: allocated slab %p for %s(%p)",
+	    slab, keg->uk_name, keg);
+
 	if (slab != NULL) {
 		if (keg->uk_flags & UMA_ZONE_HASH)
 			UMA_HASH_INSERT(&keg->uk_hash, slab, mem);
@@ -1080,36 +1074,24 @@ static void *
 startup_alloc(uma_zone_t zone, vm_size_t bytes, uint8_t *pflag, int wait)
 {
 	uma_keg_t keg;
-	uma_slab_t tmps;
-	int pages, check_pages;
+	void *mem;
+	int pages;
 
 	keg = zone_first_keg(zone);
 	pages = howmany(bytes, PAGE_SIZE);
-	check_pages = pages - 1;
 	KASSERT(pages > 0, ("startup_alloc can't reserve 0 pages\n"));
 
 	/*
 	 * Check our small startup cache to see if it has pages remaining.
 	 */
 	mtx_lock(&uma_boot_pages_mtx);
-
-	/* First check if we have enough room. */
-	tmps = LIST_FIRST(&uma_boot_pages);
-	while (tmps != NULL && check_pages-- > 0)
-		tmps = LIST_NEXT(tmps, us_link);
-	if (tmps != NULL) {
-		/*
-		 * It's ok to lose tmps references.  The last one will
-		 * have tmps->us_data pointing to the start address of
-		 * "pages" contiguous pages of memory.
-		 */
-		while (pages-- > 0) {
-			tmps = LIST_FIRST(&uma_boot_pages);
-			LIST_REMOVE(tmps, us_link);
-		}
+	if (pages <= boot_pages) {
+		mem = bootmem;
+		boot_pages -= pages;
+		bootmem += pages * PAGE_SIZE;
 		mtx_unlock(&uma_boot_pages_mtx);
-		*pflag = tmps->us_flags;
-		return (tmps->us_data);
+		*pflag = UMA_SLAB_BOOT;
+		return (mem);
 	}
 	mtx_unlock(&uma_boot_pages_mtx);
 	if (booted < UMA_STARTUP2)
@@ -1344,15 +1326,13 @@ keg_small_init(uma_keg_t keg)
 		keg->uk_ipers = slabsize / keg->uk_rsize;
 		KASSERT(keg->uk_ipers > 0 && keg->uk_ipers <= SLAB_SETSIZE,
 		    ("%s: keg->uk_ipers %u", __func__, keg->uk_ipers));
-#ifdef UMA_DEBUG
-		printf("UMA decided we need offpage slab headers for "
-		    "keg: %s, calculated wastedspace = %d, "
+		CTR6(KTR_UMA, "UMA decided we need offpage slab headers for "
+		    "keg: %s(%p), calculated wastedspace = %d, "
 		    "maximum wasted space allowed = %d, "
 		    "calculated ipers = %d, "
-		    "new wasted space = %d\n", keg->uk_name, wastedspace,
+		    "new wasted space = %d\n", keg->uk_name, keg, wastedspace,
 		    slabsize / UMA_MAX_WASTE, keg->uk_ipers,
 		    slabsize - keg->uk_ipers * keg->uk_rsize);
-#endif
 		keg->uk_flags |= UMA_ZONE_OFFPAGE;
 	}
 
@@ -1465,8 +1445,6 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	keg->uk_reserve = 0;
 	keg->uk_pages = 0;
 	keg->uk_flags = arg->flags;
-	keg->uk_allocf = page_alloc;
-	keg->uk_freef = page_free;
 	keg->uk_slabzone = NULL;
 
 	/*
@@ -1503,32 +1481,28 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	if (keg->uk_flags & UMA_ZONE_OFFPAGE)
 		keg->uk_slabzone = slabzone;
 
+#ifndef __rtems__
 	/*
 	 * If we haven't booted yet we need allocations to go through the
 	 * startup cache until the vm is ready.
 	 */
-	if (keg->uk_ppera == 1) {
-#ifdef UMA_MD_SMALL_ALLOC
-		keg->uk_allocf = uma_small_alloc;
-		keg->uk_freef = uma_small_free;
-
-#ifndef __rtems__
-		if (booted < UMA_STARTUP)
-			keg->uk_allocf = startup_alloc;
-#endif /* __rtems__ */
-#else
-#ifndef __rtems__
-		if (booted < UMA_STARTUP2)
-			keg->uk_allocf = startup_alloc;
-#endif /* __rtems__ */
-#endif
-#ifndef __rtems__
-	} else if (booted < UMA_STARTUP2 &&
-	    (keg->uk_flags & UMA_ZFLAG_INTERNAL))
+	if (booted < UMA_STARTUP2)
 		keg->uk_allocf = startup_alloc;
-#else /* __rtems__ */
-	}
+#ifdef UMA_MD_SMALL_ALLOC
+	else if (keg->uk_ppera == 1)
+		keg->uk_allocf = uma_small_alloc;
+#endif
+	else
 #endif /* __rtems__ */
+		keg->uk_allocf = page_alloc;
+#ifndef __rtems__
+#ifdef UMA_MD_SMALL_ALLOC
+	if (keg->uk_ppera == 1)
+		keg->uk_freef = uma_small_free;
+	else
+#endif
+#endif /* __rtems__ */
+		keg->uk_freef = page_free;
 
 	/*
 	 * Initialize keg's lock
@@ -1570,13 +1544,10 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	if (keg->uk_flags & UMA_ZONE_HASH)
 		hash_alloc(&keg->uk_hash);
 
-#ifdef UMA_DEBUG
-	printf("UMA: %s(%p) size %d(%d) flags %#x ipers %d ppera %d out %d free %d\n",
-	    zone->uz_name, zone, keg->uk_size, keg->uk_rsize, keg->uk_flags,
-	    keg->uk_ipers, keg->uk_ppera,
+	CTR5(KTR_UMA, "keg_ctor %p zone %s(%p) out %d free %d\n",
+	    keg, zone->uz_name, zone,
 	    (keg->uk_pages / keg->uk_ppera) * keg->uk_ipers - keg->uk_free,
 	    keg->uk_free);
-#endif
 
 	LIST_INSERT_HEAD(&keg->uk_zones, zone, uz_link);
 
@@ -1817,17 +1788,10 @@ zone_foreach(void (*zfunc)(uma_zone_t))
 /* Public functions */
 /* See uma.h */
 void
-uma_startup(void *bootmem, int boot_pages)
+uma_startup(void *mem, int npages)
 {
 	struct uma_zctor_args args;
-#ifndef __rtems__
-	uma_slab_t slab;
-	int i;
-#endif /* __rtems__ */
 
-#ifdef UMA_DEBUG
-	printf("Creating uma keg headers zone and keg.\n");
-#endif
 	rw_init(&uma_rwlock, "UMA lock");
 
 	/* "manually" create the initial zone */
@@ -1845,21 +1809,11 @@ uma_startup(void *bootmem, int boot_pages)
 	zone_ctor(kegs, sizeof(struct uma_zone), &args, M_WAITOK);
 
 #ifndef __rtems__
-#ifdef UMA_DEBUG
-	printf("Filling boot free list.\n");
-#endif
-	for (i = 0; i < boot_pages; i++) {
-		slab = (uma_slab_t)((uint8_t *)bootmem + (i * UMA_SLAB_SIZE));
-		slab->us_data = (uint8_t *)slab;
-		slab->us_flags = UMA_SLAB_BOOT;
-		LIST_INSERT_HEAD(&uma_boot_pages, slab, us_link);
-	}
 	mtx_init(&uma_boot_pages_mtx, "UMA boot pages", NULL, MTX_DEF);
+	bootmem = mem;
+	boot_pages = npages;
 #endif /* __rtems__ */
 
-#ifdef UMA_DEBUG
-	printf("Creating uma zone headers zone and keg.\n");
-#endif
 	args.name = "UMA Zones";
 	args.size = sizeof(struct uma_zone) +
 	    (sizeof(struct uma_cache) * (mp_maxid + 1));
@@ -1872,10 +1826,6 @@ uma_startup(void *bootmem, int boot_pages)
 	args.flags = UMA_ZFLAG_INTERNAL;
 	/* The initial zone has no Per cpu queues so it's smaller */
 	zone_ctor(zones, sizeof(struct uma_zone), &args, M_WAITOK);
-
-#ifdef UMA_DEBUG
-	printf("Creating slab and hash zones.\n");
-#endif
 
 	/* Now make a zone for slab headers */
 	slabzone = uma_zcreate("UMA Slabs",
@@ -1893,10 +1843,6 @@ uma_startup(void *bootmem, int boot_pages)
 #ifndef __rtems__
 	booted = UMA_STARTUP;
 #endif /* __rtems__ */
-
-#ifdef UMA_DEBUG
-	printf("UMA startup complete.\n");
-#endif
 }
 #ifdef __rtems__
 static void
@@ -1920,9 +1866,6 @@ uma_startup2(void)
 	booted = UMA_STARTUP2;
 	bucket_enable();
 	sx_init(&uma_drain_lock, "umadrain");
-#ifdef UMA_DEBUG
-	printf("UMA startup2 complete.\n");
-#endif
 }
 #endif /* __rtems__ */
 
@@ -1934,14 +1877,9 @@ uma_startup2(void)
 static void
 uma_startup3(void)
 {
-#ifdef UMA_DEBUG
-	printf("Starting callout.\n");
-#endif
+
 	callout_init(&uma_callout, 1);
 	callout_reset(&uma_callout, UMA_TIMEOUT * hz, uma_timeout, NULL);
-#ifdef UMA_DEBUG
-	printf("UMA startup3 complete.\n");
-#endif
 }
 
 static uma_keg_t
@@ -2199,11 +2137,8 @@ uma_zalloc_arg(uma_zone_t zone, void *udata, int flags)
 	random_harvest_fast_uma(&zone, sizeof(zone), 1, RANDOM_UMA);
 
 	/* This is the fast path allocation */
-#ifdef UMA_DEBUG_ALLOC_1
-	printf("Allocating one item from %s(%p)\n", zone->uz_name, zone);
-#endif
-	CTR3(KTR_UMA, "uma_zalloc_arg thread %x zone %s flags %d", curthread,
-	    zone->uz_name, flags);
+	CTR4(KTR_UMA, "uma_zalloc_arg thread %x zone %s(%p) flags %d",
+	    curthread, zone->uz_name, zone, flags);
 
 	if (flags & M_WAITOK) {
 		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
@@ -2278,9 +2213,9 @@ zalloc_start:
 	 */
 	bucket = cache->uc_freebucket;
 	if (bucket != NULL && bucket->ub_cnt > 0) {
-#ifdef UMA_DEBUG_ALLOC
-		printf("uma_zalloc: Swapping empty with alloc.\n");
-#endif
+		CTR2(KTR_UMA,
+		    "uma_zalloc: zone %s(%p) swapping empty with alloc",
+		    zone->uz_name, zone);
 		cache->uc_freebucket = cache->uc_allocbucket;
 		cache->uc_allocbucket = bucket;
 		goto zalloc_start;
@@ -2361,6 +2296,8 @@ zalloc_start:
 	 * will use the just filled bucket.
 	 */
 	bucket = zone_alloc_bucket(zone, udata, flags);
+	CTR3(KTR_UMA, "uma_zalloc: zone %s(%p) bucket zone returned %p",
+	    zone->uz_name, zone, bucket);
 	if (bucket != NULL) {
 		ZONE_LOCK(zone);
 		critical_enter();
@@ -2382,10 +2319,6 @@ zalloc_start:
 	/*
 	 * We may not be able to get a bucket so return an actual item.
 	 */
-#ifdef UMA_DEBUG
-	printf("uma_zalloc_arg: Bucketzone returned NULL\n");
-#endif
-
 zalloc_item:
 	item = zone_alloc_item(zone, udata, flags);
 
@@ -2693,9 +2626,6 @@ zone_alloc_item(uma_zone_t zone, void *udata, int flags)
 
 	item = NULL;
 
-#ifdef UMA_DEBUG_ALLOC
-	printf("INTERNAL: Allocating one item from %s(%p)\n", zone->uz_name, zone);
-#endif
 	if (zone->uz_import(zone->uz_arg, &item, 1, flags) != 1)
 		goto fail;
 	atomic_add_long(&zone->uz_allocs, 1);
@@ -2724,9 +2654,14 @@ zone_alloc_item(uma_zone_t zone, void *udata, int flags)
 	if (flags & M_ZERO)
 		uma_zero_item(item, zone);
 
+	CTR3(KTR_UMA, "zone_alloc_item item %p from %s(%p)", item,
+	    zone->uz_name, zone);
+
 	return (item);
 
 fail:
+	CTR2(KTR_UMA, "zone_alloc_item failed from %s(%p)",
+	    zone->uz_name, zone);
 	atomic_add_long(&zone->uz_fails, 1);
 	return (NULL);
 }
@@ -2743,9 +2678,6 @@ uma_zfree_arg(uma_zone_t zone, void *item, void *udata)
 	/* Enable entropy collection for RANDOM_ENABLE_UMA kernel option */
 	random_harvest_fast_uma(&zone, sizeof(zone), 1, RANDOM_UMA);
 
-#ifdef UMA_DEBUG_ALLOC_1
-	printf("Freeing item %p to %s(%p)\n", item, zone->uz_name, zone);
-#endif
 	CTR2(KTR_UMA, "uma_zfree_arg thread %x zone %s", curthread,
 	    zone->uz_name);
 
@@ -2859,9 +2791,9 @@ zfree_start:
 
 	/* Can we throw this on the zone full list? */
 	if (bucket != NULL) {
-#ifdef UMA_DEBUG_ALLOC
-		printf("uma_zfree: Putting old bucket on the free list.\n");
-#endif
+		CTR3(KTR_UMA,
+		    "uma_zfree: zone %s(%p) putting bucket %p on free list",
+		    zone->uz_name, zone, bucket);
 		/* ub_cnt is pointing to the last free item */
 		KASSERT(bucket->ub_cnt != 0,
 		    ("uma_zfree: Attempting to insert an empty bucket onto the full list.\n"));
@@ -2876,10 +2808,9 @@ zfree_start:
 		zone->uz_count++;
 	ZONE_UNLOCK(zone);
 
-#ifdef UMA_DEBUG_ALLOC
-	printf("uma_zfree: Allocating new free bucket.\n");
-#endif
 	bucket = bucket_alloc(zone, udata, M_NOWAIT);
+	CTR3(KTR_UMA, "uma_zfree: zone %s(%p) allocated bucket %p",
+	    zone->uz_name, zone, bucket);
 	if (bucket) {
 		critical_enter();
 		cpu = curcpu;
@@ -3281,9 +3212,7 @@ static void
 uma_reclaim_locked(bool kmem_danger)
 {
 
-#ifdef UMA_DEBUG
-	printf("UMA: vm asked us to release pages!\n");
-#endif
+	CTR0(KTR_UMA, "UMA: vm asked us to release pages!");
 	sx_assert(&uma_drain_lock, SA_XLOCKED);
 	bucket_enable();
 	zone_foreach(zone_drain);

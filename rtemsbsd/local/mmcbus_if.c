@@ -21,6 +21,14 @@
 #include <dev/mmc/bridge.h>
 #include <rtems/bsd/local/mmcbus_if.h>
 
+struct kobjop_desc mmcbus_retune_pause_desc = {
+	0, { &mmcbus_retune_pause_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc mmcbus_retune_unpause_desc = {
+	0, { &mmcbus_retune_unpause_desc, (kobjop_t)kobj_error_method }
+};
+
 struct kobjop_desc mmcbus_wait_for_request_desc = {
 	0, { &mmcbus_wait_for_request_desc, (kobjop_t)kobj_error_method }
 };

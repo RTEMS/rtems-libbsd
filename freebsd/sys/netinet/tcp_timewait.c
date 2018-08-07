@@ -354,7 +354,6 @@ tcp_twstart(struct tcpcb *tp)
 		    ("tcp_twstart: !SS_PROTOREF"));
 		inp->inp_flags &= ~INP_SOCKREF;
 		INP_WUNLOCK(inp);
-		ACCEPT_LOCK();
 		SOCK_LOCK(so);
 		so->so_state &= ~SS_PROTOREF;
 		sofree(so);
@@ -493,7 +492,6 @@ tcp_twclose(struct tcptw *tw, int reuse)
 		if (inp->inp_flags & INP_SOCKREF) {
 			inp->inp_flags &= ~INP_SOCKREF;
 			INP_WUNLOCK(inp);
-			ACCEPT_LOCK();
 			SOCK_LOCK(so);
 			KASSERT(so->so_state & SS_PROTOREF,
 			    ("tcp_twclose: INP_SOCKREF && !SS_PROTOREF"));

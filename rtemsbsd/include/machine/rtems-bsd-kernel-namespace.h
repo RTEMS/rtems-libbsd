@@ -6,6 +6,8 @@
 #define	accept_filt_del _bsd_accept_filt_del
 #define	accept_filt_generic_mod_event _bsd_accept_filt_generic_mod_event
 #define	accept_filt_get _bsd_accept_filt_get
+#define	accept_filt_getopt _bsd_accept_filt_getopt
+#define	accept_filt_setopt _bsd_accept_filt_setopt
 #define	accept_mtx _bsd_accept_mtx
 #define	AddFragmentPtrLink _bsd_AddFragmentPtrLink
 #define	AddLink _bsd_AddLink
@@ -308,6 +310,7 @@
 #define	BF_set_key _bsd_BF_set_key
 #define	bin2bcd_data _bsd_bin2bcd_data
 #define	blist_alloc _bsd_blist_alloc
+#define	blist_avail _bsd_blist_avail
 #define	blist_create _bsd_blist_create
 #define	blist_destroy _bsd_blist_destroy
 #define	blist_fill _bsd_blist_fill
@@ -387,8 +390,8 @@
 #define	bus_dmamap_load_buffer _bsd_bus_dmamap_load_buffer
 #define	bus_dmamap_load_mbuf _bsd_bus_dmamap_load_mbuf
 #define	bus_dmamap_load_mbuf_sg _bsd_bus_dmamap_load_mbuf_sg
-#define	_bus_dmamap_sync _bsd__bus_dmamap_sync
-#define	_bus_dmamap_unload _bsd__bus_dmamap_unload
+#define	bus_dmamap_sync _bsd_bus_dmamap_sync
+#define	bus_dmamap_unload _bsd_bus_dmamap_unload
 #define	bus_dmamem_alloc _bsd_bus_dmamem_alloc
 #define	bus_dmamem_free _bsd_bus_dmamem_free
 #define	bus_dma_tag_create _bsd_bus_dma_tag_create
@@ -703,12 +706,10 @@
 #define	DifferentialChecksum _bsd_DifferentialChecksum
 #define	div_protosw _bsd_div_protosw
 #define	div_usrreqs _bsd_div_usrreqs
-#define	do_getopt_accept_filter _bsd_do_getopt_accept_filter
 #define	domain_add _bsd_domain_add
 #define	domain_init _bsd_domain_init
 #define	domain_init_status _bsd_domain_init_status
 #define	domains _bsd_domains
-#define	do_setopt_accept_filter _bsd_do_setopt_accept_filter
 #define	drbr_dequeue_drv _bsd_drbr_dequeue_drv
 #define	drbr_enqueue_drv _bsd_drbr_enqueue_drv
 #define	drbr_inuse_drv _bsd_drbr_inuse_drv
@@ -2639,6 +2640,11 @@
 #define	miibus_driver _bsd_miibus_driver
 #define	mii_dev_mac_match _bsd_mii_dev_mac_match
 #define	mii_dev_mac_softc _bsd_mii_dev_mac_softc
+#define	mii_fdt_contype_from_name _bsd_mii_fdt_contype_from_name
+#define	mii_fdt_contype_to_name _bsd_mii_fdt_contype_to_name
+#define	mii_fdt_free_config _bsd_mii_fdt_free_config
+#define	mii_fdt_get_config _bsd_mii_fdt_get_config
+#define	mii_fdt_get_contype _bsd_mii_fdt_get_contype
 #define	mii_mediachg _bsd_mii_mediachg
 #define	mii_oui _bsd_mii_oui
 #define	mii_phy_add_media _bsd_mii_phy_add_media
@@ -3565,6 +3571,8 @@
 #define	read_machclk _bsd_read_machclk
 #define	registered_toedevs _bsd_registered_toedevs
 #define	register_tcp_functions _bsd_register_tcp_functions
+#define	register_tcp_functions_as_name _bsd_register_tcp_functions_as_name
+#define	register_tcp_functions_as_names _bsd_register_tcp_functions_as_names
 #define	resource_disabled _bsd_resource_disabled
 #define	resource_find_match _bsd_resource_find_match
 #define	resource_int_value _bsd_resource_int_value
@@ -3839,8 +3847,8 @@
 #define	sbrelease _bsd_sbrelease
 #define	sbrelease_internal _bsd_sbrelease_internal
 #define	sbrelease_locked _bsd_sbrelease_locked
-#define	sbreserve _bsd_sbreserve
 #define	sbreserve_locked _bsd_sbreserve_locked
+#define	sbsetopt _bsd_sbsetopt
 #define	sbsndmbuf _bsd_sbsndmbuf
 #define	sbsndptr _bsd_sbsndptr
 #define	sbtoxsockbuf _bsd_sbtoxsockbuf
@@ -4279,9 +4287,11 @@
 #define	sdhci_generic_release_host _bsd_sdhci_generic_release_host
 #define	sdhci_generic_request _bsd_sdhci_generic_request
 #define	sdhci_generic_resume _bsd_sdhci_generic_resume
+#define	sdhci_generic_retune _bsd_sdhci_generic_retune
 #define	sdhci_generic_set_uhs_timing _bsd_sdhci_generic_set_uhs_timing
 #define	sdhci_generic_suspend _bsd_sdhci_generic_suspend
 #define	sdhci_generic_switch_vccq _bsd_sdhci_generic_switch_vccq
+#define	sdhci_generic_tune _bsd_sdhci_generic_tune
 #define	sdhci_generic_update_ios _bsd_sdhci_generic_update_ios
 #define	sdhci_generic_write_ivar _bsd_sdhci_generic_write_ivar
 #define	sdhci_handle_card_present _bsd_sdhci_handle_card_present
@@ -4425,9 +4435,11 @@
 #define	so_linger_get _bsd_so_linger_get
 #define	so_linger_set _bsd_so_linger_set
 #define	solisten _bsd_solisten
-#define	so_listeners_apply_all _bsd_so_listeners_apply_all
+#define	solisten_dequeue _bsd_solisten_dequeue
 #define	solisten_proto _bsd_solisten_proto
 #define	solisten_proto_check _bsd_solisten_proto_check
+#define	solisten_upcall_set _bsd_solisten_upcall_set
+#define	solisten_wakeup _bsd_solisten_wakeup
 #define	so_lock _bsd_so_lock
 #define	sonewconn _bsd_sonewconn
 #define	soo_close _bsd_soo_close
@@ -4745,6 +4757,7 @@
 #define	tcp_sack_output _bsd_tcp_sack_output
 #define	tcp_sack_partialack _bsd_tcp_sack_partialack
 #define	tcp_sc_rst_sock_fail _bsd_tcp_sc_rst_sock_fail
+#define	tcp_sendbuf_auto_lowat _bsd_tcp_sendbuf_auto_lowat
 #define	tcp_sendspace _bsd_tcp_sendspace
 #define	tcp_setpersist _bsd_tcp_setpersist
 #define	tcp_slowtimo _bsd_tcp_slowtimo
@@ -5244,6 +5257,7 @@
 #define	usb_test_quirk_p _bsd_usb_test_quirk_p
 #define	usb_trim_spaces _bsd_usb_trim_spaces
 #define	usb_ugen_methods _bsd_usb_ugen_methods
+#define	uuidcmp _bsd_uuidcmp
 #define	uuid_ether_add _bsd_uuid_ether_add
 #define	uuid_ether_del _bsd_uuid_ether_del
 #define	vht80_chan_ranges _bsd_vht80_chan_ranges

@@ -87,22 +87,25 @@ char *
 fgetln(FILE *fp, size_t *lenp)
 {
 	unsigned char *p;
+	char *ret;
 	size_t len;
 	size_t off;
 
+#ifndef __rtems__
+	FLOCKFILE_CANCELSAFE(fp);
+#else /* __rtems__ */
 	FLOCKFILE(fp);
+#endif /* __rtems__ */
 	ORIENT(fp, -1);
 	/* make sure there is input */
 	if (fp->_r <= 0 && __srefill(fp)) {
 		*lenp = 0;
-		FUNLOCKFILE(fp);
-		return (NULL);
+		ret = NULL;
+		goto end;
 	}
 
 	/* look for a newline in the input */
 	if ((p = memchr((void *)fp->_p, '\n', (size_t)fp->_r)) != NULL) {
-		char *ret;
-
 		/*
 		 * Found one.  Flag buffer as modified to keep fseek from
 		 * `optimising' a backward seek, in case the user stomps on
@@ -116,8 +119,7 @@ fgetln(FILE *fp, size_t *lenp)
 #endif /* __rtems__ */
 		fp->_r -= len;
 		fp->_p = p;
-		FUNLOCKFILE(fp);
-		return (ret);
+		goto end;
 	}
 
 	/*
@@ -167,12 +169,18 @@ fgetln(FILE *fp, size_t *lenp)
 #ifdef notdef
 	fp->_lb._base[len] = '\0';
 #endif
+	ret = (char *)fp->_lb._base;
+end:
+#ifndef __rtems__
+	FUNLOCKFILE_CANCELSAFE();
+#else /* __rtems__ */
 	FUNLOCKFILE(fp);
-	return ((char *)fp->_lb._base);
+#endif /* __rtems__ */
+	return (ret);
 
 error:
 	*lenp = 0;		/* ??? */
 	fp->_flags |= __SERR;
-	FUNLOCKFILE(fp);
-	return (NULL);		/* ??? */
+	ret = NULL;
+	goto end;
 }

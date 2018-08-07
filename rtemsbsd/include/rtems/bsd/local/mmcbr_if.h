@@ -38,6 +38,30 @@ static __inline int MMCBR_SWITCH_VCCQ(device_t brdev, device_t reqdev)
 	return ((mmcbr_switch_vccq_t *) _m)(brdev, reqdev);
 }
 
+/** @brief Unique descriptor for the MMCBR_TUNE() method */
+extern struct kobjop_desc mmcbr_tune_desc;
+/** @brief A function implementing the MMCBR_TUNE() method */
+typedef int mmcbr_tune_t(device_t brdev, device_t reqdev, bool hs400);
+
+static __inline int MMCBR_TUNE(device_t brdev, device_t reqdev, bool hs400)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_tune);
+	return ((mmcbr_tune_t *) _m)(brdev, reqdev, hs400);
+}
+
+/** @brief Unique descriptor for the MMCBR_RETUNE() method */
+extern struct kobjop_desc mmcbr_retune_desc;
+/** @brief A function implementing the MMCBR_RETUNE() method */
+typedef int mmcbr_retune_t(device_t brdev, device_t reqdev, bool reset);
+
+static __inline int MMCBR_RETUNE(device_t brdev, device_t reqdev, bool reset)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_retune);
+	return ((mmcbr_retune_t *) _m)(brdev, reqdev, reset);
+}
+
 /** @brief Unique descriptor for the MMCBR_REQUEST() method */
 extern struct kobjop_desc mmcbr_request_desc;
 /** @brief A function implementing the MMCBR_REQUEST() method */

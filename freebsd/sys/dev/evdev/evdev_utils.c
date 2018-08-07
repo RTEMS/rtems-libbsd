@@ -2,7 +2,7 @@
 
 /*-
  * Copyright (c) 2014 Jakub Wojciech Klama <jceel@FreeBSD.org>
- * Copyright (c) 2015-2016 Vladimir Kondratyev <wulf@cicgroup.ru>
+ * Copyright (c) 2015-2016 Vladimir Kondratyev <wulf@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,17 +29,16 @@
  * $FreeBSD$
  */
 
-#include <sys/types.h>
-#include <sys/systm.h>
 #include <sys/param.h>
 #include <sys/bus.h>
-#include <sys/kernel.h>
 #include <sys/conf.h>
-#include <sys/malloc.h>
 #include <sys/kbio.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/systm.h>
 
-#include <dev/evdev/input.h>
 #include <dev/evdev/evdev.h>
+#include <dev/evdev/input.h>
 
 #include <dev/kbd/kbdreg.h>
 

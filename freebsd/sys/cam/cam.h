@@ -32,11 +32,7 @@
 #define _CAM_CAM_H 1
 
 #ifdef _KERNEL
-#ifndef __rtems__
-#include <opt_cam.h>
-#else /* __rtems__ */
 #include <rtems/bsd/local/opt_cam.h>
-#endif /* __rtems__ */
 #endif
 
 #include <sys/cdefs.h>

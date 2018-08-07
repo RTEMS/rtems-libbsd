@@ -29,12 +29,36 @@ null_switch_vccq(device_t brdev __unused, device_t reqdev __unused)
 	return (0);
 }
 
+static int
+null_retune(device_t brdev __unused, device_t reqdev __unused,
+    bool reset __unused)
+{
+
+	return (0);
+}
+
+static int
+null_tune(device_t brdev __unused, device_t reqdev __unused,
+    bool hs400 __unused)
+{
+
+	return (0);
+}
+
 struct kobjop_desc mmcbr_update_ios_desc = {
 	0, { &mmcbr_update_ios_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc mmcbr_switch_vccq_desc = {
 	0, { &mmcbr_switch_vccq_desc, (kobjop_t)null_switch_vccq }
+};
+
+struct kobjop_desc mmcbr_tune_desc = {
+	0, { &mmcbr_tune_desc, (kobjop_t)null_tune }
+};
+
+struct kobjop_desc mmcbr_retune_desc = {
+	0, { &mmcbr_retune_desc, (kobjop_t)null_retune }
 };
 
 struct kobjop_desc mmcbr_request_desc = {

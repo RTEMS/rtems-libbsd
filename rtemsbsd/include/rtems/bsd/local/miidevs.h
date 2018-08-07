@@ -512,7 +512,9 @@
 #define	MII_MODEL_xxTSC_78Q2121	0x0015
 #define	MII_STR_xxTSC_78Q2121	"78Q2121 100BASE-TX media interface"
 
-/* Vitesse Semiconductor */
+/* Vitesse Semiconductor (now Microsemi) */
+#define	MII_MODEL_xxVITESSE_VSC8501	0x0013
+#define	MII_STR_xxVITESSE_VSC8501	"Vitesse VSC8501 10/100/1000TX PHY"
 #define	MII_MODEL_xxVITESSE_VSC8641	0x0003
 #define	MII_STR_xxVITESSE_VSC8641	"Vitesse VSC8641 10/100/1000TX PHY"
 

@@ -383,14 +383,14 @@ bus_dmamap_load(bus_dma_tag_t dmat, bus_dmamap_t map, void *buf,
  * Release the mapping held by map. A no-op on PowerPC.
  */
 void
-_bus_dmamap_unload(bus_dma_tag_t dmat, bus_dmamap_t map)
+bus_dmamap_unload(bus_dma_tag_t dmat, bus_dmamap_t map)
 {
 
 	return;
 }
 
 void
-_bus_dmamap_sync(bus_dma_tag_t dmat, bus_dmamap_t map, bus_dmasync_op_t op)
+bus_dmamap_sync(bus_dma_tag_t dmat, bus_dmamap_t map, bus_dmasync_op_t op)
 {
 #ifdef CPU_DATA_CACHE_ALIGNMENT
 	uintptr_t size = map->buffer_size;

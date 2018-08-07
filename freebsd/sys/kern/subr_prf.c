@@ -411,7 +411,6 @@ log_console(struct uio *uio)
 	msgbuftrigger = 1;
 	free(uio, M_IOV);
 	free(consbuffer, M_TEMP);
-	return;
 }
 #endif /* __rtems__ */
 
@@ -678,7 +677,7 @@ kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_lis
 	uintmax_t num;
 	int base, lflag, qflag, tmp, width, ladjust, sharpflag, neg, sign, dot;
 	int cflag, hflag, jflag, tflag, zflag;
-	int dwidth, upper;
+	int bconv, dwidth, upper;
 	char padc;
 	int stop = 0, retval = 0;
 
@@ -704,7 +703,7 @@ kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_lis
 		}
 		percent = fmt - 1;
 		qflag = 0; lflag = 0; ladjust = 0; sharpflag = 0; neg = 0;
-		sign = 0; dot = 0; dwidth = 0; upper = 0;
+		sign = 0; dot = 0; bconv = 0; dwidth = 0; upper = 0;
 		cflag = 0; hflag = 0; jflag = 0; tflag = 0; zflag = 0;
 reswitch:	switch (ch = (u_char)*fmt++) {
 		case '.':
@@ -752,28 +751,9 @@ reswitch:	switch (ch = (u_char)*fmt++) {
 				width = n;
 			goto reswitch;
 		case 'b':
-			num = (u_int)va_arg(ap, int);
-			p = va_arg(ap, char *);
-			for (q = ksprintn(nbuf, num, *p++, NULL, 0); *q;)
-				PCHAR(*q--);
-
-			if (num == 0)
-				break;
-
-			for (tmp = 0; *p;) {
-				n = *p++;
-				if (num & (1 << (n - 1))) {
-					PCHAR(tmp ? ',' : '<');
-					for (; (n = *p) > ' '; ++p)
-						PCHAR(n);
-					tmp = 1;
-				} else
-					for (; *p > ' '; ++p)
-						continue;
-			}
-			if (tmp)
-				PCHAR('>');
-			break;
+			ladjust = 1;
+			bconv = 1;
+			goto handle_nosign;
 		case 'c':
 			width -= 1;
 
@@ -919,6 +899,10 @@ handle_nosign:
 				num = (u_char)va_arg(ap, int);
 			else
 				num = va_arg(ap, u_int);
+			if (bconv) {
+				q = va_arg(ap, char *);
+				base = *q++;
+			}
 			goto number;
 handle_sign:
 			if (jflag)
@@ -975,6 +959,26 @@ number:
 
 			while (*p)
 				PCHAR(*p--);
+
+			if (bconv && num != 0) {
+				/* %b conversion flag format. */
+				tmp = retval;
+				while (*q) {
+					n = *q++;
+					if (num & (1 << (n - 1))) {
+						PCHAR(retval != tmp ?
+						    ',' : '<');
+						for (; (n = *q) > ' '; ++q)
+							PCHAR(n);
+					} else
+						for (; *q > ' '; ++q)
+							continue;
+				}
+				if (retval != tmp) {
+					PCHAR('>');
+					width -= retval - tmp;
+				}
+			}
 
 			if (ladjust)
 				while (width-- > 0)

@@ -14,6 +14,32 @@
 #ifndef _mmcbus_if_h_
 #define _mmcbus_if_h_
 
+/** @brief Unique descriptor for the MMCBUS_RETUNE_PAUSE() method */
+extern struct kobjop_desc mmcbus_retune_pause_desc;
+/** @brief A function implementing the MMCBUS_RETUNE_PAUSE() method */
+typedef void mmcbus_retune_pause_t(device_t brdev, device_t reqdev,
+                                   bool retune);
+
+static __inline void MMCBUS_RETUNE_PAUSE(device_t brdev, device_t reqdev,
+                                         bool retune)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbus_retune_pause);
+	((mmcbus_retune_pause_t *) _m)(brdev, reqdev, retune);
+}
+
+/** @brief Unique descriptor for the MMCBUS_RETUNE_UNPAUSE() method */
+extern struct kobjop_desc mmcbus_retune_unpause_desc;
+/** @brief A function implementing the MMCBUS_RETUNE_UNPAUSE() method */
+typedef void mmcbus_retune_unpause_t(device_t brdev, device_t reqdev);
+
+static __inline void MMCBUS_RETUNE_UNPAUSE(device_t brdev, device_t reqdev)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbus_retune_unpause);
+	((mmcbus_retune_unpause_t *) _m)(brdev, reqdev);
+}
+
 /** @brief Unique descriptor for the MMCBUS_WAIT_FOR_REQUEST() method */
 extern struct kobjop_desc mmcbus_wait_for_request_desc;
 /** @brief A function implementing the MMCBUS_WAIT_FOR_REQUEST() method */

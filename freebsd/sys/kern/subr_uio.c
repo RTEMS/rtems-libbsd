@@ -212,41 +212,37 @@ uiomove_nofault(void *cp, int n, struct uio *uio)
 static int
 uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 {
-#ifndef __rtems__
-	struct thread *td;
-#endif /* __rtems__ */
 	struct iovec *iov;
 	size_t cnt;
-	int error, newflags, save;
-
 #ifndef __rtems__
-	td = curthread;
+	int error, newflags, save;
+#else /* __rtems__ */
+	int error;
 #endif /* __rtems__ */
+
 	error = 0;
 
+#ifndef __rtems__
 	KASSERT(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE,
 	    ("uiomove: mode"));
-#ifndef __rtems__
-	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == td,
+	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == curthread,
 	    ("uiomove proc"));
-#endif /* __rtems__ */
-	if (!nofault)
-		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
-		    "Calling uiomove()");
 
-#ifndef __rtems__
-	/* XXX does it make a sense to set TDP_DEADLKTREAT for UIO_SYSSPACE ? */
-	newflags = TDP_DEADLKTREAT;
-	if (uio->uio_segflg == UIO_USERSPACE && nofault) {
-		/*
-		 * Fail if a non-spurious page fault occurs.
-		 */
-		newflags |= TDP_NOFAULTING | TDP_RESETSPUR;
+	if (uio->uio_segflg == UIO_USERSPACE) {
+		newflags = TDP_DEADLKTREAT;
+		if (nofault) {
+			/*
+			 * Fail if a non-spurious page fault occurs.
+			 */
+			newflags |= TDP_NOFAULTING | TDP_RESETSPUR;
+		} else {
+			WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
+			    "Calling uiomove()");
+		}
+		save = curthread_pflags_set(newflags);
+	} else {
+		KASSERT(nofault == 0, ("uiomove: nofault"));
 	}
-	save = curthread_pflags_set(newflags);
-#else /* __rtems__ */
-	(void) newflags;
-	(void) save;
 #endif /* __rtems__ */
 
 	while (n > 0 && uio->uio_resid) {
@@ -292,7 +288,8 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 	}
 out:
 #ifndef __rtems__
-	curthread_pflags_restore(save);
+	if (uio->uio_segflg == UIO_USERSPACE) 
+		curthread_pflags_restore(save);
 #endif /* __rtems__ */
 	return (error);
 }

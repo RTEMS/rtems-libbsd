@@ -1289,4 +1289,11 @@ sbuf_putbuf(struct sbuf *sb)
 	printf("%s", sbuf_data(sb));
 }
 #endif
+#else /* __rtems__ */
+void
+sbuf_putbuf(struct sbuf *sb)
+{
+
+	printf("%s", sbuf_data(sb));
+}
 #endif /* __rtems__ */

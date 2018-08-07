@@ -99,6 +99,7 @@ list_cloners(void)
 
 	putchar('\n');
 	free(buf);
+	close(s);
 }
 
 struct clone_defcb {

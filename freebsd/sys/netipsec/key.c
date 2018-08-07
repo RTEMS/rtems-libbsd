@@ -865,7 +865,8 @@ key_allocsa_tcpmd5(struct secasindex *saidx)
 		    kdebug_secash(sah, "  "));
 		if (sah->saidx.proto != IPPROTO_TCP)
 			continue;
-		if (!key_sockaddrcmp(&saidx->dst.sa, &sah->saidx.dst.sa, 0))
+		if (!key_sockaddrcmp(&saidx->dst.sa, &sah->saidx.dst.sa, 0) &&
+		    !key_sockaddrcmp(&saidx->src.sa, &sah->saidx.src.sa, 0))
 			break;
 	}
 	if (sah != NULL) {
@@ -4964,7 +4965,8 @@ key_getsav_tcpmd5(struct secasindex *saidx, uint32_t *spi)
 	LIST_FOREACH(sah, SAHADDRHASH_HASH(saidx), addrhash) {
 		if (sah->saidx.proto != IPPROTO_TCP)
 			continue;
-		if (!key_sockaddrcmp(&saidx->dst.sa, &sah->saidx.dst.sa, 0))
+		if (!key_sockaddrcmp(&saidx->dst.sa, &sah->saidx.dst.sa, 0) &&
+		    !key_sockaddrcmp(&saidx->src.sa, &sah->saidx.src.sa, 0))
 			break;
 	}
 	if (sah != NULL) {

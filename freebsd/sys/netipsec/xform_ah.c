@@ -546,7 +546,7 @@ ah_massage_headers(struct mbuf **m0, int proto, int skip, int alg, int out)
 static int
 ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 {
-	char buf[128];
+	IPSEC_DEBUG_DECLARE(char buf[128]);
 	const struct auth_hash *ahx;
 	struct cryptodesc *crda;
 	struct cryptop *crp;
@@ -568,8 +568,8 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 	if (ah == NULL) {
 		DPRINTF(("ah_input: cannot pullup header\n"));
 		AHSTAT_INC(ahs_hdrops);		/*XXX*/
-		m_freem(m);
-		return ENOBUFS;
+		error = ENOBUFS;
+		goto bad;
 	}
 
 	/* Check replay window, if applicable. */
@@ -580,8 +580,8 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		AHSTAT_INC(ahs_replay);
 		DPRINTF(("%s: packet replay failure: %s\n", __func__,
 		    ipsec_sa2str(sav, buf, sizeof(buf))));
-		m_freem(m);
-		return (EACCES);
+		error = EACCES;
+		goto bad;
 	}
 	cryptoid = sav->tdb_cryptoid;
 	SECASVAR_UNLOCK(sav);
@@ -597,8 +597,8 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		    ipsec_address(&sav->sah->saidx.dst, buf, sizeof(buf)),
 		    (u_long) ntohl(sav->spi)));
 		AHSTAT_INC(ahs_badauthl);
-		m_freem(m);
-		return EACCES;
+		error = EACCES;
+		goto bad;
 	}
 	AHSTAT_ADD(ahs_ibytes, m->m_pkthdr.len - skip - hl);
 
@@ -608,8 +608,8 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		DPRINTF(("%s: failed to acquire crypto descriptor\n",
 		    __func__));
 		AHSTAT_INC(ahs_crypto);
-		m_freem(m);
-		return ENOBUFS;
+		error = ENOBUFS;
+		goto bad;
 	}
 
 	crda = crp->crp_desc;
@@ -631,8 +631,8 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		DPRINTF(("%s: failed to allocate xform_data\n", __func__));
 		AHSTAT_INC(ahs_crypto);
 		crypto_freereq(crp);
-		m_freem(m);
-		return ENOBUFS;
+		error = ENOBUFS;
+		goto bad;
 	}
 
 	/*
@@ -652,6 +652,7 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		AHSTAT_INC(ahs_hdrops);
 		free(xd, M_XDATA);
 		crypto_freereq(crp);
+		key_freesav(&sav);
 		return (error);
 	}
 
@@ -670,6 +671,10 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 	xd->skip = skip;
 	xd->cryptoid = cryptoid;
 	return (crypto_dispatch(crp));
+bad:
+	m_freem(m);
+	key_freesav(&sav);
+	return (error);
 }
 
 /*
@@ -678,7 +683,7 @@ ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 static int
 ah_input_cb(struct cryptop *crp)
 {
-	char buf[IPSEC_ADDRSTRLEN];
+	IPSEC_DEBUG_DECLARE(char buf[IPSEC_ADDRSTRLEN]);
 	unsigned char calc[AH_ALEN_MAX];
 	const struct auth_hash *ahx;
 	struct mbuf *m;
@@ -828,7 +833,7 @@ static int
 ah_output(struct mbuf *m, struct secpolicy *sp, struct secasvar *sav,
     u_int idx, int skip, int protoff)
 {
-	char buf[IPSEC_ADDRSTRLEN];
+	IPSEC_DEBUG_DECLARE(char buf[IPSEC_ADDRSTRLEN]);
 	const struct auth_hash *ahx;
 	struct cryptodesc *crda;
 	struct xform_data *xd;
@@ -1046,6 +1051,8 @@ ah_output(struct mbuf *m, struct secpolicy *sp, struct secasvar *sav,
 bad:
 	if (m)
 		m_freem(m);
+	key_freesav(&sav);
+	key_freesp(&sp);
 	return (error);
 }
 

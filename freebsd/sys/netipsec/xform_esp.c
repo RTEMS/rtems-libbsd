@@ -265,7 +265,7 @@ esp_zeroize(struct secasvar *sav)
 static int
 esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 {
-	char buf[128];
+	IPSEC_DEBUG_DECLARE(char buf[128]);
 	const struct auth_hash *esph;
 	const struct enc_xform *espx;
 	struct xform_data *xd;
@@ -274,18 +274,18 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 	struct newesp *esp;
 	uint8_t *ivp;
 	uint64_t cryptoid;
-	int plen, alen, hlen;
+	int alen, error, hlen, plen;
 
 	IPSEC_ASSERT(sav != NULL, ("null SA"));
 	IPSEC_ASSERT(sav->tdb_encalgxform != NULL, ("null encoding xform"));
 
+	error = EINVAL;
 	/* Valid IP Packet length ? */
 	if ( (skip&3) || (m->m_pkthdr.len&3) ){
 		DPRINTF(("%s: misaligned packet, skip %u pkt len %u",
 				__func__, skip, m->m_pkthdr.len));
 		ESPSTAT_INC(esps_badilen);
-		m_freem(m);
-		return EINVAL;
+		goto bad;
 	}
 	/* XXX don't pullup, just copy header */
 	IP6_EXTHDR_GET(esp, struct newesp *, m, skip, sizeof (struct newesp));
@@ -316,8 +316,7 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		    ipsec_address(&sav->sah->saidx.dst, buf, sizeof(buf)),
 		    (u_long)ntohl(sav->spi)));
 		ESPSTAT_INC(esps_badilen);
-		m_freem(m);
-		return EINVAL;
+		goto bad;
 	}
 
 	/*
@@ -330,8 +329,8 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 			DPRINTF(("%s: packet replay check for %s\n", __func__,
 			    ipsec_sa2str(sav, buf, sizeof(buf))));
 			ESPSTAT_INC(esps_replay);
-			m_freem(m);
-			return (EACCES);
+			error = EACCES;
+			goto bad;
 		}
 	}
 	cryptoid = sav->tdb_cryptoid;
@@ -346,8 +345,8 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		DPRINTF(("%s: failed to acquire crypto descriptors\n",
 			__func__));
 		ESPSTAT_INC(esps_crypto);
-		m_freem(m);
-		return ENOBUFS;
+		error = ENOBUFS;
+		goto bad;
 	}
 
 	/* Get IPsec-specific opaque pointer */
@@ -356,8 +355,8 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		DPRINTF(("%s: failed to allocate xform_data\n", __func__));
 		ESPSTAT_INC(esps_crypto);
 		crypto_freereq(crp);
-		m_freem(m);
-		return ENOBUFS;
+		error = ENOBUFS;
+		goto bad;
 	}
 
 	if (esph != NULL) {
@@ -427,6 +426,10 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 	crde->crd_alg = espx->type;
 
 	return (crypto_dispatch(crp));
+bad:
+	m_freem(m);
+	key_freesav(&sav);
+	return (error);
 }
 
 /*
@@ -435,7 +438,7 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 static int
 esp_input_cb(struct cryptop *crp)
 {
-	char buf[128];
+	IPSEC_DEBUG_DECLARE(char buf[128]);
 	u_int8_t lastthree[3], aalg[AH_HMAC_MAXHASHLEN];
 	const struct auth_hash *esph;
 	const struct enc_xform *espx;
@@ -621,7 +624,7 @@ static int
 esp_output(struct mbuf *m, struct secpolicy *sp, struct secasvar *sav,
     u_int idx, int skip, int protoff)
 {
-	char buf[IPSEC_ADDRSTRLEN];
+	IPSEC_DEBUG_DECLARE(char buf[IPSEC_ADDRSTRLEN]);
 	struct cryptodesc *crde = NULL, *crda = NULL;
 	struct cryptop *crp;
 	const struct auth_hash *esph;
@@ -860,6 +863,8 @@ esp_output(struct mbuf *m, struct secpolicy *sp, struct secasvar *sav,
 bad:
 	if (m)
 		m_freem(m);
+	key_freesav(&sav);
+	key_freesp(&sp);
 	return (error);
 }
 /*

@@ -267,11 +267,12 @@ struct xvnode {
 struct vattr {
 	enum vtype	va_type;	/* vnode type (for create) */
 	u_short		va_mode;	/* files access mode and type */
-	short		va_nlink;	/* number of references to file */
+	u_short		va_padding0;
 	uid_t		va_uid;		/* owner user id */
 	gid_t		va_gid;		/* owner group id */
+	nlink_t		va_nlink;	/* number of references to file */
 	dev_t		va_fsid;	/* filesystem id */
-	long		va_fileid;	/* file id */
+	ino_t		va_fileid;	/* file id */
 	u_quad_t	va_size;	/* file size in bytes */
 	long		va_blocksize;	/* blocksize preferred for i/o */
 	struct timespec	va_atime;	/* time of last access */
@@ -403,6 +404,7 @@ extern int		vttoif_tab[];
 #define	V_ALT		0x0002	/* vinvalbuf: invalidate only alternate bufs */
 #define	V_NORMAL	0x0004	/* vinvalbuf: invalidate only regular bufs */
 #define	V_CLEANONLY	0x0008	/* vinvalbuf: invalidate only clean bufs */
+#define	V_VMIO		0x0010	/* vinvalbuf: called during pageout */
 #define	REVOKEALL	0x0001	/* vop_revoke: revoke all aliases */
 #define	V_WAIT		0x0001	/* vn_start_write: sleep for suspend */
 #define	V_NOWAIT	0x0002	/* vn_start_write: don't sleep for suspend */
@@ -585,6 +587,7 @@ struct file;
 struct mount;
 struct nameidata;
 struct ostat;
+struct freebsd11_stat;
 struct thread;
 struct proc;
 struct stat;
@@ -613,7 +616,8 @@ void	cache_purge_negative(struct vnode *vp);
 void	cache_purgevfs(struct mount *mp, bool force);
 int	change_dir(struct vnode *vp, struct thread *td);
 void	cvtstat(struct stat *st, struct ostat *ost);
-void	cvtnstat(struct stat *sb, struct nstat *nsb);
+void	freebsd11_cvtnstat(struct stat *sb, struct nstat *nsb);
+void	freebsd11_cvtstat(struct stat *st, struct freebsd11_stat *ost);
 int	getnewvnode(const char *tag, struct mount *mp, struct vop_vector *vops,
 	    struct vnode **vpp);
 void	getnewvnode_reserve(u_int count);
@@ -881,6 +885,8 @@ int vn_chmod(struct file *fp, mode_t mode, struct ucred *active_cred,
     struct thread *td);
 int vn_chown(struct file *fp, uid_t uid, gid_t gid, struct ucred *active_cred,
     struct thread *td);
+
+void vn_fsid(struct vnode *vp, struct vattr *va);
 
 #endif /* _KERNEL */
 #endif /* __rtems__ */

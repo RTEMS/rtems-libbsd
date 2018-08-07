@@ -3707,6 +3707,11 @@ em_update_stats_counters(struct adapter *adapter)
 	adapter->stats.xonrxc += E1000_READ_REG(&adapter->hw, E1000_XONRXC);
 	adapter->stats.xontxc += E1000_READ_REG(&adapter->hw, E1000_XONTXC);
 	adapter->stats.xoffrxc += E1000_READ_REG(&adapter->hw, E1000_XOFFRXC);
+	/*
+	 ** For watchdog management we need to know if we have been
+	 ** paused during the last interval, so capture that here.
+	*/
+	adapter->shared->isc_pause_frames = adapter->stats.xoffrxc;
 	adapter->stats.xofftxc += E1000_READ_REG(&adapter->hw, E1000_XOFFTXC);
 	adapter->stats.fcruc += E1000_READ_REG(&adapter->hw, E1000_FCRUC);
 	adapter->stats.prc64 += E1000_READ_REG(&adapter->hw, E1000_PRC64);
@@ -3885,9 +3890,6 @@ em_add_hw_stats(struct adapter *adapter)
 		SYSCTL_ADD_ULONG(ctx, queue_list, OID_AUTO, "tx_irq",
 				CTLFLAG_RD, &txr->tx_irq,
 				"Queue MSI-X Transmit Interrupts");
-		SYSCTL_ADD_ULONG(ctx, queue_list, OID_AUTO, "no_desc_avail",
-				CTLFLAG_RD, &txr->no_desc_avail,
-				"Queue No Descriptor Available");
 	}
 
 	for (int j = 0; j < adapter->rx_num_queues; j++, rx_que++) {

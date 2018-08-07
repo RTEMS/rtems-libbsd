@@ -47,7 +47,6 @@ static const char rcsid[] =
 #include <net/if.h>
 
 #include <err.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -348,8 +347,7 @@ in6_getaddr(const char *cs, int which)
 	if (slen < sizeof(s) - 1 ) {
 		memcpy(s, cs, slen + 1);
 	} else {
-		error = ENAMETOOLONG;
-		goto done;
+		errx(1, "%s: address too long", cs);
 	}
 	newaddr &= 1;
 
@@ -370,13 +368,14 @@ in6_getaddr(const char *cs, int which)
 		bzero(&hints, sizeof(struct addrinfo));
 		hints.ai_family = AF_INET6;
 		error = getaddrinfo(s, NULL, &hints, &res);
+		if (error != 0) {
+			if (inet_pton(AF_INET6, s, &sin->sin6_addr) != 1)
+				errx(1, "%s: bad value", s);
+		} else {
+			bcopy(res->ai_addr, sin, res->ai_addrlen);
+			freeaddrinfo(res);
+		}
 	}
-done:
-	if (error != 0) {
-		if (inet_pton(AF_INET6, cs, &sin->sin6_addr) != 1)
-			errx(1, "%s: bad value", cs);
-	} else
-		bcopy(res->ai_addr, sin, res->ai_addrlen);
 }
 
 static int

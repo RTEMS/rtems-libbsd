@@ -515,23 +515,67 @@ ieee80211_decap_amsdu(struct ieee80211_node *ni, struct mbuf *m)
 }
 
 /*
+ * Add the given frame to the current RX reorder slot.
+ *
+ * For future offloaded A-MSDU handling where multiple frames with
+ * the same sequence number show up here, this routine will append
+ * those frames as long as they're appropriately tagged.
+ */
+static int
+ampdu_rx_add_slot(struct ieee80211_rx_ampdu *rap, int off, int tid,
+    ieee80211_seq rxseq,
+    struct ieee80211_node *ni,
+    struct mbuf *m)
+{
+	struct ieee80211vap *vap = ni->ni_vap;
+
+	if (rap->rxa_m[off] == NULL) {
+		rap->rxa_m[off] = m;
+		rap->rxa_qframes++;
+		rap->rxa_qbytes += m->m_pkthdr.len;
+		vap->iv_stats.is_ampdu_rx_reorder++;
+		return (0);
+	} else {
+		IEEE80211_DISCARD_MAC(vap,
+		    IEEE80211_MSG_INPUT | IEEE80211_MSG_11N,
+		    ni->ni_macaddr, "a-mpdu duplicate",
+		    "seqno %u tid %u BA win <%u:%u>",
+		    rxseq, tid, rap->rxa_start,
+		    IEEE80211_SEQ_ADD(rap->rxa_start, rap->rxa_wnd-1));
+		vap->iv_stats.is_rx_dup++;
+		IEEE80211_NODE_STAT(ni, rx_dup);
+		m_freem(m);
+		return (-1);
+	}
+}
+
+static void
+ampdu_rx_purge_slot(struct ieee80211_rx_ampdu *rap, int i)
+{
+	struct mbuf *m;
+
+	m = rap->rxa_m[i];
+	if (m == NULL)
+		return;
+
+	rap->rxa_m[i] = NULL;
+	rap->rxa_qbytes -= m->m_pkthdr.len;
+	rap->rxa_qframes--;
+	m_freem(m);
+}
+
+/*
  * Purge all frames in the A-MPDU re-order queue.
  */
 static void
 ampdu_rx_purge(struct ieee80211_rx_ampdu *rap)
 {
-	struct mbuf *m;
 	int i;
 
 	for (i = 0; i < rap->rxa_wnd; i++) {
-		m = rap->rxa_m[i];
-		if (m != NULL) {
-			rap->rxa_m[i] = NULL;
-			rap->rxa_qbytes -= m->m_pkthdr.len;
-			m_freem(m);
-			if (--rap->rxa_qframes == 0)
-				break;
-		}
+		ampdu_rx_purge_slot(rap, i);
+		if (rap->rxa_qframes == 0)
+			break;
 	}
 	KASSERT(rap->rxa_qbytes == 0 && rap->rxa_qframes == 0,
 	    ("lost %u data, %u frames on ampdu rx q",
@@ -646,6 +690,25 @@ ampdu_dispatch(struct ieee80211_node *ni, struct mbuf *m)
 	(void) ieee80211_input(ni, m, 0, 0);
 }
 
+static int
+ampdu_dispatch_slot(struct ieee80211_rx_ampdu *rap, struct ieee80211_node *ni,
+    int i)
+{
+	struct mbuf *m;
+
+	if (rap->rxa_m[i] == NULL)
+		return (0);
+
+	m = rap->rxa_m[i];
+	rap->rxa_m[i] = NULL;
+	rap->rxa_qbytes -= m->m_pkthdr.len;
+	rap->rxa_qframes--;
+
+	ampdu_dispatch(ni, m);
+
+	return (1);
+}
+
 static void
 ampdu_rx_moveup(struct ieee80211_rx_ampdu *rap, struct ieee80211_node *ni,
     int i, int winstart)
@@ -692,20 +755,14 @@ static void
 ampdu_rx_dispatch(struct ieee80211_rx_ampdu *rap, struct ieee80211_node *ni)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
-	struct mbuf *m;
 	int i;
 
 	/* flush run of frames */
 	for (i = 1; i < rap->rxa_wnd; i++) {
-		m = rap->rxa_m[i];
-		if (m == NULL)
+		if (ampdu_dispatch_slot(rap, ni, i) == 0)
 			break;
-		rap->rxa_m[i] = NULL;
-		rap->rxa_qbytes -= m->m_pkthdr.len;
-		rap->rxa_qframes--;
-
-		ampdu_dispatch(ni, m);
 	}
+
 	/*
 	 * If frames remain, copy the mbuf pointers down so
 	 * they correspond to the offsets in the new window.
@@ -727,19 +784,14 @@ static void
 ampdu_rx_flush(struct ieee80211_node *ni, struct ieee80211_rx_ampdu *rap)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
-	struct mbuf *m;
-	int i;
+	int i, r;
 
 	for (i = 0; i < rap->rxa_wnd; i++) {
-		m = rap->rxa_m[i];
-		if (m == NULL)
+		r = ampdu_dispatch_slot(rap, ni, i);
+		if (r == 0)
 			continue;
-		rap->rxa_m[i] = NULL;
-		rap->rxa_qbytes -= m->m_pkthdr.len;
-		rap->rxa_qframes--;
-		vap->iv_stats.is_ampdu_rx_oor++;
+		vap->iv_stats.is_ampdu_rx_oor += r;
 
-		ampdu_dispatch(ni, m);
 		if (rap->rxa_qframes == 0)
 			break;
 	}
@@ -755,9 +807,8 @@ ampdu_rx_flush_upto(struct ieee80211_node *ni,
 	struct ieee80211_rx_ampdu *rap, ieee80211_seq winstart)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
-	struct mbuf *m;
 	ieee80211_seq seqno;
-	int i;
+	int i, r;
 
 	/*
 	 * Flush any complete MSDU's with a sequence number lower
@@ -768,18 +819,12 @@ ampdu_rx_flush_upto(struct ieee80211_node *ni,
 	 */
 	seqno = rap->rxa_start;
 	for (i = 0; i < rap->rxa_wnd; i++) {
-		m = rap->rxa_m[i];
-		if (m != NULL) {
-			rap->rxa_m[i] = NULL;
-			rap->rxa_qbytes -= m->m_pkthdr.len;
-			rap->rxa_qframes--;
-			vap->iv_stats.is_ampdu_rx_oor++;
-
-			ampdu_dispatch(ni, m);
-		} else {
+		r = ampdu_dispatch_slot(rap, ni, i);
+		if (r == 0) {
 			if (!IEEE80211_SEQ_BA_BEFORE(seqno, winstart))
 				break;
 		}
+		vap->iv_stats.is_ampdu_rx_oor += r;
 		seqno = IEEE80211_SEQ_INC(seqno);
 	}
 	/*
@@ -806,7 +851,8 @@ ampdu_rx_flush_upto(struct ieee80211_node *ni,
  * the frame should be processed normally by the caller.
  */
 int
-ieee80211_ampdu_reorder(struct ieee80211_node *ni, struct mbuf *m)
+ieee80211_ampdu_reorder(struct ieee80211_node *ni, struct mbuf *m,
+    const struct ieee80211_rx_stats *rxs)
 {
 #define	PROCESS		0	/* caller should process frame */
 #define	CONSUMED	1	/* frame consumed, caller does nothing */
@@ -950,23 +996,9 @@ again:
 			rap->rxa_age = ticks;
 		}
 
-		/* save packet */
-		if (rap->rxa_m[off] == NULL) {
-			rap->rxa_m[off] = m;
-			rap->rxa_qframes++;
-			rap->rxa_qbytes += m->m_pkthdr.len;
-			vap->iv_stats.is_ampdu_rx_reorder++;
-		} else {
-			IEEE80211_DISCARD_MAC(vap,
-			    IEEE80211_MSG_INPUT | IEEE80211_MSG_11N,
-			    ni->ni_macaddr, "a-mpdu duplicate",
-			    "seqno %u tid %u BA win <%u:%u>",
-			    rxseq, tid, rap->rxa_start,
-			    IEEE80211_SEQ_ADD(rap->rxa_start, rap->rxa_wnd-1));
-			vap->iv_stats.is_rx_dup++;
-			IEEE80211_NODE_STAT(ni, rx_dup);
-			m_freem(m);
-		}
+		/* save packet - this consumes, no matter what */
+		ampdu_rx_add_slot(rap, off, tid, rxseq, ni, m);
+
 		return CONSUMED;
 	}
 	if (off < IEEE80211_SEQ_BA_RANGE) {

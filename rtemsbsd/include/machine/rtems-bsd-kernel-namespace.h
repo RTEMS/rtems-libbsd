@@ -59,18 +59,6 @@
 #define	arpresolve _bsd_arpresolve
 #define	arpresolve_addr _bsd_arpresolve_addr
 #define	arpstat _bsd_arpstat
-#define	atm_event _bsd_atm_event
-#define	atm_getvccs _bsd_atm_getvccs
-#define	atm_harp_attach_p _bsd_atm_harp_attach_p
-#define	atm_harp_detach_p _bsd_atm_harp_detach_p
-#define	atm_harp_event_p _bsd_atm_harp_event_p
-#define	atm_harp_input_p _bsd_atm_harp_input_p
-#define	atm_ifattach _bsd_atm_ifattach
-#define	atm_ifdetach _bsd_atm_ifdetach
-#define	atm_input _bsd_atm_input
-#define	atm_output _bsd_atm_output
-#define	atmresolve _bsd_atmresolve
-#define	atm_rtrequest _bsd_atm_rtrequest
 #define	auth_algorithm_lookup _bsd_auth_algorithm_lookup
 #define	auth_hash_hmac_md5 _bsd_auth_hash_hmac_md5
 #define	auth_hash_hmac_ripemd_160 _bsd_auth_hash_hmac_ripemd_160
@@ -1745,9 +1733,11 @@
 #define	ieee80211_wds_attach _bsd_ieee80211_wds_attach
 #define	ieee80211_wds_detach _bsd_ieee80211_wds_detach
 #define	ieee80211_wme_acnames _bsd_ieee80211_wme_acnames
+#define	ieee80211_wme_ic_getparams _bsd_ieee80211_wme_ic_getparams
 #define	ieee80211_wme_initparams _bsd_ieee80211_wme_initparams
 #define	ieee80211_wme_updateparams _bsd_ieee80211_wme_updateparams
 #define	ieee80211_wme_updateparams_locked _bsd_ieee80211_wme_updateparams_locked
+#define	ieee80211_wme_vap_getparams _bsd_ieee80211_wme_vap_getparams
 #define	ifa_add_loopback_route _bsd_ifa_add_loopback_route
 #define	ifa_alloc _bsd_ifa_alloc
 #define	if_addgroup _bsd_if_addgroup
@@ -1807,6 +1797,7 @@
 #define	if_getdrvflags _bsd_if_getdrvflags
 #define	if_getflags _bsd_if_getflags
 #define	if_gethandle _bsd_if_gethandle
+#define	if_gethwaddr _bsd_if_gethwaddr
 #define	if_gethwassist _bsd_if_gethwassist
 #define	if_gethwtsomax _bsd_if_gethwtsomax
 #define	if_gethwtsomaxsegcount _bsd_if_gethwtsomaxsegcount
@@ -2744,6 +2735,7 @@
 #define	mtx_pool_create _bsd_mtx_pool_create
 #define	mtx_pool_destroy _bsd_mtx_pool_destroy
 #define	mtx_pool_find _bsd_mtx_pool_find
+#define	mtxpool_sleep _bsd_mtxpool_sleep
 #define	mtx_recursed _bsd_mtx_recursed
 #define	mtx_sysinit _bsd_mtx_sysinit
 #define	mtx_trylock_flags_ _bsd_mtx_trylock_flags_
@@ -2824,12 +2816,6 @@
 #define	newpacket _bsd_newpacket
 #define	newreno_cc_algo _bsd_newreno_cc_algo
 #define	new_unrhdr _bsd_new_unrhdr
-#define	ng_atm_attach_p _bsd_ng_atm_attach_p
-#define	ng_atm_detach_p _bsd_ng_atm_detach_p
-#define	ng_atm_event_p _bsd_ng_atm_event_p
-#define	ng_atm_input_orphan_p _bsd_ng_atm_input_orphan_p
-#define	ng_atm_input_p _bsd_ng_atm_input_p
-#define	ng_atm_output_p _bsd_ng_atm_output_p
 #define	ng_ether_attach_p _bsd_ng_ether_attach_p
 #define	ng_ether_detach_p _bsd_ng_ether_detach_p
 #define	ng_ether_input_orphan_p _bsd_ng_ether_input_orphan_p
@@ -2967,6 +2953,7 @@
 #define	pcib_read_ivar _bsd_pcib_read_ivar
 #define	pcib_release_msi _bsd_pcib_release_msi
 #define	pcib_release_msix _bsd_pcib_release_msix
+#define	pcib_request_feature _bsd_pcib_request_feature
 #define	pcib_request_feature_allow _bsd_pcib_request_feature_allow
 #define	pcib_route_interrupt _bsd_pcib_route_interrupt
 #define	pcib_write_ivar _bsd_pcib_write_ivar
@@ -3235,7 +3222,6 @@
 #define	pfr_ina_rollback _bsd_pfr_ina_rollback
 #define	pfr_initialize _bsd_pfr_initialize
 #define	pfr_insert_kentry _bsd_pfr_insert_kentry
-#define	pfr_ktable_cnt _bsd_pfr_ktable_cnt
 #define	pfr_ktablehead_RB_FIND _bsd_pfr_ktablehead_RB_FIND
 #define	pfr_ktablehead_RB_INSERT _bsd_pfr_ktablehead_RB_INSERT
 #define	pfr_ktablehead_RB_MINMAX _bsd_pfr_ktablehead_RB_MINMAX
@@ -3244,9 +3230,7 @@
 #define	pfr_ktablehead_RB_PREV _bsd_pfr_ktablehead_RB_PREV
 #define	pfr_ktablehead_RB_REMOVE _bsd_pfr_ktablehead_RB_REMOVE
 #define	pfr_ktablehead_RB_REMOVE_COLOR _bsd_pfr_ktablehead_RB_REMOVE_COLOR
-#define	pfr_ktables _bsd_pfr_ktables
 #define	pfr_match_addr _bsd_pfr_match_addr
-#define	pfr_nulltable _bsd_pfr_nulltable
 #define	pf_routable _bsd_pf_routable
 #define	pfr_pool_get _bsd_pfr_pool_get
 #define	pfr_set_addrs _bsd_pfr_set_addrs
@@ -3883,6 +3867,7 @@
 #define	sbuf_new_for_sysctl _bsd_sbuf_new_for_sysctl
 #define	sbuf_printf _bsd_sbuf_printf
 #define	sbuf_printf_uuid _bsd_sbuf_printf_uuid
+#define	sbuf_putbuf _bsd_sbuf_putbuf
 #define	sbuf_putc _bsd_sbuf_putc
 #define	sbuf_set_drain _bsd_sbuf_set_drain
 #define	sbuf_set_flags _bsd_sbuf_set_flags
@@ -3943,7 +3928,9 @@
 #define	scsi_parse_transportid_spi _bsd_scsi_parse_transportid_spi
 #define	scsi_prevent _bsd_scsi_prevent
 #define	scsi_print_inquiry _bsd_scsi_print_inquiry
+#define	scsi_print_inquiry_sbuf _bsd_scsi_print_inquiry_sbuf
 #define	scsi_print_inquiry_short _bsd_scsi_print_inquiry_short
+#define	scsi_print_inquiry_short_sbuf _bsd_scsi_print_inquiry_short_sbuf
 #define	scsi_proto_map _bsd_scsi_proto_map
 #define	scsi_read_capacity _bsd_scsi_read_capacity
 #define	scsi_read_write _bsd_scsi_read_write
@@ -4104,6 +4091,8 @@
 #define	sctp_handle_forward_tsn _bsd_sctp_handle_forward_tsn
 #define	sctp_handle_ootb _bsd_sctp_handle_ootb
 #define	sctp_handle_sack _bsd_sctp_handle_sack
+#define	sctp_hc_get_mtu _bsd_sctp_hc_get_mtu
+#define	sctp_hc_set_mtu _bsd_sctp_hc_set_mtu
 #define	sctp_heartbeat_timer _bsd_sctp_heartbeat_timer
 #define	sctp_hmac _bsd_sctp_hmac
 #define	sctp_hmac_m _bsd_sctp_hmac_m
@@ -4163,6 +4152,7 @@
 #define	sctp_m_getptr _bsd_sctp_m_getptr
 #define	SCTP_M_IFA _bsd_SCTP_M_IFA
 #define	SCTP_M_IFN _bsd_SCTP_M_IFN
+#define	sctp_min_mtu _bsd_sctp_min_mtu
 #define	sctp_misc_ints _bsd_sctp_misc_ints
 #define	SCTP_M_ITER _bsd_SCTP_M_ITER
 #define	SCTP_M_MAP _bsd_SCTP_M_MAP
@@ -4567,7 +4557,6 @@
 #define	sysctl_handle_uma_zone_cur _bsd_sysctl_handle_uma_zone_cur
 #define	sysctl_handle_uma_zone_max _bsd_sysctl_handle_uma_zone_max
 #define	sysctl___hw _bsd_sysctl___hw
-#define	sysctl___hw_atm _bsd_sysctl___hw_atm
 #define	sysctl___hw_bus _bsd_sysctl___hw_bus
 #define	sysctl___hw_fdt _bsd_sysctl___hw_fdt
 #define	sysctl___hw_pci _bsd_sysctl___hw_pci
@@ -4646,6 +4635,7 @@
 #define	tcp6_usrreqs _bsd_tcp6_usrreqs
 #define	tcp_abc_l_var _bsd_tcp_abc_l_var
 #define	tcp_addoptions _bsd_tcp_addoptions
+#define	tcp_autorcvbuf _bsd_tcp_autorcvbuf
 #define	tcp_autorcvbuf_inc _bsd_tcp_autorcvbuf_inc
 #define	tcp_autorcvbuf_max _bsd_tcp_autorcvbuf_max
 #define	tcp_autosndbuf_inc _bsd_tcp_autosndbuf_inc

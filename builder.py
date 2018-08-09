@@ -210,8 +210,14 @@ def assertHeaderFile(path):
 
 def assertSourceFile(path):
     if path[-2] != '.' or (path[-1] != 'c' and path[-1] != 'S'):
-        print("*** " + path + " does not end in .c")
+        print("*** " + path + " does not end in .c or .S")
         print("*** Move it to a header file list")
+        sys.exit(2)
+
+def assertHeaderOrSourceFile(path):
+    if path[-2] != '.' or (path[-1] != 'h' and path[-1] != 'c'):
+        print("*** " + path + " does not end in .h or .c")
+        print("*** Move it to another list")
         sys.exit(2)
 
 def diffSource(dstLines, srcLines, src, dst):
@@ -664,7 +670,7 @@ class Module(object):
     def addKernelSpaceHeaderFiles(self, files):
         self.files += self.addFiles(files,
                                     FreeBSDPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
-                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderOrSourceFile)
 
     def addUserSpaceHeaderFiles(self, files):
         self.files += self.addFiles(files,

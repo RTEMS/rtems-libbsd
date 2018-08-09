@@ -1961,6 +1961,7 @@ flags_out:
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 			} else {
 				id->assoc_value = stcb->asoc.vrf_id;
+				SCTP_TCB_UNLOCK(stcb);
 				*optsize = sizeof(struct sctp_assoc_value);
 			}
 			break;
@@ -3065,7 +3066,6 @@ flags_out:
 			if (event_type > 0) {
 				if (stcb) {
 					event->se_on = sctp_stcb_is_feature_on(inp, stcb, event_type);
-					SCTP_TCB_UNLOCK(stcb);
 				} else {
 					if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 					    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
@@ -3078,6 +3078,9 @@ flags_out:
 						error = EINVAL;
 					}
 				}
+			}
+			if (stcb != NULL) {
+				SCTP_TCB_UNLOCK(stcb);
 			}
 			if (error == 0) {
 				*optsize = sizeof(struct sctp_event);
@@ -3649,11 +3652,15 @@ flags_out:
 				sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[0];
 				sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[0];
 #endif
-				SCTP_TCB_UNLOCK(stcb);
-				*optsize = sizeof(struct sctp_prstatus);
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
+			}
+			if (stcb != NULL) {
+				SCTP_TCB_UNLOCK(stcb);
+			}
+			if (error == 0) {
+				*optsize = sizeof(struct sctp_prstatus);
 			}
 			break;
 		}
@@ -3677,11 +3684,15 @@ flags_out:
 					sprstat->sprstat_abandoned_unsent = stcb->asoc.abandoned_unsent[policy];
 					sprstat->sprstat_abandoned_sent = stcb->asoc.abandoned_sent[policy];
 				}
-				SCTP_TCB_UNLOCK(stcb);
-				*optsize = sizeof(struct sctp_prstatus);
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
+			}
+			if (stcb != NULL) {
+				SCTP_TCB_UNLOCK(stcb);
+			}
+			if (error == 0) {
+				*optsize = sizeof(struct sctp_prstatus);
 			}
 			break;
 		}

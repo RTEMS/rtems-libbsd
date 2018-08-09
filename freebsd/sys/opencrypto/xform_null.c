@@ -1,5 +1,3 @@
-#include <machine/rtems-bsd-kernel-space.h>
-
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),
@@ -78,10 +76,18 @@ struct enc_xform enc_xform_null = {
 };
 
 /* Authentication instances */
-struct auth_hash auth_hash_null = {	/* NB: context isn't used */
-	CRYPTO_NULL_HMAC, "NULL-HMAC",
-	NULL_HMAC_KEY_LEN, NULL_HASH_LEN, sizeof(int), NULL_HMAC_BLOCK_LEN,
-	null_init, null_reinit, null_reinit, null_update, null_final
+struct auth_hash auth_hash_null = {
+	.type = CRYPTO_NULL_HMAC,
+	.name = "NULL-HMAC",
+	.keysize = 0,
+	.hashsize = NULL_HASH_LEN,
+	.ctxsize = sizeof(int),	/* NB: context isn't used */
+	.blocksize = NULL_HMAC_BLOCK_LEN,
+	.Init = null_init,
+	.Setkey = null_reinit,
+	.Reinit = null_reinit,
+	.Update = null_update,
+	.Final = null_final,
 };
 
 /*

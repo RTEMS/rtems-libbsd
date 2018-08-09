@@ -7834,6 +7834,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB Storage Adapter V2",
 	},
 	{
+	    USB_VENDOR_INTENSO, USB_PRODUCT_INTENSO_MEMORY_BOX,
+	    0,
+	    "INTENSO",
+	    "External disk",
+	},
+	{
 	    USB_VENDOR_INTEL, USB_PRODUCT_INTEL_EASYPC_CAMERA,
 	    0,
 	    "Intel",
@@ -8630,6 +8636,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Lenovo",
 	    "USB 2.0 Ethernet",
+	},
+	{
+	    USB_VENDOR_LENOVO, USB_PRODUCT_LENOVO_RTL8153,
+	    0,
+	    "Lenovo",
+	    "USB 3.0 Ethernet",
 	},
 	{
 	    USB_VENDOR_LEXAR, USB_PRODUCT_LEXAR_JUMPSHOT,
@@ -14596,6 +14608,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "UA-700 Audio I/F",
 	},
 	{
+	    USB_VENDOR_ROLAND, USB_PRODUCT_ROLAND_PCR300,
+	    0,
+	    "Roland",
+	    "EDIROL PCR-300 MIDI I/F",
+	},
+	{
 	    USB_VENDOR_ROCKFIRE, USB_PRODUCT_ROCKFIRE_GAMEPAD,
 	    0,
 	    "Rockfire",
@@ -18379,6 +18397,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_HUMAX, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "HUMAX",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_INTENSO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "INTENSO",
 	    NULL,
 	},
 	{

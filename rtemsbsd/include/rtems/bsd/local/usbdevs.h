@@ -67,6 +67,7 @@
 #define	USB_VENDOR_EGALAX2	0x0123		/* eGalax, Inc. */
 #define	USB_VENDOR_CHIPSBANK	0x0204		/* Chipsbank Microelectronics Co. */
 #define	USB_VENDOR_HUMAX	0x02ad		/* HUMAX */
+#define	USB_VENDOR_INTENSO	0x2109		/* INTENSO */
 #define	USB_VENDOR_LTS	0x0386		/* LTS */
 #define	USB_VENDOR_BWCT	0x03da		/* Bernd Walter Computer Technology */
 #define	USB_VENDOR_AOX	0x03e8		/* AOX */
@@ -2506,6 +2507,9 @@
 #define	USB_PRODUCT_INSYSTEM_USBCABLE	0x081a		/* USB cable */
 #define	USB_PRODUCT_INSYSTEM_STORAGE_V2	0x5701		/* USB Storage Adapter V2 */
 
+/* Intenso products */
+#define	USB_PRODUCT_INTENSO_MEMORY_BOX	0x0701		/* External disk */
+
 /* Intel products */
 #define	USB_PRODUCT_INTEL_EASYPC_CAMERA	0x0110		/* Easy PC Camera */
 #define	USB_PRODUCT_INTEL_TESTBOARD	0x9890		/* 82930 test board */
@@ -2706,6 +2710,7 @@
 /* Lenovo products */
 #define	USB_PRODUCT_LENOVO_GIGALAN	0x304b		/* USB 3.0 Ethernet */
 #define	USB_PRODUCT_LENOVO_ETHERNET	0x7203		/* USB 2.0 Ethernet */
+#define	USB_PRODUCT_LENOVO_RTL8153	0x7205		/* USB 3.0 Ethernet */
 
 /* Lexar products */
 #define	USB_PRODUCT_LEXAR_JUMPSHOT	0x0001		/* jumpSHOT CompactFlash Reader */
@@ -3922,6 +3927,7 @@
 #define	USB_PRODUCT_ROLAND_SD20	0x0027		/* SD-20 MIDI Synth */
 #define	USB_PRODUCT_ROLAND_SD80	0x0029		/* SD-80 MIDI Synth */
 #define	USB_PRODUCT_ROLAND_UA700	0x002b		/* UA-700 Audio I/F */
+#define	USB_PRODUCT_ROLAND_PCR300	0x0033		/* EDIROL PCR-300 MIDI I/F */
 
 /* Rockfire products */
 #define	USB_PRODUCT_ROCKFIRE_GAMEPAD	0x2033		/* gamepad 203USB */

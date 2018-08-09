@@ -172,6 +172,7 @@ void	kassert_panic(const char *fmt, ...)  __printflike(1, 2);
  * Align variables.
  */
 #define	__read_mostly		__section(".data.read_mostly")
+#define	__read_frequently	__section(".data.read_frequently")
 #define	__exclusive_cache_line	__aligned(CACHE_LINE_SIZE) \
 				    __section(".data.exclusive_cache_line")
 /*
@@ -329,6 +330,12 @@ void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #ifndef __rtems__
 void	bcopy(const void * _Nonnull from, void * _Nonnull to, size_t len);
 void	bzero(void * _Nonnull buf, size_t len);
+#define bzero(buf, len) ({				\
+	if (__builtin_constant_p(len) && (len) <= 64)	\
+		__builtin_memset((buf), 0, (len));	\
+	else						\
+		bzero((buf), (len));			\
+})
 #else /* __rtems__ */
 #define	bcopy(src, dst, len) memmove((dst), (src), (len))
 #define	bzero(buf, size) memset((buf), 0, (size))

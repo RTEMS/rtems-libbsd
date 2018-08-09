@@ -1,5 +1,3 @@
-#include <machine/rtems-bsd-kernel-space.h>
-
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),

@@ -1053,12 +1053,14 @@ no_tuning:
 	return (0);
 }
 
+#ifndef MMCCAM
 void
 sdhci_start_slot(struct sdhci_slot *slot)
 {
 
 	sdhci_card_task(slot, 0);
 }
+#endif
 
 int
 sdhci_cleanup_slot(struct sdhci_slot *slot)
@@ -2398,7 +2400,7 @@ sdhci_generic_write_ivar(device_t bus, device_t child, int which,
 
 #ifdef MMCCAM
 void
-sdhci_cam_start_slot(struct sdhci_slot *slot)
+sdhci_start_slot(struct sdhci_slot *slot)
 {
         if ((slot->devq = cam_simq_alloc(1)) == NULL) {
                 goto fail;

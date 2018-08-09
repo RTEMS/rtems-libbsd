@@ -316,6 +316,7 @@
 #define	blist_fill _bsd_blist_fill
 #define	blist_free _bsd_blist_free
 #define	blist_resize _bsd_blist_resize
+#define	blist_stats _bsd_blist_stats
 #define	bpfattach _bsd_bpfattach
 #define	bpfattach2 _bsd_bpfattach2
 #define	bpf_buffer_append_bytes _bsd_bpf_buffer_append_bytes
@@ -1285,6 +1286,7 @@
 #define	hid_is_collection _bsd_hid_is_collection
 #define	hid_is_keyboard _bsd_hid_is_keyboard
 #define	hid_is_mouse _bsd_hid_is_mouse
+#define	hid_item_resolution _bsd_hid_item_resolution
 #define	hid_locate _bsd_hid_locate
 #define	hid_put_data_unsigned _bsd_hid_put_data_unsigned
 #define	hid_report_size _bsd_hid_report_size
@@ -3536,6 +3538,7 @@
 #define	r92cu_power_off _bsd_r92cu_power_off
 #define	r92cu_power_on _bsd_r92cu_power_on
 #define	r92cu_set_led _bsd_r92cu_set_led
+#define	r92c_write_txpower _bsd_r92c_write_txpower
 #define	r92e_detach_private _bsd_r92e_detach_private
 #define	r92e_fw_reset _bsd_r92e_fw_reset
 #define	r92e_get_rssi_cck _bsd_r92e_get_rssi_cck
@@ -4234,7 +4237,6 @@
 #define	sctp_serialize_hmaclist _bsd_sctp_serialize_hmaclist
 #define	sctp_set_key _bsd_sctp_set_key
 #define	sctp_set_primary_addr _bsd_sctp_set_primary_addr
-#define	sctp_set_primary_ip_address _bsd_sctp_set_primary_ip_address
 #define	sctp_set_primary_ip_address_sa _bsd_sctp_set_primary_ip_address_sa
 #define	sctp_set_rwnd _bsd_sctp_set_rwnd
 #define	SctpShowAliasStats _bsd_SctpShowAliasStats

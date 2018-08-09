@@ -136,7 +136,11 @@ arc4rand(void *ptr, u_int len, int reseed)
 	arc4random_buf(ptr, len);
 }
 #endif /* __rtems__ */
+#ifndef __rtems__
 int	 bcmp(const void *, const void *, size_t);
+#else /* __rtems__ */
+#define	bcmp(m1, m2, n) memcmp(m1, m2, n)
+#endif /* __rtems__ */
 int	 timingsafe_bcmp(const void *, const void *, size_t);
 void	*bsearch(const void *, const void *, size_t,
 	    size_t, int (*)(const void *, const void *));

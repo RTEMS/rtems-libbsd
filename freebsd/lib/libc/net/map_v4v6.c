@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
-/*
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * ++Copyright++ 1985, 1988, 1993
  * -
  * Copyright (c) 1985, 1988, 1993

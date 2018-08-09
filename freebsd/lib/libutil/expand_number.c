@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2007 Eric Anderson <anderson@FreeBSD.org>
  * Copyright (c) 2007 Pawel Jakub Dawidek <pjd@FreeBSD.org>
  * All rights reserved.

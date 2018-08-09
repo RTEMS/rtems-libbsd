@@ -61,6 +61,7 @@
 #define	arpresolve _bsd_arpresolve
 #define	arpresolve_addr _bsd_arpresolve_addr
 #define	arpstat _bsd_arpstat
+#define	async_crypto _bsd_async_crypto
 #define	auth_algorithm_lookup _bsd_auth_algorithm_lookup
 #define	auth_hash_hmac_md5 _bsd_auth_hash_hmac_md5
 #define	auth_hash_hmac_ripemd_160 _bsd_auth_hash_hmac_ripemd_160
@@ -530,6 +531,7 @@
 #define	clean_unrhdr _bsd_clean_unrhdr
 #define	clean_unrhdrl _bsd_clean_unrhdrl
 #define	ClearCheckNewLink _bsd_ClearCheckNewLink
+#define	clear_unrhdr _bsd_clear_unrhdr
 #define	clk_intr_event _bsd_clk_intr_event
 #define	comp_algo_deflate _bsd_comp_algo_deflate
 #define	comp_algorithm_lookup _bsd_comp_algorithm_lookup
@@ -1140,7 +1142,9 @@
 #define	evdev_support_sw _bsd_evdev_support_sw
 #define	evdev_sysmouse_t_axis _bsd_evdev_sysmouse_t_axis
 #define	evdev_unregister _bsd_evdev_unregister
+#define	eventhandler_create_list _bsd_eventhandler_create_list
 #define	eventhandler_deregister _bsd_eventhandler_deregister
+#define	eventhandler_deregister_nowait _bsd_eventhandler_deregister_nowait
 #define	eventhandler_find_list _bsd_eventhandler_find_list
 #define	eventhandler_prune_list _bsd_eventhandler_prune_list
 #define	eventhandler_register _bsd_eventhandler_register
@@ -3802,7 +3806,6 @@
 #define	_rw_rlock _bsd__rw_rlock
 #define	_rw_runlock _bsd__rw_runlock
 #define	rw_sysinit _bsd_rw_sysinit
-#define	rw_sysinit_flags _bsd_rw_sysinit_flags
 #define	_rw_try_rlock _bsd__rw_try_rlock
 #define	_rw_try_upgrade _bsd__rw_try_upgrade
 #define	_rw_try_wlock _bsd__rw_try_wlock
@@ -4523,14 +4526,14 @@
 #define	swi_add _bsd_swi_add
 #define	swi_sched _bsd_swi_sched
 #define	sx_destroy _bsd_sx_destroy
-#define	sx_downgrade_ _bsd_sx_downgrade_
+#define	sx_downgrade_int _bsd_sx_downgrade_int
 #define	sx_init_flags _bsd_sx_init_flags
+#define	_sx_slock_int _bsd__sx_slock_int
+#define	_sx_sunlock_int _bsd__sx_sunlock_int
 #define	sx_sysinit _bsd_sx_sysinit
-#define	sx_try_upgrade_ _bsd_sx_try_upgrade_
-#define	sx_try_xlock_ _bsd_sx_try_xlock_
-#define	_sx_xlock _bsd__sx_xlock
+#define	sx_try_slock_int _bsd_sx_try_slock_int
+#define	sx_try_upgrade_int _bsd_sx_try_upgrade_int
 #define	sx_xlocked _bsd_sx_xlocked
-#define	_sx_xunlock _bsd__sx_xunlock
 #define	syncache_add _bsd_syncache_add
 #define	syncache_badack _bsd_syncache_badack
 #define	syncache_chkrst _bsd_syncache_chkrst
@@ -4556,6 +4559,7 @@
 #define	sysctl_ctx_init _bsd_sysctl_ctx_init
 #define	sysctl___debug _bsd_sysctl___debug
 #define	sysctl___dev _bsd_sysctl___dev
+#define	sysctl_enable_oid _bsd_sysctl_enable_oid
 #define	sysctl_find_oid _bsd_sysctl_find_oid
 #define	sysctl_handle_16 _bsd_sysctl_handle_16
 #define	sysctl_handle_32 _bsd_sysctl_handle_32
@@ -4625,6 +4629,7 @@
 #define	sysctl___net_pf _bsd_sysctl___net_pf
 #define	sysctl___net_pfsync _bsd_sysctl___net_pfsync
 #define	sysctl___net_wlan _bsd_sysctl___net_wlan
+#define	sysctl_register_disabled_oid _bsd_sysctl_register_disabled_oid
 #define	sysctl_register_oid _bsd_sysctl_register_oid
 #define	sysctl_remove_name _bsd_sysctl_remove_name
 #define	sysctl_remove_oid _bsd_sysctl_remove_oid
@@ -4741,6 +4746,8 @@
 #define	tcp_output _bsd_tcp_output
 #define	tcp_persmax _bsd_tcp_persmax
 #define	tcp_persmin _bsd_tcp_persmin
+#define	tcp_pmtud_blackhole_detect _bsd_tcp_pmtud_blackhole_detect
+#define	tcp_pmtud_blackhole_mss _bsd_tcp_pmtud_blackhole_mss
 #define	tcp_pulloutofband _bsd_tcp_pulloutofband
 #define	tcp_reass _bsd_tcp_reass
 #define	tcp_reass_flush _bsd_tcp_reass_flush
@@ -4787,6 +4794,7 @@
 #define	tcp_use_hostcache _bsd_tcp_use_hostcache
 #define	tcp_usrreqs _bsd_tcp_usrreqs
 #define	tcp_v6mssdflt _bsd_tcp_v6mssdflt
+#define	tcp_v6pmtud_blackhole_mss _bsd_tcp_v6pmtud_blackhole_mss
 #define	tcp_xmit_timer _bsd_tcp_xmit_timer
 #define	tc_tick_bt _bsd_tc_tick_bt
 #define	tc_tick_sbt _bsd_tc_tick_sbt
@@ -4955,12 +4963,15 @@
 #define	ulitecb _bsd_ulitecb
 #define	ulitecbinfo _bsd_ulitecbinfo
 #define	uma_align_cache _bsd_uma_align_cache
+#define	uma_limit _bsd_uma_limit
 #define	uma_print_stats _bsd_uma_print_stats
 #define	uma_print_zone _bsd_uma_print_zone
 #define	uma_reclaim _bsd_uma_reclaim
 #define	uma_reclaim_wakeup _bsd_uma_reclaim_wakeup
 #define	uma_reclaim_worker _bsd_uma_reclaim_worker
 #define	uma_set_align _bsd_uma_set_align
+#define	uma_set_limit _bsd_uma_set_limit
+#define	uma_size _bsd_uma_size
 #define	uma_startup _bsd_uma_startup
 #define	uma_zalloc_arg _bsd_uma_zalloc_arg
 #define	uma_zcache_create _bsd_uma_zcache_create
@@ -4982,6 +4993,7 @@
 #define	uma_zone_set_zfini _bsd_uma_zone_set_zfini
 #define	uma_zone_set_zinit _bsd_uma_zone_set_zinit
 #define	uma_zsecond_create _bsd_uma_zsecond_create
+#define	uma_zwait _bsd_uma_zwait
 #define	untimeout _bsd_untimeout
 #define	usb_alloc_device _bsd_usb_alloc_device
 #define	usb_alloc_mbufs _bsd_usb_alloc_mbufs

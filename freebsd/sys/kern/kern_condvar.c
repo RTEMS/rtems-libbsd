@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2000 Jake Burkholder <jake@freebsd.org>.
  * All rights reserved.
  *

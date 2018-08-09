@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -36,6 +38,14 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <nlist.h>
+
+/*
+ * Including vm/vm.h causes namespace pollution issues.  For the
+ * most part, only things using kvm_walk_pages() need to #include it.
+ */
+#ifndef VM_H
+typedef u_char vm_prot_t;
+#endif
 
 /* Default version symbol. */
 #define	VRS_SYM		"_version"
@@ -75,7 +85,19 @@ struct kvm_swap {
 	u_int	ksw_reserved2;
 };
 
+struct kvm_page {
+	unsigned int version;
+	u_long paddr;
+	u_long kmap_vaddr;
+	u_long dmap_vaddr;
+	vm_prot_t prot;
+	u_long offset;
+	size_t len;
+	/* end of version 1 */
+};
+
 #define SWIF_DEV_PREFIX	0x0002
+#define	LIBKVM_WALK_PAGES_VERSION	1
 
 __BEGIN_DECLS
 int	  kvm_close(kvm_t *);
@@ -106,6 +128,9 @@ ssize_t	  kvm_read(kvm_t *, unsigned long, void *, size_t);
 ssize_t	  kvm_read_zpcpu(kvm_t *, unsigned long, void *, size_t, int);
 ssize_t	  kvm_read2(kvm_t *, kvaddr_t, void *, size_t);
 ssize_t	  kvm_write(kvm_t *, unsigned long, const void *, size_t);
+
+typedef int kvm_walk_pages_cb_t(struct kvm_page *, void *);
+int kvm_walk_pages(kvm_t *, kvm_walk_pages_cb_t *, void *);
 __END_DECLS
 
 #endif /* !_KVM_H_ */

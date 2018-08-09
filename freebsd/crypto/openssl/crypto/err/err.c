@@ -727,6 +727,8 @@ void ERR_put_error(int lib, int func, int reason, const char *file, int line)
     }
 #endif
     es = ERR_get_state();
+    if (es == NULL)
+        return;
 
     es->top = (es->top + 1) % ERR_NUM_ERRORS;
     if (es->top == es->bottom)
@@ -744,6 +746,8 @@ void ERR_clear_error(void)
     ERR_STATE *es;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return;
 
     for (i = 0; i < ERR_NUM_ERRORS; i++) {
         err_clear(es, i);
@@ -808,6 +812,8 @@ static unsigned long get_error_values(int inc, int top, const char **file,
     unsigned long ret;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return 0;
 
     if (inc && top) {
         if (file)
@@ -1018,7 +1024,6 @@ void ERR_remove_state(unsigned long pid)
 
 ERR_STATE *ERR_get_state(void)
 {
-    static ERR_STATE fallback;
     ERR_STATE *ret, tmp, *tmpp = NULL;
     int i;
     CRYPTO_THREADID tid;
@@ -1032,7 +1037,7 @@ ERR_STATE *ERR_get_state(void)
     if (ret == NULL) {
         ret = (ERR_STATE *)OPENSSL_malloc(sizeof(ERR_STATE));
         if (ret == NULL)
-            return (&fallback);
+            return NULL;
         CRYPTO_THREADID_cpy(&ret->tid, &tid);
         ret->top = 0;
         ret->bottom = 0;
@@ -1044,7 +1049,7 @@ ERR_STATE *ERR_get_state(void)
         /* To check if insertion failed, do a get. */
         if (ERRFN(thread_get_item) (ret) != ret) {
             ERR_STATE_free(ret); /* could not insert it */
-            return (&fallback);
+            return NULL;
         }
         /*
          * If a race occured in this function and we came second, tmpp is the
@@ -1068,10 +1073,10 @@ void ERR_set_error_data(char *data, int flags)
     int i;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return;
 
     i = es->top;
-    if (i == 0)
-        i = ERR_NUM_ERRORS - 1;
 
     err_clear_data(es, i);
     es->err_data[i] = data;
@@ -1123,6 +1128,8 @@ int ERR_set_mark(void)
     ERR_STATE *es;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return 0;
 
     if (es->bottom == es->top)
         return 0;
@@ -1135,6 +1142,8 @@ int ERR_pop_to_mark(void)
     ERR_STATE *es;
 
     es = ERR_get_state();
+    if (es == NULL)
+        return 0;
 
     while (es->bottom != es->top
            && (es->err_flags[es->top] & ERR_FLAG_MARK) == 0) {

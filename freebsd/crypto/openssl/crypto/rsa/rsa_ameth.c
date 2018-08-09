@@ -770,6 +770,7 @@ static int rsa_item_sign(EVP_MD_CTX *ctx, const ASN1_ITEM *it, void *asn,
     return 2;
 }
 
+#ifndef OPENSSL_NO_CMS
 static RSA_OAEP_PARAMS *rsa_oaep_decode(const X509_ALGOR *alg,
                                         X509_ALGOR **pmaskHash)
 {
@@ -793,7 +794,6 @@ static RSA_OAEP_PARAMS *rsa_oaep_decode(const X509_ALGOR *alg,
     return pss;
 }
 
-#ifndef OPENSSL_NO_CMS
 static int rsa_cms_decrypt(CMS_RecipientInfo *ri)
 {
     EVP_PKEY_CTX *pkctx;

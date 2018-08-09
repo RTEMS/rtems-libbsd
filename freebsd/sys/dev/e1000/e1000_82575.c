@@ -1,6 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /******************************************************************************
+  SPDX-License-Identifier: BSD-3-Clause
 
   Copyright (c) 2001-2015, Intel Corporation 
   All rights reserved.

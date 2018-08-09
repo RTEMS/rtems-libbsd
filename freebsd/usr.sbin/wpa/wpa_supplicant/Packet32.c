@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (c) 2005
  *      Bill Paul <wpaul@windriver.com>.  All rights reserved.
  *

@@ -101,6 +101,8 @@
 /*	$NetBSD: nsparser.y,v 1.3 1999/01/25 00:16:18 lukem Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ *
  * Copyright (c) 1997, 1998, 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
@@ -151,13 +153,13 @@ static	ns_src		cursrc;
 #endif
 #ifndef YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
-#line 51 "nsparser.y"
+#line 53 "nsparser.y"
 typedef union {
 	char *str;
 	int   mapval;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-#line 161 "nsparser.c"
+#line 163 "nsparser.c"
 
 /* compatibility with bison */
 #ifdef YYPARSE_PARAM
@@ -356,7 +358,7 @@ typedef struct {
 } YYSTACKDATA;
 /* variables for the parser stack */
 static YYSTACKDATA yystack;
-#line 146 "nsparser.y"
+#line 148 "nsparser.y"
 
 static void
 _nsaddsrctomap(const char *elem)
@@ -389,7 +391,7 @@ _nsaddsrctomap(const char *elem)
 	cursrc.name = elem;
 	_nsdbtaddsrc(&curdbt, &cursrc);
 }
-#line 393 "nsparser.c"
+#line 395 "nsparser.c"
 
 #if YYDEBUG
 #include <stdio.h>	/* needed for printf */
@@ -589,25 +591,25 @@ yyreduce:
     switch (yyn)
     {
 case 6:
-#line 79 "nsparser.y"
+#line 81 "nsparser.y"
 	{
 			free((char*)curdbt.name);
 		}
 break;
 case 7:
-#line 83 "nsparser.y"
+#line 85 "nsparser.y"
 	{
 			_nsdbtput(&curdbt);
 		}
 break;
 case 8:
-#line 87 "nsparser.y"
+#line 89 "nsparser.y"
 	{
 			yyerrok;
 		}
 break;
 case 9:
-#line 94 "nsparser.y"
+#line 96 "nsparser.y"
 	{
 			curdbt.name = yylval.str;
 			curdbt.srclist = NULL;
@@ -615,24 +617,24 @@ case 9:
 		}
 break;
 case 12:
-#line 108 "nsparser.y"
+#line 110 "nsparser.y"
 	{
 			cursrc.flags = NS_TERMINATE;
 			_nsaddsrctomap(yystack.l_mark[0].str);
 		}
 break;
 case 13:
-#line 112 "nsparser.y"
+#line 114 "nsparser.y"
 	{ cursrc.flags = NS_SUCCESS; }
 break;
 case 14:
-#line 113 "nsparser.y"
+#line 115 "nsparser.y"
 	{
 			_nsaddsrctomap(yystack.l_mark[-4].str);
 		}
 break;
 case 17:
-#line 125 "nsparser.y"
+#line 127 "nsparser.y"
 	{
 			if (yystack.l_mark[0].mapval)	     /* if action == RETURN set RETURN bit */
 				cursrc.flags |= yystack.l_mark[-2].mapval;  
@@ -641,30 +643,30 @@ case 17:
 		}
 break;
 case 18:
-#line 134 "nsparser.y"
+#line 136 "nsparser.y"
 	{ yyval.mapval = NS_SUCCESS; }
 break;
 case 19:
-#line 135 "nsparser.y"
+#line 137 "nsparser.y"
 	{ yyval.mapval = NS_UNAVAIL; }
 break;
 case 20:
-#line 136 "nsparser.y"
+#line 138 "nsparser.y"
 	{ yyval.mapval = NS_NOTFOUND; }
 break;
 case 21:
-#line 137 "nsparser.y"
+#line 139 "nsparser.y"
 	{ yyval.mapval = NS_TRYAGAIN; }
 break;
 case 22:
-#line 141 "nsparser.y"
+#line 143 "nsparser.y"
 	{ yyval.mapval = NS_ACTION_RETURN; }
 break;
 case 23:
-#line 142 "nsparser.y"
+#line 144 "nsparser.y"
 	{ yyval.mapval = NS_ACTION_CONTINUE; }
 break;
-#line 668 "nsparser.c"
+#line 670 "nsparser.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;

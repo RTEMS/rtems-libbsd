@@ -4,7 +4,9 @@
 #include "rtems-bsd-ping-namespace.h"
 #endif /* __rtems__ */
 
-/*
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -88,10 +90,8 @@ __FBSDID("$FreeBSD$");
 #include <netinet/ip_var.h>
 #include <arpa/inet.h>
 
-#ifdef WITH_CASPER
 #include <libcasper.h>
 #include <casper/cap_dns.h>
-#endif
 
 #ifdef IPSEC
 #include <netipsec/ipsec.h>
@@ -224,19 +224,19 @@ static volatile sig_atomic_t finish_up;
 static volatile sig_atomic_t siginfo_p;
 #endif /* __rtems__ */
 
-#ifdef WITH_CASPER
+#ifndef __rtems__
 static cap_channel_t *capdns;
-#endif
-#ifdef __rtems__
+#else /* __rtems__ */
+#define	capdns NULL
 static u_char packet[IP_MAXPACKET] __aligned(4);
 static char hnamebuf[MAXHOSTNAMELEN], snamebuf[MAXHOSTNAMELEN];
 #endif /* __rtems__ */
 
 static void fill(char *, char *);
 static u_short in_cksum(u_short *, int);
-#ifdef WITH_CASPER
+#ifndef __rtems__
 static cap_channel_t *capdns_setup(void);
-#endif
+#endif /* __rtems__ */
 static void check_status(void);
 static void finish(void) __dead2;
 static void pinger(void);
@@ -632,21 +632,19 @@ main(int argc, char *const *argv)
 	if (options & F_PINGFILLED) {
 		fill((char *)datap, payload);
 	}
-#ifdef WITH_CASPER
+#ifndef __rtems__
 	capdns = capdns_setup();
-#endif
+#endif /* __rtems__ */
 	if (source) {
 		bzero((char *)&sock_in, sizeof(sock_in));
 		sock_in.sin_family = AF_INET;
 		if (inet_aton(source, &sock_in.sin_addr) != 0) {
 			shostname = source;
 		} else {
-#ifdef WITH_CASPER
 			if (capdns != NULL)
 				hp = cap_gethostbyname2(capdns, source,
 				    AF_INET);
 			else
-#endif
 				hp = gethostbyname2(source, AF_INET);
 			if (!hp)
 				errx(EX_NOHOST, "cannot resolve %s: %s",
@@ -675,11 +673,9 @@ main(int argc, char *const *argv)
 	if (inet_aton(target, &to->sin_addr) != 0) {
 		hostname = target;
 	} else {
-#ifdef WITH_CASPER
 		if (capdns != NULL)
 			hp = cap_gethostbyname2(capdns, target, AF_INET);
 		else
-#endif
 			hp = gethostbyname2(target, AF_INET);
 		if (!hp)
 			errx(EX_NOHOST, "cannot resolve %s: %s",
@@ -693,7 +689,7 @@ main(int argc, char *const *argv)
 		hostname = hnamebuf;
 	}
 
-#ifdef WITH_CASPER
+#ifndef __rtems__
 	/* From now on we will use only reverse DNS lookups. */
 	if (capdns != NULL) {
 		const char *types[1];
@@ -702,7 +698,7 @@ main(int argc, char *const *argv)
 		if (cap_dns_type_limit(capdns, types, 1) < 0)
 			err(1, "unable to limit access to system.dns service");
 	}
-#endif
+#endif /* __rtems__ */
 
 	if (connect(ssend, (struct sockaddr *)&whereto, sizeof(whereto)) != 0)
 		err(1, "connect");
@@ -791,10 +787,8 @@ main(int argc, char *const *argv)
 
 	if (options & F_NUMERIC)
 		cansandbox = true;
-#ifdef WITH_CASPER
 	else if (capdns != NULL)
-		cansandbox = true;
-#endif
+		cansandbox = CASPER_SUPPORT;
 	else
 		cansandbox = false;
 
@@ -1784,11 +1778,9 @@ pr_addr(struct in_addr ina)
 	if (options & F_NUMERIC)
 		return inet_ntoa(ina);
 
-#ifdef WITH_CASPER
 	if (capdns != NULL)
 		hp = cap_gethostbyaddr(capdns, (char *)&ina, 4, AF_INET);
 	else
-#endif
 		hp = gethostbyaddr((char *)&ina, 4, AF_INET);
 
 	if (hp == NULL)
@@ -1868,7 +1860,7 @@ fill(char *bp, char *patp)
 	}
 }
 
-#ifdef WITH_CASPER
+#ifndef __rtems__
 static cap_channel_t *
 capdns_setup(void)
 {
@@ -1894,7 +1886,7 @@ capdns_setup(void)
 
 	return (capdnsloc);
 }
-#endif /* WITH_CASPER */
+#endif /* __rtems__ */
 
 #if defined(IPSEC) && defined(IPSEC_POLICY_IPSEC)
 #define	SECOPT		" [-P policy]"

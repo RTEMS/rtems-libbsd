@@ -94,10 +94,10 @@ The Regents of the University of California.  All rights reserved.\n";
 #include <sys/ioccom.h>
 #include <net/bpf.h>
 #include <libgen.h>
-#ifdef WITH_CASPER
+#ifdef HAVE_CASPER
 #include <libcasper.h>
 #include <casper/cap_dns.h>
-#endif	/* WITH_CASPER */
+#endif	/* HAVE_CASPER */
 #endif	/* HAVE_CAPSICUM */
 #include <pcap.h>
 #include <signal.h>
@@ -199,7 +199,7 @@ static int infoprint;
 
 char *program_name;
 
-#ifdef WITH_CASPER
+#ifdef HAVE_CASPER
 cap_channel_t *capdns;
 #endif
 
@@ -764,7 +764,7 @@ get_next_file(FILE *VFile, char *ptr)
 	return ret;
 }
 
-#ifdef WITH_CASPER
+#ifdef HAVE_CASPER
 static cap_channel_t *
 capdns_setup(void)
 {
@@ -791,7 +791,7 @@ capdns_setup(void)
 
 	return (capdnsloc);
 }
-#endif	/* WITH_CASPER */
+#endif	/* HAVE_CASPER */
 
 #ifdef HAVE_PCAP_SET_TSTAMP_PRECISION
 static int
@@ -1980,10 +1980,10 @@ main(int argc, char **argv)
 		exit_tcpdump(0);
 	}
 
-#ifdef WITH_CASPER
+#ifdef HAVE_CASPER
 	if (!ndo->ndo_nflag)
 		capdns = capdns_setup();
-#endif	/* WITH_CASPER */
+#endif	/* HAVE_CASPER */
 
 	init_print(ndo, localnet, netmask, timezone_offset);
 
@@ -2207,11 +2207,11 @@ main(int argc, char **argv)
 
 #ifdef HAVE_CAPSICUM
 	cansandbox = (VFileName == NULL && zflag == NULL);
-#ifdef WITH_CASPER
+#ifdef HAVE_CASPER
 	cansandbox = (cansandbox && (ndo->ndo_nflag || capdns != NULL));
 #else
 	cansandbox = (cansandbox && ndo->ndo_nflag);
-#endif	/* WITH_CASPER */
+#endif	/* HAVE_CASPER */
 	if (cansandbox && cap_enter() < 0 && errno != ENOSYS)
 		error("unable to enter the capability mode");
 #endif	/* HAVE_CAPSICUM */

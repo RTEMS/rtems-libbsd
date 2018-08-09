@@ -5,6 +5,8 @@
 #endif /* __rtems__ */
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001 Networks Associates Technology, Inc.
  * All rights reserved.
  *

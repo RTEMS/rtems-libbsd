@@ -538,6 +538,8 @@ char *_nsyytext;
 /*	$NetBSD: nslexer.l,v 1.3 1999/01/25 00:16:17 lukem Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ *
  * Copyright (c) 1997, 1998, 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
@@ -583,7 +585,7 @@ static char *rcsid =
 #include "nsparser.h"
 
 #define YY_NO_INPUT 1
-#line 587 "nslexer.c"
+#line 589 "nslexer.c"
 
 #define INITIAL 0
 
@@ -763,10 +765,10 @@ YY_DECL
 	char *yy_cp, *yy_bp;
 	int yy_act;
     
-#line 59 "nslexer.l"
+#line 61 "nslexer.l"
 
 
-#line 770 "nslexer.c"
+#line 772 "nslexer.c"
 
 	if ( !(yy_init) )
 		{
@@ -861,59 +863,59 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 61 "nslexer.l"
+#line 63 "nslexer.l"
 ;			/* skip whitespace */
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 63 "nslexer.l"
+#line 65 "nslexer.l"
 ;			/* skip comments */
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 65 "nslexer.l"
+#line 67 "nslexer.l"
 ;			/* allow continuation */
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 67 "nslexer.l"
+#line 69 "nslexer.l"
 return NL;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 69 "nslexer.l"
+#line 71 "nslexer.l"
 return SUCCESS;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 70 "nslexer.l"
+#line 72 "nslexer.l"
 return UNAVAIL;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 71 "nslexer.l"
+#line 73 "nslexer.l"
 return NOTFOUND;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 72 "nslexer.l"
+#line 74 "nslexer.l"
 return TRYAGAIN;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 74 "nslexer.l"
+#line 76 "nslexer.l"
 return RETURN;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 75 "nslexer.l"
+#line 77 "nslexer.l"
 return CONTINUE;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 77 "nslexer.l"
+#line 79 "nslexer.l"
 {
 			char *p;
 			int i;
@@ -933,15 +935,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 94 "nslexer.l"
+#line 96 "nslexer.l"
 return _nsyytext[0];
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 96 "nslexer.l"
+#line 98 "nslexer.l"
 ECHO;
 	YY_BREAK
-#line 945 "nslexer.c"
+#line 947 "nslexer.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1906,7 +1908,7 @@ void _nsyyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 96 "nslexer.l"
+#line 98 "nslexer.l"
 
 
 

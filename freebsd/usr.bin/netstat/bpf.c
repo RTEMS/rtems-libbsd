@@ -5,6 +5,8 @@
 #endif /* __rtems__ */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2005 Christian S.J. Peron
  * All rights reserved.
  *

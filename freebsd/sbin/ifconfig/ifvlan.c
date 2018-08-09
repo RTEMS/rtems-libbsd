@@ -4,7 +4,9 @@
 #include "rtems-bsd-ifconfig-namespace.h"
 #endif /* __rtems__ */
 
-/*
+/*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (c) 1999 Bill Paul <wpaul@ctr.columbia.edu>
  * Copyright (c) 2012 ADARA Networks, Inc.
  * All rights reserved.

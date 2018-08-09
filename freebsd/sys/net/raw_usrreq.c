@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1980, 1986, 1993
  *	The Regents of the University of California.
  * All rights reserved.
@@ -227,9 +229,10 @@ raw_usend(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 	KASSERT(sotorawcb(so) != NULL, ("raw_usend: rp == NULL"));
 
 	if ((flags & PRUS_OOB) || (control && control->m_len)) {
-		/* XXXRW: Should control also be freed here? */
 		if (m != NULL)
 			m_freem(m);
+		if (control != NULL)
+			m_freem(control);
 		return (EOPNOTSUPP);
 	}
 

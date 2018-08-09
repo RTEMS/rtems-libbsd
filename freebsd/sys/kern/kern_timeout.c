@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1982, 1986, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -300,7 +302,7 @@ cc_cce_migrating(struct callout_cpu *cc, int direct)
 
 /*
  * Kernel low level callwheel initialization
- * called on cpu0 during kernel startup.
+ * called on the BSP during kernel startup.
  */
 #ifdef __rtems__
 static void rtems_bsd_timeout_init_early(void *);
@@ -357,7 +359,7 @@ callout_callwheel_init(void *dummy)
 	 * XXX: Clip callout to result of previous function of maxusers
 	 * maximum 384.  This is still huge, but acceptable.
 	 */
-	memset(CC_CPU(0), 0, sizeof(cc_cpu));
+	memset(CC_CPU(curcpu), 0, sizeof(cc_cpu));
 #ifndef __rtems__
 	ncallout = imin(16 + maxproc + maxfiles, 18508);
 	TUNABLE_INT_FETCH("kern.ncallout", &ncallout);
@@ -381,7 +383,7 @@ callout_callwheel_init(void *dummy)
 #endif /* __rtems__ */
 
 	/*
-	 * Only cpu0 handles timeout(9) and receives a preallocation.
+	 * Only BSP handles timeout(9) and receives a preallocation.
 	 *
 	 * XXX: Once all timeout(9) consumers are converted this can
 	 * be removed.
@@ -427,7 +429,7 @@ callout_cpu_init(struct callout_cpu *cc, int cpu)
 	snprintf(cc->cc_ktr_event_name, sizeof(cc->cc_ktr_event_name),
 	    "callwheel cpu %d", cpu);
 #ifndef __rtems__
-	if (cc->cc_callout == NULL)	/* Only cpu0 handles timeout(9) */
+	if (cc->cc_callout == NULL)	/* Only BSP handles timeout(9) */
 		return;
 #endif /* __rtems__ */
 	for (i = 0; i < ncallout; i++) {
@@ -499,7 +501,7 @@ start_softclock(void *dummy)
 		if (cpu == timeout_cpu)
 			continue;
 		cc = CC_CPU(cpu);
-		cc->cc_callout = NULL;	/* Only cpu0 handles timeout(9). */
+		cc->cc_callout = NULL;	/* Only BSP handles timeout(9). */
 		callout_cpu_init(cc, cpu);
 		snprintf(name, sizeof(name), "clock (%d)", cpu);
 		ie = NULL;

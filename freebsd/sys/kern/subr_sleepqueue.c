@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2004 John Baldwin <jhb@FreeBSD.org>
  * Copyright (c) 2015 embedded brains GmbH <rtems@embedded-brains.de>
  * All rights reserved.
@@ -102,7 +104,10 @@ __FBSDID("$FreeBSD$");
  * Constants for the hash table of sleep queue chains.
  * SC_TABLESIZE must be a power of two for SC_MASK to work properly.
  */
-#define	SC_TABLESIZE	256			/* Must be power of 2. */
+#ifndef SC_TABLESIZE
+#define	SC_TABLESIZE	256
+#endif
+CTASSERT(powerof2(SC_TABLESIZE));
 #define	SC_MASK		(SC_TABLESIZE - 1)
 #define	SC_SHIFT	8
 #define	SC_HASH(wc)	((((uintptr_t)(wc) >> SC_SHIFT) ^ (uintptr_t)(wc)) & \
@@ -146,7 +151,7 @@ struct sleepqueue_chain {
 	u_int	sc_depth;			/* Length of sc_queues. */
 	u_int	sc_max_depth;			/* Max length of sc_queues. */
 #endif
-};
+} __aligned(CACHE_LINE_SIZE);
 
 #ifdef SLEEPQUEUE_PROFILING
 u_int sleepq_max_depth;
@@ -1463,7 +1468,7 @@ sleepq_sbuf_print_stacks(struct sbuf *sb, void *wchan, int queue,
 		    M_TEMP, M_WAITOK);
 		for (stack_idx = 0; stack_idx < stacks_to_allocate;
 		    stack_idx++)
-			st[stack_idx] = stack_create();
+			st[stack_idx] = stack_create(M_WAITOK);
 
 		/* Where we will store the td name, tid, etc. */
 		td_infos = malloc(sizeof(struct sbuf *) * stacks_to_allocate,
@@ -1735,7 +1740,7 @@ found:
 		if (TAILQ_EMPTY(&sq->sq_blocked[i]))
 			db_printf("\tempty\n");
 		else
-			TAILQ_FOREACH(td, &sq->sq_blocked[0],
+			TAILQ_FOREACH(td, &sq->sq_blocked[i],
 				      td_slpq) {
 				db_printf("\t%p (tid %d, pid %d, \"%s\")\n", td,
 					  td->td_tid, td->td_proc->p_pid,

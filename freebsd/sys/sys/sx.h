@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2007 Attilio Rao <attilio@freebsd.org>
  * Copyright (c) 2001 Jason Evans <jasone@freebsd.org>
  * All rights reserved.
@@ -43,10 +45,10 @@
 #endif
 
 #ifdef __rtems__
-#define SX_NOINLINE 1
-#define _sx_slock _bsd__sx_xlock
-#define sx_try_slock_ _bsd_sx_try_xlock_
-#define _sx_sunlock _bsd__sx_xunlock
+#define	SX_NOINLINE 1
+#define	sx_try_xlock_ _bsd_sx_try_slock_int
+#define	sx_try_xlock_int _bsd_sx_try_slock_int
+#define	_sx_sunlock _bsd__sx_sunlock_int
 #endif /* __rtems__ */
 /*
  * In general, the sx locks and rwlocks use very similar algorithms.
@@ -107,18 +109,45 @@ void	sx_sysinit(void *arg);
 #define	sx_init(sx, desc)	sx_init_flags((sx), (desc), 0)
 void	sx_init_flags(struct sx *sx, const char *description, int opts);
 void	sx_destroy(struct sx *sx);
+int	sx_try_slock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF);
+#ifndef __rtems__
 int	sx_try_slock_(struct sx *sx, const char *file, int line);
+int	sx_try_xlock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF);
 int	sx_try_xlock_(struct sx *sx, const char *file, int line);
+#endif /* __rtems__ */
+int	sx_try_upgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF);
+#ifndef __rtems__
 int	sx_try_upgrade_(struct sx *sx, const char *file, int line);
+#endif /* __rtems__ */
+void	sx_downgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF);
+#ifndef __rtems__
 void	sx_downgrade_(struct sx *sx, const char *file, int line);
+#endif /* __rtems__ */
+int	_sx_slock_int(struct sx *sx, int opts LOCK_FILE_LINE_ARG_DEF);
+#ifndef __rtems__
 int	_sx_slock(struct sx *sx, int opts, const char *file, int line);
 int	_sx_xlock(struct sx *sx, int opts, const char *file, int line);
+#else /* __rtems__ */
+#if	(LOCK_DEBUG > 0)
+#define	_sx_xlock(sx, opts, file, line) \
+    _bsd__sx_slock_int(sx, opts, file, line)
+#else
+#define	_sx_xlock(sx, opts, file, line) _bsd__sx_slock_int(sx, opts)
+#endif
+#endif /* __rtems__ */
+void	_sx_sunlock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF);
+#ifndef __rtems__
 void	_sx_sunlock(struct sx *sx, const char *file, int line);
 void	_sx_xunlock(struct sx *sx, const char *file, int line);
-int	_sx_xlock_hard(struct sx *sx, uintptr_t v, uintptr_t tid, int opts,
-	    const char *file, int line);
-void	_sx_xunlock_hard(struct sx *sx, uintptr_t tid, const char *file, int
-	    line);
+int	_sx_xlock_hard(struct sx *sx, uintptr_t x, int opts LOCK_FILE_LINE_ARG_DEF);
+void	_sx_xunlock_hard(struct sx *sx, uintptr_t x LOCK_FILE_LINE_ARG_DEF);
+#else /* __rtems__ */
+#if	(LOCK_DEBUG > 0)
+#define	_sx_xunlock(sx, file, line) _bsd__sx_sunlock_int(sx, file, line)
+#else
+#define	_sx_xunlock(sx, file, line) _bsd__sx_sunlock_int(sx)
+#endif
+#endif /* __rtems__ */
 #if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
 void	_sx_assert(const struct sx *sx, int what, const char *file, int line);
 #endif
@@ -164,7 +193,7 @@ __sx_xlock(struct sx *sx, struct thread *td, int opts, const char *file,
 
 	if (__predict_false(LOCKSTAT_PROFILE_ENABLED(sx__acquire) ||
 	    !atomic_fcmpset_acq_ptr(&sx->sx_lock, &v, tid)))
-		error = _sx_xlock_hard(sx, v, tid, opts, file, line);
+		error = _sx_xlock_hard(sx, v, opts);
 
 	return (error);
 }
@@ -173,11 +202,11 @@ __sx_xlock(struct sx *sx, struct thread *td, int opts, const char *file,
 static __inline void
 __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 {
-	uintptr_t tid = (uintptr_t)td;
+	uintptr_t x = (uintptr_t)td;
 
 	if (__predict_false(LOCKSTAT_PROFILE_ENABLED(sx__release) ||
-	    !atomic_cmpset_rel_ptr(&sx->sx_lock, tid, SX_LOCK_UNLOCKED)))
-		_sx_xunlock_hard(sx, tid, file, line);
+	    !atomic_fcmpset_rel_ptr(&sx->sx_lock, &x, SX_LOCK_UNLOCKED)))
+		_sx_xunlock_hard(sx, x);
 }
 #endif
 #endif /* __rtems__ */
@@ -203,6 +232,7 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 #define	sx_xunlock_(sx, file, line)					\
 	__sx_xunlock((sx), curthread, (file), (line))
 #endif	/* LOCK_DEBUG > 0 || SX_NOINLINE */
+#if	(LOCK_DEBUG > 0)
 #define	sx_slock_(sx, file, line)					\
 	(void)_sx_slock((sx), 0, (file), (line))
 #define	sx_slock_sig_(sx, file, line)					\
@@ -213,6 +243,18 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 #define	sx_try_xlock(sx)	sx_try_xlock_((sx), LOCK_FILE, LOCK_LINE)
 #define	sx_try_upgrade(sx)	sx_try_upgrade_((sx), LOCK_FILE, LOCK_LINE)
 #define	sx_downgrade(sx)	sx_downgrade_((sx), LOCK_FILE, LOCK_LINE)
+#else
+#define	sx_slock_(sx, file, line)					\
+	(void)_sx_slock_int((sx), 0)
+#define	sx_slock_sig_(sx, file, line)					\
+	_sx_slock_int((sx), SX_INTERRUPTIBLE)
+#define	sx_sunlock_(sx, file, line)					\
+	_sx_sunlock_int((sx))
+#define	sx_try_slock(sx)	sx_try_slock_int((sx))
+#define	sx_try_xlock(sx)	sx_try_xlock_int((sx))
+#define	sx_try_upgrade(sx)	sx_try_upgrade_int((sx))
+#define	sx_downgrade(sx)	sx_downgrade_int((sx))
+#endif
 #ifdef INVARIANTS
 #define	sx_assert_(sx, what, file, line)				\
 	_sx_assert((sx), (what), (file), (line))
@@ -240,9 +282,6 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 #define	sx_xlocked(sx)							\
 	(((sx)->sx_lock & ~(SX_LOCK_FLAGMASK & ~SX_LOCK_SHARED)) ==	\
 	    (uintptr_t)curthread)
-#else /* __rtems__ */
-int sx_xlocked(struct sx *sx);
-#endif /* __rtems__ */
 
 #define	sx_unlock_(sx, file, line) do {					\
 	if (sx_xlocked(sx))						\
@@ -252,6 +291,14 @@ int sx_xlocked(struct sx *sx);
 } while (0)
 
 #define	sx_unlock(sx)	sx_unlock_((sx), LOCK_FILE, LOCK_LINE)
+#else /* __rtems__ */
+int sx_xlocked(struct sx *sx);
+#if	(LOCK_DEBUG > 0)
+#define	sx_unlock(sx)	_sx_sunlock_int((sx), LOCK_FILE, LOCK_LINE)
+#else
+#define	sx_unlock(sx)	_sx_sunlock_int((sx))
+#endif
+#endif /* __rtems__ */
 
 #define	sx_sleep(chan, sx, pri, wmesg, timo)				\
 	_sleep((chan), &(sx)->lock_object, (pri), (wmesg),		\

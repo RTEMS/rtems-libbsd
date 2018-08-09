@@ -97,7 +97,7 @@
 
 #define YYPURE 0
 
-#line 30 "parse.y"
+#line 32 "parse.y"
 #ifdef __rtems__
 #include <machine/rtems-bsd-user-space.h>
 #undef INET6
@@ -2569,7 +2569,7 @@ typedef struct {
 } YYSTACKDATA;
 /* variables for the parser stack */
 static YYSTACKDATA yystack;
-#line 4551 "parse.y"
+#line 4556 "parse.y"
 #ifdef __rtems__
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static YYSTACKDATA yystack);
 #endif /* __rtems__ */
@@ -4565,11 +4565,11 @@ yyreduce:
     switch (yyn)
     {
 case 17:
-#line 556 "parse.y"
+#line 558 "parse.y"
 	{ file->errors++; }
 break;
 case 18:
-#line 559 "parse.y"
+#line 561 "parse.y"
 	{
 			struct file	*nfile;
 
@@ -4585,7 +4585,7 @@ case 18:
 		}
 break;
 case 25:
-#line 586 "parse.y"
+#line 588 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "none"))
 				yyval.v.i = 0;
@@ -4600,7 +4600,7 @@ case 25:
 		}
 break;
 case 26:
-#line 600 "parse.y"
+#line 602 "parse.y"
 	{
 			if (check_rulestate(PFCTL_STATE_OPTION)) {
 				free(yystack.l_mark[0].v.string);
@@ -4615,7 +4615,7 @@ case 26:
 		}
 break;
 case 27:
-#line 612 "parse.y"
+#line 614 "parse.y"
 	{
 			if (!(pf->opts & PF_OPT_OPTIMIZE)) {
 				pf->opts |= PF_OPT_OPTIMIZE;
@@ -4624,7 +4624,7 @@ case 27:
 		}
 break;
 case 32:
-#line 622 "parse.y"
+#line 624 "parse.y"
 	{
 			if (check_rulestate(PFCTL_STATE_OPTION)) {
 				free(yystack.l_mark[0].v.string);
@@ -4639,7 +4639,7 @@ case 32:
 		}
 break;
 case 33:
-#line 634 "parse.y"
+#line 636 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number == 0 || yystack.l_mark[0].v.number > UINT_MAX) {
 				yyerror("hostid must be non-zero");
@@ -4652,7 +4652,7 @@ case 33:
 		}
 break;
 case 34:
-#line 644 "parse.y"
+#line 646 "parse.y"
 	{
 			if (pf->opts & PF_OPT_VERBOSE)
 				printf("set block-policy drop\n");
@@ -4662,7 +4662,7 @@ case 34:
 		}
 break;
 case 35:
-#line 651 "parse.y"
+#line 653 "parse.y"
 	{
 			if (pf->opts & PF_OPT_VERBOSE)
 				printf("set block-policy return\n");
@@ -4672,7 +4672,7 @@ case 35:
 		}
 break;
 case 36:
-#line 658 "parse.y"
+#line 660 "parse.y"
 	{
 			if (pf->opts & PF_OPT_VERBOSE)
 				printf("set require-order %s\n",
@@ -4681,7 +4681,7 @@ case 36:
 		}
 break;
 case 37:
-#line 664 "parse.y"
+#line 666 "parse.y"
 	{
 			if (pf->opts & PF_OPT_VERBOSE)
 				printf("set fingerprints \"%s\"\n", yystack.l_mark[0].v.string);
@@ -4702,7 +4702,7 @@ case 37:
 		}
 break;
 case 38:
-#line 682 "parse.y"
+#line 684 "parse.y"
 	{
 			if (pf->opts & PF_OPT_VERBOSE)
 				switch (yystack.l_mark[0].v.i) {
@@ -4717,7 +4717,7 @@ case 38:
 		}
 break;
 case 39:
-#line 694 "parse.y"
+#line 696 "parse.y"
 	{
 			if (check_rulestate(PFCTL_STATE_OPTION)) {
 				free(yystack.l_mark[0].v.string);
@@ -4732,7 +4732,7 @@ case 39:
 		}
 break;
 case 40:
-#line 706 "parse.y"
+#line 708 "parse.y"
 	{
 			if (expand_skip_interface(yystack.l_mark[0].v.interface) != 0) {
 				yyerror("error setting skip interface(s)");
@@ -4741,7 +4741,7 @@ case 40:
 		}
 break;
 case 41:
-#line 712 "parse.y"
+#line 714 "parse.y"
 	{
 			if (keep_state_defaults != NULL) {
 				yyerror("cannot redefine state-defaults");
@@ -4751,11 +4751,11 @@ case 41:
 		}
 break;
 case 42:
-#line 721 "parse.y"
+#line 723 "parse.y"
 	{ yyval.v.string = yystack.l_mark[0].v.string; }
 break;
 case 43:
-#line 722 "parse.y"
+#line 724 "parse.y"
 	{
 			if ((yyval.v.string = strdup("all")) == NULL) {
 				err(1, "stringall: strdup");
@@ -4763,7 +4763,7 @@ case 43:
 		}
 break;
 case 44:
-#line 729 "parse.y"
+#line 731 "parse.y"
 	{
 			if (asprintf(&yyval.v.string, "%s %s", yystack.l_mark[-1].v.string, yystack.l_mark[0].v.string) == -1)
 				err(1, "string: asprintf");
@@ -4772,7 +4772,7 @@ case 44:
 		}
 break;
 case 46:
-#line 738 "parse.y"
+#line 740 "parse.y"
 	{
 			if (asprintf(&yyval.v.string, "%s %s", yystack.l_mark[-1].v.string, yystack.l_mark[0].v.string) == -1)
 				err(1, "string: asprintf");
@@ -4781,7 +4781,7 @@ case 46:
 		}
 break;
 case 48:
-#line 747 "parse.y"
+#line 749 "parse.y"
 	{
 			char	*s;
 			if (asprintf(&s, "%lld", (long long)yystack.l_mark[0].v.number) == -1) {
@@ -4792,7 +4792,7 @@ case 48:
 		}
 break;
 case 50:
-#line 758 "parse.y"
+#line 760 "parse.y"
 	{
 			if (pf->opts & PF_OPT_VERBOSE)
 				printf("%s = \"%s\"\n", yystack.l_mark[-2].v.string, yystack.l_mark[0].v.string);
@@ -4803,15 +4803,15 @@ case 50:
 		}
 break;
 case 51:
-#line 768 "parse.y"
+#line 770 "parse.y"
 	{ yyval.v.string = yystack.l_mark[0].v.string; }
 break;
 case 52:
-#line 769 "parse.y"
+#line 771 "parse.y"
 	{ yyval.v.string = NULL; }
 break;
 case 57:
-#line 779 "parse.y"
+#line 781 "parse.y"
 	{
 			char ta[PF_ANCHOR_NAME_SIZE];
 			struct pf_ruleset *rs;
@@ -4831,7 +4831,7 @@ case 57:
 		}
 break;
 case 58:
-#line 796 "parse.y"
+#line 798 "parse.y"
 	{
 			pf->alast = pf->anchor;
 			pf->asd--;
@@ -4839,7 +4839,7 @@ case 58:
 		}
 break;
 case 60:
-#line 806 "parse.y"
+#line 808 "parse.y"
 	{
 			struct pf_rule	r;
 			struct node_proto	*proto;
@@ -4974,7 +4974,7 @@ case 60:
 		}
 break;
 case 61:
-#line 938 "parse.y"
+#line 940 "parse.y"
 	{
 			struct pf_rule	r;
 
@@ -4998,7 +4998,7 @@ case 61:
 		}
 break;
 case 62:
-#line 959 "parse.y"
+#line 961 "parse.y"
 	{
 			struct pf_rule	r;
 
@@ -5043,7 +5043,7 @@ case 62:
 		}
 break;
 case 63:
-#line 1001 "parse.y"
+#line 1003 "parse.y"
 	{
 			struct pf_rule	r;
 
@@ -5081,7 +5081,7 @@ case 63:
 		}
 break;
 case 64:
-#line 1038 "parse.y"
+#line 1040 "parse.y"
 	{
 			struct loadanchors	*loadanchor;
 
@@ -5114,7 +5114,7 @@ case 64:
 		}
 break;
 case 65:
-#line 1069 "parse.y"
+#line 1071 "parse.y"
 	{
 			yyval.v.b.b2 = yyval.v.b.w = 0;
 			if (yystack.l_mark[-1].v.i)
@@ -5124,7 +5124,7 @@ case 65:
 		}
 break;
 case 66:
-#line 1079 "parse.y"
+#line 1081 "parse.y"
 	{
 			struct pf_rule	r;
 
@@ -5182,18 +5182,18 @@ case 66:
 		}
 break;
 case 67:
-#line 1136 "parse.y"
+#line 1138 "parse.y"
 	{
 				bzero(&scrub_opts, sizeof scrub_opts);
 				scrub_opts.rtableid = -1;
 			}
 break;
 case 68:
-#line 1141 "parse.y"
+#line 1143 "parse.y"
 	{ yyval.v.scrub_opts = scrub_opts; }
 break;
 case 69:
-#line 1142 "parse.y"
+#line 1144 "parse.y"
 	{
 			bzero(&scrub_opts, sizeof scrub_opts);
 			scrub_opts.rtableid = -1;
@@ -5201,7 +5201,7 @@ case 69:
 		}
 break;
 case 72:
-#line 1153 "parse.y"
+#line 1155 "parse.y"
 	{
 			if (scrub_opts.nodf) {
 				yyerror("no-df cannot be respecified");
@@ -5211,7 +5211,7 @@ case 72:
 		}
 break;
 case 73:
-#line 1160 "parse.y"
+#line 1162 "parse.y"
 	{
 			if (scrub_opts.marker & SOM_MINTTL) {
 				yyerror("min-ttl cannot be respecified");
@@ -5226,7 +5226,7 @@ case 73:
 		}
 break;
 case 74:
-#line 1172 "parse.y"
+#line 1174 "parse.y"
 	{
 			if (scrub_opts.marker & SOM_MAXMSS) {
 				yyerror("max-mss cannot be respecified");
@@ -5241,7 +5241,7 @@ case 74:
 		}
 break;
 case 75:
-#line 1184 "parse.y"
+#line 1186 "parse.y"
 	{
 			if (scrub_opts.marker & SOM_SETTOS) {
 				yyerror("set-tos cannot be respecified");
@@ -5252,7 +5252,7 @@ case 75:
 		}
 break;
 case 76:
-#line 1192 "parse.y"
+#line 1194 "parse.y"
 	{
 			if (scrub_opts.marker & SOM_FRAGCACHE) {
 				yyerror("fragcache cannot be respecified");
@@ -5263,7 +5263,7 @@ case 76:
 		}
 break;
 case 77:
-#line 1200 "parse.y"
+#line 1202 "parse.y"
 	{
 			if (strcasecmp(yystack.l_mark[0].v.string, "tcp") != 0) {
 				yyerror("scrub reassemble supports only tcp, "
@@ -5280,7 +5280,7 @@ case 77:
 		}
 break;
 case 78:
-#line 1214 "parse.y"
+#line 1216 "parse.y"
 	{
 			if (scrub_opts.randomid) {
 				yyerror("random-id cannot be respecified");
@@ -5290,7 +5290,7 @@ case 78:
 		}
 break;
 case 79:
-#line 1221 "parse.y"
+#line 1223 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > rt_tableid_max()) {
 				yyerror("invalid rtable id");
@@ -5300,26 +5300,26 @@ case 79:
 		}
 break;
 case 80:
-#line 1228 "parse.y"
+#line 1230 "parse.y"
 	{
 			scrub_opts.match_tag = yystack.l_mark[0].v.string;
 			scrub_opts.match_tag_not = yystack.l_mark[-2].v.number;
 		}
 break;
 case 81:
-#line 1234 "parse.y"
+#line 1236 "parse.y"
 	{ yyval.v.i = 0; /* default */ }
 break;
 case 82:
-#line 1235 "parse.y"
+#line 1237 "parse.y"
 	{ yyval.v.i = 0; }
 break;
 case 83:
-#line 1236 "parse.y"
+#line 1238 "parse.y"
 	{ yyval.v.i = 0; }
 break;
 case 84:
-#line 1239 "parse.y"
+#line 1241 "parse.y"
 	{
 			struct pf_rule		 r;
 			struct node_host	*h = NULL, *hh;
@@ -5407,19 +5407,19 @@ case 84:
 		}
 break;
 case 85:
-#line 1326 "parse.y"
+#line 1328 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[0].v.interface; }
 break;
 case 86:
-#line 1327 "parse.y"
+#line 1329 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[-1].v.interface; }
 break;
 case 87:
-#line 1330 "parse.y"
+#line 1332 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[-1].v.interface; }
 break;
 case 88:
-#line 1331 "parse.y"
+#line 1333 "parse.y"
 	{
 			yystack.l_mark[-3].v.interface->tail->next = yystack.l_mark[-1].v.interface;
 			yystack.l_mark[-3].v.interface->tail = yystack.l_mark[-1].v.interface;
@@ -5427,29 +5427,29 @@ case 88:
 		}
 break;
 case 89:
-#line 1338 "parse.y"
+#line 1340 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[0].v.interface; }
 break;
 case 90:
-#line 1339 "parse.y"
+#line 1341 "parse.y"
 	{
 			yystack.l_mark[-1].v.interface->dynamic = 1;
 			yyval.v.interface = yystack.l_mark[-1].v.interface;
 		}
 break;
 case 91:
-#line 1345 "parse.y"
+#line 1347 "parse.y"
 	{
 				bzero(&antispoof_opts, sizeof antispoof_opts);
 				antispoof_opts.rtableid = -1;
 			}
 break;
 case 92:
-#line 1350 "parse.y"
+#line 1352 "parse.y"
 	{ yyval.v.antispoof_opts = antispoof_opts; }
 break;
 case 93:
-#line 1351 "parse.y"
+#line 1353 "parse.y"
 	{
 			bzero(&antispoof_opts, sizeof antispoof_opts);
 			antispoof_opts.rtableid = -1;
@@ -5457,7 +5457,7 @@ case 93:
 		}
 break;
 case 96:
-#line 1362 "parse.y"
+#line 1364 "parse.y"
 	{
 			if (antispoof_opts.label) {
 				yyerror("label cannot be redefined");
@@ -5467,7 +5467,7 @@ case 96:
 		}
 break;
 case 97:
-#line 1369 "parse.y"
+#line 1371 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > rt_tableid_max()) {
 				yyerror("invalid rtable id");
@@ -5477,15 +5477,15 @@ case 97:
 		}
 break;
 case 98:
-#line 1378 "parse.y"
+#line 1380 "parse.y"
 	{ yyval.v.number = 1; }
 break;
 case 99:
-#line 1379 "parse.y"
+#line 1381 "parse.y"
 	{ yyval.v.number = 0; }
 break;
 case 100:
-#line 1382 "parse.y"
+#line 1384 "parse.y"
 	{
 			struct node_host	 *h, *nh;
 			struct node_tinit	 *ti, *nti;
@@ -5516,18 +5516,18 @@ case 100:
 		}
 break;
 case 101:
-#line 1412 "parse.y"
+#line 1414 "parse.y"
 	{
 			bzero(&table_opts, sizeof table_opts);
 			SIMPLEQ_INIT(&table_opts.init_nodes);
 		}
 break;
 case 102:
-#line 1417 "parse.y"
+#line 1419 "parse.y"
 	{ yyval.v.table_opts = table_opts; }
 break;
 case 103:
-#line 1419 "parse.y"
+#line 1421 "parse.y"
 	{
 			bzero(&table_opts, sizeof table_opts);
 			SIMPLEQ_INIT(&table_opts.init_nodes);
@@ -5535,7 +5535,7 @@ case 103:
 		}
 break;
 case 106:
-#line 1430 "parse.y"
+#line 1432 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "const"))
 				table_opts.flags |= PFR_TFLAG_CONST;
@@ -5552,11 +5552,11 @@ case 106:
 		}
 break;
 case 107:
-#line 1444 "parse.y"
+#line 1446 "parse.y"
 	{ table_opts.init_addr = 1; }
 break;
 case 108:
-#line 1445 "parse.y"
+#line 1447 "parse.y"
 	{
 			struct node_host	*n;
 			struct node_tinit	*ti;
@@ -5599,7 +5599,7 @@ case 108:
 		}
 break;
 case 109:
-#line 1485 "parse.y"
+#line 1487 "parse.y"
 	{
 			struct node_tinit	*ti;
 
@@ -5612,7 +5612,7 @@ case 109:
 		}
 break;
 case 110:
-#line 1497 "parse.y"
+#line 1499 "parse.y"
 	{
 			struct pf_altq	a;
 
@@ -5637,7 +5637,7 @@ case 110:
 		}
 break;
 case 111:
-#line 1521 "parse.y"
+#line 1523 "parse.y"
 	{
 			struct pf_altq	a;
 
@@ -5675,7 +5675,7 @@ case 111:
 		}
 break;
 case 112:
-#line 1558 "parse.y"
+#line 1560 "parse.y"
 	{
 			bzero(&queue_opts, sizeof queue_opts);
 			queue_opts.priority = DEFAULT_PRIORITY;
@@ -5685,11 +5685,11 @@ case 112:
 		}
 break;
 case 113:
-#line 1566 "parse.y"
+#line 1568 "parse.y"
 	{ yyval.v.queue_opts = queue_opts; }
 break;
 case 114:
-#line 1567 "parse.y"
+#line 1569 "parse.y"
 	{
 			bzero(&queue_opts, sizeof queue_opts);
 			queue_opts.priority = DEFAULT_PRIORITY;
@@ -5700,7 +5700,7 @@ case 114:
 		}
 break;
 case 117:
-#line 1581 "parse.y"
+#line 1583 "parse.y"
 	{
 			if (queue_opts.marker & QOM_BWSPEC) {
 				yyerror("bandwidth cannot be respecified");
@@ -5711,7 +5711,7 @@ case 117:
 		}
 break;
 case 118:
-#line 1589 "parse.y"
+#line 1591 "parse.y"
 	{
 			if (queue_opts.marker & QOM_PRIORITY) {
 				yyerror("priority cannot be respecified");
@@ -5726,7 +5726,7 @@ case 118:
 		}
 break;
 case 119:
-#line 1601 "parse.y"
+#line 1603 "parse.y"
 	{
 			if (queue_opts.marker & QOM_QLIMIT) {
 				yyerror("qlimit cannot be respecified");
@@ -5741,7 +5741,7 @@ case 119:
 		}
 break;
 case 120:
-#line 1613 "parse.y"
+#line 1615 "parse.y"
 	{
 			if (queue_opts.marker & QOM_SCHEDULER) {
 				yyerror("scheduler cannot be respecified");
@@ -5752,7 +5752,7 @@ case 120:
 		}
 break;
 case 121:
-#line 1621 "parse.y"
+#line 1623 "parse.y"
 	{
 			if (queue_opts.marker & QOM_TBRSIZE) {
 				yyerror("tbrsize cannot be respecified");
@@ -5767,7 +5767,7 @@ case 121:
 		}
 break;
 case 122:
-#line 1635 "parse.y"
+#line 1637 "parse.y"
 	{
 			double	 bps;
 			char	*cp;
@@ -5813,7 +5813,7 @@ case 122:
 		}
 break;
 case 123:
-#line 1678 "parse.y"
+#line 1680 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > UINT_MAX) {
 				yyerror("bandwidth number too big");
@@ -5824,35 +5824,35 @@ case 123:
 		}
 break;
 case 124:
-#line 1688 "parse.y"
+#line 1690 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_CBQ;
 			yyval.v.queue_options.data.cbq_opts.flags = 0;
 		}
 break;
 case 125:
-#line 1692 "parse.y"
+#line 1694 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_CBQ;
 			yyval.v.queue_options.data.cbq_opts.flags = yystack.l_mark[-1].v.number;
 		}
 break;
 case 126:
-#line 1696 "parse.y"
+#line 1698 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_PRIQ;
 			yyval.v.queue_options.data.priq_opts.flags = 0;
 		}
 break;
 case 127:
-#line 1700 "parse.y"
+#line 1702 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_PRIQ;
 			yyval.v.queue_options.data.priq_opts.flags = yystack.l_mark[-1].v.number;
 		}
 break;
 case 128:
-#line 1704 "parse.y"
+#line 1706 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_HFSC;
 			bzero(&yyval.v.queue_options.data.hfsc_opts,
@@ -5860,14 +5860,14 @@ case 128:
 		}
 break;
 case 129:
-#line 1709 "parse.y"
+#line 1711 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_HFSC;
 			yyval.v.queue_options.data.hfsc_opts = yystack.l_mark[-1].v.hfsc_opts;
 		}
 break;
 case 130:
-#line 1713 "parse.y"
+#line 1715 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_FAIRQ;
 			bzero(&yyval.v.queue_options.data.fairq_opts,
@@ -5875,14 +5875,14 @@ case 130:
 		}
 break;
 case 131:
-#line 1718 "parse.y"
+#line 1720 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_FAIRQ;
 			yyval.v.queue_options.data.fairq_opts = yystack.l_mark[-1].v.fairq_opts;
 		}
 break;
 case 132:
-#line 1722 "parse.y"
+#line 1724 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_CODEL;
 			bzero(&yyval.v.queue_options.data.codel_opts,
@@ -5890,22 +5890,22 @@ case 132:
 		}
 break;
 case 133:
-#line 1727 "parse.y"
+#line 1729 "parse.y"
 	{
 			yyval.v.queue_options.qtype = ALTQT_CODEL;
 			yyval.v.queue_options.data.codel_opts = yystack.l_mark[-1].v.codel_opts;
 		}
 break;
 case 134:
-#line 1733 "parse.y"
+#line 1735 "parse.y"
 	{ yyval.v.number |= yystack.l_mark[0].v.number; }
 break;
 case 135:
-#line 1734 "parse.y"
+#line 1736 "parse.y"
 	{ yyval.v.number |= yystack.l_mark[0].v.number; }
 break;
 case 136:
-#line 1737 "parse.y"
+#line 1739 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "default"))
 				yyval.v.number = CBQCLF_DEFCLASS;
@@ -5928,15 +5928,15 @@ case 136:
 		}
 break;
 case 137:
-#line 1759 "parse.y"
+#line 1761 "parse.y"
 	{ yyval.v.number |= yystack.l_mark[0].v.number; }
 break;
 case 138:
-#line 1760 "parse.y"
+#line 1762 "parse.y"
 	{ yyval.v.number |= yystack.l_mark[0].v.number; }
 break;
 case 139:
-#line 1763 "parse.y"
+#line 1765 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "default"))
 				yyval.v.number = PRCF_DEFAULTCLASS;
@@ -5957,20 +5957,20 @@ case 139:
 		}
 break;
 case 140:
-#line 1783 "parse.y"
+#line 1785 "parse.y"
 	{
 				bzero(&hfsc_opts,
 				    sizeof(struct node_hfsc_opts));
 			}
 break;
 case 141:
-#line 1787 "parse.y"
+#line 1789 "parse.y"
 	{
 			yyval.v.hfsc_opts = hfsc_opts;
 		}
 break;
 case 144:
-#line 1796 "parse.y"
+#line 1798 "parse.y"
 	{
 			if (hfsc_opts.linkshare.used) {
 				yyerror("linkshare already specified");
@@ -5981,7 +5981,7 @@ case 144:
 		}
 break;
 case 145:
-#line 1805 "parse.y"
+#line 1807 "parse.y"
 	{
 			if (yystack.l_mark[-3].v.number < 0 || yystack.l_mark[-3].v.number > INT_MAX) {
 				yyerror("timing in curve out of range");
@@ -5998,7 +5998,7 @@ case 145:
 		}
 break;
 case 146:
-#line 1819 "parse.y"
+#line 1821 "parse.y"
 	{
 			if (hfsc_opts.realtime.used) {
 				yyerror("realtime already specified");
@@ -6009,7 +6009,7 @@ case 146:
 		}
 break;
 case 147:
-#line 1828 "parse.y"
+#line 1830 "parse.y"
 	{
 			if (yystack.l_mark[-3].v.number < 0 || yystack.l_mark[-3].v.number > INT_MAX) {
 				yyerror("timing in curve out of range");
@@ -6026,7 +6026,7 @@ case 147:
 		}
 break;
 case 148:
-#line 1842 "parse.y"
+#line 1844 "parse.y"
 	{
 			if (hfsc_opts.upperlimit.used) {
 				yyerror("upperlimit already specified");
@@ -6037,7 +6037,7 @@ case 148:
 		}
 break;
 case 149:
-#line 1851 "parse.y"
+#line 1853 "parse.y"
 	{
 			if (yystack.l_mark[-3].v.number < 0 || yystack.l_mark[-3].v.number > INT_MAX) {
 				yyerror("timing in curve out of range");
@@ -6054,7 +6054,7 @@ case 149:
 		}
 break;
 case 150:
-#line 1865 "parse.y"
+#line 1867 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "default"))
 				hfsc_opts.flags |= HFCF_DEFAULTCLASS;
@@ -6075,20 +6075,20 @@ case 150:
 		}
 break;
 case 151:
-#line 1885 "parse.y"
+#line 1887 "parse.y"
 	{
 				bzero(&fairq_opts,
 				    sizeof(struct node_fairq_opts));
 			}
 break;
 case 152:
-#line 1889 "parse.y"
+#line 1891 "parse.y"
 	{
 			yyval.v.fairq_opts = fairq_opts;
 		}
 break;
 case 155:
-#line 1898 "parse.y"
+#line 1900 "parse.y"
 	{
 			if (fairq_opts.linkshare.used) {
 				yyerror("linkshare already specified");
@@ -6099,7 +6099,7 @@ case 155:
 		}
 break;
 case 156:
-#line 1906 "parse.y"
+#line 1908 "parse.y"
 	{
 			if (fairq_opts.linkshare.used) {
 				yyerror("linkshare already specified");
@@ -6112,19 +6112,19 @@ case 156:
 		}
 break;
 case 157:
-#line 1916 "parse.y"
+#line 1918 "parse.y"
 	{
 			fairq_opts.hogs_bw = yystack.l_mark[0].v.queue_bwspec;
 		}
 break;
 case 158:
-#line 1919 "parse.y"
+#line 1921 "parse.y"
 	{
 			fairq_opts.nbuckets = yystack.l_mark[0].v.number;
 		}
 break;
 case 159:
-#line 1922 "parse.y"
+#line 1924 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "default"))
 				fairq_opts.flags |= FARF_DEFAULTCLASS;
@@ -6145,20 +6145,20 @@ case 159:
 		}
 break;
 case 160:
-#line 1942 "parse.y"
+#line 1944 "parse.y"
 	{
 				bzero(&codel_opts,
 				    sizeof(struct codel_opts));
 			}
 break;
 case 161:
-#line 1946 "parse.y"
+#line 1948 "parse.y"
 	{
 			yyval.v.codel_opts = codel_opts;
 		}
 break;
 case 164:
-#line 1955 "parse.y"
+#line 1957 "parse.y"
 	{
 			if (codel_opts.interval) {
 				yyerror("interval already specified");
@@ -6168,7 +6168,7 @@ case 164:
 		}
 break;
 case 165:
-#line 1962 "parse.y"
+#line 1964 "parse.y"
 	{
 			if (codel_opts.target) {
 				yyerror("target already specified");
@@ -6178,7 +6178,7 @@ case 165:
 		}
 break;
 case 166:
-#line 1969 "parse.y"
+#line 1971 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "ecn"))
 				codel_opts.ecn = 1;
@@ -6191,23 +6191,23 @@ case 166:
 		}
 break;
 case 167:
-#line 1981 "parse.y"
+#line 1983 "parse.y"
 	{ yyval.v.queue = NULL; }
 break;
 case 168:
-#line 1982 "parse.y"
+#line 1984 "parse.y"
 	{ yyval.v.queue = yystack.l_mark[0].v.queue; }
 break;
 case 169:
-#line 1983 "parse.y"
+#line 1985 "parse.y"
 	{ yyval.v.queue = yystack.l_mark[-1].v.queue; }
 break;
 case 170:
-#line 1986 "parse.y"
+#line 1988 "parse.y"
 	{ yyval.v.queue = yystack.l_mark[-1].v.queue; }
 break;
 case 171:
-#line 1987 "parse.y"
+#line 1989 "parse.y"
 	{
 			yystack.l_mark[-3].v.queue->tail->next = yystack.l_mark[-1].v.queue;
 			yystack.l_mark[-3].v.queue->tail = yystack.l_mark[-1].v.queue;
@@ -6215,7 +6215,7 @@ case 171:
 		}
 break;
 case 172:
-#line 1994 "parse.y"
+#line 1996 "parse.y"
 	{
 			yyval.v.queue = calloc(1, sizeof(struct node_queue));
 			if (yyval.v.queue == NULL)
@@ -6234,7 +6234,7 @@ case 172:
 		}
 break;
 case 173:
-#line 2014 "parse.y"
+#line 2016 "parse.y"
 	{
 			struct pf_rule		 r;
 			struct node_state_opt	*o;
@@ -6659,18 +6659,18 @@ case 173:
 		}
 break;
 case 174:
-#line 2438 "parse.y"
+#line 2440 "parse.y"
 	{
 				bzero(&filter_opts, sizeof filter_opts);
 				filter_opts.rtableid = -1;
 			}
 break;
 case 175:
-#line 2443 "parse.y"
+#line 2445 "parse.y"
 	{ yyval.v.filter_opts = filter_opts; }
 break;
 case 176:
-#line 2444 "parse.y"
+#line 2446 "parse.y"
 	{
 			bzero(&filter_opts, sizeof filter_opts);
 			filter_opts.rtableid = -1;
@@ -6678,7 +6678,7 @@ case 176:
 		}
 break;
 case 179:
-#line 2455 "parse.y"
+#line 2457 "parse.y"
 	{
 			if (filter_opts.uid)
 				yystack.l_mark[0].v.uid->tail->next = filter_opts.uid;
@@ -6686,7 +6686,7 @@ case 179:
 		}
 break;
 case 180:
-#line 2460 "parse.y"
+#line 2462 "parse.y"
 	{
 			if (filter_opts.gid)
 				yystack.l_mark[0].v.gid->tail->next = filter_opts.gid;
@@ -6694,7 +6694,7 @@ case 180:
 		}
 break;
 case 181:
-#line 2465 "parse.y"
+#line 2467 "parse.y"
 	{
 			if (filter_opts.marker & FOM_FLAGS) {
 				yyerror("flags cannot be redefined");
@@ -6708,7 +6708,7 @@ case 181:
 		}
 break;
 case 182:
-#line 2476 "parse.y"
+#line 2478 "parse.y"
 	{
 			if (filter_opts.marker & FOM_ICMP) {
 				yyerror("icmp-type cannot be redefined");
@@ -6719,7 +6719,7 @@ case 182:
 		}
 break;
 case 183:
-#line 2484 "parse.y"
+#line 2486 "parse.y"
 	{
 			if (filter_opts.marker & FOM_PRIO) {
 				yyerror("prio cannot be redefined");
@@ -6734,7 +6734,7 @@ case 183:
 		}
 break;
 case 184:
-#line 2496 "parse.y"
+#line 2498 "parse.y"
 	{
 			if (filter_opts.marker & FOM_TOS) {
 				yyerror("tos cannot be redefined");
@@ -6745,7 +6745,7 @@ case 184:
 		}
 break;
 case 185:
-#line 2504 "parse.y"
+#line 2506 "parse.y"
 	{
 			if (filter_opts.marker & FOM_KEEP) {
 				yyerror("modulate or keep cannot be redefined");
@@ -6757,19 +6757,19 @@ case 185:
 		}
 break;
 case 186:
-#line 2513 "parse.y"
+#line 2515 "parse.y"
 	{
 			filter_opts.fragment = 1;
 		}
 break;
 case 187:
-#line 2516 "parse.y"
+#line 2518 "parse.y"
 	{
 			filter_opts.allowopts = 1;
 		}
 break;
 case 188:
-#line 2519 "parse.y"
+#line 2521 "parse.y"
 	{
 			if (filter_opts.label) {
 				yyerror("label cannot be redefined");
@@ -6779,7 +6779,7 @@ case 188:
 		}
 break;
 case 189:
-#line 2526 "parse.y"
+#line 2528 "parse.y"
 	{
 			if (filter_opts.queues.qname) {
 				yyerror("queue cannot be redefined");
@@ -6789,20 +6789,20 @@ case 189:
 		}
 break;
 case 190:
-#line 2533 "parse.y"
+#line 2535 "parse.y"
 	{
 			filter_opts.tag = yystack.l_mark[0].v.string;
 		}
 break;
 case 191:
-#line 2536 "parse.y"
+#line 2538 "parse.y"
 	{
 			filter_opts.match_tag = yystack.l_mark[0].v.string;
 			filter_opts.match_tag_not = yystack.l_mark[-2].v.number;
 		}
 break;
 case 192:
-#line 2540 "parse.y"
+#line 2542 "parse.y"
 	{
 			double	p;
 
@@ -6817,7 +6817,7 @@ case 192:
 		}
 break;
 case 193:
-#line 2552 "parse.y"
+#line 2554 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > rt_tableid_max()) {
 				yyerror("invalid rtable id");
@@ -6827,7 +6827,7 @@ case 193:
 		}
 break;
 case 194:
-#line 2559 "parse.y"
+#line 2561 "parse.y"
 	{
 #ifdef __FreeBSD__
 			filter_opts.divert.port = yystack.l_mark[0].v.range.a;
@@ -6839,7 +6839,7 @@ case 194:
 		}
 break;
 case 195:
-#line 2568 "parse.y"
+#line 2570 "parse.y"
 	{
 #ifndef __FreeBSD__
 			if ((filter_opts.divert.addr = host(yystack.l_mark[-2].v.string)) == NULL) {
@@ -6860,7 +6860,7 @@ case 195:
 		}
 break;
 case 196:
-#line 2586 "parse.y"
+#line 2588 "parse.y"
 	{
 #ifdef __FreeBSD__
 			yyerror("divert-reply has no meaning in FreeBSD pf(4)");
@@ -6871,15 +6871,15 @@ case 196:
 		}
 break;
 case 198:
-#line 2597 "parse.y"
+#line 2599 "parse.y"
 	{ yyval.v.filter_opts = filter_opts; }
 break;
 case 199:
-#line 2598 "parse.y"
+#line 2600 "parse.y"
 	{ yyval.v.filter_opts = filter_opts; }
 break;
 case 202:
-#line 2605 "parse.y"
+#line 2607 "parse.y"
 	{
 			if (filter_opts.marker & FOM_SETPRIO) {
 				yyerror("prio cannot be redefined");
@@ -6891,7 +6891,7 @@ case 202:
 		}
 break;
 case 203:
-#line 2614 "parse.y"
+#line 2616 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > PF_PRIO_MAX) {
 				yyerror("prio must be 0 - %u", PF_PRIO_MAX);
@@ -6901,7 +6901,7 @@ case 203:
 		}
 break;
 case 204:
-#line 2621 "parse.y"
+#line 2623 "parse.y"
 	{
 			if (yystack.l_mark[-3].v.number < 0 || yystack.l_mark[-3].v.number > PF_PRIO_MAX ||
 			    yystack.l_mark[-1].v.number < 0 || yystack.l_mark[-1].v.number > PF_PRIO_MAX) {
@@ -6913,7 +6913,7 @@ case 204:
 		}
 break;
 case 205:
-#line 2632 "parse.y"
+#line 2634 "parse.y"
 	{
 			char	*e;
 			double	 p = strtod(yystack.l_mark[0].v.string, &e);
@@ -6932,21 +6932,21 @@ case 205:
 		}
 break;
 case 206:
-#line 2648 "parse.y"
+#line 2650 "parse.y"
 	{
 			yyval.v.probability = (double)yystack.l_mark[0].v.number;
 		}
 break;
 case 207:
-#line 2654 "parse.y"
+#line 2656 "parse.y"
 	{ yyval.v.b.b1 = PF_PASS; yyval.v.b.b2 = yyval.v.b.w = 0; }
 break;
 case 208:
-#line 2655 "parse.y"
+#line 2657 "parse.y"
 	{ yyval.v.b = yystack.l_mark[0].v.b; yyval.v.b.b1 = PF_DROP; }
 break;
 case 209:
-#line 2658 "parse.y"
+#line 2660 "parse.y"
 	{
 			yyval.v.b.b2 = blockpolicy;
 			yyval.v.b.w = returnicmpdefault;
@@ -6954,7 +6954,7 @@ case 209:
 		}
 break;
 case 210:
-#line 2663 "parse.y"
+#line 2665 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_DROP;
 			yyval.v.b.w = 0;
@@ -6962,7 +6962,7 @@ case 210:
 		}
 break;
 case 211:
-#line 2668 "parse.y"
+#line 2670 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURNRST;
 			yyval.v.b.w = 0;
@@ -6970,7 +6970,7 @@ case 211:
 		}
 break;
 case 212:
-#line 2673 "parse.y"
+#line 2675 "parse.y"
 	{
 			if (yystack.l_mark[-1].v.number < 0 || yystack.l_mark[-1].v.number > 255) {
 				yyerror("illegal ttl value %d", yystack.l_mark[-1].v.number);
@@ -6982,7 +6982,7 @@ case 212:
 		}
 break;
 case 213:
-#line 2682 "parse.y"
+#line 2684 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURNICMP;
 			yyval.v.b.w = returnicmpdefault;
@@ -6990,7 +6990,7 @@ case 213:
 		}
 break;
 case 214:
-#line 2687 "parse.y"
+#line 2689 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURNICMP;
 			yyval.v.b.w = returnicmpdefault;
@@ -6998,7 +6998,7 @@ case 214:
 		}
 break;
 case 215:
-#line 2692 "parse.y"
+#line 2694 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURNICMP;
 			yyval.v.b.w = yystack.l_mark[-1].v.number;
@@ -7006,7 +7006,7 @@ case 215:
 		}
 break;
 case 216:
-#line 2697 "parse.y"
+#line 2699 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURNICMP;
 			yyval.v.b.w = returnicmpdefault;
@@ -7014,7 +7014,7 @@ case 216:
 		}
 break;
 case 217:
-#line 2702 "parse.y"
+#line 2704 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURNICMP;
 			yyval.v.b.w = yystack.l_mark[-3].v.number;
@@ -7022,7 +7022,7 @@ case 217:
 		}
 break;
 case 218:
-#line 2707 "parse.y"
+#line 2709 "parse.y"
 	{
 			yyval.v.b.b2 = PFRULE_RETURN;
 			yyval.v.b.w = returnicmpdefault;
@@ -7030,7 +7030,7 @@ case 218:
 		}
 break;
 case 219:
-#line 2714 "parse.y"
+#line 2716 "parse.y"
 	{
 			if (!(yyval.v.number = parseicmpspec(yystack.l_mark[0].v.string, AF_INET))) {
 				free(yystack.l_mark[0].v.string);
@@ -7040,7 +7040,7 @@ case 219:
 		}
 break;
 case 220:
-#line 2721 "parse.y"
+#line 2723 "parse.y"
 	{
 			u_int8_t		icmptype;
 
@@ -7053,7 +7053,7 @@ case 220:
 		}
 break;
 case 221:
-#line 2733 "parse.y"
+#line 2735 "parse.y"
 	{
 			if (!(yyval.v.number = parseicmpspec(yystack.l_mark[0].v.string, AF_INET6))) {
 				free(yystack.l_mark[0].v.string);
@@ -7063,7 +7063,7 @@ case 221:
 		}
 break;
 case 222:
-#line 2740 "parse.y"
+#line 2742 "parse.y"
 	{
 			u_int8_t		icmptype;
 
@@ -7076,62 +7076,62 @@ case 222:
 		}
 break;
 case 223:
-#line 2752 "parse.y"
+#line 2754 "parse.y"
 	{ yyval.v.i = PF_INOUT; }
 break;
 case 224:
-#line 2753 "parse.y"
+#line 2755 "parse.y"
 	{ yyval.v.i = PF_IN; }
 break;
 case 225:
-#line 2754 "parse.y"
+#line 2756 "parse.y"
 	{ yyval.v.i = PF_OUT; }
 break;
 case 226:
-#line 2757 "parse.y"
+#line 2759 "parse.y"
 	{ yyval.v.logquick.quick = 0; }
 break;
 case 227:
-#line 2758 "parse.y"
+#line 2760 "parse.y"
 	{ yyval.v.logquick.quick = 1; }
 break;
 case 228:
-#line 2761 "parse.y"
+#line 2763 "parse.y"
 	{ yyval.v.logquick.log = 0; yyval.v.logquick.quick = 0; yyval.v.logquick.logif = 0; }
 break;
 case 229:
-#line 2762 "parse.y"
+#line 2764 "parse.y"
 	{ yyval.v.logquick = yystack.l_mark[0].v.logquick; yyval.v.logquick.quick = 0; }
 break;
 case 230:
-#line 2763 "parse.y"
+#line 2765 "parse.y"
 	{ yyval.v.logquick.quick = 1; yyval.v.logquick.log = 0; yyval.v.logquick.logif = 0; }
 break;
 case 231:
-#line 2764 "parse.y"
+#line 2766 "parse.y"
 	{ yyval.v.logquick = yystack.l_mark[-1].v.logquick; yyval.v.logquick.quick = 1; }
 break;
 case 232:
-#line 2765 "parse.y"
+#line 2767 "parse.y"
 	{ yyval.v.logquick = yystack.l_mark[0].v.logquick; yyval.v.logquick.quick = 1; }
 break;
 case 233:
-#line 2768 "parse.y"
+#line 2770 "parse.y"
 	{ yyval.v.logquick.log = PF_LOG; yyval.v.logquick.logif = 0; }
 break;
 case 234:
-#line 2769 "parse.y"
+#line 2771 "parse.y"
 	{
 			yyval.v.logquick.log = PF_LOG | yystack.l_mark[-1].v.logquick.log;
 			yyval.v.logquick.logif = yystack.l_mark[-1].v.logquick.logif;
 		}
 break;
 case 235:
-#line 2775 "parse.y"
+#line 2777 "parse.y"
 	{ yyval.v.logquick = yystack.l_mark[0].v.logquick; }
 break;
 case 236:
-#line 2776 "parse.y"
+#line 2778 "parse.y"
 	{
 			yyval.v.logquick.log = yystack.l_mark[-2].v.logquick.log | yystack.l_mark[0].v.logquick.log;
 			yyval.v.logquick.logif = yystack.l_mark[0].v.logquick.logif;
@@ -7140,19 +7140,19 @@ case 236:
 		}
 break;
 case 237:
-#line 2784 "parse.y"
+#line 2786 "parse.y"
 	{ yyval.v.logquick.log = PF_LOG_ALL; yyval.v.logquick.logif = 0; }
 break;
 case 238:
-#line 2785 "parse.y"
+#line 2787 "parse.y"
 	{ yyval.v.logquick.log = PF_LOG_SOCKET_LOOKUP; yyval.v.logquick.logif = 0; }
 break;
 case 239:
-#line 2786 "parse.y"
+#line 2788 "parse.y"
 	{ yyval.v.logquick.log = PF_LOG_SOCKET_LOOKUP; yyval.v.logquick.logif = 0; }
 break;
 case 240:
-#line 2787 "parse.y"
+#line 2789 "parse.y"
 	{
 			const char	*errstr;
 			u_int		 i;
@@ -7174,23 +7174,23 @@ case 240:
 		}
 break;
 case 241:
-#line 2808 "parse.y"
+#line 2810 "parse.y"
 	{ yyval.v.interface = NULL; }
 break;
 case 242:
-#line 2809 "parse.y"
+#line 2811 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[0].v.interface; }
 break;
 case 243:
-#line 2810 "parse.y"
+#line 2812 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[-1].v.interface; }
 break;
 case 244:
-#line 2813 "parse.y"
+#line 2815 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[-1].v.interface; }
 break;
 case 245:
-#line 2814 "parse.y"
+#line 2816 "parse.y"
 	{
 			yystack.l_mark[-3].v.interface->tail->next = yystack.l_mark[-1].v.interface;
 			yystack.l_mark[-3].v.interface->tail = yystack.l_mark[-1].v.interface;
@@ -7198,11 +7198,11 @@ case 245:
 		}
 break;
 case 246:
-#line 2821 "parse.y"
+#line 2823 "parse.y"
 	{ yyval.v.interface = yystack.l_mark[0].v.interface; yyval.v.interface->not = yystack.l_mark[-1].v.number; }
 break;
 case 247:
-#line 2824 "parse.y"
+#line 2826 "parse.y"
 	{
 			struct node_host	*n;
 
@@ -7227,35 +7227,35 @@ case 247:
 		}
 break;
 case 248:
-#line 2848 "parse.y"
+#line 2850 "parse.y"
 	{ yyval.v.i = 0; }
 break;
 case 249:
-#line 2849 "parse.y"
+#line 2851 "parse.y"
 	{ yyval.v.i = AF_INET; }
 break;
 case 250:
-#line 2850 "parse.y"
+#line 2852 "parse.y"
 	{ yyval.v.i = AF_INET6; }
 break;
 case 251:
-#line 2853 "parse.y"
+#line 2855 "parse.y"
 	{ yyval.v.proto = NULL; }
 break;
 case 252:
-#line 2854 "parse.y"
+#line 2856 "parse.y"
 	{ yyval.v.proto = yystack.l_mark[0].v.proto; }
 break;
 case 253:
-#line 2855 "parse.y"
+#line 2857 "parse.y"
 	{ yyval.v.proto = yystack.l_mark[-1].v.proto; }
 break;
 case 254:
-#line 2858 "parse.y"
+#line 2860 "parse.y"
 	{ yyval.v.proto = yystack.l_mark[-1].v.proto; }
 break;
 case 255:
-#line 2859 "parse.y"
+#line 2861 "parse.y"
 	{
 			yystack.l_mark[-3].v.proto->tail->next = yystack.l_mark[-1].v.proto;
 			yystack.l_mark[-3].v.proto->tail = yystack.l_mark[-1].v.proto;
@@ -7263,7 +7263,7 @@ case 255:
 		}
 break;
 case 256:
-#line 2866 "parse.y"
+#line 2868 "parse.y"
 	{
 			u_int8_t	pr;
 
@@ -7281,7 +7281,7 @@ case 256:
 		}
 break;
 case 257:
-#line 2883 "parse.y"
+#line 2885 "parse.y"
 	{
 			struct protoent	*p;
 
@@ -7296,7 +7296,7 @@ case 257:
 		}
 break;
 case 258:
-#line 2895 "parse.y"
+#line 2897 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > 255) {
 				yyerror("protocol outside range");
@@ -7305,7 +7305,7 @@ case 258:
 		}
 break;
 case 259:
-#line 2903 "parse.y"
+#line 2905 "parse.y"
 	{
 			yyval.v.fromto.src.host = NULL;
 			yyval.v.fromto.src.port = NULL;
@@ -7315,7 +7315,7 @@ case 259:
 		}
 break;
 case 260:
-#line 2910 "parse.y"
+#line 2912 "parse.y"
 	{
 			yyval.v.fromto.src = yystack.l_mark[-2].v.peer;
 			yyval.v.fromto.src_os = yystack.l_mark[-1].v.os;
@@ -7323,19 +7323,19 @@ case 260:
 		}
 break;
 case 261:
-#line 2917 "parse.y"
+#line 2919 "parse.y"
 	{ yyval.v.os = NULL; }
 break;
 case 262:
-#line 2918 "parse.y"
+#line 2920 "parse.y"
 	{ yyval.v.os = yystack.l_mark[0].v.os; }
 break;
 case 263:
-#line 2919 "parse.y"
+#line 2921 "parse.y"
 	{ yyval.v.os = yystack.l_mark[-1].v.os; }
 break;
 case 264:
-#line 2922 "parse.y"
+#line 2924 "parse.y"
 	{
 			yyval.v.os = calloc(1, sizeof(struct node_os));
 			if (yyval.v.os == NULL)
@@ -7345,11 +7345,11 @@ case 264:
 		}
 break;
 case 265:
-#line 2931 "parse.y"
+#line 2933 "parse.y"
 	{ yyval.v.os = yystack.l_mark[-1].v.os; }
 break;
 case 266:
-#line 2932 "parse.y"
+#line 2934 "parse.y"
 	{
 			yystack.l_mark[-3].v.os->tail->next = yystack.l_mark[-1].v.os;
 			yystack.l_mark[-3].v.os->tail = yystack.l_mark[-1].v.os;
@@ -7357,27 +7357,27 @@ case 266:
 		}
 break;
 case 267:
-#line 2939 "parse.y"
+#line 2941 "parse.y"
 	{
 			yyval.v.peer.host = NULL;
 			yyval.v.peer.port = NULL;
 		}
 break;
 case 268:
-#line 2943 "parse.y"
+#line 2945 "parse.y"
 	{
 			yyval.v.peer = yystack.l_mark[0].v.peer;
 		}
 break;
 case 269:
-#line 2948 "parse.y"
+#line 2950 "parse.y"
 	{
 			yyval.v.peer.host = NULL;
 			yyval.v.peer.port = NULL;
 		}
 break;
 case 270:
-#line 2952 "parse.y"
+#line 2954 "parse.y"
 	{
 			if (disallow_urpf_failed(yystack.l_mark[0].v.peer.host, "\"urpf-failed\" is "
 			    "not permitted in a destination address"))
@@ -7386,52 +7386,52 @@ case 270:
 		}
 break;
 case 271:
-#line 2960 "parse.y"
+#line 2962 "parse.y"
 	{
 			yyval.v.peer.host = yystack.l_mark[0].v.host;
 			yyval.v.peer.port = NULL;
 		}
 break;
 case 272:
-#line 2964 "parse.y"
+#line 2966 "parse.y"
 	{
 			yyval.v.peer.host = yystack.l_mark[-2].v.host;
 			yyval.v.peer.port = yystack.l_mark[0].v.port;
 		}
 break;
 case 273:
-#line 2968 "parse.y"
+#line 2970 "parse.y"
 	{
 			yyval.v.peer.host = NULL;
 			yyval.v.peer.port = yystack.l_mark[0].v.port;
 		}
 break;
 case 276:
-#line 2978 "parse.y"
+#line 2980 "parse.y"
 	{ yyval.v.host = NULL; }
 break;
 case 277:
-#line 2979 "parse.y"
+#line 2981 "parse.y"
 	{ yyval.v.host = yystack.l_mark[0].v.host; }
 break;
 case 278:
-#line 2980 "parse.y"
+#line 2982 "parse.y"
 	{ yyval.v.host = yystack.l_mark[-1].v.host; }
 break;
 case 279:
-#line 2983 "parse.y"
+#line 2985 "parse.y"
 	{ yyval.v.host = yystack.l_mark[0].v.host; }
 break;
 case 280:
-#line 2984 "parse.y"
+#line 2986 "parse.y"
 	{ yyval.v.host = NULL; }
 break;
 case 281:
-#line 2987 "parse.y"
+#line 2989 "parse.y"
 	{ yyval.v.host = yystack.l_mark[-1].v.host; }
 break;
 case 282:
-#line 2988 "parse.y"
+#line 2990 "parse.y"
 	{
 			if (yystack.l_mark[-1].v.host == NULL)
 				yyval.v.host = yystack.l_mark[-3].v.host;
@@ -7445,7 +7445,7 @@ case 282:
 		}
 break;
 case 283:
-#line 3001 "parse.y"
+#line 3003 "parse.y"
 	{
 			struct node_host	*n;
 
@@ -7455,7 +7455,7 @@ case 283:
 		}
 break;
 case 284:
-#line 3008 "parse.y"
+#line 3010 "parse.y"
 	{
 			yyval.v.host = calloc(1, sizeof(struct node_host));
 			if (yyval.v.host == NULL)
@@ -7467,7 +7467,7 @@ case 284:
 		}
 break;
 case 285:
-#line 3017 "parse.y"
+#line 3019 "parse.y"
 	{
 			yyval.v.host = calloc(1, sizeof(struct node_host));
 			if (yyval.v.host == NULL)
@@ -7479,7 +7479,7 @@ case 285:
 		}
 break;
 case 286:
-#line 3028 "parse.y"
+#line 3030 "parse.y"
 	{
 			if ((yyval.v.host = host(yystack.l_mark[0].v.string)) == NULL)	{
 				/* error. "any" is handled elsewhere */
@@ -7492,7 +7492,7 @@ case 286:
 		}
 break;
 case 287:
-#line 3038 "parse.y"
+#line 3040 "parse.y"
 	{
 			struct node_host *b, *e;
 
@@ -7528,7 +7528,7 @@ case 287:
 		}
 break;
 case 288:
-#line 3071 "parse.y"
+#line 3073 "parse.y"
 	{
 			char	*buf;
 
@@ -7545,7 +7545,7 @@ case 288:
 		}
 break;
 case 289:
-#line 3085 "parse.y"
+#line 3087 "parse.y"
 	{
 			char	*buf;
 
@@ -7566,7 +7566,7 @@ case 289:
 		}
 break;
 case 291:
-#line 3104 "parse.y"
+#line 3106 "parse.y"
 	{
 			struct node_host	*n;
 
@@ -7580,7 +7580,7 @@ case 291:
 		}
 break;
 case 292:
-#line 3115 "parse.y"
+#line 3117 "parse.y"
 	{
 			if (strlen(yystack.l_mark[-1].v.string) >= PF_TABLE_NAME_SIZE) {
 				yyerror("table name '%s' too long", yystack.l_mark[-1].v.string);
@@ -7601,7 +7601,7 @@ case 292:
 		}
 break;
 case 294:
-#line 3136 "parse.y"
+#line 3138 "parse.y"
 	{
 			u_long	ulval;
 
@@ -7615,7 +7615,7 @@ case 294:
 		}
 break;
 case 295:
-#line 3149 "parse.y"
+#line 3151 "parse.y"
 	{
 			int	 flags = 0;
 			char	*p, *op;
@@ -7670,19 +7670,19 @@ case 295:
 		}
 break;
 case 296:
-#line 3203 "parse.y"
+#line 3205 "parse.y"
 	{ yyval.v.port = yystack.l_mark[0].v.port; }
 break;
 case 297:
-#line 3204 "parse.y"
+#line 3206 "parse.y"
 	{ yyval.v.port = yystack.l_mark[-1].v.port; }
 break;
 case 298:
-#line 3207 "parse.y"
+#line 3209 "parse.y"
 	{ yyval.v.port = yystack.l_mark[-1].v.port; }
 break;
 case 299:
-#line 3208 "parse.y"
+#line 3210 "parse.y"
 	{
 			yystack.l_mark[-3].v.port->tail->next = yystack.l_mark[-1].v.port;
 			yystack.l_mark[-3].v.port->tail = yystack.l_mark[-1].v.port;
@@ -7690,7 +7690,7 @@ case 299:
 		}
 break;
 case 300:
-#line 3215 "parse.y"
+#line 3217 "parse.y"
 	{
 			yyval.v.port = calloc(1, sizeof(struct node_port));
 			if (yyval.v.port == NULL)
@@ -7706,7 +7706,7 @@ case 300:
 		}
 break;
 case 301:
-#line 3228 "parse.y"
+#line 3230 "parse.y"
 	{
 			if (yystack.l_mark[0].v.range.t) {
 				yyerror("':' cannot be used with an other "
@@ -7724,7 +7724,7 @@ case 301:
 		}
 break;
 case 302:
-#line 3243 "parse.y"
+#line 3245 "parse.y"
 	{
 			if (yystack.l_mark[-2].v.range.t || yystack.l_mark[0].v.range.t) {
 				yyerror("':' cannot be used with an other "
@@ -7742,7 +7742,7 @@ case 302:
 		}
 break;
 case 303:
-#line 3260 "parse.y"
+#line 3262 "parse.y"
 	{
 			if (parseport(yystack.l_mark[0].v.string, &yyval.v.range, 0) == -1) {
 				free(yystack.l_mark[0].v.string);
@@ -7752,7 +7752,7 @@ case 303:
 		}
 break;
 case 304:
-#line 3269 "parse.y"
+#line 3271 "parse.y"
 	{
 			if (parseport(yystack.l_mark[0].v.string, &yyval.v.range, PPORT_RANGE) == -1) {
 				free(yystack.l_mark[0].v.string);
@@ -7762,19 +7762,19 @@ case 304:
 		}
 break;
 case 305:
-#line 3278 "parse.y"
+#line 3280 "parse.y"
 	{ yyval.v.uid = yystack.l_mark[0].v.uid; }
 break;
 case 306:
-#line 3279 "parse.y"
+#line 3281 "parse.y"
 	{ yyval.v.uid = yystack.l_mark[-1].v.uid; }
 break;
 case 307:
-#line 3282 "parse.y"
+#line 3284 "parse.y"
 	{ yyval.v.uid = yystack.l_mark[-1].v.uid; }
 break;
 case 308:
-#line 3283 "parse.y"
+#line 3285 "parse.y"
 	{
 			yystack.l_mark[-3].v.uid->tail->next = yystack.l_mark[-1].v.uid;
 			yystack.l_mark[-3].v.uid->tail = yystack.l_mark[-1].v.uid;
@@ -7782,7 +7782,7 @@ case 308:
 		}
 break;
 case 309:
-#line 3290 "parse.y"
+#line 3292 "parse.y"
 	{
 			yyval.v.uid = calloc(1, sizeof(struct node_uid));
 			if (yyval.v.uid == NULL)
@@ -7795,7 +7795,7 @@ case 309:
 		}
 break;
 case 310:
-#line 3300 "parse.y"
+#line 3302 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number == UID_MAX && yystack.l_mark[-1].v.i != PF_OP_EQ && yystack.l_mark[-1].v.i != PF_OP_NE) {
 				yyerror("user unknown requires operator = or "
@@ -7813,7 +7813,7 @@ case 310:
 		}
 break;
 case 311:
-#line 3315 "parse.y"
+#line 3317 "parse.y"
 	{
 			if (yystack.l_mark[-2].v.number == UID_MAX || yystack.l_mark[0].v.number == UID_MAX) {
 				yyerror("user unknown requires operator = or "
@@ -7831,7 +7831,7 @@ case 311:
 		}
 break;
 case 312:
-#line 3332 "parse.y"
+#line 3334 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "unknown"))
 				yyval.v.number = UID_MAX;
@@ -7849,7 +7849,7 @@ case 312:
 		}
 break;
 case 313:
-#line 3347 "parse.y"
+#line 3349 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number >= UID_MAX) {
 				yyerror("illegal uid value %lu", yystack.l_mark[0].v.number);
@@ -7859,19 +7859,19 @@ case 313:
 		}
 break;
 case 314:
-#line 3356 "parse.y"
+#line 3358 "parse.y"
 	{ yyval.v.gid = yystack.l_mark[0].v.gid; }
 break;
 case 315:
-#line 3357 "parse.y"
+#line 3359 "parse.y"
 	{ yyval.v.gid = yystack.l_mark[-1].v.gid; }
 break;
 case 316:
-#line 3360 "parse.y"
+#line 3362 "parse.y"
 	{ yyval.v.gid = yystack.l_mark[-1].v.gid; }
 break;
 case 317:
-#line 3361 "parse.y"
+#line 3363 "parse.y"
 	{
 			yystack.l_mark[-3].v.gid->tail->next = yystack.l_mark[-1].v.gid;
 			yystack.l_mark[-3].v.gid->tail = yystack.l_mark[-1].v.gid;
@@ -7879,7 +7879,7 @@ case 317:
 		}
 break;
 case 318:
-#line 3368 "parse.y"
+#line 3370 "parse.y"
 	{
 			yyval.v.gid = calloc(1, sizeof(struct node_gid));
 			if (yyval.v.gid == NULL)
@@ -7892,7 +7892,7 @@ case 318:
 		}
 break;
 case 319:
-#line 3378 "parse.y"
+#line 3380 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number == GID_MAX && yystack.l_mark[-1].v.i != PF_OP_EQ && yystack.l_mark[-1].v.i != PF_OP_NE) {
 				yyerror("group unknown requires operator = or "
@@ -7910,7 +7910,7 @@ case 319:
 		}
 break;
 case 320:
-#line 3393 "parse.y"
+#line 3395 "parse.y"
 	{
 			if (yystack.l_mark[-2].v.number == GID_MAX || yystack.l_mark[0].v.number == GID_MAX) {
 				yyerror("group unknown requires operator = or "
@@ -7928,7 +7928,7 @@ case 320:
 		}
 break;
 case 321:
-#line 3410 "parse.y"
+#line 3412 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "unknown"))
 				yyval.v.number = GID_MAX;
@@ -7946,7 +7946,7 @@ case 321:
 		}
 break;
 case 322:
-#line 3425 "parse.y"
+#line 3427 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number >= GID_MAX) {
 				yyerror("illegal gid value %lu", yystack.l_mark[0].v.number);
@@ -7956,7 +7956,7 @@ case 322:
 		}
 break;
 case 323:
-#line 3434 "parse.y"
+#line 3436 "parse.y"
 	{
 			int	f;
 
@@ -7970,39 +7970,39 @@ case 323:
 		}
 break;
 case 324:
-#line 3447 "parse.y"
+#line 3449 "parse.y"
 	{ yyval.v.b.b1 = yystack.l_mark[-2].v.b.b1; yyval.v.b.b2 = yystack.l_mark[0].v.b.b1; }
 break;
 case 325:
-#line 3448 "parse.y"
+#line 3450 "parse.y"
 	{ yyval.v.b.b1 = 0; yyval.v.b.b2 = yystack.l_mark[0].v.b.b1; }
 break;
 case 326:
-#line 3449 "parse.y"
+#line 3451 "parse.y"
 	{ yyval.v.b.b1 = 0; yyval.v.b.b2 = 0; }
 break;
 case 327:
-#line 3452 "parse.y"
-	{ yyval.v.icmp = yystack.l_mark[0].v.icmp; }
-break;
-case 328:
-#line 3453 "parse.y"
-	{ yyval.v.icmp = yystack.l_mark[-1].v.icmp; }
-break;
-case 329:
 #line 3454 "parse.y"
 	{ yyval.v.icmp = yystack.l_mark[0].v.icmp; }
 break;
-case 330:
+case 328:
 #line 3455 "parse.y"
 	{ yyval.v.icmp = yystack.l_mark[-1].v.icmp; }
 break;
+case 329:
+#line 3456 "parse.y"
+	{ yyval.v.icmp = yystack.l_mark[0].v.icmp; }
+break;
+case 330:
+#line 3457 "parse.y"
+	{ yyval.v.icmp = yystack.l_mark[-1].v.icmp; }
+break;
 case 331:
-#line 3458 "parse.y"
+#line 3460 "parse.y"
 	{ yyval.v.icmp = yystack.l_mark[-1].v.icmp; }
 break;
 case 332:
-#line 3459 "parse.y"
+#line 3461 "parse.y"
 	{
 			yystack.l_mark[-3].v.icmp->tail->next = yystack.l_mark[-1].v.icmp;
 			yystack.l_mark[-3].v.icmp->tail = yystack.l_mark[-1].v.icmp;
@@ -8010,11 +8010,11 @@ case 332:
 		}
 break;
 case 333:
-#line 3466 "parse.y"
+#line 3468 "parse.y"
 	{ yyval.v.icmp = yystack.l_mark[-1].v.icmp; }
 break;
 case 334:
-#line 3467 "parse.y"
+#line 3469 "parse.y"
 	{
 			yystack.l_mark[-3].v.icmp->tail->next = yystack.l_mark[-1].v.icmp;
 			yystack.l_mark[-3].v.icmp->tail = yystack.l_mark[-1].v.icmp;
@@ -8022,7 +8022,7 @@ case 334:
 		}
 break;
 case 335:
-#line 3474 "parse.y"
+#line 3476 "parse.y"
 	{
 			yyval.v.icmp = calloc(1, sizeof(struct node_icmp));
 			if (yyval.v.icmp == NULL)
@@ -8035,7 +8035,7 @@ case 335:
 		}
 break;
 case 336:
-#line 3484 "parse.y"
+#line 3486 "parse.y"
 	{
 			const struct icmpcodeent	*p;
 
@@ -8057,7 +8057,7 @@ case 336:
 		}
 break;
 case 337:
-#line 3503 "parse.y"
+#line 3505 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > 255) {
 				yyerror("illegal icmp-code %lu", yystack.l_mark[0].v.number);
@@ -8074,7 +8074,7 @@ case 337:
 		}
 break;
 case 338:
-#line 3519 "parse.y"
+#line 3521 "parse.y"
 	{
 			yyval.v.icmp = calloc(1, sizeof(struct node_icmp));
 			if (yyval.v.icmp == NULL)
@@ -8087,7 +8087,7 @@ case 338:
 		}
 break;
 case 339:
-#line 3529 "parse.y"
+#line 3531 "parse.y"
 	{
 			const struct icmpcodeent	*p;
 
@@ -8109,7 +8109,7 @@ case 339:
 		}
 break;
 case 340:
-#line 3548 "parse.y"
+#line 3550 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > 255) {
 				yyerror("illegal icmp-code %lu", yystack.l_mark[0].v.number);
@@ -8126,7 +8126,7 @@ case 340:
 		}
 break;
 case 341:
-#line 3564 "parse.y"
+#line 3566 "parse.y"
 	{
 			const struct icmptypeent	*p;
 
@@ -8140,7 +8140,7 @@ case 341:
 		}
 break;
 case 342:
-#line 3575 "parse.y"
+#line 3577 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > 255) {
 				yyerror("illegal icmp-type %lu", yystack.l_mark[0].v.number);
@@ -8150,7 +8150,7 @@ case 342:
 		}
 break;
 case 343:
-#line 3584 "parse.y"
+#line 3586 "parse.y"
 	{
 			const struct icmptypeent	*p;
 
@@ -8165,7 +8165,7 @@ case 343:
 		}
 break;
 case 344:
-#line 3596 "parse.y"
+#line 3598 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > 255) {
 				yyerror("illegal icmp6-type %lu", yystack.l_mark[0].v.number);
@@ -8175,7 +8175,7 @@ case 344:
 		}
 break;
 case 345:
-#line 3605 "parse.y"
+#line 3607 "parse.y"
 	{
 			int val;
 			char *end;
@@ -8198,7 +8198,7 @@ case 345:
 		}
 break;
 case 346:
-#line 3625 "parse.y"
+#line 3627 "parse.y"
 	{
 			yyval.v.number = yystack.l_mark[0].v.number;
 			if (yyval.v.number < 0 || yyval.v.number > 255) {
@@ -8208,85 +8208,85 @@ case 346:
 		}
 break;
 case 347:
-#line 3634 "parse.y"
+#line 3636 "parse.y"
 	{ yyval.v.i = PF_SRCTRACK; }
 break;
 case 348:
-#line 3635 "parse.y"
+#line 3637 "parse.y"
 	{ yyval.v.i = PF_SRCTRACK_GLOBAL; }
 break;
 case 349:
-#line 3636 "parse.y"
+#line 3638 "parse.y"
 	{ yyval.v.i = PF_SRCTRACK_RULE; }
 break;
 case 350:
-#line 3639 "parse.y"
+#line 3641 "parse.y"
 	{
 			yyval.v.i = PFRULE_IFBOUND;
 		}
 break;
 case 351:
-#line 3642 "parse.y"
+#line 3644 "parse.y"
 	{
 			yyval.v.i = 0;
 		}
 break;
 case 352:
-#line 3647 "parse.y"
+#line 3649 "parse.y"
 	{
 			yyval.v.keep_state.action = 0;
 			yyval.v.keep_state.options = NULL;
 		}
 break;
 case 353:
-#line 3651 "parse.y"
+#line 3653 "parse.y"
 	{
 			yyval.v.keep_state.action = PF_STATE_NORMAL;
 			yyval.v.keep_state.options = yystack.l_mark[0].v.state_opt;
 		}
 break;
 case 354:
-#line 3655 "parse.y"
+#line 3657 "parse.y"
 	{
 			yyval.v.keep_state.action = PF_STATE_MODULATE;
 			yyval.v.keep_state.options = yystack.l_mark[0].v.state_opt;
 		}
 break;
 case 355:
-#line 3659 "parse.y"
+#line 3661 "parse.y"
 	{
 			yyval.v.keep_state.action = PF_STATE_SYNPROXY;
 			yyval.v.keep_state.options = yystack.l_mark[0].v.state_opt;
 		}
 break;
 case 356:
-#line 3665 "parse.y"
+#line 3667 "parse.y"
 	{ yyval.v.i = 0; }
 break;
 case 357:
-#line 3666 "parse.y"
+#line 3668 "parse.y"
 	{ yyval.v.i = PF_FLUSH; }
 break;
 case 358:
-#line 3667 "parse.y"
+#line 3669 "parse.y"
 	{
 			yyval.v.i = PF_FLUSH | PF_FLUSH_GLOBAL;
 		}
 break;
 case 359:
-#line 3672 "parse.y"
+#line 3674 "parse.y"
 	{ yyval.v.state_opt = yystack.l_mark[-1].v.state_opt; }
 break;
 case 360:
-#line 3673 "parse.y"
+#line 3675 "parse.y"
 	{ yyval.v.state_opt = NULL; }
 break;
 case 361:
-#line 3676 "parse.y"
+#line 3678 "parse.y"
 	{ yyval.v.state_opt = yystack.l_mark[0].v.state_opt; }
 break;
 case 362:
-#line 3677 "parse.y"
+#line 3679 "parse.y"
 	{
 			yystack.l_mark[-2].v.state_opt->tail->next = yystack.l_mark[0].v.state_opt;
 			yystack.l_mark[-2].v.state_opt->tail = yystack.l_mark[0].v.state_opt;
@@ -8294,7 +8294,7 @@ case 362:
 		}
 break;
 case 363:
-#line 3684 "parse.y"
+#line 3686 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > UINT_MAX) {
 				yyerror("only positive values permitted");
@@ -8310,7 +8310,7 @@ case 363:
 		}
 break;
 case 364:
-#line 3697 "parse.y"
+#line 3699 "parse.y"
 	{
 			yyval.v.state_opt = calloc(1, sizeof(struct node_state_opt));
 			if (yyval.v.state_opt == NULL)
@@ -8321,7 +8321,7 @@ case 364:
 		}
 break;
 case 365:
-#line 3705 "parse.y"
+#line 3707 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > UINT_MAX) {
 				yyerror("only positive values permitted");
@@ -8337,7 +8337,7 @@ case 365:
 		}
 break;
 case 366:
-#line 3718 "parse.y"
+#line 3720 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > UINT_MAX) {
 				yyerror("only positive values permitted");
@@ -8353,7 +8353,7 @@ case 366:
 		}
 break;
 case 367:
-#line 3731 "parse.y"
+#line 3733 "parse.y"
 	{
 			if (yystack.l_mark[-2].v.number < 0 || yystack.l_mark[-2].v.number > UINT_MAX ||
 			    yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > UINT_MAX) {
@@ -8371,7 +8371,7 @@ case 367:
 		}
 break;
 case 368:
-#line 3746 "parse.y"
+#line 3748 "parse.y"
 	{
 			if (strlen(yystack.l_mark[-2].v.string) >= PF_TABLE_NAME_SIZE) {
 				yyerror("table name '%s' too long", yystack.l_mark[-2].v.string);
@@ -8392,7 +8392,7 @@ case 368:
 		}
 break;
 case 369:
-#line 3764 "parse.y"
+#line 3766 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > UINT_MAX) {
 				yyerror("only positive values permitted");
@@ -8408,7 +8408,7 @@ case 369:
 		}
 break;
 case 370:
-#line 3777 "parse.y"
+#line 3779 "parse.y"
 	{
 			yyval.v.state_opt = calloc(1, sizeof(struct node_state_opt));
 			if (yyval.v.state_opt == NULL)
@@ -8420,7 +8420,7 @@ case 370:
 		}
 break;
 case 371:
-#line 3786 "parse.y"
+#line 3788 "parse.y"
 	{
 			yyval.v.state_opt = calloc(1, sizeof(struct node_state_opt));
 			if (yyval.v.state_opt == NULL)
@@ -8432,7 +8432,7 @@ case 371:
 		}
 break;
 case 372:
-#line 3795 "parse.y"
+#line 3797 "parse.y"
 	{
 			yyval.v.state_opt = calloc(1, sizeof(struct node_state_opt));
 			if (yyval.v.state_opt == NULL)
@@ -8443,7 +8443,7 @@ case 372:
 		}
 break;
 case 373:
-#line 3803 "parse.y"
+#line 3805 "parse.y"
 	{
 			int	i;
 
@@ -8476,42 +8476,42 @@ case 373:
 		}
 break;
 case 374:
-#line 3835 "parse.y"
+#line 3837 "parse.y"
 	{
 			yyval.v.string = yystack.l_mark[0].v.string;
 		}
 break;
 case 375:
-#line 3840 "parse.y"
+#line 3842 "parse.y"
 	{
 			yyval.v.qassign.qname = yystack.l_mark[0].v.string;
 			yyval.v.qassign.pqname = NULL;
 		}
 break;
 case 376:
-#line 3844 "parse.y"
+#line 3846 "parse.y"
 	{
 			yyval.v.qassign.qname = yystack.l_mark[-1].v.string;
 			yyval.v.qassign.pqname = NULL;
 		}
 break;
 case 377:
-#line 3848 "parse.y"
+#line 3850 "parse.y"
 	{
 			yyval.v.qassign.qname = yystack.l_mark[-3].v.string;
 			yyval.v.qassign.pqname = yystack.l_mark[-1].v.string;
 		}
 break;
 case 378:
-#line 3854 "parse.y"
+#line 3856 "parse.y"
 	{ yyval.v.i = 0; }
 break;
 case 379:
-#line 3855 "parse.y"
+#line 3857 "parse.y"
 	{ yyval.v.i = 1; }
 break;
 case 380:
-#line 3858 "parse.y"
+#line 3860 "parse.y"
 	{
 			if (parseport(yystack.l_mark[0].v.string, &yyval.v.range, PPORT_RANGE|PPORT_STAR) == -1) {
 				free(yystack.l_mark[0].v.string);
@@ -8521,19 +8521,19 @@ case 380:
 		}
 break;
 case 381:
-#line 3867 "parse.y"
+#line 3869 "parse.y"
 	{ yyval.v.host = yystack.l_mark[0].v.host; }
 break;
 case 382:
-#line 3868 "parse.y"
+#line 3870 "parse.y"
 	{ yyval.v.host = yystack.l_mark[-1].v.host; }
 break;
 case 383:
-#line 3871 "parse.y"
+#line 3873 "parse.y"
 	{ yyval.v.host = yystack.l_mark[-1].v.host; }
 break;
 case 384:
-#line 3872 "parse.y"
+#line 3874 "parse.y"
 	{
 			yystack.l_mark[-3].v.host->tail->next = yystack.l_mark[-1].v.host;
 			yystack.l_mark[-3].v.host->tail = yystack.l_mark[-1].v.host->tail;
@@ -8541,11 +8541,11 @@ case 384:
 		}
 break;
 case 385:
-#line 3879 "parse.y"
+#line 3881 "parse.y"
 	{ yyval.v.redirection = NULL; }
 break;
 case 386:
-#line 3880 "parse.y"
+#line 3882 "parse.y"
 	{
 			yyval.v.redirection = calloc(1, sizeof(struct redirection));
 			if (yyval.v.redirection == NULL)
@@ -8555,7 +8555,7 @@ case 386:
 		}
 break;
 case 387:
-#line 3887 "parse.y"
+#line 3889 "parse.y"
 	{
 			yyval.v.redirection = calloc(1, sizeof(struct redirection));
 			if (yyval.v.redirection == NULL)
@@ -8565,7 +8565,7 @@ case 387:
 		}
 break;
 case 388:
-#line 3897 "parse.y"
+#line 3899 "parse.y"
 	{
 			yyval.v.hashkey = calloc(1, sizeof(struct pf_poolhashkey));
 			if (yyval.v.hashkey == NULL)
@@ -8577,7 +8577,7 @@ case 388:
 		}
 break;
 case 389:
-#line 3907 "parse.y"
+#line 3909 "parse.y"
 	{
 			if (!strncmp(yystack.l_mark[0].v.string, "0x", 2)) {
 				if (strlen(yystack.l_mark[0].v.string) != 34) {
@@ -8617,22 +8617,22 @@ case 389:
 		}
 break;
 case 390:
-#line 3946 "parse.y"
+#line 3948 "parse.y"
 	{ bzero(&pool_opts, sizeof pool_opts); }
 break;
 case 391:
-#line 3948 "parse.y"
+#line 3950 "parse.y"
 	{ yyval.v.pool_opts = pool_opts; }
 break;
 case 392:
-#line 3949 "parse.y"
+#line 3951 "parse.y"
 	{
 			bzero(&pool_opts, sizeof pool_opts);
 			yyval.v.pool_opts = pool_opts;
 		}
 break;
 case 395:
-#line 3959 "parse.y"
+#line 3961 "parse.y"
 	{
 			if (pool_opts.type) {
 				yyerror("pool type cannot be redefined");
@@ -8642,7 +8642,7 @@ case 395:
 		}
 break;
 case 396:
-#line 3966 "parse.y"
+#line 3968 "parse.y"
 	{
 			if (pool_opts.type) {
 				yyerror("pool type cannot be redefined");
@@ -8652,7 +8652,7 @@ case 396:
 		}
 break;
 case 397:
-#line 3973 "parse.y"
+#line 3975 "parse.y"
 	{
 			if (pool_opts.type) {
 				yyerror("pool type cannot be redefined");
@@ -8663,7 +8663,7 @@ case 397:
 		}
 break;
 case 398:
-#line 3981 "parse.y"
+#line 3983 "parse.y"
 	{
 			if (pool_opts.type) {
 				yyerror("pool type cannot be redefined");
@@ -8673,7 +8673,7 @@ case 398:
 		}
 break;
 case 399:
-#line 3988 "parse.y"
+#line 3990 "parse.y"
 	{
 			if (pool_opts.staticport) {
 				yyerror("static-port cannot be redefined");
@@ -8683,7 +8683,7 @@ case 399:
 		}
 break;
 case 400:
-#line 3995 "parse.y"
+#line 3997 "parse.y"
 	{
 			if (filter_opts.marker & POM_STICKYADDRESS) {
 				yyerror("sticky-address cannot be redefined");
@@ -8694,11 +8694,11 @@ case 400:
 		}
 break;
 case 401:
-#line 4005 "parse.y"
+#line 4007 "parse.y"
 	{ yyval.v.redirection = NULL; }
 break;
 case 402:
-#line 4006 "parse.y"
+#line 4008 "parse.y"
 	{
 			yyval.v.redirection = calloc(1, sizeof(struct redirection));
 			if (yyval.v.redirection == NULL)
@@ -8708,7 +8708,7 @@ case 402:
 		}
 break;
 case 403:
-#line 4013 "parse.y"
+#line 4015 "parse.y"
 	{
 			yyval.v.redirection = calloc(1, sizeof(struct redirection));
 			if (yyval.v.redirection == NULL)
@@ -8718,23 +8718,23 @@ case 403:
 		}
 break;
 case 404:
-#line 4022 "parse.y"
+#line 4024 "parse.y"
 	{ yyval.v.b.b1 = yyval.v.b.b2 = 0; yyval.v.b.w2 = 0; }
 break;
 case 405:
-#line 4023 "parse.y"
+#line 4025 "parse.y"
 	{ yyval.v.b.b1 = 1; yyval.v.b.b2 = 0; yyval.v.b.w2 = 0; }
 break;
 case 406:
-#line 4024 "parse.y"
+#line 4026 "parse.y"
 	{ yyval.v.b.b1 = 1; yyval.v.b.b2 = yystack.l_mark[0].v.logquick.log; yyval.v.b.w2 = yystack.l_mark[0].v.logquick.logif; }
 break;
 case 407:
-#line 4025 "parse.y"
+#line 4027 "parse.y"
 	{ yyval.v.b.b1 = 0; yyval.v.b.b2 = yystack.l_mark[0].v.logquick.log; yyval.v.b.w2 = yystack.l_mark[0].v.logquick.logif; }
 break;
 case 408:
-#line 4028 "parse.y"
+#line 4030 "parse.y"
 	{
 			if (yystack.l_mark[-2].v.i && yystack.l_mark[0].v.b.b1) {
 				yyerror("\"pass\" not valid with \"no\"");
@@ -8750,7 +8750,7 @@ case 408:
 		}
 break;
 case 409:
-#line 4041 "parse.y"
+#line 4043 "parse.y"
 	{
 			if (yystack.l_mark[-2].v.i && yystack.l_mark[0].v.b.b1) {
 				yyerror("\"pass\" not valid with \"no\"");
@@ -8766,7 +8766,7 @@ case 409:
 		}
 break;
 case 410:
-#line 4058 "parse.y"
+#line 4060 "parse.y"
 	{
 			struct pf_rule	r;
 
@@ -8924,7 +8924,7 @@ case 410:
 		}
 break;
 case 411:
-#line 4217 "parse.y"
+#line 4219 "parse.y"
 	{
 			struct pf_rule		binat;
 			struct pf_pooladdr	*pa;
@@ -9090,27 +9090,27 @@ case 411:
 		}
 break;
 case 412:
-#line 4382 "parse.y"
+#line 4384 "parse.y"
 	{ yyval.v.string = NULL; }
 break;
 case 413:
-#line 4383 "parse.y"
+#line 4385 "parse.y"
 	{ yyval.v.string = yystack.l_mark[0].v.string; }
 break;
 case 414:
-#line 4386 "parse.y"
+#line 4388 "parse.y"
 	{ yyval.v.tagged.neg = 0; yyval.v.tagged.name = NULL; }
 break;
 case 415:
-#line 4387 "parse.y"
+#line 4389 "parse.y"
 	{ yyval.v.tagged.neg = yystack.l_mark[-2].v.number; yyval.v.tagged.name = yystack.l_mark[0].v.string; }
 break;
 case 416:
-#line 4390 "parse.y"
+#line 4392 "parse.y"
 	{ yyval.v.rtableid = -1; }
 break;
 case 417:
-#line 4391 "parse.y"
+#line 4393 "parse.y"
 	{
 			if (yystack.l_mark[0].v.number < 0 || yystack.l_mark[0].v.number > rt_tableid_max()) {
 				yyerror("invalid rtable id");
@@ -9120,7 +9120,7 @@ case 417:
 		}
 break;
 case 418:
-#line 4400 "parse.y"
+#line 4402 "parse.y"
 	{
 			yyval.v.host = calloc(1, sizeof(struct node_host));
 			if (yyval.v.host == NULL)
@@ -9132,18 +9132,21 @@ case 418:
 		}
 break;
 case 419:
-#line 4409 "parse.y"
+#line 4411 "parse.y"
 	{
+			struct node_host *n;
+
 			yyval.v.host = yystack.l_mark[-1].v.host;
-			yyval.v.host->ifname = yystack.l_mark[-2].v.string;
+			for (n = yystack.l_mark[-1].v.host; n != NULL; n = n->next)
+				n->ifname = yystack.l_mark[-2].v.string;
 		}
 break;
 case 420:
-#line 4415 "parse.y"
+#line 4420 "parse.y"
 	{ yyval.v.host = yystack.l_mark[-1].v.host; }
 break;
 case 421:
-#line 4416 "parse.y"
+#line 4421 "parse.y"
 	{
 			if (yystack.l_mark[-3].v.host->af == 0)
 				yystack.l_mark[-3].v.host->af = yystack.l_mark[-1].v.host->af;
@@ -9158,15 +9161,15 @@ case 421:
 		}
 break;
 case 422:
-#line 4430 "parse.y"
+#line 4435 "parse.y"
 	{ yyval.v.host = yystack.l_mark[0].v.host; }
 break;
 case 423:
-#line 4431 "parse.y"
+#line 4436 "parse.y"
 	{ yyval.v.host = yystack.l_mark[-1].v.host; }
 break;
 case 424:
-#line 4434 "parse.y"
+#line 4439 "parse.y"
 	{
 			yyval.v.route.host = NULL;
 			yyval.v.route.rt = 0;
@@ -9174,7 +9177,7 @@ case 424:
 		}
 break;
 case 425:
-#line 4439 "parse.y"
+#line 4444 "parse.y"
 	{
 			/* backwards-compat */
 			yyval.v.route.host = NULL;
@@ -9183,7 +9186,7 @@ case 425:
 		}
 break;
 case 426:
-#line 4445 "parse.y"
+#line 4450 "parse.y"
 	{
 			yyval.v.route.host = yystack.l_mark[-1].v.host;
 			yyval.v.route.rt = PF_ROUTETO;
@@ -9193,7 +9196,7 @@ case 426:
 		}
 break;
 case 427:
-#line 4452 "parse.y"
+#line 4457 "parse.y"
 	{
 			yyval.v.route.host = yystack.l_mark[-1].v.host;
 			yyval.v.route.rt = PF_REPLYTO;
@@ -9203,7 +9206,7 @@ case 427:
 		}
 break;
 case 428:
-#line 4459 "parse.y"
+#line 4464 "parse.y"
 	{
 			yyval.v.route.host = yystack.l_mark[-1].v.host;
 			yyval.v.route.rt = PF_DUPTO;
@@ -9213,7 +9216,7 @@ case 428:
 		}
 break;
 case 429:
-#line 4469 "parse.y"
+#line 4474 "parse.y"
 	{
 			if (check_rulestate(PFCTL_STATE_OPTION)) {
 				free(yystack.l_mark[-1].v.string);
@@ -9232,7 +9235,7 @@ case 429:
 		}
 break;
 case 430:
-#line 4485 "parse.y"
+#line 4490 "parse.y"
 	{
 			if (check_rulestate(PFCTL_STATE_OPTION))
 				YYERROR;
@@ -9245,7 +9248,7 @@ case 430:
 		}
 break;
 case 433:
-#line 4502 "parse.y"
+#line 4507 "parse.y"
 	{
 			if (check_rulestate(PFCTL_STATE_OPTION)) {
 				free(yystack.l_mark[-1].v.string);
@@ -9264,11 +9267,11 @@ case 433:
 		}
 break;
 case 438:
-#line 4528 "parse.y"
+#line 4533 "parse.y"
 	{ yyval.v.number = 0; }
 break;
 case 439:
-#line 4529 "parse.y"
+#line 4534 "parse.y"
 	{
 			if (!strcmp(yystack.l_mark[0].v.string, "yes"))
 				yyval.v.number = 1;
@@ -9282,30 +9285,30 @@ case 439:
 		}
 break;
 case 440:
-#line 4542 "parse.y"
+#line 4547 "parse.y"
 	{ yyval.v.i = PF_OP_EQ; }
 break;
 case 441:
-#line 4543 "parse.y"
+#line 4548 "parse.y"
 	{ yyval.v.i = PF_OP_NE; }
 break;
 case 442:
-#line 4544 "parse.y"
+#line 4549 "parse.y"
 	{ yyval.v.i = PF_OP_LE; }
 break;
 case 443:
-#line 4545 "parse.y"
+#line 4550 "parse.y"
 	{ yyval.v.i = PF_OP_LT; }
 break;
 case 444:
-#line 4546 "parse.y"
+#line 4551 "parse.y"
 	{ yyval.v.i = PF_OP_GE; }
 break;
 case 445:
-#line 4547 "parse.y"
+#line 4552 "parse.y"
 	{ yyval.v.i = PF_OP_GT; }
 break;
-#line 9311 "parse.c"
+#line 9314 "parse.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;

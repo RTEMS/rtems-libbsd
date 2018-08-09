@@ -5,6 +5,8 @@
 #endif /* __rtems__ */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2008 Andrew Thompson. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

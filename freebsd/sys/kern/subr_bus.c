@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 1997,1998,2003 Doug Rabson
  * All rights reserved.
  *
@@ -2977,6 +2979,9 @@ device_attach(device_t dev)
 	else
 		dev->state = DS_ATTACHED;
 	dev->flags &= ~DF_DONENOMATCH;
+#ifndef __rtems__
+	EVENTHANDLER_INVOKE(device_attach, dev);
+#endif /* __rtems__ */
 	devadded(dev);
 	return (0);
 }
@@ -3010,8 +3015,19 @@ device_detach(device_t dev)
 	if (dev->state != DS_ATTACHED)
 		return (0);
 
-	if ((error = DEVICE_DETACH(dev)) != 0)
+#ifndef __rtems__
+	EVENTHANDLER_INVOKE(device_detach, dev, EVHDEV_DETACH_BEGIN);
+#endif /* __rtems__ */
+	if ((error = DEVICE_DETACH(dev)) != 0) {
+#ifndef __rtems__
+		EVENTHANDLER_INVOKE(device_detach, dev, EVHDEV_DETACH_FAILED);
+#endif /* __rtems__ */
 		return (error);
+	} else {
+#ifndef __rtems__
+		EVENTHANDLER_INVOKE(device_detach, dev, EVHDEV_DETACH_COMPLETE);
+#endif /* __rtems__ */
+	}
 	devremoved(dev);
 	if (!device_is_quiet(dev))
 		device_printf(dev, "detached\n");

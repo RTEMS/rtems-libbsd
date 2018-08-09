@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
@@ -298,7 +300,7 @@ ums_intr_callback(struct usb_xfer *xfer, usb_error_t error)
 
 		if ((info->sc_flags & UMS_FLAG_T_AXIS) &&
 		    (id == info->sc_iid_t)) {
-			dt -= hid_get_data(buf, len, &info->sc_loc_t);
+			dt += hid_get_data(buf, len, &info->sc_loc_t);
 			/* T-axis is translated into button presses */
 			buttons_found |= (1UL << 5) | (1UL << 6);
 		}
@@ -334,10 +336,10 @@ ums_intr_callback(struct usb_xfer *xfer, usb_error_t error)
 			/* translate T-axis into button presses until further */
 			if (dt > 0) {
 				ums_put_queue(sc, 0, 0, 0, 0, buttons);
-				buttons |= 1UL << 5;
+				buttons |= 1UL << 6;
 			} else if (dt < 0) {
 				ums_put_queue(sc, 0, 0, 0, 0, buttons);
-				buttons |= 1UL << 6;
+				buttons |= 1UL << 5;
 			}
 
 			sc->sc_status.button = buttons;

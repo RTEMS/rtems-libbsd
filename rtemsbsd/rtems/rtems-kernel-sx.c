@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -114,34 +114,38 @@ sx_destroy(struct sx *sx)
 }
 
 int
-_sx_xlock(struct sx *sx, int opts, const char *file, int line)
+_sx_slock_int(struct sx *sx, int opts LOCK_FILE_LINE_ARG_DEF)
 {
-	rtems_bsd_mutex_lock(&sx->lock_object, &sx->mutex);
 
+	rtems_bsd_mutex_lock(&sx->lock_object, &sx->mutex);
 	return (0);
 }
 
 int
-sx_try_xlock_(struct sx *sx, const char *file, int line)
+sx_try_slock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 {
+
 	return (rtems_bsd_mutex_trylock(&sx->lock_object, &sx->mutex));
 }
 
 void
-_sx_xunlock(struct sx *sx, const char *file, int line)
+_sx_sunlock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 {
+
 	rtems_bsd_mutex_unlock(&sx->mutex);
 }
 
 int
-sx_try_upgrade_(struct sx *sx, const char *file, int line)
+sx_try_upgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 {
+
 	return (1);
 }
 
 void
-sx_downgrade_(struct sx *sx, const char *file, int line)
+sx_downgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 {
+
 	/* Do nothing */
 }
 

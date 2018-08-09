@@ -119,17 +119,10 @@ rw_destroy(struct rwlock *rw)
 void
 rw_sysinit(void *arg)
 {
-  struct rw_args *args = arg;
+	struct rw_args *args;
 
-  rw_init(args->ra_rw, args->ra_desc);
-}
-
-void
-rw_sysinit_flags(void *arg)
-{
-  struct rw_args_flags *args = arg;
-
-  rw_init_flags(args->ra_rw, args->ra_desc, args->ra_flags);
+	args = arg;
+	rw_init(args->ra_rw, args->ra_desc);
 }
 
 int

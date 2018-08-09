@@ -3,6 +3,8 @@
 /*	$NetBSD: Locore.c,v 1.7 2000/08/20 07:04:59 tsubai Exp $	*/
 
 /*-
+ * SPDX-License-Identifier: BSD-4-Clause
+ *
  * Copyright (C) 1995, 1996 Wolfgang Solfrank.
  * Copyright (C) 1995, 1996 TooLs GmbH.
  * All rights reserved.
@@ -209,6 +211,12 @@ OF_install(char *name, int prio)
 #ifndef __rtems__
 	ofw_def_t *ofwp, **ofwpp;
 	static int curr_prio = 0;
+
+	/* Allow OF layer to be uninstalled */
+	if (name == NULL) {
+		ofw_def_impl = NULL;
+		return (FALSE);
+	}
 
 	/*
 	 * Try and locate the OFW kobj corresponding to the name.

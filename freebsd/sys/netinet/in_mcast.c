@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2007-2009 Bruce Simpson.
  * Copyright (c) 2005 Robert N. M. Watson.
  * All rights reserved.

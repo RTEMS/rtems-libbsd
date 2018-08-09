@@ -3820,6 +3820,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DWR-510",
 	},
 	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM222,
+	    0,
+	    "D-Link",
+	    "DWM-222",
+	},
+	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM157_CD,
 	    0,
 	    "D-Link",
@@ -3830,6 +3836,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "D-Link",
 	    "DWR-510 CD-ROM Mode",
+	},
+	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWM222_CD,
+	    0,
+	    "D-Link",
+	    "DWM-222 CD-ROM Mode",
 	},
 	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DSB650,
@@ -13372,6 +13384,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "PL2506 USB to IDE Bridge",
 	},
 	{
+	    USB_VENDOR_PROLIFIC, USB_PRODUCT_PROLIFIC_PL27A1,
+	    0,
+	    "Prolific Technology",
+	    "PL27A1 USB 3.0 Host-Host interface",
+	},
+	{
 	    USB_VENDOR_PROLIFIC, USB_PRODUCT_PROLIFIC_HCR331,
 	    0,
 	    "Prolific Technology",
@@ -17402,6 +17420,24 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "TP-Link",
 	    "TL-WN823N v2",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UV2,
+	    0,
+	    "TP-Link",
+	    "Archer T4U ver 2",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UHV2,
+	    0,
+	    "TP-Link",
+	    "Archer T4UH ver 2",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_RTL8153,
+	    0,
+	    "TP-Link",
+	    "RTL8153 USB 10/100/1000 LAN",
 	},
 	{
 	    USB_VENDOR_TREK, USB_PRODUCT_TREK_THUMBDRIVE,

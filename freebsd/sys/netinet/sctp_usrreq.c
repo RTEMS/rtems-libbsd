@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -204,6 +206,10 @@ sctp_notify(struct sctp_inpcb *inp,
 #endif
 		/* no need to unlock here, since the TCB is gone */
 	} else if (icmp_code == ICMP_UNREACH_NEEDFRAG) {
+		if ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0) {
+			SCTP_TCB_UNLOCK(stcb);
+			return;
+		}
 		/* Find the next (smaller) MTU */
 		if (next_mtu == 0) {
 			/*
@@ -2414,7 +2420,7 @@ flags_out:
 #endif
 #ifdef INET6
 					case AF_INET6:
-						paddrp->spp_pathmtu -= SCTP_MIN_V4_OVERHEAD;
+						paddrp->spp_pathmtu -= SCTP_MIN_OVERHEAD;
 						break;
 #endif
 					default:
@@ -2449,7 +2455,7 @@ flags_out:
 					 * value
 					 */
 					paddrp->spp_pathmaxrxt = stcb->asoc.def_net_failure;
-					paddrp->spp_pathmtu = 0;
+					paddrp->spp_pathmtu = stcb->asoc.default_mtu;
 					if (stcb->asoc.default_dscp & 0x01) {
 						paddrp->spp_dscp = stcb->asoc.default_dscp & 0xfc;
 						paddrp->spp_flags |= SPP_DSCP;
@@ -2496,8 +2502,7 @@ flags_out:
 						paddrp->spp_flags |= SPP_IPV6_FLOWLABEL;
 					}
 #endif
-					/* can't return this */
-					paddrp->spp_pathmtu = 0;
+					paddrp->spp_pathmtu = inp->sctp_ep.default_mtu;
 
 					if (sctp_is_feature_off(inp, SCTP_PCB_FLAGS_DONOT_HEARTBEAT)) {
 						paddrp->spp_flags |= SPP_HB_ENABLE;
@@ -5481,6 +5486,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 								sctp_pathmtu_adjustment(stcb, net->mtu);
 							}
 						}
+						stcb->asoc.default_mtu = paddrp->spp_pathmtu;
 						sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 					}
 					if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
@@ -5490,6 +5496,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							}
 							net->dest_state &= ~SCTP_ADDR_NO_PMTUD;
 						}
+						stcb->asoc.default_mtu = 0;
 						sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 					}
 					if (paddrp->spp_flags & SPP_DSCP) {
@@ -5546,8 +5553,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						sctp_feature_on(inp, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
 					}
 					if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
+						inp->sctp_ep.default_mtu = 0;
 						sctp_feature_off(inp, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 					} else if (paddrp->spp_flags & SPP_PMTUD_DISABLE) {
+						if (paddrp->spp_pathmtu >= SCTP_SMALLEST_PMTU) {
+							inp->sctp_ep.default_mtu = paddrp->spp_pathmtu;
+						}
 						sctp_feature_on(inp, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 					}
 					if (paddrp->spp_flags & SPP_DSCP) {

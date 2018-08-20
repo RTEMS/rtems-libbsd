@@ -7,14 +7,22 @@
  *  http://www.rtems.org/license/LICENSE.
  */
 
+#include <machine/rtems-bsd-kernel-space.h>
+
+#include <sys/param.h>
+#include <sys/tty.h>
+#include <sys/ttydisc.h>
+
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <rtems/console.h>
+#include <rtems/dumpbuf.h>
 #include <rtems/shell.h>
 #include <rtems/bsd/bsd.h>
 

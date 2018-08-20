@@ -492,6 +492,27 @@ atomic_readandclear_int(volatile int *p)
 }
 
 static inline int
+atomic_load_int(volatile int *p)
+{
+	int tmp;
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_int *q =
+	    reinterpret_cast<std::atomic_int *>(const_cast<int *>(p));
+
+	tmp = q->load(std::memory_order_relaxed);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_int *q = (atomic_int *)RTEMS_DEVOLATILE(int *, p);
+
+	tmp = atomic_load_explicit(q, memory_order_relaxed);
+#else
+	tmp = *p;
+#endif
+
+	return (tmp);
+}
+
+static inline int
 atomic_load_acq_int(volatile int *p)
 {
 	int tmp;
@@ -511,6 +532,23 @@ atomic_load_acq_int(volatile int *p)
 #endif
 
 	return (tmp);
+}
+
+static inline void
+atomic_store_int(volatile int *p, int v)
+{
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_int *q =
+	    reinterpret_cast<std::atomic_int *>(const_cast<int *>(p));
+
+	q->store(v, std::memory_order_relaxed);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_int *q = (atomic_int *)RTEMS_DEVOLATILE(int *, p);
+
+	atomic_store_explicit(q, v, memory_order_relaxed);
+#else
+	*p = v;
+#endif
 }
 
 static inline void

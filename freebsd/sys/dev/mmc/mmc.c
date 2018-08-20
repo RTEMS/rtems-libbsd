@@ -1573,17 +1573,14 @@ mmc_host_timing(device_t dev, enum mmc_bus_timing timing)
 static void
 mmc_log_card(device_t dev, struct mmc_ivars *ivar, int newcard)
 {
-	enum mmc_bus_timing max_timing, timing;
+	enum mmc_bus_timing timing;
 
 	device_printf(dev, "Card at relative address 0x%04x%s:\n",
 	    ivar->rca, newcard ? " added" : "");
 	device_printf(dev, " card: %s\n", ivar->card_id_string);
-	max_timing = bus_timing_normal;
 	for (timing = bus_timing_max; timing > bus_timing_normal; timing--) {
-		if (isset(&ivar->timings, timing)) {
-			max_timing = timing;
+		if (isset(&ivar->timings, timing))
 			break;
-		}
 	}
 	device_printf(dev, " quirks: %b\n", ivar->quirks, MMC_QUIRKS_FMT);
 	device_printf(dev, " bus: %ubit, %uMHz (%s timing)\n",
@@ -1885,7 +1882,7 @@ mmc_discover_cards(struct mmc_softc *sc)
 			 * units of 10 ms), defaulting to 500 ms.
 			 */
 			ivar->cmd6_time = 500 * 1000;
-			if (ivar->csd.spec_vers >= 6)
+			if (ivar->raw_ext_csd[EXT_CSD_REV] >= 6)
 				ivar->cmd6_time = 10 *
 				    ivar->raw_ext_csd[EXT_CSD_GEN_CMD6_TIME];
 			/* Handle HC erase sector size. */

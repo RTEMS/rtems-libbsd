@@ -139,18 +139,12 @@ _sleep(void *ident, struct lock_object *lock, int priority,
     const char *wmesg, sbintime_t sbt, sbintime_t pr, int flags)
 {
 	struct thread *td;
-#ifndef __rtems__
-	struct proc *p;
-#endif /* __rtems__ */
 	struct lock_class *class;
 	uintptr_t lock_state;
 	int catch, pri, rval, sleepq_flags;
 	WITNESS_SAVE_DECL(lock_witness);
 
 	td = curthread;
-#ifndef __rtems__
-	p = td->td_proc;
-#endif /* __rtems__ */
 #ifdef KTRACE
 	if (KTRPOINT(td, KTR_CSW))
 		ktrcsw(1, 0, wmesg);
@@ -198,7 +192,7 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 
 	sleepq_lock(ident);
 	CTR5(KTR_PROC, "sleep: thread %ld (pid %ld, %s) on %s (%p)",
-	    td->td_tid, p->p_pid, td->td_name, wmesg, ident);
+	    td->td_tid, td->td_proc->p_pid, td->td_name, wmesg, ident);
 
 	if (lock == &Giant.lock_object)
 		mtx_assert(&Giant, MA_OWNED);
@@ -263,12 +257,10 @@ msleep_spin_sbt(void *ident, struct mtx *mtx, const char *wmesg,
     sbintime_t sbt, sbintime_t pr, int flags)
 {
 	struct thread *td;
-	struct proc *p;
 	int rval;
 	WITNESS_SAVE_DECL(mtx);
 
 	td = curthread;
-	p = td->td_proc;
 	KASSERT(mtx != NULL, ("sleeping without a mutex"));
 	KASSERT(ident != NULL, ("msleep_spin_sbt: NULL ident"));
 	KASSERT(TD_IS_RUNNING(td), ("msleep_spin_sbt: curthread not running"));
@@ -278,7 +270,7 @@ msleep_spin_sbt(void *ident, struct mtx *mtx, const char *wmesg,
 
 	sleepq_lock(ident);
 	CTR5(KTR_PROC, "msleep_spin: thread %ld (pid %ld, %s) on %s (%p)",
-	    td->td_tid, p->p_pid, td->td_name, wmesg, ident);
+	    td->td_tid, td->td_proc->p_pid, td->td_name, wmesg, ident);
 
 	DROP_GIANT();
 	mtx_assert(mtx, MA_OWNED | MA_NOTRECURSED);

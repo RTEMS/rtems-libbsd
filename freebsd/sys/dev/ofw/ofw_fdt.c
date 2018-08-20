@@ -256,7 +256,7 @@ ofw_fdt_instance_to_package(ofw_t ofw, ihandle_t instance)
 static ssize_t
 ofw_fdt_getproplen(ofw_t ofw, phandle_t package, const char *propname)
 {
-	const struct fdt_property *prop;
+	const void *prop;
 	int offset, len;
 
 	offset = fdt_phandle_offset(package);
@@ -264,7 +264,7 @@ ofw_fdt_getproplen(ofw_t ofw, phandle_t package, const char *propname)
 		return (-1);
 
 	len = -1;
-	prop = fdt_get_property(fdtp, offset, propname, &len);
+	prop = fdt_getprop(fdtp, offset, propname, &len);
 
 	if (prop == NULL && strcmp(propname, "name") == 0) {
 		/* Emulate the 'name' property */
@@ -341,7 +341,7 @@ static int
 ofw_fdt_nextprop(ofw_t ofw, phandle_t package, const char *previous, char *buf,
     size_t size)
 {
-	const struct fdt_property *prop;
+	const void *prop;
 	const char *name;
 	int offset;
 
@@ -356,7 +356,7 @@ ofw_fdt_nextprop(ofw_t ofw, phandle_t package, const char *previous, char *buf,
 
 	if (previous != NULL) {
 		while (offset >= 0) {
-			prop = fdt_get_property_by_offset(fdtp, offset, NULL);
+			prop = fdt_getprop_by_offset(fdtp, offset, &name, NULL);
 			if (prop == NULL)
 				return (-1); /* Internal error */
 
@@ -365,17 +365,16 @@ ofw_fdt_nextprop(ofw_t ofw, phandle_t package, const char *previous, char *buf,
 				return (0); /* No more properties */
 
 			/* Check if the last one was the one we wanted */
-			name = fdt_string(fdtp, fdt32_to_cpu(prop->nameoff));
 			if (strcmp(name, previous) == 0)
 				break;
 		}
 	}
 
-	prop = fdt_get_property_by_offset(fdtp, offset, &offset);
+	prop = fdt_getprop_by_offset(fdtp, offset, &name, &offset);
 	if (prop == NULL)
 		return (-1); /* Internal error */
 
-	strncpy(buf, fdt_string(fdtp, fdt32_to_cpu(prop->nameoff)), size);
+	strncpy(buf, name, size);
 
 	return (1);
 }
@@ -439,8 +438,7 @@ ofw_fdt_package_to_path(ofw_t ofw, phandle_t package, char *buf, size_t len)
 	return (-1);
 }
 
-#ifndef __rtems__
-#if defined(FDT_MARVELL) || defined(__powerpc__)
+#if defined(FDT_MARVELL)
 static int
 ofw_fdt_fixup(ofw_t ofw)
 {
@@ -483,13 +481,11 @@ ofw_fdt_fixup(ofw_t ofw)
 	return (0);
 }
 #endif
-#endif /* __rtems__ */
 
 static int
 ofw_fdt_interpret(ofw_t ofw, const char *cmd, int nret, cell_t *retvals)
 {
-#if defined(FDT_MARVELL) || defined(__powerpc__)
-#ifndef __rtems__
+#if defined(FDT_MARVELL)
 	int rv;
 
 	/*
@@ -508,9 +504,6 @@ ofw_fdt_interpret(ofw_t ofw, const char *cmd, int nret, cell_t *retvals)
 		retvals[0] = rv;
 
 	return (rv);
-#else /* __rtems__ */
-	return (0);
-#endif /* __rtems__ */
 #else
 	return (0);
 #endif

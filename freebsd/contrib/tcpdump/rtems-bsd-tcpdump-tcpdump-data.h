@@ -4,7 +4,6 @@
 /* tcpdump.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char *zflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int Bflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int Cflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int Cflag_count);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int Dflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int Gflag);
@@ -23,6 +22,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int infoprint);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int jflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int pflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int supports_monitor_mode);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static long int Cflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static pcap_t *pd);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static time_t Gflag_time);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static u_int packets_captured);

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2012-2013 The FreeBSD Foundation
  * Copyright (c) 2015-2017 Mariusz Zaborski <oshogbo@FreeBSD.org>
  * All rights reserved.
@@ -122,7 +124,15 @@ cap_wrap(int sock)
 #ifdef WITH_CASPER
 int	cap_unwrap(cap_channel_t *chan);
 #else
-#define	cap_unwrap(chan)	(chan->cch_fd)
+static inline int
+cap_unwrap(cap_channel_t *chan)
+{
+	int fd;
+
+	fd = chan->cch_fd;
+	free(chan);
+	return (fd);
+}
 #endif
 
 /*
@@ -222,7 +232,7 @@ int	cap_send_nvlist(const cap_channel_t *chan, const nvlist_t *nvl);
 #ifdef WITH_CASPER
 nvlist_t *cap_recv_nvlist(const cap_channel_t *chan, int flags);
 #else
-#define	cap_recv_nvlist(chan, flags)	(0)
+#define	cap_recv_nvlist(chan, flags)	(nvlist_create(flags))
 #endif
 
 /*

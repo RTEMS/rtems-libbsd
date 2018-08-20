@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -45,5 +45,7 @@
 #define __CHAR_BIT CHAR_BIT
 
 #define __INT_MAX INT_MAX
+
+#define __SIZE_T_MAX __SIZE_MAX__
 
 #endif /* _RTEMS_BSD_MACHINE__LIMITS_H_ */

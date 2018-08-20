@@ -36,6 +36,7 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include <sys/conf.h>
+#include <sys/eventhandler.h>
 #include <sys/filio.h>
 #include <sys/lock.h>
 #include <sys/kernel.h>
@@ -149,6 +150,10 @@ static MALLOC_DEFINE(M_BUS, "bus", "Bus data structures");
 static MALLOC_DEFINE(M_BUS_SC, "bus-sc", "Bus data structures, softc");
 
 #ifndef __rtems__
+EVENTHANDLER_LIST_DEFINE(device_attach);
+EVENTHANDLER_LIST_DEFINE(device_detach);
+EVENTHANDLER_LIST_DEFINE(dev_lookup);
+
 static void devctl2_init(void);
 #endif /* __rtems__ */
 
@@ -2981,6 +2986,7 @@ device_attach(device_t dev)
 	dev->flags &= ~DF_DONENOMATCH;
 #ifndef __rtems__
 	EVENTHANDLER_INVOKE(device_attach, dev);
+	EVENTHANDLER_DIRECT_INVOKE(device_attach, dev);
 #endif /* __rtems__ */
 	devadded(dev);
 	return (0);
@@ -3016,16 +3022,18 @@ device_detach(device_t dev)
 		return (0);
 
 #ifndef __rtems__
-	EVENTHANDLER_INVOKE(device_detach, dev, EVHDEV_DETACH_BEGIN);
+	EVENTHANDLER_DIRECT_INVOKE(device_detach, dev, EVHDEV_DETACH_BEGIN);
 #endif /* __rtems__ */
 	if ((error = DEVICE_DETACH(dev)) != 0) {
 #ifndef __rtems__
-		EVENTHANDLER_INVOKE(device_detach, dev, EVHDEV_DETACH_FAILED);
+		EVENTHANDLER_DIRECT_INVOKE(device_detach, dev,
+		    EVHDEV_DETACH_FAILED);
 #endif /* __rtems__ */
 		return (error);
 	} else {
 #ifndef __rtems__
-		EVENTHANDLER_INVOKE(device_detach, dev, EVHDEV_DETACH_COMPLETE);
+		EVENTHANDLER_DIRECT_INVOKE(device_detach, dev,
+		    EVHDEV_DETACH_COMPLETE);
 #endif /* __rtems__ */
 	}
 	devremoved(dev);
@@ -5099,7 +5107,7 @@ print_device_short(device_t dev, int indent)
 	if (!dev)
 		return;
 
-	indentprintf(("device %d: <%s> %sparent,%schildren,%s%s%s%s%s,%sivars,%ssoftc,busy=%d\n",
+	indentprintf(("device %d: <%s> %sparent,%schildren,%s%s%s%s%s%s,%sivars,%ssoftc,busy=%d\n",
 	    dev->unit, dev->desc,
 	    (dev->parent? "":"no "),
 	    (TAILQ_EMPTY(&dev->children)? "no ":""),
@@ -5108,6 +5116,7 @@ print_device_short(device_t dev, int indent)
 	    (dev->flags&DF_WILDCARD? "wildcard,":""),
 	    (dev->flags&DF_DESCMALLOCED? "descmalloced,":""),
 	    (dev->flags&DF_REBID? "rebiddable,":""),
+	    (dev->flags&DF_SUSPENDED? "suspended,":""),
 	    (dev->ivars? "":"no "),
 	    (dev->softc? "":"no "),
 	    dev->busy));
@@ -5388,7 +5397,7 @@ find_device(struct devreq *req, device_t *devp)
 
 	/* Finally, give device enumerators a chance. */
 	dev = NULL;
-	EVENTHANDLER_INVOKE(dev_lookup, req->dr_name, &dev);
+	EVENTHANDLER_DIRECT_INVOKE(dev_lookup, req->dr_name, &dev);
 	if (dev == NULL)
 		return (ENOENT);
 	*devp = dev;
@@ -5653,6 +5662,56 @@ devctl2_init(void)
 
 	make_dev_credf(MAKEDEV_ETERNAL, &devctl2_cdevsw, 0, NULL,
 	    UID_ROOT, GID_WHEEL, 0600, "devctl2");
+}
+
+/*
+ * APIs to manage deprecation and obsolescence.
+ */
+static int obsolete_panic = 0;
+SYSCTL_INT(_debug, OID_AUTO, obsolete_panic, CTLFLAG_RWTUN, &obsolete_panic, 0,
+    "Bus debug level");
+/* 0 - don't panic, 1 - panic if already obsolete, 2 - panic if deprecated */
+static void
+gone_panic(int major, int running, const char *msg)
+{
+
+	switch (obsolete_panic)
+	{
+	case 0:
+		return;
+	case 1:
+		if (running < major)
+			return;
+		/* FALLTHROUGH */
+	default:
+		panic("%s", msg);
+	}
+}
+
+void
+_gone_in(int major, const char *msg)
+{
+
+	gone_panic(major, P_OSREL_MAJOR(__FreeBSD_version), msg);
+	if (P_OSREL_MAJOR(__FreeBSD_version) >= major)
+		printf("Obsolete code will removed soon: %s\n", msg);
+	else if (P_OSREL_MAJOR(__FreeBSD_version) + 1 == major)
+		printf("Deprecated code (to be removed in FreeBSD %d): %s\n",
+		    major, msg);
+}
+
+void
+_gone_in_dev(device_t dev, int major, const char *msg)
+{
+
+	gone_panic(major, P_OSREL_MAJOR(__FreeBSD_version), msg);
+	if (P_OSREL_MAJOR(__FreeBSD_version) >= major)
+		device_printf(dev,
+		    "Obsolete code will removed soon: %s\n", msg);
+	else if (P_OSREL_MAJOR(__FreeBSD_version) + 1 == major)
+		device_printf(dev,
+		    "Deprecated code (to be removed in FreeBSD %d): %s\n",
+		    major, msg);
 }
 
 #ifdef DDB

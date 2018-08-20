@@ -57,11 +57,11 @@ int bad_options_max = 5;
 
 void	parse_options(struct packet *);
 void	parse_option_buffer(struct packet *, unsigned char *, int);
-int	store_options(unsigned char *, int, struct tree_cache **,
+unsigned store_options(unsigned char *, int, struct tree_cache **,
 	    unsigned char *, int, int, int, int);
 void	expand_domain_search(struct packet *packet);
-int	find_search_domain_name_len(struct option_data *option, int *offset);
-void	expand_search_domain_name(struct option_data *option, int *offset,
+int	find_search_domain_name_len(struct option_data *option, size_t *offset);
+void	expand_search_domain_name(struct option_data *option, size_t *offset,
 	    unsigned char **domain_search);
 
 
@@ -215,7 +215,8 @@ parse_option_buffer(struct packet *packet,
 void
 expand_domain_search(struct packet *packet)
 {
-	int offset, expanded_len, next_domain_len;
+	size_t offset;
+	int expanded_len, next_domain_len;
 	struct option_data *option;
 	unsigned char *domain_search, *cursor;
 
@@ -259,9 +260,10 @@ expand_domain_search(struct packet *packet)
 }
 
 int
-find_search_domain_name_len(struct option_data *option, int *offset)
+find_search_domain_name_len(struct option_data *option, size_t *offset)
 {
-	int domain_name_len, i, label_len, pointer, pointed_len;
+	int domain_name_len, label_len, pointed_len;
+	size_t i, pointer;
 
 	domain_name_len = 0;
 
@@ -326,10 +328,11 @@ find_search_domain_name_len(struct option_data *option, int *offset)
 }
 
 void
-expand_search_domain_name(struct option_data *option, int *offset,
+expand_search_domain_name(struct option_data *option, size_t *offset,
     unsigned char **domain_search)
 {
-	int i, label_len, pointer;
+	int label_len;
+	size_t i, pointer;
 	unsigned char *cursor;
 
 	/*
@@ -383,8 +386,10 @@ cons_options(struct packet *inpacket, struct dhcp_packet *outpacket,
     int terminate, int bootpp, u_int8_t *prl, int prl_len)
 {
 	unsigned char priority_list[300], buffer[4096];
-	int priority_len, main_buffer_size, mainbufix, bufix;
-	int option_size, length;
+	unsigned priority_len;
+	size_t main_buffer_size;
+	unsigned option_size, bufix, mainbufix;
+	int length;
 
 	/*
 	 * If the client has provided a maximum DHCP message size, use
@@ -426,7 +431,7 @@ cons_options(struct packet *inpacket, struct dhcp_packet *outpacket,
 	 */
 	if (inpacket &&
 	    inpacket->options[DHO_DHCP_PARAMETER_REQUEST_LIST].data) {
-		int prlen =
+		unsigned prlen =
 		    inpacket->options[DHO_DHCP_PARAMETER_REQUEST_LIST].len;
 		if (prlen + priority_len > sizeof(priority_list))
 			prlen = sizeof(priority_list) - priority_len;
@@ -520,7 +525,7 @@ cons_options(struct packet *inpacket, struct dhcp_packet *outpacket,
 /*
  * Store all the requested options into the requested buffer.
  */
-int
+unsigned
 store_options(unsigned char *buffer, int buflen, struct tree_cache **options,
     unsigned char *priority_list, int priority_len, int first_cutoff,
     int second_cutoff, int terminate)

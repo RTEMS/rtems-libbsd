@@ -22,8 +22,10 @@ typedef int ifdi_attach_pre_t(if_ctx_t _ctx);
 static __inline int IFDI_ATTACH_PRE(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_attach_pre);
-	return ((ifdi_attach_pre_t *) _m)(_ctx);
+	rc = ((ifdi_attach_pre_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_ATTACH_POST() method */
@@ -34,8 +36,10 @@ typedef int ifdi_attach_post_t(if_ctx_t _ctx);
 static __inline int IFDI_ATTACH_POST(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_attach_post);
-	return ((ifdi_attach_post_t *) _m)(_ctx);
+	rc = ((ifdi_attach_post_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_DETACH() method */
@@ -46,8 +50,10 @@ typedef int ifdi_detach_t(if_ctx_t _ctx);
 static __inline int IFDI_DETACH(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_detach);
-	return ((ifdi_detach_t *) _m)(_ctx);
+	rc = ((ifdi_detach_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_SUSPEND() method */
@@ -58,8 +64,10 @@ typedef int ifdi_suspend_t(if_ctx_t _ctx);
 static __inline int IFDI_SUSPEND(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_suspend);
-	return ((ifdi_suspend_t *) _m)(_ctx);
+	rc = ((ifdi_suspend_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_SHUTDOWN() method */
@@ -70,8 +78,10 @@ typedef int ifdi_shutdown_t(if_ctx_t _ctx);
 static __inline int IFDI_SHUTDOWN(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_shutdown);
-	return ((ifdi_shutdown_t *) _m)(_ctx);
+	rc = ((ifdi_shutdown_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_RESUME() method */
@@ -82,8 +92,10 @@ typedef int ifdi_resume_t(if_ctx_t _ctx);
 static __inline int IFDI_RESUME(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_resume);
-	return ((ifdi_resume_t *) _m)(_ctx);
+	rc = ((ifdi_resume_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_TX_QUEUES_ALLOC() method */
@@ -97,8 +109,10 @@ static __inline int IFDI_TX_QUEUES_ALLOC(if_ctx_t _ctx, caddr_t *_vaddrs,
                                          int ntxqsets)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_tx_queues_alloc);
-	return ((ifdi_tx_queues_alloc_t *) _m)(_ctx, _vaddrs, _paddrs, ntxqs, ntxqsets);
+	rc = ((ifdi_tx_queues_alloc_t *) _m)(_ctx, _vaddrs, _paddrs, ntxqs, ntxqsets);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_RX_QUEUES_ALLOC() method */
@@ -112,8 +126,10 @@ static __inline int IFDI_RX_QUEUES_ALLOC(if_ctx_t _ctx, caddr_t *_vaddrs,
                                          int nrxqsets)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_rx_queues_alloc);
-	return ((ifdi_rx_queues_alloc_t *) _m)(_ctx, _vaddrs, _paddrs, nrxqs, nrxqsets);
+	rc = ((ifdi_rx_queues_alloc_t *) _m)(_ctx, _vaddrs, _paddrs, nrxqs, nrxqsets);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_QUEUES_FREE() method */
@@ -160,8 +176,10 @@ typedef int ifdi_msix_intr_assign_t(if_ctx_t _sctx, int msix);
 static __inline int IFDI_MSIX_INTR_ASSIGN(if_ctx_t _sctx, int msix)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_sctx)->ops,ifdi_msix_intr_assign);
-	return ((ifdi_msix_intr_assign_t *) _m)(_sctx, msix);
+	rc = ((ifdi_msix_intr_assign_t *) _m)(_sctx, msix);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_INTR_ENABLE() method */
@@ -196,8 +214,10 @@ typedef int ifdi_rx_queue_intr_enable_t(if_ctx_t _ctx, uint16_t _qid);
 static __inline int IFDI_RX_QUEUE_INTR_ENABLE(if_ctx_t _ctx, uint16_t _qid)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_rx_queue_intr_enable);
-	return ((ifdi_rx_queue_intr_enable_t *) _m)(_ctx, _qid);
+	rc = ((ifdi_rx_queue_intr_enable_t *) _m)(_ctx, _qid);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_TX_QUEUE_INTR_ENABLE() method */
@@ -208,8 +228,10 @@ typedef int ifdi_tx_queue_intr_enable_t(if_ctx_t _ctx, uint16_t _qid);
 static __inline int IFDI_TX_QUEUE_INTR_ENABLE(if_ctx_t _ctx, uint16_t _qid)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_tx_queue_intr_enable);
-	return ((ifdi_tx_queue_intr_enable_t *) _m)(_ctx, _qid);
+	rc = ((ifdi_tx_queue_intr_enable_t *) _m)(_ctx, _qid);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_LINK_INTR_ENABLE() method */
@@ -244,8 +266,10 @@ typedef int ifdi_mtu_set_t(if_ctx_t _ctx, uint32_t _mtu);
 static __inline int IFDI_MTU_SET(if_ctx_t _ctx, uint32_t _mtu)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_mtu_set);
-	return ((ifdi_mtu_set_t *) _m)(_ctx, _mtu);
+	rc = ((ifdi_mtu_set_t *) _m)(_ctx, _mtu);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_MEDIA_SET() method */
@@ -268,8 +292,10 @@ typedef int ifdi_promisc_set_t(if_ctx_t _ctx, int _flags);
 static __inline int IFDI_PROMISC_SET(if_ctx_t _ctx, int _flags)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_promisc_set);
-	return ((ifdi_promisc_set_t *) _m)(_ctx, _flags);
+	rc = ((ifdi_promisc_set_t *) _m)(_ctx, _flags);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_CRCSTRIP_SET() method */
@@ -306,8 +332,10 @@ static __inline int IFDI_IOV_INIT(if_ctx_t _ctx, uint16_t num_vfs,
                                   const nvlist_t * params)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_iov_init);
-	return ((ifdi_iov_init_t *) _m)(_ctx, num_vfs, params);
+	rc = ((ifdi_iov_init_t *) _m)(_ctx, num_vfs, params);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_IOV_UNINIT() method */
@@ -332,8 +360,10 @@ static __inline int IFDI_IOV_VF_ADD(if_ctx_t _ctx, uint16_t num_vfs,
                                     const nvlist_t * params)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_iov_vf_add);
-	return ((ifdi_iov_vf_add_t *) _m)(_ctx, num_vfs, params);
+	rc = ((ifdi_iov_vf_add_t *) _m)(_ctx, num_vfs, params);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_UPDATE_ADMIN_STATUS() method */
@@ -368,8 +398,10 @@ typedef int ifdi_media_change_t(if_ctx_t _ctx);
 static __inline int IFDI_MEDIA_CHANGE(if_ctx_t _ctx)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_media_change);
-	return ((ifdi_media_change_t *) _m)(_ctx);
+	rc = ((ifdi_media_change_t *) _m)(_ctx);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_GET_COUNTER() method */
@@ -380,8 +412,10 @@ typedef uint64_t ifdi_get_counter_t(if_ctx_t _ctx, ift_counter cnt);
 static __inline uint64_t IFDI_GET_COUNTER(if_ctx_t _ctx, ift_counter cnt)
 {
 	kobjop_t _m;
+	uint64_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_get_counter);
-	return ((ifdi_get_counter_t *) _m)(_ctx, cnt);
+	rc = ((ifdi_get_counter_t *) _m)(_ctx, cnt);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_PRIV_IOCTL() method */
@@ -392,8 +426,10 @@ typedef int ifdi_priv_ioctl_t(if_ctx_t _ctx, u_long _cmd, caddr_t _data);
 static __inline int IFDI_PRIV_IOCTL(if_ctx_t _ctx, u_long _cmd, caddr_t _data)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_priv_ioctl);
-	return ((ifdi_priv_ioctl_t *) _m)(_ctx, _cmd, _data);
+	rc = ((ifdi_priv_ioctl_t *) _m)(_ctx, _cmd, _data);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_I2C_REQ() method */
@@ -404,8 +440,10 @@ typedef int ifdi_i2c_req_t(if_ctx_t _ctx, struct ifi2creq *_req);
 static __inline int IFDI_I2C_REQ(if_ctx_t _ctx, struct ifi2creq *_req)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_i2c_req);
-	return ((ifdi_i2c_req_t *) _m)(_ctx, _req);
+	rc = ((ifdi_i2c_req_t *) _m)(_ctx, _req);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_TXQ_SETUP() method */
@@ -416,8 +454,10 @@ typedef int ifdi_txq_setup_t(if_ctx_t _ctx, uint32_t _txqid);
 static __inline int IFDI_TXQ_SETUP(if_ctx_t _ctx, uint32_t _txqid)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_txq_setup);
-	return ((ifdi_txq_setup_t *) _m)(_ctx, _txqid);
+	rc = ((ifdi_txq_setup_t *) _m)(_ctx, _txqid);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_RXQ_SETUP() method */
@@ -428,8 +468,10 @@ typedef int ifdi_rxq_setup_t(if_ctx_t _ctx, uint32_t _txqid);
 static __inline int IFDI_RXQ_SETUP(if_ctx_t _ctx, uint32_t _txqid)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_rxq_setup);
-	return ((ifdi_rxq_setup_t *) _m)(_ctx, _txqid);
+	rc = ((ifdi_rxq_setup_t *) _m)(_ctx, _txqid);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_TIMER() method */
@@ -501,8 +543,10 @@ static __inline int IFDI_SYSCTL_INT_DELAY(if_ctx_t _sctx,
                                           if_int_delay_info_t _iidi)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_sctx)->ops,ifdi_sysctl_int_delay);
-	return ((ifdi_sysctl_int_delay_t *) _m)(_sctx, _iidi);
+	rc = ((ifdi_sysctl_int_delay_t *) _m)(_sctx, _iidi);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the IFDI_DEBUG() method */

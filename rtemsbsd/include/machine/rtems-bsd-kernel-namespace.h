@@ -1744,6 +1744,7 @@
 #define	ieee80211_wme_initparams _bsd_ieee80211_wme_initparams
 #define	ieee80211_wme_updateparams _bsd_ieee80211_wme_updateparams
 #define	ieee80211_wme_updateparams_locked _bsd_ieee80211_wme_updateparams_locked
+#define	ieee80211_wme_vap_ac_is_noack _bsd_ieee80211_wme_vap_ac_is_noack
 #define	ieee80211_wme_vap_getparams _bsd_ieee80211_wme_vap_getparams
 #define	ifa_add_loopback_route _bsd_ifa_add_loopback_route
 #define	ifa_alloc _bsd_ifa_alloc
@@ -2594,6 +2595,7 @@
 #define	make_dev_args_init_impl _bsd_make_dev_args_init_impl
 #define	make_dev_s _bsd_make_dev_s
 #define	M_ALIAS _bsd_M_ALIAS
+#define	mallocarray _bsd_mallocarray
 #define	malloc_init _bsd_malloc_init
 #define	malloc_uninit _bsd_malloc_uninit
 #define	m_append _bsd_m_append
@@ -3207,6 +3209,7 @@
 #define	pf_pull_hdr _bsd_pf_pull_hdr
 #define	pf_purge_expired_fragments _bsd_pf_purge_expired_fragments
 #define	pf_purge_expired_src_nodes _bsd_pf_purge_expired_src_nodes
+#define	pf_purge_fragments _bsd_pf_purge_fragments
 #define	pf_purge_proc _bsd_pf_purge_proc
 #define	pf_purge_thread _bsd_pf_purge_thread
 #define	pf_qids _bsd_pf_qids
@@ -4043,7 +4046,6 @@
 #define	sctp_deact_sharedkey_ep _bsd_sctp_deact_sharedkey_ep
 #define	sctp_default_supported_hmaclist _bsd_sctp_default_supported_hmaclist
 #define	sctp_del_addr_from_vrf _bsd_sctp_del_addr_from_vrf
-#define	sctp_delayed_cksum _bsd_sctp_delayed_cksum
 #define	sctp_delete_from_timewait _bsd_sctp_delete_from_timewait
 #define	sctp_delete_prim_timer _bsd_sctp_delete_prim_timer
 #define	sctp_delete_sharedkey _bsd_sctp_delete_sharedkey
@@ -4654,6 +4656,7 @@
 #define	tcp6_usrreqs _bsd_tcp6_usrreqs
 #define	tcp_abc_l_var _bsd_tcp_abc_l_var
 #define	tcp_addoptions _bsd_tcp_addoptions
+#define	tcp_always_keepalive _bsd_tcp_always_keepalive
 #define	tcp_autorcvbuf _bsd_tcp_autorcvbuf
 #define	tcp_autorcvbuf_inc _bsd_tcp_autorcvbuf_inc
 #define	tcp_autorcvbuf_max _bsd_tcp_autorcvbuf_max
@@ -4770,6 +4773,7 @@
 #define	tcp_sendspace _bsd_tcp_sendspace
 #define	tcp_setpersist _bsd_tcp_setpersist
 #define	tcp_slowtimo _bsd_tcp_slowtimo
+#define	tcp_sndbuf_autoscale _bsd_tcp_sndbuf_autoscale
 #define	tcps_states _bsd_tcps_states
 #define	tcpstat _bsd_tcpstat
 #define	tcp_state_change _bsd_tcp_state_change
@@ -4963,6 +4967,7 @@
 #define	ulitecb _bsd_ulitecb
 #define	ulitecbinfo _bsd_ulitecbinfo
 #define	uma_align_cache _bsd_uma_align_cache
+#define	uma_avail _bsd_uma_avail
 #define	uma_limit _bsd_uma_limit
 #define	uma_print_stats _bsd_uma_print_stats
 #define	uma_print_zone _bsd_uma_print_zone
@@ -4974,10 +4979,12 @@
 #define	uma_size _bsd_uma_size
 #define	uma_startup _bsd_uma_startup
 #define	uma_zalloc_arg _bsd_uma_zalloc_arg
+#define	uma_zalloc_domain _bsd_uma_zalloc_domain
 #define	uma_zcache_create _bsd_uma_zcache_create
 #define	uma_zcreate _bsd_uma_zcreate
 #define	uma_zdestroy _bsd_uma_zdestroy
 #define	uma_zfree_arg _bsd_uma_zfree_arg
+#define	uma_zfree_domain _bsd_uma_zfree_domain
 #define	uma_zone_exhausted _bsd_uma_zone_exhausted
 #define	uma_zone_exhausted_nolock _bsd_uma_zone_exhausted_nolock
 #define	uma_zone_get_cur _bsd_uma_zone_get_cur

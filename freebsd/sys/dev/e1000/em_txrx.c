@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * Copyright (c) 2016-2017 Matt Macy <mmacy@nextbsd.org>
+ * Copyright (c) 2016-2017 Matthew Macy <mmacy@mattmacy.io>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

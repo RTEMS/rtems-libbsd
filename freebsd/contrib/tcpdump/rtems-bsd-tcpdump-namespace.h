@@ -46,6 +46,7 @@
 #define in_cksum _bsd_tcpdump_in_cksum
 #define in_cksum_shouldbe _bsd_tcpdump_in_cksum_shouldbe
 /* ipproto.c */
+#define netdb_protoname _bsd_tcpdump_netdb_protoname
 /* l2vpn.c */
 /* machdep.c */
 #define abort_on_misalignment _bsd_tcpdump_abort_on_misalignment

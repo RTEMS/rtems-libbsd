@@ -92,4 +92,6 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 #define	ENOIOCTL	(-3)		/* ioctl not handled by this layer */
 #define	EDIRIOCTL	(-4)		/* do direct ioctl in GEOM */
 
+#define	EDOOFUS __ELASTERROR
+
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_KERNEL_SPACE_H_ */

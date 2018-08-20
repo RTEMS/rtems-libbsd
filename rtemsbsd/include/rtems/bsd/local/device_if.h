@@ -23,6 +23,9 @@
 #ifndef _device_if_h_
 #define _device_if_h_
 
+
+#include <sys/tslog.h>
+
 /** @brief Unique descriptor for the DEVICE_PROBE() method */
 extern struct kobjop_desc device_probe_desc;
 /** @brief A function implementing the DEVICE_PROBE() method */
@@ -104,8 +107,16 @@ typedef int device_probe_t(device_t dev);
 static __inline int DEVICE_PROBE(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
+
+TSENTER2(device_get_name(dev));
+
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_probe);
-	return ((device_probe_t *) _m)(dev);
+	rc = ((device_probe_t *) _m)(dev);
+
+TSEXIT2(device_get_name(dev));
+
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_IDENTIFY() method */
@@ -176,8 +187,16 @@ typedef int device_attach_t(device_t dev);
 static __inline int DEVICE_ATTACH(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
+
+TSENTER2(device_get_name(dev));
+
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_attach);
-	return ((device_attach_t *) _m)(dev);
+	rc = ((device_attach_t *) _m)(dev);
+
+TSEXIT2(device_get_name(dev));
+
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_DETACH() method */
@@ -210,8 +229,10 @@ typedef int device_detach_t(device_t dev);
 static __inline int DEVICE_DETACH(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_detach);
-	return ((device_detach_t *) _m)(dev);
+	rc = ((device_detach_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_SHUTDOWN() method */
@@ -236,8 +257,10 @@ typedef int device_shutdown_t(device_t dev);
 static __inline int DEVICE_SHUTDOWN(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_shutdown);
-	return ((device_shutdown_t *) _m)(dev);
+	rc = ((device_shutdown_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_SUSPEND() method */
@@ -271,8 +294,10 @@ typedef int device_suspend_t(device_t dev);
 static __inline int DEVICE_SUSPEND(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_suspend);
-	return ((device_suspend_t *) _m)(dev);
+	rc = ((device_suspend_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_RESUME() method */
@@ -301,8 +326,10 @@ typedef int device_resume_t(device_t dev);
 static __inline int DEVICE_RESUME(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_resume);
-	return ((device_resume_t *) _m)(dev);
+	rc = ((device_resume_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_QUIESCE() method */
@@ -335,8 +362,10 @@ typedef int device_quiesce_t(device_t dev);
 static __inline int DEVICE_QUIESCE(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_quiesce);
-	return ((device_quiesce_t *) _m)(dev);
+	rc = ((device_quiesce_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the DEVICE_REGISTER() method */
@@ -364,8 +393,10 @@ typedef void * device_register_t(device_t dev);
 static __inline void * DEVICE_REGISTER(device_t dev)
 {
 	kobjop_t _m;
+	void * rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_register);
-	return ((device_register_t *) _m)(dev);
+	rc = ((device_register_t *) _m)(dev);
+	return (rc);
 }
 
 #endif /* _device_if_h_ */

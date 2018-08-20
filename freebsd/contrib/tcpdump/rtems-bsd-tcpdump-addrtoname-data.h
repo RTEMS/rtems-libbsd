@@ -2,7 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-tcpdump-data.h"
 /* addrtoname.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct enamemem bytestringtable[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct bsnamemem bytestringtable[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct enamemem enametable[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct enamemem nsaptable[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct h6namemem h6nametable[]);

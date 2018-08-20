@@ -1045,10 +1045,6 @@ parse_elements(netdissect_options *ndo,
 			if (ssid.length != 0) {
 				if (ssid.length > sizeof(ssid.ssid) - 1)
 					return 0;
-				if (!ND_TTEST2(*(p + offset), ssid.length))
-					return 0;
-				if (length < ssid.length)
-					return 0;
 				memcpy(&ssid.ssid, p + offset, ssid.length);
 				offset += ssid.length;
 				length -= ssid.length;
@@ -1074,10 +1070,6 @@ parse_elements(netdissect_options *ndo,
 				if (challenge.length >
 				    sizeof(challenge.text) - 1)
 					return 0;
-				if (!ND_TTEST2(*(p + offset), challenge.length))
-					return 0;
-				if (length < challenge.length)
-					return 0;
 				memcpy(&challenge.text, p + offset,
 				    challenge.length);
 				offset += challenge.length;
@@ -1102,10 +1094,6 @@ parse_elements(netdissect_options *ndo,
 			length -= 2;
 			if (rates.length != 0) {
 				if (rates.length > sizeof rates.rate)
-					return 0;
-				if (!ND_TTEST2(*(p + offset), rates.length))
-					return 0;
-				if (length < rates.length)
 					return 0;
 				memcpy(&rates.rate, p + offset, rates.length);
 				offset += rates.length;
@@ -1195,8 +1183,7 @@ parse_elements(netdissect_options *ndo,
 			offset += 3;
 			length -= 3;
 
-			memcpy(tim.bitmap, p + (tim.length - 3),
-			    (tim.length - 3));
+			memcpy(tim.bitmap, p + offset, tim.length - 3);
 			offset += tim.length - 3;
 			length -= tim.length - 3;
 			/*

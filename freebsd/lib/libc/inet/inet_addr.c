@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-License-Identifier: (BSD-3-Clause AND ISC)
  *
  * Copyright (c) 1983, 1990, 1993
  *    The Regents of the University of California.  All rights reserved.

@@ -1765,6 +1765,8 @@ rtrequest1_fib_change(struct rib_head *rnh, struct rt_addrinfo *info,
 	int family, mtu;
 	struct if_mtuinfo ifmtu;
 
+	RIB_WLOCK_ASSERT(rnh);
+
 	rt = (struct rtentry *)rnh->rnh_lookup(info->rti_info[RTAX_DST],
 	    info->rti_info[RTAX_NETMASK], &rnh->head);
 
@@ -1813,8 +1815,9 @@ rtrequest1_fib_change(struct rib_head *rnh, struct rt_addrinfo *info,
 
 	/* Check if outgoing interface has changed */
 	if (info->rti_ifa != NULL && info->rti_ifa != rt->rt_ifa &&
-	    rt->rt_ifa != NULL && rt->rt_ifa->ifa_rtrequest != NULL) {
-		rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, info);
+	    rt->rt_ifa != NULL) {
+		if (rt->rt_ifa->ifa_rtrequest != NULL)
+			rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, info);
 		ifa_free(rt->rt_ifa);
 	}
 	/* Update gateway address */
@@ -1853,6 +1856,13 @@ rtrequest1_fib_change(struct rib_head *rnh, struct rt_addrinfo *info,
 			if_updatemtu_cb(rt->rt_nodes, &ifmtu);
 		}
 	}
+
+	/*
+	 * This route change may have modified the route's gateway.  In that
+	 * case, any inpcbs that have cached this route need to invalidate their
+	 * llentry cache.
+	 */
+	rnh->rnh_gen++;
 
 	if (ret_nrt) {
 		*ret_nrt = rt;

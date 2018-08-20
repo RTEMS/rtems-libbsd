@@ -526,7 +526,6 @@ gif_input(struct mbuf *m, struct ifnet *ifp, int proto, uint8_t ecn)
 	struct ip6_hdr *ip6;
 	uint32_t t;
 #endif
-	struct gif_softc *sc;
 	struct ether_header *eh;
 	struct ifnet *oldifp;
 	int isr, n, af;
@@ -536,7 +535,6 @@ gif_input(struct mbuf *m, struct ifnet *ifp, int proto, uint8_t ecn)
 		m_freem(m);
 		return;
 	}
-	sc = ifp->if_softc;
 	m->m_pkthdr.rcvif = ifp;
 	m_clrprotoflags(m);
 	switch (proto) {

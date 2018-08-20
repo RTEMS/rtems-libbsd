@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: 0BSD AND BSD-4-Clause
+ * SPDX-License-Identifier: (BSD-1-Clause AND BSD-4-Clause)
  *
  * Copyright (c) 2011 Rick van der Zwet <info@rickvanderzwet.nl>
  *

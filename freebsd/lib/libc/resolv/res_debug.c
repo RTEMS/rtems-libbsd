@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
-/*
+/*-
+ * SPDX-License-Identifier: (ISC AND BSD-3-Clause)
+ *
  * Portions Copyright (C) 2004, 2005, 2008, 2009  Internet Systems Consortium, Inc. ("ISC")
  * Portions Copyright (C) 1996-2003  Internet Software Consortium.
  *
@@ -18,8 +20,6 @@
  */
 
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
  * Copyright (c) 1985
  *    The Regents of the University of California.  All rights reserved.
  *

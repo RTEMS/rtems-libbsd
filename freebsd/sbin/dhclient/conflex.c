@@ -62,8 +62,8 @@ int eol_token;
 
 static char line1[81];
 static char line2[81];
-static int lpos;
-static int line;
+static unsigned lpos;
+static unsigned line;
 static int tlpos;
 static int tline;
 static int token;
@@ -230,7 +230,8 @@ skip_to_eol(FILE *cfile)
 static int
 read_string(FILE *cfile)
 {
-	int	i, c, bs = 0;
+	int	c, bs = 0;
+	unsigned i;
 
 	for (i = 0; i < sizeof(tokbuf); i++) {
 		c = get_char(cfile);
@@ -265,7 +266,8 @@ read_string(FILE *cfile)
 static int
 read_number(int c, FILE *cfile)
 {
-	int	seenx = 0, i = 0, token = NUMBER;
+	int	seenx = 0, token = NUMBER;
+	unsigned i = 0;
 
 	tokbuf[i++] = c;
 	for (; i < sizeof(tokbuf); i++) {
@@ -292,7 +294,7 @@ read_number(int c, FILE *cfile)
 static int
 read_num_or_name(int c, FILE *cfile)
 {
-	int	i = 0;
+	unsigned i = 0;
 	int	rv = NUMBER_OR_NAME;
 
 	tokbuf[i++] = c;

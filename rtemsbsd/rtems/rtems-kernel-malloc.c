@@ -6,14 +6,15 @@
  * @brief TODO.
  */
 
-/*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+/*-
+ * SPDX-License-Identifier: BSD-3-Clause
  *
- *  embedded brains GmbH
- *  Obere Lagerstr. 30
- *  82178 Puchheim
- *  Germany
- *  <rtems@embedded-brains.de>
+ * Copyright (c) 1987, 1991, 1993
+ *	The Regents of the University of California.
+ * Copyright (c) 2005-2009 Robert N. M. Watson
+ * Copyright (c) 2008 Otto Moerbeek <otto@drijf.net> (mallocarray)
+ * Copyright (c) 2009, 2018 embedded brains GmbH
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,11 +24,14 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -35,6 +39,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)kern_malloc.c	8.3 (Berkeley) 1/4/94
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
@@ -55,7 +61,7 @@ MALLOC_DEFINE(M_IOV, "iov", "large iov's");
 void
 malloc_init(void *data)
 {
-	struct malloc_type *mtp = data;
+
 }
 
 void
@@ -69,7 +75,7 @@ malloc_uninit(void *data)
 #undef malloc
 
 void *
-_bsd_malloc(unsigned long size, struct malloc_type *mtp, int flags)
+_bsd_malloc(size_t size, struct malloc_type *mtp, int flags)
 {
 	void *p = malloc(size > 0 ? size : 1);
 
@@ -77,13 +83,23 @@ _bsd_malloc(unsigned long size, struct malloc_type *mtp, int flags)
 		memset(p, 0, size);
 	}
 
-	return p;
+	return (p);
+}
+
+void *
+mallocarray(size_t nmemb, size_t size, struct malloc_type *type, int flags)
+{
+
+	if (WOULD_OVERFLOW(nmemb, size))
+		panic("mallocarray: %zu * %zu overflowed", nmemb, size);
+
+	return (_bsd_malloc(size * nmemb, type, flags));
 }
 
 #undef realloc
+
 void *
-_bsd_realloc( void *addr, unsigned long size, 
-  struct malloc_type *type, int flags)
+_bsd_realloc( void *addr, size_t size, struct malloc_type *type, int flags)
 {
 	void *p = realloc(addr, size > 0 ? size : 1);
 
@@ -95,23 +111,25 @@ _bsd_realloc( void *addr, unsigned long size,
 }
 
 #undef reallocf
+
 void *
-_bsd_reallocf( void *addr, unsigned long size, 
-  struct malloc_type *type, int flags)
+_bsd_reallocf( void *addr, size_t size, struct malloc_type *type, int flags)
 {
 	void *p = realloc(addr, size > 0 ? size : 1);
 
 	if (p == NULL) {
-		free(addr,NULL);
+		free(addr, NULL);
 	}
 
-	return p;
+	return (p);
 }
 
 #undef free
+
 void
 _bsd_free(void *addr, struct malloc_type *mtp)
 {
+
 	free(addr);
 }
 
@@ -120,5 +138,6 @@ _bsd_free(void *addr, struct malloc_type *mtp)
 char *
 _bsd_strdup(const char *__restrict s, struct malloc_type *type)
 {
-	return strdup(s);
+
+	return (strdup(s));
 }

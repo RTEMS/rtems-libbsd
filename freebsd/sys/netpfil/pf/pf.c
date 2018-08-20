@@ -1500,7 +1500,7 @@ pf_unload_vnet_purge(void)
 	 * Now purge everything.
 	 */
 	pf_purge_expired_states(0, pf_hashmask);
-	pf_purge_expired_fragments();
+	pf_purge_fragments(UINT_MAX);
 	pf_purge_expired_src_nodes();
 
 	/*
@@ -1615,6 +1615,7 @@ int
 pf_unlink_state(struct pf_state *s, u_int flags)
 {
 	struct pf_idhash *ih = &V_pf_idhash[PF_IDHASH(s)];
+	int last;
 
 	if ((flags & PF_ENTER_LOCKED) == 0)
 		PF_HASHROW_LOCK(ih);
@@ -1655,7 +1656,8 @@ pf_unlink_state(struct pf_state *s, u_int flags)
 	PF_HASHROW_UNLOCK(ih);
 
 	pf_detach_state(s);
-	refcount_release(&s->refs);
+	last = refcount_release(&s->refs);
+	KASSERT(last == 0, ("Incorrect state reference count"));
 
 	return (pf_release_state(s));
 }

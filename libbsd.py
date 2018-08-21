@@ -2440,6 +2440,7 @@ class pf(builder.Module):
                 'sys/net/if_pflog.h',
                 'sys/net/if_pfsync.h',
                 'sys/net/pfvar.h',
+                'sys/netpfil/ipfw/ip_fw_private.h',
                 'sys/netpfil/pf/pf_altq.h',
                 'sys/netpfil/pf/pf.h',
                 'sys/netpfil/pf/pf_mtag.h',
@@ -2458,60 +2459,6 @@ class pf(builder.Module):
                 'sys/netpfil/pf/pf_osfp.c',
                 'sys/netpfil/pf/pf_ruleset.c',
                 'sys/netpfil/pf/pf_table.c',
-            ],
-            mm.generator['source']()
-        )
-
-class ipfw(builder.Module):
-
-    def __init__(self, manager):
-        super(ipfw, self).__init__(manager, type(self).__name__)
-
-    def generate(self):
-        mm = self.manager
-        self.addKernelSpaceHeaderFiles(
-            [
-                'sys/netinet6/ip_fw_nat64.h',
-                'sys/netinet6/ip_fw_nptv6.h',
-                'sys/netpfil/ipfw/dn_aqm_codel.h',
-                'sys/netpfil/ipfw/dn_aqm.h',
-                'sys/netpfil/ipfw/dn_aqm_pie.h',
-                'sys/netpfil/ipfw/dn_heap.h',
-                'sys/netpfil/ipfw/dn_sched_fq_codel.h',
-                'sys/netpfil/ipfw/dn_sched_fq_codel_helper.h',
-                'sys/netpfil/ipfw/dn_sched.h',
-                'sys/netpfil/ipfw/ip_dn_private.h',
-                'sys/netpfil/ipfw/ip_fw_private.h',
-                'sys/netpfil/ipfw/ip_fw_table.h',
-                'sys/netpfil/ipfw/nat64/ip_fw_nat64.h',
-                'sys/netpfil/ipfw/nat64/nat64lsn.h',
-                'sys/netpfil/ipfw/nat64/nat64stl.h',
-                'sys/netpfil/ipfw/nat64/nat64_translate.h',
-                'sys/netpfil/ipfw/nptv6/nptv6.h',
-            ]
-        )
-        self.addKernelSpaceSourceFiles(
-            [
-                'sys/netpfil/ipfw/ip_fw2.c',
-                'sys/netpfil/ipfw/ip_fw_bpf.c',
-                'sys/netpfil/ipfw/ip_fw_dynamic.c',
-                'sys/netpfil/ipfw/ip_fw_eaction.c',
-                'sys/netpfil/ipfw/ip_fw_iface.c',
-                'sys/netpfil/ipfw/ip_fw_log.c',
-                'sys/netpfil/ipfw/ip_fw_nat.c',
-                'sys/netpfil/ipfw/ip_fw_pfil.c',
-                'sys/netpfil/ipfw/ip_fw_sockopt.c',
-                'sys/netpfil/ipfw/ip_fw_table_algo.c',
-                'sys/netpfil/ipfw/ip_fw_table.c',
-                'sys/netpfil/ipfw/ip_fw_table_value.c',
-                'sys/netpfil/ipfw/nat64/ip_fw_nat64.c',
-                'sys/netpfil/ipfw/nat64/nat64lsn.c',
-                'sys/netpfil/ipfw/nat64/nat64lsn_control.c',
-                'sys/netpfil/ipfw/nat64/nat64stl.c',
-                'sys/netpfil/ipfw/nat64/nat64stl_control.c',
-                'sys/netpfil/ipfw/nat64/nat64_translate.c',
-                'sys/netpfil/ipfw/nptv6/ip_fw_nptv6.c',
-                'sys/netpfil/ipfw/nptv6/nptv6.c',
             ],
             mm.generator['source']()
         )
@@ -4966,7 +4913,6 @@ def load(mm):
     mm.addModule(crypto(mm))
     mm.addModule(altq(mm))
     mm.addModule(pf(mm))
-    mm.addModule(ipfw(mm))
     mm.addModule(dev_net(mm))
 
     # Add PCI

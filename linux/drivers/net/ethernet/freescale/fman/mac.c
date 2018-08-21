@@ -344,7 +344,7 @@ static int set_multi(struct net_device *net_dev, struct mac_device *mac_dev)
 #else /* __rtems__ */
 	ifp = mac_dev->net_dev.ifp;
 	if_maddr_rlock(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_LINK)
 			continue;
 		addr = (enet_addr_t *)LLADDR((struct sockaddr_dl *)ifma->ifma_addr);

@@ -222,9 +222,9 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 	int error;
 #endif /* __rtems__ */
 
-	error = 0;
-
 #ifndef __rtems__
+	save = error = 0;
+
 	KASSERT(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE,
 	    ("uiomove: mode"));
 	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == curthread,
@@ -290,7 +290,7 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 	}
 out:
 #ifndef __rtems__
-	if (uio->uio_segflg == UIO_USERSPACE) 
+	if (save)
 		curthread_pflags_restore(save);
 #endif /* __rtems__ */
 	return (error);

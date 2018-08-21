@@ -1157,7 +1157,11 @@ usbd_req_get_string_any(struct usb_device *udev, struct mtx *mtx, char *buf,
 		    *s == '+' ||
 		    *s == ' ' ||
 		    *s == '.' ||
-		    *s == ',') {
+		    *s == ',' ||
+		    *s == ':' ||
+		    *s == '/' ||
+		    *s == '(' ||
+		    *s == ')') {
 			/* allowed */
 			s++;
 		}

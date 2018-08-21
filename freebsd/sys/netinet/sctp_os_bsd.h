@@ -40,7 +40,6 @@ __FBSDID("$FreeBSD$");
 /*
  * includes
  */
-#include <rtems/bsd/local/opt_compat.h>
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_sctp.h>

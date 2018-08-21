@@ -1364,7 +1364,15 @@ keg_small_init(uma_keg_t keg)
 	else 
 		shsize = sizeof(struct uma_slab);
 
-	keg->uk_ipers = (slabsize - shsize) / rsize;
+	if (rsize <= slabsize - shsize)
+		keg->uk_ipers = (slabsize - shsize) / rsize;
+	else {
+		/* Handle special case when we have 1 item per slab, so
+		 * alignment requirement can be relaxed. */
+		KASSERT(keg->uk_size <= slabsize - shsize,
+		    ("%s: size %u greater than slab", __func__, keg->uk_size));
+		keg->uk_ipers = 1;
+	}
 	KASSERT(keg->uk_ipers > 0 && keg->uk_ipers <= SLAB_SETSIZE,
 	    ("%s: keg->uk_ipers %u", __func__, keg->uk_ipers));
 
@@ -1547,7 +1555,7 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	if (keg->uk_flags & UMA_ZONE_CACHESPREAD) {
 		keg_cachespread_init(keg);
 	} else {
-		if (keg->uk_size > (UMA_SLAB_SIZE - sizeof(struct uma_slab)))
+		if (keg->uk_size > UMA_SLAB_SPACE)
 			keg_large_init(keg);
 		else
 			keg_small_init(keg);
@@ -1751,10 +1759,15 @@ zone_ctor(void *mem, int size, void *udata, int flags)
 	}
 
 out:
-	if ((arg->flags & UMA_ZONE_MAXBUCKET) == 0)
-		zone->uz_count = bucket_select(zone->uz_size);
-	else
+	KASSERT((arg->flags & (UMA_ZONE_MAXBUCKET | UMA_ZONE_NOBUCKET)) !=
+	    (UMA_ZONE_MAXBUCKET | UMA_ZONE_NOBUCKET),
+	    ("Invalid zone flag combination"));
+	if ((arg->flags & UMA_ZONE_MAXBUCKET) != 0)
 		zone->uz_count = BUCKET_MAX;
+	else if ((arg->flags & UMA_ZONE_NOBUCKET) != 0)
+		zone->uz_count = 0;
+	else
+		zone->uz_count = bucket_select(zone->uz_size);
 	zone->uz_count_min = zone->uz_count;
 
 	return (0);
@@ -1901,9 +1914,11 @@ uma_startup_count(int vm_zones)
 #endif
 
 	/* Memory for the rest of startup zones, UMA and VM, ... */
-	if (zsize > UMA_SLAB_SIZE)
+	if (zsize > UMA_SLAB_SPACE)
 		pages += (zones + vm_zones) *
 		    howmany(roundup2(zsize, UMA_BOOT_ALIGN), UMA_SLAB_SIZE);
+	else if (roundup2(zsize, UMA_BOOT_ALIGN) > UMA_SLAB_SPACE)
+		pages += zones;
 	else
 		pages += howmany(zones,
 		    UMA_SLAB_SPACE / roundup2(zsize, UMA_BOOT_ALIGN));
@@ -2443,14 +2458,6 @@ zalloc_start:
 	critical_enter();
 	cpu = curcpu;
 	cache = &zone->uz_cpu[cpu];
-
-	/*
-	 * Since we have locked the zone we may as well send back our stats.
-	 */
-	atomic_add_long(&zone->uz_allocs, cache->uc_allocs);
-	atomic_add_long(&zone->uz_frees, cache->uc_frees);
-	cache->uc_allocs = 0;
-	cache->uc_frees = 0;
 
 	/* See if we lost the race to fill the cache. */
 	if (cache->uc_allocbucket != NULL) {
@@ -3103,7 +3110,13 @@ zfree_start:
 		/* ub_cnt is pointing to the last free item */
 		KASSERT(bucket->ub_cnt != 0,
 		    ("uma_zfree: Attempting to insert an empty bucket onto the full list.\n"));
-		LIST_INSERT_HEAD(&zdom->uzd_buckets, bucket, ub_link);
+		if ((zone->uz_flags & UMA_ZONE_NOBUCKETCACHE) != 0) {
+			ZONE_UNLOCK(zone);
+			bucket_drain(zone, bucket);
+			bucket_free(zone, bucket, udata);
+			goto zfree_restart;
+		} else
+			LIST_INSERT_HEAD(&zdom->uzd_buckets, bucket, ub_link);
 	}
 
 	/*

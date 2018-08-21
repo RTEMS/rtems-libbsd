@@ -20,3 +20,4 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int src_node_killers);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int state_killers);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_anchor pf_main_anchor);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_anchor_global pf_anchors);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pfr_buffer skip_b);

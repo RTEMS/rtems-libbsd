@@ -41,7 +41,6 @@ __FBSDID("$FreeBSD$");
  * HID spec: http://www.usb.org/developers/devclass_docs/HID1_11.pdf
  */
 
-#include <rtems/bsd/local/opt_compat.h>
 #include <rtems/bsd/local/opt_kbd.h>
 #include <rtems/bsd/local/opt_ukbd.h>
 #include <rtems/bsd/local/opt_evdev.h>

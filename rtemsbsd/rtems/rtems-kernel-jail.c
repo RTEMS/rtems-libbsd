@@ -103,7 +103,7 @@ struct prison prison0 = {
 #else
   .pr_flags = PR_HOST|_PR_IP_SADDRSEL,
 #endif
-  .pr_allow = PR_ALLOW_ALL,
+  .pr_allow = PR_ALLOW_ALL_STATIC
 };
 MTX_SYSINIT(prison0, &prison0.pr_mtx, "jail mutex", MTX_DEF);
 

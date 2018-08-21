@@ -89,7 +89,6 @@ The Regents of the University of California.  All rights reserved.\n";
  */
 #ifdef HAVE_CAPSICUM
 #include <sys/capsicum.h>
-#include <sys/sysctl.h>
 #include <sys/nv.h>
 #include <sys/ioccom.h>
 #include <net/bpf.h>
@@ -125,6 +124,10 @@ The Regents of the University of California.  All rights reserved.\n";
 #undef HAVE_LIBCAP_NG
 #endif /* HAVE_CAP_NG_H */
 #endif /* HAVE_LIBCAP_NG */
+
+#ifdef __FreeBSD__
+#include <sys/sysctl.h>
+#endif /* __FreeBSD__ */
 
 #include "netdissect.h"
 #include "interface.h"
@@ -1129,6 +1132,10 @@ open_interface(const char *device, netdissect_options *ndo, char *ebuf)
 			sysctlbyname(sysctl, parent, &s, NULL, 0);
 			strlcpy(newdev, device, sizeof(newdev));
 			/* Suggest a new wlan device. */
+			/* FIXME: incrementing the index this way is not going to work well
+			 * when the index is 9 or greater but the only consequence in this
+			 * specific case would be an error message that looks a bit odd.
+			 */
 			newdev[strlen(newdev)-1]++;
 			error("%s is not a monitor mode VAP\n"
 			    "To create a new monitor mode VAP use:\n"

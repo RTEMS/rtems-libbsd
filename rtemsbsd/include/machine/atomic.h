@@ -380,6 +380,39 @@ atomic_cmpset_int(volatile int *p, int cmp, int set)
 }
 
 static inline int
+atomic_fcmpset_int(volatile int *p, int *cmp, int set)
+{
+	int rv;
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_int *q =
+	    reinterpret_cast<std::atomic_int *>(const_cast<int *>(p));
+
+	rv = q->compare_exchange_strong(*cmp, set, std::memory_order_seq_cst,
+	    std::memory_order_relaxed);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_int *q = (atomic_int *)RTEMS_DEVOLATILE(int *, p);
+
+	rv = atomic_compare_exchange_strong_explicit(q, cmp, set,
+	    memory_order_seq_cst, memory_order_relaxed);
+#else
+	rtems_interrupt_level level;
+	int actual;
+
+	rtems_interrupt_disable(level);
+	actual = *p;
+	rv = actual == *cmp;
+	*cmp = actual;
+	if (rv) {
+		*p = set;
+	}
+	rtems_interrupt_enable(level);
+#endif
+
+	return (rv);
+}
+
+static inline int
 atomic_cmpset_acq_int(volatile int *p, int cmp, int set)
 {
 	int rv;

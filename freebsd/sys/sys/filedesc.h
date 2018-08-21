@@ -174,7 +174,7 @@ enum {
 struct thread;
 
 void	filecaps_init(struct filecaps *fcaps);
-int	filecaps_copy(const struct filecaps *src, struct filecaps *dst,
+bool	filecaps_copy(const struct filecaps *src, struct filecaps *dst,
 	    bool locked);
 void	filecaps_move(struct filecaps *src, struct filecaps *dst);
 #ifndef __rtems__
@@ -266,18 +266,19 @@ int	fget_unlocked(struct filedesc *fdp, int fd, cap_rights_t *needrightsp,
 	    struct file **fpp, seq_t *seqp);
 #else /* __rtems__ */
 static inline int
-fget_unlocked(struct filedesc *fdp, int fd, cap_rights_t *needrightsp,
-    struct file **fpp, seq_t *seqp)
+do_fget_unlocked(struct filedesc *fdp, int fd, struct file **fpp, seq_t *seqp)
 {
 	struct file *fp;
 
 	(void)fdp;
-	(void)needrightsp;
 	(void)seqp;
 	fp = rtems_bsd_get_file(fd);
 	*fpp = fp;
 	return (fp != NULL ? 0 : EBADF);
 }
+
+#define	fget_unlocked(fdp, fd, needrightsp, fpp, seqp) \
+    do_fget_unlocked(fdp, fd, fpp, seqp)
 #endif /* __rtems__ */
 
 #ifndef __rtems__

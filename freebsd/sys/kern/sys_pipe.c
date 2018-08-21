@@ -93,8 +93,6 @@
  * in the structure may have changed.
  */
 
-#include <rtems/bsd/local/opt_compat.h>
-
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 

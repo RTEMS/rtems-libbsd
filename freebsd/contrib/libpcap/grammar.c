@@ -118,23 +118,18 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * $FreeBSD$
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
-
-#ifdef _WIN32
-#include <pcap-stdinc.h>
-#else /* _WIN32 */
-#include <sys/types.h>
-#include <sys/socket.h>
-#endif /* _WIN32 */
 
 #include <stdlib.h>
 
 #ifndef _WIN32
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #if __STDC__
 struct mbuf;
 struct rtentry;
@@ -146,6 +141,8 @@ struct rtentry;
 
 #include <stdio.h>
 
+#include "diag-control.h"
+
 #include "pcap-int.h"
 
 #include "gencode.h"
@@ -154,7 +151,7 @@ struct rtentry;
 
 #ifdef HAVE_NET_PFVAR_H
 #include <net/if.h>
-#include <netpfil/pf/pf.h>
+#include <net/pfvar.h>
 #include <net/if_pflog.h>
 #endif
 #include "llc.h"
@@ -165,9 +162,30 @@ struct rtentry;
 #include "os-proto.h"
 #endif
 
-#define QSET(q, p, d, a) (q).proto = (p),\
-			 (q).dir = (d),\
-			 (q).addr = (a)
+#ifdef YYBYACC
+/*
+ * Both Berkeley YACC and Bison define yydebug (under whatever name
+ * it has) as a global, but Bison does so only if YYDEBUG is defined.
+ * Berkeley YACC define it even if YYDEBUG isn't defined; declare it
+ * here to suppress a warning.
+ */
+#if !defined(YYDEBUG)
+extern int yydebug;
+#endif
+
+/*
+ * In Berkeley YACC, yynerrs (under whatever name it has) is global,
+ * even if it's building a reentrant parser.  In Bison, it's local
+ * in reentrant parsers.
+ *
+ * Declare it to squelch a warning.
+ */
+extern int yynerrs;
+#endif
+
+#define QSET(q, p, d, a) (q).proto = (unsigned char)(p),\
+			 (q).dir = (unsigned char)(d),\
+			 (q).addr = (unsigned char)(a)
 
 struct tok {
 	int v;			/* value */
@@ -274,8 +292,8 @@ str2tok(const char *str, const struct tok *toks)
 
 static struct qual qerr = { Q_UNDEF, Q_UNDEF, Q_UNDEF, Q_UNDEF };
 
-static void
-yyerror(void *yyscanner, compiler_state_t *cstate, const char *msg)
+static PCAP_NORETURN_DEF void
+yyerror(void *yyscanner _U_, compiler_state_t *cstate, const char *msg)
 {
 	bpf_syntax_error(cstate, msg);
 	/* NOTREACHED */
@@ -321,33 +339,29 @@ pfaction_to_num(compiler_state_t *cstate, const char *action)
 	}
 }
 #else /* !HAVE_NET_PFVAR_H */
-static int
-pfreason_to_num(compiler_state_t *cstate, const char *reason)
+static PCAP_NORETURN_DEF int
+pfreason_to_num(compiler_state_t *cstate, const char *reason _U_)
 {
 	bpf_error(cstate, "libpcap was compiled on a machine without pf support");
 	/*NOTREACHED*/
-
-	/* this is to make the VC compiler happy */
-	return -1;
 }
 
-static int
-pfaction_to_num(compiler_state_t *cstate, const char *action)
+static PCAP_NORETURN_DEF int
+pfaction_to_num(compiler_state_t *cstate, const char *action _U_)
 {
 	bpf_error(cstate, "libpcap was compiled on a machine without pf support");
 	/*NOTREACHED*/
-
-	/* this is to make the VC compiler happy */
-	return -1;
 }
 #endif /* HAVE_NET_PFVAR_H */
+
+DIAG_OFF_BISON_BYACC
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
 #endif
 #ifndef YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
-#line 272 "grammar.y"
+#line 286 "grammar.y"
 typedef union {
 	int i;
 	bpf_u_int32 h;
@@ -364,7 +378,7 @@ typedef union {
 	struct block *rblk;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-#line 368 "grammar.c"
+#line 382 "grammar.c"
 
 /* compatibility with bison */
 #ifdef YYPARSE_PARAM
@@ -1434,64 +1448,64 @@ yyreduce:
     switch (yyn)
     {
 case 1:
-#line 347 "grammar.y"
+#line 361 "grammar.y"
 	{
 	finish_parse(cstate, yystack.l_mark[0].blk.b);
 }
 break;
 case 3:
-#line 352 "grammar.y"
+#line 366 "grammar.y"
 	{ yyval.blk.q = qerr; }
 break;
 case 5:
-#line 355 "grammar.y"
+#line 369 "grammar.y"
 	{ gen_and(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 6:
-#line 356 "grammar.y"
+#line 370 "grammar.y"
 	{ gen_and(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 7:
-#line 357 "grammar.y"
+#line 371 "grammar.y"
 	{ gen_or(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 8:
-#line 358 "grammar.y"
+#line 372 "grammar.y"
 	{ gen_or(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 9:
-#line 360 "grammar.y"
+#line 374 "grammar.y"
 	{ yyval.blk = yystack.l_mark[-1].blk; }
 break;
 case 10:
-#line 362 "grammar.y"
+#line 376 "grammar.y"
 	{ yyval.blk = yystack.l_mark[-1].blk; }
 break;
 case 12:
-#line 365 "grammar.y"
+#line 379 "grammar.y"
 	{ yyval.blk.b = gen_ncode(cstate, NULL, (bpf_u_int32)yystack.l_mark[0].i,
 						   yyval.blk.q = yystack.l_mark[-1].blk.q); }
 break;
 case 13:
-#line 367 "grammar.y"
+#line 381 "grammar.y"
 	{ yyval.blk = yystack.l_mark[-1].blk; }
 break;
 case 14:
-#line 369 "grammar.y"
+#line 383 "grammar.y"
 	{ yyval.blk.b = gen_scode(cstate, yystack.l_mark[0].s, yyval.blk.q = yystack.l_mark[-1].blk.q); }
 break;
 case 15:
-#line 370 "grammar.y"
+#line 384 "grammar.y"
 	{ yyval.blk.b = gen_mcode(cstate, yystack.l_mark[-2].s, NULL, yystack.l_mark[0].i,
 				    yyval.blk.q = yystack.l_mark[-3].blk.q); }
 break;
 case 16:
-#line 372 "grammar.y"
+#line 386 "grammar.y"
 	{ yyval.blk.b = gen_mcode(cstate, yystack.l_mark[-2].s, yystack.l_mark[0].s, 0,
 				    yyval.blk.q = yystack.l_mark[-3].blk.q); }
 break;
 case 17:
-#line 374 "grammar.y"
+#line 388 "grammar.y"
 	{
 				  /* Decide how to parse HID based on proto */
 				  yyval.blk.q = yystack.l_mark[-1].blk.q;
@@ -1507,7 +1521,7 @@ case 17:
 				}
 break;
 case 18:
-#line 387 "grammar.y"
+#line 401 "grammar.y"
 	{
 #ifdef INET6
 				  yyval.blk.b = gen_mcode6(cstate, yystack.l_mark[-2].s, NULL, yystack.l_mark[0].i,
@@ -1519,7 +1533,7 @@ case 18:
 				}
 break;
 case 19:
-#line 396 "grammar.y"
+#line 410 "grammar.y"
 	{
 #ifdef INET6
 				  yyval.blk.b = gen_mcode6(cstate, yystack.l_mark[0].s, 0, 128,
@@ -1531,7 +1545,7 @@ case 19:
 				}
 break;
 case 20:
-#line 405 "grammar.y"
+#line 419 "grammar.y"
 	{
 				  yyval.blk.b = gen_ecode(cstate, yystack.l_mark[0].e, yyval.blk.q = yystack.l_mark[-1].blk.q);
 				  /*
@@ -1543,7 +1557,7 @@ case 20:
 				}
 break;
 case 21:
-#line 414 "grammar.y"
+#line 428 "grammar.y"
 	{
 				  yyval.blk.b = gen_acode(cstate, yystack.l_mark[0].e, yyval.blk.q = yystack.l_mark[-1].blk.q);
 				  /*
@@ -1555,465 +1569,465 @@ case 21:
 				}
 break;
 case 22:
-#line 423 "grammar.y"
+#line 437 "grammar.y"
 	{ gen_not(yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 23:
-#line 425 "grammar.y"
+#line 439 "grammar.y"
 	{ yyval.blk = yystack.l_mark[-1].blk; }
 break;
 case 24:
-#line 427 "grammar.y"
+#line 441 "grammar.y"
 	{ yyval.blk = yystack.l_mark[-1].blk; }
 break;
 case 26:
-#line 430 "grammar.y"
+#line 444 "grammar.y"
 	{ gen_and(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 27:
-#line 431 "grammar.y"
+#line 445 "grammar.y"
 	{ gen_or(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 28:
-#line 433 "grammar.y"
+#line 447 "grammar.y"
 	{ yyval.blk.b = gen_ncode(cstate, NULL, (bpf_u_int32)yystack.l_mark[0].i,
 						   yyval.blk.q = yystack.l_mark[-1].blk.q); }
 break;
 case 31:
-#line 438 "grammar.y"
+#line 452 "grammar.y"
 	{ gen_not(yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 32:
-#line 440 "grammar.y"
+#line 454 "grammar.y"
 	{ QSET(yyval.blk.q, yystack.l_mark[-2].i, yystack.l_mark[-1].i, yystack.l_mark[0].i); }
 break;
 case 33:
-#line 441 "grammar.y"
+#line 455 "grammar.y"
 	{ QSET(yyval.blk.q, yystack.l_mark[-1].i, yystack.l_mark[0].i, Q_DEFAULT); }
 break;
 case 34:
-#line 442 "grammar.y"
+#line 456 "grammar.y"
 	{ QSET(yyval.blk.q, yystack.l_mark[-1].i, Q_DEFAULT, yystack.l_mark[0].i); }
 break;
 case 35:
-#line 443 "grammar.y"
+#line 457 "grammar.y"
 	{ QSET(yyval.blk.q, yystack.l_mark[-1].i, Q_DEFAULT, Q_PROTO); }
 break;
 case 36:
-#line 444 "grammar.y"
+#line 458 "grammar.y"
 	{ QSET(yyval.blk.q, yystack.l_mark[-1].i, Q_DEFAULT, Q_PROTOCHAIN); }
 break;
 case 37:
-#line 445 "grammar.y"
+#line 459 "grammar.y"
 	{ QSET(yyval.blk.q, yystack.l_mark[-1].i, Q_DEFAULT, yystack.l_mark[0].i); }
 break;
 case 38:
-#line 447 "grammar.y"
+#line 461 "grammar.y"
 	{ yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 39:
-#line 448 "grammar.y"
+#line 462 "grammar.y"
 	{ yyval.blk.b = yystack.l_mark[-1].blk.b; yyval.blk.q = yystack.l_mark[-2].blk.q; }
 break;
 case 40:
-#line 449 "grammar.y"
+#line 463 "grammar.y"
 	{ yyval.blk.b = gen_proto_abbrev(cstate, yystack.l_mark[0].i); yyval.blk.q = qerr; }
 break;
 case 41:
-#line 450 "grammar.y"
+#line 464 "grammar.y"
 	{ yyval.blk.b = gen_relation(cstate, yystack.l_mark[-1].i, yystack.l_mark[-2].a, yystack.l_mark[0].a, 0);
 				  yyval.blk.q = qerr; }
 break;
 case 42:
-#line 452 "grammar.y"
+#line 466 "grammar.y"
 	{ yyval.blk.b = gen_relation(cstate, yystack.l_mark[-1].i, yystack.l_mark[-2].a, yystack.l_mark[0].a, 1);
 				  yyval.blk.q = qerr; }
 break;
 case 43:
-#line 454 "grammar.y"
+#line 468 "grammar.y"
 	{ yyval.blk.b = yystack.l_mark[0].rblk; yyval.blk.q = qerr; }
 break;
 case 44:
-#line 455 "grammar.y"
+#line 469 "grammar.y"
 	{ yyval.blk.b = gen_atmtype_abbrev(cstate, yystack.l_mark[0].i); yyval.blk.q = qerr; }
 break;
 case 45:
-#line 456 "grammar.y"
+#line 470 "grammar.y"
 	{ yyval.blk.b = gen_atmmulti_abbrev(cstate, yystack.l_mark[0].i); yyval.blk.q = qerr; }
 break;
 case 46:
-#line 457 "grammar.y"
+#line 471 "grammar.y"
 	{ yyval.blk.b = yystack.l_mark[0].blk.b; yyval.blk.q = qerr; }
 break;
 case 47:
-#line 458 "grammar.y"
+#line 472 "grammar.y"
 	{ yyval.blk.b = gen_mtp2type_abbrev(cstate, yystack.l_mark[0].i); yyval.blk.q = qerr; }
 break;
 case 48:
-#line 459 "grammar.y"
+#line 473 "grammar.y"
 	{ yyval.blk.b = yystack.l_mark[0].blk.b; yyval.blk.q = qerr; }
 break;
 case 50:
-#line 463 "grammar.y"
+#line 477 "grammar.y"
 	{ yyval.i = Q_DEFAULT; }
 break;
 case 51:
-#line 466 "grammar.y"
+#line 480 "grammar.y"
 	{ yyval.i = Q_SRC; }
 break;
 case 52:
-#line 467 "grammar.y"
+#line 481 "grammar.y"
 	{ yyval.i = Q_DST; }
 break;
 case 53:
-#line 468 "grammar.y"
+#line 482 "grammar.y"
 	{ yyval.i = Q_OR; }
 break;
 case 54:
-#line 469 "grammar.y"
+#line 483 "grammar.y"
 	{ yyval.i = Q_OR; }
 break;
 case 55:
-#line 470 "grammar.y"
+#line 484 "grammar.y"
 	{ yyval.i = Q_AND; }
 break;
 case 56:
-#line 471 "grammar.y"
+#line 485 "grammar.y"
 	{ yyval.i = Q_AND; }
 break;
 case 57:
-#line 472 "grammar.y"
+#line 486 "grammar.y"
 	{ yyval.i = Q_ADDR1; }
 break;
 case 58:
-#line 473 "grammar.y"
+#line 487 "grammar.y"
 	{ yyval.i = Q_ADDR2; }
 break;
 case 59:
-#line 474 "grammar.y"
+#line 488 "grammar.y"
 	{ yyval.i = Q_ADDR3; }
 break;
 case 60:
-#line 475 "grammar.y"
+#line 489 "grammar.y"
 	{ yyval.i = Q_ADDR4; }
 break;
 case 61:
-#line 476 "grammar.y"
+#line 490 "grammar.y"
 	{ yyval.i = Q_RA; }
 break;
 case 62:
-#line 477 "grammar.y"
+#line 491 "grammar.y"
 	{ yyval.i = Q_TA; }
 break;
 case 63:
-#line 480 "grammar.y"
+#line 494 "grammar.y"
 	{ yyval.i = Q_HOST; }
 break;
 case 64:
-#line 481 "grammar.y"
+#line 495 "grammar.y"
 	{ yyval.i = Q_NET; }
 break;
 case 65:
-#line 482 "grammar.y"
+#line 496 "grammar.y"
 	{ yyval.i = Q_PORT; }
 break;
 case 66:
-#line 483 "grammar.y"
+#line 497 "grammar.y"
 	{ yyval.i = Q_PORTRANGE; }
 break;
 case 67:
-#line 486 "grammar.y"
+#line 500 "grammar.y"
 	{ yyval.i = Q_GATEWAY; }
 break;
 case 68:
-#line 488 "grammar.y"
+#line 502 "grammar.y"
 	{ yyval.i = Q_LINK; }
 break;
 case 69:
-#line 489 "grammar.y"
+#line 503 "grammar.y"
 	{ yyval.i = Q_IP; }
 break;
 case 70:
-#line 490 "grammar.y"
+#line 504 "grammar.y"
 	{ yyval.i = Q_ARP; }
 break;
 case 71:
-#line 491 "grammar.y"
+#line 505 "grammar.y"
 	{ yyval.i = Q_RARP; }
 break;
 case 72:
-#line 492 "grammar.y"
+#line 506 "grammar.y"
 	{ yyval.i = Q_SCTP; }
 break;
 case 73:
-#line 493 "grammar.y"
+#line 507 "grammar.y"
 	{ yyval.i = Q_TCP; }
 break;
 case 74:
-#line 494 "grammar.y"
+#line 508 "grammar.y"
 	{ yyval.i = Q_UDP; }
 break;
 case 75:
-#line 495 "grammar.y"
+#line 509 "grammar.y"
 	{ yyval.i = Q_ICMP; }
 break;
 case 76:
-#line 496 "grammar.y"
+#line 510 "grammar.y"
 	{ yyval.i = Q_IGMP; }
 break;
 case 77:
-#line 497 "grammar.y"
+#line 511 "grammar.y"
 	{ yyval.i = Q_IGRP; }
 break;
 case 78:
-#line 498 "grammar.y"
+#line 512 "grammar.y"
 	{ yyval.i = Q_PIM; }
 break;
 case 79:
-#line 499 "grammar.y"
+#line 513 "grammar.y"
 	{ yyval.i = Q_VRRP; }
 break;
 case 80:
-#line 500 "grammar.y"
+#line 514 "grammar.y"
 	{ yyval.i = Q_CARP; }
 break;
 case 81:
-#line 501 "grammar.y"
+#line 515 "grammar.y"
 	{ yyval.i = Q_ATALK; }
 break;
 case 82:
-#line 502 "grammar.y"
+#line 516 "grammar.y"
 	{ yyval.i = Q_AARP; }
 break;
 case 83:
-#line 503 "grammar.y"
+#line 517 "grammar.y"
 	{ yyval.i = Q_DECNET; }
 break;
 case 84:
-#line 504 "grammar.y"
+#line 518 "grammar.y"
 	{ yyval.i = Q_LAT; }
 break;
 case 85:
-#line 505 "grammar.y"
+#line 519 "grammar.y"
 	{ yyval.i = Q_SCA; }
 break;
 case 86:
-#line 506 "grammar.y"
+#line 520 "grammar.y"
 	{ yyval.i = Q_MOPDL; }
 break;
 case 87:
-#line 507 "grammar.y"
+#line 521 "grammar.y"
 	{ yyval.i = Q_MOPRC; }
 break;
 case 88:
-#line 508 "grammar.y"
+#line 522 "grammar.y"
 	{ yyval.i = Q_IPV6; }
 break;
 case 89:
-#line 509 "grammar.y"
+#line 523 "grammar.y"
 	{ yyval.i = Q_ICMPV6; }
 break;
 case 90:
-#line 510 "grammar.y"
+#line 524 "grammar.y"
 	{ yyval.i = Q_AH; }
 break;
 case 91:
-#line 511 "grammar.y"
+#line 525 "grammar.y"
 	{ yyval.i = Q_ESP; }
 break;
 case 92:
-#line 512 "grammar.y"
+#line 526 "grammar.y"
 	{ yyval.i = Q_ISO; }
 break;
 case 93:
-#line 513 "grammar.y"
+#line 527 "grammar.y"
 	{ yyval.i = Q_ESIS; }
 break;
 case 94:
-#line 514 "grammar.y"
+#line 528 "grammar.y"
 	{ yyval.i = Q_ISIS; }
 break;
 case 95:
-#line 515 "grammar.y"
+#line 529 "grammar.y"
 	{ yyval.i = Q_ISIS_L1; }
 break;
 case 96:
-#line 516 "grammar.y"
+#line 530 "grammar.y"
 	{ yyval.i = Q_ISIS_L2; }
 break;
 case 97:
-#line 517 "grammar.y"
+#line 531 "grammar.y"
 	{ yyval.i = Q_ISIS_IIH; }
 break;
 case 98:
-#line 518 "grammar.y"
+#line 532 "grammar.y"
 	{ yyval.i = Q_ISIS_LSP; }
 break;
 case 99:
-#line 519 "grammar.y"
+#line 533 "grammar.y"
 	{ yyval.i = Q_ISIS_SNP; }
 break;
 case 100:
-#line 520 "grammar.y"
+#line 534 "grammar.y"
 	{ yyval.i = Q_ISIS_PSNP; }
 break;
 case 101:
-#line 521 "grammar.y"
+#line 535 "grammar.y"
 	{ yyval.i = Q_ISIS_CSNP; }
 break;
 case 102:
-#line 522 "grammar.y"
+#line 536 "grammar.y"
 	{ yyval.i = Q_CLNP; }
 break;
 case 103:
-#line 523 "grammar.y"
+#line 537 "grammar.y"
 	{ yyval.i = Q_STP; }
 break;
 case 104:
-#line 524 "grammar.y"
+#line 538 "grammar.y"
 	{ yyval.i = Q_IPX; }
 break;
 case 105:
-#line 525 "grammar.y"
+#line 539 "grammar.y"
 	{ yyval.i = Q_NETBEUI; }
 break;
 case 106:
-#line 526 "grammar.y"
+#line 540 "grammar.y"
 	{ yyval.i = Q_RADIO; }
 break;
 case 107:
-#line 528 "grammar.y"
+#line 542 "grammar.y"
 	{ yyval.rblk = gen_broadcast(cstate, yystack.l_mark[-1].i); }
 break;
 case 108:
-#line 529 "grammar.y"
+#line 543 "grammar.y"
 	{ yyval.rblk = gen_multicast(cstate, yystack.l_mark[-1].i); }
 break;
 case 109:
-#line 530 "grammar.y"
+#line 544 "grammar.y"
 	{ yyval.rblk = gen_less(cstate, yystack.l_mark[0].i); }
 break;
 case 110:
-#line 531 "grammar.y"
+#line 545 "grammar.y"
 	{ yyval.rblk = gen_greater(cstate, yystack.l_mark[0].i); }
 break;
 case 111:
-#line 532 "grammar.y"
+#line 546 "grammar.y"
 	{ yyval.rblk = gen_byteop(cstate, yystack.l_mark[-1].i, yystack.l_mark[-2].i, yystack.l_mark[0].i); }
 break;
 case 112:
-#line 533 "grammar.y"
+#line 547 "grammar.y"
 	{ yyval.rblk = gen_inbound(cstate, 0); }
 break;
 case 113:
-#line 534 "grammar.y"
+#line 548 "grammar.y"
 	{ yyval.rblk = gen_inbound(cstate, 1); }
 break;
 case 114:
-#line 535 "grammar.y"
+#line 549 "grammar.y"
 	{ yyval.rblk = gen_vlan(cstate, yystack.l_mark[0].i); }
 break;
 case 115:
-#line 536 "grammar.y"
+#line 550 "grammar.y"
 	{ yyval.rblk = gen_vlan(cstate, -1); }
 break;
 case 116:
-#line 537 "grammar.y"
+#line 551 "grammar.y"
 	{ yyval.rblk = gen_mpls(cstate, yystack.l_mark[0].i); }
 break;
 case 117:
-#line 538 "grammar.y"
+#line 552 "grammar.y"
 	{ yyval.rblk = gen_mpls(cstate, -1); }
 break;
 case 118:
-#line 539 "grammar.y"
+#line 553 "grammar.y"
 	{ yyval.rblk = gen_pppoed(cstate); }
 break;
 case 119:
-#line 540 "grammar.y"
+#line 554 "grammar.y"
 	{ yyval.rblk = gen_pppoes(cstate, yystack.l_mark[0].i); }
 break;
 case 120:
-#line 541 "grammar.y"
+#line 555 "grammar.y"
 	{ yyval.rblk = gen_pppoes(cstate, -1); }
 break;
 case 121:
-#line 542 "grammar.y"
+#line 556 "grammar.y"
 	{ yyval.rblk = gen_geneve(cstate, yystack.l_mark[0].i); }
 break;
 case 122:
-#line 543 "grammar.y"
+#line 557 "grammar.y"
 	{ yyval.rblk = gen_geneve(cstate, -1); }
 break;
 case 123:
-#line 544 "grammar.y"
+#line 558 "grammar.y"
 	{ yyval.rblk = yystack.l_mark[0].rblk; }
 break;
 case 124:
-#line 545 "grammar.y"
+#line 559 "grammar.y"
 	{ yyval.rblk = yystack.l_mark[0].rblk; }
 break;
 case 125:
-#line 546 "grammar.y"
+#line 560 "grammar.y"
 	{ yyval.rblk = yystack.l_mark[0].rblk; }
 break;
 case 126:
-#line 549 "grammar.y"
+#line 563 "grammar.y"
 	{ yyval.rblk = gen_pf_ifname(cstate, yystack.l_mark[0].s); }
 break;
 case 127:
-#line 550 "grammar.y"
+#line 564 "grammar.y"
 	{ yyval.rblk = gen_pf_ruleset(cstate, yystack.l_mark[0].s); }
 break;
 case 128:
-#line 551 "grammar.y"
+#line 565 "grammar.y"
 	{ yyval.rblk = gen_pf_rnr(cstate, yystack.l_mark[0].i); }
 break;
 case 129:
-#line 552 "grammar.y"
+#line 566 "grammar.y"
 	{ yyval.rblk = gen_pf_srnr(cstate, yystack.l_mark[0].i); }
 break;
 case 130:
-#line 553 "grammar.y"
+#line 567 "grammar.y"
 	{ yyval.rblk = gen_pf_reason(cstate, yystack.l_mark[0].i); }
 break;
 case 131:
-#line 554 "grammar.y"
+#line 568 "grammar.y"
 	{ yyval.rblk = gen_pf_action(cstate, yystack.l_mark[0].i); }
 break;
 case 132:
-#line 558 "grammar.y"
+#line 572 "grammar.y"
 	{ yyval.rblk = gen_p80211_type(cstate, yystack.l_mark[-2].i | yystack.l_mark[0].i,
 					IEEE80211_FC0_TYPE_MASK |
 					IEEE80211_FC0_SUBTYPE_MASK);
 				}
 break;
 case 133:
-#line 562 "grammar.y"
+#line 576 "grammar.y"
 	{ yyval.rblk = gen_p80211_type(cstate, yystack.l_mark[0].i,
 					IEEE80211_FC0_TYPE_MASK);
 				}
 break;
 case 134:
-#line 565 "grammar.y"
+#line 579 "grammar.y"
 	{ yyval.rblk = gen_p80211_type(cstate, yystack.l_mark[0].i,
 					IEEE80211_FC0_TYPE_MASK |
 					IEEE80211_FC0_SUBTYPE_MASK);
 				}
 break;
 case 135:
-#line 569 "grammar.y"
+#line 583 "grammar.y"
 	{ yyval.rblk = gen_p80211_fcdir(cstate, yystack.l_mark[0].i); }
 break;
 case 137:
-#line 573 "grammar.y"
+#line 587 "grammar.y"
 	{ yyval.i = str2tok(yystack.l_mark[0].s, ieee80211_types);
 				  if (yyval.i == -1)
 				  	bpf_error(cstate, "unknown 802.11 type name");
 				}
 break;
 case 139:
-#line 580 "grammar.y"
+#line 594 "grammar.y"
 	{ const struct tok *types = NULL;
 				  int i;
 				  for (i = 0;; i++) {
@@ -2034,7 +2048,7 @@ case 139:
 				}
 break;
 case 140:
-#line 600 "grammar.y"
+#line 614 "grammar.y"
 	{ int i;
 				  for (i = 0;; i++) {
 				  	if (ieee80211_type_subtypes[i].tok == NULL) {
@@ -2051,11 +2065,11 @@ case 140:
 				}
 break;
 case 141:
-#line 616 "grammar.y"
+#line 630 "grammar.y"
 	{ yyval.rblk = gen_llc(cstate); }
 break;
 case 142:
-#line 617 "grammar.y"
+#line 631 "grammar.y"
 	{ if (pcap_strcasecmp(yystack.l_mark[0].s, "i") == 0)
 					yyval.rblk = gen_llc_i(cstate);
 				  else if (pcap_strcasecmp(yystack.l_mark[0].s, "s") == 0)
@@ -2078,11 +2092,11 @@ case 142:
 				}
 break;
 case 143:
-#line 638 "grammar.y"
+#line 652 "grammar.y"
 	{ yyval.rblk = gen_llc_s_subtype(cstate, LLC_RNR); }
 break;
 case 145:
-#line 642 "grammar.y"
+#line 656 "grammar.y"
 	{ if (pcap_strcasecmp(yystack.l_mark[0].s, "nods") == 0)
 					yyval.i = IEEE80211_FC1_DIR_NODS;
 				  else if (pcap_strcasecmp(yystack.l_mark[0].s, "tods") == 0)
@@ -2096,195 +2110,195 @@ case 145:
 				}
 break;
 case 146:
-#line 655 "grammar.y"
+#line 669 "grammar.y"
 	{ yyval.i = yystack.l_mark[0].i; }
 break;
 case 147:
-#line 656 "grammar.y"
+#line 670 "grammar.y"
 	{ yyval.i = pfreason_to_num(cstate, yystack.l_mark[0].s); }
 break;
 case 148:
-#line 659 "grammar.y"
+#line 673 "grammar.y"
 	{ yyval.i = pfaction_to_num(cstate, yystack.l_mark[0].s); }
 break;
 case 149:
-#line 662 "grammar.y"
+#line 676 "grammar.y"
 	{ yyval.i = BPF_JGT; }
 break;
 case 150:
-#line 663 "grammar.y"
+#line 677 "grammar.y"
 	{ yyval.i = BPF_JGE; }
 break;
 case 151:
-#line 664 "grammar.y"
+#line 678 "grammar.y"
 	{ yyval.i = BPF_JEQ; }
 break;
 case 152:
-#line 666 "grammar.y"
+#line 680 "grammar.y"
 	{ yyval.i = BPF_JGT; }
 break;
 case 153:
-#line 667 "grammar.y"
+#line 681 "grammar.y"
 	{ yyval.i = BPF_JGE; }
 break;
 case 154:
-#line 668 "grammar.y"
+#line 682 "grammar.y"
 	{ yyval.i = BPF_JEQ; }
 break;
 case 155:
-#line 670 "grammar.y"
+#line 684 "grammar.y"
 	{ yyval.a = gen_loadi(cstate, yystack.l_mark[0].i); }
 break;
 case 157:
-#line 673 "grammar.y"
+#line 687 "grammar.y"
 	{ yyval.a = gen_load(cstate, yystack.l_mark[-3].i, yystack.l_mark[-1].a, 1); }
 break;
 case 158:
-#line 674 "grammar.y"
+#line 688 "grammar.y"
 	{ yyval.a = gen_load(cstate, yystack.l_mark[-5].i, yystack.l_mark[-3].a, yystack.l_mark[-1].i); }
 break;
 case 159:
-#line 675 "grammar.y"
+#line 689 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_ADD, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 160:
-#line 676 "grammar.y"
+#line 690 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_SUB, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 161:
-#line 677 "grammar.y"
+#line 691 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_MUL, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 162:
-#line 678 "grammar.y"
+#line 692 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_DIV, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 163:
-#line 679 "grammar.y"
+#line 693 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_MOD, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 164:
-#line 680 "grammar.y"
+#line 694 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_AND, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 165:
-#line 681 "grammar.y"
+#line 695 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_OR, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 166:
-#line 682 "grammar.y"
+#line 696 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_XOR, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 167:
-#line 683 "grammar.y"
+#line 697 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_LSH, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 168:
-#line 684 "grammar.y"
+#line 698 "grammar.y"
 	{ yyval.a = gen_arth(cstate, BPF_RSH, yystack.l_mark[-2].a, yystack.l_mark[0].a); }
 break;
 case 169:
-#line 685 "grammar.y"
+#line 699 "grammar.y"
 	{ yyval.a = gen_neg(cstate, yystack.l_mark[0].a); }
 break;
 case 170:
-#line 686 "grammar.y"
+#line 700 "grammar.y"
 	{ yyval.a = yystack.l_mark[-1].a; }
 break;
 case 171:
-#line 687 "grammar.y"
+#line 701 "grammar.y"
 	{ yyval.a = gen_loadlen(cstate); }
 break;
 case 172:
-#line 689 "grammar.y"
+#line 703 "grammar.y"
 	{ yyval.i = '&'; }
 break;
 case 173:
-#line 690 "grammar.y"
+#line 704 "grammar.y"
 	{ yyval.i = '|'; }
 break;
 case 174:
-#line 691 "grammar.y"
+#line 705 "grammar.y"
 	{ yyval.i = '<'; }
 break;
 case 175:
-#line 692 "grammar.y"
+#line 706 "grammar.y"
 	{ yyval.i = '>'; }
 break;
 case 176:
-#line 693 "grammar.y"
+#line 707 "grammar.y"
 	{ yyval.i = '='; }
 break;
 case 178:
-#line 696 "grammar.y"
+#line 710 "grammar.y"
 	{ yyval.i = yystack.l_mark[-1].i; }
 break;
 case 179:
-#line 698 "grammar.y"
+#line 712 "grammar.y"
 	{ yyval.i = A_LANE; }
 break;
 case 180:
-#line 699 "grammar.y"
+#line 713 "grammar.y"
 	{ yyval.i = A_METAC;	}
 break;
 case 181:
-#line 700 "grammar.y"
+#line 714 "grammar.y"
 	{ yyval.i = A_BCC; }
 break;
 case 182:
-#line 701 "grammar.y"
+#line 715 "grammar.y"
 	{ yyval.i = A_OAMF4EC; }
 break;
 case 183:
-#line 702 "grammar.y"
+#line 716 "grammar.y"
 	{ yyval.i = A_OAMF4SC; }
 break;
 case 184:
-#line 703 "grammar.y"
+#line 717 "grammar.y"
 	{ yyval.i = A_SC; }
 break;
 case 185:
-#line 704 "grammar.y"
+#line 718 "grammar.y"
 	{ yyval.i = A_ILMIC; }
 break;
 case 186:
-#line 706 "grammar.y"
+#line 720 "grammar.y"
 	{ yyval.i = A_OAM; }
 break;
 case 187:
-#line 707 "grammar.y"
+#line 721 "grammar.y"
 	{ yyval.i = A_OAMF4; }
 break;
 case 188:
-#line 708 "grammar.y"
+#line 722 "grammar.y"
 	{ yyval.i = A_CONNECTMSG; }
 break;
 case 189:
-#line 709 "grammar.y"
+#line 723 "grammar.y"
 	{ yyval.i = A_METACONNECT; }
 break;
 case 190:
-#line 712 "grammar.y"
+#line 726 "grammar.y"
 	{ yyval.blk.atmfieldtype = A_VPI; }
 break;
 case 191:
-#line 713 "grammar.y"
+#line 727 "grammar.y"
 	{ yyval.blk.atmfieldtype = A_VCI; }
 break;
 case 193:
-#line 716 "grammar.y"
+#line 730 "grammar.y"
 	{ yyval.blk.b = gen_atmfield_code(cstate, yystack.l_mark[-2].blk.atmfieldtype, (bpf_int32)yystack.l_mark[0].i, (bpf_u_int32)yystack.l_mark[-1].i, 0); }
 break;
 case 194:
-#line 717 "grammar.y"
+#line 731 "grammar.y"
 	{ yyval.blk.b = gen_atmfield_code(cstate, yystack.l_mark[-2].blk.atmfieldtype, (bpf_int32)yystack.l_mark[0].i, (bpf_u_int32)yystack.l_mark[-1].i, 1); }
 break;
 case 195:
-#line 718 "grammar.y"
+#line 732 "grammar.y"
 	{ yyval.blk.b = yystack.l_mark[-1].blk.b; yyval.blk.q = qerr; }
 break;
 case 196:
-#line 720 "grammar.y"
+#line 734 "grammar.y"
 	{
 	yyval.blk.atmfieldtype = yystack.l_mark[-1].blk.atmfieldtype;
 	if (yyval.blk.atmfieldtype == A_VPI ||
@@ -2293,79 +2307,79 @@ case 196:
 	}
 break;
 case 198:
-#line 728 "grammar.y"
+#line 742 "grammar.y"
 	{ gen_or(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
 case 199:
-#line 731 "grammar.y"
+#line 745 "grammar.y"
 	{ yyval.i = M_FISU; }
 break;
 case 200:
-#line 732 "grammar.y"
+#line 746 "grammar.y"
 	{ yyval.i = M_LSSU; }
 break;
 case 201:
-#line 733 "grammar.y"
+#line 747 "grammar.y"
 	{ yyval.i = M_MSU; }
 break;
 case 202:
-#line 734 "grammar.y"
+#line 748 "grammar.y"
 	{ yyval.i = MH_FISU; }
 break;
 case 203:
-#line 735 "grammar.y"
+#line 749 "grammar.y"
 	{ yyval.i = MH_LSSU; }
 break;
 case 204:
-#line 736 "grammar.y"
+#line 750 "grammar.y"
 	{ yyval.i = MH_MSU; }
 break;
 case 205:
-#line 739 "grammar.y"
+#line 753 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = M_SIO; }
 break;
 case 206:
-#line 740 "grammar.y"
+#line 754 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = M_OPC; }
 break;
 case 207:
-#line 741 "grammar.y"
+#line 755 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = M_DPC; }
 break;
 case 208:
-#line 742 "grammar.y"
+#line 756 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = M_SLS; }
 break;
 case 209:
-#line 743 "grammar.y"
+#line 757 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = MH_SIO; }
 break;
 case 210:
-#line 744 "grammar.y"
+#line 758 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = MH_OPC; }
 break;
 case 211:
-#line 745 "grammar.y"
+#line 759 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = MH_DPC; }
 break;
 case 212:
-#line 746 "grammar.y"
+#line 760 "grammar.y"
 	{ yyval.blk.mtp3fieldtype = MH_SLS; }
 break;
 case 214:
-#line 749 "grammar.y"
+#line 763 "grammar.y"
 	{ yyval.blk.b = gen_mtp3field_code(cstate, yystack.l_mark[-2].blk.mtp3fieldtype, (u_int)yystack.l_mark[0].i, (u_int)yystack.l_mark[-1].i, 0); }
 break;
 case 215:
-#line 750 "grammar.y"
+#line 764 "grammar.y"
 	{ yyval.blk.b = gen_mtp3field_code(cstate, yystack.l_mark[-2].blk.mtp3fieldtype, (u_int)yystack.l_mark[0].i, (u_int)yystack.l_mark[-1].i, 1); }
 break;
 case 216:
-#line 751 "grammar.y"
+#line 765 "grammar.y"
 	{ yyval.blk.b = yystack.l_mark[-1].blk.b; yyval.blk.q = qerr; }
 break;
 case 217:
-#line 753 "grammar.y"
+#line 767 "grammar.y"
 	{
 	yyval.blk.mtp3fieldtype = yystack.l_mark[-1].blk.mtp3fieldtype;
 	if (yyval.blk.mtp3fieldtype == M_SIO ||
@@ -2380,10 +2394,10 @@ case 217:
 	}
 break;
 case 219:
-#line 767 "grammar.y"
+#line 781 "grammar.y"
 	{ gen_or(yystack.l_mark[-2].blk.b, yystack.l_mark[0].blk.b); yyval.blk = yystack.l_mark[0].blk; }
 break;
-#line 2387 "grammar.c"
+#line 2401 "grammar.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;

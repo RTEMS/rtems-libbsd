@@ -15,6 +15,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char *f_inet6);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern char name[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int clearaddr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int doalias);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int exit_code);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int newaddr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int noload);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, extern int printifname);

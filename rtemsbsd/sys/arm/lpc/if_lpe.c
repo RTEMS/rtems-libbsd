@@ -74,6 +74,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/miibus_if.h>
 #ifdef __rtems__
 #include <machine/rtems-bsd-cache.h>
+#include <rtems/bsd/bsd.h>
 #endif /* __rtems__ */
 
 #ifdef DEBUG
@@ -224,8 +225,12 @@ lpe_attach(device_t dev)
 {
 	struct lpe_softc *sc = device_get_softc(dev);
 	struct ifnet *ifp;
+#ifndef __rtems__
 	int rid, i;
 	uint32_t val;
+#else /* __rtems__ */
+	int rid;
+#endif /* __rtems__ */
 
 	sc->lpe_dev = dev;
 #ifndef __rtems__
@@ -241,7 +246,7 @@ lpe_attach(device_t dev)
 		sc->lpe_enaddr[5] = 0x55;
 	}
 #else /* __rtems__ */
-	rtems_bsd_get_mac_address(device_get_name(sc->lpe_dev), device_get_unit(sc->lpe_dev), &sc->lpe_enaddr);
+	rtems_bsd_get_mac_address(device_get_name(sc->lpe_dev), device_get_unit(sc->lpe_dev), sc->lpe_enaddr);
 #endif /* __rtems__ */
 
 	mtx_init(&sc->lpe_mtx, device_get_nameunit(dev), MTX_NETWORK_LOCK,
@@ -540,6 +545,9 @@ lpe_init_locked(struct lpe_softc *sc)
 
 	/* Enable receive */
 	mac1 = lpe_read_4(sc, LPE_MAC1);
+#ifdef __rtems__
+	(void)mac1;
+#endif /* __rtems__ */
 	lpe_write_4(sc, LPE_MAC1, /*mac1 |*/ LPE_MAC1_RXENABLE | LPE_MAC1_PASSALL);
 
 	lpe_write_4(sc, LPE_MAC2, LPE_MAC2_CRCENABLE | LPE_MAC2_PADCRCENABLE |
@@ -815,7 +823,7 @@ static void lpe_set_rxfilter(struct lpe_softc *sc)
 	hashh = 0;
 
 	if_maddr_rlock(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_LINK)
 			continue;
 
@@ -1279,14 +1287,20 @@ lpe_init_rxbuf(struct lpe_softc *sc, int n)
 {
 	struct lpe_rxdesc *rxd;
 	struct lpe_hwdesc *hwd;
+#ifndef __rtems__
 	struct lpe_hwstatus *hws;
+#endif /* __rtems__ */
 	struct mbuf *m;
 	bus_dma_segment_t segs[1];
+#ifndef __rtems__
 	int nsegs;
+#endif /* __rtems__ */
 
 	rxd = &sc->lpe_cdata.lpe_rx_desc[n];
 	hwd = &sc->lpe_rdata.lpe_rx_ring[n];
+#ifndef __rtems__
 	hws = &sc->lpe_rdata.lpe_rx_status[n];
+#endif /* __rtems__ */
 	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
 
 	if (!m) {

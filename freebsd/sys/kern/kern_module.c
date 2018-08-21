@@ -28,8 +28,6 @@
  * SUCH DAMAGE.
  */
 
-#include <rtems/bsd/local/opt_compat.h>
-
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -99,7 +97,7 @@ module_init(void *arg)
 #endif /* __rtems__ */
 }
 
-SYSINIT(module, SI_SUB_KLD, SI_ORDER_FIRST, module_init, 0);
+SYSINIT(module, SI_SUB_KLD, SI_ORDER_FIRST, module_init, NULL);
 
 #ifndef __rtems__
 static void

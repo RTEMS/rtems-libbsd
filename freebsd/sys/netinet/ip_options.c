@@ -112,6 +112,7 @@ ip_dooptions(struct mbuf *m, int pass)
 	struct nhop4_extended nh_ext;
 	struct	sockaddr_in ipaddr = { sizeof(ipaddr), AF_INET };
 
+	NET_EPOCH_ENTER();
 	/* Ignore or reject packets with IP options. */
 	if (V_ip_doopts == 0)
 		return 0;
@@ -226,6 +227,7 @@ dropit:
 #endif
 					IPSTAT_INC(ips_cantforward);
 					m_freem(m);
+					NET_EPOCH_EXIT();
 					return (1);
 				}
 			}
@@ -252,7 +254,6 @@ dropit:
 
 				memcpy(cp + off, &(IA_SIN(ia)->sin_addr),
 				    sizeof(struct in_addr));
-				ifa_free(&ia->ia_ifa);
 			} else {
 				/* XXX MRT 0 for routing */
 				if (fib4_lookup_nh_ext(M_GETFIB(m),
@@ -300,7 +301,6 @@ dropit:
 			if ((ia = (INA)ifa_ifwithaddr((SA)&ipaddr)) != NULL) {
 				memcpy(cp + off, &(IA_SIN(ia)->sin_addr),
 				    sizeof(struct in_addr));
-				ifa_free(&ia->ia_ifa);
 			} else if (fib4_lookup_nh_ext(M_GETFIB(m),
 			    ipaddr.sin_addr, 0, 0, &nh_ext) == 0) {
 				memcpy(cp + off, &nh_ext.nh_src,
@@ -355,7 +355,6 @@ dropit:
 					continue;
 				(void)memcpy(sin, &IA_SIN(ia)->sin_addr,
 				    sizeof(struct in_addr));
-				ifa_free(&ia->ia_ifa);
 				cp[IPOPT_OFFSET] += sizeof(struct in_addr);
 				off += sizeof(struct in_addr);
 				break;
@@ -383,12 +382,14 @@ dropit:
 			cp[IPOPT_OFFSET] += sizeof(uint32_t);
 		}
 	}
+	NET_EPOCH_EXIT();
 	if (forward && V_ipforwarding) {
 		ip_forward(m, 1);
 		return (1);
 	}
 	return (0);
 bad:
+	NET_EPOCH_EXIT();
 	icmp_error(m, type, code, 0, 0);
 	IPSTAT_INC(ips_badoptions);
 	return (1);

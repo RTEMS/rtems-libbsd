@@ -23,6 +23,7 @@
 #define descr _bsd_ifconfig_descr
 #define descrlen _bsd_ifconfig_descrlen
 #define doalias _bsd_ifconfig_doalias
+#define exit_code _bsd_ifconfig_exit_code
 #define f_addr _bsd_ifconfig_f_addr
 #define f_ether _bsd_ifconfig_f_ether
 #define f_inet _bsd_ifconfig_f_inet

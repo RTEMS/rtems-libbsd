@@ -109,7 +109,6 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
-#include <rtems/bsd/local/opt_compat.h>
 #include <rtems/bsd/local/opt_sctp.h>
 
 #include <sys/param.h>

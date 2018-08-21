@@ -79,11 +79,13 @@
 #define pfctl_add_pool _bsd_pfctl_pfctl_add_pool
 #define pfctl_add_rule _bsd_pfctl_pfctl_add_rule
 #define pfctl_addrprefix _bsd_pfctl_pfctl_addrprefix
+#define pfctl_check_skip_ifaces _bsd_pfctl_pfctl_check_skip_ifaces
 #define pfctl_clear_altq _bsd_pfctl_pfctl_clear_altq
 #define pfctl_clear_interface_flags _bsd_pfctl_pfctl_clear_interface_flags
 #define pfctl_clear_nat _bsd_pfctl_pfctl_clear_nat
 #define pfctl_clear_pool _bsd_pfctl_pfctl_clear_pool
 #define pfctl_clear_rules _bsd_pfctl_pfctl_clear_rules
+#define pfctl_clear_skip_ifaces _bsd_pfctl_pfctl_clear_skip_ifaces
 #define pfctl_clear_src_nodes _bsd_pfctl_pfctl_clear_src_nodes
 #define pfctl_clear_states _bsd_pfctl_pfctl_clear_states
 #define pfctl_clear_stats _bsd_pfctl_pfctl_clear_stats
@@ -92,6 +94,7 @@
 #define pfctl_enable _bsd_pfctl_pfctl_enable
 #define pfctl_fopen _bsd_pfctl_pfctl_fopen
 #define pfctl_get_pool _bsd_pfctl_pfctl_get_pool
+#define pfctl_get_skip_ifaces _bsd_pfctl_pfctl_get_skip_ifaces
 #define pfctl_id_kill_states _bsd_pfctl_pfctl_id_kill_states
 #define pfctl_init_options _bsd_pfctl_pfctl_init_options
 #define pfctl_kill_src_nodes _bsd_pfctl_pfctl_kill_src_nodes

@@ -125,9 +125,6 @@ struct bpf_d {
 #define BPF_PID_REFRESH_CUR(bd)	do { } while (0)
 #endif /* __rtems__ */
 
-#define BPF_LOCK()		mtx_lock(&bpf_mtx)
-#define BPF_UNLOCK()		mtx_unlock(&bpf_mtx)
-#define BPF_LOCK_ASSERT()	mtx_assert(&bpf_mtx, MA_OWNED)
 /*
  * External representation of the bpf descriptor
  */

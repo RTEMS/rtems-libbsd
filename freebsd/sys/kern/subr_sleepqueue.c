@@ -433,7 +433,7 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
     int flags)
 {
 #ifndef __rtems__
-	struct sleepqueue_chain *sc;
+	struct sleepqueue_chain *sc __unused;
 	struct thread *td;
 	sbintime_t pr1;
 
@@ -982,7 +982,7 @@ sleepq_type(void *wchan)
 static int
 sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 {
-	struct sleepqueue_chain *sc;
+	struct sleepqueue_chain *sc __unused;
 #ifdef __rtems__
 	Thread_Control *thread;
 	ISR_lock_Context lock_context;
@@ -1022,7 +1022,6 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		td->td_sleepqueue = LIST_FIRST(&sq->sq_free);
 	LIST_REMOVE(td->td_sleepqueue, sq_hash);
 #ifdef __rtems__
-	(void)sc;
 	thread = td->td_thread;
 	_ISR_lock_ISR_disable(&lock_context);
 	_Thread_Wait_acquire_default_critical(thread, &lock_context);
@@ -1228,7 +1227,7 @@ sleepq_remove_matching(struct sleepqueue *sq, int queue,
 static void
 sleepq_timeout(void *arg)
 {
-	struct sleepqueue_chain *sc;
+	struct sleepqueue_chain *sc __unused;
 	struct sleepqueue *sq;
 	struct thread *td;
 	void *wchan;

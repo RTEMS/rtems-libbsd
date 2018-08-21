@@ -36,8 +36,10 @@
 
 #ifndef __rtems__
 #include <machine/_stdint.h>
-#endif /* __rtems__ */
 #include <sys/_stdint.h>
+#else /* __rtems__ */
+#include <stdint.h>
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 typedef	__int_least8_t		int_least8_t;

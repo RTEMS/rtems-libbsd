@@ -141,7 +141,11 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	struct thread *td;
 	struct lock_class *class;
 	uintptr_t lock_state;
+#ifndef __rtems__
 	int catch, pri, rval, sleepq_flags;
+#else /* __rtems__ */
+	int pri, rval, sleepq_flags;
+#endif /* __rtems__ */
 	WITNESS_SAVE_DECL(lock_witness);
 
 	td = curthread;
@@ -174,7 +178,6 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	catch = priority & PCATCH;
 	pri = priority & PRIMASK;
 #else /* __rtems__ */
-	(void)catch;
 	pri = priority;
 #endif /* __rtems__ */
 
@@ -322,16 +325,16 @@ msleep_spin_sbt(void *ident, struct mtx *mtx, const char *wmesg,
 #endif /* __rtems__ */
 
 /*
- * pause() delays the calling thread by the given number of system ticks.
- * During cold bootup, pause() uses the DELAY() function instead of
- * the tsleep() function to do the waiting. The "timo" argument must be
- * greater than or equal to zero. A "timo" value of zero is equivalent
- * to a "timo" value of one.
+ * pause_sbt() delays the calling thread by the given signed binary
+ * time. During cold bootup, pause_sbt() uses the DELAY() function
+ * instead of the _sleep() function to do the waiting. The "sbt"
+ * argument must be greater than or equal to zero. A "sbt" value of
+ * zero is equivalent to a "sbt" value of one tick.
  */
 int
 pause_sbt(const char *wmesg, sbintime_t sbt, sbintime_t pr, int flags)
 {
-	KASSERT(sbt >= 0, ("pause: timeout must be >= 0"));
+	KASSERT(sbt >= 0, ("pause_sbt: timeout must be >= 0"));
 
 	/* silently convert invalid timeouts */
 	if (sbt == 0)
@@ -352,10 +355,13 @@ pause_sbt(const char *wmesg, sbintime_t sbt, sbintime_t pr, int flags)
 		sbt = howmany(sbt, SBT_1US);
 		if (sbt > 0)
 			DELAY(sbt);
-		return (0);
+		return (EWOULDBLOCK);
 	}
-#endif /* __rtems__ */
+	return (_sleep(&pause_wchan[curcpu], NULL,
+	    (flags & C_CATCH) ? PCATCH : 0, wmesg, sbt, pr, flags));
+#else /* __rtems__ */
 	return (_sleep(&pause_wchan[curcpu], NULL, 0, wmesg, sbt, pr, flags));
+#endif /* __rtems__ */
 }
 
 /*

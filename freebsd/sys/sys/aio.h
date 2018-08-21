@@ -55,7 +55,7 @@
 
 #ifndef __rtems__
 /*
- * Maximum number of allowed LIO operations
+ * Maximum number of operations in a single lio_listio call
  */
 #define	AIO_LISTIO_MAX		16
 #endif /* __rtems__ */

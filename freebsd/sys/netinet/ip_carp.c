@@ -63,7 +63,6 @@ __FBSDID("$FreeBSD$");
 #include <net/if_dl.h>
 #include <net/if_llatbl.h>
 #include <net/if_types.h>
-#include <net/iso88025.h>
 #include <net/route.h>
 #include <net/vnet.h>
 
@@ -1541,17 +1540,6 @@ carp_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *sa)
 			fh->fddi_shost[5] = sc->sc_vhid;
 		}
 		break;
-	case IFT_ISO88025: {
- 			struct iso88025_header *th;
- 			th = mtod(m, struct iso88025_header *);
-			th->iso88025_shost[0] = 3;
-			th->iso88025_shost[1] = 0;
-			th->iso88025_shost[2] = 0x40 >> (sc->sc_vhid - 1);
-			th->iso88025_shost[3] = 0x40000 >> (sc->sc_vhid - 1);
-			th->iso88025_shost[4] = 0;
-			th->iso88025_shost[5] = 0;
-		}
-		break;
 	default:
 		printf("%s: carp is not supported for the %d interface type\n",
 		    ifp->if_xname, ifp->if_type);
@@ -1722,7 +1710,7 @@ carp_ioctl(struct ifreq *ifr, u_long cmd, struct thread *td)
 	struct carp_softc *sc = NULL;
 	int error = 0, locked = 0;
 
-	if ((error = copyin(ifr->ifr_data, &carpr, sizeof carpr)))
+	if ((error = copyin(ifr_data_get_ptr(ifr), &carpr, sizeof carpr)))
 		return (error);
 
 	ifp = ifunit_ref(ifr->ifr_name);
@@ -1734,7 +1722,6 @@ carp_ioctl(struct ifreq *ifr, u_long cmd, struct thread *td)
 	case IFT_L2VLAN:
 	case IFT_BRIDGE:
 	case IFT_FDDI:
-	case IFT_ISO88025:
 		break;
 	default:
 		error = EOPNOTSUPP;
@@ -1839,7 +1826,8 @@ carp_ioctl(struct ifreq *ifr, u_long cmd, struct thread *td)
 				break;
 			}
 			carp_carprcp(&carpr, sc, priveleged);
-			error = copyout(&carpr, ifr->ifr_data, sizeof(carpr));
+			error = copyout(&carpr, ifr_data_get_ptr(ifr),
+			    sizeof(carpr));
 		} else  {
 			int i, count;
 
@@ -1857,7 +1845,8 @@ carp_ioctl(struct ifreq *ifr, u_long cmd, struct thread *td)
 			IFNET_FOREACH_CARP(ifp, sc) {
 				carp_carprcp(&carpr, sc, priveleged);
 				carpr.carpr_count = count;
-				error = copyout(&carpr, ifr->ifr_data +
+				error = copyout(&carpr,
+				    (caddr_t)ifr_data_get_ptr(ifr) +
 				    (i * sizeof(carpr)), sizeof(carpr));
 				if (error) {
 					CIF_UNLOCK(ifp->if_carp);

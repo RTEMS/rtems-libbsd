@@ -1506,7 +1506,7 @@ static void ecp_nistz256_pre_comp_clear_free(void *pre_)
                         32 * sizeof(unsigned char) * (1 << pre->w) * 2 * 37);
         OPENSSL_free(pre->precomp_storage);
     }
-    OPENSSL_cleanse(pre, sizeof *pre);
+    OPENSSL_cleanse(pre, sizeof(*pre));
     OPENSSL_free(pre);
 }
 

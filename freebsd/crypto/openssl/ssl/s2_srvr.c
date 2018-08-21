@@ -726,7 +726,7 @@ static int get_client_hello(SSL *s)
     p += s->s2->tmp.session_id_length;
 
     /* challenge */
-    if (s->s2->challenge_length > sizeof s->s2->challenge) {
+    if (s->s2->challenge_length > sizeof(s->s2->challenge)) {
         ssl2_return_error(s, SSL2_PE_UNDEFINED_ERROR);
         SSLerr(SSL_F_GET_CLIENT_HELLO, ERR_R_INTERNAL_ERROR);
         return -1;
@@ -874,7 +874,7 @@ static int get_client_finished(SSL *s)
     }
 
     /* SSL2_ST_GET_CLIENT_FINISHED_B */
-    if (s->s2->conn_id_length > sizeof s->s2->conn_id) {
+    if (s->s2->conn_id_length > sizeof(s->s2->conn_id)) {
         ssl2_return_error(s, SSL2_PE_UNDEFINED_ERROR);
         SSLerr(SSL_F_GET_CLIENT_FINISHED, ERR_R_INTERNAL_ERROR);
         return -1;
@@ -905,7 +905,7 @@ static int server_verify(SSL *s)
     if (s->state == SSL2_ST_SEND_SERVER_VERIFY_A) {
         p = (unsigned char *)s->init_buf->data;
         *(p++) = SSL2_MT_SERVER_VERIFY;
-        if (s->s2->challenge_length > sizeof s->s2->challenge) {
+        if (s->s2->challenge_length > sizeof(s->s2->challenge)) {
             SSLerr(SSL_F_SERVER_VERIFY, ERR_R_INTERNAL_ERROR);
             return -1;
         }
@@ -927,7 +927,7 @@ static int server_finish(SSL *s)
         p = (unsigned char *)s->init_buf->data;
         *(p++) = SSL2_MT_SERVER_FINISHED;
 
-        if (s->session->session_id_length > sizeof s->session->session_id) {
+        if (s->session->session_id_length > sizeof(s->session->session_id)) {
             SSLerr(SSL_F_SERVER_FINISH, ERR_R_INTERNAL_ERROR);
             return -1;
         }

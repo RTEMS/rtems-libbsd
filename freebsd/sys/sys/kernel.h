@@ -270,7 +270,7 @@ sysinit_tslog_shim(const void * data)
 		sysinit_tslog_shim,				\
 		&uniquifier ## _sys_init_tslog			\
 	};							\
-	DATA_SET(sysinit_set,uniquifier ## _sys_init)
+	DATA_WSET(sysinit_set,uniquifier ## _sys_init)
 #else
 #ifndef __rtems__
 #define	C_SYSINIT(uniquifier, subsystem, order, func, ident)	\
@@ -280,7 +280,7 @@ sysinit_tslog_shim(const void * data)
 		func,						\
 		(ident)						\
 	};							\
-	DATA_SET(sysinit_set,uniquifier ## _sys_init)
+	DATA_WSET(sysinit_set,uniquifier ## _sys_init)
 #else /* __rtems__ */
 #define	SYSINIT_ENTRY_NAME(uniquifier)				\
 	_bsd_ ## uniquifier ## _sys_init
@@ -293,7 +293,7 @@ sysinit_tslog_shim(const void * data)
 		func,						\
 		(ident)						\
 	};							\
-	RWDATA_SET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
+	DATA_WSET(sysinit_set,SYSINIT_ENTRY_NAME(uniquifier))
 #define	SYSINIT_REFERENCE(uniquifier)				\
 	extern struct sysinit SYSINIT_ENTRY_NAME(uniquifier);	\
 	static struct sysinit const * const			\
@@ -323,7 +323,7 @@ sysinit_tslog_shim(const void * data)
 		func,						\
 		(ident)						\
 	};							\
-	DATA_SET(sysuninit_set,uniquifier ## _sys_uninit)
+	DATA_WSET(sysuninit_set,uniquifier ## _sys_uninit)
 #else /* __rtems__ */
 #define	C_SYSUNINIT(uniquifier, subsystem, order, func, ident)
 #endif /* __rtems__ */

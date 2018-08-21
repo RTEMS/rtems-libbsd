@@ -3182,6 +3182,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Corsair Vengeance K70 keyboard",
 	},
 	{
+	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_K70_RGB,
+	    0,
+	    "Corsair",
+	    "Corsair K70 RGB Keyboard",
+	},
+	{
 	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_STRAFE,
 	    0,
 	    "Corsair",
@@ -6225,6 +6231,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	},
 	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_THORLABS,
+	    0,
+	    "Future Technology Devices",
+	    "FTDI compatible adapter",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_TIAO,
 	    0,
 	    "Future Technology Devices",
 	    "FTDI compatible adapter",
@@ -16188,6 +16200,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Silicon Labs",
 	    "Planet Innovation Ingeni ZigBee",
+	},
+	{
+	    USB_VENDOR_SILABS, USB_PRODUCT_SILABS_HUBZ,
+	    0,
+	    "Silicon Labs",
+	    "HubZ dual ZigBee and Z-Wave",
 	},
 	{
 	    USB_VENDOR_SILABS, USB_PRODUCT_SILABS_CP2102,

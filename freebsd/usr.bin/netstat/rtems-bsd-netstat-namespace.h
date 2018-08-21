@@ -29,6 +29,7 @@
 /* main.c */
 #define Aflag _bsd_netstat_Aflag
 #define Lflag _bsd_netstat_Lflag
+#define Pflag _bsd_netstat_Pflag
 #define Rflag _bsd_netstat_Rflag
 #define Tflag _bsd_netstat_Tflag
 #define Wflag _bsd_netstat_Wflag

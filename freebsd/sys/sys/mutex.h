@@ -133,6 +133,8 @@ int	__mtx_trylock_spin_flags(volatile uintptr_t *c, int opts,
 	     const char *file, int line);
 void	__mtx_unlock_spin_flags(volatile uintptr_t *c, int opts,
 	    const char *file, int line);
+void	mtx_spin_wait_unlocked(struct mtx *m);
+
 #else /* __rtems__ */
 void	mtx_init(struct mtx *m, const char *name, const char *type, int opts);
 void	mtx_destroy(struct mtx *m);

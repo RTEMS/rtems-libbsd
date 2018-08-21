@@ -89,6 +89,7 @@ __FBSDID("$FreeBSD$");
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
+#include <vm/vm_extern.h>
 #include <vm/pmap.h>
 #include <vm/vm_map.h>
 #include <sys/copyright.h>
@@ -579,7 +580,7 @@ proc0_init(void *dummy __unused)
 	p->p_limit->pl_rlimit[RLIMIT_STACK].rlim_cur = dflssiz;
 	p->p_limit->pl_rlimit[RLIMIT_STACK].rlim_max = maxssiz;
 	/* Cast to avoid overflow on i386/PAE. */
-	pageablemem = ptoa((vm_paddr_t)vm_cnt.v_free_count);
+	pageablemem = ptoa((vm_paddr_t)vm_free_count());
 	p->p_limit->pl_rlimit[RLIMIT_RSS].rlim_cur =
 	    p->p_limit->pl_rlimit[RLIMIT_RSS].rlim_max = pageablemem;
 	p->p_limit->pl_rlimit[RLIMIT_MEMLOCK].rlim_cur = pageablemem / 3;
@@ -726,10 +727,6 @@ start_init(void *dummy)
 	struct thread *td;
 	struct proc *p;
 
-	mtx_lock(&Giant);
-
-	GIANT_REQUIRED;
-
 	TSENTER();	/* Here so we don't overlap with mi_startup. */
 
 	td = curthread;
@@ -824,7 +821,6 @@ start_init(void *dummy)
 		 * to user mode as init!
 		 */
 		if ((error = sys_execve(td, &args)) == EJUSTRETURN) {
-			mtx_unlock(&Giant);
 			TSEXIT();
 			return;
 		}

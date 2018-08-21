@@ -63,6 +63,8 @@
 #define	arpstat _bsd_arpstat
 #define	async_crypto _bsd_async_crypto
 #define	auth_algorithm_lookup _bsd_auth_algorithm_lookup
+#define	auth_hash_blake2b _bsd_auth_hash_blake2b
+#define	auth_hash_blake2s _bsd_auth_hash_blake2s
 #define	auth_hash_hmac_md5 _bsd_auth_hash_hmac_md5
 #define	auth_hash_hmac_ripemd_160 _bsd_auth_hash_hmac_ripemd_160
 #define	auth_hash_hmac_sha1 _bsd_auth_hash_hmac_sha1
@@ -310,6 +312,18 @@
 #define	BF_encrypt _bsd_BF_encrypt
 #define	BF_set_key _bsd_BF_set_key
 #define	bin2bcd_data _bsd_bin2bcd_data
+#define	blake2b_final_ref _bsd_blake2b_final_ref
+#define	blake2b_init_key_ref _bsd_blake2b_init_key_ref
+#define	blake2b_init_param_ref _bsd_blake2b_init_param_ref
+#define	blake2b_init_ref _bsd_blake2b_init_ref
+#define	blake2b_ref _bsd_blake2b_ref
+#define	blake2b_update_ref _bsd_blake2b_update_ref
+#define	blake2s_final_ref _bsd_blake2s_final_ref
+#define	blake2s_init_key_ref _bsd_blake2s_init_key_ref
+#define	blake2s_init_param_ref _bsd_blake2s_init_param_ref
+#define	blake2s_init_ref _bsd_blake2s_init_ref
+#define	blake2s_ref _bsd_blake2s_ref
+#define	blake2s_update_ref _bsd_blake2s_update_ref
 #define	blist_alloc _bsd_blist_alloc
 #define	blist_avail _bsd_blist_avail
 #define	blist_create _bsd_blist_create
@@ -516,11 +530,13 @@
 #define	cast_decrypt _bsd_cast_decrypt
 #define	cast_encrypt _bsd_cast_encrypt
 #define	cast_setkey _bsd_cast_setkey
+#define	cc_abe_frlossreduce _bsd_cc_abe_frlossreduce
 #define	cc_ack_received _bsd_cc_ack_received
 #define	cc_cong_signal _bsd_cc_cong_signal
 #define	cc_conn_init _bsd_cc_conn_init
 #define	cc_cpu _bsd_cc_cpu
 #define	cc_deregister_algo _bsd_cc_deregister_algo
+#define	cc_do_abe _bsd_cc_do_abe
 #define	cc_list _bsd_cc_list
 #define	cc_list_lock _bsd_cc_list_lock
 #define	cc_modevent _bsd_cc_modevent
@@ -528,6 +544,9 @@
 #define	cc_register_algo _bsd_cc_register_algo
 #define	cdevpriv_mtx _bsd_cdevpriv_mtx
 #define	cgem_set_ref_clk _bsd_cgem_set_ref_clk
+#define	chacha_encrypt_bytes _bsd_chacha_encrypt_bytes
+#define	chacha_ivsetup _bsd_chacha_ivsetup
+#define	chacha_keysetup _bsd_chacha_keysetup
 #define	clean_unrhdr _bsd_clean_unrhdr
 #define	clean_unrhdrl _bsd_clean_unrhdrl
 #define	ClearCheckNewLink _bsd_ClearCheckNewLink
@@ -1062,6 +1081,7 @@
 #define	enc_xform_blf _bsd_enc_xform_blf
 #define	enc_xform_camellia _bsd_enc_xform_camellia
 #define	enc_xform_cast5 _bsd_enc_xform_cast5
+#define	enc_xform_chacha20 _bsd_enc_xform_chacha20
 #define	enc_xform_des _bsd_enc_xform_des
 #define	enc_xform_null _bsd_enc_xform_null
 #define	enc_xform_rijndael128 _bsd_enc_xform_rijndael128
@@ -1070,6 +1090,7 @@
 #define	esp_enable _bsd_esp_enable
 #define	esp_hdrsiz _bsd_esp_hdrsiz
 #define	espstat _bsd_espstat
+#define	ether_8021q_frame _bsd_ether_8021q_frame
 #define	ether_crc32_be _bsd_ether_crc32_be
 #define	ether_crc32_le _bsd_ether_crc32_le
 #define	ether_demux _bsd_ether_demux
@@ -1368,6 +1389,7 @@
 #define	ieee80211_alloc_cts _bsd_ieee80211_alloc_cts
 #define	ieee80211_alloc_node _bsd_ieee80211_alloc_node
 #define	ieee80211_alloc_proberesp _bsd_ieee80211_alloc_proberesp
+#define	ieee80211_alloc_prot _bsd_ieee80211_alloc_prot
 #define	ieee80211_alloc_rts _bsd_ieee80211_alloc_rts
 #define	ieee80211_ampdu_reorder _bsd_ieee80211_ampdu_reorder
 #define	ieee80211_ampdu_request _bsd_ieee80211_ampdu_request
@@ -1851,6 +1873,7 @@
 #define	ifq_delete _bsd_ifq_delete
 #define	if_qflush _bsd_if_qflush
 #define	ifq_init _bsd_ifq_init
+#define	ifr_data_get_ptr _bsd_ifr_data_get_ptr
 #define	if_ref _bsd_if_ref
 #define	if_register_com_alloc _bsd_if_register_com_alloc
 #define	if_rele _bsd_if_rele
@@ -2127,10 +2150,8 @@
 #define	intr_event_create _bsd_intr_event_create
 #define	intr_event_execute_handlers _bsd_intr_event_execute_handlers
 #define	ip4_ah_net_deflev _bsd_ip4_ah_net_deflev
-#define	ip4_ah_offsetmask _bsd_ip4_ah_offsetmask
 #define	ip4_ah_trans_deflev _bsd_ip4_ah_trans_deflev
 #define	ip4_esp_net_deflev _bsd_ip4_esp_net_deflev
-#define	ip4_esp_randpad _bsd_ip4_esp_randpad
 #define	ip4_esp_trans_deflev _bsd_ip4_esp_trans_deflev
 #define	ip4_ipsec_dfbit _bsd_ip4_ipsec_dfbit
 #define	ip4_ipsec_ecn _bsd_ip4_ipsec_ecn
@@ -2336,11 +2357,6 @@
 #define	ip_tryforward _bsd_ip_tryforward
 #define	ipv4_ipsec_support _bsd_ipv4_ipsec_support
 #define	ipv6_ipsec_support _bsd_ipv6_ipsec_support
-#define	iso88025_ifattach _bsd_iso88025_ifattach
-#define	iso88025_ifdetach _bsd_iso88025_ifdetach
-#define	iso88025_input _bsd_iso88025_input
-#define	iso88025_ioctl _bsd_iso88025_ioctl
-#define	iso88025_output _bsd_iso88025_output
 #define	itimerfix _bsd_itimerfix
 #define	jailed _bsd_jailed
 #define	jailed_without_vnet _bsd_jailed_without_vnet
@@ -2415,7 +2431,6 @@
 #define	key_randomfill _bsd_key_randomfill
 #define	key_register_ifnet _bsd_key_register_ifnet
 #define	key_sa_recordxfer _bsd_key_sa_recordxfer
-#define	key_sendup _bsd_key_sendup
 #define	key_sendup_mbuf _bsd_key_sendup_mbuf
 #define	key_sockaddrcmp _bsd_key_sockaddrcmp
 #define	key_sockaddrcmp_withmask _bsd_key_sockaddrcmp_withmask
@@ -3011,6 +3026,9 @@
 #define	pci_find_dbsf _bsd_pci_find_dbsf
 #define	pci_find_extcap_method _bsd_pci_find_extcap_method
 #define	pci_find_htcap_method _bsd_pci_find_htcap_method
+#define	pci_find_next_cap_method _bsd_pci_find_next_cap_method
+#define	pci_find_next_extcap_method _bsd_pci_find_next_extcap_method
+#define	pci_find_next_htcap_method _bsd_pci_find_next_htcap_method
 #define	pci_find_pcie_root_port _bsd_pci_find_pcie_root_port
 #define	pci_freecfg _bsd_pci_freecfg
 #define	pci_generation _bsd_pci_generation
@@ -3151,12 +3169,14 @@
 #define	pfi_kif_ref _bsd_pfi_kif_ref
 #define	pfi_kif_unref _bsd_pfi_kif_unref
 #define	pfil_add_hook _bsd_pfil_add_hook
+#define	pfil_add_hook_flags _bsd_pfil_add_hook_flags
 #define	pfil_head_get _bsd_pfil_head_get
 #define	pfil_head_list _bsd_pfil_head_list
 #define	pfil_head_register _bsd_pfil_head_register
 #define	pfil_head_unregister _bsd_pfil_head_unregister
 #define	pfil_lock _bsd_pfil_lock
 #define	pfil_remove_hook _bsd_pfil_remove_hook
+#define	pfil_remove_hook_flags _bsd_pfil_remove_hook_flags
 #define	pfil_rlock _bsd_pfil_rlock
 #define	pfil_run_hooks _bsd_pfil_run_hooks
 #define	pfil_runlock _bsd_pfil_runlock
@@ -4619,6 +4639,7 @@
 #define	sysctl___net_inet_raw _bsd_sysctl___net_inet_raw
 #define	sysctl___net_inet_tcp _bsd_sysctl___net_inet_tcp
 #define	sysctl___net_inet_tcp_cc _bsd_sysctl___net_inet_tcp_cc
+#define	sysctl___net_inet_tcp_cc_newreno _bsd_sysctl___net_inet_tcp_cc_newreno
 #define	sysctl___net_inet_tcp_lro _bsd_sysctl___net_inet_tcp_lro
 #define	sysctl___net_inet_tcp_sack _bsd_sysctl___net_inet_tcp_sack
 #define	sysctl___net_inet_udp _bsd_sysctl___net_inet_udp
@@ -5286,6 +5307,7 @@
 #define	vlan_devat_p _bsd_vlan_devat_p
 #define	vlan_input_p _bsd_vlan_input_p
 #define	vlan_link_state_p _bsd_vlan_link_state_p
+#define	vlan_mtag_pcp _bsd_vlan_mtag_pcp
 #define	vlan_setcookie_p _bsd_vlan_setcookie_p
 #define	vlan_tag_p _bsd_vlan_tag_p
 #define	vlan_trunk_cap_p _bsd_vlan_trunk_cap_p

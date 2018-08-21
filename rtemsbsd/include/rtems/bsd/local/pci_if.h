@@ -37,8 +37,10 @@ static __inline u_int32_t PCI_READ_CONFIG(device_t dev, device_t child, int reg,
                                           int width)
 {
 	kobjop_t _m;
+	u_int32_t rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_read_config);
-	return ((pci_read_config_t *) _m)(dev, child, reg, width);
+	rc = ((pci_read_config_t *) _m)(dev, child, reg, width);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_WRITE_CONFIG() method */
@@ -63,8 +65,10 @@ typedef int pci_get_powerstate_t(device_t dev, device_t child);
 static __inline int PCI_GET_POWERSTATE(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_get_powerstate);
-	return ((pci_get_powerstate_t *) _m)(dev, child);
+	rc = ((pci_get_powerstate_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_SET_POWERSTATE() method */
@@ -75,8 +79,10 @@ typedef int pci_set_powerstate_t(device_t dev, device_t child, int state);
 static __inline int PCI_SET_POWERSTATE(device_t dev, device_t child, int state)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_set_powerstate);
-	return ((pci_set_powerstate_t *) _m)(dev, child, state);
+	rc = ((pci_set_powerstate_t *) _m)(dev, child, state);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_GET_VPD_IDENT() method */
@@ -89,8 +95,10 @@ static __inline int PCI_GET_VPD_IDENT(device_t dev, device_t child,
                                       const char **identptr)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_get_vpd_ident);
-	return ((pci_get_vpd_ident_t *) _m)(dev, child, identptr);
+	rc = ((pci_get_vpd_ident_t *) _m)(dev, child, identptr);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_GET_VPD_READONLY() method */
@@ -103,8 +111,10 @@ static __inline int PCI_GET_VPD_READONLY(device_t dev, device_t child,
                                          const char *kw, const char **vptr)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_get_vpd_readonly);
-	return ((pci_get_vpd_readonly_t *) _m)(dev, child, kw, vptr);
+	rc = ((pci_get_vpd_readonly_t *) _m)(dev, child, kw, vptr);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ENABLE_BUSMASTER() method */
@@ -115,8 +125,10 @@ typedef int pci_enable_busmaster_t(device_t dev, device_t child);
 static __inline int PCI_ENABLE_BUSMASTER(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_enable_busmaster);
-	return ((pci_enable_busmaster_t *) _m)(dev, child);
+	rc = ((pci_enable_busmaster_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_DISABLE_BUSMASTER() method */
@@ -127,8 +139,10 @@ typedef int pci_disable_busmaster_t(device_t dev, device_t child);
 static __inline int PCI_DISABLE_BUSMASTER(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_disable_busmaster);
-	return ((pci_disable_busmaster_t *) _m)(dev, child);
+	rc = ((pci_disable_busmaster_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ENABLE_IO() method */
@@ -139,8 +153,10 @@ typedef int pci_enable_io_t(device_t dev, device_t child, int space);
 static __inline int PCI_ENABLE_IO(device_t dev, device_t child, int space)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_enable_io);
-	return ((pci_enable_io_t *) _m)(dev, child, space);
+	rc = ((pci_enable_io_t *) _m)(dev, child, space);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_DISABLE_IO() method */
@@ -151,8 +167,10 @@ typedef int pci_disable_io_t(device_t dev, device_t child, int space);
 static __inline int PCI_DISABLE_IO(device_t dev, device_t child, int space)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_disable_io);
-	return ((pci_disable_io_t *) _m)(dev, child, space);
+	rc = ((pci_disable_io_t *) _m)(dev, child, space);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ASSIGN_INTERRUPT() method */
@@ -163,8 +181,10 @@ typedef int pci_assign_interrupt_t(device_t dev, device_t child);
 static __inline int PCI_ASSIGN_INTERRUPT(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_assign_interrupt);
-	return ((pci_assign_interrupt_t *) _m)(dev, child);
+	rc = ((pci_assign_interrupt_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_FIND_CAP() method */
@@ -177,8 +197,26 @@ static __inline int PCI_FIND_CAP(device_t dev, device_t child, int capability,
                                  int *capreg)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_cap);
-	return ((pci_find_cap_t *) _m)(dev, child, capability, capreg);
+	rc = ((pci_find_cap_t *) _m)(dev, child, capability, capreg);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the PCI_FIND_NEXT_CAP() method */
+extern struct kobjop_desc pci_find_next_cap_desc;
+/** @brief A function implementing the PCI_FIND_NEXT_CAP() method */
+typedef int pci_find_next_cap_t(device_t dev, device_t child, int capability,
+                                int start, int *capreg);
+
+static __inline int PCI_FIND_NEXT_CAP(device_t dev, device_t child,
+                                      int capability, int start, int *capreg)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_next_cap);
+	rc = ((pci_find_next_cap_t *) _m)(dev, child, capability, start, capreg);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_FIND_EXTCAP() method */
@@ -191,8 +229,26 @@ static __inline int PCI_FIND_EXTCAP(device_t dev, device_t child,
                                     int capability, int *capreg)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_extcap);
-	return ((pci_find_extcap_t *) _m)(dev, child, capability, capreg);
+	rc = ((pci_find_extcap_t *) _m)(dev, child, capability, capreg);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the PCI_FIND_NEXT_EXTCAP() method */
+extern struct kobjop_desc pci_find_next_extcap_desc;
+/** @brief A function implementing the PCI_FIND_NEXT_EXTCAP() method */
+typedef int pci_find_next_extcap_t(device_t dev, device_t child, int capability,
+                                   int start, int *capreg);
+
+static __inline int PCI_FIND_NEXT_EXTCAP(device_t dev, device_t child,
+                                         int capability, int start, int *capreg)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_next_extcap);
+	rc = ((pci_find_next_extcap_t *) _m)(dev, child, capability, start, capreg);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_FIND_HTCAP() method */
@@ -205,8 +261,26 @@ static __inline int PCI_FIND_HTCAP(device_t dev, device_t child, int capability,
                                    int *capreg)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_htcap);
-	return ((pci_find_htcap_t *) _m)(dev, child, capability, capreg);
+	rc = ((pci_find_htcap_t *) _m)(dev, child, capability, capreg);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the PCI_FIND_NEXT_HTCAP() method */
+extern struct kobjop_desc pci_find_next_htcap_desc;
+/** @brief A function implementing the PCI_FIND_NEXT_HTCAP() method */
+typedef int pci_find_next_htcap_t(device_t dev, device_t child, int capability,
+                                  int start, int *capreg);
+
+static __inline int PCI_FIND_NEXT_HTCAP(device_t dev, device_t child,
+                                        int capability, int start, int *capreg)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_find_next_htcap);
+	rc = ((pci_find_next_htcap_t *) _m)(dev, child, capability, start, capreg);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ALLOC_MSI() method */
@@ -217,8 +291,10 @@ typedef int pci_alloc_msi_t(device_t dev, device_t child, int *count);
 static __inline int PCI_ALLOC_MSI(device_t dev, device_t child, int *count)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_alloc_msi);
-	return ((pci_alloc_msi_t *) _m)(dev, child, count);
+	rc = ((pci_alloc_msi_t *) _m)(dev, child, count);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ALLOC_MSIX() method */
@@ -229,8 +305,10 @@ typedef int pci_alloc_msix_t(device_t dev, device_t child, int *count);
 static __inline int PCI_ALLOC_MSIX(device_t dev, device_t child, int *count)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_alloc_msix);
-	return ((pci_alloc_msix_t *) _m)(dev, child, count);
+	rc = ((pci_alloc_msix_t *) _m)(dev, child, count);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ENABLE_MSI() method */
@@ -283,8 +361,10 @@ static __inline int PCI_REMAP_MSIX(device_t dev, device_t child, int count,
                                    const u_int *vectors)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_remap_msix);
-	return ((pci_remap_msix_t *) _m)(dev, child, count, vectors);
+	rc = ((pci_remap_msix_t *) _m)(dev, child, count, vectors);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_RELEASE_MSI() method */
@@ -295,8 +375,10 @@ typedef int pci_release_msi_t(device_t dev, device_t child);
 static __inline int PCI_RELEASE_MSI(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_release_msi);
-	return ((pci_release_msi_t *) _m)(dev, child);
+	rc = ((pci_release_msi_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_MSI_COUNT() method */
@@ -307,8 +389,10 @@ typedef int pci_msi_count_t(device_t dev, device_t child);
 static __inline int PCI_MSI_COUNT(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msi_count);
-	return ((pci_msi_count_t *) _m)(dev, child);
+	rc = ((pci_msi_count_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_MSIX_COUNT() method */
@@ -319,8 +403,10 @@ typedef int pci_msix_count_t(device_t dev, device_t child);
 static __inline int PCI_MSIX_COUNT(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msix_count);
-	return ((pci_msix_count_t *) _m)(dev, child);
+	rc = ((pci_msix_count_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_MSIX_PBA_BAR() method */
@@ -331,8 +417,10 @@ typedef int pci_msix_pba_bar_t(device_t dev, device_t child);
 static __inline int PCI_MSIX_PBA_BAR(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msix_pba_bar);
-	return ((pci_msix_pba_bar_t *) _m)(dev, child);
+	rc = ((pci_msix_pba_bar_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_MSIX_TABLE_BAR() method */
@@ -343,8 +431,10 @@ typedef int pci_msix_table_bar_t(device_t dev, device_t child);
 static __inline int PCI_MSIX_TABLE_BAR(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_msix_table_bar);
-	return ((pci_msix_table_bar_t *) _m)(dev, child);
+	rc = ((pci_msix_table_bar_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_GET_ID() method */
@@ -357,8 +447,10 @@ static __inline int PCI_GET_ID(device_t dev, device_t child,
                                enum pci_id_type type, uintptr_t *id)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_get_id);
-	return ((pci_get_id_t *) _m)(dev, child, type, id);
+	rc = ((pci_get_id_t *) _m)(dev, child, type, id);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_ALLOC_DEVINFO() method */
@@ -369,8 +461,10 @@ typedef struct pci_devinfo * pci_alloc_devinfo_t(device_t dev);
 static __inline struct pci_devinfo * PCI_ALLOC_DEVINFO(device_t dev)
 {
 	kobjop_t _m;
+	struct pci_devinfo * rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_alloc_devinfo);
-	return ((pci_alloc_devinfo_t *) _m)(dev);
+	rc = ((pci_alloc_devinfo_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_CHILD_ADDED() method */
@@ -397,8 +491,10 @@ static __inline int PCI_IOV_ATTACH(device_t dev, device_t child,
                                    struct nvlist *vf_schema, const char *name)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_iov_attach);
-	return ((pci_iov_attach_t *) _m)(dev, child, pf_schema, vf_schema, name);
+	rc = ((pci_iov_attach_t *) _m)(dev, child, pf_schema, vf_schema, name);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_IOV_DETACH() method */
@@ -409,8 +505,10 @@ typedef int pci_iov_detach_t(device_t dev, device_t child);
 static __inline int PCI_IOV_DETACH(device_t dev, device_t child)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pci_iov_detach);
-	return ((pci_iov_detach_t *) _m)(dev, child);
+	rc = ((pci_iov_detach_t *) _m)(dev, child);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCI_CREATE_IOV_CHILD() method */
@@ -424,8 +522,10 @@ static __inline device_t PCI_CREATE_IOV_CHILD(device_t bus, device_t pf,
                                               uint16_t did)
 {
 	kobjop_t _m;
+	device_t rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,pci_create_iov_child);
-	return ((pci_create_iov_child_t *) _m)(bus, pf, rid, vid, did);
+	rc = ((pci_create_iov_child_t *) _m)(bus, pf, rid, vid, did);
+	return (rc);
 }
 
 #endif /* _pci_if_h_ */

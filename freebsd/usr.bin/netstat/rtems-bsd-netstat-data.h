@@ -9,6 +9,7 @@
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern char *interface);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int Aflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int Lflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int Pflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int Rflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int Tflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, extern int Wflag);

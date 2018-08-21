@@ -339,7 +339,7 @@ protopr(u_long off, const char *name, int af1, int proto)
 				    "Proto", "Recv-Q", "Send-Q",
 				    "Local Address", "Foreign Address");
 				if (!xflag && !Rflag)
-					xo_emit(" (state)");
+					xo_emit(" {T:/%-11.11s}", "(state)");
 			}
 			if (xflag) {
 				xo_emit(" {T:/%-6.6s} {T:/%-6.6s} {T:/%-6.6s} "
@@ -357,6 +357,8 @@ protopr(u_long off, const char *name, int af1, int proto)
 				xo_emit("  {T:/%8.8s} {T:/%5.5s}",
 				    "flowid", "ftype");
 			}
+			if (Pflag)
+				xo_emit(" {T:/%s}", "Log ID");
 			xo_emit("\n");
 #ifndef __rtems__
 			first = 0;
@@ -500,9 +502,9 @@ protopr(u_long off, const char *name, int af1, int proto)
 		}
 		if (istcp && !Lflag && !xflag && !Tflag && !Rflag) {
 			if (tp->t_state < 0 || tp->t_state >= TCP_NSTATES)
-				xo_emit("{:tcp-state/%d}", tp->t_state);
+				xo_emit("{:tcp-state/%-11d}", tp->t_state);
 			else {
-				xo_emit("{:tcp-state/%s}",
+				xo_emit("{:tcp-state/%-11s}",
 				    tcpstates[tp->t_state]);
 #if defined(TF_NEEDSYN) && defined(TF_NEEDFIN)
 				/* Show T/TCP `hidden state' */
@@ -517,6 +519,9 @@ protopr(u_long off, const char *name, int af1, int proto)
 			    inp->inp_flowid,
 			    inp->inp_flowtype);
 		}
+		if (istcp && Pflag)
+			xo_emit(" {:log-id/%s}", tp->xt_logid[0] == '\0' ?
+			    "-" : tp->xt_logid);
 		xo_emit("\n");
 		xo_close_instance("socket");
 	}

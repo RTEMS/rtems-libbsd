@@ -1537,6 +1537,7 @@
 /* Corsair products */
 #define	USB_PRODUCT_CORSAIR_K60	0x0a60		/* Corsair Vengeance K60 keyboard */
 #define	USB_PRODUCT_CORSAIR_K70	0x1b09		/* Corsair Vengeance K70 keyboard */
+#define	USB_PRODUCT_CORSAIR_K70_RGB	0x1b13		/* Corsair K70 RGB Keyboard */
 #define	USB_PRODUCT_CORSAIR_STRAFE	0x1b15		/* Cossair STRAFE Gaming keyboard */
 
 /* Creative products */
@@ -2162,6 +2163,7 @@
 #define	USB_PRODUCT_FTDI_TERATRONIK_D2XX	0xec89		/* FTDI compatible adapter */
 #define	USB_PRODUCT_FTDI_TERATRONIK_VCP	0xec88		/* FTDI compatible adapter */
 #define	USB_PRODUCT_FTDI_THORLABS	0xfaf0		/* FTDI compatible adapter */
+#define	USB_PRODUCT_FTDI_TIAO	0x8a98		/* FTDI compatible adapter */
 #define	USB_PRODUCT_FTDI_TNC_X	0xebe0		/* FTDI compatible adapter */
 #define	USB_PRODUCT_FTDI_TTUSB	0xff20		/* FTDI compatible adapter */
 #define	USB_PRODUCT_FTDI_USBX_707	0xf857		/* FTDI compatible adapter */
@@ -4243,6 +4245,7 @@
 #define	USB_PRODUCT_SILABS_AC_SERV_OBD	0x8665		/* AC-Services OBD Interface */
 #define	USB_PRODUCT_SILABS_MMB_ZIGBEE	0x88a4		/* MMB Networks ZigBee */
 #define	USB_PRODUCT_SILABS_INGENI_ZIGBEE	0x88a5		/* Planet Innovation Ingeni ZigBee */
+#define	USB_PRODUCT_SILABS_HUBZ	0x8a2a		/* HubZ dual ZigBee and Z-Wave */
 #define	USB_PRODUCT_SILABS_CP2102	0xea60		/* SILABS USB UART */
 #define	USB_PRODUCT_SILABS_CP210X_2	0xea61		/* CP210x Serial */
 #define	USB_PRODUCT_SILABS_CP210X_3	0xea70		/* CP210x Serial */

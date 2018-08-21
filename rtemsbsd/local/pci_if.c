@@ -89,12 +89,24 @@ struct kobjop_desc pci_find_cap_desc = {
 	0, { &pci_find_cap_desc, (kobjop_t)kobj_error_method }
 };
 
+struct kobjop_desc pci_find_next_cap_desc = {
+	0, { &pci_find_next_cap_desc, (kobjop_t)kobj_error_method }
+};
+
 struct kobjop_desc pci_find_extcap_desc = {
 	0, { &pci_find_extcap_desc, (kobjop_t)kobj_error_method }
 };
 
+struct kobjop_desc pci_find_next_extcap_desc = {
+	0, { &pci_find_next_extcap_desc, (kobjop_t)kobj_error_method }
+};
+
 struct kobjop_desc pci_find_htcap_desc = {
 	0, { &pci_find_htcap_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc pci_find_next_htcap_desc = {
+	0, { &pci_find_next_htcap_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc pci_alloc_msi_desc = {

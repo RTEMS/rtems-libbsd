@@ -63,7 +63,6 @@ __FBSDID("$FreeBSD$");
 #include <net/if_arc.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
-#include <net/iso88025.h>
 #include <net/fddi.h>
 #include <net/route.h>
 #include <net/vnet.h>
@@ -346,9 +345,6 @@ nd6_setmtu0(struct ifnet *ifp, struct nd_ifinfo *ndi)
 	case IFT_FDDI:
 		ndi->maxmtu = MIN(FDDIIPMTU, ifp->if_mtu); /* RFC2467 */
 		break;
-	case IFT_ISO88025:
-		 ndi->maxmtu = MIN(ISO88025_MAX_MTU, ifp->if_mtu);
-		 break;
 	default:
 		ndi->maxmtu = ifp->if_mtu;
 		break;
@@ -2281,7 +2277,6 @@ nd6_resolve(struct ifnet *ifp, int is_gw, struct mbuf *m,
 		case IFT_FDDI:
 		case IFT_L2VLAN:
 		case IFT_BRIDGE:
-		case IFT_ISO88025:
 			ETHER_MAP_IPV6_MULTICAST(&dst6->sin6_addr,
 						 desten);
 			return (0);

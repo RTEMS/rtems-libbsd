@@ -596,7 +596,6 @@ icmp6_input(struct mbuf **mp, int *offp, int proto)
 			n->m_pkthdr.len = n0len + (noff - off);
 			n->m_next = n0;
 		} else {
-			nip6 = mtod(n, struct ip6_hdr *);
 			IP6_EXTHDR_GET(nicmp6, struct icmp6_hdr *, n, off,
 			    sizeof(*nicmp6));
 			noff = off;
@@ -2318,6 +2317,14 @@ icmp6_redirect_input(struct mbuf *m, int off)
 			    icmp6_redirect_diag(&src6, &reddst6, &redtgt6)));
 			goto bad;
 		}
+
+		/*
+		 * Embed scope zone id into next hop address, since
+		 * fib6_lookup_nh_basic() returns address without embedded
+		 * scope zone id.
+		 */
+		if (in6_setscope(&nh6.nh_addr, m->m_pkthdr.rcvif, NULL))
+			goto freeit;
 
 		if (IN6_ARE_ADDR_EQUAL(&src6, &nh6.nh_addr) == 0) {
 			nd6log((LOG_ERR,

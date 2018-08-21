@@ -85,9 +85,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/in6_pcb.h>
 #endif
 #include <netinet/tcp.h>
-#ifdef TCP_RFC7413
 #include <netinet/tcp_fastopen.h>
-#endif
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
 #include <netinet/tcp_timer.h>
@@ -699,6 +697,8 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 	inp->inp_inc.inc_flags = sc->sc_inc.inc_flags;
 #ifdef INET6
 	if (sc->sc_inc.inc_flags & INC_ISIPV6) {
+		inp->inp_vflag &= ~INP_IPV4;
+		inp->inp_vflag |= INP_IPV6;
 		inp->in6p_laddr = sc->sc_inc.inc6_laddr;
 	} else {
 		inp->inp_vflag &= ~INP_IPV6;
@@ -1186,7 +1186,6 @@ failed:
 	return (0);
 }
 
-#ifdef TCP_RFC7413
 static void
 syncache_tfo_expand(struct syncache *sc, struct socket **lsop, struct mbuf *m,
     uint64_t response_cookie)
@@ -1211,14 +1210,13 @@ syncache_tfo_expand(struct syncache *sc, struct socket **lsop, struct mbuf *m,
 		inp = sotoinpcb(*lsop);
 		tp = intotcpcb(inp);
 		tp->t_flags |= TF_FASTOPEN;
-		tp->t_tfo_cookie = response_cookie;
+		tp->t_tfo_cookie.server = response_cookie;
 		tp->snd_max = tp->iss;
 		tp->snd_nxt = tp->iss;
 		tp->t_tfo_pending = pending_counter;
 		TCPSTAT_INC(tcps_sc_completed);
 	}
 }
-#endif /* TCP_RFC7413 */
 
 /*
  * Given a LISTEN socket and an inbound SYN request, add
@@ -1261,12 +1259,10 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 #endif
 	struct syncache scs;
 	struct ucred *cred;
-#ifdef TCP_RFC7413
 	uint64_t tfo_response_cookie;
 	unsigned int *tfo_pending = NULL;
 	int tfo_cookie_valid = 0;
 	int tfo_response_cookie_valid = 0;
-#endif
 
 	INP_WLOCK_ASSERT(inp);			/* listen socket */
 	KASSERT((th->th_flags & (TH_RST|TH_ACK|TH_SYN)) == TH_SYN,
@@ -1291,9 +1287,9 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	win = so->sol_sbrcv_hiwat;
 	ltflags = (tp->t_flags & (TF_NOOPT | TF_SIGNATURE));
 
-#ifdef TCP_RFC7413
-	if (V_tcp_fastopen_enabled && IS_FASTOPEN(tp->t_flags) &&
-	    (tp->t_tfo_pending != NULL) && (to->to_flags & TOF_FASTOPEN)) {
+	if (V_tcp_fastopen_server_enable && IS_FASTOPEN(tp->t_flags) &&
+	    (tp->t_tfo_pending != NULL) &&
+	    (to->to_flags & TOF_FASTOPEN)) {
 		/*
 		 * Limit the number of pending TFO connections to
 		 * approximately half of the queue limit.  This prevents TFO
@@ -1317,7 +1313,6 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		 */
 		tfo_pending = tp->t_tfo_pending;
 	}
-#endif
 
 	/* By the time we drop the lock these should no longer be used. */
 	so = NULL;
@@ -1330,9 +1325,7 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	} else
 		mac_syncache_create(maclabel, inp);
 #endif
-#ifdef TCP_RFC7413
 	if (!tfo_cookie_valid)
-#endif
 		INP_WUNLOCK(inp);
 
 	/*
@@ -1378,10 +1371,8 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	sc = syncache_lookup(inc, &sch);	/* returns locked entry */
 	SCH_LOCK_ASSERT(sch);
 	if (sc != NULL) {
-#ifdef TCP_RFC7413
 		if (tfo_cookie_valid)
 			INP_WUNLOCK(inp);
-#endif
 		TCPSTAT_INC(tcps_sc_dupsyn);
 		if (ipopts) {
 			/*
@@ -1424,13 +1415,11 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		goto done;
 	}
 
-#ifdef TCP_RFC7413
 	if (tfo_cookie_valid) {
 		bzero(&scs, sizeof(scs));
 		sc = &scs;
 		goto skip_alloc;
 	}
-#endif
 
 	sc = uma_zalloc(V_tcp_syncache.zone, M_NOWAIT | M_ZERO);
 	if (sc == NULL) {
@@ -1458,11 +1447,9 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		}
 	}
 
-#ifdef TCP_RFC7413
 skip_alloc:
 	if (!tfo_cookie_valid && tfo_response_cookie_valid)
 		sc->sc_tfo_cookie = &tfo_response_cookie;
-#endif
 
 	/*
 	 * Fill in the syncache values.
@@ -1571,14 +1558,12 @@ skip_alloc:
 #endif
 	SCH_UNLOCK(sch);
 
-#ifdef TCP_RFC7413
 	if (tfo_cookie_valid) {
 		syncache_tfo_expand(sc, lsop, m, tfo_response_cookie);
 		/* INP_WUNLOCK(inp) will be performed by the caller */
 		rv = 1;
 		goto tfo_expanded;
 	}
-#endif
 
 	/*
 	 * Do a standard 3-way handshake.
@@ -1601,7 +1586,6 @@ done:
 		*lsop = NULL;
 		m_freem(m);
 	}
-#ifdef TCP_RFC7413
 	/*
 	 * If tfo_pending is not NULL here, then a TFO SYN that did not
 	 * result in a new socket was processed and the associated pending
@@ -1612,7 +1596,6 @@ done:
 		tcp_fastopen_decrement_counter(tfo_pending);
 
 tfo_expanded:
-#endif
 	if (cred != NULL)
 		crfree(cred);
 #ifdef MAC
@@ -1749,7 +1732,6 @@ syncache_respond(struct syncache *sc, struct syncache_head *sch, int locked,
 		if (sc->sc_flags & SCF_SIGNATURE)
 			to.to_flags |= TOF_SIGNATURE;
 #endif
-#ifdef TCP_RFC7413
 		if (sc->sc_tfo_cookie) {
 			to.to_flags |= TOF_FASTOPEN;
 			to.to_tfo_len = TCP_FASTOPEN_COOKIE_LEN;
@@ -1757,7 +1739,6 @@ syncache_respond(struct syncache *sc, struct syncache_head *sch, int locked,
 			/* don't send cookie again when retransmitting response */
 			sc->sc_tfo_cookie = NULL;
 		}
-#endif
 		optlen = tcp_addoptions(&to, (u_char *)(th + 1));
 
 		/* Adjust headers by option size. */

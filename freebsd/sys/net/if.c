@@ -300,7 +300,7 @@ int	ifqmaxlen = IFQ_MAXLEN;
 VNET_DEFINE(struct ifnethead, ifnet);	/* depend on static init XXX */
 VNET_DEFINE(struct ifgrouphead, ifg_head);
 
-static VNET_DEFINE(int, if_indexlim) = 8;
+VNET_DEFINE_STATIC(int, if_indexlim) = 8;
 
 /* Table of ifnet by index. */
 VNET_DEFINE(struct ifnet **, ifindex_table);
@@ -1769,29 +1769,35 @@ if_data_copy(struct ifnet *ifp, struct if_data *ifd)
 void
 if_addr_rlock(struct ifnet *ifp)
 {
-
-	IF_ADDR_RLOCK(ifp);
+	MPASS(*(uint64_t *)&ifp->if_addr_et == 0);
+	epoch_enter_preempt(net_epoch_preempt, &ifp->if_addr_et);
 }
 
 void
 if_addr_runlock(struct ifnet *ifp)
 {
-
-	IF_ADDR_RUNLOCK(ifp);
+	epoch_exit_preempt(net_epoch_preempt, &ifp->if_addr_et);
+#ifdef INVARIANTS
+	bzero(&ifp->if_addr_et, sizeof(struct epoch_tracker));
+#endif
 }
 
 void
 if_maddr_rlock(if_t ifp)
 {
 
-	IF_ADDR_RLOCK((struct ifnet *)ifp);
+	MPASS(*(uint64_t *)&ifp->if_maddr_et == 0);
+	epoch_enter_preempt(net_epoch_preempt, &ifp->if_maddr_et);
 }
 
 void
 if_maddr_runlock(if_t ifp)
 {
 
-	IF_ADDR_RUNLOCK((struct ifnet *)ifp);
+	epoch_exit_preempt(net_epoch_preempt, &ifp->if_maddr_et);
+#ifdef INVARIANTS
+	bzero(&ifp->if_maddr_et, sizeof(struct epoch_tracker));
+#endif
 }
 
 /*
@@ -1935,7 +1941,7 @@ ifa_ifwithaddr(const struct sockaddr *addr)
 	struct ifnet *ifp;
 	struct ifaddr *ifa;
 
-	MPASS(in_epoch());
+	MPASS(in_epoch(net_epoch_preempt));
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != addr->sa_family)
@@ -1978,7 +1984,7 @@ ifa_ifwithbroadaddr(const struct sockaddr *addr, int fibnum)
 	struct ifnet *ifp;
 	struct ifaddr *ifa;
 
-	MPASS(in_epoch());
+	MPASS(in_epoch(net_epoch_preempt));
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if ((fibnum != RT_ALL_FIBS) && (ifp->if_fib != fibnum))
 			continue;
@@ -2008,7 +2014,7 @@ ifa_ifwithdstaddr(const struct sockaddr *addr, int fibnum)
 	struct ifnet *ifp;
 	struct ifaddr *ifa;
 
-	MPASS(in_epoch());
+	MPASS(in_epoch(net_epoch_preempt));
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
 			continue;
@@ -2041,7 +2047,7 @@ ifa_ifwithnet(const struct sockaddr *addr, int ignore_ptp, int fibnum)
 	u_int af = addr->sa_family;
 	const char *addr_data = addr->sa_data, *cplim;
 
-	MPASS(in_epoch());
+	MPASS(in_epoch(net_epoch_preempt));
 	/*
 	 * AF_LINK addresses can be looked up directly by their index number,
 	 * so do that if we can.
@@ -2078,7 +2084,6 @@ next:				continue;
 				 */
 				if (ifa->ifa_dstaddr != NULL &&
 				    sa_equal(addr, ifa->ifa_dstaddr)) {
-					IF_ADDR_RUNLOCK(ifp);
 					goto done;
 				}
 			} else {
@@ -2137,7 +2142,8 @@ ifaof_ifpforaddr(const struct sockaddr *addr, struct ifnet *ifp)
 
 	if (af >= AF_MAX)
 		return (NULL);
-	MPASS(in_epoch());
+
+	MPASS(in_epoch(net_epoch_preempt));
 	CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa->ifa_addr->sa_family != af)
 			continue;
@@ -2301,6 +2307,7 @@ void	(*vlan_trunk_cap_p)(struct ifnet *);		/* XXX: private from if_vlan */
 struct ifnet *(*vlan_trunkdev_p)(struct ifnet *);
 struct	ifnet *(*vlan_devat_p)(struct ifnet *, uint16_t);
 int	(*vlan_tag_p)(struct ifnet *, uint16_t *);
+int	(*vlan_pcp_p)(struct ifnet *, uint16_t *);
 int	(*vlan_setcookie_p)(struct ifnet *, void *);
 void	*(*vlan_cookie_p)(struct ifnet *);
 
@@ -2988,8 +2995,8 @@ ifioctl(struct socket *so, u_long cmd, caddr_t data, struct thread *td)
 #ifdef COMPAT_FREEBSD32
 	caddr_t saved_data = NULL;
 	struct ifmediareq ifmr;
-#endif
 	struct ifmediareq *ifmrp;
+#endif
 	struct ifnet *ifp;
 	struct ifreq *ifr;
 	int error;
@@ -3035,8 +3042,8 @@ ifioctl(struct socket *so, u_long cmd, caddr_t data, struct thread *td)
 #endif
 	}
 
-	ifmrp = NULL;
 #ifdef COMPAT_FREEBSD32
+	ifmrp = NULL;
 	switch (cmd) {
 	case SIOCGIFMEDIA32:
 	case SIOCGIFXMEDIA32:
@@ -3564,6 +3571,7 @@ if_addmulti(struct ifnet *ifp, struct sockaddr *sa,
 				error = ENOMEM;
 				goto free_llsa_out;
 			}
+			ll_ifma->ifma_flags |= IFMA_F_ENQUEUED;
 			CK_STAILQ_INSERT_HEAD(&ifp->if_multiaddrs, ll_ifma,
 			    ifma_link);
 		} else
@@ -3576,6 +3584,7 @@ if_addmulti(struct ifnet *ifp, struct sockaddr *sa,
 	 * referenced link layer address.  Add the primary address to the
 	 * ifnet address list.
 	 */
+	ifma->ifma_flags |= IFMA_F_ENQUEUED;
 	CK_STAILQ_INSERT_HEAD(&ifp->if_multiaddrs, ifma, ifma_link);
 
 	if (retifma != NULL)
@@ -3776,9 +3785,10 @@ if_delmulti_locked(struct ifnet *ifp, struct ifmultiaddr *ifma, int detaching)
 	if (--ifma->ifma_refcount > 0)
 		return 0;
 
-	if (ifp != NULL && detaching == 0)
+	if (ifp != NULL && detaching == 0 && (ifma->ifma_flags & IFMA_F_ENQUEUED)) {
 		CK_STAILQ_REMOVE(&ifp->if_multiaddrs, ifma, ifmultiaddr, ifma_link);
-
+		ifma->ifma_flags &= ~IFMA_F_ENQUEUED;
+	}
 	/*
 	 * If this ifma is a network-layer ifma, a link-layer ifma may
 	 * have been associated with it. Release it first if so.
@@ -3791,8 +3801,11 @@ if_delmulti_locked(struct ifnet *ifp, struct ifmultiaddr *ifma, int detaching)
 			ll_ifma->ifma_ifp = NULL;	/* XXX */
 		if (--ll_ifma->ifma_refcount == 0) {
 			if (ifp != NULL) {
-				CK_STAILQ_REMOVE(&ifp->if_multiaddrs, ll_ifma, ifmultiaddr,
-				    ifma_link);
+				if (ll_ifma->ifma_flags & IFMA_F_ENQUEUED) {
+					CK_STAILQ_REMOVE(&ifp->if_multiaddrs, ll_ifma, ifmultiaddr,
+						ifma_link);
+					ll_ifma->ifma_flags &= ~IFMA_F_ENQUEUED;
+				}
 			}
 			if_freemulti(ll_ifma);
 		}
@@ -3918,6 +3931,44 @@ if_requestencap_default(struct ifnet *ifp, struct if_encap_req *req)
 	req->bufsize = req->lladdr_len;
 	req->lladdr_off = 0;
 
+	return (0);
+}
+
+/*
+ * Tunnel interfaces can nest, also they may cause infinite recursion
+ * calls when misconfigured. We'll prevent this by detecting loops.
+ * High nesting level may cause stack exhaustion. We'll prevent this
+ * by introducing upper limit.
+ *
+ * Return 0, if tunnel nesting count is equal or less than limit.
+ */
+int
+if_tunnel_check_nesting(struct ifnet *ifp, struct mbuf *m, uint32_t cookie,
+    int limit)
+{
+	struct m_tag *mtag;
+	int count;
+
+	count = 1;
+	mtag = NULL;
+	while ((mtag = m_tag_locate(m, cookie, 0, mtag)) != NULL) {
+		if (*(struct ifnet **)(mtag + 1) == ifp) {
+			log(LOG_NOTICE, "%s: loop detected\n", if_name(ifp));
+			return (EIO);
+		}
+		count++;
+	}
+	if (count > limit) {
+		log(LOG_NOTICE,
+		    "%s: if_output recursively called too many times(%d)\n",
+		    if_name(ifp), count);
+		return (EIO);
+	}
+	mtag = m_tag_alloc(cookie, 0, sizeof(struct ifnet *), M_NOWAIT);
+	if (mtag == NULL)
+		return (ENOMEM);
+	*(struct ifnet **)(mtag + 1) = ifp;
+	m_tag_prepend(m, mtag);
 	return (0);
 }
 

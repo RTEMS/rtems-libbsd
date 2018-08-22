@@ -36,16 +36,19 @@
 
 #ifdef __rtems__
 #include "rtems-bsd-pfctl-namespace.h"
+
+/* Provided by kernel-space modules */
+#define	pf_find_or_create_ruleset _bsd_pf_find_or_create_ruleset
+#define	pf_anchor_setup _bsd_pf_anchor_setup
+#define	pf_remove_if_empty_ruleset _bsd_pf_remove_if_empty_ruleset
+
+#include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#ifdef __rtems__
-#include <machine/rtems-bsd-program.h>
-#define	pf_find_or_create_ruleset _bsd_pf_find_or_create_ruleset
-#define	pf_anchor_setup _bsd_pf_anchor_setup
-#define	pf_remove_if_empty_ruleset _bsd_pf_remove_if_empty_ruleset
-#endif /* __rtems__ */
+#define PFIOC_USE_LATEST
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -96,6 +99,7 @@ static u_int16_t	 returnicmpdefault =
 static u_int16_t	 returnicmp6default =
 			    (ICMP6_DST_UNREACH << 8) | ICMP6_DST_UNREACH_NOPORT;
 static int		 blockpolicy = PFRULE_DROP;
+static int		 failpolicy = PFRULE_DROP;
 static int		 require_order = 1;
 static int		 default_statelock;
 
@@ -302,7 +306,7 @@ static struct queue_opts {
 	struct node_queue_bw	queue_bwspec;
 	struct node_queue_opt	scheduler;
 	int			priority;
-	int			tbrsize;
+	unsigned int		tbrsize;
 	int			qlimit;
 } queue_opts;
 
@@ -472,8 +476,8 @@ int	parseport(char *, struct range *r, int);
 %token	MINTTL ERROR ALLOWOPTS FASTROUTE FILENAME ROUTETO DUPTO REPLYTO NO LABEL
 %token	NOROUTE URPFFAILED FRAGMENT USER GROUP MAXMSS MAXIMUM TTL TOS DROP TABLE
 %token	REASSEMBLE FRAGDROP FRAGCROP ANCHOR NATANCHOR RDRANCHOR BINATANCHOR
-%token	SET OPTIMIZATION TIMEOUT LIMIT LOGINTERFACE BLOCKPOLICY RANDOMID
-%token	REQUIREORDER SYNPROXY FINGERPRINTS NOSYNC DEBUG SKIP HOSTID
+%token	SET OPTIMIZATION TIMEOUT LIMIT LOGINTERFACE BLOCKPOLICY FAILPOLICY
+%token	RANDOMID REQUIREORDER SYNPROXY FINGERPRINTS NOSYNC DEBUG SKIP HOSTID
 %token	ANTISPOOF FOR INCLUDE
 %token	BITMASK RANDOM SOURCEHASH ROUNDROBIN STATICPORT PROBABILITY
 %token	ALTQ CBQ CODEL PRIQ HFSC FAIRQ BANDWIDTH TBRSIZE LINKSHARE REALTIME
@@ -656,6 +660,20 @@ option		: SET OPTIMIZATION STRING		{
 			if (check_rulestate(PFCTL_STATE_OPTION))
 				YYERROR;
 			blockpolicy = PFRULE_RETURN;
+		}
+		| SET FAILPOLICY DROP	{
+			if (pf->opts & PF_OPT_VERBOSE)
+				printf("set fail-policy drop\n");
+			if (check_rulestate(PFCTL_STATE_OPTION))
+				YYERROR;
+			failpolicy = PFRULE_DROP;
+		}
+		| SET FAILPOLICY RETURN {
+			if (pf->opts & PF_OPT_VERBOSE)
+				printf("set fail-policy return\n");
+			if (check_rulestate(PFCTL_STATE_OPTION))
+				YYERROR;
+			failpolicy = PFRULE_RETURN;
 		}
 		| SET REQUIREORDER yesno {
 			if (pf->opts & PF_OPT_VERBOSE)
@@ -1625,8 +1643,8 @@ queue_opt	: BANDWIDTH bandwidth	{
 				yyerror("tbrsize cannot be respecified");
 				YYERROR;
 			}
-			if ($2 < 0 || $2 > 65535) {
-				yyerror("tbrsize too big: max 65535");
+			if ($2 < 0 || $2 > UINT_MAX) {
+				yyerror("tbrsize too big: max %u", UINT_MAX);
 				YYERROR;
 			}
 			queue_opts.marker |= QOM_TBRSIZE;
@@ -1675,10 +1693,10 @@ bandwidth	: STRING {
 				}
 			}
 			free($1);
-			$$.bw_absolute = (u_int32_t)bps;
+			$$.bw_absolute = (u_int64_t)bps;
 		}
 		| NUMBER {
-			if ($1 < 0 || $1 > UINT_MAX) {
+			if ($1 < 0 || $1 >= LLONG_MAX) {
 				yyerror("bandwidth number too big");
 				YYERROR;
 			}
@@ -2653,7 +2671,12 @@ probability	: STRING				{
 		;
 
 
-action		: PASS			{ $$.b1 = PF_PASS; $$.b2 = $$.w = 0; }
+action		: PASS 			{
+			$$.b1 = PF_PASS;
+			$$.b2 = failpolicy;
+			$$.w = returnicmpdefault;
+			$$.w2 = returnicmp6default;
+		}
 		| BLOCK blockspec	{ $$ = $2; $$.b1 = PF_DROP; }
 		;
 
@@ -5491,6 +5514,7 @@ lookup(char *s)
 		{ "drop",		DROP},
 		{ "drop-ovl",		FRAGDROP},
 		{ "dup-to",		DUPTO},
+		{ "fail-policy",	FAILPOLICY},
 		{ "fairq",		FAIRQ},
 		{ "fastroute",		FASTROUTE},
 		{ "file",		FILENAME},
@@ -5955,6 +5979,7 @@ parse_config(char *filename, struct pfctl *xpf)
 	returnicmp6default =
 	    (ICMP6_DST_UNREACH << 8) | ICMP6_DST_UNREACH_NOPORT;
 	blockpolicy = PFRULE_DROP;
+	failpolicy = PFRULE_DROP;
 	require_order = 1;
 
 	if ((file = pushfile(filename, 0)) == NULL) {

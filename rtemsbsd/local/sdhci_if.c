@@ -16,10 +16,12 @@
 #include <sys/queue.h>
 #include <sys/kernel.h>
 #include <sys/kobj.h>
+#include <sys/lock.h>
+#include <sys/mutex.h>
 #include <sys/types.h>
-#include <sys/bus.h>
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
+#include <machine/bus.h>
 #include <dev/mmc/bridge.h>
 #include <dev/sdhci/sdhci.h>
 

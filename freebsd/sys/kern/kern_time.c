@@ -288,6 +288,8 @@ get_process_cputime(struct proc *targetp, struct timespec *ats)
 	PROC_STATLOCK(targetp);
 	rufetch(targetp, &ru);
 	runtime = targetp->p_rux.rux_runtime;
+	if (curthread->td_proc == targetp)
+		runtime += cpu_ticks() - PCPU_GET(switchtime);
 	PROC_STATUNLOCK(targetp);
 	cputick2timespec(runtime, ats);
 }
@@ -1577,7 +1579,7 @@ realtimer_settime(struct itimer *it, int flags,
 		if ((flags & TIMER_ABSTIME) == 0) {
 			/* Convert to absolute time. */
 			timespecadd(&it->it_time.it_value, &cts,
-			    &it->it_time.it_value);
+				&it->it_time.it_value);
 		} else {
 			timespecsub(&ts, &cts, &ts);
 			/*

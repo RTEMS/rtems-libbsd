@@ -165,8 +165,8 @@ epoch_sysinit(void)
 }
 SYSINIT(epoch, SI_SUB_TUNABLES, SI_ORDER_SECOND, epoch_sysinit, NULL);
 
-static void
-epoch_enter_preempt_next(epoch_t epoch, epoch_tracker_t et)
+void
+epoch_enter_preempt(epoch_t epoch, epoch_tracker_t et)
 {
 	Per_CPU_Control *cpu_self;
 	ISR_lock_Context lock_context;
@@ -189,8 +189,8 @@ epoch_enter_preempt_next(epoch_t epoch, epoch_tracker_t et)
 	_Thread_Dispatch_enable(cpu_self);
 }
 
-static void
-epoch_exit_preempt_next(epoch_t epoch, epoch_tracker_t et)
+void
+epoch_exit_preempt(epoch_t epoch, epoch_tracker_t et)
 {
 	Per_CPU_Control *cpu_self;
 	ISR_lock_Context lock_context;
@@ -213,23 +213,6 @@ epoch_exit_preempt_next(epoch_t epoch, epoch_tracker_t et)
 	SLIST_FOREACH(etm, &et->et_mtx, etm_link) {
 		rtems_mutex_unlock(&etm->etm_mtx);
 	}
-}
-
-/* FIXME: Must be removed in next FreeBSD baseline update step. */
-static __thread epoch_tracker_t et;
-
-void
-epoch_enter_preempt(epoch_t epoch)
-{
-
-	epoch_enter_preempt_next(epoch, &et);
-}
-
-void
-epoch_exit_preempt(epoch_t epoch)
-{
-
-	epoch_exit_preempt_next(epoch, &et);
 }
 
 static void

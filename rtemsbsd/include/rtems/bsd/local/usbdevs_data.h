@@ -41,7 +41,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_3COM, USB_PRODUCT_3COM_HOMECONN,
 	    0,
 	    "3Com",
-	    "HomeConnect Camera",
+	    "HomeConnect USB Camera",
 	},
 	{
 	    USB_VENDOR_3COM, USB_PRODUCT_3COM_3CREB96,
@@ -144,6 +144,24 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "ABIT Corporation",
 	    "3G modem",
+	},
+	{
+	    USB_VENDOR_ACDC, USB_PRODUCT_ACDC_HUB,
+	    0,
+	    "American Computer & Digital Components",
+	    "USB Pen Drive HUB",
+	},
+	{
+	    USB_VENDOR_ACDC, USB_PRODUCT_ACDC_SECWRITE,
+	    0,
+	    "American Computer & Digital Components",
+	    "USB Pen Drive Secure Write",
+	},
+	{
+	    USB_VENDOR_ACDC, USB_PRODUCT_ACDC_PEN,
+	    0,
+	    "American Computer & Digital Components",
+	    "USB Pen Drive with Secure Write",
 	},
 	{
 	    USB_VENDOR_ABOCOM, USB_PRODUCT_ABOCOM_XX1,
@@ -632,6 +650,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "AWN-8020 WLAN",
 	},
 	{
+	    USB_VENDOR_ADDONICS2, USB_PRODUCT_ADDONICS2_205,
+	    0,
+	    "Addonics Technology",
+	    "Cable 205",
+	},
+	{
 	    USB_VENDOR_ADDTRON, USB_PRODUCT_ADDTRON_AWU120,
 	    0,
 	    "Addtron",
@@ -948,6 +972,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Alink",
 	    "3G modem",
+	},
+	{
+	    USB_VENDOR_ALINK, USB_PRODUCT_ALINK_SIM7600E,
+	    0,
+	    "Alink",
+	    "LTE modem",
 	},
 	{
 	    USB_VENDOR_ALINK, USB_PRODUCT_ALINK_3GU,
@@ -3752,6 +3782,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "DWA-140 rev B3",
 	},
 	{
+	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA125A3,
+	    0,
+	    "D-Link",
+	    "DWA-125 rev A3",
+	},
+	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DWA160B2,
 	    0,
 	    "D-Link",
@@ -4774,19 +4810,19 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_EVOLUTION, USB_PRODUCT_EVOLUTION_ER1,
 	    0,
-	    "Evolution Robotics products",
+	    "Evolution Robotics",
 	    "FTDI compatible adapter",
 	},
 	{
 	    USB_VENDOR_EVOLUTION, USB_PRODUCT_EVOLUTION_HYBRID,
 	    0,
-	    "Evolution Robotics products",
+	    "Evolution Robotics",
 	    "FTDI compatible adapter",
 	},
 	{
 	    USB_VENDOR_EVOLUTION, USB_PRODUCT_EVOLUTION_RCM4,
 	    0,
-	    "Evolution Robotics products",
+	    "Evolution Robotics",
 	    "FTDI compatible adapter",
 	},
 	{
@@ -4876,13 +4912,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_FOXCONN, USB_PRODUCT_FOXCONN_TCOM_TC_300,
 	    0,
-	    "Foxconn",
+	    "Foxconn / Hon Hai",
 	    "T-Com TC 300",
 	},
 	{
 	    USB_VENDOR_FOXCONN, USB_PRODUCT_FOXCONN_PIRELLI_DP_L10,
 	    0,
-	    "Foxconn",
+	    "Foxconn / Hon Hai",
 	    "Pirelli DP-L10",
 	},
 	{
@@ -6398,6 +6434,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "GL850G USB 2.0 HUB",
 	},
 	{
+	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL3520_2,
+	    0,
+	    "Genesys Logic",
+	    "GL3520 4-Port USB 2.0 DataPath",
+	},
+	{
+	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL3520_SS,
+	    0,
+	    "Genesys Logic",
+	    "GL3520 4-Port USB 3.0 DataPath",
+	},
+	{
 	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL641USB,
 	    0,
 	    "Genesys Logic",
@@ -6414,6 +6462,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Genesys Logic",
 	    "GL641USB USB-IDE Bridge",
+	},
+	{
+	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL3233,
+	    0,
+	    "Genesys Logic",
+	    "GL3233 USB 3.0 AiO Card Reader",
 	},
 	{
 	    USB_VENDOR_GENESYS, USB_PRODUCT_GENESYS_GL641USB_2,
@@ -6546,6 +6600,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Global Sun Technology",
 	    "AR5523 (no firmware)",
+	},
+	{
+	    USB_VENDOR_GLOBESPAN, USB_PRODUCT_GLOBESPAN_MODEM_1,
+	    0,
+	    "Globespan",
+	    "USB Modem",
 	},
 	{
 	    USB_VENDOR_GLOBESPAN, USB_PRODUCT_GLOBESPAN_PRISM_GT_1,
@@ -7902,6 +7962,30 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Intel",
 	    "Integrated Rate Matching Hub",
+	},
+	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_SFP,
+	    0,
+	    "Intel",
+	    "Sandy Peak (3168) Bluetooth Module",
+	},
+	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_JFP,
+	    0,
+	    "Intel",
+	    "Jefferson Peak (9460/9560) Bluetooth Module",
+	},
+	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_THP,
+	    0,
+	    "Intel",
+	    "Thunder Peak (9160/9260) Bluetooth Module",
+	},
+	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_HSP,
+	    0,
+	    "Intel",
+	    "Harrison Peak (22560) Bluetooth Module",
 	},
 	{
 	    USB_VENDOR_INTERBIOMETRICS, USB_PRODUCT_INTERBIOMETRICS_IOBOARD,
@@ -12128,6 +12212,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "NovAtel FlexPack GPS receiver",
 	},
 	{
+	    USB_VENDOR_NVIDIA, USB_PRODUCT_NVIDIA_RTL8153,
+	    0,
+	    "NVIDIA Corporation",
+	    "USB 3.0 Ethernet",
+	},
+	{
 	    USB_VENDOR_MERLIN, USB_PRODUCT_MERLIN_V620,
 	    0,
 	    "Merlin",
@@ -12920,6 +13010,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Ethernet",
 	},
 	{
+	    USB_VENDOR_PERASO, USB_PRODUCT_PERASO_PRS4001,
+	    0,
+	    "Peraso Technologies, Inc.",
+	    "PRS4001 WLAN",
+	},
+	{
 	    USB_VENDOR_PHILIPS, USB_PRODUCT_PHILIPS_DSS350,
 	    0,
 	    "Philips",
@@ -12948,6 +13044,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Philips",
 	    "PCVC680K Vesta Pro PC Camera",
+	},
+	{
+	    USB_VENDOR_PHILIPS, USB_PRODUCT_PHILIPS_SPC900NC,
+	    0,
+	    "Philips",
+	    "SPC 900NC CCD PC Camera",
 	},
 	{
 	    USB_VENDOR_PHILIPS, USB_PRODUCT_PHILIPS_DSS150,
@@ -14240,6 +14342,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RT5370",
 	},
 	{
+	    USB_VENDOR_RALINK, USB_PRODUCT_RALINK_RT5372,
+	    0,
+	    "Ralink Technology",
+	    "RT5372",
+	},
+	{
 	    USB_VENDOR_RALINK, USB_PRODUCT_RALINK_RT5572,
 	    0,
 	    "Ralink Technology",
@@ -14686,13 +14794,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_RTSYSTEMS, USB_PRODUCT_RTSYSTEMS_CT29B,
 	    0,
-	    "RTSYSTEMS",
+	    "RT Systems",
 	    "FTDI compatible adapter",
 	},
 	{
 	    USB_VENDOR_RTSYSTEMS, USB_PRODUCT_RTSYSTEMS_SERIAL_VX7,
 	    0,
-	    "RTSYSTEMS",
+	    "RT Systems",
 	    "FTDI compatible adapter",
 	},
 	{
@@ -16570,13 +16678,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_2020HUB,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB Hub",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_2514HUB,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB Hub",
 	},
 	{
@@ -16586,111 +16694,129 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "2662W-AR Wireless",
 	},
 	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN7800_ETH,
+	    0,
+	    "Microchip (Standard Microsystems)",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN7801_ETH,
+	    0,
+	    "Microchip (Standard Microsystems)",
+	    "USB/Ethernet",
+	},
+	{
+	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN7850_ETH,
+	    0,
+	    "Microchip (Standard Microsystems)",
+	    "USB/Ethernet",
+	},
+	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9530_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9730_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500_SAL10,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505_SAL10,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_SAL10,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505A_SAL10,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_SAL10,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_HAL,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505A_HAL,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500_ETH_2,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_ETH_2,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_ETH_2,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9500A_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9505A_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN89530_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
 	    USB_VENDOR_SMC2, USB_PRODUCT_SMC2_LAN9514_ETH,
 	    0,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    "USB/Ethernet",
 	},
 	{
@@ -18140,10 +18266,76 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "UX256 MIDI I/F",
 	},
 	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_MU1000,
+	    0,
+	    "YAMAHA",
+	    "MU1000 MIDI Synth.",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_MU2000,
+	    0,
+	    "YAMAHA",
+	    "MU2000 MIDI Synth.",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_MU500,
+	    0,
+	    "YAMAHA",
+	    "MU500 MIDI Synth.",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_UW500,
+	    0,
+	    "YAMAHA",
+	    "UW500 USB Audio I/F",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_MOTIF6,
+	    0,
+	    "YAMAHA",
+	    "MOTIF6 MIDI Synth. Workstation",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_MOTIF7,
+	    0,
+	    "YAMAHA",
+	    "MOTIF7 MIDI Synth. Workstation",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_MOTIF8,
+	    0,
+	    "YAMAHA",
+	    "MOTIF8 MIDI Synth. Workstation",
+	},
+	{
 	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_UX96,
 	    0,
 	    "YAMAHA",
 	    "UX96 MIDI I/F",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_UX16,
+	    0,
+	    "YAMAHA",
+	    "UX16 MIDI I/F",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_S08,
+	    0,
+	    "YAMAHA",
+	    "S08 MIDI Keyboard",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_CLP150,
+	    0,
+	    "YAMAHA",
+	    "CLP-150 digital piano",
+	},
+	{
+	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_CLP170,
+	    0,
+	    "YAMAHA",
+	    "CLP-170 digital piano",
 	},
 	{
 	    USB_VENDOR_YAMAHA, USB_PRODUCT_YAMAHA_RPU200,
@@ -18284,6 +18476,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "UB82",
 	},
 	{
+	    USB_VENDOR_ZEEVO, USB_PRODUCT_ZEEVO_BLUETOOTH,
+	    0,
+	    "Zeevo, Inc.",
+	    "BT-500 Bluetooth USB Adapter",
+	},
+	{
 	    USB_VENDOR_ZINWELL, USB_PRODUCT_ZINWELL_RT2570,
 	    0,
 	    "Zinwell",
@@ -18326,10 +18524,70 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "2986L Fax modem",
 	},
 	{
+	    USB_VENDOR_ZOOM, USB_PRODUCT_ZOOM_3095,
+	    0,
+	    "Zoom Telephonics",
+	    "3095 USB Fax modem",
+	},
+	{
 	    USB_VENDOR_ZORAN, USB_PRODUCT_ZORAN_EX20DSC,
 	    0,
 	    "Zoran Microelectronics",
 	    "Digital Camera EX-20 DSC",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_MF622,
+	    0,
+	    "ZTE",
+	    "MF622 modem",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_MF628,
+	    0,
+	    "ZTE",
+	    "MF628 modem",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_MF626,
+	    0,
+	    "ZTE",
+	    "MF626 modem",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_MF820D_INSTALLER,
+	    0,
+	    "ZTE",
+	    "MF820D CD",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_MF820D,
+	    0,
+	    "ZTE",
+	    "MF820D modem",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_INSTALLER,
+	    0,
+	    "ZTE",
+	    "UMTS CD",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_MC2718,
+	    0,
+	    "ZTE",
+	    "MC2718 modem",
+	},
+	{
+	    USB_VENDOR_ZTE, USB_PRODUCT_ZTE_AC8700,
+	    0,
+	    "ZTE",
+	    "CDMA 1xEVDO USB modem",
+	},
+	{
+	    USB_VENDOR_ZYDAS, USB_PRODUCT_ZYDAS_ZD1201,
+	    0,
+	    "Zydas Technology Corporation",
+	    "ZD1201",
 	},
 	{
 	    USB_VENDOR_ZYDAS, USB_PRODUCT_ZYDAS_ZD1211,
@@ -18348,6 +18606,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Zydas Technology Corporation",
 	    "ZD1221",
+	},
+	{
+	    USB_VENDOR_ZYDAS, USB_PRODUCT_ZYDAS_ALL0298,
+	    0,
+	    "Zydas Technology Corporation",
+	    "ALL0298",
+	},
+	{
+	    USB_VENDOR_ZYDAS, USB_PRODUCT_ZYDAS_ZD1211B_2,
+	    0,
+	    "Zydas Technology Corporation",
+	    "ZD1211B",
 	},
 	{
 	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_OMNI56K,
@@ -18386,6 +18656,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "M-202",
 	},
 	{
+	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_G270S,
+	    0,
+	    "ZyXEL Communication",
+	    "G-270S",
+	},
+	{
 	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_G220V2,
 	    0,
 	    "ZyXEL Communication",
@@ -18396,6 +18672,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "ZyXEL Communication",
 	    "G-202",
+	},
+	{
+	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_RT2573,
+	    0,
+	    "ZyXEL Communication",
+	    "RT2573",
 	},
 	{
 	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_RT2870_1,
@@ -18443,7 +18725,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_NWD6605,
 	    0,
 	    "ZyXEL Communication",
-	    "NWD6605",
+	    "ND6605",
+	},
+	{
+	    USB_VENDOR_ZYXEL, USB_PRODUCT_ZYXEL_PRESTIGE,
+	    0,
+	    "ZyXEL Communication",
+	    "Prestige",
 	},
 	{
 	    USB_VENDOR_UNKNOWN1, 0,
@@ -18476,9 +18764,9 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
-	    USB_VENDOR_INTENSO, 0,
+	    USB_VENDOR_QUAN, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "INTENSO",
+	    "Quan",
 	    NULL,
 	},
 	{
@@ -18670,7 +18958,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_WELTREND, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "Weltrend",
+	    "Weltrend Semiconductor",
 	    NULL,
 	},
 	{
@@ -18736,7 +19024,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_SMC2, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "Standard Microsystems",
+	    "Microchip (Standard Microsystems)",
 	    NULL,
 	},
 	{
@@ -18988,7 +19276,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_FOXCONN, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "Foxconn",
+	    "Foxconn / Hon Hai",
 	    NULL,
 	},
 	{
@@ -19300,7 +19588,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_ELAN, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "Elan",
+	    "ELAN Microelectronics",
 	    NULL,
 	},
 	{
@@ -19637,6 +19925,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_AVM, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "AVM",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_NINTENDO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Nintendo",
 	    NULL,
 	},
 	{
@@ -19982,6 +20276,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_SMK, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "SMK",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_SOLIDYEAR, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Solid Year",
@@ -20306,6 +20606,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_MADCATZ, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Mad Catz, Inc.",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_SYNTECH, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Syntech Information",
@@ -20480,6 +20786,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_KINGSUN, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "KingSun",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_KEISOKUGIKEN, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Keisokugiken",
@@ -20558,6 +20870,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_BEWAN, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Bewan",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_CENTURY, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Century Corp",
@@ -20585,6 +20903,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_PCS, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Personal Communication Systems",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_SYNET, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Synet Electronics",
 	    NULL,
 	},
 	{
@@ -20882,6 +21206,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_NVIDIA, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "NVIDIA Corporation",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_BLUEWATER, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "BlueWater Systems",
@@ -20930,6 +21260,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_ZIPPY, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Zippy Technology Corporation",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_POINTCHIPS, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "PointChips",
@@ -20939,6 +21275,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_INTERSIL, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Intersil",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Tripp Lite",
 	    NULL,
 	},
 	{
@@ -21160,7 +21502,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_ATI2, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "ATI",
+	    "ATI Technologies",
 	    NULL,
 	},
 	{
@@ -21554,6 +21896,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_DVICO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "DViCO",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_QUALCOMM, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Qualcomm",
@@ -21587,6 +21935,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_DESKNOTE, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Desknote",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_AMD2, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Advanced Micro Devices",
 	    NULL,
 	},
 	{
@@ -21794,6 +22148,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_FUJITSU3, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Fujitsu Ltd.",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_UNKNOWN3, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Unknown vendor",
@@ -21896,6 +22256,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_VALIDITY, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Validity Sensors, Inc.",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_BALTECH, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Baltech",
@@ -21935,6 +22301,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_NOVATEL, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Novatel Wireless",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_OMNIVISION2, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "OmniVision Technologies, Inc.",
 	    NULL,
 	},
 	{
@@ -22262,6 +22634,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_MISC, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Misc Vendors",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_DISPLAYLINK, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "DisplayLink",
@@ -22283,6 +22661,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_VAISALA, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Vaisala",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_E3C, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "E3C Technologies",
 	    NULL,
 	},
 	{
@@ -22316,6 +22700,24 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_MEINBERG, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Meinberg Funkuhren",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_BECEEM, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Beceem Communications",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_ZTE, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "ZTE",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_QUALCOMMINC, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Qualcomm, Incorporated",
@@ -22325,6 +22727,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_QUALCOMM3, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Qualcomm, Inc.",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_QUANTA2, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Quanta",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_TERMINUS, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Terminus Technology",
 	    NULL,
 	},
 	{
@@ -22558,7 +22972,19 @@ const struct usb_knowndev usb_knowndevs[] = {
 	{
 	    USB_VENDOR_RTSYSTEMS, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "RTSYSTEMS",
+	    "RT Systems",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_DLINK4, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "D-Link",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_INTENSO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "INTENSO",
 	    NULL,
 	},
 	{
@@ -22583,6 +23009,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_WETELECOM, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "WeTelecom",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_PINNACLE, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Pinnacle Systems",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_ARDUINO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Arduino SA",
 	    NULL,
 	},
 	{
@@ -22619,6 +23057,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_THINGM, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "ThingM",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_PERASO, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Peraso Technologies, Inc.",
 	    NULL,
 	},
 	{
@@ -22754,9 +23198,21 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_INGENIC, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Ingenic Semiconductor Ltd.",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_SITECOM, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Sitecom",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_SPRINGERDESIGN, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Springer Design, Inc.",
 	    NULL,
 	},
 	{
@@ -22832,15 +23288,27 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
-	    USB_VENDOR_EVOLUTION, 0,
+	    USB_VENDOR_COMPARE, 0,
 	    USB_KNOWNDEV_NOPROD,
-	    "Evolution Robotics products",
+	    "Compare",
 	    NULL,
 	},
 	{
 	    USB_VENDOR_DATAAPEX, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "DataApex",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_EVOLUTION, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Evolution Robotics",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_EMPIA, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "eMPIA Technology",
 	    NULL,
 	},
 	{

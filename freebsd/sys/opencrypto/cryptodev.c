@@ -267,7 +267,7 @@ crypt_kop_to_32(const struct crypt_kop *from, struct crypt_kop32 *to)
 
 struct csession {
 	TAILQ_ENTRY(csession) next;
-	u_int64_t	sid;
+	crypto_session_t cses;
 	u_int32_t	ses;
 	struct mtx	lock;		/* for op submission */
 
@@ -326,10 +326,10 @@ static const rtems_filesystem_file_handlers_r cryptofops;
 static struct csession *csefind(struct fcrypt *, u_int);
 static int csedelete(struct fcrypt *, struct csession *);
 static struct csession *cseadd(struct fcrypt *, struct csession *);
-static struct csession *csecreate(struct fcrypt *, u_int64_t, caddr_t,
+static struct csession *csecreate(struct fcrypt *, crypto_session_t, caddr_t,
     u_int64_t, caddr_t, u_int64_t, u_int32_t, u_int32_t, struct enc_xform *,
     struct auth_hash *);
-static int csefree(struct csession *);
+static void csefree(struct csession *);
 
 static	int cryptodev_op(struct csession *, struct crypt_op *,
 			struct ucred *, struct thread *td);
@@ -384,7 +384,7 @@ cryptof_ioctl(
 	struct enc_xform *txform = NULL;
 	struct auth_hash *thash = NULL;
 	struct crypt_kop *kop;
-	u_int64_t sid;
+	crypto_session_t cses;
 	u_int32_t ses;
 	int error = 0, crid;
 #ifdef COMPAT_FREEBSD32
@@ -463,8 +463,14 @@ cryptof_ioctl(
 		case CRYPTO_MD5_HMAC:
 			thash = &auth_hash_hmac_md5;
 			break;
+		case CRYPTO_POLY1305:
+			thash = &auth_hash_poly1305;
+			break;
 		case CRYPTO_SHA1_HMAC:
 			thash = &auth_hash_hmac_sha1;
+			break;
+		case CRYPTO_SHA2_224_HMAC:
+			thash = &auth_hash_hmac_sha2_224;
 			break;
 		case CRYPTO_SHA2_256_HMAC:
 			thash = &auth_hash_hmac_sha2_256;
@@ -492,10 +498,23 @@ cryptof_ioctl(
 		case CRYPTO_MD5:
 			thash = &auth_hash_md5;
 			break;
+#endif
 		case CRYPTO_SHA1:
 			thash = &auth_hash_sha1;
 			break;
-#endif
+		case CRYPTO_SHA2_224:
+			thash = &auth_hash_sha2_224;
+			break;
+		case CRYPTO_SHA2_256:
+			thash = &auth_hash_sha2_256;
+			break;
+		case CRYPTO_SHA2_384:
+			thash = &auth_hash_sha2_384;
+			break;
+		case CRYPTO_SHA2_512:
+			thash = &auth_hash_sha2_512;
+			break;
+
 		case CRYPTO_NULL_HMAC:
 			thash = &auth_hash_null;
 			break;
@@ -582,19 +601,19 @@ cryptof_ioctl(
 			}
 		} else
 			crid = CRYPTOCAP_F_HARDWARE;
-		error = crypto_newsession(&sid, (txform ? &crie : &cria), crid);
+		error = crypto_newsession(&cses, (txform ? &crie : &cria), crid);
 		if (error) {
 			CRYPTDEB("crypto_newsession");
 			SDT_PROBE1(opencrypto, dev, ioctl, error, __LINE__);
 			goto bail;
 		}
 
-		cse = csecreate(fcr, sid, crie.cri_key, crie.cri_klen,
+		cse = csecreate(fcr, cses, crie.cri_key, crie.cri_klen,
 		    cria.cri_key, cria.cri_klen, sop->cipher, sop->mac, txform,
 		    thash);
 
 		if (cse == NULL) {
-			crypto_freesession(sid);
+			crypto_freesession(cses);
 			error = EINVAL;
 			SDT_PROBE1(opencrypto, dev, ioctl, error, __LINE__);
 			CRYPTDEB("csecreate");
@@ -607,7 +626,7 @@ cryptof_ioctl(
 #endif
 		    ) {
 			/* return hardware/driver id */
-			SES2(sop)->crid = CRYPTO_SESID2HID(cse->sid);
+			SES2(sop)->crid = crypto_ses2hid(cse->cses);
 		}
 bail:
 		if (error) {
@@ -634,7 +653,7 @@ bail:
 			return (EINVAL);
 		}
 		csedelete(fcr, cse);
-		error = csefree(cse);
+		csefree(cse);
 		break;
 	case CIOCCRYPT:
 #ifdef COMPAT_FREEBSD32
@@ -867,7 +886,7 @@ cryptodev_op(
 		       | (cop->flags & COP_F_BATCH);
 	crp->crp_uio = &cod->uio;
 	crp->crp_callback = cryptodev_cb;
-	crp->crp_sid = cse->sid;
+	crp->crp_session = cse->cses;
 	crp->crp_opaque = cod;
 
 	if (cop->iv) {
@@ -1043,7 +1062,7 @@ cryptodev_aead(
 		       | (caead->flags & COP_F_BATCH);
 	crp->crp_uio = &cod->uio;
 	crp->crp_callback = cryptodev_cb;
-	crp->crp_sid = cse->sid;
+	crp->crp_session = cse->cses;
 	crp->crp_opaque = cod;
 
 	if (caead->iv) {
@@ -1318,7 +1337,7 @@ cryptof_close(struct file *fp, struct thread *td)
 
 	while ((cse = TAILQ_FIRST(&fcr->csessions))) {
 		TAILQ_REMOVE(&fcr->csessions, cse, next);
-		(void)csefree(cse);
+		csefree(cse);
 	}
 	free(fcr, M_XDATA);
 	fp->f_data = NULL;
@@ -1389,7 +1408,7 @@ cseadd(struct fcrypt *fcr, struct csession *cse)
 }
 
 struct csession *
-csecreate(struct fcrypt *fcr, u_int64_t sid, caddr_t key, u_int64_t keylen,
+csecreate(struct fcrypt *fcr, crypto_session_t cses, caddr_t key, u_int64_t keylen,
     caddr_t mackey, u_int64_t mackeylen, u_int32_t cipher, u_int32_t mac,
     struct enc_xform *txform, struct auth_hash *thash)
 {
@@ -1403,7 +1422,7 @@ csecreate(struct fcrypt *fcr, u_int64_t sid, caddr_t key, u_int64_t keylen,
 	cse->keylen = keylen/8;
 	cse->mackey = mackey;
 	cse->mackeylen = mackeylen/8;
-	cse->sid = sid;
+	cse->cses = cses;
 	cse->cipher = cipher;
 	cse->mac = mac;
 	cse->txform = txform;
@@ -1412,19 +1431,17 @@ csecreate(struct fcrypt *fcr, u_int64_t sid, caddr_t key, u_int64_t keylen,
 	return (cse);
 }
 
-static int
+static void
 csefree(struct csession *cse)
 {
-	int error;
 
-	error = crypto_freesession(cse->sid);
+	crypto_freesession(cse->cses);
 	mtx_destroy(&cse->lock);
 	if (cse->key)
 		free(cse->key, M_XDATA);
 	if (cse->mackey)
 		free(cse->mackey, M_XDATA);
 	free(cse, M_XDATA);
-	return (error);
 }
 
 static int

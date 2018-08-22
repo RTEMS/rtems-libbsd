@@ -20,35 +20,26 @@
 #include <opencrypto/cryptodev.h>
 #include <rtems/bsd/local/cryptodev_if.h>
 
-struct kobj_method cryptodev_newsession_method_default = {
-	&cryptodev_newsession_desc, (kobjop_t) kobj_error_method
-};
+
+static int null_freesession(device_t dev,
+    crypto_session_t crypto_session)
+{
+	return 0;
+}
 
 struct kobjop_desc cryptodev_newsession_desc = {
-	0, &cryptodev_newsession_method_default
-};
-
-struct kobj_method cryptodev_freesession_method_default = {
-	&cryptodev_freesession_desc, (kobjop_t) kobj_error_method
+	0, { &cryptodev_newsession_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc cryptodev_freesession_desc = {
-	0, &cryptodev_freesession_method_default
-};
-
-struct kobj_method cryptodev_process_method_default = {
-	&cryptodev_process_desc, (kobjop_t) kobj_error_method
+	0, { &cryptodev_freesession_desc, (kobjop_t)null_freesession }
 };
 
 struct kobjop_desc cryptodev_process_desc = {
-	0, &cryptodev_process_method_default
-};
-
-struct kobj_method cryptodev_kprocess_method_default = {
-	&cryptodev_kprocess_desc, (kobjop_t) kobj_error_method
+	0, { &cryptodev_process_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc cryptodev_kprocess_desc = {
-	0, &cryptodev_kprocess_method_default
+	0, { &cryptodev_kprocess_desc, (kobjop_t)kobj_error_method }
 };
 

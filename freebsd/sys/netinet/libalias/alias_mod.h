@@ -41,17 +41,17 @@ MALLOC_DECLARE(M_ALIAS);
 
 /* Use kernel allocator. */
 #if defined(_SYS_MALLOC_H_)
+#undef malloc
 #ifndef __rtems__
 #define	malloc(x)	malloc(x, M_ALIAS, M_NOWAIT|M_ZERO)
 #define	calloc(n, x)	mallocarray((n), (x), M_ALIAS, M_NOWAIT|M_ZERO)
 #define	free(x)		free(x, M_ALIAS)
 #else /* __rtems__ */
-#undef malloc
 #undef calloc
 #undef free
-#define malloc(x) _bsd_malloc(x, M_ALIAS, M_NOWAIT|M_ZERO)
-#define calloc(x, n)  malloc(x*n)
-#define free(x)   _bsd_free(x, M_ALIAS)
+#define malloc(x)	_bsd_malloc(x, M_ALIAS, M_NOWAIT|M_ZERO)
+#define	calloc(n, x)	mallocarray((n), (x), M_ALIAS, M_NOWAIT|M_ZERO)
+#define free(x)		_bsd_free(x, M_ALIAS)
 #endif /* __rtems__ */
 #endif
 #endif

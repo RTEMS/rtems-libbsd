@@ -24,8 +24,10 @@ static __inline uint8_t SDHCI_READ_1(device_t brdev, struct sdhci_slot *slot,
                                      bus_size_t off)
 {
 	kobjop_t _m;
+	uint8_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_1);
-	return ((sdhci_read_1_t *) _m)(brdev, slot, off);
+	rc = ((sdhci_read_1_t *) _m)(brdev, slot, off);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the SDHCI_READ_2() method */
@@ -38,8 +40,10 @@ static __inline uint16_t SDHCI_READ_2(device_t brdev, struct sdhci_slot *slot,
                                       bus_size_t off)
 {
 	kobjop_t _m;
+	uint16_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_2);
-	return ((sdhci_read_2_t *) _m)(brdev, slot, off);
+	rc = ((sdhci_read_2_t *) _m)(brdev, slot, off);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the SDHCI_READ_4() method */
@@ -52,8 +56,10 @@ static __inline uint32_t SDHCI_READ_4(device_t brdev, struct sdhci_slot *slot,
                                       bus_size_t off)
 {
 	kobjop_t _m;
+	uint32_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_4);
-	return ((sdhci_read_4_t *) _m)(brdev, slot, off);
+	rc = ((sdhci_read_4_t *) _m)(brdev, slot, off);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the SDHCI_READ_MULTI_4() method */
@@ -141,8 +147,10 @@ static __inline int SDHCI_PLATFORM_WILL_HANDLE(device_t brdev,
                                                struct sdhci_slot *slot)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_platform_will_handle);
-	return ((sdhci_platform_will_handle_t *) _m)(brdev, slot);
+	rc = ((sdhci_platform_will_handle_t *) _m)(brdev, slot);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the SDHCI_PLATFORM_START_TRANSFER() method */
@@ -183,8 +191,10 @@ typedef uint32_t sdhci_min_freq_t(device_t brdev, struct sdhci_slot *slot);
 static __inline uint32_t SDHCI_MIN_FREQ(device_t brdev, struct sdhci_slot *slot)
 {
 	kobjop_t _m;
+	uint32_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_min_freq);
-	return ((sdhci_min_freq_t *) _m)(brdev, slot);
+	rc = ((sdhci_min_freq_t *) _m)(brdev, slot);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the SDHCI_GET_CARD_PRESENT() method */
@@ -196,8 +206,10 @@ static __inline bool SDHCI_GET_CARD_PRESENT(device_t brdev,
                                             struct sdhci_slot *slot)
 {
 	kobjop_t _m;
+	bool rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_get_card_present);
-	return ((sdhci_get_card_present_t *) _m)(brdev, slot);
+	rc = ((sdhci_get_card_present_t *) _m)(brdev, slot);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the SDHCI_SET_UHS_TIMING() method */

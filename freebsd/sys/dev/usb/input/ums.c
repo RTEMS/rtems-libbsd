@@ -952,9 +952,9 @@ ums_reset_buf(struct ums_softc *sc)
 
 #ifdef EVDEV_SUPPORT
 static int
-ums_ev_open(struct evdev_dev *evdev, void *ev_softc)
+ums_ev_open(struct evdev_dev *evdev)
 {
-	struct ums_softc *sc = (struct ums_softc *)ev_softc;
+	struct ums_softc *sc = evdev_get_softc(evdev);
 
 	mtx_assert(&sc->sc_mtx, MA_OWNED);
 
@@ -968,10 +968,10 @@ ums_ev_open(struct evdev_dev *evdev, void *ev_softc)
 	return (0);
 }
 
-static void
-ums_ev_close(struct evdev_dev *evdev, void *ev_softc)
+static int
+ums_ev_close(struct evdev_dev *evdev)
 {
-	struct ums_softc *sc = (struct ums_softc *)ev_softc;
+	struct ums_softc *sc = evdev_get_softc(evdev);
 
 	mtx_assert(&sc->sc_mtx, MA_OWNED);
 
@@ -979,6 +979,8 @@ ums_ev_close(struct evdev_dev *evdev, void *ev_softc)
 
 	if (sc->sc_fflags == 0)
 		ums_stop_rx(sc);
+
+	return (0);
 }
 #endif
 

@@ -144,11 +144,6 @@ arc4rand(void *ptr, u_int len, int reseed)
 	arc4random_buf(ptr, len);
 }
 #endif /* __rtems__ */
-#ifndef __rtems__
-int	 bcmp(const void *, const void *, size_t);
-#else /* __rtems__ */
-#define	bcmp(m1, m2, n) memcmp(m1, m2, n)
-#endif /* __rtems__ */
 int	 timingsafe_bcmp(const void *, const void *, size_t);
 void	*bsearch(const void *, const void *, size_t,
 	    size_t, int (*)(const void *, const void *));
@@ -210,7 +205,6 @@ int	 fnmatch(const char *, const char *, int);
 int	 locc(int, char *, u_int);
 void	*memchr(const void *s, int c, size_t n);
 void	*memcchr(const void *s, int c, size_t n);
-int	 memcmp(const void *b1, const void *b2, size_t len);
 void	*memmem(const void *l, size_t l_len, const void *s, size_t s_len);
 void	 qsort(void *base, size_t nmemb, size_t size,
 	    int (*compar)(const void *, const void *));
@@ -288,23 +282,6 @@ uint32_t sse42_crc32c(uint32_t, const unsigned char *, unsigned);
 #if defined(__aarch64__)
 uint32_t armv8_crc32c(uint32_t, const unsigned char *, unsigned int);
 #endif
-#endif
-
-
-LIBKERN_INLINE void *memset(void *, int, size_t);
-#ifdef LIBKERN_BODY
-LIBKERN_INLINE void *
-memset(void *b, int c, size_t len)
-{
-	char *bb;
-
-	if (c == 0)
-		bzero(b, len);
-	else
-		for (bb = (char *)b; len--; )
-			*bb++ = c;
-	return (b);
-}
 #endif
 
 #ifndef __rtems__

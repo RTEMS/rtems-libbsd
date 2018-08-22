@@ -287,8 +287,6 @@ ofw_fdt_getprop(ofw_t ofw, phandle_t package, const char *propname, void *buf,
 		/* Emulate the 'name' property */
 		name = fdt_get_name(fdtp, offset, &len);
 		strncpy(buf, name, buflen);
-		if (len + 1 > buflen)
-			len = buflen;
 		return (len + 1);
 	}
 
@@ -307,9 +305,8 @@ ofw_fdt_getprop(ofw_t ofw, phandle_t package, const char *propname, void *buf,
 	if (prop == NULL)
 		return (-1);
 
-	if (len > buflen)
-		len = buflen;
-	bcopy(prop, buf, len);
+	bcopy(prop, buf, min(len, buflen));
+
 	return (len);
 }
 

@@ -333,7 +333,7 @@ SHA512_Final(unsigned char digest[static SHA512_DIGEST_LENGTH], SHA512_CTX *ctx)
 	be64enc_vect(digest, ctx->state, SHA512_DIGEST_LENGTH);
 
 	/* Clear the context state */
-	memset(ctx, 0, sizeof(*ctx));
+	explicit_bzero(ctx, sizeof(*ctx));
 }
 
 /*** SHA-512t: *********************************************************/
@@ -376,7 +376,7 @@ SHA512_224_Final(unsigned char digest[static SHA512_224_DIGEST_LENGTH], SHA512_C
 	be64enc_vect(digest, ctx->state, SHA512_224_DIGEST_LENGTH);
 
 	/* Clear the context state */
-	memset(ctx, 0, sizeof(*ctx));
+	explicit_bzero(ctx, sizeof(*ctx));
 }
 
 void
@@ -415,7 +415,7 @@ SHA512_256_Final(unsigned char digest[static SHA512_256_DIGEST_LENGTH], SHA512_C
 	be64enc_vect(digest, ctx->state, SHA512_256_DIGEST_LENGTH);
 
 	/* Clear the context state */
-	memset(ctx, 0, sizeof(*ctx));
+	explicit_bzero(ctx, sizeof(*ctx));
 }
 
 /*** SHA-384: *********************************************************/
@@ -465,7 +465,7 @@ SHA384_Final(unsigned char digest[static SHA384_DIGEST_LENGTH], SHA384_CTX *ctx)
 	be64enc_vect(digest, ctx->state, SHA384_DIGEST_LENGTH);
 
 	/* Clear the context state */
-	memset(ctx, 0, sizeof(*ctx));
+	explicit_bzero(ctx, sizeof(*ctx));
 }
 
 #ifdef WEAK_REFS

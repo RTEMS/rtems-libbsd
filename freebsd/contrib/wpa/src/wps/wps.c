@@ -21,6 +21,10 @@
 int wps_version_number = 0x20;
 int wps_testing_dummy_cred = 0;
 int wps_corrupt_pkhash = 0;
+int wps_force_auth_types_in_use = 0;
+u16 wps_force_auth_types = 0;
+int wps_force_encr_types_in_use = 0;
+u16 wps_force_encr_types = 0;
 #endif /* CONFIG_WPS_TESTING */
 
 
@@ -172,7 +176,7 @@ void wps_deinit(struct wps_data *data)
 	} else if (data->registrar)
 		wps_registrar_unlock_pin(data->wps->registrar, data->uuid_e);
 
-	wpabuf_free(data->dh_privkey);
+	wpabuf_clear_free(data->dh_privkey);
 	wpabuf_free(data->dh_pubkey_e);
 	wpabuf_free(data->dh_pubkey_r);
 	wpabuf_free(data->last_msg);

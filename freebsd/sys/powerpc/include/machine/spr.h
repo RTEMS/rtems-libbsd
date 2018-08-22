@@ -229,7 +229,6 @@
 #define	  EPCR_DGTMI		  0x00800000
 #define	  EPCR_DMIUH		  0x00400000
 #define	  EPCR_PMGS		  0x00200000
-#define	SPR_SPEFSCR		0x200	/* ..8 Signal Processing Engine FSCR. */
 
 #define	SPR_HSRR0		0x13a
 #define	SPR_HSRR1		0x13b
@@ -245,7 +244,7 @@
 #define	SPR_LPID		0x13f	/* Logical Partitioning Control */
 
 #define	SPR_PTCR		0x1d0	/* Partition Table Control Register */
-#define	SPR_IBAT0U		0x210	/* .68 Instruction BAT Reg 0 Upper */
+#define	SPR_SPEFSCR		0x200	/* ..8 Signal Processing Engine FSCR. */
 #define	SPR_IBAT0U		0x210	/* .6. Instruction BAT Reg 0 Upper */
 #define	SPR_IBAT0L		0x211	/* .6. Instruction BAT Reg 0 Lower */
 #define	SPR_IBAT1U		0x212	/* .6. Instruction BAT Reg 1 Upper */
@@ -384,6 +383,7 @@
 #define	SPR_MD_RAM0		0x339	/* ..8 IMMU RAM entry read reg 0 */
 #define	SPR_MD_RAM1		0x33a	/* ..8 IMMU RAM entry read reg 1 */
 #define	SPR_PSSCR		0x357	/* Processor Stop Status and Control Register (ISA 3.0) */
+#define	SPR_PMCR                0x374   /* Processor Management Control Register */
 #define	SPR_UMMCR2		0x3a0	/* .6. User Monitor Mode Control Register 2 */
 #define	SPR_UMMCR0		0x3a8	/* .6. User Monitor Mode Control Register 0 */
 #define	SPR_USIA		0x3ab	/* .6. User Sampled Instruction Address */

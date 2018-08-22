@@ -48,6 +48,7 @@
 #include <sys/stdint.h>		/* for people using printf mainly */
 #ifdef __rtems__
 #include <string.h>
+#include <rtems/score/threaddispatch.h>
 #endif /* __rtems__ */
 
 __NULLABILITY_PRAGMA_PUSH
@@ -106,12 +107,21 @@ extern int vm_guest;		/* Running as virtual machine guest? */
 enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN, VM_GUEST_HV,
 		VM_GUEST_VMWARE, VM_GUEST_KVM, VM_GUEST_BHYVE, VM_LAST };
 
+/*
+ * These functions need to be declared before the KASSERT macro is invoked in
+ * !KASSERT_PANIC_OPTIONAL builds, so their declarations are sort of out of
+ * place compared to other function definitions in this header.  On the other
+ * hand, this header is a bit disorganized anyway.
+ */
+void	panic(const char *, ...) __dead2 __printflike(1, 2);
+void	vpanic(const char *, __va_list) __dead2 __printflike(1, 0);
+
 #if defined(WITNESS) || defined(INVARIANT_SUPPORT)
-#ifndef __rtems__
+#ifdef KASSERT_PANIC_OPTIONAL
 void	kassert_panic(const char *fmt, ...)  __printflike(1, 2);
-#else /* __rtems__ */
-#define	kassert_panic panic
-#endif /* __rtems__ */
+#else
+#define kassert_panic	panic
+#endif
 #endif
 
 #ifdef	INVARIANTS		/* The option is always available */
@@ -135,6 +145,12 @@ void	kassert_panic(const char *fmt, ...)  __printflike(1, 2);
 
 #ifndef CTASSERT	/* Allow lint to override */
 #define	CTASSERT(x)	_Static_assert(x, "compile-time assertion failed")
+#endif
+
+#if defined(_KERNEL)
+#include <sys/param.h>		/* MAXCPU */
+#include <sys/pcpu.h>		/* curthread */
+#include <sys/kpilite.h>
 #endif
 
 /*
@@ -184,11 +200,10 @@ void	kassert_panic(const char *fmt, ...)  __printflike(1, 2);
  * XXX most of these variables should be const.
  */
 extern int osreldate;
-extern int envmode;
-extern int hintmode;		/* 0 = off. 1 = config, 2 = fallback */
-extern int dynamic_kenv;
+extern bool dynamic_kenv;
 extern struct mtx kenv_lock;
 extern char *kern_envp;
+extern char *md_envp;
 extern char static_env[];
 extern char static_hints[];	/* by config for now */
 
@@ -244,34 +259,57 @@ void	*phashinit_flags(int count, struct malloc_type *type, u_long *nentries,
     int flags);
 void	g_waitidle(void);
 
-void	panic(const char *, ...) __dead2 __printflike(1, 2);
-void	vpanic(const char *, __va_list) __dead2 __printflike(1, 0);
-
 void	cpu_boot(int);
 void	cpu_flush_dcache(void *, size_t);
 void	cpu_rootconf(void);
-#ifndef __rtems__
-void	critical_enter(void);
-void	critical_exit(void);
-#else /* __rtems__ */
-#include <rtems/score/threaddispatch.h>
+void	critical_enter_KBI(void);
+void	critical_exit_KBI(void);
+void	critical_exit_preempt(void);
+void	init_param1(void);
+void	init_param2(long physpages);
+void	init_static_kenv(char *, size_t);
+void	tablefull(const char *);
 
+#if defined(KLD_MODULE) || defined(KTR_CRITICAL) || !defined(_KERNEL) || defined(GENOFFSET)
+#define critical_enter() critical_enter_KBI()
+#define critical_exit() critical_exit_KBI()
+#else
 static __inline void
 critical_enter(void)
 {
+#ifndef __rtems__
+	struct thread_lite *td;
+
+	td = (struct thread_lite *)curthread;
+	td->td_critnest++;
+	__compiler_membar();
+#else /* __rtems__ */
 	_Thread_Dispatch_disable();
+#endif /* __rtems__ */
 }
 
 static __inline void
 critical_exit(void)
 {
+#ifndef __rtems__
+	struct thread_lite *td;
+
+	td = (struct thread_lite *)curthread;
+	KASSERT(td->td_critnest != 0,
+	    ("critical_exit: td_critnest == 0"));
+	__compiler_membar();
+	td->td_critnest--;
+	__compiler_membar();
+	if (__predict_false(td->td_owepreempt))
+		critical_exit_preempt();
+#else /* __rtems__ */
 	_Thread_Dispatch_enable(_Per_CPU_Get());
-}
 #endif /* __rtems__ */
-void	init_param1(void);
-void	init_param2(long physpages);
-void	init_static_kenv(char *, size_t);
-void	tablefull(const char *);
+
+}
+#endif
+
+
 #ifdef  EARLY_PRINTF
 typedef void early_putc_t(int ch);
 extern early_putc_t *early_putc;
@@ -329,30 +367,22 @@ void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_OMIT_CHARS	(1 << 18)
 
 #define ovbcopy(f, t, l) bcopy((f), (t), (l))
-#ifndef __rtems__
 void	bcopy(const void * _Nonnull from, void * _Nonnull to, size_t len);
-#define bcopy(from, to, len) ({				\
-	if (__builtin_constant_p(len) && (len) <= 64)	\
-		__builtin_memmove((to), (from), (len));	\
-	else						\
-		bcopy((from), (to), (len));		\
-})
+#define bcopy(from, to, len) __builtin_memmove((to), (from), (len))
 void	bzero(void * _Nonnull buf, size_t len);
-#define bzero(buf, len) ({				\
-	if (__builtin_constant_p(len) && (len) <= 64)	\
-		__builtin_memset((buf), 0, (len));	\
-	else						\
-		bzero((buf), (len));			\
-})
-#else /* __rtems__ */
-#define	bcopy(src, dst, len) memmove((dst), (src), (len))
-#define	bzero(buf, size) memset((buf), 0, (size))
-#endif /* __rtems__ */
+#define bzero(buf, len) __builtin_memset((buf), 0, (len))
 void	explicit_bzero(void * _Nonnull, size_t);
+int	bcmp(const void *b1, const void *b2, size_t len);
+#define bcmp(b1, b2, len) __builtin_memcmp((b1), (b2), (len))
 
+void	*memset(void * _Nonnull buf, int c, size_t len);
+#define memset(buf, c, len) __builtin_memset((buf), (c), (len))
 void	*memcpy(void * _Nonnull to, const void * _Nonnull from, size_t len);
-#define memcpy(to, from, len) __builtin_memcpy(to, from, len)
+#define memcpy(to, from, len) __builtin_memcpy((to), (from), (len))
 void	*memmove(void * _Nonnull dest, const void * _Nonnull src, size_t n);
+#define memmove(dest, src, n) __builtin_memmove((dest), (src), (n))
+int	memcmp(const void *b1, const void *b2, size_t len);
+#define memcmp(b1, b2, len) __builtin_memcmp((b1), (b2), (len))
 
 #ifndef __rtems__
 int	copystr(const void * _Nonnull __restrict kfaddr,
@@ -451,17 +481,13 @@ void	realitexpire(void *);
 
 int	sysbeep(int hertz, int period);
 
-void	hardclock(int usermode, uintfptr_t pc);
-void	hardclock_cnt(int cnt, int usermode);
-void	hardclock_cpu(int usermode);
+void	hardclock(int cnt, int usermode);
 void	hardclock_sync(int cpu);
 #ifndef __rtems__
 void	softclock(void *);
+void	statclock(int cnt, int usermode);
+void	profclock(int cnt, int usermode, uintfptr_t pc);
 #endif /* __rtems__ */
-void	statclock(int usermode);
-void	statclock_cnt(int cnt, int usermode);
-void	profclock(int usermode, uintfptr_t pc);
-void	profclock_cnt(int cnt, int usermode, uintfptr_t pc);
 
 int	hardclockintr(void);
 
@@ -491,6 +517,11 @@ int	getenv_quad(const char *name, quad_t *data);
 int	kern_setenv(const char *name, const char *value);
 int	kern_unsetenv(const char *name);
 int	testenv(const char *name);
+
+int	getenv_array(const char *name, void *data, int size, int *psize,
+    int type_size, bool allow_signed);
+#define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
+#define	GETENV_SIGNED	true	/* negative numbers allowed */
 
 typedef uint64_t (cpu_tick_f)(void);
 void set_cputicker(cpu_tick_f *func, uint64_t freq, unsigned var);

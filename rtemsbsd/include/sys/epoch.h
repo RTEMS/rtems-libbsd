@@ -100,8 +100,8 @@ SYSINIT(epoch_##name, SI_SUB_TUNABLES, SI_ORDER_THIRD,			\
 void	_bsd_epoch_init(epoch_t epoch, uintptr_t pcpu_record_offset,
 	    int flags);
 
-void	epoch_enter_preempt(epoch_t epoch);
-void	epoch_exit_preempt(epoch_t epoch);
+void	epoch_enter_preempt(epoch_t epoch, epoch_tracker_t et);
+void	epoch_exit_preempt(epoch_t epoch, epoch_tracker_t et);
 
 void	epoch_wait(epoch_t epoch);
 void	epoch_wait_preempt(epoch_t epoch);

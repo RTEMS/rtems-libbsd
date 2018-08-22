@@ -374,6 +374,15 @@ rdtsc(void)
 	return (rv);
 }
 
+static __inline uint64_t
+rdtscp(void)
+{
+	uint64_t rv;
+
+	__asm __volatile("rdtscp" : "=A" (rv) : : "ecx");
+	return (rv);
+}
+
 static __inline uint32_t
 rdtsc32(void)
 {

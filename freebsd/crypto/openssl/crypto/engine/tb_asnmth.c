@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /* ====================================================================
- * Copyright (c) 2006 The OpenSSL Project.  All rights reserved.
+ * Copyright (c) 2006-2018 The OpenSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -217,7 +217,7 @@ static void look_str_cb(int nid, STACK_OF(ENGINE) *sk, ENGINE *def, void *arg)
         ENGINE *e = sk_ENGINE_value(sk, i);
         EVP_PKEY_ASN1_METHOD *ameth;
         e->pkey_asn1_meths(e, &ameth, NULL, nid);
-        if (((int)strlen(ameth->pem_str) == lk->len) &&
+        if (ameth != NULL && ((int)strlen(ameth->pem_str) == lk->len) &&
             !strncasecmp(ameth->pem_str, lk->str, lk->len)) {
             lk->e = e;
             lk->ameth = ameth;

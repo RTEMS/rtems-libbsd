@@ -79,13 +79,13 @@
 #define pfctl_add_pool _bsd_pfctl_pfctl_add_pool
 #define pfctl_add_rule _bsd_pfctl_pfctl_add_rule
 #define pfctl_addrprefix _bsd_pfctl_pfctl_addrprefix
+#define pfctl_adjust_skip_ifaces _bsd_pfctl_pfctl_adjust_skip_ifaces
 #define pfctl_check_skip_ifaces _bsd_pfctl_pfctl_check_skip_ifaces
 #define pfctl_clear_altq _bsd_pfctl_pfctl_clear_altq
 #define pfctl_clear_interface_flags _bsd_pfctl_pfctl_clear_interface_flags
 #define pfctl_clear_nat _bsd_pfctl_pfctl_clear_nat
 #define pfctl_clear_pool _bsd_pfctl_pfctl_clear_pool
 #define pfctl_clear_rules _bsd_pfctl_pfctl_clear_rules
-#define pfctl_clear_skip_ifaces _bsd_pfctl_pfctl_clear_skip_ifaces
 #define pfctl_clear_src_nodes _bsd_pfctl_pfctl_clear_src_nodes
 #define pfctl_clear_states _bsd_pfctl_pfctl_clear_states
 #define pfctl_clear_stats _bsd_pfctl_pfctl_clear_stats
@@ -125,6 +125,7 @@
 #define pfctl_show_limits _bsd_pfctl_pfctl_show_limits
 #define pfctl_show_nat _bsd_pfctl_pfctl_show_nat
 #define pfctl_show_rules _bsd_pfctl_pfctl_show_rules
+#define pfctl_show_running _bsd_pfctl_pfctl_show_running
 #define pfctl_show_src_nodes _bsd_pfctl_pfctl_show_src_nodes
 #define pfctl_show_states _bsd_pfctl_pfctl_show_states
 #define pfctl_show_status _bsd_pfctl_pfctl_show_status
@@ -210,6 +211,7 @@
 #define print_pool _bsd_pfctl_print_pool
 #define print_port _bsd_pfctl_print_port
 #define print_rule _bsd_pfctl_print_rule
+#define print_running _bsd_pfctl_print_running
 #define print_src_node _bsd_pfctl_print_src_node
 #define print_status _bsd_pfctl_print_status
 #define print_tabledef _bsd_pfctl_print_tabledef

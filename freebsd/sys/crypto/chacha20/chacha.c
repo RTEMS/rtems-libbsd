@@ -16,7 +16,6 @@ __FBSDID("$FreeBSD$");
 
 #include <crypto/chacha20/chacha.h>
 
-
 typedef uint8_t u8;
 typedef uint32_t u32;
 
@@ -59,7 +58,7 @@ typedef struct chacha_ctx chacha_ctx;
 static const char sigma[16] = "expand 32-byte k";
 static const char tau[16] = "expand 16-byte k";
 
-void
+LOCAL void
 #ifndef __rtems__
 chacha_keysetup(chacha_ctx *x,const u8 *k,u32 kbits)
 #else /* __rtems__ */
@@ -88,7 +87,7 @@ chacha_keysetup(chacha_ctx *x,const u8 *k,u_int kbits)
   x->input[3] = U8TO32_LITTLE(constants + 12);
 }
 
-void
+LOCAL void
 chacha_ivsetup(chacha_ctx *x, const u8 *iv, const u8 *counter)
 {
   x->input[12] = counter == NULL ? 0 : U8TO32_LITTLE(counter + 0);
@@ -97,7 +96,7 @@ chacha_ivsetup(chacha_ctx *x, const u8 *iv, const u8 *counter)
   x->input[15] = U8TO32_LITTLE(iv + 4);
 }
 
-void
+LOCAL void
 #ifndef __rtems__
 chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u32 bytes)
 #else /* __rtems__ */
@@ -179,6 +178,7 @@ chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u_int bytes)
     x14 = PLUS(x14,j14);
     x15 = PLUS(x15,j15);
 
+#ifndef KEYSTREAM_ONLY
     x0 = XOR(x0,U8TO32_LITTLE(m + 0));
     x1 = XOR(x1,U8TO32_LITTLE(m + 4));
     x2 = XOR(x2,U8TO32_LITTLE(m + 8));
@@ -195,6 +195,7 @@ chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u_int bytes)
     x13 = XOR(x13,U8TO32_LITTLE(m + 52));
     x14 = XOR(x14,U8TO32_LITTLE(m + 56));
     x15 = XOR(x15,U8TO32_LITTLE(m + 60));
+#endif
 
     j12 = PLUSONE(j12);
     if (!j12) {
@@ -229,6 +230,8 @@ chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u_int bytes)
     }
     bytes -= 64;
     c += 64;
+#ifndef KEYSTREAM_ONLY
     m += 64;
+#endif
   }
 }

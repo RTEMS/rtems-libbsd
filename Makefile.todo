@@ -11,6 +11,8 @@ FREEBSD_SRC = freebsd-org
 TOOLS = freebsd-org/sys/tools
 
 GENERATED =
+GENERATED += $(LOCAL_INC)/cryptodev_if.h
+GENERATED += $(LOCAL_SRC)/cryptodev_if.c
 GENERATED += $(LOCAL_INC)/usb_if.h
 GENERATED += $(LOCAL_SRC)/usb_if.c
 GENERATED += $(LOCAL_INC)/bus_if.h
@@ -62,11 +64,11 @@ YACC_GENERATED += freebsd/contrib/libpcap/grammar.c
 LEX_GENERATED += freebsd/contrib/libpcap/scanner.h
 LEX_GENERATED += freebsd/contrib/libpcap/scanner.c
 
+all: yacc lex $(GENERATED)
+
 yacc: $(YACC_GENERATED)
 
 lex: $(LEX_GENERATED)
-
-all: yacc lex $(GENERATED)
 
 program-header:
 	cd freebsd/bin/stty && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/bin/stty/*.o -p stty
@@ -88,6 +90,14 @@ $(LOCAL_INC)/usbdevs.h: $(FREEBSD_SRC)/sys/dev/usb/usbdevs
 $(LOCAL_INC)/usbdevs_data.h: $(FREEBSD_SRC)/sys/dev/usb/usbdevs
 	awk -f $(TOOLS)/usbdevs2h.awk $< -d
 	mv usbdevs_data.h $@
+
+$(LOCAL_INC)/cryptodev_if.h: $(FREEBSD_SRC)/sys/opencrypto/cryptodev_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv cryptodev_if.h $@
+
+$(LOCAL_SRC)/cryptodev_if.c: $(FREEBSD_SRC)/sys/opencrypto/cryptodev_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv cryptodev_if.c $@
 
 $(LOCAL_INC)/usb_if.h: $(FREEBSD_SRC)/sys/dev/usb/usb_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -h

@@ -8,6 +8,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char pushback_buffer[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int blockpolicy);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int debug);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int default_statelock);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int failpolicy);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int parseindex);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int pushback_index);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int require_order);

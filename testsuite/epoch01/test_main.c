@@ -282,9 +282,11 @@ test_enter_exit_preempt_body(rtems_test_parallel_context *base, void *arg,
 	counter = 0;
 
 	while (!rtems_test_parallel_stop_job(&ctx->base)) {
-		epoch_enter_preempt(e);
+		struct epoch_tracker et;
+
+		epoch_enter_preempt(e, &et);
 		++counter;
-		epoch_exit_preempt(e);
+		epoch_exit_preempt(e, &et);
 	}
 
 	ctx->stats.counter[worker_index] = counter;
@@ -315,12 +317,13 @@ test_enter_list_op_exit_preempt_body(rtems_test_parallel_context *base,
 	memset(item_counter, 0, sizeof(item_counter));
 
 	while (!rtems_test_parallel_stop_job(&ctx->base)) {
+		struct epoch_tracker et;
 		test_item *prev;
 		test_item *item;
 		test_item *tmp;
 		test_item *rm;
 
-		epoch_enter_preempt(e);
+		epoch_enter_preempt(e, &et);
 		++counter;
 
 		prev = NULL;
@@ -343,7 +346,7 @@ test_enter_list_op_exit_preempt_body(rtems_test_parallel_context *base,
 			prev = item;
 		}
 
-		epoch_exit_preempt(e);
+		epoch_exit_preempt(e, &et);
 
 		if (rm != NULL) {
 			epoch_call(e, &rm->ec, test_list_callback);
@@ -410,11 +413,13 @@ test_enter_mutex_exit_preempt_body(rtems_test_parallel_context *base,
 	mtx = &ctx->mtx[worker_index % RTEMS_ARRAY_SIZE(ctx->mtx)];
 
 	while (!rtems_test_parallel_stop_job(&ctx->base)) {
-		epoch_enter_preempt(e);
+		struct epoch_tracker et;
+
+		epoch_enter_preempt(e, &et);
 		rtems_mutex_lock(mtx);
 		++counter;
 		rtems_mutex_unlock(mtx);
-		epoch_exit_preempt(e);
+		epoch_exit_preempt(e, &et);
 	}
 
 	ctx->stats.counter[worker_index] = counter;

@@ -91,7 +91,7 @@ static int getpeername1(struct thread *td, struct getpeername_args *uap,
 struct getsockaddr_sockaddr {
 	struct sockaddr	header;
 	char		data[SOCK_MAXADDRLEN - sizeof(struct sockaddr)];
-};
+} __aligned(sizeof(long));
 
 static int getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len);
 #endif /* __rtems__ */

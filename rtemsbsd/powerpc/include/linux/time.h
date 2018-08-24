@@ -70,9 +70,7 @@ timespec_sub(struct timespec lhs, struct timespec rhs)
 {
 	struct timespec ts;
 
-	ts.tv_sec = lhs.tv_sec;
-	ts.tv_nsec = lhs.tv_nsec;
-	timespecsub(&ts, &rhs);
+	timespecsub(&lhs, &rhs, &ts);
 
 	return ts;
 }

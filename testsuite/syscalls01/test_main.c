@@ -55,6 +55,7 @@
 
 #include <rtems.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/modules.h>
 #include <rtems/libcsupport.h>
 
 #define TEST_NAME "LIBBSD SYSCALLS 1"
@@ -217,7 +218,11 @@ static socket_test socket_tests[] = {
 	{ PF_SIP, SOCK_DGRAM, 0, EAFNOSUPPORT },
 	{ PF_PIP, SOCK_DGRAM, 0, EAFNOSUPPORT },
 	{ PF_ISDN, SOCK_DGRAM, 0, EAFNOSUPPORT },
+#ifdef RTEMS_BSD_MODULE_NETIPSEC
+	{ PF_KEY, SOCK_DGRAM, 0, EPROTOTYPE },
+#else
 	{ PF_KEY, SOCK_DGRAM, 0, EAFNOSUPPORT },
+#endif
 	{ PF_INET6, SOCK_DGRAM, 0, 0 },
 	{ PF_NATM, SOCK_DGRAM, 0, EAFNOSUPPORT },
 	{ PF_ATM, SOCK_DGRAM, 0, EAFNOSUPPORT },

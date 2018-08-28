@@ -2,8 +2,8 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-tcpdump-data.h"
 /* print-nfs.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static uint32_t nfsv3_procid[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int nfserr);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct xid_map_entry xid_map[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int xid_map_next);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int xid_map_hint);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int xid_map_next);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct xid_map_entry xid_map[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static uint32_t nfsv3_procid[]);

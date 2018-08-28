@@ -2,13 +2,13 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-arp-data.h"
 /* arp.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int nflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static char *rifname);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static time_t expire_time);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int flags);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int doing_proxy);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int flags);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int nflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int s);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int seq);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static pid_t pid);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static struct if_nameindex *ifnameindex);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static struct timespec tp);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int seq);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static int s);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static pid_t pid);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_arp, static time_t expire_time);

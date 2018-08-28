@@ -2,10 +2,10 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-tcpdump-data.h"
 /* print-telnet.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *telcmds[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *telopts[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *cmds[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *authcmd[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *authtype[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *cmds[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *enccmd[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *enctype[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *telcmds[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *telopts[]);

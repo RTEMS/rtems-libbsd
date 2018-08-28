@@ -2,21 +2,21 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-pfctl-data.h"
 /* pfctl.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_anchor_global pf_anchors);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_anchor pf_main_anchor);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *clearopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *rulesopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *showopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *debugopt);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *anchoropt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *optiopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *pf_device);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *ifaceopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *tableopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *tblcmdopt);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int src_node_killers);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int state_killers);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int first_title);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int labels);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *rulesopt);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *src_node_kill[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *state_kill[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *tableopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *clearopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *debugopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *optiopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *pf_device);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *showopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char const *tblcmdopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int first_title);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int labels);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int src_node_killers);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int state_killers);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_anchor pf_main_anchor);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pf_anchor_global pf_anchors);

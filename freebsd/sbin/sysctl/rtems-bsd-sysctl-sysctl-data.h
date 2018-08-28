@@ -3,21 +3,21 @@
 #include "rtems-bsd-sysctl-data.h"
 /* sysctl.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static char const *conffile);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static char const *ctl_typename[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Bflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Nflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Tflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Wflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int aflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int bflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Bflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int ctl_sign[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int ctl_size[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int dflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int eflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int hflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int iflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Nflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int nflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int oflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int qflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int tflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Tflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int Wflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int xflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int ctl_sign[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static int ctl_size[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static char const *ctl_typename[]);

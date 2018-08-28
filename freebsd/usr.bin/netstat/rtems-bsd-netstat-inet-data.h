@@ -2,7 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-netstat-data.h"
 /* inet.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int udp_done);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int tcp_done);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int sdp_done);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int protopr_first);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int sdp_done);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int tcp_done);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int udp_done);

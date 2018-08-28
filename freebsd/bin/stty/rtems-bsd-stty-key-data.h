@@ -2,4 +2,4 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-stty-data.h"
 /* key.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_stty, static struct key keys[20]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_stty, static struct key keys[]);

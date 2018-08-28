@@ -4549,8 +4549,6 @@ unaryop		: '='		{ $$ = PF_OP_EQ; }
 
 %%
 #ifdef __rtems__
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern YYSTYPE pfctlyval);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern YYSTYPE pfctlylval);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static YYSTACKDATA yystack);
 #endif /* __rtems__ */
 

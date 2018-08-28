@@ -2,5 +2,5 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-stty-data.h"
 /* print.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_stty, static int col);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_stty, static char const *label);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_stty, static int col);

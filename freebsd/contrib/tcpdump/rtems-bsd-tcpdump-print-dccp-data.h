@@ -2,5 +2,5 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-tcpdump-data.h"
 /* print-dccp.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *dccp_reset_codes[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *dccp_feature_nums[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *dccp_reset_codes[]);

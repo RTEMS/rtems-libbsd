@@ -3,5 +3,5 @@
 #include "rtems-bsd-tcpdump-data.h"
 /* print-802_11.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *auth_alg_text[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *status_text[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *reason_text[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *status_text[]);

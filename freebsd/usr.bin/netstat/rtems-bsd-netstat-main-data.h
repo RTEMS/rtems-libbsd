@@ -2,9 +2,9 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-netstat-data.h"
 /* main.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static kvm_t *kvmd);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static char *nlistf);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static char *memf);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static char *nlistf);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int Bflag);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int pflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int af);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int pflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static kvm_t *kvmd);

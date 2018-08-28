@@ -2,8 +2,8 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-ifconfig-data.h"
 /* ifbridge.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *stpstates[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *stpproto[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *stproles[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd bridge_cmds[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *stpstates[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch af_bridge);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd bridge_cmds[]);

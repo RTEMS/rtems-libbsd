@@ -1,3 +1,7 @@
+BASE = $(PWD)
+
+BUILD_BSP = $(BASE)/build/arm-rtems5-xilinx_zynq_a9_qemu-everything
+
 LOCAL_INC = rtemsbsd/include/rtems/bsd/local
 
 LOCAL_SRC = rtemsbsd/local
@@ -63,6 +67,19 @@ yacc: $(YACC_GENERATED)
 lex: $(LEX_GENERATED)
 
 all: yacc lex $(GENERATED)
+
+program-header:
+	cd freebsd/bin/stty && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/bin/stty/*.o -p stty
+	cd freebsd/contrib/tcpdump && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/contrib/tcpdump/*.o -p tcpdump
+	cd freebsd/sbin/ifconfig && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/sbin/ifconfig/*.o -p ifconfig
+	cd freebsd/sbin/pfctl && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/sbin/pfctl/*.o -p pfctl
+	cd freebsd/sbin/ping6 && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/sbin/ping6/*.o -p ping6
+	cd freebsd/sbin/ping && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/sbin/ping/*.o -p ping
+	cd freebsd/sbin/route && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/sbin/route/*.o -p route
+	cd freebsd/sbin/sysctl && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/sbin/sysctl/*.o -p sysctl
+	cd freebsd/tools/tools/net80211/wlanstats && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/tools/tools/net80211/wlanstats/*.o -p wlanstats
+	cd freebsd/usr.bin/netstat && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.bin/netstat/*.o -p netstat
+	cd freebsd/usr.sbin/arp && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.sbin/arp/*.o -p arp
 
 $(LOCAL_INC)/usbdevs.h: $(FREEBSD_SRC)/sys/dev/usb/usbdevs
 	awk -f $(TOOLS)/usbdevs2h.awk $< -h

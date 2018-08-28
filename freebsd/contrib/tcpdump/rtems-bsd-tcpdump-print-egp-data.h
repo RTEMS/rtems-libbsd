@@ -5,5 +5,5 @@
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *egp_acquire_codes[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *egp_acquire_status[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *egp_reach_codes[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *egp_status_updown[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *egp_reasons[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *egp_status_updown[]);

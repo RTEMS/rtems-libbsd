@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2016 embedded brains GmbH.  All rights reserved.
@@ -275,7 +275,16 @@ class HeaderGenCU:
                 is_constant = True
         return is_constant
 
+    def _write_list_to_file(self, l, f):
+        if l:
+            l.sort()
+            f.write('\n'.join(l) + '\n')
+
     def _process_die(self, die, data_out, glob_data_out, namesp_out):
+        data_out_items = []
+        glob_data_out_items = []
+        namesp_out_items = []
+
         for child in die.iter_children():
             specdie = child
             # get the name of the DIE
@@ -393,23 +402,23 @@ class HeaderGenCU:
                 # check if it is a static or a extern
                 if not is_extern:
                     var_with_type = "static " + var_with_type
-                    outfile = data_out
+                    out_items = data_out_items
                 else:
                     self._err.write('WARNING: variable is not static: "%s" at %s\n' % \
                                     (var_with_type, var_decl))
                     var_with_type = "extern " + var_with_type
-                    outfile = glob_data_out
+                    out_items = glob_data_out_items
 
                 for flt in self._filter_special_vars:
                     if flt["re"].match(var_with_type) is not None:
                         if flt["action"] == "no_section":
                             self._err.write('Don\'t put "%s" into section. Reason: %s.\n' % \
                                             (var_with_type, flt["reason"]))
-                            outfile = None
+                            out_items = None
                         if flt["action"] == "ignore_extern":
                             self._err.write('Ignore extern of variable "%s". Reason: %s.\n' % \
                                             (var_with_type, flt["reason"]))
-                            outfile = data_out
+                            out_items = data_out_items
 
             # write output
             if self._verbose >= VERBOSE_SOME:
@@ -419,12 +428,16 @@ class HeaderGenCU:
                 else:
                     self._err.write('Found a function "%s" at %s (DIE offset %s); extern: %r\n' % \
                                     (varname, var_decl, child.offset, is_extern))
-            if (not is_function) and (outfile is not None):
-                outfile.write("RTEMS_LINKER_RWSET_CONTENT(bsd_prog_%s, %s);\n" % \
+            if (not is_function) and (out_items is not None):
+                out_items.append("RTEMS_LINKER_RWSET_CONTENT(bsd_prog_%s, %s);" % \
                         (self._progname, var_with_type))
             if is_extern:
-                namesp_out.write("#define %s %s%s\n" % \
+                namesp_out_items.append("#define %s %s%s" % \
                                  (varname, self._namespace_prefix, varname))
+
+        self._write_list_to_file(data_out_items, data_out)
+        self._write_list_to_file(glob_data_out_items, glob_data_out)
+        self._write_list_to_file(namesp_out_items, namesp_out)
 
 
 class UserspaceHeaderGen:

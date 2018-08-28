@@ -5,7 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
-#define YYPATCH 20160324
+#define YYPATCH 20170201
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -97,7 +97,7 @@
 
 #define YYPURE 0
 
-#line 2 "../../freebsd/lib/libc/net/nsparser.y"
+#line 2 "nsparser.y"
 /*	$NetBSD: nsparser.y,v 1.3 1999/01/25 00:16:18 lukem Exp $	*/
 
 /*-
@@ -145,19 +145,19 @@ static	void	_nsaddsrctomap(const char *);
 
 static	ns_dbt		curdbt;
 static	ns_src		cursrc;
-#line 51 "../../freebsd/lib/libc/net/nsparser.y"
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
 #endif
 #ifndef YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
+#line 51 "nsparser.y"
 typedef union {
 	char *str;
 	int   mapval;
 } YYSTYPE;
 #endif /* !YYSTYPE_IS_DECLARED */
-#line 161 "_nsyy.tab.c"
+#line 161 "nsparser.c"
 
 /* compatibility with bison */
 #ifdef YYPARSE_PARAM
@@ -356,7 +356,7 @@ typedef struct {
 } YYSTACKDATA;
 /* variables for the parser stack */
 static YYSTACKDATA yystack;
-#line 146 "../../freebsd/lib/libc/net/nsparser.y"
+#line 146 "nsparser.y"
 
 static void
 _nsaddsrctomap(const char *elem)
@@ -389,10 +389,10 @@ _nsaddsrctomap(const char *elem)
 	cursrc.name = elem;
 	_nsdbtaddsrc(&curdbt, &cursrc);
 }
-#line 393 "_nsyy.tab.c"
+#line 393 "nsparser.c"
 
 #if YYDEBUG
-#include <stdio.h>		/* needed for printf */
+#include <stdio.h>	/* needed for printf */
 #endif
 
 #include <stdlib.h>	/* needed for malloc, etc */
@@ -464,6 +464,8 @@ YYPARSE_DECL()
     }
 #endif
 
+    yym = 0;
+    yyn = 0;
     yynerrs = 0;
     yyerrflag = 0;
     yychar = YYEMPTY;
@@ -483,28 +485,26 @@ yyloop:
     if ((yyn = yydefred[yystate]) != 0) goto yyreduce;
     if (yychar < 0)
     {
-        if ((yychar = YYLEX) < 0) yychar = YYEOF;
+        yychar = YYLEX;
+        if (yychar < 0) yychar = YYEOF;
 #if YYDEBUG
         if (yydebug)
         {
-            yys = yyname[YYTRANSLATE(yychar)];
+            if ((yys = yyname[YYTRANSLATE(yychar)]) == NULL) yys = yyname[YYUNDFTOKEN];
             printf("%sdebug: state %d, reading %d (%s)\n",
                     YYPREFIX, yystate, yychar, yys);
         }
 #endif
     }
-    if ((yyn = yysindex[yystate]) && (yyn += yychar) >= 0 &&
-            yyn <= YYTABLESIZE && yycheck[yyn] == yychar)
+    if (((yyn = yysindex[yystate]) != 0) && (yyn += yychar) >= 0 &&
+            yyn <= YYTABLESIZE && yycheck[yyn] == (YYINT) yychar)
     {
 #if YYDEBUG
         if (yydebug)
             printf("%sdebug: state %d, shifting to state %d\n",
                     YYPREFIX, yystate, yytable[yyn]);
 #endif
-        if (yystack.s_mark >= yystack.s_last && yygrowstack(&yystack) == YYENOMEM)
-        {
-            goto yyoverflow;
-        }
+        if (yystack.s_mark >= yystack.s_last && yygrowstack(&yystack) == YYENOMEM) goto yyoverflow;
         yystate = yytable[yyn];
         *++yystack.s_mark = yytable[yyn];
         *++yystack.l_mark = yylval;
@@ -512,18 +512,17 @@ yyloop:
         if (yyerrflag > 0)  --yyerrflag;
         goto yyloop;
     }
-    if ((yyn = yyrindex[yystate]) && (yyn += yychar) >= 0 &&
-            yyn <= YYTABLESIZE && yycheck[yyn] == yychar)
+    if (((yyn = yyrindex[yystate]) != 0) && (yyn += yychar) >= 0 &&
+            yyn <= YYTABLESIZE && yycheck[yyn] == (YYINT) yychar)
     {
         yyn = yytable[yyn];
         goto yyreduce;
     }
-    if (yyerrflag) goto yyinrecovery;
+    if (yyerrflag != 0) goto yyinrecovery;
 
     YYERROR_CALL("syntax error");
 
-    goto yyerrlab;
-
+    goto yyerrlab; /* redundant goto avoids 'unused label' warning */
 yyerrlab:
     ++yynerrs;
 
@@ -533,18 +532,15 @@ yyinrecovery:
         yyerrflag = 3;
         for (;;)
         {
-            if ((yyn = yysindex[*yystack.s_mark]) && (yyn += YYERRCODE) >= 0 &&
-                    yyn <= YYTABLESIZE && yycheck[yyn] == YYERRCODE)
+            if (((yyn = yysindex[*yystack.s_mark]) != 0) && (yyn += YYERRCODE) >= 0 &&
+                    yyn <= YYTABLESIZE && yycheck[yyn] == (YYINT) YYERRCODE)
             {
 #if YYDEBUG
                 if (yydebug)
                     printf("%sdebug: state %d, error recovery shifting\
  to state %d\n", YYPREFIX, *yystack.s_mark, yytable[yyn]);
 #endif
-                if (yystack.s_mark >= yystack.s_last && yygrowstack(&yystack) == YYENOMEM)
-                {
-                    goto yyoverflow;
-                }
+                if (yystack.s_mark >= yystack.s_last && yygrowstack(&yystack) == YYENOMEM) goto yyoverflow;
                 yystate = yytable[yyn];
                 *++yystack.s_mark = yytable[yyn];
                 *++yystack.l_mark = yylval;
@@ -569,7 +565,7 @@ yyinrecovery:
 #if YYDEBUG
         if (yydebug)
         {
-            yys = yyname[YYTRANSLATE(yychar)];
+            if ((yys = yyname[YYTRANSLATE(yychar)]) == NULL) yys = yyname[YYUNDFTOKEN];
             printf("%sdebug: state %d, error recovery discards token %d (%s)\n",
                     YYPREFIX, yystate, yychar, yys);
         }
@@ -585,32 +581,33 @@ yyreduce:
                 YYPREFIX, yystate, yyn, yyrule[yyn]);
 #endif
     yym = yylen[yyn];
-    if (yym)
+    if (yym > 0)
         yyval = yystack.l_mark[1-yym];
     else
         memset(&yyval, 0, sizeof yyval);
+
     switch (yyn)
     {
 case 6:
-#line 79 "../../freebsd/lib/libc/net/nsparser.y"
+#line 79 "nsparser.y"
 	{
 			free((char*)curdbt.name);
 		}
 break;
 case 7:
-#line 83 "../../freebsd/lib/libc/net/nsparser.y"
+#line 83 "nsparser.y"
 	{
 			_nsdbtput(&curdbt);
 		}
 break;
 case 8:
-#line 87 "../../freebsd/lib/libc/net/nsparser.y"
+#line 87 "nsparser.y"
 	{
 			yyerrok;
 		}
 break;
 case 9:
-#line 94 "../../freebsd/lib/libc/net/nsparser.y"
+#line 94 "nsparser.y"
 	{
 			curdbt.name = yylval.str;
 			curdbt.srclist = NULL;
@@ -618,24 +615,24 @@ case 9:
 		}
 break;
 case 12:
-#line 108 "../../freebsd/lib/libc/net/nsparser.y"
+#line 108 "nsparser.y"
 	{
 			cursrc.flags = NS_TERMINATE;
 			_nsaddsrctomap(yystack.l_mark[0].str);
 		}
 break;
 case 13:
-#line 112 "../../freebsd/lib/libc/net/nsparser.y"
+#line 112 "nsparser.y"
 	{ cursrc.flags = NS_SUCCESS; }
 break;
 case 14:
-#line 113 "../../freebsd/lib/libc/net/nsparser.y"
+#line 113 "nsparser.y"
 	{
 			_nsaddsrctomap(yystack.l_mark[-4].str);
 		}
 break;
 case 17:
-#line 125 "../../freebsd/lib/libc/net/nsparser.y"
+#line 125 "nsparser.y"
 	{
 			if (yystack.l_mark[0].mapval)	     /* if action == RETURN set RETURN bit */
 				cursrc.flags |= yystack.l_mark[-2].mapval;  
@@ -644,30 +641,30 @@ case 17:
 		}
 break;
 case 18:
-#line 134 "../../freebsd/lib/libc/net/nsparser.y"
+#line 134 "nsparser.y"
 	{ yyval.mapval = NS_SUCCESS; }
 break;
 case 19:
-#line 135 "../../freebsd/lib/libc/net/nsparser.y"
+#line 135 "nsparser.y"
 	{ yyval.mapval = NS_UNAVAIL; }
 break;
 case 20:
-#line 136 "../../freebsd/lib/libc/net/nsparser.y"
+#line 136 "nsparser.y"
 	{ yyval.mapval = NS_NOTFOUND; }
 break;
 case 21:
-#line 137 "../../freebsd/lib/libc/net/nsparser.y"
+#line 137 "nsparser.y"
 	{ yyval.mapval = NS_TRYAGAIN; }
 break;
 case 22:
-#line 141 "../../freebsd/lib/libc/net/nsparser.y"
+#line 141 "nsparser.y"
 	{ yyval.mapval = NS_ACTION_RETURN; }
 break;
 case 23:
-#line 142 "../../freebsd/lib/libc/net/nsparser.y"
+#line 142 "nsparser.y"
 	{ yyval.mapval = NS_ACTION_CONTINUE; }
 break;
-#line 671 "_nsyy.tab.c"
+#line 668 "nsparser.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;
@@ -685,11 +682,12 @@ break;
         *++yystack.l_mark = yyval;
         if (yychar < 0)
         {
-            if ((yychar = YYLEX) < 0) yychar = YYEOF;
+            yychar = YYLEX;
+            if (yychar < 0) yychar = YYEOF;
 #if YYDEBUG
             if (yydebug)
             {
-                yys = yyname[YYTRANSLATE(yychar)];
+                if ((yys = yyname[YYTRANSLATE(yychar)]) == NULL) yys = yyname[YYUNDFTOKEN];
                 printf("%sdebug: state %d, reading %d (%s)\n",
                         YYPREFIX, YYFINAL, yychar, yys);
             }
@@ -698,8 +696,8 @@ break;
         if (yychar == YYEOF) goto yyaccept;
         goto yyloop;
     }
-    if ((yyn = yygindex[yym]) && (yyn += yystate) >= 0 &&
-            yyn <= YYTABLESIZE && yycheck[yyn] == yystate)
+    if (((yyn = yygindex[yym]) != 0) && (yyn += yystate) >= 0 &&
+            yyn <= YYTABLESIZE && yycheck[yyn] == (YYINT) yystate)
         yystate = yytable[yyn];
     else
         yystate = yydgoto[yym];
@@ -708,10 +706,7 @@ break;
         printf("%sdebug: after reduction, shifting from state %d \
 to state %d\n", YYPREFIX, *yystack.s_mark, yystate);
 #endif
-    if (yystack.s_mark >= yystack.s_last && yygrowstack(&yystack) == YYENOMEM)
-    {
-        goto yyoverflow;
-    }
+    if (yystack.s_mark >= yystack.s_last && yygrowstack(&yystack) == YYENOMEM) goto yyoverflow;
     *++yystack.s_mark = (YYINT) yystate;
     *++yystack.l_mark = yyval;
     goto yyloop;

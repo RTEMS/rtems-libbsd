@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2016 embedded brains GmbH.  All rights reserved.

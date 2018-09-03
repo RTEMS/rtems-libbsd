@@ -52,6 +52,7 @@ nvme_ns_cmd_read(struct nvme_namespace *ns, void *payload, uint64_t lba,
 	return (0);
 }
 
+#ifndef __rtems__
 int
 nvme_ns_cmd_read_bio(struct nvme_namespace *ns, struct bio *bp,
     nvme_cb_fn_t cb_fn, void *cb_arg)
@@ -73,6 +74,7 @@ nvme_ns_cmd_read_bio(struct nvme_namespace *ns, struct bio *bp,
 
 	return (0);
 }
+#endif /* __rtems__ */
 
 int
 nvme_ns_cmd_write(struct nvme_namespace *ns, void *payload, uint64_t lba,
@@ -93,6 +95,7 @@ nvme_ns_cmd_write(struct nvme_namespace *ns, void *payload, uint64_t lba,
 	return (0);
 }
 
+#ifndef __rtems__
 int
 nvme_ns_cmd_write_bio(struct nvme_namespace *ns, struct bio *bp,
     nvme_cb_fn_t cb_fn, void *cb_arg)
@@ -113,6 +116,7 @@ nvme_ns_cmd_write_bio(struct nvme_namespace *ns, struct bio *bp,
 
 	return (0);
 }
+#endif /* __rtems__ */
 
 int
 nvme_ns_cmd_deallocate(struct nvme_namespace *ns, void *payload,

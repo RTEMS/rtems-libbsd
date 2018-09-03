@@ -168,7 +168,11 @@ struct nvme_tracker {
 	uint16_t			cid;
 
 	uint64_t			*prp;
+#ifndef __rtems__
 	bus_addr_t			prp_bus_addr;
+#else /* __rtems__ */
+	uint64_t			prp_bus_addr;
+#endif /* __rtems__ */
 };
 
 struct nvme_qpair {

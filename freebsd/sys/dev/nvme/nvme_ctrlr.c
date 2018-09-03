@@ -997,7 +997,9 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 {
 	struct nvme_request	*req;
 	struct mtx		*mtx;
+#ifndef __rtems__
 	struct buf		*buf = NULL;
+#endif /* __rtems__ */
 	int			ret = 0;
 	vm_offset_t		addr, end;
 
@@ -1019,6 +1021,7 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 			    ctrlr->max_xfer_size);
 			return EIO;
 		}
+#ifndef __rtems__
 		if (is_user_buffer) {
 			/*
 			 * Ensure the user buffer is wired for the duration of
@@ -1036,6 +1039,7 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 			req = nvme_allocate_request_vaddr(buf->b_data, pt->len, 
 			    nvme_pt_done, pt);
 		} else
+#endif /* __rtems__ */
 			req = nvme_allocate_request_vaddr(pt->buf, pt->len,
 			    nvme_pt_done, pt);
 	} else
@@ -1068,11 +1072,13 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 		mtx_sleep(pt, mtx, PRIBIO, "nvme_pt", 0);
 	mtx_unlock(mtx);
 
+#ifndef __rtems__
 err:
 	if (buf != NULL) {
 		relpbuf(buf, NULL);
 		PRELE(curproc);
 	}
+#endif /* __rtems__ */
 
 	return (ret);
 }

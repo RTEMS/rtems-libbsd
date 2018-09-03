@@ -1064,6 +1064,7 @@ _nvme_qpair_submit_request(struct nvme_qpair *qpair, struct nvme_request *req)
 	case NVME_REQUEST_NULL:
 		nvme_qpair_submit_tracker(tr->qpair, tr);
 		break;
+#ifndef __rtems__
 	case NVME_REQUEST_BIO:
 		KASSERT(req->u.bio->bio_bcount <= qpair->ctrlr->max_xfer_size,
 		    ("bio->bio_bcount (%jd) exceeds max_xfer_size (%d)\n",
@@ -1083,6 +1084,7 @@ _nvme_qpair_submit_request(struct nvme_qpair *qpair, struct nvme_request *req)
 			nvme_printf(qpair->ctrlr,
 			    "bus_dmamap_load_ccb returned 0x%x!\n", err);
 		break;
+#endif /* __rtems__ */
 	default:
 		panic("unknown nvme request type 0x%x\n", req->type);
 		break;

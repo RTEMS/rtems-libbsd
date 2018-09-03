@@ -709,7 +709,9 @@ nvme_qpair_construct(struct nvme_qpair *qpair,
 		nvme_printf(ctrlr, "tag create failed %d\n", err);
 		goto out;
 	}
+#ifndef __rtems__
 	bus_dma_tag_set_domain(qpair->dma_tag, qpair->domain);
+#endif /* __rtems__ */
 
 	if (bus_dmamem_alloc(qpair->dma_tag, (void **)&queuemem,
 	    BUS_DMA_NOWAIT, &qpair->queuemem_map)) {
@@ -943,8 +945,13 @@ nvme_qpair_submit_tracker(struct nvme_qpair *qpair, struct nvme_tracker *tr)
 	ctrlr = qpair->ctrlr;
 
 	if (req->timeout)
+#ifndef __rtems__
 		callout_reset_on(&tr->timer, ctrlr->timeout_period * hz,
 		    nvme_timeout, tr, qpair->cpu);
+#else /* __rtems__ */
+		callout_reset_on(&tr->timer, ctrlr->timeout_period * hz,
+		    nvme_timeout, tr, -1);
+#endif /* __rtems__ */
 
 	/* Copy the command from the tracker to the submission queue. */
 	memcpy(&qpair->cmd[qpair->sq_tail], &req->cmd, sizeof(req->cmd));
@@ -1073,6 +1080,7 @@ _nvme_qpair_submit_request(struct nvme_qpair *qpair, struct nvme_request *req)
 	case NVME_REQUEST_NULL:
 		nvme_qpair_submit_tracker(tr->qpair, tr);
 		break;
+#ifndef __rtems__
 	case NVME_REQUEST_BIO:
 		KASSERT(req->u.bio->bio_bcount <= qpair->ctrlr->max_xfer_size,
 		    ("bio->bio_bcount (%jd) exceeds max_xfer_size (%d)\n",
@@ -1092,6 +1100,7 @@ _nvme_qpair_submit_request(struct nvme_qpair *qpair, struct nvme_request *req)
 			nvme_printf(qpair->ctrlr,
 			    "bus_dmamap_load_ccb returned 0x%x!\n", err);
 		break;
+#endif /* __rtems__ */
 	default:
 		panic("unknown nvme request type 0x%x\n", req->type);
 		break;

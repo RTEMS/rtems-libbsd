@@ -168,15 +168,21 @@ struct nvme_tracker {
 	uint16_t			cid;
 
 	uint64_t			*prp;
+#ifndef __rtems__
 	bus_addr_t			prp_bus_addr;
+#else /* __rtems__ */
+	uint64_t			prp_bus_addr;
+#endif /* __rtems__ */
 };
 
 struct nvme_qpair {
 
 	struct nvme_controller	*ctrlr;
 	uint32_t		id;
+#ifndef __rtems__
 	int			domain;
 	int			cpu;
+#endif /* __rtems__ */
 
 	uint16_t		vector;
 	int			rid;
@@ -240,7 +246,9 @@ struct nvme_controller {
 	device_t		dev;
 
 	struct mtx		lock;
+#ifndef __rtems__
 	int			domain;
+#endif /* __rtems__ */
 	uint32_t		ready_timeout_in_ms;
 	uint32_t		quirks;
 #define	QUIRK_DELAY_B4_CHK_RDY	1		/* Can't touch MMIO on disable */

@@ -61,8 +61,10 @@ nvme_ctrlr_construct_admin_qpair(struct nvme_controller *ctrlr)
 
 	qpair = &ctrlr->adminq;
 	qpair->id = 0;
+#ifndef __rtems__
 	qpair->cpu = CPU_FFS(&cpuset_domain[ctrlr->domain]) - 1;
 	qpair->domain = ctrlr->domain;
+#endif /* __rtems__ */
 
 	num_entries = NVME_ADMIN_ENTRIES;
 	TUNABLE_INT_FETCH("hw.nvme.admin_entries", &num_entries);
@@ -146,6 +148,7 @@ nvme_ctrlr_construct_io_qpairs(struct nvme_controller *ctrlr)
 		 *  hence the 'i+1' here.
 		 */
 		qpair->id = i + 1;
+#ifndef __rtems__
 		if (ctrlr->num_io_queues > 1) {
 			/* Find number of CPUs served by this queue. */
 			for (n = 1; QP(ctrlr, c + n) == i; n++)
@@ -157,6 +160,7 @@ nvme_ctrlr_construct_io_qpairs(struct nvme_controller *ctrlr)
 			qpair->cpu = CPU_FFS(&cpuset_domain[ctrlr->domain]) - 1;
 			qpair->domain = ctrlr->domain;
 		}
+#endif /* __rtems__ */
 
 		/*
 		 * For I/O queues, use the controller-wide max_xfer_size
@@ -172,7 +176,11 @@ nvme_ctrlr_construct_io_qpairs(struct nvme_controller *ctrlr)
 		 *  interrupt thread for this controller.
 		 */
 		if (ctrlr->num_io_queues > 1)
+#ifndef __rtems__
 			bus_bind_intr(ctrlr->dev, qpair->res, qpair->cpu);
+#else /* __rtems__ */
+			bus_bind_intr(ctrlr->dev, qpair->res, QP(ctrlr, i));
+#endif /* __rtems__ */
 	}
 
 	return (0);
@@ -1010,7 +1018,9 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 {
 	struct nvme_request	*req;
 	struct mtx		*mtx;
+#ifndef __rtems__
 	struct buf		*buf = NULL;
+#endif /* __rtems__ */
 	int			ret = 0;
 	vm_offset_t		addr, end;
 
@@ -1032,6 +1042,7 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 			    ctrlr->max_xfer_size);
 			return EIO;
 		}
+#ifndef __rtems__
 		if (is_user_buffer) {
 			/*
 			 * Ensure the user buffer is wired for the duration of
@@ -1049,6 +1060,7 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 			req = nvme_allocate_request_vaddr(buf->b_data, pt->len, 
 			    nvme_pt_done, pt);
 		} else
+#endif /* __rtems__ */
 			req = nvme_allocate_request_vaddr(pt->buf, pt->len,
 			    nvme_pt_done, pt);
 	} else
@@ -1081,11 +1093,13 @@ nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 		mtx_sleep(pt, mtx, PRIBIO, "nvme_pt", 0);
 	mtx_unlock(mtx);
 
+#ifndef __rtems__
 err:
 	if (buf != NULL) {
 		uma_zfree(pbuf_zone, buf);
 		PRELE(curproc);
 	}
+#endif /* __rtems__ */
 
 	return (ret);
 }
@@ -1141,8 +1155,10 @@ nvme_ctrlr_construct(struct nvme_controller *ctrlr, device_t dev)
 	ctrlr->dev = dev;
 
 	mtx_init(&ctrlr->lock, "nvme ctrlr lock", NULL, MTX_DEF);
+#ifndef __rtems__
 	if (bus_get_domain(dev, &ctrlr->domain) != 0)
 		ctrlr->domain = 0;
+#endif /* __rtems__ */
 
 	cap_hi = nvme_mmio_read_4(ctrlr, cap_hi);
 	ctrlr->dstrd = NVME_CAP_HI_DSTRD(cap_hi) + 2;

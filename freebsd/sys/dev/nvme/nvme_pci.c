@@ -262,7 +262,9 @@ nvme_ctrlr_setup_interrupts(struct nvme_controller *ctrlr)
 {
 	device_t	dev;
 	int		force_intx, num_io_queues, per_cpu_io_queues;
+#ifndef __rtems__
 	int		min_cpus_per_ioq;
+#endif /* __rtems__ */
 	int		num_vectors_requested, num_vectors_allocated;
 
 	dev = ctrlr->dev;
@@ -284,12 +286,14 @@ nvme_ctrlr_setup_interrupts(struct nvme_controller *ctrlr)
 	if (per_cpu_io_queues == 0)
 		num_io_queues = 1;
 
+#ifndef __rtems__
 	min_cpus_per_ioq = smp_threads_per_core;
 	TUNABLE_INT_FETCH("hw.nvme.min_cpus_per_ioq", &min_cpus_per_ioq);
 	if (min_cpus_per_ioq > 1) {
 		num_io_queues = min(num_io_queues,
 		    max(1, mp_ncpus / min_cpus_per_ioq));
 	}
+#endif /* __rtems__ */
 
 	num_io_queues = min(num_io_queues, pci_msix_count(dev) - 1);
 

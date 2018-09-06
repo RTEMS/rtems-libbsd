@@ -136,10 +136,10 @@
  */
 #define BUS_SPACE_MAXADDR_24BIT	0xffffffU
 #define BUS_SPACE_MAXADDR_32BIT 0xffffffffU
-#define BUS_SPACE_MAXADDR 	0xffffffffU
+#define BUS_SPACE_MAXADDR 	UINTPTR_MAX
 #define BUS_SPACE_MAXSIZE_24BIT	0xffffffU
 #define BUS_SPACE_MAXSIZE_32BIT	0xffffffffU
-#define BUS_SPACE_MAXSIZE 	0xffffffffU
+#define BUS_SPACE_MAXSIZE 	UINTPTR_MAX
 
 /*
  * Bus access.

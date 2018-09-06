@@ -252,6 +252,7 @@ class rtems(builder.Module):
                 'rtems/rtems-kernel-jail.c',
                 'rtems/rtems-kernel-malloc.c',
                 'rtems/rtems-kernel-mbuf.c',
+                'rtems/rtems-kernel-mtxpool.c',
                 'rtems/rtems-kernel-mutex.c',
                 'rtems/rtems-kernel-muteximpl.c',
                 'rtems/rtems-kernel-nexus.c',

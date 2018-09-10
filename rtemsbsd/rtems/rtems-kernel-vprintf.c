@@ -48,8 +48,6 @@
 
 #include <rtems/bsd/bsd.h>
 
-#undef printf
-
 #define	VPRINTF_LOCK() _Mutex_Acquire(&vprintf_mtx)
 #define	VPRINTF_UNLOCK() _Mutex_Release(&vprintf_mtx)
 
@@ -86,7 +84,17 @@ default_vprintf_handler(int level, const char *fmt, va_list ap)
 	VPRINTF_LOCK();
 
 	if (level != LOG_PRINTF) {
-		printf("%s: ", log_priorities[LOG_PRI(level)]);
+		const char *p;
+
+		p = log_priorities[LOG_PRI(level)];
+
+		while (*p != '\0') {
+			putchar(*p);
+			++p;
+		}
+
+		putchar(':');
+		putchar(' ');
 	}
 
 	last = -1;

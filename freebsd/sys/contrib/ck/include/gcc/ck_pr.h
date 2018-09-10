@@ -126,7 +126,7 @@ ck_pr_stall(void)
 	CK_CC_INLINE static void			\
 	ck_pr_fence_strict_##T(void)			\
 	{						\
-		__sync_synchronize();			\
+		__atomic_thread_fence(__ATOMIC_SEQ_CST);\
 	}
 
 CK_PR_FENCE(atomic)
@@ -158,7 +158,8 @@ CK_PR_FENCE(unlock)
 	ck_pr_cas_##S(M *target, T compare, T set)				\
 	{									\
 		bool z;								\
-		z = __sync_bool_compare_and_swap((T *)target, compare, set);	\
+		z = __atomic_compare_exchange_n((T *)target, &compare, set,	\
+		    false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);			\
 		return z;							\
 	}
 
@@ -183,18 +184,18 @@ CK_PR_CAS_S(8,  uint8_t)
 CK_CC_INLINE static bool
 ck_pr_cas_ptr_value(void *target, void *compare, void *set, void *v)
 {
-	set = __sync_val_compare_and_swap((void **)target, compare, set);
-	*(void **)v = set;
-	return (set == compare);
+	*(void **)v = compare;
+	return __atomic_compare_exchange_n((void **)target, v, set, false,
+	    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 #define CK_PR_CAS_O(S, T)						\
 	CK_CC_INLINE static bool					\
 	ck_pr_cas_##S##_value(T *target, T compare, T set, T *v)	\
 	{								\
-		set = __sync_val_compare_and_swap(target, compare, set);\
-		*v = set;						\
-		return (set == compare);				\
+		*v = compare;						\
+		return __atomic_compare_exchange_n(target, v, set,	\
+		    false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);		\
 	}
 
 CK_PR_CAS_O(char, char)
@@ -214,7 +215,8 @@ CK_PR_CAS_O(8,  uint8_t)
 	CK_CC_INLINE static T					\
 	ck_pr_faa_##S(M *target, T d)				\
 	{							\
-		d = __sync_fetch_and_add((T *)target, d);	\
+		d = __atomic_fetch_add((T *)target, d,		\
+		    __ATOMIC_SEQ_CST);				\
 		return (d);					\
 	}
 
@@ -240,7 +242,8 @@ CK_PR_FAA_S(8,  uint8_t)
 	CK_CC_INLINE static void				\
 	ck_pr_##K##_##S(M *target, T d)				\
 	{							\
-		d = __sync_fetch_and_##K((T *)target, d);	\
+		d = __atomic_fetch_##K((T *)target, d,		\
+		    __ATOMIC_SEQ_CST);				\
 		return;						\
 	}
 

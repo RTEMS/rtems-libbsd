@@ -392,8 +392,7 @@ dw_mmc_attach(device_t dev)
 	/* FIXME: MMC_CAP_8_BIT_DATA for eSDIO? */
 	sc->host.caps = MMC_CAP_4_BIT_DATA | MMC_CAP_HSPEED;
 
-	device_add_child(dev, "mmc", 0);
-	device_set_ivars(dev, &sc->host);
+	device_add_child(dev, "mmc", -1);
 	err = bus_generic_attach(dev);
 
 	return (err);

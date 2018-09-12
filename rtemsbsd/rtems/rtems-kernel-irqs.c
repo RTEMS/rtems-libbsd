@@ -60,4 +60,4 @@ irqs_sysinit(void)
 	);
 	BSD_ASSERT(status == RTEMS_SUCCESSFUL);
 }
-SYSINIT(irqs, SI_SUB_TUNABLES, SI_ORDER_ANY, irqs_sysinit, NULL);
+SYSINIT(irqs, SI_SUB_TUNABLES, SI_ORDER_FIRST, irqs_sysinit, NULL);

@@ -130,6 +130,10 @@ net $
 #define CK_MD_RMO
 #endif
 
+#ifdef __PPC_CPU_E6500__
+#define CK_MD_PPC32_LWSYNC
+#endif
+
 #define CK_VERSION "0.7.0"
 #define CK_GIT_SHA "db5db44"
 

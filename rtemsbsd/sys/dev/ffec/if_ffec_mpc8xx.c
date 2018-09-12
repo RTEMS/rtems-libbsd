@@ -51,25 +51,40 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 #include <bsp.h>
+
+#ifdef LIBBSP_POWERPC_TQM8XX_BSP_H
+
 #include <stdio.h>
-#include <errno.h>
-#include <rtems/error.h>
-#include <rtems/rtems_bsdnet.h>
-#include <rtems/rtems_mii_ioctl.h>
 
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/mbuf.h>
+#include <sys/malloc.h>
+#include <sys/kernel.h>
+#include <sys/module.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
 
+#include <sys/bus.h>
+#include <machine/bus.h>
+
 #include <net/if.h>
+#include <net/ethernet.h>
+#include <net/if_arp.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
+#include <net/if_types.h>
+#include <net/if_var.h>
 
-#include <netinet/in.h>
-#include <netinet/if_ether.h>
 #include <bsp/irq.h>
+#include <rtems/rtems_mii_ioctl.h>
+#include <rtems/bsd/bsd.h>
+#include <errno.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
+/* FIXME */
+rtems_id
+rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg);
+#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
 
 /*
  * Number of interfaces supported by this driver
@@ -116,19 +131,22 @@
  * Per-device data
  */
 struct m8xx_fec_enet_struct {
-  struct arpcom           arpcom;
+  device_t                dev;
+  struct ifnet            *ifp;
+  struct mtx              mtx;
   struct mbuf             **rxMbuf;
   struct mbuf             **txMbuf;
-  int                     acceptBroadcast;
   int                     rxBdCount;
   int                     txBdCount;
   int                     txBdHead;
   int                     txBdTail;
   int                     txBdActiveCount;
+  struct callout          watchdogCallout;
   m8xxBufferDescriptor_t  *rxBdBase;
   m8xxBufferDescriptor_t  *txBdBase;
   rtems_id                rxDaemonTid;
   rtems_id                txDaemonTid;
+  int                     if_flags;
 
   /*
    * MDIO/Phy info
@@ -158,7 +176,30 @@ struct m8xx_fec_enet_struct {
   unsigned long   txLostCarrier;
   unsigned long   txRawWait;
 };
-static struct m8xx_fec_enet_struct enet_driver[NIFACES];
+
+int fec_mode_adapt (struct ifnet *ifp);
+
+#define FEC_LOCK(sc) mtx_lock(&(sc)->mtx)
+
+#define FEC_UNLOCK(sc) mtx_unlock(&(sc)->mtx)
+
+#define FEC_EVENT RTEMS_EVENT_0
+
+static void fec_send_event(rtems_id task, rtems_event_set out)
+{
+  rtems_event_send(task, out);
+}
+
+static void fec_wait_for_event(struct m8xx_fec_enet_struct *sc,
+			       rtems_event_set in)
+{
+  rtems_event_set out;
+
+  FEC_UNLOCK(sc);
+  rtems_event_receive(in, RTEMS_EVENT_ANY | RTEMS_WAIT, RTEMS_NO_TIMEOUT,
+		      &out);
+  FEC_LOCK(sc);
+}
 
 /* declare ioctl function for internal use */
 static int fec_ioctl (struct ifnet *ifp,
@@ -324,15 +365,17 @@ int fec_mdio_write
 /*
  * FEC interrupt handler
  */
-static void m8xx_fec_interrupt_handler (void *unused)
+static void m8xx_fec_interrupt_handler (void *arg)
 {
+  struct m8xx_fec_enet_struct *sc = arg;
+
   /*
    * Frame received?
    */
   if (m8xx.fec.ievent & M8xx_FEC_IEVENT_RFINT) {
     m8xx.fec.ievent = M8xx_FEC_IEVENT_RFINT;
-    enet_driver[0].rxInterrupts++;
-    rtems_bsdnet_event_send (enet_driver[0].rxDaemonTid, INTERRUPT_EVENT);
+    sc->rxInterrupts++;
+    fec_send_event (sc->rxDaemonTid, INTERRUPT_EVENT);
   }
 
   /*
@@ -340,36 +383,17 @@ static void m8xx_fec_interrupt_handler (void *unused)
    */
   if (m8xx.fec.ievent & M8xx_FEC_IEVENT_TFINT) {
     m8xx.fec.ievent = M8xx_FEC_IEVENT_TFINT;
-    enet_driver[0].txInterrupts++;
-    rtems_bsdnet_event_send (enet_driver[0].txDaemonTid, INTERRUPT_EVENT);
+    sc->txInterrupts++;
+    fec_send_event (sc->txDaemonTid, INTERRUPT_EVENT);
   }
 }
-
-/*
- * Please organize FEC controller code better by moving code from
- * m860_fec_initialize_hardware to m8xx_fec_ethernet_on
- */
-static void m8xx_fec_ethernet_on(const rtems_irq_connect_data* ptr){};
-static void m8xx_fec_ethernet_off(const rtems_irq_connect_data* ptr){};
-static int m8xx_fec_ethernet_isOn (const rtems_irq_connect_data* ptr)
-{
-  return 1;
-}
-
-static rtems_irq_connect_data ethernetFECIrqData = {
-  BSP_FAST_ETHERNET_CTRL,
-  m8xx_fec_interrupt_handler,
-  NULL,
-  m8xx_fec_ethernet_on,
-  m8xx_fec_ethernet_off,
-  m8xx_fec_ethernet_isOn
-};
 
 static void
 m8xx_fec_initialize_hardware (struct m8xx_fec_enet_struct *sc)
 {
   int i;
   unsigned char *hwaddr;
+  rtems_status_code status;
 
   /*
    * Issue reset to FEC
@@ -409,7 +433,7 @@ m8xx_fec_initialize_hardware (struct m8xx_fec_enet_struct *sc)
   /*
    * Set our physical address
    */
-  hwaddr = sc->arpcom.ac_enaddr;
+  hwaddr = IF_LLADDR(sc->ifp);
 
   m8xx.fec.addr_low = (hwaddr[0] << 24) | (hwaddr[1] << 16) |
     (hwaddr[2] << 8)  | (hwaddr[3] << 0);
@@ -430,9 +454,9 @@ m8xx_fec_initialize_hardware (struct m8xx_fec_enet_struct *sc)
    * Allocate mbuf pointers
    */
   sc->rxMbuf = malloc (sc->rxBdCount * sizeof *sc->rxMbuf,
-                       M_MBUF, M_NOWAIT);
+                       M_TEMP, M_NOWAIT);
   sc->txMbuf = malloc (sc->txBdCount * sizeof *sc->txMbuf,
-                       M_MBUF, M_NOWAIT);
+                       M_TEMP, M_NOWAIT);
   if (!sc->rxMbuf || !sc->txMbuf)
     rtems_panic ("No memory for mbuf pointers");
 
@@ -502,26 +526,30 @@ m8xx_fec_initialize_hardware (struct m8xx_fec_enet_struct *sc)
   /*
    * Set up interrupts
    */
-  if (!BSP_install_rtems_irq_handler (&ethernetFECIrqData))
+  status = rtems_interrupt_handler_install(BSP_FAST_ETHERNET_CTRL, "FEC",
+					   RTEMS_INTERRUPT_UNIQUE,
+					   m8xx_fec_interrupt_handler, sc);
+  if (status != RTEMS_SUCCESSFUL)
     rtems_panic ("Can't attach M860 FEC interrupt handler\n");
 
 }
 static void fec_rxDaemon (void *arg)
 {
   struct m8xx_fec_enet_struct *sc = (struct m8xx_fec_enet_struct *)arg;
-  struct ifnet *ifp = &sc->arpcom.ac_if;
+  struct ifnet *ifp = sc->ifp;
   struct mbuf *m;
   uint16_t   status;
   m8xxBufferDescriptor_t *rxBd;
   int rxBdIndex;
+
+  FEC_LOCK(sc);
 
   /*
    * Allocate space for incoming packets and start reception
    */
   for (rxBdIndex = 0 ; ;) {
     rxBd = sc->rxBdBase + rxBdIndex;
-    MGETHDR (m, M_WAIT, MT_DATA);
-    MCLGET (m, M_WAIT);
+    m = m_getcl(M_WAITOK, MT_DATA, M_PKTHDR);
     m->m_pkthdr.rcvif = ifp;
     sc->rxMbuf[rxBdIndex] = m;
     rxBd->buffer = mtod (m, void *);
@@ -557,17 +585,12 @@ static void fec_rxDaemon (void *arg)
        * `if' above, and the clearing of the event register.
        */
       while ((status = rxBd->status) & M8xx_BD_EMPTY) {
-        rtems_event_set events;
-
         /*
          * Unmask RXF (Full frame received) event
          */
         m8xx.fec.ievent |= M8xx_FEC_IEVENT_RFINT;
 
-        rtems_bsdnet_event_receive (INTERRUPT_EVENT,
-                                    RTEMS_WAIT|RTEMS_EVENT_ANY,
-                                    RTEMS_NO_TIMEOUT,
-                                    &events);
+        fec_wait_for_event (sc, INTERRUPT_EVENT);
       }
     }
 
@@ -579,7 +602,6 @@ static void fec_rxDaemon (void *arg)
        * Pass the packet up the chain.
        * FIXME: Packet filtering hook could be done here.
        */
-      struct ether_header *eh;
 
       /*
        * Invalidate the buffer for this descriptor
@@ -587,18 +609,15 @@ static void fec_rxDaemon (void *arg)
       rtems_cache_invalidate_multiple_data_lines((const void *)rxBd->buffer, rxBd->length);
 
       m = sc->rxMbuf[rxBdIndex];
-      m->m_len = m->m_pkthdr.len = rxBd->length -
-        sizeof(uint32_t) -
-        sizeof(struct ether_header);
-      eh = mtod (m, struct ether_header *);
-      m->m_data += sizeof(struct ether_header);
-      ether_input (ifp, eh, m);
+      m->m_len = m->m_pkthdr.len = rxBd->length - sizeof(uint32_t);
+      FEC_UNLOCK(sc);
+      (*sc->ifp->if_input)(sc->ifp, m);
+      FEC_LOCK(sc);
 
       /*
        * Allocate a new mbuf
        */
-      MGETHDR (m, M_WAIT, MT_DATA);
-      MCLGET (m, M_WAIT);
+      m = m_getcl(M_WAITOK, MT_DATA, M_PKTHDR);
       m->m_pkthdr.rcvif = ifp;
       sc->rxMbuf[rxBdIndex] = m;
       rxBd->buffer = mtod (m, void *);
@@ -651,7 +670,7 @@ m8xx_fec_Enet_retire_tx_bd (struct m8xx_fec_enet_struct *sc)
   uint16_t   status;
   int i;
   int nRetired;
-  struct mbuf *m, *n;
+  struct mbuf *m;
 
   i = sc->txBdTail;
   nRetired = 0;
@@ -673,19 +692,19 @@ m8xx_fec_Enet_retire_tx_bd (struct m8xx_fec_enet_struct *sc)
                     M8xx_BD_RETRY_LIMIT |
                     M8xx_BD_UNDERRUN)) {
         if (status & M8xx_BD_LATE_COLLISION)
-          enet_driver[0].txLateCollision++;
+          sc->txLateCollision++;
         if (status & M8xx_BD_RETRY_LIMIT)
-          enet_driver[0].txRetryLimit++;
+          sc->txRetryLimit++;
         if (status & M8xx_BD_UNDERRUN)
-          enet_driver[0].txUnderrun++;
+          sc->txUnderrun++;
 
       }
       if (status & M8xx_BD_DEFER)
-        enet_driver[0].txDeferred++;
+        sc->txDeferred++;
       if (status & M8xx_BD_HEARTBEAT)
-        enet_driver[0].txHeartbeat++;
+        sc->txHeartbeat++;
       if (status & M8xx_BD_CARRIER_LOST)
-        enet_driver[0].txLostCarrier++;
+        sc->txLostCarrier++;
     }
     nRetired++;
     if (status & M8xx_BD_LAST) {
@@ -697,7 +716,7 @@ m8xx_fec_Enet_retire_tx_bd (struct m8xx_fec_enet_struct *sc)
       while (nRetired) {
         nRetired--;
         m = sc->txMbuf[sc->txBdTail];
-        MFREE (m, n);
+        m_free(m);
         if (++sc->txBdTail == sc->txBdCount)
           sc->txBdTail = 0;
       }
@@ -707,9 +726,8 @@ m8xx_fec_Enet_retire_tx_bd (struct m8xx_fec_enet_struct *sc)
   }
 }
 
-static void fec_sendpacket (struct ifnet *ifp, struct mbuf *m)
+static void fec_sendpacket (struct m8xx_fec_enet_struct *sc, struct mbuf *m)
 {
-  struct m8xx_fec_enet_struct *sc = ifp->if_softc;
   volatile m8xxBufferDescriptor_t *firstTxBd, *txBd;
   /*  struct mbuf *l = NULL; */
   uint16_t   status;
@@ -753,17 +771,12 @@ static void fec_sendpacket (struct ifnet *ifp, struct mbuf *m)
        */
       m8xx_fec_Enet_retire_tx_bd (sc);
       while ((sc->txBdActiveCount + nAdded) == sc->txBdCount) {
-        rtems_event_set events;
-
         /*
          * Unmask TXB (buffer transmitted) and
          * TXE (transmitter error) events.
          */
         m8xx.fec.ievent |= M8xx_FEC_IEVENT_TFINT;
-        rtems_bsdnet_event_receive (INTERRUPT_EVENT,
-                                    RTEMS_WAIT|RTEMS_EVENT_ANY,
-                                    RTEMS_NO_TIMEOUT,
-                                    &events);
+        fec_wait_for_event (sc, INTERRUPT_EVENT);
         m8xx_fec_Enet_retire_tx_bd (sc);
       }
     }
@@ -807,9 +820,7 @@ static void fec_sendpacket (struct ifnet *ifp, struct mbuf *m)
       /*
        * Just toss empty mbufs
        */
-      struct mbuf *n;
-      MFREE (m, n);
-      m = n;
+      m = m_free (m);
       /*
 	if (l != NULL)
         l->m_next = m;
@@ -837,18 +848,16 @@ static void fec_sendpacket (struct ifnet *ifp, struct mbuf *m)
 void fec_txDaemon (void *arg)
 {
   struct m8xx_fec_enet_struct *sc = (struct m8xx_fec_enet_struct *)arg;
-  struct ifnet *ifp = &sc->arpcom.ac_if;
+  struct ifnet *ifp = sc->ifp;
   struct mbuf *m;
-  rtems_event_set events;
+
+  FEC_LOCK(sc);
 
   for (;;) {
     /*
      * Wait for packet
      */
-    rtems_bsdnet_event_receive (START_TRANSMIT_EVENT,
-                                RTEMS_EVENT_ANY | RTEMS_WAIT,
-                                RTEMS_NO_TIMEOUT,
-                                &events);
+    fec_wait_for_event (sc, START_TRANSMIT_EVENT);
 
     /*
      * Send packets till queue is empty
@@ -860,15 +869,25 @@ void fec_txDaemon (void *arg)
       IF_DEQUEUE(&ifp->if_snd, m);
       if (!m)
         break;
-      fec_sendpacket (ifp, m);
+      fec_sendpacket (sc, m);
     }
-    ifp->if_flags &= ~IFF_OACTIVE;
+    ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
   }
 }
+
+static void fec_watchdog (void *arg)
+{
+  struct m8xx_fec_enet_struct *sc = arg;
+
+  fec_mode_adapt(sc->ifp);
+  callout_reset(&sc->watchdogCallout, FEC_WATCHDOG_TIMEOUT * hz,
+		fec_watchdog, sc);
+}
+
 static void fec_init (void *arg)
 {
   struct m8xx_fec_enet_struct *sc = arg;
-  struct ifnet *ifp = &sc->arpcom.ac_if;
+  struct ifnet *ifp = sc->ifp;
 
   if (sc->txDaemonTid == 0) {
 
@@ -901,12 +920,12 @@ static void fec_init (void *arg)
   /*
    * init timer so the "watchdog function gets called periodically
    */
-  ifp->if_timer    = 1;
+  callout_reset(&sc->watchdogCallout, hz, fec_watchdog, sc);
 
   /*
    * Tell the world that we're running.
    */
-  ifp->if_flags |= IFF_RUNNING;
+  ifp->if_drv_flags |= IFF_DRV_RUNNING;
 
   /*
    * Enable receiver and transmitter
@@ -922,15 +941,15 @@ m8xx_fec_enet_start (struct ifnet *ifp)
 {
   struct m8xx_fec_enet_struct *sc = ifp->if_softc;
 
-  rtems_bsdnet_event_send (sc->txDaemonTid, START_TRANSMIT_EVENT);
-  ifp->if_flags |= IFF_OACTIVE;
+  FEC_LOCK(sc);
+  ifp->if_drv_flags |= IFF_DRV_OACTIVE;
+  FEC_UNLOCK(sc);
+  fec_send_event (sc->txDaemonTid, START_TRANSMIT_EVENT);
 }
 
-static void fec_stop (struct m8xx_fec_enet_struct *sc)
+static void fec_stop (struct ifnet *ifp)
 {
-  struct ifnet *ifp = &sc->arpcom.ac_if;
-
-  ifp->if_flags &= ~IFF_RUNNING;
+  ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 
   /*
    * Shut down receiver and transmitter
@@ -943,21 +962,6 @@ static void fec_stop (struct m8xx_fec_enet_struct *sc)
  */
 static void fec_enet_stats (struct m8xx_fec_enet_struct *sc)
 {
-  int media;
-  int result;
-  /*
-   * fetch/print media info
-   */
-  media = IFM_MAKEWORD(0,0,0,sc->phy_default); /* fetch from default phy */
-
-  result = fec_ioctl(&(sc->arpcom.ac_if),
-		     SIOCGIFMEDIA,
-		     (caddr_t)&media);
-  if (result == 0) {
-    rtems_ifmedia2str(media,NULL,0);
-    printf ("\n");
-  }
-
   printf ("      Rx Interrupts:%-8lu", sc->rxInterrupts);
   printf ("       Not First:%-8lu", sc->rxNotFirst);
   printf ("        Not Last:%-8lu\n", sc->rxNotLast);
@@ -992,29 +996,19 @@ static int fec_ioctl (struct ifnet *ifp,
   case SIOCSIFMEDIA:
     rtems_mii_ioctl (&(sc->mdio_info),sc,command,(void *)data);
     break;
-  case SIOCGIFADDR:
-  case SIOCSIFADDR:
-    ether_ioctl (ifp, command, data);
-    break;
 
   case SIOCSIFFLAGS:
-    switch (ifp->if_flags & (IFF_UP | IFF_RUNNING)) {
-    case IFF_RUNNING:
-      fec_stop (sc);
-      break;
-
-    case IFF_UP:
-      fec_init (sc);
-      break;
-
-    case IFF_UP | IFF_RUNNING:
-      fec_stop (sc);
-      fec_init (sc);
-      break;
-
-    default:
-      break;
+    FEC_LOCK(sc);
+    if (ifp->if_flags & IFF_UP) {
+      if (!(ifp->if_drv_flags & IFF_DRV_RUNNING)) {
+        fec_init (sc);
+      }
+    } else {
+      if (ifp->if_drv_flags & IFF_DRV_RUNNING)
+        fec_stop (ifp);
     }
+    sc->if_flags = ifp->if_flags;
+    FEC_UNLOCK(sc);
     break;
 
   case SIO_RTEMS_SHOW_STATS:
@@ -1025,7 +1019,7 @@ static int fec_ioctl (struct ifnet *ifp,
      * FIXME: All sorts of multicast commands need to be added here!
      */
   default:
-    error = EINVAL;
+    error = ether_ioctl(ifp, command, data);
     break;
   }
   return error;
@@ -1118,85 +1112,32 @@ int fec_mode_adapt
   return 0;
 }
 
-/*=========================================================================*\
-| Function:                                                                 |
-\*-------------------------------------------------------------------------*/
-static void fec_watchdog
-(
-/*-------------------------------------------------------------------------*\
-| Purpose:                                                                  |
-|   periodically poll the PHY. if mode has changed,                         |
-|  then adjust the FEC settings                                             |
-+---------------------------------------------------------------------------+
-| Input Parameters:                                                         |
-\*-------------------------------------------------------------------------*/
- struct ifnet *ifp
-)
-/*-------------------------------------------------------------------------*\
-| Return Value:                                                             |
-|    1, if success                                                          |
-\*=========================================================================*/
-{
-  fec_mode_adapt(ifp);
-  ifp->if_timer    = FEC_WATCHDOG_TIMEOUT;
-}
-
-int rtems_fec_driver_attach (struct rtems_bsdnet_ifconfig *config)
+static int fec_attach (device_t dev)
 {
   struct m8xx_fec_enet_struct *sc;
   struct ifnet *ifp;
-  int mtu;
-  int unitNumber;
-  char *unitName;
-  static const uint8_t maczero[] ={0,0,0,0,0,0};
+  int unitNumber = device_get_unit(dev);
+  uint8_t hwaddr[ETHER_ADDR_LEN];
 
   /*
-   * Parse driver name
+   * enable FEC functionality at hardware pins*
+   * PD[3-15] are FEC pins
    */
-  if ((unitNumber = rtems_bsdnet_parse_driver_name (config, &unitName)) < 0)
-    return 0;
+  m8xx.pdpar |= 0x1fff;
+  m8xx.pddir |= 0x1fff;
 
-  /*
-   * Is driver free?
-   */
-  if ((unitNumber <= 0) || (unitNumber > NIFACES)) {
-    printk ("Bad FEC unit number.\n");
-    return 0;
-  }
-  sc = &enet_driver[unitNumber - 1];
-  ifp = &sc->arpcom.ac_if;
-  if (ifp->if_softc != NULL) {
-    printk ("Driver already in use.\n");
-    return 0;
-  }
+  rtems_bsd_get_mac_address(device_get_name(dev), device_get_unit(dev),
+			    hwaddr);
 
-  /*
-   * Process options
-   */
-  if (config->hardware_address) {
-    memcpy (sc->arpcom.ac_enaddr, config->hardware_address, ETHER_ADDR_LEN);
-  }
-#ifdef BSP_HAS_TQMMON
-  else if(0 != memcmp(maczero,TQM_BD_INFO.eth_addr,ETHER_ADDR_LEN)) {
-    memcpy (sc->arpcom.ac_enaddr, TQM_BD_INFO.eth_addr, ETHER_ADDR_LEN);
-  }
-#endif
-  else {
-    /* FIXME to read the enaddr from NVRAM */
-  }
-  if (config->mtu)
-    mtu = config->mtu;
-  else
-    mtu = ETHERMTU;
-  if (config->rbuf_count)
-    sc->rxBdCount = config->rbuf_count;
-  else
-    sc->rxBdCount = RX_BUF_COUNT;
-  if (config->xbuf_count)
-    sc->txBdCount = config->xbuf_count;
-  else
-    sc->txBdCount = TX_BUF_COUNT * TX_BD_PER_BUF;
-  sc->acceptBroadcast = !config->ignore_broadcast;
+  sc = device_get_softc(dev);
+  sc->dev = dev;
+  sc->ifp = ifp = if_alloc(IFT_ETHER);
+
+  mtx_init(&sc->mtx, device_get_nameunit(sc->dev), MTX_NETWORK_LOCK, MTX_DEF);
+  callout_init_mtx(&sc->watchdogCallout, &sc->mtx, 0);
+
+  sc->rxBdCount = RX_BUF_COUNT;
+  sc->txBdCount = TX_BUF_COUNT * TX_BD_PER_BUF;
 
   /*
    * setup info about mdio interface
@@ -1213,36 +1154,54 @@ int rtems_fec_driver_attach (struct rtems_bsdnet_ifconfig *config)
    * Set up network interface values
    */
   ifp->if_softc = sc;
-  ifp->if_unit = unitNumber;
-  ifp->if_name = unitName;
-  ifp->if_mtu = mtu;
+  if_initname(ifp, device_get_name(dev), device_get_unit(dev));
   ifp->if_init = fec_init;
   ifp->if_ioctl = fec_ioctl;
   ifp->if_start = m8xx_fec_enet_start;
-  ifp->if_output = ether_output;
-  ifp->if_watchdog =  fec_watchdog; /* XXX: timer is set in "init" */
-  ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
-  if (ifp->if_snd.ifq_maxlen == 0)
-    ifp->if_snd.ifq_maxlen = ifqmaxlen;
+  ifp->if_flags = IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX;
+  IFQ_SET_MAXLEN(&ifp->if_snd, sc->txBdCount - 1);
+  ifp->if_snd.ifq_drv_maxlen = sc->txBdCount - 1;
+  IFQ_SET_READY(&ifp->if_snd);
 
   /*
    * Attach the interface
    */
-  if_attach (ifp);
-  ether_ifattach (ifp);
-  return 1;
+  ether_ifattach (ifp, hwaddr);
+  return 0;
 };
 
-int rtems_fec_enet_driver_attach(struct rtems_bsdnet_ifconfig *config,
-				 int attaching)
+static int
+fec_probe(device_t dev)
 {
-  /*
-   * enable FEC functionality at hardware pins*
-   * PD[3-15] are FEC pins
-   */
-  if (attaching) {
-    m8xx.pdpar |= 0x1fff;
-    m8xx.pddir |= 0x1fff;
-  }
-  return rtems_fec_driver_attach(config);
+	int unit = device_get_unit(dev);
+	int error;
+
+	if (unit >= 0 && unit < NIFACES) {
+		error = BUS_PROBE_DEFAULT;
+	} else {
+		error = ENXIO;
+	}
+
+	return (error);
 }
+
+static device_method_t fec_methods[] = {
+	/* Device interface */
+	DEVMETHOD(device_probe,		fec_probe),
+	DEVMETHOD(device_attach,	fec_attach),
+
+	DEVMETHOD_END
+};
+
+static driver_t fec_nexus_driver = {
+	"fec",
+	fec_methods,
+	sizeof(struct m8xx_fec_enet_struct)
+};
+
+static devclass_t fec_devclass;
+DRIVER_MODULE(fec, nexus, fec_nexus_driver, fec_devclass, 0, 0);
+MODULE_DEPEND(fec, nexus, 1, 1, 1);
+MODULE_DEPEND(fec, ether, 1, 1, 1);
+
+#endif /* LIBBSP_POWERPC_TQM8XX_BSP_H */

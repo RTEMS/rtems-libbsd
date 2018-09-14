@@ -54,7 +54,8 @@ ck_pr_stall(void)
 	return;
 }
 
-#if defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__)
+#if __ARM_ARCH >= 7 || defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__)
+#ifdef RTEMS_SMP
 #define CK_ISB __asm __volatile("isb" : : "r" (0) : "memory")
 #define CK_DMB __asm __volatile("dmb" : : "r" (0) : "memory")
 #define CK_DSB __asm __volatile("dsb" : : "r" (0) : "memory")
@@ -64,6 +65,12 @@ ck_pr_stall(void)
 #else
 #define CK_DMB_ST __asm __volatile("dmb st" : : "r" (0) : "memory")
 #endif /* __FreeBSD__ */
+#else /* !RTEMS_SMP */
+#define CK_ISB __asm __volatile("" : : "r" (0) : "memory")
+#define CK_DMB __asm __volatile("" : : "r" (0) : "memory")
+#define CK_DSB __asm __volatile("" : : "r" (0) : "memory")
+#define CK_DMB_ST __asm __volatile("" : : "r" (0) : "memory")
+#endif /* RTEMS_SMP */
 #else
 /* armv6 doesn't have dsb/dmb/isb, and no way to wait only for stores */
 #define CK_ISB \

@@ -28,6 +28,9 @@
 #ifndef CK_CC_H
 #define CK_CC_H
 
+#ifdef __rtems__
+#include <rtems/score/cpuopts.h>
+#endif /* __rtems__ */
 #if defined(__GNUC__) || defined(__SUNPRO_C)
 #include "gcc/ck_cc.h"
 #endif

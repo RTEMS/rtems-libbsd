@@ -536,6 +536,8 @@ static void fec_rxDaemon (void *arg)
    */
   rxBdIndex = 0;
   for (;;) {
+    struct mbuf *n;
+
     rxBd = sc->rxBdBase + rxBdIndex;
 
     /*
@@ -569,30 +571,34 @@ static void fec_rxDaemon (void *arg)
      */
     if (status & M8xx_BD_LAST) {
       /*
-       * Pass the packet up the chain.
-       * FIXME: Packet filtering hook could be done here.
-       */
-
-      /*
-       * Invalidate the buffer for this descriptor
-       */
-      rtems_cache_invalidate_multiple_data_lines((const void *)rxBd->buffer, rxBd->length);
-
-      m = sc->rxMbuf[rxBdIndex];
-      m->m_len = m->m_pkthdr.len = rxBd->length - sizeof(uint32_t);
-      FEC_UNLOCK(sc);
-      (*sc->ifp->if_input)(sc->ifp, m);
-      FEC_LOCK(sc);
-
-      /*
        * Allocate a new mbuf
        */
-      m = m_getcl(M_WAITOK, MT_DATA, M_PKTHDR);
-      m->m_pkthdr.rcvif = ifp;
-      sc->rxMbuf[rxBdIndex] = m;
-      rxBd->buffer = mtod (m, void *);
-    }
-    else {
+      n = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
+
+      if (n != NULL) {
+        /*
+         * Pass the packet up the chain.
+         * FIXME: Packet filtering hook could be done here.
+         */
+
+        /*
+         * Invalidate the buffer for this descriptor
+         */
+        rtems_cache_invalidate_multiple_data_lines(rxBd->buffer, rxBd->length);
+
+        m = sc->rxMbuf[rxBdIndex];
+        m->m_len = m->m_pkthdr.len = rxBd->length - ETHER_CRC_LEN;
+        FEC_UNLOCK(sc);
+        (*sc->ifp->if_input)(sc->ifp, m);
+        FEC_LOCK(sc);
+      } else {
+        /* Drop incoming frame if no new mbuf is available */
+        n = m;
+      }
+    } else {
+      /* Reuse mbuf */
+      n = m;
+
       /*
        * Something went wrong with the reception
        */
@@ -611,11 +617,15 @@ static void fec_rxDaemon (void *arg)
       if (status & M8xx_BD_COLLISION)
         sc->rxCollision++;
     }
+
+    n->m_pkthdr.rcvif = ifp;
+    sc->rxMbuf[rxBdIndex] = n;
+    rxBd->buffer = mtod (n, void *);
+
     /*
      * Reenable the buffer descriptor
      */
-    rxBd->status = (status & M8xx_BD_WRAP) |
-      M8xx_BD_EMPTY;
+    rxBd->status = (status & M8xx_BD_WRAP) | M8xx_BD_EMPTY;
     m8xx.fec.r_des_active = 0x1000000;
     /*
      * Move to next buffer descriptor

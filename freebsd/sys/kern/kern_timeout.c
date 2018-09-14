@@ -223,7 +223,11 @@ struct callout_cpu cc_cpu;
 #define	CC_UNLOCK(cc)	mtx_unlock_spin(&(cc)->cc_lock)
 #define	CC_LOCK_ASSERT(cc)	mtx_assert(&(cc)->cc_lock, MA_OWNED)
 
+#ifndef __rtems__
 static int timeout_cpu;
+#else /* __rtems__ */
+#define	timeout_cpu 0
+#endif /* __rtems__ */
 
 static void	callout_cpu_init(struct callout_cpu *cc, int cpu);
 static void	softclock_call_cc(struct callout *c, struct callout_cpu *cc,
@@ -372,7 +376,9 @@ callout_callwheel_init(void *dummy)
 	 * XXX: Once all timeout(9) consumers are converted this can
 	 * be removed.
 	 */
+#ifndef __rtems__
 	timeout_cpu = PCPU_GET(cpuid);
+#endif /* __rtems__ */
 	cc = CC_CPU(timeout_cpu);
 	cc->cc_callout = malloc(ncallout * sizeof(struct callout),
 	    M_CALLOUT, M_WAITOK);
@@ -653,6 +659,7 @@ static struct callout_cpu *
 callout_lock(struct callout *c)
 {
 	struct callout_cpu *cc;
+#ifndef __rtems__
 	int cpu;
 
 	for (;;) {
@@ -664,12 +671,15 @@ callout_lock(struct callout *c)
 			continue;
 		}
 #endif
+#endif /* __rtems__ */
 		cc = CC_CPU(cpu);
 		CC_LOCK(cc);
+#ifndef __rtems__
 		if (cpu == c->c_cpu)
 			break;
 		CC_UNLOCK(cc);
 	}
+#endif /* __rtems__ */
 	return (cc);
 }
 
@@ -1129,12 +1139,13 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 	struct callout_cpu *cc;
 #ifndef __rtems__
 	int cancelled, direct;
+	int ignore_cpu=0;
 #else /* __rtems__ */
 	int cancelled;
 #endif /* __rtems__ */
-	int ignore_cpu=0;
 
 	cancelled = 0;
+#ifndef __rtems__
 	if (cpu == -1) {
 		ignore_cpu = 1;
 	} else if ((cpu >= MAXCPU) ||
@@ -1142,6 +1153,7 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 		/* Invalid CPU spec */
 		panic("Invalid CPU in callout %d", cpu);
 	}
+#endif /* __rtems__ */
 	callout_when(sbt, prec, flags, &to_sbt, &precision);
 
 #ifndef __rtems__
@@ -1159,6 +1171,7 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 	    ("%s: direct callout %p has lock", __func__, c));
 #endif /* __rtems__ */
 	cc = callout_lock(c);
+#ifndef __rtems__
 	/*
 	 * Don't allow migration of pre-allocated callouts lest they
 	 * become unbalanced or handle the case where the user does
@@ -1168,6 +1181,7 @@ callout_reset_sbt_on(struct callout *c, sbintime_t sbt, sbintime_t prec,
 	    ignore_cpu) {
 		cpu = c->c_cpu;
 	}
+#endif /* __rtems__ */
 
 	if (cc_exec_curr(cc, direct) == c) {
 		/*
@@ -1288,7 +1302,11 @@ callout_schedule_on(struct callout *c, int to_ticks, int cpu)
 int
 callout_schedule(struct callout *c, int to_ticks)
 {
+#ifndef __rtems__
 	return callout_reset_on(c, to_ticks, c->c_func, c->c_arg, c->c_cpu);
+#else /* __rtems__ */
+	return callout_reset_on(c, to_ticks, c->c_func, c->c_arg, 0);
+#endif /* __rtems__ */
 }
 
 int
@@ -1594,7 +1612,9 @@ callout_init(struct callout *c, int mpsafe)
 		c->c_lock = &Giant.lock_object;
 		c->c_iflags = 0;
 	}
+#ifndef __rtems__
 	c->c_cpu = timeout_cpu;
+#endif /* __rtems__ */
 }
 
 void
@@ -1610,7 +1630,9 @@ _callout_init_lock(struct callout *c, struct lock_object *lock, int flags)
 	    (LC_SPINLOCK | LC_SLEEPABLE)), ("%s: invalid lock class",
 	    __func__));
 	c->c_iflags = flags & (CALLOUT_RETURNUNLOCKED | CALLOUT_SHAREDLOCK);
+#ifndef __rtems__
 	c->c_cpu = timeout_cpu;
+#endif /* __rtems__ */
 }
 
 #ifdef APM_FIXUP_CALLTODO

@@ -59,7 +59,9 @@ struct callout {
 	struct lock_object *c_lock;		/* lock to handle */
 	short	c_flags;			/* User State */
 	short	c_iflags;			/* Internal State */
+#ifndef __rtems__
 	volatile int c_cpu;			/* CPU we're scheduled on */
+#endif /* __rtems__ */
 };
 
 #endif

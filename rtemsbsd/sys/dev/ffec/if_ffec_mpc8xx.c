@@ -521,6 +521,7 @@ static void fec_rxDaemon (void *arg)
     rxBd = sc->rxBdBase + rxBdIndex;
     m = m_getcl(M_WAITOK, MT_DATA, M_PKTHDR);
     m->m_pkthdr.rcvif = ifp;
+    rtems_cache_invalidate_multiple_data_lines(mtod(m, void *), RBUF_SIZE);
     sc->rxMbuf[rxBdIndex] = m;
     rxBd->buffer = mtod (m, void *);
     rxBd->status = M8xx_BD_EMPTY;
@@ -578,19 +579,15 @@ static void fec_rxDaemon (void *arg)
       if (n != NULL) {
         /*
          * Pass the packet up the chain.
-         * FIXME: Packet filtering hook could be done here.
          */
-
-        /*
-         * Invalidate the buffer for this descriptor
-         */
-        rtems_cache_invalidate_multiple_data_lines(rxBd->buffer, rxBd->length);
-
         m = sc->rxMbuf[rxBdIndex];
         m->m_len = m->m_pkthdr.len = rxBd->length - ETHER_CRC_LEN;
         FEC_UNLOCK(sc);
         (*sc->ifp->if_input)(sc->ifp, m);
         FEC_LOCK(sc);
+
+        n->m_pkthdr.rcvif = ifp;
+        rtems_cache_invalidate_multiple_data_lines(mtod(n, void *), RBUF_SIZE);
       } else {
         /* Drop incoming frame if no new mbuf is available */
         n = m;
@@ -618,7 +615,6 @@ static void fec_rxDaemon (void *arg)
         sc->rxCollision++;
     }
 
-    n->m_pkthdr.rcvif = ifp;
     sc->rxMbuf[rxBdIndex] = n;
     rxBd->buffer = mtod (n, void *);
 

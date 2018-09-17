@@ -40,6 +40,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>                   // platform support for UTC time
+#ifdef __rtems__
+#include <sys/param.h>
+#include <rtems/libio_.h>
+#endif /* __rtems__ */
 
 #if USES_NETLINK
 #include <asm/types.h>
@@ -75,7 +79,12 @@ struct IfChangeRec
 typedef struct IfChangeRec IfChangeRec;
 
 // Note that static data is initialized to zero in (modern) C.
+#ifndef __rtems__
 static fd_set gEventFDs;
+#else /* __rtems__ */
+static fd_set *gAllocatedEventFDs;
+#define gEventFDs (*gAllocatedEventFDs)
+#endif /* __rtems__ */
 static int gMaxFD;                              // largest fd in gEventFDs
 static GenLinkedList gEventSources;             // linked list of PosixEventSource's
 static sigset_t gEventSignalSet;                // Signals which event loop listens for
@@ -1156,14 +1165,23 @@ mDNSlocal mDNSu32       ProcessRoutingNotification(int sd)
 mDNSlocal void InterfaceChangeCallback(int fd, short filter, void *context)
 {
     IfChangeRec     *pChgRec = (IfChangeRec*) context;
+#ifndef __rtems__
     fd_set readFDs;
+#else /* __rtems__ */
+    fd_set bigEnoughReadFDs[howmany(rtems_libio_number_iops, sizeof(fd_set) * 8)];
+#define readFDs (*(&bigEnoughReadFDs[0]))
+#endif /* __rtems__ */
     mDNSu32 changedInterfaces = 0;
     struct timeval zeroTimeout = { 0, 0 };
 
     (void)fd; // Unused
     (void)filter; // Unused
 
+#ifndef __rtems__
     FD_ZERO(&readFDs);
+#else /* __rtems__ */
+    memset(bigEnoughReadFDs, 0, sizeof(bigEnoughReadFDs));
+#endif /* __rtems__ */
     FD_SET(pChgRec->NotifySD, &readFDs);
 
     do
@@ -1241,6 +1259,10 @@ mDNSexport mStatus mDNSPlatformInit(mDNS *const m)
 
     mDNS_SetFQDN(m);
 #ifdef __rtems__
+    if (err == mStatus_NoError) {
+        gAllocatedEventFDs = calloc(1, howmany(rtems_libio_number_iops, sizeof(fd_set) * 8));
+        if (gAllocatedEventFDs == NULL) err = mStatus_NoMemoryErr;
+    }
     if (err == mStatus_NoError) err = pthread_mutexattr_init(&attr);
     if (err == mStatus_NoError) err = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
     if (err == mStatus_NoError) err = pthread_mutex_init(&m->p->mutex, &attr);
@@ -1685,8 +1707,10 @@ mStatus mDNSPosixAddFDToEventLoop(int fd, mDNSPosixEventCallback callback, void 
     if (gEventSources.LinkOffset == 0)
         InitLinkedList(&gEventSources, offsetof(PosixEventSource, Next));
 
+#ifndef __rtems__
     if (fd >= (int) FD_SETSIZE || fd < 0)
         return mStatus_UnsupportedErr;
+#endif /* __rtems__ */
     if (callback == NULL)
         return mStatus_BadParamErr;
 
@@ -1766,7 +1790,13 @@ mStatus mDNSPosixIgnoreSignalInEventLoop(int signum)
 mStatus mDNSPosixRunEventLoopOnce(mDNS *m, const struct timeval *pTimeout,
                                   sigset_t *pSignalsReceived, mDNSBool *pDataDispatched)
 {
+#ifndef __rtems__
     fd_set listenFDs = gEventFDs;
+#else /* __rtems__ */
+    fd_set bigEnoughListenFDs[howmany(rtems_libio_number_iops, sizeof(fd_set) * 8)];
+#define listenFDs (*(&bigEnoughListenFDs[0]))
+    memcpy(bigEnoughListenFDs, gAllocatedEventFDs, sizeof(bigEnoughListenFDs));
+#endif /* __rtems__ */
     int fdMax = 0, numReady;
     struct timeval timeout = *pTimeout;
 

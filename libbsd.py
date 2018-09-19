@@ -724,6 +724,7 @@ class mmc_ti(builder.Module):
                 'sys/arm/ti/ti_sdhci.c',
                 'sys/dev/gpio/gpiobus.c',
                 'sys/dev/gpio/ofw_gpiobus.c',
+                'sys/dev/sdhci/fsl_sdhci.c',
                 'sys/dev/sdhci/sdhci.c',
                 'sys/dev/sdhci/sdhci_fdt_gpio.c',
             ],

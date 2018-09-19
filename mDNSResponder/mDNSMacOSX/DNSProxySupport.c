@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2011 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2011-2013 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "mDNSEmbeddedAPI.h"
 #include "mDNSMacOSX.h"
 
@@ -261,11 +262,9 @@ mDNSlocal mStatus SetupUDPProxySocket(mDNS *const m, int skt, KQSocketSet *cp, u
     int         *s        = (sa_family == AF_INET) ? &cp->sktv4 : &cp->sktv6;
     KQueueEntry *k        = (sa_family == AF_INET) ? &cp->kqsv4 : &cp->kqsv6;
     const int on = 1;
-    mDNSIPPort port;
     mStatus err = mStatus_NoError;
 
     cp->m = m;
-    port = cp->port;
     cp->closeFlag = mDNSNULL;
 
     // set default traffic class
@@ -339,11 +338,9 @@ mDNSlocal mStatus SetupTCPProxySocket(mDNS *const m, int skt, KQSocketSet *cp, u
 {
     int         *s        = (sa_family == AF_INET) ? &cp->sktv4 : &cp->sktv6;
     KQueueEntry *k        = (sa_family == AF_INET) ? &cp->kqsv4 : &cp->kqsv6;
-    mDNSIPPort port;
     mStatus err;
 
     cp->m = m;
-    port = cp->port;
     // XXX may not be used by the TCP codepath 
     cp->closeFlag = mDNSNULL;
 
@@ -384,7 +381,7 @@ mDNSlocal void BindDPSocket(int fd, int sa_family)
 
         err = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
         if (err < 0) 
-            LogMsg("BindDPSocket: setsockopt SO_REUSEPORT failed for V4 %d errno %d (%s)", fd, errno, strerror(errno));
+            LogMsg("BindDPSocket: setsockopt SO_REUSEPORT failed for IPv4 %d errno %d (%s)", fd, errno, strerror(errno));
 
         memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;

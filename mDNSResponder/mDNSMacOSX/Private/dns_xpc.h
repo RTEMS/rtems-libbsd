@@ -26,8 +26,8 @@
 
 typedef enum
 {
-    kDNSMsgReceived       =  0,
-    kDNSDaemonEngaged 
+    kDNSMsg_NoError       =  0,
+    kDNSMsg_BadArg
 } DaemonReplyStatusCodes;
 
 #endif // DNS_XPC_H

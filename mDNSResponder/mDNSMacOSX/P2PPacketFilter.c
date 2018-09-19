@@ -1,4 +1,4 @@
-/*
+/* -*- Mode: C; tab-width: 4 -*-
  *
  * Copyright (c) 2011 Apple Inc. All rights reserved.
  *
@@ -250,7 +250,8 @@ int P2PPacketFilterAddBonjourRuleSet(const char * interfaceName, u_int32_t count
     require( result == 0, exit );
 
     // open inbound port for each service
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < count; i++)
+    {
         initPortRule( &pr, interfaceName, ticket, poolTicket, anchorPath, portArray[i], protocolArray[i] );
         result = addRule( devFD, &pr );
         require( result == 0, exit );

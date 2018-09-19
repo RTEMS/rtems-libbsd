@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2007-2012 Apple Inc. All rights reserved.
+ * Copyright (c) 2007-2015 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,8 @@
 
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+
+#include <IOKit/pwr_mgt/IOPMLibPrivate.h>
 
 #ifndef RTF_IFSCOPE
 #define RTF_IFSCOPE 0x1000000
@@ -183,13 +185,24 @@ kern_return_t do_mDNSPowerRequest(__unused mach_port_t port, int key, int interv
     }
     else if (key > 0)
     {
-        CFDateRef w = CFDateCreate(NULL, CFAbsoluteTimeGetCurrent() + interval);
-        if (w)
+        CFDateRef wakeTime = CFDateCreate(NULL, CFAbsoluteTimeGetCurrent() + interval);
+        if (wakeTime)
         {
-            IOReturn r = IOPMSchedulePowerEvent(w, CFSTR("mDNSResponderHelper"), key ? CFSTR(kIOPMAutoWake) : CFSTR(kIOPMAutoSleep));
-            if (r) { usleep(100000); helplog(ASL_LEVEL_ERR, "IOPMSchedulePowerEvent(%d) %d %x", interval, r, r); }
+            CFMutableDictionaryRef scheduleDict = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+
+            CFDictionaryAddValue(scheduleDict, CFSTR(kIOPMPowerEventTimeKey), wakeTime);
+            CFDictionaryAddValue(scheduleDict, CFSTR(kIOPMPowerEventAppNameKey), CFSTR("mDNSResponderHelper"));
+            CFDictionaryAddValue(scheduleDict, CFSTR(kIOPMPowerEventTypeKey), key ? CFSTR(kIOPMAutoWake) : CFSTR(kIOPMAutoSleep));
+
+            IOReturn r = IOPMRequestSysWake(scheduleDict);
+            if (r)
+            {
+                usleep(100000);
+                helplog(ASL_LEVEL_ERR, "IOPMRequestSysWake(%d) %d %x", interval, r, r);
+            }
             *err = r;
-            CFRelease(w);
+            CFRelease(wakeTime);
+            CFRelease(scheduleDict);
         }
     }
 fin:
@@ -332,7 +345,8 @@ kern_return_t do_mDNSNotify(__unused mach_port_t port, const char *title, const 
     if (!authorized(&token)) return KERN_SUCCESS;
 
 #ifndef NO_CFUSERNOTIFICATION
-    static const char footer[] = "(Note: This message only appears on machines with 17.x.x.x IP addresses — i.e. at Apple — not on customer machines.)";
+    static const char footer[] = "(Note: This message only appears on machines with 17.x.x.x IP addresses"
+        " or on debugging builds with ForceAlerts set — i.e. only at Apple — not on customer machines.)";
     CFStringRef alertHeader  = CFStringCreateWithCString(NULL, title,  kCFStringEncodingUTF8);
     CFStringRef alertBody    = CFStringCreateWithCString(NULL, msg,    kCFStringEncodingUTF8);
     CFStringRef alertFooter  = CFStringCreateWithCString(NULL, footer, kCFStringEncodingUTF8);
@@ -429,7 +443,7 @@ static void ShowNameConflictNotification(CFMutableArrayRef header, CFStringRef s
     CFRelease(dictionary);
 }
 
-static CFMutableArrayRef GetHeader(const char* oldname, const char* newname, const CFStringRef msg, const char* suffix)
+static CFMutableArrayRef CreateAlertHeader(const char* oldname, const char* newname, const CFStringRef msg, const char* suffix)
 {
     CFMutableArrayRef alertHeader = NULL;
 
@@ -464,18 +478,21 @@ static CFMutableArrayRef GetHeader(const char* oldname, const char* newname, con
             CFStringRef userName = SCDynamicStoreCopyConsoleUser(NULL, &uid, &gid);
             if (userName)
             {
-                CFRelease(userName);
-                CFArrayAppendValue(alertHeader, msg); // Opening phrase of message, provided by caller
-                CFArrayAppendValue(alertHeader, CFS_OQ); CFArrayAppendValue(alertHeader, s1); CFArrayAppendValue(alertHeader, CFS_CQ);
-                CFArrayAppendValue(alertHeader, CFSTR(" is already in use on this network. "));
-                if (s2)
+                if (!CFEqual(userName, CFSTR("_mbsetupuser")))
                 {
-                    CFArrayAppendValue(alertHeader, CFSTR("The name has been changed to "));
-                    CFArrayAppendValue(alertHeader, CFS_OQ); CFArrayAppendValue(alertHeader, s2); CFArrayAppendValue(alertHeader, CFS_CQ);
-                    CFArrayAppendValue(alertHeader, CFSTR("."));
+                    CFArrayAppendValue(alertHeader, msg); // Opening phrase of message, provided by caller
+                    CFArrayAppendValue(alertHeader, CFS_OQ); CFArrayAppendValue(alertHeader, s1); CFArrayAppendValue(alertHeader, CFS_CQ);
+                    CFArrayAppendValue(alertHeader, CFSTR(" is already in use on this network. "));
+                    if (s2)
+                    {
+                        CFArrayAppendValue(alertHeader, CFSTR("The name has been changed to "));
+                        CFArrayAppendValue(alertHeader, CFS_OQ); CFArrayAppendValue(alertHeader, s2); CFArrayAppendValue(alertHeader, CFS_CQ);
+                        CFArrayAppendValue(alertHeader, CFSTR("."));
+                    }
+                    else
+                        CFArrayAppendValue(alertHeader, CFSTR("All attempts to find an available name by adding a number to the name were also unsuccessful."));
                 }
-                else
-                    CFArrayAppendValue(alertHeader, CFSTR("All attempts to find an available name by adding a number to the name were also unsuccessful."));
+                CFRelease(userName);
             }
         }
         if (s1) CFRelease(s1);
@@ -494,16 +511,20 @@ static void update_notification(void)
     debug("entry ucn=%s, uhn=%s, lcn=%s, lhn=%s", usercompname, userhostname, lastcompname, lasthostname);
     if (!CFS_OQ)
     {
-        // Note: the "\xEF\xBB\xBF" byte sequence in the CFS_Format string is the UTF-8 encoding of the zero-width non-breaking space character.
+        // Note: The "\xEF\xBB\xBF" byte sequence (U+FEFF) in the CFS_Format string is the UTF-8 encoding of the zero-width non-breaking space character.
         // By appending this invisible character on the end of literal names, we ensure the these strings cannot inadvertently match any string
         // in the localization file -- since we know for sure that none of our strings in the localization file contain the ZWNBS character.
-        //
-        // For languages that are written right to left, when we mix English (host names could be in english with brackets etc. and the
-        // rest in Arabic) we need unicode markups for proper formatting. The Unicode sequence 202C (UTF8 E2 80 AC), 200E (UTF8 E2 80 8E) and
-        // 202B (UTF8 E2 80 AB) helps with the formatting. See <rdar://problem/8629082> for more details.
-        CFS_OQ               = CFStringCreateWithCString(NULL, "“\xE2\x80\xAB",  kCFStringEncodingUTF8);
-        CFS_CQ               = CFStringCreateWithCString(NULL, "\xE2\x80\xAC”",  kCFStringEncodingUTF8);
-        CFS_Format           = CFStringCreateWithCString(NULL, "%@%s\xEF\xBB\xBF\xE2\x80\x8E", kCFStringEncodingUTF8);
+        CFS_Format           = CFStringCreateWithCString(NULL, "%@%s\xEF\xBB\xBF", kCFStringEncodingUTF8);
+
+        // The strings CFS_OQ, CFS_CQ and the others below are the localization keys for the “Localizable.strings” files,
+        // and MUST NOT BE CHANGED, or localization substitution will be broken.
+        // To change the text displayed to the user, edit the values in the appropriate “Localizable.strings” file, not the keys here.
+        // This includes making changes for adding appropriate directionality overrides like LRM, LRE, RLE, PDF, etc. These need to go in the values
+        // in the appropriate “Localizable.strings” entries, not in the keys here (which then won’t match *any* entry in the localization files).
+        // These localization keys here were broken in <rdar://problem/8629082> and then subsequently repaired in
+        // <rdar://problem/21071535> [mDNSResponder]: TA: Gala15A185: Incorrect punctuation marks when Change the host name to an exist one
+        CFS_OQ               = CFStringCreateWithCString(NULL, "“",  kCFStringEncodingUTF8);	// DO NOT CHANGE THIS STRING
+        CFS_CQ               = CFStringCreateWithCString(NULL, "”",  kCFStringEncodingUTF8);	// DO NOT CHANGE THIS STRING
         CFS_ComputerName     = CFStringCreateWithCString(NULL, "The name of your computer ",  kCFStringEncodingUTF8);
         CFS_ComputerNameMsg  = CFStringCreateWithCString(NULL, "To change the name of your computer, "
                                                          "open System Preferences and click Sharing, then type the name in the Computer Name field.",  kCFStringEncodingUTF8);
@@ -529,17 +550,17 @@ static void update_notification(void)
         CFStringRef* subtext = NULL;
         if (userhostname[0] && !lasthostname[0]) // we've given up trying to construct a name that doesn't conflict
         {
-            header = GetHeader(userhostname, NULL, CFS_LocalHostName, ".local");
+            header = CreateAlertHeader(userhostname, NULL, CFS_LocalHostName, ".local");
             subtext = &CFS_Problem;
         }
         else if (usercompname[0])
         {
-            header = GetHeader(usercompname, lastcompname, CFS_ComputerName, "");
+            header = CreateAlertHeader(usercompname, lastcompname, CFS_ComputerName, "");
             subtext = &CFS_ComputerNameMsg;
         }
         else
         {
-            header = GetHeader(userhostname, lasthostname, CFS_LocalHostName, ".local");
+            header = CreateAlertHeader(userhostname, lasthostname, CFS_LocalHostName, ".local");
             subtext = &CFS_LocalHostNameMsg;
         }
         ShowNameConflictNotification(header, *subtext);
@@ -912,6 +933,8 @@ do_mDNSKeychainGetSecrets(__unused mach_port_t port, __unused unsigned int *nums
         *err = kmDNSHelperKeychainCopyDefaultFailed;
         goto fin;
     }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     if (noErr != (status = SecKeychainSearchCreateFromAttributes(skc, kSecGenericPasswordItemClass, NULL, &search)))
     {
         *err = kmDNSHelperKeychainSearchCreationFailed;
@@ -932,6 +955,7 @@ do_mDNSKeychainGetSecrets(__unused mach_port_t port, __unused unsigned int *nums
         SecKeychainItemFreeAttributesAndData(attributes, NULL);
         CFRelease(item);
     }
+#pragma clang diagnostic pop
     if (errSecItemNotFound != status)
         helplog(ASL_LEVEL_ERR, "%s: SecKeychainSearchCopyNext failed: %d",
                 __func__, status);
@@ -944,8 +968,8 @@ do_mDNSKeychainGetSecrets(__unused mach_port_t port, __unused unsigned int *nums
         goto fin;
     }
     CFWriteStreamOpen(stream);
-    if (0 == CFPropertyListWriteToStream(keys, stream,
-                                         kCFPropertyListBinaryFormat_v1_0, NULL))
+    if (0 == CFPropertyListWrite(keys, stream,
+                                         kCFPropertyListBinaryFormat_v1_0, 0, NULL))
     {
         *err = kmDNSHelperPListWriteFailed;
         debug("CFPropertyListWriteToStream failed");
@@ -1017,11 +1041,16 @@ static const char g_racoon_config_dir_old[] = "/etc/racoon/remote/";
 CF_EXPORT CFDictionaryRef _CFCopySystemVersionDictionary(void);
 CF_EXPORT const CFStringRef _kCFSystemVersionBuildVersionKey;
 
-// Major version  6 is 10.2.x (Jaguar)
-// Major version  7 is 10.3.x (Panther)
-// Major version  8 is 10.4.x (Tiger)
-// Major version  9 is 10.5.x (Leopard)
-// Major version 10 is 10.6.x (SnowLeopard)
+// Major version  6 is  10.2.x (Jaguar)
+// Major version  7 is  10.3.x (Panther)
+// Major version  8 is  10.4.x (Tiger)
+// Major version  9 is  10.5.x (Leopard)
+// Major version 10 is  10.6.x (SnowLeopard)
+// Major version 11 is  10.7.x (Lion)
+// Major version 12 is  10.8.x (MountainLion)
+// Major version 13 is  10.9.x (Mavericks)
+// Major version 14 is 10.10.x (Yosemite)
+// Major version 15 is 10.11.x (ElCapitan)
 static int MacOSXSystemBuildNumber(char* letter_out, int* minor_out)
 {
     int major = 0, minor = 0;
@@ -2332,13 +2361,15 @@ in_cksum(unsigned short *ptr,int nbytes)
      * all the carry bits from the top 16 bits into the lower 16 bits.
      */
     sum = 0;
-    while (nbytes > 1) {
+    while (nbytes > 1)
+    {
         sum += *ptr++;
         nbytes -= 2;
     }
 
     /* mop up an odd byte, if necessary */
-    if (nbytes == 1) {
+    if (nbytes == 1)
+    {
         /* make sure top half is zero */
         oddbyte = 0;
 
@@ -2726,20 +2757,42 @@ static int getMACAddress(int family, v6addr_t raddr, v6addr_t gaddr, int *gfamil
         sin6 = (struct sockaddr_in6 *) (rtm +1);
         sdl  = (struct sockaddr_dl  *) (sin6->sin6_len + (char *) sin6);
     }
+
+    if (!sdl)
+    {
+        helplog(ASL_LEVEL_ERR, "do_mDNSGetRemoteMAC: sdl is NULL for family %d", family);
+        close(sock);
+        return -1;
+    }
+
     // If the address is not on the local net, we get the IP address of the gateway.
     // We would have to repeat the process to get the MAC address of the gateway
     *gfamily = sdl->sdl_family;
     if (sdl->sdl_family == AF_INET)
     {
-        struct sockaddr_in *new_sin = (struct sockaddr_in *)(sin->sin_len +(char*) sin);
-        memcpy(gaddr, &new_sin->sin_addr, sizeof(struct in_addr));
+        if (sin)
+        {
+            struct sockaddr_in *new_sin = (struct sockaddr_in *)(sin->sin_len +(char*) sin);
+            memcpy(gaddr, &new_sin->sin_addr, sizeof(struct in_addr));
+        }
+        else
+        {
+            helplog(ASL_LEVEL_ERR, "do_mDNSGetRemoteMAC: sin is NULL");
+        }
         close(sock);
         return -1;
     }
     else if (sdl->sdl_family == AF_INET6)
     {
-        struct sockaddr_in6 *new_sin6 = (struct sockaddr_in6 *)(sin6->sin6_len +(char*) sin6);
-        memcpy(gaddr, &new_sin6->sin6_addr, sizeof(struct in6_addr));
+        if (sin6)
+        {
+            struct sockaddr_in6 *new_sin6 = (struct sockaddr_in6 *)(sin6->sin6_len +(char*) sin6);
+            memcpy(gaddr, &new_sin6->sin6_addr, sizeof(struct in6_addr));
+        }
+        else
+        {
+            helplog(ASL_LEVEL_ERR, "do_mDNSGetRemoteMAC: sin6 is NULL");
+        }
         close(sock);
         return -1;
     }

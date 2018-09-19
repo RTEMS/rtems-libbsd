@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2002-2011 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2002-2015 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 #include <mach/mach.h>
@@ -26,7 +25,6 @@
 #include <fcntl.h>
 #include <launch.h>
 #include <launch_priv.h>         // for launch_socket_service_check_in()
-#include <vproc.h>
 #include <pwd.h>
 #include <sys/event.h>
 #include <pthread.h>
@@ -51,14 +49,31 @@
 #include "../mDNSMacOSX/DNSServiceDiscovery.h"
 #include "helper.h"
 
+#if TARGET_OS_EMBEDDED
+#include "Metrics.h"
+#endif
+
 static aslclient log_client = NULL;
 static aslmsg log_msg = NULL;
 
-// Used on Embedded Side for Reading mDNSResponder Managed Preferences Profile
+// Used on iOS ONLY for reading mDNSResponder Managed Preferences Profile
 #if TARGET_OS_EMBEDDED
 #define kmDNSEnableLoggingStr CFSTR("EnableLogging")
 #define kmDNSResponderPrefIDStr "com.apple.mDNSResponder.plist"
 #define kmDNSResponderPrefID CFSTR(kmDNSResponderPrefIDStr)
+#endif
+
+
+// Used on OSX(10.11.x onwards) for manipulating mDNSResponder program arguments
+#if APPLE_OSX_mDNSResponder && !TARGET_OS_EMBEDDED
+// plist file to read the user's preferences
+#define kProgramArguments CFSTR("/Library/Preferences/com.apple.mDNSResponder.plist")
+// possible arguments for external customers
+#define kDebugLogging CFSTR("DebugLogging")
+#define kUnicastPacketLogging CFSTR("UnicastPacketLogging")
+#define kAlwaysAppendSearchDomains CFSTR("AlwaysAppendSearchDomains")
+#define kNoMulticastAdvertisements CFSTR("NoMulticastAdvertisements")
+#define kStrictUnicastOrdering CFSTR("StrictUnicastOrdering")
 #endif
 
 //*************************************************************************************************************
@@ -68,12 +83,13 @@ static aslmsg log_msg = NULL;
 
 static mDNS_PlatformSupport PlatformStorage;
 
-// Start off with a default cache of 16K (99 records)
-// Each time we grow the cache we add another 99 records
-// 99 * 164 = 16236 bytes.
-// This fits in four 4kB pages, with 148 bytes spare for memory block headers and similar overhead
-#define RR_CACHE_SIZE ((16*1024) / sizeof(CacheRecord))
+// Start off with a default cache of 32K (141 records of 232 bytes each)
+// Each time we grow the cache we add another 141 records
+// 141 * 164 = 32712 bytes.
+// This fits in eight 4kB pages, with 56 bytes spare for memory block headers and similar overhead
+#define RR_CACHE_SIZE ((32*1024) / sizeof(CacheRecord))
 static CacheEntity rrcachestorage[RR_CACHE_SIZE];
+struct CompileTimeAssertionChecks_RR_CACHE_SIZE { char a[(RR_CACHE_SIZE >= 141) ? 1 : -1]; };
 
 static mach_port_t m_port            = MACH_PORT_NULL;
 
@@ -85,7 +101,7 @@ static mach_port_t signal_port       = MACH_PORT_NULL;
 #endif // MDNSRESPONDER_USES_LIB_DISPATCH_AS_PRIMARY_EVENT_LOOP_MECHANISM
 
 static dnssd_sock_t *launchd_fds = mDNSNULL;
-static mDNSu32 launchd_fds_count = 0;
+static size_t launchd_fds_count = 0;
 
 // mDNS Mach Message Timeout, in milliseconds.
 // We need this to be short enough that we don't deadlock the mDNSResponder if a client
@@ -214,22 +230,16 @@ static KQSocketEventSource *gEventSources;
 
 char _malloc_options[] = "AXZ";
 
-mDNSexport void LogMemCorruption(const char *format, ...)
+mDNSlocal void validatelists(mDNS *const m, bool checkCRActiveQuestion)
 {
-    char buffer[512];
-    va_list ptr;
-    va_start(ptr,format);
-    buffer[mDNS_vsnprintf((char *)buffer, sizeof(buffer), format, ptr)] = 0;
-    va_end(ptr);
-    LogMsg("!!!! %s !!!!", buffer);
-    NotifyOfElusiveBug("Memory Corruption", buffer);
-#if ForceAlerts
-    *(long*)0 = 0;  // Trick to crash and get a stack trace right here, if that's what we want
+#if TARGET_OS_WATCH
+    mDNSu32 NumAllInterfaceRecords   = 0;
+    mDNSu32 NumAllInterfaceQuestions = 0;
+#else
+    mDNSu32 NumAllInterfaceRecords   = 1;
+    mDNSu32 NumAllInterfaceQuestions = 1;
 #endif
-}
 
-mDNSlocal void validatelists(mDNS *const m)
-{
     // Check local lists
     KQSocketEventSource *k;
     for (k = gEventSources; k; k=k->next)
@@ -269,11 +279,15 @@ mDNSlocal void validatelists(mDNS *const m)
         if (rr->resrec.name != &rr->namestorage)
             LogMemCorruption("ResourceRecords list: %p name %p does not point to namestorage %p %##s",
                              rr, rr->resrec.name->c, rr->namestorage.c, rr->namestorage.c);
+        if (!AuthRecord_uDNS(rr) && !RRLocalOnly(rr)) NumAllInterfaceRecords++;
     }
 
     for (rr = m->DuplicateRecords; rr; rr=rr->next)
+    {
         if (rr->next == (AuthRecord *)~0 || rr->resrec.RecordType == 0 || rr->resrec.RecordType == 0xFF)
             LogMemCorruption("DuplicateRecords list: %p is garbage (%X)", rr, rr->resrec.RecordType);
+        if (!AuthRecord_uDNS(rr) && !RRLocalOnly(rr)) NumAllInterfaceRecords++;
+    }
 
     rr = m->NewLocalRecords;
     if (rr)
@@ -287,20 +301,26 @@ mDNSlocal void validatelists(mDNS *const m)
 
     DNSQuestion                 *q;
     for (q = m->Questions; q; q=q->next)
+    {
         if (q->next == (DNSQuestion*)~0 || q->ThisQInterval == (mDNSs32) ~0)
             LogMemCorruption("Questions list: %p is garbage (%lX %p)", q, q->ThisQInterval, q->next);
+        if (q->InterfaceID != mDNSInterface_LocalOnly && q->InterfaceID != mDNSInterface_P2P && mDNSOpaque16IsZero(q->TargetQID))
+            NumAllInterfaceQuestions++;
+    }
 
-    CacheGroup                  *cg;
-    CacheRecord                 *cr;
-    mDNSu32 slot;
-    FORALL_CACHERECORDS(slot, cg, cr)
-    {
-        if (cr->resrec.RecordType == 0 || cr->resrec.RecordType == 0xFF)
-            LogMemCorruption("Cache slot %lu: %p is garbage (%X)", slot, cr, cr->resrec.RecordType);
-        if (cr->CRActiveQuestion)
+    if (checkCRActiveQuestion) {
+        CacheGroup                  *cg;
+        CacheRecord                 *cr;
+        mDNSu32 slot;
+        FORALL_CACHERECORDS(slot, cg, cr)
         {
-            for (q = m->Questions; q; q=q->next) if (q == cr->CRActiveQuestion) break;
-            if (!q) LogMemCorruption("Cache slot %lu: CRActiveQuestion %p not in m->Questions list %s", slot, cr->CRActiveQuestion, CRDisplayString(m, cr));
+            if (cr->resrec.RecordType == 0 || cr->resrec.RecordType == 0xFF)
+                LogMemCorruption("Cache slot %lu: %p is garbage (%X)", slot, cr, cr->resrec.RecordType);
+            if (cr->CRActiveQuestion)
+            {
+                for (q = m->Questions; q; q=q->next) if (q == cr->CRActiveQuestion) break;
+                if (!q) LogMemCorruption("Cache slot %lu: CRActiveQuestion %p not in m->Questions list %s", slot, cr->CRActiveQuestion, CRDisplayString(m, cr));
+            }
         }
     }
 
@@ -317,6 +337,14 @@ mDNSlocal void validatelists(mDNS *const m)
     for (t = m->TunnelClients; t; t=t->next)
         if (t->next == (ClientTunnel *)~0 || t->dstname.c[0] > 63)
             LogMemCorruption("m->TunnelClients: %p is garbage (%d)", t, t->dstname.c[0]);
+
+#if TARGET_OS_WATCH
+    if (m->NumAllInterfaceRecords != NumAllInterfaceRecords)
+    	LogMemCorruption("NumAllInterfaceRecords is %d should be %d", m->NumAllInterfaceRecords, NumAllInterfaceRecords);
+    
+    if (m->NumAllInterfaceQuestions != NumAllInterfaceQuestions)
+    	LogMemCorruption("NumAllInterfaceQuestions is %d should be %d", m->NumAllInterfaceQuestions, NumAllInterfaceQuestions);
+#endif
 }
 
 mDNSexport void *mallocL(char *msg, unsigned int size)
@@ -327,13 +355,13 @@ mDNSexport void *mallocL(char *msg, unsigned int size)
     { LogMsg("malloc( %s : %d ) failed", msg, size); return(NULL); }
     else
     {
-        if      (size > 24000) LogMsg("malloc( %s : %lu ) = %p suspiciously large", msg, size, &mem[2]);
-        else if (MACOSX_MDNS_MALLOC_DEBUGGING >= 2) LogMsg("malloc( %s : %lu ) = %p",                    msg, size, &mem[2]);
+        if      (size > 32768)                      LogMsg("malloc( %s : %lu ) @ %p suspiciously large", msg, size, &mem[2]);
+        else if (MACOSX_MDNS_MALLOC_DEBUGGING >= 2) LogMsg("malloc( %s : %lu ) @ %p",                    msg, size, &mem[2]);
         mem[0] = 0xDEAD1234;
         mem[1] = size;
         //mDNSPlatformMemZero(&mem[2], size);
         memset(&mem[2], 0xFF, size);
-        validatelists(&mDNSStorage);
+        validatelists(&mDNSStorage, true);
         return(&mem[2]);
     }
 }
@@ -345,12 +373,13 @@ mDNSexport void freeL(char *msg, void *x)
     else
     {
         mDNSu32 *mem = ((mDNSu32 *)x) - 2;
-        if      (mem[0] != 0xDEAD1234)            { LogMsg("free( %s @ %p ) !!!! NOT ALLOCATED !!!!", msg, &mem[2]); return; }
-        if      (mem[1] > 24000) LogMsg("free( %s : %ld @ %p) suspiciously large", msg, mem[1], &mem[2]);
-        else if (MACOSX_MDNS_MALLOC_DEBUGGING >= 2) LogMsg("free( %s : %ld @ %p)",                    msg, mem[1], &mem[2]);
-        //mDNSPlatformMemZero(mem, sizeof(mDNSu32) * 2 + mem[1]);
-        memset(mem, 0xFF, sizeof(mDNSu32) * 2 + mem[1]);
-        validatelists(&mDNSStorage);
+        if      (mem[0] == 0xDEADDEAD)  { LogMemCorruption("free( %s : %lu @ %p ) !!!! ALREADY DISPOSED !!!!", msg, mem[1], &mem[2]); return; }
+        if      (mem[0] != 0xDEAD1234)  { LogMemCorruption("free( %s : %lu @ %p ) !!!! NEVER ALLOCATED !!!!",  msg, mem[1], &mem[2]); return; }
+        if      (mem[1] > 32768)                    LogMsg("free( %s : %lu @ %p) suspiciously large",          msg, mem[1], &mem[2]);
+        else if (MACOSX_MDNS_MALLOC_DEBUGGING >= 2) LogMsg("free( %s : %ld @ %p)",                             msg, mem[1], &mem[2]);
+        mem[0] = 0xDEADDEAD;
+        memset(mem+2, 0xFF, mem[1]);
+        validatelists(&mDNSStorage, false);
         free(mem);
     }
 }
@@ -1272,6 +1301,8 @@ mDNSlocal void mDNSPreferencesSetNames(mDNS *const m, int key, domainlabel *old,
             !SameDomainLabelCS(old->c, prevold->c) ||
             !SameDomainLabelCS(new->c, prevnew->c))
         {
+// Work around bug radar:21397654
+#ifndef __clang_analyzer__
             if (old)
                 *prevold = *old;
             else
@@ -1280,6 +1311,7 @@ mDNSlocal void mDNSPreferencesSetNames(mDNS *const m, int key, domainlabel *old,
                 *prevnew = *new;
             else
                 prevnew->c[0] = 0;
+#endif
             mDNSPreferencesSetName(key, old, new);
         }
         else
@@ -1319,6 +1351,12 @@ mDNSlocal void mDNS_StatusCallback(mDNS *const m, mStatus result)
     else if (result == mStatus_GrowCache)
     {
         // Allocate another chunk of cache storage
+        static unsigned int allocated = 0;
+#if TARGET_OS_IPHONE
+        if (allocated >= 1000000) return;	// For now we limit the cache to at most 1MB on iOS devices
+#endif
+        allocated += sizeof(CacheEntity) * RR_CACHE_SIZE;
+        // LogMsg("GrowCache %d * %d = %d; total so far %6u", sizeof(CacheEntity), RR_CACHE_SIZE, sizeof(CacheEntity) * RR_CACHE_SIZE, allocated);
         CacheEntity *storage = mallocL("mStatus_GrowCache", sizeof(CacheEntity) * RR_CACHE_SIZE);
         //LogInfo("GrowCache %d * %d = %d", sizeof(CacheEntity), RR_CACHE_SIZE, sizeof(CacheEntity) * RR_CACHE_SIZE);
         if (storage) mDNS_GrowCache(m, storage, RR_CACHE_SIZE);
@@ -1454,7 +1492,7 @@ mDNSlocal mStatus UpdateRecord(ServiceRecordSet *srs, mach_port_t client, AuthRe
     {
         errormsg = "mDNS_Update";
         freeL("RData", newrdata);
-        return err;
+        goto fail;
     }
     return(mStatus_NoError);
 
@@ -1544,6 +1582,7 @@ mDNSexport kern_return_t provide_DNSServiceRegistrationRemoveRecord_rpc(mach_por
             if ((natural_t)e->ClientID == reference)
             {
                 err = RemoveRecord(&si->srs, e, client);
+                if (err) { errormsg = "RemoveRecord failed"; goto fail; }
                 break;
             }
         }
@@ -1708,6 +1747,7 @@ mDNSlocal void HandleSIG(int sig)
 mDNSlocal void INFOCallback(void)
 {
     mDNSs32 utc = mDNSPlatformUTC();
+    const mDNSs32 now = mDNS_TimeNow(&mDNSStorage);
     NetworkInterfaceInfoOSX     *i;
     DNSServer *s;
     McastResolver *mr;
@@ -1720,6 +1760,14 @@ mDNSlocal void INFOCallback(void)
     LogMsg("---- BEGIN STATE LOG ---- %s %s %d", mDNSResponderVersionString, OSXVers ? "OSXVers" : "iOSVers", OSXVers ? OSXVers : iOSVers);
 
     udsserver_info(&mDNSStorage);
+
+    LogMsgNoIdent("----- Platform Timers -----");
+    LogTimer("m->NextCacheCheck       ", mDNSStorage.NextCacheCheck);
+    LogTimer("m->NetworkChanged       ", mDNSStorage.NetworkChanged);
+    LogTimer("m->p->NotifyUser        ", mDNSStorage.p->NotifyUser);
+    LogTimer("m->p->HostNameConflict  ", mDNSStorage.p->HostNameConflict);
+    LogTimer("m->p->KeyChainTimer     ", mDNSStorage.p->KeyChainTimer);
+
     xpcserver_info(&mDNSStorage);
 
     LogMsgNoIdent("----- KQSocketEventSources -----");
@@ -1787,7 +1835,7 @@ mDNSlocal void INFOCallback(void)
                           s->DNSSECAware ? "DNSSECAware" : "!DNSSECAware");
         }
     }
-    mDNSs32 now = mDNS_TimeNow(&mDNSStorage);
+
     LogMsgNoIdent("v4answers %d", mDNSStorage.p->v4answers);
     LogMsgNoIdent("v6answers %d", mDNSStorage.p->v6answers);
     LogMsgNoIdent("Last DNS Trigger: %d ms ago", (now - mDNSStorage.p->DNSTrigger));
@@ -1800,6 +1848,9 @@ mDNSlocal void INFOCallback(void)
             LogMsgNoIdent("Mcast Resolver %##s timeout %u", mr->domain.c, mr->timeout);
     }
 
+#if TARGET_OS_EMBEDDED
+    LogMetrics();
+#endif
     LogMsgNoIdent("Timenow 0x%08lX (%d)", (mDNSu32)now, now);
     LogMsg("----  END STATE LOG  ---- %s %s %d", mDNSResponderVersionString, OSXVers ? "OSXVers" : "iOSVers", OSXVers ? OSXVers : iOSVers);
     
@@ -1963,10 +2014,6 @@ mDNSlocal void SignalCallback(CFMachPortRef port, void *msg, CFIndex size, void 
     KQueueLock(m);
     switch(msg_header->msgh_id)
     {
-    case SIGURG:
-        m->mDNSOppCaching = m->mDNSOppCaching ? mDNSfalse : mDNStrue;
-        LogMsg("SIGURG: Opportunistic Caching %s", m->mDNSOppCaching ? "Enabled" : "Disabled");
-        // FALL THROUGH to purge the cache so that we re-do the caching based on the new setting
     case SIGHUP:    {
         mDNSu32 slot;
         CacheGroup *cg;
@@ -2144,7 +2191,6 @@ mDNSlocal kern_return_t mDNSDaemonInitialize(void)
     mDNSSetupSignal(queue, SIGINFO);
     mDNSSetupSignal(queue, SIGUSR1);
     mDNSSetupSignal(queue, SIGUSR2);
-    mDNSSetupSignal(queue, SIGURG);
 
     // Create a custom handler for doing the housekeeping work. This is either triggered
     // by the timer or an event source
@@ -2197,16 +2243,16 @@ mDNSlocal mDNSs32 mDNSDaemonIdle(mDNS *const m)
     // mDNS_Execute() generates packets, including multicasts that are looped back to ourself.
     // If we call mDNS_Execute() first, and generate packets, and then call mDNSMacOSXNetworkChanged() immediately afterwards
     // we then systematically lose our own looped-back packets.
-    if (m->p->NetworkChanged && now - m->p->NetworkChanged >= 0) mDNSMacOSXNetworkChanged(m);
+    if (m->NetworkChanged && now - m->NetworkChanged >= 0) mDNSMacOSXNetworkChanged(m);
 
     if (m->p->RequestReSleep && now - m->p->RequestReSleep >= 0) { m->p->RequestReSleep = 0; mDNSPowerRequest(0, 0); }
 
     // 3. Call mDNS_Execute() to let mDNSCore do what it needs to do
     mDNSs32 nextevent = mDNS_Execute(m);
 
-    if (m->p->NetworkChanged)
-        if (nextevent - m->p->NetworkChanged > 0)
-            nextevent = m->p->NetworkChanged;
+    if (m->NetworkChanged)
+        if (nextevent - m->NetworkChanged > 0)
+            nextevent = m->NetworkChanged;
 
     if (m->p->KeyChainTimer)
         if (nextevent - m->p->KeyChainTimer > 0)
@@ -2411,6 +2457,7 @@ mDNSlocal mDNSBool AllowSleepNow(mDNS *const m, mDNSs32 now)
 
             //interval = 48; // For testing
 
+#if !TARGET_OS_EMBEDDED
 #ifdef kIOPMAcknowledgmentOptionSystemCapabilityRequirements
             if (m->p->IOPMConnection)   // If lightweight-wake capability is available, use that
             {
@@ -2423,7 +2470,7 @@ mDNSlocal mDNSBool AllowSleepNow(mDNS *const m, mDNSs32 now)
                     if (!Requirements) LogMsg("ScheduleNextWake: CFNumberCreate failed");
                     else
                     {
-                        const void *OptionKeys[2] = { CFSTR("WakeDate"), CFSTR("Requirements") };
+                        const void *OptionKeys[2] = { kIOPMAckDHCPRenewWakeDate, kIOPMAckSystemCapabilityRequirements };
                         const void *OptionVals[2] = {        WakeDate,          Requirements   };
                         opts = CFDictionaryCreate(NULL, (void*)OptionKeys, (void*)OptionVals, 2, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
                         if (!opts) LogMsg("ScheduleNextWake: CFDictionaryCreate failed");
@@ -2434,7 +2481,8 @@ mDNSlocal mDNSBool AllowSleepNow(mDNS *const m, mDNSs32 now)
                 LogSPS("AllowSleepNow: Will request lightweight wakeup in %d seconds", interval);
             }
             else                        // else schedule the wakeup using the old API instead to
-#endif
+#endif // kIOPMAcknowledgmentOptionSystemCapabilityRequirements
+#endif // TARGET_OS_EMBEDDED
             {
                 // If we wake within +/- 30 seconds of our requested time we'll assume the system woke for us,
                 // so we should put it back to sleep. To avoid frustrating the user, we always request at least
@@ -2594,9 +2642,9 @@ mDNSlocal void KQWokenFlushBytes(int fd, __unused short filter, __unused void *c
 
 mDNSlocal void SetLowWater(const KQSocketSet *const k, const int r)
 {
-    if (setsockopt(k->sktv4, SOL_SOCKET, SO_RCVLOWAT, &r, sizeof(r)) < 0)
+    if (k->sktv4 >=0 && setsockopt(k->sktv4, SOL_SOCKET, SO_RCVLOWAT, &r, sizeof(r)) < 0)
         LogMsg("SO_RCVLOWAT IPv4 %d error %d errno %d (%s)", k->sktv4, r, errno, strerror(errno));
-    if (setsockopt(k->sktv6, SOL_SOCKET, SO_RCVLOWAT, &r, sizeof(r)) < 0)
+    if (k->sktv6 >=0 && setsockopt(k->sktv6, SOL_SOCKET, SO_RCVLOWAT, &r, sizeof(r)) < 0)
         LogMsg("SO_RCVLOWAT IPv6 %d error %d errno %d (%s)", k->sktv6, r, errno, strerror(errno));
 }
 
@@ -2633,6 +2681,10 @@ mDNSlocal void * KQueueLoop(void *m_param)
         mDNSs32 end            = mDNSPlatformRawTime();
         if (end - start >= WatchDogReportingThreshold)
             LogInfo("WARNING: Idle task took %dms to complete", end - start);
+
+#if APPLE_OSX_mDNSResponder && MACOSX_MDNS_MALLOC_DEBUGGING >= 1
+        validatelists(m, true);
+#endif
 
         mDNSs32 now = mDNS_TimeNow(m);
 
@@ -2761,53 +2813,8 @@ mDNSlocal void * KQueueLoop(void *m_param)
 mDNSlocal void LaunchdCheckin(void)
 {
     // Ask launchd for our socket
-    launch_data_t resp_sd = launch_socket_service_check_in();
-    if (!resp_sd)
-    { 
-        LogMsg("launch_socket_service_check_in returned NULL");
-        return; 
-    }
-    else
-    {
-        launch_data_t skts = launch_data_dict_lookup(resp_sd, LAUNCH_JOBKEY_SOCKETS);
-        if (!skts) LogMsg("launch_data_dict_lookup LAUNCH_JOBKEY_SOCKETS returned NULL");
-        else
-        {
-            launch_data_t skt = launch_data_dict_lookup(skts, "Listeners");
-            if (!skt) LogMsg("launch_data_dict_lookup Listeners returned NULL");
-            else
-            {
-                launchd_fds_count = launch_data_array_get_count(skt);
-                if (launchd_fds_count == 0) LogMsg("launch_data_array_get_count(skt) returned 0");
-                else
-                {
-                    launchd_fds = mallocL("LaunchdCheckin", sizeof(dnssd_sock_t) * launchd_fds_count);
-                    if (!launchd_fds) LogMsg("LaunchdCheckin: malloc failed");
-                    else
-                    {
-                        size_t i;
-                        for(i = 0; i < launchd_fds_count; i++)
-                        {
-                            launch_data_t s = launch_data_array_get_index(skt, i);
-                            if (!s)
-                            {
-                                launchd_fds[i] = dnssd_InvalidSocket;
-                                LogMsg("launch_data_array_get_index(skt, %d) returned NULL", i);
-                            }
-                            else
-                            {
-                                launchd_fds[i] = launch_data_get_fd(s);
-                                LogInfo("Launchd Unix Domain Socket [%d]: %d", i, launchd_fds[i]);
-                            }
-                        }
-                    }
-                    // In some early versions of 10.4.x, the permissions on the UDS were not set correctly, so we fix them here
-                    chmod(MDNS_UDS_SERVERPATH, S_IRUSR|S_IWUSR | S_IRGRP|S_IWGRP | S_IROTH|S_IWOTH);
-                }
-            }
-        }
-    }
-    launch_data_free(resp_sd);
+    int result = launch_activate_socket("Listeners", &launchd_fds, &launchd_fds_count);
+    if (result != 0) { LogMsg("launch_activate_socket() failed errno %d (%s)", errno, strerror(errno)); }
 }
 
 static mach_port_t RegisterMachService(const char *service_name) 
@@ -2838,19 +2845,22 @@ mDNSexport int main(int argc, char **argv)
     int i;
     kern_return_t status;
 
+    log_client = asl_open(NULL, "mDNSResponder", 0);
+    log_msg = asl_new(ASL_TYPE_MSG);
+	
     mDNSMacOSXSystemBuildNumber(NULL);
     LogMsg("%s starting %s %d", mDNSResponderVersionString, OSXVers ? "OSXVers" : "iOSVers", OSXVers ? OSXVers : iOSVers);
 
 #if 0
-    LogMsg("CacheRecord %d", sizeof(CacheRecord));
-    LogMsg("CacheGroup  %d", sizeof(CacheGroup));
-    LogMsg("ResourceRecord  %d", sizeof(ResourceRecord));
-    LogMsg("RData_small     %d", sizeof(RData_small));
+    LogMsg("CacheRecord         %5d", sizeof(CacheRecord));
+    LogMsg("CacheGroup          %5d", sizeof(CacheGroup));
+    LogMsg("ResourceRecord      %5d", sizeof(ResourceRecord));
+    LogMsg("RData_small         %5d", sizeof(RData_small));
 
-    LogMsg("sizeof(CacheEntity) %d", sizeof(CacheEntity));
-    LogMsg("RR_CACHE_SIZE       %d", RR_CACHE_SIZE);
-    LogMsg("block usage         %d", sizeof(CacheEntity) * RR_CACHE_SIZE);
-    LogMsg("block wastage       %d", 16*1024 - sizeof(CacheEntity) * RR_CACHE_SIZE);
+    LogMsg("sizeof(CacheEntity) %5d", sizeof(CacheEntity));
+    LogMsg("RR_CACHE_SIZE       %5d", RR_CACHE_SIZE);
+    LogMsg("block bytes used    %5d",           sizeof(CacheEntity) * RR_CACHE_SIZE);
+    LogMsg("block bytes wasted  %5d", 32*1024 - sizeof(CacheEntity) * RR_CACHE_SIZE);
 #endif
 
     if (0 == geteuid())
@@ -2874,8 +2884,76 @@ mDNSexport int main(int argc, char **argv)
         if (!strcasecmp(argv[i], "-AlwaysAppendSearchDomains")) AlwaysAppendSearchDomains = mDNStrue;
     }
 
+
+#if APPLE_OSX_mDNSResponder && !TARGET_OS_EMBEDDED
+/* Reads the external user's program arguments for mDNSResponder starting 10.11.x(El Capitan) on OSX. The options for external user are: 
+   DebugLogging, UnicastPacketLogging, NoMulticastAdvertisements, StrictUnicastOrdering and AlwaysAppendSearchDomains
+
+   To turn ON the particular option, here is what the user should do (as an example of setting two options)
+   1] sudo defaults write /Library/Preferences/com.apple.mDNSResponder.plist AlwaysAppendSearchDomains -bool YES
+   2] sudo defaults write /Library/Preferences/com.apple.mDNSResponder.plist NoMulticastAdvertisements -bool YES
+   3] sudo reboot
+
+   To turn OFF all options, here is what the user should do
+   1] sudo defaults delete /Library/Preferences/com.apple.mDNSResponder.plist
+   2] sudo reboot
+
+   To view the current options set, here is what the user should do
+   1] plutil -p /Library/Preferences/com.apple.mDNSResponder.plist
+   OR
+   1] sudo defaults read /Library/Preferences/com.apple.mDNSResponder.plist
+   
+*/
+    CFBooleanRef enabled = NULL;
+
+    enabled = CFPreferencesCopyValue(kDebugLogging, kProgramArguments, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+    if (enabled != NULL)
+    {
+        if ((CFGetTypeID(enabled) == CFBooleanGetTypeID()) && CFBooleanGetValue(enabled))
+            mDNS_LoggingEnabled = mDNStrue;
+        CFRelease(enabled);
+    }
+
+    enabled = CFPreferencesCopyValue(kUnicastPacketLogging, kProgramArguments, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+    if (enabled != NULL)
+    {
+        if ((CFGetTypeID(enabled) == CFBooleanGetTypeID()) && CFBooleanGetValue(enabled))
+            mDNS_PacketLoggingEnabled = mDNStrue;
+        CFRelease(enabled);
+    }
+
+    enabled = CFPreferencesCopyValue(kNoMulticastAdvertisements, kProgramArguments, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+    if (enabled != NULL)
+    {
+        if ((CFGetTypeID(enabled) == CFBooleanGetTypeID()) && CFBooleanGetValue(enabled))
+            advertise = mDNS_Init_DontAdvertiseLocalAddresses;
+        CFRelease(enabled);
+    }
+
+    enabled = CFPreferencesCopyValue(kStrictUnicastOrdering, kProgramArguments, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+    if (enabled != NULL)
+    {
+        if ((CFGetTypeID(enabled) == CFBooleanGetTypeID()) && CFBooleanGetValue(enabled))
+            StrictUnicastOrdering = mDNStrue;
+        CFRelease(enabled);
+    }
+
+    enabled = CFPreferencesCopyValue(kAlwaysAppendSearchDomains, kProgramArguments, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+    if (enabled != NULL)
+    {
+        if ((CFGetTypeID(enabled) == CFBooleanGetTypeID()) && CFBooleanGetValue(enabled))
+            AlwaysAppendSearchDomains = mDNStrue;
+        CFRelease(enabled);
+    }
+#endif
+
     // Note that mDNSPlatformInit will set DivertMulticastAdvertisements in the mDNS structure
-    if (!advertise) LogMsg("Administratively prohibiting multicast advertisements");
+    if (!advertise) 
+        LogMsg("-NoMulticastAdvertisements is set: Administratively prohibiting multicast advertisements");
+    if (AlwaysAppendSearchDomains)
+        LogMsg("-AlwaysAppendSearchDomains is set");    
+    if (StrictUnicastOrdering)
+        LogMsg("-StrictUnicastOrdering is set");
 
 #ifndef MDNSRESPONDER_USES_LIB_DISPATCH_AS_PRIMARY_EVENT_LOOP_MECHANISM
 
@@ -2886,7 +2964,6 @@ mDNSexport int main(int argc, char **argv)
     signal(SIGINFO, HandleSIG);     // (Debugging) Write state snapshot to syslog
     signal(SIGUSR1, HandleSIG);     // (Debugging) Enable Logging
     signal(SIGUSR2, HandleSIG);     // (Debugging) Enable Packet Logging
-    signal(SIGURG,  HandleSIG);     // (Debugging) Toggle Opportunistic Caching
     signal(SIGPROF, HandleSIG);     // (Debugging) Toggle Multicast Logging
     signal(SIGTSTP, HandleSIG);     // (Debugging) Disable all Debug Logging (USR1/USR2/PROF)
 
@@ -2931,6 +3008,8 @@ mDNSexport int main(int argc, char **argv)
         char *sandbox_msg;
         uint64_t sandbox_flags = SANDBOX_NAMED;
 
+        (void)confstr(_CS_DARWIN_USER_CACHE_DIR, NULL, 0);
+
         int sandbox_err = sandbox_init("mDNSResponder", sandbox_flags, &sandbox_msg);
         if (sandbox_err)
         {
@@ -2945,13 +3024,6 @@ mDNSexport int main(int argc, char **argv)
     }
 #endif // MDNS_NO_SANDBOX
 
-    // We use BeginTransactionAtShutdown in the plist that ensures that we will
-    // receive a SIGTERM during shutdown rather than a SIGKILL. But launchd (due to some
-    // limitation) currently requires us to still start and end the transaction for
-    // its proper initialization.
-    vproc_transaction_t vt = vproc_transaction_begin(NULL);
-    if (vt) vproc_transaction_end(NULL, vt);
-
     m_port = RegisterMachService(kmDNSResponderServName);
     // We should ALWAYS receive our Mach port from RegisterMachService() but sanity check before initializing daemon 
     if (m_port == MACH_PORT_NULL)
@@ -2960,15 +3032,17 @@ mDNSexport int main(int argc, char **argv)
         return -1;
     }    
 
+#if TARGET_OS_EMBEDDED
+    status = MetricsInit();
+    if (status) { LogMsg("Daemon start: MetricsInit failed (%d)", status); }
+#endif
+
     status = mDNSDaemonInitialize();
     if (status) { LogMsg("Daemon start: mDNSDaemonInitialize failed"); goto exit; }
 
     status = udsserver_init(launchd_fds, launchd_fds_count);
     if (status) { LogMsg("Daemon start: udsserver_init failed"); goto exit; }
 
-    log_client = asl_open(NULL, "mDNSResponder", 0);
-    log_msg = asl_new(ASL_TYPE_MSG);
-	
 #if TARGET_OS_EMBEDDED
     _scprefs_observer_watch(scprefs_observer_type_global, kmDNSResponderPrefIDStr, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),  
                                                 ^{   

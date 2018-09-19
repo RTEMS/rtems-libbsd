@@ -36,7 +36,7 @@ if [ -r /sbin/start-stop-daemon ]; then
 	# Suse Linux doesn't work with symbolic signal names, but we really don't need
 	# to specify "-s TERM" since SIGTERM (15) is the default stop signal anway
 	# STOP="start-stop-daemon --stop -s TERM --quiet --oknodo --exec"
-	STOP="start-stop-daemon --stop --quiet --oknodo --exec"
+	STOP="start-stop-daemon --stop --quiet --oknodo --retry 2 --exec"
 else
 	killmdnsd() {
 		kill -TERM `cat /var/run/mdnsd.pid`

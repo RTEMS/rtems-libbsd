@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2002 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2002-2012 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -453,7 +453,6 @@ DNSServiceRegistrationReplyErrorType DNSServiceRegistrationRemoveRecord(dns_serv
 
 void DNSServiceDiscovery_handleReply(void *replyMsg)
 {
-    unsigned long result = 0xFFFFFFFF;
     mach_msg_header_t *     msgSendBufPtr;
     mach_msg_header_t *     receivedMessage;
     unsigned msgSendBufLength;
@@ -466,7 +465,7 @@ void DNSServiceDiscovery_handleReply(void *replyMsg)
 
     // Call DNSServiceDiscoveryReply_server to change mig-generated message into a
     // genuine mach message. It will then cause the callback to get called.
-    result = DNSServiceDiscoveryReply_server ( receivedMessage, msgSendBufPtr );
+    DNSServiceDiscoveryReply_server ( receivedMessage, msgSendBufPtr );
     ( void ) mach_msg_send ( msgSendBufPtr );
     free(msgSendBufPtr);
 }

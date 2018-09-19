@@ -1,4 +1,4 @@
-/*
+/* -*- Mode: C; tab-width: 4 -*-
  *
  * Copyright (c) 2011 Apple Inc. All rights reserved.
  *

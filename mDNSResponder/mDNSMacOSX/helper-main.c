@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2007 Apple Inc. All rights reserved.
+ * Copyright (c) 2007-2012 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@
 #include "helper-server.h"
 #include "helpermsg.h"
 #include "helpermsgServer.h"
-#include <vproc.h>
 
 #if TARGET_OS_EMBEDDED
 #define NO_SECURITYFRAMEWORK 1
@@ -104,7 +103,7 @@ static void handle_sigterm(int sig)
 
 static void initialize_logging(void)
 {
-    logclient = asl_open(NULL, kmDNSHelperServiceName, (opt_debug ? ASL_OPT_STDERR : 0));
+    logclient = asl_open(NULL, "mDNSResponderHelper", (opt_debug ? ASL_OPT_STDERR : 0));
     if (NULL == logclient) { fprintf(stderr, "Could not initialize ASL logging.\n"); fflush(stderr); return; }
     if (opt_debug) asl_set_filter(logclient, ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG));
 }
@@ -124,9 +123,10 @@ static void initialize_id(void)
 
 static void diediedie(CFRunLoopTimerRef timer, void *context)
 {
-    debug("entry %p %p %d", timer, context, maxidle);
+    debug("entry %p %p %d", timer, context, actualidle);
     assert(gTimer == timer);
-    if (maxidle)
+    helplog(ASL_LEVEL_INFO, "mDNSResponder exiting after %d seconds", actualidle);
+    if (actualidle)
         (void)proxy_mDNSExit(gPort);
 }
 
@@ -228,6 +228,8 @@ int main(int ac, char *av[])
         }
     ac -= optind;
     av += optind;
+    (void)ac; // Unused
+    (void)av; // Unused
 
     initialize_logging();
     helplog(ASL_LEVEL_INFO, "Starting");
@@ -245,13 +247,6 @@ int main(int ac, char *av[])
     if (maxidle) actualidle = maxidle;
 
     signal(SIGTERM, handle_sigterm);
-
-    // We use BeginTransactionAtShutdown in the plist that ensures that we will
-    // receive a SIGTERM during shutdown rather than a SIGKILL. But launchd (due to some
-    // limitation) currently requires us to still start and end the transaction for
-    // its proper initialization.
-    vproc_transaction_t vt = vproc_transaction_begin(NULL);
-    if (vt) vproc_transaction_end(NULL, vt);
 
     if (initialize_timer()) exit(EXIT_FAILURE);
     for (n=0; n<100000; n++) if (!gRunLoop) usleep(100);

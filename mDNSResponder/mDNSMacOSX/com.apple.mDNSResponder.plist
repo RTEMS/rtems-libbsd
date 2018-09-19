@@ -20,8 +20,8 @@
 	<dict>
 		<key>com.apple.mDNSResponder</key>
 		<true/>
-               <key>com.apple.mDNSResponder.dnsproxy</key>
-               <true/>
+			<key>com.apple.mDNSResponder.dnsproxy</key>
+			<true/>
 	</dict>
 	<key>Sockets</key>
 	<dict>
@@ -35,11 +35,9 @@
 			<integer>438</integer>
 		</dict>
 	</dict>
-	<key>EnableTransactions</key>
-	<true/>
-	<key>BeginTransactionAtShutdown</key>
-	<true/>
 	<key>POSIXSpawnType</key>
 	<string>Interactive</string>
+	<key>EnablePressuredExit</key>
+	<false/>
 </dict>
 </plist>

@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2012 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2012-2013 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -449,9 +449,13 @@ mDNSlocal void FetchRootTA(mDNS *const m)
         return;
     }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     // If we can't fetch the XML file e.g., network problems, trigger a timer. All other failures
     // should hardly happen in practice for which schedule the normal interval to refetch the TA.
-    if (!CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, url, &xmlData, NULL, NULL, NULL))
+    Boolean success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, url, &xmlData, NULL, NULL, NULL);
+#pragma clang diagnostic pop
+    if (!success)
     {
         LogInfo("FetchRootTA: CFURLCreateDataAndPropertiesFromResource error");
         CFRelease(url);
@@ -479,7 +483,8 @@ mDNSlocal void FetchRootTA(mDNS *const m)
     xmlDocPtr tadoc = xmlReadMemory((const char*)CFDataGetBytePtr(xmlData),
         (int)CFDataGetLength(xmlData), xmlFileName, NULL, 0);        
 
-    CFRelease(fileRef);
+    if (fileRef)
+        CFRelease(fileRef);
     CFRelease(url);
     CFRelease(xmlData);
 

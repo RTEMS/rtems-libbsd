@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2002-2013 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2002-2013, 2015 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2145,7 +2145,7 @@ exit:
 }
 
 mDNSexport void mDNSPlatformSendKeepalive(mDNSAddr *sadd, mDNSAddr *dadd, mDNSIPPort *lport, mDNSIPPort *rport, mDNSu32 seq, mDNSu32 ack, mDNSu16 win)
-	{
+{
 	(void) sadd; 	// Unused
 	(void) dadd; 	// Unused
 	(void) lport; 	// Unused
@@ -2153,49 +2153,50 @@ mDNSexport void mDNSPlatformSendKeepalive(mDNSAddr *sadd, mDNSAddr *dadd, mDNSIP
 	(void) seq; 	// Unused
 	(void) ack; 	// Unused
 	(void) win;		// Unused
-	}
+}
 
-mDNSexport mStatus mDNSPlatformGetRemoteMacAddr(mDNSAddr *raddr, char *eth)
-	{
-	(void) raddr; // Unused
-	(void) eth;   // Unused
-	}
+mDNSexport mStatus mDNSPlatformGetRemoteMacAddr(mDNS *const m, mDNSAddr *raddr)
+{
+	(void) m;		// Unused
+	(void) raddr;	// Unused
+
+	return mStatus_UnsupportedErr;
+}
 
 mDNSexport  mStatus    mDNSPlatformStoreSPSMACAddr(mDNSAddr *spsaddr, char *ifname)
-	{
+{
 	(void) spsaddr; // Unused
 	(void) ifname;  // Unused
-	}
+
+	return mStatus_UnsupportedErr;
+}
 
 mDNSexport  mStatus    mDNSPlatformClearSPSMACAddr(void)
-	{
-	}
+{
+	return mStatus_UnsupportedErr;
+}
 
 mDNSexport mStatus mDNSPlatformRetrieveTCPInfo(mDNS *const m, mDNSAddr *laddr, mDNSIPPort *lport, mDNSAddr *raddr, mDNSIPPort *rport, mDNSTCPInfo *mti)
-	{
+{
 	(void) m;       // Unused
 	(void) laddr; 	// Unused
 	(void) raddr; 	// Unused
 	(void) lport; 	// Unused
 	(void) rport; 	// Unused
 	(void) mti; 	// Unused
-	}
 
-mDNSexport mDNSBool mDNSPlatformAllowPID(mDNS *const m, DNSQuestion *q)
-    {
+	return mStatus_UnsupportedErr;
+}
+
+mDNSexport void mDNSPlatformGetDNSRoutePolicy(mDNS *const m, DNSQuestion *q, mDNSBool *isCellBlocked)
+{
     (void) m;
-    (void) q;
-    return mDNStrue;
-    }
 
-mDNSexport mDNSs32 mDNSPlatformGetServiceID(mDNS *const m, DNSQuestion *q)
-    {
-    (void) m;
-    (void) q;
-    return -1;
-    }
+    q->ServiceID = -1;
+    *isCellBlocked = mDNSfalse;
+}
 
-mDNSexport void mDNSPlatformSetDelegatePID(UDPSocket *src, const mDNSAddr *dst, DNSQuestion *q)
+mDNSexport void mDNSPlatformSetuDNSSocktOpt(UDPSocket *src, const mDNSAddr *dst, DNSQuestion *q)
     {
     (void) src;
     (void) dst;
@@ -2886,6 +2887,7 @@ mDNSlocal mStatus	SetupInterface( mDNS * const inMDNS, const struct ifaddrs *inI
     // If interface is a direct link, address record will be marked as kDNSRecordTypeKnownUnique
     // and skip the probe phase of the probe/announce packet sequence.
     ifd->interfaceInfo.DirectLink = mDNSfalse;
+    ifd->interfaceInfo.SupportsUnicastMDNSResponse = mDNStrue;
 
 	err = mDNS_RegisterInterface( inMDNS, &ifd->interfaceInfo, mDNSfalse );
 	require_noerr( err, exit );

@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
- * Copyright (c) 2002-2004 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2002-2015 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -525,6 +525,7 @@ mDNSexport int ParseDNSServers(mDNS *m, const char *filePath)
             numOfServers++;
         }
     }
+	fclose(fp);
     return (numOfServers > 0) ? 0 : -1;
 }
 
@@ -648,10 +649,22 @@ mDNSlocal int SetupSocket(struct sockaddr *intfAddr, mDNSIPPort port, int interf
     // ... with a shared UDP port, if it's for multicast receiving
     if (err == 0 && port.NotAnInteger)
     {
-        #if defined(SO_REUSEPORT)
-        err = setsockopt(*sktPtr, SOL_SOCKET, SO_REUSEPORT, &kOn, sizeof(kOn));
-        #elif defined(SO_REUSEADDR)
+        // <rdar://problem/20946253>
+        // We test for SO_REUSEADDR first, as suggested by Jonny Törnbom from Axis Communications
+        // Linux kernel versions 3.9 introduces support for socket option
+        // SO_REUSEPORT, however this is not implemented the same as on *BSD
+        // systems. Linux version implements a "port hijacking" prevention
+        // mechanism, limiting processes wanting to bind to an already existing
+        // addr:port to have the same effective UID as the first who bound it. What
+        // this meant for us was that the daemon ran as one user and when for
+        // instance mDNSClientPosix was executed by another user, it wasn't allowed
+        // to bind to the socket. Our suggestion was to switch the order in which
+        // SO_REUSEPORT and SO_REUSEADDR was tested so that SO_REUSEADDR stays on
+        // top and SO_REUSEPORT to be used only if SO_REUSEADDR doesn't exist.
+        #if defined(SO_REUSEADDR) && !defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
         err = setsockopt(*sktPtr, SOL_SOCKET, SO_REUSEADDR, &kOn, sizeof(kOn));
+        #elif defined(SO_REUSEPORT)
+        err = setsockopt(*sktPtr, SOL_SOCKET, SO_REUSEPORT, &kOn, sizeof(kOn));
         #else
             #error This platform has no way to avoid address busy errors on multicast.
         #endif
@@ -919,6 +932,7 @@ mDNSlocal int SetupOneInterface(mDNS *const m, struct sockaddr *intfAddr, struct
 	if (strcmp(intfName, STRINGIFY(DIRECTLINK_INTERFACE_NAME)) == 0)
 		intf->coreIntf.DirectLink = mDNStrue;
 #endif
+    intf->coreIntf.SupportsUnicastMDNSResponse = mDNStrue;
 
     // The interface is all ready to go, let's register it with the mDNS core.
     if (err == 0)
@@ -1625,21 +1639,15 @@ mDNSexport mDNSBool mDNSPlatformInterfaceIsD2D(mDNSInterfaceID InterfaceID)
     return mDNSfalse;
 }
 
-mDNSexport mDNSBool mDNSPlatformAllowPID(mDNS *const m, DNSQuestion *q)
+mDNSexport void mDNSPlatformGetDNSRoutePolicy(mDNS *const m, DNSQuestion *q, mDNSBool *isCellBlocked)
 {
     (void) m;
-    (void) q;
-    return mDNStrue;
+
+    q->ServiceID = -1;
+    *isCellBlocked = mDNSfalse;
 }
 
-mDNSexport mDNSs32 mDNSPlatformGetServiceID(mDNS *const m, DNSQuestion *q)
-{
-    (void) m;
-    (void) q;
-    return -1;
-}
-
-mDNSexport void mDNSPlatformSetDelegatePID(UDPSocket *src, const mDNSAddr *dst, DNSQuestion *q)
+mDNSexport void mDNSPlatformSetuDNSSocktOpt(UDPSocket *src, const mDNSAddr *dst, DNSQuestion *q)
 {
     (void) src;
     (void) dst;

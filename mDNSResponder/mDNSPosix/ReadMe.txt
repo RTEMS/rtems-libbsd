@@ -308,6 +308,20 @@ CVE-ID
 CVE-2011-0220 : JaeSeung Song of the Department of Computing at Imperial
 College London
 
+Impact:  A local application may be able to cause a denial of service
+Description:  A denial of service issue was addressed through
+improved memory handling.
+CVE-ID
+CVE-2015-7988 : Alexandre Helie
+
+Impact:  A remote attacker may be able to cause unexpected
+application termination or arbitrary code execution
+Description:  Multiple memory corruption issues existed in DNS
+data parsing. These issues were addressed through improved bounds
+checking.
+CVE-ID
+CVE-2015-7987 : Alexandre Helie
+
 To Do List
 ----------
 • port to a System V that's not Solaris

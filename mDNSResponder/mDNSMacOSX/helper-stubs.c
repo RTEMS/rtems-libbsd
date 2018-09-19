@@ -1,5 +1,6 @@
-/*
- * Copyright (c) 2007-2012 Apple Inc. All rights reserved.
+/* -*- Mode: C; tab-width: 4 -*-
+ *
+ * Copyright (c) 2007-2015 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,26 +170,28 @@ void mDNSNotify(const char *title, const char *msg) // Both strings are UTF-8 te
 
     if (title)
     {
+        // Don’t try to call mDNSPlatformMem* routines here, because they call validatelists,
+        // which calls back into mDNSNotify, resulting an infinite loop until stack space is exhausted
         int len = strlen(title);
-        titleCopy = mDNSPlatformMemAllocate(len + 1);
+        titleCopy = malloc(len + 1);
         if (!titleCopy)
         {
             LogMsg("mDNSNotify: titleCopy NULL for %s", msg);
             return;
         }
-        mDNSPlatformMemCopy(titleCopy, title, len);
+        memcpy(titleCopy, title, len);
         titleCopy[len] = 0;
     }
     if (msg)
     {
         int len = strlen(msg);
-        msgCopy = mDNSPlatformMemAllocate(len + 1);
+        msgCopy = malloc(len + 1);
         if (!msgCopy)
         {
             LogMsg("mDNSNotify: msgCopy NULL for %s", msg);
             return;
         }
-        mDNSPlatformMemCopy(msgCopy, msg, len);
+        memcpy(msgCopy, msg, len);
         msgCopy[len] = 0;
     }
         
@@ -203,10 +206,10 @@ void mDNSNotify(const char *title, const char *msg) // Both strings are UTF-8 te
         kr = proxy_mDNSNotify(getHelperPort(retry), titleCopy, msgCopy);
         MACHRETRYLOOP_END(kr, retry, err, fin);
 fin:
-        if (titleCopy)
-            mDNSPlatformMemFree(titleCopy);
-        if (msgCopy)
-            mDNSPlatformMemFree(msgCopy);
+        // Don’t try to call mDNSPlatformMem* routines here, because they call validatelists,
+        // which calls back into mDNSNotify, resulting an infinite loop until stack space is exhausted
+        free(titleCopy);
+        free(msgCopy);
         (void)err;
     });
 }
@@ -231,7 +234,7 @@ int mDNSKeychainGetSecrets(CFArrayRef *result)
         LogMsg("%s: CFDataCreateWithBytesNoCopy failed", __func__);
         goto fin;
     }
-    if (NULL == (plist = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, bytes, kCFPropertyListImmutable, NULL)))
+    if (NULL == (plist = CFPropertyListCreateWithData(kCFAllocatorDefault, bytes, kCFPropertyListImmutable, NULL, NULL)))
     {
         err = kmDNSHelperInvalidPList;
         LogMsg("%s: CFPropertyListCreateFromXMLData failed", __func__);
@@ -456,7 +459,7 @@ void mDNSGetRemoteMAC(mDNS *const m, int family, v6addr_t raddr)
         // the values and schedule a task to update the MAC address in the TCP Keepalive record.
         if (kr == KERN_SUCCESS)
         {
-            addrMapping = (IPAddressMACMapping *)malloc(sizeof(IPAddressMACMapping));
+            addrMapping = mDNSPlatformMemAllocate(sizeof(IPAddressMACMapping));
             snprintf(addrMapping->ethaddr, sizeof(addrMapping->ethaddr), "%02x:%02x:%02x:%02x:%02x:%02x",
                      eth[0], eth[1], eth[2], eth[3], eth[4], eth[5]);
             if (family == AF_INET)

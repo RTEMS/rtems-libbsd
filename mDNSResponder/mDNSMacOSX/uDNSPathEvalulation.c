@@ -20,7 +20,7 @@
 #include <network/private.h>
 
 //Gets the DNSPolicy from NW PATH EVALUATOR
-mDNSexport void mDNSPlatformGetDNSRoutePolicy(mDNS *const m, DNSQuestion *q, mDNSBool *isCellBlocked)
+mDNSexport void mDNSPlatformGetDNSRoutePolicy(mDNS *const m, DNSQuestion *q, mDNSBool *isBlocked)
 {
     (void) m;
     q->ServiceID = -1; // initialize the ServiceID to default value of -1
@@ -28,7 +28,7 @@ mDNSexport void mDNSPlatformGetDNSRoutePolicy(mDNS *const m, DNSQuestion *q, mDN
     // Return for non-unicast DNS queries, invalid pid, if NWPathEvaluation is already done by the client, or NWPathEvaluation not available on this OS
     if (mDNSOpaque16IsZero(q->TargetQID) || (q->pid < 0) || (q->flags & kDNSServiceFlagsPathEvaluationDone) || !nw_endpoint_create_host)
     {
-        *isCellBlocked = mDNSfalse;
+        *isBlocked = mDNSfalse;
         return;
     }
     
@@ -142,10 +142,10 @@ mDNSexport void mDNSPlatformGetDNSRoutePolicy(mDNS *const m, DNSQuestion *q, mDN
         }
     }
     
-    if (isUUIDSet && TARGET_OS_IPHONE && nw_path_get_status(path) == nw_path_status_unsatisfied && nw_path_get_reason(path) == nw_path_reason_policy_drop)
-        *isCellBlocked = mDNStrue;
+    if (isUUIDSet && (nw_path_get_status(path) == nw_path_status_unsatisfied) && (nw_path_get_reason(path) == nw_path_reason_policy_drop))
+        *isBlocked = mDNStrue;
     else
-        *isCellBlocked = mDNSfalse;
+        *isBlocked = mDNSfalse;
 
     if (path != NULL)
         network_release(path);

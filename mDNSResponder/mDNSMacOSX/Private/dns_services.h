@@ -22,7 +22,8 @@ typedef enum
     kDNSX_NoError                   =  0,
     kDNSX_UnknownErr                = -65537,   /* 0xFFFE FFFF */
     kDNSX_NoMem                     = -65539,   /* No Memory   */
-    kDNSX_BadParam                  = -65540,   /* Client passes invalid arg/Bad use of SPI */
+    kDNSX_BadParam                  = -65540,   /* Client passed invalid arg */
+    kDNSX_Busy                      = -65551,   /* DNS Proxy already in use: incorrect use of SPI by client */
     kDNSX_DaemonNotRunning          = -65563    /* Daemon not running */
 } DNSXErrorType;
 

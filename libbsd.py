@@ -281,8 +281,6 @@ class rtems(builder.Module):
                 'rtems/rtems-routes.c',
                 'rtems/syslog.c',
                 'ftpd/ftpd-service.c',
-                'mdns/mdns.c',
-                'mdns/mdns-hostname-default.c',
                 'nfsclient/mount_prot_xdr.c',
                 'nfsclient/nfs.c',
                 'nfsclient/nfs_prot_xdr.c',
@@ -4684,6 +4682,9 @@ class mdnsresponder(builder.Module):
                 'mDNSResponder/mDNSShared/GenLinkedList.c',
                 'mDNSResponder/mDNSPosix/mDNSPosix.c',
                 'mDNSResponder/mDNSPosix/mDNSUNP.c',
+                'rtemsbsd/mdns/mDNSResolveService.c',
+                'rtemsbsd/mdns/mdns.c',
+                'rtemsbsd/mdns/mdns-hostname-default.c',
             ],
             mm.generator['source']()
         )

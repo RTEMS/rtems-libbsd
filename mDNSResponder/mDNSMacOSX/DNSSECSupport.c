@@ -44,6 +44,8 @@
 // When we can't fetch the root TA due to network errors etc., we start off a timer
 // to fire at 60 seconds and then keep doubling it till we fetch it
 #define InitialTAFetchInterval 60
+#define DNSSECProbePercentage 1
+
 
 #if !TARGET_OS_IPHONE
 DNSQuestion DNSSECProbeQuestion;
@@ -165,7 +167,7 @@ mDNSlocal mDNSu8 *ConvertDigest(char *digest, int digestType, int *diglen)
         int l, h;
         l = HexVal(digest[i]);
         h = HexVal(digest[i+1]);
-        if (l<0 || h<0) { LogMsg("ConvertDigest: Cannot convert digest"); return NULL;}
+        if (l<0 || h<0) { LogMsg("ConvertDigest: Cannot convert digest"); mDNSPlatformMemFree(dig); return NULL;}
         dig[j++] = (mDNSu8)((l << 4) | h);
     }
     return dig;
@@ -560,8 +562,8 @@ mDNSexport void DNSSECProbe(mDNS *const m)
         return;
     
     rand = mDNSRandom(0x3FFFFFFF) % 100;
-    // Probe 5% of the time
-    if (rand > 5)
+    // Probe 1% of the time
+    if (rand >= DNSSECProbePercentage)
         return;
     
     mDNS_DropLockBeforeCallback();

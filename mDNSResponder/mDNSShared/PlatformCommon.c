@@ -23,6 +23,10 @@
 #include <netinet/in.h>         // Needed for sockaddr_in
 #include <syslog.h>
 
+#if APPLE_OSX_mDNSResponder
+#include <os/log.h>
+#endif 
+
 #include "mDNSEmbeddedAPI.h"    // Defines the interface provided to the client layer above
 #include "DNSCommon.h"
 #include "PlatformCommon.h"
@@ -174,6 +178,14 @@ mDNSexport void mDNSPlatformWriteLogMsg(const char *ident, const char *buffer, m
         int syslog_level = LOG_ERR;
         switch (loglevel)
         {
+#if APPLE_OSX_mDNSResponder
+        case MDNS_LOG_MSG:       syslog_level = OS_LOG_TYPE_DEFAULT;     break;
+        case MDNS_LOG_OPERATION: syslog_level = OS_LOG_TYPE_INFO;        break;
+        case MDNS_LOG_SPS:       syslog_level = OS_LOG_TYPE_INFO;        break;
+        case MDNS_LOG_INFO:      syslog_level = OS_LOG_TYPE_INFO;        break;
+        case MDNS_LOG_DEBUG:     syslog_level = OS_LOG_TYPE_DEBUG;       break;
+        default:                 syslog_level = OS_LOG_TYPE_DEFAULT;     break;
+#else
         case MDNS_LOG_MSG:       syslog_level = LOG_ERR;     break;
         case MDNS_LOG_OPERATION: syslog_level = LOG_WARNING; break;
         case MDNS_LOG_SPS:       syslog_level = LOG_NOTICE;  break;
@@ -182,6 +194,7 @@ mDNSexport void mDNSPlatformWriteLogMsg(const char *ident, const char *buffer, m
         default:
             fprintf(stderr, "Unknown loglevel %d, assuming LOG_ERR\n", loglevel);
             fflush(stderr);
+#endif
         }
 
         if (!log_inited) { openlog(ident, LOG_CONS, LOG_DAEMON); log_inited++; }

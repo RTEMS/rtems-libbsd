@@ -75,7 +75,7 @@ OSStatus EnsureToolInstalled(void)
 {
     CFURLRef bundleURL;
     pid_t toolPID;
-    int status;
+    int status = 0;
     OSStatus err = noErr;
     const char      *args[] = { kToolPath, "0", "V", NULL };
     char toolSourcePath[PATH_MAX] = {};
@@ -98,8 +98,10 @@ OSStatus EnsureToolInstalled(void)
     if (bundleURL != NULL)
     {
         CFURLGetFileSystemRepresentation(bundleURL, false, (UInt8*) toolSourcePath, sizeof toolSourcePath);
-        if (strlcat(toolSourcePath,    "/Contents/Resources/" kToolName,      sizeof toolSourcePath   ) >= sizeof toolSourcePath   ) return(-1);
         CFURLGetFileSystemRepresentation(bundleURL, false, (UInt8*) toolInstallerPath, sizeof toolInstallerPath);
+        CFRelease(bundleURL);
+
+        if (strlcat(toolSourcePath,    "/Contents/Resources/" kToolName,      sizeof toolSourcePath   ) >= sizeof toolSourcePath   ) return(-1);
         if (strlcat(toolInstallerPath, "/Contents/Resources/" kToolInstaller, sizeof toolInstallerPath) >= sizeof toolInstallerPath) return(-1);
     }
     else
@@ -164,7 +166,7 @@ static OSStatus ExecWithCmdAndParam(const char *subCmd, CFDataRef paramData)
     }
 
     commFD = fileno(tmpfile());
-    sprintf(fileNum, "%d", commFD);
+    snprintf(fileNum, sizeof(fileNum), "%d", commFD);
     args[1] = fileNum;
     args[3] = subCmd;
 
@@ -185,7 +187,7 @@ static OSStatus ExecWithCmdAndParam(const char *subCmd, CFDataRef paramData)
     child = execTool(args);
     if (child > 0)
     {
-        int status;
+        int status = 0;
         waitpid(child, &status, 0);
         if (WIFEXITED(status))
             err = WEXITSTATUS(status);

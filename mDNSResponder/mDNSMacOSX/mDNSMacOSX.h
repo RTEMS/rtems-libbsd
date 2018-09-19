@@ -31,6 +31,7 @@ extern "C" {
 #include "mDNSEmbeddedAPI.h"  // for domain name structure
 
 #include <net/if.h>
+#include <os/log.h>
 
 //#define MDNSRESPONDER_USES_LIB_DISPATCH_AS_PRIMARY_EVENT_LOOP_MECHANISM
 #ifdef MDNSRESPONDER_USES_LIB_DISPATCH_AS_PRIMARY_EVENT_LOOP_MECHANISM
@@ -41,17 +42,13 @@ extern "C" {
 #if TARGET_OS_EMBEDDED
 #define NO_SECURITYFRAMEWORK 1
 #define NO_CFUSERNOTIFICATION 1
-#include <MobileGestalt.h> // for IsAppleTV() 
-#include <SystemConfiguration/scprefs_observer.h> // for _scprefs_observer_watch()
-extern mDNSBool GetmDNSManagedPref(CFStringRef key);
+#include <MobileGestalt.h> // for IsAppleTV()
 #endif
 
 #ifndef NO_SECURITYFRAMEWORK
 #include <Security/SecureTransport.h>
 #include <Security/Security.h>
 #endif /* NO_SECURITYFRAMEWORK */
-
-#define kmDNSResponderServName "com.apple.mDNSResponder"
 
 enum mDNSDynamicStoreSetConfigKey
 {
@@ -177,7 +174,6 @@ struct mDNS_PlatformSupport_struct
     mDNSs32 HostNameConflict;                   // Time we experienced conflict on our link-local host name
     mDNSs32 KeyChainTimer;
 
-    CFRunLoopRef CFRunLoop;
     SCDynamicStoreRef Store;
     CFRunLoopSourceRef StoreRLS;
     CFRunLoopSourceRef PMRLS;

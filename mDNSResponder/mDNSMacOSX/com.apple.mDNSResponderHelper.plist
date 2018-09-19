@@ -12,7 +12,7 @@
   </array>
   <key>MachServices</key>
   <dict>
-    <key>com.apple.mDNSResponderHelper</key>
+    <key>com.apple.mDNSResponder_Helper</key>
     <true/>
   </dict>
   <key>POSIXSpawnType</key>

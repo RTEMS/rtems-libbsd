@@ -22,7 +22,16 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/socket.h>
+#include <AvailabilityMacros.h>
+#include <TargetConditionals.h>
+
+#define TARGET_OS_MACOSX    (TARGET_OS_MAC && !TARGET_OS_IPHONE)
+
+#if (!TARGET_OS_MACOSX || (MAC_OS_X_VERSION_MAX_ALLOWED >= 101200))
+#include <SymptomReporter/SymptomReporter.h>
+#else
 #include <Symptoms/SymptomReporter.h>
+#endif
 
 #define SYMPTOM_REPORTER_mDNSResponder_NUMERIC_ID  101
 #define SYMPTOM_REPORTER_mDNSResponder_TEXT_ID     "com.apple.mDNSResponder"
@@ -30,7 +39,7 @@
 #define SYMPTOM_DNS_NO_REPLIES          0x00065001
 #define SYMPTOM_DNS_RESUMED_RESPONDING  0x00065002
 
-static symptom_framework_t symptomReporter;
+static symptom_framework_t symptomReporter = mDNSNULL;
 static symptom_framework_t (*symptom_framework_init_f)(symptom_ident_t id, const char *originator_string) = mDNSNULL;
 static symptom_t (*symptom_new_f)(symptom_framework_t framework, symptom_ident_t id) = mDNSNULL;
 static int (*symptom_set_additional_qualifier_f)(symptom_t symptom, uint32_t qualifier_type, size_t qualifier_len, void *qualifier_data) = mDNSNULL;
@@ -39,53 +48,43 @@ static int (*symptom_send_f)(symptom_t symptom) = mDNSNULL;
 mDNSlocal mStatus SymptomReporterInitCheck(void)
 {
     mStatus err;
-    static mDNSBool isInitialized = mDNSfalse;
+    static mDNSBool triedInit = mDNSfalse;
     static void *symptomReporterLib = mDNSNULL;
+#if (!TARGET_OS_MACOSX || (MAC_OS_X_VERSION_MAX_ALLOWED >= 101200))
+    static const char path[] = "/System/Library/PrivateFrameworks/SymptomReporter.framework/SymptomReporter";
+#else
     static const char path[] = "/System/Library/PrivateFrameworks/Symptoms.framework/Frameworks/SymptomReporter.framework/SymptomReporter";
+#endif
 
-    if (!isInitialized)
+    if (!triedInit)
     {
+        triedInit = mDNStrue;
+
+        symptomReporterLib = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
         if (!symptomReporterLib)
-        {
-            symptomReporterLib = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
-            if (!symptomReporterLib)
-                goto exit;
-        }
+            goto exit;
 
+        symptom_framework_init_f = dlsym(symptomReporterLib, "symptom_framework_init");
         if (!symptom_framework_init_f)
-        {
-            symptom_framework_init_f = dlsym(symptomReporterLib, "symptom_framework_init");
-            if (!symptom_framework_init_f)
-                goto exit;
-        }
+            goto exit;
 
+        symptom_new_f = dlsym(symptomReporterLib, "symptom_new");
         if (!symptom_new_f)
-        {
-            symptom_new_f = dlsym(symptomReporterLib, "symptom_new");
-            if (!symptom_new_f)
-                goto exit;
-        }
+            goto exit;
 
+        symptom_set_additional_qualifier_f = dlsym(symptomReporterLib, "symptom_set_additional_qualifier");
         if (!symptom_set_additional_qualifier_f)
-        {
-            symptom_set_additional_qualifier_f = dlsym(symptomReporterLib, "symptom_set_additional_qualifier");
-            if (!symptom_set_additional_qualifier_f)
-                goto exit;
-        }
+            goto exit;
 
+        symptom_send_f = dlsym(symptomReporterLib, "symptom_send");
         if (!symptom_send_f)
-        {
-            symptom_send_f = dlsym(symptomReporterLib, "symptom_send");
-            if (!symptom_send_f)
-                goto exit;
-        }
+            goto exit;
 
         symptomReporter = symptom_framework_init_f(SYMPTOM_REPORTER_mDNSResponder_NUMERIC_ID, SYMPTOM_REPORTER_mDNSResponder_TEXT_ID);
-        isInitialized = mDNStrue;
     }
 
 exit:
-    err = isInitialized ? mStatus_NoError : mStatus_NotInitializedErr;
+    err = symptomReporter ? mStatus_NoError : mStatus_NotInitializedErr;
     return err;
 }
 

@@ -49,8 +49,9 @@ const char *GetNextLabel(const char *cstr, char label[64])
     while (*cstr && *cstr != '.')               // While we have characters in the label...
     {
         char c = *cstr++;
-        if (c == '\\' && *cstr)                 // If we have a backslash, and it's not the last character of the string
+        if (c == '\\')                          // If escape character, check next character
         {
+            if (*cstr == '\0') break;           // If this is the end of the string, then break
             c = *cstr++;
             if (isdigit(cstr[-1]) && isdigit(cstr[0]) && isdigit(cstr[1]))
             {

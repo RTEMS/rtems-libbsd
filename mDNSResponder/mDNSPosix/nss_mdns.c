@@ -1088,6 +1088,7 @@ mdns_lookup_callback
         ns_type_t expected_rr_type =
             af_to_rr (result->hostent->h_addrtype);
 
+        // Idiot check class
         if (rrclass != C_IN)
         {
             syslog (LOG_WARNING,
@@ -1269,6 +1270,7 @@ add_address_to_buffer (result_map_t * result, const void * data, int len)
         return NULL;
     }
 
+    // Idiot check
     if (len != result->hostent->h_length)
     {
         syslog (LOG_WARNING,
@@ -1309,6 +1311,7 @@ contains_address (result_map_t * result, const void * data, int len)
 {
     int i;
 
+    // Idiot check
     if (len != result->hostent->h_length)
     {
         syslog (LOG_WARNING,
@@ -2470,6 +2473,7 @@ cmp_dns_suffix (const char * name, const char * domain)
     const char * nametail;
     const char * domaintail;
 
+    // Idiot checks
     if (*name == 0 || *name == k_dns_separator)
     {
         // Name can't be empty or start with separator

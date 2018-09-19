@@ -553,14 +553,21 @@ mDNSlocal mDNSBool CheckDNSProxyIpIntf(const mDNS *const m, mDNSInterfaceID Inte
     int i;
     mDNSu32 ip_ifindex = (mDNSu32)(unsigned long)InterfaceID;
 
-    LogInfo("CheckDNSProxyIpIntf: Stored Input Interface List: [%d] [%d] [%d] [%d] [%d]", m->dp_ipintf[0], m->dp_ipintf[1], m->dp_ipintf[2], 
-             m->dp_ipintf[3], m->dp_ipintf[4]);
+    LogInfo("CheckDNSProxyIpIntf: Check for ifindex[%d] in stored input interface list: [%d] [%d] [%d] [%d] [%d]",
+            ip_ifindex, m->dp_ipintf[0], m->dp_ipintf[1], m->dp_ipintf[2], m->dp_ipintf[3], m->dp_ipintf[4]);
 
-    for (i = 0; i < MaxIp; i++)
+    if (ip_ifindex > 0)
     {
-        if (ip_ifindex == m->dp_ipintf[i])
-            return mDNStrue;
+        for (i = 0; i < MaxIp; i++)
+        {
+            if (ip_ifindex == m->dp_ipintf[i])
+                return mDNStrue;
+        }
     }
+    
+    LogMsg("CheckDNSProxyIpIntf: ifindex[%d] not in stored input interface list: [%d] [%d] [%d] [%d] [%d]",
+            ip_ifindex, m->dp_ipintf[0], m->dp_ipintf[1], m->dp_ipintf[2], m->dp_ipintf[3], m->dp_ipintf[4]);
+    
     return mDNSfalse;
 
 }
@@ -583,7 +590,10 @@ mDNSlocal void ProxyCallbackCommon(mDNS *const m, void *socket, void *const pkt,
     debugf("ProxyCallbackCommon: DNS Query coming from InterfaceID %p", InterfaceID);
     // Ignore if the DNS Query is not from a Valid Input InterfaceID
     if (!CheckDNSProxyIpIntf(m, InterfaceID))
+    {
+        LogMsg("ProxyCallbackCommon: Rejecting DNS Query coming from InterfaceID %p", InterfaceID);
         return;
+    }
     
     if ((unsigned)(end - (mDNSu8 *)pkt) < sizeof(DNSMessageHeader))
     {
@@ -691,8 +701,7 @@ mDNSlocal void ProxyCallbackCommon(mDNS *const m, void *socket, void *const pkt,
     debugf("ProxyCallbackCommon: DNS Query forwarding to interface index %d", m->dp_opintf);
     mDNS_SetupQuestion(&pc->q, (mDNSInterfaceID)(unsigned long)m->dp_opintf, &q.qname, q.qtype, ProxyClientCallback, pc);
     pc->q.TimeoutQuestion = 1;
-    // Even though we don't care about intermediate responses, set ReturnIntermed so that
-    // we get the negative responses
+    // Set ReturnIntermed so that we get the negative responses
     pc->q.ReturnIntermed  = mDNStrue;
     pc->q.ProxyQuestion   = mDNStrue;
     pc->q.ProxyDNSSECOK   = pc->DNSSECOK;
@@ -735,9 +744,10 @@ mDNSexport void ProxyTCPCallback(mDNS *const m, void *socket, void *const pkt, c
     const mDNSIPPort srcport, const mDNSAddr *dstaddr, const mDNSIPPort dstport, const mDNSInterfaceID InterfaceID, void *context)
 {
     LogInfo("ProxyTCPCallback: DNS Message from %#a:%d to %#a:%d length %d", srcaddr, mDNSVal16(srcport), dstaddr, mDNSVal16(dstport), end - (mDNSu8 *)pkt);
-    // If the connection was closed from the other side, locate the client
+    
+    // If the connection was closed from the other side or incoming packet does not match stored input interface list, locate the client
     // state and free it.
-    if ((end - (mDNSu8 *)pkt) == 0)
+    if (((end - (mDNSu8 *)pkt) == 0) || (!CheckDNSProxyIpIntf(m, InterfaceID)))
     {
         DNSProxyClient **ppc = &DNSProxyClients;
         DNSProxyClient **prevpc;

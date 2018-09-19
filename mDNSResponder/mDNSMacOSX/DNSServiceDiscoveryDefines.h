@@ -20,8 +20,6 @@
 
 #include <mach/mach_types.h>
 
-#define DNS_SERVICE_DISCOVERY_SERVER "com.apple.mDNSResponder"
-
 typedef char DNSCString[1024];
 typedef char sockaddr_t[128];
 

@@ -87,6 +87,7 @@ mDNSlocal mDNSBool TrustedKeyPresent(mDNS *const m, DNSSECVerifier *dv);
 mDNSlocal mStatus ValidateDS(DNSSECVerifier *dv);
 mDNSlocal void DNSSECNegativeValidationCB(mDNS *const m, DNSSECVerifier *dv, CacheGroup *cg, ResourceRecord *answer, DNSSECStatus status);
 mDNSlocal RRVerifier* CopyRRVerifier(RRVerifier *from);
+mDNSlocal void FreeDNSSECAuthChainInfo(AuthChain *ac);
 
 // Currently we use this to convert a RRVerifier to resource record so that we can
 // use the standard DNS utility functions
@@ -300,6 +301,8 @@ mDNSlocal AuthChain *AuthChainCopy(AuthChain *ae)
         if (!ac)
         {
             LogMsg("AuthChainCopy: AuthChain alloc failure");
+            if (retac)
+                FreeDNSSECAuthChainInfo(retac);
             return mDNSfalse;
         }
 
@@ -2523,7 +2526,9 @@ mDNSlocal void FinishDNSSECVerification(mDNS *const m, DNSSECVerifier *dv)
     LogDNSSEC("FinishDNSSECVerification: all rdata sets available for sig verification for %##s (%s)",
               dv->origName.c, DNSTypeName(dv->origType));
 
-    mDNS_StopQuery(m, &dv->q);
+    // Stop outstanding query if one exists
+    if (dv->q.ThisQInterval != -1)
+        mDNS_StopQuery(m, &dv->q);
     if (ValidateSignature(dv, &resultKey, &resultRRSig) == mStatus_NoError)
     {
         rdataDNSKey *key;

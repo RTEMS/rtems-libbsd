@@ -6,8 +6,6 @@
 	<true/>
 	<key>Label</key>
 	<string>com.apple.dnsextd</string>
-	<key>OnDemand</key>
-	<false/>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/usr/sbin/dnsextd</string>

@@ -40,17 +40,19 @@ extern "C" {
 
 typedef enum
 {
-    kDNSFlag0_QR_Mask     = 0x80,       // Query or response?
-    kDNSFlag0_QR_Query    = 0x00,
-    kDNSFlag0_QR_Response = 0x80,
+    kDNSFlag0_QR_Mask        = 0x80,    // Query or response?
+    kDNSFlag0_QR_Query       = 0x00,
+    kDNSFlag0_QR_Response    = 0x80,
 
-    kDNSFlag0_OP_Mask     = 0x78,       // Operation type
-    kDNSFlag0_OP_StdQuery = 0x00,
-    kDNSFlag0_OP_Iquery   = 0x08,
-    kDNSFlag0_OP_Status   = 0x10,
-    kDNSFlag0_OP_Unused3  = 0x18,
-    kDNSFlag0_OP_Notify   = 0x20,
-    kDNSFlag0_OP_Update   = 0x28,
+    kDNSFlag0_OP_Mask        = 0x78,    // Operation type
+    kDNSFlag0_OP_StdQuery    = 0x00,
+    kDNSFlag0_OP_Subscribe   = 0x06,
+    kDNSFlag0_OP_UnSubscribe = 0x07,
+    kDNSFlag0_OP_Iquery      = 0x08,
+    kDNSFlag0_OP_Status      = 0x10,
+    kDNSFlag0_OP_Unused3     = 0x18,
+    kDNSFlag0_OP_Notify      = 0x20,
+    kDNSFlag0_OP_Update      = 0x28,
 
     kDNSFlag0_QROP_Mask   = kDNSFlag0_QR_Mask | kDNSFlag0_OP_Mask,
 
@@ -83,6 +85,7 @@ typedef enum
     TSIG_ErrBadKey  = 17,
     TSIG_ErrBadTime = 18
 } TSIG_ErrorCode;
+
 
 // ***************************************************************************
 #if COMPILER_LIKES_PRAGMA_MARK

@@ -333,8 +333,8 @@ MyDNSServiceAddServiceToRunLoop(MyDNSServiceState * query)
 		currentHostName = [[NSString alloc] initWithString:@""];
     }
 
-    CFRelease((CFDictionaryRef)origDict);
-    CFRelease(store);
+    if (origDict) CFRelease((CFDictionaryRef)origDict);
+    if (store) CFRelease(store);
 }
 
 

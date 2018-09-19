@@ -228,7 +228,9 @@ static void initPortRule( struct pfioc_rule * pr,
 int P2PPacketFilterAddBonjourRuleSet(const char * interfaceName, u_int32_t count, pfArray_t portArray, pfArray_t protocolArray )
 {
     int result;
-    u_int32_t i, ticket, poolTicket;
+    u_int32_t i;
+    u_int32_t ticket = 0;
+    u_int32_t poolTicket = 0;
     int devFD = -1;
     char * anchorPath = MDNS_ANCHOR_PATH;
 
@@ -278,7 +280,7 @@ int P2PPacketFilterClearBonjourRules()
 {
     int result;
     int pfDev = -1;
-    u_int32_t ticket;
+    u_int32_t ticket = 0;
     char * anchorPath = MDNS_ANCHOR_PATH;
 
     result = openPFDevice( &pfDev );

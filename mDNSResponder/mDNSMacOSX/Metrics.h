@@ -25,9 +25,10 @@ extern "C" {
 #endif
 
 #if TARGET_OS_EMBEDDED
-mStatus	MetricsInit(void);
-void	MetricsUpdateUDNSStats(const domainname *inQueryName, mDNSBool inAnswered, mDNSu32 inSendCount, mDNSu32 inLatencyMs, mDNSBool inForCellular);
-void	LogMetrics(void);
+mStatus MetricsInit(void);
+void    MetricsUpdateUDNSQueryStats(const domainname *inQueryName, mDNSu16 inType, const ResourceRecord *inRR, mDNSu32 inSendCount, mDNSu32 inLatencyMs, mDNSBool inForCell);
+void    MetricsUpdateUDNSResolveStats(const domainname *inQueryName, const ResourceRecord *inRR, mDNSBool inForCell);
+void    LogMetrics(void);
 #endif
 
 #ifdef  __cplusplus

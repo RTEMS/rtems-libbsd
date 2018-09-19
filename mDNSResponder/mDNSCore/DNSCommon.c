@@ -43,6 +43,7 @@ mDNSexport const mDNSInterfaceID mDNSInterface_LocalOnly = (mDNSInterfaceID)-2;
 mDNSexport const mDNSInterfaceID mDNSInterface_Unicast   = (mDNSInterfaceID)-3;
 mDNSexport const mDNSInterfaceID mDNSInterface_P2P       = (mDNSInterfaceID)-4;
 mDNSexport const mDNSInterfaceID uDNSInterfaceMark       = (mDNSInterfaceID)-5;
+mDNSexport const mDNSInterfaceID mDNSInterface_BLE       = (mDNSInterfaceID)-6;
 
 // Note: Microsoft's proposed "Link Local Multicast Name Resolution Protocol" (LLMNR) is essentially a limited version of
 // Multicast DNS, using the same packet formats, naming syntax, and record types as Multicast DNS, but on a different UDP
@@ -107,6 +108,8 @@ mDNSexport const mDNSOpaque16 DNSSecQFlags    = { { kDNSFlag0_QR_Query    | kDNS
 mDNSexport const mDNSOpaque16 ResponseFlags   = { { kDNSFlag0_QR_Response | kDNSFlag0_OP_StdQuery | kDNSFlag0_AA, 0 } };
 mDNSexport const mDNSOpaque16 UpdateReqFlags  = { { kDNSFlag0_QR_Query    | kDNSFlag0_OP_Update,                  0 } };
 mDNSexport const mDNSOpaque16 UpdateRespFlags = { { kDNSFlag0_QR_Response | kDNSFlag0_OP_Update,                  0 } };
+mDNSexport const mDNSOpaque16 SubscribeFlags  = { { kDNSFlag0_QR_Query    | kDNSFlag0_OP_Subscribe, 0 } };
+mDNSexport const mDNSOpaque16 UnSubscribeFlags= { { kDNSFlag0_QR_Query    | kDNSFlag0_OP_UnSubscribe, 0 } };
 
 mDNSexport const mDNSOpaque64 zeroOpaque64    = { { 0 } };
 
@@ -541,7 +544,7 @@ mDNSexport char *GetRRDisplayString_rdb(const ResourceRecord *const rr, const RD
     }
     break;
 
-    default:            mDNS_snprintf(buffer+length, RemSpc, "RDLen %d: %s", rr->rdlength, rd->data);
+    default:            mDNS_snprintf(buffer+length, RemSpc, "RDLen %d: %.*s", rr->rdlength, rr->rdlength, rd->data);
         // Really should scan buffer to check if text is valid UTF-8 and only replace with dots if not
         for (ptr = buffer; *ptr; ptr++) if (*ptr < ' ') *ptr = '.';
         break;
@@ -803,6 +806,7 @@ mDNSexport mDNSu8 *AppendDNSNameString(domainname *const name, const char *cstri
             mDNSu8 c = (mDNSu8)*cstr++;                             // Read the character
             if (c == '\\')                                          // If escape character, check next character
             {
+                if (*cstr == '\0') break;                           // If this is the end of the string, then break
                 c = (mDNSu8)*cstr++;                                // Assume we'll just take the next character
                 if (mDNSIsDigit(cstr[-1]) && mDNSIsDigit(cstr[0]) && mDNSIsDigit(cstr[1]))
                 {                                                   // If three decimal digits,
@@ -815,7 +819,7 @@ mDNSexport mDNSu8 *AppendDNSNameString(domainname *const name, const char *cstri
             }
             *ptr++ = c;                                             // Write the character
         }
-        if (*cstr) cstr++;                                          // Skip over the trailing dot (if present)
+        if (*cstr == '.') cstr++;                                   // Skip over the trailing dot (if present)
         if (ptr - lengthbyte - 1 > MAX_DOMAIN_LABEL)                // If illegal label, abort
             return(mDNSNULL);
         *lengthbyte = (mDNSu8)(ptr - lengthbyte - 1);               // Fill in the length byte
@@ -1165,7 +1169,8 @@ mDNSexport const mDNSu8 *NSEC3HashName(const domainname *name, rdataNSEC3 *nsec3
     const mDNSu8 hash[NSEC3_MAX_HASH_LEN], int *dlen)
 {
     AlgContext *ctx;
-    int i;
+    unsigned int i;
+    unsigned int iterations;
     domainname lname;
     mDNSu8 *p = (mDNSu8 *)&nsec3->salt;
     const mDNSu8 *digest;
@@ -1183,7 +1188,8 @@ mDNSexport const mDNSu8 *NSEC3HashName(const domainname *name, rdataNSEC3 *nsec3
 
     // Note that it is "i <=". The first iteration is for digesting the name and salt.
     // The iteration count does not include that.
-    for (i = 0; i <= swap16(nsec3->iterations); i++)
+    iterations = swap16(nsec3->iterations);
+    for (i = 0; i <= iterations; i++)
     {
         ctx = AlgCreate(DIGEST_ALG, nsec3->alg);
         if (!ctx)
@@ -1367,17 +1373,14 @@ mDNSexport void mDNS_SetupResourceRecord(AuthRecord *rr, RData *RDataStorage, mD
     if (InterfaceID == mDNSInterface_LocalOnly && artype != AuthRecordLocalOnly)
     {
         LogMsg("mDNS_SetupResourceRecord: ERROR!! Mismatch LocalOnly record InterfaceID %p called with artype %d", InterfaceID, artype);
-        return;
     }
     else if (InterfaceID == mDNSInterface_P2P && artype != AuthRecordP2P)
     {
         LogMsg("mDNS_SetupResourceRecord: ERROR!! Mismatch P2P record InterfaceID %p called with artype %d", InterfaceID, artype);
-        return;
     }
     else if (!InterfaceID && (artype == AuthRecordP2P || artype == AuthRecordLocalOnly))
     {
         LogMsg("mDNS_SetupResourceRecord: ERROR!! Mismatch InterfaceAny record InterfaceID %p called with artype %d", InterfaceID, artype);
-        return;
     }
 
     // Don't try to store a TTL bigger than we can represent in platform time units
@@ -1467,8 +1470,6 @@ mDNSexport void mDNS_SetupQuestion(DNSQuestion *const q, const mDNSInterfaceID I
     q->ForceMCast          = mDNSfalse;
     q->ReturnIntermed      = mDNSfalse;
     q->SuppressUnusable    = mDNSfalse;
-    q->DenyOnCellInterface = mDNSfalse;
-    q->DenyOnExpInterface  = mDNSfalse;
     q->SearchListIndex     = 0;
     q->AppendSearchDomains = 0;
     q->RetryWithSearchDomains = mDNSfalse;
@@ -1779,7 +1780,7 @@ mDNSexport mDNSBool SameNameRecordAnswersQuestion(const ResourceRecord *const rr
 
     // LocalOnly/P2P questions can be answered with AuthRecordAny in this function. LocalOnly/P2P records
     // are handled in LocalOnlyRecordAnswersQuestion
-    if ((rr->InterfaceID == mDNSInterface_LocalOnly) || (rr->InterfaceID == mDNSInterface_P2P))
+    if (LocalOnlyOrP2PInterface(rr->InterfaceID))
     {
         LogMsg("SameNameRecordAnswersQuestion: ERROR!! called with LocalOnly ResourceRecord %p, Question %p", rr->InterfaceID, q->InterfaceID);
         return mDNSfalse;
@@ -1914,7 +1915,7 @@ mDNSexport mDNSBool AnyTypeRecordAnswersQuestion(const ResourceRecord *const rr,
 {
     // LocalOnly/P2P questions can be answered with AuthRecordAny in this function. LocalOnly/P2P records
     // are handled in LocalOnlyRecordAnswersQuestion
-    if ((rr->InterfaceID == mDNSInterface_LocalOnly) || (rr->InterfaceID == mDNSInterface_P2P))
+    if (LocalOnlyOrP2PInterface(rr->InterfaceID))
     {
         LogMsg("AnyTypeRecordAnswersQuestion: ERROR!! called with LocalOnly ResourceRecord %p, Question %p", rr->InterfaceID, q->InterfaceID);
         return mDNSfalse;
@@ -2142,7 +2143,6 @@ mDNSexport const mDNSu8 *FindCompressionPointer(const mDNSu8 *const base, const 
     return(mDNSNULL);
 }
 
-// Put a string of dot-separated labels as length-prefixed labels
 // domainname is a fully-qualified name (i.e. assumed to be ending in a dot, even if it doesn't)
 // msg points to the message we're building (pass mDNSNULL if we don't want to use compression pointers)
 // end points to the end of the message so far
@@ -2843,7 +2843,7 @@ mDNSlocal mDNSu8 *SanityCheckBitMap(const mDNSu8 *bmap, const mDNSu8 *end, int l
 // (domainnames are expanded to 255 bytes) when stored in memory.
 //
 // This function can also be called with "NULL" msg to parse a single resource record pointed to by ptr.
-// The caller can do this only if the names in the resource records are compressed and validity of the
+// The caller can do this only if the names in the resource records are not compressed and validity of the
 // resource record has already been done before. DNSSEC currently uses it this way.
 mDNSexport mDNSBool SetRData(const DNSMessage *const msg, const mDNSu8 *ptr, const mDNSu8 *end,
     LargeCacheRecord *const largecr, mDNSu16 rdlength)
@@ -3348,6 +3348,12 @@ mDNSexport mDNSBool SetRData(const DNSMessage *const msg, const mDNSu8 *ptr, con
         dlen = DomainNameLength(&name);
         rlen = end - ptr;
         rr->resrec.rdlength = dlen + rlen;
+        if (rr->resrec.rdlength > MaximumRDSize)
+        {
+            LogInfo("SetRData: Malformed TSIG/TKEY rdlength %d, rr->resrec.rdlength %d, "
+                    "bmaplen %d, name %##s", rdlength, rr->resrec.rdlength, name.c);
+            goto fail;
+        }
         AssignDomainName((domainname *)rdb->data, &name);
         mDNSPlatformMemCopy(rdb->data + dlen, ptr, rlen);
         break;
@@ -3626,7 +3632,7 @@ mDNSexport mDNSu32 GetPktLease(mDNS *m, DNSMessage *msg, const mDNSu8 *end)
 mDNSlocal const mDNSu8 *DumpRecords(mDNS *const m, const DNSMessage *const msg, const mDNSu8 *ptr, const mDNSu8 *const end, int count, char *label)
 {
     int i;
-    LogMsg("%2d %s", count, label);
+    LogInfo("%2d %s", count, label);
     for (i = 0; i < count && ptr; i++)
     {
         // This puts a LargeCacheRecord on the stack instead of using the shared m->rec storage,
@@ -3634,9 +3640,11 @@ mDNSlocal const mDNSu8 *DumpRecords(mDNS *const m, const DNSMessage *const msg, 
         // embedded systems) putting a 9kB object on the stack isn't a big problem.
         LargeCacheRecord largecr;
         ptr = GetLargeResourceRecord(m, msg, ptr, end, mDNSInterface_Any, kDNSRecordTypePacketAns, &largecr);
-        if (ptr) LogMsg("%2d TTL%8d %s", i, largecr.r.resrec.rroriginalttl, CRDisplayString(m, &largecr.r));
+        if (ptr)
+            LogInfo("%2d TTL%8d %s", i, largecr.r.resrec.rroriginalttl, CRDisplayString(m, &largecr.r));
     }
-    if (!ptr) LogMsg("DumpRecords: ERROR: Premature end of packet data");
+    if (!ptr)
+        LogInfo("DumpRecords: ERROR: Premature end of packet data");
     return(ptr);
 }
 
@@ -3646,7 +3654,9 @@ mDNSlocal const mDNSu8 *DumpRecords(mDNS *const m, const DNSMessage *const msg, 
         (X) == kDNSFlag0_OP_Status   ? "Status "  :       \
         (X) == kDNSFlag0_OP_Unused3  ? "Unused3 " :       \
         (X) == kDNSFlag0_OP_Notify   ? "Notify "  :       \
-        (X) == kDNSFlag0_OP_Update   ? "Update "  : "?? " )
+        (X) == kDNSFlag0_OP_Update   ? "Update "  :       \
+        (X) == kDNSFlag0_OP_Subscribe? "Subscribe":       \
+        (X) == kDNSFlag0_OP_UnSubscribe? "UnSubscribe" : "?? " )
 
 #define DNS_RC_Name(X) (                             \
         (X) == kDNSFlag1_RC_NoErr    ? "NoErr"    :      \
@@ -3678,7 +3688,7 @@ mDNSexport void DumpPacket(mDNS *const m, mStatus status, mDNSBool sent, char *t
     if (dstaddr || !mDNSIPPortIsZero(dstport))
         dbuffer[mDNS_snprintf(dbuffer, sizeof(dbuffer), " to %#a:%d", dstaddr, mDNSVal16(dstport))] = 0;
 
-    LogMsg("-- %s %s DNS %s%s (flags %02X%02X) RCODE: %s (%d) %s%s%s%s%s%sID: %d %d bytes from %s%d%s%s --",
+    LogInfo("-- %s %s DNS %s%s (flags %02X%02X) RCODE: %s (%d) %s%s%s%s%s%sID: %d %d bytes from %s%d%s%s --",
            tbuffer, transport,
            DNS_OP_Name(msg->h.flags.b[0] & kDNSFlag0_OP_Mask),
            msg->h.flags.b[0] & kDNSFlag0_QR_Response ? "Response" : "Query",
@@ -3697,16 +3707,16 @@ mDNSexport void DumpPacket(mDNS *const m, mStatus status, mDNSBool sent, char *t
            (msg->h.flags.b[0] & kDNSFlag0_TC) ? " (truncated)" : ""
            );
 
-    LogMsg("%2d %s", msg->h.numQuestions, IsUpdate ? "Zone" : "Questions");
+    LogInfo("%2d %s", msg->h.numQuestions, IsUpdate ? "Zone" : "Questions");
     for (i = 0; i < msg->h.numQuestions && ptr; i++)
     {
         ptr = getQuestion(msg, ptr, end, mDNSInterface_Any, &q);
-        if (ptr) LogMsg("%2d %##s %s", i, q.qname.c, DNSTypeName(q.qtype));
+        if (ptr) LogInfo("%2d %##s %s", i, q.qname.c, DNSTypeName(q.qtype));
     }
     ptr = DumpRecords(m, msg, ptr, end, msg->h.numAnswers,     IsUpdate ? "Prerequisites" : "Answers");
     ptr = DumpRecords(m, msg, ptr, end, msg->h.numAuthorities, IsUpdate ? "Updates"       : "Authorities");
           DumpRecords(m, msg, ptr, end, msg->h.numAdditionals, "Additionals");
-    LogMsg("--------------");
+    LogInfo("--------------");
 }
 
 // ***************************************************************************
@@ -3896,6 +3906,10 @@ mDNSlocal mDNSs32 GetNextScheduledEvent(const mDNS *const m)
     if (e - m->NextScheduledSPS      > 0) e = m->NextScheduledSPS;
     if (e - m->NextScheduledKA       > 0) e = m->NextScheduledKA;
 
+#if BONJOUR_ON_DEMAND
+    if (m->NextBonjourDisableTime && (e - m->NextBonjourDisableTime > 0)) e = m->NextBonjourDisableTime;
+#endif // BONJOUR_ON_DEMAND
+
     // NextScheduledSPRetry only valid when DelaySleep not set
     if (!m->DelaySleep && m->SleepLimit && e - m->NextScheduledSPRetry > 0) e = m->NextScheduledSPRetry;
     if (m->DelaySleep && e - m->DelaySleep > 0) e = m->DelaySleep;
@@ -3911,6 +3925,9 @@ mDNSlocal mDNSs32 GetNextScheduledEvent(const mDNS *const m)
         if (e - m->NextScheduledResponse > 0) e = m->NextScheduledResponse;
     }
     if (e - m->NextScheduledStopTime > 0) e = m->NextScheduledStopTime;
+
+    if (m->NextBLEServiceTime && (e - m->NextBLEServiceTime > 0)) e = m->NextBLEServiceTime;
+
     return(e);
 }
 

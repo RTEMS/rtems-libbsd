@@ -40,6 +40,7 @@ if [ -r /sbin/start-stop-daemon ]; then
 else
 	killmdnsd() {
 		kill -TERM `cat /var/run/mdnsd.pid`
+		sleep 1
 	}
 	START=
 	STOP=killmdnsd
@@ -60,7 +61,6 @@ case "$1" in
     reload|restart|force-reload)
 		echo -n "Restarting Apple Darwin Multicast DNS / DNS Service Discovery daemon:"
 		$STOP $DAEMON
-		sleep 1
 		$START $DAEMON
 		echo -n " mdnsd"
 	;;

@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4 -*-
- *
+ * 
  * Copyright (c) 2015 Apple Inc. All rights reserved.
  */
 
@@ -28,5 +28,30 @@
  *                  to use this API.
  */
 DNSServiceErrorType DNSSD_API DNSServiceCreateDelegateConnection(DNSServiceRef *sdRef, int32_t pid, uuid_t uuid);
+
+// Map the source port of the local UDP socket that was opened for sending the DNS query
+// to the process ID of the application that triggered the DNS resolution.
+//
+/* DNSServiceGetPID() Parameters:
+ *
+ * srcport:         Source port (in network byte order) of the UDP socket that was created by
+ *                  the daemon to send the DNS query on the wire.
+ *
+ * pid:             Process ID of the application that started the name resolution which triggered
+ *                  the daemon to send the query on the wire. The value can be -1 if the srcport
+ *                  cannot be mapped.
+ *
+ * return value:    Returns kDNSServiceErr_NoError on success, or kDNSServiceErr_ServiceNotRunning
+ *                  if the daemon is not running. The value of the pid is undefined if the return
+ *                  value has error.
+ */
+DNSServiceErrorType DNSSD_API DNSServiceGetPID
+(
+    uint16_t srcport,
+    int32_t *pid
+);
+
+#define kDNSServiceCompPrivateDNS   "PrivateDNS"
+#define kDNSServiceCompMulticastDNS "MulticastDNS"
 
 #endif

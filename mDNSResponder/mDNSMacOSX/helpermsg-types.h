@@ -24,7 +24,7 @@ typedef uint8_t ethaddr_t[ 6];
 typedef uint8_t v6addr_t [16];
 typedef const char *string_t;
 
-#define PFPortArraySize 16
+#define PFPortArraySize 4
 typedef uint16_t pfArray_t [PFPortArraySize];
 
 #endif /* H_HELPERMSG_TYPES_H */

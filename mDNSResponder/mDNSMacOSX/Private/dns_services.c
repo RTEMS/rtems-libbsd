@@ -10,9 +10,7 @@
 #include "dns_xpc.h"
 #include <xpc/xpc.h>
 #include <Block.h>
-#include <syslog.h>
-
-#define LOG_NOW LOG_INFO
+#include <os/log.h>
 
 //*************************************************************************************************************
 // Globals
@@ -41,7 +39,7 @@ static void LogDebug(const char *prefix, xpc_object_t o)
         return;
     
     char *desc = xpc_copy_description(o);
-    syslog(LOG_NOW, "%s: %s", prefix, desc);
+    os_log_info(OS_LOG_DEFAULT, "%s: %s", prefix, desc);
     free(desc);
 }
 
@@ -51,7 +49,7 @@ void DNSXRefDeAlloc(DNSXConnRef connRef)
 {
     if (connRef == NULL)
     {
-        syslog(LOG_WARNING, "dns_services DD: DNSXRefDeAlloc called with NULL DNSXConnRef");
+        os_log(OS_LOG_DEFAULT, "dns_services: DNSXRefDeAlloc called with NULL DNSXConnRef");
         return;
     }
     
@@ -63,18 +61,18 @@ void DNSXRefDeAlloc(DNSXConnRef connRef)
         dispatch_release(connRef->lib_q);
         connRef->lib_q = NULL;
         connRef->AppCallBack = NULL;
-        syslog(LOG_NOW, "dns_services DD: DNSXRefDeAlloc successfully DeAllocated conn_ref & lib_q");
+        os_log_info(OS_LOG_DEFAULT, "dns_services: DNSXRefDeAlloc successfully DeAllocated conn_ref & lib_q");
         
         dispatch_async((connRef)->client_q, ^{
             dispatch_release(connRef->client_q);
             connRef->client_q = NULL;
             free(connRef);
-            syslog(LOG_NOW, "dns_services DD: DNSXRefDeAlloc successfully DeAllocated client_q & freed connRef");
+            os_log_info(OS_LOG_DEFAULT, "dns_services: DNSXRefDeAlloc successfully DeAllocated client_q & freed connRef");
         });
     });
     
     // DO NOT reference connRef after this comment, as it may have been freed
-    syslog(LOG_NOW, "dns_services DD: DNSXRefDeAlloc successfully DeAllocated connRef");
+    os_log_info(OS_LOG_DEFAULT, "dns_services: DNSXRefDeAlloc successfully DeAllocated connRef");
     
 }
 
@@ -83,7 +81,7 @@ static DNSXErrorType SendMsgToServer(DNSXConnRef connRef, xpc_object_t msg)
 {
     DNSXErrorType errx = kDNSX_NoError;
     
-    LogDebug("dns_services DD: SendMsgToServer Sending msg to Daemon", msg);
+    LogDebug("dns_services: SendMsgToServer Sending msg to Daemon", msg);
     
     xpc_connection_send_message_with_reply((connRef)->conn_ref, msg, (connRef)->lib_q, ^(xpc_object_t recv_msg)
     {
@@ -91,13 +89,13 @@ static DNSXErrorType SendMsgToServer(DNSXConnRef connRef, xpc_object_t msg)
                                                
         if (type == XPC_TYPE_DICTIONARY)
         {
-            LogDebug("dns_services DD: SendMsgToServer Received reply msg from Daemon", recv_msg);
+            LogDebug("dns_services: SendMsgToServer Received reply msg from Daemon", recv_msg);
             uint64_t daemon_status = xpc_dictionary_get_uint64(recv_msg, kDNSDaemonReply);
                                                    
             if (connRef == NULL || connRef->client_q == NULL || connRef->AppCallBack == NULL)
             {
                 // If connRef is bad, do not schedule any callbacks to the client
-                syslog(LOG_WARNING, "dns_services DD: SendMsgToServer: connRef is BAD Daemon status code [%llu]", daemon_status);
+                os_log(OS_LOG_DEFAULT, "dns_services: SendMsgToServer: connRef is BAD Daemon status code [%llu]", daemon_status);
             }
             else
             {
@@ -110,14 +108,16 @@ static DNSXErrorType SendMsgToServer(DNSXConnRef connRef, xpc_object_t msg)
                         });
                         break;
                                                              
-                    case kDNSMsg_BadArg:
+                    case kDNSMsg_Busy:
+                        os_log(OS_LOG_DEFAULT, "dns_services: SendMsgToServer: DNS Proxy already in use");
                         dispatch_async((connRef)->client_q, ^{
                         if (connRef->AppCallBack != NULL)
-                            ((DNSXEnableProxyReply)connRef->AppCallBack)(connRef, kDNSX_BadParam);
+                            ((DNSXEnableProxyReply)connRef->AppCallBack)(connRef, kDNSX_Busy);
                         });
                         break;
                                                                
                     default:
+                        os_log(OS_LOG_DEFAULT, "dns_services: SendMsgToServer: Unknown error");
                         dispatch_async((connRef)->client_q, ^{
                         if (connRef->AppCallBack != NULL)
                             ((DNSXEnableProxyReply)connRef->AppCallBack)(connRef, kDNSX_UnknownErr);
@@ -128,9 +128,9 @@ static DNSXErrorType SendMsgToServer(DNSXConnRef connRef, xpc_object_t msg)
         }
         else
         {
-            syslog(LOG_WARNING, "dns_services DD: SendMsgToServer Received unexpected reply from daemon [%s]",
+            os_log(OS_LOG_DEFAULT, "dns_services: SendMsgToServer Received unexpected reply from daemon [%s]",
                                 xpc_dictionary_get_string(recv_msg, XPC_ERROR_KEY_DESCRIPTION));
-            LogDebug("dns_services DD: SendMsgToServer Unexpected Reply contents", recv_msg);
+            LogDebug("dns_services: SendMsgToServer Unexpected Reply contents", recv_msg);
         }
     });
     
@@ -141,13 +141,16 @@ static DNSXErrorType SendMsgToServer(DNSXConnRef connRef, xpc_object_t msg)
 static DNSXErrorType InitConnection(DNSXConnRef *connRefOut, const char *servname, dispatch_queue_t clientq, void *AppCallBack)
 {
     if (connRefOut == NULL)
+    {
+        os_log(OS_LOG_DEFAULT, "dns_services: InitConnection() connRef cannot be NULL");
         return kDNSX_BadParam;
+    }
     
     // Use a DNSXConnRef on the stack to be captured in the blocks below, rather than capturing the DNSXConnRef* owned by the client
     DNSXConnRef connRef = malloc(sizeof(struct _DNSXConnRef_t));
     if (connRef == NULL)
     {
-        syslog(LOG_WARNING, "dns_services DD: InitConnection() No memory to allocate!");
+        os_log(OS_LOG_DEFAULT, "dns_services: InitConnection() No memory to allocate!");
         return kDNSX_NoMem;
     }
     
@@ -160,7 +163,7 @@ static DNSXErrorType InitConnection(DNSXConnRef *connRefOut, const char *servnam
     
     if (connRef->conn_ref == NULL || connRef->lib_q == NULL)
     {
-        syslog(LOG_WARNING, "dns_services DD: InitConnection() conn_ref/lib_q is NULL");
+        os_log(OS_LOG_DEFAULT, "dns_services: InitConnection() conn_ref/lib_q is NULL");
         if (connRef != NULL)
             free(connRef);
         return kDNSX_NoMem;
@@ -171,12 +174,12 @@ static DNSXErrorType InitConnection(DNSXConnRef *connRefOut, const char *servnam
         if (connRef == NULL || connRef->client_q == NULL || connRef->AppCallBack == NULL)
         {
             // If connRef is bad, do not schedule any callbacks to the client
-            syslog(LOG_WARNING, "dns_services DD: InitConnection: connRef is BAD Unexpected Connection Error [%s]",
+            os_log(OS_LOG_DEFAULT, "dns_services: InitConnection: connRef is BAD Unexpected Connection Error [%s]",
                                 xpc_dictionary_get_string(event, XPC_ERROR_KEY_DESCRIPTION));
         }
         else
         {
-            syslog(LOG_WARNING, "dns_services DD: InitConnection: Unexpected Connection Error [%s] Ping the client",
+            os_log(OS_LOG_DEFAULT, "dns_services: InitConnection: Unexpected Connection Error [%s] Ping the client",
                                  xpc_dictionary_get_string(event, XPC_ERROR_KEY_DESCRIPTION));
             dispatch_async(connRef->client_q, ^{
             if (connRef->AppCallBack != NULL)
@@ -201,7 +204,7 @@ DNSXErrorType DNSXEnableProxy(DNSXConnRef *connRef, DNSProxyParameters proxypara
     // Sanity Checks
     if (connRef == NULL || callBack == NULL || clientq == NULL)
     {
-        syslog(LOG_WARNING, "dns_services DD: DNSXEnableProxy called with NULL DNSXConnRef OR Callback OR ClientQ parameter");
+        os_log(OS_LOG_DEFAULT, "dns_services: DNSXEnableProxy called with NULL DNSXConnRef OR Callback OR ClientQ parameter");
         return kDNSX_BadParam;
     }
     
@@ -211,13 +214,13 @@ DNSXErrorType DNSXEnableProxy(DNSXConnRef *connRef, DNSProxyParameters proxypara
         errx = InitConnection(connRef, kDNSProxyService, clientq, callBack);
         if (errx) // On error InitConnection() leaves *connRef set to NULL
         {
-            syslog(LOG_WARNING, "dns_services DD: Since InitConnection() returned %d error returning w/o sending msg", errx);
+            os_log(OS_LOG_DEFAULT, "dns_services: Since InitConnection() returned %d error returning w/o sending msg", errx);
             return errx;
         }
     }
     else // Client already has a connRef and this is not valid use for this SPI
     {
-        syslog(LOG_WARNING, "dns_services DD: Client already has a valid connRef! This is incorrect usage from the client");
+        os_log(OS_LOG_DEFAULT, "dns_services: Client already has a valid connRef! This is incorrect usage from the client");
         return kDNSX_BadParam;
     }
     
@@ -225,7 +228,7 @@ DNSXErrorType DNSXEnableProxy(DNSXConnRef *connRef, DNSProxyParameters proxypara
     xpc_object_t dict = xpc_dictionary_create(NULL, NULL, 0);
     if (dict == NULL)
     {
-        syslog(LOG_WARNING, "dns_services DD: DNSXEnableProxy could not create the Msg Dict To Send!");
+        os_log(OS_LOG_DEFAULT, "dns_services: DNSXEnableProxy could not create the Msg Dict To Send!");
         DNSXRefDeAlloc(*connRef);
         return kDNSX_NoMem;
     }

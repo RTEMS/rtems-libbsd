@@ -20,7 +20,8 @@
 
 #include "helpermsg-types.h"
 
-enum {
+enum
+{
     PF_SET_RULES,
     PF_CLEAR_RULES
 };

@@ -38,7 +38,8 @@ typedef struct PosixNetworkInterface PosixNetworkInterface;
 
 struct PosixNetworkInterface
 {
-    NetworkInterfaceInfo coreIntf;
+    NetworkInterfaceInfo coreIntf;		// MUST be the first element in this structure
+    mDNSs32 LastSeen;
     const char *            intfName;
     PosixNetworkInterface * aliasIntf;
     int index;

@@ -90,6 +90,8 @@ static GenLinkedList gEventSources;             // linked list of PosixEventSour
 static sigset_t gEventSignalSet;                // Signals which event loop listens for
 static sigset_t gEventSignals;                  // Signals which were received while inside loop
 
+static PosixNetworkInterface *gRecentInterfaces;
+
 // ***************************************************************************
 // Globals (for debugging)
 
@@ -574,6 +576,13 @@ mDNSexport mDNSu32 mDNSPlatformInterfaceIndexfromInterfaceID(mDNS *const m, mDNS
     while ((intf != NULL) && (mDNSInterfaceID) intf != id)
         intf = (PosixNetworkInterface *)(intf->coreIntf.next);
 
+    if (intf) return intf->index;
+
+    // If we didn't find the interface, check the RecentInterfaces list as well
+    intf = gRecentInterfaces;
+    while ((intf != NULL) && (mDNSInterfaceID) intf != id)
+        intf = (PosixNetworkInterface *)(intf->coreIntf.next);
+
     return intf ? intf->index : 0;
 }
 
@@ -587,7 +596,11 @@ mDNSlocal void FreePosixNetworkInterface(PosixNetworkInterface *intf)
 #if HAVE_IPV6
     if (intf->multicastSocket6 != -1) assert(close(intf->multicastSocket6) == 0);
 #endif
-    free(intf);
+
+    // Move interface to the RecentInterfaces list for a minute
+    intf->LastSeen = mDNSPlatformUTC();
+    intf->coreIntf.next = &gRecentInterfaces->coreIntf;
+    gRecentInterfaces = intf;
 }
 
 // Grab the first interface, deregister it, free it, and repeat until done.
@@ -643,6 +656,14 @@ mDNSlocal int SetupSocket(struct sockaddr *intfAddr, mDNSIPPort port, int interf
             #error This platform has no way to avoid address busy errors on multicast.
         #endif
         if (err < 0) { err = errno; perror("setsockopt - SO_REUSExxxx"); }
+
+        // Enable inbound packets on IFEF_AWDL interface.
+        // Only done for multicast sockets, since we don't expect unicast socket operations
+        // on the IFEF_AWDL interface. Operation is a no-op for other interface types.
+        #ifndef SO_RECV_ANYIF
+        #define SO_RECV_ANYIF   0x1104      /* unrestricted inbound processing */
+        #endif
+        if (setsockopt(*sktPtr, SOL_SOCKET, SO_RECV_ANYIF, &kOn, sizeof(kOn)) < 0) perror("setsockopt - SO_RECV_ANYIF");
     }
 
     // We want to receive destination addresses and interface identifiers.
@@ -978,6 +999,17 @@ mDNSlocal int SetupInterfaceList(mDNS *const m)
 
     // Clean up.
     if (intfList != NULL) free_ifi_info(intfList);
+
+    // Clean up any interfaces that have been hanging around on the RecentInterfaces list for more than a minute
+    PosixNetworkInterface **ri = &gRecentInterfaces;
+    const mDNSs32 utc = mDNSPlatformUTC();
+    while (*ri)
+    {
+        PosixNetworkInterface *pi = *ri;
+        if (utc - pi->LastSeen < 60) ri = (PosixNetworkInterface **)&pi->coreIntf.next;
+        else { *ri = (PosixNetworkInterface *)pi->coreIntf.next; free(pi); }
+    }
+
     return err;
 }
 
@@ -1318,9 +1350,15 @@ mDNSexport void mDNSPlatformClose(mDNS *const m)
 #endif
 }
 
+// This is used internally by InterfaceChangeCallback.
+// It's also exported so that the Standalone Responder (mDNSResponderPosix)
+// can call it in response to a SIGHUP (mainly for debugging purposes).
 mDNSexport mStatus mDNSPlatformPosixRefreshInterfaceList(mDNS *const m)
 {
     int err;
+    // This is a pretty heavyweight way to process interface changes --
+    // destroying the entire interface list and then making fresh one from scratch.
+    // We should make it like the OS X version, which leaves unchanged interfaces alone.
     ClearInterfaceList(m);
     err = SetupInterfaceList(m);
     return PosixErrorToStatus(err);

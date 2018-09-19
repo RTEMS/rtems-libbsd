@@ -1617,7 +1617,6 @@ int main(int argc, char **argv)
         err = RegisterService(&client, argv[opi+0], typ, dom, NULL, argv[opi+3], argc-(opi+4), argv+(opi+4), flags);
         break;
 
-
     case 'P':   if (argc < opi+6) goto Fail;
         err = DNSServiceCreateConnection(&client_pa);
         if (err) { fprintf(stderr, "DNSServiceCreateConnection returned %d\n", err); return(err); }
@@ -1781,7 +1780,12 @@ int main(int argc, char **argv)
     default: goto Fail;
     }
 
-    if (!client || err != kDNSServiceErr_NoError) { fprintf(stderr, "DNSService call failed %ld\n", (long int)err); return (-1); }
+    if (!client || err != kDNSServiceErr_NoError)
+    {
+        fprintf(stderr, "DNSService call failed %ld%s\n", (long int)err,
+            (err == kDNSServiceErr_ServiceNotRunning) ? " (Service Not Running)" : "");
+        return (-1);
+    }
     printtimestamp();
     printf("...STARTING...\n");
     HandleEvents();

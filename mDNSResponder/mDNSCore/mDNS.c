@@ -23,7 +23,7 @@
  * routines, or types (which may or may not be present on any given platform).
  */
 
-#include "DNSCommon.h"                  // Defines general DNS untility routines
+#include "DNSCommon.h"                  // Defines general DNS utility routines
 #include "uDNS.h"                       // Defines entry points into unicast-specific routines
 #include "nsec.h"
 #include "dnssec.h"
@@ -11170,7 +11170,7 @@ mDNSlocal mDNSBool CacheRecordRmvEventsForQuestion(mDNS *const m, DNSQuestion *q
 mDNSlocal void SuppressStatusChanged(mDNS *const m, DNSQuestion *q, DNSQuestion **restart)
 {
     // NOTE: CacheRecordRmvEventsForQuestion will not generate RMV events for queries that have non-zero
-    // LOddressAnswers. Hence it is important that we call CacheRecordRmvEventsForQuestion before
+    // LOAddressAnswers. Hence it is important that we call CacheRecordRmvEventsForQuestion before
     // LocalRecordRmvEventsForQuestion (which decrements LOAddressAnswers)
     if (q->SuppressQuery)
     {

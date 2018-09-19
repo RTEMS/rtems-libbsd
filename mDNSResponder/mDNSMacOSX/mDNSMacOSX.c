@@ -2064,6 +2064,9 @@ mDNSexport void myKQSocketCallBack(int s1, short filter, void *context)
         err = myrecvfrom(s1, &m->imsg, sizeof(m->imsg), (struct sockaddr *)&from, &fromlen, &destAddr, packetifname, &ttl);
         if (err < 0) break;
 
+        if ((destAddr.type == mDNSAddrType_IPv4 && (destAddr.ip.v4.b[0] & 0xF0) == 0xE0) ||
+            (destAddr.type == mDNSAddrType_IPv6 && (destAddr.ip.v6.b[0]         == 0xFF))) m->p->num_mcasts++;
+
         count++;
         if (from.ss_family == AF_INET)
         {
@@ -3010,8 +3013,11 @@ mDNSlocal mStatus SetupSocket(KQSocketSet *cp, const mDNSIPPort port, u_short sa
 #endif // SO_RECV_ANYIF
 
     // ... with a shared UDP port, if it's for multicast receiving
-    if (mDNSSameIPPort(port, MulticastDNSPort) || mDNSSameIPPort(port, NATPMPAnnouncementPort)) err = setsockopt(skt, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
-    if (err < 0) { errstr = "setsockopt - SO_REUSEPORT"; goto fail; }
+    if (mDNSSameIPPort(port, MulticastDNSPort) || mDNSSameIPPort(port, NATPMPAnnouncementPort))
+    {
+        err = setsockopt(skt, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+        if (err < 0) { errstr = "setsockopt - SO_REUSEPORT"; goto fail; }
+    }
 
     if (sa_family == AF_INET)
     {
@@ -6074,7 +6080,7 @@ mDNSlocal void SetupDDNSDomains(domainname *const fqdn, DNameListElem **RegDomai
     char buf[MAX_ESCAPED_DOMAIN_NAME];  // Max legal C-string name, including terminating NUL
     domainname d;
 
-    SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("mDNSResponder:mDNSPlatformSetDNSConfig"), NULL, NULL);
+    SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("mDNSResponder:SetupDDNSDomains"), NULL, NULL);
     if (!store)
     {
         LogMsg("SetupDDNSDomains: SCDynamicStoreCreate failed: %s", SCErrorString(SCError()));
@@ -6199,7 +6205,7 @@ mDNSexport mDNSBool mDNSPlatformSetDNSConfig(mDNS *const m, mDNSBool setservers,
     static mDNSu16 resolverGroupID = 0;
 
     // Need to set these here because we need to do this even if SCDynamicStoreCreate() or SCDynamicStoreCopyValue() below don't succeed
-    if (fqdn) fqdn->c[0]      = 0;
+    if (fqdn         ) fqdn->c[0]      = 0;
     if (RegDomains   ) *RegDomains     = NULL;
     if (BrowseDomains) *BrowseDomains  = NULL;
 
@@ -6271,7 +6277,8 @@ mDNSexport mDNSBool mDNSPlatformSetDNSConfig(mDNS *const m, mDNSBool setservers,
         else
         {
             LogInfo("mDNSPlatformSetDNSConfig: config->n_resolver = %d, generation %llu", config->n_resolver, config->generation);
-            if (m->p->LastConfigGeneration == config->generation)
+			// SameDomainName check below is to fix <rdar://problem/18059009> Dynamic DNS hostname changes not noticed
+            if (m->p->LastConfigGeneration == config->generation && (!fqdn || (SameDomainName(fqdn, &m->FQDN))))
             {
                 LogInfo("mDNSPlatformSetDNSConfig: generation number %llu same, not processing", config->generation);
                 dns_configuration_free(config);

@@ -96,6 +96,9 @@ extern "C" {
 #ifdef LIMITED_RESOURCES_TARGET
 // Don't support jumbo frames
 #define AbsoluteMaxDNSMessageData 	1500
+// By the time you add IPv6 header (40 bytes) UDP header (8 bytes) and DNS message header (12 bytes)
+// this makes 1560 which is 60 bytes over the standard Ethernet MTU. D'oh!
+
 // StandardAuthRDSize is 264 (256+8), which is large enough to hold a maximum-sized SRV record (6 + 256 bytes)
 #define MaximumRDSize				264
 // Don't cache anything

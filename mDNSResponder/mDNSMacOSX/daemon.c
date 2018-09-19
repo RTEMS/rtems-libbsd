@@ -2593,6 +2593,14 @@ mDNSlocal void KQWokenFlushBytes(int fd, __unused short filter, __unused void *c
     while (recv(fd, buffer, sizeof(buffer), MSG_DONTWAIT) > 0) continue;
 }
 
+mDNSlocal void SetLowWater(const KQSocketSet *const k, const int r)
+{
+    if (setsockopt(k->sktv4, SOL_SOCKET, SO_RCVLOWAT, &r, sizeof(r)) < 0)
+        LogMsg("SO_RCVLOWAT IPv4 %d error %d errno %d (%s)", k->sktv4, r, errno, strerror(errno));
+    if (setsockopt(k->sktv6, SOL_SOCKET, SO_RCVLOWAT, &r, sizeof(r)) < 0)
+        LogMsg("SO_RCVLOWAT IPv6 %d error %d errno %d (%s)", k->sktv6, r, errno, strerror(errno));
+}
+
 mDNSlocal void * KQueueLoop(void *m_param)
 {
     mDNS            *m = m_param;
@@ -2678,6 +2686,13 @@ mDNSlocal void * KQueueLoop(void *m_param)
         // 3. The timeout expires
         pthread_mutex_unlock(&PlatformStorage.BigMutex);
 
+        // If we woke up to receive a multicast, set low-water mark to dampen excessive wakeup rate
+        if (m->p->num_mcasts)
+        {
+            SetLowWater(&m->p->permanentsockets, 0x10000);
+            if (ticks > mDNSPlatformOneSecond / 8) ticks = mDNSPlatformOneSecond / 8;
+        }
+
 #if USE_SELECT_WITH_KQUEUEFD
         struct timeval timeout;
         timeout.tv_sec = ticks / mDNSPlatformOneSecond;
@@ -2704,6 +2719,13 @@ mDNSlocal void * KQueueLoop(void *m_param)
         // time we reclaimed the lock the other thread could have done something that
         // makes the event no longer valid. Now we have the lock, we call kevent again
         // and this time we can safely process the events it tells us about.
+
+        // If we changed UDP socket low-water mark, restore it, so we will be told about every packet
+        if (m->p->num_mcasts)
+        {
+            SetLowWater(&m->p->permanentsockets, 1);
+            m->p->num_mcasts = 0;
+        }
 
         static const struct timespec zero_timeout = { 0, 0 };
         int events_found;

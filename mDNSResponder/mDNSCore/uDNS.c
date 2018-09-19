@@ -1329,7 +1329,8 @@ mDNSlocal void tcpCallback(TCPSocket *sock, void *context, mDNSBool ConnectionEs
     else
     {
         long n;
-        if (tcpInfo->nread < 2)         // First read the two-byte length preceeding the DNS message
+        const mDNSBool Read_replylen = (tcpInfo->nread < 2);  // Do we need to read the replylen field first?
+        if (Read_replylen)         // First read the two-byte length preceeding the DNS message
         {
             mDNSu8 *lenptr = (mDNSu8 *)&tcpInfo->replylen;
             n = mDNSPlatformReadTCP(sock, lenptr + tcpInfo->nread, 2 - tcpInfo->nread, &closed);
@@ -1377,8 +1378,13 @@ mDNSlocal void tcpCallback(TCPSocket *sock, void *context, mDNSBool ConnectionEs
 
         if (n < 0)
         {
-            LogMsg("ERROR: tcpCallback - read returned %d", n);
-            err = mStatus_ConnFailed;
+            // If this is our only read for this invokation, and it fails, then that's bad.
+            // But if we did successfully read some or all of the replylen field this time through,
+            // and this is now our second read from the socket, then it's expected that sometimes
+            // there may be no more data present, and that's perfectly okay.
+            // Assuming failure of the second read is a problem is what caused this bug:
+            // <rdar://problem/15043194> mDNSResponder fails to read DNS over TCP packet correctly
+            if (!Read_replylen) { LogMsg("ERROR: tcpCallback - read returned %d", n); err = mStatus_ConnFailed; }
             goto exit;
         }
         else if (closed)

@@ -1260,7 +1260,7 @@ mDNSexport mStatus mDNSPlatformInit(mDNS *const m)
     mDNS_SetFQDN(m);
 #ifdef __rtems__
     if (err == mStatus_NoError) {
-        gAllocatedEventFDs = calloc(1, howmany(rtems_libio_number_iops, sizeof(fd_set) * 8));
+        gAllocatedEventFDs = calloc(howmany(rtems_libio_number_iops, sizeof(fd_set) * 8), sizeof(fd_set));
         if (gAllocatedEventFDs == NULL) err = mStatus_NoMemoryErr;
     }
     if (err == mStatus_NoError) err = pthread_mutexattr_init(&attr);

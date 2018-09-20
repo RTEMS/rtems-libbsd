@@ -915,6 +915,10 @@ mDNSlocal int SetupOneInterface(mDNS *const m, struct sockaddr *intfAddr, struct
     // If interface is a direct link, address record will be marked as kDNSRecordTypeKnownUnique
     // and skip the probe phase of the probe/announce packet sequence.
     intf->coreIntf.DirectLink = mDNSfalse;
+#ifdef DIRECTLINK_INTERFACE_NAME
+	if (strcmp(intfName, STRINGIFY(DIRECTLINK_INTERFACE_NAME)) == 0)
+		intf->coreIntf.DirectLink = mDNStrue;
+#endif
 
     // The interface is all ready to go, let's register it with the mDNS core.
     if (err == 0)

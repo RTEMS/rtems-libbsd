@@ -2474,10 +2474,9 @@ mDNSlocal mDNSBool AllowSleepNow(mDNS *const m, mDNSs32 now)
         }
 
         m->SleepState = SleepState_Sleeping;
-        // We used to clear our interface list to empty state here before going to sleep.
-        // The applications that try to connect to an external server during maintenance wakes, saw
-        // DNS resolution errors as we don't have any interfaces (most queries use SuppressUnusable
-        // flag). Thus, we don't remove our interfaces anymore on sleep.
+		// Clear our interface list to empty state, ready to go to sleep
+		// As a side effect of doing this, we'll also cancel any outstanding SPS Resolve calls that didn't complete
+        mDNSMacOSXNetworkChanged(m);
     }
 
     LogSPS("AllowSleepNow: %s(%lX) %s at %ld (%d ticks remaining)",

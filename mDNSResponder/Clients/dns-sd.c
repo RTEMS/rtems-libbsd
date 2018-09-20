@@ -1617,6 +1617,7 @@ int main(int argc, char **argv)
         err = RegisterService(&client, argv[opi+0], typ, dom, NULL, argv[opi+3], argc-(opi+4), argv+(opi+4), flags);
         break;
 
+
     case 'P':   if (argc < opi+6) goto Fail;
         err = DNSServiceCreateConnection(&client_pa);
         if (err) { fprintf(stderr, "DNSServiceCreateConnection returned %d\n", err); return(err); }
@@ -1631,7 +1632,7 @@ int main(int argc, char **argv)
     case 'C':   {
         uint16_t rrtype, rrclass;
         flags |= kDNSServiceFlagsReturnIntermediates;
-        if (operation == 'q') 
+        if (operation == 'q')
             flags |= kDNSServiceFlagsSuppressUnusable;
         if (argc < opi+1) 
             goto Fail;

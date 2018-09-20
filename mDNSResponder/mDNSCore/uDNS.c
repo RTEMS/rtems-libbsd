@@ -1880,6 +1880,8 @@ mDNSlocal mStatus GetZoneData_StartQuery(mDNS *const m, ZoneData *zd, mDNSu16 qt
     zd->question.ForceMCast          = mDNSfalse;
     zd->question.ReturnIntermed      = mDNStrue;
     zd->question.SuppressUnusable    = mDNSfalse;
+    zd->question.DenyOnCellInterface = mDNSfalse;
+    zd->question.DenyOnExpInterface  = mDNSfalse;
     zd->question.SearchListIndex     = 0;
     zd->question.AppendSearchDomains = 0;
     zd->question.RetryWithSearchDomains = mDNSfalse;
@@ -2567,6 +2569,8 @@ mDNSlocal void GetStaticHostname(mDNS *m)
     q->ForceMCast       = mDNSfalse;
     q->ReturnIntermed   = mDNStrue;
     q->SuppressUnusable = mDNSfalse;
+    q->DenyOnCellInterface = mDNSfalse;
+    q->DenyOnExpInterface  = mDNSfalse;
     q->SearchListIndex  = 0;
     q->AppendSearchDomains = 0;
     q->RetryWithSearchDomains = mDNSfalse;
@@ -4791,7 +4795,7 @@ mDNSexport void uDNS_CheckCurrentQuestion(mDNS *const m)
                     {
                         q->LocalSocket = mDNSPlatformUDPSocket(m, zeroIPPort);
                         if (q->LocalSocket)
-                            mDNSPlatformSetDelegatePID(q->LocalSocket, &q->qDNSServer->addr, q);
+                            mDNSPlatformSetuDNSSocktOpt(q->LocalSocket, &q->qDNSServer->addr, q);
                     }
                     if (!q->LocalSocket) err = mStatus_NoMemoryErr; // If failed to make socket (should be very rare), we'll try again next time
                     else err = mDNSSendDNSMessage(m, &m->omsg, end, q->qDNSServer->interface, q->LocalSocket, &q->qDNSServer->addr, q->qDNSServer->port, mDNSNULL, mDNSNULL, q->UseBackgroundTrafficClass);

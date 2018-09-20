@@ -1467,6 +1467,8 @@ mDNSexport void mDNS_SetupQuestion(DNSQuestion *const q, const mDNSInterfaceID I
     q->ForceMCast          = mDNSfalse;
     q->ReturnIntermed      = mDNSfalse;
     q->SuppressUnusable    = mDNSfalse;
+    q->DenyOnCellInterface = mDNSfalse;
+    q->DenyOnExpInterface  = mDNSfalse;
     q->SearchListIndex     = 0;
     q->AppendSearchDomains = 0;
     q->RetryWithSearchDomains = mDNSfalse;

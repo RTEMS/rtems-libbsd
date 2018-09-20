@@ -332,7 +332,7 @@ rtems_mdns_initialize(rtems_task_priority daemon_priority,
 
 	sc = rtems_task_create(rtems_build_name('m', 'D', 'N', 'S'),
 	    daemon_priority, 16 * 1024, RTEMS_DEFAULT_MODES,
-	    RTEMS_DEFAULT_ATTRIBUTES, &mdns_daemon_id);
+	    RTEMS_FLOATING_POINT, &mdns_daemon_id);
 	if (sc != RTEMS_SUCCESSFUL) {
 		return (RTEMS_UNSATISFIED);
 	}

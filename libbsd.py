@@ -1443,6 +1443,12 @@ class dev_net(builder.Module):
             ],
             mm.generator['source']()
         )
+        self.addRTEMSSourceFiles(
+            [
+                'sys/dev/mii/ksz8091rnb_50MHz.c',
+            ],
+            mm.generator['source']()
+        )
 
 #
 # Network Interface Controllers (NIC)

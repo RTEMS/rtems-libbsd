@@ -38,7 +38,7 @@ Please help by adding to it.
 
 === Tool Chain ===
 
-You need a tool chain for RTEMS based on at least RSB 5 April 2016 or later.
+You need a tool chain for RTEMS based on the latest RTEMS Source Builder (RSB).
 
 === Installation Overview ===
 
@@ -59,12 +59,13 @@ Refer to the README.waf for Waf building instructions.
 Make sure the submodules have been initialised and are updated. If a 'git
 status' says `rtems_waf` need updating run the submodule update command:
 
+ $ git submodule sync
  $ git submodule rtems_waf update
 
 === Board Support Package Requirements ===
 
-The RTEMS version must be at least 5.  The Board Support Package (BSP)
-should support the
+You need the latest RTEMS version to build the libbsd master.  The Board
+Support Package (BSP) must support the
 http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__extension.html[Interrupt Manager Extension]
 // The first underscores have to be masked to stop asciidoc interpreting them
 to make use of generic FreeBSD based drivers.
@@ -88,7 +89,7 @@ relevant.  The output sections may also contain other input sections.
 
 === Board Support Package Configuration and Build ===
 
-You need to configure RTEMS for the desired BSP and install it.  The BSP should
+You need to configure RTEMS for the desired BSP and install it.  The BSP must
 be configured with a disabled network stack.  The BSD library containing the
 new network stack is a separate package.  Using a BSP installation containing
 the old network stack may lead to confusion and unpredictable results.

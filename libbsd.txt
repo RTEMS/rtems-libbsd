@@ -189,48 +189,19 @@ initialize the BSD library:
 #include <assert.h>
 #include <sysexits.h>
 
-#include <machine/rtems-bsd-commands.h>
 #include <rtems/bsd/bsd.h>
-
-static void
-network_ifconfig_lo0(void)
-{
-	int exit_code;
-	char *lo0[] = {
-		"ifconfig",
-		"lo0",
-		"inet",
-		"127.0.0.1",
-		"netmask",
-		"255.255.255.0",
-		NULL
-	};
-	char *lo0_inet6[] = {
-		"ifconfig",
-		"lo0",
-		"inet6",
-		"::1",
-		"prefixlen",
-		"128",
-		NULL
-	};
-
-	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(lo0), lo0);
-	assert(exit_code == EX_OK);
-
-	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(lo0_inet6), lo0_inet6);
-	assert(exit_code == EX_OK);
-}
 
 void
 network_init(void)
 {
 	rtems_status_code sc;
+	int exit_code;
 
 	sc = rtems_bsd_initialize();
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	network_ifconfig_lo0();
+	exit_code = rtems_bsd_ifconfig_lo0();
+	assert(exit_code == EX_OK);
 }
 -------------------------------------------------------------------------------
 

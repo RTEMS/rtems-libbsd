@@ -70,23 +70,6 @@ http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__e
 // The first underscores have to be masked to stop asciidoc interpreting them
 to make use of generic FreeBSD based drivers.
 
-The linker command file of the BSP must contain the following section
-definitions:
-
--------------------------------------------------------------------------------
-.rtemsroset : {
-        KEEP (*(SORT(.rtemsroset.*)))
-}
-
-.rtemsrwset : {
-        KEEP (*(SORT(.rtemsrwset.*)))
-}
--------------------------------------------------------------------------------
-
-The first output section can be placed in read-only memory.  The second output
-section must be placed in read-write memory.  The output section name is not
-relevant.  The output sections may also contain other input sections.
-
 === Board Support Package Configuration and Build ===
 
 You need to configure RTEMS for the desired BSP and install it.  The BSP must

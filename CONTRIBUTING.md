@@ -112,12 +112,16 @@ direction.
 You can add more than one verbose option (-v) to the command line and get more
 detail and debug level information from the command.
 
-FreeBSD Version of Imported Files and Directories
--------------------------------------------------
+FreeBSD Baseline
+----------------
 
-* *, trunk, 2017-04-04, 642b174daddbd0efd9bb5f242c43f4ab4db6869f.
+Use
+```
+$ git log freebsd-org
+```
+to figure out the current FreeBSD baseline.
 
-How to import code from FreeBSD
+How to Import Code from FreeBSD
 -------------------------------
 
 * In case you import files from a special FreeBSD version, then update the list above.

@@ -112,6 +112,7 @@ _defaults = {
      ('freebsd/include',                        '**/*.h',                          ''),
      ('freebsd/sys/bsm',                        '**/*.h',                          'bsm'),
      ('freebsd/sys/cam',                        '**/*.h',                          'cam'),
+     ('freebsd/sys/contrib/ck/include',         '**/*.h',                          ''),
      ('freebsd/sys/crypto',                     '*/*.h',                           'openssl'),
      ('freebsd/sys/net',                        '**/*.h',                          'net'),
      ('freebsd/sys/net80211',                   '**/*.h',                          'net80211'),

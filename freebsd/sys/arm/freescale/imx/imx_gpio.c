@@ -124,6 +124,9 @@ struct imx51_gpio_softc {
 };
 
 static struct ofw_compat_data compat_data[] = {
+#ifdef __rtems__
+	{"fsl,imx7d-gpio",  1},
+#endif /* __rtems__ */
 	{"fsl,imx6q-gpio",  1},
 	{"fsl,imx53-gpio",  1},
 	{"fsl,imx51-gpio",  1},
@@ -508,7 +511,7 @@ gpio_pic_register_isrcs(struct imx51_gpio_softc *sc)
  */
 static void
 imx51_gpio_pin_configure(struct imx51_gpio_softc *sc, struct gpio_pin *pin,
-    unsigned int flags)
+    uint32_t flags)
 {
 	u_int newflags, pad;
 

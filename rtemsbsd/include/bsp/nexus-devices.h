@@ -127,6 +127,8 @@ SYSINIT_DRIVER_REFERENCE(simplebus, ofwbus);
 SYSINIT_DRIVER_REFERENCE(ffec, simplebus);
 SYSINIT_DRIVER_REFERENCE(ukphy, miibus);
 
+SYSINIT_DRIVER_REFERENCE(imx51_gpio, simplebus);
+
 #elif defined(LIBBSP_ARM_LPC24XX_BSP_H)
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(ohci, 0, 0, NULL);

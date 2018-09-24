@@ -25,8 +25,10 @@ typedef device_t gpio_get_bus_t(device_t dev);
 static __inline device_t GPIO_GET_BUS(device_t dev)
 {
 	kobjop_t _m;
+	device_t rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_get_bus);
-	return ((gpio_get_bus_t *) _m)(dev);
+	rc = ((gpio_get_bus_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_MAX() method */
@@ -37,8 +39,10 @@ typedef int gpio_pin_max_t(device_t dev, int *maxpin);
 static __inline int GPIO_PIN_MAX(device_t dev, int *maxpin)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_max);
-	return ((gpio_pin_max_t *) _m)(dev, maxpin);
+	rc = ((gpio_pin_max_t *) _m)(dev, maxpin);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_SET() method */
@@ -50,8 +54,10 @@ static __inline int GPIO_PIN_SET(device_t dev, uint32_t pin_num,
                                  uint32_t pin_value)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_set);
-	return ((gpio_pin_set_t *) _m)(dev, pin_num, pin_value);
+	rc = ((gpio_pin_set_t *) _m)(dev, pin_num, pin_value);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_GET() method */
@@ -63,8 +69,10 @@ static __inline int GPIO_PIN_GET(device_t dev, uint32_t pin_num,
                                  uint32_t *pin_value)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_get);
-	return ((gpio_pin_get_t *) _m)(dev, pin_num, pin_value);
+	rc = ((gpio_pin_get_t *) _m)(dev, pin_num, pin_value);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_TOGGLE() method */
@@ -75,8 +83,10 @@ typedef int gpio_pin_toggle_t(device_t dev, uint32_t pin_num);
 static __inline int GPIO_PIN_TOGGLE(device_t dev, uint32_t pin_num)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_toggle);
-	return ((gpio_pin_toggle_t *) _m)(dev, pin_num);
+	rc = ((gpio_pin_toggle_t *) _m)(dev, pin_num);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_GETCAPS() method */
@@ -88,8 +98,10 @@ static __inline int GPIO_PIN_GETCAPS(device_t dev, uint32_t pin_num,
                                      uint32_t *caps)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_getcaps);
-	return ((gpio_pin_getcaps_t *) _m)(dev, pin_num, caps);
+	rc = ((gpio_pin_getcaps_t *) _m)(dev, pin_num, caps);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_GETFLAGS() method */
@@ -102,8 +114,10 @@ static __inline int GPIO_PIN_GETFLAGS(device_t dev, uint32_t pin_num,
                                       uint32_t *flags)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_getflags);
-	return ((gpio_pin_getflags_t *) _m)(dev, pin_num, flags);
+	rc = ((gpio_pin_getflags_t *) _m)(dev, pin_num, flags);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_GETNAME() method */
@@ -114,8 +128,10 @@ typedef int gpio_pin_getname_t(device_t dev, uint32_t pin_num, char *name);
 static __inline int GPIO_PIN_GETNAME(device_t dev, uint32_t pin_num, char *name)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_getname);
-	return ((gpio_pin_getname_t *) _m)(dev, pin_num, name);
+	rc = ((gpio_pin_getname_t *) _m)(dev, pin_num, name);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_PIN_SETFLAGS() method */
@@ -127,8 +143,10 @@ static __inline int GPIO_PIN_SETFLAGS(device_t dev, uint32_t pin_num,
                                       uint32_t flags)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_setflags);
-	return ((gpio_pin_setflags_t *) _m)(dev, pin_num, flags);
+	rc = ((gpio_pin_setflags_t *) _m)(dev, pin_num, flags);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIO_MAP_GPIOS() method */
@@ -144,8 +162,45 @@ static __inline int GPIO_MAP_GPIOS(device_t bus, phandle_t dev,
                                    uint32_t *flags)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,gpio_map_gpios);
-	return ((gpio_map_gpios_t *) _m)(bus, dev, gparent, gcells, gpios, pin, flags);
+	rc = ((gpio_map_gpios_t *) _m)(bus, dev, gparent, gcells, gpios, pin, flags);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the GPIO_PIN_ACCESS_32() method */
+extern struct kobjop_desc gpio_pin_access_32_desc;
+/** @brief A function implementing the GPIO_PIN_ACCESS_32() method */
+typedef int gpio_pin_access_32_t(device_t dev, uint32_t first_pin,
+                                 uint32_t clear_pins, uint32_t change_pins,
+                                 uint32_t *orig_pins);
+
+static __inline int GPIO_PIN_ACCESS_32(device_t dev, uint32_t first_pin,
+                                       uint32_t clear_pins,
+                                       uint32_t change_pins,
+                                       uint32_t *orig_pins)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_access_32);
+	rc = ((gpio_pin_access_32_t *) _m)(dev, first_pin, clear_pins, change_pins, orig_pins);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the GPIO_PIN_CONFIG_32() method */
+extern struct kobjop_desc gpio_pin_config_32_desc;
+/** @brief A function implementing the GPIO_PIN_CONFIG_32() method */
+typedef int gpio_pin_config_32_t(device_t dev, uint32_t first_pin,
+                                 uint32_t num_pins, uint32_t *pin_flags);
+
+static __inline int GPIO_PIN_CONFIG_32(device_t dev, uint32_t first_pin,
+                                       uint32_t num_pins, uint32_t *pin_flags)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpio_pin_config_32);
+	rc = ((gpio_pin_config_32_t *) _m)(dev, first_pin, num_pins, pin_flags);
+	return (rc);
 }
 
 #endif /* _gpio_if_h_ */

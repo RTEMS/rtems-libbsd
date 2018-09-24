@@ -29,6 +29,13 @@ gpio_default_get_bus(void)
 }
 
 static int
+gpio_default_nosupport(void)
+{
+
+	return (EOPNOTSUPP);
+}
+
+static int
 gpio_default_map_gpios(device_t bus, phandle_t dev,
     phandle_t gparent, int gcells, pcell_t *gpios, uint32_t *pin,
     uint32_t *flags)
@@ -84,5 +91,13 @@ struct kobjop_desc gpio_pin_setflags_desc = {
 
 struct kobjop_desc gpio_map_gpios_desc = {
 	0, { &gpio_map_gpios_desc, (kobjop_t)gpio_default_map_gpios }
+};
+
+struct kobjop_desc gpio_pin_access_32_desc = {
+	0, { &gpio_pin_access_32_desc, (kobjop_t)gpio_default_nosupport }
+};
+
+struct kobjop_desc gpio_pin_config_32_desc = {
+	0, { &gpio_pin_config_32_desc, (kobjop_t)gpio_default_nosupport }
 };
 

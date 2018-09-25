@@ -326,7 +326,15 @@ rtems_bsd_timeout_init_late(void *unused)
 	rtems_status_code sc;
 	rtems_id id;
 
-	(void) unused;
+	(void)unused;
+
+	/*
+	 * Giant unlock moved from mi_startup() to here.  We have to unlock the
+	 * Giant lock earlier, since otherwise deadlocks with non-mpsafe
+	 * callouts may occur.
+	 */
+	mtx_assert(&Giant, MA_OWNED | MA_NOTRECURSED);
+	mtx_unlock(&Giant);
 
 	sc = rtems_timer_create(rtems_build_name('_', 'C', 'L', 'O'), &id);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
@@ -338,7 +346,7 @@ rtems_bsd_timeout_init_late(void *unused)
 SYSINIT(rtems_bsd_timeout_early, SI_SUB_VM, SI_ORDER_FIRST,
     rtems_bsd_timeout_init_early, NULL);
 
-SYSINIT(rtems_bsd_timeout_late, SI_SUB_LAST, SI_ORDER_FIRST,
+SYSINIT(rtems_bsd_timeout_late, SI_SUB_KICK_SCHEDULER, SI_ORDER_FIRST,
     rtems_bsd_timeout_init_late, NULL);
 
 static void

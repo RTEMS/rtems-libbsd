@@ -350,8 +350,12 @@ restart:
 
 	TSEXIT();	/* Here so we don't overlap with start_init. */
 
+#ifndef __rtems__
 	mtx_assert(&Giant, MA_OWNED | MA_NOTRECURSED);
 	mtx_unlock(&Giant);
+#else /* __rtems__ */
+	/* Giant is unlocked in rtems_bsd_timeout_init_late() */
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 	/*

@@ -75,22 +75,17 @@ static rtems_status_code
 media_listener(rtems_media_event event, rtems_media_state state,
     const char *src, const char *dest, void *arg)
 {
+	if (dest == NULL) {
+		dest = "NULL";
+	}
+
 	printf(
-		"media listener: event = %s, state = %s, src = %s",
+		"media listener: event = %s, state = %s, src = %s, dest = %s\n",
 		rtems_media_event_description(event),
 		rtems_media_state_description(state),
-		src
+		src,
+		dest
 	);
-
-	if (dest != NULL) {
-		printf(", dest = %s", dest);
-	}
-
-	if (arg != NULL) {
-		printf(", arg = %p\n", arg);
-	}
-
-	printf("\n");
 
 	if (event == RTEMS_MEDIA_EVENT_MOUNT && state == RTEMS_MEDIA_STATE_SUCCESS) {
 		char name[256];

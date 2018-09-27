@@ -59,7 +59,11 @@ __FBSDID("$FreeBSD$");
 #ifdef __arm__
 #include <machine/intr.h>
 
+#ifndef __rtems__
 #include <arm/freescale/imx/imx_ccmvar.h>
+#else /* __rtems__ */
+uint32_t imx_ccm_sdhci_hz(void);
+#endif /* __rtems__ */
 #endif
 
 #ifdef __powerpc__

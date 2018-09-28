@@ -67,7 +67,11 @@ uint32_t imx_ccm_sdhci_hz(void);
 #endif
 
 #ifdef __powerpc__
+#ifndef __rtems__
 #include <powerpc/mpc85xx/mpc85xx.h>
+#else /* __rtems__ */
+uint32_t mpc85xx_get_system_clock(void);
+#endif /* __rtems__ */
 #endif
 
 #include <dev/gpio/gpiobusvar.h>

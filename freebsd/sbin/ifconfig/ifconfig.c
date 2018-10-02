@@ -386,7 +386,7 @@ mainwrapper(int argc, char *argv[])
 	gre_ctor();
 	group_ctor();
 	ifmedia_ctor();
-#ifdef RTEMS_BSD_MODULE_IEEE80211
+#ifdef RTEMS_BSD_MODULE_NET80211
 	ieee80211_ctor();
 #endif
 #ifdef RTEMS_BSD_MODULE_NETINET6

@@ -666,6 +666,7 @@ mDNSlocal int SetupSocket(struct sockaddr *intfAddr, mDNSIPPort port, int interf
         #endif
         if (err < 0) { err = errno; perror("setsockopt - SO_REUSExxxx"); }
 
+#ifndef __rtems__
         // Enable inbound packets on IFEF_AWDL interface.
         // Only done for multicast sockets, since we don't expect unicast socket operations
         // on the IFEF_AWDL interface. Operation is a no-op for other interface types.
@@ -673,6 +674,7 @@ mDNSlocal int SetupSocket(struct sockaddr *intfAddr, mDNSIPPort port, int interf
         #define SO_RECV_ANYIF   0x1104      /* unrestricted inbound processing */
         #endif
         if (setsockopt(*sktPtr, SOL_SOCKET, SO_RECV_ANYIF, &kOn, sizeof(kOn)) < 0) perror("setsockopt - SO_RECV_ANYIF");
+#endif /* __rtems__ */
     }
 
     // We want to receive destination addresses and interface identifiers.

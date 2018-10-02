@@ -56,11 +56,6 @@ __weak_reference(_rtems_telnetd_stack_size, rtems_telnetd_stack_size);
 int _rtems_telnetd_stack_size;
 
 /*
- * Condefs always defines this variable.
- */
-extern int rtems_telnetd_maximum_ptys;
-
-/*
  * By default no login.
  */
 static bool telnet_login;
@@ -135,7 +130,7 @@ telnetd_service(rtems_bsd_rc_conf* rc_conf)
               fprintf(stderr, "error: telnet: invalid connections countt\n");
             }
             else {
-              rtems_telnetd_maximum_ptys = conns;
+              config.client_maximum = conns;
             }
             break;
           case 'P':
@@ -160,7 +155,7 @@ telnetd_service(rtems_bsd_rc_conf* rc_conf)
       }
       if (verbose) {
         printf("telnetd: conns:%lu pri:%lu login:%s\n",
-               rtems_telnetd_maximum_ptys, config.priority,
+               config.client_maximum, config.priority,
                telnet_login == NULL ? "no" : "yes");
       }
       sc = rtems_telnetd_start(&config);

@@ -88,6 +88,15 @@
 #ifdef LIBBSP_ARM_ATSAM_BSP_H
 #include <bsp/pin-config.h>
 #endif /* LIBBSP_ARM_ATSAM_BSP_H */
+#undef	USB_BUS_SPIN_LOCK
+#undef	USB_BUS_SPIN_UNLOCK
+#define	USB_BUS_SPIN_LOCK(_b) \
+    do { \
+	rtems_interrupt_level usb_bus_spin_lock; \
+	rtems_interrupt_disable(usb_bus_spin_lock)
+#define	USB_BUS_SPIN_UNLOCK(_b) \
+	rtems_interrupt_enable(usb_bus_spin_lock); \
+    } while (0)
 #endif /* __rtems__ */
 
 #define	SAF1761_OTG_BUS2SC(bus) \
@@ -1668,6 +1677,7 @@ saf1761_otg_interrupt(void *arg)
 {
 	struct saf1761_otg_softc *sc = arg;
 	uint32_t status;
+	bool xfer_complete;
 
 	USB_BUS_LOCK(&sc->sc_bus);
 	USB_BUS_SPIN_LOCK(&sc->sc_bus);
@@ -1735,13 +1745,16 @@ saf1761_otg_interrupt(void *arg)
 		}
 	}
 
-	if (sc->sc_xfer_complete != 0) {
+	xfer_complete = (sc->sc_xfer_complete != 0);
+	if (xfer_complete)
 		sc->sc_xfer_complete = 0;
 
+	USB_BUS_SPIN_UNLOCK(&sc->sc_bus);
+
+	if (xfer_complete)
 		/* complete FIFOs, if any */
 		saf1761_otg_interrupt_complete_locked(sc);
-	}
-	USB_BUS_SPIN_UNLOCK(&sc->sc_bus);
+
 	USB_BUS_UNLOCK(&sc->sc_bus);
 }
 
@@ -2232,10 +2245,10 @@ saf1761_otg_device_done(struct usb_xfer *xfer, usb_error_t error)
 			saf1761_host_channel_free(sc, td);
 	}
 
+	USB_BUS_SPIN_UNLOCK(&sc->sc_bus);
+
 	/* dequeue transfer and start next transfer */
 	usbd_transfer_done(xfer, error);
-
-	USB_BUS_SPIN_UNLOCK(&sc->sc_bus);
 }
 
 static void
@@ -2600,8 +2613,8 @@ saf1761_otg_do_poll(struct usb_bus *bus)
 	USB_BUS_LOCK(&sc->sc_bus);
 	USB_BUS_SPIN_LOCK(&sc->sc_bus);
 	saf1761_otg_interrupt_poll_locked(sc);
-	saf1761_otg_interrupt_complete_locked(sc);
 	USB_BUS_SPIN_UNLOCK(&sc->sc_bus);
+	saf1761_otg_interrupt_complete_locked(sc);
 	USB_BUS_UNLOCK(&sc->sc_bus);
 }
 

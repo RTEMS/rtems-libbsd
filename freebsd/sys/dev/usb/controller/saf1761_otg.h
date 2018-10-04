@@ -32,6 +32,9 @@
 #ifndef _SAF1761_OTG_H_
 #define	_SAF1761_OTG_H_
 
+#ifdef __rtems__
+#include <rtems/irq-extension.h>
+#endif /* __rtems__ */
 #define	SOTG_MAX_DEVICES MIN(USB_MAX_DEVICES, 32)
 #define	SOTG_FS_MAX_PACKET_SIZE 64
 #define	SOTG_HS_MAX_PACKET_SIZE 512
@@ -163,6 +166,9 @@ struct saf1761_otg_softc {
 	uint8_t	sc_hub_idata[1];
 
 	struct saf1761_otg_flags sc_flags;
+#ifdef __rtems__
+	rtems_interrupt_server_request sc_irq_srv_req;
+#endif /* __rtems__ */
 };
 
 /* prototypes */

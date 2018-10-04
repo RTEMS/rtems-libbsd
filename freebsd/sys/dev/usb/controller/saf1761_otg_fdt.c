@@ -135,6 +135,19 @@ saf1761_otg_fdt_probe(device_t dev)
 	return (0);
 }
 
+#ifdef __rtems__
+static void
+saf1761_otg_filter_interrupt_wrapper(void *arg)
+{
+	struct saf1761_otg_softc *sc = arg;
+	int status;
+
+	status = saf1761_otg_filter_interrupt(sc);
+	if ((status & FILTER_SCHEDULE_THREAD) != 0) {
+		rtems_interrupt_server_request_submit(&sc->sc_irq_srv_req);
+	}
+}
+#endif /* __rtems__ */
 static int
 saf1761_otg_fdt_attach(device_t dev)
 {
@@ -142,6 +155,9 @@ saf1761_otg_fdt_attach(device_t dev)
 	char param[24];
 	int err;
 	int rid;
+#ifdef __rtems__
+	rtems_status_code status;
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 	/* get configuration from FDT */
@@ -243,8 +259,20 @@ saf1761_otg_fdt_attach(device_t dev)
 	PIO_EnableIt(&saf_irq);
 #endif /* LIBBSP_ARM_ATSAM_BSP_H */
 #endif /* __rtems__ */
+#ifndef __rtems__
 	err = bus_setup_intr(dev, sc->sc_irq_res, INTR_TYPE_TTY | INTR_MPSAFE,
 	    &saf1761_otg_filter_interrupt, &saf1761_otg_interrupt, sc, &sc->sc_intr_hdl);
+#else /* __rtems__ */
+	rtems_interrupt_server_request_initialize(
+	    RTEMS_INTERRUPT_SERVER_DEFAULT, &sc->sc_irq_srv_req,
+	    saf1761_otg_interrupt, sc);
+	rtems_interrupt_server_request_set_vector(&sc->sc_irq_srv_req,
+	    rman_get_start(sc->sc_irq_res));
+	status = rtems_interrupt_handler_install(
+	    rman_get_start(sc->sc_irq_res), device_get_nameunit(dev),
+	    RTEMS_INTERRUPT_SHARED, saf1761_otg_filter_interrupt_wrapper, sc);
+	err = (status == RTEMS_SUCCESSFUL) ? 0 : EINVAL;
+#endif /* __rtems__ */
 	if (err) {
 		sc->sc_intr_hdl = NULL;
 		goto error;

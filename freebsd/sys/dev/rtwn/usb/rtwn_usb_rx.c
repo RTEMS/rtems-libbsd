@@ -128,7 +128,11 @@ rtwn_rx_copy_to_mbuf(struct rtwn_softc *sc, struct rtwn_rx_stat_common *stat,
 	if (rtwn_rx_check_pre_alloc(sc, stat) != 0)
 		goto fail;
 
+#ifndef __rtems__
 	m = m_get2(totlen, M_NOWAIT, MT_DATA, M_PKTHDR);
+#else /* __rtems__ */
+	m = m_get2(totlen + ETHER_ALIGN, M_NOWAIT, MT_DATA, M_PKTHDR);
+#endif /* __rtems__ */
 	if (__predict_false(m == NULL)) {
 		device_printf(sc->sc_dev, "%s: could not allocate RX mbuf\n",
 		    __func__);
@@ -136,6 +140,9 @@ rtwn_rx_copy_to_mbuf(struct rtwn_softc *sc, struct rtwn_rx_stat_common *stat,
 	}
 
 	/* Finalize mbuf. */
+#ifdef __rtems__
+	m->m_data += ETHER_ALIGN;
+#endif /* __rtems__ */
 	memcpy(mtod(m, uint8_t *), (uint8_t *)stat, totlen);
 	m->m_pkthdr.len = m->m_len = totlen;
 

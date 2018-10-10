@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2014, 2016 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -46,12 +46,20 @@
 
 #include <rtems/bsd/bsd.h>
 
-static int syslog_priority = LOG_NOTICE;
+static int syslog_mask = LOG_UPTO(LOG_NOTICE);
+
+static bool
+syslog_do_log(int priority)
+{
+
+	return (((LOG_MASK(LOG_PRI(priority)) & syslog_mask)) != 0);
+}
 
 void
 syslog(int priority, const char *format, ...)
 {
-	if (priority <= syslog_priority) {
+
+	if (syslog_do_log(priority)) {
 		va_list ap;
 
 		va_start(ap, format);
@@ -63,7 +71,8 @@ syslog(int priority, const char *format, ...)
 void
 vsyslog(int priority, const char *format, va_list ap)
 {
-	if (priority <= syslog_priority) {
+
+	if (syslog_do_log(priority)) {
 		rtems_bsd_vprintf(priority, format, ap);
 	}
 }
@@ -83,20 +92,31 @@ closelog(void)
 int
 setlogmask(int mask)
 {
-	/* TODO */
+
+	/*
+	 * Ignore settings via this function since it has a process-wide scope.
+	 * System services (a DHCP client daemon for example) may set this and
+	 * assume that they run in their own environment (process).  This is
+	 * not the case in RTEMS.  The syslog mask can be set via
+	 * rtems_bsd_setlogpriority().
+	 */
+	return (0);
 }
 
 int
-rtems_bsd_setlogpriority(const char* priority)
+rtems_bsd_setlogpriority(const char *priority)
 {
-	CODE* c = &prioritynames[0];
+	const CODE *c;
+
+	c = &prioritynames[0];
 	while (c->c_name != NULL) {
 		if (strcasecmp(c->c_name, priority) == 0) {
-			syslog_priority = c->c_val;
-			return 0;
+			syslog_mask = LOG_UPTO(c->c_val);
+			return (0);
 		}
 		++c;
 	}
+
 	errno = ENOENT;
-	return -1;
+	return (-1);
 }

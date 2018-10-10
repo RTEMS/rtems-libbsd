@@ -75,6 +75,7 @@ __FBSDID("$FreeBSD$");
 #include <getopt.h>
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
+#include <rtems/libio_.h>
 #endif /* __rtems__ */
 #include <sys/param.h>		/* NB: we rely on this for <sys/types.h> */
 #include <sys/capsicum.h>
@@ -976,13 +977,23 @@ main(int argc, char *const *argv)
 	almost_done = 0;
 	while (!finish_up) {
 		struct timeval now, timeout;
+#ifndef __rtems__
 		fd_set rfds;
+#else /* __rtems__ */
+		fd_set big_enough_rfds[howmany(rtems_libio_number_iops,
+		    sizeof(fd_set) * 8)];
+#define	rfds (*(fd_set *)(&big_enough_rfds[0]))
+#endif /* __rtems__ */
 		int cc, n;
 
 		check_status();
+#ifndef __rtems__
 		if ((unsigned)srecv >= FD_SETSIZE)
 			errx(EX_OSERR, "descriptor too large");
 		FD_ZERO(&rfds);
+#else /* __rtems__ */
+		memset(big_enough_rfds, 0, sizeof(big_enough_rfds));
+#endif /* __rtems__ */
 		FD_SET(srecv, &rfds);
 		(void)gettimeofday(&now, NULL);
 		timeout.tv_sec = last.tv_sec + intvl.tv_sec - now.tv_sec;

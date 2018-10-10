@@ -41,6 +41,7 @@
 
 #include <sys/types.h>
 #include <sys/lock.h>
+#include <sys/reent.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
 
@@ -66,13 +67,24 @@ static const char * const log_priorities[] = {
 static struct _Mutex_Control vprintf_mtx = _MUTEX_INITIALIZER;
 
 static void
-vprintf_putchar(int c, void *arg)
+default_putchar(int c)
+{
+
+	/*
+	 * Output to the global stdout FILE object and not to the thread-local
+	 * stdout FILE object.
+	 */
+	fputc(c, &__sf[1]);
+}
+
+static void
+kvprintf_putchar(int c, void *arg)
 {
 	int *last;
 
 	last = arg;
 	*last = c;
-	putchar(c);
+	default_putchar(c);
 }
 
 static int
@@ -89,19 +101,19 @@ default_vprintf_handler(int level, const char *fmt, va_list ap)
 		p = log_priorities[LOG_PRI(level)];
 
 		while (*p != '\0') {
-			putchar(*p);
+			default_putchar(*p);
 			++p;
 		}
 
-		putchar(':');
-		putchar(' ');
+		default_putchar(':');
+		default_putchar(' ');
 	}
 
 	last = -1;
-	n = kvprintf(fmt, vprintf_putchar, &last, 10, ap);
+	n = kvprintf(fmt, kvprintf_putchar, &last, 10, ap);
 
 	if (level != LOG_PRINTF && last != '\n') {
-		putchar('\n');
+		default_putchar('\n');
 	}
 
 	VPRINTF_UNLOCK();

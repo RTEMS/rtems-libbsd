@@ -141,14 +141,14 @@ default_network_dhcpcd(void)
 	    S_IRWXU | S_IRWXG | S_IRWXO);
 	assert(fd >= 0);
 
-	n = write(fd, default_cfg, sizeof(default_cfg));
-	assert(n == (ssize_t) sizeof(default_cfg));
+	n = write(fd, default_cfg, sizeof(default_cfg) - 1);
+	assert(n == (ssize_t) sizeof(default_cfg) - 1);
 
 #ifdef DEFAULT_NETWORK_DHCPCD_NO_DHCP_DISCOVERY
 	static const char nodhcp_cfg[] = "nodhcp\nnodhcp6\n";
 
-	n = write(fd, nodhcp_cfg, sizeof(nodhcp_cfg));
-	assert(n == (ssize_t) sizeof(nodhcp_cfg));
+	n = write(fd, nodhcp_cfg, sizeof(nodhcp_cfg) - 1);
+	assert(n == (ssize_t) sizeof(nodhcp_cfg) - 1);
 #endif
 
 	rv = close(fd);

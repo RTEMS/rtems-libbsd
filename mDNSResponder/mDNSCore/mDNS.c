@@ -14475,7 +14475,11 @@ mDNSlocal mStatus mDNS_InitStorage(mDNS *const m, mDNS_PlatformSupport *const p,
     m->WABBrowseQueriesCount    = 0;
     m->WABLBrowseQueriesCount   = 0;
     m->WABRegQueriesCount       = 0;
+#ifndef __rtems__
     m->AutoTargetServices       = 0;
+#else /* __rtems__ */
+    m->AutoTargetServices       = 1;
+#endif /* __rtems__ */
 
 #if BONJOUR_ON_DEMAND
     m->NumAllInterfaceRecords   = 0;

@@ -448,6 +448,15 @@ mDNSexport mDNSBool mDNSPlatformSetDNSConfig(mDNSBool setservers, mDNSBool setse
     (void) RegDomains;
     (void) BrowseDomains;
     (void) ackConfig;
+#ifdef __rtems__
+    /*
+     * Copied from mDNSMacOSX/mDNSMacOSX.c to prevent use of uninitialized
+     * stack variables.
+     */
+    if (fqdn         ) fqdn->c[0]      = 0;
+    if (RegDomains   ) *RegDomains     = NULL;
+    if (BrowseDomains) *BrowseDomains  = NULL;
+#endif /* __rtems__ */
 
     return mDNStrue;
 }

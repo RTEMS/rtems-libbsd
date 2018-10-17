@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -34,7 +34,8 @@
  * with something like this:
  *
  * pppd nodetach noauth 192.168.100.11:192.168.100.70 proxyarp 115200 dump \
- *   local nocrtscts debug mtu 296 mru 296 nolock ms-dns 192.168.96.1 /dev/ttyS0
+ *   local nocrtscts debug mtu 296 mru 296 nolock ms-dns 192.168.96.1 novj \
+ *   /dev/ttyS0
  *
  * Make sure IP forwarding is enabled and check the firewall settings if you
  * want to access the internet.

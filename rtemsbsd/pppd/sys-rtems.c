@@ -880,6 +880,7 @@ sifaddr(
     struct ifaliasreq ifra;
     struct ifreq ifr;
 
+    BZERO(&ifra, sizeof(ifra));
     strlcpy(ifra.ifra_name, ifname, sizeof(ifra.ifra_name));
     SET_SA_FAMILY(ifra.ifra_addr, AF_INET);
     ((struct sockaddr_in *) &ifra.ifra_addr)->sin_addr.s_addr = o;
@@ -888,8 +889,7 @@ sifaddr(
     if (m != 0) {
 	SET_SA_FAMILY(ifra.ifra_mask, AF_INET);
 	((struct sockaddr_in *) &ifra.ifra_mask)->sin_addr.s_addr = m;
-    } else
-	BZERO(&ifra.ifra_mask, sizeof(ifra.ifra_mask));
+    }
     BZERO(&ifr, sizeof(ifr));
     strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
     if (ioctl(sockfd, SIOCDIFADDR, (caddr_t) &ifr) < 0) {
@@ -920,12 +920,12 @@ cifaddr(
     struct ifaliasreq ifra;
 
     ifaddrs[0] = 0;
+    BZERO(&ifra, sizeof(ifra));
     strlcpy(ifra.ifra_name, ifname, sizeof(ifra.ifra_name));
     SET_SA_FAMILY(ifra.ifra_addr, AF_INET);
     ((struct sockaddr_in *) &ifra.ifra_addr)->sin_addr.s_addr = o;
     SET_SA_FAMILY(ifra.ifra_broadaddr, AF_INET);
     ((struct sockaddr_in *) &ifra.ifra_broadaddr)->sin_addr.s_addr = h;
-    BZERO(&ifra.ifra_mask, sizeof(ifra.ifra_mask));
     if (ioctl(sockfd, SIOCDIFADDR, (caddr_t) &ifra) < 0) {
 	if (errno != EADDRNOTAVAIL)
 	    warn("Couldn't delete interface address: %m");

@@ -1298,8 +1298,6 @@
 #define	gif_hashinit _bsd_gif_hashinit
 #define	gif_input _bsd_gif_input
 #define	gif_output _bsd_gif_output
-#define	global_epoch _bsd_global_epoch
-#define	global_epoch_preempt _bsd_global_epoch_preempt
 #define	gpio_alloc_intr_resource _bsd_gpio_alloc_intr_resource
 #define	gpiobus_acquire_pin _bsd_gpiobus_acquire_pin
 #define	gpiobus_alloc_ivars _bsd_gpiobus_alloc_ivars
@@ -2905,8 +2903,6 @@
 #define	nd6_timer_ch _bsd_nd6_timer_ch
 #define	nd_defrouter _bsd_nd_defrouter
 #define	nd_prefix _bsd_nd_prefix
-#define	net_epoch _bsd_net_epoch
-#define	net_epoch_preempt _bsd_net_epoch_preempt
 #define	netisr_clearqdrops _bsd_netisr_clearqdrops
 #define	netisr_dispatch _bsd_netisr_dispatch
 #define	netisr_dispatch_src _bsd_netisr_dispatch_src

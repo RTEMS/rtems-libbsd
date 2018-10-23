@@ -47,6 +47,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/rwlock.h>
 #include <sys/endian.h>
 #include <sys/limits.h>
+#include <sys/mutex.h>
 
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/sha1.h>
@@ -767,6 +768,7 @@ swcr_newsession(device_t dev, crypto_session_t cses, struct cryptoini *cri)
 		return EINVAL;
 
 	ses = crypto_get_driver_session(cses);
+	mtx_init(&ses->swcr_lock, "swcr session lock", NULL, MTX_DEF);
 
 	for (i = 0; cri != NULL && i < nitems(ses->swcr_algorithms); i++) {
 		swd = &ses->swcr_algorithms[i];
@@ -1024,6 +1026,7 @@ swcr_freesession(device_t dev, crypto_session_t cses)
 
 	ses = crypto_get_driver_session(cses);
 
+	mtx_destroy(&ses->swcr_lock);
 	for (i = 0; i < nitems(ses->swcr_algorithms); i++) {
 		swd = &ses->swcr_algorithms[i];
 
@@ -1111,7 +1114,7 @@ swcr_freesession(device_t dev, crypto_session_t cses)
 static int
 swcr_process(device_t dev, struct cryptop *crp, int hint)
 {
-	struct swcr_session *ses;
+	struct swcr_session *ses = NULL;
 	struct cryptodesc *crd;
 	struct swcr_data *sw;
 	size_t i;
@@ -1126,6 +1129,7 @@ swcr_process(device_t dev, struct cryptop *crp, int hint)
 	}
 
 	ses = crypto_get_driver_session(crp->crp_session);
+	mtx_lock(&ses->swcr_lock);
 
 	/* Go through crypto descriptors, processing as we go */
 	for (crd = crp->crp_desc; crd; crd = crd->crd_next) {
@@ -1215,6 +1219,8 @@ swcr_process(device_t dev, struct cryptop *crp, int hint)
 	}
 
 done:
+	if (ses)
+		mtx_unlock(&ses->swcr_lock);
 	crypto_done(crp);
 	return 0;
 }

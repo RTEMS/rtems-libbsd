@@ -86,6 +86,7 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_pageout.h>
 #include <vm/vm_param.h>
 #include <vm/vm_phys.h>
+#include <vm/vm_pagequeue.h>
 #include <vm/vm_map.h>
 #include <vm/vm_kern.h>
 #include <vm/vm_extern.h>
@@ -2550,6 +2551,7 @@ uma_zalloc_arg(uma_zone_t zone, void *udata, int flags)
 	 * the current cache; when we re-acquire the critical section, we
 	 * must detect and handle migration if it has occurred.
 	 */
+zalloc_restart:
 	critical_enter();
 	cpu = curcpu;
 	cache = &zone->uz_cpu[cpu];
@@ -2611,9 +2613,11 @@ zalloc_start:
 		bucket_free(zone, bucket, udata);
 
 #ifndef __rtems__
-	if (zone->uz_flags & UMA_ZONE_NUMA)
+	if (zone->uz_flags & UMA_ZONE_NUMA) {
 		domain = PCPU_GET(domain);
-	else
+		if (VM_DOMAIN_EMPTY(domain))
+			domain = UMA_ANYDOMAIN;
+	} else
 #endif /* __rtems__ */
 		domain = UMA_ANYDOMAIN;
 
@@ -2692,15 +2696,21 @@ zalloc_start:
 		 * the memory directly.
 		 */
 #ifndef __rtems__
-		if (cache->uc_allocbucket != NULL ||
-		    (zone->uz_flags & UMA_ZONE_NUMA &&
-		    domain != PCPU_GET(domain)))
+		if (cache->uc_allocbucket == NULL &&
+		    ((zone->uz_flags & UMA_ZONE_NUMA) == 0 ||
+		    domain == PCPU_GET(domain))) {
 #else /* __rtems__ */
-		if (cache->uc_allocbucket != NULL)
+		if (cache->uc_allocbucket == NULL) {
 #endif /* __rtems__ */
-			LIST_INSERT_HEAD(&zdom->uzd_buckets, bucket, ub_link);
-		else
 			cache->uc_allocbucket = bucket;
+		} else if ((zone->uz_flags & UMA_ZONE_NOBUCKETCACHE) != 0) {
+			critical_exit();
+			ZONE_UNLOCK(zone);
+			bucket_drain(zone, bucket);
+			bucket_free(zone, bucket, udata);
+			goto zalloc_restart;
+		} else
+			LIST_INSERT_HEAD(&zdom->uzd_buckets, bucket, ub_link);
 		ZONE_UNLOCK(zone);
 		goto zalloc_start;
 	}
@@ -2765,8 +2775,10 @@ keg_first_slab(uma_keg_t keg, int domain, int rr)
 			LIST_INSERT_HEAD(&dom->ud_part_slab, slab, us_link);
 			return (slab);
 		}
+#ifndef __rtems__
 		if (rr)
 			domain = (domain + 1) % vm_ndomains;
+#endif /* __rtems__ */
 	} while (domain != start);
 
 	return (NULL);
@@ -2790,17 +2802,26 @@ keg_fetch_slab(uma_keg_t keg, uma_zone_t zone, int rdomain, int flags)
 	 * Round-robin for non first-touch zones when there is more than one
 	 * domain.
 	 */
+#ifndef __rtems__
 	if (vm_ndomains == 1)
 		rdomain = 0;
 	rr = rdomain == UMA_ANYDOMAIN;
 	if (rr) {
-		keg->uk_cursor = (keg->uk_cursor + 1) % vm_ndomains;
+		start = keg->uk_cursor;
+		do {
+			keg->uk_cursor = (keg->uk_cursor + 1) % vm_ndomains;
+			domain = keg->uk_cursor;
+		} while (VM_DOMAIN_EMPTY(domain) && domain != start);
 		domain = start = keg->uk_cursor;
 		/* Only block on the second pass. */
 		if ((flags & (M_WAITOK | M_NOVM)) == M_WAITOK)
 			allocflags = (allocflags & ~M_WAITOK) | M_NOWAIT;
 	} else
 		domain = start = rdomain;
+#else /* __rtems__ */
+	rr = 1;
+	domain = start = keg->uk_cursor;
+#endif /* __rtems__ */
 
 again:
 	do {
@@ -2845,10 +2866,13 @@ again:
 			LIST_INSERT_HEAD(&dom->ud_part_slab, slab, us_link);
 			return (slab);
 		}
+#ifndef __rtems__
 		if (rr) {
-			keg->uk_cursor = (keg->uk_cursor + 1) % vm_ndomains;
-			domain = keg->uk_cursor;
+			do {
+				domain = (domain + 1) % vm_ndomains;
+			} while (VM_DOMAIN_EMPTY(domain) && domain != start);
 		}
+#endif /* __rtems__ */
 	} while (domain != start);
 
 	/* Retry domain scan with blocking. */
@@ -3054,6 +3078,8 @@ zone_alloc_bucket(uma_zone_t zone, void *udata, int domain, int flags)
 	uma_bucket_t bucket;
 	int max;
 
+	CTR1(KTR_UMA, "zone_alloc:_bucket domain %d)", domain);
+
 	/* Don't wait for buckets, preserve caller's NOVM setting. */
 	bucket = bucket_alloc(zone, udata, M_NOWAIT | (flags & M_NOVM));
 	if (bucket == NULL)
@@ -3121,6 +3147,13 @@ zone_alloc_item(uma_zone_t zone, void *udata, int domain, int flags)
 
 	item = NULL;
 
+#ifndef __rtems__
+	if (domain != UMA_ANYDOMAIN) {
+		/* avoid allocs targeting empty domains */
+		if (VM_DOMAIN_EMPTY(domain))
+			domain = UMA_ANYDOMAIN;
+	}
+#endif /* __rtems__ */
 	if (zone->uz_import(zone->uz_arg, &item, 1, domain, flags) != 1)
 		goto fail;
 	atomic_add_long(&zone->uz_allocs, 1);
@@ -3297,9 +3330,11 @@ zfree_start:
 	critical_exit();
 
 #ifndef __rtems__
-	if ((zone->uz_flags & UMA_ZONE_NUMA) != 0)
+	if ((zone->uz_flags & UMA_ZONE_NUMA) != 0) {
 		domain = PCPU_GET(domain);
-	else 
+		if (VM_DOMAIN_EMPTY(domain))
+			domain = UMA_ANYDOMAIN;
+	} else
 		domain = 0;
 #endif /* __rtems__ */
 	zdom = &zone->uz_domain[0];
@@ -3761,7 +3796,9 @@ uma_prealloc(uma_zone_t zone, int items)
 		dom = &keg->uk_domain[slab->us_domain];
 		LIST_INSERT_HEAD(&dom->ud_free_slab, slab, us_link);
 		slabs--;
-		domain = (domain + 1) % vm_ndomains;
+		do {
+			domain = (domain + 1) % vm_ndomains;
+		} while (VM_DOMAIN_EMPTY(domain));
 	}
 	KEG_UNLOCK(keg);
 }
@@ -3857,6 +3894,11 @@ uma_large_malloc_domain(vm_size_t size, int domain, int wait)
 	vm_offset_t addr;
 	uma_slab_t slab;
 
+	if (domain != UMA_ANYDOMAIN) {
+		/* avoid allocs targeting empty domains */
+		if (VM_DOMAIN_EMPTY(domain))
+			domain = UMA_ANYDOMAIN;
+	}
 	slab = zone_alloc_item(slabzone, NULL, domain, wait);
 	if (slab == NULL)
 		return (NULL);

@@ -50,6 +50,9 @@
 
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
+#ifdef __rtems__
+#include <crypto/rsa/rsa_locl.h>
+#endif /* __rtems__ */
 
 #include "misc.h"
 #include "plog.h"

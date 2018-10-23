@@ -98,7 +98,12 @@
 #define SHA384_Init _bsd_SHA384_Init
 #define SHA384_Update _bsd_SHA384_Update
 #define SHA384_Final _bsd_SHA384_Final
-#include <openssl/sha2/sha384.h>
+#include <crypto/sha2/sha384.h>
+#include <crypto/rsa/rsa_locl.h>
+#include <crypto/evp/evp_locl.h>
+#include <crypto/dh/dh_locl.h>
+#include <crypto/include/internal/evp_int.h>
+#include <crypto/include/internal/x509_int.h>
 #endif /* __rtems__ */
 #endif
 #endif
@@ -530,13 +535,13 @@ eay_get_x509asn1subjectname(cert)
 		goto error;
 
 	/* get the length of the name */
-	len = i2d_X509_NAME(x509->cert_info->subject, NULL);
+	len = i2d_X509_NAME(x509->cert_info.subject, NULL);
 	name = vmalloc(len);
 	if (!name)
 		goto error;
 	/* get the name */
 	bp = (unsigned char *) name->v;
-	len = i2d_X509_NAME(x509->cert_info->subject, &bp);
+	len = i2d_X509_NAME(x509->cert_info.subject, &bp);
 
 	X509_free(x509);
 
@@ -675,14 +680,14 @@ eay_get_x509asn1issuername(cert)
 		goto error;
 
 	/* get the length of the name */
-	len = i2d_X509_NAME(x509->cert_info->issuer, NULL);
+	len = i2d_X509_NAME(x509->cert_info.issuer, NULL);
 	name = vmalloc(len);
 	if (name == NULL)
 		goto error;
 
 	/* get the name */
 	bp = (unsigned char *) name->v;
-	len = i2d_X509_NAME(x509->cert_info->issuer, &bp);
+	len = i2d_X509_NAME(x509->cert_info.issuer, &bp);
 
 	X509_free(x509);
 
@@ -1124,6 +1129,7 @@ evp_crypt(vchar_t *data, vchar_t *key, vchar_t *iv, const EVP_CIPHER *e, int enc
 	if ((res = vmalloc(data->l)) == NULL)
 		return NULL;
 
+	memset(&ctx, 0, sizeof(ctx));
 	EVP_CIPHER_CTX_init(&ctx);
 
 	switch(EVP_CIPHER_nid(e)){
@@ -1693,7 +1699,7 @@ eay_hmac_init(key, md)
 	vchar_t *key;
 	const EVP_MD *md;
 {
-	HMAC_CTX *c = racoon_malloc(sizeof(*c));
+	HMAC_CTX *c = HMAC_CTX_new();
 
 	HMAC_Init(c, key->v, key->l, md);
 
@@ -1744,14 +1750,14 @@ vchar_t *
 eay_hmacsha2_512_one(key, data)
 	vchar_t *key, *data;
 {
-	return eay_hmac_one(key, data, EVP_sha2_512());
+	return eay_hmac_one(key, data, EVP_sha512());
 }
 
 caddr_t
 eay_hmacsha2_512_init(key)
 	vchar_t *key;
 {
-	return eay_hmac_init(key, EVP_sha2_512());
+	return eay_hmac_init(key, EVP_sha512());
 }
 
 void
@@ -1774,8 +1780,7 @@ eay_hmacsha2_512_final(c)
 
 	HMAC_Final((HMAC_CTX *)c, (unsigned char *) res->v, &l);
 	res->l = l;
-	HMAC_cleanup((HMAC_CTX *)c);
-	(void)racoon_free(c);
+	HMAC_CTX_free((HMAC_CTX *)c);
 
 	if (SHA512_DIGEST_LENGTH != res->l) {
 		plog(LLV_ERROR, LOCATION, NULL,
@@ -1794,14 +1799,14 @@ vchar_t *
 eay_hmacsha2_384_one(key, data)
 	vchar_t *key, *data;
 {
-	return eay_hmac_one(key, data, EVP_sha2_384());
+	return eay_hmac_one(key, data, EVP_sha384());
 }
 
 caddr_t
 eay_hmacsha2_384_init(key)
 	vchar_t *key;
 {
-	return eay_hmac_init(key, EVP_sha2_384());
+	return eay_hmac_init(key, EVP_sha384());
 }
 
 void
@@ -1824,8 +1829,7 @@ eay_hmacsha2_384_final(c)
 
 	HMAC_Final((HMAC_CTX *)c, (unsigned char *) res->v, &l);
 	res->l = l;
-	HMAC_cleanup((HMAC_CTX *)c);
-	(void)racoon_free(c);
+	HMAC_CTX_free((HMAC_CTX *)c);
 
 	if (SHA384_DIGEST_LENGTH != res->l) {
 		plog(LLV_ERROR, LOCATION, NULL,
@@ -1844,14 +1848,14 @@ vchar_t *
 eay_hmacsha2_256_one(key, data)
 	vchar_t *key, *data;
 {
-	return eay_hmac_one(key, data, EVP_sha2_256());
+	return eay_hmac_one(key, data, EVP_sha256());
 }
 
 caddr_t
 eay_hmacsha2_256_init(key)
 	vchar_t *key;
 {
-	return eay_hmac_init(key, EVP_sha2_256());
+	return eay_hmac_init(key, EVP_sha256());
 }
 
 void
@@ -1874,8 +1878,7 @@ eay_hmacsha2_256_final(c)
 
 	HMAC_Final((HMAC_CTX *)c, (unsigned char *) res->v, &l);
 	res->l = l;
-	HMAC_cleanup((HMAC_CTX *)c);
-	(void)racoon_free(c);
+	HMAC_CTX_free((HMAC_CTX *)c);
 
 	if (SHA256_DIGEST_LENGTH != res->l) {
 		plog(LLV_ERROR, LOCATION, NULL,
@@ -1925,8 +1928,7 @@ eay_hmacsha1_final(c)
 
 	HMAC_Final((HMAC_CTX *)c, (unsigned char *) res->v, &l);
 	res->l = l;
-	HMAC_cleanup((HMAC_CTX *)c);
-	(void)racoon_free(c);
+	HMAC_CTX_free((HMAC_CTX *)c);
 
 	if (SHA_DIGEST_LENGTH != res->l) {
 		plog(LLV_ERROR, LOCATION, NULL,
@@ -1975,8 +1977,7 @@ eay_hmacmd5_final(c)
 
 	HMAC_Final((HMAC_CTX *)c, (unsigned char *) res->v, &l);
 	res->l = l;
-	HMAC_cleanup((HMAC_CTX *)c);
-	(void)racoon_free(c);
+	HMAC_CTX_free((HMAC_CTX *)c);
 
 	if (MD5_DIGEST_LENGTH != res->l) {
 		plog(LLV_ERROR, LOCATION, NULL,
@@ -2084,7 +2085,7 @@ vchar_t *
 eay_sha2_384_one(data)
 	vchar_t *data;
 {
-	return eay_digest_one(data, EVP_sha2_384());
+	return eay_digest_one(data, EVP_sha384());
 }
 
 int
@@ -2137,7 +2138,7 @@ vchar_t *
 eay_sha2_256_one(data)
 	vchar_t *data;
 {
-	return eay_digest_one(data, EVP_sha2_256());
+	return eay_digest_one(data, EVP_sha256());
 }
 
 int

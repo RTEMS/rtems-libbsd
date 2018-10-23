@@ -2,5 +2,5 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-racoon-data.h"
 /* localconf.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int lc_sittype2doi[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int lc_doitype2doi[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int lc_sittype2doi[]);

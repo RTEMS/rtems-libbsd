@@ -2767,6 +2767,8 @@
 #define	USB_PRODUCT_LENOVO_GIGALAN	0x304b		/* USB 3.0 Ethernet */
 #define	USB_PRODUCT_LENOVO_ETHERNET	0x7203		/* USB 2.0 Ethernet */
 #define	USB_PRODUCT_LENOVO_RTL8153	0x7205		/* USB 3.0 Ethernet */
+#define	USB_PRODUCT_LENOVO_TBT3LAN	0x3069		/* LAN port in Thinkpad TB3 dock */
+#define	USB_PRODUCT_LENOVO_USBCLAN	0x3062		/* LAN port in Thinkpad USB-C dock */
 
 /* Lexar products */
 #define	USB_PRODUCT_LEXAR_JUMPSHOT	0x0001		/* jumpSHOT CompactFlash Reader */

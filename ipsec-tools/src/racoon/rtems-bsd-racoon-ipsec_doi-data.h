@@ -2,7 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-racoon-data.h"
 /* ipsec_doi.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int (*check_attributes[])(struct isakmp_pl_t *));
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int (*check_protocol[])(int ));
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int (*check_transform[])(int ));
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int (*check_attributes[])(struct isakmp_pl_t *));
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int rm_idtype2doi[]);

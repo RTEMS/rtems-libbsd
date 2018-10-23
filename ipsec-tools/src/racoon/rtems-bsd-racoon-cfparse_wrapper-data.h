@@ -2,10 +2,10 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-racoon-data.h"
 /* cfparse_wrapper.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int num2dhgroup[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static struct remoteconf *cur_rmconf);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int tmpalgtype[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static struct sainfo *cur_sainfo);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int cur_algclass);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int oldloglevel);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static YYSTACKDATA yystack);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int cur_algclass);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int num2dhgroup[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int oldloglevel);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int tmpalgtype[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static struct remoteconf *cur_rmconf);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static struct sainfo *cur_sainfo);

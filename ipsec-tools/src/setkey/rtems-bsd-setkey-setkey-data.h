@@ -2,7 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-setkey-data.h"
 /* setkey.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static time_t thiszone);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static char const *satype[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static char const *sastate[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static char const *ipproto[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static char const *sastate[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static char const *satype[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_setkey, static time_t thiszone);

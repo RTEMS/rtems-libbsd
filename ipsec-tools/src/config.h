@@ -208,7 +208,7 @@
 #define HAVE_VPRINTF 1
 
 /* Support IPv6 */
-#define INET6 /**/
+#define INET6 1
 
 /* Use advanced IPv6 API */
 #define INET6_ADVAPI /**/

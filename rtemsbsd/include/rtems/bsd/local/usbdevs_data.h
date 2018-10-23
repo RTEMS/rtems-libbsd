@@ -8762,6 +8762,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB 3.0 Ethernet",
 	},
 	{
+	    USB_VENDOR_LENOVO, USB_PRODUCT_LENOVO_TBT3LAN,
+	    0,
+	    "Lenovo",
+	    "LAN port in Thinkpad TB3 dock",
+	},
+	{
+	    USB_VENDOR_LENOVO, USB_PRODUCT_LENOVO_USBCLAN,
+	    0,
+	    "Lenovo",
+	    "LAN port in Thinkpad USB-C dock",
+	},
+	{
 	    USB_VENDOR_LEXAR, USB_PRODUCT_LEXAR_JUMPSHOT,
 	    0,
 	    "Lexar Media",

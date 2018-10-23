@@ -321,7 +321,11 @@ struct uma_zone {
 	/* Offset 0, used in alloc/free fast/medium fast path and const. */
 	struct mtx	*uz_lockptr;
 	const char	*uz_name;	/* Text name of the zone */
+#ifndef __rtems__
 	struct uma_zone_domain	*uz_domain;	/* per-domain buckets */
+#else /* __rtems__ */
+	struct uma_zone_domain	uz_domain[1];	/* per-domain buckets */
+#endif /* __rtems__ */
 	uint32_t	uz_flags;	/* Flags inherited from kegs */
 	uint32_t	uz_size;	/* Size inherited from kegs */
 	uma_ctor	uz_ctor;	/* Constructor for each allocation */

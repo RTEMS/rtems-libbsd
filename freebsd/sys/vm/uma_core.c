@@ -404,7 +404,11 @@ bucket_init(void)
 		size += sizeof(void *) * ubz->ubz_entries;
 		ubz->ubz_zone = uma_zcreate(ubz->ubz_name, size,
 		    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR,
+#ifndef __rtems__
 		    UMA_ZONE_MTXCLASS | UMA_ZFLAG_BUCKET | UMA_ZONE_NUMA);
+#else /* __rtems__ */
+		    UMA_ZONE_MTXCLASS | UMA_ZFLAG_BUCKET);
+#endif /* __rtems__ */
 	}
 }
 
@@ -819,9 +823,11 @@ cache_drain_safe_cpu(uma_zone_t zone)
 	b1 = b2 = NULL;
 	ZONE_LOCK(zone);
 	critical_enter();
+#ifndef __rtems__
 	if (zone->uz_flags & UMA_ZONE_NUMA)
 		domain = PCPU_GET(domain);
 	else
+#endif /* __rtems__ */
 		domain = 0;
 	cache = &zone->uz_cpu[curcpu];
 	if (cache->uc_allocbucket) {
@@ -1787,8 +1793,10 @@ zone_ctor(void *mem, int size, void *udata, int flags)
 	zone->uz_count_min = 0;
 	zone->uz_flags = 0;
 	zone->uz_warning = NULL;
+#ifndef __rtems__
 	/* The domain structures follow the cpu structures. */
 	zone->uz_domain = (struct uma_zone_domain *)&zone->uz_cpu[mp_ncpus];
+#endif /* __rtems__ */
 	timevalclear(&zone->uz_ratecheck);
 	keg = arg->keg;
 
@@ -2072,8 +2080,7 @@ uma_startup(void *mem, int npages)
 	ksize = sizeof(struct uma_keg) +
 	    (sizeof(struct uma_domain) * vm_ndomains);
 	zsize = sizeof(struct uma_zone) +
-	    (sizeof(struct uma_cache) * (mp_maxid + 1)) +
-	    (sizeof(struct uma_zone_domain) * vm_ndomains);
+	    (sizeof(struct uma_cache) * (mp_maxid + 1));
 	size = 2 * roundup(zsize, CACHE_LINE_SIZE) +
 	    roundup(ksize, CACHE_LINE_SIZE);
 #endif /* __rtems__ */
@@ -2603,9 +2610,11 @@ zalloc_start:
 	if (bucket != NULL)
 		bucket_free(zone, bucket, udata);
 
+#ifndef __rtems__
 	if (zone->uz_flags & UMA_ZONE_NUMA)
 		domain = PCPU_GET(domain);
 	else
+#endif /* __rtems__ */
 		domain = UMA_ANYDOMAIN;
 
 	/* Short-circuit for zones without buckets and low memory. */
@@ -2682,9 +2691,13 @@ zalloc_start:
 		 * initialized bucket to make this less likely or claim
 		 * the memory directly.
 		 */
+#ifndef __rtems__
 		if (cache->uc_allocbucket != NULL ||
 		    (zone->uz_flags & UMA_ZONE_NUMA &&
 		    domain != PCPU_GET(domain)))
+#else /* __rtems__ */
+		if (cache->uc_allocbucket != NULL)
+#endif /* __rtems__ */
 			LIST_INSERT_HEAD(&zdom->uzd_buckets, bucket, ub_link);
 		else
 			cache->uc_allocbucket = bucket;
@@ -3162,7 +3175,11 @@ uma_zfree_arg(uma_zone_t zone, void *item, void *udata)
 	uma_cache_t cache;
 	uma_bucket_t bucket;
 	uma_zone_domain_t zdom;
+#ifndef __rtems__
 	int cpu, domain, lockfail;
+#else /* __rtems__ */
+	int cpu, lockfail;
+#endif /* __rtems__ */
 #ifdef INVARIANTS
 	bool skipdbg;
 #endif
@@ -3279,10 +3296,12 @@ zfree_start:
 	/* We are no longer associated with this CPU. */
 	critical_exit();
 
+#ifndef __rtems__
 	if ((zone->uz_flags & UMA_ZONE_NUMA) != 0)
 		domain = PCPU_GET(domain);
 	else 
 		domain = 0;
+#endif /* __rtems__ */
 	zdom = &zone->uz_domain[0];
 
 	/* Can we throw this on the zone full list? */
@@ -3317,9 +3336,13 @@ zfree_start:
 		critical_enter();
 		cpu = curcpu;
 		cache = &zone->uz_cpu[cpu];
+#ifndef __rtems__
 		if (cache->uc_freebucket == NULL &&
 		    ((zone->uz_flags & UMA_ZONE_NUMA) == 0 ||
 		    domain == PCPU_GET(domain))) {
+#else /* __rtems__ */
+		if (cache->uc_freebucket == NULL) {
+#endif /* __rtems__ */
 			cache->uc_freebucket = bucket;
 			goto zfree_start;
 		}

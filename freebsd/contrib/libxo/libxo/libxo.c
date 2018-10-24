@@ -96,6 +96,9 @@
 #ifdef HAVE_GETTEXT
 #include <libintl.h>
 #endif /* HAVE_GETTEXT */
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 
 /* Rather lame that we can't count on these... */
 #ifndef FALSE

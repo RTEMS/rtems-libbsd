@@ -43,6 +43,7 @@
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <openssl/ssl.h>
 
 static const unsigned char key[16] = "0123456789abcde";
 
@@ -105,6 +106,10 @@ decrypt(void)
 static void
 test(void)
 {
+
+	SSL_library_init();
+	OpenSSL_add_ssl_algorithms();
+	SSL_load_error_strings();
 
 	encrypt();
 

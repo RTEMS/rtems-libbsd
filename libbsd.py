@@ -4949,6 +4949,7 @@ class tests(builder.Module):
                                                     extraLibs = ['debugger']))
         self.addTest(mm.generator['test']('crypto01', ['test_main']))
         self.addTest(mm.generator['test']('ipsec01', ['test_main']))
+        self.addTest(mm.generator['test']('openssl01', ['test_main']))
 
 def load(mm):
 

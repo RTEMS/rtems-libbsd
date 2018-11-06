@@ -593,9 +593,8 @@ retry:
 #ifndef __rtems__
 	buffer = (caddr_t) vm_map_min(pipe_map);
 
-	error = vm_map_find(pipe_map, NULL, 0,
-		(vm_offset_t *) &buffer, size, 0, VMFS_ANY_SPACE,
-		VM_PROT_ALL, VM_PROT_ALL, 0);
+	error = vm_map_find(pipe_map, NULL, 0, (vm_offset_t *)&buffer, size, 0,
+	    VMFS_ANY_SPACE, VM_PROT_RW, VM_PROT_RW, 0);
 	if (error != KERN_SUCCESS) {
 #else /* __rtems__ */
 	(void)error;

@@ -563,6 +563,7 @@
 #define	comp_algorithm_lookup _bsd_comp_algorithm_lookup
 #define	config_intrhook_disestablish _bsd_config_intrhook_disestablish
 #define	config_intrhook_establish _bsd_config_intrhook_establish
+#define	config_intrhook_oneshot _bsd_config_intrhook_oneshot
 #define	copyiniov _bsd_copyiniov
 #define	counter_ratecheck _bsd_counter_ratecheck
 #define	counter_u64_alloc _bsd_counter_u64_alloc
@@ -1162,6 +1163,7 @@
 #define	evdev_register_client _bsd_evdev_register_client
 #define	evdev_register_mtx _bsd_evdev_register_mtx
 #define	evdev_release_client _bsd_evdev_release_client
+#define	evdev_restore_after_kdb _bsd_evdev_restore_after_kdb
 #define	evdev_revoke_client _bsd_evdev_revoke_client
 #define	evdev_scancode2key _bsd_evdev_scancode2key
 #define	evdev_send_event _bsd_evdev_send_event
@@ -1313,7 +1315,9 @@
 #define	gre_hashinit _bsd_gre_hashinit
 #define	gre_input _bsd_gre_input
 #define	gre_updatehdr _bsd_gre_updatehdr
+#define	grouptask_block _bsd_grouptask_block
 #define	grouptaskqueue_enqueue _bsd_grouptaskqueue_enqueue
+#define	grouptask_unblock _bsd_grouptask_unblock
 #define	gtaskqueue_block _bsd_gtaskqueue_block
 #define	gtaskqueue_cancel _bsd_gtaskqueue_cancel
 #define	gtaskqueue_drain _bsd_gtaskqueue_drain
@@ -1880,6 +1884,7 @@
 #define	if_getvtag _bsd_if_getvtag
 #define	ifg_head _bsd_ifg_head
 #define	if_handoff _bsd_if_handoff
+#define	ifhwioctl _bsd_ifhwioctl
 #define	if_hw_tsomax_common _bsd_if_hw_tsomax_common
 #define	if_hw_tsomax_update _bsd_if_hw_tsomax_update
 #define	if_inc_counter _bsd_if_inc_counter
@@ -2228,6 +2233,8 @@
 #define	ip6_ecn_ingress _bsd_ip6_ecn_ingress
 #define	ip6_encap_attach _bsd_ip6_encap_attach
 #define	ip6_encap_detach _bsd_ip6_encap_detach
+#define	ip6_encap_register_srcaddr _bsd_ip6_encap_register_srcaddr
+#define	ip6_encap_unregister_srcaddr _bsd_ip6_encap_unregister_srcaddr
 #define	ip6_esp_net_deflev _bsd_ip6_esp_net_deflev
 #define	ip6_esp_trans_deflev _bsd_ip6_esp_trans_deflev
 #define	ip6_forward _bsd_ip6_forward
@@ -2312,6 +2319,8 @@
 #define	ip_ecn_ingress _bsd_ip_ecn_ingress
 #define	ip_encap_attach _bsd_ip_encap_attach
 #define	ip_encap_detach _bsd_ip_encap_detach
+#define	ip_encap_register_srcaddr _bsd_ip_encap_register_srcaddr
+#define	ip_encap_unregister_srcaddr _bsd_ip_encap_unregister_srcaddr
 #define	ip_fillid _bsd_ip_fillid
 #define	ip_forward _bsd_ip_forward
 #define	ipforwarding _bsd_ipforwarding
@@ -2467,6 +2476,7 @@
 #define	key_allocsp _bsd_key_allocsp
 #define	key_bumpspgen _bsd_key_bumpspgen
 #define	key_debug_level _bsd_key_debug_level
+#define	key_delete_xform _bsd_key_delete_xform
 #define	keydomain _bsd_keydomain
 #define	key_freereg _bsd_key_freereg
 #define	key_freesav _bsd_key_freesav
@@ -3199,6 +3209,8 @@
 #define	pf_free_rule _bsd_pf_free_rule
 #define	pf_free_src_nodes _bsd_pf_free_src_nodes
 #define	pf_free_state _bsd_pf_free_state
+#define	pf_frent_previous _bsd_pf_frent_previous
+#define	pf_frent_remove _bsd_pf_frent_remove
 #define	pf_get_mtag _bsd_pf_get_mtag
 #define	pf_get_ruleset_number _bsd_pf_get_ruleset_number
 #define	pf_get_translation _bsd_pf_get_translation
@@ -3361,6 +3373,7 @@
 #define	pfsync_cloner _bsd_pfsync_cloner
 #define	pfsync_defer_ptr _bsd_pfsync_defer_ptr
 #define	pfsync_delete_state_ptr _bsd_pfsync_delete_state_ptr
+#define	pfsync_detach_ifnet_ptr _bsd_pfsync_detach_ifnet_ptr
 #define	pfsync_insert_state_ptr _bsd_pfsync_insert_state_ptr
 #define	pfsync_state_export _bsd_pfsync_state_export
 #define	pfsync_state_import_ptr _bsd_pfsync_state_import_ptr
@@ -4371,7 +4384,6 @@
 #define	sctp_v4src_match_nexthop _bsd_sctp_v4src_match_nexthop
 #define	sctp_v6src_match_nexthop _bsd_sctp_v6src_match_nexthop
 #define	sctp_validate_init_auth_params _bsd_sctp_validate_init_auth_params
-#define	sctp_verify_hmac _bsd_sctp_verify_hmac
 #define	sctp_verify_hmac_param _bsd_sctp_verify_hmac_param
 #define	sctp_wakeup_iterator _bsd_sctp_wakeup_iterator
 #define	sctp_wakeup_log _bsd_sctp_wakeup_log
@@ -4690,6 +4702,7 @@
 #define	sysctl___kern_features _bsd_sysctl___kern_features
 #define	sysctl___kern_ipc _bsd_sysctl___kern_ipc
 #define	sysctl_move_oid _bsd_sysctl_move_oid
+#define	sysctl_msec_to_sbintime _bsd_sysctl_msec_to_sbintime
 #define	sysctl_msec_to_ticks _bsd_sysctl_msec_to_ticks
 #define	sysctl___net _bsd_sysctl___net
 #define	sysctl___net_accf _bsd_sysctl___net_accf
@@ -5003,6 +5016,7 @@
 #define	ttyoutq_write _bsd_ttyoutq_write
 #define	ttyoutq_write_nofrag _bsd_ttyoutq_write_nofrag
 #define	tty_putchar _bsd_tty_putchar
+#define	tty_putstrn _bsd_tty_putstrn
 #define	tty_rel_gone _bsd_tty_rel_gone
 #define	tty_rel_pgrp _bsd_tty_rel_pgrp
 #define	tty_rel_sess _bsd_tty_rel_sess
@@ -5426,6 +5440,7 @@
 #define	xform_ah_authsize _bsd_xform_ah_authsize
 #define	xform_attach _bsd_xform_attach
 #define	xform_detach _bsd_xform_detach
+#define	xform_init _bsd_xform_init
 #define	X_ip6_mforward _bsd_X_ip6_mforward
 #define	X_ip6_mrouter_done _bsd_X_ip6_mrouter_done
 #define	X_ip6_mrouter_get _bsd_X_ip6_mrouter_get

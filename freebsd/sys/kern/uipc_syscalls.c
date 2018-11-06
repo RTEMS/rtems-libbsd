@@ -90,10 +90,12 @@ struct getsockaddr_sockaddr {
 	char		data[SOCK_MAXADDRLEN - sizeof(struct sockaddr)];
 } __aligned(sizeof(long));
 
-static int getsockaddr(struct sockaddr **, caddr_t, size_t);
+static int getsockaddr(struct sockaddr **, const struct sockaddr *, size_t);
 static int kern_getsockname(struct thread *, int, struct sockaddr **,
     socklen_t *);
 static int kern_listen(struct thread *, int, int);
+static int kern_setsockopt(struct thread *, int, int, int, const void *,
+    enum uio_seg, socklen_t);
 static int kern_shutdown(struct thread *, int, int);
 static int kern_socket(struct thread *, int, int, int);
 static int kern_socketpair(struct thread *, int, int, int, int *);
@@ -287,7 +289,7 @@ bind(int socket, const struct sockaddr *address, socklen_t address_len)
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct bind_args ua = {
 		.s = socket,
-		.name = (caddr_t) address,
+		.name = address,
 		.namelen = address_len
 	};
 	int error;
@@ -363,6 +365,9 @@ sys_bindat(struct thread *td, struct bindat_args *uap)
 }
 #endif /* __rtems__ */
 
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 int
 sys_listen(struct thread *td, struct listen_args *uap)
 {
@@ -681,7 +686,7 @@ connect(int socket, const struct sockaddr *address, socklen_t address_len)
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct connect_args ua = {
 		.s = socket,
-		.name = (caddr_t) address,
+		.name = address,
 		.namelen = address_len
 	};
 	int error;
@@ -1111,7 +1116,7 @@ sys_sendto(struct thread *td, struct sendto_args *uap)
 	struct msghdr msg;
 	struct iovec aiov;
 
-	msg.msg_name = uap->to;
+	msg.msg_name = __DECONST(void *, uap->to);
 	msg.msg_namelen = uap->tolen;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
@@ -1119,7 +1124,7 @@ sys_sendto(struct thread *td, struct sendto_args *uap)
 #ifdef COMPAT_OLDSOCK
 	msg.msg_flags = 0;
 #endif
-	aiov.iov_base = uap->buf;
+	aiov.iov_base = __DECONST(void *, uap->buf);
 	aiov.iov_len = uap->len;
 	return (sendit(td, uap->s, &msg, uap->flags));
 }
@@ -1134,7 +1139,7 @@ sendto(int socket, const void *message, size_t length, int flags,
 		.buf = (caddr_t) message,
 		.len = length,
 		.flags = flags,
-		.to = (caddr_t) dest_addr,
+		.to = dest_addr,
 		.tolen = dest_len
 	};
 	int error;
@@ -1189,7 +1194,7 @@ osend(struct thread *td, struct osend_args *uap)
 	msg.msg_namelen = 0;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
-	aiov.iov_base = uap->buf;
+	aiov.iov_base = __DECONST(void *, uap->buf);
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = 0;
@@ -1669,9 +1674,6 @@ shutdown(int socket, int how)
 #endif /* __rtems__ */
 
 #ifdef __rtems__
-static int kern_setsockopt( struct thread *td, int s, int level, int name,
-    void *val, enum uio_seg valseg, socklen_t valsize);
-
 static
 #endif /* __rtems__ */
 int
@@ -1707,7 +1709,7 @@ setsockopt(int socket, int level, int option_name, const void *option_value,
 #endif /* __rtems__ */
 
 int
-kern_setsockopt(struct thread *td, int s, int level, int name, void *val,
+kern_setsockopt(struct thread *td, int s, int level, int name, const void *val,
     enum uio_seg valseg, socklen_t valsize)
 {
 	struct socket *so;
@@ -1723,7 +1725,7 @@ kern_setsockopt(struct thread *td, int s, int level, int name, void *val,
 	sopt.sopt_dir = SOPT_SET;
 	sopt.sopt_level = level;
 	sopt.sopt_name = name;
-	sopt.sopt_val = val;
+	sopt.sopt_val = __DECONST(void *, val);
 	sopt.sopt_valsize = valsize;
 	switch (valseg) {
 	case UIO_USERSPACE:
@@ -2111,7 +2113,7 @@ sockargs(struct mbuf **mp, char *buf, socklen_t buflen, int type)
 }
 
 int
-getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len)
+getsockaddr(struct sockaddr **namp, const struct sockaddr *uaddr, size_t len)
 {
 	struct sockaddr *sa;
 #ifndef __rtems__

@@ -267,10 +267,10 @@ freebsd/usr.bin/netstat/nl_defs.h: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
 	    !/^\#/ { printf("\#define\tN%s\t%s\n", toupper($$2), i++); }' \
 	    < $< > $@ || rm -f $@
 
-rtemsbsd/include/machine/rtems-bsd-regdomain.h: $(FREEBSD_SRC)/etc/regdomain.xml
+rtemsbsd/include/machine/rtems-bsd-regdomain.h: $(FREEBSD_SRC)/lib/lib80211/regdomain.xml
 	rtems-bin2c -H $< $@
 
-rtemsbsd/rtems/rtems-bsd-regdomain.c: $(FREEBSD_SRC)/etc/regdomain.xml
+rtemsbsd/rtems/rtems-bsd-regdomain.c: $(FREEBSD_SRC)/lib/lib80211/regdomain.xml
 	rtems-bin2c -C $< $@
 
 freebsd/contrib/libpcap/pcap_version.h: freebsd-org/contrib/libpcap/VERSION

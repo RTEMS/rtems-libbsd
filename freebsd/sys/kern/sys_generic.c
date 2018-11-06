@@ -1366,16 +1366,15 @@ sys_poll(struct thread *td, struct poll_args *uap)
 }
 
 int
-kern_poll(struct thread *td, struct pollfd *fds, u_int nfds,
+kern_poll(struct thread *td, struct pollfd *ufds, u_int nfds,
     struct timespec *tsp, sigset_t *uset)
 {
-	struct pollfd *bits;
-	struct pollfd smallbits[32];
+	struct pollfd *kfds;
+	struct pollfd stackfds[32];
 	sbintime_t sbt, precision, tmp;
 	time_t over;
 	struct timespec ts;
 	int error;
-	size_t ni;
 
 	precision = 0;
 	if (tsp != NULL) {
@@ -1402,18 +1401,24 @@ kern_poll(struct thread *td, struct pollfd *fds, u_int nfds,
 	} else
 		sbt = -1;
 
+	/*
+	 * This is kinda bogus.  We have fd limits, but that is not
+	 * really related to the size of the pollfd array.  Make sure
+	 * we let the process use at least FD_SETSIZE entries and at
+	 * least enough for the system-wide limits.  We want to be reasonably
+	 * safe, but not overly restrictive.
+	 */
 #ifndef __rtems__
 	if (nfds > maxfilesperproc && nfds > FD_SETSIZE) 
 #else /* __rtems__ */
 	if (nfds > rtems_libio_number_iops)
 #endif /* __rtems__ */
 		return (EINVAL);
-	ni = nfds * sizeof(struct pollfd);
-	if (ni > sizeof(smallbits))
-		bits = malloc(ni, M_TEMP, M_WAITOK);
+	if (nfds > nitems(stackfds))
+		kfds = mallocarray(nfds, sizeof(*kfds), M_TEMP, M_WAITOK);
 	else
-		bits = smallbits;
-	error = copyin(fds, bits, ni);
+		kfds = stackfds;
+	error = copyin(ufds, kfds, nfds * sizeof(*kfds));
 	if (error)
 		goto done;
 
@@ -1438,7 +1443,7 @@ kern_poll(struct thread *td, struct pollfd *fds, u_int nfds,
 	seltdinit(td);
 	/* Iterate until the timeout expires or descriptors become ready. */
 	for (;;) {
-		error = pollscan(td, bits, nfds);
+		error = pollscan(td, kfds, nfds);
 		if (error || td->td_retval[0] != 0)
 			break;
 		error = seltdwait(td, sbt, precision);
@@ -1457,13 +1462,13 @@ done:
 	if (error == EWOULDBLOCK)
 		error = 0;
 	if (error == 0) {
-		error = pollout(td, bits, fds, nfds);
+		error = pollout(td, kfds, ufds, nfds);
 		if (error)
 			goto out;
 	}
 out:
-	if (ni > sizeof(smallbits))
-		free(bits, M_TEMP);
+	if (nfds > nitems(stackfds))
+		free(kfds, M_TEMP);
 	return (error);
 }
 #ifdef __rtems__

@@ -73,6 +73,9 @@
 #ifdef _KERNEL
 #include <machine/cpu.h>
 #endif
+#ifdef __rtems__
+#include <sys/epoch.h>
+#endif /* __rtems__ */
 
 /*
  * One structure allocated per session.
@@ -193,6 +196,7 @@ struct trapframe;
 struct turnstile;
 struct vm_map;
 struct vm_map_entry;
+struct epoch_tracker;
 
 /*
  * XXX: Does this belong in resource.h or resourcevar.h instead?
@@ -236,6 +240,7 @@ struct thread {
 #ifdef __rtems__
 	Thread_Control *td_thread;
 	struct rtems_bsd_program_control *td_prog_ctrl;
+	struct epoch_tracker td_et[1];	/* (k) compat KPI spare tracker */
 #endif /* __rtems__ */
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */
@@ -395,6 +400,7 @@ struct thread {
 	int		td_lastcpu;	/* (t) Last cpu we were on. */
 	int		td_oncpu;	/* (t) Which cpu we are on. */
 	void		*td_lkpi_task;	/* LinuxKPI task struct pointer */
+	struct epoch_tracker *td_et;	/* (k) compat KPI spare tracker */
 	int		td_pmcpend;
 #endif /* __rtems__ */
 };

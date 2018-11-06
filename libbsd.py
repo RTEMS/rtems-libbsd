@@ -3950,7 +3950,7 @@ class contrib_expat(builder.Module):
 
     def generate(self):
         mm = self.manager
-        cflags = ['-DHAVE_MEMMOVE=1']
+        cflags = ['-DHAVE_MEMMOVE=1', '-DHAVE_ARC4RANDOM_BUF=1']
         self.addRTEMSHeaderFiles(
             [
                 'include/bsdxml.h',
@@ -3966,6 +3966,7 @@ class contrib_expat(builder.Module):
                 'contrib/expat/lib/internal.h',
                 'contrib/expat/lib/latin1tab.h',
                 'contrib/expat/lib/nametab.h',
+                'contrib/expat/lib/siphash.h',
                 'contrib/expat/lib/utf8tab.h',
                 'contrib/expat/lib/xmlrole.h',
                 'contrib/expat/lib/xmltok.h',

@@ -39,6 +39,7 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
+#include <sys/types.h>
 #include <sys/file.h>
 
 struct file *

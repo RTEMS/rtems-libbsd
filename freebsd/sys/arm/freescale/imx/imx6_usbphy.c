@@ -91,6 +91,17 @@ usbphy_detach(device_t dev)
 	return (0);
 }
 
+#ifdef __rtems__
+#define BUS_SPACE_PHYSADDR(res, offs) \
+	((u_int)(rman_get_start(res)+(offs)))
+
+void
+imx6_anatop_write_4(bus_size_t offset, uint32_t value)
+{
+
+	bus_space_write_4(0, 0x20c8000, offset, value);
+}
+#endif /* __rtems__ */
 static int
 usbphy_attach(device_t dev)
 {

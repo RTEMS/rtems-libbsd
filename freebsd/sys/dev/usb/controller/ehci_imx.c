@@ -303,6 +303,16 @@ imx_ehci_probe(device_t dev)
 		return (ENXIO);
 
 	if (ofw_bus_search_compatible(dev, compat_data)->ocd_data != 0) {
+#ifdef __rtems__
+		char dr_mode[24];
+
+		if (OF_getprop(ofw_bus_get_node(dev), "dr_mode",
+		    &dr_mode, sizeof(dr_mode)) > 0 &&
+		    strcasecmp(dr_mode, "host") != 0) {
+			return (ENXIO);
+		}
+#endif /* __rtems__ */
+
 		device_set_desc(dev, "Freescale i.MX integrated USB controller");
 		return (BUS_PROBE_DEFAULT);
 	}
@@ -437,8 +447,10 @@ imx_ehci_attach(device_t dev)
 		goto out;
 	}
 
+#ifndef __rtems__
 	/* Turn on clocks. */
 	imx_ccm_usb_enable(dev);
+#endif /* __rtems__ */
 
 	/* Disable overcurrent detection, if configured to do so. */
 	if (OF_hasprop(ofw_bus_get_node(sc->dev), "disable-over-current"))

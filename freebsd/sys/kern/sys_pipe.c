@@ -219,6 +219,8 @@ static const rtems_filesystem_file_handlers_r pipeops = {
 
 long	maxpipekva;			/* Limit on pipe KVA */
 
+static int kern_pipe(struct thread *, int [2], int, struct filecaps *,
+    struct filecaps *);
 #endif /* __rtems__ */
 
 static void	filt_pipedetach(struct knote *kn);

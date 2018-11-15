@@ -79,6 +79,9 @@ __FBSDID("$FreeBSD$");
 #include <security/audit/audit.h>
 #ifdef __rtems__
 #include <machine/rtems-bsd-syscall-api.h>
+
+static int kern_select(struct thread *, int, fd_set *, fd_set *,
+    fd_set *, struct timeval *, int);
 #endif /* __rtems__ */
 
 /*

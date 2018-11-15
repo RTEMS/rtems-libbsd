@@ -130,6 +130,7 @@ uuid_time(void)
 	return (time & ((1LL << 60) - 1LL));
 }
 
+#ifndef __rtems__
 struct uuid *
 kern_uuidgen(struct uuid *store, size_t count)
 {
@@ -171,7 +172,6 @@ kern_uuidgen(struct uuid *store, size_t count)
 	return (store);
 }
 
-#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct uuidgen_args {
 	struct uuid *store;

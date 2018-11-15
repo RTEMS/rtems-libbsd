@@ -1388,6 +1388,7 @@ kern_kevent_fp(struct thread *td, struct file *fp, int nchanges, int nevents,
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Performs a kevent() call on a temporarily created kqueue. This can be
  * used to perform one-shot polling, similar to poll() and select().
@@ -1406,6 +1407,7 @@ kern_kevent_anonymous(struct thread *td, int nevents,
 	kqueue_destroy(&kq);
 	return (error);
 }
+#endif /* __rtems__ */
 
 int
 kqueue_add_filteropts(int filt, struct filterops *filtops)

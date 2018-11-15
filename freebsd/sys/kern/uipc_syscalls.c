@@ -90,7 +90,13 @@ struct getsockaddr_sockaddr {
 	char		data[SOCK_MAXADDRLEN - sizeof(struct sockaddr)];
 } __aligned(sizeof(long));
 
-static int getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len);
+static int getsockaddr(struct sockaddr **, caddr_t, size_t);
+static int kern_getsockname(struct thread *, int, struct sockaddr **,
+    socklen_t *);
+static int kern_listen(struct thread *, int, int);
+static int kern_shutdown(struct thread *, int, int);
+static int kern_socket(struct thread *, int, int, int);
+static int kern_socketpair(struct thread *, int, int, int, int *);
 #endif /* __rtems__ */
 static int sockargs(struct mbuf **, char *, socklen_t, int);
 
@@ -1837,11 +1843,6 @@ kern_getsockopt(struct thread *td, int s, int level, int name, void *val,
 	return (error);
 }
 
-#ifdef __rtems__
-int
-kern_getsockname(struct thread *td, int fd, struct sockaddr **sa,
-    socklen_t *alen);
-#endif /* __rtems__ */
 /*
  * getsockname1() - Get socket name.
  */

@@ -2459,15 +2459,6 @@
 #define	kdebug_secpolicy_state _bsd_kdebug_secpolicy_state
 #define	kdebug_sockaddr _bsd_kdebug_sockaddr
 #define	kernel_sysctl _bsd_kernel_sysctl
-#define	kern_getsockname _bsd_kern_getsockname
-#define	kern_kevent_anonymous _bsd_kern_kevent_anonymous
-#define	kern_listen _bsd_kern_listen
-#define	kern_pipe _bsd_kern_pipe
-#define	kern_select _bsd_kern_select
-#define	kern_shutdown _bsd_kern_shutdown
-#define	kern_socket _bsd_kern_socket
-#define	kern_socketpair _bsd_kern_socketpair
-#define	kern_uuidgen _bsd_kern_uuidgen
 #define	key_addref _bsd_key_addref
 #define	key_allocsa _bsd_key_allocsa
 #define	key_allocsa_policy _bsd_key_allocsa_policy

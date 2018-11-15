@@ -201,7 +201,8 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 		rtems_bsd_mutex_release(m, isr_level, &queue_context);
 		panic("mutex unlock: %s: owner 0x%08" PRIx32
 		    " != executing 0x%08" PRIx32 "\n", m->queue.Queue.name,
-		    owner->Object.id, executing->Object.id);
+		    owner != NULL ? owner->Object.id : 0,
+		    executing->Object.id);
 	}
 
 	if (__predict_true(nest_level == 0)) {

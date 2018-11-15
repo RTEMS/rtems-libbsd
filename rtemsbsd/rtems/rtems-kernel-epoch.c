@@ -91,10 +91,13 @@ static void
 epoch_watchdog(Watchdog_Control *wdg)
 {
 	struct epoch_pcpu *epcpu;
+	ISR_Level level;
 
 	epcpu = __containerof(wdg, struct epoch_pcpu, wdg);
+	_ISR_Local_disable(level);
 	_Watchdog_Per_CPU_insert_ticks(&epcpu->wdg,
 	    _Watchdog_Get_CPU(&epcpu->wdg), 1);
+	_ISR_Local_enable(level);
 
 	if (RTEMS_PREDICT_FALSE(epcpu->cb_count != 0)) {
 		rtems_interrupt_server_request_submit(&epcpu->irq_srv_req);

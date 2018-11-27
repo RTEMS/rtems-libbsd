@@ -58,7 +58,11 @@
 #ifndef _SYS_BLIST_H_
 #define _SYS_BLIST_H_
 
+#ifndef __rtems__
 typedef	uint64_t	u_daddr_t;	/* unsigned disk address */
+#else /* __rtems__ */
+typedef	unsigned long	u_daddr_t;	/* unsigned disk address */
+#endif /* __rtems__ */
 
 /*
  * note: currently use SWAPBLK_NONE as an absolute value rather then 

@@ -151,7 +151,11 @@ struct sleepqueue_chain {
 	u_int	sc_depth;			/* Length of sc_queues. */
 	u_int	sc_max_depth;			/* Max length of sc_queues. */
 #endif
+#if defined(__rtems__) && defined(RTEMS_SMP)
 } __aligned(CACHE_LINE_SIZE);
+#else /* __rtems__ */
+}
+#endif /* __rtems__ */
 
 #ifdef SLEEPQUEUE_PROFILING
 u_int sleepq_max_depth;

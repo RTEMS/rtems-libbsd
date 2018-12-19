@@ -154,7 +154,7 @@ struct sleepqueue_chain {
 #if defined(__rtems__) && defined(RTEMS_SMP)
 } __aligned(CACHE_LINE_SIZE);
 #else /* __rtems__ */
-}
+};
 #endif /* __rtems__ */
 
 #ifdef SLEEPQUEUE_PROFILING

@@ -1335,6 +1335,8 @@ class dev_net(builder.Module):
         mm = self.manager
         self.addKernelSpaceHeaderFiles(
             [
+                'sys/arm/ti/cpsw/if_cpswreg.h',
+                'sys/arm/ti/cpsw/if_cpswvar.h',
                 'sys/arm/xilinx/zy7_slcr.h',
                 'sys/dev/cadence/if_cgem_hw.h',
                 'sys/dev/dwc/if_dwc.h',
@@ -1367,6 +1369,7 @@ class dev_net(builder.Module):
         )
         self.addKernelSpaceSourceFiles(
             [
+                'sys/arm/ti/cpsw/if_cpsw.c',
                 'sys/dev/ffec/if_ffec.c',
                 'sys/dev/mii/mii.c',
                 'sys/dev/mii/mii_bitbang.c',

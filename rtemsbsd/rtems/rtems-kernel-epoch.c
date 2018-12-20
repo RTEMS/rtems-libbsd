@@ -94,6 +94,7 @@ epoch_watchdog(Watchdog_Control *wdg)
 	ISR_Level level;
 
 	epcpu = __containerof(wdg, struct epoch_pcpu, wdg);
+
 	_ISR_Local_disable(level);
 	_Watchdog_Per_CPU_insert_ticks(&epcpu->wdg,
 	    _Watchdog_Get_CPU(&epcpu->wdg), 1);
@@ -154,13 +155,16 @@ epoch_sysinit(void)
 	for (cpu_index = 0; cpu_index < cpu_count; ++cpu_index) {
 		Per_CPU_Control *cpu;
 		struct epoch_pcpu *epcpu;
+		ISR_Level level;
 
 		cpu = _Per_CPU_Get_by_index(cpu_index);
 		epcpu = PER_CPU_DATA_GET(cpu, struct epoch_pcpu, epoch);
 
 		_Watchdog_Preinitialize(&epcpu->wdg, cpu);
 		_Watchdog_Initialize(&epcpu->wdg, epoch_watchdog);
+		_ISR_Local_disable(level);
 		_Watchdog_Per_CPU_insert_ticks(&epcpu->wdg, cpu, 1);
+		_ISR_Local_enable(level);
 
 		rtems_interrupt_server_request_initialize(cpu_index,
 		    &epcpu->irq_srv_req, epoch_call_handler, epcpu);

@@ -16568,6 +16568,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RT3072",
 	},
 	{
+	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_WLA1000,
+	    0,
+	    "Sitecom Europe",
+	    "WLA-1000",
+	},
+	{
 	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_RTL8188CU_1,
 	    0,
 	    "Sitecom Europe",
@@ -17600,10 +17606,22 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "TL-WN823N v2",
 	},
 	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN722NV2,
+	    0,
+	    "TP-Link",
+	    "TL-WN722N v2",
+	},
+	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UV2,
 	    0,
 	    "TP-Link",
 	    "Archer T4U ver 2",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UHV1,
+	    0,
+	    "TP-Link",
+	    "Archer T4UH ver 1",
 	},
 	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UHV2,

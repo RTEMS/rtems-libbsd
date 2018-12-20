@@ -53,12 +53,11 @@ struct wps_data * wps_init(const struct wps_config *cfg)
 	}
 	if (cfg->pin) {
 		data->dev_pw_id = cfg->dev_pw_id;
-		data->dev_password = os_malloc(cfg->pin_len);
+		data->dev_password = os_memdup(cfg->pin, cfg->pin_len);
 		if (data->dev_password == NULL) {
 			os_free(data);
 			return NULL;
 		}
-		os_memcpy(data->dev_password, cfg->pin, cfg->pin_len);
 		data->dev_password_len = cfg->pin_len;
 		wpa_hexdump_key(MSG_DEBUG, "WPS: AP PIN dev_password",
 				data->dev_password, data->dev_password_len);
@@ -77,14 +76,12 @@ struct wps_data * wps_init(const struct wps_config *cfg)
 
 		data->dev_pw_id = cfg->wps->ap_nfc_dev_pw_id;
 		data->dev_password =
-			os_malloc(wpabuf_len(cfg->wps->ap_nfc_dev_pw));
+			os_memdup(wpabuf_head(cfg->wps->ap_nfc_dev_pw),
+				  wpabuf_len(cfg->wps->ap_nfc_dev_pw));
 		if (data->dev_password == NULL) {
 			os_free(data);
 			return NULL;
 		}
-		os_memcpy(data->dev_password,
-			  wpabuf_head(cfg->wps->ap_nfc_dev_pw),
-			  wpabuf_len(cfg->wps->ap_nfc_dev_pw));
 		data->dev_password_len = wpabuf_len(cfg->wps->ap_nfc_dev_pw);
 		wpa_hexdump_key(MSG_DEBUG, "WPS: NFC dev_password",
 			    data->dev_password, data->dev_password_len);
@@ -126,15 +123,14 @@ struct wps_data * wps_init(const struct wps_config *cfg)
 
 	if (cfg->new_ap_settings) {
 		data->new_ap_settings =
-			os_malloc(sizeof(*data->new_ap_settings));
+			os_memdup(cfg->new_ap_settings,
+				  sizeof(*data->new_ap_settings));
 		if (data->new_ap_settings == NULL) {
 			bin_clear_free(data->dev_password,
 				       data->dev_password_len);
 			os_free(data);
 			return NULL;
 		}
-		os_memcpy(data->new_ap_settings, cfg->new_ap_settings,
-			  sizeof(*data->new_ap_settings));
 	}
 
 	if (cfg->peer_addr)

@@ -56,7 +56,6 @@ static int random_fd = -1;
 static unsigned int own_pool_ready = 0;
 #define RANDOM_ENTROPY_SIZE 20
 static char *random_entropy_file = NULL;
-static int random_entropy_file_read = 0;
 
 #define MIN_COLLECT_ENTROPY 1000
 static unsigned int entropy = 0;
@@ -68,6 +67,9 @@ static void random_write_entropy(void);
 
 static u32 __ROL32(u32 x, u32 y)
 {
+	if (y == 0)
+		return x;
+
 	return (x << (y & 31)) | (x >> (32 - (y & 31)));
 }
 
@@ -356,7 +358,6 @@ static void random_read_entropy(void)
 
 	own_pool_ready = (u8) buf[0];
 	random_add_randomness(buf + 1, RANDOM_ENTROPY_SIZE);
-	random_entropy_file_read = 1;
 	os_free(buf);
 	wpa_printf(MSG_DEBUG, "random: Added entropy from %s "
 		   "(own_pool_ready=%u)",

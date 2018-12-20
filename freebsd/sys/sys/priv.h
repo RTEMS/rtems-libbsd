@@ -533,10 +533,10 @@ struct thread;
 struct ucred;
 #ifndef __rtems__
 int	priv_check(struct thread *td, int priv);
-int	priv_check_cred(struct ucred *cred, int priv, int flags);
+int	priv_check_cred(struct ucred *cred, int priv);
 #else /* __rtems__ */
 #define priv_check(td, priv) 0
-#define priv_check_cred(cred, priv, flags) 0
+#define priv_check_cred(cred, priv) 0
 #endif /* __rtems__ */
 #endif
 

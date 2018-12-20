@@ -750,12 +750,11 @@ int wps_registrar_add_pin(struct wps_registrar *reg, const u8 *addr,
 		p->wildcard_uuid = 1;
 	else
 		os_memcpy(p->uuid, uuid, WPS_UUID_LEN);
-	p->pin = os_malloc(pin_len);
+	p->pin = os_memdup(pin, pin_len);
 	if (p->pin == NULL) {
 		os_free(p);
 		return -1;
 	}
-	os_memcpy(p->pin, pin, pin_len);
 	p->pin_len = pin_len;
 
 	if (timeout) {
@@ -883,6 +882,7 @@ static const u8 * wps_registrar_get_pin(struct wps_registrar *reg,
 					const u8 *uuid, size_t *pin_len)
 {
 	struct wps_uuid_pin *pin, *found = NULL;
+	int wildcard = 0;
 
 	wps_registrar_expire_pins(reg);
 
@@ -902,7 +902,7 @@ static const u8 * wps_registrar_get_pin(struct wps_registrar *reg,
 			    pin->wildcard_uuid == 2) {
 				wpa_printf(MSG_DEBUG, "WPS: Found a wildcard "
 					   "PIN. Assigned it for this UUID-E");
-				pin->wildcard_uuid++;
+				wildcard = 1;
 				os_memcpy(pin->uuid, uuid, WPS_UUID_LEN);
 				found = pin;
 				break;
@@ -924,6 +924,8 @@ static const u8 * wps_registrar_get_pin(struct wps_registrar *reg,
 	}
 	*pin_len = found->pin_len;
 	found->flags |= PIN_LOCKED;
+	if (wildcard)
+		found->wildcard_uuid++;
 	return found->pin;
 }
 
@@ -1406,10 +1408,9 @@ static int wps_get_dev_password(struct wps_data *wps)
 		return -1;
 	}
 
-	wps->dev_password = os_malloc(pin_len);
+	wps->dev_password = os_memdup(pin, pin_len);
 	if (wps->dev_password == NULL)
 		return -1;
-	os_memcpy(wps->dev_password, pin, pin_len);
 	wps->dev_password_len = pin_len;
 
 	return 0;

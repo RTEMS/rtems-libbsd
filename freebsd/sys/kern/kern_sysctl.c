@@ -552,10 +552,10 @@ sysctl_unregister_oid(struct sysctl_oid *oidp)
 	int error;
 
 	SYSCTL_ASSERT_WLOCKED();
-	error = ENOENT;
 	if (oidp->oid_number == OID_AUTO) {
 		error = EINVAL;
 	} else {
+		error = ENOENT;
 		SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
 			if (p == oidp) {
 				SLIST_REMOVE(oidp->oid_parent, oidp,
@@ -571,8 +571,10 @@ sysctl_unregister_oid(struct sysctl_oid *oidp)
 	 * being unloaded afterwards.  It should not be a panic()
 	 * for normal use.
 	 */
-	if (error)
-		printf("%s: failed to unregister sysctl\n", __func__);
+	if (error) {
+		printf("%s: failed(%d) to unregister sysctl(%s)\n",
+		    __func__, error, oidp->oid_name);
+	}
 }
 
 /* Initialize a new context to keep track of dynamically added sysctls. */
@@ -1714,13 +1716,13 @@ sysctl_usec_to_sbintime(SYSCTL_HANDLER_ARGS)
 	sbintime_t sb;
 
 	tt = *(int64_t *)arg1;
-	sb = ustosbt(tt);
+	sb = sbttous(tt);
 
 	error = sysctl_handle_64(oidp, &sb, 0, req);
 	if (error || !req->newptr)
 		return (error);
 
-	tt = sbttous(sb);
+	tt = ustosbt(sb);
 	*(int64_t *)arg1 = tt;
 
 	return (0);
@@ -1737,13 +1739,13 @@ sysctl_msec_to_sbintime(SYSCTL_HANDLER_ARGS)
 	sbintime_t sb;
 
 	tt = *(int64_t *)arg1;
-	sb = mstosbt(tt);
+	sb = sbttoms(tt);
 
 	error = sysctl_handle_64(oidp, &sb, 0, req);
 	if (error || !req->newptr)
 		return (error);
 
-	tt = sbttoms(sb);
+	tt = mstosbt(sb);
 	*(int64_t *)arg1 = tt;
 
 	return (0);
@@ -1782,7 +1784,7 @@ sysctl_new_kernel(struct sysctl_req *req, void *p, size_t l)
 		return (0);
 	if (req->newlen - req->newidx < l)
 		return (EINVAL);
-	bcopy((char *)req->newptr + req->newidx, p, l);
+	bcopy((const char *)req->newptr + req->newidx, p, l);
 	req->newidx += l;
 	return (0);
 }
@@ -1919,7 +1921,7 @@ sysctl_new_user(struct sysctl_req *req, void *p, size_t l)
 		return (EINVAL);
 	WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
 	    "sysctl_new_user()");
-	error = copyin((char *)req->newptr + req->newidx, p, l);
+	error = copyin((const char *)req->newptr + req->newidx, p, l);
 	req->newidx += l;
 	return (error);
 }
@@ -2153,8 +2155,8 @@ sys___sysctl(struct thread *td, struct sysctl_args *uap)
  */
 int
 userland_sysctl(struct thread *td, int *name, u_int namelen, void *old,
-    size_t *oldlenp, int inkernel, void *new, size_t newlen, size_t *retval,
-    int flags)
+    size_t *oldlenp, int inkernel, const void *new, size_t newlen,
+    size_t *retval, int flags)
 {
 	int error = 0, memlocked;
 	struct sysctl_req req;

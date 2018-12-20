@@ -29,6 +29,7 @@
 #define	AliasSctpInit _bsd_AliasSctpInit
 #define	AliasSctpTerm _bsd_AliasSctpTerm
 #define	alloc_unr _bsd_alloc_unr
+#define	alloc_unr64 _bsd_alloc_unr64
 #define	alloc_unrl _bsd_alloc_unrl
 #define	alloc_unr_specific _bsd_alloc_unr_specific
 #define	altq_add _bsd_altq_add
@@ -432,6 +433,7 @@
 #define	bus_generic_release_resource _bsd_bus_generic_release_resource
 #define	bus_generic_resume _bsd_bus_generic_resume
 #define	bus_generic_resume_child _bsd_bus_generic_resume_child
+#define	bus_generic_resume_intr _bsd_bus_generic_resume_intr
 #define	bus_generic_rl_alloc_resource _bsd_bus_generic_rl_alloc_resource
 #define	bus_generic_rl_delete_resource _bsd_bus_generic_rl_delete_resource
 #define	bus_generic_rl_get_resource _bsd_bus_generic_rl_get_resource
@@ -441,6 +443,7 @@
 #define	bus_generic_shutdown _bsd_bus_generic_shutdown
 #define	bus_generic_suspend _bsd_bus_generic_suspend
 #define	bus_generic_suspend_child _bsd_bus_generic_suspend_child
+#define	bus_generic_suspend_intr _bsd_bus_generic_suspend_intr
 #define	bus_generic_teardown_intr _bsd_bus_generic_teardown_intr
 #define	bus_generic_unmap_resource _bsd_bus_generic_unmap_resource
 #define	bus_generic_write_ivar _bsd_bus_generic_write_ivar
@@ -458,9 +461,11 @@
 #define	bus_print_child_header _bsd_bus_print_child_header
 #define	bus_release_resource _bsd_bus_release_resource
 #define	bus_release_resources _bsd_bus_release_resources
+#define	bus_resume_intr _bsd_bus_resume_intr
 #define	bus_set_pass _bsd_bus_set_pass
 #define	bus_set_resource _bsd_bus_set_resource
 #define	bus_setup_intr _bsd_bus_setup_intr
+#define	bus_suspend_intr _bsd_bus_suspend_intr
 #define	bus_teardown_intr _bsd_bus_teardown_intr
 #define	bus_unmap_resource _bsd_bus_unmap_resource
 #define	calculate_crc32c _bsd_calculate_crc32c
@@ -572,6 +577,7 @@
 #define	counter_u64_zero _bsd_counter_u64_zero
 #define	crc32_tab _bsd_crc32_tab
 #define	crypto_apply _bsd_crypto_apply
+#define	crypto_contiguous_subsegment _bsd_crypto_contiguous_subsegment
 #define	crypto_copyback _bsd_crypto_copyback
 #define	crypto_copydata _bsd_crypto_copydata
 #define	crypto_devallowsoft _bsd_crypto_devallowsoft
@@ -723,6 +729,7 @@
 #define	device_has_quiet_children _bsd_device_has_quiet_children
 #define	device_is_alive _bsd_device_is_alive
 #define	device_is_attached _bsd_device_is_attached
+#define	device_is_devclass_fixed _bsd_device_is_devclass_fixed
 #define	device_is_enabled _bsd_device_is_enabled
 #define	device_is_quiet _bsd_device_is_quiet
 #define	device_is_suspended _bsd_device_is_suspended
@@ -1311,6 +1318,15 @@
 #define	gpiobus_init_softc _bsd_gpiobus_init_softc
 #define	gpiobus_release_pin _bsd_gpiobus_release_pin
 #define	gpio_check_flags _bsd_gpio_check_flags
+#define	gpio_pin_get_by_ofw_idx _bsd_gpio_pin_get_by_ofw_idx
+#define	gpio_pin_get_by_ofw_name _bsd_gpio_pin_get_by_ofw_name
+#define	gpio_pin_get_by_ofw_property _bsd_gpio_pin_get_by_ofw_property
+#define	gpio_pin_get_by_ofw_propidx _bsd_gpio_pin_get_by_ofw_propidx
+#define	gpio_pin_getcaps _bsd_gpio_pin_getcaps
+#define	gpio_pin_is_active _bsd_gpio_pin_is_active
+#define	gpio_pin_release _bsd_gpio_pin_release
+#define	gpio_pin_set_active _bsd_gpio_pin_set_active
+#define	gpio_pin_setflags _bsd_gpio_pin_setflags
 #define	gre_hashdestroy _bsd_gre_hashdestroy
 #define	gre_hashinit _bsd_gre_hashinit
 #define	gre_input _bsd_gre_input
@@ -3004,6 +3020,12 @@
 #define	ofw_bus_status_okay _bsd_ofw_bus_status_okay
 #define	ofw_bus_string_list_to_array _bsd_ofw_bus_string_list_to_array
 #define	ofw_fdt _bsd_ofw_fdt
+#define	ofw_gpiobus_add_fdt_child _bsd_ofw_gpiobus_add_fdt_child
+#define	ofwgpiobus_devclass _bsd_ofwgpiobus_devclass
+#define	ofw_gpiobus_driver _bsd_ofw_gpiobus_driver
+#define	ofw_gpiobus_parse_gpios _bsd_ofw_gpiobus_parse_gpios
+#define	ofw_gpiobus_register_provider _bsd_ofw_gpiobus_register_provider
+#define	ofw_gpiobus_unregister_provider _bsd_ofw_gpiobus_unregister_provider
 #define	ofw_parse_bootargs _bsd_ofw_parse_bootargs
 #define	ofw_reg_to_paddr _bsd_ofw_reg_to_paddr
 #define	OF_write _bsd_OF_write
@@ -3750,6 +3772,7 @@
 #define	rman_get_device _bsd_rman_get_device
 #define	rman_get_end _bsd_rman_get_end
 #define	rman_get_flags _bsd_rman_get_flags
+#define	rman_get_irq_cookie _bsd_rman_get_irq_cookie
 #define	rman_get_mapping _bsd_rman_get_mapping
 #define	rman_get_rid _bsd_rman_get_rid
 #define	rman_get_size _bsd_rman_get_size
@@ -3769,6 +3792,7 @@
 #define	rman_set_bustag _bsd_rman_set_bustag
 #define	rman_set_device _bsd_rman_set_device
 #define	rman_set_end _bsd_rman_set_end
+#define	rman_set_irq_cookie _bsd_rman_set_irq_cookie
 #define	rman_set_mapping _bsd_rman_set_mapping
 #define	rman_set_rid _bsd_rman_set_rid
 #define	rman_set_start _bsd_rman_set_start
@@ -4448,6 +4472,7 @@
 #define	SHA512_Update _bsd_SHA512_Update
 #define	simplebus_add_device _bsd_simplebus_add_device
 #define	simplebus_driver _bsd_simplebus_driver
+#define	simplebus_fill_ranges _bsd_simplebus_fill_ranges
 #define	simplebus_init _bsd_simplebus_init
 #define	simplebus_setup_dinfo _bsd_simplebus_setup_dinfo
 #define	SipHash_End _bsd_SipHash_End
@@ -4752,11 +4777,11 @@
 #define	sysctl___security _bsd_sysctl___security
 #define	sysctl___sysctl _bsd_sysctl___sysctl
 #define	sysctl_unregister_oid _bsd_sysctl_unregister_oid
+#define	sysctl_usec_to_sbintime _bsd_sysctl_usec_to_sbintime
 #define	sysctl___vm _bsd_sysctl___vm
 #define	sysctl_wire_old_buffer _bsd_sysctl_wire_old_buffer
 #define	sysctl_wlock _bsd_sysctl_wlock
 #define	sysctl_wunlock _bsd_sysctl_wunlock
-#define	sys_listen _bsd_sys_listen
 #define	system_base_info _bsd_system_base_info
 #define	taskqgroup_adjust _bsd_taskqgroup_adjust
 #define	taskqgroup_attach _bsd_taskqgroup_attach

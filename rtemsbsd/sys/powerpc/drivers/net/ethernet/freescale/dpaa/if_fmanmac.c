@@ -69,7 +69,7 @@ fman_mac_sgt_init(void)
 {
 
 	fman_mac_sgt_zone = uma_zcreate("FMan MAC SGT", sizeof(struct fman_mac_sgt),
-	    NULL, NULL, NULL, NULL, 16, 0);
+	    NULL, NULL, NULL, NULL, 16 - 1, 0);
 	if (fman_mac_sgt_zone == NULL) {
 		panic("Cannot create FMan MAC SGT zone");
 	}

@@ -113,108 +113,90 @@ fman_mac_enable_tx_csum(struct mbuf *m, struct qm_fd *fd,
 	fd->cmd |= FM_FD_CMD_RPD | FM_FD_CMD_DTC;
 }
 
-static void
-fman_mac_txstart_locked(struct ifnet *ifp, struct fman_mac_softc *sc)
-{
-
-	FMAN_MAC_ASSERT_LOCKED(sc);
-
-	for (;;) {
-		struct fman_mac_sgt *sgt;
-		struct mbuf *m;
-		struct mbuf *n;
-		struct qm_fd fd;
-		struct dpaa_priv *priv;
-		struct qman_fq *egress_fq;
-		int queue = 0;
-		size_t i;
-		int err;
-
-		IFQ_DRV_DEQUEUE(&ifp->if_snd, m);
-		if (m == NULL) {
-			break;
-		}
-
-		sgt = uma_zalloc(fman_mac_sgt_zone, M_NOWAIT);
-		if (sgt == NULL) {
-			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
-			m_freem(m);
-			continue;
-		}
-
-		qm_fd_clear_fd(&fd);
-		qm_fd_set_sg(&fd, offsetof(struct fman_mac_sgt, sg), m->m_pkthdr.len);
-		fd.bpid = FSL_DPAA_BPID_INV;
-		fd.cmd |= cpu_to_be32(FM_FD_CMD_FCO);
-		qm_fd_addr_set64(&fd, (uintptr_t)sgt);
-		fman_mac_enable_tx_csum(m, &fd, &sgt->prs);
-
-repeat_with_collapsed_mbuf_chain:
-
-		i = 0;
-		n = m;
-
-		while (n != NULL && i < DPAA_SGT_MAX_ENTRIES) {
-			int len = n->m_len;
-
-			if (len > 0) {
-				qm_sg_entry_set_len(&sgt->sg[i], len);
-				sgt->sg[i].bpid = FSL_DPAA_BPID_INV;
-				sgt->sg[i].offset = 0;
-				qm_sg_entry_set64(&sgt->sg[i],
-				    mtod(n, uintptr_t));
-				++i;
-			}
-
-			n = n->m_next;
-		}
-
-		if (n != NULL && i == DPAA_SGT_MAX_ENTRIES) {
-			struct mbuf *c;
-
-			c = m_collapse(m, M_NOWAIT, DPAA_SGT_MAX_ENTRIES);
-			if (c == NULL) {
-				if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
-				m_freem(m);
-				uma_zfree(fman_mac_sgt_zone, sgt);
-				continue;
-			}
-
-			m = c;
-			goto repeat_with_collapsed_mbuf_chain;
-		}
-
-		sgt->sg[i - 1].cfg |= cpu_to_be32(QM_SG_FIN);
-		sgt->m = m;
-		priv = netdev_priv(&sc->mac_dev.net_dev);
-		egress_fq = priv->egress_fqs[queue];
-		fd.cmd |= cpu_to_be32(qman_fq_fqid(priv->conf_fqs[queue]));
-
-		for (i = 0; i < DPAA_ENQUEUE_RETRIES; ++i) {
-			err = qman_enqueue(egress_fq, &fd);
-			if (err != -EBUSY) {
-				break;
-			}
-		}
-
-		if (unlikely(err < 0)) {
-			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
-			m_freem(m);
-			continue;
-		}
-	}
-}
-
-static void
-fman_mac_txstart(struct ifnet *ifp)
+static int
+fman_mac_tx(struct ifnet *ifp, struct mbuf *m)
 {
 	struct fman_mac_softc *sc;
+	struct fman_mac_sgt *sgt;
+	struct mbuf *n;
+	struct qm_fd fd;
+	struct dpaa_priv *priv;
+	struct qman_fq *egress_fq;
+	int queue = 0;
+	size_t i;
+	int err;
 
 	sc = ifp->if_softc;
 
-	FMAN_MAC_LOCK(sc);
-	fman_mac_txstart_locked(ifp, sc);
-	FMAN_MAC_UNLOCK(sc);
+	sgt = uma_zalloc(fman_mac_sgt_zone, M_NOWAIT);
+	if (unlikely(sgt == NULL)) {
+		if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
+		m_freem(m);
+		return (ENOBUFS);
+	}
+
+	qm_fd_clear_fd(&fd);
+	qm_fd_set_sg(&fd, offsetof(struct fman_mac_sgt, sg), m->m_pkthdr.len);
+	fd.bpid = FSL_DPAA_BPID_INV;
+	fd.cmd |= cpu_to_be32(FM_FD_CMD_FCO);
+	qm_fd_addr_set64(&fd, (uintptr_t)sgt);
+	fman_mac_enable_tx_csum(m, &fd, &sgt->prs);
+
+repeat_with_collapsed_mbuf_chain:
+
+	i = 0;
+	n = m;
+
+	while (n != NULL && i < DPAA_SGT_MAX_ENTRIES) {
+		int len = n->m_len;
+
+		if (len > 0) {
+			qm_sg_entry_set_len(&sgt->sg[i], len);
+			sgt->sg[i].bpid = FSL_DPAA_BPID_INV;
+			sgt->sg[i].offset = 0;
+			qm_sg_entry_set64(&sgt->sg[i],
+			    mtod(n, uintptr_t));
+			++i;
+		}
+
+		n = n->m_next;
+	}
+
+	if (unlikely(n != NULL && i == DPAA_SGT_MAX_ENTRIES)) {
+		struct mbuf *c;
+
+		c = m_collapse(m, M_NOWAIT, DPAA_SGT_MAX_ENTRIES);
+		if (c == NULL) {
+			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
+			m_freem(m);
+			uma_zfree(fman_mac_sgt_zone, sgt);
+			return (ENOBUFS);
+		}
+
+		m = c;
+		goto repeat_with_collapsed_mbuf_chain;
+	}
+
+	sgt->sg[i - 1].cfg |= cpu_to_be32(QM_SG_FIN);
+	sgt->m = m;
+	priv = netdev_priv(&sc->mac_dev.net_dev);
+	egress_fq = priv->egress_fqs[queue];
+	fd.cmd |= cpu_to_be32(qman_fq_fqid(priv->conf_fqs[queue]));
+
+	for (i = 0; i < DPAA_ENQUEUE_RETRIES; ++i) {
+		err = qman_enqueue(egress_fq, &fd);
+		if (likely(err != -EBUSY)) {
+			break;
+		}
+	}
+
+	if (unlikely(err < 0)) {
+		if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
+		m_freem(m);
+		return (ENOBUFS);
+	}
+
+	return (0);
 }
 
 static void
@@ -447,7 +429,8 @@ fman_mac_dev_attach(device_t dev)
 	    IFCAP_VLAN_MTU | IFCAP_JUMBO_MTU;
 	ifp->if_capenable = ifp->if_capabilities;
 	ifp->if_hwassist = FMAN_MAC_CSUM;
-	ifp->if_start = fman_mac_txstart;
+	ifp->if_transmit = fman_mac_tx;
+	ifp->if_qflush = if_qflush;
 	ifp->if_ioctl = fman_mac_ioctl;
 	ifp->if_init = fman_mac_init;
 	IFQ_SET_MAXLEN(&ifp->if_snd, 128);

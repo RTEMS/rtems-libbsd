@@ -235,8 +235,13 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 	__sx_xunlock((sx), curthread, (file), (line))
 #endif	/* LOCK_DEBUG > 0 || SX_NOINLINE */
 #if	(LOCK_DEBUG > 0)
+#ifndef __rtems__
 #define	sx_slock_(sx, file, line)					\
 	(void)_sx_slock((sx), 0, (file), (line))
+#else /* __rtems__ */
+#define	sx_slock_(sx, file, line)					\
+	(void)_sx_xlock((sx), 0, (file), (line))
+#endif /* __rtems__ */
 #define	sx_slock_sig_(sx, file, line)					\
 	_sx_slock((sx), SX_INTERRUPTIBLE, (file) , (line))
 #define	sx_sunlock_(sx, file, line)					\

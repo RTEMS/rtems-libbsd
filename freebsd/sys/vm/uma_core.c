@@ -338,6 +338,7 @@ static void uma_dbg_alloc(uma_zone_t zone, uma_slab_t slab, void *item);
 static SYSCTL_NODE(_vm, OID_AUTO, debug, CTLFLAG_RD, 0,
     "Memory allocation debugging");
 
+#ifndef __rtems__
 static u_int dbg_divisor = 1;
 SYSCTL_UINT(_vm_debug, OID_AUTO, divisor,
     CTLFLAG_RDTUN | CTLFLAG_NOFETCH, &dbg_divisor, 0,
@@ -349,6 +350,9 @@ SYSCTL_COUNTER_U64(_vm_debug, OID_AUTO, trashed, CTLFLAG_RD,
     &uma_dbg_cnt, "memory items debugged");
 SYSCTL_COUNTER_U64(_vm_debug, OID_AUTO, skipped, CTLFLAG_RD,
     &uma_skip_cnt, "memory items skipped, not debugged");
+#else /* __rtems__ */
+#define	dbg_divisor 1
+#endif /* __rtems__ */
 #endif
 
 SYSINIT(uma_startup3, SI_SUB_VM_CONF, SI_ORDER_SECOND, uma_startup3, NULL);
@@ -2245,9 +2249,11 @@ uma_startup3(void)
 {
 
 #ifdef INVARIANTS
+#ifndef __rtems__
 	TUNABLE_INT_FETCH("vm.debug.divisor", &dbg_divisor);
 	uma_dbg_cnt = counter_u64_alloc(M_WAITOK);
 	uma_skip_cnt = counter_u64_alloc(M_WAITOK);
+#endif /* __rtems__ */
 #endif
 	callout_init(&uma_callout, 1);
 	callout_reset(&uma_callout, UMA_TIMEOUT * hz, uma_timeout, NULL);
@@ -2792,8 +2798,10 @@ uma_zalloc_domain(uma_zone_t zone, void *udata, int domain, int flags)
 		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
 		    "uma_zalloc_domain: zone \"%s\"", zone->uz_name);
 	}
+#ifndef __rtems__
 	KASSERT(curthread->td_critnest == 0 || SCHEDULER_STOPPED(),
 	    ("uma_zalloc_domain: called with spinlock or critical section held"));
+#endif /* __rtems__ */
 
 	return (zone_alloc_item(zone, udata, domain, flags));
 }
@@ -3474,8 +3482,10 @@ uma_zfree_domain(uma_zone_t zone, void *item, void *udata)
 	CTR2(KTR_UMA, "uma_zfree_domain thread %x zone %s", curthread,
 	    zone->uz_name);
 
+#ifndef __rtems__
 	KASSERT(curthread->td_critnest == 0 || SCHEDULER_STOPPED(),
 	    ("uma_zfree_domain: called with spinlock or critical section held"));
+#endif /* __rtems__ */
 
         /* uma_zfree(..., NULL) does nothing, to match free(9). */
         if (item == NULL)
@@ -4357,6 +4367,7 @@ uma_dbg_kskip(uma_keg_t keg, void *mem)
 	if (dbg_divisor == 1)
 		return (false);
 
+#ifndef __rtems__
 	idx = (uintptr_t)mem >> PAGE_SHIFT;
 	if (keg->uk_ipers > 1) {
 		idx *= keg->uk_ipers;
@@ -4368,6 +4379,7 @@ uma_dbg_kskip(uma_keg_t keg, void *mem)
 		return (true);
 	}
 	counter_u64_add(uma_dbg_cnt, 1);
+#endif /* __rtems__ */
 
 	return (false);
 }

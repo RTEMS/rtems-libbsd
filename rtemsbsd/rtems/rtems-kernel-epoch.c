@@ -33,6 +33,9 @@
 #include <sys/types.h>
 #include <sys/kernel.h>
 #include <sys/epoch.h>
+#ifdef INVARIANTS
+#include <sys/systm.h>
+#endif
 
 #include <machine/cpu.h>
 
@@ -322,3 +325,32 @@ epoch_call(epoch_t epoch, epoch_context_t ctx,
 	ck_epoch_call(&er->er_record, ctx, callback);
 	_Thread_Dispatch_enable(cpu_self);
 }
+
+#ifdef INVARIANTS
+int
+_bsd_in_epoch(epoch_t epoch)
+{
+	Per_CPU_Control *cpu_self;
+	Thread_Control *executing;
+	struct epoch_record *er;
+	struct epoch_pcpu *epcpu;
+	struct epoch_tracker *tdwait;
+	int in;
+
+	in = 0;
+	cpu_self = _Thread_Dispatch_disable();
+	executing = _Per_CPU_Get_executing(cpu_self);
+	epcpu = PER_CPU_DATA_GET(cpu_self, struct epoch_pcpu, epoch);
+	er = EPOCH_GET_RECORD(cpu_self, epoch);
+
+	TAILQ_FOREACH(tdwait, &er->er_tdlist, et_link) {
+		if (tdwait->et_td == executing) {
+			in = 1;
+			break;
+		}
+	}
+
+	_Thread_Dispatch_enable(cpu_self);
+	return (in);
+}
+#endif

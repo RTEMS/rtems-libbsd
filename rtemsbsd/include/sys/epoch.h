@@ -109,8 +109,9 @@ void	epoch_wait_preempt(epoch_t epoch);
 void	epoch_call(epoch_t epoch, epoch_context_t ctx,
 	    void (*callback) (epoch_context_t));
 
-int	in_epoch(epoch_t epoch);
-int	in_epoch_verbose(epoch_t epoch, int dump_onfail);
+int	_bsd_in_epoch(epoch_t epoch);
+#define	in_epoch(epoch) _bsd_in_epoch(epoch)
+#define	in_epoch_verbose(epoch, dump_onfail) _bsd_in_epoch(epoch)
 
 #define	EPOCH_GET_RECORD(cpu_self, epoch) PER_CPU_DATA_GET_BY_OFFSET( \
     cpu_self, struct epoch_record, epoch->e_pcpu_record_offset)

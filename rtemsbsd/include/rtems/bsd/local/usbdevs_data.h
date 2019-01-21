@@ -14594,6 +14594,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CU",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8821AU,
+	    0,
+	    "Realtek",
+	    "RTL8821AU",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8723BU,
 	    0,
 	    "Realtek",

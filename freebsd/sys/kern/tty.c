@@ -35,7 +35,6 @@
 __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_capsicum.h>
-#include <rtems/bsd/local/opt_printf.h>
 
 #include <sys/param.h>
 #include <sys/capsicum.h>
@@ -108,12 +107,6 @@ SYSCTL_INT(_kern, OID_AUTO, tty_drainwait, CTLFLAG_RWTUN,
  */
 
 #define	TTYBUF_MAX	65536
-
-#ifdef PRINTF_BUFR_SIZE
-#define	TTY_PRBUF_SIZE	PRINTF_BUFR_SIZE
-#else
-#define	TTY_PRBUF_SIZE	256
-#endif
 
 /*
  * Allocate buffer space if necessary, and set low watermarks, based on speed.
@@ -1072,9 +1065,7 @@ tty_alloc_mutex(struct ttydevsw *tsw, void *sc, struct mtx *mutex)
 	PATCH_FUNC(busy);
 #undef PATCH_FUNC
 
-	tp = malloc(sizeof(struct tty) + TTY_PRBUF_SIZE, M_TTY,
-	    M_WAITOK | M_ZERO);
-	tp->t_prbufsz = TTY_PRBUF_SIZE;
+	tp = malloc(sizeof(struct tty), M_TTY, M_WAITOK|M_ZERO);
 	tp->t_devsw = tsw;
 	tp->t_devswsoftc = sc;
 	tp->t_flags = tsw->tsw_flags;

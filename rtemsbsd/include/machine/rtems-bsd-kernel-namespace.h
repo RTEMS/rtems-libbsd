@@ -29,6 +29,7 @@
 #define	AliasSctpInit _bsd_AliasSctpInit
 #define	AliasSctpTerm _bsd_AliasSctpTerm
 #define	alloc_unr _bsd_alloc_unr
+#define	alloc_unr64 _bsd_alloc_unr64
 #define	alloc_unrl _bsd_alloc_unrl
 #define	alloc_unr_specific _bsd_alloc_unr_specific
 #define	altq_add _bsd_altq_add
@@ -3209,8 +3210,6 @@
 #define	pf_free_rule _bsd_pf_free_rule
 #define	pf_free_src_nodes _bsd_pf_free_src_nodes
 #define	pf_free_state _bsd_pf_free_state
-#define	pf_frent_previous _bsd_pf_frent_previous
-#define	pf_frent_remove _bsd_pf_frent_remove
 #define	pf_get_mtag _bsd_pf_get_mtag
 #define	pf_get_ruleset_number _bsd_pf_get_ruleset_number
 #define	pf_get_translation _bsd_pf_get_translation
@@ -3542,6 +3541,7 @@
 #define	r21au_scan_end _bsd_r21au_scan_end
 #define	r21au_scan_start _bsd_r21au_scan_start
 #define	r88e_beacon_enable _bsd_r88e_beacon_enable
+#define	r88e_classify_intr _bsd_r88e_classify_intr
 #define	r88e_fw_cmd _bsd_r88e_fw_cmd
 #define	r88e_fw_download_enable _bsd_r88e_fw_download_enable
 #define	r88e_fw_reset _bsd_r88e_fw_reset
@@ -3550,11 +3550,10 @@
 #define	r88e_get_rx_stats _bsd_r88e_get_rx_stats
 #define	r88e_get_txpower _bsd_r88e_get_txpower
 #define	r88e_handle_c2h_report _bsd_r88e_handle_c2h_report
-#define	r88e_init_bb _bsd_r88e_init_bb
+#define	r88e_init_bb_common _bsd_r88e_init_bb_common
 #define	r88e_iq_calib _bsd_r88e_iq_calib
 #define	r88e_macid_enable_link _bsd_r88e_macid_enable_link
 #define	r88e_parse_rom _bsd_r88e_parse_rom
-#define	r88e_power_on _bsd_r88e_power_on
 #define	r88e_ratectl_tx_complete _bsd_r88e_ratectl_tx_complete
 #define	r88e_rf_write _bsd_r88e_rf_write
 #define	r88e_set_bw20 _bsd_r88e_set_bw20
@@ -3569,22 +3568,24 @@
 #define	r88e_tx_setup_hwseq _bsd_r88e_tx_setup_hwseq
 #define	r88e_tx_setup_macid _bsd_r88e_tx_setup_macid
 #define	r88eu_attach _bsd_r88eu_attach
-#define	r88eu_classify_intr _bsd_r88eu_classify_intr
+#define	r88eu_init_bb _bsd_r88eu_init_bb
 #define	r88eu_init_intr _bsd_r88eu_init_intr
 #define	r88eu_init_rx_agg _bsd_r88eu_init_rx_agg
 #define	r88eu_post_init _bsd_r88eu_post_init
 #define	r88eu_power_off _bsd_r88eu_power_off
+#define	r88eu_power_on _bsd_r88eu_power_on
 #define	r92c_beacon_enable _bsd_r92c_beacon_enable
 #define	r92c_beacon_init _bsd_r92c_beacon_init
 #define	r92c_check_condition _bsd_r92c_check_condition
+#define	r92c_classify_intr _bsd_r92c_classify_intr
 #define	r92c_detach_private _bsd_r92c_detach_private
 #define	r92ce_attach _bsd_r92ce_attach
-#define	r92ce_classify_intr _bsd_r92ce_classify_intr
 #define	r92ce_copy_tx_desc _bsd_r92ce_copy_tx_desc
 #define	r92ce_dump_tx_desc _bsd_r92ce_dump_tx_desc
 #define	r92ce_enable_intr _bsd_r92ce_enable_intr
 #define	r92c_efuse_postread _bsd_r92c_efuse_postread
 #define	r92ce_fw_reset _bsd_r92ce_fw_reset
+#define	r92ce_get_intr_status _bsd_r92ce_get_intr_status
 #define	r92ce_init_ampdu _bsd_r92ce_init_ampdu
 #define	r92ce_init_bb _bsd_r92ce_init_bb
 #define	r92ce_init_edca _bsd_r92ce_init_edca
@@ -3641,7 +3642,6 @@
 #define	r92c_tx_setup_macid _bsd_r92c_tx_setup_macid
 #define	r92cu_align_rx _bsd_r92cu_align_rx
 #define	r92cu_attach _bsd_r92cu_attach
-#define	r92cu_classify_intr _bsd_r92cu_classify_intr
 #define	r92cu_dump_tx_desc _bsd_r92cu_dump_tx_desc
 #define	r92cu_init_bb _bsd_r92cu_init_bb
 #define	r92cu_init_intr _bsd_r92cu_init_intr
@@ -4702,7 +4702,6 @@
 #define	sysctl___kern_features _bsd_sysctl___kern_features
 #define	sysctl___kern_ipc _bsd_sysctl___kern_ipc
 #define	sysctl_move_oid _bsd_sysctl_move_oid
-#define	sysctl_msec_to_sbintime _bsd_sysctl_msec_to_sbintime
 #define	sysctl_msec_to_ticks _bsd_sysctl_msec_to_ticks
 #define	sysctl___net _bsd_sysctl___net
 #define	sysctl___net_accf _bsd_sysctl___net_accf
@@ -4756,7 +4755,6 @@
 #define	sysctl_wire_old_buffer _bsd_sysctl_wire_old_buffer
 #define	sysctl_wlock _bsd_sysctl_wlock
 #define	sysctl_wunlock _bsd_sysctl_wunlock
-#define	sys_listen _bsd_sys_listen
 #define	system_base_info _bsd_system_base_info
 #define	taskqgroup_adjust _bsd_taskqgroup_adjust
 #define	taskqgroup_attach _bsd_taskqgroup_attach
@@ -5016,7 +5014,6 @@
 #define	ttyoutq_write _bsd_ttyoutq_write
 #define	ttyoutq_write_nofrag _bsd_ttyoutq_write_nofrag
 #define	tty_putchar _bsd_tty_putchar
-#define	tty_putstrn _bsd_tty_putstrn
 #define	tty_rel_gone _bsd_tty_rel_gone
 #define	tty_rel_pgrp _bsd_tty_rel_pgrp
 #define	tty_rel_sess _bsd_tty_rel_sess

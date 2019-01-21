@@ -1217,7 +1217,6 @@ class dev_wlan_rtwn(builder.Module):
                 'sys/dev/rtwn/rtl8188e/r88e_tx.c',
                 'sys/dev/rtwn/rtl8188e/usb/r88eu_attach.c',
                 'sys/dev/rtwn/rtl8188e/usb/r88eu_init.c',
-                'sys/dev/rtwn/rtl8188e/usb/r88eu_rx.c',
                 'sys/dev/rtwn/rtl8192c/pci/r92ce_attach.c',
                 'sys/dev/rtwn/rtl8192c/pci/r92ce_calib.c',
                 'sys/dev/rtwn/rtl8192c/pci/r92ce_fw.c',
@@ -2366,7 +2365,6 @@ class crypto(builder.Module):
                 'sys/crypto/blowfish/bf_pi.h',
                 'sys/crypto/blowfish/blowfish.h',
                 'sys/crypto/camellia/camellia.h',
-                'sys/crypto/chacha20/_chacha.h',
                 'sys/crypto/chacha20/chacha.h',
                 'sys/crypto/des/des.h',
                 'sys/crypto/des/des_locl.h',
@@ -3228,6 +3226,7 @@ class crypto_openssl(builder.Module):
         )
         self.addUserSpaceSourceFiles(
             [
+                'crypto/openssl/crypto/getenv.c',
                 'crypto/openssl/crypto/aes/aes_cbc.c',
                 'crypto/openssl/crypto/aes/aes_cfb.c',
                 'crypto/openssl/crypto/aes/aes_core.c',
@@ -3969,7 +3968,6 @@ class contrib_expat(builder.Module):
                 'contrib/expat/lib/internal.h',
                 'contrib/expat/lib/latin1tab.h',
                 'contrib/expat/lib/nametab.h',
-                'contrib/expat/lib/siphash.h',
                 'contrib/expat/lib/utf8tab.h',
                 'contrib/expat/lib/xmlrole.h',
                 'contrib/expat/lib/xmltok.h',

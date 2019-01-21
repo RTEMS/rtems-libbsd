@@ -8762,18 +8762,6 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "USB 3.0 Ethernet",
 	},
 	{
-	    USB_VENDOR_LENOVO, USB_PRODUCT_LENOVO_TBT3LAN,
-	    0,
-	    "Lenovo",
-	    "LAN port in Thinkpad TB3 dock",
-	},
-	{
-	    USB_VENDOR_LENOVO, USB_PRODUCT_LENOVO_USBCLAN,
-	    0,
-	    "Lenovo",
-	    "LAN port in Thinkpad USB-C dock",
-	},
-	{
 	    USB_VENDOR_LEXAR, USB_PRODUCT_LEXAR_JUMPSHOT,
 	    0,
 	    "Lexar Media",
@@ -13292,6 +13280,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "PlexWriter 40/12/40U",
 	},
 	{
+	    USB_VENDOR_PLOYTEC, USB_PRODUCT_PLOYTEC_SPL_CRIMSON_1,
+	    0,
+	    "Ploytec GmbH",
+	    "SPL Crimson Revision 1",
+	},
+	{
 	    USB_VENDOR_PLX, USB_PRODUCT_PLX_TESTBOARD,
 	    0,
 	    "PLX",
@@ -16568,6 +16562,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RT3072",
 	},
 	{
+	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_WLA1000,
+	    0,
+	    "Sitecom Europe",
+	    "WLA-1000",
+	},
+	{
 	    USB_VENDOR_SITECOMEU, USB_PRODUCT_SITECOMEU_RTL8188CU_1,
 	    0,
 	    "Sitecom Europe",
@@ -17588,6 +17588,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Archer T4U",
 	},
 	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN821NV5,
+	    0,
+	    "TP-Link",
+	    "TL-WN821N v5",
+	},
+	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN822NV4,
 	    0,
 	    "TP-Link",
@@ -17600,10 +17606,22 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "TL-WN823N v2",
 	},
 	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_WN722NV2,
+	    0,
+	    "TP-Link",
+	    "TL-WN722N v2",
+	},
+	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UV2,
 	    0,
 	    "TP-Link",
 	    "Archer T4U ver 2",
+	},
+	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UHV1,
+	    0,
+	    "TP-Link",
+	    "Archer T4UH ver 1",
 	},
 	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T4UHV2,
@@ -21401,6 +21419,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_MEDIAGEAR, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "MediaGear",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_PLOYTEC, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Ploytec GmbH",
 	    NULL,
 	},
 	{

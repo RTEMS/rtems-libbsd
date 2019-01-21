@@ -167,10 +167,8 @@ pfi_cleanup_vnet(void)
 		RB_REMOVE(pfi_ifhead, &V_pfi_ifs, kif);
 		if (kif->pfik_group)
 			kif->pfik_group->ifg_pf_kif = NULL;
-		if (kif->pfik_ifp) {
-			if_rele(kif->pfik_ifp);
+		if (kif->pfik_ifp)
 			kif->pfik_ifp->if_pf_kif = NULL;
-		}
 		free(kif, PFI_MTYPE);
 	}
 
@@ -325,8 +323,6 @@ pfi_attach_ifnet(struct ifnet *ifp)
 	PF_RULES_WLOCK();
 	V_pfi_update++;
 	kif = pfi_kif_attach(kif, ifp->if_xname);
-
-	if_ref(ifp);
 
 	kif->pfik_ifp = ifp;
 	ifp->if_pf_kif = kif;
@@ -559,8 +555,7 @@ pfi_instance_add(struct ifnet *ifp, int net, int flags)
 		if ((flags & PFI_AFLAG_PEER) &&
 		    !(ifp->if_flags & IFF_POINTOPOINT))
 			continue;
-		if ((flags & (PFI_AFLAG_NETWORK | PFI_AFLAG_NOALIAS)) &&
-		    af == AF_INET6 &&
+		if ((flags & PFI_AFLAG_NETWORK) && af == AF_INET6 &&
 		    IN6_IS_ADDR_LINKLOCAL(
 		    &((struct sockaddr_in6 *)ia->ifa_addr)->sin6_addr))
 			continue;
@@ -855,8 +850,6 @@ pfi_detach_ifnet_event(void *arg __unused, struct ifnet *ifp)
 	V_pfi_update++;
 	pfi_kif_update(kif);
 
-	if_rele(kif->pfik_ifp);
-
 	kif->pfik_ifp = NULL;
 	ifp->if_pf_kif = NULL;
 #ifdef ALTQ
@@ -917,9 +910,6 @@ pfi_detach_group_event(void *arg __unused, struct ifg_group *ifg)
 static void
 pfi_ifaddr_event(void *arg __unused, struct ifnet *ifp)
 {
-
-	KASSERT(ifp, ("ifp == NULL"));
-
 	if (ifp->if_pf_kif == NULL)
 		return;
 
@@ -928,7 +918,7 @@ pfi_ifaddr_event(void *arg __unused, struct ifnet *ifp)
 		return;
 	}
 	PF_RULES_WLOCK();
-	if (ifp->if_pf_kif) {
+	if (ifp && ifp->if_pf_kif) {
 		V_pfi_update++;
 		pfi_kif_update(ifp->if_pf_kif);
 	}

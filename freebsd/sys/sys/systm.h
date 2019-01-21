@@ -331,6 +331,7 @@ int	vasprintf(char **ret, struct malloc_type *mtp, const char *format,
 int	vsnprintf(char *, size_t, const char *, __va_list) __printflike(3, 0);
 int	vsnrprintf(char *, size_t, int, const char *, __va_list) __printflike(4, 0);
 int	vsprintf(char *buf, const char *, __va_list) __printflike(2, 0);
+int	ttyprintf(struct tty *, const char *, ...) __printflike(2, 3);
 int	sscanf(const char *, char const * _Nonnull, ...) __scanflike(2, 3);
 int	vsscanf(const char * _Nonnull, char const * _Nonnull, __va_list)  __scanflike(2, 0);
 long	strtol(const char *, char **, int);
@@ -653,6 +654,32 @@ int alloc_unr(struct unrhdr *uh);
 int alloc_unr_specific(struct unrhdr *uh, u_int item);
 int alloc_unrl(struct unrhdr *uh);
 void free_unr(struct unrhdr *uh, u_int item);
+
+#ifndef __LP64__
+#define UNR64_LOCKED
+#endif
+
+struct unrhdr64 {
+        uint64_t	counter;
+};
+
+static __inline void
+new_unrhdr64(struct unrhdr64 *unr64, uint64_t low)
+{
+
+	unr64->counter = low;
+}
+
+#ifdef UNR64_LOCKED
+uint64_t alloc_unr64(struct unrhdr64 *);
+#else
+static __inline uint64_t
+alloc_unr64(struct unrhdr64 *unr64)
+{
+
+	return (atomic_fetchadd_64(&unr64->counter, 1));
+}
+#endif
 
 void	intr_prof_stack_use(struct thread *td, struct trapframe *frame);
 

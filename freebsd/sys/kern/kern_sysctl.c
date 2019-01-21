@@ -552,10 +552,10 @@ sysctl_unregister_oid(struct sysctl_oid *oidp)
 	int error;
 
 	SYSCTL_ASSERT_WLOCKED();
-	error = ENOENT;
 	if (oidp->oid_number == OID_AUTO) {
 		error = EINVAL;
 	} else {
+		error = ENOENT;
 		SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
 			if (p == oidp) {
 				SLIST_REMOVE(oidp->oid_parent, oidp,
@@ -571,8 +571,10 @@ sysctl_unregister_oid(struct sysctl_oid *oidp)
 	 * being unloaded afterwards.  It should not be a panic()
 	 * for normal use.
 	 */
-	if (error)
-		printf("%s: failed to unregister sysctl\n", __func__);
+	if (error) {
+		printf("%s: failed(%d) to unregister sysctl(%s)\n",
+		    __func__, error, oidp->oid_name);
+	}
 }
 
 /* Initialize a new context to keep track of dynamically added sysctls. */
@@ -1702,53 +1704,6 @@ retry:
 
 	return (error);
 }
-
-/*
- * Based on on sysctl_handle_int() convert microseconds to a sbintime.
- */
-int
-sysctl_usec_to_sbintime(SYSCTL_HANDLER_ARGS)
-{
-	int error;
-	int64_t tt;
-	sbintime_t sb;
-
-	tt = *(int64_t *)arg1;
-	sb = ustosbt(tt);
-
-	error = sysctl_handle_64(oidp, &sb, 0, req);
-	if (error || !req->newptr)
-		return (error);
-
-	tt = sbttous(sb);
-	*(int64_t *)arg1 = tt;
-
-	return (0);
-}
-
-/*
- * Based on on sysctl_handle_int() convert milliseconds to a sbintime.
- */
-int
-sysctl_msec_to_sbintime(SYSCTL_HANDLER_ARGS)
-{
-	int error;
-	int64_t tt;
-	sbintime_t sb;
-
-	tt = *(int64_t *)arg1;
-	sb = mstosbt(tt);
-
-	error = sysctl_handle_64(oidp, &sb, 0, req);
-	if (error || !req->newptr)
-		return (error);
-
-	tt = sbttoms(sb);
-	*(int64_t *)arg1 = tt;
-
-	return (0);
-}
-
 
 /*
  * Transfer functions to/from kernel space.

@@ -503,6 +503,7 @@
 #define	USB_VENDOR_BOCASYSTEMS	0x0a43		/* Boca Systems */
 #define	USB_VENDOR_SHANTOU	0x0a46		/* ShanTou */
 #define	USB_VENDOR_MEDIAGEAR	0x0a48		/* MediaGear */
+#define	USB_VENDOR_PLOYTEC	0x0a4a		/* Ploytec GmbH */
 #define	USB_VENDOR_BROADCOM	0x0a5c		/* Broadcom */
 #define	USB_VENDOR_GREENHOUSE	0x0a6b		/* GREENHOUSE */
 #define	USB_VENDOR_MEDELI	0x0a67		/* Medeli */
@@ -2767,8 +2768,6 @@
 #define	USB_PRODUCT_LENOVO_GIGALAN	0x304b		/* USB 3.0 Ethernet */
 #define	USB_PRODUCT_LENOVO_ETHERNET	0x7203		/* USB 2.0 Ethernet */
 #define	USB_PRODUCT_LENOVO_RTL8153	0x7205		/* USB 3.0 Ethernet */
-#define	USB_PRODUCT_LENOVO_TBT3LAN	0x3069		/* LAN port in Thinkpad TB3 dock */
-#define	USB_PRODUCT_LENOVO_USBCLAN	0x3062		/* LAN port in Thinkpad USB-C dock */
 
 /* Lexar products */
 #define	USB_PRODUCT_LEXAR_JUMPSHOT	0x0001		/* jumpSHOT CompactFlash Reader */
@@ -3698,6 +3697,9 @@
 /* Plextor Corp. */
 #define	USB_PRODUCT_PLEXTOR_40_12_40U	0x0011		/* PlexWriter 40/12/40U */
 
+/* Ploytec GmbH */
+#define	USB_PRODUCT_PLOYTEC_SPL_CRIMSON_1	0xc150		/* SPL Crimson Revision 1 */
+
 /* PLX products */
 #define	USB_PRODUCT_PLX_TESTBOARD	0x9060		/* test board */
 #define	USB_PRODUCT_PLX_CA42	0xac70		/* CA-42 */
@@ -4351,6 +4353,7 @@
 #define	USB_PRODUCT_SITECOMEU_RT3072_5	0x004a		/* RT3072 */
 #define	USB_PRODUCT_SITECOMEU_WL349V1	0x004b		/* WL-349 v1 */
 #define	USB_PRODUCT_SITECOMEU_RT3072_6	0x004d		/* RT3072 */
+#define	USB_PRODUCT_SITECOMEU_WLA1000	0x005b		/* WLA-1000 */
 #define	USB_PRODUCT_SITECOMEU_RTL8188CU_1	0x0052		/* RTL8188CU */
 #define	USB_PRODUCT_SITECOMEU_RTL8188CU_2	0x005c		/* RTL8188CU */
 #define	USB_PRODUCT_SITECOMEU_RTL8192CU	0x0061		/* RTL8192CU */
@@ -4614,9 +4617,12 @@
 
 /* TP-Link products */
 #define	USB_PRODUCT_TPLINK_T4U	0x0101		/* Archer T4U */
+#define	USB_PRODUCT_TPLINK_WN821NV5	0x0107		/* TL-WN821N v5 */
 #define	USB_PRODUCT_TPLINK_WN822NV4	0x0108		/* TL-WN822N v4 */
 #define	USB_PRODUCT_TPLINK_WN823NV2	0x0109		/* TL-WN823N v2 */
+#define	USB_PRODUCT_TPLINK_WN722NV2	0x010c		/* TL-WN722N v2 */
 #define	USB_PRODUCT_TPLINK_T4UV2	0x010d		/* Archer T4U ver 2 */
+#define	USB_PRODUCT_TPLINK_T4UHV1	0x0103		/* Archer T4UH ver 1 */
 #define	USB_PRODUCT_TPLINK_T4UHV2	0x010e		/* Archer T4UH ver 2 */
 #define	USB_PRODUCT_TPLINK_RTL8153	0x0601		/* RTL8153 USB 10/100/1000 LAN */
 

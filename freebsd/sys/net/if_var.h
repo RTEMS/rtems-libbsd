@@ -390,6 +390,8 @@ struct ifnet {
 	struct netdump_methods *if_netdump_methods;
 #endif /* __rtems__ */
 	struct epoch_context	if_epoch_ctx;
+	struct epoch_tracker	if_addr_et;
+	struct epoch_tracker	if_maddr_et;
 
 #ifndef __rtems__
 	/*

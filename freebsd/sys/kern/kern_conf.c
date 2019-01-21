@@ -210,8 +210,7 @@ dev_refthread(struct cdev *dev, int *ref)
 			csw = NULL;
 	}
 	dev_unlock();
-	if (csw != NULL)
-		*ref = 1;
+	*ref = 1;
 	return (csw);
 }
 

@@ -1116,7 +1116,11 @@ sys_sendto(struct thread *td, struct sendto_args *uap)
 	struct msghdr msg;
 	struct iovec aiov;
 
+#ifndef __rtems__
+	msg.msg_name = uap->to;
+#else /* __rtems__ */
 	msg.msg_name = __DECONST(void *, uap->to);
+#endif /* __rtems__ */
 	msg.msg_namelen = uap->tolen;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
@@ -1124,7 +1128,7 @@ sys_sendto(struct thread *td, struct sendto_args *uap)
 #ifdef COMPAT_OLDSOCK
 	msg.msg_flags = 0;
 #endif
-	aiov.iov_base = __DECONST(void *, uap->buf);
+	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->len;
 	return (sendit(td, uap->s, &msg, uap->flags));
 }
@@ -1194,7 +1198,7 @@ osend(struct thread *td, struct osend_args *uap)
 	msg.msg_namelen = 0;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
-	aiov.iov_base = __DECONST(void *, uap->buf);
+	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = 0;
@@ -1709,8 +1713,13 @@ setsockopt(int socket, int level, int option_name, const void *option_value,
 #endif /* __rtems__ */
 
 int
+#ifndef __rtems__
+kern_setsockopt(struct thread *td, int s, int level, int name, void *val,
+    enum uio_seg valseg, socklen_t valsize)
+#else /* __rtems__ */
 kern_setsockopt(struct thread *td, int s, int level, int name, const void *val,
     enum uio_seg valseg, socklen_t valsize)
+#endif /* __rtems__ */
 {
 	struct socket *so;
 	struct file *fp;
@@ -1725,7 +1734,11 @@ kern_setsockopt(struct thread *td, int s, int level, int name, const void *val,
 	sopt.sopt_dir = SOPT_SET;
 	sopt.sopt_level = level;
 	sopt.sopt_name = name;
+#ifndef __rtems__
+	sopt.sopt_val = val;
+#else /* __rtems__ */
 	sopt.sopt_val = __DECONST(void *, val);
+#endif /* __rtems__ */
 	sopt.sopt_valsize = valsize;
 	switch (valseg) {
 	case UIO_USERSPACE:
@@ -2113,7 +2126,11 @@ sockargs(struct mbuf **mp, char *buf, socklen_t buflen, int type)
 }
 
 int
+#ifndef __rtems__
+getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len)
+#else /* __rtems__ */
 getsockaddr(struct sockaddr **namp, const struct sockaddr *uaddr, size_t len)
+#endif /* __rtems__ */
 {
 	struct sockaddr *sa;
 #ifndef __rtems__

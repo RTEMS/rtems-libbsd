@@ -322,9 +322,10 @@ main(int argc, char *const *argv)
 #ifdef IPSEC_POLICY_IPSEC
 	policy_in = policy_out = NULL;
 #endif
+#ifndef __rtems__
 	cap_rights_t rights;
 	bool cansandbox;
-#ifdef __rtems__
+#else /* __rtems__ */
 	struct getopt_data getopt_data;
 	memset(&getopt_data, 0, sizeof(getopt_data));
 #define optind getopt_data.optind
@@ -387,7 +388,7 @@ main(int argc, char *const *argv)
 			break;
 		case 'c':
 			ltmp = strtol(optarg, &ep, 0);
-			if (*ep || ep == optarg || ltmp > LONG_MAX || ltmp <=0)
+			if (*ep || ep == optarg || ltmp <= 0)
 				errx(EX_USAGE,
 				    "invalid count of packets to transmit: `%s'",
 				    optarg);
@@ -643,7 +644,11 @@ main(int argc, char *const *argv)
 		if (inet_aton(source, &sock_in.sin_addr) != 0) {
 			shostname = source;
 		} else {
-			hp = cap_gethostbyname2(capdns, source, AF_INET);
+			if (capdns != NULL)
+				hp = cap_gethostbyname2(capdns, source,
+				    AF_INET);
+			else
+				hp = gethostbyname2(source, AF_INET);
 			if (!hp)
 				errx(EX_NOHOST, "cannot resolve %s: %s",
 				    source, hstrerror(h_errno));
@@ -671,7 +676,10 @@ main(int argc, char *const *argv)
 	if (inet_aton(target, &to->sin_addr) != 0) {
 		hostname = target;
 	} else {
-		hp = cap_gethostbyname2(capdns, target, AF_INET);
+		if (capdns != NULL)
+			hp = cap_gethostbyname2(capdns, target, AF_INET);
+		else
+			hp = gethostbyname2(target, AF_INET);
 		if (!hp)
 			errx(EX_NOHOST, "cannot resolve %s: %s",
 			    target, hstrerror(h_errno));
@@ -689,7 +697,7 @@ main(int argc, char *const *argv)
 	if (capdns != NULL) {
 		const char *types[1];
 
-		types[0] = "ADDR2NAME";
+		types[0] = "ADDR";
 		if (cap_dns_type_limit(capdns, types, 1) < 0)
 			err(1, "unable to limit access to system.dns service");
 	}
@@ -780,6 +788,7 @@ main(int argc, char *const *argv)
 		ip->ip_dst = to->sin_addr;
         }
 
+#ifndef __rtems__
 	if (options & F_NUMERIC)
 		cansandbox = true;
 	else if (capdns != NULL)
@@ -802,6 +811,7 @@ main(int argc, char *const *argv)
 	cap_rights_init(&rights, CAP_SEND, CAP_SETSOCKOPT);
 	if (cap_rights_limit(ssend, &rights) < 0 && errno != ENOSYS)
 		err(1, "cap_rights_limit ssend");
+#endif /* __rtems__ */
 
 	/* record route option */
 	if (options & F_RROUTE) {
@@ -883,17 +893,21 @@ main(int argc, char *const *argv)
 	hold = IP_MAXPACKET + 128;
 	(void)setsockopt(srecv, SOL_SOCKET, SO_RCVBUF, (char *)&hold,
 	    sizeof(hold));
+#ifndef __rtems__
 	/* CAP_SETSOCKOPT removed */
 	cap_rights_init(&rights, CAP_RECV, CAP_EVENT);
 	if (cap_rights_limit(srecv, &rights) < 0 && errno != ENOSYS)
 		err(1, "cap_rights_limit srecv setsockopt");
+#endif /* __rtems__ */
 	if (uid == 0)
 		(void)setsockopt(ssend, SOL_SOCKET, SO_SNDBUF, (char *)&hold,
 		    sizeof(hold));
+#ifndef __rtems__
 	/* CAP_SETSOCKOPT removed */
 	cap_rights_init(&rights, CAP_SEND);
 	if (cap_rights_limit(ssend, &rights) < 0 && errno != ENOSYS)
 		err(1, "cap_rights_limit ssend setsockopt");
+#endif /* __rtems__ */
 
 	if (to->sin_family == AF_INET) {
 		(void)printf("PING %s (%s)", hostname,
@@ -1783,7 +1797,10 @@ pr_addr(struct in_addr ina)
 	if (options & F_NUMERIC)
 		return inet_ntoa(ina);
 
-	hp = cap_gethostbyaddr(capdns, (char *)&ina, 4, AF_INET);
+	if (capdns != NULL)
+		hp = cap_gethostbyaddr(capdns, (char *)&ina, 4, AF_INET);
+	else
+		hp = gethostbyaddr((char *)&ina, 4, AF_INET);
 
 	if (hp == NULL)
 		return inet_ntoa(ina);
@@ -1878,8 +1895,8 @@ capdns_setup(void)
 	cap_close(capcas);
 	if (capdnsloc == NULL)
 		err(1, "unable to open system.dns service");
-	types[0] = "NAME2ADDR";
-	types[1] = "ADDR2NAME";
+	types[0] = "NAME";
+	types[1] = "ADDR";
 	if (cap_dns_type_limit(capdnsloc, types, 2) < 0)
 		err(1, "unable to limit access to system.dns service");
 	families[0] = AF_INET;

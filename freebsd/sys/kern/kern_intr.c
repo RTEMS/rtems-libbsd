@@ -878,8 +878,8 @@ intr_event_remove_handler(void *cookie)
 	free(handler, M_ITHREAD);
 	return (0);
 }
-
 #endif /* __rtems__ */
+
 static int
 intr_event_schedule_thread(struct intr_event *ie)
 {

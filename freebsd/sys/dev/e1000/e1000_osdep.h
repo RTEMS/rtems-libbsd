@@ -253,7 +253,7 @@ struct e1000_osdep
         ((struct e1000_osdep *)(hw)->back)->flash_bus_space_handle, reg, value)
 
 
-#if defined(INVARIANTS)
+#if defined(INVARIANTS) && !defined(__rtems__)
 #include <sys/proc.h>
 
 #define ASSERT_NO_LOCKS()				\

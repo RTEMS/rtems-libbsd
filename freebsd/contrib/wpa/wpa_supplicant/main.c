@@ -165,25 +165,6 @@ static void wpa_supplicant_fd_workaround(int start)
 #endif /* __linux__ */
 }
 
-#ifdef __rtems__
-#include <rtems/libio.h>
-
-static int
-main(int argc, char **argv);
-
-int rtems_bsd_command_wpa_supplicant(int argc, char **argv)
-{
-	int exit_code;
-	rtems_status_code sc;
-
-	rtems_bsd_wpa_supplicant_lock();
-	exit_code = rtems_bsd_program_call_main("wpa_supplicant", main,
-	    argc, argv);
-	rtems_bsd_wpa_supplicant_unlock();
-
-	return exit_code;
-}
-#endif /* __rtems__ */
 
 #ifdef CONFIG_MATCH_IFACE
 static int wpa_supplicant_init_match(struct wpa_global *global)
@@ -207,6 +188,23 @@ static int wpa_supplicant_init_match(struct wpa_global *global)
 #endif /* CONFIG_MATCH_IFACE */
 
 
+#ifdef __rtems__
+#include <rtems/libio.h>
+
+static int main(int argc, char *argv[]);
+
+int
+rtems_bsd_command_wpa_supplicant(int argc, char **argv)
+{
+	int exit_code;
+
+	rtems_bsd_wpa_supplicant_lock();
+	exit_code = rtems_bsd_program_call_main("wpa_supplicant", main,
+	    argc, argv);
+	rtems_bsd_wpa_supplicant_unlock();
+	return (exit_code);
+}
+#endif /* __rtems__ */
 int main(int argc, char *argv[])
 {
 	int c, i;

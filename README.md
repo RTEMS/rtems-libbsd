@@ -1,5 +1,5 @@
-RTEMS LibBSD Waf
-~~~~~~~~~~~~~~~~
+RTEMS LibBSD
+============
 
 Welcome to building LibBSD for RTEMS using Waf. This package is a library
 containing various parts of the FreeBSD kernel ported to RTEMS. The library
@@ -12,42 +12,23 @@ and a recent RTEMS kernel for your BSP configured with networking disabled
 built and installed. If you already have this you can skip to step 3 of the
 build procedure.
 
-Waf Setup
-~~~~~~~~~
-
-You can find the Waf project at:
-
- https://waf.io/
-
-Waf is not intended to be installed by distribution packages so we recommend
-you download a recent waf version and install it in your home directory.
-
-Waf is a Python program so you will also need to have a current Python version
-installed and in your path.
-
-Download the latest signed executable file version to $HOME/bin and symlink it
-to waf. Add the directory $HOME/bin to your path if it is not already in your
-default path.
-
 Building and Installing LibBSD
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 
 The following instructions show you how to build and install RTEMS Tools and
 RTEMS kernel for your BSP in separate paths. Using separate paths for the tools
 and BSPs lets you manage what you have installed. If you are happy with a
 single path you can use the same path in each stage.
 
-The waf build support for RTEMS requires you provide your BSP name as an
-architecture and BSP pair. You must provide both or waf will generate an error
+The Waf build support for RTEMS requires you provide your BSP name as an
+architecture and BSP pair. You must provide both or Waf will generate an error
 message during the configure phase.
 
 We will build an Xilinx Zynq QEMU BSP using the name
-'arm/xilinx_zynq_a9_qemu'.
+*arm/xilinx_zynq_a9_qemu*.  You can copy and paste the shell commands below to
+do this.  The individual steps are explained afterwards.
 
-Steps
------
-
--------------------------------------------------------------------------------
+```
 sandbox="$PWD/sandbox"
 mkdir sandbox
 cd "$sandbox"
@@ -56,76 +37,86 @@ git clone git://git.rtems.org/rtems.git
 git clone git://git.rtems.org/rtems-libbsd.git
 cd "$sandbox"
 cd rtems-source-builder/rtems
-../source-builder/sb-set-builder --prefix="$sandbox/rtems-4.12" 4.12/rtems-arm
+../source-builder/sb-set-builder --prefix="$sandbox/rtems/5" 5/rtems-arm
 cd "$sandbox"
 cd rtems
-PATH="$sandbox/rtems-4.12/bin:$PATH" ./bootstrap
+PATH="$sandbox/rtems/5/bin:$PATH" ./bootstrap
 cd "$sandbox"
 mkdir b-xilinx_zynq_a9_qemu
 cd b-xilinx_zynq_a9_qemu
-PATH="$sandbox/rtems-4.12/bin:$PATH" "$sandbox/rtems/configure" \
-  --target=arm-rtems4.12 --prefix="$sandbox/rtems-4.12" \
+PATH="$sandbox/rtems/5/bin:$PATH" "$sandbox/rtems/configure" \
+  --target=arm-rtems5 --prefix="$sandbox/rtems/5" \
   --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
-PATH="$sandbox/rtems-4.12/bin:$PATH" make
-PATH="$sandbox/rtems-4.12/bin:$PATH" make install
+PATH="$sandbox/rtems/5/bin:$PATH" make
+PATH="$sandbox/rtems/5/bin:$PATH" make install
 cd "$sandbox"
 cd rtems-libbsd
 git submodule init
 git submodule update rtems_waf
-waf configure --prefix="$sandbox/rtems-4.12" \
+./waf configure --prefix="$sandbox/rtems/5" \
   --rtems-bsps=arm/xilinx_zynq_a9_qemu \
   --buildset=buildset/default.ini
-waf
-waf install
+./waf
+./waf install
 qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
   -nographic -M xilinx-zynq-a9 -m 256M \
-  -kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
--------------------------------------------------------------------------------
+  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+```
 
 1. Create a sandbox directory:
 
-    $ sandbox="$PWD/sandbox"
-    $ mkdir sandbox
+```
+$ sandbox="$PWD/sandbox"
+$ mkdir sandbox
+```
 
-1. Clone the repositories:
+2. Clone the repositories:
 
-    $ cd "$sandbox"
-    $ git clone git://git.rtems.org/rtems-source-builder.git
-    $ git clone git://git.rtems.org/rtems.git
-    $ git clone git://git.rtems.org/rtems-libbsd.git
+```
+$ cd "$sandbox"
+$ git clone git://git.rtems.org/rtems-source-builder.git
+$ git clone git://git.rtems.org/rtems.git
+$ git clone git://git.rtems.org/rtems-libbsd.git
+```
 
-2. Build and install the tools. In this example the path is
-   $sandbox/rtems-4.12:
+3. Build and install the tools:
 
-    $ cd "$sandbox"
-    $ cd rtems-source-builder/rtems
-    $ ../source-builder/sb-set-builder --prefix="$sandbox/rtems-4.12" 4.12/rtems-arm
+```
+$ cd "$sandbox"
+$ cd rtems-source-builder/rtems
+$ ../source-builder/sb-set-builder --prefix="$sandbox/rtems/5" 5/rtems-arm
+```
 
-3. Bootstrap the RTEMS sources:
+4. Bootstrap the RTEMS sources:
 
-    $ cd "$sandbox"
-    $ cd rtems
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" ./bootstrap
+```
+$ cd "$sandbox"
+$ cd rtems
+$ PATH="$sandbox/rtems/5/bin:$PATH" ./bootstrap
+```
 
-5. Build and install the RTEMS Board Support Packages (BSP) you want to use. In
-   this example the path is /opt/rtems/4.12/bsps:
+5. Build and install the RTEMS Board Support Packages (BSP) you want to use:
 
-    $ cd "$sandbox"
-    $ mkdir b-xilinx_zynq_a9_qemu
-    $ cd b-xilinx_zynq_a9_qemu
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" "$sandbox/rtems/configure" \
-        --target=arm-rtems4.12 --prefix="$sandbox/rtems-4.12" \
-        --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" make
-    $ PATH="$sandbox/rtems-4.12/bin:$PATH" make install
+```
+$ cd "$sandbox"
+$ mkdir b-xilinx_zynq_a9_qemu
+$ cd b-xilinx_zynq_a9_qemu
+$ PATH="$sandbox/rtems/5/bin:$PATH" "$sandbox/rtems/configure" \
+    --target=arm-rtems5 --prefix="$sandbox/rtems/5" \
+    --disable-networking --enable-rtemsbsp=xilinx_zynq_a9_qemu
+$ PATH="$sandbox/rtems/5/bin:$PATH" make
+$ PATH="$sandbox/rtems/5/bin:$PATH" make install
+```
 
 6. Populate the rtems_waf git submodule.  Note, make sure you specify
    'rtems_waf' or the FreeBSD kernel source will be cloned:
 
-   $ cd "$sandbox"
-   $ cd rtems-libbsd
-   $ git submodule init
-   $ git submodule update rtems_waf
+```
+$ cd "$sandbox"
+$ cd rtems-libbsd
+$ git submodule init
+$ git submodule update rtems_waf
+```
 
 7. Run Waf's configure with your specific settings. In this case the path to
    the tools and RTEMS are provided on the command line and so do not need to
@@ -139,67 +130,79 @@ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
    explicitly here) will be used. You can also provide multiple buildsets as a
    coma separated list or via multiple '--buildset=x' options.
 
-   $ cd "$sandbox"
-   $ cd rtems-libbsd
-   $ waf configure --prefix="$sandbox/rtems-4.12" \
-       --rtems-bsps=arm/xilinx_zynq_a9_qemu \
-       --buildset=buildset/default.ini
+```
+$ cd "$sandbox"
+$ cd rtems-libbsd
+$ ./waf configure --prefix="$sandbox/rtems/5" \
+    --rtems-bsps=arm/xilinx_zynq_a9_qemu \
+    --buildset=buildset/default.ini
+```
 
 8. Build and install.  The LibBSD package will be installed into the prefix
    provided to configure:
 
-   $ cd "$sandbox"
-   $ cd rtems-libbsd
-   $ waf
-   $ waf install
+```
+$ cd "$sandbox"
+$ cd rtems-libbsd
+$ ./waf
+$ ./waf install
+```
 
 9. Run the tests on QEMU, for example:
 
-   $ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
-   $   -nographic -M xilinx-zynq-a9 -m 256M \
-   $   -kernel build/arm-rtems4.12-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+```
+$ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
+$   -nographic -M xilinx-zynq-a9 -m 256M \
+$   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+```
 
 [1] It is good practice to keep your environment as empty as possible. Setting
     paths to tools or specific values to configure or control a build is
     dangerous because settings can leak between different builds and change
-    what you expect a build to do. The waf tool used here lets you specify on
-    the command line the tools and RTEMS paths and this is embedded in waf's
+    what you expect a build to do. The Waf tool used here lets you specify on
+    the command line the tools and RTEMS paths and this is embedded in Waf's
     configuration information. If you have a few source trees working at any
     one time with different tool sets or configurations you can easly move
     between them safe in the knowledge that one build will not infect another.
 
 Updating RTEMS Waf Support
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 If you have a working libbsd repository and new changes to the `rtems_waf`
 submodule has been made, you will need update. A `git status` will indicate
 there are new commits with:
 
-  $ git status
-      [ snip output ]
-            modified:   rtems_waf (new commits)
-      [ snip output ]
+```
+$ git status
+    [ snip output ]
+          modified:   rtems_waf (new commits)
+    [ snip output ]
+```
 
 To update:
 
-  $ git submodule update rtems_waf
+```
+$ git submodule update rtems_waf
+```
 
 Please make sure you use the exact command or you might find you are cloning
 the whole of the FreeBSD source tree. If that happens simply git ^C and try
 again.
 
-The following is for developers only who need to move libbsd to a newer
+The following is for maintainer only who need to move libbsd to a newer
 versions:
 
- $ git submodule update rtems_waf
- $ cd rtems_waf
- $ git checkout master
- $ git pull
- $ cd ..
- $ git commit -m "Update rtems_waf" rtems_waf
+```
+$ git submodule update rtems_waf
+$ cd rtems_waf
+$ git checkout master
+$ git pull
+$ cd ..
+$ git commit -m "Update rtems_waf" rtems_waf
+```
 
 FreeBSD Developer Support
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 The --freebsd-option provides a tool you can set special kernel options. This
 is a developer tool and should only be used if you are familiar with the
@@ -207,12 +210,14 @@ internals of the FreeBSD kernel and what these options do.
 
 The options are listed in:
 
- https://github.com/freebsd/freebsd/blob/master/sys/conf/NOTES
+https://github.com/freebsd/freebsd/blob/master/sys/conf/NOTES
 
 An example to turn on a verbose kernel boot, verbose sysinit and bus debugging
 configure with:
 
- --freebsd-options=bootverbose,verbose_sysinit,bus_debug
+```
+--freebsd-options=bootverbose,verbose_sysinit,bus_debug
+```
 
-The LibBSD waf support splits the options and converts them to uppercase and
+The LibBSD Waf support splits the options and converts them to uppercase and
 adds them -D options on the compiler command line.

@@ -145,6 +145,7 @@
 #define	USB_VENDOR_SEAGATE	0x0477		/* Seagate */
 #define	USB_VENDOR_CONNECTIX	0x0478		/* Connectix */
 #define	USB_VENDOR_SEMTECH	0x047a		/* Semtech */
+#define	USB_VENDOR_DELL2	0x047c		/* Dell */
 #define	USB_VENDOR_KENSINGTON	0x047d		/* Kensington */
 #define	USB_VENDOR_LUCENT	0x047e		/* Lucent */
 #define	USB_VENDOR_PLANTRONICS	0x047f		/* Plantronics */
@@ -559,6 +560,7 @@
 #define	USB_VENDOR_CMEDIA	0x0d8c		/* CMEDIA */
 #define	USB_VENDOR_CONCEPTRONIC	0x0d8e		/* Conceptronic */
 #define	USB_VENDOR_SKANHEX	0x0d96		/* Skanhex Technology, Inc. */
+#define	USB_VENDOR_POWERCOM	0x0d9f		/* PowerCOM */
 #define	USB_VENDOR_MSI	0x0db0		/* Micro Star International */
 #define	USB_VENDOR_ELCON	0x0db7		/* ELCON Systemtechnik */
 #define	USB_VENDOR_UNKNOWN4	0x0dcd		/* Unknown vendor */
@@ -566,6 +568,7 @@
 #define	USB_VENDOR_SITECOMEU	0x0df6		/* Sitecom Europe */
 #define	USB_VENDOR_MOBILEACTION	0x0df7		/* Mobile Action */
 #define	USB_VENDOR_AMIGO	0x0e0b		/* Amigo Technology */
+#define	USB_VENDOR_SMART2	0x0e39		/* Smart Modular Technologies */
 #define	USB_VENDOR_SPEEDDRAGON	0x0e55		/* Speed Dragon Multimedia */
 #define	USB_VENDOR_HAWKING	0x0e66		/* Hawking */
 #define	USB_VENDOR_FOSSIL	0x0e67		/* Fossil, Inc */
@@ -1370,8 +1373,16 @@
 #define	USB_PRODUCT_BELKIN_F5U208	0x0208		/* F5U208 VideoBus II */
 #define	USB_PRODUCT_BELKIN_F5U237	0x0237		/* F5U237 USB 2.0 7-Port Hub */
 #define	USB_PRODUCT_BELKIN_F5U257	0x0257		/* F5U257 Serial */
+#define	USB_PRODUCT_BELKIN_F6H375USB	0x0375		/* F6H375-USB */
 #define	USB_PRODUCT_BELKIN_F5U409	0x0409		/* F5U409 Serial */
 #define	USB_PRODUCT_BELKIN_F6C550AVR	0x0551		/* F6C550-AVR UPS */
+#define	USB_PRODUCT_BELKIN_F6C1250TWRK	0x0750		/* F6C1250-TW-RK */
+#define	USB_PRODUCT_BELKIN_F6C1500TWRK	0x0751		/* F6C1500-TW-RK */
+#define	USB_PRODUCT_BELKIN_F6C900UNV	0x0900		/* F6C900-UNV */
+#define	USB_PRODUCT_BELKIN_F6C100UNV	0x0910		/* F6C100-UNV */
+#define	USB_PRODUCT_BELKIN_F6C120UNV	0x0912		/* F6C120-UNV UPS */
+#define	USB_PRODUCT_BELKIN_F6C800UNV	0x0980		/* F6C800-UNV */
+#define	USB_PRODUCT_BELKIN_F6C1100UNV	0x1100		/* F6C1100-UNV, F6C1200-UNV */
 #define	USB_PRODUCT_BELKIN_F5U120	0x1203		/* F5U120-PC Hub */
 #define	USB_PRODUCT_BELKIN_RTL8188CU	0x1102		/* RTL8188CU Wireless Adapter */
 #define	USB_PRODUCT_BELKIN_F9L1103	0x1103		/* F9L1103 Wireless Adapter */
@@ -1575,9 +1586,11 @@
 
 /* Corsair products */
 #define	USB_PRODUCT_CORSAIR_K60	0x0a60		/* Corsair Vengeance K60 keyboard */
+#define	USB_PRODUCT_CORSAIR_K68	0x1b3f		/* Corsair Gaming K68 keyboard */
 #define	USB_PRODUCT_CORSAIR_K70	0x1b09		/* Corsair Vengeance K70 keyboard */
 #define	USB_PRODUCT_CORSAIR_K70_RGB	0x1b13		/* Corsair K70 RGB Keyboard */
-#define	USB_PRODUCT_CORSAIR_STRAFE	0x1b15		/* Cossair STRAFE Gaming keyboard */
+#define	USB_PRODUCT_CORSAIR_STRAFE	0x1b15		/* Corsair STRAFE Gaming keyboard */
+#define	USB_PRODUCT_CORSAIR_STRAFE2	0x1b44		/* Corsair STRAFE Gaming keyboard */
 
 /* Creative products */
 #define	USB_PRODUCT_CREATIVE_NOMAD_II	0x1002		/* Nomad II MP3 player */
@@ -1605,7 +1618,9 @@
 #define	USB_PRODUCT_CURITEL_UM175	0x3714		/* EVDO modem */
 
 /* CyberPower products */
+#define	USB_PRODUCT_CYBERPOWER_BC900D	0x0005		/* 900AVR/BC900D, CP1200AVR/BC1200D */
 #define	USB_PRODUCT_CYBERPOWER_1500CAVRLCD	0x0501		/* 1500CAVRLCD */
+#define	USB_PRODUCT_CYBERPOWER_OR2200LCDRM2U	0x0601		/* OR2200LCDRM2U */
 
 /* CyberTAN Technology products */
 #define	USB_PRODUCT_CYBERTAN_TG54USB	0x1666		/* TG54USB */
@@ -1657,6 +1672,7 @@
 #define	USB_PRODUCT_DELL_U5730_2	0x8181		/* Dell 5730 3G */
 #define	USB_PRODUCT_DELL_U5730_3	0x8182		/* Dell 5730 3G */
 #define	USB_PRODUCT_DELL_DW700	0x9500		/* Dell DW700 GPS */
+#define	USB_PRODUCT_DELL2_VARIOUS_UPS	0xffff		/* Various UPS Models */
 
 /* Delorme Paublishing products */
 #define	USB_PRODUCT_DELORME_EARTHMATE	0x0100		/* Earthmate GPS */
@@ -2405,6 +2421,8 @@
 #define	USB_PRODUCT_HP3_RTL8188CU	0x1629		/* RTL8188CU */
 #define	USB_PRODUCT_HP_P2000U	0x1801		/* Inkjet P-2000U */
 #define	USB_PRODUCT_HP_HS2300	0x1e1d		/* HS2300 HSDPA (aka MC8775) */
+#define	USB_PRODUCT_HP_T500	0x1f01		/* T500 */
+#define	USB_PRODUCT_HP_T750	0x1f02		/* T750 */
 #define	USB_PRODUCT_HP_640C	0x2004		/* DeskJet 640c */
 #define	USB_PRODUCT_HP_4670V	0x3005		/* ScanJet 4670v */
 #define	USB_PRODUCT_HP_P1100	0x3102		/* Photosmart P1100 */
@@ -2779,6 +2797,7 @@
 
 /* Liebert products */
 #define	USB_PRODUCT_LIEBERT_POWERSURE_PXT	0xffff		/* PowerSure Personal XT */
+#define	USB_PRODUCT_LIEBERT2_POWERSURE_PSA	0x0001		/* PowerSure PSA UPS */
 #define	USB_PRODUCT_LIEBERT2_PSI1000	0x0004		/* UPS PSI 1000 FW:08 */
 
 /* Link Instruments Inc. products */
@@ -2828,6 +2847,7 @@
 #define	USB_PRODUCT_LOGITECH_UN53B	0xc032		/* iFeel MouseMan */
 #define	USB_PRODUCT_LOGITECH_WMPAD	0xc208		/* WingMan GamePad Extreme */
 #define	USB_PRODUCT_LOGITECH_WMRPAD	0xc20a		/* WingMan RumblePad */
+#define	USB_PRODUCT_LOGITECH_G510S	0xc22d		/* G510s Keyboard */
 #define	USB_PRODUCT_LOGITECH_WMJOY	0xc281		/* WingMan Force joystick */
 #define	USB_PRODUCT_LOGITECH_BB13	0xc401		/* USB-PS/2 Trackball */
 #define	USB_PRODUCT_LOGITECH_RK53	0xc501		/* Cordless mouse */
@@ -3704,6 +3724,13 @@
 #define	USB_PRODUCT_PLX_TESTBOARD	0x9060		/* test board */
 #define	USB_PRODUCT_PLX_CA42	0xac70		/* CA-42 */
 
+/* PowerCOM products */
+#define	USB_PRODUCT_POWERCOM_IMPERIAL_SERIES	0x00a2		/* IMPERIAL Series */
+#define	USB_PRODUCT_POWERCOM_SMART_KING_PRO	0x00a3		/* Smart KING Pro */
+#define	USB_PRODUCT_POWERCOM_WOW	0x00a4		/* WOW */
+#define	USB_PRODUCT_POWERCOM_VANGUARD	0x00a5		/* Vanguard */
+#define	USB_PRODUCT_POWERCOM_BLACK_KNIGHT_PRO	0x00a6		/* Black Knight Pro */
+
 /* PNY products */
 #define	USB_PRODUCT_PNY_ATTACHE2	0x0010		/* USB 2.0 Flash Drive */
 
@@ -3930,6 +3957,7 @@
 #define	USB_PRODUCT_REALTEK_USB20CRW	0x0158		/* USB20CRW Card Reader */
 #define	USB_PRODUCT_REALTEK_RTL8188ETV	0x0179		/* RTL8188ETV */
 #define	USB_PRODUCT_REALTEK_RTL8188CTV	0x018a		/* RTL8188CTV */
+#define	USB_PRODUCT_REALTEK_RTL8821AU_2	0x0811		/* RTL8821AU */
 #define	USB_PRODUCT_REALTEK_RTL8188RU_2	0x317f		/* RTL8188RU */
 #define	USB_PRODUCT_REALTEK_USBKR100	0x8150		/* USBKR100 USB Ethernet */
 #define	USB_PRODUCT_REALTEK_RTL8152	0x8152		/* RTL8152 USB Ethernet */
@@ -3960,7 +3988,7 @@
 #define	USB_PRODUCT_REALTEK_RTL8712	0x8712		/* RTL8712 */
 #define	USB_PRODUCT_REALTEK_RTL8713	0x8713		/* RTL8713 */
 #define	USB_PRODUCT_REALTEK_RTL8188CU_COMBO	0x8754		/* RTL8188CU */
-#define	USB_PRODUCT_REALTEK_RTL8821AU	0xa811		/* RTL8821AU */
+#define	USB_PRODUCT_REALTEK_RTL8821AU_1	0xa811		/* RTL8821AU */
 #define	USB_PRODUCT_REALTEK_RTL8723BU	0xb720		/* RTL8723BU */
 #define	USB_PRODUCT_REALTEK_RTL8192SU	0xc512		/* RTL8192SU */
 #define	USB_PRODUCT_REALTEK_RTL8812AU	0x8812		/* RTL8812AU Wireless Adapter */
@@ -4374,6 +4402,9 @@
 /* Smart Technologies products */
 #define	USB_PRODUCT_SMART_PL2303	0x2303		/* Serial adapter */
 
+/* Smart Modular Technologies products */
+#define	USB_PRODUCT_SMART2_G2MEMKEY	0x1700		/* G2 Memory Key */
+
 /* SmartBridges products */
 #define	USB_PRODUCT_SMARTBRIDGES_SMARTLINK	0x0001		/* SmartLink USB Ethernet */
 #define	USB_PRODUCT_SMARTBRIDGES_SMARTNIC	0x0003		/* smartNIC 2 PnP Ethernet */
@@ -4640,6 +4671,19 @@
 
 /* Tripp-Lite products */
 #define	USB_PRODUCT_TRIPPLITE_U209	0x2008		/* Serial */
+#define	USB_PRODUCT_TRIPPLITE2_OMNIVS1000	0x0001		/* OMNIVS1000, SMART550USB */
+#define	USB_PRODUCT_TRIPPLITE2_AVR550U	0x1003		/* AVR550U */
+#define	USB_PRODUCT_TRIPPLITE2_AVR750U	0x1007		/* AVR750U */
+#define	USB_PRODUCT_TRIPPLITE2_ECO550UPS	0x1008		/* ECO550UPS */
+#define	USB_PRODUCT_TRIPPLITE2_T750_INTL	0x1f06		/* T750 INTL */
+#define	USB_PRODUCT_TRIPPLITE2_RT_2200_INTL	0x1f0a		/* R/T 2200 INTL */
+#define	USB_PRODUCT_TRIPPLITE2_OMNI1000LCD	0x2005		/* OMNI1000LCD */
+#define	USB_PRODUCT_TRIPPLITE2_OMNI900LCD	0x2007		/* OMNI900LCD */
+#define	USB_PRODUCT_TRIPPLITE2_SMART_2200RMXL2U	0x3012		/* smart2200RMXL2U */
+#define	USB_PRODUCT_TRIPPLITE2_UPS_3014	0x3014		/* Unknown UPS */
+#define	USB_PRODUCT_TRIPPLITE2_SU1500RTXL2UA	0x4001		/* SmartOnline SU1500RTXL2UA */
+#define	USB_PRODUCT_TRIPPLITE2_SU6000RT4U	0x4002		/* SmartOnline SU6000RT4U */
+#define	USB_PRODUCT_TRIPPLITE2_SU1500RTXL2UA_2	0x4003		/* SmartOnline SU1500RTXL2UA */
 
 /* Trumpion products */
 #define	USB_PRODUCT_TRUMPION_T33520	0x1001		/* T33520 USB Flash Card Controller */

@@ -2288,6 +2288,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "F5U257 Serial",
 	},
 	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6H375USB,
+	    0,
+	    "Belkin Components",
+	    "F6H375-USB",
+	},
+	{
 	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F5U409,
 	    0,
 	    "Belkin Components",
@@ -2298,6 +2304,48 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Belkin Components",
 	    "F6C550-AVR UPS",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C1250TWRK,
+	    0,
+	    "Belkin Components",
+	    "F6C1250-TW-RK",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C1500TWRK,
+	    0,
+	    "Belkin Components",
+	    "F6C1500-TW-RK",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C900UNV,
+	    0,
+	    "Belkin Components",
+	    "F6C900-UNV",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C100UNV,
+	    0,
+	    "Belkin Components",
+	    "F6C100-UNV",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C120UNV,
+	    0,
+	    "Belkin Components",
+	    "F6C120-UNV UPS",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C800UNV,
+	    0,
+	    "Belkin Components",
+	    "F6C800-UNV",
+	},
+	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F6C1100UNV,
+	    0,
+	    "Belkin Components",
+	    "F6C1100-UNV, F6C1200-UNV",
 	},
 	{
 	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F5U120,
@@ -3206,6 +3254,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Corsair Vengeance K60 keyboard",
 	},
 	{
+	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_K68,
+	    0,
+	    "Corsair",
+	    "Corsair Gaming K68 keyboard",
+	},
+	{
 	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_K70,
 	    0,
 	    "Corsair",
@@ -3221,7 +3275,13 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_STRAFE,
 	    0,
 	    "Corsair",
-	    "Cossair STRAFE Gaming keyboard",
+	    "Corsair STRAFE Gaming keyboard",
+	},
+	{
+	    USB_VENDOR_CORSAIR, USB_PRODUCT_CORSAIR_STRAFE2,
+	    0,
+	    "Corsair",
+	    "Corsair STRAFE Gaming keyboard",
 	},
 	{
 	    USB_VENDOR_CREATIVE, USB_PRODUCT_CREATIVE_NOMAD_II,
@@ -3314,10 +3374,22 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "EVDO modem",
 	},
 	{
+	    USB_VENDOR_CYBERPOWER, USB_PRODUCT_CYBERPOWER_BC900D,
+	    0,
+	    "Cyber Power Systems, Inc.",
+	    "900AVR/BC900D, CP1200AVR/BC1200D",
+	},
+	{
 	    USB_VENDOR_CYBERPOWER, USB_PRODUCT_CYBERPOWER_1500CAVRLCD,
 	    0,
 	    "Cyber Power Systems, Inc.",
 	    "1500CAVRLCD",
+	},
+	{
+	    USB_VENDOR_CYBERPOWER, USB_PRODUCT_CYBERPOWER_OR2200LCDRM2U,
+	    0,
+	    "Cyber Power Systems, Inc.",
+	    "OR2200LCDRM2U",
 	},
 	{
 	    USB_VENDOR_CYBERTAN, USB_PRODUCT_CYBERTAN_TG54USB,
@@ -3546,6 +3618,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Dell",
 	    "Dell DW700 GPS",
+	},
+	{
+	    USB_VENDOR_DELL2, USB_PRODUCT_DELL2_VARIOUS_UPS,
+	    0,
+	    "Dell",
+	    "Various UPS Models",
 	},
 	{
 	    USB_VENDOR_DELORME, USB_PRODUCT_DELORME_EARTHMATE,
@@ -7124,6 +7202,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "HS2300 HSDPA (aka MC8775)",
 	},
 	{
+	    USB_VENDOR_HP, USB_PRODUCT_HP_T500,
+	    0,
+	    "Hewlett Packard",
+	    "T500",
+	},
+	{
+	    USB_VENDOR_HP, USB_PRODUCT_HP_T750,
+	    0,
+	    "Hewlett Packard",
+	    "T750",
+	},
+	{
 	    USB_VENDOR_HP, USB_PRODUCT_HP_640C,
 	    0,
 	    "Hewlett Packard",
@@ -8792,6 +8882,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "PowerSure Personal XT",
 	},
 	{
+	    USB_VENDOR_LIEBERT2, USB_PRODUCT_LIEBERT2_POWERSURE_PSA,
+	    0,
+	    "Liebert",
+	    "PowerSure PSA UPS",
+	},
+	{
 	    USB_VENDOR_LIEBERT2, USB_PRODUCT_LIEBERT2_PSI1000,
 	    0,
 	    "Liebert",
@@ -9036,6 +9132,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Logitech",
 	    "WingMan RumblePad",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_G510S,
+	    0,
+	    "Logitech",
+	    "G510s Keyboard",
 	},
 	{
 	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_WMJOY,
@@ -13298,6 +13400,36 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "CA-42",
 	},
 	{
+	    USB_VENDOR_POWERCOM, USB_PRODUCT_POWERCOM_IMPERIAL_SERIES,
+	    0,
+	    "PowerCOM",
+	    "IMPERIAL Series",
+	},
+	{
+	    USB_VENDOR_POWERCOM, USB_PRODUCT_POWERCOM_SMART_KING_PRO,
+	    0,
+	    "PowerCOM",
+	    "Smart KING Pro",
+	},
+	{
+	    USB_VENDOR_POWERCOM, USB_PRODUCT_POWERCOM_WOW,
+	    0,
+	    "PowerCOM",
+	    "WOW",
+	},
+	{
+	    USB_VENDOR_POWERCOM, USB_PRODUCT_POWERCOM_VANGUARD,
+	    0,
+	    "PowerCOM",
+	    "Vanguard",
+	},
+	{
+	    USB_VENDOR_POWERCOM, USB_PRODUCT_POWERCOM_BLACK_KNIGHT_PRO,
+	    0,
+	    "PowerCOM",
+	    "Black Knight Pro",
+	},
+	{
 	    USB_VENDOR_PNY, USB_PRODUCT_PNY_ATTACHE2,
 	    0,
 	    "PNY",
@@ -14414,6 +14546,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CTV",
 	},
 	{
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8821AU_2,
+	    0,
+	    "Realtek",
+	    "RTL8821AU",
+	},
+	{
 	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8188RU_2,
 	    0,
 	    "Realtek",
@@ -14594,7 +14732,7 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "RTL8188CU",
 	},
 	{
-	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8821AU,
+	    USB_VENDOR_REALTEK, USB_PRODUCT_REALTEK_RTL8821AU_1,
 	    0,
 	    "Realtek",
 	    "RTL8821AU",
@@ -16658,6 +16796,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Serial adapter",
 	},
 	{
+	    USB_VENDOR_SMART2, USB_PRODUCT_SMART2_G2MEMKEY,
+	    0,
+	    "Smart Modular Technologies",
+	    "G2 Memory Key",
+	},
+	{
 	    USB_VENDOR_SMARTBRIDGES, USB_PRODUCT_SMARTBRIDGES_SMARTLINK,
 	    0,
 	    "SmartBridges",
@@ -17688,6 +17832,84 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Tripp-Lite",
 	    "Serial",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_OMNIVS1000,
+	    0,
+	    "Tripp Lite",
+	    "OMNIVS1000, SMART550USB",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_AVR550U,
+	    0,
+	    "Tripp Lite",
+	    "AVR550U",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_AVR750U,
+	    0,
+	    "Tripp Lite",
+	    "AVR750U",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_ECO550UPS,
+	    0,
+	    "Tripp Lite",
+	    "ECO550UPS",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_T750_INTL,
+	    0,
+	    "Tripp Lite",
+	    "T750 INTL",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_RT_2200_INTL,
+	    0,
+	    "Tripp Lite",
+	    "R/T 2200 INTL",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_OMNI1000LCD,
+	    0,
+	    "Tripp Lite",
+	    "OMNI1000LCD",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_OMNI900LCD,
+	    0,
+	    "Tripp Lite",
+	    "OMNI900LCD",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_SMART_2200RMXL2U,
+	    0,
+	    "Tripp Lite",
+	    "smart2200RMXL2U",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_UPS_3014,
+	    0,
+	    "Tripp Lite",
+	    "Unknown UPS",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_SU1500RTXL2UA,
+	    0,
+	    "Tripp Lite",
+	    "SmartOnline SU1500RTXL2UA",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_SU6000RT4U,
+	    0,
+	    "Tripp Lite",
+	    "SmartOnline SU6000RT4U",
+	},
+	{
+	    USB_VENDOR_TRIPPLITE2, USB_PRODUCT_TRIPPLITE2_SU1500RTXL2UA_2,
+	    0,
+	    "Tripp Lite",
+	    "SmartOnline SU1500RTXL2UA",
 	},
 	{
 	    USB_VENDOR_TRUMPION, USB_PRODUCT_TRUMPION_T33520,
@@ -19277,6 +19499,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_SEMTECH, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Semtech",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_DELL2, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Dell",
 	    NULL,
 	},
 	{
@@ -21764,6 +21992,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    NULL,
 	},
 	{
+	    USB_VENDOR_POWERCOM, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "PowerCOM",
+	    NULL,
+	},
+	{
 	    USB_VENDOR_MSI, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Micro Star International",
@@ -21803,6 +22037,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_AMIGO, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Amigo Technology",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_SMART2, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Smart Modular Technologies",
 	    NULL,
 	},
 	{

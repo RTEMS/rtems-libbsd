@@ -997,6 +997,27 @@ atomic_readandclear_32(volatile uint32_t *p)
 }
 
 static inline uint32_t
+atomic_load_32(volatile uint32_t *p)
+{
+	uint32_t tmp;
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_int *q =
+	    reinterpret_cast<std::atomic_uint_least32_t *>(const_cast<uint32_t *>(p));
+
+	tmp = q->load(std::memory_order_relaxed);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_uint_least32_t *q = (atomic_uint_least32_t *)RTEMS_DEVOLATILE(uint32_t *, p);
+
+	tmp = atomic_load_explicit(q, memory_order_relaxed);
+#else
+	tmp = *p;
+#endif
+
+	return (tmp);
+}
+
+static inline uint32_t
 atomic_load_acq_32(volatile uint32_t *p)
 {
 	uint32_t tmp;

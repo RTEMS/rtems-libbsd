@@ -2218,6 +2218,7 @@ class net80211(builder.Module):
                 'sys/net80211/ieee80211_var.h',
                 'sys/net80211/ieee80211_vht.h',
                 'sys/net80211/ieee80211_wds.h',
+                'sys/net80211/ieee80211_wps.h',
             ]
         )
         self.addKernelSpaceSourceFiles(

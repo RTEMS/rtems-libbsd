@@ -33,8 +33,10 @@ typedef int ofw_init_t(ofw_t _ofw, void *_cookie);
 static __inline int OFW_INIT(ofw_t _ofw, void *_cookie)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_init);
-	return ((ofw_init_t *) _m)(_ofw, _cookie);
+	rc = ((ofw_init_t *) _m)(_ofw, _cookie);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_PEER() method */
@@ -50,8 +52,10 @@ typedef phandle_t ofw_peer_t(ofw_t _ofw, phandle_t _node);
 static __inline phandle_t OFW_PEER(ofw_t _ofw, phandle_t _node)
 {
 	kobjop_t _m;
+	phandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_peer);
-	return ((ofw_peer_t *) _m)(_ofw, _node);
+	rc = ((ofw_peer_t *) _m)(_ofw, _node);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_PARENT() method */
@@ -67,8 +71,10 @@ typedef phandle_t ofw_parent_t(ofw_t _ofw, phandle_t _node);
 static __inline phandle_t OFW_PARENT(ofw_t _ofw, phandle_t _node)
 {
 	kobjop_t _m;
+	phandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_parent);
-	return ((ofw_parent_t *) _m)(_ofw, _node);
+	rc = ((ofw_parent_t *) _m)(_ofw, _node);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_CHILD() method */
@@ -84,8 +90,10 @@ typedef phandle_t ofw_child_t(ofw_t _ofw, phandle_t _node);
 static __inline phandle_t OFW_CHILD(ofw_t _ofw, phandle_t _node)
 {
 	kobjop_t _m;
+	phandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_child);
-	return ((ofw_child_t *) _m)(_ofw, _node);
+	rc = ((ofw_child_t *) _m)(_ofw, _node);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_INSTANCE_TO_PACKAGE() method */
@@ -101,8 +109,10 @@ typedef phandle_t ofw_instance_to_package_t(ofw_t _ofw, ihandle_t _handle);
 static __inline phandle_t OFW_INSTANCE_TO_PACKAGE(ofw_t _ofw, ihandle_t _handle)
 {
 	kobjop_t _m;
+	phandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_instance_to_package);
-	return ((ofw_instance_to_package_t *) _m)(_ofw, _handle);
+	rc = ((ofw_instance_to_package_t *) _m)(_ofw, _handle);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_GETPROPLEN() method */
@@ -121,8 +131,10 @@ static __inline ssize_t OFW_GETPROPLEN(ofw_t _ofw, phandle_t _node,
                                        const char *_prop)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_getproplen);
-	return ((ofw_getproplen_t *) _m)(_ofw, _node, _prop);
+	rc = ((ofw_getproplen_t *) _m)(_ofw, _node, _prop);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_GETPROP() method */
@@ -143,8 +155,10 @@ static __inline ssize_t OFW_GETPROP(ofw_t _ofw, phandle_t _node,
                                     const char *_prop, void *_buf, size_t _size)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_getprop);
-	return ((ofw_getprop_t *) _m)(_ofw, _node, _prop, _buf, _size);
+	rc = ((ofw_getprop_t *) _m)(_ofw, _node, _prop, _buf, _size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_NEXTPROP() method */
@@ -165,8 +179,10 @@ static __inline int OFW_NEXTPROP(ofw_t _ofw, phandle_t _node, const char *_prop,
                                  char *_buf, size_t _size)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_nextprop);
-	return ((ofw_nextprop_t *) _m)(_ofw, _node, _prop, _buf, _size);
+	rc = ((ofw_nextprop_t *) _m)(_ofw, _node, _prop, _buf, _size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_SETPROP() method */
@@ -187,8 +203,10 @@ static __inline int OFW_SETPROP(ofw_t _ofw, phandle_t _node, const char *_prop,
                                 const void *_buf, size_t _size)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_setprop);
-	return ((ofw_setprop_t *) _m)(_ofw, _node, _prop, _buf, _size);
+	rc = ((ofw_setprop_t *) _m)(_ofw, _node, _prop, _buf, _size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_CANON() method */
@@ -208,8 +226,10 @@ static __inline ssize_t OFW_CANON(ofw_t _ofw, const char *_path, char *_buf,
                                   size_t _size)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_canon);
-	return ((ofw_canon_t *) _m)(_ofw, _path, _buf, _size);
+	rc = ((ofw_canon_t *) _m)(_ofw, _path, _buf, _size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_FINDDEVICE() method */
@@ -225,8 +245,10 @@ typedef phandle_t ofw_finddevice_t(ofw_t _ofw, const char *_path);
 static __inline phandle_t OFW_FINDDEVICE(ofw_t _ofw, const char *_path)
 {
 	kobjop_t _m;
+	phandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_finddevice);
-	return ((ofw_finddevice_t *) _m)(_ofw, _path);
+	rc = ((ofw_finddevice_t *) _m)(_ofw, _path);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_INSTANCE_TO_PATH() method */
@@ -246,8 +268,10 @@ static __inline ssize_t OFW_INSTANCE_TO_PATH(ofw_t _ofw, ihandle_t _handle,
                                              char *_path, size_t _size)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_instance_to_path);
-	return ((ofw_instance_to_path_t *) _m)(_ofw, _handle, _path, _size);
+	rc = ((ofw_instance_to_path_t *) _m)(_ofw, _handle, _path, _size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_PACKAGE_TO_PATH() method */
@@ -267,8 +291,10 @@ static __inline ssize_t OFW_PACKAGE_TO_PATH(ofw_t _ofw, phandle_t _node,
                                             char *_path, size_t _size)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_package_to_path);
-	return ((ofw_package_to_path_t *) _m)(_ofw, _node, _path, _size);
+	rc = ((ofw_package_to_path_t *) _m)(_ofw, _node, _path, _size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_TEST() method */
@@ -284,8 +310,10 @@ typedef int ofw_test_t(ofw_t _ofw, const char *_name);
 static __inline int OFW_TEST(ofw_t _ofw, const char *_name)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_test);
-	return ((ofw_test_t *) _m)(_ofw, _name);
+	rc = ((ofw_test_t *) _m)(_ofw, _name);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_CALL_METHOD() method */
@@ -309,8 +337,10 @@ static __inline int OFW_CALL_METHOD(ofw_t _ofw, ihandle_t _instance,
                                     int _nreturns, cell_t *_args_and_returns)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_call_method);
-	return ((ofw_call_method_t *) _m)(_ofw, _instance, _method, _nargs, _nreturns, _args_and_returns);
+	rc = ((ofw_call_method_t *) _m)(_ofw, _instance, _method, _nargs, _nreturns, _args_and_returns);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_INTERPRET() method */
@@ -330,8 +360,10 @@ static __inline int OFW_INTERPRET(ofw_t _ofw, const char *_cmd, int _nreturns,
                                   cell_t *_returns)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_interpret);
-	return ((ofw_interpret_t *) _m)(_ofw, _cmd, _nreturns, _returns);
+	rc = ((ofw_interpret_t *) _m)(_ofw, _cmd, _nreturns, _returns);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_OPEN() method */
@@ -347,8 +379,10 @@ typedef ihandle_t ofw_open_t(ofw_t _ofw, const char *_path);
 static __inline ihandle_t OFW_OPEN(ofw_t _ofw, const char *_path)
 {
 	kobjop_t _m;
+	ihandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_open);
-	return ((ofw_open_t *) _m)(_ofw, _path);
+	rc = ((ofw_open_t *) _m)(_ofw, _path);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_CLOSE() method */
@@ -385,8 +419,10 @@ static __inline ssize_t OFW_READ(ofw_t _ofw, ihandle_t _instance, void *_buf,
                                  size_t size)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_read);
-	return ((ofw_read_t *) _m)(_ofw, _instance, _buf, size);
+	rc = ((ofw_read_t *) _m)(_ofw, _instance, _buf, size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_WRITE() method */
@@ -406,8 +442,10 @@ static __inline ssize_t OFW_WRITE(ofw_t _ofw, ihandle_t _instance,
                                   const void *_buf, size_t size)
 {
 	kobjop_t _m;
+	ssize_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_write);
-	return ((ofw_write_t *) _m)(_ofw, _instance, _buf, size);
+	rc = ((ofw_write_t *) _m)(_ofw, _instance, _buf, size);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_SEEK() method */
@@ -424,8 +462,10 @@ typedef int ofw_seek_t(ofw_t _ofw, ihandle_t _instance, uint64_t _off);
 static __inline int OFW_SEEK(ofw_t _ofw, ihandle_t _instance, uint64_t _off)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_seek);
-	return ((ofw_seek_t *) _m)(_ofw, _instance, _off);
+	rc = ((ofw_seek_t *) _m)(_ofw, _instance, _off);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_CLAIM() method */
@@ -445,8 +485,10 @@ static __inline caddr_t OFW_CLAIM(ofw_t _ofw, void *_addr, size_t _size,
                                   u_int _align)
 {
 	kobjop_t _m;
+	caddr_t rc;
 	KOBJOPLOOKUP(((kobj_t)_ofw)->ops,ofw_claim);
-	return ((ofw_claim_t *) _m)(_ofw, _addr, _size, _align);
+	rc = ((ofw_claim_t *) _m)(_ofw, _addr, _size, _align);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_RELEASE() method */

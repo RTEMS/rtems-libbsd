@@ -34,8 +34,10 @@ static __inline const struct ofw_bus_devinfo * OFW_BUS_GET_DEVINFO(device_t bus,
                                                                    device_t dev)
 {
 	kobjop_t _m;
+	const struct ofw_bus_devinfo * rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_get_devinfo);
-	return ((ofw_bus_get_devinfo_t *) _m)(bus, dev);
+	rc = ((ofw_bus_get_devinfo_t *) _m)(bus, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_BUS_GET_COMPAT() method */
@@ -46,8 +48,10 @@ typedef const char * ofw_bus_get_compat_t(device_t bus, device_t dev);
 static __inline const char * OFW_BUS_GET_COMPAT(device_t bus, device_t dev)
 {
 	kobjop_t _m;
+	const char * rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_get_compat);
-	return ((ofw_bus_get_compat_t *) _m)(bus, dev);
+	rc = ((ofw_bus_get_compat_t *) _m)(bus, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_BUS_GET_MODEL() method */
@@ -58,8 +62,10 @@ typedef const char * ofw_bus_get_model_t(device_t bus, device_t dev);
 static __inline const char * OFW_BUS_GET_MODEL(device_t bus, device_t dev)
 {
 	kobjop_t _m;
+	const char * rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_get_model);
-	return ((ofw_bus_get_model_t *) _m)(bus, dev);
+	rc = ((ofw_bus_get_model_t *) _m)(bus, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_BUS_GET_NAME() method */
@@ -70,8 +76,10 @@ typedef const char * ofw_bus_get_name_t(device_t bus, device_t dev);
 static __inline const char * OFW_BUS_GET_NAME(device_t bus, device_t dev)
 {
 	kobjop_t _m;
+	const char * rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_get_name);
-	return ((ofw_bus_get_name_t *) _m)(bus, dev);
+	rc = ((ofw_bus_get_name_t *) _m)(bus, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_BUS_GET_NODE() method */
@@ -82,8 +90,10 @@ typedef phandle_t ofw_bus_get_node_t(device_t bus, device_t dev);
 static __inline phandle_t OFW_BUS_GET_NODE(device_t bus, device_t dev)
 {
 	kobjop_t _m;
+	phandle_t rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_get_node);
-	return ((ofw_bus_get_node_t *) _m)(bus, dev);
+	rc = ((ofw_bus_get_node_t *) _m)(bus, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_BUS_GET_TYPE() method */
@@ -94,8 +104,10 @@ typedef const char * ofw_bus_get_type_t(device_t bus, device_t dev);
 static __inline const char * OFW_BUS_GET_TYPE(device_t bus, device_t dev)
 {
 	kobjop_t _m;
+	const char * rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_get_type);
-	return ((ofw_bus_get_type_t *) _m)(bus, dev);
+	rc = ((ofw_bus_get_type_t *) _m)(bus, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the OFW_BUS_MAP_INTR() method */
@@ -109,8 +121,10 @@ static __inline int OFW_BUS_MAP_INTR(device_t bus, device_t dev,
                                      pcell_t *interrupt)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)bus)->ops,ofw_bus_map_intr);
-	return ((ofw_bus_map_intr_t *) _m)(bus, dev, iparent, icells, interrupt);
+	rc = ((ofw_bus_map_intr_t *) _m)(bus, dev, iparent, icells, interrupt);
+	return (rc);
 }
 
 #endif /* _ofw_bus_if_h_ */

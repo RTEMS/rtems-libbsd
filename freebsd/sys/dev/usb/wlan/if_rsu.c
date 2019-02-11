@@ -44,12 +44,8 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/bus.h>
-#include <sys/rman.h>
 #include <sys/firmware.h>
 #include <sys/module.h>
-
-#include <machine/bus.h>
-#include <machine/resource.h>
 
 #include <net/bpf.h>
 #include <net/if.h>
@@ -290,9 +286,6 @@ MODULE_DEPEND(rsu, usb, 1, 1, 1);
 MODULE_DEPEND(rsu, firmware, 1, 1, 1);
 MODULE_VERSION(rsu, 1);
 USB_PNP_HOST_INFO(rsu_devs);
-
-static const uint8_t rsu_chan_2ghz[] =
-	{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
 
 static uint8_t rsu_wme_ac_xfer_map[4] = {
 	[WME_AC_BE] = RSU_BULK_TX_BE_BK,
@@ -789,9 +782,8 @@ rsu_getradiocaps(struct ieee80211com *ic,
 	setbit(bands, IEEE80211_MODE_11G);
 	if (sc->sc_ht)
 		setbit(bands, IEEE80211_MODE_11NG);
-	ieee80211_add_channel_list_2ghz(chans, maxchans, nchans,
-	    rsu_chan_2ghz, nitems(rsu_chan_2ghz), bands,
-	    (ic->ic_htcaps & IEEE80211_HTCAP_CHWIDTH40) != 0);
+	ieee80211_add_channels_default_2ghz(chans, maxchans, nchans,
+	    bands, (ic->ic_htcaps & IEEE80211_HTCAP_CHWIDTH40) != 0);
 }
 
 static void
@@ -2768,7 +2760,7 @@ rsu_tx_start(struct rsu_softc *sc, struct ieee80211_node *ni,
 	struct ieee80211_frame *wh;
 	struct ieee80211_key *k = NULL;
 	struct r92s_tx_desc *txd;
-	uint8_t rate, ridx, type, cipher;
+	uint8_t rate, ridx, type, cipher, qos;
 	int prio = 0;
 	uint8_t which;
 	int hasqos;
@@ -2817,12 +2809,14 @@ rsu_tx_start(struct rsu_softc *sc, struct ieee80211_node *ni,
 		prio = M_WME_GETAC(m0);
 		which = rsu_wme_ac_xfer_map[prio];
 		hasqos = 1;
+		qos = ((const struct ieee80211_qosframe *)wh)->i_qos[0];
 	} else {
 		/* Non-QoS TID */
 		/* XXX TODO: tid=0 for non-qos TID? */
 		which = rsu_wme_ac_xfer_map[WME_AC_BE];
 		hasqos = 0;
 		prio = 0;
+		qos = 0;
 	}
 
 	qid = rsu_ac2qid[prio];
@@ -2880,6 +2874,12 @@ rsu_tx_start(struct rsu_softc *sc, struct ieee80211_node *ni,
 	txd->txdw2 |= htole32(R92S_TXDW2_BK);
 	if (ismcast)
 		txd->txdw2 |= htole32(R92S_TXDW2_BMCAST);
+
+	if (!ismcast && (!qos || (qos & IEEE80211_QOS_ACKPOLICY) !=
+	    IEEE80211_QOS_ACKPOLICY_NOACK)) {
+		txd->txdw2 |= htole32(R92S_TXDW2_RTY_LMT_ENA);
+		txd->txdw2 |= htole32(SM(R92S_TXDW2_RTY_LMT, tp->maxretry));
+	}
 
 	/* Force mgmt / mcast / ucast rate if needed. */
 	if (rate != 0) {

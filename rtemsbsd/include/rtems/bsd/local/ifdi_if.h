@@ -14,6 +14,48 @@
 #ifndef _ifdi_if_h_
 #define _ifdi_if_h_
 
+/** @brief Unique descriptor for the IFDI_KNLIST_ADD() method */
+extern struct kobjop_desc ifdi_knlist_add_desc;
+/** @brief A function implementing the IFDI_KNLIST_ADD() method */
+typedef int ifdi_knlist_add_t(if_ctx_t _ctx, struct knote *_kn);
+
+static __inline int IFDI_KNLIST_ADD(if_ctx_t _ctx, struct knote *_kn)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_knlist_add);
+	rc = ((ifdi_knlist_add_t *) _m)(_ctx, _kn);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the IFDI_KNOTE_EVENT() method */
+extern struct kobjop_desc ifdi_knote_event_desc;
+/** @brief A function implementing the IFDI_KNOTE_EVENT() method */
+typedef int ifdi_knote_event_t(if_ctx_t _ctx, struct knote *_kn, int hint);
+
+static __inline int IFDI_KNOTE_EVENT(if_ctx_t _ctx, struct knote *_kn, int hint)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_knote_event);
+	rc = ((ifdi_knote_event_t *) _m)(_ctx, _kn, hint);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the IFDI_OBJECT_INFO_GET() method */
+extern struct kobjop_desc ifdi_object_info_get_desc;
+/** @brief A function implementing the IFDI_OBJECT_INFO_GET() method */
+typedef int ifdi_object_info_get_t(if_ctx_t _ctx, void *data, int size);
+
+static __inline int IFDI_OBJECT_INFO_GET(if_ctx_t _ctx, void *data, int size)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_object_info_get);
+	rc = ((ifdi_object_info_get_t *) _m)(_ctx, data, size);
+	return (rc);
+}
+
 /** @brief Unique descriptor for the IFDI_ATTACH_PRE() method */
 extern struct kobjop_desc ifdi_attach_pre_desc;
 /** @brief A function implementing the IFDI_ATTACH_PRE() method */
@@ -39,6 +81,50 @@ static __inline int IFDI_ATTACH_POST(if_ctx_t _ctx)
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_attach_post);
 	rc = ((ifdi_attach_post_t *) _m)(_ctx);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the IFDI_REINIT_PRE() method */
+extern struct kobjop_desc ifdi_reinit_pre_desc;
+/** @brief A function implementing the IFDI_REINIT_PRE() method */
+typedef int ifdi_reinit_pre_t(if_ctx_t _ctx);
+
+static __inline int IFDI_REINIT_PRE(if_ctx_t _ctx)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_reinit_pre);
+	rc = ((ifdi_reinit_pre_t *) _m)(_ctx);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the IFDI_REINIT_POST() method */
+extern struct kobjop_desc ifdi_reinit_post_desc;
+/** @brief A function implementing the IFDI_REINIT_POST() method */
+typedef int ifdi_reinit_post_t(if_ctx_t _ctx);
+
+static __inline int IFDI_REINIT_POST(if_ctx_t _ctx)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_reinit_post);
+	rc = ((ifdi_reinit_post_t *) _m)(_ctx);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the IFDI_CLONEATTACH() method */
+extern struct kobjop_desc ifdi_cloneattach_desc;
+/** @brief A function implementing the IFDI_CLONEATTACH() method */
+typedef int ifdi_cloneattach_t(if_ctx_t _ctx, struct if_clone *_ifc,
+                               const char *_name, caddr_t params);
+
+static __inline int IFDI_CLONEATTACH(if_ctx_t _ctx, struct if_clone *_ifc,
+                                     const char *_name, caddr_t params)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_cloneattach);
+	rc = ((ifdi_cloneattach_t *) _m)(_ctx, _ifc, _name, params);
 	return (rc);
 }
 
@@ -142,6 +228,20 @@ static __inline void IFDI_QUEUES_FREE(if_ctx_t _ctx)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_queues_free);
 	((ifdi_queues_free_t *) _m)(_ctx);
+}
+
+/** @brief Unique descriptor for the IFDI_RX_CLSET() method */
+extern struct kobjop_desc ifdi_rx_clset_desc;
+/** @brief A function implementing the IFDI_RX_CLSET() method */
+typedef void ifdi_rx_clset_t(if_ctx_t _ctx, uint16_t _fl, uint16_t _qsetid,
+                             caddr_t *_sdcl);
+
+static __inline void IFDI_RX_CLSET(if_ctx_t _ctx, uint16_t _fl,
+                                   uint16_t _qsetid, caddr_t *_sdcl)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_rx_clset);
+	((ifdi_rx_clset_t *) _m)(_ctx, _fl, _qsetid, _sdcl);
 }
 
 /** @brief Unique descriptor for the IFDI_INIT() method */
@@ -269,6 +369,20 @@ static __inline int IFDI_MTU_SET(if_ctx_t _ctx, uint32_t _mtu)
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_mtu_set);
 	rc = ((ifdi_mtu_set_t *) _m)(_ctx, _mtu);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the IFDI_MAC_SET() method */
+extern struct kobjop_desc ifdi_mac_set_desc;
+/** @brief A function implementing the IFDI_MAC_SET() method */
+typedef int ifdi_mac_set_t(if_ctx_t _ctx, const uint8_t *_mac);
+
+static __inline int IFDI_MAC_SET(if_ctx_t _ctx, const uint8_t *_mac)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_mac_set);
+	rc = ((ifdi_mac_set_t *) _m)(_ctx, _mac);
 	return (rc);
 }
 
@@ -496,6 +610,18 @@ static __inline void IFDI_WATCHDOG_RESET(if_ctx_t _ctx)
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_watchdog_reset);
 	((ifdi_watchdog_reset_t *) _m)(_ctx);
+}
+
+/** @brief Unique descriptor for the IFDI_WATCHDOG_RESET_QUEUE() method */
+extern struct kobjop_desc ifdi_watchdog_reset_queue_desc;
+/** @brief A function implementing the IFDI_WATCHDOG_RESET_QUEUE() method */
+typedef void ifdi_watchdog_reset_queue_t(if_ctx_t _ctx, uint16_t _q);
+
+static __inline void IFDI_WATCHDOG_RESET_QUEUE(if_ctx_t _ctx, uint16_t _q)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)_ctx)->ops,ifdi_watchdog_reset_queue);
+	((ifdi_watchdog_reset_queue_t *) _m)(_ctx, _q);
 }
 
 /** @brief Unique descriptor for the IFDI_LED_FUNC() method */

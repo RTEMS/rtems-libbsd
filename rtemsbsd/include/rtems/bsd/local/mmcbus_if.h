@@ -50,8 +50,10 @@ static __inline int MMCBUS_WAIT_FOR_REQUEST(device_t busdev, device_t reqdev,
                                             struct mmc_request *req)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)busdev)->ops,mmcbus_wait_for_request);
-	return ((mmcbus_wait_for_request_t *) _m)(busdev, reqdev, req);
+	rc = ((mmcbus_wait_for_request_t *) _m)(busdev, reqdev, req);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the MMCBUS_ACQUIRE_BUS() method */
@@ -62,8 +64,10 @@ typedef int mmcbus_acquire_bus_t(device_t busdev, device_t reqdev);
 static __inline int MMCBUS_ACQUIRE_BUS(device_t busdev, device_t reqdev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)busdev)->ops,mmcbus_acquire_bus);
-	return ((mmcbus_acquire_bus_t *) _m)(busdev, reqdev);
+	rc = ((mmcbus_acquire_bus_t *) _m)(busdev, reqdev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the MMCBUS_RELEASE_BUS() method */
@@ -74,8 +78,10 @@ typedef int mmcbus_release_bus_t(device_t busdev, device_t reqdev);
 static __inline int MMCBUS_RELEASE_BUS(device_t busdev, device_t reqdev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)busdev)->ops,mmcbus_release_bus);
-	return ((mmcbus_release_bus_t *) _m)(busdev, reqdev);
+	rc = ((mmcbus_release_bus_t *) _m)(busdev, reqdev);
+	return (rc);
 }
 
 #endif /* _mmcbus_if_h_ */

@@ -433,6 +433,7 @@
 #define	bus_generic_release_resource _bsd_bus_generic_release_resource
 #define	bus_generic_resume _bsd_bus_generic_resume
 #define	bus_generic_resume_child _bsd_bus_generic_resume_child
+#define	bus_generic_resume_intr _bsd_bus_generic_resume_intr
 #define	bus_generic_rl_alloc_resource _bsd_bus_generic_rl_alloc_resource
 #define	bus_generic_rl_delete_resource _bsd_bus_generic_rl_delete_resource
 #define	bus_generic_rl_get_resource _bsd_bus_generic_rl_get_resource
@@ -442,6 +443,7 @@
 #define	bus_generic_shutdown _bsd_bus_generic_shutdown
 #define	bus_generic_suspend _bsd_bus_generic_suspend
 #define	bus_generic_suspend_child _bsd_bus_generic_suspend_child
+#define	bus_generic_suspend_intr _bsd_bus_generic_suspend_intr
 #define	bus_generic_teardown_intr _bsd_bus_generic_teardown_intr
 #define	bus_generic_unmap_resource _bsd_bus_generic_unmap_resource
 #define	bus_generic_write_ivar _bsd_bus_generic_write_ivar
@@ -459,9 +461,11 @@
 #define	bus_print_child_header _bsd_bus_print_child_header
 #define	bus_release_resource _bsd_bus_release_resource
 #define	bus_release_resources _bsd_bus_release_resources
+#define	bus_resume_intr _bsd_bus_resume_intr
 #define	bus_set_pass _bsd_bus_set_pass
 #define	bus_set_resource _bsd_bus_set_resource
 #define	bus_setup_intr _bsd_bus_setup_intr
+#define	bus_suspend_intr _bsd_bus_suspend_intr
 #define	bus_teardown_intr _bsd_bus_teardown_intr
 #define	bus_unmap_resource _bsd_bus_unmap_resource
 #define	calculate_crc32c _bsd_calculate_crc32c
@@ -1389,6 +1393,7 @@
 #define	ieee80211_add_channel_ht40 _bsd_ieee80211_add_channel_ht40
 #define	ieee80211_add_channel_list_2ghz _bsd_ieee80211_add_channel_list_2ghz
 #define	ieee80211_add_channel_list_5ghz _bsd_ieee80211_add_channel_list_5ghz
+#define	ieee80211_add_channels_default_2ghz _bsd_ieee80211_add_channels_default_2ghz
 #define	ieee80211_add_htcap _bsd_ieee80211_add_htcap
 #define	ieee80211_add_htcap_ch _bsd_ieee80211_add_htcap_ch
 #define	ieee80211_add_htcap_vendor _bsd_ieee80211_add_htcap_vendor
@@ -1461,6 +1466,9 @@
 #define	ieee80211_classify _bsd_ieee80211_classify
 #define	ieee80211_compute_duration _bsd_ieee80211_compute_duration
 #define	ieee80211_compute_duration_ht _bsd_ieee80211_compute_duration_ht
+#define	ieee80211_com_vdecref _bsd_ieee80211_com_vdecref
+#define	ieee80211_com_vdetach _bsd_ieee80211_com_vdetach
+#define	ieee80211_com_vincref _bsd_ieee80211_com_vincref
 #define	ieee80211_create_ibss _bsd_ieee80211_create_ibss
 #define	ieee80211_crypto_attach _bsd_ieee80211_crypto_attach
 #define	ieee80211_crypto_available _bsd_ieee80211_crypto_available
@@ -1895,7 +1903,6 @@
 #define	if_input _bsd_if_input
 #define	ifioctl _bsd_ifioctl
 #define	if_link_state_change _bsd_if_link_state_change
-#define	ifma6_restart _bsd_ifma6_restart
 #define	if_maddr_rlock _bsd_if_maddr_rlock
 #define	if_maddr_runlock _bsd_if_maddr_runlock
 #define	ifma_restart _bsd_ifma_restart
@@ -2043,11 +2050,11 @@
 #define	in6_mcast_loop _bsd_in6_mcast_loop
 #define	in6m_clear_recorded _bsd_in6m_clear_recorded
 #define	in6m_commit _bsd_in6m_commit
-#define	in6m_disconnect _bsd_in6m_disconnect
+#define	in6m_disconnect_locked _bsd_in6m_disconnect_locked
 #define	in6m_print _bsd_in6m_print
 #define	in6m_record_source _bsd_in6m_record_source
-#define	in6m_release_deferred _bsd_in6m_release_deferred
 #define	in6m_release_list_deferred _bsd_in6m_release_list_deferred
+#define	in6m_release_wait _bsd_in6m_release_wait
 #define	in6_multi_free_mtx _bsd_in6_multi_free_mtx
 #define	in6_multi_list_mtx _bsd_in6_multi_list_mtx
 #define	in6_multi_sx _bsd_in6_multi_sx
@@ -2211,6 +2218,8 @@
 #define	in_sockaddr _bsd_in_sockaddr
 #define	intr_event_add_handler _bsd_intr_event_add_handler
 #define	intr_event_create _bsd_intr_event_create
+#define	intr_event_resume_handler _bsd_intr_event_resume_handler
+#define	intr_event_suspend_handler _bsd_intr_event_suspend_handler
 #define	ip4_ah_net_deflev _bsd_ip4_ah_net_deflev
 #define	ip4_ah_trans_deflev _bsd_ip4_ah_trans_deflev
 #define	ip4_esp_net_deflev _bsd_ip4_esp_net_deflev
@@ -3750,6 +3759,7 @@
 #define	rman_get_device _bsd_rman_get_device
 #define	rman_get_end _bsd_rman_get_end
 #define	rman_get_flags _bsd_rman_get_flags
+#define	rman_get_irq_cookie _bsd_rman_get_irq_cookie
 #define	rman_get_mapping _bsd_rman_get_mapping
 #define	rman_get_rid _bsd_rman_get_rid
 #define	rman_get_size _bsd_rman_get_size
@@ -3769,6 +3779,7 @@
 #define	rman_set_bustag _bsd_rman_set_bustag
 #define	rman_set_device _bsd_rman_set_device
 #define	rman_set_end _bsd_rman_set_end
+#define	rman_set_irq_cookie _bsd_rman_set_irq_cookie
 #define	rman_set_mapping _bsd_rman_set_mapping
 #define	rman_set_rid _bsd_rman_set_rid
 #define	rman_set_start _bsd_rman_set_start
@@ -4490,6 +4501,8 @@
 #define	Skein_512_Output _bsd_Skein_512_Output
 #define	Skein_512_Process_Block _bsd_Skein_512_Process_Block
 #define	Skein_512_Update _bsd_Skein_512_Update
+#define	Skein_Get64_LSB_First _bsd_Skein_Get64_LSB_First
+#define	Skein_Put64_LSB_First _bsd_Skein_Put64_LSB_First
 #define	skipjack_backwards _bsd_skipjack_backwards
 #define	skipjack_forwards _bsd_skipjack_forwards
 #define	sl_compress_init _bsd_sl_compress_init

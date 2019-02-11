@@ -22,8 +22,10 @@ typedef int gpiobus_acquire_bus_t(device_t busdev, device_t dev, int how);
 static __inline int GPIOBUS_ACQUIRE_BUS(device_t busdev, device_t dev, int how)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)busdev)->ops,gpiobus_acquire_bus);
-	return ((gpiobus_acquire_bus_t *) _m)(busdev, dev, how);
+	rc = ((gpiobus_acquire_bus_t *) _m)(busdev, dev, how);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_RELEASE_BUS() method */
@@ -48,8 +50,10 @@ static __inline int GPIOBUS_PIN_SET(device_t dev, device_t child,
                                     uint32_t pin_num, uint32_t pin_value)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_set);
-	return ((gpiobus_pin_set_t *) _m)(dev, child, pin_num, pin_value);
+	rc = ((gpiobus_pin_set_t *) _m)(dev, child, pin_num, pin_value);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_GET() method */
@@ -62,8 +66,10 @@ static __inline int GPIOBUS_PIN_GET(device_t dev, device_t child,
                                     uint32_t pin_num, uint32_t *pin_value)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_get);
-	return ((gpiobus_pin_get_t *) _m)(dev, child, pin_num, pin_value);
+	rc = ((gpiobus_pin_get_t *) _m)(dev, child, pin_num, pin_value);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_TOGGLE() method */
@@ -76,8 +82,10 @@ static __inline int GPIOBUS_PIN_TOGGLE(device_t dev, device_t child,
                                        uint32_t pin_num)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_toggle);
-	return ((gpiobus_pin_toggle_t *) _m)(dev, child, pin_num);
+	rc = ((gpiobus_pin_toggle_t *) _m)(dev, child, pin_num);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_GETCAPS() method */
@@ -90,8 +98,10 @@ static __inline int GPIOBUS_PIN_GETCAPS(device_t dev, device_t child,
                                         uint32_t pin_num, uint32_t *caps)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_getcaps);
-	return ((gpiobus_pin_getcaps_t *) _m)(dev, child, pin_num, caps);
+	rc = ((gpiobus_pin_getcaps_t *) _m)(dev, child, pin_num, caps);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_GETFLAGS() method */
@@ -104,8 +114,10 @@ static __inline int GPIOBUS_PIN_GETFLAGS(device_t dev, device_t child,
                                          uint32_t pin_num, uint32_t *flags)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_getflags);
-	return ((gpiobus_pin_getflags_t *) _m)(dev, child, pin_num, flags);
+	rc = ((gpiobus_pin_getflags_t *) _m)(dev, child, pin_num, flags);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_SETFLAGS() method */
@@ -118,8 +130,10 @@ static __inline int GPIOBUS_PIN_SETFLAGS(device_t dev, device_t child,
                                          uint32_t pin_num, uint32_t flags)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_setflags);
-	return ((gpiobus_pin_setflags_t *) _m)(dev, child, pin_num, flags);
+	rc = ((gpiobus_pin_setflags_t *) _m)(dev, child, pin_num, flags);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_GETNAME() method */
@@ -131,8 +145,10 @@ static __inline int GPIOBUS_PIN_GETNAME(device_t dev, uint32_t pin_num,
                                         char *name)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_getname);
-	return ((gpiobus_pin_getname_t *) _m)(dev, pin_num, name);
+	rc = ((gpiobus_pin_getname_t *) _m)(dev, pin_num, name);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the GPIOBUS_PIN_SETNAME() method */
@@ -145,8 +161,10 @@ static __inline int GPIOBUS_PIN_SETNAME(device_t dev, uint32_t pin_num,
                                         const char *name)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,gpiobus_pin_setname);
-	return ((gpiobus_pin_setname_t *) _m)(dev, pin_num, name);
+	rc = ((gpiobus_pin_setname_t *) _m)(dev, pin_num, name);
+	return (rc);
 }
 
 #endif /* _gpiobus_if_h_ */

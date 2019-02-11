@@ -119,6 +119,14 @@ struct kobjop_desc bus_teardown_intr_desc = {
 	0, { &bus_teardown_intr_desc, (kobjop_t)kobj_error_method }
 };
 
+struct kobjop_desc bus_suspend_intr_desc = {
+	0, { &bus_suspend_intr_desc, (kobjop_t)bus_generic_suspend_intr }
+};
+
+struct kobjop_desc bus_resume_intr_desc = {
+	0, { &bus_resume_intr_desc, (kobjop_t)bus_generic_resume_intr }
+};
+
 struct kobjop_desc bus_set_resource_desc = {
 	0, { &bus_set_resource_desc, (kobjop_t)kobj_error_method }
 };

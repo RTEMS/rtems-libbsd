@@ -22,8 +22,10 @@ typedef int miibus_readreg_t(device_t dev, int phy, int reg);
 static __inline int MIIBUS_READREG(device_t dev, int phy, int reg)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,miibus_readreg);
-	return ((miibus_readreg_t *) _m)(dev, phy, reg);
+	rc = ((miibus_readreg_t *) _m)(dev, phy, reg);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the MIIBUS_WRITEREG() method */
@@ -34,8 +36,10 @@ typedef int miibus_writereg_t(device_t dev, int phy, int reg, int val);
 static __inline int MIIBUS_WRITEREG(device_t dev, int phy, int reg, int val)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,miibus_writereg);
-	return ((miibus_writereg_t *) _m)(dev, phy, reg, val);
+	rc = ((miibus_writereg_t *) _m)(dev, phy, reg, val);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the MIIBUS_STATCHG() method */

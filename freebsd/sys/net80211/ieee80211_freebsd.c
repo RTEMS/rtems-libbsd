@@ -70,8 +70,6 @@ SYSCTL_INT(_net_wlan, OID_AUTO, debug, CTLFLAG_RW, &ieee80211_debug,
 	    0, "debugging printfs");
 #endif
 
-static MALLOC_DEFINE(M_80211_COM, "80211com", "802.11 com state");
-
 static const char wlanname[] = "wlan";
 static struct if_clone *wlan_cloner;
 
@@ -138,13 +136,12 @@ int
 ieee80211_sysctl_msecs_ticks(SYSCTL_HANDLER_ARGS)
 {
 	int msecs = ticks_to_msecs(*(int *)arg1);
-	int error, t;
+	int error;
 
 	error = sysctl_handle_int(oidp, &msecs, 0, req);
 	if (error || !req->newptr)
 		return error;
-	t = msecs_to_ticks(msecs);
-	*(int *)arg1 = (t < 1) ? 1 : t;
+	*(int *)arg1 = msecs_to_ticks(msecs);
 	return 0;
 }
 
@@ -349,9 +346,6 @@ ieee80211_com_vdetach(struct ieee80211vap *vap)
 	int sleep_time;
 
 	sleep_time = msecs_to_ticks(250);
-	if (sleep_time == 0)
-		sleep_time = 1;
-
 	atomic_set_32(&vap->iv_com_state, IEEE80211_COM_DETACHED);
 	while (MS(atomic_load_32(&vap->iv_com_state), IEEE80211_COM_REF) != 0)
 		pause("comref", sleep_time);

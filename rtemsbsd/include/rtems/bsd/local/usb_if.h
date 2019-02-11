@@ -24,8 +24,10 @@ static __inline int USB_HANDLE_REQUEST(device_t dev, const void *req,
                                        /* pointer to the device request */ void **pptr, /* data pointer */ uint16_t *plen, /* maximum transfer length */ uint16_t offset, /* data offset */ uint8_t *pstate)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,usb_handle_request);
-	return ((usb_handle_request_t *) _m)(dev, req, pptr, plen, offset, pstate);
+	rc = ((usb_handle_request_t *) _m)(dev, req, pptr, plen, offset, pstate);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the USB_TAKE_CONTROLLER() method */
@@ -36,8 +38,10 @@ typedef int usb_take_controller_t(device_t dev);
 static __inline int USB_TAKE_CONTROLLER(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,usb_take_controller);
-	return ((usb_take_controller_t *) _m)(dev);
+	rc = ((usb_take_controller_t *) _m)(dev);
+	return (rc);
 }
 
 #endif /* _usb_if_h_ */

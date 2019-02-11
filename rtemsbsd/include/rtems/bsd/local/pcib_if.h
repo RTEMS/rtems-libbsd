@@ -25,8 +25,10 @@ typedef int pcib_maxslots_t(device_t dev);
 static __inline int PCIB_MAXSLOTS(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pcib_maxslots);
-	return ((pcib_maxslots_t *) _m)(dev);
+	rc = ((pcib_maxslots_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_MAXFUNCS() method */
@@ -37,8 +39,10 @@ typedef int pcib_maxfuncs_t(device_t dev);
 static __inline int PCIB_MAXFUNCS(device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pcib_maxfuncs);
-	return ((pcib_maxfuncs_t *) _m)(dev);
+	rc = ((pcib_maxfuncs_t *) _m)(dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_READ_CONFIG() method */
@@ -51,8 +55,10 @@ static __inline u_int32_t PCIB_READ_CONFIG(device_t dev, u_int bus, u_int slot,
                                            u_int func, u_int reg, int width)
 {
 	kobjop_t _m;
+	u_int32_t rc;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,pcib_read_config);
-	return ((pcib_read_config_t *) _m)(dev, bus, slot, func, reg, width);
+	rc = ((pcib_read_config_t *) _m)(dev, bus, slot, func, reg, width);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_WRITE_CONFIG() method */
@@ -79,8 +85,10 @@ typedef int pcib_route_interrupt_t(device_t pcib, device_t dev, int pin);
 static __inline int PCIB_ROUTE_INTERRUPT(device_t pcib, device_t dev, int pin)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_route_interrupt);
-	return ((pcib_route_interrupt_t *) _m)(pcib, dev, pin);
+	rc = ((pcib_route_interrupt_t *) _m)(pcib, dev, pin);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_ALLOC_MSI() method */
@@ -93,8 +101,10 @@ static __inline int PCIB_ALLOC_MSI(device_t pcib, device_t dev, int count,
                                    int maxcount, int *irqs)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_alloc_msi);
-	return ((pcib_alloc_msi_t *) _m)(pcib, dev, count, maxcount, irqs);
+	rc = ((pcib_alloc_msi_t *) _m)(pcib, dev, count, maxcount, irqs);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_RELEASE_MSI() method */
@@ -107,8 +117,10 @@ static __inline int PCIB_RELEASE_MSI(device_t pcib, device_t dev, int count,
                                      int *irqs)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_release_msi);
-	return ((pcib_release_msi_t *) _m)(pcib, dev, count, irqs);
+	rc = ((pcib_release_msi_t *) _m)(pcib, dev, count, irqs);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_ALLOC_MSIX() method */
@@ -119,8 +131,10 @@ typedef int pcib_alloc_msix_t(device_t pcib, device_t dev, int *irq);
 static __inline int PCIB_ALLOC_MSIX(device_t pcib, device_t dev, int *irq)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_alloc_msix);
-	return ((pcib_alloc_msix_t *) _m)(pcib, dev, irq);
+	rc = ((pcib_alloc_msix_t *) _m)(pcib, dev, irq);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_RELEASE_MSIX() method */
@@ -131,8 +145,10 @@ typedef int pcib_release_msix_t(device_t pcib, device_t dev, int irq);
 static __inline int PCIB_RELEASE_MSIX(device_t pcib, device_t dev, int irq)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_release_msix);
-	return ((pcib_release_msix_t *) _m)(pcib, dev, irq);
+	rc = ((pcib_release_msix_t *) _m)(pcib, dev, irq);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_MAP_MSI() method */
@@ -145,8 +161,10 @@ static __inline int PCIB_MAP_MSI(device_t pcib, device_t dev, int irq,
                                  uint64_t *addr, uint32_t *data)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_map_msi);
-	return ((pcib_map_msi_t *) _m)(pcib, dev, irq, addr, data);
+	rc = ((pcib_map_msi_t *) _m)(pcib, dev, irq, addr, data);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_POWER_FOR_SLEEP() method */
@@ -158,8 +176,10 @@ static __inline int PCIB_POWER_FOR_SLEEP(device_t pcib, device_t dev,
                                          int *pstate)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_power_for_sleep);
-	return ((pcib_power_for_sleep_t *) _m)(pcib, dev, pstate);
+	rc = ((pcib_power_for_sleep_t *) _m)(pcib, dev, pstate);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_GET_ID() method */
@@ -172,8 +192,10 @@ static __inline int PCIB_GET_ID(device_t pcib, device_t dev,
                                 enum pci_id_type type, uintptr_t *id)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_get_id);
-	return ((pcib_get_id_t *) _m)(pcib, dev, type, id);
+	rc = ((pcib_get_id_t *) _m)(pcib, dev, type, id);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_TRY_ENABLE_ARI() method */
@@ -184,8 +206,10 @@ typedef int pcib_try_enable_ari_t(device_t pcib, device_t dev);
 static __inline int PCIB_TRY_ENABLE_ARI(device_t pcib, device_t dev)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_try_enable_ari);
-	return ((pcib_try_enable_ari_t *) _m)(pcib, dev);
+	rc = ((pcib_try_enable_ari_t *) _m)(pcib, dev);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_ARI_ENABLED() method */
@@ -196,8 +220,10 @@ typedef int pcib_ari_enabled_t(device_t pcib);
 static __inline int PCIB_ARI_ENABLED(device_t pcib)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_ari_enabled);
-	return ((pcib_ari_enabled_t *) _m)(pcib);
+	rc = ((pcib_ari_enabled_t *) _m)(pcib);
+	return (rc);
 }
 
 /** @brief Unique descriptor for the PCIB_DECODE_RID() method */
@@ -224,8 +250,10 @@ static __inline int PCIB_REQUEST_FEATURE(device_t pcib, device_t dev,
                                          enum pci_feature feature)
 {
 	kobjop_t _m;
+	int rc;
 	KOBJOPLOOKUP(((kobj_t)pcib)->ops,pcib_request_feature);
-	return ((pcib_request_feature_t *) _m)(pcib, dev, feature);
+	rc = ((pcib_request_feature_t *) _m)(pcib, dev, feature);
+	return (rc);
 }
 
 #endif /* _pcib_if_h_ */

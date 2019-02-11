@@ -92,6 +92,7 @@ WR4(struct ccm_softc *sc, bus_size_t off, uint32_t val)
 static void
 ccm_init_gates(struct ccm_softc *sc)
 {
+#ifndef __rtems__
 	uint32_t reg;
 
  	/* ahpbdma, aipstz 1 & 2 buses */
@@ -129,6 +130,7 @@ ccm_init_gates(struct ccm_softc *sc)
 	reg = CCGR6_USBOH3 | CCGR6_USDHC1 | CCGR6_USDHC2 |
 	    CCGR6_USDHC3 | CCGR6_USDHC4;
 	WR4(sc, CCM_CCGR6, reg);
+#endif /* __rtems__ */
 }
 
 static int
@@ -204,7 +206,12 @@ ccm_probe(device_t dev)
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
+#ifndef __rtems__
         if (ofw_bus_is_compatible(dev, "fsl,imx6q-ccm") == 0)
+#else /* __rtems__ */
+        if (ofw_bus_is_compatible(dev, "fsl,imx6q-ccm") == 0 &&
+	    ofw_bus_is_compatible(dev, "fsl,imx6ul-ccm") == 0)
+#endif /* __rtems__ */
 		return (ENXIO);
 
 	device_set_desc(dev, "Freescale i.MX6 Clock Control Module");

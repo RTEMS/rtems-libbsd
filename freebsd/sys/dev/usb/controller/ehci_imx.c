@@ -50,6 +50,9 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#ifdef __rtems__
+#include <dev/fdt/fdt_common.h>
+#endif /* __rtems__ */
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
@@ -270,6 +273,9 @@ struct imx_ehci_softc {
 	device_t	dev;
 	struct resource	*ehci_mem_res;	/* EHCI core regs. */
 	struct resource	*ehci_irq_res;	/* EHCI core IRQ. */ 
+#ifdef __rtems__
+	void		*phy_regs;
+#endif /* __rtems__ */
 };
 
 static struct ofw_compat_data compat_data[] = {
@@ -380,6 +386,32 @@ imx_ehci_disable_oc(struct imx_ehci_softc *sc)
 	index = usbmprops[1];
 	imx_usbmisc_set_ctrl(usbmdev, index, USBNC_OVER_CUR_DIS);
 }
+#ifdef __rtems__
+#define BUS_SPACE_PHYSADDR(res, offs) \
+	((u_int)(rman_get_start(res)+(offs)))
+
+static uint16_t
+imx_ehci_get_port_speed_portsc(struct ehci_softc *sc, uint16_t index)
+{
+	uint32_t v;
+	struct imx_ehci_softc *isc = (struct imx_ehci_softc *)sc;
+
+	v = ehci_get_port_speed_portsc(sc, index);
+
+	/* Set/clear ENHOSTDISCONDETECT in USBPHY CTRL register */
+	/* FIXME: This is a very hacky method. It should be done by the phy
+	 * driver instead. */
+	volatile uint32_t *ctrl_set = isc->phy_regs + 0x34;
+	volatile uint32_t *ctrl_clr = isc->phy_regs + 0x38;
+	if (v == UPS_HIGH_SPEED) {
+		*ctrl_set = 0x2;
+	} else {
+		*ctrl_clr = 0x2;
+	}
+
+	return (v);
+}
+#endif /* __rtems__ */
 
 static int
 imx_ehci_attach(device_t dev)
@@ -474,6 +506,33 @@ imx_ehci_attach(device_t dev)
 	esc->sc_flags |= EHCI_SCFLG_NORESTERM | EHCI_SCFLG_TT;
 	esc->sc_vendor_post_reset = imx_ehci_post_reset;
 	esc->sc_vendor_get_port_speed = ehci_get_port_speed_portsc;
+#ifdef __rtems__
+	/*
+	 * FIXME: This is a big hack to get the PHY regs and set one bit during
+	 * changes of the port speed.
+	 */
+	sc->phy_regs = 0;
+	if (OF_hasprop(ofw_bus_get_node(sc->dev), "fsl,usbphy")) {
+		phandle_t *cells;
+		int len;
+		phandle_t phynode;
+
+		cells = NULL;
+		len = OF_getencprop_alloc_multi(ofw_bus_get_node(sc->dev),
+		    "fsl,usbphy", sizeof(*cells), (void **)&cells);
+		if (len > 0
+		    && (phynode = OF_node_from_xref(cells[0])) != -1 &&
+		    ofw_bus_node_is_compatible(phynode, "fsl,imx6ul-usbphy")) {
+			u_long base, size;
+			if (fdt_regsize(phynode, &base, &size) == 0) {
+				sc->phy_regs = (void*)base;
+				esc->sc_vendor_get_port_speed =
+				    imx_ehci_get_port_speed_portsc;
+			}
+		}
+		OF_prop_free(cells);
+	}
+#endif /* __rtems__ */
 
 	err = ehci_init(esc);
 	if (err != 0) {

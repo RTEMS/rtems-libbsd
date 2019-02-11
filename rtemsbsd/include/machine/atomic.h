@@ -1057,6 +1057,32 @@ atomic_store_rel_32(volatile uint32_t *p, uint32_t v)
 #endif
 }
 
+static inline uint64_t
+atomic_fetchadd_64(volatile uint64_t *p, uint64_t v)
+{
+	uint64_t tmp;
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_uint_least64_t *q =
+	    reinterpret_cast<std::atomic_uint_least64_t *>(const_cast<uint64_t *>(p));
+
+	tmp = q->fetch_add(v, std::memory_order_seq_cst);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_uint_least64_t *q = (atomic_uint_least64_t *)RTEMS_DEVOLATILE(uint64_t *, p);
+
+	tmp = atomic_fetch_add_explicit(q, v, memory_order_seq_cst);
+#else
+	rtems_interrupt_level level;
+
+	rtems_interrupt_disable(level);
+	tmp = *p;
+	*p += v;
+	rtems_interrupt_enable(level);
+#endif
+
+	return (tmp);
+}
+
 static inline void
 atomic_add_long(volatile long *p, long v)
 {

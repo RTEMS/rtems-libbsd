@@ -109,7 +109,6 @@ _defaults = {
     #  local path                               wildcard                           dest path
     [('rtemsbsd/include',                       '**/*.h',                          ''),
      ('rtemsbsd/@CPU@/include',                 '**/*.h',                          ''),
-     ('rtemsbsd/mghttpd',                       'mongoose.h',                      'mghttpd'),
      ('freebsd/include',                        '**/*.h',                          ''),
      ('freebsd/sys/bsm',                        '**/*.h',                          'bsm'),
      ('freebsd/sys/cam',                        '**/*.h',                          'cam'),
@@ -4775,23 +4774,6 @@ class mdnsresponder(builder.Module):
             mm.generator['source']()
         )
 
-#
-# Mongoose HTTP
-#
-class mghttpd(builder.Module):
-
-    def __init__(self, manager):
-        super(mghttpd, self).__init__(manager, type(self).__name__)
-
-    def generate(self):
-        mm = self.manager
-        self.addSourceFiles(
-            [
-                'rtemsbsd/mghttpd/mongoose.c',
-            ],
-            mm.generator['source']('-DNO_SSL -DNO_POPEN -DNO_CGI -DUSE_WEBSOCKET')
-        )
-
 class dpaa(builder.Module):
 
     def __init__(self, manager):
@@ -5027,7 +5009,6 @@ def load(mm):
     mm.addModule(crypto_openssl(mm))
 
     mm.addModule(dhcpcd(mm))
-    mm.addModule(mghttpd(mm))
     mm.addModule(mdnsresponder(mm))
 
     mm.addModule(tests(mm))

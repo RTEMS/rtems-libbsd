@@ -170,6 +170,7 @@ extern uintptr_t dpcpu_off[];
 
 #endif /* _KERNEL */
 
+#ifndef __rtems__
 /*
  * This structure maps out the global data that needs to be kept on a
  * per-cpu basis.  The members are accessed via the PCPU_GET/SET/PTR
@@ -177,7 +178,6 @@ extern uintptr_t dpcpu_off[];
  * defined in the PCPU_MD_FIELDS macro defined in <machine/pcpu.h>.
  */
 struct pcpu {
-#ifndef __rtems__
 	struct thread	*pc_curthread;		/* Current thread */
 	struct thread	*pc_idlethread;		/* Idle thread */
 	struct thread	*pc_fpcurthread;	/* Fp state owner */
@@ -208,10 +208,10 @@ struct pcpu {
 	 * if only to make kernel debugging easier.
 	 */
 	PCPU_MD_FIELDS;
-#else /* __rtems__ */
-	int pc_dummy;
-#endif /* __rtems__ */
 } __aligned(CACHE_LINE_SIZE);
+#else /* __rtems__ */
+struct pcpu;
+#endif /* __rtems__ */
 
 #ifdef _KERNEL
 
@@ -227,9 +227,9 @@ extern struct pcpu *cpuid_to_pcpu[];
 #endif
 #define	curvidata	PCPU_GET(vidata)
 
-#ifndef __rtems__
 #define UMA_PCPU_ALLOC_SIZE		PAGE_SIZE
 
+#ifndef __rtems__
 #ifdef CTASSERT
 #if defined(__i386__) || defined(__amd64__)
 /* Required for counters(9) to work on x86. */
@@ -242,8 +242,6 @@ CTASSERT(sizeof(struct pcpu) == UMA_PCPU_ALLOC_SIZE);
 CTASSERT((PAGE_SIZE / sizeof(struct pcpu)) * sizeof(struct pcpu) == PAGE_SIZE);
 #endif	/* UMA_PCPU_ALLOC_SIZE && x86 */
 #endif	/* CTASSERT */
-#else /* __rtems__ */
-#define	UMA_PCPU_ALLOC_SIZE sizeof(struct pcpu)
 #endif /* __rtems__ */
 
 /* Accessor to elements allocated via UMA_ZONE_PCPU zone. */

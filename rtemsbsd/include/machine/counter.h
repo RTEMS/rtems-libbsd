@@ -42,7 +42,7 @@ static inline uint64_t
 counter_u64_read_one(uint64_t *p, int cpu)
 {
 
-	return (*((uint64_t *)((char *)p + sizeof(struct pcpu) * cpu)));
+	return (*((uint64_t *)((char *)p + UMA_PCPU_ALLOC_SIZE * cpu)));
 }
 
 static inline uint64_t
@@ -65,7 +65,7 @@ counter_u64_zero_inline(counter_u64_t c)
 	uint32_t cpu;
 
 	for (cpu = 0; cpu < _SMP_Get_processor_count(); ++cpu) {
-		*((uint64_t *)((char *)c + sizeof(struct pcpu) * cpu)) = 0;
+		*((uint64_t *)((char *)c + UMA_PCPU_ALLOC_SIZE * cpu)) = 0;
 	}
 }
 #endif

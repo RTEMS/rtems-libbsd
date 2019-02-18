@@ -32,6 +32,8 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*
  * Include this outside the extern "C", since we may include <atomic> via
  * <rtems.h> which uses templates.
@@ -40,10 +42,9 @@
 
 extern "C" {
 
-#include <machine/rtems-bsd-kernel-space.h>
-
 #include <sys/param.h>
 #include <sys/types.h>
+#include <sys/lock.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>

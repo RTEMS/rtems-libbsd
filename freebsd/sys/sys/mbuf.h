@@ -776,7 +776,7 @@ m_get(int how, short type)
 
 	args.flags = 0;
 	args.type = type;
-	m = uma_zalloc_arg(zone_mbuf, &args, how);
+	m = (struct mbuf *)uma_zalloc_arg(zone_mbuf, &args, how);
 	MBUF_PROBE3(m__get, how, type, m);
 	return (m);
 }
@@ -789,7 +789,7 @@ m_gethdr(int how, short type)
 
 	args.flags = M_PKTHDR;
 	args.type = type;
-	m = uma_zalloc_arg(zone_mbuf, &args, how);
+	m = (struct mbuf *)uma_zalloc_arg(zone_mbuf, &args, how);
 	MBUF_PROBE3(m__gethdr, how, type, m);
 	return (m);
 }
@@ -802,7 +802,7 @@ m_getcl(int how, short type, int flags)
 
 	args.flags = flags;
 	args.type = type;
-	m = uma_zalloc_arg(zone_pack, &args, how);
+	m = (struct mbuf *)uma_zalloc_arg(zone_pack, &args, how);
 	MBUF_PROBE4(m__getcl, how, type, flags, m);
 	return (m);
 }

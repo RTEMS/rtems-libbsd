@@ -209,8 +209,8 @@ def assertHeaderFile(path):
         sys.exit(2)
 
 def assertSourceFile(path):
-    if path[-2] != '.' or (path[-1] != 'c' and path[-1] != 'S'):
-        print("*** " + path + " does not end in .c or .S")
+    if path[-2:] != '.c' and path[-2:] != '.S' and path[-3:] != '.cc':
+        print("*** " + path + " does not end in .c, .cc or .S")
         print("*** Move it to a header file list")
         sys.exit(2)
 

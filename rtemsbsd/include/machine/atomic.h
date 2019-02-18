@@ -1002,7 +1002,7 @@ atomic_load_32(volatile uint32_t *p)
 	uint32_t tmp;
 
 #if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
-	std::atomic_int *q =
+	std::atomic_uint_least32_t *q =
 	    reinterpret_cast<std::atomic_uint_least32_t *>(const_cast<uint32_t *>(p));
 
 	tmp = q->load(std::memory_order_relaxed);

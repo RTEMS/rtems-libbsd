@@ -499,7 +499,9 @@ class Builder(builder.ModuleManager):
         #
         # Tests
         #
-        tests = self.data['tests']
+        tests = []
+        if 'tests' in self.data:
+            tests = self.data['tests']
         for testName in sorted(tests):
             test = self.data['tests'][testName]['all']
             test_source = []

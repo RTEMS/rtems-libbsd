@@ -1343,10 +1343,10 @@ ikev1_id_print(netdissect_options *ndo, u_char tpay _U_,
 #define USE_IPSECDOI_IN_PHASE1	1
 	const struct ikev1_pl_id *p;
 	struct ikev1_pl_id id;
-	static const char *idtypestr[] = {
+	static const char * const idtypestr[] = {
 		"IPv4", "IPv4net", "IPv6", "IPv6net",
 	};
-	static const char *ipsecidtypestr[] = {
+	static const char * const ipsecidtypestr[] = {
 		NULL, "IPv4", "FQDN", "user FQDN", "IPv4net", "IPv6",
 		"IPv6net", "IPv4range", "IPv6range", "ASN1 DN", "ASN1 GN",
 		"keyid",
@@ -1512,7 +1512,7 @@ ikev1_cert_print(netdissect_options *ndo, u_char tpay _U_,
 {
 	const struct ikev1_pl_cert *p;
 	struct ikev1_pl_cert cert;
-	static const char *certstr[] = {
+	static const char * const certstr[] = {
 		"none",	"pkcs7", "pgp", "dns",
 		"x509sign", "x509ke", "kerberos", "crl",
 		"arl", "spki", "x509attr",
@@ -1545,7 +1545,7 @@ ikev1_cr_print(netdissect_options *ndo, u_char tpay _U_,
 {
 	const struct ikev1_pl_cert *p;
 	struct ikev1_pl_cert cert;
-	static const char *certstr[] = {
+	static const char * const certstr[] = {
 		"none",	"pkcs7", "pgp", "dns",
 		"x509sign", "x509ke", "kerberos", "crl",
 		"arl", "spki", "x509attr",
@@ -1667,7 +1667,7 @@ ikev1_n_print(netdissect_options *ndo, u_char tpay _U_,
 	const u_char *ep2;
 	uint32_t doi;
 	uint32_t proto;
-	static const char *notify_error_str[] = {
+	static const char * const notify_error_str[] = {
 		NULL,				"INVALID-PAYLOAD-TYPE",
 		"DOI-NOT-SUPPORTED",		"SITUATION-NOT-SUPPORTED",
 		"INVALID-COOKIE",		"INVALID-MAJOR-VERSION",
@@ -1685,13 +1685,13 @@ ikev1_n_print(netdissect_options *ndo, u_char tpay _U_,
 		"CERTIFICATE-UNAVAILABLE",	"UNSUPPORTED-EXCHANGE-TYPE",
 		"UNEQUAL-PAYLOAD-LENGTHS",
 	};
-	static const char *ipsec_notify_error_str[] = {
+	static const char * const ipsec_notify_error_str[] = {
 		"RESERVED",
 	};
-	static const char *notify_status_str[] = {
+	static const char * const notify_status_str[] = {
 		"CONNECTED",
 	};
-	static const char *ipsec_notify_status_str[] = {
+	static const char * const ipsec_notify_status_str[] = {
 		"RESPONDER-LIFETIME",		"REPLAY-STATUS",
 		"INITIAL-CONTACT",
 	};

@@ -401,9 +401,9 @@ void
 unsigned_relts_print(netdissect_options *ndo,
                      uint32_t secs)
 {
-	static const char *lengths[] = {"y", "w", "d", "h", "m", "s"};
+	static const char * const lengths[] = {"y", "w", "d", "h", "m", "s"};
 	static const u_int seconds[] = {31536000, 604800, 86400, 3600, 60, 1};
-	const char **l = lengths;
+	const char * const *l = lengths;
 	const u_int *s = seconds;
 
 	if (secs == 0) {

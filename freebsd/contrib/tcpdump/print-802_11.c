@@ -2809,7 +2809,7 @@ print_radiotap_field(netdissect_options *ndo,
 		uint8_t known;
 		uint8_t flags;
 		uint8_t mcs_index;
-		static const char *ht_bandwidth[4] = {
+		static const char * const ht_bandwidth[4] = {
 			"20 MHz",
 			"40 MHz",
 			"20 MHz (L)",
@@ -2929,7 +2929,7 @@ print_radiotap_field(netdissect_options *ndo,
 		uint8_t coding;
 		uint8_t group_id;
 		uint16_t partial_aid;
-		static const char *vht_bandwidth[32] = {
+		static const char * const vht_bandwidth[32] = {
 			"20 MHz",
 			"40 MHz",
 			"20 MHz (L)",

@@ -608,6 +608,9 @@ void esp_print_decodesecret(netdissect_options *ndo)
 {
 	char *line;
 	char *p;
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static int initialized = 0;
 
 	if (!initialized) {

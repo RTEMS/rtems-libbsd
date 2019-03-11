@@ -323,6 +323,9 @@ ts_print(netdissect_options *ndo,
 	struct tm *tm;
 	time_t Time;
 	char buf[TS_BUF_SIZE];
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static struct timeval tv_ref;
 	struct timeval tv_result;
 	int negative_offset;
@@ -510,6 +513,9 @@ tok2str(register const struct tok *lp, register const char *fmt,
 	register u_int v)
 {
 	static char buf[4][TOKBUFSIZE];
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static int idx = 0;
 	char *ret;
 

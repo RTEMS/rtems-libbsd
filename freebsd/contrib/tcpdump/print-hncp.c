@@ -165,6 +165,9 @@ static const char *
 format_nid(const u_char *data)
 {
     static char buf[4][11+5];
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
     static int i = 0;
     i = (i + 1) % 4;
     snprintf(buf[i], 16, "%02x:%02x:%02x:%02x",
@@ -176,6 +179,9 @@ static const char *
 format_256(const u_char *data)
 {
     static char buf[4][64+5];
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
     static int i = 0;
     i = (i + 1) % 4;
     snprintf(buf[i], 28, "%016" PRIx64 "%016" PRIx64 "%016" PRIx64 "%016" PRIx64,
@@ -191,6 +197,9 @@ static const char *
 format_interval(const uint32_t n)
 {
     static char buf[4][sizeof("0000000.000s")];
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
     static int i = 0;
     i = (i + 1) % 4;
     snprintf(buf[i], sizeof(buf[i]), "%u.%03us", n / 1000, n % 1000);

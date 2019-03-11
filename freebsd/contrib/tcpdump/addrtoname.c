@@ -1266,7 +1266,13 @@ struct hnamemem *
 newhnamemem(netdissect_options *ndo)
 {
 	register struct hnamemem *p;
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static struct hnamemem *ptr = NULL;
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static u_int num = 0;
 
 	if (num  <= 0) {
@@ -1285,7 +1291,13 @@ struct h6namemem *
 newh6namemem(netdissect_options *ndo)
 {
 	register struct h6namemem *p;
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static struct h6namemem *ptr = NULL;
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static u_int num = 0;
 
 	if (num  <= 0) {

@@ -576,6 +576,9 @@ ataddr_string(netdissect_options *ndo,
 	register struct hnamemem *tp, *tp2;
 	register int i = (atnet << 8) | athost;
 	char nambuf[256+1];
+#ifdef __rtems__
+	__section(".rtemsrwset.bsd_prog_tcpdump.content")
+#endif /* __rtems__ */
 	static int first = 1;
 	FILE *fp;
 

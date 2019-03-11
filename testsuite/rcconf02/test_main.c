@@ -134,10 +134,10 @@ static const char* rc_conf_text =                          \
   "dhcpcd_options=\"-h foobar\"\n"                         \
   "\n"                                                     \
   "telnetd_enable=\"YES\"\n"                               \
-  "telnetd_options=\"-v -C 10 -P 50 -L\"\n"                \
+  "telnetd_options=\"-v -C 2 -P 50 -L\"\n"                \
   "\n"                                                     \
   "ftpd_enable=\"YES\"\n"                                  \
-  "ftpd_options=\"-v -p 21 -C 10 -P 150 -L -I 10 -R /\"\n" \
+  "ftpd_options=\"-v -p 21 -C 2 -P 150 -L -I 10 -R /\"\n" \
   "\n"                                                     \
   "pf_enable=\"YES\"\n"                                    \
   "pf_rules=\"/etc/mypf.conf\"\n"                          \

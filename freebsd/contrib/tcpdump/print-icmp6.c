@@ -590,7 +590,7 @@ static const struct tok mldv2report2str[] = {
 static const char *
 get_rtpref(u_int v)
 {
-	static const char *rtpref_str[] = {
+	static const char * const rtpref_str[] = {
 		"medium",		/* 00 */
 		"high",			/* 01 */
 		"rsv",			/* 10 */

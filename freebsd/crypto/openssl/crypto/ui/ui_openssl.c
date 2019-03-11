@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2001-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -101,6 +101,12 @@
 #   undef  SGTTY
 #  endif
 
+# endif
+
+# if defined(OPENSSL_SYS_VXWORKS)
+#  undef TERMIOS
+#  undef TERMIO
+#  undef SGTTY
 # endif
 
 # ifdef TERMIOS

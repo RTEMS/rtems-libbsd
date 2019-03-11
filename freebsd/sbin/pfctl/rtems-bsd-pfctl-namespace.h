@@ -62,14 +62,11 @@
 #define eval_queue_opts _bsd_pfctl_eval_queue_opts
 #define getifmtu _bsd_pfctl_getifmtu
 #define getifspeed _bsd_pfctl_getifspeed
-#define pfaltq_lookup _bsd_pfctl_pfaltq_lookup
 #define pfaltq_store _bsd_pfctl_pfaltq_store
 #define print_altq _bsd_pfctl_print_altq
 #define print_fairq_sc _bsd_pfctl_print_fairq_sc
 #define print_hfsc_sc _bsd_pfctl_print_hfsc_sc
 #define print_queue _bsd_pfctl_print_queue
-#define qname_to_pfaltq _bsd_pfctl_qname_to_pfaltq
-#define qname_to_qid _bsd_pfctl_qname_to_qid
 #define rate2str _bsd_pfctl_rate2str
 /* pfctl.c */
 #define altqsupport _bsd_pfctl_altqsupport
@@ -186,7 +183,7 @@
 #define append_addr _bsd_pfctl_append_addr
 #define append_addr_host _bsd_pfctl_append_addr_host
 #define check_netmask _bsd_pfctl_check_netmask
-#define get_socket_domain _bsd_pfctl_get_socket_domain
+#define get_query_socket _bsd_pfctl_get_query_socket
 #define geticmpcodebyname _bsd_pfctl_geticmpcodebyname
 #define geticmpcodebynumber _bsd_pfctl_geticmpcodebynumber
 #define geticmptypebyname _bsd_pfctl_geticmptypebyname

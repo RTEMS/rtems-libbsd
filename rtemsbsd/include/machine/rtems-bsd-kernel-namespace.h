@@ -2808,6 +2808,7 @@
 #define	M_OFWPROP _bsd_M_OFWPROP
 #define	m_pad _bsd_m_pad
 #define	M_PCB _bsd_M_PCB
+#define	M_PFHASH _bsd_M_PFHASH
 #define	m_pkthdr_init _bsd_m_pkthdr_init
 #define	m_prepend _bsd_m_prepend
 #define	m_print _bsd_m_print
@@ -3164,6 +3165,8 @@
 #define	pf_addr_cmp _bsd_pf_addr_cmp
 #define	pf_addrcpy _bsd_pf_addrcpy
 #define	pf_addr_inc _bsd_pf_addr_inc
+#define	pf_altq_ifs_active _bsd_pf_altq_ifs_active
+#define	pf_altq_ifs_inactive _bsd_pf_altq_ifs_inactive
 #define	pf_altqs _bsd_pf_altqs
 #define	pf_altqs_active _bsd_pf_altqs_active
 #define	pf_altqs_inactive _bsd_pf_altqs_inactive
@@ -3320,7 +3323,6 @@
 #define	pf_purge_fragments _bsd_pf_purge_fragments
 #define	pf_purge_proc _bsd_pf_purge_proc
 #define	pf_purge_thread _bsd_pf_purge_thread
-#define	pf_qids _bsd_pf_qids
 #define	pfr_add_addrs _bsd_pfr_add_addrs
 #define	pfr_add_tables _bsd_pfr_add_tables
 #define	pfr_attach_table _bsd_pfr_attach_table
@@ -3388,6 +3390,7 @@
 #define	pfsync_update_state_ptr _bsd_pfsync_update_state_ptr
 #define	pf_tag_packet _bsd_pf_tag_packet
 #define	pf_tags _bsd_pf_tags
+#define	pf_tag_z _bsd_pf_tag_z
 #define	pf_tcp_iss_off _bsd_pf_tcp_iss_off
 #define	pf_tcp_secret _bsd_pf_tcp_secret
 #define	pf_tcp_secret_ctx _bsd_pf_tcp_secret_ctx
@@ -4501,8 +4504,6 @@
 #define	Skein_512_Output _bsd_Skein_512_Output
 #define	Skein_512_Process_Block _bsd_Skein_512_Process_Block
 #define	Skein_512_Update _bsd_Skein_512_Update
-#define	Skein_Get64_LSB_First _bsd_Skein_Get64_LSB_First
-#define	Skein_Put64_LSB_First _bsd_Skein_Put64_LSB_First
 #define	skipjack_backwards _bsd_skipjack_backwards
 #define	skipjack_forwards _bsd_skipjack_forwards
 #define	sl_compress_init _bsd_sl_compress_init
@@ -4712,6 +4713,7 @@
 #define	sysctl___kern _bsd_sysctl___kern
 #define	sysctl___kern_cam _bsd_sysctl___kern_cam
 #define	sysctl___kern_evdev _bsd_sysctl___kern_evdev
+#define	sysctl___kern_evdev_input _bsd_sysctl___kern_evdev_input
 #define	sysctl___kern_features _bsd_sysctl___kern_features
 #define	sysctl___kern_ipc _bsd_sysctl___kern_ipc
 #define	sysctl_move_oid _bsd_sysctl_move_oid

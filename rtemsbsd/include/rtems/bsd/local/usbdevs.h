@@ -4070,6 +4070,7 @@
 #define	USB_PRODUCT_SANDISK_SDCZ2_256	0x7104		/* Cruzer Mini 256MB */
 #define	USB_PRODUCT_SANDISK_SDCZ4_128	0x7112		/* Cruzer Micro 128MB */
 #define	USB_PRODUCT_SANDISK_SDCZ4_256	0x7113		/* Cruzer Micro 256MB */
+#define	USB_PRODUCT_SANDISK_SDCZ48_32	0x5581		/* Ultra 32GB */
 #define	USB_PRODUCT_SANDISK_IMAGEMATE_SDDR289	0xb6ba		/* ImageMate SDDR-289 */
 
 /* Sanwa Electric Instrument Co., Ltd. products */

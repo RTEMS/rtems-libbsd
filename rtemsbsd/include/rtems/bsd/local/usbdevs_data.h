@@ -15080,6 +15080,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Cruzer Micro 256MB",
 	},
 	{
+	    USB_VENDOR_SANDISK, USB_PRODUCT_SANDISK_SDCZ48_32,
+	    0,
+	    "SanDisk",
+	    "Ultra 32GB",
+	},
+	{
 	    USB_VENDOR_SANDISK, USB_PRODUCT_SANDISK_IMAGEMATE_SDDR289,
 	    0,
 	    "SanDisk",

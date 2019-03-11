@@ -635,9 +635,7 @@ print_attr_num(netdissect_options *ndo,
                           /* This attribute has standard values */
    if (attr_type[attr_code].siz_subtypes)
    {
-      static const char **table;
       uint32_t data_value;
-      table = attr_type[attr_code].subtypes;
 
       if ( (attr_code == TUNNEL_TYPE) || (attr_code == TUNNEL_MEDIUM) )
       {
@@ -655,7 +653,7 @@ print_attr_num(netdissect_options *ndo,
       if ( data_value <= (uint32_t)(attr_type[attr_code].siz_subtypes - 1 +
             attr_type[attr_code].first_subtype) &&
 	   data_value >= attr_type[attr_code].first_subtype )
-         ND_PRINT((ndo, "%s", table[data_value]));
+         ND_PRINT((ndo, "%s", attr_type[attr_code].subtypes[data_value]));
       else
          ND_PRINT((ndo, "#%u", data_value));
    }

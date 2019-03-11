@@ -154,8 +154,8 @@ char *
 q922_string(netdissect_options *ndo, const u_char *p, u_int length)
 {
 
-    static u_int dlci, addr_len;
-    static uint8_t flags[4];
+    u_int dlci, addr_len;
+    uint8_t flags[4];
     static char buffer[sizeof("DLCI xxxxxxxxxx")];
     memset(buffer, 0, sizeof(buffer));
 

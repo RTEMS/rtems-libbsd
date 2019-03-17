@@ -189,13 +189,14 @@ Please make sure you use the exact command or you might find you are cloning
 the whole of the FreeBSD source tree. If that happens simply git ^C and try
 again.
 
+FreeBSD Kernel Options
+----------------------
 
-FreeBSD Developer Support
--------------------------
-
-The --freebsd-option provides a tool you can set special kernel options. This
-is a developer tool and should only be used if you are familiar with the
-internals of the FreeBSD kernel and what these options do.
+You can set FreeBSD kernel options during build configuration with the
+--freebsd-option=a,b,c,... configuration command option.  This is an advanced
+option and should only be used if you are familiar with the internals of the
+FreeBSD kernel and what these options do.  Each of the comma separated options
+is converted to uppercase and passed as a compiler command line define (-D).
 
 The options are listed in:
 
@@ -208,5 +209,8 @@ configure with:
 --freebsd-options=bootverbose,verbose_sysinit,bus_debug
 ```
 
-The LibBSD Waf support splits the options and converts them to uppercase and
-adds them -D options on the compiler command line.
+To enable kernel internal consistency checking use:
+
+```
+--freebsd-options=invariants,invariant_support
+```

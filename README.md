@@ -214,3 +214,58 @@ To enable kernel internal consistency checking use:
 ```
 --freebsd-options=invariants,invariant_support
 ```
+
+Qemu and Networking
+-------------------
+
+You can use the Qemu simulator to run a LibBSD based application and connect it
+to a virtual network on your host.  You have to create a TAP virtual Ethernet
+interface for this:
+
+```
+sudo tunctl -p -t qtap -u $(whoami)
+sudo ip link set dev qtap up
+sudo ip addr add 169.254.1.1/16 dev qtap
+```
+
+You can show the interface state with the following command:
+
+```
+$ ip addr show qtap
+27: qtap: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
+    link/ether 8e:50:a2:fb:e1:3b brd ff:ff:ff:ff:ff:ff
+    inet 169.254.1.1/16 scope global qtap
+       valid_lft forever preferred_lft forever
+```
+
+You may have to assign the interface to a firewall zone.
+
+The Qemu command line varies by board support package, here is an example for
+the arm/xilinx_zynq_a9_qemu BSP:
+
+```
+qemu-system-arm -serial null -serial mon:stdio -nographic \
+  -M xilinx-zynq-a9 -m 256M \
+  -net tap,ifname=qtap,script=no,downscript=no \
+  -net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:12 \
+  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/media01.exe
+```
+
+After some seconds it will acquire a IPv4 link-local address, e.g.
+
+```
+info: cgem0: probing for an IPv4LL address
+debug: cgem0: checking for 169.254.159.156
+```
+
+You can connect to the target via telnet for example:
+
+```
+$ telnet 169.254.159.156
+Trying 169.254.159.156...
+Connected to 169.254.159.156.
+Escape character is '^]'.
+
+RTEMS Shell on /dev/pty4. Use 'help' to list commands.
+TLNT [/] #
+```

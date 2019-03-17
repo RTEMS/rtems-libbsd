@@ -60,7 +60,7 @@ git submodule update rtems_waf
 ./waf install
 qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
   -nographic -M xilinx-zynq-a9 -m 256M \
-  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/selectpollkqueue01.exe
 ```
 
 1. Create a sandbox directory:
@@ -153,7 +153,7 @@ $ ./waf install
 ```
 $ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
 $   -nographic -M xilinx-zynq-a9 -m 256M \
-$   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+$   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/selectpollkqueue01.exe
 ```
 
 [1] It is good practice to keep your environment as empty as possible. Setting

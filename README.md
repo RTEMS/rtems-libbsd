@@ -189,17 +189,6 @@ Please make sure you use the exact command or you might find you are cloning
 the whole of the FreeBSD source tree. If that happens simply git ^C and try
 again.
 
-The following is for maintainer only who need to move libbsd to a newer
-versions:
-
-```
-$ git submodule update rtems_waf
-$ cd rtems_waf
-$ git checkout master
-$ git pull
-$ cd ..
-$ git commit -m "Update rtems_waf" rtems_waf
-```
 
 FreeBSD Developer Support
 -------------------------

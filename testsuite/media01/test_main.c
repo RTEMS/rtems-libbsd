@@ -40,6 +40,7 @@
 #include <rtems/console.h>
 #include <rtems/ftpd.h>
 #include <rtems/media.h>
+#include <rtems/record.h>
 #include <rtems/shell.h>
 #include <rtems/telnetd.h>
 
@@ -145,6 +146,9 @@ test_main(void)
 	sc = rtems_telnetd_initialize();
 	assert(sc == RTEMS_SUCCESSFUL);
 
+	sc = rtems_record_start_server(1, 1234, 1);
+	assert(sc == RTEMS_SUCCESSFUL);
+
 	sc = rtems_shell_init("SHLL", 16 * 1024, 1, CONSOLE_DEVICE_NAME,
 	    false, true, NULL);
 	assert(sc == RTEMS_SUCCESSFUL);
@@ -186,6 +190,10 @@ early_initialization(void)
 #define CONFIGURE_FILESYSTEM_DOSFS
 
 #define CONFIGURE_MAXIMUM_PROCESSORS 32
+
+#define CONFIGURE_RECORD_PER_PROCESSOR_ITEMS 0x10000
+
+#define CONFIGURE_RECORD_EXTENSIONS_ENABLED
 
 #include <rtems/bsd/test/default-network-init.h>
 

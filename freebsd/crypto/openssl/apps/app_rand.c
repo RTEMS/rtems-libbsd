@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -93,3 +97,6 @@ int opt_rand(int opt)
     }
     return 1;
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-app_rand-data.h"
+#endif /* __rtems__ */

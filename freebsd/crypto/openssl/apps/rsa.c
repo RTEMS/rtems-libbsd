@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -316,3 +320,6 @@ int rsa_main(int argc, char **argv)
     return ret;
 }
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-openssl-rsa-data.h"
+#endif /* __rtems__ */

@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -33,6 +37,9 @@
 #if !defined(OPENSSL_SYS_MSDOS)
 # include OPENSSL_UNISTD
 #endif
+#ifdef __rtems__
+#undef SIGALRM
+#endif /* __rtems__ */
 
 #if defined(_WIN32)
 # include <windows.h>
@@ -1455,12 +1462,21 @@ int speed_main(int argc, char **argv)
     CAMELLIA_KEY camellia_ks1, camellia_ks2, camellia_ks3;
 #endif
 #ifndef OPENSSL_NO_DES
+    #ifdef __rtems__
+    const
+    #endif /* __rtems__ */
     static DES_cblock key = {
         0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
     };
+    #ifdef __rtems__
+    const
+    #endif /* __rtems__ */
     static DES_cblock key2 = {
         0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12
     };
+    #ifdef __rtems__
+    const
+    #endif /* __rtems__ */
     static DES_cblock key3 = {
         0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34
     };
@@ -3442,6 +3458,9 @@ static int do_multi(int multi, int size_num)
     int n;
     int fd[2];
     int *fds;
+#ifdef __rtems__
+    const
+#endif /* __rtems__ */
     static char sep[] = ":";
 
     fds = app_malloc(sizeof(*fds) * multi, "fd buffer for do_multi");
@@ -3691,3 +3710,6 @@ static void multiblock_speed(const EVP_CIPHER *evp_cipher, int lengths_single,
     OPENSSL_free(out);
     EVP_CIPHER_CTX_free(ctx);
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-speed-data.h"
+#endif /* __rtems__ */

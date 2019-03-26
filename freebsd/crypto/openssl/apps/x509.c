@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -1196,3 +1200,6 @@ static int print_x509v3_exts(BIO *bio, X509 *x, const char *ext_names)
     OPENSSL_free(tmp_ext_names);
     return ret;
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-x509-data.h"
+#endif /* __rtems__ */

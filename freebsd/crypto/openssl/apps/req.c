@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -1664,3 +1668,6 @@ int do_X509_CRL_sign(X509_CRL *x, EVP_PKEY *pkey, const EVP_MD *md,
     EVP_MD_CTX_free(mctx);
     return rv > 0 ? 1 : 0;
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-req-data.h"
+#endif /* __rtems__ */

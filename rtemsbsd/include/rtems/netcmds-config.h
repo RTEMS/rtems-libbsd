@@ -54,6 +54,7 @@ extern rtems_shell_cmd_t rtems_shell_STTY_Command;
 extern rtems_shell_cmd_t rtems_shell_RACOON_Command;
 extern rtems_shell_cmd_t rtems_shell_SETKEY_Command;
 
+extern rtems_shell_cmd_t rtems_shell_OPENSSL_Command;
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

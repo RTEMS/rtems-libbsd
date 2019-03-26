@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -9,6 +13,10 @@
  * https://www.openssl.org/source/license.html
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 #include <internal/cryptlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +40,9 @@
 #include "apps.h"
 #define INCLUDE_FUNCTION_TABLE
 #include "progs.h"
+#ifdef __rtems__
+#include "rtems-bsd-openssl-openssl-data.h"
+#endif /* __rtems__ */
 
 /* Structure to hold the number of columns to be displayed and the
  * field width used to display them.
@@ -119,6 +130,29 @@ static char *make_config_name(void)
     return p;
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_openssl, char);
+
+int
+rtems_bsd_command_openssl(int argc, char *argv[])
+{
+    int exit_code;
+    void *data_begin;
+    size_t data_size;
+
+    data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_openssl);
+    data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_openssl);
+
+    rtems_bsd_program_lock();
+    exit_code = rtems_bsd_program_call_main_with_data_restore("openssl",
+        main, argc, argv, data_begin, data_size);
+    rtems_bsd_program_unlock();
+
+    return exit_code;
+}
+#endif /* __rtems__ */
 int main(int argc, char *argv[])
 {
     FUNCTION f, *fp;
@@ -802,10 +836,16 @@ static void list_disabled(void)
 #endif
 }
 
+#ifdef __rtems__
+static LHASH_OF(FUNCTION) *ret = NULL;
+static int prog_inited = 0;
+#endif /* __rtems__ */
 static LHASH_OF(FUNCTION) *prog_init(void)
 {
+#ifndef __rtems__
     static LHASH_OF(FUNCTION) *ret = NULL;
     static int prog_inited = 0;
+#endif /* __rtems__ */
     FUNCTION *f;
     size_t i;
 

@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 2015-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -898,3 +902,6 @@ void opt_help(const OPTIONS *list)
         BIO_printf(bio_err, "%s  %s\n", start, help);
     }
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-opt-data.h"
+#endif /* __rtems__ */

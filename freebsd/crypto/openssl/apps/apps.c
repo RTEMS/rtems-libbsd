@@ -1,4 +1,11 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+/* The only file opened here is put into a BIO-structure which is handled by
+ * BIO_free. */
+#define RTEMS_BSD_PROGRAM_NO_OPEN_WRAP
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
@@ -371,10 +378,15 @@ int app_passwd(const char *arg1, const char *arg2, char **pass1, char **pass2)
     return 1;
 }
 
+#ifdef __rtems__
+static BIO *pwdbio = NULL;
+#endif /* __rtems__ */
 static char *app_get_pass(const char *arg, int keepbio)
 {
     char *tmp, tpass[APP_PASS_LEN];
+#ifndef __rtems__
     static BIO *pwdbio = NULL;
+#endif /* __rtems__ */
     int i;
 
     if (strncmp(arg, "pass:", 5) == 0)
@@ -2752,3 +2764,6 @@ void make_uppercase(char *string)
     for (i = 0; string[i] != '\0'; i++)
         string[i] = toupper((unsigned char)string[i]);
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-apps-data.h"
+#endif /* __rtems__ */

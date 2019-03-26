@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -177,3 +181,6 @@ static int prefix_puts(BIO *b, const char *str)
 {
     return BIO_write(b, str, strlen(str));
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-bf_prefix-data.h"
+#endif /* __rtems__ */

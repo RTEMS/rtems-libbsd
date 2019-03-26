@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -525,3 +529,6 @@ static int do_keyop(EVP_PKEY_CTX *ctx, int pkey_op,
     }
     return rv;
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-pkeyutl-data.h"
+#endif /* __rtems__ */

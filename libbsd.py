@@ -3944,6 +3944,96 @@ class crypto_openssl(builder.Module):
                                           mm.generator['buildSystemFragmentComposer']()))
 
 #
+# /usr/bin/openssl
+#
+# depends on crypto_openssl, user_space
+class usr_bin_openssl(builder.Module):
+
+    def __init__(self, manager):
+        super(usr_bin_openssl, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addUserSpaceHeaderFiles(
+            [
+                'crypto/openssl/apps/apps.h',
+                'crypto/openssl/apps/progs.h',
+                'crypto/openssl/apps/s_apps.h',
+                'crypto/openssl/apps/testdsa.h',
+                'crypto/openssl/apps/testrsa.h',
+                'crypto/openssl/apps/timeouts.h',
+            ]
+        )
+        self.addUserSpaceSourceFiles(
+            [
+                'crypto/openssl/apps/app_rand.c',
+                'crypto/openssl/apps/apps.c',
+                'crypto/openssl/apps/asn1pars.c',
+                'crypto/openssl/apps/bf_prefix.c',
+                'crypto/openssl/apps/ca.c',
+                'crypto/openssl/apps/ciphers.c',
+                'crypto/openssl/apps/cms.c',
+                'crypto/openssl/apps/crl.c',
+                'crypto/openssl/apps/crl2p7.c',
+                'crypto/openssl/apps/dgst.c',
+                'crypto/openssl/apps/dhparam.c',
+                'crypto/openssl/apps/dsa.c',
+                'crypto/openssl/apps/dsaparam.c',
+                'crypto/openssl/apps/ec.c',
+                'crypto/openssl/apps/ecparam.c',
+                'crypto/openssl/apps/enc.c',
+                'crypto/openssl/apps/engine.c',
+                'crypto/openssl/apps/errstr.c',
+                'crypto/openssl/apps/gendsa.c',
+                'crypto/openssl/apps/genpkey.c',
+                'crypto/openssl/apps/genrsa.c',
+                'crypto/openssl/apps/nseq.c',
+                'crypto/openssl/apps/ocsp.c',
+                'crypto/openssl/apps/openssl.c',
+                'crypto/openssl/apps/opt.c',
+                'crypto/openssl/apps/passwd.c',
+                'crypto/openssl/apps/pkcs12.c',
+                'crypto/openssl/apps/pkcs7.c',
+                'crypto/openssl/apps/pkcs8.c',
+                'crypto/openssl/apps/pkey.c',
+                'crypto/openssl/apps/pkeyparam.c',
+                'crypto/openssl/apps/pkeyutl.c',
+                'crypto/openssl/apps/prime.c',
+                'crypto/openssl/apps/rand.c',
+                'crypto/openssl/apps/rehash.c',
+                'crypto/openssl/apps/req.c',
+                'crypto/openssl/apps/rsa.c',
+                'crypto/openssl/apps/rsautl.c',
+                'crypto/openssl/apps/s_cb.c',
+                'crypto/openssl/apps/s_client.c',
+                'crypto/openssl/apps/s_server.c',
+                'crypto/openssl/apps/s_socket.c',
+                'crypto/openssl/apps/s_time.c',
+                'crypto/openssl/apps/sess_id.c',
+                'crypto/openssl/apps/smime.c',
+                'crypto/openssl/apps/speed.c',
+                'crypto/openssl/apps/spkac.c',
+                'crypto/openssl/apps/srp.c',
+                # storeutl excluded due to problem with OPENSSL_atexit
+                # 'crypto/openssl/apps/storeutl.c',
+                'crypto/openssl/apps/ts.c',
+                'crypto/openssl/apps/verify.c',
+                'crypto/openssl/apps/version.c',
+                'crypto/openssl/apps/x509.c',
+            ],
+            mm.generator['source'](['-D__FreeBSD__=1',
+                                    '-DOPENSSL_NO_RC5=1'],
+                                   ['freebsd/crypto/openssl']
+            )
+        )
+        self.addRTEMSSourceFiles(
+            [
+                'rtems/rtems-bsd-shell-openssl.c',
+            ],
+            mm.generator['source']()
+        )
+
+#
 # Contrib expat
 #
 class contrib_expat(builder.Module):
@@ -4936,6 +5026,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('crypto01', ['test_main']))
         self.addTest(mm.generator['test']('ipsec01', ['test_main']))
         self.addTest(mm.generator['test']('openssl01', ['test_main']))
+        self.addTest(mm.generator['test']('openssl02', ['test_main']))
 
 def load(mm):
 
@@ -4999,6 +5090,7 @@ def load(mm):
     mm.addModule(usr_sbin_tcpdump(mm))
     mm.addModule(usr_sbin_wpa_supplicant(mm))
     mm.addModule(crypto_openssl(mm))
+    mm.addModule(usr_bin_openssl(mm))
 
     mm.addModule(dhcpcd(mm))
     mm.addModule(mdnsresponder(mm))

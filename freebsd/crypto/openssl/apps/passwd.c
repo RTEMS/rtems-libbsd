@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 2000-2018 The OpenSSL Project Authors. All Rights Reserved.
@@ -82,6 +86,9 @@ const OPTIONS passwd_options[] = {
     {NULL}
 };
 
+#ifdef __rtems__
+static char *passwds_static[2] = { NULL, NULL };
+#endif /* __rtems__ */
 int passwd_main(int argc, char **argv)
 {
     BIO *in = NULL;
@@ -235,7 +242,9 @@ int passwd_main(int argc, char **argv)
         if (1) {
 #ifndef OPENSSL_NO_UI_CONSOLE
             /* build a null-terminated list */
+#ifndef __rtems__
             static char *passwds_static[2] = { NULL, NULL };
+#endif /* __rtems__ */
 
             passwds = passwds_static;
             if (in == NULL) {
@@ -853,3 +862,6 @@ static int do_passwd(int passed_salt, char **salt_p, char **salt_malloc_p,
  end:
     return 0;
 }
+#ifdef __rtems__
+#include "rtems-bsd-openssl-passwd-data.h"
+#endif /* __rtems__ */

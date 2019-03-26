@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
@@ -2572,6 +2576,9 @@ static int sv_body(int s, int stype, int prot, unsigned char *context)
             for (;;) {
                 /* should do a select for the write */
 #ifdef RENEG
+#ifdef __rtems__
+#error FIXME: Make a global static variable out of this.
+#endif /* __rtems__ */
                 static count = 0;
                 if (++count == 100) {
                     count = 0;
@@ -3292,6 +3299,9 @@ static int www_body(int s, int stype, int prot, unsigned char *context)
 
                 for (j = 0; j < i;) {
 #ifdef RENEG
+#ifdef __rtems__
+#error FIXME: Make a global static variable out of this.
+#endif /* __rtems__ */
                     static count = 0;
                     if (++count == 13) {
                         SSL_renegotiate(con);
@@ -3632,3 +3642,6 @@ static void free_sessions(void)
 }
 
 #endif                          /* OPENSSL_NO_SOCK */
+#ifdef __rtems__
+#include "rtems-bsd-openssl-s_server-data.h"
+#endif /* __rtems__ */

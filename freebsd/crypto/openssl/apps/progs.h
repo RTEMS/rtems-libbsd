@@ -202,7 +202,9 @@ static FUNCTION functions[] = {
 #ifndef OPENSSL_NO_SRP
     {FT_general, "srp", srp_main, srp_options},
 #endif
+#ifndef __rtems__
     {FT_general, "storeutl", storeutl_main, storeutl_options},
+#endif /* __rtems__ */
 #ifndef OPENSSL_NO_TS
     {FT_general, "ts", ts_main, ts_options},
 #endif

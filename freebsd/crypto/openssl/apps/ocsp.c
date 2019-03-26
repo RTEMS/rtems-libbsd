@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 2001-2019 The OpenSSL Project Authors. All Rights Reserved.
@@ -1621,3 +1625,6 @@ OCSP_RESPONSE *process_responder(OCSP_REQUEST *req,
 # endif
 
 #endif
+#ifdef __rtems__
+#include "rtems-bsd-openssl-ocsp-data.h"
+#endif /* __rtems__ */

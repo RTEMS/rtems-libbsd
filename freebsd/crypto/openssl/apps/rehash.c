@@ -1,4 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-openssl-namespace.h"
+#endif /* __rtems__ */
 
 /*
  * Copyright 2015-2019 The OpenSSL Project Authors. All Rights Reserved.
@@ -120,6 +124,10 @@ static int bit_isset(unsigned char *set, unsigned int bit)
 }
 
 
+#ifdef __rtems__
+static BUCKET nilbucket;
+static HENTRY nilhentry;
+#endif /* __rtems__ */
 /*
  * Process an entry; return number of errors.
  */
@@ -127,8 +135,10 @@ static int add_entry(enum Type type, unsigned int hash, const char *filename,
                       const unsigned char *digest, int need_symlink,
                       unsigned short old_id)
 {
+#ifndef __rtems__
     static BUCKET nilbucket;
     static HENTRY nilhentry;
+#endif /* __rtems__ */
     BUCKET *bp;
     HENTRY *ep, *found = NULL;
     unsigned int ndx = (type + hash) % OSSL_NELEM(hash_table);
@@ -532,3 +542,6 @@ int rehash_main(int argc, char **argv)
 }
 
 #endif /* defined(OPENSSL_SYS_UNIX) || defined(__APPLE__) */
+#ifdef __rtems__
+#include "rtems-bsd-openssl-rehash-data.h"
+#endif /* __rtems__ */

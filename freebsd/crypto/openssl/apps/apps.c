@@ -1,4 +1,5 @@
 #include <machine/rtems-bsd-user-space.h>
+
 #ifdef __rtems__
 /* The only file opened here is put into a BIO-structure which is handled by
  * BIO_free. */

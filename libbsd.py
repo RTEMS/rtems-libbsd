@@ -4937,7 +4937,7 @@ class tests(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addTest(mm.generator['test']('epoch01', ['test_main']))
+        self.addTest(mm.generator['test']('epoch01', ['test_main'], extraLibs = ['rtemstest']))
         self.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('foobarclient', ['test_main'],
                                           runTest = False, netTest = True))
@@ -4983,7 +4983,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('zerocopy01', ['test_main'],
                                           runTest = False, netTest = True,
                                           extraLibs = ['telnetd']))
-        self.addTest(mm.generator['test']('smp01', ['test_main']))
+        self.addTest(mm.generator['test']('smp01', ['test_main'], extraLibs = ['rtemstest']))
         self.addTest(mm.generator['test']('media01', ['test_main'],
                                           runTest = False,
                                           extraLibs = ['ftpd', 'telnetd']))

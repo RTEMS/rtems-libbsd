@@ -194,7 +194,7 @@ original FreeBSD code.
   ```
   The following command may be useful:
   ```
-  sed -i 's%#include <machine/rtems-bsd-user-space.h>%#include <machine/rtems-bsd-user-space.h>\n#ifdef __rtems__\n#include <machine/rtems-bsd-program.h>\n#include "rtems-bsd-PROGNAME-namespace.h"\n#endif /* __rtems__ */%' *.c
+  sed -i 's%#include <machine/rtems-bsd-user-space.h>%#include <machine/rtems-bsd-user-space.h>\n\n#ifdef __rtems__\n#include <machine/rtems-bsd-program.h>\n#include "rtems-bsd-PROGNAME-namespace.h"\n#endif /* __rtems__ */%' *.c
   ```
 * At the bottom of each source file place the follwing:
   ```c

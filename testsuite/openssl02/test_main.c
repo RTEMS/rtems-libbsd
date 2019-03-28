@@ -30,20 +30,16 @@
  */
 
 #include <sys/param.h>
-
+#include <sys/stat.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
+#include <unistd.h>
 
 #include <machine/rtems-bsd-commands.h>
-
-#include <rtems/libcsupport.h>
-#include <rtems/bsd/modules.h>
-
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #define TEST_NAME "LIBBSD OPENSSL 2"
 

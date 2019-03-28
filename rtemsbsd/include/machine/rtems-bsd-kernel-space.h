@@ -58,6 +58,11 @@
 #include <machine/rtems-bsd-version.h>
 #include <machine/rtems-bsd-kernel-namespace.h>
 
+/* Global kernel options */
+
+/* We do not need user space backward compatibility */
+#define	BURN_BRIDGES 1
+
 /* Assert */
 
 void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);

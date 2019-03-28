@@ -36,7 +36,7 @@ The top level directory contains a few directories and files. The following
 are important to understand
 
 * `freebsd-to-rtems.py` - script to convert to and free FreeBSD and RTEMS trees,
-* `create-kernel-namespace.sh` - script to create the kernel namespace header <machine/rtems-bsd-kernel-namespace.h,
+* `create-kernel-namespace.sh` - script to create the kernel namespace header `<machine/rtems-bsd-kernel-namespace.h>`,
 * `wscript` - automatically generated,
 * `freebsd/` - from FreeBSD by script,
 * `rtemsbsd/` - RTEMS specific implementations of FreeBSD kernel support routines,

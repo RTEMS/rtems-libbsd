@@ -2460,6 +2460,7 @@ bpf_bintime2ts(struct bintime *bt, struct bpf_ts *ts, int tstype)
 
 	if ((tstype & BPF_T_MONOTONIC) == 0) {
 		bt2 = *bt;
+		getboottimebin(&boottimebin);
 		bintime_add(&bt2, &boottimebin);
 		bt = &bt2;
 	}

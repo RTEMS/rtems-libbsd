@@ -8294,6 +8294,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "FTDI compatible adapter",
 	},
 	{
+	    USB_VENDOR_JMICRON, USB_PRODUCT_JMICRON_JMS566,
+	    0,
+	    "JMicron",
+	    "USB to SATA 3.0Gb/s bridge",
+	},
+	{
 	    USB_VENDOR_JMICRON, USB_PRODUCT_JMICRON_JMS567,
 	    0,
 	    "JMicron",
@@ -14922,6 +14928,18 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Roland",
 	    "EDIROL PCR-300 MIDI I/F",
+	},
+	{
+	    USB_VENDOR_ROLAND, USB_PRODUCT_ROLAND_UA25EX_AD,
+	    0,
+	    "Roland",
+	    "EDIROL UA-25EX (Advanced Driver)",
+	},
+	{
+	    USB_VENDOR_ROLAND, USB_PRODUCT_ROLAND_UA25EX_CC,
+	    0,
+	    "Roland",
+	    "EDIROL UA-25EX (Class Compliant)",
 	},
 	{
 	    USB_VENDOR_ROCKFIRE, USB_PRODUCT_ROCKFIRE_GAMEPAD,

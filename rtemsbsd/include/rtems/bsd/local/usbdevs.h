@@ -2653,6 +2653,7 @@
 #define	USB_PRODUCT_JETI_SPC1201	0x04b2		/* FTDI compatible adapter */
 
 /* JMicron products */
+#define	USB_PRODUCT_JMICRON_JMS566	0x3569		/* USB to SATA 3.0Gb/s bridge */
 #define	USB_PRODUCT_JMICRON_JMS567	0x0567		/* USB to SATA 6.0Gb/s bridge */
 #define	USB_PRODUCT_JMICRON_JM20336	0x2336		/* USB to SATA Bridge */
 #define	USB_PRODUCT_JMICRON_JM20337	0x2338		/* USB to ATA/ATAPI Bridge */
@@ -4030,6 +4031,8 @@
 #define	USB_PRODUCT_ROLAND_SD80	0x0029		/* SD-80 MIDI Synth */
 #define	USB_PRODUCT_ROLAND_UA700	0x002b		/* UA-700 Audio I/F */
 #define	USB_PRODUCT_ROLAND_PCR300	0x0033		/* EDIROL PCR-300 MIDI I/F */
+#define	USB_PRODUCT_ROLAND_UA25EX_AD	0x00e6		/* EDIROL UA-25EX (Advanced Driver) */
+#define	USB_PRODUCT_ROLAND_UA25EX_CC	0x00e7		/* EDIROL UA-25EX (Class Compliant) */
 
 /* Rockfire products */
 #define	USB_PRODUCT_ROCKFIRE_GAMEPAD	0x2033		/* gamepad 203USB */

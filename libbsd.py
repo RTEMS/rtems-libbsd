@@ -2294,6 +2294,7 @@ class opencrypto(builder.Module):
                 'sys/contrib/libsodium/src/libsodium/include/sodium/utils.h',
                 'sys/opencrypto/cast.h',
                 'sys/opencrypto/castsb.h',
+                'sys/opencrypto/cbc_mac.h',
                 'sys/opencrypto/_cryptodev.h',
                 'sys/opencrypto/cryptodev.h',
                 'sys/opencrypto/cryptosoft.h',
@@ -2333,6 +2334,7 @@ class opencrypto(builder.Module):
                 'sys/contrib/libsodium/src/libsodium/crypto_verify/sodium/verify.c',
                 'sys/crypto/libsodium/utils.c',
                 'sys/opencrypto/cast.c',
+                'sys/opencrypto/cbc_mac.c',
                 'sys/opencrypto/criov.c',
                 'sys/opencrypto/crypto.c',
                 'sys/opencrypto/cryptodeflate.c',
@@ -2343,6 +2345,7 @@ class opencrypto(builder.Module):
                 'sys/opencrypto/rmd160.c',
                 'sys/opencrypto/skipjack.c',
                 'sys/opencrypto/xform.c',
+                'sys/opencrypto/xform_cbc_mac.c',
                 'sys/opencrypto/xform_poly1305.c',
             ],
             mm.generator['source']()

@@ -14,6 +14,11 @@
 #define	AddPptp _bsd_AddPptp
 #define	addrsel_policy_init _bsd_addrsel_policy_init
 #define	AddSeq _bsd_AddSeq
+#define	AES_CBC_MAC_Final _bsd_AES_CBC_MAC_Final
+#define	AES_CBC_MAC_Init _bsd_AES_CBC_MAC_Init
+#define	AES_CBC_MAC_Reinit _bsd_AES_CBC_MAC_Reinit
+#define	AES_CBC_MAC_Setkey _bsd_AES_CBC_MAC_Setkey
+#define	AES_CBC_MAC_Update _bsd_AES_CBC_MAC_Update
 #define	AES_GMAC_Final _bsd_AES_GMAC_Final
 #define	AES_GMAC_Init _bsd_AES_GMAC_Init
 #define	AES_GMAC_Reinit _bsd_AES_GMAC_Reinit
@@ -56,6 +61,9 @@
 #define	auth_algorithm_lookup _bsd_auth_algorithm_lookup
 #define	auth_hash_blake2b _bsd_auth_hash_blake2b
 #define	auth_hash_blake2s _bsd_auth_hash_blake2s
+#define	auth_hash_ccm_cbc_mac_128 _bsd_auth_hash_ccm_cbc_mac_128
+#define	auth_hash_ccm_cbc_mac_192 _bsd_auth_hash_ccm_cbc_mac_192
+#define	auth_hash_ccm_cbc_mac_256 _bsd_auth_hash_ccm_cbc_mac_256
 #define	auth_hash_hmac_md5 _bsd_auth_hash_hmac_md5
 #define	auth_hash_hmac_ripemd_160 _bsd_auth_hash_hmac_ripemd_160
 #define	auth_hash_hmac_sha1 _bsd_auth_hash_hmac_sha1
@@ -1111,6 +1119,7 @@
 #define	enc_xform_blf _bsd_enc_xform_blf
 #define	enc_xform_camellia _bsd_enc_xform_camellia
 #define	enc_xform_cast5 _bsd_enc_xform_cast5
+#define	enc_xform_ccm _bsd_enc_xform_ccm
 #define	enc_xform_chacha20 _bsd_enc_xform_chacha20
 #define	enc_xform_des _bsd_enc_xform_des
 #define	enc_xform_null _bsd_enc_xform_null

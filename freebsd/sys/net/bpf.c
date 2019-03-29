@@ -142,6 +142,13 @@ CTASSERT(offsetof(struct bpf_if, bif_ext) == 0);
 #define BPF_ALIGNMENT32 sizeof(int32_t)
 #define	BPF_WORDALIGN32(x) roundup2(x, BPF_ALIGNMENT32)
 
+#ifdef __rtems__
+/*
+ * This FreeBSD kernel option is broken in general, but here it is useful to
+ * get rid of some legacy support we do not need in libbsd.
+ */
+#define BURN_BRIDGES
+#endif /* __rtems__ */
 #ifndef BURN_BRIDGES
 /*
  * 32-bit version of structure prepended to each packet.  We use this header

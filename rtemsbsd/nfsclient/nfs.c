@@ -401,6 +401,13 @@ DirInfo	dip;
 #define SERP_ATTR(node) ((node)->serporid.serporid_u.serporid.attributes)
 #define SERP_FILE(node) ((node)->serporid.serporid_u.serporid.file)
 
+/*
+ * FIXME: The use of the serporid structure with several embedded unions to
+ * split up the specific NFS request/response structures is quite a hack.  It
+ * breaks on 64-bit targets due to the presence of pointer members which affect
+ * the overall alignment.  Use a packed serporidok structure to hopefully fix
+ * this issue.
+ */
 
 typedef struct serporidok {
 	fattr					attributes;
@@ -447,7 +454,7 @@ typedef struct serporidok {
 			uint32_t	count;
 		}					readdirarg;
 	}							arg_u;
-} serporidok;
+} RTEMS_PACKED serporidok;
 
 typedef struct serporid {
 	nfsstat			status;

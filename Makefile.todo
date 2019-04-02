@@ -47,7 +47,6 @@ GENERATED += $(LOCAL_INC)/gpiobus_if.h
 GENERATED += $(LOCAL_SRC)/gpiobus_if.c
 GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
 GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
-GENERATED += freebsd/contrib/libpcap/pcap_version.h
 
 YACC_GENERATED =
 LEX_GENERATED =
@@ -272,9 +271,6 @@ rtemsbsd/include/machine/rtems-bsd-regdomain.h: $(FREEBSD_SRC)/lib/lib80211/regd
 
 rtemsbsd/rtems/rtems-bsd-regdomain.c: $(FREEBSD_SRC)/lib/lib80211/regdomain.xml
 	rtems-bin2c -C $< $@
-
-freebsd/contrib/libpcap/pcap_version.h: freebsd-org/contrib/libpcap/VERSION
-	freebsd-org/contrib/libpcap/gen_version_header.sh $< freebsd-org/contrib/libpcap/pcap_version.h.in $@
 
 freebsd/lib/libc/net/nsparser.h: freebsd/lib/libc/net/nsparser.c
 

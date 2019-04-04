@@ -228,6 +228,7 @@ class Builder(builder.ModuleManager):
         except:
             bld.fatal('network configuraiton \'%s\' read failed' % (bld.env.NET_CONFIG))
         lc = 0
+        sed = 'sed '
         for l in net_cfg_lines:
             lc += 1
             if l.strip().startswith('NET_CFG_'):
@@ -237,10 +238,9 @@ class Builder(builder.ModuleManager):
                               'parse error: %d: %s' % (bld.env.NET_CONFIG, lc, l))
                 lhs = ls[0].strip()
                 rhs = ls[1].strip()
-                sed = 'sed '
                 for t in tags:
                     if lhs == t:
-                        sed += "-e 's/@%s@/%s/'" % (t, rhs)
+                        sed += "-e 's/@%s@/%s/' " % (t, rhs)
         bld(target = "testsuite/include/rtems/bsd/test/network-config.h",
             source = "testsuite/include/rtems/bsd/test/network-config.h.in",
             rule = sed + " < ${SRC} > ${TGT}",

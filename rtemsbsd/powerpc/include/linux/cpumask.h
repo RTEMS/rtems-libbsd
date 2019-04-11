@@ -35,15 +35,15 @@ extern "C" {
 
 /* FIXME */
 #define	for_each_cpu(cpu, mask)						\
-    for ((cpu) = 0; (cpu) < rtems_get_processor_count(); ++(cpu))
+    for ((cpu) = 0; (cpu) < rtems_scheduler_get_processor_maximum(); ++(cpu))
 
 /* FIXME */
 #define	for_each_cpu_not(cpu, mask)					\
-    for ((cpu) = 0; (cpu) < rtems_get_processor_count(); ++(cpu))
+    for ((cpu) = 0; (cpu) < rtems_scheduler_get_processor_maximum(); ++(cpu))
 
 /* FIXME */
 #define	for_each_cpu_and(cpu, mask, and)				\
-    for ((cpu) = 0; (cpu) < rtems_get_processor_count(); ++(cpu))
+    for ((cpu) = 0; (cpu) < rtems_scheduler_get_processor_maximum(); ++(cpu))
 
 /* FIXME */
 #define	for_each_possible_cpu(cpu)					\

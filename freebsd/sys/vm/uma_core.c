@@ -115,9 +115,9 @@ __FBSDID("$FreeBSD$");
 #undef curcpu
 #define curcpu _SMP_Get_current_processor()
 #undef mp_maxid
-#define mp_maxid (rtems_get_processor_count() - 1)
+#define mp_maxid (_SMP_Get_processor_maximum() - 1)
 #undef mp_ncpus
-#define mp_ncpus rtems_get_processor_count()
+#define mp_ncpus _SMP_Get_processor_maximum()
 #define SMP
 #endif /* RTEMS_SMP */
 #endif /* __rtems__ */

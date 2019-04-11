@@ -138,7 +138,7 @@ test_main(void)
 	rtems_status_code sc;
 
 	rtems_ftpd_configuration.tasks_count = MAX(4,
-	    rtems_get_processor_count());
+	    rtems_scheduler_get_processor_maximum());
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
 

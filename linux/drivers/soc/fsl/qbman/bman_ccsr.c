@@ -308,7 +308,7 @@ bman_sysinit(void)
 		}
 	};
 	const char *name;
-	int cpu_count = (int)rtems_get_processor_count();
+	int cpu_count = (int)rtems_scheduler_get_processor_maximum();
 	int cpu;
 	int ret;
 	int node;

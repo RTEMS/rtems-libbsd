@@ -995,7 +995,7 @@ static void dpaa_fq_setup(struct dpaa_priv *priv,
 			dpaa_setup_ingress(priv, fq, &fq_cbs->rx_defq);
 			p = qman_get_affine_portal(cpu);
 			fq->channel = qman_portal_get_channel(p);
-			cpu = (cpu + 1) % (int)rtems_get_processor_count();
+			cpu = (cpu + 1) % (int)rtems_scheduler_get_processor_maximum();
 			break;
 #endif /* __rtems__ */
 		case FQ_TYPE_TX:
@@ -3217,7 +3217,7 @@ dpaa_eth_priv_probe(struct platform_device *pdev, struct mac_device *mac_dev)
 #ifndef __rtems__
 	for_each_possible_cpu(i) {
 #else /* __rtems__ */
-	for (i = 0; i < (int)rtems_get_processor_count(); ++i) {
+	for (i = 0; i < (int)rtems_scheduler_get_processor_maximum(); ++i) {
 #endif /* __rtems__ */
 		percpu_priv = per_cpu_ptr(priv->percpu_priv, i);
 		memset(percpu_priv, 0, sizeof(*percpu_priv));

@@ -115,7 +115,7 @@ static int on_all_cpus(int (*fn)(void))
 #ifndef __rtems__
 	for_each_cpu(cpu, cpu_online_mask) {
 #else /* __rtems__ */
-	for (cpu = 0; cpu < (int)rtems_get_processor_count(); ++cpu) {
+	for (cpu = 0; cpu < (int)rtems_scheduler_get_processor_maximum(); ++cpu) {
 #endif /* __rtems__ */
 		struct bstrap bstrap = {
 			.fn = fn,

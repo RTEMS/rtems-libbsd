@@ -83,7 +83,7 @@ devm_ioremap(struct device *dev, resource_size_t offset, resource_size_t size)
 }
 
 #define	devm_alloc_percpu(dev, type) \
-    devm_kzalloc(dev, sizeof(type) * rtems_get_processor_count(), GFP_KERNEL)
+    devm_kzalloc(dev, sizeof(type) * rtems_scheduler_get_processor_maximum(), GFP_KERNEL)
 
 #define	dev_crit(dev, fmt, ...) \
     do { (void)dev; printf(fmt, ##__VA_ARGS__); } while (0)

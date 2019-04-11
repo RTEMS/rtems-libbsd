@@ -115,7 +115,7 @@ busy(void)
 static uint32_t
 get_obj_count(void)
 {
-	return ((rtems_get_processor_count() + 1) / 2);
+	return ((rtems_scheduler_get_processor_maximum() + 1) / 2);
 }
 
 static void

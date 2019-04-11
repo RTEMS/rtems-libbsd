@@ -72,7 +72,7 @@ _bsd_epoch_init(epoch_t epoch, uintptr_t pcpu_record_offset, int flags)
 	epoch->e_flags = flags;
 	epoch->e_pcpu_record_offset = pcpu_record_offset;
 
-	cpu_count = rtems_get_processor_count();
+	cpu_count = rtems_scheduler_get_processor_maximum();
 
 	for (cpu_index = 0; cpu_index < cpu_count; ++cpu_index) {
 		Per_CPU_Control *cpu;
@@ -153,7 +153,7 @@ epoch_sysinit(void)
 	uint32_t cpu_count;
 	uint32_t cpu_index;
 
-	cpu_count = rtems_get_processor_count();
+	cpu_count = rtems_scheduler_get_processor_maximum();
 
 	for (cpu_index = 0; cpu_index < cpu_count; ++cpu_index) {
 		Per_CPU_Control *cpu;

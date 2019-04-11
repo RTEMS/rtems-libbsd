@@ -52,7 +52,7 @@ counter_u64_fetch_inline(uint64_t *p)
 	uint32_t cpu;
 
 	r = 0;
-	for (cpu = 0; cpu < _SMP_Get_processor_count(); ++cpu) {
+	for (cpu = 0; cpu < _SMP_Get_processor_maximum(); ++cpu) {
 		r += counter_u64_read_one((uint64_t *)p, cpu);
 	}
 
@@ -64,7 +64,7 @@ counter_u64_zero_inline(counter_u64_t c)
 {
 	uint32_t cpu;
 
-	for (cpu = 0; cpu < _SMP_Get_processor_count(); ++cpu) {
+	for (cpu = 0; cpu < _SMP_Get_processor_maximum(); ++cpu) {
 		*((uint64_t *)((char *)c + UMA_PCPU_ALLOC_SIZE * cpu)) = 0;
 	}
 }

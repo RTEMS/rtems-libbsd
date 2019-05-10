@@ -369,15 +369,56 @@ struct mount;
 struct sockaddr;
 struct statfs;
 struct vfsconf;
+#ifndef __rtems__
 int jailed(struct ucred *cred);
+#else /* __rtems__ */
+static inline int
+jailed(struct ucred *cred)
+{
+
+	(void)cred;
+	return (0);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int jailed_without_vnet(struct ucred *);
+#else /* __rtems__ */
+static inline int
+jailed_without_vnet(struct ucred *cred)
+{
+
+	(void)cred;
+	return (0);
+}
+#endif /* __rtems__ */
 void getcredhostname(struct ucred *, char *, size_t);
 void getcreddomainname(struct ucred *, char *, size_t);
 void getcredhostuuid(struct ucred *, char *, size_t);
+#ifndef __rtems__
 void getcredhostid(struct ucred *, unsigned long *);
+#else /* __rtems__ */
+static inline void
+getcredhostid(struct ucred *cred, unsigned long *hostid)
+{
+
+	(void)cred;
+	*hostid = 0;
+}
+#endif /* __rtems__ */
 void prison0_init(void);
 int prison_allow(struct ucred *, unsigned);
+#ifndef __rtems__
 int prison_check(struct ucred *cred1, struct ucred *cred2);
+#else /* __rtems__ */
+static inline int
+prison_check(struct ucred *cred1, struct ucred *cred2)
+{
+
+	(void)cred1;
+	(void)cred2;
+	return (0);
+}
+#endif /* __rtems__ */
 int prison_owns_vnet(struct ucred *);
 int prison_canseemount(struct ucred *cred, struct mount *mp);
 void prison_enforce_statfs(struct ucred *cred, struct mount *mp,
@@ -385,10 +426,38 @@ void prison_enforce_statfs(struct ucred *cred, struct mount *mp,
 struct prison *prison_find(int prid);
 struct prison *prison_find_child(struct prison *, int);
 struct prison *prison_find_name(struct prison *, const char *);
+#ifndef __rtems__
 int prison_flag(struct ucred *, unsigned);
+#else /* __rtems__ */
+static inline int
+prison_flag(struct ucred *cred, unsigned flag)
+{
+
+	(void)cred;
+	return (prison0.pr_flags & flag);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 void prison_free(struct prison *pr);
+#else /* __rtems__ */
+static inline void
+prison_free(struct prison *pr)
+{
+
+	(void)pr;
+}
+#endif /* __rtems__ */
 void prison_free_locked(struct prison *pr);
+#ifndef __rtems__
 void prison_hold(struct prison *pr);
+#else /* __rtems__ */
+static inline void
+prison_hold(struct prison *pr)
+{
+
+	(void)pr;
+}
+#endif /* __rtems__ */
 void prison_hold_locked(struct prison *pr);
 void prison_proc_hold(struct prison *);
 void prison_proc_free(struct prison *);
@@ -398,12 +467,67 @@ int prison_equal_ip4(struct prison *, struct prison *);
 #else /* __rtems__ */
 #define prison_equal_ip4(p1, p2) 1
 #endif /* __rtems__ */
+#ifndef __rtems__
 int prison_get_ip4(struct ucred *cred, struct in_addr *ia);
+#else /* __rtems__ */
+static inline int
+prison_get_ip4(struct ucred *cred, struct in_addr *ia)
+{
+
+	(void)cred;
+	(void)ia;
+	return (EAFNOSUPPORT);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_local_ip4(struct ucred *cred, struct in_addr *ia);
+#else /* __rtems__ */
+static inline int
+prison_local_ip4(struct ucred *cred, struct in_addr *ia)
+{
+
+	(void)cred;
+	(void)ia;
+	return (0);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_remote_ip4(struct ucred *cred, struct in_addr *ia);
+#else /* __rtems__ */
+static inline int
+prison_remote_ip4(struct ucred *cred, struct in_addr *ia)
+{
+
+	(void)cred;
+	(void)ia;
+	return (0);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_check_ip4(const struct ucred *, const struct in_addr *);
+#else /* __rtems__ */
+static inline int
+prison_check_ip4(const struct ucred *cred, const struct in_addr *ia)
+{
+
+	(void)cred;
+	(void)ia;
+	return (0);
+}
+#endif /* __rtems__ */
 int prison_check_ip4_locked(const struct prison *, const struct in_addr *);
+#ifndef __rtems__
 int prison_saddrsel_ip4(struct ucred *, struct in_addr *);
+#else /* __rtems__ */
+static inline int
+prison_saddrsel_ip4(struct ucred *cred, struct in_addr *ia)
+{
+
+	(void)cred;
+	(void)ia;
+	return (1);
+}
+#endif /* __rtems__ */
 int prison_restrict_ip4(struct prison *, struct in_addr *);
 int prison_qcmp_v4(const void *, const void *);
 #ifdef INET6
@@ -412,17 +536,95 @@ int prison_equal_ip6(struct prison *, struct prison *);
 #else /* __rtems__ */
 #define prison_equal_ip6(p1, p2) 1
 #endif /* __rtems__ */
+#ifndef __rtems__
 int prison_get_ip6(struct ucred *, struct in6_addr *);
+#else /* __rtems__ */
+static inline int
+prison_get_ip6(struct ucred *cred, struct in6_addr *ia6)
+{
+
+	(void)cred;
+	(void)ia6;
+	return (EAFNOSUPPORT);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_local_ip6(struct ucred *, struct in6_addr *, int);
+#else /* __rtems__ */
+static inline int
+prison_local_ip6(struct ucred *cred, struct in6_addr *ia6, int v6only)
+{
+
+	(void)cred;
+	(void)ia6;
+	(void)v6only;
+	return (0);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_remote_ip6(struct ucred *, struct in6_addr *);
+#else /* __rtems__ */
+static inline int
+prison_remote_ip6(struct ucred *cred, struct in6_addr *ia6)
+{
+
+	(void)cred;
+	(void)ia6;
+	return (0);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_check_ip6(const struct ucred *, const struct in6_addr *);
+#else /* __rtems__ */
+static inline int
+prison_check_ip6(const struct ucred *cred, const struct in6_addr *ia6)
+{
+
+	(void)cred;
+	(void)ia6;
+	return (0);
+}
+#endif /* __rtems__ */
 int prison_check_ip6_locked(const struct prison *, const struct in6_addr *);
+#ifndef __rtems__
 int prison_saddrsel_ip6(struct ucred *, struct in6_addr *);
+#else /* __rtems__ */
+static inline int
+prison_saddrsel_ip6(struct ucred *cred, struct in6_addr *ia6)
+{
+
+	(void)cred;
+	(void)ia6;
+	return (EAFNOSUPPORT);
+}
+#endif /* __rtems__ */
 int prison_restrict_ip6(struct prison *, struct in6_addr *);
 int prison_qcmp_v6(const void *, const void *);
 #endif
+#ifndef __rtems__
 int prison_check_af(struct ucred *cred, int af);
+#else /* __rtems__ */
+static inline int
+prison_check_af(struct ucred *cred, int af)
+{
+
+	(void)cred;
+	(void)af;
+	return (0);
+}
+#endif /* __rtems__ */
+#ifndef __rtems__
 int prison_if(struct ucred *cred, struct sockaddr *sa);
+#else /* __rtems__ */
+static inline int
+prison_if(struct ucred *cred, struct sockaddr *sa)
+{
+
+	(void)cred;
+	(void)sa;
+	return (0);
+}
+#endif /* __rtems__ */
 char *prison_name(struct prison *, struct prison *);
 int prison_priv_check(struct ucred *cred, int priv);
 int sysctl_jail_param(SYSCTL_HANDLER_ARGS);

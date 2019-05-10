@@ -1,3 +1,5 @@
+#include <rtems/bsd/modules.h>
+
 #define USB_HAVE_CONDVAR 1
 
 #define USB_HAVE_UGEN 1
@@ -8,7 +10,9 @@
 
 #define USB_HAVE_USER_IO 0
 
+#if defined(RTEMS_BSD_MODULE_NETINET) || defined(RTEMS_BSD_MODULE_NETINET6)
 #define USB_HAVE_MBUF 1
+#endif
 
 #undef USB_VERBOSE
 

@@ -73,6 +73,18 @@ extern unsigned int usb_resume_wait;
 extern unsigned int usb_resume_recovery;
 extern unsigned int usb_extra_power_up_time;
 #else
+#ifdef __rtems__
+#undef usb_port_reset_delay
+#undef usb_port_root_reset_delay
+#undef usb_port_reset_recovery
+#undef usb_port_powerup_delay
+#undef usb_port_resume_delay
+#undef usb_set_address_settle
+#undef usb_resume_delay
+#undef usb_resume_wait
+#undef usb_resume_recovery
+#undef usb_extra_power_up_time
+#endif /* __rtems__ */
 #define usb_port_reset_delay		USB_PORT_RESET_DELAY
 #define usb_port_root_reset_delay	USB_PORT_ROOT_RESET_DELAY
 #define usb_port_reset_recovery		USB_PORT_RESET_RECOVERY

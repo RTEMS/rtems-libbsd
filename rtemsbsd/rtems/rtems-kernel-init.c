@@ -115,18 +115,6 @@ volatile uint32_t _Watchdog_Ticks_since_boot;
 extern volatile int32_t _bsd_ticks
     __attribute__ ((__alias__("_Watchdog_Ticks_since_boot")));
 
-__attribute__((__weak__)) void _arc4random_getentropy_fail(void)
-{
-
-}
-
-__attribute__((__weak__)) int getentropy(void *buf, size_t n)
-{
-
-	memset(buf, 0, n);
-	return (0);
-}
-
 rtems_status_code
 rtems_bsd_initialize(void)
 {

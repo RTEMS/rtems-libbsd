@@ -53,8 +53,6 @@
 
 #include <rtems/bsd/bsd.h>
 
-#undef ticks
-
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/statesimpl.h>
 #include <rtems/score/threaddispatch.h>

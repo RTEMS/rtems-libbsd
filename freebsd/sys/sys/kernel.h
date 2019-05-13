@@ -70,16 +70,7 @@ extern int psratio;			/* ratio: prof / stat */
 extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int profprocs;			/* number of process's profiling */
-#ifndef __rtems__
 extern volatile int ticks;
-#else /* __rtems__ */
-/*
- * This must be a singed integer type, otherwise expressions like
- * (x - ticks) > 0 would yield unexpected results.
- */
-extern volatile int32_t _bsd_ticks;
-#define ticks _bsd_ticks
-#endif /* __rtems__ */
 
 #endif /* _KERNEL */
 

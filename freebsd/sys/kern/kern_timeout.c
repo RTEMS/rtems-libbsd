@@ -317,6 +317,7 @@ rtems_bsd_callout_timer(rtems_id id, void *arg)
 	sc = rtems_timer_reset(id);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 
+	++ticks;
 	callout_process(sbinuptime());
 }
 
@@ -339,7 +340,9 @@ rtems_bsd_timeout_init_late(void *unused)
 	sc = rtems_timer_create(rtems_build_name('_', 'C', 'L', 'O'), &id);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_timer_server_fire_after(id, 1, rtems_bsd_callout_timer, NULL);
+	sc = rtems_timer_server_fire_after(id,
+	    rtems_clock_get_ticks_per_second() / (rtems_interval)hz,
+	    rtems_bsd_callout_timer, NULL);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 }
 

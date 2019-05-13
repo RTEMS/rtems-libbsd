@@ -1999,8 +1999,6 @@ kern_posix_error(struct thread *td, int error)
 #ifdef __rtems__
 #include <machine/rtems-bsd-thread.h>
 
-#undef ticks
-
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/threadimpl.h>
 

@@ -85,6 +85,7 @@ void mi_startup(void);
 
 int hz;
 int tick;
+volatile int ticks;
 sbintime_t tick_sbt;
 struct bintime bt_timethreshold;
 struct bintime bt_tickthreshold;
@@ -105,22 +106,21 @@ SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD,
 SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD,
     &maxid_maxcpus, 0, "Max number of CPUs that the system was compiled for.");
 
-#undef _bsd_ticks
-
-RTEMS_STATIC_ASSERT(sizeof(int) == sizeof(int32_t), ticks);
-
-volatile uint32_t _Watchdog_Ticks_since_boot;
-
-extern volatile int32_t _bsd_ticks
-    __attribute__ ((__alias__("_Watchdog_Ticks_since_boot")));
-
 rtems_status_code
 rtems_bsd_initialize(void)
 {
 	static const char name[] = "TIME";
 	rtems_status_code sc;
+	int tps;
 
-	hz = (int) rtems_clock_get_ticks_per_second();
+	/*
+	 * Limit the libbsd ticks per second to 100Hz.  This helps to reduce
+	 * the processor load on low end targets which use 1000Hz for the RTEMS
+	 * clock tick.
+	 */
+	tps = (int)rtems_clock_get_ticks_per_second();
+	hz = MIN(100, tps);
+
 	tick = 1000000 / hz;
 	tick_sbt = SBT_1S / hz;
 	FREQ2BT(hz, &tc_tick_bt);

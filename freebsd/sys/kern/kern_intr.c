@@ -65,7 +65,6 @@ __FBSDID("$FreeBSD$");
 #else /* __rtems__ */
   #include <machine/rtems-bsd-thread.h>
   #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
-  #undef ticks
   #include <rtems/score/threadimpl.h>
 #endif /* __rtems__ */
 #include <machine/stdarg.h>

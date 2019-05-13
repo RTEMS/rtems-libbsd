@@ -4936,6 +4936,7 @@
 #define	ticket_altqs_active _bsd_ticket_altqs_active
 #define	ticket_altqs_inactive _bsd_ticket_altqs_inactive
 #define	ticket_pabuf _bsd_ticket_pabuf
+#define	ticks _bsd_ticks
 #define	tick_sbt _bsd_tick_sbt
 #define	ti_hwmods _bsd_ti_hwmods
 #define	ti_hwmods_contains _bsd_ti_hwmods_contains

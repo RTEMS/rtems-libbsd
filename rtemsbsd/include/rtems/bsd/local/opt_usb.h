@@ -16,7 +16,7 @@
 
 #undef USB_VERBOSE
 
-#define USB_DEBUG 0
+#undef USB_DEBUG
 
 #define USB_HAVE_TT_SUPPORT 1
 

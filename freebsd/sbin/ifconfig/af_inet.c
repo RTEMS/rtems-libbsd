@@ -149,6 +149,12 @@ in_getaddr(const char *s, int which)
 	struct hostent *hp;
 	struct netent *np;
 
+#ifdef __rtems__
+	/* Memory is automatically freed */
+	s = strdup(s);
+	if (s == NULL)
+		errx(1, "no memory");
+#endif /* __rtems__ */
 	sin->sin_len = sizeof(*sin);
 	sin->sin_family = AF_INET;
 

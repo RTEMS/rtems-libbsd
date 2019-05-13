@@ -53,8 +53,7 @@ struct mbuf *rtems_bsd_m_get(int how, short type);
 struct mbuf *rtems_bsd_m_gethdr(int how, short type);
 
 void rtems_bsd_m_extaddref(struct mbuf *m, void *buf, size_t size,
-    u_int *ref_cnt, void (*freef)(void *, void *), void *arg1,
-    void *arg2);
+    u_int *ref_cnt, m_ext_free_t *freef, void *arg1, void *arg2);
 
 void rtems_bsd_m_free(struct mbuf *m);
 

@@ -55,8 +55,7 @@ rtems_bsd_m_gethdr(int how, short type)
 
 void
 rtems_bsd_m_extaddref(struct mbuf *m, void *buf, size_t size,
-    u_int *ref_cnt, void (*freef)(void *, void *), void *arg1,
-    void *arg2)
+    u_int *ref_cnt, m_ext_free_t *freef, void *arg1, void *arg2)
 {
 	m_extaddref(m, buf, size, ref_cnt, freef, arg1, arg2);
 }

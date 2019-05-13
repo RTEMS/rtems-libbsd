@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2019 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -41,9 +41,10 @@
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_PROGRAM_H_
 
 #include <sys/cdefs.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdarg.h>
+#include <stdlib.h>
 
 __BEGIN_DECLS
 
@@ -116,6 +117,10 @@ rtems_bsd_program_asprintf(char **strp, const char *fmt, ...);
 
 void
 rtems_bsd_program_free(void *ptr);
+
+#ifndef RTEMS_BSD_PROGRAM_NO_ABORT_WRAP
+  #define abort() rtems_bsd_program_exit(1)
+#endif
 
 #ifndef RTEMS_BSD_PROGRAM_NO_EXIT_WRAP
   #define exit(code) rtems_bsd_program_exit(code)

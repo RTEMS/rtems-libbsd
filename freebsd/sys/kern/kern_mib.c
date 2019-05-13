@@ -60,6 +60,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/systm.h>
 #include <rtems/bsd/sys/unistd.h>
+#ifdef __rtems__
+#include <rtems/bsd/modules.h>
+#endif /* __rtems__ */
 
 SYSCTL_ROOT_NODE(0,	  sysctl, CTLFLAG_RW, 0,
 	"Sysctl internal magic");
@@ -291,6 +294,7 @@ SYSCTL_STRING(_kern, OID_AUTO, supported_archs, CTLFLAG_RD | CTLFLAG_MPSAFE,
     MACHINE_ARCH, 0, "Supported architectures for binaries");
 #endif
 
+#if defined(RTEMS_BSD_MODULE_NETINET) || defined(RTEMS_BSD_MODULE_NETINET6)
 static int
 sysctl_hostname(SYSCTL_HANDLER_ARGS)
 {
@@ -367,6 +371,7 @@ SYSCTL_PROC(_kern, KERN_HOSTUUID, hostuuid,
     CTLTYPE_STRING | CTLFLAG_RW | CTLFLAG_PRISON | CTLFLAG_CAPRD | CTLFLAG_MPSAFE,
     (void *)(offsetof(struct prison, pr_hostuuid)), HOSTUUIDLEN,
     sysctl_hostname, "A", "Host UUID");
+#endif /* RTEMS_BSD_MODULE_NETINET || RTEMS_BSD_MODULE_NETINET6 */
 
 #ifndef __rtems__
 static int	regression_securelevel_nonmonotonic = 0;

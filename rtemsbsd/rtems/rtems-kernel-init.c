@@ -93,7 +93,6 @@ sbintime_t sbt_tickthreshold;
 struct bintime tc_tick_bt;
 sbintime_t tc_tick_sbt;
 int tc_precexp;
-int maxusers;     /* base tunable */
 
 static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
     "Kernel SMP");
@@ -132,7 +131,6 @@ rtems_bsd_initialize(void)
 	bt_tickthreshold = bt_timethreshold;
 	sbt_timethreshold = bttosbt(bt_timethreshold);
 	sbt_tickthreshold = bttosbt(bt_tickthreshold);
-	maxusers = 1;
 	maxid_maxcpus = (int) rtems_scheduler_get_processor_maximum();
 
 	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);

@@ -2694,7 +2694,6 @@
 #define	m_append _bsd_m_append
 #define	m_apply _bsd_m_apply
 #define	maxpipekva _bsd_maxpipekva
-#define	maxusers _bsd_maxusers
 #define	mb_dupcl _bsd_mb_dupcl
 #define	mb_free_ext _bsd_mb_free_ext
 #define	M_BPF _bsd_M_BPF

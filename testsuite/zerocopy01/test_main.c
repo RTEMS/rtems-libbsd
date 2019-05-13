@@ -82,10 +82,10 @@ struct buffer_control {
 static struct buffer_control buffer_control;
 
 static void
-buffer_free(void *arg1, void *arg2)
+buffer_free(struct mbuf *m)
 {
-	struct buffer_control *bc = arg1;
-	struct buffer *buf = arg2;
+	struct buffer_control *bc = m->m_ext.ext_arg1;
+	struct buffer *buf = m->m_ext.ext_arg2;
 	rtems_status_code sc;
 	rtems_interrupt_lock_context lock_context;
 	rtems_id waiting_task;

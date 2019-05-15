@@ -278,12 +278,10 @@ epoch_block_handler_preempt(struct ck_epoch *g __unused,
 
 #ifdef RTEMS_SMP
 	if (cpu_self_index != er->er_cpuid) {
-		cpu_set_t set;
+		Processor_mask targets;
 
-		CPU_ZERO(&set);
-		CPU_SET((int)er->er_cpuid, &set);
-		_SMP_Multicast_action(sizeof(set), &set, epoch_register_mutex,
-		    &etm);
+		_Processor_mask_From_index(&targets, er->er_cpuid);
+		_SMP_Multicast_action(&targets, epoch_register_mutex, &etm);
 	} else {
 		epoch_register_mutex(&etm);
 	}

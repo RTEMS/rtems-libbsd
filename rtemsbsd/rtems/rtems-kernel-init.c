@@ -145,7 +145,7 @@ rtems_bsd_initialize(void)
 	sbt_timethreshold = bttosbt(bt_timethreshold);
 	sbt_tickthreshold = bttosbt(bt_tickthreshold);
 	maxusers = 1;
-	maxid_maxcpus = (int) rtems_get_processor_count();
+	maxid_maxcpus = (int) rtems_scheduler_get_processor_maximum();
 
 	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
 

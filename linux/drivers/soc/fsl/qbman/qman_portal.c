@@ -486,7 +486,7 @@ qman_sysinit_portals(void)
 	const char *fdt = bsp_fdt_get();
 	struct device_node dn;
 	const char *name;
-	int cpu_count = (int)rtems_get_processor_count();
+	int cpu_count = (int)rtems_scheduler_get_processor_maximum();
 	int i;
 	int node;
 

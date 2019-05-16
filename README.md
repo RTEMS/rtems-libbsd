@@ -60,7 +60,7 @@ git submodule update rtems_waf
 ./waf install
 qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
   -nographic -M xilinx-zynq-a9 -m 256M \
-  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/selectpollkqueue01.exe
 ```
 
 1. Create a sandbox directory:
@@ -153,7 +153,7 @@ $ ./waf install
 ```
 $ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
 $   -nographic -M xilinx-zynq-a9 -m 256M \
-$   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
+$   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/selectpollkqueue01.exe
 ```
 
 [1] It is good practice to keep your environment as empty as possible. Setting
@@ -164,6 +164,23 @@ $   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
     configuration information. If you have a few source trees working at any
     one time with different tool sets or configurations you can easly move
     between them safe in the knowledge that one build will not infect another.
+
+Branches
+--------
+
+* master - branch intended for the RTEMS master which tracks the FreeBSD master
+  branch.  This branch must be used for libbsd development.  Back ports to the
+  5-freebsd-12 are allowed.
+
+* 5-freebsd-12 - branch intended for RTEMS 5 which tracks the FreeBSD stable/12
+  branch.  This branch is maintained and regular updates from FreeBSD are
+  planned.  It is recommended for production systems.
+
+* freebsd-9.3 - branch for some RTEMS version with a FreeBSD 9.3 baseline.
+  This branch is unmaintained.  It is recommended to update to RTEMS 5.
+
+* 4.11 - branch for the RTEMS 4.11 release series.  This branch is
+  unmaintained.  It is recommended to update to RTEMS 5.
 
 Updating RTEMS Waf Support
 --------------------------
@@ -189,24 +206,14 @@ Please make sure you use the exact command or you might find you are cloning
 the whole of the FreeBSD source tree. If that happens simply git ^C and try
 again.
 
-The following is for maintainer only who need to move libbsd to a newer
-versions:
+FreeBSD Kernel Options
+----------------------
 
-```
-$ git submodule update rtems_waf
-$ cd rtems_waf
-$ git checkout master
-$ git pull
-$ cd ..
-$ git commit -m "Update rtems_waf" rtems_waf
-```
-
-FreeBSD Developer Support
--------------------------
-
-The --freebsd-option provides a tool you can set special kernel options. This
-is a developer tool and should only be used if you are familiar with the
-internals of the FreeBSD kernel and what these options do.
+You can set FreeBSD kernel options during build configuration with the
+--freebsd-option=a,b,c,... configuration command option.  This is an advanced
+option and should only be used if you are familiar with the internals of the
+FreeBSD kernel and what these options do.  Each of the comma separated options
+is converted to uppercase and passed as a compiler command line define (-D).
 
 The options are listed in:
 
@@ -219,5 +226,63 @@ configure with:
 --freebsd-options=bootverbose,verbose_sysinit,bus_debug
 ```
 
-The LibBSD Waf support splits the options and converts them to uppercase and
-adds them -D options on the compiler command line.
+To enable kernel internal consistency checking use:
+
+```
+--freebsd-options=invariants,invariant_support
+```
+
+Qemu and Networking
+-------------------
+
+You can use the Qemu simulator to run a LibBSD based application and connect it
+to a virtual network on your host.  You have to create a TAP virtual Ethernet
+interface for this:
+
+```
+sudo tunctl -p -t qtap -u $(whoami)
+sudo ip link set dev qtap up
+sudo ip addr add 169.254.1.1/16 dev qtap
+```
+
+You can show the interface state with the following command:
+
+```
+$ ip addr show qtap
+27: qtap: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
+    link/ether 8e:50:a2:fb:e1:3b brd ff:ff:ff:ff:ff:ff
+    inet 169.254.1.1/16 scope global qtap
+       valid_lft forever preferred_lft forever
+```
+
+You may have to assign the interface to a firewall zone.
+
+The Qemu command line varies by board support package, here is an example for
+the arm/xilinx_zynq_a9_qemu BSP:
+
+```
+qemu-system-arm -serial null -serial mon:stdio -nographic \
+  -M xilinx-zynq-a9 -m 256M \
+  -net tap,ifname=qtap,script=no,downscript=no \
+  -net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:12 \
+  -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/media01.exe
+```
+
+After some seconds it will acquire a IPv4 link-local address, e.g.
+
+```
+info: cgem0: probing for an IPv4LL address
+debug: cgem0: checking for 169.254.159.156
+```
+
+You can connect to the target via telnet for example:
+
+```
+$ telnet 169.254.159.156
+Trying 169.254.159.156...
+Connected to 169.254.159.156.
+Escape character is '^]'.
+
+RTEMS Shell on /dev/pty4. Use 'help' to list commands.
+TLNT [/] #
+```

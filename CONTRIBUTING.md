@@ -36,7 +36,7 @@ The top level directory contains a few directories and files. The following
 are important to understand
 
 * `freebsd-to-rtems.py` - script to convert to and free FreeBSD and RTEMS trees,
-* `create-kernel-namespace.sh` - script to create the kernel namespace header <machine/rtems-bsd-kernel-namespace.h,
+* `create-kernel-namespace.sh` - script to create the kernel namespace header `<machine/rtems-bsd-kernel-namespace.h>`,
 * `wscript` - automatically generated,
 * `freebsd/` - from FreeBSD by script,
 * `rtemsbsd/` - RTEMS specific implementations of FreeBSD kernel support routines,
@@ -194,7 +194,7 @@ original FreeBSD code.
   ```
   The following command may be useful:
   ```
-  sed -i 's%#include <machine/rtems-bsd-user-space.h>%#include <machine/rtems-bsd-user-space.h>\n#ifdef __rtems__\n#include <machine/rtems-bsd-program.h>\n#include "rtems-bsd-PROGNAME-namespace.h"\n#endif /* __rtems__ */%' *.c
+  sed -i 's%#include <machine/rtems-bsd-user-space.h>%#include <machine/rtems-bsd-user-space.h>\n\n#ifdef __rtems__\n#include <machine/rtems-bsd-program.h>\n#include "rtems-bsd-PROGNAME-namespace.h"\n#endif /* __rtems__ */%' *.c
   ```
 * At the bottom of each source file place the follwing:
   ```c

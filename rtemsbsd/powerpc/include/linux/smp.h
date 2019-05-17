@@ -41,12 +41,9 @@ typedef void (*smp_call_func_t)(void *arg);
 static inline int
 smp_call_function_single(int cpu, smp_call_func_t func, void *arg, int wait)
 {
-	cpu_set_t set;
 
 	(void)wait;
-	CPU_ZERO(&set);
-	CPU_SET(cpu, &set);
-	_SMP_Multicast_action(sizeof(set), &set, func, arg);
+	_SMP_Unicast_action((uint32_t)cpu, func, arg);
 	return (0);
 }
 

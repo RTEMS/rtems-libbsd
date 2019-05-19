@@ -181,6 +181,9 @@ original FreeBSD code.
   `python ./userspace-header-gen.py build/arm-rtems4.12-xilinx_zynq_a9_qemu/freebsd/sbin/pfctl/*.o -p pfctl`
   Replace the name (given via -p option) by the name of the userspace tool. It
   has to match the name that is used in the RTEMS linker set further below.
+  `Note:` the script `userspace-header-gen.py` depends on pyelftools. It can be
+  installed using pip:
+  `pip install --user pyelftools`
 * If you regenerated files that have already been generated, you may have to
   remove RTEMS-specific names from the namespace. The defaults (linker set names
   and rtems_bsd_program_.*) should already be filtered.

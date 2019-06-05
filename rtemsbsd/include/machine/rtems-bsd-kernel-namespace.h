@@ -1279,6 +1279,7 @@
 #define	GetAckModified _bsd_GetAckModified
 #define	GetAliasAddress _bsd_GetAliasAddress
 #define	GetAliasPort _bsd_GetAliasPort
+#define	getcredhostuuid _bsd_getcredhostuuid
 #define	GetDefaultAliasAddress _bsd_GetDefaultAliasAddress
 #define	GetDeltaAckIn _bsd_GetDeltaAckIn
 #define	GetDeltaSeqOut _bsd_GetDeltaSeqOut

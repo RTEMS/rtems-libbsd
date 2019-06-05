@@ -3,14 +3,14 @@
  *
  * @ingroup rtems_bsd_rtems
  *
- * @brief This object is an minimal rtems implementation of kern_jail.c.
+ * @brief This object is an minimal RTEMS implementation of kern_jail.c.
  */
 
 /*
- * Copyright (c) 2009, 2010 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2009, 2019 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4.
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -39,13 +39,6 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 
-/*#include <sys/types.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/jail.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>*/
-
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/kernel.h>
@@ -69,6 +62,8 @@
 #include <sys/socket.h>
 #include <sys/syscallsubr.h>
 #include <sys/sysctl.h>
+
+#include <rtems/score/threadqimpl.h>
 
 #define DEFAULT_HOSTUUID  "00000000-0000-0000-0000-000000000000"
 
@@ -96,6 +91,19 @@ struct prison prison0 = {
   .pr_path  = "/",
   .pr_securelevel = -1,
   .pr_childmax  = JAIL_MAX,
+
+  /*
+   * Statically initialize this mutex to allow a garbage collection of this
+   * structure.
+   */
+  .pr_mtx = {
+    .lock_object = { .lo_flags = LO_INITIALIZED },
+    .mutex = {
+      .queue = THREAD_QUEUE_INITIALIZER("jail mutex"),
+      .nest_level = 0
+    }
+  },
+
   .pr_hostuuid  = DEFAULT_HOSTUUID,
   .pr_children  = LIST_HEAD_INITIALIZER(prison0.pr_children),
 #ifdef VIMAGE
@@ -105,4 +113,13 @@ struct prison prison0 = {
 #endif
   .pr_allow = PR_ALLOW_ALL_STATIC
 };
-MTX_SYSINIT(prison0, &prison0.pr_mtx, "jail mutex", MTX_DEF);
+
+void
+getcredhostuuid(struct ucred *cred, char *buf, size_t size)
+{
+
+	(void)cred;
+	mtx_lock(&prison0.pr_mtx);
+	strlcpy(buf, prison0.pr_hostuuid, size);
+	mtx_unlock(&prison0.pr_mtx);
+}

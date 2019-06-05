@@ -356,6 +356,7 @@
 #define	USB_VENDOR_AGFA	0x06bd		/* AGFA-Gevaert */
 #define	USB_VENDOR_ASIAMD	0x06be		/* Asia Microelectronic Development */
 #define	USB_VENDOR_BIZLINK	0x06c4		/* Bizlink International */
+#define	USB_VENDOR_SYNAPTICS	0x06cb		/* Synaptics, Inc. */
 #define	USB_VENDOR_KEYSPAN	0x06cd		/* Keyspan / InnoSys Inc. */
 #define	USB_VENDOR_CONTEC	0x06ce		/* Contec products */
 #define	USB_VENDOR_AASHIMA	0x06d6		/* Aashima Technology */
@@ -2587,6 +2588,7 @@
 #define	USB_PRODUCT_INTEL2_IRMH2	0x0024		/* Integrated Rate Matching Hub */
 #define	USB_PRODUCT_INTEL2_IRMH3	0x8000		/* Integrated Rate Matching Hub */
 #define	USB_PRODUCT_INTEL2_IRMH4	0x8008		/* Integrated Rate Matching Hub */
+#define	USB_PRODUCT_INTEL2_SNP	0x0a2b		/* Stone Peak (7265) Bluetooth Module */
 #define	USB_PRODUCT_INTEL2_SFP	0x0aa7		/* Sandy Peak (3168) Bluetooth Module */
 #define	USB_PRODUCT_INTEL2_JFP	0x0aaa		/* Jefferson Peak (9460/9560) Bluetooth Module */
 #define	USB_PRODUCT_INTEL2_THP	0x0025		/* Thunder Peak (9160/9260) Bluetooth Module */
@@ -2678,6 +2680,9 @@
 /* Kensington products */
 #define	USB_PRODUCT_KENSINGTON_ORBIT	0x1003		/* Orbit USB/PS2 trackball */
 #define	USB_PRODUCT_KENSINGTON_TURBOBALL	0x1005		/* TurboBall */
+
+/* Synaptics products */
+#define	USB_PRODUCT_SYNAPTICS_FPR9A	0x009a		/* Fingerprint Reader */
 
 /* Keyspan products */
 #define	USB_PRODUCT_KEYSPAN_USA28_NF	0x0101		/* USA-28 serial Adapter (no firmware) */

@@ -105,7 +105,7 @@ static int wpa_supplicant_ctrl_iface_attach(struct dl_list *ctrl_dst,
 					    struct sockaddr_storage *from,
 					    socklen_t fromlen, int global)
 {
-	return ctrl_iface_attach(ctrl_dst, from, fromlen);
+	return ctrl_iface_attach(ctrl_dst, from, fromlen, NULL);
 }
 
 
@@ -572,8 +572,8 @@ static int wpas_ctrl_iface_open_sock(struct wpa_supplicant *wpa_s,
 		}
 	}
 
-	if (gid_set && chown(dir, -1, gid) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface=%s,gid=%d]: %s",
+	if (gid_set && lchown(dir, -1, gid) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface=%s,gid=%d]: %s",
 			   dir, (int) gid, strerror(errno));
 		goto fail;
 	}
@@ -640,8 +640,8 @@ static int wpas_ctrl_iface_open_sock(struct wpa_supplicant *wpa_s,
 		}
 	}
 
-	if (gid_set && chown(fname, -1, gid) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface=%s,gid=%d]: %s",
+	if (gid_set && lchown(fname, -1, gid) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface=%s,gid=%d]: %s",
 			   fname, (int) gid, strerror(errno));
 		goto fail;
 	}
@@ -1237,9 +1237,9 @@ static int wpas_global_ctrl_iface_open_sock(struct wpa_global *global,
 			wpa_printf(MSG_DEBUG, "ctrl_interface_group=%d",
 				   (int) gid);
 		}
-		if (chown(ctrl, -1, gid) < 0) {
+		if (lchown(ctrl, -1, gid) < 0) {
 			wpa_printf(MSG_ERROR,
-				   "chown[global_ctrl_interface=%s,gid=%d]: %s",
+				   "lchown[global_ctrl_interface=%s,gid=%d]: %s",
 				   ctrl, (int) gid, strerror(errno));
 			goto fail;
 		}

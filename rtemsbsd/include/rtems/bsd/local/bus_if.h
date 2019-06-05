@@ -1155,4 +1155,75 @@ static __inline int BUS_GET_CPUS(device_t _dev, device_t _child,
 	return (rc);
 }
 
+/** @brief Unique descriptor for the BUS_RESET_PREPARE() method */
+extern struct kobjop_desc bus_reset_prepare_desc;
+/** @brief A function implementing the BUS_RESET_PREPARE() method */
+typedef int bus_reset_prepare_t(device_t _dev, device_t _child);
+/**
+ * @brief Prepares the given child of the bus for reset
+ *
+ * Typically bus detaches or suspends children' drivers, and then
+ * calls this method to save bus-specific information, for instance,
+ * PCI config space, which is damaged by reset.
+ *
+ * The bus_helper_reset_prepare() helper is provided to ease
+ * implementing bus reset methods.
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ */
+
+static __inline int BUS_RESET_PREPARE(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_reset_prepare);
+	rc = ((bus_reset_prepare_t *) _m)(_dev, _child);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the BUS_RESET_POST() method */
+extern struct kobjop_desc bus_reset_post_desc;
+/** @brief A function implementing the BUS_RESET_POST() method */
+typedef int bus_reset_post_t(device_t _dev, device_t _child);
+/**
+ * @brief Restores the child operations after the reset
+ *
+ * The bus_helper_reset_post() helper is provided to ease
+ * implementing bus reset methods.
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ */
+
+static __inline int BUS_RESET_POST(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_reset_post);
+	rc = ((bus_reset_post_t *) _m)(_dev, _child);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the BUS_RESET_CHILD() method */
+extern struct kobjop_desc bus_reset_child_desc;
+/** @brief A function implementing the BUS_RESET_CHILD() method */
+typedef int bus_reset_child_t(device_t _dev, device_t _child, int _flags);
+/**
+ * @brief Performs reset of the child
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ * @param _flags	DEVF_RESET_ flags
+ */
+
+static __inline int BUS_RESET_CHILD(device_t _dev, device_t _child, int _flags)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_reset_child);
+	rc = ((bus_reset_child_t *) _m)(_dev, _child, _flags);
+	return (rc);
+}
+
 #endif /* _bus_if_h_ */

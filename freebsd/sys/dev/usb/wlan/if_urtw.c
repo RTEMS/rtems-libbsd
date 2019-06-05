@@ -754,6 +754,7 @@ static void		urtw_free_tx_data_list(struct urtw_softc *);
 static void		urtw_free_rx_data_list(struct urtw_softc *);
 static void		urtw_free_data_list(struct urtw_softc *,
 			    struct urtw_data data[], int, int);
+static usb_error_t	urtw_set_macaddr(struct urtw_softc *, const uint8_t *);
 static usb_error_t	urtw_adapter_start(struct urtw_softc *);
 static usb_error_t	urtw_adapter_start_b(struct urtw_softc *);
 static usb_error_t	urtw_set_mode(struct urtw_softc *, uint32_t);
@@ -1189,9 +1190,23 @@ fail:
 }
 
 static usb_error_t
+urtw_set_macaddr(struct urtw_softc *sc, const uint8_t *macaddr)
+{
+	usb_error_t error;
+
+	urtw_write32_m(sc, URTW_MAC0, ((const uint32_t *)macaddr)[0]);
+	urtw_write16_m(sc, URTW_MAC4, ((const uint32_t *)macaddr)[1] & 0xffff);
+
+fail:
+	return (error);
+}
+
+static usb_error_t
 urtw_adapter_start(struct urtw_softc *sc)
 {
 	struct ieee80211com *ic = &sc->sc_ic;
+	struct ieee80211vap *vap = TAILQ_FIRST(&ic->ic_vaps);
+	const uint8_t *macaddr;
 	usb_error_t error;
 
 	error = urtw_reset(sc);
@@ -1211,8 +1226,11 @@ urtw_adapter_start(struct urtw_softc *sc)
 	if (error)
 		goto fail;
 	/* applying MAC address again.  */
-	urtw_write32_m(sc, URTW_MAC0, ((uint32_t *)ic->ic_macaddr)[0]);
-	urtw_write16_m(sc, URTW_MAC4, ((uint32_t *)ic->ic_macaddr)[1] & 0xffff);
+	macaddr = vap ? vap->iv_myaddr : ic->ic_macaddr;
+	urtw_set_macaddr(sc, macaddr);
+	if (error)
+		goto fail;
+
 	error = urtw_set_mode(sc, URTW_EPROM_CMD_NORMAL);
 	if (error)
 		goto fail;
@@ -1699,11 +1717,7 @@ urtw_tx_start(struct urtw_softc *sc, struct ieee80211_node *ni, struct mbuf *m0,
 	if (ieee80211_radiotap_active_vap(vap)) {
 		struct urtw_tx_radiotap_header *tap = &sc->sc_txtap;
 
-		/* XXX Are variables correct?  */
 		tap->wt_flags = 0;
-		tap->wt_chan_freq = htole16(ic->ic_curchan->ic_freq);
-		tap->wt_chan_flags = htole16(ic->ic_curchan->ic_flags);
-
 		ieee80211_radiotap_tx(vap, m0);
 	}
 
@@ -1897,11 +1911,13 @@ static void
 urtw_watchdog(void *arg)
 {
 	struct urtw_softc *sc = arg;
+	struct ieee80211com *ic = &sc->sc_ic;
 
 	if (sc->sc_txtimer > 0) {
 		if (--sc->sc_txtimer == 0) {
 			device_printf(sc->sc_dev, "device timeout\n");
-			counter_u64_add(sc->sc_ic.ic_oerrors, 1);
+			counter_u64_add(ic->ic_oerrors, 1);
+			ieee80211_restart_all(ic);
 			return;
 		}
 		callout_reset(&sc->sc_watchdog_ch, hz, urtw_watchdog, sc);
@@ -3184,6 +3200,8 @@ static usb_error_t
 urtw_8225v2b_rf_init(struct urtw_softc *sc)
 {
 	struct ieee80211com *ic = &sc->sc_ic;
+	struct ieee80211vap *vap = TAILQ_FIRST(&ic->ic_vaps);
+	const uint8_t *macaddr;
 	unsigned int i;
 	uint8_t data8;
 	usb_error_t error;
@@ -3231,8 +3249,10 @@ urtw_8225v2b_rf_init(struct urtw_softc *sc)
 	urtw_write8_m(sc, URTW_CONFIG1, data8);
 
 	/* applying MAC address again.  */
-	urtw_write32_m(sc, URTW_MAC0, ((uint32_t *)ic->ic_macaddr)[0]);
-	urtw_write16_m(sc, URTW_MAC4, ((uint32_t *)ic->ic_macaddr)[1] & 0xffff);
+	macaddr = vap ? vap->iv_myaddr : ic->ic_macaddr;
+	error = urtw_set_macaddr(sc, macaddr);
+	if (error)
+		goto fail;
 
 	error = urtw_set_mode(sc, URTW_EPROM_CMD_NORMAL);
 	if (error)
@@ -3938,6 +3958,7 @@ urtw_rxeof(struct usb_xfer *xfer, struct urtw_data *data, int *rssi_p,
 	struct urtw_softc *sc = data->sc;
 	struct ieee80211com *ic = &sc->sc_ic;
 	uint8_t noise = 0, rate;
+	uint64_t mactime;
 
 	usbd_xfer_status(xfer, &actlen, NULL, NULL, NULL);
 
@@ -3957,6 +3978,9 @@ urtw_rxeof(struct usb_xfer *xfer, struct urtw_data *data, int *rssi_p,
 		/* XXX correct? */
 		rssi = rx->rssi & URTW_RX_RSSI_MASK;
 		noise = rx->noise;
+
+		if (ieee80211_radiotap_active(ic))
+			mactime = rx->mactime;
 	} else {
 		struct urtw_8187l_rxhdr *rx;
 
@@ -3973,6 +3997,9 @@ urtw_rxeof(struct usb_xfer *xfer, struct urtw_data *data, int *rssi_p,
 		/* XXX correct? */
 		rssi = rx->rssi & URTW_RX_8187L_RSSI_MASK;
 		noise = rx->noise;
+
+		if (ieee80211_radiotap_active(ic))
+			mactime = rx->mactime;
 	}
 
 	if (flen < IEEE80211_ACK_LEN)
@@ -3992,9 +4019,8 @@ urtw_rxeof(struct usb_xfer *xfer, struct urtw_data *data, int *rssi_p,
 	if (ieee80211_radiotap_active(ic)) {
 		struct urtw_rx_radiotap_header *tap = &sc->sc_rxtap;
 
-		/* XXX Are variables correct?  */
-		tap->wr_chan_freq = htole16(ic->ic_curchan->ic_freq);
-		tap->wr_chan_flags = htole16(ic->ic_curchan->ic_flags);
+		tap->wr_tsf = mactime;
+		tap->wr_flags = 0;
 		tap->wr_dbm_antsignal = (int8_t)rssi;
 	}
 

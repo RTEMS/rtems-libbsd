@@ -107,6 +107,14 @@ __FBSDID("$FreeBSD$");
 #define CGEM_CKSUM_ASSIST	(CSUM_IP | CSUM_TCP | CSUM_UDP | \
 				 CSUM_TCP_IPV6 | CSUM_UDP_IPV6)
 
+#ifndef __rtems__
+static struct ofw_compat_data compat_data[] = {
+	{ "cadence,gem",	1 },
+	{ "cdns,macb",		1 },
+	{ NULL,			0 },
+};
+#endif /* __rtems__ */
+
 struct cgem_softc {
 	if_t			ifp;
 	struct mtx		sc_mtx;
@@ -1724,7 +1732,7 @@ cgem_probe(device_t dev)
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
-	if (!ofw_bus_is_compatible(dev, "cadence,gem"))
+	if (ofw_bus_search_compatible(dev, compat_data)->ocd_data == 0)
 		return (ENXIO);
 #endif /* __rtems__ */
 

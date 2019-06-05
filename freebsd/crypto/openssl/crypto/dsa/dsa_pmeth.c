@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2006-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -22,8 +22,8 @@
 
 typedef struct {
     /* Parameter gen parameters */
-    int nbits;                  /* size of p in bits (default: 1024) */
-    int qbits;                  /* size of q in bits (default: 160) */
+    int nbits;                  /* size of p in bits (default: 2048) */
+    int qbits;                  /* size of q in bits (default: 224) */
     const EVP_MD *pmd;          /* MD for parameter generation */
     /* Keygen callback info */
     int gentmp[2];
@@ -37,8 +37,8 @@ static int pkey_dsa_init(EVP_PKEY_CTX *ctx)
 
     if (dctx == NULL)
         return 0;
-    dctx->nbits = 1024;
-    dctx->qbits = 160;
+    dctx->nbits = 2048;
+    dctx->qbits = 224;
     dctx->pmd = NULL;
     dctx->md = NULL;
 
@@ -140,7 +140,11 @@ static int pkey_dsa_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
             EVP_MD_type((const EVP_MD *)p2) != NID_sha224 &&
             EVP_MD_type((const EVP_MD *)p2) != NID_sha256 &&
             EVP_MD_type((const EVP_MD *)p2) != NID_sha384 &&
-            EVP_MD_type((const EVP_MD *)p2) != NID_sha512) {
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha512 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_224 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_256 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_384 &&
+            EVP_MD_type((const EVP_MD *)p2) != NID_sha3_512) {
             DSAerr(DSA_F_PKEY_DSA_CTRL, DSA_R_INVALID_DIGEST_TYPE);
             return 0;
         }

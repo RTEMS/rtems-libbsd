@@ -167,10 +167,9 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_load_crypto_nodelete)
 #ifdef OPENSSL_INIT_DEBUG
     fprintf(stderr, "OPENSSL_INIT: ossl_init_load_crypto_nodelete()\n");
 #endif
-#if !defined(OPENSSL_NO_DSO) \
-    && !defined(OPENSSL_USE_NODELETE) \
+#if !defined(OPENSSL_USE_NODELETE) \
     && !defined(OPENSSL_NO_PINSHARED)
-# ifdef DSO_WIN32
+# if defined(DSO_WIN32) && !defined(_WIN32_WCE)
     {
         HMODULE handle = NULL;
         BOOL ret;
@@ -186,7 +185,7 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_load_crypto_nodelete)
 #  endif
         return (ret == TRUE) ? 1 : 0;
     }
-# else
+# elif !defined(DSO_NONE) && !defined(__rtems__)
     /*
      * Deliberately leak a reference to ourselves. This will force the library
      * to remain loaded until the atexit() handler is run at process exit.
@@ -714,7 +713,7 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
         ret = RUN_ONCE(&config, ossl_init_config);
         conf_settings = NULL;
         CRYPTO_THREAD_unlock(init_lock);
-        if (!ret)
+        if (ret <= 0)
             return 0;
     }
 
@@ -779,8 +778,7 @@ int OPENSSL_atexit(void (*handler)(void))
 {
     OPENSSL_INIT_STOP *newhand;
 
-#if !defined(OPENSSL_NO_DSO) \
-    && !defined(OPENSSL_USE_NODELETE)\
+#if !defined(OPENSSL_USE_NODELETE)\
     && !defined(OPENSSL_NO_PINSHARED)
     {
         union {
@@ -789,7 +787,7 @@ int OPENSSL_atexit(void (*handler)(void))
         } handlersym;
 
         handlersym.func = handler;
-# ifdef DSO_WIN32
+# if defined(DSO_WIN32) && !defined(_WIN32_WCE)
         {
             HMODULE handle = NULL;
             BOOL ret;
@@ -805,7 +803,7 @@ int OPENSSL_atexit(void (*handler)(void))
             if (!ret)
                 return 0;
         }
-# else
+# elif !defined(DSO_NONE)
         /*
          * Deliberately leak a reference to the handler. This will force the
          * library/code containing the handler to remain loaded until we run the

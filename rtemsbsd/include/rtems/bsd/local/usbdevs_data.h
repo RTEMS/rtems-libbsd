@@ -8054,6 +8054,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Integrated Rate Matching Hub",
 	},
 	{
+	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_SNP,
+	    0,
+	    "Intel",
+	    "Stone Peak (7265) Bluetooth Module",
+	},
+	{
 	    USB_VENDOR_INTEL2, USB_PRODUCT_INTEL2_SFP,
 	    0,
 	    "Intel",
@@ -8370,6 +8376,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Kensington",
 	    "TurboBall",
+	},
+	{
+	    USB_VENDOR_SYNAPTICS, USB_PRODUCT_SYNAPTICS_FPR9A,
+	    0,
+	    "Synaptics, Inc.",
+	    "Fingerprint Reader",
 	},
 	{
 	    USB_VENDOR_KEYSPAN, USB_PRODUCT_KEYSPAN_USA28_NF,
@@ -20789,6 +20801,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    USB_VENDOR_BIZLINK, 0,
 	    USB_KNOWNDEV_NOPROD,
 	    "Bizlink International",
+	    NULL,
+	},
+	{
+	    USB_VENDOR_SYNAPTICS, 0,
+	    USB_KNOWNDEV_NOPROD,
+	    "Synaptics, Inc.",
 	    NULL,
 	},
 	{

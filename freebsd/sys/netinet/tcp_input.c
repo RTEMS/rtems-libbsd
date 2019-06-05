@@ -2029,7 +2029,8 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			else
 				tp->t_flags |= TF_ACKNOW;
 
-			if ((thflags & TH_ECE) && V_tcp_do_ecn) {
+			if (((thflags & (TH_CWR | TH_ECE)) == TH_ECE) &&
+			    V_tcp_do_ecn) {
 				tp->t_flags |= TF_ECN_PERMIT;
 				TCPSTAT_INC(tcps_ecn_shs);
 			}
@@ -2279,6 +2280,17 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			TCPSTAT_INC(tcps_rcvpartduppack);
 			TCPSTAT_ADD(tcps_rcvpartdupbyte, todrop);
 		}
+		/*
+		 * DSACK - add SACK block for dropped range
+		 */
+		if (tp->t_flags & TF_SACK_PERMIT) {
+			tcp_update_sack_list(tp, th->th_seq, th->th_seq+tlen);
+			/*
+			 * ACK now, as the next in-sequence segment
+			 * will clear the DSACK block again
+			 */
+			tp->t_flags |= TF_ACKNOW;
+		}
 		drop_hdrlen += todrop;	/* drop from the top afterwards */
 		th->th_seq += todrop;
 		tlen -= todrop;
@@ -2403,8 +2415,8 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 		if ((tp->t_flags & (TF_RCVD_SCALE|TF_REQ_SCALE)) ==
 			(TF_RCVD_SCALE|TF_REQ_SCALE)) {
 			tp->rcv_scale = tp->request_r_scale;
-			tp->snd_wnd = tiwin;
 		}
+		tp->snd_wnd = tiwin;
 		/*
 		 * Make transitions:
 		 *      SYN-RECEIVED  -> ESTABLISHED
@@ -3007,6 +3019,8 @@ dodata:							/* XXX */
 	if ((tlen || (thflags & TH_FIN) || tfo_syn) &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		tcp_seq save_start = th->th_seq;
+		tcp_seq save_rnxt  = tp->rcv_nxt;
+		int     save_tlen  = tlen;
 		m_adj(m, drop_hdrlen);	/* delayed header drop */
 		/*
 		 * Insert segment which includes th into TCP reassembly queue
@@ -3046,11 +3060,34 @@ dodata:							/* XXX */
 			 * m_adj() doesn't actually frees any mbufs
 			 * when trimming from the head.
 			 */
-			thflags = tcp_reass(tp, th, &save_start, &tlen, m);
+			tcp_seq temp = save_start;
+			thflags = tcp_reass(tp, th, &temp, &tlen, m);
 			tp->t_flags |= TF_ACKNOW;
 		}
-		if (tlen > 0 && (tp->t_flags & TF_SACK_PERMIT))
-			tcp_update_sack_list(tp, save_start, save_start + tlen);
+		if (tp->t_flags & TF_SACK_PERMIT) {
+			if (((tlen == 0) && (save_tlen > 0) &&
+			    (SEQ_LT(save_start, save_rnxt)))) {
+				/*
+				 * DSACK actually handled in the fastpath
+				 * above.
+				 */
+				tcp_update_sack_list(tp, save_start, save_start + save_tlen);
+			} else
+			if ((tlen > 0) && SEQ_GT(tp->rcv_nxt, save_rnxt)) {
+				/*
+				 * Cleaning sackblks by using zero length
+				 * update.
+				 */
+				tcp_update_sack_list(tp, save_start, save_start);
+			} else
+			if ((tlen > 0) && (tlen >= save_tlen)) {
+				/* Update of sackblks. */
+				tcp_update_sack_list(tp, save_start, save_start + save_tlen);
+			} else
+			if (tlen > 0) {
+				tcp_update_sack_list(tp, save_start, save_start+tlen);
+			}
+		}
 #if 0
 		/*
 		 * Note the amount of data that peer has sent into

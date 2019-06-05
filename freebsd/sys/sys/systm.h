@@ -688,6 +688,7 @@ void counted_warning(unsigned *counter, const char *msg);
 /*
  * APIs to manage deprecation and obsolescence.
  */
+#ifndef __rtems__
 struct device;
 void _gone_in(int major, const char *msg);
 void _gone_in_dev(struct device *dev, int major, const char *msg);
@@ -703,6 +704,10 @@ void _gone_in_dev(struct device *dev, int major, const char *msg);
 #define	gone_by_fcp101_dev(dev)						\
 	gone_in_dev((dev), 13,						\
 	    "see https://github.com/freebsd/fcp/blob/master/fcp-0101.md")
+#else /* __rtems__ */
+#define gone_in(major, msg) do { } while (0)
+#define gone_in_dev(dev, major, msg) do { } while (0)
+#endif /* __rtems__ */
 
 __NULLABILITY_PRAGMA_POP
 

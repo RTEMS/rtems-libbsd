@@ -358,7 +358,6 @@
 #define	bridge_control_table_size _bsd_bridge_control_table_size
 #define	bridge_dn_p _bsd_bridge_dn_p
 #define	bridge_rtable_prune_period _bsd_bridge_rtable_prune_period
-#define	bridge_rtnode_zone _bsd_bridge_rtnode_zone
 #define	bstp_attach _bsd_bstp_attach
 #define	bstp_create _bsd_bstp_create
 #define	bstp_destroy _bsd_bstp_destroy
@@ -462,6 +461,8 @@
 #define	bus_get_resource _bsd_bus_get_resource
 #define	bus_get_resource_count _bsd_bus_get_resource_count
 #define	bus_get_resource_start _bsd_bus_get_resource_start
+#define	bus_helper_reset_post _bsd_bus_helper_reset_post
+#define	bus_helper_reset_prepare _bsd_bus_helper_reset_prepare
 #define	bus_map_resource _bsd_bus_map_resource
 #define	bus_null_rescan _bsd_bus_null_rescan
 #define	bus_print_child_domain _bsd_bus_print_child_domain
@@ -1139,6 +1140,7 @@
 #define	ether_crc32_be _bsd_ether_crc32_be
 #define	ether_crc32_le _bsd_ether_crc32_le
 #define	ether_demux _bsd_ether_demux
+#define	ether_gen_addr _bsd_ether_gen_addr
 #define	ether_ifattach _bsd_ether_ifattach
 #define	ether_ifdetach _bsd_ether_ifdetach
 #define	ether_ioctl _bsd_ether_ioctl
@@ -1326,7 +1328,9 @@
 #define	gre_hashdestroy _bsd_gre_hashdestroy
 #define	gre_hashinit _bsd_gre_hashinit
 #define	gre_input _bsd_gre_input
-#define	gre_updatehdr _bsd_gre_updatehdr
+#define	gre_sofree _bsd_gre_sofree
+#define	gre_update_hdr _bsd_gre_update_hdr
+#define	gre_update_udphdr _bsd_gre_update_udphdr
 #define	grouptask_block _bsd_grouptask_block
 #define	grouptaskqueue_enqueue _bsd_grouptaskqueue_enqueue
 #define	grouptask_unblock _bsd_grouptask_unblock
@@ -3101,6 +3105,7 @@
 #define	pci_ea_is_enabled _bsd_pci_ea_is_enabled
 #define	pcie_flr _bsd_pcie_flr
 #define	pcie_get_max_completion_timeout _bsd_pcie_get_max_completion_timeout
+#define	pcie_link_reset _bsd_pcie_link_reset
 #define	pci_enable_busmaster_method _bsd_pci_enable_busmaster_method
 #define	pci_enable_io_method _bsd_pci_enable_io_method
 #define	pci_enable_msi_method _bsd_pci_enable_msi_method
@@ -3140,6 +3145,7 @@
 #define	pci_msix_table_bar_method _bsd_pci_msix_table_bar_method
 #define	pci_numdevs _bsd_pci_numdevs
 #define	pci_pending_msix _bsd_pci_pending_msix
+#define	pci_power_reset _bsd_pci_power_reset
 #define	pci_print_child _bsd_pci_print_child
 #define	pci_print_faulted_dev _bsd_pci_print_faulted_dev
 #define	pci_print_verbose _bsd_pci_print_verbose
@@ -4882,6 +4888,7 @@
 #define	tcp_recvspace _bsd_tcp_recvspace
 #define	tcp_respond _bsd_tcp_respond
 #define	tcp_rexmit_drop_options _bsd_tcp_rexmit_drop_options
+#define	tcp_rexmit_initial _bsd_tcp_rexmit_initial
 #define	tcp_rexmit_min _bsd_tcp_rexmit_min
 #define	tcp_rexmit_slop _bsd_tcp_rexmit_slop
 #define	tcprexmtthresh _bsd_tcprexmtthresh
@@ -4902,7 +4909,6 @@
 #define	tcpstat _bsd_tcpstat
 #define	tcp_state_change _bsd_tcp_state_change
 #define	tcp_switch_back_to_default _bsd_tcp_switch_back_to_default
-#define	tcp_syn_backoff _bsd_tcp_syn_backoff
 #define	tcp_timer_2msl _bsd_tcp_timer_2msl
 #define	tcp_timer_activate _bsd_tcp_timer_activate
 #define	tcp_timer_active _bsd_tcp_timer_active

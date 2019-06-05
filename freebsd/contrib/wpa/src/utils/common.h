@@ -17,7 +17,7 @@
 #endif /* __linux__ */
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
-    defined(__OpenBSD__)
+    defined(__OpenBSD__) || defined(__rtems__)
 #include <sys/types.h>
 #include <sys/endian.h>
 #define __BYTE_ORDER	_BYTE_ORDER
@@ -33,7 +33,8 @@
 #define bswap_64 bswap64
 #endif /* __OpenBSD__ */
 #endif /* defined(__FreeBSD__) || defined(__NetBSD__) ||
-	* defined(__DragonFly__) || defined(__OpenBSD__) */
+	* defined(__DragonFly__) || defined(__OpenBSD__) ||
+	* defined(__rtems__) */
 
 #ifdef __APPLE__
 #include <sys/types.h>
@@ -141,6 +142,7 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #define host_to_le32(n) (n)
 #define be_to_host32(n) wpa_swap_32(n)
 #define host_to_be32(n) wpa_swap_32(n)
+#define host_to_le64(n) (n)
 
 #define WPA_BYTE_SWAP_DEFINED
 
@@ -331,6 +333,9 @@ static inline void WPA_PUT_LE64(u8 *a, u64 val)
 #ifndef ETH_P_RRB
 #define ETH_P_RRB 0x890D
 #endif /* ETH_P_RRB */
+#ifndef ETH_P_OUI
+#define ETH_P_OUI 0x88B7
+#endif /* ETH_P_OUI */
 
 
 #ifdef __GNUC__
@@ -423,6 +428,7 @@ void perror(const char *s);
 #define __bitwise __attribute__((bitwise))
 #else
 #define __force
+#undef __bitwise
 #define __bitwise
 #endif
 
@@ -552,6 +558,8 @@ int is_ctrl_char(char c);
 
 int str_starts(const char *str, const char *start);
 
+u8 rssi_to_rcpi(int rssi);
+char * get_param(const char *cmd, const char *param);
 
 /*
  * gcc 4.4 ends up generating strict-aliasing warnings about some very common

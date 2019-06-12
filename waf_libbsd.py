@@ -218,7 +218,8 @@ class Builder(builder.ModuleManager):
         #
         if not os.path.exists(bld.env.NET_CONFIG):
             bld.fatal('network configuraiton \'%s\' not found' % (bld.env.NET_CONFIG))
-        tags = [ 'NET_CFG_SELF_IP',
+        tags = [ 'NET_CFG_INTERFACE_0',
+                 'NET_CFG_SELF_IP',
                  'NET_CFG_NETMASK',
                  'NET_CFG_PEER_IP',
                  'NET_CFG_GATEWAY_IP' ]

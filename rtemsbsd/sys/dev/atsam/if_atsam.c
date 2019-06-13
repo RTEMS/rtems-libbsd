@@ -994,9 +994,6 @@ static void if_atsam_init(void *arg)
 	ifp->if_flags |= IFF_DRV_RUNNING;
 	sc->interrupt_number = GMAC_IRQn;
 
-	/* Disable Watchdog */
-	WDT_Disable(WDT);
-
 	/* Enable Peripheral Clock */
 	if ((PMC->PMC_PCSR1 & (1u << 7)) != (1u << 7)) {
 		PMC->PMC_PCER1 = 1 << 7;

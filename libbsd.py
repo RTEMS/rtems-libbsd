@@ -125,6 +125,7 @@ _defaults = {
      ('freebsd/sys/sys',                        '**/*.h',                          'sys'),
      ('freebsd/sys/vm',                         '**/*.h',                          'vm'),
      ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),
+     ('freebsd/sys/dev/iicbus',                 '**/*.h',                          'dev/iicbus'),
      ('linux/include',                          '**/*.h',                          ''),
      ('mDNSResponder/mDNSCore',                 'mDNSDebug.h',                     ''),
      ('mDNSResponder/mDNSCore',                 'mDNSEmbeddedAPI.h',               ''),
@@ -737,6 +738,39 @@ class evdev(builder.Module):
                 'sys/dev/evdev/evdev_mt.c',
                 'sys/dev/evdev/evdev_utils.c',
                 'sys/dev/evdev/uinput.c',
+            ],
+            mm.generator['source']()
+        )
+
+#
+# IIC
+#
+class iic(builder.Module):
+
+    def __init__(self, manager):
+        super(iic, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/dev/iicbus/iicbus.h',
+                'sys/dev/iicbus/iic.h',
+                'sys/dev/iicbus/iiconf.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/dev/iicbus/iic.c',
+                'sys/dev/iicbus/iicbus.c',
+                'sys/dev/iicbus/iiconf.c',
+                'sys/dev/iicbus/ofw_iicbus.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addRTEMSSourceFiles(
+            [
+                'local/iicbus_if.c',
             ],
             mm.generator['source']()
         )
@@ -5096,6 +5130,7 @@ def load(mm):
     mm.addModule(mmc_ti(mm))
     mm.addModule(dev_input(mm))
     mm.addModule(evdev(mm))
+    mm.addModule(iic(mm))
 
     mm.addModule(dev_usb(mm))
     mm.addModule(dev_usb_controller(mm))

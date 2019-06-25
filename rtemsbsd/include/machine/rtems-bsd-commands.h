@@ -54,6 +54,8 @@ int rtems_bsd_command_netstat(int argc, char **argv);
 
 int rtems_bsd_command_pfctl(int argc, char **argv);
 
+int rtems_bsd_command_i2c(int argc, char **argv);
+
 int rtems_bsd_command_ping(int argc, char **argv);
 
 int rtems_bsd_command_ping6(int argc, char **argv);

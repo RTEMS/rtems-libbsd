@@ -28,6 +28,13 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
+
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -560,6 +567,24 @@ err2:
 	return (1);
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+int
+rtems_bsd_command_i2c(int argc, char *argv[])
+{
+    int exit_code;
+    void *data_begin;
+    size_t data_size;
+
+    rtems_bsd_program_lock();
+    exit_code = rtems_bsd_program_call_main("i2c", main, argc, argv);
+    rtems_bsd_program_unlock();
+
+    return exit_code;
+}
+#endif /* __rtems__ */
+
 int
 main(int argc, char** argv)
 {
@@ -567,6 +592,16 @@ main(int argc, char** argv)
 	struct options i2c_opt;
 	char *dev, *skip_addr, *i2c_buf;
 	int error, chunk_size, i, j, ch;
+
+#ifdef __rtems__
+    struct getopt_data getopt_data;
+    memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	errno = 0;
 	error = 0;

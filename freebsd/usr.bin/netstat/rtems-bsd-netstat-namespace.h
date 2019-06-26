@@ -18,7 +18,6 @@
 #define icmp_stats _bsd_netstat_icmp_stats
 #define igmp_stats _bsd_netstat_igmp_stats
 #define inetname _bsd_netstat_inetname
-#define inetprint _bsd_netstat_inetprint
 #define ip_stats _bsd_netstat_ip_stats
 #define pim_stats _bsd_netstat_pim_stats
 #define protopr _bsd_netstat_protopr

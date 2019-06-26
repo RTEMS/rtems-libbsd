@@ -16532,6 +16532,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Infinity GPS-MIC-1 Radio Monophone",
 	},
 	{
+	    USB_VENDOR_SILABS, USB_PRODUCT_SILABS_CP2112,
+	    0,
+	    "Silicon Labs",
+	    "CP2112 HID USB-to-SMBus Bridge with GPIO",
+	},
+	{
 	    USB_VENDOR_SILABS, USB_PRODUCT_SILABS_USBSCOPE50,
 	    0,
 	    "Silicon Labs",

@@ -149,6 +149,7 @@ struct ifa_order_elt {
 
 TAILQ_HEAD(ifa_queue, ifa_order_elt);
 
+#ifndef __rtems__
 static struct module_map_entry {
 	const char *ifname;
 	const char *kldname;
@@ -172,6 +173,7 @@ static struct module_map_entry {
 		.kldname = "if_enc",
 	},
 };
+#endif /* __rtems__ */
 
 
 void
@@ -436,7 +438,7 @@ int
 rtems_bsd_command_ifconfig(int argc, char *argv[])
 {
 	int exit_code;
-	const void *data_begin;
+	void *data_begin;
 	size_t data_size;
 
 	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_ifconfig);

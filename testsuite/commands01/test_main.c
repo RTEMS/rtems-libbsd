@@ -32,6 +32,7 @@
 #include <sys/param.h>
 
 #include <assert.h>
+#include <ck_epoch.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,15 @@
 #define TEST_NAME "LIBBSD COMMANDS 1"
 
 #define ARGC(x) RTEMS_BSD_ARGC(x)
+
+static void
+epoch_cleanup(void)
+{
+	rtems_status_code sc;
+
+	sc = rtems_task_wake_after(CK_EPOCH_LENGTH);
+	assert(sc == RTEMS_SUCCESSFUL);
+}
 
 static void
 test_route_without_if(void)
@@ -72,26 +82,31 @@ test_route_without_if(void)
 	exit_code = rtems_bsd_command_route(ARGC(flush), flush);
 	assert(exit_code == EX_OK);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_route(ARGC(flush), flush);
 	assert(exit_code == EX_OK);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 
 	exit_code = rtems_bsd_command_route(ARGC(dflt_route), dflt_route);
 	assert(exit_code == EXIT_FAILURE);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_route(ARGC(dflt_route), dflt_route);
 	assert(exit_code == EXIT_FAILURE);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 
 	exit_code = rtems_bsd_command_route(ARGC(invalid), invalid);
 	assert(exit_code == EX_USAGE);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -143,6 +158,7 @@ test_ifconfig_lo0(void)
 	assert(exit_code == EX_OK);
 #endif /* RTEMS_BSD_MODULE_NETINET6 */
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_ifconfig(ARGC(status), status);
@@ -153,13 +169,15 @@ test_ifconfig_lo0(void)
 	assert(exit_code == EX_OK);
 #endif /* RTEMS_BSD_MODULE_NETINET6 */
 
-	rtems_resource_snapshot_take(&snapshot);
+	epoch_cleanup();
+	assert(rtems_resource_snapshot_check(&snapshot));
 
 #ifdef RTEMS_BSD_MODULE_NETINET6
 	exit_code = rtems_bsd_command_ifconfig(ARGC(status_inet6), status_inet6);
 	assert(exit_code == EX_OK);
 #endif /* RTEMS_BSD_MODULE_NETINET6 */
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -195,11 +213,13 @@ test_ping(void)
 	exit_code = rtems_bsd_command_ping(ARGC(ping), ping);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_ping(ARGC(ping), ping);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -220,11 +240,13 @@ test_ping6(void)
 	exit_code = rtems_bsd_command_ping6(ARGC(ping6), ping6);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_ping6(ARGC(ping6), ping6);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 #endif
 }
@@ -252,21 +274,25 @@ test_netstat(void)
 	exit_code = rtems_bsd_command_netstat(ARGC(netstat), netstat);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_netstat(ARGC(netstat_s), netstat_s);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 
 	exit_code = rtems_bsd_command_netstat(ARGC(netstat_r), netstat_r);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_command_netstat(ARGC(netstat_r), netstat_r);
 	assert(exit_code == EXIT_SUCCESS);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -282,8 +308,10 @@ test_wlanstats(void)
 
 	/* Without a WLAN device, only the basic call can be tested. */
 	rtems_bsd_command_wlanstats(ARGC(wlanstats), wlanstats);
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 	rtems_bsd_command_wlanstats(ARGC(wlanstats), wlanstats);
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 #endif /* RTEMS_BSD_MODULE_USER_SPACE_WLANSTATS */
 }

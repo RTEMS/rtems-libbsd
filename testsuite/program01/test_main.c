@@ -38,6 +38,7 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <ck_epoch.h>
 
 #define RTEMS_BSD_PROGRAM_NO_EXIT_WRAP
 #define RTEMS_BSD_PROGRAM_NO_PRINTF_WRAP
@@ -427,6 +428,7 @@ static void
 test_open_close(void)
 {
 	int exit_code;
+	rtems_status_code sc;
 	rtems_resource_snapshot snapshot;
 
 	puts("test open, socket and close");
@@ -440,6 +442,8 @@ test_open_close(void)
 	exit_code = rtems_bsd_program_call("fopen", call_fopen, NULL);
 	assert(exit_code == 0);
 
+	sc = rtems_task_wake_after(CK_EPOCH_LENGTH);
+	assert(sc == RTEMS_SUCCESSFUL);
 	rtems_resource_snapshot_take(&snapshot);
 
 	exit_code = rtems_bsd_program_call("open", call_open, NULL);
@@ -454,11 +458,15 @@ test_open_close(void)
 
 	exit_code = rtems_bsd_program_call("socket", call_socket, NULL);
 	assert(exit_code == 0);
+	sc = rtems_task_wake_after(CK_EPOCH_LENGTH);
+	assert(sc == RTEMS_SUCCESSFUL);
 	assert(rtems_resource_snapshot_check(&snapshot));
 
 	exit_code = rtems_bsd_program_call("socket_close", call_socket_close,
 	    NULL);
 	assert(exit_code == 0);
+	sc = rtems_task_wake_after(CK_EPOCH_LENGTH);
+	assert(sc == RTEMS_SUCCESSFUL);
 	assert(rtems_resource_snapshot_check(&snapshot));
 
 	exit_code = rtems_bsd_program_call("fopen", call_fopen, NULL);

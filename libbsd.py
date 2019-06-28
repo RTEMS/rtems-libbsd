@@ -761,6 +761,7 @@ class dev_usb(builder.Module):
                 'sys/dev/usb/usbdi_util.h',
                 'sys/dev/usb/usb_dynamic.h',
                 'sys/dev/usb/usb_endian.h',
+                'sys/dev/usb/usb_fdt_support.h',
                 'sys/dev/usb/usb_freebsd.h',
                 'sys/dev/usb/usb_generic.h',
                 'sys/dev/usb/usb.h',

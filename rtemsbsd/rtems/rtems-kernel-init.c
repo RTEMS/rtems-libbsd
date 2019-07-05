@@ -87,6 +87,7 @@ int hz;
 int tick;
 volatile int ticks;
 sbintime_t tick_sbt;
+sbintime_t rtems_bsd_sbt_per_watchdog_tick;
 struct bintime bt_timethreshold;
 struct bintime bt_tickthreshold;
 sbintime_t sbt_timethreshold;
@@ -123,6 +124,7 @@ rtems_bsd_initialize(void)
 
 	tick = 1000000 / hz;
 	tick_sbt = SBT_1S / hz;
+	rtems_bsd_sbt_per_watchdog_tick = SBT_1S / tps;
 	FREQ2BT(hz, &tc_tick_bt);
 	tc_tick_sbt = bttosbt(tc_tick_bt);
 	tc_precexp = 31;

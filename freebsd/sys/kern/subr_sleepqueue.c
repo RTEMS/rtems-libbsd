@@ -462,6 +462,7 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
 	ISR_lock_Context lock_context;
 	ISR_lock_Context lock_context_2;
 	Watchdog_Header *header;
+	sbintime_t sbt_per_tick;
 	uint64_t expire;
 
 	cpu_self = _Thread_Dispatch_disable();
@@ -477,15 +478,16 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
 	_Watchdog_Set_CPU(&executing->Timer.Watchdog, cpu_self);
 
 	_Watchdog_Per_CPU_acquire_critical(cpu_self, &lock_context_2);
+	sbt_per_tick = rtems_bsd_sbt_per_watchdog_tick;
 
 	if ((flags & C_ABSOLUTE) != 0) {
 		/*
 		 * The FreeBSD uptime starts at one second, however, the
 		 * relative watchdog ticks start at zero, see also TIMESEL().
 		 */
-		expire = (sbt - SBT_1S + tick_sbt - 1) / tick_sbt;
+		expire = (sbt - SBT_1S + sbt_per_tick - 1) / sbt_per_tick;
 	} else {
-		expire = (sbt + tick_sbt - 1) / tick_sbt;
+		expire = (sbt + sbt_per_tick - 1) / sbt_per_tick;
 		expire += cpu_self->Watchdog.ticks;
 	}
 

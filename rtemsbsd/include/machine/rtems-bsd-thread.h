@@ -46,6 +46,8 @@
 
 #include <rtems.h>
 
+extern sbintime_t rtems_bsd_sbt_per_watchdog_tick;
+
 #define BSD_TASK_NAME rtems_build_name('_', 'B', 'S', 'D')
 
 struct thread *

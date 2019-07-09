@@ -357,6 +357,51 @@ test_enter_list_op_exit_preempt_fini(rtems_test_parallel_context *base,
 }
 
 static void
+test_enter_list_op_exit_drain_body(rtems_test_parallel_context *base,
+    void *arg, size_t active_workers, size_t worker_index)
+{
+	test_context *ctx;
+	epoch_t e;
+	uint32_t counter;
+	uint32_t removals;
+	uint32_t item_counter[CPU_COUNT];
+
+	ctx = (test_context *)base;
+	e = global_epoch;
+	counter = 0;
+	removals = 0;
+	memset(item_counter, 0, sizeof(item_counter));
+
+	while (!rtems_test_parallel_stop_job(&ctx->base)) {
+		test_item *rm;
+
+		epoch_enter(e);
+		++counter;
+		rm = test_remove_item(ctx, item_counter, &removals,
+		    worker_index);
+		epoch_exit(e);
+
+		if (rm != NULL) {
+			epoch_call(e, &rm->ec, test_list_callback);
+			epoch_drain_callbacks(e);
+		}
+	}
+
+	ctx->stats.counter[worker_index] = counter;
+	ctx->stats.removals[worker_index] = removals;
+	memcpy(ctx->stats.item_counter[worker_index], item_counter,
+	    sizeof(ctx->stats.item_counter[worker_index]));
+}
+
+static void
+test_enter_list_op_exit_drain_fini(rtems_test_parallel_context *base,
+    void *arg, size_t active_workers)
+{
+
+	test_fini(base, "EnterListOpExitDrain", active_workers);
+}
+
+static void
 test_thread_local_mutex_body(rtems_test_parallel_context *base, void *arg,
     size_t active_workers, size_t worker_index)
 {
@@ -441,6 +486,11 @@ static const rtems_test_parallel_job test_jobs[] = {
 		.init = test_list_init,
 		.body = test_enter_list_op_exit_preempt_body,
 		.fini = test_enter_list_op_exit_preempt_fini,
+		.cascade = true
+	}, {
+		.init = test_list_init,
+		.body = test_enter_list_op_exit_drain_body,
+		.fini = test_enter_list_op_exit_drain_fini,
 		.cascade = true
 	}, {
 		.init = test_init,

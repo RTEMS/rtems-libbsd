@@ -34,6 +34,8 @@
 #include <sys/cdefs.h>
 #ifdef _KERNEL
 #include <sys/lock.h>
+#include <sys/_mutex.h>
+#include <sys/_sx.h>
 #include <sys/pcpu.h>
 #include <rtems/score/percpudata.h>
 #endif
@@ -66,6 +68,8 @@ struct epoch_record {
 	ck_epoch_record_t er_record;
 	struct epoch_tdlist er_tdlist;
 	uint32_t er_cpuid;
+	struct epoch_context er_drain_ctx;
+	struct epoch *er_parent;
 } __aligned(EPOCH_ALIGN);
 
 typedef struct epoch {
@@ -73,6 +77,9 @@ typedef struct epoch {
 	uintptr_t e_pcpu_record_offset;
 	int	e_flags;
 	SLIST_ENTRY(epoch) e_link;	/* List of all epochs */
+	struct sx e_drain_sx;
+	struct mtx e_drain_mtx;
+	volatile int e_drain_count;
 } *epoch_t;
 
 extern struct epoch _bsd_global_epoch;
@@ -110,6 +117,7 @@ void	epoch_wait_preempt(epoch_t epoch);
 
 void	epoch_call(epoch_t epoch, epoch_context_t ctx,
 	    void (*callback) (epoch_context_t));
+void	epoch_drain_callbacks(epoch_t epoch);
 
 int	_bsd_in_epoch(epoch_t epoch);
 #define	in_epoch(epoch) _bsd_in_epoch(epoch)

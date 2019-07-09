@@ -36,7 +36,6 @@
 #include <sys/lock.h>
 #include <sys/pcpu.h>
 #include <rtems/score/percpudata.h>
-#include <rtems/score/threaddispatch.h>
 #endif
 #include <rtems/thread.h>
 #include <ck_epoch.h>
@@ -100,7 +99,10 @@ SYSINIT(epoch_##name, SI_SUB_TUNABLES, SI_ORDER_THIRD,			\
 void	_bsd_epoch_init(epoch_t epoch, uintptr_t pcpu_record_offset,
 	    int flags);
 
+void	epoch_enter(epoch_t epoch);
 void	epoch_enter_preempt(epoch_t epoch, epoch_tracker_t et);
+
+void	epoch_exit(epoch_t epoch);
 void	epoch_exit_preempt(epoch_t epoch, epoch_tracker_t et);
 
 void	epoch_wait(epoch_t epoch);
@@ -113,30 +115,5 @@ int	_bsd_in_epoch(epoch_t epoch);
 #define	in_epoch(epoch) _bsd_in_epoch(epoch)
 #define	in_epoch_verbose(epoch, dump_onfail) _bsd_in_epoch(epoch)
 
-#define	EPOCH_GET_RECORD(cpu_self, epoch) PER_CPU_DATA_GET_BY_OFFSET( \
-    cpu_self, struct epoch_record, epoch->e_pcpu_record_offset)
-
-static __inline void
-epoch_enter(epoch_t epoch)
-{
-	Per_CPU_Control *cpu_self;
-	struct epoch_record *er;
-
-	cpu_self = _Thread_Dispatch_disable();
-	er = EPOCH_GET_RECORD(cpu_self, epoch);
-	ck_epoch_begin(&er->er_record, NULL);
-}
-
-static __inline void
-epoch_exit(epoch_t epoch)
-{
-	Per_CPU_Control *cpu_self;
-	struct epoch_record *er;
-
-	cpu_self = _Per_CPU_Get();
-	er = EPOCH_GET_RECORD(cpu_self, epoch);
-	ck_epoch_end(&er->er_record, NULL);
-	_Thread_Dispatch_enable(cpu_self);
-}
 #endif /* _KERNEL */
 #endif /* _SYS_EPOCH_H_ */

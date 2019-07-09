@@ -42,8 +42,12 @@
 #include <rtems.h>
 #include <rtems/irq-extension.h>
 #include <rtems/score/smpimpl.h>
+#include <rtems/score/threaddispatch.h>
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/watchdogimpl.h>
+
+#define	EPOCH_GET_RECORD(cpu_self, epoch) PER_CPU_DATA_GET_BY_OFFSET( \
+    cpu_self, struct epoch_record, epoch->e_pcpu_record_offset)
 
 EPOCH_DEFINE(_bsd_global_epoch_preempt, EPOCH_PREEMPT);
 
@@ -176,6 +180,29 @@ epoch_sysinit(void)
 SYSINIT(epoch, SI_SUB_TUNABLES, SI_ORDER_SECOND, epoch_sysinit, NULL);
 
 void
+epoch_enter(epoch_t epoch)
+{
+	Per_CPU_Control *cpu_self;
+	struct epoch_record *er;
+
+	cpu_self = _Thread_Dispatch_disable();
+	er = EPOCH_GET_RECORD(cpu_self, epoch);
+	ck_epoch_begin(&er->er_record, NULL);
+}
+
+void
+epoch_exit(epoch_t epoch)
+{
+	Per_CPU_Control *cpu_self;
+	struct epoch_record *er;
+
+	cpu_self = _Per_CPU_Get();
+	er = EPOCH_GET_RECORD(cpu_self, epoch);
+	ck_epoch_end(&er->er_record, NULL);
+	_Thread_Dispatch_enable(cpu_self);
+}
+
+void
 epoch_enter_preempt(epoch_t epoch, epoch_tracker_t et)
 {
 	Per_CPU_Control *cpu_self;
@@ -266,12 +293,16 @@ epoch_block_handler_preempt(struct ck_epoch *g __unused,
 {
 	struct epoch_record *er;
 	Per_CPU_Control *cpu_self;
-	uint32_t cpu_self_index;
 	struct epoch_tracker_mutex etm;
+#ifdef RTEMS_SMP
+	uint32_t cpu_self_index;
+#endif
 
 	er = __containerof(cr, struct epoch_record, er_record);
 	cpu_self = _Per_CPU_Get();
+#ifdef RTEMS_SMP
 	cpu_self_index = _Per_CPU_Get_index(cpu_self);
+#endif
 
 	rtems_mutex_init(&etm.etm_mtx, "epoch");
 	etm.etm_record = er;

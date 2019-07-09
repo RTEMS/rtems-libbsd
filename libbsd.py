@@ -1758,6 +1758,34 @@ class dev_nic_broadcomm(builder.Module):
             mm.generator['source']()
         )
 
+class nvme(builder.Module):
+
+    def __init__(self, manager):
+        super(nvme, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/dev/nvme/nvme.h',
+                'sys/dev/nvme/nvme_private.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/dev/nvme/nvme.c',
+                'sys/dev/nvme/nvme_ctrlr.c',
+                'sys/dev/nvme/nvme_ctrlr_cmd.c',
+                'sys/dev/nvme/nvme_ns.c',
+                'sys/dev/nvme/nvme_ns_cmd.c',
+                'sys/dev/nvme/nvme_pci.c',
+                'sys/dev/nvme/nvme_qpair.c',
+                'sys/dev/nvme/nvme_sysctl.c',
+                'sys/dev/nvme/nvme_util.c',
+            ],
+            mm.generator['source']()
+        )
+
 #
 # Networking
 #
@@ -5269,6 +5297,8 @@ def load(mm):
     mm.addModule(dev_nic_dc(mm))
     mm.addModule(dev_nic_smc(mm))
     mm.addModule(dev_nic_broadcomm(mm))
+
+    mm.addModule(nvme(mm))
 
     # Add in_chksum
     mm.addModule(in_cksum(mm))

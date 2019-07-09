@@ -138,7 +138,9 @@ int
 _sleep(void *ident, struct lock_object *lock, int priority,
     const char *wmesg, sbintime_t sbt, sbintime_t pr, int flags)
 {
+#ifndef __rtems__
 	struct thread *td;
+#endif /* __rtems__ */
 	struct lock_class *class;
 	uintptr_t lock_state;
 #ifndef __rtems__
@@ -148,7 +150,9 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 #endif /* __rtems__ */
 	WITNESS_SAVE_DECL(lock_witness);
 
+#ifndef __rtems__
 	td = curthread;
+#endif /* __rtems__ */
 #ifdef KTRACE
 	if (KTRPOINT(td, KTR_CSW))
 		ktrcsw(1, 0, wmesg);
@@ -401,6 +405,23 @@ wakeup_one(void *ident)
 	if (wakeup_swapper)
 		kick_proc0();
 }
+
+void
+wakeup_any(void *ident)
+#ifndef __rtems__
+{
+	int wakeup_swapper;
+
+	sleepq_lock(ident);
+	wakeup_swapper = sleepq_signal(ident, SLEEPQ_SLEEP | SLEEPQ_UNFAIR,
+	    0, 0);
+	sleepq_release(ident);
+	if (wakeup_swapper)
+		kick_proc0();
+}
+#else /* __rtems__ */
+RTEMS_ALIAS(_bsd_wakeup_one);
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 static void

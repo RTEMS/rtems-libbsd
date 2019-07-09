@@ -1128,7 +1128,10 @@
 #define	enc_xform_skipjack _bsd_enc_xform_skipjack
 #define	eopnotsupp _bsd_eopnotsupp
 #define	epoch_call _bsd_epoch_call
+#define	epoch_drain_callbacks _bsd_epoch_drain_callbacks
+#define	epoch_enter _bsd_epoch_enter
 #define	epoch_enter_preempt _bsd_epoch_enter_preempt
+#define	epoch_exit _bsd_epoch_exit
 #define	epoch_exit_preempt _bsd_epoch_exit_preempt
 #define	epoch_init _bsd_epoch_init
 #define	epoch_wait _bsd_epoch_wait
@@ -2278,6 +2281,8 @@
 #define	ip6_maxfrags _bsd_ip6_maxfrags
 #define	ip6_maxfragsperpacket _bsd_ip6_maxfragsperpacket
 #define	ip6_mcast_pmtu _bsd_ip6_mcast_pmtu
+#define	ip6_mfilter_alloc _bsd_ip6_mfilter_alloc
+#define	ip6_mfilter_free _bsd_ip6_mfilter_free
 #define	ip6_mforward _bsd_ip6_mforward
 #define	ip6_mloopback _bsd_ip6_mloopback
 #define	ip6_mrouter _bsd_ip6_mrouter
@@ -2353,6 +2358,8 @@
 #define	ip_input _bsd_ip_input
 #define	ip_insertoptions _bsd_ip_insertoptions
 #define	ip_mcast_src _bsd_ip_mcast_src
+#define	ip_mfilter_alloc _bsd_ip_mfilter_alloc
+#define	ip_mfilter_free _bsd_ip_mfilter_free
 #define	ip_mforward _bsd_ip_mforward
 #define	ip_mrouter _bsd_ip_mrouter
 #define	ip_mrouter_done _bsd_ip_mrouter_done
@@ -3986,6 +3993,7 @@
 #define	sbuf_clear _bsd_sbuf_clear
 #define	sbuf_clear_flags _bsd_sbuf_clear_flags
 #define	sbuf_copyin _bsd_sbuf_copyin
+#define	sbuf_count_drain _bsd_sbuf_count_drain
 #define	sbuf_cpy _bsd_sbuf_cpy
 #define	sbuf_data _bsd_sbuf_data
 #define	sbuf_delete _bsd_sbuf_delete
@@ -4498,6 +4506,8 @@
 #define	Skein_512_Output _bsd_Skein_512_Output
 #define	Skein_512_Process_Block _bsd_Skein_512_Process_Block
 #define	Skein_512_Update _bsd_Skein_512_Update
+#define	Skein_Get64_LSB_First _bsd_Skein_Get64_LSB_First
+#define	Skein_Put64_LSB_First _bsd_Skein_Put64_LSB_First
 #define	skipjack_backwards _bsd_skipjack_backwards
 #define	skipjack_forwards _bsd_skipjack_forwards
 #define	sl_compress_init _bsd_sl_compress_init
@@ -5440,6 +5450,7 @@
 #define	vsnrprintf _bsd_vsnrprintf
 #define	vsprintf _bsd_vsprintf
 #define	wakeup _bsd_wakeup
+#define	wakeup_any _bsd_wakeup_any
 #define	wakeup_one _bsd_wakeup_one
 #define	window_deflate _bsd_window_deflate
 #define	window_inflate _bsd_window_inflate

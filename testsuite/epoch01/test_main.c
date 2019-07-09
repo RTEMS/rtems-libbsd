@@ -202,6 +202,38 @@ test_list_callback(epoch_context_t ec)
 	}
 }
 
+static test_item *
+test_remove_item(test_context *ctx, uint32_t item_counter[CPU_COUNT],
+    uint32_t *removals, size_t worker_index)
+{
+	test_item *prev;
+	test_item *item;
+	test_item *tmp;
+	test_item *rm;
+
+	prev = NULL;
+	rm = NULL;
+	CK_SLIST_FOREACH_SAFE(item, &ctx->item_list, link, tmp) {
+		++item_counter[item->index];
+
+		if (item->worker_index == worker_index) {
+			++(*removals);
+			rm = item;
+
+			if (prev != NULL) {
+				CK_SLIST_REMOVE_AFTER(prev, link);
+			} else {
+				CK_SLIST_REMOVE_HEAD(&ctx->item_list,
+				    link);
+			}
+		}
+
+		prev = item;
+	}
+
+	return rm;
+}
+
 static void
 test_enter_list_op_exit_body(rtems_test_parallel_context *base, void *arg,
     size_t active_workers, size_t worker_index)
@@ -219,34 +251,12 @@ test_enter_list_op_exit_body(rtems_test_parallel_context *base, void *arg,
 	memset(item_counter, 0, sizeof(item_counter));
 
 	while (!rtems_test_parallel_stop_job(&ctx->base)) {
-		test_item *prev;
-		test_item *item;
-		test_item *tmp;
 		test_item *rm;
 
 		epoch_enter(e);
 		++counter;
-
-		prev = NULL;
-		rm = NULL;
-		CK_SLIST_FOREACH_SAFE(item, &ctx->item_list, link, tmp) {
-			++item_counter[item->index];
-
-			if (item->worker_index == worker_index) {
-				++removals;
-				rm = item;
-
-				if (prev != NULL) {
-					CK_SLIST_REMOVE_AFTER(prev, link);
-				} else {
-					CK_SLIST_REMOVE_HEAD(&ctx->item_list,
-					    link);
-				}
-			}
-
-			prev = item;
-		}
-
+		rm = test_remove_item(ctx, item_counter, &removals,
+		    worker_index);
 		epoch_exit(e);
 
 		if (rm != NULL) {
@@ -318,34 +328,12 @@ test_enter_list_op_exit_preempt_body(rtems_test_parallel_context *base,
 
 	while (!rtems_test_parallel_stop_job(&ctx->base)) {
 		struct epoch_tracker et;
-		test_item *prev;
-		test_item *item;
-		test_item *tmp;
 		test_item *rm;
 
 		epoch_enter_preempt(e, &et);
 		++counter;
-
-		prev = NULL;
-		rm = NULL;
-		CK_SLIST_FOREACH_SAFE(item, &ctx->item_list, link, tmp) {
-			++item_counter[item->index];
-
-			if (item->worker_index == worker_index) {
-				++removals;
-				rm = item;
-
-				if (prev != NULL) {
-					CK_SLIST_REMOVE_AFTER(prev, link);
-				} else {
-					CK_SLIST_REMOVE_HEAD(&ctx->item_list,
-					    link);
-				}
-			}
-
-			prev = item;
-		}
-
+		rm = test_remove_item(ctx, item_counter, &removals,
+		    worker_index);
 		epoch_exit_preempt(e, &et);
 
 		if (rm != NULL) {

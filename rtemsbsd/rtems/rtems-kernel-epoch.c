@@ -33,10 +33,11 @@
 #include <sys/types.h>
 #include <sys/kernel.h>
 #include <sys/epoch.h>
-#ifdef INVARIANTS
+#include <sys/mutex.h>
+#include <sys/sx.h>
 #include <sys/systm.h>
-#endif
 
+#include <machine/atomic.h>
 #include <machine/cpu.h>
 
 #include <rtems.h>
@@ -75,6 +76,8 @@ _bsd_epoch_init(epoch_t epoch, uintptr_t pcpu_record_offset, int flags)
 	ck_epoch_init(&epoch->e_epoch);
 	epoch->e_flags = flags;
 	epoch->e_pcpu_record_offset = pcpu_record_offset;
+	sx_init(&epoch->e_drain_sx, "epoch-drain-sx");
+	mtx_init(&epoch->e_drain_mtx, "epoch-drain-mtx", NULL, MTX_DEF);
 
 	cpu_count = rtems_scheduler_get_processor_maximum();
 
@@ -89,6 +92,7 @@ _bsd_epoch_init(epoch_t epoch, uintptr_t pcpu_record_offset, int flags)
 		TAILQ_INIT(__DEVOLATILE(struct epoch_tdlist *,
 		    &er->er_tdlist));
 		er->er_cpuid = cpu_index;
+		er->er_parent = epoch;
 	}
 
 	SLIST_INSERT_HEAD(&epoch_list, epoch, e_link);
@@ -380,3 +384,77 @@ _bsd_in_epoch(epoch_t epoch)
 	return (in);
 }
 #endif
+
+static void
+epoch_drain_cb(struct epoch_context *ctx)
+{
+	struct epoch *epoch =
+	    __containerof(ctx, struct epoch_record, er_drain_ctx)->er_parent;
+
+	if (atomic_fetchadd_int(&epoch->e_drain_count, -1) == 1) {
+		mtx_lock(&epoch->e_drain_mtx);
+		wakeup(epoch);
+		mtx_unlock(&epoch->e_drain_mtx);
+	}
+}
+
+#ifdef RTEMS_SMP
+static void
+epoch_call_drain_cb(void *arg)
+{
+	epoch_t epoch;
+	Per_CPU_Control *cpu;
+	struct epoch_record *er;
+
+	epoch = arg;
+	cpu = _Per_CPU_Get();
+	er = EPOCH_GET_RECORD(cpu, epoch);
+	epoch_call(epoch, &er->er_drain_ctx, epoch_drain_cb);
+}
+#endif
+
+void
+epoch_drain_callbacks(epoch_t epoch)
+{
+#ifdef RTEMS_SMP
+	uint32_t cpu_index;
+	uint32_t cpu_max;
+	rtems_id id;
+	rtems_status_code sc;
+#else
+	struct epoch_record *er;
+#endif
+
+	sx_xlock(&epoch->e_drain_sx);
+	mtx_lock(&epoch->e_drain_mtx);
+
+#ifdef RTEMS_SMP
+	cpu_max = rtems_scheduler_get_processor_maximum();
+
+	for (cpu_index = 0; cpu_index <= cpu_max; ++cpu_index) {
+		sc = rtems_scheduler_ident_by_processor(cpu_index, &id);
+		if (sc == RTEMS_SUCCESSFUL) {
+			epoch->e_drain_count++;
+		}
+	}
+
+	for (cpu_index = 0; cpu_index <= cpu_max; ++cpu_index) {
+		sc = rtems_scheduler_ident_by_processor(cpu_index, &id);
+		if (sc == RTEMS_SUCCESSFUL) {
+			_SMP_Unicast_action(cpu_index, epoch_call_drain_cb,
+			    epoch);
+		}
+	}
+#else
+	epoch->e_drain_count = 1;
+	er = EPOCH_GET_RECORD(0, epoch);
+	epoch_call(epoch, &er->er_drain_ctx, epoch_drain_cb);
+#endif
+
+	while (epoch->e_drain_count != 0) {
+		msleep(epoch, &epoch->e_drain_mtx, PZERO, "EDRAIN", 0);
+	}
+
+	mtx_unlock(&epoch->e_drain_mtx);
+	sx_xunlock(&epoch->e_drain_sx);
+}

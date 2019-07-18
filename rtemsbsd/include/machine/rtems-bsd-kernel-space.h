@@ -58,6 +58,10 @@
 #include <machine/rtems-bsd-version.h>
 #include <machine/rtems-bsd-kernel-namespace.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /* Assert */
 
 void rtems_bsd_assert_func(const char *file, int line, const char *func, const char *expr);
@@ -93,5 +97,9 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 #define	EDIRIOCTL	(-4)		/* do direct ioctl in GEOM */
 
 #define	EDOOFUS __ELASTERROR
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_KERNEL_SPACE_H_ */

@@ -331,20 +331,20 @@ struct nvme_controller {
 	offsetof(struct nvme_registers, reg)
 
 #define nvme_mmio_read_4(sc, reg)					       \
-	bus_space_read_4((sc)->bus_tag, (sc)->bus_handle,		       \
-	    nvme_mmio_offsetof(reg))
+	le32toh(bus_space_read_4((sc)->bus_tag, (sc)->bus_handle,	       \
+	    nvme_mmio_offsetof(reg)))
 
 #define nvme_mmio_write_4(sc, reg, val)					       \
 	bus_space_write_4((sc)->bus_tag, (sc)->bus_handle,		       \
-	    nvme_mmio_offsetof(reg), val)
+	    nvme_mmio_offsetof(reg), htole32(val))
 
 #define nvme_mmio_write_8(sc, reg, val)					       \
 	do {								       \
 		bus_space_write_4((sc)->bus_tag, (sc)->bus_handle,	       \
-		    nvme_mmio_offsetof(reg), val & 0xFFFFFFFF); 	       \
+		    nvme_mmio_offsetof(reg), htole32(val & 0xFFFFFFFF));       \
 		bus_space_write_4((sc)->bus_tag, (sc)->bus_handle,	       \
 		    nvme_mmio_offsetof(reg)+4,				       \
-		    (val & 0xFFFFFFFF00000000ULL) >> 32);		       \
+		    htole32((val & 0xFFFFFFFF00000000ULL) >> 32));	       \
 	} while (0);
 
 #define nvme_printf(ctrlr, fmt, args...)	\

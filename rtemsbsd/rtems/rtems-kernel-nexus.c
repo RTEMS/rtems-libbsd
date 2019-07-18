@@ -174,7 +174,10 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 	}
 
 	SET_FOREACH(nd, nexus) {
-		if (strcmp(device_get_name(child), nd->name) == 0
+		const char *name;
+
+		name = device_get_name(child);
+		if (name != NULL && strcmp(name, nd->name) == 0
 		    && device_get_unit(child) == nd->unit) {
 			if (nexus_get_start(nd, type, &start)) {
 				res = rman_reserve_resource(rm, start, end,

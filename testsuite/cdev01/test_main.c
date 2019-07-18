@@ -35,6 +35,7 @@
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -124,6 +125,9 @@ static void test_cdev(const char *path)
 	rv = kevent(kq, &change, 1, NULL, 0, timeout);
 	assert(rv == -1);
 	assert(errno == TEST_KQ_ERRNO);
+
+	rv = mmap(NULL, 1, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	assert(rv == 0);
 
 	rv = close(fd);
 	assert(rv == 0);

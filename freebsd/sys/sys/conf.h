@@ -209,8 +209,8 @@ struct cdevsw {
 	d_write_t		*d_write;
 	d_ioctl_t		*d_ioctl;
 	d_poll_t		*d_poll;
-#ifndef __rtems__
 	d_mmap_t		*d_mmap;
+#ifndef __rtems__
 	d_strategy_t		*d_strategy;
 	dumper_t		*d_dump;
 #endif /* __rtems__ */

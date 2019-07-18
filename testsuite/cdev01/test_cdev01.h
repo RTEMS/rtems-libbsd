@@ -42,7 +42,8 @@ typedef enum {
 	TEST_WRITEV,
 	TEST_POLL,
 	TEST_KQFILTER,
-	TEST_CLOSED
+	TEST_MMAP,
+	TEST_CLOSED,
 } test_state;
 
 void test_make_dev(test_state *state, const char *name);

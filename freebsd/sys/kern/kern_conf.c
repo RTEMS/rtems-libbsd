@@ -328,8 +328,8 @@ static struct cdevsw dead_cdevsw = {
 	.d_write =	dead_write,
 	.d_ioctl =	dead_ioctl,
 	.d_poll =	dead_poll,
-#ifndef __rtems__
 	.d_mmap =	dead_mmap,
+#ifndef __rtems__
 	.d_strategy =	dead_strategy,
 #endif /* __rtems__ */
 	.d_name =	"dead",
@@ -522,7 +522,6 @@ giant_kqfilter(struct cdev *dev, struct knote *kn)
 	return (retval);
 }
 
-#ifndef __rtems__
 static int
 giant_mmap(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr, int nprot,
     vm_memattr_t *memattr)
@@ -541,6 +540,7 @@ giant_mmap(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr, int nprot,
 	return (retval);
 }
 
+#ifndef __rtems__
 static int
 giant_mmap_single(struct cdev *dev, vm_ooffset_t *offset, vm_size_t size,
     vm_object_t *object, int nprot)
@@ -667,8 +667,8 @@ prep_cdevsw(struct cdevsw *devsw, int flags)
 		devsw->d_write = dead_write;
 		devsw->d_ioctl = dead_ioctl;
 		devsw->d_poll = dead_poll;
-#ifndef __rtems__
 		devsw->d_mmap = dead_mmap;
+#ifndef __rtems__
 		devsw->d_mmap_single = dead_mmap_single;
 		devsw->d_strategy = dead_strategy;
 		devsw->d_dump = dead_dump;
@@ -702,8 +702,8 @@ prep_cdevsw(struct cdevsw *devsw, int flags)
 	FIXUP(d_write,		no_write,	giant_write);
 	FIXUP(d_ioctl,		no_ioctl,	giant_ioctl);
 	FIXUP(d_poll,		no_poll,	giant_poll);
-#ifndef __rtems__
 	FIXUP(d_mmap,		no_mmap,	giant_mmap);
+#ifndef __rtems__
 	FIXUP(d_strategy,	no_strategy,	giant_strategy);
 #endif /* __rtems__ */
 	FIXUP(d_kqfilter,	no_kqfilter,	giant_kqfilter);

@@ -387,6 +387,43 @@ devfs_imfs_kqfilter(rtems_libio_t *iop, struct knote *kn)
 	return error;
 }
 
+static int
+devfs_imfs_mmap(rtems_libio_t *iop, void **addr, size_t len, int prot,
+    off_t off)
+{
+	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
+	struct file *fp = rtems_bsd_iop_to_fp(iop);
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fpop;
+	struct cdevsw *dsw;
+	int error, ref;
+
+	if (td != 0) {
+		if (cdev == NULL) {
+			error = ENXIO;
+			goto err;
+		}
+		if (cdev->si_flags & SI_ALIAS) {
+			cdev = cdev->si_parent;
+		}
+		dsw = dev_refthread(cdev, &ref);
+		if (dsw == NULL) {
+			error = ENXIO;
+			goto err;
+		}
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
+		error = dsw->d_mmap( cdev, off, (vm_paddr_t *) addr, prot, VM_MEMATTR_DEFAULT);
+		td->td_fpop = fpop;
+		dev_relthread(cdev, ref);
+	} else {
+		error = ENOMEM;
+	}
+
+err:
+	return rtems_bsd_error_to_status_and_errno(error);
+}
+
 static const rtems_filesystem_file_handlers_r devfs_imfs_handlers = {
 	.open_h = devfs_imfs_open,
 	.close_h = devfs_imfs_close,
@@ -403,6 +440,7 @@ static const rtems_filesystem_file_handlers_r devfs_imfs_handlers = {
 	.kqfilter_h = devfs_imfs_kqfilter,
 	.readv_h = devfs_imfs_readv,
 	.writev_h = devfs_imfs_writev,
+	.mmap_h = devfs_imfs_mmap,
 };
 
 static const IMFS_node_control devfs_imfs_control = IMFS_GENERIC_INITIALIZER(

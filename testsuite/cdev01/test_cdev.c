@@ -30,8 +30,10 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
+#include <machine/vm.h>
 #include <sys/types.h>
 #include <sys/conf.h>
+#include <sys/mman.h>
 
 #include <rtems/seterr.h>
 
@@ -46,6 +48,7 @@ static	d_write_t	testwrite;
 static	d_ioctl_t	testioctl;
 static	d_poll_t	testpoll;
 static	d_kqfilter_t	testkqfilter;
+static	d_mmap_t	testmmap;
 
 static struct cdevsw test_cdevsw = {
 	.d_version =	D_VERSION,
@@ -59,6 +62,7 @@ static struct cdevsw test_cdevsw = {
 	.d_ioctl =	testioctl,
 	.d_poll =	testpoll,
 	.d_kqfilter =	testkqfilter,
+	.d_mmap =	testmmap,
 };
 
 static	int
@@ -77,7 +81,7 @@ testclose(struct cdev *dev, int fflag, int devtype, struct thread *td)
 {
 	test_state *state = dev->si_drv1;
 
-	assert(*state == TEST_KQFILTER);
+	assert(*state == TEST_MMAP);
 	*state = TEST_CLOSED;
 
 	return 0;
@@ -146,6 +150,21 @@ testkqfilter(struct cdev *dev, struct knote *kn)
 	*state = TEST_KQFILTER;
 
 	return TEST_KQ_ERRNO;
+}
+
+static int
+testmmap(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr,
+         int nprot, vm_memattr_t *memattr)
+{
+	test_state *state = dev->si_drv1;
+
+	assert(paddr != NULL);
+	assert(memattr == VM_MEMATTR_DEFAULT);
+	assert(nprot == (PROT_READ | PROT_WRITE));
+	assert(*state == TEST_KQFILTER);
+	*state = TEST_MMAP;
+
+	return 0;
 }
 
 void

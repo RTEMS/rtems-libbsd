@@ -1130,9 +1130,11 @@ int	kernel_sysctlbyname(struct thread *td, char *name, void *old,
 	    size_t *oldlenp, const void *newp, size_t newlen, size_t *retval,
 #endif /* __rtems__ */
 	    int flags);
+#ifndef __rtems__
 int	userland_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 	    size_t *oldlenp, int inkernel, void *new, size_t newlen,
 	    size_t *retval, int flags);
+#endif /* __rtems__ */
 int	sysctl_find_oid(int *name, u_int namelen, struct sysctl_oid **noid,
 	    int *nindx, struct sysctl_req *req);
 void	sysctl_wlock(void);

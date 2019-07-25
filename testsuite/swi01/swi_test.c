@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2012 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2012, 2019 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
- *  Obere Lagerstr. 30
+ *  Dornierstr. 4
  *  82178 Puchheim
  *  Germany
  *  <rtems@embedded-brains.de>
@@ -37,11 +37,11 @@
 #include <unistd.h>
 
 #include <sys/types.h>
-#include <sys/systm.h>
-
 #include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/interrupt.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
 
 #define SWI_TEST_THREAD_PRIO (0)
 
@@ -194,6 +194,31 @@ void swi_test_error_has_allready_exclusive()
 	assert(argument == HANDLER_NOT_VISITED);
 }
 
+static void
+ich_func(void *arg)
+{
+	int *invocations;
+
+	invocations = arg;
+	++(*invocations);
+}
+
+static void
+test_config_intrhook_establish(void)
+{
+	int invocations;
+	struct intr_config_hook	hook = {
+		.ich_func = ich_func,
+		.ich_arg = &invocations
+	};
+
+	printf("== Test config_intrhook_establish().\n");
+
+	invocations = 0;
+	config_intrhook_establish(&hook);
+	assert(invocations == 1);
+}
+
 void swi_test(void)
 {
 	swi_test_normal_handler();
@@ -204,5 +229,6 @@ void swi_test(void)
 	swi_test_error_name_null();
 	swi_test_error_handler_null();
 	swi_test_error_has_allready_exclusive();
+	test_config_intrhook_establish();
 }
 

@@ -1226,6 +1226,10 @@
 #define	fdt_immr_va _bsd_fdt_immr_va
 #define	fdt_is_compatible_strict _bsd_fdt_is_compatible_strict
 #define	fdt_parent_addr_cells _bsd_fdt_parent_addr_cells
+#define	fdt_pinctrl_configure _bsd_fdt_pinctrl_configure
+#define	fdt_pinctrl_configure_by_name _bsd_fdt_pinctrl_configure_by_name
+#define	fdt_pinctrl_configure_tree _bsd_fdt_pinctrl_configure_tree
+#define	fdt_pinctrl_register _bsd_fdt_pinctrl_register
 #define	fdt_regsize _bsd_fdt_regsize
 #define	fib4_free_nh_ext _bsd_fib4_free_nh_ext
 #define	fib4_lookup_nh_basic _bsd_fib4_lookup_nh_basic
@@ -4965,6 +4969,7 @@
 #define	t_functions _bsd_t_functions
 #define	t_functions_inited _bsd_t_functions_inited
 #define	ti_am335x_clk_devmap _bsd_ti_am335x_clk_devmap
+#define	ti_am335x_pinmux_dev _bsd_ti_am335x_pinmux_dev
 #define	tick _bsd_tick
 #define	ticket_altqs_active _bsd_ticket_altqs_active
 #define	ticket_altqs_inactive _bsd_ticket_altqs_inactive
@@ -4979,6 +4984,10 @@
 #define	_timeout_task_init _bsd__timeout_task_init
 #define	timevaladd _bsd_timevaladd
 #define	timevalsub _bsd_timevalsub
+#define	ti_pinmux_padconf_get _bsd_ti_pinmux_padconf_get
+#define	ti_pinmux_padconf_get_gpiomode _bsd_ti_pinmux_padconf_get_gpiomode
+#define	ti_pinmux_padconf_set _bsd_ti_pinmux_padconf_set
+#define	ti_pinmux_padconf_set_gpiomode _bsd_ti_pinmux_padconf_set_gpiomode
 #define	ti_prcm_clk_disable _bsd_ti_prcm_clk_disable
 #define	ti_prcm_clk_enable _bsd_ti_prcm_clk_enable
 #define	ti_prcm_clk_get_source_freq _bsd_ti_prcm_clk_get_source_freq

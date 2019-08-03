@@ -49,6 +49,10 @@ GENERATED += $(LOCAL_INC)/iicbus_if.h
 GENERATED += $(LOCAL_SRC)/iicbus_if.c
 GENERATED += $(LOCAL_INC)/fdt_pinctrl_if.h
 GENERATED += $(LOCAL_SRC)/fdt_pinctrl_if.c
+GENERATED += $(LOCAL_INC)/clknode_if.h
+GENERATED += $(LOCAL_SRC)/clknode_if.c
+GENERATED += $(LOCAL_INC)/hdmi_if.h
+GENERATED += $(LOCAL_SRC)/hdmi_if.c
 GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
 GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
 
@@ -251,6 +255,28 @@ $(LOCAL_SRC)/fdt_pinctrl_if.c: $(FREEBSD_SRC)/sys/dev/fdt/fdt_pinctrl_if.m
 	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
 	    -e 's|#include "fdt_pinctrl_if.h"|#include <rtems/bsd/local/fdt_pinctrl_if.h>|'
 	mv fdt_pinctrl_if.c $@
+
+$(LOCAL_INC)/clknode_if.h: $(FREEBSD_SRC)/sys/dev/extres/clk/clknode_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv clknode_if.h $@
+
+$(LOCAL_SRC)/clknode_if.c: $(FREEBSD_SRC)/sys/dev/extres/clk/clknode_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	sed -i clknode_if.c \
+	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
+	    -e 's|#include "clknode_if.h"|#include <rtems/bsd/local/clknode_if.h>|'
+	mv clknode_if.c $@
+
+$(LOCAL_INC)/hdmi_if.h: $(FREEBSD_SRC)/sys/dev/hdmi/hdmi_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv hdmi_if.h $@
+
+$(LOCAL_SRC)/hdmi_if.c: $(FREEBSD_SRC)/sys/dev/hdmi/hdmi_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	sed -i hdmi_if.c \
+	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
+	    -e 's|#include "hdmi_if.h"|#include <rtems/bsd/local/hdmi_if.h>|'
+	mv hdmi_if.c $@
 
 $(LOCAL_SRC)/gpio_if.c: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c

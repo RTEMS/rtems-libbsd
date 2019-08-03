@@ -805,6 +805,8 @@ class display(builder.Module):
                 'sys/sys/fbio.h',
                 'sys/sys/consio.h',
                 'sys/sys/terminal.h',
+                'sys/arm/ti/am335x/am335x_lcd.h',
+                'sys/arm/ti/am335x/am335x_pwm.h',
             ]
         )
         self.addKernelSpaceSourceFiles(
@@ -816,6 +818,9 @@ class display(builder.Module):
                 'sys/dev/videomode/videomode.c',
                 'sys/dev/fb/fb.c',
                 'sys/dev/fb/fbd.c',
+                'sys/arm/ti/am335x/am335x_lcd.c',
+                'sys/arm/ti/am335x/am335x_pwmss.c',
+                'sys/arm/ti/am335x/am335x_ecap.c',
             ],
             mm.generator['source']()
         )

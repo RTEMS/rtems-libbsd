@@ -56,6 +56,8 @@ SYSINIT_DRIVER_REFERENCE(simplebus, ofwbus);
 SYSINIT_DRIVER_REFERENCE(ti_scm, simplebus);
 SYSINIT_DRIVER_REFERENCE(ti_pinmux, simplebus);
 SYSINIT_DRIVER_REFERENCE(am335x_prcm, simplebus);
+SYSINIT_DRIVER_REFERENCE(am335x_pwmss, simplebus);
+SYSINIT_DRIVER_REFERENCE(am335x_lcd, simplebus);
 SYSINIT_DRIVER_REFERENCE(usbss, simplebus);
 SYSINIT_DRIVER_REFERENCE(musbotg, usbss);
 SYSINIT_DRIVER_REFERENCE(sdhci_ti, simplebus);

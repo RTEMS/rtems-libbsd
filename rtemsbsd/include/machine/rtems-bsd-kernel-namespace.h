@@ -46,6 +46,8 @@
 #define	altq_remove _bsd_altq_remove
 #define	altq_remove_queue _bsd_altq_remove_queue
 #define	altqs_inactive_open _bsd_altqs_inactive_open
+#define	am335x_pwm_config_ecap _bsd_am335x_pwm_config_ecap
+#define	am335x_pwmss_driver _bsd_am335x_pwmss_driver
 #define	arp_announce_ifaddr _bsd_arp_announce_ifaddr
 #define	arp_ifinit _bsd_arp_ifinit
 #define	arprequest _bsd_arprequest

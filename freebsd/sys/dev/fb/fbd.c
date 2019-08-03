@@ -257,11 +257,13 @@ fbd_register(struct fb_info* info)
 	err = fb_init(entry, framebuffer_dev_unit++);
 	if (err)
 		return (err);
+#ifndef __rtems__
 	if (first) {
 		err = vt_fb_attach(info);
 		if (err)
 			return (err);
 	}
+#endif /* __rtems__ */
 
 	return (0);
 }
@@ -274,8 +276,10 @@ fbd_unregister(struct fb_info* info)
 	LIST_FOREACH_SAFE(entry, &fb_list_head, fb_list, tmp) {
 		if (entry->fb_info == info) {
 			LIST_REMOVE(entry, fb_list);
+#ifndef __rtems__
 			if (LIST_EMPTY(&fb_list_head))
 				vt_fb_detach(info);
+#endif /* __rtems__ */
 			free(entry, M_DEVBUF);
 			return (0);
 		}

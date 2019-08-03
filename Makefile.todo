@@ -53,6 +53,8 @@ GENERATED += $(LOCAL_INC)/clknode_if.h
 GENERATED += $(LOCAL_SRC)/clknode_if.c
 GENERATED += $(LOCAL_INC)/hdmi_if.h
 GENERATED += $(LOCAL_SRC)/hdmi_if.c
+GENERATED += $(LOCAL_INC)/fb_if.h
+GENERATED += $(LOCAL_SRC)/fb_if.c
 GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
 GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
 
@@ -277,6 +279,17 @@ $(LOCAL_SRC)/hdmi_if.c: $(FREEBSD_SRC)/sys/dev/hdmi/hdmi_if.m
 	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
 	    -e 's|#include "hdmi_if.h"|#include <rtems/bsd/local/hdmi_if.h>|'
 	mv hdmi_if.c $@
+
+$(LOCAL_INC)/fb_if.h: $(FREEBSD_SRC)/sys/dev/fb/fb_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv fb_if.h $@
+
+$(LOCAL_SRC)/fb_if.c: $(FREEBSD_SRC)/sys/dev/fb/fb_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	sed -i fb_if.c \
+	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
+	    -e 's|#include "fb_if.h"|#include <rtems/bsd/local/fb_if.h>|'
+	mv fb_if.c $@
 
 $(LOCAL_SRC)/gpio_if.c: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c

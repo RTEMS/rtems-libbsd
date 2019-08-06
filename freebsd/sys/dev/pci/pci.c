@@ -80,6 +80,14 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/pcib_if.h>
 #include <rtems/bsd/local/pci_if.h>
 
+#ifdef __rtems__
+#undef bus_read_4
+#define bus_read_4(r, o)						\
+    le32toh(bus_space_read_4((r)->r_bustag, (r)->r_bushandle, o))
+#undef bus_write_4
+#define bus_write_4(r, o, v)					\
+    bus_space_write_4((r)->r_bustag, (r)->r_bushandle, o, htole32(v))
+#endif /* __rtems__ */
 #define	PCIR_IS_BIOS(cfg, reg)						\
 	(((cfg)->hdrtype == PCIM_HDRTYPE_NORMAL && reg == PCIR_BIOS) ||	\
 	 ((cfg)->hdrtype == PCIM_HDRTYPE_BRIDGE && reg == PCIR_BIOS_1))

@@ -394,4 +394,5 @@ static driver_t nexus_driver = {
 
 static devclass_t nexus_devclass;
 
-DRIVER_MODULE(nexus, root, nexus_driver, nexus_devclass, 0, 0);
+EARLY_DRIVER_MODULE_ORDERED(nexus, root, nexus_driver, nexus_devclass, 0, 0,
+	SI_ORDER_FIRST, BUS_PASS_BUS + BUS_PASS_ORDER_FIRST);

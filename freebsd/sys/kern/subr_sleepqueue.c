@@ -465,12 +465,13 @@ sleepq_set_timeout_sbt(void *wchan, sbintime_t sbt, sbintime_t pr,
 	sbintime_t sbt_per_tick;
 	uint64_t expire;
 
-	cpu_self = _Thread_Dispatch_disable();
+	_ISR_lock_ISR_disable(&lock_context);
+	cpu_self = _Thread_Dispatch_disable_critical(&lock_context);
 	executing = _Per_CPU_Get_executing(cpu_self);
 	BSD_ASSERT(_Watchdog_Get_state(&executing->Timer.Watchdog) ==
 	    WATCHDOG_INACTIVE);
 
-	_ISR_lock_ISR_disable_and_acquire(&executing->Timer.Lock, &lock_context);
+	_ISR_lock_Acquire(&executing->Timer.Lock, &lock_context);
 
 	header = &cpu_self->Watchdog.Header[PER_CPU_WATCHDOG_TICKS];
 	executing->Timer.header = header;

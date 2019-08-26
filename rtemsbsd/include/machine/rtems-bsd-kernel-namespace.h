@@ -415,6 +415,7 @@
 #define	bus_dma_tag_create _bsd_bus_dma_tag_create
 #define	bus_dma_tag_destroy _bsd_bus_dma_tag_destroy
 #define	bus_enumerate_hinted_children _bsd_bus_enumerate_hinted_children
+#define	bus_free_resource _bsd_bus_free_resource
 #define	bus_generic_activate_resource _bsd_bus_generic_activate_resource
 #define	bus_generic_add_child _bsd_bus_generic_add_child
 #define	bus_generic_adjust_resource _bsd_bus_generic_adjust_resource
@@ -2448,6 +2449,7 @@
 #define	ipsec_setspidx_inpcb _bsd_ipsec_setspidx_inpcb
 #define	ipsec_updateid _bsd_ipsec_updateid
 #define	ipsec_updatereplay _bsd_ipsec_updatereplay
+#define	ipsec_warn_interval _bsd_ipsec_warn_interval
 #define	ip_slowtimo _bsd_ip_slowtimo
 #define	ip_srcroute _bsd_ip_srcroute
 #define	ipstat _bsd_ipstat
@@ -4464,6 +4466,7 @@
 #define	SHA512_Update _bsd_SHA512_Update
 #define	simplebus_add_device _bsd_simplebus_add_device
 #define	simplebus_driver _bsd_simplebus_driver
+#define	simplebus_fill_ranges _bsd_simplebus_fill_ranges
 #define	simplebus_init _bsd_simplebus_init
 #define	simplebus_setup_dinfo _bsd_simplebus_setup_dinfo
 #define	SipHash_End _bsd_SipHash_End
@@ -4506,8 +4509,6 @@
 #define	Skein_512_Output _bsd_Skein_512_Output
 #define	Skein_512_Process_Block _bsd_Skein_512_Process_Block
 #define	Skein_512_Update _bsd_Skein_512_Update
-#define	Skein_Get64_LSB_First _bsd_Skein_Get64_LSB_First
-#define	Skein_Put64_LSB_First _bsd_Skein_Put64_LSB_First
 #define	skipjack_backwards _bsd_skipjack_backwards
 #define	skipjack_forwards _bsd_skipjack_forwards
 #define	sl_compress_init _bsd_sl_compress_init
@@ -4767,6 +4768,7 @@
 #define	sysctl_remove_name _bsd_sysctl_remove_name
 #define	sysctl_remove_oid _bsd_sysctl_remove_oid
 #define	sysctl_rename_oid _bsd_sysctl_rename_oid
+#define	sysctl_sec_to_timeval _bsd_sysctl_sec_to_timeval
 #define	sysctl___security _bsd_sysctl___security
 #define	sysctl___sysctl _bsd_sysctl___sysctl
 #define	sysctl_unregister_oid _bsd_sysctl_unregister_oid

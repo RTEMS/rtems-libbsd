@@ -296,6 +296,7 @@ void          __mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *);
 #define	MNT_NOCLUSTERW	0x0000000080000000ULL /* disable cluster write */
 #define	MNT_SUJ		0x0000000100000000ULL /* using journaled soft updates */
 #define	MNT_AUTOMOUNTED	0x0000000200000000ULL /* mounted by automountd(8) */
+#define	MNT_UNTRUSTED	0x0000000800000000ULL /* filesys metadata untrusted */
 
 /*
  * NFS export related mount flags.
@@ -333,7 +334,8 @@ void          __mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *);
 			MNT_NOCLUSTERW	| MNT_SUIDDIR	| MNT_SOFTDEP	| \
 			MNT_IGNORE	| MNT_EXPUBLIC	| MNT_NOSYMFOLLOW | \
 			MNT_GJOURNAL	| MNT_MULTILABEL | MNT_ACLS	| \
-			MNT_NFS4ACLS	| MNT_AUTOMOUNTED | MNT_VERIFIED)
+			MNT_NFS4ACLS	| MNT_AUTOMOUNTED | MNT_VERIFIED | \
+			MNT_UNTRUSTED)
 
 /* Mask of flags that can be updated. */
 #define	MNT_UPDATEMASK (MNT_NOSUID	| MNT_NOEXEC	| \
@@ -342,7 +344,7 @@ void          __mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *);
 			MNT_NOSYMFOLLOW	| MNT_IGNORE	| \
 			MNT_NOCLUSTERR	| MNT_NOCLUSTERW | MNT_SUIDDIR	| \
 			MNT_ACLS	| MNT_USER	| MNT_NFS4ACLS	| \
-			MNT_AUTOMOUNTED)
+			MNT_AUTOMOUNTED | MNT_UNTRUSTED)
 
 /*
  * External filesystem command modifier flags.
@@ -396,6 +398,7 @@ void          __mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *);
 #define	MNTK_MARKER		0x00001000
 #define	MNTK_UNMAPPED_BUFS	0x00002000
 #define	MNTK_USES_BCACHE	0x00004000 /* FS uses the buffer cache. */
+#define	MNTK_TEXT_REFS		0x00008000 /* Keep use ref for text */
 #define MNTK_NOASYNC	0x00800000	/* disable async */
 #define MNTK_UNMOUNT	0x01000000	/* unmount in progress */
 #define	MNTK_MWAIT	0x02000000	/* waiting for unmount to finish */

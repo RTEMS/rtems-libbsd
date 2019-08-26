@@ -152,6 +152,7 @@ struct devreq {
 
 #include <sys/eventhandler.h>
 #include <sys/kobj.h>
+#include <sys/systm.h>
 
 /**
  * devctl hooks.  Typically one should use the devctl_notify
@@ -808,16 +809,24 @@ DECLARE_MODULE(name##_##busname, name##_##busname##_mod,		\
 static __inline type varp ## _get_ ## var(device_t dev)			\
 {									\
 	uintptr_t v;							\
-	BUS_READ_IVAR(device_get_parent(dev), dev,			\
+	int e;								\
+	e = BUS_READ_IVAR(device_get_parent(dev), dev,			\
 	    ivarp ## _IVAR_ ## ivar, &v);				\
+	KASSERT(e == 0, ("%s failed for %s on bus %s, error = %d",	\
+	    __func__, device_get_nameunit(dev),				\
+	    device_get_nameunit(device_get_parent(dev)), e));		\
 	return ((type) v);						\
 }									\
 									\
 static __inline void varp ## _set_ ## var(device_t dev, type t)		\
 {									\
 	uintptr_t v = (uintptr_t) t;					\
-	BUS_WRITE_IVAR(device_get_parent(dev), dev,			\
+	int e;								\
+	e = BUS_WRITE_IVAR(device_get_parent(dev), dev,			\
 	    ivarp ## _IVAR_ ## ivar, v);				\
+	KASSERT(e == 0, ("%s failed for %s on bus %s, error = %d",	\
+	    __func__, device_get_nameunit(dev),				\
+	    device_get_nameunit(device_get_parent(dev)), e));		\
 }
 #else /* __rtems__ */
 #define __BUS_ACCESSOR(varp, var, ivarp, ivar, type)			\

@@ -1687,7 +1687,7 @@ pipe_poll(struct file *fp, int events, struct ucred *active_cred,
 	    (POLLIN | POLLINIGNEOF | POLLPRI | POLLRDNORM | POLLRDBAND);
 #ifndef __rtems__
 	if (rpipe->pipe_state & PIPE_NAMED && fp->f_flag & FREAD && levents &&
-	    fp->f_seqcount == rpipe->pipe_wgen)
+	    fp->f_pipegen == rpipe->pipe_wgen)
 #else /* __rtems__ */
 	if (rpipe->pipe_state & PIPE_NAMED && rtems_bsd_libio_flags_to_fflag(fp->f_io.flags) & FREAD && levents)
 #endif /* __rtems__ */

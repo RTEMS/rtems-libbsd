@@ -99,6 +99,16 @@ struct hwmod ti_hwmods[] = {
 	{NULL,		0}
 };
 
+static inline int
+ti_get_hwmods_prop(phandle_t node, void **name)
+{
+	int len;
+
+	if ((len = OF_getprop_alloc(node, "ti,hwmods", name)) > 0)
+		return (len);
+	return (OF_getprop_alloc(OF_parent(node), "ti,hwmods", name));
+}
+
 clk_ident_t
 ti_hwmods_get_clock(device_t dev)
 {
@@ -112,7 +122,7 @@ ti_hwmods_get_clock(device_t dev)
 	if ((node = ofw_bus_get_node(dev)) == 0)
 		return (INVALID_CLK_IDENT);
 
-	if ((len = OF_getprop_alloc(node, "ti,hwmods", (void**)&name)) <= 0)
+	if ((len = ti_get_hwmods_prop(node, (void **)&name)) <= 0)
 		return (INVALID_CLK_IDENT);
 
 	buf = name;
@@ -150,7 +160,7 @@ int ti_hwmods_contains(device_t dev, const char *hwmod)
 	if ((node = ofw_bus_get_node(dev)) == 0)
 		return (0);
 
-	if ((len = OF_getprop_alloc(node, "ti,hwmods", (void**)&name)) <= 0)
+	if ((len = ti_get_hwmods_prop(node, (void **)&name)) <= 0)
 		return (0);
 
 	buf = name;
@@ -184,7 +194,7 @@ ti_hwmods_get_unit(device_t dev, const char *hwmod)
 	if ((node = ofw_bus_get_node(dev)) == 0)
 		return (0);
 
-	if ((len = OF_getprop_alloc(node, "ti,hwmods", (void**)&name)) <= 0)
+	if ((len = ti_get_hwmods_prop(node, (void **)&name)) <= 0)
 		return (0);
 
 	buf = name;

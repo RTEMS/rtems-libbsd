@@ -825,9 +825,7 @@ _intr_drain(int irq)
 	thread_unlock(td);
 	return;
 }
-#endif /* __rtems__ */
 
-#ifndef __rtems__
 int
 intr_event_remove_handler(void *cookie)
 {
@@ -909,7 +907,6 @@ intr_event_remove_handler(void *cookie)
 	free(handler, M_ITHREAD);
 	return (0);
 }
-#endif /* __rtems__ */
 
 int
 intr_event_suspend_handler(void *cookie)
@@ -953,6 +950,7 @@ intr_event_resume_handler(void *cookie)
 	mtx_unlock(&ie->ie_lock);
 	return (0);
 }
+#endif /* __rtems__ */
 
 static int
 intr_event_schedule_thread(struct intr_event *ie)

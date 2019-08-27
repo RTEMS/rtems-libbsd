@@ -72,12 +72,14 @@ crypto_onetimeauth_poly1305_statebytes(void)
     return sizeof(crypto_onetimeauth_poly1305_state);
 }
 
+#ifndef __rtems__
 void
 crypto_onetimeauth_poly1305_keygen(
     unsigned char k[crypto_onetimeauth_poly1305_KEYBYTES])
 {
     randombytes_buf(k, crypto_onetimeauth_poly1305_KEYBYTES);
 }
+#endif /* __rtems__ */
 
 int
 _crypto_onetimeauth_poly1305_pick_best_implementation(void)

@@ -492,7 +492,6 @@ class base(builder.Module):
                 'sys/kern/subr_hints.c',
                 'sys/kern/subr_kobj.c',
                 'sys/kern/subr_lock.c',
-                'sys/kern/subr_module.c',
                 'sys/kern/subr_pcpu.c',
                 'sys/kern/subr_prf.c',
                 'sys/kern/subr_rman.c',

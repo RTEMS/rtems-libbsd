@@ -1950,6 +1950,7 @@ tty_ioctl(struct tty *tp, u_long cmd, void *data, int fflag, struct thread *td)
 	return (error);
 }
 
+#ifndef __rtems__
 dev_t
 tty_udev(struct tty *tp)
 {
@@ -1959,6 +1960,7 @@ tty_udev(struct tty *tp)
 	else
 		return (NODEV);
 }
+#endif /* __rtems__ */
 
 int
 tty_checkoutq(struct tty *tp)
@@ -2127,7 +2129,6 @@ ttyhook_unregister(struct tty *tp)
 	/* Maybe deallocate the TTY as well. */
 	tty_rel_free(tp);
 }
-#endif /* __rtems__ */
 
 /*
  * /dev/console handling.
@@ -2182,14 +2183,11 @@ static struct cdevsw ttyconsdev_cdevsw = {
 	.d_ioctl	= ttydev_ioctl,
 	.d_kqfilter	= ttydev_kqfilter,
 	.d_poll		= ttydev_poll,
-#ifndef __rtems__
 	.d_mmap		= ttydev_mmap,
-#endif /* __rtems__ */
 	.d_name		= "ttyconsdev",
 	.d_flags	= D_TTY,
 };
 
-#ifndef __rtems__
 static void
 ttyconsdev_init(void *unused __unused)
 {

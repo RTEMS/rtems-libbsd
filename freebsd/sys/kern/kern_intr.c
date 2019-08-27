@@ -815,9 +815,7 @@ _intr_drain(int irq)
 	thread_unlock(td);
 	return;
 }
-#endif /* __rtems__ */
 
-#ifndef __rtems__
 int
 intr_event_remove_handler(void *cookie)
 {

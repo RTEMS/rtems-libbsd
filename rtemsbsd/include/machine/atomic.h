@@ -1478,6 +1478,27 @@ atomic_readandclear_long(volatile long *p)
 }
 
 static inline long
+atomic_load_long(volatile long *p)
+{
+	long tmp;
+
+#if defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_ATOMIC)
+	std::atomic_long *q =
+	    reinterpret_cast<std::atomic_long *>(const_cast<long *>(p));
+
+	tmp = q->load(std::memory_order_relaxed);
+#elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
+	atomic_long *q = (atomic_long *)RTEMS_DEVOLATILE(long *, p);
+
+	tmp = atomic_load_explicit(q, memory_order_relaxed);
+#else
+	tmp = *p;
+#endif
+
+	return (tmp);
+}
+
+static inline long
 atomic_load_acq_long(volatile long *p)
 {
 	long tmp;

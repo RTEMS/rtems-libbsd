@@ -4205,6 +4205,7 @@ pf_load(void)
 	return (0);
 }
 
+#ifndef __rtems__
 static void
 pf_unload_vnet(void)
 {
@@ -4241,6 +4242,7 @@ pf_unload_vnet(void)
 	if (IS_DEFAULT_VNET(curvnet))
 		pf_mtag_cleanup();
 }
+#endif /* __rtems__ */
 
 static void
 pf_unload(void)
@@ -4273,6 +4275,7 @@ vnet_pf_init(void *unused __unused)
 VNET_SYSINIT(vnet_pf_init, SI_SUB_PROTO_FIREWALL, SI_ORDER_THIRD, 
     vnet_pf_init, NULL);
 
+#ifndef __rtems__
 static void
 vnet_pf_uninit(const void *unused __unused)
 {
@@ -4282,6 +4285,7 @@ vnet_pf_uninit(const void *unused __unused)
 SYSUNINIT(pf_unload, SI_SUB_PROTO_FIREWALL, SI_ORDER_SECOND, pf_unload, NULL);
 VNET_SYSUNINIT(vnet_pf_uninit, SI_SUB_PROTO_FIREWALL, SI_ORDER_THIRD,
     vnet_pf_uninit, NULL);
+#endif /* __rtems__ */
 
 
 static int

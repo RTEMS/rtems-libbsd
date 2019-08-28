@@ -815,7 +815,6 @@ class display(builder.Module):
                 'sys/dev/videomode/edid.c',
                 'sys/dev/videomode/vesagtf.c',
                 'sys/dev/videomode/videomode.c',
-                'sys/dev/fb/fb.c',
                 'sys/dev/fb/fbd.c',
                 'sys/arm/ti/am335x/am335x_lcd.c',
                 'sys/arm/ti/am335x/am335x_pwmss.c',

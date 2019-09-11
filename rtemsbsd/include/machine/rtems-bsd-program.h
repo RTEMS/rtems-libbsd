@@ -107,7 +107,10 @@ void *
 rtems_bsd_program_reallocf(void *ptr, size_t size);
 
 char *
-rtems_bsd_program_strdup(const char *s1);
+rtems_bsd_program_strdup(const char *s);
+
+char *
+rtems_bsd_program_strndup(const char *s, size_t size);
 
 int
 rtems_bsd_program_vasprintf(char **strp, const char *fmt, va_list ap);
@@ -177,7 +180,11 @@ rtems_bsd_program_free(void *ptr);
 #endif
 
 #ifndef RTEMS_BSD_PROGRAM_NO_STRDUP_WRAP
-  #define strdup(s1) rtems_bsd_program_strdup(s1)
+  #define strdup(s) rtems_bsd_program_strdup(s)
+#endif
+
+#ifndef RTEMS_BSD_PROGRAM_NO_STRNDUP_WRAP
+  #define strndup(s, size) rtems_bsd_program_strndup(s, size)
 #endif
 
 #ifndef RTEMS_BSD_PROGRAM_NO_VASPRINTF_WRAP

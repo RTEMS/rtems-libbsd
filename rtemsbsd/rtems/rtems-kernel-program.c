@@ -47,6 +47,7 @@
 
 #undef printf
 #define RTEMS_BSD_PROGRAM_NO_STRDUP_WRAP
+#define RTEMS_BSD_PROGRAM_NO_STRNDUP_WRAP
 #include <machine/rtems-bsd-program.h>
 
 struct rtems_bsd_program_control *

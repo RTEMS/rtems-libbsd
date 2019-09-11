@@ -52,12 +52,13 @@
 
 struct alloc_ctx {
 	enum alloc_type {
-		ALLOC_MALLOC = 0,
-		ALLOC_CALLOC = 1,
-		ALLOC_REALLOC = 2,
-		ALLOC_STRDUP = 3,
-		ALLOC_ASPRINTF = 4,
-		ALLOC_LAST = 5,
+		ALLOC_MALLOC,
+		ALLOC_CALLOC,
+		ALLOC_REALLOC,
+		ALLOC_STRDUP,
+		ALLOC_STRNDUP,
+		ALLOC_ASPRINTF,
+		ALLOC_LAST
 	} type;
 	unsigned free;
 #define ALLOC_FREE_NONE		0x0
@@ -511,8 +512,25 @@ call_alloc(void *ctx)
 		break;
 	case ALLOC_STRDUP:
 		first = strdup(teststring);
+		assert(first != NULL);
+		assert(strcmp(first, teststring) == 0);
 		second = strdup(teststring);
+		assert(second != NULL);
+		assert(strcmp(second, teststring) == 0);
 		third = strdup(teststring);
+		assert(third != NULL);
+		assert(strcmp(third, teststring) == 0);
+		break;
+	case ALLOC_STRNDUP:
+		first = strndup(teststring, 1);
+		assert(first != NULL);
+		assert(strncmp(first, "t", 1) == 0);
+		second = strndup(teststring, 2);
+		assert(second != NULL);
+		assert(strncmp(second, "te", 2) == 0);
+		third = strndup(teststring, 4);
+		assert(third != NULL);
+		assert(strcmp(third, teststring) == 0);
 		break;
 	case ALLOC_ASPRINTF:
 		asprintf(&first, "a number %d", 0x123456);

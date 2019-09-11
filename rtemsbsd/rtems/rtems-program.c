@@ -546,18 +546,32 @@ rtems_bsd_program_reallocf(void *ptr, size_t size)
 }
 
 char *
-rtems_bsd_program_strdup(const char *s1)
+rtems_bsd_program_strdup(const char *s)
 {
-	size_t size = strlen(s1) + 1; /* add one for null termination */
-	char *item;
+	size_t size;
+	void *s2;
 
-	item = rtems_bsd_program_alloc(size, NULL);
-
-	if (item != NULL) {
-		memcpy(item, s1, size);
+	size = strlen(s) + 1;
+	s2 = rtems_bsd_program_alloc(size, NULL);
+	if (s2 == NULL) {
+		return (NULL);
 	}
 
-	return item;
+	return (memcpy(s2, s, size));
+}
+
+char *
+rtems_bsd_program_strndup(const char *s, size_t size)
+{
+	void *s2;
+
+	size = strnlen(s, size) + 1;
+	s2 = rtems_bsd_program_alloc(size, NULL);
+	if (s2 == NULL) {
+		return (NULL);
+	}
+
+	return (memcpy(s2, s, size));
 }
 
 int

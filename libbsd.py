@@ -1786,6 +1786,12 @@ class nvme(builder.Module):
             ],
             mm.generator['source']()
         )
+        self.addRTEMSSourceFiles(
+            [
+                'sys/dev/nvd/nvd.c',
+            ],
+            mm.generator['source']()
+        )
 
 #
 # Networking

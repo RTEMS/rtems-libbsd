@@ -133,8 +133,10 @@ static void		pci_resume_msi(device_t dev);
 static void		pci_resume_msix(device_t dev);
 static int		pci_remap_intr_method(device_t bus, device_t dev,
 			    u_int irq);
+#ifndef __rtems__
 static void		pci_hint_device_unit(device_t acdev, device_t child,
 			    const char *name, int *unitp);
+#endif /* __rtems__ */
 static int		pci_reset_post(device_t dev, device_t child);
 static int		pci_reset_prepare(device_t dev, device_t child);
 static int		pci_reset_child(device_t dev, device_t child,
@@ -181,7 +183,9 @@ static device_method_t pci_methods[] = {
 	DEVMETHOD(bus_child_detached,	pci_child_detached),
 	DEVMETHOD(bus_child_pnpinfo_str, pci_child_pnpinfo_str_method),
 	DEVMETHOD(bus_child_location_str, pci_child_location_str_method),
+#ifndef __rtems__
 	DEVMETHOD(bus_hint_device_unit,	pci_hint_device_unit),
+#endif /* __rtems__ */
 	DEVMETHOD(bus_remap_intr,	pci_remap_intr_method),
 	DEVMETHOD(bus_suspend_child,	pci_suspend_child),
 	DEVMETHOD(bus_resume_child,	pci_resume_child),
@@ -3402,7 +3406,9 @@ pci_assign_interrupt(device_t bus, device_t dev, int force_route)
 {
 	struct pci_devinfo *dinfo = device_get_ivars(dev);
 	pcicfgregs *cfg = &dinfo->cfg;
+#ifndef __rtems__
 	char tunable_name[64];
+#endif /* __rtems__ */
 	int irq;
 
 	/* Has to have an intpin to have an interrupt. */
@@ -4433,6 +4439,7 @@ pci_detach(device_t dev)
 	return (device_delete_children(dev));
 }
 
+#ifndef __rtems__
 static void
 pci_hint_device_unit(device_t dev, device_t child, const char *name, int *unitp)
 {
@@ -4457,6 +4464,7 @@ pci_hint_device_unit(device_t dev, device_t child, const char *name, int *unitp)
 		return;
 	}
 }
+#endif /* __rtems__ */
 
 static void
 pci_set_power_child(device_t dev, device_t child, int state)
@@ -4588,6 +4596,7 @@ pci_resume(device_t dev)
 static void
 pci_load_vendor_data(void)
 {
+#ifndef __rtems__
 	caddr_t data;
 	void *ptr;
 	size_t sz;
@@ -4603,6 +4612,7 @@ pci_load_vendor_data(void)
 			pci_vendordata[pci_vendordata_size] = '\n';
 		}
 	}
+#endif /* __rtems__ */
 }
 
 void

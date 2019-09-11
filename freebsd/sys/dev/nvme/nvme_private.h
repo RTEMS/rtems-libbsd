@@ -164,7 +164,9 @@ struct nvme_tracker {
 	struct nvme_request		*req;
 	struct nvme_qpair		*qpair;
 	struct callout			timer;
+#ifndef __rtems__
 	bus_dmamap_t			payload_dma_map;
+#endif /* __rtems__ */
 	uint16_t			cid;
 
 	uint64_t			*prp;
@@ -208,7 +210,9 @@ struct nvme_qpair {
 	struct nvme_completion	*cpl;
 
 	bus_dma_tag_t		dma_tag;
+#ifndef __rtems__
 	bus_dma_tag_t		dma_tag_payload;
+#endif /* __rtems__ */
 
 	bus_dmamap_t		queuemem_map;
 	uint64_t		cmd_bus_addr;

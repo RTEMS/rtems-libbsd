@@ -130,6 +130,9 @@ extern devclass_t nvme_devclass;
 #define NVME_REQUEST_UIO	3
 #define NVME_REQUEST_BIO	4
 #define NVME_REQUEST_CCB        5
+#ifdef __rtems__
+#define NVME_REQUEST_IOV	10
+#endif /* __rtems__ */
 
 struct nvme_request {
 
@@ -138,6 +141,9 @@ struct nvme_request {
 	union {
 		void			*payload;
 		struct bio		*bio;
+#ifdef __rtems__
+		const struct iovec	*iov;
+#endif /* __rtems__ */
 	} u;
 	uint32_t			type;
 	uint32_t			payload_size;
@@ -550,6 +556,23 @@ nvme_allocate_request_ccb(union ccb *ccb, nvme_cb_fn_t cb_fn, void *cb_arg)
 
 	return (req);
 }
+#ifdef __rtems__
+static __inline struct nvme_request *
+nvme_allocate_request_iov(const struct iovec *iov, uint32_t payload_size,
+    nvme_cb_fn_t cb_fn, void *cb_arg)
+{
+	struct nvme_request *req;
+
+	req = _nvme_allocate_request(cb_fn, cb_arg);
+	if (req != NULL) {
+		req->type = NVME_REQUEST_IOV;
+		req->u.iov = iov;
+		req->payload_size = payload_size;
+	}
+
+	return (req);
+}
+#endif /* __rtems__ */
 
 #define nvme_free_request(req)	uma_zfree(nvme_request_zone, req)
 

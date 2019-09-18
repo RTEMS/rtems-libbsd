@@ -37,6 +37,9 @@
 
 #include <sys/param.h>
 #include <sys/endian.h>
+#ifdef __rtems__
+#include <sys/_iovec.h>
+#endif /* __rtems__ */
 
 #define	NVME_PASSTHROUGH_CMD		_IOWR('n', 0, struct nvme_pt_command)
 #define	NVME_RESET_CONTROLLER		_IO('n', 1)
@@ -1607,11 +1610,23 @@ int	nvme_ns_cmd_write(struct nvme_namespace *ns, void *payload,
 			  void *cb_arg);
 int	nvme_ns_cmd_write_bio(struct nvme_namespace *ns, struct bio *bp,
 			      nvme_cb_fn_t cb_fn, void *cb_arg);
+#ifdef __rtems__
+int	nvme_ns_cmd_write_iov(struct nvme_namespace *ns,
+			      const struct iovec *iov, uint64_t lba,
+			      uint32_t lba_count, nvme_cb_fn_t cb_fn,
+			      void *cb_arg);
+#endif /* __rtems__ */
 int	nvme_ns_cmd_read(struct nvme_namespace *ns, void *payload,
 			 uint64_t lba, uint32_t lba_count, nvme_cb_fn_t cb_fn,
 			 void *cb_arg);
 int	nvme_ns_cmd_read_bio(struct nvme_namespace *ns, struct bio *bp,
 			      nvme_cb_fn_t cb_fn, void *cb_arg);
+#ifdef __rtems__
+int	nvme_ns_cmd_read_iov(struct nvme_namespace *ns,
+			     const struct iovec *iov, uint64_t lba,
+			     uint32_t lba_count, nvme_cb_fn_t cb_fn,
+			     void *cb_arg);
+#endif /* __rtems__ */
 int	nvme_ns_cmd_deallocate(struct nvme_namespace *ns, void *payload,
 			       uint8_t num_ranges, nvme_cb_fn_t cb_fn,
 			       void *cb_arg);

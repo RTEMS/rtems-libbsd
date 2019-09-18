@@ -1044,6 +1044,50 @@ nvme_payload_map(void *arg, bus_dma_segment_t *seg, int nseg, int error)
 #endif /* __rtems__ */
 	nvme_qpair_submit_tracker(tr->qpair, tr);
 }
+#ifdef __rtems__
+static void
+nvme_qpair_submit_request_iov(struct nvme_qpair *qpair,
+    struct nvme_request *req, struct nvme_tracker *tr)
+{
+	const struct iovec *iov;
+	size_t n;
+	size_t desc_count;
+	struct nvme_sgl_desc first;
+	struct nvme_sgl_desc *desc;
+
+	/* Enable SGL for this command */
+	req->cmd.fuse |= 0x40;
+
+	desc = (struct nvme_sgl_desc *)tr->prp;
+	desc_count = 0;
+	n = req->payload_size;
+	iov = req->u.iov;
+
+	while (n > 0) {
+		BSD_ASSERT(desc_count < (NVME_MAX_PRP_LIST_ENTRIES *
+		    sizeof(*tr->prp) / sizeof(*desc)));
+		desc->address = htole64((uintptr_t)iov->iov_base);
+		desc->length = htole32(iov->iov_len);
+		desc->reserved12[0] = 0;
+		desc->reserved12[1] = 0;
+		desc->reserved12[2] = 0;
+		desc->sgl_ident = NVME_SGL_IDENT_TYPE_DATA_BLOCK <<
+		    NVME_SGL_IDENT_TYPE_SHIFT;
+		BSD_ASSERT(n >= iov->iov_len);
+		n -= iov->iov_len;
+		++iov;
+		++desc;
+		++desc_count;
+	}
+
+	first.address = htole64((uint64_t)tr->prp_bus_addr);
+	first.length = htole32(desc_count * sizeof(*desc));
+	first.sgl_ident = NVME_SGL_IDENT_TYPE_LAST_SEG_DESC <<
+	    NVME_SGL_IDENT_TYPE_SHIFT;
+	memcpy(&req->cmd.prp1, &first, sizeof(first));
+	nvme_qpair_submit_tracker(tr->qpair, tr);
+}
+#endif /* __rtems__ */
 
 static void
 _nvme_qpair_submit_request(struct nvme_qpair *qpair, struct nvme_request *req)
@@ -1151,6 +1195,10 @@ _nvme_qpair_submit_request(struct nvme_qpair *qpair, struct nvme_request *req)
 		if (err != 0)
 			nvme_printf(qpair->ctrlr,
 			    "bus_dmamap_load_ccb returned 0x%x!\n", err);
+		break;
+#else /* __rtems__ */
+	case NVME_REQUEST_IOV:
+		nvme_qpair_submit_request_iov(tr->qpair, req, tr);
 		break;
 #endif /* __rtems__ */
 	default:

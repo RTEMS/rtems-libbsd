@@ -488,6 +488,20 @@ enum nvme_critical_warning_state {
 #define	NVME_SS_PAGE_SSTAT_GDE_SHIFT			(8)
 #define	NVME_SS_PAGE_SSTAT_GDE_MASK			(0x1)
 
+/* SGL descriptor field definitions */
+#define	NVME_SGL_IDENT_TYPE_DATA_BLOCK			(0)
+#define	NVME_SGL_IDENT_TYPE_BIT_BUCKET			(1)
+#define	NVME_SGL_IDENT_TYPE_SEG_DESC			(2)
+#define	NVME_SGL_IDENT_TYPE_LAST_SEG_DESC		(3)
+#define	NVME_SGL_IDENT_TYPE_KEYED_DATA_BLOCK		(4)
+#define	NVME_SGL_IDENT_TYPE_VENDOR			(0xf)
+#define	NVME_SGL_IDENT_TYPE_SHIFT			(4)
+#define	NVME_SGL_IDENT_TYPE_MASK			(0xf)
+#define	NVME_SGL_IDENT_SUB_TYPE_ADDRESS			(0)
+#define	NVME_SGL_IDENT_SUB_TYPE_OFFSET			(0x1)
+#define	NVME_SGL_IDENT_SUB_TYPE_SHIFT			(0)
+#define	NVME_SGL_IDENT_SUB_TYPE_MASK			(0xf)
+
 /* CC register SHN field values */
 enum shn_value {
 	NVME_SHN_NORMAL		= 0x1,
@@ -1450,6 +1464,16 @@ struct nvme_resv_status_ext
 } __packed __aligned(4);
 
 _Static_assert(sizeof(struct nvme_resv_status_ext) == 64, "bad size for nvme_resv_status_ext");
+
+struct nvme_sgl_desc
+{
+	uint64_t		address;
+	uint32_t		length;
+	uint8_t			reserved12[3];
+	uint8_t			sgl_ident;
+} __packed __aligned(8);
+
+_Static_assert(sizeof(struct nvme_sgl_desc) == 16, "bad size for nvme_sgl_desc");
 
 #define NVME_TEST_MAX_THREADS	128
 

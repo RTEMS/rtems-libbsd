@@ -358,6 +358,7 @@ class base(builder.Module):
                 'sys/sys/counter.h',
                 'sys/sys/cpu.h',
                 'sys/sys/ctype.h',
+                'sys/sys/disk.h',
                 'sys/sys/domain.h',
                 'sys/sys/_domainset.h',
                 'sys/sys/domainset.h',

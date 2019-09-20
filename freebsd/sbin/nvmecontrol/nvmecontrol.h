@@ -33,6 +33,9 @@
 
 #include <dev/nvme/nvme.h>
 #include "comnd.h"
+#ifdef __rtems__
+#include <sys/ioctl.h>
+#endif /* __rtems__ */
 
 typedef void (*print_fn_t)(const struct nvme_controller_data *cdata, void *buf, uint32_t size);
 
@@ -87,6 +90,7 @@ void print_intel_add_smart(const struct nvme_controller_data *cdata __unused, vo
  * ints in sofware.
  */
 #define UINT128_DIG	39
+#ifndef __rtems__
 #ifdef __i386__
 typedef uint64_t uint128_t;
 #else
@@ -98,6 +102,23 @@ to128(void *p)
 {
 	return *(uint128_t *)p;
 }
+#else /* __rtems__ */
+#if __SIZEOF_LONG__ < 8
+typedef uint64_t uint128_t;
+#else
+typedef unsigned __int128 uint128_t;
+#endif
+
+static __inline uint128_t
+to128(void *p)
+{
+#if __SIZEOF_LONG__ < 8 && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return *(uint128_t *)(char *)(p + 8);
+#else
+	return *(uint128_t *)p;
+#endif
+}
+#endif /* __rtems__ */
 
 uint64_t le48dec(const void *pp);
 char * uint128_to_str(uint128_t u, char *buf, size_t buflen);

@@ -28,6 +28,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -368,7 +371,7 @@ struct ns_result_str {
 	const char * str;
 };
 
-static struct ns_result_str ns_result[] = {
+static const struct ns_result_str ns_result[] = {
 	{ 0x2,  "Invalid Field"},
 	{ 0xa,  "Invalid Format"},
 	{ 0xb,  "Invalid Namespace or format"},
@@ -387,7 +390,7 @@ static struct ns_result_str ns_result[] = {
 static const char *
 get_res_str(uint16_t res)
 {
-	struct ns_result_str *t = ns_result;
+	const struct ns_result_str *t = ns_result;
 
 	while (t->res != 0xFFFF) {
 		if (t->res == res)

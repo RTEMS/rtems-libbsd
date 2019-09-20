@@ -28,6 +28,11 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#include <pthread.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -175,14 +180,68 @@ get_nsid(int fd, char **ctrlr_str, uint32_t *nsid)
 		*nsid = gnsid.nsid;
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+static pthread_once_t nvmecontrol_once = PTHREAD_ONCE_INIT;
+
+static void
+nvmecontrol_cmd_register(void)
+{
+
+	cmd_register_admin_pass_cmd();
+	cmd_register_devlist_cmd();
+	cmd_register_firmware_cmd();
+	cmd_register_format_cmd();
+	cmd_register_identify_cmd();
+	cmd_register_io_pass_cmd();
+	cmd_register_logpage_cmd();
+	cmd_register_ns_cmd();
+	cmd_register_ns_cmd_active_cmd();
+	cmd_register_ns_cmd_allocated_cmd();
+	cmd_register_ns_cmd_attach_cmd();
+	cmd_register_ns_cmd_attached_cmd();
+	cmd_register_ns_cmd_controllers_cmd();
+	cmd_register_ns_cmd_create_cmd();
+	cmd_register_ns_cmd_delete_cmd();
+	cmd_register_ns_cmd_detach_cmd();
+	cmd_register_ns_cmd_identify_cmd();
+	cmd_register_nsid_cmd();
+	cmd_register_power_cmd();
+	cmd_register_reset_cmd();
+	cmd_register_resv_cmd();
+	cmd_register_resv_cmd_acquire_cmd();
+	cmd_register_resv_cmd_register_cmd();
+	cmd_register_resv_cmd_release_cmd();
+	cmd_register_resv_cmd_report_cmd();
+	cmd_register_sanitize_cmd();
+}
+
+int
+rtems_bsd_command_nvmecontrol(int argc, char *argv[])
+{
+	int exit_code;
+
+	pthread_once(&nvmecontrol_once, nvmecontrol_cmd_register);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main("nvmecontrol", main, argc,
+	    argv);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
 int
 main(int argc, char *argv[])
 {
 
 	cmd_init();
 
+#ifndef __rtems__
 	cmd_load_dir("/lib/nvmecontrol", NULL, NULL);
 	cmd_load_dir("/usr/local/lib/nvmecontrol", NULL, NULL);
+#endif /* __rtems__ */
 
 	cmd_dispatch(argc, argv, NULL);
 

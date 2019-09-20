@@ -86,12 +86,48 @@ struct cmd  {
 };
 
 void cmd_register(struct cmd *, struct cmd *);
+#ifndef __rtems__
 #define CMD_COMMAND(c)							\
     static void cmd_register_##c(void) __attribute__((constructor));	\
     static void cmd_register_##c(void) { cmd_register(NULL, &c); }
 #define CMD_SUBCOMMAND(c,sc)						\
     static void cmd_register_##c_##sc(void) __attribute__((constructor)); \
     static void cmd_register_##c_##sc(void) { cmd_register(&c, &sc); }
+#else /* __rtems__ */
+#define CMD_COMMAND(c)							\
+    void cmd_register_##c(void) { cmd_register(NULL, &c); }
+#define CMD_SUBCOMMAND(c,sc)						\
+    void cmd_register_##c##_##sc(void) { cmd_register(&c, &sc); }
+void cmd_register_admin_pass_cmd(void);
+void cmd_register_devlist_cmd(void);
+void cmd_register_firmware_cmd(void);
+void cmd_register_format_cmd(void);
+void cmd_register_identify_cmd(void);
+void cmd_register_io_pass_cmd(void);
+void cmd_register_logpage_cmd(void);
+void cmd_register_ns_cmd(void);
+void cmd_register_ns_cmd_active_cmd(void);
+void cmd_register_ns_cmd_allocated_cmd(void);
+void cmd_register_ns_cmd_attach_cmd(void);
+void cmd_register_ns_cmd_attached_cmd(void);
+void cmd_register_ns_cmd_controllers_cmd(void);
+void cmd_register_ns_cmd_create_cmd(void);
+void cmd_register_ns_cmd_delete_cmd(void);
+void cmd_register_ns_cmd_detach_cmd(void);
+void cmd_register_ns_cmd_identify_cmd(void);
+void cmd_register_nsid_cmd(void);
+void cmd_register_perftest_cmd(void);
+void cmd_register_power_cmd(void);
+void cmd_register_reset_cmd(void);
+void cmd_register_resv_cmd(void);
+void cmd_register_resv_cmd_acquire_cmd(void);
+void cmd_register_resv_cmd_register_cmd(void);
+void cmd_register_resv_cmd_release_cmd(void);
+void cmd_register_resv_cmd_report_cmd(void);
+void cmd_register_sanitize_cmd(void);
+void cmd_register_wdc_cmd(void);
+void cmd_register_wdc_cmd_cap_diag_cmd(void);
+#endif /* __rtems__ */
 
 int arg_parse(int argc, char * const *argv, const struct cmd *f);
 void arg_help(int argc, char * const *argv, const struct cmd *f);

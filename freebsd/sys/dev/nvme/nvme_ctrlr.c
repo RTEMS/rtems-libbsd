@@ -45,6 +45,13 @@ __FBSDID("$FreeBSD$");
 #include <sys/endian.h>
 
 #include "nvme_private.h"
+#ifdef __rtems__
+#include <rtems/score/smp.h>
+#undef curcpu
+#define curcpu _SMP_Get_current_processor()
+#undef mp_ncpus
+#define mp_ncpus _SMP_Get_processor_maximum()
+#endif /* __rtems__ */
 
 #define B4_CHK_RDY_DELAY_MS	2300		/* work around controller bug */
 

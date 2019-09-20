@@ -44,6 +44,9 @@
 #define	NVME_PASSTHROUGH_CMD		_IOWR('n', 0, struct nvme_pt_command)
 #define	NVME_RESET_CONTROLLER		_IO('n', 1)
 #define	NVME_GET_NSID			_IOR('n', 2, struct nvme_get_nsid)
+#ifdef __rtems__
+#define	NVME_GET_NAMESPACE		_IOR('n', 10, struct nvme_namespace *)
+#endif /* __rtems__ */
 
 #define	NVME_IO_TEST			_IOWR('n', 100, struct nvme_io_test)
 #define	NVME_BIO_TEST			_IOWR('n', 101, struct nvme_io_test)

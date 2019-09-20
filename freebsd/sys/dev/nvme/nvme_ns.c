@@ -96,6 +96,11 @@ nvme_ns_ioctl(struct cdev *cdev, u_long cmd, caddr_t arg, int flag,
 		gnsid->nsid = ns->id;
 		break;
 	}
+#ifdef __rtems__
+	case NVME_GET_NAMESPACE:
+		*(struct nvme_namespace **)arg = ns;
+		break;
+#endif /* __rtems__ */
 	case DIOCGMEDIASIZE:
 		*(off_t *)arg = (off_t)nvme_ns_get_size(ns);
 		break;

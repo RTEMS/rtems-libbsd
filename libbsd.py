@@ -2653,9 +2653,10 @@ class pci(builder.Module):
         mm = self.manager
         self.addKernelSpaceSourceFiles(
             [
+                'sys/dev/pci/pcib_support.c',
                 'sys/dev/pci/pci.c',
-                'sys/dev/pci/pci_user.c',
                 'sys/dev/pci/pci_pci.c',
+                'sys/dev/pci/pci_user.c',
             ],
             mm.generator['source']()
         )

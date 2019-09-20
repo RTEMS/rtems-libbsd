@@ -52,6 +52,8 @@ int rtems_bsd_command_ifconfig(int argc, char **argv);
 
 int rtems_bsd_command_netstat(int argc, char **argv);
 
+int rtems_bsd_command_nvmecontrol(int argc, char **argv);
+
 int rtems_bsd_command_pfctl(int argc, char **argv);
 
 int rtems_bsd_command_ping(int argc, char **argv);

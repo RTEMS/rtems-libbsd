@@ -26,6 +26,9 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#endif /* __rtems__ */
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -53,7 +56,7 @@ static void wdc_cap_diag(int argc, char *argv[]);
 
 #define WDC_CAP_DIAG_USAGE	"\tnvmecontrol wdc cap-diag [-o path-template]\n"
 
-static struct nvme_function wdc_funcs[] = {
+static const struct nvme_function wdc_funcs[] = {
 	{"cap-diag",		wdc_cap_diag,		WDC_CAP_DIAG_USAGE},
 	{NULL,			NULL,			NULL},
 };

@@ -179,6 +179,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-shell-arp.c',
                 'rtems/rtems-bsd-shell-ifconfig.c',
                 'rtems/rtems-bsd-shell-netstat.c',
+                'rtems/rtems-bsd-shell-nvmecontrol.c',
                 'rtems/rtems-bsd-shell-pfctl.c',
                 'rtems/rtems-bsd-shell-ping.c',
                 'rtems/rtems-bsd-shell-route.c',

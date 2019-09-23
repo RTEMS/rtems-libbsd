@@ -44,6 +44,7 @@
 #include <err.h>
 
 #include <assert.h>
+#include <ck_epoch.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -236,6 +237,15 @@ static socket_test socket_tests[] = {
 };
 
 static void
+epoch_cleanup(void)
+{
+	rtems_status_code sc;
+
+	sc = rtems_task_wake_after(CK_EPOCH_LENGTH);
+	assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void
 init_addr(struct sockaddr_in *addr)
 {
 	int ok;
@@ -350,6 +360,7 @@ test_sockets(void)
 	}
 
 	puts("test sockets and check resources");
+	epoch_cleanup();
 
 	for (i = 0; i < n; ++i) {
 		const socket_test *st = &socket_tests[i];
@@ -359,6 +370,7 @@ test_sockets(void)
 
 		test_socket(st);
 
+		epoch_cleanup();
 		assert(rtems_resource_snapshot_check(&snapshot));
 	}
 }
@@ -401,6 +413,7 @@ test_socket_unsupported_ops(void)
 	rv = close(sd);
 	assert(rv == 0);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -480,6 +493,7 @@ test_socket_fstat_and_shutdown(void)
 	rv = connect(sd, (struct sockaddr *) &addr, sizeof(addr));
 	assert(rv == 0);
 
+	epoch_cleanup();
 	do_no_mem_test(no_mem_socket_shutdown, sd);
 
 	rv = close(sd);
@@ -495,6 +509,7 @@ test_socket_fstat_and_shutdown(void)
 	assert(rv == -1);
 	assert(errno == ENOTSOCK);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -545,6 +560,7 @@ test_socket_ioctl(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -602,6 +618,7 @@ test_socket_bind(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -659,6 +676,7 @@ test_socket_connect(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -713,6 +731,7 @@ test_socket_listen(void)
 	rv = close(sd);
 	assert(rv == 0);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -764,6 +783,7 @@ test_socket_accept(void)
 	assert(ad == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -864,6 +884,7 @@ test_socket_getsockopt_and_setsockopt(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -914,6 +935,7 @@ test_socket_getpeername(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -968,6 +990,7 @@ test_socket_getsockname(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -1033,6 +1056,7 @@ test_socket_read_and_write(void)
 	assert(n == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -1124,6 +1148,7 @@ test_socket_send_and_sendto_and_sendmsg(void)
 	assert(n == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -1224,6 +1249,7 @@ test_socket_recv_and_recvfrom_and_recvmsg(void)
 	assert(n == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -1270,6 +1296,7 @@ test_socket_select(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	sd = socket(PF_INET, SOCK_DGRAM, 0);
@@ -1297,6 +1324,7 @@ test_socket_select(void)
 	assert(rv == -1);
 	assert(errno == EBADF);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -1342,6 +1370,7 @@ test_socket_poll(void)
 	assert(rv == 1);
 	assert(pfd.revents == POLLNVAL);
 
+	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
 	sd = socket(PF_INET, SOCK_DGRAM, 0);
@@ -1369,6 +1398,7 @@ test_socket_poll(void)
 	assert(rv == 1);
 	assert(pfd.revents == POLLNVAL);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 static void
@@ -1416,6 +1446,7 @@ test_socket_pair(void)
 
 	do_no_mem_test(no_mem_socket_pair, -1);
 
+	epoch_cleanup();
 	assert(rtems_resource_snapshot_check(&snapshot));
 }
 
@@ -1642,6 +1673,7 @@ test_main(void)
 	test_setgethostname();
 
 	rtems_bsd_ifconfig_lo0();
+	epoch_cleanup();
 	test_socket_fstat_and_shutdown();
 
 	exit(0);

@@ -1329,6 +1329,81 @@ test_socket_select(void)
 }
 
 static void
+no_mem_socket_pselect(int fd)
+{
+	struct fd_set set;
+	int nfds;
+	int rv;
+
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+	nfds = fd + 1;
+
+	errno = 0;
+	rv = pselect(nfds, &set, NULL, NULL, NULL, NULL);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
+}
+
+static void
+test_socket_pselect(void)
+{
+	rtems_resource_snapshot snapshot;
+	struct fd_set set;
+	int nfds;
+	int sd;
+	int rv;
+
+	puts("test socket pselect");
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	FD_ZERO(&set);
+	FD_SET(sd, &set);
+	nfds = sd + 1;
+
+	errno = 0;
+	rv = pselect(nfds, &set, NULL, NULL, NULL, NULL);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	epoch_cleanup();
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	do_no_mem_test(no_mem_socket_pselect, sd);
+
+	FD_ZERO(&set);
+	nfds = -1;
+
+	errno = 0;
+	rv = pselect(nfds, &set, NULL, NULL, NULL, NULL);
+	assert(rv == -1);
+	assert(errno == EINVAL);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	FD_ZERO(&set);
+	FD_SET(sd, &set);
+	nfds = sd + 1;
+
+	errno = 0;
+	rv = pselect(nfds, &set, NULL, NULL, NULL, NULL);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	epoch_cleanup();
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 no_mem_socket_poll(int fd)
 {
 	struct pollfd pfd;
@@ -1662,6 +1737,7 @@ test_main(void)
 	test_socket_send_and_sendto_and_sendmsg();
 	test_socket_recv_and_recvfrom_and_recvmsg();
 	test_socket_select();
+	test_socket_pselect();
 	test_socket_poll();
 	test_socket_pair();
 

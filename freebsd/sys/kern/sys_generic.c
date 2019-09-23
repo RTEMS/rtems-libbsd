@@ -1179,6 +1179,43 @@ select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
 		rtems_set_errno_and_return_minus_one(error);
 	}
 }
+
+int
+pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
+    const struct timespec *timeout, const sigset_t *set)
+{
+	struct thread *td;
+	int error;
+
+	if (set != NULL) {
+		rtems_set_errno_and_return_minus_one(ENOSYS);
+	}
+
+	td = rtems_bsd_get_curthread_or_null();
+
+	if (td != NULL) {
+		struct timeval tv;
+		struct timeval *tvp;
+
+		if (timeout != NULL) {
+			TIMESPEC_TO_TIMEVAL(&tv, timeout);
+			tvp = &tv;
+		} else {
+			tvp = NULL;
+		}
+
+		error = kern_select(td, nfds, readfds, writefds, errorfds,
+		    tvp, NFDBITS);
+	} else {
+		error = ENOMEM;
+	}
+
+	if (error == 0) {
+		return td->td_retval[0];
+	} else {
+		rtems_set_errno_and_return_minus_one(error);
+	}
+}
 #endif /* __rtems__ */
 
 /* 

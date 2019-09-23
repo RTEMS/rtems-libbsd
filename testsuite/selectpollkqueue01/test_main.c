@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
+ * Copyright (c) 2013, 2019 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
  *  Dornierstr. 4
@@ -519,6 +519,63 @@ test_select_close(test_context *ctx)
 	assert(errno == EBADF);
 
 	assert(ctx->cfd == -1);
+}
+
+static void
+test_pselect_sigmask(void)
+{
+	int rv;
+	sigset_t set;
+
+	puts("test pselect sigmask");
+
+	sigemptyset(&set);
+	errno = 0;
+	rv = pselect(0, NULL, NULL, NULL, NULL, &set);
+	assert(rv == -1);
+	assert(errno == ENOSYS);
+}
+
+static void
+test_pselect_timeout(test_context *ctx)
+{
+	struct timespec timeout = {
+		.tv_sec = 0,
+		.tv_nsec = 100000000
+	};
+	int fd = ctx->lfd;
+	int nfds = fd + 1;
+	struct fd_set set;
+	int rv;
+	int i;
+
+	puts("test pselect timeout");
+
+	set_non_blocking(ctx->lfd, 0);
+
+	FD_ZERO(&set);
+	FD_SET(fd, &set);
+
+	rv = pselect(nfds, &set, NULL, NULL, &timeout, NULL);
+	assert(rv == 0);
+
+	for (i = 0; i < nfds; ++i) {
+		assert(!FD_ISSET(i, &set));
+	}
+
+	rv = pselect(nfds, NULL, &set, NULL, &timeout, NULL);
+	assert(rv == 0);
+
+	for (i = 0; i < nfds; ++i) {
+		assert(!FD_ISSET(i, &set));
+	}
+
+	rv = pselect(nfds, NULL, NULL, &set, &timeout, NULL);
+	assert(rv == 0);
+
+	for (i = 0; i < nfds; ++i) {
+		assert(!FD_ISSET(i, &set));
+	}
 }
 
 static void
@@ -1198,6 +1255,9 @@ test_main(void)
 	test_select_read(ctx);
 	test_select_write(ctx);
 	test_select_close(ctx);
+
+	test_pselect_sigmask();
+	test_pselect_timeout(ctx);
 
 	test_poll_timeout(ctx);
 	test_poll_connect(ctx);

@@ -17822,6 +17822,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Archer T4UH ver 2",
 	},
 	{
+	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_T2UNANO,
+	    0,
+	    "TP-Link",
+	    "Archer T2U Nano",
+	},
+	{
 	    USB_VENDOR_TPLINK, USB_PRODUCT_TPLINK_RTL8153,
 	    0,
 	    "TP-Link",

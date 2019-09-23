@@ -4666,6 +4666,7 @@
 #define	USB_PRODUCT_TPLINK_T4UV2	0x010d		/* Archer T4U ver 2 */
 #define	USB_PRODUCT_TPLINK_T4UHV1	0x0103		/* Archer T4UH ver 1 */
 #define	USB_PRODUCT_TPLINK_T4UHV2	0x010e		/* Archer T4UH ver 2 */
+#define	USB_PRODUCT_TPLINK_T2UNANO	0x011e		/* Archer T2U Nano */
 #define	USB_PRODUCT_TPLINK_RTL8153	0x0601		/* RTL8153 USB 10/100/1000 LAN */
 
 /* Trek Technology products */

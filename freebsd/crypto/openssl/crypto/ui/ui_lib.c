@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2001-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -502,6 +502,7 @@ int UI_process(UI *ui)
     if (ui->meth->ui_flush != NULL)
         switch (ui->meth->ui_flush(ui)) {
         case -1:               /* Interrupt/Cancel/something... */
+            ui->flags &= ~UI_FLAG_REDOABLE;
             ok = -2;
             goto err;
         case 0:                /* Errors */
@@ -519,6 +520,7 @@ int UI_process(UI *ui)
                                              sk_UI_STRING_value(ui->strings,
                                                                 i))) {
             case -1:           /* Interrupt/Cancel/something... */
+                ui->flags &= ~UI_FLAG_REDOABLE;
                 ok = -2;
                 goto err;
             case 0:            /* Errors */

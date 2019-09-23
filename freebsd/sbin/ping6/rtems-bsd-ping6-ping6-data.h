@@ -2,6 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-ping6-data.h"
 /* ping6.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static cap_channel_t *capdns);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static char *hostname);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static char *scmsg);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static char BBELL);
@@ -18,7 +19,8 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int hoplimit);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int ident);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int interval);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int mx_dup_ck);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int s);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int srecv);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int ssend);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int timing);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int waittime);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static long int nmissedmax);
@@ -36,5 +38,6 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static struct sockaddr_in6 dst);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static struct sockaddr_in6 src);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static u_char *packet);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static u_char outpack[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static u_int options);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static u_int8_t nonce[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static u_short naflags);

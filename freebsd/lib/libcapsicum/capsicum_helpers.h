@@ -51,6 +51,7 @@ __BEGIN_DECLS
 static __inline int
 caph_limit_stream(int fd, int flags)
 {
+#ifndef __rtems__
 	cap_rights_t rights;
 	unsigned long cmds[] = { TIOCGETA, TIOCGWINSZ, FIODTYPE };
 
@@ -75,6 +76,7 @@ caph_limit_stream(int fd, int flags)
 
 	if (cap_fcntls_limit(fd, CAP_FCNTL_GETFL) < 0 && errno != ENOSYS)
 		return (-1);
+#endif /* __rtems__ */
 
 	return (0);
 }
@@ -123,7 +125,9 @@ static __inline void
 caph_cache_catpages(void)
 {
 
+#ifndef __rtems__
 	(void)catopen("libc", NL_CAT_LOCALE);
+#endif /* __rtems__ */
 }
 
 static __inline int

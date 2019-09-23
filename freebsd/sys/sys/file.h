@@ -410,8 +410,14 @@ _fnoop(void)
 	return (0);
 }
 
-#define	fhold(fp)							\
-	(refcount_acquire(&(fp)->f_count))
+#ifndef __rtems__
+static __inline __result_use_check bool
+fhold(struct file *fp)
+{
+	return (refcount_acquire_checked(&fp->f_count));
+}
+#endif /* __rtems__ */
+
 #ifndef __rtems__
 #define	fdrop(fp, td)							\
 	(refcount_release(&(fp)->f_count) ? _fdrop((fp), (td)) : _fnoop())

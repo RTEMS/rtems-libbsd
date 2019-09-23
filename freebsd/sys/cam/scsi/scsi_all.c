@@ -2059,7 +2059,7 @@ static struct asc_table_entry asc_table[] = {
 	{ SST(0x30, 0x13, SS_RDEF,	/* XXX TBD */
 	    "Cleaning volume expired") },
 	/* DT  WRO   BK   */
-	{ SST(0x31, 0x00, SS_RDEF,
+	{ SST(0x31, 0x00, SS_FATAL | ENXIO,
 	    "Medium format corrupted") },
 	/* D L  RO   B    */
 	{ SST(0x31, 0x01, SS_RDEF,
@@ -8294,10 +8294,10 @@ scsi_ata_identify(struct ccb_scsiio *csio, u_int32_t retries,
 		      tag_action,
 		      /*protocol*/AP_PROTO_PIO_IN,
 		      /*ata_flags*/AP_FLAG_TDIR_FROM_DEV |
-				   AP_FLAG_BYT_BLOK_BYTES |
+				   AP_FLAG_BYT_BLOK_BLOCKS |
 				   AP_FLAG_TLEN_SECT_CNT,
 		      /*features*/0,
-		      /*sector_count*/dxfer_len,
+		      /*sector_count*/dxfer_len / 512,
 		      /*lba*/0,
 		      /*command*/ATA_ATA_IDENTIFY,
 		      /*device*/ 0,

@@ -2660,6 +2660,7 @@ class user_space(builder.Module):
                 'sbin/dhclient/privsep.h',
                 'sbin/dhclient/tree.h',
                 'sbin/ifconfig/ifconfig.h',
+                'sbin/ping/utils.h',
                 'usr.bin/netstat/netstat.h'
             ]
         )
@@ -2929,6 +2930,7 @@ class user_space(builder.Module):
                 'sbin/pfctl/pf_print_state.c',
                 'sbin/ping6/ping6.c',
                 'sbin/ping/ping.c',
+                'sbin/ping/utils.c',
                 'sbin/route/route.c',
                 'sbin/sysctl/sysctl.c',
                 'usr.bin/netstat/bpf.c',

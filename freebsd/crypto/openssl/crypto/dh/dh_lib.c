@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -236,11 +236,11 @@ void DH_get0_key(const DH *dh, const BIGNUM **pub_key, const BIGNUM **priv_key)
 int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key)
 {
     if (pub_key != NULL) {
-        BN_free(dh->pub_key);
+        BN_clear_free(dh->pub_key);
         dh->pub_key = pub_key;
     }
     if (priv_key != NULL) {
-        BN_free(dh->priv_key);
+        BN_clear_free(dh->priv_key);
         dh->priv_key = priv_key;
     }
 

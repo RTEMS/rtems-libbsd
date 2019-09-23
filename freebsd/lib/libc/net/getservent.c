@@ -666,7 +666,7 @@ nis_servent(void *retval, void *mdata, va_list ap)
 {
 	char *resultbuf, *lastkey;
 	int resultbuflen;
-	char buf[YPMAXRECORD + 2];
+	char *buf;
 
 	struct nis_state *st;
 	int rv;
@@ -683,6 +683,7 @@ nis_servent(void *retval, void *mdata, va_list ap)
 
 	name = NULL;
 	proto = NULL;
+	buf = NULL;
 	how = (enum nss_lookup_type)mdata;
 	switch (how) {
 	case nss_lt_name:
@@ -718,7 +719,10 @@ nis_servent(void *retval, void *mdata, va_list ap)
 	do {
 		switch (how) {
 		case nss_lt_name:
-			snprintf(buf, sizeof(buf), "%s/%s", name, proto);
+			free(buf);
+			asprintf(&buf, "%s/%s", name, proto);
+			if (buf == NULL)
+				return (NS_TRYAGAIN);
 			if (yp_match(st->yp_domain, "services.byname", buf,
 			    strlen(buf), &resultbuf, &resultbuflen)) {
 				rv = NS_NOTFOUND;
@@ -726,8 +730,10 @@ nis_servent(void *retval, void *mdata, va_list ap)
 			}
 			break;
 		case nss_lt_id:
-			snprintf(buf, sizeof(buf), "%d/%s", ntohs(port),
-			    proto);
+			free(buf);
+			asprintf(&buf, "%d/%s", ntohs(port), proto);
+			if (buf == NULL)
+				return (NS_TRYAGAIN);
 
 			/*
 			 * We have to be a little flexible
@@ -793,6 +799,7 @@ nis_servent(void *retval, void *mdata, va_list ap)
 	} while (!(rv & NS_TERMINATE) && how == nss_lt_all);
 
 fin:
+	free(buf);
 	if (rv == NS_SUCCESS && retval != NULL)
 		*(struct servent **)retval = serv;
 

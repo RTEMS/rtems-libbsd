@@ -73,6 +73,7 @@ static void test_cdev(const char *path)
 	struct pollfd fds[1];
 	int kq;
 	struct kevent change;
+	void *p;
 
 	test_make_dev(&state, name);
 
@@ -126,8 +127,8 @@ static void test_cdev(const char *path)
 	assert(rv == -1);
 	assert(errno == TEST_KQ_ERRNO);
 
-	rv = mmap(NULL, 1, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	assert(rv == 0);
+	p = mmap(NULL, 1, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	assert(p == NULL);
 
 	rv = close(fd);
 	assert(rv == 0);

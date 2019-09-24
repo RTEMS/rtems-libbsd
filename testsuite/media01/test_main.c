@@ -41,6 +41,7 @@
 #include <rtems/ftpd.h>
 #include <rtems/media.h>
 #include <rtems/record.h>
+#include <rtems/recordserver.h>
 #include <rtems/shell.h>
 #include <rtems/telnetd.h>
 

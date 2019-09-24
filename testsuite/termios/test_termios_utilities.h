@@ -10,10 +10,13 @@
 #ifndef TEST_TERMIOS_UTILITIES_H
 #define TEST_TERMIOS_UTILITIES_H
 
+#include <sys/types.h>
+
 #define TX_MAX 1024
 
 extern void open_it(void);
 extern void close_it(void);
+extern void read_it(ssize_t expected);
 extern void change_iflag(const char *desc, int mask, int new);
 extern void change_lflag(const char *desc, int mask, int new);
 extern void change_oflag(const char *desc, int mask, int new);

@@ -44,6 +44,9 @@
 
 #include <rtems/bsd/bsd.h>
 
+/* Only visible in <sys/syslog.h> if _KERNEL is undefined */
+void	syslog(int, const char *, ...) __printflike(2, 3);
+
 #define TEST_NAME "LIBBSD LOG 1"
 
 typedef struct {

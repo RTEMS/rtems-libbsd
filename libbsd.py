@@ -214,7 +214,6 @@ class rtems(builder.Module):
                 'rtems/rtems-kernel-pci_cfgreg.c',
                 'rtems/rtems-kernel-program.c',
                 'rtems/rtems-kernel-rwlock.c',
-                'rtems/rtems-kernel-signal.c',
                 'rtems/rtems-kernel-sx.c',
                 'rtems/rtems-kernel-sysctlbyname.c',
                 'rtems/rtems-kernel-sysctl.c',

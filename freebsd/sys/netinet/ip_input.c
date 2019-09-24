@@ -59,11 +59,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/syslog.h>
 #include <sys/sysctl.h>
 
-#include <net/pfil.h>
 #include <net/if.h>
 #include <net/if_types.h>
 #include <net/if_var.h>
 #include <net/if_dl.h>
+#include <net/pfil.h>
 #include <net/route.h>
 #include <net/netisr.h>
 #include <net/rss_config.h>
@@ -136,7 +136,7 @@ SYSCTL_INT(_net_inet_ip, OID_AUTO, check_interface, CTLFLAG_VNET | CTLFLAG_RW,
     &VNET_NAME(ip_checkinterface), 0,
     "Verify packet arrives on correct interface");
 
-VNET_DEFINE(struct pfil_head, inet_pfil_hook);	/* Packet filter hooks */
+VNET_DEFINE(pfil_head_t, inet_pfil_head);	/* Packet filter hooks */
 
 static struct netisr_handler ip_nh = {
 	.nh_name = "ip",
@@ -303,6 +303,7 @@ SYSCTL_PROC(_net_inet_ip, IPCTL_INTRDQDROPS, intr_direct_queue_drops,
 void
 ip_init(void)
 {
+	struct pfil_head_args args;
 	struct protosw *pr;
 	int i;
 
@@ -313,11 +314,11 @@ ip_init(void)
 	ipreass_init();
 
 	/* Initialize packet filter hooks. */
-	V_inet_pfil_hook.ph_type = PFIL_TYPE_AF;
-	V_inet_pfil_hook.ph_af = AF_INET;
-	if ((i = pfil_head_register(&V_inet_pfil_hook)) != 0)
-		printf("%s: WARNING: unable to register pfil hook, "
-			"error %d\n", __func__, i);
+	args.pa_version = PFIL_VERSION;
+	args.pa_flags = PFIL_IN | PFIL_OUT;
+	args.pa_type = PFIL_TYPE_IP4;
+	args.pa_headname = PFIL_INET_NAME;
+	V_inet_pfil_head = pfil_head_register(&args);
 
 	if (hhook_head_register(HHOOK_TYPE_IPSEC_IN, AF_INET,
 	    &V_ipsec_hhh_in[HHOOK_IPSEC_INET],
@@ -379,10 +380,7 @@ ip_destroy(void *unused __unused)
 #endif
 	netisr_unregister_vnet(&ip_nh);
 
-	if ((error = pfil_head_unregister(&V_inet_pfil_hook)) != 0)
-		printf("%s: WARNING: unable to unregister pfil hook, "
-		    "error %d\n", __func__, error);
-
+	pfil_head_unregister(V_inet_pfil_head);
 	error = hhook_head_deregister(V_ipsec_hhh_in[HHOOK_IPSEC_INET]);
 	if (error != 0) {
 		printf("%s: WARNING: unable to deregister input helper hook "
@@ -503,10 +501,10 @@ ip_input(struct mbuf *m)
 
 	IP_PROBE(receive, NULL, NULL, ip, m->m_pkthdr.rcvif, ip, NULL);
 
-	/* 127/8 must not appear on wire - RFC1122 */
+	/* IN_LOOPBACK must not appear on the wire - RFC1122 */
 	ifp = m->m_pkthdr.rcvif;
-	if ((ntohl(ip->ip_dst.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET ||
-	    (ntohl(ip->ip_src.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET) {
+	if (IN_LOOPBACK(ntohl(ip->ip_dst.s_addr)) ||
+	    IN_LOOPBACK(ntohl(ip->ip_src.s_addr))) {
 		if ((ifp->if_flags & IFF_LOOPBACK) == 0) {
 			IPSTAT_INC(ips_badaddr);
 			goto bad;
@@ -601,11 +599,12 @@ tooshort:
 	 */
 
 	/* Jump over all PFIL processing if hooks are not active. */
-	if (!PFIL_HOOKED(&V_inet_pfil_hook))
+	if (!PFIL_HOOKED_IN(V_inet_pfil_head))
 		goto passin;
 
 	odst = ip->ip_dst;
-	if (pfil_run_hooks(&V_inet_pfil_hook, &m, ifp, PFIL_IN, 0, NULL) != 0)
+	if (pfil_run_hooks(V_inet_pfil_head, &m, ifp, PFIL_IN, NULL) !=
+	    PFIL_PASS)
 		return;
 	if (m == NULL)			/* consumed by filter */
 		return;
@@ -711,7 +710,9 @@ passin:
 	 * into the stack for SIMPLEX interfaces handled by ether_output().
 	 */
 	if (ifp != NULL && ifp->if_flags & IFF_BROADCAST) {
-		IF_ADDR_RLOCK(ifp);
+		struct epoch_tracker et;
+
+		NET_EPOCH_ENTER(et);
 		CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
@@ -721,7 +722,7 @@ passin:
 				counter_u64_add(ia->ia_ifa.ifa_ipackets, 1);
 				counter_u64_add(ia->ia_ifa.ifa_ibytes,
 				    m->m_pkthdr.len);
-				IF_ADDR_RUNLOCK(ifp);
+				NET_EPOCH_EXIT(et);
 				goto ours;
 			}
 #ifdef BOOTP_COMPAT
@@ -729,12 +730,12 @@ passin:
 				counter_u64_add(ia->ia_ifa.ifa_ipackets, 1);
 				counter_u64_add(ia->ia_ifa.ifa_ibytes,
 				    m->m_pkthdr.len);
-				IF_ADDR_RUNLOCK(ifp);
+				NET_EPOCH_EXIT(et);
 				goto ours;
 			}
 #endif
 		}
-		IF_ADDR_RUNLOCK(ifp);
+		NET_EPOCH_EXIT(et);
 		ia = NULL;
 	}
 	/* RFC 3927 2.7: Do not forward datagrams for 169.254.0.0/16. */
@@ -954,6 +955,7 @@ ip_forward(struct mbuf *m, int srcrt)
 	struct sockaddr_in *sin;
 	struct in_addr dest;
 	struct route ro;
+	struct epoch_tracker et;
 	int error, type = 0, code = 0, mtu = 0;
 
 	if (m->m_flags & (M_BCAST|M_MCAST) || in_canforward(ip->ip_dst) == 0) {
@@ -982,7 +984,7 @@ ip_forward(struct mbuf *m, int srcrt)
 #else
 	in_rtalloc_ign(&ro, 0, M_GETFIB(m));
 #endif
-	NET_EPOCH_ENTER();
+	NET_EPOCH_ENTER(et);
 	if (ro.ro_rt != NULL) {
 		ia = ifatoia(ro.ro_rt->rt_ifa);
 	} else
@@ -1134,7 +1136,7 @@ ip_forward(struct mbuf *m, int srcrt)
 	}
 	icmp_error(mcopy, type, code, dest.s_addr, mtu);
  out:
-	NET_EPOCH_EXIT();
+	NET_EPOCH_EXIT(et);
 }
 
 #define	CHECK_SO_CT(sp, ct) \

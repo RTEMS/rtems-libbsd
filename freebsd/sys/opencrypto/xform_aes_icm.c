@@ -52,11 +52,12 @@ __FBSDID("$FreeBSD$");
 
 #include <opencrypto/xform_enc.h>
 
-static	int aes_icm_setkey(u_int8_t **, u_int8_t *, int);
+static	int aes_icm_setkey(u_int8_t **, const u_int8_t *, int);
 static	void aes_icm_crypt(caddr_t, u_int8_t *);
 static	void aes_icm_zerokey(u_int8_t **);
-static	void aes_icm_reinit(caddr_t, u_int8_t *);
-static	void aes_gcm_reinit(caddr_t, u_int8_t *);
+static	void aes_icm_reinit(caddr_t, const u_int8_t *);
+static	void aes_gcm_reinit(caddr_t, const u_int8_t *);
+static	void aes_ccm_reinit(caddr_t, const u_int8_t *);
 
 /* Encryption instances */
 struct enc_xform enc_xform_aes_icm = {
@@ -79,11 +80,23 @@ struct enc_xform enc_xform_aes_nist_gcm = {
 	aes_gcm_reinit,
 };
 
+struct enc_xform enc_xform_ccm = {
+	.type = CRYPTO_AES_CCM_16,
+	.name = "AES-CCM",
+	.blocksize = AES_ICM_BLOCK_LEN, .ivsize = AES_CCM_IV_LEN,
+	.minkey = AES_MIN_KEY, .maxkey = AES_MAX_KEY,
+	.encrypt = aes_icm_crypt,
+	.decrypt = aes_icm_crypt,
+	.setkey = aes_icm_setkey,
+	.zerokey = aes_icm_zerokey,
+	.reinit = aes_ccm_reinit,
+};
+
 /*
  * Encryption wrapper routines.
  */
 static void
-aes_icm_reinit(caddr_t key, u_int8_t *iv)
+aes_icm_reinit(caddr_t key, const u_int8_t *iv)
 {
 	struct aes_icm_ctx *ctx;
 
@@ -92,7 +105,7 @@ aes_icm_reinit(caddr_t key, u_int8_t *iv)
 }
 
 static void
-aes_gcm_reinit(caddr_t key, u_int8_t *iv)
+aes_gcm_reinit(caddr_t key, const u_int8_t *iv)
 {
 	struct aes_icm_ctx *ctx;
 
@@ -102,6 +115,21 @@ aes_gcm_reinit(caddr_t key, u_int8_t *iv)
 	/* GCM starts with 2 as counter 1 is used for final xor of tag. */
 	bzero(&ctx->ac_block[AESICM_BLOCKSIZE - 4], 4);
 	ctx->ac_block[AESICM_BLOCKSIZE - 1] = 2;
+}
+
+static void
+aes_ccm_reinit(caddr_t key, const u_int8_t *iv)
+{
+	struct aes_icm_ctx *ctx;
+
+	ctx = (struct aes_icm_ctx*)key;
+
+	/* CCM has flags, then the IV, then the counter, which starts at 1 */
+	bzero(ctx->ac_block, sizeof(ctx->ac_block));
+	/* 3 bytes for length field; this gives a nonce of 12 bytes */
+	ctx->ac_block[0] = (15 - AES_CCM_IV_LEN) - 1;
+	bcopy(iv, ctx->ac_block+1, AES_CCM_IV_LEN);
+	ctx->ac_block[AESICM_BLOCKSIZE - 1] = 1;
 }
 
 static void
@@ -125,7 +153,7 @@ aes_icm_crypt(caddr_t key, u_int8_t *data)
 }
 
 static int
-aes_icm_setkey(u_int8_t **sched, u_int8_t *key, int len)
+aes_icm_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 {
 	struct aes_icm_ctx *ctx;
 
@@ -138,7 +166,7 @@ aes_icm_setkey(u_int8_t **sched, u_int8_t *key, int len)
 		return ENOMEM;
 
 	ctx = (struct aes_icm_ctx *)*sched;
-	ctx->ac_nr = rijndaelKeySetupEnc(ctx->ac_ek, (u_char *)key, len * 8);
+	ctx->ac_nr = rijndaelKeySetupEnc(ctx->ac_ek, key, len * 8);
 	return 0;
 }
 

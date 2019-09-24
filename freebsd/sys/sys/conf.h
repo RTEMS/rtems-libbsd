@@ -43,7 +43,7 @@
 #define	_SYS_CONF_H_
 
 #ifdef _KERNEL
-#include <sys/eventhandler.h>
+#include <sys/_eventhandler.h>
 #else
 #include <sys/queue.h>
 #endif
@@ -186,7 +186,8 @@ typedef int dumper_hdr_t(struct dumperinfo *di, struct kerneldumpheader *kdh,
 #define	D_VERSION_01	0x17032005	/* Add d_uid,gid,mode & kind */
 #define	D_VERSION_02	0x28042009	/* Add d_mmap_single */
 #define	D_VERSION_03	0x17122009	/* d_mmap takes memattr,vm_ooffset_t */
-#define	D_VERSION	D_VERSION_03
+#define	D_VERSION_04	0x5c48c353	/* SPECNAMELEN bumped to MAXNAMLEN */
+#define	D_VERSION	D_VERSION_04
 
 /*
  * Flags used for internal housekeeping
@@ -379,6 +380,10 @@ struct dumperinfo {
 	off_t	origdumpoff;	/* Starting dump offset. */
 	struct kerneldumpcrypto	*kdcrypto; /* Kernel dump crypto. */
 	struct kerneldumpcomp *kdcomp; /* Kernel dump compression. */
+
+	TAILQ_ENTRY(dumperinfo)	di_next;
+
+	char			di_devname[];
 };
 
 #ifndef __rtems__
@@ -388,10 +393,10 @@ extern int dumping;		/* system is dumping */
 #endif /* __rtems__ */
 
 int doadump(boolean_t);
-int set_dumper(struct dumperinfo *di, const char *devname, struct thread *td,
-    uint8_t compression, uint8_t encryption, const uint8_t *key,
-    uint32_t encryptedkeysize, const uint8_t *encryptedkey);
-int clear_dumper(struct thread *td);
+struct diocskerneldump_arg;
+int dumper_insert(const struct dumperinfo *di_template, const char *devname,
+    const struct diocskerneldump_arg *kda);
+int dumper_remove(const char *devname, const struct diocskerneldump_arg *kda);
 
 int dump_start(struct dumperinfo *di, struct kerneldumpheader *kdh);
 int dump_append(struct dumperinfo *, void *, vm_offset_t, size_t);

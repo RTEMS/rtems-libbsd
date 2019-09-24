@@ -109,6 +109,7 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_kern_tls.h>
 #include <rtems/bsd/local/opt_sctp.h>
 
 #include <sys/param.h>
@@ -125,6 +126,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/hhook.h>
 #include <sys/kernel.h>
 #include <sys/khelp.h>
+#include <sys/ktls.h>
 #include <sys/event.h>
 #include <sys/eventhandler.h>
 #include <sys/poll.h>
@@ -143,6 +145,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/jail.h>
 #include <sys/syslog.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 
 #include <net/vnet.h>
 
@@ -911,6 +914,8 @@ solisten_wakeup(struct socket *sol)
 	}
 	SOLISTEN_UNLOCK(sol);
 	wakeup_one(&sol->sol_comp);
+	if ((sol->so_state & SS_ASYNC) && sol->so_sigio != NULL)
+		pgsigio(&sol->so_sigio, SIGIO, 0);
 }
 
 /*
@@ -1067,7 +1072,7 @@ sofree(struct socket *so)
 	 *
 	 * We used to do a lot of socket buffer and socket locking here, as
 	 * well as invoke sorflush() and perform wakeups.  The direct call to
-	 * dom_dispose() and sbrelease_internal() are an inlining of what was
+	 * dom_dispose() and sbdestroy() are an inlining of what was
 	 * necessary from sorflush().
 	 *
 	 * Notice that the socket buffer and kqueue state are torn down
@@ -1154,9 +1159,9 @@ drop:
 	so->so_state |= SS_NOFDREF;
 	sorele(so);
 	if (listening) {
-		struct socket *sp;
+		struct socket *sp, *tsp;
 
-		TAILQ_FOREACH(sp, &lqueue, so_list) {
+		TAILQ_FOREACH_SAFE(sp, &lqueue, so_list, tsp) {
 			SOCK_LOCK(sp);
 			if (sp->so_count == 0) {
 				SOCK_UNLOCK(sp);
@@ -1197,7 +1202,6 @@ soabort(struct socket *so)
 	KASSERT(so->so_count == 0, ("soabort: so_count"));
 	KASSERT((so->so_state & SS_PROTOREF) == 0, ("soabort: SS_PROTOREF"));
 	KASSERT(so->so_state & SS_NOFDREF, ("soabort: !SS_NOFDREF"));
-	KASSERT(so->so_qstate == SQ_NONE, ("soabort: !SQ_NONE"));
 	VNET_SO_ASSERT(so);
 
 	if (so->so_proto->pr_usrreqs->pru_abort != NULL)
@@ -1468,7 +1472,15 @@ sosend_generic(struct socket *so, struct sockaddr *addr, struct uio *uio,
 	ssize_t resid;
 	int clen = 0, error, dontroute;
 	int atomic = sosendallatonce(so) || top;
+	int pru_flag;
+#ifdef KERN_TLS
+	struct ktls_session *tls;
+	int tls_enq_cnt, tls_pruflag;
+	uint8_t tls_rtype;
 
+	tls = NULL;
+	tls_rtype = TLS_RLTYPE_APP;
+#endif
 	if (uio != NULL)
 		resid = uio->uio_resid;
 	else
@@ -1501,6 +1513,28 @@ sosend_generic(struct socket *so, struct sockaddr *addr, struct uio *uio,
 	error = sblock(&so->so_snd, SBLOCKWAIT(flags));
 	if (error)
 		goto out;
+
+#ifdef KERN_TLS
+	tls_pruflag = 0;
+	tls = ktls_hold(so->so_snd.sb_tls_info);
+	if (tls != NULL) {
+		if (tls->sw_encrypt != NULL)
+			tls_pruflag = PRUS_NOTREADY;
+
+		if (control != NULL) {
+			struct cmsghdr *cm = mtod(control, struct cmsghdr *);
+
+			if (clen >= sizeof(*cm) &&
+			    cm->cmsg_type == TLS_SET_RECORD_TYPE) {
+				tls_rtype = *((uint8_t *)CMSG_DATA(cm));
+				clen = 0;
+				m_freem(control);
+				control = NULL;
+				atomic = 1;
+			}
+		}
+	}
+#endif
 
 restart:
 	do {
@@ -1551,7 +1585,8 @@ restart:
 		}
 		if (space < resid + clen &&
 		    (atomic || space < so->so_snd.sb_lowat || space < clen)) {
-			if ((so->so_state & SS_NBIO) || (flags & MSG_NBIO)) {
+			if ((so->so_state & SS_NBIO) ||
+			    (flags & (MSG_NBIO | MSG_DONTWAIT)) != 0) {
 				SOCKBUF_UNLOCK(&so->so_snd);
 				error = EWOULDBLOCK;
 				goto release;
@@ -1578,10 +1613,27 @@ restart:
 				 * is a workaround to prevent protocol send
 				 * methods to panic.
 				 */
-				top = m_uiotombuf(uio, M_WAITOK, space,
-				    (atomic ? max_hdr : 0),
-				    (atomic ? M_PKTHDR : 0) |
-				    ((flags & MSG_EOR) ? M_EOR : 0));
+#ifdef KERN_TLS
+				if (tls != NULL) {
+					top = m_uiotombuf(uio, M_WAITOK, space,
+					    tls->params.max_frame_len,
+					    M_NOMAP |
+					    ((flags & MSG_EOR) ? M_EOR : 0));
+					if (top != NULL) {
+						error = ktls_frame(top, tls,
+						    &tls_enq_cnt, tls_rtype);
+						if (error) {
+							m_freem(top);
+							goto release;
+						}
+					}
+					tls_rtype = TLS_RLTYPE_APP;
+				} else
+#endif
+					top = m_uiotombuf(uio, M_WAITOK, space,
+					    (atomic ? max_hdr : 0),
+					    (atomic ? M_PKTHDR : 0) |
+					    ((flags & MSG_EOR) ? M_EOR : 0));
 				if (top == NULL) {
 					error = EFAULT; /* only possible error */
 					goto release;
@@ -1605,8 +1657,8 @@ restart:
 			 * this.
 			 */
 			VNET_SO_ASSERT(so);
-			error = (*so->so_proto->pr_usrreqs->pru_send)(so,
-			    (flags & MSG_OOB) ? PRUS_OOB :
+
+			pru_flag = (flags & MSG_OOB) ? PRUS_OOB :
 			/*
 			 * If the user set MSG_EOF, the protocol understands
 			 * this flag and nothing left to send then use
@@ -1618,13 +1670,37 @@ restart:
 				PRUS_EOF :
 			/* If there is more to send set PRUS_MORETOCOME. */
 			    (flags & MSG_MORETOCOME) ||
-			    (resid > 0 && space > 0) ? PRUS_MORETOCOME : 0,
-			    top, addr, control, td);
+			    (resid > 0 && space > 0) ? PRUS_MORETOCOME : 0;
+
+#ifdef KERN_TLS
+			pru_flag |= tls_pruflag;
+#endif
+
+			error = (*so->so_proto->pr_usrreqs->pru_send)(so,
+			    pru_flag, top, addr, control, td);
+
 			if (dontroute) {
 				SOCK_LOCK(so);
 				so->so_options &= ~SO_DONTROUTE;
 				SOCK_UNLOCK(so);
 			}
+
+#ifdef KERN_TLS
+			if (tls != NULL && tls->sw_encrypt != NULL) {
+				/*
+				 * Note that error is intentionally
+				 * ignored.
+				 *
+				 * Like sendfile(), we rely on the
+				 * completion routine (pru_ready())
+				 * to free the mbufs in the event that
+				 * pru_send() encountered an error and
+				 * did not append them to the sockbuf.
+				 */
+				soref(so);
+				ktls_enqueue(top, so, tls_enq_cnt);
+			}
+#endif
 			clen = 0;
 			control = NULL;
 			top = NULL;
@@ -1636,6 +1712,10 @@ restart:
 release:
 	sbunlock(&so->so_snd);
 out:
+#ifdef KERN_TLS
+	if (tls != NULL)
+		ktls_free(tls);
+#endif
 	if (top != NULL)
 		m_freem(top);
 	if (control != NULL)
@@ -2011,7 +2091,13 @@ dontblock:
 			SBLASTRECORDCHK(&so->so_rcv);
 			SBLASTMBUFCHK(&so->so_rcv);
 			SOCKBUF_UNLOCK(&so->so_rcv);
-			error = uiomove(mtod(m, char *) + moff, (int)len, uio);
+#ifndef __rtems__
+			if ((m->m_flags & M_NOMAP) != 0)
+				error = m_unmappedtouio(m, moff, uio, (int)len);
+			else
+#endif /* __rtems__ */
+				error = uiomove(mtod(m, char *) + moff,
+				    (int)len, uio);
 			SOCKBUF_LOCK(&so->so_rcv);
 			if (error) {
 				/*
@@ -2225,7 +2311,7 @@ soreceive_stream(struct socket *so, struct sockaddr **psa, struct uio *uio,
 	/* Prevent other readers from entering the socket. */
 	error = sblock(sb, SBLOCKWAIT(flags));
 	if (error)
-		goto out;
+		return (error);
 	SOCKBUF_LOCK(sb);
 
 	/* Easy one, no space to copyout anything. */
@@ -2793,12 +2879,10 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 	CURVNET_SET(so->so_vnet);
 	error = 0;
 	if (sopt->sopt_level != SOL_SOCKET) {
-		if (so->so_proto->pr_ctloutput != NULL) {
+		if (so->so_proto->pr_ctloutput != NULL)
 			error = (*so->so_proto->pr_ctloutput)(so, sopt);
-			CURVNET_RESTORE();
-			return (error);
-		}
-		error = ENOPROTOOPT;
+		else
+			error = ENOPROTOOPT;
 	} else {
 		switch (sopt->sopt_name) {
 		case SO_ACCEPTFILTER:
@@ -2811,7 +2895,12 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			error = sooptcopyin(sopt, &l, sizeof l, sizeof l);
 			if (error)
 				goto bad;
-
+			if (l.l_linger < 0 ||
+			    l.l_linger > USHRT_MAX ||
+			    l.l_linger > (INT_MAX / hz)) {
+				error = EDOM;
+				goto bad;
+			}
 			SOCK_LOCK(so);
 			so->so_linger = l.l_linger;
 			if (l.l_onoff)
@@ -4161,6 +4250,9 @@ so_linger_get(const struct socket *so)
 void
 so_linger_set(struct socket *so, int val)
 {
+
+	KASSERT(val >= 0 && val <= USHRT_MAX && val <= (INT_MAX / hz),
+	    ("%s: val %d out of range", __func__, val));
 
 	so->so_linger = val;
 }

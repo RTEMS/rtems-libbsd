@@ -105,7 +105,8 @@ extern int vm_guest;		/* Running as virtual machine guest? */
  * Keep in sync with vm_guest_sysctl_names[].
  */
 enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN, VM_GUEST_HV,
-		VM_GUEST_VMWARE, VM_GUEST_KVM, VM_GUEST_BHYVE, VM_LAST };
+		VM_GUEST_VMWARE, VM_GUEST_KVM, VM_GUEST_BHYVE, VM_GUEST_VBOX,
+		VM_GUEST_PARALLELS, VM_LAST };
 
 /*
  * These functions need to be declared before the KASSERT macro is invoked in
@@ -269,6 +270,13 @@ void	init_param1(void);
 void	init_param2(long physpages);
 void	init_static_kenv(char *, size_t);
 void	tablefull(const char *);
+
+/*
+ * Allocate per-thread "current" state in the linuxkpi
+ */
+extern int (*lkpi_alloc_current)(struct thread *, int);
+int linux_alloc_current_noop(struct thread *, int);
+
 
 #if defined(KLD_MODULE) || defined(KTR_CRITICAL) || !defined(_KERNEL) || defined(GENOFFSET)
 #define critical_enter() critical_enter_KBI()
@@ -612,6 +620,7 @@ int	pause_sbt(const char *wmesg, sbintime_t sbt, sbintime_t pr,
 	_sleep((chan), NULL, (pri), (wmesg), (bt), (pr), (flags))
 void	wakeup(void * chan);
 void	wakeup_one(void * chan);
+void	wakeup_any(void * chan);
 
 /*
  * Common `struct cdev *' stuff are declared here to avoid #include poisoning
@@ -687,6 +696,7 @@ void counted_warning(unsigned *counter, const char *msg);
 /*
  * APIs to manage deprecation and obsolescence.
  */
+#ifndef __rtems__
 struct device;
 void _gone_in(int major, const char *msg);
 void _gone_in_dev(struct device *dev, int major, const char *msg);
@@ -699,9 +709,10 @@ void _gone_in_dev(struct device *dev, int major, const char *msg);
 #endif
 #define gone_in(major, msg)		__gone_ok(major, msg) _gone_in(major, msg)
 #define gone_in_dev(dev, major, msg)	__gone_ok(major, msg) _gone_in_dev(dev, major, msg)
-#define	gone_by_fcp101_dev(dev)						\
-	gone_in_dev((dev), 13,						\
-	    "see https://github.com/freebsd/fcp/blob/master/fcp-0101.md")
+#else /* __rtems__ */
+#define gone_in(major, msg) do { } while (0)
+#define gone_in_dev(dev, major, msg) do { } while (0)
+#endif /* __rtems__ */
 
 __NULLABILITY_PRAGMA_POP
 

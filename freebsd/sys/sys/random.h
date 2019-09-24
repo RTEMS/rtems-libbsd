@@ -37,31 +37,29 @@
 
 struct uio;
 
-#if defined(DEV_RANDOM)
-u_int read_random(void *, u_int);
-int read_random_uio(struct uio *, bool);
-#else
-static __inline int
-read_random_uio(void *a __unused, u_int b __unused)
-{
-	return (0);
-}
 #ifndef __rtems__
-static __inline u_int
-read_random(void *a __unused, u_int b __unused)
-{
-	return (0);
-}
+void read_random(void *, u_int);
 #else /* __rtems__ */
 #include <unistd.h>
 static __inline u_int
 read_random(void *ptr, u_int n)
 {
+
 	getentropy(ptr, n);
 	return (n);
 }
 #endif /* __rtems__ */
-#endif
+int read_random_uio(struct uio *, bool);
+#ifndef __rtems__
+bool is_random_seeded(void);
+#else /* __rtems__ */
+static __inline bool
+is_random_seeded(void)
+{
+
+	return (true);
+}
+#endif /* __rtems__ */
 
 /*
  * Note: if you add or remove members of random_entropy_source, remember to
@@ -97,6 +95,7 @@ enum random_entropy_source {
 	RANDOM_PURE_BROADCOM,
 	RANDOM_PURE_CCP,
 	RANDOM_PURE_DARN,
+	RANDOM_PURE_TPM,
 	ENTROPYSOURCE
 };
 _Static_assert(ENTROPYSOURCE <= 32,
@@ -104,9 +103,8 @@ _Static_assert(ENTROPYSOURCE <= 32,
 
 #define RANDOM_LEGACY_BOOT_ENTROPY_MODULE	"/boot/entropy"
 #define RANDOM_CACHED_BOOT_ENTROPY_MODULE	"boot_entropy_cache"
-#define	RANDOM_CACHED_SKIP_START	256
 
-#if defined(DEV_RANDOM)
+#ifndef __rtems__
 extern u_int hc_source_mask;
 void random_harvest_queue_(const void *, u_int, enum random_entropy_source);
 void random_harvest_fast_(const void *, u_int);
@@ -163,6 +161,9 @@ void random_harvest_deregister_source(enum random_entropy_source);
 
 #define GRND_NONBLOCK	0x1
 #define GRND_RANDOM	0x2
+
+__BEGIN_DECLS
 ssize_t getrandom(void *buf, size_t buflen, unsigned int flags);
+__END_DECLS
 
 #endif /* _SYS_RANDOM_H_ */

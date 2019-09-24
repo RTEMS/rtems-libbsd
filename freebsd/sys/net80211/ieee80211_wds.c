@@ -301,6 +301,7 @@ ieee80211_dwds_mcast(struct ieee80211vap *vap0, struct mbuf *m)
 			continue;
 		}
 		mcopy->m_flags |= M_MCAST;
+		MPASS((mcopy->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0);
 		mcopy->m_pkthdr.rcvif = (void *) ni;
 
 		err = ieee80211_parent_xmitpkt(ic, mcopy);
@@ -334,6 +335,7 @@ ieee80211_dwds_discover(struct ieee80211_node *ni, struct mbuf *m)
 	 * XXX handle overflow?
 	 * XXX per/vap beacon interval?
 	 */
+	MPASS((m->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0);
 	m->m_pkthdr.rcvif = (void *)(uintptr_t)
 	    ieee80211_mac_hash(ic, ni->ni_macaddr);
 	(void) ieee80211_ageq_append(&ic->ic_stageq, m,
@@ -585,11 +587,9 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 		/*
 		 * Save QoS bits for use below--before we strip the header.
 		 */
-		if (subtype == IEEE80211_FC0_SUBTYPE_QOS) {
-			qos = (dir == IEEE80211_FC1_DIR_DSTODS) ?
-			    ((struct ieee80211_qosframe_addr4 *)wh)->i_qos[0] :
-			    ((struct ieee80211_qosframe *)wh)->i_qos[0];
-		} else
+		if (subtype == IEEE80211_FC0_SUBTYPE_QOS)
+			qos = ieee80211_getqos(wh)[0];
+		else
 			qos = 0;
 
 		/*

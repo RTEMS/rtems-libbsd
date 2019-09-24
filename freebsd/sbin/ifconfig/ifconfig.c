@@ -86,6 +86,7 @@ static const char rcsid[] =
 #ifdef JAIL
 #include <jail.h>
 #endif
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -129,6 +130,8 @@ static	void status(const struct afswtch *afp, const struct sockaddr_dl *sdl,
 static	void tunnel_status(int s);
 static _Noreturn void usage(void);
 
+static int getifflags(const char *ifname, int us);
+
 static struct afswtch *af_getbyname(const char *name);
 static struct afswtch *af_getbyfamily(int af);
 static void af_other_status(int);
@@ -145,6 +148,39 @@ struct ifa_order_elt {
 };
 
 TAILQ_HEAD(ifa_queue, ifa_order_elt);
+
+static struct module_map_entry {
+	const char *ifname;
+	const char *kldname;
+} module_map[] = {
+	{
+		.ifname = "tun",
+		.kldname = "if_tuntap",
+	},
+	{
+		.ifname = "tap",
+		.kldname = "if_tuntap",
+	},
+	{
+		.ifname = "vmnet",
+		.kldname = "if_tuntap",
+	},
+	{
+		.ifname = "ipsec",
+		.kldname = "ipsec",
+	},
+	{
+		/*
+		 * This mapping exists because there is a conflicting enc module
+		 * in CAM.  ifconfig's guessing behavior will attempt to match
+		 * the ifname to a module as well as if_${ifname} and clash with
+		 * CAM enc.  This is an assertion of the correct module to load.
+		 */
+		.ifname = "enc",
+		.kldname = "if_enc",
+	},
+};
+
 
 void
 opt_register(struct option *p)
@@ -437,6 +473,7 @@ main(int argc, char *argv[])
 	const char *ifname;
 	struct option *p;
 	size_t iflen;
+	int flags;
 #ifdef __rtems__
 	struct getopt_data getopt_data;
 	memset(&getopt_data, 0, sizeof(getopt_data));
@@ -607,6 +644,25 @@ main(int argc, char *argv[])
 			argc--, argv++;
 	}
 
+	/*
+	 * Check for a requested configuration action on a single interface,
+	 * which doesn't require building, sorting, and searching the entire
+	 * system address list
+	 */
+	if ((argc > 0) && (ifname != NULL)) {
+		iflen = strlcpy(name, ifname, sizeof(name));
+		if (iflen >= sizeof(name)) {
+			warnx("%s: interface name too long, skipping", ifname);
+		} else {
+			flags = getifflags(name, -1);
+			if (!(((flags & IFF_CANTCONFIG) != 0) ||
+				(downonly && (flags & IFF_UP) != 0) ||
+				(uponly && (flags & IFF_UP) == 0)))
+				ifconfig(argc, argv, 0, afp);
+		}
+		goto done;
+	}
+
 	if (getifaddrs(&ifap) != 0)
 		err(EXIT_FAILURE, "getifaddrs");
 
@@ -690,6 +746,7 @@ main(int argc, char *argv[])
 		printf("\n");
 	freeifaddrs(ifap);
 
+done:
 	freeformat();
 	exit(exit_code);
 }
@@ -1101,6 +1158,28 @@ setifdstaddr(const char *addr, int param __unused, int s,
 		afp->af_getaddr(addr, DSTADDR);
 }
 
+static int
+getifflags(const char *ifname, int us)
+{
+	struct ifreq my_ifr;
+	int s;
+	
+	memset(&my_ifr, 0, sizeof(my_ifr));
+	(void) strlcpy(my_ifr.ifr_name, ifname, sizeof(my_ifr.ifr_name));
+	if (us < 0) {
+		if ((s = socket(AF_LOCAL, SOCK_DGRAM, 0)) < 0)
+			err(1, "socket(family AF_LOCAL,SOCK_DGRAM");
+	} else
+		s = us;
+ 	if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&my_ifr) < 0) {
+ 		Perror("ioctl (SIOCGIFFLAGS)");
+ 		exit(1);
+ 	}
+	if (us < 0)
+		close(s);
+	return ((my_ifr.ifr_flags & 0xffff) | (my_ifr.ifr_flagshigh << 16));
+}
+
 /*
  * Note: doing an SIOCIGIFFLAGS scribbles on the union portion
  * of the ifreq structure, which may confuse other parts of ifconfig.
@@ -1112,20 +1191,14 @@ setifflags(const char *vname, int value, int s, const struct afswtch *afp)
 	struct ifreq		my_ifr;
 	int flags;
 
-	memset(&my_ifr, 0, sizeof(my_ifr));
-	(void) strlcpy(my_ifr.ifr_name, name, sizeof(my_ifr.ifr_name));
-
- 	if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&my_ifr) < 0) {
- 		Perror("ioctl (SIOCGIFFLAGS)");
- 		exit(1);
- 	}
-	flags = (my_ifr.ifr_flags & 0xffff) | (my_ifr.ifr_flagshigh << 16);
-
+	flags = getifflags(name, s);
 	if (value < 0) {
 		value = -value;
 		flags &= ~value;
 	} else
 		flags |= value;
+	memset(&my_ifr, 0, sizeof(my_ifr));
+	(void) strlcpy(my_ifr.ifr_name, name, sizeof(my_ifr.ifr_name));
 	my_ifr.ifr_flags = flags & 0xffff;
 	my_ifr.ifr_flagshigh = flags >> 16;
 	if (ioctl(s, SIOCSIFFLAGS, (caddr_t)&my_ifr) < 0)
@@ -1265,7 +1338,7 @@ unsetifdescr(const char *val, int value, int s, const struct afswtch *afp)
 "\020\1RXCSUM\2TXCSUM\3NETCONS\4VLAN_MTU\5VLAN_HWTAGGING\6JUMBO_MTU\7POLLING" \
 "\10VLAN_HWCSUM\11TSO4\12TSO6\13LRO\14WOL_UCAST\15WOL_MCAST\16WOL_MAGIC" \
 "\17TOE4\20TOE6\21VLAN_HWFILTER\23VLAN_HWTSO\24LINKSTATE\25NETMAP" \
-"\26RXCSUM_IPV6\27TXCSUM_IPV6\31TXRTLMT\32HWRXTSTMP"
+"\26RXCSUM_IPV6\27TXCSUM_IPV6\31TXRTLMT\32HWRXTSTMP\33NOMAP\34TXTLS4\35TXTLS6"
 
 /*
  * Print the status of the interface.  If an address family was
@@ -1451,7 +1524,7 @@ print_vhid(const struct ifaddrs *ifa, const char *s)
 	if (ifd->ifi_vhid == 0)
 		return;
 	
-	printf("vhid %d ", ifd->ifi_vhid);
+	printf(" vhid %d", ifd->ifi_vhid);
 }
 
 void
@@ -1460,9 +1533,11 @@ ifmaybeload(const char *name)
 #ifndef __rtems__
 #define MOD_PREFIX_LEN		3	/* "if_" */
 	struct module_stat mstat;
-	int fileid, modid;
+	int i, fileid, modid;
 	char ifkind[IFNAMSIZ + MOD_PREFIX_LEN], ifname[IFNAMSIZ], *dp;
 	const char *cp;
+	struct module_map_entry *mme;
+	bool found;
 
 	/* loading suppressed by the user */
 	if (noload)
@@ -1476,9 +1551,24 @@ ifmaybeload(const char *name)
 			break;
 		}
 
-	/* turn interface and unit into module name */
-	strlcpy(ifkind, "if_", sizeof(ifkind));
-	strlcat(ifkind, ifname, sizeof(ifkind));
+	/* Either derive it from the map or guess otherwise */
+	*ifkind = '\0';
+	found = false;
+	for (i = 0; i < nitems(module_map); ++i) {
+		mme = &module_map[i];
+		if (strcmp(mme->ifname, ifname) == 0) {
+			strlcpy(ifkind, mme->kldname, sizeof(ifkind));
+			found = true;
+			break;
+		}
+	}
+
+	/* We didn't have an alias for it... we'll guess. */
+	if (!found) {
+	    /* turn interface and unit into module name */
+	    strlcpy(ifkind, "if_", sizeof(ifkind));
+	    strlcat(ifkind, ifname, sizeof(ifkind));
+	}
 
 	/* scan files in kernel */
 	mstat.version = sizeof(struct module_stat);
@@ -1494,8 +1584,12 @@ ifmaybeload(const char *name)
 			} else {
 				cp = mstat.name;
 			}
-			/* already loaded? */
-			if (strcmp(ifname, cp) == 0 ||
+			/*
+			 * Is it already loaded?  Don't compare with ifname if
+			 * we were specifically told which kld to use.  Doing
+			 * so could lead to conflicts not trivially solved.
+			 */
+			if ((!found && strcmp(ifname, cp) == 0) ||
 			    strcmp(ifkind, cp) == 0)
 				return;
 		}
@@ -1550,6 +1644,8 @@ static struct cmd basic_cmds[] = {
 	DEF_CMD("-link2",	-IFF_LINK2,	setifflags),
 	DEF_CMD("monitor",	IFF_MONITOR,	setifflags),
 	DEF_CMD("-monitor",	-IFF_MONITOR,	setifflags),
+	DEF_CMD("nomap",	IFCAP_NOMAP,	setifcap),
+	DEF_CMD("-nomap",	-IFCAP_NOMAP,	setifcap),
 	DEF_CMD("staticarp",	IFF_STATICARP,	setifflags),
 	DEF_CMD("-staticarp",	-IFF_STATICARP,	setifflags),
 	DEF_CMD("rxcsum6",	IFCAP_RXCSUM_IPV6,	setifcap),
@@ -1576,6 +1672,8 @@ static struct cmd basic_cmds[] = {
 	DEF_CMD("-toe",		-IFCAP_TOE,	setifcap),
 	DEF_CMD("lro",		IFCAP_LRO,	setifcap),
 	DEF_CMD("-lro",		-IFCAP_LRO,	setifcap),
+	DEF_CMD("txtls",	IFCAP_TXTLS,	setifcap),
+	DEF_CMD("-txtls",	-IFCAP_TXTLS,	setifcap),
 	DEF_CMD("wol",		IFCAP_WOL,	setifcap),
 	DEF_CMD("-wol",		-IFCAP_WOL,	setifcap),
 	DEF_CMD("wol_ucast",	IFCAP_WOL_UCAST,	setifcap),

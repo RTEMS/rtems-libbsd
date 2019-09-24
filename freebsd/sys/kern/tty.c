@@ -95,7 +95,7 @@ static const char	*dev_console_filename;
 			FLUSHO|NOKERNINFO|NOFLSH)
 #define TTYSUP_CFLAG	(CIGNORE|CSIZE|CSTOPB|CREAD|PARENB|PARODD|\
 			HUPCL|CLOCAL|CCTS_OFLOW|CRTS_IFLOW|CDTR_IFLOW|\
-			CDSR_OFLOW|CCAR_OFLOW)
+			CDSR_OFLOW|CCAR_OFLOW|CNO_RTSDTR)
 
 #define	TTY_CALLOUT(tp,d) (dev2unit(d) & TTYUNIT_CALLOUT)
 
@@ -336,7 +336,8 @@ ttydev_open(struct cdev *dev, int oflags, int devtype __unused,
 		if (TTY_CALLOUT(tp, dev) || dev == dev_console)
 			tp->t_termios.c_cflag |= CLOCAL;
 
-		ttydevsw_modem(tp, SER_DTR|SER_RTS, 0);
+		if ((tp->t_termios.c_cflag & CNO_RTSDTR) == 0)
+			ttydevsw_modem(tp, SER_DTR|SER_RTS, 0);
 
 		error = ttydevsw_open(tp);
 		if (error != 0)
@@ -1146,6 +1147,9 @@ tty_rel_free(struct tty *tp)
 		tty_unlock(tp);
 		return;
 	}
+
+	/* Stop asynchronous I/O. */
+	funsetown(&tp->t_sigio);
 
 	/* TTY can be deallocated. */
 	dev = tp->t_dev;

@@ -92,7 +92,10 @@ struct xucred {
 	uid_t	cr_uid;			/* effective user id */
 	short	cr_ngroups;		/* number of groups */
 	gid_t	cr_groups[XU_NGROUPS];	/* groups */
-	void	*_cr_unused1;		/* compatibility with old ucred */
+	union {
+		void	*_cr_unused1;	/* compatibility with old ucred */
+		pid_t	cr_pid;
+	};
 #endif /* __rtems__ */
 };
 #define	XUCRED_VERSION	0
@@ -121,12 +124,14 @@ void	crfree(struct ucred *cr);
 struct ucred	*crget(void);
 struct ucred	*crhold(struct ucred *cr);
 void	cru2x(struct ucred *cr, struct xucred *xcr);
+void	cru2xt(struct thread *td, struct xucred *xcr);
 void	crsetgroups(struct ucred *cr, int n, gid_t *groups);
 int	groupmember(gid_t gid, struct ucred *cred);
 #else /* __rtems__ */
 #define crfree(cr) do { } while (0)
 #define crhold(cr) NULL
 #define cru2x(cr, xcr) do { } while (0)
+#define cru2xt(td, xcr) do { } while (0)
 #define groupmember(gid, cred) 1
 #endif /* __rtems__ */
 #endif /* _KERNEL */

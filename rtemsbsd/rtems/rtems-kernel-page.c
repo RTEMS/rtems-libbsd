@@ -80,7 +80,7 @@ rtems_bsd_page_alloc(uintptr_t size_in_bytes, int flags)
 		for (i = 0; i < 8; i++) {
 			++page_alloc.reclaims;
 			mtx_unlock(&page_alloc.mtx);
-			uma_reclaim();
+			uma_reclaim(UMA_RECLAIM_DRAIN);
 			mtx_lock(&page_alloc.mtx);
 
 			addr = rtems_rbheap_allocate(&page_alloc.heap,

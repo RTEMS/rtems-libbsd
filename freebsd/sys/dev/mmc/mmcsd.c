@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
  * Copyright (c) 2006 Bernd Walter.  All rights reserved.
- * Copyright (c) 2006 M. Warner Losh.  All rights reserved.
+ * Copyright (c) 2006 M. Warner Losh.
  * Copyright (c) 2017 Marius Strobl <marius@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -813,7 +813,7 @@ mmcsd_add_part(struct mmcsd_softc *sc, u_int type, const char *name, u_int cnt,
 		    speed / 1000000, (speed / 100000) % 10,
 		    mmcsd_bus_bit_width(dev), sc->max_data);
 	} else if (type == EXT_CSD_PART_CONFIG_ACC_RPMB) {
-		printf("%s: %ju%sB partion %d%s at %s\n", part->name, bytes,
+		printf("%s: %ju%sB partition %d%s at %s\n", part->name, bytes,
 		    unit, type, ro ? " (read-only)" : "",
 		    device_get_nameunit(dev));
 	} else {
@@ -849,12 +849,12 @@ mmcsd_add_part(struct mmcsd_softc *sc, u_int type, const char *name, u_int cnt,
 			}
 		}
 		if (ext == NULL)
-			printf("%s%d: %ju%sB partion %d%s%s at %s\n",
+			printf("%s%d: %ju%sB partition %d%s%s at %s\n",
 			    part->name, cnt, bytes, unit, type, enh ?
 			    " enhanced" : "", ro ? " (read-only)" : "",
 			    device_get_nameunit(dev));
 		else
-			printf("%s%d: %ju%sB partion %d extended 0x%x "
+			printf("%s%d: %ju%sB partition %d extended 0x%x "
 			    "(%s)%s at %s\n", part->name, cnt, bytes, unit,
 			    type, extattr, ext, ro ? " (read-only)" : "",
 			    device_get_nameunit(dev));

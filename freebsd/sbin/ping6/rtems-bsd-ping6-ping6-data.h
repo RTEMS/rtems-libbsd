@@ -18,7 +18,6 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int hoplimit);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int ident);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int interval);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int mx_dup_ck);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int s);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int timing);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static int waittime);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ping6, static long int nmissedmax);

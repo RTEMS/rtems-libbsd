@@ -31,7 +31,7 @@
 
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/vm.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/mman.h>
 

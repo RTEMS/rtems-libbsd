@@ -1,5 +1,5 @@
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -477,6 +477,32 @@ static __inline int BUS_ADJUST_RESOURCE(device_t _dev, device_t _child,
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_adjust_resource);
 	rc = ((bus_adjust_resource_t *) _m)(_dev, _child, _type, _res, _start, _end);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the BUS_TRANSLATE_RESOURCE() method */
+extern struct kobjop_desc bus_translate_resource_desc;
+/** @brief A function implementing the BUS_TRANSLATE_RESOURCE() method */
+typedef int bus_translate_resource_t(device_t _dev, int _type,
+                                     rman_res_t _start, rman_res_t *_newstart);
+/**
+ * @brief translate a resource value
+ *
+ *
+ * @param _dev		the device associated with the resource
+ * @param _type		the type of resource
+ * @param _start	the starting address of the resource range
+ * @param _newstart	the new starting address of the resource range
+ */
+
+static __inline int BUS_TRANSLATE_RESOURCE(device_t _dev, int _type,
+                                           rman_res_t _start,
+                                           rman_res_t *_newstart)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_translate_resource);
+	rc = ((bus_translate_resource_t *) _m)(_dev, _type, _start, _newstart);
 	return (rc);
 }
 
@@ -1132,7 +1158,7 @@ static __inline int BUS_GET_DOMAIN(device_t _dev, device_t _child, int *_domain)
 extern struct kobjop_desc bus_get_cpus_desc;
 /** @brief A function implementing the BUS_GET_CPUS() method */
 typedef int bus_get_cpus_t(device_t _dev, device_t _child, enum cpu_sets _op,
-                           size_t _setsize, cpuset_t *_cpuset);
+                           size_t _setsize, struct _cpuset *_cpuset);
 /**
  * @brief Request a set of CPUs
  *
@@ -1146,12 +1172,83 @@ typedef int bus_get_cpus_t(device_t _dev, device_t _child, enum cpu_sets _op,
 
 static __inline int BUS_GET_CPUS(device_t _dev, device_t _child,
                                  enum cpu_sets _op, size_t _setsize,
-                                 cpuset_t *_cpuset)
+                                 struct _cpuset *_cpuset)
 {
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_cpus);
 	rc = ((bus_get_cpus_t *) _m)(_dev, _child, _op, _setsize, _cpuset);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the BUS_RESET_PREPARE() method */
+extern struct kobjop_desc bus_reset_prepare_desc;
+/** @brief A function implementing the BUS_RESET_PREPARE() method */
+typedef int bus_reset_prepare_t(device_t _dev, device_t _child);
+/**
+ * @brief Prepares the given child of the bus for reset
+ *
+ * Typically bus detaches or suspends children' drivers, and then
+ * calls this method to save bus-specific information, for instance,
+ * PCI config space, which is damaged by reset.
+ *
+ * The bus_helper_reset_prepare() helper is provided to ease
+ * implementing bus reset methods.
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ */
+
+static __inline int BUS_RESET_PREPARE(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_reset_prepare);
+	rc = ((bus_reset_prepare_t *) _m)(_dev, _child);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the BUS_RESET_POST() method */
+extern struct kobjop_desc bus_reset_post_desc;
+/** @brief A function implementing the BUS_RESET_POST() method */
+typedef int bus_reset_post_t(device_t _dev, device_t _child);
+/**
+ * @brief Restores the child operations after the reset
+ *
+ * The bus_helper_reset_post() helper is provided to ease
+ * implementing bus reset methods.
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ */
+
+static __inline int BUS_RESET_POST(device_t _dev, device_t _child)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_reset_post);
+	rc = ((bus_reset_post_t *) _m)(_dev, _child);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the BUS_RESET_CHILD() method */
+extern struct kobjop_desc bus_reset_child_desc;
+/** @brief A function implementing the BUS_RESET_CHILD() method */
+typedef int bus_reset_child_t(device_t _dev, device_t _child, int _flags);
+/**
+ * @brief Performs reset of the child
+ *
+ * @param _dev		the bus device
+ * @param _child	the child device
+ * @param _flags	DEVF_RESET_ flags
+ */
+
+static __inline int BUS_RESET_CHILD(device_t _dev, device_t _child, int _flags)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_reset_child);
+	rc = ((bus_reset_child_t *) _m)(_dev, _child, _flags);
 	return (rc);
 }
 

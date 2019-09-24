@@ -48,6 +48,7 @@
 __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_kern_tls.h>
 #include <rtems/bsd/local/opt_vlan.h>
 #include <rtems/bsd/local/opt_ratelimit.h>
 
@@ -105,6 +106,20 @@ struct ifvlantrunk {
 	int		refcnt;
 };
 
+#if defined(KERN_TLS) || defined(RATELIMIT)
+struct vlan_snd_tag {
+	struct m_snd_tag com;
+	struct m_snd_tag *tag;
+};
+
+static inline struct vlan_snd_tag *
+mst_to_vst(struct m_snd_tag *mst)
+{
+
+	return (__containerof(mst, struct vlan_snd_tag, com));
+}
+#endif
+
 /*
  * This macro provides a facility to iterate over every vlan on a trunk with
  * the assumption that none will be added/removed during iteration.
@@ -158,7 +173,7 @@ struct vlan_mc_entry {
 	struct epoch_context		mc_epoch_ctx;
 };
 
-struct	ifvlan {
+struct ifvlan {
 	struct	ifvlantrunk *ifv_trunk;
 	struct	ifnet *ifv_ifp;
 #define	TRUNK(ifv)	((ifv)->ifv_trunk)
@@ -166,28 +181,19 @@ struct	ifvlan {
 	void	*ifv_cookie;
 	int	ifv_pflags;	/* special flags we have set on parent */
 	int	ifv_capenable;
-	struct	ifv_linkmib {
-		int	ifvm_encaplen;	/* encapsulation length */
-		int	ifvm_mtufudge;	/* MTU fudged by this much */
-		int	ifvm_mintu;	/* min transmission unit */
-		uint16_t ifvm_proto;	/* encapsulation ethertype */
-		uint16_t ifvm_tag;	/* tag to apply on packets leaving if */
-              	uint16_t ifvm_vid;	/* VLAN ID */
-		uint8_t	ifvm_pcp;	/* Priority Code Point (PCP). */
-	}	ifv_mib;
+	int	ifv_encaplen;	/* encapsulation length */
+	int	ifv_mtufudge;	/* MTU fudged by this much */
+	int	ifv_mintu;	/* min transmission unit */
+	uint16_t ifv_proto;	/* encapsulation ethertype */
+	uint16_t ifv_tag;	/* tag to apply on packets leaving if */
+	uint16_t ifv_vid;	/* VLAN ID */
+	uint8_t	ifv_pcp;	/* Priority Code Point (PCP). */
 	struct task lladdr_task;
 	CK_SLIST_HEAD(, vlan_mc_entry) vlan_mc_listhead;
 #ifndef VLAN_ARRAY
 	CK_SLIST_ENTRY(ifvlan) ifv_list;
 #endif
 };
-#define	ifv_proto	ifv_mib.ifvm_proto
-#define	ifv_tag		ifv_mib.ifvm_tag
-#define	ifv_vid 	ifv_mib.ifvm_vid
-#define	ifv_pcp		ifv_mib.ifvm_pcp
-#define	ifv_encaplen	ifv_mib.ifvm_encaplen
-#define	ifv_mtufudge	ifv_mib.ifvm_mtufudge
-#define	ifv_mintu	ifv_mib.ifvm_mintu
 
 /* Special flags we should propagate to parent. */
 static struct {
@@ -235,10 +241,6 @@ static struct sx _VLAN_SX_ID;
 #define VLAN_LOCKING_DESTROY() \
 	sx_destroy(&_VLAN_SX_ID)
 
-#define	VLAN_RLOCK()			NET_EPOCH_ENTER();
-#define	VLAN_RUNLOCK()			NET_EPOCH_EXIT();
-#define	VLAN_RLOCK_ASSERT()		MPASS(in_epoch(net_epoch_preempt))
-
 #define	VLAN_SLOCK()			sx_slock(&_VLAN_SX_ID)
 #define	VLAN_SUNLOCK()			sx_sunlock(&_VLAN_SX_ID)
 #define	VLAN_XLOCK()			sx_xlock(&_VLAN_SX_ID)
@@ -254,11 +256,8 @@ static struct sx _VLAN_SX_ID;
  */
 #define	TRUNK_LOCK_INIT(trunk)		mtx_init(&(trunk)->lock, vlanname, NULL, MTX_DEF)
 #define	TRUNK_LOCK_DESTROY(trunk)	mtx_destroy(&(trunk)->lock)
-#define	TRUNK_RLOCK(trunk)		NET_EPOCH_ENTER()
 #define	TRUNK_WLOCK(trunk)		mtx_lock(&(trunk)->lock)
-#define	TRUNK_RUNLOCK(trunk)		NET_EPOCH_EXIT();
 #define	TRUNK_WUNLOCK(trunk)		mtx_unlock(&(trunk)->lock)
-#define	TRUNK_RLOCK_ASSERT(trunk)	MPASS(in_epoch(net_epoch_preempt))
 #define	TRUNK_LOCK_ASSERT(trunk)	MPASS(in_epoch(net_epoch_preempt) || mtx_owned(&(trunk)->lock))
 #define	TRUNK_WLOCK_ASSERT(trunk)	mtx_assert(&(trunk)->lock, MA_OWNED);
 
@@ -282,9 +281,14 @@ static	void trunk_destroy(struct ifvlantrunk *trunk);
 static	void vlan_init(void *foo);
 static	void vlan_input(struct ifnet *ifp, struct mbuf *m);
 static	int vlan_ioctl(struct ifnet *ifp, u_long cmd, caddr_t addr);
-#ifdef RATELIMIT
+#if defined(KERN_TLS) || defined(RATELIMIT)
 static	int vlan_snd_tag_alloc(struct ifnet *,
     union if_snd_tag_alloc_params *, struct m_snd_tag **);
+static	int vlan_snd_tag_modify(struct m_snd_tag *,
+    union if_snd_tag_modify_params *);
+static	int vlan_snd_tag_query(struct m_snd_tag *,
+    union if_snd_tag_query_params *);
+static	void vlan_snd_tag_free(struct m_snd_tag *);
 #endif
 static	void vlan_qflush(struct ifnet *ifp);
 static	int vlan_setflag(struct ifnet *ifp, int flag, int status,
@@ -292,6 +296,8 @@ static	int vlan_setflag(struct ifnet *ifp, int flag, int status,
 static	int vlan_setflags(struct ifnet *ifp, int status);
 static	int vlan_setmulti(struct ifnet *ifp);
 static	int vlan_transmit(struct ifnet *ifp, struct mbuf *m);
+static	int vlan_output(struct ifnet *ifp, struct mbuf *m,
+    const struct sockaddr *dst, struct route *ro);
 static	void vlan_unconfig(struct ifnet *ifp);
 static	void vlan_unconfig_locked(struct ifnet *ifp, int departing);
 static	int vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t tag);
@@ -474,7 +480,7 @@ vlan_gethash(struct ifvlantrunk *trunk, uint16_t vid)
 {
 	struct ifvlan *ifv;
 
-	TRUNK_RLOCK_ASSERT(trunk);
+	NET_EPOCH_ASSERT();
 
 	CK_SLIST_FOREACH(ifv, &trunk->hash[HASH(vid, trunk->hmask)], ifv_list)
 		if (ifv->ifv_vid == vid)
@@ -619,16 +625,17 @@ vlan_setmulti(struct ifnet *ifp)
 static void
 vlan_iflladdr(void *arg __unused, struct ifnet *ifp)
 {
+	struct epoch_tracker et;
 	struct ifvlan *ifv;
 	struct ifnet *ifv_ifp;
 	struct ifvlantrunk *trunk;
 	struct sockaddr_dl *sdl;
 
-	/* Need the rmlock since this is run on taskqueue_swi. */
-	VLAN_RLOCK();
+	/* Need the epoch since this is run on taskqueue_swi. */
+	NET_EPOCH_ENTER(et);
 	trunk = ifp->if_vlantrunk;
 	if (trunk == NULL) {
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		return;
 	}
 
@@ -654,7 +661,7 @@ vlan_iflladdr(void *arg __unused, struct ifnet *ifp)
 		taskqueue_enqueue(taskqueue_thread, &ifv->lladdr_task);
 	}
 	TRUNK_WUNLOCK(trunk);
-	VLAN_RUNLOCK();
+	NET_EPOCH_EXIT(et);
 }
 
 /*
@@ -700,17 +707,18 @@ vlan_ifdetach(void *arg __unused, struct ifnet *ifp)
 static struct ifnet  *
 vlan_trunkdev(struct ifnet *ifp)
 {
+	struct epoch_tracker et;
 	struct ifvlan *ifv;
 
 	if (ifp->if_type != IFT_L2VLAN)
 		return (NULL);
 
-	VLAN_RLOCK();
+	NET_EPOCH_ENTER(et);
 	ifv = ifp->if_softc;
 	ifp = NULL;
 	if (ifv->ifv_trunk)
 		ifp = PARENT(ifv);
-	VLAN_RUNLOCK();
+	NET_EPOCH_EXIT(et);
 	return (ifp);
 }
 
@@ -782,20 +790,21 @@ vlan_setcookie(struct ifnet *ifp, void *cookie)
 static struct ifnet *
 vlan_devat(struct ifnet *ifp, uint16_t vid)
 {
+	struct epoch_tracker et;
 	struct ifvlantrunk *trunk;
 	struct ifvlan *ifv;
 
-	VLAN_RLOCK();
+	NET_EPOCH_ENTER(et);
 	trunk = ifp->if_vlantrunk;
 	if (trunk == NULL) {
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		return (NULL);
 	}
 	ifp = NULL;
 	ifv = vlan_gethash(trunk, vid);
 	if (ifv)
 		ifp = ifv->ifv_ifp;
-	VLAN_RUNLOCK();
+	NET_EPOCH_EXIT(et);
 	return (ifp);
 }
 
@@ -1055,17 +1064,16 @@ vlan_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	strlcpy(ifp->if_xname, name, IFNAMSIZ);
 	ifp->if_dname = vlanname;
 	ifp->if_dunit = unit;
-	/* NB: flags are not set here */
-	ifp->if_linkmib = &ifv->ifv_mib;
-	ifp->if_linkmiblen = sizeof(ifv->ifv_mib);
-	/* NB: mtu is not set here */
 
 	ifp->if_init = vlan_init;
 	ifp->if_transmit = vlan_transmit;
 	ifp->if_qflush = vlan_qflush;
 	ifp->if_ioctl = vlan_ioctl;
-#ifdef RATELIMIT
+#if defined(KERN_TLS) || defined(RATELIMIT)
 	ifp->if_snd_tag_alloc = vlan_snd_tag_alloc;
+	ifp->if_snd_tag_modify = vlan_snd_tag_modify;
+	ifp->if_snd_tag_query = vlan_snd_tag_query;
+	ifp->if_snd_tag_free = vlan_snd_tag_free;
 #endif
 	ifp->if_flags = VLAN_IFFLAGS;
 	ether_ifattach(ifp, eaddr);
@@ -1135,15 +1143,16 @@ vlan_init(void *foo __unused)
 static int
 vlan_transmit(struct ifnet *ifp, struct mbuf *m)
 {
+	struct epoch_tracker et;
 	struct ifvlan *ifv;
 	struct ifnet *p;
 	int error, len, mcast;
 
-	VLAN_RLOCK();
+	NET_EPOCH_ENTER(et);
 	ifv = ifp->if_softc;
 	if (TRUNK(ifv) == NULL) {
 		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		m_freem(m);
 		return (ENETDOWN);
 	}
@@ -1153,20 +1162,40 @@ vlan_transmit(struct ifnet *ifp, struct mbuf *m)
 
 	BPF_MTAP(ifp, m);
 
+#if defined(KERN_TLS) || defined(RATELIMIT)
+	if (m->m_pkthdr.csum_flags & CSUM_SND_TAG) {
+		struct vlan_snd_tag *vst;
+		struct m_snd_tag *mst;
+
+		MPASS(m->m_pkthdr.snd_tag->ifp == ifp);
+		mst = m->m_pkthdr.snd_tag;
+		vst = mst_to_vst(mst);
+		if (vst->tag->ifp != p) {
+			if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
+			NET_EPOCH_EXIT(et);
+			m_freem(m);
+			return (EAGAIN);
+		}
+
+		m->m_pkthdr.snd_tag = m_snd_tag_ref(vst->tag);
+		m_snd_tag_rele(mst);
+	}
+#endif
+
 	/*
 	 * Do not run parent's if_transmit() if the parent is not up,
 	 * or parent's driver will cause a system crash.
 	 */
 	if (!UP_AND_RUNNING(p)) {
 		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		m_freem(m);
 		return (ENETDOWN);
 	}
 
 	if (!ether_8021q_frame(&m, ifp, p, ifv->ifv_vid, ifv->ifv_pcp)) {
 		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		return (0);
 	}
 
@@ -1180,9 +1209,30 @@ vlan_transmit(struct ifnet *ifp, struct mbuf *m)
 		if_inc_counter(ifp, IFCOUNTER_OMCASTS, mcast);
 	} else
 		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
-	VLAN_RUNLOCK();
+	NET_EPOCH_EXIT(et);
 	return (error);
 }
+
+static int
+vlan_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
+    struct route *ro)
+{
+	struct epoch_tracker et;
+	struct ifvlan *ifv;
+	struct ifnet *p;
+
+	NET_EPOCH_ENTER(et);
+	ifv = ifp->if_softc;
+	if (TRUNK(ifv) == NULL) {
+		NET_EPOCH_EXIT(et);
+		m_freem(m);
+		return (ENETDOWN);
+	}
+	p = PARENT(ifv);
+	NET_EPOCH_EXIT(et);
+	return p->if_output(ifp, m, dst, ro);
+}
+
 
 /*
  * The ifp->if_qflush entry point for vlan(4) is a no-op.
@@ -1195,15 +1245,16 @@ vlan_qflush(struct ifnet *ifp __unused)
 static void
 vlan_input(struct ifnet *ifp, struct mbuf *m)
 {
+	struct epoch_tracker et;
 	struct ifvlantrunk *trunk;
 	struct ifvlan *ifv;
 	struct m_tag *mtag;
 	uint16_t vid, tag;
 
-	VLAN_RLOCK();
+	NET_EPOCH_ENTER(et);
 	trunk = ifp->if_vlantrunk;
 	if (trunk == NULL) {
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		m_freem(m);
 		return;
 	}
@@ -1226,7 +1277,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 			if (m->m_len < sizeof(*evl) &&
 			    (m = m_pullup(m, sizeof(*evl))) == NULL) {
 				if_printf(ifp, "cannot pullup VLAN header\n");
-				VLAN_RUNLOCK();
+				NET_EPOCH_EXIT(et);
 				return;
 			}
 			evl = mtod(m, struct ether_vlan_header *);
@@ -1249,7 +1300,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 			      __func__, ifp->if_xname, ifp->if_type);
 #endif
 			if_inc_counter(ifp, IFCOUNTER_NOPROTO, 1);
-			VLAN_RUNLOCK();
+			NET_EPOCH_EXIT(et);
 			m_freem(m);
 			return;
 		}
@@ -1259,7 +1310,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 
 	ifv = vlan_gethash(trunk, vid);
 	if (ifv == NULL || !UP_AND_RUNNING(ifv->ifv_ifp)) {
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		if_inc_counter(ifp, IFCOUNTER_NOPROTO, 1);
 		m_freem(m);
 		return;
@@ -1279,7 +1330,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 			    sizeof(uint8_t), M_NOWAIT);
 			if (mtag == NULL) {
 				if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
-				VLAN_RUNLOCK();
+				NET_EPOCH_EXIT(et);
 				m_freem(m);
 				return;
 			}
@@ -1290,7 +1341,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 
 	m->m_pkthdr.rcvif = ifv->ifv_ifp;
 	if_inc_counter(ifv->ifv_ifp, IFCOUNTER_IPACKETS, 1);
-	VLAN_RUNLOCK();
+	NET_EPOCH_EXIT(et);
 
 	/* Pass it back through the parent's input routine. */
 	(*ifv->ifv_ifp->if_input)(ifv->ifv_ifp, m);
@@ -1316,6 +1367,7 @@ vlan_lladdr_fn(void *arg, int pending __unused)
 static int
 vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t vid)
 {
+	struct epoch_tracker et;
 	struct ifvlantrunk *trunk;
 	struct ifnet *ifp;
 	int error = 0;
@@ -1397,12 +1449,17 @@ vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t vid)
 	 */
 	ifp->if_mtu = p->if_mtu - ifv->ifv_mtufudge;
 	ifp->if_baudrate = p->if_baudrate;
-	ifp->if_output = p->if_output;
 	ifp->if_input = p->if_input;
 	ifp->if_resolvemulti = p->if_resolvemulti;
 	ifp->if_addrlen = p->if_addrlen;
 	ifp->if_broadcastaddr = p->if_broadcastaddr;
 	ifp->if_pcp = ifv->ifv_pcp;
+
+	/*
+	 * We wrap the parent's if_output using vlan_output to ensure that it
+	 * can't become stale.
+	 */
+	ifp->if_output = vlan_output;
 
 	/*
 	 * Copy only a selected subset of flags from the parent.
@@ -1415,9 +1472,9 @@ vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t vid)
 
 	ifp->if_link_state = p->if_link_state;
 
-	TRUNK_RLOCK(TRUNK(ifv));
+	NET_EPOCH_ENTER(et);
 	vlan_capabilities(ifv);
-	TRUNK_RUNLOCK(TRUNK(ifv));
+	NET_EPOCH_EXIT(et);
 
 	/*
 	 * Set up our interface address to reflect the underlying
@@ -1589,14 +1646,15 @@ vlan_setflags(struct ifnet *ifp, int status)
 static void
 vlan_link_state(struct ifnet *ifp)
 {
+	struct epoch_tracker et;
 	struct ifvlantrunk *trunk;
 	struct ifvlan *ifv;
 
 	/* Called from a taskqueue_swi task, so we cannot sleep. */
-	VLAN_RLOCK();
+	NET_EPOCH_ENTER(et);
 	trunk = ifp->if_vlantrunk;
 	if (trunk == NULL) {
-		VLAN_RUNLOCK();
+		NET_EPOCH_EXIT(et);
 		return;
 	}
 
@@ -1607,7 +1665,7 @@ vlan_link_state(struct ifnet *ifp)
 		    trunk->parent->if_link_state);
 	}
 	TRUNK_WUNLOCK(trunk);
-	VLAN_RUNLOCK();
+	NET_EPOCH_EXIT(et);
 }
 
 static void
@@ -1620,7 +1678,7 @@ vlan_capabilities(struct ifvlan *ifv)
 	u_long hwa = 0;
 
 	VLAN_SXLOCK_ASSERT();
-	TRUNK_RLOCK_ASSERT(TRUNK(ifv));
+	NET_EPOCH_ASSERT();
 	p = PARENT(ifv);
 	ifp = ifv->ifv_ifp;
 
@@ -1704,6 +1762,30 @@ vlan_capabilities(struct ifvlan *ifv)
 	ena |= (mena & IFCAP_TXRTLMT);
 #endif
 
+	/*
+	 * If the parent interface supports unmapped mbufs, so does
+	 * the VLAN interface.  Note that this should be fine even for
+	 * interfaces that don't support hardware tagging as headers
+	 * are prepended in normal mbufs to unmapped mbufs holding
+	 * payload data.
+	 */
+	cap |= (p->if_capabilities & IFCAP_NOMAP);
+	ena |= (mena & IFCAP_NOMAP);
+
+	/*
+	 * If the parent interface can offload encryption and segmentation
+	 * of TLS records over TCP, propagate it's capability to the VLAN
+	 * interface.
+	 *
+	 * All TLS drivers in the tree today can deal with VLANs.  If
+	 * this ever changes, then a new IFCAP_VLAN_TXTLS can be
+	 * defined.
+	 */
+	if (p->if_capabilities & IFCAP_TXTLS)
+		cap |= p->if_capabilities & IFCAP_TXTLS;
+	if (p->if_capenable & IFCAP_TXTLS)
+		ena |= mena & IFCAP_TXTLS;
+
 	ifp->if_capabilities = cap;
 	ifp->if_capenable = ena;
 	ifp->if_hwassist = hwa;
@@ -1712,6 +1794,7 @@ vlan_capabilities(struct ifvlan *ifv)
 static void
 vlan_trunk_capabilities(struct ifnet *ifp)
 {
+	struct epoch_tracker et;
 	struct ifvlantrunk *trunk;
 	struct ifvlan *ifv;
 
@@ -1721,11 +1804,11 @@ vlan_trunk_capabilities(struct ifnet *ifp)
 		VLAN_SUNLOCK();
 		return;
 	}
-	TRUNK_RLOCK(trunk);
+	NET_EPOCH_ENTER(et);
 	VLAN_FOREACH(ifv, trunk) {
 		vlan_capabilities(ifv);
 	}
-	TRUNK_RUNLOCK(trunk);
+	NET_EPOCH_EXIT(et);
 	VLAN_SUNLOCK();
 }
 
@@ -1917,9 +2000,11 @@ vlan_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		ifv->ifv_capenable = ifr->ifr_reqcap;
 		trunk = TRUNK(ifv);
 		if (trunk != NULL) {
-			TRUNK_RLOCK(trunk);
+			struct epoch_tracker et;
+
+			NET_EPOCH_ENTER(et);
 			vlan_capabilities(ifv);
-			TRUNK_RUNLOCK(trunk);
+			NET_EPOCH_EXIT(et);
 		}
 		VLAN_SUNLOCK();
 		break;
@@ -1932,18 +2017,77 @@ vlan_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	return (error);
 }
 
-#ifdef RATELIMIT
+#if defined(KERN_TLS) || defined(RATELIMIT)
 static int
 vlan_snd_tag_alloc(struct ifnet *ifp,
     union if_snd_tag_alloc_params *params,
     struct m_snd_tag **ppmt)
 {
+	struct epoch_tracker et;
+	struct vlan_snd_tag *vst;
+	struct ifvlan *ifv;
+	struct ifnet *parent;
+	int error;
 
-	/* get trunk device */
-	ifp = vlan_trunkdev(ifp);
-	if (ifp == NULL || (ifp->if_capenable & IFCAP_TXRTLMT) == 0)
+	NET_EPOCH_ENTER(et);
+	ifv = ifp->if_softc;
+	if (ifv->ifv_trunk != NULL)
+		parent = PARENT(ifv);
+	else
+		parent = NULL;
+	if (parent == NULL || parent->if_snd_tag_alloc == NULL) {
+		NET_EPOCH_EXIT(et);
 		return (EOPNOTSUPP);
-	/* forward allocation request */
-	return (ifp->if_snd_tag_alloc(ifp, params, ppmt));
+	}
+	if_ref(parent);
+	NET_EPOCH_EXIT(et);
+
+	vst = malloc(sizeof(*vst), M_VLAN, M_NOWAIT);
+	if (vst == NULL) {
+		if_rele(parent);
+		return (ENOMEM);
+	}
+
+	error = parent->if_snd_tag_alloc(parent, params, &vst->tag);
+	if_rele(parent);
+	if (error) {
+		free(vst, M_VLAN);
+		return (error);
+	}
+
+	m_snd_tag_init(&vst->com, ifp);
+
+	*ppmt = &vst->com;
+	return (0);
+}
+
+static int
+vlan_snd_tag_modify(struct m_snd_tag *mst,
+    union if_snd_tag_modify_params *params)
+{
+	struct vlan_snd_tag *vst;
+
+	vst = mst_to_vst(mst);
+	return (vst->tag->ifp->if_snd_tag_modify(vst->tag, params));
+}
+
+static int
+vlan_snd_tag_query(struct m_snd_tag *mst,
+    union if_snd_tag_query_params *params)
+{
+	struct vlan_snd_tag *vst;
+
+	vst = mst_to_vst(mst);
+	return (vst->tag->ifp->if_snd_tag_query(vst->tag, params));
+}
+
+static void
+vlan_snd_tag_free(struct m_snd_tag *mst)
+{
+	struct vlan_snd_tag *vst;
+
+	vst = mst_to_vst(mst);
+	m_snd_tag_rele(vst->tag);
+	free(vst, M_VLAN);
 }
 #endif

@@ -92,6 +92,9 @@ __FBSDID("$FreeBSD$");
 #if defined(INET) || defined(INET6)
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
+#ifdef INET
+#include <netinet/in_var.h>
+#endif
 #include <netinet/ip_var.h>
 #include <netinet/tcp_var.h>
 #ifdef TCPHPTS
@@ -99,16 +102,13 @@ __FBSDID("$FreeBSD$");
 #endif
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
-#endif
-#ifdef INET
-#include <netinet/in_var.h>
-#endif
 #ifdef INET6
 #include <netinet/ip6.h>
 #include <netinet6/in6_pcb.h>
 #include <netinet6/in6_var.h>
 #include <netinet6/ip6_var.h>
 #endif /* INET6 */
+#endif
 
 #include <netipsec/ipsec_support.h>
 
@@ -216,6 +216,22 @@ SYSCTL_INT(_net_inet_ip_portrange, OID_AUTO, randomtime,
 	&VNET_NAME(ipport_randomtime), 0,
 	"Minimum time to keep sequental port "
 	"allocation before switching to a random one");
+
+#ifdef RATELIMIT
+counter_u64_t rate_limit_active;
+counter_u64_t rate_limit_alloc_fail;
+counter_u64_t rate_limit_set_ok;
+
+static SYSCTL_NODE(_net_inet_ip, OID_AUTO, rl, CTLFLAG_RD, 0,
+    "IP Rate Limiting");
+SYSCTL_COUNTER_U64(_net_inet_ip_rl, OID_AUTO, active, CTLFLAG_RD,
+    &rate_limit_active, "Active rate limited connections");
+SYSCTL_COUNTER_U64(_net_inet_ip_rl, OID_AUTO, alloc_fail, CTLFLAG_RD,
+   &rate_limit_alloc_fail, "Rate limited connection failures");
+SYSCTL_COUNTER_U64(_net_inet_ip_rl, OID_AUTO, set_ok, CTLFLAG_RD,
+   &rate_limit_set_ok, "Rate limited setting succeeded");
+#endif /* RATELIMIT */
+
 #endif /* INET */
 
 /*
@@ -516,6 +532,9 @@ in_pcballoc(struct socket *so, struct inpcbinfo *pcbinfo)
 	if (inp == NULL)
 		return (ENOBUFS);
 	bzero(&inp->inp_start_zero, inp_zero_size);
+#ifdef NUMA
+	inp->inp_numa_domain = M_NODOM;
+#endif
 	inp->inp_pcbinfo = pcbinfo;
 	inp->inp_socket = so;
 	inp->inp_cred = crhold(so->so_cred);
@@ -1024,6 +1043,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 	struct sockaddr *sa;
 	struct sockaddr_in *sin;
 	struct route sro;
+	struct epoch_tracker et;
 	int error;
 
 	KASSERT(laddr != NULL, ("%s: laddr NULL", __func__));
@@ -1059,7 +1079,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 	 * network and try to find a corresponding interface to take
 	 * the source address from.
 	 */
-	NET_EPOCH_ENTER();
+	NET_EPOCH_ENTER(et);
 	if (sro.ro_rt == NULL || sro.ro_rt->rt_ifp == NULL) {
 		struct in_ifaddr *ia;
 		struct ifnet *ifp;
@@ -1223,7 +1243,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 	}
 
 done:
-	NET_EPOCH_EXIT();
+	NET_EPOCH_EXIT(et);
 	if (sro.ro_rt != NULL)
 		RTFREE(sro.ro_rt);
 	return (error);
@@ -1576,6 +1596,7 @@ in_pcbfree_deferred(epoch_context_t ctx)
 	inp = __containerof(ctx, struct inpcb, inp_epoch_ctx);
 
 	INP_WLOCK(inp);
+	CURVNET_SET(inp->inp_vnet);
 #ifdef INET
 	struct ip_moptions *imo = inp->inp_moptions;
 	inp->inp_moptions = NULL;
@@ -1608,6 +1629,7 @@ in_pcbfree_deferred(epoch_context_t ctx)
 #ifdef INET
 	inp_freemoptions(imo);
 #endif	
+	CURVNET_RESTORE();
 }
 
 /*
@@ -1785,8 +1807,9 @@ void
 in_pcbpurgeif0(struct inpcbinfo *pcbinfo, struct ifnet *ifp)
 {
 	struct inpcb *inp;
+	struct in_multi *inm;
+	struct in_mfilter *imf;
 	struct ip_moptions *imo;
-	int i, gap;
 
 	INP_INFO_WLOCK(pcbinfo);
 	CK_LIST_FOREACH(inp, pcbinfo->ipi_listhead, inp_list) {
@@ -1807,17 +1830,18 @@ in_pcbpurgeif0(struct inpcbinfo *pcbinfo, struct ifnet *ifp)
 			 *
 			 * XXX This can all be deferred to an epoch_call
 			 */
-			for (i = 0, gap = 0; i < imo->imo_num_memberships;
-			    i++) {
-				if (imo->imo_membership[i]->inm_ifp == ifp) {
-					IN_MULTI_LOCK_ASSERT();
-					in_leavegroup_locked(imo->imo_membership[i], NULL);
-					gap++;
-				} else if (gap != 0)
-					imo->imo_membership[i - gap] =
-					    imo->imo_membership[i];
+restart:
+			IP_MFILTER_FOREACH(imf, &imo->imo_head) {
+				if ((inm = imf->imf_inm) == NULL)
+					continue;
+				if (inm->inm_ifp != ifp)
+					continue;
+				ip_mfilter_remove(&imo->imo_head, imf);
+				IN_MULTI_LOCK_ASSERT();
+				in_leavegroup_locked(inm, NULL);
+				ip_mfilter_free(imf);
+				goto restart;
 			}
-			imo->imo_num_memberships -= gap;
 		}
 		INP_WUNLOCK(inp);
 	}
@@ -3174,6 +3198,7 @@ in_pcbmodify_txrtlmt(struct inpcb *inp, uint32_t max_pacing_rate)
 {
 	union if_snd_tag_modify_params params = {
 		.rate_limit.max_rate = max_pacing_rate,
+		.rate_limit.flags = M_NOWAIT,
 	};
 	struct m_snd_tag *mst;
 	struct ifnet *ifp;
@@ -3260,7 +3285,8 @@ in_pcbquery_txrlevel(struct inpcb *inp, uint32_t *p_txqueue_level)
  */
 int
 in_pcbattach_txrtlmt(struct inpcb *inp, struct ifnet *ifp,
-    uint32_t flowtype, uint32_t flowid, uint32_t max_pacing_rate)
+    uint32_t flowtype, uint32_t flowid, uint32_t max_pacing_rate, struct m_snd_tag **st)
+
 {
 	union if_snd_tag_alloc_params params = {
 		.rate_limit.hdr.type = (max_pacing_rate == -1U) ?
@@ -3268,12 +3294,13 @@ in_pcbattach_txrtlmt(struct inpcb *inp, struct ifnet *ifp,
 		.rate_limit.hdr.flowid = flowid,
 		.rate_limit.hdr.flowtype = flowtype,
 		.rate_limit.max_rate = max_pacing_rate,
+		.rate_limit.flags = M_NOWAIT,
 	};
 	int error;
 
 	INP_WLOCK_ASSERT(inp);
 
-	if (inp->inp_snd_tag != NULL)
+	if (*st != NULL)
 		return (EINVAL);
 
 	if (ifp->if_snd_tag_alloc == NULL) {
@@ -3281,35 +3308,20 @@ in_pcbattach_txrtlmt(struct inpcb *inp, struct ifnet *ifp,
 	} else {
 		error = ifp->if_snd_tag_alloc(ifp, &params, &inp->inp_snd_tag);
 
-		/*
-		 * At success increment the refcount on
-		 * the send tag's network interface:
-		 */
-		if (error == 0)
-			if_ref(inp->inp_snd_tag->ifp);
+#ifdef INET
+		if (error == 0) {
+			counter_u64_add(rate_limit_set_ok, 1);
+			counter_u64_add(rate_limit_active, 1);
+		} else
+			counter_u64_add(rate_limit_alloc_fail, 1);
+#endif
 	}
 	return (error);
 }
 
-/*
- * Free an existing TX rate limit tag based on the "inp->inp_snd_tag",
- * if any:
- */
 void
-in_pcbdetach_txrtlmt(struct inpcb *inp)
+in_pcbdetach_tag(struct ifnet *ifp, struct m_snd_tag *mst)
 {
-	struct m_snd_tag *mst;
-	struct ifnet *ifp;
-
-	INP_WLOCK_ASSERT(inp);
-
-	mst = inp->inp_snd_tag;
-	inp->inp_snd_tag = NULL;
-
-	if (mst == NULL)
-		return;
-
-	ifp = mst->ifp;
 	if (ifp == NULL)
 		return;
 
@@ -3322,6 +3334,79 @@ in_pcbdetach_txrtlmt(struct inpcb *inp)
 
 	/* release reference count on network interface */
 	if_rele(ifp);
+#ifdef INET
+	counter_u64_add(rate_limit_active, -1);
+#endif
+}
+
+/*
+ * Free an existing TX rate limit tag based on the "inp->inp_snd_tag",
+ * if any:
+ */
+void
+in_pcbdetach_txrtlmt(struct inpcb *inp)
+{
+	struct m_snd_tag *mst;
+
+	INP_WLOCK_ASSERT(inp);
+
+	mst = inp->inp_snd_tag;
+	inp->inp_snd_tag = NULL;
+
+	if (mst == NULL)
+		return;
+
+	m_snd_tag_rele(mst);
+}
+
+int
+in_pcboutput_txrtlmt_locked(struct inpcb *inp, struct ifnet *ifp, struct mbuf *mb, uint32_t max_pacing_rate)
+{
+	int error;
+
+	/*
+	 * If the existing send tag is for the wrong interface due to
+	 * a route change, first drop the existing tag.  Set the
+	 * CHANGED flag so that we will keep trying to allocate a new
+	 * tag if we fail to allocate one this time.
+	 */
+	if (inp->inp_snd_tag != NULL && inp->inp_snd_tag->ifp != ifp) {
+		in_pcbdetach_txrtlmt(inp);
+		inp->inp_flags2 |= INP_RATE_LIMIT_CHANGED;
+	}
+
+	/*
+	 * NOTE: When attaching to a network interface a reference is
+	 * made to ensure the network interface doesn't go away until
+	 * all ratelimit connections are gone. The network interface
+	 * pointers compared below represent valid network interfaces,
+	 * except when comparing towards NULL.
+	 */
+	if (max_pacing_rate == 0 && inp->inp_snd_tag == NULL) {
+		error = 0;
+	} else if (!(ifp->if_capenable & IFCAP_TXRTLMT)) {
+		if (inp->inp_snd_tag != NULL)
+			in_pcbdetach_txrtlmt(inp);
+		error = 0;
+	} else if (inp->inp_snd_tag == NULL) {
+		/*
+		 * In order to utilize packet pacing with RSS, we need
+		 * to wait until there is a valid RSS hash before we
+		 * can proceed:
+		 */
+		if (M_HASHTYPE_GET(mb) == M_HASHTYPE_NONE) {
+			error = EAGAIN;
+		} else {
+			error = in_pcbattach_txrtlmt(inp, ifp, M_HASHTYPE_GET(mb),
+			    mb->m_pkthdr.flowid, max_pacing_rate, &inp->inp_snd_tag);
+		}
+	} else {
+		error = in_pcbmodify_txrtlmt(inp, max_pacing_rate);
+	}
+	if (error == 0 || error == EOPNOTSUPP)
+		inp->inp_flags2 &= ~INP_RATE_LIMIT_CHANGED;
+
+	return (error);
 }
 
 /*
@@ -3366,36 +3451,8 @@ in_pcboutput_txrtlmt(struct inpcb *inp, struct ifnet *ifp, struct mbuf *mb)
 	 */
 	max_pacing_rate = socket->so_max_pacing_rate;
 
-	/*
-	 * NOTE: When attaching to a network interface a reference is
-	 * made to ensure the network interface doesn't go away until
-	 * all ratelimit connections are gone. The network interface
-	 * pointers compared below represent valid network interfaces,
-	 * except when comparing towards NULL.
-	 */
-	if (max_pacing_rate == 0 && inp->inp_snd_tag == NULL) {
-		error = 0;
-	} else if (!(ifp->if_capenable & IFCAP_TXRTLMT)) {
-		if (inp->inp_snd_tag != NULL)
-			in_pcbdetach_txrtlmt(inp);
-		error = 0;
-	} else if (inp->inp_snd_tag == NULL) {
-		/*
-		 * In order to utilize packet pacing with RSS, we need
-		 * to wait until there is a valid RSS hash before we
-		 * can proceed:
-		 */
-		if (M_HASHTYPE_GET(mb) == M_HASHTYPE_NONE) {
-			error = EAGAIN;
-		} else {
-			error = in_pcbattach_txrtlmt(inp, ifp, M_HASHTYPE_GET(mb),
-			    mb->m_pkthdr.flowid, max_pacing_rate);
-		}
-	} else {
-		error = in_pcbmodify_txrtlmt(inp, max_pacing_rate);
-	}
-	if (error == 0 || error == EOPNOTSUPP)
-		inp->inp_flags2 &= ~INP_RATE_LIMIT_CHANGED;
+	error = in_pcboutput_txrtlmt_locked(inp, ifp, mb, max_pacing_rate);
+
 	if (did_upgrade)
 		INP_DOWNGRADE(inp);
 }
@@ -3406,14 +3463,9 @@ in_pcboutput_txrtlmt(struct inpcb *inp, struct ifnet *ifp, struct mbuf *mb)
 void
 in_pcboutput_eagain(struct inpcb *inp)
 {
-	struct socket *socket;
 	bool did_upgrade;
 
 	if (inp == NULL)
-		return;
-
-	socket = inp->inp_socket;
-	if (socket == NULL)
 		return;
 
 	if (inp->inp_snd_tag == NULL)
@@ -3442,4 +3494,16 @@ in_pcboutput_eagain(struct inpcb *inp)
 	if (did_upgrade)
 		INP_DOWNGRADE(inp);
 }
+
+#ifdef INET
+static void
+rl_init(void *st)
+{
+	rate_limit_active = counter_u64_alloc(M_WAITOK);
+	rate_limit_alloc_fail = counter_u64_alloc(M_WAITOK);
+	rate_limit_set_ok = counter_u64_alloc(M_WAITOK);
+}
+
+SYSINIT(rl, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, rl_init, NULL);
+#endif
 #endif /* RATELIMIT */

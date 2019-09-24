@@ -197,8 +197,15 @@ enum lacp_mux_state {
 
 #define	LACP_MAX_PORTS		32
 
+struct lacp_numa {
+	int			count;
+	struct lacp_port	*map[LACP_MAX_PORTS];
+};
+
 struct lacp_portmap {
 	int			pm_count;
+	int			pm_num_dom;
+	struct lacp_numa	pm_numa[MAXMEMDOM];
 	struct lacp_port	*pm_map[LACP_MAX_PORTS];
 };
 
@@ -286,7 +293,7 @@ struct lacp_softc {
 
 struct mbuf	*lacp_input(struct lagg_port *, struct mbuf *);
 struct lagg_port *lacp_select_tx_port(struct lagg_softc *, struct mbuf *);
-#ifdef RATELIMIT
+#if defined(RATELIMIT) || defined(KERN_TLS)
 struct lagg_port *lacp_select_tx_port_by_hash(struct lagg_softc *, uint32_t);
 #endif
 void		lacp_attach(struct lagg_softc *);

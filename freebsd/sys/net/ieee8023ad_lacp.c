@@ -34,6 +34,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <rtems/bsd/local/opt_kern_tls.h>
 #include <rtems/bsd/local/opt_ratelimit.h>
 
 #include <sys/param.h>
@@ -837,7 +838,9 @@ lacp_select_tx_port(struct lagg_softc *sc, struct mbuf *m)
 	struct lacp_softc *lsc = LACP_SOFTC(sc);
 	struct lacp_portmap *pm;
 	struct lacp_port *lp;
+	struct lacp_port **map;
 	uint32_t hash;
+	int count;
 
 	if (__predict_false(lsc->lsc_suppress_distributing)) {
 		LACP_DPRINTF((NULL, "%s: waiting transit\n", __func__));
@@ -850,13 +853,31 @@ lacp_select_tx_port(struct lagg_softc *sc, struct mbuf *m)
 		return (NULL);
 	}
 
+#ifdef NUMA
+	if ((sc->sc_opts & LAGG_OPT_USE_NUMA) &&
+	    pm->pm_num_dom > 1 && m->m_pkthdr.numa_domain < MAXMEMDOM) {
+		count = pm->pm_numa[m->m_pkthdr.numa_domain].count;
+		if (count > 0) {
+			map = pm->pm_numa[m->m_pkthdr.numa_domain].map;
+		} else {
+			/* No ports on this domain; use global hash. */
+			map = pm->pm_map;
+			count = pm->pm_count;
+		}
+	} else
+#endif
+	{
+		map = pm->pm_map;
+		count = pm->pm_count;
+	}
 	if ((sc->sc_opts & LAGG_OPT_USE_FLOWID) &&
 	    M_HASHTYPE_GET(m) != M_HASHTYPE_NONE)
 		hash = m->m_pkthdr.flowid >> sc->flowid_shift;
 	else
 		hash = m_ether_tcpip_hash(sc->sc_flags, m, lsc->lsc_hashkey);
-	hash %= pm->pm_count;
-	lp = pm->pm_map[hash];
+
+	hash %= count;
+	lp = map[hash];
 
 	KASSERT((lp->lp_state & LACP_STATE_DISTRIBUTING) != 0,
 	    ("aggregated port is not distributing"));
@@ -864,7 +885,7 @@ lacp_select_tx_port(struct lagg_softc *sc, struct mbuf *m)
 	return (lp->lp_lagg);
 }
 
-#ifdef RATELIMIT
+#if defined(RATELIMIT) || defined(KERN_TLS)
 struct lagg_port *
 lacp_select_tx_port_by_hash(struct lagg_softc *sc, uint32_t flowid)
 {
@@ -1046,6 +1067,10 @@ lacp_update_portmap(struct lacp_softc *lsc)
 	uint64_t speed;
 	u_int newmap;
 	int i;
+#ifdef NUMA
+	int count;
+	uint8_t domain;
+#endif
 
 	newmap = lsc->lsc_activemap == 0 ? 1 : 0;
 	p = &lsc->lsc_pmap[newmap];
@@ -1056,9 +1081,25 @@ lacp_update_portmap(struct lacp_softc *lsc)
 	if (la != NULL && la->la_nports > 0) {
 		p->pm_count = la->la_nports;
 		i = 0;
-		TAILQ_FOREACH(lp, &la->la_ports, lp_dist_q)
+		TAILQ_FOREACH(lp, &la->la_ports, lp_dist_q) {
 			p->pm_map[i++] = lp;
+#ifdef NUMA
+			domain = lp->lp_ifp->if_numa_domain;
+			if (domain >= MAXMEMDOM)
+				continue;
+			count = p->pm_numa[domain].count;
+			p->pm_numa[domain].map[count] = lp;
+			p->pm_numa[domain].count++;
+#endif
+		}
 		KASSERT(i == p->pm_count, ("Invalid port count"));
+
+#ifdef NUMA
+		for (i = 0; i < MAXMEMDOM; i++) {
+			if (p->pm_numa[i].count != 0)
+				p->pm_num_dom++;
+		}
+#endif
 		speed = lacp_aggregator_bandwidth(la);
 	}
 	sc->sc_ifp->if_baudrate = speed;

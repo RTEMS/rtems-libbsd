@@ -625,11 +625,12 @@ rtredirect_fib(struct sockaddr *dst,
 	int error = 0;
 	short *stat = NULL;
 	struct rt_addrinfo info;
+	struct epoch_tracker et;
 	struct ifaddr *ifa;
 	struct rib_head *rnh;
 
 	ifa = NULL;
-	NET_EPOCH_ENTER();
+	NET_EPOCH_ENTER(et);
 	rnh = rt_tables_get_rnh(fibnum, dst->sa_family);
 	if (rnh == NULL) {
 		error = EAFNOSUPPORT;
@@ -724,7 +725,7 @@ done:
 	if (rt)
 		RTFREE_LOCKED(rt);
  out:
-	NET_EPOCH_EXIT();
+	NET_EPOCH_EXIT(et);
 	if (error)
 		V_rtstat.rts_badredirect++;
 	else if (stat != NULL)
@@ -1307,11 +1308,14 @@ rt_notifydelete(struct rtentry *rt, struct rt_addrinfo *info)
 /*
  * Look up rt_addrinfo for a specific fib.  Note that if rti_ifa is defined,
  * it will be referenced so the caller must free it.
+ *
+ * Assume basic consistency checks are executed by callers:
+ * RTAX_DST exists, if RTF_GATEWAY is set, RTAX_GATEWAY exists as well.
  */
 int
 rt_getifa_fib(struct rt_addrinfo *info, u_int fibnum)
 {
-	struct ifaddr *ifa;
+	struct epoch_tracker et;
 	int needref, error;
 
 	/*
@@ -1320,22 +1324,55 @@ rt_getifa_fib(struct rt_addrinfo *info, u_int fibnum)
 	 */
 	error = 0;
 	needref = (info->rti_ifa == NULL);
-	NET_EPOCH_ENTER();
+	NET_EPOCH_ENTER(et);
+
+	/* If we have interface specified by the ifindex in the address, use it */
 	if (info->rti_ifp == NULL && ifpaddr != NULL &&
-	    ifpaddr->sa_family == AF_LINK &&
-	    (ifa = ifa_ifwithnet(ifpaddr, 0, fibnum)) != NULL) {
-		info->rti_ifp = ifa->ifa_ifp;
+	    ifpaddr->sa_family == AF_LINK) {
+	    const struct sockaddr_dl *sdl = (const struct sockaddr_dl *)ifpaddr;
+	    if (sdl->sdl_index != 0)
+		    info->rti_ifp = ifnet_byindex_locked(sdl->sdl_index);
 	}
+	/*
+	 * If we have source address specified, try to find it
+	 * TODO: avoid enumerating all ifas on all interfaces.
+	 */
 	if (info->rti_ifa == NULL && ifaaddr != NULL)
 		info->rti_ifa = ifa_ifwithaddr(ifaaddr);
 	if (info->rti_ifa == NULL) {
 		struct sockaddr *sa;
 
-		sa = ifaaddr != NULL ? ifaaddr :
-		    (gateway != NULL ? gateway : dst);
-		if (sa != NULL && info->rti_ifp != NULL)
+		/*
+		 * Most common use case for the userland-supplied routes.
+		 *
+		 * Choose sockaddr to select ifa.
+		 * -- if ifp is set --
+		 * Order of preference:
+		 * 1) IFA address
+		 * 2) gateway address
+		 *   Note: for interface routes link-level gateway address 
+		 *     is specified to indicate the interface index without
+		 *     specifying RTF_GATEWAY. In this case, ignore gateway
+		 *   Note: gateway AF may be different from dst AF. In this case,
+		 *   ignore gateway
+		 * 3) final destination.
+		 * 4) if all of these fails, try to get at least link-level ifa.
+		 * -- else --
+		 * try to lookup gateway or dst in the routing table to get ifa
+		 */
+		if (info->rti_info[RTAX_IFA] != NULL)
+			sa = info->rti_info[RTAX_IFA];
+		else if ((info->rti_flags & RTF_GATEWAY) != 0 &&
+		    gateway->sa_family == dst->sa_family)
+			sa = gateway;
+		else
+			sa = dst;
+		if (info->rti_ifp != NULL) {
 			info->rti_ifa = ifaof_ifpforaddr(sa, info->rti_ifp);
-		else if (dst != NULL && gateway != NULL)
+			/* Case 4 */
+			if (info->rti_ifa == NULL && gateway != NULL)
+				info->rti_ifa = ifaof_ifpforaddr(gateway, info->rti_ifp);
+		} else if (dst != NULL && gateway != NULL)
 			info->rti_ifa = ifa_ifwithroute(flags, dst, gateway,
 							fibnum);
 		else if (sa != NULL)
@@ -1348,7 +1385,7 @@ rt_getifa_fib(struct rt_addrinfo *info, u_int fibnum)
 		ifa_ref(info->rti_ifa);
 	} else
 		error = ENETUNREACH;
-	NET_EPOCH_EXIT();
+	NET_EPOCH_EXIT(et);
 	return (error);
 }
 
@@ -1585,6 +1622,8 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 	switch (req) {
 	case RTM_DELETE:
 		if (netmask) {
+			if (dst->sa_len > sizeof(mdst))
+				return (EINVAL);
 			rt_maskedcopy(dst, (struct sockaddr *)&mdst, netmask);
 			dst = (struct sockaddr *)&mdst;
 		}
@@ -1990,7 +2029,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 	char tempbuf[_SOCKADDR_TMPSIZE];
 	int didwork = 0;
 	int a_failure = 0;
-	static struct sockaddr_dl null_sdl = {sizeof(null_sdl), AF_LINK};
+	struct sockaddr_dl *sdl = NULL;
 	struct rib_head *rnh;
 
 	if (flags & RTF_HOST) {
@@ -2045,7 +2084,14 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 			rt_maskedcopy(dst, (struct sockaddr *)tempbuf, netmask);
 			dst = (struct sockaddr *)tempbuf;
 		}
-	}
+	} else if (cmd == RTM_ADD) {
+		sdl = (struct sockaddr_dl *)tempbuf;
+		bzero(sdl, sizeof(struct sockaddr_dl));
+		sdl->sdl_family = AF_LINK;
+		sdl->sdl_len = sizeof(struct sockaddr_dl);
+		sdl->sdl_type = ifa->ifa_ifp->if_type;
+		sdl->sdl_index = ifa->ifa_ifp->if_index;
+        }
 	/*
 	 * Now go through all the requested tables (fibs) and do the
 	 * requested action. Realistically, this will either be fib 0
@@ -2108,8 +2154,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 		 * doing this for compatibility reasons
 		 */
 		if (cmd == RTM_ADD)
-			info.rti_info[RTAX_GATEWAY] =
-			    (struct sockaddr *)&null_sdl;
+			info.rti_info[RTAX_GATEWAY] = (struct sockaddr *)sdl;
 		else
 			info.rti_info[RTAX_GATEWAY] = ifa->ifa_addr;
 		info.rti_info[RTAX_NETMASK] = netmask;
@@ -2136,15 +2181,6 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 				rt->rt_ifa = ifa;
 			}
 #endif
-			/* 
-			 * doing this for compatibility reasons
-			 */
-			if (cmd == RTM_ADD) {
-			    ((struct sockaddr_dl *)rt->rt_gateway)->sdl_type  =
-				rt->rt_ifp->if_type;
-			    ((struct sockaddr_dl *)rt->rt_gateway)->sdl_index =
-				rt->rt_ifp->if_index;
-			}
 			RT_ADDREF(rt);
 			RT_UNLOCK(rt);
 			rt_newaddrmsg_fib(cmd, ifa, error, rt, fibnum);

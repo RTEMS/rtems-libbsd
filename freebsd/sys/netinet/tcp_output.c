@@ -39,6 +39,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_ipsec.h>
+#include <rtems/bsd/local/opt_kern_tls.h>
 #include <rtems/bsd/local/opt_tcpdebug.h>
 
 #include <sys/param.h>
@@ -48,6 +49,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/hhook.h>
 #endif
 #include <sys/kernel.h>
+#ifdef KERN_TLS
+#include <sys/ktls.h>
+#endif
 #include <sys/lock.h>
 #include <sys/mbuf.h>
 #include <sys/mutex.h>
@@ -193,7 +197,7 @@ tcp_output(struct tcpcb *tp)
 	uint32_t recwin, sendwin;
 	int off, flags, error = 0;	/* Keep compiler happy */
 	u_int if_hw_tsomaxsegcount = 0;
-	u_int if_hw_tsomaxsegsize;
+	u_int if_hw_tsomaxsegsize = 0;
 	struct mbuf *m;
 	struct ip *ip = NULL;
 #ifdef TCPDEBUG
@@ -220,6 +224,11 @@ tcp_output(struct tcpcb *tp)
 	int isipv6;
 
 	isipv6 = (tp->t_inpcb->inp_vflag & INP_IPV6) != 0;
+#endif
+#ifdef KERN_TLS
+	const bool hw_tls = (so->so_snd.sb_flags & SB_TLS_IFNET) != 0;
+#else
+	const bool hw_tls = false;
 #endif
 
 	INP_WLOCK_ASSERT(tp->t_inpcb);
@@ -658,7 +667,8 @@ after_sack_rexmit:
 		if (adv >= (int32_t)(2 * tp->t_maxseg) &&
 		    (adv >= (int32_t)(so->so_rcv.sb_hiwat / 4) ||
 		     recwin <= (so->so_rcv.sb_hiwat / 8) ||
-		     so->so_rcv.sb_hiwat <= 8 * tp->t_maxseg))
+		     so->so_rcv.sb_hiwat <= 8 * tp->t_maxseg ||
+		     adv >= TCP_MAXWIN << tp->rcv_scale))
 			goto send;
 		if (2 * adv >= (int32_t)so->so_rcv.sb_hiwat)
 			goto send;
@@ -1001,7 +1011,7 @@ send:
 		 * to the offset in the socket buffer chain.
 		 */
 		mb = sbsndptr_noadv(&so->so_snd, off, &moff);
-		if (len <= MHLEN - hdrlen - max_linkhdr) {
+		if (len <= MHLEN - hdrlen - max_linkhdr && !hw_tls) {
 			m_copydata(mb, moff, len,
 			    mtod(m, caddr_t) + hdrlen);
 			if (SEQ_LT(tp->snd_nxt, tp->snd_max))
@@ -1014,7 +1024,7 @@ send:
 				msb = &so->so_snd;
 			m->m_next = tcp_m_copym(mb, moff,
 			    &len, if_hw_tsomaxsegcount,
-			    if_hw_tsomaxsegsize, msb);
+			    if_hw_tsomaxsegsize, msb, hw_tls);
 			if (len <= (tp->t_maxseg - optlen)) {
 				/* 
 				 * Must have ran out of mbufs for the copy
@@ -1285,15 +1295,9 @@ send:
 		m->m_pkthdr.tso_segsz = tp->t_maxseg - optlen;
 	}
 
-#if defined(IPSEC) || defined(IPSEC_SUPPORT)
-	KASSERT(len + hdrlen + ipoptlen - ipsec_optlen == m_length(m, NULL),
-	    ("%s: mbuf chain shorter than expected: %d + %u + %u - %u != %u",
-	    __func__, len, hdrlen, ipoptlen, ipsec_optlen, m_length(m, NULL)));
-#else
-	KASSERT(len + hdrlen + ipoptlen == m_length(m, NULL),
-	    ("%s: mbuf chain shorter than expected: %d + %u + %u != %u",
-	    __func__, len, hdrlen, ipoptlen, m_length(m, NULL)));
-#endif
+	KASSERT(len + hdrlen == m_length(m, NULL),
+	    ("%s: mbuf chain shorter than expected: %d + %u != %u",
+	    __func__, len, hdrlen, m_length(m, NULL)));
 
 #ifdef TCP_HHOOK
 	/* Run HHOOK_TCP_ESTABLISHED_OUT helper hooks. */
@@ -1515,7 +1519,13 @@ timer:
 		if (SEQ_GT(tp->snd_nxt + xlen, tp->snd_max))
 			tp->snd_max = tp->snd_nxt + xlen;
 	}
-
+	if ((error == 0) &&
+	    (TCPS_HAVEESTABLISHED(tp->t_state) &&
+	     (tp->t_flags & TF_SACK_PERMIT) &&
+	     tp->rcv_numsacks > 0)) {
+		    /* Clean up any DSACK's sent */
+		    tcp_clean_dsack_blocks(tp);
+	}
 	if (error) {
 		/* Record the error. */
 		TCP_LOG_EVENT(tp, NULL, &so->so_rcv, &so->so_snd, TCP_LOG_OUT,
@@ -1817,8 +1827,12 @@ tcp_addoptions(struct tcpopt *to, u_char *optp)
  */
 struct mbuf *
 tcp_m_copym(struct mbuf *m, int32_t off0, int32_t *plen,
-    int32_t seglimit, int32_t segsize, struct sockbuf *sb)
+    int32_t seglimit, int32_t segsize, struct sockbuf *sb, bool hw_tls)
 {
+#ifdef KERN_TLS
+	struct ktls_session *tls, *ntls;
+	struct mbuf *start;
+#endif
 	struct mbuf *n, **np;
 	struct mbuf *top;
 	int32_t off = off0;
@@ -1850,6 +1864,13 @@ tcp_m_copym(struct mbuf *m, int32_t off0, int32_t *plen,
 	np = &top;
 	top = NULL;
 	pkthdrlen = NULL;
+#ifdef KERN_TLS
+	if (m->m_flags & M_NOMAP)
+		tls = m->m_ext.ext_pgs->tls;
+	else
+		tls = NULL;
+	start = m;
+#endif
 	while (len > 0) {
 		if (m == NULL) {
 			KASSERT(len == M_COPYALL,
@@ -1859,6 +1880,38 @@ tcp_m_copym(struct mbuf *m, int32_t off0, int32_t *plen,
 				*pkthdrlen = len_cp;
 			break;
 		}
+#ifdef KERN_TLS
+		if (hw_tls) {
+			if (m->m_flags & M_NOMAP)
+				ntls = m->m_ext.ext_pgs->tls;
+			else
+				ntls = NULL;
+
+			/*
+			 * Avoid mixing TLS records with handshake
+			 * data or TLS records from different
+			 * sessions.
+			 */
+			if (tls != ntls) {
+				MPASS(m != start);
+				*plen = len_cp;
+				if (pkthdrlen != NULL)
+					*pkthdrlen = len_cp;
+				break;
+			}
+
+			/*
+			 * Don't end a send in the middle of a TLS
+			 * record if it spans multiple TLS records.
+			 */
+			if (tls != NULL && (m != start) && len < m->m_len) {
+				*plen = len_cp;
+				if (pkthdrlen != NULL)
+					*pkthdrlen = len_cp;
+				break;
+			}
+		}
+#endif
 		mlen = min(len, m->m_len - off);
 		if (seglimit) {
 			/*

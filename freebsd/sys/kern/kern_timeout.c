@@ -52,6 +52,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/bus.h>
 #include <sys/callout.h>
+#include <sys/domainset.h>
 #include <sys/file.h>
 #include <sys/interrupt.h>
 #include <sys/kernel.h>
@@ -67,6 +68,7 @@ __FBSDID("$FreeBSD$");
 
 #ifdef DDB
 #include <ddb/ddb.h>
+#include <ddb/db_sym.h>
 #include <machine/_inttypes.h>
 #endif
 
@@ -154,12 +156,16 @@ u_int callwheelsize, callwheelmask;
 struct cc_exec {
 	struct callout		*cc_curr;
 	void			(*cc_drain)(void *);
+#ifndef __rtems__
+	void			*cc_last_func;
+	void			*cc_last_arg;
+#endif /* __rtems__ */
 #ifdef SMP
 	void			(*ce_migration_func)(void *);
 	void			*ce_migration_arg;
-	int			ce_migration_cpu;
 	sbintime_t		ce_migration_time;
 	sbintime_t		ce_migration_prec;
+	int			ce_migration_cpu;
 #endif
 	bool			cc_cancel;
 	bool			cc_waiting;
@@ -200,6 +206,8 @@ struct callout_cpu {
 
 #ifndef __rtems__
 #define	cc_exec_curr(cc, dir)		cc->cc_exec_entity[dir].cc_curr
+#define	cc_exec_last_func(cc, dir)	cc->cc_exec_entity[dir].cc_last_func
+#define	cc_exec_last_arg(cc, dir)	cc->cc_exec_entity[dir].cc_last_arg
 #define	cc_exec_drain(cc, dir)		cc->cc_exec_entity[dir].cc_drain
 #else /* __rtems__ */
 #define	cc_exec_curr(cc, dir)		cc->cc_exec_entity.cc_curr
@@ -426,8 +434,9 @@ callout_cpu_init(struct callout_cpu *cc, int cpu)
 	SLIST_INIT(&cc->cc_callfree);
 	cc->cc_inited = 1;
 #ifndef __rtems__
-	cc->cc_callwheel = malloc(sizeof(struct callout_list) * callwheelsize,
-	    M_CALLOUT, M_WAITOK);
+	cc->cc_callwheel = malloc_domainset(sizeof(struct callout_list) *
+	    callwheelsize, M_CALLOUT,
+	    DOMAINSET_PREF(pcpu_find(cpu)->pc_domain), M_WAITOK);
 #endif /* __rtems__ */
 	for (i = 0; i < callwheelsize; i++)
 		LIST_INIT(&cc->cc_callwheel[i]);
@@ -821,6 +830,10 @@ softclock_call_cc(struct callout *c, struct callout_cpu *cc,
 		c->c_iflags &= ~CALLOUT_PENDING;
 	
 	cc_exec_curr(cc, direct) = c;
+#ifndef __rtems__
+	cc_exec_last_func(cc, direct) = c_func;
+	cc_exec_last_arg(cc, direct) = c_arg;
+#endif /* __rtems__ */
 	cc_exec_cancel(cc, direct) = false;
 	cc_exec_drain(cc, direct) = NULL;
 	CC_UNLOCK(cc);
@@ -1875,5 +1888,43 @@ DB_SHOW_COMMAND(callout, db_show_callout)
 	}
 
 	_show_callout((struct callout *)addr);
+}
+
+static void
+_show_last_callout(int cpu, int direct, const char *dirstr)
+{
+	struct callout_cpu *cc;
+	void *func, *arg;
+
+	cc = CC_CPU(cpu);
+	func = cc_exec_last_func(cc, direct);
+	arg = cc_exec_last_arg(cc, direct);
+	db_printf("cpu %d last%s callout function: %p ", cpu, dirstr, func);
+	db_printsym((db_expr_t)func, DB_STGY_ANY);
+	db_printf("\ncpu %d last%s callout argument: %p\n", cpu, dirstr, arg);
+}
+
+DB_SHOW_COMMAND(callout_last, db_show_callout_last)
+{
+	int cpu, last;
+
+	if (have_addr) {
+		if (addr < 0 || addr > mp_maxid || CPU_ABSENT(addr)) {
+			db_printf("no such cpu: %d\n", (int)addr);
+			return;
+		}
+		cpu = last = addr;
+	} else {
+		cpu = 0;
+		last = mp_maxid;
+	}
+
+	while (cpu <= last) {
+		if (!CPU_ABSENT(cpu)) {
+			_show_last_callout(cpu, 0, "");
+			_show_last_callout(cpu, 1, " direct");
+		}
+		cpu++;
+	}
 }
 #endif /* DDB */

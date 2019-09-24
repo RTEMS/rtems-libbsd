@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
- * Copyright (C) 1999-2000 by Maksim Yevmenkin <m_evmenkin@yahoo.com>
+ * Copyright (C) 2019 Jan Sucan <jansucan@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,47 +25,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * BASED ON:
- * -------------------------------------------------------------------------
- *
- * Copyright (c) 1998 Brian Somers <brian@Awfulhak.org>
- * All rights reserved.
- *
- * Copyright (c) 1988, Julian Onions <jpo@cs.nott.ac.uk>
- * Nottingham University 1987.
- */
-
-/*
  * $FreeBSD$
- * $Id: if_tapvar.h,v 0.6 2000/07/11 02:16:08 max Exp $
  */
 
-#ifndef _NET_IF_TAPVAR_H_
-#define _NET_IF_TAPVAR_H_
+#ifndef UTILS_H
+#define UTILS_H 1
 
-/*
- * tap_mtx locks tap_flags, tap_pid.  tap_next locked with global tapmtx.
- * Other fields locked by owning subsystems.
- */
-struct tap_softc {
-	struct ifnet	*tap_ifp;
-	u_short		tap_flags;		/* misc flags                */
-#define	TAP_OPEN	(1 << 0)
-#define	TAP_INITED	(1 << 1)
-#define	TAP_RWAIT	(1 << 2)
-#define	TAP_ASYNC	(1 << 3)
-#define TAP_READY       (TAP_OPEN|TAP_INITED)
-#define	TAP_VMNET	(1 << 4)
+#include <sys/types.h>
 
-	u_int8_t 	ether_addr[ETHER_ADDR_LEN]; /* ether addr of the remote side */
+u_short in_cksum(u_char *, int);
 
-	pid_t		 tap_pid;		/* PID of process to open    */
-	struct sigio	*tap_sigio;		/* information for async I/O */
-	struct selinfo	 tap_rsel;		/* read select               */
-
-	SLIST_ENTRY(tap_softc)	tap_next;	/* next device in chain      */
-	struct cdev *tap_dev;
-	struct mtx	 tap_mtx;		/* per-softc mutex */
-};
-
-#endif /* !_NET_IF_TAPVAR_H_ */
+#endif

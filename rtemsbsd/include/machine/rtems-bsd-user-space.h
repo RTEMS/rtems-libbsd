@@ -45,6 +45,7 @@
 #include <rtems/bsd/local/opt_inet6.h>
 #include <machine/rtems-bsd-version.h>
 #include <sys/cdefs.h>
+#include <sys/limits.h>
 
 #include <stdio.h>
 

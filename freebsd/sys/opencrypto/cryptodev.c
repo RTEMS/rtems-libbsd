@@ -296,6 +296,11 @@ struct fcrypt {
 	int		sesn;
 };
 
+static struct timeval warninterval = { .tv_sec = 60, .tv_usec = 0 };
+SYSCTL_TIMEVAL_SEC(_kern, OID_AUTO, cryptodev_warn_interval, CTLFLAG_RW,
+    &warninterval,
+    "Delay in seconds between warnings of deprecated /dev/crypto algorithms");
+
 #ifndef __rtems__
 static	int cryptof_ioctl(struct file *, u_long, void *,
 		    struct ucred *, struct thread *);
@@ -450,6 +455,9 @@ cryptof_ioctl(
 		case CRYPTO_CHACHA20:
 			txform = &enc_xform_chacha20;
 			break;
+		case CRYPTO_AES_CCM_16:
+			txform = &enc_xform_ccm;
+			break;
 
 		default:
 			CRYPTDEB("invalid cipher");
@@ -494,6 +502,25 @@ cryptof_ioctl(
 			thash = &auth_hash_nist_gmac_aes_256;
 			break;
 
+		case CRYPTO_AES_CCM_CBC_MAC:
+			switch (sop->keylen) {
+			case 16:
+				thash = &auth_hash_ccm_cbc_mac_128;
+				break;
+			case 24:
+				thash = &auth_hash_ccm_cbc_mac_192;
+				break;
+			case 32:
+				thash = &auth_hash_ccm_cbc_mac_256;
+				break;
+			default:
+				CRYPTDEB("Invalid CBC MAC key size %d",
+				    sop->keylen);
+				SDT_PROBE1(opencrypto, dev, ioctl,
+				    error, __LINE__);
+				return (EINVAL);
+			}
+			break;
 #ifdef notdef
 		case CRYPTO_MD5:
 			thash = &auth_hash_md5;
@@ -798,6 +825,47 @@ cod_free(struct cryptop_data *cod)
 	free(cod, M_XDATA);
 }
 
+static void
+cryptodev_warn(struct csession *cse)
+{
+	static struct timeval arc4warn, blfwarn, castwarn, deswarn, md5warn;
+	static struct timeval skipwarn, tdeswarn;
+
+	switch (cse->cipher) {
+	case CRYPTO_DES_CBC:
+		if (ratecheck(&deswarn, &warninterval))
+			gone_in(13, "DES cipher via /dev/crypto");
+		break;
+	case CRYPTO_3DES_CBC:
+		if (ratecheck(&tdeswarn, &warninterval))
+			gone_in(13, "3DES cipher via /dev/crypto");
+		break;
+	case CRYPTO_BLF_CBC:
+		if (ratecheck(&blfwarn, &warninterval))
+			gone_in(13, "Blowfish cipher via /dev/crypto");
+		break;
+	case CRYPTO_CAST_CBC:
+		if (ratecheck(&castwarn, &warninterval))
+			gone_in(13, "CAST128 cipher via /dev/crypto");
+		break;
+	case CRYPTO_SKIPJACK_CBC:
+		if (ratecheck(&skipwarn, &warninterval))
+			gone_in(13, "Skipjack cipher via /dev/crypto");
+		break;
+	case CRYPTO_ARC4:
+		if (ratecheck(&arc4warn, &warninterval))
+			gone_in(13, "ARC4 cipher via /dev/crypto");
+		break;
+	}
+
+	switch (cse->mac) {
+	case CRYPTO_MD5_HMAC:
+		if (ratecheck(&md5warn, &warninterval))
+			gone_in(13, "MD5-HMAC authenticator via /dev/crypto");
+		break;
+	}
+}
+
 static int
 cryptodev_op(
 	struct csession *cse,
@@ -920,6 +988,7 @@ cryptodev_op(
 		error = EINVAL;
 		goto bail;
 	}
+	cryptodev_warn(cse);
 
 again:
 	/*
@@ -1030,12 +1099,13 @@ cryptodev_aead(
 	}
 
 	/*
-	 * For GCM, crd_len covers only the AAD.  For other ciphers
+	 * For GCM/CCM, crd_len covers only the AAD.  For other ciphers
 	 * chained with an HMAC, crd_len covers both the AAD and the
 	 * cipher text.
 	 */
 	crda->crd_skip = 0;
-	if (cse->cipher == CRYPTO_AES_NIST_GCM_16)
+	if (cse->cipher == CRYPTO_AES_NIST_GCM_16 ||
+	    cse->cipher == CRYPTO_AES_CCM_16)
 		crda->crd_len = caead->aadlen;
 	else
 		crda->crd_len = caead->aadlen + caead->len;
@@ -1088,6 +1158,7 @@ cryptodev_aead(
 		SDT_PROBE1(opencrypto, dev, ioctl, error, __LINE__);
 		goto bail;
 	}
+	cryptodev_warn(cse);
 again:
 	/*
 	 * Let the dispatch run unlocked, then, interlock against the

@@ -98,10 +98,6 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 
 #define	EDOOFUS __ELASTERROR
 
-/* FIXME: Newlib forward compatibility */
-#define	IP_MIN_MEMBERSHIPS	31
-#define	IPV6_MIN_MEMBERSHIPS	31
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

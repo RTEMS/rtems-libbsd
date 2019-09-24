@@ -56,9 +56,9 @@ struct enc_xform {
 	u_int16_t minkey, maxkey;
 	void (*encrypt) (caddr_t, u_int8_t *);
 	void (*decrypt) (caddr_t, u_int8_t *);
-	int (*setkey) (u_int8_t **, u_int8_t *, int len);
+	int (*setkey) (u_int8_t **, const u_int8_t *, int len);
 	void (*zerokey) (u_int8_t **);
-	void (*reinit) (caddr_t, u_int8_t *);
+	void (*reinit) (caddr_t, const u_int8_t *);
 	/*
 	 * Encrypt/decrypt 1+ blocks of input -- total size is 'len' bytes.
 	 * Len is guaranteed to be a multiple of the defined 'blocksize'.
@@ -84,6 +84,7 @@ extern struct enc_xform enc_xform_aes_xts;
 extern struct enc_xform enc_xform_arc4;
 extern struct enc_xform enc_xform_camellia;
 extern struct enc_xform enc_xform_chacha20;
+extern struct enc_xform enc_xform_ccm;
 
 struct aes_icm_ctx {
 	u_int32_t	ac_ek[4*(RIJNDAEL_MAXNR + 1)];

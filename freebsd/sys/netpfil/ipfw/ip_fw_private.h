@@ -61,6 +61,7 @@ enum {
 	IP_FW_NGTEE,
 	IP_FW_NAT,
 	IP_FW_REASS,
+	IP_FW_NAT64,
 };
 
 /*
@@ -83,11 +84,20 @@ struct _ip6dn_args {
  * efficient to pass variables around and extend the interface.
  */
 struct ip_fw_args {
-	struct mbuf	*m;		/* the mbuf chain		*/
-	struct ifnet	*oif;		/* output interface		*/
-	struct sockaddr_in *next_hop;	/* forward address		*/
-	struct sockaddr_in6 *next_hop6; /* ipv6 forward address		*/
-
+	uint32_t		flags;
+#define	IPFW_ARGS_ETHER		0x00010000	/* valid ethernet header */
+#define	IPFW_ARGS_NH4		0x00020000	/* IPv4 next hop in hopstore */
+#define	IPFW_ARGS_NH6		0x00040000	/* IPv6 next hop in hopstore */
+#define	IPFW_ARGS_NH4PTR	0x00080000	/* IPv4 next hop in next_hop */
+#define	IPFW_ARGS_NH6PTR	0x00100000	/* IPv6 next hop in next_hop6 */
+#define	IPFW_ARGS_REF		0x00200000	/* valid ipfw_rule_ref	*/
+#define	IPFW_ARGS_IN		0x00400000	/* called on input */
+#define	IPFW_ARGS_OUT		0x00800000	/* called on output */
+#define	IPFW_ARGS_IP4		0x01000000	/* belongs to v4 ISR */
+#define	IPFW_ARGS_IP6		0x02000000	/* belongs to v6 ISR */
+#define	IPFW_ARGS_DROP		0x04000000	/* drop it (dummynet) */
+#define	IPFW_ARGS_LENMASK	0x0000ffff	/* length of data in *mem */
+#define	IPFW_ARGS_LENGTH(f)	((f) & IPFW_ARGS_LENMASK)
 	/*
 	 * On return, it points to the matching rule.
 	 * On entry, rule.slot > 0 means the info is valid and
@@ -95,44 +105,35 @@ struct ip_fw_args {
 	 * If chain_id == chain->id && slot >0 then jump to that slot.
 	 * Otherwise, we locate the first rule >= rulenum:rule_id
 	 */
-	struct ipfw_rule_ref rule;	/* match/restart info		*/
+	struct ipfw_rule_ref	rule;	/* match/restart info		*/
 
-	struct ether_header *eh;	/* for bridged packets		*/
-
-	struct ipfw_flow_id f_id;	/* grabbed from IP header	*/
-	//uint32_t	cookie;		/* a cookie depending on rule action */
-	struct inpcb	*inp;
-
-	struct _ip6dn_args	dummypar; /* dummynet->ip6_output */
-	union {		/* store here if cannot use a pointer */
-		struct sockaddr_in hopstore;
-		struct sockaddr_in6 hopstore6;
+	struct ifnet		*ifp;	/* input/output interface	*/
+	struct inpcb		*inp;
+	union {
+		/*
+		 * next_hop[6] pointers can be used to point to next hop
+		 * stored in rule's opcode to avoid copying into hopstore.
+		 * Also, it is expected that all 0x1-0x10 flags are mutually
+		 * exclusive.
+		 */
+		struct sockaddr_in	*next_hop;
+		struct sockaddr_in6	*next_hop6;
+		/* ipfw next hop storage */
+		struct sockaddr_in	hopstore;
+		struct ip_fw_nh6 {
+			struct in6_addr sin6_addr;
+			uint32_t	sin6_scope_id;
+			uint16_t	sin6_port;
+		} hopstore6;
 	};
+	union {
+		struct mbuf	*m;	/* the mbuf chain		*/
+		void		*mem;	/* or memory pointer		*/
+	};
+	struct ipfw_flow_id	f_id;	/* grabbed from IP header	*/
 };
 
 MALLOC_DECLARE(M_IPFW);
-
-/*
- * Hooks sometime need to know the direction of the packet
- * (divert, dummynet, netgraph, ...)
- * We use a generic definition here, with bit0-1 indicating the
- * direction, bit 2 indicating layer2 or 3, bit 3-4 indicating the
- * specific protocol
- * indicating the protocol (if necessary)
- */
-enum {
-	DIR_MASK =	0x3,
-	DIR_OUT =	0,
-	DIR_IN =	1,
-	DIR_FWD =	2,
-	DIR_DROP =	3,
-	PROTO_LAYER2 =	0x4, /* set for layer 2 */
-	/* PROTO_DEFAULT = 0, */
-	PROTO_IPV4 =	0x08,
-	PROTO_IPV6 =	0x10,
-	PROTO_IFB =	0x0c, /* layer2 + ifbridge */
-   /*	PROTO_OLDBDG =	0x14, unused, old bridge */
-};
 
 /* wrapper for freeing a packet, in case we need to do more work */
 #ifndef FREE_PKT
@@ -150,8 +151,8 @@ int ipfw_chk(struct ip_fw_args *args);
 struct mbuf *ipfw_send_pkt(struct mbuf *, struct ipfw_flow_id *,
     u_int32_t, u_int32_t, int);
 
-/* attach (arg = 1) or detach (arg = 0) hooks */
-int ipfw_attach_hooks(int);
+int ipfw_attach_hooks(void);
+void ipfw_detach_hooks(void);
 #ifdef NOTYET
 void ipfw_nat_destroy(void);
 #endif
@@ -162,10 +163,11 @@ struct ip_fw_chain;
 
 void ipfw_bpf_init(int);
 void ipfw_bpf_uninit(int);
+void ipfw_bpf_tap(u_char *, u_int);
+void ipfw_bpf_mtap(struct mbuf *);
 void ipfw_bpf_mtap2(void *, u_int, struct mbuf *);
 void ipfw_log(struct ip_fw_chain *chain, struct ip_fw *f, u_int hlen,
-    struct ip_fw_args *args, struct mbuf *m, struct ifnet *oif,
-    u_short offset, uint32_t tablearg, struct ip *ip);
+    struct ip_fw_args *args, u_short offset, uint32_t tablearg, struct ip *ip);
 VNET_DECLARE(u_int64_t, norule_counter);
 #define	V_norule_counter	VNET(norule_counter)
 VNET_DECLARE(int, verbose_limit);
@@ -296,6 +298,8 @@ struct ip_fw_chain {
 	void		**srvstate;	/* runtime service mappings */
 #if defined( __linux__ ) || defined( _WIN32 )
 	spinlock_t rwmtx;
+#else
+	struct rmlock	rwmtx;
 #endif
 	int		static_len;	/* total len of static rules (v0) */
 	uint32_t	gencnt;		/* NAT generation count */
@@ -436,23 +440,25 @@ struct ipfw_ifc {
 #define	IPFW_PF_RUNLOCK(p)		IPFW_RUNLOCK(p)
 #else /* FreeBSD */
 #define	IPFW_LOCK_INIT(_chain) do {			\
+	rm_init_flags(&(_chain)->rwmtx, "IPFW static rules", RM_RECURSE); \
 	rw_init(&(_chain)->uh_lock, "IPFW UH lock");	\
 	} while (0)
 
 #define	IPFW_LOCK_DESTROY(_chain) do {			\
+	rm_destroy(&(_chain)->rwmtx);			\
 	rw_destroy(&(_chain)->uh_lock);			\
 	} while (0)
 
-#define	IPFW_RLOCK_ASSERT(_chain)	rm_assert(&V_pfil_lock, RA_RLOCKED)
-#define	IPFW_WLOCK_ASSERT(_chain)	rm_assert(&V_pfil_lock, RA_WLOCKED)
+#define	IPFW_RLOCK_ASSERT(_chain)	rm_assert(&(_chain)->rwmtx, RA_RLOCKED)
+#define	IPFW_WLOCK_ASSERT(_chain)	rm_assert(&(_chain)->rwmtx, RA_WLOCKED)
 
 #define	IPFW_RLOCK_TRACKER		struct rm_priotracker _tracker
-#define	IPFW_RLOCK(p)			rm_rlock(&V_pfil_lock, &_tracker)
-#define	IPFW_RUNLOCK(p)			rm_runlock(&V_pfil_lock, &_tracker)
-#define	IPFW_WLOCK(p)			rm_wlock(&V_pfil_lock)
-#define	IPFW_WUNLOCK(p)			rm_wunlock(&V_pfil_lock)
-#define	IPFW_PF_RLOCK(p)
-#define	IPFW_PF_RUNLOCK(p)
+#define	IPFW_RLOCK(p)			rm_rlock(&(p)->rwmtx, &_tracker)
+#define	IPFW_RUNLOCK(p)			rm_runlock(&(p)->rwmtx, &_tracker)
+#define	IPFW_WLOCK(p)			rm_wlock(&(p)->rwmtx)
+#define	IPFW_WUNLOCK(p)			rm_wunlock(&(p)->rwmtx)
+#define	IPFW_PF_RLOCK(p)		IPFW_RLOCK(p)
+#define	IPFW_PF_RUNLOCK(p)		IPFW_RUNLOCK(p)
 #endif
 
 #define	IPFW_UH_RLOCK_ASSERT(_chain)	rw_assert(&(_chain)->uh_lock, RA_RLOCKED)
@@ -659,6 +665,7 @@ struct ip_fw *ipfw_alloc_rule(struct ip_fw_chain *chain, size_t rulesize);
 void ipfw_free_rule(struct ip_fw *rule);
 int ipfw_match_range(struct ip_fw *rule, ipfw_range_tlv *rt);
 int ipfw_mark_object_kidx(uint32_t *bmask, uint16_t etlv, uint16_t kidx);
+ipfw_insn *ipfw_get_action(struct ip_fw *);
 
 typedef int (sopt_handler_f)(struct ip_fw_chain *ch,
     ip_fw3_opheader *op3, struct sockopt_data *sd);

@@ -5,7 +5,6 @@
  *
  * Copyright (c) 2004 John Baldwin <jhb@FreeBSD.org>
  * Copyright (c) 2015 embedded brains GmbH <rtems@embedded-brains.de>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -132,7 +131,7 @@ CTASSERT(powerof2(SC_TABLESIZE));
  *  c - sleep queue chain lock
  */
 struct sleepqueue {
-	TAILQ_HEAD(, thread) sq_blocked[NR_SLEEPQS];	/* (c) Blocked threads. */
+	struct threadqueue sq_blocked[NR_SLEEPQS]; /* (c) Blocked threads. */
 	u_int sq_blockedcnt[NR_SLEEPQS];	/* (c) N. of blocked threads. */
 	LIST_ENTRY(sleepqueue) sq_hash;		/* (c) Chain and free list. */
 	LIST_HEAD(, sleepqueue) sq_free;	/* (c) Free queues. */
@@ -592,6 +591,19 @@ sleepq_catch_signals(void *wchan, int pri)
 				mtx_unlock(&ps->ps_mtx);
 			} else {
 				mtx_unlock(&ps->ps_mtx);
+			}
+
+			/*
+			 * Do not go into sleep if this thread was the
+			 * ptrace(2) attach leader.  cursig() consumed
+			 * SIGSTOP from PT_ATTACH, but we usually act
+			 * on the signal by interrupting sleep, and
+			 * should do that here as well.
+			 */
+			if ((td->td_dbgflags & TDB_FSTP) != 0) {
+				if (ret == 0)
+					ret = EINTR;
+				td->td_dbgflags &= ~TDB_FSTP;
 			}
 		}
 		/*
@@ -1127,13 +1139,15 @@ sleepq_init(void *mem, int size, int flags)
 }
 
 /*
- * Find the highest priority thread sleeping on a wait channel and resume it.
+ * Find thread sleeping on a wait channel and resume it.
  */
 int
 sleepq_signal(void *wchan, int flags, int pri, int queue)
 {
+	struct sleepqueue_chain *sc;
 	struct sleepqueue *sq;
 #ifndef __rtems__
+	struct threadqueue *head;
 	struct thread *td, *besttd;
 #else /* __rtems__ */
 	struct thread *besttd;
@@ -1150,16 +1164,33 @@ sleepq_signal(void *wchan, int flags, int pri, int queue)
 	    ("%s: mismatch between sleep/wakeup and cv_*", __func__));
 
 #ifndef __rtems__
-	/*
-	 * Find the highest priority thread on the queue.  If there is a
-	 * tie, use the thread that first appears in the queue as it has
-	 * been sleeping the longest since threads are always added to
-	 * the tail of sleep queues.
-	 */
-	besttd = TAILQ_FIRST(&sq->sq_blocked[queue]);
-	TAILQ_FOREACH(td, &sq->sq_blocked[queue], td_slpq) {
-		if (td->td_priority < besttd->td_priority)
+	head = &sq->sq_blocked[queue];
+	if (flags & SLEEPQ_UNFAIR) {
+		/*
+		 * Find the most recently sleeping thread, but try to
+		 * skip threads still in process of context switch to
+		 * avoid spinning on the thread lock.
+		 */
+		sc = SC_LOOKUP(wchan);
+		besttd = TAILQ_LAST_FAST(head, thread, td_slpq);
+		while (besttd->td_lock != &sc->sc_lock) {
+			td = TAILQ_PREV_FAST(besttd, head, thread, td_slpq);
+			if (td == NULL)
+				break;
 			besttd = td;
+		}
+	} else {
+		/*
+		 * Find the highest priority thread on the queue.  If there
+		 * is a tie, use the thread that first appears in the queue
+		 * as it has been sleeping the longest since threads are
+		 * always added to the tail of sleep queues.
+		 */
+		besttd = td = TAILQ_FIRST(head);
+		while ((td = TAILQ_NEXT(td, td_slpq)) != NULL) {
+			if (td->td_priority < besttd->td_priority)
+				besttd = td;
+		}
 	}
 #else /* __rtems__ */
 	besttd = TAILQ_FIRST(&sq->sq_blocked[queue]);

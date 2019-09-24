@@ -52,19 +52,12 @@ __FBSDID("$FreeBSD$");
 
 /*
  * Expand the line buffer.  Return -1 on error.
-#ifdef notdef
- * The `new size' does not account for a terminating '\0',
- * so we add 1 here.
-#endif
  */
 int
 __slbexpand(FILE *fp, size_t newsize)
 {
 	void *p;
 
-#ifdef notdef
-	++newsize;
-#endif
 	if (fp->_lb._size >= newsize)
 		return (0);
 	if (newsize > INT_MAX) {
@@ -168,9 +161,6 @@ fgetln(FILE *fp, size_t *lenp)
 		break;
 	}
 	*lenp = len;
-#ifdef notdef
-	fp->_lb._base[len] = '\0';
-#endif
 	ret = (char *)fp->_lb._base;
 end:
 #ifndef __rtems__

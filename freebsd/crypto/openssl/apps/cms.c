@@ -6,7 +6,7 @@
 #endif /* __rtems__ */
 
 /*
- * Copyright 2008-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2008-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -643,6 +643,7 @@ int cms_main(int argc, char **argv)
             goto opthelp;
         }
     } else if (!operation) {
+        BIO_printf(bio_err, "No operation option (-encrypt|-decrypt|-sign|-verify|...) specified.\n");
         goto opthelp;
     }
 

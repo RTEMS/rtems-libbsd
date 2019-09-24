@@ -46,8 +46,10 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_config.h>
 
 #include <sys/param.h>
+#include <sys/boot.h>
 #include <sys/jail.h>
 #include <sys/kernel.h>
+#include <sys/limits.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
@@ -147,7 +149,7 @@ SYSCTL_INT(_kern, KERN_SAVED_IDS, saved_ids, CTLFLAG_RD|CTLFLAG_CAPRD,
     SYSCTL_NULL_INT_PTR, 0, "Whether saved set-group/user ID is available");
 #endif
 
-char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
+char kernelname[MAXPATHLEN] = PATH_KERNEL;	/* XXX bloat */
 
 SYSCTL_STRING(_kern, KERN_BOOTFILE, bootfile, CTLFLAG_RW | CTLFLAG_MPSAFE,
     kernelname, sizeof kernelname, "Name of kernel file booted");
@@ -170,15 +172,8 @@ sysctl_kern_arnd(SYSCTL_HANDLER_ARGS)
 	char buf[256];
 	size_t len;
 
-	/*-
-	 * This is one of the very few legitimate uses of read_random(9).
-	 * Use of arc4random(9) is not recommended as that will ignore
-	 * an unsafe (i.e. unseeded) random(4).
-	 *
-	 * If random(4) is not seeded, then this returns 0, so the
-	 * sysctl will return a zero-length buffer.
-	 */
-	len = read_random(buf, MIN(req->oldlen, sizeof(buf)));
+	len = MIN(req->oldlen, sizeof(buf));
+	read_random(buf, len);
 	return (SYSCTL_OUT(req, buf, len));
 }
 
@@ -189,37 +184,51 @@ SYSCTL_PROC(_kern, KERN_ARND, arandom,
 static int
 sysctl_hw_physmem(SYSCTL_HANDLER_ARGS)
 {
-	u_long val;
+	u_long val, p;
 
-	val = ctob(physmem);
+	p = SIZE_T_MAX >> PAGE_SHIFT;
+	if (physmem < p)
+		p = physmem;
+	val = ctob(p);
 	return (sysctl_handle_long(oidp, &val, 0, req));
 }
-
 SYSCTL_PROC(_hw, HW_PHYSMEM, physmem, CTLTYPE_ULONG | CTLFLAG_RD,
-	0, 0, sysctl_hw_physmem, "LU", "");
+    0, 0, sysctl_hw_physmem, "LU",
+    "Amount of physical memory (in bytes)");
 
 static int
 sysctl_hw_realmem(SYSCTL_HANDLER_ARGS)
 {
-	u_long val;
-	val = ctob(realmem);
+	u_long val, p;
+
+	p = SIZE_T_MAX >> PAGE_SHIFT;
+	if (realmem < p)
+		p = realmem;
+	val = ctob(p);
 	return (sysctl_handle_long(oidp, &val, 0, req));
 }
 SYSCTL_PROC(_hw, HW_REALMEM, realmem, CTLTYPE_ULONG | CTLFLAG_RD,
-	0, 0, sysctl_hw_realmem, "LU", "");
+    0, 0, sysctl_hw_realmem, "LU",
+    "Amount of memory (in bytes) reported by the firmware");
+
 static int
 sysctl_hw_usermem(SYSCTL_HANDLER_ARGS)
 {
-	u_long val;
+	u_long val, p, p1;
 
-	val = ctob(physmem - vm_wire_count());
+	p1 = physmem - vm_wire_count();
+	p = SIZE_T_MAX >> PAGE_SHIFT;
+	if (p1 < p)
+		p = p1;
+	val = ctob(p);
 	return (sysctl_handle_long(oidp, &val, 0, req));
 }
-
 SYSCTL_PROC(_hw, HW_USERMEM, usermem, CTLTYPE_ULONG | CTLFLAG_RD,
-	0, 0, sysctl_hw_usermem, "LU", "");
+    0, 0, sysctl_hw_usermem, "LU",
+    "Amount of memory (in bytes) which is not wired");
 
-SYSCTL_LONG(_hw, OID_AUTO, availpages, CTLFLAG_RD, &physmem, 0, "");
+SYSCTL_LONG(_hw, OID_AUTO, availpages, CTLFLAG_RD, &physmem, 0,
+    "Amount of physical memory (in pages)");
 
 u_long pagesizes[MAXPAGESIZES] = { PAGE_SIZE };
 
@@ -501,6 +510,54 @@ sysctl_osreldate(SYSCTL_HANDLER_ARGS)
 SYSCTL_PROC(_kern, KERN_OSRELDATE, osreldate,
     CTLTYPE_INT | CTLFLAG_CAPRD | CTLFLAG_RD | CTLFLAG_MPSAFE,
     NULL, 0, sysctl_osreldate, "I", "Kernel release date");
+
+/*
+ * The build-id is copied from the ELF section .note.gnu.build-id.  The linker
+ * script defines two variables to expose the beginning and end.  LLVM
+ * currently uses a SHA-1 hash, but other formats can be supported by checking
+ * the length of the section.
+ */
+
+extern char __build_id_start[];
+extern char __build_id_end[];
+
+#define	BUILD_ID_HEADER_LEN	0x10
+#define	BUILD_ID_HASH_MAXLEN	0x14
+
+static int
+sysctl_build_id(SYSCTL_HANDLER_ARGS)
+{
+	uintptr_t sectionlen = (uintptr_t)(__build_id_end - __build_id_start);
+	int hashlen;
+	char buf[2*BUILD_ID_HASH_MAXLEN+1];
+
+	/*
+	 * The ELF note section has a four byte length for the vendor name,
+	 * four byte length for the value, and a four byte vendor specific
+	 * type.  The name for the build id is "GNU\0".  We skip the first 16
+	 * bytes to read the build hash.  We will return the remaining bytes up
+	 * to 20 (SHA-1) hash size.  If the hash happens to be a custom number
+	 * of bytes we will pad the value with zeros, as the section should be
+	 * four byte aligned.
+	 */
+	if (sectionlen <= BUILD_ID_HEADER_LEN ||
+	    sectionlen > (BUILD_ID_HEADER_LEN + BUILD_ID_HASH_MAXLEN)) {
+		return (ENOENT);
+	}
+
+
+	hashlen = sectionlen - BUILD_ID_HEADER_LEN;
+	for (int i = 0; i < hashlen; i++) {
+		uint8_t c = __build_id_start[i+BUILD_ID_HEADER_LEN];
+		snprintf(&buf[2*i], 3, "%02x", c);
+	}
+
+	return (SYSCTL_OUT(req, buf, strlen(buf) + 1));
+}
+
+SYSCTL_PROC(_kern, OID_AUTO, build_id,
+    CTLTYPE_STRING | CTLFLAG_CAPRD | CTLFLAG_RD | CTLFLAG_MPSAFE,
+    NULL, 0, sysctl_build_id, "A", "Operating system build-id");
 #endif /* __rtems__ */
 
 SYSCTL_NODE(_kern, OID_AUTO, features, CTLFLAG_RD, 0, "Kernel Features");

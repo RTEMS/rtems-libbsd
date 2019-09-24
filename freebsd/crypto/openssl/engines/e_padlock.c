@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2004-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2004-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -43,7 +43,7 @@
  */
 
 #  undef COMPILE_HW_PADLOCK
-#  if !defined(I386_ONLY) && defined(PADLOCK_ASM)
+#  if defined(PADLOCK_ASM)
 #   define COMPILE_HW_PADLOCK
 #   ifdef OPENSSL_NO_DYNAMIC_ENGINE
 static ENGINE *ENGINE_padlock(void);
@@ -150,7 +150,7 @@ static int padlock_init(ENGINE *e)
  * This stuff is needed if this ENGINE is being compiled into a
  * self-contained shared-library.
  */
-#   ifdef DYNAMIC_ENGINE
+#   ifndef OPENSSL_NO_DYNAMIC_ENGINE
 static int padlock_bind_fn(ENGINE *e, const char *id)
 {
     if (id && (strcmp(id, padlock_id) != 0)) {
@@ -166,7 +166,7 @@ static int padlock_bind_fn(ENGINE *e, const char *id)
 
 IMPLEMENT_DYNAMIC_CHECK_FN()
 IMPLEMENT_DYNAMIC_BIND_FN(padlock_bind_fn)
-#   endif                       /* DYNAMIC_ENGINE */
+#   endif                       /* !OPENSSL_NO_DYNAMIC_ENGINE */
 /* ===== Here comes the "real" engine ===== */
 
 /* Some AES-related constants */

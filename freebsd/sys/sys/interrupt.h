@@ -156,7 +156,7 @@ extern struct	intr_event *clk_intr_event;
 extern void	*vm_ih;
 
 /* Counts and names for statistics (defined in MD code). */
-#if defined(__amd64__) || defined(__i386__)
+#if defined(__amd64__) || defined(__i386__) || defined(__powerpc__)
 extern u_long 	*intrcnt;	/* counts for for each device and stray */
 extern char 	*intrnames;	/* string table containing device names */
 #else
@@ -176,6 +176,9 @@ int	intr_event_add_handler(struct intr_event *ie, const char *name,
 int	intr_event_bind(struct intr_event *ie, int cpu);
 int	intr_event_bind_irqonly(struct intr_event *ie, int cpu);
 int	intr_event_bind_ithread(struct intr_event *ie, int cpu);
+struct _cpuset;
+int	intr_event_bind_ithread_cpuset(struct intr_event *ie,
+	    struct _cpuset *mask);
 int	intr_event_create(struct intr_event **event, void *source,
 	    int flags, int irq, void (*pre_ithread)(void *),
 	    void (*post_ithread)(void *), void (*post_filter)(void *),

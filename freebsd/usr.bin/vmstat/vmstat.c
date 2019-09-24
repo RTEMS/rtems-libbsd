@@ -165,6 +165,7 @@ static struct __vmmeter {
 	u_int v_free_min;
 	u_int v_free_count;
 	u_int v_wire_count;
+	u_long v_user_wire_count;
 	u_int v_active_count;
 	u_int v_inactive_target;
 	u_int v_inactive_count;
@@ -628,6 +629,7 @@ fill_vmmeter(struct __vmmeter *vmmp)
 		GET_VM_STATS(vm, v_free_min);
 		GET_VM_STATS(vm, v_free_count);
 		GET_VM_STATS(vm, v_wire_count);
+		GET_VM_STATS(vm, v_user_wire_count);
 		GET_VM_STATS(vm, v_active_count);
 		GET_VM_STATS(vm, v_inactive_target);
 		GET_VM_STATS(vm, v_inactive_count);
@@ -1119,6 +1121,8 @@ dosum(void)
 	    sum.v_laundry_count);
 	xo_emit("{:wired-pages/%9u} {N:pages wired down}\n",
 	    sum.v_wire_count);
+	xo_emit("{:virtual-user-wired-pages/%9lu} {N:virtual user pages wired "
+	    "down}\n", sum.v_user_wire_count);
 	xo_emit("{:free-pages/%9u} {N:pages free}\n",
 	    sum.v_free_count);
 	xo_emit("{:bytes-per-page/%9u} {N:bytes per page}\n", sum.v_page_size);
@@ -1549,9 +1553,9 @@ domemstat_zone(void)
 #endif /* __rtems__ */
 	}
 	xo_open_container("memory-zone-statistics");
-	xo_emit("{T:/%-20s} {T:/%6s} {T:/%6s} {T:/%8s} {T:/%8s} {T:/%8s} "
+	xo_emit("{T:/%-20s} {T:/%6s} {T:/%6s} {T:/%8s} {T:/%8s} {T:/%8s} {T:/%8s}"
 	    "{T:/%4s} {T:/%4s}\n\n", "ITEM", "SIZE",
-	    "LIMIT", "USED", "FREE", "REQ", "FAIL", "SLEEP");
+	    "LIMIT", "USED", "FREE", "REQ", "FAIL", "SLEEP", "XDOMAIN");
 	xo_open_list("zone");
 	for (mtp = memstat_mtl_first(mtlp); mtp != NULL;
 	    mtp = memstat_mtl_next(mtp)) {
@@ -1561,7 +1565,7 @@ domemstat_zone(void)
 		xo_emit("{d:name/%-20s}{ke:name/%s} {:size/%6ju}, "
 		    "{:limit/%6ju},{:used/%8ju},"
 		    "{:free/%8ju},{:requests/%8ju},"
-		    "{:fail/%4ju},{:sleep/%4ju}\n", name,
+		    "{:fail/%4ju},{:sleep/%4ju},{:xdomain/%4ju}\n", name,
 		    memstat_get_name(mtp),
 		    (uintmax_t)memstat_get_size(mtp),
 		    (uintmax_t)memstat_get_countlimit(mtp),
@@ -1569,7 +1573,8 @@ domemstat_zone(void)
 		    (uintmax_t)memstat_get_free(mtp),
 		    (uintmax_t)memstat_get_numallocs(mtp),
 		    (uintmax_t)memstat_get_failures(mtp),
-		    (uintmax_t)memstat_get_sleeps(mtp));
+		    (uintmax_t)memstat_get_sleeps(mtp),
+		    (uintmax_t)memstat_get_xdomain(mtp));
 		xo_close_instance("zone");
 	}
 	memstat_mtl_free(mtlp);

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2005-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2005-2019 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -786,7 +786,7 @@ static long dgram_ctrl(BIO *b, int cmd, long num, void *ptr)
      * reasons. When BIO_CTRL_DGRAM_SET_PEEK_MODE was first defined its value
      * was incorrectly clashing with BIO_CTRL_DGRAM_SCTP_SET_IN_HANDSHAKE. The
      * value has been updated to a non-clashing value. However to preserve
-     * binary compatiblity we now respond to both the old value and the new one
+     * binary compatibility we now respond to both the old value and the new one
      */
     case BIO_CTRL_DGRAM_SCTP_SET_IN_HANDSHAKE:
     case BIO_CTRL_DGRAM_SET_PEEK_MODE:

@@ -31,6 +31,7 @@
  */
 
 #include <sys/param.h>
+#include <sys/counter.h>
 #include <sys/cpuset.h>
 #include <sys/sysctl.h>
 
@@ -202,6 +203,7 @@ retry:
 		mtp->mt_numfrees = uthp->uth_frees;
 		mtp->mt_failures = uthp->uth_fails;
 		mtp->mt_sleeps = uthp->uth_sleeps;
+		mtp->mt_xdomain = uthp->uth_xdomain;
 
 		for (j = 0; j < maxcpus; j++) {
 			upsp = (struct uma_percpu_stat *)p;
@@ -213,6 +215,15 @@ retry:
 			mtp->mt_numallocs += upsp->ups_allocs;
 			mtp->mt_numfrees += upsp->ups_frees;
 		}
+
+		/*
+		 * Values for uth_allocs and uth_frees frees are snap.
+		 * It may happen that kernel reports that number of frees
+		 * is greater than number of allocs. See counter(9) for
+		 * details.
+		 */
+		if (mtp->mt_numallocs < mtp->mt_numfrees)
+			mtp->mt_numallocs = mtp->mt_numfrees;
 
 		mtp->mt_size = uthp->uth_size;
 		mtp->mt_rsize = uthp->uth_rsize;
@@ -409,10 +420,18 @@ memstat_kvm_uma(struct memory_type_list *list, void *kvm_handle)
 			 * Reset the statistics on a current node.
 			 */
 			_memstat_mt_reset_stats(mtp, mp_maxid + 1);
-			mtp->mt_numallocs = uz.uz_allocs;
-			mtp->mt_numfrees = uz.uz_frees;
-			mtp->mt_failures = uz.uz_fails;
+			mtp->mt_numallocs = kvm_counter_u64_fetch(kvm,
+			    (unsigned long )uz.uz_allocs);
+			mtp->mt_numfrees = kvm_counter_u64_fetch(kvm,
+			    (unsigned long )uz.uz_frees);
+			mtp->mt_failures = kvm_counter_u64_fetch(kvm,
+			    (unsigned long )uz.uz_fails);
 			mtp->mt_sleeps = uz.uz_sleeps;
+			/* See comment above in memstat_sysctl_uma(). */
+			if (mtp->mt_numallocs < mtp->mt_numfrees)
+				mtp->mt_numallocs = mtp->mt_numfrees;
+
+			mtp->mt_xdomain = uz.uz_xdomain;
 			if (kz.uk_flags & UMA_ZFLAG_INTERNAL)
 				goto skip_percpu;
 			for (i = 0; i < mp_maxid + 1; i++) {
@@ -451,21 +470,16 @@ skip_percpu:
 			mtp->mt_memalloced = mtp->mt_numallocs * mtp->mt_size;
 			mtp->mt_memfreed = mtp->mt_numfrees * mtp->mt_size;
 			mtp->mt_bytes = mtp->mt_memalloced - mtp->mt_memfreed;
-			if (kz.uk_ppera > 1)
-				mtp->mt_countlimit = kz.uk_maxpages /
-				    kz.uk_ipers;
-			else
-				mtp->mt_countlimit = kz.uk_maxpages *
-				    kz.uk_ipers;
+			mtp->mt_countlimit = uz.uz_max_items;
 			mtp->mt_byteslimit = mtp->mt_countlimit * mtp->mt_size;
 			mtp->mt_count = mtp->mt_numallocs - mtp->mt_numfrees;
 			for (i = 0; i < ndomains; i++) {
 				ret = kread(kvm, &uz.uz_domain[i], &uzd,
 				   sizeof(uzd), 0);
 				for (ubp =
-				    LIST_FIRST(&uzd.uzd_buckets);
+				    TAILQ_FIRST(&uzd.uzd_buckets);
 				    ubp != NULL;
-				    ubp = LIST_NEXT(&ub, ub_link)) {
+				    ubp = TAILQ_NEXT(&ub, ub_link)) {
 					ret = kread(kvm, ubp, &ub,
 					   sizeof(ub), 0);
 					mtp->mt_zonefree += ub.ub_cnt;

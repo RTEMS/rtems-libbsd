@@ -9,7 +9,7 @@ __FBSDID("$FreeBSD$");
 #include <opencrypto/xform_enc.h>
 
 static int
-chacha20_xform_setkey(u_int8_t **sched, u_int8_t *key, int len)
+chacha20_xform_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 {
 	struct chacha_ctx *ctx;
 
@@ -26,7 +26,7 @@ chacha20_xform_setkey(u_int8_t **sched, u_int8_t *key, int len)
 }
 
 static void
-chacha20_xform_reinit(caddr_t key, u_int8_t *iv)
+chacha20_xform_reinit(caddr_t key, const u_int8_t *iv)
 {
 	struct chacha_ctx *ctx;
 

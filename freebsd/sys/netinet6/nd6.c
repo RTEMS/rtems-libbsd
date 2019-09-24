@@ -41,6 +41,7 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/eventhandler.h>
 #include <sys/callout.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
@@ -115,7 +116,7 @@ VNET_DEFINE(int, nd6_debug) = 1;
 VNET_DEFINE(int, nd6_debug) = 0;
 #endif
 
-static eventhandler_tag lle_event_eh, iflladdr_event_eh;
+static eventhandler_tag lle_event_eh, iflladdr_event_eh, ifnet_link_event_eh;
 
 VNET_DEFINE(struct nd_drhead, nd_defrouter);
 VNET_DEFINE(struct nd_prhead, nd_prefix);
@@ -235,6 +236,8 @@ nd6_init(void)
 		    NULL, EVENTHANDLER_PRI_ANY);
 		iflladdr_event_eh = EVENTHANDLER_REGISTER(iflladdr_event,
 		    nd6_iflladdr, NULL, EVENTHANDLER_PRI_ANY);
+		ifnet_link_event_eh = EVENTHANDLER_REGISTER(ifnet_link_event,
+		    nd6_ifnet_link_event, NULL, EVENTHANDLER_PRI_ANY);
 	}
 }
 
@@ -246,6 +249,7 @@ nd6_destroy()
 	callout_drain(&V_nd6_slowtimo_ch);
 	callout_drain(&V_nd6_timer_ch);
 	if (IS_DEFAULT_VNET(curvnet)) {
+		EVENTHANDLER_DEREGISTER(ifnet_link_event, ifnet_link_event_eh);
 		EVENTHANDLER_DEREGISTER(lle_event, lle_event_eh);
 		EVENTHANDLER_DEREGISTER(iflladdr_event, iflladdr_event_eh);
 	}
@@ -300,9 +304,10 @@ nd6_ifattach(struct ifnet *ifp)
 void
 nd6_ifdetach(struct ifnet *ifp, struct nd_ifinfo *nd)
 {
+	struct epoch_tracker et;
 	struct ifaddr *ifa, *next;
 
-	IF_ADDR_RLOCK(ifp);
+	NET_EPOCH_ENTER(et);
 	CK_STAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
@@ -310,7 +315,7 @@ nd6_ifdetach(struct ifnet *ifp, struct nd_ifinfo *nd)
 		/* stop DAD processing */
 		nd6_dad_stop(ifa);
 	}
-	IF_ADDR_RUNLOCK(ifp);
+	NET_EPOCH_EXIT(et);
 
 	free(nd, M_IP6NDP);
 }
@@ -898,6 +903,7 @@ nd6_timer(void *arg)
 	struct nd_prhead prl;
 	struct nd_defrouter *dr, *ndr;
 	struct nd_prefix *pr, *npr;
+	struct ifnet *ifp;
 	struct in6_ifaddr *ia6, *nia6;
 	uint64_t genid;
 
@@ -994,14 +1000,15 @@ nd6_timer(void *arg)
 			 * Check status of the interface.  If it is down,
 			 * mark the address as tentative for future DAD.
 			 */
-			if ((ia6->ia_ifp->if_flags & IFF_UP) == 0 ||
-			    (ia6->ia_ifp->if_drv_flags & IFF_DRV_RUNNING)
-				== 0 ||
-			    (ND_IFINFO(ia6->ia_ifp)->flags &
-				ND6_IFF_IFDISABLED) != 0) {
+			ifp = ia6->ia_ifp;
+			if ((ND_IFINFO(ifp)->flags & ND6_IFF_NO_DAD) == 0 &&
+			    ((ifp->if_flags & IFF_UP) == 0 ||
+			    (ifp->if_drv_flags & IFF_DRV_RUNNING) == 0 ||
+			    (ND_IFINFO(ifp)->flags & ND6_IFF_IFDISABLED) != 0)){
 				ia6->ia6_flags &= ~IN6_IFF_DUPLICATED;
 				ia6->ia6_flags |= IN6_IFF_TENTATIVE;
 			}
+
 			/*
 			 * A new RA might have made a deprecated address
 			 * preferred.
@@ -1064,12 +1071,13 @@ restart:
 static int
 regen_tmpaddr(struct in6_ifaddr *ia6)
 {
+	struct epoch_tracker et;
 	struct ifaddr *ifa;
 	struct ifnet *ifp;
 	struct in6_ifaddr *public_ifa6 = NULL;
 
 	ifp = ia6->ia_ifa.ifa_ifp;
-	IF_ADDR_RLOCK(ifp);
+	NET_EPOCH_ENTER(et);
 	CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		struct in6_ifaddr *it6;
 
@@ -1110,7 +1118,7 @@ regen_tmpaddr(struct in6_ifaddr *ia6)
 	}
 	if (public_ifa6 != NULL)
 		ifa_ref(&public_ifa6->ia_ifa);
-	IF_ADDR_RUNLOCK(ifp);
+	NET_EPOCH_EXIT(et);
 
 	if (public_ifa6 != NULL) {
 		int e;
@@ -1345,17 +1353,19 @@ restart:
 	 * a p2p interface, the address should be a neighbor.
 	 */
 	if (ifp->if_flags & IFF_POINTOPOINT) {
-		IF_ADDR_RLOCK(ifp);
+		struct epoch_tracker et;
+
+		NET_EPOCH_ENTER(et);
 		CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != addr->sin6_family)
 				continue;
 			if (ifa->ifa_dstaddr != NULL &&
 			    sa_equal(addr, ifa->ifa_dstaddr)) {
-				IF_ADDR_RUNLOCK(ifp);
+				NET_EPOCH_EXIT(et);
 				return 1;
 			}
 		}
-		IF_ADDR_RUNLOCK(ifp);
+		NET_EPOCH_EXIT(et);
 	}
 
 	/*
@@ -1379,6 +1389,7 @@ restart:
 int
 nd6_is_addr_neighbor(const struct sockaddr_in6 *addr, struct ifnet *ifp)
 {
+	struct epoch_tracker et;
 	struct llentry *lle;
 	int rc = 0;
 
@@ -1390,12 +1401,12 @@ nd6_is_addr_neighbor(const struct sockaddr_in6 *addr, struct ifnet *ifp)
 	 * Even if the address matches none of our addresses, it might be
 	 * in the neighbor cache.
 	 */
-	IF_AFDATA_RLOCK(ifp);
+	NET_EPOCH_ENTER(et);
 	if ((lle = nd6_lookup(&addr->sin6_addr, 0, ifp)) != NULL) {
 		LLE_RUNLOCK(lle);
 		rc = 1;
 	}
-	IF_AFDATA_RUNLOCK(ifp);
+	NET_EPOCH_EXIT(et);
 	return (rc);
 }
 
@@ -1624,6 +1635,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 	struct in6_ndireq *ndi = (struct in6_ndireq *)data;
 	struct in6_nbrinfo *nbi = (struct in6_nbrinfo *)data;
 	struct in6_ndifreq *ndif = (struct in6_ndifreq *)data;
+	struct epoch_tracker et;
 	int error = 0;
 
 	if (ifp->if_afdata[AF_INET6] == NULL)
@@ -1688,7 +1700,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 			 * do not clear ND6_IFF_IFDISABLED.
 			 * See RFC 4862, Section 5.4.5.
 			 */
-			IF_ADDR_RLOCK(ifp);
+			NET_EPOCH_ENTER(et);
 			CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 				if (ifa->ifa_addr->sa_family != AF_INET6)
 					continue;
@@ -1697,7 +1709,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 				    IN6_IS_ADDR_LINKLOCAL(IA6_IN6(ia)))
 					break;
 			}
-			IF_ADDR_RUNLOCK(ifp);
+			NET_EPOCH_EXIT(et);
 
 			if (ifa != NULL) {
 				/* LLA is duplicated. */
@@ -1718,7 +1730,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 			ND_IFINFO(ifp)->flags |= ND6_IFF_IFDISABLED;
 			if (V_ip6_dad_count > 0 &&
 			    (ND_IFINFO(ifp)->flags & ND6_IFF_NO_DAD) == 0) {
-				IF_ADDR_RLOCK(ifp);
+				NET_EPOCH_ENTER(et);
 				CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead,
 				    ifa_link) {
 					if (ifa->ifa_addr->sa_family !=
@@ -1727,7 +1739,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 					ia = (struct in6_ifaddr *)ifa;
 					ia->ia6_flags |= IN6_IFF_TENTATIVE;
 				}
-				IF_ADDR_RUNLOCK(ifp);
+				NET_EPOCH_EXIT(et);
 			}
 		}
 
@@ -1746,7 +1758,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 				 * address is assigned, and IFF_UP, try to
 				 * assign one.
 				 */
-				IF_ADDR_RLOCK(ifp);
+				NET_EPOCH_ENTER(et);
 				CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead,
 				    ifa_link) {
 					if (ifa->ifa_addr->sa_family !=
@@ -1756,7 +1768,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 					if (IN6_IS_ADDR_LINKLOCAL(IA6_IN6(ia)))
 						break;
 				}
-				IF_ADDR_RUNLOCK(ifp);
+				NET_EPOCH_EXIT(et);
 				if (ifa != NULL)
 					/* No LLA is configured. */
 					in6_ifattach(ifp, NULL);
@@ -1833,9 +1845,9 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 		if ((error = in6_setscope(&nb_addr, ifp, NULL)) != 0)
 			return (error);
 
-		IF_AFDATA_RLOCK(ifp);
+		NET_EPOCH_ENTER(et);
 		ln = nd6_lookup(&nb_addr, 0, ifp);
-		IF_AFDATA_RUNLOCK(ifp);
+		NET_EPOCH_EXIT(et);
 
 		if (ln == NULL) {
 			error = EINVAL;
@@ -1960,6 +1972,7 @@ nd6_cache_lladdr(struct ifnet *ifp, struct in6_addr *from, char *lladdr,
 	int flags;
 	uint16_t router = 0;
 	struct sockaddr_in6 sin6;
+	struct epoch_tracker et;
 	struct mbuf *chain = NULL;
 	u_char linkhdr[LLE_MAX_LINKHDR];
 	size_t linkhdrsize;
@@ -1984,9 +1997,9 @@ nd6_cache_lladdr(struct ifnet *ifp, struct in6_addr *from, char *lladdr,
 	 * description on it in NS section (RFC 2461 7.2.3).
 	 */
 	flags = lladdr ? LLE_EXCLUSIVE : 0;
-	IF_AFDATA_RLOCK(ifp);
+	NET_EPOCH_ENTER(et);
 	ln = nd6_lookup(from, flags, ifp);
-	IF_AFDATA_RUNLOCK(ifp);
+	NET_EPOCH_EXIT(et);
 	is_newentry = 0;
 	if (ln == NULL) {
 		flags |= LLE_EXCLUSIVE;
@@ -2128,13 +2141,14 @@ nd6_cache_lladdr(struct ifnet *ifp, struct in6_addr *from, char *lladdr,
 static void
 nd6_slowtimo(void *arg)
 {
+	struct epoch_tracker et;
 	CURVNET_SET((struct vnet *) arg);
 	struct nd_ifinfo *nd6if;
 	struct ifnet *ifp;
 
 	callout_reset(&V_nd6_slowtimo_ch, ND6_SLOWTIMER_INTERVAL * hz,
 	    nd6_slowtimo, curvnet);
-	IFNET_RLOCK_NOSLEEP();
+	NET_EPOCH_ENTER(et);
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if (ifp->if_afdata[AF_INET6] == NULL)
 			continue;
@@ -2151,7 +2165,7 @@ nd6_slowtimo(void *arg)
 			nd6if->reachable = ND_COMPUTE_RTIME(nd6if->basereachable);
 		}
 	}
-	IFNET_RUNLOCK_NOSLEEP();
+	NET_EPOCH_EXIT(et);
 	CURVNET_RESTORE();
 }
 
@@ -2244,6 +2258,7 @@ nd6_resolve(struct ifnet *ifp, int is_gw, struct mbuf *m,
     const struct sockaddr *sa_dst, u_char *desten, uint32_t *pflags,
     struct llentry **plle)
 {
+	struct epoch_tracker et;
 	struct llentry *ln = NULL;
 	const struct sockaddr_in6 *dst6;
 
@@ -2272,7 +2287,7 @@ nd6_resolve(struct ifnet *ifp, int is_gw, struct mbuf *m,
 		}
 	}
 
-	IF_AFDATA_RLOCK(ifp);
+	NET_EPOCH_ENTER(et);
 	ln = nd6_lookup(&dst6->sin6_addr, plle ? LLE_EXCLUSIVE : LLE_UNLOCKED,
 	    ifp);
 	if (ln != NULL && (ln->r_flags & RLLE_VALID) != 0) {
@@ -2292,11 +2307,11 @@ nd6_resolve(struct ifnet *ifp, int is_gw, struct mbuf *m,
 			*plle = ln;
 			LLE_WUNLOCK(ln);
 		}
-		IF_AFDATA_RUNLOCK(ifp);
+		NET_EPOCH_EXIT(et);
 		return (0);
 	} else if (plle && ln)
 		LLE_WUNLOCK(ln);
-	IF_AFDATA_RUNLOCK(ifp);
+	NET_EPOCH_EXIT(et);
 
 	return (nd6_resolve_slow(ifp, 0, m, dst6, desten, pflags, plle));
 }
@@ -2330,9 +2345,11 @@ nd6_resolve_slow(struct ifnet *ifp, int flags, struct mbuf *m,
 	 * or an anycast address(i.e. not a multicast).
 	 */
 	if (lle == NULL) {
-		IF_AFDATA_RLOCK(ifp);
+		struct epoch_tracker et;
+
+		NET_EPOCH_ENTER(et);
 		lle = nd6_lookup(&dst->sin6_addr, LLE_EXCLUSIVE, ifp);
-		IF_AFDATA_RUNLOCK(ifp);
+		NET_EPOCH_EXIT(et);
 		if ((lle == NULL) && nd6_is_addr_neighbor(dst, ifp))  {
 			/*
 			 * Since nd6_is_addr_neighbor() internally calls nd6_lookup(),

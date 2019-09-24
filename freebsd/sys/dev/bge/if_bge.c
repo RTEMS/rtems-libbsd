@@ -2929,10 +2929,14 @@ bge_dma_ring_alloc(struct bge_softc *sc, bus_size_t alignment,
     bus_addr_t *paddr, const char *msg)
 {
 	struct bge_dmamap_arg ctx;
+	bus_addr_t lowaddr;
+	bus_size_t ring_end;
 	int error;
 
+	lowaddr = BUS_SPACE_MAXADDR;
+again:
 	error = bus_dma_tag_create(sc->bge_cdata.bge_parent_tag,
-	    alignment, 0, BUS_SPACE_MAXADDR, BUS_SPACE_MAXADDR, NULL,
+	    alignment, 0, lowaddr, BUS_SPACE_MAXADDR, NULL,
 	    NULL, maxsize, 1, maxsize, 0, NULL, NULL, tag);
 	if (error != 0) {
 		device_printf(sc->bge_dev,
@@ -2957,6 +2961,25 @@ bge_dma_ring_alloc(struct bge_softc *sc, bus_size_t alignment,
 		return (ENOMEM);
 	}
 	*paddr = ctx.bge_busaddr;
+	ring_end = *paddr + maxsize;
+	if ((sc->bge_flags & BGE_FLAG_4G_BNDRY_BUG) != 0 &&
+	    BGE_ADDR_HI(*paddr) != BGE_ADDR_HI(ring_end)) {
+		/*
+		 * 4GB boundary crossed.  Limit maximum allowable DMA
+		 * address space to 32bit and try again.
+		 */
+		bus_dmamap_unload(*tag, *map);
+		bus_dmamem_free(*tag, *ring, *map);
+		bus_dma_tag_destroy(*tag);
+		if (bootverbose)
+			device_printf(sc->bge_dev, "4GB boundary crossed, "
+			    "limit DMA address space to 32bit for %s\n", msg);
+		*ring = NULL;
+		*tag = NULL;
+		*map = NULL;
+		lowaddr = BUS_SPACE_MAXADDR_32BIT;
+		goto again;
+	}
 	return (0);
 }
 
@@ -2964,7 +2987,7 @@ static int
 bge_dma_alloc(struct bge_softc *sc)
 {
 	bus_addr_t lowaddr;
-	bus_size_t rxmaxsegsz, sbsz, txsegsz, txmaxsegsz;
+	bus_size_t boundary, sbsz, rxmaxsegsz, txsegsz, txmaxsegsz;
 	int i, error;
 
 	lowaddr = BUS_SPACE_MAXADDR;
@@ -3051,7 +3074,9 @@ bge_dma_alloc(struct bge_softc *sc)
 	}
 
 	/* Create parent tag for buffers. */
+	boundary = 0;
 	if ((sc->bge_flags & BGE_FLAG_4G_BNDRY_BUG) != 0) {
+		boundary = BGE_DMA_BNDRY;
 		/*
 		 * XXX
 		 * watchdog timeout issue was observed on BCM5704 which
@@ -3062,10 +3087,10 @@ bge_dma_alloc(struct bge_softc *sc)
 		if (sc->bge_pcixcap != 0)
 			lowaddr = BUS_SPACE_MAXADDR_32BIT;
 	}
-	error = bus_dma_tag_create(bus_get_dma_tag(sc->bge_dev), 1, 0, lowaddr,
-	    BUS_SPACE_MAXADDR, NULL, NULL, BUS_SPACE_MAXSIZE_32BIT, 0,
-	    BUS_SPACE_MAXSIZE_32BIT, 0, NULL, NULL,
-	    &sc->bge_cdata.bge_buffer_tag);
+	error = bus_dma_tag_create(bus_get_dma_tag(sc->bge_dev),
+	    1, boundary, lowaddr, BUS_SPACE_MAXADDR, NULL,
+	    NULL, BUS_SPACE_MAXSIZE_32BIT, 0, BUS_SPACE_MAXSIZE_32BIT,
+	    0, NULL, NULL, &sc->bge_cdata.bge_buffer_tag);
 	if (error != 0) {
 		device_printf(sc->bge_dev,
 		    "could not allocate buffer dma tag\n");
@@ -3253,6 +3278,8 @@ bge_mbox_reorder(struct bge_softc *sc)
 		bus = device_get_parent(dev);
 		if (device_get_devclass(dev) != pcib)
 			break;
+		if (device_get_devclass(bus) != pci)
+			break;
 		for (i = 0; i < nitems(mbox_reorder_lists); i++) {
 			if (pci_get_vendor(dev) ==
 			    mbox_reorder_lists[i].vendor &&
@@ -3264,8 +3291,6 @@ bge_mbox_reorder(struct bge_softc *sc)
 				return (1);
 			}
 		}
-		if (device_get_devclass(bus) != pci)
-			break;
 	}
 	return (0);
 }

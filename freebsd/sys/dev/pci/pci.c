@@ -33,20 +33,22 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <rtems/bsd/local/opt_acpi.h>
 #include <rtems/bsd/local/opt_bus.h>
 
 #include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/module.h>
+#include <sys/conf.h>
+#include <sys/endian.h>
+#include <sys/eventhandler.h>
+#include <sys/fcntl.h>
+#include <sys/kernel.h>
 #include <sys/limits.h>
 #include <sys/linker.h>
-#include <sys/fcntl.h>
-#include <sys/conf.h>
-#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/module.h>
 #include <sys/queue.h>
 #include <sys/sysctl.h>
-#include <sys/endian.h>
+#include <sys/systm.h>
 
 #include <vm/vm.h>
 #include <vm/pmap.h>
@@ -137,6 +139,10 @@ static int		pci_remap_intr_method(device_t bus, device_t dev,
 static void		pci_hint_device_unit(device_t acdev, device_t child,
 			    const char *name, int *unitp);
 #endif /* __rtems__ */
+static int		pci_reset_post(device_t dev, device_t child);
+static int		pci_reset_prepare(device_t dev, device_t child);
+static int		pci_reset_child(device_t dev, device_t child,
+			    int flags);
 
 static int		pci_get_id_method(device_t dev, device_t child,
 			    enum pci_id_type type, uintptr_t *rid);
@@ -161,6 +167,9 @@ static device_method_t pci_methods[] = {
 	DEVMETHOD(bus_driver_added,	pci_driver_added),
 	DEVMETHOD(bus_setup_intr,	pci_setup_intr),
 	DEVMETHOD(bus_teardown_intr,	pci_teardown_intr),
+	DEVMETHOD(bus_reset_prepare,	pci_reset_prepare),
+	DEVMETHOD(bus_reset_post,	pci_reset_post),
+	DEVMETHOD(bus_reset_child,	pci_reset_child),
 
 	DEVMETHOD(bus_get_dma_tag,	pci_get_dma_tag),
 	DEVMETHOD(bus_get_resource_list,pci_get_resource_list),
@@ -355,7 +364,7 @@ SYSCTL_INT(_hw_pci, OID_AUTO, enable_io_modes, CTLFLAG_RWTUN,
     " enable these bits correctly.  We'd like to do this all the time, but"
     " there are some peripherals that this causes problems with.");
 
-static int pci_do_realloc_bars = 0;
+static int pci_do_realloc_bars = 1;
 SYSCTL_INT(_hw_pci, OID_AUTO, realloc_bars, CTLFLAG_RWTUN,
     &pci_do_realloc_bars, 0,
     "Attempt to allocate a new range for any BARs whose original "
@@ -1678,10 +1687,13 @@ pci_mask_msix(device_t dev, u_int index)
 	KASSERT(msix->msix_msgnum > index, ("bogus index"));
 	offset = msix->msix_table_offset + index * 16 + 12;
 	val = bus_read_4(msix->msix_table_res, offset);
-	if (!(val & PCIM_MSIX_VCTRL_MASK)) {
-		val |= PCIM_MSIX_VCTRL_MASK;
-		bus_write_4(msix->msix_table_res, offset, val);
-	}
+	val |= PCIM_MSIX_VCTRL_MASK;
+
+	/*
+	 * Some devices (e.g. Samsung PM961) do not support reads of this
+	 * register, so always write the new value.
+	 */
+	bus_write_4(msix->msix_table_res, offset, val);
 }
 
 void
@@ -1694,10 +1706,13 @@ pci_unmask_msix(device_t dev, u_int index)
 	KASSERT(msix->msix_table_len > index, ("bogus index"));
 	offset = msix->msix_table_offset + index * 16 + 12;
 	val = bus_read_4(msix->msix_table_res, offset);
-	if (val & PCIM_MSIX_VCTRL_MASK) {
-		val &= ~PCIM_MSIX_VCTRL_MASK;
-		bus_write_4(msix->msix_table_res, offset, val);
-	}
+	val &= ~PCIM_MSIX_VCTRL_MASK;
+
+	/*
+	 * Some devices (e.g. Samsung PM961) do not support reads of this
+	 * register, so always write the new value.
+	 */
+	bus_write_4(msix->msix_table_res, offset, val);
 }
 
 int
@@ -4359,9 +4374,6 @@ pci_attach_common(device_t dev)
 {
 	struct pci_softc *sc;
 	int busno, domain;
-#ifdef PCI_DMA_BOUNDARY
-	int error, tag_valid;
-#endif
 #ifdef PCI_RES_BUS
 	int rid;
 #endif
@@ -4381,23 +4393,7 @@ pci_attach_common(device_t dev)
 	if (bootverbose)
 		device_printf(dev, "domain=%d, physical bus=%d\n",
 		    domain, busno);
-#ifdef PCI_DMA_BOUNDARY
-	tag_valid = 0;
-	if (device_get_devclass(device_get_parent(device_get_parent(dev))) !=
-	    devclass_find("pci")) {
-		error = bus_dma_tag_create(bus_get_dma_tag(dev), 1,
-		    PCI_DMA_BOUNDARY, BUS_SPACE_MAXADDR, BUS_SPACE_MAXADDR,
-		    NULL, NULL, BUS_SPACE_MAXSIZE, BUS_SPACE_UNRESTRICTED,
-		    BUS_SPACE_MAXSIZE, 0, NULL, NULL, &sc->sc_dma_tag);
-		if (error)
-			device_printf(dev, "Failed to create DMA tag: %d\n",
-			    error);
-		else
-			tag_valid = 1;
-	}
-	if (!tag_valid)
-#endif
-		sc->sc_dma_tag = bus_get_dma_tag(dev);
+	sc->sc_dma_tag = bus_get_dma_tag(dev);
 	return (0);
 }
 
@@ -5730,6 +5726,26 @@ pci_get_resource_list (device_t dev, device_t child)
 	return (&dinfo->resources);
 }
 
+#ifdef ACPI_DMAR
+bus_dma_tag_t dmar_get_dma_tag(device_t dev, device_t child);
+bus_dma_tag_t
+pci_get_dma_tag(device_t bus, device_t dev)
+{
+	bus_dma_tag_t tag;
+	struct pci_softc *sc;
+
+	if (device_get_parent(dev) == bus) {
+		/* try dmar and return if it works */
+		tag = dmar_get_dma_tag(bus, dev);
+	} else
+		tag = NULL;
+	if (tag == NULL) {
+		sc = device_get_softc(bus);
+		tag = sc->sc_dma_tag;
+	}
+	return (tag);
+}
+#else
 bus_dma_tag_t
 pci_get_dma_tag(device_t bus, device_t dev)
 {
@@ -5737,6 +5753,7 @@ pci_get_dma_tag(device_t bus, device_t dev)
 
 	return (sc->sc_dma_tag);
 }
+#endif
 
 uint32_t
 pci_read_config_method(device_t dev, device_t child, int reg, int width)
@@ -6400,6 +6417,94 @@ pcie_flr(device_t dev, u_int max_delay, bool force)
 	    PCIEM_STA_TRANSACTION_PND)
 		pci_printf(&dinfo->cfg, "Transactions pending after FLR!\n");
 	return (true);
+}
+
+/*
+ * Attempt a power-management reset by cycling the device in/out of D3
+ * state.  PCI spec says we can only go into D3 state from D0 state.
+ * Transition from D[12] into D0 before going to D3 state.
+ */
+int
+pci_power_reset(device_t dev)
+{
+	int ps;
+
+	ps = pci_get_powerstate(dev);
+	if (ps != PCI_POWERSTATE_D0 && ps != PCI_POWERSTATE_D3)
+		pci_set_powerstate(dev, PCI_POWERSTATE_D0);
+	pci_set_powerstate(dev, PCI_POWERSTATE_D3);
+	pci_set_powerstate(dev, ps);
+	return (0);
+}
+
+/*
+ * Try link drop and retrain of the downstream port of upstream
+ * switch, for PCIe.  According to the PCIe 3.0 spec 6.6.1, this must
+ * cause Conventional Hot reset of the device in the slot.
+ * Alternative, for PCIe, could be the secondary bus reset initiatied
+ * on the upstream switch PCIR_BRIDGECTL_1, bit 6.
+ */
+int
+pcie_link_reset(device_t port, int pcie_location)
+{
+	uint16_t v;
+
+	v = pci_read_config(port, pcie_location + PCIER_LINK_CTL, 2);
+	v |= PCIEM_LINK_CTL_LINK_DIS;
+	pci_write_config(port, pcie_location + PCIER_LINK_CTL, v, 2);
+	pause_sbt("pcier1", mstosbt(20), 0, 0);
+	v &= ~PCIEM_LINK_CTL_LINK_DIS;
+	v |= PCIEM_LINK_CTL_RETRAIN_LINK;
+	pci_write_config(port, pcie_location + PCIER_LINK_CTL, v, 2);
+	pause_sbt("pcier2", mstosbt(100), 0, 0); /* 100 ms */
+	v = pci_read_config(port, pcie_location + PCIER_LINK_STA, 2);
+	return ((v & PCIEM_LINK_STA_TRAINING) != 0 ? ETIMEDOUT : 0);
+}
+
+static int
+pci_reset_post(device_t dev, device_t child)
+{
+
+	if (dev == device_get_parent(child))
+		pci_restore_state(child);
+	return (0);
+}
+
+static int
+pci_reset_prepare(device_t dev, device_t child)
+{
+
+	if (dev == device_get_parent(child))
+		pci_save_state(child);
+	return (0);
+}
+
+static int
+pci_reset_child(device_t dev, device_t child, int flags)
+{
+	int error;
+
+	if (dev == NULL || device_get_parent(child) != dev)
+		return (0);
+	if ((flags & DEVF_RESET_DETACH) != 0) {
+		error = device_get_state(child) == DS_ATTACHED ?
+		    device_detach(child) : 0;
+	} else {
+		error = BUS_SUSPEND_CHILD(dev, child);
+	}
+	if (error == 0) {
+		if (!pcie_flr(child, 1000, false)) {
+			error = BUS_RESET_PREPARE(dev, child);
+			if (error == 0)
+				pci_power_reset(child);
+			BUS_RESET_POST(dev, child);
+		}
+		if ((flags & DEVF_RESET_DETACH) != 0)
+			device_probe_and_attach(child);
+		else
+			BUS_RESUME_CHILD(dev, child);
+	}
+	return (error);
 }
 
 const struct pci_device_table *

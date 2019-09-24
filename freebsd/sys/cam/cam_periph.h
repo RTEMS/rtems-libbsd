@@ -37,6 +37,8 @@
 #include <cam/cam_sim.h>
 
 #ifdef _KERNEL
+#include <sys/lock.h>
+#include <sys/mutex.h>
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 
@@ -149,6 +151,7 @@ struct cam_periph {
 
 struct cam_periph_map_info {
 	int		num_bufs_used;
+	void		*orig[CAM_PERIPH_MAXMAPS];
 	struct buf	*bp[CAM_PERIPH_MAXMAPS];
 };
 

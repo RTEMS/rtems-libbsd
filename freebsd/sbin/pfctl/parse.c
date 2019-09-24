@@ -157,6 +157,7 @@ __FBSDID("$FreeBSD$");
 #include "pfctl_parser.h"
 #include "pfctl.h"
 #ifdef __rtems__
+#include <sys/limits.h>
 #include "rtems-bsd-pfctl-parse-data.h"
 #endif /* __rtems__ */
 

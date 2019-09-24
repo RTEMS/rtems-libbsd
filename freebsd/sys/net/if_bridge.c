@@ -228,7 +228,7 @@ struct bridge_softc {
 	struct bstp_state	sc_stp;		/* STP state */
 	uint32_t		sc_brtexceeded;	/* # of cache drops */
 	struct ifnet		*sc_ifaddr;	/* member mac copied from */
-	u_char			sc_defaddr[6];	/* Default MAC address */
+	struct ether_addr	sc_defaddr;	/* Default MAC address */
 };
 
 VNET_DEFINE_STATIC(struct mtx, bridge_list_mtx);
@@ -237,7 +237,8 @@ static eventhandler_tag bridge_detach_cookie;
 
 int	bridge_rtable_prune_period = BRIDGE_RTABLE_PRUNE_PERIOD;
 
-uma_zone_t bridge_rtnode_zone;
+VNET_DEFINE_STATIC(uma_zone_t, bridge_rtnode_zone);
+#define	V_bridge_rtnode_zone	VNET(bridge_rtnode_zone)
 
 static int	bridge_clone_create(struct if_clone *, int, caddr_t);
 static void	bridge_clone_destroy(struct ifnet *);
@@ -529,6 +530,9 @@ static void
 vnet_bridge_init(const void *unused __unused)
 {
 
+	V_bridge_rtnode_zone = uma_zcreate("bridge_rtnode",
+	    sizeof(struct bridge_rtnode), NULL, NULL, NULL, NULL,
+	    UMA_ALIGN_PTR, 0);
 	BRIDGE_LIST_LOCK_INIT();
 	LIST_INIT(&V_bridge_list);
 	V_bridge_cloner = if_clone_simple(bridge_name,
@@ -544,6 +548,7 @@ vnet_bridge_uninit(const void *unused __unused)
 	if_clone_detach(V_bridge_cloner);
 	V_bridge_cloner = NULL;
 	BRIDGE_LIST_LOCK_DESTROY();
+	uma_zdestroy(V_bridge_rtnode_zone);
 }
 VNET_SYSUNINIT(vnet_bridge_uninit, SI_SUB_PSEUDO, SI_ORDER_ANY,
     vnet_bridge_uninit, NULL);
@@ -554,9 +559,6 @@ bridge_modevent(module_t mod, int type, void *data)
 
 	switch (type) {
 	case MOD_LOAD:
-		bridge_rtnode_zone = uma_zcreate("bridge_rtnode",
-		    sizeof(struct bridge_rtnode), NULL, NULL, NULL, NULL,
-		    UMA_ALIGN_PTR, 0);
 		bridge_dn_p = bridge_dummynet;
 		bridge_detach_cookie = EVENTHANDLER_REGISTER(
 		    ifnet_departure_event, bridge_ifdetach, NULL,
@@ -565,7 +567,6 @@ bridge_modevent(module_t mod, int type, void *data)
 	case MOD_UNLOAD:
 		EVENTHANDLER_DEREGISTER(ifnet_departure_event,
 		    bridge_detach_cookie);
-		uma_zdestroy(bridge_rtnode_zone);
 		bridge_dn_p = NULL;
 		break;
 	default:
@@ -672,16 +673,14 @@ bridge_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	getcredhostid(curthread->td_ucred, &hostid);
 	do {
 		if (fb || hostid == 0) {
-			arc4rand(sc->sc_defaddr, ETHER_ADDR_LEN, 1);
-			sc->sc_defaddr[0] &= ~1;/* clear multicast bit */
-			sc->sc_defaddr[0] |= 2;	/* set the LAA bit */
+			ether_gen_addr(ifp, &sc->sc_defaddr);
 		} else {
-			sc->sc_defaddr[0] = 0x2;
-			sc->sc_defaddr[1] = (hostid >> 24) & 0xff;
-			sc->sc_defaddr[2] = (hostid >> 16) & 0xff;
-			sc->sc_defaddr[3] = (hostid >> 8 ) & 0xff;
-			sc->sc_defaddr[4] =  hostid        & 0xff;
-			sc->sc_defaddr[5] = ifp->if_dunit & 0xff;
+			sc->sc_defaddr.octet[0] = 0x2;
+			sc->sc_defaddr.octet[1] = (hostid >> 24) & 0xff;
+			sc->sc_defaddr.octet[2] = (hostid >> 16) & 0xff;
+			sc->sc_defaddr.octet[3] = (hostid >> 8 ) & 0xff;
+			sc->sc_defaddr.octet[4] =  hostid        & 0xff;
+			sc->sc_defaddr.octet[5] = ifp->if_dunit & 0xff;
 		}
 
 		fb = 1;
@@ -689,7 +688,7 @@ bridge_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 		BRIDGE_LIST_LOCK();
 		LIST_FOREACH(sc2, &V_bridge_list, sc_list) {
 			bifp = sc2->sc_ifp;
-			if (memcmp(sc->sc_defaddr,
+			if (memcmp(sc->sc_defaddr.octet,
 			    IF_LLADDR(bifp), ETHER_ADDR_LEN) == 0) {
 				retry = 1;
 				break;
@@ -699,7 +698,7 @@ bridge_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	} while (retry == 1);
 
 	bstp_attach(&sc->sc_stp, &bridge_ops);
-	ether_ifattach(ifp, sc->sc_defaddr);
+	ether_ifattach(ifp, sc->sc_defaddr.octet);
 	/* Now undo some of the damage... */
 	ifp->if_baudrate = 0;
 	ifp->if_type = IFT_BRIDGE;
@@ -734,6 +733,9 @@ bridge_clone_destroy(struct ifnet *ifp)
 		bridge_delete_span(sc, bif);
 	}
 
+	/* Tear down the routing table. */
+	bridge_rtable_fini(sc);
+
 	BRIDGE_UNLOCK(sc);
 
 	callout_drain(&sc->sc_brcallout);
@@ -745,9 +747,6 @@ bridge_clone_destroy(struct ifnet *ifp)
 	bstp_detach(&sc->sc_stp);
 	ether_ifdetach(ifp);
 	if_free(ifp);
-
-	/* Tear down the routing table. */
-	bridge_rtable_fini(sc);
 
 	BRIDGE_LOCK_DESTROY(sc);
 	free(sc, M_DEVBUF);
@@ -927,7 +926,7 @@ bridge_set_ifcap(struct bridge_softc *sc, struct bridge_iflist *bif, int set)
 {
 	struct ifnet *ifp = bif->bif_ifp;
 	struct ifreq ifr;
-	int error;
+	int error, mask, stuck;
 
 	BRIDGE_UNLOCK_ASSERT(sc);
 
@@ -940,10 +939,12 @@ bridge_set_ifcap(struct bridge_softc *sc, struct bridge_iflist *bif, int set)
 			if_printf(sc->sc_ifp,
 			    "error setting capabilities on %s: %d\n",
 			    ifp->if_xname, error);
-		if ((ifp->if_capenable & ~set) != 0)
+		mask = BRIDGE_IFCAPS_MASK | BRIDGE_IFCAPS_STRIP;
+		stuck = ifp->if_capenable & mask & ~set;
+		if (stuck != 0)
 			if_printf(sc->sc_ifp,
 			    "can't disable some capabilities on %s: 0x%x\n",
-			    ifp->if_xname, ifp->if_capenable & ~set);
+			    ifp->if_xname, stuck);
 	}
 }
 
@@ -1018,7 +1019,7 @@ bridge_delete_member(struct bridge_softc *sc, struct bridge_iflist *bif,
 	 */
 	if (V_bridge_inherit_mac && sc->sc_ifaddr == ifs) {
 		if (LIST_EMPTY(&sc->sc_iflist)) {
-			bcopy(sc->sc_defaddr,
+			bcopy(&sc->sc_defaddr,
 			    IF_LLADDR(sc->sc_ifp), ETHER_ADDR_LEN);
 			sc->sc_ifaddr = NULL;
 		} else {
@@ -1189,7 +1190,7 @@ bridge_ioctl_add(struct bridge_softc *sc, void *arg)
 	 * the default randomly generated one.
 	 */
 	if (V_bridge_inherit_mac && LIST_EMPTY(&sc->sc_iflist) &&
-	    !memcmp(IF_LLADDR(sc->sc_ifp), sc->sc_defaddr, ETHER_ADDR_LEN)) {
+	    !memcmp(IF_LLADDR(sc->sc_ifp), sc->sc_defaddr.octet, ETHER_ADDR_LEN)) {
 		bcopy(IF_LLADDR(ifs), IF_LLADDR(sc->sc_ifp), ETHER_ADDR_LEN);
 		sc->sc_ifaddr = ifs;
 		EVENTHANDLER_INVOKE(iflladdr_event, sc->sc_ifp);
@@ -1972,9 +1973,9 @@ bridge_dummynet(struct mbuf *m, struct ifnet *ifp)
 		return;
 	}
 
-	if (PFIL_HOOKED(&V_inet_pfil_hook)
+	if (PFIL_HOOKED_OUT(V_inet_pfil_head)
 #ifdef INET6
-	    || PFIL_HOOKED(&V_inet6_pfil_hook)
+	    || PFIL_HOOKED_OUT(V_inet6_pfil_head)
 #endif
 	    ) {
 		if (bridge_pfil(&m, sc->sc_ifp, ifp, PFIL_OUT) != 0)
@@ -2001,7 +2002,7 @@ bridge_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
     struct rtentry *rt)
 {
 	struct ether_header *eh;
-	struct ifnet *dst_if;
+	struct ifnet *bifp, *dst_if;
 	struct bridge_softc *sc;
 	uint16_t vlan;
 
@@ -2016,13 +2017,14 @@ bridge_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
 	vlan = VLANTAGOF(m);
 
 	BRIDGE_LOCK(sc);
+	bifp = sc->sc_ifp;
 
 	/*
 	 * If bridge is down, but the original output interface is up,
 	 * go ahead and send out that interface.  Otherwise, the packet
 	 * is dropped below.
 	 */
-	if ((sc->sc_ifp->if_drv_flags & IFF_DRV_RUNNING) == 0) {
+	if ((bifp->if_drv_flags & IFF_DRV_RUNNING) == 0) {
 		dst_if = ifp;
 		goto sendunicast;
 	}
@@ -2035,6 +2037,9 @@ bridge_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
 		dst_if = NULL;
 	else
 		dst_if = bridge_rtlookup(sc, eh->ether_dhost, vlan);
+	/* Tap any traffic not passing back out the originating interface */
+	if (dst_if != ifp)
+		ETHER_BPF_MTAP(bifp, m);
 	if (dst_if == NULL) {
 		struct bridge_iflist *bif;
 		struct mbuf *mc;
@@ -2072,7 +2077,7 @@ bridge_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
 			} else {
 				mc = m_copypacket(m, M_NOWAIT);
 				if (mc == NULL) {
-					if_inc_counter(sc->sc_ifp, IFCOUNTER_OERRORS, 1);
+					if_inc_counter(bifp, IFCOUNTER_OERRORS, 1);
 					continue;
 				}
 			}
@@ -2232,9 +2237,9 @@ bridge_forward(struct bridge_softc *sc, struct bridge_iflist *sbif,
 		ETHER_BPF_MTAP(ifp, m);
 
 	/* run the packet filter */
-	if (PFIL_HOOKED(&V_inet_pfil_hook)
+	if (PFIL_HOOKED_IN(V_inet_pfil_head)
 #ifdef INET6
-	    || PFIL_HOOKED(&V_inet6_pfil_hook)
+	    || PFIL_HOOKED_IN(V_inet6_pfil_head)
 #endif
 	    ) {
 		BRIDGE_UNLOCK(sc);
@@ -2272,9 +2277,9 @@ bridge_forward(struct bridge_softc *sc, struct bridge_iflist *sbif,
 
 	BRIDGE_UNLOCK(sc);
 
-	if (PFIL_HOOKED(&V_inet_pfil_hook)
+	if (PFIL_HOOKED_OUT(V_inet_pfil_head)
 #ifdef INET6
-	    || PFIL_HOOKED(&V_inet6_pfil_hook)
+	    || PFIL_HOOKED_OUT(V_inet6_pfil_head)
 #endif
 	    ) {
 		if (bridge_pfil(&m, ifp, dst_if, PFIL_OUT) != 0)
@@ -2411,7 +2416,7 @@ bridge_input(struct ifnet *ifp, struct mbuf *m)
 
 #ifdef INET6
 #   define OR_PFIL_HOOKED_INET6 \
-	|| PFIL_HOOKED(&V_inet6_pfil_hook)
+	|| PFIL_HOOKED_IN(V_inet6_pfil_head)
 #else
 #   define OR_PFIL_HOOKED_INET6
 #endif
@@ -2423,22 +2428,6 @@ bridge_input(struct ifnet *ifp, struct mbuf *m)
 	if (memcmp(IF_LLADDR((iface)), eh->ether_dhost,  ETHER_ADDR_LEN) == 0 \
 	    OR_CARP_CHECK_WE_ARE_DST((iface))				\
 	    ) {								\
-		if ((iface)->if_type == IFT_BRIDGE) {			\
-			ETHER_BPF_MTAP(iface, m);			\
-			if_inc_counter(iface, IFCOUNTER_IPACKETS, 1);				\
-			if_inc_counter(iface, IFCOUNTER_IBYTES, m->m_pkthdr.len);		\
-			/* Filter on the physical interface. */		\
-			if (V_pfil_local_phys &&			\
-			    (PFIL_HOOKED(&V_inet_pfil_hook)		\
-			     OR_PFIL_HOOKED_INET6)) {			\
-				if (bridge_pfil(&m, NULL, ifp,		\
-				    PFIL_IN) != 0 || m == NULL) {	\
-					BRIDGE_UNLOCK(sc);		\
-					return (NULL);			\
-				}					\
-				eh = mtod(m, struct ether_header *);	\
-			}						\
-		}							\
 		if (bif->bif_flags & IFBIF_LEARNING) {			\
 			error = bridge_rtupdate(sc, eh->ether_shost,	\
 			    vlan, bif, 0, IFBAF_DYNAMIC);		\
@@ -2449,6 +2438,26 @@ bridge_input(struct ifnet *ifp, struct mbuf *m)
 			}						\
 		}							\
 		m->m_pkthdr.rcvif = iface;				\
+		if ((iface) == ifp) {					\
+			/* Skip bridge processing... src == dest */	\
+			BRIDGE_UNLOCK(sc);				\
+			return (m);					\
+		}							\
+		/* It's passing over or to the bridge, locally. */	\
+		ETHER_BPF_MTAP(bifp, m);				\
+		if_inc_counter(bifp, IFCOUNTER_IPACKETS, 1);		\
+		if_inc_counter(bifp, IFCOUNTER_IBYTES, m->m_pkthdr.len); \
+		/* Filter on the physical interface. */			\
+		if (V_pfil_local_phys && (PFIL_HOOKED_IN(V_inet_pfil_head) \
+		     OR_PFIL_HOOKED_INET6)) {				\
+			if (bridge_pfil(&m, NULL, ifp,			\
+			    PFIL_IN) != 0 || m == NULL) {		\
+				BRIDGE_UNLOCK(sc);			\
+				return (NULL);				\
+			}						\
+		}							\
+		if ((iface) != bifp)					\
+			ETHER_BPF_MTAP(iface, m);			\
 		BRIDGE_UNLOCK(sc);					\
 		return (m);						\
 	}								\
@@ -2519,9 +2528,9 @@ bridge_broadcast(struct bridge_softc *sc, struct ifnet *src_if,
 	}
 
 	/* Filter on the bridge interface before broadcasting */
-	if (runfilt && (PFIL_HOOKED(&V_inet_pfil_hook)
+	if (runfilt && (PFIL_HOOKED_OUT(V_inet_pfil_head)
 #ifdef INET6
-	    || PFIL_HOOKED(&V_inet6_pfil_hook)
+	    || PFIL_HOOKED_OUT(V_inet6_pfil_head)
 #endif
 	    )) {
 		if (bridge_pfil(&m, sc->sc_ifp, NULL, PFIL_OUT) != 0)
@@ -2566,9 +2575,9 @@ bridge_broadcast(struct bridge_softc *sc, struct ifnet *src_if,
 		 * pointer so we do not redundantly filter on the bridge for
 		 * each interface we broadcast on.
 		 */
-		if (runfilt && (PFIL_HOOKED(&V_inet_pfil_hook)
+		if (runfilt && (PFIL_HOOKED_OUT(V_inet_pfil_head)
 #ifdef INET6
-		    || PFIL_HOOKED(&V_inet6_pfil_hook)
+		    || PFIL_HOOKED_OUT(V_inet6_pfil_head)
 #endif
 		    )) {
 			if (used == 0) {
@@ -2671,7 +2680,7 @@ bridge_rtupdate(struct bridge_softc *sc, const uint8_t *dst, uint16_t vlan,
 		 * initialize the expiration time and Ethernet
 		 * address.
 		 */
-		brt = uma_zalloc(bridge_rtnode_zone, M_NOWAIT | M_ZERO);
+		brt = uma_zalloc(V_bridge_rtnode_zone, M_NOWAIT | M_ZERO);
 		if (brt == NULL)
 			return (ENOMEM);
 
@@ -2684,7 +2693,7 @@ bridge_rtupdate(struct bridge_softc *sc, const uint8_t *dst, uint16_t vlan,
 		brt->brt_vlan = vlan;
 
 		if ((error = bridge_rtnode_insert(sc, brt)) != 0) {
-			uma_zfree(bridge_rtnode_zone, brt);
+			uma_zfree(V_bridge_rtnode_zone, brt);
 			return (error);
 		}
 		brt->brt_dst = bif;
@@ -2768,11 +2777,14 @@ bridge_timer(void *arg)
 
 	BRIDGE_LOCK_ASSERT(sc);
 
+	/* Destruction of rtnodes requires a proper vnet context */
+	CURVNET_SET(sc->sc_ifp->if_vnet);
 	bridge_rtage(sc);
 
 	if (sc->sc_ifp->if_drv_flags & IFF_DRV_RUNNING)
 		callout_reset(&sc->sc_brcallout,
 		    bridge_rtable_prune_period * hz, bridge_timer, sc);
+	CURVNET_RESTORE();
 }
 
 /*
@@ -3030,7 +3042,7 @@ bridge_rtnode_destroy(struct bridge_softc *sc, struct bridge_rtnode *brt)
 	LIST_REMOVE(brt, brt_list);
 	sc->sc_brtcnt--;
 	brt->brt_dst->bif_addrcnt--;
-	uma_zfree(bridge_rtnode_zone, brt);
+	uma_zfree(V_bridge_rtnode_zone, brt);
 }
 
 /*
@@ -3044,6 +3056,7 @@ bridge_rtable_expire(struct ifnet *ifp, int age)
 	struct bridge_softc *sc = ifp->if_bridge;
 	struct bridge_rtnode *brt;
 
+	CURVNET_SET(ifp->if_vnet);
 	BRIDGE_LOCK(sc);
 
 	/*
@@ -3062,6 +3075,7 @@ bridge_rtable_expire(struct ifnet *ifp, int age)
 		}
 	}
 	BRIDGE_UNLOCK(sc);
+	CURVNET_RESTORE();
 }
 
 /*
@@ -3103,6 +3117,7 @@ bridge_pfil(struct mbuf **mp, struct ifnet *bifp, struct ifnet *ifp, int dir)
 	struct ip *ip;
 	struct llc llc1;
 	u_int16_t ether_type;
+	pfil_return_t rv;
 
 	snap = 0;
 	error = -1;	/* Default error if not error == 0 */
@@ -3174,14 +3189,14 @@ bridge_pfil(struct mbuf **mp, struct ifnet *bifp, struct ifnet *ifp, int dir)
 	}
 
 	/* Run the packet through pfil before stripping link headers */
-	if (PFIL_HOOKED(&V_link_pfil_hook) && V_pfil_ipfw != 0 &&
-			dir == PFIL_OUT && ifp != NULL) {
-
-		error = pfil_run_hooks(&V_link_pfil_hook, mp, ifp, dir, 0,
-		    NULL);
-
-		if (*mp == NULL || error != 0) /* packet consumed by filter */
-			return (error);
+	if (PFIL_HOOKED_OUT(V_link_pfil_head) && V_pfil_ipfw != 0 &&
+	    dir == PFIL_OUT && ifp != NULL) {
+		switch (pfil_run_hooks(V_link_pfil_head, mp, ifp, dir, NULL)) {
+		case PFIL_DROPPED:
+			return (EPERM);
+		case PFIL_CONSUMED:
+			return (0);
+		}
 	}
 
 	/* Strip off the Ethernet header and keep a copy. */
@@ -3219,6 +3234,7 @@ bridge_pfil(struct mbuf **mp, struct ifnet *bifp, struct ifnet *ifp, int dir)
 	/*
 	 * Run the packet through pfil
 	 */
+	rv = PFIL_PASS;
 	switch (ether_type) {
 	case ETHERTYPE_IP:
 		/*
@@ -3228,25 +3244,19 @@ bridge_pfil(struct mbuf **mp, struct ifnet *bifp, struct ifnet *ifp, int dir)
 		 * Keep the order:
 		 *   in_if -> bridge_if -> out_if
 		 */
-		if (V_pfil_bridge && dir == PFIL_OUT && bifp != NULL)
-			error = pfil_run_hooks(&V_inet_pfil_hook, mp, bifp,
-					dir, 0, NULL);
-
-		if (*mp == NULL || error != 0) /* filter may consume */
+		if (V_pfil_bridge && dir == PFIL_OUT && bifp != NULL && (rv =
+		    pfil_run_hooks(V_inet_pfil_head, mp, bifp, dir, NULL)) !=
+		    PFIL_PASS)
 			break;
 
-		if (V_pfil_member && ifp != NULL)
-			error = pfil_run_hooks(&V_inet_pfil_hook, mp, ifp,
-					dir, 0, NULL);
-
-		if (*mp == NULL || error != 0) /* filter may consume */
+		if (V_pfil_member && ifp != NULL && (rv =
+		    pfil_run_hooks(V_inet_pfil_head, mp, ifp, dir, NULL)) !=
+		    PFIL_PASS)
 			break;
 
-		if (V_pfil_bridge && dir == PFIL_IN && bifp != NULL)
-			error = pfil_run_hooks(&V_inet_pfil_hook, mp, bifp,
-					dir, 0, NULL);
-
-		if (*mp == NULL || error != 0) /* filter may consume */
+		if (V_pfil_bridge && dir == PFIL_IN && bifp != NULL && (rv =
+		    pfil_run_hooks(V_inet_pfil_head, mp, bifp, dir, NULL)) !=
+		    PFIL_PASS)
 			break;
 
 		/* check if we need to fragment the packet */
@@ -3282,34 +3292,32 @@ bridge_pfil(struct mbuf **mp, struct ifnet *bifp, struct ifnet *ifp, int dir)
 		break;
 #ifdef INET6
 	case ETHERTYPE_IPV6:
-		if (V_pfil_bridge && dir == PFIL_OUT && bifp != NULL)
-			error = pfil_run_hooks(&V_inet6_pfil_hook, mp, bifp,
-					dir, 0, NULL);
-
-		if (*mp == NULL || error != 0) /* filter may consume */
+		if (V_pfil_bridge && dir == PFIL_OUT && bifp != NULL && (rv =
+		    pfil_run_hooks(V_inet6_pfil_head, mp, bifp, dir, NULL)) !=
+		    PFIL_PASS)
 			break;
 
-		if (V_pfil_member && ifp != NULL)
-			error = pfil_run_hooks(&V_inet6_pfil_hook, mp, ifp,
-					dir, 0, NULL);
-
-		if (*mp == NULL || error != 0) /* filter may consume */
+		if (V_pfil_member && ifp != NULL && (rv =
+		    pfil_run_hooks(V_inet6_pfil_head, mp, ifp, dir, NULL)) !=
+		    PFIL_PASS)
 			break;
 
-		if (V_pfil_bridge && dir == PFIL_IN && bifp != NULL)
-			error = pfil_run_hooks(&V_inet6_pfil_hook, mp, bifp,
-					dir, 0, NULL);
+		if (V_pfil_bridge && dir == PFIL_IN && bifp != NULL && (rv =
+		    pfil_run_hooks(V_inet6_pfil_head, mp, bifp, dir, NULL)) !=
+		    PFIL_PASS)
+			break;
 		break;
 #endif
-	default:
-		error = 0;
-		break;
 	}
 
-	if (*mp == NULL)
-		return (error);
-	if (error != 0)
-		goto bad;
+	switch (rv) {
+	case PFIL_CONSUMED:
+		return (0);
+	case PFIL_DROPPED:
+		return (EPERM);
+	default:
+		break;
+	}
 
 	error = -1;
 

@@ -412,11 +412,11 @@ tbr_timeout(arg)
 {
 	VNET_ITERATOR_DECL(vnet_iter);
 	struct ifnet *ifp;
-	int active, s;
+	struct epoch_tracker et;
+	int active;
 
 	active = 0;
-	s = splnet();
-	IFNET_RLOCK_NOSLEEP();
+	NET_EPOCH_ENTER(et);
 	VNET_LIST_RLOCK_NOSLEEP();
 	VNET_FOREACH(vnet_iter) {
 		CURVNET_SET(vnet_iter);
@@ -433,8 +433,7 @@ tbr_timeout(arg)
 		CURVNET_RESTORE();
 	}
 	VNET_LIST_RUNLOCK_NOSLEEP();
-	IFNET_RUNLOCK_NOSLEEP();
-	splx(s);
+	NET_EPOCH_EXIT(et);
 	if (active > 0)
 		CALLOUT_RESET(&tbr_callout, 1, tbr_timeout, (void *)0);
 	else
@@ -523,7 +522,7 @@ altq_pfdetach(struct pf_altq *a)
  * malloc with WAITOK, also it is not yet clear which lock to use.
  */
 int
-altq_add(struct pf_altq *a)
+altq_add(struct ifnet *ifp, struct pf_altq *a)
 {
 	int error = 0;
 
@@ -538,27 +537,27 @@ altq_add(struct pf_altq *a)
 	switch (a->scheduler) {
 #ifdef ALTQ_CBQ
 	case ALTQT_CBQ:
-		error = cbq_add_altq(a);
+		error = cbq_add_altq(ifp, a);
 		break;
 #endif
 #ifdef ALTQ_PRIQ
 	case ALTQT_PRIQ:
-		error = priq_add_altq(a);
+		error = priq_add_altq(ifp, a);
 		break;
 #endif
 #ifdef ALTQ_HFSC
 	case ALTQT_HFSC:
-		error = hfsc_add_altq(a);
+		error = hfsc_add_altq(ifp, a);
 		break;
 #endif
 #ifdef ALTQ_FAIRQ
         case ALTQT_FAIRQ:
-                error = fairq_add_altq(a);
+                error = fairq_add_altq(ifp, a);
                 break;
 #endif
 #ifdef ALTQ_CODEL
 	case ALTQT_CODEL:
-		error = codel_add_altq(a);
+		error = codel_add_altq(ifp, a);
 		break;
 #endif
 	default:

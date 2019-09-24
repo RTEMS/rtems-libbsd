@@ -422,7 +422,9 @@ kern_clock_settime(struct thread *td, clockid_t clock_id, struct timespec *ats)
 	if (ats->tv_nsec < 0 || ats->tv_nsec >= 1000000000 ||
 	    ats->tv_sec < 0)
 		return (EINVAL);
-	if (!allow_insane_settime && ats->tv_sec > 8000ULL * 365 * 24 * 60 * 60)
+	if (!allow_insane_settime &&
+	    (ats->tv_sec > 8000ULL * 365 * 24 * 60 * 60 ||
+	    ats->tv_sec < utc_offset()))
 		return (EINVAL);
 	/* XXX Don't convert nsec->usec and back */
 	TIMESPEC_TO_TIMEVAL(&atv, ats);
@@ -673,8 +675,8 @@ sys_gettimeofday(struct thread *td, struct gettimeofday_args *uap)
 		error = copyout(&atv, uap->tp, sizeof (atv));
 	}
 	if (error == 0 && uap->tzp != NULL) {
-		rtz.tz_minuteswest = tz_minuteswest;
-		rtz.tz_dsttime = tz_dsttime;
+		rtz.tz_minuteswest = 0;
+		rtz.tz_dsttime = 0;
 		error = copyout(&rtz, uap->tzp, sizeof (rtz));
 	}
 	return (error);
@@ -725,10 +727,6 @@ kern_settimeofday(struct thread *td, struct timeval *tv, struct timezone *tzp)
 		    tv->tv_sec < 0)
 			return (EINVAL);
 		error = settime(td, tv);
-	}
-	if (tzp && error == 0) {
-		tz_minuteswest = tzp->tz_minuteswest;
-		tz_dsttime = tzp->tz_dsttime;
 	}
 	return (error);
 }

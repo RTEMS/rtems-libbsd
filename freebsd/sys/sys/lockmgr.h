@@ -143,7 +143,7 @@ _lockmgr_args_rw(struct lock *lk, u_int flags, struct rwlock *ilk,
 /*
  * Flags for lockinit().
  */
-#define	LK_INIT_MASK	0x0000FF
+#define	LK_INIT_MASK	0x0001FF
 #define	LK_CANRECURSE	0x000001
 #define	LK_NODUP	0x000002
 #define	LK_NOPROFILE	0x000004
@@ -152,6 +152,7 @@ _lockmgr_args_rw(struct lock *lk, u_int flags, struct rwlock *ilk,
 #define	LK_QUIET	0x000020
 #define	LK_ADAPTIVE	0x000040
 #define	LK_IS_VNODE	0x000080	/* Tell WITNESS about a VNODE lock */
+#define	LK_NEW		0x000100
 
 /*
  * Additional attributes to be used in lockmgr().
@@ -163,7 +164,6 @@ _lockmgr_args_rw(struct lock *lk, u_int flags, struct rwlock *ilk,
 #define	LK_SLEEPFAIL	0x000800
 #define	LK_TIMELOCK	0x001000
 #define	LK_NODDLKTREAT	0x002000
-#define	LK_VNHELD	0x004000
 
 /*
  * Operations for lockmgr().

@@ -156,7 +156,12 @@ static int	 syncookie_cmp(struct in_conninfo *inc, struct syncache_head *sch,
 
 /*
  * Transmit the SYN,ACK fewer times than TCP_MAXRXTSHIFT specifies.
- * 3 retransmits corresponds to a timeout of 3 * (1 + 2 + 4 + 8) == 45 seconds,
+ * 3 retransmits corresponds to a timeout with default values of
+ * tcp_rexmit_initial * (             1 +
+ *                       tcp_backoff[1] +
+ *                       tcp_backoff[2] +
+ *                       tcp_backoff[3]) + 3 * tcp_rexmit_slop,
+ * 1000 ms * (1 + 2 + 4 + 8) +  3 * 200 ms = 15600 ms,
  * the odds are that the user has given up attempting to connect by then.
  */
 #define SYNCACHE_MAXREXMTS		3
@@ -421,9 +426,10 @@ syncache_timeout(struct syncache *sc, struct syncache_head *sch, int docallout)
 	int rexmt;
 
 	if (sc->sc_rxmits == 0)
-		rexmt = TCPTV_RTOBASE;
+		rexmt = tcp_rexmit_initial;
 	else
-		TCPT_RANGESET(rexmt, TCPTV_RTOBASE * tcp_syn_backoff[sc->sc_rxmits],
+		TCPT_RANGESET(rexmt,
+		    tcp_rexmit_initial * tcp_backoff[sc->sc_rxmits],
 		    tcp_rexmit_min, TCPTV_REXMTMAX);
 	sc->sc_rxttime = ticks + rexmt;
 	sc->sc_rxmits++;
@@ -773,6 +779,9 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 	if (m != NULL && M_HASHTYPE_GET(m) != M_HASHTYPE_NONE) {
 		inp->inp_flowid = m->m_pkthdr.flowid;
 		inp->inp_flowtype = M_HASHTYPE_GET(m);
+#ifdef NUMA
+		inp->inp_numa_domain = m->m_pkthdr.numa_domain;
+#endif
 	}
 
 	/*
@@ -1143,6 +1152,28 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 			}
 		}
 #endif /* TCP_SIGNATURE */
+
+		/*
+		 * RFC 7323 PAWS: If we have a timestamp on this segment and
+		 * it's less than ts_recent, drop it.
+		 * XXXMT: RFC 7323 also requires to send an ACK.
+		 *        In tcp_input.c this is only done for TCP segments
+		 *        with user data, so be consistent here and just drop
+		 *        the segment.
+		 */
+		if (sc->sc_flags & SCF_TIMESTAMP && to->to_flags & TOF_TS &&
+		    TSTMP_LT(to->to_tsval, sc->sc_tsreflect)) {
+			SCH_UNLOCK(sch);
+			if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
+				log(LOG_DEBUG,
+				    "%s; %s: SEG.TSval %u < TS.Recent %u, "
+				    "segment dropped\n", s, __func__,
+				    to->to_tsval, sc->sc_tsreflect);
+				free(s, M_TCPLOG);
+			}
+			return (-1);  /* Do not send RST */
+		}
+
 		/*
 		 * Pull out the entry to unlock the bucket row.
 		 * 
@@ -1522,7 +1553,6 @@ skip_alloc:
 	sc->sc_todctx = todctx;
 #endif
 	sc->sc_irs = th->th_seq;
-	sc->sc_iss = arc4random();
 	sc->sc_flags = 0;
 	sc->sc_flowlabel = 0;
 
@@ -1596,6 +1626,8 @@ skip_alloc:
 
 	if (V_tcp_syncookies)
 		sc->sc_iss = syncookie_generate(sch, sc);
+	else
+		sc->sc_iss = arc4random();
 #ifdef INET6
 	if (autoflowlabel) {
 		if (V_tcp_syncookies)

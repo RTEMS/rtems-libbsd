@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -45,6 +45,28 @@ null_add_child(device_t bus, int order, const char *name,
 {
 
 	panic("bus_add_child is not implemented");
+}
+
+static int null_reset_post(device_t bus, device_t dev)
+{
+	return (0);
+}
+
+static int null_reset_prepare(device_t bus, device_t dev)
+{
+	return (0);
+}
+
+static int
+null_translate_resource(device_t bus, int type, rman_res_t start,
+	rman_res_t *newstart)
+{
+	if (device_get_parent(bus) != NULL)
+		return (BUS_TRANSLATE_RESOURCE(device_get_parent(bus),
+		    type, start, newstart));
+
+	*newstart = start;
+	return (0);
 }
 
 struct kobjop_desc bus_print_child_desc = {
@@ -105,6 +127,10 @@ struct kobjop_desc bus_deactivate_resource_desc = {
 
 struct kobjop_desc bus_adjust_resource_desc = {
 	0, { &bus_adjust_resource_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc bus_translate_resource_desc = {
+	0, { &bus_translate_resource_desc, (kobjop_t)null_translate_resource }
 };
 
 struct kobjop_desc bus_release_resource_desc = {
@@ -205,5 +231,17 @@ struct kobjop_desc bus_get_domain_desc = {
 
 struct kobjop_desc bus_get_cpus_desc = {
 	0, { &bus_get_cpus_desc, (kobjop_t)bus_generic_get_cpus }
+};
+
+struct kobjop_desc bus_reset_prepare_desc = {
+	0, { &bus_reset_prepare_desc, (kobjop_t)null_reset_prepare }
+};
+
+struct kobjop_desc bus_reset_post_desc = {
+	0, { &bus_reset_post_desc, (kobjop_t)null_reset_post }
+};
+
+struct kobjop_desc bus_reset_child_desc = {
+	0, { &bus_reset_child_desc, (kobjop_t)kobj_error_method }
 };
 

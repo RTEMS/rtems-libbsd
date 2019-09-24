@@ -2,7 +2,7 @@
 
 /*
  * OS specific functions for UNIX/POSIX systems
- * Copyright (c) 2005-2009, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2005-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -284,6 +284,13 @@ void os_daemonize_terminate(const char *pid_file)
 
 int os_get_random(unsigned char *buf, size_t len)
 {
+#ifdef TEST_FUZZ
+	size_t i;
+
+	for (i = 0; i < len; i++)
+		buf[i] = i & 0xff;
+	return 0;
+#else /* TEST_FUZZ */
 	FILE *f;
 	size_t rc;
 
@@ -304,6 +311,7 @@ int os_get_random(unsigned char *buf, size_t len)
 	fclose(f);
 
 	return rc != len ? -1 : 0;
+#endif /* TEST_FUZZ */
 #endif /* __rtems__ */
 }
 
@@ -551,7 +559,7 @@ void * os_memdup(const void *src, size_t len)
 {
 	void *r = os_malloc(len);
 
-	if (r)
+	if (r && src)
 		os_memcpy(r, src, len);
 	return r;
 }

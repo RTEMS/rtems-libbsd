@@ -1,11 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
- *
- * Copyright (c) 2014 Robert N. M. Watson
- * All rights reserved.
- *
- * This software was developed at the University of Cambridge Computer
- * Laboratory with support from a grant from Google, Inc.
+ * Copyright (c) 2014 Mateusz Guzik <mjg@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,17 +25,83 @@
  * $FreeBSD$
  */
 
+#ifndef _SYS_SEQC_H_
+#define _SYS_SEQC_H_
+
+#ifdef _KERNEL
+#include <sys/systm.h>
+#endif
+#include <sys/types.h>
+
 /*
- * Historically, the key userspace and kernel Capsicum definitions were found
- * in this file.  However, it conflicted with POSIX.1e's capability.h, so has
- * been renamed capsicum.h.  The file remains for backwards compatibility
- * reasons as a nested include.  It is expected to be removed before
- * FreeBSD 13.
+ * seqc_t may be included in structs visible to userspace
  */
-#ifndef _SYS_CAPABILITY_H_
-#define	_SYS_CAPABILITY_H_
+typedef uint32_t seqc_t;
 
-#warning this file includes <sys/capability.h> which is deprecated
-#include <sys/capsicum.h>
+#ifdef _KERNEL
 
-#endif /* !_SYS_CAPABILITY_H_ */
+/* A hack to get MPASS macro */
+#include <sys/lock.h>
+
+#include <machine/cpu.h>
+
+static __inline bool
+seqc_in_modify(seqc_t seqcp)
+{
+
+	return (seqcp & 1);
+}
+
+static __inline void
+seqc_write_begin(seqc_t *seqcp)
+{
+
+	critical_enter();
+	MPASS(!seqc_in_modify(*seqcp));
+	*seqcp += 1;
+	atomic_thread_fence_rel();
+}
+
+static __inline void
+seqc_write_end(seqc_t *seqcp)
+{
+
+	atomic_store_rel_int(seqcp, *seqcp + 1);
+	MPASS(!seqc_in_modify(*seqcp));
+	critical_exit();
+}
+
+static __inline seqc_t
+seqc_read(const seqc_t *seqcp)
+{
+	seqc_t ret;
+
+	for (;;) {
+		ret = atomic_load_acq_int(__DECONST(seqc_t *, seqcp));
+		if (__predict_false(seqc_in_modify(ret))) {
+			cpu_spinwait();
+			continue;
+		}
+		break;
+	}
+
+	return (ret);
+}
+
+static __inline bool
+seqc_consistent_nomb(const seqc_t *seqcp, seqc_t oldseqc)
+{
+
+	return (*seqcp == oldseqc);
+}
+
+static __inline bool
+seqc_consistent(const seqc_t *seqcp, seqc_t oldseqc)
+{
+
+	atomic_thread_fence_acq();
+	return (seqc_consistent_nomb(seqcp, oldseqc));
+}
+
+#endif	/* _KERNEL */
+#endif	/* _SYS_SEQC_H_ */

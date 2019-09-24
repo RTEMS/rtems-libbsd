@@ -3491,7 +3491,6 @@
 #define	pf_unload_vnet_purge _bsd_pf_unload_vnet_purge
 #define	pf_vnet_active _bsd_pf_vnet_active
 #define	pfxlist_onlink_check _bsd_pfxlist_onlink_check
-#define	pgsigio _bsd_pgsigio
 #define	phashinit _bsd_phashinit
 #define	phashinit_flags _bsd_phashinit_flags
 #define	pick_mode_by_dotclock _bsd_pick_mode_by_dotclock

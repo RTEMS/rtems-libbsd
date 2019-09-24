@@ -1630,6 +1630,37 @@ class nvme(builder.Module):
 
     def generate(self):
         mm = self.manager
+        self.addUserSpaceHeaderFiles(
+            [
+                'sbin/nvmecontrol/comnd.h',
+                'sbin/nvmecontrol/nvmecontrol_ext.h',
+                'sbin/nvmecontrol/nvmecontrol.h',
+            ]
+        )
+        self.addUserSpaceSourceFiles(
+            [
+                'sbin/nvmecontrol/comnd.c',
+                'sbin/nvmecontrol/devlist.c',
+                'sbin/nvmecontrol/firmware.c',
+                'sbin/nvmecontrol/format.c',
+                'sbin/nvmecontrol/identify.c',
+                'sbin/nvmecontrol/identify_ext.c',
+                'sbin/nvmecontrol/logpage.c',
+                'sbin/nvmecontrol/modules/intel/intel.c',
+                'sbin/nvmecontrol/modules/wdc/wdc.c',
+                'sbin/nvmecontrol/nc_util.c',
+                'sbin/nvmecontrol/ns.c',
+                'sbin/nvmecontrol/nsid.c',
+                'sbin/nvmecontrol/nvmecontrol.c',
+                'sbin/nvmecontrol/passthru.c',
+                'sbin/nvmecontrol/perftest.c',
+                'sbin/nvmecontrol/power.c',
+                'sbin/nvmecontrol/reset.c',
+                'sbin/nvmecontrol/resv.c',
+                'sbin/nvmecontrol/sanitize.c',
+            ],
+            mm.generator['source']()
+        )
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/nvme/nvme.h',

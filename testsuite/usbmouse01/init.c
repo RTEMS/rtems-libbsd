@@ -104,9 +104,8 @@ usb_mouse_open_task(rtems_task_argument arg)
 {
 	rtems_status_code sc;
 	struct usb_test_message msg;
-	struct termios t;
 	uint32_t size;
-	int fd, iret;
+	int fd;
 
 	fd = -2;
 	otask_active = true;
@@ -187,10 +186,10 @@ Init(rtems_task_argument arg)
 	);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(rid, usb_mouse_read_task, NULL);
+	sc = rtems_task_start(rid, usb_mouse_read_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(oid, usb_mouse_open_task, NULL);
+	sc = rtems_task_start(oid, usb_mouse_open_task, 0);
 	assert(sc == RTEMS_SUCCESSFUL);
 
 	sc = rtems_bsd_initialize();

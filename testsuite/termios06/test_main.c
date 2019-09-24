@@ -29,7 +29,6 @@
 #define TEST_NAME "LIBBSD TERMIOS 6"
 
 static struct termios term;
-static rtems_id flush_task_id;
 
 static void init_term(void)
 {

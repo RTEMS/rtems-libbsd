@@ -439,7 +439,6 @@ class base(builder.Module):
                 'sys/sys/_sx.h',
                 'sys/sys/sx.h',
                 'sys/sys/sysctl.h',
-                'sys/sys/syslog.h',
                 'sys/sys/sysproto.h',
                 'sys/sys/systm.h',
                 'sys/sys/_task.h',

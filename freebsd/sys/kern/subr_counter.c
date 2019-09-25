@@ -174,3 +174,6 @@ counter_ratecheck(struct counter_rate *cr, int64_t limit)
 
 	return (val);
 }
+#ifdef __rtems__
+uint64_t _bsd_early_counter[_BSD_EARLY_COUNTER_SIZE];
+#endif /* __rtems__ */

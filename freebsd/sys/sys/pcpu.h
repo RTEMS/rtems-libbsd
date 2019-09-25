@@ -227,7 +227,11 @@ extern struct pcpu *cpuid_to_pcpu[];
 #endif
 #define	curvidata	PCPU_GET(vidata)
 
+#ifndef __rtems__
 #define UMA_PCPU_ALLOC_SIZE		PAGE_SIZE
+#else /* __rtems__ */
+#define UMA_PCPU_ALLOC_SIZE		(PAGE_SIZE / 32)
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 #ifdef CTASSERT

@@ -362,6 +362,7 @@ test_sockets(void)
 		const socket_test *st = &socket_tests[i];
 
 		test_socket(st);
+		epoch_cleanup();
 	}
 
 	puts("test sockets and check resources");

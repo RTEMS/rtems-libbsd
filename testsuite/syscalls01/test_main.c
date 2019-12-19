@@ -570,6 +570,35 @@ test_socket_ioctl(void)
 }
 
 static void
+test_socket_sockatmark(void)
+{
+	rtems_resource_snapshot snapshot;
+	int sd;
+	int rv;
+
+	puts("test socket sockatmark");
+
+	rtems_resource_snapshot_take(&snapshot);
+
+	sd = socket(PF_INET, SOCK_DGRAM, 0);
+	assert(sd >= 0);
+
+	rv = sockatmark(sd);
+	assert(rv == 0);
+
+	rv = close(sd);
+	assert(rv == 0);
+
+	errno = 0;
+	rv = sockatmark(sd);
+	assert(rv == -1);
+	assert(errno == EBADF);
+
+	epoch_cleanup();
+	assert(rtems_resource_snapshot_check(&snapshot));
+}
+
+static void
 no_mem_socket_bind(int fd)
 {
 	struct sockaddr_in addr;
@@ -1731,6 +1760,7 @@ test_main(void)
 
 	test_socket_unsupported_ops();
 	test_socket_ioctl();
+	test_socket_sockatmark();
 	test_socket_bind();
 	test_socket_connect();
 	test_socket_listen();

@@ -3001,6 +3001,7 @@ class user_space(builder.Module):
                 'lib/libc/net/recv.c',
                 'lib/libc/net/rthdr.c',
                 'lib/libc/net/send.c',
+                'lib/libc/net/sockatmark.c',
                 'lib/libc/net/vars.c',
                 'lib/libc/posix1e/mac.c',
                 'lib/libc/resolv/h_errno.c',

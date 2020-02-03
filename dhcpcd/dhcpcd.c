@@ -1181,7 +1181,8 @@ rtems_dhcpcd_start(const rtems_dhcpcd_config *config)
 		if (sc == RTEMS_SUCCESSFUL) {
 			dhcpcd_initialized = true;
 
-			sc = rtems_task_start(id, dhcpcd_task, 0);
+			sc = rtems_task_start(id, dhcpcd_task,
+			    (rtems_task_argument) config);
 			assert(sc == RTEMS_SUCCESSFUL);
 		}
 	} else {

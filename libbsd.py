@@ -1556,6 +1556,8 @@ class dev_nic(builder.Module):
                 'sys/i386/include/specialreg.h',
                 'sys/i386/include/md_var.h',
                 'sys/i386/include/intr_machdep.h',
+                'sys/x86/include/intr_machdep.h',
+                'sys/x86/include/metadata.h',
                 'sys/i386/include/cpufunc.h',
                 'sys/mips/include/cpufunc.h',
                 'sys/mips/include/cpuregs.h',
@@ -2742,7 +2744,8 @@ class pci(builder.Module):
         self.addCPUDependentFreeBSDHeaderFiles(
             [
                 'sys/i386/include/_bus.h',
-                'sys/i386/include/legacyvar.h',
+                'sys/i386/include/bus.h',
+                'sys/x86/include/legacyvar.h',
                 'sys/x86/include/bus.h',
                 'sys/x86/include/pci_cfgreg.h',
             ]
@@ -2750,7 +2753,7 @@ class pci(builder.Module):
         self.addCPUDependentFreeBSDSourceFiles(
             [ 'i386' ],
             [
-                'sys/i386/i386/legacy.c',
+                'sys/x86/x86/legacy.c',
                 'sys/x86/pci/pci_bus.c',
             ],
             mm.generator['source']()

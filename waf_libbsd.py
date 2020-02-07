@@ -197,7 +197,7 @@ class Builder(builder.ModuleManager):
         if 'cpu-include-paths' in config:
             cpu = bld.get_env()['RTEMS_ARCH']
             if cpu == "i386":
-                cpu = 'x86'
+                includes += ['freebsd/sys/x86/include']
             for i in config['cpu-include-paths']:
                 includes += [i.replace('@CPU@', cpu)]
         if 'include-paths' in config:

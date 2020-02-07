@@ -49,7 +49,11 @@ __FBSDID("$FreeBSD$");
 #ifdef CPU_ELAN
 #include <machine/md_var.h>
 #endif
+#ifdef __rtems__
+#include <machine/legacyvar.h>
+#else /* __rtems__ */
 #include <x86/legacyvar.h>
+#endif /* __rtems__ */
 #include <machine/pci_cfgreg.h>
 #include <machine/resource.h>
 

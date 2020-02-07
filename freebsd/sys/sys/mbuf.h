@@ -348,6 +348,7 @@ struct mbuf_ext_pgs {
 	vm_paddr_t	pa[MBUF_PEXT_MAX_PGS];	/* phys addrs of pages */
 	char		hdr[MBUF_PEXT_HDR_LEN];	/* TLS header */
 	struct ktls_session *tls;		/* TLS session */
+#if defined(__rtems__) && !defined(__i386__)
 #if defined(__i386__) || \
     (defined(__powerpc__) && !defined(__powerpc64__) && defined(BOOKE))
 	/*
@@ -356,6 +357,7 @@ struct mbuf_ext_pgs {
 	 */
 	uint32_t	pad;
 #endif
+#endif /* __rtems__ && !__i386__ */
 	union {
 		char	trail[MBUF_PEXT_TRAIL_LEN]; /* TLS trailer */
 		struct {

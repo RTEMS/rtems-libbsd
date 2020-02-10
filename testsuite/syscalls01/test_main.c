@@ -340,6 +340,12 @@ test_socket(const socket_test *st)
 
 	errno = 0;
 	sd = socket(st->domain, st->type, st->protocol);
+
+	if (sd < 0) {
+		epoch_cleanup();
+		sd = socket(st->domain, st->type, st->protocol);
+	}
+
 	if (st->expect_errno == 0) {
 		assert(sd >= 0);
 

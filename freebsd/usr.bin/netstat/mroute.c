@@ -426,16 +426,14 @@ mrt_stats()
 
 	mstaddr = nl[N_MRTSTAT].n_value;
 
+	if (fetch_stats("net.inet.ip.mrtstat", mstaddr, &mrtstat,
+	    sizeof(mrtstat), kread_counters) != 0) {
 #ifndef __rtems__
-	if (mstaddr == 0) {
-		fprintf(stderr, "No IPv4 MROUTING kernel support.\n");
+		if ((live && errno == ENOENT) || (!live && mstaddr == 0))
+			fprintf(stderr, "No IPv4 MROUTING kernel support.\n");
+#endif /* __rtems__ */
 		return;
 	}
-#endif /* __rtems__ */
-
-	if (fetch_stats("net.inet.ip.mrtstat", mstaddr, &mrtstat,
-	    sizeof(mrtstat), kread_counters) != 0)
-		return;
 
 	xo_emit("{T:IPv4 multicast forwarding}:\n");
 

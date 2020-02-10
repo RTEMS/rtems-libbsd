@@ -46,6 +46,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_config.h>
 
 #include <sys/param.h>
+#include <sys/boot.h>
 #include <sys/jail.h>
 #include <sys/kernel.h>
 #include <sys/limits.h>
@@ -87,6 +88,8 @@ SYSCTL_ROOT_NODE(CTL_HW,	  hw,     CTLFLAG_RW, 0,
 #ifndef __rtems__
 SYSCTL_ROOT_NODE(CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
 	"machine dependent");
+SYSCTL_NODE(_machdep, OID_AUTO, mitigations, CTLFLAG_RW, 0,
+	"Machine dependent platform mitigations.");
 SYSCTL_ROOT_NODE(CTL_USER,	  user,   CTLFLAG_RW, 0,
 	"user-level");
 SYSCTL_ROOT_NODE(CTL_P1003_1B,  p1003_1b,   CTLFLAG_RW, 0,
@@ -148,7 +151,7 @@ SYSCTL_INT(_kern, KERN_SAVED_IDS, saved_ids, CTLFLAG_RD|CTLFLAG_CAPRD,
     SYSCTL_NULL_INT_PTR, 0, "Whether saved set-group/user ID is available");
 #endif
 
-char kernelname[MAXPATHLEN] = "/boot/kernel/kernel";	/* XXX bloat */
+char kernelname[MAXPATHLEN] = PATH_KERNEL;	/* XXX bloat */
 
 SYSCTL_STRING(_kern, KERN_BOOTFILE, bootfile, CTLFLAG_RW | CTLFLAG_MPSAFE,
     kernelname, sizeof kernelname, "Name of kernel file booted");

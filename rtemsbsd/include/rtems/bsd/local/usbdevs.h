@@ -1789,6 +1789,7 @@
 #define	USB_PRODUCT_DISPLAYLINK_SWDVI	0x024c		/* SUNWEIT DVI */
 #define	USB_PRODUCT_DISPLAYLINK_NBDOCK	0x0215		/* VideoHome NBdock1920 */
 #define	USB_PRODUCT_DISPLAYLINK_LUM70	0x02a9		/* Lilliput UM-70 */
+#define	USB_PRODUCT_DISPLAYLINK_DVI_19	0x0360		/* USB to DVI-19 */
 #define	USB_PRODUCT_DISPLAYLINK_UM7X0	0x401a		/* nanovision MiMo */
 #define	USB_PRODUCT_DISPLAYLINK_LT1421	0x03e0		/* Lenovo ThinkVision LT1421 */
 #define	USB_PRODUCT_DISPLAYLINK_POLARIS2	0x0117		/* Polaris2 USB dock */
@@ -4343,6 +4344,7 @@
 #define	USB_PRODUCT_SILABS_MMB_ZIGBEE	0x88a4		/* MMB Networks ZigBee */
 #define	USB_PRODUCT_SILABS_INGENI_ZIGBEE	0x88a5		/* Planet Innovation Ingeni ZigBee */
 #define	USB_PRODUCT_SILABS_HUBZ	0x8a2a		/* HubZ dual ZigBee and Z-Wave */
+#define	USB_PRODUCT_SILABS_BV_AV2010_10	0x8b34		/* Bitron Video AV2010/10 ZigBee USB Stick */
 #define	USB_PRODUCT_SILABS_CP2102	0xea60		/* SILABS USB UART */
 #define	USB_PRODUCT_SILABS_CP210X_2	0xea61		/* CP210x Serial */
 #define	USB_PRODUCT_SILABS_CP210X_3	0xea70		/* CP210x Serial */

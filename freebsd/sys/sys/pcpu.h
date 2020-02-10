@@ -221,10 +221,6 @@ extern struct cpuhead cpuhead;
 extern struct pcpu *cpuid_to_pcpu[];
 
 #define	curcpu		PCPU_GET(cpuid)
-#define	curproc		(curthread->td_proc)
-#ifndef curthread
-#define	curthread	PCPU_GET(curthread)
-#endif
 #define	curvidata	PCPU_GET(vidata)
 
 #ifndef __rtems__
@@ -233,20 +229,12 @@ extern struct pcpu *cpuid_to_pcpu[];
 #define UMA_PCPU_ALLOC_SIZE		(PAGE_SIZE / 32)
 #endif /* __rtems__ */
 
-#ifndef __rtems__
-#ifdef CTASSERT
-#if defined(__i386__) || defined(__amd64__)
-/* Required for counters(9) to work on x86. */
-CTASSERT(sizeof(struct pcpu) == UMA_PCPU_ALLOC_SIZE);
-#else
-/*
- * To minimize memory waste in per-cpu UMA zones, size of struct pcpu
- * should be denominator of PAGE_SIZE.
- */
-CTASSERT((PAGE_SIZE / sizeof(struct pcpu)) * sizeof(struct pcpu) == PAGE_SIZE);
-#endif	/* UMA_PCPU_ALLOC_SIZE && x86 */
-#endif	/* CTASSERT */
-#endif /* __rtems__ */
+#include <machine/pcpu_aux.h>
+
+#ifndef curthread
+#define	curthread	PCPU_GET(curthread)
+#endif
+#define	curproc		(curthread->td_proc)
 
 /* Accessor to elements allocated via UMA_ZONE_PCPU zone. */
 static inline void *

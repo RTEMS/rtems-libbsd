@@ -59,7 +59,6 @@
 #else
 #include <sys/ioccom.h>
 #include <sys/fcntl.h>
-#include <sys/tty.h>
 #endif
 
 #define USB_DEBUG_VAR uep_debug

@@ -49,7 +49,6 @@ __FBSDID("$FreeBSD$");
 #include <netinet/sctp_output.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_bsd_addr.h>
-#include <netinet/sctp_dtrace_define.h>
 #if defined(INET) || defined(INET6)
 #include <netinet/udp.h>
 #endif
@@ -3647,12 +3646,8 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 
 
 #ifdef INET6
-	if (ip_pcb->inp_vflag & INP_IPV6) {
-		struct in6pcb *in6p;
-
-		in6p = (struct in6pcb *)inp;
-		ip6_freepcbopts(in6p->in6p_outputopts);
-	}
+	if (ip_pcb->inp_vflag & INP_IPV6)
+		ip6_freepcbopts(((struct inpcb *)inp)->in6p_outputopts);
 #endif				/* INET6 */
 	ip_pcb->inp_vflag = 0;
 	/* free up authentication fields */

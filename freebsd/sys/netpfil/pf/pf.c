@@ -46,6 +46,7 @@ __FBSDID("$FreeBSD$");
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_bpf.h>
 #include <rtems/bsd/local/opt_pf.h>
+#include <rtems/bsd/local/opt_sctp.h>
 
 #include <sys/param.h>
 #include <sys/bus.h>
@@ -104,6 +105,10 @@ __FBSDID("$FreeBSD$");
 #include <netinet6/in6_fib.h>
 #include <netinet6/scope6_var.h>
 #endif /* INET6 */
+
+#ifdef SCTP
+#include <netinet/sctp_crc32.h>
+#endif
 
 #include <machine/in_cksum.h>
 #include <security/mac/mac_framework.h>
@@ -5601,7 +5606,7 @@ pf_route(struct mbuf **m, struct pf_rule *r, int dir, struct ifnet *oifp,
 	}
 #ifdef SCTP
 	if (m0->m_pkthdr.csum_flags & CSUM_SCTP & ~ifp->if_hwassist) {
-		sctp_delayed_cksum(m, (uint32_t)(ip->ip_hl << 2));
+		sctp_delayed_cksum(m0, (uint32_t)(ip->ip_hl << 2));
 		m0->m_pkthdr.csum_flags &= ~CSUM_SCTP;
 	}
 #endif

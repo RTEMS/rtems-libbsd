@@ -1,8 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * Copyright (c) 2017 Netflix, Inc
- * All rights reserved.
+ * Copyright (c) 2017 Netflix, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

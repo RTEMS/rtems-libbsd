@@ -114,9 +114,10 @@
 #define HOPC 370
 #define HDPC 371
 #define HSLS 372
-#define OR 373
-#define AND 374
-#define UMINUS 375
+#define LEX_ERROR 373
+#define OR 374
+#define AND 375
+#define UMINUS 376
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1
@@ -126,7 +127,6 @@
 typedef union {
 	int i;
 	bpf_u_int32 h;
-	u_char *e;
 	char *s;
 	struct stmt *stmt;
 	struct arth *a;

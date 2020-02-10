@@ -309,8 +309,17 @@ esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 		ESPSTAT_INC(esps_badilen);
 		goto bad;
 	}
-	/* XXX don't pullup, just copy header */
-	IP6_EXTHDR_GET(esp, struct newesp *, m, skip, sizeof (struct newesp));
+
+	if (m->m_len < skip + sizeof(*esp)) {
+		m = m_pullup(m, skip + sizeof(*esp));
+		if (m == NULL) {
+			DPRINTF(("%s: cannot pullup header\n", __func__));
+			ESPSTAT_INC(esps_hdrops);	/*XXX*/
+			error = ENOBUFS;
+			goto bad;
+		}
+	}
+	esp = (struct newesp *)(mtod(m, caddr_t) + skip);
 
 	esph = sav->tdb_authalgxform;
 	espx = sav->tdb_encalgxform;
@@ -608,6 +617,13 @@ esp_input_cb(struct cryptop *crp)
 			goto bad;
 		}
 	}
+
+	/*
+	 * RFC4303 2.6:
+	 * Silently drop packet if next header field is IPPROTO_NONE.
+	 */
+	if (lastthree[2] == IPPROTO_NONE)
+		goto bad;
 
 	/* Trim the mbuf chain to remove trailing authenticator and padding */
 	m_adj(m, -(lastthree[1] + 2));

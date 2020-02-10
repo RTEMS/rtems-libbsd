@@ -65,6 +65,7 @@
 #define ieee802_11_if_print _bsd_tcpdump_ieee802_11_if_print
 #define ieee802_11_radio_avs_if_print _bsd_tcpdump_ieee802_11_radio_avs_if_print
 #define ieee802_11_radio_if_print _bsd_tcpdump_ieee802_11_radio_if_print
+#define ieee802_11_radio_print _bsd_tcpdump_ieee802_11_radio_print
 #define prism_if_print _bsd_tcpdump_prism_if_print
 /* print-802_15_4.c */
 #define ieee802_15_4_if_print _bsd_tcpdump_ieee802_15_4_if_print
@@ -138,7 +139,6 @@
 #define dccp_print _bsd_tcpdump_dccp_print
 /* print-decnet.c */
 #define decnet_print _bsd_tcpdump_decnet_print
-#define dnname_string _bsd_tcpdump_dnname_string
 #define dnnum_string _bsd_tcpdump_dnnum_string
 /* print-dhcp6.c */
 #define dhcp6_print _bsd_tcpdump_dhcp6_print

@@ -207,7 +207,7 @@ arg_parse(int argc, char * const * argv, const struct cmd *f)
 	if (lopts == NULL)
 		err(1, "option memory");
 #ifndef __rtems__
-	p = shortopts = malloc((2 * n + 2) * sizeof(char));
+	p = shortopts = malloc((n + 3) * sizeof(char));
 #else /* __rtems__ */
 	p = shortopts = malloc((2 * n + 3) * sizeof(char));
 #endif /* __rtems__ */

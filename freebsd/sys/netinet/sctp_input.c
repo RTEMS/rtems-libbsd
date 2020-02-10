@@ -467,6 +467,10 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	if (!cookie_found) {
 		uint16_t len;
 
+		/* Only report the missing cookie parameter */
+		if (op_err != NULL) {
+			sctp_m_freem(op_err);
+		}
 		len = (uint16_t)(sizeof(struct sctp_error_missing_param) + sizeof(uint16_t));
 		/* We abort with an error of missing mandatory param */
 		op_err = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
@@ -550,7 +554,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	    asoc->primary_destination, SCTP_FROM_SCTP_INPUT + SCTP_LOC_3);
 
 	/* calculate the RTO */
-	net->RTO = sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered,
+	sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered,
 	    SCTP_RTT_FROM_NON_DATA);
 	retval = sctp_send_cookie_echo(m, offset, initack_limit, stcb, net);
 	return (retval);
@@ -650,7 +654,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 	tv.tv_sec = cp->heartbeat.hb_info.time_value_1;
 	tv.tv_usec = cp->heartbeat.hb_info.time_value_2;
 	/* Now lets do a RTO with this */
-	r_net->RTO = sctp_calculate_rto(stcb, &stcb->asoc, r_net, &tv,
+	sctp_calculate_rto(stcb, &stcb->asoc, r_net, &tv,
 	    SCTP_RTT_FROM_NON_DATA);
 	if (!(r_net->dest_state & SCTP_ADDR_REACHABLE)) {
 		r_net->dest_state |= SCTP_ADDR_REACHABLE;
@@ -705,34 +709,37 @@ static int
 sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 {
 	/*
-	 * return 0 means we want you to proceed with the abort non-zero
-	 * means no abort processing
+	 * Return 0 means we want you to proceed with the abort non-zero
+	 * means no abort processing.
 	 */
+	uint32_t new_vtag;
 	struct sctpasochead *head;
 
 	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
+		new_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport, 1);
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
 		SCTP_INP_INFO_WLOCK();
 		SCTP_TCB_LOCK(stcb);
 		atomic_subtract_int(&stcb->asoc.refcnt, 1);
+	} else {
+		return (0);
 	}
 	if (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) {
 		/* generate a new vtag and send init */
 		LIST_REMOVE(stcb, sctp_asocs);
-		stcb->asoc.my_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport, 1);
+		stcb->asoc.my_vtag = new_vtag;
 		head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag, SCTP_BASE_INFO(hashasocmark))];
 		/*
 		 * put it in the bucket in the vtag hash of assoc's for the
 		 * system
 		 */
 		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
-		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		SCTP_INP_INFO_WUNLOCK();
+		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		return (1);
-	}
-	if (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED) {
+	} else {
 		/*
 		 * treat like a case where the cookie expired i.e.: - dump
 		 * current cookie. - generate a new vtag. - resend init.
@@ -742,15 +749,15 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 		sctp_stop_all_cookie_timers(stcb);
 		sctp_toss_old_cookies(stcb, &stcb->asoc);
-		stcb->asoc.my_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport, 1);
+		stcb->asoc.my_vtag = new_vtag;
 		head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag, SCTP_BASE_INFO(hashasocmark))];
 		/*
 		 * put it in the bucket in the vtag hash of assoc's for the
 		 * system
 		 */
 		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
-		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		SCTP_INP_INFO_WUNLOCK();
+		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
 	return (0);
@@ -1676,8 +1683,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			old.tv_sec = cookie->time_entered.tv_sec;
 			old.tv_usec = cookie->time_entered.tv_usec;
 			net->hb_responded = 1;
-			net->RTO = sctp_calculate_rto(stcb, asoc, net,
-			    &old,
+			sctp_calculate_rto(stcb, asoc, net, &old,
 			    SCTP_RTT_FROM_NON_DATA);
 
 			if (stcb->asoc.sctp_autoclose_ticks &&
@@ -2401,8 +2407,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		/* calculate the RTT and set the encaps port */
 		old.tv_sec = cookie->time_entered.tv_sec;
 		old.tv_usec = cookie->time_entered.tv_usec;
-		(*netp)->RTO = sctp_calculate_rto(stcb, asoc, *netp,
-		    &old, SCTP_RTT_FROM_NON_DATA);
+		sctp_calculate_rto(stcb, asoc, *netp, &old, SCTP_RTT_FROM_NON_DATA);
 	}
 	/* respond with a COOKIE-ACK */
 	sctp_send_cookie_ack(stcb);
@@ -2978,8 +2983,7 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 		SCTP_STAT_INCR_COUNTER32(sctps_activeestab);
 		SCTP_STAT_INCR_GAUGE32(sctps_currestab);
 		if (asoc->overall_error_count == 0) {
-			net->RTO = sctp_calculate_rto(stcb, asoc, net,
-			    &asoc->time_entered,
+			sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered,
 			    SCTP_RTT_FROM_NON_DATA);
 		}
 		(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);

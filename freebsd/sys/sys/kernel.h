@@ -475,6 +475,8 @@ struct tunable_str {
 #define TUNABLE_LONG_FETCH(path, var)
 #define TUNABLE_ULONG(path, var)
 #define TUNABLE_ULONG_FETCH(path, var)
+#define TUNABLE_UINT64(path, var)
+#define TUNABLE_UINT64_FETCH(path, var)
 #define TUNABLE_QUAD(path, var)
 #define TUNABLE_QUAD_FETCH(path, var)
 #define TUNABLE_STR(path, var, size)

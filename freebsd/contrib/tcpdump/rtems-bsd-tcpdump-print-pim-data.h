@@ -2,4 +2,3 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-tcpdump-data.h"
 /* print-pim.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int pimv2_addr_len);

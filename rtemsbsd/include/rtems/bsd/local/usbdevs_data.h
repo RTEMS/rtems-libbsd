@@ -4214,6 +4214,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    "Lilliput UM-70",
 	},
 	{
+	    USB_VENDOR_DISPLAYLINK, USB_PRODUCT_DISPLAYLINK_DVI_19,
+	    0,
+	    "DisplayLink",
+	    "USB to DVI-19",
+	},
+	{
 	    USB_VENDOR_DISPLAYLINK, USB_PRODUCT_DISPLAYLINK_UM7X0,
 	    0,
 	    "DisplayLink",
@@ -16500,6 +16506,12 @@ const struct usb_knowndev usb_knowndevs[] = {
 	    0,
 	    "Silicon Labs",
 	    "HubZ dual ZigBee and Z-Wave",
+	},
+	{
+	    USB_VENDOR_SILABS, USB_PRODUCT_SILABS_BV_AV2010_10,
+	    0,
+	    "Silicon Labs",
+	    "Bitron Video AV2010/10 ZigBee USB Stick",
 	},
 	{
 	    USB_VENDOR_SILABS, USB_PRODUCT_SILABS_CP2102,

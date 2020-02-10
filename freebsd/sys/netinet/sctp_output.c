@@ -4338,7 +4338,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				 * at the SCTP layer. So use the value from
 				 * the IP layer.
 				 */
-				flowlabel = ntohl(((struct in6pcb *)inp)->in6p_flowinfo);
+				flowlabel = ntohl(((struct inpcb *)inp)->inp_flow);
 			}
 			flowlabel &= 0x000fffff;
 			len = SCTP_MIN_OVERHEAD;
@@ -4393,7 +4393,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				 * at the SCTP layer. So use the value from
 				 * the IP layer.
 				 */
-				tos_value = (ntohl(((struct in6pcb *)inp)->in6p_flowinfo) >> 20) & 0xff;
+				tos_value = (ntohl(((struct inpcb *)inp)->inp_flow) >> 20) & 0xff;
 			}
 			tos_value &= 0xfc;
 			if (ecn_ok) {
@@ -7874,8 +7874,8 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 	int bundle_at, ctl_cnt, no_data_chunks, eeor_mode;
 	unsigned int mtu, r_mtu, omtu, mx_mtu, to_out;
 	int tsns_sent = 0;
-	uint32_t auth_offset = 0;
-	struct sctp_auth_chunk *auth = NULL;
+	uint32_t auth_offset;
+	struct sctp_auth_chunk *auth;
 	uint16_t auth_keyid;
 	int override_ok = 1;
 	int skip_fill_up = 0;
@@ -8070,6 +8070,8 @@ again_one_more_time:
 		}
 		bundle_at = 0;
 		endoutchain = outchain = NULL;
+		auth = NULL;
+		auth_offset = 0;
 		no_fragmentflg = 1;
 		one_chunk = 0;
 		if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
@@ -9061,8 +9063,7 @@ sctp_send_cookie_echo(struct mbuf *m,
 				pad = 4 - pad;
 			}
 			if (pad > 0) {
-				cookie = sctp_pad_lastmbuf(cookie, pad, NULL);
-				if (cookie == NULL) {
+				if (sctp_pad_lastmbuf(cookie, pad, NULL) == NULL) {
 					return (-8);
 				}
 			}

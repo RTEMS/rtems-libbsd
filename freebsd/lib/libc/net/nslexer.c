@@ -765,7 +765,7 @@ YY_DECL
 	char *yy_cp, *yy_bp;
 	int yy_act;
     
-#line 61 "nslexer.l"
+#line 62 "nslexer.l"
 
 
 #line 772 "nslexer.c"
@@ -827,16 +827,12 @@ yy_match:
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 69 );
+		while ( yy_current_state != 58 );
+		yy_cp = (yy_last_accepting_cpos);
+		yy_current_state = (yy_last_accepting_state);
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
-		if ( yy_act == 0 )
-			{ /* have to back up */
-			yy_cp = (yy_last_accepting_cpos);
-			yy_current_state = (yy_last_accepting_state);
-			yy_act = yy_accept[yy_current_state];
-			}
 
 		YY_DO_BEFORE_ACTION;
 
@@ -863,59 +859,59 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 63 "nslexer.l"
+#line 64 "nslexer.l"
 ;			/* skip whitespace */
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 65 "nslexer.l"
+#line 66 "nslexer.l"
 ;			/* skip comments */
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 67 "nslexer.l"
+#line 68 "nslexer.l"
 ;			/* allow continuation */
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 69 "nslexer.l"
+#line 70 "nslexer.l"
 return NL;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 71 "nslexer.l"
+#line 72 "nslexer.l"
 return SUCCESS;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 72 "nslexer.l"
+#line 73 "nslexer.l"
 return UNAVAIL;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 73 "nslexer.l"
+#line 74 "nslexer.l"
 return NOTFOUND;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 74 "nslexer.l"
+#line 75 "nslexer.l"
 return TRYAGAIN;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 76 "nslexer.l"
+#line 77 "nslexer.l"
 return RETURN;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 77 "nslexer.l"
+#line 78 "nslexer.l"
 return CONTINUE;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 79 "nslexer.l"
+#line 80 "nslexer.l"
 {
 			char *p;
 			int i;
@@ -935,15 +931,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 96 "nslexer.l"
+#line 97 "nslexer.l"
 return _nsyytext[0];
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 98 "nslexer.l"
+#line 99 "nslexer.l"
 ECHO;
 	YY_BREAK
-#line 947 "nslexer.c"
+#line 943 "nslexer.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1010,7 +1006,8 @@ case YY_STATE_EOF(INITIAL):
 
 			else
 				{
-				yy_cp = (yy_c_buf_p);
+				yy_cp = (yy_last_accepting_cpos);
+				yy_current_state = (yy_last_accepting_state);
 				goto yy_find_action;
 				}
 			}
@@ -1484,7 +1481,7 @@ static void _nsyy_load_buffer_state  (void)
         b->yy_bs_column = 0;
     }
 
-        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
+        b->yy_is_interactive = 0;
     
 	errno = oerrno;
 }
@@ -1908,7 +1905,7 @@ void _nsyyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 98 "nslexer.l"
+#line 99 "nslexer.l"
 
 
 

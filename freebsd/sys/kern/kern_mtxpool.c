@@ -85,7 +85,7 @@ struct mtx_pool {
 #define mtx_pool_next	mtx_pool_header.mtxpool_next
 
 #ifndef __rtems__
-struct mtx_pool *mtxpool_sleep;
+struct mtx_pool __read_frequently *mtxpool_sleep;
 #endif /* __rtems__ */
 
 #if UINTPTR_MAX == UINT64_MAX	/* 64 bits */

@@ -427,7 +427,9 @@ udp_print(netdissect_options *ndo, register const u_char *bp, u_int length,
 
 	if (ndo->ndo_packettype) {
 		register const struct sunrpc_msg *rp;
+#ifndef __rtems__
 		enum sunrpc_msg_type direction;
+#endif /* __rtems__ */
 
 		switch (ndo->ndo_packettype) {
 
@@ -443,8 +445,8 @@ udp_print(netdissect_options *ndo, register const u_char *bp, u_int length,
 
 		case PT_RPC:
 			rp = (const struct sunrpc_msg *)(up + 1);
-			direction = (enum sunrpc_msg_type)EXTRACT_32BITS(&rp->rm_direction);
 #ifndef __rtems__
+			direction = (enum sunrpc_msg_type)EXTRACT_32BITS(&rp->rm_direction);
 			if (direction == SUNRPC_CALL)
 				sunrpcrequest_print(ndo, (const u_char *)rp, length,
 				    (const u_char *)ip);

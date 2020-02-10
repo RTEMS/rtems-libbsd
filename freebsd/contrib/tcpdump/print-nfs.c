@@ -1574,8 +1574,8 @@ interp_reply(netdissect_options *ndo,
 						tok2str(nfsv3_writemodes,
 							NULL, EXTRACT_32BITS(&dp[1]))));
 				}
-				return;
 			}
+			return;
 		} else {
 			if (parseattrstat(ndo, dp, ndo->ndo_vflag, v3) != 0)
 				return;
@@ -1661,8 +1661,8 @@ interp_reply(netdissect_options *ndo,
 				ND_PRINT((ndo, " dir:"));
 				if (!(dp = parse_wcc_data(ndo, dp, ndo->ndo_vflag)))
 					break;
-				return;
 			}
+			return;
 		} else {
 			if (parsestatus(ndo, dp, &er) != NULL)
 				return;

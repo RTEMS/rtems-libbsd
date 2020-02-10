@@ -2504,7 +2504,8 @@ unp_internalize(struct mbuf **controlp, struct thread *td)
 			goto out;
 		}
 
-		controlp = &(*controlp)->m_next;
+		if (*controlp != NULL)
+			controlp = &(*controlp)->m_next;
 		if (CMSG_SPACE(datalen) < clen) {
 			clen -= CMSG_SPACE(datalen);
 			cm = (struct cmsghdr *)

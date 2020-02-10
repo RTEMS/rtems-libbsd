@@ -185,7 +185,11 @@ void	*contigmalloc_domainset(unsigned long size, struct malloc_type *type,
 	    unsigned long alignment, vm_paddr_t boundary)
 	    __malloc_like __result_use_check __alloc_size(1) __alloc_align(7);
 void	free(void *addr, struct malloc_type *type);
+#ifndef __rtems__
 void	free_domain(void *addr, struct malloc_type *type);
+#else /* __rtems__ */
+#define	free_domain(addr, type) free(addr, type)
+#endif /* __rtems__ */
 #ifndef __rtems__
 void	*malloc(size_t size, struct malloc_type *type, int flags) __malloc_like
 	    __result_use_check __alloc_size(1);
@@ -250,9 +254,13 @@ void	*_bsd_malloc(size_t size, struct malloc_type *type, int flags)
 	_malloc_item;							\
 })
 
+#ifndef __rtems__
 void	*malloc_domainset(size_t size, struct malloc_type *type,
 	    struct domainset *ds, int flags) __malloc_like __result_use_check
 	    __alloc_size(1);
+#else /* __rtems__ */
+#define	malloc_domainset(size, type, ds, flags) malloc(size, type, flags)
+#endif /* __rtems__ */
 void	*mallocarray(size_t nmemb, size_t size, struct malloc_type *type,
 	    int flags) __malloc_like __result_use_check
 	    __alloc_size2(1, 2);

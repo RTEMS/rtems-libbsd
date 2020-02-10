@@ -147,7 +147,7 @@ struct nvme_request {
 	} u;
 	uint32_t			type;
 	uint32_t			payload_size;
-	boolean_t			timeout;
+	bool				timeout;
 	nvme_cb_fn_t			cb_fn;
 	void				*cb_arg;
 	int32_t				retries;
@@ -187,7 +187,10 @@ struct nvme_qpair {
 
 	struct nvme_controller	*ctrlr;
 	uint32_t		id;
-	uint32_t		phase;
+#ifndef __rtems__
+	int			domain;
+	int			cpu;
+#endif /* __rtems__ */
 
 	uint16_t		vector;
 	int			rid;
@@ -199,6 +202,7 @@ struct nvme_qpair {
 	uint32_t		sq_tdbl_off;
 	uint32_t		cq_hdbl_off;
 
+	uint32_t		phase;
 	uint32_t		sq_head;
 	uint32_t		sq_tail;
 	uint32_t		cq_head;
@@ -226,7 +230,7 @@ struct nvme_qpair {
 
 	struct nvme_tracker	**act_tr;
 
-	boolean_t		is_enabled;
+	bool			is_enabled;
 
 	struct mtx		lock __aligned(CACHE_LINE_SIZE);
 
@@ -252,7 +256,9 @@ struct nvme_controller {
 	device_t		dev;
 
 	struct mtx		lock;
-
+#ifndef __rtems__
+	int			domain;
+#endif /* __rtems__ */
 	uint32_t		ready_timeout_in_ms;
 	uint32_t		quirks;
 #define	QUIRK_DELAY_B4_CHK_RDY	1		/* Can't touch MMIO on disable */
@@ -272,11 +278,9 @@ struct nvme_controller {
 	struct resource		*bar4_resource;
 
 	uint32_t		msix_enabled;
-	uint32_t		force_intx;
 	uint32_t		enable_aborts;
 
 	uint32_t		num_io_queues;
-	uint32_t		num_cpus_per_ioq;
 	uint32_t		max_hw_pend_io;
 
 	/* Fields for tracking progress during controller initialization. */
@@ -293,9 +297,6 @@ struct nvme_controller {
 	struct resource		*res;
 	void			*tag;
 
-	bus_dma_tag_t		hw_desc_tag;
-	bus_dmamap_t		hw_desc_map;
-
 	/** maximum i/o size in bytes */
 	uint32_t		max_xfer_size;
 
@@ -310,6 +311,9 @@ struct nvme_controller {
 
 	/** timeout period in seconds */
 	uint32_t		timeout_period;
+
+	/** doorbell stride */
+	uint32_t		dstrd;
 
 	struct nvme_qpair	adminq;
 	struct nvme_qpair	*ioq;
@@ -333,8 +337,24 @@ struct nvme_controller {
 	uint32_t			is_initialized;
 	uint32_t			notification_sent;
 
-	boolean_t			is_failed;
+	bool				is_failed;
 	STAILQ_HEAD(, nvme_request)	fail_req;
+
+	/* Host Memory Buffer */
+#ifndef __rtems__
+	int				hmb_nchunks;
+	size_t				hmb_chunk;
+	bus_dma_tag_t			hmb_tag;
+	struct nvme_hmb_chunk {
+		bus_dmamap_t		hmbc_map;
+		void			*hmbc_vaddr;
+		uint64_t		hmbc_paddr;
+	} *hmb_chunks;
+	bus_dma_tag_t			hmb_desc_tag;
+	bus_dmamap_t			hmb_desc_map;
+	struct nvme_hmb_desc		*hmb_desc_vaddr;
+	uint64_t			hmb_desc_paddr;
+#endif /* __rtems__ */
 };
 
 #define nvme_mmio_offsetof(reg)						       \
@@ -388,7 +408,7 @@ void	nvme_ctrlr_cmd_get_firmware_page(struct nvme_controller *ctrlr,
 					 nvme_cb_fn_t cb_fn,
 					 void *cb_arg);
 void	nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr,
-				    struct nvme_qpair *io_que, uint16_t vector,
+				    struct nvme_qpair *io_que,
 				    nvme_cb_fn_t cb_fn, void *cb_arg);
 void	nvme_ctrlr_cmd_create_io_sq(struct nvme_controller *ctrlr,
 				    struct nvme_qpair *io_que,
@@ -424,9 +444,8 @@ void	nvme_ctrlr_submit_io_request(struct nvme_controller *ctrlr,
 void	nvme_ctrlr_post_failed_request(struct nvme_controller *ctrlr,
 				       struct nvme_request *req);
 
-int	nvme_qpair_construct(struct nvme_qpair *qpair, uint32_t id,
-			     uint16_t vector, uint32_t num_entries,
-			     uint32_t num_trackers,
+int	nvme_qpair_construct(struct nvme_qpair *qpair,
+			     uint32_t num_entries, uint32_t num_trackers,
 			     struct nvme_controller *ctrlr);
 void	nvme_qpair_submit_tracker(struct nvme_qpair *qpair,
 				  struct nvme_tracker *tr);
@@ -499,7 +518,7 @@ _nvme_allocate_request(nvme_cb_fn_t cb_fn, void *cb_arg)
 	if (req != NULL) {
 		req->cb_fn = cb_fn;
 		req->cb_arg = cb_arg;
-		req->timeout = TRUE;
+		req->timeout = true;
 	}
 	return (req);
 }

@@ -5,7 +5,7 @@
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
-#define YYPATCH 20170201
+#define YYPATCH 20170430
 
 #define YYEMPTY        (-1)
 #define yyclearin      (yychar = YYEMPTY)
@@ -2765,6 +2765,8 @@ process_tabledef(char *name, struct table_opts *opts)
 {
 	struct pfr_buffer	 ab;
 	struct node_tinit	*ti;
+	unsigned long		 maxcount;
+	size_t			 s = sizeof(maxcount);
 
 	bzero(&ab, sizeof(ab));
 	ab.pfrb_type = PFRB_ADDRS;
@@ -2792,8 +2794,19 @@ process_tabledef(char *name, struct table_opts *opts)
 	if (!(pf->opts & PF_OPT_NOACTION) &&
 	    pfctl_define_table(name, opts->flags, opts->init_addr,
 	    pf->anchor->name, &ab, pf->anchor->ruleset.tticket)) {
-		yyerror("cannot define table %s: %s", name,
-		    pfr_strerror(errno));
+
+		if (sysctlbyname("net.pf.request_maxcount", &maxcount, &s,
+		    NULL, 0) == -1)
+			maxcount = 65535;
+
+		if (ab.pfrb_size > maxcount)
+			yyerror("cannot define table %s: too many elements.\n"
+			    "Consider increasing net.pf.request_maxcount.",
+			    name);
+		else
+			yyerror("cannot define table %s: %s", name,
+			    pfr_strerror(errno));
+
 		goto _error;
 	}
 	pf->tdirty = 1;
@@ -3795,8 +3808,10 @@ top:
 					return (0);
 				if (next == quotec || c == ' ' || c == '\t')
 					c = next;
-				else if (next == '\n')
+				else if (next == '\n') {
+					file->lineno++;
 					continue;
+				}
 				else
 					lungetc(next);
 			} else if (c == quotec) {
@@ -4382,7 +4397,7 @@ rt_tableid_max(void)
 	return (RT_TABLEID_MAX);
 #endif
 }
-#line 4388 "parse.c"
+#line 4401 "parse.c"
 
 #if YYDEBUG
 #include <stdio.h>	/* needed for printf */
@@ -9167,7 +9182,7 @@ case 420:
 			yyval.v.host = calloc(1, sizeof(struct node_host));
 			if (yyval.v.host == NULL)
 				err(1, "route_host: calloc");
-			yyval.v.host->ifname = yystack.l_mark[0].v.string;
+			yyval.v.host->ifname = strdup(yystack.l_mark[0].v.string);
 			set_ipmask(yyval.v.host, 128);
 			yyval.v.host->next = NULL;
 			yyval.v.host->tail = yyval.v.host;
@@ -9180,7 +9195,7 @@ case 421:
 
 			yyval.v.host = yystack.l_mark[-1].v.host;
 			for (n = yystack.l_mark[-1].v.host; n != NULL; n = n->next)
-				n->ifname = yystack.l_mark[-2].v.string;
+				n->ifname = strdup(yystack.l_mark[-2].v.string);
 		}
 break;
 case 422:
@@ -9350,7 +9365,7 @@ case 447:
 #line 4575 "parse.y"
 	{ yyval.v.i = PF_OP_GT; }
 break;
-#line 9356 "parse.c"
+#line 9369 "parse.c"
     }
     yystack.s_mark -= yym;
     yystate = *yystack.s_mark;

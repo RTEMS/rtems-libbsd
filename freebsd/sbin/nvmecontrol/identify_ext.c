@@ -126,7 +126,7 @@ nvme_print_controller(struct nvme_controller_data *cdata)
 	if (cdata->mdts == 0)
 		printf("Unlimited\n");
 	else
-		printf("%ld\n", PAGE_SIZE * (1L << cdata->mdts));
+		printf("%ld bytes\n", PAGE_SIZE * (1L << cdata->mdts));
 	printf("Controller ID:               0x%04x\n", cdata->ctrlr_id);
 	printf("Version:                     %d.%d.%d\n",
 	    (cdata->ver >> 16) & 0xffff, (cdata->ver >> 8) & 0xff,
@@ -189,6 +189,18 @@ nvme_print_controller(struct nvme_controller_data *cdata)
 		ns_smart ? "Yes" : "No");
 	printf("Error Log Page Entries:      %d\n", cdata->elpe+1);
 	printf("Number of Power States:      %d\n", cdata->npss+1);
+	if (cdata->ver >= 0x010200) {
+		printf("Total NVM Capacity:          %s bytes\n",
+		    uint128_to_str(to128(cdata->untncap.tnvmcap),
+		    cbuf, sizeof(cbuf)));
+		printf("Unallocated NVM Capacity:    %s bytes\n",
+		    uint128_to_str(to128(cdata->untncap.unvmcap),
+		    cbuf, sizeof(cbuf)));
+	}
+	printf("Host Buffer Preferred Size:  %llu bytes\n",
+	    (long long unsigned)cdata->hmpre * 4096);
+	printf("Host Buffer Minimum Size:    %llu bytes\n",
+	    (long long unsigned)cdata->hmmin * 4096);
 
 	printf("\n");
 	printf("NVM Command Set Attributes\n");
@@ -240,13 +252,6 @@ nvme_print_controller(struct nvme_controller_data *cdata)
 	    (t == NVME_CTRLR_DATA_VWC_ALL_NO) ? ", no flush all" :
 	    (t == NVME_CTRLR_DATA_VWC_ALL_YES) ? ", flush all" : "");
 
-	if (nsmgmt) {
-		printf("\n");
-		printf("Namespace Drive Attributes\n");
-		printf("==========================\n");
-		printf("NVM total cap:               %s\n",
-			   uint128_to_str(to128(cdata->untncap.tnvmcap), cbuf, sizeof(cbuf)));
-		printf("NVM unallocated cap:         %s\n",
-			   uint128_to_str(to128(cdata->untncap.unvmcap), cbuf, sizeof(cbuf)));
-	}
+	if (cdata->ver >= 0x010201)
+		printf("\nNVM Subsystem Name:          %.256s\n", cdata->subnqn);
 }

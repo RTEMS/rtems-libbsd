@@ -712,7 +712,7 @@ ospf_print_lsa(netdissect_options *ndo,
 		while ((const u_char *)lp < ls_end) {
 			register uint32_t ul;
 
-			ND_TCHECK(*lp);
+			ND_TCHECK_32BITS(lp);
 			ul = EXTRACT_32BITS(lp);
                         topology = (ul & SLA_MASK_TOS) >> SLA_SHIFT_TOS;
 			ND_PRINT((ndo, "\n\t\ttopology %s (%u) metric %d",
@@ -729,7 +729,7 @@ ospf_print_lsa(netdissect_options *ndo,
 		while ((const u_char *)lp < ls_end) {
 			register uint32_t ul;
 
-			ND_TCHECK(*lp);
+			ND_TCHECK_32BITS(lp);
 			ul = EXTRACT_32BITS(lp);
                         topology = (ul & SLA_MASK_TOS) >> SLA_SHIFT_TOS;
 			ND_PRINT((ndo, "\n\t\ttopology %s (%u) metric %d",

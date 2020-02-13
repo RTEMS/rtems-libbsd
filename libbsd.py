@@ -5205,6 +5205,35 @@ class imx(builder.Module):
             mm.generator['source']()
         )
 
+class regulator(builder.Module):
+    def __init__(self, manager):
+        super(regulator, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addRTEMSSourceFiles(
+            [
+                'local/regdev_if.c',
+                'local/regnode_if.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/dev/extres/regulator/regulator.h',
+                'sys/dev/extres/regulator/regulator_fixed.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/dev/extres/regulator/regulator.c',
+                'sys/dev/extres/regulator/regulator_bus.c',
+                'sys/dev/extres/regulator/regulator_fixed.c',
+                'sys/dev/gpio/gpioregulator.c',
+            ],
+            mm.generator['source']()
+        )
+
 #
 # Tests
 #
@@ -5365,6 +5394,7 @@ def load(mm):
 
     mm.addModule(nvme(mm))
     mm.addModule(imx(mm))
+    mm.addModule(regulator(mm))
 
     # Add in_chksum
     mm.addModule(in_cksum(mm))

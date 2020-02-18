@@ -631,8 +631,13 @@ nvme_qpair_process_completions(struct nvme_qpair *qpair)
 			qpair->phase = !qpair->phase;			/* 3 */
 		}
 
+#ifndef __rtems__
 		bus_space_write_4(qpair->ctrlr->bus_tag, qpair->ctrlr->bus_handle,
 		    qpair->cq_hdbl_off, qpair->cq_head);
+#else /* __rtems__ */
+		bus_space_write_4(qpair->ctrlr->bus_tag, qpair->ctrlr->bus_handle,
+		    qpair->cq_hdbl_off, htole32(qpair->cq_head));
+#endif /* __rtems__ */
 	}
 	return (done != 0);
 }
@@ -987,8 +992,13 @@ nvme_qpair_submit_tracker(struct nvme_qpair *qpair, struct nvme_tracker *tr)
 	wmb();
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 	bus_space_write_4(qpair->ctrlr->bus_tag, qpair->ctrlr->bus_handle,
 	    qpair->sq_tdbl_off, qpair->sq_tail);
+#else /* __rtems__ */
+	bus_space_write_4(qpair->ctrlr->bus_tag, qpair->ctrlr->bus_handle,
+	    qpair->sq_tdbl_off, htole32(qpair->sq_tail));
+#endif /* __rtems__ */
 	qpair->num_cmds++;
 }
 

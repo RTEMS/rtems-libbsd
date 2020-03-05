@@ -109,7 +109,10 @@ class Builder(builder.ModuleManager):
                 if config != 'default':
                     if 'configure' not in data:
                         data['configure'] = { }
-                    data['configure'][config] = frag[0][2][1]
+                    configTest = frag[1]['configTest']
+                    if configTest not in data['configure']:
+                        data['configure'][configTest] = { }
+                    data['configure'][configTest][config] = frag[0][2][1]
                 if type(frag[1]) is list:
                     if config not in d[cpu]:
                         d[cpu][config] = []
@@ -149,12 +152,23 @@ class Builder(builder.ModuleManager):
 
     def bsp_configure(self, conf, arch_bsp):
         if 'configure' in self.data:
-            for cfg in self.data['configure']:
-                for h in self.data['configure'][cfg]:
-                    conf.check(header_name = h,
-                               features = "c",
-                               includes = conf.env.IFLAGS,
-                               mandatory = False)
+            for configTest in self.data['configure']:
+                for cfg in self.data['configure'][configTest]:
+                    if configTest == 'header':
+                        for h in self.data['configure'][configTest][cfg]:
+                            conf.check(header_name = h,
+                                       features = "c",
+                                       includes = conf.env.IFLAGS,
+                                       mandatory = False)
+                    elif configTest == 'library':
+                        for l in self.data['configure'][configTest][cfg]:
+                            conf.check_cc(lib = l,
+                                          fragment = rtems.test_application(),
+                                          execute = False,
+                                          mandatory = False)
+                    else:
+                        bld.fatal('invalid config test: %s' % (configTest))
+
 
     def build(self, bld):
         #

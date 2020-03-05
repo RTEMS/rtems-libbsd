@@ -5105,8 +5105,8 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('termios06', ['test_main',
                                                         '../termios/test_termios_driver',
                                                         '../termios/test_termios_utilities']))
-        self.addTest(mm.generator['test-if-header']('debugger01', 'rtems/rtems-debugger.h',
-                                                    ['test_main'], runTest = False, netTest = True,
+        self.addTest(mm.generator['test-if-library']('debugger01', 'debugger',
+                                                     ['test_main'], runTest = False, netTest = True,
                                                     extraLibs = ['debugger']))
         self.addTest(mm.generator['test']('crypto01', ['test_main']))
         self.addTest(mm.generator['test']('ipsec01', ['test_main']))

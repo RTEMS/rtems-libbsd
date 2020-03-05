@@ -502,15 +502,17 @@ class SourceFileIfHeaderComposer(SourceFileFragmentComposer):
 
 class TestFragementComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, testName, fileFragments, runTest = True, netTest = False, extraLibs = []):
+    def __init__(self, testName, fileFragments, configTest = None, runTest = True, netTest = False, extraLibs = []):
         self.testName = testName
         self.fileFragments = fileFragments
+        self.configTest = configTest
         self.runTest = runTest
         self.netTest = netTest
         self.extraLibs = extraLibs
 
     def compose(self, path):
-        return ['tests', self.testName, ('default', None)], { 'files': self.fileFragments,
+        return ['tests', self.testName, ('default', None)], { 'configTest': self.configTest,
+                                                              'files': self.fileFragments,
                                                               'run': self.runTest,
                                                               'net': self.netTest,
                                                               'libs': self.extraLibs}
@@ -521,7 +523,7 @@ class TestIfHeaderComposer(TestFragementComposer):
         if headers is not list:
             headers = [headers]
         self.headers = headers
-        super(TestIfHeaderComposer, self).__init__(testName, fileFragments,
+        super(TestIfHeaderComposer, self).__init__(testName, fileFragments, 'header',
                                                    runTest = runTest, netTest = netTest,
                                                    extraLibs = extraLibs)
 
@@ -534,6 +536,27 @@ class TestIfHeaderComposer(TestFragementComposer):
                 h = h.replace(c, '_')
             define_keys += ' ' + h
         r[0][2] = (define_keys.strip(), self.headers)
+        return r
+
+class TestIfLibraryComposer(TestFragementComposer):
+
+    def __init__(self, testName, libraries, fileFragments, runTest = True, netTest = False, extraLibs = []):
+        if libraries is not list:
+            libraries = [libraries]
+        self.libraries = libraries
+        super(TestIfLibraryComposer, self).__init__(testName, fileFragments, 'library',
+                                                    runTest = runTest, netTest = netTest,
+                                                    extraLibs = extraLibs)
+
+    def compose(self, path):
+        r = TestFragementComposer.compose(self, path)
+        define_keys = ''
+        for l in self.libraries:
+            l = l.upper()
+            for c in '\/-.':
+                l = l.replace(c, '_')
+            define_keys += ' ' + l
+        r[0][2] = (define_keys.strip(), self.libraries)
         return r
 
 class KVMSymbolsFragmentComposer(BuildSystemFragmentComposer):
@@ -849,3 +872,4 @@ class ModuleManager(object):
 
         self.generator['source-if-header'] = SourceFileIfHeaderComposer
         self.generator['test-if-header'] = TestIfHeaderComposer
+        self.generator['test-if-library'] = TestIfLibraryComposer

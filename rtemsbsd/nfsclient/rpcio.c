@@ -145,7 +145,7 @@ static struct timeval _rpc_default_timeout = { 10 /* secs */, 0 /* usecs */ };
  * MUST NOT be used by any application
  * thread doing RPC IO (e.g. NFS)
  */
-#define RTEMS_RPC_EVENT		RTEMS_EVENT_30	/* THE event used by RPCIO. Every task doing
+#define RTEMS_RPC_EVENT		RTEMS_EVENT_SYSTEM_SERVER	/* THE event used by RPCIO. Every task doing
 											 * RPC IO will receive this - hence it is
 											 * RESERVED
 											 */
@@ -867,7 +867,7 @@ rtems_event_set		gotEvents;
 	do {
 
 	/* block for the reply */
-	status = rtems_event_receive(
+	status = rtems_event_system_receive(
 		RTEMS_RPC_EVENT,
 		RTEMS_WAIT | RTEMS_EVENT_ANY,
 		RTEMS_NO_TIMEOUT,
@@ -1316,7 +1316,7 @@ rtems_status_code	status;
 				}
 
 				/* wakeup requestor */
-				rtems_event_send(xact->requestor, RTEMS_RPC_EVENT);
+				rtems_event_system_send(xact->requestor, RTEMS_RPC_EVENT);
 			}
 		}
 
@@ -1371,7 +1371,7 @@ rtems_status_code	status;
 #if (DEBUG) & DEBUG_TIMEOUT
 					fprintf(stderr,"RPCIO XACT timed out; waking up requestor\n");
 #endif
-					if ( rtems_event_send(xact->requestor, RTEMS_RPC_EVENT) ) {
+					if ( rtems_event_system_send(xact->requestor, RTEMS_RPC_EVENT) ) {
 						rtems_panic("RPCIO PANIC: requestor id was 0x%08x",
 									xact->requestor);
 					}
@@ -1403,7 +1403,7 @@ rtems_status_code	status;
 
 						/* wakeup requestor */
 						fprintf(stderr,"RPCIO: SEND failure\n");
-						status = rtems_event_send(xact->requestor, RTEMS_RPC_EVENT);
+						status = rtems_event_system_send(xact->requestor, RTEMS_RPC_EVENT);
 						assert( status == RTEMS_SUCCESSFUL );
 
 					} else {
@@ -1541,7 +1541,7 @@ rtems_status_code	status;
 
 	for (xact=((RpcUdpXact)listHead.next); xact; xact=((RpcUdpXact)xact->node.next)) {
 			xact->status.re_status = RPC_TIMEDOUT;
-			rtems_event_send(xact->requestor, RTEMS_RPC_EVENT);
+			rtems_event_system_send(xact->requestor, RTEMS_RPC_EVENT);
 	}
 #endif
 

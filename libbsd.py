@@ -227,6 +227,7 @@ class rtems(builder.Module):
                 'sys/dev/ffec/if_ffec_mpc8xx.c',
                 'sys/dev/input/touchscreen/tsc_lpc32xx.c',
                 'sys/dev/smc/if_smc_nexus.c',
+                'sys/dev/stmac/if_stmac.c',
                 'sys/dev/tsec/if_tsec_nexus.c',
                 'sys/dev/usb/controller/ehci_mpc83xx.c',
                 'sys/dev/usb/controller/ohci_lpc32xx.c',

@@ -186,7 +186,9 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 	pri = priority;
 #endif /* __rtems__ */
 
+#ifndef __rtems__
 	KASSERT(!TD_ON_SLEEPQ(td), ("recursive sleep"));
+#endif /* __rtems__ */
 
 	if ((uint8_t *)ident >= &pause_wchan[0] &&
 	    (uint8_t *)ident <= &pause_wchan[MAXCPU - 1])

@@ -144,8 +144,8 @@ def bsp_init(ctx, env, contexts):
             newcmd = y.cmd + '-' + builder
             newvariant = y.variant + '-' + builder
             class context(y):
-                cmd = newcmd
-                variant = newvariant
+                cmd = str(newcmd)
+                variant = str(newvariant)
                 libbsd_buildset_name = builder
 
     # Transform the commands to per build variant commands
@@ -153,9 +153,9 @@ def bsp_init(ctx, env, contexts):
     for cmd in waflib.Options.commands:
         if cmd.startswith(('build', 'clean', 'install')):
             for builder in builders:
-                commands += [cmd + '-' + builder]
+                commands += [str(cmd + '-' + builder)]
         else:
-            commands += [cmd]
+            commands += [str(cmd)]
     waflib.Options.commands = commands
 
 def init(ctx):

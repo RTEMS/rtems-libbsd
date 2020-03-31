@@ -36,8 +36,11 @@
 #include <rtems.h>
 
 #include <rtems/bsd/bsd.h>
+#include <rtems/test.h>
 
 #include "timeout_test.h"
+
+#define TEST_NAME "LIBBSD TIMEOUT 1"
 
 uintptr_t rtems_bsd_allocator_domain_page_mbuf_size =
     RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT;
@@ -46,14 +49,14 @@ static void Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;
 
-	puts("\n\n*** TEST TIMOUT 1 ***");
+	rtems_test_begin(TEST_NAME, TEST_STATE);
 
 	sc = rtems_bsd_initialize();
 	assert(sc == RTEMS_SUCCESSFUL);
 
 	timeout_test();
 
-	puts("*** END OF TEST TIMOUT 1 ***");
+	rtems_test_end(TEST_NAME);
 
 	exit(0);
 }

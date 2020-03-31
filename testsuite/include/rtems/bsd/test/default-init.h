@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <rtems/printer.h>
+#include <rtems/test.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
 
@@ -29,7 +30,7 @@ static void default_on_exit( int exit_code, void *arg )
   rtems_stack_checker_report_usage_with_plugin(&printer);
 
   if ( exit_code == 0 ) {
-    puts( "*** END OF TEST " TEST_NAME " ***" );
+    rtems_test_end(TEST_NAME);
   }
 }
 
@@ -44,7 +45,7 @@ rtems_task Init(
    */
   rtems_bsd_setlogpriority("debug");
 
-  puts( "*** " TEST_NAME " TEST ***" );
+  rtems_test_begin(TEST_NAME, TEST_STATE);
 
   /*
    *  BSD must support the new "shared IRQ PIC implementation" at this point.

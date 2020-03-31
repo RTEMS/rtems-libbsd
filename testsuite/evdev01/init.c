@@ -39,6 +39,7 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/test.h>
 
 #define TEST_NAME "LIBBSD EVDEV"
 
@@ -563,7 +564,7 @@ Init(rtems_task_argument arg)
 	struct evdev_test_message msg;
 
 	(void) arg;
-	puts("*** " TEST_NAME " TEST ***");
+	rtems_test_begin(TEST_NAME, TEST_STATE);
 
 	sc = rtems_semaphore_create(
 		rtems_build_name('E', 'V', 'D', 'S'),
@@ -695,6 +696,8 @@ Init(rtems_task_argument arg)
 
 	sc = rtems_semaphore_delete(psema);
 	assert(sc == RTEMS_SUCCESSFUL);
+
+	rtems_test_end(TEST_NAME);
 
 	exit(0);
 }

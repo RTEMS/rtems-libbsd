@@ -45,6 +45,7 @@
 
 #include <rtems.h>
 #include <rtems/printer.h>
+#include <rtems/test.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
 #include <rtems/bsd/modules.h>
@@ -170,7 +171,7 @@ default_network_on_exit(int exit_code, void *arg)
 	rtems_stack_checker_report_usage_with_plugin(&printer);
 
 	if (exit_code == 0) {
-		puts("*** END OF TEST " TEST_NAME " ***");
+		rtems_test_end(TEST_NAME);
 	}
 }
 
@@ -191,7 +192,7 @@ Init(rtems_task_argument arg)
 	rtems_bsd_setlogpriority("debug");
 
 	(void)arg;
-	puts("*** " TEST_NAME " TEST ***");
+	rtems_test_begin(TEST_NAME, TEST_STATE);
 
 	on_exit(default_network_on_exit, NULL);
 

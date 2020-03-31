@@ -35,6 +35,7 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/test.h>
 
 #define TEST_NAME "LIBBSD USB SERIAL"
 
@@ -177,7 +178,7 @@ Init(rtems_task_argument arg)
 	struct usb_test_message msg;
 
 	(void) arg;
-	puts("*** " TEST_NAME " TEST ***");
+	rtems_test_begin(TEST_NAME, TEST_STATE);
 
 	sc = rtems_message_queue_create(
 		rtems_build_name ('M', 'U', 'O', 'P'),
@@ -270,6 +271,8 @@ Init(rtems_task_argument arg)
 
 	sc = rtems_message_queue_delete(omid);
 	assert(sc == RTEMS_SUCCESSFUL);
+
+	rtems_test_end(TEST_NAME);
 
 	exit(0);
 }

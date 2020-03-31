@@ -37,6 +37,7 @@
 #include <rtems/telnetd.h>
 
 #define TEST_NAME "LIBBSD TELNETD 1"
+#define TEST_STATE_USER_INPUT 1
 
 static void
 telnet_shell(char *name, void *arg)

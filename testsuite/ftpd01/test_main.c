@@ -37,6 +37,7 @@
 #include <rtems/console.h>
 
 #define TEST_NAME "LIBBSD FTPD 1"
+#define TEST_STATE_USER_INPUT 1
 
 struct rtems_ftpd_configuration rtems_ftpd_configuration = {
 	/* FTPD task priority */

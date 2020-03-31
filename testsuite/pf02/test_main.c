@@ -39,6 +39,7 @@
 #include <rtems/shell.h>
 
 #define TEST_NAME "LIBBSD PF 2"
+#define TEST_STATE_USER_INPUT 1
 
 /* Block all input except telnet. */
 #define ETC_PF_CONF "/etc/pf.conf"

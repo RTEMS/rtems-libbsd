@@ -47,6 +47,7 @@
 #include <rtems/mdns.h>
 
 #define TEST_NAME "LIBBSD FOOBAR CLIENT"
+#define TEST_STATE_USER_INPUT 1
 
 static CacheEntity rr_cache[64];
 

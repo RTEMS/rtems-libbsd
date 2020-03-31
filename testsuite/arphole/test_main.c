@@ -54,6 +54,7 @@
 #include <rtems/bsd/util.h>
 
 #define TEST_NAME "LIBBSD ARP HOLE"
+#define TEST_STATE_USER_INPUT 1
 
 typedef struct {
 	struct ether_header eh;

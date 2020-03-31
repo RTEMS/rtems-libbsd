@@ -21,6 +21,7 @@
 #include "test_termios_driver.h"
 
 #define TEST_NAME "LIBBSD TERMIOS"
+#define TEST_STATE_USER_INPUT 1
 
 /* forward declarations to avoid warnings */
 void print_32bits(unsigned long bits, unsigned char size, char * names[]);

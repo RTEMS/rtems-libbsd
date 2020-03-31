@@ -30,6 +30,7 @@
  */
 
 #define TEST_NAME "LIBBSD IPSEC 1"
+#define TEST_STATE_USER_INPUT 1
 
 #include <stdio.h>
 #include <stdlib.h>

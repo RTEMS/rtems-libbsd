@@ -59,6 +59,7 @@
 #include <rtems/rtemspppd.h>
 
 #define TEST_NAME "LIBBSD PPP 1"
+#define TEST_STATE_USER_INPUT 1
 
 #ifndef RTEMS_SMP
 

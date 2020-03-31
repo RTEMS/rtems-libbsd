@@ -700,8 +700,6 @@ test_main(void)
   char c;
   struct termios orig_termios, test_termios;
 
-  puts( "*** " TEST_NAME " TEST ***" );
-
   test_termios_make_dev();
 
   status = rtems_shell_wait_for_input(

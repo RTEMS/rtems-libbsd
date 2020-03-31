@@ -520,7 +520,7 @@ class Builder(builder.ModuleManager):
         for testName in sorted(tests):
             test = self.data['tests'][testName]['all']
             test_source = []
-            libs = ['bsd', 'm', 'z']
+            libs = ['bsd', 'm', 'z', 'rtemstest']
             for cfg in test:
                 build_test = True
                 if cfg != 'default':

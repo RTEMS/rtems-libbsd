@@ -38,6 +38,7 @@
 #include <rtems/media.h>
 #include <rtems/shell.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/test.h>
 
 #define TEST_NAME "LIBBSD USB 1"
 
@@ -88,7 +89,7 @@ Init(rtems_task_argument arg)
 	rtems_status_code sc;
 
 	(void) arg;
-	puts( "*** " TEST_NAME " TEST ***" );
+	rtems_test_begin(TEST_NAME, TEST_STATE);
 
 	sc = rtems_bdbuf_init();
 	assert(sc == RTEMS_SUCCESSFUL);
@@ -113,6 +114,8 @@ Init(rtems_task_argument arg)
 	sc = rtems_shell_init("SHLL", 16 * 1024, 1, CONSOLE_DEVICE_NAME,
 	    false, true, NULL);
 	assert(sc == RTEMS_SUCCESSFUL);
+
+	rtems_test_end(TEST_NAME);
 
 	exit(0);
 }

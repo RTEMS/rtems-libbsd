@@ -223,5 +223,8 @@ driver_filter_t dwc_otg_filter_interrupt;
 driver_intr_t dwc_otg_interrupt;
 int dwc_otg_init(struct dwc_otg_softc *);
 void dwc_otg_uninit(struct dwc_otg_softc *);
+#ifdef __rtems__
+void dwc_otg_platform_init(struct dwc_otg_softc *);
+#endif /* __rtems__ */
 
 #endif		/* _DWC_OTG_H_ */

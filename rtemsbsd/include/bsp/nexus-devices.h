@@ -152,8 +152,26 @@ RTEMS_BSD_DRIVER_USB_MASS;
 
 #elif defined(LIBBSP_ARM_STM32H7_BSP_H)
 
+#include <stm32h7xx.h>
+
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(stmac, 0, 0, NULL);
 SYSINIT_DRIVER_REFERENCE(ukphy, miibus);
+
+static const rtems_bsd_device_resource dwcotg_res[] = {
+	{
+		.type = RTEMS_BSD_RES_MEMORY,
+		.start_request = 0,
+		.start_actual = USB2_OTG_FS_PERIPH_BASE
+	}, {
+		.type = RTEMS_BSD_RES_IRQ,
+		.start_request = 0,
+		.start_actual = OTG_FS_IRQn
+	}
+};
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwcotg, 0, RTEMS_ARRAY_SIZE(dwcotg_res),
+    dwcotg_res);
+RTEMS_BSD_DRIVER_USB;
+RTEMS_BSD_DRIVER_USB_MASS;
 
 #elif defined(LIBBSP_I386_PC386_BSP_H)
 

@@ -228,6 +228,8 @@ class rtems(builder.Module):
                 'sys/dev/stmac/if_stmac.c',
                 'sys/dev/tsec/if_tsec_nexus.c',
                 'sys/dev/usb/controller/ehci_mpc83xx.c',
+                'sys/dev/usb/controller/dwc_otg_nexus.c',
+                'sys/dev/usb/controller/dwc_otg_stm32h7.c',
                 'sys/dev/usb/controller/ohci_lpc32xx.c',
                 'sys/dev/usb/controller/ohci_lpc.c',
                 'sys/dev/usb/controller/usb_otg_transceiver.c',

@@ -39,9 +39,10 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 #include <rtems/bsd/bsd.h>
-#include <rtems/test.h>
 
 #define TEST_NAME "LIBBSD EVDEV"
+#define TEST_STATE_USER_INPUT 1
+#include <rtems/test.h>
 
 #define PRIO_OPEN           (RTEMS_MAXIMUM_PRIORITY - 12)
 #define PRIO_KEYBOARD       (RTEMS_MAXIMUM_PRIORITY - 11)

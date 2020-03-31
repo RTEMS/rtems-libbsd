@@ -57,6 +57,7 @@
 #include <rtems/bsd/test/network-config.h>
 
 #define TEST_NAME "LIBBSD ZEROCOPY 1"
+#define TEST_STATE_USER_INPUT 1
 
 #define BUFFER_COUNT 128
 

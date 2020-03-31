@@ -40,6 +40,7 @@
 #include <rtems/bsd/test/network-config.h>
 
 #define TEST_NAME "LIBBSD NFS 1"
+#define TEST_STATE_USER_INPUT 1
 
 static void
 test_main(void)

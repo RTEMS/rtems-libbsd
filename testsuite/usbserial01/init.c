@@ -35,9 +35,10 @@
 #include <rtems/console.h>
 #include <rtems/shell.h>
 #include <rtems/bsd/bsd.h>
-#include <rtems/test.h>
 
 #define TEST_NAME "LIBBSD USB SERIAL"
+#define TEST_STATE_USER_INPUT 1
+#include <rtems/test.h>
 
 #define USB_SERIAL_TEST_BUFFER_SIZE 48
 #define PRIO_OPEN  (RTEMS_MAXIMUM_PRIORITY - 12)

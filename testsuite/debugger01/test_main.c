@@ -35,6 +35,7 @@
 #include <rtems/rtems-debugger-remote-tcp.h>
 
 #define TEST_NAME "LIBBSD DEBUGGER 1"
+#define TEST_STATE_USER_INPUT 1
 
 extern rtems_shell_cmd_t rtems_shell_DEBUGGER_Command;
 

@@ -41,6 +41,7 @@
 #include <rtems/termiostypes.h>
 
 #define TEST_NAME "LIBBSD NETSHELL 1"
+#define TEST_STATE_USER_INPUT 1
 
 static void
 change_serial_settings(int fd, const struct termios *current, bool icanon)

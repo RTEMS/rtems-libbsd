@@ -47,6 +47,7 @@
 #include <pthread.h>
 
 #define TEST_NAME "LIBBSD FOOBAR SERVER"
+#define TEST_STATE_USER_INPUT 1
 
 #define FOOBAR_PORT_BEGIN 10815
 

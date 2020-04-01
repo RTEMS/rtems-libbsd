@@ -436,6 +436,15 @@ rtems_bsd_mmcsd_attach_worker(rtems_media_state state, const char *src, char **d
 			goto error;
 		}
 
+		/*
+		 * FIXME: There is no release for this acquire. Implementing
+		 * this would be necessary for:
+		 * - multiple hardware partitions of eMMC chips
+		 * - multiple devices on one bus
+		 *
+		 * On the other hand it would mean that the bus has to be
+		 * acquired on every read which would decrease the performance.
+		 */
 		MMCBUS_ACQUIRE_BUS(device_get_parent(dev), dev);
 
 		status_code = rtems_bsd_mmcsd_set_block_size(dev, block_size);
@@ -764,6 +773,10 @@ mmcsd_add_part(struct mmcsd_softc *sc, u_int type, const char *name, u_int cnt,
 			free(part, M_DEVBUF);
 			return;
 		}
+#ifdef __rtems__
+	} else if (type != EXT_CSD_PART_CONFIG_ACC_DEFAULT) {
+		printf("%s: Additional partition. This is currently not supported in RTEMS.", part->name);
+#endif /* __rtems__ */
 	} else {
 		MMCSD_DISK_LOCK_INIT(part);
 

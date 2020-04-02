@@ -69,6 +69,9 @@ bus_dmamap_load_mbuf(bus_dma_tag_t dmat, bus_dmamap_t map,
 		int first = 1;
 		bus_addr_t lastaddr = 0;
 		struct mbuf *m;
+		if ((flags & BUS_DMA_LOAD_MBUF) != 0) {
+			map->flags |= DMAMAP_CACHE_ALIGNED;
+		}
 
 		for (m = m0; m != NULL && error == 0; m = m->m_next) {
 			if (m->m_len > 0) {

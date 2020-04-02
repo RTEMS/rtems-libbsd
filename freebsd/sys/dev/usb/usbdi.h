@@ -640,6 +640,10 @@ void	usbd_xfer_set_frame_data(struct usb_xfer *xfer, usb_frcount_t frindex,
 	    void *ptr, usb_frlength_t len);
 void	usbd_xfer_frame_data(struct usb_xfer *xfer, usb_frcount_t frindex,
 	    void **ptr, int *len);
+#ifdef __rtems__
+void	usbd_xfer_frame_allow_cache_line_blow_up(struct usb_xfer *xfer,
+	    usb_frcount_t frindex);
+#endif /* __rtems__ */
 void	usbd_xfer_set_frame_offset(struct usb_xfer *xfer, usb_frlength_t offset,
 	    usb_frcount_t frindex);
 usb_frlength_t usbd_xfer_max_len(struct usb_xfer *xfer);

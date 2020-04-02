@@ -45,7 +45,7 @@
 #if defined(LIBBSP_ARM_LPC24XX_BSP_H) || (defined(LIBBSP_ARM_LPC32XX_BSP_H) && defined(LPC32XX_DISABLE_MMU))
   /* No cache */
 #elif defined(LIBBSP_ARM_ALTERA_CYCLONE_V_BSP_H) || \
-  defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H) || (defined(LIBBSP_ARM_LPC32XX_BSP_H) && !defined(LPC32XX_DISABLE_MMU))
+  defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H) || (defined(LIBBSP_ARM_LPC32XX_BSP_H) && !defined(LPC32XX_DISABLE_MMU)) || defined(LIBBSP_ARM_IMX_BSP_H)
   /* With cache, no coherency support in hardware */
   #define CPU_DATA_CACHE_ALIGNMENT 32
 #elif defined(__GEN83xx_BSP_h)

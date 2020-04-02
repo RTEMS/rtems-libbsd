@@ -470,38 +470,31 @@ dwc_otg_uses_split(struct usb_device *udev)
 static void
 dwc_otg_update_host_frame_interval(struct dwc_otg_softc *sc)
 {
-
-  /*
-   * Disabled until further. Assuming that the register is already
-   * programmed correctly by the boot loader.
-   */
-#if 0
+	uint32_t fslpclksel;
+	uint32_t frint;
 	uint32_t temp;
 
-	/* setup HOST frame interval register, based on existing value */
-	temp = DWC_OTG_READ_4(sc, DOTG_HFIR) & HFIR_FRINT_MASK;
-	if (temp >= 10000)
-		temp /= 1000;
-	else
-		temp /= 125;
+	if (sc->sc_flags.status_high_speed ||
+	    sc->sc_phy_type != DWC_OTG_PHY_INTERNAL) {
+		fslpclksel = 0;
+		frint = 60000;
+	} else if (sc->sc_flags.status_low_speed) {
+		fslpclksel = 2;
+		frint = 6000;
+	} else {
+		fslpclksel = 1;
+		frint = 48000;
+	}
 
-	/* figure out nearest X-tal value */
-	if (temp >= 54)
-		temp = 60;	/* MHz */
-	else if (temp >= 39)
-		temp = 48;	/* MHz */
-	else
-		temp = 30;	/* MHz */
-
-	if (sc->sc_flags.status_high_speed)
-		temp *= 125;
-	else
-		temp *= 1000;
-
-	DPRINTF("HFIR=0x%08x\n", temp);
-
+	temp = DWC_OTG_READ_4(sc, DOTG_HFIR);
+	temp &= ~HFIR_FRINT_MASK;
+	temp |= frint;
 	DWC_OTG_WRITE_4(sc, DOTG_HFIR, temp);
-#endif
+
+	temp = DWC_OTG_READ_4(sc, DOTG_HCFG);
+	temp &= ~(HCFG_FSLSSUPP | HCFG_FSLSPCLKSEL_MASK);
+	temp |= (fslpclksel << HCFG_FSLSPCLKSEL_SHIFT);
+	DWC_OTG_WRITE_4(sc, DOTG_HCFG, temp);
 }
 
 static void
@@ -3049,8 +3042,10 @@ dwc_otg_interrupt(void *arg)
 		else
 			sc->sc_flags.status_high_speed = 0;
 
-		if (hprt & HPRT_PRTCONNDET)
+		if (hprt & HPRT_PRTCONNDET) {
 			sc->sc_flags.change_connect = 1;
+			dwc_otg_update_host_frame_interval(sc);
+		}
 
 		if (hprt & HPRT_PRTSUSP)
 			dwc_otg_suspend_irq(sc);
@@ -3059,9 +3054,6 @@ dwc_otg_interrupt(void *arg)
 
 		/* complete root HUB interrupt endpoint */
 		dwc_otg_root_intr(sc);
-
-		/* update host frame interval */
-		dwc_otg_update_host_frame_interval(sc);
 	}
 
 	/*
@@ -4047,14 +4039,6 @@ dwc_otg_init(struct dwc_otg_softc *sc)
 		    DIEPMSK_XFERCOMPLMSK);
 		DWC_OTG_WRITE_4(sc, DOTG_DOEPMSK, 0);
 		DWC_OTG_WRITE_4(sc, DOTG_DAINTMSK, 0xFFFF);
-	}
-
-	if (sc->sc_mode == DWC_MODE_OTG || sc->sc_mode == DWC_MODE_HOST) {
-		/* setup clocks */
-		temp = DWC_OTG_READ_4(sc, DOTG_HCFG);
-		temp &= ~(HCFG_FSLSSUPP | HCFG_FSLSPCLKSEL_MASK);
-		temp |= (1 << HCFG_FSLSPCLKSEL_SHIFT);
-		DWC_OTG_WRITE_4(sc, DOTG_HCFG, temp);
 	}
 
 	/* only enable global IRQ */

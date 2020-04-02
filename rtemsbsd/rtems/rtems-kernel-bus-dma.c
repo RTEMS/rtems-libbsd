@@ -365,9 +365,13 @@ bus_dmamap_load(bus_dma_tag_t dmat, bus_dmamap_t map, void *buf,
 
 	map->buffer_begin = buf;
 	map->buffer_size = buflen;
+	if ((flags & BUS_DMA_DO_CACHE_LINE_BLOW_UP) != 0) {
+		map->flags |= DMAMAP_CACHE_ALIGNED;
+	}
 
 	lastaddr = (vm_offset_t)0;
 	nsegs = 0;
+
 	error = bus_dmamap_load_buffer(dmat, dm_segments, buf, buflen,
 	    NULL, flags, &lastaddr, &nsegs, 1);
 
@@ -397,6 +401,11 @@ bus_dmamap_sync(bus_dma_tag_t dmat, bus_dmamap_t map, bus_dmasync_op_t op)
 	uintptr_t begin = (uintptr_t) map->buffer_begin;
 	uintptr_t end = begin + size;
 
+	if ((map->flags & DMAMAP_CACHE_ALIGNED) != 0) {
+		begin &= ~CLMASK;
+		end = (end + CLMASK) & ~CLMASK;
+		size = end - begin;
+	}
 	if ((op & BUS_DMASYNC_PREWRITE) != 0 && (op & BUS_DMASYNC_PREREAD) == 0) {
 		rtems_cache_flush_multiple_data_lines((void *) begin, size);
 	}

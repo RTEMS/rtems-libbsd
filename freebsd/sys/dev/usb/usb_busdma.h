@@ -102,6 +102,11 @@ struct usb_page_cache {
 					 * from the memory. Else write. */
 	uint8_t	ismultiseg:1;		/* set if we can have multiple
 					 * segments */
+#ifdef __rtems__
+	uint8_t dma_do_cache_line_blow_up:1;
+					/* set if it is OK to align the buffer
+					 * start and end to next cache line */
+#endif /* __rtems__ */
 #endif
 };
 

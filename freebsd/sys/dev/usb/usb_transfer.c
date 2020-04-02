@@ -2195,6 +2195,9 @@ usbd_xfer_set_frame_data(struct usb_xfer *xfer, usb_frcount_t frindex,
 	/* set virtual address to load and length */
 	xfer->frbuffers[frindex].buffer = ptr;
 	usbd_xfer_set_frame_len(xfer, frindex, len);
+#ifdef __rtems__
+	xfer->frbuffers[frindex].dma_do_cache_line_blow_up = 0;
+#endif /* __rtems__ */
 }
 
 void
@@ -2209,6 +2212,23 @@ usbd_xfer_frame_data(struct usb_xfer *xfer, usb_frcount_t frindex,
 		*len = xfer->frlengths[frindex];
 }
 
+#ifdef __rtems__
+/*------------------------------------------------------------------------*
+ *	usbd_xfer_frame_allow_cache_line_blow_up
+ *
+ * Set a flag that the buffer start and end belonging to this frame can be
+ * aligned to the next cache line on sync and flush.
+ *------------------------------------------------------------------------*/
+void
+usbd_xfer_frame_allow_cache_line_blow_up(struct usb_xfer *xfer,
+    usb_frcount_t frindex)
+{
+	KASSERT(frindex < xfer->max_frame_count, ("frame index overflow"));
+
+	xfer->frbuffers[frindex].dma_do_cache_line_blow_up = 1;
+}
+
+#endif /* __rtems__ */
 /*------------------------------------------------------------------------*
  *	usbd_xfer_old_frame_length
  *

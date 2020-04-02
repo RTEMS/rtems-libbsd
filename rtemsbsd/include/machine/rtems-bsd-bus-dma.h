@@ -75,6 +75,9 @@ struct bus_dma_tag {
 struct bus_dmamap {
 	void *buffer_begin;
 	bus_size_t buffer_size;
+	int flags;
+/* OK to flush / invalidate the complete cache line */
+#define DMAMAP_CACHE_ALIGNED	(1 << 0)
 };
 
 int

@@ -67,6 +67,9 @@
 #include <dev/usb/usb_controller.h>
 #include <dev/usb/usb_bus.h>
 #endif			/* USB_GLOBAL_INCLUDE_FILE */
+#ifdef __rtems__
+#include <machine/rtems-bsd-cache.h>
+#endif /* __rtems__ */
 
 #if USB_HAVE_BUSDMA
 static void	usb_dma_tag_create(struct usb_dma_tag *, usb_size_t, usb_size_t);
@@ -543,6 +546,15 @@ usb_pc_alloc_mem(struct usb_page_cache *pc, struct usb_page *pg,
 
 	uptag = pc->tag_parent;
 
+#if defined(__rtems__) && defined(CPU_DATA_CACHE_ALIGNMENT)
+	while (align % CPU_DATA_CACHE_ALIGNMENT != 0) {
+		align *= 2;
+	}
+	if (size % CPU_DATA_CACHE_ALIGNMENT != 0) {
+		size = (size + (CPU_DATA_CACHE_ALIGNMENT - 1)) &
+		    ~(CPU_DATA_CACHE_ALIGNMENT - 1);
+	}
+#endif /* __rtems__ */
 	if (align != 1) {
 		/*
 	         * The alignment must be greater or equal to the
@@ -605,7 +617,12 @@ usb_pc_alloc_mem(struct usb_page_cache *pc, struct usb_page *pg,
 	/* load memory into DMA */
 	err = bus_dmamap_load(
 	    utag->tag, map, ptr, size, &usb_pc_alloc_mem_cb,
+#if defined(__rtems__) && CPU_DATA_CACHE_ALIGNMENT
+	    pc, (BUS_DMA_WAITOK | BUS_DMA_COHERENT |
+	    BUS_DMA_DO_CACHE_LINE_BLOW_UP));
+#else /* __rtems__ */
 	    pc, (BUS_DMA_WAITOK | BUS_DMA_COHERENT));
+#endif /* __rtems__ */
 
 	if (err == EINPROGRESS) {
 		cv_wait(uptag->cv, uptag->mtx);
@@ -662,6 +679,12 @@ usb_pc_free_mem(struct usb_page_cache *pc)
 uint8_t
 usb_pc_load_mem(struct usb_page_cache *pc, usb_size_t size, uint8_t sync)
 {
+#ifdef __rtems__
+	int flags;
+
+	flags = pc->dma_do_cache_line_blow_up ?
+	    BUS_DMA_DO_CACHE_LINE_BLOW_UP : 0;
+#endif /* __rtems__ */
 	/* setup page cache */
 	pc->page_offset_buf = 0;
 	pc->page_offset_end = size;
@@ -687,7 +710,11 @@ usb_pc_load_mem(struct usb_page_cache *pc, usb_size_t size, uint8_t sync)
 			 */
 			err = bus_dmamap_load(
 			    pc->tag, pc->map, pc->buffer, size,
+#ifndef __rtems__
 			    &usb_pc_alloc_mem_cb, pc, BUS_DMA_WAITOK);
+#else /* __rtems__ */
+			    &usb_pc_alloc_mem_cb, pc, BUS_DMA_WAITOK | flags);
+#endif /* __rtems__ */
 			if (err == EINPROGRESS) {
 				cv_wait(uptag->cv, uptag->mtx);
 				err = 0;
@@ -709,7 +736,11 @@ usb_pc_load_mem(struct usb_page_cache *pc, usb_size_t size, uint8_t sync)
 			 */
 			if (bus_dmamap_load(
 			    pc->tag, pc->map, pc->buffer, size,
+#ifndef __rtems__
 			    &usb_pc_load_mem_cb, pc, BUS_DMA_WAITOK)) {
+#else /* __rtems__ */
+			    &usb_pc_load_mem_cb, pc, BUS_DMA_WAITOK | flags)) {
+#endif /* __rtems__ */
 			}
 		}
 	} else {

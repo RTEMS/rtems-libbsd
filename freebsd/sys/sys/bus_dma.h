@@ -105,6 +105,12 @@
 #define	BUS_DMA_KEEP_PG_OFFSET	0x400
 
 #define	BUS_DMA_LOAD_MBUF	0x800
+#ifdef __rtems__
+/*
+ * Hint that the start address and size can be aligned to the next cache line.
+ */
+#define BUS_DMA_DO_CACHE_LINE_BLOW_UP	0x80000000
+#endif /* __rtems__ */
 
 /* Forwards needed by prototypes below. */
 union ccb;

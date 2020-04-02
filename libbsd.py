@@ -5010,6 +5010,28 @@ class dpaa(builder.Module):
             mm.generator['source']()
         )
 
+class imx(builder.Module):
+    def __init__(self, manager):
+        super(imx, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/arm/freescale/imx/imx6_anatopreg.h',
+                'sys/arm/freescale/imx/imx6_anatopvar.h',
+                'sys/arm/freescale/imx/imx6_ccmreg.h',
+                'sys/arm/freescale/imx/imx6_machdep.h',
+                'sys/arm/freescale/imx/imx_machdep.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/arm/freescale/imx/imx6_ccm.c',
+            ],
+            mm.generator['source']()
+        )
+
 #
 # Tests
 #
@@ -5166,6 +5188,7 @@ def load(mm):
     mm.addModule(dev_nic_broadcomm(mm))
 
     mm.addModule(nvme(mm))
+    mm.addModule(imx(mm))
 
     # Add in_chksum
     mm.addModule(in_cksum(mm))

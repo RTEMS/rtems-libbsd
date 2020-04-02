@@ -5028,6 +5028,8 @@ class imx(builder.Module):
         self.addKernelSpaceSourceFiles(
             [
                 'sys/arm/freescale/imx/imx6_ccm.c',
+                'sys/arm/freescale/imx/imx6_usbphy.c',
+                'sys/dev/usb/controller/ehci_imx.c',
             ],
             mm.generator['source']()
         )

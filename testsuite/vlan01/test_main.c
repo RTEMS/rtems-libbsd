@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief A vlan creation using ifconfig is tested.
+ */
+
 /*
  * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
  *

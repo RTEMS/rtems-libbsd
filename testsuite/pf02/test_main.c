@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Packet filter rules are tested (see defines below).
+ *
+ * RTEMS shell starts at the end of the test.
+ */
+
 /*
  * Copyright (c) 2016 embedded brains GmbH.  All rights reserved.
  *

@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Same as media01 but without ftpd and telnetd.
+ *
+ * RTEMS shell starts at the end of the test.
+ */
+
 /*
  * Copyright (c) 2010, 2016 embedded brains GmbH.  All rights reserved.
  *

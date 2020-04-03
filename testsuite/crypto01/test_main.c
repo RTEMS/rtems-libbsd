@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief It tests /dev/crypto device.
+ */
+
 /*
  * Copyright (c) 2018 embedded brains GmbH.  All rights reserved.
  *

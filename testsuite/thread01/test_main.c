@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @brief The creation and execution of threads (RTEMS task, kproc, kthread) are tested.
+ *
+ * The main thread creates a worker and the waits until receives an event of the
+ * created worker.
+ */
+
 /*
  * Copyright (c) 2013, 2018 embedded brains GmbH.  All rights reserved.
  *

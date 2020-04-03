@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief It tests RTEMS debugger (TCP:1122).
+ */
+
 /*
  * Copyright (c) 2016 Chris Johns <chrisj@rtems.org>
  * All rights reserved.

@@ -1,3 +1,32 @@
+/**
+ * @file
+ *
+ * @brief A rc.conf script (rc_conf_text) is run. RTEMS shell starts at the end of the test.
+ *
+ * Tests:
+ *
+ * 1. rc.conf processing
+ *  1.1  syslog_priority
+ *  1.2  create_args_*
+ *  1.3  hostname
+ *  1.4  ifconfig_<iface>
+ *  1.5  vlans_<iface>
+ *  1.6  ifconfig_<iface>.<vlan>
+ *  1.7  defaultrouter
+ *  1.8  defaultroute_delay
+ *  1.9  ftp_enable
+ *  1.10 ftp_options
+ *  1.11 dhcpcd_priority
+ *  1.12 dhcpcd_options
+ *
+ * 2. dhcpcd (via vlan, should timeout unless VLAN is present)
+ *
+ * 3. get route, the defaultrouter sets a default route and the vlan DHCP
+ *    interface requires the default route be probed and found.
+ *
+ * 4. ftpd
+ */
+
 /*
  * Copyright 2016 Chris Johns <chrisj@rtems.org>
  *
@@ -21,31 +50,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-
-/*
- * Tests:
- *
- * 1. rc.conf processing
- *  1.1  syslog_priority
- *  1.2  create_args_*
- *  1.3  hostname
- *  1.4  ifconfig_<iface>
- *  1.5  vlans_<iface>
- *  1.6  ifconfig_<iface>.<vlan>
- *  1.7  defaultrouter
- *  1.8  defaultroute_delay
- *  1.9  ftp_enable
- *  1.10 ftp_options
- *  1.11 dhcpcd_priority
- *  1.12 dhcpcd_options
- *
- * 2. dhcpcd (via vlan, should timeout unless VLAN is present)
- *
- * 3. get route, the defaultrouter sets a default route and the vlan DHCP
- *    interface requires the default route be probed and found.
- *
- * 4. ftpd
  */
 
 #include <sys/param.h>

@@ -1,3 +1,10 @@
+/**
+ * @file
+ *
+ * The behavior of the following flags are tested: IGNCR, ISRTIP, IUCLC, ICRNL,
+ * INLCR, OPOST, ONLRET, ONLCR, ONOCR, OCRNL, OXTABS and OLCUC.
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2017.
  *  On-Line Applications Research Corporation (OAR).

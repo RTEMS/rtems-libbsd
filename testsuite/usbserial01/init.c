@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief USB serial adapter test.
+ *
+ * RTEMS shell starts at the end of the test.
+ */
+
 /*-
  * COPYRIGHT (c) 2017 Kevin Kirspel
  * All rights reserved.

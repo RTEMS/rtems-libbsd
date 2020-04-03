@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief read() and write() are tested using the termios utilities.
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2017.
  *  On-Line Applications Research Corporation (OAR).

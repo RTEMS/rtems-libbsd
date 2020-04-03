@@ -1,3 +1,12 @@
+/**
+ * @file
+ *
+ * @brief USB mouse test.
+ *
+ * This test requires a USB mouse to be attached to a USB port.
+ * RTEMS shell starts at the end of the test.
+ */
+
 /*-
  * COPYRIGHT (c) 2017 Kevin Kirspel
  * All rights reserved.
@@ -22,10 +31,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-
-/*
- * This test requires a USB mouse to be attached to a USB port.
  */
 
 #include <sys/malloc.h>

@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief Different mutex methods are tested.
+ */
+
 /*
  * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *

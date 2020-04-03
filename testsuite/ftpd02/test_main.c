@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief File handling basics are tested in an FTP file system locally.
+ */
+
 /*
  * Copyright (c) 2011, 2016 embedded brains GmbH.  All rights reserved.
  *

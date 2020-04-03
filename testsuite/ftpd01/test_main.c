@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief It starts an FTP daemon (ftpd).
+ */
+
 /*
  * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
  *

@@ -1,3 +1,10 @@
+/**
+ * @file
+ *
+ * The openssl certificate generation is tested and performance of
+ * cryptographic algorithm is shown.
+ */
+
 /*
  * Copyright (c) 2013-2019 embedded brains GmbH.  All rights reserved.
  *

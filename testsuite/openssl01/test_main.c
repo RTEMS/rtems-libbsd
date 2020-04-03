@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief It tests encryption and decryption using openssl.
+ */
+
 /*
  * Copyright (c) 2018 embedded brains GmbH.  All rights reserved.
  *

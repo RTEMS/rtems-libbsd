@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief RTEMS function wrappers for BSD programs test.
+ */
+
 /*
  * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
  *

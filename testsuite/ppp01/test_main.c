@@ -1,3 +1,17 @@
+/**
+ * @file
+ *
+ * To test PPP connect the RTEMS target with your host.  Start PPP on the host
+ * with something like this:
+ *
+ * pppd nodetach noauth 192.168.100.11:192.168.100.70 proxyarp 115200 dump \
+ *   local nocrtscts debug mtu 296 mru 296 nolock ms-dns 192.168.96.1 novj \
+ *   /dev/ttyS0
+ *
+ * Make sure IP forwarding is enabled and check the firewall settings if you
+ * want to access the internet.
+ */
+
 /*
  * Copyright (c) 2014, 2018 embedded brains GmbH.  All rights reserved.
  *
@@ -27,18 +41,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-
-/*
- * To test PPP connect the RTEMS target with your host.  Start PPP on the host
- * with something like this:
- *
- * pppd nodetach noauth 192.168.100.11:192.168.100.70 proxyarp 115200 dump \
- *   local nocrtscts debug mtu 296 mru 296 nolock ms-dns 192.168.96.1 novj \
- *   /dev/ttyS0
- *
- * Make sure IP forwarding is enabled and check the firewall settings if you
- * want to access the internet.
  */
 
 #include <assert.h>

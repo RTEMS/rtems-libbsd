@@ -1,8 +1,10 @@
 /**
  * @file
  *
- * This test program processes all ARP requests and claims every IP address it
- * notices.  Use with care in production networks.
+ * @brief This test program processes all ARP requests and claims every IP address it
+ * notices.
+ *
+ * Use with care in production networks.
  */
 
 /*

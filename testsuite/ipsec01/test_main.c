@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief It tests Internet Protocol Security protocol (ipsec).
+ *
+ * It needs a communication partner (see testsuit/ipsec01/README).
+ */
+
 /*
  * Copyright (c) 2018 embedded brains GmbH.  All rights reserved.
  *

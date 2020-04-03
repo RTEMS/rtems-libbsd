@@ -1,3 +1,13 @@
+/**
+ * @file
+ *
+ * @brief The multicast DNS (mDNS) protocol is tested.
+ *
+ * To run this test is also required to run foobarserver.
+ * The following functions are called: mDNS_StartBrowse(),
+ * mDNS_StartResolveService() and mDNS_StopResolveService().
+ */
+
 /*
  * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
  *

@@ -1,6 +1,9 @@
-/*
- *  This is the body of the test. It does not do much except ensure
- *  that the target is alive after initializing the TCP/IP stack.
+/**
+ * @file
+ *
+ * @brief It tests socket connections locally.
+ *
+ * The server and clients are running in different RTEMS tasks.
  */
 
 #include <stdlib.h>

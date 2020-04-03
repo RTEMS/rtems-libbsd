@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief Noncanonical mode test.
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2017.
  *  On-Line Applications Research Corporation (OAR).

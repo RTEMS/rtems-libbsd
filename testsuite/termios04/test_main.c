@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief IXON and IXOFF flags test.
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2017.
  *  On-Line Applications Research Corporation (OAR).

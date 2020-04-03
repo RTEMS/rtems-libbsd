@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief A program to test different setting of termios manually is run.
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2010.
  *  On-Line Applications Research Corporation (OAR).

@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief It tests to add a hook to DHCP client daemon (dhcpcd).
+ *
+ * Every time the hook is called, the environment is printed out.
+ */
+
 /*
  * Copyright (c) 2013, 2018 embedded brains GmbH.  All rights reserved.
  *

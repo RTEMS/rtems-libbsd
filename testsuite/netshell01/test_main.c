@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief RTEMS shell is started and it is possible to run net commands.
+ */
+
 /*
  * COPYRIGHT (c) 2012. On-Line Applications Research Corporation (OAR).
  * All rights reserved.
@@ -22,11 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-
-/*
- *  This is the body of the test. It does not do much except ensure
- *  that the target is alive after initializing the TCP/IP stack.
  */
 
 #include <assert.h>

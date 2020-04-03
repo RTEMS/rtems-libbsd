@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Zerocopy test.
+ *
+ * Telnet daemon (telnetd) is initilized.
+ */
+
 /*
  * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
  *

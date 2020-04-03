@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * The following epoch functions are tested with parallel tasks: epoch_enter(),
+ * epoch_exit(), epoch_call(), epoch_wait(), epoch_enter_preempt(),
+ * epoch_exit_preempt(), epoch_wait_preempt() and epoch_drain_callbacks().
+ */
+
 /*
  * Copyright (c) 2018 embedded brains GmbH.  All rights reserved.
  *

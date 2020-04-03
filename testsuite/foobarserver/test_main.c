@@ -1,3 +1,15 @@
+/**
+ * @file
+ *
+ * @brief The multicast DNS (mDNS) protocol is tested.
+ *
+ * To run this test is also required to run foobarclient.
+ * A TCP socket (SOCK_STREAM) is open from port FOOBAR_PORT_BEGIN to
+ * port FOOBAR_PORT_END - 1 on at a time.
+ * The following functions are called: mDNS_RegisterService(),
+ * mDNS_DeregisterService() and mDNS_RenameAndReregisterService().
+ */
+
 /*
  * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
  *

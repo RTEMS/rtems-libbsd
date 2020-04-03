@@ -1,3 +1,10 @@
+/**
+ * @file
+ *
+ * It creates a character device (cdev) and tests the basic i/o functions,
+ * e.g. open(), read(), write(), ioctl(), etc.
+ */
+
 /*
  * Copyright (c) 2016 embedded brains GmbH.  All rights reserved.
  *

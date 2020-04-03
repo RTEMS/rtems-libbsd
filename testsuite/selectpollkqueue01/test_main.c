@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * The following system calls are tested: select(), pselect(), poll(), kqueue() and pipe().
+ */
+
 /*
  * Copyright (c) 2013, 2019 embedded brains GmbH.  All rights reserved.
  *

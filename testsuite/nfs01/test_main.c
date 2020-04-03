@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief It mounts a network file system (nfs).
+ */
+
 /*
  * Copyright (c) 2016 embedded brains GmbH.  All rights reserved.
  *

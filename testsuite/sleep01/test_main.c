@@ -1,3 +1,13 @@
+/**
+ * @file
+ *
+ * The following functions are tested: msleep(), msleep_spin(), tsleep(),
+ * wakeup() and wakeup_one().
+ * SLAVE_COUNT tasks are created. Each one increments its own counter and
+ * then it is sent to sleep with tsleep(). All tasks are grouped under the
+ * same channel. This means that all threads are woken up if wakeup() is called.
+ */
+
 /*
  * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
  *

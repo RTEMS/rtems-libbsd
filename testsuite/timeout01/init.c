@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief The timeout and callout functions are tested.
+ */
+
 /*
  * Copyright (c) 2012 embedded brains GmbH.  All rights reserved.
  *

@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief Different logging levels are tested.
+ */
+
 /*
  * Copyright (c) 2016 embedded brains GmbH.  All rights reserved.
  *

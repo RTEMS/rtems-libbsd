@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief It tests the DHCP client daemon (dhcpcd).
+ */
+
 /*
  * Copyright (c) 2013-2014 embedded brains GmbH.  All rights reserved.
  *

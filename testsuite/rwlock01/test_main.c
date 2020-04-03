@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief Readers-writer lock is tested.
+ */
+
 /*
  * Copyright (c) 2013 embedded brains GmbH.  All rights reserved.
  *

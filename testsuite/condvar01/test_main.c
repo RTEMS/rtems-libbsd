@@ -1,3 +1,10 @@
+/**
+ * @file
+ *
+ * It tests condition variable (condvar) sending RTEMS events to two
+ * workers (RTEMS tasks).
+ */
+
 /*
  * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
  *

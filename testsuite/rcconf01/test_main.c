@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * The following functions are tested: rtems_bsd_rc_conf_argc_argv_create(),
+ * rtems_bsd_rc_conf_find(), rtems_bsd_rc_conf_print_cmd() and
+ * rtems_bsd_rc_conf_find_next().
+ */
+
 /*
  * Copyright 2016 Chris Johns <chrisj@rtems.org>
  *

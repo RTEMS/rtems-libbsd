@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Software interrupts (swi) are tested.
+ *
+ * The following functions are called: swi_add() and swi_sched().
+ */
+
 /*
  * Copyright (c) 2012 embedded brains GmbH.  All rights reserved.
  *

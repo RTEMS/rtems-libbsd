@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief Different event devices (evdev) are tested in different RTEMS tasks.
+ */
+
 /*-
  * COPYRIGHT (c) 2017 Kevin Kirspel
  * All rights reserved.

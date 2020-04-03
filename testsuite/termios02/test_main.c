@@ -1,3 +1,10 @@
+/**
+ * @file
+ *
+ * The following system calls are tested: tcflow(), tcflush(), tcgetpgrp(),
+ * tcsendbreak() and ctermid().
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2017.
  *  On-Line Applications Research Corporation (OAR).

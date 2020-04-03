@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Code used to test the Media Manager.
+ *
+ * Telnet daemon (telnetd) and FTP daemon (ftpd) are started. Events are recorded.
+ */
+
 /*
  * Copyright (c) 2010-2016 embedded brains GmbH.  All rights reserved.
  *

@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Settings of termios (e.g. baudrate, parity, etc.) are tested.
+ *
+ * tcsetattr() is used to change the settings.
+ */
+
 /*
  *  COPYRIGHT (c) 1989-2010.
  *  On-Line Applications Research Corporation (OAR).

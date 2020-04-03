@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * @brief The telnet daemon is run.
+ */
+
 /*
  * Copyright (c) 2014 embedded brains GmbH.  All rights reserved.
  *

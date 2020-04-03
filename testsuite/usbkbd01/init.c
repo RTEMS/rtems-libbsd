@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief USB keyboard test.
+ *
+ * RTEMS shell starts at the end of the test.
+ */
+
 /*-
  * COPYRIGHT (c) 2017 Kevin Kirspel
  * All rights reserved.

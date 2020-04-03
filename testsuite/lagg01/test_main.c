@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief A link aggregation (lagg) is tested.
+ *
+ * ifconfig command is used to do this.
+ */
+
 /*
  * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
  *

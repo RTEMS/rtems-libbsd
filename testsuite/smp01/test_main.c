@@ -1,3 +1,11 @@
+/**
+ * @file
+ *
+ * @brief Symetric Multiprocessing (smp) is tested.
+ *
+ * Parallel jobs are run with rtems_test_parallel().
+ */
+
 /*
  * Copyright (c) 2015 embedded brains GmbH.  All rights reserved.
  *

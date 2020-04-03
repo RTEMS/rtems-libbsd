@@ -1,4 +1,6 @@
-/*
+/**
+ * @file
+ *
  *  This is the body of the test. It does not do much except ensure
  *  that the target is alive after initializing the TCP/IP stack.
  */

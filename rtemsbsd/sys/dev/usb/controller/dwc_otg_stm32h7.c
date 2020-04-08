@@ -82,6 +82,7 @@ dwc_otg_platform_init(struct dwc_otg_softc *sc)
 	stm32h7_gpio_init(&dwc_otg_pin_id);
 	stm32h7_clk_enable(STM32H7_MODULE_USB2_OTG);
 	stm32h7_clk_low_power_disable(STM32H7_MODULE_USB2_OTG_ULPI);
+	HAL_PWREx_EnableUSBVoltageDetector();
 }
 
 #endif /* LIBBSP_ARM_STM32H7_BSP_H */

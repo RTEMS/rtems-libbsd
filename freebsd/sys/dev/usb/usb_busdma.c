@@ -584,7 +584,11 @@ usb_pc_alloc_mem(struct usb_page_cache *pc, struct usb_page *pg,
 	}
 	/* allocate memory */
 	if (bus_dmamem_alloc(
+#if !defined(__rtems__) || USB_NEED_BUSDMA_COHERENT_ALLOC
 	    utag->tag, &ptr, (BUS_DMA_WAITOK | BUS_DMA_COHERENT), &map)) {
+#else /* __rtems__ */
+	    utag->tag, &ptr, BUS_DMA_WAITOK, &map)) {
+#endif /* __rtems__ */
 		goto error;
 	}
 	/* setup page cache */

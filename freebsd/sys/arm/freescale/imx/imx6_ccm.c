@@ -51,7 +51,14 @@ __FBSDID("$FreeBSD$");
 #include <arm/freescale/imx/imx6_anatopvar.h>
 #include <arm/freescale/imx/imx6_ccmreg.h>
 #include <arm/freescale/imx/imx_machdep.h>
+#ifndef __rtems__
 #include <arm/freescale/imx/imx_ccmvar.h>
+#else /* __rtems__ */
+#include <bsp.h>
+#ifdef LIBBSP_ARM_IMX_BSP_H
+#include <arm/freescale/imx/imx_ccmvar.h>
+#endif /* LIBBSP_ARM_IMX_BSP_H */
+#endif /* __rtems__ */
 
 #ifndef CCGR_CLK_MODE_ALWAYS
 #define	CCGR_CLK_MODE_OFF		0

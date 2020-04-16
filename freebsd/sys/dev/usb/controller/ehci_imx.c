@@ -67,7 +67,9 @@ __FBSDID("$FreeBSD$");
 #include <machine/bus.h>
 #include <machine/resource.h>
 
+#ifndef __rtems__
 #include <arm/freescale/imx/imx_ccmvar.h>
+#endif /* __rtems__ */
 
 #include <rtems/bsd/local/opt_platform.h>
 

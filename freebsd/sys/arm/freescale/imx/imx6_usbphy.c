@@ -49,7 +49,11 @@ __FBSDID("$FreeBSD$");
 
 #include <machine/bus.h>
 
+#ifndef __rtems__
 #include <arm/freescale/imx/imx_ccmvar.h>
+#else /* __rtems__ */
+void imx_ccm_usbphy_enable(device_t _phydev);
+#endif /* __rtems__ */
 #include <arm/freescale/imx/imx6_anatopreg.h>
 #include <arm/freescale/imx/imx6_anatopvar.h>
 #ifdef __rtems__

@@ -90,6 +90,14 @@ _defaults = {
     'cpu-include-paths': ['rtemsbsd/@CPU@/include',
                           'freebsd/sys/@CPU@/include'],
 
+    #
+    # Map paths based on RTEMS naming to FreeBSD naming.
+    #
+    'path-mappings': [     # (source, targets)
+    # i386
+    ('freebsd/sys/i386/include', ['freebsd/sys/x86/include', 'freebsd/sys/i386/include']),
+    ],
+
     # The path where headers will be copied during build.
     'build-include-path': ['build-include'],
 

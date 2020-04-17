@@ -210,8 +210,6 @@ class Builder(builder.ModuleManager):
         buildinclude = 'build-include'
         if 'cpu-include-paths' in config:
             cpu = bld.get_env()['RTEMS_ARCH']
-            if cpu == "i386":
-                cpu = 'x86'
             for i in config['cpu-include-paths']:
                 includes += [i.replace('@CPU@', cpu)]
         if 'include-paths' in config:
@@ -221,6 +219,17 @@ class Builder(builder.ModuleManager):
             if not isinstance(buildinclude, basestring):
                 buildinclude = buildinclude[0]
         includes += [buildinclude]
+
+        #
+        # Path mappings
+        #
+        if 'path-mappings' in config:
+            for source, target in config['path-mappings']:
+                if source in includes:
+                    target = [target] if isinstance(target, str) else target
+                    i = includes.index(source)
+                    includes.remove(source)
+                    includes[i:i] = target
 
         #
         # Collect the libbsd uses

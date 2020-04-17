@@ -161,7 +161,9 @@ struct iflib_ctx {
 	device_t ifc_dev;
 	if_t ifc_ifp;
 
+#ifndef __rtems__
 	cpuset_t ifc_cpus;
+#endif /* __rtems__ */
 	if_shared_ctx_t ifc_sctx;
 	struct if_softc_ctx ifc_softc_ctx;
 
@@ -1279,6 +1281,7 @@ prefetch2cachelines(void *x)
 #define prefetch2cachelines(x)
 #endif
 
+#ifndef __rtems__
 static void
 iflib_gen_mac(if_ctx_t ctx)
 {
@@ -1310,6 +1313,7 @@ iflib_gen_mac(if_ctx_t ctx)
 	mac[4] = digest[1];
 	mac[5] = digest[2];
 }
+#endif /* __rtems__ */
 
 static void
 iru_init(if_rxd_update_t iru, iflib_rxq_t rxq, uint8_t flid)
@@ -4448,6 +4452,7 @@ get_ctx_core_offset(if_ctx_t ctx)
 		qc = max(scctx->isc_ntxqsets, scctx->isc_nrxqsets);
 
 	mtx_lock(&cpu_offset_mtx);
+#ifndef __rtems__
 	SLIST_FOREACH(op, &cpu_offsets, entries) {
 		if (CPU_CMP(&ctx->ifc_cpus, &op->set) == 0) {
 			ret = op->offset;
@@ -4457,6 +4462,7 @@ get_ctx_core_offset(if_ctx_t ctx)
 			break;
 		}
 	}
+#endif /* __rtems__ */
 	if (ret == CORE_OFFSET_UNSPECIFIED) {
 		ret = 0;
 		op = malloc(sizeof(struct cpu_offset), M_IFLIB,
@@ -4467,7 +4473,9 @@ get_ctx_core_offset(if_ctx_t ctx)
 		} else {
 			op->offset = qc;
 			op->refcount = 1;
+#ifndef __rtems__
 			CPU_COPY(&ctx->ifc_cpus, &op->set);
+#endif /* __rtems__ */
 			SLIST_INSERT_HEAD(&cpu_offsets, op, entries);
 		}
 	}
@@ -4483,7 +4491,11 @@ unref_ctx_core_offset(if_ctx_t ctx)
 
 	mtx_lock(&cpu_offset_mtx);
 	SLIST_FOREACH_SAFE(op, &cpu_offsets, entries, top) {
+#ifndef __rtems__
 		if (CPU_CMP(&ctx->ifc_cpus, &op->set) == 0) {
+#else /* __rtems__ */
+		{
+#endif /* __rtems__ */
 			MPASS(op->refcount > 0);
 			op->refcount--;
 			if (op->refcount == 0) {
@@ -4594,12 +4606,14 @@ iflib_device_register(device_t dev, void *sc, if_shared_ctx_t sctx, if_ctx_t *ct
 	taskqgroup_attach(qgroup_if_config_tqg, &ctx->ifc_admin_task, ctx,
 	    -1, "admin");
 
+#ifndef __rtems__
 	/* Set up cpu set.  If it fails, use the set of all CPUs. */
 	if (bus_get_cpus(dev, INTR_CPUS, sizeof(ctx->ifc_cpus), &ctx->ifc_cpus) != 0) {
 		device_printf(dev, "Unable to fetch CPU list\n");
 		CPU_COPY(&all_cpus, &ctx->ifc_cpus);
 	}
 	MPASS(CPU_COUNT(&ctx->ifc_cpus) > 0);
+#endif /* __rtems__ */
 
 	/*
 	** Now set up MSI or MSI-X, should return us the number of supported
@@ -5427,7 +5441,9 @@ iflib_queues_alloc(if_ctx_t ctx)
 			txq->ift_br_offset = 0;
 		}
 		/* XXX fix this */
+#ifndef __rtems__
 		txq->ift_timer.c_cpu = cpu;
+#endif /* __rtems__ */
 
 		if (iflib_txsd_alloc(txq)) {
 			device_printf(dev, "Critical Failure setting up TX buffers\n");
@@ -6233,11 +6249,19 @@ iflib_msix_init(if_ctx_t ctx)
 #else
 	queues = queuemsgs;
 #endif
+#ifndef __rtems__
 	queues = imin(CPU_COUNT(&ctx->ifc_cpus), queues);
+#else /* __rtems__ */
+	queues = imin(1, queues);
+#endif /* __rtems__ */
 	if (bootverbose)
 		device_printf(dev,
 		    "intr CPUs: %d queue msgs: %d admincnt: %d\n",
+#ifndef __rtems__
 		    CPU_COUNT(&ctx->ifc_cpus), queuemsgs, admincnt);
+#else /* __rtems__ */
+		    1, queuemsgs, admincnt);
+#endif /* __rtems__ */
 #ifdef  RSS
 	/* If we're doing RSS, clamp at the number of RSS buckets */
 	if (queues > rss_getnumbuckets())

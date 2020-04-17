@@ -43,6 +43,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/module.h>
 #include <sys/gpio.h>
 
+#if !defined(__rtems__) || defined(FDT)
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
 
@@ -348,3 +349,4 @@ static devclass_t gpioregulator_devclass;
 EARLY_DRIVER_MODULE(gpioregulator, simplebus, gpioregulator_driver,
     gpioregulator_devclass, 0, 0, BUS_PASS_INTERRUPT + BUS_PASS_ORDER_LAST);
 MODULE_VERSION(gpioregulator, 1);
+#endif /* !__rtems__ || FDT */

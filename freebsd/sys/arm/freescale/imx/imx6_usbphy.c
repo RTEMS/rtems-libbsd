@@ -138,7 +138,7 @@ usbphy_attach(device_t dev)
 #ifdef __rtems__
 	node = ofw_bus_get_node(dev);
 	if (OF_hasprop(node, "vbus-supply")) {
-		rv = regulator_get_by_ofw_property(sc->dev, 0, "vbus-supply",
+		rv = regulator_get_by_ofw_property(sc->dev, node, "vbus-supply",
 		    &sc->supply_vbus);
 		if (rv != 0) {
 			device_printf(sc->dev,

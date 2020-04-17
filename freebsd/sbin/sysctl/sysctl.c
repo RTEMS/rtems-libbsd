@@ -69,7 +69,9 @@ static const char rcsid[] =
 #endif
 
 #if defined(__amd64__) || defined(__i386__)
+#ifndef __rtems__
 #include <machine/pc/bios.h>
+#endif /* __rtems__ */
 #endif
 
 #include <assert.h>
@@ -832,6 +834,7 @@ S_efi_map(size_t l2, void *p)
 #endif
 
 #if defined(__amd64__) || defined(__i386__)
+#ifndef __rtems__
 static int
 S_bios_smap_xattr(size_t l2, void *p)
 {
@@ -850,6 +853,7 @@ S_bios_smap_xattr(size_t l2, void *p)
 		    (uintmax_t)smap->length);
 	return (0);
 }
+#endif /* __rtems__ */
 #endif
 
 static int
@@ -1061,7 +1065,11 @@ show_var(int *oid, int nlen)
 #endif
 #if defined(__amd64__) || defined(__i386__)
 		else if (strcmp(fmt, "S,bios_smap_xattr") == 0)
+#ifndef __rtems__
 			func = S_bios_smap_xattr;
+#else /* __rtems__ */
+			func = NULL;
+#endif /* __rtems__ */
 #endif
 		else {
 			func = NULL;

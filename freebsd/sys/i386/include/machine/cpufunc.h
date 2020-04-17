@@ -233,11 +233,13 @@ fls(int mask)
 
 #define	HAVE_INLINE_FLSL
 
+#ifndef __rtems__
 static __inline __pure2 int
 flsl(long mask)
 {
 	return (fls((int)mask));
 }
+#endif /* __rtems__ */
 
 #endif /* _KERNEL */
 

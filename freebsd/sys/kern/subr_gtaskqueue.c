@@ -744,7 +744,9 @@ taskqgroup_attach(struct taskqgroup *qgroup, struct grouptask *gtask,
 			    __func__, gtask->gt_name, error);
 	} else
 #else /* __rtems__ */
+#ifndef __i386__
 	BSD_ASSERT(irq == -1);
+#endif /* __i386__ */
 #endif /* __rtems__ */
 		mtx_unlock(&qgroup->tqg_lock);
 }
@@ -776,7 +778,9 @@ taskqgroup_attach_deferred(struct taskqgroup *qgroup, struct grouptask *gtask)
 
 	}
 #else /* __rtems__ */
+#ifndef __i386__
 	BSD_ASSERT(gtask->gt_irq == -1);
+#endif /* __i386__ */
 #endif /* __rtems__ */
 	qgroup->tqg_queue[qid].tgc_cnt++;
 	LIST_INSERT_HEAD(&qgroup->tqg_queue[qid].tgc_tasks, gtask, gt_list);

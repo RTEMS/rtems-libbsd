@@ -112,9 +112,15 @@ int	callout_reset_sbt_on(struct callout *, sbintime_t, sbintime_t,
 #define	callout_reset_sbt_curcpu(c, sbt, pr, fn, arg, flags)		\
     callout_reset_sbt_on((c), (sbt), (pr), (fn), (arg), PCPU_GET(cpuid),\
         (flags))
+#ifndef __rtems__
 #define	callout_reset_on(c, to_ticks, fn, arg, cpu)			\
     callout_reset_sbt_on((c), tick_sbt * (to_ticks), 0, (fn), (arg),	\
         (cpu), C_HARDCLOCK)
+#else /* __rtems__ */
+#define	callout_reset_on(c, to_ticks, fn, arg, cpu)			\
+    callout_reset_sbt_on((c), tick_sbt * (to_ticks), 0, (fn), (arg),	\
+        -1, C_HARDCLOCK)
+#endif /* __rtems__ */
 #define	callout_reset(c, on_tick, fn, arg)				\
     callout_reset_on((c), (on_tick), (fn), (arg), -1)
 #define	callout_reset_curcpu(c, on_tick, fn, arg)			\

@@ -5072,7 +5072,6 @@ class regulator(builder.Module):
                 'sys/dev/extres/regulator/regulator.c',
                 'sys/dev/extres/regulator/regulator_bus.c',
                 'sys/dev/extres/regulator/regulator_fixed.c',
-                'sys/dev/gpio/gpioregulator.c',
             ],
             mm.generator['source']()
         )

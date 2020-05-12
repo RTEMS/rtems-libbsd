@@ -151,7 +151,6 @@ SYSINIT_DRIVER_REFERENCE(sdhci_fsl, simplebus);
 RTEMS_BSD_DRIVER_MMC;
 
 SYSINIT_DRIVER_REFERENCE(ofw_regulator_bus, simplebus);
-SYSINIT_DRIVER_REFERENCE(gpioregulator, simplebus);
 
 #elif defined(LIBBSP_ARM_LPC24XX_BSP_H)
 

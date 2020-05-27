@@ -37,6 +37,10 @@ __FBSDID("$FreeBSD$");
 #include <sys/endian.h>
 #include <sys/linker.h>
 #include <sys/kdb.h>
+#ifdef __rtems__
+#include <machine/rtems-bsd-cache.h>
+#include <rtems/malloc.h>
+#endif /* __rtems__ */
 
 #include <net/if.h>
 #include <net/if_var.h>
@@ -115,7 +119,14 @@ rtwn_usb_alloc_list(struct rtwn_softc *sc, struct rtwn_data data[],
 	for (i = 0; i < ndata; i++) {
 		struct rtwn_data *dp = &data[i];
 		dp->m = NULL;
+#if defined(__rtems__) && defined(CPU_DATA_CACHE_ALIGNMENT)
+		maxsz = maxsz + (CPU_DATA_CACHE_ALIGNMENT - 1) &
+		    ~(CPU_DATA_CACHE_ALIGNMENT - 1);
+		dp->buf = rtems_heap_allocate_aligned_with_boundary(maxsz,
+		    CPU_DATA_CACHE_ALIGNMENT, 0);
+#else /* __rtems__ */
 		dp->buf = malloc(maxsz, M_USBDEV, M_NOWAIT);
+#endif /* __rtems__ */
 		if (dp->buf == NULL) {
 			device_printf(sc->sc_dev,
 			    "could not allocate buffer\n");

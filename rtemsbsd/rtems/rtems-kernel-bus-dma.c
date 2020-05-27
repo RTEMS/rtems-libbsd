@@ -48,6 +48,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-cache.h>
 #include <machine/rtems-bsd-bus-dma.h>
+#include <bsp.h>
+#include <bsp/linker-symbols.h>
 
 #include <rtems/malloc.h>
 
@@ -400,6 +402,12 @@ bus_dmamap_sync(bus_dma_tag_t dmat, bus_dmamap_t map, bus_dmasync_op_t op)
 	uintptr_t size = map->buffer_size;
 	uintptr_t begin = (uintptr_t) map->buffer_begin;
 	uintptr_t end = begin + size;
+#ifdef __arm__
+	if (begin >= (uintptr_t)bsp_section_nocache_begin &&
+	    end <= (uintptr_t)bsp_section_nocachenoload_end) {
+		return;
+	}
+#endif
 
 	if ((map->flags & DMAMAP_CACHE_ALIGNED) != 0) {
 		begin &= ~CLMASK;

@@ -714,8 +714,16 @@ ffec_encap(struct ifnet *ifp, struct ffec_softc *sc, struct mbuf *m0,
 		tx_desc->buf_paddr = segs[i].ds_addr;
 		tx_desc->flags2 = flags2;
 #ifdef __rtems__
-		rtems_cache_flush_multiple_data_lines((void *)segs[i].ds_addr,
-		    segs[i].ds_len);
+		uintptr_t addr_flush = (uintptr_t)segs[i].ds_addr;
+		size_t len_flush = segs[i].ds_len;
+#ifdef CPU_CACHE_LINE_BYTES
+		/* mbufs should be cache line aligned. So we can just round. */
+		addr_flush = addr_flush & ~(CPU_CACHE_LINE_BYTES - 1);
+		len_flush = (len_flush + (CPU_CACHE_LINE_BYTES - 1)) &
+		    ~(CPU_CACHE_LINE_BYTES - 1);
+#endif
+		rtems_cache_flush_multiple_data_lines((void*)addr_flush,
+		    len_flush);
 #endif /* __rtems__ */
 
 		if (i == 0) {

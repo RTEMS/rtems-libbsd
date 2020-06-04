@@ -128,6 +128,7 @@ _defaults = {
      ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),
      ('freebsd/sys/dev/pci',                    '**/*.h',                          'dev/pci'),
      ('freebsd/sys/dev/nvme',                   '**/*.h',                          'dev/nvme'),
+     ('freebsd/sys/dev/evdev',                  '**/*.h',                          'dev/evdev'),
      ('linux/include',                          '**/*.h',                          ''),
      ('mDNSResponder/mDNSCore',                 'mDNSDebug.h',                     ''),
      ('mDNSResponder/mDNSCore',                 'mDNSEmbeddedAPI.h',               ''),

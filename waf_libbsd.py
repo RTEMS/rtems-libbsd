@@ -452,19 +452,11 @@ class Builder(builder.ModuleManager):
             for arch in archs:
                 if bld.get_env()['RTEMS_ARCH'] == arch:
                     bld_sources += Builder._sourceList(bld, build[arch])
-            if 'cflags' in build:
-                bld_defines = [d[2:] for d in build['cflags']]
-            else:
-                bld_defines = []
-            if 'includes' in build:
-                bld_includes = build['includes']
-            else:
-                bld_includes = []
             bld.objects(target = target,
                         features = 'c',
-                        cflags = cflags,
-                        includes = sorted(bld_includes) + includes,
-                        defines = defines + sorted(bld_defines),
+                        cflags = cflags + sorted(build.get('cflags', [])),
+                        includes = sorted(build.get('includes', [])) + includes,
+                        defines = defines,
                         source = bld_sources)
             libbsd_use += [target]
 

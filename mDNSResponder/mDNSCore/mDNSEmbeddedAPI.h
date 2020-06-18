@@ -3665,6 +3665,46 @@ extern void D2D_stop_advertising_record(AuthRecord *ar);
 
 // ***************************************************************************
 
+#ifdef __rtems__
+typedef struct
+{
+    // Client API fields: The client must set up name and InterfaceID *before* calling mDNS_StartResolveService()
+    // When the callback is invoked, ip, port, TXTlen and TXTinfo will have been filled in with the results learned from the network.
+    domainname name;
+    mDNSInterfaceID InterfaceID;        // ID of the interface the response was received on
+    mDNSAddr ip;                        // Remote (destination) IP address where this service can be accessed
+    mDNSIPPort port;                    // Port where this service can be accessed
+    mDNSu16 TXTlen;
+    mDNSu8 TXTinfo[2048];               // Additional demultiplexing information (e.g. LPR queue name)
+} ServiceInfo;
+
+// Note: Within an mDNSServiceInfoQueryCallback mDNS all API calls are legal except mDNS_Init(), mDNS_Exit(), mDNS_Execute()
+typedef struct ServiceInfoQuery_struct ServiceInfoQuery;
+typedef void mDNSServiceInfoQueryCallback (mDNS *const m, ServiceInfoQuery *query);
+struct ServiceInfoQuery_struct
+{
+    // Internal state fields. These are used internally by mDNSCore; the client layer needn't be concerned with them.
+    // No fields need to be set up by the client prior to calling mDNS_StartResolveService();
+    // all required data is passed as parameters to that function.
+    // The ServiceInfoQuery structure memory is working storage for mDNSCore to discover the requested information
+    // and place it in the ServiceInfo structure. After the client has called mDNS_StopResolveService(), it may
+    // dispose of the ServiceInfoQuery structure while retaining the results in the ServiceInfo structure.
+    DNSQuestion qSRV;
+    DNSQuestion qTXT;
+    DNSQuestion qAv4;
+    DNSQuestion qAv6;
+    mDNSu8 GotSRV;
+    mDNSu8 GotTXT;
+    mDNSu8 GotADD;
+    mDNSu32 Answers;
+    ServiceInfo                  *info;
+    mDNSServiceInfoQueryCallback *ServiceInfoQueryCallback;
+    void                         *ServiceInfoQueryContext;
+};
+
+extern mStatus mDNS_StartResolveService(mDNS *const m, ServiceInfoQuery *query, ServiceInfo *info, mDNSServiceInfoQueryCallback *Callback, void *Context);
+extern void    mDNS_StopResolveService (mDNS *const m, ServiceInfoQuery *query);
+#endif /* __rtems__ */
 #ifdef __cplusplus
 }
 #endif

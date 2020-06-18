@@ -274,17 +274,12 @@ mDNSexport void SetAnonData(DNSQuestion *q, ResourceRecord *rr, mDNSBool ForQues
     }
 }
 
-mDNSlocal char *RRDisplayStringBuf(const ResourceRecord *const rr, char *const buffer)
-{
-    return GetRRDisplayString_rdb(rr, &rr->rdata->u, buffer);
-}
-
 // returns -1 if the caller should ignore the result
 // returns 1 if the record answers the question
 // returns 0 if the record does not answer the question
 mDNSexport int AnonInfoAnswersQuestion(const ResourceRecord *const rr, const DNSQuestion *const q)
 {
-    char MsgBuffer[MaxMsg];             // Temp storage used while building error log messages
+    mDNSexport mDNS mDNSStorage;
     ResourceRecord *nsec3RR;
     int i;
     AnonymousInfo *qai, *rai;
@@ -368,7 +363,7 @@ mDNSexport int AnonInfoAnswersQuestion(const ResourceRecord *const rr, const DNS
             mDNSPlatformMemCmp(qai->AnonData, rai->AnonData, qai->AnonDataLen) != 0)
         {
             debugf("AnonInfoAnswersQuestion: AnonData mis-match for record  %s question %##s ",
-                RRDisplayStringBuf(rr, MsgBuffer), q->qname.c);
+                RRDisplayString(&mDNSStorage, rr), q->qname.c);
             return 0;
         }
         // AnonData matches i.e they belong to the same group and the same service.
@@ -406,10 +401,10 @@ mDNSexport int AnonInfoAnswersQuestion(const ResourceRecord *const rr, const DNS
         // AnonData can be NULL for the cache entry and if we are hearing our own question back, AnonData is NULL for
         // that too and we can end up here for that case.
         debugf("AnonInfoAnswersQuestion: AnonData %p or nsec3RR %p, NULL for question %##s, record %s", AnonData, nsec3RR,
-            q->qname.c, RRDisplayStringBuf(rr, MsgBuffer));
+            q->qname.c, RRDisplayString(&mDNSStorage, rr));
         return 0;
     }
-    debugf("AnonInfoAnswersQuestion: Validating question %##s, ResourceRecord %s", q->qname.c, RRDisplayStringBuf(nsec3RR, MsgBuffer));
+    debugf("AnonInfoAnswersQuestion: Validating question %##s, ResourceRecord %s", q->qname.c, RRDisplayString(&mDNSStorage, nsec3RR));
 
 
     nsec3 = (rdataNSEC3 *)nsec3RR->rdata->u.data;
@@ -441,7 +436,7 @@ mDNSexport int AnonInfoAnswersQuestion(const ResourceRecord *const rr, const DNS
             return 0;
         }
     }
-    LogInfo("AnonInfoAnswersQuestion: ResourceRecord %s matched question %##s (%s)", RRDisplayStringBuf(nsec3RR, MsgBuffer), q->qname.c, DNSTypeName(q->qtype));
+    LogInfo("AnonInfoAnswersQuestion: ResourceRecord %s matched question %##s (%s)", RRDisplayString(&mDNSStorage, nsec3RR), q->qname.c, DNSTypeName(q->qtype));
     return 1;
 }
 

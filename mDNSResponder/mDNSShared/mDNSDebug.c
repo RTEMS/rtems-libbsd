@@ -60,11 +60,7 @@ mDNSlocal void LogMsgWithLevelv(mDNSLogLevel_t logLevel, const char *format, va_
 {
     char buffer[512];
     buffer[mDNS_vsnprintf((char *)buffer, sizeof(buffer), format, ptr)] = 0;
-#ifndef __rtems__
     mDNSPlatformWriteLogMsg(ProgramName, buffer, logLevel);
-#else /* __rtems__ */
-    mDNSPlatformWriteLogMsg(NULL, buffer, logLevel);
-#endif /* __rtems__ */
 }
 
 #define LOG_HELPER_BODY(L) \

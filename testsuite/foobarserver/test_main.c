@@ -110,7 +110,7 @@ foobar_register(mDNSu16 port)
 	MakeDomainNameFromDNSNameString(&domain, "local.");
 
 	status = mDNS_RegisterService(&mDNSStorage, srs, &name, &type, &domain,
-	    NULL, mDNSOpaque16fromIntVal(port), NULL, 0, NULL, 0,
+	    NULL, mDNSOpaque16fromIntVal(port), NULL, NULL, 0, NULL, 0,
 	    mDNSInterface_Any, foobar_callback, srs, 0);
 	assert(status == mStatus_NoError);
 

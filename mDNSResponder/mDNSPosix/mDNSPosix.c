@@ -40,10 +40,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>                   // platform support for UTC time
-#ifdef __rtems__
-#include <sys/param.h>
-#include <rtems/libio_.h>
-#endif /* __rtems__ */
 
 #if USES_NETLINK
 #include <asm/types.h>
@@ -80,12 +76,7 @@ struct IfChangeRec
 typedef struct IfChangeRec IfChangeRec;
 
 // Note that static data is initialized to zero in (modern) C.
-#ifndef __rtems__
 static fd_set gEventFDs;
-#else /* __rtems__ */
-static fd_set *gAllocatedEventFDs;
-#define gEventFDs (*gAllocatedEventFDs)
-#endif /* __rtems__ */
 static int gMaxFD;                              // largest fd in gEventFDs
 static GenLinkedList gEventSources;             // linked list of PosixEventSource's
 static sigset_t gEventSignalSet;                // Signals which event loop listens for
@@ -448,15 +439,6 @@ mDNSexport mDNSBool mDNSPlatformSetDNSConfig(mDNSBool setservers, mDNSBool setse
     (void) RegDomains;
     (void) BrowseDomains;
     (void) ackConfig;
-#ifdef __rtems__
-    /*
-     * Copied from mDNSMacOSX/mDNSMacOSX.c to prevent use of uninitialized
-     * stack variables.
-     */
-    if (fqdn         ) fqdn->c[0]      = 0;
-    if (RegDomains   ) *RegDomains     = NULL;
-    if (BrowseDomains) *BrowseDomains  = NULL;
-#endif /* __rtems__ */
 
     return mDNStrue;
 }
@@ -675,7 +657,6 @@ mDNSlocal int SetupSocket(struct sockaddr *intfAddr, mDNSIPPort port, int interf
         #endif
         if (err < 0) { err = errno; perror("setsockopt - SO_REUSExxxx"); }
 
-#ifndef __rtems__
         // Enable inbound packets on IFEF_AWDL interface.
         // Only done for multicast sockets, since we don't expect unicast socket operations
         // on the IFEF_AWDL interface. Operation is a no-op for other interface types.
@@ -683,7 +664,6 @@ mDNSlocal int SetupSocket(struct sockaddr *intfAddr, mDNSIPPort port, int interf
         #define SO_RECV_ANYIF   0x1104      /* unrestricted inbound processing */
         #endif
         if (setsockopt(*sktPtr, SOL_SOCKET, SO_RECV_ANYIF, &kOn, sizeof(kOn)) < 0) perror("setsockopt - SO_RECV_ANYIF");
-#endif /* __rtems__ */
     }
 
     // We want to receive destination addresses and interface identifiers.
@@ -1228,23 +1208,14 @@ mDNSlocal mDNSu32       ProcessRoutingNotification(int sd)
 mDNSlocal void InterfaceChangeCallback(int fd, short filter, void *context)
 {
     IfChangeRec     *pChgRec = (IfChangeRec*) context;
-#ifndef __rtems__
     fd_set readFDs;
-#else /* __rtems__ */
-    fd_set bigEnoughReadFDs[howmany(rtems_libio_number_iops, sizeof(fd_set) * 8)];
-#define readFDs (*(&bigEnoughReadFDs[0]))
-#endif /* __rtems__ */
     mDNSu32 changedInterfaces = 0;
     struct timeval zeroTimeout = { 0, 0 };
 
     (void)fd; // Unused
     (void)filter; // Unused
 
-#ifndef __rtems__
     FD_ZERO(&readFDs);
-#else /* __rtems__ */
-    memset(bigEnoughReadFDs, 0, sizeof(bigEnoughReadFDs));
-#endif /* __rtems__ */
     FD_SET(pChgRec->NotifySD, &readFDs);
 
     do
@@ -1301,9 +1272,6 @@ mDNSexport mStatus mDNSPlatformInit(mDNS *const m)
 {
     int err = 0;
     struct sockaddr sa;
-#ifdef __rtems__
-    pthread_mutexattr_t attr;
-#endif /* __rtems__ */
     assert(m != NULL);
 
     if (mDNSPlatformInit_CanReceiveUnicast()) m->CanReceiveUnicastOn5353 = mDNStrue;
@@ -1321,16 +1289,6 @@ mDNSexport mStatus mDNSPlatformInit(mDNS *const m)
     if (m->hostlabel.c[0] == 0) MakeDomainLabelFromLiteralString(&m->hostlabel, "Computer");
 
     mDNS_SetFQDN(m);
-#ifdef __rtems__
-    if (err == mStatus_NoError) {
-        gAllocatedEventFDs = calloc(howmany(rtems_libio_number_iops, sizeof(fd_set) * 8), sizeof(fd_set));
-        if (gAllocatedEventFDs == NULL) err = mStatus_NoMemoryErr;
-    }
-    if (err == mStatus_NoError) err = pthread_mutexattr_init(&attr);
-    if (err == mStatus_NoError) err = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
-    if (err == mStatus_NoError) err = pthread_mutex_init(&m->p->mutex, &attr);
-    if (err == mStatus_NoError) err = pthread_mutexattr_destroy(&attr);
-#endif /* __rtems__ */
 
     sa.sa_family = AF_INET;
     m->p->unicastSocket4 = -1;
@@ -1415,22 +1373,14 @@ mDNSexport mStatus mDNSPlatformPosixRefreshInterfaceList(mDNS *const m)
 // the platform from reentering mDNS core code.
 mDNSexport void    mDNSPlatformLock   (const mDNS *const m)
 {
-#ifndef __rtems__
     (void) m;   // Unused
-#else /* __rtems__ */
-    pthread_mutex_lock(&m->p->mutex);
-#endif /* __rtems__ */
 }
 
 // mDNS core calls this routine when it release the lock taken by
 // mDNSPlatformLock and allow the platform to reenter mDNS core code.
 mDNSexport void    mDNSPlatformUnlock (const mDNS *const m)
 {
-#ifndef __rtems__
     (void) m;   // Unused
-#else /* __rtems__ */
-    pthread_mutex_unlock(&m->p->mutex);
-#endif /* __rtems__ */
 }
 
 #if COMPILER_LIKES_PRAGMA_MARK
@@ -1553,7 +1503,7 @@ mDNSexport void    mDNSPlatformMemZero(void *dst, mDNSu32 len)
     memset(dst, 0, len);
 }
 
-mDNSexport void *  mDNSPlatformMemAllocate(mDNSu32 len) { return(calloc(1, len)); }
+mDNSexport void *  mDNSPlatformMemAllocate(mDNSu32 len) { return(malloc(len)); }
 mDNSexport void    mDNSPlatformMemFree    (void *mem)   { free(mem); }
 
 #if _PLATFORM_HAS_STRONG_PRNG_
@@ -1804,10 +1754,8 @@ mStatus mDNSPosixAddFDToEventLoop(int fd, mDNSPosixEventCallback callback, void 
     if (gEventSources.LinkOffset == 0)
         InitLinkedList(&gEventSources, offsetof(PosixEventSource, Next));
 
-#ifndef __rtems__
     if (fd >= (int) FD_SETSIZE || fd < 0)
         return mStatus_UnsupportedErr;
-#endif /* __rtems__ */
     if (callback == NULL)
         return mStatus_BadParamErr;
 
@@ -1887,13 +1835,7 @@ mStatus mDNSPosixIgnoreSignalInEventLoop(int signum)
 mStatus mDNSPosixRunEventLoopOnce(mDNS *m, const struct timeval *pTimeout,
                                   sigset_t *pSignalsReceived, mDNSBool *pDataDispatched)
 {
-#ifndef __rtems__
     fd_set listenFDs = gEventFDs;
-#else /* __rtems__ */
-    fd_set bigEnoughListenFDs[howmany(rtems_libio_number_iops, sizeof(fd_set) * 8)];
-#define listenFDs (*(&bigEnoughListenFDs[0]))
-    memcpy(bigEnoughListenFDs, gAllocatedEventFDs, sizeof(bigEnoughListenFDs));
-#endif /* __rtems__ */
     int fdMax = 0, numReady;
     struct timeval timeout = *pTimeout;
 

@@ -110,8 +110,12 @@ static void
 test_fini(rtems_test_parallel_context *base, const char *name,
     size_t active_workers)
 {
+	rtems_status_code sc;
 	test_context *ctx;
 	size_t i;
+
+	sc = rtems_task_wake_after(CK_EPOCH_LENGTH);
+	assert(sc == RTEMS_SUCCESSFUL);
 
 	ctx = (test_context *)base;
 

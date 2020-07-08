@@ -397,71 +397,36 @@ DirInfo	dip;
 
 /* Macro for accessing serporid fields
  */
-#define SERP_ARGS(node) ((node)->serporid.serporid_u.serporid.arg_u)
-#define SERP_ATTR(node) ((node)->serporid.serporid_u.serporid.attributes)
-#define SERP_FILE(node) ((node)->serporid.serporid_u.serporid.file)
-
-/*
- * FIXME: The use of the serporid structure with several embedded unions to
- * split up the specific NFS request/response structures is quite a hack.  It
- * breaks on 64-bit targets due to the presence of pointer members which affect
- * the overall alignment.  Use a packed serporidok structure to hopefully fix
- * this issue.
- */
+#define SERP_ARGS(node) ((node)->serporid.serporid)
+#define SERP_ATTR(node) ((node)->serporid.serporid.attributes)
+#define SERP_FILE(node) ((node)->serporid.serporid.file)
 
 typedef struct serporidok {
 	fattr					attributes;
-	nfs_fh					file;
 	union	{
-		struct {
-			filename	name;
-		}					diroparg;
-		struct {
-			sattr		attributes;
-		}					sattrarg;
-		struct {
-			uint32_t	offset;
-			uint32_t	count;
-			uint32_t	totalcount;
-		}					readarg;
-		struct {
-			uint32_t	beginoffset;
-			uint32_t	offset;
-			uint32_t	totalcount;
-			struct {
-				uint32_t data_len;
-				char* data_val;
-			}			data;
-		}					writearg;
-		struct {
-			filename	name;
-			sattr		attributes;
-		}					createarg;
-		struct {
-			filename	name;
-			diropargs	to;
-		}					renamearg;
-		struct {
-			diropargs	to;
-		}					linkarg;
-		struct {
-			filename	name;
-			nfspath		to;
-			sattr		attributes;
-		}					symlinkarg;
-		struct {
-			nfscookie	cookie;
-			uint32_t	count;
-		}					readdirarg;
-	}							arg_u;
-} RTEMS_PACKED serporidok;
+		nfs_fh				file;
+		diropargs			diroparg;
+		sattrargs			sattrarg;
+		readargs			readarg;
+		writeargs			writearg;
+		createargs			createarg;
+		renameargs			renamearg;
+		linkargs			linkarg;
+		symlinkargs			symlinkarg;
+		readdirargs			readdirarg;
+	};
+} serporidok;
 
+/*
+ * The nfsstat is an enum, so has an integer alignment.  The serporid contains
+ * pointers, so has at least a pointer alignment.  The packed attribute ensures
+ * that there is no gap between the status and serporid members on 64-bit
+ * targets.
+ */
 typedef struct serporid {
 	nfsstat			status;
-	union	{
-		serporidok	serporid;
-	}				serporid_u;
-} serporid;
+	serporidok		serporid;
+} RTEMS_PACKED serporid;
 
 /* an XDR routine to encode/decode the inverted diropres
  * into an nfsnodestat;
@@ -493,7 +458,7 @@ xdr_serporid(XDR *xdrs, serporid *objp)
          return FALSE;
     switch (objp->status) {
     case NFS_OK:
-         if (!xdr_serporidok(xdrs, &objp->serporid_u.serporid))
+         if (!xdr_serporidok(xdrs, &objp->serporid))
              return FALSE;
         break;
     default:
@@ -2040,7 +2005,7 @@ char					*dupname;
 
         rtems_clock_get_tod_timeval(&now);
 
-	SERP_ARGS(node).createarg.name       		= dupname;
+	SERP_ARGS(node).createarg.where.name		= dupname;
 	SERP_ARGS(node).createarg.attributes.mode	= mode;
 	SERP_ARGS(node).createarg.attributes.uid	= nfs->uid;
 	SERP_ARGS(node).createarg.attributes.gid	= nfs->gid;
@@ -2134,7 +2099,7 @@ char					*dupname;
 
 	rtems_clock_get_tod_timeval(&now);
 
-	SERP_ARGS(node).symlinkarg.name       		= dupname;
+	SERP_ARGS(node).symlinkarg.from.name			= dupname;
 	SERP_ARGS(node).symlinkarg.to				= (nfspath) target;
 
 	SERP_ARGS(node).symlinkarg.attributes.mode	= S_IFLNK | S_IRWXU | S_IRWXG | S_IRWXO;
@@ -2231,7 +2196,7 @@ static int nfs_rename(
 		nfs_fh *toDirDst = &SERP_ARGS(oldParentNode).renamearg.to.dir;
 		nfsstat	status;
 
-		SERP_ARGS(oldParentNode).renamearg.name = oldNode->str;
+		SERP_ARGS(oldParentNode).renamearg.from.name = oldNode->str;
 		SERP_ARGS(oldParentNode).renamearg.to.name = dupname;
 		memcpy(toDirDst, toDirSrc, sizeof(*toDirDst));
 

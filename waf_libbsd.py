@@ -57,6 +57,10 @@ if windows:
 else:
     host_shell = ''
 
+def _add_flags_if_not_present(current_flags, addional_flags):
+    for flag in addional_flags:
+        if flag not in current_flags:
+            current_flags.append(flag)
 
 #
 # The waf builder for libbsd.
@@ -182,6 +186,10 @@ class Builder(builder.ModuleManager):
                                           mandatory=False)
                     else:
                         bld.fatal('invalid config test: %s' % (configTest))
+            section_flags = ["-fdata-sections", "-ffunction-sections"]
+            _add_flags_if_not_present(conf.env.CFLAGS, section_flags)
+            _add_flags_if_not_present(conf.env.CXXFLAGS, section_flags)
+            _add_flags_if_not_present(conf.env.LINKFLAGS, ["-Wl,--gc-sections"])
 
     def build(self, bld):
         #

@@ -38,6 +38,7 @@
  */
 
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/modules.h>
 #include <rtems/dhcpcd.h>
 
 #include <sysexits.h>
@@ -76,7 +77,11 @@ rtems_bsd_initialize_dhcp(void)
 
 #define RTEMS_BSD_CONFIG_NET_PF_UNIX
 #define RTEMS_BSD_CONFIG_NET_IP_MROUTE
+
+#ifdef RTEMS_BSD_MODULE_NETINET6
 #define RTEMS_BSD_CONFIG_NET_IP6_MROUTE
+#endif
+
 #define RTEMS_BSD_CONFIG_NET_IF_BRIDGE
 #define RTEMS_BSD_CONFIG_NET_IF_LAGG
 #define RTEMS_BSD_CONFIG_NET_IF_VLAN

@@ -48,7 +48,7 @@
 
 #define TEST_NAME "LIBBSD EVDEV"
 #define TEST_STATE_USER_INPUT 1
-#include <rtems/test.h>
+#include <rtems/test-info.h>
 
 #define PRIO_OPEN           (RTEMS_MAXIMUM_PRIORITY - 12)
 #define PRIO_KEYBOARD       (RTEMS_MAXIMUM_PRIORITY - 11)

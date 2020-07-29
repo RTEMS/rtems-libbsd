@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <rtems/printer.h>
-#include <rtems/test.h>
+#include <rtems/test-info.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
 

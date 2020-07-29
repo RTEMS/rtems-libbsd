@@ -47,7 +47,7 @@
 
 #define TEST_NAME "LIBBSD USB MOUSE"
 #define TEST_STATE_USER_INPUT 1
-#include <rtems/test.h>
+#include <rtems/test-info.h>
 
 #define USB_SERIAL_TEST_BUFFER_SIZE 48
 #define PRIO_OPEN  (RTEMS_MAXIMUM_PRIORITY - 12)

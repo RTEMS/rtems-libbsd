@@ -48,8 +48,6 @@
 #include <machine/rtems-bsd-kernel-space.h>
 #include <machine/rtems-bsd-cache.h>
 #include <machine/rtems-bsd-bus-dma.h>
-#include <bsp.h>
-#include <bsp/linker-symbols.h>
 
 #include <rtems/malloc.h>
 
@@ -59,6 +57,10 @@
 #ifdef CPU_DATA_CACHE_ALIGNMENT
   #define CLSZ ((uintptr_t) CPU_DATA_CACHE_ALIGNMENT)
   #define CLMASK (CLSZ - (uintptr_t) 1)
+#endif
+
+#ifdef __arm__
+#include <bsp/linker-symbols.h>
 #endif
 
 /*

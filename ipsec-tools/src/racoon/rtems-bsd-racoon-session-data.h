@@ -2,8 +2,8 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-racoon-data.h"
 /* session.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static _types_fd_set active_mask);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static _types_fd_set preset_mask);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static fd_set active_mask);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static fd_set preset_mask);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int nfds);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static int signals[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, static sig_atomic_t volatile volatile sigreq[]);

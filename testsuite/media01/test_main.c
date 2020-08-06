@@ -123,7 +123,7 @@ telnet_shell(char *name, void *arg)
 {
 	rtems_shell_env_t env;
 
-	memset(&env, 0, sizeof(env));
+	rtems_shell_dup_current_env(&env);
 
 	env.devname = name;
 	env.taskname = "TLNT";

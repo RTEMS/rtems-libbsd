@@ -162,7 +162,7 @@ test_main(void)
 {
 	rtems_shell_env_t env;
 
-	memset(&env, 0, sizeof(env));
+	rtems_shell_dup_current_env(&env);
 	rtems_shell_main_loop(&env);
 
 	exit(0);

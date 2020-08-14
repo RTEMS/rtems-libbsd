@@ -1837,8 +1837,14 @@ em_if_update_admin_status(if_ctx_t ctx)
 
 	if (adapter->hw.mac.type < em_mac_min)
 		lem_smartspeed(adapter);
+#ifdef __rtems__
+	else if (hw->mac.type == e1000_82574 &&
+			adapter->intr_type == IFLIB_INTR_MSIX)
+		E1000_WRITE_REG(&adapter->hw, E1000_IMS, EM_MSIX_LINK | E1000_IMS_LSC);
+#else /* __rtems__ */
 
 	E1000_WRITE_REG(&adapter->hw, E1000_IMS, EM_MSIX_LINK | E1000_IMS_LSC);
+#endif /* __rtems__ */
 }
 
 static void

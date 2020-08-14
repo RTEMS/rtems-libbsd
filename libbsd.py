@@ -1513,10 +1513,14 @@ class dev_net(builder.Module):
                 'sys/net/if_types.h',
                 'sys/net/if_var.h',
                 'sys/net/vnet.h',
+                'sys/net/mp_ring.h',
+                'sys/net/iflib_private.h',
             ]
         )
         self.addKernelSpaceSourceFiles(
             [
+                'sys/net/iflib.c',
+                'sys/net/mp_ring.c',
                 'sys/arm/ti/cpsw/if_cpsw.c',
                 'sys/dev/ffec/if_ffec.c',
                 'sys/dev/mii/mii.c',
@@ -1569,12 +1573,13 @@ class dev_nic(builder.Module):
         self.addCPUDependentFreeBSDHeaderFiles(
             [
                 'sys/arm/include/cpufunc.h',
-                'sys/i386/include/specialreg.h',
                 'sys/i386/include/md_var.h',
                 'sys/i386/include/intr_machdep.h',
                 'sys/x86/include/intr_machdep.h',
-                'sys/x86/include/metadata.h',
                 'sys/i386/include/cpufunc.h',
+                'sys/x86/include/intr_machdep.h',
+                'sys/x86/include/specialreg.h',
+                'sys/x86/include/x86_var.h',
                 'sys/mips/include/cpufunc.h',
                 'sys/mips/include/cpuregs.h',
                 'sys/powerpc/include/cpufunc.h',
@@ -2918,7 +2923,6 @@ class pci(builder.Module):
         self.addCPUDependentFreeBSDHeaderFiles(
             [
                 'sys/i386/include/_bus.h',
-                'sys/i386/include/bus.h',
                 'sys/x86/include/legacyvar.h',
                 'sys/x86/include/bus.h',
                 'sys/x86/include/pci_cfgreg.h',

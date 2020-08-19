@@ -333,6 +333,7 @@ OF_interpret(const char *cmd, int nreturns, ...)
  * Device tree functions
  */
 
+#ifndef __rtems__
 /* Return the next sibling of this node or 0. */
 phandle_t
 OF_peer(phandle_t node)
@@ -672,6 +673,7 @@ OF_xref_from_node(phandle_t node)
 		return (node);
 	return (xref);
 }
+#endif /* __rtems__ */
 
 device_t
 OF_device_from_xref(phandle_t xref)

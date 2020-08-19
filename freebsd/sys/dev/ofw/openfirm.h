@@ -64,7 +64,11 @@
 
 #include <sys/types.h>
 #include <machine/_bus.h>
+#ifdef __rtems__
+#include <ofw/ofw_compat.h>
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 /*
  * Prototypes for Open Firmware Interface Routines
  */
@@ -72,6 +76,7 @@
 typedef uint32_t	ihandle_t;
 typedef uint32_t	phandle_t;
 typedef uint32_t	pcell_t;
+#endif /* __rtems__ */
 
 #ifdef _KERNEL
 #include <sys/malloc.h>
@@ -102,6 +107,7 @@ int		OF_test(const char *name);
 void		OF_printf(const char *fmt, ...);
 
 /* Device tree functions */
+#ifndef __rtems__
 phandle_t	OF_peer(phandle_t node);
 phandle_t	OF_child(phandle_t node);
 phandle_t	OF_parent(phandle_t node);
@@ -140,6 +146,7 @@ ssize_t		OF_package_to_path(phandle_t node, char *buf, size_t len);
  */
 phandle_t	OF_node_from_xref(phandle_t xref);
 phandle_t	OF_xref_from_node(phandle_t node);
+#endif /* __rtems__ */
 
 /*
  * When properties contain references to other nodes using xref handles it is
@@ -159,8 +166,10 @@ ssize_t		OF_read(ihandle_t instance, void *buf, size_t len);
 ssize_t		OF_write(ihandle_t instance, const void *buf, size_t len);
 int		OF_seek(ihandle_t instance, uint64_t where);
 
+#ifndef __rtems__
 phandle_t	OF_instance_to_package(ihandle_t instance);
 ssize_t		OF_instance_to_path(ihandle_t instance, char *buf, size_t len);
+#endif /* __rtems__ */
 int		OF_call_method(const char *method, ihandle_t instance,
 		    int nargs, int nreturns, ...);
 

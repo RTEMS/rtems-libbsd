@@ -47,6 +47,7 @@ import libbsd
 isForward = True
 isEarlyExit = False
 statsReport = False
+isConfig = False
 
 def usage():
     print("freebsd-to-rtems.py [args]")
@@ -59,14 +60,15 @@ def usage():
     print("  -R|--reverse      default origin -> LibBSD, reverse that")
     print("  -r|--rtems        LibBSD directory (default: '.')")
     print("  -f|--freebsd      FreeBSD origin directory (default: 'freebsd-org')")
+    print("  -c|--config       Output the configuration then exit")
     print("  -v|--verbose      enable verbose output mode")
 
 # Parse the arguments
 def parseArguments():
-    global isForward, isEarlyExit, statsReport
+    global isForward, isEarlyExit, statsReport, isConfig
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   "?hdDembSRr:f:v",
+                                   "?hdDembSRr:f:cv",
                                    [ "help",
                                      "help",
                                      "dry-run"
@@ -78,6 +80,7 @@ def parseArguments():
                                      "stats"
                                      "rtems="
                                      "freebsd="
+                                     "config"
                                      "verbose" ])
     except getopt.GetoptError as err:
         # print help information and exit:
@@ -104,6 +107,8 @@ def parseArguments():
             builder.LIBBSD_DIR = a
         elif o in ("-f", "--freebsd"):
             builder.FreeBSD_DIR = a
+        elif o in ("-c", "--config"):
+            isConfig = True
         else:
             assert False, "unhandled option"
 
@@ -127,24 +132,31 @@ def wasDirectorySet(desc, path):
         print("error:" + desc + " Directory (" + path + ") does not exist")
         sys.exit(2)
 
-# Were directories specified?
-wasDirectorySet( "LibBSD", builder.LIBBSD_DIR )
-wasDirectorySet( "FreeBSD", builder.FreeBSD_DIR )
-
-# Are we generating or reverting?
-if isForward == True:
-    print("Forward from", builder.FreeBSD_DIR, "into", builder.LIBBSD_DIR)
-else:
-    print("Reverting from", builder.LIBBSD_DIR)
-
-if isEarlyExit == True:
-    print("Early exit at user request")
-    sys.exit(0)
-
 try:
+    if not isConfig:
+        # Were directories specified?
+        wasDirectorySet( "LibBSD", builder.LIBBSD_DIR )
+        wasDirectorySet( "FreeBSD", builder.FreeBSD_DIR )
+
+        # Are we generating or reverting?
+        if isForward == True:
+            print("Forward from", builder.FreeBSD_DIR, "into", builder.LIBBSD_DIR)
+        else:
+            print("Reverting from", builder.LIBBSD_DIR)
+
+        if isEarlyExit == True:
+            print("Early exit at user request")
+            sys.exit(0)
+
     build = builder.ModuleManager()
     libbsd.load(build)
     build.generateBuild(only_enabled=False)
+
+    if isConfig:
+        print()
+        print(build)
+        sys.exit(0)
+
     build.processSource(isForward)
     builder.changedFileSummary(statsReport)
 except IOError as ioe:

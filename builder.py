@@ -537,6 +537,16 @@ class BuildSystemFragmentComposer(object):
         else:
             self.includes = includes
 
+    def __str__(self):
+        return ''
+
+    def get_includes(self):
+        if None in self.includes:
+            incs = []
+        else:
+            incs = self.includes
+        return incs
+
     def compose(self, path):
         return ''
 
@@ -545,11 +555,14 @@ class SourceFileFragmentComposer(BuildSystemFragmentComposer):
     def __init__(self, cflags="default", includes=None):
         self.cflags, self.includes = _cflagsIncludes(cflags, includes)
 
+    def _get_flags(self):
+        return self.cflags + self.get_includes()
+
+    def __str__(self):
+        return 'SF: ' + ' '.join(self._get_flags())
+
     def compose(self, path):
-        if None in self.includes:
-            flags = self.cflags
-        else:
-            flags = self.cflags + self.includes
+        flags = self._get_flags()
         return ['sources', flags,
                 ('default', None)], [path], self.cflags, self.includes
 
@@ -561,6 +574,12 @@ class SourceFileIfHeaderComposer(SourceFileFragmentComposer):
         self.headers = headers
         super(SourceFileIfHeaderComposer, self).__init__(cflags=cflags,
                                                          includes=includes)
+    def __str__(self):
+        incs = self.headers + self.get_includes
+        if len(incs) > 0:
+            return 'SFIH:' + ' '.join(incs)
+        else:
+            return ''
 
     def compose(self, path):
         r = SourceFileFragmentComposer.compose(self, path)
@@ -588,6 +607,9 @@ class TestFragementComposer(BuildSystemFragmentComposer):
         self.runTest = runTest
         self.netTest = netTest
         self.extraLibs = extraLibs
+
+    def __str__(self):
+        return 'TEST: ' + self.testName
 
     def compose(self, path):
         return ['tests', self.testName, ('default', None)], {
@@ -717,10 +739,9 @@ class YaccFragmentComposer(BuildSystemFragmentComposer):
         return ['yacc', path, ('default', None)], d
 
 
-#
-# File - a file in the source we move backwards and forwards.
-#
 class File(object):
+    '''A file of source we move backwards and forwards and build.'''
+
     def __init__(self, path, pathComposer, forwardConverter, reverseConverter,
                  buildSystemComposer):
         if verbose(verboseMoreDetail):
@@ -736,6 +757,13 @@ class File(object):
         self.forwardConverter = forwardConverter
         self.reverseConverter = reverseConverter
         self.buildSystemComposer = buildSystemComposer
+
+    def __str__(self):
+        out = self.path
+        bsc = str(self.buildSystemComposer)
+        if len(bsc) > 0:
+            out += ' (' + bsc + ')'
+        return out
 
     def processSource(self, forward):
         if forward:
@@ -754,10 +782,9 @@ class File(object):
             self.pathComposer.composeLibBSDPath(self.path, ''))
 
 
-#
-# Module - logical group of related files we can perform actions on
-#
 class Module(object):
+    '''Logical group of related files we can perform actions on'''
+
     def __init__(self, manager, name, enabled=True):
         self.manager = manager
         self.name = name
@@ -765,6 +792,20 @@ class Module(object):
         self.files = []
         self.cpuDependentSourceFiles = {}
         self.dependencies = []
+
+    def __str__(self):
+        out = [self.name + ': ' + self.conditionalOn]
+        if len(self.dependencies) > 0:
+            out += [' Deps: ' + str(len(self.dependencies))]
+            out += ['  ' + type(d).__name__ for d in self.dependencies]
+        if len(self.files) > 0:
+            out += [' Files: ' + str(len(self.files))]
+            out += ['  ' + str(f) for f in self.files]
+        if len(self.cpuDependentSourceFiles) > 0:
+            out += [' CPU Dep: ' + str(len(self.cpuDependentSourceFiles))]
+            for cpu in self.cpuDependentSourceFiles:
+                out += ['  ' + cpu + ':' + str(f) for f in self.cpuDependentSourceFiles[cpu]]
+        return os.linesep.join(out)
 
     def initCPUDependencies(self, cpu):
         if cpu not in self.cpuDependentSourceFiles:
@@ -778,15 +819,6 @@ class Module(object):
         for cpu, files in self.cpuDependentSourceFiles.items():
             for f in files:
                 f.processSource(direction)
-
-    def addFiles(self,
-                 newFiles,
-                 buildSystemComposer=BuildSystemFragmentComposer()):
-        files = []
-        for newFile in newFiles:
-            assertFile(newFile)
-            files += [File(newFile, composers, buildSystemComposer)]
-        return files
 
     def addFile(self, f):
         self.files += [f]
@@ -920,10 +952,9 @@ class Module(object):
         self.dependencies += [dep]
 
 
-#
-# Manager - a collection of modules.
-#
 class ModuleManager(object):
+    '''A manager for a collection of modules.'''
+
     def __init__(self):
         self.modules = {}
         self.generator = {}
@@ -934,6 +965,12 @@ class ModuleManager(object):
         if key not in self.modules:
             raise KeyError('module %s not found' % (key))
         return self.modules[key]
+
+    def __str__(self):
+        out = ['Modules: ' + str(len(self.modules)), '']
+        for m in sorted(self.modules):
+            out += [str(self.modules[m]), '']
+        return os.linesep.join(out)
 
     def getAllModules(self):
         if 'modules' in self.configuration:

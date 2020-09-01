@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: BSD-2-Clause
+'''Manage the libbsd build configuration data.
+'''
+
+# Copyright (c) 2015, 2020 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
-#  Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
-#
-#  Copyright (c) 2009, 2017 embedded brains GmbH.  All rights reserved.
+# Copyright (c) 2009, 2017 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
 #   Dornierstr. 4
@@ -9,30 +12,26 @@
 #   Germany
 #   <info@embedded-brains.de>
 #
-#  Copyright (c) 2012 OAR Corporation. All rights reserved.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
 #
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions
-#  are met:
-#  1. Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer.
-#  2. Redistributions in binary form must reproduce the above copyright
-#     notice, this list of conditions and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
-#
-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-#  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# FreeBSD: http://svn.freebsd.org/base/releng/8.2/sys (revision 222485)
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
 
@@ -60,12 +59,13 @@ filesTotal = 0
 filesTotalLines = 0
 filesTotalInserts = 0
 filesTotalDeletes = 0
-diffDetails = { }
+diffDetails = {}
 
 verboseInfo = 1
 verboseDetail = 2
 verboseMoreDetail = 3
 verboseDebug = 4
+
 
 def _cflagsIncludes(cflags, includes):
     if type(cflags) is not list:
@@ -81,10 +81,12 @@ def _cflagsIncludes(cflags, includes):
         _includes = includes
     return _cflags, _includes
 
-def verbose(level = verboseInfo):
+
+def verbose(level=verboseInfo):
     return verboseLevel >= level
 
-def changedFileSummary(statsReport = False):
+
+def changedFileSummary(statsReport=False):
 
     global filesTotal, filesTotalLines, filesTotalInserts, filesTotalDeletes
 
@@ -107,17 +109,24 @@ def changedFileSummary(statsReport = False):
         #
         # Sort by opacity.
         #
-        ordered_diffs = sorted(diffDetails.items(), key = lambda diff: diff[1].opacity, reverse = True)
+        ordered_diffs = sorted(diffDetails.items(),
+                               key=lambda diff: diff[1].opacity,
+                               reverse=True)
         for f in ordered_diffs:
             print('  %s' % (diffDetails[f[0]].status()))
 
+
 def readFile(name):
     try:
-        contents = codecs.open(name, mode = 'r', encoding = 'utf-8', errors = 'ignore').read()
+        contents = codecs.open(name,
+                               mode='r',
+                               encoding='utf-8',
+                               errors='ignore').read()
     except UnicodeDecodeError as ude:
         print('error: reading: %s: %s' % (name, ude))
         sys.exit(1)
     return contents
+
 
 def writeFile(name, contents):
     path = os.path.dirname(name)
@@ -128,10 +137,12 @@ def writeFile(name, contents):
             print('error: cannot create directory: %s: %s' % (path, oe))
             sys.exit(1)
     try:
-        codecs.open(name, mode = 'w',  encoding = 'utf-8', errors = 'ignore').write(contents)
+        codecs.open(name, mode='w', encoding='utf-8',
+                    errors='ignore').write(contents)
     except UnicodeDecodeError as ude:
         print('error: write: %s: %s' % (name, ude))
         sys.exit(1)
+
 
 #
 # A builder error.
@@ -140,10 +151,13 @@ class error(Exception):
     """Base class for exceptions."""
     def __init__(self, msg):
         self.msg = 'error: %s' % (msg)
+
     def set_output(self, msg):
         self.msg = msg
+
     def __str__(self):
         return self.msg
+
 
 #
 # Diff Record
@@ -158,7 +172,8 @@ class diffRecord:
         self.inserts = inserts
         self.deletes = deletes
         self.changes = inserts + deletes
-        self.opacity = (float(self.changes) / (self.lines + self.changes)) * 100.0
+        self.opacity = (float(self.changes) /
+                        (self.lines + self.changes)) * 100.0
 
     def __repr__(self):
         return self.src
@@ -167,35 +182,49 @@ class diffRecord:
         return 'opacity:%5.1f%% edits:%4d (+):%-4d (-):%-4d %s' % \
             (self.opacity, self.changes, self.inserts, self.deletes, self.src)
 
+
 #
 # This stuff needs to move to libbsd.py.
 #
 
+
 # Move target dependent files under a machine directory
 def mapCPUDependentPath(path):
-  return path.replace("include/", "include/machine/")
+    return path.replace("include/", "include/machine/")
+
 
 def fixIncludes(data):
-    data = re.sub('#include <sys/resource.h>', '#include <rtems/bsd/sys/resource.h>', data)
-    data = re.sub('#include <sys/unistd.h>',   '#include <rtems/bsd/sys/unistd.h>', data)
+    data = re.sub('#include <sys/resource.h>',
+                  '#include <rtems/bsd/sys/resource.h>', data)
+    data = re.sub('#include <sys/unistd.h>',
+                  '#include <rtems/bsd/sys/unistd.h>', data)
     return data
+
 
 # revert fixing the include paths inside a C or .h file
 def revertFixIncludes(data):
-    data = re.sub('#include <rtems/bsd/',  '#include <', data)
-    data = re.sub('#include <util.h>',     '#include <rtems/bsd/util.h>', data)
-    data = re.sub('#include <bsd.h>',      '#include <rtems/bsd/bsd.h>', data)
-    data = re.sub('#include <zerocopy.h>', '#include <rtems/bsd/zerocopy.h>', data)
-    data = re.sub('#include <modules.h>',  '#include <rtems/bsd/modules.h>', data)
+    data = re.sub('#include <rtems/bsd/', '#include <', data)
+    data = re.sub('#include <util.h>', '#include <rtems/bsd/util.h>', data)
+    data = re.sub('#include <bsd.h>', '#include <rtems/bsd/bsd.h>', data)
+    data = re.sub('#include <zerocopy.h>', '#include <rtems/bsd/zerocopy.h>',
+                  data)
+    data = re.sub('#include <modules.h>', '#include <rtems/bsd/modules.h>',
+                  data)
     return data
+
 
 # fix include paths inside a C or .h file
 def fixLocalIncludes(data):
-    data = re.sub('#include "opt_([^"]*)"',    '#include <rtems/bsd/local/opt_\\1>', data)
-    data = re.sub('#include "([^"]*)_if.h"',   '#include <rtems/bsd/local/\\1_if.h>', data)
-    data = re.sub('#include "miidevs([^"]*)"', '#include <rtems/bsd/local/miidevs\\1>', data)
-    data = re.sub('#include "usbdevs([^"]*)"', '#include <rtems/bsd/local/usbdevs\\1>', data)
+    data = re.sub('#include "opt_([^"]*)"',
+                  '#include <rtems/bsd/local/opt_\\1>', data)
+    data = re.sub('#include "([^"]*)_if.h"',
+                  '#include <rtems/bsd/local/\\1_if.h>', data)
+    data = re.sub('#include "miidevs([^"]*)"',
+                  '#include <rtems/bsd/local/miidevs\\1>', data)
+    data = re.sub('#include "usbdevs([^"]*)"',
+                  '#include <rtems/bsd/local/usbdevs\\1>', data)
     return data
+
 
 # revert fixing the include paths inside a C or .h file
 def revertFixLocalIncludes(data):
@@ -208,11 +237,13 @@ def assertHeaderFile(path):
         print("*** Move it to a C source file list")
         sys.exit(2)
 
+
 def assertSourceFile(path):
     if path[-2:] != '.c' and path[-2:] != '.S' and path[-3:] != '.cc':
         print("*** " + path + " does not end in .c, .cc or .S")
         print("*** Move it to a header file list")
         sys.exit(2)
+
 
 def assertHeaderOrSourceFile(path):
     if path[-2] != '.' or (path[-1] != 'h' and path[-1] != 'c'):
@@ -220,30 +251,34 @@ def assertHeaderOrSourceFile(path):
         print("*** Move it to another list")
         sys.exit(2)
 
+
 def diffSource(dstLines, srcLines, src, dst):
     global filesTotal, filesTotalLines, filesTotalInserts, filesTotalDeletes
     #
     # Diff, note there is no line termination on each string.  Expand the
     # generator to list because the generator is not reusable.
     #
-    diff = list(difflib.unified_diff(dstLines,
-                                     srcLines,
-                                     fromfile = src,
-                                     tofile = dst,
-                                     n = 5,
-                                     lineterm = ''))
+    diff = list(
+        difflib.unified_diff(dstLines,
+                             srcLines,
+                             fromfile=src,
+                             tofile=dst,
+                             n=5,
+                             lineterm=''))
     inserts = 0
     deletes = 0
     if len(diff) > 0:
         if src in diffDetails and \
            diffDetails[src].dst != dst and diffDetails[src].diff != diff:
-            raise error('repeated diff of file different: src:%s dst:%s' % (src, dst))
+            raise error('repeated diff of file different: src:%s dst:%s' %
+                        (src, dst))
         for l in diff:
             if l[0] == '-':
                 deletes += 1
             elif l[0] == '+':
                 inserts += 1
-        diffDetails[src] = diffRecord(src, dst, srcLines, diff, inserts, deletes)
+        diffDetails[src] = diffRecord(src, dst, srcLines, diff, inserts,
+                                      deletes)
 
     #
     # Count the total files, lines and the level of changes.
@@ -255,6 +290,7 @@ def diffSource(dstLines, srcLines, src, dst):
 
     return diff
 
+
 #
 # Converters provide a way to alter the various types of code. The conversion
 # process filters a file as it is copies from the source path to the
@@ -262,8 +298,12 @@ def diffSource(dstLines, srcLines, src, dst):
 # source.
 #
 class Converter(object):
-
-    def convert(self, src, dst, hasSource = True, sourceFilter = None, srcContents = None):
+    def convert(self,
+                src,
+                dst,
+                hasSource=True,
+                sourceFilter=None,
+                srcContents=None):
 
         global filesProcessed, filesProcessedCount
 
@@ -334,9 +374,11 @@ class Converter(object):
                 for l in diff:
                     print(l)
 
+
 class NoConverter(Converter):
-    def convert(self, src, dst, hasSource = True, sourceFilter = None):
+    def convert(self, src, dst, hasSource=True, sourceFilter=None):
         return '/* EMPTY */\n'
+
 
 class FromFreeBSDToRTEMSHeaderConverter(Converter):
     def sourceFilter(self, data):
@@ -346,7 +388,8 @@ class FromFreeBSDToRTEMSHeaderConverter(Converter):
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSHeaderConverter, self)
-        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
+        sconverter.convert(src, dst, sourceFilter=self.sourceFilter)
+
 
 class FromFreeBSDToRTEMSUserSpaceHeaderConverter(Converter):
     def sourceFilter(self, data):
@@ -355,7 +398,8 @@ class FromFreeBSDToRTEMSUserSpaceHeaderConverter(Converter):
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSUserSpaceHeaderConverter, self)
-        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
+        sconverter.convert(src, dst, sourceFilter=self.sourceFilter)
+
 
 class FromFreeBSDToRTEMSSourceConverter(Converter):
     def sourceFilter(self, data):
@@ -366,7 +410,8 @@ class FromFreeBSDToRTEMSSourceConverter(Converter):
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSSourceConverter, self)
-        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
+        sconverter.convert(src, dst, sourceFilter=self.sourceFilter)
+
 
 class FromFreeBSDToRTEMSUserSpaceSourceConverter(Converter):
     def sourceFilter(self, data):
@@ -376,7 +421,8 @@ class FromFreeBSDToRTEMSUserSpaceSourceConverter(Converter):
 
     def convert(self, src, dst):
         sconverter = super(FromFreeBSDToRTEMSUserSpaceSourceConverter, self)
-        sconverter.convert(src, dst, sourceFilter = self.sourceFilter)
+        sconverter.convert(src, dst, sourceFilter=self.sourceFilter)
+
 
 class FromRTEMSToFreeBSDHeaderConverter(Converter):
     def sourceFilter(self, data):
@@ -386,19 +432,29 @@ class FromRTEMSToFreeBSDHeaderConverter(Converter):
 
     def convert(self, src, dst):
         sconverter = super(FromRTEMSToFreeBSDHeaderConverter, self)
-        sconverter.convert(src, dst, hasSource = False,  sourceFilter = self.sourceFilter)
+        sconverter.convert(src,
+                           dst,
+                           hasSource=False,
+                           sourceFilter=self.sourceFilter)
+
 
 class FromRTEMSToFreeBSDSourceConverter(Converter):
     def sourceFilter(self, data):
-        data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '', data)
-        data = re.sub('#include <machine/rtems-bsd-user-space.h>\n\n', '', data)
+        data = re.sub('#include <machine/rtems-bsd-kernel-space.h>\n\n', '',
+                      data)
+        data = re.sub('#include <machine/rtems-bsd-user-space.h>\n\n', '',
+                      data)
         data = revertFixLocalIncludes(data)
         data = revertFixIncludes(data)
         return data
 
     def convert(self, src, dst):
         sconverter = super(FromRTEMSToFreeBSDSourceConverter, self)
-        sconverter.convert(src, dst, hasSource = False, sourceFilter = self.sourceFilter)
+        sconverter.convert(src,
+                           dst,
+                           hasSource=False,
+                           sourceFilter=self.sourceFilter)
+
 
 #
 # Compose a path based for the various parts of the source tree.
@@ -410,12 +466,14 @@ class PathComposer(object):
     def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, path)
 
+
 class FreeBSDPathComposer(PathComposer):
     def composeOriginPath(self, path):
         return os.path.join(FreeBSD_DIR, path)
 
     def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, 'freebsd', path)
+
 
 class RTEMSPathComposer(PathComposer):
     def composeOriginPath(self, path):
@@ -424,6 +482,7 @@ class RTEMSPathComposer(PathComposer):
     def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, 'rtemsbsd', path)
 
+
 class LinuxPathComposer(PathComposer):
     def composeOriginPath(self, path):
         return path
@@ -431,23 +490,30 @@ class LinuxPathComposer(PathComposer):
     def composeLibBSDPath(self, path, prefix):
         return os.path.join(prefix, 'linux', path)
 
+
 class CPUDependentFreeBSDPathComposer(FreeBSDPathComposer):
     def composeLibBSDPath(self, path, prefix):
-        path = super(CPUDependentFreeBSDPathComposer, self).composeLibBSDPath(path, prefix)
+        path = super(CPUDependentFreeBSDPathComposer,
+                     self).composeLibBSDPath(path, prefix)
         path = mapCPUDependentPath(path)
         return path
+
 
 class CPUDependentRTEMSPathComposer(RTEMSPathComposer):
     def composeLibBSDPath(self, path, prefix):
-        path = super(CPUDependentRTEMSPathComposer, self).composeLibBSDPath(path, prefix)
+        path = super(CPUDependentRTEMSPathComposer,
+                     self).composeLibBSDPath(path, prefix)
         path = mapCPUDependentPath(path)
         return path
 
+
 class CPUDependentLinuxPathComposer(LinuxPathComposer):
     def composeLibBSDPath(self, path, prefix):
-        path = super(CPUDependentLinuxPathComposer, self).composeLibBSDPath(path, prefix)
+        path = super(CPUDependentLinuxPathComposer,
+                     self).composeLibBSDPath(path, prefix)
         path = mapCPUDependentPath(path)
         return path
+
 
 class TargetSourceCPUDependentPathComposer(CPUDependentFreeBSDPathComposer):
     def __init__(self, targetCPU, sourceCPU):
@@ -455,12 +521,14 @@ class TargetSourceCPUDependentPathComposer(CPUDependentFreeBSDPathComposer):
         self.sourceCPU = sourceCPU
 
     def composeLibBSDPath(self, path, prefix):
-        path = super(TargetSourceCPUDependentPathComposer, self).composeLibBSDPath(path, prefix)
+        path = super(TargetSourceCPUDependentPathComposer,
+                     self).composeLibBSDPath(path, prefix)
         path = path.replace(self.sourceCPU, self.targetCPU)
         return path
 
+
 class BuildSystemFragmentComposer(object):
-    def __init__(self, includes = None):
+    def __init__(self, includes=None):
         if type(includes) is not list:
             self.includes = [includes]
         else:
@@ -469,9 +537,9 @@ class BuildSystemFragmentComposer(object):
     def compose(self, path):
         return ''
 
-class SourceFileFragmentComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, cflags = "default", includes = None):
+class SourceFileFragmentComposer(BuildSystemFragmentComposer):
+    def __init__(self, cflags="default", includes=None):
         self.cflags, self.includes = _cflagsIncludes(cflags, includes)
 
     def compose(self, path):
@@ -479,15 +547,17 @@ class SourceFileFragmentComposer(BuildSystemFragmentComposer):
             flags = self.cflags
         else:
             flags = self.cflags + self.includes
-        return ['sources', flags, ('default', None)], [path], self.cflags, self.includes
+        return ['sources', flags,
+                ('default', None)], [path], self.cflags, self.includes
+
 
 class SourceFileIfHeaderComposer(SourceFileFragmentComposer):
-
-    def __init__(self, headers, cflags = "default", includes = None):
+    def __init__(self, headers, cflags="default", includes=None):
         if headers is not list:
             headers = [headers]
         self.headers = headers
-        super(SourceFileIfHeaderComposer, self).__init__(cflags = cflags, includes = includes)
+        super(SourceFileIfHeaderComposer, self).__init__(cflags=cflags,
+                                                         includes=includes)
 
     def compose(self, path):
         r = SourceFileFragmentComposer.compose(self, path)
@@ -500,9 +570,15 @@ class SourceFileIfHeaderComposer(SourceFileFragmentComposer):
         r[0][2] = (define_keys.strip(), self.headers)
         return r
 
-class TestFragementComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, testName, fileFragments, configTest = None, runTest = True, netTest = False, extraLibs = []):
+class TestFragementComposer(BuildSystemFragmentComposer):
+    def __init__(self,
+                 testName,
+                 fileFragments,
+                 configTest=None,
+                 runTest=True,
+                 netTest=False,
+                 extraLibs=[]):
         self.testName = testName
         self.fileFragments = fileFragments
         self.configTest = configTest
@@ -511,21 +587,32 @@ class TestFragementComposer(BuildSystemFragmentComposer):
         self.extraLibs = extraLibs
 
     def compose(self, path):
-        return ['tests', self.testName, ('default', None)], { 'configTest': self.configTest,
-                                                              'files': self.fileFragments,
-                                                              'run': self.runTest,
-                                                              'net': self.netTest,
-                                                              'libs': self.extraLibs}
+        return ['tests', self.testName, ('default', None)], {
+            'configTest': self.configTest,
+            'files': self.fileFragments,
+            'run': self.runTest,
+            'net': self.netTest,
+            'libs': self.extraLibs
+        }
+
 
 class TestIfHeaderComposer(TestFragementComposer):
-
-    def __init__(self, testName, headers, fileFragments, runTest = True, netTest = False, extraLibs = []):
+    def __init__(self,
+                 testName,
+                 headers,
+                 fileFragments,
+                 runTest=True,
+                 netTest=False,
+                 extraLibs=[]):
         if headers is not list:
             headers = [headers]
         self.headers = headers
-        super(TestIfHeaderComposer, self).__init__(testName, fileFragments, 'header',
-                                                   runTest = runTest, netTest = netTest,
-                                                   extraLibs = extraLibs)
+        super(TestIfHeaderComposer, self).__init__(testName,
+                                                   fileFragments,
+                                                   'header',
+                                                   runTest=runTest,
+                                                   netTest=netTest,
+                                                   extraLibs=extraLibs)
 
     def compose(self, path):
         r = TestFragementComposer.compose(self, path)
@@ -538,15 +625,24 @@ class TestIfHeaderComposer(TestFragementComposer):
         r[0][2] = (define_keys.strip(), self.headers)
         return r
 
-class TestIfLibraryComposer(TestFragementComposer):
 
-    def __init__(self, testName, libraries, fileFragments, runTest = True, netTest = False, extraLibs = []):
+class TestIfLibraryComposer(TestFragementComposer):
+    def __init__(self,
+                 testName,
+                 libraries,
+                 fileFragments,
+                 runTest=True,
+                 netTest=False,
+                 extraLibs=[]):
         if libraries is not list:
             libraries = [libraries]
         self.libraries = libraries
-        super(TestIfLibraryComposer, self).__init__(testName, fileFragments, 'library',
-                                                    runTest = runTest, netTest = netTest,
-                                                    extraLibs = extraLibs)
+        super(TestIfLibraryComposer, self).__init__(testName,
+                                                    fileFragments,
+                                                    'library',
+                                                    runTest=runTest,
+                                                    netTest=netTest,
+                                                    extraLibs=extraLibs)
 
     def compose(self, path):
         r = TestFragementComposer.compose(self, path)
@@ -559,65 +655,71 @@ class TestIfLibraryComposer(TestFragementComposer):
         r[0][2] = (define_keys.strip(), self.libraries)
         return r
 
-class KVMSymbolsFragmentComposer(BuildSystemFragmentComposer):
 
+class KVMSymbolsFragmentComposer(BuildSystemFragmentComposer):
     def compose(self, path):
-        return ['KVMSymbols', 'files', ('default', None)], [path], self.includes
+        return ['KVMSymbols', 'files',
+                ('default', None)], [path], self.includes
+
 
 class RPCGENFragmentComposer(BuildSystemFragmentComposer):
-
     def compose(self, path):
         return ['RPCGen', 'files', ('default', None)], [path]
 
-class RouteKeywordsFragmentComposer(BuildSystemFragmentComposer):
 
+class RouteKeywordsFragmentComposer(BuildSystemFragmentComposer):
     def compose(self, path):
         return ['RouteKeywords', 'files', ('default', None)], [path]
 
-class LexFragmentComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, sym, dep, cflags = None, includes = None, build = True):
+class LexFragmentComposer(BuildSystemFragmentComposer):
+    def __init__(self, sym, dep, cflags=None, includes=None, build=True):
         self.sym = sym
         self.dep = dep
         self.cflags, self.includes = _cflagsIncludes(cflags, includes)
         self.build = build
 
     def compose(self, path):
-        d = { 'file': path,
-              'sym': self.sym,
-              'dep': self.dep,
-              'build': self.build }
+        d = {
+            'file': path,
+            'sym': self.sym,
+            'dep': self.dep,
+            'build': self.build
+        }
         if None not in self.cflags:
             d['cflags'] = self.cflags
         if None not in self.includes:
             d['includes'] = self.includes
         return ['lex', path, ('default', None)], d
 
-class YaccFragmentComposer(BuildSystemFragmentComposer):
 
-    def __init__(self, sym, header, cflags = None, includes = None, build = True):
+class YaccFragmentComposer(BuildSystemFragmentComposer):
+    def __init__(self, sym, header, cflags=None, includes=None, build=True):
         self.sym = sym
         self.header = header
         self.cflags, self.includes = _cflagsIncludes(cflags, includes)
         self.build = build
 
     def compose(self, path):
-        d = { 'file': path,
-              'sym': self.sym,
-              'header': self.header,
-              'build': self.build }
+        d = {
+            'file': path,
+            'sym': self.sym,
+            'header': self.header,
+            'build': self.build
+        }
         if None not in self.cflags:
             d['cflags'] = self.cflags
         if None not in self.includes:
             d['includes'] = self.includes
         return ['yacc', path, ('default', None)], d
 
+
 #
 # File - a file in the source we move backwards and forwards.
 #
 class File(object):
-    def __init__(self, path, pathComposer,
-                 forwardConverter, reverseConverter, buildSystemComposer):
+    def __init__(self, path, pathComposer, forwardConverter, reverseConverter,
+                 buildSystemComposer):
         if verbose(verboseMoreDetail):
             print("FILE: %-50s F:%-45s R:%-45s" % \
                   (path,
@@ -626,7 +728,8 @@ class File(object):
         self.path = path
         self.pathComposer = pathComposer
         self.originPath = self.pathComposer.composeOriginPath(self.path)
-        self.libbsdPath = self.pathComposer.composeLibBSDPath(self.path, LIBBSD_DIR)
+        self.libbsdPath = self.pathComposer.composeLibBSDPath(
+            self.path, LIBBSD_DIR)
         self.forwardConverter = forwardConverter
         self.reverseConverter = reverseConverter
         self.buildSystemComposer = buildSystemComposer
@@ -634,7 +737,8 @@ class File(object):
     def processSource(self, forward):
         if forward:
             if verbose(verboseDetail):
-                print("process source: %s => %s" % (self.originPath, self.libbsdPath))
+                print("process source: %s => %s" %
+                      (self.originPath, self.libbsdPath))
             self.forwardConverter.convert(self.originPath, self.libbsdPath)
         else:
             if verbose(verboseDetail):
@@ -643,13 +747,15 @@ class File(object):
             self.reverseConverter.convert(self.libbsdPath, self.originPath)
 
     def getFragment(self):
-        return self.buildSystemComposer.compose(self.pathComposer.composeLibBSDPath(self.path, ''))
+        return self.buildSystemComposer.compose(
+            self.pathComposer.composeLibBSDPath(self.path, ''))
+
 
 #
 # Module - logical group of related files we can perform actions on
 #
 class Module(object):
-    def __init__(self, manager, name, enabled = True):
+    def __init__(self, manager, name, enabled=True):
         self.manager = manager
         self.name = name
         self.conditionalOn = "none"
@@ -670,7 +776,9 @@ class Module(object):
             for f in files:
                 f.processSource(direction)
 
-    def addFiles(self, newFiles, buildSystemComposer = BuildSystemFragmentComposer()):
+    def addFiles(self,
+                 newFiles,
+                 buildSystemComposer=BuildSystemFragmentComposer()):
         files = []
         for newFile in newFiles:
             assertFile(newFile)
@@ -680,82 +788,92 @@ class Module(object):
     def addFile(self, f):
         self.files += [f]
 
-    def addFiles(self, newFiles,
-                 pathComposer, forwardConverter, reverseConverter,
-                 assertFile, buildSystemComposer = BuildSystemFragmentComposer()):
+    def addFiles(self,
+                 newFiles,
+                 pathComposer,
+                 forwardConverter,
+                 reverseConverter,
+                 assertFile,
+                 buildSystemComposer=BuildSystemFragmentComposer()):
         files = []
         for newFile in newFiles:
             assertFile(newFile)
-            files += [File(newFile, pathComposer, forwardConverter,
-                           reverseConverter, buildSystemComposer)]
+            files += [
+                File(newFile, pathComposer, forwardConverter, reverseConverter,
+                     buildSystemComposer)
+            ]
         return files
 
     def addKernelSpaceHeaderFiles(self, files):
-        self.files += self.addFiles(files,
-                                    FreeBSDPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
-                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderOrSourceFile)
+        self.files += self.addFiles(files, FreeBSDPathComposer(),
+                                    FromFreeBSDToRTEMSHeaderConverter(),
+                                    FromRTEMSToFreeBSDHeaderConverter(),
+                                    assertHeaderOrSourceFile)
 
     def addUserSpaceHeaderFiles(self, files):
-        self.files += self.addFiles(files,
-                                    FreeBSDPathComposer(), FromFreeBSDToRTEMSUserSpaceHeaderConverter(),
-                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+        self.files += self.addFiles(
+            files, FreeBSDPathComposer(),
+            FromFreeBSDToRTEMSUserSpaceHeaderConverter(),
+            FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
 
     def addRTEMSHeaderFiles(self, files):
-        self.files += self.addFiles(files, RTEMSPathComposer(),
-                                    NoConverter(), NoConverter(), assertHeaderFile)
+        self.files += self.addFiles(files, RTEMSPathComposer(), NoConverter(),
+                                    NoConverter(), assertHeaderFile)
 
     def addLinuxHeaderFiles(self, files):
-        self.files += self.addFiles(files,
-                                    PathComposer(), NoConverter(),
+        self.files += self.addFiles(files, PathComposer(), NoConverter(),
                                     NoConverter(), assertHeaderFile)
 
     def addCPUDependentFreeBSDHeaderFiles(self, files):
-        self.files += self.addFiles(files,
-                                    CPUDependentFreeBSDPathComposer(), FromFreeBSDToRTEMSHeaderConverter(),
-                                    FromRTEMSToFreeBSDHeaderConverter(), assertHeaderFile)
+        self.files += self.addFiles(files, CPUDependentFreeBSDPathComposer(),
+                                    FromFreeBSDToRTEMSHeaderConverter(),
+                                    FromRTEMSToFreeBSDHeaderConverter(),
+                                    assertHeaderFile)
 
     def addCPUDependentLinuxHeaderFiles(self, files):
-        self.files += self.addFiles(files,
-                                    CPUDependentLinuxPathComposer(), NoConverter(),
-                                    NoConverter(), assertHeaderFile)
+        self.files += self.addFiles(files, CPUDependentLinuxPathComposer(),
+                                    NoConverter(), NoConverter(),
+                                    assertHeaderFile)
 
-    def addTargetSourceCPUDependentHeaderFiles(self, targetCPUs, sourceCPU, files):
+    def addTargetSourceCPUDependentHeaderFiles(self, targetCPUs, sourceCPU,
+                                               files):
         for cpu in targetCPUs:
-            self.files += self.addFiles(files,
-                                        TargetSourceCPUDependentPathComposer(cpu, sourceCPU),
-                                        FromFreeBSDToRTEMSHeaderConverter(),
-                                        NoConverter(), assertHeaderFile)
+            self.files += self.addFiles(
+                files, TargetSourceCPUDependentPathComposer(cpu, sourceCPU),
+                FromFreeBSDToRTEMSHeaderConverter(), NoConverter(),
+                assertHeaderFile)
 
     def addSourceFiles(self, files, sourceFileFragmentComposer):
-        self.files += self.addFiles(files,
-                                    PathComposer(), NoConverter(), NoConverter(), assertSourceFile,
-                                    sourceFileFragmentComposer)
-
-    def addKernelSpaceSourceFiles(self, files, sourceFileFragmentComposer):
-        self.files += self.addFiles(files,
-                                    FreeBSDPathComposer(), FromFreeBSDToRTEMSSourceConverter(),
-                                    FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
-                                    sourceFileFragmentComposer)
-
-    def addUserSpaceSourceFiles(self, files, sourceFileFragmentComposer):
-        self.files += self.addFiles(files,
-                                    FreeBSDPathComposer(),
-                                    FromFreeBSDToRTEMSUserSpaceSourceConverter(),
-                                    FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
-                                    sourceFileFragmentComposer)
-
-    def addRTEMSSourceFiles(self, files, sourceFileFragmentComposer):
-        self.files += self.addFiles(files,
-                                    RTEMSPathComposer(), NoConverter(), NoConverter(),
-                                    assertSourceFile, sourceFileFragmentComposer)
-
-    def addLinuxSourceFiles(self, files, sourceFileFragmentComposer):
-        self.files += self.addFiles(files,
-                                    PathComposer(), NoConverter(),
+        self.files += self.addFiles(files, PathComposer(), NoConverter(),
                                     NoConverter(), assertSourceFile,
                                     sourceFileFragmentComposer)
 
-    def addCPUDependentFreeBSDSourceFiles(self, cpus, files, sourceFileFragmentComposer):
+    def addKernelSpaceSourceFiles(self, files, sourceFileFragmentComposer):
+        self.files += self.addFiles(files, FreeBSDPathComposer(),
+                                    FromFreeBSDToRTEMSSourceConverter(),
+                                    FromRTEMSToFreeBSDSourceConverter(),
+                                    assertSourceFile,
+                                    sourceFileFragmentComposer)
+
+    def addUserSpaceSourceFiles(self, files, sourceFileFragmentComposer):
+        self.files += self.addFiles(
+            files, FreeBSDPathComposer(),
+            FromFreeBSDToRTEMSUserSpaceSourceConverter(),
+            FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
+            sourceFileFragmentComposer)
+
+    def addRTEMSSourceFiles(self, files, sourceFileFragmentComposer):
+        self.files += self.addFiles(files, RTEMSPathComposer(), NoConverter(),
+                                    NoConverter(), assertSourceFile,
+                                    sourceFileFragmentComposer)
+
+    def addLinuxSourceFiles(self, files, sourceFileFragmentComposer):
+        self.files += self.addFiles(files, PathComposer(), NoConverter(),
+                                    NoConverter(), assertSourceFile,
+                                    sourceFileFragmentComposer)
+
+    def addCPUDependentFreeBSDSourceFiles(self, cpus, files,
+                                          sourceFileFragmentComposer):
         for cpu in cpus:
             self.initCPUDependencies(cpu)
             self.cpuDependentSourceFiles[cpu] += \
@@ -764,7 +882,8 @@ class Module(object):
                               FromRTEMSToFreeBSDSourceConverter(), assertSourceFile,
                               sourceFileFragmentComposer)
 
-    def addCPUDependentRTEMSSourceFiles(self, cpus, files, sourceFileFragmentComposer):
+    def addCPUDependentRTEMSSourceFiles(self, cpus, files,
+                                        sourceFileFragmentComposer):
         for cpu in cpus:
             self.initCPUDependencies(cpu)
             self.cpuDependentSourceFiles[cpu] += \
@@ -773,7 +892,8 @@ class Module(object):
                               NoConverter(), assertSourceFile,
                               sourceFileFragmentComposer)
 
-    def addCPUDependentLinuxSourceFiles(self, cpus, files, sourceFileFragmentComposer):
+    def addCPUDependentLinuxSourceFiles(self, cpus, files,
+                                        sourceFileFragmentComposer):
         for cpu in cpus:
             self.initCPUDependencies(cpu)
             self.cpuDependentSourceFiles[cpu] += \
@@ -783,12 +903,14 @@ class Module(object):
                               sourceFileFragmentComposer)
 
     def addTest(self, testFragementComposer):
-        self.files += [File(testFragementComposer.testName,
-                            PathComposer(), NoConverter(), NoConverter(),
-                            testFragementComposer)]
+        self.files += [
+            File(testFragementComposer.testName, PathComposer(), NoConverter(),
+                 NoConverter(), testFragementComposer)
+        ]
 
     def addDependency(self, dep):
         self.dependencies += [dep]
+
 
 #
 # Manager - a collection of modules.
@@ -850,9 +972,12 @@ class ModuleManager(object):
     def setGenerators(self):
         self.generator['convert'] = Converter
         self.generator['no-convert'] = NoConverter
-        self.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'] = FromFreeBSDToRTEMSUserSpaceSourceConverter
-        self.generator['from-RTEMS-To-FreeBSD-SourceConverter'] = FromRTEMSToFreeBSDSourceConverter
-        self.generator['buildSystemFragmentComposer'] = BuildSystemFragmentComposer
+        self.generator[
+            'from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'] = FromFreeBSDToRTEMSUserSpaceSourceConverter
+        self.generator[
+            'from-RTEMS-To-FreeBSD-SourceConverter'] = FromRTEMSToFreeBSDSourceConverter
+        self.generator[
+            'buildSystemFragmentComposer'] = BuildSystemFragmentComposer
 
         self.generator['file'] = File
 
@@ -860,7 +985,8 @@ class ModuleManager(object):
         self.generator['freebsd-path'] = FreeBSDPathComposer
         self.generator['rtems-path'] = RTEMSPathComposer
         self.generator['cpu-path'] = CPUDependentFreeBSDPathComposer
-        self.generator['target-src-cpu--path'] = TargetSourceCPUDependentPathComposer
+        self.generator[
+            'target-src-cpu--path'] = TargetSourceCPUDependentPathComposer
 
         self.generator['source'] = SourceFileFragmentComposer
         self.generator['test'] = TestFragementComposer

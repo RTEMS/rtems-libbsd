@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: BSD-2-Clause
+'''LibBSD build configuration to waf integration module.
+'''
+
+# Copyright (c) 2015, 2020 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
-#  Copyright (c) 2015-2018 Chris Johns <chrisj@rtems.org>. All rights reserved.
-#
-#  Copyright (c) 2009-2015 embedded brains GmbH.  All rights reserved.
+# Copyright (c) 2009, 2015 embedded brains GmbH.  All rights reserved.
 #
 #   embedded brains GmbH
 #   Dornierstr. 4
@@ -9,30 +12,31 @@
 #   Germany
 #   <info@embedded-brains.de>
 #
-#  Copyright (c) 2012 OAR Corporation. All rights reserved.
+# Copyright (c) 2012 OAR Corporation. All rights reserved.
 #
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions
-#  are met:
-#  1. Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer.
-#  2. Redistributions in binary form must reproduce the above copyright
-#     notice, this list of conditions and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
 #
-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-#  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-#  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-#  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
+
 # Python 3 does no longer know the basestring class. Catch that.
 try:
     basestring
@@ -55,12 +59,12 @@ if windows:
 else:
     host_shell = ''
 
+
 #
 # The waf builder for libbsd.
 #
 class Builder(builder.ModuleManager):
-
-    def __init__(self, trace = False):
+    def __init__(self, trace=False):
         super(Builder, self).__init__()
         self.trace = trace
         self.data = {}
@@ -82,7 +86,6 @@ class Builder(builder.ModuleManager):
         return sources
 
     def generate(self, rtems_version):
-
         def _dataInsert(data, cpu, frag):
             #
             # The default handler returns an empty string. Skip it.
@@ -104,14 +107,14 @@ class Builder(builder.ModuleManager):
                     d[p] = {}
                 d = d[p]
                 if cpu not in d:
-                    d[cpu] = { }
+                    d[cpu] = {}
                 config = frag[0][2][0]
                 if config != 'default':
                     if 'configure' not in data:
-                        data['configure'] = { }
+                        data['configure'] = {}
                     configTest = frag[1]['configTest']
                     if configTest not in data['configure']:
-                        data['configure'][configTest] = { }
+                        data['configure'][configTest] = {}
                     data['configure'][configTest][config] = frag[0][2][1]
                 if type(frag[1]) is list:
                     if config not in d[cpu]:
@@ -156,19 +159,18 @@ class Builder(builder.ModuleManager):
                 for cfg in self.data['configure'][configTest]:
                     if configTest == 'header':
                         for h in self.data['configure'][configTest][cfg]:
-                            conf.check(header_name = h,
-                                       features = "c",
-                                       includes = conf.env.IFLAGS,
-                                       mandatory = False)
+                            conf.check(header_name=h,
+                                       features="c",
+                                       includes=conf.env.IFLAGS,
+                                       mandatory=False)
                     elif configTest == 'library':
                         for l in self.data['configure'][configTest][cfg]:
-                            conf.check_cc(lib = l,
-                                          fragment = rtems.test_application(),
-                                          execute = False,
-                                          mandatory = False)
+                            conf.check_cc(lib=l,
+                                          fragment=rtems.test_application(),
+                                          execute=False,
+                                          mandatory=False)
                     else:
                         bld.fatal('invalid config test: %s' % (configTest))
-
 
     def build(self, bld):
         #
@@ -240,16 +242,17 @@ class Builder(builder.ModuleManager):
         # Network test configuration
         #
         if not os.path.exists(bld.env.NET_CONFIG):
-            bld.fatal('network configuraiton \'%s\' not found' % (bld.env.NET_CONFIG))
-        tags = [ 'NET_CFG_INTERFACE_0',
-                 'NET_CFG_SELF_IP',
-                 'NET_CFG_NETMASK',
-                 'NET_CFG_PEER_IP',
-                 'NET_CFG_GATEWAY_IP' ]
+            bld.fatal('network configuraiton \'%s\' not found' %
+                      (bld.env.NET_CONFIG))
+        tags = [
+            'NET_CFG_INTERFACE_0', 'NET_CFG_SELF_IP', 'NET_CFG_NETMASK',
+            'NET_CFG_PEER_IP', 'NET_CFG_GATEWAY_IP'
+        ]
         try:
             net_cfg_lines = open(bld.env.NET_CONFIG).readlines()
         except:
-            bld.fatal('network configuraiton \'%s\' read failed' % (bld.env.NET_CONFIG))
+            bld.fatal('network configuraiton \'%s\' read failed' %
+                      (bld.env.NET_CONFIG))
         lc = 0
         sed = 'sed '
         for l in net_cfg_lines:
@@ -264,10 +267,10 @@ class Builder(builder.ModuleManager):
                 for t in tags:
                     if lhs == t:
                         sed += "-e 's/@%s@/%s/' " % (t, rhs)
-        bld(target = "testsuite/include/rtems/bsd/test/network-config.h",
-            source = "testsuite/include/rtems/bsd/test/network-config.h.in",
-            rule = sed + " < ${SRC} > ${TGT}",
-            update_outputs = True)
+        bld(target="testsuite/include/rtems/bsd/test/network-config.h",
+            source="testsuite/include/rtems/bsd/test/network-config.h.in",
+            rule=sed + " < ${SRC} > ${TGT}",
+            update_outputs=True)
 
         #
         # Add a copy rule for all headers where the install path and the source
@@ -275,7 +278,8 @@ class Builder(builder.ModuleManager):
         #
         if 'header-paths' in config:
             header_build_copy_paths = [
-                hp for hp in config['header-paths'] if hp[2] != '' and not hp[0].endswith(hp[2])
+                hp for hp in config['header-paths']
+                if hp[2] != '' and not hp[0].endswith(hp[2])
             ]
             for headers in header_build_copy_paths:
                 target = os.path.join(buildinclude, headers[2])
@@ -283,10 +287,10 @@ class Builder(builder.ModuleManager):
                 for header in start_dir.ant_glob(headers[1]):
                     relsourcepath = header.path_from(start_dir)
                     targetheader = os.path.join(target, relsourcepath)
-                    bld(features = 'subst',
-                        target = targetheader,
-                        source = header,
-                        is_copy = True)
+                    bld(features='subst',
+                        target=targetheader,
+                        source=header,
+                        is_copy=True)
 
         #
         # Generate a header that contains information about enabled modules
@@ -305,12 +309,13 @@ class Builder(builder.ModuleManager):
                 output += '#define RTEMS_BSD_MODULE_{} 1\n'.format(modname)
             output += '#endif /* RTEMS_BSD_MODULES_H */\n'
             self.outputs[0].write(output)
+
         modules_h_file_with_path = os.path.join(buildinclude,
                                                 module_header_path,
                                                 module_header_name)
-        bld(rule = rtems_libbsd_modules_h_gen,
-            target = modules_h_file_with_path,
-            before = ['c', 'cxx'])
+        bld(rule=rtems_libbsd_modules_h_gen,
+            target=modules_h_file_with_path,
+            before=['c', 'cxx'])
 
         #
         # Add the specific rule based builders
@@ -325,15 +330,15 @@ class Builder(builder.ModuleManager):
                 kvmsymbols_includes = kvmsymbols['files']['includes']
             else:
                 kvmsymbols_includes = []
-            bld(target = kvmsymbols['files']['all']['default'][0],
-                source = 'rtemsbsd/rtems/generate_kvm_symbols',
-                rule = host_shell + './${SRC} > ${TGT}',
-                update_outputs = True)
-            bld.objects(target = 'kvmsymbols',
-                        features = 'c',
-                        cflags = cflags,
-                        includes = kvmsymbols_includes + includes,
-                        source = kvmsymbols['files']['all']['default'][0])
+            bld(target=kvmsymbols['files']['all']['default'][0],
+                source='rtemsbsd/rtems/generate_kvm_symbols',
+                rule=host_shell + './${SRC} > ${TGT}',
+                update_outputs=True)
+            bld.objects(target='kvmsymbols',
+                        features='c',
+                        cflags=cflags,
+                        includes=kvmsymbols_includes + includes,
+                        source=kvmsymbols['files']['all']['default'][0])
             libbsd_use += ["kvmsymbols"]
 
         bld.add_group()
@@ -345,9 +350,9 @@ class Builder(builder.ModuleManager):
             if bld.env.AUTO_REGEN:
                 rpcgen = self.data['RPCGen']
                 rpcname = rpcgen['files']['all']['default'][0][:-2]
-                bld(target = rpcname + '.h',
-                    source = rpcname + '.x',
-                    rule = host_shell + '${RPCGEN} -h -o ${TGT} ${SRC}')
+                bld(target=rpcname + '.h',
+                    source=rpcname + '.x',
+                    rule=host_shell + '${RPCGEN} -h -o ${TGT} ${SRC}')
 
         #
         # Route keywords
@@ -360,9 +365,7 @@ class Builder(builder.ModuleManager):
                            "awk 'BEGIN { r = 0 } { if (NF == 1) " + \
                            "printf \"#define\\tK_%%s\\t%%d\\n\\t{\\\"%%s\\\", K_%%s},\\n\", " + \
                            "toupper($1), ++r, $1, toupper($1)}' > ${TGT}"
-                bld(target = rkwname + '.h',
-                    source = rkwname,
-                    rule = rkw_rule)
+                bld(target=rkwname + '.h', source=rkwname, rule=rkw_rule)
 
         #
         # Lex
@@ -382,16 +385,16 @@ class Builder(builder.ModuleManager):
                 lex_rule = host_shell + '${LEX} -P ' + lex['sym'] + ' -t ${SRC} | ' + \
                            'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' > ${TGT}'
                 if bld.env.AUTO_REGEN:
-                    bld(target = lex['file'][:-2]+ '.c',
-                        source = lex['file'],
-                        rule = lex_rule)
+                    bld(target=lex['file'][:-2] + '.c',
+                        source=lex['file'],
+                        rule=lex_rule)
                 if lex['build']:
-                    bld.objects(target = 'lex_%s' % (lex['sym']),
-                                features = 'c',
-                                cflags = cflags,
-                                includes = lexIncludes + includes,
-                                defines = defines + lexDefines,
-                                source = lex['file'][:-2] + '.c')
+                    bld.objects(target='lex_%s' % (lex['sym']),
+                                features='c',
+                                cflags=cflags,
+                                includes=lexIncludes + includes,
+                                defines=defines + lexDefines,
+                                source=lex['file'][:-2] + '.c')
                 libbsd_use += ['lex_%s' % (lex['sym'])]
 
         #
@@ -406,7 +409,8 @@ class Builder(builder.ModuleManager):
                     yaccSym = yacc['sym']
                 else:
                     yaccSym = os.path.basename(yaccFile)[:-2]
-                yaccHeader = '%s/%s' % (os.path.dirname(yaccFile), yacc['header'])
+                yaccHeader = '%s/%s' % (os.path.dirname(yaccFile),
+                                        yacc['header'])
                 if 'cflags' in yacc:
                     yaccDefines = [d[2:] for d in yacc['cflags']]
                 else:
@@ -417,19 +421,20 @@ class Builder(builder.ModuleManager):
                     yaccIncludes = []
                 yacc_rule = host_shell + '${YACC} -b ' + yaccSym + \
                             ' -d -p ' + yaccSym + ' ${SRC} && ' + \
-                            'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' < ' + yaccSym + '.tab.c > ${TGT} && ' + \
+                            'sed -e \'/YY_BUF_SIZE/s/16384/1024/\' < ' + \
+                            yaccSym + '.tab.c > ${TGT} && ' + \
                             'rm -f ' + yaccSym + '.tab.c && mv ' + yaccSym + '.tab.h ' + yaccHeader
                 if bld.env.AUTO_REGEN:
-                    bld(target = yaccFile[:-2] + '.c',
-                        source = yaccFile,
-                        rule = yacc_rule)
+                    bld(target=yaccFile[:-2] + '.c',
+                        source=yaccFile,
+                        rule=yacc_rule)
                 if yacc['build']:
-                    bld.objects(target = 'yacc_%s' % (yaccSym),
-                                features = 'c',
-                                cflags = cflags,
-                                includes = yaccIncludes + includes,
-                                defines = defines + yaccDefines,
-                                source = yaccFile[:-2] + '.c')
+                    bld.objects(target='yacc_%s' % (yaccSym),
+                                features='c',
+                                cflags=cflags,
+                                includes=yaccIncludes + includes,
+                                defines=defines + yaccDefines,
+                                source=yaccFile[:-2] + '.c')
                 libbsd_use += ['yacc_%s' % (yaccSym)]
 
         #
@@ -452,12 +457,12 @@ class Builder(builder.ModuleManager):
             for arch in archs:
                 if bld.get_env()['RTEMS_ARCH'] == arch:
                     bld_sources += Builder._sourceList(bld, build[arch])
-            bld.objects(target = target,
-                        features = 'c',
-                        cflags = cflags + sorted(build.get('cflags', [])),
-                        includes = sorted(build.get('includes', [])) + includes,
-                        defines = defines,
-                        source = bld_sources)
+            bld.objects(target=target,
+                        features='c',
+                        cflags=cflags + sorted(build.get('cflags', [])),
+                        includes=sorted(build.get('includes', [])) + includes,
+                        defines=defines,
+                        source=bld_sources)
             libbsd_use += [target]
 
         #
@@ -471,14 +476,14 @@ class Builder(builder.ModuleManager):
         for arch in archs:
             if bld.get_env()['RTEMS_ARCH'] == arch:
                 bld_sources += Builder._sourceList(bld, build[arch])
-        bld.stlib(target = 'bsd',
-                  features = 'c cxx',
-                  cflags = cflags,
-                  cxxflags = cxxflags,
-                  includes = includes,
-                  defines = defines,
-                  source = bld_sources,
-                  use = libbsd_use)
+        bld.stlib(target='bsd',
+                  features='c cxx',
+                  cflags=cflags,
+                  cxxflags=cxxflags,
+                  includes=includes,
+                  defines=defines,
+                  source=bld_sources,
+                  use=libbsd_use)
 
         #
         # Installs.
@@ -504,13 +509,13 @@ class Builder(builder.ModuleManager):
                 if start_dir != None:
                     bld.install_files("${PREFIX}/" + ipath,
                                       start_dir.ant_glob(headers[1]),
-                                      cwd = start_dir,
-                                      relative_trick = True)
+                                      cwd=start_dir,
+                                      relative_trick=True)
 
         bld.install_files(os.path.join("${PREFIX}", arch_inc_path,
                                        module_header_path),
                           modules_h_file_with_path,
-                          cwd = bld.path)
+                          cwd=bld.path)
 
         #
         # Tests
@@ -534,11 +539,11 @@ class Builder(builder.ModuleManager):
                                     for f in test[cfg]['files']]
                     libs = test[cfg]['libs'] + libs
             if build_test:
-                bld.program(target = '%s.exe' % (testName),
-                            features = 'cprogram',
-                            cflags = cflags,
-                            includes = includes,
-                            source = test_sources,
-                            use = ['bsd'],
-                            lib = libs,
-                            install_path = None)
+                bld.program(target='%s.exe' % (testName),
+                            features='cprogram',
+                            cflags=cflags,
+                            includes=includes,
+                            source=test_sources,
+                            use=['bsd'],
+                            lib=libs,
+                            install_path=None)

@@ -152,6 +152,18 @@ try:
     libbsd.load(build)
     build.generateBuild(only_enabled=False)
 
+    dups = build.duplicateCheck()
+    if len(dups) > 0:
+        print()
+        print('Duplicates: %d' % (len(dups)))
+        mods = list(set([dup[0] for dup in dups]))
+        max_mod_len = max(len(dup[1]) for dup in dups)
+        for mod in mods:
+            print(' %s:' % (mod))
+            for dup in [dup for dup in dups if dup[0] == mod]:
+                print('  %-*s %s %s' % (max_mod_len, dup[1], dup[3][0].upper(), dup[2]))
+        print()
+
     if isConfig:
         print()
         print(build)

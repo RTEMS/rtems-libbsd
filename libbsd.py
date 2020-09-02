@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2015-2016, 2018 Chris Johns <chrisj@rtems.org>.
+#  Copyright (c) 2015, 2020 Chris Johns <chrisj@rtems.org>.
 #  All rights reserved.
 #
 #  Copyright (c) 2009, 2018 embedded brains GmbH.  All rights reserved.
@@ -56,42 +56,55 @@ _defaults = {
     #
     # Includes
     #
-    'include-paths': ['rtemsbsd/include',
-                      'freebsd/sys',
-                      'freebsd/sys/contrib/ck/include',
-                      'freebsd/sys/contrib/libsodium/src/libsodium/include',
-                      'freebsd/sys/contrib/libsodium/src/libsodium/include/sodium',
-                      'freebsd/sys/contrib/pf',
-                      'freebsd/crypto',
-                      'freebsd/crypto/openssl/include',
-                      'freebsd/sys/net',
-                      'freebsd/include',
-                      'freebsd/lib',
-                      'freebsd/lib/libbsdstat',
-                      'freebsd/lib/libcapsicum',
-                      'freebsd/lib/libcasper',
-                      'freebsd/lib/libc/include',
-                      'freebsd/lib/libc/isc/include',
-                      'freebsd/lib/libc/resolv',
-                      'freebsd/lib/libutil',
-                      'freebsd/lib/libkvm',
-                      'freebsd/lib/libmemstat',
-                      'freebsd/contrib/expat/lib',
-                      'freebsd/contrib/libpcap',
-                      'freebsd/contrib/libxo',
-                      'ipsec-tools/src/libipsec',
-                      'linux/include',
-                      'linux/drivers/net/ethernet/freescale/fman',
-                      'rtemsbsd/sys',
-                      'mDNSResponder/mDNSCore',
-                      'mDNSResponder/mDNSShared',
-                      'mDNSResponder/mDNSPosix',
-                      'testsuite/include'],
-    'cpu-include-paths': ['rtemsbsd/@CPU@/include',
-                          'freebsd/sys/@CPU@/include'],
+    'include-paths': {
+        # The path where headers will be copied during the build.
+        'build': ['build-include'],
+        # Kernel header paths
+        'kernel': ['rtemsbsd/include',
+                   'freebsd/sys',
+                   'freebsd/sys/contrib/ck/include',
+                   'freebsd/sys/contrib/libsodium/src/libsodium/include',
+                   'freebsd/sys/contrib/libsodium/src/libsodium/include/sodium',
+                   'freebsd/sys/contrib/pf',
+                   'freebsd/sys/net',
+                   'ipsec-tools/src/libipsec',
+                   'linux/include',
+                   'linux/drivers/net/ethernet/freescale/fman',
+                   'rtemsbsd/sys'],
+        # User header paths
+        'user': ['freebsd/crypto',
+                 'freebsd/crypto/openssl/include',
+                 'freebsd/include',
+                 'freebsd/lib',
+                 'freebsd/lib/libbsdstat',
+                 'freebsd/lib/libcapsicum',
+                 'freebsd/lib/libcasper',
+                 'freebsd/lib/libc/include',
+                 'freebsd/lib/libc/isc/include',
+                 'freebsd/lib/libc/resolv',
+                 'freebsd/lib/libutil',
+                 'freebsd/lib/libkvm',
+                 'freebsd/lib/libmemstat',
+                 'freebsd/contrib/expat/lib',
+                 'freebsd/contrib/libpcap',
+                 'freebsd/contrib/libxo',
+                 'mDNSResponder/mDNSCore',
+                 'mDNSResponder/mDNSShared',
+                 'mDNSResponder/mDNSPosix',
+                 'testsuite/include'],
+        # CPU specific path, assumed to be in the kernel context
+        'cpu': ['rtemsbsd/@CPU@/include',
+                'freebsd/sys/@CPU@/include'],
+    },
 
-    # The path where headers will be copied during build.
-    'build-include-path': ['build-include'],
+    #
+    # Map paths based on RTEMS naming to FreeBSD naming.
+    #
+    'path-mappings': [
+        # (source, [targets..])
+        # i386
+        ('freebsd/sys/i386/include', ['freebsd/sys/x86/include', 'freebsd/sys/i386/include']),
+    ],
 
     #
     # Install headers
@@ -146,7 +159,7 @@ class rtems(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/bus_if.c',
                 'local/cryptodev_if.c',
@@ -162,36 +175,11 @@ class rtems(builder.Module):
                 'local/mmcbr_if.c',
                 'local/if_dwc_if.c',
                 'local/gpio_if.c',
-                'rtems/ipsec_get_policylen.c',
-                'rtems/rtems-bsd-arp-processor.c',
                 'rtems/rtems-bsd-allocator-domain-size.c',
-                'rtems/rtems-bsd-cxx.cc',
                 'rtems/rtems-bsd-get-allocator-domain-size.c',
-                'rtems/rtems-bsd-get-ethernet-addr.c',
                 'rtems/rtems-bsd-get-mac-address.c',
                 'rtems/rtems-bsd-get-task-priority.c',
                 'rtems/rtems-bsd-get-task-stack-size.c',
-                'rtems/rtems-bsd-ifconfig.c',
-                'rtems/rtems-bsd-ifconfig-lo0.c',
-                'rtems/rtems-bsd-init-dhcp.c',
-                'rtems/rtems-bsd-rc-conf-net.c',
-                'rtems/rtems-bsd-rc-conf-pf.c',
-                'rtems/rtems-bsd-rc-conf.c',
-                'rtems/rtems-bsd-set-if-input.c',
-                'rtems/rtems-bsd-shell-arp.c',
-                'rtems/rtems-bsd-shell-i2c.c',
-                'rtems/rtems-bsd-shell-ifconfig.c',
-                'rtems/rtems-bsd-shell-ifmcstat.c',
-                'rtems/rtems-bsd-shell-netstat.c',
-                'rtems/rtems-bsd-shell-nvmecontrol.c',
-                'rtems/rtems-bsd-shell-pfctl.c',
-                'rtems/rtems-bsd-shell-ping.c',
-                'rtems/rtems-bsd-shell-route.c',
-                'rtems/rtems-bsd-shell-stty.c',
-                'rtems/rtems-bsd-shell-sysctl.c',
-                'rtems/rtems-bsd-shell-tcpdump.c',
-                'rtems/rtems-bsd-shell-vmstat.c',
-                'rtems/rtems-bsd-shell-wlanstats.c',
                 'rtems/rtems-bsd-syscall-api.c',
                 'rtems/rtems-kernel-assert.c',
                 'rtems/rtems-kernel-autoconf.c',
@@ -230,32 +218,6 @@ class rtems(builder.Module):
                 'rtems/rtems-legacy-rtrequest.c',
                 'rtems/rtems-legacy-newproc.c',
                 'rtems/rtems-legacy-mii.c',
-                'rtems/rtems-kvm.c',
-                'rtems/rtems-program.c',
-                'rtems/rtems-program-socket.c',
-                'rtems/rtems-routes.c',
-                'rtems/syslog.c',
-                'ftpd/ftpd-service.c',
-                'nfsclient/mount_prot_xdr.c',
-                'nfsclient/nfs.c',
-                'nfsclient/nfs_prot_xdr.c',
-                'nfsclient/rpcio.c',
-                'pppd/auth.c',
-                'pppd/ccp.c',
-                'pppd/chap.c',
-                'pppd/chap_ms.c',
-                'pppd/chat.c',
-                'pppd/demand.c',
-                'pppd/fsm.c',
-                'pppd/ipcp.c',
-                'pppd/lcp.c',
-                'pppd/magic.c',
-                'pppd/options.c',
-                'pppd/rtemsmain.c',
-                'pppd/rtemspppd.c',
-                'pppd/sys-rtems.c',
-                'pppd/upap.c',
-                'pppd/utils.c',
                 'sys/arm/lpc/if_lpe.c',
                 'sys/arm/lpc/lpc_pwr.c',
                 'sys/dev/atsam/if_atsam.c',
@@ -274,21 +236,75 @@ class rtems(builder.Module):
                 'sys/fs/devfs/devfs_devs.c',
                 'sys/net/if_ppp.c',
                 'sys/net/ppp_tty.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addRTEMSUserSourceFiles(
+            [
+                'rtems/ipsec_get_policylen.c',
+                'rtems/rtems-bsd-arp-processor.c',
+                'rtems/rtems-bsd-cxx.cc',
+                'rtems/rtems-bsd-get-ethernet-addr.c',
+                'rtems/rtems-bsd-ifconfig.c',
+                'rtems/rtems-bsd-ifconfig-lo0.c',
+                'rtems/rtems-bsd-init-dhcp.c',
+                'rtems/rtems-bsd-rc-conf-net.c',
+                'rtems/rtems-bsd-rc-conf-pf.c',
+                'rtems/rtems-bsd-rc-conf.c',
+                'rtems/rtems-bsd-set-if-input.c',
+                'rtems/rtems-bsd-shell-arp.c',
+                'rtems/rtems-bsd-shell-ifconfig.c',
+                'rtems/rtems-bsd-shell-ifmcstat.c',
+                'rtems/rtems-bsd-shell-netstat.c',
+                'rtems/rtems-bsd-shell-nvmecontrol.c',
+                'rtems/rtems-bsd-shell-pfctl.c',
+                'rtems/rtems-bsd-shell-ping.c',
+                'rtems/rtems-bsd-shell-route.c',
+                'rtems/rtems-bsd-shell-stty.c',
+                'rtems/rtems-bsd-shell-sysctl.c',
+                'rtems/rtems-bsd-shell-tcpdump.c',
+                'rtems/rtems-bsd-shell-vmstat.c',
+                'rtems/rtems-bsd-shell-wlanstats.c',
+                'rtems/rtems-kvm.c',
+                'rtems/rtems-program.c',
+                'rtems/rtems-program-socket.c',
+                'rtems/rtems-routes.c',
+                'rtems/syslog.c',
+                'ftpd/ftpd-service.c',
+                'pppd/auth.c',
+                'pppd/ccp.c',
+                'pppd/chap.c',
+                'pppd/chap_ms.c',
+                'pppd/chat.c',
+                'pppd/demand.c',
+                'pppd/fsm.c',
+                'pppd/ipcp.c',
+                'pppd/lcp.c',
+                'pppd/magic.c',
+                'pppd/options.c',
+                'pppd/rtemsmain.c',
+                'pppd/rtemspppd.c',
+                'pppd/sys-rtems.c',
+                'pppd/upap.c',
+                'pppd/utils.c',
                 'telnetd/telnetd-service.c',
             ],
             mm.generator['source']()
         )
-        self.addFile(mm.generator['file']('rtems/rtems-kernel-kvm-symbols.c',
+        self.addFile(mm.generator['file']('kernel',
+                                          'rtems/rtems-kernel-kvm-symbols.c',
                                           mm.generator['rtems-path'](),
                                           mm.generator['no-convert'](),
                                           mm.generator['no-convert'](),
                                           mm.generator['kvm-symbols'](includes = 'rtemsbsd/rtems')))
-        self.addFile(mm.generator['file']('lib/libc/net/nslexer.l',
+        self.addFile(mm.generator['file']('user',
+                                          'lib/libc/net/nslexer.l',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['lex']('_nsyy', 'nsparser.c')))
-        self.addFile(mm.generator['file']('lib/libc/net/nsparser.y',
+        self.addFile(mm.generator['file']('user',
+                                          'lib/libc/net/nsparser.y',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -339,8 +355,6 @@ class base(builder.Module):
                 'sys/contrib/ck/include/gcc/x86/ck_f_pr.h',
                 'sys/contrib/ck/include/gcc/x86/ck_pr.h',
                 'sys/fs/devfs/devfs_int.h',
-                'sys/rpc/netconfig.h',
-                'sys/rpc/types.h',
                 'sys/security/audit/audit.h',
                 'sys/security/mac/mac_framework.h',
                 'sys/sys/acl.h',
@@ -571,7 +585,7 @@ class fdt(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'rtems/ofw_machdep.c',
             ],
@@ -608,7 +622,7 @@ class tty(builder.Module):
             ],
             mm.generator['source']()
         )
-#        self.addRTEMSSourceFiles(
+#        self.addRTEMSKernelSourceFiles(
 #            [
 #                'rtems/ofw_machdep.c',
 #            ],
@@ -645,7 +659,7 @@ class mmc(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'sys/arm/at91/at91_mci.c',
             ],
@@ -684,7 +698,7 @@ class mmc_ti(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/sdhci_if.c',
                 'local/gpiobus_if.c',
@@ -774,7 +788,7 @@ class iic(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/iicbus_if.c',
                 'sys/dev/iicbus/rtems-i2c.c',
@@ -828,7 +842,7 @@ class display(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/clknode_if.c',
                 'local/hdmi_if.c',
@@ -862,7 +876,7 @@ class pinmux(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/fdt_pinctrl_if.c',
             ],
@@ -1206,7 +1220,7 @@ class dev_usb_wlan(builder.Module):
                 'sys/dev/usb/wlan/if_zydreg.h',
             ]
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/runfw.c',
             ],
@@ -1318,7 +1332,7 @@ class dev_wlan_rtwn(builder.Module):
                 'sys/dev/rtwn/usb/rtwn_usb_var.h',
             ]
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/rtwn-rtl8192cfwT.c',
                 'local/rtwn-rtl8188eufw.c',
@@ -1523,7 +1537,7 @@ class dev_net(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'sys/dev/mii/ksz8091rnb_50MHz.c',
             ],
@@ -1822,7 +1836,7 @@ class nvme(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'sys/dev/nvd/nvd.c',
             ],
@@ -2231,14 +2245,16 @@ class netipsec(builder.Module):
             ],
             mm.generator['source'](libipsec_cflags)
         )
-        self.addFile(mm.generator['file']('ipsec-tools/src/libipsec/policy_token.l',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/libipsec/policy_token.l',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['lex']('__libipsec',
                                                               'policy_parse.c',
                                                               libipsec_cflags)))
-        self.addFile(mm.generator['file']('ipsec-tools/src/libipsec/policy_parse.y',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/libipsec/policy_parse.y',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2300,7 +2316,8 @@ class netipsec(builder.Module):
             mm.generator['source'](racoon_cflags,
                                    ['freebsd/crypto/openssl'])
         )
-        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/cftoken.l',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/racoon/cftoken.l',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2308,7 +2325,8 @@ class netipsec(builder.Module):
                                                               'cftoken.c',
                                                               racoon_cflags,
                                                               build=False)))
-        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/cfparse.y',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/racoon/cfparse.y',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2316,7 +2334,8 @@ class netipsec(builder.Module):
                                                                'cfparse.h',
                                                                racoon_cflags,
                                                                build=False)))
-        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/prsa_tok.l',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/racoon/prsa_tok.l',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2324,7 +2343,8 @@ class netipsec(builder.Module):
                                                               'prsa_tok.c',
                                                               racoon_cflags,
                                                               build=False)))
-        self.addFile(mm.generator['file']('ipsec-tools/src/racoon/prsa_par.y',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/racoon/prsa_par.y',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2337,7 +2357,7 @@ class netipsec(builder.Module):
                 'rtems/ipsec.h',
             ]
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSUserSourceFiles(
             [
                 'rtems/rtems-bsd-racoon.c',
                 'rtems/rtems-bsd-rc-conf-ipsec.c',
@@ -2357,7 +2377,8 @@ class netipsec(builder.Module):
             ],
             mm.generator['source'](setkey_cflags)
         )
-        self.addFile(mm.generator['file']('ipsec-tools/src/setkey/token.l',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/setkey/token.l',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2365,7 +2386,8 @@ class netipsec(builder.Module):
                                                               'token.c',
                                                               setkey_cflags,
                                                               build=False)))
-        self.addFile(mm.generator['file']('ipsec-tools/src/setkey/parse.y',
+        self.addFile(mm.generator['file']('user',
+                                          'ipsec-tools/src/setkey/parse.y',
                                           mm.generator['path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2373,7 +2395,7 @@ class netipsec(builder.Module):
                                                                'parse.h',
                                                                setkey_cflags,
                                                                build=False)))
-        self.addRTEMSSourceFiles(
+        self.addRTEMSUserSourceFiles(
             [
                 'rtems/rtems-bsd-shell-setkey.c',
             ],
@@ -2716,6 +2738,156 @@ class pf(builder.Module):
         )
 
 #
+# RPC for user space, remove when NFSv2 is removed
+#
+class rpc_user(builder.Module):
+
+    def __init__(self, manager):
+        super(rpc_user, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        # User space support for legacy nfsv2 client, remove when nfsv2 is removed
+        self.addUserSpaceHeaderFiles(
+            [
+                'include/rpc/clnt.h',
+                'include/rpc/pmap_rmt.h',
+                'include/rpc/svc_soc.h',
+                'include/rpc/nettype.h',
+                'include/rpc/xdr.h',
+                'include/rpc/svc.h',
+                'include/rpc/rpc_msg.h',
+                'include/rpc/rpcsec_gss.h',
+                'include/rpc/raw.h',
+                'include/rpc/clnt_stat.h',
+                'include/rpc/auth.h',
+                'include/rpc/svc_dg.h',
+                'include/rpc/auth_kerb.h',
+                'include/rpc/auth_des.h',
+                'include/rpc/rpcb_clnt.h',
+                'include/rpc/rpc.h',
+                'include/rpc/des.h',
+                'include/rpc/des_crypt.h',
+                'include/rpc/svc_auth.h',
+                'include/rpc/pmap_clnt.h',
+                'include/rpc/clnt_soc.h',
+                'include/rpc/pmap_prot.h',
+                'include/rpc/auth_unix.h',
+                'include/rpc/rpc_com.h',
+                'include/rpc/rpcent.h',
+                'include/rpcsvc/nis_db.h',
+                'include/rpcsvc/nislib.h',
+                'include/rpcsvc/nis_tags.h',
+                'include/rpcsvc/ypclnt.h',
+                'include/rpcsvc/yp_prot.h',
+                'lib/libc/rpc/mt_misc.h',
+                'lib/libc/rpc/rpc_com.h',
+            ]
+        )
+        self.addFile(mm.generator['file']('user',
+                                          'include/rpc/rpcb_prot.x',
+                                          mm.generator['freebsd-path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['rpc-gen']()))
+        self.addFile(mm.generator['file']('user',
+                                          'include/rpcsvc/nis.x',
+                                          mm.generator['freebsd-path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['rpc-gen']()))
+        self.addUserSpaceSourceFiles(
+            [
+                'lib/libc/rpc/auth_des.c',
+                'lib/libc/rpc/authdes_prot.c',
+                'lib/libc/rpc/auth_none.c',
+                'lib/libc/rpc/auth_time.c',
+                'lib/libc/rpc/auth_unix.c',
+                'lib/libc/rpc/authunix_prot.c',
+                'lib/libc/rpc/bindresvport.c',
+                'lib/libc/rpc/clnt_bcast.c',
+                'lib/libc/rpc/clnt_dg.c',
+                'lib/libc/rpc/clnt_generic.c',
+                'lib/libc/rpc/clnt_perror.c',
+                'lib/libc/rpc/clnt_raw.c',
+                'lib/libc/rpc/clnt_simple.c',
+                'lib/libc/rpc/clnt_vc.c',
+                'lib/libc/rpc/crypt_client.c',
+                'lib/libc/rpc/des_crypt.c',
+                'lib/libc/rpc/des_soft.c',
+                'lib/libc/rpc/getnetconfig.c',
+                'lib/libc/rpc/getnetpath.c',
+                'lib/libc/rpc/getpublickey.c',
+                'lib/libc/rpc/getrpcent.c',
+                'lib/libc/rpc/getrpcport.c',
+                'lib/libc/rpc/key_call.c',
+                'lib/libc/rpc/key_prot_xdr.c',
+                'lib/libc/rpc/mt_misc.c',
+                'lib/libc/rpc/netname.c',
+                'lib/libc/rpc/netnamer.c',
+                'lib/libc/rpc/pmap_clnt.c',
+                'lib/libc/rpc/pmap_getmaps.c',
+                'lib/libc/rpc/pmap_getport.c',
+                'lib/libc/rpc/pmap_prot2.c',
+                'lib/libc/rpc/pmap_prot.c',
+                'lib/libc/rpc/pmap_rmt.c',
+                'lib/libc/rpc/rpcb_clnt.c',
+                'lib/libc/rpc/rpcb_prot.c',
+                'lib/libc/rpc/rpcb_st_xdr.c',
+                'lib/libc/rpc/rpc_callmsg.c',
+                'lib/libc/rpc/rpc_commondata.c',
+                'lib/libc/rpc/rpcdname.c',
+                'lib/libc/rpc/rpc_dtablesize.c',
+                'lib/libc/rpc/rpc_generic.c',
+                'lib/libc/rpc/rpc_prot.c',
+                'lib/libc/rpc/rpcsec_gss_stub.c',
+                'lib/libc/rpc/rpc_soc.c',
+                'lib/libc/rpc/rtime.c',
+                'lib/libc/rpc/svc_auth.c',
+                'lib/libc/rpc/svc_auth_des.c',
+                'lib/libc/rpc/svc_auth_unix.c',
+                'lib/libc/rpc/svc.c',
+                'lib/libc/rpc/svc_dg.c',
+                'lib/libc/rpc/svc_generic.c',
+                'lib/libc/rpc/svc_raw.c',
+                'lib/libc/rpc/svc_run.c',
+                'lib/libc/rpc/svc_simple.c',
+                'lib/libc/rpc/svc_vc.c',
+                'lib/libc/xdr/xdr_array.c',
+                'lib/libc/xdr/xdr.c',
+                'lib/libc/xdr/xdr_float.c',
+                'lib/libc/xdr/xdr_mem.c',
+                'lib/libc/xdr/xdr_rec.c',
+                'lib/libc/xdr/xdr_reference.c',
+                'lib/libc/xdr/xdr_sizeof.c',
+                'lib/libc/xdr/xdr_stdio.c',
+            ],
+            mm.generator['source'](['-DINET'])
+        )
+
+#
+# NFSv2 Client
+#
+class nfsv2(builder.Module):
+
+    def __init__(self, manager):
+        super(nfsv2, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addDependency(mm['rpc_user'])
+        self.addRTEMSUserSourceFiles(
+            [
+                'nfsclient/mount_prot_xdr.c',
+                'nfsclient/nfs.c',
+                'nfsclient/nfs_prot_xdr.c',
+                'nfsclient/rpcio.c',
+            ],
+            mm.generator['source']()
+        )
+
+
+#
 # PCI
 #
 class pci(builder.Module):
@@ -2761,6 +2933,7 @@ class pci(builder.Module):
             mm.generator['source']()
         )
 
+
 #
 # User space
 #
@@ -2797,36 +2970,6 @@ class user_space(builder.Module):
                 'include/nsswitch.h',
                 'include/resolv.h',
                 'include/res_update.h',
-                'include/rpc/clnt.h',
-                'include/rpc/pmap_rmt.h',
-                'include/rpc/svc_soc.h',
-                'include/rpc/nettype.h',
-                'include/rpc/xdr.h',
-                'include/rpc/svc.h',
-                'include/rpc/rpc_msg.h',
-                'include/rpc/rpcsec_gss.h',
-                'include/rpc/raw.h',
-                'include/rpc/clnt_stat.h',
-                'include/rpc/auth.h',
-                'include/rpc/svc_dg.h',
-                'include/rpc/auth_kerb.h',
-                'include/rpc/auth_des.h',
-                'include/rpc/rpcb_clnt.h',
-                'include/rpc/rpc.h',
-                'include/rpc/des.h',
-                'include/rpc/des_crypt.h',
-                'include/rpc/svc_auth.h',
-                'include/rpc/pmap_clnt.h',
-                'include/rpc/clnt_soc.h',
-                'include/rpc/pmap_prot.h',
-                'include/rpc/auth_unix.h',
-                'include/rpc/rpc_com.h',
-                'include/rpc/rpcent.h',
-                'include/rpcsvc/nis_db.h',
-                'include/rpcsvc/nislib.h',
-                'include/rpcsvc/nis_tags.h',
-                'include/rpcsvc/ypclnt.h',
-                'include/rpcsvc/yp_prot.h',
                 'include/sysexits.h',
                 'lib/lib80211/lib80211_ioctl.h',
                 'lib/lib80211/lib80211_regdomain.h',
@@ -2856,8 +2999,6 @@ class user_space(builder.Module):
                 'lib/libc/net/res_config.h',
                 'lib/libc/resolv/res_debug.h',
                 'lib/libc/resolv/res_private.h',
-                'lib/libc/rpc/mt_misc.h',
-                'lib/libc/rpc/rpc_com.h',
                 'lib/libc/stdio/local.h',
                 'lib/libkvm/kvm.h',
                 'lib/libmemstat/memstat.h',
@@ -2873,22 +3014,14 @@ class user_space(builder.Module):
                 'usr.bin/netstat/netstat.h'
             ]
         )
-        self.addFile(mm.generator['file']('include/rpc/rpcb_prot.x',
-                                          mm.generator['freebsd-path'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['rpc-gen']()))
-        self.addFile(mm.generator['file']('include/rpcsvc/nis.x',
-                                          mm.generator['freebsd-path'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['convert'](),
-                                          mm.generator['rpc-gen']()))
-        self.addFile(mm.generator['file']('sbin/route/keywords',
+        self.addFile(mm.generator['file']('user',
+                                          'sbin/route/keywords',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['route-keywords']()))
-        self.addFile(mm.generator['file']('sbin/pfctl/parse.y',
+        self.addFile(mm.generator['file']('user',
+                                          'sbin/pfctl/parse.y',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -2928,7 +3061,7 @@ class user_space(builder.Module):
                 'include/machine/rtems-bsd-regdomain.h',
             ]
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSUserSourceFiles(
             [
                 'rtems/rtems-bsd-regdomain.c',
             ],
@@ -3023,72 +3156,9 @@ class user_space(builder.Module):
                 'lib/libc/resolv/res_send.c',
                 'lib/libc/resolv/res_state.c',
                 'lib/libc/resolv/res_update.c',
-                'lib/libc/rpc/auth_des.c',
-                'lib/libc/rpc/authdes_prot.c',
-                'lib/libc/rpc/auth_none.c',
-                'lib/libc/rpc/auth_time.c',
-                'lib/libc/rpc/auth_unix.c',
-                'lib/libc/rpc/authunix_prot.c',
-                'lib/libc/rpc/bindresvport.c',
-                'lib/libc/rpc/clnt_bcast.c',
-                'lib/libc/rpc/clnt_dg.c',
-                'lib/libc/rpc/clnt_generic.c',
-                'lib/libc/rpc/clnt_perror.c',
-                'lib/libc/rpc/clnt_raw.c',
-                'lib/libc/rpc/clnt_simple.c',
-                'lib/libc/rpc/clnt_vc.c',
-                'lib/libc/rpc/crypt_client.c',
-                'lib/libc/rpc/des_crypt.c',
-                'lib/libc/rpc/des_soft.c',
-                'lib/libc/rpc/getnetconfig.c',
-                'lib/libc/rpc/getnetpath.c',
-                'lib/libc/rpc/getpublickey.c',
-                'lib/libc/rpc/getrpcent.c',
-                'lib/libc/rpc/getrpcport.c',
-                'lib/libc/rpc/key_call.c',
-                'lib/libc/rpc/key_prot_xdr.c',
-                'lib/libc/rpc/mt_misc.c',
-                'lib/libc/rpc/netname.c',
-                'lib/libc/rpc/netnamer.c',
-                'lib/libc/rpc/pmap_clnt.c',
-                'lib/libc/rpc/pmap_getmaps.c',
-                'lib/libc/rpc/pmap_getport.c',
-                'lib/libc/rpc/pmap_prot2.c',
-                'lib/libc/rpc/pmap_prot.c',
-                'lib/libc/rpc/pmap_rmt.c',
-                'lib/libc/rpc/rpcb_clnt.c',
-                'lib/libc/rpc/rpcb_prot.c',
-                'lib/libc/rpc/rpcb_st_xdr.c',
-                'lib/libc/rpc/rpc_callmsg.c',
-                'lib/libc/rpc/rpc_commondata.c',
-                'lib/libc/rpc/rpcdname.c',
-                'lib/libc/rpc/rpc_dtablesize.c',
-                'lib/libc/rpc/rpc_generic.c',
-                'lib/libc/rpc/rpc_prot.c',
-                'lib/libc/rpc/rpcsec_gss_stub.c',
-                'lib/libc/rpc/rpc_soc.c',
-                'lib/libc/rpc/rtime.c',
-                'lib/libc/rpc/svc_auth.c',
-                'lib/libc/rpc/svc_auth_des.c',
-                'lib/libc/rpc/svc_auth_unix.c',
-                'lib/libc/rpc/svc.c',
-                'lib/libc/rpc/svc_dg.c',
-                'lib/libc/rpc/svc_generic.c',
-                'lib/libc/rpc/svc_raw.c',
-                'lib/libc/rpc/svc_run.c',
-                'lib/libc/rpc/svc_simple.c',
-                'lib/libc/rpc/svc_vc.c',
                 'lib/libc/stdio/fgetln.c',
                 'lib/libc/stdlib/strtonum.c',
                 'lib/libc/string/strsep.c',
-                'lib/libc/xdr/xdr_array.c',
-                'lib/libc/xdr/xdr.c',
-                'lib/libc/xdr/xdr_float.c',
-                'lib/libc/xdr/xdr_mem.c',
-                'lib/libc/xdr/xdr_rec.c',
-                'lib/libc/xdr/xdr_reference.c',
-                'lib/libc/xdr/xdr_sizeof.c',
-                'lib/libc/xdr/xdr_stdio.c',
                 'lib/libmemstat/memstat_all.c',
                 'lib/libmemstat/memstat.c',
                 'lib/libmemstat/memstat_malloc.c',
@@ -3206,6 +3276,7 @@ class crypto_openssl(builder.Module):
 
     def generate(self):
         mm = self.manager
+        self.addDependency(mm['user_space'])
         self.addUserSpaceHeaderFiles(
             [
                 'crypto/openssl/crypto/aes/aes_locl.h',
@@ -4159,16 +4230,18 @@ class crypto_openssl(builder.Module):
                                     'freebsd/crypto/openssl/crypto/ec/curve448',
                                     'freebsd/crypto/openssl/crypto/ec/curve448/arch_32'])
         )
-        self.addFile(mm.generator['file']('crypto/openssl/crypto/LPdir_unix.c',
+        self.addFile(mm.generator['file']('user',
+                                          'crypto/openssl/crypto/LPdir_unix.c',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'](),
                                           mm.generator['from-RTEMS-To-FreeBSD-SourceConverter'](),
-                                          mm.generator['buildSystemFragmentComposer']()))
-        self.addFile(mm.generator['file']('crypto/openssl/crypto/ec/ecp_nistz256_table.c',
+                                          mm.generator['buildSystemComposer']()))
+        self.addFile(mm.generator['file']('user',
+                                          'crypto/openssl/crypto/ec/ecp_nistz256_table.c',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'](),
                                           mm.generator['from-RTEMS-To-FreeBSD-SourceConverter'](),
-                                          mm.generator['buildSystemFragmentComposer']()))
+                                          mm.generator['buildSystemComposer']()))
         self.addPlainTextFile(
             [
                 'crypto/openssl/LICENSE'
@@ -4178,7 +4251,6 @@ class crypto_openssl(builder.Module):
 #
 # /usr/bin/openssl
 #
-# depends on crypto_openssl, user_space
 class usr_bin_openssl(builder.Module):
 
     def __init__(self, manager):
@@ -4186,6 +4258,7 @@ class usr_bin_openssl(builder.Module):
 
     def generate(self):
         mm = self.manager
+        self.addDependency(mm['crypto_openssl'])
         self.addUserSpaceHeaderFiles(
             [
                 'crypto/openssl/apps/apps.h',
@@ -4258,7 +4331,7 @@ class usr_bin_openssl(builder.Module):
                                    ['freebsd/crypto/openssl']
             )
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSUserSourceFiles(
             [
                 'rtems/rtems-bsd-shell-openssl.c',
             ],
@@ -4378,14 +4451,16 @@ class contrib_libpcap(builder.Module):
         )
         gen_cflags = cflags + ['-DNEED_YYPARSE_WRAPPER=1',
                                '-Dyylval=pcap_lval']
-        self.addFile(mm.generator['file']('contrib/libpcap/scanner.l',
+        self.addFile(mm.generator['file']('user',
+                                          'contrib/libpcap/scanner.l',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['lex']('pcap',
                                                               'scanner.c',
                                                               gen_cflags)))
-        self.addFile(mm.generator['file']('contrib/libpcap/grammar.y',
+        self.addFile(mm.generator['file']('user',
+                                          'contrib/libpcap/grammar.y',
                                           mm.generator['freebsd-path'](),
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
@@ -4966,7 +5041,7 @@ class usr_sbin_wpa_supplicant(builder.Module):
                                     'freebsd/usr.sbin/wpa/wpa_supplicant',
                                     'freebsd/crypto/openssl/crypto'])
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSUserSourceFiles(
             [
                 'rtems/rtems-bsd-shell-wpa_supplicant.c',
                 'rtems/rtems-wpa_supplicant_mutex.c',
@@ -5080,7 +5155,7 @@ class dhcpcd(builder.Module):
             ],
             mm.generator['source']('-D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET')
         )
-        self.addRTEMSSourceFiles(
+        self.addRTEMSUserSourceFiles(
             [
                 'rtems/rtems-bsd-shell-dhcpcd.c',
             ],
@@ -5117,6 +5192,7 @@ class mdnsresponder(builder.Module):
             ],
             mm.generator['source']()
         )
+
 
 class dpaa(builder.Module):
 
@@ -5217,7 +5293,7 @@ class regulator(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addRTEMSSourceFiles(
+        self.addRTEMSKernelSourceFiles(
             [
                 'local/regdev_if.c',
                 'local/regnode_if.c',
@@ -5385,6 +5461,9 @@ def load(mm):
     mm.addModule(altq(mm))
     mm.addModule(pf(mm))
     mm.addModule(dev_net(mm))
+
+    mm.addModule(rpc_user(mm))
+    mm.addModule(nfsv2(mm))
 
     # Add PCI
     mm.addModule(pci(mm))

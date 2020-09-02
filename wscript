@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-2-Clause
-'''RTEMS LibBSD is a transparent source build of the FreeBSD kernel
+"""RTEMS LibBSD is a transparent source build of the FreeBSD kernel
 source for RTEMS.
 
 To use see README.waf shipped with this file.
-'''
+"""
 
 # Copyright (c) 2015-2016 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #

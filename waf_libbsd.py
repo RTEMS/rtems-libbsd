@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
-'''LibBSD build configuration to waf integration module.
-'''
+"""LibBSD build configuration to waf integration module.
+"""
 
 # Copyright (c) 2015, 2020 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
@@ -36,12 +36,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
-
-# Python 3 does no longer know the basestring class. Catch that.
-try:
-    basestring
-except NameError:
-    basestring = (str, bytes)
 
 import os
 import sys
@@ -86,11 +80,11 @@ class Builder(builder.ModuleManager):
         return sources
 
     def generate(self, rtems_version):
-        def _dataInsert(data, cpu, frag):
+        def _dataInsert(data, cpu, space, frag):
             #
-            # The default handler returns an empty string. Skip it.
+            # The default handler returns None. Skip it.
             #
-            if type(frag) is not str:
+            if frag is not None:
                 # Start at the top of the tree
                 d = data
                 path = frag[0]
@@ -99,6 +93,10 @@ class Builder(builder.ModuleManager):
                 # Select the sub-part of the tree as the compile options
                 # specialise how files are built.
                 d = d[path[0]]
+                # Group based on the space, ie kernel or user
+                if space not in d:
+                    d[space] = {}
+                d = d[space]
                 if type(path[1]) is list:
                     p = ' '.join(path[1])
                 else:
@@ -144,11 +142,14 @@ class Builder(builder.ModuleManager):
             m = self[mn]
             if m.conditionalOn == "none":
                 for f in m.files:
-                    _dataInsert(self.data, 'all', f.getFragment())
+                    _dataInsert(self.data, 'all', f.getSpace(),
+                                f.getFragment())
             for cpu, files in sorted(m.cpuDependentSourceFiles.items()):
                 for f in files:
-                    _dataInsert(self.data, cpu, f.getFragment())
+                    _dataInsert(self.data, cpu, f.getSpace(),
+                                f.getFragment())
 
+        # Start here if you need to understand self.data. Add 'True or'
         if self.trace:
             import pprint
             pprint.pprint(self.data)
@@ -206,23 +207,45 @@ class Builder(builder.ModuleManager):
                 defines += ['%s=1' % (o.strip().upper())]
 
         #
-        # Include paths
+        # Include paths, maintain paths for each build space.
         #
-        includes = []
-        buildinclude = 'build-include'
-        if 'cpu-include-paths' in config:
+        include_paths = config['include-paths']
+        if 'build' not in include_paths:
+            bld.fatal('no build include path found in include-path defaults')
+        buildinclude = include_paths['build']
+        if isinstance(buildinclude, list):
+            buildinclude = buildinclude[0]
+        inc_paths = sorted(include_paths)
+        inc_paths.remove('build')
+        inc_paths.remove('cpu')
+        includes = {}
+        for inc in inc_paths:
+            includes[inc] = include_paths[inc]
+        # cpu include paths must be the first searched
+        if 'cpu' in include_paths:
             cpu = bld.get_env()['RTEMS_ARCH']
-            if cpu == "i386":
-                includes += ['freebsd/sys/x86/include']
-            for i in config['cpu-include-paths']:
-                includes += [i.replace('@CPU@', cpu)]
-        if 'include-paths' in config:
-            includes += config['include-paths']
-        if 'build-include-path' in config:
-            buildinclude = config['build-include-path']
-            if not isinstance(buildinclude, basestring):
-                buildinclude = buildinclude[0]
-        includes += [buildinclude]
+            for i in include_paths['cpu']:
+                includes['kernel'].insert(0, i.replace('@CPU@', cpu))
+        includes['kernel'] += [buildinclude]
+
+        #
+        # Path mappings
+        #
+        if 'path-mappings' in config:
+            for source, target in config['path-mappings']:
+                for space in includes:
+                    incs = includes[space]
+                    if source in incs:
+                        target = [target] if isinstance(target,
+                                                        str) else target
+                        i = incs.index(source)
+                        incs.remove(source)
+                        incs[i:i] = target
+
+        #
+        # Place the kernel include paths after the user paths
+        #
+        includes['user'] += includes['kernel']
 
         #
         # Collect the libbsd uses
@@ -316,7 +339,7 @@ class Builder(builder.ModuleManager):
         # KVM Symbols
         #
         if 'KVMSymbols' in self.data:
-            kvmsymbols = self.data['KVMSymbols']
+            kvmsymbols = self.data['KVMSymbols']['kernel']
             if 'includes' in kvmsymbols['files']:
                 kvmsymbols_includes = kvmsymbols['files']['includes']
             else:
@@ -328,7 +351,7 @@ class Builder(builder.ModuleManager):
             bld.objects(target='kvmsymbols',
                         features='c',
                         cflags=cflags,
-                        includes=kvmsymbols_includes + includes,
+                        includes=kvmsymbols_includes + includes['kernel'],
                         source=kvmsymbols['files']['all']['default'][0])
             libbsd_use += ["kvmsymbols"]
 
@@ -339,7 +362,7 @@ class Builder(builder.ModuleManager):
         #
         if 'RPCGen' in self.data:
             if bld.env.AUTO_REGEN:
-                rpcgen = self.data['RPCGen']
+                rpcgen = self.data['RPCGen']['user']
                 rpcname = rpcgen['files']['all']['default'][0][:-2]
                 bld(target=rpcname + '.h',
                     source=rpcname + '.x',
@@ -350,7 +373,7 @@ class Builder(builder.ModuleManager):
         #
         if 'RouteKeywords' in self.data:
             if bld.env.AUTO_REGEN:
-                routekw = self.data['RouteKeywords']
+                routekw = self.data['RouteKeywords']['user']
                 rkwname = routekw['files']['all']['default'][0]
                 rkw_rule = host_shell + "cat ${SRC} | " + \
                            "awk 'BEGIN { r = 0 } { if (NF == 1) " + \
@@ -362,7 +385,7 @@ class Builder(builder.ModuleManager):
         # Lex
         #
         if 'lex' in self.data:
-            lexes = self.data['lex']
+            lexes = self.data['lex']['user']
             for l in sorted(lexes.keys()):
                 lex = lexes[l]['all']['default']
                 if 'cflags' in lex:
@@ -383,7 +406,7 @@ class Builder(builder.ModuleManager):
                     bld.objects(target='lex_%s' % (lex['sym']),
                                 features='c',
                                 cflags=cflags,
-                                includes=lexIncludes + includes,
+                                includes=lexIncludes + includes['user'],
                                 defines=defines + lexDefines,
                                 source=lex['file'][:-2] + '.c')
                 libbsd_use += ['lex_%s' % (lex['sym'])]
@@ -392,7 +415,7 @@ class Builder(builder.ModuleManager):
         # Yacc
         #
         if 'yacc' in self.data:
-            yaccs = self.data['yacc']
+            yaccs = self.data['yacc']['user']
             for y in sorted(yaccs.keys()):
                 yacc = yaccs[y]['all']['default']
                 yaccFile = yacc['file']
@@ -423,7 +446,7 @@ class Builder(builder.ModuleManager):
                     bld.objects(target='yacc_%s' % (yaccSym),
                                 features='c',
                                 cflags=cflags,
-                                includes=yaccIncludes + includes,
+                                includes=yaccIncludes + includes['user'],
                                 defines=defines + yaccDefines,
                                 source=yaccFile[:-2] + '.c')
                 libbsd_use += ['yacc_%s' % (yaccSym)]
@@ -433,34 +456,40 @@ class Builder(builder.ModuleManager):
         # specific files for those flags.
         #
         objs = 0
-        sources = sorted(self.data['sources'])
-        if 'default' in sources:
-            sources.remove('default')
-        for flags in sources:
-            objs += 1
-            build = self.data['sources'][flags]
-            target = 'objs%02d' % (objs)
-            bld_sources = Builder._sourceList(bld, build['all'])
-            archs = sorted(build)
-            for i in ['all', 'cflags', 'includes']:
-                if i in archs:
-                    archs.remove(i)
-            for arch in archs:
-                if bld.get_env()['RTEMS_ARCH'] == arch:
-                    bld_sources += Builder._sourceList(bld, build[arch])
-            bld.objects(target=target,
-                        features='c',
-                        cflags=cflags + sorted(build.get('cflags', [])),
-                        includes=sorted(build.get('includes', [])) + includes,
-                        defines=defines,
-                        source=bld_sources)
-            libbsd_use += [target]
+        for space in sorted(self.data['sources']):
+            sources = sorted(self.data['sources'][space])
+            if space == 'kernel' and 'default' in sources:
+                sources.remove('default')
+            for flags in sources:
+                objs += 1
+                build = self.data['sources'][space][flags]
+                target = 'objs%02d' % (objs)
+                bld_sources = Builder._sourceList(bld, build['all'])
+                archs = sorted(build)
+                for i in ['all', 'cflags', 'includes']:
+                    if i in archs:
+                        archs.remove(i)
+                for arch in archs:
+                    if bld.get_env()['RTEMS_ARCH'] == arch:
+                        bld_sources += Builder._sourceList(bld, build[arch])
+                bld_cflags = sorted(build.get('cflags', []))
+                if 'default' in bld_cflags:
+                    bld_cflags.remove('default')
+                bld.objects(target=target,
+                            features='c cxx',
+                            cflags=cflags + bld_cflags,
+                            cxxflags=cxxflags,
+                            includes=sorted(build.get('includes', [])) +
+                            includes[space],
+                            defines=defines,
+                            source=bld_sources)
+                libbsd_use += [target]
 
         #
-        # We hold the 'default' cflags set of files to the end to create the
-        # static library with.
+        # We hold the kernel 'default' cflags set of files to the end to
+        # create the static library with.
         #
-        build = self.data['sources']['default']
+        build = self.data['sources']['kernel']['default']
         bld_sources = Builder._sourceList(bld, build['all'])
         archs = sorted(build)
         archs.remove('all')
@@ -471,7 +500,7 @@ class Builder(builder.ModuleManager):
                   features='c cxx',
                   cflags=cflags,
                   cxxflags=cxxflags,
-                  includes=includes,
+                  includes=includes['kernel'],
                   defines=defines,
                   source=bld_sources,
                   use=libbsd_use)
@@ -513,9 +542,9 @@ class Builder(builder.ModuleManager):
         #
         tests = []
         if 'tests' in self.data:
-            tests = self.data['tests']
+            tests = self.data['tests']['user']
         for testName in sorted(tests):
-            test = self.data['tests'][testName]['all']
+            test = tests[testName]['all']
             test_source = []
             libs = ['bsd', 'm', 'z', 'rtemstest']
             for cfg in test:
@@ -533,7 +562,7 @@ class Builder(builder.ModuleManager):
                 bld.program(target='%s.exe' % (testName),
                             features='cprogram',
                             cflags=cflags,
-                            includes=includes,
+                            includes=includes['user'],
                             source=test_sources,
                             use=['bsd'],
                             lib=libs,

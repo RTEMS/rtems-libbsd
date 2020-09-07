@@ -86,6 +86,7 @@ program-header:
 	cd freebsd/tools/tools/net80211/wlanstats && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/tools/tools/net80211/wlanstats/*.o -p wlanstats
 	cd freebsd/usr.bin/netstat && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.bin/netstat/*.o -p netstat
 	cd freebsd/usr.sbin/arp && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.sbin/arp/*.o -p arp
+	cd freebsd/usr.sbin/ifmcstat && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.sbin/ifmcstat/*.o -p ifmcstat
 	cd ipsec-tools/src/racoon && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/ipsec-tools/src/racoon/*.o -p racoon
 	cd ipsec-tools/src/setkey && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/ipsec-tools/src/setkey/*.o -p setkey
 

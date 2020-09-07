@@ -5141,6 +5141,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('media01', ['test_main'],
                                           runTest = False,
                                           extraLibs = ['ftpd', 'telnetd']))
+        self.addTest(mm.generator['test']('mcast01', ['test_main']))
         self.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('log01', ['test_main']))

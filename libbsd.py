@@ -186,6 +186,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-set-if-input.c',
                 'rtems/rtems-bsd-shell-arp.c',
                 'rtems/rtems-bsd-shell-ifconfig.c',
+                'rtems/rtems-bsd-shell-ifmcstat.c',
                 'rtems/rtems-bsd-shell-netstat.c',
                 'rtems/rtems-bsd-shell-nvmecontrol.c',
                 'rtems/rtems-bsd-shell-pfctl.c',
@@ -3026,6 +3027,8 @@ class user_space(builder.Module):
                 'usr.bin/netstat/unix.c',
                 'usr.bin/vmstat/vmstat.c',
                 'usr.sbin/arp/arp.c',
+                'usr.sbin/ifmcstat/ifmcstat.c',
+                'usr.sbin/ifmcstat/printb.c',
             ],
             mm.generator['source'](['-DINET'])
         )

@@ -50,6 +50,8 @@ int rtems_bsd_command_arp(int argc, char **argv);
 
 int rtems_bsd_command_ifconfig(int argc, char **argv);
 
+int rtems_bsd_command_ifmcstat(int argc, char **argv);
+
 int rtems_bsd_command_netstat(int argc, char **argv);
 
 int rtems_bsd_command_nvmecontrol(int argc, char **argv);

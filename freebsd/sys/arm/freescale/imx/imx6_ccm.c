@@ -368,6 +368,7 @@ imx6_ccm_sata_enable(void)
 	return 0;
 }
 
+#ifndef __rtems__
 uint32_t
 imx_ccm_ecspi_hz(void)
 {
@@ -408,6 +409,7 @@ imx_ccm_ahb_hz(void)
 {
 	return (132000000);
 }
+#endif /* __rtems__ */
 
 void
 imx_ccm_ipu_enable(int ipu)

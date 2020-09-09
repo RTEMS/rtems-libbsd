@@ -2636,17 +2636,11 @@
 #define	imo_multi_filter _bsd_imo_multi_filter
 #define	imx6_anatop_write_4 _bsd_imx6_anatop_write_4
 #define	imx6_ccm_sata_enable _bsd_imx6_ccm_sata_enable
-#define	imx_ccm_ahb_hz _bsd_imx_ccm_ahb_hz
-#define	imx_ccm_ecspi_hz _bsd_imx_ccm_ecspi_hz
 #define	imx_ccm_get_cacrr _bsd_imx_ccm_get_cacrr
 #define	imx_ccm_hdmi_enable _bsd_imx_ccm_hdmi_enable
-#define	imx_ccm_ipg_hz _bsd_imx_ccm_ipg_hz
 #define	imx_ccm_ipu_enable _bsd_imx_ccm_ipu_enable
-#define	imx_ccm_perclk_hz _bsd_imx_ccm_perclk_hz
-#define	imx_ccm_sdhci_hz _bsd_imx_ccm_sdhci_hz
 #define	imx_ccm_set_cacrr _bsd_imx_ccm_set_cacrr
 #define	imx_ccm_ssi_configure _bsd_imx_ccm_ssi_configure
-#define	imx_ccm_uart_hz _bsd_imx_ccm_uart_hz
 #define	imx_ccm_usb_enable _bsd_imx_ccm_usb_enable
 #define	imx_ccm_usbphy_enable _bsd_imx_ccm_usbphy_enable
 #define	in4_cksum _bsd_in4_cksum

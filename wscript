@@ -45,76 +45,24 @@ except:
     import sys
     sys.exit(1)
 
-import libbsd
-import waf_libbsd
 import os.path
 import runpy
 import sys
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+
 import waflib.Options
 
+import libbsd
+import waf_libbsd
+
 builders = {}
-
-BUILDSET_DIR = "buildset"
-BUILDSET_DEFAULT = "buildset/default.ini"
-
-
-def load_ini(conf, f):
-    ini = configparser.ConfigParser()
-    ini.read(f)
-    if not ini.has_section('general'):
-        conf.fatal("'{}' is missing a general section.".format(f))
-    if not ini.has_option('general', 'name'):
-        conf.fatal("'{}' is missing a general/name.".format(f))
-    if ini.has_option('general', 'extends'):
-        extends = ini.get('general', 'extends')
-        extendfile = None
-        basepath = os.path.dirname(f)
-        if os.path.isfile(os.path.join(basepath, extends)):
-            extendfile = os.path.join(basepath, extends)
-        elif os.path.isfile(os.path.join(BUILDSET_DIR, extends)):
-            extendfile = os.path.join(BUILDSET_DIR, extends)
-        else:
-            conf.fatal(
-                "'{}': Invalid file given for general/extends:'{}'".format(
-                    f, extends))
-        base = load_ini(conf, extendfile)
-        for s in ini.sections():
-            if not base.has_section(s):
-                base.add_section(s)
-            for o in ini.options(s):
-                val = ini.get(s, o)
-                base.set(s, o, val)
-        ini = base
-    return ini
-
-
-def load_config(conf, f):
-    ini = load_ini(conf, f)
-    config = {}
-
-    config['name'] = ini.get('general', 'name')
-
-    config['modules-enabled'] = []
-    mods = []
-    if ini.has_section('modules'):
-        mods = ini.options('modules')
-    for mod in mods:
-        if ini.getboolean('modules', mod):
-            config['modules-enabled'].append(mod)
-    return config
 
 
 def update_builders(ctx, buildset_opt):
     global builders
     builders = {}
-
     buildsets = []
     if buildset_opt == []:
-        buildset_opt.append(BUILDSET_DEFAULT)
+        buildset_opt.append(waf_libbsd.BUILDSET_DEFAULT)
     for bs in buildset_opt:
         if os.path.isdir(bs):
             for f in os.listdir(bs):
@@ -123,15 +71,16 @@ def update_builders(ctx, buildset_opt):
         else:
             for f in bs.split(','):
                 buildsets += [f]
-
     for bs in buildsets:
-        builder = waf_libbsd.Builder()
-        libbsd.load(builder)
-        bsconfig = load_config(ctx, bs)
-        bsname = bsconfig['name']
-        builder.updateConfiguration(bsconfig)
-        builder.generate(rtems_version)
-        builders[bsname] = builder
+        try:
+            builder = waf_libbsd.Builder()
+            libbsd.load(builder)
+            builder.loadConfig(bs)
+            builder.generate(rtems_version)
+        except Exception as exc:
+            raise
+            ctx.fatal(str(exc))
+        builders[builder.getName()] = builder
 
 
 def bsp_init(ctx, env, contexts):
@@ -250,7 +199,7 @@ def configure(conf):
     conf.env.OPTIMIZATION = conf.options.optimization
     conf.env.BUILDSET = conf.options.buildset
     if len(conf.env.BUILDSET) == 0:
-        conf.env.BUILDSET += [BUILDSET_DEFAULT]
+        conf.env.BUILDSET += [waf_libbsd.BUILDSET_DEFAULT]
     update_builders(conf, conf.env.BUILDSET)
     rtems.configure(conf, bsp_configure)
 

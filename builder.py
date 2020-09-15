@@ -42,6 +42,11 @@ import os
 import re
 import sys
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
 #
 # Global controls.
 #
@@ -62,6 +67,9 @@ verboseInfo = 1
 verboseDetail = 2
 verboseMoreDetail = 3
 verboseDebug = 4
+
+BUILDSET_DIR = "buildset"
+BUILDSET_DEFAULT = "buildset/default.ini"
 
 
 def verbose(level=verboseInfo):
@@ -758,8 +766,10 @@ class File(object):
         state = state and (self.pathComposer == self.pathComposer)
         state = state and (self.originPath == self.originPath)
         state = state and (self.forwardConverter == self.forwardConverter)
-        state = state and (self.self.reverseConverter == self.self.reverseConverter)
-        state = state and (self.buildSystemComposer == self.buildSystemComposer)
+        state = state and (self.self.reverseConverter
+                           == self.self.reverseConverter)
+        state = state and (self.buildSystemComposer
+                           == self.buildSystemComposer)
         return state
 
     def processSource(self, forward):
@@ -791,13 +801,12 @@ class Module(object):
     def __init__(self, manager, name, enabled=True):
         self.manager = manager
         self.name = name
-        self.conditionalOn = "none"
         self.files = []
         self.cpuDependentSourceFiles = {}
         self.dependencies = []
 
     def __str__(self):
-        out = [self.name + ': conditional-on=' + self.conditionalOn]
+        out = [self.name + ':']
         if len(self.dependencies) > 0:
             out += [' Deps: ' + str(len(self.dependencies))]
             out += ['  ' + type(d).__name__ for d in self.dependencies]
@@ -978,13 +987,16 @@ class Module(object):
                               NoConverter(), assertSourceFile,
                               sourceFileBuildComposer)
 
-    def addTest(self, testFragementComposer):
+    def addTest(self, testFragementComposer, dependencies=[]):
         self.files += [
             File('user', testFragementComposer.testName, PathComposer(),
                  NoConverter(), NoConverter(), testFragementComposer)
         ]
+        self.dependencies += dependencies
 
     def addDependency(self, dep):
+        if not isinstance(dep, str):
+            raise TypeError('dependencies are a string: %s' % (self.name))
         self.dependencies += [dep]
 
 
@@ -1007,18 +1019,75 @@ class ModuleManager(object):
             out += [str(self.modules[m]), '']
         return os.linesep.join(out)
 
+    def _loadIni(self, ini_file):
+        if not os.path.exists(ini_file):
+            raise FileNotFoundError('file not found: %s' % (ini_file))
+        ini = configparser.ConfigParser()
+        ini.read(ini_file)
+        if not ini.has_section('general'):
+            raise Exception(
+                "'{}' is missing a general section.".format(ini_file))
+        if not ini.has_option('general', 'name'):
+            raise Exception("'{}' is missing a general/name.".format(ini_file))
+        if ini.has_option('general', 'extends'):
+            extends = ini.get('general', 'extends')
+            extendfile = None
+            basepath = os.path.dirname(ini_file)
+            if os.path.isfile(os.path.join(basepath, extends)):
+                extendfile = os.path.join(basepath, extends)
+            elif os.path.isfile(os.path.join(BUILDSET_DIR, extends)):
+                extendfile = os.path.join(BUILDSET_DIR, extends)
+            else:
+                raise Exception(
+                    "'{}': Invalid file given for general/extends:'{}'".format(
+                        ini_file, extends))
+            base = self._loadIni(extendfile)
+            for s in ini.sections():
+                if not base.has_section(s):
+                    base.add_section(s)
+                for o in ini.options(s):
+                    val = ini.get(s, o)
+                    base.set(s, o, val)
+            ini = base
+        return ini
+
+    def _checkDependencies(self):
+        enabled_modules = self.getEnabledModules()
+        enabled_modules.remove('tests')
+        for mod in enabled_modules:
+            if mod not in self.modules:
+                raise KeyError('enabled module not found: %s' % (mod))
+            for dep in self.modules[mod].dependencies:
+                if dep not in self.modules:
+                    print(type(dep))
+                    raise KeyError('dependent module not found: %s' % (dep))
+                if dep not in enabled_modules:
+                    raise Exception('module "%s" dependency "%s" not enabled' %
+                                    (mod, dep))
+
     def getAllModules(self):
         if 'modules' in self.configuration:
-            return self.configuration['modules']
+            return sorted(self.configuration['modules'])
         return []
 
     def getEnabledModules(self):
         if 'modules-enabled' in self.configuration:
-            return self.configuration['modules-enabled']
+            return sorted(self.configuration['modules-enabled'])
         return []
 
     def addModule(self, module):
-        self.modules[module.name] = module
+        name = module.name
+        if name in self.modules:
+            raise KeyError('module already added: %' % (name))
+        self.modules[name] = module
+        if 'modules' not in self.configuration:
+            self.configuration['modules'] = []
+        if 'modules-enabled' not in self.configuration:
+            self.configuration['modules-enabled'] = []
+        self.configuration['modules'] += [name]
+        self.configuration['modules-enabled'] += [name]
+        self.configuration['modules'].sort()
+        self.configuration['modules-enabled'].sort
 
     def processSource(self, direction):
         if verbose(verboseDetail):
@@ -1032,15 +1101,6 @@ class ModuleManager(object):
     def getConfiguration(self):
         return copy.deepcopy(self.configuration)
 
-    def updateConfiguration(self, config):
-        self.configuration.update(config)
-
-    def setModuleConfigiuration(self):
-        mods = sorted(self.modules.keys())
-        self.configuration['modules'] = mods
-        # Enabled modules are overwritten by config file. Default to all.
-        self.configuration['modules-enabled'] = mods
-
     def generateBuild(self, only_enabled=True):
         modules_to_process = self.getEnabledModules()
         # Used for copy between FreeBSD and RTEMS
@@ -1050,6 +1110,7 @@ class ModuleManager(object):
             if m not in self.modules:
                 raise KeyError('enabled module not registered: %s' % (m))
             self.modules[m].generate()
+        self._checkDependencies()
 
     def duplicateCheck(self):
         dups = []
@@ -1064,6 +1125,25 @@ class ModuleManager(object):
                         if fmod.getPath() == fm.getPath():
                             dups += [(m, mod, fm.getPath(), fm.getSpace())]
         return dups
+
+    def loadConfig(self, config=BUILDSET_DEFAULT):
+        if 'name' in self.configuration:
+            raise KeyError('configuration already loaded: %s (%s)' % \
+                           (self.configuration['name'], config))
+        ini = self._loadIni(config)
+        self.configuration['name'] = ini.get('general', 'name')
+        self.configuration['modules-enabled'] = []
+        mods = []
+        if ini.has_section('modules'):
+            mods = ini.options('modules')
+        for mod in mods:
+            if ini.getboolean('modules', mod):
+                self.configuration['modules-enabled'].append(mod)
+
+    def getName(self):
+        if 'name' not in self.configuration:
+            raise KeyError('configuration not loaded')
+        return self.configuration['name']
 
     def setGenerators(self):
         self.generator['convert'] = Converter

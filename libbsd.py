@@ -960,7 +960,7 @@ class dev_usb_controller(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/usb/controller/ohci.h',
@@ -999,7 +999,7 @@ class dev_usb_input(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/usb/input/usb_rdesc.h',
@@ -1027,7 +1027,7 @@ class dev_usb_net(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/usb/net/if_auereg.h',
@@ -1077,7 +1077,7 @@ class dev_usb_quirk(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/usb/quirk/usb_quirk.h',
@@ -1100,7 +1100,7 @@ class dev_usb_serial(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/usb/serial/uftdi_reg.h',
@@ -1145,7 +1145,7 @@ class dev_usb_storage(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceSourceFiles(
             [
                 'sys/dev/usb/storage/umass.c',
@@ -1163,7 +1163,7 @@ class dev_usb_controller_bbb(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/arm/ti/ti_cpuid.h',
@@ -1200,7 +1200,7 @@ class dev_usb_wlan(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/usb/wlan/if_rsureg.h',
@@ -1250,7 +1250,7 @@ class dev_wlan_rtwn(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['dev_usb'])
+        self.addDependency('dev_usb')
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/rtwn/if_rtwn_beacon.h',
@@ -2875,7 +2875,7 @@ class nfsv2(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['rpc_user'])
+        self.addDependency('rpc_user')
         self.addRTEMSUserSourceFiles(
             [
                 'nfsclient/mount_prot_xdr.c',
@@ -3276,7 +3276,7 @@ class crypto_openssl(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['user_space'])
+        self.addDependency('user_space')
         self.addUserSpaceHeaderFiles(
             [
                 'crypto/openssl/crypto/aes/aes_locl.h',
@@ -4258,7 +4258,7 @@ class usr_bin_openssl(builder.Module):
 
     def generate(self):
         mm = self.manager
-        self.addDependency(mm['crypto_openssl'])
+        self.addDependency('crypto_openssl')
         self.addUserSpaceHeaderFiles(
             [
                 'crypto/openssl/apps/apps.h',
@@ -5328,7 +5328,8 @@ class tests(builder.Module):
     def generate(self):
         mm = self.manager
         self.addTest(mm.generator['test']('epoch01', ['test_main'], extraLibs = ['rtemstest']))
-        self.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True))
+        self.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True),
+                     ['nfsv2'])
         self.addTest(mm.generator['test']('foobarclient', ['test_main'],
                                           runTest = False, netTest = True))
         self.addTest(mm.generator['test']('foobarserver', ['test_main'],
@@ -5497,8 +5498,6 @@ def load(mm):
     mm.addModule(mdnsresponder(mm))
 
     mm.addModule(tests(mm))
-
-    mm.setModuleConfigiuration()
 
     # XXX TODO Check that no file is also listed in empty
     # XXX TODO Check that no file in in two modules

@@ -150,6 +150,7 @@ try:
 
     build = builder.ModuleManager()
     libbsd.load(build)
+    build.loadConfig()
     build.generateBuild(only_enabled=False)
 
     dups = build.duplicateCheck()

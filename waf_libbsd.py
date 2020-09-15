@@ -46,6 +46,10 @@ import builder
 
 import rtems_waf.rtems as rtems
 
+
+BUILDSET_DIR = builder.BUILDSET_DIR
+BUILDSET_DEFAULT = builder.BUILDSET_DEFAULT
+
 windows = os.name == 'nt'
 
 if windows:
@@ -138,16 +142,22 @@ class Builder(builder.ModuleManager):
 
         self.data = {}
 
-        for mn in self.getEnabledModules():
+        enabled_modules = self.getEnabledModules()
+        for mn in enabled_modules:
             m = self[mn]
-            if m.conditionalOn == "none":
+            enabled = True
+            for dep in m.dependencies:
+                if dep not in enabled_modules:
+                    enabled = False
+                    break
+            if enabled:
                 for f in m.files:
                     _dataInsert(self.data, 'all', f.getSpace(),
                                 f.getFragment())
-            for cpu, files in sorted(m.cpuDependentSourceFiles.items()):
-                for f in files:
-                    _dataInsert(self.data, cpu, f.getSpace(),
-                                f.getFragment())
+                for cpu, files in sorted(m.cpuDependentSourceFiles.items()):
+                    for f in files:
+                        _dataInsert(self.data, cpu, f.getSpace(),
+                                    f.getFragment())
 
         # Start here if you need to understand self.data. Add 'True or'
         if self.trace:

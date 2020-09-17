@@ -78,14 +78,15 @@ typedef struct {
 } iface_binding;
 
 static void
-set_mcast_route(const char *iface_name)
+set_mcast_route(char *iface_name)
 {
+	static char net[] = "224.0.0.0/4";
 	int exit_code;
 	char *route[] = {
 		"route",
 		"add",
 		"-net",
-		"224.0.0.0/4",
+		net,
 		"-iface",
 		iface_name,
 		NULL

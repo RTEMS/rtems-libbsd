@@ -531,6 +531,11 @@ class base(builder.Module):
             ],
             mm.generator['source']()
         )
+        self.addPlainTextFile(
+            [
+                'COPYRIGHT'
+            ]
+        )
 
 #
 # FDT
@@ -1564,6 +1569,11 @@ class dev_nic_e1000(builder.Module):
             ],
             mm.generator['source']()
         )
+        self.addPlainTextFile(
+            [
+                'sys/dev/e1000/LICENSE'
+            ]
+        )
 
 #
 # DEC Tulip aka Intel 21143
@@ -2430,6 +2440,11 @@ class opencrypto(builder.Module):
             ],
             mm.generator['source']()
         )
+        self.addPlainTextFile(
+            [
+                'sys/contrib/libsodium/LICENSE'
+            ]
+        )
 
 #
 # Crypto
@@ -3031,6 +3046,11 @@ class user_space(builder.Module):
                 'usr.sbin/ifmcstat/printb.c',
             ],
             mm.generator['source'](['-DINET'])
+        )
+        self.addPlainTextFile(
+            [
+                'contrib/libxo/LICENSE'
+            ]
         )
 
 #
@@ -4031,6 +4051,11 @@ class crypto_openssl(builder.Module):
                                           mm.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'](),
                                           mm.generator['from-RTEMS-To-FreeBSD-SourceConverter'](),
                                           mm.generator['buildSystemFragmentComposer']()))
+        self.addPlainTextFile(
+            [
+                'crypto/openssl/LICENSE'
+            ]
+        )
 
 #
 # /usr/bin/openssl
@@ -4164,6 +4189,11 @@ class contrib_expat(builder.Module):
             ],
             mm.generator['source'](cflags)
         )
+        self.addPlainTextFile(
+            [
+                'contrib/expat/COPYING'
+            ]
+        )
 
 #
 # Contrib libpcap
@@ -4264,6 +4294,11 @@ class contrib_libpcap(builder.Module):
                 'contrib/libpcap/sf-pcapng.c',
             ],
             mm.generator['source'](cflags)
+        )
+        self.addPlainTextFile(
+            [
+                'contrib/libpcap/LICENSE'
+            ]
         )
 
 #
@@ -4504,6 +4539,11 @@ class usr_sbin_tcpdump(builder.Module):
                                     '-DHAVE_NET_PFVAR_H=1'],
                                    ['freebsd/contrib/tcpdump',
                                     'freebsd/usr.sbin/tcpdump/tcpdump'])
+        )
+        self.addPlainTextFile(
+            [
+                'contrib/tcpdump/LICENSE'
+            ]
         )
 
 #
@@ -4818,6 +4858,11 @@ class usr_sbin_wpa_supplicant(builder.Module):
                 'rtems/rtems-bsd-shell-wpa_supplicant_fork.c',
             ],
             mm.generator['source']()
+        )
+        self.addPlainTextFile(
+            [
+                'contrib/wpa/COPYING'
+            ]
         )
 
 #

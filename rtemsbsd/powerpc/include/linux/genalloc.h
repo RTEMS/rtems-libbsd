@@ -88,7 +88,7 @@ gen_pool_alloc(struct gen_pool *gp, size_t size)
 
 	chunks = (size + (1 << gp->gen_chunk_shift) - 1) >> gp->gen_chunk_shift;
 	mtx_lock(&gp->gen_lock);
-	blkno = blist_alloc(gp->gen_list, chunks);
+	blkno = blist_alloc(gp->gen_list, &chunks, chunks);
 	mtx_unlock(&gp->gen_lock);
 
 	if (blkno == SWAPBLK_NONE)

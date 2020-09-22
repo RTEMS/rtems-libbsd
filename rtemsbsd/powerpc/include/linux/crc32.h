@@ -28,7 +28,7 @@
 #define	_LINUX_CRC32_H
 
 #include <linux/types.h>
-#include <sys/libkern.h>
+#include <sys/gsb_crc32.h>
 
 #ifdef __cplusplus
 extern "C" {

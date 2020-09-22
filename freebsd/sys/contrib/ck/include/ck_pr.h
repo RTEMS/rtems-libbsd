@@ -51,7 +51,9 @@
 #if __ARM_ARCH >= 6
 #include "gcc/arm/ck_pr.h"
 #else
+#ifndef __rtems__
 #include "gcc/arm/ck_pr_armv4.h"
+#endif /* __rtems__ */
 #endif
 #elif defined(__aarch64__)
 #include "gcc/aarch64/ck_pr.h"

@@ -270,10 +270,10 @@ lpc_tsc_init(struct lpc_tsc_softc *sc)
 	TSCWRITE4(sc, LPC32XX_TSC_CON, tmp | LPC32XX_TSC_ADCCON_AUTO_EN);
 }
 
-static void
-lpc_tsc_ev_close(struct evdev_dev *evdev, void *data)
+static int
+lpc_tsc_ev_close(struct evdev_dev *evdev)
 {
-	struct lpc_tsc_softc *sc = (struct lpc_tsc_softc *)data;
+	struct lpc_tsc_softc *sc = evdev_get_softc(evdev);
 	uint32_t tmp;
 
 	LPC_TSC_LOCK_ASSERT(sc);
@@ -283,12 +283,14 @@ lpc_tsc_ev_close(struct evdev_dev *evdev, void *data)
 	TSCWRITE4(sc, LPC32XX_TSC_CON, tmp);
 
 	lpc_adc_module_disable(sc);
+
+	return (0);
 }
 
 static int
-lpc_tsc_ev_open(struct evdev_dev *evdev, void *data)
+lpc_tsc_ev_open(struct evdev_dev *evdev)
 {
-	struct lpc_tsc_softc *sc = (struct lpc_tsc_softc *)data;
+	struct lpc_tsc_softc *sc = evdev_get_softc(evdev);
 
 	LPC_TSC_LOCK_ASSERT(sc);
 

@@ -4942,7 +4942,8 @@ class in_cksum(builder.Module):
         self.addCPUDependentFreeBSDSourceFiles(
             [
                 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
-                'mips', 'nios2', 'or1k', 'riscv', 'sh', 'sparc', 'v850'
+                'mips', 'moxie', 'nios2', 'or1k', 'riscv', 'sh', 'sparc',
+                'v850'
             ],
             [
                 'sys/mips/mips/in_cksum.c',

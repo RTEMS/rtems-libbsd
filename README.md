@@ -148,12 +148,13 @@ $ ./waf
 $ ./waf install
 ```
 
-9. Run the tests on QEMU, for example:
+9. Run the tests on QEMU, for example using VDE:
 
 ```
-$ qemu-system-arm -no-reboot -serial null -serial mon:stdio -net none \
-$   -nographic -M xilinx-zynq-a9 -m 256M \
-$   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu-default/selectpollkqueue01.exe
+$ qemu-system-arm -no-reboot -serial null -serial mon:stdio \
+    -net nic,model=cadence_gem -net vde,id=vde0,sock=/tmp/vde1 \
+    -nographic -M xilinx-zynq-a9 -m 256M \
+    -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
 ```
 
 [1] It is good practice to keep your environment as empty as possible. Setting

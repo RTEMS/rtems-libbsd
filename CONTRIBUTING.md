@@ -12,22 +12,54 @@ thousand imported source files will become too labour intensive eventually.
 What is in the Git Repository
 -----------------------------
 
-The libbsd a self-contained kit with FreeBSD and RTEMS components pre-merged.
-The Waf wscript in libbsd is automatically generated.
+The libbsd a self-contained kit with FreeBSD and RTEMS components
+pre-merged. The Waf wscript in libbsd automatically generates the build when
+you run waf by reading the modules and module's source, header, defines and
+special flags from `libbsd.py`. This is the same module data used to manage
+the FreeBSD source.
 
 Any changes to source in the `freebsd` directories will need to be merged
 upstream into our master FreeBSD checkout, the `freebsd-org` submodule.
 
 The repository contains two FreeBSD source trees.  In the `freebsd` directory
-are the so called *managed* FreeBSD sources used to build the BSD library.  The
-FreeBSD source in `freebsd-org` is the *master* version.  The
-`freebsd-to-rtems.py` script is used to transfer files between the two trees.
-In general terms, if you have modified managed FreeBSD sources, you will need
-to run the script in *revert* or *reverse* mode using the `-R` switch.  This
-will copy the source back to your local copy of the master FreeBSD source so
-you can run `git diff` against the upstream FreeBSD source.  If you want to
-transfer source files from the master FreeBSD source to the manged FreeBSD
-sources, then you must run the script in *forward* mode (the default).
+are the so called *managed* FreeBSD sources used to build the BSD library.
+The FreeBSD source in `freebsd-org` is the *master* version.  The
+`freebsd-to-rtems.py` script is used to transfer files between the two trees
+using the module defnitions in `libbsd.py`.  In general terms, if you have
+modified managed FreeBSD sources, you will need to run the script in *revert*
+or *reverse* mode using the `-R` switch.  This will copy the source back to
+your local copy of the master FreeBSD source so you can run `git diff` against
+the upstream FreeBSD source.  If you want to transfer source files from the
+master FreeBSD source to the manged FreeBSD sources, then you must run the
+script in *forward* mode (the default).
+
+Kernel and User Space
+---------------------
+
+FreeBSD uses virtual memory to run separate address spaces. The kernel is one
+address space and each process the kernel runs is another separate address
+space. The FreeBSD build system understands the separation and separately
+linked executable for the kernel and user land maintains the separation.
+
+RTEMS is a single address space operating system and that means the kernel and
+user space code have to be linked to together and be able to run side by
+side. This creates additional complexity when working with the FreeBSD code,
+for example the FreeBSD kernel has a `malloc` call with a different signature
+to the user land `malloc` call. The RTEMS LibBSD support code provides
+structured ways to manage the separation.
+
+LibBSD manages the integration of kernel and user code by knowing the context
+of the source code. This lets the merge process handle specific changes each
+type of file needs. The build system also uses this information to control the
+include paths a source file sees. The kernel code sees the kernel, CPU
+specific and build system generated include paths in that order. User code
+sees the user include paths then the kernel, CPU specific and build system
+generated include paths in that order. The FreeBSD OS include path
+`/usr/include` has a mix of kernel and user space header files. The kernel
+headers let user space code cleanly access structures the kernel exports. If a
+user header file has the same name as a kernel header file the user file will
+be used in the user code rather than the kernel file. If the user code
+includes a kernel header that file will be found and included.
 
 Organization
 ------------
@@ -37,7 +69,8 @@ are important to understand
 
 * `freebsd-to-rtems.py` - script to convert to and free FreeBSD and RTEMS trees,
 * `create-kernel-namespace.sh` - script to create the kernel namespace header `<machine/rtems-bsd-kernel-namespace.h>`,
-* `wscript` - automatically generated,
+* `wscript` - automatically generates the build from libbsd.py,
+* `libbsd.py` - modules, sources, compile flags, and dependencies
 * `freebsd/` - from FreeBSD by script,
 * `rtemsbsd/` - RTEMS specific implementations of FreeBSD kernel support routines,
 * `testsuite/` - RTEMS specific tests, and
@@ -63,10 +96,11 @@ freebsd-to-rtems.py [args]
   -R|--reverse      default FreeBSD -> RTEMS, reverse that
   -r|--rtems        RTEMS Libbsd directory (default: '.')
   -f|--freebsd      FreeBSD SVN directory (default: 'freebsd-org')
+  -c|--config       Output the configuration then exit
   -v|--verbose      enable verbose output mode
 ```
 
-In its default mode of operation, freebsd-to-rtems.py is used to copy code
+In its default mode of operation, `freebsd-to-rtems.py` is used to copy code
 from FreeBSD to the rtems-libbsd tree and perform transformations.
 
 In *reverse mode*, this script undoes those transformations and copies

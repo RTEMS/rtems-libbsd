@@ -605,13 +605,15 @@ class TestFragementComposer(BuildSystemComposer):
                  configTest=None,
                  runTest=True,
                  netTest=False,
-                 extraLibs=[]):
+                 extraLibs=[],
+                 modules=[]):
         self.testName = testName
         self.fileFragments = fileFragments
         self.configTest = configTest
         self.runTest = runTest
         self.netTest = netTest
         self.extraLibs = extraLibs
+        self.modules = modules
 
     def __str__(self):
         return 'TEST: ' + self.testName
@@ -622,7 +624,8 @@ class TestFragementComposer(BuildSystemComposer):
             'files': self.fileFragments,
             'run': self.runTest,
             'net': self.netTest,
-            'libs': self.extraLibs
+            'libs': self.extraLibs,
+            'modules': self.modules,
         }
 
 
@@ -633,7 +636,8 @@ class TestIfHeaderComposer(TestFragementComposer):
                  fileFragments,
                  runTest=True,
                  netTest=False,
-                 extraLibs=[]):
+                 extraLibs=[],
+                 modules=[]):
         if headers is not list:
             headers = [headers]
         self.headers = headers
@@ -642,7 +646,8 @@ class TestIfHeaderComposer(TestFragementComposer):
                                                    'header',
                                                    runTest=runTest,
                                                    netTest=netTest,
-                                                   extraLibs=extraLibs)
+                                                   extraLibs=extraLibs,
+                                                   modules=modules)
 
     def compose(self, path):
         r = TestFragementComposer.compose(self, path)
@@ -657,7 +662,8 @@ class TestIfLibraryComposer(TestFragementComposer):
                  fileFragments,
                  runTest=True,
                  netTest=False,
-                 extraLibs=[]):
+                 extraLibs=[],
+                 modules=[]):
         if libraries is not list:
             libraries = [libraries]
         self.libraries = libraries
@@ -666,7 +672,8 @@ class TestIfLibraryComposer(TestFragementComposer):
                                                     'library',
                                                     runTest=runTest,
                                                     netTest=netTest,
-                                                    extraLibs=extraLibs)
+                                                    extraLibs=extraLibs,
+                                                    modules=modules)
 
     def compose(self, path):
         r = TestFragementComposer.compose(self, path)
@@ -987,12 +994,11 @@ class Module(object):
                               NoConverter(), assertSourceFile,
                               sourceFileBuildComposer)
 
-    def addTest(self, testFragementComposer, dependencies=[]):
+    def addTest(self, testFragementComposer):
         self.files += [
             File('user', testFragementComposer.testName, PathComposer(),
                  NoConverter(), NoConverter(), testFragementComposer)
         ]
-        self.dependencies += dependencies
 
     def addDependency(self, dep):
         if not isinstance(dep, str):

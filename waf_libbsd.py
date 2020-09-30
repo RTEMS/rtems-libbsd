@@ -572,13 +572,18 @@ class Builder(builder.ModuleManager):
         tests = []
         if 'tests' in self.data:
             tests = self.data['tests']['user']
+        enabled_modules = self.getEnabledModules()
         for testName in sorted(tests):
             test = tests[testName]['all']
             test_source = []
             libs = ['bsd', 'm', 'z', 'rtemstest']
             for cfg in test:
                 build_test = True
-                if cfg != 'default':
+                for mod in test[cfg]['modules']:
+                    if mod not in enabled_modules:
+                        build_test = False
+                        break
+                if build_test and cfg != 'default':
                     for c in cfg.split(' '):
                         if not bld.env['HAVE_%s' % (c)]:
                             build_test = False

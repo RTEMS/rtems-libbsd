@@ -5333,8 +5333,8 @@ class tests(builder.Module):
     def generate(self):
         mm = self.manager
         self.addTest(mm.generator['test']('epoch01', ['test_main'], extraLibs = ['rtemstest']))
-        self.addTest(mm.generator['test']('nfs01', ['test_main'], netTest = True),
-                     ['nfsv2'])
+        self.addTest(mm.generator['test']('nfs01', ['test_main'],
+                                          netTest = True, modules = ['nfsv2']))
         self.addTest(mm.generator['test']('foobarclient', ['test_main'],
                                           runTest = False, netTest = True))
         self.addTest(mm.generator['test']('foobarserver', ['test_main'],

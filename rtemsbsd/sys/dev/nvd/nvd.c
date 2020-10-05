@@ -43,6 +43,7 @@
 
 #include <stdatomic.h>
 #include <rtems/blkdev.h>
+#include <rtems/thread.h>
 
 #define NVD_STR		"nvd"
 
@@ -208,28 +209,27 @@ nvd_request(struct nvd_disk *ndisk, rtems_blkdev_request *req,
 static void
 nvd_sync_completion(void *arg, const struct nvme_completion *status)
 {
-	rtems_status_code sc;
+	rtems_binary_semaphore *sync;
 
-	if (nvme_completion_is_error(status)) {
-		sc = RTEMS_IO_ERROR;
-	} else {
-		sc = RTEMS_SUCCESSFUL;
-	}
-
-	rtems_blkdev_request_done(arg, sc);
+	sync = arg;
+	rtems_binary_semaphore_post(sync);
 }
 
 static int
-nvd_sync(struct nvd_disk *ndisk, rtems_blkdev_request *req)
+nvd_sync(struct nvd_disk *ndisk)
 {
+	rtems_binary_semaphore sync;
 	int error;
 
-	error = nvme_ns_cmd_flush(ndisk->ns, nvd_sync_completion, req);
-	if (error != 0) {
-		rtems_blkdev_request_done(req, RTEMS_NO_MEMORY);
+	rtems_binary_semaphore_init(&sync, "nvd sync");
+
+	error = nvme_ns_cmd_flush(ndisk->ns, nvd_sync_completion, &sync);
+	if (error == 0) {
+		rtems_binary_semaphore_wait(&sync);
 	}
 
-	return (0);
+	rtems_binary_semaphore_destroy(&sync);
+	return (error);
 }
 
 static int
@@ -244,7 +244,7 @@ nvd_ioctl(rtems_disk_device *dd, uint32_t req, void *arg)
 	}
 
 	if (req == RTEMS_BLKDEV_REQ_SYNC) {
-		return (nvd_sync(ndisk, arg));
+		return (nvd_sync(ndisk));
 	}
 
 	if (req == RTEMS_BLKIO_CAPABILITIES) {

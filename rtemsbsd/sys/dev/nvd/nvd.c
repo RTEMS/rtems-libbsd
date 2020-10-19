@@ -165,10 +165,9 @@ nvd_completion(void *arg, const struct nvme_completion *status)
 
 static int
 nvd_request(struct nvd_disk *ndisk, rtems_blkdev_request *req,
-    uint32_t media_blocks_per_block)
+    uint32_t media_block_size)
 {
 	uint32_t i;
-	uint32_t lb_count;
 	uint32_t bufnum;
 
 	BSD_ASSERT(req->req == RTEMS_BLKDEV_REQ_READ ||
@@ -179,13 +178,15 @@ nvd_request(struct nvd_disk *ndisk, rtems_blkdev_request *req,
 	req->status = RTEMS_SUCCESSFUL;
 	bufnum = req->bufnum;
 	req->bufnum |= bufnum << NVD_BUFNUM_SHIFT;
-	lb_count = media_blocks_per_block * ndisk->lb_per_media_block;
 
 	for (i = 0; i < bufnum; ++i) {
 		rtems_blkdev_sg_buffer *sg;
+		uint32_t lb_count;
 		int error;
 
 		sg = &req->bufs[i];
+		lb_count = (sg->length / media_block_size) *
+		    ndisk->lb_per_media_block;
 
 		if (req->req == RTEMS_BLKDEV_REQ_READ) {
 			error = nvme_ns_cmd_read(ndisk->ns, sg->buffer,
@@ -240,7 +241,7 @@ nvd_ioctl(rtems_disk_device *dd, uint32_t req, void *arg)
 	ndisk = rtems_disk_get_driver_data(dd);
 
 	if (req == RTEMS_BLKIO_REQUEST) {
-		return (nvd_request(ndisk, arg, dd->media_blocks_per_block));
+		return (nvd_request(ndisk, arg, dd->media_block_size));
 	}
 
 	if (req == RTEMS_BLKDEV_REQ_SYNC) {

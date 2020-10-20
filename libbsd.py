@@ -2929,7 +2929,7 @@ class pci(builder.Module):
             ]
         )
         self.addCPUDependentFreeBSDSourceFiles(
-            [ 'i386' ],
+            [ 'i386', 'powerpc' ],
             [
                 'sys/x86/x86/legacy.c',
                 'sys/x86/pci/pci_bus.c',

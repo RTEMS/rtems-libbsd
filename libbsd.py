@@ -104,6 +104,8 @@ _defaults = {
         # (source, [targets..])
         # i386
         ('freebsd/sys/i386/include', ['freebsd/sys/x86/include', 'freebsd/sys/i386/include']),
+        # arm64
+        ('freebsd/sys/aarch64/include', ['freebsd/sys/aarch64/include', 'freebsd/sys/arm64/include']),
     ],
 
     #
@@ -340,6 +342,8 @@ class base(builder.Module):
                 'sys/contrib/ck/include/ck_string.h',
                 'sys/contrib/ck/include/gcc/aarch64/ck_f_pr.h',
                 'sys/contrib/ck/include/gcc/aarch64/ck_pr.h',
+                'sys/contrib/ck/include/gcc/aarch64/ck_pr_lse.h',
+                'sys/contrib/ck/include/gcc/aarch64/ck_pr_llsc.h',
                 'sys/contrib/ck/include/gcc/arm/ck_f_pr.h',
                 'sys/contrib/ck/include/gcc/arm/ck_pr.h',
                 'sys/contrib/ck/include/gcc/ck_cc.h',
@@ -1444,6 +1448,9 @@ class dev_nic(builder.Module):
         )
         self.addCPUDependentFreeBSDHeaderFiles(
             [
+                'sys/arm64/include/armreg.h',
+                'sys/arm64/include/cpufunc.h',
+                'sys/arm64/include/cpu.h',
                 'sys/arm/include/cpufunc.h',
                 'sys/i386/include/md_var.h',
                 'sys/i386/include/intr_machdep.h',
@@ -4914,12 +4921,26 @@ class in_cksum(builder.Module):
             ]
         )
         self.addTargetSourceCPUDependentHeaderFiles(
+            [ 'arm64' ],
+            'arm64',
+            [
+                'sys/arm64/include/in_cksum.h',
+            ]
+        )
+        self.addTargetSourceCPUDependentHeaderFiles(
             [ 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
               'nios2', 'sh', 'sparc', 'v850' ],
             'mips',
             [
                 'sys/mips/include/in_cksum.h',
             ]
+        )
+        self.addCPUDependentFreeBSDSourceFiles(
+            [ 'aarch64', 'arm64' ],
+            [
+                'sys/arm64/arm64/in_cksum.c',
+            ],
+            mm.generator['source']()
         )
         self.addCPUDependentFreeBSDSourceFiles(
             [ 'i386' ],

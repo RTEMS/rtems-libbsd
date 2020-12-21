@@ -118,6 +118,35 @@ extern "C" {
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR */
 
 /*
+ * Xilinx Zynq Arasan SDIO Driver.
+ */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI)
+  #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI(_num, _base, _irq)                     \
+    static const rtems_bsd_device_resource arasan_sdhci ## _num ## _res[] = {       \
+      {                                                                             \
+        .type = RTEMS_BSD_RES_MEMORY,                                               \
+        .start_request = 0,                                                         \
+        .start_actual = (_base)                                                     \
+      }, {                                                                          \
+        .type = RTEMS_BSD_RES_IRQ,                                                  \
+        .start_request = 0,                                                         \
+        .start_actual = (_irq)                                                      \
+      }                                                                             \
+    };                                                                              \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(arasan_sdhci, _num,                               \
+                                  RTEMS_ARRAY_SIZE(arasan_sdhci ## _num ## _res),      \
+                                  &arasan_sdhci ## _num ## _res[0])
+#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI0)
+  #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI0                \
+    RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI(0, 0xE0100000, 56)
+#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI0 */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI1)
+  #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI1                \
+    RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI(1, 0xE0101000, 79)
+#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI1 */
+
+/*
  * LPC32XX Power Control (PWR).
  */
 #if !defined(RTEMS_BSD_DRIVER_LPC32XX_PWR)

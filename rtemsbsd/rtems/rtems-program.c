@@ -479,12 +479,13 @@ rtems_bsd_program_alloc(size_t size, void *org_ptr)
 	void *ptr = NULL;
 	size_t size_with_list;
 	size_t size_alligned;
+	size_t alignment = sizeof(void*);
 
 	if (prog_ctrl != NULL) {
 		/* align the end to the next word address */
 		size_alligned = size;
-		if ((size_alligned & 0x3) != 0) {
-			size_alligned = (size_alligned | 0x03) + 1;
+		if ((size_alligned & (alignment - 1)) != 0) {
+			size_alligned = (size_alligned | (alignment - 1)) + 1;
 		}
 		size_with_list = size_alligned +
 		    sizeof(struct program_allocmem_item);

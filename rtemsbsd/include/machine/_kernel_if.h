@@ -41,6 +41,8 @@ MALLOC_DECLARE(M_IFADDR);
 MALLOC_DECLARE(M_IFMADDR);
 #endif
 
+extern struct sx ifnet_detach_sxlock;
+
 #define	ifr_buffer	ifr_ifru.ifru_buffer	/* user supplied buffer with its length */
 #define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 

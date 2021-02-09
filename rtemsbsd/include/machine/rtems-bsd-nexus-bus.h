@@ -38,6 +38,7 @@
  *
  *  Devices:
  *   RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR
+ *   RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR
  *   RTEMS_BSD_DRIVER_LPC32XX_PWR
  *   RTEMS_BSD_DRIVER_LPC32XX_TSC
  *
@@ -116,6 +117,26 @@ extern "C" {
                                   RTEMS_ARRAY_SIZE(zy7_slcr_res),      \
                                   &zy7_slcr_res[0])
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SLCR */
+
+/*
+ * Xilinx ZynqMP System Level Control Registers (SLCR).
+ */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR)
+  /*
+   * Hard IP part of the ZynqMP so a fixed address.
+   */
+  #define RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR                            \
+    static const rtems_bsd_device_resource zynqmp_slcr_res[] = {          \
+      {                                                                 \
+        .type = RTEMS_BSD_RES_MEMORY,                                   \
+        .start_request = 0,                                             \
+        .start_actual = 0xf0000000                                      \
+      }                                                                 \
+    };                                                                  \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(zynqmp_slcr, 0,                          \
+                                  RTEMS_ARRAY_SIZE(zynqmp_slcr_res),      \
+                                  &zynqmp_slcr_res[0])
+#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR */
 
 /*
  * Xilinx Zynq Arasan SDIO Driver.

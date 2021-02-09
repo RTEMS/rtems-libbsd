@@ -45,6 +45,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #ifdef __rtems__
 #include <sys/bus.h>
+#include <bsp.h>
 #endif /* __rtems__ */
 #include <sys/conf.h>
 #include <sys/kernel.h>
@@ -217,6 +218,7 @@ zy7_slcr_postload_pl(int en_level_shifters)
 	ZSLCR_UNLOCK(sc);
 }
 
+#if defined(LIBBSP_ARM_XILINX_ZYNQ_BSP_H)
 /* Override cgem_set_refclk() in gigabit ethernet driver
  * (sys/dev/cadence/if_cgem.c).  This function is called to
  * request a change in the gem's reference clock speed.
@@ -264,6 +266,7 @@ cgem_set_ref_clk(int unit, int frequency)
 
 	return (0);
 }
+#endif /* LIBBSP_ARM_XILINX_ZYNQ_BSP_H */
 
 /* 
  * PL clocks management function

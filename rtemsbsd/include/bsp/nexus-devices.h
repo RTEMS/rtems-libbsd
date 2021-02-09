@@ -107,6 +107,7 @@ RTEMS_BSD_DRIVER_MMC;
 
 #include <bsp/irq.h>
 
+RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR;
 /* Qemu only applies user-mode networking to the first interface by default, so
  * all 4 CGEM instances must be configured in the Qemu arguments using
  * "-nic user,model=cadence_gem" for each nic.

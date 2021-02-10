@@ -243,6 +243,28 @@ extern "C" {
     SYSINIT_DRIVER_REFERENCE(mmcsd, mmc)
 #endif /* RTEMS_BSD_DRIVER_MMC */
 
+#if !defined(RTEMS_BSD_DRIVER_ST_SDMMC)
+  #define RTEMS_BSD_DRIVER_ST_SDMMC(_num, _base, _dlyb, _irq)                 \
+    static const rtems_bsd_device_resource st_sdmmc ## _num ## _res[] = {     \
+      {                                                                       \
+        .type = RTEMS_BSD_RES_MEMORY,                                         \
+        .start_request = 0,                                                   \
+        .start_actual = (_base)                                               \
+      }, {                                                                    \
+        .type = RTEMS_BSD_RES_MEMORY,                                         \
+        .start_request = 1,                                                   \
+        .start_actual = (_dlyb)                                               \
+      }, {                                                                    \
+        .type = RTEMS_BSD_RES_IRQ,                                            \
+        .start_request = 0,                                                   \
+        .start_actual = (_irq)                                                \
+      }                                                                       \
+    };                                                                        \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(st_sdmmc, 0,                                \
+                                  RTEMS_ARRAY_SIZE(st_sdmmc ## _num ## _res), \
+                                  &st_sdmmc ## _num ## _res[0])
+#endif /* RTEMS_BSD_DRIVER_ST_SDMMC */
+
 /*
  * USB Drivers.
  */

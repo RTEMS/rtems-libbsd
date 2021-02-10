@@ -193,6 +193,8 @@ static const rtems_bsd_device_resource dwcotg_res[] = {
 };
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(dwcotg, 0, RTEMS_ARRAY_SIZE(dwcotg_res),
     dwcotg_res);
+RTEMS_BSD_DRIVER_ST_SDMMC(0, SDMMC1_BASE, DLYB_SDMMC1_BASE, SDMMC1_IRQn);
+RTEMS_BSD_DRIVER_MMC;
 RTEMS_BSD_DRIVER_USB;
 RTEMS_BSD_DRIVER_USB_MASS;
 

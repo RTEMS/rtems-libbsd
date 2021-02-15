@@ -251,7 +251,6 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 
 	if (*vaddr == NULL) {
 		free(*mapp, M_DEVBUF);
-
 		return ENOMEM;
 	}
 
@@ -291,6 +290,10 @@ bus_dmamap_load_buffer(bus_dma_tag_t dmat, bus_dma_segment_t segs[],
 	bus_addr_t curaddr, lastaddr, baddr, bmask;
 	vm_offset_t vaddr = (vm_offset_t)buf;
 	int seg;
+
+#ifdef RTEMS_BSP_PCI_MEM_REGION_BASE
+	vaddr += RTEMS_BSP_PCI_MEM_REGION_BASE;
+#endif
 
 	lastaddr = *lastaddrp;
 	bmask = ~(dmat->boundary - 1);

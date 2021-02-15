@@ -6,9 +6,13 @@
  * @brief TODO.
  *
  * File origin from FreeBSD 'sys/amd64/include/bus.h'.
+ *
+ * Conditionally supports PCI IO regions (IO Ports).
  */
 
 /*-
+ * Copyright (c) 2021 Chris Johns.  All rights reserved.
+ *
  * Copyright (c) 2009, 2015 embedded brains GmbH.  All rights reserved.
  *
  *  embedded brains GmbH
@@ -25,7 +29,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer as
  *    the first lines of this file unmodified.
@@ -34,7 +38,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -123,8 +127,45 @@
 #endif
 
 #ifdef __i386__
-  #error "your include paths are wrong"
+  #error "x86 has its own bus.h; check your include paths are correct"
 #endif
+
+#include <bsp.h>
+
+/*
+ * BSP PCI Support
+ *
+ * The RTEMS Nexus bus support can optionaly support PC PCI spaces that
+ * mapped to BSP speciic address spaces. Add the following define to
+ * the BSP header file to enable this support:
+ *
+ *  #define BSP_HAS_PC_PCI
+ *
+ * If enabled a BSP must support the following IO region calls:
+ *
+ * inb  : read 8 bits
+ * outb : write 8 bits
+ * inw  : read 16 bits
+ * outw : write 16 bits
+ * inl  : read 32 bits
+ * outl : write 32 bits
+ *
+ * The BSP needs to provide the DRAM address space offset
+ * PCI_DRAM_OFFSET. This is the base address of the DRAM as seen by a
+ * PCI master.
+ *
+ * i386 BSPs have a special bus.h file and do not use this file.
+ */
+
+#ifdef BSP_HAS_PC_PCI
+
+/*
+ * Values for the bus space tag, not to be used directly by MI code.
+ */
+#define	BSP_BUS_SPACE_IO	0	/* space is i/o space */
+#define	BSP_BUS_SPACE_MEM	1	/* space is mem space */
+
+#endif /* BSP_HAS_PC_PCI */
 
 /*
  * Bus address alignment.
@@ -144,6 +185,7 @@
 /*
  * Bus access.
  */
+#define BUS_SPACE_INVALID_DATA	(~0U)
 #define BUS_SPACE_UNRESTRICTED	(~0U)
 
 /*
@@ -223,36 +265,152 @@ bus_space_barrier(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size
 }
 
 /*
+ * BSP Bus Space Map Support
+ *
+ * A BSP can provide the following as C macros in the BSP header
+ * (bsp.h) to speicalise for special BSP specific bus operations:
+ *
+ *  RTEMS_BSP_READ_1
+ *  RTEMS_BSP_READ_2
+ *  RTEMS_BSP_READ_4
+ *  RTEMS_BSP_READ_8
+ *  RTEMS_BSP_WRITE_1
+ *  RTEMS_BSP_WRITE_2
+ *  RTEMS_BSP_WRITE_4
+ *  RTEMS_BSP_WRITE_8
+ */
+
+static __inline uint8_t
+bsp_bus_space_read_1(const uint8_t __volatile *bsp)
+{
+#if defined(RTEMS_BSP_READ_1)
+	return RTEMS_BSP_READ_1(bsp);
+#else
+	return (*bsp);
+#endif
+}
+
+static __inline uint16_t
+bsp_bus_space_read_2(const uint16_t __volatile *bsp)
+{
+#if defined(RTEMS_BSP_READ_2)
+	return RTEMS_BSP_READ_2(bsp);
+#else
+	return (*bsp);
+#endif
+}
+
+static __inline uint32_t
+bsp_bus_space_read_4(const uint32_t __volatile *bsp)
+{
+#if defined(RTEMS_BSP_READ_4)
+	return RTEMS_BSP_READ_4(bsp);
+#else
+	return (*bsp);
+#endif
+}
+
+static __inline uint64_t
+bsp_bus_space_read_8(const uint64_t __volatile *bsp)
+{
+#if defined(RTEMS_BSP_READ_8)
+	return RTEMS_BSP_READ_8(bsp);
+#else
+	return (*bsp);
+#endif
+}
+
+static __inline void
+bsp_bus_space_write_1(uint8_t __volatile *bsp, uint8_t val)
+{
+#if defined(RTEMS_BSP_WRITE_1)
+	RTEMS_BSP_WRITE_1(bsp, val);
+#else
+	*bsp = val;
+#endif
+}
+
+static __inline void
+bsp_bus_space_write_2(uint16_t __volatile *bsp, uint16_t val)
+{
+#if defined(RTEMS_BSP_WRITE_2)
+	RTEMS_BSP_WRITE_2(bsp, val);
+#else
+	*bsp = val;
+#endif
+}
+
+static __inline void
+bsp_bus_space_write_4(uint32_t __volatile *bsp, uint32_t val)
+{
+#if defined(RTEMS_BSP_WRITE_4)
+	RTEMS_BSP_WRITE_4(bsp, val);
+#else
+	*bsp = val;
+#endif
+}
+
+static __inline void
+bsp_bus_space_write_8(uint64_t __volatile *bsp, uint64_t val)
+{
+#if defined(RTEMS_BSP_WRITE_8)
+	RTEMS_BSP_WRITE_8(bsp, val);
+#else
+	*bsp = val;
+#endif
+}
+
+
+/*
  * Read 1 unit of data from bus space described by the tag, handle and ofs
  * tuple. A unit of data can be 1 byte, 2 bytes, 4 bytes or 8 bytes. The
  * data is returned.
  */
 static __inline uint8_t
-bus_space_read_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+bus_space_read_1(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		return inb(bsh + ofs);
+	}
+#endif
 	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
-	return (*bsp);
+	return bsp_bus_space_read_1(bsp);
 }
 
 static __inline uint16_t
-bus_space_read_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+bus_space_read_2(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		return inw(bsh + ofs);
+	}
+#endif
 	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
-	return (*bsp);
+	return bsp_bus_space_read_2(bsp);
 }
 
 static __inline uint32_t
-bus_space_read_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+bus_space_read_4(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		return inl(bsh + ofs);
+	}
+#endif
 	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
-	return (*bsp);
+	return bsp_bus_space_read_4(bsp);
 }
 
 static __inline uint64_t
-bus_space_read_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs)
+bus_space_read_8(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO)
+		return BUS_SPACE_INVALID_DATA;
+#endif
 	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
-	return (*bsp);
+	return bsp_bus_space_read_8(bsp);
 }
 
 
@@ -262,35 +420,58 @@ bus_space_read_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_
  * data is passed by value.
  */
 static __inline void
-bus_space_write_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+bus_space_write_1(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs,
     uint8_t val)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		outb(val, bsh + ofs);
+		return;
+	}
+#endif
 	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
-	*bsp = val;
+	bsp_bus_space_write_1(bsp, val);
 }
 
 static __inline void
-bus_space_write_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+bus_space_write_2(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs,
     uint16_t val)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		outw(val, bsh + ofs);
+		return;
+	}
+#endif
 	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
-	*bsp = val;
+	bsp_bus_space_write_2(bsp, val);
 }
 
 static __inline void
-bus_space_write_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+bus_space_write_4(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs,
     uint32_t val)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		outl(val, bsh + ofs);
+		return;
+	}
+#endif
 	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
-	*bsp = val;
+	bsp_bus_space_write_4(bsp, val);
 }
 
 static __inline void
-bus_space_write_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh, bus_size_t ofs,
+bus_space_write_8(bus_space_tag_t bst, bus_space_handle_t bsh, bus_size_t ofs,
     uint64_t val)
 {
+#ifdef BSP_HAS_PC_PCI
+	if (bst == BSP_BUS_SPACE_IO) {
+		return;
+	}
+#endif
 	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
-	*bsp = val;
+	bsp_bus_space_write_8(bsp, val);
 }
 
 
@@ -305,7 +486,7 @@ bus_space_read_multi_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bufp++ = *bsp;
+		*bufp++ = bsp_bus_space_read_1(bsp);
 	}
 }
 
@@ -315,7 +496,7 @@ bus_space_read_multi_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bufp++ = *bsp;
+		*bufp++ = bsp_bus_space_read_2(bsp);
 	}
 }
 
@@ -325,7 +506,7 @@ bus_space_read_multi_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bufp++ = *bsp;
+		*bufp++ = bsp_bus_space_read_4(bsp);
 	}
 }
 
@@ -335,7 +516,7 @@ bus_space_read_multi_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bufp++ = *bsp;
+		*bufp++ = bsp_bus_space_read_8(bsp);
 	}
 }
 
@@ -351,7 +532,7 @@ bus_space_write_multi_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = *bufp++;
+		bsp_bus_space_write_1(bsp, *bufp++);
 	}
 }
 
@@ -361,7 +542,7 @@ bus_space_write_multi_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = *bufp++;
+		bsp_bus_space_write_2(bsp, *bufp++);
 	}
 }
 
@@ -371,7 +552,7 @@ bus_space_write_multi_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = *bufp++;
+		bsp_bus_space_write_4(bsp, *bufp++);
 	}
 }
 
@@ -381,7 +562,7 @@ bus_space_write_multi_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = *bufp++;
+		bsp_bus_space_write_8(bsp, *bufp++);
 	}
 }
 
@@ -396,10 +577,9 @@ static __inline void
 bus_space_read_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint8_t *bufp, bus_size_t count)
 {
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
-		*bufp++ = *bsp;
-		ofs += 1;
+		*bufp++ = bsp_bus_space_read_1(bsp++);
 	}
 }
 
@@ -407,10 +587,9 @@ static __inline void
 bus_space_read_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint16_t *bufp, bus_size_t count)
 {
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
-		*bufp++ = *bsp;
-		ofs += 2;
+		*bufp++ = bsp_bus_space_read_2(bsp++);
 	}
 }
 
@@ -418,10 +597,9 @@ static __inline void
 bus_space_read_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint32_t *bufp, bus_size_t count)
 {
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
-		*bufp++ = *bsp;
-		ofs += 4;
+		*bufp++ = bsp_bus_space_read_4(bsp++);
 	}
 }
 
@@ -429,10 +607,9 @@ static __inline void
 bus_space_read_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint64_t *bufp, bus_size_t count)
 {
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
-		*bufp++ = *bsp;
-		ofs += 8;
+		*bufp++ = bsp_bus_space_read_8(bsp++);
 	}
 }
 
@@ -447,10 +624,9 @@ static __inline void
 bus_space_write_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, const uint8_t *bufp, bus_size_t count)
 {
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
-		*bsp = *bufp++;
-		ofs += 1;
+		bsp_bus_space_write_1(bsp++, *bufp++);
 	}
 }
 
@@ -458,10 +634,9 @@ static __inline void
 bus_space_write_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, const uint16_t *bufp, bus_size_t count)
 {
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
-		*bsp = *bufp++;
-		ofs += 2;
+		bsp_bus_space_write_2(bsp++, *bufp++);
 	}
 }
 
@@ -469,10 +644,9 @@ static __inline void
 bus_space_write_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, const uint32_t *bufp, bus_size_t count)
 {
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
-		*bsp = *bufp++;
-		ofs += 4;
+		bsp_bus_space_write_4(bsp++, *bufp++);
 	}
 }
 
@@ -480,10 +654,9 @@ static __inline void
 bus_space_write_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, const uint64_t *bufp, bus_size_t count)
 {
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
-		*bsp = *bufp++;
-		ofs += 8;
+		bsp_bus_space_write_8(bsp++, *bufp++);
 	}
 }
 
@@ -499,7 +672,7 @@ bus_space_set_multi_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = val;
+		bsp_bus_space_write_1(bsp, val);
 	}
 }
 
@@ -509,7 +682,7 @@ bus_space_set_multi_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = val;
+		bsp_bus_space_write_2(bsp, val);
 	}
 }
 
@@ -519,7 +692,7 @@ bus_space_set_multi_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = val;
+		bsp_bus_space_write_4(bsp, val);
 	}
 }
 
@@ -529,7 +702,7 @@ bus_space_set_multi_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
 {
 	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		*bsp = val;
+		bsp_bus_space_write_8(bsp, val);
 	}
 }
 
@@ -544,10 +717,9 @@ static __inline void
 bus_space_set_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint8_t val, bus_size_t count)
 {
+	uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint8_t __volatile *bsp = (uint8_t __volatile *)(bsh + ofs);
-		*bsp = val;
-		ofs += 1;
+		bsp_bus_space_write_1(bsp++, val);
 	}
 }
 
@@ -555,10 +727,9 @@ static __inline void
 bus_space_set_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint16_t val, bus_size_t count)
 {
+	uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint16_t __volatile *bsp = (uint16_t __volatile *)(bsh + ofs);
-		*bsp = val;
-		ofs += 2;
+		bsp_bus_space_write_2(bsp++, val);
 	}
 }
 
@@ -566,10 +737,9 @@ static __inline void
 bus_space_set_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint32_t val, bus_size_t count)
 {
+	uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint32_t __volatile *bsp = (uint32_t __volatile *)(bsh + ofs);
-		*bsp = val;
-		ofs += 4;
+		bsp_bus_space_write_4(bsp++, val);
 	}
 }
 
@@ -577,10 +747,9 @@ static __inline void
 bus_space_set_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh,
     bus_size_t ofs, uint64_t val, bus_size_t count)
 {
+	uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
 	while (count-- > 0) {
-		uint64_t __volatile *bsp = (uint64_t __volatile *)(bsh + ofs);
-		*bsp = val;
-		ofs += 8;
+		bsp_bus_space_write_8(bsp++, val);
 	}
 }
 
@@ -596,23 +765,21 @@ static __inline void
 bus_space_copy_region_1(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
     bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
 {
-	bus_addr_t dst = bsh1 + ofs1;
-	bus_addr_t src = bsh2 + ofs2;
-	uint8_t __volatile *dstp = (uint8_t __volatile *) dst;
-	uint8_t __volatile *srcp = (uint8_t __volatile *) src;
+	uint8_t __volatile *dst = (uint8_t __volatile *)(bsh1 + ofs1);
+	uint8_t __volatile *src = (uint8_t __volatile *)(bsh2 + ofs2);
 	if (dst > src) {
 		src += count - 1;
 		dst += count - 1;
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src -= 1;
-			dst -= 1;
+			bsp_bus_space_write_1(dst, bsp_bus_space_read_1(src));
+			src--;
+			dst--;
 		}
 	} else {
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src += 1;
-			dst += 1;
+			bsp_bus_space_write_1(dst, bsp_bus_space_read_1(src));
+			src++;
+			dst++;
 		}
 	}
 }
@@ -621,23 +788,21 @@ static __inline void
 bus_space_copy_region_2(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
     bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
 {
-	bus_addr_t dst = bsh1 + ofs1;
-	bus_addr_t src = bsh2 + ofs2;
-	uint16_t __volatile *dstp = (uint16_t __volatile *) dst;
-	uint16_t __volatile *srcp = (uint16_t __volatile *) src;
+	uint16_t __volatile *dst = (uint16_t __volatile *)(bsh1 + ofs1);
+	uint16_t __volatile *src = (uint16_t __volatile *)(bsh2 + ofs2);;
 	if (dst > src) {
-		src += (count - 1) << 1;
-		dst += (count - 1) << 1;
+		src += count - 1;
+		dst += count - 1;
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src -= 2;
-			dst -= 2;
+			bsp_bus_space_write_2(dst, bsp_bus_space_read_2(src));
+			src--;
+			dst--;
 		}
 	} else {
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src += 2;
-			dst += 2;
+			bsp_bus_space_write_2(dst, bsp_bus_space_read_2(src));
+			src++;
+			dst++;
 		}
 	}
 }
@@ -646,23 +811,21 @@ static __inline void
 bus_space_copy_region_4(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
     bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
 {
-	bus_addr_t dst = bsh1 + ofs1;
-	bus_addr_t src = bsh2 + ofs2;
-	uint32_t __volatile *dstp = (uint32_t __volatile *) dst;
-	uint32_t __volatile *srcp = (uint32_t __volatile *) src;
+	uint32_t __volatile *dst = (uint32_t __volatile *)(bsh1 + ofs1);
+	uint32_t __volatile *src = (uint32_t __volatile *)(bsh2 + ofs2);;
 	if (dst > src) {
-		src += (count - 1) << 2;
-		dst += (count - 1) << 2;
+		src += count - 1;
+		dst += count - 1;
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src -= 4;
-			dst -= 4;
+			bsp_bus_space_write_4(dst, bsp_bus_space_read_4(src));
+			src--;
+			dst--;
 		}
 	} else {
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src += 4;
-			dst += 4;
+			bsp_bus_space_write_4(dst, bsp_bus_space_read_4(src));
+			src++;
+			dst++;
 		}
 	}
 }
@@ -671,23 +834,21 @@ static __inline void
 bus_space_copy_region_8(bus_space_tag_t bst __unused, bus_space_handle_t bsh1,
     bus_size_t ofs1, bus_space_handle_t bsh2, bus_size_t ofs2, bus_size_t count)
 {
-	bus_addr_t dst = bsh1 + ofs1;
-	bus_addr_t src = bsh2 + ofs2;
-	uint64_t __volatile *dstp = (uint64_t __volatile *) dst;
-	uint64_t __volatile *srcp = (uint64_t __volatile *) src;
+	uint64_t __volatile *dst = (uint64_t __volatile *)(bsh1 + ofs1);
+	uint64_t __volatile *src = (uint64_t __volatile *)(bsh2 + ofs2);;
 	if (dst > src) {
-		src += (count - 1) << 3;
-		dst += (count - 1) << 3;
+		src += count - 1;
+		dst += count - 1;
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src -= 8;
-			dst -= 8;
+			bsp_bus_space_write_8(dst, bsp_bus_space_read_8(src));
+			src--;
+			dst--;
 		}
 	} else {
 		while (count-- > 0) {
-			*dstp = *srcp;
-			src += 8;
-			dst += 8;
+			bsp_bus_space_write_8(dst, bsp_bus_space_read_8(src));
+			src++;
+			dst++;
 		}
 	}
 }

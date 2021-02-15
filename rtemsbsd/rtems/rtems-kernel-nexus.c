@@ -59,9 +59,35 @@
 #include <rtems/bsd/bsd.h>
 #include <rtems/irq-extension.h>
 
+#include <bsp.h>
+
+/*
+ * BSP PCI Support
+ *
+ * The RTEMS Nexus bus support can optionaly support PCI spaces that
+ * map to BSP speciic address spaces. The BSP needs to provide the
+ * following:
+ *
+ * RTEMS_BSP_PCI_IO_REGION_BASE
+ *   The base address of the IO port region of the address space
+ *
+ * RTEMS_BSP_PCI_MEM_REGION_BASE
+ *  The base address of the memory region of the address space
+ *
+ * i386 (x86) BSPs have a special bus.h file and do not use these settings.
+ */
+
 /* #define DISABLE_INTERRUPT_EXTENSION */
 
-#if defined(__i386__) || defined(FDT)
+#if defined(__i386__)
+#define RTEMS_BSP_PCI_IO_REGION_BASE 0
+#endif
+
+#if !defined(RTEMS_BSP_PCI_MEM_REGION_BASE)
+#define RTEMS_BSP_PCI_MEM_REGION_BASE 0
+#endif
+
+#if defined(RTEMS_BSP_PCI_IO_REGION_BASE) || defined(FDT)
 #define ENABLE_RESOURCE_ACTIVATE_DEACTIVATE
 #endif
 
@@ -77,7 +103,7 @@ static struct rman mem_rman;
 
 static struct rman irq_rman;
 
-#ifdef __i386__
+#if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 static struct rman port_rman;
 #endif
 
@@ -111,9 +137,9 @@ nexus_probe(device_t dev)
 	err = rman_manage_region(&irq_rman, irq_rman.rm_start, irq_rman.rm_end);
 	BSD_ASSERT(err == 0);
 
-#ifdef __i386__
+#if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 	port_rman.rm_start = 0;
-	port_rman.rm_end = 0xffff;
+	port_rman.rm_end = ~0UL;
 	port_rman.rm_type = RMAN_ARRAY;
 	port_rman.rm_descr = "I/O ports";
 	err = rman_init(&port_rman) != 0;
@@ -156,6 +182,7 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 	struct resource *res = NULL;
 	struct rman *rm;
 	const rtems_bsd_device *nd;
+	rman_res_t base = RTEMS_BSP_PCI_MEM_REGION_BASE;
 
 	switch (type) {
 	case SYS_RES_MEMORY:
@@ -164,9 +191,10 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 	case SYS_RES_IRQ:
 		rm = &irq_rman;
 		break;
-#ifdef __i386__
+#if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 	case SYS_RES_IOPORT:
 		rm = &port_rman;
+		base = RTEMS_BSP_PCI_IO_REGION_BASE;
 		break;
 #endif
 	default:
@@ -185,7 +213,7 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 				if (res != NULL) {
 					rman_set_rid(res, *rid);
 					rman_set_bushandle(res,
-					    rman_get_start(res));
+					    rman_get_start(res) + base);
 				}
 			};
 
@@ -193,7 +221,7 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 		}
 	}
 
-#ifdef __i386__
+#if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 	/*
 	 * FIXME: This is a quick and dirty hack.  Simply reserve resources of
 	 * this kind.  See also pci_reserve_map().
@@ -225,16 +253,22 @@ nexus_activate_resource(device_t bus, device_t child, int type, int rid,
 {
 
 	switch (type) {
-#ifdef __i386__
+#if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 	case SYS_RES_IOPORT:
+#ifdef __i386__
 		rman_set_bustag(res, X86_BUS_SPACE_IO);
+#else
+		rman_set_bushandle(res,
+		   rman_get_start(res) + RTEMS_BSP_PCI_IO_REGION_BASE);
+#endif
 		break;
 #endif
 	case SYS_RES_MEMORY:
 #ifdef __i386__
 		rman_set_bustag(res, X86_BUS_SPACE_MEM);
 #else
-		rman_set_bushandle(res, rman_get_start(res));
+		rman_set_bushandle(res,
+		   rman_get_start(res) + RTEMS_BSP_PCI_MEM_REGION_BASE);
 #endif
 		break;
 	}

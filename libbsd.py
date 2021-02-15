@@ -785,6 +785,7 @@ class dev_usb(builder.Module):
                 'sys/dev/usb/usb_ioctl.h',
                 'sys/dev/usb/usb_mbuf.h',
                 'sys/dev/usb/usb_msctest.h',
+                'sys/dev/usb/usb_pci.h',
                 'sys/dev/usb/usb_pf.h',
                 'sys/dev/usb/usb_process.h',
                 'sys/dev/usb/usb_request.h',
@@ -847,6 +848,7 @@ class dev_usb_controller(builder.Module):
             [
                 'sys/dev/usb/controller/ohci.c',
                 'sys/dev/usb/controller/ehci.c',
+                'sys/dev/usb/controller/ehci_pci.c',
                 'sys/dev/usb/controller/usb_controller.c',
                 'sys/dev/usb/controller/dwc_otg.c',
                 'sys/dev/usb/controller/dwc_otg_fdt.c',

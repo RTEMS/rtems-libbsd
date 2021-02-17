@@ -156,6 +156,10 @@ MODULE_DEPEND(dc, miibus, 1, 1, 1);
  * Various supported device vendors/types and their names.
  */
 static const struct dc_type dc_devs[] = {
+#ifdef __rtems__
+	{ DC_DEVID(DC_VENDORID_DEC, DC_DEVICEID_21140A), 0,
+		"Intel 21140A 10/100BaseTX" },
+#endif /* __rtems__ */
 	{ DC_DEVID(DC_VENDORID_DEC, DC_DEVICEID_21143), 0,
 		"Intel 21143 10/100BaseTX" },
 	{ DC_DEVID(DC_VENDORID_DAVICOM, DC_DEVICEID_DM9009), 0,
@@ -2076,6 +2080,9 @@ dc_attach(device_t dev)
 		dc_eeprom_width(sc);
 
 	switch (sc->dc_info->dc_devid) {
+#ifdef __rtems__
+	case DC_DEVID(DC_VENDORID_DEC, DC_DEVICEID_21140A):
+#endif /* __rtems__ */
 	case DC_DEVID(DC_VENDORID_DEC, DC_DEVICEID_21143):
 		sc->dc_type = DC_TYPE_21143;
 		sc->dc_flags |= DC_TX_POLL | DC_TX_USE_TX_INTR;

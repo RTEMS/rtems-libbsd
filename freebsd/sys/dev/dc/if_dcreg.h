@@ -824,6 +824,13 @@ struct dc_softc {
  */
 #define	DC_VENDORID_DEC		0x1011
 
+#ifdef __rtems__
+/*
+ * DEC/Intel 21140 PCI device ID
+ */
+#define	DC_DEVICEID_21140A	0x0009
+
+#endif /* __rtems__ */
 /*
  * DEC/Intel 21143 PCI device ID
  */

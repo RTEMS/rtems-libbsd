@@ -559,9 +559,25 @@ extern "C" {
     SYSINIT_DRIVER_REFERENCE(re, pci);
 #endif /* RTEMS_BSD_DRIVER_PCI_RE */
 
+/*
+ * DEC Tulip Driver
+ */
+#if !defined(RTEMS_BSD_DRIVER_PCI_DC)
+  #define RTEMS_BSD_DRIVER_PCI_DC                 \
+    SYSINIT_DRIVER_REFERENCE(dc, pci);
+#endif /* RTEMS_BSD_DRIVER_PCI_DC */
+
 /**
  ** MMI Physical Layer Support.
  **/
+
+/*
+ * UK PHY (for unknown PHY devices)
+ */
+#if !defined(RTEMS_BSD_DRIVER_UKPHY)
+  #define RTEMS_BSD_DRIVER_UKPHY               \
+    SYSINIT_DRIVER_REFERENCE(ukphy, miibus);
+#endif /* RTEMS_BSD_DRIVER_UKPHY */
 
 /*
  * E1000 PHY
@@ -602,6 +618,22 @@ extern "C" {
   #define RTEMS_BSD_DRIVER_UKPHY                  \
     SYSINIT_DRIVER_REFERENCE(ukphy, miibus);
 #endif /* RTEMS_BSD_DRIVER_UKPHY */
+
+/*
+ * DC PHY.
+ */
+#if !defined(RTEMS_BSD_DRIVER_DCPHY)
+  #define RTEMS_BSD_DRIVER_DCPHY                  \
+    SYSINIT_DRIVER_REFERENCE(dcphy, miibus);
+#endif /* RTEMS_BSD_DRIVER_DCPHY */
+
+/*
+ * PN PHY.
+ */
+#if !defined(RTEMS_BSD_DRIVER_PNPHY)
+  #define RTEMS_BSD_DRIVER_PNPHY                  \
+    SYSINIT_DRIVER_REFERENCE(pnphy, miibus);
+#endif /* RTEMS_BSD_DRIVER_PNPHY */
 
 #ifdef __cplusplus
 }

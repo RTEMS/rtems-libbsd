@@ -65,6 +65,10 @@
 #include <sys/stat.h>
 #include <paths.h>
 #include <err.h>
+#ifdef __rtems__
+#include <sys/param.h>
+#include <rtems/libio_.h>
+#endif /* __rtems__ */
 
 #include <netinet/in.h>
 #include <resolv.h>
@@ -123,8 +127,16 @@ static void check_sigreq __P((void));
 static void check_flushsa __P((void));
 static int close_sockets __P((void));
 
+#ifndef __rtems__
 static fd_set preset_mask, active_mask;
 static struct fd_monitor fd_monitors[FD_SETSIZE];
+#else /* __rtems__ */
+static fd_set *allocated_preset_mask, *allocated_active_mask;
+static struct fd_monitor *allocated_fd_monitors;
+#define preset_mask (*allocated_preset_mask)
+#define active_mask (*allocated_active_mask)
+#define fd_monitors (allocated_fd_monitors)
+#endif /* __rtems__ */
 static TAILQ_HEAD(fd_monitor_list, fd_monitor) fd_monitor_tree[NUM_PRIORITIES];
 static int nfds = 0;
 
@@ -134,7 +146,11 @@ static struct sched scflushsa = SCHED_INITIALIZER();
 void
 monitor_fd(int fd, int (*callback)(void *, int), void *ctx, int priority)
 {
+#ifndef __rtems__
 	if (fd < 0 || fd >= FD_SETSIZE) {
+#else /* __rtems__ */
+	if (fd < 0 || fd >= rtems_libio_number_iops) {
+#endif /* __rtems__ */
 		plog(LLV_ERROR, LOCATION, NULL, "fd_set overrun");
 		exit(1);
 	}
@@ -158,7 +174,11 @@ monitor_fd(int fd, int (*callback)(void *, int), void *ctx, int priority)
 void
 unmonitor_fd(int fd)
 {
+#ifndef __rtems__
 	if (fd < 0 || fd >= FD_SETSIZE) {
+#else /* __rtems__ */
+	if (fd < 0 || fd >= rtems_libio_number_iops) {
+#endif /* __rtems__ */
 		plog(LLV_ERROR, LOCATION, NULL, "fd_set overrun");
 		exit(1);
 	}
@@ -186,7 +206,22 @@ session(void)
 	struct fd_monitor *fdm;
 
 	nfds = 0;
+#ifndef __rtems__
 	FD_ZERO(&preset_mask);
+#else /* __rtems__ */
+	allocated_preset_mask = calloc(sizeof(fd_set),
+	    howmany(rtems_libio_number_iops, sizeof(fd_set) * 8));
+	if (allocated_preset_mask == NULL)
+		errx(1, "failed to allocate preset_mask");
+	allocated_active_mask = calloc(sizeof(fd_set),
+	    howmany(rtems_libio_number_iops, sizeof(fd_set) * 8));
+	if (allocated_active_mask == NULL)
+		errx(1, "failed to allocate active_mask");
+	allocated_fd_monitors = calloc(
+	    rtems_libio_number_iops, sizeof(struct fd_monitor));
+	if (allocated_fd_monitors == NULL)
+		errx(1, "failed to allocate fd_monitors");
+#endif /* __rtems__ */
 
 	for (i = 0; i < NUM_PRIORITIES; i++)
 		TAILQ_INIT(&fd_monitor_tree[i]);
@@ -356,6 +391,11 @@ close_session()
 	flushsainfo();
 	close_sockets();
 	backupsa_clean();
+#ifdef __rtems__
+	free(allocated_preset_mask); allocated_preset_mask = NULL;
+	free(allocated_active_mask); allocated_active_mask = NULL;
+	free(allocated_fd_monitors); allocated_fd_monitors = NULL;
+#endif /* __rtems__ */
 
 	plog(LLV_INFO, LOCATION, NULL, "racoon process %d shutdown\n", getpid());
 

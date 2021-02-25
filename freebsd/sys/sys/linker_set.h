@@ -68,39 +68,62 @@
 	__used = &(sym)
 #define __MAKE_SET(set, sym)	__MAKE_SET_QV(set, sym, __MAKE_SET_CONST)
 #else /* __rtems__ */
+
+#if __cplusplus >= 201103L
+  #define RTEMS_BSD_ALIGNOF( _type_name ) alignof( _type_name )
+#elif __STDC_VERSION__ >= 201112L
+  #define RTEMS_BSD_ALIGNOF( _type_name ) _Alignof( _type_name )
+#else
+  #define RTEMS_BSD_ALIGNOF( _type_name ) sizeof( _type_name )
+#endif
+
+#define RTEMS_BSD_SET_ALIGN( type )	\
+	__attribute__(( __aligned__( RTEMS_BSD_ALIGNOF( type ) ) ))
+
 #define RTEMS_BSD_DEFINE_SET(set, type)					\
-	type const __CONCAT(_bsd__start_set_,set)[0]		\
+	RTEMS_BSD_SET_ALIGN( type ) type				\
+	const __CONCAT(_bsd__start_set_,set)[0]				\
 	__section(".rtemsroset.bsd." __STRING(set) ".begin") __used;	\
-	type const __CONCAT(_bsd__stop_set_,set)[0]		\
+	RTEMS_BSD_SET_ALIGN( type ) type				\
+	const __CONCAT(_bsd__stop_set_,set)[0]				\
 	__section(".rtemsroset.bsd." __STRING(set) ".end") __used
 
 #define RTEMS_BSD_DECLARE_SET(set, type)				\
-	extern type const __CONCAT(_bsd__start_set_,set)[0];		\
-	extern type const __CONCAT(_bsd__stop_set_,set)[0]
+	extern RTEMS_BSD_SET_ALIGN( type ) type				\
+	const __CONCAT(_bsd__start_set_,set)[0];			\
+	extern RTEMS_BSD_SET_ALIGN( type ) type				\
+	const __CONCAT(_bsd__stop_set_,set)[0]
 
 #define RTEMS_BSD_DEFINE_SET_ITEM(set, sym, type)			\
-	static type const __set_##set##_sym_##sym			\
-       __section(".rtemsroset.bsd." __STRING(set) ".content.1") __used
+	static RTEMS_BSD_SET_ALIGN( type ) type				\
+	const __set_##set##_sym_##sym					\
+	__section(".rtemsroset.bsd." __STRING(set) ".content.1") __used
 
-#define RTEMS_BSD_DEFINE_SET_ITEM_ORDERED(set, sym, order, type)     \
-	static type const __set_##set##_sym_##sym     \
-       __section(".rtemsroset.bsd." __STRING(set) ".content.0."  RTEMS_XSTRING( order )) __used
+#define RTEMS_BSD_DEFINE_SET_ITEM_ORDERED(set, sym, order, type)	\
+	static RTEMS_BSD_SET_ALIGN( type ) type				\
+	const __set_##set##_sym_##sym     				\
+	__section(".rtemsroset.bsd." __STRING(set) ".content.0."  RTEMS_XSTRING( order )) __used
 
 #define __MAKE_SET(set, sym)						\
 	RTEMS_BSD_DEFINE_SET_ITEM(set, sym, const void *) = &sym
 
 #define RTEMS_BSD_DEFINE_RWSET(set, type)				\
-	type __CONCAT(_bsd__start_set_,set)[0]				\
+	RTEMS_BSD_SET_ALIGN( type ) type				\
+	__CONCAT(_bsd__start_set_,set)[0]				\
 	__section(".rtemsrwset.bsd." __STRING(set) ".begin") __used;	\
-	type __CONCAT(_bsd__stop_set_,set)[0]				\
+	RTEMS_BSD_SET_ALIGN( type ) type				\
+	__CONCAT(_bsd__stop_set_,set)[0]				\
 	__section(".rtemsrwset.bsd." __STRING(set) ".end") __used
 
 #define RTEMS_BSD_DECLARE_RWSET(set, type)				\
-	extern type __CONCAT(_bsd__start_set_,set)[0];			\
-	extern type __CONCAT(_bsd__stop_set_,set)[0]
+	extern RTEMS_BSD_SET_ALIGN( type ) type				\
+	__CONCAT(_bsd__start_set_,set)[0];				\
+	extern RTEMS_BSD_SET_ALIGN( type ) type				\
+	__CONCAT(_bsd__stop_set_,set)[0]
 
 #define RTEMS_BSD_DEFINE_RWSET_ITEM(set, sym, type)			\
-	static type __set_##set##_sym_##sym 				\
+	static RTEMS_BSD_SET_ALIGN( type ) type				\
+	__set_##set##_sym_##sym 					\
 	__section(".rtemsrwset.bsd." __STRING(set) ".content") __used
 
 #define __MAKE_RWSET(set, sym)						\

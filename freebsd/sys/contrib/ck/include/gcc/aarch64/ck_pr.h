@@ -111,7 +111,11 @@ CK_PR_FENCE(unlock, CK_DMB_SY)
 	}
 
 
+#ifdef __ILP32__
+CK_PR_LOAD(ptr, void, void *, "ldr")
+#else
 CK_PR_LOAD_64(ptr, void, void *, "ldr")
+#endif
 
 #define CK_PR_LOAD_S(S, T, I) CK_PR_LOAD(S, T, T, I)
 #define CK_PR_LOAD_S_64(S, T, I) CK_PR_LOAD_64(S, T, T, I)
@@ -156,7 +160,11 @@ CK_PR_LOAD_S_64(double, double, "ldr")
 		return;						\
 	}
 
+#ifdef __ILP32__
+CK_PR_STORE(ptr, void, const void *, "str")
+#else
 CK_PR_STORE_64(ptr, void, const void *, "str")
+#endif
 
 #define CK_PR_STORE_S(S, T, I) CK_PR_STORE(S, T, T, I)
 #define CK_PR_STORE_S_64(S, T, I) CK_PR_STORE_64(S, T, T, I)

@@ -115,6 +115,7 @@ __FBSDID("$FreeBSD$");
 #include <getopt.h>
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
+#include <rtems/libio_.h>
 #endif /* __rtems__ */
 #include <sys/param.h>
 #include <sys/capsicum.h>
@@ -1198,7 +1199,13 @@ main(int argc, char *argv[])
 		struct timespec now, timeout;
 		struct msghdr m;
 		struct iovec iov[2];
+#ifndef __rtems__
 		fd_set rfds;
+#else /* __rtems__ */
+		fd_set big_enough_rfds[howmany(rtems_libio_number_iops,
+		    sizeof(fd_set) * 8)];
+#define	rfds (*(fd_set *)(&big_enough_rfds[0]))
+#endif /* __rtems__ */
 		int n;
 
 		/* signal handling */
@@ -1211,7 +1218,11 @@ main(int argc, char *argv[])
 			continue;
 		}
 #endif
+#ifndef __rtems__
 		FD_ZERO(&rfds);
+#else /* __rtems__ */
+		memset(big_enough_rfds, 0, sizeof(big_enough_rfds));
+#endif /* __rtems__ */
 		FD_SET(srecv, &rfds);
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		timespecadd(&last, &intvl, &timeout);

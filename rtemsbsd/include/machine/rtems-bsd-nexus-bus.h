@@ -78,6 +78,7 @@
  *   RTEMS_BSD_DRIVER_ICSPHY
  *   RTEMS_BSD_DRIVER_REPHY
  *   RTEMS_BSD_DRIVER_PHY_MIC
+ *   RTEMS_BSD_DRIVER_UKPHY
  */
 
 #if !defined(RTEMS_BSD_NEXUS_BUS_h)
@@ -542,6 +543,14 @@ extern "C" {
   #define RTEMS_BSD_DRIVER_PHY_MIC                  \
     SYSINIT_DRIVER_REFERENCE(micphy, miibus);
 #endif /* RTEMS_BSD_DRIVER_PHY_MIC */
+
+/*
+ * UK PHY.
+ */
+#if !defined(RTEMS_BSD_DRIVER_UKPHY)
+  #define RTEMS_BSD_DRIVER_UKPHY                  \
+    SYSINIT_DRIVER_REFERENCE(ukphy, miibus);
+#endif /* RTEMS_BSD_DRIVER_UKPHY */
 
 #ifdef __cplusplus
 }

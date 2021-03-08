@@ -81,6 +81,10 @@ __FBSDID("$FreeBSD$");
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
 
+#if defined(__LP64__) || defined(__ILP32__)
+#define CGEM64
+#endif
+
 #include <dev/cadence/if_cgem_hw.h>
 
 #include <rtems/bsd/local/miibus_if.h>
@@ -127,8 +131,14 @@ struct cgem_softc {
 	void			*intrhand;
 	struct callout		tick_ch;
 	uint32_t		net_ctl_shadow;
+#ifdef __rtems__
+	uint32_t		net_cfg_shadow;
+	int			neednullqs;
+#endif /* __rtems__ */
 	int			ref_clk_num;
+#ifndef __rtems__
 	u_char			eaddr[6];
+#endif /* __rtems__ */
 
 	bus_dma_tag_t		desc_dma_tag;
 	bus_dma_tag_t		mbuf_dma_tag;
@@ -161,11 +171,17 @@ struct cgem_softc {
 	int			txring_hd_ptr;	/* where to put next xmits */
 	int			txring_tl_ptr;	/* next xmit mbuf to free */
 	int			txring_queued;	/* num xmits segs queued */
+#ifndef __rtems__
 	bus_dmamap_t		txring_dma_map;
+#endif /* __rtems__ */
 	u_int			txfull;		/* tx ring full events */
 	u_int			txdefrags;	/* tx calls to m_defrag() */
 	u_int			txdefragfails;	/* tx m_defrag() failures */
 	u_int			txdmamapfails;	/* tx dmamap failures */
+
+	/* null descriptor rings */
+	void			*null_qs;
+	bus_addr_t		null_qs_physaddr;
 
 	/* hardware provided statistics */
 	struct cgem_hw_stats {
@@ -337,7 +353,11 @@ cgem_rx_filter(struct cgem_softc *sc)
 	hash_hi = 0;
 	hash_lo = 0;
 
+#ifdef __rtems__
+	net_cfg = sc->net_cfg_shadow;
+#else
 	net_cfg = RD4(sc, CGEM_NET_CFG);
+#endif
 
 	net_cfg &= ~(CGEM_NET_CFG_MULTI_HASH_EN |
 		     CGEM_NET_CFG_NO_BCAST | 
@@ -379,6 +399,9 @@ cgem_rx_filter(struct cgem_softc *sc)
 
 	WR4(sc, CGEM_HASH_TOP, hash_hi);
 	WR4(sc, CGEM_HASH_BOT, hash_lo);
+#ifdef __rtems__
+	sc->net_cfg_shadow = net_cfg;
+#endif /* __rtems__ */
 	WR4(sc, CGEM_NET_CFG, net_cfg);
 }
 
@@ -392,24 +415,87 @@ cgem_getaddr(void *arg, bus_dma_segment_t *segs, int nsegs, int error)
 	*(bus_addr_t *)arg = segs[0].ds_addr;
 }
 
+#ifdef __rtems__
+/* Set up null queues for priority queues we actually can't disable. */
+static void
+cgem_null_qs(struct cgem_softc *sc)
+{
+	struct cgem_rx_desc *rx_desc;
+	struct cgem_tx_desc *tx_desc;
+	uint32_t queue_mask;
+	int n;
+
+	/* Read design config register 6 to determine number of queues. */
+	queue_mask = (RD4(sc, CGEM_DESIGN_CFG6) &
+	    CGEM_DESIGN_CFG6_DMA_PRIO_Q_MASK) >> 1;
+	if (queue_mask == 0)
+		return;
+
+	/* Create empty RX queue and empty TX buf queues. */
+	memset(sc->null_qs, 0, sizeof(struct cgem_rx_desc) +
+	    sizeof(struct cgem_tx_desc));
+	rx_desc = sc->null_qs;
+	rx_desc->addr = CGEM_RXDESC_OWN | CGEM_RXDESC_WRAP;
+	tx_desc = (struct cgem_tx_desc *)(rx_desc + 1);
+	tx_desc->ctl = CGEM_TXDESC_USED | CGEM_TXDESC_WRAP;
+
+	/* Point all valid ring base pointers to the null queues. */
+	for (n = 1; (queue_mask & 1) != 0; n++, queue_mask >>= 1) {
+		WR4(sc, CGEM_RX_QN_BAR(n), sc->null_qs_physaddr);
+		WR4(sc, CGEM_TX_QN_BAR(n), sc->null_qs_physaddr +
+		    sizeof(struct cgem_rx_desc));
+	}
+}
+#endif /* __rtems__ */
+
 /* Create DMA'able descriptor rings. */
 static int
 cgem_setup_descs(struct cgem_softc *sc)
 {
 	int i, err;
+#ifdef __rtems__
+	int desc_rings_size = CGEM_NUM_RX_DESCS * sizeof(struct cgem_rx_desc) +
+	    CGEM_NUM_TX_DESCS * sizeof(struct cgem_tx_desc);
 
+	if (sc->neednullqs)
+		desc_rings_size += sizeof(struct cgem_rx_desc) +
+		    sizeof(struct cgem_tx_desc);
+#endif /* __rtems__ */
 	sc->txring = NULL;
 	sc->rxring = NULL;
 
 	/* Allocate non-cached DMA space for RX and TX descriptors.
 	 */
+#ifndef __rtems__
 	err = bus_dma_tag_create(bus_get_dma_tag(sc->dev), 1, 0,
 				 BUS_SPACE_MAXADDR_32BIT,
+#else /* __rtems__ */
+	err = bus_dma_tag_create(bus_get_dma_tag(sc->dev),
+#if defined(__LP64__)
+				 8,
+				 1ULL << 32,	/* Do not cross a 4G boundary. */
+				 BUS_SPACE_MAXADDR,
+#elif defined(__ILP32__)
+				 8,
+				 0,
+				 BUS_SPACE_MAXADDR,
+#else /* ARMv7 */
+				 1,
+				 0,
+				 BUS_SPACE_MAXADDR_32BIT,
+#endif /* ARMv7 */
+#endif /* __rtems__ */
 				 BUS_SPACE_MAXADDR,
 				 NULL, NULL,
+#ifndef __rtems__
 				 MAX_DESC_RING_SIZE,
 				 1,
 				 MAX_DESC_RING_SIZE,
+#else /* __rtems__ */
+				 desc_rings_size,
+				 1,
+				 desc_rings_size,
+#endif /* __rtems__ */
 				 0,
 				 busdma_lock_mutex,
 				 &sc->sc_mtx,
@@ -418,8 +504,19 @@ cgem_setup_descs(struct cgem_softc *sc)
 		return (err);
 
 	/* Set up a bus_dma_tag for mbufs. */
+#ifndef __rtems__
 	err = bus_dma_tag_create(bus_get_dma_tag(sc->dev), 1, 0,
 				 BUS_SPACE_MAXADDR_32BIT,
+#else /* __rtems__ */
+	err = bus_dma_tag_create(bus_get_dma_tag(sc->dev),
+#ifdef CGEM64
+				 8,
+#else
+				 1,
+#endif
+				 0,
+				 BUS_SPACE_MAXADDR,
+#endif /* __rtems__ */
 				 BUS_SPACE_MAXADDR,
 				 NULL, NULL,
 				 MCLBYTES,
@@ -435,7 +532,11 @@ cgem_setup_descs(struct cgem_softc *sc)
 	/* Allocate DMA memory in non-cacheable space. */
 	err = bus_dmamem_alloc(sc->desc_dma_tag,
 			       (void **)&sc->rxring,
+#ifndef __rtems__
 			       BUS_DMA_NOWAIT | BUS_DMA_COHERENT,
+#else /* __rtems__ */
+			       BUS_DMA_NOWAIT | BUS_DMA_COHERENT | BUS_DMA_ZERO,
+#endif /* __rtems__ */
 			       &sc->rxring_dma_map);
 	if (err)
 		return (err);
@@ -443,7 +544,11 @@ cgem_setup_descs(struct cgem_softc *sc)
 	/* Load descriptor DMA memory. */
 	err = bus_dmamap_load(sc->desc_dma_tag, sc->rxring_dma_map,
 			      (void *)sc->rxring,
+#ifndef __rtems__
 			      CGEM_NUM_RX_DESCS*sizeof(struct cgem_rx_desc),
+#else /* __rtems__ */
+			      desc_rings_size,
+#endif /* __rtems__ */
 			      cgem_getaddr, &sc->rxring_physaddr,
 			      BUS_DMA_NOWAIT);
 	if (err)
@@ -464,6 +569,7 @@ cgem_setup_descs(struct cgem_softc *sc)
 	sc->rxring_tl_ptr = 0;
 	sc->rxring_queued = 0;
 
+#ifndef __rtems__
 	/* Allocate DMA memory for TX descriptors in non-cacheable space. */
 	err = bus_dmamem_alloc(sc->desc_dma_tag,
 			       (void **)&sc->txring,
@@ -480,6 +586,11 @@ cgem_setup_descs(struct cgem_softc *sc)
 			      BUS_DMA_NOWAIT);
 	if (err)
 		return (err);
+#else /* __rtems__ */
+	sc->txring = (struct cgem_tx_desc *)(sc->rxring + CGEM_NUM_RX_DESCS);
+	sc->txring_physaddr = sc->rxring_physaddr + CGEM_NUM_RX_DESCS *
+	    sizeof(struct cgem_rx_desc);
+#endif /* __rtems__ */
 
 	/* Initialize TX descriptor ring. */
 	for (i = 0; i < CGEM_NUM_TX_DESCS; i++) {
@@ -495,6 +606,16 @@ cgem_setup_descs(struct cgem_softc *sc)
 	sc->txring_hd_ptr = 0;
 	sc->txring_tl_ptr = 0;
 	sc->txring_queued = 0;
+
+#ifdef __rtems__
+	if (sc->neednullqs) {
+		sc->null_qs = (void *)(sc->txring + CGEM_NUM_TX_DESCS);
+		sc->null_qs_physaddr = sc->txring_physaddr +
+		    CGEM_NUM_TX_DESCS * sizeof(struct cgem_tx_desc);
+
+		cgem_null_qs(sc);
+	}
+#endif /* __rtems__ */
 
 	return (0);
 }
@@ -556,6 +677,13 @@ cgem_fill_rqueue(struct cgem_softc *sc)
 
 		/* Write rx descriptor and increment head pointer. */
 		sc->rxring[sc->rxring_hd_ptr].ctl = 0;
+#ifdef __rtems__
+#if defined(__LP64__)
+		sc->rxring[sc->rxring_hd_ptr].addrhi = segs[0].ds_addr >> 32;
+#elif defined(__ILP32__)
+		sc->rxring[sc->rxring_hd_ptr].addrhi = 0;
+#endif
+#endif /* __rtems__ */
 		if (sc->rxring_hd_ptr == CGEM_NUM_RX_DESCS - 1) {
 			sc->rxring[sc->rxring_hd_ptr].addr = segs[0].ds_addr |
 				CGEM_RXDESC_WRAP;
@@ -709,9 +837,16 @@ cgem_clean_tx(struct cgem_softc *sc)
 		/* Check the status. */
 		if ((ctl & CGEM_TXDESC_AHB_ERR) != 0) {
 			/* Serious bus error. log to console. */
+#if defined(__LP64__) && defined(__rtems__)
+			device_printf(sc->dev,
+				      "cgem_clean_tx: AHB error, addr=0x%x%08x\n",
+				      sc->txring[sc->txring_tl_ptr].addrhi,
+				      sc->txring[sc->txring_tl_ptr].addr);
+#else
 			device_printf(sc->dev, "cgem_clean_tx: Whoa! "
 				   "AHB error, addr=0x%x\n",
 				   sc->txring[sc->txring_tl_ptr].addr);
+#endif
 		} else if ((ctl & (CGEM_TXDESC_RETRY_ERR |
 				   CGEM_TXDESC_LATE_COLL)) != 0) {
 			if_inc_counter(sc->ifp, IFCOUNTER_OERRORS, 1);
@@ -879,6 +1014,14 @@ cgem_start_locked(if_t ifp)
 			/* Descriptor address. */
 			sc->txring[sc->txring_hd_ptr + i].addr =
 				segs[i].ds_addr;
+#ifdef __rtems__
+#ifdef defined(__LP64__)
+			sc->txring[sc->txring_hd_ptr + i].addrhi =
+				segs[i].ds_addr >> 32;
+#elif defined(__ILP32__)
+			sc->txring[sc->txring_hd_ptr + i].addrhi = 0;
+#endif
+#endif /* __rtems__ */
 
 			/* Descriptor control word. */
 			ctl = segs[i].ds_len;
@@ -1081,7 +1224,11 @@ cgem_reset(struct cgem_softc *sc)
 	CGEM_ASSERT_LOCKED(sc);
 
 	WR4(sc, CGEM_NET_CTRL, 0);
+#ifndef __rtems__
 	WR4(sc, CGEM_NET_CFG, 0);
+#else
+	WR4(sc, CGEM_NET_CFG, sc->net_cfg_shadow);
+#endif
 	WR4(sc, CGEM_NET_CTRL, CGEM_NET_CTRL_CLR_STAT_REGS);
 	WR4(sc, CGEM_TX_STAT, CGEM_TX_STAT_ALL);
 	WR4(sc, CGEM_RX_STAT, CGEM_RX_STAT_ALL);
@@ -1092,9 +1239,31 @@ cgem_reset(struct cgem_softc *sc)
 	WR4(sc, CGEM_RX_QBAR, 0);
 
 	/* Get management port running even if interface is down. */
+#ifndef __rtems__
 	WR4(sc, CGEM_NET_CFG,
 	    CGEM_NET_CFG_DBUS_WIDTH_32 |
 	    CGEM_NET_CFG_MDC_CLK_DIV_64);
+#else
+	/* Determine data bus width from design configuration register. */
+	switch (RD4(sc, CGEM_DESIGN_CFG1) &
+	    CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_MASK) {
+	case CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_64:
+		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_64;
+		break;
+	case CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_128:
+		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_128;
+		break;
+	default:
+		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_32;
+	}
+
+#ifdef CGEM64
+	sc->net_cfg_shadow |= CGEM_NET_CFG_MDC_CLK_DIV_48;
+#else
+	sc->net_cfg_shadow |= CGEM_NET_CFG_MDC_CLK_DIV_64;
+#endif
+	WR4(sc, CGEM_NET_CFG, sc->net_cfg_shadow);
+#endif /* __rtems__ */
 
 	sc->net_ctl_shadow = CGEM_NET_CTRL_MGMT_PORT_EN;
 	WR4(sc, CGEM_NET_CTRL, sc->net_ctl_shadow);
@@ -1112,8 +1281,14 @@ cgem_config(struct cgem_softc *sc)
 	CGEM_ASSERT_LOCKED(sc);
 
 	/* Program Net Config Register. */
+#ifndef __rtems__
 	net_cfg = CGEM_NET_CFG_DBUS_WIDTH_32 |
 		CGEM_NET_CFG_MDC_CLK_DIV_64 |
+#else /* __rtems__ */
+	sc->net_cfg_shadow &= (CGEM_NET_CFG_MDC_CLK_DIV_MASK |
+	    CGEM_NET_CFG_DBUS_WIDTH_MASK);
+	net_cfg = sc->net_cfg_shadow |
+#endif /* __rtems__ */
 		CGEM_NET_CFG_FCS_REMOVE |
 		CGEM_NET_CFG_RX_BUF_OFFSET(ETHER_ALIGN) |
 		CGEM_NET_CFG_GIGE_EN |
@@ -1125,6 +1300,9 @@ cgem_config(struct cgem_softc *sc)
 	if ((if_getcapenable(ifp) & IFCAP_RXCSUM) != 0)
 		net_cfg |=  CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN;
 
+#ifdef __rtems__
+	sc->net_cfg_shadow = net_cfg;
+#endif /* __rtems__ */
 	WR4(sc, CGEM_NET_CFG, net_cfg);
 
 	/* Program DMA Config Register. */
@@ -1132,6 +1310,9 @@ cgem_config(struct cgem_softc *sc)
 		CGEM_DMA_CFG_RX_PKTBUF_MEMSZ_SEL_8K |
 		CGEM_DMA_CFG_TX_PKTBUF_MEMSZ_SEL |
 		CGEM_DMA_CFG_AHB_FIXED_BURST_LEN_16 |
+#if defined(CGEM64) && defined(__rtems__)
+	        CGEM_DMA_CFG_ADDR_BUS_64 |
+#endif
 		CGEM_DMA_CFG_DISC_WHEN_NO_AHB;
 
 	/* Enable transmit checksum offloading? */
@@ -1143,6 +1324,13 @@ cgem_config(struct cgem_softc *sc)
 	/* Write the rx and tx descriptor ring addresses to the QBAR regs. */
 	WR4(sc, CGEM_RX_QBAR, (uint32_t) sc->rxring_physaddr);
 	WR4(sc, CGEM_TX_QBAR, (uint32_t) sc->txring_physaddr);
+#if defined(__LP64__) && defined(__rtems__)
+	WR4(sc, CGEM_RX_QBAR_HI, (uint32_t)(sc->rxring_physaddr >> 32));
+	WR4(sc, CGEM_TX_QBAR_HI, (uint32_t)(sc->txring_physaddr >> 32));
+#elif defined(__ILP32__) && defined(__rtems__)
+	WR4(sc, CGEM_RX_QBAR_HI, 0);
+	WR4(sc, CGEM_TX_QBAR_HI, 0);
+#endif
 	
 	/* Enable rx and tx. */
 	sc->net_ctl_shadow |= (CGEM_NET_CTRL_TX_EN | CGEM_NET_CTRL_RX_EN);
@@ -1176,8 +1364,14 @@ cgem_init_locked(struct cgem_softc *sc)
 
 	if_setdrvflagbits(sc->ifp, IFF_DRV_RUNNING, IFF_DRV_OACTIVE);
 
+#ifdef __rtems__
+	if (sc->miibus != NULL) {
+#endif /* __rtems__ */
 	mii = device_get_softc(sc->miibus);
 	mii_mediachg(mii);
+#ifdef __rtems__
+	}
+#endif /* __rtems__ */
 
 	callout_reset(&sc->tick_ch, hz, cgem_tick, sc);
 }
@@ -1297,6 +1491,10 @@ cgem_ioctl(if_t ifp, u_long cmd, caddr_t data)
 
 	case SIOCSIFMEDIA:
 	case SIOCGIFMEDIA:
+#ifdef __rtems__
+		if (sc->miibus == NULL)
+			return (ENXIO);
+#endif /* __rtems__ */
 		mii = device_get_softc(sc->miibus);
 		error = ifmedia_ioctl(ifp, ifr, &mii->mii_media, cmd);
 		break;
@@ -1331,16 +1529,28 @@ cgem_ioctl(if_t ifp, u_long cmd, caddr_t data)
 				/* Turn on RX checksumming. */
 				if_setcapenablebit(ifp, IFCAP_RXCSUM |
 						   IFCAP_RXCSUM_IPV6, 0);
+#ifndef __rtems__
 				WR4(sc, CGEM_NET_CFG,
 				    RD4(sc, CGEM_NET_CFG) |
 				     CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN);
+#else /* __rtems__ */
+				sc->net_cfg_shadow |=
+					CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN;
+				WR4(sc, CGEM_NET_CFG, sc->net_cfg_shadow);
+#endif /* __rtems__ */
 			} else {
 				/* Turn off RX checksumming. */
 				if_setcapenablebit(ifp, 0, IFCAP_RXCSUM |
 						   IFCAP_RXCSUM_IPV6);
+#ifndef __rtems__
 				WR4(sc, CGEM_NET_CFG,
 				    RD4(sc, CGEM_NET_CFG) &
 				     ~CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN);
+#else /* __rtems__ */
+				sc->net_cfg_shadow &=
+					~CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN;
+				WR4(sc, CGEM_NET_CFG, sc->net_cfg_shadow);
+#endif /* __rtems__ */
 			}
 		}
 		if ((if_getcapenable(ifp) & (IFCAP_RXCSUM | IFCAP_TXCSUM)) == 
@@ -1361,6 +1571,7 @@ cgem_ioctl(if_t ifp, u_long cmd, caddr_t data)
 
 /* MII bus support routines.
  */
+#ifndef __rtems__
 static void
 cgem_child_detached(device_t dev, device_t child)
 {
@@ -1369,6 +1580,7 @@ cgem_child_detached(device_t dev, device_t child)
 	if (child == sc->miibus)
 		sc->miibus = NULL;
 }
+#endif /* __rtems__ */
 
 static int
 cgem_ifmedia_upd(if_t ifp)
@@ -1514,7 +1726,11 @@ cgem_mediachange(struct cgem_softc *sc,	struct mii_data *mii)
 	CGEM_ASSERT_LOCKED(sc);
 
 	/* Update hardware to reflect media. */
+#ifndef __rtems__
 	net_cfg = RD4(sc, CGEM_NET_CFG);
+#else /* __rtems__ */
+	net_cfg = sc->net_cfg_shadow;
+#endif /* __rtems__ */
 	net_cfg &= ~(CGEM_NET_CFG_SPEED100 | CGEM_NET_CFG_GIGE_EN |
 		     CGEM_NET_CFG_FULL_DUPLEX);
 
@@ -1535,6 +1751,9 @@ cgem_mediachange(struct cgem_softc *sc,	struct mii_data *mii)
 	if ((mii->mii_media_active & IFM_FDX) != 0)
 		net_cfg |= CGEM_NET_CFG_FULL_DUPLEX;
 
+#ifdef __rtems__
+	sc->net_cfg_shadow = net_cfg;
+#endif /* __rtems__ */
 	WR4(sc, CGEM_NET_CFG, net_cfg);
 
 	/* Set the reference clock if necessary. */
@@ -1809,7 +2028,17 @@ cgem_attach(device_t dev)
 
 	sc->if_old_flags = if_getflags(ifp);
 	sc->rxbufs = DEFAULT_NUM_RX_BUFS;
+#if defined(CGEM64) && defined(__rtems__)
+	uint32_t design_cfg6 = RD4(sc, CGEM_DESIGN_CFG6);
+	/*
+	 * QEMU does not have PBUF_CUTTHRU defined and is broken when trying
+	 * to use nullqs
+	 */
+	if ((design_cfg6 & CGEM_DESIGN_CFG6_PBUF_CUTTHRU))
+		sc->neednullqs = 1;
+#else
 	sc->rxhangwar = 1;
+#endif
 
 	/* Reset hardware. */
 	CGEM_LOCK(sc);
@@ -1901,10 +2130,18 @@ cgem_detach(device_t dev)
 			bus_dmamap_unload(sc->desc_dma_tag,
 					  sc->rxring_dma_map);
 			sc->rxring_physaddr = 0;
+#ifdef __rtems__
+			sc->txring_physaddr = 0;
+			sc->null_qs_physaddr = 0;
+#endif /* __rtems__ */
 		}
 		bus_dmamem_free(sc->desc_dma_tag, sc->rxring,
 				sc->rxring_dma_map);
 		sc->rxring = NULL;
+#ifdef __rtems__
+		sc->txring = NULL;
+		sc->null_qs = NULL;
+#endif /* __rtems__ */
 #ifndef __rtems__
 		for (i = 0; i < CGEM_NUM_RX_DESCS; i++)
 			if (sc->rxring_m_dmamap[i] != NULL) {
@@ -1912,7 +2149,6 @@ cgem_detach(device_t dev)
 						   sc->rxring_m_dmamap[i]);
 				sc->rxring_m_dmamap[i] = NULL;
 			}
-#endif /* __rtems__ */
 	}
 	if (sc->txring != NULL) {
 		if (sc->txring_physaddr != 0) {
@@ -1923,7 +2159,6 @@ cgem_detach(device_t dev)
 		bus_dmamem_free(sc->desc_dma_tag, sc->txring,
 				sc->txring_dma_map);
 		sc->txring = NULL;
-#ifndef __rtems__
 		for (i = 0; i < CGEM_NUM_TX_DESCS; i++)
 			if (sc->txring_m_dmamap[i] != NULL) {
 				bus_dmamap_destroy(sc->mbuf_dma_tag,
@@ -1954,8 +2189,10 @@ static device_method_t cgem_methods[] = {
 	DEVMETHOD(device_attach,	cgem_attach),
 	DEVMETHOD(device_detach,	cgem_detach),
 
+#ifndef __rtems__
 	/* Bus interface */
 	DEVMETHOD(bus_child_detached,	cgem_child_detached),
+#endif /* __rtems__ */
 
 	/* MII interface */
 	DEVMETHOD(miibus_readreg,	cgem_miibus_readreg),

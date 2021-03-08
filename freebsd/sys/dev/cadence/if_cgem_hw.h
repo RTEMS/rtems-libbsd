@@ -77,6 +77,7 @@
 #define   CGEM_NET_CFG_MDC_CLK_DIV_16		(1<<18)
 #define   CGEM_NET_CFG_MDC_CLK_DIV_32		(2<<18)
 #define   CGEM_NET_CFG_MDC_CLK_DIV_48		(3<<18)
+/* Higher MDC clock divs are reserved values on 64bit hardware */
 #define   CGEM_NET_CFG_MDC_CLK_DIV_64		(4<<18)
 #define   CGEM_NET_CFG_MDC_CLK_DIV_96		(5<<18)
 #define   CGEM_NET_CFG_MDC_CLK_DIV_128		(6<<18)
@@ -113,6 +114,7 @@
 #define CGEM_USER_IO			0x00C	/* User I/O */
 
 #define CGEM_DMA_CFG			0x010	/* DMA Config */
+#define   CGEM_DMA_CFG_ADDR_BUS_64		(1 << 30)
 #define   CGEM_DMA_CFG_DISC_WHEN_NO_AHB		(1<<24)
 #define   CGEM_DMA_CFG_RX_BUF_SIZE_SHIFT	16
 #define   CGEM_DMA_CFG_RX_BUF_SIZE_MASK		(0xff<<16)
@@ -290,6 +292,29 @@
 #define CGEM_PTP_PEER_RX_S		0x1F8	/* PTP Peer Event rcv'd s */
 #define CGEM_PTP_PEER_RX_NS		0x1FC	/* PTP Peer Event rcv'd ns */
 
+#define CGEM_DESIGN_CFG1		0x280	/* Design Configuration 1 */
+#define   CGEM_DESIGN_CFG1_AXI_CACHE_WIDTH_MASK	(0xfU << 28)
+#define   CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_MASK	(7 << 25)
+#define   CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_32	(1 << 25)
+#define   CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_64	(2 << 25)
+#define   CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_128	(4 << 25)
+#define   CGEM_DESIGN_CFG1_IRQ_READ_CLR		(1 << 23)
+#define   CGEM_DESIGN_CFG1_NO_SNAPSHOT		(1 << 22)
+#define   CGEM_DESIGN_CFG1_NO_STATS		(1 << 21)
+#define   CGEM_DESIGN_CFG1_NO_SCAN_PINS		(1 << 20)
+#define   CGEM_DESIGN_CFG1_USER_IN_WIDTH_MASK	(0x1f << 15)
+#define   CGEM_DESIGN_CFG1_USER_OUT_WIDTH_MASK	(0x1f << 10)
+#define   CGEM_DESIGN_CFG1_USER_IO		(1 << 9)
+#define   CGEM_DESIGN_CFG1_APB_REV2		(1 << 8)
+#define   CGEM_DESIGN_CFG1_APB_REV1		(1 << 7)
+#define   CGEM_DESIGN_CFG1_EXT_FIFO_INTERFACE	(1 << 6)
+#define   CGEM_DESIGN_CFG1_NO_INT_LOOPBACK	(1 << 5)
+#define   CGEM_DESIGN_CFG1_INT_LOOPBACK		(1 << 4)
+#define   CGEM_DESIGN_CFG1_TDC_50		(1 << 3)
+#define   CGEM_DESIGN_CFG1_RDC_50		(1 << 2)
+#define   CGEM_DESIGN_CFG1_SERDES		(1 << 1)
+#define   CGEM_DESIGN_CFG1_NO_PCS		(1 << 0)
+
 #define CGEM_DESIGN_CFG2		0x284	/* Design Configuration 2 */
 #define   CGEM_DESIGN_CFG2_TX_PBUF_ADDR_SHIFT	26
 #define   CGEM_DESIGN_CFG2_TX_PBUF_ADDR_MASK	(0xf<<26)
@@ -330,6 +355,18 @@
 #define   CGEM_DESIGN_CFG5_TX_FIFO_CNT_WIDTH_MASK (0xf<<4)
 #define   CGEM_DESIGN_CFG5_RX_FIFO_CNT_WIDTH_MASK 0xf
 
+#define CGEM_DESIGN_CFG6		0x294	/* Design Configuration 6 */
+#define   CGEM_DESIGN_CFG6_PBUF_CUTTHRU		(1 << 25) /* 64-bit addr cap */
+#define   CGEM_DESIGN_CFG6_ADDR_64B		(1 << 23) /* 64-bit addr cap */
+#define   CGEM_DESIGN_CFG6_DMA_PRIO_Q_MASK	0xfffe
+#define   CGEM_DESIGN_CFG6_DMA_PRIO_Q(n)	(1 << (n))
+
+#define CGEM_TX_QN_BAR(n)		(0x440 + ((n) - 1) * 4)
+#define CGEM_RX_QN_BAR(n)		(0x480 + ((n) - 1) * 4)
+
+#define CGEM_TX_QBAR_HI			0x4C8
+#define CGEM_RX_QBAR_HI			0x4D4
+
 /* Transmit Descriptors */
 struct cgem_tx_desc {
 	uint32_t	addr;
@@ -350,6 +387,10 @@ struct cgem_tx_desc {
 #define CGEM_TXDESC_NO_CRC_APPENDED		(1<<16)
 #define CGEM_TXDESC_LAST_BUF			(1<<15)	/* last buf in frame */
 #define CGEM_TXDESC_LENGTH_MASK		0x3fff
+#if defined(CGEM64) && defined(__rtems__)
+	uint32_t	addrhi;
+	uint32_t	unused;
+#endif
 };
 
 struct cgem_rx_desc {
@@ -379,6 +420,10 @@ struct cgem_rx_desc {
 #define CGEM_RXDESC_SOF				(1<<14) /* start of frame */
 #define CGEM_RXDESC_BAD_FCS			(1<<13)
 #define CGEM_RXDESC_LENGTH_MASK			0x1fff
+#if defined(CGEM64) && defined(__rtems__)
+	uint32_t	addrhi;
+	uint32_t	unused;
+#endif
 };
 
 #endif /* _IF_CGEM_HW_H_ */

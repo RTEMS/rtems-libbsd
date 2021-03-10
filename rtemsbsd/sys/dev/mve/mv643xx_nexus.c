@@ -3,6 +3,7 @@
 
 #ifdef LIBBSP_BEATNIK_BSP_H
 
+#include <sys/types.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>
 #include <sys/module.h>
@@ -12,9 +13,18 @@
 #include <net/if.h>
 #include <net/if_types.h>
 #include <net/if_var.h>
+#include <net/if_dl.h>
+#include <net/if_media.h>
 #include <net/ethernet.h>
+#include <dev/mii/mii.h>
+#include <dev/mii/miivar.h>
+#include <rtems/bsd/local/miibus_if.h>
 #include <stdio.h>
 #include <bsp/mv643xx_eth.h>
+
+#define DRVNAME "mv63xx_nexus"
+
+#undef  MVETH_DEBUG
 
 /* Define default ring sizes */
 
@@ -77,13 +87,18 @@
 #define IRQ_EVENT RTEMS_EVENT_0
 #define TX_EVENT  RTEMS_EVENT_1
 
-/* Hack -- FIXME */
+/* Hacks -- FIXME */
+rtems_id
+rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg);
 #define SIO_RTEMS_SHOW_STATS _IO('i', 250)
 
+#define	MVE643XX_DUMMY_PHY 0 /* phy is defined by low-level driver */
 
 struct mve_enet_softc {
 	device_t                  dev;
 	struct ifnet             *ifp;
+	device_t                  miibus;
+	struct mii_data          *mii_softc;
 	struct mveth_private     *mp;
     struct mtx                mtx;
 	struct callout            wdCallout;
@@ -97,21 +112,45 @@ typedef struct MveMbufIter {
 	struct mbuf  *head;
 } MveMbufIter;
 
+/* Forward Declarations */
+struct mve_enet_softc;
+
+static void
+mve_media_status(struct ifnet *ifp, struct ifmediareq *ifmr);
+
+static int
+mve_media_change(struct ifnet *ifp);
+
+static void
+mve_set_filters(struct ifnet *ifp);
+
+static int
+xlateMediaFlags(const struct mii_data *mid);
+
+static void
+mve_ack_link_change(struct mve_enet_softc *sc);
+
 static __inline__ void
 mve_send_event(struct mve_enet_softc *sc, rtems_event_set ev)
 {
-	rtems_event_send(sc->daemonTid, ev);
+rtems_status_code st;
+	if ( RTEMS_SUCCESSFUL != (st = rtems_event_send(sc->daemonTid, ev)) ) {
+		printk(DRVNAME": rtems_event_send returned 0x%08x (TID: 0x%08x, sc: 0x%08x)\n", st, sc->daemonTid, sc);
+		rtems_panic(DRVNAME": rtems_event_send() failed!\n");
+	}
 }
 
 static __inline__ void
-mve_lock(struct mve_enet_softc *sc)
+mve_lock(struct mve_enet_softc *sc, const char *from)
 {
 	mtx_lock( & sc->mtx );
+/*printk("L V %s\n", from);*/
 }
 
 static __inline__ void
-mve_unlock(struct mve_enet_softc *sc)
+mve_unlock(struct mve_enet_softc *sc, const char *from)
 {
+/*printk("L ^ %s\n", from);*/
 	mtx_unlock( & sc->mtx );
 }
 
@@ -121,9 +160,13 @@ mve_probe(device_t dev)
 	int unit = device_get_unit(dev);
 	int err;
 
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_probe (entering)\n");
+#endif
+
 	if ( unit >= 0 && unit < MV643XXETH_NUM_DRIVER_SLOTS ) {
 		err = BUS_PROBE_DEFAULT;
-	} else { 
+	} else {
 		err = ENXIO;
 	}
 
@@ -245,16 +288,52 @@ static void
 mve_isr(void *closure)
 {
 struct mve_enet_softc *sc = (struct mve_enet_softc*)closure;
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_isr; posting event to %x\n", sc->daemonTid);
+#endif
 	BSP_mve_disable_irqs( sc->mp );
-	mve_send_event( sc->daemonTid, IRQ_EVENT );
+	mve_send_event( sc, IRQ_EVENT );
 }
 
 static void
-mveth_stop(struct mve_enet_softc *sc)
+mve_stop(struct mve_enet_softc *sc)
 {
 	BSP_mve_stop_hw( sc->mp );
 	/* clear IF flags */
 	if_setdrvflagbits(sc->ifp, 0, (IFF_DRV_OACTIVE | IFF_DRV_RUNNING));
+}
+
+static void
+mve_set_filters(struct ifnet *ifp)
+{
+struct mve_enet_softc *sc = (struct mve_enet_softc*)ifp->if_softc;
+int                   iff = if_getflags(ifp);
+struct ifmultiaddr   *ifma;
+unsigned char        *lladdr;
+
+	BSP_mve_promisc_set( sc->mp, !!(iff & IFF_PROMISC));
+
+	if ( iff & (IFF_PROMISC | IFF_ALLMULTI) ) {
+		BSP_mve_mcast_filter_accept_all(sc->mp);
+	} else {
+		BSP_mve_mcast_filter_clear( sc->mp );
+
+		if_maddr_rlock( ifp );
+
+		CK_STAILQ_FOREACH( ifma, &ifp->if_multiaddrs, ifma_link ) {
+
+			if ( ifma->ifma_addr->sa_family != AF_LINK ) {
+				continue;
+			}
+
+			lladdr = LLADDR((struct sockaddr_dl *) ifma->ifma_addr);
+
+			BSP_mve_mcast_filter_accept_add( sc->mp, lladdr );
+
+		}
+
+		if_maddr_runlock( ifp );
+	}
 }
 
 /* Daemon task does all the 'interrupt' work */
@@ -270,24 +349,25 @@ int                      sndStat;
 uint32_t                 irqstat;
 
 #ifdef MVETH_DEBUG
-	sleep(1);
 	printk(DRVNAME": bsdnet mveth_daemon started\n");
 #endif
 
-	mve_lock( sc );
+	mve_lock( sc, "daemon" );
 
 	for (;;) {
 
-		mve_unlock( sc );
-		rtems_event_receive( IRQ_EVENT | TX_EVENT, RTEMS_WAIT | RTEMS_EVENT_ANY, RTEMS_NO_TIMEOUT, &evs );
-		mve_lock( sc );
+		mve_unlock( sc, "daemon" );
+		if ( RTEMS_SUCCESSFUL != rtems_event_receive( (IRQ_EVENT | TX_EVENT), (RTEMS_WAIT | RTEMS_EVENT_ANY), RTEMS_NO_TIMEOUT, &evs ) ) {
+			rtems_panic(DRVNAME": rtems_event_receive() failed!\n");
+		}
+		mve_lock( sc, "daemon" );
 
 #ifdef MVETH_DEBUG
 		printk(DRVNAME": bsdnet mveth_daemon event received 0x%x\n", evs);
 #endif
 
 		if ( !(if_getflags(ifp) & IFF_UP) ) {
-			mveth_stop(sc);
+			mve_stop(sc);
 			/* clear flag */
 			if_setdrvflagbits(sc->ifp, 0, IFF_DRV_RUNNING);
 			continue;
@@ -306,23 +386,11 @@ uint32_t                 irqstat;
 			irqstat = 0;
 		}
 
-#warning TODO_
-#if 0
-		if ( (MV643XX_ETH_EXT_IRQ_LINK_CHG & irqstat) ) {
+		if ( (MV643XX_ETH_EXT_IRQ_LINK_CHG & irqstat) && sc->mii_softc ) {
 			/* phy status changed */
-			int media;
-
-			if ( 0 == BSP_mve_ack_link_chg(sc->pvt, &media) ) {
-				if ( IFM_LINK_OK & media ) {
-					/* stop sending */
-					if_setdrvflagbits(ifp, 0, IFF_DRV_OACTIVE);
-					mveth_start(ifp);
-				} else {
-					if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
-				}
-			}
+			mii_pollstat( sc->mii_softc );
 		}
-#endif
+
 		/* free tx chain and send */
 		if ( (evs & TX_EVENT) || (MV643XX_ETH_EXT_IRQ_TX_DONE & irqstat)  ) {
 			while ( (avail = BSP_mve_swipe_tx( sc->mp )) > TX_LOWWATER ) {
@@ -347,7 +415,7 @@ uint32_t                 irqstat;
 		BSP_mve_enable_irqs(sc->mp);
 	}
 
-	mve_unlock( sc );
+	mve_unlock( sc, "daemon (xit)" );
 }
 
 static void
@@ -387,7 +455,7 @@ unsigned long	l,o;
 
 		m->m_len   = m->m_pkthdr.len = l;
 		*p_size    = m->m_len;
-		*p_data    = mtod(m, uintptr_t); 
+		*p_data    = mtod(m, uintptr_t);
 	}
 
 	return (void*) m;
@@ -414,48 +482,92 @@ struct mbuf           *m   = (struct mbuf*)user_buf;
 
 			if_inc_counter( ifp, IFCOUNTER_IPACKETS,               1 );
 			if_inc_counter( ifp, IFCOUNTER_IBYTES,   m->m_pkthdr.len );
-			
+
 			if (0) {
 				/* Low-level debugging */
 				int i;
 				for (i=0; i<m->m_len; i++) {
 					if ( !(i&15) )
-						printf("\n");
-					printf("0x%02x ",mtod(m,char*)[i]);
+						printk("\n");
+					printk("0x%02x ",mtod(m,char*)[i]);
 				}
-				printf("\n");
+				printk("\n");
 			}
 
-			mve_unlock( sc );
+			mve_unlock( sc, "rx_cleanup" );
 			(*ifp->if_input)(ifp, m);
-			mve_lock( sc );
+			mve_lock( sc, "rx_cleanup" );
 	}
 }
 
-static void
-mve_init(void *arg)
+/* Translate IFFLAGS to low-level driver representation */
+static int
+xlateMediaFlags(const struct mii_data *mid)
 {
-struct mve_enet_softc *sc                  = (struct mve_enet_softc*)arg;
+int lowLevelFlags = 0;
+int msk           = IFM_AVALID | IFM_ACTIVE;
+
+	if ( (mid->mii_media_status & msk) == msk ) {
+		lowLevelFlags |= MV643XX_MEDIA_LINK;
+
+		if ( IFM_OPTIONS( mid->mii_media_active ) & IFM_FDX ) {
+			lowLevelFlags |= MV643XX_MEDIA_FD;
+		}
+
+		switch ( IFM_ETHER_SUBTYPE_GET( mid->mii_media_active ) ) {
+			default:
+#ifdef MVETH_DEBUG
+				printk(DRVNAME"xlateMediaFlags: UNKNOWN SPEED\n");
+#endif
+				break; /* UNKNOWN -- FIXME */
+			case IFM_10_T:
+#ifdef MVETH_DEBUG
+				printk(DRVNAME"xlateMediaFlags: 10baseT\n");
+#endif
+				lowLevelFlags |= MV643XX_MEDIA_10;
+				break;
+			case IFM_100_TX:
+#ifdef MVETH_DEBUG
+				printk(DRVNAME"xlateMediaFlags: 100baseT\n");
+#endif
+				lowLevelFlags |= MV643XX_MEDIA_100;
+				break;
+			case IFM_1000_T:
+#ifdef MVETH_DEBUG
+				printk(DRVNAME"xlateMediaFlags: 1000baseT\n");
+#endif
+				lowLevelFlags |= MV643XX_MEDIA_1000;
+				break;
+		}
+	} else {
+#ifdef MVETH_DEBUG
+				printk(DRVNAME"xlateMediaFlags: NO LINK\n");
+#endif
+	}
+	return lowLevelFlags;
+}
+
+static void
+mve_init_unlocked(struct mve_enet_softc *sc)
+{
 struct ifnet		  *ifp                 = sc->ifp;
 int                    lowLevelMediaStatus = 0;
-int                    promisc; 
+int                    promisc;
 
-	mve_lock( sc );
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_init (entering)\n");
+#endif
 
-#ifdef TODO__
-int                    media;
 
-	media = IFM_MAKEWORD(0, 0, 0, 0);
-	if ( 0 == BSP_mve_media_ioctl(sc->pvt, SIOCGIFMEDIA, &media) ) {
-	    if ( (IFM_LINK_OK & media) ) {
+	if ( sc->mii_softc ) {
+		mii_pollstat( sc->mii_softc );
+		lowLevelMediaStatus = xlateMediaFlags( sc->mii_softc );
+		if ( (lowLevelMediaStatus & MV643XX_MEDIA_LINK) ) {
 			if_setdrvflagbits(ifp, 0, IFF_DRV_OACTIVE);
 		} else {
 			if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
 		}
 	}
-
-	lowLevelMediaStatus = xlateMediaFlags( media );
-#endif
 
 	promisc = !! (if_getdrvflags(ifp) & IFF_PROMISC);
 
@@ -463,27 +575,39 @@ int                    media;
 
 	/* if promiscuous then there is no need to change */
 	if ( ! promisc ) {
-		mveth_set_filters(ifp);
+		mve_set_filters(ifp);
 	}
 
-	if ( ! sc->daemonTid ) {
-		sc->daemonTid = rtems_bsd_newproc("MVE", 4096, mve_daemon, (void*)sc);
-	}
 
 	if_setdrvflagbits(ifp, IFF_DRV_RUNNING, 0);
+}
 
-	mve_unlock( sc );
+static void
+mve_init(void *arg)
+{
+struct mve_enet_softc *sc = (struct mve_enet_softc*)arg;
+	mve_lock( sc, "mve_init" );
+		mve_init_unlocked( sc );
+	mve_unlock( sc, "mve_init" );
+}
+
+static void
+mve_start_unlocked(struct ifnet *ifp)
+{
+struct mve_enet_softc *sc  = (struct mve_enet_softc*)ifp->if_softc;
+	if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
+	mve_send_event( sc, TX_EVENT );
 }
 
 static void
 mve_start(struct ifnet *ifp)
 {
 struct mve_enet_softc *sc  = (struct mve_enet_softc*)ifp->if_softc;
-	mve_lock( sc );
-		if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
-	mve_unlock( sc );
-	mve_send_event( sc, TX_EVENT );
+	mve_lock( sc, "mve_start" );
+		mve_start_unlocked( ifp );
+	mve_unlock( sc, "mve_start" );
 }
+
 
 static int
 mve_ioctl(struct ifnet *ifp, ioctl_command_t cmd, caddr_t data)
@@ -493,7 +617,11 @@ struct ifreq          *ifr = (struct ifreq *)data;
 int                    err = 0;
 int                      f, df;
 
-	mve_lock( sc );
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_ioctl (entering)\n");
+#endif
+
+	mve_lock( sc, "mve_ioctl" );
 
 	switch ( cmd ) {
   		case SIOCSIFFLAGS:
@@ -501,33 +629,34 @@ int                      f, df;
 			df = if_getdrvflags( ifp );
 			if ( (f & IFF_UP) ) {
 				if ( ! ( df & IFF_DRV_RUNNING ) ) {
-					mveth_init(sc);
+					mve_init_unlocked(sc);
 				} else {
 					if ( (f & IFF_PROMISC) != (sc->oif_flags & IFF_PROMISC) ) {
-						mveth_set_filters(ifp);
+						mve_set_filters(ifp);
 					}
 					/* FIXME: other flag changes are ignored/unimplemented */
 				}
 			} else {
 				if ( df & IFF_DRV_RUNNING ) {
-					mveth_stop(sc);
+					mve_stop(sc);
 				}
 			}
 			sc->oif_flags = f;
 		break;
 
-#ifdef TODO_
-/* what to do with lock ? */
   		case SIOCGIFMEDIA:
   		case SIOCSIFMEDIA:
-			err = BSP_mve_media_ioctl(sc->pvt, cmd, &ifr->ifr_media);
+			if ( sc->mii_softc ) {
+				err = ifmedia_ioctl( ifp, ifr, &sc->mii_softc->mii_media, cmd );
+			} else {
+				err = EINVAL;
+			}
 		break;
-#endif
- 
+
 		case SIOCADDMULTI:
 		case SIOCDELMULTI:
 			if ( if_getdrvflags( ifp ) & IFF_DRV_RUNNING ) {
-				mveth_set_filters(ifp);
+				mve_set_filters(ifp);
 			}
 		break;
 
@@ -540,9 +669,79 @@ int                      f, df;
 		break;
 	}
 
-	mve_unlock( sc );
+	mve_unlock( sc, "mve_ioctl" );
 
 	return err;
+}
+
+/*
+ * Used to update speed settings in the hardware
+ * when the phy setup changes.
+ *
+ * ASSUME: caller holds lock
+ */
+static void
+mve_ack_link_change(struct mve_enet_softc *sc)
+{
+struct mii_data *mii                 = sc->mii_softc;
+int              lowLevelMediaStatus;
+
+	if ( !mii )
+		return;
+
+	lowLevelMediaStatus = xlateMediaFlags( mii );
+
+	if ( (lowLevelMediaStatus & MV643XX_MEDIA_LINK) ) {
+		BSP_mve_update_serial_port( sc->mp, lowLevelMediaStatus );
+		if_setdrvflagbits( sc->ifp, 0, IFF_DRV_OACTIVE );
+        mve_start_unlocked( sc->ifp );
+	} else {
+		if_setdrvflagbits( sc->ifp, IFF_DRV_OACTIVE, 0 );
+	}
+}
+
+/* Callback from ifmedia_ioctl()
+ *
+ * Caller probably holds the lock already but
+ * since it is recursive we may as well make sure
+ * in case there are other possible execution paths.
+ */
+static int
+mve_media_change(struct ifnet *ifp)
+{
+struct mve_enet_softc  *sc  = (struct mve_enet_softc *)ifp->if_softc;
+struct mii_data        *mii = sc->mii_softc;
+int                     err;
+
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_media_change\n");
+#endif
+
+	if ( ! mii ) {
+		return ENXIO;
+	}
+
+	err = mii_mediachg( mii );
+
+	return err;
+}
+
+static void
+mve_media_status(struct ifnet *ifp, struct ifmediareq *ifmr)
+{
+struct mve_enet_softc  *sc  = (struct mve_enet_softc *)ifp->if_softc;
+struct mii_data        *mii = sc->mii_softc;
+
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_media_status\n");
+#endif
+
+	if ( mii ) {
+		mii_pollstat( mii );
+		ifmr->ifm_active = mii->mii_media_active;
+		ifmr->ifm_status = mii->mii_media_status;
+	}
+
 }
 
 static int
@@ -561,8 +760,13 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 	sc->dev       = dev;
 	sc->ifp       = ifp = if_alloc(IFT_ETHER);
 	sc->daemonTid = 0;
+	sc->mii_softc = 0;
 
-	mtx_init( &sc->mtx, device_get_nameunit( sc->dev ), MTX_NETWORK_LOCK, MTX_DEF );
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_attach (entering)\n");
+#endif
+
+	mtx_init( &sc->mtx, device_get_nameunit( sc->dev ), MTX_NETWORK_LOCK, MTX_RECURSE );
 	callout_init_mtx( &sc->wdCallout, &sc->mtx, 0 );
 
 	ifp->if_softc = sc;
@@ -576,7 +780,7 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 	if_setsendqready( ifp );
 
 	mp = BSP_mve_create(
-	        unit,
+	        unit + 1, /* low-level driver' unit numbers are 1-based */
 	        0,
 	        mve_isr, (void*)sc,
 	        release_tx_mbuf, (void*)sc,
@@ -594,23 +798,101 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 
 	sc->mp = mp;
 
+
 	BSP_mve_read_eaddr( mp, hwaddr );
 
+	if ( 0 == mii_attach( sc->dev,
+	                     &sc->miibus,
+	                      ifp,
+	                      mve_media_change,
+	                      mve_media_status,
+	                      BMSR_DEFCAPMASK,
+ 	                      MVE643XX_DUMMY_PHY,
+ 	                      MII_OFFSET_ANY,
+	                      0 ) ) {
+		sc->mii_softc = device_get_softc( sc->miibus );
+	}
+
+	sc->daemonTid = rtems_bsdnet_newproc("MVE", 4096, mve_daemon, (void*)sc);
+
 	ether_ifattach( ifp, hwaddr );
+
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_attach (leaving)\n");
+#endif
+
+	return 0;
 }
 
+static int
+mve_miibus_read_reg(device_t dev, int phy, int reg)
+{
+struct mve_enet_softc  *sc = (struct mve_enet_softc*) device_get_softc(dev);
+
+	/* low-level driver knows what phy to use; ignore arg */
+	return (int) BSP_mve_mii_read( sc->mp, reg );
+}
+
+static int
+mve_miibus_write_reg(device_t dev, int phy, int reg, int val)
+{
+struct mve_enet_softc  *sc = (struct mve_enet_softc*) device_get_softc(dev);
+
+	/* low-level driver knows what phy to use; ignore arg */
+	BSP_mve_mii_write( sc->mp, reg, val );
+	return 0;
+}
+
+static void
+mve_miibus_statchg(device_t dev)
+{
+struct mve_enet_softc  *sc = (struct mve_enet_softc*) device_get_softc(dev);
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_miibus_statchg\n");
+#endif
+	/* assume this ends up being called either from the ioctl or the driver
+	 * task -- either of which holds the lock.
+	 */
+	mve_ack_link_change( sc );
+}
+
+static void
+mve_miibus_linkchg(device_t dev)
+{
+struct mve_enet_softc  *sc = (struct mve_enet_softc*) device_get_softc(dev);
+#ifdef MVETH_DEBUG
+	printk(DRVNAME": mve_miibus_linkchg\n");
+#endif
+	/* assume this ends up being called either from the ioctl or the driver
+	 * task -- either of which holds the lock.
+	 */
+	mve_ack_link_change( sc );
+}
+
+
 static device_method_t mve_methods[] = {
-	DEVMETHOD(device_probe,    mve_probe),
+	DEVMETHOD(device_probe,    mve_probe ),
+	DEVMETHOD(device_attach,   mve_attach),
+
+	DEVMETHOD(miibus_readreg,  mve_miibus_read_reg ),
+	DEVMETHOD(miibus_writereg, mve_miibus_write_reg),
+	DEVMETHOD(miibus_statchg , mve_miibus_statchg  ),
+	DEVMETHOD(miibus_linkchg , mve_miibus_linkchg  ),
+
 	DEVMETHOD_END
 };
 
 static driver_t mve_nexus_driver = {
 	"mve",
 	mve_methods,
-	sizeof(struct mve_enet_softc )
+	sizeof( struct mve_enet_softc )
 };
 
 static devclass_t mve_devclass;
 
 DRIVER_MODULE(mve, nexus, mve_nexus_driver, mve_devclass, 0, 0);
+DRIVER_MODULE(miibus, mve, miibus_driver,   miibus_devclass, 0, 0);
+
+MODULE_DEPEND(mve, nexus, 1, 1, 1);
+MODULE_DEPEND(mve, ether, 1, 1, 1);
 #endif

@@ -1,3 +1,70 @@
+/* RTEMS driver for the mv643xx gigabit ethernet chip */
+
+/* Acknowledgement:
+ *
+ * Valuable information for developing this driver was obtained
+ * from the linux open-source driver mv643xx_eth.c which was written
+ * by the following people and organizations:
+ *
+ * Matthew Dharm <mdharm@momenco.com>
+ * rabeeh@galileo.co.il
+ * PMC-Sierra, Inc., Manish Lachwani
+ * Ralf Baechle <ralf@linux-mips.org>
+ * MontaVista Software, Inc., Dale Farnsworth <dale@farnsworth.org>
+ * Steven J. Hill <sjhill1@rockwellcollins.com>/<sjhill@realitydiluted.com>
+ *
+ * Note however, that in spite of the identical name of this file
+ * (and some of the symbols used herein) this file provides a
+ * new implementation and is the original work by the author.
+ */
+
+/* 
+ * Authorship
+ * ----------
+ * This software (mv643xx ethernet driver for RTEMS) was
+ *     created by Till Straumann <strauman@slac.stanford.edu>, 2005-2007,
+ * 	   Stanford Linear Accelerator Center, Stanford University.
+ * 
+ * Acknowledgement of sponsorship
+ * ------------------------------
+ * The 'mv643xx ethernet driver for RTEMS' was produced by
+ *     the Stanford Linear Accelerator Center, Stanford University,
+ * 	   under Contract DE-AC03-76SFO0515 with the Department of Energy.
+ * 
+ * Government disclaimer of liability
+ * ----------------------------------
+ * Neither the United States nor the United States Department of Energy,
+ * nor any of their employees, makes any warranty, express or implied, or
+ * assumes any legal liability or responsibility for the accuracy,
+ * completeness, or usefulness of any data, apparatus, product, or process
+ * disclosed, or represents that its use would not infringe privately owned
+ * rights.
+ * 
+ * Stanford disclaimer of liability
+ * --------------------------------
+ * Stanford University makes no representations or warranties, express or
+ * implied, nor assumes any liability for the use of this software.
+ * 
+ * Stanford disclaimer of copyright
+ * --------------------------------
+ * Stanford University, owner of the copyright, hereby disclaims its
+ * copyright and all other rights in this software.  Hence, anyone may
+ * freely use it for any purpose without restriction.  
+ * 
+ * Maintenance of notices
+ * ----------------------
+ * In the interest of clarity regarding the origin and status of this
+ * SLAC software, this and all the preceding Stanford University notices
+ * are to remain affixed to any copy or derivative of this software made
+ * or distributed by the recipient and are to be affixed to any copy of
+ * software made or distributed by the recipient that contains a copy or
+ * derivative of this software.
+ * 
+ * ------------------ SLAC Software Notices, Set 4 OTT.002a, 2004 FEB 03
+ */ 
+
+/* Nexus port by Till Straumann, <till.straumann@psi.ch>, 3/2021 */
+
 #include <machine/rtems-bsd-kernel-space.h>
 #include <bsp.h>
 
@@ -548,16 +615,16 @@ int msk           = IFM_AVALID | IFM_ACTIVE;
 }
 
 static void
-mve_init_unlocked(struct mve_enet_softc *sc)
+mve_init(void *arg)
 {
-struct ifnet		  *ifp                 = sc->ifp;
+struct mve_enet_softc  *sc                 = (struct mve_enet_softc*)arg;
+struct ifnet           *ifp                = sc->ifp;
 int                    lowLevelMediaStatus = 0;
 int                    promisc;
 
 #ifdef MVETH_DEBUG
 	printk(DRVNAME": mve_init (entering)\n");
 #endif
-
 
 	if ( sc->mii_softc ) {
 		mii_pollstat( sc->mii_softc );
@@ -583,31 +650,14 @@ int                    promisc;
 }
 
 static void
-mve_init(void *arg)
-{
-struct mve_enet_softc *sc = (struct mve_enet_softc*)arg;
-	mve_lock( sc, "mve_init" );
-		mve_init_unlocked( sc );
-	mve_unlock( sc, "mve_init" );
-}
-
-static void
-mve_start_unlocked(struct ifnet *ifp)
-{
-struct mve_enet_softc *sc  = (struct mve_enet_softc*)ifp->if_softc;
-	if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
-	mve_send_event( sc, TX_EVENT );
-}
-
-static void
 mve_start(struct ifnet *ifp)
 {
 struct mve_enet_softc *sc  = (struct mve_enet_softc*)ifp->if_softc;
 	mve_lock( sc, "mve_start" );
-		mve_start_unlocked( ifp );
+		if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
 	mve_unlock( sc, "mve_start" );
+	mve_send_event( sc, TX_EVENT );
 }
-
 
 static int
 mve_ioctl(struct ifnet *ifp, ioctl_command_t cmd, caddr_t data)
@@ -629,7 +679,7 @@ int                      f, df;
 			df = if_getdrvflags( ifp );
 			if ( (f & IFF_UP) ) {
 				if ( ! ( df & IFF_DRV_RUNNING ) ) {
-					mve_init_unlocked(sc);
+					mve_init( (void*)sc );
 				} else {
 					if ( (f & IFF_PROMISC) != (sc->oif_flags & IFF_PROMISC) ) {
 						mve_set_filters(ifp);
@@ -694,7 +744,7 @@ int              lowLevelMediaStatus;
 	if ( (lowLevelMediaStatus & MV643XX_MEDIA_LINK) ) {
 		BSP_mve_update_serial_port( sc->mp, lowLevelMediaStatus );
 		if_setdrvflagbits( sc->ifp, 0, IFF_DRV_OACTIVE );
-        mve_start_unlocked( sc->ifp );
+        mve_start( sc->ifp );
 	} else {
 		if_setdrvflagbits( sc->ifp, IFF_DRV_OACTIVE, 0 );
 	}
@@ -741,7 +791,6 @@ struct mii_data        *mii = sc->mii_softc;
 		ifmr->ifm_active = mii->mii_media_active;
 		ifmr->ifm_status = mii->mii_media_status;
 	}
-
 }
 
 static int
@@ -797,7 +846,6 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 	}
 
 	sc->mp = mp;
-
 
 	BSP_mve_read_eaddr( mp, hwaddr );
 

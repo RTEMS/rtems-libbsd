@@ -346,7 +346,7 @@ mve_stop(struct mve_enet_softc *sc)
 static void
 mve_set_filters(struct ifnet *ifp)
 {
-struct mve_enet_softc *sc = (struct mve_enet_softc*)ifp->if_softc;
+struct mve_enet_softc *sc = (struct mve_enet_softc*) if_getsoftc( ifp );
 int                   iff = if_getflags(ifp);
 struct ifmultiaddr   *ifma;
 unsigned char        *lladdr;
@@ -625,7 +625,7 @@ int                    promisc;
 static void
 mve_start(struct ifnet *ifp)
 {
-struct mve_enet_softc *sc  = (struct mve_enet_softc*)ifp->if_softc;
+struct mve_enet_softc *sc = (struct mve_enet_softc*) if_getsoftc( ifp );
 	mve_lock( sc, "mve_start" );
 		if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
 	mve_unlock( sc, "mve_start" );
@@ -635,7 +635,7 @@ struct mve_enet_softc *sc  = (struct mve_enet_softc*)ifp->if_softc;
 static int
 mve_ioctl(struct ifnet *ifp, ioctl_command_t cmd, caddr_t data)
 {
-struct mve_enet_softc  *sc = (struct mve_enet_softc*)ifp->if_softc;
+struct mve_enet_softc *sc = (struct mve_enet_softc*) if_getsoftc( ifp );
 struct ifreq          *ifr = (struct ifreq *)data;
 int                    err = 0;
 int                      f, df;
@@ -744,7 +744,7 @@ int              lowLevelMediaStatus;
 static int
 mve_media_change(struct ifnet *ifp)
 {
-struct mve_enet_softc  *sc  = (struct mve_enet_softc *)ifp->if_softc;
+struct mve_enet_softc *sc   = (struct mve_enet_softc*) if_getsoftc( ifp );
 struct mii_data        *mii = sc->mii_softc;
 int                     err;
 
@@ -764,7 +764,7 @@ int                     err;
 static void
 mve_media_status(struct ifnet *ifp, struct ifmediareq *ifmr)
 {
-struct mve_enet_softc  *sc  = (struct mve_enet_softc *)ifp->if_softc;
+struct mve_enet_softc *sc   = (struct mve_enet_softc*) if_getsoftc( ifp );
 struct mii_data        *mii = sc->mii_softc;
 
 #ifdef MVETH_DEBUG
@@ -803,14 +803,15 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 	mtx_init( &sc->mtx, device_get_nameunit( sc->dev ), MTX_NETWORK_LOCK, MTX_RECURSE );
 	callout_init_mtx( &sc->wdCallout, &sc->mtx, 0 );
 
-	ifp->if_softc = sc;
-	if_initname(ifp, device_get_name(dev), unit);
-	ifp->if_init  = mve_init;
-	ifp->if_ioctl = mve_ioctl;
-	ifp->if_start = mve_start;
-	if_setflags(ifp, (IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX) );
-	sc->oif_flags = if_getflags(ifp);
-	if_setsendqlen( ifp, tx_q_size );
+	if_setsoftc     ( ifp, sc        );
+	if_initname     ( ifp, device_get_name(dev), unit);
+	if_setinitfn    ( ifp, mve_init  );
+	if_setioctlfn   ( ifp, mve_ioctl );
+	if_setstartfn   ( ifp, mve_start );
+	if_setflags     ( ifp, (IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX) );
+	sc->oif_flags = if_getflags( ifp );
+
+	if_setsendqlen  ( ifp, tx_q_size );
 	if_setsendqready( ifp );
 
 	mp = BSP_mve_create(

@@ -171,6 +171,8 @@ struct mve_enet_softc {
 	int                       oif_flags;
 };
 
+static struct mve_enet_softc * ifaces[MV643XXETH_NUM_DRIVER_SLOTS] = { 0 };
+
 typedef struct MveMbufIter {
 	MveEthBufIter it;
 	struct mbuf  *next;
@@ -695,6 +697,18 @@ int                      f, df;
 	return err;
 }
 
+/* SIO RTEMS_SHOW_STATS is too cumbersome to use -- for debugging, provide direct hack */
+int
+mv643xx_nexus_dump_stats(int unit, FILE *f)
+{
+	if ( unit < 0 || unit >= MV643XXETH_NUM_DRIVER_SLOTS || ! ifaces[unit] )
+		return -EINVAL;
+	if ( ! f )
+		f = stdout;
+	BSP_mve_dump_stats(ifaces[unit]->mp, f);
+	return 0;
+}
+
 /*
  * Used to update speed settings in the hardware
  * when the phy setup changes.
@@ -839,6 +853,8 @@ int                     tx_q_size    = MV643XX_TX_QUEUE_SIZE;
 #ifdef MVETH_DEBUG
 	printk(DRVNAME": mve_attach (leaving)\n");
 #endif
+
+	ifaces[unit] = sc;
 
 	return 0;
 }

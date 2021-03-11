@@ -95,8 +95,9 @@
 
 /* Define default ring sizes */
 
-#ifdef MVETH_TESTING
+#undef  MVETH_TESTING
 
+#ifdef  MVETH_TESTING
 /* hard and small defaults */
 #define MV643XX_RX_RING_SIZE	2
 #define MV643XX_TX_QUEUE_SIZE   4
@@ -116,9 +117,6 @@
 #endif /* MVETH_TESTING */
 
 /* NOTE: tx ring size MUST be > max. # of fragments / mbufs in a chain;
- *       in 'TESTING' mode, special code is compiled in to repackage
- *		 chains that are longer than the ring size. Normally, this is
- *		 disabled for sake of speed.
  *		 I observed chains of >17 entries regularly!
  */
 #define MV643XX_TX_RING_SIZE	((MV643XX_TX_QUEUE_SIZE) * (MV643XX_BD_PER_PACKET))
@@ -240,25 +238,6 @@ mve_probe(device_t dev)
 	return err;
 }
 
-/* allocate a new cluster and copy an existing chain there;
- * old chain is released...
- */
-static struct mbuf *
-repackage_chain(struct mbuf *m_head)
-{
-struct mbuf *m;
-
-	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
-
-	if ( m ) {
-		m_copydata(m_head, 0, MCLBYTES, mtod(m, caddr_t));
-		m->m_pkthdr.len = m->m_len = m_head->m_pkthdr.len;
-	}
-
-	m_freem(m_head);
-	return m;
-}
-
 /*
  * starting at 'm' scan the buffer chain until we
  * find a non-empty buffer (which we return)
@@ -328,8 +307,6 @@ mve_send_mbuf( struct mve_enet_softc *sc, struct mbuf *m_head )
 MveMbufIter iter;
 int         rval;
 
-startover:
-
 	if ( ! m_head ) {
 		return 0;
 	}
@@ -341,12 +318,6 @@ startover:
 	}
 
 	rval = BSP_mve_send_buf_chain( sc->mp, nextBuf, &iter.it );
-
-	if ( -2 == rval ) {
-		/* would never fit (too many fragments) */
-		m_head = repackage_chain( m_head );
-		goto startover;
-	}
 
 	return rval;
 }

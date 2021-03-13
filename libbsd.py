@@ -870,16 +870,12 @@ class pinmux(builder.Module):
         mm = self.manager
         self.addKernelSpaceHeaderFiles(
             [
-                'sys/arm/ti/ti_pinmux.h',
                 'sys/arm/ti/omap4/omap4_scm_padconf.h',
-                'sys/arm/ti/am335x/am335x_scm_padconf.h',
             ]
         )
         self.addKernelSpaceSourceFiles(
             [
-                'sys/arm/ti/ti_pinmux.c',
                 'sys/dev/fdt/fdt_pinctrl.c',
-                'sys/arm/ti/am335x/am335x_scm_padconf.c',
             ],
             mm.generator['source']()
         )

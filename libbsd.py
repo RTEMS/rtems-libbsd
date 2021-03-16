@@ -5403,7 +5403,7 @@ class tests(builder.Module):
                                           runTest = False, netTest = True,
                                           extraLibs = ['telnetd']))
         self.addTest(mm.generator['test']('smp01', ['test_main'], extraLibs = ['rtemstest']))
-        self.addTest(mm.generator['test']('media01', ['test_main'],
+        self.addTest(mm.generator['test']('media01', ['test_main', 'pattern-test'],
                                           runTest = False,
                                           extraLibs = ['ftpd', 'telnetd']))
         self.addTest(mm.generator['test']('mcast01', ['test_main']))

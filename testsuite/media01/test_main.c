@@ -53,6 +53,8 @@
 #include <rtems/shell.h>
 #include <rtems/telnetd.h>
 
+#include "pattern-test.h"
+
 #define TEST_NAME "LIBBSD MEDIA 1"
 #define TEST_STATE_USER_INPUT 1
 
@@ -241,7 +243,8 @@ early_initialization(void)
   &rtems_shell_SYSCTL_Command, \
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_IFMCSTAT_Command, \
-  &rtems_shell_VMSTAT_Command
+  &rtems_shell_VMSTAT_Command, \
+  &shell_PATTERN_Command
 
 #define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE

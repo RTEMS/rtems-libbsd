@@ -258,6 +258,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-rc-conf.c',
                 'rtems/rtems-bsd-set-if-input.c',
                 'rtems/rtems-bsd-shell-arp.c',
+                'rtems/rtems-bsd-shell-i2c.c',
                 'rtems/rtems-bsd-shell-ifconfig.c',
                 'rtems/rtems-bsd-shell-ifmcstat.c',
                 'rtems/rtems-bsd-shell-netstat.c',

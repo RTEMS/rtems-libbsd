@@ -64,6 +64,10 @@
 #include <rtems/malloc.h>
 #include <rtems/irq-extension.h>
 
+#include <bsp.h>
+
+#ifdef LIBBSP_ARM_STM32H7_BSP_H
+
 #include <stm32h7/hal.h>
 #include <stm32h7/memory.h>
 
@@ -845,3 +849,5 @@ static devclass_t st_sdmmc_devclass;
 DRIVER_MODULE(st_sdmmc, nexus, st_sdmmc_driver, st_sdmmc_devclass, NULL, NULL);
 DRIVER_MODULE(mmc, st_sdmmc, mmc_driver, mmc_devclass, NULL, NULL);
 MODULE_DEPEND(st_sdmmc, mmc, 1, 1, 1);
+
+#endif /* LIBBSP_ARM_STM32H7_BSP_H */

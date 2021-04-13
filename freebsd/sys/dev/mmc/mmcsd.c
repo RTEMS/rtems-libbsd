@@ -1196,7 +1196,11 @@ mmcsd_ioctl_cmd(struct mmcsd_part *part, struct mmc_ioc_cmd *mic, int fflag)
 		goto out;
 	}
 	if (len != 0) {
+#ifndef __rtems__
 		dp = malloc(len, M_TEMP, M_WAITOK);
+#else /* __rtems__ */
+		dp = rtems_cache_aligned_malloc(len);
+#endif /* __rtems__ */
 		err = copyin((void *)(uintptr_t)mic->data_ptr, dp, len);
 		if (err != 0)
 			goto out;

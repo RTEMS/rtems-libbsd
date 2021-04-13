@@ -117,7 +117,8 @@ __FBSDID("$FreeBSD$");
 #define RES_IRQ_SDMMC 2
 #define RES_NR 3
 
-#define DMA_BUF_SIZE CPU_CACHE_LINE_BYTES
+/* Maximum non-aligned buffer is 512 byte from mmc_send_ext_csd() */
+#define DMA_BUF_SIZE 512
 
 #if 0
 #define debug_print(sc, lvl, ...) \
@@ -575,14 +576,19 @@ st_sdmmc_cmd_do(struct st_sdmmc_softc *sc, struct mmc_command *cmd)
 
 		BSD_ASSERT(xferlen % (1 << blksize) == 0);
 
-		if (xferlen < CPU_CACHE_LINE_BYTES) {
+		data = cmd->data->data;
+		/*
+		 * Check whether data have to be copied. Reason is either
+		 * misaligned start address or misaligned length.
+		 */
+		if (((uintptr_t)data % CPU_CACHE_LINE_BYTES != 0) ||
+		    (xferlen % CPU_CACHE_LINE_BYTES) != 0) {
+			BSD_ASSERT(xferlen < DMA_BUF_SIZE);
 			if ((cmd->data->flags & MMC_DATA_READ) == 0) {
 				memcpy(sc->dmabuf, cmd->data->data, xferlen);
 			}
 			data = sc->dmabuf;
 			short_xfer = true;
-		} else {
-			data = cmd->data->data;
 		}
 
 		dctrl |= blksize << SDMMC_DCTRL_DBLOCKSIZE_Pos;

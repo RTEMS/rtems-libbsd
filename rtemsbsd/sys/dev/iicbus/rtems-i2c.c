@@ -87,9 +87,11 @@ rtems_i2c_attach(device_t dev)
 
 	len = OF_getprop_alloc(node, "rtems,i2c-path", &sc->path);
 	if (len == -1){
-		device_printf(sc->dev, "Path not found in Device Tree");
-		OF_prop_free(sc->path);
-		return (ENXIO);
+		len = OF_getprop_alloc(node, "rtems,path", &sc->path);
+		if (len == -1) {
+			device_printf(sc->dev, "Path not found in Device Tree");
+			return (ENXIO);
+		}
 	}
 
 	if ((sc->sc_iicbus = device_add_child(sc->dev, "iicbus", -1)) == NULL) {

@@ -2058,19 +2058,19 @@ static int nfs_rmnod(
 	return rv;
 }
 
-static int nfs_utime(
+static int nfs_utimens(
 	const rtems_filesystem_location_info_t  *pathloc, /* IN */
-	time_t                                   actime,  /* IN */
-	time_t                                   modtime  /* IN */
+	struct timespec 			 times[2] /* IN */
+
 )
 {
 sattr	arg;
 
 	/* TODO: add rtems EPOCH - UNIX EPOCH seconds */
-	arg.atime.seconds  = actime;
-	arg.atime.useconds = 0;
-	arg.mtime.seconds  = modtime;
-	arg.mtime.useconds = 0;
+	arg.atime.seconds  = times[0].tv_sec;
+	arg.atime.useconds = times[0].tv_nsec / 1000;
+	arg.mtime.seconds  = times[1].tv_sec;
+	arg.mtime.useconds = times[1].tv_nsec / 1000;
 
 	return nfs_sattr(pathloc->node_access, &arg, SATTR_ATIME | SATTR_MTIME);
 }
@@ -2262,25 +2262,25 @@ sattr	arg;
 }
 
 const struct _rtems_filesystem_operations_table nfs_fs_ops = {
-	.lock_h         = nfs_lock,
-	.unlock_h       = nfs_unlock,
-	.eval_path_h    = nfs_eval_path,
-	.link_h         = nfs_link,
+	.lock_h            = nfs_lock,
+	.unlock_h          = nfs_unlock,
+	.eval_path_h       = nfs_eval_path,
+	.link_h            = nfs_link,
 	.are_nodes_equal_h = nfs_are_nodes_equal,
-	.mknod_h        = nfs_mknod,
-	.rmnod_h        = nfs_rmnod,
-	.fchmod_h       = nfs_fchmod,
-	.chown_h        = nfs_chown,
-	.clonenod_h     = nfs_clonenode,
-	.freenod_h      = nfs_freenode,
-	.mount_h        = rtems_filesystem_default_mount,
-	.unmount_h      = rtems_filesystem_default_unmount,
-	.fsunmount_me_h = nfs_fsunmount_me,
-	.utime_h        = nfs_utime,
-	.symlink_h      = nfs_symlink,
-	.readlink_h     = nfs_readlink,
-	.rename_h       = nfs_rename,
-	.statvfs_h      = rtems_filesystem_default_statvfs
+	.mknod_h           = nfs_mknod,
+	.rmnod_h           = nfs_rmnod,
+	.fchmod_h          = nfs_fchmod,
+	.chown_h           = nfs_chown,
+	.clonenod_h        = nfs_clonenode,
+	.freenod_h         = nfs_freenode,
+	.mount_h           = rtems_filesystem_default_mount,
+	.unmount_h         = rtems_filesystem_default_unmount,
+	.fsunmount_me_h    = nfs_fsunmount_me,
+	.utimens_h         = nfs_utimens,
+	.symlink_h         = nfs_symlink,
+	.readlink_h        = nfs_readlink,
+	.rename_h          = nfs_rename,
+	.statvfs_h         = rtems_filesystem_default_statvfs
 };
 
 /*****************************************

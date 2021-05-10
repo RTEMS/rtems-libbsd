@@ -1,5 +1,12 @@
 #include <machine/rtems-bsd-user-space.h>
 
+#ifdef __rtems__
+/* Only need socket from rtems-bsd-program wrappers! */
+int
+rtems_bsd_program_socket(int domain, int type, int protocol);
+#define socket(domain, type, protocol) \
+    rtems_bsd_program_socket(domain, type, protocol)
+#endif /* __rtems__ */
 /*	$NetBSD: pfkey.c,v 1.21.2.1 2011/11/14 13:25:06 tteras Exp $	*/
 
 /*	$KAME: pfkey.c,v 1.47 2003/10/02 19:52:12 itojun Exp $	*/

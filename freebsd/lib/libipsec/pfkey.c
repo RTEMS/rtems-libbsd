@@ -1,4 +1,11 @@
 #include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+/* Only need socket from rtems-bsd-program wrappers! */
+int
+rtems_bsd_program_socket(int domain, int type, int protocol);
+#define socket(domain, type, protocol) \
+    rtems_bsd_program_socket(domain, type, protocol)
+#endif /* __rtems__ */
 /*	$KAME: pfkey.c,v 1.46 2003/08/26 03:37:06 itojun Exp $	*/
 
 /*-

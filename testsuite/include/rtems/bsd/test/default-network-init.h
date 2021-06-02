@@ -318,9 +318,16 @@ Init(rtems_task_argument arg)
   #define SHELL_WPA_SUPPLICANT_COMMAND
 #endif
 
+#ifdef SHELL_TTCP_COMMAND_ENABLE
+  #define SHELL_TTCP_COMMAND &rtems_shell_TTCP_Command,
+#else
+  #define SHELL_TTCP_COMMAND
+#endif
+
 #define CONFIGURE_SHELL_USER_COMMANDS \
   SHELL_WLANSTATS_COMMAND \
   SHELL_WPA_SUPPLICANT_COMMAND \
+  SHELL_TTCP_COMMAND \
   &bsp_interrupt_shell_command, \
   &rtems_shell_ARP_Command, \
   &rtems_shell_HOSTNAME_Command, \

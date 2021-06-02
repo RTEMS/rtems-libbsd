@@ -5193,6 +5193,7 @@ class tests(builder.Module):
 
     def generate(self):
         mm = self.manager
+        self.addTest(mm.generator['test']('ttcpshell01', ['test_main'], netTest = True, runTest = False))
         self.addTest(mm.generator['test']('epoch01', ['test_main'], extraLibs = ['rtemstest']))
         self.addTest(mm.generator['test']('nfs01', ['test_main'],
                                           netTest = True, modules = ['nfsv2']))

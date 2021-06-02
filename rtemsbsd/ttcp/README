@@ -7,14 +7,9 @@ but please do leave the credit notices in the source and man page intact.
 
 Contents of this directory:
 
-ttcp.c          Source that runs on IRIX 3.3.x and 4.0.x systems
-                and BSD-based systems.  This version also uses getopt(3)
-                and has 2 new options: -f and -T.
-
-ttcp.c-brl      Original source from BRL.
-
-ttcp.1          Manual page (describes ttcp.c options, which are a
-                superset of the other version).
+ttcp.c          Source that runs on IRIX 3.3.x and 4.0.x systems,
+                BSD-based systems, and RTEMS.  This version also
+                uses getopt(3) and has 2 new options: -f and -T.
 
 
 How to get TCP performance numbers:

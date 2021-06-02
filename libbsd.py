@@ -272,6 +272,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-shell-tcpdump.c',
                 'rtems/rtems-bsd-shell-vmstat.c',
                 'rtems/rtems-bsd-shell-wlanstats.c',
+                'rtems/rtems-bsd-shell-ttcp.c',
                 'rtems/rtems-kvm.c',
                 'rtems/rtems-program.c',
                 'rtems/rtems-program-socket.c',
@@ -295,6 +296,7 @@ class rtems(builder.Module):
                 'pppd/upap.c',
                 'pppd/utils.c',
                 'telnetd/telnetd-service.c',
+                'ttcp/ttcp.c',
             ],
             mm.generator['source']()
         )

@@ -29,6 +29,8 @@ extern rtems_shell_cmd_t rtems_shell_PFCTL_Command;
 extern rtems_shell_cmd_t rtems_shell_PING_Command;
 extern rtems_shell_cmd_t rtems_shell_PING6_Command;
 
+extern rtems_shell_cmd_t rtems_shell_TTCP_Command;
+
 extern rtems_shell_cmd_t rtems_shell_IFCONFIG_Command;
 
 extern rtems_shell_cmd_t rtems_shell_IFMCSTAT_Command;

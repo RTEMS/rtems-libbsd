@@ -45,6 +45,7 @@
 /* #define BSD41a */
 /* #define SYSV */	/* required on SGI IRIX releases before 3.3 */
 
+//The millisecond delay should work on a modern OS but can be disabled if not
 #define ENABLE_NANOSLEEP_DELAY
 
 #include <stdio.h>
@@ -60,6 +61,10 @@
 #include <string.h>
 #include <sys/time.h>		/* struct timeval */
 
+#if defined(ENABLE_NANOSLEEP_DELAY)
+#include <time.h>
+#endif
+
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -74,48 +79,95 @@ struct rusage {
 #include <sys/resource.h>
 #endif
 
-struct sockaddr_in sinme;
-struct sockaddr_in sinhim;
-struct sockaddr_in frominet;
+#if defined(__rtems__)
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <rtems/shell.h>
+#endif
+
+static struct sockaddr_in sinme;
+static struct sockaddr_in sinhim;
+static struct sockaddr_in frominet;
 
 /* these make it easier to avoid warnings */
-struct sockaddr *sinhim_p = (struct sockaddr *) &sinhim;
-struct sockaddr *sinme_p = (struct sockaddr *) &sinme;
-struct sockaddr *frominet_p = (struct sockaddr *) &frominet;
+static struct sockaddr *sinhim_p = (struct sockaddr *) &sinhim;
+static struct sockaddr *sinme_p = (struct sockaddr *) &sinme;
+static struct sockaddr *frominet_p = (struct sockaddr *) &frominet;
 
-int domain;
-socklen_t fromlen;
-int fd;				/* fd of network socket */
+static int domain;
+static socklen_t fromlen;
+static int fd;				/* fd of network socket */
 
-int buflen = 8 * 1024;		/* length of buffer */
-char *buf;			/* ptr to dynamic buffer */
-int nbuf = 2 * 1024;		/* number of buffers to send in sinkmode */
+static int buflen = 8 * 1024;		/* length of buffer */
+static char *buf;			/* ptr to dynamic buffer */
+static char *alloc_buf;			/* ptr to beginning of memory allocated for buf */
+static int nbuf = 2 * 1024;		/* number of buffers to send in sinkmode */
 
-int bufoffset = 0;		/* align buffer to this */
-int bufalign = 16*1024;		/* modulo this */
+static int bufoffset = 0;		/* align buffer to this */
+static int bufalign = 16*1024;		/* modulo this */
 
-int udp = 0;			/* 0 = tcp, !0 = udp */
-int options = 0;		/* socket options */
-int one = 1;                    /* for 4.3 BSD style setsockopt() */
-short port = 5001;		/* TCP port number */
-char *host;			/* ptr to name of host */
-int trans;			/* 0=receive, !0=transmit mode */
-int sinkmode = 0;		/* 0=normal I/O, !0=sink/source mode */
-int verbose = 0;		/* 0=print basic info, 1=print cpu rate, proc
+static int udp = 0;			/* 0 = tcp, !0 = udp */
+static int options = 0;		/* socket options */
+static int one = 1;                    /* for 4.3 BSD style setsockopt() */
+static short port = 5001;		/* TCP port number */
+static char *host;			/* ptr to name of host */
+static int trans;			/* 0=receive, !0=transmit mode */
+static int sinkmode = 0;		/* 0=normal I/O, !0=sink/source mode */
+static int verbose = 0;		/* 0=print basic info, 1=print cpu rate, proc
 				 * resource usage. */
-int nodelay = 0;		/* set TCP_NODELAY socket option */
-int b_flag = 0;			/* use mread() */
-int sockbufsize = 0;		/* socket buffer size to use */
-char fmt = 'K';			/* output format: k = kilobits, K = kilobytes,
+static int nodelay = 0;		/* set TCP_NODELAY socket option */
+static int b_flag = 0;			/* use mread() */
+static int sockbufsize = 0;		/* socket buffer size to use */
+static char fmt = 'K';			/* output format: k = kilobits, K = kilobytes,
 				 *  m = megabits, M = megabytes,
 				 *  g = gigabits, G = gigabytes */
-int touchdata = 0;		/* access data after reading */
-long milliseconds = 0;          /* delay in milliseconds */
+static int touchdata = 0;		/* access data after reading */
+static long milliseconds = 0;          /* delay in milliseconds */
 
-struct hostent *addr;
-extern int errno;
-extern int optind;
-extern char *optarg;
+static struct hostent *addr;
+static void initialize_vars(void)
+{
+	memset(&sinme, 0, sizeof(sinme));
+	memset(&sinhim, 0, sizeof(sinhim));
+	memset(&frominet, 0, sizeof(frominet));
+
+	/* these make it easier to avoid warnings */
+	sinhim_p = (struct sockaddr *) &sinhim;
+	sinme_p = (struct sockaddr *) &sinme;
+	frominet_p = (struct sockaddr *) &frominet;
+
+	domain = 0;
+	fromlen = 0;
+	fd = 0;				/* fd of network socket */
+
+	buflen = 8 * 1024;		/* length of buffer */
+	buf = NULL;			/* ptr to dynamic buffer */
+	alloc_buf = NULL; /* ptr to beginning of memory allocated for buf */
+	nbuf = 2 * 1024;		/* number of buffers to send in sinkmode */
+
+	bufoffset = 0;		/* align buffer to this */
+	bufalign = 16*1024;		/* modulo this */
+
+	udp = 0;			/* 0 = tcp, !0 = udp */
+	options = 0;		/* socket options */
+	one = 1;			/* for 4.3 BSD style setsockopt() */
+	port = 5001;		/* TCP port number */
+	host = NULL;			/* ptr to name of host */
+	trans = 0;			/* 0=receive, !0=transmit mode */
+	sinkmode = 0;		/* 0=normal I/O, !0=sink/source mode */
+	verbose = 0;		/* 0=print basic info, 1=print cpu rate, proc
+									 * resource usage. */
+	nodelay = 0;		/* set TCP_NODELAY socket option */
+	b_flag = 0;			/* use mread() */
+	sockbufsize = 0;		/* socket buffer size to use */
+	fmt = 'K';			/* output format: k = kilobits, K = kilobytes,
+									 *  m = megabits, M = megabytes,
+									 *  g = gigabits, G = gigabytes */
+	touchdata = 0;		/* access data after reading */
+	milliseconds = 0;			/* delay in milliseconds */
+
+	addr = NULL;
+}
 
 char Usage[] = "\
 Usage: ttcp -t [-options] host [ < in ]\n\
@@ -173,16 +225,34 @@ void millisleep(long msec)
   nanosleep( &req, NULL );
 #endif
 }
+
+#if (defined (__rtems__))
+int rtems_shell_main_ttcp(argc,argv)
+#else
 int main(argc,argv)
+#endif
 int argc;
 char **argv;
 {
+	initialize_vars();
 	unsigned long addr_tmp;
 	int c;
 
 	if (argc < 2) goto usage;
 
+#ifdef __rtems__
+	struct getopt_data getopt_reent;
+#define optarg getopt_reent.optarg
+#define optind getopt_reent.optind
+#define opterr getopt.reent.opterr
+#define optopt getopt.reent.optopt
+	memset(&getopt_reent, 0, sizeof(getopt_data));
+	while ((c = getopt_r(argc, argv,
+					"drstuvBDTb:f:l:m:n:p:A:O:",
+					&getopt_reent)) != -1) {
+#else
 	while ((c = getopt(argc, argv, "drstuvBDTb:f:l:m:n:p:A:O:")) != -1) {
+#endif
 		switch (c) {
 
 		case 'B':
@@ -270,8 +340,12 @@ char **argv;
 			sinhim.sin_addr.s_addr = inet_addr(host);
 #endif
 		} else {
-			if ((addr=gethostbyname(host)) == NULL)
+			if ((addr=gethostbyname(host)) == NULL)  {
 				err("bad hostname");
+#ifdef __rtems__
+				return 1;
+#endif
+			}
 			sinhim.sin_family = addr->h_addrtype;
 			bcopy(addr->h_addr,(char*)&addr_tmp, addr->h_length);
 #if defined(cray)
@@ -292,10 +366,15 @@ char **argv;
 	    buflen = 5;		/* send more than the sentinel size */
 	}
 
-	if ( (buf = (char *)malloc(buflen+bufalign)) == (char *)NULL)
+	if ( (buf = (char *)malloc(buflen+bufalign)) == (char *)NULL)  {
 		err("malloc");
+#ifdef __rtems__
+		return 1;
+#endif
+	}
+	alloc_buf = buf;
 	if (bufalign != 0)
-		buf +=(bufalign - ((int)buf % bufalign) + bufoffset) % bufalign;
+		buf +=(bufalign - ((intptr_t)buf % bufalign) + bufoffset) % bufalign;
 
 	if (trans) {
 	    fprintf(stdout,
@@ -313,24 +392,40 @@ char **argv;
 	    fprintf(stdout, "  %s\n", udp?"udp":"tcp");
 	}
 
-	if ((fd = socket(AF_INET, udp?SOCK_DGRAM:SOCK_STREAM, 0)) < 0)
+	if ((fd = socket(AF_INET, udp?SOCK_DGRAM:SOCK_STREAM, 0)) < 0)  {
 		err("socket");
+#ifdef __rtems__
+		return 1;
+#endif
+	}
 	mes("socket");
 
-	if (bind(fd, sinme_p, sizeof(sinme)) < 0)
+	if (bind(fd, sinme_p, sizeof(sinme)) < 0)  {
 		err("bind");
+#ifdef __rtems__
+		return 1;
+#endif
+	}
 
 #if defined(SO_SNDBUF) || defined(SO_RCVBUF)
 	if (sockbufsize) {
 	    if (trans) {
 		if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sockbufsize,
-		    sizeof sockbufsize) < 0)
+		    sizeof sockbufsize) < 0)  {
 			err("setsockopt: sndbuf");
+#ifdef __rtems__
+			return 1;
+#endif
+		}
 		mes("sndbuf");
 	    } else {
 		if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &sockbufsize,
-		    sizeof sockbufsize) < 0)
+		    sizeof sockbufsize) < 0)  {
 			err("setsockopt: rcvbuf");
+#ifdef __rtems__
+			return 1;
+#endif
+		}
 		mes("rcvbuf");
 	    }
 	}
@@ -344,24 +439,36 @@ char **argv;
 		/* We are the client if transmitting */
 		if (options)  {
 #if defined(BSD42)
-			if( setsockopt(fd, SOL_SOCKET, options, 0, 0) < 0)
+			if( setsockopt(fd, SOL_SOCKET, options, 0, 0) < 0)  {
 #else /* BSD43 */
-			if( setsockopt(fd, SOL_SOCKET, options, &one, sizeof(one)) < 0)
+			if( setsockopt(fd, SOL_SOCKET, options, &one, sizeof(one)) < 0)  {
 #endif
 				err("setsockopt");
+#ifdef __rtems__
+				return 1;
+#endif
+			}
 		}
 #ifdef TCP_NODELAY
 		if (nodelay) {
 			struct protoent *p;
 			p = getprotobyname("tcp");
 			if( p && setsockopt(fd, p->p_proto, TCP_NODELAY,
-			    &one, sizeof(one)) < 0)
+			    &one, sizeof(one)) < 0)  {
 				err("setsockopt: nodelay");
+#ifdef __rtems__
+				return 1;
+#endif
+			}
 			mes("nodelay");
 		}
 #endif
-		if(connect(fd, sinhim_p, sizeof(sinhim) ) < 0)
+		if(connect(fd, sinhim_p, sizeof(sinhim) ) < 0)  {
 			err("connect");
+#ifdef __rtems__
+			return 1;
+#endif
+		}
 		mes("connect");
 	    } else {
 		/* otherwise, we are the server and
@@ -374,21 +481,41 @@ char **argv;
 #endif
 		if(options)  {
 #if defined(BSD42)
-			if( setsockopt(fd, SOL_SOCKET, options, 0, 0) < 0)
+			if( setsockopt(fd, SOL_SOCKET, options, 0, 0) < 0)  {
 #else /* BSD43 */
-			if( setsockopt(fd, SOL_SOCKET, options, &one, sizeof(one)) < 0)
+			if( setsockopt(fd, SOL_SOCKET, options, &one, sizeof(one)) < 0)  {
 #endif
 				err("setsockopt");
+#ifdef __rtems__
+				return 1;
+#endif
+			}
 		}
 		fromlen = sizeof(frominet);
 		domain = AF_INET;
-		if((fd=accept(fd, frominet_p, &fromlen) ) < 0)
+		int fd_list = fd;
+		if((fd=accept(fd_list, frominet_p, &fromlen) ) < 0)  {
 			err("accept");
+#ifdef __rtems__
+			return 1;
+#endif
+		}
+
+		if(close(fd_list) < 0)  {
+			err("close");
+#ifdef __rtems__
+			return 1;
+#endif
+		}
+
 		{ struct sockaddr_in peer;
 		  socklen_t peerlen = sizeof(peer);
 		  if (getpeername(fd, (struct sockaddr *) &peer,
 				&peerlen) < 0) {
 			err("getpeername");
+#ifdef __rtems__
+			return 1;
+#endif
 		  }
 		  fprintf(stderr,"ttcp-r: accept from %s\n",
 			inet_ntoa(peer.sin_addr));
@@ -438,7 +565,12 @@ char **argv;
 				nbytes += cnt;
 		}
 	}
-	if(errno) err("IO");
+	if(errno)  {
+		err("IO");
+#ifdef __rtems__
+		return 1;
+#endif
+	}
 	(void)read_timer(stats,sizeof(stats));
 	if(udp&&trans)  {
 		(void)Nwrite( fd, buf, 4 ); /* rcvr end */
@@ -446,6 +578,14 @@ char **argv;
 		(void)Nwrite( fd, buf, 4 ); /* rcvr end */
 		(void)Nwrite( fd, buf, 4 ); /* rcvr end */
 	}
+
+	if(close(fd) < 0)  {
+		err("close");
+#ifdef __rtems__
+		return 1;
+#endif
+	}
+
 	if( cput <= 0.0 )  cput = 0.001;
 	if( realt <= 0.0 )  realt = 0.001;
 	fprintf(stdout,
@@ -471,12 +611,22 @@ char **argv;
 		trans?"-t":"-r",
 		buf);
 	}
+	free(alloc_buf);
+#ifdef __rtems__
+	return 0;
+#else
 	exit(0);
+#endif
 
 usage:
 	fprintf(stderr,Usage);
+	free(alloc_buf);
+#ifdef __rtems__
+	return 1;
+#else
 	exit(1);
-	return 0;
+	return 1;
+#endif
 }
 
 void
@@ -486,7 +636,16 @@ char *s;
 	fprintf(stderr,"ttcp%s: ", trans?"-t":"-r");
 	perror(s);
 	fprintf(stderr,"errno=%d\n",errno);
+	free(alloc_buf);
+	if (fd != 0)
+	{
+		close(fd);
+	}
+#ifdef __rtems__
+	return;
+#else
 	exit(1);
+#endif
 }
 
 void
@@ -540,10 +699,12 @@ double b;
 static struct	timeval time0;	/* Time at which timing started */
 static struct	rusage ru0;	/* Resource utilization at the start */
 
+#ifndef __rtems__
 static void prusage();
+static void psecs();
+#endif
 static void tvadd();
 static void tvsub();
-static void psecs();
 
 #if defined(SYSV)
 /*ARGSUSED*/
@@ -601,7 +762,11 @@ int len;
 
 	getrusage(RUSAGE_SELF, &ru1);
 	gettimeofday(&timedol, (struct timezone *)0);
+#ifndef __rtems__
 	prusage(&ru0, &ru1, &timedol, &time0, line);
+#else
+	line[0] = '\0';
+#endif
 	(void)strncpy( str, line, len );
 
 	/* Get real time */
@@ -617,6 +782,7 @@ int len;
 	return( cput );
 }
 
+#ifndef __rtems__
 static void
 prusage(r0, r1, e, b, outp)
 	register struct rusage *r0, *r1;
@@ -731,6 +897,7 @@ prusage(r0, r1, e, b, outp)
 	}
 	*outp = '\0';
 }
+#endif
 
 static void
 tvadd(tsum, t0, t1)
@@ -754,6 +921,7 @@ tvsub(tdiff, t1, t0)
 		tdiff->tv_sec--, tdiff->tv_usec += 1000000;
 }
 
+#ifndef __rtems__
 static void
 psecs(l,cp)
 long l;
@@ -777,6 +945,7 @@ register char *cp;
 	*cp++ = ':';
 	sprintf(cp,"%d%d", i / 10, i % 10);
 }
+#endif //!__rtems__
 
 /*
  *			N R E A D

@@ -538,17 +538,24 @@ class Builder(builder.ModuleManager):
         if 'header-paths' in config:
             headerPaths = config['header-paths']
             cpu = bld.get_env()['RTEMS_ARCH']
-            if cpu == "i386":
-                cpu = 'x86'
             for headers in headerPaths:
-                # Get the dest path
-                ipath = os.path.join(arch_inc_path, headers[2])
-                start_dir = bld.path.find_dir(headers[0].replace('@CPU@', cpu))
-                if start_dir != None:
-                    bld.install_files("${PREFIX}/" + ipath,
-                                      start_dir.ant_glob(headers[1]),
-                                      cwd=start_dir,
-                                      relative_trick=True)
+                paths = [headers[0].replace('@CPU@', cpu)]
+                # Apply the path mappings
+                for source, targets in config['path-mappings']:
+                    if source in paths:
+                        i = paths.index(source)
+                        paths.remove(source)
+                        paths[i:i] = targets
+
+                for hp in paths:
+                    # Get the dest path
+                    ipath = os.path.join(arch_inc_path, headers[2])
+                    start_dir = bld.path.find_dir(hp)
+                    if start_dir != None:
+                        bld.install_files("${PREFIX}/" + ipath,
+                                        start_dir.ant_glob(headers[1]),
+                                        cwd=start_dir,
+                                        relative_trick=True)
 
         bld.install_files(os.path.join("${PREFIX}", arch_inc_path,
                                        module_header_path),

@@ -35,14 +35,17 @@
  * Distribution Status -
  *      Public Domain.  Distribution Unlimited.
  */
+
 #ifndef lint
-static char RCSid[] = "ttcp.c $Revision$";
+/* static char RCSid[] = "ttcp.c $Revision$"; */
 #endif
 
 #define BSD43
 /* #define BSD42 */
 /* #define BSD41a */
 /* #define SYSV */	/* required on SGI IRIX releases before 3.3 */
+
+#define ENABLE_NANOSLEEP_DELAY
 
 #include <stdio.h>
 #include <signal.h>
@@ -54,7 +57,11 @@ static char RCSid[] = "ttcp.c $Revision$";
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <string.h>
 #include <sys/time.h>		/* struct timeval */
+
+#include <unistd.h>
+#include <stdlib.h>
 
 #if defined(SYSV)
 #include <sys/times.h>
@@ -71,7 +78,13 @@ struct sockaddr_in sinme;
 struct sockaddr_in sinhim;
 struct sockaddr_in frominet;
 
-int domain, fromlen;
+/* these make it easier to avoid warnings */
+struct sockaddr *sinhim_p = (struct sockaddr *) &sinhim;
+struct sockaddr *sinme_p = (struct sockaddr *) &sinme;
+struct sockaddr *frominet_p = (struct sockaddr *) &frominet;
+
+int domain;
+socklen_t fromlen;
 int fd;				/* fd of network socket */
 
 int buflen = 8 * 1024;		/* length of buffer */
@@ -97,6 +110,7 @@ char fmt = 'K';			/* output format: k = kilobits, K = kilobytes,
 				 *  m = megabits, M = megabytes,
 				 *  g = gigabits, G = gigabytes */
 int touchdata = 0;		/* access data after reading */
+long milliseconds = 0;          /* delay in milliseconds */
 
 struct hostent *addr;
 extern int errno;
@@ -124,6 +138,7 @@ Options specific to -t:\n\
 Options specific to -r:\n\
 	-B	for -s, only output full blocks as specified by -l (for TAR)\n\
 	-T	\"touch\": access each byte as it's read\n\
+	-m ##	delay for specified milliseconds between each write\n\
 ";
 
 char stats[128];
@@ -133,7 +148,7 @@ double cput, realt;		/* user, real time (seconds) */
 
 void err();
 void mes();
-int pattern();
+void pattern();
 void prep_timer();
 double read_timer();
 int Nread();
@@ -147,7 +162,18 @@ sigpipe()
 {
 }
 
-main(argc,argv)
+void millisleep(long msec)
+{
+#if defined(ENABLE_NANOSLEEP_DELAY)
+  struct timespec req;
+
+  req.tv_sec = msec / 1000;
+  req.tv_nsec = (msec % 1000) * 1000000;
+
+  nanosleep( &req, NULL );
+#endif
+}
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -156,7 +182,7 @@ char **argv;
 
 	if (argc < 2) goto usage;
 
-	while ((c = getopt(argc, argv, "drstuvBDTb:f:l:n:p:A:O:")) != -1) {
+	while ((c = getopt(argc, argv, "drstuvBDTb:f:l:m:n:p:A:O:")) != -1) {
 		switch (c) {
 
 		case 'B':
@@ -178,6 +204,12 @@ char **argv;
 			fprintf(stderr,
 	"ttcp: -D option ignored: TCP_NODELAY socket option not supported\n");
 #endif
+			break;
+		case 'm':
+			milliseconds = atoi(optarg);
+			#if !defined(ENABLE_NANOSLEEP_DELAY)
+				fprintf(stderr, "millisecond delay disabled\n");
+			#endif
 			break;
 		case 'n':
 			nbuf = atoi(optarg);
@@ -285,7 +317,7 @@ char **argv;
 		err("socket");
 	mes("socket");
 
-	if (bind(fd, &sinme, sizeof(sinme)) < 0)
+	if (bind(fd, sinme_p, sizeof(sinme)) < 0)
 		err("bind");
 
 #if defined(SO_SNDBUF) || defined(SO_RCVBUF)
@@ -305,7 +337,9 @@ char **argv;
 #endif
 
 	if (!udp)  {
+#if !defined(__rtems__)
 	    signal(SIGPIPE, sigpipe);
+#endif
 	    if (trans) {
 		/* We are the client if transmitting */
 		if (options)  {
@@ -326,7 +360,7 @@ char **argv;
 			mes("nodelay");
 		}
 #endif
-		if(connect(fd, &sinhim, sizeof(sinhim) ) < 0)
+		if(connect(fd, sinhim_p, sizeof(sinhim) ) < 0)
 			err("connect");
 		mes("connect");
 	    } else {
@@ -348,11 +382,11 @@ char **argv;
 		}
 		fromlen = sizeof(frominet);
 		domain = AF_INET;
-		if((fd=accept(fd, &frominet, &fromlen) ) < 0)
+		if((fd=accept(fd, frominet_p, &fromlen) ) < 0)
 			err("accept");
 		{ struct sockaddr_in peer;
-		  int peerlen = sizeof(peer);
-		  if (getpeername(fd, (struct sockaddr_in *) &peer,
+		  socklen_t peerlen = sizeof(peer);
+		  if (getpeername(fd, (struct sockaddr *) &peer,
 				&peerlen) < 0) {
 			err("getpeername");
 		  }
@@ -368,8 +402,10 @@ char **argv;
 		if (trans)  {
 			pattern( buf, buflen );
 			if(udp)  (void)Nwrite( fd, buf, 4 ); /* rcvr start */
-			while (nbuf-- && Nwrite(fd,buf,buflen) == buflen)
+			while (nbuf-- && Nwrite(fd,buf,buflen) == buflen) {
 				nbytes += buflen;
+				millisleep( milliseconds );
+                        }
 			if(udp)  (void)Nwrite( fd, buf, 4 ); /* rcvr end */
 		} else {
 			if (udp) {
@@ -423,7 +459,7 @@ char **argv;
 		nbytes, cput, outfmt(nbytes/cput));
 	}
 	fprintf(stdout,
-		"ttcp%s: %d I/O calls, msec/call = %.2f, calls/sec = %.2f\n",
+		"ttcp%s: %ld I/O calls, msec/call = %.2f, calls/sec = %.2f\n",
 		trans?"-t":"-r",
 		numCalls,
 		1024.0 * realt/((double)numCalls),
@@ -431,7 +467,7 @@ char **argv;
 	fprintf(stdout,"ttcp%s: %s\n", trans?"-t":"-r", stats);
 	if (verbose) {
 	    fprintf(stdout,
-		"ttcp%s: buffer address %#x\n",
+		"ttcp%s: buffer address %p\n",
 		trans?"-t":"-r",
 		buf);
 	}
@@ -440,6 +476,7 @@ char **argv;
 usage:
 	fprintf(stderr,Usage);
 	exit(1);
+	return 0;
 }
 
 void
@@ -459,7 +496,7 @@ char *s;
 	fprintf(stderr,"ttcp%s: %s\n", trans?"-t":"-r", s);
 }
 
-pattern( cp, cnt )
+void pattern( cp, cnt )
 register char *cp;
 register int cnt;
 {
@@ -554,6 +591,7 @@ prep_timer()
 double
 read_timer(str,len)
 char *str;
+int len;
 {
 	struct timeval timedol;
 	struct rusage ru1;
@@ -614,13 +652,13 @@ prusage(r0, r1, e, b, outp)
 
 		case 'U':
 			tvsub(&tdiff, &r1->ru_utime, &r0->ru_utime);
-			sprintf(outp,"%d.%01d", tdiff.tv_sec, tdiff.tv_usec/100000);
+			sprintf(outp,"%ld.%01ld", tdiff.tv_sec, tdiff.tv_usec/100000);
 			END(outp);
 			break;
 
 		case 'S':
 			tvsub(&tdiff, &r1->ru_stime, &r0->ru_stime);
-			sprintf(outp,"%d.%01d", tdiff.tv_sec, tdiff.tv_usec/100000);
+			sprintf(outp,"%ld.%01ld", tdiff.tv_sec, tdiff.tv_usec/100000);
 			END(outp);
 			break;
 
@@ -642,18 +680,18 @@ prusage(r0, r1, e, b, outp)
 			break;
 
 		case 'X':
-			sprintf(outp,"%d", t == 0 ? 0 : (r1->ru_ixrss-r0->ru_ixrss)/t);
+			sprintf(outp,"%ld", t == 0 ? 0 : (r1->ru_ixrss-r0->ru_ixrss)/t);
 			END(outp);
 			break;
 
 		case 'D':
-			sprintf(outp,"%d", t == 0 ? 0 :
+			sprintf(outp,"%ld", t == 0 ? 0 :
 			    (r1->ru_idrss+r1->ru_isrss-(r0->ru_idrss+r0->ru_isrss))/t);
 			END(outp);
 			break;
 
 		case 'K':
-			sprintf(outp,"%d", t == 0 ? 0 :
+			sprintf(outp,"%ld", t == 0 ? 0 :
 			    ((r1->ru_ixrss+r1->ru_isrss+r1->ru_idrss) -
 			    (r0->ru_ixrss+r0->ru_idrss+r0->ru_isrss))/t);
 			END(outp);
@@ -743,16 +781,16 @@ register char *cp;
 /*
  *			N R E A D
  */
-Nread( fd, buf, count )
+int Nread( fd, buf, count )
 int fd;
 void *buf;
 int count;
 {
 	struct sockaddr_in from;
-	int len = sizeof(from);
+	socklen_t len = sizeof(from);
 	register int cnt;
 	if( udp )  {
-		cnt = recvfrom( fd, buf, count, 0, &from, &len );
+		cnt = recvfrom( fd, buf, count, 0, (struct sockaddr *)&from, &len );
 		numCalls++;
 	} else {
 		if( b_flag )
@@ -774,7 +812,7 @@ int count;
 /*
  *			N W R I T E
  */
-Nwrite( fd, buf, count )
+int Nwrite( fd, buf, count )
 int fd;
 void *buf;
 int count;
@@ -782,9 +820,10 @@ int count;
 	register int cnt;
 	if( udp )  {
 again:
-		cnt = sendto( fd, buf, count, 0, &sinhim, sizeof(sinhim) );
+		cnt = sendto( fd, buf, count, 0, sinhim_p, sizeof(sinhim) );
 		numCalls++;
 		if( cnt<0 && errno == ENOBUFS )  {
+			printf("ttcp: out of buffers -- delaying\n"); /*JRS*/
 			delay(18000);
 			errno = 0;
 			goto again;
@@ -797,13 +836,13 @@ again:
 }
 
 void
-delay(us)
+delay(int us)
 {
 	struct timeval tv;
 
 	tv.tv_sec = 0;
 	tv.tv_usec = us;
-	(void)select( 1, (char *)0, (char *)0, (char *)0, &tv );
+	(void)select( 1, (fd_set *)0, (fd_set *)0, (fd_set *)0, &tv );
 }
 
 /*

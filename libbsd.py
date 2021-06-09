@@ -135,6 +135,7 @@ _defaults = {
      ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),
      ('freebsd/sys/dev/pci',                    '**/*.h',                          'dev/pci'),
      ('freebsd/sys/dev/nvme',                   '**/*.h',                          'dev/nvme'),
+     ('freebsd/sys/@CPU@/include',              '**/*.h',                          ''),
      ('linux/include',                          '**/*.h',                          ''),
      ('mDNSResponder/mDNSCore',                 'mDNSDebug.h',                     ''),
      ('mDNSResponder/mDNSCore',                 'mDNSEmbeddedAPI.h',               ''),
@@ -1443,7 +1444,6 @@ class dev_nic(builder.Module):
             [
                 'sys/arm/include/cpufunc.h',
                 'sys/i386/include/md_var.h',
-                'sys/i386/include/intr_machdep.h',
                 'sys/i386/include/cpufunc.h',
                 'sys/x86/include/intr_machdep.h',
                 'sys/x86/include/specialreg.h',

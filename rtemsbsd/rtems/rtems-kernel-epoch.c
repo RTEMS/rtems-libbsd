@@ -60,6 +60,10 @@ struct epoch_pcpu {
 	rtems_interrupt_server_request irq_srv_req;
 };
 
+#ifdef PER_CPU_DATA_NEED_INITIALIZATION
+PER_CPU_DATA_NEED_INITIALIZATION();
+#endif
+
 static PER_CPU_DATA_ITEM(struct epoch_pcpu, epoch);
 
 static SLIST_HEAD(, epoch) epoch_list = SLIST_HEAD_INITIALIZER(epoch_list);

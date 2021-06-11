@@ -1059,7 +1059,8 @@ class ModuleManager(object):
 
     def _checkDependencies(self):
         enabled_modules = self.getEnabledModules()
-        enabled_modules.remove('tests')
+        if 'tests' in enabled_modules:
+            enabled_modules.remove('tests')
         for mod in enabled_modules:
             if mod not in self.modules:
                 raise KeyError('enabled module not found: %s' % (mod))

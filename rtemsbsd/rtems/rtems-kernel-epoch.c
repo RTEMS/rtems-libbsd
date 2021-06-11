@@ -349,15 +349,29 @@ epoch_call(epoch_t epoch, epoch_context_t ctx,
     void (*callback) (epoch_context_t))
 {
 	Per_CPU_Control *cpu_self;
-	struct epoch_record *er;
 	struct epoch_pcpu *epcpu;
+	struct epoch_record *er;
+#ifdef RTEMS_SMP
+	ISR_Level level;
+	Thread_Control *executing;
 
-	cpu_self = _Thread_Dispatch_disable();
+	_ISR_Local_disable(level);
+	cpu_self = _Per_CPU_Get();
+	executing = _Per_CPU_Get_executing(cpu_self);
+	_Thread_Pin(executing);
+	_ISR_Local_enable(level);
+#endif
+
 	epcpu = PER_CPU_DATA_GET(cpu_self, struct epoch_pcpu, epoch);
 	epcpu->cb_count += 1;
 	er = EPOCH_GET_RECORD(cpu_self, epoch);
 	ck_epoch_call(&er->er_record, ctx, callback);
+
+#ifdef RTEMS_SMP
+	cpu_self = _Thread_Dispatch_disable();
+	_Thread_Unpin(executing, cpu_self);
 	_Thread_Dispatch_enable(cpu_self);
+#endif
 }
 
 #ifdef INVARIANTS
@@ -411,7 +425,7 @@ epoch_call_drain_cb(void *arg)
 	struct epoch_record *er;
 
 	epoch = arg;
-	cpu = _Per_CPU_Get();
+	cpu = _Per_CPU_Get_snapshot();
 	er = EPOCH_GET_RECORD(cpu, epoch);
 	epoch_call(epoch, &er->er_drain_ctx, epoch_drain_cb);
 }
@@ -425,6 +439,7 @@ epoch_drain_callbacks(epoch_t epoch)
 	uint32_t cpu_max;
 	rtems_id id;
 	rtems_status_code sc;
+	rtems_interrupt_server_request req[CPU_MAXIMUM_PROCESSORS];
 #else
 	struct epoch_record *er;
 #endif
@@ -433,6 +448,7 @@ epoch_drain_callbacks(epoch_t epoch)
 	mtx_lock(&epoch->e_drain_mtx);
 
 #ifdef RTEMS_SMP
+	memset(&req, 0, sizeof(req));
 	cpu_max = rtems_scheduler_get_processor_maximum();
 
 	for (cpu_index = 0; cpu_index <= cpu_max; ++cpu_index) {
@@ -445,8 +461,15 @@ epoch_drain_callbacks(epoch_t epoch)
 	for (cpu_index = 0; cpu_index <= cpu_max; ++cpu_index) {
 		sc = rtems_scheduler_ident_by_processor(cpu_index, &id);
 		if (sc == RTEMS_SUCCESSFUL) {
-			_SMP_Unicast_action(cpu_index, epoch_call_drain_cb,
+			sc = rtems_interrupt_server_request_initialize(
+			    cpu_index, &req[cpu_index], epoch_call_drain_cb,
 			    epoch);
+			if (sc == RTEMS_SUCCESSFUL) {
+				rtems_interrupt_server_request_submit(
+				    &req[cpu_index]);
+			} else {
+				panic("no interrupt server for epoch drain");
+			}
 		}
 	}
 #else
@@ -461,4 +484,12 @@ epoch_drain_callbacks(epoch_t epoch)
 
 	mtx_unlock(&epoch->e_drain_mtx);
 	sx_xunlock(&epoch->e_drain_sx);
+
+#ifdef RTEMS_SMP
+	for (cpu_index = 0; cpu_index <= cpu_max; ++cpu_index) {
+		if (req[cpu_index].action.handler != NULL) {
+			rtems_interrupt_server_request_destroy(&req[cpu_index]);
+		}
+	}
+#endif
 }

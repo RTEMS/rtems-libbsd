@@ -293,3 +293,12 @@ Escape character is '^]'.
 RTEMS Shell on /dev/pty4. Use 'help' to list commands.
 TLNT [/] #
 ```
+
+SMP Requirements
+----------------
+
+In order to support
+[EPOCH(9)](https://www.freebsd.org/cgi/man.cgi?query=epoch&apropos=0&sektion=9)
+a scheduler with thread pinning support is required.  This is the case if you
+use the default scheduler configuration.  EPOCH(9) is a central synchronization
+mechanism of the network stack.

@@ -409,6 +409,17 @@ extern "C" {
   #define RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM3(_irq)       \
     RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM(3, 0xff0e0000, _irq)
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM3 */
+/*
+ * Versal has a similar GEM as the CGEM. This should work for now.
+ */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_GEM0)
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_GEM0(_irq)                \
+    RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM(0, 0xff0c0000, _irq)
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_GEM0 */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_GEM1)
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_GEM1(_irq)       \
+    RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM(1, 0xff0d0000, _irq)
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_GEM1 */
 
 /*
  * Designware/Synopsys Ethernet MAC Controller.

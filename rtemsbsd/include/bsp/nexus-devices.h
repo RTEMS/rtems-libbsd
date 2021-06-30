@@ -38,6 +38,7 @@
 
 #include <rtems/bsd/bsd.h>
 #include <rtems/bsd/modules.h>
+#include <rtems/bsd/test/network-config.h>
 #include <machine/rtems-bsd-nexus-bus.h>
 
 
@@ -115,16 +116,16 @@ RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR;
  * CGEM3 is used for LibBSD because all Zynq Ultrascale+ MPSoC dev boards treat
  * the highest-mapped CGEM as the primary interface.
  */
-#if BSP_XILINX_ZYNQMP_USE_CGEM0
+#if NET_CFG_ZYNQMP_USE_CGEM0 == '1'
 RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM0(ZYNQMP_IRQ_ETHERNET_0);
 #endif
-#if BSP_XILINX_ZYNQMP_USE_CGEM1
+#if NET_CFG_ZYNQMP_USE_CGEM1 == '1'
 RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM1(ZYNQMP_IRQ_ETHERNET_1);
 #endif
-#if BSP_XILINX_ZYNQMP_USE_CGEM2
+#if NET_CFG_ZYNQMP_USE_CGEM2 == '1'
 RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM2(ZYNQMP_IRQ_ETHERNET_2);
 #endif
-#if BSP_XILINX_ZYNQMP_USE_CGEM3
+#if NET_CFG_ZYNQMP_USE_CGEM3 == '1'
 RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM3(ZYNQMP_IRQ_ETHERNET_3);
 #endif
 RTEMS_BSD_DRIVER_E1000PHY;

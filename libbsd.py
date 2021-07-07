@@ -269,6 +269,7 @@ class rtems(builder.Module):
                 'sys/dev/dw_mmc/dw_mmc.c',
                 'sys/dev/ffec/if_ffec_mcf548x.c',
                 'sys/dev/ffec/if_ffec_mpc8xx.c',
+                'sys/dev/mve/mv643xx_nexus.c',
                 'sys/dev/input/touchscreen/tsc_lpc32xx.c',
                 'sys/dev/smc/if_smc_nexus.c',
                 'sys/dev/tsec/if_tsec_nexus.c',

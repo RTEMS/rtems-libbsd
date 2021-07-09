@@ -1953,6 +1953,25 @@ cgem_probe(device_t dev)
 
 	if (ofw_bus_search_compatible(dev, compat_data)->ocd_data == 0)
 		return (ENXIO);
+#else /* __rtems__ */
+
+	struct cgem_softc *sc = device_get_softc(dev);
+	int val, rid = 0;
+
+	/* Check for PHY read timeouts which indicate an unterminated MII bus */
+	sc->mem_res = bus_alloc_resource_any(dev, SYS_RES_MEMORY, &rid,
+					     RF_ACTIVE);
+
+	val = cgem_miibus_readreg(dev, 0, MII_BMSR);
+	if (val == -1) {
+		bus_release_resource(dev, SYS_RES_MEMORY, &rid,
+				     sc->mem_res);
+		sc->mem_res = NULL;
+		return (ENXIO);
+	}
+	bus_release_resource(dev, SYS_RES_MEMORY, &rid,
+			     sc->mem_res);
+	sc->mem_res = NULL;
 #endif /* __rtems__ */
 
 	device_set_desc(dev, "Cadence CGEM Gigabit Ethernet Interface");

@@ -289,9 +289,7 @@ class Builder(builder.ModuleManager):
                       (bld.env.NET_CONFIG))
         tags = [
             'NET_CFG_INTERFACE_0', 'NET_CFG_SELF_IP', 'NET_CFG_NETMASK',
-            'NET_CFG_PEER_IP', 'NET_CFG_GATEWAY_IP',
-            'NET_CFG_ZYNQMP_USE_CGEM0', 'NET_CFG_ZYNQMP_USE_CGEM1',
-            'NET_CFG_ZYNQMP_USE_CGEM2', 'NET_CFG_ZYNQMP_USE_CGEM3'
+            'NET_CFG_PEER_IP', 'NET_CFG_GATEWAY_IP'
         ]
         try:
             net_cfg_lines = open(bld.env.NET_CONFIG).readlines()

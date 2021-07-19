@@ -37,6 +37,7 @@
 
 #include <sys/time.h>
 
+#include <limits.h>
 #include <rtems/score/timespec.h>
 
 /*
@@ -45,10 +46,15 @@
 int
 tvtohz(struct timeval *tv)
 {
-  struct timespec ts;
+	struct timespec ts;
+	uint32_t ticks;
 
-  ts.tv_sec = tv->tv_sec;
-  ts.tv_nsec = tv->tv_usec * 1000;
+	ts.tv_sec = tv->tv_sec;
+	ts.tv_nsec = tv->tv_usec * 1000;
 
-  return (int) _Timespec_To_ticks( &ts );
+	ticks = _Timespec_To_ticks(&ts);
+	if (ticks > INT_MAX)
+		ticks = INT_MAX;
+
+	return ticks;
 }

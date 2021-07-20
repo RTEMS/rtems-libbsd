@@ -34,7 +34,9 @@
 #define	_SYS__LOCKMGR_H_
 
 #ifdef DEBUG_LOCKS
+#ifndef __rtems__
 #include <sys/_stack.h>
+#endif /* __rtems__ */
 #endif
 
 struct lock {
@@ -44,7 +46,11 @@ struct lock {
 	int			lk_timo;
 	int			lk_pri;
 #ifdef DEBUG_LOCKS
+#ifndef __rtems__
 	struct stack		lk_stack;
+#else /* __rtems__ */
+	void*			lk_stack;
+#endif /* __rtems__ */
 #endif
 };
 

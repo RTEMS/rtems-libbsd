@@ -70,9 +70,9 @@ struct lock_class lock_class_rw = {
 	.lc_unlock = unlock_rw,
 };
 
-#define	rw_wowner(rw) rtems_bsd_mutex_owner(&(rw)->mutex)
+#define	rw_wowner(rw) rtems_bsd_mutex_owner(&(rw)->lock_object)
 
-#define	rw_recursed(rw) rtems_bsd_mutex_recursed(&(rw)->mutex)
+#define	rw_recursed(rw) rtems_bsd_mutex_recursed(&(rw)->lock_object)
 
 void
 assert_rw(const struct lock_object *lock, int what)
@@ -101,11 +101,9 @@ rw_init_flags(struct rwlock *rw, const char *name, int opts)
 {
 	int flags;
 
-	flags = LO_UPGRADABLE;
-	if (opts & RW_RECURSE)
-		flags |= LO_RECURSABLE;
+	flags = LO_UPGRADABLE | LO_RECURSABLE;
 
-	rtems_bsd_mutex_init(&rw->lock_object, &rw->mutex, &lock_class_rw,
+	rtems_bsd_mutex_init(&rw->lock_object, &lock_class_rw,
 	    name, NULL, flags);
 }
 
@@ -113,7 +111,7 @@ void
 rw_destroy(struct rwlock *rw)
 {
 
-	rtems_bsd_mutex_destroy(&rw->lock_object, &rw->mutex);
+	rtems_bsd_mutex_destroy(&rw->lock_object);
 }
 
 void
@@ -128,43 +126,43 @@ rw_sysinit(void *arg)
 int
 rw_wowned(struct rwlock *rw)
 {
-	return (rtems_bsd_mutex_owned(&rw->mutex));
+	return (rtems_bsd_mutex_owned(&rw->lock_object));
 }
 
 void
 _rw_wlock(struct rwlock *rw, const char *file, int line)
 {
-	rtems_bsd_mutex_lock(&rw->lock_object, &rw->mutex);
+	rtems_bsd_mutex_lock(&rw->lock_object);
 }
 
 int
 _rw_try_wlock(struct rwlock *rw, const char *file, int line)
 {
-	return (rtems_bsd_mutex_trylock(&rw->lock_object, &rw->mutex));
+	return (rtems_bsd_mutex_trylock(&rw->lock_object));
 }
 
 void
 _rw_wunlock(struct rwlock *rw, const char *file, int line)
 {
-	rtems_bsd_mutex_unlock(&rw->mutex);
+	rtems_bsd_mutex_unlock(&rw->lock_object);
 }
 
 void
 _rw_rlock(struct rwlock *rw, const char *file, int line)
 {
-	rtems_bsd_mutex_lock(&rw->lock_object, &rw->mutex);
+	rtems_bsd_mutex_lock(&rw->lock_object);
 }
 
 int
 _rw_try_rlock(struct rwlock *rw, const char *file, int line)
 {
-	return (rtems_bsd_mutex_trylock(&rw->lock_object, &rw->mutex));
+	return (rtems_bsd_mutex_trylock(&rw->lock_object));
 }
 
 void
 _rw_runlock(struct rwlock *rw, const char *file, int line)
 {
-	rtems_bsd_mutex_unlock(&rw->mutex);
+	rtems_bsd_mutex_unlock(&rw->lock_object);
 }
 
 int
@@ -188,7 +186,7 @@ _rw_downgrade(struct rwlock *rw, const char *file, int line)
 void
 _rw_assert(const struct rwlock *rw, int what, const char *file, int line)
 {
-	const char *name = rtems_bsd_mutex_name(&rw->mutex);
+	const char *name = rtems_bsd_mutex_name(&rw->lock_object);
 
 	switch (what) {
 	case RA_LOCKED:

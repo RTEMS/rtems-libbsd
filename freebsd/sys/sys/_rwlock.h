@@ -30,9 +30,6 @@
 
 #ifndef _SYS__RWLOCK_H_
 #define	_SYS__RWLOCK_H_
-#ifdef __rtems__
-#include <machine/rtems-bsd-mutex.h>
-#endif /* __rtems__ */
 
 #include <machine/param.h>
 
@@ -49,8 +46,6 @@ struct rwlock {
 	struct lock_object	lock_object;
 #ifndef __rtems__
 	volatile uintptr_t	rw_lock;
-#else /* __rtems__ */
-	rtems_bsd_mutex mutex;
 #endif /* __rtems__ */
 };
 

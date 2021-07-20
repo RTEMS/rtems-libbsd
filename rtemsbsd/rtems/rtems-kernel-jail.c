@@ -97,10 +97,12 @@ struct prison prison0 = {
    * structure.
    */
   .pr_mtx = {
-    .lock_object = { .lo_flags = LO_INITIALIZED },
-    .mutex = {
-      .queue = THREAD_QUEUE_INITIALIZER("jail mutex"),
-      .nest_level = 0
+    .lock_object = {
+      .lo_flags = LO_INITIALIZED,
+      .lo_mtx = {
+	.queue = THREAD_QUEUE_INITIALIZER("jail mutex"),
+	.nest_level = 0
+      }
     }
   },
 

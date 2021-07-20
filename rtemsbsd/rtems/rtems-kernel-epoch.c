@@ -32,8 +32,8 @@
 
 #include <sys/types.h>
 #include <sys/kernel.h>
-#include <sys/epoch.h>
 #include <sys/mutex.h>
+#include <sys/epoch.h>
 #include <sys/sx.h>
 #include <sys/systm.h>
 

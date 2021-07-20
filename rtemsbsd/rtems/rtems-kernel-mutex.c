@@ -48,6 +48,11 @@
 #include <sys/proc.h>
 #include <sys/conf.h>
 
+#if RTEMS_DEBUG
+struct _bsd_mutex_list _bsd_mutexlist = TAILQ_HEAD_INITIALIZER(_bsd_mutexlist);
+rtems_mutex _bsd_mutexlist_lock = RTEMS_MUTEX_INITIALIZER("mmutexlist");
+#endif /* RTEMS_DEBUG */
+
 static void	assert_mtx(const struct lock_object *lock, int what);
 static void	lock_mtx(struct lock_object *lock, uintptr_t how);
 static uintptr_t unlock_mtx(struct lock_object *lock);
@@ -110,26 +115,26 @@ mtx_init(struct mtx *m, const char *name, const char *type, int opts)
 	if (opts & MTX_RECURSE)
 		flags |= LO_RECURSABLE;
 
-	rtems_bsd_mutex_init(&m->lock_object, &m->mutex, class, name, type,
+	rtems_bsd_mutex_init(&m->lock_object, class, name, type,
 	    flags);
 }
 
 void
 _mtx_lock_flags(struct mtx *m, int opts, const char *file, int line)
 {
-	rtems_bsd_mutex_lock(&m->lock_object, &m->mutex);
+	rtems_bsd_mutex_lock(&m->lock_object);
 }
 
 int
 mtx_trylock_flags_(struct mtx *m, int opts, const char *file, int line)
 {
-	return (rtems_bsd_mutex_trylock(&m->lock_object, &m->mutex));
+	return (rtems_bsd_mutex_trylock(&m->lock_object));
 }
 
 void
 _mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line)
 {
-	rtems_bsd_mutex_unlock(&m->mutex);
+	rtems_bsd_mutex_unlock(&m->lock_object);
 }
 
 /*
@@ -139,7 +144,7 @@ _mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line)
 void
 _mtx_assert(struct mtx *m, int what, const char *file, int line)
 {
-	const char *name = rtems_bsd_mutex_name(&m->mutex);
+	const char *name = rtems_bsd_mutex_name(&m->lock_object);
 
 	switch (what) {
 	case MA_OWNED:
@@ -168,12 +173,12 @@ _mtx_assert(struct mtx *m, int what, const char *file, int line)
 
 int mtx_owned(struct mtx *m)
 {
-	return (rtems_bsd_mutex_owned(&m->mutex));
+	return (rtems_bsd_mutex_owned(&m->lock_object));
 }
 
 int mtx_recursed(struct mtx *m)
 {
-	return (rtems_bsd_mutex_recursed(&m->mutex));
+	return (rtems_bsd_mutex_recursed(&m->lock_object));
 }
 
 void
@@ -188,7 +193,7 @@ void
 mtx_destroy(struct mtx *m)
 {
 
-	rtems_bsd_mutex_destroy(&m->lock_object, &m->mutex);
+	rtems_bsd_mutex_destroy(&m->lock_object);
 }
 
 void

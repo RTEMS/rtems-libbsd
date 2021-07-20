@@ -74,9 +74,7 @@ struct lock_class *lock_classes[LOCK_CLASS_MAX + 1] = {
 	&lock_class_rm_sleepable,
 #endif /* __rtems__ */
 	&lock_class_rw,
-#ifndef __rtems__
 	&lock_class_lockmgr,
-#endif /* __rtems__ */
 };
 
 void

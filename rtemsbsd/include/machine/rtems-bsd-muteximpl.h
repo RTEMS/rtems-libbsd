@@ -50,6 +50,8 @@
 
 #include <inttypes.h>
 
+#include <rtems/thread.h>
+#include <rtems/score/thread.h>
 #include <rtems/score/threadimpl.h>
 #include <rtems/score/threadqimpl.h>
 
@@ -60,17 +62,48 @@ extern "C" {
 #define	RTEMS_BSD_MUTEX_TQ_OPERATIONS \
     &_Thread_queue_Operations_priority_inherit
 
+#if RTEMS_DEBUG
+/*
+ * Resource tracking. In GDB you can:
+ *
+ * define mutex-owned
+ *  set $m = $arg0
+ *  set $c = 0
+ *  while $m != 0
+ *   set $c = $c + 1
+ *   if $m->queue.Queue.owner != 0
+ *    printf "%08x %-40s\n", $m->queue.Queue.owner, $m->queue.Queue.name
+ *   end
+ *   set $m = $m->mutex_list.tqe_next
+ *  end
+ *  printf "Total: %d\n", $c
+ * end
+ *
+ * (gdb) mutex-owned _bsd_bsd_mutexlist->tqh_first
+ */
+extern TAILQ_HEAD(_bsd_mutex_list, rtems_bsd_mutex) _bsd_mutexlist;
+extern rtems_mutex _bsd_mutexlist_lock;
+#endif /* RTEMS_DEBUG */
+
 static inline void
-rtems_bsd_mutex_init(struct lock_object *lock, rtems_bsd_mutex *m,
-    struct lock_class *class, const char *name, const char *type, int flags)
+rtems_bsd_mutex_init(struct lock_object *lk, struct lock_class *class,
+   const char *name, const char *type, int flags)
 {
+	rtems_bsd_mutex *m = &lk->lo_mtx;
+
 	_Thread_queue_Initialize(&m->queue, name);
 	m->nest_level = 0;
 
-	lock_init(lock, class, name, type, flags);
+	lock_init(lk, class, name, type, flags);
+
+#if RTEMS_DEBUG
+	rtems_mutex_lock(&_bsd_mutexlist_lock);
+	TAILQ_INSERT_TAIL(&_bsd_mutexlist, m, mutex_list);
+	rtems_mutex_unlock(&_bsd_mutexlist_lock);
+#endif /* RTEMS_DEBUG */
 }
 
-void rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
+void rtems_bsd_mutex_lock_more(struct lock_object *lk,
     Thread_Control *owner, Thread_Control *executing,
     Thread_queue_Context *queue_context);
 
@@ -117,12 +150,13 @@ rtems_bsd_mutex_set_isr_level(Thread_queue_Context *queue_context,
 }
 
 static inline void
-rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
+rtems_bsd_mutex_lock(struct lock_object *lk)
 {
 	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *executing;
 	Thread_Control *owner;
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 
 	_Thread_queue_Context_initialize(&queue_context);
 	rtems_bsd_mutex_isr_disable(isr_level, &queue_context);
@@ -137,19 +171,20 @@ rtems_bsd_mutex_lock(struct lock_object *lock, rtems_bsd_mutex *m)
 		rtems_bsd_mutex_release(m, isr_level, &queue_context);
 	} else {
 		rtems_bsd_mutex_set_isr_level(&queue_context, isr_level);
-		rtems_bsd_mutex_lock_more(lock, m, owner, executing,
+		rtems_bsd_mutex_lock_more(lk, owner, executing,
 		    &queue_context);
 	}
 }
 
 static inline int
-rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
+rtems_bsd_mutex_trylock(struct lock_object *lk)
 {
 	int success;
 	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *executing;
 	Thread_Control *owner;
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 
 	_Thread_queue_Context_initialize(&queue_context);
 	rtems_bsd_mutex_isr_disable(isr_level, &queue_context);
@@ -163,7 +198,7 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 		_Thread_Resource_count_increment(executing);
 		success = 1;
 	} else if (owner == executing) {
-		if ((lock->lo_flags & LO_RECURSABLE) == 0) {
+		if ((lk->lo_flags & LO_RECURSABLE) == 0) {
 			rtems_bsd_mutex_release(m, isr_level, &queue_context);
 			panic("mutex trylock: %s: not LO_RECURSABLE\n",
 			    m->queue.Queue.name);
@@ -181,13 +216,14 @@ rtems_bsd_mutex_trylock(struct lock_object *lock, rtems_bsd_mutex *m)
 }
 
 static inline void
-rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
+rtems_bsd_mutex_unlock(struct lock_object *lk)
 {
 	ISR_Level isr_level;
 	Thread_queue_Context queue_context;
 	Thread_Control *owner;
 	Thread_Control *executing;
 	int nest_level;
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 
 	_Thread_queue_Context_initialize(&queue_context);
 	rtems_bsd_mutex_isr_disable(isr_level, &queue_context);
@@ -226,45 +262,52 @@ rtems_bsd_mutex_unlock(rtems_bsd_mutex *m)
 }
 
 static inline Thread_Control *
-rtems_bsd_mutex_owner(const rtems_bsd_mutex *m)
+rtems_bsd_mutex_owner(struct lock_object *lk)
 {
-
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 	return (m->queue.Queue.owner);
 }
 
 static inline int
-rtems_bsd_mutex_owned(const rtems_bsd_mutex *m)
+rtems_bsd_mutex_owned(struct lock_object *lk)
 {
-
-	return (rtems_bsd_mutex_owner(m) == _Thread_Get_executing());
+	return (rtems_bsd_mutex_owner(lk) == _Thread_Get_executing());
 }
 
 static inline int
-rtems_bsd_mutex_recursed(const rtems_bsd_mutex *m)
+rtems_bsd_mutex_recursed(struct lock_object *lk)
 {
-
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 	return (m->nest_level != 0);
 }
 
 static inline const char *
-rtems_bsd_mutex_name(const rtems_bsd_mutex *m)
+rtems_bsd_mutex_name(struct lock_object *lk)
 {
-
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 	return (m->queue.Queue.name);
 }
 
 static inline void
-rtems_bsd_mutex_destroy(struct lock_object *lock, rtems_bsd_mutex *m)
+rtems_bsd_mutex_destroy(struct lock_object *lk)
 {
+	rtems_bsd_mutex *m = &lk->lo_mtx;
+
 	BSD_ASSERT(m->queue.Queue.heads == NULL);
 
-	if (rtems_bsd_mutex_owned(m)) {
+	if (rtems_bsd_mutex_owned(lk)) {
 		m->nest_level = 0;
-		rtems_bsd_mutex_unlock(m);
+		rtems_bsd_mutex_unlock(lk);
 	}
 
+#if RTEMS_DEBUG
+	rtems_mutex_lock(&_bsd_mutexlist_lock);
+	TAILQ_REMOVE(&_bsd_mutexlist, m, mutex_list);
+	rtems_mutex_unlock(&_bsd_mutexlist_lock);
+#endif /* RTEMS_DEBUG */
+
 	_Thread_queue_Destroy(&m->queue);
-	lock_destroy(lock);
+	lock_destroy(lk);
 }
 
 #ifdef __cplusplus

@@ -32,15 +32,23 @@
 
 #ifndef _SYS__LOCK_H_
 #define	_SYS__LOCK_H_
+#ifdef __rtems__
+#include <machine/rtems-bsd-mutex.h>
+#endif /* __rtems__ */
 
 struct lock_object {
 #ifndef __rtems__
 	const	char *lo_name;		/* Individual lock name. */
+#else /* __rtems__ */
+	#define lo_name lo_mtx.queue.Queue.name
+#endif /* __rtems__ */
 	u_int	lo_flags;
+#ifndef __rtems__
 	u_int	lo_data;		/* General class specific data. */
 	struct	witness *lo_witness;	/* Data for witness. */
 #else /* __rtems__ */
-	unsigned int lo_flags;
+	#define lo_data lo_mtx.nest_level
+	rtems_bsd_mutex lo_mtx;
 #endif /* __rtems__ */
 };
 

@@ -40,16 +40,20 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_MUTEX_H_
 
-#include <rtems/score/thread.h>
+#include <sys/queue.h>
+
 #include <rtems/score/threadq.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-typedef struct {
+typedef struct rtems_bsd_mutex {
 	Thread_queue_Control queue;
 	int nest_level;
+#if RTEMS_DEBUG
+	TAILQ_ENTRY(rtems_bsd_mutex) mutex_list;
+#endif /* RTEMS_DEBUG */
 } rtems_bsd_mutex;
 
 #ifdef __cplusplus

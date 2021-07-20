@@ -45,6 +45,7 @@
 #include <sys/proc.h>
 
 #include <rtems.h>
+#include <rtems/score/thread.h>
 
 extern sbintime_t rtems_bsd_sbt_per_watchdog_tick;
 

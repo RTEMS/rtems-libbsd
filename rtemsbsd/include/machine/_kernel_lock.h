@@ -35,9 +35,9 @@
 #define _MACHINE__KERNEL_LOCK_H_
 
 #include <sys/queue.h>
-#include <sys/_lock.h>
 #include <sys/ktr_class.h>
 
+struct lock_object;
 struct lock_list_entry;
 struct thread;
 

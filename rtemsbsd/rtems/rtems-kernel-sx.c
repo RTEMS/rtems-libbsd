@@ -59,9 +59,9 @@ struct lock_class lock_class_sx = {
 	.lc_unlock = unlock_sx,
 };
 
-#define	sx_xholder(sx) rtems_bsd_mutex_owner(&(sx)->mutex)
+#define	sx_xholder(sx) rtems_bsd_mutex_owner(&(sx)->lock_object)
 
-#define	sx_recursed(sx) rtems_bsd_mutex_recursed(&(sx)->mutex)
+#define	sx_recursed(sx) rtems_bsd_mutex_recursed(&(sx)->lock_object)
 
 void
 assert_sx(const struct lock_object *lock, int what)
@@ -90,7 +90,7 @@ sx_sysinit(void *arg)
 {
 	struct sx_args *sargs = arg;
 
-	sx_init(sargs->sa_sx, sargs->sa_desc);
+	sx_init_flags(sargs->sa_sx, sargs->sa_desc, sargs->sa_flags);
 }
 
 void
@@ -102,7 +102,7 @@ sx_init_flags(struct sx *sx, const char *description, int opts)
 	if (opts & SX_RECURSE)
 		flags |= LO_RECURSABLE;
 
-	rtems_bsd_mutex_init(&sx->lock_object, &sx->mutex, &lock_class_sx,
+	rtems_bsd_mutex_init(&sx->lock_object, &lock_class_sx,
 	    description, NULL, flags);
 }
 
@@ -110,14 +110,14 @@ void
 sx_destroy(struct sx *sx)
 {
 
-	rtems_bsd_mutex_destroy(&sx->lock_object, &sx->mutex);
+	rtems_bsd_mutex_destroy(&sx->lock_object);
 }
 
 int
 _sx_slock_int(struct sx *sx, int opts LOCK_FILE_LINE_ARG_DEF)
 {
 
-	rtems_bsd_mutex_lock(&sx->lock_object, &sx->mutex);
+	rtems_bsd_mutex_lock(&sx->lock_object);
 	return (0);
 }
 
@@ -125,18 +125,25 @@ int
 sx_try_slock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 {
 
-	return (rtems_bsd_mutex_trylock(&sx->lock_object, &sx->mutex));
+	return (rtems_bsd_mutex_trylock(&sx->lock_object));
 }
 
 void
 _sx_sunlock_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 {
 
-	rtems_bsd_mutex_unlock(&sx->mutex);
+	rtems_bsd_mutex_unlock(&sx->lock_object);
 }
 
 int
 sx_try_upgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
+{
+
+	return (1);
+}
+
+int
+sx_try_upgrade_(struct sx *sx, const char *file, int line)
 {
 
 	return (1);
@@ -149,6 +156,13 @@ sx_downgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 	/* Do nothing */
 }
 
+int
+sx_try_downgrade_(struct sx *sx, const char *file, int line)
+{
+
+	return (1);
+}
+
 #ifdef INVARIANT_SUPPORT
 /*
  * In the non-WITNESS case, sx_assert() can only detect that at least
@@ -158,7 +172,7 @@ sx_downgrade_int(struct sx *sx LOCK_FILE_LINE_ARG_DEF)
 void
 _sx_assert(const struct sx *sx, int what, const char *file, int line)
 {
-	const char *name = rtems_bsd_mutex_name(&sx->mutex);
+	const char *name = rtems_bsd_mutex_name(&sx->lock_object);
 
 	switch (what) {
 	case SA_SLOCKED:
@@ -205,5 +219,5 @@ _sx_assert(const struct sx *sx, int what, const char *file, int line)
 int
 sx_xlocked(struct sx *sx)
 {
-	return (rtems_bsd_mutex_owned(&sx->mutex));
+	return (rtems_bsd_mutex_owned(&sx->lock_object));
 }

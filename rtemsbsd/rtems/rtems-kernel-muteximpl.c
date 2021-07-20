@@ -43,12 +43,13 @@
 #include <rtems/score/schedulerimpl.h>
 
 void
-rtems_bsd_mutex_lock_more(struct lock_object *lock, rtems_bsd_mutex *m,
+rtems_bsd_mutex_lock_more(struct lock_object *lk,
     Thread_Control *owner, Thread_Control *executing,
     Thread_queue_Context *queue_context)
 {
+	rtems_bsd_mutex *m = &lk->lo_mtx;
 	if (owner == executing) {
-		if ((lock->lo_flags & LO_RECURSABLE) == 0) {
+		if ((lk->lo_flags & LO_RECURSABLE) == 0) {
 			_Thread_queue_Release(&m->queue, queue_context);
 			panic("mutex lock: %s: not LO_RECURSABLE\n",
 			    m->queue.Queue.name);

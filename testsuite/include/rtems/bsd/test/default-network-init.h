@@ -367,6 +367,7 @@ Init(rtems_task_argument arg)
   &rtems_shell_SYSCTL_Command, \
   &rtems_shell_VMSTAT_Command
 
+#ifndef CONFIGURE_SHELL_COMMANDS_ALL
 #define CONFIGURE_SHELL_COMMAND_CPUINFO
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE
@@ -387,6 +388,7 @@ Init(rtems_task_argument arg)
 #define CONFIGURE_SHELL_COMMAND_RM
 #define CONFIGURE_SHELL_COMMAND_MALLOC_INFO
 #define CONFIGURE_SHELL_COMMAND_SHUTDOWN
+#endif
 
 #include <rtems/shellconfig.h>
 

@@ -73,8 +73,10 @@
   #define RTEMS_BSD_ALIGNOF( _type_name ) alignof( _type_name )
 #elif __STDC_VERSION__ >= 201112L
   #define RTEMS_BSD_ALIGNOF( _type_name ) _Alignof( _type_name )
+#elif defined(__GNUC__)
+  #define RTEMS_BSD_ALIGNOF( _type_name ) __alignof__( _type_name )
 #else
-  #define RTEMS_BSD_ALIGNOF( _type_name ) sizeof( _type_name )
+  #error "FIX ME! Implement RTEMS_BSD_ALIGNOF() for this environment"
 #endif
 
 #define RTEMS_BSD_SET_ALIGN( type )	\

@@ -260,6 +260,9 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 		BSD_ASSERT(td != NULL);
 
 		_Thread_Set_name(thread, name);
+#ifdef KTR
+		strlcpy(td->td_name, name, sizeof(td->td_name));
+#endif
 
 		if (rtems_bsd_thread_ready_to_start) {
 			sc = rtems_task_start(task_id, (rtems_task_entry) func,

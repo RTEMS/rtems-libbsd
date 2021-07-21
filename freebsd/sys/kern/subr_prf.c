@@ -218,6 +218,7 @@ uprintf(const char *fmt, ...)
 	va_end(ap);
 	return (retval);
 }
+#endif /* __rtems__ */
 
 /*
  * tprintf and vtprintf print on the controlling terminal associated with the
@@ -236,6 +237,7 @@ tprintf(struct proc *p, int pri, const char *fmt, ...)
 void
 vtprintf(struct proc *p, int pri, const char *fmt, va_list ap)
 {
+#ifndef __rtems__
 	struct tty *tp = NULL;
 	int flags = 0;
 	struct putchar_arg pca;
@@ -271,8 +273,12 @@ vtprintf(struct proc *p, int pri, const char *fmt, va_list ap)
 	if (sess != NULL)
 		sess_release(sess);
 	msgbuftrigger = 1;
+#else /* __rtems__ */
+	vprintf(fmt, ap);
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 /*
  * Ttyprintf displays a message on a tty; it should be used only by
  * the tty driver, or anything that knows the underlying tty will not

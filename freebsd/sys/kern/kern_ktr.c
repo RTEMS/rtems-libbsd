@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
@@ -34,13 +36,15 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_ddb.h"
-#include "opt_ktr.h"
-#include "opt_alq.h"
+#include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_ktr.h>
+#include <rtems/bsd/local/opt_alq.h>
 
 #include <sys/param.h>
 #include <sys/queue.h>
+#ifndef __rtems__
 #include <sys/alq.h>
+#endif /* __rtems__ */
 #include <sys/cons.h>
 #include <sys/cpuset.h>
 #include <sys/kdb.h>
@@ -111,6 +115,7 @@ SYSCTL_INT(_debug_ktr, OID_AUTO, version, CTLFLAG_RD,
 SYSCTL_UQUAD(_debug_ktr, OID_AUTO, compile, CTLFLAG_RD,
     &ktr_compile, 0, "Bitmask of KTR event classes compiled into the kernel");
 
+#ifndef __rtems__
 static int
 sysctl_debug_ktr_cpumask(SYSCTL_HANDLER_ARGS)
 {
@@ -133,6 +138,7 @@ SYSCTL_PROC(_debug_ktr, OID_AUTO, cpumask,
     CTLFLAG_RWTUN | CTLFLAG_MPSAFE | CTLTYPE_STRING, NULL, 0,
     sysctl_debug_ktr_cpumask, "S",
     "Bitmask of CPUs on which KTR logging is enabled");
+#endif /* __rtems__ */
 
 static int
 sysctl_debug_ktr_clear(SYSCTL_HANDLER_ARGS)
@@ -221,11 +227,13 @@ sysctl_debug_ktr_entries(SYSCTL_HANDLER_ARGS)
 	/* Disable ktr temporarily. */
 	mask = ktr_mask;
 	ktr_mask = 0;
+#ifndef __rtems__
 	/* Wait for threads to go idle. */
 	if ((error = quiesce_all_cpus("ktrent", PCATCH)) != 0) {
 		ktr_mask = mask;
 		return (error);
 	}
+#endif /* __rtems__ */
 	if (ktr_buf != ktr_buf_init)
 		oldbuf = ktr_buf;
 	else

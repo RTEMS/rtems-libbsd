@@ -189,7 +189,9 @@ ithread_update(struct intr_thread *ithd)
 	_Thread_Set_name(td->td_thread, ie->ie_fullname);
 #endif /* __rtems__ */
 #ifdef KTR
+#ifndef __rtems__
 	sched_clear_tdname(td);
+#endif /* __rtems__ */
 #endif
 	thread_lock(td);
 #ifndef __rtems__
@@ -1242,11 +1244,7 @@ ithread_loop(void *arg)
 	int wake;
 
 	td = curthread;
-#ifndef __rtems__
 	p = td->td_proc;
-#else /* __rtems__ */
-	p = NULL;
-#endif /* __rtems__ */
 	ithd = (struct intr_thread *)arg;
 	KASSERT(ithd->it_thread == td,
 	    ("%s: ithread and proc linkage out of sync", __func__));

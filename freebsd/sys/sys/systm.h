@@ -83,7 +83,8 @@ extern int boothowto;		/* reboot flags, from console subsystem */
 extern int bootverbose;		/* nonzero to print verbose messages */
 #else /* __rtems__ */
 #ifdef BOOTVERBOSE
-extern int bootverbose;		/* nonzero to print verbose messages */
+extern int rtems_bsd_bootverbose; /* nonzero to print verbose messages */
+#define bootverbose rtems_bsd_bootverbose
 #else
 #define bootverbose    0        /* Remove all verbose code for the standard RTEMS build */
 #endif /* BOOTVERBOSE */
@@ -407,6 +408,20 @@ int	copyout_nofault(const void * _Nonnull __restrict kaddr,
 	    void * __restrict udaddr, size_t len);
 
 #else /* __rtems__ */
+static inline int
+copystr(const void * _Nonnull __restrict kfaddr,
+	    void * _Nonnull __restrict kdaddr, size_t len,
+	    size_t * __restrict lencopied)
+{
+	if (lencopied != NULL) {
+		*lencopied = len;
+	}
+
+	memcpy(kdaddr, kfaddr, len);
+
+	return (0);
+}
+
 static inline int
 copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
 	    size_t len, size_t * __restrict lencopied)

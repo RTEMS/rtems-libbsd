@@ -2609,8 +2609,10 @@ uma_zalloc_arg(uma_zone_t zone, void *udata, int flags)
 	random_harvest_fast_uma(&zone, sizeof(zone), RANDOM_UMA);
 
 	/* This is the fast path allocation */
+#ifndef __rtems__
 	CTR4(KTR_UMA, "uma_zalloc_arg thread %x zone %s(%p) flags %d",
 	    curthread, zone->uz_name, zone, flags);
+#endif /* __rtems__ */
 
 	if (flags & M_WAITOK) {
 		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
@@ -2698,9 +2700,11 @@ zalloc_start:
 	 */
 	bucket = cache->uc_freebucket;
 	if (bucket != NULL && bucket->ub_cnt > 0) {
+#ifndef __rtems__
 		CTR2(KTR_UMA,
 		    "uma_zalloc: zone %s(%p) swapping empty with alloc",
 		    zone->uz_name, zone);
+#endif /* __rtems__ */
 		cache->uc_freebucket = cache->uc_allocbucket;
 		cache->uc_allocbucket = bucket;
 		goto zalloc_start;
@@ -2784,8 +2788,10 @@ zalloc_start:
 	 * will use the just filled bucket.
 	 */
 	bucket = zone_alloc_bucket(zone, udata, domain, flags);
+#ifndef __rtems__
 	CTR3(KTR_UMA, "uma_zalloc: zone %s(%p) bucket zone returned %p",
 	    zone->uz_name, zone, bucket);
+#endif /* __rtems__ */
 	if (bucket != NULL) {
 		ZONE_LOCK(zone);
 		critical_enter();
@@ -2835,9 +2841,11 @@ uma_zalloc_domain(uma_zone_t zone, void *udata, int domain, int flags)
 	random_harvest_fast_uma(&zone, sizeof(zone), RANDOM_UMA);
 
 	/* This is the fast path allocation */
+#ifndef __rtems__
 	CTR5(KTR_UMA,
 	    "uma_zalloc_domain thread %x zone %s(%p) domain %d flags %d",
 	    curthread, zone->uz_name, zone, domain, flags);
+#endif /* __rtems__ */
 
 	if (flags & M_WAITOK) {
 		WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,

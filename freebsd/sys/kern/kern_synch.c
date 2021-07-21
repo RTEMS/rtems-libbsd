@@ -138,9 +138,7 @@ int
 _sleep(void *ident, struct lock_object *lock, int priority,
     const char *wmesg, sbintime_t sbt, sbintime_t pr, int flags)
 {
-#ifndef __rtems__
 	struct thread *td;
-#endif /* __rtems__ */
 	struct lock_class *class;
 	uintptr_t lock_state;
 #ifndef __rtems__
@@ -150,9 +148,7 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 #endif /* __rtems__ */
 	WITNESS_SAVE_DECL(lock_witness);
 
-#ifndef __rtems__
 	td = curthread;
-#endif /* __rtems__ */
 #ifdef KTRACE
 	if (KTRPOINT(td, KTR_CSW))
 		ktrcsw(1, 0, wmesg);
@@ -165,10 +161,10 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 #ifndef __rtems__
 	KASSERT(TD_IS_RUNNING(td), ("_sleep: curthread not running"));
 	KASSERT(td->td_epochnest == 0, ("sleeping in an epoch section"));
+#endif /* __rtems__ */
 	if (priority & PDROP)
 		KASSERT(lock != NULL && lock != &Giant.lock_object,
 		    ("PDROP requires a non-Giant lock"));
-#endif /* __rtems__ */
 	if (lock != NULL)
 		class = LOCK_CLASS(lock);
 	else
@@ -181,10 +177,8 @@ _sleep(void *ident, struct lock_object *lock, int priority,
 		return (0);
 	}
 	catch = priority & PCATCH;
-	pri = priority & PRIMASK;
-#else /* __rtems__ */
-	pri = priority;
 #endif /* __rtems__ */
+	pri = priority & PRIMASK;
 
 #ifndef __rtems__
 	KASSERT(!TD_ON_SLEEPQ(td), ("recursive sleep"));

@@ -222,6 +222,15 @@ configure with:
 The LibBSD Waf support splits the options and converts them to uppercase and
 adds them -D options on the compiler command line.
 
+The list is:
+
+ bootverbose:     Verbose boot of the kernel
+ verbose_sysinit: Verbose printing of all the SYSINIT calls
+ bus_debug:       Bus debugging support
+ ktr:             Kernel trace
+ ktr_verbose:     Verbose kernel trace
+ invariants:      Invariants build of the kernel
+
 SMP Requirements
 ----------------
 

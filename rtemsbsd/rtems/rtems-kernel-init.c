@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/ktr.h>
 #include <sys/sysctl.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
@@ -186,6 +187,12 @@ rtems_bsd_initialize(void)
 
 	mutex_init();
 	mi_startup();
+
+#ifdef KTR
+	ktr_verbose = 10;
+	ktr_mask = KTR_ALL;
+	ktr_mask = KTR_GEN | KTR_LOCK | KTR_VFS | KTR_VOP | KTR_BUF | KTR_MALLOC | KTR_SYSC | KTR_RUNQ;
+#endif
 
 	return RTEMS_SUCCESSFUL;
 }

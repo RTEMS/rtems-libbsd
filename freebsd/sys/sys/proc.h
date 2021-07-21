@@ -74,6 +74,7 @@
 #include <machine/cpu.h>
 #endif
 #ifdef __rtems__
+#include <rtems/score/thread.h>
 #include <sys/epoch.h>
 #endif /* __rtems__ */
 
@@ -243,7 +244,9 @@ struct thread {
 #endif /* __rtems__ */
 #ifndef __rtems__
 	struct mtx	*volatile td_lock; /* replaces sched lock */
+#endif /* __rtems__ */
 	struct proc	*td_proc;	/* (*) Associated process. */
+#ifndef __rtems__
 	TAILQ_ENTRY(thread) td_plist;	/* (*) All threads in this proc. */
 	TAILQ_ENTRY(thread) td_runq;	/* (t) Run queue. */
 #endif /* __rtems__ */
@@ -261,6 +264,10 @@ struct thread {
 	struct rl_q_entry *td_rlqe;	/* (k) Associated range lock entry. */
 	struct umtx_q   *td_umtxq;	/* (c?) Link for when we're blocked. */
 	lwpid_t		td_tid;		/* (b) Thread ID. */
+#else /* __rtems__ */
+        #define td_tid td_thread->Object.id
+#endif /* __rtems__ */
+#ifndef __rtems__
 	sigqueue_t	td_sigqueue;	/* (c) Sigs arrived, not delivered. */
 #define	td_siglist	td_sigqueue.sq_signals
 	u_char		td_lend_user_pri; /* (t) Lend user pri. */
@@ -270,7 +277,9 @@ struct thread {
 	u_char		td_epochnest;	/* (k) Epoch nest counter. */
 	int		td_flags;	/* (t) TDF_* flags. */
 	int		td_inhibitors;	/* (t) Why can not run. */
+#endif /* __rtems__ */
 	int		td_pflags;	/* (k) Private thread (TDP_*) flags. */
+#ifndef __rtems__
 	int		td_dupfd;	/* (k) Ret value from fdopen. XXX */
 #endif /* __rtems__ */
 #ifdef __rtems__
@@ -285,7 +294,9 @@ struct thread {
 	short		td_locks;	/* (k) Debug: count of non-spin locks */
 	short		td_rw_rlocks;	/* (k) Count of rwlock read locks. */
 	short		td_sx_slocks;	/* (k) Count of sx shared locks. */
+#endif /* __rtems__ */
 	short		td_lk_slocks;	/* (k) Count of lockmgr shared locks. */
+#ifndef __rtems__
 	short		td_stopsched;	/* (k) Scheduler stopped. */
 	struct turnstile *td_blocked;	/* (t) Lock thread is blocked on. */
 	const char	*td_lockname;	/* (t) Name of lock blocked on. */
@@ -319,6 +330,10 @@ struct thread {
 	u_long		td_profil_addr;	/* (k) Temporary addr until AST. */
 	u_int		td_profil_ticks; /* (k) Temporary ticks until AST. */
 	char		td_name[MAXCOMLEN + 1];	/* (*) Thread name. */
+#else /* __rtems__ */
+#if KTR
+	char		td_name[MAXCOMLEN + 1];	/* (*) Thread name. */
+#endif
 #endif /* __rtems__ */
 	struct file	*td_fpop;	/* (k) file referencing cdev under op */
 #ifndef __rtems__
@@ -328,7 +343,9 @@ struct thread {
 	struct osd	td_osd;		/* (k) Object specific data. */
 	struct vm_map_entry *td_map_def_user; /* (k) Deferred entries. */
 	pid_t		td_dbg_forked;	/* (c) Child pid for debugger. */
+#endif /* __rtems__ */
 	u_int		td_vp_reserv;	/* (k) Count of reserved vnodes. */
+#ifndef __rtems__
 	int		td_no_sleeping;	/* (k) Sleeping disabled count. */
 	void		*td_su;		/* (k) FFS SU private */
 	sbintime_t	td_sleeptimo;	/* (t) Sleep timeout. */
@@ -365,15 +382,13 @@ struct thread {
 		TDS_RUNQ,
 		TDS_RUNNING
 	} td_state;			/* (t) thread state */
+#endif /* __rtems__ */
 	union {
 		register_t	tdu_retval[2];
 		off_t		tdu_off;
 	} td_uretoff;			/* (k) Syscall aux returns. */
-#else /* __rtems__ */
-	register_t	td_retval[2];	/* (k) Syscall aux returns. */
-#endif /* __rtems__ */
-#ifndef __rtems__
 #define td_retval	td_uretoff.tdu_retval
+#ifndef __rtems__
 	u_int		td_cowgen;	/* (k) Generation of COW pointers. */
 	/* LP64 hole */
 	struct callout	td_slpcallout;	/* (h) Callout for sleep. */
@@ -615,9 +630,11 @@ struct proc {
 	LIST_ENTRY(proc) p_list;	/* (d) List of all processes. */
 	TAILQ_HEAD(, thread) p_threads;	/* (c) all threads. */
 	struct mtx	p_slock;	/* process spin lock */
+#endif /* __rtems__ */
 	struct ucred	*p_ucred;	/* (c) Process owner's identity. */
 	struct filedesc	*p_fd;		/* (b) Open files. */
 	struct filedesc_to_leader *p_fdtol; /* (b) Tracking node */
+#ifndef __rtems__
 	struct pstats	*p_stats;	/* (b) Accounting/statistics (CPU). */
 	struct plimit	*p_limit;	/* (c) Resource limits. */
 	struct callout	p_limco;	/* (c) Limit callout handle */
@@ -630,7 +647,9 @@ struct proc {
 		PRS_NORMAL,		/* threads can be run. */
 		PRS_ZOMBIE
 	} p_state;			/* (j/c) Process status. */
+#endif /* __rtems__ */
 	pid_t		p_pid;		/* (b) Process identifier. */
+#ifndef __rtems__
 	LIST_ENTRY(proc) p_hash;	/* (d) Hash chain. */
 	LIST_ENTRY(proc) p_pglist;	/* (g + e) List of processes in pgrp. */
 	struct proc	*p_pptr;	/* (c + e) Pointer to parent process. */
@@ -675,7 +694,9 @@ struct proc {
 	char		p_step;		/* (c) Process is stopped. */
 	u_char		p_pfsflags;	/* (c) Procfs flags. */
 	u_int		p_ptevents;	/* (c + e) ptrace() event mask. */
+#endif /* __rtems__ */
 	struct nlminfo	*p_nlminfo;	/* (?) Only used by/for lockd. */
+#ifndef __rtems__
 	struct kaioinfo	*p_aioinfo;	/* (y) ASYNC I/O info. */
 	struct thread	*p_singlethread;/* (c + j) If single threading this is it */
 	int		p_suspcount;	/* (j) Num threads in suspended mode. */
@@ -887,6 +908,7 @@ MALLOC_DECLARE(M_SUBPROC);
 #define	NO_PID		100000
 extern pid_t pid_max;
 
+#ifndef __rtems__
 #define	SESS_LEADER(p)	((p)->p_session->s_leader == (p))
 
 
@@ -949,7 +971,6 @@ extern pid_t pid_max;
  * _PHOLD(), it only guarantees that exit1() is not executed,
  * faultin() is not called.
  */
-#ifndef __rtems__
 #define	PHOLD(p) do {							\
 	PROC_LOCK(p);							\
 	_PHOLD(p);							\
@@ -994,8 +1015,28 @@ extern pid_t pid_max;
 	(p)->p_cowgen++;						\
 } while (0)
 #else /* __rtems__ */
+#define SESS_LEADER(p) (1)
+#define STOPEVENT(p, e, v) do { } while (0)
+#define PROC_LOCK(p) do { } while (0)
+#define PROC_TRYLOCK(p) do { } while (0)
+#define	PROC_UNLOCK(p) do { } while (0)
+#define	PROC_LOCKED(p) do { } while (0)
+#define	PROC_LOCK_ASSERT(p, type) do { } while (0)
+#define	PGRP_LOCK(pg) do { } while (0)
+#define	PGRP_UNLOCK(pg) do { } while (0)
+#define	PGRP_LOCKED(pg) do { } while (0)
+#define	PGRP_LOCK_ASSERT(pg, type) do { } while (0)
+#define	PGRP_LOCK_PGSIGNAL(pg) do { } while (0)
+#define	PGRP_UNLOCK_PGSIGNAL(pg) do { } while (0)
+#define	SESS_LOCK(s) do { } while (0)
+#define	SESS_UNLOCK(s) do { } while (0)
+#define	SESS_LOCKED(s) do { } while (0)
+#define	SESS_LOCK_ASSERT(s, type) do { } while (0)
 #define	PHOLD(x) do { } while (0)
+#define	_PHOLD(x) do { } while (0)
+#define PROC_ASSERT_HELD(p) do { } while (0)
 #define	PRELE(x) do { } while (0)
+#define PROC_ASSERT_NOT_HELD(p) do { } while (0)
 #endif /* __rtems__ */
 
 /* Check whether a thread is safe to be swapped out. */

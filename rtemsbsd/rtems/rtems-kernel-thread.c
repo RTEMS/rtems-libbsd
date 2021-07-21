@@ -90,15 +90,19 @@ struct thread *
 rtems_bsd_thread_create(Thread_Control *thread, int wait)
 {
 	struct thread *td = malloc(sizeof(*td), M_TEMP, M_ZERO | wait);
-	struct sleepqueue *sq = sleepq_alloc();
 
-	if (td != NULL && sq != NULL) {
-		td->td_thread = thread;
-		td->td_sleepqueue = sq;
-	} else {
-		free(td, M_TEMP);
-		sleepq_free(sq);
-		td = NULL;
+	if (td != NULL) {
+		struct sleepqueue *sq = sleepq_alloc();
+		if (sq != NULL) {
+			td->td_proc = &proc0;
+			td->td_ucred = proc0.p_ucred;
+			td->td_thread = thread;
+			td->td_sleepqueue = sq;
+			crhold(td->td_ucred);
+		} else {
+			free(td, M_TEMP);
+			td = NULL;
+		}
 	}
 
 	thread->extensions[rtems_bsd_extension_index] = td;
@@ -167,6 +171,7 @@ rtems_bsd_extension_thread_delete(
 	if (td != NULL) {
 		seltdfini(td);
 		sleepq_free(td->td_sleepqueue);
+		crfree(td->td_ucred);
 		free(td, M_TEMP);
 	}
 }
@@ -303,7 +308,7 @@ kproc_create(void (*func)(void *), void *arg, struct proc **newpp, int flags, in
 	va_list ap;
 
 	va_start(ap, fmt);
-	eno = rtems_bsd_thread_start(newpp, func, arg, flags, pages, fmt, ap);
+	eno = rtems_bsd_thread_start((struct thread**) newpp, func, arg, flags, pages, fmt, ap);
 	va_end(ap);
 
 	return eno;
@@ -331,6 +336,8 @@ kthread_add(void (*func)(void *), void *arg, struct proc *p, struct thread **new
 	va_list ap;
 
 	va_start(ap, fmt);
+	/* the cast here is a hack but passing a proc as a thread struct is just wrong and I
+	 * have no idea why it is like this */
 	eno = rtems_bsd_thread_start(newtdp, func, arg, flags, pages, fmt, ap);
 	va_end(ap);
 

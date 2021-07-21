@@ -505,6 +505,8 @@ class base(builder.Module):
                 'sys/kern/kern_module.c',
                 'sys/kern/kern_mtxpool.c',
                 'sys/kern/kern_osd.c',
+                'sys/kern/kern_prot.c',
+                'sys/kern/kern_resource.c',
                 'sys/kern/kern_synch.c',
                 'sys/kern/kern_sysctl.c',
                 'sys/kern/kern_time.c',

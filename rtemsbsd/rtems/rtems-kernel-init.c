@@ -50,6 +50,9 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/kbio.h>
+#include <sys/resourcevar.h>
+#include <sys/jail.h>
+#include <uuid/uuid.h>
 
 #include <limits.h>
 
@@ -94,6 +97,7 @@ sbintime_t sbt_timethreshold;
 sbintime_t sbt_tickthreshold;
 struct bintime tc_tick_bt;
 sbintime_t tc_tick_sbt;
+int maxproc;
 int tc_precexp;
 
 static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
@@ -106,6 +110,38 @@ SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD,
 
 SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD,
     &maxid_maxcpus, 0, "Max number of CPUs that the system was compiled for.");
+
+/*
+ * Create a single process. RTEMS is a single address, single process OS.
+ */
+static void
+proc0_init(void* dummy)
+{
+	struct proc *p = &proc0;
+	struct ucred *newcred;
+	struct uidinfo tmpuinfo;
+	uuid_t uuid;
+	uihashinit();
+	/* Create the file descriptor table. */
+	newcred = crget();
+	newcred->cr_uid = 0;
+	newcred->cr_ruid = 0;
+	newcred->cr_ngroups = 1;	/* group 0 */
+	newcred->cr_groups[0] = 0;
+	newcred->cr_rgid = 0;
+	tmpuinfo.ui_uid = 1;
+	curthread->td_ucred = newcred;
+	newcred->cr_uidinfo = newcred->cr_ruidinfo = &tmpuinfo;
+	newcred->cr_uidinfo = uifind(0);
+	newcred->cr_ruidinfo = uifind(0);
+	p->p_ucred = newcred;
+	p->p_pid = getpid();
+	p->p_fd = NULL;
+	p->p_fdtol = NULL;
+	uuid_generate(uuid);
+	uuid_unparse(uuid, prison0.pr_hostuuid);
+}
+SYSINIT(p0init, SI_SUB_INTRINSIC, SI_ORDER_FIRST, proc0_init, NULL);
 
 rtems_status_code
 rtems_bsd_initialize(void)
@@ -134,6 +170,8 @@ rtems_bsd_initialize(void)
 	sbt_timethreshold = bttosbt(bt_timethreshold);
 	sbt_tickthreshold = bttosbt(bt_tickthreshold);
 	maxid_maxcpus = (int) rtems_scheduler_get_processor_maximum();
+
+	maxproc = 16;
 
 	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
 

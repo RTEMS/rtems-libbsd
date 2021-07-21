@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -59,15 +61,21 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/sysent.h>
 #include <sys/time.h>
+#ifndef __rtems__
 #include <sys/umtx.h>
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #include <vm/vm.h>
 #include <vm/vm_param.h>
 #include <vm/pmap.h>
 #include <vm/vm_map.h>
+#endif /* __rtems__ */
 
 
+#ifndef __rtems__
 static MALLOC_DEFINE(M_PLIMIT, "plimit", "plimit structures");
+#endif /* __rtems__ */
 static MALLOC_DEFINE(M_UIDINFO, "uidinfo", "uidinfo structures");
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
 static struct rwlock uihashtbl_lock;
@@ -80,6 +88,7 @@ static int	donice(struct thread *td, struct proc *chgp, int n);
 static struct uidinfo *uilookup(uid_t uid);
 static void	ruxagg_locked(struct rusage_ext *rux, struct thread *td);
 
+#ifndef __rtems__
 /*
  * Resource controls and accounting.
  */
@@ -1303,6 +1312,7 @@ lim_rlimit_proc(struct proc *p, int which, struct rlimit *rlp)
 	if (p->p_sysent->sv_fixlimit != NULL)
 		p->p_sysent->sv_fixlimit(rlp, which);
 }
+#endif /* __rtems__ */
 
 void
 uihashinit()
@@ -1443,6 +1453,7 @@ uifree(struct uidinfo *uip)
 	free(uip, M_UIDINFO);
 }
 
+#ifndef __rtems__
 #ifdef RACCT
 void
 ui_racct_foreach(void (*callback)(struct racct *racct,
@@ -1537,3 +1548,4 @@ chgumtxcnt(struct uidinfo *uip, int diff, rlim_t max)
 
 	return (chglimit(uip, &uip->ui_umtxcnt, diff, max, "umtxcnt"));
 }
+#endif /* __rtems__ */

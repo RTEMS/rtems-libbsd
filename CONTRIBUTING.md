@@ -121,6 +121,82 @@ $ git log freebsd-org
 ```
 to figure out the current FreeBSD baseline.
 
+Updates to FreeBSD or RTEMS Kernel Support
+------------------------------------------
+
+If you update code or change any defines that effect the generated
+code in the following paths:
+
+* `freebsd/sys/*.[ch]`
+* `rtemsbsd/rtems/rtems-kernel-*.c`
+
+you need to see if any new kernel symbols have been generated or
+exposed. The tool `rtems-kern-symbols` command supports checking and
+updating the kernel symbol namespace.
+
+The public (global) kernel symbosl need to reside in a private
+namespace to avoid clashing with symbols in the user space code or
+applications. The FreeBSD kernel names functions and variables
+assuming a private kernel only symbols space. RTEMS builds FreeBSD
+kernel and user space code in the same symbols space so there can be
+clashes. We manage this by maintaining a header file that maps the
+global kernel symbols to a private namespace. For example `malloc` is
+mapped to `_bsd_malloc`.
+
+The set of symbols to map is not easy to obtain because symbols may be
+the result of complex preprocessing of the source, the code is
+specific to a BSP or the code is controlled by a buildset.
+
+The approach we use is to not remove symbols unless you are certain
+the symbols have been removed from the FreeBSD kernel source. This is
+a manual operation.
+
+You are required to check symbols with a 32bit and 64bit
+architecture.
+
+If you are working on a specific BSP and related drivers please make
+sure the kernel symbols are checked. It is too much to ask every
+developer to build all BSPs and check.
+
+RTEMS Kernel Symbols Tool
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The python tool `rtems-kern-symbols` can read a kernel header loading
+a previously generated version. This maintains the current symbol set
+without you needing to build the object files previously scanned.
+
+The kernel namespace header can be regenerated from the original
+header. This checks the kernel header is already sorted. If you think
+there is a sorting issue in the existing header please regenerate
+without adding new symbols.
+
+```
+$ ./rtems-kern-symbols --regenerate --output=tmp.h
+```
+
+This command needs access to your built RTEMS tools. You can set your
+environment `PATH` variable or you can specify the top level path as an argument:
+```
+$ ./rtems-kern-symbols --rtems-tools=/opt/work/rtems/6
+```
+
+Options:
+
+* You can provide a different kernel header using the `--kern-header`
+argument. The default is the LibbSD header.
+
+* The `--report` option provides a report.
+
+* The `--diff` option provides a unified diff of any changes.
+
+* The `--write` option is needed to write any changes
+
+* The `--output` option lets you control the output kernel header file
+  change are written too
+
+The tool manages a number of exlcuded symbols. These are symbols in
+the kernel space that are not mapped to the RTEMS kernel namespace.
+
 How to Import Code from FreeBSD
 -------------------------------
 
@@ -134,7 +210,7 @@ How to Import Code from FreeBSD
 * Immediately check in the imported files without the changes to `libbsd.py` and the buildsets.  Do not touch the imported files yourself at this point.
 * Port the imported files to RTEMS.  See 'Rules for Modifying FreeBSD Source'.
 * Add a test to the testsuite if possible.
-* Run `./create-kernel-namespace.sh` if you imported kernel space headers.  Add only your new defines via `git add -p rtemsbsd/include/machine/rtems-bsd-kernel-namespace.h`.
+* Run `./rtems-kern-symbols` as discussed above
 * Create one commit from this.
 
 The -S or --stats option generates reports the changes we have made to

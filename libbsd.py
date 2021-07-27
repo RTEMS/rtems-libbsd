@@ -5020,7 +5020,7 @@ class dhcpcd(builder.Module):
                 'dhcpcd/compat/pselect.c',
                 'dhcpcd/crypt/hmac_md5.c',
             ],
-            mm.generator['source']('-D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET')
+            mm.generator['source']('-D__FreeBSD__ -DTHERE_IS_NO_FORK -DMASTER_ONLY -DINET -Dhmac_md5=_dhcpcd_hmac_md5')
         )
         self.addRTEMSUserSourceFiles(
             [

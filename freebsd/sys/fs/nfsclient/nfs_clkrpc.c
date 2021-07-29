@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -36,7 +38,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_kgssapi.h"
+#include <rtems/bsd/local/opt_kgssapi.h>
 
 #include <fs/nfs/nfsport.h>
 
@@ -296,4 +298,3 @@ nfsrvd_cbinit(int terminating)
 		NFSD_LOCK();
 	}
 }
-

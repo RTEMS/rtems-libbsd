@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -36,7 +38,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_nfs.h"
+#include <rtems/bsd/local/opt_nfs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -49,17 +51,21 @@ __FBSDID("$FreeBSD$");
 #include <sys/mutex.h>
 #include <sys/module.h>
 #include <sys/sysent.h>
+#ifndef __rtems__
 #include <sys/syscall.h>
+#endif /* __rtems__ */
 #include <sys/sysproto.h>
 
 #include <security/audit/audit.h>
 
 #include <nfs/nfssvc.h>
 
+#ifndef __rtems__
 static struct syscall_helper_data nfssvc_syscalls[] = {
 	SYSCALL_INIT_HELPER(nfssvc),
 	SYSCALL_INIT_LAST
 };
+#endif /* __rtems__ */
 
 /*
  * This tiny module simply handles the nfssvc() system call. The other
@@ -124,8 +130,10 @@ nfssvc_modevent(module_t mod, int type, void *data)
 
 	switch (type) {
 	case MOD_LOAD:
+#ifndef __rtems__
 		error = syscall_helper_register(nfssvc_syscalls,
 		    SY_THR_STATIC_KLD);
+#endif /* __rtems__ */
 		break;
 
 	case MOD_UNLOAD:
@@ -134,7 +142,9 @@ nfssvc_modevent(module_t mod, int type, void *data)
 			error = EBUSY;
 			break;
 		}
+#ifndef __rtems__
 		syscall_helper_unregister(nfssvc_syscalls);
+#endif /* __rtems__ */
 		break;
 	default:
 		error = EOPNOTSUPP;
@@ -151,4 +161,3 @@ DECLARE_MODULE(nfssvc, nfssvc_mod, SI_SUB_VFS, SI_ORDER_ANY);
 
 /* So that loader and kldload(2) can find us, wherever we are.. */
 MODULE_VERSION(nfssvc, 1);
-

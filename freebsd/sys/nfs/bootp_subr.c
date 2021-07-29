@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-4-Clause
  *
@@ -45,9 +47,9 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_bootp.h"
-#include "opt_nfs.h"
-#include "opt_rootdevname.h"
+#include <rtems/bsd/local/opt_bootp.h>
+#include <rtems/bsd/local/opt_nfs.h>
+#include <rtems/bsd/local/opt_rootdevname.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>

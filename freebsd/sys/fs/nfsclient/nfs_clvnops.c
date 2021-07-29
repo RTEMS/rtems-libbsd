@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -41,7 +43,7 @@ __FBSDID("$FreeBSD$");
  * vnode op calls for Sun NFS version 2, 3 and 4
  */
 
-#include "opt_inet.h"
+#include <rtems/bsd/local/opt_inet.h>
 
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -59,7 +61,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/vnode.h>
 #include <sys/dirent.h>
 #include <sys/fcntl.h>
+#ifndef __rtems__
 #include <sys/lockf.h>
+#endif /* __rtems__ */
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/signalvar.h>
@@ -334,7 +338,9 @@ nfs_lock(struct vop_lock1_args *ap)
 	np->n_flag &= ~NVNSETSZSKIP;
 	nsize = np->n_size;
 	NFSUNLOCKNODE(np);
+#ifndef __rtems__
 	vnode_pager_setsize(vp, nsize);
+#endif /* __rtems__ */
 downgrade:
 	if (lktype == LK_SHARED) {
 		ap->a_flags &= ~(LK_TYPE_MASK | LK_INTERLOCK);
@@ -683,7 +689,9 @@ nfs_open(struct vop_open_args *ap)
 
 	if (cred != NULL)
 		crfree(cred);
+#ifndef __rtems__
 	vnode_create_vobject(vp, vattr.va_size, ap->a_td);
+#endif /* __rtems__ */
 
 	/*
 	 * If the text file has been mmap'd, flush any dirty pages to the
@@ -694,12 +702,14 @@ nfs_open(struct vop_open_args *ap)
 	 * executing the text file to be terminated.
 	 */
 	if (vp->v_writecount <= -1) {
+#ifndef __rtems__
 		if ((obj = vp->v_object) != NULL &&
 		    (obj->flags & OBJ_MIGHTBEDIRTY) != 0) {
 			VM_OBJECT_WLOCK(obj);
 			vm_object_page_clean(obj, 0, 0, OBJPC_SYNC);
 			VM_OBJECT_WUNLOCK(obj);
 		}
+#endif /* __rtems__ */
 
 		/* Now, flush the buffer cache. */
 		ncl_flush(vp, MNT_WAIT, curthread, 0, 0);
@@ -778,11 +788,13 @@ nfs_close(struct vop_close_args *ap)
 	     * close, regardless of whether they were dirtied by
 	     * mmap'ed writes or via write().
 	     */
+#ifndef __rtems__
 	    if (nfs_clean_pages_on_close && vp->v_object) {
 		VM_OBJECT_WLOCK(vp->v_object);
 		vm_object_page_clean(vp->v_object, 0, 0, 0);
 		VM_OBJECT_WUNLOCK(vp->v_object);
 	    }
+#endif /* __rtems__ */
 	    NFSLOCKNODE(np);
 	    if (np->n_flag & NMODIFIED) {
 		NFSUNLOCKNODE(np);
@@ -805,7 +817,7 @@ nfs_close(struct vop_close_args *ap)
 		    int cm = newnfs_commit_on_close ? 1 : 0;
 		    error = ncl_flush(vp, MNT_WAIT, ap->a_td, cm, 0);
 		    /* np->n_flag &= ~NMODIFIED; */
-		} else if (NFS_ISV4(vp)) { 
+		} else if (NFS_ISV4(vp)) {
 			if (nfscl_mustflush(vp) != 0) {
 				int cm = newnfs_commit_on_close ? 1 : 0;
 				error = ncl_flush(vp, MNT_WAIT, ap->a_td,
@@ -821,10 +833,10 @@ nfs_close(struct vop_close_args *ap)
 		}
 		NFSLOCKNODE(np);
 	    }
- 	    /* 
+ 	    /*
  	     * Invalidate the attribute cache in all cases.
  	     * An open is going to fetch fresh attrs any way, other procs
- 	     * on this node that have file open will be forced to do an 
+ 	     * on this node that have file open will be forced to do an
  	     * otw attr fetch, but this is safe.
 	     * --> A user found that their RPC count dropped by 20% when
 	     *     this was commented out and I can't see any requirement
@@ -879,7 +891,7 @@ nfs_close(struct vop_close_args *ap)
 			 np->n_directio_asyncwr));
 	if (newnfs_directio_enable && (fmode & O_DIRECT) && (vp->v_type == VREG)) {
 		NFSLOCKNODE(np);
-		KASSERT((np->n_directio_opens > 0), 
+		KASSERT((np->n_directio_opens > 0),
 			("nfs_close: unexpectedly value (0) of n_directio_opens\n"));
 		np->n_directio_opens--;
 		if (np->n_directio_opens == 0)
@@ -1009,7 +1021,7 @@ nfs_setattr(struct vop_setattr_args *ap)
 			    vap->va_mode == (mode_t)VNOVAL &&
 			    vap->va_uid == (uid_t)VNOVAL &&
 			    vap->va_gid == (gid_t)VNOVAL)
-				return (0);		
+				return (0);
  			vap->va_size = VNOVAL;
  			break;
  		default:
@@ -1036,7 +1048,9 @@ nfs_setattr(struct vop_setattr_args *ap)
 			    error = ncl_vinvalbuf(vp, vap->va_size == 0 ?
 			        0 : V_SAVE, td, 1);
 			    if (error != 0) {
+#ifndef __rtems__
 				    vnode_pager_setsize(vp, tsize);
+#endif /* __rtems__ */
 				    return (error);
 			    }
 			    /*
@@ -1058,7 +1072,7 @@ nfs_setattr(struct vop_setattr_args *ap)
   		}
   	} else {
 		NFSLOCKNODE(np);
-		if ((vap->va_mtime.tv_sec != VNOVAL || vap->va_atime.tv_sec != VNOVAL) && 
+		if ((vap->va_mtime.tv_sec != VNOVAL || vap->va_atime.tv_sec != VNOVAL) &&
 		    (np->n_flag & NMODIFIED) && vp->v_type == VREG) {
 			NFSUNLOCKNODE(np);
 			error = ncl_vinvalbuf(vp, V_SAVE, td, 1);
@@ -1071,7 +1085,9 @@ nfs_setattr(struct vop_setattr_args *ap)
 	if (error && vap->va_size != VNOVAL) {
 		NFSLOCKNODE(np);
 		np->n_size = np->n_vattr.na_size = tsize;
+#ifndef __rtems__
 		vnode_pager_setsize(vp, tsize);
+#endif /* __rtems__ */
 		NFSUNLOCKNODE(np);
 	}
 	return (error);
@@ -1130,7 +1146,7 @@ nfs_lookup(struct vop_lookup_args *ap)
 	struct nfsvattr dnfsva, nfsva;
 	struct vattr vattr;
 	struct timespec nctime;
-	
+
 	*vpp = NULLVP;
 	if ((flags & ISLASTCN) && (mp->mnt_flag & MNT_RDONLY) &&
 	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
@@ -1207,7 +1223,7 @@ nfs_lookup(struct vop_lookup_args *ap)
 		cache_purge(newvp);
 		if (dvp != newvp)
 			vput(newvp);
-		else 
+		else
 			vrele(newvp);
 		*vpp = NULLVP;
 	} else if (error == ENOENT) {
@@ -1363,7 +1379,7 @@ nfs_lookup(struct vop_lookup_args *ap)
 			(void) nfscl_loadattrcache(&newvp, &nfsva, NULL, NULL,
 			    0, 1);
 		else if ((flags & (ISLASTCN | ISOPEN)) == (ISLASTCN | ISOPEN) &&
-		    !(np->n_flag & NMODIFIED)) {			
+		    !(np->n_flag & NMODIFIED)) {
 			/*
 			 * Flush the attribute cache when opening a
 			 * leaf node to ensure that fresh attributes
@@ -1695,7 +1711,7 @@ again:
 				/* try again without setting uid/gid */
 				vap->va_uid = (uid_t)VNOVAL;
 				vap->va_gid = (uid_t)VNOVAL;
-				error = nfsrpc_setattr(newvp, vap, NULL, 
+				error = nfsrpc_setattr(newvp, vap, NULL,
 				    cnp->cn_cred, cnp->cn_thread, &nfsva,
 				    &attrflag, NULL);
 			}
@@ -1883,7 +1899,7 @@ nfs_rename(struct vop_rename_args *ap)
 	 * under NFSV3.  NFSV2 does not have this problem because
 	 * ( as far as I can tell ) it flushes dirty buffers more
 	 * often.
-	 * 
+	 *
 	 * Skip the rename operation if the fsync fails, this can happen
 	 * due to the server's volume being full, when we pushed out data
 	 * that was written back to our cache earlier. Not checking for
@@ -2295,10 +2311,10 @@ nfs_readdir(struct vop_readdir_args *ap)
 	ssize_t tresid, left;
 	int error = 0;
 	struct vattr vattr;
-	
+
 	if (ap->a_eofflag != NULL)
 		*ap->a_eofflag = 0;
-	if (vp->v_type != VDIR) 
+	if (vp->v_type != VDIR)
 		return(EPERM);
 
 	/*
@@ -2342,7 +2358,7 @@ nfs_readdir(struct vop_readdir_args *ap)
 		if (ap->a_eofflag != NULL)
 			*ap->a_eofflag = 1;
 	}
-	
+
 	/* Add the partial DIRBLKSIZ (left) back in. */
 	uio->uio_resid += left;
 	return (error);
@@ -2376,7 +2392,7 @@ ncl_readdirrpc(struct vnode *vp, struct uio *uiop, struct ucred *cred,
 		cookie = *cookiep;
 		ncl_dircookie_unlock(dnp);
 	} else {
-		ncl_dircookie_unlock(dnp);		
+		ncl_dircookie_unlock(dnp);
 		return (NFSERR_BAD_COOKIE);
 	}
 
@@ -2494,18 +2510,22 @@ nfs_sillyrename(struct vnode *dvp, struct vnode *vp, struct componentname *cnp)
 	sp->s_dvp = dvp;
 	VREF(dvp);
 
-	/* 
+	/*
 	 * Fudge together a funny name.
-	 * Changing the format of the funny name to accommodate more 
+	 * Changing the format of the funny name to accommodate more
 	 * sillynames per directory.
-	 * The name is now changed to .nfs.<ticks>.<pid>.4, where ticks is 
+	 * The name is now changed to .nfs.<ticks>.<pid>.4, where ticks is
 	 * CPU ticks since boot.
 	 */
+#ifndef __rtems__
 	pid = cnp->cn_thread->td_proc->p_pid;
+#else /* __rtems__ */
+	pid = 1;
+#endif /* __rtems__ */
 	lticks = (unsigned int)ticks;
 	for ( ; ; ) {
-		sp->s_namlen = sprintf(sp->s_name, 
-				       ".nfs.%08x.%04x4.4", lticks, 
+		sp->s_namlen = sprintf(sp->s_name,
+				       ".nfs.%08x.%04x4.4", lticks,
 				       pid);
 		if (nfs_lookitup(dvp, sp->s_name, sp->s_namlen, sp->s_cred,
 				 cnp->cn_thread, NULL))
@@ -3041,12 +3061,12 @@ loop:
 		while (np->n_directio_asyncwr > 0) {
 			np->n_flag |= NFSYNCWAIT;
 			error = newnfs_msleep(td, &np->n_directio_asyncwr,
-			    &np->n_mtx, slpflag | (PRIBIO + 1), 
+			    &np->n_mtx, slpflag | (PRIBIO + 1),
 			    "nfsfsync", 0);
 			if (error) {
 				if (newnfs_sigintr(nmp, td)) {
 					NFSUNLOCKNODE(np);
-					error = EINTR;	
+					error = EINTR;
 					goto done;
 				}
 			}
@@ -3106,7 +3126,7 @@ nfs_advlock(struct vop_advlock_args *ap)
 	struct vattr va;
 	int ret, error = EOPNOTSUPP;
 	u_quad_t size;
-	
+
 	ret = NFSVOPLOCK(vp, LK_SHARED);
 	if (ret != 0)
 		return (EBADF);
@@ -3115,9 +3135,11 @@ nfs_advlock(struct vop_advlock_args *ap)
 			NFSVOPUNLOCK(vp, 0);
 			return (EINVAL);
 		}
+#ifndef __rtems__
 		if ((ap->a_flags & F_POSIX) != 0)
 			cred = p->p_ucred;
 		else
+#endif /* __rtems__ */
 			cred = td->td_ucred;
 		NFSVOPLOCK(vp, LK_UPGRADE | LK_RETRY);
 		if (vp->v_iflag & VI_DOOMED) {
@@ -3198,6 +3220,7 @@ nfs_advlock(struct vop_advlock_args *ap)
 		NFSVOPUNLOCK(vp, 0);
 		return (0);
 	} else if (!NFS_ISV4(vp)) {
+#ifndef __rtems__
 		if ((VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NOLOCKD) != 0) {
 			size = VTONFS(vp)->n_size;
 			NFSVOPUNLOCK(vp, 0);
@@ -3220,6 +3243,10 @@ nfs_advlock(struct vop_advlock_args *ap)
 				NFSVOPUNLOCK(vp, 0);
 			}
 		}
+#else /* __rtems__ */
+		NFSVOPUNLOCK(vp, 0);
+		return (0);
+#endif /* __rtems__ */
 	} else
 		NFSVOPUNLOCK(vp, 0);
 	return (error);
@@ -3234,7 +3261,7 @@ nfs_advlockasync(struct vop_advlockasync_args *ap)
 	struct vnode *vp = ap->a_vp;
 	u_quad_t size;
 	int error;
-	
+
 	if (NFS_ISV4(vp))
 		return (EOPNOTSUPP);
 	error = NFSVOPLOCK(vp, LK_SHARED);
@@ -3243,7 +3270,9 @@ nfs_advlockasync(struct vop_advlockasync_args *ap)
 	if ((VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NOLOCKD) != 0) {
 		size = VTONFS(vp)->n_size;
 		NFSVOPUNLOCK(vp, 0);
+#ifndef __rtems__
 		error = lf_advlockasync(ap, &(vp->v_lockf), size);
+#endif /* __rtems__ */
 	} else {
 		NFSVOPUNLOCK(vp, 0);
 		error = EOPNOTSUPP;
@@ -3262,8 +3291,10 @@ nfs_print(struct vop_print_args *ap)
 
 	printf("\tfileid %jd fsid 0x%jx", (uintmax_t)np->n_vattr.na_fileid,
 	    (uintmax_t)np->n_vattr.na_fsid);
+#ifndef __rtems__
 	if (vp->v_type == VFIFO)
 		fifo_printinfo(vp);
+#endif /* __rtems__ */
 	printf("\n");
 	return (0);
 }
@@ -3296,7 +3327,9 @@ ncl_writebp(struct buf *bp, int force __unused, struct thread *td)
 	bp->b_iocmd = BIO_WRITE;
 
 	bufobj_wref(bp->b_bufobj);
+#ifndef __rtems__
 	curthread->td_ru.ru_oublock++;
+#endif /* __rtems__ */
 
 	/*
 	 * Note: to avoid loopback deadlocks, we do not
@@ -3364,6 +3397,7 @@ out:
 static int
 nfsfifo_read(struct vop_read_args *ap)
 {
+#ifndef __rtems__
 	struct nfsnode *np = VTONFS(ap->a_vp);
 	int error;
 
@@ -3375,7 +3409,10 @@ nfsfifo_read(struct vop_read_args *ap)
 	vfs_timestamp(&np->n_atim);
 	NFSUNLOCKNODE(np);
 	error = fifo_specops.vop_read(ap);
-	return error;	
+	return error;
+#else /* __rtems__ */
+	return (EINVAL);
+#endif /* __rtems__ */
 }
 
 /*
@@ -3384,6 +3421,7 @@ nfsfifo_read(struct vop_read_args *ap)
 static int
 nfsfifo_write(struct vop_write_args *ap)
 {
+#ifndef __rtems__
 	struct nfsnode *np = VTONFS(ap->a_vp);
 
 	/*
@@ -3394,6 +3432,9 @@ nfsfifo_write(struct vop_write_args *ap)
 	vfs_timestamp(&np->n_mtim);
 	NFSUNLOCKNODE(np);
 	return(fifo_specops.vop_write(ap));
+#else /* __rtems__ */
+	return (EINVAL);
+#endif /* __rtems__ */
 }
 
 /*
@@ -3404,6 +3445,7 @@ nfsfifo_write(struct vop_write_args *ap)
 static int
 nfsfifo_close(struct vop_close_args *ap)
 {
+#ifndef __rtems__
 	struct vnode *vp = ap->a_vp;
 	struct nfsnode *np = VTONFS(vp);
 	struct vattr vattr;
@@ -3432,6 +3474,9 @@ nfsfifo_close(struct vop_close_args *ap)
 	NFSUNLOCKNODE(np);
 out:
 	return (fifo_specops.vop_close(ap));
+#else /* __rtems__ */
+	return (EINVAL);
+#endif /* __rtems__ */
 }
 
 /*
@@ -3601,4 +3646,3 @@ nfs_pathconf(struct vop_pathconf_args *ap)
 	}
 	return (error);
 }
-

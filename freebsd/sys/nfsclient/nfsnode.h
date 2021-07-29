@@ -102,13 +102,17 @@ struct nfsnode {
 	u_quad_t		n_size;		/* Current size of file */
 	u_quad_t		n_brev;		/* Modify rev when cached */
 	u_quad_t		n_lrev;		/* Modify rev for lease */
+#ifndef __rtems__
 	struct vattr		n_vattr;	/* Vnode attribute cache */
+#endif /* __rtems__ */
 	time_t			n_attrstamp;	/* Attr. cache timestamp */
 	struct nfs_accesscache	n_accesscache[NFS_ACCESSCACHESIZE];
 	struct timespec		n_mtime;	/* Prev modify time. */
 	nfsfh_t			*n_fhp;		/* NFS File Handle */
+#ifndef __rtems__
 	struct vnode		*n_vnode;	/* associated vnode */
 	struct vnode		*n_dvp;		/* parent vnode */
+#endif /* __rtems__ */
 	int			n_error;	/* Save write error value */
 	union {
 		struct timespec	nf_atim;	/* Special file times */

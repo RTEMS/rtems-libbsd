@@ -142,7 +142,7 @@ rtems_bsd_libio_loc_set_vnode(
 		old_new_hc = old->v_holdcnt;
 		old_new_rc = vrefcnt(old);
 	}
-	if (RTEMS_BSD_DESCRIP_TRACE || true)
+	if (RTEMS_BSD_DESCRIP_TRACE)
 		printf(
 		    "bsd: lio: set-vode loc=%p vn=%p (%d/%d)->(%d/%d) old=%p (%d/%d)->(%d/%d)\n",
 		    loc, vp, hc, rc, new_hc, new_rc, old, old_hc, old_rc,

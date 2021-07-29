@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -40,8 +42,8 @@ __FBSDID("$FreeBSD$");
  * Socket operations for use by nfs
  */
 
-#include "opt_kgssapi.h"
-#include "opt_nfs.h"
+#include <rtems/bsd/local/opt_kgssapi.h>
+#include <rtems/bsd/local/opt_nfs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -62,7 +64,9 @@ __FBSDID("$FreeBSD$");
 #include <rpc/rpc.h>
 #include <rpc/krpc.h>
 
+#ifndef __rtems__
 #include <kgssapi/krb5/kcrypto.h>
+#endif /* __rtems__ */
 
 #include <fs/nfs/nfsport.h>
 
@@ -215,7 +219,7 @@ newnfs_connect(struct nfsmount *nmp, struct nfssockreq *nrp,
 			nconf = getnetconfigent("udp6");
 		else
 			nconf = getnetconfigent("tcp6");
-			
+
 	pktscale = nfs_bufpackets;
 	if (pktscale < 2)
 		pktscale = 2;
@@ -233,7 +237,7 @@ newnfs_connect(struct nfsmount *nmp, struct nfssockreq *nrp,
 	 */
 	so = NULL;
 	saddr = NFSSOCKADDR(nrp->nr_nam, struct sockaddr *);
-	error = socreate(saddr->sa_family, &so, nrp->nr_sotype, 
+	error = socreate(saddr->sa_family, &so, nrp->nr_sotype,
 	    nrp->nr_soproto, td->td_ucred, td);
 	if (error) {
 		td->td_ucred = origcred;
@@ -387,7 +391,7 @@ newnfs_connect(struct nfsmount *nmp, struct nfssockreq *nrp,
 		/*
 		 * For UDP, there are 2 timeouts:
 		 * - CLSET_RETRY_TIMEOUT sets the initial timeout for the timer
-		 *   that does a retransmit of an RPC request using the same 
+		 *   that does a retransmit of an RPC request using the same
 		 *   socket and xid. This is what you normally want to do,
 		 *   since NFS servers depend on "same xid" for their
 		 *   Duplicate Request Cache.
@@ -737,7 +741,7 @@ newnfs_request(struct nfsrv_descript *nd, struct nfsmount *nmp,
 		if (dtrace_nfscl_nfs234_start_probe != NULL) {
 			uint32_t probe_id;
 			int probe_procnum;
-	
+
 			if (nd->nd_flag & ND_NFSV4) {
 				probe_id =
 				    nfscl_nfs4_start_probes[nd->nd_procnum];
@@ -1139,9 +1143,9 @@ tryagain:
 				      j != NFSERR_STALESTATEID &&
 				      j != NFSERR_BADSTATEID &&
 				      j != NFSERR_BADSEQID &&
-				      j != NFSERR_BADXDR &&	 
+				      j != NFSERR_BADXDR &&
 				      j != NFSERR_RESOURCE &&
-				      j != NFSERR_NOFILEHANDLE)))		 
+				      j != NFSERR_NOFILEHANDLE)))
 					nd->nd_flag |= ND_INCRSEQID;
 			}
 			/*
@@ -1260,13 +1264,13 @@ static int
 nfs_sig_pending(sigset_t set)
 {
 	int i;
-	
+
 	for (i = 0 ; i < nitems(newnfs_sig_set); i++)
 		if (SIGISMEMBER(set, newnfs_sig_set[i]))
 			return (1);
 	return (0);
 }
- 
+
 /*
  * The set/restore sigmask functions are used to (temporarily) overwrite
  * the thread td_sigmask during an RPC call (for example). These are also
@@ -1275,10 +1279,11 @@ nfs_sig_pending(sigset_t set)
 void
 newnfs_set_sigmask(struct thread *td, sigset_t *oldset)
 {
+#ifndef __rtems__
 	sigset_t newset;
 	int i;
 	struct proc *p;
-	
+
 	SIGFILLSET(newset);
 	if (td == NULL)
 		td = curthread; /* XXX */
@@ -1301,14 +1306,17 @@ newnfs_set_sigmask(struct thread *td, sigset_t *oldset)
 	kern_sigprocmask(td, SIG_SETMASK, &newset, oldset,
 	    SIGPROCMASK_PROC_LOCKED);
 	PROC_UNLOCK(p);
+#endif /* __rtems__ */
 }
 
 void
 newnfs_restore_sigmask(struct thread *td, sigset_t *set)
 {
+#ifndef __rtems__
 	if (td == NULL)
 		td = curthread; /* XXX */
 	kern_sigprocmask(td, SIG_SETMASK, set, NULL, 0);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1338,9 +1346,10 @@ newnfs_msleep(struct thread *td, void *ident, struct mtx *mtx, int priority, cha
 int
 newnfs_sigintr(struct nfsmount *nmp, struct thread *td)
 {
+#ifndef __rtems__
 	struct proc *p;
 	sigset_t tmpset;
-	
+
 	/* Terminate all requests while attempting a forced unmount. */
 	if (NFSCL_FORCEDISM(nmp->nm_mountp))
 		return (EIO);
@@ -1362,6 +1371,7 @@ newnfs_sigintr(struct nfsmount *nmp, struct thread *td)
 		return (EINTR);
 	}
 	PROC_UNLOCK(p);
+#endif /* __rtems__ */
 	return (0);
 }
 
@@ -1423,7 +1433,7 @@ nfs_up(struct nfsmount *nmp, struct thread *td, const char *msg,
 		    VQ_NOTRESP, 1);
 	} else
 		mtx_unlock(&nmp->nm_mtx);
-	
+
 	mtx_lock(&nmp->nm_mtx);
 	if ((flags & NFSSTA_LOCKTIMEO) && (nmp->nm_state & NFSSTA_LOCKTIMEO)) {
 		nmp->nm_state &= ~NFSSTA_LOCKTIMEO;
@@ -1433,4 +1443,3 @@ nfs_up(struct nfsmount *nmp, struct thread *td, const char *msg,
 	} else
 		mtx_unlock(&nmp->nm_mtx);
 }
-

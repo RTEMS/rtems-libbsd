@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -36,8 +38,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_inet.h"
-#include "opt_inet6.h"
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/capsicum.h>
 
@@ -232,7 +234,11 @@ nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
 	 * destroy the mutex (in the case of the loser, or if hash_insert
 	 * happened to return an error no special casing is needed).
 	 */
+#ifndef __rtems__
 	mtx_init(&np->n_mtx, "NEWNFSnode lock", NULL, MTX_DEF | MTX_DUPOK);
+#else /* __rtems__ */
+	mtx_init(&np->n_mtx, "NEWNFSnode lock", NULL, MTX_DEF | MTX_DUPOK | MTX_RECURSE);
+#endif /* __rtems__ */
 	lockinit(&np->n_excl, PVFS, "nfsupg", VLKTIMEOUT, LK_NOSHARE |
 	    LK_CANRECURSE);
 
@@ -432,7 +438,11 @@ nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
 	if (vp->v_type != nvap->va_type) {
 		vp->v_type = nvap->va_type;
 		if (vp->v_type == VFIFO)
+#ifndef __rtems__
 			vp->v_op = &newnfs_fifoops;
+#else /* __rtems__ */
+			panic("no newnfs_fifoops");
+#endif /* __rtems__ */
 		np->n_mtime = nvap->va_mtime;
 	}
 	nmp = VFSTONFS(vp->v_mount);
@@ -596,16 +606,20 @@ ncl_pager_setsize(struct vnode *vp, u_quad_t *nsizep)
 	object = vp->v_object;
 	setnsize = false;
 
+#ifndef __rtems__
 	if (object != NULL && nsize != object->un_pager.vnp.vnp_size) {
 		if (VOP_ISLOCKED(vp) == LK_EXCLUSIVE)
 			setnsize = true;
 		else
 			np->n_flag |= NVNSETSZSKIP;
 	}
+#endif /* __rtems__ */
 	if (nsizep == NULL) {
 		NFSUNLOCKNODE(np);
+#ifndef __rtems__
 		if (setnsize)
 			vnode_pager_setsize(vp, nsize);
+#endif /* __rtems__ */
 		setnsize = false;
 	} else {
 		*nsizep = nsize;
@@ -678,12 +692,20 @@ nfscl_filllockowner(void *id, u_int8_t *cp, int flags)
 		*cp++ = tl.cval[1];
 		*cp++ = tl.cval[2];
 		*cp++ = tl.cval[3];
+#ifndef __rtems__
 		tl.lval = p->p_stats->p_start.tv_sec;
+#else /* __rtems__ */
+		tl.lval = 0;
+#endif /* __rtems__ */
 		*cp++ = tl.cval[0];
 		*cp++ = tl.cval[1];
 		*cp++ = tl.cval[2];
 		*cp++ = tl.cval[3];
+#ifndef __rtems__
 		tl.lval = p->p_stats->p_start.tv_usec;
+#else /* __rtems__ */
+		tl.lval = 0;
+#endif /* __rtems__ */
 		*cp++ = tl.cval[0];
 		*cp++ = tl.cval[1];
 		*cp++ = tl.cval[2];
@@ -705,6 +727,7 @@ nfscl_filllockowner(void *id, u_int8_t *cp, int flags)
 NFSPROC_T *
 nfscl_getparent(struct thread *td)
 {
+#ifndef __rtems__
 	struct proc *p;
 	struct thread *ptd;
 
@@ -718,6 +741,9 @@ nfscl_getparent(struct thread *td)
 		return (NULL);
 	ptd = TAILQ_FIRST(&p->p_threads);
 	return (ptd);
+#else /* __rtems__ */
+	return (NULL);
+#endif /* __rtems__ */
 }
 
 /*
@@ -730,7 +756,11 @@ start_nfscl(void *arg)
 	struct thread *td;
 
 	clp = (struct nfsclclient *)arg;
+#ifndef __rtems__
 	td = TAILQ_FIRST(&clp->nfsc_renewthread->p_threads);
+#else /* __rtems__ */
+	td = rtems_bsd_get_curthread_or_wait_forever();
+#endif /* __rtems__ */
 	nfscl_renewthread(clp, td);
 	kproc_exit(0);
 }
@@ -971,7 +1001,11 @@ nfscl_getmyip(struct nfsmount *nmp, struct in6_addr *paddr, int *isinet6p)
 #if defined(INET6) || defined(INET)
 	int error, fibnum;
 
+#ifndef __rtems__
 	fibnum = curthread->td_proc->p_fibnum;
+#else /* __rtems__ */
+	fibnum = 0;
+#endif /* __rtems__ */
 #endif
 #ifdef INET
 	if (nmp->nm_nam->sa_family == AF_INET) {
@@ -1052,6 +1086,9 @@ nfscl_init(void)
 	inited = 1;
 	nfscl_inited = 1;
 	ncl_pbuf_freecnt = nswbuf / 2 + 1;
+#ifdef __rtems__
+	ncl_pbuf_zone = pbuf_zsecond_create("nfspbuf", ncl_pbuf_freecnt);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1173,6 +1210,7 @@ nfscl_procdoesntexist(u_int8_t *own)
 	pid_t pid;
 	int i, ret = 0;
 
+#ifndef __rtems__
 	/* For the single open_owner of all 0 bytes, just return 0. */
 	for (i = 0; i < NFSV4CL_LOCKNAMELEN; i++)
 		if (own[i] != 0)
@@ -1207,6 +1245,7 @@ nfscl_procdoesntexist(u_int8_t *own)
 			ret = 1;
 	}
 	PROC_UNLOCK(p);
+#endif /* __rtems__ */
 	return (ret);
 }
 
@@ -1243,10 +1282,12 @@ nfssvc_nfscl(struct thread *td, struct nfssvc_args *uap)
 		    cap_rights_init(&rights, CAP_SOCK_CLIENT), &fp);
 		if (error)
 			return (error);
+#ifndef __rtems__
 		if (fp->f_type != DTYPE_SOCKET) {
 			fdrop(fp, td);
 			return (EPERM);
 		}
+#endif /* __rtems__ */
 		error = nfscbd_addsock(fp);
 		fdrop(fp, td);
 		if (!error && nfscl_enablecallb == 0) {
@@ -1411,4 +1452,3 @@ MODULE_DEPEND(nfscl, nfscommon, 1, 1, 1);
 MODULE_DEPEND(nfscl, krpc, 1, 1, 1);
 MODULE_DEPEND(nfscl, nfssvc, 1, 1, 1);
 MODULE_DEPEND(nfscl, nfslock, 1, 1, 1);
-

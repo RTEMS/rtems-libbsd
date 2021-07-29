@@ -42,7 +42,7 @@
  * to be the cleanest way to handle #include files for the ports.
  */
 #ifdef _KERNEL
-#include <sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/conf.h>
@@ -53,7 +53,9 @@
 #include <sys/filedesc.h>
 #include <sys/jail.h>
 #include <sys/kernel.h>
+#ifndef __rtems__
 #include <sys/lockf.h>
+#endif /* __rtems__ */
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/mount.h>
@@ -77,7 +79,9 @@
 #include <sys/acl.h>
 #include <sys/module.h>
 #include <sys/sysent.h>
+#ifndef __rtems__
 #include <sys/syscall.h>
+#endif /* __rtems__ */
 #include <sys/priv.h>
 #include <sys/kthread.h>
 #include <sys/syscallsubr.h>
@@ -108,6 +112,7 @@
  * (This is always defined as nil otherwise.)
  */
 #define	APPLESTATIC
+#ifndef __rtems__
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -117,9 +122,10 @@
 #include <vm/vm.h>
 #include <vm/vm_object.h>
 #include <vm/vm_extern.h>
+#endif /* __rtems__ */
 #include <nfs/nfssvc.h>
-#include "opt_nfs.h"
-#include "opt_ufs.h"
+#include <rtems/bsd/local/opt_nfs.h>
+#include <rtems/bsd/local/opt_ufs.h>
 
 /*
  * These types must be defined before the nfs includes.
@@ -697,8 +703,13 @@ void nfsrvd_rcv(struct socket *, void *, int);
 #define	NFSASSERTIOD()		mtx_assert(&ncl_iod_mutex, MA_OWNED)
 #define	NFSLOCKREQUEST(r)	mtx_lock(&((r)->r_mtx))
 #define	NFSUNLOCKREQUEST(r)	mtx_unlock(&((r)->r_mtx))
+#ifndef __rtems__
 #define	NFSPROCLISTLOCK()	sx_slock(&allproc_lock)
 #define	NFSPROCLISTUNLOCK()	sx_sunlock(&allproc_lock)
+#else /* __rtems__ */
+#define	NFSPROCLISTLOCK()
+#define	NFSPROCLISTUNLOCK()
+#endif /* __rtems__ */
 #define	NFSLOCKSOCKREQ(r)	mtx_lock(&((r)->nr_mtx))
 #define	NFSUNLOCKSOCKREQ(r)	mtx_unlock(&((r)->nr_mtx))
 #define	NFSLOCKDS(d)		mtx_lock(&((d)->nfsclds_mtx))

@@ -289,7 +289,8 @@ class Builder(builder.ModuleManager):
                       (bld.env.NET_CONFIG))
         tags = [
             'NET_CFG_INTERFACE_0', 'NET_CFG_SELF_IP', 'NET_CFG_NETMASK',
-            'NET_CFG_PEER_IP', 'NET_CFG_GATEWAY_IP'
+            'NET_CFG_PEER_IP', 'NET_CFG_GATEWAY_IP', 'NET_CFG_NFS_MOUNT_PATH',
+            'NET_CFG_NFS_MOUNT_OPTIONS'
         ]
         try:
             net_cfg_lines = open(bld.env.NET_CONFIG).readlines()
@@ -307,9 +308,19 @@ class Builder(builder.ModuleManager):
                               'parse error: %d: %s' % (bld.env.NET_CONFIG, lc, l))
                 lhs = ls[0].strip()
                 rhs = ls[1].strip()
-                for t in tags:
-                    if lhs == t:
-                        sed += "-e 's/@%s@/%s/' " % (t, rhs)
+                for tag in tags:
+                    if lhs == tag:
+                        transpose = [(':', '\:'), ('/', '\/')]
+                        trhs = ''
+                        for c in rhs:
+                            for t in transpose:
+                                if c == t[0]:
+                                    trhs += t[1]
+                                    c = None
+                                    break
+                            if c is not None:
+                                trhs += c
+                        sed += "-e 's/@%s@/%s/' " % (tag, trhs)
         bld(target="testsuite/include/rtems/bsd/test/network-config.h",
             source="testsuite/include/rtems/bsd/test/network-config.h.in",
             rule=sed + " < ${SRC} > ${TGT}",
@@ -585,11 +596,14 @@ class Builder(builder.ModuleManager):
             test_source = []
             libs = ['bsd', 'm', 'z', 'rtemstest']
             for cfg in test:
-                build_test = True
-                for mod in test[cfg]['modules']:
-                    if mod not in enabled_modules:
-                        build_test = False
-                        break
+                if len(test[cfg]['modules']) == 0:
+                    build_test = True
+                else:
+                    build_test = False
+                    for mod in test[cfg]['modules']:
+                        if mod in enabled_modules:
+                            build_test = True
+                            break
                 if build_test and cfg != 'default':
                     for c in cfg.split(' '):
                         if not bld.env['HAVE_%s' % (c)]:

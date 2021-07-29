@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -142,7 +144,11 @@ ncl_nget(struct mount *mntp, u_int8_t *fhp, int fhsize, struct nfsnode **npp,
 	 * destroy the mutex (in the case of the loser, or if hash_insert
 	 * happened to return an error no special casing is needed).
 	 */
+#ifndef __rtems__
 	mtx_init(&np->n_mtx, "NEWNFSnode lock", NULL, MTX_DEF | MTX_DUPOK);
+#else /* __rtems__ */
+	mtx_init(&np->n_mtx, "NEWNFSnode lock", NULL, MTX_DEF | MTX_DUPOK | MTX_RECURSE);
+#endif /* __rtems__ */
 	lockinit(&np->n_excl, PVFS, "nfsupg", VLKTIMEOUT, LK_NOSHARE |
 	    LK_CANRECURSE);
 
@@ -250,8 +256,10 @@ ncl_inactive(struct vop_inactive_args *ap)
 		 */
 		if (vp->v_object != NULL) {
 			VM_OBJECT_WLOCK(vp->v_object);
+#ifndef __rtems__
 			retv = vm_object_page_clean(vp->v_object, 0, 0,
 			    OBJPC_SYNC);
+#endif /* __rtems__ */
 			VM_OBJECT_WUNLOCK(vp->v_object);
 		} else
 			retv = TRUE;
@@ -301,7 +309,9 @@ ncl_reclaim(struct vop_reclaim_args *ap)
 	/*
 	 * Destroy the vm object and flush associated pages.
 	 */
+#ifndef __rtems__
 	vnode_destroy_vobject(vp);
+#endif /* __rtems__ */
 
 	if (NFS_ISV4(vp) && vp->v_type == VREG)
 		/*

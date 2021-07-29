@@ -96,7 +96,8 @@ void ncl_doio_directwrite(struct buf *);
 int ncl_bioread(struct vnode *, struct uio *, int, struct ucred *);
 int ncl_biowrite(struct vnode *, struct uio *, int, struct ucred *);
 int ncl_vinvalbuf(struct vnode *, int, struct thread *, int);
-int ncl_asyncio(struct nfsmount *, struct buf *, struct ucred *,
+int ncl_asyncio(struct
+		nfsmount *, struct buf *, struct ucred *,
     struct thread *);
 int ncl_doio(struct vnode *, struct buf *, struct ucred *, struct thread *,
     int);

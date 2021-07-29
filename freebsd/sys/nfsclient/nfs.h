@@ -39,7 +39,7 @@
 #define _NFSCLIENT_NFS_H_
 
 #ifdef _KERNEL
-#include "opt_nfs.h"
+#include <rtems/bsd/local/opt_nfs.h>
 #endif
 
 #include <nfsclient/nfsargs.h>

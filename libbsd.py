@@ -2885,6 +2885,138 @@ class rpc(builder.Module):
         )
 
 #
+# NFS
+#
+class nfs(builder.Module):
+
+    def __init__(self, manager):
+        super(nfs, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addDependency('rpc')
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/nfs/krpc.h',
+                'sys/nfs/nfs_common.h',
+                'sys/nfs/nfs_fha.h',
+                'sys/nfs/nfs_kdtrace.h',
+                'sys/nfs/nfs_lock.h',
+                'sys/nfs/nfs_mountcommon.h',
+                'sys/nfs/nfsdiskless.h',
+                'sys/nfs/nfsproto.h',
+                'sys/nfs/nfssvc.h',
+                'sys/nfs/xdr_subs.h',
+                'sys/nfsclient/nfs.h',
+                'sys/nfsclient/nfsargs.h',
+                'sys/nfsclient/nfsm_subs.h',
+                'sys/nfsclient/nfsmount.h',
+                'sys/nfsclient/nfsnode.h',
+                'sys/nfsclient/nfsstats.h',
+                'sys/nfsclient/nlminfo.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/nfs/bootp_subr.c',
+                'sys/nfs/krpc_subr.c',
+                'sys/nfs/nfs_fha.c',
+                'sys/nfs/nfs_lock.c',
+                'sys/nfs/nfs_nfssvc.c',
+            ],
+            mm.generator['source']()
+        )
+
+#
+# File System NFS
+#
+class fs_nfs(builder.Module):
+
+    def __init__(self, manager):
+        super(fs_nfs, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addDependency('rpc')
+        self.addDependency('nfs')
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/fs/nfs/nfs.h',
+                'sys/fs/nfs/nfs_var.h',
+                'sys/fs/nfs/nfscl.h',
+                'sys/fs/nfs/nfsclstate.h',
+                'sys/fs/nfs/nfsdport.h',
+                'sys/fs/nfs/nfskpiport.h',
+                'sys/fs/nfs/nfsm_subs.h',
+                'sys/fs/nfs/nfsport.h',
+                'sys/fs/nfs/nfsproto.h',
+                'sys/fs/nfs/nfsrvcache.h',
+                'sys/fs/nfs/nfsrvstate.h',
+                'sys/fs/nfs/nfsv4_errstr.h',
+                'sys/fs/nfs/rpcv2.h',
+                'sys/fs/nfs/xdr_subs.h',
+            ]
+        )
+        fs_nfs_cflags = ['-DEBADRPC=72',
+                         '-DPVFS=10']
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/fs/nfs/nfs_commonacl.c',
+                'sys/fs/nfs/nfs_commonkrpc.c',
+                'sys/fs/nfs/nfs_commonport.c',
+                'sys/fs/nfs/nfs_commonsubs.c',
+            ],
+            mm.generator['source']()
+        )
+
+
+#
+# File System NFS Client
+#
+class fs_nfsclient(builder.Module):
+
+    def __init__(self, manager):
+        super(fs_nfsclient, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addDependency('rpc')
+        self.addDependency('nfs')
+        self.addDependency('fs_nfs')
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/fs/nfsclient/nfs.h',
+                'sys/fs/nfsclient/nfsmount.h',
+                'sys/fs/nfsclient/nfsnode.h',
+                'sys/fs/nfsclient/nlminfo.h',
+                'sys/fs/nfsclient/nfs_kdtrace.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/fs/nfsclient/nfs_clbio.c',
+                'sys/fs/nfsclient/nfs_clcomsubs.c',
+                'sys/fs/nfsclient/nfs_clkdtrace.c',
+                'sys/fs/nfsclient/nfs_clkrpc.c',
+                'sys/fs/nfsclient/nfs_clnfsiod.c',
+                'sys/fs/nfsclient/nfs_clnode.c',
+                'sys/fs/nfsclient/nfs_clport.c',
+                'sys/fs/nfsclient/nfs_clrpcops.c',
+                'sys/fs/nfsclient/nfs_clstate.c',
+                'sys/fs/nfsclient/nfs_clsubs.c',
+                'sys/fs/nfsclient/nfs_clvfsops.c',
+                'sys/fs/nfsclient/nfs_clvnops.c',
+            ],
+            mm.generator['source'](['-DDIRBLKSIZ=512'])
+        )
+        self.addRTEMSUserSourceFiles(
+            [
+                'fs/nfsclient/nfs.c'
+            ],
+            mm.generator['source']()
+        )
+
+#
 # PCI
 #
 class pci(builder.Module):
@@ -5312,7 +5444,8 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('ttcpshell01', ['test_main'], netTest = True, runTest = False))
         self.addTest(mm.generator['test']('epoch01', ['test_main'], extraLibs = ['rtemstest']))
         self.addTest(mm.generator['test']('nfs01', ['test_main'],
-                                          netTest = True, modules = ['nfsv2']))
+                                          netTest = True, modules = ['nfsv2', 'fs_nfsclient'],
+                                          extraLibs = ['telnetd']))
         self.addTest(mm.generator['test']('foobarclient', ['test_main'],
                                           runTest = False, netTest = True))
         self.addTest(mm.generator['test']('foobarserver', ['test_main'],
@@ -5447,6 +5580,9 @@ def load(mm):
     mm.addModule(nfsv2(mm))
 
     mm.addModule(rpc(mm))
+    mm.addModule(nfs(mm))
+    mm.addModule(fs_nfs(mm))
+    mm.addModule(fs_nfsclient(mm))
 
     # Add PCI
     mm.addModule(pci(mm))

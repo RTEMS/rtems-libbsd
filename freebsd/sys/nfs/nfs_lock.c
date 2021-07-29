@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -41,7 +43,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/limits.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
+#ifndef __rtems__
 #include <sys/lockf.h>		/* for hz */ /* Must come after sys/malloc.h */
+#endif /* __rtems__ */
 #include <sys/mbuf.h>
 #include <sys/mount.h>
 #include <sys/namei.h>
@@ -50,7 +54,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/resourcevar.h>
 #include <sys/socket.h>
 #include <sys/socket.h>
-#include <sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 #include <sys/vnode.h>
 
 #include <net/if.h>
@@ -286,7 +290,9 @@ nfs_dolock(struct vop_advlock_args *ap)
 	if (p->p_nlminfo == NULL) {
 		p->p_nlminfo = malloc(sizeof(struct nlminfo),
 		    M_NLMINFO, M_WAITOK | M_ZERO);
+#ifndef __rtems__
 		p->p_nlminfo->pid_start = p->p_stats->p_start;
+#endif /* __rtems__ */
 		getboottime(&boottime);
 		timevaladd(&p->p_nlminfo->pid_start, &boottime);
 	}
@@ -337,7 +343,9 @@ nfs_dolock(struct vop_advlock_args *ap)
 
 		if (msg.lm_getlk && p->p_nlminfo->retcode == 0) {
 			if (p->p_nlminfo->set_getlk_pid) {
+#ifndef __rtems__
 				fl->l_sysid = 0; /* XXX */
+#endif /* __rtems__ */
 				fl->l_pid = p->p_nlminfo->getlk_pid;
 			} else {
 				fl->l_type = F_UNLCK;
@@ -364,9 +372,13 @@ nfslockdans(struct thread *td, struct lockd_ans *ansp)
 	if (ansp->la_vers != LOCKD_ANS_VERSION)
 		return (EINVAL);
 
+#ifndef __rtems__
 	/* Find the process, set its return errno and wake it up. */
 	if ((targetp = pfind(ansp->la_msg_ident.pid)) == NULL)
 		return (ESRCH);
+#else /* __rtems__ */
+	targetp = td->td_proc;
+#endif /* __rtems__ */
 
 	/* verify the pid hasn't been reused (if we can), and it isn't waiting
 	 * for an answer from a more recent request.  We return an EPIPE if

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -38,8 +40,8 @@
 __FBSDID("$FreeBSD$");
 
 
-#include "opt_bootp.h"
-#include "opt_nfsroot.h"
+#include <rtems/bsd/local/opt_bootp.h>
+#include <rtems/bsd/local/opt_nfsroot.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -49,7 +51,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/clock.h>
 #include <sys/jail.h>
 #include <sys/limits.h>
+#ifndef __rtems__
 #include <sys/lock.h>
+#endif /* __rtems__ */
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/module.h>
@@ -446,6 +450,7 @@ nfs_mountroot(struct mount *mp)
 	error = ifioctl(so, SIOCAIFADDR, (caddr_t)&nd->myif, td);
 	if (error)
 		panic("nfs_mountroot: SIOCAIFADDR: %d", error);
+#ifndef __rtems__
 	if ((cp = kern_getenv("boot.netif.mtu")) != NULL) {
 		ir.ifr_mtu = strtol(cp, NULL, 10);
 		bcopy(nd->myif.ifra_name, ir.ifr_name, IFNAMSIZ);
@@ -454,6 +459,7 @@ nfs_mountroot(struct mount *mp)
 		if (error)
 			printf("nfs_mountroot: SIOCSIFMTU: %d", error);
 	}
+#endif /* __rtems__ */
 	soclose(so);
 
 	/*
@@ -506,7 +512,9 @@ nfs_mountroot(struct mount *mp)
 	strlcpy(prison0.pr_hostname, nd->my_hostnam,
 	    sizeof(prison0.pr_hostname));
 	mtx_unlock(&prison0.pr_mtx);
+#ifndef __rtems__
 	inittodr(ntohl(nd->root_time));
+#endif /* __rtems__ */
 	return (0);
 }
 
@@ -1178,7 +1186,11 @@ nfs_mount(struct mount *mp)
 		 * "nfsreq".
 		 */
 		if (args.sotype == SOCK_DGRAM && nmp->nm_sotype == SOCK_STREAM)
+#ifndef __rtems__
 			tprintf(td->td_proc, LOG_WARNING,
+#else /* __rtems__ */
+			printf(
+#endif /* __rtems__ */
 	"Warning: mount -u that changes TCP->UDP can result in hung threads\n");
 
 		/*
@@ -2048,4 +2060,3 @@ void nfscl_retopts(struct nfsmount *nmp, char *buffer, size_t buflen)
 	nfscl_printoptval(nmp, nmp->nm_timeo, ",timeout", &buf, &blen);
 	nfscl_printoptval(nmp, nmp->nm_retry, ",retrans", &buf, &blen);
 }
-

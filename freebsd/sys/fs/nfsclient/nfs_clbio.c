@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -53,7 +55,9 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_page.h>
 #include <vm/vm_object.h>
 #include <vm/vm_pager.h>
+#ifndef __rtems__
 #include <vm/vnode_pager.h>
+#endif /* __rtems__ */
 
 #include <fs/nfs/nfsport.h>
 #include <fs/nfsclient/nfsmount.h>
@@ -173,10 +177,12 @@ ncl_getpages(struct vop_getpages_args *ap)
 	 *
 	 * XXXGL: is that true for NFS, where short read can occur???
 	 */
+#ifndef __rtems__
 	VM_OBJECT_WLOCK(object);
 	if (pages[npages - 1]->valid != 0 && --npages == 0)
 		goto out;
 	VM_OBJECT_WUNLOCK(object);
+#endif /* __rtems__*/
 
 	/*
 	 * We use only the kva address for the buffer, but this is extremely
@@ -185,7 +191,9 @@ ncl_getpages(struct vop_getpages_args *ap)
 	bp = getpbuf(&ncl_pbuf_freecnt);
 
 	kva = (vm_offset_t) bp->b_data;
+#ifndef __rtems__
 	pmap_qenter(kva, pages, npages);
+#endif /* __rtems__*/
 	VM_CNT_INC(v_vnodein);
 	VM_CNT_ADD(v_vnodepgsin, npages);
 
@@ -194,14 +202,20 @@ ncl_getpages(struct vop_getpages_args *ap)
 	iov.iov_len = count;
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
+#ifndef __rtems__
 	uio.uio_offset = IDX_TO_OFF(pages[0]->pindex);
+#else /* __rtems__*/
+	uio.uio_offset = 0;
+#endif /* __rtems__*/
 	uio.uio_resid = count;
 	uio.uio_segflg = UIO_SYSSPACE;
 	uio.uio_rw = UIO_READ;
 	uio.uio_td = td;
 
 	error = ncl_readrpc(vp, &uio, cred);
+#ifndef __rtems__
 	pmap_qremove(kva, npages);
+#endif /* __rtems__*/
 
 	relpbuf(bp, &ncl_pbuf_freecnt);
 
@@ -221,6 +235,7 @@ ncl_getpages(struct vop_getpages_args *ap)
 	for (i = 0, toff = 0; i < npages; i++, toff = nextoff) {
 		vm_page_t m;
 		nextoff = toff + PAGE_SIZE;
+#ifndef __rtems__
 		m = pages[i];
 
 		if (nextoff <= size) {
@@ -250,8 +265,11 @@ ncl_getpages(struct vop_getpages_args *ap)
 			 */
 			;
 		}
+#endif /* __rtems__*/
 	}
+#ifndef __rtems__
 out:
+#endif /* __rtems__ */
 	VM_OBJECT_WUNLOCK(object);
 	if (ap->a_rbehind)
 		*ap->a_rbehind = 0;
@@ -291,7 +309,11 @@ ncl_putpages(struct vop_putpages_args *ap)
 	count = ap->a_count;
 	rtvals = ap->a_rtvals;
 	npages = btoc(count);
+#ifndef __rtems__
 	offset = IDX_TO_OFF(pages[0]->pindex);
+#else /* __rtems__*/
+	offset = 0;
+#endif /* __rtems__*/
 
 	mtx_lock(&nmp->nm_mtx);
 	if ((nmp->nm_flag & NFSMNT_NFSV3) != 0 &&
@@ -334,14 +356,20 @@ ncl_putpages(struct vop_putpages_args *ap)
 	uio.uio_rw = UIO_WRITE;
 	uio.uio_td = td;
 
+#ifndef __rtems__
 	error = VOP_WRITE(vp, &uio, vnode_pager_putpages_ioflags(ap->a_sync),
 	    cred);
+#else /* __rtems__*/
+	error = VOP_WRITE(vp, &uio, 0, cred);
+#endif /* __rtems__*/
 	crfree(cred);
 
+#ifndef __rtems__
 	if (error == 0 || !nfs_keep_dirty_on_error) {
 		vnode_pager_undirty_pages(pages, rtvals, count - uio.uio_resid,
 		    np->n_size - offset, npages * PAGE_SIZE);
 	}
+#endif /* __rtems__*/
 	return (rtvals[0]);
 }
 
@@ -709,6 +737,7 @@ ncl_bioread(struct vnode *vp, struct uio *uio, int ioflag, struct ucred *cred)
 	return (error);
 }
 
+#ifdef __rtems__
 /*
  * The NFS write path cannot handle iovecs with len > 1. So we need to
  * break up iovecs accordingly (restricting them to wsize).
@@ -855,6 +884,7 @@ err_free:
 	}
 	return (0);
 }
+#endif /* __rtems__ */
 
 /*
  * Vnode op for write using bio
@@ -1044,7 +1074,9 @@ again:
 				NFSLOCKNODE(np);
 				np->n_size = uio->uio_offset + n;
 				np->n_flag |= NMODIFIED;
+#ifndef __rtems__
 				vnode_pager_setsize(vp, np->n_size);
+#endif /* __rems__ */
 				NFSUNLOCKNODE(np);
 
 				save = bp->b_flags & B_CACHE;
@@ -1073,7 +1105,9 @@ again:
 			if (uio->uio_offset + n > np->n_size) {
 				np->n_size = uio->uio_offset + n;
 				np->n_flag |= NMODIFIED;
+#ifndef __rtems__
 				vnode_pager_setsize(vp, np->n_size);
+#endif /* __rems__ */
 			}
 			NFSUNLOCKNODE(np);
 		}
@@ -1265,6 +1299,7 @@ again:
 	return (error);
 }
 
+#ifdef __rtems__
 /*
  * Get an nfs cache block.
  *
@@ -1309,6 +1344,7 @@ nfs_getcacheblk(struct vnode *vp, daddr_t bn, int size, struct thread *td)
 		bp->b_blkno = bn * (vp->v_bufobj.bo_bsize / DEV_BSIZE);
 	return (bp);
 }
+#endif /* __rtems__ */
 
 /*
  * Flush and invalidate all dirty buffers. If another process is already
@@ -1345,9 +1381,11 @@ ncl_vinvalbuf(struct vnode *vp, int flags, struct thread *td, int intrflg)
 	 */
 	if ((flags & (V_SAVE | V_VMIO)) == V_SAVE &&
 	     vp->v_bufobj.bo_object != NULL) {
+#ifndef __rtems__
 		VM_OBJECT_WLOCK(vp->v_bufobj.bo_object);
 		vm_object_page_clean(vp->v_bufobj.bo_object, 0, 0, OBJPC_SYNC);
 		VM_OBJECT_WUNLOCK(vp->v_bufobj.bo_object);
+#endif /* __rtems__*/
 		/*
 		 * If the page clean was interrupted, fail the invalidation.
 		 * Not doing so, we run the risk of losing dirty pages in the
@@ -1392,6 +1430,9 @@ out:
 int
 ncl_asyncio(struct nfsmount *nmp, struct buf *bp, struct ucred *cred, struct thread *td)
 {
+#ifdef __rtems__
+	return (EOPNOTSUPP);
+#else /* __rtems__ */
 	int iod;
 	int gotiod;
 	int slpflag = 0;
@@ -1533,12 +1574,16 @@ again:
 	 * force the caller to process the i/o synchronously.
 	 */
 	NFS_DPF(ASYNCIO, ("ncl_asyncio: no iods available, i/o is synchronous\n"));
+#endif /* __rtems__ */
 	return (EIO);
 }
 
 void
 ncl_doio_directwrite(struct buf *bp)
 {
+#ifdef __rtems__
+	panic("not supported in RTEMS");
+#else /* __rtems__ */
 	int iomode, must_commit;
 	struct uio *uiop = (struct uio *)bp->b_caller1;
 	char *iov_base = uiop->uio_iov->iov_base;
@@ -1572,6 +1617,7 @@ ncl_doio_directwrite(struct buf *bp)
 	}
 	bp->b_vp = NULL;
 	relpbuf(bp, &ncl_pbuf_freecnt);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1643,9 +1689,13 @@ ncl_doio(struct vnode *vp, struct buf *bp, struct ucred *cr, struct thread *td,
 			NFSLOCKNODE(np);
 			if (NFS_TIMESPEC_COMPARE(&np->n_mtime, &np->n_vattr.na_mtime)) {
 				NFSUNLOCKNODE(np);
+#ifndef __rtems__
 				PROC_LOCK(p);
 				killproc(p, "text file modification");
 				PROC_UNLOCK(p);
+#else /* __rtems__ */
+				panic("nfsclient: text file modification: want to killproc");
+#endif /* _-rtems__ */
 			} else
 				NFSUNLOCKNODE(np);
 		}
@@ -1867,8 +1917,9 @@ ncl_meta_setsize(struct vnode *vp, struct thread *td, u_quad_t nsize)
 		bp->b_flags |= B_RELBUF;  /* don't leave garbage around */
 		brelse(bp);
 	} else {
+#ifndef __rtems__
 		vnode_pager_setsize(vp, nsize);
+#endif /* __rtems__ */
 	}
 	return(error);
 }
-

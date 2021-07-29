@@ -57,6 +57,10 @@
 #define	RPC_MAXDATASIZE 9000
 #define	RPC_MAXADDRSIZE 1024
 
+#ifdef __rtems__
+#define __RPC_GETXID(now) ((uint32_t)_Thread_Get_executing() ^ (uint32_t)(now)->tv_sec ^ \
+    (uint32_t)(now)->tv_usec)
+#else /* __rtems__ */
 #ifdef _KERNEL
 
 #define __RPC_GETXID(now) ((uint32_t)curproc->p_pid ^ (uint32_t)(now)->tv_sec ^ \
@@ -68,6 +72,7 @@
     (uint32_t)(now)->tv_usec)
 
 #endif
+#endif /* __rtems__ */
 
 __BEGIN_DECLS
 #ifndef _KERNEL

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$NetBSD: svc_generic.c,v 1.3 2000/07/06 03:10:35 christos Exp $	*/
 
 /*-
@@ -46,7 +48,7 @@ __FBSDID("$FreeBSD$");
  *
  */
 
-#include "opt_inet6.h"
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/param.h>
 #include <sys/lock.h>

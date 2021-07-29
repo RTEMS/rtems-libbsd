@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$NetBSD: svc.c,v 1.21 2000/07/06 03:10:35 christos Exp $	*/
 
 /*-
@@ -1226,6 +1228,11 @@ svc_run_internal(SVCGROUP *grp, bool_t ismaster)
 			} else if (error != 0) {
 				KASSERT(error == EINTR || error == ERESTART,
 				    ("non-signal error %d", error));
+#ifdef __rtems__
+				mtx_unlock(&grp->sg_lock);
+				svc_exit(pool);
+				mtx_lock(&grp->sg_lock);
+#else /* __rtems__ */
 				mtx_unlock(&grp->sg_lock);
 				p = curproc;
 				PROC_LOCK(p);
@@ -1240,6 +1247,7 @@ svc_run_internal(SVCGROUP *grp, bool_t ismaster)
 					mtx_lock(&grp->sg_lock);
 					break;
 				}
+#endif /* __rtems__ */
 			}
 			continue;
 		}
@@ -1352,16 +1360,25 @@ void
 svc_run(SVCPOOL *pool)
 {
 	int g, i;
+#ifndef __rtems__
 	struct proc *p;
 	struct thread *td;
+#endif /* __rtems__ */
 	SVCGROUP *grp;
 
+#ifndef __rtems__
 	p = curproc;
 	td = curthread;
 	snprintf(td->td_name, sizeof(td->td_name),
 	    "%s: master", pool->sp_name);
+#endif /* __rtems__ */
+
 	pool->sp_state = SVCPOOL_ACTIVE;
+#ifndef __rtems__
 	pool->sp_proc = p;
+#else /* __rtems__ */
+	pool->sp_proc = NULL;
+#endif /* __rtems__ */
 
 	/* Choose group count based on number of threads and CPUs. */
 	pool->sp_groupcount = max(1, min(SVC_MAXGROUPS,

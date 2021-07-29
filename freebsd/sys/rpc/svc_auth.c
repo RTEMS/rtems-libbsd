@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$NetBSD: svc_auth.c,v 1.12 2000/07/06 03:10:35 christos Exp $	*/
 
 /*-
@@ -181,8 +183,10 @@ svc_getcred(struct svc_req *rqst, struct ucred **crp, int *flavorp)
 		cr->cr_uid = cr->cr_ruid = cr->cr_svuid = xcr->cr_uid;
 		crsetgroups(cr, xcr->cr_ngroups, xcr->cr_groups);
 		cr->cr_rgid = cr->cr_svgid = cr->cr_groups[0];
+#ifndef __rtems__
 		cr->cr_prison = &prison0;
 		prison_hold(cr->cr_prison);
+#endif /* __rtems__ */
 		*crp = cr;
 		return (TRUE);
 
@@ -195,4 +199,3 @@ svc_getcred(struct svc_req *rqst, struct ucred **crp, int *flavorp)
 		return (FALSE);
 	}
 }
-

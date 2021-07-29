@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
@@ -27,7 +29,7 @@
  * SUCH DAMAGE.
  */
 
-#include "opt_inet6.h"
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");

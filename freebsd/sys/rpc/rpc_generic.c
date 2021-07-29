@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$NetBSD: rpc_generic.c,v 1.4 2000/09/28 09:07:04 kleink Exp $	*/
 
 /*-
@@ -42,7 +44,7 @@ __FBSDID("$FreeBSD$");
  *
  */
 
-#include "opt_inet6.h"
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/param.h>
 #include <sys/kernel.h>

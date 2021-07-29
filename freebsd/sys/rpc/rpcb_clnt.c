@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$NetBSD: rpcb_clnt.c,v 1.6 2000/07/16 06:41:43 itojun Exp $	*/
 
 /*-
@@ -49,7 +51,7 @@ __FBSDID("$FreeBSD$");
  * Copyright (C) 1988, Sun Microsystems, Inc.
  */
 
-#include "opt_inet6.h"
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>

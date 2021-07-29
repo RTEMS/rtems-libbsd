@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$NetBSD: rpc_callmsg.c,v 1.16 2000/07/14 08:40:42 fvdl Exp $	*/
 
 /*-

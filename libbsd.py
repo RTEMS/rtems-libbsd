@@ -2818,6 +2818,71 @@ class nfsv2(builder.Module):
             mm.generator['source']()
         )
 
+#
+# RPC
+#
+class rpc(builder.Module):
+
+    def __init__(self, manager):
+        super(rpc, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/kgssapi/gssapi.h',
+                'sys/rpc/auth.h',
+                'sys/rpc/clnt.h',
+                'sys/rpc/clnt_stat.h',
+                'sys/rpc/krpc.h',
+                'sys/rpc/netconfig.h',
+                'sys/rpc/nettype.h',
+                'sys/rpc/pmap_prot.h',
+                'sys/rpc/replay.h',
+                'sys/rpc/rpc.h',
+                'sys/rpc/rpc_com.h',
+                'sys/rpc/rpc_msg.h',
+                'sys/rpc/rpcb_clnt.h',
+                'sys/rpc/rpcb_prot.h',
+                'sys/rpc/rpcm_subs.h',
+                'sys/rpc/rpcsec_gss.h',
+                'sys/rpc/svc.h',
+                'sys/rpc/svc_auth.h',
+                'sys/rpc/types.h',
+                'sys/rpc/xdr.h',
+            ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/rpc/auth_none.c',
+                'sys/rpc/auth_unix.c',
+                'sys/rpc/authunix_prot.c',
+                'sys/rpc/clnt_bck.c',
+                'sys/rpc/clnt_dg.c',
+                'sys/rpc/clnt_rc.c',
+                'sys/rpc/clnt_vc.c',
+                'sys/rpc/getnetconfig.c',
+                'sys/rpc/replay.c',
+                'sys/rpc/rpc_callmsg.c',
+                'sys/rpc/rpc_generic.c',
+                'sys/rpc/rpc_prot.c',
+                'sys/rpc/rpcb_clnt.c',
+                'sys/rpc/rpcb_prot.c',
+                'sys/rpc/svc.c',
+                'sys/rpc/svc_auth.c',
+                'sys/rpc/svc_auth_unix.c',
+                'sys/rpc/svc_dg.c',
+                'sys/rpc/svc_generic.c',
+                'sys/rpc/svc_vc.c',
+                'sys/xdr/xdr.c',
+                'sys/xdr/xdr_array.c',
+                'sys/xdr/xdr_mbuf.c',
+                'sys/xdr/xdr_mem.c',
+                'sys/xdr/xdr_reference.c',
+                'sys/xdr/xdr_sizeof.c',
+            ],
+            mm.generator['source']()
+        )
 
 #
 # PCI
@@ -5380,6 +5445,8 @@ def load(mm):
 
     mm.addModule(rpc_user(mm))
     mm.addModule(nfsv2(mm))
+
+    mm.addModule(rpc(mm))
 
     # Add PCI
     mm.addModule(pci(mm))

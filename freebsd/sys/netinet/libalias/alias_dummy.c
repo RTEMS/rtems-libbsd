@@ -105,6 +105,9 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
  * ITS EXACT NAME: handlers.
  */
 
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 struct proto_handler handlers [] = {
 	{
 	  .pri = 666,
@@ -154,4 +157,3 @@ AliasHandleDummy(struct libalias *la, struct ip *ip, struct alias_data *ah)
 {
 	; /* Dummy. */
 }
-

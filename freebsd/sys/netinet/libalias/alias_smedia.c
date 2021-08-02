@@ -164,6 +164,9 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 	return (0);
 }
 
+#ifdef __rtems__
+static
+#endif /* __rtems__ */
 struct proto_handler handlers[] = {
 	{
 	  .pri = 100,

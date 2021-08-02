@@ -172,7 +172,6 @@ struct fadvise_info {
 };
 
 struct file {
-#ifndef __rtems__
 	void		*f_data;	/* file descriptor specific data */
 	struct fileops	*f_ops;		/* File operations */
 	struct ucred	*f_cred;	/* associated credentials. */
@@ -202,93 +201,13 @@ struct file {
 	 * Mandatory Access control information.
 	 */
 	void		*f_label;	/* Place-holder for MAC label. */
-#else /* __rtems__ */
-	rtems_libio_t	f_io;
+#ifdef __rtems__
+	rtems_libio_t	*f_io;
 #endif /* __rtems__ */
 };
-#ifdef __rtems__
-#define f_data f_io.pathinfo.node_access_2
-#define	f_cdevpriv	f_io.data1
 
-static inline struct file *
-rtems_bsd_iop_to_fp(rtems_libio_t *iop)
-{
-	return (struct file *) iop;
-}
-
-static inline struct file *
-rtems_bsd_fd_to_fp(int fd)
-{
-	return rtems_bsd_iop_to_fp(&rtems_libio_iops[fd]);
-}
-
-static inline int
-rtems_bsd_fp_to_fd(struct file *fp)
-{
-	return fp - rtems_bsd_iop_to_fp(&rtems_libio_iops[0]);
-}
-
-static inline void *
-rtems_bsd_loc_to_f_data(const rtems_filesystem_location_info_t *loc)
-{
-	return loc->node_access_2;
-}
-
-static inline uint32_t
-rtems_bsd_fflag_to_libio_flags(u_int fflag)
-{
-	uint32_t libio_flags = 0;
-
-	if ((fflag & FREAD) == FREAD) {
-		libio_flags |= LIBIO_FLAGS_READ;
-	}
-
-	if ((fflag & FWRITE) == FWRITE) {
-		libio_flags |= LIBIO_FLAGS_WRITE;
-	}
-
-	if ((fflag & FNONBLOCK) == FNONBLOCK) {
-		libio_flags |= LIBIO_FLAGS_NO_DELAY;
-	}
-
-	return (libio_flags);
-}
-
-static inline u_int
-rtems_bsd_libio_flags_to_fflag(uint32_t libio_flags)
-{
-	u_int fflag = 0;
-
-	if ((libio_flags & LIBIO_FLAGS_READ) == LIBIO_FLAGS_READ) {
-		fflag |= FREAD;
-	}
-
-	if ((libio_flags & LIBIO_FLAGS_WRITE) == LIBIO_FLAGS_WRITE) {
-		fflag |= FWRITE;
-	}
-
-	if ((libio_flags & LIBIO_FLAGS_NO_DELAY) == LIBIO_FLAGS_NO_DELAY) {
-		fflag |= FNONBLOCK;
-	}
-
-	return (fflag);
-}
-
-static int inline
-rtems_bsd_error_to_status_and_errno(int error)
-{
-	if (error == 0) {
-		return 0;
-	} else {
-		rtems_set_errno_and_return_minus_one(error);
-	}
-}
-#endif /* __rtems__ */
-
-#ifndef __rtems__
 #define	f_cdevpriv	f_vnun.fvn_cdevpriv
 #define	f_advice	f_vnun.fvn_advice
-#endif /* __rtems__ */
 
 #define	FOFFSET_LOCKED       0x1
 #define	FOFFSET_LOCK_WAITING 0x2
@@ -323,32 +242,12 @@ struct xfile {
 
 extern struct fileops vnops;
 extern struct fileops badfileops;
-#ifndef __rtems__
 extern struct fileops socketops;
-#else /* __rtems__ */
-extern const rtems_filesystem_file_handlers_r socketops;
-#endif /* __rtems__ */
 extern int maxfiles;		/* kernel limit on number of open files */
 extern int maxfilesperproc;	/* per process limit on number of open files */
 extern volatile int openfiles;	/* actual number of open files */
 
-#ifndef __rtems__
 int fget(struct thread *td, int fd, cap_rights_t *rightsp, struct file **fpp);
-#else /* __rtems__ */
-struct file *rtems_bsd_get_file(int fd);
-
-static inline int
-rtems_bsd_do_fget(int fd, struct file **fpp)
-{
-	struct file *fp;
-
-	fp = rtems_bsd_get_file(fd);
-	*fpp = fp;
-	return (fp != NULL ? 0 : EBADF);
-}
-
-#define	fget(td, fd, rights, fpp)	rtems_bsd_do_fget(fd, fpp)
-#endif /* __rtems__ */
 int fget_mmap(struct thread *td, int fd, cap_rights_t *rightsp,
     u_char *maxprotp, struct file **fpp);
 int fget_read(struct thread *td, int fd, cap_rights_t *rightsp,
@@ -359,7 +258,6 @@ int fget_fcntl(struct thread *td, int fd, cap_rights_t *rightsp,
     int needfcntl, struct file **fpp);
 int _fdrop(struct file *fp, struct thread *td);
 
-#ifndef __rtems__
 fo_rdwr_t	invfo_rdwr;
 fo_truncate_t	invfo_truncate;
 fo_ioctl_t	invfo_ioctl;
@@ -371,27 +269,12 @@ fo_sendfile_t	invfo_sendfile;
 
 fo_sendfile_t	vn_sendfile;
 fo_seek_t	vn_seek;
+#ifndef __rtems__
 fo_fill_kinfo_t	vn_fill_kinfo;
 int vn_fill_kinfo_vnode(struct vnode *vp, struct kinfo_file *kif);
-#else /* __rtems__ */
-int rtems_bsd_soo_kqfilter(rtems_libio_t *iop, struct knote *kn);
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 void finit(struct file *, u_int, short, void *, struct fileops *);
-#else /* __rtems__ */
-static inline void
-finit(struct file *fp, u_int fflag, short type, void *data,
-    const rtems_filesystem_file_handlers_r *ops)
-{
-
-	(void)type;
-	fp->f_data = data;
-	fp->f_io.pathinfo.handlers = ops;
-	rtems_libio_iop_flags_set(&fp->f_io, LIBIO_FLAGS_OPEN |
-	    rtems_bsd_fflag_to_libio_flags(fflag));
-}
-#endif /* __rtems__ */
 int fgetvp(struct thread *td, int fd, cap_rights_t *rightsp,
     struct vnode **vpp);
 int fgetvp_exec(struct thread *td, int fd, cap_rights_t *rightsp,
@@ -410,36 +293,32 @@ _fnoop(void)
 	return (0);
 }
 
-#ifndef __rtems__
 static __inline __result_use_check bool
 fhold(struct file *fp)
 {
 	return (refcount_acquire_checked(&fp->f_count));
 }
-#endif /* __rtems__ */
 
 #ifndef __rtems__
 #define	fdrop(fp, td)							\
 	(refcount_release(&(fp)->f_count) ? _fdrop((fp), (td)) : _fnoop())
 #else /* __rtems__ */
-static inline void
-rtems_bsd_fdrop(struct file *fp)
+static inline int fdrop(struct file *fp, struct thread *td)
 {
-
-	rtems_libio_iop_drop(&fp->f_io);
+	if (fp->f_io != NULL) {
+		if (RTEMS_BSD_DESCRIP_TRACE)
+		  printf("bsd:  fb: fdrop: iop=%p %d (%d) fp=%p (%d) by %p\n",
+			 fp->f_io, fp->f_io->data0, fp->f_io->flags >> 12,
+			 fp, fp->f_count, __builtin_return_address(0));
+		rtems_libio_iop_drop(fp->f_io);
+	} else if (RTEMS_BSD_DESCRIP_TRACE) {
+		printf("bsd:  fb: fdrop: %d %p %d by %p\n",
+		       -1, fp, fp->f_count, __builtin_return_address(0));
+	}
+	return (refcount_release(&(fp)->f_count) ? _fdrop((fp), (td)) : _fnoop());
 }
-
-/*
- * WARNING: fdalloc() and falloc_caps() do not increment the reference count of
- * the file descriptor in contrast to FreeBSD.  We must not call the fdrop()
- * corresponding to a fdalloc() or falloc_caps().  The reason for this is that
- * FreeBSD performs a lazy cleanup once the reference count reaches zero.
- * RTEMS uses the reference count to determine if a cleanup is allowed.
- */
-#define	fdrop(fp, td) rtems_bsd_fdrop(fp)
 #endif /* __rtems__ */
 
-#ifndef __rtems__
 static __inline fo_rdwr_t	fo_read;
 static __inline fo_rdwr_t	fo_write;
 static __inline fo_truncate_t	fo_truncate;
@@ -475,29 +354,13 @@ fo_truncate(struct file *fp, off_t length, struct ucred *active_cred,
 
 	return ((*fp->f_ops->fo_truncate)(fp, length, active_cred, td));
 }
-#endif /* __rtems__ */
 
 static __inline int
 fo_ioctl(struct file *fp, u_long com, void *data, struct ucred *active_cred,
     struct thread *td)
 {
 
-#ifndef __rtems__
 	return ((*fp->f_ops->fo_ioctl)(fp, com, data, active_cred, td));
-#else /* __rtems__ */
-	int rv;
-
-	(void) active_cred;
-	(void) td;
-
-	errno = 0;
-	rv = ((*fp->f_io.pathinfo.handlers->ioctl_h)(&fp->f_io, com, data));
-	if (rv == 0) {
-		return (0);
-	} else {
-		return (errno);
-	}
-#endif /* __rtems__ */
 }
 
 static __inline int
@@ -505,17 +368,9 @@ fo_poll(struct file *fp, int events, struct ucred *active_cred,
     struct thread *td)
 {
 
-#ifndef __rtems__
 	return ((*fp->f_ops->fo_poll)(fp, events, active_cred, td));
-#else /* __rtems__ */
-	(void) active_cred;
-	(void) td;
-
-	return ((*fp->f_io.pathinfo.handlers->poll_h)(&fp->f_io, events));
-#endif /* __rtems__ */
 }
 
-#ifndef __rtems__
 static __inline int
 fo_stat(struct file *fp, struct stat *sb, struct ucred *active_cred,
     struct thread *td)
@@ -530,20 +385,14 @@ fo_close(struct file *fp, struct thread *td)
 
 	return ((*fp->f_ops->fo_close)(fp, td));
 }
-#endif /* __rtems__ */
 
 static __inline int
 fo_kqfilter(struct file *fp, struct knote *kn)
 {
 
-#ifndef __rtems__
 	return ((*fp->f_ops->fo_kqfilter)(fp, kn));
-#else /* __rtems__ */
-	return ((*fp->f_io.pathinfo.handlers->kqfilter_h)(&fp->f_io, kn));
-#endif /* __rtems__ */
 }
 
-#ifndef __rtems__
 static __inline int
 fo_chmod(struct file *fp, mode_t mode, struct ucred *active_cred,
     struct thread *td)
@@ -602,6 +451,9 @@ fo_aio_queue(struct file *fp, struct kaiocb *job)
 
 	return ((*fp->f_ops->fo_aio_queue)(fp, job));
 }
+
+#ifdef __rtems__
+#include <machine/rtems-bsd-libio.h>
 #endif /* __rtems__ */
 
 #endif /* _KERNEL */

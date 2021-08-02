@@ -46,7 +46,6 @@
 #include <sys/acl.h>
 #include <sys/ktr.h>
 
-#ifndef __rtems__
 /*
  * The vnode is the focus of all file activity in UNIX.  There is a
  * unique vnode allocated for each active file, each current directory,
@@ -155,7 +154,9 @@ struct vnode {
 	struct vpollinfo *v_pollinfo;		/* i Poll events, p for *v_pi */
 	struct label *v_label;			/* MAC label for vnode */
 	struct lockf *v_lockf;		/* Byte-level advisory lock list */
+#ifndef __rtems__
 	struct rangelock v_rl;			/* Byte-range lock */
+#endif /* __rtems__ */
 
 	/*
 	 * clustering stuff
@@ -380,7 +381,9 @@ struct vattr {
 MALLOC_DECLARE(M_VNODE);
 #endif
 
+#ifndef __rtems__
 extern u_int ncsizefactor;
+#endif /* __rtems__ */
 
 /*
  * Convert between vnode types and inode formats (since POSIX.1
@@ -718,6 +721,7 @@ int	vn_io_fault_uiomove(char *data, int xfersize, struct uio *uio);
 int	vn_io_fault_pgmove(vm_page_t ma[], vm_offset_t offset, int xfersize,
 	    struct uio *uio);
 
+#ifndef __rtems__
 #define	vn_rangelock_unlock(vp, cookie)					\
 	rangelock_unlock(&(vp)->v_rl, (cookie), VI_MTX(vp))
 #define	vn_rangelock_unlock_range(vp, cookie, start, end)		\
@@ -727,6 +731,12 @@ int	vn_io_fault_pgmove(vm_page_t ma[], vm_offset_t offset, int xfersize,
 	rangelock_rlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
 #define	vn_rangelock_wlock(vp, start, end)				\
 	rangelock_wlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
+#else /* __rtems__ */
+#define	vn_rangelock_unlock(vp, cookie)
+#define	vn_rangelock_unlock_range(vp, cookie, start, end)
+#define	vn_rangelock_rlock(vp, start, end) NULL
+#define	vn_rangelock_wlock(vp, start, end) NULL
+#endif /* __rtems__ */
 
 int	vfs_cache_lookup(struct vop_lookup_args *ap);
 void	vfs_timestamp(struct timespec *);
@@ -925,6 +935,5 @@ void vn_fsid(struct vnode *vp, struct vattr *va);
 int vn_dir_check_exec(struct vnode *vp, struct componentname *cnp);
 
 #endif /* _KERNEL */
-#endif /* __rtems__ */
 
 #endif /* !_SYS_VNODE_H_ */

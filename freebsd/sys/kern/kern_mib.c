@@ -71,10 +71,8 @@ SYSCTL_ROOT_NODE(CTL_KERN,	  kern,   CTLFLAG_RW|CTLFLAG_CAPRD, 0,
 	"High kernel, proc, limits &c");
 SYSCTL_ROOT_NODE(CTL_VM,	  vm,     CTLFLAG_RW, 0,
 	"Virtual memory");
-#ifndef __rtems__
 SYSCTL_ROOT_NODE(CTL_VFS,	  vfs,     CTLFLAG_RW, 0,
 	"File system");
-#endif /* __rtems__ */
 SYSCTL_ROOT_NODE(CTL_NET,	  net,    CTLFLAG_RW, 0,
 	"Network, (see socket.h)");
 SYSCTL_ROOT_NODE(CTL_DEBUG,  debug,  CTLFLAG_RW, 0,

@@ -3898,12 +3898,15 @@ uma_zone_reserve_kva(uma_zone_t zone, int count)
 
 	return (1);
 }
+#endif /* __rtems__ */
 
 /* See uma.h */
 void
 uma_prealloc(uma_zone_t zone, int items)
 {
+#ifndef __rtems__
 	struct vm_domainset_iter di;
+#endif /* __rtems__ */
 	uma_domain_t dom;
 	uma_slab_t slab;
 	uma_keg_t keg;
@@ -3918,8 +3921,10 @@ uma_prealloc(uma_zone_t zone, int items)
 		slabs++;
 	while (slabs-- > 0) {
 		aflags = M_NOWAIT;
+#ifndef __rtems__
 		vm_domainset_iter_policy_ref_init(&di, &keg->uk_dr, &domain,
 		    &aflags);
+#endif /* __rtems__ */
 		for (;;) {
 			slab = keg_alloc_slab(keg, zone, domain, M_WAITOK,
 			    aflags);
@@ -3931,16 +3936,17 @@ uma_prealloc(uma_zone_t zone, int items)
 				break;
 			}
 			KEG_LOCK(keg);
+#ifndef __rtems__
 			if (vm_domainset_iter_policy(&di, &domain) != 0) {
 				KEG_UNLOCK(keg);
 				vm_wait_doms(&keg->uk_dr.dr_policy->ds_mask);
 				KEG_LOCK(keg);
 			}
+#endif /* __rtems__ */
 		}
 	}
 	KEG_UNLOCK(keg);
 }
-#endif /* __rtems__ */
 
 /* See uma.h */
 static void

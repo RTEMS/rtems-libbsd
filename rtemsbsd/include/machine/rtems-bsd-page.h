@@ -49,6 +49,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+
 #include <stdint.h>
 
 __BEGIN_DECLS
@@ -60,6 +61,8 @@ extern uintptr_t rtems_bsd_page_area_begin;
 void *rtems_bsd_page_alloc(uintptr_t size_in_bytes, int wait);
 
 void rtems_bsd_page_free(void *addr);
+
+void vm_pager_bufferinit(void);
 
 static inline void **
 rtems_bsd_page_get_object_entry(void *addr)

@@ -65,6 +65,8 @@
 #include <rtems/bsd/modules.h>
 #include <rtems/libcsupport.h>
 
+#include <rtems/libio_.h>
+
 #define TEST_NAME "LIBBSD SYSCALLS 1"
 
 typedef void (*no_mem_test_body)(int fd);
@@ -94,6 +96,7 @@ static socket_test socket_tests[] = {
 	{ PF_INET, SOCK_DGRAM, 0, 0 },
 	{ PF_INET, SOCK_SEQPACKET, 0, EPROTOTYPE },
 	{ PF_INET, SOCK_RAW, IPPROTO_3PC, 0 },
+
 	{ PF_INET, SOCK_RAW, IPPROTO_ADFS, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_AH, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_AHIP, 0 },
@@ -104,6 +107,7 @@ static socket_test socket_tests[] = {
 	{ PF_INET, SOCK_RAW, IPPROTO_BLT, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_BRSATMON, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_CARP, 0 },
+
 	{ PF_INET, SOCK_RAW, IPPROTO_CFTP, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_CHAOS, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_CMTP, 0 },
@@ -112,6 +116,7 @@ static socket_test socket_tests[] = {
 	{ PF_INET, SOCK_RAW, IPPROTO_DDP, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_DGP, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_DSTOPTS, 0 },
+
 	{ PF_INET, SOCK_RAW, IPPROTO_EGP, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_EMCON, 0 },
 	{ PF_INET, SOCK_RAW, IPPROTO_ENCAP, 0 },
@@ -368,7 +373,7 @@ test_sockets(void)
 	size_t n = sizeof(socket_tests) / sizeof(socket_tests[0]);
 	size_t i;
 
-	puts("test sockets");
+	puts("Test Sockets");
 
 	for (i = 0; i < n; ++i) {
 		const socket_test *st = &socket_tests[i];
@@ -441,7 +446,8 @@ no_mem_socket_fstat(int fd)
 	int rv;
 
 	rv = fstat(fd, &st);
-	assert(rv == 0);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
 }
 
 static void
@@ -450,7 +456,8 @@ no_mem_socket_shutdown(int fd)
 	int rv;
 
 	rv = shutdown(fd, SHUT_RDWR);
-	assert(rv == 0);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
 }
 
 static void
@@ -1591,12 +1598,12 @@ test_kqueue_unsupported_ops(void)
 	errno = 0;
 	n = read(kq, &buf[0], sizeof(buf));
 	assert(n == -1);
-	assert(errno == ENOTSUP);
+	assert(errno == EOPNOTSUPP);
 
 	errno = 0;
 	n = write(kq, &buf[0], sizeof(buf));
 	assert(n == -1);
-	assert(errno == ENOTSUP);
+	assert(errno == EOPNOTSUPP);
 
 	errno = 0;
 	rv = ioctl(kq, 0);
@@ -1636,7 +1643,8 @@ no_mem_kqueue_fstat(int fd)
 	int rv;
 
 	rv = fstat(fd, &st);
-	assert(rv == 0);
+	assert(rv == -1);
+	assert(errno == ENOMEM);
 }
 
 static void

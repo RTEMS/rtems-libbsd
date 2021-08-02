@@ -81,8 +81,6 @@ __FBSDID("$FreeBSD$");
 
 #include <vm/uma.h>
 #ifdef __rtems__
-#include <machine/rtems-bsd-syscall-api.h>
-
 /* Maintain a global kqueue list on RTEMS */
 static struct kqlist fd_kqlist;
 #endif /* __rtems__ */
@@ -131,7 +129,6 @@ static int	kern_kevent_generic(struct thread *td,
 		    struct g_kevent_args *uap,
 		    struct kevent_copyops *k_ops, const char *struct_name);
 
-#ifndef __rtems__
 static fo_rdwr_t	kqueue_read;
 static fo_rdwr_t	kqueue_write;
 static fo_truncate_t	kqueue_truncate;
@@ -156,9 +153,6 @@ static struct fileops kqueueops = {
 	.fo_sendfile = invfo_sendfile,
 	.fo_fill_kinfo = kqueue_fill_kinfo,
 };
-#else /* __rtems__ */
-static const rtems_filesystem_file_handlers_r kqueueops;
-#endif /* __rtems__ */
 
 static int 	knote_attach(struct knote *kn, struct kqueue *kq);
 static void 	knote_drop(struct knote *kn, struct thread *td);
@@ -399,14 +393,27 @@ static int
 filt_fileattach(struct knote *kn)
 {
 
+#ifndef __rtems__
 	return (fo_kqfilter(kn->kn_fp, kn));
+#else /* __rtems__ */
+	if ((kn->kn_status & KN_FP_IS_IOP) == 0) {
+		return (fo_kqfilter(kn->kn_fp, kn));
+	} else {
+		rtems_libio_t* iop = (rtems_libio_t*) kn->kn_fp;
+		return ((*iop->pathinfo.handlers->kqfilter_h)(iop, kn));
+	}
+#endif /* __rtems__ */
 }
 
 /*ARGSUSED*/
 static int
 kqueue_kqfilter(struct file *fp, struct knote *kn)
 {
+#ifndef __rtems__
 	struct kqueue *kq = kn->kn_fp->f_data;
+#else /* __rtems__ */
+	struct kqueue *kq = rtems_bsd_libio_knote_to_kq(kn);
+#endif /* __rtems__ */
 
 	if (kn->kn_filter != EVFILT_READ)
 		return (EINVAL);
@@ -417,20 +424,15 @@ kqueue_kqfilter(struct file *fp, struct knote *kn)
 
 	return (0);
 }
-#ifdef __rtems__
-static int
-rtems_bsd_kqueue_kqfilter(rtems_libio_t *iop, struct knote *kn)
-{
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
-
-	return kqueue_kqfilter(fp, kn);
-}
-#endif /* __rtems__ */
 
 static void
 filt_kqdetach(struct knote *kn)
 {
+#ifndef __rtems__
 	struct kqueue *kq = kn->kn_fp->f_data;
+#else /* __rtems__ */
+	struct kqueue *kq = rtems_bsd_libio_knote_to_kq(kn);
+#endif /* __rtems__ */
 
 	knlist_remove(&kq->kq_sel.si_note, kn, 0);
 }
@@ -439,7 +441,11 @@ filt_kqdetach(struct knote *kn)
 static int
 filt_kqueue(struct knote *kn, long hint)
 {
+#ifndef __rtems__
 	struct kqueue *kq = kn->kn_fp->f_data;
+#else /* __rtems__ */
+	struct kqueue *kq = rtems_bsd_libio_knote_to_kq(kn);
+#endif /* __rtems__ */
 
 	kn->kn_data = kq->kq_count;
 	return (kn->kn_data > 0);
@@ -991,12 +997,6 @@ filt_usertouch(struct knote *kn, struct kevent *kev, u_long type)
 	}
 }
 
-#ifdef __rtems__
-static int
-kern_kqueue(struct thread *td, int flags, struct filecaps *fcaps);
-
-static
-#endif /* __rtems__ */
 int
 sys_kqueue(struct thread *td, struct kqueue_args *uap)
 {
@@ -1023,15 +1023,10 @@ kern_kqueue(struct thread *td, int flags, struct filecaps *fcaps)
 	struct ucred *cred;
 	int fd, error;
 
-#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
 	cred = td->td_ucred;
 	if (!chgkqcnt(cred->cr_ruidinfo, 1, lim_cur(td, RLIMIT_KQUEUES)))
 		return (ENOMEM);
-#else /* __rtems__ */
-	(void)fdp;
-	(void)cred;
-#endif /* __rtems__ */
 
 	error = falloc_caps(td, &fp, &fd, flags, fcaps);
 	if (error != 0) {
@@ -1042,50 +1037,19 @@ kern_kqueue(struct thread *td, int flags, struct filecaps *fcaps)
 	/* An extra reference on `fp' has been held for us by falloc(). */
 	kq = malloc(sizeof *kq, M_KQUEUE, M_WAITOK | M_ZERO);
 	kqueue_init(kq);
-#ifndef __rtems__
 	kq->kq_fdp = fdp;
 	kq->kq_cred = crhold(cred);
-#endif /* __rtems__ */
 
-#ifndef __rtems__
 	FILEDESC_XLOCK(fdp);
 	TAILQ_INSERT_HEAD(&fdp->fd_kqlist, kq, kq_list);
 	FILEDESC_XUNLOCK(fdp);
-#else /* __rtems__ */
-	rtems_libio_lock();
-	TAILQ_INSERT_HEAD(&fd_kqlist, kq, kq_list);
-	rtems_libio_unlock();
-#endif /* __rtems__ */
 
 	finit(fp, FREAD | FWRITE, DTYPE_KQUEUE, kq, &kqueueops);
-#ifndef __rtems__
 	fdrop(fp, td);
-#endif /* __rtems__ */
 
 	td->td_retval[0] = fd;
 	return (0);
 }
-#ifdef __rtems__
-int
-kqueue(void)
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	struct kqueue_args ua;
-	int error;
-
-	if (td != NULL) {
-		error = sys_kqueue(td, &ua);
-	} else {
-		error = ENOMEM;
-	}
-
-	if (error == 0) {
-		return td->td_retval[0];
-	} else {
-		rtems_set_errno_and_return_minus_one(error);
-	}
-}
-#endif /* __rtems__ */
 
 struct g_kevent_args {
 	int	fd;
@@ -1096,15 +1060,6 @@ struct g_kevent_args {
 	const struct timespec *timeout;
 };
 
-#ifdef __rtems__
-static int kern_kevent(struct thread *td, int fd, int nchanges, int nevents,
-    struct kevent_copyops *k_ops, const struct timespec *timeout);
-
-static int kern_kevent_fp(struct thread *td, struct file *fp, int nchanges,
-    int nevents, struct kevent_copyops *k_ops, const struct timespec *timeout);
-
-static
-#endif /* __rtems__ */
 int
 sys_kevent(struct thread *td, struct kevent_args *uap)
 {
@@ -1161,38 +1116,6 @@ kern_kevent_generic(struct thread *td, struct g_kevent_args *uap,
 
 	return (error);
 }
-#ifdef __rtems__
-__weak_reference(kevent, _kevent);
-
-int
-kevent(int kq, const struct kevent *changelist, int nchanges,
-    struct kevent *eventlist, int nevents,
-    const struct timespec *timeout)
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	struct kevent_args ua = {
-		.fd = kq,
-		.changelist = changelist,
-		.nchanges = nchanges,
-		.eventlist = eventlist,
-		.nevents = nevents,
-		.timeout = timeout
-	};
-	int error;
-
-	if (td != NULL) {
-		error = sys_kevent(td, &ua);
-	} else {
-		error = ENOMEM;
-	}
-
-	if (error == 0) {
-		return td->td_retval[0];
-	} else {
-		rtems_set_errno_and_return_minus_one(error);
-	}
-}
-#endif /* __rtems__ */
 
 /*
  * Copy 'count' items into the destination list pointed to by uap->eventlist.
@@ -1503,6 +1426,9 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, struct thread *td,
 {
 	struct filterops *fops;
 	struct file *fp;
+#ifdef __rtems__
+	rtems_libio_t* iop = NULL;
+#endif /* __rtems__ */
 	struct knote *kn, *tkn;
 	struct knlist *knl;
 	int error, filt, event;
@@ -1540,15 +1466,39 @@ findkn:
 		if (kev->ident > INT_MAX)
 			error = EBADF;
 		else
+#ifndef __rtems__
 			error = fget(td, kev->ident, &cap_event_rights, &fp);
+#else /* __rtems__ */
+		{
+			int ffd = rtems_bsd_libio_iop_hold(kev->ident, &iop);
+			if (ffd < 0)
+				error = EBADF;
+			else {
+				if (iop == NULL)
+					error = fget(td, ffd, &cap_event_rights, &fp);
+				else
+					fp = NULL;
+			}
+		}
+#endif /* __rtems__ */
 		if (error)
 			goto done;
 
 		if ((kev->flags & EV_ADD) == EV_ADD && kqueue_expand(kq, fops,
 		    kev->ident, M_NOWAIT) != 0) {
+#ifndef __rtems__
 			/* try again */
 			fdrop(fp, td);
 			fp = NULL;
+#else /* __rtems__ */
+			if (fp != NULL) {
+				fdrop(fp, td);
+				fp = NULL;
+			} else if (iop != NULL) {
+				rtems_libio_iop_drop(iop);
+				iop = NULL;
+			}
+#endif /* __rtems__ */
 			error = kqueue_expand(kq, fops, kev->ident, mflag);
 			if (error)
 				goto done;
@@ -1558,7 +1508,7 @@ findkn:
 #ifndef __rtems__
 		if (fp->f_type == DTYPE_KQUEUE) {
 #else /* __rtems__ */
-		if (fp->f_io.pathinfo.handlers == &kqueueops) {
+		if (fp != NULL && fp->f_type == DTYPE_KQUEUE) {
 #endif /* __rtems__ */
 			/*
 			 * If we add some intelligence about what we are doing,
@@ -1632,6 +1582,12 @@ findkn:
 			fdrop(fp, td);
 			fp = NULL;
 		}
+#ifdef __rtems__
+		if (iop != NULL) {
+			rtems_libio_iop_drop(iop);
+			iop = NULL;
+		}
+#endif /* __rtems__ */
 		goto findkn;
 	}
 
@@ -1647,7 +1603,17 @@ findkn:
 				error = ENOMEM;
 				goto done;
 			}
+#ifndef __rtems__
 			kn->kn_fp = fp;
+#else /* __rtems__ */
+			if (fp != NULL) {
+				kn->kn_fp = fp;
+				kn->kn_status = 0;
+			} else if (iop != NULL) {
+				rtems_bsd_libio_iop_to_knote(kn, iop);
+				kn->kn_status = KN_FP_IS_IOP;
+			}
+#endif /* __rtems__ */
 			kn->kn_kq = kq;
 			kn->kn_fop = fops;
 			/*
@@ -1656,6 +1622,9 @@ findkn:
 			 */
 			fops = NULL;
 			fp = NULL;
+#ifdef __rtems__
+			iop = NULL;
+#endif /* __rtems__ */
 
 			kn->kn_sfflags = kev->fflags;
 			kn->kn_sdata = kev->data;
@@ -1664,7 +1633,11 @@ findkn:
 			kn->kn_kevent = *kev;
 			kn->kn_kevent.flags &= ~(EV_ADD | EV_DELETE |
 			    EV_ENABLE | EV_DISABLE | EV_FORCEONESHOT);
+#ifndef __rtems__
 			kn->kn_status = KN_DETACHED;
+#else /* __rtems__ */
+			kn->kn_status |= KN_DETACHED;
+#endif /* __rtems__ */
 			if ((kev->flags & EV_DISABLE) != 0)
 				kn->kn_status |= KN_DISABLED;
 			kn_enter_flux(kn);
@@ -1757,6 +1730,10 @@ done:
 		FILEDESC_XUNLOCK(td->td_proc->p_fd);
 	if (fp != NULL)
 		fdrop(fp, td);
+#ifdef __rtems__
+	if (iop != NULL)
+		rtems_libio_iop_drop(iop);
+#endif /* __rtems__ */
 	knote_free(tkn);
 	if (fops != NULL)
 		kqueue_fo_release(filt);
@@ -1772,11 +1749,7 @@ kqueue_acquire(struct file *fp, struct kqueue **kqp)
 	error = 0;
 
 	kq = fp->f_data;
-#ifndef __rtems__
 	if (fp->f_type != DTYPE_KQUEUE || kq == NULL)
-#else /* __rtems__ */
-	if (fp->f_io.pathinfo.handlers != &kqueueops || kq == NULL)
-#endif /* __rtems__ */
 		return (EBADF);
 	*kqp = kq;
 	KQ_LOCK(kq);
@@ -2117,7 +2090,6 @@ done_nl:
 	return (error);
 }
 
-#ifndef __rtems__
 /*ARGSUSED*/
 static int
 kqueue_ioctl(struct file *fp, u_long cmd, void *data,
@@ -2165,7 +2137,6 @@ kqueue_ioctl(struct file *fp, u_long cmd, void *data,
 
 	return (ENOTTY);
 }
-#endif /* __rtems__ */
 
 /*ARGSUSED*/
 static int
@@ -2193,39 +2164,14 @@ kqueue_poll(struct file *fp, int events, struct ucred *active_cred,
 	KQ_UNLOCK(kq);
 	return (revents);
 }
-#ifdef __rtems__
-static int
-rtems_bsd_kqueue_poll(rtems_libio_t *iop, int events)
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
-	int error;
-
-	if (td != NULL) {
-		error = kqueue_poll(fp, events, NULL, td);
-	} else {
-		error = ENOMEM;
-	}
-
-	return error;
-}
-#endif /* __rtems__ */
 
 /*ARGSUSED*/
-#ifndef __rtems__
 static int
 kqueue_stat(struct file *fp, struct stat *st, struct ucred *active_cred,
 	struct thread *td)
 {
 
 	bzero((void *)st, sizeof *st);
-#else /* __rtems__ */
-static int
-rtems_bsd_kqueue_stat(const rtems_filesystem_location_info_t *loc,
-    struct stat *st)
-{
-	(void) loc;
-#endif /* __rtems__ */
 	/*
 	 * We no longer return kq_count because the unlocked value is useless.
 	 * If you spent all this time getting the count, why not spend your
@@ -2304,10 +2250,8 @@ static void
 kqueue_destroy(struct kqueue *kq)
 {
 
-#ifndef __rtems__
 	KASSERT(kq->kq_fdp == NULL,
 	    ("kqueue still attached to a file descriptor"));
-#endif /* __rtems__ */
 	seldrain(&kq->kq_sel);
 	knlist_destroy(&kq->kq_sel.si_note);
 	mtx_destroy(&kq->kq_lock);
@@ -2333,7 +2277,6 @@ kqueue_close(struct file *fp, struct thread *td)
 		return error;
 	kqueue_drain(kq, td);
 
-#ifndef __rtems__
 	/*
 	 * We could be called due to the knote_drop() doing fdrop(),
 	 * called from kqueue_register().  In this case the global
@@ -2350,12 +2293,6 @@ kqueue_close(struct file *fp, struct thread *td)
 	TAILQ_REMOVE(&fdp->fd_kqlist, kq, kq_list);
 	if (filedesc_unlock)
 		FILEDESC_XUNLOCK(fdp);
-#else /* __rtems__ */
-	(void)filedesc_unlock;
-	rtems_libio_lock();
-	TAILQ_REMOVE(&fd_kqlist, kq, kq_list);
-	rtems_libio_unlock();
-#endif /* __rtems__ */
 
 	kqueue_destroy(kq);
 	chgkqcnt(kq->kq_cred->cr_ruidinfo, -1, 0);
@@ -2365,25 +2302,7 @@ kqueue_close(struct file *fp, struct thread *td)
 
 	return (0);
 }
-#ifdef __rtems__
-static int
-rtems_bsd_kqueue_close(rtems_libio_t *iop)
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
-	int error;
 
-	if (td != NULL) {
-		error = kqueue_close(fp, td);
-	} else {
-		error = ENOMEM;
-	}
-
-	return rtems_bsd_error_to_status_and_errno(error);
-}
-#endif /* __rtems__ */
-
-#ifndef __rtems__
 static int
 kqueue_fill_kinfo(struct file *fp, struct kinfo_file *kif, struct filedesc *fdp)
 {
@@ -2391,7 +2310,6 @@ kqueue_fill_kinfo(struct file *fp, struct kinfo_file *kif, struct filedesc *fdp)
 	kif->kf_type = KF_TYPE_KQUEUE;
 	return (0);
 }
-#endif /* __rtems__ */
 
 static void
 kqueue_wakeup(struct kqueue *kq)
@@ -2756,28 +2674,18 @@ again:		/* need to reacquire lock since we have dropped it */
 void
 knote_fdclose(struct thread *td, int fd)
 {
-#ifndef __rtems__
 	struct filedesc *fdp = td->td_proc->p_fd;
-#endif /* __rtems__ */
 	struct kqueue *kq;
 	struct knote *kn;
 	int influx;
 
-#ifndef __rtems__
 	FILEDESC_XLOCK_ASSERT(fdp);
-#endif /* __rtems__ */
 
 	/*
 	 * We shouldn't have to worry about new kevents appearing on fd
 	 * since filedesc is locked.
 	 */
-#ifndef __rtems__
 	TAILQ_FOREACH(kq, &fdp->fd_kqlist, kq_list) {
-#else /* __rtems__ */
-	/* FIXME: Use separate lock? */
-	rtems_libio_lock();
-	TAILQ_FOREACH(kq, &fd_kqlist, kq_list) {
-#endif /* __rtems__ */
 		KQ_LOCK(kq);
 
 again:
@@ -2800,9 +2708,6 @@ again:
 		}
 		KQ_UNLOCK_FLUX(kq);
 	}
-#ifdef __rtems__
-	rtems_libio_unlock();
-#endif /* __rtems__ */
 }
 
 static int
@@ -2865,7 +2770,14 @@ knote_drop_detached(struct knote *kn, struct thread *td)
 	KQ_UNLOCK_FLUX(kq);
 
 	if (kn->kn_fop->f_isfd) {
+#ifndef __rtems__
 		fdrop(kn->kn_fp, td);
+#else /* __rtems__ */
+		if ((kn->kn_status & KN_FP_IS_IOP) == 0)
+		fdrop(kn->kn_fp, td);
+		else
+			rtems_libio_iop_drop((rtems_libio_t*) kn->kn_fp);
+#endif /* __rtems__ */
 		kn->kn_fp = NULL;
 	}
 	kqueue_fo_release(kn->kn_kevent.filter);
@@ -2947,23 +2859,3 @@ noacquire:
 	fdrop(fp, td);
 	return (error);
 }
-#ifdef __rtems__
-static const rtems_filesystem_file_handlers_r kqueueops = {
-	.open_h = rtems_filesystem_default_open,
-	.close_h = rtems_bsd_kqueue_close,
-	.read_h = rtems_filesystem_default_read,
-	.write_h = rtems_filesystem_default_write,
-	.ioctl_h = rtems_filesystem_default_ioctl,
-	.lseek_h = rtems_filesystem_default_lseek,
-	.fstat_h = rtems_bsd_kqueue_stat,
-	.ftruncate_h = rtems_filesystem_default_ftruncate,
-	.fsync_h = rtems_filesystem_default_fsync_or_fdatasync,
-	.fdatasync_h = rtems_filesystem_default_fsync_or_fdatasync,
-	.fcntl_h = rtems_filesystem_default_fcntl,
-	.poll_h = rtems_bsd_kqueue_poll,
-	.kqfilter_h = rtems_bsd_kqueue_kqfilter,
-	.readv_h = rtems_filesystem_default_readv,
-	.writev_h = rtems_filesystem_default_writev,
-	.mmap_h = rtems_filesystem_default_mmap
-};
-#endif /* __rtems__ */

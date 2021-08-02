@@ -77,12 +77,6 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #include <security/audit/audit.h>
-#ifdef __rtems__
-#include <machine/rtems-bsd-syscall-api.h>
-
-static int kern_select(struct thread *, int, fd_set *, fd_set *,
-    fd_set *, struct timeval *, int);
-#endif /* __rtems__ */
 
 /*
  * The following macro defines how many bytes will be allocated from
@@ -98,7 +92,6 @@ static int kern_select(struct thread *, int, fd_set *, fd_set *,
 #define	SYS_IOCTL_SMALL_SIZE	128	/* bytes */
 #define	SYS_IOCTL_SMALL_ALIGN	8	/* bytes */
 
-#ifndef __rtems__
 #ifdef __LP64__
 static int iosize_max_clamp = 0;
 SYSCTL_INT(_debug, OID_AUTO, iosize_max_clamp, CTLFLAG_RW,
@@ -108,6 +101,7 @@ SYSCTL_INT(_debug, OID_AUTO, devfs_iosize_max_clamp, CTLFLAG_RW,
     &devfs_iosize_max_clamp, 0, "Clamp max i/o size to INT_MAX for devices");
 #endif
 
+#ifndef __rtems__
 /*
  * Assert that the return value of read(2) and write(2) syscalls fits
  * into a register.  If not, an architecture will need to provide the
@@ -130,12 +124,10 @@ static int	selscan(struct thread *, fd_mask **, fd_mask **, int);
 static int	selrescan(struct thread *, fd_mask **, fd_mask **);
 static void	selfdalloc(struct thread *, void *);
 static void	selfdfree(struct seltd *, struct selfd *);
-#ifndef __rtems__
 static int	dofileread(struct thread *, int, struct file *, struct uio *,
 		    off_t, int);
 static int	dofilewrite(struct thread *, int, struct file *, struct uio *,
 		    off_t, int);
-#endif /* __rtems__ */
 static void	doselwakeup(struct selinfo *, int);
 static void	seltdinit(struct thread *);
 static int	seltdwait(struct thread *, sbintime_t, sbintime_t);
@@ -176,7 +168,6 @@ struct selfd {
 static uma_zone_t selfd_zone;
 static struct mtx_pool *mtxpool_select;
 
-#ifndef __rtems__
 #ifdef __LP64__
 size_t
 devfs_iosize_max(void)
@@ -221,6 +212,7 @@ sys_read(struct thread *td, struct read_args *uap)
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Positioned read system call
  */
@@ -267,6 +259,7 @@ freebsd6_pread(struct thread *td, struct freebsd6_pread_args *uap)
 	return (kern_pread(td, uap->fd, uap->buf, uap->nbyte, uap->offset));
 }
 #endif
+#endif /* __rtems__ */
 
 /*
  * Scatter read system call.
@@ -306,6 +299,7 @@ kern_readv(struct thread *td, int fd, struct uio *auio)
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Scatter positioned read system call.
  */
@@ -350,6 +344,7 @@ kern_preadv(struct thread *td, int fd, struct uio *auio, off_t offset)
 	fdrop(fp, td);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Common code for readv and preadv that reads data in
@@ -422,6 +417,7 @@ sys_write(struct thread *td, struct write_args *uap)
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Positioned write system call.
  */
@@ -469,6 +465,7 @@ freebsd6_pwrite(struct thread *td, struct freebsd6_pwrite_args *uap)
 	return (kern_pwrite(td, uap->fd, uap->buf, uap->nbyte, uap->offset));
 }
 #endif
+#endif /* __rtems__ */
 
 /*
  * Gather write system call.
@@ -508,6 +505,7 @@ kern_writev(struct thread *td, int fd, struct uio *auio)
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Gather positioned write system call.
  */
@@ -552,6 +550,7 @@ kern_pwritev(struct thread *td, int fd, struct uio *auio, off_t offset)
 	fdrop(fp, td);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Common code for writev and pwritev that writes data to
@@ -583,12 +582,14 @@ dofilewrite(struct thread *td, int fd, struct file *fp, struct uio *auio,
 		if (auio->uio_resid != cnt && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
+#ifndef __rtems__
 		/* Socket layer is responsible for issuing SIGPIPE. */
 		if (fp->f_type != DTYPE_SOCKET && error == EPIPE) {
 			PROC_LOCK(td->td_proc);
 			tdsignal(td, SIGPIPE);
 			PROC_UNLOCK(td->td_proc);
 		}
+#endif /* __rtems__ */
 	}
 	cnt -= auio->uio_resid;
 #ifdef KTRACE
@@ -678,7 +679,11 @@ sys_ioctl(struct thread *td, struct ioctl_args *uap)
 	if (uap->com > 0xffffffff) {
 		printf(
 		    "WARNING pid %d (%s): ioctl sign-extension ioctl %lx\n",
+#ifndef __rtems__
 		    td->td_proc->p_pid, td->td_name, uap->com);
+#else /* __rtems__ */
+		    1, "BSD", uap->com);
+#endif /* __rtems__ */
 		uap->com &= 0xffffffff;
 	}
 	com = uap->com;
@@ -706,7 +711,11 @@ sys_ioctl(struct thread *td, struct ioctl_args *uap)
 			size = 0;
 		} else {
 			if (size > SYS_IOCTL_SMALL_SIZE)
+#ifndef __rtems__
 				data = malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
+#else /* __rtems__ */
+				panic("libbsd: ioctl size too big");
+#endif /* __rtems__ */
 			else
 				data = smalldata;
 		}
@@ -730,8 +739,10 @@ sys_ioctl(struct thread *td, struct ioctl_args *uap)
 		error = copyout(data, uap->data, (u_int)size);
 
 out:
+#ifndef __rtems__
 	if (size > SYS_IOCTL_SMALL_SIZE)
 		free(data, M_IOCTLOPS);
+#endif /* __rtems__ */
 	return (error);
 }
 
@@ -835,7 +846,6 @@ out:
 		fdrop(fp, td);
 	return (error);
 }
-#endif /* __rtems__ */
 
 int
 poll_no_poll(int events)
@@ -853,7 +863,6 @@ poll_no_poll(int events)
 	return (events & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
 }
 
-#ifndef __rtems__
 int
 sys_pselect(struct thread *td, struct pselect_args *uap)
 {
@@ -887,6 +896,7 @@ kern_pselect(struct thread *td, int nd, fd_set *in, fd_set *ou, fd_set *ex,
 {
 	int error;
 
+#ifndef __rtems__
 	if (uset != NULL) {
 		error = kern_sigprocmask(td, SIG_SETMASK, uset,
 		    &td->td_oldsigmask, 0);
@@ -902,6 +912,7 @@ kern_pselect(struct thread *td, int nd, fd_set *in, fd_set *ou, fd_set *ex,
 		td->td_flags |= TDF_ASTPENDING;
 		thread_unlock(td);
 	}
+#endif /* __rtems__ */
 	error = kern_select(td, nd, in, ou, ex, tvp, abi_nfdbits);
 	return (error);
 }
@@ -930,7 +941,6 @@ sys_select(struct thread *td, struct select_args *uap)
 	return (kern_select(td, uap->nd, uap->in, uap->ou, uap->ex, tvp,
 	    NFDBITS));
 }
-#endif /* __rtems__ */
 
 /*
  * In the unlikely case when user specified n greater then the last
@@ -1000,14 +1010,11 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 
 	if (nd < 0)
 		return (EINVAL);
-#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
-#endif /* __rtems__ */
 	ndu = nd;
 #ifndef __rtems__
 	lf = fdp->fd_lastfile;
 #else /* __rtems__ */
-	(void) fdp;
 	lf = rtems_libio_number_iops;
 #endif /* __rtems__ */
 	if (nd > lf + 1)
@@ -1162,65 +1169,6 @@ done:
 
 	return (error);
 }
-#ifdef __rtems__
-int
-select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
-    struct timeval *timeout)
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	int error;
-
-	if (td != NULL) {
-		error = kern_select(td, nfds, readfds, writefds, errorfds,
-		    timeout, NFDBITS);
-	} else {
-		error = ENOMEM;
-	}
-
-	if (error == 0) {
-		return td->td_retval[0];
-	} else {
-		rtems_set_errno_and_return_minus_one(error);
-	}
-}
-
-int
-pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
-    const struct timespec *timeout, const sigset_t *set)
-{
-	struct thread *td;
-	int error;
-
-	if (set != NULL) {
-		rtems_set_errno_and_return_minus_one(ENOSYS);
-	}
-
-	td = rtems_bsd_get_curthread_or_null();
-
-	if (td != NULL) {
-		struct timeval tv;
-		struct timeval *tvp;
-
-		if (timeout != NULL) {
-			TIMESPEC_TO_TIMEVAL(&tv, timeout);
-			tvp = &tv;
-		} else {
-			tvp = NULL;
-		}
-
-		error = kern_select(td, nfds, readfds, writefds, errorfds,
-		    tvp, NFDBITS);
-	} else {
-		error = ENOMEM;
-	}
-
-	if (error == 0) {
-		return td->td_retval[0];
-	} else {
-		rtems_set_errno_and_return_minus_one(error);
-	}
-}
-#endif /* __rtems__ */
 
 /* 
  * Convert a select bit set to poll flags.
@@ -1291,6 +1239,17 @@ selsetbits(fd_mask **ibits, fd_mask **obits, int idx, fd_mask bit, int events)
 static __inline int
 getselfd_cap(struct filedesc *fdp, int fd, struct file **fpp)
 {
+#ifdef __rtems__
+	rtems_libio_t *iop;
+	int ffd = rtems_bsd_libio_iop_hold(fd, &iop);
+	if (ffd < 0)
+		return EBADF;
+	if (iop != NULL) {
+		*fpp = NULL;
+		return 0;
+	}
+	fd = ffd;
+#endif /* __rtems__ */
 
 	return (fget_unlocked(fdp, fd, &cap_event_rights, fpp, NULL));
 }
@@ -1312,11 +1271,7 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 	int fd, ev, n, idx;
 	int error;
 
-#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
-#else /* __rtems__ */
-	fdp = NULL;
-#endif /* __rtems__ */
 	stp = td->td_sel;
 	n = 0;
 	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
@@ -1331,8 +1286,15 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 			return (error);
 		idx = fd / NFDBITS;
 		bit = (fd_mask)1 << (fd % NFDBITS);
+#ifndef __rtems__
 		ev = fo_poll(fp, selflags(ibits, idx, bit), td->td_ucred, td);
 		fdrop(fp, td);
+#else /* __rtems__ */
+		ev = rtems_bsd_libio_fo_poll(fd, fp, selflags(ibits, idx, bit),
+					     td->td_ucred, td);
+		if (fp != NULL)
+			fdrop(fp, td);
+#endif /* __rtems__ */
 		if (ev != 0)
 			n += selsetbits(ibits, obits, idx, bit, ev);
 	}
@@ -1355,11 +1317,7 @@ selscan(struct thread *td, fd_mask **ibits, fd_mask **obits, int nfd)
 	int n, idx;
 	int error;
 
-#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
-#else /* __rtems__ */
-	fdp = NULL;
-#endif /* __rtems__ */
 	n = 0;
 	for (idx = 0, fd = 0; fd < nfd; idx++) {
 		end = imin(fd + NFDBITS, nfd);
@@ -1372,8 +1330,16 @@ selscan(struct thread *td, fd_mask **ibits, fd_mask **obits, int nfd)
 			if (error)
 				return (error);
 			selfdalloc(td, (void *)(uintptr_t)fd);
+#ifndef __rtems__
 			ev = fo_poll(fp, flags, td->td_ucred, td);
 			fdrop(fp, td);
+#else /* __rtems__ */
+			ev = rtems_bsd_libio_fo_poll(fd, fp,
+						     selflags(ibits, idx, bit),
+						     td->td_ucred, td);
+			if (fp != NULL)
+				fdrop(fp, td);
+#endif /* __rtems__ */
 			if (ev != 0)
 				n += selsetbits(ibits, obits, idx, bit, ev);
 		}
@@ -1383,12 +1349,6 @@ selscan(struct thread *td, fd_mask **ibits, fd_mask **obits, int nfd)
 	return (0);
 }
 
-#ifdef __rtems__
-static int kern_poll(struct thread *td, struct pollfd *fds, u_int nfds,
-    struct timespec *tsp, sigset_t *uset);
-
-static
-#endif /* __rtems__ */
 int
 sys_poll(struct thread *td, struct poll_args *uap)
 {
@@ -1507,31 +1467,6 @@ out:
 		free(bits, M_TEMP);
 	return (error);
 }
-#ifdef __rtems__
-int
-poll(struct pollfd fds[], nfds_t nfds, int timeout)
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	struct poll_args ua = {
-		.fds = &fds[0],
-		.nfds = nfds,
-		.timeout = timeout
-	};
-	int error;
-
-	if (td != NULL) {
-		error = sys_poll(td, &ua);
-	} else {
-		error = ENOMEM;
-	}
-
-	if (error == 0) {
-		return td->td_retval[0];
-	} else {
-		rtems_set_errno_and_return_minus_one(error);
-	}
-}
-#endif /* __rtems__ */
 
 #ifndef __rtems__
 int
@@ -1577,11 +1512,7 @@ pollrescan(struct thread *td)
 	int n;
 
 	n = 0;
-#ifndef __rtems__
 	fdp = td->td_proc->p_fd;
-#else /* __rtems__ */
-	fdp = NULL;
-#endif /* __rtems__ */
 	stp = td->td_sel;
 	FILEDESC_SLOCK(fdp);
 	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
@@ -1593,15 +1524,24 @@ pollrescan(struct thread *td)
 			continue;
 #ifndef __rtems__
 		fp = fdp->fd_ofiles[fd->fd].fde_file;
-#else /* __rtems__ */
-		fget_unlocked(fdp, fd->fd, NULL, &fp, NULL);
-#endif /* __rtems__ */
 #ifdef CAPABILITIES
 		if (fp == NULL ||
 		    cap_check(cap_rights(fdp, fd->fd), &cap_event_rights) != 0)
 #else
 		if (fp == NULL)
 #endif
+#else /* __rtems__ */
+		rtems_libio_t* iop;
+		int ffd = rtems_bsd_libio_iop_hold(fd->fd, &iop);
+		if (ffd >= 0) {
+			if (iop == NULL) {
+				fp = fdp->fd_ofiles[ffd].fde_file;
+			} else {
+				fp = NULL;
+			}
+		}
+		else
+#endif /* __rtems__ */
 		{
 			fd->revents = POLLNVAL;
 			n++;
@@ -1612,9 +1552,10 @@ pollrescan(struct thread *td)
 		 * Note: backend also returns POLLHUP and
 		 * POLLERR if appropriate.
 		 */
+#ifndef __rtems__
 		fd->revents = fo_poll(fp, fd->events, td->td_ucred, td);
-#ifdef __rtems__
-		rtems_libio_iop_drop(&fp->f_io);
+#else /* __rtems__ */
+		fd->revents = rtems_bsd_libio_fo_poll(ffd, fp, fd->events, td->td_ucred, td);
 #endif /* __rtems__ */
 		if (fd->revents != 0)
 			n++;
@@ -1650,11 +1591,7 @@ pollout(struct thread *td, struct pollfd *fds, struct pollfd *ufds, u_int nfd)
 static int
 pollscan(struct thread *td, struct pollfd *fds, u_int nfd)
 {
-#ifndef __rtems__
 	struct filedesc *fdp = td->td_proc->p_fd;
-#else /* __rtems__ */
-	struct filedesc *fdp = NULL;
-#endif /* __rtems__ */
 	struct file *fp;
 	int i, n = 0;
 
@@ -1663,7 +1600,7 @@ pollscan(struct thread *td, struct pollfd *fds, u_int nfd)
 #ifndef __rtems__
 		if (fds->fd > fdp->fd_lastfile) {
 #else /* __rtems__ */
-		if ((uint32_t)fds->fd >= rtems_libio_number_iops) {
+		if (fds->fd >= (int) rtems_libio_number_iops) {
 #endif /* __rtems__ */
 			fds->revents = POLLNVAL;
 			n++;
@@ -1672,15 +1609,24 @@ pollscan(struct thread *td, struct pollfd *fds, u_int nfd)
 		} else {
 #ifndef __rtems__
 			fp = fdp->fd_ofiles[fds->fd].fde_file;
-#else /* __rtems__ */
-			fget_unlocked(fdp, fds->fd, NULL, &fp, NULL);
-#endif /* __rtems__ */
 #ifdef CAPABILITIES
 			if (fp == NULL ||
 			    cap_check(cap_rights(fdp, fds->fd), &cap_event_rights) != 0)
 #else
 			if (fp == NULL)
 #endif
+#else /* __rtems__ */
+			rtems_libio_t* iop;
+			int ffd = rtems_bsd_libio_iop_hold(fds->fd, &iop);
+			if (ffd >= 0) {
+				if (iop == NULL) {
+					fp = fdp->fd_ofiles[ffd].fde_file;
+				} else {
+					fp = NULL;
+				}
+			}
+			if (ffd < 0)
+#endif /* __rtems__ */
 			{
 				fds->revents = POLLNVAL;
 				n++;
@@ -1690,10 +1636,12 @@ pollscan(struct thread *td, struct pollfd *fds, u_int nfd)
 				 * POLLERR if appropriate.
 				 */
 				selfdalloc(td, fds);
+#ifndef __rtems__
 				fds->revents = fo_poll(fp, fds->events,
 				    td->td_ucred, td);
-#ifdef __rtems__
-				rtems_libio_iop_drop(&fp->f_io);
+#else /* __rtems__ */
+				fds->revents = rtems_bsd_libio_fo_poll(ffd, fp, fds->events,
+				    td->td_ucred, td);
 #endif /* __rtems__ */
 				/*
 				 * POSIX requires POLLOUT to be never
@@ -2037,6 +1985,8 @@ kern_posix_error(struct thread *td, int error)
 
 #include <rtems/score/objectimpl.h>
 #include <rtems/score/threadimpl.h>
+
+#include <sys/socket.h>
 
 #include <rtems/bsd/util.h>
 

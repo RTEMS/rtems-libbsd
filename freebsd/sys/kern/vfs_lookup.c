@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -39,8 +41,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_capsicum.h"
-#include "opt_ktrace.h"
+#include <rtems/bsd/local/opt_capsicum.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -158,7 +160,11 @@ nameiinit(void *dummy __unused)
 	    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, 0);
 	getnewvnode("crossmp", NULL, &crossmp_vnodeops, &vp_crossmp);
 }
+#ifndef __rtems__
 SYSINIT(vfs, SI_SUB_VFS, SI_ORDER_SECOND, nameiinit, NULL);
+#else /* __rtems__ */
+SYSINIT(vfs_l, SI_SUB_VFS, SI_ORDER_SECOND, nameiinit, NULL);
+#endif /* __rtems__ */
 
 static int lookup_cap_dotdot = 1;
 SYSCTL_INT(_vfs, OID_AUTO, lookup_cap_dotdot, CTLFLAG_RWTUN,
@@ -557,6 +563,7 @@ static int
 compute_cn_lkflags(struct mount *mp, int lkflags, int cnflags)
 {
 
+#ifndef __rtems__
 	if (mp == NULL || ((lkflags & LK_SHARED) &&
 	    (!(mp->mnt_kern_flag & MNTK_LOOKUP_SHARED) ||
 	    ((cnflags & ISDOTDOT) &&
@@ -565,6 +572,7 @@ compute_cn_lkflags(struct mount *mp, int lkflags, int cnflags)
 		lkflags |= LK_EXCLUSIVE;
 	}
 	lkflags |= LK_NODDLKTREAT;
+#endif /* __rtems__ */
 	return (lkflags);
 }
 
@@ -820,10 +828,14 @@ dirloop:
 			goto bad;
 		}
 		for (;;) {
+#ifndef __rtems__
 			for (pr = cnp->cn_cred->cr_prison; pr != NULL;
 			     pr = pr->pr_parent)
 				if (dp == pr->pr_root)
 					break;
+#else /* __rtems__ */
+			pr = NULL;
+#endif /* __rtems__ */
 			if (dp == ndp->ni_rootdir || 
 			    dp == ndp->ni_topdir || 
 			    dp == rootvnode ||

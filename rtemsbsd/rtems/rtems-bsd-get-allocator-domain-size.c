@@ -45,13 +45,16 @@ rtems_bsd_get_allocator_domain_size(rtems_bsd_allocator_domain domain)
 	uintptr_t size;
 
 	switch (domain) {
-		case RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE:
-		case RTEMS_BSD_ALLOCATOR_DOMAIN_MBUF:
-			size = rtems_bsd_allocator_domain_page_mbuf_size;
-			break;
-		default:
-			size = 0;
-			break;
+	case RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE:
+	case RTEMS_BSD_ALLOCATOR_DOMAIN_MBUF:
+		size = rtems_bsd_allocator_domain_page_mbuf_size;
+		break;
+	case RTEMS_BSD_ALLOCATOR_DOMAIN_BIO:
+		size = rtems_bsd_allocator_domain_bio_size;
+		break;
+	default:
+		size = 0;
+		break;
 	}
 
 	return (size);

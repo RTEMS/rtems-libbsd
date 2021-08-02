@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -39,8 +41,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_capsicum.h"
-#include "opt_ktrace.h"
+#include <rtems/bsd/local/opt_capsicum.h>
+#include <rtems/bsd/local/opt_ktrace.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -65,7 +67,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sdt.h>
 #include <sys/stat.h>
 #include <sys/sx.h>
-#include <sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 #include <sys/vnode.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
@@ -87,7 +89,9 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_page.h>
 #include <vm/uma.h>
 
+#ifndef __rtems__
 #include <ufs/ufs/quota.h>
+#endif /* __rtems__ */
 
 MALLOC_DEFINE(M_FADVISE, "fadvise", "posix_fadvise(2) information");
 
@@ -151,6 +155,7 @@ sys_sync(struct thread *td, struct sync_args *uap)
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * Change filesystem quotas.
  */
@@ -203,6 +208,7 @@ sys_quotactl(struct thread *td, struct quotactl_args *uap)
 		vfs_unbusy(mp);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Used by statfs conversion routines to scale the block size up if
@@ -904,6 +910,7 @@ kern_chdir(struct thread *td, char *path, enum uio_seg pathseg)
 	return (0);
 }
 
+#ifndef __rtems__
 /*
  * Change notion of root (``/'') directory.
  */
@@ -945,6 +952,7 @@ error:
 	NDFREE(&nd, NDF_ONLY_PNBUF);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Common routine for chroot and chdir.  Callers must provide a locked vnode
@@ -999,8 +1007,10 @@ flags_to_rights(int flags, cap_rights_t *rightsp)
 	if (flags & (O_SYNC | O_FSYNC))
 		cap_rights_set(rightsp, CAP_FSYNC);
 
+#ifndef __rtems__
 	if (flags & (O_EXLOCK | O_SHLOCK))
 		cap_rights_set(rightsp, CAP_FLOCK);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1061,9 +1071,13 @@ kern_openat(struct thread *td, int fd, char *path, enum uio_seg pathseg,
 	 * Only one of the O_EXEC, O_RDONLY, O_WRONLY and O_RDWR flags
 	 * may be specified.
 	 */
+#ifndef __rtems__
 	if (flags & O_EXEC) {
 		if (flags & O_ACCMODE)
 			return (EINVAL);
+#else /* __rtems__ */
+	if (false) {
+#endif /* __rtems__ */
 	} else if ((flags & O_ACCMODE) == O_ACCMODE) {
 		return (EINVAL);
 	} else {
@@ -1083,10 +1097,16 @@ kern_openat(struct thread *td, int fd, char *path, enum uio_seg pathseg,
 	 */
 	/* Set the flags early so the finit in devfs can pick them up. */
 	fp->f_flag = flags & FMASK;
+#ifndef __rtems__
 	cmode = ((mode & ~fdp->fd_cmask) & ALLPERMS) & ~S_ISTXT;
+#else /* __rtems__ */
+	cmode = (mode & ~fdp->fd_cmask) & ALLPERMS;
+#endif /* __rtems__ */
 	NDINIT_ATRIGHTS(&nd, LOOKUP, FOLLOW | AUDITVNODE1, pathseg, path, fd,
 	    &rights, td);
+#ifndef __rtems__
 	td->td_dupfd = -1;		/* XXX check for fdopen */
+#endif /* __rtems__ */
 	error = vn_open(&nd, &flags, cmode, fp);
 	if (error != 0) {
 		/*
@@ -1106,16 +1126,23 @@ kern_openat(struct thread *td, int fd, char *path, enum uio_seg pathseg,
 		 */
 		if ((nd.ni_lcf & NI_LCF_STRICTRELATIVE) == 0 &&
 		    (error == ENODEV || error == ENXIO) &&
+#ifndef __rtems__
 		    td->td_dupfd >= 0) {
 			error = dupfdopen(td, fdp, td->td_dupfd, flags, error,
 			    &indx);
 			if (error == 0)
 				goto success;
+#else /* __rtems__ */
+		    true) {
+			panic("fdopen() dup");
+#endif /* __rtems__ */
 		}
 
 		goto bad;
 	}
+#ifndef __rtems__
 	td->td_dupfd = 0;
+#endif /* __rtems__ */
 	NDFREE(&nd, NDF_ONLY_PNBUF);
 	vp = nd.ni_vp;
 
@@ -1255,12 +1282,16 @@ kern_mknodat(struct thread *td, int fd, char *path, enum uio_seg pathseg,
 		if (error == 0 && dev == VNOVAL)
 			error = EINVAL;
 		break;
+#ifndef __rtems__
 	case S_IFWHT:
 		error = priv_check(td, PRIV_VFS_MKNOD_WHT);
 		break;
+#endif /* __rtems__ */
 	case S_IFIFO:
+#ifndef __rtems__
 		if (dev == 0)
 			return (kern_mkfifoat(td, fd, path, pathseg, mode));
+#endif /* __rtems__ */
 		/* FALLTHROUGH */
 	default:
 		error = EINVAL;
@@ -1298,9 +1329,11 @@ restart:
 		case S_IFBLK:
 			vattr.va_type = VBLK;
 			break;
+#ifndef __rtems__
 		case S_IFWHT:
 			whiteout = 1;
 			break;
+#endif /* __rtems__ */
 		default:
 			panic("kern_mknod: invalid mode");
 		}
@@ -1333,6 +1366,7 @@ restart:
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Create a named pipe.
  */
@@ -1418,6 +1452,7 @@ out:
 	NDFREE(&nd, NDF_ONLY_PNBUF);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Make a hard file link.
@@ -1459,15 +1494,19 @@ sys_linkat(struct thread *td, struct linkat_args *uap)
 }
 
 int hardlink_check_uid = 0;
+#ifndef __rtems__
 SYSCTL_INT(_security_bsd, OID_AUTO, hardlink_check_uid, CTLFLAG_RW,
     &hardlink_check_uid, 0,
     "Unprivileged processes cannot create hard links to files owned by other "
     "users");
+#endif /* __rtems__ */
 static int hardlink_check_gid = 0;
+#ifndef __rtems__
 SYSCTL_INT(_security_bsd, OID_AUTO, hardlink_check_gid, CTLFLAG_RW,
     &hardlink_check_gid, 0,
     "Unprivileged processes cannot create hard links to files owned by other "
     "groups");
+#endif /* __rtems__ */
 
 static int
 can_hardlink(struct vnode *vp, struct ucred *cred)
@@ -1689,6 +1728,7 @@ out:
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Delete a whiteout from the filesystem.
  */
@@ -1735,6 +1775,7 @@ restart:
 	vn_finished_write(mp);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Delete a name from the filesystem.
@@ -1952,6 +1993,7 @@ sys_access(struct thread *td, struct access_args *uap)
 	    0, uap->amode));
 }
 
+#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct faccessat_args {
 	int	dirfd;
@@ -2014,7 +2056,9 @@ out:
 	}
 	return (error);
 }
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 /*
  * Check access permissions using "effective" credentials.
  */
@@ -2031,7 +2075,9 @@ sys_eaccess(struct thread *td, struct eaccess_args *uap)
 	return (kern_accessat(td, AT_FDCWD, uap->path, UIO_USERSPACE,
 	    AT_EACCESS, uap->amode));
 }
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #if defined(COMPAT_43)
 /*
  * Get file status; this version follows links.
@@ -2256,6 +2302,7 @@ freebsd11_fstatat(struct thread *td, struct freebsd11_fstatat_args* uap)
 	return (error);
 }
 #endif	/* COMPAT_FREEBSD11 */
+#endif /* __rtems__ */
 
 /*
  * Get file status
@@ -2398,6 +2445,7 @@ freebsd11_nlstat(struct thread *td, struct freebsd11_nlstat_args *uap)
 }
 #endif /* COMPAT_FREEBSD11 */
 
+#ifndef __rtems__
 /*
  * Get configurable pathname variables.
  */
@@ -2456,6 +2504,7 @@ kern_pathconf(struct thread *td, char *path, enum uio_seg pathseg, int name,
 	vput(nd.ni_vp);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Return target name of a symbolic link.
@@ -2607,6 +2656,7 @@ sys_chflags(struct thread *td, struct chflags_args *uap)
 	    uap->flags, 0));
 }
 
+#ifndef __rtems__
 #ifndef _SYS_SYSPROTO_H_
 struct chflagsat_args {
 	int	fd;
@@ -2695,6 +2745,7 @@ sys_fchflags(struct thread *td, struct fchflags_args *uap)
 	fdrop(fp, td);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Common implementation code for chmod(), lchmod() and fchmod().
@@ -2954,6 +3005,7 @@ sys_fchown(struct thread *td, struct fchown_args *uap)
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Common implementation code for utimes(), lutimes(), and futimes().
  */
@@ -3272,6 +3324,7 @@ kern_utimensat(struct thread *td, int fd, char *path, enum uio_seg pathseg,
 	vrele(nd.ni_vp);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Truncate a file given its path name.
@@ -3396,11 +3449,13 @@ kern_fsync(struct thread *td, int fd, bool fullsync)
 	}
 	vn_lock(vp, lock_flags | LK_RETRY);
 	AUDIT_ARG_VNODE1(vp);
+#ifndef __rtems__
 	if (vp->v_object != NULL) {
 		VM_OBJECT_WLOCK(vp->v_object);
 		vm_object_page_clean(vp->v_object, 0, 0, 0);
 		VM_OBJECT_WUNLOCK(vp->v_object);
 	}
+#endif /* __rtems__ */
 	error = fullsync ? VOP_FSYNC(vp, MNT_WAIT, td) : VOP_FDATASYNC(vp, td);
 	VOP_UNLOCK(vp, 0);
 	vn_finished_write(mp);
@@ -3481,6 +3536,7 @@ again:
 	    AUDITVNODE1, pathseg, old, oldfd,
 	    &cap_renameat_source_rights, td);
 #else
+
 	NDINIT_ATRIGHTS(&fromnd, DELETE, WANTPARENT | SAVESTART | AUDITVNODE1,
 	    pathseg, old, oldfd,
 	    &cap_renameat_source_rights, td);
@@ -4035,6 +4091,7 @@ fail:
 	return (error);
 }
 
+#ifndef __rtems__
 /*
  * Set the mode mask for creation of filesystem nodes.
  */
@@ -4102,6 +4159,7 @@ out:
 	vput(vp);
 	return (error);
 }
+#endif /* __rtems__ */
 
 /*
  * Convert a user file descriptor to a kernel file entry and check that, if it
@@ -4139,6 +4197,7 @@ getvnode(struct thread *td, int fd, cap_rights_t *rightsp, struct file **fpp)
 }
 
 
+#ifndef __rtems__
 /*
  * Get an (NFS) file handle.
  */
@@ -4515,6 +4574,7 @@ out:
 	vfs_unbusy(mp);
 	return (error);
 }
+#endif /* __rtems__ */
 
 int
 kern_posix_fallocate(struct thread *td, int fd, off_t offset, off_t len)
@@ -4600,6 +4660,7 @@ kern_posix_fallocate(struct thread *td, int fd, off_t offset, off_t len)
 	return (error);
 }
 
+#ifndef __rtems__
 int
 sys_posix_fallocate(struct thread *td, struct posix_fallocate_args *uap)
 {
@@ -4746,3 +4807,4 @@ sys_posix_fadvise(struct thread *td, struct posix_fadvise_args *uap)
 	    uap->advice);
 	return (kern_posix_error(td, error));
 }
+#endif /* __rtems__ */

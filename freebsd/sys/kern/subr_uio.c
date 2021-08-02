@@ -296,7 +296,6 @@ out:
 	return (error);
 }
 
-#ifndef __rtems__
 /*
  * Wrapper for uiomove() that validates the arguments against a known-good
  * kernel buffer.  Currently, uiomove accepts a signed (n) argument, which
@@ -319,6 +318,7 @@ uiomove_frombuf(void *buf, int buflen, struct uio *uio)
 	return (uiomove((char *)buf + offset, n, uio));
 }
 
+#ifndef __rtems__
 /*
  * Give next character to user as result of read.
  */

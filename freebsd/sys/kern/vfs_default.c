@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -46,13 +48,15 @@ __FBSDID("$FreeBSD$");
 #include <sys/kernel.h>
 #include <sys/limits.h>
 #include <sys/lock.h>
+#ifndef __rtems__
 #include <sys/lockf.h>
+#endif /* __rtems__ */
 #include <sys/malloc.h>
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/rwlock.h>
 #include <sys/fcntl.h>
-#include <sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 #include <sys/vnode.h>
 #include <sys/dirent.h>
 #include <sys/poll.h>
@@ -66,7 +70,9 @@ __FBSDID("$FreeBSD$");
 #include <vm/vm_map.h>
 #include <vm/vm_page.h>
 #include <vm/vm_pager.h>
+#ifndef __rtems__
 #include <vm/vnode_pager.h>
+#endif /* __rtems__ */
 
 static int	vop_nolookup(struct vop_lookup_args *);
 static int	vop_norename(struct vop_rename_args *);
@@ -401,6 +407,7 @@ vop_stdaccessx(struct vop_accessx_args *ap)
 int
 vop_stdadvlock(struct vop_advlock_args *ap)
 {
+#ifndef __rtems__
 	struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -422,11 +429,15 @@ vop_stdadvlock(struct vop_advlock_args *ap)
 		vattr.va_size = 0;
 
 	return (lf_advlock(ap, &(vp->v_lockf), vattr.va_size));
+#else /* __rtems__ */
+	return (EINVAL);
+#endif /* __rtems__ */
 }
 
 int
 vop_stdadvlockasync(struct vop_advlockasync_args *ap)
 {
+#ifndef __rtems__
 	struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -443,16 +454,23 @@ vop_stdadvlockasync(struct vop_advlockasync_args *ap)
 		vattr.va_size = 0;
 
 	return (lf_advlockasync(ap, &(vp->v_lockf), vattr.va_size));
+#else /* __rtems__ */
+	return (EINVAL);
+#endif /* __rtems__ */
 }
 
 int
 vop_stdadvlockpurge(struct vop_advlockpurge_args *ap)
 {
+#ifndef __rtems__
 	struct vnode *vp;
 
 	vp = ap->a_vp;
 	lf_purgelocks(vp, &vp->v_lockf);
 	return (0);
+#else /* __rtems__ */
+	return (EINVAL);
+#endif /* __rtems__ */
 }
 
 /*
@@ -670,20 +688,28 @@ vop_stdgetpages(ap)
 		int *a_rahead;
 	} */ *ap;
 {
+#ifndef __rtems__
 
 	return vnode_pager_generic_getpages(ap->a_vp, ap->a_m,
 	    ap->a_count, ap->a_rbehind, ap->a_rahead, NULL, NULL);
+#else /* __rtems__ */
+	return EINVAL;
+#endif /* __rtems__ */
 }
 
 static int
 vop_stdgetpages_async(struct vop_getpages_async_args *ap)
 {
+#ifndef __rtems__
 	int error;
 
 	error = VOP_GETPAGES(ap->a_vp, ap->a_m, ap->a_count, ap->a_rbehind,
 	    ap->a_rahead);
 	ap->a_iodone(ap->a_arg, ap->a_m, ap->a_count, error);
 	return (error);
+#else /* __rtems__ */
+	return EINVAL;
+#endif /* __rtems__ */
 }
 
 int
@@ -703,9 +729,13 @@ vop_stdputpages(ap)
 		int *a_rtvals;
 	} */ *ap;
 {
+#ifndef __rtems__
 
 	return vnode_pager_generic_putpages(ap->a_vp, ap->a_m, ap->a_count,
 	     ap->a_sync, ap->a_rtvals);
+#else /* __rtems__ */
+	return EINVAL;
+#endif /* __rtems__ */
 }
 
 int
@@ -962,8 +992,10 @@ vop_stdallocate(struct vop_allocate_args *ap)
 		offset += cur;
 		if (len == 0)
 			break;
+#ifndef __rtems__
 		if (should_yield())
 			break;
+#endif /* __rtems__ */
 	}
 
  out:
@@ -984,6 +1016,7 @@ vop_stdadvise(struct vop_advise_args *ap)
 
 	vp = ap->a_vp;
 	switch (ap->a_advice) {
+#ifndef __rtems__
 	case POSIX_FADV_WILLNEED:
 		/*
 		 * Do nothing for now.  Filesystems should provide a
@@ -1026,6 +1059,7 @@ vop_stdadvise(struct vop_advise_args *ap)
 		BO_RUNLOCK(bo);
 		VOP_UNLOCK(vp, 0);
 		break;
+#endif /* __rtems__ */
 	default:
 		error = EINVAL;
 		break;

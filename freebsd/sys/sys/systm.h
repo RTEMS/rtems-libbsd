@@ -413,11 +413,11 @@ copystr(const void * _Nonnull __restrict kfaddr,
 	    void * _Nonnull __restrict kdaddr, size_t len,
 	    size_t * __restrict lencopied)
 {
-	if (lencopied != NULL) {
-		*lencopied = len;
-	}
+	size_t n = strlcpy((char*)kdaddr, (const char*)kfaddr, len);
 
-	memcpy(kdaddr, kfaddr, len);
+	if (lencopied != NULL) {
+		*lencopied = n + 1;
+	}
 
 	return (0);
 }
@@ -426,11 +426,11 @@ static inline int
 copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
 	    size_t len, size_t * __restrict lencopied)
 {
-	if (lencopied != NULL) {
-		*lencopied = len;
-	}
+	size_t n = strlcpy((char*)kaddr, (const char*)udaddr, len);
 
-	memcpy(kaddr, udaddr, len);
+	if (lencopied != NULL) {
+		*lencopied = n + 1;
+	}
 
 	return (0);
 }

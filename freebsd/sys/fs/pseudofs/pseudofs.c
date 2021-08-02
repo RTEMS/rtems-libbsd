@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -31,7 +33,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_pseudofs.h"
+#include <rtems/bsd/local/opt_pseudofs.h>
 
 #include <sys/param.h>
 #include <sys/kernel.h>

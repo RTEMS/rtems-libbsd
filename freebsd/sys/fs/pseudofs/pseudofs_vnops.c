@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -31,7 +33,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_pseudofs.h"
+#include <rtems/bsd/local/opt_pseudofs.h>
 
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -95,6 +97,7 @@ pfs_visible_proc(struct thread *td, struct pfs_node *pn, struct proc *proc)
 
 	PROC_LOCK_ASSERT(proc, MA_OWNED);
 
+#ifndef __rtems__
 	visible = ((proc->p_flag & P_WEXIT) == 0);
 	if (visible)
 		visible = (p_cansee(td, proc) == 0);
@@ -102,6 +105,7 @@ pfs_visible_proc(struct thread *td, struct pfs_node *pn, struct proc *proc)
 		visible = pn_vis(td, proc, pn);
 	if (!visible)
 		return (0);
+#endif /* __rtems__ */
 	return (1);
 }
 
@@ -118,7 +122,11 @@ pfs_visible(struct thread *td, struct pfs_node *pn, pid_t pid,
 		*p = NULL;
 	if (pid == NO_PID)
 		PFS_RETURN (1);
+#ifndef __rtems__
 	proc = allproc_locked ? pfind_locked(pid) : pfind(pid);
+#else /* __rtems__ */
+	proc = &proc0;
+#endif /* __rtems__ */
 	if (proc == NULL)
 		PFS_RETURN (0);
 	if (pfs_visible_proc(td, pn, proc)) {
@@ -177,7 +185,11 @@ pfs_close(struct vop_close_args *va)
 		PFS_RETURN (0);
 
 	if (pvd->pvd_pid != NO_PID) {
+#ifndef __rtems__
 		proc = pfind(pvd->pvd_pid);
+#else /* __rtems__ */
+		proc = &proc0;
+#endif /* __rtems__ */
 	} else {
 		proc = NULL;
 	}
@@ -241,13 +253,17 @@ pfs_getattr(struct vop_getattr_args *va)
 		break;
 	}
 
+#ifndef __rtems__
 	if (proc != NULL) {
 		vap->va_uid = proc->p_ucred->cr_ruid;
 		vap->va_gid = proc->p_ucred->cr_rgid;
 	} else {
+#endif /* __rtems__ */
 		vap->va_uid = 0;
 		vap->va_gid = 0;
+#ifndef __rtems__
 	}
+#endif /* __rtems__ */
 
 	if (pn->pn_attr != NULL)
 		error = pn_attr(curthread, proc, pn, vap);
@@ -713,10 +729,14 @@ pfs_iterate(struct thread *td, struct proc *proc, struct pfs_node *pd,
 	}
 	if (*pn != NULL && (*pn)->pn_type == pfstype_procdir) {
 		/* next process */
+#ifndef __rtems__
 		if (*p == NULL)
 			*p = LIST_FIRST(&allproc);
 		else
 			*p = LIST_NEXT(*p, p_list);
+#else /* __rtems__ */
+		*p = &proc0;
+#endif /* __rtems__ */
 		/* out of processes: next node */
 		if (*p == NULL)
 			*pn = (*pn)->pn_next;
@@ -895,6 +915,7 @@ pfs_readlink(struct vop_readlink_args *va)
 	if (pn->pn_fill == NULL)
 		PFS_RETURN (EIO);
 
+#ifndef __rtems__
 	if (pvd->pvd_pid != NO_PID) {
 		if ((proc = pfind(pvd->pvd_pid)) == NULL)
 			PFS_RETURN (EIO);
@@ -905,6 +926,7 @@ pfs_readlink(struct vop_readlink_args *va)
 		_PHOLD(proc);
 		PROC_UNLOCK(proc);
 	}
+#endif /* __rtems__ */
 	vhold(vn);
 	locked = VOP_ISLOCKED(vn);
 	VOP_UNLOCK(vn, 0);

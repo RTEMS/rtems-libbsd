@@ -155,10 +155,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysent.h>
 #include <compat/freebsd32/freebsd32.h>
 #endif
-#ifdef __rtems__
-#include <rtems/libio.h>
-#define maxfiles rtems_libio_number_iops
-#endif /* __rtems__ */
 
 static int	soreceive_rcvoob(struct socket *so, struct uio *uio,
 		    int flags);
@@ -177,9 +173,6 @@ static void	filt_sowdetach(struct knote *kn);
 static int	filt_sowrite(struct knote *kn, long hint);
 static int	filt_soempty(struct knote *kn, long hint);
 static int inline hhook_run_socket(struct socket *so, void *hctx, int32_t h_id);
-#ifdef __rtems__
-static
-#endif /* __rtems__ */
 fo_kqfilter_t	soo_kqfilter;
 
 static struct filterops soread_filtops = {
@@ -3427,15 +3420,6 @@ soo_kqfilter(struct file *fp, struct knote *kn)
 	SOCK_UNLOCK(so);
 	return (0);
 }
-#ifdef __rtems__
-int
-rtems_bsd_soo_kqfilter(rtems_libio_t *iop, struct knote *kn)
-{
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
-
-	return soo_kqfilter(fp, kn);
-}
-#endif /* __rtems__ */
 
 /*
  * Some routines that return EOPNOTSUPP for entry points that are not

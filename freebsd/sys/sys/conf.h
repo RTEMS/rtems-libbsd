@@ -90,15 +90,11 @@ struct cdev {
 	LIST_HEAD(, cdev)	si_children;
 	LIST_ENTRY(cdev)	si_siblings;
 	struct cdev *si_parent;
-#ifndef __rtems__
 	struct mount	*si_mountpt;
-#endif /* __rtems__ */
 	void		*si_drv1, *si_drv2;
 	struct cdevsw	*si_devsw;
-#ifndef __rtems__
 	int		si_iosize_max;	/* maximum I/O size (for physio &al) */
 	u_long		si_usecount;
-#endif /* __rtems__ */
 	u_long		si_threadcount;
 #ifndef __rtems__
 	union {

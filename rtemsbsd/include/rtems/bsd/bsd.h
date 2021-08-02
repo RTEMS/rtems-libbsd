@@ -58,6 +58,12 @@ extern "C" {
  */
 #define RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT (8 * 1024 * 1024)
 
+/*
+ * The default block IO buffer memory size. Do not change, use
+ * RTEMS_BSD_CONFIG_DOMAIN_BIO_SIZE to override for your application.
+ */
+#define RTEMS_BSD_ALLOCATOR_DOMAIN_BIO_DEFAULT (4 * 1024 * 1024)
+
 typedef enum {
 	RTEMS_BSD_RES_IRQ = 1,
 	RTEMS_BSD_RES_MEMORY = 3
@@ -165,6 +171,7 @@ size_t rtems_bsd_get_task_stack_size(const char *name);
 typedef enum {
 	RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE,
 	RTEMS_BSD_ALLOCATOR_DOMAIN_MBUF,
+	RTEMS_BSD_ALLOCATOR_DOMAIN_BIO,
 	RTEMS_BSD_ALLOCATOR_DOMAIN_MALLOC
 } rtems_bsd_allocator_domain;
 
@@ -174,6 +181,13 @@ typedef enum {
  * Applications may set this value to change the value returned by the default.
  */
 extern uintptr_t rtems_bsd_allocator_domain_page_mbuf_size;
+
+/**
+ * @brief The size for the block IO default buffer memory.
+ *
+ * Applications may set this value to change the value returned by the default.
+ */
+extern uintptr_t rtems_bsd_allocator_domain_bio_size;
 
 /**
  * @brief Returns the size for a specific allocator domain.

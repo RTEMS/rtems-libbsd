@@ -93,6 +93,7 @@ struct trapframe;
 struct vnode;
 
 struct sysentvec {
+#ifndef __rtems__
 	int		sv_size;	/* number of entries */
 	struct sysent	*sv_table;	/* pointer to sysent */
 	u_int		sv_mask;	/* optional mask to index */
@@ -123,7 +124,9 @@ struct sysentvec {
 			    u_long);
 	void		(*sv_fixlimit)(struct rlimit *, int);
 	u_long		*sv_maxssiz;
+#endif /* __rtems__ */
 	u_int		sv_flags;
+#ifndef __rtems__
 	void		(*sv_set_syscall_retval)(struct thread *, int);
 	int		(*sv_fetch_syscall_args)(struct thread *);
 	const char	**sv_syscallnames;
@@ -137,6 +140,7 @@ struct sysentvec {
 	int		(*sv_trap)(struct thread *);
 	u_long		*sv_hwcap;	/* Value passed in AT_HWCAP. */
 	u_long		*sv_hwcap2;	/* Value passed in AT_HWCAP2. */
+#endif /* __rtems__ */
 };
 
 #define	SV_ILP32	0x000100	/* 32-bit executable. */

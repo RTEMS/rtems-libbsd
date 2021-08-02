@@ -85,6 +85,12 @@ extern "C" {
   #define RTEMS_BSD_CFGDECL_DOMAIN_PAGE_MBUFS_SIZE RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT
 #endif
 
+#if defined(RTEMS_BSD_CONFIG_DOMAIN_BIO_SIZE)
+  #define RTEMS_BSD_CFGDECL_DOMAIN_BIO_SIZE RTEMS_BSD_CONFIG_DOMAIN_BIO_SIZE
+#else
+  #define RTEMS_BSD_CFGDECL_DOMAIN_BIO_SIZE RTEMS_BSD_ALLOCATOR_DOMAIN_BIO_DEFAULT
+#endif
+
 /*
  * BSD Kernel modules.
  */
@@ -221,6 +227,12 @@ extern "C" {
    */
   uintptr_t rtems_bsd_allocator_domain_page_mbuf_size = \
     RTEMS_BSD_CFGDECL_DOMAIN_PAGE_MBUFS_SIZE;
+
+  /*
+   * Configure the block IO buffer memory size.
+   */
+  uintptr_t rtems_bsd_allocator_domain_bio_size = \
+    RTEMS_BSD_CFGDECL_DOMAIN_BIO_SIZE;
 
   /*
    * If a BSP configuration is requested include the Nexus bus BSP

@@ -34,6 +34,13 @@ static void default_wait_for_link_up( const char *name )
   }
 }
 
+/*
+ * Work around the need for this declr and not being able to include sys/ioctl.h.
+ *
+ * rtems/bdbuf.h have a call to it
+ */
+int ioctl(int fd, unsigned long request, ...);
+
 static void default_set_self_prio( rtems_task_priority prio )
 {
   rtems_status_code sc;

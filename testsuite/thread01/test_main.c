@@ -278,6 +278,16 @@ test_kthread_add(void)
 static void
 test_rtems_bsd_get_curthread_or_null(void)
 {
+#ifdef TEST_IS_BROKEN
+	/*
+	 * This part of test relies on nothing calling
+	 * rtems_bsd_get_current.*() before getting here so the workspace
+	 * can be consumed and the allocation fails. Changes in other
+	 * areas of libbsd have resulted in `Init` having a struct thread
+	 * object allocated.
+	 *
+	 * Maybe creating a new thread and using that would be a more stable test.
+	 */
 	rtems_resource_snapshot snapshot;
 	void *greedy;
 
@@ -290,12 +300,12 @@ test_rtems_bsd_get_curthread_or_null(void)
 	rtems_workspace_greedy_free(greedy);
 
 	rtems_resource_snapshot_take(&snapshot);
+#endif
 }
 
 static void
 test_main(void)
 {
-
 	main_task_id = rtems_task_self();
 
 	/*

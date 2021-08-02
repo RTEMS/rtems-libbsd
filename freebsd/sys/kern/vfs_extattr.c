@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
@@ -491,6 +493,8 @@ kern_extattr_get_path(struct thread *td, const char *path, int attrnamespace,
  * References: vp must be a valid reference for the duration of the call
  */
 static int
+
+
 extattr_delete_vp(struct vnode *vp, int attrnamespace, const char *attrname,
     struct thread *td)
 {

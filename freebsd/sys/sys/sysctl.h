@@ -1129,18 +1129,10 @@ int	sysctl_ctx_entry_del(struct sysctl_ctx_list *clist,
 	    struct sysctl_oid *oidp);
 
 int	kernel_sysctl(struct thread *td, int *name, u_int namelen, void *old,
-#ifndef __rtems__
 	    size_t *oldlenp, void *new, size_t newlen, size_t *retval,
-#else /* __rtems__ */
-	    size_t *oldlenp, const void *newp, size_t newlen, size_t *retval,
-#endif /* __rtems__ */
 	    int flags);
 int	kernel_sysctlbyname(struct thread *td, char *name, void *old,
-#ifndef __rtems__
 	    size_t *oldlenp, void *new, size_t newlen, size_t *retval,
-#else /* __rtems__ */
-	    size_t *oldlenp, const void *newp, size_t newlen, size_t *retval,
-#endif /* __rtems__ */
 	    int flags);
 #ifndef __rtems__
 int	userland_sysctl(struct thread *td, int *name, u_int namelen, void *old,

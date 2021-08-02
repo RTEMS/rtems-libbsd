@@ -216,7 +216,7 @@ An example to turn on a verbose kernel boot, verbose sysinit and bus debugging
 configure with:
 
 ```
---freebsd-options=bootverbose,verbose_sysinit,bus_debug
+--freebsd-options=bootverbose,verbose_sysinit,bus_debug,debug_locks,ktr,ktr_verbose
 ```
 
 The LibBSD Waf support splits the options and converts them to uppercase and
@@ -224,12 +224,17 @@ adds them -D options on the compiler command line.
 
 The list is:
 
- bootverbose:     Verbose boot of the kernel
- verbose_sysinit: Verbose printing of all the SYSINIT calls
- bus_debug:       Bus debugging support
- ktr:             Kernel trace
- ktr_verbose:     Verbose kernel trace
- invariants:      Invariants build of the kernel
+ bootverbose:             Verbose boot of the kernel
+ verbose_sysinit:         Verbose printing of all the SYSINIT calls
+ bus_debug:               Bus debugging support
+ ktr:                     Kernel trace
+ ktr_verbose:             Verbose kernel trace
+ debug_locks:             FreeBSD locks debugging
+ invariants:              Invariants build of the kernel
+ invariant_support:       Support for Invariants (needed with invariants)
+ rtems_bsd_descrip_trace: RTEMS BSD descriptor maping trace
+ rtems_bsd_syscall_trace: RTEMS BSD system call trace
+ rtems_bsd_vfs_trace      RTEMS VFS to libio trace
 
 SMP Requirements
 ----------------

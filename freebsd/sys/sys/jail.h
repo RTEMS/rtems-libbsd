@@ -399,7 +399,18 @@ getcredhostid(struct ucred *cred, unsigned long *hostid)
 }
 #endif /* __rtems__ */
 void prison0_init(void);
+#ifndef __rtems__
 int prison_allow(struct ucred *, unsigned);
+#else /* __rtems__ */
+static inline int
+prison_allow(struct ucred *cred1, unsigned i)
+{
+
+	(void)cred1;
+	(void)i;
+	return (0);
+}
+#endif /* __rtems__ */
 #ifndef __rtems__
 int prison_check(struct ucred *cred1, struct ucred *cred2);
 #else /* __rtems__ */

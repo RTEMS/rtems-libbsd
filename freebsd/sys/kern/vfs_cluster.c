@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -36,7 +38,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_debug_cluster.h"
+#include <rtems/bsd/local/opt_debug_cluster.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -254,7 +256,9 @@ cluster_read(struct vnode *vp, u_quad_t filesize, daddr_t lblkno, long size,
 			PROC_UNLOCK(td->td_proc);
 		}
 #endif /* RACCT */
+#ifndef __rtems__
 		td->td_ru.ru_inblock++;
+#endif /* __rtems__ */
 	}
 
 	/*
@@ -314,7 +318,9 @@ cluster_read(struct vnode *vp, u_quad_t filesize, daddr_t lblkno, long size,
 			PROC_UNLOCK(td->td_proc);
 		}
 #endif /* RACCT */
+#ifndef __rtems__
 		td->td_ru.ru_inblock++;
+#endif /* __rtems__ */
 	}
 
 	if (reqbp) {
@@ -447,6 +453,7 @@ cluster_rbuild(struct vnode *vp, u_quad_t filesize, daddr_t lbn,
 			 * take part in the cluster.  If it is partially valid
 			 * then we stop.
 			 */
+#ifndef __rtems__
 			off = tbp->b_offset;
 			tsize = size;
 			VM_OBJECT_WLOCK(tbp->b_bufobj->bo_object);

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -39,8 +41,8 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_inet.h"
-#include "opt_inet6.h"
+#include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -61,7 +63,12 @@ __FBSDID("$FreeBSD$");
 #include <netinet/in.h>
 #include <net/radix.h>
 
+#ifndef __rtems__
 static MALLOC_DEFINE(M_NETADDR, "export_host", "Export host address structure");
+#else /* __rtems__ */
+static MALLOC_DEFINE(M_NETADDR_e, "export_host", "Export host address structure");
+#define M_NETADDR M_NETADDR_e
+#endif /* __rtems__ */
 
 #if defined(INET) || defined(INET6)
 static struct radix_node_head *vfs_create_addrlist_af(
@@ -119,11 +126,13 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 	 * with fields like cr_uidinfo and cr_prison?  Currently, this
 	 * routine does not touch them (leaves them as NULL).
 	 */
+#ifndef __rtems__
 	if (argp->ex_anon.cr_version != XUCRED_VERSION) {
 		vfs_mount_error(mp, "ex_anon.cr_version: %d != %d",
 		    argp->ex_anon.cr_version, XUCRED_VERSION);
 		return (EINVAL);
 	}
+#endif /* __rtems__ */
 
 	if (argp->ex_addrlen == 0) {
 		if (mp->mnt_flag & MNT_DEFEXPORTED) {
@@ -134,11 +143,13 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 		np = &nep->ne_defexported;
 		np->netc_exflags = argp->ex_flags;
 		np->netc_anon = crget();
+#ifndef __rtems__
 		np->netc_anon->cr_uid = argp->ex_anon.cr_uid;
 		crsetgroups(np->netc_anon, argp->ex_anon.cr_ngroups,
 		    argp->ex_anon.cr_groups);
 		np->netc_anon->cr_prison = &prison0;
 		prison_hold(np->netc_anon->cr_prison);
+#endif /* __rtems__ */
 		np->netc_numsecflavors = argp->ex_numsecflavors;
 		bcopy(argp->ex_secflavors, np->netc_secflavors,
 		    sizeof(np->netc_secflavors));
@@ -213,11 +224,13 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 	}
 	np->netc_exflags = argp->ex_flags;
 	np->netc_anon = crget();
+#ifndef __rtems__
 	np->netc_anon->cr_uid = argp->ex_anon.cr_uid;
 	crsetgroups(np->netc_anon, argp->ex_anon.cr_ngroups,
 	    argp->ex_anon.cr_groups);
 	np->netc_anon->cr_prison = &prison0;
 	prison_hold(np->netc_anon->cr_prison);
+#endif /* __rtems__ */
 	np->netc_numsecflavors = argp->ex_numsecflavors;
 	bcopy(argp->ex_secflavors, np->netc_secflavors,
 	    sizeof(np->netc_secflavors));
@@ -525,4 +538,3 @@ vfs_stdcheckexp(struct mount *mp, struct sockaddr *nam, int *extflagsp,
 	lockmgr(&mp->mnt_explock, LK_RELEASE, NULL);
 	return (0);
 }
-

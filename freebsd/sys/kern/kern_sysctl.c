@@ -1773,11 +1773,7 @@ sysctl_new_kernel(struct sysctl_req *req, void *p, size_t l)
 
 int
 kernel_sysctl(struct thread *td, int *name, u_int namelen, void *old,
-#ifndef __rtems__
     size_t *oldlenp, void *new, size_t newlen, size_t *retval, int flags)
-#else /* __rtems__ */
-    size_t *oldlenp, const void *new, size_t newlen, size_t *retval, int flags)
-#endif /* __rtems__ */
 {
 	int error = 0;
 	struct sysctl_req req;

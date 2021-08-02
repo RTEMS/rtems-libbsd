@@ -44,6 +44,7 @@ struct sys_exit_args {
 struct fork_args {
 	register_t dummy;
 };
+#endif /* __rtems__ */
 struct read_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char buf_l_[PADL_(void *)]; void * buf; char buf_r_[PADR_(void *)];
@@ -62,12 +63,14 @@ struct open_args {
 struct close_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct wait4_args {
 	char pid_l_[PADL_(int)]; int pid; char pid_r_[PADR_(int)];
 	char status_l_[PADL_(int *)]; int * status; char status_r_[PADR_(int *)];
 	char options_l_[PADL_(int)]; int options; char options_r_[PADR_(int)];
 	char rusage_l_[PADL_(struct rusage *)]; struct rusage * rusage; char rusage_r_[PADR_(struct rusage *)];
 };
+#endif /* __rtems__ */
 struct link_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char link_l_[PADL_(char *)]; char * link; char link_r_[PADR_(char *)];
@@ -90,12 +93,14 @@ struct chown_args {
 	char uid_l_[PADL_(int)]; int uid; char uid_r_[PADR_(int)];
 	char gid_l_[PADL_(int)]; int gid; char gid_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct break_args {
 	char nsize_l_[PADL_(char *)]; char * nsize; char nsize_r_[PADR_(char *)];
 };
 struct getpid_args {
 	register_t dummy;
 };
+#endif /* __rtems__ */
 struct mount_args {
 	char type_l_[PADL_(char *)]; char * type; char type_r_[PADR_(char *)];
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
@@ -106,6 +111,7 @@ struct unmount_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char flags_l_[PADL_(int)]; int flags; char flags_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct setuid_args {
 	char uid_l_[PADL_(uid_t)]; uid_t uid; char uid_r_[PADR_(uid_t)];
 };
@@ -159,7 +165,6 @@ struct getsockname_args {
 	char asa_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict asa; char asa_r_[PADR_(struct sockaddr *__restrict)];
 	char alen_l_[PADL_(__socklen_t *__restrict)]; __socklen_t *__restrict alen; char alen_r_[PADR_(__socklen_t *__restrict)];
 };
-#ifndef __rtems__
 struct access_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char amode_l_[PADL_(int)]; int amode; char amode_r_[PADR_(int)];
@@ -172,6 +177,7 @@ struct fchflags_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char flags_l_[PADL_(u_long)]; u_long flags; char flags_r_[PADR_(u_long)];
 };
+#ifndef __rtems__
 struct sync_args {
 	register_t dummy;
 };
@@ -223,17 +229,20 @@ struct sigaltstack_args {
 	char ss_l_[PADL_(stack_t *)]; stack_t * ss; char ss_r_[PADR_(stack_t *)];
 	char oss_l_[PADL_(stack_t *)]; stack_t * oss; char oss_r_[PADR_(stack_t *)];
 };
+#endif /* __rtems__ */
 struct ioctl_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char com_l_[PADL_(u_long)]; u_long com; char com_r_[PADR_(u_long)];
 	char data_l_[PADL_(caddr_t)]; caddr_t data; char data_r_[PADR_(caddr_t)];
 };
+#ifndef __rtems__
 struct reboot_args {
 	char opt_l_[PADL_(int)]; int opt; char opt_r_[PADR_(int)];
 };
 struct revoke_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 };
+#endif /* __rtems__ */
 struct symlink_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char link_l_[PADL_(char *)]; char * link; char link_r_[PADR_(char *)];
@@ -243,6 +252,7 @@ struct readlink_args {
 	char buf_l_[PADL_(char *)]; char * buf; char buf_r_[PADR_(char *)];
 	char count_l_[PADL_(size_t)]; size_t count; char count_r_[PADR_(size_t)];
 };
+#ifndef __rtems__
 struct execve_args {
 	char fname_l_[PADL_(char *)]; char * fname; char fname_r_[PADR_(char *)];
 	char argv_l_[PADL_(char **)]; char ** argv; char argv_r_[PADR_(char **)];
@@ -332,6 +342,7 @@ struct fcntl_args {
 	char cmd_l_[PADL_(int)]; int cmd; char cmd_r_[PADR_(int)];
 	char arg_l_[PADL_(long)]; long arg; char arg_r_[PADR_(long)];
 };
+#endif /* __rtems__ */
 struct select_args {
 	char nd_l_[PADL_(int)]; int nd; char nd_r_[PADR_(int)];
 	char in_l_[PADL_(fd_set *)]; fd_set * in; char in_r_[PADR_(fd_set *)];
@@ -342,6 +353,7 @@ struct select_args {
 struct fsync_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct setpriority_args {
 	char which_l_[PADL_(int)]; int which; char which_r_[PADR_(int)];
 	char who_l_[PADL_(int)]; int who; char who_r_[PADR_(int)];
@@ -417,7 +429,6 @@ struct getsockopt_args {
 	char avalsize_l_[PADL_(__socklen_t *)]; __socklen_t * avalsize; char avalsize_r_[PADR_(__socklen_t *)];
 #endif /* __rtems__ */
 };
-#ifndef __rtems__
 struct readv_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char iovp_l_[PADL_(struct iovec *)]; struct iovec * iovp; char iovp_r_[PADR_(struct iovec *)];
@@ -428,10 +439,12 @@ struct writev_args {
 	char iovp_l_[PADL_(struct iovec *)]; struct iovec * iovp; char iovp_r_[PADR_(struct iovec *)];
 	char iovcnt_l_[PADL_(u_int)]; u_int iovcnt; char iovcnt_r_[PADR_(u_int)];
 };
+#ifndef __rtems__
 struct settimeofday_args {
 	char tv_l_[PADL_(struct timeval *)]; struct timeval * tv; char tv_r_[PADR_(struct timeval *)];
 	char tzp_l_[PADL_(struct timezone *)]; struct timezone * tzp; char tzp_r_[PADR_(struct timezone *)];
 };
+#endif /* __rtems__ */
 struct fchown_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char uid_l_[PADL_(int)]; int uid; char uid_r_[PADR_(int)];
@@ -441,6 +454,7 @@ struct fchmod_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char mode_l_[PADL_(int)]; int mode; char mode_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct setreuid_args {
 	char ruid_l_[PADL_(int)]; int ruid; char ruid_r_[PADR_(int)];
 	char euid_l_[PADL_(int)]; int euid; char euid_r_[PADR_(int)];
@@ -449,10 +463,12 @@ struct setregid_args {
 	char rgid_l_[PADL_(int)]; int rgid; char rgid_r_[PADR_(int)];
 	char egid_l_[PADL_(int)]; int egid; char egid_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct rename_args {
 	char from_l_[PADL_(char *)]; char * from; char from_r_[PADR_(char *)];
 	char to_l_[PADL_(char *)]; char * to; char to_r_[PADR_(char *)];
 };
+#ifndef __rtems__
 struct flock_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char how_l_[PADL_(int)]; int how; char how_r_[PADR_(int)];
@@ -485,7 +501,6 @@ struct socketpair_args {
 	char protocol_l_[PADL_(int)]; int protocol; char protocol_r_[PADR_(int)];
 	char rsv_l_[PADL_(int *)]; int * rsv; char rsv_r_[PADR_(int *)];
 };
-#ifndef __rtems__
 struct mkdir_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(int)]; int mode; char mode_r_[PADR_(int)];
@@ -493,6 +508,7 @@ struct mkdir_args {
 struct rmdir_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 };
+#ifndef __rtems__
 struct utimes_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char tptr_l_[PADL_(struct timeval *)]; struct timeval * tptr; char tptr_r_[PADR_(struct timeval *)];
@@ -522,10 +538,12 @@ struct nlm_syscall_args {
 	char addr_count_l_[PADL_(int)]; int addr_count; char addr_count_r_[PADR_(int)];
 	char addrs_l_[PADL_(char **)]; char ** addrs; char addrs_r_[PADR_(char **)];
 };
+#endif /* __rtems__ */
 struct nfssvc_args {
 	char flag_l_[PADL_(int)]; int flag; char flag_r_[PADR_(int)];
 	char argp_l_[PADL_(caddr_t)]; caddr_t argp; char argp_r_[PADR_(caddr_t)];
 };
+#ifndef __rtems__
 struct lgetfh_args {
 	char fname_l_[PADL_(char *)]; char * fname; char fname_r_[PADR_(char *)];
 	char fhp_l_[PADL_(struct fhandle *)]; struct fhandle * fhp; char fhp_r_[PADR_(struct fhandle *)];
@@ -741,6 +759,7 @@ struct rfork_args {
 struct issetugid_args {
 	register_t dummy;
 };
+#endif /* __rtems__ */
 struct lchown_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char uid_l_[PADL_(int)]; int uid; char uid_r_[PADR_(int)];
@@ -762,6 +781,7 @@ struct lchmod_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(mode_t)]; mode_t mode; char mode_r_[PADR_(mode_t)];
 };
+#ifndef __rtems__
 struct lutimes_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char tptr_l_[PADL_(struct timeval *)]; struct timeval * tptr; char tptr_r_[PADR_(struct timeval *)];
@@ -827,6 +847,7 @@ struct setresgid_args {
 	char egid_l_[PADL_(gid_t)]; gid_t egid; char egid_r_[PADR_(gid_t)];
 	char sgid_l_[PADL_(gid_t)]; gid_t sgid; char sgid_r_[PADR_(gid_t)];
 };
+#endif /* __rtems__ */
 struct aio_return_args {
 	char aiocbp_l_[PADL_(struct aiocb *)]; struct aiocb * aiocbp; char aiocbp_r_[PADR_(struct aiocb *)];
 };
@@ -842,6 +863,7 @@ struct aio_cancel_args {
 struct aio_error_args {
 	char aiocbp_l_[PADL_(struct aiocb *)]; struct aiocb * aiocbp; char aiocbp_r_[PADR_(struct aiocb *)];
 };
+#ifndef __rtems__
 struct yield_args {
 	register_t dummy;
 };
@@ -851,10 +873,12 @@ struct mlockall_args {
 struct munlockall_args {
 	register_t dummy;
 };
+#endif /* __rtems__ */
 struct __getcwd_args {
 	char buf_l_[PADL_(char *)]; char * buf; char buf_r_[PADR_(char *)];
 	char buflen_l_[PADL_(size_t)]; size_t buflen; char buflen_r_[PADR_(size_t)];
 };
+#ifndef __rtems__
 struct sched_setparam_args {
 	char pid_l_[PADL_(pid_t)]; pid_t pid; char pid_r_[PADR_(pid_t)];
 	char param_l_[PADL_(const struct sched_param *)]; const struct sched_param * param; char param_r_[PADR_(const struct sched_param *)];
@@ -923,6 +947,7 @@ struct sigwaitinfo_args {
 	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
 	char info_l_[PADL_(siginfo_t *)]; siginfo_t * info; char info_r_[PADR_(siginfo_t *)];
 };
+#endif /* __rtems__ */
 struct __acl_get_file_args {
 	char path_l_[PADL_(const char *)]; const char * path; char path_r_[PADR_(const char *)];
 	char type_l_[PADL_(acl_type_t)]; acl_type_t type; char type_r_[PADR_(acl_type_t)];
@@ -961,6 +986,7 @@ struct __acl_aclcheck_fd_args {
 	char type_l_[PADL_(acl_type_t)]; acl_type_t type; char type_r_[PADR_(acl_type_t)];
 	char aclp_l_[PADL_(struct acl *)]; struct acl * aclp; char aclp_r_[PADR_(struct acl *)];
 };
+#ifndef __rtems__
 struct extattrctl_args {
 	char path_l_[PADL_(const char *)]; const char * path; char path_r_[PADR_(const char *)];
 	char cmd_l_[PADL_(int)]; int cmd; char cmd_r_[PADR_(int)];
@@ -987,10 +1013,12 @@ struct extattr_delete_file_args {
 	char attrnamespace_l_[PADL_(int)]; int attrnamespace; char attrnamespace_r_[PADR_(int)];
 	char attrname_l_[PADL_(const char *)]; const char * attrname; char attrname_r_[PADR_(const char *)];
 };
+#endif /* __rtems__ */
 struct aio_waitcomplete_args {
 	char aiocbp_l_[PADL_(struct aiocb **)]; struct aiocb ** aiocbp; char aiocbp_r_[PADR_(struct aiocb **)];
 	char timeout_l_[PADL_(struct timespec *)]; struct timespec * timeout; char timeout_r_[PADR_(struct timespec *)];
 };
+#ifndef __rtems__
 struct getresuid_args {
 	char ruid_l_[PADL_(uid_t *)]; uid_t * ruid; char ruid_r_[PADR_(uid_t *)];
 	char euid_l_[PADL_(uid_t *)]; uid_t * euid; char euid_r_[PADR_(uid_t *)];
@@ -1041,11 +1069,13 @@ struct afs3_syscall_args {
 	char parm5_l_[PADL_(long)]; long parm5; char parm5_r_[PADR_(long)];
 	char parm6_l_[PADL_(long)]; long parm6; char parm6_r_[PADR_(long)];
 };
+#endif /* __rtems__ */
 struct nmount_args {
 	char iovp_l_[PADL_(struct iovec *)]; struct iovec * iovp; char iovp_r_[PADR_(struct iovec *)];
 	char iovcnt_l_[PADL_(unsigned int)]; unsigned int iovcnt; char iovcnt_r_[PADR_(unsigned int)];
 	char flags_l_[PADL_(int)]; int flags; char flags_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct __mac_get_proc_args {
 	char mac_p_l_[PADL_(struct mac *)]; struct mac * mac_p; char mac_p_r_[PADR_(struct mac *)];
 };
@@ -1074,10 +1104,12 @@ struct kenv_args {
 	char value_l_[PADL_(char *)]; char * value; char value_r_[PADR_(char *)];
 	char len_l_[PADL_(int)]; int len; char len_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct lchflags_args {
 	char path_l_[PADL_(const char *)]; const char * path; char path_r_[PADR_(const char *)];
 	char flags_l_[PADL_(u_long)]; u_long flags; char flags_r_[PADR_(u_long)];
 };
+#ifndef __rtems__
 struct uuidgen_args {
 	char store_l_[PADL_(struct uuid *)]; struct uuid * store; char store_r_[PADR_(struct uuid *)];
 	char count_l_[PADL_(int)]; int count; char count_r_[PADR_(int)];
@@ -1187,6 +1219,7 @@ struct swapcontext_args {
 struct swapoff_args {
 	char name_l_[PADL_(const char *)]; const char * name; char name_r_[PADR_(const char *)];
 };
+#endif /* __rtems__ */
 struct __acl_get_link_args {
 	char path_l_[PADL_(const char *)]; const char * path; char path_r_[PADR_(const char *)];
 	char type_l_[PADL_(acl_type_t)]; acl_type_t type; char type_r_[PADR_(acl_type_t)];
@@ -1206,6 +1239,7 @@ struct __acl_aclcheck_link_args {
 	char type_l_[PADL_(acl_type_t)]; acl_type_t type; char type_r_[PADR_(acl_type_t)];
 	char aclp_l_[PADL_(struct acl *)]; struct acl * aclp; char aclp_r_[PADR_(struct acl *)];
 };
+#ifndef __rtems__
 struct sigwait_args {
 	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
 	char sig_l_[PADL_(int *)]; int * sig; char sig_r_[PADR_(int *)];
@@ -1349,10 +1383,12 @@ struct thr_set_name_args {
 	char id_l_[PADL_(long)]; long id; char id_r_[PADR_(long)];
 	char name_l_[PADL_(const char *)]; const char * name; char name_r_[PADR_(const char *)];
 };
+#endif /* __rtems__ */
 struct aio_fsync_args {
 	char op_l_[PADL_(int)]; int op; char op_r_[PADR_(int)];
 	char aiocbp_l_[PADL_(struct aiocb *)]; struct aiocb * aiocbp; char aiocbp_r_[PADR_(struct aiocb *)];
 };
+#ifndef __rtems__
 struct rtprio_thread_args {
 	char function_l_[PADL_(int)]; int function; char function_r_[PADR_(int)];
 	char lwpid_l_[PADL_(lwpid_t)]; lwpid_t lwpid; char lwpid_r_[PADR_(lwpid_t)];
@@ -1409,6 +1445,7 @@ struct mmap_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char pos_l_[PADL_(off_t)]; off_t pos; char pos_r_[PADR_(off_t)];
 };
+#endif /* __rtems__ */
 struct lseek_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char offset_l_[PADL_(off_t)]; off_t offset; char offset_r_[PADR_(off_t)];
@@ -1422,6 +1459,7 @@ struct ftruncate_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char length_l_[PADL_(off_t)]; off_t length; char length_r_[PADR_(off_t)];
 };
+#ifndef __rtems__
 struct thr_kill2_args {
 	char pid_l_[PADL_(pid_t)]; pid_t pid; char pid_r_[PADR_(pid_t)];
 	char id_l_[PADL_(long)]; long id; char id_r_[PADR_(long)];
@@ -1469,6 +1507,7 @@ struct faccessat_args {
 	char amode_l_[PADL_(int)]; int amode; char amode_r_[PADR_(int)];
 	char flag_l_[PADL_(int)]; int flag; char flag_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct fchmodat_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
@@ -1482,6 +1521,7 @@ struct fchownat_args {
 	char gid_l_[PADL_(gid_t)]; gid_t gid; char gid_r_[PADR_(gid_t)];
 	char flag_l_[PADL_(int)]; int flag; char flag_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct fexecve_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char argv_l_[PADL_(char **)]; char ** argv; char argv_r_[PADR_(char **)];
@@ -1492,6 +1532,7 @@ struct futimesat_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char times_l_[PADL_(struct timeval *)]; struct timeval * times; char times_r_[PADR_(struct timeval *)];
 };
+#endif /* __rtems__ */
 struct linkat_args {
 	char fd1_l_[PADL_(int)]; int fd1; char fd1_r_[PADR_(int)];
 	char path1_l_[PADL_(char *)]; char * path1; char path1_r_[PADR_(char *)];
@@ -1504,11 +1545,13 @@ struct mkdirat_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(mode_t)]; mode_t mode; char mode_r_[PADR_(mode_t)];
 };
+#ifndef __rtems__
 struct mkfifoat_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(mode_t)]; mode_t mode; char mode_r_[PADR_(mode_t)];
 };
+#endif /* __rtems__ */
 struct openat_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
@@ -1537,6 +1580,7 @@ struct unlinkat_args {
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char flag_l_[PADL_(int)]; int flag; char flag_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct posix_openpt_args {
 	char flags_l_[PADL_(int)]; int flags; char flags_r_[PADR_(int)];
 };
@@ -1602,6 +1646,7 @@ struct pdgetpid_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char pidp_l_[PADL_(pid_t *)]; pid_t * pidp; char pidp_r_[PADR_(pid_t *)];
 };
+#endif /* __rtems__ */
 struct pselect_args {
 	char nd_l_[PADL_(int)]; int nd; char nd_r_[PADR_(int)];
 	char in_l_[PADL_(fd_set *)]; fd_set * in; char in_r_[PADR_(fd_set *)];
@@ -1610,6 +1655,7 @@ struct pselect_args {
 	char ts_l_[PADL_(const struct timespec *)]; const struct timespec * ts; char ts_r_[PADR_(const struct timespec *)];
 	char sm_l_[PADL_(const sigset_t *)]; const sigset_t * sm; char sm_r_[PADR_(const sigset_t *)];
 };
+#ifndef __rtems__
 struct getloginclass_args {
 	char namebuf_l_[PADL_(char *)]; char * namebuf; char namebuf_r_[PADR_(char *)];
 	char namelen_l_[PADL_(size_t)]; size_t namelen; char namelen_r_[PADR_(size_t)];
@@ -1706,6 +1752,7 @@ struct chflagsat_args {
 	char flags_l_[PADL_(u_long)]; u_long flags; char flags_r_[PADR_(u_long)];
 	char atflag_l_[PADL_(int)]; int atflag; char atflag_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct accept4_args {
 	char s_l_[PADL_(int)]; int s; char s_r_[PADR_(int)];
 	char name_l_[PADL_(struct sockaddr *__restrict)]; struct sockaddr *__restrict name; char name_r_[PADR_(struct sockaddr *__restrict)];
@@ -1719,6 +1766,7 @@ struct pipe2_args {
 struct aio_mlock_args {
 	char aiocbp_l_[PADL_(struct aiocb *)]; struct aiocb * aiocbp; char aiocbp_r_[PADR_(struct aiocb *)];
 };
+#ifndef __rtems__
 struct procctl_args {
 	char idtype_l_[PADL_(idtype_t)]; idtype_t idtype; char idtype_r_[PADR_(idtype_t)];
 	char id_l_[PADL_(id_t)]; id_t id; char id_r_[PADR_(id_t)];
@@ -1741,6 +1789,7 @@ struct utimensat_args {
 	char times_l_[PADL_(struct timespec *)]; struct timespec * times; char times_r_[PADR_(struct timespec *)];
 	char flag_l_[PADL_(int)]; int flag; char flag_r_[PADR_(int)];
 };
+#endif /* __rtems__ */
 struct fdatasync_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 };
@@ -1754,10 +1803,12 @@ struct fstatat_args {
 	char buf_l_[PADL_(struct stat *)]; struct stat * buf; char buf_r_[PADR_(struct stat *)];
 	char flag_l_[PADL_(int)]; int flag; char flag_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct fhstat_args {
 	char u_fhp_l_[PADL_(const struct fhandle *)]; const struct fhandle * u_fhp; char u_fhp_r_[PADR_(const struct fhandle *)];
 	char sb_l_[PADL_(struct stat *)]; struct stat * sb; char sb_r_[PADR_(struct stat *)];
 };
+#endif /* __rtems__ */
 struct getdirentries_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char buf_l_[PADL_(char *)]; char * buf; char buf_r_[PADR_(char *)];
@@ -1777,17 +1828,18 @@ struct getfsstat_args {
 	char bufsize_l_[PADL_(long)]; long bufsize; char bufsize_r_[PADR_(long)];
 	char mode_l_[PADL_(int)]; int mode; char mode_r_[PADR_(int)];
 };
+#ifndef __rtems__
 struct fhstatfs_args {
 	char u_fhp_l_[PADL_(const struct fhandle *)]; const struct fhandle * u_fhp; char u_fhp_r_[PADR_(const struct fhandle *)];
 	char buf_l_[PADL_(struct statfs *)]; struct statfs * buf; char buf_r_[PADR_(struct statfs *)];
 };
+#endif /* __rtems__ */
 struct mknodat_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char path_l_[PADL_(char *)]; char * path; char path_r_[PADR_(char *)];
 	char mode_l_[PADL_(mode_t)]; mode_t mode; char mode_r_[PADR_(mode_t)];
 	char dev_l_[PADL_(dev_t)]; dev_t dev; char dev_r_[PADR_(dev_t)];
 };
-#endif /* __rtems__ */
 struct kevent_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 #ifndef __rtems__
@@ -1845,25 +1897,32 @@ struct fhreadlink_args {
 int	nosys(struct thread *, struct nosys_args *);
 void	sys_sys_exit(struct thread *, struct sys_exit_args *);
 int	sys_fork(struct thread *, struct fork_args *);
+#endif /* __rtems__ */
 int	sys_read(struct thread *, struct read_args *);
 int	sys_write(struct thread *, struct write_args *);
 int	sys_open(struct thread *, struct open_args *);
 int	sys_close(struct thread *, struct close_args *);
+#ifndef __rtems__
 int	sys_wait4(struct thread *, struct wait4_args *);
+#endif /* __rtems__ */
 int	sys_link(struct thread *, struct link_args *);
 int	sys_unlink(struct thread *, struct unlink_args *);
 int	sys_chdir(struct thread *, struct chdir_args *);
 int	sys_fchdir(struct thread *, struct fchdir_args *);
 int	sys_chmod(struct thread *, struct chmod_args *);
 int	sys_chown(struct thread *, struct chown_args *);
+#ifndef __rtems__
 int	sys_break(struct thread *, struct break_args *);
 int	sys_getpid(struct thread *, struct getpid_args *);
+#endif /* __rtems__ */
 int	sys_mount(struct thread *, struct mount_args *);
 int	sys_unmount(struct thread *, struct unmount_args *);
+#ifndef __rtems__
 int	sys_setuid(struct thread *, struct setuid_args *);
 int	sys_getuid(struct thread *, struct getuid_args *);
 int	sys_geteuid(struct thread *, struct geteuid_args *);
 int	sys_ptrace(struct thread *, struct ptrace_args *);
+#endif /* __rtems__ */
 int	sys_recvmsg(struct thread *, struct recvmsg_args *);
 int	sys_sendmsg(struct thread *, struct sendmsg_args *);
 int	sys_recvfrom(struct thread *, struct recvfrom_args *);
@@ -1873,6 +1932,7 @@ int	sys_getsockname(struct thread *, struct getsockname_args *);
 int	sys_access(struct thread *, struct access_args *);
 int	sys_chflags(struct thread *, struct chflags_args *);
 int	sys_fchflags(struct thread *, struct fchflags_args *);
+#ifndef __rtems__
 int	sys_sync(struct thread *, struct sync_args *);
 int	sys_kill(struct thread *, struct kill_args *);
 int	sys_getppid(struct thread *, struct getppid_args *);
@@ -1885,11 +1945,15 @@ int	sys_getlogin(struct thread *, struct getlogin_args *);
 int	sys_setlogin(struct thread *, struct setlogin_args *);
 int	sys_acct(struct thread *, struct acct_args *);
 int	sys_sigaltstack(struct thread *, struct sigaltstack_args *);
+#endif /* __rtems__ */
 int	sys_ioctl(struct thread *, struct ioctl_args *);
+#ifndef __rtems__
 int	sys_reboot(struct thread *, struct reboot_args *);
 int	sys_revoke(struct thread *, struct revoke_args *);
+#endif /* __rtems__ */
 int	sys_symlink(struct thread *, struct symlink_args *);
 int	sys_readlink(struct thread *, struct readlink_args *);
+#ifndef __rtems__
 int	sys_execve(struct thread *, struct execve_args *);
 int	sys_umask(struct thread *, struct umask_args *);
 int	sys_chroot(struct thread *, struct chroot_args *);
@@ -1911,33 +1975,45 @@ int	sys_getitimer(struct thread *, struct getitimer_args *);
 int	sys_getdtablesize(struct thread *, struct getdtablesize_args *);
 int	sys_dup2(struct thread *, struct dup2_args *);
 int	sys_fcntl(struct thread *, struct fcntl_args *);
+#endif /* __rtems__ */
 int	sys_select(struct thread *, struct select_args *);
 int	sys_fsync(struct thread *, struct fsync_args *);
+#ifndef __rtems__
 int	sys_setpriority(struct thread *, struct setpriority_args *);
+#endif /* __rtems__ */
 int	sys_socket(struct thread *, struct socket_args *);
 int	sys_connect(struct thread *, struct connect_args *);
+#ifndef __rtems__
 int	sys_getpriority(struct thread *, struct getpriority_args *);
+#endif /* __rtems__ */
 int	sys_bind(struct thread *, struct bind_args *);
 int	sys_setsockopt(struct thread *, struct setsockopt_args *);
 int	sys_listen(struct thread *, struct listen_args *);
+#ifndef __rtems__
 int	sys_gettimeofday(struct thread *, struct gettimeofday_args *);
 int	sys_getrusage(struct thread *, struct getrusage_args *);
+#endif /* __rtems__ */
 int	sys_getsockopt(struct thread *, struct getsockopt_args *);
 int	sys_readv(struct thread *, struct readv_args *);
 int	sys_writev(struct thread *, struct writev_args *);
+#ifndef __rtems__
 int	sys_settimeofday(struct thread *, struct settimeofday_args *);
+#endif /* __rtems__ */
 int	sys_fchown(struct thread *, struct fchown_args *);
 int	sys_fchmod(struct thread *, struct fchmod_args *);
+#ifndef __rtems__
 int	sys_setreuid(struct thread *, struct setreuid_args *);
 int	sys_setregid(struct thread *, struct setregid_args *);
 int	sys_rename(struct thread *, struct rename_args *);
 int	sys_flock(struct thread *, struct flock_args *);
 int	sys_mkfifo(struct thread *, struct mkfifo_args *);
+#endif /* __rtems__ */
 int	sys_sendto(struct thread *, struct sendto_args *);
 int	sys_shutdown(struct thread *, struct shutdown_args *);
 int	sys_socketpair(struct thread *, struct socketpair_args *);
 int	sys_mkdir(struct thread *, struct mkdir_args *);
 int	sys_rmdir(struct thread *, struct rmdir_args *);
+#ifndef __rtems__
 int	sys_utimes(struct thread *, struct utimes_args *);
 int	sys_adjtime(struct thread *, struct adjtime_args *);
 int	sys_setsid(struct thread *, struct setsid_args *);
@@ -1951,7 +2027,9 @@ int	sys_rtprio(struct thread *, struct rtprio_args *);
 int	sys_semsys(struct thread *, struct semsys_args *);
 int	sys_msgsys(struct thread *, struct msgsys_args *);
 int	sys_shmsys(struct thread *, struct shmsys_args *);
+#endif /* __rtems__ */
 int	sys_setfib(struct thread *, struct setfib_args *);
+#ifndef __rtems__
 int	sys_ntp_adjtime(struct thread *, struct ntp_adjtime_args *);
 int	sys_setgid(struct thread *, struct setgid_args *);
 int	sys_setegid(struct thread *, struct setegid_args *);
@@ -1966,7 +2044,9 @@ int	sys_munlock(struct thread *, struct munlock_args *);
 int	sys_undelete(struct thread *, struct undelete_args *);
 int	sys_futimes(struct thread *, struct futimes_args *);
 int	sys_getpgid(struct thread *, struct getpgid_args *);
+#endif /* __rtems__ */
 int	sys_poll(struct thread *, struct poll_args *);
+#ifndef __rtems__
 int	sys_semget(struct thread *, struct semget_args *);
 int	sys_semop(struct thread *, struct semop_args *);
 int	sys_msgget(struct thread *, struct msgget_args *);
@@ -2055,7 +2135,9 @@ int	sys_extattr_delete_file(struct thread *, struct extattr_delete_file_args *);
 int	sys_aio_waitcomplete(struct thread *, struct aio_waitcomplete_args *);
 int	sys_getresuid(struct thread *, struct getresuid_args *);
 int	sys_getresgid(struct thread *, struct getresgid_args *);
+#endif /* __rtems__ */
 int	sys_kqueue(struct thread *, struct kqueue_args *);
+#ifndef __rtems__
 int	sys_extattr_set_fd(struct thread *, struct extattr_set_fd_args *);
 int	sys_extattr_get_fd(struct thread *, struct extattr_get_fd_args *);
 int	sys_extattr_delete_fd(struct thread *, struct extattr_delete_fd_args *);
@@ -2218,7 +2300,9 @@ int	sys_fstatfs(struct thread *, struct fstatfs_args *);
 int	sys_getfsstat(struct thread *, struct getfsstat_args *);
 int	sys_fhstatfs(struct thread *, struct fhstatfs_args *);
 int	sys_mknodat(struct thread *, struct mknodat_args *);
+#endif /* __rtems__ */
 int	sys_kevent(struct thread *, struct kevent_args *);
+#ifndef __rtems__
 int	sys_cpuset_getdomain(struct thread *, struct cpuset_getdomain_args *);
 int	sys_cpuset_setdomain(struct thread *, struct cpuset_setdomain_args *);
 int	sys_getrandom(struct thread *, struct getrandom_args *);
@@ -2226,7 +2310,9 @@ int	sys_getfhat(struct thread *, struct getfhat_args *);
 int	sys_fhlink(struct thread *, struct fhlink_args *);
 int	sys_fhlinkat(struct thread *, struct fhlinkat_args *);
 int	sys_fhreadlink(struct thread *, struct fhreadlink_args *);
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #ifdef COMPAT_43
 
 struct ocreat_args {

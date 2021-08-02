@@ -696,6 +696,7 @@ struct vfsops {
 
 vfs_statfs_t	__vfs_statfs;
 
+#ifndef __rtems__
 #define	VFS_PROLOGUE(MP)	do {					\
 	struct mount *mp__;						\
 	int _prev_stops;						\
@@ -708,6 +709,10 @@ vfs_statfs_t	__vfs_statfs;
 #define	VFS_EPILOGUE(MP)						\
 	sigallowstop(_prev_stops);					\
 } while (0)
+#else /* __rtems__ */
+#define	VFS_PROLOGUE(MP)
+#define	VFS_EPILOGUE(MP)
+#endif /* __rtems__ */
 
 #define	VFS_MOUNT(MP) ({						\
 	int _rc;							\
@@ -857,6 +862,7 @@ vfs_statfs_t	__vfs_statfs;
 #define VFS_VERSION_02	0x20180504
 #define VFS_VERSION	VFS_VERSION_02
 
+#ifndef __rtems__
 #define VFS_SET(vfsops, fsname, flags) \
 	static struct vfsconf fsname ## _vfsconf = {		\
 		.vfc_version = VFS_VERSION,			\
@@ -871,6 +877,22 @@ vfs_statfs_t	__vfs_statfs;
 		& fsname ## _vfsconf				\
 	};							\
 	DECLARE_MODULE(fsname, fsname ## _mod, SI_SUB_VFS, SI_ORDER_MIDDLE)
+#else /* __rtems__ */
+#define VFS_SET(vfsops, fsname, flags) \
+	struct vfsconf fsname ## _vfsconf = {			\
+		.vfc_version = VFS_VERSION,			\
+		.vfc_name = #fsname,				\
+		.vfc_vfsops = &vfsops,				\
+		.vfc_typenum = -1,				\
+		.vfc_flags = flags,				\
+	};							\
+	moduledata_t fsname ## _mod = {				\
+		#fsname,					\
+		vfs_modevent,					\
+		& fsname ## _vfsconf				\
+	};							\
+	DECLARE_MODULE(fsname, fsname ## _mod, SI_SUB_VFS, SI_ORDER_MIDDLE)
+#endif /* __rtems__ */
 
 /*
  * exported vnode operations

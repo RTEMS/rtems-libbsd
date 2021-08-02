@@ -54,7 +54,11 @@ struct vnode;
  */
 #define PFS_NAMELEN		128
 #define PFS_FSNAMELEN		16	/* equal to MFSNAMELEN */
+#ifndef __rtems__
 #define PFS_DELEN		(offsetof(struct dirent, d_name) + PFS_NAMELEN)
+#else /* __rtems__ */
+#define PFS_DELEN		(offsetof(struct dirent, d_name) + PFS_NAMELEN + 2)
+#endif /* __rtems__ */
 
 typedef enum {
 	pfstype_none = 0,

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -45,7 +47,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_hwpmc_hooks.h"
+#include <rtems/bsd/local/opt_hwpmc_hooks.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -74,7 +76,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/ttycom.h>
 #include <sys/conf.h>
 #include <sys/syslog.h>
-#include <sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 #include <sys/user.h>
 
 #include <security/audit/audit.h>
@@ -114,10 +116,14 @@ struct 	fileops vnops = {
 	.fo_close = vn_closefile,
 	.fo_chmod = vn_chmod,
 	.fo_chown = vn_chown,
+#ifndef __rtems__
 	.fo_sendfile = vn_sendfile,
+#endif /* __rtems__ */
 	.fo_seek = vn_seek,
+#ifndef __rtems__
 	.fo_fill_kinfo = vn_fill_kinfo,
 	.fo_mmap = vn_mmap,
+#endif /* __rtems__ */
 	.fo_flags = DFLAG_PASSABLE | DFLAG_SEEKABLE
 };
 
@@ -353,8 +359,10 @@ vn_open_vnode(struct vnode *vp, int fmode, struct ucred *cred,
 	}
 	if (fmode & FREAD)
 		accmode |= VREAD;
+#ifndef __rtems__
 	if (fmode & FEXEC)
 		accmode |= VEXEC;
+#endif /* __rtems__ */
 	if ((fmode & O_APPEND) && (fmode & FWRITE))
 		accmode |= VAPPEND;
 #ifdef MAC
@@ -394,7 +402,9 @@ vn_open_vnode(struct vnode *vp, int fmode, struct ucred *cred,
 	 * Arrange for that by having fdrop() to use vn_closefile().
 	 */
 	if (error != 0) {
+#ifndef __rtems__
 		fp->f_flag |= FOPENFAILED;
+#endif /* __rtems__ */
 		fp->f_vnode = vp;
 		if (fp->f_ops == &badfileops) {
 			fp->f_type = DTYPE_VNODE;
@@ -448,7 +458,11 @@ vn_close1(struct vnode *vp, int flags, struct ucred *file_cred,
 	vn_start_write(vp, &mp, V_WAIT);
 	vn_lock(vp, lock_flags | LK_RETRY);
 	AUDIT_ARG_VNODE1(vp);
+#ifndef __rtems__
 	if ((flags & (FWRITE | FOPENFAILED)) == FWRITE) {
+#else /* __rtems__ */
+	if ((flags & FWRITE) == FWRITE) {
+#endif /* __rtems__ */
 		VOP_ADD_WRITECOUNT_CHECKED(vp, -1);
 		CTR3(KTR_VFS, "%s: vp %p v_writecount decreased to %d",
 		    __func__, vp, vp->v_writecount);
@@ -478,8 +492,10 @@ sequential_heuristic(struct uio *uio, struct file *fp)
 {
 
 	ASSERT_VOP_LOCKED(fp->f_vnode, __func__);
+#ifndef __rtems__
 	if (fp->f_flag & FRDAHEAD)
 		return (fp->f_seqcount << IO_SEQSHIFT);
+#endif /* __rtems__ */
 
 	/*
 	 * Offset 0 is handled specially.  open() sets f_seqcount to 1 so
@@ -752,6 +768,7 @@ foffset_unlock_uio(struct file *fp, struct uio *uio, int flags)
 static int
 get_advice(struct file *fp, struct uio *uio)
 {
+#ifndef __rtems__
 	struct mtx *mtxp;
 	int ret;
 
@@ -767,6 +784,9 @@ get_advice(struct file *fp, struct uio *uio)
 		ret = fp->f_advice->fa_advice;
 	mtx_unlock(mtxp);
 	return (ret);
+#else /* __rtems__ */
+	return (POSIX_FADV_NORMAL);
+#endif /* __rtems__ */
 }
 
 /*
@@ -946,7 +966,9 @@ vn_io_fault_doio(struct vn_io_fault_args *args, struct uio *uio,
 	int error, save;
 
 	error = 0;
+#ifndef __rtems__
 	save = vm_fault_disable_pagefaults();
+#endif /* __rtems__ */
 	switch (args->kind) {
 	case VN_IO_FAULT_FOP:
 		error = (args->args.fop_args.doio)(args->args.fop_args.fp,
@@ -965,24 +987,31 @@ vn_io_fault_doio(struct vn_io_fault_args *args, struct uio *uio,
 		panic("vn_io_fault_doio: unknown kind of io %d %d",
 		    args->kind, uio->uio_rw);
 	}
+#ifndef __rtems__
 	vm_fault_enable_pagefaults(save);
+#endif /* __rtems__ */
 	return (error);
 }
 
 static int
 vn_io_fault_touch(char *base, const struct uio *uio)
 {
+#ifndef __rtems__
 	int r;
 
 	r = fubyte(base);
 	if (r == -1 || (uio->uio_rw == UIO_READ && subyte(base, r) == -1))
 		return (EFAULT);
 	return (0);
+#else /* __rtems__ */
+	return (EFAULT);
+#endif /* __rtems__ */
 }
 
 static int
 vn_io_fault_prefault_user(const struct uio *uio)
 {
+#ifndef __rtems__
 	char *base;
 	const struct iovec *iov;
 	size_t len;
@@ -1020,6 +1049,9 @@ vn_io_fault_prefault_user(const struct uio *uio)
 		}
 	}
 	return (error);
+#else /* __rtems__ */
+	return (EFAULT);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1042,6 +1074,9 @@ vn_io_fault1(struct vnode *vp, struct uio *uio, struct vn_io_fault_args *args,
 	size_t len, resid;
 	ssize_t adv;
 	int error, cnt, saveheld, prev_td_ma_cnt;
+#ifdef __rtems__
+	struct uio uio_clone_;
+#endif /* __rtems__ */
 
 	if (vn_io_fault_prefault) {
 		error = vn_io_fault_prefault_user(uio);
@@ -1060,7 +1095,12 @@ vn_io_fault1(struct vnode *vp, struct uio *uio, struct vn_io_fault_args *args,
 	 * Cache a copy of the original uio, which is advanced to the redo
 	 * point using UIO_NOCOPY below.
 	 */
+#ifndef __rtems__
 	uio_clone = cloneuio(uio);
+#else /* __rtems__ */
+	uio_clone_ = *uio;
+	uio_clone = &uio_clone_;
+#endif /* __rtems__ */
 	resid = uio->uio_resid;
 
 	short_uio.uio_segflg = UIO_USERSPACE;
@@ -1076,9 +1116,11 @@ vn_io_fault1(struct vnode *vp, struct uio *uio, struct vn_io_fault_args *args,
 	uiomove(NULL, resid - uio->uio_resid, uio_clone);
 	uio_clone->uio_segflg = uio->uio_segflg;
 
+#ifndef __rtems__
 	saveheld = curthread_pflags_set(TDP_UIOHELD);
 	prev_td_ma = td->td_ma;
 	prev_td_ma_cnt = td->td_ma_cnt;
+#endif /* __rtems__ */
 
 	while (uio_clone->uio_resid != 0) {
 		len = uio_clone->uio_iov->iov_len;
@@ -1098,6 +1140,7 @@ vn_io_fault1(struct vnode *vp, struct uio *uio, struct vn_io_fault_args *args,
 			break;
 		}
 		cnt = atop(end - trunc_page(addr));
+#ifndef __rtems__
 		/*
 		 * A perfectly misaligned address and length could cause
 		 * both the start and the end of the chunk to use partial
@@ -1109,16 +1152,21 @@ vn_io_fault1(struct vnode *vp, struct uio *uio, struct vn_io_fault_args *args,
 			error = EFAULT;
 			break;
 		}
+#endif /* __rtems__ */
 		short_uio.uio_iov = &short_iovec[0];
 		short_iovec[0].iov_base = (void *)addr;
 		short_uio.uio_iovcnt = 1;
 		short_uio.uio_resid = short_iovec[0].iov_len = len;
 		short_uio.uio_offset = uio_clone->uio_offset;
+#ifndef __rtems__
 		td->td_ma = ma;
 		td->td_ma_cnt = cnt;
+#endif /* __rtems__ */
 
 		error = vn_io_fault_doio(args, &short_uio, td);
+#ifndef __rtems__
 		vm_page_unhold_pages(ma, cnt);
+#endif /* __rtems__ */
 		adv = len - short_uio.uio_resid;
 
 		uio_clone->uio_iov->iov_base =
@@ -1133,11 +1181,15 @@ vn_io_fault1(struct vnode *vp, struct uio *uio, struct vn_io_fault_args *args,
 		if (error != 0 || adv == 0)
 			break;
 	}
+#ifndef __rtems__
 	td->td_ma = prev_td_ma;
 	td->td_ma_cnt = prev_td_ma_cnt;
 	curthread_pflags_restore(saveheld);
+#endif /* __rtems__ */
 out:
+#ifndef __rtems__
 	free(uio_clone, M_IOV);
+#endif /* __rtems__ */
 	return (error);
 }
 
@@ -1145,6 +1197,7 @@ static int
 vn_io_fault(struct file *fp, struct uio *uio, struct ucred *active_cred,
     int flags, struct thread *td)
 {
+#ifdef __rtems__
 	fo_rdwr_t *doio;
 	struct vnode *vp;
 	void *rl_cookie;
@@ -1178,6 +1231,9 @@ vn_io_fault(struct file *fp, struct uio *uio, struct ucred *active_cred,
 	}
 	foffset_unlock_uio(fp, uio, flags);
 	return (error);
+#else /* __rtems__ */
+	return (EFAULT);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1195,6 +1251,8 @@ vn_io_fault(struct file *fp, struct uio *uio, struct ucred *active_cred,
 int
 vn_io_fault_uiomove(char *data, int xfersize, struct uio *uio)
 {
+#ifndef __rtems__
+	return (EFAULT);
 	struct uio transp_uio;
 	struct iovec transp_iov[1];
 	struct thread *td;
@@ -1204,8 +1262,10 @@ vn_io_fault_uiomove(char *data, int xfersize, struct uio *uio)
 	td = curthread;
 	if ((td->td_pflags & TDP_UIOHELD) == 0 ||
 	    uio->uio_segflg != UIO_USERSPACE)
+#endif /* __rtems__ */
 		return (uiomove(data, xfersize, uio));
 
+#ifndef __rtems__
 	KASSERT(uio->uio_iovcnt == 1, ("uio_iovcnt %d", uio->uio_iovcnt));
 	transp_iov[0].iov_base = data;
 	transp_uio.uio_iov = &transp_iov[0];
@@ -1246,12 +1306,14 @@ vn_io_fault_uiomove(char *data, int xfersize, struct uio *uio)
 	uio->uio_resid -= adv;
 	uio->uio_offset += adv;
 	return (error);
+#endif /* __rtems__ */
 }
 
 int
 vn_io_fault_pgmove(vm_page_t ma[], vm_offset_t offset, int xfersize,
     struct uio *uio)
 {
+#ifndef __rtems__
 	struct thread *td;
 	vm_offset_t iov_base;
 	int cnt, pgadv;
@@ -1284,6 +1346,9 @@ vn_io_fault_pgmove(vm_page_t ma[], vm_offset_t offset, int xfersize,
 	uio->uio_resid -= cnt;
 	uio->uio_offset += cnt;
 	return (0);
+#else /* __rtems__ */
+	return (EFAULT);
+#endif /* __rtems__ */
 }
 
 
@@ -1440,7 +1505,9 @@ vn_stat(struct vnode *vp, struct stat *sb, struct ucred *active_cred,
 	sb->st_atim = vap->va_atime;
 	sb->st_mtim = vap->va_mtime;
 	sb->st_ctim = vap->va_ctime;
+#ifndef __rtems__
 	sb->st_birthtim = vap->va_birthtime;
+#endif /* __rtems__ */
 
         /*
 	 * According to www.opengroup.org, the meaning of st_blksize is 
@@ -1452,11 +1519,13 @@ vn_stat(struct vnode *vp, struct stat *sb, struct ucred *active_cred,
 
 	sb->st_blksize = max(PAGE_SIZE, vap->va_blocksize);
 	
+#ifndef __rtems__
 	sb->st_flags = vap->va_flags;
 	if (priv_check(td, PRIV_VFS_GENERATION))
 		sb->st_gen = 0;
 	else
 		sb->st_gen = vap->va_gen;
+#endif /* __rtems__ */
 
 	sb->st_blocks = vap->va_bytes / S_BLKSIZE;
 	return (0);
@@ -1486,6 +1555,7 @@ vn_ioctl(struct file *fp, u_long com, void *data, struct ucred *active_cred,
 			if (error == 0)
 				*(int *)data = vattr.va_size - fp->f_offset;
 			return (error);
+#ifndef __rtems__
 		case FIOBMAP2:
 			bmarg = (struct fiobmap2_arg *)data;
 			vn_lock(vp, LK_SHARED | LK_RETRY);
@@ -1498,6 +1568,7 @@ vn_ioctl(struct file *fp, u_long com, void *data, struct ucred *active_cred,
 				    &bmarg->bn, &bmarg->runp, &bmarg->runb);
 			VOP_UNLOCK(vp, 0);
 			return (error);
+#endif /* __rtems__ */
 		case FIONBIO:
 		case FIOASYNC:
 			return (0);
@@ -1578,7 +1649,11 @@ vn_closefile(struct file *fp, struct thread *td)
 
 	vp = fp->f_vnode;
 	fp->f_ops = &badfileops;
+#ifndef __rtems__
 	ref= (fp->f_flag & FHASLOCK) != 0 && fp->f_type == DTYPE_VNODE;
+#else /* __rtems__ */
+	ref = false;
+#endif /* __rtems__ */
 
 	error = vn_close1(vp, fp->f_flag, fp->f_cred, td, ref);
 
@@ -1617,7 +1692,11 @@ vn_start_write_locked(struct mount *mp, int flags)
 	/*
 	 * Check on status of suspension.
 	 */
+#ifndef __rtems__
 	if ((curthread->td_pflags & TDP_IGNSUSP) == 0 ||
+#else /* __rtems__ */
+	if (
+#endif /* __rtems__ */
 	    mp->mnt_susp_owner != curthread) {
 		mflags = ((mp->mnt_vfc->vfc_flags & VFCF_SBDRY) != 0 ?
 		    (flags & PCATCH) : 0) | (PUSER - 1);
@@ -1864,7 +1943,9 @@ vfs_write_resume(struct mount *mp, int flags)
 		mp->mnt_susp_owner = NULL;
 		wakeup(&mp->mnt_writeopcount);
 		wakeup(&mp->mnt_flag);
+#ifndef __rtems__
 		curthread->td_pflags &= ~TDP_IGNSUSP;
+#endif /* __rtems__ */
 		if ((flags & VR_START_WRITE) != 0) {
 			MNT_REF(mp);
 			mp->mnt_writeopcount++;
@@ -1910,7 +1991,9 @@ vfs_write_suspend_umnt(struct mount *mp)
 	mp->mnt_kern_flag &= ~(MNTK_SUSPENDED | MNTK_SUSPEND2);
 	wakeup(&mp->mnt_flag);
 	MNT_IUNLOCK(mp);
+#ifndef __rtems__
 	curthread->td_pflags |= TDP_IGNSUSP;
+#endif /* __rtems__ */
 	return (0);
 }
 
@@ -2106,9 +2189,11 @@ vn_rlimit_fsize(const struct vnode *vp, const struct uio *uio,
 		return (0);
 	if ((uoff_t)uio->uio_offset + uio->uio_resid >
 	    lim_cur(td, RLIMIT_FSIZE)) {
+#ifndef __rtems__
 		PROC_LOCK(td->td_proc);
 		kern_psignal(td->td_proc, SIGXFSZ);
 		PROC_UNLOCK(td->td_proc);
+#endif /* __rtems__ */
 		return (EFBIG);
 	}
 	return (0);
@@ -2147,6 +2232,7 @@ vn_chown(struct file *fp, uid_t uid, gid_t gid, struct ucred *active_cred,
 void
 vn_pages_remove(struct vnode *vp, vm_pindex_t start, vm_pindex_t end)
 {
+#ifndef __rtems__
 	vm_object_t object;
 
 	if ((object = vp->v_object) == NULL)
@@ -2154,6 +2240,7 @@ vn_pages_remove(struct vnode *vp, vm_pindex_t start, vm_pindex_t end)
 	VM_OBJECT_WLOCK(object);
 	vm_object_page_remove(object, start, end, 0);
 	VM_OBJECT_WUNLOCK(object);
+#endif /* __rtems__ */
 }
 
 int
@@ -2386,6 +2473,7 @@ vn_fill_kinfo_vnode(struct vnode *vp, struct kinfo_file *kif)
 	return (0);
 }
 
+#ifndef __rtems__
 int
 vn_mmap(struct file *fp, vm_map_t map, vm_offset_t *addr, vm_size_t size,
     vm_prot_t prot, vm_prot_t cap_maxprot, int flags, vm_ooffset_t foff,
@@ -2499,6 +2587,7 @@ vn_mmap(struct file *fp, vm_map_t map, vm_offset_t *addr, vm_size_t size,
 #endif
 	return (error);
 }
+#endif /* __rtems__ */
 
 void
 vn_fsid(struct vnode *vp, struct vattr *va)

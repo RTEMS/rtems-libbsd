@@ -336,9 +336,9 @@ cap_rights_t *__cap_rights_set(cap_rights_t *rights, ...);
 	__cap_rights_clear(__VA_ARGS__, 0ULL)
 cap_rights_t *__cap_rights_clear(cap_rights_t *rights, ...);
 #else /* __rtems__ */
-#define	cap_rights_init(...) (void)0
-#define	cap_rights_set(...) (void)0
-#define	cap_rights_clear(...) (void)0
+#define	cap_rights_init(...) NULL
+#define	cap_rights_set(...) NULL
+#define	cap_rights_clear(...) NULL
 #endif /* __rtems__ */
 
 #define	cap_rights_is_set(...)						\

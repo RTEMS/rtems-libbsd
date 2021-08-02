@@ -407,9 +407,6 @@ struct setfib_args {
 	int     fibnum;
 };
 #endif
-#ifdef __rtems__
-static
-#endif /* __rtems__ */
 int
 sys_setfib(struct thread *td, struct setfib_args *uap)
 {
@@ -423,20 +420,6 @@ sys_setfib(struct thread *td, struct setfib_args *uap)
 #endif /* __rtems__ */
 	return (0);
 }
-#ifdef __rtems__
-int
-setfib(int fibnum)
-{
-	struct setfib_args ua = {
-		.fibnum = fibnum
-	};
-	int error;
-
-	error = sys_setfib(NULL, &ua);
-
-	return rtems_bsd_error_to_status_and_errno(error);
-}
-#endif /* __rtems__ */
 
 /*
  * Packet routing routines.
@@ -2302,4 +2285,3 @@ rt_newaddrmsg_fib(int cmd, struct ifaddr *ifa, int error, struct rtentry *rt,
 		rt_addrmsg(cmd, ifa, fibnum);
 	}
 }
-

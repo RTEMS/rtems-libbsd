@@ -104,6 +104,9 @@ UseTab: Always
 SpaceAfterCStyleCast: false
 IncludeBlocks: Regroup
 IncludeCategories:
+  - Regex: '^\<machine/rtems-bsd-kernel-space.h>$'
+    Priority: 1
+    SortPriority: 10
   - Regex: '^\"opt_.*\.h\"'
     Priority: 1
     SortPriority: 10

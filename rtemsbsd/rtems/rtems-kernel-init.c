@@ -38,30 +38,37 @@
  */
 
 #include <machine/rtems-bsd-kernel-space.h>
-#include <machine/rtems-bsd-thread.h>
 
-#include <sys/param.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/filedesc.h>
+#include <sys/jail.h>
+#include <sys/kbio.h>
 #include <sys/kernel.h>
 #include <sys/ktr.h>
-#include <sys/sysctl.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
-#include <sys/stat.h>
-#include <sys/kbio.h>
 #include <sys/resourcevar.h>
-#include <sys/jail.h>
-#include <uuid/uuid.h>
+#include <sys/stat.h>
+#include <sys/sx.h>
+#include <sys/sysctl.h>
+#include <sys/sysent.h>
 
-#include <limits.h>
+#include <machine/rtems-bsd-page.h>
+#include <machine/rtems-bsd-thread.h>
 
 #include <dev/kbd/kbdreg.h>
 
 #include <net80211/ieee80211_freebsd.h>
 
+#include <limits.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/libio_.h>
+#include <rtems/malloc.h>
+#include <uuid/uuid.h>
 
 SYSINIT_REFERENCE(configure1);
 SYSINIT_REFERENCE(module);
@@ -98,25 +105,47 @@ sbintime_t sbt_timethreshold;
 sbintime_t sbt_tickthreshold;
 struct bintime tc_tick_bt;
 sbintime_t tc_tick_sbt;
-int maxproc;
 int tc_precexp;
+int maxproc;
+int maxfiles;
+int maxfilesperproc;
+int ngroups_max;
+int unmapped_buf_allowed;
+caddr_t unmapped_base;
+long maxbcache;
+int bio_transient_maxcnt;
+struct sx allproc_lock;
+struct vmem *rtems_bsd_transient_arena;
+int nbuf;   /* The number of buffer headers */
+int nswbuf; /* Number of swap I/O buffer headers. */
+void (*nlminfo_release_p)(struct proc *p);
+struct sysentvec rtems_sysvec;
 
-static SYSCTL_NODE(_kern, OID_AUTO, smp, CTLFLAG_RD|CTLFLAG_CAPRD, NULL,
-    "Kernel SMP");
+static SYSCTL_NODE(
+    _kern, OID_AUTO, smp, CTLFLAG_RD | CTLFLAG_CAPRD, NULL, "Kernel SMP");
 
 static int maxid_maxcpus;
 
-SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD|CTLFLAG_CAPRD,
+SYSCTL_INT(_kern_smp, OID_AUTO, maxid, CTLFLAG_RD | CTLFLAG_CAPRD,
     &maxid_maxcpus, 0, "Max CPU ID.");
 
-SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD|CTLFLAG_CAPRD,
+SYSCTL_INT(_kern_smp, OID_AUTO, maxcpus, CTLFLAG_RD | CTLFLAG_CAPRD,
     &maxid_maxcpus, 0, "Max number of CPUs that the system was compiled for.");
+
+static void
+cpu_startup(void *dummy)
+{
+	kern_vfs_bio_buffer_alloc(unmapped_base, maxbcache);
+	bufinit();
+	vm_pager_bufferinit();
+}
+SYSINIT(cpu, SI_SUB_CPU, SI_ORDER_FIRST, cpu_startup, NULL);
 
 /*
  * Create a single process. RTEMS is a single address, single process OS.
  */
 static void
-proc0_init(void* dummy)
+proc0_init(void *dummy)
 {
 	struct proc *p = &proc0;
 	struct ucred *newcred;
@@ -127,7 +156,7 @@ proc0_init(void* dummy)
 	newcred = crget();
 	newcred->cr_uid = 0;
 	newcred->cr_ruid = 0;
-	newcred->cr_ngroups = 1;	/* group 0 */
+	newcred->cr_ngroups = 1; /* group 0 */
 	newcred->cr_groups[0] = 0;
 	newcred->cr_rgid = 0;
 	tmpuinfo.ui_uid = 1;
@@ -137,8 +166,15 @@ proc0_init(void* dummy)
 	newcred->cr_ruidinfo = uifind(0);
 	p->p_ucred = newcred;
 	p->p_pid = getpid();
-	p->p_fd = NULL;
+	p->p_fd = fdinit(NULL, false);
 	p->p_fdtol = NULL;
+	rtems_sysvec.sv_flags = SV_ABI_FREEBSD;
+#ifdef __LP64__
+	rtems_sysvec.sv_flags |= SV_LP64;
+#else
+	rtems_sysvec.sv_flags |= SV_ILP32;
+#endif
+	p->p_sysent = &rtems_sysvec;
 	uuid_generate(uuid);
 	uuid_unparse(uuid, prison0.pr_hostuuid);
 }
@@ -170,17 +206,27 @@ rtems_bsd_initialize(void)
 	bt_tickthreshold = bt_timethreshold;
 	sbt_timethreshold = bttosbt(bt_timethreshold);
 	sbt_tickthreshold = bttosbt(bt_tickthreshold);
-	maxid_maxcpus = (int) rtems_scheduler_get_processor_maximum();
+	maxid_maxcpus = (int)rtems_scheduler_get_processor_maximum();
+	bio_transient_maxcnt = 1024;
+	sx_init(&allproc_lock, "allproc");
 
+	maxfiles = rtems_libio_number_iops;
+	maxfilesperproc = maxfiles;
 	maxproc = 16;
+	ngroups_max = 4;
+
+	maxbcache = rtems_bsd_get_allocator_domain_size(
+	    RTEMS_BSD_ALLOCATOR_DOMAIN_BIO);
+	unmapped_base = (caddr_t)rtems_heap_allocate_aligned_with_boundary(
+	    maxbcache, CACHE_LINE_SIZE, 0);
+	if (unmapped_base == NULL) {
+		return RTEMS_UNSATISFIED;
+	}
 
 	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
 
-	sc =  rtems_timer_initiate_server(
-		rtems_bsd_get_task_priority(name),
-		rtems_bsd_get_task_stack_size(name),
-		RTEMS_DEFAULT_ATTRIBUTES
-	);
+	sc = rtems_timer_initiate_server(rtems_bsd_get_task_priority(name),
+	    rtems_bsd_get_task_stack_size(name), RTEMS_DEFAULT_ATTRIBUTES);
 	if (sc != RTEMS_SUCCESSFUL) {
 		return RTEMS_UNSATISFIED;
 	}
@@ -191,7 +237,8 @@ rtems_bsd_initialize(void)
 #ifdef KTR
 	ktr_verbose = 10;
 	ktr_mask = KTR_ALL;
-	ktr_mask = KTR_GEN | KTR_LOCK | KTR_VFS | KTR_VOP | KTR_BUF | KTR_MALLOC | KTR_SYSC | KTR_RUNQ;
+	ktr_mask = KTR_GEN | KTR_LOCK | KTR_VFS | KTR_VOP | KTR_BUF |
+	    KTR_MALLOC | KTR_SYSC | KTR_RUNQ;
 #endif
 
 	return RTEMS_SUCCESSFUL;

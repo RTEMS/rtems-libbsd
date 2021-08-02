@@ -40,4 +40,7 @@
 
 #include <rtems/bsd/bsd.h>
 
-uintptr_t rtems_bsd_allocator_domain_page_mbuf_size = RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT;
+uintptr_t rtems_bsd_allocator_domain_page_mbuf_size =
+    RTEMS_BSD_ALLOCATOR_DOMAIN_PAGE_MBUF_DEFAULT;
+uintptr_t rtems_bsd_allocator_domain_bio_size =
+    RTEMS_BSD_ALLOCATOR_DOMAIN_BIO_DEFAULT;

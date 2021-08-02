@@ -102,9 +102,11 @@ struct bio {
 	void	*bio_caller2;		/* Private use by the consumer. */
 	TAILQ_ENTRY(bio) bio_queue;	/* Disksort queue. */
 	const char *bio_attribute;	/* Attribute for BIO_[GS]ETATTR */
+#ifndef __rtems__
 	struct  disk_zone_args bio_zone;/* Used for BIO_ZONE */
 	struct g_consumer *bio_from;	/* GEOM linkage */
 	struct g_provider *bio_to;	/* GEOM linkage */
+#endif /* __rtems__ */
 	off_t	bio_length;		/* Like bio_bcount */
 	off_t	bio_completed;		/* Inverse of bio_resid */
 	u_int	bio_children;		/* Number of spawned bios */

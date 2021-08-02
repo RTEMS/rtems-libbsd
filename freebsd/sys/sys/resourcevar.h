@@ -123,7 +123,7 @@ void	 calcru(struct proc *p, struct timeval *up, struct timeval *sp);
 #ifndef __rtems__
 int	 chgkqcnt(struct uidinfo *uip, int diff, rlim_t max);
 #else /* __rtems__ */
-#define	 chgkqcnt(uip, diff, max) 0
+#define	 chgkqcnt(uip, diff, max) 1
 #endif /* __rtems__ */
 int	 chgproccnt(struct uidinfo *uip, int diff, rlim_t maxval);
 #ifndef __rtems__
@@ -146,7 +146,14 @@ int	 kern_proc_setrlimit(struct thread *td, struct proc *p, u_int which,
 struct plimit
 	*lim_alloc(void);
 void	 lim_copy(struct plimit *dst, struct plimit *src);
+#ifndef __rtems__
 rlim_t	 lim_cur(struct thread *td, int which);
+#else /* __rtems__ */
+static inline rlim_t  lim_cur(struct thread *td, int which)
+{
+	return INT64_MAX;
+}
+#endif /* __rtems__ */
 rlim_t	 lim_cur_proc(struct proc *p, int which);
 void	 lim_fork(struct proc *p1, struct proc *p2);
 void	 lim_free(struct plimit *limp);

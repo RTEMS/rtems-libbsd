@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -796,16 +798,22 @@ sys_mount(struct thread *td, struct mount_args *uap)
 	 */
 	flags &= ~MNT_ROOTFS;
 
+#ifndef __rtems__
 	fstype = malloc(MFSNAMELEN, M_TEMP, M_WAITOK);
 	error = copyinstr(uap->type, fstype, MFSNAMELEN, NULL);
 	if (error) {
 		free(fstype, M_TEMP);
 		return (error);
 	}
+#else /* __rtems__ */
+	fstype = uap->type;
+#endif /* __rtems__ */
 
 	AUDIT_ARG_TEXT(fstype);
 	vfsp = vfs_byname_kld(fstype, td, &error);
+#ifndef __rtems__
 	free(fstype, M_TEMP);
+#endif /* __rtems__ */
 	if (vfsp == NULL)
 		return (ENOENT);
 	if (vfsp->vfc_vfsops->vfs_cmount == NULL)

@@ -48,9 +48,7 @@ struct kqueue {
 	int		kq_count;		/* number of pending events */
 	struct		selinfo kq_sel;
 	struct		sigio *kq_sigio;
-#ifndef __rtems__
 	struct		filedesc *kq_fdp;
-#endif /* __rtems__ */
 	int		kq_state;
 #define KQ_SEL		0x01
 #define KQ_SLEEP	0x02

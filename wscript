@@ -145,7 +145,9 @@ def options(opt):
                    action="store",
                    default="",
                    dest="freebsd_options",
-                   help="Set FreeBSD options (developer option).")
+                   help="Set FreeBSD options (developer option). Supported: " + \
+                   "bootverbose,verbose_sysinit,debug_locks,ktr,ktr_verbose," + \
+                   "rtems_bsd_descrip_trace,rtems_bsd_syscall_trace,rtems_bsd_vfs_trace")
     opt.add_option(
         "--optimization",
         action="store",

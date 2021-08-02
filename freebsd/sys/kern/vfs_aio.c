@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
@@ -40,7 +42,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/limits.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
-#include <sys/unistd.h>
+#include <rtems/bsd/sys/unistd.h>
 #include <sys/posix4.h>
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
@@ -48,10 +50,14 @@ __FBSDID("$FreeBSD$");
 #include <sys/syscallsubr.h>
 #include <sys/protosw.h>
 #include <sys/rwlock.h>
+#ifndef __rtems__
 #include <sys/sema.h>
+#endif /* __rtems__ */
 #include <sys/socket.h>
 #include <sys/socketvar.h>
+#ifndef __rtems__
 #include <sys/syscall.h>
+#endif /* __rtems__ */
 #include <sys/sysent.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
@@ -302,10 +308,15 @@ struct aiocb_ops {
 };
 
 static TAILQ_HEAD(,aioproc) aio_freeproc;		/* (c) Idle daemons */
+#ifndef __rtems__
 static struct sema aio_newproc_sem;
+#endif /* __rtems__ */
 static struct mtx aio_job_mtx;
 static TAILQ_HEAD(,kaiocb) aio_jobs;			/* (c) Async job list */
 static struct unrhdr *aiod_unr;
+#ifdef __rtems__
+static struct kaioinfo *aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 
 void		aio_init_aioinfo(struct proc *p);
 static int	aio_onceonly(void);
@@ -407,7 +418,9 @@ aio_onceonly(void)
 	kqueue_add_filteropts(EVFILT_AIO, &aio_filtops);
 	kqueue_add_filteropts(EVFILT_LIO, &lio_filtops);
 	TAILQ_INIT(&aio_freeproc);
+#ifndef __rtems__
 	sema_init(&aio_newproc_sem, 0, "aio_new_proc");
+#endif /* __rtems__ */
 	mtx_init(&aio_job_mtx, "aio_job", NULL, MTX_DEF);
 	TAILQ_INIT(&aio_jobs);
 	aiod_unr = new_unrhdr(1, INT_MAX, NULL);
@@ -451,6 +464,7 @@ aio_init_aioinfo(struct proc *p)
 	TAILQ_INIT(&ki->kaio_syncready);
 	TASK_INIT(&ki->kaio_task, 0, aio_kick_helper, p);
 	TASK_INIT(&ki->kaio_sync_task, 0, aio_schedule_fsync, ki);
+#ifndef __rtems__
 	PROC_LOCK(p);
 	if (p->p_aioinfo == NULL) {
 		p->p_aioinfo = ki;
@@ -460,14 +474,25 @@ aio_init_aioinfo(struct proc *p)
 		mtx_destroy(&ki->kaio_mtx);
 		uma_zfree(kaio_zone, ki);
 	}
+#else /* __rtems__ */
+	if (aio_proc_p_aioinfo == NULL) {
+		aio_proc_p_aioinfo = ki;
+	} else {
+		mtx_destroy(&ki->kaio_mtx);
+		uma_zfree(kaio_zone, ki);
+	}
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 	while (num_aio_procs < MIN(target_aio_procs, max_aio_procs))
 		aio_newproc(NULL);
+#endif /* __rtems__ */
 }
 
 static int
 aio_sendsig(struct proc *p, struct sigevent *sigev, ksiginfo_t *ksi)
 {
+#ifndef __rtems__
 	struct thread *td;
 	int error;
 
@@ -482,6 +507,9 @@ aio_sendsig(struct proc *p, struct sigevent *sigev, ksiginfo_t *ksi)
 	}
 	PROC_UNLOCK(p);
 	return (error);
+#else /* __rtems__ */
+	return 0;
+#endif /* __rtems__ */
 }
 
 /*
@@ -494,11 +522,15 @@ aio_free_entry(struct kaiocb *job)
 {
 	struct kaioinfo *ki;
 	struct aioliojob *lj;
+#ifndef __rtems__
 	struct proc *p;
 
 	p = job->userproc;
 	MPASS(curproc == p);
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	MPASS(ki != NULL);
 
 	AIO_LOCK_ASSERT(ki, MA_OWNED);
@@ -521,18 +553,22 @@ aio_free_entry(struct kaiocb *job)
 			TAILQ_REMOVE(&ki->kaio_liojoblist, lj, lioj_list);
 			/* lio is going away, we need to destroy any knotes */
 			knlist_delete(&lj->klist, curthread, 1);
+#ifndef __rtems__
 			PROC_LOCK(p);
 			sigqueue_take(&lj->lioj_ksi);
 			PROC_UNLOCK(p);
+#endif /* __rtems__ */
 			uma_zfree(aiolio_zone, lj);
 		}
 	}
 
 	/* job is going away, we need to destroy any knotes */
 	knlist_delete(&job->klist, curthread, 1);
+#ifndef __rtems__
 	PROC_LOCK(p);
 	sigqueue_take(&job->ksi);
 	PROC_UNLOCK(p);
+#endif /* __rtems__ */
 
 	AIO_UNLOCK(ki);
 
@@ -635,7 +671,11 @@ aio_proc_rundown(void *arg, struct proc *p)
 
 	KASSERT(curthread->td_proc == p,
 	    ("%s: called on non-curproc", __func__));
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	if (ki == NULL)
 		return;
 
@@ -655,7 +695,11 @@ restart:
 	/* Wait for all running I/O to be finished */
 	if (TAILQ_FIRST(&ki->kaio_jobqueue) || ki->kaio_active_count != 0) {
 		ki->kaio_flags |= KAIO_WAKEUP;
+#ifndef __rtems__
 		msleep(&p->p_aioinfo, AIO_MTX(ki), PRIBIO, "aioprn", hz);
+#else /* __rtems__ */
+		msleep(&aio_proc_p_aioinfo, AIO_MTX(ki), PRIBIO, "aioprn", hz);
+#endif /* __rtems__ */
 		goto restart;
 	}
 
@@ -667,9 +711,11 @@ restart:
 		if (lj->lioj_count == 0) {
 			TAILQ_REMOVE(&ki->kaio_liojoblist, lj, lioj_list);
 			knlist_delete(&lj->klist, curthread, 1);
+#ifndef __rtems__
 			PROC_LOCK(p);
 			sigqueue_take(&lj->lioj_ksi);
 			PROC_UNLOCK(p);
+#endif /* __rtems__ */
 			uma_zfree(aiolio_zone, lj);
 		} else {
 			panic("LIO job not cleaned up: C:%d, FC:%d\n",
@@ -681,7 +727,11 @@ restart:
 	taskqueue_drain(taskqueue_aiod_kick, &ki->kaio_sync_task);
 	mtx_destroy(&ki->kaio_mtx);
 	uma_zfree(kaio_zone, ki);
+#ifndef __rtems__
 	p->p_aioinfo = NULL;
+#else /* __rtems__ */
+	aio_proc_p_aioinfo = NULL;
+#endif /* __rtems__ */
 }
 
 /*
@@ -698,7 +748,11 @@ aio_selectjob(struct aioproc *aiop)
 restart:
 	TAILQ_FOREACH(job, &aio_jobs, list) {
 		userp = job->userproc;
+#ifndef __rtems__
 		ki = userp->p_aioinfo;
+#else /* __rtems__ */
+		ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 
 		if (ki->kaio_active_count < max_aio_per_proc) {
 			TAILQ_REMOVE(&aio_jobs, job, list);
@@ -785,10 +839,12 @@ aio_process_rw(struct kaiocb *job)
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_td = td;
 
+#ifndef __rtems__
 	msgrcv_st = td->td_ru.ru_msgrcv;
 	msgsnd_st = td->td_ru.ru_msgsnd;
 	inblock_st = td->td_ru.ru_inblock;
 	oublock_st = td->td_ru.ru_oublock;
+#endif /* __rtems__ */
 
 	/*
 	 * aio_aqueue() acquires a reference to the file that is
@@ -806,6 +862,7 @@ aio_process_rw(struct kaiocb *job)
 		auio.uio_rw = UIO_WRITE;
 		error = fo_write(fp, &auio, fp->f_cred, FOF_OFFSET, td);
 	}
+#ifndef __rtems__
 	msgrcv_end = td->td_ru.ru_msgrcv;
 	msgsnd_end = td->td_ru.ru_msgsnd;
 	inblock_end = td->td_ru.ru_inblock;
@@ -815,14 +872,17 @@ aio_process_rw(struct kaiocb *job)
 	job->msgsnd = msgsnd_end - msgsnd_st;
 	job->inblock = inblock_end - inblock_st;
 	job->outblock = oublock_end - oublock_st;
+#endif /* __rtems__ */
 
 	if ((error) && (auio.uio_resid != cnt)) {
 		if (error == ERESTART || error == EINTR || error == EWOULDBLOCK)
 			error = 0;
 		if ((error == EPIPE) && (cb->aio_lio_opcode == LIO_WRITE)) {
+#ifndef __rtems__
 			PROC_LOCK(job->userproc);
 			kern_psignal(job->userproc, SIGPIPE);
 			PROC_UNLOCK(job->userproc);
+#endif /* __rtems__ */
 		}
 	}
 
@@ -879,7 +939,11 @@ aio_bio_done_notify(struct proc *userp, struct kaiocb *job)
 	int lj_done;
 	bool schedule_fsync;
 
+#ifndef __rtems__
 	ki = userp->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	AIO_LOCK_ASSERT(ki, MA_OWNED);
 	lj = job->lio;
 	lj_done = 0;
@@ -894,12 +958,15 @@ aio_bio_done_notify(struct proc *userp, struct kaiocb *job)
 	if (ki->kaio_flags & KAIO_RUNDOWN)
 		goto notification_done;
 
+#ifndef __rtems__
 	if (job->uaiocb.aio_sigevent.sigev_notify == SIGEV_SIGNAL ||
 	    job->uaiocb.aio_sigevent.sigev_notify == SIGEV_THREAD_ID)
 		aio_sendsig(userp, &job->uaiocb.aio_sigevent, &job->ksi);
+#endif /* __rtems__ */
 
 	KNOTE_LOCKED(&job->klist, 1);
 
+#ifndef __rtems__
 	if (lj_done) {
 		if (lj->lioj_signal.sigev_notify == SIGEV_KEVENT) {
 			lj->lioj_flags |= LIOJ_KEVENT_POSTED;
@@ -913,6 +980,7 @@ aio_bio_done_notify(struct proc *userp, struct kaiocb *job)
 			lj->lioj_flags |= LIOJ_SIGNAL_POSTED;
 		}
 	}
+#endif /* __rtems__ */
 
 notification_done:
 	if (job->jobflags & KAIOCB_CHECKSYNC) {
@@ -935,7 +1003,12 @@ notification_done:
 	}
 	if (ki->kaio_flags & KAIO_WAKEUP) {
 		ki->kaio_flags &= ~KAIO_WAKEUP;
+
+#ifndef __rtems__
 		wakeup(&userp->p_aioinfo);
+#else /* __rtems__ */
+		wakeup(&aio_proc_p_aioinfo);
+#endif /* __rtems__ */
 	}
 }
 
@@ -974,7 +1047,9 @@ static bool
 aio_clear_cancel_function_locked(struct kaiocb *job)
 {
 
+#ifndef __rtems__
 	AIO_LOCK_ASSERT(job->userproc->p_aioinfo, MA_OWNED);
+#endif /* __rtems__ */
 	MPASS(job->cancel_fn != NULL);
 	if (job->jobflags & KAIOCB_CANCELLING) {
 		job->jobflags |= KAIOCB_CLEARED;
@@ -990,7 +1065,11 @@ aio_clear_cancel_function(struct kaiocb *job)
 	struct kaioinfo *ki;
 	bool ret;
 
+#ifndef __rtems__
 	ki = job->userproc->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	AIO_LOCK(ki);
 	ret = aio_clear_cancel_function_locked(job);
 	AIO_UNLOCK(ki);
@@ -1001,7 +1080,9 @@ static bool
 aio_set_cancel_function_locked(struct kaiocb *job, aio_cancel_fn_t *func)
 {
 
+#ifndef __rtems__
 	AIO_LOCK_ASSERT(job->userproc->p_aioinfo, MA_OWNED);
+#endif /* __rtems__ */
 	if (job->jobflags & KAIOCB_CANCELLED)
 		return (false);
 	job->cancel_fn = func;
@@ -1014,7 +1095,11 @@ aio_set_cancel_function(struct kaiocb *job, aio_cancel_fn_t *func)
 	struct kaioinfo *ki;
 	bool ret;
 
+#ifndef __rtems__
 	ki = job->userproc->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	AIO_LOCK(ki);
 	ret = aio_set_cancel_function_locked(job, func);
 	AIO_UNLOCK(ki);
@@ -1030,8 +1115,13 @@ aio_complete(struct kaiocb *job, long status, int error)
 	job->uaiocb._aiocb_private.error = error;
 	job->uaiocb._aiocb_private.status = status;
 
+#ifndef __rtems__
 	userp = job->userproc;
 	ki = userp->p_aioinfo;
+#else /* __rtems__ */
+	userp = NULL;
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 
 	AIO_LOCK(ki);
 	KASSERT(!(job->jobflags & KAIOCB_FINISHED),
@@ -1055,7 +1145,9 @@ void
 aio_switch_vmspace(struct kaiocb *job)
 {
 
+#ifndef __rtems__
 	vmspace_switch_aio(job->userproc->p_vmspace);
+#endif /* __rtems__ */
 }
 
 /*
@@ -1078,24 +1170,30 @@ aio_daemon(void *_id)
 	 * doesn't get freed by jobs that switch to a different
 	 * vmspace.
 	 */
+#ifndef __rtems__
 	p = td->td_proc;
 	myvm = vmspace_acquire_ref(p);
 
 	KASSERT(p->p_textvp == NULL, ("kthread has a textvp"));
+#endif /* __rtems__ */
 
 	/*
 	 * Allocate and ready the aio control info.  There is one aiop structure
 	 * per daemon.
 	 */
 	aiop = uma_zalloc(aiop_zone, M_WAITOK);
+#ifndef __rtems__
 	aiop->aioproc = p;
+#endif /* __rtems__ */
 	aiop->aioprocflags = 0;
 
 	/*
 	 * Wakeup parent process.  (Parent sleeps to keep from blasting away
 	 * and creating too many daemons.)
 	 */
+#ifndef __rtems__
 	sema_post(&aio_newproc_sem);
+#endif /* __rtems__ */
 
 	mtx_lock(&aio_job_mtx);
 	for (;;) {
@@ -1113,7 +1211,11 @@ aio_daemon(void *_id)
 		while ((job = aio_selectjob(aiop)) != NULL) {
 			mtx_unlock(&aio_job_mtx);
 
+#ifndef __rtems__
 			ki = job->userproc->p_aioinfo;
+#else /* __rtems__ */
+			ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 			job->handle_fn(job);
 
 			mtx_lock(&aio_job_mtx);
@@ -1124,6 +1226,7 @@ aio_daemon(void *_id)
 		/*
 		 * Disconnect from user address space.
 		 */
+#ifndef __rtems__
 		if (p->p_vmspace != myvm) {
 			mtx_unlock(&aio_job_mtx);
 			vmspace_switch_aio(myvm);
@@ -1134,6 +1237,7 @@ aio_daemon(void *_id)
 			 */
 			continue;
 		}
+#endif /* __rtems__ */
 
 		mtx_assert(&aio_job_mtx, MA_OWNED);
 
@@ -1155,12 +1259,14 @@ aio_daemon(void *_id)
 	mtx_unlock(&aio_job_mtx);
 	uma_zfree(aiop_zone, aiop);
 	free_unr(aiod_unr, id);
+#ifndef __rtems__
 	vmspace_free(myvm);
 
 	KASSERT(p->p_vmspace == myvm,
 	    ("AIOD: bad vmspace for exiting daemon"));
 	KASSERT(myvm->vm_refcnt > 1,
 	    ("AIOD: bad vm refcnt for exiting daemon: %d", myvm->vm_refcnt));
+#endif /* __rtems__ */
 	kproc_exit(0);
 }
 
@@ -1182,7 +1288,9 @@ aio_newproc(int *start)
 		/*
 		 * Wait until daemon is started.
 		 */
+#ifndef __rtems__
 		sema_wait(&aio_newproc_sem);
+#endif /* __rtems__ */
 		mtx_lock(&aio_job_mtx);
 		num_aio_procs++;
 		if (start != NULL)
@@ -1248,7 +1356,11 @@ aio_qbio(struct proc *p, struct kaiocb *job)
 		goto unref;
 	}
 
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	poff = (vm_offset_t)cb->aio_buf & PAGE_MASK;
 	if ((dev->si_flags & SI_UNMAPPED) && unmapped_buf_allowed) {
 		if (cb->aio_nbytes > MAXPHYS) {
@@ -1287,7 +1399,11 @@ aio_qbio(struct proc *p, struct kaiocb *job)
 	prot = VM_PROT_READ;
 	if (cb->aio_lio_opcode == LIO_READ)
 		prot |= VM_PROT_WRITE;	/* Less backwards than it looks */
+#ifndef __rtems__
 	job->npages = vm_fault_quick_hold_pages(&curproc->p_vmspace->vm_map,
+#else /* __rtems__ */
+	job->npages = vm_fault_quick_hold_pages(NULL,
+#endif /* __rtems__ */
 	    (vm_offset_t)bp->bio_data, bp->bio_length, prot, job->pages,
 	    nitems(job->pages));
 	if (job->npages < 0) {
@@ -1309,7 +1425,9 @@ aio_qbio(struct proc *p, struct kaiocb *job)
 	}
 
 	/* Perform transfer. */
+#ifndef __rtems__
 	csw->d_strategy(bp);
+#endif /* __rtems__ */
 	dev_relthread(dev, ref);
 	return (0);
 
@@ -1449,7 +1567,9 @@ int
 aio_aqueue(struct thread *td, struct aiocb *ujob, struct aioliojob *lj,
     int type, struct aiocb_ops *ops)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#endif /* __rtems__ */
 	struct file *fp;
 	struct kaiocb *job;
 	struct kaioinfo *ki;
@@ -1460,10 +1580,14 @@ aio_aqueue(struct thread *td, struct aiocb *ujob, struct aioliojob *lj,
 	int jid;
 	u_short evflags;
 
+#ifndef __rtems__
 	if (p->p_aioinfo == NULL)
 		aio_init_aioinfo(p);
 
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 
 	ops->store_status(ujob, -1);
 	ops->store_error(ujob, 0);
@@ -1490,6 +1614,7 @@ aio_aqueue(struct thread *td, struct aiocb *ujob, struct aioliojob *lj,
 		return (EINVAL);
 	}
 
+#ifndef __rtems__
 	if (job->uaiocb.aio_sigevent.sigev_notify != SIGEV_KEVENT &&
 	    job->uaiocb.aio_sigevent.sigev_notify != SIGEV_SIGNAL &&
 	    job->uaiocb.aio_sigevent.sigev_notify != SIGEV_THREAD_ID &&
@@ -1505,6 +1630,7 @@ aio_aqueue(struct thread *td, struct aiocb *ujob, struct aioliojob *lj,
 		uma_zfree(aiocb_zone, job);
 		return (EINVAL);
 	}
+#endif /* __rtems__ */
 
 	ksiginfo_init(&job->ksi);
 
@@ -1581,6 +1707,15 @@ aio_aqueue(struct thread *td, struct aiocb *ujob, struct aioliojob *lj,
 		return (0);
 	}
 
+#ifdef __rtems__
+	/*
+	 * Note: the following has been removed because kqueue and signals
+	 * meet here and for reasons I cannot explain signal support in libbsd
+	 * has not been supported but it needs to be.
+	 */
+	error = EINVAL;
+	goto aqueue_fail;
+#else /* __rtems__ */
 	if (job->uaiocb.aio_sigevent.sigev_notify != SIGEV_KEVENT)
 		goto no_kqueue;
 	evflags = job->uaiocb.aio_sigevent.sigev_notify_kevent_flags;
@@ -1598,12 +1733,15 @@ aio_aqueue(struct thread *td, struct aiocb *ujob, struct aioliojob *lj,
 	error = kqfd_register(kqfd, &kev, td, M_WAITOK);
 	if (error)
 		goto aqueue_fail;
+#endif /* __rtems__ */
 
 no_kqueue:
 
 	ops->store_error(ujob, EINPROGRESS);
 	job->uaiocb._aiocb_private.error = EINPROGRESS;
+#ifndef __rtems__
 	job->userproc = p;
+#endif /* __rtems__ */
 	job->cred = crhold(td->td_ucred);
 	job->jobflags = KAIOCB_QUEUEING;
 	job->lio = lj;
@@ -1631,7 +1769,11 @@ no_kqueue:
 		 * The bulk of the completion is deferred in that case
 		 * until this point.
 		 */
+#ifndef __rtems__
 		aio_bio_done_notify(p, job);
+#else /* __rtems__ */
+		aio_bio_done_notify(NULL, job);
+#endif /* __rtems__ */
 	} else
 		TAILQ_INSERT_TAIL(&ki->kaio_jobqueue, job, plist);
 	AIO_UNLOCK(ki);
@@ -1678,7 +1820,11 @@ aio_cancel_sync(struct kaiocb *job)
 {
 	struct kaioinfo *ki;
 
+#ifndef __rtems__
 	ki = job->userproc->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	AIO_LOCK(ki);
 	if (!aio_cancel_cleared(job))
 		TAILQ_REMOVE(&ki->kaio_syncqueue, job, list);
@@ -1696,7 +1842,11 @@ aio_queue_file(struct file *fp, struct kaiocb *job)
 	int error;
 	bool safe;
 
+#ifndef __rtems__
 	ki = job->userproc->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	error = aio_qbio(job->userproc, job);
 	if (error >= 0)
 		return (error);
@@ -1755,7 +1905,11 @@ aio_queue_file(struct file *fp, struct kaiocb *job)
 static void
 aio_kick_nowait(struct proc *userp)
 {
+#ifndef __rtems__
 	struct kaioinfo *ki = userp->p_aioinfo;
+#else /* __rtems__ */
+	struct kaioinfo *ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	struct aioproc *aiop;
 
 	mtx_assert(&aio_job_mtx, MA_OWNED);
@@ -1772,7 +1926,11 @@ aio_kick_nowait(struct proc *userp)
 static int
 aio_kick(struct proc *userp)
 {
+#ifndef __rtems__
 	struct kaioinfo *ki = userp->p_aioinfo;
+#else /* __rtems__ */
+	struct kaioinfo *ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	struct aioproc *aiop;
 	int error, ret = 0;
 
@@ -1818,12 +1976,18 @@ aio_kick_helper(void *context, int pending)
 static int
 kern_aio_return(struct thread *td, struct aiocb *ujob, struct aiocb_ops *ops)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#endif /* __rtems__ */
 	struct kaiocb *job;
 	struct kaioinfo *ki;
 	long status, error;
 
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	if (ki == NULL)
 		return (EINVAL);
 	AIO_LOCK(ki);
@@ -1836,10 +2000,12 @@ kern_aio_return(struct thread *td, struct aiocb *ujob, struct aiocb_ops *ops)
 		status = job->uaiocb._aiocb_private.status;
 		error = job->uaiocb._aiocb_private.error;
 		td->td_retval[0] = status;
+#ifndef __rtems__
 		td->td_ru.ru_oublock += job->outblock;
 		td->td_ru.ru_inblock += job->inblock;
 		td->td_ru.ru_msgsnd += job->msgsnd;
 		td->td_ru.ru_msgrcv += job->msgrcv;
+#endif /* __rtems__ */
 		aio_free_entry(job);
 		AIO_UNLOCK(ki);
 		ops->store_error(ujob, error);
@@ -1865,7 +2031,9 @@ static int
 kern_aio_suspend(struct thread *td, int njoblist, struct aiocb **ujoblist,
     struct timespec *ts)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#endif /* __rtems__ */
 	struct timeval atv;
 	struct kaioinfo *ki;
 	struct kaiocb *firstjob, *job;
@@ -1882,7 +2050,11 @@ kern_aio_suspend(struct thread *td, int njoblist, struct aiocb **ujoblist,
 		timo = tvtohz(&atv);
 	}
 
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	if (ki == NULL)
 		return (EAGAIN);
 
@@ -1908,8 +2080,13 @@ kern_aio_suspend(struct thread *td, int njoblist, struct aiocb **ujoblist,
 			break;
 
 		ki->kaio_flags |= KAIO_WAKEUP;
+#ifndef __rtems__
 		error = msleep(&p->p_aioinfo, AIO_MTX(ki), PRIBIO | PCATCH,
 		    "aiospn", timo);
+#else /* __rtems__ */
+		error = msleep(&aio_proc_p_aioinfo, AIO_MTX(ki), PRIBIO | PCATCH,
+		    "aiospn", timo);
+#endif /* __rtems__ */
 		if (error == ERESTART)
 			error = EINTR;
 		if (error)
@@ -1952,7 +2129,11 @@ sys_aio_suspend(struct thread *td, struct aio_suspend_args *uap)
 int
 sys_aio_cancel(struct thread *td, struct aio_cancel_args *uap)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#else /* __rtems__ */
+	struct proc *p = NULL;
+#endif /* __rtems__ */
 	struct kaioinfo *ki;
 	struct kaiocb *job, *jobn;
 	struct file *fp;
@@ -1966,7 +2147,11 @@ sys_aio_cancel(struct thread *td, struct aio_cancel_args *uap)
 	if (error)
 		return (error);
 
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	if (ki == NULL)
 		goto done;
 
@@ -2028,12 +2213,18 @@ done:
 static int
 kern_aio_error(struct thread *td, struct aiocb *ujob, struct aiocb_ops *ops)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#endif /* __rtems__ */
 	struct kaiocb *job;
 	struct kaioinfo *ki;
 	int status;
 
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	if (ki == NULL) {
 		td->td_retval[0] = EINVAL;
 		return (0);
@@ -2121,7 +2312,9 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
     struct aiocb **acb_list, int nent, struct sigevent *sig,
     struct aiocb_ops *ops)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#endif /* __rtems__ */
 	struct aiocb *job;
 	struct kaioinfo *ki;
 	struct aioliojob *lj;
@@ -2136,10 +2329,19 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
 	if (nent < 0 || nent > max_aio_queue_per_proc)
 		return (EINVAL);
 
+#ifndef __rtems__
 	if (p->p_aioinfo == NULL)
 		aio_init_aioinfo(p);
+#else /* __rtems__ */
+	if (aio_proc_p_aioinfo == NULL)
+		aio_init_aioinfo(NULL);
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 
 	lj = uma_zalloc(aiolio_zone, M_WAITOK);
 	lj->lioj_flags = 0;
@@ -2152,6 +2354,14 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
 	 * Setup signal.
 	 */
 	if (sig && (mode == LIO_NOWAIT)) {
+#ifdef __rtems__
+	/*
+	 * Note: the following has been removed because kqueue and signals
+	 * meet here and for reasons I cannot explain signal support in libbsd
+	 * has not been supported but it needs to be.
+	 */
+		return EINVAL;
+#else /* __rtems__ */
 		bcopy(sig, &lj->lioj_signal, sizeof(lj->lioj_signal));
 		if (lj->lioj_signal.sigev_notify == SIGEV_KEVENT) {
 			/* Assume only new style KEVENT */
@@ -2182,6 +2392,7 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
 			uma_zfree(aiolio_zone, lj);
 			return EINVAL;
 		}
+#endif /* __rtems__ */
 	}
 
 	AIO_LOCK(ki);
@@ -2216,7 +2427,11 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
 	if (mode == LIO_WAIT) {
 		while (lj->lioj_count - 1 != lj->lioj_finished_count) {
 			ki->kaio_flags |= KAIO_WAKEUP;
+#ifndef __rtems__
 			error = msleep(&p->p_aioinfo, AIO_MTX(ki),
+#else /* __rtems__ */
+			error = msleep(&aio_proc_p_aioinfo, AIO_MTX(ki),
+#endif /* __rtems__ */
 			    PRIBIO | PCATCH, "aiospn", 0);
 			if (error == ERESTART)
 				error = EINTR;
@@ -2225,6 +2440,15 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
 		}
 	} else {
 		if (lj->lioj_count - 1 == lj->lioj_finished_count) {
+#ifdef __rtems__
+			/*
+			 * Note: the following has been removed because kqueue
+			 * and signals meet here and for reasons I cannot
+			 * explain signal support in libbsd has not been
+			 * supported but it needs to be.
+			 */
+			return EINVAL;
+#else /* __rtems__ */
 			if (lj->lioj_signal.sigev_notify == SIGEV_KEVENT) {
 				lj->lioj_flags |= LIOJ_KEVENT_POSTED;
 				KNOTE_LOCKED(&lj->klist, 1);
@@ -2237,15 +2461,18 @@ kern_lio_listio(struct thread *td, int mode, struct aiocb * const *uacb_list,
 					    &lj->lioj_ksi);
 				lj->lioj_flags |= LIOJ_SIGNAL_POSTED;
 			}
+#endif /* __rtems__ */
 		}
 	}
 	lj->lioj_count--;
 	if (lj->lioj_count == 0) {
 		TAILQ_REMOVE(&ki->kaio_liojoblist, lj, lioj_list);
 		knlist_delete(&lj->klist, curthread, 1);
+#ifndef __rtems__
 		PROC_LOCK(p);
 		sigqueue_take(&lj->lioj_ksi);
 		PROC_UNLOCK(p);
+#endif /* __rtems__ */
 		AIO_UNLOCK(ki);
 		uma_zfree(aiolio_zone, lj);
 	} else
@@ -2341,7 +2568,11 @@ aio_biowakeup(struct bio *bp)
 
 	/* Release mapping into kernel space. */
 	userp = job->userproc;
+#ifndef __rtems__
 	ki = userp->p_aioinfo;
+#else /* __rtems__ */
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 	if (job->pbuf) {
 		pmap_qremove((vm_offset_t)job->pbuf->b_data, job->npages);
 		relpbuf(job->pbuf, NULL);
@@ -2379,7 +2610,9 @@ static int
 kern_aio_waitcomplete(struct thread *td, struct aiocb **ujobp,
     struct timespec *ts, struct aiocb_ops *ops)
 {
+#ifndef __rtems__
 	struct proc *p = td->td_proc;
+#endif /* __rtems__ */
 	struct timeval atv;
 	struct kaioinfo *ki;
 	struct kaiocb *job;
@@ -2403,9 +2636,15 @@ kern_aio_waitcomplete(struct thread *td, struct aiocb **ujobp,
 		timo = tvtohz(&atv);
 	}
 
+#ifndef __rtems__
 	if (p->p_aioinfo == NULL)
 		aio_init_aioinfo(p);
 	ki = p->p_aioinfo;
+#else /* __rtems__ */
+	if (aio_proc_p_aioinfo == NULL)
+		aio_init_aioinfo(NULL);
+	ki = aio_proc_p_aioinfo;
+#endif /* __rtems__ */
 
 	error = 0;
 	job = NULL;
@@ -2416,8 +2655,13 @@ kern_aio_waitcomplete(struct thread *td, struct aiocb **ujobp,
 			break;
 		}
 		ki->kaio_flags |= KAIO_WAKEUP;
+#ifndef __rtems__
 		error = msleep(&p->p_aioinfo, AIO_MTX(ki), PRIBIO | PCATCH,
 		    "aiowc", timo);
+#else /* __rtems__ */
+		error = msleep(&aio_proc_p_aioinfo, AIO_MTX(ki), PRIBIO | PCATCH,
+		    "aiowc", timo);
+#endif /* __rtems__ */
 		if (timo && error == ERESTART)
 			error = EINTR;
 		if (error)
@@ -2430,10 +2674,12 @@ kern_aio_waitcomplete(struct thread *td, struct aiocb **ujobp,
 		status = job->uaiocb._aiocb_private.status;
 		error = job->uaiocb._aiocb_private.error;
 		td->td_retval[0] = status;
+#ifndef __rtems__
 		td->td_ru.ru_oublock += job->outblock;
 		td->td_ru.ru_inblock += job->inblock;
 		td->td_ru.ru_msgsnd += job->msgsnd;
 		td->td_ru.ru_msgrcv += job->msgrcv;
+#endif /* __rtems__ */
 		aio_free_entry(job);
 		AIO_UNLOCK(ki);
 		ops->store_aiocb(ujobp, ujob);

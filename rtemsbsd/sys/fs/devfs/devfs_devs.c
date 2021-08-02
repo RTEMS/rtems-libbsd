@@ -35,12 +35,15 @@
 #include <sys/conf.h>
 #include <sys/kernel.h>
 #include <sys/file.h>
+#include <sys/filedesc.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/poll.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <machine/rtems-bsd-libio.h>
 
 #include <fs/devfs/devfs_int.h>
 
@@ -72,27 +75,30 @@ static int
 devfs_imfs_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
+	int fd = -1;
 
 	if (td != NULL) {
 		if (cdev == NULL) {
 			error = ENXIO;
 			goto err;
 		}
+		error = falloc(td, &fp, &fd, oflag);
+		if (error != 0)
+			goto err;
+		finit(fp, FREAD | FWRITE, DTYPE_DEV, NULL, NULL);
+		rtems_libio_iop_hold(iop);
+		rtems_bsd_libio_iop_set_bsd_descriptor(iop, fd);
+		rtems_bsd_libio_iop_set_bsd_file(iop, fp);
 		if (cdev->si_flags & SI_ALIAS) {
 			cdev = cdev->si_parent;
 		}
 		dsw = dev_refthread(cdev, &ref);
 		if (dsw == NULL) {
-			error = ENXIO;
-			goto err;
-		}
-		if (fp == NULL) {
-			dev_relthread(cdev, ref);
 			error = ENXIO;
 			goto err;
 		}
@@ -104,12 +110,19 @@ devfs_imfs_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
 		if (error != 0)
 			devfs_clear_cdevpriv();
 		curthread->td_fpop = fpop;
-		dev_relthread(cdev, ref);
 	} else {
 		error = ENOMEM;
 	}
 
 err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL) {
+		if (error != 0)
+			fdclose(td, fp, fd);
+		else
+			fdrop(fp, td);
+	}
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 
@@ -117,11 +130,11 @@ static int
 devfs_imfs_close(rtems_libio_t *iop)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	int flags = rtems_libio_to_fcntl_flags(iop->flags);
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
 
 	if (td != NULL) {
@@ -131,6 +144,11 @@ devfs_imfs_close(rtems_libio_t *iop)
 		}
 		if (cdev->si_flags & SI_ALIAS) {
 			cdev = cdev->si_parent;
+		}
+		fp = rtems_bsd_libio_iop_to_file_hold(iop, td);
+		if (fp == NULL) {
+			error = EBADF;
+			goto err;
 		}
 		dsw = dev_refthread(cdev, &ref);
 		if (dsw == NULL) {
@@ -141,7 +159,6 @@ devfs_imfs_close(rtems_libio_t *iop)
 		curthread->td_fpop = fp;
 		error = dsw->d_close(cdev, flags, 0, td);
 		curthread->td_fpop = fpop;
-		dev_relthread(cdev, ref);
 		if (fp->f_cdevpriv != NULL)
 			devfs_fpdrop(fp);
 	} else {
@@ -149,6 +166,10 @@ devfs_imfs_close(rtems_libio_t *iop)
 	}
 
 err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL)
+		fdrop(fp, td);
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 
@@ -157,7 +178,6 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
     ssize_t total)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct uio uio = {
 		.uio_iov = __DECONST(struct iovec *, iov),
@@ -168,8 +188,9 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		.uio_rw = UIO_READ,
 		.uio_td = td
 	};
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
 
 	if (td != NULL) {
@@ -179,6 +200,11 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		}
 		if (cdev->si_flags & SI_ALIAS) {
 			cdev = cdev->si_parent;
+		}
+		fp = rtems_bsd_libio_iop_to_file_hold(iop, td);
+		if (fp == NULL) {
+			error = EBADF;
+			goto err;
 		}
 		dsw = dev_refthread(cdev, &ref);
 		if (dsw == NULL) {
@@ -190,12 +216,15 @@ devfs_imfs_readv(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		error = dsw->d_read(cdev, &uio,
 		    rtems_libio_to_fcntl_flags(iop->flags));
 		td->td_fpop = fpop;
-		dev_relthread(cdev, ref);
 	} else {
 		error = ENOMEM;
 	}
 
 err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL)
+		fdrop(fp, td);
 	if (error == 0) {
 		return (total - uio.uio_resid);
 	} else {
@@ -219,7 +248,6 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
     ssize_t total)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct uio uio = {
 		.uio_iov = __DECONST(struct iovec *, iov),
@@ -230,8 +258,9 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		.uio_rw = UIO_WRITE,
 		.uio_td = td
 	};
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
 
 	if (td != NULL) {
@@ -241,6 +270,11 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		}
 		if (cdev->si_flags & SI_ALIAS) {
 			cdev = cdev->si_parent;
+		}
+		fp = rtems_bsd_libio_iop_to_file_hold(iop, td);
+		if (fp == NULL) {
+			error = EBADF;
+			goto err;
 		}
 		dsw = dev_refthread(cdev, &ref);
 		if (dsw == NULL) {
@@ -252,12 +286,15 @@ devfs_imfs_writev(rtems_libio_t *iop, const struct iovec *iov, int iovcnt,
 		error = dsw->d_write(cdev, &uio,
 		    rtems_libio_to_fcntl_flags(iop->flags));
 		td->td_fpop = fpop;
-		dev_relthread(cdev, ref);
 	} else {
 		error = ENOMEM;
 	}
 
 err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL)
+		fdrop(fp, td);
 	if (error == 0) {
 		return (total - uio.uio_resid);
 	} else {
@@ -280,10 +317,10 @@ static int
 devfs_imfs_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
 	int flags = rtems_libio_to_fcntl_flags(iop->flags);
 
@@ -295,6 +332,11 @@ devfs_imfs_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
 		if (cdev->si_flags & SI_ALIAS) {
 			cdev = cdev->si_parent;
 		}
+		fp = rtems_bsd_libio_iop_to_file_hold(iop, td);
+		if (fp == NULL) {
+			error = EBADF;
+			goto err;
+		}
 		dsw = dev_refthread(cdev, &ref);
 		if (dsw == NULL) {
 			error = ENXIO;
@@ -305,12 +347,15 @@ devfs_imfs_ioctl(rtems_libio_t *iop, ioctl_command_t request, void *buffer)
 		error = dsw->d_ioctl(cdev, request, buffer, flags,
 		    td);
 		td->td_fpop = fpop;
-		dev_relthread(cdev, ref);
 	} else {
 		error = ENOMEM;
 	}
 
 err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL)
+		fdrop(fp, td);
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 
@@ -333,28 +378,43 @@ static int
 devfs_imfs_poll(rtems_libio_t *iop, int events)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_wait_forever();
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
 
-	if (cdev == NULL) {
-		return POLLERR;
+	if (td != 0) {
+		if (cdev == NULL) {
+			error = POLLERR;
+			goto err;
+		}
+		if (cdev->si_flags & SI_ALIAS) {
+			cdev = cdev->si_parent;
+		}
+		fp = rtems_bsd_libio_iop_to_file_hold(iop, td);
+		if (fp == NULL) {
+			error = EBADF;
+			goto err;
+		}
+		dsw = dev_refthread(cdev, &ref);
+		if (dsw == NULL) {
+			error = POLLERR;
+			goto err;
+		}
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
+		error = dsw->d_poll(cdev, events, td);
+		td->td_fpop = fpop;
+	} else {
+		error = ENOMEM;
 	}
-	if (cdev->si_flags & SI_ALIAS) {
-		cdev = cdev->si_parent;
-	}
-	dsw = dev_refthread(cdev, &ref);
-	if (dsw == NULL) {
-		return POLLERR;
-	}
-	fpop = td->td_fpop;
-	curthread->td_fpop = fp;
-	error = dsw->d_poll(cdev, events, td);
-	td->td_fpop = fpop;
-	dev_relthread(cdev, ref);
 
+err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL)
+		fdrop(fp, td);
 	return error;
 }
 
@@ -362,28 +422,41 @@ static int
 devfs_imfs_kqfilter(rtems_libio_t *iop, struct knote *kn)
 {
 	struct cdev *cdev = devfs_imfs_get_context_by_iop(iop);
-	struct file *fp = rtems_bsd_iop_to_fp(iop);
 	struct thread *td = rtems_bsd_get_curthread_or_wait_forever();
+	struct file *fp = NULL;
+	struct cdevsw *dsw = NULL;
 	struct file *fpop;
-	struct cdevsw *dsw;
 	int error, ref;
 
-	if (cdev == NULL) {
-		return EINVAL;
+	if (td != 0) {
+		if (cdev == NULL) {
+			error = EINVAL;
+		}
+		fp = rtems_bsd_libio_iop_to_file_hold(iop, td);
+		if (fp == NULL) {
+			error = EBADF;
+			goto err;
+		}
+		if (cdev->si_flags & SI_ALIAS) {
+			cdev = cdev->si_parent;
+		}
+		dsw = dev_refthread(cdev, &ref);
+		if (dsw == NULL) {
+			error = EINVAL;
+		}
+		fpop = td->td_fpop;
+		curthread->td_fpop = fp;
+		error = dsw->d_kqfilter(cdev, kn);
+		td->td_fpop = fpop;
+	} else {
+		error = ENOMEM;
 	}
-	if (cdev->si_flags & SI_ALIAS) {
-		cdev = cdev->si_parent;
-	}
-	dsw = dev_refthread(cdev, &ref);
-	if (dsw == NULL) {
-		return EINVAL;
-	}
-	fpop = td->td_fpop;
-	curthread->td_fpop = fp;
-	error = dsw->d_kqfilter(cdev, kn);
-	td->td_fpop = fpop;
-	dev_relthread(cdev, ref);
 
+err:
+	if (dsw != NULL)
+		dev_relthread(cdev, ref);
+	if (td != NULL && fp != NULL)
+		fdrop(fp, td);
 	return error;
 }
 

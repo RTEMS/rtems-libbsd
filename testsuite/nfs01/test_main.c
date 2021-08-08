@@ -46,6 +46,7 @@
 #include <rtems/bsd/test/network-config.h>
 
 #define TEST_NAME "LIBBSD NFS 1"
+#define TEST_WAIT_FOR_LINK NET_CFG_INTERFACE_0
 #define TEST_STATE_USER_INPUT 1
 
 static void

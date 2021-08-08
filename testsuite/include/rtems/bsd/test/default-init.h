@@ -9,10 +9,30 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+
 #include <rtems/printer.h>
 #include <rtems/test-info.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
+
+static void default_wait_for_link_up( const char *name )
+{
+  size_t seconds = 0;
+  while ( true ) {
+    bool link_active = false;
+    assert(rtems_bsd_iface_link_state( name, &link_active ) == 0);
+    if (link_active) {
+      return;
+    }
+    sleep( 1 );
+    ++seconds;
+    if (seconds > 10) {
+      printf("error: %s: no active link\n", name);
+      assert(seconds < 10);
+    }
+  }
+}
 
 static void default_set_self_prio( rtems_task_priority prio )
 {
@@ -67,6 +87,15 @@ rtems_task Init(
   /* Let the callout timer allocate its resources */
   sc = rtems_task_wake_after( 2 );
   assert(sc == RTEMS_SUCCESSFUL);
+
+#if defined(TEST_WAIT_FOR_LINK)
+  /*
+   * Per test option to wait for the network interface. If the address
+   * is static the PHY may take a while to connect and bring the
+   * interface online.
+   */
+  default_wait_for_link_up( TEST_WAIT_FOR_LINK );
+#endif
 
   test_main();
   /* should not return */

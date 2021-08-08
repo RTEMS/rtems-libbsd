@@ -46,6 +46,7 @@
 #include <rtems/bsd/test/network-config.h>
 
 #define TEST_NAME "LIBBSD PING 1"
+#define TEST_WAIT_FOR_LINK NET_CFG_INTERFACE_0
 
 static void
 test_ping(void)

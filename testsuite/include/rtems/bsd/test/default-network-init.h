@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
+#include <unistd.h>
 
 #include <machine/rtems-bsd-commands.h>
 
@@ -176,6 +177,25 @@ default_network_on_exit(int exit_code, void *arg)
 }
 
 static void
+default_wait_for_link_up( const char *name )
+{
+	size_t seconds = 0;
+	while ( true ) {
+		bool link_active = false;
+		assert(rtems_bsd_iface_link_state( name, &link_active ) == 0);
+		if (link_active) {
+			return;
+		}
+		sleep( 1 );
+		++seconds;
+		if (seconds > 10) {
+			printf("error: %s: no active link\n", name);
+			assert(seconds < 10);
+		}
+	}
+}
+
+static void
 Init(rtems_task_argument arg)
 {
 	rtems_status_code sc;
@@ -238,6 +258,14 @@ Init(rtems_task_argument arg)
 #endif
 	default_network_dhcpcd();
 
+#if defined(TEST_WAIT_FOR_LINK)
+	/*
+	 * Per test option to wait for the network interface. If the address
+	 * is static the PHY may take a while to connect and bring the
+	 * interface online.
+	 */
+	default_wait_for_link_up( TEST_WAIT_FOR_LINK );
+#endif
 	test_main();
 
 	assert(0);

@@ -253,6 +253,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-cxx.cc',
                 'rtems/rtems-bsd-get-ethernet-addr.c',
                 'rtems/rtems-bsd-ifconfig.c',
+                'rtems/rtems-bsd-iface.c',
                 'rtems/rtems-bsd-ifconfig-lo0.c',
                 'rtems/rtems-bsd-init-dhcp.c',
                 'rtems/rtems-bsd-rc-conf-net.c',

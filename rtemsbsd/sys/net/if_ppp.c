@@ -313,11 +313,12 @@ static rtems_task ppp_txdaemon(rtems_task_argument arg)
       frag=0;
 
       /* initialize output values */
-      sc->sc_outfcs    = PPP_INITFCS;
-      sc->sc_outbuf    = (u_char *)0;
-      sc->sc_outlen    = (short   )0;
-      sc->sc_outoff    = (short   )0;
-      sc->sc_outfcslen = (short   )0;
+      sc->sc_outfcs        = PPP_INITFCS;
+      sc->sc_outbuf        = (u_char *)0;
+      sc->sc_outlen        = (short   )0;
+      sc->sc_outoff        = (short   )0;
+      sc->sc_outoff_update = false;
+      sc->sc_outfcslen     = (short   )0;
 
 /*	  printf("Start Transmit Packet..\n"); */
 

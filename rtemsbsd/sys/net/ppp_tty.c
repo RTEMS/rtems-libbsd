@@ -124,7 +124,7 @@ int     pppread(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args);
 int     pppwrite(struct rtems_termios_tty *tty, rtems_libio_rw_args_t *rw_args);
 int     ppptioctl(struct rtems_termios_tty *tty, rtems_libio_ioctl_args_t *args);
 int     pppinput(int c, struct rtems_termios_tty *tty);
-int     pppstart(struct rtems_termios_tty *tp);
+int     pppstart(struct rtems_termios_tty *tp, int len);
 u_short pppfcs(u_short fcs, u_char *cp, int len);
 void    pppallocmbuf(struct ppp_softc *sc, struct mbuf **mp);
 
@@ -557,7 +557,7 @@ pppasyncctlp(
  * Called at spltty or higher.
  */
 int
-pppstart(struct rtems_termios_tty *tp)
+pppstart(struct rtems_termios_tty *tp, int len)
 {
   u_char             *sendBegin;
   u_long              ioffset = (u_long       )0;
@@ -567,6 +567,13 @@ pppstart(struct rtems_termios_tty *tp)
 
   /* ensure input is valid and we are busy */
   if (( sc != NULL ) && ( sc->sc_outflag & SC_TX_BUSY )) {
+    /* Adapt offsets if necessary */
+    if ( sc->sc_outoff_update ) {
+      sc->sc_stats.ppp_obytes += len;
+      sc->sc_outoff += len;
+      sc->sc_outoff_update = false;
+    }
+
     /* check to see if we need to get the next buffer */
 
     /* Ready with PPP_FLAG Character ? */
@@ -644,8 +651,25 @@ pppstart(struct rtems_termios_tty *tp)
 
       /* write out the character(s) and update the stats */
       (*tp->handler.write)(ctx, (char *)sendBegin, (ioffset > 0) ? ioffset : 1);
-      sc->sc_stats.ppp_obytes += (ioffset > 0) ? ioffset : 1;
-      sc->sc_outoff += ioffset;
+      /*
+       * In case of polled drivers, everything is sent here. So adapt the
+       * offsets. In case of interrupt or task driven drivers, we don't know
+       * whether all characters have been sent. We only get feedback via
+       * rtems_termios_dequeue_characters() function which is the one that is
+       * calling us.
+       */
+      if (tp->handler.mode == TERMIOS_POLLED) {
+        sc->sc_stats.ppp_obytes += (ioffset > 0) ? ioffset : 1;
+        sc->sc_outoff += ioffset;
+        sc->sc_outoff_update = false;
+      } else {
+        if (ioffset > 0) {
+          sc->sc_outoff_update = true;
+        } else {
+          sc->sc_outoff_update = false;
+          sc->sc_stats.ppp_obytes += 1;
+        }
+      }
 
       return (0);
     }

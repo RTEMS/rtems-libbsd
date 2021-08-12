@@ -117,6 +117,7 @@ struct ppp_softc {
 
 	struct	ifqueue sc_freeq;       /* free packets */
 	short	sc_outoff;		/* output packet byte offset */
+	bool	sc_outoff_update;	/* outoff needs update in pppstart */
 	short	sc_outflag;		/* output status flag */
 	short	sc_outlen;		/* length of output packet */
 	short	sc_outfcslen;		/* length of output fcs data */

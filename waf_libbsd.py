@@ -287,40 +287,80 @@ class Builder(builder.ModuleManager):
         if not os.path.exists(bld.env.NET_CONFIG):
             bld.fatal('network configuraiton \'%s\' not found' %
                       (bld.env.NET_CONFIG))
-        tags = [
-            'NET_CFG_INTERFACE_0', 'NET_CFG_SELF_IP', 'NET_CFG_NETMASK',
-            'NET_CFG_PEER_IP', 'NET_CFG_GATEWAY_IP', 'NET_CFG_NFS_MOUNT_PATH',
-            'NET_CFG_NFS_MOUNT_OPTIONS'
-        ]
+        net_cfg = {
+            'NET_CFG_INTERFACE_0': { 'mandatory': True,  },
+            'NET_CFG_SELF_IP': { 'mandatory': True },
+            'NET_CFG_NETMASK': { 'mandatory': True },
+            'NET_CFG_PEER_IP': { 'mandatory': True },
+            'NET_CFG_GATEWAY_IP': { 'manditory': True },
+            'NET_CFG_NFS_MOUNT_PATH': { 'mandatory': False,
+                                        'default': '@NET_CFG_PEER_IP@/rtems' },
+            'NET_CFG_NFS_MOUNT_OPTIONS': { 'mandatory': False,
+                                           'default': 'nfsv4,minorversion=1' }
+        }
+        tags = list(net_cfg.keys())
+        config_inc = bld.path.find_node('config.inc')
+        try:
+            config_inc_lines = open(config_inc.abspath()).readlines()
+        except:
+            bld.fatal('network configuraiton \'%s\' read failed' %
+                      (config_inc.abspath()))
+        for l in config_inc_lines:
+            if l.strip().startswith('NET_CFG_'):
+                ls = l.split('=', 1)
+                if len(ls) == 2:
+                    lhs = ls[0].strip()
+                    rhs = ls[1].strip()
+                    if lhs in tags:
+                        net_cfg[lhs]['default'] = rhs
         try:
             net_cfg_lines = open(bld.env.NET_CONFIG).readlines()
         except:
             bld.fatal('network configuraiton \'%s\' read failed' %
                       (bld.env.NET_CONFIG))
         lc = 0
-        sed = 'sed '
         for l in net_cfg_lines:
             lc += 1
             if l.strip().startswith('NET_CFG_'):
-                ls = l.split('=')
+                ls = l.split('=', 1)
                 if len(ls) != 2:
                     bld.fatal('network configuraiton \'%s\' ' + \
                               'parse error: %d: %s' % (bld.env.NET_CONFIG, lc, l))
                 lhs = ls[0].strip()
                 rhs = ls[1].strip()
-                for tag in tags:
-                    if lhs == tag:
-                        transpose = [(':', '\:'), ('/', '\/')]
-                        trhs = ''
-                        for c in rhs:
-                            for t in transpose:
-                                if c == t[0]:
-                                    trhs += t[1]
-                                    c = None
-                                    break
-                            if c is not None:
-                                trhs += c
-                        sed += "-e 's/@%s@/%s/' " % (tag, trhs)
+                if lhs in tags:
+                    net_cfg[lhs]['value'] = rhs
+        for tag in net_cfg:
+            if 'value' not in net_cfg[tag]:
+                if net_cfg[tag]['mandatory']:
+                    bld.fatal('network configuraiton \'%s\' ' + \
+                              'entry not found: %s' % (bld.env.NET_CONFIG, tag))
+                net_cfg[tag]['value'] = net_cfg[tag]['default']
+        updated = True
+        while updated:
+            updated = False
+            for tag in net_cfg:
+                for rtag in net_cfg:
+                    if tag != rtag and 'value' in net_cfg[rtag]:
+                        pattern = re.escape('@' + tag + '@')
+                        repl = net_cfg[tag]['value']
+                        value = re.sub(pattern, repl, net_cfg[rtag]['value'])
+                        if value != net_cfg[rtag]['value']:
+                            updated = True
+                            net_cfg[rtag]['value'] = value
+        transpose = [(':', '\:'), ('/', '\/')]
+        sed = 'sed '
+        for tag in net_cfg:
+            tv = ''
+            for c in net_cfg[tag]['value']:
+                for t in transpose:
+                    if c == t[0]:
+                        tv += t[1]
+                        c = None
+                        break
+                if c is not None:
+                    tv += c
+            sed += "-e 's/@%s@/%s/' " % (tag, tv)
         bld(target="testsuite/include/rtems/bsd/test/network-config.h",
             source="testsuite/include/rtems/bsd/test/network-config.h.in",
             rule=sed + " < ${SRC} > ${TGT}",

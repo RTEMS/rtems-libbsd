@@ -398,6 +398,11 @@ clnt_tli_create(int fd, const struct netconfig *nconf,
 		goto err1; /* borrow errors from clnt_dg/vc creates */
 	if (nconf) {
 		cl->cl_netid = strdup(nconf->nc_netid);
+#ifdef __rtems__
+		if (nconf->nc_device == NULL)
+			cl->cl_tp = "";
+		else
+#endif /* __rtems__ */
 		cl->cl_tp = strdup(nconf->nc_device);
 	} else {
 		cl->cl_netid = "";

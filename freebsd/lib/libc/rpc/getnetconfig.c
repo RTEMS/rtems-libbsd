@@ -63,7 +63,45 @@ __FBSDID("$FreeBSD$");
  * used to specify the network transport to be used.
  */
 
-
+#ifdef __rtems__
+#undef fopen
+#undef fgets
+#undef fclose
+static const char *internal_netconfig[] = {
+	"udp6	tpi_clts	v	inet6		udp	-	-\n",
+	"tcp6	tpi_cots_ord	v	inet6		tcp	-	-\n",
+	"udp	tpi_clts	v	inet		udp	-	-\n",
+	"tcp	tpi_cots_ord	v	inet		tcp	-	-\n",
+	"rawip	tpi_raw		-	inet		-	-	-\n",
+	"local	tpi_cots_ord	-	loopback	-	-	-\n",
+	NULL
+};
+static int netconfig_next;
+static FILE*
+nc_fopen(const char* name, const char* mode) {
+	netconfig_next = 0;
+	return (FILE*) &netconfig_next;
+}
+static int
+nc_fclose(FILE *stream) {
+	return 0;
+}
+static char *
+nc_fgets(char * str, int size, FILE *stream) {
+	int l;
+	const char *p = internal_netconfig[netconfig_next];;
+	if (p == NULL)
+		return NULL;
+	l = strlen(p);
+	size = l < size ? l : size;
+	memcpy(str, p, size);
+	++netconfig_next;
+	return str;
+}
+#define fopen nc_fopen
+#define fgets nc_fgets
+#define fclose nc_fclose
+#endif /* __rtems__ */
 /*
  * netconfig errors
  */

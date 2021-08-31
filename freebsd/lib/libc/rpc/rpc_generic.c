@@ -122,9 +122,11 @@ __rpc_dtbsize(void)
 	if (tbsize) {
 		return (tbsize);
 	}
+#ifndef __rtems__
 	if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
 		return (tbsize = (int)rl.rlim_max);
 	}
+#endif /* __rtems__ */
 	/*
 	 * Something wrong.  I'll try to save face by returning a
 	 * pessimistic number.

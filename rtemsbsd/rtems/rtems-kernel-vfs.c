@@ -185,7 +185,7 @@ rtems_bsd_vfs_vnode_componentname(struct componentname *cnd, struct vnode *vp,
 	name[namemax] = '\0';
 	namelen = namemax;
 	tvp = vp;
-	error = vn_vptocnp(&tvp, NULL, name, &namelen);
+	error = vn_vptocnp(&tvp, cred, name, &namelen);
 	if (error == 0) {
 		name = &name[namelen];
 		namelen = namemax - namelen;

@@ -67,6 +67,12 @@ __FBSDID("$FreeBSD$");
 #include "mt_misc.h"
 
 
+#ifdef __rtems__
+#undef thr_sigsetmask
+#define thr_sigsetmask(_a, _b, _c)
+#define cond_signal(_a)
+#define sigfillset(_a)
+#endif /* __rtems__ */
 #ifdef _FREEFALL_CONFIG
 /*
  * Disable RPC exponential back-off for FreeBSD.org systems.
@@ -204,10 +210,12 @@ clnt_dg_create(int fd, const struct netbuf *svcaddr, rpcprog_t program,
 			thr_sigsetmask(SIG_SETMASK, &(mask), NULL);
 			goto err1;
 		} else {
+#ifndef __rtems__
 			int i;
 
 			for (i = 0; i < dtbsize; i++)
 				cond_init(&dg_cv[i], 0, (void *) 0);
+#endif /* __rtems__ */
 		}
 	}
 
@@ -345,8 +353,10 @@ clnt_dg_call(CLIENT *cl, rpcproc_t proc, xdrproc_t xargs, void *argsp,
 	sigfillset(&newmask);
 	thr_sigsetmask(SIG_SETMASK, &newmask, &mask);
 	mutex_lock(&clnt_fd_lock);
+#ifndef __rtems__
 	while (dg_fd_locks[cu->cu_fd])
 		cond_wait(&dg_cv[cu->cu_fd], &clnt_fd_lock);
+#endif /* __rtems__ */
 	if (__isthreaded)
 		rpc_lock_value = 1;
 	else
@@ -630,8 +640,10 @@ clnt_dg_freeres(CLIENT *cl, xdrproc_t xdr_res, void *res_ptr)
 	sigfillset(&newmask);
 	thr_sigsetmask(SIG_SETMASK, &newmask, &mask);
 	mutex_lock(&clnt_fd_lock);
+#ifndef __rtems__
 	while (dg_fd_locks[cu->cu_fd])
 		cond_wait(&dg_cv[cu->cu_fd], &clnt_fd_lock);
+#endif /* __rtems__ */
 	xdrs->x_op = XDR_FREE;
 	dummy = (*xdr_res)(xdrs, res_ptr);
 	mutex_unlock(&clnt_fd_lock);
@@ -658,8 +670,10 @@ clnt_dg_control(CLIENT *cl, u_int request, void *info)
 	sigfillset(&newmask);
 	thr_sigsetmask(SIG_SETMASK, &newmask, &mask);
 	mutex_lock(&clnt_fd_lock);
+#ifndef __rtems__
 	while (dg_fd_locks[cu->cu_fd])
 		cond_wait(&dg_cv[cu->cu_fd], &clnt_fd_lock);
+#endif * __rtems__ */
 	if (__isthreaded)
                 rpc_lock_value = 1;
         else
@@ -800,8 +814,10 @@ clnt_dg_destroy(CLIENT *cl)
 	sigfillset(&newmask);
 	thr_sigsetmask(SIG_SETMASK, &newmask, &mask);
 	mutex_lock(&clnt_fd_lock);
+#ifndef __rtems__
 	while (dg_fd_locks[cu_fd])
 		cond_wait(&dg_cv[cu_fd], &clnt_fd_lock);
+#endif * __rtems__ */
 	if (cu->cu_closeit)
 		(void)_close(cu_fd);
 	if (cu->cu_kq >= 0)
@@ -852,4 +868,3 @@ time_not_ok(struct timeval *t)
 	return (t->tv_sec < -1 || t->tv_sec > 100000000 ||
 		t->tv_usec < -1 || t->tv_usec > 1000000);
 }
-

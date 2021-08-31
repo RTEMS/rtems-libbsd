@@ -191,20 +191,27 @@ authunix_create_default(void)
 	gid_t gid;
 	gid_t *gids;
 
+#ifndef __rtems__	
 	ngids_max = sysconf(_SC_NGROUPS_MAX) + 1;
 	gids = malloc(sizeof(gid_t) * ngids_max);
 	if (gids == NULL)
 		return (NULL);
+#endif /* __rtems__ */
 
 	if (gethostname(machname, sizeof machname) == -1)
 		abort();
 	machname[sizeof(machname) - 1] = 0;
 	uid = geteuid();
 	gid = getegid();
+#ifndef __rtems__	
 	if ((ngids = getgroups(ngids_max, gids)) < 0)
 		abort();
 	if (ngids > NGRPS)
 		ngids = NGRPS;
+#else /* __rtems__ */
+	ngids = 0;
+	gids = NULL;
+#endif /* __rtems__ */
 	/* XXX: interface problem; we should translate from uid_t and gid_t */
 	auth = authunix_create(machname, uid, gid, ngids, gids);
 	free(gids);

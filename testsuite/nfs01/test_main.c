@@ -53,6 +53,7 @@
 
 #define TEST_NAME "LIBBSD NFS 1"
 #define TEST_STATE_USER_INPUT 1
+#define TEST_WAIT_FOR_LINK    NET_CFG_INTERFACE_0
 
 static const char *test_top = "test-nfs01";
 
@@ -323,10 +324,12 @@ test_path_eval(const char *base, int depth)
 static void
 test_nfs(const char *base)
 {
-	test_printer_data pd;
 	test_path_eval(base, 5);
+#if NFS_TREE_WALK
+	test_printer_data pd;
 	memset(&pd, 0, sizeof(pd));
 	test_walk_tree(base, test_walk_tree_printer, &pd);
+#endif
 }
 
 static void

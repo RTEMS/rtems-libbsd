@@ -93,8 +93,9 @@ nc_fgets(char * str, int size, FILE *stream) {
 	if (p == NULL)
 		return NULL;
 	l = strlen(p);
-	size = l < size ? l : size;
+	size = l < size ? l : size - 1;
 	memcpy(str, p, size);
+	str[size] = '\0';
 	++netconfig_next;
 	return str;
 }

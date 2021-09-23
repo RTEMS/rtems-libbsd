@@ -442,58 +442,6 @@ listen(int socket, int backlog)
 }
 
 int
-pipe(int fildes[2])
-{
-	struct thread *td = rtems_bsd_get_curthread_or_null();
-	rtems_libio_t *iop[2];
-	int error;
-	if (RTEMS_BSD_SYSCALL_TRACE) {
-		printf("bsd: sys: pipe: %d\n", socket);
-	}
-	if (td == NULL) {
-		return rtems_bsd_error_to_status_and_errno(ENOMEM);
-	}
-	iop[0] = rtems_bsd_libio_iop_allocate();
-	if (iop[0] == NULL) {
-		return rtems_bsd_error_to_status_and_errno(ENFILE);
-	}
-	iop[1] = rtems_bsd_libio_iop_allocate();
-	if (iop[1] == NULL) {
-		rtems_bsd_libio_iop_free(iop[0]);
-		return rtems_bsd_error_to_status_and_errno(ENFILE);
-	}
-	error = kern_pipe(td, fildes, 0, NULL, NULL);
-	if (error != 0) {
-		goto out;
-	}
-	error = rtems_bsd_libio_iop_set_bsd_fd(
-	    td, fildes[0], iop[0], &rtems_bsd_sysgen_nodeops);
-	if (error != 0) {
-		goto out;
-	}
-	error = rtems_bsd_libio_iop_set_bsd_fd(
-	    td, fildes[1], iop[1], &rtems_bsd_sysgen_nodeops);
-	if (error == 0) {
-		fildes[0] = rtems_libio_iop_to_descriptor(iop[0]);
-		fildes[1] = rtems_libio_iop_to_descriptor(iop[1]);
-		if (RTEMS_BSD_SYSCALL_TRACE) {
-			printf("bsd: sys: pipe: %d -> %d, %d -> %d\n",
-			    fildes[0],
-			    rtems_bsd_libio_iop_to_descriptor(iop[0]),
-			    fildes[1],
-			    rtems_bsd_libio_iop_to_descriptor(iop[1]));
-		}
-		return 0;
-	}
-out:
-	kern_close(td, rtems_bsd_libio_iop_to_descriptor(iop[0]));
-	kern_close(td, rtems_bsd_libio_iop_to_descriptor(iop[1]));
-	rtems_bsd_libio_iop_free(iop[0]);
-	rtems_bsd_libio_iop_free(iop[1]);
-	return rtems_bsd_error_to_status_and_errno(error);
-}
-
-int
 poll(struct pollfd fds[], nfds_t nfds, int timeout)
 {
 	struct thread *td = rtems_bsd_get_curthread_or_null();

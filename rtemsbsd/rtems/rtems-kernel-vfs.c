@@ -335,6 +335,9 @@ rtems_bsd_vfs_eval_token(rtems_filesystem_eval_path_context_t *ctx, void *arg,
 
 	if (*vpp != NULL) {
 		rtems_filesystem_eval_path_clear_token(ctx);
+		if ((*vpp)->v_type != VDIR) {
+			currentloc->handlers = &rtems_bsd_sysgen_fileops;
+		}
 	}
 
 	return no_more_path ? RTEMS_FILESYSTEM_EVAL_PATH_GENERIC_DONE :

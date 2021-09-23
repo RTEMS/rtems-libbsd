@@ -61,6 +61,8 @@
 
 static int rtems_bsd_sysgen_open_error(
     rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
+static int rtems_bsd_sysgen_opendir(
+    rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
 static int rtems_bsd_sysgen_open(
     rtems_libio_t *iop, const char *path, int oflag, mode_t mode);
 static int rtems_bsd_sysgen_close(rtems_libio_t *iop);
@@ -90,7 +92,7 @@ static int rtems_bsd_sysgen_poll(rtems_libio_t *iop, int events);
 static int rtems_bsd_sysgen_kqfilter(rtems_libio_t *iop, struct knote *kn);
 
 const rtems_filesystem_file_handlers_r rtems_bsd_sysgen_dirops = {
-	.open_h = rtems_bsd_sysgen_open,
+	.open_h = rtems_bsd_sysgen_opendir,
 	.close_h = rtems_bsd_sysgen_close,
 	.read_h = rtems_bsd_sysgen_read,
 	.write_h = rtems_filesystem_default_write,
@@ -928,9 +930,9 @@ rtems_bsd_sysgen_open_error(
 	return rtems_bsd_error_to_status_and_errno(ENXIO);
 }
 
-int
-rtems_bsd_sysgen_open(
-    rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
+static int
+rtems_bsd_sysgen_open_node(
+	rtems_libio_t *iop, const char *path, int oflag, mode_t mode, bool isdir)
 {
 	struct thread *td = rtems_bsd_get_curthread_or_null();
 	struct filedesc *fdp;
@@ -954,13 +956,13 @@ rtems_bsd_sysgen_open(
 
 	/*
 	 * There is no easy or clean means to open a vnode and follow the
-	 * POSIX open semantics. You can open a vnode but the extra
-	 * functionality such as create and truncate are not part of the
-	 * basic vnode open. All the calls that provide that functionality
-	 * take a path as the argument. As a result find the last token in
-	 * the path and use the parent directory vnode to position ourselves
-	 * in the parent directory. The pathloc vnode points to the '.' or
-	 * '..'  directory.
+	 * POSIX open semantics. See `kern_openat`. You can open a vnode but
+	 * the extra functionality such as the file pointer, descriptor,
+	 * create and truncate are not part of the basic vnode open. All the
+	 * calls that provide that functionality take a path as the
+	 * argument. As a result find the last token in the path and use the
+	 * parent directory vnode to position ourselves in the parent
+	 * directory. The pathloc vnode points to the '.' or '..'  directory.
 	 */
 	opath = path + strlen(path);
 	opathlen = 0;
@@ -982,10 +984,20 @@ rtems_bsd_sysgen_open(
 		rtems_filesystem_location_info_t *rootloc =
 		    &iop->pathinfo.mt_entry->mt_fs_root->location;
 		cdir = rtems_bsd_libio_loc_to_vnode_dir(&iop->pathinfo);
-		if (fdp->fd_cdir == NULL ||
-		    rtems_bsd_libio_loc_to_vnode(&iop->pathinfo) ==
-			rtems_bsd_libio_loc_to_vnode(rootloc)) {
+		if (fdp->fd_cdir == NULL) {
 			cdir = rtems_bsd_libio_loc_to_vnode(rootloc);
+		} else if (rtems_bsd_libio_loc_to_vnode(&iop->pathinfo) ==
+				rtems_bsd_libio_loc_to_vnode(rootloc)) {
+			/*
+			 * If this is a directory and this is the root node of
+			 * the mounted file system we need to move up the
+			 * hidden pseudo file system node.
+			 */
+			if (isdir) {
+				cdir = rootvnode;
+			} else {
+				cdir = rtems_bsd_libio_loc_to_vnode(rootloc);
+			}
 		}
 	}
 
@@ -999,10 +1011,10 @@ rtems_bsd_sysgen_open(
 
 	if (RTEMS_BSD_SYSCALL_TRACE) {
 		printf("bsd: sys: open: path=%s opath=%s vn=%p cwd=%p"
-		       " flags=%08x mode=%08x\n",
+		       " flags=%08x mode=%08x isdir=%s\n",
 		    path, opath,
 		    creat ? NULL : rtems_bsd_libio_loc_to_vnode(&iop->pathinfo),
-		    fdp->fd_cdir, oflag, mode);
+		    fdp->fd_cdir, oflag, mode, isdir ? "yes" : "no");
 	}
 
 	VREF(fdp->fd_cdir);
@@ -1048,6 +1060,20 @@ rtems_bsd_sysgen_open(
 }
 
 int
+rtems_bsd_sysgen_opendir(
+    rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
+{
+	 return rtems_bsd_sysgen_open_node(iop, path, oflag, mode, true);
+}
+
+int
+rtems_bsd_sysgen_open(
+    rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
+{
+	 return rtems_bsd_sysgen_open_node(iop, path, oflag, mode, false);
+}
+
+int
 rtems_bsd_sysgen_close(rtems_libio_t *iop)
 {
 	struct thread *td = curthread;
@@ -1084,8 +1110,8 @@ rtems_bsd_sysgen_read(rtems_libio_t *iop, void *buffer, size_t count)
 	ssize_t size = 0;
 
 	if (RTEMS_BSD_SYSCALL_TRACE) {
-		printf("bsd: sys: read: %d -> %d: vn=%p len=%d\n",
-		    rtems_libio_iop_to_descriptor(iop), fd, vp, count);
+		printf("bsd: sys: read: %d -> %d: vn=%p vn-type=%d len=%d\n",
+		   rtems_libio_iop_to_descriptor(iop), fd, vp, vp->v_type, count);
 	}
 
 	if (td == NULL) {

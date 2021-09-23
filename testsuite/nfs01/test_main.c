@@ -37,6 +37,7 @@
  */
 
 #include <assert.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -279,7 +280,11 @@ test_walk_tree_unlink(walk_tree_dir state,
 static void
 test_setup(const char *base)
 {
+	struct DIR *ddir;
 	printf("test: nfs: setup\n");
+	printf("test: nfs: opendir: %s\n", base);
+	rtems_test_errno_assert((ddir = opendir(base)) != NULL);
+	rtems_test_errno_assert(closedir(ddir) == 0);
 	printf("test: nfs: chdir: %s\n", base);
 	rtems_test_errno_assert(chdir(base) == 0);
 	printf("test: nfs: mkdir: %s\n", test_top);

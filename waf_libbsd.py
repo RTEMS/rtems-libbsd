@@ -180,10 +180,11 @@ class Builder(builder.ModuleManager):
                                        mandatory=False)
                     elif configTest == 'library':
                         for l in self.data['configure'][configTest][cfg]:
-                            conf.check_cc(lib=l,
-                                          fragment=rtems.test_application(),
-                                          execute=False,
-                                          mandatory=False)
+                            if conf.check_cc(lib=l,
+                                             fragment=rtems.test_application(),
+                                             execute=False,
+                                             mandatory=False)
+                                conf.env['HAVE_%s' % l.upper()] = True
                     else:
                         bld.fatal('invalid config test: %s' % (configTest))
             section_flags = ["-fdata-sections", "-ffunction-sections"]

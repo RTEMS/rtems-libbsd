@@ -530,7 +530,7 @@ atomic_clear_rel_long(volatile long *p, long v)
 #elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
 #define _ATOMIC_CMPSET(T, p, cmp, set, mo) \
 	atomic_##T *q = (atomic_##T *)RTEMS_DEVOLATILE(T *, p); \
-	atomic_compare_exchange_strong_explicit(q, &cmp, set, \
+	rv = atomic_compare_exchange_strong_explicit(q, &cmp, set, \
             mo, memory_order_relaxed)
 #else
 #define _ATOMIC_CMPSET(T, p, cmp, set, mo) \
@@ -676,7 +676,7 @@ atomic_cmpset_rel_ptr(volatile uintptr_t *p, uintptr_t cmp, uintptr_t set)
 #elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
 #define _ATOMIC_FCMPSET(T, p, cmp, set, mo) \
 	atomic_##T *q = (atomic_##T *)RTEMS_DEVOLATILE(T *, p); \
-	atomic_compare_exchange_strong_explicit(q, cmp, set, \
+	rv = atomic_compare_exchange_strong_explicit(q, cmp, set, \
            mo, memory_order_relaxed)
 #else
 #define _ATOMIC_FCMPSET(T, p, cmp, set, mo) \

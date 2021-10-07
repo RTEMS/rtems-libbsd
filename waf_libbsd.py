@@ -183,7 +183,7 @@ class Builder(builder.ModuleManager):
                             if conf.check_cc(lib=l,
                                              fragment=rtems.test_application(),
                                              execute=False,
-                                             mandatory=False)
+                                             mandatory=False):
                                 conf.env['HAVE_%s' % l.upper()] = True
                     else:
                         bld.fatal('invalid config test: %s' % (configTest))

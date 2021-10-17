@@ -43,6 +43,18 @@ MALLOC_DECLARE(M_IFMADDR);
 
 extern struct sx ifnet_detach_sxlock;
 
+struct nvlist;
+struct ifcap_nv_bit_name;
+int if_capnv_to_capint(const struct nvlist *nv, int *old_cap,
+    const struct ifcap_nv_bit_name *nn, bool all);
+void if_capint_to_capnv(struct nvlist *nv,
+    const struct ifcap_nv_bit_name *nn, int ifr_cap, int ifr_req);
+struct siocsifcapnv_driver_data {
+	int reqcap;
+	int reqcap2;
+	struct nvlist *nvcap;
+};
+
 #define	ifr_buffer	ifr_ifru.ifru_buffer	/* user supplied buffer with its length */
 #define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 

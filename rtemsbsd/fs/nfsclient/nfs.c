@@ -963,15 +963,15 @@ rtems_nfs_initialize(
 			tryret = nfs_tryproto(ai, &args);
 			if (tryret == TRYRET_SUCCESS) {
 				error = nfs_trymount(mt_entry, ai, &args, fspath, data);
-			if (RTEMS_DEBUG)
-					printf("nfs: mount: (%d) %s\n", error, strerror(error));
+				if (RTEMS_DEBUG)
+						printf("nfs: mount: (%d) %s\n", error, strerror(error));
 				break;
 			} else {
 				error = EIO;
 				if (RTEMS_DEBUG)
 					printf("nfs: mount: %s\n", args.errstr);
+			}
 		}
-	}
 	}
 
 	freeaddrinfo(args.ai_nfs);
@@ -984,6 +984,7 @@ out:
 		if (fspath != NULL) {
 			rtems_bsd_rootfs_rmdir(fspath);
 		}
+	  rtems_set_errno_and_return_minus_one(error);
 	}
-	return error;
+	return 0;
 }

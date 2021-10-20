@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (c) 2009-2012 embedded brains GmbH.  
+ * Copyright (c) 2009-2012 embedded brains GmbH.
  * All rights reserved.
  *
  *  embedded brains GmbH
@@ -258,7 +258,12 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 	(*mapp)->buffer_size = dmat->maxsize;
 
 	if ((flags & BUS_DMA_ZERO) != 0) {
-		memset(*vaddr, 0, dmat->maxsize);
+		unsigned char* mem = *vaddr;
+		int len = dmat->maxsize;
+		while (len-- > 0) {
+			bsp_bus_space_write_1(mem, 0);
+			mem++;
+		}
 	}
 
 	return (0);

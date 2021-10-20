@@ -2,7 +2,7 @@
 """LibBSD build configuration to waf integration module.
 """
 
-# Copyright (c) 2015, 2020 Chris Johns <chrisj@rtems.org>. All rights reserved.
+# Copyright (c) 2015, 2021 Chris Johns <chrisj@rtems.org>. All rights reserved.
 #
 # Copyright (c) 2009, 2015 embedded brains GmbH.  All rights reserved.
 #
@@ -61,6 +61,13 @@ def _add_flags_if_not_present(current_flags, addional_flags):
     for flag in addional_flags:
         if flag not in current_flags:
             current_flags.append(flag)
+
+def _remove_bsp_include_path(bsp_include_path, current_flags):
+    # this does not handle quted strings; maybe needed
+    for bsp_path in bsp_include_path:
+        if bsp_path in current_flags:
+            current_flags = [flag for flag in current_flags if flag != bsp_path]
+    return current_flags
 
 #
 # The waf builder for libbsd.
@@ -191,6 +198,12 @@ class Builder(builder.ModuleManager):
             _add_flags_if_not_present(conf.env.CFLAGS, section_flags)
             _add_flags_if_not_present(conf.env.CXXFLAGS, section_flags)
             _add_flags_if_not_present(conf.env.LINKFLAGS, ["-Wl,--gc-sections"])
+            conf.env.CFLAGS = _remove_bsp_include_path(conf.env.IFLAGS,
+                                                       conf.env.CFLAGS)
+            conf.env.CXXFLAGS = _remove_bsp_include_path(conf.env.IFLAGS,
+                                                                    conf.env.CXXFLAGS)
+            conf.env.LINKFLAGS = _remove_bsp_include_path(conf.env.IFLAGS,
+                                                          conf.env.LINKFLAGS)
 
     def build(self, bld):
         #
@@ -237,7 +250,7 @@ class Builder(builder.ModuleManager):
         inc_paths = sorted(include_paths)
         inc_paths.remove('build')
         inc_paths.remove('cpu')
-        includes = {}
+        includes = { 'bsp': [p[2:] for p in bld.env.IFLAGS] }
         for inc in inc_paths:
             includes[inc] = include_paths[inc]
         # cpu include paths must be the first searched
@@ -432,7 +445,7 @@ class Builder(builder.ModuleManager):
             bld.objects(target='kvmsymbols',
                         features='c',
                         cflags=cflags,
-                        includes=kvmsymbols_includes + includes['kernel'],
+                        includes=kvmsymbols_includes + includes['kernel'] + includes['bsp'],
                         source=kvmsymbols['files']['all']['default'][0])
             libbsd_use += ["kvmsymbols"]
 
@@ -487,7 +500,7 @@ class Builder(builder.ModuleManager):
                     bld.objects(target='lex_%s' % (lex['sym']),
                                 features='c',
                                 cflags=cflags,
-                                includes=lexIncludes + includes['user'],
+                                includes=lexIncludes + includes['user'] + includes['bsp'],
                                 defines=defines + lexDefines,
                                 source=lex['file'][:-2] + '.c')
                 libbsd_use += ['lex_%s' % (lex['sym'])]
@@ -527,7 +540,7 @@ class Builder(builder.ModuleManager):
                     bld.objects(target='yacc_%s' % (yaccSym),
                                 features='c',
                                 cflags=cflags,
-                                includes=yaccIncludes + includes['user'],
+                                includes=yaccIncludes + includes['user'] + includes['bsp'],
                                 defines=defines + yaccDefines,
                                 source=yaccFile[:-2] + '.c')
                 libbsd_use += ['yacc_%s' % (yaccSym)]
@@ -561,7 +574,7 @@ class Builder(builder.ModuleManager):
                             cflags=cflags + bld_cflags,
                             cxxflags=cxxflags,
                             includes=sorted(build.get('includes', [])) +
-                            includes[space],
+                            includes[space] + includes['bsp'],
                             defines=defines,
                             source=bld_sources)
                 libbsd_use += [target]
@@ -581,7 +594,7 @@ class Builder(builder.ModuleManager):
                   features='c cxx',
                   cflags=cflags,
                   cxxflags=cxxflags,
-                  includes=includes['kernel'],
+                  includes=includes['kernel'] + includes['bsp'],
                   defines=defines,
                   source=bld_sources,
                   use=libbsd_use)
@@ -658,7 +671,7 @@ class Builder(builder.ModuleManager):
                 bld.program(target='%s.exe' % (testName),
                             features='cprogram',
                             cflags=cflags,
-                            includes=includes['user'],
+                            includes=includes['user'] + includes['bsp'],
                             source=test_sources,
                             use=['bsd'],
                             lib=libs,

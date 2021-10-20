@@ -1478,6 +1478,7 @@ class dev_net(builder.Module):
         self.addRTEMSKernelSourceFiles(
             [
                 'sys/dev/mii/ksz8091rnb_50MHz.c',
+                'sys/arm64/xilinx/versal_slcr.c',
                 'sys/arm64/xilinx/zynqmp_slcr.c',
             ],
             mm.generator['source']()

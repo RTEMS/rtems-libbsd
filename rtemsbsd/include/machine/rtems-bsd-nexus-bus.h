@@ -140,6 +140,26 @@ extern "C" {
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR */
 
 /*
+ * Xilinx Versal System Level Control Registers (SLCR).
+ */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_SLCR)
+  /*
+   * Hard IP part of the Versal so a fixed address.
+   */
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_SLCR                           \
+    static const rtems_bsd_device_resource versal_slcr_res[] = {        \
+      {                                                                 \
+        .type = RTEMS_BSD_RES_MEMORY,                                   \
+        .start_request = 0,                                             \
+        .start_actual = 0xf0000000                                      \
+      }                                                                 \
+    };                                                                  \
+    RTEMS_BSD_DEFINE_NEXUS_DEVICE(versal_slcr, 0,                       \
+                                  RTEMS_ARRAY_SIZE(versal_slcr_res),   \
+                                  &versal_slcr_res[0])
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_SLCR */
+
+/*
  * Xilinx ZynqMP Arasan SDIO Driver.
  */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI)
@@ -489,6 +509,14 @@ extern "C" {
   #define RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM3(_irq)       \
     RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM(3, 0xff0e0000, _irq)
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM3 */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_CGEM0)
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_CGEM0(_irq)       \
+    RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM(0, 0xff0c0000, _irq)
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_CGEM0 */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_CGEM1)
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_CGEM1(_irq)                \
+    RTEMS_BSD_DRIVER_XILINX_ZYNQ_CGEM(1, 0xff0d0000, _irq)
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_CGEM1 */
 
 /*
  * Designware/Synopsys Ethernet MAC Controller.

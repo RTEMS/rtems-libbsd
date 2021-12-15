@@ -497,7 +497,11 @@ extern int	cluster_pbuf_freecnt;	/* Number of pbufs for clusters */
 extern int	vnode_pbuf_freecnt;	/* Number of pbufs for vnode pager */
 extern int	vnode_async_pbuf_freecnt; /* Number of pbufs for vnode pager,
 					     asynchronous reads */
+#ifndef __rtems__
 extern caddr_t	unmapped_buf;	/* Data address for unmapped buffers. */
+#else /* __rtems__ */
+extern caddr_t __read_mostly unmapped_buf;
+#endif /* __rtems__ */
 
 static inline int
 buf_mapped(struct buf *bp)

@@ -34,6 +34,8 @@ GENERATED += $(LOCAL_INC)/pci_if.h
 GENERATED += $(LOCAL_SRC)/pci_if.c
 GENERATED += $(LOCAL_INC)/pcib_if.h
 GENERATED += $(LOCAL_SRC)/pcib_if.c
+GENERATED += $(LOCAL_INC)/pic_if.h
+GENERATED += $(LOCAL_SRC)/pic_if.c
 GENERATED += $(LOCAL_INC)/mmcbr_if.h
 GENERATED += $(LOCAL_SRC)/mmcbr_if.c
 GENERATED += $(LOCAL_INC)/mmcbus_if.h
@@ -165,6 +167,14 @@ $(LOCAL_INC)/pcib_if.h: $(FREEBSD_SRC)/sys/dev/pci/pcib_if.m
 $(LOCAL_SRC)/pcib_if.c: $(FREEBSD_SRC)/sys/dev/pci/pcib_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -c
 	mv pcib_if.c $@
+
+$(LOCAL_INC)/pic_if.h: $(FREEBSD_SRC)/sys/powerpc/powerpc/pic_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -h
+	mv pic_if.h $@
+
+$(LOCAL_SRC)/pic_if.c: $(FREEBSD_SRC)/sys/powerpc/powerpc/pic_if.m
+	awk -f $(TOOLS)/makeobjops.awk $< -c
+	mv pic_if.c $@
 
 $(LOCAL_INC)/mmcbus_if.h: $(FREEBSD_SRC)/sys/dev/mmc/mmcbus_if.m
 	awk -f $(TOOLS)/makeobjops.awk $< -h

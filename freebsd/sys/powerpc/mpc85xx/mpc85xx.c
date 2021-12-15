@@ -273,6 +273,7 @@ law_pci_target(struct resource *res, int *trgt_mem, int *trgt_io)
 	return (rv);
 }
 
+#ifndef __rtems__
 static void
 l3cache_inval(void)
 {
@@ -320,6 +321,7 @@ mpc85xx_enable_l3_cache(void)
 		}
 	}
 }
+#endif /* __rtems__ */
 
 int
 mpc85xx_is_qoriq(void)
@@ -333,6 +335,7 @@ mpc85xx_is_qoriq(void)
 	return (0);
 }
 
+#ifndef __rtems__
 uint32_t
 mpc85xx_get_platform_clock(void)
 {
@@ -359,3 +362,4 @@ mpc85xx_get_system_clock(void)
 
 	return (freq / 2);
 }
+#endif /* __rtems__ */

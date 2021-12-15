@@ -31,6 +31,9 @@
 #ifndef _POWERPC_SPR_H_
 #define	_POWERPC_SPR_H_
 
+#ifdef __rtems__
+#define BOOKE
+#endif /* __rtems__ */
 #ifndef _LOCORE
 #define	mtspr(reg, val)							\
 	__asm __volatile("mtspr %0,%1" : : "K"(reg), "r"(val))

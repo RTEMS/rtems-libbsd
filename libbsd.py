@@ -177,6 +177,7 @@ class rtems(builder.Module):
                 'local/ofw_if.c',
                 'local/pcib_if.c',
                 'local/pci_if.c',
+                'local/pic_if.c',
                 'local/xdma_if.c',
                 'local/usb_if.c',
                 'local/mmcbus_if.c',
@@ -3084,17 +3085,21 @@ class pci(builder.Module):
                 'sys/dev/pci/pcib_support.c',
                 'sys/dev/pci/pci.c',
                 'sys/dev/pci/pci_pci.c',
+                'sys/dev/pci/pci_subr.c',
                 'sys/dev/pci/pci_user.c',
+                'sys/dev/ofw/ofwpci.c',
             ],
             mm.generator['source']()
         )
         self.addKernelSpaceHeaderFiles(
             [
+                'sys/dev/ofw/ofwpci.h',
                 'sys/dev/pci/pcib_private.h',
                 'sys/dev/pci/pci_private.h',
                 'sys/dev/pci/pcireg.h',
                 'sys/dev/pci/pcivar.h',
                 'sys/dev/pci/pcivar.h',
+                'sys/powerpc/mpc85xx/mpc85xx.h',
             ]
         )
         self.addCPUDependentFreeBSDHeaderFiles(
@@ -3103,6 +3108,9 @@ class pci(builder.Module):
                 'sys/x86/include/legacyvar.h',
                 'sys/x86/include/bus.h',
                 'sys/x86/include/pci_cfgreg.h',
+                'sys/powerpc/include/platformvar.h',
+                'sys/powerpc/include/hid.h',
+                'sys/powerpc/include/pio.h',
             ]
         )
         self.addCPUDependentFreeBSDSourceFiles(
@@ -3110,6 +3118,23 @@ class pci(builder.Module):
             [
                 'sys/x86/x86/legacy.c',
                 'sys/x86/pci/pci_bus.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addCPUDependentFreeBSDSourceFiles(
+            [ 'powerpc' ],
+            [
+                'sys/powerpc/mpc85xx/mpc85xx.c',
+                'sys/powerpc/mpc85xx/pci_mpc85xx.c',
+                'sys/powerpc/mpc85xx/pci_mpc85xx_pcib.c',
+                'sys/powerpc/ofw/ofw_pcib_pci.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addCPUDependentRTEMSSourceFiles(
+            [ 'powerpc' ],
+            [
+                'sys/powerpc/platform_mpc85xx.c',
             ],
             mm.generator['source']()
         )

@@ -47,7 +47,9 @@ __FBSDID("$FreeBSD$");
 #include <dev/pci/pcib_private.h>
 
 #include <machine/bus.h>
+#ifndef __rtems__
 #include <machine/md_var.h>
+#endif /* __rtems__ */
 #include <machine/resource.h>
 
 #include <vm/vm.h>
@@ -79,9 +81,11 @@ static int ofw_pci_deactivate_resource(device_t, device_t, int, int,
 static int ofw_pci_adjust_resource(device_t, device_t, int,
     struct resource *, rman_res_t, rman_res_t);
 
+#ifndef __rtems__
 #ifdef __powerpc__
 static bus_space_tag_t ofw_pci_bus_get_bus_tag(device_t, device_t);
 #endif
+#endif /* __rtems__ */
 
 /*
  * pcib interface
@@ -118,9 +122,11 @@ static device_method_t	ofw_pci_methods[] = {
 	DEVMETHOD(bus_activate_resource,	ofw_pci_activate_resource),
 	DEVMETHOD(bus_deactivate_resource,	ofw_pci_deactivate_resource),
 	DEVMETHOD(bus_adjust_resource,	ofw_pci_adjust_resource),
+#ifndef __rtems__
 #ifdef __powerpc__
 	DEVMETHOD(bus_get_bus_tag,	ofw_pci_bus_get_bus_tag),
 #endif
+#endif /* __rtems__ */
 
 	/* pcib interface */
 	DEVMETHOD(pcib_maxslots,	ofw_pci_maxslots),
@@ -531,9 +537,13 @@ ofw_pci_activate_resource(device_t bus, device_t child, int type, int rid,
 		printf("ofw_pci mapdev: start %jx, len %jd\n",
 		    (rman_res_t)start, rman_get_size(res));
 
+#ifndef __rtems__
 	tag = BUS_GET_BUS_TAG(child, child);
 	if (tag == NULL)
 		return (ENOMEM);
+#else /* __rtems__ */
+	tag = 0;
+#endif /* __rtems__ */
 
 	rman_set_bustag(res, tag);
 	rv = bus_space_map(tag, start,
@@ -547,6 +557,7 @@ ofw_pci_activate_resource(device_t bus, device_t child, int type, int rid,
 	return (rman_activate_resource(res));
 }
 
+#ifndef __rtems__
 #ifdef __powerpc__
 static bus_space_tag_t
 ofw_pci_bus_get_bus_tag(device_t bus, device_t child)
@@ -555,20 +566,25 @@ ofw_pci_bus_get_bus_tag(device_t bus, device_t child)
 	return (&bs_le_tag);
 }
 #endif
+#endif /* __rtems__ */
 
 static int
 ofw_pci_deactivate_resource(device_t bus, device_t child, int type, int rid,
     struct resource *res)
 {
+#ifndef __rtems__
 	vm_size_t psize;
+#endif /* __rtems__ */
 
 	if (type != SYS_RES_IOPORT && type != SYS_RES_MEMORY) {
 		return (bus_generic_deactivate_resource(bus, child, type, rid,
 		    res));
 	}
 
+#ifndef __rtems__
 	psize = rman_get_size(res);
 	pmap_unmapdev((vm_offset_t)rman_get_virtual(res), psize);
+#endif /* __rtems__ */
 
 	return (rman_deactivate_resource(res));
 }

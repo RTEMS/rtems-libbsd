@@ -78,6 +78,9 @@ __FBSDID("$FreeBSD$");
 #include <machine/intr_machdep.h>
 
 #include <powerpc/mpc85xx/mpc85xx.h>
+#ifdef __rtems__
+#include <rtems/score/memory.h>
+#endif /* __rtems__ */
 
 #define	REG_CFG_ADDR	0x0000
 #define	CONFIG_ACCESS_ENABLE	0x80000000
@@ -233,7 +236,9 @@ static int fsl_pcib_release_msix(device_t dev, device_t child, int irq);
 static int fsl_pcib_map_msi(device_t dev, device_t child,
     int irq, uint64_t *addr, uint32_t *data);
 
+#ifndef __rtems__
 static vmem_t *msi_vmem;	/* Global MSI vmem, holds all MSI ranges. */
+#endif /* __rtems__ */
 
 /*
  * Bus interface definitions.
@@ -414,6 +419,8 @@ fsl_pcib_attach(device_t dev)
 		return (ENXIO);
 	}
 
+	fsl_pcib_err_init(dev);
+
 	/* Setup interrupt handler */
 	error = bus_setup_intr(dev, sc->sc_irq_res, INTR_TYPE_MISC | INTR_MPSAFE,
 	    NULL, fsl_pcib_err_intr, dev, &sc->sc_ih);
@@ -428,8 +435,6 @@ fsl_pcib_attach(device_t dev)
 		}
 		return (ENXIO);
 	}
-
-	fsl_pcib_err_init(dev);
 
 	return (ofw_pci_attach(dev));
 
@@ -751,8 +756,15 @@ fsl_pcib_decode_win(phandle_t node, struct fsl_pcib_softc *sc)
 
 	fsl_pcib_inbound(sc, 1, -1, 0, 0, 0);
 	fsl_pcib_inbound(sc, 2, -1, 0, 0, 0);
+#ifndef __rtems__
 	fsl_pcib_inbound(sc, 3, PIWAR_TRGT_LOCAL, 0,
 	    ptoa(Maxmem), 0);
+#else /* __rtems__ */
+	const Memory_Information *mem = _Memory_Get();
+	const Memory_Area *area = _Memory_Get_area( mem, 0 );
+	fsl_pcib_inbound(sc, 3, PIWAR_TRGT_LOCAL, 0,
+	    (uintptr_t)_Memory_Get_end(area), 0);
+#endif /* __rtems__ */
 
 	/* Direct-map the CCSR for MSIs. */
 	/* Freescale PCIe 2.x has a dedicated MSI window. */
@@ -770,6 +782,7 @@ fsl_pcib_decode_win(phandle_t node, struct fsl_pcib_softc *sc)
 static int fsl_pcib_alloc_msi(device_t dev, device_t child,
     int count, int maxcount, int *irqs)
 {
+#ifndef __rtems__
 	struct fsl_pcib_softc *sc;
 	vmem_addr_t start;
 	int err, i;
@@ -786,6 +799,9 @@ static int fsl_pcib_alloc_msi(device_t dev, device_t child,
 
 	for (i = 0; i < count; i++)
 		irqs[i] = start + i;
+#else /* __rtems__ */
+	BSD_ASSERT(0);
+#endif /* __rtems__ */
 
 	return (0);
 }
@@ -793,10 +809,14 @@ static int fsl_pcib_alloc_msi(device_t dev, device_t child,
 static int fsl_pcib_release_msi(device_t dev, device_t child,
     int count, int *irqs)
 {
+#ifndef __rtems__
 	if (msi_vmem == NULL)
 		return (ENODEV);
 
 	vmem_xfree(msi_vmem, irqs[0], count);
+#else /* __rtems__ */
+	BSD_ASSERT(0);
+#endif /* __rtems__ */
 	return (0);
 }
 
@@ -869,7 +889,11 @@ fsl_msi_intr_filter(void *priv)
 	i = 0;
 	while (reg != 0) {
 		if (reg & 1)
+#ifndef __rtems__
 			powerpc_dispatch_intr(data->vectors[i], NULL);
+#else /* __rtems__ */
+			BSD_ASSERT(0);
+#endif /* __rtems__ */
 		reg >>= 1;
 		i++;
 	}
@@ -897,8 +921,10 @@ fsl_msi_attach(device_t dev)
 
 	sc = device_get_softc(dev);
 
+#ifndef __rtems__
 	if (msi_vmem == NULL)
 		msi_vmem = vmem_create("MPIC MSI", 0, 0, 1, 0, M_BESTFIT | M_WAITOK);
+#endif /* __rtems__ */
 
 	/* Manually play with resource entries. */
 	sc->sc_base = bus_get_resource_start(dev, SYS_RES_MEMORY, 0);
@@ -916,11 +942,13 @@ fsl_msi_attach(device_t dev)
 		bus_setup_intr(dev, irq->res, INTR_TYPE_MISC | INTR_MPSAFE,
 		    fsl_msi_intr_filter, NULL, irq, &irq->cookie);
 	}
+#ifndef __rtems__
 	sc->sc_map.irq_base = powerpc_register_pic(dev, ofw_bus_get_node(dev),
 	    FSL_NUM_MSIS, 0, 0);
 
 	/* Let vmem and the IRQ subsystem work their magic for allocations. */
 	vmem_add(msi_vmem, sc->sc_map.irq_base, FSL_NUM_MSIS, M_WAITOK);
+#endif /* __rtems__ */
 
 	SLIST_INSERT_HEAD(&fsl_msis, &sc->sc_map, slist);
 

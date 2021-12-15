@@ -3694,6 +3694,7 @@ pci_reserve_secbus(device_t bus, device_t dev, pcicfgregs *cfg,
 		}
 		break;
 
+#ifndef __rtems__
 	case 0x00dd10de:
 		/* Compaq R3000 BIOS sets wrong subordinate bus number. */
 		if ((cp = kern_getenv("smbios.planar.maker")) == NULL)
@@ -3715,6 +3716,7 @@ pci_reserve_secbus(device_t bus, device_t dev, pcicfgregs *cfg,
 			PCI_WRITE_CONFIG(bus, dev, sub_reg, sub_bus, 1);
 		}
 		break;
+#endif /* __rtems__ */
 	}
 
 	if (bootverbose)

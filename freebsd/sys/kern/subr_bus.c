@@ -5588,7 +5588,6 @@ bus_data_generation_update(void)
 	bus_data_generation++;
 }
 
-#ifndef __rtems__
 int
 bus_free_resource(device_t dev, int type, struct resource *r)
 {
@@ -5597,6 +5596,7 @@ bus_free_resource(device_t dev, int type, struct resource *r)
 	return (bus_release_resource(dev, type, rman_get_rid(r), r));
 }
 
+#ifndef __rtems__
 device_t
 device_lookup_by_name(const char *name)
 {

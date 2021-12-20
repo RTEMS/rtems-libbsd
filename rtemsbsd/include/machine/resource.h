@@ -45,5 +45,6 @@
 #define SYS_RES_MEMORY 3
 #define SYS_RES_IOPORT 4
 #define SYS_RES_GPIO 5
+#define PCI_RES_BUS 6
 
 #endif /* _RTEMS_BSD_MACHINE_RESOURCE_H_ */

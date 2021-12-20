@@ -247,6 +247,14 @@ dev_t rtems_bsd__makedev(int _M, int _m);
 struct dirent;
 void dirent_terminate(struct dirent *dp);
 
+/*
+ * Enable the "new" PCI-PCI bridge driver, since this is going to be the future
+ * FreeBSD driver:
+ *
+ * https://reviews.freebsd.org/D32954
+ */
+#define	NEW_PCIB 1
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

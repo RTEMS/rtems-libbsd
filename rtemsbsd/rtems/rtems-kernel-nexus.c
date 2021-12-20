@@ -57,6 +57,7 @@
 #endif
 
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/modules.h>
 #include <rtems/irq-extension.h>
 
 #include <bsp.h>
@@ -103,6 +104,10 @@ static struct rman mem_rman;
 
 static struct rman irq_rman;
 
+#ifdef RTEMS_BSD_MODULE_PCI
+static struct rman pci_rman;
+#endif
+
 #if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 static struct rman port_rman;
 #endif
@@ -136,6 +141,17 @@ nexus_probe(device_t dev)
 	BSD_ASSERT(err == 0);
 	err = rman_manage_region(&irq_rman, irq_rman.rm_start, irq_rman.rm_end);
 	BSD_ASSERT(err == 0);
+
+#ifdef RTEMS_BSD_MODULE_PCI
+	pci_rman.rm_start = 0;
+	pci_rman.rm_end = ~0UL;
+	pci_rman.rm_type = RMAN_ARRAY;
+	pci_rman.rm_descr = "PCI bus";
+	err = rman_init(&pci_rman) != 0;
+	BSD_ASSERT(err == 0);
+	err = rman_manage_region(&pci_rman, pci_rman.rm_start, pci_rman.rm_end);
+	BSD_ASSERT(err == 0);
+#endif
 
 #if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 	port_rman.rm_start = 0;
@@ -191,6 +207,11 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 	case SYS_RES_IRQ:
 		rm = &irq_rman;
 		break;
+#ifdef RTEMS_BSD_MODULE_PCI
+	case PCI_RES_BUS:
+		rm = &pci_rman;
+		break;
+#endif
 #if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
 	case SYS_RES_IOPORT:
 		rm = &port_rman;

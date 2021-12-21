@@ -79,6 +79,8 @@ extern vm_size_t		ccsrbar_size;
 #define	OCP85XX_LAWSR_85XX(n)	(CCSRBAR_VA + 0xc10 + 0x10 * (n))
 #define	OCP85XX_LAWSR(n)	(mpc85xx_is_qoriq() ? OCP85XX_LAWSR_QORIQ(n) : \
 				 OCP85XX_LAWSR_85XX(n))
+#define	OCP85XX_LAWBAR_P20XX(n)	(CCSRBAR_VA + 0xc08 + 0x20 * (n))
+#define	OCP85XX_LAWAR(n)	(CCSRBAR_VA + 0xc10 + 0x20 * (n))
 
 /* Attribute register */
 #define	OCP85XX_ENA_MASK	0x80000000

@@ -82,6 +82,29 @@ ccsr_write4(uintptr_t addr, uint32_t val)
 	powerpc_iomb();
 }
 
+static int
+mpc85xx_is_p20xx(void)
+{
+	uint32_t ver;
+	int is_p20xx;
+
+	ver = SVR_VER(mfspr(SPR_SVR));
+	switch (ver) {
+	case SVR_P2010:
+	case SVR_P2010E:
+	case SVR_P2020:
+	case SVR_P2020E:
+	case SVR_P2041:
+	case SVR_P2041E:
+		is_p20xx = 1;
+		break;
+	default:
+		is_p20xx = 0;
+	}
+
+	return (is_p20xx);
+}
+
 int
 law_getmax(void)
 {
@@ -99,6 +122,14 @@ law_getmax(void)
 	case SVR_MPC8548:
 	case SVR_MPC8548E:
 		law_max = 10;
+		break;
+	case SVR_P2010:
+	case SVR_P2010E:
+	case SVR_P2020:
+	case SVR_P2020E:
+	case SVR_P2041:
+	case SVR_P2041E:
+		law_max = 12;
 		break;
 	case SVR_P5020:
 	case SVR_P5020E:
@@ -124,6 +155,10 @@ law_write(uint32_t n, uint64_t bar, uint32_t sr)
 		ccsr_write4(OCP85XX_LAWBARL(n), bar);
 		ccsr_write4(OCP85XX_LAWSR_QORIQ(n), sr);
 		ccsr_read4(OCP85XX_LAWSR_QORIQ(n));
+	} else if (mpc85xx_is_p20xx()) {
+		ccsr_write4(OCP85XX_LAWBAR_P20XX(n), bar >> 12);
+		ccsr_write4(OCP85XX_LAWAR(n), sr);
+		ccsr_read4(OCP85XX_LAWAR(n));
 	} else {
 		ccsr_write4(OCP85XX_LAWBAR(n), bar >> 12);
 		ccsr_write4(OCP85XX_LAWSR_85XX(n), sr);
@@ -148,6 +183,9 @@ law_read(uint32_t n, uint64_t *bar, uint32_t *sr)
 		*bar = (uint64_t)ccsr_read4(OCP85XX_LAWBARH(n)) << 32 |
 		    ccsr_read4(OCP85XX_LAWBARL(n));
 		*sr = ccsr_read4(OCP85XX_LAWSR_QORIQ(n));
+	} else if (mpc85xx_is_p20xx()) {
+		*bar = (uint64_t)ccsr_read4(OCP85XX_LAWBAR_P20XX(n)) << 12;
+		*sr = ccsr_read4(OCP85XX_LAWAR(n));
 	} else {
 		*bar = (uint64_t)ccsr_read4(OCP85XX_LAWBAR(n)) << 12;
 		*sr = ccsr_read4(OCP85XX_LAWSR_85XX(n));

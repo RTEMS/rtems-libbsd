@@ -383,6 +383,7 @@ fsl_pcib_attach(device_t dev)
 	    PCIM_CMD_PORTEN;
 	fsl_pcib_cfgwrite(sc, 0, 0, 0, PCIR_COMMAND, cfgreg, 2);
 
+#ifndef __rtems__
 	/* Reset the bus.  Needed for Radeon video cards. */
 	brctl = fsl_pcib_read_config(sc->sc_dev, 0, 0, 0,
 	    PCIR_BRIDGECTL_1, 1);
@@ -394,6 +395,7 @@ fsl_pcib_attach(device_t dev)
 	fsl_pcib_write_config(sc->sc_dev, 0, 0, 0,
 	    PCIR_BRIDGECTL_1, brctl, 1);
 	DELAY(100000);
+#endif /* __rtems__ */
 
 	if (sc->sc_pcie) {
 		ltssm = fsl_pcib_cfgread(sc, 0, 0, 0, PCIR_LTSSM, 1);

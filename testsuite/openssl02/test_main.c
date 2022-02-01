@@ -46,6 +46,8 @@
 #include <sysexits.h>
 #include <unistd.h>
 
+#include <rtems/bsd/modules.h>
+
 #include <machine/rtems-bsd-commands.h>
 
 #define TEST_NAME "LIBBSD OPENSSL 2"

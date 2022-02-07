@@ -5204,7 +5204,7 @@ class in_cksum(builder.Module):
         )
         self.addTargetSourceCPUDependentHeaderFiles(
             [ 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
-              'nios2', 'sh', 'sparc', 'v850' ],
+              'microblaze', 'nios2', 'sh', 'sparc', 'v850' ],
             'mips',
             [
                 'sys/mips/include/in_cksum.h',
@@ -5241,8 +5241,8 @@ class in_cksum(builder.Module):
         self.addCPUDependentFreeBSDSourceFiles(
             [
                 'arm', 'avr', 'bfin', 'h8300', 'lm32', 'm32c', 'm32r', 'm68k',
-                'mips', 'moxie', 'nios2', 'or1k', 'riscv', 'sh', 'sparc',
-                'v850'
+                'microblaze', 'mips', 'moxie', 'nios2', 'or1k', 'riscv', 'sh',
+                'sparc', 'v850'
             ],
             [
                 'sys/mips/mips/in_cksum.c',

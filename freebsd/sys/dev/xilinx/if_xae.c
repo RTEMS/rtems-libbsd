@@ -145,6 +145,9 @@ xae_rx_enqueue(struct xae_softc *sc, uint32_t n)
 		}
 
 		m->m_pkthdr.len = m->m_len = m->m_ext.ext_size;
+#ifdef __rtems__
+		m_adj(m, ETHER_ALIGN);
+#endif /* __rtems__ */
 		xdma_enqueue_mbuf(sc->xchan_rx, &m, 0, 4, 4, XDMA_DEV_TO_MEM);
 	}
 
@@ -717,7 +720,11 @@ xae_miibus_read_reg(device_t dev, int phy, int reg)
 
 	rv = READ4(sc, XAE_MDIO_READ);
 
+#ifndef __rtems__
 	return (rv);
+#else /* __rtems__ */
+	return (rv & 0xFFFF);
+#endif /* __rtems__ */
 }
 
 static int
@@ -830,12 +837,14 @@ setup_xdma(struct xae_softc *sc)
 		return (ENXIO);
 	}
 
+#ifndef __rtems__
 	/* Setup bounce buffer */
 	vmem = xdma_get_memory(dev);
 	if (vmem) {
 		xchan_set_memory(sc->xchan_tx, vmem);
 		xchan_set_memory(sc->xchan_rx, vmem);
 	}
+#endif /* __rtems__ */
 
 	xdma_prep_sg(sc->xchan_tx,
 	    TX_QUEUE_SIZE,	/* xchan requests queue size */

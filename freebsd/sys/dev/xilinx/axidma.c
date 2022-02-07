@@ -66,6 +66,12 @@ __FBSDID("$FreeBSD$");
 #define AXIDMA_DEBUG
 #undef AXIDMA_DEBUG
 
+#ifdef __rtems__
+#include <sys/endian.h>
+
+#define AXIDMA_DESCRIPTOR_ALIGNMENT 64
+#endif /* __rtems__ */
+
 #ifdef AXIDMA_DEBUG
 #define dprintf(fmt, ...)  printf(fmt, ##__VA_ARGS__)
 #else
@@ -178,6 +184,12 @@ axidma_intr(struct axidma_softc *sc,
 
 		st.error = errors;
 		st.transferred = desc->status & BD_CONTROL_LEN_M;
+#ifdef __rtems__
+		/* Handle Control / Status Streams. */
+		if (!st.transferred) {
+			st.transferred = desc->app4 & BD_STATUS_TRANSFERRED_M;
+		}
+#endif /* __rtems__ */
 		tot_copied += st.transferred;
 		xchan_seg_done(xchan, &st);
 
@@ -328,8 +340,10 @@ axidma_desc_free(struct axidma_softc *sc, struct axidma_channel *chan)
 	free(chan->descs, M_DEVBUF);
 	free(chan->descs_phys, M_DEVBUF);
 
+#ifndef __rtems__
 	pmap_kremove_device(chan->mem_vaddr, chan->mem_size);
 	kva_free(chan->mem_vaddr, chan->mem_size);
+#endif /* __rtems__ */
 	vmem_free(xchan->vmem, chan->mem_paddr, chan->mem_size);
 
 	return (0);
@@ -357,6 +371,7 @@ axidma_desc_alloc(struct axidma_softc *sc, struct xdma_channel *xchan,
 	chan->descs_phys = malloc(nsegments * sizeof(bus_dma_segment_t),
 	    M_DEVBUF, M_NOWAIT | M_ZERO);
 	chan->mem_size = desc_size * nsegments;
+#ifndef __rtems__
 	if (vmem_alloc(xchan->vmem, chan->mem_size, M_FIRSTFIT | M_NOWAIT,
 	    &chan->mem_paddr)) {
 		device_printf(sc->dev, "Failed to allocate memory.\n");
@@ -364,6 +379,13 @@ axidma_desc_alloc(struct axidma_softc *sc, struct xdma_channel *xchan,
 	}
 	chan->mem_vaddr = kva_alloc(chan->mem_size);
 	pmap_kenter_device(chan->mem_vaddr, chan->mem_size, chan->mem_paddr);
+#else /* __rtems__ */
+	/* Align DMA descriptors */
+	chan->mem_vaddr = calloc(1, chan->mem_size + AXIDMA_DESCRIPTOR_ALIGNMENT - 1);
+	chan->mem_vaddr = ((uintptr_t)chan->mem_vaddr +
+		AXIDMA_DESCRIPTOR_ALIGNMENT - 1) & ~0x3F;
+	chan->mem_paddr = chan->mem_vaddr;
+#endif /* __rtems__ */
 
 	device_printf(sc->dev, "Allocated chunk %lx %d\n",
 	    chan->mem_paddr, chan->mem_size);
@@ -559,8 +581,13 @@ axidma_channel_prep_sg(device_t dev, struct xdma_channel *xchan)
 		desc->status = 0;
 		desc->control = 0;
 
+#ifndef __rtems__
 		dprintf("%s(%d): desc %d vaddr %lx next paddr %x\n", __func__,
 		    data->id, i, (uint64_t)desc, le32toh(desc->next));
+#else /* __rtems__ */
+		dprintf("%s(%d): desc %d vaddr %lx next paddr %x\n", __func__,
+		    data->id, i, desc, le32toh(desc->next));
+#endif /* __rtems__ */
 	}
 
 	addr = chan->descs_phys[0];

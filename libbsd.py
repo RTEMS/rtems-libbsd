@@ -177,6 +177,7 @@ class rtems(builder.Module):
                 'local/ofw_if.c',
                 'local/pcib_if.c',
                 'local/pci_if.c',
+                'local/xdma_if.c',
                 'local/usb_if.c',
                 'local/mmcbus_if.c',
                 'local/mmcbr_if.c',
@@ -1656,6 +1657,39 @@ class dev_nic_e1000(builder.Module):
                 'sys/dev/e1000/em_txrx.c',
                 'sys/dev/e1000/if_em.c',
                 'sys/dev/e1000/igb_txrx.c',
+            ],
+            mm.generator['source']()
+        )
+
+#
+# NIC xilinx
+#
+class dev_nic_xilinx(builder.Module):
+
+    def __init__(self, manager):
+        super(dev_nic_xilinx, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addKernelSpaceHeaderFiles(
+            [
+                'sys/dev/xilinx/if_xaereg.h',
+                'sys/dev/xilinx/if_xaevar.h',
+                'sys/dev/mii/tiphy.h',
+                'sys/dev/xdma/xdma.h',
+                'sys/dev/xilinx/axidma.h',
+             ]
+        )
+        self.addKernelSpaceSourceFiles(
+            [
+                'sys/dev/xilinx/if_xae.c',
+                'sys/dev/xdma/xdma.c',
+                'sys/dev/xdma/xdma_mbuf.c',
+                'sys/dev/xdma/xdma_queue.c',
+                'sys/dev/xdma/xdma_sg.c',
+                'sys/dev/xdma/xdma_bank.c',
+                'sys/dev/xdma/xdma_sglist.c',
+                'sys/dev/xilinx/axidma.c',
             ],
             mm.generator['source']()
         )
@@ -5612,6 +5646,7 @@ def load(mm):
     mm.addModule(dev_nic_re(mm))
     mm.addModule(dev_nic_fxp(mm))
     mm.addModule(dev_nic_e1000(mm))
+    mm.addModule(dev_nic_xilinx(mm))
     mm.addModule(dev_nic_dc(mm))
     mm.addModule(dev_nic_smc(mm))
     mm.addModule(dev_nic_broadcomm(mm))

@@ -36,6 +36,9 @@
 
 #include <sys/proc.h>
 #include <sys/vmem.h>
+#ifdef __rtems__
+#include <dev/ofw/openfirm.h>
+#endif /* __rtems__ */
 
 enum xdma_direction {
 	XDMA_MEM_TO_MEM,
@@ -181,7 +184,15 @@ struct xdma_intr_handler {
 	TAILQ_ENTRY(xdma_intr_handler)	ih_next;
 };
 
+#ifndef __rtems__
 static MALLOC_DEFINE(M_XDMA, "xdma", "xDMA framework");
+#else /* __rtems__ */
+#ifdef IN_XDMA_C
+MALLOC_DEFINE(M_XDMA, "xdma", "xDMA framework");
+#else
+MALLOC_DECLARE(M_XDMA);
+#endif
+#endif /* __rtems__ */
 
 #define	XCHAN_LOCK(xchan)		mtx_lock(&(xchan)->mtx_lock)
 #define	XCHAN_UNLOCK(xchan)		mtx_unlock(&(xchan)->mtx_lock)

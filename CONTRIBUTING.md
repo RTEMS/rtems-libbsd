@@ -388,7 +388,10 @@ For new code use
 [STYLE(9)](http://www.freebsd.org/cgi/man.cgi?query=style&apropos=0&sektion=9).
 
 Do not format original FreeBSD code.  Do not perform white space changes even
-if you get git commit warnings.
+if you get git commit warnings.  Check your editor settings so that it doesn't
+perform white space changes automatically, for example adding a newline to the
+end of the file.  White space changes may result in conflicts during updates,
+especially changes at the end of a file.
 
 Automatically Generated FreeBSD Files
 -------------------------------------

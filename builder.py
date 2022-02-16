@@ -221,6 +221,9 @@ def revertFixLocalIncludes(data):
     data = re.sub('#include <rtems/bsd/local/([^>]*)>', '#include "\\1"', data)
     return data
 
+def assertNothing(path):
+    pass
+
 def assertHeaderFile(path):
     if path[-2] != '.' or path[-1] != 'h':
         print("*** " + path + " does not end in .h")
@@ -880,7 +883,7 @@ class Module(object):
             ]
         return files
 
-    def addPlainTextFile(self, files):
+    def addPlainTextFiles(self, files):
         self.files += self.addFiles('user', files,
                                     FreeBSDPathComposer(), Converter(),
                                     Converter(), assertNothing)

@@ -883,7 +883,7 @@ class Module(object):
             ]
         return files
 
-    def addPlainTextFile(self, files):
+    def addPlainTextFiles(self, files):
         self.files += self.addFiles('user', files,
                                     FreeBSDPathComposer(), Converter(),
                                     Converter(), assertNothing)

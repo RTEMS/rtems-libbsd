@@ -198,7 +198,7 @@ rtems_bsd_program_free(void *ptr);
 #endif
 
 #ifndef RTEMS_BSD_PROGRAM_NO_FREE_WRAP
-  #define free(ptr) rtems_bsd_program_free(ptr);
+  #define free(ptr) rtems_bsd_program_free(ptr)
 #endif
 
 __END_DECLS

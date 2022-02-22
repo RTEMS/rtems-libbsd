@@ -1836,8 +1836,18 @@ pfkey_open(void)
 		(void)setsockopt(so, SOL_SOCKET, SO_SNDBUF,
 			&bufsiz_wanted, sizeof(bufsiz_wanted));
 
+#ifndef __rtems__
 	/* Try to have have at least 2MB. If we have more, do not lower it. */
 	bufsiz_wanted = 2 * 1024 * 1024;
+#else /* __rtems__ */
+	/*
+	 * The bufsize_wanted has an influence on the maximum number of SPDs. We
+	 * don't really need that much of them on an embedded system. If some
+	 * application really needs it, this can be overwritten with the
+	 * pfkey_buffer option in the config file.
+	 */
+	bufsiz_wanted = 128 * 1024;
+#endif /* __rtems__ */
 	len = sizeof(bufsiz_current);
 	ret = getsockopt(so, SOL_SOCKET, SO_RCVBUF,
 		&bufsiz_current, &len);

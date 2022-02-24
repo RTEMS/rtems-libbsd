@@ -187,10 +187,10 @@ class Builder(builder.ModuleManager):
                                 conf.env['HAVE_%s' % l.upper()] = True
                     else:
                         bld.fatal('invalid config test: %s' % (configTest))
-            section_flags = ["-fdata-sections", "-ffunction-sections"]
-            _add_flags_if_not_present(conf.env.CFLAGS, section_flags)
-            _add_flags_if_not_present(conf.env.CXXFLAGS, section_flags)
-            _add_flags_if_not_present(conf.env.LINKFLAGS, ["-Wl,--gc-sections"])
+        section_flags = ["-fdata-sections", "-ffunction-sections"]
+        _add_flags_if_not_present(conf.env.CFLAGS, section_flags)
+        _add_flags_if_not_present(conf.env.CXXFLAGS, section_flags)
+        _add_flags_if_not_present(conf.env.LINKFLAGS, ["-Wl,--gc-sections"])
 
     def build(self, bld):
         #

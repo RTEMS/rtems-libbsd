@@ -3139,6 +3139,22 @@ class pci(builder.Module):
             mm.generator['source']()
         )
 
+#
+# TSI148
+#
+class tsi148(builder.Module):
+
+    def __init__(self, manager):
+        super(tsi148, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addRTEMSKernelSourceFiles(
+            [
+                'sys/dev/vme/tsi148.c',
+            ],
+            mm.generator['source']()
+        )
 
 #
 # User space
@@ -5666,6 +5682,7 @@ def load(mm):
 
     # Add PCI
     mm.addModule(pci(mm))
+    mm.addModule(tsi148(mm))
 
     # Add NIC devices
     mm.addModule(dev_nic(mm))

@@ -891,6 +891,24 @@ class pinmux(builder.Module):
         )
 
 #
+# MV643XX Ethernet driver
+#
+class if_mve(builder.Module):
+
+    def __init__(self, manager):
+        super(if_mve, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addRTEMSKernelSourceFiles(
+            [
+                'sys/dev/mve/if_mve.c',
+                'sys/dev/mve/if_mve_nexus.c',
+            ],
+            mm.generator['source']()
+        )
+
+#
 # USB
 #
 class dev_usb(builder.Module):
@@ -5466,6 +5484,7 @@ def load(mm):
     mm.addModule(evdev(mm))
     mm.addModule(iic(mm))
     mm.addModule(pinmux(mm))
+    mm.addModule(if_mve(mm))
     mm.addModule(display(mm))
 
     mm.addModule(dev_usb(mm))

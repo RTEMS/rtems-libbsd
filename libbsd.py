@@ -817,6 +817,24 @@ class evdev(builder.Module):
         )
 
 #
+# MV643XX Ethernet driver
+#
+class if_mve(builder.Module):
+
+    def __init__(self, manager):
+        super(if_mve, self).__init__(manager, type(self).__name__)
+
+    def generate(self):
+        mm = self.manager
+        self.addRTEMSKernelSourceFiles(
+            [
+                'sys/dev/mve/if_mve.c',
+                'sys/dev/mve/if_mve_nexus.c',
+            ],
+            mm.generator['source']()
+        )
+
+#
 # USB
 #
 class dev_usb(builder.Module):
@@ -5551,6 +5569,7 @@ def load(mm):
     mm.addModule(mmc_ti(mm))
     mm.addModule(dev_input(mm))
     mm.addModule(evdev(mm))
+    mm.addModule(if_mve(mm))
 
     mm.addModule(dev_usb(mm))
     mm.addModule(dev_usb_controller(mm))

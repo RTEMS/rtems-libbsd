@@ -553,7 +553,7 @@ class base(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'COPYRIGHT'
             ]
@@ -1714,7 +1714,7 @@ class dev_nic_e1000(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'sys/dev/e1000/LICENSE'
             ]
@@ -2594,7 +2594,7 @@ class opencrypto(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'sys/contrib/libsodium/LICENSE'
             ]
@@ -3250,7 +3250,7 @@ class user_space(builder.Module):
             ],
             mm.generator['source'](['-DINET'])
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'contrib/libxo/LICENSE'
             ]
@@ -4257,7 +4257,7 @@ class crypto_openssl(builder.Module):
                                           mm.generator['from-FreeBSD-to-RTEMS-UserSpaceSourceConverter'](),
                                           mm.generator['from-RTEMS-To-FreeBSD-SourceConverter'](),
                                           mm.generator['buildSystemComposer']()))
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'crypto/openssl/LICENSE'
             ]
@@ -4395,7 +4395,7 @@ class contrib_expat(builder.Module):
             ],
             mm.generator['source'](cflags)
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'contrib/expat/COPYING'
             ]
@@ -4500,7 +4500,7 @@ class contrib_libpcap(builder.Module):
             ],
             mm.generator['source'](cflags)
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'contrib/libpcap/LICENSE'
             ]
@@ -4745,7 +4745,7 @@ class usr_sbin_tcpdump(builder.Module):
                                    ['freebsd/contrib/tcpdump',
                                     'freebsd/usr.sbin/tcpdump/tcpdump'])
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'contrib/tcpdump/LICENSE'
             ]
@@ -5064,7 +5064,7 @@ class usr_sbin_wpa_supplicant(builder.Module):
             ],
             mm.generator['source']()
         )
-        self.addPlainTextFile(
+        self.addPlainTextFiles(
             [
                 'contrib/wpa/COPYING'
             ]

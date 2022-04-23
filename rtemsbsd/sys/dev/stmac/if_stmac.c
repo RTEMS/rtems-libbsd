@@ -40,6 +40,7 @@
 #include <sys/module.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
+#include <sys/gsb_crc32.h>
 
 #include <net/if.h>
 #include <net/ethernet.h>

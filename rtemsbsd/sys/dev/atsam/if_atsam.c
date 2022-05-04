@@ -1487,6 +1487,7 @@ static int if_atsam_driver_attach(device_t dev)
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
 	    IFCAP_VLAN_HWCSUM;
+	ifp->if_capenable = ifp->if_capabilities;
 	ifp->if_hwassist = CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP |
 	    CSUM_IP6_UDP | CSUM_IP6_TCP;
 	IFQ_SET_MAXLEN(&ifp->if_snd, TXBUF_COUNT - 1);

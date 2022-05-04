@@ -678,7 +678,6 @@ static bool if_atsam_send_packet(if_atsam_softc *sc, struct mbuf *m)
 	uint32_t tmp_val = 0;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 	bool success;
-	int csum_flags = m->m_pkthdr.csum_flags;
 
 	if_atsam_tx_bd_cleanup(sc);
 	/* Wait for interrupt in case no buffer descriptors are available */
@@ -725,15 +724,9 @@ static bool if_atsam_send_packet(if_atsam_softc *sc, struct mbuf *m)
 		 * processed
 		 */
 		if (m == NULL) {
+			_ARM_Data_synchronization_barrier();
 			tmp_val |= GMAC_TX_SET_EOF;
 			tmp_val &= ~GMAC_TX_SET_USED;
-			if ((csum_flags & (CSUM_IP | CSUM_TCP | CSUM_UDP |
-			    CSUM_TCP_IPV6 | CSUM_UDP_IPV6)) != 0) {
-				start_packet_tx_bd->status.bm.bNoCRC = 0;
-			} else {
-				start_packet_tx_bd->status.bm.bNoCRC = 1;
-			}
-			_ARM_Data_synchronization_barrier();
 			cur->status.val = tmp_val;
 			start_packet_tx_bd->status.val &= ~GMAC_TX_SET_USED;
 			_ARM_Data_synchronization_barrier();

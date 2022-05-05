@@ -50,6 +50,7 @@
 #include <sys/sysctl.h>
 
 #include <net/if.h>
+#include <net/if_dl.h>
 #include <net/if_var.h>
 #include <net/if_types.h>
 #include <net/if_media.h>
@@ -90,13 +91,6 @@
 	  PIO_DEFAULT }
 /** The runtime pin configure list for GMAC */
 #define BOARD_GMAC_RUN_PINS			BOARD_GMAC_PINS
-
-/** Multicast Enable */
-#define GMAC_MC_ENABLE				(1u << 6)
-#define HASH_INDEX_AMOUNT			6
-#define HASH_ELEMENTS_PER_INDEX			8
-#define MAC_ADDR_MASK				0x0000FFFFFFFFFFFF
-#define MAC_IDX_MASK				(1u << 0)
 
 /** RX Defines */
 #define GMAC_RX_BUFFER_SIZE			1536
@@ -992,6 +986,11 @@ if_atsam_init(if_atsam_softc *sc)
 	/* Enable hardware checksum offload for receive */
 	sc->Gmac_inst.gGmacd.pHw->GMAC_NCFGR |= GMAC_NCFGR_RXCOEN;
 
+	/* Use Multicast Hash Filter */
+	sc->Gmac_inst.gGmacd.pHw->GMAC_NCFGR |= GMAC_NCFGR_MTIHEN;
+	sc->Gmac_inst.gGmacd.pHw->GMAC_HRB = 0;
+	sc->Gmac_inst.gGmacd.pHw->GMAC_HRT = 0;
+
 	/* Shut down Transmit and Receive */
 	GMAC_ReceiveEnable(sc->Gmac_inst.gGmacd.pHw, 0);
 	GMAC_TransmitEnable(sc->Gmac_inst.gGmacd.pHw, 0);
@@ -1025,16 +1024,75 @@ if_atsam_init(if_atsam_softc *sc)
 	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
 }
 
+static int
+if_atsam_get_hash_index(const uint8_t *eaddr)
+{
+	uint64_t eaddr64;
+	int index;
+	int i;
+
+	eaddr64 = eaddr[5];
+
+	for (i = 4; i >= 0; --i) {
+		eaddr64 <<= 8;
+		eaddr64 |= eaddr[i];
+	}
+
+	index = 0;
+
+	for (i = 0; i < 6; ++i) {
+		uint64_t bits;
+		int j;
+		int hash;
+
+		bits = eaddr64 >> i;
+		hash = bits & 1;
+
+		for (j = 1; j < 8; ++j) {
+			bits >>= 6;
+			hash ^= bits & 1;
+		}
+
+		index |= hash << i;
+	}
+
+	return index;
+}
+
 static void
 if_atsam_setup_rxfilter(struct if_atsam_softc *sc)
 {
-	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	struct ifnet *ifp;
+	struct ifmultiaddr *ifma;
+	uint64_t mhash;
+	Gmac *pHw;
+
+	pHw = sc->Gmac_inst.gGmacd.pHw;
 
 	if ((sc->ifp->if_flags & IFF_PROMISC) != 0) {
 		pHw->GMAC_NCFGR |= GMAC_NCFGR_CAF;
 	} else {
 		pHw->GMAC_NCFGR &= ~GMAC_NCFGR_CAF;
 	}
+
+	ifp = sc->ifp;
+
+	if ((ifp->if_flags & IFF_ALLMULTI))
+		mhash = 0xffffffffffffffffLLU;
+	else {
+		mhash = 0;
+		if_maddr_rlock(ifp);
+		CK_STAILQ_FOREACH(ifma, &sc->ifp->if_multiaddrs, ifma_link) {
+			if (ifma->ifma_addr->sa_family != AF_LINK)
+				continue;
+			mhash |= 1LLU << if_atsam_get_hash_index(
+			    LLADDR((struct sockaddr_dl *) ifma->ifma_addr));
+		}
+		if_maddr_runlock(ifp);
+	}
+
+	pHw->GMAC_HRB = (uint32_t)mhash;
+	pHw->GMAC_HRT = (uint32_t)(mhash >> 32);
 }
 
 static void
@@ -1326,33 +1384,6 @@ if_atsam_add_sysctls(device_t dev)
 	    "UDP Checksum Errors");
 }
 
-
-/*
- * Calculates the index that is to be sent into the hash registers
- */
-static void if_atsam_get_hash_index(uint64_t addr, uint32_t *val)
-{
-	uint64_t tmp_val;
-	uint8_t i, j;
-	uint64_t idx;
-	int offset = 0;
-
-	addr &= MAC_ADDR_MASK;
-
-	for (i = 0; i < HASH_INDEX_AMOUNT; ++i) {
-		tmp_val = 0;
-		offset = 0;
-		for (j = 0; j < HASH_ELEMENTS_PER_INDEX; j++) {
-			idx = (addr >> (offset + i)) & MAC_IDX_MASK;
-			tmp_val ^= idx;
-			offset += HASH_INDEX_AMOUNT;
-		}
-		if (tmp_val > 0) {
-			*val |= (1u << i);
-		}
-	}
-}
-
 static int
 if_atsam_mediaioctl(if_atsam_softc *sc, struct ifreq *ifr, u_long command)
 {
@@ -1403,6 +1434,14 @@ if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 		}
 		sc->if_flags = ifp->if_flags;
 		IF_ATSAM_UNLOCK(sc);
+		break;
+	case SIOCADDMULTI:
+	case SIOCDELMULTI:
+		if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
+			IF_ATSAM_LOCK(sc);
+			if_atsam_setup_rxfilter(sc);
+			IF_ATSAM_UNLOCK(sc);
+		}
 		break;
 	default:
 		rv = ether_ioctl(ifp, command, data);
@@ -1491,7 +1530,7 @@ static int if_atsam_driver_attach(device_t dev)
 	ifp->if_init = if_atsam_start;
 	ifp->if_ioctl = if_atsam_ioctl;
 	ifp->if_start = if_atsam_enet_start;
-	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
+	ifp->if_flags = IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX;
 	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
 	    IFCAP_VLAN_HWCSUM;
 	ifp->if_capenable = ifp->if_capabilities;

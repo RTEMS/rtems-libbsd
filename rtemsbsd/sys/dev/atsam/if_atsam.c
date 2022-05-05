@@ -990,7 +990,6 @@ static void if_atsam_init(void *arg)
 	}
 	/* Setup interrupts */
 	NVIC_ClearPendingIRQ(GMAC_IRQn);
-	NVIC_EnableIRQ(GMAC_IRQn);
 
 	/* Configuration of DMAC */
 	dmac_cfg = (GMAC_DCFGR_DRBS(GMAC_RX_BUFFER_SIZE >> 6)) |

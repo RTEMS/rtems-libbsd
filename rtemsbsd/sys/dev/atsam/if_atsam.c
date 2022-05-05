@@ -66,6 +66,7 @@
 
 #include <rtems/bsd/local/miibus_if.h>
 #include <rtems/bsd/if_atsam.h>
+#include <rtems/bsd/bsd.h>
 
 /*
  * Number of interfaces supported by the driver
@@ -356,11 +357,10 @@ if_atsam_miibus_readreg(device_t dev, int phy, int reg)
 static int
 if_atsam_miibus_writereg(device_t dev, int phy, int reg, int data)
 {
-	uint8_t err;
 	if_atsam_softc *sc = device_get_softc(dev);
 
 	IF_ATSAM_LOCK(sc);
-	err = if_atsam_write_phy(sc->Gmac_inst.gGmacd.pHw,
+	(void)if_atsam_write_phy(sc->Gmac_inst.gGmacd.pHw,
 	    (uint8_t)phy, (uint8_t)reg, data, sc->Gmac_inst.retries);
 	IF_ATSAM_UNLOCK(sc);
 
@@ -455,7 +455,8 @@ static void if_atsam_interrupt_handler(void *arg)
 	}
 }
 
-static void rx_update_mbuf(struct mbuf *m, sGmacRxDescriptor *buffer_desc)
+static void rx_update_mbuf(struct mbuf *m,
+    volatile sGmacRxDescriptor *buffer_desc)
 {
 	int frame_len;
 
@@ -488,13 +489,11 @@ static void if_atsam_rx_daemon(void *arg)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
 	struct ifnet *ifp = sc->ifp;
-	rtems_event_set events = 0;
 	void *rx_bd_base;
 	struct mbuf *m;
 	struct mbuf *n;
 	volatile sGmacRxDescriptor *buffer_desc;
 	uint32_t tmp_rx_bd_address;
-	size_t i;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
 	IF_ATSAM_LOCK(sc);
@@ -759,7 +758,6 @@ static bool if_atsam_send_packet(if_atsam_softc *sc, struct mbuf *m)
 static void if_atsam_tx_daemon(void *arg)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
-	rtems_event_set events = 0;
 	sGmacTxDescriptor *buffer_desc;
 	int bd_number;
 	void *tx_bd_base;
@@ -986,7 +984,6 @@ static void if_atsam_init(void *arg)
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
 	struct ifnet *ifp = sc->ifp;
 	uint32_t dmac_cfg = 0;
-	uint32_t gmii_val = 0;
 
 	if (ifp->if_flags & IFF_DRV_RUNNING) {
 		return;
@@ -1070,7 +1067,7 @@ if_atsam_poll_hw_stats(struct if_atsam_softc *sc)
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
 	octets = pHw->GMAC_OTLO;
-	octets |= pHw->GMAC_OTHI << 32;
+	octets |= (uint64_t)pHw->GMAC_OTHI << 32;
 	sc->stats.octets_transm += octets;
 	sc->stats.frames_transm += pHw->GMAC_FT;
 	sc->stats.broadcast_frames_transm += pHw->GMAC_BCFT;
@@ -1092,7 +1089,7 @@ if_atsam_poll_hw_stats(struct if_atsam_softc *sc)
 	sc->stats.carrier_sense_errors += pHw->GMAC_CSE;
 
 	octets = pHw->GMAC_ORLO;
-	octets |= pHw->GMAC_ORHI << 32;
+	octets |= (uint64_t)pHw->GMAC_ORHI << 32;
 	sc->stats.octets_rec += octets;
 	sc->stats.frames_rec += pHw->GMAC_FR;
 	sc->stats.broadcast_frames_rec += pHw->GMAC_BCFR;
@@ -1381,7 +1378,6 @@ if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 	struct ifreq *ifr = (struct ifreq *)data;
 	int rv = 0;
 	bool prom_enable;
-	struct mii_data *mii;
 
 	switch (command) {
 	case SIOCGIFMEDIA:
@@ -1416,7 +1412,6 @@ static int if_atsam_driver_attach(device_t dev)
 	if_atsam_softc *sc;
 	struct ifnet *ifp;
 	int unit;
-	char *unitName;
 	uint8_t eaddr[ETHER_ADDR_LEN];
 
 	sc = device_get_softc(dev);

@@ -98,9 +98,6 @@
 #define MAC_ADDR_MASK				0x0000FFFFFFFFFFFF
 #define MAC_IDX_MASK				(1u << 0)
 
-/** Promiscuous Mode Enable */
-#define GMAC_PROM_ENABLE			(1u << 4)
-
 /** RX Defines */
 #define GMAC_RX_BUFFER_SIZE			1536
 #define GMAC_RX_BUF_DESC_ADDR_MASK		0xFFFFFFFC
@@ -244,6 +241,8 @@ typedef struct if_atsam_softc {
 		uint32_t tcp_checksum_errors;
 		uint32_t udp_checksum_errors;
 	} stats;
+
+	int if_flags;
 } if_atsam_softc;
 
 static void if_atsam_poll_hw_stats(struct if_atsam_softc *sc);
@@ -967,21 +966,14 @@ if_atsam_tick(void *context)
 }
 
 
-/*
- * Sets up the hardware and chooses the interface to be used
- */
-static void if_atsam_init(void *arg)
+static void
+if_atsam_init(if_atsam_softc *sc)
 {
 	rtems_status_code status;
 
-	if_atsam_softc *sc = (if_atsam_softc *)arg;
 	struct ifnet *ifp = sc->ifp;
 	uint32_t dmac_cfg = 0;
 
-	if (ifp->if_flags & IFF_DRV_RUNNING) {
-		return;
-	}
-	ifp->if_flags |= IFF_DRV_RUNNING;
 	sc->interrupt_number = GMAC_IRQn;
 
 	/* Enable Peripheral Clock */
@@ -1031,24 +1023,58 @@ static void if_atsam_init(void *arg)
 		if_atsam_tx_daemon, sc);
 
 	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
-
-	ifp->if_drv_flags |= IFF_DRV_RUNNING;
 }
 
+static void
+if_atsam_setup_rxfilter(struct if_atsam_softc *sc)
+{
+	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
-/*
- * Stop the device
- */
-static void if_atsam_stop(struct if_atsam_softc *sc)
+	if ((sc->ifp->if_flags & IFF_PROMISC) != 0) {
+		pHw->GMAC_NCFGR |= GMAC_NCFGR_CAF;
+	} else {
+		pHw->GMAC_NCFGR &= ~GMAC_NCFGR_CAF;
+	}
+}
+
+static void
+if_atsam_start_locked(struct if_atsam_softc *sc)
 {
 	struct ifnet *ifp = sc->ifp;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 
-	ifp->if_flags &= ~IFF_DRV_RUNNING;
+	if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
+		return;
+	}
 
-	/* Disable MDIO interface and TX/RX */
+	ifp->if_drv_flags |= IFF_DRV_RUNNING;
+
+	if_atsam_setup_rxfilter(sc);
+
+	/* Enable TX/RX */
+	pHw->GMAC_NCR |= GMAC_NCR_RXEN | GMAC_NCR_TXEN;
+}
+
+static void
+if_atsam_start(void *arg)
+{
+	struct if_atsam_softc *sc = arg;
+
+	IF_ATSAM_LOCK(sc);
+	if_atsam_start_locked(sc);
+	IF_ATSAM_UNLOCK(sc);
+}
+
+static void
+if_atsam_stop(struct if_atsam_softc *sc)
+{
+	struct ifnet *ifp = sc->ifp;
+	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+
+	ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+
+	/* Disable TX/RX */
 	pHw->GMAC_NCR &= ~(GMAC_NCR_RXEN | GMAC_NCR_TXEN);
-	pHw->GMAC_NCR &= ~GMAC_NCR_MPE;
 }
 
 
@@ -1327,22 +1353,6 @@ static void if_atsam_get_hash_index(uint64_t addr, uint32_t *val)
 	}
 }
 
-
-/*
- * Dis/Enable promiscuous Mode
- */
-static void if_atsam_promiscuous_mode(if_atsam_softc *sc, bool enable)
-{
-	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
-
-	if (enable) {
-		pHw->GMAC_NCFGR |= GMAC_PROM_ENABLE;
-	} else {
-		pHw->GMAC_NCFGR &= ~GMAC_PROM_ENABLE;
-	}
-}
-
-
 static int
 if_atsam_mediaioctl(if_atsam_softc *sc, struct ifreq *ifr, u_long command)
 {
@@ -1369,7 +1379,6 @@ if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 	if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
 	struct ifreq *ifr = (struct ifreq *)data;
 	int rv = 0;
-	bool prom_enable;
 
 	switch (command) {
 	case SIOCGIFMEDIA:
@@ -1377,17 +1386,23 @@ if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 		rv = if_atsam_mediaioctl(sc, ifr, command);
 		break;
 	case SIOCSIFFLAGS:
+		IF_ATSAM_LOCK(sc);
 		if (ifp->if_flags & IFF_UP) {
-			if (!(ifp->if_drv_flags & IFF_DRV_RUNNING)) {
-				if_atsam_init(sc);
+			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
+				if ((ifp->if_flags ^ sc->if_flags) &
+				    (IFF_PROMISC | IFF_ALLMULTI)) {
+					if_atsam_setup_rxfilter(sc);
+				}
+			} else {
+				if_atsam_start_locked(sc);
 			}
-			prom_enable = ((ifp->if_flags & IFF_PROMISC) != 0);
-			if_atsam_promiscuous_mode(sc, prom_enable);
 		} else {
 			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
 				if_atsam_stop(sc);
 			}
 		}
+		sc->if_flags = ifp->if_flags;
+		IF_ATSAM_UNLOCK(sc);
 		break;
 	default:
 		rv = ether_ioctl(ifp, command, data);
@@ -1473,7 +1488,7 @@ static int if_atsam_driver_attach(device_t dev)
 	 */
 	ifp->if_softc = sc;
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
-	ifp->if_init = if_atsam_init;
+	ifp->if_init = if_atsam_start;
 	ifp->if_ioctl = if_atsam_ioctl;
 	ifp->if_start = if_atsam_enet_start;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
@@ -1492,6 +1507,7 @@ static int if_atsam_driver_attach(device_t dev)
 	ether_ifattach(ifp, eaddr);
 
 	if_atsam_add_sysctls(dev);
+	if_atsam_init(sc);
 
 	return (0);
 }

@@ -99,17 +99,11 @@
 #define GMAC_RX_SET_USED_WRAP			((1u << 1) | (1u << 0))
 #define GMAC_RX_SET_WRAP			(1u << 1)
 #define GMAC_RX_SET_USED			(1u << 0)
-/** TX Defines */
-#define GMAC_TX_SET_EOF				(1u << 15)
-#define GMAC_TX_SET_WRAP			(1u << 30)
-#define GMAC_TX_SET_USED			(1u << 31)
 
 #define GMAC_DESCRIPTOR_ALIGNMENT		8
 
 /** Events */
 #define ATSAMV7_ETH_RX_EVENT_INTERRUPT		RTEMS_EVENT_1
-#define ATSAMV7_ETH_TX_EVENT_INTERRUPT		RTEMS_EVENT_2
-#define ATSAMV7_ETH_START_TRANSMIT_EVENT	RTEMS_EVENT_3
 
 #define ATSAMV7_ETH_RX_DATA_OFFSET		2
 
@@ -119,8 +113,16 @@
 #define MDIO_RETRIES 10
 #define MDIO_PHY MII_PHY_ANY
 #define RXBUF_COUNT 8
-#define TXBUF_COUNT 64
 #define IGNORE_RX_ERR false
+
+#define TX_DESC_LOG2 6
+#define TX_DESC_COUNT (1U << TX_DESC_LOG2)
+#define TX_DESC_WRAP(idx) \
+  ((((idx) + 1) & TX_DESC_COUNT) << (30 - TX_DESC_LOG2))
+RTEMS_STATIC_ASSERT(TX_DESC_WRAP(TX_DESC_COUNT - 1) ==
+    GMAC_TX_WRAP_BIT, tx_desc_wrap);
+RTEMS_STATIC_ASSERT(TX_DESC_WRAP(TX_DESC_COUNT - 2) ==
+    0, tx_desc_no_wrap);
 
 /** The PINs for GMAC */
 static const Pin gmacPins[] = { BOARD_GMAC_RUN_PINS };
@@ -131,11 +133,9 @@ typedef struct if_atsam_gmac {
 	uint32_t retries;
 } if_atsam_gmac;
 
-typedef struct ring_buffer {
-	unsigned tx_bd_used;
-	unsigned tx_bd_free;
-	size_t length;
-} ring_buffer;
+struct if_atsam_tx_bds {
+	volatile sGmacTxDescriptor bds[TX_DESC_COUNT];
+};
 
 /*
  * Per-device data
@@ -148,17 +148,16 @@ typedef struct if_atsam_softc {
 	struct ifnet *ifp;
 	struct mtx mtx;
 	if_atsam_gmac Gmac_inst;
+	size_t tx_idx_head;
+	size_t tx_idx_tail;
+	struct if_atsam_tx_bds *tx;
+	struct mbuf *tx_mbufs[TX_DESC_COUNT];
 	uint8_t GMacAddress[6];
 	rtems_id rx_daemon_tid;
-	rtems_id tx_daemon_tid;
 	rtems_vector_number interrupt_number;
 	struct mbuf **rx_mbuf;
-	struct mbuf **tx_mbuf;
-	volatile sGmacTxDescriptor *tx_bd_base;
 	size_t rx_bd_fill_idx;
 	size_t amount_rx_buf;
-	size_t amount_tx_buf;
-	ring_buffer tx_ring;
 	struct callout tick_ch;
 
 	/*
@@ -183,12 +182,10 @@ typedef struct if_atsam_softc {
 		/* Software */
 		uint32_t rx_overrun_errors;
 		uint32_t rx_interrupts;
-		uint32_t tx_complete_int;
 		uint32_t tx_tur_errors;
 		uint32_t tx_rlex_errors;
 		uint32_t tx_tfc_errors;
 		uint32_t tx_hresp_errors;
-		uint32_t tx_interrupts;
 
 		/* Hardware */
 		uint64_t octets_transm;
@@ -396,55 +393,40 @@ if_atsam_init_phy(if_atsam_gmac *gmac_inst, uint32_t mck,
 static void if_atsam_interrupt_handler(void *arg)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
-	uint32_t irq_status_val;
-	rtems_event_set rx_event = 0;
-	rtems_event_set tx_event = 0;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	uint32_t is;
 
 	/* Get interrupt status */
-	irq_status_val = GMAC_GetItStatus(pHw, 0);
+	is = pHw->GMAC_ISR;
+
+	if (__predict_false((is & GMAC_TX_ERR_BIT) != 0)) {
+		if ((is & GMAC_IER_TUR) != 0) {
+			++sc->stats.tx_tur_errors;
+		}
+		if ((is & GMAC_IER_RLEX) != 0) {
+			++sc->stats.tx_rlex_errors;
+		}
+		if ((is & GMAC_IER_TFC) != 0) {
+			++sc->stats.tx_tfc_errors;
+		}
+		if ((is & GMAC_IER_HRESP) != 0) {
+			++sc->stats.tx_hresp_errors;
+		}
+	}
 
 	/* Check receive interrupts */
-	if ((irq_status_val & GMAC_IER_ROVR) != 0) {
-		++sc->stats.rx_overrun_errors;
-		rx_event = ATSAMV7_ETH_RX_EVENT_INTERRUPT;
-	}
-	if ((irq_status_val & GMAC_IER_RCOMP) != 0) {
-		rx_event = ATSAMV7_ETH_RX_EVENT_INTERRUPT;
-	}
-	/* Send events to receive task and switch off rx interrupts */
-	if (rx_event != 0) {
+	if (__predict_true((is & (GMAC_IER_ROVR | GMAC_IER_RCOMP)) != 0)) {
+		if (__predict_false((is & GMAC_IER_ROVR) != 0)) {
+			++sc->stats.rx_overrun_errors;
+		}
+
 		++sc->stats.rx_interrupts;
+
 		/* Erase the interrupts for RX completion and errors */
-		GMAC_DisableIt(pHw, GMAC_IER_RCOMP | GMAC_IER_ROVR, 0);
-		(void)if_atsam_event_send(sc->rx_daemon_tid, rx_event);
-	}
-	if ((irq_status_val & GMAC_IER_TUR) != 0) {
-		++sc->stats.tx_tur_errors;
-		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
-	}
-	if ((irq_status_val & GMAC_IER_RLEX) != 0) {
-		++sc->stats.tx_rlex_errors;
-		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
-	}
-	if ((irq_status_val & GMAC_IER_TFC) != 0) {
-		++sc->stats.tx_tfc_errors;
-		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
-	}
-	if ((irq_status_val & GMAC_IER_HRESP) != 0) {
-		++sc->stats.tx_hresp_errors;
-		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
-	}
-	if ((irq_status_val & GMAC_IER_TCOMP) != 0) {
-		++sc->stats.tx_complete_int;
-		tx_event = ATSAMV7_ETH_TX_EVENT_INTERRUPT;
-	}
-	/* Send events to transmit task and switch off tx interrupts */
-	if (tx_event != 0) {
-		++sc->stats.tx_interrupts;
-		/* Erase the interrupts for TX completion and errors */
-		GMAC_DisableIt(pHw, GMAC_INT_TX_BITS, 0);
-		(void)if_atsam_event_send(sc->tx_daemon_tid, tx_event);
+		pHw->GMAC_IDR = GMAC_IER_RCOMP | GMAC_IER_ROVR;
+
+		(void)if_atsam_event_send(sc->rx_daemon_tid,
+		    ATSAMV7_ETH_RX_EVENT_INTERRUPT);
 	}
 }
 
@@ -571,9 +553,6 @@ static void if_atsam_rx_daemon(void *arg)
 					sc->ifp->if_input(ifp, m);
 					IF_ATSAM_LOCK(sc);
 					m = n;
-				} else {
-					(void)if_atsam_event_send(
-					    sc->tx_daemon_tid, ATSAMV7_ETH_START_TRANSMIT_EVENT);
 				}
 				sc->rx_mbuf[sc->rx_bd_fill_idx] = m;
 				tmp_rx_bd_address = (uint32_t)m->m_data &
@@ -604,240 +583,168 @@ static void if_atsam_rx_daemon(void *arg)
 	}
 }
 
-/*
- * Update of current transmit buffer position.
- */
-static void if_atsam_tx_bd_pos_update(size_t *pos, size_t amount_tx_buf)
+static void
+if_atsam_tx_reclaim(struct if_atsam_softc *sc, struct ifnet *ifp)
 {
-	*pos = (*pos + 1) % amount_tx_buf;
-}
+	uint32_t head_idx;
+	uint32_t tail_idx;
+	volatile sGmacTxDescriptor *base;
 
-/*
- * Is RingBuffer empty
- */
-static bool if_atsam_ring_buffer_empty(ring_buffer *ring_buffer)
-{
-	return (ring_buffer->tx_bd_used == ring_buffer->tx_bd_free);
-}
+	head_idx = sc->tx_idx_head;
+	tail_idx = sc->tx_idx_tail;
+	base = &sc->tx->bds[0];
 
-/*
- * Is RingBuffer full
- */
-static bool if_atsam_ring_buffer_full(ring_buffer *ring_buffer)
-{
-	size_t tx_bd_used_next = ring_buffer->tx_bd_used;
+	while (head_idx != tail_idx) {
+		uint32_t status;
+		ift_counter cnt;
+		struct mbuf *m;
 
-	if_atsam_tx_bd_pos_update(&tx_bd_used_next, ring_buffer->length);
-	return (tx_bd_used_next == ring_buffer->tx_bd_free);
-}
+		status = base[tail_idx].status.val;
 
-/*
- * Cleanup transmit file descriptors by freeing mbufs which are not needed any
- * longer due to correct transmission.
- */
-static void if_atsam_tx_bd_cleanup(if_atsam_softc *sc)
-{
-	struct mbuf *m;
-	volatile sGmacTxDescriptor *cur;
-	bool eof_needed = false;
-
-	while (!if_atsam_ring_buffer_empty(&sc->tx_ring)){
-		cur = sc->tx_bd_base + sc->tx_ring.tx_bd_free;
-		if (((cur->status.bm.bUsed == 1) && !eof_needed) || eof_needed) {
-			eof_needed = true;
-			cur->status.val |= GMAC_TX_SET_USED;
-			m = sc->tx_mbuf[sc->tx_ring.tx_bd_free];
-			m_free(m);
-			sc->tx_mbuf[sc->tx_ring.tx_bd_free] = 0;
-			if_atsam_tx_bd_pos_update(&sc->tx_ring.tx_bd_free,
-			    sc->tx_ring.length);
-			if (cur->status.bm.bLastBuffer) {
-				eof_needed = false;
-			}
-		} else {
+		if ((status & GMAC_TX_USED_BIT) == 0) {
 			break;
 		}
+
+		if (__predict_true((status & GMAC_TX_ERR_BITS) == 0)) {
+			cnt = IFCOUNTER_OPACKETS;
+		} else {
+			cnt = IFCOUNTER_OERRORS;
+		}
+
+		while ((m = sc->tx_mbufs[tail_idx]) == NULL ) {
+			base[tail_idx].status.val = status | GMAC_TX_USED_BIT;
+			tail_idx = (tail_idx + 1) % TX_DESC_COUNT;
+			status = base[tail_idx].status.val;
+
+			if (__predict_false((status & GMAC_TX_ERR_BITS) != 0)) {
+				cnt = IFCOUNTER_OERRORS;
+			}
+		}
+
+		base[tail_idx].status.val = status | GMAC_TX_USED_BIT;
+		if_inc_counter(ifp, cnt, 1);
+		sc->tx_mbufs[tail_idx] = NULL;
+		m_freem(m);
+
+		tail_idx = (tail_idx + 1) % TX_DESC_COUNT;
 	}
+
+	sc->tx_idx_tail = tail_idx;
 }
 
-/*
- * Prepare Ethernet frame to start transmission.
- */
-static bool if_atsam_send_packet(if_atsam_softc *sc, struct mbuf *m)
+static void
+if_atsam_cache_flush(uintptr_t begin, uintptr_t size)
 {
-	volatile sGmacTxDescriptor *cur;
-	volatile sGmacTxDescriptor *start_packet_tx_bd = 0;
-	int pos = 0;
-	uint32_t tmp_val = 0;
-	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
-	bool success;
+	uintptr_t end;
+	uintptr_t mask;
 
-	if_atsam_tx_bd_cleanup(sc);
-	/* Wait for interrupt in case no buffer descriptors are available */
-	/* Wait for events */
-	while (true) {
-		if (if_atsam_ring_buffer_full(&sc->tx_ring)) {
-			/* Setup the interrupts for TX completion and errors */
-			GMAC_EnableIt(pHw, GMAC_INT_TX_BITS, 0);
-			success = false;
-			break;
+	/* Align begin and end of the data to a cache line */
+	end = begin + size;
+	mask = CPU_CACHE_LINE_BYTES - 1;
+	begin &= ~mask;
+	end = (end + mask) & ~mask;
+	rtems_cache_flush_multiple_data_lines((void *)begin, end - begin);
+}
+
+static int
+if_atsam_tx_enqueue(struct if_atsam_softc *sc, struct ifnet *ifp, struct mbuf *m)
+{
+	size_t head_idx;
+	size_t tail_idx;
+	size_t capacity;
+	size_t idx;
+	volatile sGmacTxDescriptor *base;
+	volatile sGmacTxDescriptor *desc;
+	size_t bufs;
+	uint32_t status;
+	struct mbuf *n;
+
+	head_idx = sc->tx_idx_head;
+	tail_idx = sc->tx_idx_tail;
+	capacity = (tail_idx - head_idx - 1) % TX_DESC_COUNT;
+
+	idx = head_idx;
+	base = &sc->tx->bds[0];
+	bufs = 0;
+	n = m;
+
+	do {
+		uint32_t size;
+
+		desc = &base[idx];
+
+		size = (uint32_t)n->m_len;
+		if (__predict_true(size > 0)) {
+			uintptr_t begin;
+
+			++bufs;
+			if (__predict_false(bufs > capacity)) {
+				return (ENOBUFS);
+			}
+
+			begin = mtod(n, uintptr_t);
+			desc->addr = (uint32_t)begin;
+			status = GMAC_TX_USED_BIT | TX_DESC_WRAP(idx) | size;
+			desc->status.val = status;
+			if_atsam_cache_flush(begin, size);
+			idx = (idx + 1) % TX_DESC_COUNT;
 		}
 
-		/*
-		 * Get current mbuf for data fill
-		 */
-		cur = &sc->tx_bd_base[sc->tx_ring.tx_bd_used];
-		/* Set the transfer data */
-		if (m->m_len) {
-			uintptr_t cache_adjustment = mtod(m, uintptr_t) % 32;
+		n = n->m_next;
+	} while (n != NULL);
 
-			rtems_cache_flush_multiple_data_lines(
-			  mtod(m, const char *) - cache_adjustment,
-			  (size_t)(m->m_len + cache_adjustment));
+	sc->tx_idx_head = idx;
 
-			cur->addr = mtod(m, uint32_t);
-			tmp_val = (uint32_t)m->m_len | GMAC_TX_SET_USED;
-			if (sc->tx_ring.tx_bd_used == (sc->tx_ring.length - 1)) {
-				tmp_val |= GMAC_TX_SET_WRAP;
-			}
-			if (pos == 0) {
-				start_packet_tx_bd = cur;
-			}
-			sc->tx_mbuf[sc->tx_ring.tx_bd_used] = m;
-			m = m->m_next;
-			if_atsam_tx_bd_pos_update(&sc->tx_ring.tx_bd_used,
-			    sc->tx_ring.length);
-		} else {
-			/* Discard empty mbufs */
-			m = m_free(m);
-		}
+	idx = (idx - 1) % TX_DESC_COUNT;
+	desc = &base[idx];
+	sc->tx_mbufs[idx] = m;
+	status = GMAC_TX_LAST_BUFFER_BIT;
 
-		/*
-		 * Send out the buffer once the complete mbuf_chain has been
-		 * processed
-		 */
-		if (m == NULL) {
-			_ARM_Data_synchronization_barrier();
-			tmp_val |= GMAC_TX_SET_EOF;
-			tmp_val &= ~GMAC_TX_SET_USED;
-			cur->status.val = tmp_val;
-			start_packet_tx_bd->status.val &= ~GMAC_TX_SET_USED;
-			_ARM_Data_synchronization_barrier();
-			GMAC_TransmissionStart(pHw);
-			success = true;
-			break;
-		} else {
-			if (pos > 0) {
-				tmp_val &= ~GMAC_TX_SET_USED;
-			}
-			pos++;
-			cur->status.val = tmp_val;
-		}
+	while (idx != head_idx) {
+		desc->status.val = (desc->status.val & ~GMAC_TX_USED_BIT) |
+		    status;
+		status = 0;
+
+		idx = (idx - 1) % TX_DESC_COUNT;
+		desc = &base[idx];
 	}
-	return success;
+
+	desc->status.val = (desc->status.val & ~GMAC_TX_USED_BIT) | status;
+	_ARM_Data_synchronization_barrier();
+	sc->Gmac_inst.gGmacd.pHw->GMAC_NCR |= GMAC_NCR_TSTART;
+	return (0);
 }
 
-
-/*
- * Transmit daemon
- */
-static void if_atsam_tx_daemon(void *arg)
+static int
+if_atsam_transmit(struct ifnet *ifp, struct mbuf *m)
 {
-	if_atsam_softc *sc = (if_atsam_softc *)arg;
-	sGmacTxDescriptor *buffer_desc;
-	int bd_number;
-	void *tx_bd_base;
-	struct mbuf *m;
-	bool success;
+	struct if_atsam_softc *sc;
+	int error;
 
+	sc = ifp->if_softc;
 	IF_ATSAM_LOCK(sc);
 
-	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
-	struct ifnet *ifp = sc->ifp;
+	error = if_atsam_tx_enqueue(sc, ifp, m);
+	if_atsam_tx_reclaim(sc, ifp);
 
-	GMAC_TransmitEnable(pHw, 0);
+	if (__predict_false(error != 0)) {
+		struct mbuf *n;
 
-	/* Allocate memory space for priority queue descriptor list */
-	tx_bd_base = rtems_cache_coherent_allocate(sizeof(sGmacTxDescriptor),
-		GMAC_DESCRIPTOR_ALIGNMENT, 0);
-	assert(tx_bd_base != NULL);
+		n = m_defrag(m, M_NOWAIT);
+		if (n != NULL) {
+			m = n;
+		}
 
-	buffer_desc = (sGmacTxDescriptor *)tx_bd_base;
-	buffer_desc->addr = 0;
-	buffer_desc->status.val = GMAC_TX_SET_USED | GMAC_TX_SET_WRAP;
-
-	GMAC_SetTxQueue(pHw, (uint32_t)buffer_desc, 1);
-	GMAC_SetTxQueue(pHw, (uint32_t)buffer_desc, 2);
-
-	/* Allocate memory space for buffer descriptor list */
-	tx_bd_base = rtems_cache_coherent_allocate(
-		sc->amount_tx_buf * sizeof(sGmacTxDescriptor),
-		GMAC_DESCRIPTOR_ALIGNMENT, 0);
-	assert(tx_bd_base != NULL);
-	buffer_desc = (sGmacTxDescriptor *)tx_bd_base;
-
-	/* Create descriptor list and mark as empty */
-	for (bd_number = 0; bd_number < sc->amount_tx_buf; bd_number++) {
-		buffer_desc->addr = 0;
-		buffer_desc->status.val = GMAC_TX_SET_USED;
-		if (bd_number == (sc->amount_tx_buf - 1)) {
-			buffer_desc->status.bm.bWrap = 1;
-		} else {
-			buffer_desc++;
+		error = if_atsam_tx_enqueue(sc, ifp, m);
+		if (error != 0) {
+			m_freem(m);
+			if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
 		}
 	}
-	buffer_desc = (sGmacTxDescriptor *)tx_bd_base;
 
-	/* Write Buffer Queue Base Address Register */
-	GMAC_SetTxQueue(pHw, (uint32_t)buffer_desc, 0);
-
-	/* Enable Transmission of data */
-	GMAC_TransmitEnable(pHw, 1);
-
-	/* Set variables in context */
-	sc->tx_bd_base = tx_bd_base;
-
-	while (true) {
-		/* Wait for events */
-		if_atsam_event_receive(sc,
-		    ATSAMV7_ETH_START_TRANSMIT_EVENT |
-		    ATSAMV7_ETH_TX_EVENT_INTERRUPT);
-		//printf("TX Transmit Event received\n");
-
-		/*
-		 * Send packets till queue is empty
-		 */
-		while (true) {
-			/*
-			 * Get the mbuf chain to transmit
-			 */
-			if_atsam_tx_bd_cleanup(sc);
-			IF_DEQUEUE(&ifp->if_snd, m);
-			if (!m) {
-				ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
-				break;
-			}
-			success = if_atsam_send_packet(sc, m);
-			if (!success){
-				break;
-			}
-		}
-	}
+	IF_ATSAM_UNLOCK(sc);
+	return (error);
 }
-
-
-/*
- * Send packet (caller provides header).
- */
-static void if_atsam_enet_start(struct ifnet *ifp)
-{
-	if_atsam_softc *sc = (if_atsam_softc *)ifp->if_softc;
-
-	ifp->if_drv_flags |= IFF_DRV_OACTIVE;
-	if_atsam_event_send(sc->tx_daemon_tid,
-	    ATSAMV7_ETH_START_TRANSMIT_EVENT);
-}
-
 
 static uint8_t if_atsam_get_gmac_linkspeed_from_media(uint32_t media_subtype)
 {
@@ -959,13 +866,53 @@ if_atsam_tick(void *context)
 	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
 }
 
+static void
+if_atsam_setup_tx(struct if_atsam_softc *sc)
+{
+	sGmacTxDescriptor *base;
+	struct if_atsam_tx_bds *tx;
+	size_t i;
+	Gmac *pHw;
+
+	pHw = sc->Gmac_inst.gGmacd.pHw;
+	GMAC_TransmitEnable(pHw, 0);
+
+	/* Allocate memory space for priority queue descriptor list */
+	base = rtems_cache_coherent_allocate(sizeof(base),
+	    GMAC_DESCRIPTOR_ALIGNMENT, 0);
+	assert(base != NULL);
+
+	base->addr = 0;
+	base->status.val = GMAC_TX_USED_BIT | GMAC_TX_WRAP_BIT;
+
+	GMAC_SetTxQueue(pHw, (uint32_t)base, 1);
+	GMAC_SetTxQueue(pHw, (uint32_t)base, 2);
+
+	/* Allocate memory space for buffer descriptor list */
+	tx = rtems_cache_coherent_allocate(sizeof(*sc->tx),
+	    GMAC_DESCRIPTOR_ALIGNMENT, 0);
+	assert(tx != NULL);
+
+	/* Set variables in context */
+	sc->tx = tx;
+
+	/* Create descriptor list and mark as empty */
+	for (i = 0; i < TX_DESC_COUNT; ++i) {
+		tx->bds[i].addr = 0;
+		tx->bds[i].status.val = GMAC_TX_USED_BIT | TX_DESC_WRAP(i);
+	}
+
+	/* Write Buffer Queue Base Address Register */
+	GMAC_SetTxQueue(pHw, (uint32_t)&tx->bds[0], 0);
+
+	/* Enable Transmission of data */
+	GMAC_TransmitEnable(pHw, 1);
+}
 
 static void
 if_atsam_init(if_atsam_softc *sc)
 {
 	rtems_status_code status;
-
-	struct ifnet *ifp = sc->ifp;
 	uint32_t dmac_cfg = 0;
 
 	sc->interrupt_number = GMAC_IRQn;
@@ -1001,9 +948,7 @@ if_atsam_init(if_atsam_softc *sc)
 	 * Allocate mbuf pointers
 	 */
 	sc->rx_mbuf = malloc(sc->amount_rx_buf * sizeof *sc->rx_mbuf,
-		M_TEMP, M_NOWAIT);
-	sc->tx_mbuf = malloc(sc->amount_tx_buf * sizeof *sc->tx_mbuf,
-		M_TEMP, M_NOWAIT);
+		M_TEMP, M_WAITOK | M_ZERO);
 
 	/* Install interrupt handler */
 	status = rtems_interrupt_handler_install(sc->interrupt_number,
@@ -1018,10 +963,10 @@ if_atsam_init(if_atsam_softc *sc)
 	 */
 	sc->rx_daemon_tid = rtems_bsdnet_newproc("SCrx", 4096,
 		if_atsam_rx_daemon, sc);
-	sc->tx_daemon_tid = rtems_bsdnet_newproc("SCtx", 4096,
-		if_atsam_tx_daemon, sc);
 
 	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
+
+	if_atsam_setup_tx(sc);
 }
 
 static int
@@ -1221,9 +1166,6 @@ if_atsam_add_sysctls(device_t dev)
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_interrupts",
 	    CTLFLAG_RD, &sc->stats.rx_interrupts, 0,
 	    "Rx interrupts");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_complete_int",
-	    CTLFLAG_RD, &sc->stats.tx_complete_int, 0,
-	    "Tx complete interrupts");
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_tur_errors",
 	    CTLFLAG_RD, &sc->stats.tx_tur_errors, 0,
 	    "Error Tur Tx interrupts");
@@ -1236,9 +1178,6 @@ if_atsam_add_sysctls(device_t dev)
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_hresp_errors",
 	    CTLFLAG_RD, &sc->stats.tx_hresp_errors, 0,
 	    "Error Hresp Tx interrupts");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "tx_interrupts",
-	    CTLFLAG_RD, &sc->stats.tx_interrupts, 0,
-	    "Tx interrupts");
 
 	tree = SYSCTL_ADD_NODE(ctx, statsnode, OID_AUTO, "hw", CTLFLAG_RD,
 			       NULL, "if_atsam hardware statistics");
@@ -1479,11 +1418,6 @@ static int if_atsam_driver_attach(device_t dev)
 	memcpy(sc->GMacAddress, eaddr, ETHER_ADDR_LEN);
 
 	sc->amount_rx_buf = RXBUF_COUNT;
-	sc->amount_tx_buf = TXBUF_COUNT;
-
-	sc->tx_ring.tx_bd_used = 0;
-	sc->tx_ring.tx_bd_free = 0;
-	sc->tx_ring.length = sc->amount_tx_buf;
 
 	/* Set Initial Link Speed */
 	sc->link_speed = GMAC_SPEED_100M;
@@ -1529,16 +1463,18 @@ static int if_atsam_driver_attach(device_t dev)
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
 	ifp->if_init = if_atsam_start;
 	ifp->if_ioctl = if_atsam_ioctl;
-	ifp->if_start = if_atsam_enet_start;
+	ifp->if_transmit = if_atsam_transmit;
+	ifp->if_qflush = if_qflush;
 	ifp->if_flags = IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX;
 	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
 	    IFCAP_VLAN_HWCSUM;
 	ifp->if_capenable = ifp->if_capabilities;
 	ifp->if_hwassist = CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP |
 	    CSUM_IP6_UDP | CSUM_IP6_TCP;
-	IFQ_SET_MAXLEN(&ifp->if_snd, TXBUF_COUNT - 1);
-	ifp->if_snd.ifq_drv_maxlen = TXBUF_COUNT - 1;
+	IFQ_SET_MAXLEN(&ifp->if_snd, TX_DESC_COUNT - 1);
+	ifp->if_snd.ifq_drv_maxlen = TX_DESC_COUNT - 1;
 	IFQ_SET_READY(&ifp->if_snd);
+	ifp->if_hdrlen = sizeof(struct ether_vlan_header);
 
 	/*
 	 * Attach the interface

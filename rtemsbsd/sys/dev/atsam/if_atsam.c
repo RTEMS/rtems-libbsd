@@ -95,25 +95,25 @@
 /** RX Defines */
 #define GMAC_RX_BUFFER_SIZE			1536
 #define GMAC_RX_BUF_DESC_ADDR_MASK		0xFFFFFFFC
-#define GMAC_RX_SET_OFFSET			(1u << 15)
-#define GMAC_RX_SET_USED_WRAP			((1u << 1) | (1u << 0))
-#define GMAC_RX_SET_WRAP			(1u << 1)
-#define GMAC_RX_SET_USED			(1u << 0)
 
 #define GMAC_DESCRIPTOR_ALIGNMENT		8
 
 /** Events */
 #define ATSAMV7_ETH_RX_EVENT_INTERRUPT		RTEMS_EVENT_1
 
-#define ATSAMV7_ETH_RX_DATA_OFFSET		2
-
-#define WATCHDOG_TIMEOUT			5
-
 /* FIXME: Make these configurable */
 #define MDIO_RETRIES 10
 #define MDIO_PHY MII_PHY_ANY
-#define RXBUF_COUNT 8
 #define IGNORE_RX_ERR false
+
+#define RX_DESC_LOG2 3
+#define RX_DESC_COUNT (1U << RX_DESC_LOG2)
+#define RX_DESC_WRAP(idx) \
+  ((((idx) + 1) & RX_DESC_COUNT) >> (RX_DESC_LOG2 - 1))
+RTEMS_STATIC_ASSERT(RX_DESC_WRAP(RX_DESC_COUNT - 1) ==
+    GMAC_RX_WRAP_BIT, rx_desc_wrap);
+RTEMS_STATIC_ASSERT(RX_DESC_WRAP(RX_DESC_COUNT - 2) ==
+    0, rx_desc_no_wrap);
 
 #define TX_DESC_LOG2 6
 #define TX_DESC_COUNT (1U << TX_DESC_LOG2)
@@ -137,6 +137,10 @@ struct if_atsam_tx_bds {
 	volatile sGmacTxDescriptor bds[TX_DESC_COUNT];
 };
 
+struct if_atsam_rx_bds {
+	volatile sGmacRxDescriptor bds[RX_DESC_COUNT];
+};
+
 /*
  * Per-device data
  */
@@ -152,12 +156,11 @@ typedef struct if_atsam_softc {
 	size_t tx_idx_tail;
 	struct if_atsam_tx_bds *tx;
 	struct mbuf *tx_mbufs[TX_DESC_COUNT];
+	struct if_atsam_rx_bds *rx;
+	struct mbuf *rx_mbufs[RX_DESC_COUNT];
 	uint8_t GMacAddress[6];
 	rtems_id rx_daemon_tid;
 	rtems_vector_number interrupt_number;
-	struct mbuf **rx_mbuf;
-	size_t rx_bd_fill_idx;
-	size_t amount_rx_buf;
 	struct callout tick_ch;
 
 	/*
@@ -241,27 +244,6 @@ static void if_atsam_poll_hw_stats(struct if_atsam_softc *sc);
 #define IF_ATSAM_LOCK(sc) mtx_lock(&(sc)->mtx)
 
 #define IF_ATSAM_UNLOCK(sc) mtx_unlock(&(sc)->mtx)
-
-static void if_atsam_event_send(rtems_id task, rtems_event_set event)
-{
-	rtems_event_send(task, event);
-}
-
-
-static void if_atsam_event_receive(if_atsam_softc *sc, rtems_event_set in)
-{
-	rtems_event_set out;
-
-	IF_ATSAM_UNLOCK(sc);
-	rtems_event_receive(
-	    in,
-	    RTEMS_EVENT_ANY | RTEMS_WAIT,
-	    RTEMS_NO_TIMEOUT,
-	    &out
-	);
-	IF_ATSAM_LOCK(sc);
-}
-
 
 static struct mbuf *if_atsam_new_mbuf(struct ifnet *ifp)
 {
@@ -425,17 +407,17 @@ static void if_atsam_interrupt_handler(void *arg)
 		/* Erase the interrupts for RX completion and errors */
 		pHw->GMAC_IDR = GMAC_IER_RCOMP | GMAC_IER_ROVR;
 
-		(void)if_atsam_event_send(sc->rx_daemon_tid,
+		(void)rtems_event_send(sc->rx_daemon_tid,
 		    ATSAMV7_ETH_RX_EVENT_INTERRUPT);
 	}
 }
 
-static void rx_update_mbuf(struct mbuf *m,
-    volatile sGmacRxDescriptor *buffer_desc)
+static void
+if_atsam_rx_update_mbuf(struct mbuf *m, uint32_t status)
 {
 	int frame_len;
 
-	frame_len = (int) (buffer_desc->status.bm.len);
+	frame_len = (int)(status & GMAC_LENGTH_FRAME);
 
 	m->m_data = mtod(m, char*)+ETHER_ALIGN;
 	m->m_len = frame_len;
@@ -443,7 +425,7 @@ static void rx_update_mbuf(struct mbuf *m,
 
 	/* check checksum offload result */
 	m->m_pkthdr.csum_flags = 0;
-	switch (buffer_desc->status.bm.typeIDMatchOrCksumResult) {
+	switch ((status >> 22) & 0x3) {
 	case GMAC_RXDESC_ST_CKSUM_RESULT_IP_CHECKED:
 		m->m_pkthdr.csum_flags = CSUM_IP_CHECKED | CSUM_IP_VALID;
 		m->m_pkthdr.csum_data = 0xffff;
@@ -464,12 +446,12 @@ static void if_atsam_rx_daemon(void *arg)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
 	struct ifnet *ifp = sc->ifp;
-	void *rx_bd_base;
-	struct mbuf *m;
-	struct mbuf *n;
-	volatile sGmacRxDescriptor *buffer_desc;
-	uint32_t tmp_rx_bd_address;
+	volatile sGmacRxDescriptor *base;
+	struct if_atsam_rx_bds *rx;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	size_t idx;
+	struct mbuf **mbufs;
+	struct mbuf *m;
 
 	IF_ATSAM_LOCK(sc);
 
@@ -480,47 +462,37 @@ static void if_atsam_rx_daemon(void *arg)
 	}
 
 	/* Allocate memory space for priority queue descriptor list */
-	rx_bd_base = rtems_cache_coherent_allocate(sizeof(sGmacRxDescriptor),
+	base = rtems_cache_coherent_allocate(sizeof(*base),
 		GMAC_DESCRIPTOR_ALIGNMENT, 0);
-	assert(rx_bd_base != NULL);
+	assert(base != NULL);
 
-	buffer_desc = (sGmacRxDescriptor *)rx_bd_base;
-	buffer_desc->addr.val = GMAC_RX_SET_USED_WRAP;
-	buffer_desc->status.val = 0;
+	base->addr.val = GMAC_RX_OWNERSHIP_BIT | GMAC_RX_WRAP_BIT;
+	base->status.val = 0;
 
-	GMAC_SetRxQueue(pHw, (uint32_t)buffer_desc, 1);
-	GMAC_SetRxQueue(pHw, (uint32_t)buffer_desc, 2);
+	GMAC_SetRxQueue(pHw, (uint32_t)base, 1);
+	GMAC_SetRxQueue(pHw, (uint32_t)base, 2);
 
 	/* Allocate memory space for buffer descriptor list */
-	rx_bd_base = rtems_cache_coherent_allocate(
-		sc->amount_rx_buf * sizeof(sGmacRxDescriptor),
+	rx = rtems_cache_coherent_allocate(sizeof(*rx),
 		GMAC_DESCRIPTOR_ALIGNMENT, 0);
-	assert(rx_bd_base != NULL);
-	buffer_desc = (sGmacRxDescriptor *)rx_bd_base;
+	assert(rx != NULL);
+	sc->rx = rx;
+	mbufs = &sc->rx_mbufs[0];
 
 	/* Create descriptor list and mark as empty */
-	for (sc->rx_bd_fill_idx = 0; sc->rx_bd_fill_idx < sc->amount_rx_buf;
-	    ++sc->rx_bd_fill_idx) {
+	for (idx = 0; idx < RX_DESC_COUNT; ++idx) {
 		m = if_atsam_new_mbuf(ifp);
 		assert(m != NULL);
-		sc->rx_mbuf[sc->rx_bd_fill_idx] = m;
-		buffer_desc->addr.val = ((uint32_t)m->m_data) &
-		    GMAC_RX_BUF_DESC_ADDR_MASK;
-		buffer_desc->status.val = 0;
-		if (sc->rx_bd_fill_idx == (sc->amount_rx_buf - 1)) {
-			buffer_desc->addr.bm.bWrap = 1;
-		} else {
-			buffer_desc++;
-		}
+		mbufs[idx] = m;
+		rx->bds[idx].addr.val = mtod(m, uint32_t) | RX_DESC_WRAP(idx);
 	}
-	buffer_desc = (sGmacRxDescriptor *)rx_bd_base;
 
 	/* Set 2 Byte Receive Buffer Offset */
-	pHw->GMAC_NCFGR |= GMAC_RX_SET_OFFSET;
+	pHw->GMAC_NCFGR |= GMAC_NCFGR_RXBUFO(2);
 
 	/* Write Buffer Queue Base Address Register */
 	GMAC_ReceiveEnable(pHw, 0);
-	GMAC_SetRxQueue(pHw, (uint32_t)buffer_desc, 0);
+	GMAC_SetRxQueue(pHw, (uint32_t)&rx->bds[0], 0);
 
 	/* Set address for address matching */
 	GMAC_SetAddress(pHw, 0, sc->GMacAddress);
@@ -528,58 +500,50 @@ static void if_atsam_rx_daemon(void *arg)
 	/* Enable Receiving of data */
 	GMAC_ReceiveEnable(pHw, 1);
 
-	/* Setup the interrupts for RX completion and errors */
-	GMAC_EnableIt(pHw, GMAC_IER_RCOMP | GMAC_IER_ROVR, 0);
+	IF_ATSAM_UNLOCK(sc);
 
-	sc->rx_bd_fill_idx = 0;
+	idx = 0;
 
 	while (true) {
-		/* Wait for events */
-		if_atsam_event_receive(sc, ATSAMV7_ETH_RX_EVENT_INTERRUPT);
+		rtems_event_set out;
 
-		/*
-		 * Check for all packets with a set ownership bit
-		 */
-		while (buffer_desc->addr.bm.bOwnership == 1) {
-			if (buffer_desc->status.bm.bEof == 1) {
-				m = sc->rx_mbuf[sc->rx_bd_fill_idx];
+		/* Enable RX interrupts */
+		pHw->GMAC_IER = GMAC_IER_RCOMP | GMAC_IER_ROVR;
 
-				/* New mbuf for desc */
+		(void) rtems_event_receive(ATSAMV7_ETH_RX_EVENT_INTERRUPT,
+		    RTEMS_EVENT_ALL | RTEMS_WAIT, RTEMS_NO_TIMEOUT, &out);
+
+		while (true) {
+			uint32_t addr;
+			uint32_t status;
+
+			addr = rx->bds[idx].addr.val;
+			if ((addr & GMAC_RX_OWNERSHIP_BIT) == 0) {
+				break;
+			}
+
+			status = rx->bds[idx].status.val;
+			m = mbufs[idx];
+
+			if (__predict_true((status & GMAC_RX_EOF_BIT) != 0)) {
+				struct mbuf *n;
+
 				n = if_atsam_new_mbuf(ifp);
 				if (n != NULL) {
-					rx_update_mbuf(m, buffer_desc);
-
-					IF_ATSAM_UNLOCK(sc);
-					sc->ifp->if_input(ifp, m);
-					IF_ATSAM_LOCK(sc);
+					if_atsam_rx_update_mbuf(m, status);
+					(*ifp->if_input)(ifp, m);
 					m = n;
 				}
-				sc->rx_mbuf[sc->rx_bd_fill_idx] = m;
-				tmp_rx_bd_address = (uint32_t)m->m_data &
-				    GMAC_RX_BUF_DESC_ADDR_MASK;
-
-				/* Switch pointer to next buffer descriptor */
-				if (sc->rx_bd_fill_idx ==
-				    (sc->amount_rx_buf - 1)) {
-					tmp_rx_bd_address |= GMAC_RX_SET_WRAP;
-					sc->rx_bd_fill_idx = 0;
-				} else {
-					++sc->rx_bd_fill_idx;
-				}
-
-				/*
-				 * Give ownership to GMAC for further processing
-				 */
-				tmp_rx_bd_address &= ~GMAC_RX_SET_USED;
-				_ARM_Data_synchronization_barrier();
-				buffer_desc->addr.val = tmp_rx_bd_address;
-
-				buffer_desc = (sGmacRxDescriptor *)rx_bd_base
-				    + sc->rx_bd_fill_idx;
+			} else {
+				if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
 			}
+
+			mbufs[idx] = m;
+			rx->bds[idx].addr.val = mtod(m, uint32_t) |
+			    RX_DESC_WRAP(idx);
+
+			idx = (idx + 1) % RX_DESC_COUNT;
 		}
-		/* Setup the interrupts for RX completion and errors */
-		GMAC_EnableIt(pHw, GMAC_IER_RCOMP | GMAC_IER_ROVR, 0);
 	}
 }
 
@@ -943,12 +907,6 @@ if_atsam_init(if_atsam_softc *sc)
 	GMAC_TransmitEnable(sc->Gmac_inst.gGmacd.pHw, 0);
 
 	GMAC_StatisticsWriteEnable(sc->Gmac_inst.gGmacd.pHw, 1);
-
-	/*
-	 * Allocate mbuf pointers
-	 */
-	sc->rx_mbuf = malloc(sc->amount_rx_buf * sizeof *sc->rx_mbuf,
-		M_TEMP, M_WAITOK | M_ZERO);
 
 	/* Install interrupt handler */
 	status = rtems_interrupt_handler_install(sc->interrupt_number,
@@ -1416,8 +1374,6 @@ static int if_atsam_driver_attach(device_t dev)
 	sc->Gmac_inst.retries = MDIO_RETRIES;
 
 	memcpy(sc->GMacAddress, eaddr, ETHER_ADDR_LEN);
-
-	sc->amount_rx_buf = RXBUF_COUNT;
 
 	/* Set Initial Link Speed */
 	sc->link_speed = GMAC_SPEED_100M;

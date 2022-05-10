@@ -685,6 +685,18 @@ if_atsam_transmit(struct ifnet *ifp, struct mbuf *m)
 	struct if_atsam_softc *sc;
 	int error;
 
+	if (__predict_false((m->m_flags & M_VLANTAG) != 0)) {
+		struct mbuf *n;
+
+		n = ether_vlanencap(m, m->m_pkthdr.ether_vtag);
+		if (n == NULL) {
+			m_freem(m);
+			return (ENOBUFS);
+		}
+
+		m = n;
+	}
+
 	sc = ifp->if_softc;
 	IF_ATSAM_LOCK(sc);
 
@@ -1423,7 +1435,7 @@ static int if_atsam_driver_attach(device_t dev)
 	ifp->if_qflush = if_qflush;
 	ifp->if_flags = IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX;
 	ifp->if_capabilities |= IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6 |
-	    IFCAP_VLAN_HWCSUM;
+	    IFCAP_VLAN_HWCSUM | IFCAP_VLAN_HWTAGGING;
 	ifp->if_capenable = ifp->if_capabilities;
 	ifp->if_hwassist = CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP |
 	    CSUM_IP6_UDP | CSUM_IP6_TCP;

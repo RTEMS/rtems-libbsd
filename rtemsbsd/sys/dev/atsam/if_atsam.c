@@ -439,10 +439,8 @@ if_atsam_rx_update_mbuf(struct mbuf *m, uint32_t status)
 	}
 }
 
-/*
- * Receive daemon
- */
-static void if_atsam_rx_daemon(void *arg)
+static void
+if_atsam_rx_daemon(rtems_task_argument arg)
 {
 	if_atsam_softc *sc = (if_atsam_softc *)arg;
 	struct ifnet *ifp = sc->ifp;
@@ -931,8 +929,15 @@ if_atsam_init(if_atsam_softc *sc)
 	/*
 	 * Start driver tasks
 	 */
-	sc->rx_daemon_tid = rtems_bsdnet_newproc("SCrx", 4096,
-		if_atsam_rx_daemon, sc);
+
+	status = rtems_task_create(rtems_build_name('S', 'C', 'r', 'x'),
+	    rtems_bsd_get_task_priority(device_get_name(sc->dev)), 4096,
+	    RTEMS_DEFAULT_MODES, RTEMS_DEFAULT_MODES, &sc->rx_daemon_tid);
+	assert(status == RTEMS_SUCCESSFUL);
+
+	status = rtems_task_start(sc->rx_daemon_tid, if_atsam_rx_daemon,
+	    (rtems_task_argument)sc);
+	assert(status == RTEMS_SUCCESSFUL);
 
 	callout_reset(&sc->tick_ch, hz, if_atsam_tick, sc);
 

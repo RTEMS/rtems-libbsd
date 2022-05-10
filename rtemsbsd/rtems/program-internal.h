@@ -60,6 +60,12 @@ struct program_allocmem_item {
 	LIST_ENTRY(program_allocmem_item) entries;
 };
 
+struct program_destructor {
+	void	(*destructor)(void *);
+	void	*arg;
+	LIST_ENTRY(program_destructor) link;
+};
+
 struct rtems_bsd_program_control {
 	void *context;
 	int exit_code;
@@ -68,6 +74,7 @@ struct rtems_bsd_program_control {
 	LIST_HEAD(, program_fd_item) open_fd;
 	LIST_HEAD(, program_file_item) open_file;
 	LIST_HEAD(, program_allocmem_item) allocated_mem;
+	LIST_HEAD(, program_destructor) destructors;
 };
 
 struct rtems_bsd_program_control *rtems_bsd_program_get_control_or_null(void);

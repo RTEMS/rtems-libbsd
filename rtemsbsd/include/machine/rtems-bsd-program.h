@@ -60,6 +60,12 @@ rtems_bsd_program_call_main_with_data_restore(const char *name,
     int (*main)(int, char **), int argc, char **argv,
     void *data_buf, const size_t data_size);
 
+void *
+rtems_bsd_program_add_destructor(void (*destructor)(void *), void *arg);
+
+void
+rtems_bsd_program_remove_destructor(void *cookie, bool call);
+
 void
 rtems_bsd_program_exit(int exit_code) __dead2;
 

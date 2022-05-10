@@ -224,6 +224,18 @@ allocmem_free_all(struct rtems_bsd_program_control *prog_ctrl)
 	}
 }
 
+static void
+call_destructors(struct rtems_bsd_program_control *prog_ctrl)
+{
+	struct program_destructor *node;
+	struct program_destructor *tmp;
+
+	LIST_FOREACH_SAFE(node, &prog_ctrl->destructors, link, tmp) {
+		(*node->destructor)(node->arg);
+		free(node);
+	}
+}
+
 int
 rtems_bsd_program_call(const char *name, int (*prog)(void *), void *context)
 {
@@ -251,6 +263,7 @@ rtems_bsd_program_call(const char *name, int (*prog)(void *), void *context)
 	LIST_INIT(&prog_ctrl->open_fd);
 	LIST_INIT(&prog_ctrl->open_file);
 	LIST_INIT(&prog_ctrl->allocated_mem);
+	LIST_INIT(&prog_ctrl->destructors);
 
 	if (setjmp(prog_ctrl->return_context) == 0) {
 		exit_code = (*prog)(context);
@@ -262,8 +275,46 @@ rtems_bsd_program_call(const char *name, int (*prog)(void *), void *context)
 	fd_close_all(prog_ctrl);
 	file_close_all(prog_ctrl);
 	allocmem_free_all(prog_ctrl);
+	call_destructors(prog_ctrl);
 	free(prog_ctrl);
 	return (exit_code);
+}
+
+void *
+rtems_bsd_program_add_destructor(void (*destructor)(void *), void *arg)
+{
+	struct rtems_bsd_program_control *prog_ctrl;
+	struct program_destructor *node;
+
+	prog_ctrl = rtems_bsd_program_get_control_or_null();
+	if (prog_ctrl == NULL) {
+		return (NULL);
+	}
+
+	node = malloc(sizeof(*node));
+	if (node == NULL) {
+		return (NULL);
+	}
+
+	node->destructor = destructor;
+	node->arg = arg;
+	LIST_INSERT_HEAD(&prog_ctrl->destructors, node, link);
+	return (node);
+}
+
+void
+rtems_bsd_program_remove_destructor(void *cookie, bool call)
+{
+	struct program_destructor *node;
+
+	node = cookie;
+	LIST_REMOVE(node, link);
+
+	if (call) {
+		(*node->destructor)(node->arg);
+	}
+
+	free(node);
 }
 
 void

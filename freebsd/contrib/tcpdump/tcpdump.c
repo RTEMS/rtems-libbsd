@@ -139,6 +139,7 @@ The Regents of the University of California.  All rights reserved.\n";
 #include <sys/sysctl.h>
 #include <machine/rtems-bsd-commands.h>
 #include <assert.h>
+#include <sched.h>
 #include <rtems.h>
 #include <rtems/linkersets.h>
 #define setpriority(a, b, c)
@@ -1224,6 +1225,8 @@ pcap_loop_monitor(rtems_task_argument arg)
 			pcap_breakloop(pd);
 			break;
 		}
+
+		sched_yield();
 	}
 
 	rtems_task_delete(RTEMS_SELF);

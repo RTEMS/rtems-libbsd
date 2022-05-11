@@ -1229,8 +1229,7 @@ pcap_loop_monitor(rtems_task_argument arg)
 		sched_yield();
 	}
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 static int

@@ -1351,10 +1351,17 @@ get_socket_domain(void)
 	return (sdom);
 }
 
+#ifdef __rtems__
+static int pfctl_s = -1;
+#endif /* __rtems__ */
 int
 get_query_socket(void)
 {
+#ifndef __rtems__
 	static int s = -1;
+#else /* __rtems__ */
+#define	s pfctl_s
+#endif /* __rtems__ */
 
 	if (s == -1) {
 		if ((s = socket(get_socket_domain(), SOCK_DGRAM, 0)) == -1)
@@ -1362,6 +1369,9 @@ get_query_socket(void)
 	}
 
 	return (s);
+#ifdef __rtems__
+#undef s
+#endif /* __rtems__ */
 }
 
 /*

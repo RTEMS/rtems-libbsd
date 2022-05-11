@@ -1292,6 +1292,13 @@ pcap_loop_wrapper(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
 }
 
 #define	pcap_loop(pd, cnt, cb, ud) pcap_loop_wrapper(pd, cnt, cb, ud)
+
+static void
+destroy_pcap_dumper(void *arg)
+{
+
+	pcap_dump_close(arg);
+}
 #endif /* __rtems__ */
 int
 #ifndef __rtems__
@@ -2148,6 +2155,12 @@ main(int argc, char **argv)
 		if (Uflag)
 			pcap_dump_flush(p);
 #endif
+#ifdef __rtems__
+		if (rtems_bsd_program_add_destructor(destroy_pcap_dumper, p) ==
+		    NULL) {
+			error("cannot add destructor");
+		}
+#endif /* __rtems__ */
 	} else {
 		dlt = pcap_datalink(pd);
 		ndo->ndo_if_printer = get_if_printer(ndo, dlt);

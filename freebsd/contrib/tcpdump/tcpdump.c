@@ -1255,8 +1255,8 @@ pcap_loop_monitor(rtems_task_argument arg)
 	rtems_task_exit();
 }
 
-static int
-pcap_loop_wrapper(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
+static void
+pcap_create_loop_monitor(pcap_t *pd)
 {
 	rtems_status_code sc;
 	rtems_task_priority priority;
@@ -1271,9 +1271,8 @@ pcap_loop_wrapper(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
 	    RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
 	    RTEMS_DEFAULT_ATTRIBUTES, &id);
 	if (sc != RTEMS_SUCCESSFUL) {
-		fprintf(stderr, "tcpdump: cannot create helper thread: %s\n",
+		error("cannot create pcap loop monitor thread: %s\n",
 		    rtems_status_text(sc));
-		return (-1);
 	}
 
 	fprintf(stdout, "tcpdump: press <ENTER> or 'q' or 'Q' to quit\n");
@@ -1287,11 +1286,7 @@ pcap_loop_wrapper(pcap_t *pd, int cnt, pcap_handler cb, u_char *ud)
 
 	sc = rtems_event_transient_receive(RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 	assert(sc == RTEMS_SUCCESSFUL);
-
-	return (pcap_loop(pd, cnt, cb, ud));
 }
-
-#define	pcap_loop(pd, cnt, cb, ud) pcap_loop_wrapper(pd, cnt, cb, ud)
 
 static void
 destroy_pcap_dumper(void *arg)
@@ -2234,6 +2229,11 @@ main(int argc, char **argv)
 #endif	/* HAVE_CAPSICUM */
 
 	do {
+#ifdef __rtems__
+		if (RFileName == NULL) {
+			pcap_create_loop_monitor(pd);
+		}
+#endif /* __rtems__ */
 		status = pcap_loop(pd, cnt, callback, pcap_userdata);
 		if (WFileName == NULL) {
 			/*

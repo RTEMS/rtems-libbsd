@@ -4,8 +4,6 @@
 /* pfctl_altq.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char r2sbuf[][16]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int idx);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct gen_sc lssc);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct gen_sc rtsc);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct hsearch_data if_map);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct hsearch_data qid_map);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct hsearch_data queue_map);

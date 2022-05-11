@@ -35,6 +35,7 @@
 #define parseport _bsd_pfctl_parseport
 #define pfctl_cmdline_symset _bsd_pfctl_pfctl_cmdline_symset
 #define pfctl_load_anchors _bsd_pfctl_pfctl_load_anchors
+#define pfctl_s _bsd_pfctl_s
 #define pfctlychar _bsd_pfctl_pfctlychar
 #define pfctlydebug _bsd_pfctl_pfctlydebug
 #define pfctlyerrflag _bsd_pfctl_pfctlyerrflag

@@ -167,6 +167,7 @@ test_main(void)
 {
 	rtems_status_code sc;
 	int rv;
+	rtems_shell_env_t env;
 
 	prepare_files();
 
@@ -176,9 +177,7 @@ test_main(void)
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
 
-	rtems_shell_env_t env;
-
-	memset(&env, 0, sizeof(env));
+	rtems_shell_dup_current_env(&env);
 	rtems_shell_main_loop( &env );
 
 	exit(0);

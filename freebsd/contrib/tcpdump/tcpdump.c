@@ -1220,26 +1220,22 @@ typedef struct {
 	FILE *in;
 	pcap_t *pd;
 	rtems_id master;
+	bool terminate;
 } pcap_loop_context;
 
 static void
 pcap_loop_monitor(rtems_task_argument arg)
 {
-	pcap_loop_context *ctx;
+	const pcap_loop_context *ctx;
 	FILE *in;
 	pcap_t *pd;
-	rtems_id master;
 	rtems_status_code sc;
 
-	ctx = (pcap_loop_context *)arg;
+	ctx = (const pcap_loop_context *)arg;
 	in = ctx->in;
 	pd = ctx->pd;
-	master = ctx->master;
 
-	sc = rtems_event_transient_send(master);
-	assert(sc == RTEMS_SUCCESSFUL);
-
-	while (true) {
+	while (!ctx->terminate) {
 		int c;
 
 		c = fgetc(in);
@@ -1252,16 +1248,18 @@ pcap_loop_monitor(rtems_task_argument arg)
 		sched_yield();
 	}
 
+	sc = rtems_event_transient_send(ctx->master);
+	assert(sc == RTEMS_SUCCESSFUL);
+
 	rtems_task_exit();
 }
 
 static void
-pcap_create_loop_monitor(pcap_t *pd)
+pcap_create_loop_monitor(pcap_loop_context *ctx, pcap_t *pd)
 {
 	rtems_status_code sc;
 	rtems_task_priority priority;
 	rtems_id id;
-	pcap_loop_context ctx;
 
 	sc = rtems_task_set_priority(RTEMS_SELF, RTEMS_CURRENT_PRIORITY,
 	    &priority);
@@ -1277,12 +1275,21 @@ pcap_create_loop_monitor(pcap_t *pd)
 
 	fprintf(stdout, "tcpdump: press <ENTER> or 'q' or 'Q' to quit\n");
 
-	ctx.in = stdin;
-	ctx.pd = pd;
-	ctx.master = rtems_task_self();
+	ctx->in = stdin;
+	ctx->pd = pd;
+	ctx->master = rtems_task_self();
+	ctx->terminate = false;
 	sc = rtems_task_start(id, pcap_loop_monitor,
-	    (rtems_task_argument)&ctx);
+	    (rtems_task_argument)ctx);
 	assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void
+pcap_terminate_loop_monitor(pcap_loop_context *ctx)
+{
+	rtems_status_code sc;
+
+	ctx->terminate = true;
 
 	sc = rtems_event_transient_receive(RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 	assert(sc == RTEMS_SUCCESSFUL);
@@ -2230,11 +2237,18 @@ main(int argc, char **argv)
 
 	do {
 #ifdef __rtems__
+		pcap_loop_context ctx;
+
 		if (RFileName == NULL) {
-			pcap_create_loop_monitor(pd);
+			pcap_create_loop_monitor(&ctx, pd);
 		}
 #endif /* __rtems__ */
 		status = pcap_loop(pd, cnt, callback, pcap_userdata);
+#ifdef __rtems__
+		if (RFileName == NULL) {
+			pcap_terminate_loop_monitor(&ctx);
+		}
+#endif /* __rtems__ */
 		if (WFileName == NULL) {
 			/*
 			 * We're printing packets.  Flush the printed output,

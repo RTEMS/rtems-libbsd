@@ -1046,15 +1046,28 @@ if_atsam_start(void *arg)
 }
 
 static void
-if_atsam_stop(struct if_atsam_softc *sc)
+if_atsam_stop_locked(struct if_atsam_softc *sc)
 {
 	struct ifnet *ifp = sc->ifp;
 	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	size_t i;
 
 	ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 
 	/* Disable TX/RX */
 	pHw->GMAC_NCR &= ~(GMAC_NCR_RXEN | GMAC_NCR_TXEN);
+
+	/* Reinitialize the TX descriptors */
+
+	sc->tx_idx_head = 0;
+	sc->tx_idx_tail = 0;
+
+	for (i = 0; i < TX_DESC_COUNT; ++i) {
+		sc->tx->bds[i].addr = 0;
+		sc->tx->bds[i].status.val = GMAC_TX_USED_BIT | TX_DESC_WRAP(i);
+		m_freem(sc->tx_mbufs[i]);
+		sc->tx_mbufs[i] = NULL;
+	}
 }
 
 
@@ -1345,7 +1358,7 @@ if_atsam_ioctl(struct ifnet *ifp, ioctl_command_t command, caddr_t data)
 			}
 		} else {
 			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
-				if_atsam_stop(sc);
+				if_atsam_stop_locked(sc);
 			}
 		}
 		sc->if_flags = ifp->if_flags;

@@ -169,7 +169,7 @@ static void initialize_vars(void)
 	addr = NULL;
 }
 
-char Usage[] = "\
+static const char Usage[] = "\
 Usage: ttcp -t [-options] host [ < in ]\n\
        ttcp -r [-options > out]\n\
 Common options:\n\
@@ -193,28 +193,23 @@ Options specific to -r:\n\
 	-m ##	delay for specified milliseconds between each write\n\
 ";
 
-char stats[128];
-double nbytes;			/* bytes on net */
-unsigned long numCalls;		/* # of I/O system calls */
-double cput, realt;		/* user, real time (seconds) */
+static char stats[128];
+static double nbytes;			/* bytes on net */
+static unsigned long numCalls;		/* # of I/O system calls */
+static double cput, realt;		/* user, real time (seconds) */
 
-void err();
-void mes();
-void pattern();
-void prep_timer();
-double read_timer();
-int Nread();
-int Nwrite();
-void delay();
-int mread();
-char *outfmt();
+static void err();
+static void mes();
+static void pattern();
+static void prep_timer();
+static double read_timer();
+static int Nread();
+static int Nwrite();
+static void delay();
+static int mread();
+static char *outfmt();
 
-void
-sigpipe()
-{
-}
-
-void millisleep(long msec)
+static void millisleep(long msec)
 {
 #if defined(ENABLE_NANOSLEEP_DELAY)
   struct timespec req;

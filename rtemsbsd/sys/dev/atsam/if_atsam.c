@@ -49,6 +49,7 @@
 #include <sys/bus.h>
 #include <sys/sysctl.h>
 
+#include <net/bpf.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_var.h>
@@ -674,6 +675,7 @@ if_atsam_tx_enqueue(struct if_atsam_softc *sc, struct ifnet *ifp, struct mbuf *m
 	desc->status.val = (desc->status.val & ~GMAC_TX_USED_BIT) | status;
 	_ARM_Data_synchronization_barrier();
 	sc->Gmac_inst.gGmacd.pHw->GMAC_NCR |= GMAC_NCR_TSTART;
+	ETHER_BPF_MTAP(ifp, m);
 	return (0);
 }
 

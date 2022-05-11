@@ -211,8 +211,10 @@ cap_channel_t *capdns;
 static void error(FORMAT_STRING(const char *), ...) NORETURN PRINTFLIKE(1, 2);
 static void warning(FORMAT_STRING(const char *), ...) PRINTFLIKE(1, 2);
 static void exit_tcpdump(int) NORETURN;
+#ifndef __rtems__
 static RETSIGTYPE cleanup(int);
 static RETSIGTYPE child_cleanup(int);
+#endif /* __rtems__ */
 static void print_version(void);
 static void print_usage(void);
 static void show_tstamp_types_and_exit(pcap_t *, const char *device) NORETURN;
@@ -224,6 +226,7 @@ static void show_devices_and_exit (void) NORETURN;
 static void print_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
 static void dump_packet_and_trunc(u_char *, const struct pcap_pkthdr *, const u_char *);
 static void dump_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
+#ifndef __rtems__
 static void droproot(const char *, const char *);
 
 #ifdef SIGNAL_REQ_INFO
@@ -237,6 +240,7 @@ RETSIGTYPE requestinfo(int);
 #elif defined(HAVE_ALARM)
   static void verbose_stats_dump(int sig);
 #endif
+#endif /* __rtems__ */
 
 static void info(int);
 static u_int packets_captured;
@@ -628,6 +632,7 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
+#ifndef __rtems__
 #ifndef _WIN32
 /* Drop root privileges and chroot if necessary */
 static void
@@ -660,7 +665,6 @@ droproot(const char *username, const char *chroot_dir)
 			}
 		}
 #else
-#ifndef __rtems__
 		if (initgroups(pw->pw_name, pw->pw_gid) != 0 ||
 		    setgid(pw->pw_gid) != 0 || setuid(pw->pw_uid) != 0) {
 			fprintf(stderr, "%s: Couldn't change to '%.32s' uid=%lu gid=%lu: %s\n",
@@ -673,7 +677,6 @@ droproot(const char *username, const char *chroot_dir)
 		else {
 			fprintf(stderr, "dropped privs to %s\n", username);
 		}
-#endif /* __rtems__ */
 #endif /* HAVE_LIBCAP_NG */
 	}
 	else {
@@ -695,6 +698,7 @@ droproot(const char *username, const char *chroot_dir)
 
 }
 #endif /* _WIN32 */
+#endif /* __rtems__ */
 
 static int
 getWflagChars(int x)
@@ -1317,15 +1321,19 @@ main(int argc, char **argv)
 	int dlt;
 	const char *dlt_name;
 	struct bpf_program fcode;
+#ifndef __rtems__
 #ifndef _WIN32
 	RETSIGTYPE (*oldhandler)(int);
 #endif
+#endif /* __rtems__ */
 	struct dump_info dumpinfo;
 	u_char *pcap_userdata;
 	char ebuf[PCAP_ERRBUF_SIZE];
 	char VFileLine[PATH_MAX + 1];
+#ifndef __rtems__
 	char *username = NULL;
 	char *chroot_dir = NULL;
+#endif /* __rtems__ */
 	char *ret = NULL;
 	char *end;
 #ifdef HAVE_PCAP_FINDALLDEVS
@@ -1697,9 +1705,11 @@ main(int argc, char **argv)
 			zflag = optarg;
 			break;
 
+#ifndef __rtems__
 		case 'Z':
 			username = optarg;
 			break;
+#endif /* __rtems__ */
 
 		case '#':
 			ndo->ndo_packet_number = 1;
@@ -1996,6 +2006,7 @@ main(int argc, char **argv)
 
 	init_print(ndo, localnet, netmask, timezone_offset);
 
+#ifndef __rtems__
 #ifndef _WIN32
 	(void)setsignal(SIGPIPE, cleanup);
 	(void)setsignal(SIGTERM, cleanup);
@@ -2063,6 +2074,7 @@ main(int argc, char **argv)
 
 	}
 #endif /* _WIN32 */
+#endif /* __rtems__ */
 
 	if (pcap_setfilter(pd, &fcode) < 0)
 		error("%s", pcap_geterr(pd));
@@ -2170,6 +2182,7 @@ main(int argc, char **argv)
 		pcap_userdata = (u_char *)ndo;
 	}
 
+#ifndef __rtems__
 #ifdef SIGNAL_REQ_INFO
 	/*
 	 * We can't get statistics when reading from a file rather
@@ -2194,6 +2207,7 @@ main(int argc, char **argv)
 		alarm(1);
 #endif
 	}
+#endif /* __rtems__ */
 
 	if (RFileName == NULL) {
 		/*
@@ -2367,6 +2381,7 @@ main(int argc, char **argv)
 	exit_tcpdump(status == -1 ? 1 : 0);
 }
 
+#ifndef __rtems__
 /* make a clean exit on interrupts */
 static RETSIGTYPE
 cleanup(int signo _U_)
@@ -2419,6 +2434,7 @@ child_cleanup(int signo _U_)
   wait(NULL);
 }
 #endif /* HAVE_FORK && HAVE_VFORK */
+#endif /* __rtems__ */
 
 static void
 info(register int verbose)
@@ -2779,6 +2795,7 @@ print_packet(u_char *user, const struct pcap_pkthdr *h, const u_char *sp)
 	char Wpcap_version[]="3.1";
 #endif
 
+#ifndef __rtems__
 #ifdef SIGNAL_REQ_INFO
 RETSIGTYPE requestinfo(int signo _U_)
 {
@@ -2807,6 +2824,7 @@ static void verbose_stats_dump(int sig _U_)
 	alarm(1);
 }
 #endif
+#endif /* __rtems__ */
 
 USES_APPLE_DEPRECATED_API
 static void

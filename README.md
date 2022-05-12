@@ -165,6 +165,30 @@ $   -kernel build/arm-rtems5-xilinx_zynq_a9_qemu/selectpollkqueue01.exe
     one time with different tool sets or configurations you can easly move
     between them safe in the knowledge that one build will not infect another.
 
+Branches
+--------
+
+* master - branch intended for the RTEMS master which tracks the FreeBSD master
+  branch.  This branch must be used for libbsd development.  Back ports to the
+  6-freebsd-12 are allowed.
+
+* 6-freebsd-12 - branch intended for RTEMS 6 which tracks the FreeBSD stable/12
+  branch.  This branch is maintained and regular updates from FreeBSD are
+  planned.  It is recommended for production systems.
+
+* 5-freebsd-12 - branch belongs to the RTEMS 5 release. It is based on FreeBSD
+  stable/12 branch. It is recommended for production systems that use RTEMS 5.
+
+* 5 - branch belongs to the RTEMS 5 release. It is based on a FreeBSD
+  development version.  This branch is unmaintained.  Use 5-freebsd-12 for
+  RTEMS 5.
+
+* freebsd-9.3 - branch for some RTEMS version with a FreeBSD 9.3 baseline.
+  This branch is unmaintained.  It is recommended to update to RTEMS 5 or 6.
+
+* 4.11 - branch for the RTEMS 4.11 release series.  This branch is
+  unmaintained.  It is recommended to update to RTEMS 5 or 6.
+
 Updating RTEMS Waf Support
 --------------------------
 

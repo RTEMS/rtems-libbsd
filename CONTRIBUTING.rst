@@ -4,16 +4,16 @@ Guidelines for Developing and Contributing Code
 Introduction
 ============
 
-This guide aims to help developing and contributing code to the libbsd.  One
-goal of the libbsd is to stay in synchronization with FreeBSD.  This is only
+This guide aims to help developing and contributing code to the LibBSD.  One
+goal of the LibBSD is to stay in synchronization with FreeBSD.  This is only
 feasible if certain rules are in place.  Otherwise, managing more than a
 thousand imported source files will become too labour intensive eventually.
 
 What is in the Git Repository
 =============================
 
-The libbsd a self-contained kit with FreeBSD and RTEMS components
-pre-merged. The Waf wscript in libbsd automatically generates the build when
+The LibBSD a self-contained kit with FreeBSD and RTEMS components
+pre-merged. The Waf wscript in LibBSD automatically generates the build when
 you run waf by reading the modules and module's source, header, defines and
 special flags from ``libbsd.py``. This is the same module data used to manage
 the FreeBSD source.
@@ -285,7 +285,7 @@ original FreeBSD code.
   ``rtems_bsd_command_pfctl()`` in `pfctl.c <freebsd/sbin/pfctl/pfctl.c>`_.
 * You probably have to use getopt_r() instead of getopt(). Have a look at
   `pfctl.c <freebsd/sbin/pfctl/pfctl.c>`_.
-* Build the libbsd without optimization.
+* Build the LibBSD without optimization.
 * Use the ``userspace-header-gen.py`` to generate some necessary header
   files. It will generate one ``rtems-bsd-PROGNAME-MODULE-data.h`` per object file, one
   ``rtems-bsd-PROGNAME-namespace.h`` and one ``rtems-bsd-PROGNAME-data.h``. To call

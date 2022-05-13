@@ -44,6 +44,7 @@
 #include <rtems/dhcpcd.h>
 
 #define TEST_NAME "LIBBSD DHCPCD 1"
+#define TEST_STATE_USER_INPUT 1
 
 static void
 dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
@@ -67,9 +68,7 @@ test_main(void)
 {
 
 	rtems_dhcpcd_add_hook(&dhcpcd_hook);
-
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

@@ -5,35 +5,6 @@ RTEMS BSD Library Guide
 :numbered:
 :website: http://www.rtems.org/
 
-The libbsd makes FreeBSD subsystems like TCP/IP, USB, SD and some more usable
-for RTEMS. It tries to follow the FreeBSD development as close as possible and
-therefore is updated to the latest FreeBSD HEAD revision from time to time.
-To find out which version of FreeBSD is currently used as the base version for
-libbsd please take a look at the
-https://git.rtems.org/rtems-libbsd/log/freebsd-org[freebsd-org] submodule.
-
-This is a guide which captures information on the
-process of merging code from FreeBSD, building this library,
-RTEMS specific support files, and general guidelines on what
-modifications to the FreeBSD source are permitted.
-
-Goals of this effort are
-
-* update TCP/IP and provide USB in RTEMS,
-* ease updating to future FreeBSD versions,
-* ease tracking changes in FreeBSD code,
-* minimize manual changes in FreeBSD code, and
-* define stable kernel/device driver API which is implemented
-by both RTEMS and FreeBSD. This is the foundation of the port.
-
-We will work to push our changes upstream to the FreeBSD Project
-and minimize changes required at each update point.
-
-*******************************************************************************
-This is a work in progress and is very likely to be incomplete.
-Please help by adding to it.
-*******************************************************************************
-
 == Getting Started
 
 === Tool Chain ===

@@ -40,12 +40,13 @@
 #include <rtems.h>
 
 #define TEST_NAME "LIBBSD DHCPCD 2"
+#define TEST_STATE_USER_INPUT 1
 
 static void
 test_main(void)
 {
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+
+	rtems_task_exit();
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

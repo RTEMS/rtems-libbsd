@@ -9,6 +9,28 @@ goal of the LibBSD is to stay in synchronization with FreeBSD.  This is only
 feasible if certain rules are in place.  Otherwise, managing more than a
 thousand imported source files will become too labour intensive eventually.
 
+The LibBSD makes FreeBSD subsystems like TCP/IP, USB, SD/MMC, PCIe, and some
+more usable for RTEMS.  It tries to follow the FreeBSD development as close as
+possible and therefore is updated to the latest FreeBSD HEAD revision of the
+associated FreeBSD branch from time to time.  To find out which version of
+FreeBSD is currently used as the base version for LibBSD please take a look at
+the ``freebsd-org`` submodule.
+
+This guide captures information on the process of merging code from FreeBSD,
+RTEMS specific support files, general guidelines on what modifications to the
+FreeBSD source are permitted, and some other topics.  For building the library,
+see the `README <README.rst>`_.
+
+Goals of the LibBSD activity are
+
+* provide functionality from FreeBSD to RTEMS,
+* ease updating to future FreeBSD versions,
+* ease tracking changes in FreeBSD code,
+* minimize manual changes in FreeBSD code.
+
+We will work to push our changes upstream to the FreeBSD Project and minimize
+changes required at each update point.
+
 What is in the Git Repository
 =============================
 

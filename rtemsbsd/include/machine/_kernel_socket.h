@@ -46,7 +46,7 @@
 #define	MSG_SOCALLBCK    0x00010000	/* for use by socket callbacks - soreceive (TCP) */
 
 #define	MSG_MORETOCOME	 0x00100000	/* additional data pending */
-#define	MSG_TLSAPPDATA	 0x00200000	/* only soreceive() app. data (TLS) */
+#define	MSG_TLSAPPDATA	 0x00200000	/* do not soreceive() alert rec. (TLS) */
 
 #define	CMSG_ALIGN(n)	_ALIGN(n)
 

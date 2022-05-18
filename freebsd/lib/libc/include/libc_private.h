@@ -36,8 +36,12 @@
 
 #ifndef _LIBC_PRIVATE_H_
 #define _LIBC_PRIVATE_H_
+#ifndef __rtems__
 #include <sys/_types.h>
 #include <sys/_pthreadtypes.h>
+#else /* __rtems__ */
+#include <sys/types.h>
+#endif /* __rtems__ */
 
 /*
  * This global flag is non-zero when a process has created one

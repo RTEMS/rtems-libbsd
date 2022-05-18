@@ -139,7 +139,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, extern int nd_smi_module_loaded);
 /* print-sll.c */
 /* print-slow.c */
 /* print-smb.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, extern u_char const *startbuf);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, extern unsigned char const *startbuf);
 /* print-smtp.c */
 /* print-snmp.c */
 /* print-stp.c */

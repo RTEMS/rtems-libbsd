@@ -84,7 +84,9 @@ extern int	__sread(void *, char *, int);
 extern int	__swrite(void *, char const *, int);
 extern fpos_t	__sseek(void *, fpos_t, int);
 extern int	__sclose(void *);
+#ifndef __rtems__
 extern void	__sinit(void);
+#endif /* __rtems__ */
 extern void	_cleanup(void);
 extern void	__smakebuf(FILE *);
 extern int	__swhatbuf(FILE *, size_t *, int *);

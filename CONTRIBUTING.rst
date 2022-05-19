@@ -394,3 +394,25 @@ build process.  The ``Makefile.todo`` file performs this manually.  The should b
 included in ``freebsd-to-rtems.py`` script some time in the future.  For details,
 see also
 `KOBJ(9) <http://www.freebsd.org/cgi/man.cgi?query=kobj&sektion=9&apropos=0>`_.
+
+Reference Board Support Package
+===============================
+
+The reference BSP for LibBSD development is ``arm/xilinx_zynq_a9_qemu``.  All
+patches shall be tested for this BSP.  The BSP runs on the Qemu simulator which
+has some benefits for development and test of the LibBSD
+
+* ``NULL`` pointer read and write protection,
+* Qemu is a fast simulator,
+* Qemu provides support for GDB watchpoints,
+* Qemu provides support for virtual Ethernet networks, e.g. TUN and bridge
+  devices (you can run multiple test instances on one virtual network).
+
+Board Support Package Requirements
+==================================
+
+In FreeBSD, interrupt handler may use mutexes.  In RTEMS, using mutexes from
+within interrupt context is not allowed, so the Board Support Package (BSP)
+should support the
+`Interrupt Manager <https://docs.rtems.org/branches/master/c-user/interrupt/directives.html#rtems-interrupt-server-handler-install>`_
+in general.

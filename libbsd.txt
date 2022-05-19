@@ -7,7 +7,6 @@ RTEMS BSD Library Guide
 
 == Getting Started
 
-=== Tool Chain ===
 
 You need a tool chain for RTEMS based on the latest RTEMS Source Builder (RSB).
 
@@ -32,14 +31,6 @@ status' says `rtems_waf` need updating run the submodule update command:
 
  $ git submodule sync
  $ git submodule rtems_waf update
-
-=== Board Support Package Requirements ===
-
-You need the latest RTEMS version to build the libbsd master.  The Board
-Support Package (BSP) must support the
-http://www.rtems.org/onlinedocs/doxygen/cpukit/html/group\__rtems\__interrupt__extension.html[Interrupt Manager Extension]
-// The first underscores have to be masked to stop asciidoc interpreting them
-to make use of generic FreeBSD based drivers.
 
 === Board Support Package Configuration and Build ===
 
@@ -66,16 +57,6 @@ ${HOME}/git-rtems/configure \
         make && \
         make install
 -------------------------------------------------------------------------------
-
-The `arm/xilinx_zynq_a9_qemu` BSP running on the Qemu simulator has some
-benefits for development and test of the BSD library
-
-* it offers a NULL pointer read and write protection,
-* Qemu is a fast simulator,
-* Qemu provides support for GDB watchpoints,
-* Qemu provides support for virtual Ethernet networks, e.g. TUN and bridge
-devices (you can run multiple test instances on one virtual network).
-
 === BSD Library Configuration and Build ===
 
 The build system based on the Waf build system. To build with Waf please refer

@@ -209,6 +209,11 @@ struct ffec_softc {
 	int		rx_ic_count;	/* RW, valid values 0..255 */
 	int		tx_ic_time;
 	int		tx_ic_count;
+#ifdef __rtems__
+
+	device_t		mdio_device;
+	struct mtx		mdio_mtx;
+#endif /* __rtems__ */
 };
 
 static struct resource_spec irq_res_spec[MAX_IRQ_COUNT + 1] = {
@@ -376,6 +381,13 @@ ffec_miibus_readreg(device_t dev, int phy, int reg)
 	int val;
 
 	sc = device_get_softc(dev);
+#ifdef __rtems__
+	if (sc->mdio_device) {
+		return (MIIBUS_READREG(sc->mdio_device, phy, reg));
+	}
+
+	mtx_lock(&sc->mdio_mtx);
+#endif /* __rtems__ */
 
 	WR4(sc, FEC_IER_REG, FEC_IER_MII);
 
@@ -386,11 +398,17 @@ ffec_miibus_readreg(device_t dev, int phy, int reg)
 
 	if (!ffec_miibus_iowait(sc)) {
 		device_printf(dev, "timeout waiting for mii read\n");
+#ifdef __rtems__
+		mtx_unlock(&sc->mdio_mtx);
+#endif /* __rtems__ */
 		return (-1); /* All-ones is a symptom of bad mdio. */
 	}
 
 	val = RD4(sc, FEC_MMFR_REG) & FEC_MMFR_DATA_MASK;
 
+#ifdef __rtems__
+	mtx_unlock(&sc->mdio_mtx);
+#endif /* __rtems__ */
 	return (val);
 }
 
@@ -400,6 +418,13 @@ ffec_miibus_writereg(device_t dev, int phy, int reg, int val)
 	struct ffec_softc *sc;
 
 	sc = device_get_softc(dev);
+#ifdef __rtems__
+	if (sc->mdio_device) {
+		return (MIIBUS_WRITEREG(sc->mdio_device, phy, reg, val));
+	}
+
+	mtx_lock(&sc->mdio_mtx);
+#endif /* __rtems__ */
 
 	WR4(sc, FEC_IER_REG, FEC_IER_MII);
 
@@ -411,9 +436,15 @@ ffec_miibus_writereg(device_t dev, int phy, int reg, int val)
 
 	if (!ffec_miibus_iowait(sc)) {
 		device_printf(dev, "timeout waiting for mii write\n");
+#ifdef __rtems__
+		mtx_unlock(&sc->mdio_mtx);
+#endif /* __rtems__ */
 		return (-1);
 	}
 
+#ifdef __rtems__
+	mtx_unlock(&sc->mdio_mtx);
+#endif /* __rtems__ */
 	return (0);
 }
 
@@ -1577,6 +1608,9 @@ ffec_detach(device_t dev)
 	if (sc->mem_res != NULL)
 		bus_release_resource(dev, SYS_RES_MEMORY, 0, sc->mem_res);
 
+#ifdef __rtems__
+	mtx_destroy(&sc->mtx);
+#endif /* __rtems__ */
 	FFEC_LOCK_DESTROY(sc);
 	return (0);
 }
@@ -1726,6 +1760,80 @@ ffec_set_txic(struct ffec_softc *sc)
 	ffec_set_ic(sc, FEC_TXIC0_REG, sc->tx_ic_count, sc->tx_ic_time);
 }
 
+#ifdef __rtems__
+int
+ffec_get_phy_information(
+	struct ffec_softc *sc,
+	phandle_t node,
+	device_t dev,
+	int *phy_addr
+)
+{
+	phandle_t phy_node;
+	phandle_t parent_node;
+	pcell_t phy_handle, phy_reg;
+	device_t other;
+	phandle_t xref;
+
+	/* Search for the phy-handle and get the address */
+
+	if (OF_getencprop(node, "phy-handle", (void *)&phy_handle,
+	    sizeof(phy_handle)) <= 0)
+		return (ENXIO);
+
+	phy_node = OF_node_from_xref(phy_handle);
+
+	if (OF_getencprop(phy_node, "reg", (void *)&phy_reg,
+	    sizeof(phy_reg)) <= 0)
+		return (ENXIO);
+
+	*phy_addr = phy_reg;
+
+	/* Detect whether PHY handle is connected to this or another FFEC. */
+	parent_node = phy_node;
+
+	while (parent_node != 0) {
+		if (parent_node == node) {
+			/* PHY is directly connected. That's easy. */
+			sc->mdio_device = NULL;
+			return 0;
+		}
+
+		/*
+		 * Check whether the node is also an Ethernet controller. Do
+		 * that by just assuming that every Ethernet controller has a
+		 * PHY attached to it.
+		 */
+		if (OF_getencprop(parent_node, "phy-handle",
+		    (void *)&phy_handle, sizeof(phy_handle)) > 0) {
+			/*
+			 * Try to find the device of the other Ethernet
+			 * controller and use that for MDIO communication.
+			 * Note: This is not really a nice workaround but it
+			 * works.
+			 */
+			xref = OF_xref_from_node(parent_node);
+			if (xref == 0) {
+				device_printf(dev,
+				    "Couldn't get device that handles PHY\n");
+				return (ENXIO);
+			}
+			other = OF_device_from_xref(xref);
+			if (other == 0) {
+				device_printf(dev,
+				    "Couldn't get device that handles PHY\n");
+				return (ENXIO);
+			}
+			sc->mdio_device = other;
+			return 0;
+		}
+
+		parent_node = OF_parent(parent_node);
+	}
+	return (ENXIO);
+}
+
+#endif /* __rtems__ */
 static int
 ffec_attach(device_t dev)
 {
@@ -1743,6 +1851,10 @@ ffec_attach(device_t dev)
 	sc->dev = dev;
 
 	FFEC_LOCK_INIT(sc);
+#ifdef __rtems__
+	mtx_init(&sc->mtx, device_get_nameunit(sc->dev),
+	    MTX_NETWORK_LOCK, MTX_DEF);
+#endif /* __rtems__ */
 
 	/*
 	 * There are differences in the implementation and features of the FEC
@@ -2047,9 +2159,17 @@ ffec_attach(device_t dev)
 	ffec_miigasket_setup(sc);
 
 	/* Attach the mii driver. */
+#ifdef __rtems__
+	OF_device_register_xref(OF_xref_from_node(ofw_node), dev);
+	if (ffec_get_phy_information(sc, ofw_node, dev, &phynum) != 0) {
+		phynum = MII_PHY_ANY;
+	}
+	(void) dummy;
+#else /* __rtems__ */
 	if (fdt_get_phyaddr(ofw_node, dev, &phynum, &dummy) != 0) {
 		phynum = MII_PHY_ANY;
 	}
+#endif /* __rtems__ */
 	error = mii_attach(dev, &sc->miibus, ifp, ffec_media_change,
 	    ffec_media_status, BMSR_DEFCAPMASK, phynum, MII_OFFSET_ANY,
 	    (sc->fecflags & FECTYPE_MVF) ? MIIF_FORCEANEG : 0);

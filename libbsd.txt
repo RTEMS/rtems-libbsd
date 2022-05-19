@@ -7,56 +7,6 @@ RTEMS BSD Library Guide
 
 == Getting Started
 
-
-You need a tool chain for RTEMS based on the latest RTEMS Source Builder (RSB).
-
-=== Installation Overview ===
-
-. You must configure your BSP with the +--disable-networking+ option to disable
-the old network stack.  Make sure no header files of the old network stack are
-installed.
-
-. Clone the Git repository +git clone git://git.rtems.org/rtems-libbsd.git+.
-. Change into the RTEMS BSD library root directory.
-. If you want to run tests with a custom IP configuration instead of the default
-  one you can use an adjusted `config.inc` configuration file.
-. Run +waf configure ...+.
-. Run +waf+.
-. Run +waf install+.
-
-Refer to the README.waf for Waf building instructions.
-
-Make sure the submodules have been initialised and are updated. If a 'git
-status' says `rtems_waf` need updating run the submodule update command:
-
- $ git submodule sync
- $ git submodule rtems_waf update
-
-=== Board Support Package Configuration and Build ===
-
-You need to configure RTEMS for the desired BSP and install it.  The BSP must
-be configured with a disabled network stack.  The BSD library containing the
-new network stack is a separate package.  Using a BSP installation containing
-the old network stack may lead to confusion and unpredictable results.
-
-The following script is used to build the `arm/xilinx_zynq_a9_qemu` BSP for
-our internal testing purposes:
-
--------------------------------------------------------------------------------
-#!/bin/sh
-
-cd ${HOME}/sandbox
-rm -rf b-xilinx_zynq_a9_qemu
-mkdir b-xilinx_zynq_a9_qemu
-cd b-xilinx_zynq_a9_qemu
-${HOME}/git-rtems/configure \
-        --prefix=${HOME}/sandbox/install \
-        --target=arm-rtems5 \
-        --enable-rtemsbsp=xilinx_zynq_a9_qemu \
-        --disable-networking && \
-        make && \
-        make install
--------------------------------------------------------------------------------
 === BSD Library Configuration and Build ===
 
 The build system based on the Waf build system. To build with Waf please refer

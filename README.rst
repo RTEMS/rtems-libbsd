@@ -474,12 +474,17 @@ Qemu and Networking
 ===================
 
 You can use the Qemu simulator to run a LibBSD based application and connect it
-to a virtual network on your host.  You have to create a TAP virtual Ethernet
-interface for this:
+to a virtual network on your host.
+
+Networking with TAP Interface
+-----------------------------
+
+One option for networking with Qemu is using a TAP interface (virtual
+Ethernet).  You can create a TAP interface with these commands on Linux:
 
 .. code-block:: none
 
-    sudo tunctl -p -t qtap -u $(whoami)
+    sudo ip tuntap add qtap mode tap user $(whoami)
     sudo ip link set dev qtap up
     sudo ip addr add 169.254.1.1/16 dev qtap
 
@@ -502,18 +507,20 @@ the arm/xilinx_zynq_a9_qemu BSP:
 
     qemu-system-arm -serial null -serial mon:stdio -nographic \
       -M xilinx-zynq-a9 -m 256M \
+      -net nic,model=cadence_gem \
       -net tap,ifname=qtap,script=no,downscript=no \
-      -net nic,model=cadence_gem,macaddr=0e:b0:ba:5e:ba:12 \
       -kernel build/arm-rtems6-xilinx_zynq_a9_qemu-default/media01.exe
 
-After some seconds it will acquire a IPv4 link-local address, e.g.
+Make sure that each Qemu instance uses its own MAC address to avoid an address
+conflict (or otherwise use it as a test).  After some seconds it will acquire a
+IPv4 link-local address, for example:
 
 .. code-block:: none
 
     info: cgem0: probing for an IPv4LL address
     debug: cgem0: checking for 169.254.159.156
 
-You can connect to the target via telnet for example:
+You can connect to the target via telnet, for example:
 
 .. code-block:: none
 
@@ -524,3 +531,61 @@ You can connect to the target via telnet for example:
 
     RTEMS Shell on /dev/pty4. Use 'help' to list commands.
     TLNT [/] #
+
+Virtual Distributed Ethernet (VDE)
+----------------------------------
+
+You can use a Virtual Distributed Ethernet (VDE) to create a network
+environment that does not need to run Qemu as root or needing to drop the tap's
+privileges to run Qemu.
+
+VDE creates a software switch with a default of 32 ports which means a single
+kernel tap can support 32 Qemu networking sessions.
+
+To use VDE you need to build Qemu with VDE support. The RSB can detect a VDE
+plug and enable VDE support in Qemu when building. On FreeBSD install the VDE
+support with:
+
+.. code-block:: none
+
+    pkg install -u vde2
+
+Build Qemu with the RSB.
+
+To network create a bridge and a tap. The network is 10.10.1.0/24. On FreeBSD
+add to your ``/etc/rc.conf``:
+
+.. code-block:: none
+
+    cloned_interfaces="bridge0 tap0"
+    autobridge_interfaces="bridge0"
+    autobridge_bridge0="re0 tap0"
+    ifconfig_re0="up"
+    ifconfig_tap0="up"
+    ifconfig_bridge0="inet 10.1.1.2 netmask 255.255.255.0"
+    defaultrouter="10.10.1.1"
+
+Start the VDE switch as root:
+
+.. code-block:: none
+
+   sysctl net.link.tap.user_open=1
+   sysctl net.link.tap.up_on_open=1
+   vde_switch -d -s /tmp/vde1 -M /tmp/mgmt1 -tap tap0 -m 660 --mgmtmode 660
+   chmod 660 /dev/tap0
+
+You can connect to the VDE switch's management channel using:
+
+.. code-block:: none
+
+    vdeterm /tmp/mgmt1
+
+To run Qemu:
+
+.. code-block:: none
+
+    qemu-system-arm -serial null -serial mon:stdio -nographic \
+      -M xilinx-zynq-a9 -m 256M \
+      -net nic,model=cadence_gem \
+      -net vde,id=vde0,sock=/tmp/vde1
+      -kernel build/arm-rtems6-xilinx_zynq_a9_qemu-default/rcconf02.exe

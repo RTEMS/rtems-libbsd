@@ -676,3 +676,127 @@ System Control Hints
 If you get undefined references to ``_bsd_sysctl_*`` symbols, then you have to
 locate and add the associated system control node, see
 `SYSCTL(9) <http://www.freebsd.org/cgi/man.cgi?query=SYSCTL_DECL&sektion=9>`_.
+
+Issues and TODO
+===============
+
+* PCI support on x86 uses a quick and dirty hack, see pci_reserve_map().
+
+* Priority queues are broken with clustered scheduling.
+
+* Per-CPU data should be enabled once the new stack is ready for SMP.
+
+* Per-CPU NETISR(9) should be enabled onece the new stack is ready for SMP.
+
+* Multiple routing tables are not supported.  Every FIB value is set to zero
+  (= BSD_DEFAULT_FIB).
+
+* Process identifiers are not supported.  Every PID value is set to zero
+  (= BSD_DEFAULT_PID).
+
+* User credentials are not supported.  The following functions allow the
+  operation for everyone
+
+  * prison_equal_ip4(),
+  * chgsbsize(),
+  * cr_cansee(),
+  * cr_canseesocket() and
+  * cr_canseeinpcb().
+
+* A basic USB functionality test that is known to work on Qemu is desirable.
+
+* Adapt generic IRQ PIC interface code to Simple Vectored Interrupt Model
+  so that those architectures can use new TCP/IP and USB code.
+
+* freebsd-userspace/rtems/include/sys/syslog.h is a copy from the old
+  RTEMS TCP/IP stack. For some reason, the __printflike markers do not
+  compile in this environment. We may want to use the FreeBSD syslog.h
+  and get this addressed.
+
+* in_cksum implementations for architectures not supported by FreeBSD.
+  This will require figuring out where to put implementations that do
+  not originate from FreeBSD and are populated via the script.
+
+* MAC support functions are not thread-safe ("freebsd/lib/libc/posix1e/mac.c").
+
+* IFCONFIG(8): IEEE80211 support is disabled.  This module depends on a XML
+  parser and mmap().
+
+* get_cyclecount(): The implementation is a security problem.
+
+* What to do with the priority parameter present in the FreeBSD synchronization
+  primitives and the thread creation functions?
+
+* TASKQUEUE(9): Support spin mutexes.
+
+* ZONE(9): Review allocator lock usage in rtems-bsd-chunk.c.
+
+* KQUEUE(2): Choose proper lock for global kqueue list.
+
+* TIMEOUT(9): Maybe use special task instead of timer server to call
+  callout_tick().
+
+* sysctl_handle_opaque(): Implement reliable snapshots.
+
+* PING6(8): What to do with SIGALARM?
+
+* <sys/param.h>: Update Newlib to use a MSIZE of 256.
+
+* BPF(4): Add support for zero-copy buffers.
+
+* UNIX(4): Fix race conditions in the area of socket object and file node
+  destruction.  Add support for file descriptor transmission via control
+  messages.
+
+* PRINTF(9): Add support for log(), the %D format specifier is missing in the
+  normal printf() family.
+
+* Why is the interrupt server used?  The BSD interrupt handlers can block on
+  synchronization primitives like mutexes.  This is in contrast to RTEMS
+  interrupt service routines.  The BSPs using the generic interrupt support
+  must implement the ``bsp_interrupt_vector_enable()`` and
+  ``bsp_interrupt_vector_disable()`` routines.  They normally enable/disable a
+  particular interrupt source at the interrupt controller.  This can be used to
+  implement the interrupt server.  The interrupt server is a task that wakes-up
+  in case an associated interrupt happens.  The interrupt source is disabled in
+  a generic interrupt handler that wakes-up the interrupt server task.   Once
+  the postponed interrupt processing is performed in the interrupt server the
+  interrupt source is enabled again.
+
+* Convert all BSP linkcmds to use a linkcmds.base so the sections are
+  easier to insert.
+
+* NIC Device Drivers
+* Only common PCI NIC drivers have been included in the initial set. These
+  do not include any system on chip or ISA drivers.
+* PCI configuration probe does not appear to happen to determine if a
+  NIC is in I/O or memory space. We have worked around this by using a
+  static hint to tell the fxp driver the correct mode. But this needs to
+  be addressed.
+* The ISA drivers require more BSD infrastructure to be addressed. This was
+  outside the scope of the initial porting effort.
+
+* devfs (Device file system): There is a minimal implementation based on IMFS.
+  The mount point is fixed to "/dev". Note that the devfs is only used by the
+  cdev subsystem. cdev has been adapted so that the full path (including the
+  leading "/dev") is given to devfs.  This saves some copy operations.
+
+  devfs_create() first creates the full path and then creates an IMFS generic
+  node for the device.
+
+  TBD: remove empty paths on devfs_destroy().
+
+* altq_subr.c - Arbitrary choices were made in this file that RTEMS would not
+  support tsc frequency change.  Additionally, the clock frequency for
+  machclk_freq is always measured for RTEMS.
+
+* conf.h - In order to add make_dev and destroy_dev, variables in the cdev
+  structure that were not being used were conditionally compiled out. The
+  capability of supporting children did not appear to be needed and was not
+  implemented in the rtems version of these routines.
+
+* Problem to report to FreeBSD: The MMAP_NOT_AVAILABLE define is inverted on
+  its usage.  When it is defined the mmap method is called. Additionally, it is
+  not used thoroughly. It is not used in the unmap portion of the source.  The
+  file rec_open.c uses the define MMAP_NOT_AVAILABLE to wrap the call to mmap
+  and file rec_close.c uses the munmap method.

@@ -430,3 +430,26 @@ DHCPCD(8) client is a consumer of these events for example.  Make sure that the
 interface flag ``IFF_UP`` and the interface driver flag ``IFF_DRV_RUNNING`` is
 set in case the link is up, otherwise ``ether_output()`` will return the error
 status ``ENETDOWN``.
+
+FreeBSD Kernel Features Ported to LibBSD
+========================================
+
+All lock based synchronization primitives are implemented through mutexes using
+the priority inheritance protocol.
+
+* `BUS_DMA(9) <http://www.freebsd.org/cgi/man.cgi?query=bus_dma&sektion=9>`_: Bus and Machine Independent DMA Mapping Interface
+* `BUS_SPACE(9) <http://www.freebsd.org/cgi/man.cgi?query=bus_space&sektion=9>`_: Bus space manipulation functions
+* `CALLOUT(9) <http://www.freebsd.org/cgi/man.cgi?query=callout&sektion=9>`_: Execute a function after a specified length of time
+* `CONDVAR(9) <http://www.freebsd.org/cgi/man.cgi?query=condvar&sektion=9>`_: Kernel condition variable
+* `DEVICE(9) <http://www.freebsd.org/cgi/man.cgi?query=device&sektion=9>`_: An abstract representation of a device
+* `DRIVER(9) <http://www.freebsd.org/cgi/man.cgi?query=driver&sektion=9>`_: Structure describing a device driver
+* `EPOCH(9) <http://www.freebsd.org/cgi/man.cgi?query=epoch&sektion=9>`_: Kernel epoch based reclamation
+* `MUTEX(9) <http://www.freebsd.org/cgi/man.cgi?query=mutex&sektion=9>`_: Kernel synchronization primitives
+* `RMAN(9) <http://www.freebsd.org/cgi/man.cgi?query=rman&sektion=9>`_: Resource management functions
+* `RMLOCK(9) <http://www.freebsd.org/cgi/man.cgi?query=rmlock&sektion=9>`_: Kernel reader/writer lock optimized for read-mostly access patterns
+* `RWLOCK(9) <http://www.freebsd.org/cgi/man.cgi?query=rwlock&sektion=9>`_: Kernel reader/writer lock
+* `SX(9) <http://www.freebsd.org/cgi/man.cgi?query=sx&sektion=9>`_: Kernel shared/exclusive lock
+* `SYSCTL(9) <http://www.freebsd.org/cgi/man.cgi?query=SYSCTL_DECL&sektion=9>`_: Dynamic and static sysctl MIB creation functions
+* `SYSINIT(9) <http://www.freebsd.org/cgi/man.cgi?query=sysinit&sektion=9>`_: A framework for dynamic kernel initialization
+* `TASKQUEUE(9) <http://www.freebsd.org/cgi/man.cgi?query=taskqueue&sektion=9>`_: Asynchronous task execution
+* `UMA(9) <http://www.freebsd.org/cgi/man.cgi?query=uma&sektion=9>`_: General-purpose kernel object allocator

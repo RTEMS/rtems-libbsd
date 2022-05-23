@@ -592,3 +592,10 @@ Here you see that the SYSINIT(9) entries are no longer static.  The
 ``*_REFERENCE()`` macros will create references to the corresponding modules
 which are later resolved by the linker.  The application has to provide an
 object file with references to all required FreeBSD modules.
+
+System Control Hints
+====================
+
+If you get undefined references to ``_bsd_sysctl_*`` symbols, then you have to
+locate and add the associated system control node, see
+`SYSCTL(9) <http://www.freebsd.org/cgi/man.cgi?query=SYSCTL_DECL&sektion=9>`_.

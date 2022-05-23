@@ -273,6 +273,21 @@ a scheduler with thread pinning support is required.  This is the case if you
 use the default scheduler configuration.  EPOCH(9) is a central synchronization
 mechanism of the network stack.
 
+Configuration for Network Tests
+===============================
+
+If you need some other IP configuration for the network tests that use a fixed
+IP config you can copy ``config.inc`` to a location outside to the source tree and
+adapt it. Then use the option ``--net-test-config=NET_CONFIG`` to pass the file to
+Waf's configure command.
+
+.. code-block:: none
+
+    NET_CFG_SELF_IP = 10.0.0.2
+    NET_CFG_NETMASK = 255.255.0.0
+    NET_CFG_PEER_IP = 10.0.0.1
+    NET_CFG_GATEWAY_IP = 10.0.0.1
+
 Qemu and Networking
 ===================
 

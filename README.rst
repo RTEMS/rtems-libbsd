@@ -324,6 +324,78 @@ freebsd-9.3
     Is the branch for the RTEMS 4.11 release series.  This branch is
     unmaintained.  It is recommended to update to RTEMS 5 or 6.
 
+Features
+========
+
+The following features are available in LibBSD.  Some features need device
+driver support for a particular target platform.
+
+* `BPF(4) <http://www.freebsd.org/cgi/man.cgi?query=bpf&sektion=4>`_: Berkeley Packet Filter
+* `DHCPCD(8) <http://roy.marples.name/projects/dhcpcd/index>`_: DHCP client
+* `dns_sd.h <mDNSResponder/mDNSShared/dns_sd.h>`_: DNS Service Discovery
+* `GETHOSTBYNAME(3) <http://www.freebsd.org/cgi/man.cgi?query=gethostbyname&sektion=3>`_: Get network host entry
+* `IF_BRIDGE(4) <http://www.freebsd.org/cgi/man.cgi?query=if_bridge&sektion=4>`_: Network bridge device
+* `INET(4) <http://www.freebsd.org/cgi/man.cgi?query=inet&sektion=4>`_: Internet protocol family
+* `INET6(4) <http://www.freebsd.org/cgi/man.cgi?query=inet6&sektion=4>`_: Internet protocol version 6 family
+* `IPSEC(4) <http://www.freebsd.org/cgi/man.cgi?query=ipsec&sektion=4>`_: Internet Protocol Security protocol
+* `KQUEUE(2) <http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2>`_: Kernel event notification mechanism
+* `LAGG(4) <http://www.freebsd.org/cgi/man.cgi?query=lagg&sektion=4>`_: Link aggregation and link failover interface
+* `mDNSEmbeddedAPI.h <mDNSResponder/mDNSCore/mDNSEmbeddedAPI.h>`_: Multi-Cast DNS
+* `MMC(4) <http://www.freebsd.org/cgi/man.cgi?query=mmc&sektion=4>`_: MultiMediaCard and SD Card bus driver
+* `NET80211(4) <http://www.freebsd.org/cgi/man.cgi?query=net80211&sektion=4>`_: Standard interface to IEEE 802.11 devices
+* `NVME(4) <http://www.freebsd.org/cgi/man.cgi?query=nvme&sektion=4>`_: NVM Express core driver
+* `PCI(4) <http://www.freebsd.org/cgi/man.cgi?query=pci&sektion=4>`_: Generic PCI/PCIe bus driver
+* `PF(4) <http://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4>`_: Packet filter
+* `POLL(2) <http://www.freebsd.org/cgi/man.cgi?query=poll&sektion=2>`_: Synchronous I/O multiplexing
+* `RESOLVER(3) <http://www.freebsd.org/cgi/man.cgi?query=resolver&sektion=3>`_: Resolver routines
+* `ROUTE(4) <http://www.freebsd.org/cgi/man.cgi?query=route&sektion=4>`_: Kernel packet forwarding database
+* `SELECT(2) <http://www.freebsd.org/cgi/man.cgi?query=select&sektion=2>`_: Synchronous I/O multiplexing
+* `SOCKET(2) <http://www.freebsd.org/cgi/man.cgi?query=socket&sektion=2>`_: Create an endpoint for communication
+* `SSL(7) <http://www.freebsd.org/cgi/man.cgi?query=ssl&sektion=7>`_: OpenSSL SSL/TLS library
+* `SYSCTL(3) <http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=3>`_: Get or set system information
+* `TCP(4) <http://www.freebsd.org/cgi/man.cgi?query=tcp&sektion=4>`_: Internet Transmission Control Protocol
+* `UDP(4) <http://www.freebsd.org/cgi/man.cgi?query=udp&sektion=4>`_: Internet User Datagram Protocol
+* `UMASS(4) <http://www.freebsd.org/cgi/man.cgi?query=umass&sektion=4>`_: USB Mass Storage Devices driver
+* `UNIX(4) <http://www.freebsd.org/cgi/man.cgi?query=unix&sektion=4>`_: UNIX-domain protocol family
+* `USB(4) <http://www.freebsd.org/cgi/man.cgi?query=usb&sektion=4>`_: Universal Serial Bus
+* `VLAN(4) <http://www.freebsd.org/cgi/man.cgi?query=vlan&sektion=4>`_: IEEE 802.1Q VLAN network interface
+
+Commands
+========
+
+In LibBSD the following ports of FreeBSD command line tools are available.  You
+can invoke the commands in the RTEMS Shell or through function calls, for
+example ``rtems_bsd_command_ifconfig()``.  The functions declarations are
+available through
+`#include <machine/rtems-bsd-commands.h> <rtemsbsd/include/machine/rtems-bsd-commands.h>`_.
+
+* `ARP(8) <http://www.freebsd.org/cgi/man.cgi?query=arp&sektion=8>`_: Address resolution display and control
+* `HOSTNAME(1) <http://www.freebsd.org/cgi/man.cgi?query=hostname&sektion=1>`_: Set or print name of current host system
+* `IFCONFIG(8) <http://www.freebsd.org/cgi/man.cgi?query=ifconfig&sektion=8>`_: Configure network interface parameters
+* `IFMCSTAT(8) <http://www.freebsd.org/cgi/man.cgi?query=ifmcstat&sektion=8>`_: Dump multicast group management statistics per interface
+* `NETSTAT(1) <http://www.freebsd.org/cgi/man.cgi?query=netstat&sektion=1>`_: Show network status
+* `NVMECONTROL(8) <http://www.freebsd.org/cgi/man.cgi?query=nvmecontrol&sektion=8>`_: NVM Express control utility
+* `OPENSSL(1) <http://www.freebsd.org/cgi/man.cgi?query=openssl&sektion=1>`_: OpenSSL command line tool
+* `PFCTL(8) <http://www.freebsd.org/cgi/man.cgi?query=pfctl&sektion=8>`_: Control the packet filter (PF) device
+* `PING6(8) <http://www.freebsd.org/cgi/man.cgi?query=ping6&sektion=8>`_: Send ICMPv6 ECHO_REQUEST packets to network hosts
+* `PING(8) <http://www.freebsd.org/cgi/man.cgi?query=ping&sektion=8>`_: Send ICMP ECHO_REQUEST packets to network hosts
+* `RACOON(8) <http://www.freebsd.org/cgi/man.cgi?query=racoon&sektion=8>`_: IKE (ISAKMP/Oakley) key management daemon
+* `ROUTE(8) <http://www.freebsd.org/cgi/man.cgi?query=route&sektion=8>`_: Manually manipulate the routing tables
+* `SETKEY(8) <http://www.freebsd.org/cgi/man.cgi?query=setkey&sektion=8>`_: Manually manipulate the IPsec SA/SP database
+* `STTY(1) <http://www.freebsd.org/cgi/man.cgi?query=stty&sektion=1>`_: Set the options for a terminal device interface
+* `SYSCTL(8) <http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=8>`_: Get or set kernel state
+* `TCPDUMP(1) <http://www.freebsd.org/cgi/man.cgi?query=tcpdump&sektion=1>`_: Dump traffic on a network
+* `VMSTAT(8) <http://www.freebsd.org/cgi/man.cgi?query=vmstat&sektion=8>`_: Report virtual memory statistics
+* `WPA_SUPPLICANT(8) <http://www.freebsd.org/cgi/man.cgi?query=wpa_supplicant&sektion=8>`_: WPA/802.11i Supplicant for wireless network devices
+
+Command specific notes are listed below.
+
+HOSTNAME(1)
+    In addition to the standard options the RTEMS version of the HOSTNAME(1)
+    command supports the -m flag to set/get the multicast hostname of the mDNS
+    resolver instance.  See also ``rtems_mdns_sethostname()`` and
+    ``rtems_mdns_gethostname()``.
+
 Updating RTEMS Waf Support
 ==========================
 

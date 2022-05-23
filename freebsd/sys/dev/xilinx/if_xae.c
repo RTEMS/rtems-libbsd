@@ -792,7 +792,7 @@ setup_xdma(struct xae_softc *sc)
 
 	dev = sc->dev;
 
-	/* Get xDMA controller */
+	/* Get xDMA controller */   
 	sc->xdma_tx = xdma_ofw_get(sc->dev, "tx");
 	if (sc->xdma_tx == NULL) {
 		device_printf(dev, "Could not find DMA controller.\n");

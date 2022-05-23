@@ -56,7 +56,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, extern struct dhgroup dh_modp8192);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, extern char *pname);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, extern int f_foreground);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, extern int print_location);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, extern u_int32_t loglevel);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_racoon, extern __uint32_t loglevel);
 /* policy.c */
 /* privsep.c */
 /* proposal.c */

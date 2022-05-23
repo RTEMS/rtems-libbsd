@@ -7,52 +7,6 @@ RTEMS BSD Library Guide
 
 == Getting Started
 
-== Network Stack Features
-
-http://roy.marples.name/projects/dhcpcd/index[DHCPCD(8)]:: DHCP client
-
-https://developer.apple.com/library/mac/documentation/Networking/Reference/DNSServiceDiscovery_CRef/Reference/reference.html[dns_sd.h]:: DNS Service Discovery
-
-http://www.opensource.apple.com/source/mDNSResponder/mDNSResponder-320.10/mDNSCore/mDNSEmbeddedAPI.h[mDNS]:: Multi-Cast DNS
-
-http://www.freebsd.org/cgi/man.cgi?query=unix&sektion=4[UNIX(4)]:: UNIX-domain protocol family
-
-http://www.freebsd.org/cgi/man.cgi?query=inet&sektion=4[INET(4)]:: Internet protocol family
-
-http://www.freebsd.org/cgi/man.cgi?query=inet6&sektion=4[INET6(4)]:: Internet protocol version 6 family
-
-http://www.freebsd.org/cgi/man.cgi?query=tcp&sektion=4[TCP(4)]:: Internet Transmission Control Protocol
-
-http://www.freebsd.org/cgi/man.cgi?query=udp&sektion=4[UDP(4)]:: Internet User Datagram Protocol
-
-http://www.freebsd.org/cgi/man.cgi?query=route&sektion=4[ROUTE(4)]:: Kernel packet forwarding database
-
-http://www.freebsd.org/cgi/man.cgi?query=bpf&sektion=4[BPF(4)]:: Berkeley Packet Filter
-
-http://www.freebsd.org/cgi/man.cgi?query=socket&sektion=2[SOCKET(2)]:: Create an endpoint for communication
-
-http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2[KQUEUE(2)]:: Kernel event notification mechanism
-
-http://www.freebsd.org/cgi/man.cgi?query=select&sektion=2[SELECT(2)]:: Synchronous I/O multiplexing
-
-http://www.freebsd.org/cgi/man.cgi?query=poll&sektion=2[POLL(2)]:: Synchronous I/O multiplexing
-
-http://www.freebsd.org/cgi/man.cgi?query=route&sektion=8[ROUTE(8)]:: Manually manipulate the routing tables
-
-http://www.freebsd.org/cgi/man.cgi?query=ifconfig&sektion=8[IFCONFIG(8)]:: Configure network interface parameters
-
-http://www.freebsd.org/cgi/man.cgi?query=netstat&sektion=1[NETSTAT(1)]:: Show network status
-
-http://www.freebsd.org/cgi/man.cgi?query=ping&sektion=8[PING(8)]:: Send ICMP ECHO_REQUEST packets to network hosts
-
-http://www.freebsd.org/cgi/man.cgi?query=ping6&sektion=8[PING6(8)]:: Send ICMPv6 ECHO_REQUEST packets to network hosts
-
-http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=3[SYSCTL(3)]:: Get or set system information
-
-http://www.freebsd.org/cgi/man.cgi?query=resolver&sektion=3[RESOLVER(3)]:: Resolver routines
-
-http://www.freebsd.org/cgi/man.cgi?query=gethostbyname&sektion=3[GETHOSTBYNAME(3)]:: Get network host entry
-
 == Network Interface Drivers
 
 === Link Up/Down Events
@@ -63,15 +17,6 @@ function.  The DHCPCD(8) client is a consumer of these events for example.
 Make sure that the interface flag IFF_UP and the interface driver flag
 IFF_DRV_RUNNING is set in case the link is up, otherwise ether_output() will
 return the error status ENETDOWN.
-
-== Shell Commands
-
-=== HOSTNAME(1)
-
-In addition to the standard options the RTEMS version of the HOSTNAME(1)
-command supports the -m flag to set/get the multicast hostname of the
-mDNS resolver instance.  See also rtems_mdns_sethostname() and
-rtems_mdns_gethostname().
 
 == Qemu
 

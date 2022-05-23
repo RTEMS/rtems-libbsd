@@ -396,6 +396,58 @@ HOSTNAME(1)
     resolver instance.  See also ``rtems_mdns_sethostname()`` and
     ``rtems_mdns_gethostname()``.
 
+Packet Filter (PF, Firewall)
+============================
+
+It is possible to use PF as a firewall. See the
+`FreeBSD Handbook <https://docs.freebsd.org/en/books/handbook/firewalls/#firewalls-pf>`_
+for details on the range of functions and for how to configure the firewall.
+
+Configuration
+-------------
+
+The following is necessary to use PF on RTEMS:
+
+* You have to provide a ``/etc/pf.os`` file. The firewall can use it for passive
+  OS fingerprinting. If you don't want to use this feature, the file may contain
+  nothing except a line of comment (for example "# empty").
+
+* If some filters use protocol names (like ``tcp`` or ``udp``) you have to provide a
+  ``/etc/protocols`` file.
+
+* If some filters use service names (like ``http`` or ``https``) you have to provide a
+  ``/etc/services`` file.
+
+* Create a rule file (normally ``/etc/pf.conf``). See the FreeBSD manual for the
+  syntax.
+
+* Load the rule file using the
+  `pfctl <http://www.freebsd.org/cgi/man.cgi?query=pfctl&sektion=8>`_
+  command and enable PF. Please note that the pfctl command needs a lot of
+  stack. You should use at least RTEMS_MINIMUM_STACK_SIZE + 8192 Bytes of
+  stack. An example initialisation can look like follows:
+
+  .. code-block:: c
+
+      int exit_code;
+      char *argv[] = {
+              "pfctl",
+              "-f",
+              "/etc/pf.conf",
+              "-e",
+              NULL
+      };
+
+      exit_code = rtems_bsd_command_pfctl(ARGC(argv), argv);
+      assert(exit_code == EXIT_SUCCSESS);
+
+Known Restrictions
+------------------
+
+Currently, PF on RTEMS always uses the configuration for memory restricted
+systems (on FreeBSD that means systems with less than 100 MB RAM). This is
+fixed in ``pfctl_init_options()``.
+
 Updating RTEMS Waf Support
 ==========================
 

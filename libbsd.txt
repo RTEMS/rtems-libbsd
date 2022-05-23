@@ -321,61 +321,6 @@ structure that were not being used were conditionally compiled out. The
 capability of supporting children did not appear to be needed and was
 not implemented in the rtems version of these routines.
 
-== Wireless Network (WLAN) ==
-
-The libbsd provides a basic support for WLAN. Note that currently this support
-is still in an early state. The WLAN support is _not_ enabled in the default
-buildset. You have to configure libbsd with the
-`--buildset=buildset/everything.ini` to enable that feature.
-
-The following gives a rough overview over the necessary steps to connect to an
-encrypted network with an RTL8188EU based WiFi dongle:
-
-- Reference all necessary module for your BSP. For some BSPs this is already
-  done in the nexus-devices.h:
-
-----
-	SYSINIT_MODULE_REFERENCE(wlan_ratectl_none);
-	SYSINIT_MODULE_REFERENCE(wlan_sta);
-	SYSINIT_MODULE_REFERENCE(wlan_amrr);
-	SYSINIT_MODULE_REFERENCE(wlan_wep);
-	SYSINIT_MODULE_REFERENCE(wlan_tkip);
-	SYSINIT_MODULE_REFERENCE(wlan_ccmp);
-	SYSINIT_DRIVER_REFERENCE(rtwn_usb, uhub);
-	SYSINIT_REFERENCE(rtwn_rtl8188eufw);
-----
-
-- Create your wlan device using ifconfig:
-  +ifconfig wlan0 create wlandev rtwn0 up+
-
-- Start a wpa_supplicant instance for that device:
-  + wpa_supplicant_fork -Dbsd -iwlan0 -c/media/mmcsd-0-0/wpa_supplicant.conf+
-
-Note that the wpa_supplicant will only be active till the device goes down. A
-workaround is to just restart it every time it exits.
-
-=== Known restrictions ===
-
-- The network interface (e.g. wlan0) is currently not automatically created. It
-  would be nice, if some service would create it as soon as for example a USB
-  device is connected. In FreeBSD the names are assigned via rc.conf with lines
-  like +wlans_rtwn0="wlan0"+.
-
-- wpa_supplicant hast to be started after the device is created. It has to be
-  restarted every time the connection goes down. Instead of this behaviour,
-  there should be some service that starts and restarts wpa_supplicant
-  automatically if a interface is ready. Probably the dhcpcd hooks could be used
-  for that.
-
-- The current wpa_supplicant implementation is protected with a lock so it can't
-  be started more than one time. If multiple interface should be used, all have
-  to be handled by that single instance. That makes it hard to add interfaces
-  dynamically. wpa_supplicant should be reviewed thoroughly whether multiple
-  instances could be started in parallel.
-
-- The control interface of wpa_supplicant most likely doesn't work. The wpa_cli
-  application is not ported.
-
 == IPSec ==
 
 The IPSec support is optional in libbsd. It is disabled in the default build

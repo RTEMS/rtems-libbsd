@@ -493,3 +493,17 @@ within interrupt context is not allowed, so the Board Support Package (BSP)
 should support the
 `Interrupt Manager <https://docs.rtems.org/branches/master/c-user/interrupt/directives.html#rtems-interrupt-server-handler-install>`_
 in general.
+
+Network Interface Drivers Hints
+===============================
+
+Link Up/Down Events
+-------------------
+
+You can notifiy the application space of link up/down events in your network
+interface driver via the
+``if_link_state_change(LINK_STATE_UP/LINK_STATE_DOWN)`` function.  The
+DHCPCD(8) client is a consumer of these events for example.  Make sure that the
+interface flag ``IFF_UP`` and the interface driver flag ``IFF_DRV_RUNNING`` is
+set in case the link is up, otherwise ``ether_output()`` will return the error
+status ``ENETDOWN``.

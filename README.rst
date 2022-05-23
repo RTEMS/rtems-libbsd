@@ -147,6 +147,18 @@ If you have a few source trees working at any one time with different tool sets
 or configurations you can easly move between them safe in the knowledge that
 one build will not infect another.
 
+Buildsets
+=========
+
+Note that the LibBSD supports different buildsets.  These can be selected with
+the ``--buildset=some.ini`` option during the configure phase.  Take a look at
+the comments in ``buildset/*.ini`` to see which build sets are officially
+supported.
+
+You can also create and provide your own buildset configuration. But remember
+that it's quite easy to break something by disabling the wrong modules.  Only
+the configurations in the ``buildset`` directory are officially maintained.
+
 Branches
 ========
 

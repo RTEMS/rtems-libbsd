@@ -7,19 +7,6 @@ RTEMS BSD Library Guide
 
 == Getting Started
 
-=== BSD Library Configuration and Build ===
-
-The build system based on the Waf build system. To build with Waf please refer
-to the README.waf file.
-
-Note that the libbsd supports different buildsets. These can be selected with
-the `--buildset=xxx.ini` option during the configure phase. Take a look at the
-comments in `buildset/*.ini` to see which build sets are officially supported.
-
-You can also create and provide your own buildset configuration. But remember
-that it's quite easy to break something by disabling the wrong modules. Only the
-configurations in the `buildset` directory are officially maintained.
-
 ===== Example Configuration for Network Tests =====
 
 If you need some other IP configuration for the network tests that use a fixed

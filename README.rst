@@ -147,6 +147,152 @@ If you have a few source trees working at any one time with different tool sets
 or configurations you can easly move between them safe in the knowledge that
 one build will not infect another.
 
+Buildsets
+=========
+
+Note that the LibBSD supports different buildsets.  These can be selected with
+the ``--buildset=some.ini`` option during the configure phase.  Take a look at
+the comments in ``buildset/*.ini`` to see which build sets are officially
+supported.
+
+You can also create and provide your own buildset configuration. But remember
+that it's quite easy to break something by disabling the wrong modules.  Only
+the configurations in the ``buildset`` directory are officially maintained.
+
+Initialization
+==============
+
+To initialise the LibBSD create a suitable ``rc.conf`` file. The FreeBSD man
+page `RC.CONF(5) <https://www.freebsd.org/cgi/man.cgi?rc.conf>`_ provides the
+details needed to create a suitable format file
+
+You can call one of three functions to run the initialisation once LibBSD has
+initialised:
+
+* ``rtems_bsd_run_etc_rc_conf()``: Run ``/etc/rc.conf``.
+* ``rtems_bsd_run_rc_conf()``: Run a user supplied file.
+* ``rtems_bsd_run_rc_conf_script()``: Run the in memory line feed separated text string.
+
+For exapmle:
+
+.. code-block:: c
+
+    void
+    network_init(void)
+    {
+            rtems_status_code sc;
+
+            sc = rtems_bsd_initialize();
+            assert(sc == RTEMS_SUCCESSFUL);
+
+            rtems_bsd_run_etc_rc_conf(true); /* verbose = true */
+    }
+
+By default the networking support is builtin. Other directives can be added and
+are found in ``machine/rtems-bsd-rc-conf-directives.h``. Please check the file
+for the list.
+
+The following network names are supported:
+
+.. code-block:: none
+
+    cloned_interfaces
+    ifconfig_'interface'
+    defaultrouter
+    hostname
+
+For example:
+
+.. code-block:: none
+
+    #
+    # My BSD initialisation.
+    #
+    hostname="myhost"
+    cloned_interfaces="vlan0 vlan1"
+    ifconfig_re0="inet inet 10.10.10.10 netmask 255.255.255.0"
+    fconfig_vlan0="inet 10.11.10.10 255.255.255.0 vlan 101 vlandev re0"
+    defaultrouter="10.10.10.1"
+
+You can also intialise the LibBSD using code. The following code to
+initialize the LibBSD:
+
+.. code-block:: c
+
+    #include <assert.h>
+    #include <sysexits.h>
+
+    #include <rtems/bsd/bsd.h>
+
+    void
+    network_init(void)
+    {
+            rtems_status_code sc;
+            int exit_code;
+
+            sc = rtems_bsd_initialize();
+            assert(sc == RTEMS_SUCCESSFUL);
+
+            exit_code = rtems_bsd_ifconfig_lo0();
+            assert(exit_code == EX_OK);
+    }
+
+This performs the basic network stack initialization with a loopback interface.
+Further initialization must be done using the standard FreeBSD network
+configuration commands
+`IFCONFIG(8) <http://www.freebsd.org/cgi/man.cgi?query=ifconfig&sektion=8>`_
+using ``rtems_bsd_command_ifconfig()`` and
+`ROUTE(8) <http://www.freebsd.org/cgi/man.cgi?query=route&sektion=8>`_
+using ``rtems_bsd_command_route()``.  For an example, please have a look at
+`default-network-init.h <testsuite/include/rtems/bsd/test/default-network-init.h>`_.
+
+Task Priorities and Stack Size
+==============================
+
+The default task priority is 96 for the interrupt server task (name "IRQS"), 98
+for the timer server task (name "TIME") and 100 for all other tasks.  The
+application may provide their own implementation of the
+``rtems_bsd_get_task_priority()`` function if different values are desired (for
+example in the translation unit which calls ``rtems_bsd_initialize()``).
+
+The task stack size is determined by the ``rtems_bsd_get_task_stack_size()``
+function which may be provided by the application in case the default is not
+appropriate.
+
+Size for Allocator Domains
+==========================
+
+The size for an allocator domain can be specified via the
+``rtems_bsd_get_allocator_domain_size()`` function.  The application may provide
+their own implementation of the ``rtems_bsd_get_allocator_domain_size()``
+function (for example in the module which calls ``rtems_bsd_initialize()``) if
+different values are desired.  The default size is 8MiB for all domains.
+
+Redirecting or Disabling the Output
+===================================
+
+A lot of system messages are printed to the ``stdout`` by default. If you want to
+redirect them you can overwrite the default print handler. That can even be done
+before the libbsd initialization to catch all messages. An example would look
+like follows:
+
+.. code-block:: c
+
+    int my_vprintf_handler(int level, const char *fmt, va_list ap) {
+            /* Do something with the messages. */
+
+            return number_of_printed_chars;
+    }
+
+    ...
+            /* In your initialization: */
+            rtems_bsd_vprintf_handler old;
+            old = rtems_bsd_set_vprintf_handler(my_vprintf_handler);
+    ...
+
+As a special case, you can set the ``rtems_bsd_vprintf_handler_mute(...)``
+provided by LibBSD to suppress all output.
+
 Branches
 ========
 

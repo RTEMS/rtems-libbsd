@@ -42,6 +42,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mbuf.h>
+#include <sys/sbuf.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/kernel.h>
@@ -157,6 +158,7 @@ typedef struct if_atsam_softc {
 	size_t tx_idx_tail;
 	struct if_atsam_tx_bds *tx;
 	struct mbuf *tx_mbufs[TX_DESC_COUNT];
+	size_t rx_idx_head;
 	struct if_atsam_rx_bds *rx;
 	struct mbuf *rx_mbufs[RX_DESC_COUNT];
 	uint8_t GMacAddress[6];
@@ -505,6 +507,8 @@ if_atsam_rx_daemon(rtems_task_argument arg)
 
 	while (true) {
 		rtems_event_set out;
+
+		sc->rx_idx_head = idx;
 
 		/* Enable RX interrupts */
 		pHw->GMAC_IER = GMAC_IER_RCOMP | GMAC_IER_ROVR;
@@ -1160,6 +1164,73 @@ if_atsam_sysctl_reg(SYSCTL_HANDLER_ARGS)
 	return (sysctl_handle_int(oidp, &value, 0, req));
 }
 
+static int
+if_atsam_sysctl_tx_desc(SYSCTL_HANDLER_ARGS)
+{
+	struct if_atsam_softc *sc = arg1;
+	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	struct sbuf *sb;
+	int error;
+	size_t i;
+
+	error = sysctl_wire_old_buffer(req, 0);
+	if (error != 0) {
+		return (error);
+	}
+
+	sb = sbuf_new_for_sysctl(NULL, NULL, 1024, req);
+	if (sb == NULL) {
+		return (ENOMEM);
+	}
+
+	sbuf_printf(sb, "\n\tHead %u\n", sc->tx_idx_head);
+	sbuf_printf(sb, "\tTail %u\n", sc->tx_idx_tail);
+	sbuf_printf(sb, "\tDMA  %u\n",
+	    (pHw->GMAC_TBQB - (uintptr_t)&sc->tx->bds[0]) / 8);
+
+	for (i = 0; i < TX_DESC_COUNT; ++i) {
+		sbuf_printf(sb, "\t[%2u] %08x %08x\n", i,
+		    sc->tx->bds[i].status.val, sc->tx->bds[i].addr);
+	}
+
+	error = sbuf_finish(sb);
+	sbuf_delete(sb);
+	return (error);
+}
+
+static int
+if_atsam_sysctl_rx_desc(SYSCTL_HANDLER_ARGS)
+{
+	struct if_atsam_softc *sc = arg1;
+	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
+	struct sbuf *sb;
+	int error;
+	size_t i;
+
+	error = sysctl_wire_old_buffer(req, 0);
+	if (error != 0) {
+		return (error);
+	}
+
+	sb = sbuf_new_for_sysctl(NULL, NULL, 1024, req);
+	if (sb == NULL) {
+		return (ENOMEM);
+	}
+
+	sbuf_printf(sb, "\n\tHead %u\n", sc->rx_idx_head);
+	sbuf_printf(sb, "\tDMA  %u\n",
+	    (pHw->GMAC_RBQB - (uintptr_t)&sc->rx->bds[0]) / 8);
+
+	for (i = 0; i < RX_DESC_COUNT; ++i) {
+		sbuf_printf(sb, "\t[%2u] %08x %08x\n", i,
+		    sc->rx->bds[i].status.val, sc->rx->bds[i].addr);
+	}
+
+	error = sbuf_finish(sb);
+	sbuf_delete(sb);
+	return (error);
+}
+
 static void
 if_atsam_add_sysctls(device_t dev)
 {
@@ -1179,6 +1250,12 @@ if_atsam_add_sysctls(device_t dev)
 			       NULL, "if_atsam registers");
 	child = SYSCTL_CHILDREN(tree);
 
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "txdesc", CTLTYPE_STRING |
+	    CTLFLAG_RD, sc, 0, if_atsam_sysctl_tx_desc, "A",
+	    "Transmit Descriptors");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "rxdesc", CTLTYPE_STRING |
+	    CTLFLAG_RD, sc, 0, if_atsam_sysctl_rx_desc, "A",
+	    "Receive Descriptors");
 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "imr", CTLTYPE_UINT |
 	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_IMR), 0,
 	    if_atsam_sysctl_reg, "I", "IMR");

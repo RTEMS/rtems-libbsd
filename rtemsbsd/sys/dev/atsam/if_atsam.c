@@ -1128,6 +1128,28 @@ if_atsam_poll_hw_stats(struct if_atsam_softc *sc)
 	sc->stats.udp_checksum_errors += pHw->GMAC_UCE;
 }
 
+static int
+if_atsam_stats_reset(SYSCTL_HANDLER_ARGS)
+{
+	struct if_atsam_softc *sc = arg1;
+	int value;
+	int error;
+
+	value = 0;
+	error = sysctl_handle_int(oidp, &value, 0, req);
+	if (error != 0 || req->newptr == NULL) {
+		return (error);
+	}
+
+	if (value != 0) {
+		IF_ATSAM_LOCK(sc);
+		if_atsam_poll_hw_stats(sc);
+		memset(&sc->stats, 0, sizeof(sc->stats));
+		IF_ATSAM_UNLOCK(sc);
+	}
+
+	return (0);
+}
 
 static void
 if_atsam_add_sysctls(device_t dev)
@@ -1145,6 +1167,9 @@ if_atsam_add_sysctls(device_t dev)
 	tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "stats", CTLFLAG_RD,
 			       NULL, "if_atsam statistics");
 	statsnode = SYSCTL_CHILDREN(tree);
+
+	SYSCTL_ADD_PROC(ctx, statsnode, OID_AUTO, "reset", CTLTYPE_INT |
+	    CTLFLAG_WR, sc, 0, if_atsam_stats_reset, "I", "Reset");
 
 	tree = SYSCTL_ADD_NODE(ctx, statsnode, OID_AUTO, "sw", CTLFLAG_RD,
 			       NULL, "if_atsam software statistics");

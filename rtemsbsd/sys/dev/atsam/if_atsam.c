@@ -1151,20 +1151,57 @@ if_atsam_stats_reset(SYSCTL_HANDLER_ARGS)
 	return (0);
 }
 
+static int
+if_atsam_sysctl_reg(SYSCTL_HANDLER_ARGS)
+{
+	u_int value;
+
+	value = *(uint32_t *)arg1;
+	return (sysctl_handle_int(oidp, &value, 0, req));
+}
+
 static void
 if_atsam_add_sysctls(device_t dev)
 {
 	struct if_atsam_softc *sc = device_get_softc(dev);
+	Gmac *pHw = sc->Gmac_inst.gGmacd.pHw;
 	struct sysctl_ctx_list *ctx;
+	struct sysctl_oid_list *base;
 	struct sysctl_oid_list *statsnode;
 	struct sysctl_oid_list *hwstatsnode;
 	struct sysctl_oid_list *child;
 	struct sysctl_oid *tree;
 
 	ctx = device_get_sysctl_ctx(dev);
-	child = SYSCTL_CHILDREN(device_get_sysctl_tree(dev));
+	base = SYSCTL_CHILDREN(device_get_sysctl_tree(dev));
 
-	tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "stats", CTLFLAG_RD,
+	tree = SYSCTL_ADD_NODE(ctx, base, OID_AUTO, "regs", CTLFLAG_RD,
+			       NULL, "if_atsam registers");
+	child = SYSCTL_CHILDREN(tree);
+
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "imr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_IMR), 0,
+	    if_atsam_sysctl_reg, "I", "IMR");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "isr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_ISR), 0,
+	    if_atsam_sysctl_reg, "I", "ISR");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "rsr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_RSR), 0,
+	    if_atsam_sysctl_reg, "I", "RSR");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "tsr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_TSR), 0,
+	    if_atsam_sysctl_reg, "I", "TSR");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "nsr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_NSR), 0,
+	    if_atsam_sysctl_reg, "I", "NSR");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "ncfgr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_NCFGR), 0,
+	    if_atsam_sysctl_reg, "I", "NCFGR");
+	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "ncr", CTLTYPE_UINT |
+	    CTLFLAG_RD, __DEVOLATILE(uint32_t *, &pHw->GMAC_NCR), 0,
+	    if_atsam_sysctl_reg, "I", "NCR");
+
+	tree = SYSCTL_ADD_NODE(ctx, base, OID_AUTO, "stats", CTLFLAG_RD,
 			       NULL, "if_atsam statistics");
 	statsnode = SYSCTL_CHILDREN(tree);
 

@@ -1316,40 +1316,40 @@ if_atsam_add_sysctls(device_t dev)
 			       NULL, "if_atsam hardware transmit statistics");
 	child = SYSCTL_CHILDREN(tree);
 
-	SYSCTL_ADD_UQUAD(ctx, child, OID_AUTO, "octets_transm",
+	SYSCTL_ADD_UQUAD(ctx, child, OID_AUTO, "octets",
 	    CTLFLAG_RD, &sc->stats.octets_transm,
 	    "Octets Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames",
 	    CTLFLAG_RD, &sc->stats.frames_transm, 0,
 	    "Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "broadcast_frames_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "broadcast_frames",
 	    CTLFLAG_RD, &sc->stats.broadcast_frames_transm, 0,
 	    "Broadcast Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multicast_frames_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multicast_frames",
 	    CTLFLAG_RD, &sc->stats.multicast_frames_transm, 0,
 	    "Multicast Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "pause_frames_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "pause_frames",
 	    CTLFLAG_RD, &sc->stats.pause_frames_transm, 0,
 	    "Pause Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_64_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_64_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_64_byte_transm, 0,
 	    "64 Byte Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_65_to_127_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_65_to_127_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_65_to_127_byte_transm, 0,
 	    "65 to 127 Byte Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_128_to_255_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_128_to_255_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_128_to_255_byte_transm, 0,
 	    "128 to 255 Byte Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_256_to_511_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_256_to_511_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_256_to_511_byte_transm, 0,
 	    "256 to 511 Byte Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_512_to_1023_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_512_to_1023_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_512_to_1023_byte_transm, 0,
 	    "512 to 1023 Byte Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1024_to_1518_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1024_to_1518_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_1024_to_1518_byte_transm, 0,
 	    "1024 to 1518 Byte Frames Transmitted");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_greater_1518_byte_transm",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1519_to_maximum_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_greater_1518_byte_transm, 0,
 	    "Greater Than 1518 Byte Frames Transmitted");
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "transmit_underruns",
@@ -1378,49 +1378,49 @@ if_atsam_add_sysctls(device_t dev)
 			       NULL, "if_atsam hardware receive statistics");
 	child = SYSCTL_CHILDREN(tree);
 
-	SYSCTL_ADD_UQUAD(ctx, child, OID_AUTO, "octets_rec",
+	SYSCTL_ADD_UQUAD(ctx, child, OID_AUTO, "octets",
 	    CTLFLAG_RD, &sc->stats.octets_rec,
 	    "Octets Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames",
 	    CTLFLAG_RD, &sc->stats.frames_rec, 0,
 	    "Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "broadcast_frames_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "broadcast_frames",
 	    CTLFLAG_RD, &sc->stats.broadcast_frames_rec, 0,
 	    "Broadcast Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multicast_frames_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "multicast_frames",
 	    CTLFLAG_RD, &sc->stats.multicast_frames_rec, 0,
 	    "Multicast Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "pause_frames_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "pause_frames",
 	    CTLFLAG_RD, &sc->stats.pause_frames_rec, 0,
 	    "Pause Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_64_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_64_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_64_byte_rec, 0,
 	    "64 Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_65_to_127_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_65_to_127_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_65_to_127_byte_rec, 0,
 	    "65 to 127 Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_128_to_255_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_128_to_255_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_128_to_255_byte_rec, 0,
 	    "128 to 255 Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_256_to_511_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_256_to_511_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_256_to_511_byte_rec, 0,
 	    "256 to 511 Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_512_to_1023_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_512_to_1023_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_512_to_1023_byte_rec, 0,
 	    "512 to 1023 Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1024_to_1518_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1024_to_1518_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_1024_to_1518_byte_rec, 0,
 	    "1024 to 1518 Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1519_to_maximum_byte_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frames_1519_to_maximum_bytes",
 	    CTLFLAG_RD, &sc->stats.frames_1519_to_maximum_byte_rec, 0,
 	    "1519 to Maximum Byte Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "undersize_frames_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "undersize_frames",
 	    CTLFLAG_RD, &sc->stats.undersize_frames_rec, 0,
 	    "Undersize Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "oversize_frames_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "oversize_frames",
 	    CTLFLAG_RD, &sc->stats.oversize_frames_rec, 0,
 	    "Oversize Frames Received");
-	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "jabbers_rec",
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "jabbers",
 	    CTLFLAG_RD, &sc->stats.jabbers_rec, 0,
 	    "Jabbers Received");
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "frame_check_sequence_errors",

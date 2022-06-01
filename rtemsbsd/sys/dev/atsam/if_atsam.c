@@ -108,6 +108,8 @@
 #define MDIO_PHY MII_PHY_ANY
 #define IGNORE_RX_ERR false
 
+#define RX_INTERRUPTS (GMAC_ISR_RCOMP | GMAC_ISR_RXUBR | GMAC_ISR_ROVR)
+
 #define RX_DESC_LOG2 3
 #define RX_DESC_COUNT (1U << RX_DESC_LOG2)
 #define RX_DESC_WRAP(idx) \
@@ -187,6 +189,7 @@ typedef struct if_atsam_softc {
 	struct if_atsam_stats {
 		/* Software */
 		uint32_t rx_overrun_errors;
+		uint32_t rx_used_bit_reads;
 		uint32_t rx_interrupts;
 		uint32_t tx_tur_errors;
 		uint32_t tx_rlex_errors;
@@ -400,15 +403,19 @@ static void if_atsam_interrupt_handler(void *arg)
 	}
 
 	/* Check receive interrupts */
-	if (__predict_true((is & (GMAC_IER_ROVR | GMAC_IER_RCOMP)) != 0)) {
-		if (__predict_false((is & GMAC_IER_ROVR) != 0)) {
+	if (__predict_true((is & RX_INTERRUPTS) != 0)) {
+		if (__predict_false((is & GMAC_ISR_RXUBR) != 0)) {
+			++sc->stats.rx_used_bit_reads;
+		}
+
+		if (__predict_false((is & GMAC_ISR_ROVR) != 0)) {
 			++sc->stats.rx_overrun_errors;
 		}
 
 		++sc->stats.rx_interrupts;
 
-		/* Erase the interrupts for RX completion and errors */
-		pHw->GMAC_IDR = GMAC_IER_RCOMP | GMAC_IER_ROVR;
+		/* Disable RX interrupts */
+		pHw->GMAC_IDR = RX_INTERRUPTS;
 
 		(void)rtems_event_send(sc->rx_daemon_tid,
 		    ATSAMV7_ETH_RX_EVENT_INTERRUPT);
@@ -511,7 +518,7 @@ if_atsam_rx_daemon(rtems_task_argument arg)
 		sc->rx_idx_head = idx;
 
 		/* Enable RX interrupts */
-		pHw->GMAC_IER = GMAC_IER_RCOMP | GMAC_IER_ROVR;
+		pHw->GMAC_IER = RX_INTERRUPTS;
 
 		(void) rtems_event_receive(ATSAMV7_ETH_RX_EVENT_INTERRUPT,
 		    RTEMS_EVENT_ALL | RTEMS_WAIT, RTEMS_NO_TIMEOUT, &out);
@@ -1292,6 +1299,9 @@ if_atsam_add_sysctls(device_t dev)
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_overrun_errors",
 	    CTLFLAG_RD, &sc->stats.rx_overrun_errors, 0,
 	    "RX overrun errors");
+	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_used_bit_reads",
+	    CTLFLAG_RD, &sc->stats.rx_used_bit_reads, 0,
+	    "RX used bit reads");
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "rx_interrupts",
 	    CTLFLAG_RD, &sc->stats.rx_interrupts, 0,
 	    "Rx interrupts");

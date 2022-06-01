@@ -272,8 +272,7 @@ test_main(void)
 	rv = rtems_pppd_connect();
 	assert(rv == 0);
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 RTEMS_BSD_DEFINE_NEXUS_DEVICE(ppp, 0, 0, NULL);

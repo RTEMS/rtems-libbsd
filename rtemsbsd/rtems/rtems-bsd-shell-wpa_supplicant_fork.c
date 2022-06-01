@@ -53,7 +53,7 @@ new_wpa_supplicant_task(rtems_task_argument arg)
 	free(params->argv);
 	free(params);
 
-	rtems_task_delete( RTEMS_SELF );
+	rtems_task_exit();
 }
 
 int rtems_bsd_command_wpa_supplicant_fork(int argc, char **argv)

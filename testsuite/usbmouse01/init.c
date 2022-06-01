@@ -103,7 +103,7 @@ usb_mouse_read_task(rtems_task_argument arg)
 	}
 
 	rtask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void
@@ -143,7 +143,7 @@ usb_mouse_open_task(rtems_task_argument arg)
 		printf("mouse device closed\n");
 	}
 	otask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void

@@ -101,7 +101,7 @@ usb_keyboard_read_task(rtems_task_argument arg)
 	  rtems_message_queue_send(omid, &msg, sizeof(msg));
 	}
 	rtask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void
@@ -141,7 +141,7 @@ usb_keyboard_open_task(rtems_task_argument arg)
 		printf("keyboard device closed\n");
 	}
 	otask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void

@@ -75,7 +75,7 @@ racoon_task(rtems_task_argument arg)
 	}
 
 	clean_up_args(args);
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 rtems_status_code

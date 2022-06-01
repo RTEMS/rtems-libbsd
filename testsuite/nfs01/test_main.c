@@ -397,8 +397,7 @@ test_main(void)
 
 	test_nfs(mount_point);
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define CONFIGURE_SHELL_COMMANDS_ALL

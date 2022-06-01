@@ -1155,7 +1155,7 @@ dhcpcd_task(rtems_task_argument arg)
 		(*config->destroy)(config, exit_code);
 	}
 
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 rtems_status_code

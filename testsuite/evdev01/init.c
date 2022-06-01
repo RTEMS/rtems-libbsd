@@ -341,7 +341,7 @@ evdev_scan_task(rtems_task_argument arg)
 		}
 	}
 	otask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void
@@ -401,7 +401,7 @@ err:
 		}
 	}
 	ktask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void
@@ -484,7 +484,7 @@ err:
 		}
 	}
 	mtask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void
@@ -561,7 +561,7 @@ err:
 		}
 	}
 	ttask_active = false;
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 static void

@@ -79,8 +79,7 @@ test_main(void)
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

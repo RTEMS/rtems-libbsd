@@ -763,7 +763,7 @@ rc_conf_worker(rtems_task_argument task_argument)
   if (rc_conf->verbose)
     printf("rc.conf: finished\n");
 
-  rtems_task_delete(RTEMS_SELF);
+  rtems_task_exit();
 }
 
 int

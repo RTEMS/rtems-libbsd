@@ -288,13 +288,6 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 	return eno;
 }
 
-static __dead2 void
-rtems_bsd_thread_delete(void)
-{
-	rtems_task_delete(RTEMS_SELF);
-	BSD_PANIC("delete self failed");
-}
-
 void
 kproc_start(const void *udata)
 {
@@ -320,7 +313,7 @@ kproc_create(void (*func)(void *), void *arg, struct proc **newpp, int flags, in
 void
 kproc_exit(int ecode)
 {
-	rtems_bsd_thread_delete();
+	rtems_task_exit();
 }
 
 void
@@ -350,7 +343,7 @@ kthread_add(void (*func)(void *), void *arg, struct proc *p, struct thread **new
 void
 kthread_exit(void)
 {
-	rtems_bsd_thread_delete();
+	rtems_task_exit();
 }
 
 int

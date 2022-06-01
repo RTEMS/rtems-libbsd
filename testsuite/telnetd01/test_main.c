@@ -75,8 +75,7 @@ test_main(void)
 	rtems_status_code sc = rtems_telnetd_initialize();
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define DEFAULT_NETWORK_SHELL

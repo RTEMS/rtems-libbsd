@@ -3114,7 +3114,7 @@ rtems_filesystem_location_info_t	old;
 		rtems_filesystem_current->location = old;
 	}
 	rtems_semaphore_release(rpa->sync);
-	rtems_task_delete(RTEMS_SELF);
+	rtems_task_exit();
 }
 
 

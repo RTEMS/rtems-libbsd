@@ -240,8 +240,7 @@ test_main(void)
 	sc = rtems_task_start(id, network_flood_task, (rtems_task_argument) bc);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

@@ -109,13 +109,10 @@ wait_for_worker_thread(void)
 static void
 non_bsd_thread(rtems_task_argument arg)
 {
-	rtems_status_code sc;
 
 	test_curthread("");
 	wake_up_main_thread();
-
-	sc = rtems_task_delete(RTEMS_SELF);
-	assert(sc == RTEMS_SUCCESSFUL);
+	rtems_task_exit();
 }
 
 static void

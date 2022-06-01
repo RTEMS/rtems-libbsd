@@ -272,8 +272,7 @@ test_main(void)
 
 	foobar_register(&question);
 
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define DEFAULT_NETWORK_DHCPCD_ENABLE

@@ -32,8 +32,6 @@
  * SUCH DAMAGE.
  */
 
-#include <assert.h>
-
 #include <rtems.h>
 #include <rtems/shell.h>
 #include <rtems/console.h>
@@ -44,8 +42,7 @@
 static void
 test_main(void)
 {
-	rtems_task_delete(RTEMS_SELF);
-	assert(0);
+	rtems_task_exit();
 }
 
 #define SHELL_TTCP_COMMAND_ENABLE

@@ -145,7 +145,7 @@ test_walk_tree(const char *start, walk_tree_callout callout, void *data)
 	while (dir != NULL && active) {
 		test_dir *tmp_dir;
 		if (active && dir->dirs == NULL && dir->indir == NULL) {
-			struct DIR *ddir;
+			DIR *ddir;
 			rtems_test_errno_assert((ddir = opendir(".")) != NULL);
 			while (active) {
 				struct dirent *dp;
@@ -209,6 +209,7 @@ test_walk_tree(const char *start, walk_tree_callout callout, void *data)
 	}
 }
 
+#if NFS_TREE_WALK
 typedef struct test_printer_data {
 	char path[MAXPATHLEN];
 	int count;
@@ -256,6 +257,7 @@ test_walk_tree_printer(walk_tree_dir state,
 	}
 	return true;
 }
+#endif
 
 static bool
 test_walk_tree_unlink(walk_tree_dir state,
@@ -280,7 +282,7 @@ test_walk_tree_unlink(walk_tree_dir state,
 static void
 test_setup(const char *base)
 {
-	struct DIR *ddir;
+	DIR *ddir;
 	printf("test: nfs: setup\n");
 	printf("test: nfs: opendir: %s\n", base);
 	rtems_test_errno_assert((ddir = opendir(base)) != NULL);

@@ -3924,6 +3924,8 @@ uma_prealloc(uma_zone_t zone, int items)
 #ifndef __rtems__
 		vm_domainset_iter_policy_ref_init(&di, &keg->uk_dr, &domain,
 		    &aflags);
+#else /* __rtems__ */
+		domain = 0;
 #endif /* __rtems__ */
 		for (;;) {
 			slab = keg_alloc_slab(keg, zone, domain, M_WAITOK,

@@ -356,6 +356,12 @@ original FreeBSD code.
 Rules for Modifying FreeBSD Source
 ==================================
 
+Do not reformat original FreeBSD code.  Do not perform white space changes even
+if you get git commit warnings.  **Check your editor settings so that it does
+not perform white space changes automatically**, for example adding a newline
+to the end of the file.  White space changes may result in conflicts during
+updates, especially changes at the end of a file.
+
 Changes in FreeBSD files must be done using ``__rtems__`` C pre-processor guards.
 This makes synchronization with the FreeBSD upstream easier and is very
 important.  Patches which do not follow these rules will be rejected.  Only add
@@ -456,12 +462,6 @@ In general, provide empty header files and do not guard includes.
 
 For new code use
 `STYLE(9) <http://www.freebsd.org/cgi/man.cgi?query=style&apropos=0&sektion=9>`_.
-
-Do not format original FreeBSD code.  Do not perform white space changes even
-if you get git commit warnings.  Check your editor settings so that it doesn't
-perform white space changes automatically, for example adding a newline to the
-end of the file.  White space changes may result in conflicts during updates,
-especially changes at the end of a file.
 
 Automatically Generated FreeBSD Files
 =====================================

@@ -1,1428 +1,1839 @@
+/**
+ * @file
+ *
+ * @ingroup lpc_eth
+ *
+ * @brief Ethernet driver.
+ */
+
+/*
+ * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
+ *
+ *  embedded brains GmbH
+ *  Obere Lagerstr. 30
+ *  82178 Puchheim
+ *  Germany
+ *  <rtems@embedded-brains.de>
+ *
+ * The license and distribution terms for this file may be
+ * found in the file LICENSE in this distribution or at
+ * http://www.rtems.org/license/LICENSE.
+ */
+
 #include <machine/rtems-bsd-kernel-space.h>
 
-/*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
- *
- * Copyright (c) 2011 Jakub Wojciech Klama <jceel@FreeBSD.org>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#include <errno.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
+#include <rtems.h>
+#include <rtems/rtems_bsdnet.h>
+#include <rtems/rtems_mii_ioctl.h>
 
 #include <sys/param.h>
-#include <sys/endian.h>
-#include <sys/systm.h>
+#include <sys/socket.h>
 #include <sys/sockio.h>
 #include <sys/mbuf.h>
-#include <sys/malloc.h>
-#include <sys/kernel.h>
-#include <sys/module.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/rman.h>
-#include <sys/bus.h>
-#include <sys/socket.h>
-#include <machine/bus.h>
-#ifndef __rtems__
-#include <machine/intr.h>
-#endif /* __rtems__ */
 
 #include <net/if.h>
 #include <net/if_arp.h>
-#include <net/ethernet.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
-#include <net/if_types.h>
-#include <net/if_var.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 
-#include <net/bpf.h>
+#include <bsp.h>
+#include <bsp/irq.h>
+#include <bsp/lpc-ethernet-config.h>
+#include <bsp/utility.h>
 
-#ifndef __rtems__
-#include <dev/ofw/ofw_bus.h>
-#include <dev/ofw/ofw_bus_subr.h>
-#endif /* __rtems__ */
+#if MCLBYTES > (2 * 1024)
+  #error "MCLBYTES to large"
+#endif
 
-#include <dev/mii/mii.h>
-#include <dev/mii/miivar.h>
+#ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+  #define LPC_ETH_CONFIG_TX_BUF_SIZE sizeof(struct mbuf *)
+#else
+  #define LPC_ETH_CONFIG_TX_BUF_SIZE 1518U
+#endif
 
-#include <arm/lpc/lpcreg.h>
-#include <arm/lpc/lpcvar.h>
-#include <arm/lpc/if_lpereg.h>
+#define DEFAULT_PHY 0
+#define WATCHDOG_TIMEOUT 5
 
-#include <rtems/bsd/local/miibus_if.h>
-#ifdef __rtems__
-#include <machine/rtems-bsd-cache.h>
-#include <rtems/bsd/bsd.h>
-#endif /* __rtems__ */
+typedef struct {
+  uint32_t start;
+  uint32_t control;
+} lpc_eth_transfer_descriptor;
+
+typedef struct {
+  uint32_t info;
+  uint32_t hash_crc;
+} lpc_eth_receive_status;
+
+typedef struct {
+  uint32_t mac1;
+  uint32_t mac2;
+  uint32_t ipgt;
+  uint32_t ipgr;
+  uint32_t clrt;
+  uint32_t maxf;
+  uint32_t supp;
+  uint32_t test;
+  uint32_t mcfg;
+  uint32_t mcmd;
+  uint32_t madr;
+  uint32_t mwtd;
+  uint32_t mrdd;
+  uint32_t mind;
+  uint32_t reserved_0 [2];
+  uint32_t sa0;
+  uint32_t sa1;
+  uint32_t sa2;
+  uint32_t reserved_1 [45];
+  uint32_t command;
+  uint32_t status;
+  uint32_t rxdescriptor;
+  uint32_t rxstatus;
+  uint32_t rxdescriptornum;
+  uint32_t rxproduceindex;
+  uint32_t rxconsumeindex;
+  uint32_t txdescriptor;
+  uint32_t txstatus;
+  uint32_t txdescriptornum;
+  uint32_t txproduceindex;
+  uint32_t txconsumeindex;
+  uint32_t reserved_2 [10];
+  uint32_t tsv0;
+  uint32_t tsv1;
+  uint32_t rsv;
+  uint32_t reserved_3 [3];
+  uint32_t flowcontrolcnt;
+  uint32_t flowcontrolsts;
+  uint32_t reserved_4 [34];
+  uint32_t rxfilterctrl;
+  uint32_t rxfilterwolsts;
+  uint32_t rxfilterwolclr;
+  uint32_t reserved_5 [1];
+  uint32_t hashfilterl;
+  uint32_t hashfilterh;
+  uint32_t reserved_6 [882];
+  uint32_t intstatus;
+  uint32_t intenable;
+  uint32_t intclear;
+  uint32_t intset;
+  uint32_t reserved_7 [1];
+  uint32_t powerdown;
+} lpc_eth_controller;
+
+static volatile lpc_eth_controller *const lpc_eth = 
+  (volatile lpc_eth_controller *) LPC_ETH_CONFIG_REG_BASE;
+
+/* ETH_RX_CTRL */
+
+#define ETH_RX_CTRL_SIZE_MASK 0x000007ffU
+#define ETH_RX_CTRL_INTERRUPT 0x80000000U
+
+/* ETH_RX_STAT */
+
+#define ETH_RX_STAT_RXSIZE_MASK 0x000007ffU
+#define ETH_RX_STAT_BYTES 0x00000100U
+#define ETH_RX_STAT_CONTROL_FRAME 0x00040000U
+#define ETH_RX_STAT_VLAN 0x00080000U
+#define ETH_RX_STAT_FAIL_FILTER 0x00100000U
+#define ETH_RX_STAT_MULTICAST 0x00200000U
+#define ETH_RX_STAT_BROADCAST 0x00400000U
+#define ETH_RX_STAT_CRC_ERROR 0x00800000U
+#define ETH_RX_STAT_SYMBOL_ERROR 0x01000000U
+#define ETH_RX_STAT_LENGTH_ERROR 0x02000000U
+#define ETH_RX_STAT_RANGE_ERROR 0x04000000U
+#define ETH_RX_STAT_ALIGNMENT_ERROR 0x08000000U
+#define ETH_RX_STAT_OVERRUN 0x10000000U
+#define ETH_RX_STAT_NO_DESCRIPTOR 0x20000000U
+#define ETH_RX_STAT_LAST_FLAG 0x40000000U
+#define ETH_RX_STAT_ERROR 0x80000000U
+
+/* ETH_TX_CTRL */
+
+#define ETH_TX_CTRL_SIZE_MASK 0x7ffU
+#define ETH_TX_CTRL_SIZE_SHIFT 0
+#define ETH_TX_CTRL_OVERRIDE 0x04000000U
+#define ETH_TX_CTRL_HUGE 0x08000000U
+#define ETH_TX_CTRL_PAD 0x10000000U
+#define ETH_TX_CTRL_CRC 0x20000000U
+#define ETH_TX_CTRL_LAST 0x40000000U
+#define ETH_TX_CTRL_INTERRUPT 0x80000000U
+
+/* ETH_TX_STAT */
+
+#define ETH_TX_STAT_COLLISION_COUNT_MASK 0x01e00000U
+#define ETH_TX_STAT_DEFER 0x02000000U
+#define ETH_TX_STAT_EXCESSIVE_DEFER 0x04000000U
+#define ETH_TX_STAT_EXCESSIVE_COLLISION 0x08000000U
+#define ETH_TX_STAT_LATE_COLLISION 0x10000000U
+#define ETH_TX_STAT_UNDERRUN 0x20000000U
+#define ETH_TX_STAT_NO_DESCRIPTOR 0x40000000U
+#define ETH_TX_STAT_ERROR 0x80000000U
+
+/* ETH_INT */
+
+#define ETH_INT_RX_OVERRUN 0x00000001U
+#define ETH_INT_RX_ERROR 0x00000002U
+#define ETH_INT_RX_FINISHED 0x00000004U
+#define ETH_INT_RX_DONE 0x00000008U
+#define ETH_INT_TX_UNDERRUN 0x00000010U
+#define ETH_INT_TX_ERROR 0x00000020U
+#define ETH_INT_TX_FINISHED 0x00000040U
+#define ETH_INT_TX_DONE 0x00000080U
+#define ETH_INT_SOFT 0x00001000U
+#define ETH_INT_WAKEUP 0x00002000U
+
+/* ETH_RX_FIL_CTRL */
+
+#define ETH_RX_FIL_CTRL_ACCEPT_UNICAST 0x00000001U
+#define ETH_RX_FIL_CTRL_ACCEPT_BROADCAST 0x00000002U
+#define ETH_RX_FIL_CTRL_ACCEPT_MULTICAST 0x00000004U
+#define ETH_RX_FIL_CTRL_ACCEPT_UNICAST_HASH 0x00000008U
+#define ETH_RX_FIL_CTRL_ACCEPT_MULTICAST_HASH 0x00000010U
+#define ETH_RX_FIL_CTRL_ACCEPT_PERFECT 0x00000020U
+#define ETH_RX_FIL_CTRL_MAGIC_PACKET_WOL 0x00001000U
+#define ETH_RX_FIL_CTRL_RX_FILTER_WOL 0x00002000U
+
+/* ETH_CMD */
+
+#define ETH_CMD_RX_ENABLE 0x00000001U
+#define ETH_CMD_TX_ENABLE 0x00000002U
+#define ETH_CMD_REG_RESET 0x00000008U
+#define ETH_CMD_TX_RESET 0x00000010U
+#define ETH_CMD_RX_RESET 0x00000020U
+#define ETH_CMD_PASS_RUNT_FRAME 0x00000040U
+#define ETH_CMD_PASS_RX_FILTER 0X00000080U
+#define ETH_CMD_TX_FLOW_CONTROL 0x00000100U
+#define ETH_CMD_RMII 0x00000200U
+#define ETH_CMD_FULL_DUPLEX 0x00000400U
+
+/* ETH_STAT */
+
+#define ETH_STAT_RX_ACTIVE 0x00000001U
+#define ETH_STAT_TX_ACTIVE 0x00000002U
+
+/* ETH_MAC2 */
+
+#define ETH_MAC2_FULL_DUPLEX BSP_BIT32(8)
+
+/* ETH_SUPP */
+
+#define ETH_SUPP_SPEED BSP_BIT32(8)
+
+/* ETH_MCFG */
+
+#define ETH_MCFG_CLOCK_SELECT(val) BSP_FLD32(val, 2, 4)
+
+#define ETH_MCFG_RESETMIIMGMT BSP_BIT32(15)
+
+/* ETH_MCMD */
+
+#define ETH_MCMD_READ BSP_BIT32(0)
+#define ETH_MCMD_SCAN BSP_BIT32(1)
+
+/* ETH_MADR */
+
+#define ETH_MADR_REG(val) BSP_FLD32(val, 0, 4)
+#define ETH_MADR_PHY(val) BSP_FLD32(val, 8, 12)
+
+/* ETH_MIND */
+
+#define ETH_MIND_BUSY BSP_BIT32(0)
+#define ETH_MIND_SCANNING BSP_BIT32(1)
+#define ETH_MIND_NOT_VALID BSP_BIT32(2)
+#define ETH_MIND_MII_LINK_FAIL BSP_BIT32(3)
+
+/* Events */
+
+#define LPC_ETH_EVENT_INITIALIZE RTEMS_EVENT_1
+
+#define LPC_ETH_EVENT_TXSTART RTEMS_EVENT_2
+
+#define LPC_ETH_EVENT_INTERRUPT RTEMS_EVENT_3
+
+#define LPC_ETH_EVENT_STOP RTEMS_EVENT_4
+
+/* Status */
+
+#define LPC_ETH_INTERRUPT_RECEIVE \
+  (ETH_INT_RX_ERROR | ETH_INT_RX_FINISHED | ETH_INT_RX_DONE)
+
+#define LPC_ETH_INTERRUPT_TRANSMIT \
+  (ETH_INT_TX_DONE | ETH_INT_TX_FINISHED | ETH_INT_TX_ERROR)
+
+#define LPC_ETH_RX_STAT_ERRORS \
+  (ETH_RX_STAT_CRC_ERROR \
+    | ETH_RX_STAT_SYMBOL_ERROR \
+    | ETH_RX_STAT_LENGTH_ERROR \
+    | ETH_RX_STAT_ALIGNMENT_ERROR \
+    | ETH_RX_STAT_OVERRUN \
+    | ETH_RX_STAT_NO_DESCRIPTOR)
+
+#define LPC_ETH_LAST_FRAGMENT_FLAGS \
+  (ETH_TX_CTRL_OVERRIDE \
+    | ETH_TX_CTRL_PAD \
+    | ETH_TX_CTRL_CRC \
+    | ETH_TX_CTRL_INTERRUPT \
+    | ETH_TX_CTRL_LAST)
+
+/* Debug */
 
 #ifdef DEBUG
-#define debugf(fmt, args...) do { printf("%s(): ", __func__);   \
-    printf(fmt,##args); } while (0)
+  #define LPC_ETH_PRINTF(...) printf(__VA_ARGS__)
+  #define LPC_ETH_PRINTK(...) printk(__VA_ARGS__)
 #else
-#define debugf(fmt, args...)
+  #define LPC_ETH_PRINTF(...)
+  #define LPC_ETH_PRINTK(...)
 #endif
 
-struct lpe_dmamap_arg {
-	bus_addr_t		lpe_dma_busaddr;
+typedef enum {
+  LPC_ETH_STATE_NOT_INITIALIZED = 0,
+  LPC_ETH_STATE_DOWN,
+  LPC_ETH_STATE_UP
+} lpc_eth_state;
+
+typedef struct {
+  struct arpcom arpcom;
+  lpc_eth_state state;
+  struct rtems_mdio_info mdio;
+  uint32_t anlpar;
+  rtems_id receive_task;
+  rtems_id transmit_task;
+  unsigned rx_unit_count;
+  unsigned tx_unit_count;
+  volatile lpc_eth_transfer_descriptor *rx_desc_table;
+  volatile lpc_eth_receive_status *rx_status_table;
+  struct mbuf **rx_mbuf_table;
+  volatile lpc_eth_transfer_descriptor *tx_desc_table;
+  volatile uint32_t *tx_status_table;
+  void *tx_buf_table;
+  unsigned received_frames;
+  unsigned receive_interrupts;
+  unsigned transmitted_frames;
+  unsigned transmit_interrupts;
+  unsigned receive_drop_errors;
+  unsigned receive_overrun_errors;
+  unsigned receive_fragment_errors;
+  unsigned receive_crc_errors;
+  unsigned receive_symbol_errors;
+  unsigned receive_length_errors;
+  unsigned receive_alignment_errors;
+  unsigned receive_no_descriptor_errors;
+  unsigned receive_fatal_errors;
+  unsigned transmit_underrun_errors;
+  unsigned transmit_late_collision_errors;
+  unsigned transmit_excessive_collision_errors;
+  unsigned transmit_excessive_defer_errors;
+  unsigned transmit_no_descriptor_errors;
+  unsigned transmit_overflow_errors;
+  unsigned transmit_fatal_errors;
+  uint32_t phy_id;
+  int phy;
+  rtems_vector_number interrupt_number;
+  rtems_id control_task;
+} lpc_eth_driver_entry;
+
+static lpc_eth_driver_entry lpc_eth_driver_data;
+
+static void lpc_eth_control_request_complete(const lpc_eth_driver_entry *e)
+{
+  rtems_status_code sc = rtems_event_transient_send(e->control_task);
+  assert(sc == RTEMS_SUCCESSFUL);
+}
+
+static void lpc_eth_control_request(
+  lpc_eth_driver_entry *e,
+  rtems_id task,
+  rtems_event_set event
+)
+{
+  rtems_status_code sc = RTEMS_SUCCESSFUL;
+  uint32_t nest_count = 0;
+
+  e->control_task = rtems_task_self();
+
+  sc = rtems_bsdnet_event_send(task, event);
+  assert(sc == RTEMS_SUCCESSFUL);
+
+  nest_count = rtems_bsdnet_semaphore_release_recursive();
+  sc = rtems_event_transient_receive(RTEMS_WAIT, RTEMS_NO_TIMEOUT);
+  assert(sc == RTEMS_SUCCESSFUL);
+  rtems_bsdnet_semaphore_obtain_recursive(nest_count);
+
+  e->control_task = 0;
+}
+
+static inline uint32_t lpc_eth_increment(
+  uint32_t value,
+  uint32_t cycle
+)
+{
+  if (value < cycle) {
+    return ++value;
+  } else {
+    return 0;
+  }
+}
+
+static void lpc_eth_enable_promiscous_mode(bool enable)
+{
+  if (enable) {
+    lpc_eth->rxfilterctrl = ETH_RX_FIL_CTRL_ACCEPT_UNICAST
+      | ETH_RX_FIL_CTRL_ACCEPT_MULTICAST
+      | ETH_RX_FIL_CTRL_ACCEPT_BROADCAST;
+  } else {
+    lpc_eth->rxfilterctrl = ETH_RX_FIL_CTRL_ACCEPT_PERFECT
+      | ETH_RX_FIL_CTRL_ACCEPT_MULTICAST_HASH
+      | ETH_RX_FIL_CTRL_ACCEPT_BROADCAST;
+  }
+}
+
+static void lpc_eth_interrupt_handler(void *arg)
+{
+  lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) arg;
+  rtems_event_set re = 0;
+  rtems_event_set te = 0;
+  uint32_t ie = 0;
+
+  /* Get interrupt status */
+  uint32_t im = lpc_eth->intenable;
+  uint32_t is = lpc_eth->intstatus & im;
+
+  /* Check receive interrupts */
+  if ((is & ETH_INT_RX_OVERRUN) != 0) {
+    re = LPC_ETH_EVENT_INITIALIZE;
+    ++e->receive_fatal_errors;
+  } else if ((is & LPC_ETH_INTERRUPT_RECEIVE) != 0) {
+    re = LPC_ETH_EVENT_INTERRUPT;
+    ie |= LPC_ETH_INTERRUPT_RECEIVE;
+  }
+
+  /* Send events to receive task */
+  if (re != 0) {
+    ++e->receive_interrupts;
+    (void) rtems_bsdnet_event_send(e->receive_task, re);
+  }
+
+  /* Check transmit interrupts */
+  if ((is & ETH_INT_TX_UNDERRUN) != 0) {
+    te = LPC_ETH_EVENT_INITIALIZE;
+    ++e->transmit_fatal_errors;
+  } else if ((is & LPC_ETH_INTERRUPT_TRANSMIT) != 0) {
+    te = LPC_ETH_EVENT_INTERRUPT;
+    ie |= LPC_ETH_INTERRUPT_TRANSMIT;
+  }
+
+  /* Send events to transmit task */
+  if (te != 0) {
+    ++e->transmit_interrupts;
+    (void) rtems_bsdnet_event_send(e->transmit_task, te);
+  }
+
+  LPC_ETH_PRINTK("interrupt: rx = 0x%08x, tx = 0x%08x\n", re, te);
+
+  /* Update interrupt mask */
+  lpc_eth->intenable = im & ~ie;
+
+  /* Clear interrupts */
+  lpc_eth->intclear = is;
+}
+
+static void lpc_eth_enable_receive_interrupts(void)
+{
+  rtems_interrupt_level level;
+
+  rtems_interrupt_disable(level);
+  lpc_eth->intenable |= LPC_ETH_INTERRUPT_RECEIVE;
+  rtems_interrupt_enable(level);
+}
+
+static void lpc_eth_disable_receive_interrupts(void)
+{
+  rtems_interrupt_level level;
+
+  rtems_interrupt_disable(level);
+  lpc_eth->intenable &= ~LPC_ETH_INTERRUPT_RECEIVE;
+  rtems_interrupt_enable(level);
+}
+
+static void lpc_eth_enable_transmit_interrupts(void)
+{
+  rtems_interrupt_level level;
+
+  rtems_interrupt_disable(level);
+  lpc_eth->intenable |= LPC_ETH_INTERRUPT_TRANSMIT;
+  rtems_interrupt_enable(level);
+}
+
+static void lpc_eth_disable_transmit_interrupts(void)
+{
+  rtems_interrupt_level level;
+
+  rtems_interrupt_disable(level);
+  lpc_eth->intenable &= ~LPC_ETH_INTERRUPT_TRANSMIT;
+  rtems_interrupt_enable(level);
+}
+
+#define LPC_ETH_RX_DATA_OFFSET 2
+
+static struct mbuf *lpc_eth_new_mbuf(struct ifnet *ifp, bool wait)
+{
+  struct mbuf *m = NULL;
+  int mw = wait ? M_WAIT : M_DONTWAIT;
+
+  MGETHDR(m, mw, MT_DATA);
+  if (m != NULL) {
+    MCLGET(m, mw);
+    if ((m->m_flags & M_EXT) != 0) {
+      /* Set receive interface */
+      m->m_pkthdr.rcvif = ifp;
+
+      /* Adjust by two bytes for proper IP header alignment */
+      m->m_data = mtod(m, char *) + LPC_ETH_RX_DATA_OFFSET;
+
+      return m;
+    } else {
+      m_free(m);
+    }
+  }
+
+  return NULL;
+}
+
+static bool lpc_eth_add_new_mbuf(
+  struct ifnet *ifp,
+  volatile lpc_eth_transfer_descriptor *desc,
+  struct mbuf **mbufs,
+  uint32_t i,
+  bool wait
+)
+{
+  /* New mbuf */
+  struct mbuf *m = lpc_eth_new_mbuf(ifp, wait);
+
+  /* Check mbuf */
+  if (m != NULL) {
+    /* Cache invalidate */
+    rtems_cache_invalidate_multiple_data_lines(
+      mtod(m, void *),
+      MCLBYTES - LPC_ETH_RX_DATA_OFFSET
+    );
+
+    /* Add mbuf to queue */
+    desc [i].start = mtod(m, uint32_t);
+    desc [i].control = (MCLBYTES - LPC_ETH_RX_DATA_OFFSET - 1)
+      | ETH_RX_CTRL_INTERRUPT;
+
+    /* Cache flush of descriptor  */
+    rtems_cache_flush_multiple_data_lines(
+      (void *) &desc [i],
+      sizeof(desc [0])
+    );
+
+    /* Add mbuf to table */
+    mbufs [i] = m;
+
+    return true;
+  } else {
+    return false;
+  }
+}
+
+static void lpc_eth_receive_task(void *arg)
+{
+  rtems_status_code sc = RTEMS_SUCCESSFUL;
+  rtems_event_set events = 0;
+  lpc_eth_driver_entry *const e = (lpc_eth_driver_entry *) arg;
+  struct ifnet *const ifp = &e->arpcom.ac_if;
+  volatile lpc_eth_transfer_descriptor *const desc = e->rx_desc_table;
+  volatile lpc_eth_receive_status *const status = e->rx_status_table;
+  struct mbuf **const mbufs = e->rx_mbuf_table;
+  uint32_t const index_max = e->rx_unit_count - 1;
+  uint32_t produce_index = 0;
+  uint32_t consume_index = 0;
+
+  LPC_ETH_PRINTF("%s\n", __func__);
+
+  /* Main event loop */
+  while (true) {
+    /* Wait for events */
+    sc = rtems_bsdnet_event_receive(
+      LPC_ETH_EVENT_INITIALIZE
+        | LPC_ETH_EVENT_STOP
+        | LPC_ETH_EVENT_INTERRUPT,
+      RTEMS_EVENT_ANY | RTEMS_WAIT,
+      RTEMS_NO_TIMEOUT,
+      &events
+    );
+    assert(sc == RTEMS_SUCCESSFUL);
+
+    LPC_ETH_PRINTF("rx: wake up: 0x%08" PRIx32 "\n", events);
+
+    /* Stop receiver? */
+    if ((events & LPC_ETH_EVENT_STOP) != 0) {
+      lpc_eth_control_request_complete(e);
+
+      /* Wait for events */
+      continue;
+    }
+
+    /* Initialize receiver? */
+    if ((events & LPC_ETH_EVENT_INITIALIZE) != 0) {
+      /* Disable receive interrupts */
+      lpc_eth_disable_receive_interrupts();
+
+      /* Disable receiver */
+      lpc_eth->command &= ~ETH_CMD_RX_ENABLE;
+
+      /* Wait for inactive status */
+      while ((lpc_eth->status & ETH_STAT_RX_ACTIVE) != 0) {
+        /* Wait */
+      }
+
+      /* Reset */
+      lpc_eth->command |= ETH_CMD_RX_RESET;
+
+      /* Clear receive interrupts */
+      lpc_eth->intclear = LPC_ETH_INTERRUPT_RECEIVE;
+
+      /* Move existing mbufs to the front */
+      consume_index = 0;
+      for (produce_index = 0; produce_index <= index_max; ++produce_index) {
+        if (mbufs [produce_index] != NULL) {
+          mbufs [consume_index] = mbufs [produce_index];
+          ++consume_index;
+        }
+      }
+
+      /* Fill receive queue */
+      for (
+        produce_index = consume_index;
+        produce_index <= index_max;
+        ++produce_index
+      ) {
+        lpc_eth_add_new_mbuf(ifp, desc, mbufs, produce_index, true);
+      }
+
+      /* Receive descriptor table */
+      lpc_eth->rxdescriptornum = index_max;
+      lpc_eth->rxdescriptor = (uint32_t) desc;
+      lpc_eth->rxstatus = (uint32_t) status;
+
+      /* Initialize indices */
+      produce_index = lpc_eth->rxproduceindex;
+      consume_index = lpc_eth->rxconsumeindex;
+
+      /* Enable receiver */
+      lpc_eth->command |= ETH_CMD_RX_ENABLE;
+
+      /* Enable receive interrupts */
+      lpc_eth_enable_receive_interrupts();
+
+      lpc_eth_control_request_complete(e);
+
+      /* Wait for events */
+      continue;
+    }
+
+    while (true) {
+      /* Clear receive interrupt status */
+      lpc_eth->intclear = LPC_ETH_INTERRUPT_RECEIVE;
+
+      /* Get current produce index */
+      produce_index = lpc_eth->rxproduceindex;
+
+      if (consume_index != produce_index) {
+        uint32_t stat = 0;
+
+        /* Fragment status */
+        rtems_cache_invalidate_multiple_data_lines(
+          (void *) &status [consume_index],
+          sizeof(status [0])
+        );
+        stat = status [consume_index].info;
+
+        if (
+          (stat & ETH_RX_STAT_LAST_FLAG) != 0
+            && (stat & LPC_ETH_RX_STAT_ERRORS) == 0
+        ) {
+          /* Received mbuf */
+          struct mbuf *m = mbufs [consume_index];
+
+          if (lpc_eth_add_new_mbuf(ifp, desc, mbufs, consume_index, false)) {
+            /* Ethernet header */
+            struct ether_header *eh = mtod(m, struct ether_header *);
+
+            /* Discard Ethernet header and CRC */
+            int sz = (int) (stat & ETH_RX_STAT_RXSIZE_MASK) + 1
+              - ETHER_HDR_LEN - ETHER_CRC_LEN;
+
+            /* Update mbuf */
+            m->m_len = sz;
+            m->m_pkthdr.len = sz;
+            m->m_data = mtod(m, char *) + ETHER_HDR_LEN;
+
+            LPC_ETH_PRINTF("rx: %02" PRIu32 ": %u\n", consume_index, sz);
+
+            /* Hand over */
+            ether_input(ifp, eh, m);
+
+            /* Increment received frames counter */
+            ++e->received_frames;
+          } else {
+            ++e->receive_drop_errors;
+          }
+        } else {
+          /* Update error counters */
+          if ((stat & ETH_RX_STAT_OVERRUN) != 0) {
+            ++e->receive_overrun_errors;
+          }
+          if ((stat & ETH_RX_STAT_LAST_FLAG) == 0) {
+            ++e->receive_fragment_errors;
+          }
+          if ((stat & ETH_RX_STAT_CRC_ERROR) != 0) {
+            ++e->receive_crc_errors;
+          }
+          if ((stat & ETH_RX_STAT_SYMBOL_ERROR) != 0) {
+            ++e->receive_symbol_errors;
+          }
+          if ((stat & ETH_RX_STAT_LENGTH_ERROR) != 0) {
+            ++e->receive_length_errors;
+          }
+          if ((stat & ETH_RX_STAT_ALIGNMENT_ERROR) != 0) {
+            ++e->receive_alignment_errors;
+          }
+          if ((stat & ETH_RX_STAT_NO_DESCRIPTOR) != 0) {
+            ++e->receive_no_descriptor_errors;
+          }
+        }
+
+        /* Increment and update consume index */
+        consume_index = lpc_eth_increment(consume_index, index_max);
+        lpc_eth->rxconsumeindex = consume_index;
+      } else {
+        /* Nothing to do, enable receive interrupts */
+        lpc_eth_enable_receive_interrupts();
+        break;
+      }
+    }
+  }
+}
+
+static struct mbuf *lpc_eth_next_fragment(
+  struct ifnet *ifp,
+  struct mbuf *m,
+  uint32_t *ctrl
+)
+{
+  struct mbuf *n = NULL;
+  int size = 0;
+
+  while (true) {
+    if (m == NULL) {
+      /* Dequeue first fragment of the next frame */
+      IF_DEQUEUE(&ifp->if_snd, m);
+
+      /* Empty queue? */
+      if (m == NULL) {
+        return m;
+      }
+    }
+
+    /* Get fragment size */
+    size = m->m_len;
+
+    if (size > 0) {
+      /* Now we have a not empty fragment */
+      break;
+    } else {
+      /* Discard empty fragments */
+      m = m_free(m);
+    }
+  }
+
+  /* Set fragment size */
+  *ctrl = (uint32_t) (size - 1);
+
+  /* Discard empty successive fragments */
+  n = m->m_next;
+  while (n != NULL && n->m_len <= 0) {
+    n = m_free(n);
+  }
+  m->m_next = n;
+
+  /* Is our fragment the last in the frame? */
+  if (n == NULL) {
+    *ctrl |= LPC_ETH_LAST_FRAGMENT_FLAGS;
+  }
+
+  return m;
+}
+
+static void lpc_eth_transmit_task(void *arg)
+{
+  rtems_status_code sc = RTEMS_SUCCESSFUL;
+  rtems_event_set events = 0;
+  lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) arg;
+  struct ifnet *ifp = &e->arpcom.ac_if;
+  volatile lpc_eth_transfer_descriptor *const desc = e->tx_desc_table;
+  volatile uint32_t *const status = e->tx_status_table;
+  #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+    struct mbuf **const mbufs = e->tx_buf_table;
+  #else
+    char *const buf = e->tx_buf_table;
+  #endif
+  struct mbuf *m = NULL;
+  uint32_t const index_max = e->tx_unit_count - 1;
+  uint32_t produce_index = 0;
+  uint32_t consume_index = 0;
+  uint32_t ctrl = 0;
+  #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+    uint32_t frame_length = 0;
+    char *frame_buffer = NULL;
+  #endif
+
+  LPC_ETH_PRINTF("%s\n", __func__);
+
+  #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+    /* Initialize descriptor table */
+    for (produce_index = 0; produce_index <= index_max; ++produce_index) {
+      desc [produce_index].start =
+        (uint32_t) (buf + produce_index * LPC_ETH_CONFIG_TX_BUF_SIZE);
+    }
+  #endif
+
+  /* Main event loop */
+  while (true) {
+    /* Wait for events */
+    sc = rtems_bsdnet_event_receive(
+      LPC_ETH_EVENT_INITIALIZE
+        | LPC_ETH_EVENT_STOP
+        | LPC_ETH_EVENT_TXSTART
+        | LPC_ETH_EVENT_INTERRUPT,
+      RTEMS_EVENT_ANY | RTEMS_WAIT,
+      RTEMS_NO_TIMEOUT,
+      &events
+    );
+    assert(sc == RTEMS_SUCCESSFUL);
+
+    LPC_ETH_PRINTF("tx: wake up: 0x%08" PRIx32 "\n", events);
+
+    /* Stop transmitter? */
+    if ((events & LPC_ETH_EVENT_STOP) != 0) {
+      lpc_eth_control_request_complete(e);
+
+      /* Wait for events */
+      continue;
+    }
+
+    /* Initialize transmitter? */
+    if ((events & LPC_ETH_EVENT_INITIALIZE) != 0) {
+      /* Disable transmit interrupts */
+      lpc_eth_disable_transmit_interrupts();
+
+      /* Disable transmitter */
+      lpc_eth->command &= ~ETH_CMD_TX_ENABLE;
+
+      /* Wait for inactive status */
+      while ((lpc_eth->status & ETH_STAT_TX_ACTIVE) != 0) {
+        /* Wait */
+      }
+
+      /* Reset */
+      lpc_eth->command |= ETH_CMD_TX_RESET;
+
+      /* Clear transmit interrupts */
+      lpc_eth->intclear = LPC_ETH_INTERRUPT_TRANSMIT;
+
+      /* Transmit descriptors */
+      lpc_eth->txdescriptornum = index_max;
+      lpc_eth->txdescriptor = (uint32_t) desc;
+      lpc_eth->txstatus = (uint32_t) status;
+
+      #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+        /* Discard outstanding fragments (= data loss) */
+        for (produce_index = 0; produce_index <= index_max; ++produce_index) {
+          struct mbuf *victim = mbufs [produce_index];
+
+          if (victim != NULL) {
+            m_free(victim);
+            mbufs [produce_index] = NULL;
+          }
+        }
+      #endif
+
+      /* Initialize indices */
+      produce_index = lpc_eth->txproduceindex;
+      consume_index = lpc_eth->txconsumeindex;
+
+      #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+        /* Fresh frame length and buffer start */
+        frame_length = 0;
+        frame_buffer = (char *) desc [produce_index].start;
+      #endif
+
+      /* Enable transmitter */
+      lpc_eth->command |= ETH_CMD_TX_ENABLE;
+
+      lpc_eth_control_request_complete(e);
+    }
+
+    /* Free consumed fragments */
+    while (true) {
+      /* Save last known consume index */
+      uint32_t c = consume_index;
+
+      /* Clear transmit interrupt status */
+      lpc_eth->intclear = LPC_ETH_INTERRUPT_TRANSMIT;
+
+      /* Get new consume index */
+      consume_index = lpc_eth->txconsumeindex;
+
+      /* Nothing consumed in the meantime? */
+      if (c == consume_index) {
+        break;
+      }
+
+      while (c != consume_index) {
+        uint32_t s = status [c];
+
+        /* Update error counters */
+        if ((s & (ETH_TX_STAT_ERROR | ETH_TX_STAT_NO_DESCRIPTOR)) != 0) {
+          if ((s & ETH_TX_STAT_UNDERRUN) != 0) {
+            ++e->transmit_underrun_errors;
+          }
+          if ((s & ETH_TX_STAT_LATE_COLLISION) != 0) {
+            ++e->transmit_late_collision_errors;
+          }
+          if ((s & ETH_TX_STAT_EXCESSIVE_COLLISION) != 0) {
+            ++e->transmit_excessive_collision_errors;
+          }
+          if ((s & ETH_TX_STAT_EXCESSIVE_DEFER) != 0) {
+            ++e->transmit_excessive_defer_errors;
+          }
+          if ((s & ETH_TX_STAT_NO_DESCRIPTOR) != 0) {
+            ++e->transmit_no_descriptor_errors;
+          }
+        }
+
+        #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+          /* Release mbuf */
+          m_free(mbufs [c]);
+          mbufs [c] = NULL;
+        #endif
+
+        /* Next consume index */
+        c = lpc_eth_increment(c, index_max);
+      }
+    }
+
+    /* Transmit new fragments */
+    while (true) {
+      /* Compute next produce index */
+      uint32_t p = lpc_eth_increment(produce_index, index_max);
+
+      /* Get next fragment and control value */
+      m = lpc_eth_next_fragment(ifp, m, &ctrl);
+
+      /* Queue full? */
+      if (p == consume_index) {
+        LPC_ETH_PRINTF("tx: full queue: 0x%08x\n", m);
+
+        /* The queue is full, wait for transmit interrupt */
+        break;
+      }
+
+      /* New fragment? */
+      if (m != NULL) {
+        #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+          /* Set the transfer data */
+          rtems_cache_flush_multiple_data_lines(
+            mtod(m, const void *),
+            (size_t) m->m_len
+          );
+          desc [produce_index].start = mtod(m, uint32_t);
+          desc [produce_index].control = ctrl;
+          rtems_cache_flush_multiple_data_lines(
+            (void *) &desc [produce_index],
+            sizeof(desc [0])
+           );
+          mbufs [produce_index] = m;
+
+          LPC_ETH_PRINTF(
+            "tx: %02" PRIu32 ": %u %s\n",
+            produce_index, m->m_len,
+            (ctrl & ETH_TX_CTRL_LAST) != 0 ? "L" : ""
+          );
+
+          /* Next produce index */
+          produce_index = p;
+
+          /* Last fragment of a frame? */
+          if ((ctrl & ETH_TX_CTRL_LAST) != 0) {
+            /* Update the produce index */
+            lpc_eth->txproduceindex = produce_index;
+
+            /* Increment transmitted frames counter */
+            ++e->transmitted_frames;
+          }
+
+          /* Next fragment of the frame */
+          m = m->m_next;
+        #else
+          size_t fragment_length = (size_t) m->m_len;
+          void *fragment_start = mtod(m, void *);
+          uint32_t new_frame_length = frame_length + fragment_length;
+
+          /* Check buffer size */
+          if (new_frame_length > LPC_ETH_CONFIG_TX_BUF_SIZE) {
+            LPC_ETH_PRINTF("tx: overflow\n");
+
+            /* Discard overflow data */
+            new_frame_length = LPC_ETH_CONFIG_TX_BUF_SIZE;
+            fragment_length = new_frame_length - frame_length;
+
+            /* Finalize frame */
+            ctrl |= LPC_ETH_LAST_FRAGMENT_FLAGS;
+
+            /* Update error counter */
+            ++e->transmit_overflow_errors;
+          }
+
+          LPC_ETH_PRINTF(
+            "tx: copy: %" PRIu32 "%s%s\n",
+            fragment_length,
+            (m->m_flags & M_EXT) != 0 ? ", E" : "",
+            (m->m_flags & M_PKTHDR) != 0 ? ", H" : ""
+          );
+
+          /* Copy fragment to buffer in Ethernet RAM */
+          memcpy(frame_buffer, fragment_start, fragment_length);
+
+          if ((ctrl & ETH_TX_CTRL_LAST) != 0) {
+            /* Finalize descriptor */
+            desc [produce_index].control = (ctrl & ~ETH_TX_CTRL_SIZE_MASK)
+              | (new_frame_length - 1);
+
+            LPC_ETH_PRINTF(
+              "tx: %02" PRIu32 ": %" PRIu32 "\n",
+              produce_index,
+              new_frame_length
+            );
+
+            /* Cache flush of data */
+            rtems_cache_flush_multiple_data_lines(
+              (const void *) desc [produce_index].start,
+              new_frame_length
+            );
+
+            /* Cache flush of descriptor  */
+            rtems_cache_flush_multiple_data_lines(
+              (void *) &desc [produce_index],
+              sizeof(desc [0])
+            );
+
+            /* Next produce index */
+            produce_index = p;
+
+            /* Update the produce index */
+            lpc_eth->txproduceindex = produce_index;
+
+            /* Fresh frame length and buffer start */
+            frame_length = 0;
+            frame_buffer = (char *) desc [produce_index].start;
+
+            /* Increment transmitted frames counter */
+            ++e->transmitted_frames;
+          } else {
+            /* New frame length */
+            frame_length = new_frame_length;
+
+            /* Update current frame buffer start */
+            frame_buffer += fragment_length;
+          }
+
+          /* Free mbuf and get next */
+          m = m_free(m);
+        #endif
+      } else {
+        /* Nothing to transmit */
+        break;
+      }
+    }
+
+    /* No more fragments? */
+    if (m == NULL) {
+      /* Interface is now inactive */
+      ifp->if_flags &= ~IFF_OACTIVE;
+    } else {
+      LPC_ETH_PRINTF("tx: enable interrupts\n");
+
+      /* Enable transmit interrupts */
+      lpc_eth_enable_transmit_interrupts();
+    }
+  }
+}
+
+static int lpc_eth_mdio_wait_for_not_busy(void)
+{
+  rtems_interval one_second = rtems_clock_get_ticks_per_second();
+  rtems_interval i = 0;
+
+  while ((lpc_eth->mind & ETH_MIND_BUSY) != 0 && i < one_second) {
+    rtems_task_wake_after(1);
+    ++i;
+  }
+
+  LPC_ETH_PRINTK("tx: lpc_eth_mdio_wait %s after %d\n",
+                 i != one_second? "succeed": "timeout", i);
+
+  return i != one_second ? 0 : ETIMEDOUT;
+}
+
+static uint32_t lpc_eth_mdio_read_anlpar(int phy)
+{
+  uint32_t madr = ETH_MADR_REG(MII_ANLPAR) | ETH_MADR_PHY(phy);
+  uint32_t anlpar = 0;
+  int eno = 0;
+
+  if (lpc_eth->madr != madr) {
+    lpc_eth->madr = madr;
+  }
+
+  if (lpc_eth->mcmd != ETH_MCMD_READ) {
+    lpc_eth->mcmd = 0;
+    lpc_eth->mcmd = ETH_MCMD_READ;
+  }
+
+  eno = lpc_eth_mdio_wait_for_not_busy();
+  if (eno == 0) {
+    anlpar = lpc_eth->mrdd;
+  }
+
+  /* Start next read */
+  lpc_eth->mcmd = 0;
+  lpc_eth->mcmd = ETH_MCMD_READ;
+
+  return anlpar;
+}
+
+static int lpc_eth_mdio_read(
+  int phy,
+  void *arg RTEMS_UNUSED,
+  unsigned reg,
+  uint32_t *val
+)
+{
+  int eno = 0;
+
+  if (0 <= phy && phy <= 31) {
+    lpc_eth->madr = ETH_MADR_REG(reg) | ETH_MADR_PHY(phy);
+    lpc_eth->mcmd = 0;
+    lpc_eth->mcmd = ETH_MCMD_READ;
+    eno = lpc_eth_mdio_wait_for_not_busy();
+
+    if (eno == 0) {
+      *val = lpc_eth->mrdd;
+    }
+  } else {
+    eno = EINVAL;
+  }
+
+  return eno;
+}
+
+static int lpc_eth_mdio_write(
+  int phy,
+  void *arg RTEMS_UNUSED,
+  unsigned reg,
+  uint32_t val
+)
+{
+  int eno = 0;
+
+  if (0 <= phy && phy <= 31) {
+    lpc_eth->madr = ETH_MADR_REG(reg) | ETH_MADR_PHY(phy);
+    lpc_eth->mwtd = val;
+    eno = lpc_eth_mdio_wait_for_not_busy();
+  } else {
+    eno = EINVAL;
+  }
+
+  return eno;
+}
+
+static int lpc_eth_phy_get_id(int phy, uint32_t *id)
+{
+  uint32_t id1 = 0;
+  int eno = lpc_eth_mdio_read(phy, NULL, MII_PHYIDR1, &id1);
+
+  if (eno == 0) {
+    uint32_t id2 = 0;
+
+    eno = lpc_eth_mdio_read(phy, NULL, MII_PHYIDR2, &id2);
+    if (eno == 0) {
+      *id = (id1 << 16) | (id2 & 0xfff0);
+    }
+  }
+
+  return eno;
+}
+
+#define PHY_KSZ80X1RNL 0x221550
+#define PHY_DP83848    0x20005c90
+
+typedef struct {
+  unsigned reg;
+  uint32_t set;
+  uint32_t clear;
+} lpc_eth_phy_action;
+
+static int lpc_eth_phy_set_and_clear(
+  lpc_eth_driver_entry *e,
+  const lpc_eth_phy_action *actions,
+  size_t n
+)
+{
+  int eno = 0;
+  size_t i;
+
+  for (i = 0; eno == 0 && i < n; ++i) {
+    const lpc_eth_phy_action *action = &actions [i];
+    uint32_t val;
+
+    eno = lpc_eth_mdio_read(e->phy, NULL, action->reg, &val);
+    if (eno == 0) {
+      val |= action->set;
+      val &= ~action->clear;
+      eno = lpc_eth_mdio_write(e->phy, NULL, action->reg, val);
+    }
+  }
+
+  return eno;
+}
+
+static const lpc_eth_phy_action lpc_eth_phy_up_action_default [] = {
+  { MII_BMCR, 0, BMCR_PDOWN },
+  { MII_BMCR, BMCR_RESET, 0 },
+  { MII_BMCR, BMCR_AUTOEN, 0 }
 };
 
-struct lpe_rxdesc {
-	struct mbuf *		lpe_rxdesc_mbuf;
-#ifndef __rtems__
-	bus_dmamap_t		lpe_rxdesc_dmamap;
-#endif /* __rtems__ */
+static const lpc_eth_phy_action lpc_eth_phy_up_pre_action_KSZ80X1RNL [] = {
+  /* Disable slow oscillator mode */
+  { 0x11, 0, 0x10 }
 };
 
-struct lpe_txdesc {
-	int			lpe_txdesc_first;
-	struct mbuf *		lpe_txdesc_mbuf;
-#ifndef __rtems__
-	bus_dmamap_t		lpe_txdesc_dmamap;
-#endif /* __rtems__ */
+static const lpc_eth_phy_action lpc_eth_phy_up_post_action_KSZ80X1RNL [] = {
+  /* Enable energy detect power down (EDPD) mode */
+  { 0x18, 0x0800, 0 },
+  /* Turn PLL of automatically in EDPD mode */
+  { 0x10, 0x10, 0 }
 };
 
-struct lpe_chain_data {
-	bus_dma_tag_t		lpe_parent_tag;
-	bus_dma_tag_t		lpe_tx_ring_tag;
-	bus_dmamap_t		lpe_tx_ring_map;
-	bus_dma_tag_t		lpe_tx_status_tag;
-	bus_dmamap_t		lpe_tx_status_map;
-	bus_dma_tag_t		lpe_tx_buf_tag;
-	bus_dma_tag_t		lpe_rx_ring_tag;
-	bus_dmamap_t		lpe_rx_ring_map;
-	bus_dma_tag_t		lpe_rx_status_tag;
-	bus_dmamap_t		lpe_rx_status_map;
-	bus_dma_tag_t		lpe_rx_buf_tag;
-	struct lpe_rxdesc	lpe_rx_desc[LPE_RXDESC_NUM];
-	struct lpe_txdesc	lpe_tx_desc[LPE_TXDESC_NUM];
-	int			lpe_tx_prod;
-	int			lpe_tx_last;
-	int			lpe_tx_used;
+static int lpc_eth_phy_up(lpc_eth_driver_entry *e)
+{
+  int eno;
+  int retries = 64;
+  uint32_t val;
+
+  e->phy = DEFAULT_PHY - 1;
+  while (true) {
+    e->phy = (e->phy + 1) % 32;
+
+    --retries;
+    eno = lpc_eth_phy_get_id(e->phy, &e->phy_id);
+    if (
+      (eno == 0 && e->phy_id != 0xfffffff0 && e->phy_id != 0)
+        || retries <= 0
+    ) {
+      break;
+    }
+
+    rtems_task_wake_after(1);
+  }
+
+  LPC_ETH_PRINTF("lpc_eth_phy_get_id: 0x%08" PRIx32 " from phy %d retries %d\n",
+                 e->phy_id, e->phy, retries);
+
+  if (eno == 0) {
+    switch (e->phy_id) {
+      case PHY_KSZ80X1RNL:
+        eno = lpc_eth_phy_set_and_clear(
+          e,
+          &lpc_eth_phy_up_pre_action_KSZ80X1RNL [0],
+          RTEMS_ARRAY_SIZE(lpc_eth_phy_up_pre_action_KSZ80X1RNL)
+        );
+        break;
+      case PHY_DP83848:
+        eno = lpc_eth_mdio_read(e->phy, NULL, 0x17, &val);
+        LPC_ETH_PRINTF("phy PHY_DP83848 RBR 0x%08" PRIx32 "\n", val);
+        /* val = 0x21; */
+        val = 0x32 ;
+        eno = lpc_eth_mdio_write(e->phy, NULL, 0x17, val);
+        break;
+      case 0:
+      case 0xfffffff0:
+        eno = EIO;
+        e->phy = DEFAULT_PHY;
+        break;
+      default:
+        break;
+    }
+
+    if (eno == 0) {
+      eno = lpc_eth_phy_set_and_clear(
+        e,
+        &lpc_eth_phy_up_action_default [0],
+        RTEMS_ARRAY_SIZE(lpc_eth_phy_up_action_default)
+      );
+    }
+
+    if (eno == 0) {
+      switch (e->phy_id) {
+        case PHY_KSZ80X1RNL:
+          eno = lpc_eth_phy_set_and_clear(
+            e,
+            &lpc_eth_phy_up_post_action_KSZ80X1RNL [0],
+            RTEMS_ARRAY_SIZE(lpc_eth_phy_up_post_action_KSZ80X1RNL)
+          );
+          break;
+        default:
+          break;
+      }
+    }
+  } else {
+    e->phy_id = 0;
+  }
+
+  return eno;
+}
+
+static const lpc_eth_phy_action lpc_eth_phy_down_action_default [] = {
+  { MII_BMCR, BMCR_PDOWN, 0 }
 };
 
-struct lpe_ring_data {
-	struct lpe_hwdesc *	lpe_rx_ring;
-	struct lpe_hwstatus *	lpe_rx_status;
-	bus_addr_t		lpe_rx_ring_phys;
-	bus_addr_t		lpe_rx_status_phys;
-	struct lpe_hwdesc *	lpe_tx_ring;
-	struct lpe_hwstatus *	lpe_tx_status;
-	bus_addr_t		lpe_tx_ring_phys;
-	bus_addr_t		lpe_tx_status_phys;
+static const lpc_eth_phy_action lpc_eth_phy_down_post_action_KSZ80X1RNL [] = {
+  /* Enable slow oscillator mode */
+  { 0x11, 0x10, 0 }
 };
 
-struct lpe_softc {
-	struct ifnet *		lpe_ifp;
-	struct mtx		lpe_mtx;
-#ifndef __rtems__
-	phandle_t		lpe_ofw;
-#endif /* __rtems__ */
-	device_t		lpe_dev;
-	device_t		lpe_miibus;
-	uint8_t			lpe_enaddr[6];
-	struct resource	*	lpe_mem_res;
-	struct resource *	lpe_irq_res;
-	void *			lpe_intrhand;
-	bus_space_tag_t		lpe_bst;
-	bus_space_handle_t	lpe_bsh;
-#define	LPE_FLAG_LINK		(1 << 0)
-	uint32_t		lpe_flags;
-	int			lpe_watchdog_timer;
-	struct callout		lpe_tick;
-	struct lpe_chain_data	lpe_cdata;
-	struct lpe_ring_data	lpe_rdata;
-};
-
-static int lpe_probe(device_t);
-static int lpe_attach(device_t);
-static int lpe_detach(device_t);
-static int lpe_miibus_readreg(device_t, int, int);
-static int lpe_miibus_writereg(device_t, int, int, int);
-static void lpe_miibus_statchg(device_t);
-
-static void lpe_reset(struct lpe_softc *);
-static void lpe_init(void *);
-static void lpe_init_locked(struct lpe_softc *);
-static void lpe_start(struct ifnet *);
-static void lpe_start_locked(struct ifnet *);
-static void lpe_stop(struct lpe_softc *);
-static void lpe_stop_locked(struct lpe_softc *);
-static int lpe_ioctl(struct ifnet *, u_long, caddr_t);
-static void lpe_set_rxmode(struct lpe_softc *);
-static void lpe_set_rxfilter(struct lpe_softc *);
-static void lpe_intr(void *);
-static void lpe_rxintr(struct lpe_softc *);
-static void lpe_txintr(struct lpe_softc *);
-static void lpe_tick(void *);
-static void lpe_watchdog(struct lpe_softc *);
-static int lpe_encap(struct lpe_softc *, struct mbuf **);
-static int lpe_dma_alloc(struct lpe_softc *);
-static int lpe_dma_alloc_rx(struct lpe_softc *);
-static int lpe_dma_alloc_tx(struct lpe_softc *);
-static int lpe_init_rx(struct lpe_softc *);
-static int lpe_init_rxbuf(struct lpe_softc *, int);
-static void lpe_discard_rxbuf(struct lpe_softc *, int);
-static void lpe_dmamap_cb(void *, bus_dma_segment_t *, int, int);
-static int lpe_ifmedia_upd(struct ifnet *);
-static void lpe_ifmedia_sts(struct ifnet *, struct ifmediareq *);
-
-#define	lpe_lock(_sc)		mtx_lock(&(_sc)->lpe_mtx)
-#define	lpe_unlock(_sc)		mtx_unlock(&(_sc)->lpe_mtx)
-#define	lpe_lock_assert(_sc)	mtx_assert(&(_sc)->lpe_mtx, MA_OWNED)
-
-#define	lpe_read_4(_sc, _reg)		\
-    bus_space_read_4((_sc)->lpe_bst, (_sc)->lpe_bsh, (_reg))
-#define	lpe_write_4(_sc, _reg, _val)	\
-    bus_space_write_4((_sc)->lpe_bst, (_sc)->lpe_bsh, (_reg), (_val))
-
-#define	LPE_HWDESC_RXERRS	(LPE_HWDESC_CRCERROR | LPE_HWDESC_SYMBOLERROR | \
-    LPE_HWDESC_LENGTHERROR | LPE_HWDESC_ALIGNERROR | LPE_HWDESC_OVERRUN | \
-    LPE_HWDESC_RXNODESCR)
-
-#define	LPE_HWDESC_TXERRS	(LPE_HWDESC_EXCDEFER | LPE_HWDESC_EXCCOLL | \
-    LPE_HWDESC_LATECOLL | LPE_HWDESC_UNDERRUN | LPE_HWDESC_TXNODESCR)
-
-static int
-lpe_probe(device_t dev)
+static void lpc_eth_phy_down(lpc_eth_driver_entry *e)
 {
+  int eno = lpc_eth_phy_set_and_clear(
+    e,
+    &lpc_eth_phy_down_action_default [0],
+    RTEMS_ARRAY_SIZE(lpc_eth_phy_down_action_default)
+  );
 
-#ifndef __rtems__
-	if (!ofw_bus_status_okay(dev))
-		return (ENXIO);
-
-	if (!ofw_bus_is_compatible(dev, "lpc,ethernet"))
-		return (ENXIO);
-#endif /* __rtems__ */
-
-	device_set_desc(dev, "LPC32x0 10/100 Ethernet");
-	return (BUS_PROBE_DEFAULT);
+  if (eno == 0) {
+    switch (e->phy_id) {
+      case PHY_KSZ80X1RNL:
+        eno = lpc_eth_phy_set_and_clear(
+          e,
+          &lpc_eth_phy_down_post_action_KSZ80X1RNL [0],
+          RTEMS_ARRAY_SIZE(lpc_eth_phy_down_post_action_KSZ80X1RNL)
+        );
+        break;
+      default:
+        break;
+    }
+  }
 }
 
-static int
-lpe_attach(device_t dev)
+static void lpc_eth_soft_reset(void)
 {
-	struct lpe_softc *sc = device_get_softc(dev);
-	struct ifnet *ifp;
-#ifndef __rtems__
-	int rid, i;
-	uint32_t val;
-#else /* __rtems__ */
-	int rid;
-#endif /* __rtems__ */
-
-	sc->lpe_dev = dev;
-#ifndef __rtems__
-	sc->lpe_ofw = ofw_bus_get_node(dev);
-
-	i = OF_getprop(sc->lpe_ofw, "local-mac-address", (void *)&sc->lpe_enaddr, 6);
-	if (i != 6) {
-		sc->lpe_enaddr[0] = 0x00;
-		sc->lpe_enaddr[1] = 0x11;
-		sc->lpe_enaddr[2] = 0x22;
-		sc->lpe_enaddr[3] = 0x33;
-		sc->lpe_enaddr[4] = 0x44;
-		sc->lpe_enaddr[5] = 0x55;
-	}
-#else /* __rtems__ */
-	rtems_bsd_get_mac_address(device_get_name(sc->lpe_dev), device_get_unit(sc->lpe_dev), sc->lpe_enaddr);
-#endif /* __rtems__ */
-
-	mtx_init(&sc->lpe_mtx, device_get_nameunit(dev), MTX_NETWORK_LOCK,
-	    MTX_DEF);
-
-	callout_init_mtx(&sc->lpe_tick, &sc->lpe_mtx, 0);
-
-	rid = 0;
-	sc->lpe_mem_res = bus_alloc_resource_any(dev, SYS_RES_MEMORY, &rid,
-	    RF_ACTIVE);
-	if (!sc->lpe_mem_res) {
-		device_printf(dev, "cannot allocate memory window\n");
-		goto fail;
-	}
-
-	sc->lpe_bst = rman_get_bustag(sc->lpe_mem_res);
-	sc->lpe_bsh = rman_get_bushandle(sc->lpe_mem_res);
-
-	rid = 0;
-	sc->lpe_irq_res = bus_alloc_resource_any(dev, SYS_RES_IRQ, &rid,
-	    RF_ACTIVE);
-	if (!sc->lpe_irq_res) {
-		device_printf(dev, "cannot allocate interrupt\n");
-		goto fail;
-	}
-
-	sc->lpe_ifp = if_alloc(IFT_ETHER);
-	if (!sc->lpe_ifp) {
-		device_printf(dev, "cannot allocated ifnet\n");
-		goto fail;
-	}
-
-	ifp = sc->lpe_ifp;
-
-	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
-	ifp->if_softc = sc;
-	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-	ifp->if_start = lpe_start;
-	ifp->if_ioctl = lpe_ioctl;
-	ifp->if_init = lpe_init;
-	IFQ_SET_MAXLEN(&ifp->if_snd, IFQ_MAXLEN);
-	ifp->if_snd.ifq_drv_maxlen = IFQ_MAXLEN;
-	IFQ_SET_READY(&ifp->if_snd);
-
-	ether_ifattach(ifp, sc->lpe_enaddr);
-
-	if (bus_setup_intr(dev, sc->lpe_irq_res, INTR_TYPE_NET, NULL,
-	    lpe_intr, sc, &sc->lpe_intrhand)) {
-		device_printf(dev, "cannot establish interrupt handler\n");
-		ether_ifdetach(ifp);
-		goto fail;
-	}
-
-	/* Enable Ethernet clock */
-#ifndef __rtems__
-	lpc_pwr_write(dev, LPC_CLKPWR_MACCLK_CTRL,
-	    LPC_CLKPWR_MACCLK_CTRL_REG |
-	    LPC_CLKPWR_MACCLK_CTRL_SLAVE |
-	    LPC_CLKPWR_MACCLK_CTRL_MASTER |
-	    LPC_CLKPWR_MACCLK_CTRL_HDWINF(3));
-#else /* __rtems__ */
-#ifdef LPC32XX_ETHERNET_RMII
-	lpc_pwr_write(dev, LPC_CLKPWR_MACCLK_CTRL,
-	    LPC_CLKPWR_MACCLK_CTRL_REG |
-	    LPC_CLKPWR_MACCLK_CTRL_SLAVE |
-	    LPC_CLKPWR_MACCLK_CTRL_MASTER |
-	    LPC_CLKPWR_MACCLK_CTRL_HDWINF(3));
-#else
-	lpc_pwr_write(dev, LPC_CLKPWR_MACCLK_CTRL,
-	    LPC_CLKPWR_MACCLK_CTRL_REG |
-	    LPC_CLKPWR_MACCLK_CTRL_SLAVE |
-	    LPC_CLKPWR_MACCLK_CTRL_MASTER |
-	    LPC_CLKPWR_MACCLK_CTRL_HDWINF(1));
-#endif
-#endif /* __rtems__ */
-
-	/* Reset chip */
-	lpe_reset(sc);
-
-	/* Initialize MII */
-#ifndef __rtems__
-	val = lpe_read_4(sc, LPE_COMMAND);
-	lpe_write_4(sc, LPE_COMMAND, val | LPE_COMMAND_RMII);
-
-	if (mii_attach(dev, &sc->lpe_miibus, ifp, lpe_ifmedia_upd,
-	    lpe_ifmedia_sts, BMSR_DEFCAPMASK, 0x01, 
-	    MII_OFFSET_ANY, 0)) {
-		device_printf(dev, "cannot find PHY\n");
-		goto fail;
-	}
-#else /* __rtems__ */
-	if (mii_attach(dev, &sc->lpe_miibus, ifp, lpe_ifmedia_upd,
-	    lpe_ifmedia_sts, BMSR_DEFCAPMASK, MII_PHY_ANY,
-	    MII_OFFSET_ANY, 0)) {
-		device_printf(dev, "cannot find PHY\n");
-		goto fail;
-	}
-#endif /* __rtems__ */
-
-	lpe_dma_alloc(sc);
-
-	return (0);
-
-fail:
-	if (sc->lpe_ifp)
-		if_free(sc->lpe_ifp);
-	if (sc->lpe_intrhand)
-		bus_teardown_intr(dev, sc->lpe_irq_res, sc->lpe_intrhand);
-	if (sc->lpe_irq_res)
-		bus_release_resource(dev, SYS_RES_IRQ, 0, sc->lpe_irq_res);
-	if (sc->lpe_mem_res)
-		bus_release_resource(dev, SYS_RES_MEMORY, 0, sc->lpe_mem_res);
-	return (ENXIO);
+  lpc_eth->command = 0x38;
+  lpc_eth->mac1 = 0xcf00;
+  lpc_eth->mac1 = 0x0;
 }
 
-static int
-lpe_detach(device_t dev)
+static int lpc_eth_up_or_down(lpc_eth_driver_entry *e, bool up)
 {
-	struct lpe_softc *sc = device_get_softc(dev);
+  int eno = 0;
+  rtems_status_code sc = RTEMS_SUCCESSFUL;
+  struct ifnet *ifp = &e->arpcom.ac_if;
 
-	lpe_stop(sc);
+  if (up && e->state == LPC_ETH_STATE_DOWN) {
 
-	if_free(sc->lpe_ifp);
-	bus_teardown_intr(dev, sc->lpe_irq_res, sc->lpe_intrhand);
-	bus_release_resource(dev, SYS_RES_IRQ, 0, sc->lpe_irq_res);
-	bus_release_resource(dev, SYS_RES_MEMORY, 0, sc->lpe_mem_res);
+    lpc_eth_config_module_enable();
 
-	return (0);
+    /* Enable RX/TX reset and disable soft reset */
+    lpc_eth->mac1 = 0xf00;
+
+    /* Initialize PHY */
+    /* Clock value 10 (divide by 44 ) is safe on LPC178x up to 100 MHz AHB clock */
+    lpc_eth->mcfg = ETH_MCFG_CLOCK_SELECT(10) | ETH_MCFG_RESETMIIMGMT;
+    rtems_task_wake_after(1);
+    lpc_eth->mcfg = ETH_MCFG_CLOCK_SELECT(10);
+    rtems_task_wake_after(1);
+    eno = lpc_eth_phy_up(e);
+
+    if (eno == 0) {
+      /*
+       * We must have a valid external clock from the PHY at this point,
+       * otherwise the system bus hangs and only a watchdog reset helps.
+       */
+      lpc_eth_soft_reset();
+
+      /* Reinitialize registers */
+      lpc_eth->mac2 = 0x31;
+      lpc_eth->ipgt = 0x15;
+      lpc_eth->ipgr = 0x12;
+      lpc_eth->clrt = 0x370f;
+      lpc_eth->maxf = 0x0600;
+      lpc_eth->supp = ETH_SUPP_SPEED;
+      lpc_eth->test = 0;
+      #ifdef LPC_ETH_CONFIG_RMII
+        lpc_eth->command = 0x0600;
+      #else
+        lpc_eth->command = 0x0400;
+      #endif
+      lpc_eth->intenable = ETH_INT_RX_OVERRUN | ETH_INT_TX_UNDERRUN;
+      lpc_eth->intclear = 0x30ff;
+      lpc_eth->powerdown = 0;
+
+      /* MAC address */
+      lpc_eth->sa0 = ((uint32_t) e->arpcom.ac_enaddr [5] << 8)
+        | (uint32_t) e->arpcom.ac_enaddr [4];
+      lpc_eth->sa1 = ((uint32_t) e->arpcom.ac_enaddr [3] << 8)
+        | (uint32_t) e->arpcom.ac_enaddr [2];
+      lpc_eth->sa2 = ((uint32_t) e->arpcom.ac_enaddr [1] << 8)
+        | (uint32_t) e->arpcom.ac_enaddr [0];
+
+      /* Enable receiver */
+      lpc_eth->mac1 = 0x03;
+
+      /* Initialize tasks */
+      lpc_eth_control_request(e, e->receive_task, LPC_ETH_EVENT_INITIALIZE);
+      lpc_eth_control_request(e, e->transmit_task, LPC_ETH_EVENT_INITIALIZE);
+
+      /* Install interrupt handler */
+      sc = rtems_interrupt_handler_install(
+        e->interrupt_number,
+        "Ethernet",
+        RTEMS_INTERRUPT_UNIQUE,
+        lpc_eth_interrupt_handler,
+        e
+      );
+      assert(sc == RTEMS_SUCCESSFUL);
+
+      /* Start watchdog timer */
+      ifp->if_timer = 1;
+
+      /* Change state */
+      e->state = LPC_ETH_STATE_UP;
+    }
+
+    if (eno != 0) {
+      ifp->if_flags &= ~IFF_UP;
+    }
+  } else if (!up && e->state == LPC_ETH_STATE_UP) {
+    /* Remove interrupt handler */
+    sc = rtems_interrupt_handler_remove(
+      e->interrupt_number,
+      lpc_eth_interrupt_handler,
+      e
+    );
+    assert(sc == RTEMS_SUCCESSFUL);
+
+    /* Stop tasks */
+    lpc_eth_control_request(e, e->receive_task, LPC_ETH_EVENT_STOP);
+    lpc_eth_control_request(e, e->transmit_task, LPC_ETH_EVENT_STOP);
+
+    lpc_eth_soft_reset();
+    lpc_eth_phy_down(e);
+    lpc_eth_config_module_disable();
+
+    /* Stop watchdog timer */
+    ifp->if_timer = 0;
+
+    /* Change state */
+    e->state = LPC_ETH_STATE_DOWN;
+  }
+
+  return eno;
 }
 
-static int
-lpe_miibus_readreg(device_t dev, int phy, int reg)
+static void lpc_eth_interface_init(void *arg)
 {
-	struct lpe_softc *sc = device_get_softc(dev);
-	uint32_t val;
-	int result;
-
-	lpe_write_4(sc, LPE_MCMD, LPE_MCMD_READ);
-	lpe_write_4(sc, LPE_MADR, 
-	    (reg & LPE_MADR_REGMASK) << LPE_MADR_REGSHIFT |
-	    (phy & LPE_MADR_PHYMASK) << LPE_MADR_PHYSHIFT);
-
-	val = lpe_read_4(sc, LPE_MIND);
-
-	/* Wait until request is completed */
-	while (val & LPE_MIND_BUSY) {
-		val = lpe_read_4(sc, LPE_MIND);
-		DELAY(10);
-	}
-
-	if (val & LPE_MIND_INVALID)
-		return (0);
-
-	lpe_write_4(sc, LPE_MCMD, 0);
-	result = (lpe_read_4(sc, LPE_MRDD) & LPE_MRDD_DATAMASK);
-	debugf("phy=%d reg=%d result=0x%04x\n", phy, reg, result);
-
-	return (result);
+  /* Nothing to do */
 }
 
-static int
-lpe_miibus_writereg(device_t dev, int phy, int reg, int data)
+static void lpc_eth_interface_stats(lpc_eth_driver_entry *e)
 {
-	struct lpe_softc *sc = device_get_softc(dev);
-	uint32_t val;
+  int eno = EIO;
+  int media = 0;
 
-	debugf("phy=%d reg=%d data=0x%04x\n", phy, reg, data);
+  if (e->state == LPC_ETH_STATE_UP) {
+    media = IFM_MAKEWORD(0, 0, 0, 0);
+    eno = rtems_mii_ioctl(&e->mdio, e, SIOCGIFMEDIA, &media);
+  }
 
-	lpe_write_4(sc, LPE_MCMD, LPE_MCMD_WRITE);
-	lpe_write_4(sc, LPE_MADR, 
-	    (reg & LPE_MADR_REGMASK) << LPE_MADR_REGSHIFT |
-	    (phy & LPE_MADR_PHYMASK) << LPE_MADR_PHYSHIFT);
+  rtems_bsdnet_semaphore_release();
 
-	lpe_write_4(sc, LPE_MWTD, (data & LPE_MWTD_DATAMASK));
+  if (eno == 0) {
+    rtems_ifmedia2str(media, NULL, 0);
+    printf("\n");
+  }
 
-	val = lpe_read_4(sc, LPE_MIND);
+  printf("received frames:                     %u\n", e->received_frames);
+  printf("receive interrupts:                  %u\n", e->receive_interrupts);
+  printf("transmitted frames:                  %u\n", e->transmitted_frames);
+  printf("transmit interrupts:                 %u\n", e->transmit_interrupts);
+  printf("receive drop errors:                 %u\n", e->receive_drop_errors);
+  printf("receive overrun errors:              %u\n", e->receive_overrun_errors);
+  printf("receive fragment errors:             %u\n", e->receive_fragment_errors);
+  printf("receive CRC errors:                  %u\n", e->receive_crc_errors);
+  printf("receive symbol errors:               %u\n", e->receive_symbol_errors);
+  printf("receive length errors:               %u\n", e->receive_length_errors);
+  printf("receive alignment errors:            %u\n", e->receive_alignment_errors);
+  printf("receive no descriptor errors:        %u\n", e->receive_no_descriptor_errors);
+  printf("receive fatal errors:                %u\n", e->receive_fatal_errors);
+  printf("transmit underrun errors:            %u\n", e->transmit_underrun_errors);
+  printf("transmit late collision errors:      %u\n", e->transmit_late_collision_errors);
+  printf("transmit excessive collision errors: %u\n", e->transmit_excessive_collision_errors);
+  printf("transmit excessive defer errors:     %u\n", e->transmit_excessive_defer_errors);
+  printf("transmit no descriptor errors:       %u\n", e->transmit_no_descriptor_errors);
+  printf("transmit overflow errors:            %u\n", e->transmit_overflow_errors);
+  printf("transmit fatal errors:               %u\n", e->transmit_fatal_errors);
 
-	/* Wait until request is completed */
-	while (val & LPE_MIND_BUSY) {
-		val = lpe_read_4(sc, LPE_MIND);
-		DELAY(10);
-	}
-
-	return (0);
+  rtems_bsdnet_semaphore_obtain();
 }
 
-static void
-lpe_miibus_statchg(device_t dev)
+static int lpc_eth_multicast_control(
+  bool add,
+  struct ifreq *ifr,
+  struct arpcom *ac
+)
 {
-	struct lpe_softc *sc = device_get_softc(dev);
-	struct mii_data *mii = device_get_softc(sc->lpe_miibus);
+  int eno = 0;
 
-#ifndef __rtems__
-	lpe_lock(sc);
-#endif /* __rtems__ */
+  if (add) {
+    eno = ether_addmulti(ifr, ac);
+  } else {
+    eno = ether_delmulti(ifr, ac);
+  }
 
-	if ((mii->mii_media_status & IFM_ACTIVE) &&
-	    (mii->mii_media_status & IFM_AVALID))
-		sc->lpe_flags |= LPE_FLAG_LINK;
-	else
-		sc->lpe_flags &= ~LPE_FLAG_LINK;
+  if (eno == ENETRESET) {
+    struct ether_multistep step;
+    struct ether_multi *enm;
 
-#ifndef __rtems__
-	lpe_unlock(sc);
-#endif /* __rtems__ */
+    eno = 0;
+
+    lpc_eth->hashfilterl = 0;
+    lpc_eth->hashfilterh = 0;
+
+    ETHER_FIRST_MULTI(step, ac, enm);
+    while (enm != NULL) {
+      uint64_t addrlo = 0;
+      uint64_t addrhi = 0;
+
+      memcpy(&addrlo, enm->enm_addrlo, ETHER_ADDR_LEN);
+      memcpy(&addrhi, enm->enm_addrhi, ETHER_ADDR_LEN);
+      while (addrlo <= addrhi) {
+        /* XXX: ether_crc32_le() does not work, why? */
+        uint32_t crc = ether_crc32_be((uint8_t *) &addrlo, ETHER_ADDR_LEN);
+        uint32_t index = (crc >> 23) & 0x3f;
+
+        if (index < 32) {
+          lpc_eth->hashfilterl |= 1U << index;
+        } else {
+          lpc_eth->hashfilterh |= 1U << (index - 32);
+        }
+        ++addrlo;
+      }
+      ETHER_NEXT_MULTI(step, enm);
+    }
+  }
+
+  return eno;
 }
 
-static void
-lpe_reset(struct lpe_softc *sc)
+static int lpc_eth_interface_ioctl(
+  struct ifnet *ifp,
+  ioctl_command_t cmd,
+  caddr_t data
+)
 {
-	uint32_t mac1;
+  lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) ifp->if_softc;
+  struct ifreq *ifr = (struct ifreq *) data;
+  int eno = 0;
 
-#ifndef __rtems__
-	/* Enter soft reset mode */
-	mac1 = lpe_read_4(sc, LPE_MAC1);
-	lpe_write_4(sc, LPE_MAC1, mac1 | LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
-	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX);
+  LPC_ETH_PRINTF("%s\n", __func__);
 
-	/* Reset registers, Tx path and Rx path */
-	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_REGRESET |
-	    LPE_COMMAND_TXRESET | LPE_COMMAND_RXRESET);
+  switch (cmd)  {
+    case SIOCGIFMEDIA:
+    case SIOCSIFMEDIA:
+      rtems_mii_ioctl(&e->mdio, e, cmd, &ifr->ifr_media);
+      break;
+    case SIOCGIFADDR:
+    case SIOCSIFADDR:
+      ether_ioctl(ifp, cmd, data);
+      break;
+    case SIOCSIFFLAGS:
+      eno = lpc_eth_up_or_down(e, (ifp->if_flags & IFF_UP) != 0);
+      if (eno == 0 && (ifp->if_flags & IFF_UP) != 0) {
+        lpc_eth_enable_promiscous_mode((ifp->if_flags & IFF_PROMISC) != 0);
+      }
+      break;
+    case SIOCADDMULTI:
+    case SIOCDELMULTI:
+      eno = lpc_eth_multicast_control(cmd == SIOCADDMULTI, ifr, &e->arpcom);
+      break;
+    case SIO_RTEMS_SHOW_STATS:
+      lpc_eth_interface_stats(e);
+      break;
+    default:
+      eno = EINVAL;
+      break;
+  }
 
-	/* Set station address */
-	lpe_write_4(sc, LPE_SA2, sc->lpe_enaddr[1] << 8 | sc->lpe_enaddr[0]);
-	lpe_write_4(sc, LPE_SA1, sc->lpe_enaddr[3] << 8 | sc->lpe_enaddr[2]);
-	lpe_write_4(sc, LPE_SA0, sc->lpe_enaddr[5] << 8 | sc->lpe_enaddr[4]);
-
-	/* Leave soft reset mode */
-	mac1 = lpe_read_4(sc, LPE_MAC1);
-	lpe_write_4(sc, LPE_MAC1, mac1 & ~(LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
-	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX));
-#else /* __rtems__ */
-	/* Reset registers, Tx path and Rx path */
-	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_REGRESET | LPE_COMMAND_TXRESET | LPE_COMMAND_RXRESET);
-
-	/* Enter soft reset mode */
-	mac1 = lpe_read_4(sc, LPE_MAC1);
-	lpe_write_4(sc, LPE_MAC1, mac1 | LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
-	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX);
-
-	/* Leave soft reset mode */
-	mac1 = lpe_read_4(sc, LPE_MAC1);
-	lpe_write_4(sc, LPE_MAC1, mac1 & ~(LPE_MAC1_SOFTRESET | LPE_MAC1_RESETTX |
-	    LPE_MAC1_RESETMCSTX | LPE_MAC1_RESETRX | LPE_MAC1_RESETMCSRX));
-
-	/* Reinitialize registers */
-	lpe_write_4(sc, LPE_MCFG, LPE_MCFG_CLKSEL(0x7));
-	lpe_write_4(sc, LPE_MAC2, LPE_MAC2_PADCRCENABLE | LPE_MAC2_CRCENABLE | LPE_MAC2_FULLDUPLEX);
-	lpe_write_4(sc, LPE_IPGT, 0x15);
-	lpe_write_4(sc, LPE_IPGR, 0x12);
-	lpe_write_4(sc, LPE_CLRT, 0x370f);
-	lpe_write_4(sc, LPE_MAXF, 0x0600);
-	lpe_write_4(sc, LPE_SUPP, LPE_SUPP_SPEED);
-	lpe_write_4(sc, LPE_TEST, 0x0);
-#ifdef LPC32XX_ETHERNET_RMII
-	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_FULLDUPLEX | LPE_COMMAND_RMII);
-#else
-	lpe_write_4(sc, LPE_COMMAND, LPE_COMMAND_FULLDUPLEX);
-#endif
-	lpe_write_4(sc, LPE_INTENABLE, 0x0);
-	lpe_write_4(sc, LPE_INTCLEAR, 0x30ff);
-	lpe_write_4(sc, LPE_POWERDOWN, 0x0);
-
-	/* Set station address */
-	lpe_write_4(sc, LPE_SA2, sc->lpe_enaddr[1] << 8 | sc->lpe_enaddr[0]);
-	lpe_write_4(sc, LPE_SA1, sc->lpe_enaddr[3] << 8 | sc->lpe_enaddr[2]);
-	lpe_write_4(sc, LPE_SA0, sc->lpe_enaddr[5] << 8 | sc->lpe_enaddr[4]);
-#endif /* __rtems__ */
+  return eno;
 }
 
-static void
-lpe_init(void *arg)
+static void lpc_eth_interface_start(struct ifnet *ifp)
 {
-	struct lpe_softc *sc = (struct lpe_softc *)arg;
+  rtems_status_code sc = RTEMS_SUCCESSFUL;
+  lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) ifp->if_softc;
 
-	lpe_lock(sc);
-	lpe_init_locked(sc);
-	lpe_unlock(sc);
+  ifp->if_flags |= IFF_OACTIVE;
+
+  if (e->state == LPC_ETH_STATE_UP) {
+    sc = rtems_bsdnet_event_send(e->transmit_task, LPC_ETH_EVENT_TXSTART);
+    assert(sc == RTEMS_SUCCESSFUL);
+  }
 }
 
-static void
-lpe_init_locked(struct lpe_softc *sc)
+static void lpc_eth_interface_watchdog(struct ifnet *ifp)
 {
-	struct ifnet *ifp = sc->lpe_ifp;
-	uint32_t cmd, mac1;
+  lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) ifp->if_softc;
 
-	lpe_lock_assert(sc);
+  if (e->state == LPC_ETH_STATE_UP) {
+    uint32_t anlpar = lpc_eth_mdio_read_anlpar(e->phy);
 
-	if (ifp->if_drv_flags & IFF_DRV_RUNNING)
-		return;
+    if (e->anlpar != anlpar) {
+      bool full_duplex = false;
+      bool speed = false;
 
-	/* Enable Tx and Rx */
-	cmd = lpe_read_4(sc, LPE_COMMAND);
-	lpe_write_4(sc, LPE_COMMAND, cmd | LPE_COMMAND_RXENABLE |
-	    LPE_COMMAND_TXENABLE | LPE_COMMAND_PASSRUNTFRAME);
+      e->anlpar = anlpar;
 
-	/* Enable receive */
-	mac1 = lpe_read_4(sc, LPE_MAC1);
-#ifdef __rtems__
-	(void)mac1;
-#endif /* __rtems__ */
-	lpe_write_4(sc, LPE_MAC1, /*mac1 |*/ LPE_MAC1_RXENABLE | LPE_MAC1_PASSALL);
+      if ((anlpar & ANLPAR_TX_FD) != 0) {
+        full_duplex = true;
+        speed = true;
+      } else if ((anlpar & ANLPAR_T4) != 0) {
+        speed = true;
+      } else if ((anlpar & ANLPAR_TX) != 0) {
+        speed = true;
+      } else if ((anlpar & ANLPAR_10_FD) != 0) {
+        full_duplex = true;
+      }
 
-	lpe_write_4(sc, LPE_MAC2, LPE_MAC2_CRCENABLE | LPE_MAC2_PADCRCENABLE |
-	    LPE_MAC2_FULLDUPLEX);
+      if (full_duplex) {
+        lpc_eth->mac2 |= ETH_MAC2_FULL_DUPLEX;
+      } else {
+        lpc_eth->mac2 &= ~ETH_MAC2_FULL_DUPLEX;
+      }
 
-	lpe_write_4(sc, LPE_MCFG, LPE_MCFG_CLKSEL(7));
+      if (speed) {
+        lpc_eth->supp |= ETH_SUPP_SPEED;
+      } else {
+        lpc_eth->supp &= ~ETH_SUPP_SPEED;
+      }
+    }
 
-	/* Set up Rx filter */
-	lpe_set_rxmode(sc);
-
-	/* Enable interrupts */
-	lpe_write_4(sc, LPE_INTENABLE, LPE_INT_RXOVERRUN | LPE_INT_RXERROR |
-	    LPE_INT_RXFINISH | LPE_INT_RXDONE | LPE_INT_TXUNDERRUN | 
-	    LPE_INT_TXERROR | LPE_INT_TXFINISH | LPE_INT_TXDONE);
-
-	sc->lpe_cdata.lpe_tx_prod = 0;
-	sc->lpe_cdata.lpe_tx_last = 0;
-	sc->lpe_cdata.lpe_tx_used = 0;
-
-	lpe_init_rx(sc);
-
-	/* Initialize Rx packet and status descriptor heads */
-	lpe_write_4(sc, LPE_RXDESC, sc->lpe_rdata.lpe_rx_ring_phys);
-	lpe_write_4(sc, LPE_RXSTATUS, sc->lpe_rdata.lpe_rx_status_phys);
-	lpe_write_4(sc, LPE_RXDESC_NUMBER, LPE_RXDESC_NUM - 1);
-	lpe_write_4(sc, LPE_RXDESC_CONS, 0);
-
-	/* Initialize Tx packet and status descriptor heads */
-	lpe_write_4(sc, LPE_TXDESC, sc->lpe_rdata.lpe_tx_ring_phys);
-	lpe_write_4(sc, LPE_TXSTATUS, sc->lpe_rdata.lpe_tx_status_phys);
-	lpe_write_4(sc, LPE_TXDESC_NUMBER, LPE_TXDESC_NUM - 1);
-	lpe_write_4(sc, LPE_TXDESC_PROD, 0);
-
-	ifp->if_drv_flags |= IFF_DRV_RUNNING;
-	ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
-
-	callout_reset(&sc->lpe_tick, hz, lpe_tick, sc);
+    ifp->if_timer = WATCHDOG_TIMEOUT;
+  }
 }
 
-static void
-lpe_start(struct ifnet *ifp)
+static unsigned lpc_eth_fixup_unit_count(int count, int default_value, int max)
 {
-	struct lpe_softc *sc = (struct lpe_softc *)ifp->if_softc;
+  if (count <= 0) {
+    count = default_value;
+  } else if (count > max) {
+    count = max;
+  }
 
-	lpe_lock(sc);
-	lpe_start_locked(ifp);
-	lpe_unlock(sc);
+  return LPC_ETH_CONFIG_UNIT_MULTIPLE
+    + (((unsigned) count - 1U) & ~(LPC_ETH_CONFIG_UNIT_MULTIPLE - 1U));
 }
 
-static void
-lpe_start_locked(struct ifnet *ifp)
+static int lpc_eth_attach(struct rtems_bsdnet_ifconfig *config)
 {
-	struct lpe_softc *sc = (struct lpe_softc *)ifp->if_softc;
-	struct mbuf *m_head;
-	int encap = 0;
+  lpc_eth_driver_entry *e = &lpc_eth_driver_data;
+  struct ifnet *ifp = &e->arpcom.ac_if;
+  char *unit_name = NULL;
+  int unit_index = rtems_bsdnet_parse_driver_name(config, &unit_name);
+  size_t table_area_size = 0;
+  char *table_area = NULL;
+  char *table_location = NULL;
 
-	lpe_lock_assert(sc);
+  /* Check parameter */
+  if (unit_index < 0) {
+    return 0;
+  }
+  if (unit_index != 0) {
+    goto cleanup;
+  }
+  if (config->hardware_address == NULL) {
+    goto cleanup;
+  }
+  if (e->state != LPC_ETH_STATE_NOT_INITIALIZED) {
+    goto cleanup;
+  }
 
-	while (!IFQ_DRV_IS_EMPTY(&ifp->if_snd)) {
-		if (lpe_read_4(sc, LPE_TXDESC_PROD) ==
-		    lpe_read_4(sc, LPE_TXDESC_CONS) - 5)
-			break;
+  /* MDIO */
+  e->mdio.mdio_r = lpc_eth_mdio_read;
+  e->mdio.mdio_w = lpc_eth_mdio_write;
+  e->mdio.has_gmii = 0;
+  e->anlpar = 0;
 
-		/* Dequeue first packet */
-		IFQ_DRV_DEQUEUE(&ifp->if_snd, m_head);
-		if (!m_head)
-			break;
+  /* Interrupt number */
+  config->irno = LPC_ETH_CONFIG_INTERRUPT;
 
-		lpe_encap(sc, &m_head);
+  /* Device control */
+  config->drv_ctrl = e;
 
-		encap++;
-	}
+  /* Receive unit count */
+  e->rx_unit_count = lpc_eth_fixup_unit_count(
+    config->rbuf_count,
+    LPC_ETH_CONFIG_RX_UNIT_COUNT_DEFAULT,
+    LPC_ETH_CONFIG_RX_UNIT_COUNT_MAX
+  );
+  config->rbuf_count = (int) e->rx_unit_count;
 
-	/* Submit new descriptor list */
-	if (encap) {
-		lpe_write_4(sc, LPE_TXDESC_PROD, sc->lpe_cdata.lpe_tx_prod);
-		sc->lpe_watchdog_timer = 5;
-	}
-	
+  /* Transmit unit count */
+  e->tx_unit_count = lpc_eth_fixup_unit_count(
+    config->xbuf_count,
+    LPC_ETH_CONFIG_TX_UNIT_COUNT_DEFAULT,
+    LPC_ETH_CONFIG_TX_UNIT_COUNT_MAX
+  );
+  config->xbuf_count = (int) e->tx_unit_count;
+
+  /* Remember interrupt number */
+  e->interrupt_number = config->irno;
+
+  /* Copy MAC address */
+  memcpy(e->arpcom.ac_enaddr, config->hardware_address, ETHER_ADDR_LEN);
+
+  /* Allocate and clear table area */
+  table_area_size =
+    e->rx_unit_count
+      * (sizeof(lpc_eth_transfer_descriptor)
+        + sizeof(lpc_eth_receive_status)
+        + sizeof(struct mbuf *))
+    + e->tx_unit_count
+      * (sizeof(lpc_eth_transfer_descriptor)
+        + sizeof(uint32_t)
+        + LPC_ETH_CONFIG_TX_BUF_SIZE);
+  table_area = lpc_eth_config_alloc_table_area(table_area_size);
+  if (table_area == NULL) {
+    goto cleanup;
+  }
+  memset(table_area, 0, table_area_size);
+
+  table_location = table_area;
+
+  /*
+   * The receive status table must be the first one since it has the strictest
+   * alignment requirements.
+   */
+  e->rx_status_table = (volatile lpc_eth_receive_status *) table_location;
+  table_location += e->rx_unit_count * sizeof(e->rx_status_table [0]);
+
+  e->rx_desc_table = (volatile lpc_eth_transfer_descriptor *) table_location;
+  table_location += e->rx_unit_count * sizeof(e->rx_desc_table [0]);
+
+  e->rx_mbuf_table = (struct mbuf **) table_location;
+  table_location += e->rx_unit_count * sizeof(e->rx_mbuf_table [0]);
+
+  e->tx_desc_table = (volatile lpc_eth_transfer_descriptor *) table_location;
+  table_location += e->tx_unit_count * sizeof(e->tx_desc_table [0]);
+
+  e->tx_status_table = (volatile uint32_t *) table_location;
+  table_location += e->tx_unit_count * sizeof(e->tx_status_table [0]);
+
+  e->tx_buf_table = table_location;
+
+  /* Set interface data */
+  ifp->if_softc = e;
+  ifp->if_unit = (short) unit_index;
+  ifp->if_name = unit_name;
+  ifp->if_mtu = (config->mtu > 0) ? (u_long) config->mtu : ETHERMTU;
+  ifp->if_init = lpc_eth_interface_init;
+  ifp->if_ioctl = lpc_eth_interface_ioctl;
+  ifp->if_start = lpc_eth_interface_start;
+  ifp->if_output = ether_output;
+  ifp->if_watchdog = lpc_eth_interface_watchdog;
+  ifp->if_flags = IFF_MULTICAST | IFF_BROADCAST | IFF_SIMPLEX;
+  ifp->if_snd.ifq_maxlen = ifqmaxlen;
+  ifp->if_timer = 0;
+
+  /* Create tasks */
+  e->receive_task = rtems_bsdnet_newproc(
+    "ntrx",
+    4096,
+    lpc_eth_receive_task,
+    e
+  );
+  e->transmit_task = rtems_bsdnet_newproc(
+    "nttx",
+    4096,
+    lpc_eth_transmit_task,
+    e
+  );
+
+  /* Change status */
+  ifp->if_flags |= IFF_RUNNING;
+  e->state = LPC_ETH_STATE_DOWN;
+
+  /* Attach the interface */
+  if_attach(ifp);
+  ether_ifattach(ifp);
+
+  return 1;
+
+cleanup:
+
+  lpc_eth_config_free_table_area(table_area);
+
+  /* FIXME: Type */
+  free(unit_name, (int) 0xdeadbeef);
+
+  return 0;
 }
 
-#ifdef __rtems__
-static int
-lpe_get_segs_for_tx(struct mbuf *m, bus_dma_segment_t segs[LPE_MAXFRAGS],
-    int *nsegs)
+static int lpc_eth_detach(
+  struct rtems_bsdnet_ifconfig *config RTEMS_UNUSED
+)
 {
-	int i = 0;
+  /* FIXME: Detach the interface from the upper layers? */
 
-	do {
-		if (m->m_len > 0) {
-			segs[i].ds_addr = mtod(m, bus_addr_t);
-			segs[i].ds_len = m->m_len;
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-			rtems_cache_flush_multiple_data_lines(m->m_data, m->m_len);
-#endif
-			++i;
-		}
-		m = m->m_next;
-		if (m == NULL) {
-			*nsegs = i;
-			return (0);
-		}
-	} while (i < LPE_MAXFRAGS);
-	return (EFBIG);
-}
-#endif /* __rtems__ */
-static int
-lpe_encap(struct lpe_softc *sc, struct mbuf **m_head)
-{
-	struct lpe_txdesc *txd;
-	struct lpe_hwdesc *hwd;
-	bus_dma_segment_t segs[LPE_MAXFRAGS];
-	int i, err, nsegs, prod;
+  /* Module soft reset */
+  lpc_eth->command = 0x38;
+  lpc_eth->mac1 = 0xcf00;
 
-	lpe_lock_assert(sc);
-	M_ASSERTPKTHDR((*m_head));
+  /* FIXME: More cleanup */
 
-	prod = sc->lpe_cdata.lpe_tx_prod;
-	txd = &sc->lpe_cdata.lpe_tx_desc[prod];
-
-	debugf("starting with prod=%d\n", prod);
-
-#ifndef __rtems__
-	err = bus_dmamap_load_mbuf_sg(sc->lpe_cdata.lpe_tx_buf_tag,
-	    txd->lpe_txdesc_dmamap, *m_head, segs, &nsegs, BUS_DMA_NOWAIT);
-#else /* __rtems__ */
-	err = lpe_get_segs_for_tx(*m_head, segs, &nsegs);
-#endif /* __rtems__ */
-
-	if (err)
-		return (err);
-
-	if (nsegs == 0) {
-		m_freem(*m_head);
-		*m_head = NULL;
-		return (EIO);
-	}
-
-#ifndef __rtems__
-        bus_dmamap_sync(sc->lpe_cdata.lpe_tx_buf_tag, txd->lpe_txdesc_dmamap,
-          BUS_DMASYNC_PREREAD);
-#endif /* __rtems__ */
-        bus_dmamap_sync(sc->lpe_cdata.lpe_tx_ring_tag, sc->lpe_cdata.lpe_tx_ring_map,
-            BUS_DMASYNC_POSTREAD | BUS_DMASYNC_POSTWRITE);
-
-	txd->lpe_txdesc_first = 1;
-	txd->lpe_txdesc_mbuf = *m_head;
-
-	for (i = 0; i < nsegs; i++) {
-		hwd = &sc->lpe_rdata.lpe_tx_ring[prod];
-		hwd->lhr_data = segs[i].ds_addr;
-		hwd->lhr_control = segs[i].ds_len - 1;
-
-		if (i == nsegs - 1) {
-			hwd->lhr_control |= LPE_HWDESC_LASTFLAG;
-			hwd->lhr_control |= LPE_HWDESC_INTERRUPT;
-			hwd->lhr_control |= LPE_HWDESC_CRC;
-			hwd->lhr_control |= LPE_HWDESC_PAD;
-		}
-
-#ifdef __rtems__
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-		rtems_cache_flush_multiple_data_lines(hwd, sizeof(*hwd));
-#endif
-#endif /* __rtems__ */
-		LPE_INC(prod, LPE_TXDESC_NUM);
-	}
-
-	bus_dmamap_sync(sc->lpe_cdata.lpe_tx_ring_tag, sc->lpe_cdata.lpe_tx_ring_map,
-	    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
-
-	sc->lpe_cdata.lpe_tx_used += nsegs;
-	sc->lpe_cdata.lpe_tx_prod = prod;
-
-	return (0);
+  return 0;
 }
 
-static void
-lpe_stop(struct lpe_softc *sc)
+int lpc_eth_attach_detach(
+  struct rtems_bsdnet_ifconfig *config,
+  int attaching
+)
 {
-	lpe_lock(sc);
-	lpe_stop_locked(sc);
-	lpe_unlock(sc);
+  /* FIXME: Return value */
+
+  if (attaching) {
+    return lpc_eth_attach(config);
+  } else {
+    return lpc_eth_detach(config);
+  }
 }
-
-static void
-lpe_stop_locked(struct lpe_softc *sc)
-{
-	lpe_lock_assert(sc);
-
-	callout_stop(&sc->lpe_tick);
-
-	/* Disable interrupts */
-	lpe_write_4(sc, LPE_INTCLEAR, 0xffffffff);
-
-	/* Stop EMAC */
-	lpe_write_4(sc, LPE_MAC1, 0);
-	lpe_write_4(sc, LPE_MAC2, 0);
-	lpe_write_4(sc, LPE_COMMAND, 0);
-
-	sc->lpe_ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
-	sc->lpe_ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
-}
-
-static int
-lpe_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
-{
-	struct lpe_softc *sc = ifp->if_softc;
-	struct mii_data *mii = device_get_softc(sc->lpe_miibus);
-	struct ifreq *ifr = (struct ifreq *)data;
-	int err = 0;
-
-	switch (cmd) {
-	case SIOCSIFFLAGS:
-		lpe_lock(sc);
-		if (ifp->if_flags & IFF_UP) {
-			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
-				lpe_set_rxmode(sc);
-				lpe_set_rxfilter(sc);
-			} else
-				lpe_init_locked(sc);
-		} else
-			lpe_stop(sc);
-		lpe_unlock(sc);
-		break;
-	case SIOCADDMULTI:
-	case SIOCDELMULTI:
-		if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
-			lpe_lock(sc);
-			lpe_set_rxfilter(sc);
-			lpe_unlock(sc);
-		}
-		break;
-	case SIOCGIFMEDIA:
-	case SIOCSIFMEDIA:
-		err = ifmedia_ioctl(ifp, ifr, &mii->mii_media, cmd);
-		break;
-	default:
-		err = ether_ioctl(ifp, cmd, data);
-		break;
-	}
-
-	return (err);
-}
-
-static void lpe_set_rxmode(struct lpe_softc *sc)
-{
-	struct ifnet *ifp = sc->lpe_ifp;
-	uint32_t rxfilt;
-
-	rxfilt = LPE_RXFILTER_UNIHASH | LPE_RXFILTER_MULTIHASH | LPE_RXFILTER_PERFECT;
-
-	if (ifp->if_flags & IFF_BROADCAST)
-		rxfilt |= LPE_RXFILTER_BROADCAST;
-
-	if (ifp->if_flags & IFF_PROMISC)
-		rxfilt |= LPE_RXFILTER_UNICAST | LPE_RXFILTER_MULTICAST;
-
-	if (ifp->if_flags & IFF_ALLMULTI)
-		rxfilt |= LPE_RXFILTER_MULTICAST;
-
-	lpe_write_4(sc, LPE_RXFILTER_CTRL, rxfilt);
-}
-
-static void lpe_set_rxfilter(struct lpe_softc *sc)
-{
-	struct ifnet *ifp = sc->lpe_ifp;
-	struct ifmultiaddr *ifma;
-	int index;
-	uint32_t hashl, hashh;
-
-	hashl = 0;
-	hashh = 0;
-
-	if_maddr_rlock(ifp);
-	CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
-		if (ifma->ifma_addr->sa_family != AF_LINK)
-			continue;
-
-		index = ether_crc32_be(LLADDR((struct sockaddr_dl *)
-		    ifma->ifma_addr), ETHER_ADDR_LEN) >> 23 & 0x3f;
-
-		if (index > 31)
-			hashh |= (1 << (index - 32));
-		else
-			hashl |= (1 << index);
-	}
-	if_maddr_runlock(ifp);
-
-	/* Program new hash filter */
-	lpe_write_4(sc, LPE_HASHFILTER_L, hashl);
-	lpe_write_4(sc, LPE_HASHFILTER_H, hashh);
-}
-
-static void
-lpe_intr(void *arg)
-{
-	struct lpe_softc *sc = (struct lpe_softc *)arg;
-	uint32_t intstatus;
-
-	debugf("status=0x%08x\n", lpe_read_4(sc, LPE_INTSTATUS));
-
-	lpe_lock(sc);
-
-	while ((intstatus = lpe_read_4(sc, LPE_INTSTATUS))) {
-		if (intstatus & LPE_INT_RXDONE)
-			lpe_rxintr(sc);
-
-#ifndef __rtems__
-		if (intstatus & LPE_INT_TXDONE)
-			lpe_txintr(sc);
-	
-#else /* __rtems__ */
-		if (intstatus & LPE_INT_TXUNDERRUN) {
-			if_inc_counter(sc->lpe_ifp, IFCOUNTER_OERRORS, 1);
-			lpe_stop_locked(sc);
-			lpe_init_locked(sc);
-		}
-		else if (intstatus & (LPE_INT_TXERROR | LPE_INT_TXFINISH | LPE_INT_TXDONE))
-			lpe_txintr(sc);
-#endif /* __rtems__ */
-		lpe_write_4(sc, LPE_INTCLEAR, 0xffff);
-	}
-
-	lpe_unlock(sc);
-}
-
-static void
-lpe_rxintr(struct lpe_softc *sc)
-{
-	struct ifnet *ifp = sc->lpe_ifp;
-	struct lpe_hwdesc *hwd;
-	struct lpe_hwstatus *hws;
-	struct lpe_rxdesc *rxd;
-	struct mbuf *m;
-	int prod, cons;
-
-	for (;;) {
-		prod = lpe_read_4(sc, LPE_RXDESC_PROD);
-		cons = lpe_read_4(sc, LPE_RXDESC_CONS);
-		
-		if (prod == cons)
-			break;
-
-		rxd = &sc->lpe_cdata.lpe_rx_desc[cons];
-		hwd = &sc->lpe_rdata.lpe_rx_ring[cons];
-		hws = &sc->lpe_rdata.lpe_rx_status[cons];
-#ifdef __rtems__
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-		rtems_cache_invalidate_multiple_data_lines(rxd, sizeof(*rxd));
-		rtems_cache_invalidate_multiple_data_lines(hwd, sizeof(*hwd));
-		rtems_cache_invalidate_multiple_data_lines(hws, sizeof(*hws));
-#endif
-#endif /* __rtems__ */
-
-		/* Check received frame for errors */
-		if (hws->lhs_info & LPE_HWDESC_RXERRS) {
-			if_inc_counter(ifp, IFCOUNTER_IERRORS, 1);
-			lpe_discard_rxbuf(sc, cons);
-			lpe_init_rxbuf(sc, cons);
-			goto skip;
-		}
-
-		m = rxd->lpe_rxdesc_mbuf;
-#ifdef __rtems__
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-		rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
-#endif
-#endif /* __rtems__ */
-		m->m_pkthdr.rcvif = ifp;
-		m->m_data += 2;
-
-		if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
-
-		lpe_unlock(sc);
-		(*ifp->if_input)(ifp, m);	
-		lpe_lock(sc);
-
-		lpe_init_rxbuf(sc, cons);
-skip:
-		LPE_INC(cons, LPE_RXDESC_NUM);
-		lpe_write_4(sc, LPE_RXDESC_CONS, cons);
-	}
-}
-
-static void
-lpe_txintr(struct lpe_softc *sc)
-{
-	struct ifnet *ifp = sc->lpe_ifp;
-	struct lpe_hwdesc *hwd;
-	struct lpe_hwstatus *hws;
-	struct lpe_txdesc *txd;
-	int cons, last;
-
-	for (;;) {
-		cons = lpe_read_4(sc, LPE_TXDESC_CONS);
-		last = sc->lpe_cdata.lpe_tx_last;
-		
-		if (cons == last)
-			break;
-
-		txd = &sc->lpe_cdata.lpe_tx_desc[last];
-		hwd = &sc->lpe_rdata.lpe_tx_ring[last];
-		hws = &sc->lpe_rdata.lpe_tx_status[last];
-
-#ifndef __rtems__
-		bus_dmamap_sync(sc->lpe_cdata.lpe_tx_buf_tag,
-		    txd->lpe_txdesc_dmamap, BUS_DMASYNC_POSTWRITE);
-#else /* __rtems__ */
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-		rtems_cache_invalidate_multiple_data_lines(txd, sizeof(*txd));
-		rtems_cache_invalidate_multiple_data_lines(hwd, sizeof(*hwd));
-		rtems_cache_invalidate_multiple_data_lines(hws, sizeof(*hws));
-#endif
-#endif /* __rtems__ */
-
-		if_inc_counter(ifp, IFCOUNTER_COLLISIONS, LPE_HWDESC_COLLISIONS(hws->lhs_info));
-
-		if (hws->lhs_info & LPE_HWDESC_TXERRS)
-			if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
-		else
-			if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1);
-
-		if (txd->lpe_txdesc_first) {
-#ifndef __rtems__
-			bus_dmamap_unload(sc->lpe_cdata.lpe_tx_buf_tag,
-			    txd->lpe_txdesc_dmamap);	
-#endif /* __rtems__ */
-
-			m_freem(txd->lpe_txdesc_mbuf);
-			txd->lpe_txdesc_mbuf = NULL;
-			txd->lpe_txdesc_first = 0;
-		}
-
-		sc->lpe_cdata.lpe_tx_used--;
-		LPE_INC(sc->lpe_cdata.lpe_tx_last, LPE_TXDESC_NUM);
-	}
-
-	if (!sc->lpe_cdata.lpe_tx_used)
-		sc->lpe_watchdog_timer = 0;
-}
-
-static void
-lpe_tick(void *arg)
-{
-	struct lpe_softc *sc = (struct lpe_softc *)arg;
-	struct mii_data *mii = device_get_softc(sc->lpe_miibus);
-
-	lpe_lock_assert(sc);
-	
-	mii_tick(mii);
-	lpe_watchdog(sc);
-
-	callout_reset(&sc->lpe_tick, hz, lpe_tick, sc);
-}
-
-static void
-lpe_watchdog(struct lpe_softc *sc)
-{
-	struct ifnet *ifp = sc->lpe_ifp;
-
-	lpe_lock_assert(sc);
-
-	if (sc->lpe_watchdog_timer == 0 || sc->lpe_watchdog_timer--)
-		return;
-
-	/* Chip has stopped responding */
-	device_printf(sc->lpe_dev, "WARNING: chip hangup, restarting...\n");
-	lpe_stop_locked(sc);
-	lpe_init_locked(sc);
-
-	/* Try to resend packets */
-	if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd))
-		lpe_start_locked(ifp);
-}
-
-static int
-lpe_dma_alloc(struct lpe_softc *sc)
-{
-	int err;
-
-	/* Create parent DMA tag */
-	err = bus_dma_tag_create(
-	    bus_get_dma_tag(sc->lpe_dev),
-	    1, 0,			/* alignment, boundary */
-	    BUS_SPACE_MAXADDR_32BIT,	/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    BUS_SPACE_MAXSIZE_32BIT, 0,	/* maxsize, nsegments */
-	    BUS_SPACE_MAXSIZE_32BIT, 0,	/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_parent_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create parent DMA tag\n");
-		return (err);
-	}
-
-	err = lpe_dma_alloc_rx(sc);
-	if (err)
-		return (err);
-
-	err = lpe_dma_alloc_tx(sc);
-	if (err)
-		return (err);
-
-	return (0);
-}
-
-static int
-lpe_dma_alloc_rx(struct lpe_softc *sc)
-{
-	struct lpe_rxdesc *rxd;
-	struct lpe_dmamap_arg ctx;
-	int err, i;
-
-	/* Create tag for Rx ring */
-	err = bus_dma_tag_create(
-	    sc->lpe_cdata.lpe_parent_tag,
-	    LPE_DESC_ALIGN, 0,		/* alignment, boundary */
-	    BUS_SPACE_MAXADDR,		/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    LPE_RXDESC_SIZE, 1,		/* maxsize, nsegments */
-	    LPE_RXDESC_SIZE, 0,		/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_rx_ring_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create Rx ring DMA tag\n");
-		goto fail;
-	}
-
-	/* Create tag for Rx status ring */
-	err = bus_dma_tag_create(
-	    sc->lpe_cdata.lpe_parent_tag,
-	    LPE_DESC_ALIGN, 0,		/* alignment, boundary */
-	    BUS_SPACE_MAXADDR,		/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    LPE_RXSTATUS_SIZE, 1,	/* maxsize, nsegments */
-	    LPE_RXSTATUS_SIZE, 0,	/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_rx_status_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create Rx status ring DMA tag\n");
-		goto fail;
-	}
-
-	/* Create tag for Rx buffers */
-	err = bus_dma_tag_create(
-	    sc->lpe_cdata.lpe_parent_tag,
-	    LPE_DESC_ALIGN, 0,		/* alignment, boundary */
-	    BUS_SPACE_MAXADDR,		/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    MCLBYTES * LPE_RXDESC_NUM,	/* maxsize */
-	    LPE_RXDESC_NUM,		/* segments */
-	    MCLBYTES, 0,		/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_rx_buf_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create Rx buffers DMA tag\n");
-		goto fail;
-	}
-
-	/* Allocate Rx DMA ring */
-	err = bus_dmamem_alloc(sc->lpe_cdata.lpe_rx_ring_tag,
-	    (void **)&sc->lpe_rdata.lpe_rx_ring, BUS_DMA_WAITOK | BUS_DMA_COHERENT |
-	    BUS_DMA_ZERO, &sc->lpe_cdata.lpe_rx_ring_map);
-
-	err = bus_dmamap_load(sc->lpe_cdata.lpe_rx_ring_tag, 
-	    sc->lpe_cdata.lpe_rx_ring_map, sc->lpe_rdata.lpe_rx_ring,
-	    LPE_RXDESC_SIZE, lpe_dmamap_cb, &ctx, 0);
-
-	sc->lpe_rdata.lpe_rx_ring_phys = ctx.lpe_dma_busaddr;
-
-	/* Allocate Rx status ring */
-	err = bus_dmamem_alloc(sc->lpe_cdata.lpe_rx_status_tag,
-	    (void **)&sc->lpe_rdata.lpe_rx_status, BUS_DMA_WAITOK | BUS_DMA_COHERENT |
-	    BUS_DMA_ZERO, &sc->lpe_cdata.lpe_rx_status_map);
-
-	err = bus_dmamap_load(sc->lpe_cdata.lpe_rx_status_tag, 
-	    sc->lpe_cdata.lpe_rx_status_map, sc->lpe_rdata.lpe_rx_status,
-	    LPE_RXDESC_SIZE, lpe_dmamap_cb, &ctx, 0);
-
-	sc->lpe_rdata.lpe_rx_status_phys = ctx.lpe_dma_busaddr;
-
-
-	/* Create Rx buffers DMA map */
-	for (i = 0; i < LPE_RXDESC_NUM; i++) {
-		rxd = &sc->lpe_cdata.lpe_rx_desc[i];
-		rxd->lpe_rxdesc_mbuf = NULL;
-#ifndef __rtems__
-		rxd->lpe_rxdesc_dmamap = NULL;
-
-		err = bus_dmamap_create(sc->lpe_cdata.lpe_rx_buf_tag, 0,
-		    &rxd->lpe_rxdesc_dmamap);
-
-		if (err) {
-			device_printf(sc->lpe_dev, "cannot create Rx DMA map\n");
-			return (err);
-		}
-#endif /* __rtems__ */
-	}
-
-	return (0);
-fail:
-	return (err);
-}
-
-static int
-lpe_dma_alloc_tx(struct lpe_softc *sc)
-{
-	struct lpe_txdesc *txd;
-	struct lpe_dmamap_arg ctx;
-	int err, i;
-
-	/* Create tag for Tx ring */
-	err = bus_dma_tag_create(
-	    sc->lpe_cdata.lpe_parent_tag,
-	    LPE_DESC_ALIGN, 0,		/* alignment, boundary */
-	    BUS_SPACE_MAXADDR,		/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    LPE_TXDESC_SIZE, 1,		/* maxsize, nsegments */
-	    LPE_TXDESC_SIZE, 0,		/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_tx_ring_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create Tx ring DMA tag\n");
-		goto fail;
-	}
-
-	/* Create tag for Tx status ring */
-	err = bus_dma_tag_create(
-	    sc->lpe_cdata.lpe_parent_tag,
-	    LPE_DESC_ALIGN, 0,		/* alignment, boundary */
-	    BUS_SPACE_MAXADDR,		/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    LPE_TXSTATUS_SIZE, 1,	/* maxsize, nsegments */
-	    LPE_TXSTATUS_SIZE, 0,	/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_tx_status_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create Tx status ring DMA tag\n");
-		goto fail;
-	}
-
-	/* Create tag for Tx buffers */
-	err = bus_dma_tag_create(
-	    sc->lpe_cdata.lpe_parent_tag,
-	    LPE_DESC_ALIGN, 0,		/* alignment, boundary */
-	    BUS_SPACE_MAXADDR,		/* lowaddr */
-	    BUS_SPACE_MAXADDR,		/* highaddr */
-	    NULL, NULL,			/* filter, filterarg */
-	    MCLBYTES * LPE_TXDESC_NUM,	/* maxsize */
-	    LPE_TXDESC_NUM,		/* segments */
-	    MCLBYTES, 0,		/* maxsegsize, flags */
-	    NULL, NULL,			/* lockfunc, lockarg */
-	    &sc->lpe_cdata.lpe_tx_buf_tag);
-
-	if (err) {
-		device_printf(sc->lpe_dev, "cannot create Tx buffers DMA tag\n");
-		goto fail;
-	}
-
-	/* Allocate Tx DMA ring */
-	err = bus_dmamem_alloc(sc->lpe_cdata.lpe_tx_ring_tag,
-	    (void **)&sc->lpe_rdata.lpe_tx_ring, BUS_DMA_WAITOK | BUS_DMA_COHERENT |
-	    BUS_DMA_ZERO, &sc->lpe_cdata.lpe_tx_ring_map);
-
-	err = bus_dmamap_load(sc->lpe_cdata.lpe_tx_ring_tag, 
-	    sc->lpe_cdata.lpe_tx_ring_map, sc->lpe_rdata.lpe_tx_ring,
-	    LPE_RXDESC_SIZE, lpe_dmamap_cb, &ctx, 0);
-
-	sc->lpe_rdata.lpe_tx_ring_phys = ctx.lpe_dma_busaddr;
-
-	/* Allocate Tx status ring */
-	err = bus_dmamem_alloc(sc->lpe_cdata.lpe_tx_status_tag,
-	    (void **)&sc->lpe_rdata.lpe_tx_status, BUS_DMA_WAITOK | BUS_DMA_COHERENT |
-	    BUS_DMA_ZERO, &sc->lpe_cdata.lpe_tx_status_map);
-
-	err = bus_dmamap_load(sc->lpe_cdata.lpe_tx_status_tag, 
-	    sc->lpe_cdata.lpe_tx_status_map, sc->lpe_rdata.lpe_tx_status,
-	    LPE_RXDESC_SIZE, lpe_dmamap_cb, &ctx, 0);
-
-	sc->lpe_rdata.lpe_tx_status_phys = ctx.lpe_dma_busaddr;
-
-
-	/* Create Tx buffers DMA map */
-	for (i = 0; i < LPE_TXDESC_NUM; i++) {
-		txd = &sc->lpe_cdata.lpe_tx_desc[i];
-		txd->lpe_txdesc_mbuf = NULL;
-#ifndef __rtems__
-		txd->lpe_txdesc_dmamap = NULL;
-#endif /* __rtems__ */
-		txd->lpe_txdesc_first = 0;
-
-#ifndef __rtems__
-		err = bus_dmamap_create(sc->lpe_cdata.lpe_tx_buf_tag, 0,
-		    &txd->lpe_txdesc_dmamap);
-#endif /* __rtems__ */
-
-		if (err) {
-			device_printf(sc->lpe_dev, "cannot create Tx DMA map\n");
-			return (err);
-		}
-	}
-
-	return (0);
-fail:
-	return (err);
-}
-
-static int
-lpe_init_rx(struct lpe_softc *sc)
-{
-	int i, err;
-
-	for (i = 0; i < LPE_RXDESC_NUM; i++) {
-		err = lpe_init_rxbuf(sc, i);
-		if (err)
-			return (err);
-	}
-
-	return (0);
-}
-
-static int
-lpe_init_rxbuf(struct lpe_softc *sc, int n)
-{
-	struct lpe_rxdesc *rxd;
-	struct lpe_hwdesc *hwd;
-#ifndef __rtems__
-	struct lpe_hwstatus *hws;
-#endif /* __rtems__ */
-	struct mbuf *m;
-	bus_dma_segment_t segs[1];
-#ifndef __rtems__
-	int nsegs;
-#endif /* __rtems__ */
-
-	rxd = &sc->lpe_cdata.lpe_rx_desc[n];
-	hwd = &sc->lpe_rdata.lpe_rx_ring[n];
-#ifndef __rtems__
-	hws = &sc->lpe_rdata.lpe_rx_status[n];
-#endif /* __rtems__ */
-	m = m_getcl(M_NOWAIT, MT_DATA, M_PKTHDR);
-
-	if (!m) {
-		device_printf(sc->lpe_dev, "WARNING: mbufs exhausted!\n");
-		return (ENOBUFS);
-	}
-
-	m->m_len = m->m_pkthdr.len = MCLBYTES;
-
-#ifndef __rtems__
-	bus_dmamap_unload(sc->lpe_cdata.lpe_rx_buf_tag, rxd->lpe_rxdesc_dmamap);
-
-	if (bus_dmamap_load_mbuf_sg(sc->lpe_cdata.lpe_rx_buf_tag, 
-	    rxd->lpe_rxdesc_dmamap, m, segs, &nsegs, 0)) {
-		m_freem(m);
-		return (ENOBUFS);
-	}
-
-	bus_dmamap_sync(sc->lpe_cdata.lpe_rx_buf_tag, rxd->lpe_rxdesc_dmamap, 
-	    BUS_DMASYNC_PREREAD);
-#else /* __rtems__ */
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-	rtems_cache_invalidate_multiple_data_lines(m->m_data, m->m_len);
-#endif
-	segs[0].ds_addr = mtod(m, bus_addr_t);
-#endif /* __rtems__ */
-
-	rxd->lpe_rxdesc_mbuf = m;
-	hwd->lhr_data = segs[0].ds_addr + 2;
-	hwd->lhr_control = (segs[0].ds_len - 1) | LPE_HWDESC_INTERRUPT;
-#ifdef __rtems__
-#ifdef CPU_DATA_CACHE_ALIGNMENT
-	rtems_cache_flush_multiple_data_lines(hwd, sizeof(*hwd));
-#endif
-#endif /* __rtems__ */
-
-	return (0);
-}
-
-static void
-lpe_discard_rxbuf(struct lpe_softc *sc, int n)
-{
-	struct lpe_rxdesc *rxd;
-	struct lpe_hwdesc *hwd;
-
-	rxd = &sc->lpe_cdata.lpe_rx_desc[n];
-	hwd = &sc->lpe_rdata.lpe_rx_ring[n];
-
-#ifndef __rtems__
-	bus_dmamap_unload(sc->lpe_cdata.lpe_rx_buf_tag, rxd->lpe_rxdesc_dmamap);
-#endif /* __rtems__ */
-
-	hwd->lhr_data = 0;
-	hwd->lhr_control = 0;
-
-	if (rxd->lpe_rxdesc_mbuf) {
-		m_freem(rxd->lpe_rxdesc_mbuf); 
-		rxd->lpe_rxdesc_mbuf = NULL;
-	}
-}
-
-static void
-lpe_dmamap_cb(void *arg, bus_dma_segment_t *segs, int nseg, int error)
-{
-	struct lpe_dmamap_arg *ctx;
-
-	if (error)
-		return;
-
-	ctx = (struct lpe_dmamap_arg *)arg;
-	ctx->lpe_dma_busaddr = segs[0].ds_addr;
-}
-
-static int
-lpe_ifmedia_upd(struct ifnet *ifp)
-{
-	return (0);
-}
-
-static void
-lpe_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
-{
-	struct lpe_softc *sc = ifp->if_softc;
-	struct mii_data *mii = device_get_softc(sc->lpe_miibus);
-
-	lpe_lock(sc);
-	mii_pollstat(mii);
-	ifmr->ifm_active = mii->mii_media_active;
-	ifmr->ifm_status = mii->mii_media_status;
-	lpe_unlock(sc);
-}
-
-static device_method_t lpe_methods[] = {
-	/* Device interface */
-	DEVMETHOD(device_probe,		lpe_probe),
-	DEVMETHOD(device_attach,	lpe_attach),
-	DEVMETHOD(device_detach,	lpe_detach),
-
-	/* Bus interface */
-	DEVMETHOD(bus_print_child,	bus_generic_print_child),
-
-	/* MII interface */
-	DEVMETHOD(miibus_readreg,	lpe_miibus_readreg),
-	DEVMETHOD(miibus_writereg,	lpe_miibus_writereg),
-	DEVMETHOD(miibus_statchg,	lpe_miibus_statchg),
-	{ 0, 0 }
-};
-
-static driver_t lpe_driver = {
-	"lpe",
-	lpe_methods,
-	sizeof(struct lpe_softc),
-};
-
-static devclass_t lpe_devclass;
-
-#ifndef __rtems__
-DRIVER_MODULE(lpe, simplebus, lpe_driver, lpe_devclass, 0, 0);
-#else /* __rtems__ */
-DRIVER_MODULE(lpe, nexus, lpe_driver, lpe_devclass, 0, 0);
-#endif /* __rtems__ */
-DRIVER_MODULE(miibus, lpe, miibus_driver, miibus_devclass, 0, 0);
-MODULE_DEPEND(lpe, obio, 1, 1, 1);
-MODULE_DEPEND(lpe, miibus, 1, 1, 1);
-MODULE_DEPEND(lpe, ether, 1, 1, 1);

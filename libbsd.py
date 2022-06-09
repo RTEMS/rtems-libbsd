@@ -235,7 +235,6 @@ class rtems(builder.Module):
                 'rtems/rtems-legacy-rtrequest.c',
                 'rtems/rtems-legacy-newproc.c',
                 'rtems/rtems-legacy-mii.c',
-                'sys/arm/lpc/if_lpe.c',
                 'sys/arm/lpc/lpc_pwr.c',
                 'sys/dev/atsam/if_atsam.c',
                 'sys/dev/atsam/if_atsam_media.c',

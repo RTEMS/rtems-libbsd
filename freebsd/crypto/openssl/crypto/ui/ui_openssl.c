@@ -158,11 +158,13 @@ struct IOSB {
 # endif
 
 /* Define globals.  They are protected by a lock */
+#ifndef __rtems__
 # ifdef SIGACTION
 static struct sigaction savsig[NX509_SIG];
 # else
 static void (*savsig[NX509_SIG]) (int);
 # endif
+#endif /* __rtems__ */
 
 # ifdef OPENSSL_SYS_VMS
 static struct IOSB iosb;
@@ -185,7 +187,9 @@ static int is_a_tty;
 /* Declare static functions */
 # if !defined(OPENSSL_SYS_WINCE)
 static int read_till_nl(FILE *);
+#ifndef __rtems__
 static void recsig(int);
+#endif /* __rtems__ */
 static void pushsig(void);
 static void popsig(void);
 # endif
@@ -588,6 +592,7 @@ static int close_console(UI *ui)
 /* Internal functions to handle signals and act on them */
 static void pushsig(void)
 {
+#ifndef __rtems__
 #  ifndef OPENSSL_SYS_WIN32
     int i;
 #  endif
@@ -630,10 +635,12 @@ static void pushsig(void)
 #  ifdef SIGWINCH
     signal(SIGWINCH, SIG_DFL);
 #  endif
+#endif /* __rtems__ */
 }
 
 static void popsig(void)
 {
+#ifndef __rtems__
 #  ifdef OPENSSL_SYS_WIN32
     signal(SIGABRT, savsig[SIGABRT]);
     signal(SIGFPE, savsig[SIGFPE]);
@@ -659,12 +666,15 @@ static void popsig(void)
 #   endif
     }
 #  endif
+#endif /* __rtems__ */
 }
 
+#ifndef __rtems__
 static void recsig(int i)
 {
     intr_signal = i;
 }
+#endif /* __rtems__ */
 # endif
 
 /* Internal functions specific for Windows */

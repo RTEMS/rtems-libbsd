@@ -58,7 +58,7 @@ NON_EMPTY_TRANSLATION_UNIT
 #endif
 
 # if !defined(NO_FORK) && !defined(OPENSSL_NO_SOCK) \
-     && !defined(OPENSSL_NO_POSIX_IO)
+     && !defined(OPENSSL_NO_POSIX_IO) && !defined(__rtems__)
 #  define OCSP_DAEMON
 #  include <sys/types.h>
 #  include <sys/wait.h>

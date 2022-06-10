@@ -512,6 +512,7 @@ intpr(void (*pfunc)(char *), int af)
 		freeifmaddrs(ifmap);
 }
 
+#ifndef __rtems__
 struct iftot {
 	u_long	ift_ip;			/* input packets */
 	u_long	ift_ie;			/* input errors */
@@ -575,6 +576,7 @@ catchalarm(int signo __unused)
 {
 	signalled = true;
 }
+#endif /* __rtems__ */
 
 /*
  * Print a running summary of interface statistics.
@@ -585,6 +587,7 @@ catchalarm(int signo __unused)
 static void
 sidewaysintpr(void)
 {
+#ifndef __rtems__
 	struct iftot ift[2], *new, *old;
 	struct itimerval interval_it;
 	int oldmask, line;
@@ -619,26 +622,11 @@ loop:
 		xo_close_list("interface-statistics");
 		return;
 	}
-#ifdef __rtems__
-	{
-	sigset_t oldmask, desired, empty;
-
-	sigemptyset(&empty);
-	sigemptyset(&desired);
-	sigaddset(&desired, SIGALRM);
-	sigprocmask(SIG_BLOCK, &desired, &oldmask);
-	while (!signalled)
-		sigsuspend(&desired);
-	signalled = false;
-	sigprocmask(SIG_SETMASK, &oldmask, NULL);
-	}
-#else /* __rtems__ */
 	oldmask = sigblock(sigmask(SIGALRM));
 	while (!signalled)
 		sigpause(0);
 	signalled = false;
 	sigsetmask(oldmask);
-#endif /* __rtems__ */
 	line++;
 
 	fill_iftot(new);
@@ -681,4 +669,5 @@ loop:
 		goto loop;
 
 	/* NOTREACHED */
+#endif /* __rtems__ */
 }

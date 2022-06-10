@@ -43,6 +43,7 @@
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#include <string.h>
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
 #endif /* __rtems__ */
@@ -96,6 +97,7 @@ getfmt(const char *tag)
 	return tag;
 }
 
+#ifndef __rtems__
 static int signalled;
 
 static void
@@ -103,6 +105,7 @@ catchalarm(int signo __unused)
 {
 	signalled = 1;
 }
+#endif /* __rtems__ */
 
 #if 0
 static void
@@ -262,6 +265,7 @@ main(int argc, char *argv[])
 	wf->setstamac(wf, mac);
 
 	if (argc > 0) {
+#ifndef __rtems__
 		u_long interval = strtoul(argv[0], NULL, 0);
 		int line, omask;
 
@@ -283,24 +287,10 @@ main(int argc, char *argv[])
 			wf->print_total(wf, stdout);
 		}
 		fflush(stdout);
-#ifndef __rtems__
 		omask = sigblock(sigmask(SIGALRM));
 		if (!signalled)
 			sigpause(0);
 		sigsetmask(omask);
-#else /* __rtems__ */
-		{
-		sigset_t oldmask, desired, empty;
-
-		sigemptyset(&empty);
-		sigemptyset(&desired);
-		sigaddset(&desired, SIGALRM);
-		sigprocmask(SIG_BLOCK, &desired, &oldmask);
-		while (!signalled)
-			sigsuspend(&desired);
-		sigprocmask(SIG_SETMASK, &oldmask, NULL);
-		}
-#endif /* __rtems__ */
 		signalled = 0;
 		alarm(interval);
 		line++;
@@ -346,6 +336,10 @@ main(int argc, char *argv[])
 			} while (len >= sizeof(struct ieee80211req_sta_info));
 		}
 #endif
+#else /* __rtems__ */
+		(void)mode;
+		printf("wlanstats: not implemented\n");
+#endif /* __rtems__ */
 	} else {
 		wf->collect_tot(wf);
 		wf->print_verbose(wf, stdout);

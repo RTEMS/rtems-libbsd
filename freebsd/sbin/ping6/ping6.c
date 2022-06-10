@@ -287,7 +287,9 @@ static void	 fill(char *, char *);
 static int	 get_hoplim(struct msghdr *);
 static int	 get_pathmtu(struct msghdr *);
 static struct in6_pktinfo *get_rcvpktinfo(struct msghdr *);
+#ifndef __rtems__
 static void	 onsignal(int);
+#endif /* __rtems__ */
 static void	 onint(int);
 static size_t	 pingerlen(void);
 static int	 pinger(void);
@@ -347,7 +349,9 @@ main(int argc, char *argv[])
 	struct timespec last, intvl;
 	struct sockaddr_in6 from, *sin6;
 	struct addrinfo hints, *res;
+#ifndef __rtems__
 	struct sigaction si_sa;
+#endif /* __rtems__ */
 	int cc, i;
 	int almost_done, ch, hold, packlen, preload, optval, error;
 	int nig_oldmcprefix = -1;
@@ -374,7 +378,9 @@ main(int argc, char *argv[])
 	char *policy_out = NULL;
 #endif
 	double t;
+#ifndef __rtems__
 	u_long alarmtimeout;
+#endif /* __rtems__ */
 	size_t rthlen;
 #ifdef IPV6_USE_MIN_MTU
 	int mflag = 0;
@@ -400,7 +406,9 @@ main(int argc, char *argv[])
 	intvl.tv_sec = interval / 1000;
 	intvl.tv_nsec = interval % 1000 * 1000000;
 
+#ifndef __rtems__
 	alarmtimeout = preload = 0;
+#endif /* __rtems__ */
 	datap = &outpack[ICMP6ECHOLEN + ICMP6ECHOTMLEN];
 	capdns = capdns_setup();
 #ifndef IPSEC
@@ -628,6 +636,7 @@ main(int argc, char *argv[])
 			options |= F_WAITTIME;
 			waittime = (int)t;
 			break;
+#ifndef __rtems__
 		case 'X':
 			alarmtimeout = strtoul(optarg, &e, 0);
 			if ((alarmtimeout < 1) || (alarmtimeout == ULONG_MAX))
@@ -638,6 +647,7 @@ main(int argc, char *argv[])
 				    optarg, MAXALARM);
 			alarm((int)alarmtimeout);
 			break;
+#endif /* __rtems__ */
 #ifdef IPSEC
 #ifdef IPSEC_POLICY_IPSEC
 		case 'P':
@@ -1174,6 +1184,7 @@ main(int argc, char *argv[])
 	}
 	clock_gettime(CLOCK_MONOTONIC, &last);
 
+#ifndef __rtems__
 	sigemptyset(&si_sa.sa_mask);
 	si_sa.sa_flags = 0;
 	si_sa.sa_handler = onsignal;
@@ -1189,6 +1200,7 @@ main(int argc, char *argv[])
 		if (sigaction(SIGALRM, &si_sa, 0) == -1)
 			err(EX_OSERR, "sigaction SIGALRM");
 	}
+#endif /* __rtems__ */
 	if (options & F_FLOOD) {
 		intvl.tv_sec = 0;
 		intvl.tv_nsec = 10000000;
@@ -1310,11 +1322,13 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+#ifndef __rtems__
 	sigemptyset(&si_sa.sa_mask);
 	si_sa.sa_flags = 0;
 	si_sa.sa_handler = SIG_IGN;
 	sigaction(SIGINT, &si_sa, 0);
 	sigaction(SIGALRM, &si_sa, 0);
+#endif /* __rtems__ */
 	summary();
 
         if(packet != NULL)
@@ -1323,6 +1337,7 @@ main(int argc, char *argv[])
 	exit(nreceived == 0 ? 2 : 0);
 }
 
+#ifndef __rtems__
 static void
 onsignal(int sig)
 {
@@ -1339,6 +1354,7 @@ onsignal(int sig)
 #endif
 	}
 }
+#endif /* __rtems__ */
 
 /*
  * pinger --

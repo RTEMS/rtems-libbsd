@@ -89,9 +89,11 @@ static void calculate_columns(DISPLAY_COLUMNS *dc)
 
 static int apps_startup(void)
 {
+#ifndef __rtems__
 #ifdef SIGPIPE
     signal(SIGPIPE, SIG_IGN);
 #endif
+#endif /* __rtems__ */
 
     /* Set non-default library initialisation settings */
     if (!OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN

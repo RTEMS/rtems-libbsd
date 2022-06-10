@@ -16,6 +16,9 @@
 #include "list.h"
 #include "eloop.h"
 
+#ifdef __rtems__
+#define CONFIG_ELOOP_KQUEUE
+#endif /* __rtems__ */
 #if defined(CONFIG_ELOOP_POLL) && defined(CONFIG_ELOOP_EPOLL)
 #error Do not define both of poll and epoll
 #endif

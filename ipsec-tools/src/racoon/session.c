@@ -119,6 +119,7 @@ struct fd_monitor {
 
 #define NUM_PRIORITIES 2
 
+#ifndef __rtems__
 static void close_session __P((void));
 static void initfds __P((void));
 static void init_signal __P((void));
@@ -126,6 +127,7 @@ static int set_signal __P((int sig, RETSIGTYPE (*func) __P((int))));
 static void check_sigreq __P((void));
 static void check_flushsa __P((void));
 static int close_sockets __P((void));
+#endif /* __rtems__ */
 
 #ifndef __rtems__
 static fd_set preset_mask, active_mask;
@@ -140,8 +142,10 @@ static struct fd_monitor *allocated_fd_monitors;
 static TAILQ_HEAD(fd_monitor_list, fd_monitor) fd_monitor_tree[NUM_PRIORITIES];
 static int nfds = 0;
 
+#ifndef __rtems__
 static volatile sig_atomic_t sigreq[NSIG + 1];
 static struct sched scflushsa = SCHED_INITIALIZER();
+#endif /* __rtems__ */
 
 void
 monitor_fd(int fd, int (*callback)(void *, int), void *ctx, int priority)
@@ -199,9 +203,11 @@ session(void)
 {
 	struct timeval *timeout;
 	int error;
+#ifndef __rtems__
 	char pid_file[MAXPATHLEN];
 	FILE *fp;
 	pid_t racoon_pid = 0;
+#endif /* __rtems__ */
 	int i, count;
 	struct fd_monitor *fdm;
 
@@ -228,7 +234,9 @@ session(void)
 
 	/* initialize schedular */
 	sched_init();
+#ifndef __rtems__
 	init_signal();
+#endif /* __rtems__ */
 
 	if (pfkey_init() < 0)
 		errx(1, "failed to initialize pfkey socket");
@@ -325,17 +333,19 @@ session(void)
 	racoon_pid = getpid();
 	fprintf(fp, "%ld\n", (long)racoon_pid);
 	fclose(fp);
-#endif /* __rtems__ */
 
 	for (i = 0; i <= NSIG; i++)
 		sigreq[i] = 0;
+#endif /* __rtems__ */
 
 	while (1) {
+#ifndef __rtems__
 		/*
 		 * asynchronous requests via signal.
 		 * make sure to reset sigreq to 0.
 		 */
 		check_sigreq();
+#endif /* __rtems__ */
 
 		/* scheduling */
 		timeout = schedular();
@@ -379,6 +389,7 @@ session(void)
 	}
 }
 
+#ifndef __rtems__
 /* clear all status and exit program. */
 static void
 close_session()
@@ -391,11 +402,6 @@ close_session()
 	flushsainfo();
 	close_sockets();
 	backupsa_clean();
-#ifdef __rtems__
-	free(allocated_preset_mask); allocated_preset_mask = NULL;
-	free(allocated_active_mask); allocated_active_mask = NULL;
-	free(allocated_fd_monitors); allocated_fd_monitors = NULL;
-#endif /* __rtems__ */
 
 	plog(LLV_INFO, LOCATION, NULL, "racoon process %d shutdown\n", getpid());
 
@@ -565,11 +571,7 @@ set_signal(sig, func)
 
 	memset((caddr_t)&sa, 0, sizeof(sa));
 	sa.sa_handler = func;
-#ifndef __rtems__
 	sa.sa_flags = SA_RESTART;
-#else /* __rtems__ */
-	sa.sa_flags = 0;
-#endif /* __rtems__ */
 
 	if (sigemptyset(&sa.sa_mask) < 0)
 		return -1;
@@ -590,6 +592,7 @@ close_sockets()
 #endif
 	return 0;
 }
+#endif /* __rtems__ */
 
 #ifdef __rtems__
 #include "rtems-bsd-racoon-session-data.h"

@@ -80,7 +80,9 @@ static int privsep_sock[2] = { -1, -1 };
 static int privsep_recv(int, struct privsep_com_msg **, size_t *);
 static int privsep_send(int, struct privsep_com_msg *, size_t);
 static int safety_check(struct privsep_com_msg *, int i);
+#ifndef __rtems__
 static int port_check(int);
+#endif /* __rtems__ */
 static int unsafe_env(char *const *);
 static int unknown_name(int);
 static int unsafe_path(char *, int);
@@ -321,7 +323,6 @@ privsep_init(void)
 #if defined(__NetBSD__) || defined(__FreeBSD__)
 	setproctitle("[priv]");
 #endif
-#endif /* __rtems__ */
 	
 	/*
 	 * Don't catch any signal
@@ -334,13 +335,16 @@ privsep_init(void)
 	signal(SIGUSR1, SIG_DFL);
 	signal(SIGUSR2, SIG_DFL);
 	signal(SIGCHLD, SIG_DFL);
+#endif /* __rtems__ */
 
 	while (1) {
 		size_t len;
 		struct privsep_com_msg *combuf;
 		struct privsep_com_msg *reply;
 		char *data;
+#ifndef __rtems__
 		size_t *buflen;
+#endif /* __rtems__ */
 		size_t totallen;
 		char *bufs[PRIVSEP_NBUF_MAX];
 		int i;
@@ -1067,7 +1071,9 @@ privsep_getpsk(str, keylen)
 	vchar_t *psk;
 	struct privsep_com_msg *msg;
 	size_t len;
+#ifndef __rtems__
 	int *keylenp;
+#endif /* __rtems__ */
 	char *data;
 
 	if (geteuid() == 0)
@@ -1129,7 +1135,11 @@ privsep_socket(domain, type, protocol)
 	size_t len;
 	char *data;
 	struct socket_args socket_args;
+#ifndef __rtems__
 	int s, saved_errno = 0;
+#else /* __rtems__ */
+	int s;
+#endif /* __rtems__ */
 
 	if (geteuid() == 0)
 		return socket(domain, type, protocol);

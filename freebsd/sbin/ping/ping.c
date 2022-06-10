@@ -307,7 +307,9 @@ main(int argc, char *const *argv)
 #endif
 	struct sockaddr_in *to;
 	double t;
+#ifndef __rtems__
 	u_long alarmtimeout;
+#endif /* __rtems__ */
 	long ltmp;
 	int almost_done, ch, df, hold, i, icmp_len, mib[4], preload;
 	int ssend_errno, srecv_errno, tos, ttl;
@@ -370,7 +372,9 @@ main(int argc, char *const *argv)
 		err(EX_OSERR, "srecv socket");
 	}
 
+#ifndef __rtems__
 	alarmtimeout = df = preload = tos = 0;
+#endif /* __rtems__ */
 
 	outpack = outpackhdr + sizeof(struct ip);
 	while ((ch = getopt(argc, argv,
@@ -572,6 +576,7 @@ main(int argc, char *const *argv)
 			mttl = ltmp;
 			options |= F_MTTL;
 			break;
+#ifndef __rtems__
 		case 't':
 			alarmtimeout = strtoul(optarg, &ep, 0);
 			if ((alarmtimeout < 1) || (alarmtimeout == ULONG_MAX))
@@ -582,6 +587,7 @@ main(int argc, char *const *argv)
 				    optarg, MAXALARM);
 			alarm((int)alarmtimeout);
 			break;
+#endif /* __rtems__ */
 		case 'v':
 			options |= F_VERBOSE;
 			break;
@@ -1518,8 +1524,10 @@ static void
 finish(void)
 {
 
+#ifndef __rtems__
 	(void)signal(SIGINT, SIG_IGN);
 	(void)signal(SIGALRM, SIG_IGN);
+#endif /* __rtems__ */
 	(void)putchar('\n');
 	(void)fflush(stdout);
 	(void)printf("--- %s ping statistics ---\n", hostname);

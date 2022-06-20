@@ -3205,10 +3205,23 @@ nfsrpc_readdir(vnode_t vp, struct uio *uiop, nfsuint64 *cookiep,
 			    } else {
 				dp->d_fileno = nfsva.na_fileid;
 			    }
+#ifndef __rtems__
 			    *tl2++ = cookiep->nfsuquad[0] = cookie.lval[0] =
 				ncookie.lval[0];
+#else /* __rtems__ */
+			    memcpy(tl2, &ncookie.lval[0], sizeof(*tl2));
+			    tl2++;
+			    cookiep->nfsuquad[0] = cookie.lval[0] =
+				ncookie.lval[0];
+#endif /* __rtems__ */
+#ifndef __rtems__
 			    *tl2 = cookiep->nfsuquad[1] = cookie.lval[1] =
 				ncookie.lval[1];
+#else /* __rtems__ */
+			    memcpy(tl2, &ncookie.lval[1], sizeof(*tl2));
+			    cookiep->nfsuquad[1] = cookie.lval[1] =
+				ncookie.lval[1];
+#endif /* __rtems__ */
 			}
 			more_dirs = fxdr_unsigned(int, *tl);
 		}

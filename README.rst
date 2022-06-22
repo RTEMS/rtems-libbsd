@@ -40,7 +40,7 @@ do this.  The individual steps are explained afterwards.
     ../source-builder/sb-set-builder --prefix="$sandbox/rtems/6" 6/rtems-arm
     cd "$sandbox"
     cd rtems
-    echo -e "[arm/xilinx_zynq_a9_qemu]\nRTEMS_POSIX_API = True" > config.ini
+    echo -e "[arm/xilinx_zynq_a9_qemu]" > config.ini
     ./waf configure --prefix "$sandbox/rtems/6"
     ./waf
     ./waf install
@@ -85,7 +85,7 @@ do this.  The individual steps are explained afterwards.
 
        $ cd "$sandbox"
        $ cd rtems
-       $ echo -e "[arm/xilinx_zynq_a9_qemu]\nRTEMS_POSIX_API = True" > config.ini
+       $ echo -e "[arm/xilinx_zynq_a9_qemu]" > config.ini
        $ ./waf configure --prefix "$sandbox/rtems/6"
        $ ./waf
        $ ./waf install

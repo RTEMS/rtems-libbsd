@@ -7,13 +7,7 @@
  */
 
 /*
- * Copyright (c) 2009-2012 embedded brains GmbH.  All rights reserved.
- *
- *  embedded brains GmbH
- *  Obere Lagerstr. 30
- *  82178 Puchheim
- *  Germany
- *  <rtems@embedded-brains.de>
+ * Copyright (C) 2009, 2022 embedded brains GmbH
  *
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
@@ -264,8 +258,6 @@ static volatile lpc_eth_controller *const lpc_eth =
 
 #define LPC_ETH_EVENT_INIT_TX RTEMS_EVENT_1
 
-#define LPC_ETH_EVENT_TXSTART RTEMS_EVENT_2
-
 #define LPC_ETH_EVENT_INTERRUPT RTEMS_EVENT_3
 
 #define LPC_ETH_EVENT_STOP RTEMS_EVENT_4
@@ -274,9 +266,6 @@ static volatile lpc_eth_controller *const lpc_eth =
 
 #define LPC_ETH_INTERRUPT_RECEIVE \
   (ETH_INT_RX_ERROR | ETH_INT_RX_FINISHED | ETH_INT_RX_DONE)
-
-#define LPC_ETH_INTERRUPT_TRANSMIT \
-  (ETH_INT_TX_DONE | ETH_INT_TX_FINISHED | ETH_INT_TX_ERROR)
 
 #define LPC_ETH_RX_STAT_ERRORS \
   (ETH_RX_STAT_CRC_ERROR \
@@ -317,7 +306,6 @@ typedef struct {
   uint32_t anlpar;
   struct callout watchdog_callout;
   rtems_id receive_task;
-  rtems_id transmit_task;
   unsigned rx_unit_count;
   unsigned tx_unit_count;
   volatile lpc_eth_transfer_descriptor *rx_desc_table;
@@ -331,7 +319,6 @@ typedef struct {
   unsigned received_frames;
   unsigned receive_interrupts;
   unsigned transmitted_frames;
-  unsigned transmit_interrupts;
   unsigned receive_drop_errors;
   unsigned receive_overrun_errors;
   unsigned receive_fragment_errors;
@@ -435,24 +422,12 @@ static void lpc_eth_interrupt_handler(void *arg)
   } else if ((is & LPC_ETH_INTERRUPT_RECEIVE) != 0) {
     re = LPC_ETH_EVENT_INTERRUPT;
     ie |= LPC_ETH_INTERRUPT_RECEIVE;
+    ++e->receive_interrupts;
   }
 
   /* Send events to receive task */
   if (re != 0) {
-    ++e->receive_interrupts;
     (void) rtems_event_send(e->receive_task, re);
-  }
-
-  /* Check transmit interrupts */
-  if ((is & LPC_ETH_INTERRUPT_TRANSMIT) != 0) {
-    te = LPC_ETH_EVENT_INTERRUPT;
-    ie |= LPC_ETH_INTERRUPT_TRANSMIT;
-  }
-
-  /* Send events to transmit task */
-  if (te != 0) {
-    ++e->transmit_interrupts;
-    (void) rtems_event_send(e->transmit_task, te);
   }
 
   LPC_ETH_PRINTK("interrupt: rx = 0x%08x, tx = 0x%08x\n", re, te);
@@ -482,24 +457,6 @@ static void lpc_eth_disable_receive_interrupts(void)
   rtems_interrupt_enable(level);
 }
 
-static void lpc_eth_enable_transmit_interrupts(void)
-{
-  rtems_interrupt_level level;
-
-  rtems_interrupt_disable(level);
-  lpc_eth->intenable |= LPC_ETH_INTERRUPT_TRANSMIT;
-  rtems_interrupt_enable(level);
-}
-
-static void lpc_eth_disable_transmit_interrupts(void)
-{
-  rtems_interrupt_level level;
-
-  rtems_interrupt_disable(level);
-  lpc_eth->intenable &= ~LPC_ETH_INTERRUPT_TRANSMIT;
-  rtems_interrupt_enable(level);
-}
-
 static void lpc_eth_initialize_transmit(lpc_eth_driver_entry *e)
 {
   volatile uint32_t *const status = e->tx_status_table;
@@ -512,9 +469,6 @@ static void lpc_eth_initialize_transmit(lpc_eth_driver_entry *e)
   #endif
   uint32_t produce_index;
 
-  /* Disable transmit interrupts */
-  lpc_eth_disable_transmit_interrupts();
-
   /* Disable transmitter */
   lpc_eth->command &= ~ETH_CMD_TX_ENABLE;
 
@@ -526,9 +480,6 @@ static void lpc_eth_initialize_transmit(lpc_eth_driver_entry *e)
   /* Reset */
   lpc_eth->command |= ETH_CMD_TX_RESET;
 
-  /* Clear transmit interrupts */
-  lpc_eth->intclear = LPC_ETH_INTERRUPT_TRANSMIT;
-
   /* Transmit descriptors */
   lpc_eth->txdescriptornum = index_max;
   lpc_eth->txdescriptor = (uint32_t) desc;
@@ -537,12 +488,8 @@ static void lpc_eth_initialize_transmit(lpc_eth_driver_entry *e)
   #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
     /* Discard outstanding fragments (= data loss) */
     for (produce_index = 0; produce_index <= index_max; ++produce_index) {
-      struct mbuf *victim = mbufs [produce_index];
-
-      if (victim != NULL) {
-        m_free(victim);
-        mbufs [produce_index] = NULL;
-      }
+      m_freem(mbufs [produce_index]);
+      mbufs [produce_index] = NULL;
     }
   #else
     /* Initialize descriptor table */
@@ -815,20 +762,10 @@ static struct mbuf *lpc_eth_next_fragment(
   uint32_t *ctrl
 )
 {
-  struct mbuf *n = NULL;
-  int size = 0;
+  struct mbuf *n;
+  int size;
 
   while (true) {
-    if (m == NULL) {
-      /* Dequeue first fragment of the next frame */
-      IF_DEQUEUE(&ifp->if_snd, m);
-
-      /* Empty queue? */
-      if (m == NULL) {
-        return m;
-      }
-    }
-
     /* Get fragment size */
     size = m->m_len;
 
@@ -836,8 +773,12 @@ static struct mbuf *lpc_eth_next_fragment(
       /* Now we have a not empty fragment */
       break;
     } else {
-      /* Discard empty fragments */
-      m = m_free(m);
+      /* Skip empty fragments */
+      m = m->m_next;
+
+      if (m == NULL) {
+        return NULL;
+      }
     }
   }
 
@@ -859,266 +800,224 @@ static struct mbuf *lpc_eth_next_fragment(
   return m;
 }
 
-static void lpc_eth_transmit_task(rtems_task_argument arg)
+static void lpc_eth_tx_reclaim(lpc_eth_driver_entry *e, struct ifnet *ifp)
 {
-  rtems_status_code sc = RTEMS_SUCCESSFUL;
-  rtems_event_set events = 0;
-  lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) arg;
-  struct ifnet *ifp = e->ifp;
-  volatile lpc_eth_transfer_descriptor *const desc = e->tx_desc_table;
   volatile uint32_t *const status = e->tx_status_table;
+  volatile lpc_eth_transfer_descriptor *const desc = e->tx_desc_table;
   #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
     struct mbuf **const mbufs = e->tx_buf_table;
   #else
     char *const buf = e->tx_buf_table;
   #endif
-  struct mbuf *m = NULL;
   uint32_t const index_max = e->tx_unit_count - 1;
-  uint32_t ctrl = 0;
+  uint32_t consume_index = e->tx_consume_index;
 
-  LPC_ETH_PRINTF("%s\n", __func__);
-
-  /* Main event loop */
+  /* Free consumed fragments */
   while (true) {
-    uint32_t produce_index;
-    uint32_t consume_index;
-    #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-      uint32_t frame_length;
-      char *frame_buffer;
-    #endif
+    /* Save last known consume index */
+    uint32_t c = consume_index;
 
-    /* Wait for events */
-    sc = rtems_event_receive(
-      LPC_ETH_EVENT_STOP
-        | LPC_ETH_EVENT_TXSTART
-        | LPC_ETH_EVENT_INTERRUPT,
-      RTEMS_EVENT_ANY | RTEMS_WAIT,
-      RTEMS_NO_TIMEOUT,
-      &events
-    );
-    BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+    /* Get new consume index */
+    consume_index = lpc_eth->txconsumeindex;
 
-    LPC_ETH_PRINTF("tx: wake up: 0x%08" PRIx32 "\n", events);
-
-    /* Stop transmitter? */
-    if ((events & LPC_ETH_EVENT_STOP) != 0) {
-      lpc_eth_control_request_complete(e);
-
-      /* Wait for events */
-      continue;
+    /* Nothing consumed in the meantime? */
+    if (c == consume_index) {
+      break;
     }
 
-    LPE_LOCK(e);
+    while (c != consume_index) {
+      uint32_t s = status [c];
 
-    /* Get indices */
-    produce_index = e->tx_produce_index;
-    consume_index = e->tx_consume_index;
-
-    #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-      /* Fresh frame length and buffer start */
-      frame_length = 0;
-      frame_buffer = (char *) desc [produce_index].start;
-    #endif
-
-    /* Free consumed fragments */
-    while (true) {
-      /* Save last known consume index */
-      uint32_t c = consume_index;
-
-      /* Clear transmit interrupt status */
-      lpc_eth->intclear = LPC_ETH_INTERRUPT_TRANSMIT;
-
-      /* Get new consume index */
-      consume_index = lpc_eth->txconsumeindex;
-
-      /* Nothing consumed in the meantime? */
-      if (c == consume_index) {
-        break;
+      /* Update error counters */
+      if ((s & (ETH_TX_STAT_ERROR | ETH_TX_STAT_NO_DESCRIPTOR)) != 0) {
+        if ((s & ETH_TX_STAT_UNDERRUN) != 0) {
+          ++e->transmit_underrun_errors;
+        }
+        if ((s & ETH_TX_STAT_LATE_COLLISION) != 0) {
+          ++e->transmit_late_collision_errors;
+        }
+        if ((s & ETH_TX_STAT_EXCESSIVE_COLLISION) != 0) {
+          ++e->transmit_excessive_collision_errors;
+        }
+        if ((s & ETH_TX_STAT_EXCESSIVE_DEFER) != 0) {
+          ++e->transmit_excessive_defer_errors;
+        }
+        if ((s & ETH_TX_STAT_NO_DESCRIPTOR) != 0) {
+          ++e->transmit_no_descriptor_errors;
+        }
       }
 
-      while (c != consume_index) {
-        uint32_t s = status [c];
+      #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+        /* Release mbuf */
+        m_freem(mbufs [c]);
+        mbufs [c] = NULL;
+      #endif
 
-        /* Update error counters */
-        if ((s & (ETH_TX_STAT_ERROR | ETH_TX_STAT_NO_DESCRIPTOR)) != 0) {
-          if ((s & ETH_TX_STAT_UNDERRUN) != 0) {
-            ++e->transmit_underrun_errors;
-          }
-          if ((s & ETH_TX_STAT_LATE_COLLISION) != 0) {
-            ++e->transmit_late_collision_errors;
-          }
-          if ((s & ETH_TX_STAT_EXCESSIVE_COLLISION) != 0) {
-            ++e->transmit_excessive_collision_errors;
-          }
-          if ((s & ETH_TX_STAT_EXCESSIVE_DEFER) != 0) {
-            ++e->transmit_excessive_defer_errors;
-          }
-          if ((s & ETH_TX_STAT_NO_DESCRIPTOR) != 0) {
-            ++e->transmit_no_descriptor_errors;
-          }
+      /* Next consume index */
+      c = lpc_eth_increment(c, index_max);
+    }
+  }
+
+  e->tx_consume_index = consume_index;
+}
+
+static int lpc_eth_tx_enqueue(
+  lpc_eth_driver_entry *e,
+  struct ifnet *ifp,
+  struct mbuf *m0
+)
+{
+  volatile lpc_eth_transfer_descriptor *const desc = e->tx_desc_table;
+  #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+    struct mbuf **const mbufs = e->tx_buf_table;
+  #else
+    char *const buf = e->tx_buf_table;
+    uint32_t frame_length;
+    char *frame_buffer;
+  #endif
+  uint32_t const index_max = e->tx_unit_count - 1;
+  uint32_t produce_index = e->tx_produce_index;
+  uint32_t consume_index = e->tx_consume_index;
+  struct mbuf *m = m0;
+
+  while (true) {
+    uint32_t ctrl;
+
+    /* Compute next produce index */
+    uint32_t p = lpc_eth_increment(produce_index, index_max);
+
+    /* Queue full? */
+    if (p == consume_index) {
+      LPC_ETH_PRINTF("tx: full queue: 0x%08x\n", m);
+
+      /* The queue is full */
+      return ENOBUFS;
+    }
+
+    /* Get next fragment and control value */
+    m = lpc_eth_next_fragment(ifp, m, &ctrl);
+
+    /* New fragment? */
+    if (m != NULL) {
+      #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+        /* Set the transfer data */
+        rtems_cache_flush_multiple_data_lines(
+          mtod(m, const void *),
+          (size_t) m->m_len
+        );
+        desc [produce_index].start = mtod(m, uint32_t);
+        desc [produce_index].control = ctrl;
+        rtems_cache_flush_multiple_data_lines(
+          (void *) &desc [produce_index],
+          sizeof(desc [0])
+         );
+
+        LPC_ETH_PRINTF(
+          "tx: %02" PRIu32 ": %u %s\n",
+          produce_index, m->m_len,
+          (ctrl & ETH_TX_CTRL_LAST) != 0 ? "L" : ""
+        );
+
+        /* Next produce index */
+        produce_index = p;
+
+        /* Last fragment of a frame? */
+        if ((ctrl & ETH_TX_CTRL_LAST) != 0) {
+          /* Update the produce index */
+          lpc_eth->txproduceindex = produce_index;
+          e->tx_produce_index = produce_index;
+
+          mbufs [produce_index] = m0;
+
+          /* Increment transmitted frames counter */
+          ++e->transmitted_frames;
+
+          return 0;
         }
 
-        #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-          /* Release mbuf */
-          m_free(mbufs [c]);
-          mbufs [c] = NULL;
-        #endif
+        /* Next fragment of the frame */
+        m = m->m_next;
+      #else
+        size_t fragment_length = (size_t) m->m_len;
+        void *fragment_start = mtod(m, void *);
+        uint32_t new_frame_length = frame_length + fragment_length;
 
-        /* Next consume index */
-        c = lpc_eth_increment(c, index_max);
-      }
-    }
+        /* Check buffer size */
+        if (new_frame_length > LPC_ETH_CONFIG_TX_BUF_SIZE) {
+          LPC_ETH_PRINTF("tx: overflow\n");
 
-    /* Transmit new fragments */
-    while (true) {
-      /* Compute next produce index */
-      uint32_t p = lpc_eth_increment(produce_index, index_max);
+          /* Discard overflow data */
+          new_frame_length = LPC_ETH_CONFIG_TX_BUF_SIZE;
+          fragment_length = new_frame_length - frame_length;
 
-      /* Get next fragment and control value */
-      m = lpc_eth_next_fragment(ifp, m, &ctrl);
+          /* Finalize frame */
+          ctrl |= LPC_ETH_LAST_FRAGMENT_FLAGS;
 
-      /* Queue full? */
-      if (p == consume_index) {
-        LPC_ETH_PRINTF("tx: full queue: 0x%08x\n", m);
+          /* Update error counter */
+          ++e->transmit_overflow_errors;
+        }
 
-        /* The queue is full, wait for transmit interrupt */
-        break;
-      }
+        LPC_ETH_PRINTF(
+          "tx: copy: %" PRIu32 "%s%s\n",
+          fragment_length,
+          (m->m_flags & M_EXT) != 0 ? ", E" : "",
+          (m->m_flags & M_PKTHDR) != 0 ? ", H" : ""
+        );
 
-      /* New fragment? */
-      if (m != NULL) {
-        #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-          /* Set the transfer data */
-          rtems_cache_flush_multiple_data_lines(
-            mtod(m, const void *),
-            (size_t) m->m_len
+        /* Copy fragment to buffer in Ethernet RAM */
+        memcpy(frame_buffer, fragment_start, fragment_length);
+
+        if ((ctrl & ETH_TX_CTRL_LAST) != 0) {
+          /* Finalize descriptor */
+          desc [produce_index].control = (ctrl & ~ETH_TX_CTRL_SIZE_MASK)
+            | (new_frame_length - 1);
+
+          LPC_ETH_PRINTF(
+            "tx: %02" PRIu32 ": %" PRIu32 "\n",
+            produce_index,
+            new_frame_length
           );
-          desc [produce_index].start = mtod(m, uint32_t);
-          desc [produce_index].control = ctrl;
+
+          /* Cache flush of data */
+          rtems_cache_flush_multiple_data_lines(
+            (const void *) desc [produce_index].start,
+            new_frame_length
+          );
+
+          /* Cache flush of descriptor  */
           rtems_cache_flush_multiple_data_lines(
             (void *) &desc [produce_index],
             sizeof(desc [0])
-           );
-          mbufs [produce_index] = m;
-
-          LPC_ETH_PRINTF(
-            "tx: %02" PRIu32 ": %u %s\n",
-            produce_index, m->m_len,
-            (ctrl & ETH_TX_CTRL_LAST) != 0 ? "L" : ""
           );
 
           /* Next produce index */
           produce_index = p;
 
-          /* Last fragment of a frame? */
-          if ((ctrl & ETH_TX_CTRL_LAST) != 0) {
-            /* Update the produce index */
-            lpc_eth->txproduceindex = produce_index;
+          /* Update the produce index */
+          lpc_eth->txproduceindex = produce_index;
 
-            /* Increment transmitted frames counter */
-            ++e->transmitted_frames;
-          }
+          /* Fresh frame length and buffer start */
+          frame_length = 0;
+          frame_buffer = (char *) desc [produce_index].start;
 
-          /* Next fragment of the frame */
-          m = m->m_next;
-        #else
-          size_t fragment_length = (size_t) m->m_len;
-          void *fragment_start = mtod(m, void *);
-          uint32_t new_frame_length = frame_length + fragment_length;
+          /* Increment transmitted frames counter */
+          ++e->transmitted_frames;
+        } else {
+          /* New frame length */
+          frame_length = new_frame_length;
 
-          /* Check buffer size */
-          if (new_frame_length > LPC_ETH_CONFIG_TX_BUF_SIZE) {
-            LPC_ETH_PRINTF("tx: overflow\n");
+          /* Update current frame buffer start */
+          frame_buffer += fragment_length;
+        }
 
-            /* Discard overflow data */
-            new_frame_length = LPC_ETH_CONFIG_TX_BUF_SIZE;
-            fragment_length = new_frame_length - frame_length;
-
-            /* Finalize frame */
-            ctrl |= LPC_ETH_LAST_FRAGMENT_FLAGS;
-
-            /* Update error counter */
-            ++e->transmit_overflow_errors;
-          }
-
-          LPC_ETH_PRINTF(
-            "tx: copy: %" PRIu32 "%s%s\n",
-            fragment_length,
-            (m->m_flags & M_EXT) != 0 ? ", E" : "",
-            (m->m_flags & M_PKTHDR) != 0 ? ", H" : ""
-          );
-
-          /* Copy fragment to buffer in Ethernet RAM */
-          memcpy(frame_buffer, fragment_start, fragment_length);
-
-          if ((ctrl & ETH_TX_CTRL_LAST) != 0) {
-            /* Finalize descriptor */
-            desc [produce_index].control = (ctrl & ~ETH_TX_CTRL_SIZE_MASK)
-              | (new_frame_length - 1);
-
-            LPC_ETH_PRINTF(
-              "tx: %02" PRIu32 ": %" PRIu32 "\n",
-              produce_index,
-              new_frame_length
-            );
-
-            /* Cache flush of data */
-            rtems_cache_flush_multiple_data_lines(
-              (const void *) desc [produce_index].start,
-              new_frame_length 
-            );
-
-            /* Cache flush of descriptor  */
-            rtems_cache_flush_multiple_data_lines(
-              (void *) &desc [produce_index],
-              sizeof(desc [0])
-            );
-
-            /* Next produce index */
-            produce_index = p;
-
-            /* Update the produce index */
-            lpc_eth->txproduceindex = produce_index;
-
-            /* Fresh frame length and buffer start */
-            frame_length = 0;
-            frame_buffer = (char *) desc [produce_index].start;
-
-            /* Increment transmitted frames counter */
-            ++e->transmitted_frames;
-          } else {
-            /* New frame length */
-            frame_length = new_frame_length;
-
-            /* Update current frame buffer start */
-            frame_buffer += fragment_length;
-          }
-
-          /* Free mbuf and get next */
-          m = m_free(m);
-        #endif
-      } else {
-        /* Nothing to transmit */
-        break;
-      }
-    }
-
-    /* Save indices */
-    e->tx_produce_index = produce_index;
-    e->tx_consume_index = consume_index;
-
-    /* No more fragments? */
-    if (m == NULL) {
-      /* Interface is now inactive */
-      ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+        /* Free mbuf and get next */
+        m = m_free(m);
+      #endif
     } else {
-      LPC_ETH_PRINTF("tx: enable interrupts\n");
-
-      /* Enable transmit interrupts */
-      lpc_eth_enable_transmit_interrupts();
+      /* Nothing to transmit */
+      m_freem(m0);
+      return 0;
     }
-
-    LPE_UNLOCK(e);
   }
 }
 
@@ -1484,9 +1383,8 @@ static int lpc_eth_up_or_down(lpc_eth_driver_entry *e, bool up)
     );
     BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 
-    /* Stop tasks */
+    /* Stop task */
     lpc_eth_control_request(e, e->receive_task, LPC_ETH_EVENT_STOP);
-    lpc_eth_control_request(e, e->transmit_task, LPC_ETH_EVENT_STOP);
 
     lpc_eth_soft_reset();
     lpc_eth_phy_down(e);
@@ -1604,17 +1502,38 @@ static int lpc_eth_interface_ioctl(
   return eno;
 }
 
-static void lpc_eth_interface_start(struct ifnet *ifp)
+static int lpc_eth_interface_transmit(struct ifnet *ifp, struct mbuf *m)
 {
-  rtems_status_code sc = RTEMS_SUCCESSFUL;
   lpc_eth_driver_entry *e = (lpc_eth_driver_entry *) ifp->if_softc;
+  int eno;
 
-  ifp->if_drv_flags |= IFF_DRV_OACTIVE;
+  LPE_LOCK(e);
 
   if (e->state == LPC_ETH_STATE_UP) {
-    sc = rtems_event_send(e->transmit_task, LPC_ETH_EVENT_TXSTART);
-    BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+    eno = lpc_eth_tx_enqueue(e, ifp, m);
+    lpc_eth_tx_reclaim(e, ifp);
+
+    if (__predict_false(eno != 0)) {
+      struct mbuf *n;
+
+      n = m_defrag(m, M_NOWAIT);
+      if (n != NULL) {
+        m = n;
+      }
+
+      eno = lpc_eth_tx_enqueue(e, ifp, m);
+    }
+  } else {
+    eno = ENETDOWN;
   }
+
+  if (eno != 0) {
+    m_freem(m);
+    if_inc_counter(ifp, IFCOUNTER_OQDROPS, 1);
+  }
+
+  LPE_UNLOCK(e);
+  return eno;
 }
 
 static void lpc_eth_interface_watchdog(void *arg)
@@ -1772,7 +1691,7 @@ static int lpc_eth_attach(device_t dev)
   if_initname(ifp, device_get_name(dev), device_get_unit(dev));
   ifp->if_init = lpc_eth_interface_init;
   ifp->if_ioctl = lpc_eth_interface_ioctl;
-  ifp->if_start = lpc_eth_interface_start;
+  ifp->if_transmit = lpc_eth_interface_transmit;
   ifp->if_qflush = if_qflush;
   ifp->if_flags = IFF_BROADCAST | IFF_MULTICAST | IFF_SIMPLEX;
   IFQ_SET_MAXLEN(&ifp->if_snd, LPC_ETH_CONFIG_TX_UNIT_COUNT_MAX - 1);
@@ -1795,21 +1714,6 @@ static int lpc_eth_attach(device_t dev)
   status = rtems_task_start(
     e->receive_task,
     lpc_eth_receive_task,
-    (rtems_task_argument)e
-  );
-  BSD_ASSERT(status == RTEMS_SUCCESSFUL);
-  status = rtems_task_create(
-    rtems_build_name('n', 't', 't', 'x'),
-    rtems_bsd_get_task_priority(device_get_name(e->dev)),
-    4096,
-    RTEMS_DEFAULT_MODES,
-    RTEMS_DEFAULT_ATTRIBUTES,
-    &e->transmit_task
-  );
-  BSD_ASSERT(status == RTEMS_SUCCESSFUL);
-  status = rtems_task_start(
-    e->transmit_task,
-    lpc_eth_transmit_task,
     (rtems_task_argument)e
   );
   BSD_ASSERT(status == RTEMS_SUCCESSFUL);

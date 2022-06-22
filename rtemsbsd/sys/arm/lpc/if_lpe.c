@@ -260,7 +260,9 @@ static volatile lpc_eth_controller *const lpc_eth =
 
 /* Events */
 
-#define LPC_ETH_EVENT_INITIALIZE RTEMS_EVENT_1
+#define LPC_ETH_EVENT_INIT_RX RTEMS_EVENT_0
+
+#define LPC_ETH_EVENT_INIT_TX RTEMS_EVENT_1
 
 #define LPC_ETH_EVENT_TXSTART RTEMS_EVENT_2
 
@@ -324,6 +326,8 @@ typedef struct {
   volatile lpc_eth_transfer_descriptor *tx_desc_table;
   volatile uint32_t *tx_status_table;
   void *tx_buf_table;
+  uint32_t tx_produce_index;
+  uint32_t tx_consume_index;
   unsigned received_frames;
   unsigned receive_interrupts;
   unsigned transmitted_frames;
@@ -418,9 +422,16 @@ static void lpc_eth_interrupt_handler(void *arg)
   uint32_t is = lpc_eth->intstatus & im;
 
   /* Check receive interrupts */
-  if ((is & ETH_INT_RX_OVERRUN) != 0) {
-    re = LPC_ETH_EVENT_INITIALIZE;
-    ++e->receive_fatal_errors;
+  if ((is & (ETH_INT_RX_OVERRUN | ETH_INT_TX_UNDERRUN)) != 0) {
+    if ((is & ETH_INT_RX_OVERRUN) != 0) {
+      re = LPC_ETH_EVENT_INIT_RX;
+      ++e->receive_fatal_errors;
+    }
+
+    if ((is & ETH_INT_TX_UNDERRUN) != 0) {
+      re = LPC_ETH_EVENT_INIT_TX;
+      ++e->transmit_fatal_errors;
+    }
   } else if ((is & LPC_ETH_INTERRUPT_RECEIVE) != 0) {
     re = LPC_ETH_EVENT_INTERRUPT;
     ie |= LPC_ETH_INTERRUPT_RECEIVE;
@@ -433,10 +444,7 @@ static void lpc_eth_interrupt_handler(void *arg)
   }
 
   /* Check transmit interrupts */
-  if ((is & ETH_INT_TX_UNDERRUN) != 0) {
-    te = LPC_ETH_EVENT_INITIALIZE;
-    ++e->transmit_fatal_errors;
-  } else if ((is & LPC_ETH_INTERRUPT_TRANSMIT) != 0) {
+  if ((is & LPC_ETH_INTERRUPT_TRANSMIT) != 0) {
     te = LPC_ETH_EVENT_INTERRUPT;
     ie |= LPC_ETH_INTERRUPT_TRANSMIT;
   }
@@ -490,6 +498,66 @@ static void lpc_eth_disable_transmit_interrupts(void)
   rtems_interrupt_disable(level);
   lpc_eth->intenable &= ~LPC_ETH_INTERRUPT_TRANSMIT;
   rtems_interrupt_enable(level);
+}
+
+static void lpc_eth_initialize_transmit(lpc_eth_driver_entry *e)
+{
+  volatile uint32_t *const status = e->tx_status_table;
+  uint32_t const index_max = e->tx_unit_count - 1;
+  volatile lpc_eth_transfer_descriptor *const desc = e->tx_desc_table;
+  #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+    struct mbuf **const mbufs = e->tx_buf_table;
+  #else
+    char *const buf = e->tx_buf_table;
+  #endif
+  uint32_t produce_index;
+
+  /* Disable transmit interrupts */
+  lpc_eth_disable_transmit_interrupts();
+
+  /* Disable transmitter */
+  lpc_eth->command &= ~ETH_CMD_TX_ENABLE;
+
+  /* Wait for inactive status */
+  while ((lpc_eth->status & ETH_STAT_TX_ACTIVE) != 0) {
+    /* Wait */
+  }
+
+  /* Reset */
+  lpc_eth->command |= ETH_CMD_TX_RESET;
+
+  /* Clear transmit interrupts */
+  lpc_eth->intclear = LPC_ETH_INTERRUPT_TRANSMIT;
+
+  /* Transmit descriptors */
+  lpc_eth->txdescriptornum = index_max;
+  lpc_eth->txdescriptor = (uint32_t) desc;
+  lpc_eth->txstatus = (uint32_t) status;
+
+  #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+    /* Discard outstanding fragments (= data loss) */
+    for (produce_index = 0; produce_index <= index_max; ++produce_index) {
+      struct mbuf *victim = mbufs [produce_index];
+
+      if (victim != NULL) {
+        m_free(victim);
+        mbufs [produce_index] = NULL;
+      }
+    }
+  #else
+    /* Initialize descriptor table */
+    for (produce_index = 0; produce_index <= index_max; ++produce_index) {
+      desc [produce_index].start =
+        (uint32_t) (buf + produce_index * LPC_ETH_CONFIG_TX_BUF_SIZE);
+    }
+  #endif
+
+  /* Initialize indices */
+  e->tx_produce_index = lpc_eth->txproduceindex;
+  e->tx_consume_index = lpc_eth->txconsumeindex;
+
+  /* Enable transmitter */
+  lpc_eth->command |= ETH_CMD_TX_ENABLE;
 }
 
 #define LPC_ETH_RX_DATA_OFFSET 2
@@ -576,7 +644,8 @@ static void lpc_eth_receive_task(rtems_task_argument arg)
   while (true) {
     /* Wait for events */
     sc = rtems_event_receive(
-      LPC_ETH_EVENT_INITIALIZE
+      LPC_ETH_EVENT_INIT_RX
+        | LPC_ETH_EVENT_INIT_TX
         | LPC_ETH_EVENT_STOP
         | LPC_ETH_EVENT_INTERRUPT,
       RTEMS_EVENT_ANY | RTEMS_WAIT,
@@ -595,59 +664,67 @@ static void lpc_eth_receive_task(rtems_task_argument arg)
       continue;
     }
 
-    /* Initialize receiver? */
-    if ((events & LPC_ETH_EVENT_INITIALIZE) != 0) {
-      /* Disable receive interrupts */
-      lpc_eth_disable_receive_interrupts();
+    /* Initialize receiver or transmitter? */
+    if ((events & (LPC_ETH_EVENT_INIT_RX | LPC_ETH_EVENT_INIT_TX)) != 0) {
+      if ((events & LPC_ETH_EVENT_INIT_RX) != 0) {
+        /* Disable receive interrupts */
+        lpc_eth_disable_receive_interrupts();
 
-      /* Disable receiver */
-      lpc_eth->command &= ~ETH_CMD_RX_ENABLE;
+        /* Disable receiver */
+        lpc_eth->command &= ~ETH_CMD_RX_ENABLE;
 
-      /* Wait for inactive status */
-      while ((lpc_eth->status & ETH_STAT_RX_ACTIVE) != 0) {
-        /* Wait */
-      }
-
-      /* Reset */
-      lpc_eth->command |= ETH_CMD_RX_RESET;
-
-      /* Clear receive interrupts */
-      lpc_eth->intclear = LPC_ETH_INTERRUPT_RECEIVE;
-
-      /* Move existing mbufs to the front */
-      consume_index = 0;
-      for (produce_index = 0; produce_index <= index_max; ++produce_index) {
-        if (mbufs [produce_index] != NULL) {
-          mbufs [consume_index] = mbufs [produce_index];
-          ++consume_index;
+        /* Wait for inactive status */
+        while ((lpc_eth->status & ETH_STAT_RX_ACTIVE) != 0) {
+          /* Wait */
         }
+
+        /* Reset */
+        lpc_eth->command |= ETH_CMD_RX_RESET;
+
+        /* Clear receive interrupts */
+        lpc_eth->intclear = LPC_ETH_INTERRUPT_RECEIVE;
+
+        /* Move existing mbufs to the front */
+        consume_index = 0;
+        for (produce_index = 0; produce_index <= index_max; ++produce_index) {
+          if (mbufs [produce_index] != NULL) {
+            mbufs [consume_index] = mbufs [produce_index];
+            ++consume_index;
+          }
+        }
+
+        /* Fill receive queue */
+        for (
+          produce_index = consume_index;
+          produce_index <= index_max;
+          ++produce_index
+        ) {
+          lpc_eth_add_new_mbuf(ifp, desc, mbufs, produce_index, true);
+        }
+
+        /* Receive descriptor table */
+        lpc_eth->rxdescriptornum = index_max;
+        lpc_eth->rxdescriptor = (uint32_t) desc;
+        lpc_eth->rxstatus = (uint32_t) status;
+
+        /* Initialize indices */
+        produce_index = lpc_eth->rxproduceindex;
+        consume_index = lpc_eth->rxconsumeindex;
+
+        /* Enable receiver */
+        lpc_eth->command |= ETH_CMD_RX_ENABLE;
+
+        /* Enable receive interrupts */
+        lpc_eth_enable_receive_interrupts();
+
+        lpc_eth_control_request_complete(e);
       }
 
-      /* Fill receive queue */
-      for (
-        produce_index = consume_index;
-        produce_index <= index_max;
-        ++produce_index
-      ) {
-        lpc_eth_add_new_mbuf(ifp, desc, mbufs, produce_index, true);
+      if ((events & LPC_ETH_EVENT_INIT_TX) != 0) {
+        LPE_LOCK(e);
+        lpc_eth_initialize_transmit(e);
+        LPE_UNLOCK(e);
       }
-
-      /* Receive descriptor table */
-      lpc_eth->rxdescriptornum = index_max;
-      lpc_eth->rxdescriptor = (uint32_t) desc;
-      lpc_eth->rxstatus = (uint32_t) status;
-
-      /* Initialize indices */
-      produce_index = lpc_eth->rxproduceindex;
-      consume_index = lpc_eth->rxconsumeindex;
-
-      /* Enable receiver */
-      lpc_eth->command |= ETH_CMD_RX_ENABLE;
-
-      /* Enable receive interrupts */
-      lpc_eth_enable_receive_interrupts();
-
-      lpc_eth_control_request_complete(e);
 
       /* Wait for events */
       continue;
@@ -797,30 +874,22 @@ static void lpc_eth_transmit_task(rtems_task_argument arg)
   #endif
   struct mbuf *m = NULL;
   uint32_t const index_max = e->tx_unit_count - 1;
-  uint32_t produce_index = 0;
-  uint32_t consume_index = 0;
   uint32_t ctrl = 0;
-  #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-    uint32_t frame_length = 0;
-    char *frame_buffer = NULL;
-  #endif
 
   LPC_ETH_PRINTF("%s\n", __func__);
 
-  #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-    /* Initialize descriptor table */
-    for (produce_index = 0; produce_index <= index_max; ++produce_index) {
-      desc [produce_index].start =
-        (uint32_t) (buf + produce_index * LPC_ETH_CONFIG_TX_BUF_SIZE);
-    }
-  #endif
-
   /* Main event loop */
   while (true) {
+    uint32_t produce_index;
+    uint32_t consume_index;
+    #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+      uint32_t frame_length;
+      char *frame_buffer;
+    #endif
+
     /* Wait for events */
     sc = rtems_event_receive(
-      LPC_ETH_EVENT_INITIALIZE
-        | LPC_ETH_EVENT_STOP
+      LPC_ETH_EVENT_STOP
         | LPC_ETH_EVENT_TXSTART
         | LPC_ETH_EVENT_INTERRUPT,
       RTEMS_EVENT_ANY | RTEMS_WAIT,
@@ -839,57 +908,17 @@ static void lpc_eth_transmit_task(rtems_task_argument arg)
       continue;
     }
 
-    /* Initialize transmitter? */
-    if ((events & LPC_ETH_EVENT_INITIALIZE) != 0) {
-      /* Disable transmit interrupts */
-      lpc_eth_disable_transmit_interrupts();
+    LPE_LOCK(e);
 
-      /* Disable transmitter */
-      lpc_eth->command &= ~ETH_CMD_TX_ENABLE;
+    /* Get indices */
+    produce_index = e->tx_produce_index;
+    consume_index = e->tx_consume_index;
 
-      /* Wait for inactive status */
-      while ((lpc_eth->status & ETH_STAT_TX_ACTIVE) != 0) {
-        /* Wait */
-      }
-
-      /* Reset */
-      lpc_eth->command |= ETH_CMD_TX_RESET;
-
-      /* Clear transmit interrupts */
-      lpc_eth->intclear = LPC_ETH_INTERRUPT_TRANSMIT;
-
-      /* Transmit descriptors */
-      lpc_eth->txdescriptornum = index_max;
-      lpc_eth->txdescriptor = (uint32_t) desc;
-      lpc_eth->txstatus = (uint32_t) status;
-
-      #ifdef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-        /* Discard outstanding fragments (= data loss) */
-        for (produce_index = 0; produce_index <= index_max; ++produce_index) {
-          struct mbuf *victim = mbufs [produce_index];
-
-          if (victim != NULL) {
-            m_free(victim);
-            mbufs [produce_index] = NULL;
-          }
-        }
-      #endif
-
-      /* Initialize indices */
-      produce_index = lpc_eth->txproduceindex;
-      consume_index = lpc_eth->txconsumeindex;
-
-      #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
-        /* Fresh frame length and buffer start */
-        frame_length = 0;
-        frame_buffer = (char *) desc [produce_index].start;
-      #endif
-
-      /* Enable transmitter */
-      lpc_eth->command |= ETH_CMD_TX_ENABLE;
-
-      lpc_eth_control_request_complete(e);
-    }
+    #ifndef LPC_ETH_CONFIG_USE_TRANSMIT_DMA
+      /* Fresh frame length and buffer start */
+      frame_length = 0;
+      frame_buffer = (char *) desc [produce_index].start;
+    #endif
 
     /* Free consumed fragments */
     while (true) {
@@ -1074,6 +1103,10 @@ static void lpc_eth_transmit_task(rtems_task_argument arg)
       }
     }
 
+    /* Save indices */
+    e->tx_produce_index = produce_index;
+    e->tx_consume_index = consume_index;
+
     /* No more fragments? */
     if (m == NULL) {
       /* Interface is now inactive */
@@ -1084,6 +1117,8 @@ static void lpc_eth_transmit_task(rtems_task_argument arg)
       /* Enable transmit interrupts */
       lpc_eth_enable_transmit_interrupts();
     }
+
+    LPE_UNLOCK(e);
   }
 }
 
@@ -1418,8 +1453,8 @@ static int lpc_eth_up_or_down(lpc_eth_driver_entry *e, bool up)
       lpc_eth->mac1 = 0x03;
 
       /* Initialize tasks */
-      lpc_eth_control_request(e, e->receive_task, LPC_ETH_EVENT_INITIALIZE);
-      lpc_eth_control_request(e, e->transmit_task, LPC_ETH_EVENT_INITIALIZE);
+      lpc_eth_control_request(e, e->receive_task, LPC_ETH_EVENT_INIT_RX);
+      lpc_eth_initialize_transmit(e);
 
       /* Install interrupt handler */
       sc = rtems_interrupt_handler_install(

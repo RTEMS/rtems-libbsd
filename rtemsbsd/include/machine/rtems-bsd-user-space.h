@@ -41,6 +41,7 @@
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_USER_SPACE_H_
 
 #define __FreeBSD__ 1
+#define _WANT_FREEBSD_BITSET
 
 #include <rtems/bsd/local/opt_inet6.h>
 #include <machine/rtems-bsd-version.h>

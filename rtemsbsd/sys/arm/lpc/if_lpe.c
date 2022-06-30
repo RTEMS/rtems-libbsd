@@ -43,6 +43,8 @@
 
 #include <rtems/bsd/bsd.h>
 
+#include <arm/lpc/probe.h>
+
 #include <bsp.h>
 #include <bsp/irq.h>
 #include <bsp/lpc-ethernet-config.h>
@@ -1603,15 +1605,19 @@ static void lpc_eth_media_status(struct ifnet *ifp, struct ifmediareq *imr)
   }
 }
 
-int lpc_eth_probe(device_t dev)
+__weak_symbol int lpc_eth_probe(int unit)
 {
-  int unit = device_get_unit(dev);
-
   if (unit != 0) {
     return ENXIO;
   }
 
-  return 0;
+  return BUS_PROBE_DEFAULT;
+}
+
+static int lpc_eth_do_probe(device_t dev)
+{
+  device_set_desc(dev, "LPC32x0 Ethernet controller");
+  return lpc_eth_probe(device_get_unit(dev));
 }
 
 static int lpc_eth_attach(device_t dev)
@@ -1743,7 +1749,7 @@ static int lpc_eth_detach(device_t dev)
 }
 
 static device_method_t lpe_methods[] = {
-  DEVMETHOD(device_probe, lpc_eth_probe),
+  DEVMETHOD(device_probe, lpc_eth_do_probe),
   DEVMETHOD(device_attach, lpc_eth_attach),
   DEVMETHOD(device_detach, lpc_eth_detach),
   DEVMETHOD_END

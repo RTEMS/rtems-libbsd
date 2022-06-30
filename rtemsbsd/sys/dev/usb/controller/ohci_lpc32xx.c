@@ -71,6 +71,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/usb/controller/ohci.h>
 #include <dev/usb/controller/ohcireg.h>
 
+#include <arm/lpc/probe.h>
 #include <arm/lpc/lpcreg.h>
 #include <arm/lpc/lpcvar.h>
 
@@ -90,7 +91,7 @@ __FBSDID("$FreeBSD$");
     	while ((lpc_otg_read_4(_sc, _sreg) & _value) != _value);    	\
     } while (0);
 
-static int lpc_ohci_probe(device_t dev);
+static int lpc_ohci_do_probe(device_t dev);
 static int lpc_ohci_attach(device_t dev);
 static int lpc_ohci_detach(device_t dev);
 
@@ -107,12 +108,20 @@ static int lpc_otg_i2c_wait_for_transaction_done(struct ohci_softc *sc);
 static int lpc_otg_i2c_read(const struct usb_otg_transceiver *self, uint8_t reg_addr, uint8_t *value);
 static int lpc_otg_i2c_write(const struct usb_otg_transceiver *self, uint8_t reg_addr, uint8_t value);
 
+__weak_symbol int
+lpc_ohci_probe(int unit)
+{
+
+	(void)unit;
+	return (BUS_PROBE_DEFAULT);
+}
+
 static int
-lpc_ohci_probe(device_t dev)
+lpc_ohci_do_probe(device_t dev)
 {
 
 	device_set_desc(dev, "LPC32x0 USB OHCI controller");
-	return (BUS_PROBE_DEFAULT);
+	return (lpc_ohci_probe(device_get_unit(dev)));
 }
 
 static int
@@ -473,7 +482,7 @@ lpc_ohci_resume(device_t dev)
 
 static device_method_t lpc_ohci_methods[] = {
 	/* Device interface */
-	DEVMETHOD(device_probe,		lpc_ohci_probe),
+	DEVMETHOD(device_probe,		lpc_ohci_do_probe),
 	DEVMETHOD(device_attach,	lpc_ohci_attach),
 	DEVMETHOD(device_detach,	lpc_ohci_detach),
   DEVMETHOD(device_suspend, bus_generic_suspend),

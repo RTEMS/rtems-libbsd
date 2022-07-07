@@ -98,6 +98,9 @@ extern "C" {
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1
 
+/* REVIEW-AFTER-FREEBSD-BASELINE-UPDATE */
+#define IN_HISTORICAL_NETS
+
 /*
  * Various developer tracing options. See waf --help and --freebsd-options.
  */

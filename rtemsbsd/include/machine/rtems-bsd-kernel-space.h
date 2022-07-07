@@ -58,6 +58,9 @@
 /* REVIEW-AFTER-FREEBSD-BASELINE-UPDATE */
 #define IN_HISTORICAL_NETS
 
+/* REVIEW-AFTER-FREEBSD-BASELINE-UPDATE */
+#define IFCAP_NOMAP 0x4000000
+
 #include <machine/rtems-bsd-version.h>
 #include <machine/rtems-bsd-kernel-namespace.h>
 

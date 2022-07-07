@@ -50,6 +50,9 @@
 
 #include <stdio.h>
 
+/* REVIEW-AFTER-FREEBSD-BASELINE-UPDATE */
+#define IFCAP_NOMAP 0x4000000
+
 #define O_CLOEXEC 0
 
 #define O_DIRECTORY 0

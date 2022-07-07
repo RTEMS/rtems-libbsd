@@ -386,6 +386,17 @@ In general, provide empty header files and do not guard includes.
 For new code use
 `STYLE(9) <http://www.freebsd.org/cgi/man.cgi?query=style&apropos=0&sektion=9>`_.
 
+Update FreeBSD Baseline
+=======================
+
+Perform the following steps to do a FreeBSD baseline update:
+
+* Update ``__FreeBSD_version`` in ``rtemsbsd/include/machine/rtems-bsd-version.h``
+
+* Update the namespace header file.
+
+* Review all code blocks with the ``REVIEW-AFTER-FREEBSD-BASELINE-UPDATE`` tag.
+
 Automatically Generated FreeBSD Files
 =====================================
 

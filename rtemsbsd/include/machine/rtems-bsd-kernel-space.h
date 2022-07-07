@@ -55,6 +55,9 @@
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1
 
+/* REVIEW-AFTER-FREEBSD-BASELINE-UPDATE */
+#define IN_HISTORICAL_NETS
+
 #include <machine/rtems-bsd-version.h>
 #include <machine/rtems-bsd-kernel-namespace.h>
 

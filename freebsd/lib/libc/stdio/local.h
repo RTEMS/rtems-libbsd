@@ -78,7 +78,7 @@ extern int	__srefill(FILE *);
  */
 extern int __srefill_r(struct _reent *,FILE *);
 
-#define __srefill(_x) __srefill_r(__getreent(), _x)
+#define __srefill(_x) __srefill_r(_REENT, _x)
 #endif /* __rtems__ */
 extern int	__sread(void *, char *, int);
 extern int	__swrite(void *, char const *, int);

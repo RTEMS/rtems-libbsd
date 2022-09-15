@@ -246,6 +246,31 @@ arasan_sdhci_attach(device_t dev)
 		goto fail;
 	}
 
+	/*
+	 * These devices may be disabled by being held in reset. If this is the
+	 * case, a read attempt in its register range will result in a CPU hang.
+	 * Detect this situation and avoid probing the device in this situation.
+	 */
+#if defined(LIBBSP_AARCH64_XILINX_ZYNQMP_BSP_H)
+	volatile uint32_t *RST_LPD_IOU2_ptr = (uint32_t*)0xFF5E0238;
+	uint32_t RST_LPD_IOU2 = *RST_LPD_IOU2_ptr;
+	uint32_t SDIO0_disabled = RST_LPD_IOU2 & (1 << 5);
+	uint32_t SDIO1_disabled = RST_LPD_IOU2 & (1 << 6);
+	if ( sc->mem_res == 0xFF160000 ) {
+		if ( SDIO0_disabled != 0 ) {
+			device_printf(dev, "SDIO0 disabled\n");
+			err = ENXIO;
+			goto fail;
+		}
+	} else {
+		if ( SDIO1_disabled != 0 ) {
+			device_printf(dev, "SDIO1 disabled\n");
+			err = ENXIO;
+			goto fail;
+		}
+	}
+#endif
+
 	rid = 0;
 	sc->irq_res = bus_alloc_resource_any(dev, SYS_RES_IRQ, &rid,
 		RF_ACTIVE);

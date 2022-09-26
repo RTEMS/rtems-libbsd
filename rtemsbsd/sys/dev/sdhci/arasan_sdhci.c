@@ -284,8 +284,6 @@ arasan_sdhci_attach(device_t dev)
 	 */
 	sc->slot.quirks |= SDHCI_QUIRK_BROKEN_DMA;
 
-	sc->slot.max_clk = 50000000;
-
 	sdhci_init_slot(dev, &sc->slot, 0);
 	sc->slot_init_done = true;
 

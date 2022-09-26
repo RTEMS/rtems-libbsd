@@ -304,7 +304,7 @@ fail:
 static int
 arasan_sdhci_probe(device_t dev)
 {
-	device_set_desc(dev, "Zynq-7000 SDHCI");
+	device_set_desc(dev, "Arasan SDIO");
 
 	return (0);
 }

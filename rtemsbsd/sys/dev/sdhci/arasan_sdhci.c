@@ -280,6 +280,13 @@ arasan_sdhci_attach(device_t dev)
 	}
 
 	/*
+	 * There are some combinations of board routing and eMMC memory that are
+	 * not compatible with the HISPD mode. This disables HISPD mode for
+	 * compatibility.
+	 */
+	sc->slot.quirks |= SDHCI_QUIRK_DONT_SET_HISPD_BIT;
+
+	/*
 	 * DMA is not really broken, it just isn't implemented yet.
 	 */
 	sc->slot.quirks |= SDHCI_QUIRK_BROKEN_DMA;

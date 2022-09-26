@@ -123,16 +123,8 @@ static uint32_t
 arasan_sdhci_read_4(device_t dev, struct sdhci_slot *slot, bus_size_t off)
 {
 	struct arasan_sdhci_softc *sc = device_get_softc(dev);
-	uint32_t val32, wrk32;
 
-	val32 = RD4(sc, off);
-
-	if (off == SDHCI_CAPABILITIES) {
-		val32 &= ~SDHCI_CAN_DO_8BITBUS;
-		return (val32);
-	}
-
-	return val32;
+	return (RD4(sc, off));
 }
 
 static void
@@ -286,9 +278,6 @@ arasan_sdhci_attach(device_t dev)
 		err = ENXIO;
 		goto fail;
 	}
-
-	sc->slot.quirks |= SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK;
-	sc->slot.quirks |= SDHCI_QUIRK_BROKEN_AUTO_STOP;
 
 	/*
 	 * DMA is not really broken, it just isn't implemented yet.

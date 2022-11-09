@@ -134,6 +134,7 @@ struct cgem_softc {
 #ifdef __rtems__
 	uint32_t		net_cfg_shadow;
 	int			neednullqs;
+	int			phy_contype;
 #endif /* __rtems__ */
 	int			ref_clk_num;
 #ifndef __rtems__
@@ -1296,6 +1297,14 @@ cgem_config(struct cgem_softc *sc)
 		CGEM_NET_CFG_FULL_DUPLEX |
 		CGEM_NET_CFG_SPEED100;
 
+#ifdef __rtems__
+	/* Check connection type, enable SGMII bits if necessary. */
+	if ( sc->phy_contype == MII_CONTYPE_SGMII ) {
+		net_cfg |= CGEM_NET_CFG_SGMII_EN;
+		net_cfg |= CGEM_NET_CFG_PCS_SEL;
+	}
+#endif
+
 	/* Enable receive checksum offloading? */
 	if ((if_getcapenable(ifp) & IFCAP_RXCSUM) != 0)
 		net_cfg |=  CGEM_NET_CFG_RX_CHKSUM_OFFLD_EN;
@@ -2014,6 +2023,7 @@ cgem_attach(device_t dev)
 		/* Else for ref-clock-num OF_getprop */
 		else
 			sc->ref_clk_num = device_get_unit(dev);
+		sc->phy_contype = mii_fdt_get_contype(node);
 	} else {
 		sc->ref_clk_num = device_get_unit(dev);
 		sc->phy_contype = MII_CONTYPE_RGMII_ID;

@@ -72,11 +72,9 @@ __FBSDID("$FreeBSD$");
 #include <net/bpf.h>
 #include <net/bpfdesc.h>
 
-#ifndef __rtems__
 #include <dev/fdt/fdt_common.h>
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
-#endif /* __rtems__ */
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
@@ -92,6 +90,7 @@ __FBSDID("$FreeBSD$");
 #pragma GCC diagnostic ignored "-Wpointer-sign"
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/local/opt_platform.h>
 #endif /* __rtems__ */
 
 #define IF_CGEM_NAME "cgem"
@@ -111,13 +110,14 @@ __FBSDID("$FreeBSD$");
 #define CGEM_CKSUM_ASSIST	(CSUM_IP | CSUM_TCP | CSUM_UDP | \
 				 CSUM_TCP_IPV6 | CSUM_UDP_IPV6)
 
-#ifndef __rtems__
 static struct ofw_compat_data compat_data[] = {
 	{ "cadence,gem",	1 },
 	{ "cdns,macb",		1 },
+#ifdef __rtems__
+	{ "cdns,gem",		1 },
+#endif
 	{ NULL,			0 },
 };
-#endif /* __rtems__ */
 
 struct cgem_softc {
 	if_t			ifp;
@@ -1947,13 +1947,20 @@ static int
 cgem_probe(device_t dev)
 {
 
-#ifndef __rtems__
+#ifdef __rtems__
+#ifdef FDT
+	if (bsp_fdt_get()) {
+#else
+	if (0) {
+#endif
+#endif /* __rtems__ */
 	if (!ofw_bus_status_okay(dev))
 		return (ENXIO);
 
 	if (ofw_bus_search_compatible(dev, compat_data)->ocd_data == 0)
 		return (ENXIO);
-#else /* __rtems__ */
+#ifdef __rtems__
+	}
 
 	struct cgem_softc *sc = device_get_softc(dev);
 	int val, rid = 0;
@@ -1983,24 +1990,34 @@ cgem_attach(device_t dev)
 {
 	struct cgem_softc *sc = device_get_softc(dev);
 	if_t ifp = NULL;
-#ifndef __rtems__
 	phandle_t node;
 	pcell_t cell;
-#endif /* __rtems__ */
 	int rid, err;
 	u_char eaddr[ETHER_ADDR_LEN];
 
 	sc->dev = dev;
 	CGEM_LOCK_INIT(sc);
 
-#ifndef __rtems__
+#ifdef __rtems__
+#ifdef FDT
+	if (bsp_fdt_get()) {
+#else
+	if (0) {
+#endif
+#endif /* __rtems__ */
 	/* Get reference clock number and base divider from fdt. */
 	node = ofw_bus_get_node(dev);
 	sc->ref_clk_num = 0;
 	if (OF_getprop(node, "ref-clock-num", &cell, sizeof(cell)) > 0)
 		sc->ref_clk_num = fdt32_to_cpu(cell);
-#else /* __rtems__ */
-	sc->ref_clk_num = device_get_unit(dev);
+#ifdef __rtems__
+		/* Else for ref-clock-num OF_getprop */
+		else
+			sc->ref_clk_num = device_get_unit(dev);
+	} else {
+		sc->ref_clk_num = device_get_unit(dev);
+		sc->phy_contype = MII_CONTYPE_RGMII_ID;
+	}
 #endif /* __rtems__ */
 
 	/* Get memory resource. */
@@ -2228,9 +2245,8 @@ static driver_t cgem_driver = {
 	sizeof(struct cgem_softc),
 };
 
-#ifndef __rtems__
 DRIVER_MODULE(cgem, simplebus, cgem_driver, cgem_devclass, NULL, NULL);
-#else /* __rtems__ */
+#ifdef __rtems__
 DRIVER_MODULE(cgem, nexus, cgem_driver, cgem_devclass, NULL, NULL);
 #endif /* __rtems__ */
 DRIVER_MODULE(miibus, cgem, miibus_driver, miibus_devclass, NULL, NULL);

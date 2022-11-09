@@ -107,18 +107,14 @@ RTEMS_BSD_DRIVER_MMC;
 
 #include <bsp/irq.h>
 
+RTEMS_BSD_DEFINE_NEXUS_DEVICE(ofwbus, 0, 0, NULL);
+SYSINIT_DRIVER_REFERENCE(simplebus, ofwbus);
 RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SLCR;
 /* Qemu only applies user-mode networking to the first interface by default, so
  * all 4 CGEM instances must be configured in the Qemu arguments using
- * "-nic user,model=cadence_gem" for each nic.
- *
- * CGEM3 is used for LibBSD because all Zynq Ultrascale+ MPSoC dev boards treat
- * the highest-mapped CGEM as the primary interface.
+ * "-nic user,model=cadence_gem" for each desired nic.
  */
-RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM0(ZYNQMP_IRQ_ETHERNET_0);
-RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM1(ZYNQMP_IRQ_ETHERNET_1);
-RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM2(ZYNQMP_IRQ_ETHERNET_2);
-RTEMS_BSD_DRIVER_XILINX_ZYNQMP_CGEM3(ZYNQMP_IRQ_ETHERNET_3);
+SYSINIT_DRIVER_REFERENCE(cgem, simplebus);
 RTEMS_BSD_DRIVER_E1000PHY;
 RTEMS_BSD_DRIVER_UKPHY;
 

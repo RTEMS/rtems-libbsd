@@ -160,10 +160,10 @@ extern "C" {
 #endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_SLCR */
 
 /*
- * Xilinx ZynqMP Arasan SDIO Driver.
+ * Xilinx Arasan SDIO Driver.
  */
-#if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI)
-  #define RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI(_num, _base, _irq)                     \
+#if !defined(RTEMS_BSD_DRIVER_ARASAN_SDHCI)
+  #define RTEMS_BSD_DRIVER_ARASAN_SDHCI(_num, _base, _irq)                     \
     static const rtems_bsd_device_resource arasan_sdhci ## _num ## _res[] = {       \
       {                                                                             \
         .type = RTEMS_BSD_RES_MEMORY,                                               \
@@ -178,44 +178,33 @@ extern "C" {
     RTEMS_BSD_DEFINE_NEXUS_DEVICE(arasan_sdhci, _num,                               \
                                   RTEMS_ARRAY_SIZE(arasan_sdhci ## _num ## _res),      \
                                   &arasan_sdhci ## _num ## _res[0])
-#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI */
+#endif /* RTEMS_BSD_DRIVER_ARASAN_SDHCI */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI0)
   #define RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI0                \
-    RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI(0, 0xFF160000, 80)
+    RTEMS_BSD_DRIVER_ARASAN_SDHCI(0, 0xFF160000, 80)
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI0 */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI1)
   #define RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI1                \
-    RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI(1, 0xFF170000, 81)
+    RTEMS_BSD_DRIVER_ARASAN_SDHCI(1, 0xFF170000, 81)
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQMP_SDHCI1 */
 
-/*
- * Xilinx Zynq Arasan SDIO Driver.
- */
-#if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI)
-  #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI(_num, _base, _irq)                     \
-    static const rtems_bsd_device_resource arasan_sdhci ## _num ## _res[] = {       \
-      {                                                                             \
-        .type = RTEMS_BSD_RES_MEMORY,                                               \
-        .start_request = 0,                                                         \
-        .start_actual = (_base)                                                     \
-      }, {                                                                          \
-        .type = RTEMS_BSD_RES_IRQ,                                                  \
-        .start_request = 0,                                                         \
-        .start_actual = (_irq)                                                      \
-      }                                                                             \
-    };                                                                              \
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(arasan_sdhci, _num,                               \
-                                  RTEMS_ARRAY_SIZE(arasan_sdhci ## _num ## _res),      \
-                                  &arasan_sdhci ## _num ## _res[0])
-#endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI0)
   #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI0                \
-    RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI(0, 0xE0100000, 56)
+    RTEMS_BSD_DRIVER_ARASAN_SDHCI(0, 0xE0100000, 56)
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI0 */
 #if !defined(RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI1)
   #define RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI1                \
-    RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI(1, 0xE0101000, 79)
+    RTEMS_BSD_DRIVER_ARASAN_SDHCI(1, 0xE0101000, 79)
 #endif /* RTEMS_BSD_DRIVER_XILINX_ZYNQ_SDHCI1 */
+
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_SDHCI0)
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_SDHCI0                \
+    RTEMS_BSD_DRIVER_ARASAN_SDHCI(0, 0xF1040000, 158)
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_SDHCI0 */
+#if !defined(RTEMS_BSD_DRIVER_XILINX_VERSAL_SDHCI1)
+  #define RTEMS_BSD_DRIVER_XILINX_VERSAL_SDHCI1                \
+    RTEMS_BSD_DRIVER_ARASAN_SDHCI(1, 0xF1050000, 160)
+#endif /* RTEMS_BSD_DRIVER_XILINX_VERSAL_SDHCI1 */
 
 /*
  * LPC32XX Power Control (PWR).

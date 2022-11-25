@@ -490,7 +490,7 @@ rtems_bsd_vfs_fchmod(const rtems_filesystem_location_info_t *loc, mode_t mode)
 		}
 		return rtems_bsd_error_to_status_and_errno(ENOMEM);
 	}
-	error = setfmode(td, NULL, vp, mode);
+	error = setfmode(td, td->td_ucred, vp, mode);
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 
@@ -511,7 +511,7 @@ rtems_bsd_vfs_chown(
 		}
 		return rtems_bsd_error_to_status_and_errno(ENOMEM);
 	}
-	error = setfown(td, NULL, vp, owner, group);
+	error = setfown(td, td->td_ucred, vp, owner, group);
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 

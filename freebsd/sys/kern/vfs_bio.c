@@ -2967,7 +2967,7 @@ vfs_vmio_invalidate(struct buf *bp)
 		BUF_CHECK_MAPPED(bp);
 #ifndef __rtems__
 		pmap_qremove(trunc_page((vm_offset_t)bp->b_data), bp->b_npages);
-#endif /* _-rtems__ */
+#endif /* __rtems__ */
 	} else
 		BUF_CHECK_UNMAPPED(bp);
 	/*

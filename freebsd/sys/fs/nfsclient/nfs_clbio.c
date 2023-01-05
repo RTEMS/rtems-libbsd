@@ -1695,7 +1695,7 @@ ncl_doio(struct vnode *vp, struct buf *bp, struct ucred *cr, struct thread *td,
 				PROC_UNLOCK(p);
 #else /* __rtems__ */
 				panic("nfsclient: text file modification: want to killproc");
-#endif /* _-rtems__ */
+#endif /* __rtems__ */
 			} else
 				NFSUNLOCKNODE(np);
 		}
@@ -1923,3 +1923,4 @@ ncl_meta_setsize(struct vnode *vp, struct thread *td, u_quad_t nsize)
 	}
 	return(error);
 }
+

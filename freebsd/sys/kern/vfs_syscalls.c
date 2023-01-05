@@ -3536,7 +3536,6 @@ again:
 	    AUDITVNODE1, pathseg, old, oldfd,
 	    &cap_renameat_source_rights, td);
 #else
-
 	NDINIT_ATRIGHTS(&fromnd, DELETE, WANTPARENT | SAVESTART | AUDITVNODE1,
 	    pathseg, old, oldfd,
 	    &cap_renameat_source_rights, td);

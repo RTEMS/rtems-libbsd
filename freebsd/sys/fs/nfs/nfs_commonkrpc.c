@@ -219,7 +219,7 @@ newnfs_connect(struct nfsmount *nmp, struct nfssockreq *nrp,
 			nconf = getnetconfigent("udp6");
 		else
 			nconf = getnetconfigent("tcp6");
-
+			
 	pktscale = nfs_bufpackets;
 	if (pktscale < 2)
 		pktscale = 2;
@@ -237,7 +237,7 @@ newnfs_connect(struct nfsmount *nmp, struct nfssockreq *nrp,
 	 */
 	so = NULL;
 	saddr = NFSSOCKADDR(nrp->nr_nam, struct sockaddr *);
-	error = socreate(saddr->sa_family, &so, nrp->nr_sotype,
+	error = socreate(saddr->sa_family, &so, nrp->nr_sotype, 
 	    nrp->nr_soproto, td->td_ucred, td);
 	if (error) {
 		td->td_ucred = origcred;
@@ -391,7 +391,7 @@ newnfs_connect(struct nfsmount *nmp, struct nfssockreq *nrp,
 		/*
 		 * For UDP, there are 2 timeouts:
 		 * - CLSET_RETRY_TIMEOUT sets the initial timeout for the timer
-		 *   that does a retransmit of an RPC request using the same
+		 *   that does a retransmit of an RPC request using the same 
 		 *   socket and xid. This is what you normally want to do,
 		 *   since NFS servers depend on "same xid" for their
 		 *   Duplicate Request Cache.
@@ -741,7 +741,7 @@ newnfs_request(struct nfsrv_descript *nd, struct nfsmount *nmp,
 		if (dtrace_nfscl_nfs234_start_probe != NULL) {
 			uint32_t probe_id;
 			int probe_procnum;
-
+	
 			if (nd->nd_flag & ND_NFSV4) {
 				probe_id =
 				    nfscl_nfs4_start_probes[nd->nd_procnum];
@@ -1143,9 +1143,9 @@ tryagain:
 				      j != NFSERR_STALESTATEID &&
 				      j != NFSERR_BADSTATEID &&
 				      j != NFSERR_BADSEQID &&
-				      j != NFSERR_BADXDR &&
+				      j != NFSERR_BADXDR &&	 
 				      j != NFSERR_RESOURCE &&
-				      j != NFSERR_NOFILEHANDLE)))
+				      j != NFSERR_NOFILEHANDLE)))		 
 					nd->nd_flag |= ND_INCRSEQID;
 			}
 			/*
@@ -1264,13 +1264,13 @@ static int
 nfs_sig_pending(sigset_t set)
 {
 	int i;
-
+	
 	for (i = 0 ; i < nitems(newnfs_sig_set); i++)
 		if (SIGISMEMBER(set, newnfs_sig_set[i]))
 			return (1);
 	return (0);
 }
-
+ 
 /*
  * The set/restore sigmask functions are used to (temporarily) overwrite
  * the thread td_sigmask during an RPC call (for example). These are also
@@ -1283,7 +1283,7 @@ newnfs_set_sigmask(struct thread *td, sigset_t *oldset)
 	sigset_t newset;
 	int i;
 	struct proc *p;
-
+	
 	SIGFILLSET(newset);
 	if (td == NULL)
 		td = curthread; /* XXX */
@@ -1349,7 +1349,7 @@ newnfs_sigintr(struct nfsmount *nmp, struct thread *td)
 #ifndef __rtems__
 	struct proc *p;
 	sigset_t tmpset;
-
+	
 	/* Terminate all requests while attempting a forced unmount. */
 	if (NFSCL_FORCEDISM(nmp->nm_mountp))
 		return (EIO);
@@ -1433,7 +1433,7 @@ nfs_up(struct nfsmount *nmp, struct thread *td, const char *msg,
 		    VQ_NOTRESP, 1);
 	} else
 		mtx_unlock(&nmp->nm_mtx);
-
+	
 	mtx_lock(&nmp->nm_mtx);
 	if ((flags & NFSSTA_LOCKTIMEO) && (nmp->nm_state & NFSSTA_LOCKTIMEO)) {
 		nmp->nm_state &= ~NFSSTA_LOCKTIMEO;
@@ -1443,3 +1443,4 @@ nfs_up(struct nfsmount *nmp, struct thread *td, const char *msg,
 	} else
 		mtx_unlock(&nmp->nm_mtx);
 }
+

@@ -817,7 +817,7 @@ nfs_close(struct vop_close_args *ap)
 		    int cm = newnfs_commit_on_close ? 1 : 0;
 		    error = ncl_flush(vp, MNT_WAIT, ap->a_td, cm, 0);
 		    /* np->n_flag &= ~NMODIFIED; */
-		} else if (NFS_ISV4(vp)) {
+		} else if (NFS_ISV4(vp)) { 
 			if (nfscl_mustflush(vp) != 0) {
 				int cm = newnfs_commit_on_close ? 1 : 0;
 				error = ncl_flush(vp, MNT_WAIT, ap->a_td,
@@ -833,10 +833,10 @@ nfs_close(struct vop_close_args *ap)
 		}
 		NFSLOCKNODE(np);
 	    }
- 	    /*
+ 	    /* 
  	     * Invalidate the attribute cache in all cases.
  	     * An open is going to fetch fresh attrs any way, other procs
- 	     * on this node that have file open will be forced to do an
+ 	     * on this node that have file open will be forced to do an 
  	     * otw attr fetch, but this is safe.
 	     * --> A user found that their RPC count dropped by 20% when
 	     *     this was commented out and I can't see any requirement
@@ -891,7 +891,7 @@ nfs_close(struct vop_close_args *ap)
 			 np->n_directio_asyncwr));
 	if (newnfs_directio_enable && (fmode & O_DIRECT) && (vp->v_type == VREG)) {
 		NFSLOCKNODE(np);
-		KASSERT((np->n_directio_opens > 0),
+		KASSERT((np->n_directio_opens > 0), 
 			("nfs_close: unexpectedly value (0) of n_directio_opens\n"));
 		np->n_directio_opens--;
 		if (np->n_directio_opens == 0)
@@ -1021,7 +1021,7 @@ nfs_setattr(struct vop_setattr_args *ap)
 			    vap->va_mode == (mode_t)VNOVAL &&
 			    vap->va_uid == (uid_t)VNOVAL &&
 			    vap->va_gid == (gid_t)VNOVAL)
-				return (0);
+				return (0);		
  			vap->va_size = VNOVAL;
  			break;
  		default:
@@ -1072,7 +1072,7 @@ nfs_setattr(struct vop_setattr_args *ap)
   		}
   	} else {
 		NFSLOCKNODE(np);
-		if ((vap->va_mtime.tv_sec != VNOVAL || vap->va_atime.tv_sec != VNOVAL) &&
+		if ((vap->va_mtime.tv_sec != VNOVAL || vap->va_atime.tv_sec != VNOVAL) && 
 		    (np->n_flag & NMODIFIED) && vp->v_type == VREG) {
 			NFSUNLOCKNODE(np);
 			error = ncl_vinvalbuf(vp, V_SAVE, td, 1);
@@ -1146,7 +1146,7 @@ nfs_lookup(struct vop_lookup_args *ap)
 	struct nfsvattr dnfsva, nfsva;
 	struct vattr vattr;
 	struct timespec nctime;
-
+	
 	*vpp = NULLVP;
 	if ((flags & ISLASTCN) && (mp->mnt_flag & MNT_RDONLY) &&
 	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
@@ -1223,7 +1223,7 @@ nfs_lookup(struct vop_lookup_args *ap)
 		cache_purge(newvp);
 		if (dvp != newvp)
 			vput(newvp);
-		else
+		else 
 			vrele(newvp);
 		*vpp = NULLVP;
 	} else if (error == ENOENT) {
@@ -1379,7 +1379,7 @@ nfs_lookup(struct vop_lookup_args *ap)
 			(void) nfscl_loadattrcache(&newvp, &nfsva, NULL, NULL,
 			    0, 1);
 		else if ((flags & (ISLASTCN | ISOPEN)) == (ISLASTCN | ISOPEN) &&
-		    !(np->n_flag & NMODIFIED)) {
+		    !(np->n_flag & NMODIFIED)) {			
 			/*
 			 * Flush the attribute cache when opening a
 			 * leaf node to ensure that fresh attributes
@@ -1711,7 +1711,7 @@ again:
 				/* try again without setting uid/gid */
 				vap->va_uid = (uid_t)VNOVAL;
 				vap->va_gid = (uid_t)VNOVAL;
-				error = nfsrpc_setattr(newvp, vap, NULL,
+				error = nfsrpc_setattr(newvp, vap, NULL, 
 				    cnp->cn_cred, cnp->cn_thread, &nfsva,
 				    &attrflag, NULL);
 			}
@@ -1899,7 +1899,7 @@ nfs_rename(struct vop_rename_args *ap)
 	 * under NFSV3.  NFSV2 does not have this problem because
 	 * ( as far as I can tell ) it flushes dirty buffers more
 	 * often.
-	 *
+	 * 
 	 * Skip the rename operation if the fsync fails, this can happen
 	 * due to the server's volume being full, when we pushed out data
 	 * that was written back to our cache earlier. Not checking for
@@ -2311,10 +2311,10 @@ nfs_readdir(struct vop_readdir_args *ap)
 	ssize_t tresid, left;
 	int error = 0;
 	struct vattr vattr;
-
+	
 	if (ap->a_eofflag != NULL)
 		*ap->a_eofflag = 0;
-	if (vp->v_type != VDIR)
+	if (vp->v_type != VDIR) 
 		return(EPERM);
 
 	/*
@@ -2358,7 +2358,7 @@ nfs_readdir(struct vop_readdir_args *ap)
 		if (ap->a_eofflag != NULL)
 			*ap->a_eofflag = 1;
 	}
-
+	
 	/* Add the partial DIRBLKSIZ (left) back in. */
 	uio->uio_resid += left;
 	return (error);
@@ -2392,7 +2392,7 @@ ncl_readdirrpc(struct vnode *vp, struct uio *uiop, struct ucred *cred,
 		cookie = *cookiep;
 		ncl_dircookie_unlock(dnp);
 	} else {
-		ncl_dircookie_unlock(dnp);
+		ncl_dircookie_unlock(dnp);		
 		return (NFSERR_BAD_COOKIE);
 	}
 
@@ -2510,11 +2510,11 @@ nfs_sillyrename(struct vnode *dvp, struct vnode *vp, struct componentname *cnp)
 	sp->s_dvp = dvp;
 	VREF(dvp);
 
-	/*
+	/* 
 	 * Fudge together a funny name.
-	 * Changing the format of the funny name to accommodate more
+	 * Changing the format of the funny name to accommodate more 
 	 * sillynames per directory.
-	 * The name is now changed to .nfs.<ticks>.<pid>.4, where ticks is
+	 * The name is now changed to .nfs.<ticks>.<pid>.4, where ticks is 
 	 * CPU ticks since boot.
 	 */
 #ifndef __rtems__
@@ -2524,8 +2524,8 @@ nfs_sillyrename(struct vnode *dvp, struct vnode *vp, struct componentname *cnp)
 #endif /* __rtems__ */
 	lticks = (unsigned int)ticks;
 	for ( ; ; ) {
-		sp->s_namlen = sprintf(sp->s_name,
-				       ".nfs.%08x.%04x4.4", lticks,
+		sp->s_namlen = sprintf(sp->s_name, 
+				       ".nfs.%08x.%04x4.4", lticks, 
 				       pid);
 		if (nfs_lookitup(dvp, sp->s_name, sp->s_namlen, sp->s_cred,
 				 cnp->cn_thread, NULL))
@@ -3061,12 +3061,12 @@ loop:
 		while (np->n_directio_asyncwr > 0) {
 			np->n_flag |= NFSYNCWAIT;
 			error = newnfs_msleep(td, &np->n_directio_asyncwr,
-			    &np->n_mtx, slpflag | (PRIBIO + 1),
+			    &np->n_mtx, slpflag | (PRIBIO + 1), 
 			    "nfsfsync", 0);
 			if (error) {
 				if (newnfs_sigintr(nmp, td)) {
 					NFSUNLOCKNODE(np);
-					error = EINTR;
+					error = EINTR;	
 					goto done;
 				}
 			}
@@ -3126,7 +3126,7 @@ nfs_advlock(struct vop_advlock_args *ap)
 	struct vattr va;
 	int ret, error = EOPNOTSUPP;
 	u_quad_t size;
-
+	
 	ret = NFSVOPLOCK(vp, LK_SHARED);
 	if (ret != 0)
 		return (EBADF);
@@ -3261,7 +3261,7 @@ nfs_advlockasync(struct vop_advlockasync_args *ap)
 	struct vnode *vp = ap->a_vp;
 	u_quad_t size;
 	int error;
-
+	
 	if (NFS_ISV4(vp))
 		return (EOPNOTSUPP);
 	error = NFSVOPLOCK(vp, LK_SHARED);
@@ -3409,7 +3409,7 @@ nfsfifo_read(struct vop_read_args *ap)
 	vfs_timestamp(&np->n_atim);
 	NFSUNLOCKNODE(np);
 	error = fifo_specops.vop_read(ap);
-	return error;
+	return error;	
 #else /* __rtems__ */
 	return (EINVAL);
 #endif /* __rtems__ */
@@ -3646,3 +3646,4 @@ nfs_pathconf(struct vop_pathconf_args *ap)
 	}
 	return (error);
 }
+

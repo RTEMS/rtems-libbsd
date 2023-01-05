@@ -1379,7 +1379,6 @@ svc_run(SVCPOOL *pool)
 #else /* __rtems__ */
 	pool->sp_proc = NULL;
 #endif /* __rtems__ */
-
 	/* Choose group count based on number of threads and CPUs. */
 	pool->sp_groupcount = max(1, min(SVC_MAXGROUPS,
 	    min(pool->sp_maxthreads / 2, mp_ncpus) / 6));

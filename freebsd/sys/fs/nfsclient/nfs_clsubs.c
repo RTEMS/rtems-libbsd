@@ -394,3 +394,4 @@ ncl_init(struct vfsconf *vfsp)
 
 	return (0);
 }
+

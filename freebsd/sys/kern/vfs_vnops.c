@@ -1252,7 +1252,6 @@ int
 vn_io_fault_uiomove(char *data, int xfersize, struct uio *uio)
 {
 #ifndef __rtems__
-	return (EFAULT);
 	struct uio transp_uio;
 	struct iovec transp_iov[1];
 	struct thread *td;

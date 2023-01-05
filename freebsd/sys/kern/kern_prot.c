@@ -1852,6 +1852,7 @@ crget(void)
 struct ucred *
 crhold(struct ucred *cr)
 {
+
 #ifdef __rtems__
 	if (cr == NULL)
 		return (cr);

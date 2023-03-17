@@ -869,7 +869,7 @@ rtems_bsd_run_rc_conf(const char* name, int timeout, bool verbose)
   if (r < 0)
     return r;
 
-  rc_conf = malloc(sb.st_size);
+  rc_conf = malloc(sb.st_size + 1);
   if (rc_conf == NULL) {
     errno = ENOMEM;
     return -1;
@@ -891,6 +891,8 @@ rtems_bsd_run_rc_conf(const char* name, int timeout, bool verbose)
   }
 
   fclose(file);
+
+  rc_conf[sb.st_size] = '\0';
 
   r = rtems_bsd_run_rc_conf_script(name, rc_conf, timeout, verbose);
 

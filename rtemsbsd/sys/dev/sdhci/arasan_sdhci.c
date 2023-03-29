@@ -195,6 +195,27 @@ arasan_sdhci_get_card_present(device_t dev, struct sdhci_slot *slot)
 {
 	struct arasan_sdhci_softc *sc = device_get_softc(dev);
 
+	// wait a maximum of 1 second for card stable to settle
+	const unsigned int max_tries = 20;
+	const rtems_interval sleep_ticks =
+		rtems_clock_get_ticks_per_second() / max_tries;
+
+	unsigned int count = 0;
+	while (!(RD4(sc, SDHCI_PRESENT_STATE) & SDHCI_CARD_STABLE) &&
+		(count < max_tries))
+	{
+		rtems_task_wake_after(sleep_ticks);
+		++count;
+	}
+
+	if (!(RD4(sc, SDHCI_PRESENT_STATE) & SDHCI_CARD_STABLE))
+	{
+		device_printf(dev,
+			"Card Detect failed to stabilize,"
+			" setting to not present.\n");
+		return false;
+	}
+
 	return (RD4(sc, SDHCI_PRESENT_STATE) & SDHCI_CARD_PRESENT);
 }
 

@@ -3847,6 +3847,7 @@
 #define	pci_find_cap_method _bsd_pci_find_cap_method
 #define	pci_find_class _bsd_pci_find_class
 #define	pci_find_dbsf _bsd_pci_find_dbsf
+#define	pci_find_device _bsd_pci_find_device
 #define	pci_find_extcap_method _bsd_pci_find_extcap_method
 #define	pci_find_htcap_method _bsd_pci_find_htcap_method
 #define	pci_find_next_cap_method _bsd_pci_find_next_cap_method

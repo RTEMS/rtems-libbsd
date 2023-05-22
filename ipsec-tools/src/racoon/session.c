@@ -215,6 +215,8 @@ session(void)
 #ifndef __rtems__
 	FD_ZERO(&preset_mask);
 #else /* __rtems__ */
+	size_t allocated_mask_size = sizeof(fd_set) *
+	    howmany(rtems_libio_number_iops, sizeof(fd_set) * 8);
 	allocated_preset_mask = calloc(sizeof(fd_set),
 	    howmany(rtems_libio_number_iops, sizeof(fd_set) * 8));
 	if (allocated_preset_mask == NULL)
@@ -352,7 +354,12 @@ session(void)
 
 		/* schedular can change select() mask, so we reset
 		 * the working copy here */
+#ifndef __rtems__
 		active_mask = preset_mask;
+#else /* __rtems__ */
+		memcpy(allocated_active_mask, allocated_preset_mask,
+		    allocated_mask_size);
+#endif /* __rtems__ */
 
 		error = select(nfds + 1, &active_mask, NULL, NULL, timeout);
 		if (error < 0) {

@@ -80,8 +80,9 @@ cgem_set_ref_clk(int unit, int frequency)
 {
 	struct versal_slcr_softc *sc = versal_slcr_softc_p;
 	int div, last_error = 0;
-	uint64_t clk_ctrl, pll_ctrl;
+	uint64_t clk_ctrl, pll_ctrl, to_xpd_ctrl;
 	uint32_t clk_ctrl_val, pll_ctrl_val, pll_freq, pll_reset, pll_bypass;
+	uint32_t clk_src_sel, to_xpd_ctrl_val, to_xpd_div, to_xpd_freq;
 
 	if (!sc)
 		return (-1);
@@ -126,15 +127,36 @@ cgem_set_ref_clk(int unit, int frequency)
 	}
 
 	/* Apply divider */
-  pll_freq >>= (pll_ctrl_val & VERSAL_SLCR_PLL_CTRL_DIV_MASK) >> VERSAL_SLCR_PLL_CTRL_DIV_SHIFT;
+	pll_freq >>= (pll_ctrl_val & VERSAL_SLCR_PLL_CTRL_DIV_MASK) >> VERSAL_SLCR_PLL_CTRL_DIV_SHIFT;
+
+	/* Check if routed through {X}PLL_TO_XPD_CLK to GEM{unit}_REF_CLK and adjust */
+	clk_src_sel = (clk_ctrl_val & VERSAL_SLCR_GEM_CLK_CTRL_SRCSEL_MASK);
+	to_xpd_ctrl = 0;
+	if (clk_src_sel == VERSAL_SLCR_GEM_CLK_CTRL_SRCSEL_P_PLL) {
+		to_xpd_ctrl = VERSAL_SLCR_PPLL_TO_XPD_CTRL;
+	} else if (clk_src_sel == VERSAL_SLCR_GEM_CLK_CTRL_SRCSEL_N_PLL) {
+		to_xpd_ctrl = VERSAL_SLCR_NPLL_TO_XPD_CTRL;
+	}
+
+	if (to_xpd_ctrl != 0) {
+		to_xpd_ctrl_val = RD4(sc, to_xpd_ctrl);
+		to_xpd_div = (to_xpd_ctrl_val & VERSAL_SLCR_XPD_CLK_CTRL_DIVISOR_MASK);
+		to_xpd_div = to_xpd_div >> VERSAL_SLCR_XPD_CTRL_DIV_SHIFT;
+		if (to_xpd_div == 0) {
+			to_xpd_div = 1;
+		}
+		to_xpd_freq = pll_freq / to_xpd_div;
+	} else {
+		to_xpd_freq = pll_freq;
+	}
 
 	/* Find suitable divisor. Linear search, not the fastest method but hey.
 	 */
 	for (div = 1; div <= VERSAL_SLCR_GEM_CLK_CTRL_DIVISOR_MAX; div++) {
-    int div_freq = pll_freq / div;
+		int div_freq = to_xpd_freq / div;
 		int error = abs(frequency - div_freq);
 		if (error >= last_error && last_error != 0) {
-      div--;
+			div--;
 			break;
 		}
 		last_error = error;

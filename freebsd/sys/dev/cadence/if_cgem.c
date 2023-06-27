@@ -133,7 +133,6 @@ struct cgem_softc {
 	uint32_t		net_ctl_shadow;
 #ifdef __rtems__
 	uint32_t		net_cfg_shadow;
-	int			neednullqs;
 	int			phy_contype;
 #endif /* __rtems__ */
 	int			ref_clk_num;
@@ -458,9 +457,8 @@ cgem_setup_descs(struct cgem_softc *sc)
 	int desc_rings_size = CGEM_NUM_RX_DESCS * sizeof(struct cgem_rx_desc) +
 	    CGEM_NUM_TX_DESCS * sizeof(struct cgem_tx_desc);
 
-	if (sc->neednullqs)
-		desc_rings_size += sizeof(struct cgem_rx_desc) +
-		    sizeof(struct cgem_tx_desc);
+	desc_rings_size += sizeof(struct cgem_rx_desc) +
+	    sizeof(struct cgem_tx_desc);
 #endif /* __rtems__ */
 	sc->txring = NULL;
 	sc->rxring = NULL;
@@ -609,13 +607,11 @@ cgem_setup_descs(struct cgem_softc *sc)
 	sc->txring_queued = 0;
 
 #ifdef __rtems__
-	if (sc->neednullqs) {
-		sc->null_qs = (void *)(sc->txring + CGEM_NUM_TX_DESCS);
-		sc->null_qs_physaddr = sc->txring_physaddr +
-		    CGEM_NUM_TX_DESCS * sizeof(struct cgem_tx_desc);
+	sc->null_qs = (void *)(sc->txring + CGEM_NUM_TX_DESCS);
+	sc->null_qs_physaddr = sc->txring_physaddr +
+	    CGEM_NUM_TX_DESCS * sizeof(struct cgem_tx_desc);
 
-		cgem_null_qs(sc);
-	}
+	cgem_null_qs(sc);
 #endif /* __rtems__ */
 
 	return (0);
@@ -2074,15 +2070,7 @@ cgem_attach(device_t dev)
 
 	sc->if_old_flags = if_getflags(ifp);
 	sc->rxbufs = DEFAULT_NUM_RX_BUFS;
-#if defined(CGEM64) && defined(__rtems__)
-	uint32_t design_cfg6 = RD4(sc, CGEM_DESIGN_CFG6);
-	/*
-	 * QEMU does not have PBUF_CUTTHRU defined and is broken when trying
-	 * to use nullqs
-	 */
-	if ((design_cfg6 & CGEM_DESIGN_CFG6_PBUF_CUTTHRU))
-		sc->neednullqs = 1;
-#else
+#if !defined(CGEM64) && defined(__rtems__)
 	sc->rxhangwar = 1;
 #endif
 

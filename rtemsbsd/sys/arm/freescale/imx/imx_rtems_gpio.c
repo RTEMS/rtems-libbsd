@@ -27,7 +27,7 @@
  */
 
 #include <bsp.h>
-#if defined(LIBBSP_ARM_IMX_BSP_H)
+#if defined(LIBBSP_ARM_IMX_BSP_H) || defined(LIBBSP_ARM_IMXRT_BSP_H)
 
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
@@ -303,4 +303,4 @@ EARLY_DRIVER_MODULE(imx_rtems_gpio, simplebus, imx_rtems_gpio_driver,
     imx_rtems_gpio_devclass, NULL, NULL,
     BUS_PASS_RESOURCE + BUS_PASS_ORDER_MIDDLE);
 
-#endif /* LIBBSP_ARM_IMX_BSP_H */
+#endif /* LIBBSP_ARM_IMX_BSP_H || LIBBSP_ARM_IMXRT_BSP_H */

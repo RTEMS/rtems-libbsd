@@ -931,9 +931,18 @@ rtems_bsd_sysgen_open_node(
 	} else {
 		rtems_filesystem_location_info_t *rootloc =
 		    &iop->pathinfo.mt_entry->mt_fs_root->location;
+		/*
+		 * We need the parent directory so open can find the
+		 * entry. If we are creating the file the pathinfo
+		 * vnode entry is the directory open uses to create
+		 * the file in.
+		 */
 		cdir = rtems_bsd_libio_loc_to_vnode_dir(&iop->pathinfo);
+		if (cdir == NULL || creat) {
+			cdir = rtems_bsd_libio_loc_to_vnode(&iop->pathinfo);
+		}
 		if (fdp->fd_cdir == NULL) {
-			cdir = rtems_bsd_libio_loc_to_vnode(rootloc);
+			cdir = rtems_bsd_libio_loc_to_vnode_dir(rootloc);
 		} else if (rtems_bsd_libio_loc_to_vnode(&iop->pathinfo) ==
 				rtems_bsd_libio_loc_to_vnode(rootloc)) {
 			/*
@@ -958,11 +967,14 @@ rtems_bsd_sysgen_open_node(
 	FILEDESC_XUNLOCK(fdp);
 
 	if (RTEMS_BSD_SYSCALL_TRACE) {
-		printf("bsd: sys: open: path=%s opath=%s vn=%p cwd=%p"
-		       " flags=%08x mode=%08x isdir=%s\n",
-		    path, opath,
-		    creat ? NULL : rtems_bsd_libio_loc_to_vnode(&iop->pathinfo),
-		    fdp->fd_cdir, oflag, mode, isdir ? "yes" : "no");
+		struct vnode* _vn = rtems_bsd_libio_loc_to_vnode(&iop->pathinfo);
+		struct vnode* _dvn = rtems_bsd_libio_loc_to_vnode_dir(&iop->pathinfo);
+		printf("bsd: sys: open: path=%s opath=%s vn=%p (%c) dvn=%p (%c) cwd=%p"
+		       " flags=%08x mode=%o isdir=%s\n",
+		       path, opath,
+		       _vn, creat ? 'c' : _vn ? (_vn->v_type == VDIR ? 'd' : 'r') : 'n',
+		       _dvn,  _dvn ? (_dvn->v_type == VDIR ? 'd' : 'r') : 'n',
+		       fdp->fd_cdir, oflag, mode, isdir ? "yes" : "no");
 	}
 
 	VREF(fdp->fd_cdir);

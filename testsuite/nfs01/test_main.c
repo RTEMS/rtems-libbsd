@@ -46,17 +46,26 @@
 
 #include <rtems/console.h>
 #include <rtems/shell.h>
-#include <rtems/telnetd.h>
 
 #include <librtemsNfs.h>
 
 #include <rtems/bsd/test/network-config.h>
+
+#define END_TEST_IN_SHELL 0
 
 #define TEST_NAME "LIBBSD NFS 1"
 #define TEST_STATE_USER_INPUT 1
 #define TEST_WAIT_FOR_LINK    NET_CFG_INTERFACE_0
 
 static const char *test_top = "test-nfs01";
+
+#define rtems_test_assert(__exp) \
+  do { \
+    if (!(__exp)) { \
+      printf( "%s: %d %s\n", __FILE__, __LINE__, #__exp ); \
+      assert(1 == 0); \
+    } \
+  } while (0)
 
 #define rtems_test_errno_assert(__exp) \
   do { \
@@ -329,39 +338,51 @@ test_path_eval(const char *base, int depth)
 }
 
 static void
+test_path_file_copy(const char *base, int depth)
+{
+	char path[MAXPATHLEN];
+	struct stat sb;
+	FILE* f;
+	int l;
+
+	printf("test path eval\n");
+
+	test_setup(base);
+
+	memset(path, 0, sizeof(path));
+
+	for (l = 1; l <= depth; ++l) {
+		char* p = path + strlen(path);
+		if (l > 1) {
+			*p++ = '/';
+		}
+		snprintf(p, sizeof(path), "%d", l);
+		printf("test: nfs: mkdir: %s\n", path);
+		rtems_test_errno_assert(mkdir(path, 0777) == 0);
+	}
+
+	strlcat(path, "/test-file.txt", sizeof(path));
+	printf("Create file %s\n", path);
+	rtems_test_errno_assert((f = fopen(path, "w")) != NULL);
+	rtems_test_errno_assert(fprintf(f, "The contents of %s\nNFS test\n", path) > 0);
+	rtems_test_errno_assert(fclose(f) == 0);
+	printf("Checking %s has been copied\n", path);
+	rtems_test_errno_assert(stat(path, &sb) == 0);
+
+	test_cleanup(base);
+}
+
+static void
 test_nfs(const char *base)
 {
 	test_path_eval(base, 5);
+	test_path_file_copy(base, 3);
 #if NFS_TREE_WALK
 	test_printer_data pd;
 	memset(&pd, 0, sizeof(pd));
 	test_walk_tree(base, test_walk_tree_printer, &pd);
 #endif
 }
-
-static void
-telnet_shell(char *name, void *arg)
-{
-	rtems_shell_env_t env;
-
-	rtems_shell_dup_current_env(&env);
-
-	env.devname = name;
-	env.taskname = "TLNT";
-	env.login_check = NULL;
-	env.forever = false;
-
-	rtems_shell_main_loop(&env);
-}
-
-rtems_telnetd_config_table rtems_telnetd_config = {
-	.command = telnet_shell,
-	.arg = NULL,
-	.priority = 0,
-	.stack_size = 0,
-	.login_check = NULL,
-	.keep_stdio = false
-};
 
 static void
 test_main(void)
@@ -372,8 +393,6 @@ test_main(void)
 	const char* mount_point = "/nfs";
 	int retries = 0;
 	int rv;
-
-	assert(rtems_telnetd_initialize() == RTEMS_SUCCESSFUL);
 
 	if (strlen(options) != 0) {
 		mount_options = options;
@@ -399,11 +418,17 @@ test_main(void)
 
 	test_nfs(mount_point);
 
+#if END_TEST_IN_SHELL
 	rtems_task_exit();
+#else
+	exit(0);
+#endif
 }
 
 #define CONFIGURE_SHELL_COMMANDS_ALL
-#define DEFAULT_NETWORK_SHELL
+#if END_TEST_IN_SHELL
+ #define DEFAULT_NETWORK_SHELL */
+#endif
 
 #define CONFIGURE_FILESYSTEM_NFS
 

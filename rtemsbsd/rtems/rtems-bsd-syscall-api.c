@@ -889,6 +889,7 @@ rtems_bsd_sysgen_open_node(
 	struct vnode *cdir;
 	struct vnode *rdir;
 	const char *opath;
+	rtems_filesystem_location_info_t *rootloc;
 	int opathlen;
 	int fd;
 	int error;
@@ -902,6 +903,8 @@ rtems_bsd_sysgen_open_node(
 
 	fdp = td->td_proc->p_fd;
 
+	rootloc = &iop->pathinfo.mt_entry->mt_fs_root->location;
+
 	/*
 	 * There is no easy or clean means to open a vnode and follow the
 	 * POSIX open semantics. See `kern_openat`. You can open a vnode but
@@ -912,11 +915,16 @@ rtems_bsd_sysgen_open_node(
 	 * parent directory vnode to position ourselves in the parent
 	 * directory. The pathloc vnode points to the '.' or '..'  directory.
 	 */
-	opath = path + strlen(path);
-	opathlen = 0;
-	while (opath != path && !rtems_filesystem_is_delimiter(opath[-1])) {
-		opath--;
-		opathlen++;
+	if (rtems_bsd_libio_loc_to_vnode(&iop->pathinfo) ==
+	    rtems_bsd_libio_loc_to_vnode(rootloc)) {
+		opath = ".";
+	} else {
+		opath = path + strlen(path);
+		opathlen = 0;
+		while (opath != path && !rtems_filesystem_is_delimiter(opath[-1])) {
+			opath--;
+			opathlen++;
+		}
 	}
 	if (rtems_filesystem_is_current_directory(opath, opathlen) ||
 	    rtems_filesystem_is_parent_directory(opath, opathlen)) {
@@ -929,8 +937,6 @@ rtems_bsd_sysgen_open_node(
 		opath = ".";
 		cdir = rtems_bsd_libio_loc_to_vnode(&iop->pathinfo);
 	} else {
-		rtems_filesystem_location_info_t *rootloc =
-		    &iop->pathinfo.mt_entry->mt_fs_root->location;
 		/*
 		 * We need the parent directory so open can find the
 		 * entry. If we are creating the file the pathinfo
@@ -943,18 +949,6 @@ rtems_bsd_sysgen_open_node(
 		}
 		if (fdp->fd_cdir == NULL) {
 			cdir = rtems_bsd_libio_loc_to_vnode_dir(rootloc);
-		} else if (rtems_bsd_libio_loc_to_vnode(&iop->pathinfo) ==
-				rtems_bsd_libio_loc_to_vnode(rootloc)) {
-			/*
-			 * If this is a directory and this is the root node of
-			 * the mounted file system we need to move up the
-			 * hidden pseudo file system node.
-			 */
-			if (isdir) {
-				cdir = rootvnode;
-			} else {
-				cdir = rtems_bsd_libio_loc_to_vnode(rootloc);
-			}
 		}
 	}
 

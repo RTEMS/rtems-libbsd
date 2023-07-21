@@ -830,8 +830,10 @@ rtems_nfs_initialize(
     rtems_filesystem_mount_table_entry_t *mt_entry, const void *data)
 {
 	struct nfs_args args;
-	const char *fspath = NULL;
+	static int mount_counter;
+	char fspath[NAME_MAX + 1];
 	char *at;
+	int len;
 	int error;
 
 	if (RTEMS_DEBUG) {
@@ -923,14 +925,29 @@ rtems_nfs_initialize(
 
 	rtems_bsd_vfs_mount_init(mt_entry);
 
-	fspath = mt_entry->target;
-	if (*fspath == '/') {
-		++fspath;
+	at = mt_entry->target + strlen(mt_entry->target);
+	len = 0;
+	while (at != mt_entry->target && !rtems_filesystem_is_delimiter(at[-1])) {
+		at--;
+		len++;
 	}
-	if (strchr(fspath, '/') != 0) {
+
+	/*
+	 * Account for the mount number and leading `/`
+	 */
+	if (len >= sizeof(fspath) - (6 + 2)) {
 		error = EINVAL;
 		goto out;
 	}
+
+	/*
+	 * Append a unique number to the end of the path created in
+	 * the FreeBSD root file system. All mounts are in the root
+	 * directory of the root file system and so flat. A user could
+	 * use different mount paths with the same end name. Without
+	 * the counter appended they would clash.
+	 */
+	snprintf(fspath, sizeof(fspath), "/%s-%d", at, mount_counter++);
 
 	if (getnfsargs(mt_entry->dev, &args) < 0) {
 		if (RTEMS_DEBUG)
@@ -949,7 +966,7 @@ rtems_nfs_initialize(
 	 * export then find the vnode and hold it. Make sure we find the root
 	 * node of the NFS share and the not the root file system's mount node.
 	 */
-	error = rtems_bsd_rootfs_mkdir(fspath);
+	error = rtems_bsd_rootfs_mkdir(fspath + 1);
 	if (error == 0) {
 		struct addrinfo *ai;
 		enum tryret tryret;
@@ -964,7 +981,7 @@ rtems_nfs_initialize(
 			if (tryret == TRYRET_SUCCESS) {
 				error = nfs_trymount(mt_entry, ai, &args, fspath, data);
 				if (RTEMS_DEBUG)
-						printf("nfs: mount: (%d) %s\n", error, strerror(error));
+					printf("nfs: mount: (%d) %s\n", error, strerror(error));
 				break;
 			} else {
 				error = EIO;

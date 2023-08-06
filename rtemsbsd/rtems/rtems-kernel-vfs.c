@@ -679,7 +679,11 @@ restart:
 		goto restart;
 	}
 	vfs_notify_upper(vp, VFS_NOTIFY_UPPER_UNLINK);
-	error = VOP_RMDIR(dvp, vp, &cn);
+	if (vp->v_type == VDIR) {
+		error = VOP_RMDIR(dvp, vp, &cn);
+	} else {
+		error = VOP_REMOVE(dvp, vp, &cn);
+	}
 	vn_finished_write(mp);
 out:
 	return rtems_bsd_error_to_status_and_errno(error);

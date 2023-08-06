@@ -317,21 +317,28 @@ static void
 test_path_eval(const char *base, int depth)
 {
 	char path[MAXPATHLEN];
+	char curpath[MAXPATHLEN];
+	char getpath[MAXPATHLEN];
 	int l;
 
-	printf("test path eval\n");
+	printf("test path eval: %s\n", base);
 
 	test_setup(base);
 
+	sprintf(curpath, "%s/%s", base, test_top);
+
 	for (l = 1; l <= depth; ++l) {
 		snprintf(path, sizeof(path), "%d", l);
-		printf("test: nfs: mkdir: %s\n", path);
+		strcat(curpath, "/");
+		strcat(curpath, path);
+		printf("test: nfs: mkdir: %s (%s)\n", path, curpath);
 		rtems_test_errno_assert(mkdir(path, 0777) == 0);
-		printf("test: nfs: chdir: %s\n", path);
+		printf("test: nfs: chdir: %s (%s)\n", path, curpath);
 		rtems_test_errno_assert(chdir(path) == 0);
-		printf("test: nfs: getcwd: %s\n", path);
-		assert(getcwd(path, sizeof(path)) != NULL);
-		printf("test: nfs: getcwd: %s\n", path);
+		printf("test: nfs: getcwd: %s (%s)\n", path, curpath);
+		assert(getcwd(getpath, sizeof(getpath)) != NULL);
+		printf("test: nfs: getcwd: %s (want: %s)\n", getpath, curpath);
+		assert(strcmp(curpath, getpath) == 0);
 	}
 
 	test_cleanup(base);

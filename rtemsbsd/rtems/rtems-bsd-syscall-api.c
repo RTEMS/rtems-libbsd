@@ -918,6 +918,7 @@ rtems_bsd_sysgen_open_node(
 	if (rtems_bsd_libio_loc_to_vnode(&iop->pathinfo) ==
 	    rtems_bsd_libio_loc_to_vnode(rootloc)) {
 		opath = ".";
+		opathlen = 1;
 	} else {
 		opath = path + strlen(path);
 		opathlen = 0;

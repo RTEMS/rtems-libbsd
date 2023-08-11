@@ -5334,6 +5334,12 @@ class imx(builder.Module):
             ],
             mm.generator['source']()
         )
+        self.addRTEMSKernelSourceFiles(
+            [
+                'sys/arm/freescale/imx/imxrt1166_usbphy.c',
+            ],
+            mm.generator['source']()
+        )
 
 class regulator(builder.Module):
     def __init__(self, manager):

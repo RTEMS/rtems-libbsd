@@ -228,7 +228,7 @@ rtems_bsd_libio_iop_hold(int fd, rtems_libio_t **iopp)
 	rtems_libio_t *iop = NULL;
 	unsigned int flags = 0;
 	int ffd = -1;
-	if (fd < rtems_libio_number_iops) {
+	if (fd >= 0 && fd < rtems_libio_number_iops) {
 		iop = rtems_libio_iop(fd);
 		flags = rtems_libio_iop_hold(iop);
 		if ((flags & LIBIO_FLAGS_OPEN) != 0) {
@@ -249,7 +249,9 @@ rtems_bsd_libio_iop_hold(int fd, rtems_libio_t **iopp)
 		if (RTEMS_BSD_DESCRIP_TRACE)
 			flags = iop->flags;
 	} else {
-		*iopp = NULL;
+		if (iopp != NULL) {
+			*iopp = NULL;
+		}
 	}
 	if (RTEMS_BSD_DESCRIP_TRACE)
 		printf("bsd: iop: hold: fd=%d ffd=%d refs=%d iop=%p by %p\n",

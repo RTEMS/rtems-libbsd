@@ -168,6 +168,15 @@
 #endif /* BSP_HAS_PC_PCI */
 
 /*
+ * Provide a memory tag for the DMA bus interface
+ */
+#ifdef BSP_BUS_SPACE_MEM
+#define BUS_SPACE_MEM BSP_BUS_SPACE_MEM
+#else
+#define BUS_SPACE_MEM 1
+#endif
+
+/*
  * Bus address alignment.
  */
 #define BUS_SPACE_ALIGNED_POINTER(p, t) ALIGNED_POINTER(p, t)

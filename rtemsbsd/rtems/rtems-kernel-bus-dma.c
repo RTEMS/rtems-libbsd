@@ -63,6 +63,10 @@
 #include <bsp/linker-symbols.h>
 #endif
 
+#ifdef X86_BUS_SPACE_MEM
+#define BUS_SPACE_MEM X86_BUS_SPACE_MEM
+#endif
+
 /*
  * Convenience function for manipulating driver locks from busdma (during
  * busdma_swi, for example).  Drivers that don't provide their own locks
@@ -261,7 +265,7 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 		unsigned char* mem = *vaddr;
 		int len = dmat->maxsize;
 		while (len-- > 0) {
-			bsp_bus_space_write_1(mem, 0);
+			bus_space_write_1(BUS_SPACE_MEM, mem, 0, 0);
 			mem++;
 		}
 	}

@@ -80,6 +80,7 @@ __FBSDID("$FreeBSD$");
 #include <powerpc/mpc85xx/mpc85xx.h>
 #ifdef __rtems__
 #include <rtems/score/memory.h>
+#include <libcpu/powerpc-utility.h>
 #endif /* __rtems__ */
 
 #define	REG_CFG_ADDR	0x0000
@@ -460,6 +461,9 @@ fsl_pcib_cfgread(struct fsl_pcib_softc *sc, u_int bus, u_int slot, u_int func,
 
 	mtx_lock_spin(&sc->sc_cfg_mtx);
 	bus_space_write_4(sc->sc_bst, sc->sc_bsh, REG_CFG_ADDR, addr);
+#ifdef __rtems__
+	ppc_enforce_in_order_execution_of_io();
+#endif
 
 	switch (bytes) {
 	case 1:
@@ -498,6 +502,9 @@ fsl_pcib_cfgwrite(struct fsl_pcib_softc *sc, u_int bus, u_int slot, u_int func,
 
 	mtx_lock_spin(&sc->sc_cfg_mtx);
 	bus_space_write_4(sc->sc_bst, sc->sc_bsh, REG_CFG_ADDR, addr);
+#ifdef __rtems__
+	ppc_enforce_in_order_execution_of_io();
+#endif
 
 	switch (bytes) {
 	case 1:

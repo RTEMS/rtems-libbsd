@@ -3152,6 +3152,7 @@ class tsi148(builder.Module):
         self.addRTEMSKernelSourceFiles(
             [
                 'sys/dev/vme/tsi148.c',
+                'sys/dev/vme/vme-rtems-compat.c',
             ],
             mm.generator['source']()
         )

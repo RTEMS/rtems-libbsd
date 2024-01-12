@@ -5631,6 +5631,8 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('openssl01', ['test_main']))
         self.addTest(mm.generator['test']('openssl02', ['test_main']))
         self.addTest(mm.generator['test']('tcpdump01', ['test_main']))
+        self.addTest(mm.generator['test']('vme01', ['test_main'],
+                                          runTest = False))
 
 def load(mm):
 

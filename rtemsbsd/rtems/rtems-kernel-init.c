@@ -223,7 +223,9 @@ rtems_bsd_initialize(void)
 		return RTEMS_UNSATISFIED;
 	}
 
-	mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO);
+	if (mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO) != 0) {
+		return RTEMS_UNSATISFIED;
+	}
 
 	sc = rtems_timer_initiate_server(rtems_bsd_get_task_priority(name),
 	    rtems_bsd_get_task_stack_size(name), RTEMS_DEFAULT_ATTRIBUTES);

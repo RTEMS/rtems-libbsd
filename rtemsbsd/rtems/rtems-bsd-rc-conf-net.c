@@ -103,7 +103,9 @@ cloned_interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
       "ifconfig", aa->argv[arg], "create", NULL
     };
     rtems_bsd_rc_conf_print_cmd(rc_conf, "cloning_interfaces", 3, ifconfg_args);
-    rtems_bsd_command_ifconfig(3, (char**) ifconfg_args);
+    if (rtems_bsd_command_ifconfig(3, (char**) ifconfg_args)) {
+      return -1;
+    }
   }
 
   return 0;
@@ -377,7 +379,7 @@ defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa, bool 
       memset(&sin, 0, sizeof(sin));
       memset(&rti_info[0], 0, sizeof(rti_info));
       sin.sin_family = AF_INET;
-      inet_pton(AF_INET, "0.0.0.0", &sin.sin_addr);
+      (void) inet_pton(AF_INET, "0.0.0.0", &sin.sin_addr);
 
       r = rtems_get_route(&sin, rti_info);
       if (r == 0 && rti_info[RTAX_GATEWAY] != NULL) {
@@ -710,9 +712,9 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
   }
   dd->config.priority = priority;
 
-  rtems_bsd_rc_conf_find(rc_conf, "dhcpcd_options", dd->argc_argv);
+  r = rtems_bsd_rc_conf_find(rc_conf, "dhcpcd_options", dd->argc_argv);
 
-  if (dd->argc_argv->argc > 0) {
+  if (r == 0 && dd->argc_argv->argc > 0) {
     dd->config.argc = dd->argc_argv->argc;
     dd->config.argv = dd->argc_argv->argv;
   }

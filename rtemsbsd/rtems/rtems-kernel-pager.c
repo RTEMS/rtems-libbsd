@@ -85,7 +85,9 @@ pbuf_ctor(void *mem, int size, void *arg, int flags)
 	bp->b_ioflags = 0;
 	bp->b_iodone = NULL;
 	bp->b_error = 0;
-	BUF_LOCK(bp, LK_EXCLUSIVE, NULL);
+	if (BUF_LOCK(bp, LK_EXCLUSIVE, NULL) != 0) {
+		return -1;
+	}
 
 	return (0);
 }

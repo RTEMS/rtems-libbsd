@@ -1322,9 +1322,12 @@ rtems_bsd_sysgen_vnstat(
 	if (vp == NULL)
 		error = EFAULT;
 	else {
-		VOP_LOCK(vp, LK_SHARED);
-		error = vn_stat(vp, buf, td->td_ucred, NOCRED, td);
-		VOP_UNLOCK(vp, 0);
+		if (VOP_LOCK(vp, LK_SHARED) == 0) {
+			error = vn_stat(vp, buf, td->td_ucred, NOCRED, td);
+			VOP_UNLOCK(vp, 0);
+		} else {
+			error = ENOLCK;
+		}
 	}
 	if (RTEMS_BSD_SYSCALL_TRACE) {
 		printf("bsd: sys: vnstat: exit %p\n", vp);

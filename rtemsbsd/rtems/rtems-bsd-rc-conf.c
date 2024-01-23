@@ -260,12 +260,14 @@ rc_conf_create(rtems_bsd_rc_conf** rc_conf,
    */
   length = strnlen(text, RTEMS_BSD_RC_CONF_MAX_SIZE);
   if (length == RTEMS_BSD_RC_CONF_MAX_SIZE) {
+    free(_rc_conf);
     errno = E2BIG;
     return -1;
   }
 
   copy = strdup(text);
   if (copy == NULL) {
+    free(_rc_conf);
     errno = ENOMEM;
     return -1;
   }
@@ -286,6 +288,7 @@ rc_conf_create(rtems_bsd_rc_conf** rc_conf,
   lines = malloc(sizeof(char*) * line_count);
   if (lines == NULL) {
     free(copy);
+    free(_rc_conf);
     errno = ENOMEM;
     return -1;
   }
@@ -335,6 +338,13 @@ rc_conf_create(rtems_bsd_rc_conf** rc_conf,
   if (timeout >= 0)
     _rc_conf->waiter = rtems_task_self();
 
+  if (_rc_conf->name == NULL) {
+    free((void*) _rc_conf->lines);
+    free((void*) _rc_conf->data);
+    free(_rc_conf);
+    return -1;
+  }
+
   /*
    * Create the lock.
    */
@@ -343,6 +353,7 @@ rc_conf_create(rtems_bsd_rc_conf** rc_conf,
     free((void*) _rc_conf->name);
     free((void*) _rc_conf->lines);
     free((void*) _rc_conf->data);
+    free(_rc_conf);
     return -1;
   }
 
@@ -796,6 +807,7 @@ rtems_bsd_run_rc_conf_script(const char* name,
   if (sc != RTEMS_SUCCESSFUL) {
     fprintf(stderr, "error: %s: get priority: %s\n",
             name, rtems_status_text(sc));
+    rc_conf_destroy(rc_conf);
     errno = EIO;
     return -1;
   }
@@ -808,6 +820,7 @@ rtems_bsd_run_rc_conf_script(const char* name,
                          &worker);
   if (sc != RTEMS_SUCCESSFUL) {
     fprintf (stderr, "error: worker create: %s", rtems_status_text(sc));
+    rc_conf_destroy(rc_conf);
     errno = EIO;
     return -1;
   }
@@ -817,6 +830,7 @@ rtems_bsd_run_rc_conf_script(const char* name,
                         (rtems_task_argument) rc_conf);
   if (sc != RTEMS_SUCCESSFUL) {
     fprintf (stderr, "error: worker start: %s", rtems_status_text(sc));
+    rc_conf_destroy(rc_conf);
     errno = EIO;
     return - 1;
   }

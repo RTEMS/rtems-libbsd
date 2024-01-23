@@ -94,8 +94,6 @@ bsd_mountroot(const char *fstype)
 	if (vfsp != NULL) {
 		mp = vfs_mount_alloc(NULLVP, vfsp, "/", cred);
 
-		crfree(cred);
-
 		error = VFS_MOUNT(mp);
 		if (error != 0)
 			panic("Cannot mount root file system: %d", error);
@@ -114,6 +112,8 @@ bsd_mountroot(const char *fstype)
 
 		set_rootvnode(mp);
 	}
+
+	crfree(cred);
 }
 
 static void

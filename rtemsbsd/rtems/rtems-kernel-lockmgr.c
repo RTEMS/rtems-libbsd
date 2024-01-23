@@ -207,13 +207,11 @@ lockmgr_lock_fast_path(struct lock *lk, u_int flags, struct lock_object *ilk,
 {
 	uintptr_t x, tid;
 	u_int op;
-	bool locked;
 
 	if (__predict_false(panicstr != NULL))
 		return (0);
 
 	op = flags & LK_TYPE_MASK;
-	locked = false;
 	switch (op) {
 	case LK_SHARED:
 		if (!__predict_false(lk->lock_object.lo_flags & LK_NOSHARE))

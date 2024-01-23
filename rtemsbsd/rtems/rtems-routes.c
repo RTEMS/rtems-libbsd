@@ -85,8 +85,10 @@ int rtems_get_route(const struct sockaddr_in* sin, struct sockaddr** rti_info)
   }
 
   s = socket(AF_ROUTE, SOCK_RAW, AF_UNSPEC);
-  if (s < 0)
+  if (s < 0) {
+    free(buf);
     return -1;
+  }
 
   rtm = (struct rt_msghdr *) buf;
   rtm->rtm_msglen = sizeof(struct rt_msghdr) + sizeof(struct sockaddr_in);

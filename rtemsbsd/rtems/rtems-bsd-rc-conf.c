@@ -714,6 +714,7 @@ rc_conf_worker(rtems_task_argument task_argument)
   rtems_chain_node*  node = rtems_chain_first(&services);
   int                r = 0;
   int                error;
+  bool               rc_conf_verbose;
 
   /*
    * Check for a syslog priority before any services are run.
@@ -748,6 +749,8 @@ rc_conf_worker(rtems_task_argument task_argument)
   if (r < 0)
     rc_conf->error_code = error;
 
+  rc_conf_verbose = rc_conf->verbose;
+
   /*
    * If there is a waiter signal else clean up because the waiter has gone.
    */
@@ -760,7 +763,7 @@ rc_conf_worker(rtems_task_argument task_argument)
     rc_conf_destroy(rc_conf);
   }
 
-  if (rc_conf->verbose)
+  if (rc_conf_verbose)
     printf("rc.conf: finished\n");
 
   rtems_task_exit();

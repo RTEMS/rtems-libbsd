@@ -247,6 +247,12 @@ arasan_sdhci_attach(device_t dev)
 {
 	struct arasan_sdhci_softc *sc = device_get_softc(dev);
 	int rid, err;
+#if defined(LIBBSP_AARCH64_XILINX_ZYNQMP_BSP_H)
+	volatile uint32_t *RST_LPD_IOU2_ptr = (uint32_t*)0xFF5E0238;
+	uint32_t RST_LPD_IOU2 = *RST_LPD_IOU2_ptr;
+	uint32_t SDIO0_disabled = RST_LPD_IOU2 & (1 << 5);
+	uint32_t SDIO1_disabled = RST_LPD_IOU2 & (1 << 6);
+#endif
 
 	sc->dev = dev;
 
@@ -265,10 +271,6 @@ arasan_sdhci_attach(device_t dev)
 	 * Detect this situation and avoid probing the device in this situation.
 	 */
 #if defined(LIBBSP_AARCH64_XILINX_ZYNQMP_BSP_H)
-	volatile uint32_t *RST_LPD_IOU2_ptr = (uint32_t*)0xFF5E0238;
-	uint32_t RST_LPD_IOU2 = *RST_LPD_IOU2_ptr;
-	uint32_t SDIO0_disabled = RST_LPD_IOU2 & (1 << 5);
-	uint32_t SDIO1_disabled = RST_LPD_IOU2 & (1 << 6);
 	if ( sc->mem_res == 0xFF160000 ) {
 		if ( SDIO0_disabled != 0 ) {
 			device_printf(dev, "SDIO0 disabled\n");

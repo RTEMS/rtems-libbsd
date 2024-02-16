@@ -546,6 +546,11 @@ mmcsd_attach(device_t dev)
 	 */
 	rev = ext_csd[EXT_CSD_REV];
 
+/*
+ * Cache flush functions are currently not available. Use of on-device cache can
+ * cause data loss.
+ */
+#ifndef __rtems__
 	/*
 	 * With revision 1.5 (MMC v4.5, EXT_CSD_REV == 6) and later, take
 	 * advantage of the device R/W cache if present and useage is not
@@ -567,6 +572,7 @@ mmcsd_attach(device_t dev)
 				sc->flags |= MMCSD_FLUSH_CACHE;
 		}
 	}
+#endif
 
 	/*
 	 * Ignore user-creatable enhanced user data area and general purpose

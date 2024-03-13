@@ -92,28 +92,6 @@ typedef struct {
 rtems_status_code rtems_bsd_initialize(void);
 
 /**
- * @brief Initializes the libbsd and starts a DHCPCD task.
- *
- * The libbsd is initialized via rtems_bsd_initialize().  If this is
- * successful, then the loop back interfaces are created.  If this is
- * successful, then a DHCPCD task is started at the least important priority.
- *
- * The default devices of the BSP are initialized.  Support for
- *   - IF_BRIDGE(4),
- *   - LAGG(4),
- *   - multicast routing,
- *   - UNIX(4), and
- *   - VLAN(4),
- * is enabled.
- *
- * No RTEMS shell commands are registered.
- *
- * @retval RTEMS_SUCCESSFUL Successful operation.
- * @retval otherwise An error occurred.
- */
-rtems_status_code rtems_bsd_initialize_dhcp(void);
-
-/**
  * @brief Configures the lo0 (loopback) interface.
  *
  * @return Returns an exit code, see also <sysexits.h>.

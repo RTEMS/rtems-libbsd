@@ -223,7 +223,7 @@ rtems_bsd_initialize(void)
 		return RTEMS_UNSATISFIED;
 	}
 
-	if (mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO) != 0) {
+	if (mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO) != 0 && errno != EEXIST) {
 		return RTEMS_UNSATISFIED;
 	}
 

@@ -135,7 +135,7 @@ rtems_bsd_initialize(void)
 	sbt_tickthreshold = bttosbt(bt_tickthreshold);
 	maxid_maxcpus = (int) rtems_scheduler_get_processor_maximum();
 
-	if (mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO) != 0) {
+	if (mkdir("/etc", S_IRWXU | S_IRWXG | S_IRWXO) != 0 && errno != EEXIST) {
 		return RTEMS_UNSATISFIED;
 	}
 

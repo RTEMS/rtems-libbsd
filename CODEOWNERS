@@ -3,3 +3,9 @@
 
 [General Maintainer] @approvers/general/maintainer
 *
+
+[Documentation] @approvers/docs
+*/README
+*.md
+*.txt
+

@@ -39,8 +39,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
@@ -54,6 +52,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/mbuf.h>
 #include <sys/mount.h>
 #include <sys/mutex.h>
+#include <sys/proc.h>
 #include <sys/rmlock.h>
 #include <sys/refcount.h>
 #include <sys/signalvar.h>
@@ -62,6 +61,9 @@ __FBSDID("$FreeBSD$");
 
 #include <netinet/in.h>
 #include <net/radix.h>
+
+#include <rpc/types.h>
+#include <rpc/auth.h>
 
 #ifndef __rtems__
 static MALLOC_DEFINE(M_NETADDR, "export_host", "Export host address structure");
@@ -74,7 +76,6 @@ static MALLOC_DEFINE(M_NETADDR_e, "export_host", "Export host address structure"
 static struct radix_node_head *vfs_create_addrlist_af(
 		    struct radix_node_head **prnh, int off);
 #endif
-static void	vfs_free_addrlist(struct netexport *nep);
 static int	vfs_free_netcred(struct radix_node *rn, void *w);
 static void	vfs_free_addrlist_af(struct radix_node_head **prnh);
 static int	vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
@@ -86,7 +87,7 @@ static struct netcred *vfs_export_lookup(struct mount *, struct sockaddr *);
  */
 struct netcred {
 	struct	radix_node netc_rnodes[2];
-	int	netc_exflags;
+	uint64_t netc_exflags;
 	struct	ucred *netc_anon;
 	int	netc_numsecflavors;
 	int	netc_secflavors[MAXSECFLAVORS];
@@ -119,21 +120,18 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 #endif
 	int error;
 
+	KASSERT(argp->ex_numsecflavors > 0,
+	    ("%s: numsecflavors <= 0", __func__));
+	KASSERT(argp->ex_numsecflavors < MAXSECFLAVORS,
+	    ("%s: numsecflavors >= MAXSECFLAVORS", __func__));
+
 	/*
-	 * XXX: This routine converts from a `struct xucred'
-	 * (argp->ex_anon) to a `struct ucred' (np->netc_anon).  This
+	 * XXX: This routine converts from a uid plus gid list
+	 * to a `struct ucred' (np->netc_anon).  This
 	 * operation is questionable; for example, what should be done
 	 * with fields like cr_uidinfo and cr_prison?  Currently, this
 	 * routine does not touch them (leaves them as NULL).
 	 */
-#ifndef __rtems__
-	if (argp->ex_anon.cr_version != XUCRED_VERSION) {
-		vfs_mount_error(mp, "ex_anon.cr_version: %d != %d",
-		    argp->ex_anon.cr_version, XUCRED_VERSION);
-		return (EINVAL);
-	}
-#endif /* __rtems__ */
-
 	if (argp->ex_addrlen == 0) {
 		if (mp->mnt_flag & MNT_DEFEXPORTED) {
 			vfs_mount_error(mp,
@@ -144,9 +142,9 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 		np->netc_exflags = argp->ex_flags;
 		np->netc_anon = crget();
 #ifndef __rtems__
-		np->netc_anon->cr_uid = argp->ex_anon.cr_uid;
-		crsetgroups(np->netc_anon, argp->ex_anon.cr_ngroups,
-		    argp->ex_anon.cr_groups);
+		np->netc_anon->cr_uid = argp->ex_uid;
+		crsetgroups(np->netc_anon, argp->ex_ngroups,
+		    argp->ex_groups);
 		np->netc_anon->cr_prison = &prison0;
 		prison_hold(np->netc_anon->cr_prison);
 #endif /* __rtems__ */
@@ -225,9 +223,9 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 	np->netc_exflags = argp->ex_flags;
 	np->netc_anon = crget();
 #ifndef __rtems__
-	np->netc_anon->cr_uid = argp->ex_anon.cr_uid;
-	crsetgroups(np->netc_anon, argp->ex_anon.cr_ngroups,
-	    argp->ex_anon.cr_groups);
+	np->netc_anon->cr_uid = argp->ex_uid;
+	crsetgroups(np->netc_anon, argp->ex_ngroups,
+	    argp->ex_groups);
 	np->netc_anon->cr_prison = &prison0;
 	prison_hold(np->netc_anon->cr_prison);
 #endif /* __rtems__ */
@@ -285,7 +283,7 @@ vfs_free_addrlist_af(struct radix_node_head **prnh)
 /*
  * Free the net address hash lists that are hanging off the mount points.
  */
-static void
+void
 vfs_free_addrlist(struct netexport *nep)
 {
 	struct ucred *cred;
@@ -296,8 +294,10 @@ vfs_free_addrlist(struct netexport *nep)
 		vfs_free_addrlist_af(&nep->ne6);
 
 	cred = nep->ne_defexported.netc_anon;
-	if (cred != NULL)
+	if (cred != NULL) {
 		crfree(cred);
+		nep->ne_defexported.netc_anon = NULL;
+	}
 
 }
 
@@ -306,18 +306,31 @@ vfs_free_addrlist(struct netexport *nep)
  * and the passed in netexport.
  * Struct export_args *argp is the variable used to twiddle options,
  * the structure is described in sys/mount.h
+ * The do_exjail argument should be true if *mp is in the mountlist
+ * and false if not.  It is not in the mountlist for the NFSv4 rootfs
+ * fake mount point just used for exports.
  */
 int
-vfs_export(struct mount *mp, struct export_args *argp)
+vfs_export(struct mount *mp, struct export_args *argp, bool do_exjail)
 {
 	struct netexport *nep;
+	struct ucred *cr;
+	struct prison *pr;
 	int error;
+	bool new_nep;
 
-	if (argp->ex_numsecflavors < 0
-	    || argp->ex_numsecflavors >= MAXSECFLAVORS)
+	if ((argp->ex_flags & (MNT_DELEXPORT | MNT_EXPORTED)) == 0)
+		return (EINVAL);
+
+	if ((argp->ex_flags & MNT_EXPORTED) != 0 &&
+	    (argp->ex_numsecflavors < 0
+	    || argp->ex_numsecflavors >= MAXSECFLAVORS))
 		return (EINVAL);
 
 	error = 0;
+#ifndef __rtems__
+	pr = curthread->td_ucred->cr_prison;
+#endif /* __rtems__ */
 	lockmgr(&mp->mnt_explock, LK_EXCLUSIVE, NULL);
 	nep = mp->mnt_export;
 	if (argp->ex_flags & MNT_DELEXPORT) {
@@ -325,6 +338,23 @@ vfs_export(struct mount *mp, struct export_args *argp)
 			error = ENOENT;
 			goto out;
 		}
+#ifndef __rtems__
+		MNT_ILOCK(mp);
+		if (mp->mnt_exjail != NULL && mp->mnt_exjail->cr_prison != pr &&
+		    pr == &prison0) {
+			MNT_IUNLOCK(mp);
+			/* EXDEV will not get logged by mountd(8). */
+			error = EXDEV;
+			goto out;
+		} else if (mp->mnt_exjail != NULL &&
+		    mp->mnt_exjail->cr_prison != pr) {
+			MNT_IUNLOCK(mp);
+			/* EPERM will get logged by mountd(8). */
+			error = EPERM;
+			goto out;
+		}
+		MNT_IUNLOCK(mp);
+#endif /* __rtems__ */
 		if (mp->mnt_flag & MNT_EXPUBLIC) {
 			vfs_setpublicfs(NULL, NULL, NULL);
 			MNT_ILOCK(mp);
@@ -336,24 +366,72 @@ vfs_export(struct mount *mp, struct export_args *argp)
 		free(nep, M_MOUNT);
 		nep = NULL;
 		MNT_ILOCK(mp);
+		cr = mp->mnt_exjail;
+		mp->mnt_exjail = NULL;
 		mp->mnt_flag &= ~(MNT_EXPORTED | MNT_DEFEXPORTED);
 		MNT_IUNLOCK(mp);
+		if (cr != NULL) {
+			atomic_subtract_int(&pr->pr_exportcnt, 1);
+			crfree(cr);
+		}
 	}
 	if (argp->ex_flags & MNT_EXPORTED) {
+		new_nep = false;
+		MNT_ILOCK(mp);
+		if (mp->mnt_exjail == NULL) {
+			MNT_IUNLOCK(mp);
+			if (do_exjail && nep != NULL) {
+				vfs_free_addrlist(nep);
+				memset(nep, 0, sizeof(*nep));
+				new_nep = true;
+			}
+#ifndef __rtems__
+		} else if (mp->mnt_exjail->cr_prison != pr) {
+			MNT_IUNLOCK(mp);
+			error = EPERM;
+			goto out;
+#endif /* __rtems__ */
+		} else
+			MNT_IUNLOCK(mp);
 		if (nep == NULL) {
-			nep = malloc(sizeof(struct netexport), M_MOUNT, M_WAITOK | M_ZERO);
+			nep = malloc(sizeof(struct netexport), M_MOUNT,
+			    M_WAITOK | M_ZERO);
 			mp->mnt_export = nep;
+			new_nep = true;
 		}
 		if (argp->ex_flags & MNT_EXPUBLIC) {
-			if ((error = vfs_setpublicfs(mp, nep, argp)) != 0)
+			if ((error = vfs_setpublicfs(mp, nep, argp)) != 0) {
+				if (new_nep) {
+					mp->mnt_export = NULL;
+					free(nep, M_MOUNT);
+				}
 				goto out;
+			}
+			new_nep = false;
 			MNT_ILOCK(mp);
+			if (do_exjail && mp->mnt_exjail == NULL) {
+				mp->mnt_exjail = crhold(curthread->td_ucred);
+				atomic_add_int(&pr->pr_exportcnt, 1);
+			}
 			mp->mnt_flag |= MNT_EXPUBLIC;
 			MNT_IUNLOCK(mp);
 		}
-		if ((error = vfs_hang_addrlist(mp, nep, argp)))
+		if (argp->ex_numsecflavors == 0) {
+			argp->ex_numsecflavors = 1;
+			argp->ex_secflavors[0] = AUTH_SYS;
+		}
+		if ((error = vfs_hang_addrlist(mp, nep, argp))) {
+			if (new_nep) {
+				mp->mnt_export = NULL;
+				free(nep, M_MOUNT);
+			}
 			goto out;
+		}
 		MNT_ILOCK(mp);
+		if (do_exjail && mp->mnt_exjail == NULL) {
+			mp->mnt_exjail = crhold(curthread->td_ucred);
+			atomic_add_int(&pr->pr_exportcnt, 1);
+		}
 		mp->mnt_flag |= MNT_EXPORTED;
 		MNT_IUNLOCK(mp);
 	}
@@ -372,6 +450,99 @@ out:
 	vfs_deleteopt(mp->mnt_opt, "export");
 	return (error);
 }
+
+#ifndef __rtems__
+/*
+ * Get rid of credential references for this prison.
+ */
+void
+vfs_exjail_delete(struct prison *pr)
+{
+	struct mount *mp;
+	struct ucred *cr;
+	int error, i;
+
+	/*
+	 * Since this function is called from prison_cleanup() after
+	 * all processes in the prison have exited, the value of
+	 * pr_exportcnt can no longer increase.  It is possible for
+	 * a dismount of a file system exported within this prison
+	 * to be in progress.  In this case, the file system is no
+	 * longer in the mountlist and the mnt_exjail will be free'd
+	 * by vfs_mount_destroy() at some time.  As such, pr_exportcnt
+	 * and, therefore "i", is the upper bound on the number of
+	 * mnt_exjail entries to be found by this function.
+	 */
+	i = atomic_load_int(&pr->pr_exportcnt);
+	KASSERT(i >= 0, ("vfs_exjail_delete: pr_exportcnt negative"));
+	if (i == 0)
+		return;
+	mtx_lock(&mountlist_mtx);
+tryagain:
+	TAILQ_FOREACH(mp, &mountlist, mnt_list) {
+		MNT_ILOCK(mp);
+		if (mp->mnt_exjail != NULL &&
+		    mp->mnt_exjail->cr_prison == pr) {
+			MNT_IUNLOCK(mp);
+			error = vfs_busy(mp, MBF_MNTLSTLOCK | MBF_NOWAIT);
+			if (error != 0) {
+				/*
+				 * If the vfs_busy() fails, we still want to
+				 * get rid of mnt_exjail for two reasons:
+				 * - a credential reference will result in
+				 *   a prison not being removed
+				 * - setting mnt_exjail NULL indicates that
+				 *   the exports are no longer valid
+				 * The now invalid exports will be deleted
+				 * when the file system is dismounted or
+				 * the file system is re-exported by mountd.
+				 */
+				cr = NULL;
+				MNT_ILOCK(mp);
+				if (mp->mnt_exjail != NULL &&
+				    mp->mnt_exjail->cr_prison == pr) {
+					cr = mp->mnt_exjail;
+					mp->mnt_exjail = NULL;
+				}
+				MNT_IUNLOCK(mp);
+				if (cr != NULL) {
+					crfree(cr);
+					i--;
+				}
+				if (i == 0)
+					break;
+				continue;
+			}
+			cr = NULL;
+			lockmgr(&mp->mnt_explock, LK_EXCLUSIVE, NULL);
+			MNT_ILOCK(mp);
+			if (mp->mnt_exjail != NULL &&
+			    mp->mnt_exjail->cr_prison == pr) {
+				cr = mp->mnt_exjail;
+				mp->mnt_exjail = NULL;
+				mp->mnt_flag &= ~(MNT_EXPORTED | MNT_DEFEXPORTED);
+				MNT_IUNLOCK(mp);
+				vfs_free_addrlist(mp->mnt_export);
+				free(mp->mnt_export, M_MOUNT);
+				mp->mnt_export = NULL;
+			} else
+				MNT_IUNLOCK(mp);
+			lockmgr(&mp->mnt_explock, LK_RELEASE, NULL);
+			if (cr != NULL) {
+				crfree(cr);
+				i--;
+			}
+			mtx_lock(&mountlist_mtx);
+			vfs_unbusy(mp);
+			if (i == 0)
+				break;
+			goto tryagain;
+		}
+		MNT_IUNLOCK(mp);
+	}
+	mtx_unlock(&mountlist_mtx);
+}
+#endif /* __rtems__ */
 
 /*
  * Set the publicly exported filesystem (WebNFS). Currently, only
@@ -515,9 +686,9 @@ vfs_export_lookup(struct mount *mp, struct sockaddr *nam)
  * Verify that a host should have access to a filesystem.
  */
 
-int 
-vfs_stdcheckexp(struct mount *mp, struct sockaddr *nam, int *extflagsp,
-    struct ucred **credanonp, int *numsecflavors, int **secflavors)
+int
+vfs_stdcheckexp(struct mount *mp, struct sockaddr *nam, uint64_t *extflagsp,
+    struct ucred **credanonp, int *numsecflavors, int *secflavors)
 {
 	struct netcred *np;
 
@@ -531,11 +702,16 @@ vfs_stdcheckexp(struct mount *mp, struct sockaddr *nam, int *extflagsp,
 	*extflagsp = np->netc_exflags;
 	if ((*credanonp = np->netc_anon) != NULL)
 		crhold(*credanonp);
-	if (numsecflavors)
+	if (numsecflavors) {
 		*numsecflavors = np->netc_numsecflavors;
-	if (secflavors)
-		*secflavors = np->netc_secflavors;
+		KASSERT(*numsecflavors > 0,
+		    ("%s: numsecflavors <= 0", __func__));
+		KASSERT(*numsecflavors < MAXSECFLAVORS,
+		    ("%s: numsecflavors >= MAXSECFLAVORS", __func__));
+	}
+	if (secflavors && np->netc_numsecflavors > 0)
+		memcpy(secflavors, np->netc_secflavors, np->netc_numsecflavors *
+		    sizeof(int));
 	lockmgr(&mp->mnt_explock, LK_RELEASE, NULL);
 	return (0);
 }
-

@@ -1,3 +1,4 @@
-#define	compiler_flags ""
-#define	DATE ""
-#define	PLATFORM ""
+#define compiler_flags ""
+#define DATE ""
+#define PLATFORM ""
+

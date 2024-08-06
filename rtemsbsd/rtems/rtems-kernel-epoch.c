@@ -345,8 +345,8 @@ epoch_wait_preempt(epoch_t epoch)
 }
 
 void
-epoch_call(epoch_t epoch, epoch_context_t ctx,
-    void (*callback) (epoch_context_t))
+epoch_call(epoch_t epoch, void (*callback) (epoch_context_t),
+    epoch_context_t ctx)
 {
 	Per_CPU_Control *cpu_self;
 	struct epoch_pcpu *epcpu;
@@ -427,7 +427,7 @@ epoch_call_drain_cb(void *arg)
 	epoch = arg;
 	cpu = _Per_CPU_Get_snapshot();
 	er = EPOCH_GET_RECORD(cpu, epoch);
-	epoch_call(epoch, &er->er_drain_ctx, epoch_drain_cb);
+	epoch_call(epoch, epoch_drain_cb, &er->er_drain_ctx);
 }
 #endif
 
@@ -475,7 +475,7 @@ epoch_drain_callbacks(epoch_t epoch)
 #else
 	epoch->e_drain_count = 1;
 	er = EPOCH_GET_RECORD(0, epoch);
-	epoch_call(epoch, &er->er_drain_ctx, epoch_drain_cb);
+	epoch_call(epoch, epoch_drain_cb, &er->er_drain_ctx);
 #endif
 
 	while (epoch->e_drain_count != 0) {

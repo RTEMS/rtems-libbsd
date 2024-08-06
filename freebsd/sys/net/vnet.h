@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006-2009 University of Zagreb
  * Copyright (c) 2006-2009 FreeBSD Foundation
@@ -33,8 +33,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*-
@@ -65,6 +63,7 @@
  * as required for libkvm.
  */
 #if defined(_KERNEL) || defined(_WANT_VNET)
+#include <machine/param.h>	/* for CACHE_LINE_SIZE */
 #include <sys/queue.h>
 
 struct vnet {
@@ -75,8 +74,9 @@ struct vnet {
 	u_int			 vnet_state;	/* SI_SUB_* */
 	void			*vnet_data_mem;
 	uintptr_t		 vnet_data_base;
-};
-#define	VNET_MAGIC_N	0x3e0d8f29
+	bool			 vnet_shutdown;	/* Shutdown in progress. */
+} __aligned(CACHE_LINE_SIZE);
+#define	VNET_MAGIC_N	0x5e4a6f28
 
 /*
  * These two virtual network stack allocator definitions are also required
@@ -141,7 +141,8 @@ array##_sysctl(SYSCTL_HANDLER_ARGS)					\
 		    sizeof(type) / sizeof(uint64_t));			\
 	return (SYSCTL_OUT(req, &s, sizeof(type)));			\
 }									\
-SYSCTL_PROC(parent, nbr, name, CTLFLAG_VNET | CTLTYPE_OPAQUE | CTLFLAG_RW, \
+SYSCTL_PROC(parent, nbr, name,						\
+    CTLFLAG_VNET | CTLTYPE_OPAQUE | CTLFLAG_RW | CTLFLAG_NEEDGIANT,	\
     NULL, 0, array ## _sysctl, "I", desc)
 #endif /* SYSCTL_OID */
 
@@ -199,14 +200,14 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	const char *saved_vnet_lpush = curthread->td_vnet_lpush;	\
 	curvnet = arg;							\
 	curthread->td_vnet_lpush = __func__;
- 
+
 #define	CURVNET_SET_VERBOSE(arg)					\
 	CURVNET_SET_QUIET(arg)						\
 	if (saved_vnet)							\
 		vnet_log_recursion(saved_vnet, saved_vnet_lpush, __LINE__);
 
 #define	CURVNET_SET(arg)	CURVNET_SET_VERBOSE(arg)
- 
+
 #define	CURVNET_RESTORE()						\
 	VNET_ASSERT(curvnet != NULL && (saved_vnet == NULL ||		\
 	    saved_vnet->vnet_magic_n == VNET_MAGIC_N),			\
@@ -222,12 +223,12 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	    __FILE__, __LINE__, __func__, curvnet, (arg)));		\
 	struct vnet *saved_vnet = curvnet;				\
 	curvnet = arg;	
- 
+
 #define	CURVNET_SET_VERBOSE(arg)					\
 	CURVNET_SET_QUIET(arg)
 
 #define	CURVNET_SET(arg)	CURVNET_SET_VERBOSE(arg)
- 
+
 #define	CURVNET_RESTORE()						\
 	VNET_ASSERT(curvnet != NULL && (saved_vnet == NULL ||		\
 	    saved_vnet->vnet_magic_n == VNET_MAGIC_N),			\
@@ -235,6 +236,10 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	    __FILE__, __LINE__, __func__, curvnet, saved_vnet));	\
 	curvnet = saved_vnet;
 #endif /* VNET_DEBUG */
+
+#define	CURVNET_ASSERT_SET()						\
+	VNET_ASSERT(curvnet != NULL, ("vnet is not set at %s:%d %s()",  \
+	    __FILE__, __LINE__, __func__))
 
 extern struct vnet *vnet0;
 #define	IS_DEFAULT_VNET(arg)	((arg) == vnet0)
@@ -273,7 +278,8 @@ extern struct sx vnet_sxlock;
 /* struct _hack is to stop this from being used with static data */
 #define	VNET_DEFINE(t, n)	\
     struct _hack; t VNET_NAME(n) __section(VNET_SETNAME) __used
-#if defined(KLD_MODULE) && (defined(__aarch64__) || defined(__riscv))
+#if defined(KLD_MODULE) && (defined(__aarch64__) || defined(__riscv) \
+		|| defined(__powerpc64__) || defined(__i386__))
 /*
  * As with DPCPU_DEFINE_STATIC we are unable to mark this data as static
  * in modules on some architectures.
@@ -353,12 +359,6 @@ struct vnet_sysinit {
 	    vnet_deregister_sysuninit, &ident ## _vnet_uninit)
 
 /*
- * Run per-vnet sysinits or sysuninits during vnet creation/destruction.
- */
-void	 vnet_sysinit(void);
-void	 vnet_sysuninit(void);
-
-/*
  * Interfaces for managing per-vnet constructors and destructors.
  */
 void	vnet_register_sysinit(void *arg);
@@ -400,13 +400,14 @@ do {									\
 #define	CURVNET_SET(arg)
 #define	CURVNET_SET_QUIET(arg)
 #define	CURVNET_RESTORE()
+#define	CURVNET_ASSERT_SET()						\
 
 #define	VNET_LIST_RLOCK()
 #define	VNET_LIST_RLOCK_NOSLEEP()
 #define	VNET_LIST_RUNLOCK()
 #define	VNET_LIST_RUNLOCK_NOSLEEP()
 #define	VNET_ITERATOR_DECL(arg)
-#define	VNET_FOREACH(arg)
+#define	VNET_FOREACH(arg)	for (int _vn = 0; _vn == 0; _vn++)
 
 #define	IS_DEFAULT_VNET(arg)	1
 #define	CRED_TO_VNET(cr)	NULL

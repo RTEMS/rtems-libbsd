@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -50,7 +48,6 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/rtwn/rtl8188e/r88e.h>
 #include <dev/rtwn/rtl8188e/r88e_reg.h>
-
 
 void
 r88e_set_led(struct rtwn_softc *sc, int led, int on)

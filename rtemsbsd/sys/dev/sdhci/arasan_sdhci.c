@@ -368,15 +368,13 @@ static device_method_t arasan_sdhci_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t arasan_sdhci_devclass;
-
 static driver_t arasan_sdhci_driver = {
 	"arasan_sdhci",
 	arasan_sdhci_methods,
 	sizeof(struct arasan_sdhci_softc),
 };
 
-DRIVER_MODULE(arasan_sdhci, nexus, arasan_sdhci_driver, arasan_sdhci_devclass, 0, 0);
+DRIVER_MODULE(arasan_sdhci, nexus, arasan_sdhci_driver, 0, 0);
 MODULE_DEPEND(arasan_sdhci, sdhci, 1, 1, 1);
 
 #ifndef MMCCAM

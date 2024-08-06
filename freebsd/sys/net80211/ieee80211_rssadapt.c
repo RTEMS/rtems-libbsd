@@ -1,6 +1,5 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/*	$FreeBSD$	*/
 /* $NetBSD: ieee80211_rssadapt.c,v 1.9 2005/02/26 22:45:09 perry Exp $ */
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
@@ -383,6 +382,7 @@ rssadapt_sysctlattach(struct ieee80211vap *vap,
 {
 
 	SYSCTL_ADD_PROC(ctx, SYSCTL_CHILDREN(tree), OID_AUTO,
-	    "rssadapt_rate_interval", CTLTYPE_INT | CTLFLAG_RW, vap,
-	    0, rssadapt_sysctl_interval, "I", "rssadapt operation interval (ms)");
+	    "rssadapt_rate_interval",
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT, vap, 0,
+	    rssadapt_sysctl_interval, "I", "rssadapt operation interval (ms)");
 }

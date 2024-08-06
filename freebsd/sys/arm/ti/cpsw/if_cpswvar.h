@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2012 Damjan Marion <dmarion@Freebsd.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef	_IF_CPSWVAR_H
@@ -55,7 +53,7 @@ struct cpsw_vlangroups {
 struct cpsw_slot {
 	uint32_t bd_offset;  /* Offset of corresponding BD within CPPI RAM. */
 	bus_dmamap_t dmamap;
-	struct ifnet *ifp;
+	if_t ifp;
 	struct mbuf *mbuf;
 	STAILQ_ENTRY(cpsw_slot) next;
 };
@@ -139,7 +137,7 @@ struct cpswp_softc {
 	struct bintime	init_uptime; /* system uptime when init happened. */
 	struct callout	mii_callout;
 	struct cpsw_softc *swsc;
-	struct ifnet	*ifp;
+	if_t		ifp;
 	struct mii_data	*mii;
 	struct mtx	lock;
 	uint32_t	if_flags;

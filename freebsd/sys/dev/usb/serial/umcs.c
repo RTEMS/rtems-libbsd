@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2010 Lev Serebryakov <lev@FreeBSD.org>.
  * All rights reserved.
@@ -37,13 +37,11 @@
  * http://www.moschip.com.  The datasheets don't contain full
  * programming information for the chip.
  *
- * It is nornal to have only two enabled ports in devices, based on
+ * It is normal to have only two enabled ports in devices, based on
  * quad-port mos7840.
  *
  */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/stdint.h>
 #include <sys/stddef.h>
 #include <sys/param.h>
@@ -83,10 +81,10 @@ __FBSDID("$FreeBSD$");
 #ifdef USB_DEBUG
 static int umcs_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, umcs, CTLFLAG_RW, 0, "USB umcs quadport serial adapter");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, umcs, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB umcs quadport serial adapter");
 SYSCTL_INT(_hw_usb_umcs, OID_AUTO, debug, CTLFLAG_RWTUN, &umcs_debug, 0, "Debug level");
 #endif					/* USB_DEBUG */
-
 
 /*
  * Two-port devices (both with 7820 chip and 7840 chip configured as two-port)
@@ -270,15 +268,13 @@ static device_method_t umcs7840_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t umcs7840_devclass;
-
 static driver_t umcs7840_driver = {
 	.name = "umcs7840",
 	.methods = umcs7840_methods,
 	.size = sizeof(struct umcs7840_softc),
 };
 
-DRIVER_MODULE(umcs7840, uhub, umcs7840_driver, umcs7840_devclass, 0, 0);
+DRIVER_MODULE(umcs7840, uhub, umcs7840_driver, 0, 0);
 MODULE_DEPEND(umcs7840, ucom, 1, 1, 1);
 MODULE_DEPEND(umcs7840, usb, 1, 1, 1);
 MODULE_VERSION(umcs7840, UMCS7840_MODVER);
@@ -349,7 +345,7 @@ umcs7840_attach(device_t dev)
 	}
 	device_printf(dev, "Chip mcs%04x, found %d active ports\n", uaa->info.idProduct, sc->sc_numports);
 	if (!umcs7840_get_reg_sync(sc, MCS7840_DEV_REG_MODE, &data)) {
-		device_printf(dev, "On-die confguration: RST: active %s, HRD: %s, PLL: %s, POR: %s, Ports: %s, EEPROM write %s, IrDA is %savailable\n",
+		device_printf(dev, "On-die configuration: RST: active %s, HRD: %s, PLL: %s, POR: %s, Ports: %s, EEPROM write %s, IrDA is %savailable\n",
 		    (data & MCS7840_DEV_MODE_RESET) ? "low" : "high",
 		    (data & MCS7840_DEV_MODE_SER_PRSNT) ? "yes" : "no",
 		    (data & MCS7840_DEV_MODE_PLLBYPASS) ? "bypassed" : "avail",
@@ -501,7 +497,9 @@ umcs7840_cfg_open(struct ucom_softc *ucom)
 	 * Enable DTR/RTS on modem control, enable modem interrupts --
 	 * documented
 	 */
-	sc->sc_ports[pn].sc_mcr = MCS7840_UART_MCR_DTR | MCS7840_UART_MCR_RTS | MCS7840_UART_MCR_IE;
+	sc->sc_ports[pn].sc_mcr = MCS7840_UART_MCR_IE;
+	if (ucom->sc_tty == NULL || (ucom->sc_tty->t_termios.c_cflag & CNO_RTSDTR) == 0)
+		sc->sc_ports[pn].sc_mcr |= MCS7840_UART_MCR_DTR | MCS7840_UART_MCR_RTS;
 	if (umcs7840_set_UART_reg_sync(sc, pn, MCS7840_UART_REG_MCR, sc->sc_ports[pn].sc_mcr))
 		return;
 
@@ -518,7 +516,6 @@ umcs7840_cfg_open(struct ucom_softc *ucom)
 	/* Set speed 9600 */
 	if (umcs7840_set_baudrate(sc, pn, 9600))
 		return;
-
 
 	/* Finally enable all interrupts -- documented */
 	/*
@@ -608,7 +605,6 @@ umcs7840_cfg_set_break(struct ucom_softc *ucom, uint8_t onoff)
 	DPRINTF("Port %d BREAK set to: %s\n", pn, onoff ? "on" : "off");
 }
 
-
 static void
 umcs7840_cfg_param(struct ucom_softc *ucom, struct termios *t)
 {
@@ -683,7 +679,6 @@ umcs7840_cfg_param(struct ucom_softc *ucom, struct termios *t)
 
 	umcs7840_set_baudrate(sc, pn, t->c_ospeed);
 }
-
 
 static int
 umcs7840_pre_param(struct ucom_softc *ucom, struct termios *t)
@@ -1054,7 +1049,7 @@ umcs7840_set_baudrate(struct umcs7840_softc *sc, uint8_t portno, uint32_t rate)
 	}
 	DPRINTF("Port %d set speed: %d (%02x / %d)\n", portno, rate, clk, divisor);
 
-	/* Set clock source for standard BAUD frequences */
+	/* Set clock source for standard BAUD frequencies */
 	err = umcs7840_get_reg_sync(sc, umcs7840_port_registers[portno].reg_sp, &data);
 	if (err)
 		return (err);
@@ -1085,7 +1080,7 @@ umcs7840_set_baudrate(struct umcs7840_softc *sc, uint8_t portno, uint32_t rate)
 	return (0);
 }
 
-/* Maximum speeds for standard frequences, when PLL is not used */
+/* Maximum speeds for standard frequencies, when PLL is not used */
 static const uint32_t umcs7840_baudrate_divisors[] = {0, 115200, 230400, 403200, 460800, 806400, 921600, 1572864, 3145728,};
 static const uint8_t umcs7840_baudrate_divisors_len = nitems(umcs7840_baudrate_divisors);
 

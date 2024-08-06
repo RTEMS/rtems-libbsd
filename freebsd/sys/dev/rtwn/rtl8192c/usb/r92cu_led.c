@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -51,7 +49,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8192c/r92c_reg.h>
 
 #include <dev/rtwn/rtl8192c/usb/r92cu.h>
-
 
 void
 r92cu_set_led(struct rtwn_softc *sc, int led, int on)

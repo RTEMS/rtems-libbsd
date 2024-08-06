@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * Copyright (c) 2014, 2018 Andrey V. Elsukov <ae@FreeBSD.org>
@@ -37,8 +37,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_rss.h>
@@ -62,6 +60,7 @@ __FBSDID("$FreeBSD$");
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/if_clone.h>
 #include <net/if_types.h>
 #include <net/netisr.h>
@@ -109,6 +108,9 @@ static void	gre_clone_destroy(struct ifnet *);
 VNET_DEFINE_STATIC(struct if_clone *, gre_cloner);
 #define	V_gre_cloner	VNET(gre_cloner)
 
+#ifdef VIMAGE
+static void	gre_reassign(struct ifnet *, struct vnet *, char *);
+#endif
 static void	gre_qflush(struct ifnet *);
 static int	gre_transmit(struct ifnet *, struct mbuf *);
 static int	gre_ioctl(struct ifnet *, u_long, caddr_t);
@@ -117,7 +119,7 @@ static int	gre_output(struct ifnet *, struct mbuf *,
 static void	gre_delete_tunnel(struct gre_softc *);
 
 SYSCTL_DECL(_net_link);
-static SYSCTL_NODE(_net_link, IFT_TUNNEL, gre, CTLFLAG_RW, 0,
+static SYSCTL_NODE(_net_link, IFT_TUNNEL, gre, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "Generic Routing Encapsulation");
 #ifndef MAX_GRE_NEST
 /*
@@ -189,12 +191,30 @@ gre_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	GRE2IFP(sc)->if_ioctl = gre_ioctl;
 	GRE2IFP(sc)->if_transmit = gre_transmit;
 	GRE2IFP(sc)->if_qflush = gre_qflush;
+#ifdef VIMAGE
+	GRE2IFP(sc)->if_reassign = gre_reassign;
+#endif
 	GRE2IFP(sc)->if_capabilities |= IFCAP_LINKSTATE;
 	GRE2IFP(sc)->if_capenable |= IFCAP_LINKSTATE;
 	if_attach(GRE2IFP(sc));
 	bpfattach(GRE2IFP(sc), DLT_NULL, sizeof(u_int32_t));
 	return (0);
 }
+
+#ifdef VIMAGE
+static void
+gre_reassign(struct ifnet *ifp, struct vnet *new_vnet __unused,
+    char *unused __unused)
+{
+	struct gre_softc *sc;
+
+	sx_xlock(&gre_ioctl_sx);
+	sc = ifp->if_softc;
+	if (sc != NULL)
+		gre_delete_tunnel(sc);
+	sx_xunlock(&gre_ioctl_sx);
+}
+#endif /* VIMAGE */
 
 static void
 gre_clone_destroy(struct ifnet *ifp)
@@ -398,7 +418,7 @@ gre_delete_tunnel(struct gre_softc *sc)
 	if ((gs = sc->gre_so) != NULL && CK_LIST_EMPTY(&gs->list)) {
 		CK_LIST_REMOVE(gs, chain);
 		soclose(gs->so);
-		epoch_call(net_epoch_preempt, &gs->epoch_ctx, gre_sofree);
+		NET_EPOCH_CALL(gre_sofree, &gs->epoch_ctx);
 		sc->gre_so = NULL;
 	}
 	GRE2IFP(sc)->if_drv_flags &= ~IFF_DRV_RUNNING;
@@ -595,10 +615,11 @@ gre_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 {
 	uint32_t af;
 
-	if (dst->sa_family == AF_UNSPEC)
+	/* BPF writes need to be handled specially. */
+	if (dst->sa_family == AF_UNSPEC || dst->sa_family == pseudo_AF_HDRCMPLT)
 		bcopy(dst->sa_data, &af, sizeof(af));
 	else
-		af = dst->sa_family;
+		af = RO_GET_FAMILY(ro, dst);
 	/*
 	 * Now save the af in the inbound pkt csum data, this is a cheat since
 	 * we are using the inbound csum_data field to carry the af over to
@@ -628,46 +649,37 @@ gre_setseqn(struct grehdr *gh, uint32_t seq)
 static uint32_t
 gre_flowid(struct gre_softc *sc, struct mbuf *m, uint32_t af)
 {
-	uint32_t flowid;
+	uint32_t flowid = 0;
 
 	if ((sc->gre_options & GRE_UDPENCAP) == 0 || sc->gre_port != 0)
-		return (0);
-#ifndef RSS
+		return (flowid);
 	switch (af) {
 #ifdef INET
 	case AF_INET:
+#ifdef RSS
+		flowid = rss_hash_ip4_2tuple(mtod(m, struct ip *)->ip_src,
+		    mtod(m, struct ip *)->ip_dst);
+		break;
+#endif
 		flowid = mtod(m, struct ip *)->ip_src.s_addr ^
 		    mtod(m, struct ip *)->ip_dst.s_addr;
 		break;
 #endif
 #ifdef INET6
 	case AF_INET6:
-		flowid = mtod(m, struct ip6_hdr *)->ip6_src.s6_addr32[3] ^
-		    mtod(m, struct ip6_hdr *)->ip6_dst.s6_addr32[3];
-		break;
-#endif
-	default:
-		flowid = 0;
-	}
-#else /* RSS */
-	switch (af) {
-#ifdef INET
-	case AF_INET:
-		flowid = rss_hash_ip4_2tuple(mtod(m, struct ip *)->ip_src,
-		    mtod(m, struct ip *)->ip_dst);
-		break;
-#endif
-#ifdef INET6
-	case AF_INET6:
+#ifdef RSS
 		flowid = rss_hash_ip6_2tuple(
 		    &mtod(m, struct ip6_hdr *)->ip6_src,
 		    &mtod(m, struct ip6_hdr *)->ip6_dst);
 		break;
 #endif
-	default:
-		flowid = 0;
-	}
+		flowid = mtod(m, struct ip6_hdr *)->ip6_src.s6_addr32[3] ^
+		    mtod(m, struct ip6_hdr *)->ip6_dst.s6_addr32[3];
+		break;
 #endif
+	default:
+		break;
+	}
 	return (flowid);
 }
 

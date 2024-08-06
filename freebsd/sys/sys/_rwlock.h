@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006 John Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS__RWLOCK_H_
@@ -44,12 +41,9 @@
  */
 struct rwlock {
 	struct lock_object	lock_object;
-#ifndef __rtems__
 	volatile uintptr_t	rw_lock;
-#endif /* __rtems__ */
 };
 
-#ifndef __rtems__
 /*
  * Members of struct rwlock_padalign must mirror members of struct rwlock.
  * rwlock_padalign rwlocks can use the rwlock(9) API transparently without
@@ -63,8 +57,5 @@ struct rwlock_padalign {
 	struct lock_object	lock_object;
 	volatile uintptr_t	rw_lock;
 } __aligned(CACHE_LINE_SIZE);
-#else /* __rtems__ */
-#define	rwlock_padalign rwlock
-#endif /* __rtems__ */
 
 #endif /* !_SYS__RWLOCK_H_ */

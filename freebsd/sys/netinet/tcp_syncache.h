@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)tcp_var.h	8.4 (Berkeley) 5/24/95
- * $FreeBSD$
  */
 
 #ifndef _NETINET_TCP_SYNCACHE_H_
@@ -40,21 +39,23 @@ void	 syncache_init(void);
 #ifdef VIMAGE
 void	syncache_destroy(void);
 #endif
-void	 syncache_unreach(struct in_conninfo *, tcp_seq);
+void	 syncache_unreach(struct in_conninfo *, tcp_seq, uint16_t);
 int	 syncache_expand(struct in_conninfo *, struct tcpopt *,
-	     struct tcphdr *, struct socket **, struct mbuf *);
-int	 syncache_add(struct in_conninfo *, struct tcpopt *,
-	     struct tcphdr *, struct inpcb *, struct socket **, struct mbuf *,
-	     void *, void *);
-void	 syncache_chkrst(struct in_conninfo *, struct tcphdr *, struct mbuf *);
-void	 syncache_badack(struct in_conninfo *);
-int	 syncache_pcblist(struct sysctl_req *req, int max_pcbs, int *pcbs_exported);
+	     struct tcphdr *, struct socket **, struct mbuf *, uint16_t);
+struct socket *	 syncache_add(struct in_conninfo *, struct tcpopt *,
+	     struct tcphdr *, struct inpcb *, struct socket *, struct mbuf *,
+	     void *, void *, uint8_t, uint16_t);
+void	 syncache_chkrst(struct in_conninfo *, struct tcphdr *, struct mbuf *,
+	     uint16_t);
+void	 syncache_badack(struct in_conninfo *, uint16_t);
+int	 syncache_pcblist(struct sysctl_req *);
 
 struct syncache {
 	TAILQ_ENTRY(syncache)	sc_hash;
 	struct		in_conninfo sc_inc;	/* addresses */
 	int		sc_rxttime;		/* retransmit time */
 	u_int16_t	sc_rxmits;		/* retransmit counter */
+	u_int16_t	sc_port;		/* remote UDP encaps port */
 	u_int32_t	sc_tsreflect;		/* timestamp to reflect */
 	u_int32_t	sc_tsoff;		/* ts offset w/ syncookies */
 	u_int32_t	sc_flowlabel;		/* IPv6 flowlabel */
@@ -63,8 +64,8 @@ struct syncache {
 	struct		mbuf *sc_ipopts;	/* source route */
 	u_int16_t	sc_peer_mss;		/* peer's MSS */
 	u_int16_t	sc_wnd;			/* advertised window */
-	u_int8_t	sc_ip_ttl;		/* IPv4 TTL */
-	u_int8_t	sc_ip_tos;		/* IPv4 TOS */
+	u_int8_t	sc_ip_ttl;		/* TTL / Hop Limit */
+	u_int8_t	sc_ip_tos;		/* TOS / Traffic Class */
 	u_int8_t	sc_requested_s_scale:4,
 			sc_requested_r_scale:4;
 	u_int16_t	sc_flags;
@@ -89,7 +90,12 @@ struct syncache {
 #define SCF_UNREACH	0x10			/* icmp unreachable received */
 #define SCF_SIGNATURE	0x20			/* send MD5 digests */
 #define SCF_SACK	0x80			/* send SACK option */
-#define SCF_ECN		0x100			/* send ECN setup packet */
+#define SCF_ECN_MASK	0x700			/* ECN codepoint mask */
+#define SCF_ECN 	0x100			/* send ECN setup packet */
+#define SCF_ACE_N	0x400			/* send ACE non-ECT setup */
+#define SCF_ACE_0	0x500			/* send ACE ECT0 setup */
+#define SCF_ACE_1	0x600			/* send ACE ECT1 setup */
+#define SCF_ACE_CE	0x700			/* send ACE CE setup */
 
 struct syncache_head {
 	struct mtx	sch_mtx;
@@ -111,6 +117,9 @@ struct syncookie_secret {
 	u_int lifetime;
 };
 
+#define	TCP_SYNCACHE_PAUSE_TIME		SYNCOOKIE_LIFETIME
+#define	TCP_SYNCACHE_MAX_BACKOFF	6	/* 16 minutes */
+
 struct tcp_syncache {
 	struct	syncache_head *hashbase;
 	uma_zone_t zone;
@@ -122,6 +131,12 @@ struct tcp_syncache {
 	uint32_t hash_secret;
 	struct vnet *vnet;
 	struct syncookie_secret secret;
+	struct mtx pause_mtx;
+	struct callout pause_co;
+	time_t	pause_until;
+	uint8_t pause_backoff;
+	volatile bool paused;
+	bool see_other;
 };
 
 /* Internal use for the syncookie functions. */

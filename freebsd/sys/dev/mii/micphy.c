@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * Copyright (c) 2014 Ruslan Bukin <br@bsdpad.com>
+ * Copyright (c) 2014,2019 Ruslan Bukin <br@bsdpad.com>
  * All rights reserved.
  *
  * This software was developed by SRI International and the University of
@@ -31,10 +31,8 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
- * Micrel KSZ9021 Gigabit Ethernet Transceiver
+ * Micrel KSZ8081/KSZ9021/KSZ9031 Gigabit Ethernet Transceiver
  */
 
 #include <sys/param.h>
@@ -61,6 +59,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/ofw/openfirm.h>
 #include <dev/ofw/ofw_bus.h>
 #include <dev/ofw/ofw_bus_subr.h>
+#include <dev/mii/mii_fdt.h>
 
 #define	MII_KSZPHY_EXTREG			0x0b
 #define	 KSZPHY_EXTREG_WRITE			(1 << 15)
@@ -96,15 +95,13 @@ static device_method_t micphy_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t micphy_devclass;
-
 static driver_t micphy_driver = {
 	"micphy",
 	micphy_methods,
 	sizeof(struct mii_softc)
 };
 
-DRIVER_MODULE(micphy, miibus, micphy_driver, micphy_devclass, 0, 0);
+DRIVER_MODULE(micphy, miibus, micphy_driver, 0, 0);
 
 static const struct mii_phydesc micphys[] = {
 	MII_PHY_DESC(MICREL, KSZ8081),
@@ -253,6 +250,7 @@ micphy_probe(device_t dev)
 static int
 micphy_attach(device_t dev)
 {
+	mii_fdt_phy_config_t *cfg;
 	struct mii_softc *sc;
 	phandle_t node;
 	device_t miibus;
@@ -273,10 +271,14 @@ micphy_attach(device_t dev)
 	if ((node = ofw_bus_get_node(parent)) == -1)
 		return (ENXIO);
 
+	cfg = mii_fdt_get_config(dev);
+
 	if (sc->mii_mpd_model == MII_MODEL_MICREL_KSZ9031)
-		ksz9031_load_values(sc, node);
+		ksz9031_load_values(sc, cfg->phynode);
 	else
-		ksz9021_load_values(sc, node);
+		ksz9021_load_values(sc, cfg->phynode);
+
+	mii_fdt_free_config(cfg);
 
 	return (0);
 }

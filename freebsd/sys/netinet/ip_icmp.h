@@ -29,7 +29,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)ip_icmp.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD$
  */
 
 #ifndef _NETINET_IP_ICMP_H_
@@ -216,6 +215,7 @@ struct icmp {
 	(type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
 
 #ifdef _KERNEL
+int	icmp_errmap(const struct icmp *);
 void	icmp_error(struct mbuf *, int, int, uint32_t, int);
 int	icmp_input(struct mbuf **, int *, int);
 int	ip_next_mtu(int, int);

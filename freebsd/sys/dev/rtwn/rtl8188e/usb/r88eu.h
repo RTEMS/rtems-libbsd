@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * $OpenBSD: if_urtwnreg.h,v 1.3 2010/11/16 18:02:59 damien Exp $
- * $FreeBSD$
  */
 
 #ifndef RTL8188EU_H
@@ -23,13 +22,11 @@
 
 #include <dev/rtwn/rtl8188e/r88e.h>
 
-
 /*
  * Global definitions.
  */
 #define R88EU_PUBQ_NPAGES	142
 #define R88EU_TX_PAGE_COUNT	169
-
 
 /*
  * Function declarations.

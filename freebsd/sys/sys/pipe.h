@@ -17,16 +17,10 @@
  *    is allowed if this notation is included.
  * 5. Modifications may be freely made to this file if the above conditions
  *    are met.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_PIPE_H_
 #define _SYS_PIPE_H_
-
-#ifndef _KERNEL
-#error "no user-serviceable parts inside"
-#endif
 
 /*
  * Pipe buffer size, keep moderate in value, pipes take kva space.
@@ -53,6 +47,7 @@
 
 #define PIPENPAGES	(BIG_PIPE_SIZE / PAGE_SIZE + 1)
 
+#ifdef _KERNEL
 /*
  * See sys_pipe.c for info on what these limits mean. 
  */
@@ -60,6 +55,7 @@ extern long	maxpipekva;
 #ifndef __rtems__
 extern struct	fileops pipeops;
 #endif /* __rtems__ */
+#endif
 
 /*
  * Pipe buffer information.
@@ -78,8 +74,8 @@ struct pipebuf {
  * Information to support direct transfers between processes for pipes.
  */
 struct pipemapping {
-	vm_size_t	cnt;		/* number of chars in buffer */
-	vm_size_t	pos;		/* current position of transfer */
+	u_int		cnt;		/* number of chars in buffer */
+	u_int		pos;		/* current position of transfer */
 	int		npages;		/* number of pages */
 #ifndef __rtems__
 	vm_page_t	ms[PIPENPAGES];	/* pages in source process */
@@ -99,7 +95,11 @@ struct pipemapping {
 #define PIPE_LWANT	0x200	/* Process wants exclusive access to pointers/data. */
 #define PIPE_DIRECTW	0x400	/* Pipe direct write active. */
 #define PIPE_DIRECTOK	0x800	/* Direct mode ok. */
-#define PIPE_NAMED	0x1000	/* Is a named pipe. */
+
+/*
+ * Bits in pipe_type.
+ */
+#define PIPE_TYPE_NAMED	0x001	/* Is a named pipe. */
 
 /*
  * Per-pipe data structure.
@@ -107,7 +107,7 @@ struct pipemapping {
  */
 struct pipe {
 	struct	pipebuf pipe_buffer;	/* data storage */
-	struct	pipemapping pipe_map;	/* pipe mapping for direct I/O */
+	struct	pipemapping pipe_pages;	/* wired pages for direct I/O */
 	struct	selinfo pipe_sel;	/* for compat with select */
 	struct	timespec pipe_atime;	/* time of last access */
 	struct	timespec pipe_mtime;	/* time of last modify */
@@ -115,9 +115,11 @@ struct pipe {
 	struct	sigio *pipe_sigio;	/* information for async I/O */
 	struct	pipe *pipe_peer;	/* link with other direction */
 	struct	pipepair *pipe_pair;	/* container structure pointer */
-	u_int	pipe_state;		/* pipe status info */
+	u_short	pipe_state;		/* pipe status info */
+	u_char	pipe_type;		/* pipe type info */
+	u_char	pipe_present;		/* still present? */
+	int	pipe_waiters;		/* pipelock waiters */
 	int	pipe_busy;		/* busy flag, mostly to handle rundown sanely */
-	int	pipe_present;		/* still present? */
 	int	pipe_wgen;		/* writer generation for named pipe */
 	ino_t	pipe_ino;		/* fake inode for stat(2) */
 };
@@ -138,6 +140,7 @@ struct pipepair {
 	struct pipe	pp_wpipe;
 	struct mtx	pp_mtx;
 	struct label	*pp_label;
+	struct ucred	*pp_owner;	/* to dec pipe usage count */
 };
 
 #define PIPE_MTX(pipe)		(&(pipe)->pipe_pair->pp_mtx)
@@ -145,7 +148,9 @@ struct pipepair {
 #define PIPE_UNLOCK(pipe)	mtx_unlock(PIPE_MTX(pipe))
 #define PIPE_LOCK_ASSERT(pipe, type)  mtx_assert(PIPE_MTX(pipe), (type))
 
+#ifdef _KERNEL
 void	pipe_dtor(struct pipe *dpipe);
-void	pipe_named_ctor(struct pipe **ppipe, struct thread *td);
+int	pipe_named_ctor(struct pipe **ppipe, struct thread *td);
 void	pipeselwakeup(struct pipe *cpipe);
+#endif
 #endif /* !_SYS_PIPE_H_ */

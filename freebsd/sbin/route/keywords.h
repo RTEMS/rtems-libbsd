@@ -106,3 +106,4 @@
 	{"xns", K_XNS},
 #define	K_XRESOLVE	54
 	{"xresolve", K_XRESOLVE},
+

@@ -40,7 +40,7 @@
 cap_rights_t cap_no_rights;
 
 #define RTEMS_BSD_CAP_ALIAS(var, tar) \
-	extern int __attribute__((alias("_bsd_" #var))) _bsd_##tar;
+	extern cap_rights_t __attribute__((alias("_bsd_" #var))) _bsd_##tar;
 
 #ifdef INVARIANT_SUPPORT
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_rights_is_valid);
@@ -65,6 +65,7 @@ RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_recv_rights);
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_renameat_source_rights);
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_renameat_target_rights);
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_seek_rights);
+RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_send_rights);
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_setsockopt_rights);
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_shutdown_rights);
 RTEMS_BSD_CAP_ALIAS(cap_no_rights, cap_symlinkat_rights);

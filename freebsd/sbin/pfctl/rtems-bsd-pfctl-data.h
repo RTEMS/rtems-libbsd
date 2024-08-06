@@ -2,18 +2,21 @@
 #include <rtems/linkersets.h>
 /* parse.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int pfctlychar);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int pfctlydebug);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int pfctlyerrflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int pfctlynerrs);
-/* pfctl_altq.c */
+/* pf_print_state.c */
+/* pf_ruleset.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern struct pfctl_anchor_global pf_anchors);
 /* pfctl.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int altqsupport);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int dev);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int loadopt);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern struct pfctl_anchor pf_main_anchor);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern struct pfctl_eth_anchor pf_eth_main_anchor);
+/* pfctl_altq.c */
 /* pfctl_optimize.c */
 /* pfctl_osfp.c */
 /* pfctl_parser.c */
 /* pfctl_qstats.c */
 /* pfctl_radix.c */
 /* pfctl_table.c */
-/* pf_print_state.c */

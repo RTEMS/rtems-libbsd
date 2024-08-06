@@ -1,8 +1,9 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
+ * Copyright (c) 2001-2024, Intel Corporation
  * Copyright (c) 2016 Nicole Graziano <nicole@nextbsd.org>
- * All rights reserved.
+ * Copyright (c) 2024 Kevin Bowling <kbowling@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,10 +27,14 @@
  * SUCH DAMAGE.
  */
 
-/*$FreeBSD$*/
+
+#ifndef _EM_H_DEFINED_
+#define _EM_H_DEFINED_
+
 #include <rtems/bsd/local/opt_ddb.h>
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/bsd/local/opt_rss.h>
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
 #include <rtems/bsd/local/opt_device_polling.h>
@@ -41,9 +46,7 @@
 #include <sys/types.h>
 #include <ddb/ddb.h>
 #endif
-#if __FreeBSD_version >= 800000
 #include <sys/buf_ring.h>
-#endif
 #include <sys/bus.h>
 #include <sys/endian.h>
 #include <sys/kernel.h>
@@ -69,6 +72,10 @@
 #include <net/if_dl.h>
 #include <net/if_media.h>
 #include <net/iflib.h>
+#ifdef	RSS
+#include <net/rss_config.h>
+#include <netinet/in_rss.h>
+#endif
 
 #include <net/if_types.h>
 #include <net/if_vlan_var.h>
@@ -90,11 +97,6 @@
 #include "e1000_82571.h"
 #include <rtems/bsd/local/ifdi_if.h>
 
-
-#ifndef _EM_H_DEFINED_
-#define _EM_H_DEFINED_
-
-
 /* Tunables */
 
 /*
@@ -111,7 +113,7 @@
  */
 #define EM_MIN_TXD		128
 #define EM_MAX_TXD		4096
-#define EM_DEFAULT_TXD          1024
+#define EM_DEFAULT_TXD		1024
 #define EM_DEFAULT_MULTI_TXD	4096
 #define IGB_MAX_TXD		4096
 
@@ -130,7 +132,7 @@
  */
 #define EM_MIN_RXD		128
 #define EM_MAX_RXD		4096
-#define EM_DEFAULT_RXD          1024
+#define EM_DEFAULT_RXD		1024
 #define EM_DEFAULT_MULTI_RXD	4096
 #define IGB_MAX_RXD		4096
 
@@ -144,7 +146,7 @@
  *   system is reporting dropped transmits, this value may be set too high
  *   causing the driver to run out of available transmit descriptors.
  */
-#define EM_TIDV                         64
+#define EM_TIDV		64
 
 /*
  * EM_TADV - Transmit Absolute Interrupt Delay Value
@@ -158,7 +160,7 @@
  *   along with EM_TIDV, may improve traffic throughput in specific
  *   network conditions.
  */
-#define EM_TADV                         64
+#define EM_TADV		64
 
 /*
  * EM_RDTR - Receive Interrupt Delay Timer (Packet Timer)
@@ -179,7 +181,7 @@
  *            restoring the network connection. To eliminate the potential
  *            for the hang ensure that EM_RDTR is set to 0.
  */
-#define EM_RDTR                         0
+#define EM_RDTR		0
 
 /*
  * Receive Interrupt Absolute Delay Timer (Not valid for 82542/82543/82544)
@@ -192,14 +194,14 @@
  *   along with EM_RDTR, may improve traffic throughput in specific network
  *   conditions.
  */
-#define EM_RADV                         64
+#define EM_RADV		64
 
 /*
- * This parameter controls whether or not autonegotation is enabled.
+ * This parameter controls whether or not autonegotiation is enabled.
  *              0 - Disable autonegotiation
  *              1 - Enable  autonegotiation
  */
-#define DO_AUTO_NEG                     1
+#define DO_AUTO_NEG	1
 
 /*
  * This parameter control whether or not the driver will wait for
@@ -207,13 +209,13 @@
  *              1 - Wait for autonegotiation to complete
  *              0 - Don't wait for autonegotiation to complete
  */
-#define WAIT_FOR_AUTO_NEG_DEFAULT       0
+#define WAIT_FOR_AUTO_NEG_DEFAULT	0
 
 /* Tunables -- End */
 
 #define AUTONEG_ADV_DEFAULT	(ADVERTISE_10_HALF | ADVERTISE_10_FULL | \
-				ADVERTISE_100_HALF | ADVERTISE_100_FULL | \
-				ADVERTISE_1000_FULL)
+				    ADVERTISE_100_HALF | ADVERTISE_100_FULL | \
+				    ADVERTISE_1000_FULL)
 
 #define AUTO_ALL_MODES		0
 
@@ -221,33 +223,42 @@
 #define EM_MASTER_SLAVE		e1000_ms_hw_default
 
 /*
- * Micellaneous constants
+ * Miscellaneous constants
  */
-#define EM_VENDOR_ID                    0x8086
-#define EM_FLASH                        0x0014 
+#define EM_VENDOR_ID			0x8086
+#define EM_FLASH			0x0014
 
-#define EM_JUMBO_PBA                    0x00000028
-#define EM_DEFAULT_PBA                  0x00000030
-#define EM_SMARTSPEED_DOWNSHIFT         3
-#define EM_SMARTSPEED_MAX               15
+#define EM_JUMBO_PBA			0x00000028
+#define EM_DEFAULT_PBA			0x00000030
+#define EM_SMARTSPEED_DOWNSHIFT		3
+#define EM_SMARTSPEED_MAX		15
 #define EM_MAX_LOOP			10
 
-#define MAX_NUM_MULTICAST_ADDRESSES     128
-#define PCI_ANY_ID                      (~0U)
-#define ETHER_ALIGN                     2
+#define MAX_NUM_MULTICAST_ADDRESSES	128
+#define PCI_ANY_ID			(~0U)
+#define ETHER_ALIGN			2
 #define EM_FC_PAUSE_TIME		0x0680
 #define EM_EEPROM_APME			0x400;
 #define EM_82544_APME			0x0004;
 
-
 /* Support AutoMediaDetect for Marvell M88 PHY in i354 */
-#define IGB_MEDIA_RESET			(1 << 0)
+#define IGB_MEDIA_RESET		(1 << 0)
 
-/* Define the starting Interrupt rate per Queue */
-#define IGB_INTS_PER_SEC        8000
-#define IGB_DEFAULT_ITR         ((1000000/IGB_INTS_PER_SEC) << 2)
+/* Define the interrupt rates and ITR helpers */
+#define EM_INTS_4K		4000
+#define EM_INTS_20K		20000
+#define EM_INTS_70K		70000
+#define EM_INTS_DEFAULT		8000
+#define EM_INTS_MULTIPLIER	256
+#define EM_ITR_DIVIDEND		1000000000
+#define EM_INTS_TO_ITR(i)	(EM_ITR_DIVIDEND/(i * EM_INTS_MULTIPLIER))
+#define IGB_EITR_DIVIDEND	1000000
+#define IGB_EITR_SHIFT		2
+#define IGB_QVECTOR_MASK	0x7FFC
+#define IGB_INTS_TO_EITR(i)	(((IGB_EITR_DIVIDEND/i) & IGB_QVECTOR_MASK) << \
+				    IGB_EITR_SHIFT)
 
-#define IGB_LINK_ITR            2000
+#define IGB_LINK_ITR		2000
 #define I210_LINK_DELAY		1000
 
 #define IGB_TXPBSIZE		20408
@@ -264,25 +275,25 @@
  * and compare to TX_MAXTRIES.  When counter > TX_MAXTRIES,
  * reset adapter.
  */
-#define EM_TX_IDLE			0x00000000
-#define EM_TX_BUSY			0x00000001
-#define EM_TX_HUNG			0x80000000
-#define EM_TX_MAXTRIES			10
+#define EM_TX_IDLE		0x00000000
+#define EM_TX_BUSY		0x00000001
+#define EM_TX_HUNG		0x80000000
+#define EM_TX_MAXTRIES		10
 
-#define PCICFG_DESC_RING_STATUS		0xe4
-#define FLUSH_DESC_REQUIRED		0x100
+#define PCICFG_DESC_RING_STATUS	0xe4
+#define FLUSH_DESC_REQUIRED	0x100
 
 
-#define IGB_RX_PTHRESH			((hw->mac.type == e1000_i354) ? 12 : \
-					  ((hw->mac.type <= e1000_82576) ? 16 : 8))
-#define IGB_RX_HTHRESH			8
-#define IGB_RX_WTHRESH			((hw->mac.type == e1000_82576 && \
-					  (adapter->intr_type == IFLIB_INTR_MSIX)) ? 1 : 4)
+#define IGB_RX_PTHRESH	((hw->mac.type == e1000_i354) ? 12 : \
+			    ((hw->mac.type <= e1000_82576) ? 16 : 8))
+#define IGB_RX_HTHRESH	8
+#define IGB_RX_WTHRESH	((hw->mac.type == e1000_82576 && \
+			    (sc->intr_type == IFLIB_INTR_MSIX)) ? 1 : 4)
 
-#define IGB_TX_PTHRESH			((hw->mac.type == e1000_i354) ? 20 : 8)
-#define IGB_TX_HTHRESH			1
-#define IGB_TX_WTHRESH			((hw->mac.type != e1000_82575 && \
-                                          (adapter->intr_type == IFLIB_INTR_MSIX) ? 1 : 16)
+#define IGB_TX_PTHRESH	((hw->mac.type == e1000_i354) ? 20 : 8)
+#define IGB_TX_HTHRESH	1
+#define IGB_TX_WTHRESH	((hw->mac.type != e1000_82575 && \
+			    sc->intr_type == IFLIB_INTR_MSIX) ? 1 : 16)
 
 /*
  * TDBA/RDBA should be aligned on 16 byte boundary. But TDLEN/RDLEN should be
@@ -297,8 +308,8 @@
 #define TARC_COMPENSATION_MODE	(1 << 7)	/* Compensation Mode */
 #define TARC_SPEED_MODE_BIT 	(1 << 21)	/* On PCI-E MACs only */
 #define TARC_MQ_FIX		(1 << 23) | \
-				(1 << 24) | \
-				(1 << 25)	/* Handle errata in MQ mode */
+				    (1 << 24) | \
+				    (1 << 25)	/* Handle errata in MQ mode */
 #define TARC_ERRATA_BIT 	(1 << 26)	/* Note from errata on 82574 */
 
 /* PCI Config defines */
@@ -311,41 +322,34 @@
 #define EM_BAR_MEM_TYPE_MASK	0x00000006
 #define EM_BAR_MEM_TYPE_32BIT	0x00000000
 #define EM_BAR_MEM_TYPE_64BIT	0x00000004
-#define EM_MSIX_BAR		3	/* On 82575 */
-
-/* More backward compatibility */
-#if __FreeBSD_version < 900000
-#define SYSCTL_ADD_UQUAD SYSCTL_ADD_QUAD
-#endif
 
 /* Defines for printing debug information */
-#define DEBUG_INIT  0
-#define DEBUG_IOCTL 0
-#define DEBUG_HW    0
+#define DEBUG_INIT	0
+#define DEBUG_IOCTL	0
+#define DEBUG_HW	0
 
-#define INIT_DEBUGOUT(S)            if (DEBUG_INIT)  printf(S "\n")
-#define INIT_DEBUGOUT1(S, A)        if (DEBUG_INIT)  printf(S "\n", A)
-#define INIT_DEBUGOUT2(S, A, B)     if (DEBUG_INIT)  printf(S "\n", A, B)
-#define IOCTL_DEBUGOUT(S)           if (DEBUG_IOCTL) printf(S "\n")
-#define IOCTL_DEBUGOUT1(S, A)       if (DEBUG_IOCTL) printf(S "\n", A)
-#define IOCTL_DEBUGOUT2(S, A, B)    if (DEBUG_IOCTL) printf(S "\n", A, B)
-#define HW_DEBUGOUT(S)              if (DEBUG_HW) printf(S "\n")
-#define HW_DEBUGOUT1(S, A)          if (DEBUG_HW) printf(S "\n", A)
-#define HW_DEBUGOUT2(S, A, B)       if (DEBUG_HW) printf(S "\n", A, B)
+#define INIT_DEBUGOUT(S)		if (DEBUG_INIT)  printf(S "\n")
+#define INIT_DEBUGOUT1(S, A)		if (DEBUG_INIT)  printf(S "\n", A)
+#define INIT_DEBUGOUT2(S, A, B)		if (DEBUG_INIT)  printf(S "\n", A, B)
+#define IOCTL_DEBUGOUT(S)		if (DEBUG_IOCTL) printf(S "\n")
+#define IOCTL_DEBUGOUT1(S, A)		if (DEBUG_IOCTL) printf(S "\n", A)
+#define IOCTL_DEBUGOUT2(S, A, B)	if (DEBUG_IOCTL) printf(S "\n", A, B)
+#define HW_DEBUGOUT(S)			if (DEBUG_HW) printf(S "\n")
+#define HW_DEBUGOUT1(S, A)		if (DEBUG_HW) printf(S "\n", A)
+#define HW_DEBUGOUT2(S, A, B)		if (DEBUG_HW) printf(S "\n", A, B)
 
 #define EM_MAX_SCATTER		40
 #define EM_VFTA_SIZE		128
 #define EM_TSO_SIZE		65535
 #define EM_TSO_SEG_SIZE		4096	/* Max dma segment size */
-#define EM_MSIX_MASK		0x01F00000 /* For 82574 use */
-#define EM_MSIX_LINK		0x01000000 /* For 82574 use */
 #define ETH_ZLEN		60
-#define ETH_ADDR_LEN		6
-#define EM_CSUM_OFFLOAD		(CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP) /* Offload bits in mbuf flag */
-#define IGB_CSUM_OFFLOAD	(CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP | \
-				 CSUM_IP_SCTP | CSUM_IP6_UDP | CSUM_IP6_TCP | \
-				 CSUM_IP6_SCTP)	/* Offload bits in mbuf flag */
 
+/* Offload bits in mbuf flag */
+#define EM_CSUM_OFFLOAD		(CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP | \
+				    CSUM_IP6_UDP | CSUM_IP6_TCP)
+#define IGB_CSUM_OFFLOAD	(CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP | \
+				    CSUM_IP_SCTP | CSUM_IP6_UDP | CSUM_IP6_TCP | \
+				    CSUM_IP6_SCTP)
 
 #define IGB_PKTTYPE_MASK	0x0000FFF0
 #define IGB_DMCTLX_DCFLUSH_DIS	0x80000000  /* Disable DMA Coalesce Flush */
@@ -356,7 +360,7 @@
  * the em driver only 82574 uses MSI-X we can
  * solve it just using this define.
  */
-#define EM_EIAC 0x000DC
+#define EM_EIAC	0x000DC
 /*
  * 82574 only reports 3 MSI-X vectors by default;
  * defines assisting with making it report 5 are
@@ -366,21 +370,21 @@
 #define EM_NVM_MSIX_N_MASK	(0x7 << EM_NVM_MSIX_N_SHIFT)
 #define EM_NVM_MSIX_N_SHIFT	7
 
-struct adapter;
+struct e1000_softc;
 
 struct em_int_delay_info {
-	struct adapter *adapter;	/* Back-pointer to the adapter struct */
-	int offset;			/* Register offset to read/write */
-	int value;			/* Current value in usecs */
+	struct e1000_softc	*sc;		/* Back-pointer to the sc struct */
+	int			offset;		/* Register offset to read/write */
+	int			value;		/* Current value in usecs */
 };
 
 /*
  * The transmit ring, one per tx queue
  */
 struct tx_ring {
-        struct adapter          *adapter;
+	struct e1000_softc	*sc;
 	struct e1000_tx_desc	*tx_base;
-	uint64_t                tx_paddr; 
+	uint64_t		tx_paddr;
 	qidx_t			*tx_rsq;
 	bool			tx_tso;		/* last tx was tso */
 	uint8_t			me;
@@ -388,9 +392,13 @@ struct tx_ring {
 	qidx_t			tx_rs_pidx;
 	qidx_t			tx_cidx_processed;
 	/* Interrupt resources */
-	void                    *tag;
-	struct resource         *res;
-        unsigned long		tx_irq;
+	void			*tag;
+	struct resource		*res;
+
+	/* Soft stats */
+	unsigned long		tx_irq;
+	unsigned long		tx_packets;
+	unsigned long		tx_bytes;
 
 	/* Saved csum offloading context information */
 	int			csum_flags;
@@ -402,103 +410,105 @@ struct tx_ring {
 	int			csum_pktlen;
 
 	uint32_t		csum_txd_upper;
-	uint32_t		csum_txd_lower; /* last field */
+	uint32_t		csum_txd_lower;	/* last field */
 };
 
 /*
  * The Receive ring, one per rx queue
  */
 struct rx_ring {
-        struct adapter          *adapter;
-        struct em_rx_queue      *que;
-        u32                     me;
-        u32                     payload;
-        union e1000_rx_desc_extended	*rx_base;
-        uint64_t                rx_paddr; 
+	struct e1000_softc	*sc;
+	struct em_rx_queue	*que;
+	u32			me;
+	u32			payload;
+	union e1000_rx_desc_extended *rx_base;
+	uint64_t		rx_paddr;
 
-        /* Interrupt resources */
-        void                    *tag;
-        struct resource         *res;
+	/* Interrupt resources */
+	void			*tag;
+	struct resource	*res;
 	bool			discard;
 
-        /* Soft stats */
-        unsigned long		rx_irq;
-        unsigned long		rx_discarded;
-        unsigned long		rx_packets;
-        unsigned long		rx_bytes;
+	/* Soft stats */
+	unsigned long		rx_irq;
+	unsigned long		rx_discarded;
+	unsigned long		rx_packets;
+	unsigned long		rx_bytes;
+
+	/* Next requested ITR latency */
+	u8			rx_nextlatency;
 };
 
 struct em_tx_queue {
-	struct adapter         *adapter;
-        u32                     msix;
-	u32			eims;		/* This queue's EIMS bit */
-	u32                    me;
-	struct tx_ring         txr;
+	struct e1000_softc	*sc;
+	u32			msix;
+	u32			eims;	/* This queue's EIMS bit */
+	u32			me;
+	struct tx_ring		txr;
 };
 
 struct em_rx_queue {
-	struct adapter         *adapter;
-	u32                    me;
-	u32                    msix;
-	u32                    eims;
-	struct rx_ring         rxr;
-	u64                    irqs;
-	struct if_irq          que_irq; 
+	struct e1000_softc	*sc;
+	u32			me;
+	u32			msix;
+	u32			eims;
+	u32			itr_setting;
+	struct rx_ring		rxr;
+	u64			irqs;
+	struct if_irq		que_irq;
 };  
 
-/* Our adapter structure */
-struct adapter {
-	struct ifnet 	*ifp;
-	struct e1000_hw	hw;
+/* Our softc structure */
+struct e1000_softc {
+	struct e1000_hw		hw;
 
-        if_softc_ctx_t shared;
-        if_ctx_t ctx;
-#define tx_num_queues shared->isc_ntxqsets
-#define rx_num_queues shared->isc_nrxqsets
-#define intr_type shared->isc_intr
+	if_softc_ctx_t		shared;
+	if_ctx_t		ctx;
+#define tx_num_queues		shared->isc_ntxqsets
+#define rx_num_queues		shared->isc_nrxqsets
+#define intr_type		shared->isc_intr
 	/* FreeBSD operating-system-specific structures. */
-	struct e1000_osdep osdep;
-	device_t	dev;
-	struct cdev	*led_dev;
+	struct e1000_osdep	osdep;
+	device_t		dev;
+	struct cdev		*led_dev;
 
-        struct em_tx_queue *tx_queues;
-        struct em_rx_queue *rx_queues; 
-        struct if_irq   irq;
+	struct em_tx_queue	*tx_queues;
+	struct em_rx_queue	*rx_queues;
+	struct if_irq		irq;
 
-	struct resource *memory;
-	struct resource *flash;
-	struct resource	*ioport;
+	struct resource		*memory;
+	struct resource		*flash;
+	struct resource		*ioport;
 
-	struct resource	*res;
-	void		*tag;
-	u32		linkvec;
-	u32		ivars;
+	struct resource		*res;
+	void			*tag;
+	u32			linkvec;
+	u32			ivars;
 
-	struct ifmedia	*media;
-	int		msix;
-	int		if_flags;
-	int		em_insert_vlan_header;
-	u32		ims;
-	bool		in_detach;
+	struct ifmedia		*media;
+	int			msix;
+	int			if_flags;
+	int			em_insert_vlan_header;
+	u32			ims;
+	bool			in_detach;
 
-	u32		flags;
+	u32			flags;
 	/* Task for FAST handling */
-	struct grouptask link_task;
+	struct grouptask	link_task;
 
-	u16	        num_vlans;
-        u32		txd_cmd;
+	u16			num_vlans;
+	u32			txd_cmd;
 
-        u32             tx_process_limit; 
-        u32             rx_process_limit;
-	u32		rx_mbuf_sz;
+	u32			rx_mbuf_sz;
 
+	int			enable_aim;
 	/* Management and WOL features */
-	u32		wol;
-	bool		has_manage;
-	bool		has_amt;
+	u32			wol;
+	bool			has_manage;
+	bool			has_amt;
 
 	/* Multicast array memory */
-	u8		*mta;
+	u8			*mta;
 
 	/*
 	** Shadow VFTA table, this is needed because
@@ -506,18 +516,23 @@ struct adapter {
 	** a soft reset and the driver needs to be able
 	** to repopulate it.
 	*/
-	u32		shadow_vfta[EM_VFTA_SIZE];
+	u32			shadow_vfta[EM_VFTA_SIZE];
 
 	/* Info about the interface */
-	u16		link_active;
-	u16		fc;
-	u16		link_speed;
-	u16		link_duplex;
-	u32		smartspeed;
-	u32		dmac;
-	int		link_mask;
+	u16			link_active;
+	u16			fc;
+	u16			link_speed;
+	u16			link_duplex;
+	u32			smartspeed;
+	u32			dmac;
+	u32			pba;
+	int			link_mask;
+	int			tso_automasked;
 
-	u64		que_mask;
+	u64			que_mask;
+
+	/* We need to store this at attach due to e1000 hw/sw locking model */
+	struct e1000_fw_version	fw_ver;
 
 	struct em_int_delay_info tx_int_delay;
 	struct em_int_delay_info tx_abs_int_delay;
@@ -526,13 +541,13 @@ struct adapter {
 	struct em_int_delay_info tx_itr;
 
 	/* Misc stats maintained by the driver */
-	unsigned long	dropped_pkts;
-	unsigned long	link_irq;
-	unsigned long	rx_overruns;
-	unsigned long	watchdog_events;
+	unsigned long		dropped_pkts;
+	unsigned long		link_irq;
+	unsigned long		rx_overruns;
+	unsigned long		watchdog_events;
 
-	struct e1000_hw_stats stats;
-	u16		vf_ifp;
+	struct e1000_hw_stats	stats;
+	u16			vf_ifp;
 };
 
 /********************************************************************************
@@ -543,18 +558,18 @@ struct adapter {
  *
  ********************************************************************************/
 typedef struct _em_vendor_info_t {
-	unsigned int vendor_id;
-	unsigned int device_id;
-	unsigned int subvendor_id;
-	unsigned int subdevice_id;
-	unsigned int index;
+	unsigned int	vendor_id;
+	unsigned int	device_id;
+	unsigned int	subvendor_id;
+	unsigned int	subdevice_id;
+	unsigned int	index;
 } em_vendor_info_t;
 
-void em_dump_rs(struct adapter *);
+void em_dump_rs(struct e1000_softc *);
 
 #define EM_RSSRK_SIZE	4
-#define EM_RSSRK_VAL(key, i)		(key[(i) * EM_RSSRK_SIZE] | \
-					 key[(i) * EM_RSSRK_SIZE + 1] << 8 | \
-					 key[(i) * EM_RSSRK_SIZE + 2] << 16 | \
-					 key[(i) * EM_RSSRK_SIZE + 3] << 24)
+#define EM_RSSRK_VAL(key, i)	(key[(i) * EM_RSSRK_SIZE] | \
+				    key[(i) * EM_RSSRK_SIZE + 1] << 8 | \
+				    key[(i) * EM_RSSRK_SIZE + 2] << 16 | \
+				    key[(i) * EM_RSSRK_SIZE + 3] << 24)
 #endif /* _EM_H_DEFINED_ */

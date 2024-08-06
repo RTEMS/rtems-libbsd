@@ -35,11 +35,6 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
-static const char rcsid[] =
-  "$FreeBSD$";
-#endif /* not lint */
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
@@ -50,6 +45,7 @@ static const char rcsid[] =
 #include <net/if.h>
 
 #include <err.h>
+#include <libifconfig.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,52 +56,37 @@ static const char rcsid[] =
 #include "rtems-bsd-ifconfig-ifclone-data.h"
 #endif /* __rtems__ */
 
+typedef enum {
+	MT_PREFIX,
+	MT_FILTER,
+} clone_match_type;
+
 static void
 list_cloners(void)
 {
-	struct if_clonereq ifcr;
-	char *cp, *buf;
-	int idx;
-	int s;
+	char *cloners;
+	size_t cloners_count;
 
-	s = socket(AF_LOCAL, SOCK_DGRAM, 0);
-	if (s == -1)
-		err(1, "socket(AF_LOCAL,SOCK_DGRAM)");
+	if (ifconfig_list_cloners(lifh, &cloners, &cloners_count) < 0)
+		errc(1, ifconfig_err_errno(lifh), "unable to list cloners");
 
-	memset(&ifcr, 0, sizeof(ifcr));
-
-	if (ioctl(s, SIOCIFGCLONERS, &ifcr) < 0)
-		err(1, "SIOCIFGCLONERS for count");
-
-	buf = malloc(ifcr.ifcr_total * IFNAMSIZ);
-	if (buf == NULL)
-		err(1, "unable to allocate cloner name buffer");
-
-	ifcr.ifcr_count = ifcr.ifcr_total;
-	ifcr.ifcr_buffer = buf;
-
-	if (ioctl(s, SIOCIFGCLONERS, &ifcr) < 0)
-		err(1, "SIOCIFGCLONERS for names");
-
-	/*
-	 * In case some disappeared in the mean time, clamp it down.
-	 */
-	if (ifcr.ifcr_count > ifcr.ifcr_total)
-		ifcr.ifcr_count = ifcr.ifcr_total;
-
-	for (cp = buf, idx = 0; idx < ifcr.ifcr_count; idx++, cp += IFNAMSIZ) {
-		if (idx > 0)
+	for (const char *name = cloners;
+	    name < cloners + cloners_count * IFNAMSIZ;
+	    name += IFNAMSIZ) {
+		if (name > cloners)
 			putchar(' ');
-		printf("%s", cp);
+		printf("%s", name);
 	}
-
 	putchar('\n');
-	free(buf);
-	close(s);
+	free(cloners);
 }
 
 struct clone_defcb {
-	char ifprefix[IFNAMSIZ];
+	union {
+		char ifprefix[IFNAMSIZ];
+		clone_match_func *ifmatch;
+	};
+	clone_match_type clone_mt;
 	clone_callback_func *clone_cb;
 	SLIST_ENTRY(clone_defcb) next;
 };
@@ -118,7 +99,7 @@ static SLIST_HEAD(clone_defcb_list, clone_defcb) clone_defcbh =
    SLIST_HEAD_INITIALIZER(clone_defcbh);
 
 void
-clone_setdefcallback(const char *ifprefix, clone_callback_func *p)
+clone_setdefcallback_prefix(const char *ifprefix, clone_callback_func *p)
 {
 	struct clone_defcb *dcp;
 
@@ -129,6 +110,19 @@ clone_setdefcallback(const char *ifprefix, clone_callback_func *p)
 	}
 #endif /* __rtems__ */
 	strlcpy(dcp->ifprefix, ifprefix, IFNAMSIZ-1);
+	dcp->clone_mt = MT_PREFIX;
+	dcp->clone_cb = p;
+	SLIST_INSERT_HEAD(&clone_defcbh, dcp, next);
+}
+
+void
+clone_setdefcallback_filter(clone_match_func *filter, clone_callback_func *p)
+{
+	struct clone_defcb *dcp;
+
+	dcp = malloc(sizeof(*dcp));
+	dcp->ifmatch  = filter;
+	dcp->clone_mt = MT_FILTER;
 	dcp->clone_cb = p;
 	SLIST_INSERT_HEAD(&clone_defcbh, dcp, next);
 }
@@ -140,54 +134,50 @@ clone_setdefcallback(const char *ifprefix, clone_callback_func *p)
  * no parameters.
  */
 static void
-ifclonecreate(int s, void *arg)
+ifclonecreate(if_ctx *ctx, void *arg __unused)
 {
-	struct ifreq ifr;
+	struct ifreq ifr = {};
 	struct clone_defcb *dcp;
-	clone_callback_func *clone_cb = NULL;
 
-	memset(&ifr, 0, sizeof(ifr));
-	(void) strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, ctx->ifname, sizeof(ifr.ifr_name));
 
-	if (clone_cb == NULL) {
-		/* Try to find a default callback */
+	/* Try to find a default callback by filter */
+	SLIST_FOREACH(dcp, &clone_defcbh, next) {
+		if (dcp->clone_mt == MT_FILTER &&
+		    dcp->ifmatch(ifr.ifr_name) != 0)
+			break;
+	}
+
+	if (dcp == NULL) {
+		/* Try to find a default callback by prefix */
 		SLIST_FOREACH(dcp, &clone_defcbh, next) {
-			if (strncmp(dcp->ifprefix, ifr.ifr_name,
-			    strlen(dcp->ifprefix)) == 0) {
-				clone_cb = dcp->clone_cb;
+			if (dcp->clone_mt == MT_PREFIX &&
+			    strncmp(dcp->ifprefix, ifr.ifr_name,
+			    strlen(dcp->ifprefix)) == 0)
 				break;
-			}
 		}
 	}
-	if (clone_cb == NULL) {
-		/* NB: no parameters */
-		if (ioctl(s, SIOCIFCREATE2, &ifr) < 0)
-			err(1, "SIOCIFCREATE2");
-	} else {
-		clone_cb(s, &ifr);
-	}
 
-	/*
-	 * If we get a different name back than we put in, update record and
-	 * indicate it should be printed later.
-	 */
-	if (strncmp(name, ifr.ifr_name, sizeof(name)) != 0) {
-		strlcpy(name, ifr.ifr_name, sizeof(name));
-		printifname = 1;
+	if (dcp == NULL || dcp->clone_cb == NULL) {
+		/* NB: no parameters */
+		ifcreate_ioctl(ctx, &ifr);
+	} else {
+		dcp->clone_cb(ctx, &ifr);
 	}
 }
 
-static
-DECL_CMD_FUNC(clone_create, arg, d)
+static void
+clone_create(if_ctx *ctx __unused, const char *cmd __unused, int d __unused)
 {
 	callback_register(ifclonecreate, NULL);
 }
 
-static
-DECL_CMD_FUNC(clone_destroy, arg, d)
+static void
+clone_destroy(if_ctx *ctx, const char *cmd __unused, int d __unused)
 {
-	(void) strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	if (ioctl(s, SIOCIFDESTROY, &ifr) < 0)
+	struct ifreq ifr = {};
+
+	if (ioctl_ctx_ifr(ctx, SIOCIFDESTROY, &ifr) < 0)
 		err(1, "SIOCIFDESTROY");
 }
 
@@ -199,7 +189,7 @@ static struct cmd clone_cmds[] = {
 };
 
 static void
-clone_Copt_cb(const char *optarg __unused)
+clone_Copt_cb(const char *arg __unused)
 {
 	list_cloners();
 	exit(exit_code);

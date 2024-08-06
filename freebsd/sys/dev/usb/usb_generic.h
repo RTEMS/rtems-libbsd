@@ -1,6 +1,5 @@
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
@@ -31,5 +30,6 @@
 
 extern struct usb_fifo_methods usb_ugen_methods;
 int	ugen_do_request(struct usb_fifo *f, struct usb_ctl_request *ur);
+int	ugen_fill_deviceinfo(struct usb_fifo *f, struct usb_device_info *di);
 
 #endif					/* _USB_GENERIC_H_ */

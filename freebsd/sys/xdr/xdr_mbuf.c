@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Isilon Inc http://www.isilon.com/
  * Authors: Doug Rabson <dfr@rabson.org>
@@ -30,8 +30,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -95,7 +93,7 @@ xdrmbuf_append(XDR *xdrs, struct mbuf *madd)
 		m_freem(madd);
 		return;
 	}
-	
+
 	m = (struct mbuf *) xdrs->x_private;
 	m->m_next = madd;
 
@@ -160,9 +158,7 @@ xdrmbuf_getlong(XDR *xdrs, long *lp)
 }
 
 static bool_t
-xdrmbuf_putlong(xdrs, lp)
-	XDR *xdrs;
-	const long *lp;
+xdrmbuf_putlong(XDR *xdrs, const long *lp)
 {
 	int32_t *p;
 	int32_t t = htonl(*lp);
@@ -208,7 +204,7 @@ xdrmbuf_getbytes(XDR *xdrs, char *addr, u_int len)
 			xdrs->x_handy = 0;
 		}
 	}
-	
+
 	return (TRUE);
 }
 
@@ -243,7 +239,7 @@ xdrmbuf_putbytes(XDR *xdrs, const char *addr, u_int len)
 			xdrs->x_handy = 0;
 		}
 	}
-	
+
 	return (TRUE);
 }
 

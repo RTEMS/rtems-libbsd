@@ -40,8 +40,6 @@
  * Enterprises.  To learn more about the Internet Software Consortium,
  * see ``http://www.vix.com/isc''.  To learn more about Vixie
  * Enterprises, see ``http://www.vix.com''.
- *
- * $FreeBSD$
  */
 
 #define SEMI ';'
@@ -133,6 +131,8 @@
 #define AUTHORITATIVE	333
 #define TOKEN_NOT	334
 #define ALWAYS_REPLY_RFC1048 335
+#define VLAN_PCP	336
+#define IGNORE		337
 
 #define is_identifier(x)	((x) >= FIRST_TOKEN &&	\
 				 (x) != STRING &&	\

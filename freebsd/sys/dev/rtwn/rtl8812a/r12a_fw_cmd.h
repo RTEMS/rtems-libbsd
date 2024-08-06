@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef R12A_FW_CMD_H
@@ -76,7 +74,6 @@ struct r12a_fw_cmd_iq_calib {
 #define RTWN_CMD_IQ_EXT_PA_5G(pa)	(pa)
 #define RTWN_CMD_IQ_EXT_LNA_5G(lna)	((lna) << 1)
 } __packed;
-
 
 /*
  * C2H event types.

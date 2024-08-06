@@ -29,8 +29,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/ioccom.h>
 
@@ -42,6 +40,7 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <unistd.h>
 
 #include "nvmecontrol.h"
@@ -69,14 +68,10 @@ power_list_one(int i, struct nvme_power_state *nps)
 	int mpower, apower, ipower;
 	uint8_t mps, nops, aps, apw;
 
-	mps = (nps->mps_nops >> NVME_PWR_ST_MPS_SHIFT) &
-		NVME_PWR_ST_MPS_MASK;
-	nops = (nps->mps_nops >> NVME_PWR_ST_NOPS_SHIFT) &
-		NVME_PWR_ST_NOPS_MASK;
-	apw = (nps->apw_aps >> NVME_PWR_ST_APW_SHIFT) &
-		NVME_PWR_ST_APW_MASK;
-	aps = (nps->apw_aps >> NVME_PWR_ST_APS_SHIFT) &
-		NVME_PWR_ST_APS_MASK;
+	mps = NVMEV(NVME_PWR_ST_MPS, nps->mps_nops);
+	nops = NVMEV(NVME_PWR_ST_NOPS, nps->mps_nops);
+	apw = NVMEV(NVME_PWR_ST_APW, nps->apw_aps);
+	aps = NVMEV(NVME_PWR_ST_APS, nps->apw_aps);
 
 	mpower = nps->mp;
 	if (mps == 0)
@@ -101,7 +96,7 @@ power_list(struct nvme_controller_data *cdata)
 	int i;
 
 	printf("\nPower States Supported: %d\n\n", cdata->npss + 1);
-	printf(" #   Max pwr  Enter Lat  Exit Lat RT RL WT WL Idle Pwr  Act Pwr Workloadd\n");
+	printf(" #   Max pwr  Enter Lat  Exit Lat RT RL WT WL Idle Pwr  Act Pwr Workload\n");
 	printf("--  --------  --------- --------- -- -- -- -- -------- -------- --\n");
 	for (i = 0; i <= cdata->npss; i++)
 		power_list_one(i, &cdata->power_state[i]);
@@ -120,10 +115,10 @@ power_set(int fd, int power_val, int workload, int perm)
 	pt.cmd.cdw11 = htole32(power_val | (workload << 5));
 
 	if (ioctl(fd, NVME_PASSTHROUGH_CMD, &pt) < 0)
-		err(1, "set feature power mgmt request failed");
+		err(EX_IOERR, "set feature power mgmt request failed");
 
 	if (nvme_completion_is_error(&pt.cpl))
-		errx(1, "set feature power mgmt request returned error");
+		errx(EX_IOERR, "set feature power mgmt request returned error");
 }
 
 static void
@@ -136,12 +131,13 @@ power_show(int fd)
 	pt.cmd.cdw10 = htole32(NVME_FEAT_POWER_MANAGEMENT);
 
 	if (ioctl(fd, NVME_PASSTHROUGH_CMD, &pt) < 0)
-		err(1, "set feature power mgmt request failed");
+		err(EX_IOERR, "set feature power mgmt request failed");
 
 	if (nvme_completion_is_error(&pt.cpl))
-		errx(1, "set feature power mgmt request returned error");
+		errx(EX_IOERR, "set feature power mgmt request returned error");
 
-	printf("Current Power Mode is %d\n", pt.cpl.cdw0);
+	printf("Current Power State is %d\n", pt.cpl.cdw0 & 0x1F);
+	printf("Current Workload Hint is %d\n", pt.cpl.cdw0 >> 5);
 }
 
 static void
@@ -149,8 +145,11 @@ power(const struct cmd *f, int argc, char *argv[])
 {
 	struct nvme_controller_data	cdata;
 	int				fd;
+	char				*path;
+	uint32_t			nsid;
 
-	arg_parse(argc, argv, f);
+	if (arg_parse(argc, argv, f))
+		return;
 
 	if (opt.list && opt.power != POWER_NONE) {
 		fprintf(stderr, "Can't set power and list power states\n");
@@ -158,9 +157,16 @@ power(const struct cmd *f, int argc, char *argv[])
 	}
 
 	open_dev(opt.dev, &fd, 1, 1);
+	get_nsid(fd, &path, &nsid);
+	if (nsid != 0) {
+		close(fd);
+		open_dev(path, &fd, 1, 1);
+	}
+	free(path);
 
 	if (opt.list) {
-		read_controller_data(fd, &cdata);
+		if (read_controller_data(fd, &cdata))
+			errx(EX_IOERR, "Identify request failed");
 		power_list(&cdata);
 		goto out;
 	}
@@ -183,13 +189,13 @@ static const struct opts power_opts[] = {
 	OPT("power", 'p', arg_uint32, opt, power,
 	    "Set the power state"),
 	OPT("workload", 'w', arg_uint32, opt, workload,
-	    "Set the workload"),
+	    "Set the workload hint"),
 	{ NULL, 0, arg_none, NULL, NULL }
 };
 #undef OPT
 
 static const struct args power_args[] = {
-	{ arg_string, &opt.dev, "controller-id" },
+	{ arg_string, &opt.dev, "controller-id|namespace-id" },
 	{ arg_none, NULL, NULL },
 };
 

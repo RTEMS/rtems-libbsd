@@ -24,6 +24,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct node_hfsc_opts hfsc_opt
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct node_queue *queues);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct node_state_opt *keep_state_defaults);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pfctl *pf);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pfctl_watermarks syncookie_opts);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct pool_opts pool_opts);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct queue_opts queue_opts);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static struct scrub_opts scrub_opts);

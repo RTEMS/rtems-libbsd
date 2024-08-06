@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -57,7 +55,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/if_rtwn_debug.h>
 #include <dev/rtwn/if_rtwn_ridx.h>
 #include <dev/rtwn/if_rtwn_tx.h>
-
 
 void
 rtwn_drain_mbufq(struct rtwn_softc *sc)

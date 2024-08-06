@@ -48,9 +48,6 @@
  *   beware on merge.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -234,24 +231,44 @@ getnameinfo_inet(const struct afd *afd,
 	case AF_INET6:
 	    {
 		const struct sockaddr_in6 *sin6;
+
 		sin6 = (const struct sockaddr_in6 *)sa;
-		switch (sin6->sin6_addr.s6_addr[0]) {
-		case 0x00:
-			if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr))
-				;
-			else if (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr))
-				;
-			else
-				flags |= NI_NUMERICHOST;
-			break;
-		default:
-			if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
-				flags |= NI_NUMERICHOST;
-			}
-			else if (IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))
-				flags |= NI_NUMERICHOST;
-			break;
-		}
+
+		/*
+		 * https://pubs.opengroup.org/onlinepubs/9699919799/functions/getnameinfo.html
+		 * "[IP6] [Option Start] If the socket address structure
+		 * contains an IPv4-mapped IPv6 address or an IPv4-compatible
+		 * IPv6 address, the implementation shall extract the embedded
+		 * IPv4 address and lookup the node name for that IPv4 address.
+		 * [Option End]"
+		 * => getipnodebyaddr() handles this case for us.
+		 * => in case of NI_NUMERICHOST being set, inet_ntop[6] will
+		 *    handle it too.
+		 *
+		 * "If the address is the IPv6 unspecified address ( "::" ),
+		 * a lookup shall not be performed and the behavior shall be
+		 * the same as when the node's name cannot be located."
+		 * => getipnodebyaddr() handles this case for us.
+		 * => in case of NI_NUMERICHOST being set,
+		 *    ip6_parsenumeric() -> inet_ntop[6] will handle it too.
+		 */
+
+		/*
+		 * We used to exclude link-local from lookups.
+		 * Even though calles in the resolver chain may not (yet)
+		 * properly deal with them, we no longer do as for link-local
+		 * there is a path to resolve these. See:
+		 * RFC 6303 4.5.  IPv6 Link-Local Addresses
+		 * RFC 6762 4.  Reverse Address Mapping
+		 *
+		 * XXX For IPv6 MC the only reference found was
+		 * https://www.ietf.org/archive/id/draft-michaelson-as112-ipv6-02.html
+		 * but there are also no "empty zone"s for x.0.f.f.ip6.arpa
+		 * in DNS servers.  Keep catching it here for now and
+		 * do not attempt name resolution but return the address string.
+		 */
+		if (IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))
+			flags |= NI_NUMERICHOST;
 	    }
 		break;
 #endif
@@ -469,7 +486,7 @@ getnameinfo_link(const struct afd *afd,
 	 * The following have zero-length addresses.
 	 * IFT_GIF	(net/if_gif.c)
 	 * IFT_LOOP	(net/if_loop.c)
-	 * IFT_PPP	(net/if_ppp.c, net/if_spppsubr.c)
+	 * IFT_PPP	(net/if_tuntap.c)
 	 * IFT_SLIP	(net/if_sl.c, net/if_strip.c)
 	 * IFT_STF	(net/if_stf.c)
 	 * IFT_L2VLAN	(net/if_vlan.c)

@@ -33,7 +33,6 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)igmp_var.h	8.1 (Berkeley) 7/19/93
- * $FreeBSD$
  */
 
 #ifndef _NETINET_IGMP_VAR_H_
@@ -54,6 +53,7 @@
 struct igmpstat {
 	/*
 	 * Structure header (to insulate ABI changes).
+	 * XXX: unset inside the kernel, exported via sysctl_igmp_stat().
 	 */
 	uint32_t igps_version;		/* version of this structure */
 	uint32_t igps_len;		/* length of this structure */
@@ -147,7 +147,6 @@ CTASSERT(sizeof(struct igmpstat) == IGPS_VERSION3_LEN);
 #define IGMP_MAX_STATE_CHANGE_PACKETS	8 /* # of packets per state change */
 #define IGMP_MAX_RESPONSE_PACKETS	16 /* # of packets for general query */
 #define IGMP_MAX_RESPONSE_BURST		4 /* # of responses to send at once */
-#define IGMP_RESPONSE_BURST_INTERVAL	(PR_FASTHZ / 2)	/* 500ms */
 
 /*
  * IGMP-specific mbuf flags.
@@ -184,8 +183,12 @@ struct igmp_ifinfo {
 };
 
 #ifdef _KERNEL
-#define	IGMPSTAT_ADD(name, val)		V_igmpstat.name += (val)
-#define	IGMPSTAT_INC(name)		IGMPSTAT_ADD(name, 1)
+#include <sys/counter.h>
+
+VNET_PCPUSTAT_DECLARE(struct igmpstat, igmpstat);
+#define	IGMPSTAT_ADD(name, val)	\
+    VNET_PCPUSTAT_ADD(struct igmpstat, igmpstat, name, (val))
+#define	IGMPSTAT_INC(name)	IGMPSTAT_ADD(name, 1)
 
 /*
  * Subsystem lock macros.
@@ -218,13 +221,11 @@ struct igmp_ifsoftc {
 };
 
 int	igmp_change_state(struct in_multi *);
-void	igmp_fasttimo(void);
 struct igmp_ifsoftc *
 	igmp_domifattach(struct ifnet *);
 void	igmp_domifdetach(struct ifnet *);
 void	igmp_ifdetach(struct ifnet *);
 int	igmp_input(struct mbuf **, int *, int);
-void	igmp_slowtimo(void);
 
 SYSCTL_DECL(_net_inet_igmp);
 

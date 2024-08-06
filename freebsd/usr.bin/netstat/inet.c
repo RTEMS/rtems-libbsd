@@ -43,8 +43,6 @@ static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/domain.h>
@@ -67,6 +65,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp_var.h>
 #include <netinet/igmp_var.h>
+#include <netinet/ip_divert.h>
 #include <netinet/ip_var.h>
 #include <netinet/pim_var.h>
 #include <netinet/tcp.h>
@@ -97,6 +96,8 @@ __FBSDID("$FreeBSD$");
 #include "rtems-bsd-netstat-inet-data.h"
 #endif /* __rtems__ */
 
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+
 #ifdef INET
 static void inetprint(const char *, struct in_addr *, int, const char *, int,
     const int);
@@ -119,15 +120,14 @@ pcblist_sysctl(int proto, const char *name, char **bufp)
 	case IPPROTO_UDP:
 		mibvar = "net.inet.udp.pcblist";
 		break;
-	case IPPROTO_DIVERT:
-		mibvar = "net.inet.divert.pcblist";
-		break;
 	default:
 		mibvar = "net.inet.raw.pcblist";
 		break;
 	}
 	if (strncmp(name, "sdp", 3) == 0)
 		mibvar = "net.inet.sdp.pcblist";
+	else if (strncmp(name, "divert", 6) == 0)
+		mibvar = "net.inet.divert.pcblist";
 	len = 0;
 	if (sysctlbyname(mibvar, 0, &len, 0, 0) < 0) {
 		if (errno != ENOENT)
@@ -157,8 +157,6 @@ sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb)
 	xsb->sb_cc = sb->sb_ccc;
 	xsb->sb_hiwat = sb->sb_hiwat;
 	xsb->sb_mbcnt = sb->sb_mbcnt;
-	xsb->sb_mcnt = sb->sb_mcnt;
-	xsb->sb_ccnt = sb->sb_ccnt;
 	xsb->sb_mbmax = sb->sb_mbmax;
 	xsb->sb_lowat = sb->sb_lowat;
 	xsb->sb_flags = sb->sb_flags;
@@ -218,6 +216,7 @@ protopr(u_long off, const char *name, int af1, int proto)
 	struct xinpcb *inp;
 	struct xinpgen *xig, *oxig;
 	struct xsocket *so;
+	int fnamelen, cnamelen;
 
 	istcp = 0;
 	switch (proto) {
@@ -250,6 +249,25 @@ protopr(u_long off, const char *name, int af1, int proto)
 	if (!pcblist_sysctl(proto, name, &buf))
 		return;
 
+	if (istcp && (cflag || Cflag)) {
+		fnamelen = strlen("Stack");
+		cnamelen = strlen("CC");
+		oxig = xig = (struct xinpgen *)buf;
+		for (xig = (struct xinpgen*)((char *)xig + xig->xig_len);
+		    xig->xig_len > sizeof(struct xinpgen);
+		    xig = (struct xinpgen *)((char *)xig + xig->xig_len)) {
+			tp = (struct xtcpcb *)xig;
+			inp = &tp->xt_inp;
+			if (inp->inp_gencnt > oxig->xig_gen)
+				continue;
+			so = &inp->xi_socket;
+			if (so->xso_protocol != proto)
+				continue;
+			fnamelen = max(fnamelen, (int)strlen(tp->xt_stack));
+			cnamelen = max(cnamelen, (int)strlen(tp->xt_cc));
+		}
+	}
+
 	oxig = xig = (struct xinpgen *)buf;
 	for (xig = (struct xinpgen *)((char *)xig + xig->xig_len);
 	    xig->xig_len > sizeof(struct xinpgen);
@@ -263,7 +281,7 @@ protopr(u_long off, const char *name, int af1, int proto)
 		so = &inp->xi_socket;
 
 		/* Ignore sockets for protocols other than the desired one. */
-		if (so->xso_protocol != proto)
+		if (proto != 0 && so->xso_protocol != proto)
 			continue;
 
 		/* Ignore PCBs which were freed during copyout. */
@@ -285,14 +303,14 @@ protopr(u_long off, const char *name, int af1, int proto)
 		    (
 		     (istcp && tp->t_state == TCPS_LISTEN)
 		     || (af1 == AF_INET &&
-		      inet_lnaof(inp->inp_laddr) == INADDR_ANY)
+		      inp->inp_laddr.s_addr == INADDR_ANY)
 #ifdef INET6
 		     || (af1 == AF_INET6 &&
 			 IN6_IS_ADDR_UNSPECIFIED(&inp->in6p_laddr))
 #endif /* INET6 */
 		     || (af1 == AF_UNSPEC &&
 			 (((inp->inp_vflag & INP_IPV4) != 0 &&
-			   inet_lnaof(inp->inp_laddr) == INADDR_ANY)
+			   inp->inp_laddr.s_addr == INADDR_ANY)
 #ifdef INET6
 			  || ((inp->inp_vflag & INP_IPV6) != 0 &&
 			      IN6_IS_ADDR_UNSPECIFIED(&inp->in6p_laddr))
@@ -344,11 +362,9 @@ protopr(u_long off, const char *name, int af1, int proto)
 					xo_emit(" {T:/%-11.11s}", "(state)");
 			}
 			if (xflag) {
-				xo_emit(" {T:/%-6.6s} {T:/%-6.6s} {T:/%-6.6s} "
-				    "{T:/%-6.6s} {T:/%-6.6s} {T:/%-6.6s} "
+				xo_emit("{T:/%-6.6s} {T:/%-6.6s} "
 				    "{T:/%-6.6s} {T:/%-6.6s} {T:/%-6.6s} "
 				    "{T:/%-6.6s} {T:/%-6.6s} {T:/%-6.6s}",
-				    "R-MBUF", "S-MBUF", "R-CLUS", "S-CLUS",
 				    "R-HIWA", "S-HIWA", "R-LOWA", "S-LOWA",
 				    "R-BCNT", "S-BCNT", "R-BMAX", "S-BMAX");
 				xo_emit(" {T:/%7.7s} {T:/%7.7s} {T:/%7.7s} "
@@ -359,6 +375,19 @@ protopr(u_long off, const char *name, int af1, int proto)
 				xo_emit("  {T:/%8.8s} {T:/%5.5s}",
 				    "flowid", "ftype");
 			}
+			if (cflag) {
+				xo_emit(" {T:/%-*.*s}",
+					fnamelen, fnamelen, "Stack");
+			}
+			if (Cflag)
+				xo_emit(" {T:/%-*.*s} {T:/%10.10s}"
+					" {T:/%10.10s} {T:/%5.5s}"
+					" {T:/%3.3s}", cnamelen,
+					cnamelen, "CC",
+					"cwin",
+					"ssthresh",
+					"MSS",
+					"ECN");
 			if (Pflag)
 				xo_emit(" {T:/%s}", "Log ID");
 			xo_emit("\n");
@@ -371,16 +400,9 @@ protopr(u_long off, const char *name, int af1, int proto)
 		if (Lflag && so->so_qlimit == 0)
 			continue;
 		xo_open_instance("socket");
-		if (Aflag) {
-			if (istcp)
-				xo_emit("{q:address/%*lx} ",
-				    2 * (int)sizeof(void *),
-				    (u_long)inp->inp_ppcb);
-			else
-				xo_emit("{q:address/%*lx} ",
-				    2 * (int)sizeof(void *),
-				    (u_long)so->so_pcb);
-		}
+		if (Aflag)
+			xo_emit("{q:address/%*lx} ", 2 * (int)sizeof(void *),
+			    (u_long)so->so_pcb);
 #ifdef INET6
 		if ((inp->inp_vflag & INP_IPV6) != 0)
 			vchar = ((inp->inp_vflag & INP_IPV4) != 0) ?
@@ -484,15 +506,12 @@ protopr(u_long off, const char *name, int af1, int proto)
 #endif /* INET6 */
 		}
 		if (xflag) {
-			xo_emit("{:receive-mbufs/%6u} {:send-mbufs/%6u} "
-			    "{:receive-clusters/%6u} {:send-clusters/%6u} "
-			    "{:receive-high-water/%6u} {:send-high-water/%6u} "
+			xo_emit("{:receive-high-water/%6u} "
+			    "{:send-high-water/%6u} "
 			    "{:receive-low-water/%6u} {:send-low-water/%6u} "
 			    "{:receive-mbuf-bytes/%6u} {:send-mbuf-bytes/%6u} "
 			    "{:receive-mbuf-bytes-max/%6u} "
 			    "{:send-mbuf-bytes-max/%6u}",
-			    so->so_rcv.sb_mcnt, so->so_snd.sb_mcnt,
-			    so->so_rcv.sb_ccnt, so->so_snd.sb_ccnt,
 			    so->so_rcv.sb_hiwat, so->so_snd.sb_hiwat,
 			    so->so_rcv.sb_lowat, so->so_snd.sb_lowat,
 			    so->so_rcv.sb_mbcnt, so->so_snd.sb_mbcnt,
@@ -536,9 +555,30 @@ protopr(u_long off, const char *name, int af1, int proto)
 			    inp->inp_flowid,
 			    inp->inp_flowtype);
 		}
-		if (istcp && Pflag)
-			xo_emit(" {:log-id/%s}", tp->xt_logid[0] == '\0' ?
-			    "-" : tp->xt_logid);
+		if (istcp) {
+			if (cflag)
+				xo_emit(" {:stack/%-*.*s}",
+					
+					fnamelen, fnamelen, tp->xt_stack);
+			if (Cflag)
+				xo_emit(" {:cc/%-*.*s}"
+					" {:snd-cwnd/%10lu}"
+					" {:snd-ssthresh/%10lu}"
+					" {:t-maxseg/%5u} {:ecn/%3s}",
+					cnamelen, cnamelen, tp->xt_cc,
+					tp->t_snd_cwnd, tp->t_snd_ssthresh,
+					tp->t_maxseg,
+					(tp->t_state >= TCPS_ESTABLISHED ?
+					    (tp->xt_ecn > 0 ?
+						(tp->xt_ecn == 1 ?
+						    "ecn" : "ace")
+						: "off")
+					    : "n/a"));
+			if (Pflag)
+				xo_emit(" {:log-id/%s}",
+				    tp->xt_logid[0] == '\0' ?
+				    "-" : tp->xt_logid);
+		}
 		xo_emit("\n");
 		xo_close_instance("socket");
 	}
@@ -627,8 +667,16 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	    "{N:(for} {:received-ack-bytes/%ju} {N:/byte%s})\n");
 	p(tcps_rcvdupack, "\t\t{:received-duplicate-acks/%ju} "
 	    "{N:/duplicate ack%s}\n");
-	p(tcps_rcvacktoomuch, "\t\t{:received-acks-for-unsent-data/%ju} "
-	    "{N:/ack%s for unsent data}\n");
+	p(tcps_tunneled_pkts, "\t\t{:received-udp-tunneled-pkts/%ju} "
+	    "{N:/UDP tunneled pkt%s}\n");
+	p(tcps_tunneled_errs, "\t\t{:received-bad-udp-tunneled-pkts/%ju} "
+	    "{N:/UDP tunneled pkt cnt with error%s}\n");
+	p(tcps_rcvacktoomuch, "\t\t{:received-acks-for-data-not-yet-sent/%ju} "
+	    "{N:/ack%s for data not yet sent}\n");
+	p(tcps_rcvghostack, "\t\t{:received-acks-for-data-never-been-sent/%ju} "
+	    "{N:/ack%s for data never been sent (ghost acks)}\n");
+	p(tcps_rcvacktooold, "\t\t{:received-acks-for-data-being-too-old/%ju} "
+	    "{N:/ack%s for data being too old}\n");
 	p2(tcps_rcvpack, tcps_rcvbyte, "\t\t"
 	    "{:received-in-sequence-packets/%ju} {N:/packet%s} "
 	    "({:received-in-sequence-bytes/%ju} {N:/byte%s}) "
@@ -654,6 +702,12 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	    "{N:/window probe%s}\n");
 	p(tcps_rcvwinupd, "\t\t{:receive-window-update-packets/%ju} "
 	    "{N:/window update packet%s}\n");
+	p(tcps_dsack_count, "\t\t{:received-with-dsack-packets/%ju} "
+	    "{N:/packet%s received with dsack}\n");
+	p(tcps_dsack_bytes, "\t\t{:received-with-dsack-bytes/%ju} "
+	    "{N:/dsack byte%s received (no TLP involved)}\n");
+	p(tcps_dsack_tlp_bytes, "\t\t{:received-with-dsack-bytes-tlp/%ju} "
+	    "{N:/dsack byte%s received (TLP responsible)}\n");
 	p(tcps_rcvafterclose, "\t\t{:received-after-close-packets/%ju} "
 	    "{N:/packet%s received after close}\n");
 	p(tcps_rcvbadsum, "\t\t{:discard-bad-checksum/%ju} "
@@ -717,6 +771,8 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	    "{N:/keepalive probe%s sent}\n");
 	p(tcps_keepdrops, "\t\t{:connections-dropped-by-keepalives/%ju} "
 	    "{N:/connection%s dropped by keepalive}\n");
+	p(tcps_progdrops, "\t{:connections-dropped-due-to-progress-time/%ju} "
+	    "{N:/connection%s dropped due to exceeding progress time}\n");
 	p(tcps_predack, "\t{:ack-header-predictions/%ju} "
 	    "{N:/correct ACK header prediction%s}\n");
 	p(tcps_preddat, "\t{:data-packet-header-predictions/%ju} "
@@ -768,22 +824,37 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	    "{N:/SACK option%s (SACK blocks) received}\n");
 	p(tcps_sack_send_blocks, "\t{:sent-option-blocks/%ju} "
 	    "{N:/SACK option%s (SACK blocks) sent}\n");
+	p(tcps_sack_lostrexmt, "\t{:lost-retransmissions/%ju} "
+	    "{N:/SACK retransmission%s lost}\n");
 	p1a(tcps_sack_sboverflow, "\t{:scoreboard-overflows/%ju} "
 	    "{N:/SACK scoreboard overflow}\n");
 
 	xo_close_container("sack");
 	xo_open_container("ecn");
 
-	p(tcps_ecn_ce, "\t{:ce-packets/%ju} "
-	    "{N:/packet%s with ECN CE bit set}\n");
-	p(tcps_ecn_ect0, "\t{:ect0-packets/%ju} "
-	    "{N:/packet%s with ECN ECT(0) bit set}\n");
-	p(tcps_ecn_ect1, "\t{:ect1-packets/%ju} "
-	    "{N:/packet%s with ECN ECT(1) bit set}\n");
+	p(tcps_ecn_rcvce, "\t{:received-ce-packets/%ju} "
+	    "{N:/packet%s received with ECN CE bit set}\n");
+	p(tcps_ecn_rcvect0, "\t{:received-ect0-packets/%ju} "
+	    "{N:/packet%s received with ECN ECT(0) bit set}\n");
+	p(tcps_ecn_rcvect1, "\t{:received-ect1-packets/%ju} "
+	    "{N:/packet%s received with ECN ECT(1) bit set}\n");
+	p(tcps_ecn_sndect0, "\t{:sent-ect0-packets/%ju} "
+	    "{N:/packet%s sent with ECN ECT(0) bit set}\n");
+	p(tcps_ecn_sndect1, "\t{:sent-ect1-packets/%ju} "
+	    "{N:/packet%s sent with ECN ECT(1) bit set}\n");
 	p(tcps_ecn_shs, "\t{:handshakes/%ju} "
 	    "{N:/successful ECN handshake%s}\n");
 	p(tcps_ecn_rcwnd, "\t{:congestion-reductions/%ju} "
 	    "{N:/time%s ECN reduced the congestion window}\n");
+
+	p(tcps_ace_nect, "\t{:ace-nonect-syn/%ju} "
+	    "{N:/ACE SYN packet%s with Non-ECT}\n");
+	p(tcps_ace_ect0, "\t{:ace-ect0-syn/%ju} "
+	    "{N:/ACE SYN packet%s with ECT0}\n");
+	p(tcps_ace_ect1, "\t{:ace-ect1-syn/%ju} "
+	    "{N:/ACE SYN packet%s with ECT1}\n");
+	p(tcps_ace_ce, "\t{:ace-ce-syn/%ju} "
+	    "{N:/ACE SYN packet%s with CE}\n");
 
 	xo_close_container("ecn");
 	xo_open_container("tcp-signature");
@@ -808,13 +879,23 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	    "{N:/Path MTU discovery black hole detection min MSS activation%s}\n");
 	p(tcps_pmtud_blackhole_failed, "\t{:pmtud-failed/%ju} "
 	    "{N:/Path MTU discovery black hole detection failure%s}\n");
+
+	xo_close_container("pmtud");
+	xo_open_container("tw");
+
+	p(tcps_tw_responds, "\t{:tw_responds/%ju} "
+	    "{N:/time%s connection in TIME-WAIT responded with ACK}\n");
+	p(tcps_tw_recycles, "\t{:tw_recycles/%ju} "
+	    "{N:/time%s connection in TIME-WAIT was actively recycled}\n");
+	p(tcps_tw_resets, "\t{:tw_resets/%ju} "
+	    "{N:/time%s connection in TIME-WAIT responded with RST}\n");
+
+	xo_close_container("tw");
  #undef p
  #undef p1a
  #undef p2
  #undef p2a
  #undef p3
-	xo_close_container("pmtud");
-
 
 	xo_open_container("TCP connection count by state");
 	xo_emit("{T:/TCP connection count by state}:\n");
@@ -1066,12 +1147,13 @@ arp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	xo_emit("\t" m, (uintmax_t)arpstat.f, pluralies(arpstat.f))
 
 	p(txrequests, "{:sent-requests/%ju} {N:/ARP request%s sent}\n");
+	p(txerrors, "{:sent-failures/%ju} {N:/ARP request%s failed to sent}\n");
 	p2(txreplies, "{:sent-replies/%ju} {N:/ARP repl%s sent}\n");
 	p(rxrequests, "{:received-requests/%ju} "
 	    "{N:/ARP request%s received}\n");
 	p2(rxreplies, "{:received-replies/%ju} "
 	    "{N:/ARP repl%s received}\n");
-	p(received, "{:received-packers/%ju} "
+	p(received, "{:received-packets/%ju} "
 	    "{N:/ARP packet%s received}\n");
 	p(dropped, "{:dropped-no-entry/%ju} "
 	    "{N:/total packet%s dropped due to no ARP entry}\n");
@@ -1247,10 +1329,26 @@ void
 igmp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 {
 	struct igmpstat igmpstat;
+	int error, zflag0;
 
 	if (fetch_stats("net.inet.igmp.stats", 0, &igmpstat,
 	    sizeof(igmpstat), kread) != 0)
 		return;
+	/*
+	 * Reread net.inet.igmp.stats when zflag == 1.
+	 * This is because this MIB contains version number and
+	 * length of the structure which are not set when clearing
+	 * the counters.
+	 */
+	zflag0 = zflag;
+	if (zflag) {
+		zflag = 0;
+		error = fetch_stats("net.inet.igmp.stats", 0, &igmpstat,
+		    sizeof(igmpstat), kread);
+		zflag = zflag0;
+		if (error)
+			return;
+	}
 
 	if (igmpstat.igps_version != IGPS_VERSION_3) {
 		xo_warnx("%s: version mismatch (%d != %d)", __func__,
@@ -1359,6 +1457,36 @@ pim_stats(u_long off __unused, const char *name, int af1 __unused,
 	xo_close_container(name);
 }
 
+/*
+ * Dump divert(4) statistics structure.
+ */
+void
+divert_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
+{
+	struct divstat divstat;
+
+	if (fetch_stats("net.inet.divert.stats", off, &divstat,
+	    sizeof(divstat), kread_counters) != 0)
+		return;
+
+	xo_open_container(name);
+	xo_emit("{T:/%s}:\n", name);
+
+#define	p(f, m) if (divstat.f || sflag <= 1) \
+	xo_emit(m, (uintmax_t)divstat.f, plural(divstat.f))
+
+	p(div_diverted, "\t{:diverted-packets/%ju} "
+	    "{N:/packet%s successfully diverted to userland}\n");
+	p(div_noport, "\t{:noport-fails/%ju} "
+	    "{N:/packet%s failed to divert due to no socket bound at port}\n");
+	p(div_outbound, "\t{:outbound-packets/%ju} "
+	    "{N:/packet%s successfully re-injected as outbound}\n");
+	p(div_inbound, "\t{:inbound-packets/%ju} "
+	    "{N:/packet%s successfully re-injected as inbound}\n");
+#undef p
+	xo_close_container(name);
+}
+
 #ifdef INET
 /*
  * Pretty print an Internet address (net address + port).
@@ -1417,24 +1545,13 @@ inetname(struct in_addr *inp)
 	char *cp;
 	static char line[MAXHOSTNAMELEN];
 	struct hostent *hp;
-	struct netent *np;
 
 	cp = 0;
 	if (!numeric_addr && inp->s_addr != INADDR_ANY) {
-		int net = inet_netof(*inp);
-		int lna = inet_lnaof(*inp);
-
-		if (lna == INADDR_ANY) {
-			np = getnetbyaddr(net, AF_INET);
-			if (np)
-				cp = np->n_name;
-		}
-		if (cp == NULL) {
-			hp = gethostbyaddr((char *)inp, sizeof (*inp), AF_INET);
-			if (hp) {
-				cp = hp->h_name;
-				trimdomain(cp, strlen(cp));
-			}
+		hp = gethostbyaddr((char *)inp, sizeof (*inp), AF_INET);
+		if (hp) {
+			cp = hp->h_name;
+			trimdomain(cp, strlen(cp));
 		}
 	}
 	if (inp->s_addr == INADDR_ANY)

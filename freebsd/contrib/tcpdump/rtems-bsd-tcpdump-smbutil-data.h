@@ -2,4 +2,5 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-tcpdump-data.h"
 /* smbutil.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int stringlen_is_set);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static uint32_t stringlen);

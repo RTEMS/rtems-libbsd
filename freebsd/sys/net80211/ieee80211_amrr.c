@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*-
  * Naive implementation of the Adaptive Multi Rate Retry algorithm:
  *
@@ -136,8 +134,9 @@ amrr_init(struct ieee80211vap *vap)
 static void
 amrr_deinit(struct ieee80211vap *vap)
 {
-	IEEE80211_FREE(vap->iv_rs, M_80211_RATECTL);
 	KASSERT(nrefs > 0, ("imbalanced attach/detach"));
+	IEEE80211_FREE(vap->iv_rs, M_80211_RATECTL);
+	vap->iv_rs = NULL;	/* guard */
 	nrefs--;		/* XXX locking */
 }
 
@@ -467,8 +466,8 @@ amrr_sysctlattach(struct ieee80211vap *vap,
 		return;
 
 	SYSCTL_ADD_PROC(ctx, SYSCTL_CHILDREN(tree), OID_AUTO,
-	    "amrr_rate_interval", CTLTYPE_INT | CTLFLAG_RW, vap,
-	    0, amrr_sysctl_interval, "I", "amrr operation interval (ms)");
+	    "amrr_rate_interval", CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
+	    vap, 0, amrr_sysctl_interval, "I", "amrr operation interval (ms)");
 	/* XXX bounds check values */
 	SYSCTL_ADD_UINT(ctx, SYSCTL_CHILDREN(tree), OID_AUTO,
 	    "amrr_max_sucess_threshold", CTLFLAG_RW,
@@ -479,18 +478,12 @@ amrr_sysctlattach(struct ieee80211vap *vap,
 }
 
 static void
-amrr_node_stats(struct ieee80211_node *ni, struct sbuf *s)
+amrr_print_node_rate(struct ieee80211_amrr_node *amn,
+    struct ieee80211_node *ni, struct sbuf *s)
 {
 	int rate;
-	struct ieee80211_amrr_node *amn = ni->ni_rctls;
 	struct ieee80211_rateset *rs;
 
-	/* XXX TODO: check locking? */
-
-	if (!amn)
-		return;
-
-	/* XXX TODO: this should be a method */
 	if (amrr_node_is_11n(ni)) {
 		rs = (struct ieee80211_rateset *) &ni->ni_htrates;
 		rate = rs->rs_rates[amn->amn_rix] & IEEE80211_RATE_VAL;
@@ -500,7 +493,19 @@ amrr_node_stats(struct ieee80211_node *ni, struct sbuf *s)
 		rate = rs->rs_rates[amn->amn_rix] & IEEE80211_RATE_VAL;
 		sbuf_printf(s, "rate: %d Mbit\n", rate / 2);
 	}
+}
 
+static void
+amrr_node_stats(struct ieee80211_node *ni, struct sbuf *s)
+{
+	struct ieee80211_amrr_node *amn = ni->ni_rctls;
+
+	/* XXX TODO: check locking? */
+
+	if (!amn)
+		return;
+
+	amrr_print_node_rate(amn, ni, s);
 	sbuf_printf(s, "ticks: %d\n", amn->amn_ticks);
 	sbuf_printf(s, "txcnt: %u\n", amn->amn_txcnt);
 	sbuf_printf(s, "success: %u\n", amn->amn_success);

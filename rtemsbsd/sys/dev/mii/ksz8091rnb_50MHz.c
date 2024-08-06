@@ -97,15 +97,13 @@ static device_method_t ksz8091rnb_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t ksz8091rnb_devclass;
-
 static driver_t ksz8091rnb_driver = {
 	"ksz8091rnb",
 	ksz8091rnb_methods,
 	sizeof(struct mii_softc)
 };
 
-DRIVER_MODULE(ksz8091rnb, miibus, ksz8091rnb_driver, ksz8091rnb_devclass, 0, 0);
+DRIVER_MODULE(ksz8091rnb, miibus, ksz8091rnb_driver, 0, 0);
 
 static const struct mii_phydesc ksz8091rnbphys[] = {
 	{

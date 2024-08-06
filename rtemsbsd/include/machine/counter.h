@@ -83,7 +83,6 @@ counter_u64_zero_inline(counter_u64_t c)
 static inline void
 counter_u64_add_protected(counter_u64_t c, int64_t inc)
 {
-
 	*(uint64_t *)zpcpu_get(c) += inc;
 }
 

@@ -43,6 +43,7 @@
 #include <sys/lockmgr.h>
 #include <sys/mutex.h>
 #include <sys/proc.h>
+#include <sys/ktr.h>
 
 #ifdef DEBUG_LOCKS
 #define STACK_PRINT(lk) printf("caller: %p\n", (lk)->lk_stack)
@@ -202,7 +203,7 @@ lockmgr_downgrade(struct lock *lk, u_int flags, struct lock_object *ilk,
 }
 
 int
-lockmgr_lock_fast_path(struct lock *lk, u_int flags, struct lock_object *ilk,
+lockmgr_lock_flags(struct lock *lk, u_int flags, struct lock_object *ilk,
     const char *file, int line)
 {
 	uintptr_t x, tid;
@@ -276,7 +277,7 @@ lockmgr_xunlock_hard(struct lock *lk, uintptr_t x, u_int flags,
 }
 
 int
-lockmgr_unlock_fast_path(struct lock *lk, u_int flags, struct lock_object *ilk)
+lockmgr_unlock(struct lock *lk)
 {
 	struct lock_class *class;
 	uintptr_t x, tid;
@@ -291,9 +292,9 @@ lockmgr_unlock_fast_path(struct lock *lk, u_int flags, struct lock_object *ilk)
 
 	x = lk->lk_lock;
 	if (__predict_true(x & LK_SHARE) != 0) {
-		return (lockmgr_sunlock_hard(lk, x, flags, ilk, file, line));
+		return (lockmgr_sunlock_hard(lk, x, LK_RELEASE, NULL, file, line));
 	} else {
-		return (lockmgr_xunlock_hard(lk, x, flags, ilk, file, line));
+		return (lockmgr_xunlock_hard(lk, x, LK_RELEASE, NULL, file, line));
 	}
 }
 

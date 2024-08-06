@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Ed Schouten <ed@FreeBSD.org>
  * All rights reserved.
@@ -32,8 +32,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
@@ -83,7 +81,7 @@ static uma_zone_t ttyoutq_zone;
 		uma_zfree(ttyoutq_zone, tob);				\
 	else								\
 		TTYOUTQ_INSERT_TAIL(to, tob);				\
-} while(0)
+} while (0)
 
 void
 ttyoutq_flush(struct ttyoutq *to)

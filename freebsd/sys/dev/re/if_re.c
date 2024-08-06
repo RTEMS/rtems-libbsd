@@ -35,8 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * RealTek 8139C+/8169/8169S/8110S/8168/8111/8101E PCI NIC driver
  *
@@ -130,6 +128,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 
+#include <net/debugnet.h>
 #include <net/if.h>
 #include <net/if_var.h>
 #include <net/if_arp.h>
@@ -140,8 +139,6 @@ __FBSDID("$FreeBSD$");
 #include <net/if_vlan_var.h>
 
 #include <net/bpf.h>
-
-#include <netinet/netdump/netdump.h>
 
 #include <machine/bus.h>
 #include <machine/resource.h>
@@ -183,12 +180,16 @@ static const struct rl_type re_devs[] = {
 	    "D-Link DGE-528(T) Gigabit Ethernet Adapter" },
 	{ DLINK_VENDORID, DLINK_DEVICEID_530T_REVC, 0,
 	    "D-Link DGE-530(T) Gigabit Ethernet Adapter" },
+	{ RT_VENDORID, RT_DEVICEID_2600, 0,
+	   "RealTek Killer E2600 Gigabit Ethernet Controller" },
 	{ RT_VENDORID, RT_DEVICEID_8139, 0,
 	    "RealTek 8139C+ 10/100BaseTX" },
 	{ RT_VENDORID, RT_DEVICEID_8101E, 0,
 	    "RealTek 810xE PCIe 10/100baseTX" },
 	{ RT_VENDORID, RT_DEVICEID_8168, 0,
 	    "RealTek 8168/8111 B/C/CP/D/DP/E/F/G PCIe Gigabit Ethernet" },
+	{ RT_VENDORID, RT_DEVICEID_8161, 0,
+	    "RealTek 8168 Gigabit Ethernet" },
 	{ NCUBE_VENDORID, RT_DEVICEID_8168, 0,
 	    "TP-Link TG-3468 v2 (RTL8168) Gigabit Ethernet" },
 	{ RT_VENDORID, RT_DEVICEID_8169, 0,
@@ -244,6 +245,7 @@ static const struct rl_hwrev re_hwrevs[] = {
 	{ RL_HWREV_8168E_VL, RL_8169, "8168E/8111E-VL", RL_JUMBO_MTU_6K},
 	{ RL_HWREV_8168EP, RL_8169, "8168EP/8111EP", RL_JUMBO_MTU_9K},
 	{ RL_HWREV_8168F, RL_8169, "8168F/8111F", RL_JUMBO_MTU_9K},
+	{ RL_HWREV_8168FP, RL_8169, "8168FP/8111FP", RL_JUMBO_MTU_9K},
 	{ RL_HWREV_8168G, RL_8169, "8168G/8111G", RL_JUMBO_MTU_9K},
 	{ RL_HWREV_8168GU, RL_8169, "8168GU/8111GU", RL_JUMBO_MTU_9K},
 	{ RL_HWREV_8168H, RL_8169, "8168H/8111H", RL_JUMBO_MTU_9K},
@@ -274,17 +276,17 @@ static __inline void re_fixup_rx
 static int re_rxeof		(struct rl_softc *, int *);
 static void re_txeof		(struct rl_softc *);
 #ifdef DEVICE_POLLING
-static int re_poll		(struct ifnet *, enum poll_cmd, int);
-static int re_poll_locked	(struct ifnet *, enum poll_cmd, int);
+static int re_poll		(if_t, enum poll_cmd, int);
+static int re_poll_locked	(if_t, enum poll_cmd, int);
 #endif
 static int re_intr		(void *);
 static void re_intr_msi		(void *);
 static void re_tick		(void *);
 static void re_int_task		(void *, int);
-static void re_start		(struct ifnet *);
-static void re_start_locked	(struct ifnet *);
+static void re_start		(if_t);
+static void re_start_locked	(if_t);
 static void re_start_tx		(struct rl_softc *);
-static int re_ioctl		(struct ifnet *, u_long, caddr_t);
+static int re_ioctl		(if_t, u_long, caddr_t);
 static void re_init		(void *);
 static void re_init_locked	(struct rl_softc *);
 static void re_stop		(struct rl_softc *);
@@ -292,8 +294,8 @@ static void re_watchdog		(struct rl_softc *);
 static int re_suspend		(device_t);
 static int re_resume		(device_t);
 static int re_shutdown		(device_t);
-static int re_ifmedia_upd	(struct ifnet *);
-static void re_ifmedia_sts	(struct ifnet *, struct ifmediareq *);
+static int re_ifmedia_upd	(if_t);
+static void re_ifmedia_sts	(if_t, struct ifmediareq *);
 
 static void re_eeprom_putbyte	(struct rl_softc *, int);
 static void re_eeprom_getword	(struct rl_softc *, int, u_int16_t *);
@@ -312,7 +314,7 @@ static void re_setwol		(struct rl_softc *);
 static void re_clrwol		(struct rl_softc *);
 static void re_set_linkspeed	(struct rl_softc *);
 
-NETDUMP_DEFINE(re);
+DEBUGNET_DEFINE(re);
 
 #ifdef DEV_NETMAP	/* see ixgbe.c for details */
 #include <dev/netmap/if_re_netmap.h>
@@ -351,10 +353,8 @@ static driver_t re_driver = {
 	sizeof(struct rl_softc)
 };
 
-static devclass_t re_devclass;
-
-DRIVER_MODULE(re, pci, re_driver, re_devclass, 0, 0);
-DRIVER_MODULE(miibus, re, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(re, pci, re_driver, 0, 0);
+DRIVER_MODULE(miibus, re, miibus_driver, 0, 0);
 
 #define EE_SET(x)					\
 	CSR_WRITE_1(sc, RL_EECMD,			\
@@ -619,14 +619,14 @@ static void
 re_miibus_statchg(device_t dev)
 {
 	struct rl_softc		*sc;
-	struct ifnet		*ifp;
+	if_t ifp;
 	struct mii_data		*mii;
 
 	sc = device_get_softc(dev);
 	mii = device_get_softc(sc->rl_miibus);
 	ifp = sc->rl_ifp;
 	if (mii == NULL || ifp == NULL ||
-	    (ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+	    (if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 		return;
 
 	sc->rl_flags &= ~RL_FLAG_LINK;
@@ -652,16 +652,29 @@ re_miibus_statchg(device_t dev)
 	 */
 }
 
+static u_int
+re_hash_maddr(void *arg, struct sockaddr_dl *sdl, u_int cnt)
+{
+	uint32_t h, *hashes = arg;
+
+	h = ether_crc32_be(LLADDR(sdl), ETHER_ADDR_LEN) >> 26;
+	if (h < 32)
+		hashes[0] |= (1 << h);
+	else
+		hashes[1] |= (1 << (h - 32));
+
+	return (1);
+}
+
 /*
  * Set the RX configuration and 64-bit multicast hash filter.
  */
 static void
 re_set_rxmode(struct rl_softc *sc)
 {
-	struct ifnet		*ifp;
-	struct ifmultiaddr	*ifma;
-	uint32_t		hashes[2] = { 0, 0 };
-	uint32_t		h, rxfilt;
+	if_t ifp;
+	uint32_t		h, hashes[2] = { 0, 0 };
+	uint32_t		rxfilt;
 
 	RL_LOCK_ASSERT(sc);
 
@@ -673,8 +686,8 @@ re_set_rxmode(struct rl_softc *sc)
 	else if ((sc->rl_flags & RL_FLAG_8168G_PLUS) != 0)
 		rxfilt |= RL_RXCFG_EARLYOFFV2;
 
-	if (ifp->if_flags & (IFF_ALLMULTI | IFF_PROMISC)) {
-		if (ifp->if_flags & IFF_PROMISC)
+	if (if_getflags(ifp) & (IFF_ALLMULTI | IFF_PROMISC)) {
+		if (if_getflags(ifp) & IFF_PROMISC)
 			rxfilt |= RL_RXCFG_RX_ALLPHYS;
 		/*
 		 * Unlike other hardwares, we have to explicitly set
@@ -686,18 +699,7 @@ re_set_rxmode(struct rl_softc *sc)
 		goto done;
 	}
 
-	if_maddr_rlock(ifp);
-	CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
-		if (ifma->ifma_addr->sa_family != AF_LINK)
-			continue;
-		h = ether_crc32_be(LLADDR((struct sockaddr_dl *)
-		    ifma->ifma_addr), ETHER_ADDR_LEN) >> 26;
-		if (h < 32)
-			hashes[0] |= (1 << h);
-		else
-			hashes[1] |= (1 << (h - 32));
-	}
-	if_maddr_runlock(ifp);
+	if_foreach_llmaddr(ifp, re_hash_maddr, hashes);
 
 	if (hashes[0] != 0 || hashes[1] != 0) {
 		/*
@@ -775,7 +777,7 @@ re_reset(struct rl_softc *sc)
 static int
 re_diag(struct rl_softc *sc)
 {
-	struct ifnet		*ifp = sc->rl_ifp;
+	if_t ifp = sc->rl_ifp;
 	struct mbuf		*m0;
 	struct ether_header	*eh;
 	struct rl_desc		*cur_rx;
@@ -801,9 +803,9 @@ re_diag(struct rl_softc *sc)
 	 * - Leaves interrupts turned off
 	 */
 
-	ifp->if_flags |= IFF_PROMISC;
+	if_setflagbit(ifp, IFF_PROMISC, 0);
 	sc->rl_testmode = 1;
-	ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+	if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 	re_init_locked(sc);
 	sc->rl_flags |= RL_FLAG_LINK;
 	if (sc->rl_type == RL_8169)
@@ -839,7 +841,7 @@ re_diag(struct rl_softc *sc)
 	CSR_WRITE_2(sc, RL_ISR, 0xFFFF);
 	RL_UNLOCK(sc);
 	/* XXX: re_diag must not be called when in ALTQ mode */
-	IF_HANDOFF(&ifp->if_snd, m0, ifp);
+	if_handoff(ifp, m0, ifp);
 	RL_LOCK(sc);
 	m0 = NULL;
 
@@ -917,7 +919,7 @@ done:
 
 	sc->rl_testmode = 0;
 	sc->rl_flags &= ~RL_FLAG_LINK;
-	ifp->if_flags &= ~IFF_PROMISC;
+	if_setflagbit(ifp, 0, IFF_PROMISC);
 	re_stop(sc);
 	if (m0 != NULL)
 		m_freem(m0);
@@ -1215,7 +1217,7 @@ re_attach(device_t dev)
 	u_char			eaddr[ETHER_ADDR_LEN];
 	u_int16_t		as[ETHER_ADDR_LEN / 2];
 	struct rl_softc		*sc;
-	struct ifnet		*ifp;
+	if_t ifp;
 	const struct rl_hwrev	*hw_rev;
 	int			capmask, error = 0, hwrev, i, msic, msixc,
 				phy, reg, rid;
@@ -1496,6 +1498,7 @@ re_attach(device_t dev)
 		    RL_FLAG_CMDSTOP_WAIT_TXQ | RL_FLAG_WOL_MANLINK;
 		break;
 	case RL_HWREV_8168EP:
+	case RL_HWREV_8168FP:
 	case RL_HWREV_8168G:
 	case RL_HWREV_8411B:
 		sc->rl_flags |= RL_FLAG_PHYWAKE | RL_FLAG_PAR |
@@ -1605,11 +1608,6 @@ re_attach(device_t dev)
 	re_add_sysctls(sc);
 
 	ifp = sc->rl_ifp = if_alloc(IFT_ETHER);
-	if (ifp == NULL) {
-		device_printf(dev, "can not if_alloc()\n");
-		error = ENOSPC;
-		goto fail;
-	}
 
 	/* Take controller out of deep sleep mode. */
 	if ((sc->rl_flags & RL_FLAG_MACSLEEP) != 0) {
@@ -1632,11 +1630,11 @@ re_attach(device_t dev)
 		re_gmii_writereg(dev, 1, 0x0e, 0);
 	}
 
-	ifp->if_softc = sc;
+	if_setsoftc(ifp, sc);
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
-	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-	ifp->if_ioctl = re_ioctl;
-	ifp->if_start = re_start;
+	if_setflags(ifp, IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST);
+	if_setioctlfn(ifp, re_ioctl);
+	if_setstartfn(ifp, re_start);
 	/*
 	 * RTL8168/8111C generates wrong IP checksummed frame if the
 	 * packet has IP options so disable TX checksum offloading.
@@ -1644,20 +1642,19 @@ re_attach(device_t dev)
 	if (sc->rl_hwrev->rl_rev == RL_HWREV_8168C ||
 	    sc->rl_hwrev->rl_rev == RL_HWREV_8168C_SPIN2 ||
 	    sc->rl_hwrev->rl_rev == RL_HWREV_8168CP) {
-		ifp->if_hwassist = 0;
-		ifp->if_capabilities = IFCAP_RXCSUM | IFCAP_TSO4;
+		if_sethwassist(ifp, 0);
+		if_setcapabilities(ifp, IFCAP_RXCSUM | IFCAP_TSO4);
 	} else {
-		ifp->if_hwassist = CSUM_IP | CSUM_TCP | CSUM_UDP;
-		ifp->if_capabilities = IFCAP_HWCSUM | IFCAP_TSO4;
+		if_sethwassist(ifp, CSUM_IP | CSUM_TCP | CSUM_UDP);
+		if_setcapabilities(ifp, IFCAP_HWCSUM | IFCAP_TSO4);
 	}
-	ifp->if_hwassist |= CSUM_TSO;
-	ifp->if_capenable = ifp->if_capabilities;
-	ifp->if_init = re_init;
-	IFQ_SET_MAXLEN(&ifp->if_snd, RL_IFQ_MAXLEN);
-	ifp->if_snd.ifq_drv_maxlen = RL_IFQ_MAXLEN;
-	IFQ_SET_READY(&ifp->if_snd);
+	if_sethwassistbits(ifp, CSUM_TSO, 0);
+	if_setcapenable(ifp, if_getcapabilities(ifp));
+	if_setinitfn(ifp, re_init);
+	if_setsendqlen(ifp, RL_IFQ_MAXLEN);
+	if_setsendqready(ifp);
 
-	TASK_INIT(&sc->rl_inttask, 0, re_int_task, sc);
+	NET_TASK_INIT(&sc->rl_inttask, 0, re_int_task, sc);
 
 #define	RE_PHYAD_INTERNAL	 0
 
@@ -1675,36 +1672,41 @@ re_attach(device_t dev)
 		goto fail;
 	}
 
+	/* If address was not found, create one based on the hostid and name. */
+	if (ETHER_IS_ZERO(eaddr)) {
+		ether_gen_addr(ifp, (struct ether_addr *)eaddr);
+	}
+
 	/*
 	 * Call MI attach routine.
 	 */
 	ether_ifattach(ifp, eaddr);
 
 	/* VLAN capability setup */
-	ifp->if_capabilities |= IFCAP_VLAN_MTU | IFCAP_VLAN_HWTAGGING;
-	if (ifp->if_capabilities & IFCAP_HWCSUM)
-		ifp->if_capabilities |= IFCAP_VLAN_HWCSUM;
+	if_setcapabilitiesbit(ifp, IFCAP_VLAN_MTU | IFCAP_VLAN_HWTAGGING, 0);
+	if (if_getcapabilities(ifp) & IFCAP_HWCSUM)
+		if_setcapabilitiesbit(ifp, IFCAP_VLAN_HWCSUM, 0);
 	/* Enable WOL if PM is supported. */
 	if (pci_find_cap(sc->rl_dev, PCIY_PMG, &reg) == 0)
-		ifp->if_capabilities |= IFCAP_WOL;
-	ifp->if_capenable = ifp->if_capabilities;
-	ifp->if_capenable &= ~(IFCAP_WOL_UCAST | IFCAP_WOL_MCAST);
+		if_setcapabilitiesbit(ifp, IFCAP_WOL, 0);
+	if_setcapenable(ifp, if_getcapabilities(ifp));
+	if_setcapenablebit(ifp, 0, (IFCAP_WOL_UCAST | IFCAP_WOL_MCAST));
 	/*
 	 * Don't enable TSO by default.  It is known to generate
 	 * corrupted TCP segments(bad TCP options) under certain
 	 * circumstances.
 	 */
-	ifp->if_hwassist &= ~CSUM_TSO;
-	ifp->if_capenable &= ~(IFCAP_TSO4 | IFCAP_VLAN_HWTSO);
+	if_sethwassistbits(ifp, 0, CSUM_TSO);
+	if_setcapenablebit(ifp, 0, (IFCAP_TSO4 | IFCAP_VLAN_HWTSO));
 #ifdef DEVICE_POLLING
-	ifp->if_capabilities |= IFCAP_POLLING;
+	if_setcapabilitiesbit(ifp, IFCAP_POLLING, 0);
 #endif
 	/*
 	 * Tell the upper layer(s) we support long frames.
 	 * Must appear after the call to ether_ifattach() because
 	 * ether_ifattach() sets ifi_hdrlen to the default value.
 	 */
-	ifp->if_hdrlen = sizeof(struct ether_vlan_header);
+	if_setifheaderlen(ifp, sizeof(struct ether_vlan_header));
 
 #ifdef DEV_NETMAP
 	re_netmap_attach(sc);
@@ -1747,7 +1749,7 @@ re_attach(device_t dev)
 		goto fail;
 	}
 
-	NETDUMP_SET(ifp, re);
+	DEBUGNET_SET(ifp, re);
 
 fail:
 	if (error)
@@ -1767,7 +1769,7 @@ static int
 re_detach(device_t dev)
 {
 	struct rl_softc		*sc;
-	struct ifnet		*ifp;
+	if_t ifp;
 	int			i, rid;
 
 	sc = device_get_softc(dev);
@@ -1777,7 +1779,7 @@ re_detach(device_t dev)
 	/* These should only be active if attach succeeded */
 	if (device_is_attached(dev)) {
 #ifdef DEVICE_POLLING
-		if (ifp->if_capenable & IFCAP_POLLING)
+		if (if_getcapenable(ifp) & IFCAP_POLLING)
 			ether_poll_deregister(ifp);
 #endif
 		RL_LOCK(sc);
@@ -1800,7 +1802,7 @@ re_detach(device_t dev)
 		 * to invoke the re_tick() function that isn't there
 		 * anymore.
 		 */
-		ifp->if_flags &= ~IFF_UP;
+		if_setflagbits(ifp, 0, IFF_UP);
 		ether_ifdetach(ifp);
 	}
 	if (sc->rl_miibus)
@@ -1925,7 +1927,7 @@ re_discard_rxbuf(struct rl_softc *sc, int idx)
 	struct rl_rxdesc	*rxd;
 	uint32_t		cmdstat;
 
-	if (sc->rl_ifp->if_mtu > RL_MTU &&
+	if (if_getmtu(sc->rl_ifp) > RL_MTU &&
 	    (sc->rl_flags & RL_FLAG_JUMBOV2) != 0)
 		rxd = &sc->rl_ldata.rl_jrx_desc[idx];
 	else
@@ -2164,7 +2166,7 @@ static int
 re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 {
 	struct mbuf		*m;
-	struct ifnet		*ifp;
+	if_t ifp;
 	int			i, rxerr, total_len;
 	struct rl_desc		*cur_rx;
 	u_int32_t		rxstat, rxvlan;
@@ -2177,7 +2179,7 @@ re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 	if (netmap_rx_irq(ifp, 0, &rx_npkts))
 		return 0;
 #endif /* DEV_NETMAP */
-	if (ifp->if_mtu > RL_MTU && (sc->rl_flags & RL_FLAG_JUMBOV2) != 0)
+	if (if_getmtu(ifp) > RL_MTU && (sc->rl_flags & RL_FLAG_JUMBOV2) != 0)
 		jumbo = 1;
 	else
 		jumbo = 0;
@@ -2190,7 +2192,7 @@ re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 
 	for (i = sc->rl_ldata.rl_rx_prodidx; maxpkt > 0;
 	    i = RL_RX_DESC_NXT(sc, i)) {
-		if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+		if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 			break;
 		cur_rx = &sc->rl_ldata.rl_rx_list[i];
 		rxstat = le32toh(cur_rx->rl_cmdstat);
@@ -2336,7 +2338,7 @@ re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 
 		/* Do RX checksumming if enabled */
 
-		if (ifp->if_capenable & IFCAP_RXCSUM) {
+		if (if_getcapenable(ifp) & IFCAP_RXCSUM) {
 			if ((sc->rl_flags & RL_FLAG_DESCV2) == 0) {
 				/* Check IP header checksum */
 				if (rxstat & RL_RDESC_STAT_PROTOID)
@@ -2384,7 +2386,7 @@ re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 			m->m_flags |= M_VLANTAG;
 		}
 		RL_UNLOCK(sc);
-		(*ifp->if_input)(ifp, m);
+		if_input(ifp, m);
 		RL_LOCK(sc);
 		rx_npkts++;
 	}
@@ -2408,7 +2410,7 @@ re_rxeof(struct rl_softc *sc, int *rx_npktsp)
 static void
 re_txeof(struct rl_softc *sc)
 {
-	struct ifnet		*ifp;
+	if_t ifp;
 	struct rl_txdesc	*txd;
 	u_int32_t		txstat;
 	int			cons;
@@ -2457,7 +2459,7 @@ re_txeof(struct rl_softc *sc)
 				if_inc_counter(ifp, IFCOUNTER_OPACKETS, 1);
 		}
 		sc->rl_ldata.rl_tx_free++;
-		ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+		if_setdrvflagbits(ifp, 0, IFF_DRV_OACTIVE);
 	}
 	sc->rl_ldata.rl_tx_considx = cons;
 
@@ -2504,22 +2506,22 @@ re_tick(void *xsc)
 
 #ifdef DEVICE_POLLING
 static int
-re_poll(struct ifnet *ifp, enum poll_cmd cmd, int count)
+re_poll(if_t ifp, enum poll_cmd cmd, int count)
 {
-	struct rl_softc *sc = ifp->if_softc;
+	struct rl_softc *sc = if_getsoftc(ifp);
 	int rx_npkts = 0;
 
 	RL_LOCK(sc);
-	if (ifp->if_drv_flags & IFF_DRV_RUNNING)
+	if (if_getdrvflags(ifp) & IFF_DRV_RUNNING)
 		rx_npkts = re_poll_locked(ifp, cmd, count);
 	RL_UNLOCK(sc);
 	return (rx_npkts);
 }
 
 static int
-re_poll_locked(struct ifnet *ifp, enum poll_cmd cmd, int count)
+re_poll_locked(if_t ifp, enum poll_cmd cmd, int count)
 {
-	struct rl_softc *sc = ifp->if_softc;
+	struct rl_softc *sc = if_getsoftc(ifp);
 	int rx_npkts;
 
 	RL_LOCK_ASSERT(sc);
@@ -2528,7 +2530,7 @@ re_poll_locked(struct ifnet *ifp, enum poll_cmd cmd, int count)
 	re_rxeof(sc, &rx_npkts);
 	re_txeof(sc);
 
-	if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd))
+	if (!if_sendq_empty(ifp))
 		re_start_locked(ifp);
 
 	if (cmd == POLL_AND_CHECK_STATUS) { /* also check status register */
@@ -2548,7 +2550,7 @@ re_poll_locked(struct ifnet *ifp, enum poll_cmd cmd, int count)
 		 */
 
 		if (status & RL_ISR_SYSTEM_ERR) {
-			ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+			if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 			re_init_locked(sc);
 		}
 	}
@@ -2578,7 +2580,7 @@ static void
 re_int_task(void *arg, int npending)
 {
 	struct rl_softc		*sc;
-	struct ifnet		*ifp;
+	if_t ifp;
 	u_int16_t		status;
 	int			rval = 0;
 
@@ -2591,13 +2593,13 @@ re_int_task(void *arg, int npending)
         CSR_WRITE_2(sc, RL_ISR, status);
 
 	if (sc->suspended ||
-	    (ifp->if_drv_flags & IFF_DRV_RUNNING) == 0) {
+	    (if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0) {
 		RL_UNLOCK(sc);
 		return;
 	}
 
 #ifdef DEVICE_POLLING
-	if  (ifp->if_capenable & IFCAP_POLLING) {
+	if  (if_getcapenable(ifp) & IFCAP_POLLING) {
 		RL_UNLOCK(sc);
 		return;
 	}
@@ -2627,11 +2629,11 @@ re_int_task(void *arg, int npending)
 		re_txeof(sc);
 
 	if (status & RL_ISR_SYSTEM_ERR) {
-		ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+		if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 		re_init_locked(sc);
 	}
 
-	if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd))
+	if (!if_sendq_empty(ifp))
 		re_start_locked(ifp);
 
 	RL_UNLOCK(sc);
@@ -2648,7 +2650,7 @@ static void
 re_intr_msi(void *xsc)
 {
 	struct rl_softc		*sc;
-	struct ifnet		*ifp;
+	if_t ifp;
 	uint16_t		intrs, status;
 
 	sc = xsc;
@@ -2656,14 +2658,14 @@ re_intr_msi(void *xsc)
 
 	ifp = sc->rl_ifp;
 #ifdef DEVICE_POLLING
-	if (ifp->if_capenable & IFCAP_POLLING) {
+	if (if_getcapenable(ifp) & IFCAP_POLLING) {
 		RL_UNLOCK(sc);
 		return;
 	}
 #endif
 	/* Disable interrupts. */
 	CSR_WRITE_2(sc, RL_IMR, 0);
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0) {
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0) {
 		RL_UNLOCK(sc);
 		return;
 	}
@@ -2681,7 +2683,7 @@ re_intr_msi(void *xsc)
 	if (status & (RL_ISR_TIMEOUT_EXPIRED | RL_ISR_RX_OK | RL_ISR_RX_ERR |
 	    RL_ISR_FIFO_OFLOW | RL_ISR_RX_OVERRUN)) {
 		re_rxeof(sc, NULL);
-		if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
+		if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0) {
 			if (sc->rl_int_rx_mod != 0 &&
 			    (status & (RL_ISR_RX_OK | RL_ISR_RX_ERR |
 			    RL_ISR_FIFO_OFLOW | RL_ISR_RX_OVERRUN)) != 0) {
@@ -2713,12 +2715,12 @@ re_intr_msi(void *xsc)
 		re_txeof(sc);
 
 	if (status & RL_ISR_SYSTEM_ERR) {
-		ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+		if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 		re_init_locked(sc);
 	}
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
-		if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd))
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0) {
+		if (!if_sendq_empty(ifp))
 			re_start_locked(ifp);
 		CSR_WRITE_2(sc, RL_IMR, intrs);
 	}
@@ -2918,11 +2920,11 @@ re_encap(struct rl_softc *sc, struct mbuf **m_head)
 }
 
 static void
-re_start(struct ifnet *ifp)
+re_start(if_t ifp)
 {
 	struct rl_softc		*sc;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	RL_LOCK(sc);
 	re_start_locked(ifp);
 	RL_UNLOCK(sc);
@@ -2932,17 +2934,17 @@ re_start(struct ifnet *ifp)
  * Main transmit routine for C+ and gigE NICs.
  */
 static void
-re_start_locked(struct ifnet *ifp)
+re_start_locked(if_t ifp)
 {
 	struct rl_softc		*sc;
 	struct mbuf		*m_head;
 	int			queued;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 
 #ifdef DEV_NETMAP
 	/* XXX is this necessary ? */
-	if (ifp->if_capenable & IFCAP_NETMAP) {
+	if (if_getcapenable(ifp) & IFCAP_NETMAP) {
 		struct netmap_kring *kring = NA(ifp)->tx_rings[0];
 		if (sc->rl_ldata.rl_tx_prodidx != kring->nr_hwcur) {
 			/* kick the tx unit */
@@ -2956,21 +2958,21 @@ re_start_locked(struct ifnet *ifp)
 	}
 #endif /* DEV_NETMAP */
 
-	if ((ifp->if_drv_flags & (IFF_DRV_RUNNING | IFF_DRV_OACTIVE)) !=
+	if ((if_getdrvflags(ifp) & (IFF_DRV_RUNNING | IFF_DRV_OACTIVE)) !=
 	    IFF_DRV_RUNNING || (sc->rl_flags & RL_FLAG_LINK) == 0)
 		return;
 
-	for (queued = 0; !IFQ_DRV_IS_EMPTY(&ifp->if_snd) &&
+	for (queued = 0; !if_sendq_empty(ifp) &&
 	    sc->rl_ldata.rl_tx_free > 1;) {
-		IFQ_DRV_DEQUEUE(&ifp->if_snd, m_head);
+		m_head = if_dequeue(ifp);
 		if (m_head == NULL)
 			break;
 
 		if (re_encap(sc, &m_head) != 0) {
 			if (m_head == NULL)
 				break;
-			IFQ_DRV_PREPEND(&ifp->if_snd, m_head);
-			ifp->if_drv_flags |= IFF_DRV_OACTIVE;
+			if_sendq_prepend(ifp, m_head);
+			if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
 			break;
 		}
 
@@ -3089,20 +3091,17 @@ re_init(void *xsc)
 static void
 re_init_locked(struct rl_softc *sc)
 {
-	struct ifnet		*ifp = sc->rl_ifp;
+	if_t ifp = sc->rl_ifp;
 	struct mii_data		*mii;
 	uint32_t		reg;
 	uint16_t		cfg;
-	union {
-		uint32_t align_dummy;
-		u_char eaddr[ETHER_ADDR_LEN];
-        } eaddr;
+	uint32_t		idr[2];
 
 	RL_LOCK_ASSERT(sc);
 
 	mii = device_get_softc(sc->rl_miibus);
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0)
 		return;
 
 	/*
@@ -3117,7 +3116,7 @@ re_init_locked(struct rl_softc *sc)
 	 * For C+ mode, initialize the RX descriptors and mbufs.
 	 */
 	if ((sc->rl_flags & RL_FLAG_JUMBOV2) != 0) {
-		if (ifp->if_mtu > RL_MTU) {
+		if (if_getmtu(ifp) > RL_MTU) {
 			if (re_jrx_list_init(sc) != 0) {
 				device_printf(sc->rl_dev,
 				    "no memory for jumbo RX buffers\n");
@@ -3125,8 +3124,8 @@ re_init_locked(struct rl_softc *sc)
 				return;
 			}
 			/* Disable checksum offloading for jumbo frames. */
-			ifp->if_capenable &= ~(IFCAP_HWCSUM | IFCAP_TSO4);
-			ifp->if_hwassist &= ~(RE_CSUM_FEATURES | CSUM_TSO);
+			if_setcapenablebit(ifp, 0, (IFCAP_HWCSUM | IFCAP_TSO4));
+			if_sethwassistbits(ifp, 0, (RE_CSUM_FEATURES | CSUM_TSO));
 		} else {
 			if (re_rx_list_init(sc) != 0) {
 				device_printf(sc->rl_dev,
@@ -3135,7 +3134,7 @@ re_init_locked(struct rl_softc *sc)
 				return;
 			}
 		}
-		re_set_jumbo(sc, ifp->if_mtu > RL_MTU);
+		re_set_jumbo(sc, if_getmtu(ifp) > RL_MTU);
 	} else {
 		if (re_rx_list_init(sc) != 0) {
 			device_printf(sc->rl_dev, "no memory for RX buffers\n");
@@ -3144,7 +3143,7 @@ re_init_locked(struct rl_softc *sc)
 		}
 		if ((sc->rl_flags & RL_FLAG_PCIE) != 0 &&
 		    pci_get_device(sc->rl_dev) != RT_DEVICEID_8101E) {
-			if (ifp->if_mtu > RL_MTU)
+			if (if_getmtu(ifp) > RL_MTU)
 				pci_set_max_read_req(sc->rl_dev, 512);
 			else
 				pci_set_max_read_req(sc->rl_dev, 4096);
@@ -3158,9 +3157,9 @@ re_init_locked(struct rl_softc *sc)
 	 * before all others.
 	 */
 	cfg = RL_CPLUSCMD_PCI_MRW;
-	if ((ifp->if_capenable & IFCAP_RXCSUM) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_RXCSUM) != 0)
 		cfg |= RL_CPLUSCMD_RXCSUM_ENB;
-	if ((ifp->if_capenable & IFCAP_VLAN_HWTAGGING) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_VLAN_HWTAGGING) != 0)
 		cfg |= RL_CPLUSCMD_VLANSTRIP;
 	if ((sc->rl_flags & RL_FLAG_MACSTAT) != 0) {
 		cfg |= RL_CPLUSCMD_MACSTAT_DIS;
@@ -3184,9 +3183,9 @@ re_init_locked(struct rl_softc *sc)
 	 * Disable TSO if interface MTU size is greater than MSS
 	 * allowed in controller.
 	 */
-	if (ifp->if_mtu > RL_TSO_MTU && (ifp->if_capenable & IFCAP_TSO4) != 0) {
-		ifp->if_capenable &= ~IFCAP_TSO4;
-		ifp->if_hwassist &= ~CSUM_TSO;
+	if (if_getmtu(ifp) > RL_TSO_MTU && (if_getcapenable(ifp) & IFCAP_TSO4) != 0) {
+		if_setcapenablebit(ifp, 0, IFCAP_TSO4);
+		if_sethwassistbits(ifp, 0, CSUM_TSO);
 	}
 
 	/*
@@ -3195,12 +3194,11 @@ re_init_locked(struct rl_softc *sc)
 	 * register write enable" mode to modify the ID registers.
 	 */
 	/* Copy MAC address on stack to align. */
-	bcopy(IF_LLADDR(ifp), eaddr.eaddr, ETHER_ADDR_LEN);
+	bzero(idr, sizeof(idr));
+	bcopy(if_getlladdr(ifp), idr, ETHER_ADDR_LEN);
 	CSR_WRITE_1(sc, RL_EECMD, RL_EEMODE_WRITECFG);
-	CSR_WRITE_4(sc, RL_IDR0,
-	    htole32(*(u_int32_t *)(&eaddr.eaddr[0])));
-	CSR_WRITE_4(sc, RL_IDR4,
-	    htole32(*(u_int32_t *)(&eaddr.eaddr[4])));
+	CSR_WRITE_4(sc, RL_IDR0, htole32(idr[0]));
+	CSR_WRITE_4(sc, RL_IDR4, htole32(idr[1]));
 	CSR_WRITE_1(sc, RL_EECMD, RL_EEMODE_OFF);
 
 	/*
@@ -3267,7 +3265,7 @@ re_init_locked(struct rl_softc *sc)
 	/*
 	 * Disable interrupts if we are polling.
 	 */
-	if (ifp->if_capenable & IFCAP_POLLING)
+	if (if_getcapenable(ifp) & IFCAP_POLLING)
 		CSR_WRITE_2(sc, RL_IMR, 0);
 	else	/* otherwise ... */
 #endif
@@ -3329,7 +3327,7 @@ re_init_locked(struct rl_softc *sc)
 			 * set maximum size of jumbo frame depending on
 			 * controller revisions.
 			 */
-			if (ifp->if_mtu > RL_MTU)
+			if (if_getmtu(ifp) > RL_MTU)
 				CSR_WRITE_2(sc, RL_MAXRXPKTLEN,
 				    sc->rl_hwrev->rl_max_mtu +
 				    ETHER_VLAN_ENCAP_LEN + ETHER_HDR_LEN +
@@ -3351,27 +3349,31 @@ re_init_locked(struct rl_softc *sc)
 	CSR_WRITE_1(sc, sc->rl_cfg1, CSR_READ_1(sc, sc->rl_cfg1) |
 	    RL_CFG1_DRVLOAD);
 
-	ifp->if_drv_flags |= IFF_DRV_RUNNING;
-	ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+	if_setdrvflagbits(ifp, IFF_DRV_RUNNING, 0);
+	if_setdrvflagbits(ifp, 0, IFF_DRV_OACTIVE);
 
 	sc->rl_flags &= ~RL_FLAG_LINK;
 	mii_mediachg(mii);
 
 	sc->rl_watchdog_timer = 0;
 	callout_reset(&sc->rl_stat_callout, hz, re_tick, sc);
+
+#ifdef DEV_NETMAP
+	netmap_enable_all_rings(ifp);
+#endif /* DEV_NETMAP */
 }
 
 /*
  * Set media options.
  */
 static int
-re_ifmedia_upd(struct ifnet *ifp)
+re_ifmedia_upd(if_t ifp)
 {
 	struct rl_softc		*sc;
 	struct mii_data		*mii;
 	int			error;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	mii = device_get_softc(sc->rl_miibus);
 	RL_LOCK(sc);
 	error = mii_mediachg(mii);
@@ -3384,12 +3386,12 @@ re_ifmedia_upd(struct ifnet *ifp)
  * Report current media status.
  */
 static void
-re_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
+re_ifmedia_sts(if_t ifp, struct ifmediareq *ifmr)
 {
 	struct rl_softc		*sc;
 	struct mii_data		*mii;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	mii = device_get_softc(sc->rl_miibus);
 
 	RL_LOCK(sc);
@@ -3400,9 +3402,9 @@ re_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 }
 
 static int
-re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
+re_ioctl(if_t ifp, u_long command, caddr_t data)
 {
-	struct rl_softc		*sc = ifp->if_softc;
+	struct rl_softc		*sc = if_getsoftc(ifp);
 	struct ifreq		*ifr = (struct ifreq *) data;
 	struct mii_data		*mii;
 	int			error = 0;
@@ -3417,18 +3419,18 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 			break;
 		}
 		RL_LOCK(sc);
-		if (ifp->if_mtu != ifr->ifr_mtu) {
-			ifp->if_mtu = ifr->ifr_mtu;
+		if (if_getmtu(ifp) != ifr->ifr_mtu) {
+			if_setmtu(ifp, ifr->ifr_mtu);
 			if ((sc->rl_flags & RL_FLAG_JUMBOV2) != 0 &&
-			    (ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
-				ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+			    (if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0) {
+				if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 				re_init_locked(sc);
 			}
-			if (ifp->if_mtu > RL_TSO_MTU &&
-			    (ifp->if_capenable & IFCAP_TSO4) != 0) {
-				ifp->if_capenable &= ~(IFCAP_TSO4 |
-				    IFCAP_VLAN_HWTSO);
-				ifp->if_hwassist &= ~CSUM_TSO;
+			if (if_getmtu(ifp) > RL_TSO_MTU &&
+			    (if_getcapenable(ifp) & IFCAP_TSO4) != 0) {
+				if_setcapenablebit(ifp, 0,
+				    IFCAP_TSO4 | IFCAP_VLAN_HWTSO);
+				if_sethwassistbits(ifp, 0, CSUM_TSO);
 			}
 			VLAN_CAPABILITIES(ifp);
 		}
@@ -3436,24 +3438,24 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 		break;
 	case SIOCSIFFLAGS:
 		RL_LOCK(sc);
-		if ((ifp->if_flags & IFF_UP) != 0) {
-			if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
-				if (((ifp->if_flags ^ sc->rl_if_flags)
+		if ((if_getflags(ifp) & IFF_UP) != 0) {
+			if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0) {
+				if (((if_getflags(ifp) ^ sc->rl_if_flags)
 				    & (IFF_PROMISC | IFF_ALLMULTI)) != 0)
 					re_set_rxmode(sc);
 			} else
 				re_init_locked(sc);
 		} else {
-			if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0)
+			if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0)
 				re_stop(sc);
 		}
-		sc->rl_if_flags = ifp->if_flags;
+		sc->rl_if_flags = if_getflags(ifp);
 		RL_UNLOCK(sc);
 		break;
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
 		RL_LOCK(sc);
-		if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0)
+		if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0)
 			re_set_rxmode(sc);
 		RL_UNLOCK(sc);
 		break;
@@ -3466,7 +3468,7 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 	    {
 		int mask, reinit;
 
-		mask = ifr->ifr_reqcap ^ ifp->if_capenable;
+		mask = ifr->ifr_reqcap ^ if_getcapenable(ifp);
 		reinit = 0;
 #ifdef DEVICE_POLLING
 		if (mask & IFCAP_POLLING) {
@@ -3477,55 +3479,55 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 				RL_LOCK(sc);
 				/* Disable interrupts */
 				CSR_WRITE_2(sc, RL_IMR, 0x0000);
-				ifp->if_capenable |= IFCAP_POLLING;
+				if_setcapenablebit(ifp, IFCAP_POLLING, 0);
 				RL_UNLOCK(sc);
 			} else {
 				error = ether_poll_deregister(ifp);
 				/* Enable interrupts. */
 				RL_LOCK(sc);
 				CSR_WRITE_2(sc, RL_IMR, RL_INTRS_CPLUS);
-				ifp->if_capenable &= ~IFCAP_POLLING;
+				if_setcapenablebit(ifp, 0, IFCAP_POLLING);
 				RL_UNLOCK(sc);
 			}
 		}
 #endif /* DEVICE_POLLING */
 		RL_LOCK(sc);
 		if ((mask & IFCAP_TXCSUM) != 0 &&
-		    (ifp->if_capabilities & IFCAP_TXCSUM) != 0) {
-			ifp->if_capenable ^= IFCAP_TXCSUM;
-			if ((ifp->if_capenable & IFCAP_TXCSUM) != 0)
-				ifp->if_hwassist |= RE_CSUM_FEATURES;
+		    (if_getcapabilities(ifp) & IFCAP_TXCSUM) != 0) {
+			if_togglecapenable(ifp, IFCAP_TXCSUM);
+			if ((if_getcapenable(ifp) & IFCAP_TXCSUM) != 0)
+				if_sethwassistbits(ifp, RE_CSUM_FEATURES, 0);
 			else
-				ifp->if_hwassist &= ~RE_CSUM_FEATURES;
+				if_sethwassistbits(ifp, 0, RE_CSUM_FEATURES);
 			reinit = 1;
 		}
 		if ((mask & IFCAP_RXCSUM) != 0 &&
-		    (ifp->if_capabilities & IFCAP_RXCSUM) != 0) {
-			ifp->if_capenable ^= IFCAP_RXCSUM;
+		    (if_getcapabilities(ifp) & IFCAP_RXCSUM) != 0) {
+			if_togglecapenable(ifp, IFCAP_RXCSUM);
 			reinit = 1;
 		}
 		if ((mask & IFCAP_TSO4) != 0 &&
-		    (ifp->if_capabilities & IFCAP_TSO4) != 0) {
-			ifp->if_capenable ^= IFCAP_TSO4;
-			if ((IFCAP_TSO4 & ifp->if_capenable) != 0)
-				ifp->if_hwassist |= CSUM_TSO;
+		    (if_getcapabilities(ifp) & IFCAP_TSO4) != 0) {
+			if_togglecapenable(ifp, IFCAP_TSO4);
+			if ((IFCAP_TSO4 & if_getcapenable(ifp)) != 0)
+				if_sethwassistbits(ifp, CSUM_TSO, 0);
 			else
-				ifp->if_hwassist &= ~CSUM_TSO;
-			if (ifp->if_mtu > RL_TSO_MTU &&
-			    (ifp->if_capenable & IFCAP_TSO4) != 0) {
-				ifp->if_capenable &= ~IFCAP_TSO4;
-				ifp->if_hwassist &= ~CSUM_TSO;
+				if_sethwassistbits(ifp, 0, CSUM_TSO);
+			if (if_getmtu(ifp) > RL_TSO_MTU &&
+			    (if_getcapenable(ifp) & IFCAP_TSO4) != 0) {
+				if_setcapenablebit(ifp, 0, IFCAP_TSO4);
+				if_sethwassistbits(ifp, 0, CSUM_TSO);
 			}
 		}
 		if ((mask & IFCAP_VLAN_HWTSO) != 0 &&
-		    (ifp->if_capabilities & IFCAP_VLAN_HWTSO) != 0)
-			ifp->if_capenable ^= IFCAP_VLAN_HWTSO;
+		    (if_getcapabilities(ifp) & IFCAP_VLAN_HWTSO) != 0)
+			if_togglecapenable(ifp, IFCAP_VLAN_HWTSO);
 		if ((mask & IFCAP_VLAN_HWTAGGING) != 0 &&
-		    (ifp->if_capabilities & IFCAP_VLAN_HWTAGGING) != 0) {
-			ifp->if_capenable ^= IFCAP_VLAN_HWTAGGING;
+		    (if_getcapabilities(ifp) & IFCAP_VLAN_HWTAGGING) != 0) {
+			if_togglecapenable(ifp, IFCAP_VLAN_HWTAGGING);
 			/* TSO over VLAN requires VLAN hardware tagging. */
-			if ((ifp->if_capenable & IFCAP_VLAN_HWTAGGING) == 0)
-				ifp->if_capenable &= ~IFCAP_VLAN_HWTSO;
+			if ((if_getcapenable(ifp) & IFCAP_VLAN_HWTAGGING) == 0)
+				if_setcapenablebit(ifp, 0, IFCAP_VLAN_HWTSO);
 			reinit = 1;
 		}
 		if ((sc->rl_flags & RL_FLAG_JUMBOV2) != 0 &&
@@ -3533,16 +3535,16 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 		    IFCAP_VLAN_HWTSO)) != 0)
 				reinit = 1;
 		if ((mask & IFCAP_WOL) != 0 &&
-		    (ifp->if_capabilities & IFCAP_WOL) != 0) {
+		    (if_getcapabilities(ifp) & IFCAP_WOL) != 0) {
 			if ((mask & IFCAP_WOL_UCAST) != 0)
-				ifp->if_capenable ^= IFCAP_WOL_UCAST;
+				if_togglecapenable(ifp, IFCAP_WOL_UCAST);
 			if ((mask & IFCAP_WOL_MCAST) != 0)
-				ifp->if_capenable ^= IFCAP_WOL_MCAST;
+				if_togglecapenable(ifp, IFCAP_WOL_MCAST);
 			if ((mask & IFCAP_WOL_MAGIC) != 0)
-				ifp->if_capenable ^= IFCAP_WOL_MAGIC;
+				if_togglecapenable(ifp, IFCAP_WOL_MAGIC);
 		}
-		if (reinit && ifp->if_drv_flags & IFF_DRV_RUNNING) {
-			ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+		if (reinit && if_getdrvflags(ifp) & IFF_DRV_RUNNING) {
+			if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 			re_init_locked(sc);
 		}
 		RL_UNLOCK(sc);
@@ -3560,7 +3562,7 @@ re_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 static void
 re_watchdog(struct rl_softc *sc)
 {
-	struct ifnet		*ifp;
+	if_t ifp;
 
 	RL_LOCK_ASSERT(sc);
 
@@ -3572,7 +3574,7 @@ re_watchdog(struct rl_softc *sc)
 	if (sc->rl_ldata.rl_tx_free == sc->rl_ldata.rl_tx_desc_cnt) {
 		if_printf(ifp, "watchdog timeout (missed Tx interrupts) "
 		    "-- recovering\n");
-		if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd))
+		if (!if_sendq_empty(ifp))
 			re_start_locked(ifp);
 		return;
 	}
@@ -3581,9 +3583,9 @@ re_watchdog(struct rl_softc *sc)
 	if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 
 	re_rxeof(sc, NULL);
-	ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+	if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 	re_init_locked(sc);
-	if (!IFQ_DRV_IS_EMPTY(&ifp->if_snd))
+	if (!if_sendq_empty(ifp))
 		re_start_locked(ifp);
 }
 
@@ -3595,7 +3597,7 @@ static void
 re_stop(struct rl_softc *sc)
 {
 	int			i;
-	struct ifnet		*ifp;
+	if_t ifp;
 	struct rl_txdesc	*txd;
 	struct rl_rxdesc	*rxd;
 
@@ -3605,7 +3607,11 @@ re_stop(struct rl_softc *sc)
 
 	sc->rl_watchdog_timer = 0;
 	callout_stop(&sc->rl_stat_callout);
-	ifp->if_drv_flags &= ~(IFF_DRV_RUNNING | IFF_DRV_OACTIVE);
+	if_setdrvflagbits(ifp, 0, (IFF_DRV_RUNNING | IFF_DRV_OACTIVE));
+
+#ifdef DEV_NETMAP
+	netmap_disable_all_rings(ifp);
+#endif /* DEV_NETMAP */
 
 	/*
 	 * Disable accepting frames to put RX MAC into idle state.
@@ -3730,7 +3736,7 @@ static int
 re_resume(device_t dev)
 {
 	struct rl_softc		*sc;
-	struct ifnet		*ifp;
+	if_t ifp;
 
 	sc = device_get_softc(dev);
 
@@ -3751,7 +3757,7 @@ re_resume(device_t dev)
 	re_clrwol(sc);
 
 	/* reinitialize interface if necessary */
-	if (ifp->if_flags & IFF_UP)
+	if (if_getflags(ifp) & IFF_UP)
 		re_init_locked(sc);
 
 	sc->suspended = 0;
@@ -3778,7 +3784,7 @@ re_shutdown(device_t dev)
 	 * interrupt comes in later on, which can happen in some
 	 * cases.
 	 */
-	sc->rl_ifp->if_flags &= ~IFF_UP;
+	if_setflagbits(sc->rl_ifp, 0, IFF_UP);
 	re_setwol(sc);
 	RL_UNLOCK(sc);
 
@@ -3856,7 +3862,7 @@ re_set_linkspeed(struct rl_softc *sc)
 static void
 re_setwol(struct rl_softc *sc)
 {
-	struct ifnet		*ifp;
+	if_t ifp;
 	int			pmc;
 	uint16_t		pmstat;
 	uint8_t			v;
@@ -3873,7 +3879,7 @@ re_setwol(struct rl_softc *sc)
 			CSR_WRITE_1(sc, RL_GPIO,
 			    CSR_READ_1(sc, RL_GPIO) & ~0x01);
 	}
-	if ((ifp->if_capenable & IFCAP_WOL) != 0) {
+	if ((if_getcapenable(ifp) & IFCAP_WOL) != 0) {
 		if ((sc->rl_flags & RL_FLAG_8168G_PLUS) != 0) {
 			/* Disable RXDV gate. */
 			CSR_WRITE_4(sc, RL_MISC, CSR_READ_4(sc, RL_MISC) &
@@ -3891,31 +3897,31 @@ re_setwol(struct rl_softc *sc)
 	/* Enable PME. */
 	v = CSR_READ_1(sc, sc->rl_cfg1);
 	v &= ~RL_CFG1_PME;
-	if ((ifp->if_capenable & IFCAP_WOL) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_WOL) != 0)
 		v |= RL_CFG1_PME;
 	CSR_WRITE_1(sc, sc->rl_cfg1, v);
 
 	v = CSR_READ_1(sc, sc->rl_cfg3);
 	v &= ~(RL_CFG3_WOL_LINK | RL_CFG3_WOL_MAGIC);
-	if ((ifp->if_capenable & IFCAP_WOL_MAGIC) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_WOL_MAGIC) != 0)
 		v |= RL_CFG3_WOL_MAGIC;
 	CSR_WRITE_1(sc, sc->rl_cfg3, v);
 
 	v = CSR_READ_1(sc, sc->rl_cfg5);
 	v &= ~(RL_CFG5_WOL_BCAST | RL_CFG5_WOL_MCAST | RL_CFG5_WOL_UCAST |
 	    RL_CFG5_WOL_LANWAKE);
-	if ((ifp->if_capenable & IFCAP_WOL_UCAST) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_WOL_UCAST) != 0)
 		v |= RL_CFG5_WOL_UCAST;
-	if ((ifp->if_capenable & IFCAP_WOL_MCAST) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_WOL_MCAST) != 0)
 		v |= RL_CFG5_WOL_MCAST | RL_CFG5_WOL_BCAST;
-	if ((ifp->if_capenable & IFCAP_WOL) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_WOL) != 0)
 		v |= RL_CFG5_WOL_LANWAKE;
 	CSR_WRITE_1(sc, sc->rl_cfg5, v);
 
 	/* Config register write done. */
 	CSR_WRITE_1(sc, RL_EECMD, RL_EEMODE_OFF);
 
-	if ((ifp->if_capenable & IFCAP_WOL) == 0 &&
+	if ((if_getcapenable(ifp) & IFCAP_WOL) == 0 &&
 	    (sc->rl_flags & RL_FLAG_PHYWAKE_PM) != 0)
 		CSR_WRITE_1(sc, RL_PMCH, CSR_READ_1(sc, RL_PMCH) & ~0x80);
 	/*
@@ -3927,7 +3933,7 @@ re_setwol(struct rl_softc *sc)
 	/* Request PME if WOL is requested. */
 	pmstat = pci_read_config(sc->rl_dev, pmc + PCIR_POWER_STATUS, 2);
 	pmstat &= ~(PCIM_PSTAT_PME | PCIM_PSTAT_PMEENABLE);
-	if ((ifp->if_capenable & IFCAP_WOL) != 0)
+	if ((if_getcapenable(ifp) & IFCAP_WOL) != 0)
 		pmstat |= PCIM_PSTAT_PME | PCIM_PSTAT_PMEENABLE;
 	pci_write_config(sc->rl_dev, pmc + PCIR_POWER_STATUS, pmstat, 2);
 }
@@ -3970,14 +3976,15 @@ re_add_sysctls(struct rl_softc *sc)
 	children = SYSCTL_CHILDREN(device_get_sysctl_tree(sc->rl_dev));
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "stats",
-	    CTLTYPE_INT | CTLFLAG_RW, sc, 0, re_sysctl_stats, "I",
-	    "Statistics Information");
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT, sc, 0,
+	    re_sysctl_stats, "I", "Statistics Information");
 	if ((sc->rl_flags & (RL_FLAG_MSI | RL_FLAG_MSIX)) == 0)
 		return;
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "int_rx_mod",
-	    CTLTYPE_INT | CTLFLAG_RW, &sc->rl_int_rx_mod, 0,
-	    sysctl_hw_re_int_mod, "I", "re RX interrupt moderation");
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
+	    &sc->rl_int_rx_mod, 0, sysctl_hw_re_int_mod, "I",
+	    "re RX interrupt moderation");
 	/* Pull in device tunables. */
 	sc->rl_int_rx_mod = RL_TIMER_DEFAULT;
 	error = resource_int_value(device_get_name(sc->rl_dev),
@@ -4008,7 +4015,7 @@ re_sysctl_stats(SYSCTL_HANDLER_ARGS)
 	if (result == 1) {
 		sc = (struct rl_softc *)arg1;
 		RL_LOCK(sc);
-		if ((sc->rl_ifp->if_drv_flags & IFF_DRV_RUNNING) == 0) {
+		if ((if_getdrvflags(sc->rl_ifp) & IFF_DRV_RUNNING) == 0) {
 			RL_UNLOCK(sc);
 			goto done;
 		}
@@ -4095,28 +4102,28 @@ sysctl_hw_re_int_mod(SYSCTL_HANDLER_ARGS)
 	    RL_TIMER_MAX));
 }
 
-#ifdef NETDUMP
+#ifdef DEBUGNET
 static void
-re_netdump_init(struct ifnet *ifp, int *nrxr, int *ncl, int *clsize)
+re_debugnet_init(if_t ifp, int *nrxr, int *ncl, int *clsize)
 {
 	struct rl_softc *sc;
 
 	sc = if_getsoftc(ifp);
 	RL_LOCK(sc);
 	*nrxr = sc->rl_ldata.rl_rx_desc_cnt;
-	*ncl = NETDUMP_MAX_IN_FLIGHT;
-	*clsize = (ifp->if_mtu > RL_MTU &&
+	*ncl = DEBUGNET_MAX_IN_FLIGHT;
+	*clsize = (if_getmtu(ifp) > RL_MTU &&
 	    (sc->rl_flags & RL_FLAG_JUMBOV2) != 0) ? MJUM9BYTES : MCLBYTES;
 	RL_UNLOCK(sc);
 }
 
 static void
-re_netdump_event(struct ifnet *ifp __unused, enum netdump_ev event __unused)
+re_debugnet_event(if_t ifp __unused, enum debugnet_ev event __unused)
 {
 }
 
 static int
-re_netdump_transmit(struct ifnet *ifp, struct mbuf *m)
+re_debugnet_transmit(if_t ifp, struct mbuf *m)
 {
 	struct rl_softc *sc;
 	int error;
@@ -4133,7 +4140,7 @@ re_netdump_transmit(struct ifnet *ifp, struct mbuf *m)
 }
 
 static int
-re_netdump_poll(struct ifnet *ifp, int count)
+re_debugnet_poll(if_t ifp, int count)
 {
 	struct rl_softc *sc;
 	int error;
@@ -4149,4 +4156,4 @@ re_netdump_poll(struct ifnet *ifp, int count)
 		return (error);
 	return (0);
 }
-#endif /* NETDUMP */
+#endif /* DEBUGNET */

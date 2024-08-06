@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef RTL8812A_H
@@ -51,7 +49,6 @@ static const uint8_t r12a_chan_5ghz_1[] =
 	{ 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144 };
 static const uint8_t r12a_chan_5ghz_2[] =
 	{ 149, 153, 157, 161, 165, 169, 173, 177 };
-
 
 /*
  * Function declarations.

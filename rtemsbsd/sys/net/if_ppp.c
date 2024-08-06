@@ -1760,9 +1760,7 @@ static driver_t ppp_nexus_driver = {
     NULL
 };
 
-static devclass_t ppp_devclass;
-
-DRIVER_MODULE(ppp, nexus, ppp_nexus_driver, ppp_devclass, 0, 0);
+DRIVER_MODULE(ppp, nexus, ppp_nexus_driver, 0, 0);
 MODULE_DEPEND(ppp, nexus, 1, 1, 1);
 
 #endif	/* NPPP > 0 */

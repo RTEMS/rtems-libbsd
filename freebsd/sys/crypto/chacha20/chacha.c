@@ -9,8 +9,6 @@ Public domain.
 /* $OpenBSD: chacha.c,v 1.1 2013/11/21 00:45:44 djm Exp $ */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/types.h>
 
@@ -90,11 +88,31 @@ chacha_keysetup(chacha_ctx *x,const u8 *k,u_int kbits)
 LOCAL void
 chacha_ivsetup(chacha_ctx *x, const u8 *iv, const u8 *counter)
 {
+#ifndef CHACHA_NONCE0_CTR128
   x->input[12] = counter == NULL ? 0 : U8TO32_LITTLE(counter + 0);
   x->input[13] = counter == NULL ? 0 : U8TO32_LITTLE(counter + 4);
   x->input[14] = U8TO32_LITTLE(iv + 0);
   x->input[15] = U8TO32_LITTLE(iv + 4);
+#else
+  // CHACHA_STATELEN
+  (void)iv;
+  x->input[12] = U8TO32_LITTLE(counter + 0);
+  x->input[13] = U8TO32_LITTLE(counter + 4);
+  x->input[14] = U8TO32_LITTLE(counter + 8);
+  x->input[15] = U8TO32_LITTLE(counter + 12);
+#endif
 }
+
+#ifdef CHACHA_NONCE0_CTR128
+LOCAL void
+chacha_ctrsave(const chacha_ctx *x, u8 *counter)
+{
+    U32TO8_LITTLE(counter + 0, x->input[12]);
+    U32TO8_LITTLE(counter + 4, x->input[13]);
+    U32TO8_LITTLE(counter + 8, x->input[14]);
+    U32TO8_LITTLE(counter + 12, x->input[15]);
+}
+#endif
 
 LOCAL void
 #ifndef __rtems__
@@ -130,8 +148,10 @@ chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u_int bytes)
 
   for (;;) {
     if (bytes < 64) {
+#ifndef KEYSTREAM_ONLY
       for (i = 0;i < bytes;++i) tmp[i] = m[i];
       m = tmp;
+#endif
       ctarget = c;
       c = tmp;
     }
@@ -200,7 +220,16 @@ chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u_int bytes)
     j12 = PLUSONE(j12);
     if (!j12) {
       j13 = PLUSONE(j13);
+#ifndef CHACHA_NONCE0_CTR128
       /* stopping at 2^70 bytes per nonce is user's responsibility */
+#else
+      if (!j13) {
+        j14 = PLUSONE(j14);
+        if (!j14) {
+          j15 = PLUSONE(j15);
+        }
+      }
+#endif
     }
 
     U32TO8_LITTLE(c + 0,x0);
@@ -226,6 +255,10 @@ chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c,u_int bytes)
       }
       x->input[12] = j12;
       x->input[13] = j13;
+#ifdef CHACHA_NONCE0_CTR128
+      x->input[14] = j14;
+      x->input[15] = j15;
+#endif
       return;
     }
     bytes -= 64;

@@ -60,8 +60,6 @@ static char sccsid[] = "@(#)hostname.c	8.1 (Berkeley) 5/31/93";
 #include <rtems/mdns.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 
 #include <err.h>
@@ -99,7 +97,7 @@ int
 main(int argc, char *argv[])
 {
 	int ch, sflag, dflag;
-	char *p, hostname[MAXHOSTNAMELEN];
+	char hostname[MAXHOSTNAMELEN], *hostp, *p;
 #ifdef __rtems__
 	struct getopt_data getopt_data;
 	memset(&getopt_data, 0, sizeof(getopt_data));
@@ -164,6 +162,7 @@ main(int argc, char *argv[])
 		(void)printf("%s\n", hostname);
 #endif /* __rtems__ */
 	} else {
+		hostp = hostname;
 		if (gethostname(hostname, (int)sizeof(hostname)))
 			err(1, "gethostname");
 		if (sflag) {
@@ -173,9 +172,9 @@ main(int argc, char *argv[])
 		} else if (dflag) {
 			p = strchr(hostname, '.');
 			if (p != NULL)
-				strcpy(hostname, ++p);
+				hostp = p + 1;
 		}
-		(void)printf("%s\n", hostname);
+		(void)printf("%s\n", hostp);
 	}
 	exit(0);
 }

@@ -53,6 +53,8 @@
 
 #define	KEY_LENGTH 16
 
+#define    CRIOGET         _IOWR('c', 100, uint32_t)
+
 typedef struct {
 	int dev_fd;
 	int session_fd;
@@ -86,8 +88,9 @@ aes_session_create(test_context *ctx, const void *key, size_t keylen)
 {
 	int rv;
 
-	rv = ioctl(ctx->dev_fd, CRIOGET, &ctx->session_fd);
-	assert(rv == 0);
+	ctx->dev_fd = open("/dev/crypto", O_RDWR);
+	assert(ctx->dev_fd >= 0);
+	ctx->session_fd = ctx->dev_fd;
 
 	memset(&ctx->session, 0, sizeof(ctx->session));
 	ctx->session.cipher = CRYPTO_AES_CBC;
@@ -177,18 +180,11 @@ test_main(void)
 	ctx = &test_instance;
 
 	allow = 1;
-	rv = sysctlbyname("kern.cryptodevallowsoft", NULL, NULL, &allow,
+	rv = sysctlbyname("kern.crypto.allow_soft", NULL, NULL, &allow,
 	    sizeof(allow));
-	assert(rv == 0);
-
-	ctx->dev_fd = open("/dev/crypto", O_RDWR);
-	assert(ctx->dev_fd >= 0);
 
 	aes_test(ctx, key_0, plaintext_0, ciphertext_0);
 	aes_test(ctx, key_1, plaintext_1, ciphertext_1);
-
-	rv = close(ctx->dev_fd);
-	assert(rv == 0);
 
 	exit(0);
 }

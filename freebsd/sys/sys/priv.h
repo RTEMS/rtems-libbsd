@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
@@ -27,8 +27,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -107,6 +105,7 @@
 #define	PRIV_CRED_SETRESGID	58	/* setresgid. */
 #define	PRIV_SEEOTHERGIDS	59	/* Exempt bsd.seeothergids. */
 #define	PRIV_SEEOTHERUIDS	60	/* Exempt bsd.seeotheruids. */
+#define	PRIV_SEEJAILPROC        61      /* Exempt from bsd.see_jail_proc. */
 
 /*
  * Debugging privileges.
@@ -192,6 +191,7 @@
 #define	PRIV_SCHED_SETPARAM	205	/* Can set thread scheduler params. */
 #define	PRIV_SCHED_CPUSET	206	/* Can manipulate cpusets. */
 #define	PRIV_SCHED_CPUSET_INTR	207	/* Can adjust IRQ to CPU binding. */
+#define	PRIV_SCHED_IDPRIO	208	/* Can set idle time scheduling. */
 
 /*
  * POSIX semaphore privileges.
@@ -283,6 +283,7 @@
 #define	PRIV_VFS_SYSFLAGS	342	/* Can modify system flags. */
 #define	PRIV_VFS_UNMOUNT	343	/* Can unmount(). */
 #define	PRIV_VFS_STAT		344	/* Override vnode MAC stat perm. */
+#define	PRIV_VFS_READ_DIR	345	/* Can read(2) a dirfd, needs sysctl. */
 
 /*
  * Virtual memory privileges.
@@ -346,12 +347,17 @@
 #define	PRIV_NET_VXLAN		420	/* Administer vxlan. */
 #define	PRIV_NET_SETLANPCP	421	/* Set LAN priority. */
 #define	PRIV_NET_SETVLANPCP	PRIV_NET_SETLANPCP /* Alias Set VLAN priority */
+#define	PRIV_NET_OVPN		422	/* Administer OpenVPN DCO. */
+#define	PRIV_NET_ME		423	/* Administer ME interface. */
+#define	PRIV_NET_WG		424	/* Administer WireGuard interface. */
 
 /*
  * 802.11-related privileges.
  */
-#define	PRIV_NET80211_GETKEY	440	/* Query 802.11 keys. */
-#define	PRIV_NET80211_MANAGE	441	/* Administer 802.11. */
+#define	PRIV_NET80211_VAP_GETKEY	440	/* Query VAP 802.11 keys. */
+#define	PRIV_NET80211_VAP_MANAGE	441	/* Administer 802.11 VAP */
+#define	PRIV_NET80211_VAP_SETMAC	442	/* Set VAP MAC address */
+#define	PRIV_NET80211_CREATE_VAP	443	/* Create a new VAP */
 
 /*
  * Placeholder for AppleTalk privileges, not supported anymore.
@@ -420,11 +426,13 @@
  */
 #define	PRIV_VM86_INTCALL	550	/* Allow invoking vm86 int handlers. */
 
+#define	PRIV_PIPEBUF		560	/* Allow to allocate reserved pipebuf
+					   space */
+
 /*
  * Set of reserved privilege values, which will be allocated to code as
  * needed, in order to avoid renumbering later privileges due to insertion.
  */
-#define	_PRIV_RESERVED0		560
 #define	_PRIV_RESERVED1		561
 #define	_PRIV_RESERVED2		562
 #define	_PRIV_RESERVED3		563
@@ -509,9 +517,21 @@
 #define	PRIV_KMEM_WRITE		681	/* Open mem/kmem for writing. */
 
 /*
+ * Kernel debugger privileges.
+ */
+#define	PRIV_KDB_SET_BACKEND	690	/* Allow setting KDB backend. */
+
+/*
+ * veriexec override privileges - very rare!
+ */
+#define	PRIV_VERIEXEC_DIRECT	700	/* Can override 'indirect' */
+#define	PRIV_VERIEXEC_NOVERIFY	701	/* Can override O_VERIFY */
+#define	PRIV_VERIEXEC_CONTROL	702	/* Can configure veriexec */
+
+/*
  * Track end of privilege list.
  */
-#define	_PRIV_HIGHEST		682
+#define	_PRIV_HIGHEST		703
 
 /*
  * Validate that a named privilege is known by the privilege system.  Invalid
@@ -533,10 +553,16 @@ struct thread;
 struct ucred;
 #ifndef __rtems__
 int	priv_check(struct thread *td, int priv);
-int	priv_check_cred(struct ucred *cred, int priv, int flags);
+int	priv_check_cred(struct ucred *cred, int priv);
+int	priv_check_cred_vfs_lookup(struct ucred *cred);
+int	priv_check_cred_vfs_lookup_nomac(struct ucred *cred);
+int	priv_check_cred_vfs_generation(struct ucred *cred);
 #else /* __rtems__ */
-#define priv_check(td, priv) 0
-#define priv_check_cred(cred, priv, flags) 0
+#define priv_check(td, priv) (0)
+#define priv_check_cred(cred, priv) (0)
+#define priv_check_cred_vfs_lookup(cred) (0)
+#define priv_check_cred_vfs_lookup_nomac(cred) (0)
+#define priv_check_cred_vfs_generation(cred) (0)
 #endif /* __rtems__ */
 #endif
 

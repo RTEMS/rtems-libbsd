@@ -10,7 +10,7 @@
  * Copyright (c) 1999 Bill Paul <wpaul@ctr.columbia.edu>
  * Copyright (c) 2012 ADARA Networks, Inc.
  * All rights reserved.
-  *
+ *
  * Portions of this software were developed by Robert N. M. Watson under
  * contract to ADARA Networks, Inc.
  *
@@ -71,44 +71,97 @@
 #include "rtems-bsd-ifconfig-ifvlan-data.h"
 #endif /* __rtems__ */
 
-#ifndef lint
-static const char rcsid[] =
-  "$FreeBSD$";
-#endif
-
 #define	NOTAG	((u_short) -1)
+#define	NOPROTO	((u_short) -1)
+
+static const char proto_8021Q[]  = "802.1q";
+static const char proto_8021ad[] = "802.1ad";
+static const char proto_qinq[] = "qinq";
 
 static 	struct vlanreq params = {
 	.vlr_tag	= NOTAG,
+	.vlr_proto	= NOPROTO,
 };
 
-static int
-getvlan(int s, struct ifreq *ifr, struct vlanreq *vreq)
-{
-	bzero((char *)vreq, sizeof(*vreq));
-	ifr->ifr_data = (caddr_t)vreq;
-
-	return ioctl(s, SIOCGETVLAN, (caddr_t)ifr);
-}
-
 static void
-vlan_status(int s)
+vlan_status(if_ctx *ctx)
 {
-	struct vlanreq		vreq;
+	struct vlanreq vreq = {};
+	struct ifreq ifr = { .ifr_data = (caddr_t)&vreq };
 
-	if (getvlan(s, &ifr, &vreq) == -1)
+	if (ioctl_ctx_ifr(ctx, SIOCGETVLAN, &ifr) == -1)
 		return;
 	printf("\tvlan: %d", vreq.vlr_tag);
-	if (ioctl(s, SIOCGVLANPCP, (caddr_t)&ifr) != -1)
+	printf(" vlanproto: ");
+	switch (vreq.vlr_proto) {
+		case ETHERTYPE_VLAN:
+			printf(proto_8021Q);
+			break;
+		case ETHERTYPE_QINQ:
+			printf(proto_8021ad);
+			break;
+		default:
+			printf("0x%04x", vreq.vlr_proto);
+	}
+	if (ioctl_ctx_ifr(ctx, SIOCGVLANPCP, &ifr) != -1)
 		printf(" vlanpcp: %u", ifr.ifr_vlan_pcp);
 	printf(" parent interface: %s", vreq.vlr_parent[0] == '\0' ?
 	    "<none>" : vreq.vlr_parent);
 	printf("\n");
 }
 
-static void
-vlan_create(int s, struct ifreq *ifr)
+static int
+vlan_match_ethervid(const char *name)
 {
+	return (strchr(name, '.') != NULL);
+}
+
+static void
+vlan_parse_ethervid(const char *name)
+{
+	char ifname[IFNAMSIZ];
+	char *cp;
+	unsigned int vid;
+
+	strlcpy(ifname, name, IFNAMSIZ);
+	if ((cp = strrchr(ifname, '.')) == NULL)
+		return;
+	/*
+	 * Derive params from interface name: "parent.vid".
+	 */
+	*cp++ = '\0';
+	if ((*cp < '1') || (*cp > '9'))
+		errx(1, "invalid vlan tag");
+
+	vid = *cp++ - '0';
+	while ((*cp >= '0') && (*cp <= '9')) {
+		vid = (vid * 10) + (*cp++ - '0');
+		if (vid >= 0xFFF)
+			errx(1, "invalid vlan tag");
+	}
+	if (*cp != '\0')
+		errx(1, "invalid vlan tag");
+
+	/*
+	 * allow "devX.Y vlandev devX vlan Y" syntax
+	 */
+	if (params.vlr_tag == NOTAG || params.vlr_tag == vid)
+		params.vlr_tag = vid;
+	else
+		errx(1, "ambiguous vlan specification");
+
+	/* Restrict overriding interface name */
+	if (params.vlr_parent[0] == '\0' || !strcmp(params.vlr_parent, ifname))
+		strlcpy(params.vlr_parent, ifname, IFNAMSIZ);
+	else
+		errx(1, "ambiguous vlan specification");
+}
+
+static void
+vlan_create(if_ctx *ctx, struct ifreq *ifr)
+{
+	vlan_parse_ethervid(ifr->ifr_name);
+
 	if (params.vlr_tag != NOTAG || params.vlr_parent[0] != '\0') {
 		/*
 		 * One or both parameters were specified, make sure both.
@@ -117,14 +170,15 @@ vlan_create(int s, struct ifreq *ifr)
 			errx(1, "must specify a tag for vlan create");
 		if (params.vlr_parent[0] == '\0')
 			errx(1, "must specify a parent device for vlan create");
+		if (params.vlr_proto == NOPROTO)
+			params.vlr_proto = ETHERTYPE_VLAN;
 		ifr->ifr_data = (caddr_t) &params;
 	}
-	if (ioctl(s, SIOCIFCREATE2, ifr) < 0)
-		err(1, "SIOCIFCREATE2");
+	ifcreate_ioctl(ctx, ifr);
 }
 
 static void
-vlan_cb(int s, void *arg)
+vlan_cb(if_ctx *ctx __unused, void *arg __unused)
 {
 	if ((params.vlr_tag != NOTAG) ^ (params.vlr_parent[0] != '\0'))
 		errx(1, "both vlan and vlandev must be specified");
@@ -134,16 +188,19 @@ static void
 vlan_set(int s, struct ifreq *ifr)
 {
 	if (params.vlr_tag != NOTAG && params.vlr_parent[0] != '\0') {
+		if (params.vlr_proto == NOPROTO)
+			params.vlr_proto = ETHERTYPE_VLAN;
 		ifr->ifr_data = (caddr_t) &params;
 		if (ioctl(s, SIOCSETVLAN, (caddr_t)ifr) == -1)
 			err(1, "SIOCSETVLAN");
 	}
 }
 
-static
-DECL_CMD_FUNC(setvlantag, val, d)
+static void
+setvlantag(if_ctx *ctx, const char *val, int dummy __unused)
 {
-	struct vlanreq vreq;
+	struct vlanreq vreq = {};
+	struct ifreq ifr = { .ifr_data = (caddr_t)&vreq };
 	u_long ul;
 	char *endp;
 
@@ -155,26 +212,69 @@ DECL_CMD_FUNC(setvlantag, val, d)
 	if (params.vlr_tag != ul)
 		errx(1, "value for vlan out of range");
 
-	if (getvlan(s, &ifr, &vreq) != -1)
-		vlan_set(s, &ifr);
+	if (ioctl_ctx_ifr(ctx, SIOCGETVLAN, &ifr) != -1) {
+		/*
+		 * Retrieve the current settings if the interface has already
+		 * been configured.
+		 */
+		if (vreq.vlr_parent[0] != '\0') {
+			if (params.vlr_parent[0] == '\0')
+				strlcpy(params.vlr_parent, vreq.vlr_parent, IFNAMSIZ);
+			if (params.vlr_proto == NOPROTO)
+				params.vlr_proto = vreq.vlr_proto;
+		}
+		vlan_set(ctx->io_s, &ifr);
+	}
 }
 
-static
-DECL_CMD_FUNC(setvlandev, val, d)
+static void
+setvlandev(if_ctx *ctx, const char *val, int dummy __unused)
 {
-	struct vlanreq vreq;
+	struct vlanreq vreq = {};
+	struct ifreq ifr = { .ifr_data = (caddr_t)&vreq };
 
 	strlcpy(params.vlr_parent, val, sizeof(params.vlr_parent));
 
-	if (getvlan(s, &ifr, &vreq) != -1)
-		vlan_set(s, &ifr);
+	if (ioctl_ctx_ifr(ctx, SIOCGETVLAN, &ifr) != -1)
+		vlan_set(ctx->io_s, &ifr);
 }
 
-static
-DECL_CMD_FUNC(setvlanpcp, val, d)
+static void
+setvlanproto(if_ctx *ctx, const char *val, int dummy __unused)
+{
+	struct vlanreq vreq = {};
+	struct ifreq ifr = { .ifr_data = (caddr_t)&vreq };
+
+	if (strncasecmp(proto_8021Q, val,
+	    strlen(proto_8021Q)) == 0) {
+		params.vlr_proto = ETHERTYPE_VLAN;
+	} else if ((strncasecmp(proto_8021ad, val, strlen(proto_8021ad)) == 0)
+	    || (strncasecmp(proto_qinq, val, strlen(proto_qinq)) == 0)) {
+		params.vlr_proto = ETHERTYPE_QINQ;
+	} else
+		errx(1, "invalid value for vlanproto");
+
+	if (ioctl_ctx_ifr(ctx, SIOCGETVLAN, &ifr) != -1) {
+		/*
+		 * Retrieve the current settings if the interface has already
+		 * been configured.
+		 */
+		if (vreq.vlr_parent[0] != '\0') {
+			if (params.vlr_parent[0] == '\0')
+				strlcpy(params.vlr_parent, vreq.vlr_parent, IFNAMSIZ);
+			if (params.vlr_tag == NOTAG)
+				params.vlr_tag = vreq.vlr_tag;
+		}
+		vlan_set(ctx->io_s, &ifr);
+	}
+}
+
+static void
+setvlanpcp(if_ctx *ctx, const char *val, int dummy __unused)
 {
 	u_long ul;
 	char *endp;
+	struct ifreq ifr = {};
 
 	ul = strtoul(val, &endp, 0);
 	if (*endp != '\0')
@@ -182,47 +282,47 @@ DECL_CMD_FUNC(setvlanpcp, val, d)
 	if (ul > 7)
 		errx(1, "value for vlanpcp out of range");
 	ifr.ifr_vlan_pcp = ul;
-	if (ioctl(s, SIOCSVLANPCP, (caddr_t)&ifr) == -1)
+	if (ioctl_ctx_ifr(ctx, SIOCSVLANPCP, &ifr) == -1)
 		err(1, "SIOCSVLANPCP");
 }
 
-static
-DECL_CMD_FUNC(unsetvlandev, val, d)
+static void
+unsetvlandev(if_ctx *ctx, const char *val __unused, int dummy __unused)
 {
-	struct vlanreq		vreq;
+	struct vlanreq vreq = {};
+	struct ifreq ifr = { .ifr_data = (caddr_t)&vreq };
 
-	bzero((char *)&vreq, sizeof(struct vlanreq));
-	ifr.ifr_data = (caddr_t)&vreq;
-
-	if (ioctl(s, SIOCGETVLAN, (caddr_t)&ifr) == -1)
+	if (ioctl_ctx_ifr(ctx, SIOCGETVLAN, &ifr) == -1)
 		err(1, "SIOCGETVLAN");
 
 	bzero((char *)&vreq.vlr_parent, sizeof(vreq.vlr_parent));
 	vreq.vlr_tag = 0;
 
-	if (ioctl(s, SIOCSETVLAN, (caddr_t)&ifr) == -1)
+	if (ioctl_ctx(ctx, SIOCSETVLAN, (caddr_t)&ifr) == -1)
 		err(1, "SIOCSETVLAN");
 }
 
 static struct cmd vlan_cmds[] = {
 	DEF_CLONE_CMD_ARG("vlan",			setvlantag),
 	DEF_CLONE_CMD_ARG("vlandev",			setvlandev),
+	DEF_CLONE_CMD_ARG("vlanproto",			setvlanproto),
 	DEF_CMD_ARG("vlanpcp",				setvlanpcp),
 	/* NB: non-clone cmds */
 	DEF_CMD_ARG("vlan",				setvlantag),
 	DEF_CMD_ARG("vlandev",				setvlandev),
+	DEF_CMD_ARG("vlanproto",			setvlanproto),
 	/* XXX For compatibility.  Should become DEF_CMD() some day. */
 	DEF_CMD_OPTARG("-vlandev",			unsetvlandev),
 	DEF_CMD("vlanmtu",	IFCAP_VLAN_MTU,		setifcap),
-	DEF_CMD("-vlanmtu",	-IFCAP_VLAN_MTU,	setifcap),
+	DEF_CMD("-vlanmtu",	IFCAP_VLAN_MTU,		clearifcap),
 	DEF_CMD("vlanhwtag",	IFCAP_VLAN_HWTAGGING,	setifcap),
-	DEF_CMD("-vlanhwtag",	-IFCAP_VLAN_HWTAGGING,	setifcap),
+	DEF_CMD("-vlanhwtag",	IFCAP_VLAN_HWTAGGING,	clearifcap),
 	DEF_CMD("vlanhwfilter",	IFCAP_VLAN_HWFILTER,	setifcap),
-	DEF_CMD("-vlanhwfilter", -IFCAP_VLAN_HWFILTER,	setifcap),
-	DEF_CMD("-vlanhwtso",	-IFCAP_VLAN_HWTSO,	setifcap),
+	DEF_CMD("-vlanhwfilter", IFCAP_VLAN_HWFILTER,	clearifcap),
 	DEF_CMD("vlanhwtso",	IFCAP_VLAN_HWTSO,	setifcap),
+	DEF_CMD("-vlanhwtso",	IFCAP_VLAN_HWTSO,	clearifcap),
 	DEF_CMD("vlanhwcsum",	IFCAP_VLAN_HWCSUM,	setifcap),
-	DEF_CMD("-vlanhwcsum",	-IFCAP_VLAN_HWCSUM,	setifcap),
+	DEF_CMD("-vlanhwcsum",	IFCAP_VLAN_HWCSUM,	clearifcap),
 };
 static struct afswtch af_vlan = {
 	.af_name	= "af_vlan",
@@ -243,5 +343,6 @@ vlan_ctor(void)
 		cmd_register(&vlan_cmds[i]);
 	af_register(&af_vlan);
 	callback_register(vlan_cb, NULL);
-	clone_setdefcallback("vlan", vlan_create);
+	clone_setdefcallback_prefix("vlan", vlan_create);
+	clone_setdefcallback_filter(vlan_match_ethervid, vlan_create);
 }

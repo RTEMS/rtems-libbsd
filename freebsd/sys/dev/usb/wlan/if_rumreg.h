@@ -1,4 +1,3 @@
-/*	$FreeBSD$	*/
 
 /*-
  * Copyright (c) 2005, 2006 Damien Bergamini <damien.bergamini@free.fr>
@@ -116,7 +115,6 @@
 #define RT2573_STA_CSR3		0x30cc
 #define RT2573_STA_CSR4		0x30d0
 #define RT2573_STA_CSR5		0x30d4
-
 
 /* possible values for register RT2573_ADDR_MODE */
 #define RT2573_MODE_MASK	0x7

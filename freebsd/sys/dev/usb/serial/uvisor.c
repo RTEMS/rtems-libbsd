@@ -1,7 +1,6 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*	$NetBSD: uvisor.c,v 1.9 2001/01/23 14:04:14 augustss Exp $	*/
-/*      $FreeBSD$ */
 
 /* Also already merged from NetBSD:
  *	$NetBSD: uvisor.c,v 1.12 2001/11/13 06:24:57 lukem Exp $
@@ -16,7 +15,7 @@
  */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -84,7 +83,8 @@
 #ifdef USB_DEBUG
 static int uvisor_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, uvisor, CTLFLAG_RW, 0, "USB uvisor");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, uvisor, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB uvisor");
 SYSCTL_INT(_hw_usb_uvisor, OID_AUTO, debug, CTLFLAG_RWTUN,
     &uvisor_debug, 0, "Debug level");
 #endif
@@ -209,7 +209,6 @@ static void	uvisor_start_write(struct ucom_softc *);
 static void	uvisor_stop_write(struct ucom_softc *);
 
 static const struct usb_config uvisor_config[UVISOR_N_TRANSFER] = {
-
 	[UVISOR_BULK_DT_WR] = {
 		.type = UE_BULK,
 		.endpoint = UE_ADDR_ANY,
@@ -246,8 +245,6 @@ static device_method_t uvisor_methods[] = {
 	DEVMETHOD(device_detach, uvisor_detach),
 	DEVMETHOD_END
 };
-
-static devclass_t uvisor_devclass;
 
 static driver_t uvisor_driver = {
 	.name = "uvisor",
@@ -287,7 +284,7 @@ static const STRUCT_USB_HOST_ID uvisor_devs[] = {
 #undef UVISOR_DEV
 };
 
-DRIVER_MODULE(uvisor, uhub, uvisor_driver, uvisor_devclass, NULL, 0);
+DRIVER_MODULE(uvisor, uhub, uvisor_driver, NULL, NULL);
 MODULE_DEPEND(uvisor, ucom, 1, 1, 1);
 MODULE_DEPEND(uvisor, usb, 1, 1, 1);
 MODULE_VERSION(uvisor, 1);
@@ -621,7 +618,6 @@ uvisor_write_callback(struct usb_xfer *xfer, usb_error_t error)
 	case USB_ST_TRANSFERRED:
 tr_setup:
 		for (x = 0; x != UVISOROFRAMES; x++) {
-
 			usbd_xfer_set_frame_offset(xfer, 
 			    x * UVISOROBUFSIZE, x);
 

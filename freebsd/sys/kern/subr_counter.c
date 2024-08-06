@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2012 Gleb Smirnoff <glebius@FreeBSD.org>
  * All rights reserved.
@@ -29,8 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -63,14 +61,14 @@ counter_u64_t
 counter_u64_alloc(int flags)
 {
 
-	return (uma_zalloc_pcpu(pcpu_zone_64, flags | M_ZERO));
+	return (uma_zalloc_pcpu(pcpu_zone_8, flags | M_ZERO));
 }
 
 void
 counter_u64_free(counter_u64_t c)
 {
 
-	uma_zfree_pcpu(pcpu_zone_64, c);
+	uma_zfree_pcpu(pcpu_zone_8, c);
 }
 
 int
@@ -115,7 +113,7 @@ sysctl_handle_counter_u64_array(SYSCTL_HANDLER_ARGS)
 	 */
 	for (int i = 0; i < arg2; i++)
 		counter_u64_zero(((counter_u64_t *)arg1)[i]);
- 
+
 	return (0);
 }
 
@@ -173,6 +171,24 @@ counter_ratecheck(struct counter_rate *cr, int64_t limit)
 		val = cr->cr_over = -1;
 
 	return (val);
+}
+
+void
+counter_u64_sysinit(void *arg)
+{
+	counter_u64_t *cp;
+
+	cp = arg;
+	*cp = counter_u64_alloc(M_WAITOK);
+}
+
+void
+counter_u64_sysuninit(void *arg)
+{
+	counter_u64_t *cp;
+
+	cp = arg;
+	counter_u64_free(*cp);
 }
 #ifdef __rtems__
 uint64_t _bsd_early_counter[_BSD_EARLY_COUNTER_SIZE];

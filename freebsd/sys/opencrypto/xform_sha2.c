@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),
@@ -48,21 +50,20 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
+#include <sys/types.h>
 #include <crypto/sha2/sha224.h>
 #include <crypto/sha2/sha256.h>
 #include <crypto/sha2/sha384.h>
 #include <crypto/sha2/sha512.h>
 #include <opencrypto/xform_auth.h>
 
-static	int SHA224Update_int(void *, const u_int8_t *, u_int16_t);
-static	int SHA256Update_int(void *, const u_int8_t *, u_int16_t);
-static	int SHA384Update_int(void *, const u_int8_t *, u_int16_t);
-static	int SHA512Update_int(void *, const u_int8_t *, u_int16_t);
+static	int SHA224Update_int(void *, const void *, u_int);
+static	int SHA256Update_int(void *, const void *, u_int);
+static	int SHA384Update_int(void *, const void *, u_int);
+static	int SHA512Update_int(void *, const void *, u_int);
 
 /* Plain hashes */
-struct auth_hash auth_hash_sha2_224 = {
+const struct auth_hash auth_hash_sha2_224 = {
 	.type = CRYPTO_SHA2_224,
 	.name = "SHA2-224",
 	.hashsize = SHA2_224_HASH_LEN,
@@ -70,10 +71,10 @@ struct auth_hash auth_hash_sha2_224 = {
 	.blocksize = SHA2_224_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA224_Init,
 	.Update = SHA224Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA224_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA224_Final,
 };
 
-struct auth_hash auth_hash_sha2_256 = {
+const struct auth_hash auth_hash_sha2_256 = {
 	.type = CRYPTO_SHA2_256,
 	.name = "SHA2-256",
 	.keysize = SHA2_256_BLOCK_LEN,
@@ -82,10 +83,10 @@ struct auth_hash auth_hash_sha2_256 = {
 	.blocksize = SHA2_256_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA256_Init,
 	.Update = SHA256Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA256_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA256_Final,
 };
 
-struct auth_hash auth_hash_sha2_384 = {
+const struct auth_hash auth_hash_sha2_384 = {
 	.type = CRYPTO_SHA2_384,
 	.name = "SHA2-384",
 	.keysize = SHA2_384_BLOCK_LEN,
@@ -94,10 +95,10 @@ struct auth_hash auth_hash_sha2_384 = {
 	.blocksize = SHA2_384_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA384_Init,
 	.Update = SHA384Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA384_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA384_Final,
 };
 
-struct auth_hash auth_hash_sha2_512 = {
+const struct auth_hash auth_hash_sha2_512 = {
 	.type = CRYPTO_SHA2_512,
 	.name = "SHA2-512",
 	.keysize = SHA2_512_BLOCK_LEN,
@@ -106,11 +107,11 @@ struct auth_hash auth_hash_sha2_512 = {
 	.blocksize = SHA2_512_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA512_Init,
 	.Update = SHA512Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA512_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA512_Final,
 };
 
 /* Authentication instances */
-struct auth_hash auth_hash_hmac_sha2_224 = {
+const struct auth_hash auth_hash_hmac_sha2_224 = {
 	.type = CRYPTO_SHA2_224_HMAC,
 	.name = "HMAC-SHA2-224",
 	.keysize = SHA2_224_BLOCK_LEN,
@@ -119,10 +120,10 @@ struct auth_hash auth_hash_hmac_sha2_224 = {
 	.blocksize = SHA2_224_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA224_Init,
 	.Update = SHA224Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA224_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA224_Final,
 };
 
-struct auth_hash auth_hash_hmac_sha2_256 = {
+const struct auth_hash auth_hash_hmac_sha2_256 = {
 	.type = CRYPTO_SHA2_256_HMAC,
 	.name = "HMAC-SHA2-256",
 	.keysize = SHA2_256_BLOCK_LEN,
@@ -131,10 +132,10 @@ struct auth_hash auth_hash_hmac_sha2_256 = {
 	.blocksize = SHA2_256_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA256_Init,
 	.Update = SHA256Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA256_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA256_Final,
 };
 
-struct auth_hash auth_hash_hmac_sha2_384 = {
+const struct auth_hash auth_hash_hmac_sha2_384 = {
 	.type = CRYPTO_SHA2_384_HMAC,
 	.name = "HMAC-SHA2-384",
 	.keysize = SHA2_384_BLOCK_LEN,
@@ -143,10 +144,10 @@ struct auth_hash auth_hash_hmac_sha2_384 = {
 	.blocksize = SHA2_384_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA384_Init,
 	.Update = SHA384Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA384_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA384_Final,
 };
 
-struct auth_hash auth_hash_hmac_sha2_512 = {
+const struct auth_hash auth_hash_hmac_sha2_512 = {
 	.type = CRYPTO_SHA2_512_HMAC,
 	.name = "HMAC-SHA2-512",
 	.keysize = SHA2_512_BLOCK_LEN,
@@ -155,35 +156,35 @@ struct auth_hash auth_hash_hmac_sha2_512 = {
 	.blocksize = SHA2_512_BLOCK_LEN,
 	.Init = (void (*)(void *)) SHA512_Init,
 	.Update = SHA512Update_int,
-	.Final = (void (*)(u_int8_t *, void *)) SHA512_Final,
+	.Final = (void (*)(uint8_t *, void *)) SHA512_Final,
 };
 
 /*
  * And now for auth.
  */
 static int
-SHA224Update_int(void *ctx, const u_int8_t *buf, u_int16_t len)
+SHA224Update_int(void *ctx, const void *buf, u_int len)
 {
 	SHA224_Update(ctx, buf, len);
 	return 0;
 }
 
 static int
-SHA256Update_int(void *ctx, const u_int8_t *buf, u_int16_t len)
+SHA256Update_int(void *ctx, const void *buf, u_int len)
 {
 	SHA256_Update(ctx, buf, len);
 	return 0;
 }
 
 static int
-SHA384Update_int(void *ctx, const u_int8_t *buf, u_int16_t len)
+SHA384Update_int(void *ctx, const void *buf, u_int len)
 {
 	SHA384_Update(ctx, buf, len);
 	return 0;
 }
 
 static int
-SHA512Update_int(void *ctx, const u_int8_t *buf, u_int16_t len)
+SHA512Update_int(void *ctx, const void *buf, u_int len)
 {
 	SHA512_Update(ctx, buf, len);
 	return 0;

@@ -1,16 +1,16 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2001-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
 #include "e_os.h"
-#include "eng_int.h"
+#include "eng_local.h"
 #include <openssl/rand.h>
 #include "internal/refcount.h"
 
@@ -22,8 +22,6 @@ CRYPTO_ONCE engine_lock_init = CRYPTO_ONCE_STATIC_INIT;
 
 DEFINE_RUN_ONCE(do_engine_lock_init)
 {
-    if (!OPENSSL_init_crypto(0, NULL))
-        return 0;
     global_engine_lock = CRYPTO_THREAD_lock_new();
     return global_engine_lock != NULL;
 }
@@ -34,11 +32,11 @@ ENGINE *ENGINE_new(void)
 
     if (!RUN_ONCE(&engine_lock_init, do_engine_lock_init)
         || (ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
-        ENGINEerr(ENGINE_F_ENGINE_NEW, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     ret->struct_ref = 1;
-    engine_ref_debug(ret, 0, 1);
+    ENGINE_REF_PRINT(ret, 0, 1);
     if (!CRYPTO_new_ex_data(CRYPTO_EX_INDEX_ENGINE, ret, &ret->ex_data)) {
         OPENSSL_free(ret);
         return NULL;
@@ -69,6 +67,7 @@ void engine_set_all_null(ENGINE *e)
     e->load_pubkey = NULL;
     e->cmd_defns = NULL;
     e->flags = 0;
+    e->dynamic_id = NULL;
 }
 
 int engine_free_util(ENGINE *e, int not_locked)
@@ -81,7 +80,7 @@ int engine_free_util(ENGINE *e, int not_locked)
         CRYPTO_DOWN_REF(&e->struct_ref, &i, global_engine_lock);
     else
         i = --e->struct_ref;
-    engine_ref_debug(e, 0, -1);
+    ENGINE_REF_PRINT(e, 0, -1);
     if (i > 0)
         return 1;
     REF_ASSERT_ISNT(i < 0);
@@ -94,6 +93,7 @@ int engine_free_util(ENGINE *e, int not_locked)
      */
     if (e->destroy)
         e->destroy(e);
+    engine_remove_dynamic_id(e, not_locked);
     CRYPTO_free_ex_data(CRYPTO_EX_INDEX_ENGINE, e, &e->ex_data);
     OPENSSL_free(e);
     return 1;
@@ -128,34 +128,41 @@ static ENGINE_CLEANUP_ITEM *int_cleanup_item(ENGINE_CLEANUP_CB *cb)
     ENGINE_CLEANUP_ITEM *item;
 
     if ((item = OPENSSL_malloc(sizeof(*item))) == NULL) {
-        ENGINEerr(ENGINE_F_INT_CLEANUP_ITEM, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     item->cb = cb;
     return item;
 }
 
-void engine_cleanup_add_first(ENGINE_CLEANUP_CB *cb)
+int engine_cleanup_add_first(ENGINE_CLEANUP_CB *cb)
 {
     ENGINE_CLEANUP_ITEM *item;
 
     if (!int_cleanup_check(1))
-        return;
-    item = int_cleanup_item(cb);
-    if (item)
-        sk_ENGINE_CLEANUP_ITEM_insert(cleanup_stack, item, 0);
-}
-
-void engine_cleanup_add_last(ENGINE_CLEANUP_CB *cb)
-{
-    ENGINE_CLEANUP_ITEM *item;
-    if (!int_cleanup_check(1))
-        return;
+        return 0;
     item = int_cleanup_item(cb);
     if (item != NULL) {
-        if (sk_ENGINE_CLEANUP_ITEM_push(cleanup_stack, item) <= 0)
-            OPENSSL_free(item);
+        if (sk_ENGINE_CLEANUP_ITEM_insert(cleanup_stack, item, 0))
+            return 1;
+        OPENSSL_free(item);
     }
+    return 0;
+}
+
+int engine_cleanup_add_last(ENGINE_CLEANUP_CB *cb)
+{
+    ENGINE_CLEANUP_ITEM *item;
+
+    if (!int_cleanup_check(1))
+        return 0;
+    item = int_cleanup_item(cb);
+    if (item != NULL) {
+        if (sk_ENGINE_CLEANUP_ITEM_push(cleanup_stack, item) > 0)
+            return 1;
+        OPENSSL_free(item);
+    }
+    return 0;
 }
 
 /* The API function that performs all cleanup */
@@ -173,6 +180,7 @@ void engine_cleanup_int(void)
         cleanup_stack = NULL;
     }
     CRYPTO_THREAD_lock_free(global_engine_lock);
+    global_engine_lock = NULL;
 }
 
 /* Now the "ex_data" support */
@@ -195,7 +203,7 @@ void *ENGINE_get_ex_data(const ENGINE *e, int idx)
 int ENGINE_set_id(ENGINE *e, const char *id)
 {
     if (id == NULL) {
-        ENGINEerr(ENGINE_F_ENGINE_SET_ID, ERR_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
     e->id = id;
@@ -205,7 +213,7 @@ int ENGINE_set_id(ENGINE *e, const char *id)
 int ENGINE_set_name(ENGINE *e, const char *name)
 {
     if (name == NULL) {
-        ENGINEerr(ENGINE_F_ENGINE_SET_NAME, ERR_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_ENGINE, ERR_R_PASSED_NULL_PARAMETER);
         return 0;
     }
     e->name = name;

@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_SYSENT_H_
@@ -54,19 +52,25 @@ typedef	void	(*systrace_probe_func_t)(struct syscall_args *,
 typedef	void	(*systrace_args_func_t)(int, void *, uint64_t *, int *);
 
 #ifdef _KERNEL
-extern bool			systrace_enabled;
-#endif
 extern systrace_probe_func_t	systrace_probe_func;
+extern bool			systrace_enabled;
+
+#ifdef KDTRACE_HOOKS
+#define	SYSTRACE_ENABLED()	(systrace_enabled)
+#else
+#define SYSTRACE_ENABLED()	(0)
+#endif
+#endif /* _KERNEL */
 
 struct sysent {			/* system call table */
-	int	sy_narg;	/* number of arguments */
 	sy_call_t *sy_call;	/* implementing function */
-	au_event_t sy_auevent;	/* audit event associated with syscall */
 	systrace_args_func_t sy_systrace_args_func;
 				/* optional argument conversion function. */
+	u_int8_t sy_narg;	/* number of arguments */
+	u_int8_t sy_flags;	/* General flags for system calls. */
+	au_event_t sy_auevent;	/* audit event associated with syscall */
 	u_int32_t sy_entry;	/* DTrace entry ID for systrace. */
 	u_int32_t sy_return;	/* DTrace return ID for systrace. */
-	u_int32_t sy_flags;	/* General flags for system calls. */
 	u_int32_t sy_thrcnt;
 };
 
@@ -88,40 +92,43 @@ struct sysent {			/* system call table */
 #endif
 
 struct image_params;
+struct proc;
 struct __sigset;
 struct trapframe;
 struct vnode;
+struct note_info_list;
 
 struct sysentvec {
 #ifndef __rtems__
 	int		sv_size;	/* number of entries */
 	struct sysent	*sv_table;	/* pointer to sysent */
-	u_int		sv_mask;	/* optional mask to index */
-	int		sv_errsize;	/* size of errno translation table */
-	const int 	*sv_errtbl;	/* errno translation table */
-	int		(*sv_transtrap)(int, int);
-					/* translate trap-to-signal mapping */
-	int		(*sv_fixup)(register_t **, struct image_params *);
+	int		(*sv_fixup)(uintptr_t *, struct image_params *);
 					/* stack fixup function */
 	void		(*sv_sendsig)(void (*)(int), struct ksiginfo *, struct __sigset *);
 			    		/* send signal */
-	char 		*sv_sigcode;	/* start of sigtramp code */
+	const char 	*sv_sigcode;	/* start of sigtramp code */
 	int 		*sv_szsigcode;	/* size of sigtramp code */
+	int		sv_sigcodeoff;
 	char		*sv_name;	/* name of binary type */
 	int		(*sv_coredump)(struct thread *, struct vnode *, off_t, int);
 					/* function to dump core, or NULL */
-	int		(*sv_imgact_try)(struct image_params *);
-	void		(*sv_stackgap)(struct image_params *, u_long *);
+	int		sv_elf_core_osabi;
+	const char	*sv_elf_core_abi_vendor;
+	void		(*sv_elf_core_prepare_notes)(struct thread *,
+			    struct note_info_list *, size_t *);
+	int		(*sv_copyout_auxargs)(struct image_params *,
+			    uintptr_t);
 	int		sv_minsigstksz;	/* minimum signal stack size */
-	int		sv_pagesize;	/* spare / no longer used */
 	vm_offset_t	sv_minuser;	/* VM_MIN_ADDRESS */
 	vm_offset_t	sv_maxuser;	/* VM_MAXUSER_ADDRESS */
 	vm_offset_t	sv_usrstack;	/* USRSTACK */
 	vm_offset_t	sv_psstrings;	/* PS_STRINGS */
+	size_t		sv_psstringssz;	/* PS_STRINGS size */
 	int		sv_stackprot;	/* vm protection for stack */
-	register_t	*(*sv_copyout_strings)(struct image_params *);
+	int		(*sv_copyout_strings)(struct image_params *,
+			    uintptr_t *);
 	void		(*sv_setregs)(struct thread *, struct image_params *,
-			    u_long);
+			    uintptr_t);
 	void		(*sv_fixlimit)(struct rlimit *, int);
 	u_long		*sv_maxssiz;
 #endif /* __rtems__ */
@@ -130,16 +137,29 @@ struct sysentvec {
 	void		(*sv_set_syscall_retval)(struct thread *, int);
 	int		(*sv_fetch_syscall_args)(struct thread *);
 	const char	**sv_syscallnames;
-	vm_offset_t	sv_timekeep_base;
+	vm_offset_t	sv_timekeep_offset;
 	vm_offset_t	sv_shared_page_base;
 	vm_offset_t	sv_shared_page_len;
-	vm_offset_t	sv_sigcode_base;
+	vm_offset_t	sv_sigcode_offset;
 	void		*sv_shared_page_obj;
+	vm_offset_t	sv_vdso_offset;
 	void		(*sv_schedtail)(struct thread *);
 	void		(*sv_thread_detach)(struct thread *);
 	int		(*sv_trap)(struct thread *);
 	u_long		*sv_hwcap;	/* Value passed in AT_HWCAP. */
 	u_long		*sv_hwcap2;	/* Value passed in AT_HWCAP2. */
+	const char	*(*sv_machine_arch)(struct proc *);
+	vm_offset_t	sv_fxrng_gen_offset;
+	void		(*sv_onexec_old)(struct thread *td);
+	int		(*sv_onexec)(struct proc *, struct image_params *);
+	void		(*sv_onexit)(struct proc *);
+	void		(*sv_ontdexit)(struct thread *td);
+	int		(*sv_setid_allowed)(struct thread *td,
+			    struct image_params *imgp);
+	void		(*sv_set_fork_retval)(struct thread *);
+					/* Only used on x86 */
+	struct regset	**sv_regset_begin;
+	struct regset	**sv_regset_end;
 #endif /* __rtems__ */
 };
 
@@ -148,13 +168,15 @@ struct sysentvec {
 #define	SV_IA32		0x004000	/* Intel 32-bit executable. */
 #define	SV_AOUT		0x008000	/* a.out executable. */
 #define	SV_SHP		0x010000	/* Shared page. */
-#define	SV_CAPSICUM	0x020000	/* Force cap_enter() on startup. */
+#define	SV_SIGSYS	0x020000	/* SIGSYS for non-existing syscall */
 #define	SV_TIMEKEEP	0x040000	/* Shared page timehands. */
 #define	SV_ASLR		0x080000	/* ASLR allowed. */
+#define	SV_RNG_SEED_VER	0x100000	/* random(4) reseed generation. */
+#define	SV_SIG_DISCIGN	0x200000	/* Do not discard ignored signals */
+#define	SV_SIG_WAITNDQ	0x400000	/* Wait does not dequeue SIGCHLD */
+#define	SV_DSO_SIG	0x800000	/* Signal trampoline packed in dso */
 
 #define	SV_ABI_MASK	0xff
-#define	SV_ABI_ERRNO(p, e)	((p)->p_sysent->sv_errsize <= 0 ? e :	\
-	((e) >= (p)->p_sysent->sv_errsize ? -1 : (p)->p_sysent->sv_errtbl[e]))
 #define	SV_PROC_FLAG(p, x)	((p)->p_sysent->sv_flags & (x))
 #define	SV_PROC_ABI(p)		((p)->p_sysent->sv_flags & SV_ABI_MASK)
 #define	SV_CURPROC_FLAG(x)	SV_PROC_FLAG(curproc, x)
@@ -162,17 +184,24 @@ struct sysentvec {
 /* same as ELFOSABI_XXX, to prevent header pollution */
 #define	SV_ABI_LINUX	3
 #define	SV_ABI_FREEBSD 	9
-#define	SV_ABI_CLOUDABI	17
 #define	SV_ABI_UNDEF	255
+
+/* sv_coredump flags */
+#define	SVC_PT_COREDUMP	0x00000001	/* dump requested by ptrace(2) */
+#define	SVC_NOCOMPRESS	0x00000002	/* disable compression. */
+#define	SVC_ALL		0x00000004	/* dump everything */
 
 #ifdef _KERNEL
 extern struct sysentvec aout_sysvec;
 extern struct sysent sysent[];
 extern const char *syscallnames[];
+extern struct sysent nosys_sysent;
 
-#if defined(__amd64__)
-extern int i386_read_exec;
-#endif
+struct nosys_args {
+	register_t dummy;
+};
+
+int	nosys(struct thread *, struct nosys_args *);
 
 #define	NO_SYSCALL (-1)
 
@@ -198,7 +227,7 @@ struct syscall_module_data {
 	.sy_return = 0,						\
 	.sy_flags = 0,						\
 	.sy_thrcnt = 0						\
-}							
+}
 
 #define	MAKE_SYSENT(syscallname)				\
 static struct sysent syscallname##_sysent = SYSENT_INIT_VALS(syscallname);
@@ -295,32 +324,19 @@ struct nosys_args;
 int	lkmnosys(struct thread *, struct nosys_args *);
 int	lkmressys(struct thread *, struct nosys_args *);
 
-int	_syscall_thread_enter(struct thread *td, struct sysent *se);
-void	_syscall_thread_exit(struct thread *td, struct sysent *se);
-
-static inline int
-syscall_thread_enter(struct thread *td, struct sysent *se)
-{
-
-	if (__predict_true((se->sy_thrcnt & SY_THR_STATIC) != 0))
-		return (0);
-	return (_syscall_thread_enter(td, se));
-}
-
-static inline void
-syscall_thread_exit(struct thread *td, struct sysent *se)
-{
-
-	if (__predict_true((se->sy_thrcnt & SY_THR_STATIC) != 0))
-		return;
-	_syscall_thread_exit(td, se);
-}
+int	syscall_thread_enter(struct thread *td, struct sysent **se);
+void	syscall_thread_exit(struct thread *td, struct sysent *se);
 
 int shared_page_alloc(int size, int align);
 int shared_page_fill(int size, int align, const void *data);
 void shared_page_write(int base, int size, const void *data);
 void exec_sysvec_init(void *param);
+void exec_sysvec_init_secondary(struct sysentvec *sv, struct sysentvec *sv2);
 void exec_inittk(void);
+
+void exit_onexit(struct proc *p);
+void exec_free_abi_mappings(struct proc *p);
+void exec_onexec_old(struct thread *td);
 
 #define INIT_SYSENTVEC(name, sv)					\
     SYSINIT(name, SI_SUB_EXEC, SI_ORDER_ANY,				\

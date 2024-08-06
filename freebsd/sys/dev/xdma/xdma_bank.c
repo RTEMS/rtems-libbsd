@@ -31,14 +31,14 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_platform.h>
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/bus.h>
 #include <sys/kernel.h>
+#include <sys/lock.h>
 #include <sys/malloc.h>
+#include <sys/mutex.h>
 
 #include <machine/bus.h>
 
@@ -48,11 +48,9 @@ void
 xchan_bank_init(xdma_channel_t *xchan)
 {
 	struct xdma_request *xr;
-	xdma_controller_t *xdma;
 	int i;
 
-	xdma = xchan->xdma;
-	KASSERT(xdma != NULL, ("xdma is NULL"));
+	KASSERT(xchan->xdma != NULL, ("xdma is NULL"));
 
 	xchan->xr_mem = malloc(sizeof(struct xdma_request) * xchan->xr_num,
 	    M_XDMA, M_WAITOK | M_ZERO);

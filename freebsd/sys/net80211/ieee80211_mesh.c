@@ -1,10 +1,9 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*- 
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 The FreeBSD Foundation 
- * All rights reserved. 
  * 
  * This software was developed by Rui Paulo under sponsorship from the
  * FreeBSD Foundation. 
@@ -32,7 +31,6 @@
  */ 
 #include <sys/cdefs.h>
 #ifdef __FreeBSD__
-__FBSDID("$FreeBSD$");
 #endif
 
 /*
@@ -61,6 +59,7 @@ __FBSDID("$FreeBSD$");
 #include <net/if_var.h>
 #include <net/if_media.h>
 #include <net/if_llc.h>
+#include <net/if_private.h>
 #include <net/ethernet.h>
 
 #include <net80211/ieee80211_var.h>
@@ -108,27 +107,32 @@ uint32_t	mesh_airtime_calc(struct ieee80211_node *);
 /*
  * Timeout values come from the specification and are in milliseconds.
  */
-static SYSCTL_NODE(_net_wlan, OID_AUTO, mesh, CTLFLAG_RD, 0,
+static SYSCTL_NODE(_net_wlan, OID_AUTO, mesh, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
     "IEEE 802.11s parameters");
 static int	ieee80211_mesh_gateint = -1;
-SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, gateint, CTLTYPE_INT | CTLFLAG_RW,
+SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, gateint,
+    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
     &ieee80211_mesh_gateint, 0, ieee80211_sysctl_msecs_ticks, "I",
     "mesh gate interval (ms)");
 static int ieee80211_mesh_retrytimeout = -1;
-SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, retrytimeout, CTLTYPE_INT | CTLFLAG_RW,
+SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, retrytimeout,
+    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
     &ieee80211_mesh_retrytimeout, 0, ieee80211_sysctl_msecs_ticks, "I",
     "Retry timeout (msec)");
 static int ieee80211_mesh_holdingtimeout = -1;
 
-SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, holdingtimeout, CTLTYPE_INT | CTLFLAG_RW,
+SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, holdingtimeout,
+    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
     &ieee80211_mesh_holdingtimeout, 0, ieee80211_sysctl_msecs_ticks, "I",
     "Holding state timeout (msec)");
 static int ieee80211_mesh_confirmtimeout = -1;
-SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, confirmtimeout, CTLTYPE_INT | CTLFLAG_RW,
+SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, confirmtimeout,
+    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
     &ieee80211_mesh_confirmtimeout, 0, ieee80211_sysctl_msecs_ticks, "I",
     "Confirm state timeout (msec)");
 static int ieee80211_mesh_backofftimeout = -1;
-SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, backofftimeout, CTLTYPE_INT | CTLFLAG_RW,
+SYSCTL_PROC(_net_wlan_mesh, OID_AUTO, backofftimeout,
+    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
     &ieee80211_mesh_backofftimeout, 0, ieee80211_sysctl_msecs_ticks, "I",
     "Backoff timeout (msec). This is to throutles peering forever when "
     "not receiving answer or is rejected by a neighbor");
@@ -892,7 +896,6 @@ ieee80211_mesh_mark_gate(struct ieee80211vap *vap, const uint8_t *addr,
 	return gr;
 }
 
-
 /*
  * Helper function to note the Mesh Peer Link FSM change.
  */
@@ -948,7 +951,7 @@ static void
 mesh_checkid(void *arg, struct ieee80211_node *ni)
 {
 	uint16_t *r = arg;
-	
+
 	if (*r == ni->ni_mllid)
 		*(uint16_t *)arg = 0;
 }
@@ -960,7 +963,7 @@ mesh_generateid(struct ieee80211vap *vap)
 	uint16_t r;
 
 	do {
-		get_random_bytes(&r, 2);
+		net80211_get_random_bytes(&r, 2);
 		ieee80211_iterate_nodes(&vap->iv_ic->ic_sta, mesh_checkid, &r);
 		maxiter--;
 	} while (r == 0 && maxiter > 0);
@@ -1118,7 +1121,7 @@ ieee80211_mesh_forward_to_gates(struct ieee80211vap *vap,
 		ieee80211_mesh_rt_update(rt_dest, ms->ms_ppath->mpp_inact);
 		MESH_RT_UNLOCK(ms);
 		/* XXX: lock?? */
-		mcopy = m_dup(m, M_NOWAIT);
+		mcopy = m_dup(m, IEEE80211_M_NOWAIT);
 		for (; mcopy != NULL; mcopy = next) {
 			next = mcopy->m_nextpkt;
 			mcopy->m_nextpkt = NULL;
@@ -1174,7 +1177,7 @@ mesh_forward(struct ieee80211vap *vap, struct mbuf *m,
 		vap->iv_stats.is_mesh_fwd_disabled++;
 		return;
 	}
-	mcopy = m_dup(m, M_NOWAIT);
+	mcopy = m_dup(m, IEEE80211_M_NOWAIT);
 	if (mcopy == NULL) {
 		IEEE80211_NOTE_FRAME(vap, IEEE80211_MSG_MESH, wh,
 		    "%s", "frame not fwd'd, cannot dup");
@@ -1227,6 +1230,7 @@ mesh_forward(struct ieee80211vap *vap, struct mbuf *m,
 	M_WME_SETAC(mcopy, WME_AC_BE);
 
 	/* XXX do we know m_nextpkt is NULL? */
+	MPASS((mcopy->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0);
 	mcopy->m_pkthdr.rcvif = (void *) ni;
 
 	/*
@@ -1639,7 +1643,7 @@ mesh_input(struct ieee80211_node *ni, struct mbuf *m,
 		 */
 		hdrspace = ieee80211_hdrspace(ic, wh);
 		if (!IEEE80211_IS_MULTICAST(wh->i_addr1)) {
-			m = ieee80211_defrag(ni, m, hdrspace);
+			m = ieee80211_defrag(ni, m, hdrspace, 0);
 			if (m == NULL) {
 				/* Fragment dropped or frame not complete yet */
 				goto out;
@@ -1795,7 +1799,7 @@ mesh_input(struct ieee80211_node *ni, struct mbuf *m,
 			    ether_sprintf(wh->i_addr2), rssi);
 		}
 #endif
-		if (wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
+		if (IEEE80211_IS_PROTECTED(wh)) {
 			IEEE80211_DISCARD(vap, IEEE80211_MSG_INPUT,
 			    wh, NULL, "%s", "WEP set but not permitted");
 			vap->iv_stats.is_rx_mgtdiscard++; /* XXX */
@@ -1879,7 +1883,7 @@ mesh_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0, int subtype,
 				 * XXX check if the beacon we recv'd gives
 				 * us what we need and suppress the probe req
 				 */
-				ieee80211_probe_curchan(vap, 1);
+				ieee80211_probe_curchan(vap, true);
 				ic->ic_flags_ext &= ~IEEE80211_FEXT_PROBECHAN;
 			}
 			ieee80211_add_scan(vap, rxchan, &scan, wh,
@@ -2182,7 +2186,7 @@ mesh_parse_meshpeering_action(struct ieee80211_node *ni,
 			return NULL;
 		}
 	}
-	
+
 	/*
 	 * Close frames are accepted if meshid is the same.
 	 * Verify the other two types.
@@ -2192,7 +2196,7 @@ mesh_parse_meshpeering_action(struct ieee80211_node *ni,
 		sendclose = 1;
 		IEEE80211_DISCARD(vap,
 		    IEEE80211_MSG_ACTION | IEEE80211_MSG_MESH,
-		    wh, NULL, "%s", "configuration missmatch");
+		    wh, NULL, "%s", "configuration mismatch");
 	}
 
 	if (sendclose) {
@@ -2227,7 +2231,7 @@ mesh_parse_meshpeering_action(struct ieee80211_node *ni,
 		}
 		return NULL;
 	}
-	
+
 	return (const struct ieee80211_meshpeer_ie *) mp;
 }
 
@@ -2506,7 +2510,7 @@ mesh_recv_action_meshlmetric(struct ieee80211_node *ni,
 	    (const struct ieee80211_meshlmetric_ie *)
 	    (frm+2); /* action + code */
 	struct ieee80211_meshlmetric_ie lm_rep;
-	
+
 	if (ie->lm_flags & IEEE80211_MESH_LMETRIC_FLAGS_REQ) {
 		lm_rep.lm_flags = 0;
 		lm_rep.lm_metric = mesh_airtime_calc(ni);
@@ -2602,7 +2606,6 @@ mesh_recv_action_meshgate(struct ieee80211_node *ni,
 		/* corresponding mesh gate found & GANN accepted */
 		found = 1;
 		break;
-
 	}
 	if (found == 0) {
 		/* this GANN is from a new mesh Gate add it to known table. */
@@ -2667,7 +2670,7 @@ mesh_send_action(struct ieee80211_node *ni,
 		return EIO;		/* XXX */
 	}
 
-	M_PREPEND(m, sizeof(struct ieee80211_frame), M_NOWAIT);
+	M_PREPEND(m, sizeof(struct ieee80211_frame), IEEE80211_M_NOWAIT);
 	if (m == NULL) {
 		ieee80211_free_node(ni);
 		return ENOMEM;
@@ -2958,7 +2961,7 @@ mesh_send_action_meshgate(struct ieee80211_node *ni,
 		 * mesh link metric
 		 *   [1] category
 		 *   [1] action
-		 *   [tlv] mesh gate annoucement
+		 *   [tlv] mesh gate announcement
 		 */
 		*frm++ = category;
 		*frm++ = action;
@@ -3001,7 +3004,7 @@ static void
 mesh_peer_timeout_backoff(struct ieee80211_node *ni)
 {
 	uint32_t r;
-	
+
 	r = arc4random();
 	ni->ni_mltval += r % ni->ni_mltval;
 	callout_reset(&ni->ni_mltimer, ni->ni_mltval, mesh_peer_timeout_cb,
@@ -3035,7 +3038,7 @@ mesh_peer_timeout_cb(void *arg)
 	IEEE80211_NOTE(ni->ni_vap, IEEE80211_MSG_MESH,
 	    ni, "mesh link timeout, state %d, retry counter %d",
 	    ni->ni_mlstate, ni->ni_mlrcnt);
-	
+
 	switch (ni->ni_mlstate) {
 	case IEEE80211_NODE_MESH_IDLE:
 	case IEEE80211_NODE_MESH_ESTABLISHED:
@@ -3571,16 +3574,21 @@ mesh_ioctl_set80211(struct ieee80211vap *vap, struct ieee80211req *ireq)
 			ieee80211_mesh_rt_flush(vap);
 			break;
 		case IEEE80211_MESH_RTCMD_ADD:
-			if (IEEE80211_ADDR_EQ(vap->iv_myaddr, ireq->i_data) ||
-			    IEEE80211_ADDR_EQ(broadcastaddr, ireq->i_data))
-				return EINVAL;
-			error = copyin(ireq->i_data, &tmpaddr,
+			error = copyin(ireq->i_data, tmpaddr,
 			    IEEE80211_ADDR_LEN);
-			if (error == 0)
-				ieee80211_mesh_discover(vap, tmpaddr, NULL);
+			if (error != 0)
+				break;
+			if (IEEE80211_ADDR_EQ(vap->iv_myaddr, tmpaddr) ||
+			    IEEE80211_ADDR_EQ(broadcastaddr, tmpaddr))
+				return EINVAL;
+			ieee80211_mesh_discover(vap, tmpaddr, NULL);
 			break;
 		case IEEE80211_MESH_RTCMD_DELETE:
-			ieee80211_mesh_rt_del(vap, ireq->i_data);
+			error = copyin(ireq->i_data, tmpaddr,
+			    IEEE80211_ADDR_LEN);
+			if (error != 0)
+				break;
+			ieee80211_mesh_rt_del(vap, tmpaddr);
 			break;
 		default:
 			return ENOSYS;

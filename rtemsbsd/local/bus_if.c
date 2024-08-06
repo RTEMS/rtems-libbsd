@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -47,14 +47,22 @@ null_add_child(device_t bus, int order, const char *name,
 	panic("bus_add_child is not implemented");
 }
 
-static int null_reset_post(device_t bus, device_t dev)
+static int
+null_reset_post(device_t bus, device_t dev)
 {
 	return (0);
 }
 
-static int null_reset_prepare(device_t bus, device_t dev)
+static int
+null_reset_prepare(device_t bus, device_t dev)
 {
 	return (0);
+}
+
+static struct rman *
+null_get_rman(device_t bus, int type, u_int flags)
+{
+	return (NULL);
 }
 
 struct kobjop_desc bus_print_child_desc = {
@@ -90,7 +98,7 @@ struct kobjop_desc bus_add_child_desc = {
 };
 
 struct kobjop_desc bus_rescan_desc = {
-	0, { &bus_rescan_desc, (kobjop_t)kobj_error_method }
+	0, { &bus_rescan_desc, (kobjop_t)bus_null_rescan }
 };
 
 struct kobjop_desc bus_alloc_resource_desc = {
@@ -115,6 +123,10 @@ struct kobjop_desc bus_deactivate_resource_desc = {
 
 struct kobjop_desc bus_adjust_resource_desc = {
 	0, { &bus_adjust_resource_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc bus_translate_resource_desc = {
+	0, { &bus_translate_resource_desc, (kobjop_t)bus_generic_translate_resource }
 };
 
 struct kobjop_desc bus_release_resource_desc = {
@@ -153,16 +165,20 @@ struct kobjop_desc bus_get_resource_list_desc = {
 	0, { &bus_get_resource_list_desc, (kobjop_t)bus_generic_get_resource_list }
 };
 
+struct kobjop_desc bus_get_rman_desc = {
+	0, { &bus_get_rman_desc, (kobjop_t)null_get_rman }
+};
+
 struct kobjop_desc bus_child_present_desc = {
 	0, { &bus_child_present_desc, (kobjop_t)bus_generic_child_present }
 };
 
-struct kobjop_desc bus_child_pnpinfo_str_desc = {
-	0, { &bus_child_pnpinfo_str_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc bus_child_pnpinfo_desc = {
+	0, { &bus_child_pnpinfo_desc, (kobjop_t)bus_generic_child_pnpinfo }
 };
 
-struct kobjop_desc bus_child_location_str_desc = {
-	0, { &bus_child_location_str_desc, (kobjop_t)kobj_error_method }
+struct kobjop_desc bus_child_location_desc = {
+	0, { &bus_child_location_desc, (kobjop_t)bus_generic_child_location }
 };
 
 struct kobjop_desc bus_bind_intr_desc = {
@@ -227,5 +243,13 @@ struct kobjop_desc bus_reset_post_desc = {
 
 struct kobjop_desc bus_reset_child_desc = {
 	0, { &bus_reset_child_desc, (kobjop_t)kobj_error_method }
+};
+
+struct kobjop_desc bus_get_property_desc = {
+	0, { &bus_get_property_desc, (kobjop_t)bus_generic_get_property }
+};
+
+struct kobjop_desc bus_get_device_path_desc = {
+	0, { &bus_get_device_path_desc, (kobjop_t)bus_generic_get_device_path }
 };
 

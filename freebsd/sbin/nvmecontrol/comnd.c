@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2019 Netflix, Inc
  *
@@ -33,8 +33,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/ioccom.h>
 
@@ -50,6 +48,7 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <unistd.h>
 
 #include "comnd.h"
@@ -84,7 +83,7 @@ gen_usage(const struct cmd *t)
 	SLIST_FOREACH(walker, &t->subcmd, link) {
 		print_usage(walker);
 	}
-	exit(1);
+	exit(EX_USAGE);
 }
 
 int
@@ -165,7 +164,7 @@ arg_help(int argc __unused, char * const *argv, const struct cmd *f)
 			fprintf(stderr, "%-30.30s - %s\n", buf, opts[i].descr);
 		}
 	}
-	exit(1);
+	exit(EX_USAGE);
 }
 
 static int
@@ -205,14 +204,10 @@ arg_parse(int argc, char * const * argv, const struct cmd *f)
 			n++;
 	lopts = malloc((n + 2) * sizeof(struct option));
 	if (lopts == NULL)
-		err(1, "option memory");
-#ifndef __rtems__
-	p = shortopts = malloc((n + 3) * sizeof(char));
-#else /* __rtems__ */
+		err(EX_OSERR, "option memory");
 	p = shortopts = malloc((2 * n + 3) * sizeof(char));
-#endif /* __rtems__ */
 	if (shortopts == NULL)
-		err(1, "shortopts memory");
+		err(EX_OSERR, "shortopts memory");
 #ifdef __rtems__
 	*p++ = '+';
 #endif /* __rtems__ */
@@ -303,7 +298,7 @@ bad_arg:
 	fprintf(stderr, "Bad value to --%s: %s\n", opts[idx].long_arg, optarg);
 	free(lopts);
 	free(shortopts);
-	exit(1);
+	exit(EX_USAGE);
 }
 
 #ifndef __rtems__
@@ -311,7 +306,7 @@ bad_arg:
  * Loads all the .so's from the specified directory.
  */
 void
-cmd_load_dir(const char *dir __unused, cmd_load_cb_t cb __unused, void *argp __unused)
+cmd_load_dir(const char *dir, cmd_load_cb_t cb, void *argp)
 {
 	DIR *d;
 	struct dirent *dent;
@@ -326,7 +321,7 @@ cmd_load_dir(const char *dir __unused, cmd_load_cb_t cb __unused, void *argp __u
 			continue;
 		asprintf(&path, "%s/%s", dir, dent->d_name);
 		if (path == NULL)
-			err(1, "Can't malloc for path, giving up.");
+			err(EX_OSERR, "Can't malloc for path, giving up.");
 		if ((h = dlopen(path, RTLD_NOW | RTLD_GLOBAL)) == NULL)
 			warnx("Can't load %s: %s", path, dlerror());
 		else {

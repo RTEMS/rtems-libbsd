@@ -36,8 +36,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Broadcom BCM57xx(x)/BCM590x NetXtreme and NetLink family Ethernet driver
  *
@@ -86,6 +84,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 
+#include <net/debugnet.h>
 #include <net/if.h>
 #include <net/if_var.h>
 #include <net/if_arp.h>
@@ -102,7 +101,6 @@ __FBSDID("$FreeBSD$");
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-#include <netinet/netdump/netdump.h>
 
 #include <machine/bus.h>
 #include <machine/resource.h>
@@ -113,13 +111,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/mii/miivar.h>
 #include <rtems/bsd/local/miidevs.h>
 #include <dev/mii/brgphyreg.h>
-
-#ifdef __sparc64__
-#include <dev/ofw/ofw_bus.h>
-#include <dev/ofw/openfirm.h>
-#include <machine/ofw_machdep.h>
-#include <machine/ver.h>
-#endif
 
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcivar.h>
@@ -139,7 +130,7 @@ MODULE_DEPEND(bge, miibus, 1, 1, 1);
 /*
  * Various supported device vendors/types and their names. Note: the
  * spec seems to indicate that the hardware still has Alteon's vendor
- * ID burned into it, though it will always be overriden by the vendor
+ * ID burned into it, though it will always be overridden by the vendor
  * ID in the EEPROM. Just to be safe, we cover all possibilities.
  */
 static const struct bge_type {
@@ -248,8 +239,6 @@ static const struct bge_type {
 
 	{ FJTSU_VENDORID,	FJTSU_DEVICEID_PW008GE4 },
 	{ FJTSU_VENDORID,	FJTSU_DEVICEID_PW008GE5 },
-	{ FJTSU_VENDORID,	FJTSU_DEVICEID_PP250450 },
-
 	{ 0, 0 }
 };
 
@@ -264,7 +253,6 @@ static const struct bge_vendor {
 	{ SK_VENDORID,		"SysKonnect" },
 	{ TC_VENDORID,		"3Com" },
 	{ FJTSU_VENDORID,	"Fujitsu" },
-
 	{ 0, NULL }
 };
 
@@ -339,7 +327,6 @@ static const struct bge_revision {
 	{ BGE_CHIPID_BCM57765_B0,	"BCM57765 B0" },
 	{ BGE_CHIPID_BCM57780_A0,	"BCM57780 A0" },
 	{ BGE_CHIPID_BCM57780_A1,	"BCM57780 A1" },
-
 	{ 0, NULL }
 };
 
@@ -372,7 +359,6 @@ static const struct bge_revision bge_majorrevs[] = {
 	{ BGE_ASICREV_BCM5719,		"unknown BCM5719" },
 	{ BGE_ASICREV_BCM5720,		"unknown BCM5720" },
 	{ BGE_ASICREV_BCM5762,		"unknown BCM5762" },
-
 	{ 0, NULL }
 };
 
@@ -521,7 +507,7 @@ static void bge_add_sysctl_stats(struct bge_softc *, struct sysctl_ctx_list *,
     struct sysctl_oid_list *);
 static int bge_sysctl_stats(SYSCTL_HANDLER_ARGS);
 
-NETDUMP_DEFINE(bge);
+DEBUGNET_DEFINE(bge);
 
 static device_method_t bge_methods[] = {
 	/* Device interface */
@@ -546,60 +532,21 @@ static driver_t bge_driver = {
 	sizeof(struct bge_softc)
 };
 
-static devclass_t bge_devclass;
-
-DRIVER_MODULE(bge, pci, bge_driver, bge_devclass, 0, 0);
+DRIVER_MODULE(bge, pci, bge_driver, 0, 0);
 MODULE_PNP_INFO("U16:vendor;U16:device", pci, bge, bge_devs,
     nitems(bge_devs) - 1);
-DRIVER_MODULE(miibus, bge, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(miibus, bge, miibus_driver, 0, 0);
 
 static int bge_allow_asf = 1;
 
-static SYSCTL_NODE(_hw, OID_AUTO, bge, CTLFLAG_RD, 0, "BGE driver parameters");
+static SYSCTL_NODE(_hw, OID_AUTO, bge, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
+    "BGE driver parameters");
 SYSCTL_INT(_hw_bge, OID_AUTO, allow_asf, CTLFLAG_RDTUN, &bge_allow_asf, 0,
 	"Allow ASF mode if available");
-
-#define	SPARC64_BLADE_1500_MODEL	"SUNW,Sun-Blade-1500"
-#define	SPARC64_BLADE_1500_PATH_BGE	"/pci@1f,700000/network@2"
-#define	SPARC64_BLADE_2500_MODEL	"SUNW,Sun-Blade-2500"
-#define	SPARC64_BLADE_2500_PATH_BGE	"/pci@1c,600000/network@3"
-#define	SPARC64_OFW_SUBVENDOR		"subsystem-vendor-id"
 
 static int
 bge_has_eaddr(struct bge_softc *sc)
 {
-#ifdef __sparc64__
-	char buf[sizeof(SPARC64_BLADE_1500_PATH_BGE)];
-	device_t dev;
-	uint32_t subvendor;
-
-	dev = sc->bge_dev;
-
-	/*
-	 * The on-board BGEs found in sun4u machines aren't fitted with
-	 * an EEPROM which means that we have to obtain the MAC address
-	 * via OFW and that some tests will always fail.  We distinguish
-	 * such BGEs by the subvendor ID, which also has to be obtained
-	 * from OFW instead of the PCI configuration space as the latter
-	 * indicates Broadcom as the subvendor of the netboot interface.
-	 * For early Blade 1500 and 2500 we even have to check the OFW
-	 * device path as the subvendor ID always defaults to Broadcom
-	 * there.
-	 */
-	if (OF_getprop(ofw_bus_get_node(dev), SPARC64_OFW_SUBVENDOR,
-	    &subvendor, sizeof(subvendor)) == sizeof(subvendor) &&
-	    (subvendor == FJTSU_VENDORID || subvendor == SUN_VENDORID))
-		return (0);
-	memset(buf, 0, sizeof(buf));
-	if (OF_package_to_path(ofw_bus_get_node(dev), buf, sizeof(buf)) > 0) {
-		if (strcmp(sparc64_model, SPARC64_BLADE_1500_MODEL) == 0 &&
-		    strcmp(buf, SPARC64_BLADE_1500_PATH_BGE) == 0)
-			return (0);
-		if (strcmp(sparc64_model, SPARC64_BLADE_2500_MODEL) == 0 &&
-		    strcmp(buf, SPARC64_BLADE_2500_PATH_BGE) == 0)
-			return (0);
-	}
-#endif
 	return (1);
 }
 
@@ -756,7 +703,7 @@ bge_ape_read_fw_ver(struct bge_softc *sc)
 
 	sc->bge_mfw_flags |= BGE_MFW_ON_APE;
 
-	/* Fetch the APE firwmare type and version. */
+	/* Fetch the APE firmware type and version. */
 	apedata = APE_READ_4(sc, BGE_APE_FW_VERSION);
 	features = APE_READ_4(sc, BGE_APE_FW_FEATURES);
 	if ((features & BGE_APE_FW_FEATURE_NCSI) != 0) {
@@ -1623,33 +1570,32 @@ bge_setpromisc(struct bge_softc *sc)
 		BGE_CLRBIT(sc, BGE_RX_MODE, BGE_RXMODE_RX_PROMISC);
 }
 
+static u_int
+bge_hash_maddr(void *arg, struct sockaddr_dl *sdl, u_int cnt)
+{
+	uint32_t *hashes = arg;
+	int h;
+
+	h = ether_crc32_le(LLADDR(sdl), ETHER_ADDR_LEN) & 0x7F;
+	hashes[(h & 0x60) >> 5] |= 1 << (h & 0x1F);
+
+	return (1);
+}
+
 static void
 bge_setmulti(struct bge_softc *sc)
 {
 	if_t ifp;
-	int mc_count = 0;
 	uint32_t hashes[4] = { 0, 0, 0, 0 };
-	int h, i, mcnt;
-	unsigned char *mta;
+	int i;
 
 	BGE_LOCK_ASSERT(sc);
 
 	ifp = sc->bge_ifp;
 
-	mc_count = if_multiaddr_count(ifp, -1);
-	mta = malloc(sizeof(unsigned char) *  ETHER_ADDR_LEN *
-	    mc_count, M_DEVBUF, M_NOWAIT);
-
-	if(mta == NULL) {
-		device_printf(sc->bge_dev, 
-		    "Failed to allocated temp mcast list\n");
-		return;
-	}
-
 	if (if_getflags(ifp) & IFF_ALLMULTI || if_getflags(ifp) & IFF_PROMISC) {
 		for (i = 0; i < 4; i++)
 			CSR_WRITE_4(sc, BGE_MAR0 + (i * 4), 0xFFFFFFFF);
-		free(mta, M_DEVBUF);
 		return;
 	}
 
@@ -1657,17 +1603,10 @@ bge_setmulti(struct bge_softc *sc)
 	for (i = 0; i < 4; i++)
 		CSR_WRITE_4(sc, BGE_MAR0 + (i * 4), 0);
 
-	if_multiaddr_array(ifp, mta, &mcnt, mc_count);
-	for(i = 0; i < mcnt; i++) {
-		h = ether_crc32_le(mta + (i * ETHER_ADDR_LEN),
-		    ETHER_ADDR_LEN) & 0x7F;
-		hashes[(h & 0x60) >> 5] |= 1 << (h & 0x1F);
-	}
+	if_foreach_llmaddr(ifp, bge_hash_maddr, hashes);
 
 	for (i = 0; i < 4; i++)
 		CSR_WRITE_4(sc, BGE_MAR0 + (i * 4), hashes[i]);
-
-	free(mta, M_DEVBUF);
 }
 
 static void
@@ -1983,6 +1922,7 @@ bge_blockinit(struct bge_softc *sc)
 {
 	struct bge_rcb *rcb;
 	bus_size_t vrcb;
+	caddr_t	lladdr;
 	bge_hostaddr taddr;
 	uint32_t dmactl, rdmareg, val;
 	int i, limit;
@@ -2221,7 +2161,7 @@ bge_blockinit(struct bge_softc *sc)
 	 * The BD ring replenish thresholds control how often the
 	 * hardware fetches new BD's from the producer rings in host
 	 * memory.  Setting the value too low on a busy system can
-	 * starve the hardware and recue the throughpout.
+	 * starve the hardware and reduce the throughput.
 	 *
 	 * Set the BD ring replentish thresholds. The recommended
 	 * values are 1/8th the number of descriptors allocated to
@@ -2329,11 +2269,12 @@ bge_blockinit(struct bge_softc *sc)
 	RCB_WRITE_4(sc, vrcb, bge_maxlen_flags,
 	    BGE_RCB_MAXLEN_FLAGS(sc->bge_return_ring_cnt, 0));
 
+	lladdr = if_getlladdr(sc->bge_ifp);
 	/* Set random backoff seed for TX */
 	CSR_WRITE_4(sc, BGE_TX_RANDOM_BACKOFF,
-	    (IF_LLADDR(sc->bge_ifp)[0] + IF_LLADDR(sc->bge_ifp)[1] +
-	    IF_LLADDR(sc->bge_ifp)[2] + IF_LLADDR(sc->bge_ifp)[3] +
-	    IF_LLADDR(sc->bge_ifp)[4] + IF_LLADDR(sc->bge_ifp)[5]) &
+	    (lladdr[0] + lladdr[1] +
+	    lladdr[2] + lladdr[3] +
+	    lladdr[4] + lladdr[5]) &
 	    BGE_TX_BACKOFF_SEED_MASK);
 
 	/* Set inter-packet gap */
@@ -2356,7 +2297,7 @@ bge_blockinit(struct bge_softc *sc)
 	 */
 	CSR_WRITE_4(sc, BGE_RXLP_CFG, 0x181);
 
-	/* Inialize RX list placement stats mask. */
+	/* Initialize RX list placement stats mask. */
 	CSR_WRITE_4(sc, BGE_RXLP_STATS_ENABLE_MASK, 0x007FFFFF);
 	CSR_WRITE_4(sc, BGE_RXLP_STATS_CTL, 0x1);
 
@@ -2760,7 +2701,6 @@ bge_chipid(device_t dev)
 static int
 bge_probe(device_t dev)
 {
-	char buf[96];
 	char model[64];
 	const struct bge_revision *br;
 	const char *pname;
@@ -2788,9 +2728,8 @@ bge_probe(device_t dev)
 				    br != NULL ? br->br_name :
 				    "NetXtreme/NetLink Ethernet Controller");
 			}
-			snprintf(buf, sizeof(buf), "%s, %sASIC rev. %#08x",
+			device_set_descf(dev, "%s, %sASIC rev. %#08x",
 			    model, br != NULL ? "" : "unknown ", id);
-			device_set_desc_copy(dev, buf);
 			return (BUS_PROBE_DEFAULT);
 		}
 		t++;
@@ -2929,10 +2868,14 @@ bge_dma_ring_alloc(struct bge_softc *sc, bus_size_t alignment,
     bus_addr_t *paddr, const char *msg)
 {
 	struct bge_dmamap_arg ctx;
+	bus_addr_t lowaddr;
+	bus_size_t ring_end;
 	int error;
 
+	lowaddr = BUS_SPACE_MAXADDR;
+again:
 	error = bus_dma_tag_create(sc->bge_cdata.bge_parent_tag,
-	    alignment, 0, BUS_SPACE_MAXADDR, BUS_SPACE_MAXADDR, NULL,
+	    alignment, 0, lowaddr, BUS_SPACE_MAXADDR, NULL,
 	    NULL, maxsize, 1, maxsize, 0, NULL, NULL, tag);
 	if (error != 0) {
 		device_printf(sc->bge_dev,
@@ -2957,6 +2900,25 @@ bge_dma_ring_alloc(struct bge_softc *sc, bus_size_t alignment,
 		return (ENOMEM);
 	}
 	*paddr = ctx.bge_busaddr;
+	ring_end = *paddr + maxsize;
+	if ((sc->bge_flags & BGE_FLAG_4G_BNDRY_BUG) != 0 &&
+	    BGE_ADDR_HI(*paddr) != BGE_ADDR_HI(ring_end)) {
+		/*
+		 * 4GB boundary crossed.  Limit maximum allowable DMA
+		 * address space to 32bit and try again.
+		 */
+		bus_dmamap_unload(*tag, *map);
+		bus_dmamem_free(*tag, *ring, *map);
+		bus_dma_tag_destroy(*tag);
+		if (bootverbose)
+			device_printf(sc->bge_dev, "4GB boundary crossed, "
+			    "limit DMA address space to 32bit for %s\n", msg);
+		*ring = NULL;
+		*tag = NULL;
+		*map = NULL;
+		lowaddr = BUS_SPACE_MAXADDR_32BIT;
+		goto again;
+	}
 	return (0);
 }
 
@@ -2964,7 +2926,7 @@ static int
 bge_dma_alloc(struct bge_softc *sc)
 {
 	bus_addr_t lowaddr;
-	bus_size_t rxmaxsegsz, sbsz, txsegsz, txmaxsegsz;
+	bus_size_t boundary, sbsz, rxmaxsegsz, txsegsz, txmaxsegsz;
 	int i, error;
 
 	lowaddr = BUS_SPACE_MAXADDR;
@@ -3051,7 +3013,9 @@ bge_dma_alloc(struct bge_softc *sc)
 	}
 
 	/* Create parent tag for buffers. */
+	boundary = 0;
 	if ((sc->bge_flags & BGE_FLAG_4G_BNDRY_BUG) != 0) {
+		boundary = BGE_DMA_BNDRY;
 		/*
 		 * XXX
 		 * watchdog timeout issue was observed on BCM5704 which
@@ -3062,10 +3026,10 @@ bge_dma_alloc(struct bge_softc *sc)
 		if (sc->bge_pcixcap != 0)
 			lowaddr = BUS_SPACE_MAXADDR_32BIT;
 	}
-	error = bus_dma_tag_create(bus_get_dma_tag(sc->bge_dev), 1, 0, lowaddr,
-	    BUS_SPACE_MAXADDR, NULL, NULL, BUS_SPACE_MAXSIZE_32BIT, 0,
-	    BUS_SPACE_MAXSIZE_32BIT, 0, NULL, NULL,
-	    &sc->bge_cdata.bge_buffer_tag);
+	error = bus_dma_tag_create(bus_get_dma_tag(sc->bge_dev),
+	    1, boundary, lowaddr, BUS_SPACE_MAXADDR, NULL,
+	    NULL, BUS_SPACE_MAXSIZE_32BIT, 0, BUS_SPACE_MAXSIZE_32BIT,
+	    0, NULL, NULL, &sc->bge_cdata.bge_buffer_tag);
 	if (error != 0) {
 		device_printf(sc->bge_dev,
 		    "could not allocate buffer dma tag\n");
@@ -3336,7 +3300,7 @@ bge_attach(device_t dev)
 	sc->bge_dev = dev;
 
 	BGE_LOCK_INIT(sc, device_get_nameunit(dev));
-	TASK_INIT(&sc->bge_intr_task, 0, bge_intr_task, sc);
+	NET_TASK_INIT(&sc->bge_intr_task, 0, bge_intr_task, sc);
 	callout_init_mtx(&sc->bge_stat_ch, &sc->bge_mtx, 0);
 
 	pci_enable_busmaster(dev);
@@ -3572,7 +3536,7 @@ bge_attach(device_t dev)
 	 * known bug which can't handle TSO if Ethernet header + IP/TCP
 	 * header is greater than 80 bytes. A workaround for the TSO
 	 * bug exist but it seems it's too expensive than not using
-	 * TSO at all. Some hardwares also have the TSO bug so limit
+	 * TSO at all. Some hardware also have the TSO bug so limit
 	 * the TSO to the controllers that are not affected TSO issues
 	 * (e.g. 5755 or higher).
 	 */
@@ -3750,11 +3714,6 @@ bge_attach(device_t dev)
 
 	/* Set up ifnet structure */
 	ifp = sc->bge_ifp = if_alloc(IFT_ETHER);
-	if (ifp == NULL) {
-		device_printf(sc->bge_dev, "failed to if_alloc()\n");
-		error = ENXIO;
-		goto fail;
-	}
 	if_setsoftc(ifp, sc);
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
 	if_setflags(ifp, IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST);
@@ -3933,12 +3892,6 @@ again:
 		    ~BGE_MSIMODE_ONE_SHOT_DISABLE);
 		sc->bge_tq = taskqueue_create_fast("bge_taskq", M_WAITOK,
 		    taskqueue_thread_enqueue, &sc->bge_tq);
-		if (sc->bge_tq == NULL) {
-			device_printf(dev, "could not create taskqueue.\n");
-			ether_ifdetach(ifp);
-			error = ENOMEM;
-			goto fail;
-		}
 		error = taskqueue_start_threads(&sc->bge_tq, 1, PI_NET,
 		    "%s taskq", device_get_nameunit(sc->bge_dev));
 		if (error != 0) {
@@ -3960,8 +3913,8 @@ again:
 		goto fail;
 	}
 
-	/* Attach driver netdump methods. */
-	NETDUMP_SET(ifp, bge);
+	/* Attach driver debugnet methods. */
+	DEBUGNET_SET(ifp, bge);
 
 fail:
 	if (error)
@@ -4845,11 +4798,9 @@ bge_tick(void *xsc)
 static void
 bge_stats_update_regs(struct bge_softc *sc)
 {
-	if_t ifp;
 	struct bge_mac_stats *stats;
 	uint32_t val;
 
-	ifp = sc->bge_ifp;
 	stats = &sc->bge_mac_stats;
 
 	stats->ifHCOutOctets +=
@@ -5488,7 +5439,7 @@ bge_init_locked(struct bge_softc *sc)
 	    (if_getcapenable(ifp) & IFCAP_VLAN_MTU ? ETHER_VLAN_ENCAP_LEN : 0));
 
 	/* Load our MAC address. */
-	m = (uint16_t *)IF_LLADDR(sc->bge_ifp);
+	m = (uint16_t *)if_getlladdr(sc->bge_ifp);
 	CSR_WRITE_4(sc, BGE_MAC_ADDR1_LO, htons(m[0]));
 	CSR_WRITE_4(sc, BGE_MAC_ADDR1_HI, (htons(m[1]) << 16) | htons(m[2]));
 
@@ -6270,31 +6221,29 @@ bge_add_sysctls(struct bge_softc *sc)
 {
 	struct sysctl_ctx_list *ctx;
 	struct sysctl_oid_list *children;
-	int unit;
 
 	ctx = device_get_sysctl_ctx(sc->bge_dev);
 	children = SYSCTL_CHILDREN(device_get_sysctl_tree(sc->bge_dev));
 
 #ifdef BGE_REGISTER_DEBUG
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "debug_info",
-	    CTLTYPE_INT | CTLFLAG_RW, sc, 0, bge_sysctl_debug_info, "I",
-	    "Debug Information");
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT, sc, 0,
+	    bge_sysctl_debug_info, "I", "Debug Information");
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "reg_read",
-	    CTLTYPE_INT | CTLFLAG_RW, sc, 0, bge_sysctl_reg_read, "I",
-	    "MAC Register Read");
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT, sc, 0,
+	    bge_sysctl_reg_read, "I", "MAC Register Read");
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "ape_read",
-	    CTLTYPE_INT | CTLFLAG_RW, sc, 0, bge_sysctl_ape_read, "I",
-	    "APE Register Read");
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT, sc, 0,
+	    bge_sysctl_ape_read, "I", "APE Register Read");
 
 	SYSCTL_ADD_PROC(ctx, children, OID_AUTO, "mem_read",
-	    CTLTYPE_INT | CTLFLAG_RW, sc, 0, bge_sysctl_mem_read, "I",
-	    "Memory Read");
+	    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_NEEDGIANT, sc, 0,
+	    bge_sysctl_mem_read, "I", "Memory Read");
 
 #endif
 
-	unit = device_get_unit(sc->bge_dev);
 	/*
 	 * A common design characteristic for many Broadcom client controllers
 	 * is that they only support a single outstanding DMA read operation
@@ -6340,9 +6289,9 @@ bge_add_sysctls(struct bge_softc *sc)
 }
 
 #define BGE_SYSCTL_STAT(sc, ctx, desc, parent, node, oid) \
-	SYSCTL_ADD_PROC(ctx, parent, OID_AUTO, oid, CTLTYPE_UINT|CTLFLAG_RD, \
-	    sc, offsetof(struct bge_stats, node), bge_sysctl_stats, "IU", \
-	    desc)
+    SYSCTL_ADD_PROC(ctx, parent, OID_AUTO, oid, \
+        CTLTYPE_UINT | CTLFLAG_RD | CTLFLAG_NEEDGIANT, sc, \
+	offsetof(struct bge_stats, node), bge_sysctl_stats, "IU", desc)
 
 static void
 bge_add_sysctl_stats(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
@@ -6351,8 +6300,8 @@ bge_add_sysctl_stats(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
 	struct sysctl_oid *tree;
 	struct sysctl_oid_list *children, *schildren;
 
-	tree = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "stats", CTLFLAG_RD,
-	    NULL, "BGE Statistics");
+	tree = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "stats",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "BGE Statistics");
 	schildren = children = SYSCTL_CHILDREN(tree);
 	BGE_SYSCTL_STAT(sc, ctx, "Frames Dropped Due To Filters",
 	    children, COSFramesDroppedDueToFilters,
@@ -6386,8 +6335,8 @@ bge_add_sysctl_stats(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
 	BGE_SYSCTL_STAT(sc, ctx, "NIC Send Threshold Hit",
 	    children, nicSendThresholdHit, "SendThresholdHit");
 
-	tree = SYSCTL_ADD_NODE(ctx, schildren, OID_AUTO, "rx", CTLFLAG_RD,
-	    NULL, "BGE RX Statistics");
+	tree = SYSCTL_ADD_NODE(ctx, schildren, OID_AUTO, "rx",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "BGE RX Statistics");
 	children = SYSCTL_CHILDREN(tree);
 	BGE_SYSCTL_STAT(sc, ctx, "Inbound Octets",
 	    children, rxstats.ifHCInOctets, "ifHCInOctets");
@@ -6422,8 +6371,8 @@ bge_add_sysctl_stats(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
 	BGE_SYSCTL_STAT(sc, ctx, "Outbound Range Length Errors",
 	    children, rxstats.outRangeLengthError, "outRangeLengthError");
 
-	tree = SYSCTL_ADD_NODE(ctx, schildren, OID_AUTO, "tx", CTLFLAG_RD,
-	    NULL, "BGE TX Statistics");
+	tree = SYSCTL_ADD_NODE(ctx, schildren, OID_AUTO, "tx",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "BGE TX Statistics");
 	children = SYSCTL_CHILDREN(tree);
 	BGE_SYSCTL_STAT(sc, ctx, "Outbound Octets",
 	    children, txstats.ifHCOutOctets, "ifHCOutOctets");
@@ -6482,8 +6431,8 @@ bge_add_sysctl_stats_regs(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
 	struct bge_mac_stats *stats;
 
 	stats = &sc->bge_mac_stats;
-	tree = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "stats", CTLFLAG_RD,
-	    NULL, "BGE Statistics");
+	tree = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "stats",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "BGE Statistics");
 	schild = child = SYSCTL_CHILDREN(tree);
 	BGE_SYSCTL_STAT_ADD64(ctx, child, "FramesDroppedDueToFilters",
 	    &stats->FramesDroppedDueToFilters, "Frames Dropped Due to Filters");
@@ -6501,8 +6450,8 @@ bge_add_sysctl_stats_regs(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
 	BGE_SYSCTL_STAT_ADD64(ctx, child, "RecvThresholdHit",
 	    &stats->RecvThresholdHit, "NIC Recv Threshold Hit");
 
-	tree = SYSCTL_ADD_NODE(ctx, schild, OID_AUTO, "rx", CTLFLAG_RD,
-	    NULL, "BGE RX Statistics");
+	tree = SYSCTL_ADD_NODE(ctx, schild, OID_AUTO, "rx",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "BGE RX Statistics");
 	child = SYSCTL_CHILDREN(tree);
 	BGE_SYSCTL_STAT_ADD64(ctx, child, "ifHCInOctets",
 	    &stats->ifHCInOctets, "Inbound Octets");
@@ -6533,8 +6482,8 @@ bge_add_sysctl_stats_regs(struct bge_softc *sc, struct sysctl_ctx_list *ctx,
 	BGE_SYSCTL_STAT_ADD64(ctx, child, "UndersizePkts",
 	    &stats->etherStatsUndersizePkts, "Undersized Packets");
 
-	tree = SYSCTL_ADD_NODE(ctx, schild, OID_AUTO, "tx", CTLFLAG_RD,
-	    NULL, "BGE TX Statistics");
+	tree = SYSCTL_ADD_NODE(ctx, schild, OID_AUTO, "tx",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "BGE TX Statistics");
 	child = SYSCTL_CHILDREN(tree);
 	BGE_SYSCTL_STAT_ADD64(ctx, child, "ifHCOutOctets",
 	    &stats->ifHCOutOctets, "Outbound Octets");
@@ -6726,15 +6675,7 @@ bge_sysctl_mem_read(SYSCTL_HANDLER_ARGS)
 static int
 bge_get_eaddr_fw(struct bge_softc *sc, uint8_t ether_addr[])
 {
-#ifdef __sparc64__
-	if (sc->bge_flags & BGE_FLAG_EADDR)
-		return (1);
-
-	OF_getetheraddr(sc->bge_dev, ether_addr);
-	return (0);
-#else
 	return (1);
-#endif
 }
 
 static int
@@ -6821,16 +6762,23 @@ bge_get_counter(if_t ifp, ift_counter cnt)
 	}
 }
 
-#ifdef NETDUMP
+#ifdef DEBUGNET
 static void
-bge_netdump_init(if_t ifp, int *nrxr, int *ncl, int *clsize)
+bge_debugnet_init(if_t ifp, int *nrxr, int *ncl, int *clsize)
 {
 	struct bge_softc *sc;
 
 	sc = if_getsoftc(ifp);
 	BGE_LOCK(sc);
-	*nrxr = sc->bge_return_ring_cnt;
-	*ncl = NETDUMP_MAX_IN_FLIGHT;
+	/*
+	 * There is only one logical receive ring, but it is backed
+	 * by two actual rings, for cluster- and jumbo-sized mbufs.
+	 * Debugnet expects only one size, so if jumbo is in use,
+	 * this says we have two rings of jumbo mbufs, but that's
+	 * only a little wasteful.
+	 */
+	*nrxr = 2;
+	*ncl = DEBUGNET_MAX_IN_FLIGHT;
 	if ((sc->bge_flags & BGE_FLAG_JUMBO_STD) != 0 &&
 	    (if_getmtu(sc->bge_ifp) + ETHER_HDR_LEN + ETHER_CRC_LEN +
 	    ETHER_VLAN_ENCAP_LEN > (MCLBYTES - ETHER_ALIGN)))
@@ -6841,12 +6789,12 @@ bge_netdump_init(if_t ifp, int *nrxr, int *ncl, int *clsize)
 }
 
 static void
-bge_netdump_event(if_t ifp __unused, enum netdump_ev event __unused)
+bge_debugnet_event(if_t ifp __unused, enum debugnet_ev event __unused)
 {
 }
 
 static int
-bge_netdump_transmit(if_t ifp, struct mbuf *m)
+bge_debugnet_transmit(if_t ifp, struct mbuf *m)
 {
 	struct bge_softc *sc;
 	uint32_t prodidx;
@@ -6865,7 +6813,7 @@ bge_netdump_transmit(if_t ifp, struct mbuf *m)
 }
 
 static int
-bge_netdump_poll(if_t ifp, int count)
+bge_debugnet_poll(if_t ifp, int count)
 {
 	struct bge_softc *sc;
 	uint32_t rx_prod, tx_cons;
@@ -6890,4 +6838,4 @@ bge_netdump_poll(if_t ifp, int count)
 	bge_txeof(sc, tx_cons);
 	return (0);
 }
-#endif /* NETDUMP */
+#endif /* DEBUGNET */

@@ -35,9 +35,6 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getnetpath.c	1.11 91/12/19 SMI";
 #endif
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Copyright (c) 1989 by Sun Microsystems, Inc.
  */
@@ -137,7 +134,7 @@ failed:
  * NULL and sets errno in case of an error (e.g., setnetpath was not called
  * previously).
  * getnetpath() silently ignores invalid NETPATH components.  A NETPATH
- * compnent is invalid if there is no corresponding entry in the netconfig
+ * component is invalid if there is no corresponding entry in the netconfig
  * database.
  * If the NETPATH variable is unset, getnetpath() behaves as if NETPATH
  * were set to the sequence of default or visible networks in the netconfig

@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * $OpenBSD: if_urtwnreg.h,v 1.3 2010/11/16 18:02:59 damien Exp $
- * $FreeBSD$
  */
 
 #ifndef R92C_TX_DESC_H
@@ -108,7 +107,6 @@ struct r92c_tx_desc {
 #define R92C_TXDW6_MAX_AGG_M		0x0000f800
 #define R92C_TXDW6_MAX_AGG_S		11
 } __packed __attribute__((aligned(4)));
-
 
 /* Rate adaptation modes. */
 #define R92C_RAID_11BGN		0

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2013 Intel Corporation
  * Copyright (C) 1997 Justin T. Gibbs
@@ -30,8 +30,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <dev/nvme/nvme.h>
 
@@ -62,4 +60,3 @@ nvme_strvis(uint8_t *dst, const uint8_t *src, int dstlen, int srclen)
 	}
 	*dst = '\0';
 }
-

@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Ian Lepore <ian@freebsd.org>
  * All rights reserved.
@@ -31,8 +31,6 @@
 #define IF_FFECREG_H
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Hardware defines for Freescale Fast Ethernet Controller.
  */
@@ -144,17 +142,6 @@ __FBSDID("$FreeBSD$");
 #define	FEC_OPD_REG			0x00ec
 #define	  FEC_OPD_PAUSE_DUR_SHIFT	  0
 #define	  FEC_OPD_PAUSE_DUR_MASK	  (0xffff << FEC_OPD_PAUSE_DUR_SHIFT)
-
-#define	FEC_TXIC0_REG			0x00f0
-#define	FEC_TXIC1_REG			0x00f4
-#define	FEC_TXIC2_REG			0x00f8
-#define	FEC_RXIC0_REG			0x0100
-#define	FEC_RXIC1_REG			0x0104
-#define	FEC_RXIC2_REG			0x0108
-#define	  FEC_IC_ICEN			  (1 <<  31)
-#define	  FEC_IC_ICCS			  (1 <<  30)
-#define	  FEC_IC_ICFT(x)		  (((x) & 0xff) << 20)
-#define	  FEC_IC_ICTT(x)		  ((x) & 0xffff)
 
 #define	FEC_IAUR_REG			0x0118
 #define	FEC_IALR_REG			0x011c
@@ -297,11 +284,6 @@ struct ffec_hwdesc
 {
 	uint32_t	flags_len;
 	uint32_t	buf_paddr;
-	uint32_t	flags2;
-	uint32_t	hlen_proto;
-	uint32_t	bdu;
-	uint32_t	ts;
-	uint32_t	res[2];
 };
 
 #define	FEC_TXDESC_READY		(1U << 31)
@@ -312,11 +294,6 @@ struct ffec_hwdesc
 #define	FEC_TXDESC_TC			(1 << 26)
 #define	FEC_TXDESC_ABC			(1 << 25)
 #define	FEC_TXDESC_LEN_MASK		(0xffff)
-
-#define	FEC_TXDESC_INT			(1 << 30)
-#define	FEC_TXDESC_TS			(1 << 29)
-#define	FEC_TXDESC_PINS			(1 << 28)
-#define	FEC_TXDESC_IINS			(1 << 27)
 
 #define	FEC_RXDESC_EMPTY		(1U << 31)
 #define	FEC_RXDESC_R01			(1 << 30)
@@ -332,10 +309,6 @@ struct ffec_hwdesc
 #define	FEC_RXDESC_OV			(1 << 17)
 #define	FEC_RXDESC_TR			(1 << 16)
 #define	FEC_RXDESC_LEN_MASK		(0xffff)
-
-#define	FEC_RXDESC_INT			(1 << 23)
-#define	FEC_RXDESC_ICE			(1 << 5)
-#define	FEC_RXDESC_PCR			(1 << 4)
 
 #define	FEC_RXDESC_ERROR_BITS	(FEC_RXDESC_LG | FEC_RXDESC_NO | \
     FEC_RXDESC_OV | FEC_RXDESC_TR)

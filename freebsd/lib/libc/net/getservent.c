@@ -34,9 +34,6 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getservent.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -448,7 +445,7 @@ files_setservent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(uintptr_t)mdata) {
 	case SETSERVENT:
 		f = va_arg(ap,int);
 		if (st->fp == NULL)
@@ -511,7 +508,7 @@ db_servent(void *retval, void *mdata, va_list ap)
 
 	name = NULL;
 	proto = NULL;
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(uintptr_t)mdata;
 	switch (how) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -628,7 +625,7 @@ db_setservent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(uintptr_t)mdata) {
 	case SETSERVENT:
 		f = va_arg(ap, int);
 		st->stayopen |= f;
@@ -684,7 +681,7 @@ nis_servent(void *retval, void *mdata, va_list ap)
 	name = NULL;
 	proto = NULL;
 	buf = NULL;
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(uintptr_t)mdata;
 	switch (how) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -816,7 +813,7 @@ nis_setservent(void *result, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(uintptr_t)mdata) {
 	case SETSERVENT:
 	case ENDSERVENT:
 		free(st->yp_key);
@@ -852,7 +849,7 @@ compat_setservent(void *retval, void *mdata, va_list ap)
 
 	(void)files_setservent(retval, mdata, ap);
 
-	switch ((enum constants)mdata) {
+	switch ((enum constants)(uintptr_t)mdata) {
 	case SETSERVENT:
 		f = va_arg(ap,int);
 		(void)nsdispatch(retval, compat_dtab, NSDB_SERVICES_COMPAT,
@@ -881,7 +878,7 @@ serv_id_func(char *buffer, size_t *buffer_size, va_list ap, void *cache_mdata)
 	enum nss_lookup_type lookup_type;
 	int res = NS_UNAVAIL;
 
-	lookup_type = (enum nss_lookup_type)cache_mdata;
+	lookup_type = (enum nss_lookup_type)(uintptr_t)cache_mdata;
 	switch (lookup_type) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -945,16 +942,16 @@ fin:
 	return (res);
 }
 
-int
+static int
 serv_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
     void *cache_mdata)
 {
-	char *name;
-	char *proto;
-	int port;
+	char *name __unused;
+	char *proto __unused;
+	int port __unused;
 	struct servent *serv;
-	char *orig_buf;
-	size_t orig_buf_size;
+	char *orig_buf __unused;
+	size_t orig_buf_size __unused;
 
 	struct servent new_serv;
 	size_t desired_size;
@@ -963,7 +960,7 @@ serv_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
 	size_t size;
 	size_t aliases_size;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(uintptr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		proto = va_arg(ap, char *);
@@ -1046,13 +1043,13 @@ serv_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
 	return (NS_SUCCESS);
 }
 
-int
+static int
 serv_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
     void *cache_mdata)
 {
-	char *name;
-	char *proto;
-	int port;
+	char *name __unused;
+	char *proto __unused;
+	int port __unused;
 	struct servent *serv;
 	char *orig_buf;
 	char *p;
@@ -1060,7 +1057,7 @@ serv_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 	size_t orig_buf_size;
 	int *ret_errno;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(uintptr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		proto = va_arg(ap, char *);

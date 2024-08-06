@@ -48,12 +48,13 @@
 #define MAXPHYS (128 * 1024)
 #define NSWBUF_MIN 16
 
-static u_long maxphys; /* max raw I/O transfer size */
+static const char pbuf_wmesg[] = "pbufwait";
 static int nswbuf_max;
+
+u_long maxphys = MAXPHYS;
 
 vmem_t *kernel_arena;
 uma_zone_t pbuf_zone;
-uma_zone_t ncl_pbuf_zone;
 
 vm_offset_t
 kva_alloc(vm_size_t size)
@@ -118,7 +119,7 @@ pbuf_init(void *mem, int size, int flags)
 	if (bp->b_kvabase == NULL)
 		return (ENOMEM);
 	bp->b_kvasize = ptoa(PBUF_PAGES);
-	BUF_LOCKINIT(bp);
+	BUF_LOCKINIT(bp, pbuf_wmesg);
 	LIST_INIT(&bp->b_dep);
 	bp->b_rcred = bp->b_wcred = NOCRED;
 	bp->b_xflags = 0;
@@ -138,7 +139,7 @@ vm_pager_bufferinit(void)
 }
 
 uma_zone_t
-pbuf_zsecond_create(char *name, int max)
+pbuf_zsecond_create(const char *name, int max)
 {
 	uma_zone_t zone;
 

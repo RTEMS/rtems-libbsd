@@ -1,6 +1,8 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Copyright (c) 2017 Netflix, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,8 +31,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/endian.h>
 #include "nvmecontrol.h"
 

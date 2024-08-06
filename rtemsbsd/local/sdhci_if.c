@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -23,7 +23,18 @@
 #include <sys/taskqueue.h>
 #include <machine/bus.h>
 #include <dev/mmc/bridge.h>
+#include <rtems/bsd/local/sdhci_if.h>
+#ifdef __rtems__
 #include <dev/sdhci/sdhci.h>
+#endif /* __rtems__ */
+
+static int
+null_set_clock(device_t brdev __unused,
+    struct sdhci_slot *slot __unused,
+    int clock)
+{
+	return (clock);
+}
 
 static void
 null_set_uhs_timing(device_t brdev __unused,
@@ -31,8 +42,6 @@ null_set_uhs_timing(device_t brdev __unused,
 {
 
 }
-
-#include <rtems/bsd/local/sdhci_if.h>
 
 struct kobjop_desc sdhci_read_1_desc = {
 	0, { &sdhci_read_1_desc, (kobjop_t)kobj_error_method }
@@ -88,5 +97,13 @@ struct kobjop_desc sdhci_get_card_present_desc = {
 
 struct kobjop_desc sdhci_set_uhs_timing_desc = {
 	0, { &sdhci_set_uhs_timing_desc, (kobjop_t)null_set_uhs_timing }
+};
+
+struct kobjop_desc sdhci_set_clock_desc = {
+	0, { &sdhci_set_clock_desc, (kobjop_t)null_set_clock }
+};
+
+struct kobjop_desc sdhci_reset_desc = {
+	0, { &sdhci_reset_desc, (kobjop_t)sdhci_generic_reset }
 };
 

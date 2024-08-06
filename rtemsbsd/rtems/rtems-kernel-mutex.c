@@ -171,6 +171,11 @@ _mtx_assert(struct mtx *m, int what, const char *file, int line)
 }
 #endif
 
+int mtx_owner(struct mtx *m)
+{
+	return (rtems_bsd_mutex_owner(&m->lock_object));
+}
+
 int mtx_owned(struct mtx *m)
 {
 	return (rtems_bsd_mutex_owned(&m->lock_object));

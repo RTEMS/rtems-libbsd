@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -56,7 +54,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8188e/r88e.h>
 #include <dev/rtwn/rtl8188e/r88e_priv.h>
 #include <dev/rtwn/rtl8188e/r88e_rom_image.h>
-
 
 void
 r88e_parse_rom(struct rtwn_softc *sc, uint8_t *buf)

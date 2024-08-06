@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Alexander Motin <mav@FreeBSD.org>
  * All rights reserved.
@@ -23,8 +23,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef	__SDHCI_H__
@@ -57,7 +55,7 @@
 #define	SDHCI_QUIRK_LOWER_FREQUENCY			(1 << 9)
 /* Data timeout is invalid, should use SD clock */
 #define	SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK		(1 << 10)
-/* Timeout value is invalid, should be overriden */
+/* Timeout value is invalid, should be overridden */
 #define	SDHCI_QUIRK_BROKEN_TIMEOUT_VAL			(1 << 11)
 /* SDHCI_CAPABILITIES is invalid */
 #define	SDHCI_QUIRK_MISSING_CAPS			(1 << 12)
@@ -431,6 +429,7 @@ void sdhci_finish_data(struct sdhci_slot *slot);
 int sdhci_cleanup_slot(struct sdhci_slot *slot);
 int sdhci_generic_suspend(struct sdhci_slot *slot);
 int sdhci_generic_resume(struct sdhci_slot *slot);
+void sdhci_generic_reset(device_t brdev, struct sdhci_slot *slot, uint8_t mask);
 int sdhci_generic_update_ios(device_t brdev, device_t reqdev);
 int sdhci_generic_tune(device_t brdev, device_t reqdev, bool hs400);
 int sdhci_generic_switch_vccq(device_t brdev, device_t reqdev);

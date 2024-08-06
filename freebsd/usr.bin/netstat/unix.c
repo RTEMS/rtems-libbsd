@@ -45,8 +45,6 @@ static char sccsid[] = "@(#)unix.c	8.1 (Berkeley) 6/6/93";
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Display protocol blocks in the unix domain.
  */

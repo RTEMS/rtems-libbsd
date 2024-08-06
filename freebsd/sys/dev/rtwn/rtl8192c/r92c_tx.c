@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -55,7 +53,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8192c/r92c.h>
 #include <dev/rtwn/rtl8192c/r92c_var.h>
 #include <dev/rtwn/rtl8192c/r92c_tx_desc.h>
-
 
 static int
 r92c_tx_get_sco(struct rtwn_softc *sc, struct ieee80211_channel *c)
@@ -338,7 +335,7 @@ r92c_fill_tx_desc(struct rtwn_softc *sc, struct ieee80211_node *ni,
 		uint16_t seqno;
 
 		if (m->m_flags & M_AMPDU_MPDU) {
-			seqno = ni->ni_txseqs[tid];
+			seqno = ni->ni_txseqs[tid] % IEEE80211_SEQ_RANGE;
 			ni->ni_txseqs[tid]++;
 		} else
 			seqno = M_SEQNO_GET(m) % IEEE80211_SEQ_RANGE;

@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -71,7 +69,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8821a/r21a_priv.h>
 
 #include <dev/rtwn/rtl8821a/usb/r21au.h>
-
 
 void	r21au_attach(struct rtwn_usb_softc *);
 

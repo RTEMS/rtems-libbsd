@@ -60,8 +60,6 @@ int rtems_bsd_command_pfctl(int argc, char **argv);
 
 int rtems_bsd_command_ping(int argc, char **argv);
 
-int rtems_bsd_command_ping6(int argc, char **argv);
-
 int rtems_bsd_command_route(int argc, char **argv);
 
 int rtems_bsd_command_wpa_supplicant(int argc, char **argv);
@@ -77,10 +75,6 @@ int rtems_bsd_command_vmstat(int argc, char **argv);
 int rtems_bsd_command_wlanstats(int argc, char **argv);
 
 int rtems_bsd_command_stty(int argc, char **argv);
-
-int rtems_bsd_command_racoon(int argc, char **argv);
-
-int rtems_bsd_command_setkey(int argc, char **argv);
 
 int rtems_bsd_command_openssl(int argc, char **argv);
 

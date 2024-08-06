@@ -39,8 +39,6 @@
  * Enterprises.  To learn more about the Internet Software Consortium,
  * see ``http://www.vix.com/isc''.  To learn more about Vixie
  * Enterprises, see ``http://www.vix.com''.
- *
- * $FreeBSD$
  */
 
 #include <sys/param.h>
@@ -159,6 +157,8 @@ struct client_config {
 	u_int8_t		 required_options[256];
 	u_int8_t		 requested_options[256];
 	int			 requested_option_count;
+	u_int8_t		 ignored_options[256];
+	u_int			 vlan_pcp;
 	time_t			 timeout;
 	time_t			 initial_interval;
 	time_t			 retry_interval;
@@ -219,7 +219,7 @@ struct interface_info {
 
 struct timeout {
 	struct timeout	*next;
-	time_t		 when;
+	struct timespec	 when;
 	void		 (*func)(void *);
 	void		*what;
 };
@@ -321,6 +321,7 @@ void reinitialize_interfaces(void);
 void dispatch(void);
 void got_one(struct protocol *);
 void add_timeout(time_t, void (*)(void *), void *);
+void add_timeout_timespec(struct timespec, void (*)(void *), void *);
 void cancel_timeout(void (*)(void *), void *);
 void add_protocol(const char *, int, void (*)(struct protocol *), void *);
 void remove_protocol(struct protocol *);
@@ -361,6 +362,7 @@ char *piaddr(struct iaddr);
 extern cap_channel_t *capsyslog;
 extern const char *path_dhclient_conf;
 extern char *path_dhclient_db;
+extern struct timespec time_now;
 extern time_t cur_time;
 extern int log_priority;
 extern int log_perror;

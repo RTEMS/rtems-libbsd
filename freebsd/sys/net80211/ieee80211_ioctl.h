@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001 Atsushi Onoe
  * Copyright (c) 2002-2009 Sam Leffler, Errno Consulting
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 #ifndef _NET80211_IEEE80211_IOCTL_H_
 #define _NET80211_IEEE80211_IOCTL_H_
@@ -371,7 +369,6 @@ enum {
 	IEEE80211_HWMP_ROOTMODE_RANN		= 3,	/* use RANN elemid */
 };
 
-
 /*
  * Set the active channel list by IEEE channel #: each channel
  * to be marked active is set in a bit vector.  Note this list is
@@ -710,6 +707,8 @@ struct ieee80211req {
 #define	IEEE80211_IOC_GREENFIELD	112	/* Greenfield (on, off) */
 #define	IEEE80211_IOC_STBC		113	/* STBC Tx/RX (on, off) */
 #define	IEEE80211_IOC_LDPC		114	/* LDPC Tx/RX (on, off) */
+#define	IEEE80211_IOC_UAPSD		115	/* UAPSD (on, off) */
+#define	IEEE80211_IOC_UAPSD_INFO	116	/* UAPSD (SP, per-AC enable) */
 
 /* VHT */
 #define	IEEE80211_IOC_VHTCONF		130	/* VHT config (off, on; widths) */
@@ -741,6 +740,9 @@ struct ieee80211req {
 #define	IEEE80211_IOC_QUIET_OFFSET	207	/* Quiet Offset */
 #define	IEEE80211_IOC_QUIET_DUR		208	/* Quiet Duration */
 #define	IEEE80211_IOC_QUIET_COUNT	209	/* Quiet Count */
+
+#define	IEEE80211_IOC_IC_NAME		210	/* HW device name. */
+
 /*
  * Parameters for controlling a scan requested with
  * IEEE80211_IOC_SCAN_REQ.

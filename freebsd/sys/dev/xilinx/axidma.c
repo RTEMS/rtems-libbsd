@@ -35,8 +35,6 @@
 /* Xilinx AXI DMA controller driver. */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_platform.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -69,6 +67,15 @@ __FBSDID("$FreeBSD$");
 
 #include <rtems/bsd/local/xdma_if.h>
 
+#define	READ4(_sc, _reg)	\
+	bus_space_read_4(_sc->bst, _sc->bsh, _reg)
+#define	WRITE4(_sc, _reg, _val)	\
+	bus_space_write_4(_sc->bst, _sc->bsh, _reg, _val)
+#define	READ8(_sc, _reg)	\
+	bus_space_read_8(_sc->bst, _sc->bsh, _reg)
+#define	WRITE8(_sc, _reg, _val)	\
+	bus_space_write_8(_sc->bst, _sc->bsh, _reg, _val)
+
 #define AXIDMA_DEBUG
 #undef AXIDMA_DEBUG
 
@@ -84,16 +91,7 @@ __FBSDID("$FreeBSD$");
 #define dprintf(fmt, ...)
 #endif
 
-#define	AXIDMA_NCHANNELS	2
-#define	AXIDMA_DESCS_NUM	512
-#define	AXIDMA_TX_CHAN		0
-#define	AXIDMA_RX_CHAN		1
-
 extern struct bus_space memmap_bus;
-
-struct axidma_fdt_data {
-	int id;
-};
 
 struct axidma_channel {
 	struct axidma_softc	*sc;
@@ -338,9 +336,7 @@ static int
 axidma_desc_free(struct axidma_softc *sc, struct axidma_channel *chan)
 {
 	struct xdma_channel *xchan;
-	int nsegments;
 
-	nsegments = chan->descs_num;
 	xchan = chan->xchan;
 
 	free(chan->descs, M_DEVBUF);
@@ -393,7 +389,7 @@ axidma_desc_alloc(struct axidma_softc *sc, struct xdma_channel *xchan,
 	chan->mem_paddr = chan->mem_vaddr;
 #endif /* __rtems__ */
 
-	device_printf(sc->dev, "Allocated chunk %lx %d\n",
+	device_printf(sc->dev, "Allocated chunk %lx %lu\n",
 	    chan->mem_paddr, chan->mem_size);
 
 	for (i = 0; i < nsegments; i++) {
@@ -429,6 +425,7 @@ axidma_channel_alloc(device_t dev, struct xdma_channel *xchan)
 		if (axidma_reset(sc, data->id) != 0)
 			return (-1);
 		chan->xchan = xchan;
+		xchan->caps |= XCHAN_CAP_BOUNCE;
 		xchan->chan = (void *)chan;
 		chan->sc = sc;
 		chan->used = true;
@@ -492,7 +489,6 @@ axidma_channel_submit_sg(device_t dev, struct xdma_channel *xchan,
 	uint32_t len;
 	uint32_t tmp;
 	int i;
-	int tail;
 
 	dprintf("%s: sg_n %d\n", __func__, sg_n);
 
@@ -504,8 +500,6 @@ axidma_channel_submit_sg(device_t dev, struct xdma_channel *xchan,
 
 	if (sg_n == 0)
 		return (0);
-
-	tail = chan->idx_head;
 
 	tmp = 0;
 
@@ -611,12 +605,6 @@ axidma_channel_prep_sg(device_t dev, struct xdma_channel *xchan)
 static int
 axidma_channel_control(device_t dev, xdma_channel_t *xchan, int cmd)
 {
-	struct axidma_channel *chan;
-	struct axidma_softc *sc;
-
-	sc = device_get_softc(dev);
-
-	chan = (struct axidma_channel *)xchan->chan;
 
 	switch (cmd) {
 	case XDMA_CMD_BEGIN:
@@ -677,7 +665,5 @@ static driver_t axidma_driver = {
 	sizeof(struct axidma_softc),
 };
 
-static devclass_t axidma_devclass;
-
-EARLY_DRIVER_MODULE(axidma, simplebus, axidma_driver, axidma_devclass, 0, 0,
+EARLY_DRIVER_MODULE(axidma, simplebus, axidma_driver, 0, 0,
     BUS_PASS_INTERRUPT + BUS_PASS_ORDER_LATE);

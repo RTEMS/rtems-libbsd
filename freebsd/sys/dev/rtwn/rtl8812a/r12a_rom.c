@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -60,7 +58,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8812a/r12a.h>
 #include <dev/rtwn/rtl8812a/r12a_var.h>
 #include <dev/rtwn/rtl8812a/r12a_rom_image.h>
-
 
 void
 r12a_parse_rom_common(struct rtwn_softc *sc, uint8_t *buf)

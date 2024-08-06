@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -13,14 +13,14 @@
 #include <stdio.h>
 #include "internal/cryptlib.h"
 #include <openssl/asn1.h>
-#include "asn1_locl.h"
+#include "asn1_local.h"
 
 int ASN1_BIT_STRING_set(ASN1_BIT_STRING *x, unsigned char *d, int len)
 {
     return ASN1_STRING_set(x, d, len);
 }
 
-int i2c_ASN1_BIT_STRING(ASN1_BIT_STRING *a, unsigned char **pp)
+int ossl_i2c_ASN1_BIT_STRING(ASN1_BIT_STRING *a, unsigned char **pp)
 {
     int ret, j, bits, len;
     unsigned char *p, *d;
@@ -78,8 +78,8 @@ int i2c_ASN1_BIT_STRING(ASN1_BIT_STRING *a, unsigned char **pp)
     return ret;
 }
 
-ASN1_BIT_STRING *c2i_ASN1_BIT_STRING(ASN1_BIT_STRING **a,
-                                     const unsigned char **pp, long len)
+ASN1_BIT_STRING *ossl_c2i_ASN1_BIT_STRING(ASN1_BIT_STRING **a,
+                                          const unsigned char **pp, long len)
 {
     ASN1_BIT_STRING *ret = NULL;
     const unsigned char *p;
@@ -136,7 +136,7 @@ ASN1_BIT_STRING *c2i_ASN1_BIT_STRING(ASN1_BIT_STRING **a,
     *pp = p;
     return ret;
  err:
-    ASN1err(ASN1_F_C2I_ASN1_BIT_STRING, i);
+    ERR_raise(ERR_LIB_ASN1, i);
     if ((a == NULL) || (*a != ret))
         ASN1_BIT_STRING_free(ret);
     return NULL;
@@ -149,6 +149,9 @@ int ASN1_BIT_STRING_set_bit(ASN1_BIT_STRING *a, int n, int value)
 {
     int w, v, iv;
     unsigned char *c;
+
+    if (n < 0)
+        return 0;
 
     w = n / 8;
     v = 1 << (7 - (n & 0x07));
@@ -166,7 +169,7 @@ int ASN1_BIT_STRING_set_bit(ASN1_BIT_STRING *a, int n, int value)
             return 1;         /* Don't need to set */
         c = OPENSSL_clear_realloc(a->data, a->length, w + 1);
         if (c == NULL) {
-            ASN1err(ASN1_F_ASN1_BIT_STRING_SET_BIT, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
             return 0;
         }
         if (w + 1 - a->length > 0)
@@ -183,6 +186,9 @@ int ASN1_BIT_STRING_set_bit(ASN1_BIT_STRING *a, int n, int value)
 int ASN1_BIT_STRING_get_bit(const ASN1_BIT_STRING *a, int n)
 {
     int w, v;
+
+    if (n < 0)
+        return 0;
 
     w = n / 8;
     v = 1 << (7 - (n & 0x07));

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -29,13 +29,19 @@ if_dwc_default_init(device_t dev)
 static int
 if_dwc_default_mac_type(device_t dev)
 {
-	return (DWC_GMAC);
+	return (DWC_GMAC_EXT_DESC);
 }
 
 static int
 if_dwc_default_mii_clk(device_t dev)
 {
 	return (GMAC_MII_CLK_25_35M_DIV16);
+}
+
+static int
+if_dwc_default_set_speed(device_t dev, int speed)
+{
+	return (0);
 }
 
 struct kobjop_desc if_dwc_init_desc = {
@@ -48,5 +54,9 @@ struct kobjop_desc if_dwc_mac_type_desc = {
 
 struct kobjop_desc if_dwc_mii_clk_desc = {
 	0, { &if_dwc_mii_clk_desc, (kobjop_t)if_dwc_default_mii_clk }
+};
+
+struct kobjop_desc if_dwc_set_speed_desc = {
+	0, { &if_dwc_set_speed_desc, (kobjop_t)if_dwc_default_set_speed }
 };
 

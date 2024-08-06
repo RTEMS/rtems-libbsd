@@ -1,7 +1,6 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*	$OpenBSD: if_upgt.c,v 1.35 2008/04/16 18:32:15 damien Exp $ */
-/*	$FreeBSD$ */
 
 /*
  * Copyright (c) 2007 Marcus Glocker <mglocker@openbsd.org>
@@ -74,7 +73,7 @@
  * Sebastien Bourdeauducq <lekernel@prism54.org>.
  */
 
-static SYSCTL_NODE(_hw, OID_AUTO, upgt, CTLFLAG_RD, 0,
+static SYSCTL_NODE(_hw, OID_AUTO, upgt, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
     "USB PrismGT GW3887 driver parameters");
 
 #ifdef UPGT_DEBUG
@@ -897,7 +896,7 @@ upgt_set_chan(struct upgt_softc *sc, struct ieee80211_channel *c)
 		    "%s: invalid channel %x\n", __func__, channel);
 		return;
 	}
-	
+
 	DPRINTF(sc, UPGT_DEBUG_STATE, "%s: channel %d\n", __func__, channel);
 
 	data_cmd = upgt_getbuf(sc);
@@ -1058,7 +1057,6 @@ upgt_eeprom_parse(struct upgt_softc *sc)
 	    (sizeof(struct upgt_eeprom_header) + preamble_len));
 
 	while (!option_end) {
-
 		/* sanity check */
 		if (eeprom_option >= (struct upgt_eeprom_option *)
 		    (sc->sc_eeprom + UPGT_EEPROM_SIZE)) {
@@ -1156,17 +1154,15 @@ upgt_eeprom_parse_freq3(struct upgt_softc *sc, uint8_t *data, int len)
 	struct upgt_lmac_freq3 *freq3;
 	int i;
 	int elements;
-	int flags;
 	unsigned channel;
 
 	freq3_header = (struct upgt_eeprom_freq3_header *)data;
 	freq3 = (struct upgt_lmac_freq3 *)(freq3_header + 1);
 
-	flags = freq3_header->flags;
 	elements = freq3_header->elements;
 
 	DPRINTF(sc, UPGT_DEBUG_FW, "flags=0x%02x elements=%d\n",
-	    flags, elements);
+	    freq3_header->flags, elements);
 
 	if (elements >= (int)(UPGT_EEPROM_SIZE / sizeof(freq3[0])))
 		return;
@@ -1193,12 +1189,10 @@ upgt_eeprom_parse_freq4(struct upgt_softc *sc, uint8_t *data, int len)
 	int j;
 	int elements;
 	int settings;
-	int flags;
 	unsigned channel;
 
 	freq4_header = (struct upgt_eeprom_freq4_header *)data;
 	freq4_1 = (struct upgt_eeprom_freq4_1 *)(freq4_header + 1);
-	flags = freq4_header->flags;
 	elements = freq4_header->elements;
 	settings = freq4_header->settings;
 
@@ -1206,7 +1200,7 @@ upgt_eeprom_parse_freq4(struct upgt_softc *sc, uint8_t *data, int len)
 	sc->sc_eeprom_freq6_settings = freq4_header->settings;
 
 	DPRINTF(sc, UPGT_DEBUG_FW, "flags=0x%02x elements=%d settings=%d\n",
-	    flags, elements, settings);
+	    freq4_header->flags, elements, settings);
 
 	if (elements >= (int)(UPGT_EEPROM_SIZE / sizeof(freq4_1[0])))
 		return;
@@ -1277,7 +1271,7 @@ upgt_eeprom_read(struct upgt_softc *sc)
 	int block, error, offset;
 
 	UPGT_LOCK(sc);
-	usb_pause_mtx(&sc->sc_mtx, 100);
+	usb_pause_mtx(&sc->sc_mtx, USB_MS_TO_TICKS(100));
 
 	offset = 0;
 	block = UPGT_EEPROM_BLOCK_SIZE;
@@ -1485,7 +1479,7 @@ upgt_rx_rate(struct upgt_softc *sc, const int rate)
 	static const uint8_t cck_upgt2rate[4] = { 2, 4, 11, 22 };
 	static const uint8_t ofdm_upgt2rate[12] =
 	    { 2, 4, 11, 22, 12, 18, 24, 36, 48, 72, 96, 108 };
-	
+
 	if (ic->ic_curmode == IEEE80211_MODE_11B &&
 	    !(rate < 0 || rate > 3))
 		return cck_upgt2rate[rate & 0xf];
@@ -1674,7 +1668,7 @@ static int
 upgt_fw_copy(const uint8_t *src, char *dst, int size)
 {
 	int i, j;
-	
+
 	for (i = 0, j = 0; i < size && j < size; i++) {
 		switch (src[i]) {
 		case 0x7e:
@@ -1890,7 +1884,7 @@ upgt_device_reset(struct upgt_softc *sc)
 	memcpy(data->buf, init_cmd, sizeof(init_cmd));
 	data->buflen = sizeof(init_cmd);
 	upgt_bulk_tx(sc, data);
-	usb_pause_mtx(&sc->sc_mtx, 100);
+	usb_pause_mtx(&sc->sc_mtx, USB_MS_TO_TICKS(100));
 
 	UPGT_UNLOCK(sc);
 	DPRINTF(sc, UPGT_DEBUG_FW, "%s: device initialized\n", __func__);
@@ -1937,7 +1931,7 @@ upgt_detach(device_t dev)
 {
 	struct upgt_softc *sc = device_get_softc(dev);
 	struct ieee80211com *ic = &sc->sc_ic;
-	unsigned int x;
+	unsigned x;
 
 	/*
 	 * Prevent further allocations from RX/TX/CMD
@@ -2043,8 +2037,8 @@ upgt_sysctl_node(struct upgt_softc *sc)
 	ctx = device_get_sysctl_ctx(sc->sc_dev);
 	child = SYSCTL_CHILDREN(device_get_sysctl_tree(sc->sc_dev));
 
-	tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "stats", CTLFLAG_RD,
-	    NULL, "UPGT statistics");
+	tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "stats",
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "UPGT statistics");
 	child = SYSCTL_CHILDREN(tree);
 	UPGT_SYSCTL_STAT_ADD32(ctx, child, "tx_active",
 	    &stats->st_tx_active, "Active numbers in TX queue");
@@ -2199,7 +2193,7 @@ done:
 	 * will stall.  It's strange, but it works, so we keep reading
 	 * the statistics here.  *shrug*
 	 */
-	if (!(vap->iv_ifp->if_get_counter(vap->iv_ifp, IFCOUNTER_OPACKETS) %
+	if (!(if_getcounter(vap->iv_ifp, IFCOUNTER_OPACKETS) %
 	    UPGT_TX_STAT_INTERVAL))
 		upgt_get_stats(sc);
 
@@ -2344,9 +2338,7 @@ static driver_t upgt_driver = {
 	.size = sizeof(struct upgt_softc)
 };
 
-static devclass_t upgt_devclass;
-
-DRIVER_MODULE(if_upgt, uhub, upgt_driver, upgt_devclass, NULL, 0);
+DRIVER_MODULE(if_upgt, uhub, upgt_driver, NULL, NULL);
 MODULE_VERSION(if_upgt, 1);
 MODULE_DEPEND(if_upgt, usb, 1, 1, 1);
 MODULE_DEPEND(if_upgt, wlan, 1, 1, 1);

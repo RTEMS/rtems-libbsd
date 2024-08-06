@@ -40,18 +40,18 @@
 #ident	"@(#)svc_dg.c	1.17	94/04/24 SMI"
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * svc_dg.c, Server side for connectionless RPC.
  */
 
 #include <sys/param.h>
+#include <sys/jail.h>
 #include <sys/lock.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/mutex.h>
+#include <sys/proc.h>
 #include <sys/protosw.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
@@ -75,7 +75,7 @@ static void svc_dg_destroy(SVCXPRT *);
 static bool_t svc_dg_control(SVCXPRT *, const u_int, void *);
 static int svc_dg_soupcall(struct socket *so, void *arg, int waitflag);
 
-static struct xp_ops svc_dg_ops = {
+static const struct xp_ops svc_dg_ops = {
 	.xp_recv =	svc_dg_recv,
 	.xp_stat =	svc_dg_stat,
 	.xp_reply =	svc_dg_reply,
@@ -106,6 +106,8 @@ svc_dg_create(SVCPOOL *pool, struct socket *so, size_t sendsize,
 	struct sockaddr* sa;
 	int error;
 
+	if (jailed(curthread->td_ucred))
+		return (NULL);
 	if (!__rpc_socket2sockinfo(so, &si)) {
 		printf(svc_dg_str, svc_dg_err1);
 		return (NULL);
@@ -129,7 +131,7 @@ svc_dg_create(SVCPOOL *pool, struct socket *so, size_t sendsize,
 	xprt->xp_ops = &svc_dg_ops;
 
 	CURVNET_SET(so->so_vnet);
-	error = so->so_proto->pr_usrreqs->pru_sockaddr(so, &sa);
+	error = so->so_proto->pr_sockaddr(so, &sa);
 	CURVNET_RESTORE();
 	if (error)
 		goto freedata;
@@ -290,10 +292,7 @@ svc_dg_destroy(SVCXPRT *xprt)
 
 static bool_t
 /*ARGSUSED*/
-svc_dg_control(xprt, rq, in)
-	SVCXPRT *xprt;
-	const u_int	rq;
-	void		*in;
+svc_dg_control(SVCXPRT *xprt, const u_int rq, void *in)
 {
 
 	return (FALSE);

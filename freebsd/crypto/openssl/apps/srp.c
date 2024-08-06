@@ -6,10 +6,10 @@
 #endif /* __rtems__ */
 
 /*
- * Copyright 2004-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2004-2021 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2004, EdelKey Project. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -18,29 +18,29 @@
  * for the EdelKey project.
  */
 
+/* SRP is deprecated, so we're going to have to use some deprecated APIs */
+#define OPENSSL_SUPPRESS_DEPRECATED
+
 #include <openssl/opensslconf.h>
-#ifdef OPENSSL_NO_SRP
-NON_EMPTY_TRANSLATION_UNIT
-#else
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
-# include <openssl/conf.h>
-# include <openssl/bio.h>
-# include <openssl/err.h>
-# include <openssl/txt_db.h>
-# include <openssl/buffer.h>
-# include <openssl/srp.h>
-# include "apps.h"
-# include "progs.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <openssl/conf.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/txt_db.h>
+#include <openssl/buffer.h>
+#include <openssl/srp.h>
+#include "apps.h"
+#include "progs.h"
 
-# define BASE_SECTION    "srp"
-# define CONFIG_FILE "openssl.cnf"
+#define BASE_SECTION    "srp"
+#define CONFIG_FILE "openssl.cnf"
 
 
-# define ENV_DATABASE            "srpvfile"
-# define ENV_DEFAULT_SRP         "default_srp"
+#define ENV_DATABASE            "srpvfile"
+#define ENV_DEFAULT_SRP         "default_srp"
 
 static int get_index(CA_DB *db, char *id, char type)
 {
@@ -197,31 +197,42 @@ static char *srp_create_user(char *user, char **srp_verifier,
 }
 
 typedef enum OPTION_choice {
-    OPT_ERR = -1, OPT_EOF = 0, OPT_HELP,
+    OPT_COMMON,
     OPT_VERBOSE, OPT_CONFIG, OPT_NAME, OPT_SRPVFILE, OPT_ADD,
     OPT_DELETE, OPT_MODIFY, OPT_LIST, OPT_GN, OPT_USERINFO,
-    OPT_PASSIN, OPT_PASSOUT, OPT_ENGINE, OPT_R_ENUM
+    OPT_PASSIN, OPT_PASSOUT, OPT_ENGINE, OPT_R_ENUM, OPT_PROV_ENUM
 } OPTION_CHOICE;
 
 const OPTIONS srp_options[] = {
+    {OPT_HELP_STR, 1, '-', "Usage: %s [options] [user...]\n"},
+
+    OPT_SECTION("General"),
     {"help", OPT_HELP, '-', "Display this summary"},
     {"verbose", OPT_VERBOSE, '-', "Talk a lot while doing things"},
     {"config", OPT_CONFIG, '<', "A config file"},
     {"name", OPT_NAME, 's', "The particular srp definition to use"},
-    {"srpvfile", OPT_SRPVFILE, '<', "The srp verifier file name"},
-    {"add", OPT_ADD, '-', "Add a user and srp verifier"},
-    {"modify", OPT_MODIFY, '-',
-     "Modify the srp verifier of an existing user"},
+#ifndef OPENSSL_NO_ENGINE
+    {"engine", OPT_ENGINE, 's', "Use engine, possibly a hardware device"},
+#endif
+
+    OPT_SECTION("Action"),
+    {"add", OPT_ADD, '-', "Add a user and SRP verifier"},
+    {"modify", OPT_MODIFY, '-', "Modify the SRP verifier of an existing user"},
     {"delete", OPT_DELETE, '-', "Delete user from verifier file"},
     {"list", OPT_LIST, '-', "List users"},
+
+    OPT_SECTION("Configuration"),
+    {"srpvfile", OPT_SRPVFILE, '<', "The srp verifier file name"},
     {"gn", OPT_GN, 's', "Set g and N values to be used for new verifier"},
     {"userinfo", OPT_USERINFO, 's', "Additional info to be set for user"},
     {"passin", OPT_PASSIN, 's', "Input file pass phrase source"},
     {"passout", OPT_PASSOUT, 's', "Output file pass phrase source"},
+
     OPT_R_OPTIONS,
-# ifndef OPENSSL_NO_ENGINE
-    {"engine", OPT_ENGINE, 's', "Use engine, possibly a hardware device"},
-# endif
+    OPT_PROV_OPTIONS,
+
+    OPT_PARAMETERS(),
+    {"user", 0, 0, "Username(s) to process (optional)"},
     {NULL}
 };
 
@@ -294,10 +305,19 @@ int srp_main(int argc, char **argv)
             if (!opt_rand(o))
                 goto end;
             break;
+        case OPT_PROV_CASES:
+            if (!opt_provider(o))
+                goto end;
+            break;
         }
     }
+
+    /* Optional parameters are usernames. */
     argc = opt_num_rest();
     argv = opt_rest();
+
+    if (!app_RAND_load())
+        goto end;
 
     if (srpvfile != NULL && configfile != NULL) {
         BIO_printf(bio_err,
@@ -331,10 +351,7 @@ int srp_main(int argc, char **argv)
         if (configfile == NULL)
             configfile = default_config_file;
 
-        if (verbose)
-            BIO_printf(bio_err, "Using configuration from %s\n",
-                       configfile);
-        conf = app_load_config(configfile);
+        conf = app_load_config_verbose(configfile, verbose);
         if (conf == NULL)
             goto end;
         if (configfile != default_config_file && !app_load_modules(conf))
@@ -369,8 +386,10 @@ int srp_main(int argc, char **argv)
                    srpvfile);
 
     db = load_index(srpvfile, NULL);
-    if (db == NULL)
+    if (db == NULL) {
+        BIO_printf(bio_err, "Problem with index file: %s (could not load/parse file)\n", srpvfile);
         goto end;
+    }
 
     /* Lets check some fields */
     for (i = 0; i < sk_OPENSSL_PSTRING_num(db->db->data); i++) {
@@ -617,7 +636,6 @@ int srp_main(int argc, char **argv)
     release_engine(e);
     return ret;
 }
-#endif
 #ifdef __rtems__
 #include "rtems-bsd-openssl-srp-data.h"
 #endif /* __rtems__ */

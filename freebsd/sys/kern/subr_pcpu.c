@@ -50,8 +50,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_ddb.h>
 
 #include <sys/param.h>
@@ -98,6 +96,7 @@ pcpu_init(struct pcpu *pcpu, int cpuid, size_t size)
 	cpu_pcpu_init(pcpu, cpuid, size);
 	pcpu->pc_rm_queue.rmq_next = &pcpu->pc_rm_queue;
 	pcpu->pc_rm_queue.rmq_prev = &pcpu->pc_rm_queue;
+	pcpu->pc_zpcpu_offset = zpcpu_offset_cpu(cpuid);
 }
 
 void
@@ -105,6 +104,7 @@ dpcpu_init(void *dpcpu, int cpuid)
 {
 	struct pcpu *pcpu;
 
+	TSENTER();
 	pcpu = pcpu_find(cpuid);
 	pcpu->pc_dynamic = (uintptr_t)dpcpu - DPCPU_START;
 
@@ -117,6 +117,7 @@ dpcpu_init(void *dpcpu, int cpuid)
 	 * Place it in the global pcpu offset array.
 	 */
 	dpcpu_off[cpuid] = pcpu->pc_dynamic;
+	TSEXIT();
 }
 
 static void
@@ -134,28 +135,30 @@ SYSINIT(dpcpu, SI_SUB_KLD, SI_ORDER_FIRST, dpcpu_startup, NULL);
 #endif /* __rtems__ */
 
 /*
- * UMA_PCPU_ZONE zones, that are available for all kernel
- * consumers. Right now 64 bit zone is used for counter(9)
- * and pointer zone is used by flowtable.
+ * UMA_ZONE_PCPU zones for general kernel use.
  */
-
+uma_zone_t pcpu_zone_4;
+uma_zone_t pcpu_zone_8;
+uma_zone_t pcpu_zone_16;
+uma_zone_t pcpu_zone_32;
 uma_zone_t pcpu_zone_64;
-uma_zone_t pcpu_zone_ptr;
 
 static void
 pcpu_zones_startup(void)
 {
 
-	pcpu_zone_64 = uma_zcreate("64 pcpu", sizeof(uint64_t),
+	pcpu_zone_4 = uma_zcreate("pcpu-4", 4,
 	    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_PCPU);
-
-	if (sizeof(uint64_t) == sizeof(void *))
-		pcpu_zone_ptr = pcpu_zone_64;
-	else
-		pcpu_zone_ptr = uma_zcreate("ptr pcpu", sizeof(void *),
-		    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_PCPU);
+	pcpu_zone_8 = uma_zcreate("pcpu-8", 8,
+	    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_PCPU);
+	pcpu_zone_16 = uma_zcreate("pcpu-16", 16,
+	    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_PCPU);
+	pcpu_zone_32 = uma_zcreate("pcpu-32", 32,
+	    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_PCPU);
+	pcpu_zone_64 = uma_zcreate("pcpu-64", 64,
+	    NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_PCPU);
 }
-SYSINIT(pcpu_zones, SI_SUB_VM, SI_ORDER_ANY, pcpu_zones_startup, NULL);
+SYSINIT(pcpu_zones, SI_SUB_COUNTER, SI_ORDER_FIRST, pcpu_zones_startup, NULL);
 
 #ifndef __rtems__
 /*
@@ -340,7 +343,7 @@ sysctl_dpcpu_int(SYSCTL_HANDLER_ARGS)
 }
 
 #ifdef DDB
-DB_SHOW_COMMAND(dpcpu_off, db_show_dpcpu_off)
+DB_SHOW_COMMAND_FLAGS(dpcpu_off, db_show_dpcpu_off, DB_CMD_MEMSAFE)
 {
 	int id;
 
@@ -361,8 +364,9 @@ show_pcpu(struct pcpu *pc)
 	db_printf("curthread    = ");
 	td = pc->pc_curthread;
 	if (td != NULL)
-		db_printf("%p: pid %d tid %d \"%s\"\n", td, td->td_proc->p_pid,
-		    td->td_tid, td->td_name);
+		db_printf("%p: pid %d tid %d critnest %d \"%s\"\n", td,
+		    td->td_proc->p_pid, td->td_tid, td->td_critnest,
+		    td->td_name);
 	else
 		db_printf("none\n");
 	db_printf("curpcb       = %p\n", pc->pc_curpcb);
@@ -391,7 +395,7 @@ show_pcpu(struct pcpu *pc)
 #endif
 }
 
-DB_SHOW_COMMAND(pcpu, db_show_pcpu)
+DB_SHOW_COMMAND_FLAGS(pcpu, db_show_pcpu, DB_CMD_MEMSAFE)
 {
 	struct pcpu *pc;
 	int id;
@@ -422,6 +426,6 @@ DB_SHOW_ALL_COMMAND(pcpu, db_show_cpu_all)
 		}
 	}
 }
-DB_SHOW_ALIAS(allpcpu, db_show_cpu_all);
+DB_SHOW_ALIAS_FLAGS(allpcpu, db_show_cpu_all, DB_CMD_MEMSAFE);
 #endif
 #endif /* __rtems__ */

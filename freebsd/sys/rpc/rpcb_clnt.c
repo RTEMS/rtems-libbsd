@@ -42,8 +42,6 @@
 static char sccsid[] = "@(#)rpcb_clnt.c 1.30 89/06/21 Copyr 1988 Sun Micro";
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * rpcb_clnt.c
  * interface to rpcbind rpc service.
@@ -438,7 +436,7 @@ getclnthandle(host, nconf, targaddr)
  * rpcbind. Returns NULL on error and free's everything.
  */
 static CLIENT *
-local_rpcb()
+local_rpcb(void)
 {
 	CLIENT *client;
 	struct socket *so;

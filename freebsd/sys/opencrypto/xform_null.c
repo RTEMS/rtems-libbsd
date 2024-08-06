@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),
@@ -48,35 +50,36 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <opencrypto/xform_auth.h>
 #include <opencrypto/xform_enc.h>
 
-static	int null_setkey(u_int8_t **, u_int8_t *, int);
-static	void null_encrypt(caddr_t, u_int8_t *);
-static	void null_decrypt(caddr_t, u_int8_t *);
-static	void null_zerokey(u_int8_t **);
+static	int null_setkey(void *, const uint8_t *, int);
+static	void null_crypt(void *, const uint8_t *, uint8_t *);
+static	void null_crypt_multi(void *, const uint8_t *, uint8_t *, size_t);
 
 static	void null_init(void *);
-static	void null_reinit(void *ctx, const u_int8_t *buf, u_int16_t len);
-static	int null_update(void *, const u_int8_t *, u_int16_t);
-static	void null_final(u_int8_t *, void *);
+static	void null_reinit(void *ctx, const uint8_t *buf, u_int len);
+static	int null_update(void *, const void *, u_int);
+static	void null_final(uint8_t *, void *);
 
 /* Encryption instances */
-struct enc_xform enc_xform_null = {
-	CRYPTO_NULL_CBC, "NULL",
+const struct enc_xform enc_xform_null = {
+	.type = CRYPTO_NULL_CBC,
+	.name = "NULL",
 	/* NB: blocksize of 4 is to generate a properly aligned ESP header */
-	NULL_BLOCK_LEN, 0, NULL_MIN_KEY, NULL_MAX_KEY, 
-	null_encrypt,
-	null_decrypt,
-	null_setkey,
-	null_zerokey,
-	NULL,
+	.blocksize = NULL_BLOCK_LEN,
+	.ivsize = 0,
+	.minkey = NULL_MIN_KEY,
+	.maxkey = NULL_MAX_KEY,
+	.setkey = null_setkey,
+	.encrypt = null_crypt,
+	.decrypt = null_crypt,
+	.encrypt_multi = null_crypt_multi,
+	.decrypt_multi = null_crypt_multi,
 };
 
 /* Authentication instances */
-struct auth_hash auth_hash_null = {
+const struct auth_hash auth_hash_null = {
 	.type = CRYPTO_NULL_HMAC,
 	.name = "NULL-HMAC",
 	.keysize = 0,
@@ -94,26 +97,23 @@ struct auth_hash auth_hash_null = {
  * Encryption wrapper routines.
  */
 static void
-null_encrypt(caddr_t key, u_int8_t *blk)
+null_crypt(void *key, const uint8_t *in, uint8_t *out)
 {
+	if (in != out)
+		memcpy(out, in, NULL_BLOCK_LEN);
 }
 
 static void
-null_decrypt(caddr_t key, u_int8_t *blk)
+null_crypt_multi(void *key, const uint8_t *in, uint8_t *out, size_t len)
 {
+	if (in != out)
+		memcpy(out, in, len);
 }
 
 static int
-null_setkey(u_int8_t **sched, u_int8_t *key, int len)
+null_setkey(void *sched, const uint8_t *key, int len)
 {
-	*sched = NULL;
-	return 0;
-}
-
-static void
-null_zerokey(u_int8_t **sched)
-{
-	*sched = NULL;
+	return (0);
 }
 
 /*
@@ -126,19 +126,18 @@ null_init(void *ctx)
 }
 
 static void
-null_reinit(void *ctx, const u_int8_t *buf, u_int16_t len)
+null_reinit(void *ctx, const uint8_t *buf, u_int len)
 {
 }
 
 static int
-null_update(void *ctx, const u_int8_t *buf, u_int16_t len)
+null_update(void *ctx, const void *buf, u_int len)
 {
-	return 0;
+	return (0);
 }
 
 static void
-null_final(u_int8_t *buf, void *ctx)
+null_final(uint8_t *buf, void *ctx)
 {
-	if (buf != (u_int8_t *) 0)
-		bzero(buf, 12);
+	bzero(buf, NULL_HASH_LEN);
 }

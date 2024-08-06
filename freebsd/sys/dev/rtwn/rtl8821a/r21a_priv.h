@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef R21A_PRIV_H
@@ -59,7 +57,6 @@ static const struct rtwn_mac_prog rtl8821au_mac[] = {
 	{ 0x703, 0x87 }, { 0x708, 0x21 }, { 0x709, 0x43 }, { 0x70a, 0x65 },
 	{ 0x70b, 0x87 }, { 0x718, 0x40 }
 };
-
 
 /*
  * Baseband initialization values.
@@ -216,7 +213,6 @@ static const struct rtwn_agc_prog rtl8821au_agc[] = {
 		NULL
 	}
 };
-
 
 /*
  * RF initialization values.
@@ -444,7 +440,6 @@ static const struct rtwn_rf_prog rtl8821au_rf[] = {
 	},
 	{ 0, NULL, NULL, { 0 }, NULL }
 };
-
 
 /*
  * Registers to save before IQ calibration.

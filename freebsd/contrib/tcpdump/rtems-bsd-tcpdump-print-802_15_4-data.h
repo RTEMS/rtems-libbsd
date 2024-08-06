@@ -3,3 +3,8 @@
 #include "rtems-bsd-tcpdump-data.h"
 /* print-802_15_4.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *ftypes[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *h_ie_names[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *mac_c_names[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *p_ie_names[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *p_mlme_long_names[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *p_mlme_short_names[]);

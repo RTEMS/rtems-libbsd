@@ -39,8 +39,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_bpf.h>
@@ -59,6 +57,7 @@ __FBSDID("$FreeBSD$");
 #include <net/if_var.h>
 #include <net/if_clone.h>
 #include <net/if_pflog.h>
+#include <net/if_private.h>
 #include <net/if_types.h>
 #include <net/vnet.h>
 #include <net/pfvar.h>
@@ -93,8 +92,9 @@ static int	pflogoutput(struct ifnet *, struct mbuf *,
 static void	pflogattach(int);
 static int	pflogioctl(struct ifnet *, u_long, caddr_t);
 static void	pflogstart(struct ifnet *);
-static int	pflog_clone_create(struct if_clone *, int, caddr_t);
-static void	pflog_clone_destroy(struct ifnet *);
+static int	pflog_clone_create(struct if_clone *, char *, size_t,
+		    struct ifc_data *, struct ifnet **);
+static int	pflog_clone_destroy(struct if_clone *, struct ifnet *, uint32_t);
 
 static const char pflogname[] = "pflog";
 
@@ -107,26 +107,32 @@ VNET_DEFINE(struct ifnet *, pflogifs[PFLOGIFS_MAX]);	/* for fast access */
 static void
 pflogattach(int npflog __unused)
 {
-	int	i;
+	int i;
+
 	for (i = 0; i < PFLOGIFS_MAX; i++)
 		V_pflogifs[i] = NULL;
-	V_pflog_cloner = if_clone_simple(pflogname, pflog_clone_create,
-	    pflog_clone_destroy, 1);
+
+	struct if_clone_addreq req = {
+		.create_f = pflog_clone_create,
+		.destroy_f = pflog_clone_destroy,
+		.flags = IFC_F_AUTOUNIT | IFC_F_LIMITUNIT,
+		.maxunit = PFLOGIFS_MAX - 1,
+	};
+	V_pflog_cloner = ifc_attach_cloner(pflogname, &req);
+	struct ifc_data ifd = { .unit = 0 };
+	ifc_create_ifp(pflogname, &ifd, NULL);
 }
 
 static int
-pflog_clone_create(struct if_clone *ifc, int unit, caddr_t param)
+pflog_clone_create(struct if_clone *ifc, char *name, size_t maxlen,
+    struct ifc_data *ifd, struct ifnet **ifpp)
 {
 	struct ifnet *ifp;
 
-	if (unit >= PFLOGIFS_MAX)
-		return (EINVAL);
+	MPASS(ifd->unit < PFLOGIFS_MAX);
 
 	ifp = if_alloc(IFT_PFLOG);
-	if (ifp == NULL) {
-		return (ENOSPC);
-	}
-	if_initname(ifp, pflogname, unit);
+	if_initname(ifp, pflogname, ifd->unit);
 	ifp->if_mtu = PFLOGMTU;
 	ifp->if_ioctl = pflogioctl;
 	ifp->if_output = pflogoutput;
@@ -137,15 +143,19 @@ pflog_clone_create(struct if_clone *ifc, int unit, caddr_t param)
 
 	bpfattach(ifp, DLT_PFLOG, PFLOG_HDRLEN);
 
-	V_pflogifs[unit] = ifp;
+	V_pflogifs[ifd->unit] = ifp;
+	*ifpp = ifp;
 
 	return (0);
 }
 
-static void
-pflog_clone_destroy(struct ifnet *ifp)
+static int
+pflog_clone_destroy(struct if_clone *ifc, struct ifnet *ifp, uint32_t flags)
 {
 	int i;
+
+	if (ifp->if_dunit == 0 && (flags & IFC_F_FORCE) == 0)
+		return (EINVAL);
 
 	for (i = 0; i < PFLOGIFS_MAX; i++)
 		if (V_pflogifs[i] == ifp)
@@ -154,6 +164,8 @@ pflog_clone_destroy(struct ifnet *ifp)
 	bpfdetach(ifp);
 	if_detach(ifp);
 	if_free(ifp);
+
+	return (0);
 }
 
 /*
@@ -203,17 +215,18 @@ pflogioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 }
 
 static int
-pflog_packet(struct pfi_kif *kif, struct mbuf *m, sa_family_t af, u_int8_t dir,
-    u_int8_t reason, struct pf_rule *rm, struct pf_rule *am,
-    struct pf_ruleset *ruleset, struct pf_pdesc *pd, int lookupsafe)
+pflog_packet(struct pfi_kkif *kif, struct mbuf *m, sa_family_t af,
+    u_int8_t reason, struct pf_krule *rm, struct pf_krule *am,
+    struct pf_kruleset *ruleset, struct pf_pdesc *pd, int lookupsafe)
 {
 	struct ifnet *ifn;
 	struct pfloghdr hdr;
 
 	if (kif == NULL || m == NULL || rm == NULL || pd == NULL)
-		return ( 1);
+		return (1);
 
-	if ((ifn = V_pflogifs[rm->logif]) == NULL || !ifn->if_bpf)
+	ifn = V_pflogifs[rm->logif];
+	if (ifn == NULL || !bpf_peers_present(ifn->if_bpf))
 		return (0);
 
 	bzero(&hdr, sizeof(hdr));
@@ -233,13 +246,14 @@ pflog_packet(struct pfi_kif *kif, struct mbuf *m, sa_family_t af, u_int8_t dir,
 			strlcpy(hdr.ruleset, ruleset->anchor->name,
 			    sizeof(hdr.ruleset));
 	}
+	hdr.ridentifier = htonl(rm->ridentifier);
 	/*
 	 * XXXGL: we avoid pf_socket_lookup() when we are holding
 	 * state lock, since this leads to unsafe LOR.
 	 * These conditions are very very rare, however.
 	 */
 	if (rm->log & PF_LOG_SOCKET_LOOKUP && !pd->lookup.done && lookupsafe)
-		pd->lookup.done = pf_socket_lookup(dir, pd, m);
+		pd->lookup.done = pf_socket_lookup(pd, m);
 	if (pd->lookup.done > 0)
 		hdr.uid = pd->lookup.uid;
 	else
@@ -247,10 +261,10 @@ pflog_packet(struct pfi_kif *kif, struct mbuf *m, sa_family_t af, u_int8_t dir,
 	hdr.pid = NO_PID;
 	hdr.rule_uid = rm->cuid;
 	hdr.rule_pid = rm->cpid;
-	hdr.dir = dir;
+	hdr.dir = pd->dir;
 
 #ifdef INET
-	if (af == AF_INET && dir == PF_OUT) {
+	if (af == AF_INET && pd->dir == PF_OUT) {
 		struct ip *ip;
 
 		ip = mtod(m, struct ip *);
@@ -261,7 +275,7 @@ pflog_packet(struct pfi_kif *kif, struct mbuf *m, sa_family_t af, u_int8_t dir,
 
 	if_inc_counter(ifn, IFCOUNTER_OPACKETS, 1);
 	if_inc_counter(ifn, IFCOUNTER_OBYTES, m->m_pkthdr.len);
-	BPF_MTAP2(ifn, &hdr, PFLOG_HDRLEN, m);
+	bpf_mtap2(ifn->if_bpf, &hdr, PFLOG_HDRLEN, m);
 
 	return (0);
 }
@@ -279,7 +293,7 @@ static void
 vnet_pflog_uninit(const void *unused __unused)
 {
 
-	if_clone_detach(V_pflog_cloner);
+	ifc_detach_cloner(V_pflog_cloner);
 }
 /*
  * Detach after pf is gone; otherwise we might touch pflog memory

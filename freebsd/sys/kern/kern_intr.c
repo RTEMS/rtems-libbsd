@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
  * All rights reserved.
@@ -29,9 +29,8 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_ddb.h>
+#include <rtems/bsd/local/opt_hwpmc_hooks.h>
 #include <rtems/bsd/local/opt_kstack_usage_prof.h>
 
 #include <sys/param.h>
@@ -50,6 +49,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/mutex.h>
 #include <sys/priv.h>
 #include <sys/proc.h>
+#include <sys/epoch.h>
 #include <sys/random.h>
 #include <sys/resourcevar.h>
 #include <sys/sched.h>
@@ -67,6 +67,7 @@ __FBSDID("$FreeBSD$");
   #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
   #include <rtems/score/threadimpl.h>
 #endif /* __rtems__ */
+#include <machine/smp.h>
 #include <machine/stdarg.h>
 #ifdef DDB
 #include <ddb/ddb.h>
@@ -81,6 +82,7 @@ struct intr_thread {
 	struct thread *it_thread;	/* Kernel thread. */
 	int	it_flags;		/* (j) IT_* flags. */
 	int	it_need;		/* Needs service. */
+	int	it_waiting;		/* Waiting in the runq. */
 };
 
 /* Interrupt thread flags kept in it_flags */
@@ -94,24 +96,32 @@ struct	intr_entropy {
 
 struct	intr_event *clk_intr_event;
 #ifndef __rtems__
-struct	intr_event *tty_intr_event;
-void	*vm_ih;
 struct proc *intrproc;
 #endif /* __rtems__ */
 
 static MALLOC_DEFINE(M_ITHREAD, "ithread", "Interrupt Threads");
 
-static int intr_storm_threshold = 1000;
+static int intr_storm_threshold = 0;
 SYSCTL_INT(_hw, OID_AUTO, intr_storm_threshold, CTLFLAG_RWTUN,
     &intr_storm_threshold, 0,
     "Number of consecutive interrupts before storm protection is enabled");
+static int intr_epoch_batch = 1000;
+SYSCTL_INT(_hw, OID_AUTO, intr_epoch_batch, CTLFLAG_RWTUN, &intr_epoch_batch,
+    0, "Maximum interrupt handler executions without re-entering epoch(9)");
+#ifdef HWPMC_HOOKS
+static int intr_hwpmc_waiting_report_threshold = 1;
+SYSCTL_INT(_hw, OID_AUTO, intr_hwpmc_waiting_report_threshold, CTLFLAG_RWTUN,
+    &intr_hwpmc_waiting_report_threshold, 1,
+    "Threshold for reporting number of events in a workq");
+#define	PMC_HOOK_INSTALLED_ANY() __predict_false(pmc_hook != NULL)
+#endif
 static TAILQ_HEAD(, intr_event) event_list =
     TAILQ_HEAD_INITIALIZER(event_list);
 static struct mtx event_lock;
 MTX_SYSINIT(intr_event_list, &event_lock, "intr event list", MTX_DEF);
 
 static void	intr_event_update(struct intr_event *ie);
-static int	intr_event_schedule_thread(struct intr_event *ie);
+static int	intr_event_schedule_thread(struct intr_event *ie, struct trapframe *frame);
 static struct intr_thread *ithread_create(const char *name);
 #ifndef __rtems__
 static void	ithread_destroy(struct intr_thread *ithread);
@@ -122,6 +132,24 @@ static void	ithread_loop(void *);
 static void	ithread_update(struct intr_thread *ithd);
 #ifndef __rtems__
 static void	start_softintr(void *);
+
+#ifdef HWPMC_HOOKS
+#include <sys/pmckern.h>
+PMC_SOFT_DEFINE( , , intr, all);
+PMC_SOFT_DEFINE( , , intr, ithread);
+PMC_SOFT_DEFINE( , , intr, filter);
+PMC_SOFT_DEFINE( , , intr, stray);
+PMC_SOFT_DEFINE( , , intr, schedule);
+PMC_SOFT_DEFINE( , , intr, waiting);
+
+#define PMC_SOFT_CALL_INTR_HLPR(event, frame)			\
+do {					\
+	if (frame != NULL)					\
+		PMC_SOFT_CALL_TF( , , intr, event, frame);	\
+	else							\
+		PMC_SOFT_CALL( , , intr, event);		\
+} while (0)
+#endif
 
 /* Map an interrupt type to an ithread priority. */
 u_char
@@ -195,7 +223,7 @@ ithread_update(struct intr_thread *ithd)
 #endif
 	thread_lock(td);
 #ifndef __rtems__
-	sched_prio(td, pri);
+	sched_ithread_prio(td, pri);
 #else /* __rtems__ */
 #warning TODO: set thread priority
 #endif /* __rtems__ */
@@ -210,12 +238,12 @@ intr_event_update(struct intr_event *ie)
 {
 	struct intr_handler *ih;
 	char *last;
-	int missed, space;
+	int missed, space, flags;
 
 	/* Start off with no entropy and just the name of the event. */
 	mtx_assert(&ie->ie_lock, MA_OWNED);
 	strlcpy(ie->ie_fullname, ie->ie_name, sizeof(ie->ie_fullname));
-	ie->ie_flags &= ~IE_ENTROPY;
+	flags = 0;
 	missed = 0;
 	space = 1;
 
@@ -228,9 +256,9 @@ intr_event_update(struct intr_event *ie)
 			space = 0;
 		} else
 			missed++;
-		if (ih->ih_flags & IH_ENTROPY)
-			ie->ie_flags |= IE_ENTROPY;
+		flags |= ih->ih_flags;
 	}
+	ie->ie_hflags = flags;
 
 	/*
 	 * If there is only one handler and its name is too long, just copy in
@@ -405,6 +433,25 @@ intr_event_bind_ithread(struct intr_event *ie, int cpu)
 	return (_intr_event_bind(ie, cpu, false, true));
 }
 
+/*
+ * Bind an interrupt event's ithread to the specified cpuset.
+ */
+int
+intr_event_bind_ithread_cpuset(struct intr_event *ie, cpuset_t *cs)
+{
+	lwpid_t id;
+
+	mtx_lock(&ie->ie_lock);
+	if (ie->ie_thread != NULL) {
+		id = ie->ie_thread->it_thread->td_tid;
+		mtx_unlock(&ie->ie_lock);
+		return (cpuset_setthread(id, cs));
+	} else {
+		mtx_unlock(&ie->ie_lock);
+	}
+	return (ENODEV);
+}
+
 static struct intr_event *
 intr_lookup(int irq)
 {
@@ -508,6 +555,9 @@ int
 intr_event_destroy(struct intr_event *ie)
 {
 
+	if (ie == NULL)
+		return (EINVAL);
+
 	mtx_lock(&event_lock);
 	mtx_lock(&ie->ie_lock);
 	if (!CK_SLIST_EMPTY(&ie->ie_handlers)) {
@@ -516,14 +566,10 @@ intr_event_destroy(struct intr_event *ie)
 		return (EBUSY);
 	}
 	TAILQ_REMOVE(&event_list, ie, ie_list);
-#ifndef notyet
-	if (ie->ie_thread != NULL) {
-		ithread_destroy(ie->ie_thread);
-		ie->ie_thread = NULL;
-	}
-#endif
-	mtx_unlock(&ie->ie_lock);
 	mtx_unlock(&event_lock);
+	if (ie->ie_thread != NULL)
+		ithread_destroy(ie->ie_thread);
+	mtx_unlock(&ie->ie_lock);
 	mtx_destroy(&ie->ie_lock);
 	free(ie, M_ITHREAD);
 	return (0);
@@ -565,17 +611,25 @@ ithread_create(const char *name)
 static void
 ithread_destroy(struct intr_thread *ithread)
 {
+	struct intr_event *ie;
 	struct thread *td;
 
-	CTR2(KTR_INTR, "%s: killing %s", __func__, ithread->it_event->ie_name);
 	td = ithread->it_thread;
+	ie = ithread->it_event;
+
+	mtx_assert(&ie->ie_lock, MA_OWNED);
+
+	CTR2(KTR_INTR, "%s: killing %s", __func__, ie->ie_name);
+
 	thread_lock(td);
 	ithread->it_flags |= IT_DEAD;
 	if (TD_AWAITING_INTR(td)) {
 		TD_CLR_IWAIT(td);
-		sched_add(td, SRQ_INTR);
-	}
-	thread_unlock(td);
+		sched_wakeup(td, SRQ_INTR);
+	} else
+		thread_unlock(td);
+	while (ie->ie_thread != NULL)
+		msleep(ithread, &ie->ie_lock, 0, "ithd_dth", 0);
 }
 
 #endif /* __rtems__ */
@@ -605,6 +659,8 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		ih->ih_flags |= IH_MPSAFE;
 	if (flags & INTR_ENTROPY)
 		ih->ih_flags |= IH_ENTROPY;
+	if (flags & INTR_TYPE_NET)
+		ih->ih_flags |= IH_NET;
 
 	/* We can only have one exclusive handler in a event. */
 	mtx_lock(&ie->ie_lock);
@@ -759,7 +815,7 @@ intr_event_barrier(struct intr_event *ie)
 
 	/*
 	 * Now wait on the inactive phase.
-	 * The acquire fence is needed so that that all post-barrier accesses
+	 * The acquire fence is needed so that all post-barrier accesses
 	 * are after the check.
 	 */
 	while (ie->ie_active[phase] > 0)
@@ -783,7 +839,7 @@ intr_handler_barrier(struct intr_handler *handler)
 	}
 	if ((handler->ih_flags & IH_CHANGED) == 0) {
 		handler->ih_flags |= IH_CHANGED;
-		intr_event_schedule_thread(ie);
+		intr_event_schedule_thread(ie, NULL);
 	}
 	while ((handler->ih_flags & IH_CHANGED) != 0)
 		msleep(handler, &ie->ie_lock, 0, "ih_barr", 0);
@@ -793,8 +849,8 @@ intr_handler_barrier(struct intr_handler *handler)
  * Sleep until an ithread finishes executing an interrupt handler.
  *
  * XXX Doesn't currently handle interrupt filters or fast interrupt
- * handlers.  This is intended for compatibility with linux drivers
- * only.  Do not use in BSD code.
+ * handlers. This is intended for LinuxKPI drivers only.
+ * Do not use in BSD code.
  */
 void
 _intr_drain(int irq)
@@ -835,9 +891,6 @@ intr_event_remove_handler(void *cookie)
 	struct intr_event *ie;
 	struct intr_handler *ih;
 	struct intr_handler **prevptr;
-#ifdef notyet
-	int dead;
-#endif
 
 	if (handler == NULL)
 		return (EINVAL);
@@ -858,53 +911,30 @@ intr_event_remove_handler(void *cookie)
 		    "interrupt event \"%s\"", handler->ih_name, ie->ie_name);
 	}
 
-	/*
-	 * If there is no ithread, then directly remove the handler.  Note that
-	 * intr_event_handle() iterates ie_handlers in a lock-less fashion, so
-	 * care needs to be taken to keep ie_handlers consistent and to free
-	 * the removed handler only when ie_handlers is quiescent.
-	 */
 	if (ie->ie_thread == NULL) {
+		/*
+		 * If there is no ithread, then directly remove the handler.
+		 * Note that intr_event_handle() iterates ie_handlers in a
+		 * lock-less fashion, so care needs to be taken to keep
+		 * ie_handlers consistent and to free the removed handler only
+		 * when ie_handlers is quiescent.
+		 */
 		CK_SLIST_REMOVE_PREVPTR(prevptr, ih, ih_next);
 		intr_event_barrier(ie);
-		intr_event_update(ie);
-		mtx_unlock(&ie->ie_lock);
-		free(handler, M_ITHREAD);
-		return (0);
+	} else {
+		/*
+		 * Let the interrupt thread do the job.  The interrupt source is
+		 * disabled when the interrupt thread is running, so it does not
+		 * have to worry about interaction with intr_event_handle().
+		 */
+		KASSERT((handler->ih_flags & IH_DEAD) == 0,
+		    ("duplicate handle remove"));
+		handler->ih_flags |= IH_DEAD;
+		intr_event_schedule_thread(ie, NULL);
+		while (handler->ih_flags & IH_DEAD)
+			msleep(handler, &ie->ie_lock, 0, "iev_rmh", 0);
 	}
-
-	/*
-	 * Let the interrupt thread do the job.
-	 * The interrupt source is disabled when the interrupt thread is
-	 * running, so it does not have to worry about interaction with
-	 * intr_event_handle().
-	 */
-	KASSERT((handler->ih_flags & IH_DEAD) == 0,
-	    ("duplicate handle remove"));
-	handler->ih_flags |= IH_DEAD;
-	intr_event_schedule_thread(ie);
-	while (handler->ih_flags & IH_DEAD)
-		msleep(handler, &ie->ie_lock, 0, "iev_rmh", 0);
 	intr_event_update(ie);
-
-#ifdef notyet
-	/*
-	 * XXX: This could be bad in the case of ppbus(8).  Also, I think
-	 * this could lead to races of stale data when servicing an
-	 * interrupt.
-	 */
-	dead = 1;
-	CK_SLIST_FOREACH(ih, &ie->ie_handlers, ih_next) {
-		if (ih->ih_handler != NULL) {
-			dead = 0;
-			break;
-		}
-	}
-	if (dead) {
-		ithread_destroy(ie->ie_thread);
-		ie->ie_thread = NULL;
-	}
-#endif
 	mtx_unlock(&ie->ie_lock);
 	free(handler, M_ITHREAD);
 	return (0);
@@ -955,7 +985,7 @@ intr_event_resume_handler(void *cookie)
 #endif /* __rtems__ */
 
 static int
-intr_event_schedule_thread(struct intr_event *ie)
+intr_event_schedule_thread(struct intr_event *ie, struct trapframe *frame)
 {
 	struct intr_entropy entropy;
 	struct intr_thread *it;
@@ -977,7 +1007,7 @@ intr_event_schedule_thread(struct intr_event *ie)
 	 * If any of the handlers for this ithread claim to be good
 	 * sources of entropy, then gather some.
 	 */
-	if (ie->ie_flags & IE_ENTROPY) {
+	if (ie->ie_hflags & IH_ENTROPY) {
 		entropy.event = (uintptr_t)ie;
 		entropy.td = ctd;
 		random_harvest_queue(&entropy, sizeof(entropy), RANDOM_INTERRUPT);
@@ -1000,13 +1030,25 @@ intr_event_schedule_thread(struct intr_event *ie)
 	thread_lock(td);
 #ifndef __rtems__
 	if (TD_AWAITING_INTR(td)) {
+#ifdef HWPMC_HOOKS
+		it->it_waiting = 0;
+		if (PMC_HOOK_INSTALLED_ANY())
+			PMC_SOFT_CALL_INTR_HLPR(schedule, frame);
+#endif
 		CTR3(KTR_INTR, "%s: schedule pid %d (%s)", __func__, td->td_proc->p_pid,
 		    td->td_name);
 		TD_CLR_IWAIT(td);
-		sched_add(td, SRQ_INTR);
+		sched_wakeup(td, SRQ_INTR);
 	} else {
+#ifdef HWPMC_HOOKS
+		it->it_waiting++;
+		if (PMC_HOOK_INSTALLED_ANY() &&
+		    (it->it_waiting >= intr_hwpmc_waiting_report_threshold))
+			PMC_SOFT_CALL_INTR_HLPR(waiting, frame);
+#endif
 		CTR5(KTR_INTR, "%s: pid %d (%s): it_need %d, state %d",
-		    __func__, td->td_proc->p_pid, td->td_name, it->it_need, td->td_state);
+		    __func__, td->td_proc->p_pid, td->td_name, it->it_need, TD_GET_STATE(td));
+		thread_unlock(td);
 	}
 #else /* __rtems__ */
 	/* Send event to wake the thread up.
@@ -1015,7 +1057,6 @@ intr_event_schedule_thread(struct intr_event *ie)
 	rtems_status_code sc = rtems_event_send(rtems_bsd_get_task_id(td), RTEMSBSD_SWI_WAKEUP_EVENT);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 #endif /* __rtems__ */
-	thread_unlock(td);
 
 	return (0);
 }
@@ -1041,7 +1082,7 @@ swi_add(struct intr_event **eventp, const char *name, driver_intr_t handler,
 	    void *arg, int pri, enum intr_type flags, void **cookiep)
 {
 	struct intr_event *ie;
-	int error;
+	int error = 0;
 
 	if (flags & INTR_ENTROPY)
 		return (EINVAL);
@@ -1059,8 +1100,10 @@ swi_add(struct intr_event **eventp, const char *name, driver_intr_t handler,
 		if (eventp != NULL)
 			*eventp = ie;
 	}
-	error = intr_event_add_handler(ie, name, NULL, handler, arg,
-	    PI_SWI(pri), flags, cookiep);
+	if (handler != NULL) {
+		error = intr_event_add_handler(ie, name, NULL, handler, arg,
+		    PI_SWI(pri), flags, cookiep);
+	}
 	return (error);
 }
 
@@ -1078,9 +1121,11 @@ swi_sched(void *cookie, int flags)
 	CTR3(KTR_INTR, "swi_sched: %s %s need=%d", ie->ie_name, ih->ih_name,
 	    ih->ih_need);
 
-	entropy.event = (uintptr_t)ih;
-	entropy.td = curthread;
-	random_harvest_queue(&entropy, sizeof(entropy), RANDOM_SWI);
+	if ((flags & SWI_FROMNMI) == 0) {
+		entropy.event = (uintptr_t)ih;
+		entropy.td = curthread;
+		random_harvest_queue(&entropy, sizeof(entropy), RANDOM_SWI);
+	}
 
 	/*
 	 * Set ih_need for this handler so that if the ithread is already
@@ -1089,11 +1134,20 @@ swi_sched(void *cookie, int flags)
 	 */
 	ih->ih_need = 1;
 
-	if (!(flags & SWI_DELAY)) {
+	if (flags & SWI_DELAY)
+		return;
+
+	if (flags & SWI_FROMNMI) {
+#if defined(SMP) && (defined(__i386__) || defined(__amd64__))
+		KASSERT(ie == clk_intr_event,
+		    ("SWI_FROMNMI used not with clk_intr_event"));
+		ipi_self_from_nmi(IPI_SWI);
+#endif
+	} else {
 #ifndef __rtems__
 		VM_CNT_INC(v_soft);
 #endif /* __rtems__ */
-		error = intr_event_schedule_thread(ie);
+		error = intr_event_schedule_thread(ie, NULL);
 		KASSERT(error == 0, ("stray software interrupt"));
 	}
 }
@@ -1187,17 +1241,12 @@ static void
 ithread_execute_handlers(struct proc *p, struct intr_event *ie)
 {
 
-#ifndef __rtems__
 	/* Interrupt handlers should not sleep. */
 	if (!(ie->ie_flags & IE_SOFT))
 		THREAD_NO_SLEEPING();
 	intr_event_execute_handlers(p, ie);
 	if (!(ie->ie_flags & IE_SOFT))
 		THREAD_SLEEPING_OK();
-#else /* __rtems__ */
-	/* We only have soft-threads, so the two queries are not necessary. */
-	intr_event_execute_handlers(p, ie);
-#endif /* __rtems__ */
 
 	/*
 	 * Interrupt storm handling:
@@ -1209,8 +1258,9 @@ ithread_execute_handlers(struct proc *p, struct intr_event *ie)
 	 * number of back to back interrupts exceeds the storm threshold,
 	 * then enter storming mode.
 	 */
-	if (intr_storm_threshold != 0 && ie->ie_count >= intr_storm_threshold &&
-	    !(ie->ie_flags & IE_SOFT)) {
+	if (__predict_false(intr_storm_threshold != 0 &&
+	    ie->ie_count >= intr_storm_threshold &&
+	    (ie->ie_flags & IE_SOFT) == 0)) {
 #ifndef __rtems__
 		/* Report the message only once every second. */
 		if (ppsratecheck(&ie->ie_warntm, &ie->ie_warncnt, 1)) {
@@ -1237,11 +1287,13 @@ ithread_execute_handlers(struct proc *p, struct intr_event *ie)
 static void
 ithread_loop(void *arg)
 {
+	struct epoch_tracker et;
 	struct intr_thread *ithd;
 	struct intr_event *ie;
 	struct thread *td;
 	struct proc *p;
-	int wake;
+	int epoch_count;
+	bool needs_epoch;
 
 	td = curthread;
 	p = td->td_proc;
@@ -1250,7 +1302,6 @@ ithread_loop(void *arg)
 	    ("%s: ithread and proc linkage out of sync", __func__));
 	ie = ithd->it_event;
 	ie->ie_count = 0;
-	wake = 0;
 
 	/*
 	 * As long as we have interrupts outstanding, go through the
@@ -1260,9 +1311,14 @@ ithread_loop(void *arg)
 		/*
 		 * If we are an orphaned thread, then just die.
 		 */
-		if (ithd->it_flags & IT_DEAD) {
+		if (__predict_false((ithd->it_flags & IT_DEAD) != 0)) {
 			CTR3(KTR_INTR, "%s: pid %d (%s) exiting", __func__,
 			    p->p_pid, td->td_name);
+			mtx_lock(&ie->ie_lock);
+			ie->ie_thread = NULL;
+			wakeup(ithd);
+			mtx_unlock(&ie->ie_lock);
+
 			free(ithd, M_ITHREAD);
 			kthread_exit();
 		}
@@ -1276,8 +1332,23 @@ ithread_loop(void *arg)
 		 * that the load of ih_need in ithread_execute_handlers()
 		 * is ordered after the load of it_need here.
 		 */
-		while (atomic_cmpset_acq_int(&ithd->it_need, 1, 0) != 0)
+		needs_epoch =
+		    (atomic_load_int(&ie->ie_hflags) & IH_NET) != 0;
+		if (needs_epoch) {
+			epoch_count = 0;
+			NET_EPOCH_ENTER(et);
+		}
+		while (atomic_cmpset_acq_int(&ithd->it_need, 1, 0) != 0) {
 			ithread_execute_handlers(p, ie);
+			if (needs_epoch &&
+			    ++epoch_count >= intr_epoch_batch) {
+				NET_EPOCH_EXIT(et);
+				epoch_count = 0;
+				NET_EPOCH_ENTER(et);
+			}
+		}
+		if (needs_epoch)
+			NET_EPOCH_EXIT(et);
 		WITNESS_WARN(WARN_PANIC, NULL, "suspending ithread");
 		mtx_assert(&Giant, MA_NOTOWNED);
 
@@ -1292,7 +1363,7 @@ ithread_loop(void *arg)
 #ifndef __rtems__
 			TD_SET_IWAIT(td);
 			ie->ie_count = 0;
-			mi_switch(SW_VOL | SWT_IWAIT, NULL);
+			mi_switch(SW_VOL | SWT_IWAIT);
 #else /* __rtems__ */
 			/* wait for wakeup event
 			 * TODO: eventually replace event by a better mechanism
@@ -1305,16 +1376,12 @@ ithread_loop(void *arg)
 				&event_out);
 			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 #endif /* __rtems__ */
-		}
-		if (ithd->it_flags & IT_WAIT) {
-			wake = 1;
+		} else if ((ithd->it_flags & IT_WAIT) != 0) {
 			ithd->it_flags &= ~IT_WAIT;
-		}
-		thread_unlock(td);
-		if (wake) {
+			thread_unlock(td);
 			wakeup(ithd);
-			wake = 0;
-		}
+		} else
+			thread_unlock(td);
 	}
 }
 #ifndef __rtems__
@@ -1376,6 +1443,8 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	CK_SLIST_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if ((ih->ih_flags & IH_SUSP) != 0)
 			continue;
+		if ((ie->ie_flags & IE_SOFT) != 0 && ih->ih_need == 0)
+			continue;
 		if (ih->ih_filter == NULL) {
 			thread = true;
 			continue;
@@ -1387,12 +1456,23 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 			ret = ih->ih_filter(frame);
 		else
 			ret = ih->ih_filter(ih->ih_argument);
+#ifdef HWPMC_HOOKS
+		PMC_SOFT_CALL_TF( , , intr, all, frame);
+#endif
 		KASSERT(ret == FILTER_STRAY ||
 		    ((ret & (FILTER_SCHEDULE_THREAD | FILTER_HANDLED)) != 0 &&
 		    (ret & ~(FILTER_SCHEDULE_THREAD | FILTER_HANDLED)) == 0),
 		    ("%s: incorrect return value %#x from %s", __func__, ret,
 		    ih->ih_name));
 		filter = filter || ret == FILTER_HANDLED;
+#ifdef HWPMC_HOOKS
+		if (ret & FILTER_SCHEDULE_THREAD)
+			PMC_SOFT_CALL_TF( , , intr, ithread, frame);
+		else if (ret & FILTER_HANDLED)
+			PMC_SOFT_CALL_TF( , , intr, filter, frame);
+		else if (ret == FILTER_STRAY)
+			PMC_SOFT_CALL_TF( , , intr, stray, frame);
+#endif
 
 		/*
 		 * Wrapper handler special handling:
@@ -1429,7 +1509,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	if (thread) {
 		int error __unused;
 
-		error =  intr_event_schedule_thread(ie);
+		error =  intr_event_schedule_thread(ie, frame);
 		KASSERT(error == 0, ("bad stray interrupt"));
 	}
 	critical_exit();
@@ -1456,20 +1536,8 @@ db_dump_intrhand(struct intr_handler *ih)
 	case PI_REALTIME:
 		db_printf("CLK ");
 		break;
-	case PI_AV:
-		db_printf("AV  ");
-		break;
-	case PI_TTY:
-		db_printf("TTY ");
-		break;
-	case PI_NET:
-		db_printf("NET ");
-		break;
-	case PI_DISK:
-		db_printf("DISK");
-		break;
-	case PI_DULL:
-		db_printf("DULL");
+	case PI_INTR:
+		db_printf("INTR");
 		break;
 	default:
 		if (ih->ih_pri >= PI_SOFT)
@@ -1545,18 +1613,12 @@ db_dump_intr_event(struct intr_event *ie, int handlers)
 		db_printf("(pid %d)", it->it_thread->td_proc->p_pid);
 	else
 		db_printf("(no thread)");
-	if ((ie->ie_flags & (IE_SOFT | IE_ENTROPY | IE_ADDING_THREAD)) != 0 ||
+	if ((ie->ie_flags & (IE_SOFT | IE_ADDING_THREAD)) != 0 ||
 	    (it != NULL && it->it_need)) {
 		db_printf(" {");
 		comma = 0;
 		if (ie->ie_flags & IE_SOFT) {
 			db_printf("SOFT");
-			comma = 1;
-		}
-		if (ie->ie_flags & IE_ENTROPY) {
-			if (comma)
-				db_printf(", ");
-			db_printf("ENTROPY");
 			comma = 1;
 		}
 		if (ie->ie_flags & IE_ADDING_THREAD) {
@@ -1582,7 +1644,7 @@ db_dump_intr_event(struct intr_event *ie, int handlers)
 /*
  * Dump data about interrupt handlers
  */
-DB_SHOW_COMMAND(intr, db_show_intr)
+DB_SHOW_COMMAND_FLAGS(intr, db_show_intr, DB_CMD_MEMSAFE)
 {
 	struct intr_event *ie;
 	int all, verbose;
@@ -1606,8 +1668,9 @@ static void
 start_softintr(void *dummy)
 {
 
-	if (swi_add(NULL, "vm", swi_vm, NULL, SWI_VM, INTR_MPSAFE, &vm_ih))
-		panic("died while creating vm swi ithread");
+	if (swi_add(&clk_intr_event, "clk", NULL, NULL, SWI_CLOCK,
+	    INTR_MPSAFE, NULL))
+		panic("died while creating clk swi ithread");
 }
 SYSINIT(start_softintr, SI_SUB_SOFTINTR, SI_ORDER_FIRST, start_softintr,
     NULL);
@@ -1627,8 +1690,10 @@ sysctl_intrnames(SYSCTL_HANDLER_ARGS)
 	return (sysctl_handle_opaque(oidp, intrnames, sintrnames, req));
 }
 
-SYSCTL_PROC(_hw, OID_AUTO, intrnames, CTLTYPE_OPAQUE | CTLFLAG_RD,
-    NULL, 0, sysctl_intrnames, "", "Interrupt Names");
+SYSCTL_PROC(_hw, OID_AUTO, intrnames,
+    CTLTYPE_OPAQUE | CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, 0,
+    sysctl_intrnames, "",
+    "Interrupt Names");
 
 static int
 sysctl_intrcnt(SYSCTL_HANDLER_ARGS)
@@ -1654,14 +1719,16 @@ sysctl_intrcnt(SYSCTL_HANDLER_ARGS)
 	return (sysctl_handle_opaque(oidp, intrcnt, sintrcnt, req));
 }
 
-SYSCTL_PROC(_hw, OID_AUTO, intrcnt, CTLTYPE_OPAQUE | CTLFLAG_RD,
-    NULL, 0, sysctl_intrcnt, "", "Interrupt Counts");
+SYSCTL_PROC(_hw, OID_AUTO, intrcnt,
+    CTLTYPE_OPAQUE | CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, 0,
+    sysctl_intrcnt, "",
+    "Interrupt Counts");
 
 #ifdef DDB
 /*
  * DDB command to dump the interrupt statistics.
  */
-DB_SHOW_COMMAND(intrcnt, db_show_intrcnt)
+DB_SHOW_COMMAND_FLAGS(intrcnt, db_show_intrcnt, DB_CMD_MEMSAFE)
 {
 	u_long *i;
 	char *cp;

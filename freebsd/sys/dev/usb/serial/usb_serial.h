@@ -1,8 +1,7 @@
 /*	$NetBSD: ucomvar.h,v 1.9 2001/01/23 21:56:17 augustss Exp $	*/
-/*	$FreeBSD$	*/
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD AND BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001-2002, Shunsuke Akiyama <akiyama@jp.FreeBSD.org>.
  * All rights reserved.
@@ -165,9 +164,7 @@ struct ucom_softc {
 	const struct ucom_callback *sc_callback;
 	struct ucom_super_softc *sc_super;
 	struct tty *sc_tty;
-#ifndef __rtems__
 	struct consdev *sc_consdev;
-#endif /* __rtems__ */
 	struct mtx *sc_mtx;
 	void   *sc_parent;
 	int sc_subunit;

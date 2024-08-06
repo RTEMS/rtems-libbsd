@@ -1,6 +1,5 @@
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
@@ -44,9 +43,11 @@ extern int usb_debug;
   }						\
 } while (0)
 #define	DPRINTF(...)	DPRINTFN(1, __VA_ARGS__)
+#define	__usbdebug_used
 #else
 #define	DPRINTF(...) do { } while (0)
 #define	DPRINTFN(...) do { } while (0)
+#define	__usbdebug_used __unused
 #endif
 #endif
 
@@ -62,29 +63,18 @@ void	usb_dump_endpoint(struct usb_endpoint *ep);
 void	usb_dump_xfer(struct usb_xfer *xfer);
 
 #ifdef USB_DEBUG
-extern unsigned int usb_port_reset_delay;
-extern unsigned int usb_port_root_reset_delay;
-extern unsigned int usb_port_reset_recovery;
-extern unsigned int usb_port_powerup_delay;
-extern unsigned int usb_port_resume_delay;
-extern unsigned int usb_set_address_settle;
-extern unsigned int usb_resume_delay;
-extern unsigned int usb_resume_wait;
-extern unsigned int usb_resume_recovery;
-extern unsigned int usb_extra_power_up_time;
+extern unsigned usb_port_reset_delay;
+extern unsigned usb_port_root_reset_delay;
+extern unsigned usb_port_reset_recovery;
+extern unsigned usb_port_powerup_delay;
+extern unsigned usb_port_resume_delay;
+extern unsigned usb_set_address_settle;
+extern unsigned usb_resume_delay;
+extern unsigned usb_resume_wait;
+extern unsigned usb_resume_recovery;
+extern unsigned usb_extra_power_up_time;
+extern unsigned usb_enum_nice_time;
 #else
-#ifdef __rtems__
-#undef usb_port_reset_delay
-#undef usb_port_root_reset_delay
-#undef usb_port_reset_recovery
-#undef usb_port_powerup_delay
-#undef usb_port_resume_delay
-#undef usb_set_address_settle
-#undef usb_resume_delay
-#undef usb_resume_wait
-#undef usb_resume_recovery
-#undef usb_extra_power_up_time
-#endif /* __rtems__ */
 #define usb_port_reset_delay		USB_PORT_RESET_DELAY
 #define usb_port_root_reset_delay	USB_PORT_ROOT_RESET_DELAY
 #define usb_port_reset_recovery		USB_PORT_RESET_RECOVERY
@@ -95,6 +85,7 @@ extern unsigned int usb_extra_power_up_time;
 #define usb_resume_wait			USB_RESUME_WAIT
 #define usb_resume_recovery		USB_RESUME_RECOVERY
 #define usb_extra_power_up_time		USB_EXTRA_POWER_UP_TIME
+#define usb_enum_nice_time		USB_ENUM_NICE_TIME
 #endif
 
 #endif					/* _USB_DEBUG_H_ */

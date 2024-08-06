@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2006-2007 Semihalf, Piotr Kruszynski
  * All rights reserved.
@@ -23,8 +23,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _IF_TSEC_H
@@ -55,8 +53,8 @@ struct tsec_bufmap {
 
 struct tsec_softc {
 	/* XXX MII bus requires that struct ifnet is first!!! */
-	struct ifnet	*tsec_ifp;
-	
+	if_t		tsec_ifp;
+
 	struct mtx	transmit_lock;	/* transmitter lock */
 	struct mtx	receive_lock;	/* receiver lock */
 
@@ -290,8 +288,6 @@ struct tsec_rx_fcb {
 		== (TSEC_RX_FCB_TCP_UDP_FOUND | TSEC_RX_FCB_TCP_UDP_CSUM))
 
 /* Prototypes */
-extern devclass_t tsec_devclass;
-
 int	tsec_attach(struct tsec_softc *sc);
 int	tsec_detach(struct tsec_softc *sc);
 

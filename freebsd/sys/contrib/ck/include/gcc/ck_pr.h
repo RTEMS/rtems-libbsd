@@ -127,6 +127,14 @@ ck_pr_stall(void)
 /*
  * Load and store fences are equivalent to full fences in the GCC port.
  */
+#ifndef __rtems__
+#define CK_PR_FENCE(T)					\
+	CK_CC_INLINE static void			\
+	ck_pr_fence_strict_##T(void)			\
+	{						\
+		__sync_synchronize();			\
+	}
+#else /* __rtems__ */
 #ifdef RTEMS_SMP
 #define CK_PR_FENCE(T)						\
 	CK_CC_INLINE static void				\
@@ -142,6 +150,7 @@ ck_pr_stall(void)
 		__asm__ __volatile__("" ::: "memory");		\
 	}
 #endif
+#endif /* __rtems__ */
 
 CK_PR_FENCE(atomic)
 CK_PR_FENCE(atomic_atomic)
@@ -167,6 +176,16 @@ CK_PR_FENCE(unlock)
 /*
  * Atomic compare and swap.
  */
+#ifndef __rtems__
+#define CK_PR_CAS(S, M, T)							\
+	CK_CC_INLINE static bool						\
+	ck_pr_cas_##S(M *target, T compare, T set)				\
+	{									\
+		bool z;								\
+		z = __sync_bool_compare_and_swap((T *)target, compare, set);	\
+		return z;							\
+	}
+#else /* __rtems__ */
 #define CK_PR_CAS(S, M, T)							\
 	CK_CC_INLINE static bool						\
 	ck_pr_cas_##S(M *target, T compare, T set)				\
@@ -176,6 +195,7 @@ CK_PR_FENCE(unlock)
 		    false, CK_PR_ATOMIC_ORDER, CK_PR_ATOMIC_ORDER);		\
 		return z;							\
 	}
+#endif /* __rtems__ */
 
 CK_PR_CAS(ptr, void, void *)
 
@@ -195,6 +215,24 @@ CK_PR_CAS_S(8,  uint8_t)
 /*
  * Compare and swap, set *v to old value of target.
  */
+#ifndef __rtems__
+CK_CC_INLINE static bool
+ck_pr_cas_ptr_value(void *target, void *compare, void *set, void *v)
+{
+	set = __sync_val_compare_and_swap((void **)target, compare, set);
+	*(void **)v = set;
+	return (set == compare);
+}
+
+#define CK_PR_CAS_O(S, T)						\
+	CK_CC_INLINE static bool					\
+	ck_pr_cas_##S##_value(T *target, T compare, T set, T *v)	\
+	{								\
+		set = __sync_val_compare_and_swap(target, compare, set);\
+		*v = set;						\
+		return (set == compare);				\
+	}
+#else /* __rtems__ */
 CK_CC_INLINE static bool
 ck_pr_cas_ptr_value(void *target, void *compare, void *set, void *v)
 {
@@ -211,6 +249,7 @@ ck_pr_cas_ptr_value(void *target, void *compare, void *set, void *v)
 		return __atomic_compare_exchange_n(target, v, set,	\
 		    false, CK_PR_ATOMIC_ORDER, CK_PR_ATOMIC_ORDER);	\
 	}
+#endif /* __rtems__ */
 
 CK_PR_CAS_O(char, char)
 CK_PR_CAS_O(int, int)
@@ -225,6 +264,15 @@ CK_PR_CAS_O(8,  uint8_t)
 /*
  * Atomic fetch-and-add operations.
  */
+#ifndef __rtems__
+#define CK_PR_FAA(S, M, T)					\
+	CK_CC_INLINE static T					\
+	ck_pr_faa_##S(M *target, T d)				\
+	{							\
+		d = __sync_fetch_and_add((T *)target, d);	\
+		return (d);					\
+	}
+#else /* __rtems__ */
 #define CK_PR_FAA(S, M, T)					\
 	CK_CC_INLINE static T					\
 	ck_pr_faa_##S(M *target, T d)				\
@@ -233,6 +281,7 @@ CK_PR_CAS_O(8,  uint8_t)
 		    CK_PR_ATOMIC_ORDER);			\
 		return (d);					\
 	}
+#endif /* __rtems__ */
 
 CK_PR_FAA(ptr, void, void *)
 
@@ -252,6 +301,15 @@ CK_PR_FAA_S(8,  uint8_t)
 /*
  * Atomic store-only binary operations.
  */
+#ifndef __rtems__
+#define CK_PR_BINARY(K, S, M, T)				\
+	CK_CC_INLINE static void				\
+	ck_pr_##K##_##S(M *target, T d)				\
+	{							\
+		d = __sync_fetch_and_##K((T *)target, d);	\
+		return;						\
+	}
+#else /* __rtems__ */
 #define CK_PR_BINARY(K, S, M, T)				\
 	CK_CC_INLINE static void				\
 	ck_pr_##K##_##S(M *target, T d)				\
@@ -260,6 +318,7 @@ CK_PR_FAA_S(8,  uint8_t)
 		    CK_PR_ATOMIC_ORDER);			\
 		return;						\
 	}
+#endif /* __rtems__ */
 
 #define CK_PR_BINARY_S(K, S, T) CK_PR_BINARY(K, S, T, T)
 
@@ -310,6 +369,5 @@ CK_PR_UNARY_S(8, uint8_t)
 
 #undef CK_PR_UNARY_S
 #undef CK_PR_UNARY
-#undef CK_PR_ATOMIC_ORDER
 #endif /* !CK_F_PR */
 #endif /* CK_PR_GCC_H */

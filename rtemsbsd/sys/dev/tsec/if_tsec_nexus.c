@@ -101,7 +101,7 @@ static driver_t tsec_nexus_driver = {
 	sizeof(struct tsec_softc),
 };
 
-DRIVER_MODULE(tsec, nexus, tsec_nexus_driver, tsec_devclass, 0, 0);
+DRIVER_MODULE(tsec, nexus, tsec_nexus_driver, 0, 0);
 MODULE_DEPEND(tsec, nexus, 1, 1, 1);
 MODULE_DEPEND(tsec, ether, 1, 1, 1);
 

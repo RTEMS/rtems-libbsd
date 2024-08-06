@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * $OpenBSD: if_urtwnreg.h,v 1.3 2010/11/16 18:02:59 damien Exp $
- * $FreeBSD$
  */
 
 #ifndef IF_RTWNREG_H
@@ -25,7 +24,6 @@
 #define R92C_MAX_TX_PWR		0x3f
 
 #define R92C_H2C_NBOX		4
-
 
 /* Common part of Tx descriptor (named only!). */
 struct rtwn_tx_desc_common {
@@ -115,7 +113,6 @@ struct rtwn_rx_stat_pci {
 #define RW(var, field, val)						\
 	(((var) & ~field##_M) | SM(field, val))
 
-
 #define RTWN_MAX_CONDITIONS	3
 
 /*
@@ -154,7 +151,6 @@ struct rtwn_rf_prog {
 	const uint8_t	cond[RTWN_MAX_CONDITIONS];
 	const struct rtwn_rf_prog *next;
 };
-
 
 /* XXX move to net80211. */
 static __inline int

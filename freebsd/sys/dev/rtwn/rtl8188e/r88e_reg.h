@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * $OpenBSD: if_urtwnreg.h,v 1.3 2010/11/16 18:02:59 damien Exp $
- * $FreeBSD$
  */
 
 #ifndef R88E_REG_H
@@ -43,7 +42,6 @@
 #define R88E_TX_RPT_MACID_MAX		0x4ed
 #define R88E_TX_RPT_TIME		0x4f0
 #define R88E_SCH_TXCMD			0x5f8
-
 
 /* Bits for R88E_HIMR. */
 #define R88E_HIMR_ROK		0x00000001	/* receive DMA OK */
@@ -100,14 +98,12 @@
 /* Bits for R92C_SECCFG. */
 #define R88E_SECCFG_CHK_KEYID	0x0100
 
-
 /*
  * Baseband registers.
  */
 /* Bits for R92C_LSSI_PARAM(i). */
 #define R88E_LSSI_PARAM_ADDR_M	0x0ff00000
 #define R88E_LSSI_PARAM_ADDR_S	20
-
 
 /*
  * RF (6052) registers.

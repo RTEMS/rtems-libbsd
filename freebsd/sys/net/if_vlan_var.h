@@ -25,12 +25,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NET_IF_VLAN_VAR_H_
 #define	_NET_IF_VLAN_VAR_H_	1
+
+#include <sys/mbuf.h>
 
 /* Set the VLAN ID in an mbuf packet header non-destructively. */
 #define EVL_APPLY_VLID(m, vlid)						\
@@ -69,6 +69,7 @@
 struct	vlanreq {
 	char	vlr_parent[IFNAMSIZ];
 	u_short	vlr_tag;
+	u_short	vlr_proto;
 };
 #define	SIOCSETVLAN	SIOCSIFGENERIC
 #define	SIOCGETVLAN	SIOCGIFGENERIC
@@ -123,24 +124,40 @@ struct	vlanreq {
 #define	MTAG_8021Q_PCP_IN	0		/* Input priority. */
 #define	MTAG_8021Q_PCP_OUT	1		/* Output priority. */
 
+#define	VLAN_PCP_MAX		7
+
+#define	DOT1Q_VID_NULL		0x0
+#define	DOT1Q_VID_DEF_PVID	0x1
+#define	DOT1Q_VID_DEF_SR_PVID	0x2
+#define	DOT1Q_VID_RSVD_IMPL	0xfff
+
+/*
+ * 802.1q full tag. Proto and vid are stored in host byte order.
+ */
+struct ether_8021q_tag {
+	uint16_t proto;
+	uint16_t vid;
+	uint8_t  pcp;
+};
+
 #define	VLAN_CAPABILITIES(_ifp) do {				\
-	if ((_ifp)->if_vlantrunk != NULL) 			\
+	if (if_getvlantrunk(_ifp) != NULL) 			\
 		(*vlan_trunk_cap_p)(_ifp);			\
 } while (0)
 
 #define	VLAN_TRUNKDEV(_ifp)					\
-	((_ifp)->if_type == IFT_L2VLAN ? (*vlan_trunkdev_p)((_ifp)) : NULL)
+	(if_gettype(_ifp) == IFT_L2VLAN ? (*vlan_trunkdev_p)((_ifp)) : NULL)
 #define	VLAN_TAG(_ifp, _vid)					\
-	((_ifp)->if_type == IFT_L2VLAN ? (*vlan_tag_p)((_ifp), (_vid)) : EINVAL)
+	(if_gettype(_ifp) == IFT_L2VLAN ? (*vlan_tag_p)((_ifp), (_vid)) : EINVAL)
 #define	VLAN_PCP(_ifp, _pcp)					\
-	((_ifp)->if_type == IFT_L2VLAN ? (*vlan_pcp_p)((_ifp), (_pcp)) : EINVAL)
+	(if_gettype(_ifp) == IFT_L2VLAN ? (*vlan_pcp_p)((_ifp), (_pcp)) : EINVAL)
 #define	VLAN_COOKIE(_ifp)					\
-	((_ifp)->if_type == IFT_L2VLAN ? (*vlan_cookie_p)((_ifp)) : NULL)
+	(if_gettype(_ifp) == IFT_L2VLAN ? (*vlan_cookie_p)((_ifp)) : NULL)
 #define	VLAN_SETCOOKIE(_ifp, _cookie)				\
-	((_ifp)->if_type == IFT_L2VLAN ?			\
+	(if_gettype(_ifp) == IFT_L2VLAN ?			\
 	    (*vlan_setcookie_p)((_ifp), (_cookie)) : EINVAL)
 #define	VLAN_DEVAT(_ifp, _vid)					\
-	((_ifp)->if_vlantrunk != NULL ? (*vlan_devat_p)((_ifp), (_vid)) : NULL)
+	(if_getvlantrunk(_ifp) != NULL ? (*vlan_devat_p)((_ifp), (_vid)) : NULL)
 
 extern	void (*vlan_trunk_cap_p)(struct ifnet *);
 extern	struct ifnet *(*vlan_trunkdev_p)(struct ifnet *);
@@ -150,13 +167,35 @@ extern	int (*vlan_pcp_p)(struct ifnet *, uint16_t *);
 extern	int (*vlan_setcookie_p)(struct ifnet *, void *);
 extern	void *(*vlan_cookie_p)(struct ifnet *);
 
-#ifdef _SYS_EVENTHANDLER_H_
+#include <sys/_eventhandler.h>
+
 /* VLAN state change events */
 typedef void (*vlan_config_fn)(void *, struct ifnet *, uint16_t);
 typedef void (*vlan_unconfig_fn)(void *, struct ifnet *, uint16_t);
 EVENTHANDLER_DECLARE(vlan_config, vlan_config_fn);
 EVENTHANDLER_DECLARE(vlan_unconfig, vlan_unconfig_fn);
-#endif /* _SYS_EVENTHANDLER_H_ */
+
+static inline int
+vlan_set_pcp(struct mbuf *m, uint8_t prio)
+{
+	struct m_tag *mtag;
+
+	KASSERT(prio <= VLAN_PCP_MAX,
+	    ("%s with invalid pcp", __func__));
+
+	mtag = m_tag_locate(m, MTAG_8021Q, MTAG_8021Q_PCP_OUT, NULL);
+	if (mtag == NULL) {
+		mtag = m_tag_alloc(MTAG_8021Q, MTAG_8021Q_PCP_OUT,
+		    sizeof(uint8_t), M_NOWAIT);
+		if (mtag == NULL)
+			return (ENOMEM);
+		m_tag_prepend(m, mtag);
+	}
+
+	*(uint8_t *)(mtag + 1) = prio;
+
+	return (0);
+}
 
 #endif /* _KERNEL */
 

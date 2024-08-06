@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -29,7 +29,6 @@
 
 #include <sys/cdefs.h>
 #ifdef __FreeBSD__
-__FBSDID("$FreeBSD$");
 #endif
 
 /*
@@ -423,7 +422,7 @@ ieee80211_dfs_pickchannel(struct ieee80211com *ic)
 	 * one at random (skipping channels where radar has
 	 * been detected).
 	 */
-	get_random_bytes(&v, sizeof(v));
+	net80211_get_random_bytes(&v, sizeof(v));
 	v %= ic->ic_nchans;
 	for (i = v; i < ic->ic_nchans; i++) {
 		c = &ic->ic_channels[i];

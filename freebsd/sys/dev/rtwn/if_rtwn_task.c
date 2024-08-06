@@ -17,8 +17,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #ifdef __rtems__
@@ -47,7 +45,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/if_rtwnvar.h>
 
 #include <dev/rtwn/if_rtwn_task.h>
-
 
 static void
 rtwn_cmdq_cb(void *arg, int pending)

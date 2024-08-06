@@ -47,14 +47,14 @@ extern int32_t rtems_bsdnet_timeoffset;
  * Manipulate routing tables
  */
 struct sockaddr;
-struct rtentry;
+struct rib_cmd_info;
 int rtems_bsdnet_rtrequest (
     int req,
     struct sockaddr *dst,
     struct sockaddr *gateway,
     struct sockaddr *netmask,
     int flags,
-    struct rtentry **net_nrt);
+    struct rib_cmd_info **rc);
 
 /*
  * Diagnostics

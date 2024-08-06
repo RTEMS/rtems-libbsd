@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Ian Lepore <ian@freebsd.org>
  * All rights reserved.
@@ -29,8 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Clocks and power control driver for Freescale i.MX6 family of SoCs.
  */
@@ -411,6 +409,53 @@ imx_ccm_ahb_hz(void)
 }
 #endif /* __rtems__ */
 
+int
+imx_ccm_pll_video_enable(void)
+{
+	uint32_t reg;
+	int timeout;
+
+	/* Power down PLL */
+	reg = RD4(ccm_sc, CCM_ANALOG_PLL_VIDEO);
+	reg &= ~CCM_ANALOG_PLL_VIDEO_POWERDOWN;
+	WR4(ccm_sc, CCM_ANALOG_PLL_VIDEO, reg);
+
+	/*
+	 * Fvideo = Fref * (37 + 11/12) / 2
+	 * Fref = 24MHz, Fvideo = 455MHz
+	 */
+	reg &= ~CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT_MASK;
+	reg |= CCM_ANALOG_PLL_VIDEO_POST_DIV_2;
+	reg &= ~CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK;
+	reg |= 37 << CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT;
+	WR4(ccm_sc, CCM_ANALOG_PLL_VIDEO, reg);
+
+	WR4(ccm_sc, CCM_ANALOG_PLL_VIDEO_NUM, 11);
+	WR4(ccm_sc, CCM_ANALOG_PLL_VIDEO_DENOM, 12);
+
+	/* Power up and wait for PLL lock down */
+	reg = RD4(ccm_sc, CCM_ANALOG_PLL_VIDEO);
+	reg &= ~CCM_ANALOG_PLL_VIDEO_POWERDOWN;
+	WR4(ccm_sc, CCM_ANALOG_PLL_VIDEO, reg);
+
+	for (timeout = 100000; timeout > 0; timeout--) {
+		if (RD4(ccm_sc, CCM_ANALOG_PLL_VIDEO) &
+		   CCM_ANALOG_PLL_VIDEO_LOCK) {
+			break;
+		}
+	}
+	if (timeout <= 0) {
+		return ETIMEDOUT;
+	}
+
+	/* Enable the PLL */
+	reg |= CCM_ANALOG_PLL_VIDEO_ENABLE;
+	reg &= ~CCM_ANALOG_PLL_VIDEO_BYPASS;
+	WR4(ccm_sc, CCM_ANALOG_PLL_VIDEO, reg);
+
+	return (0);
+}
+
 void
 imx_ccm_ipu_enable(int ipu)
 {
@@ -424,6 +469,24 @@ imx_ccm_ipu_enable(int ipu)
 	else
 		reg |= CCGR3_IPU2_IPU | CCGR3_IPU2_DI0;
 	WR4(sc, CCM_CCGR3, reg);
+
+	/* Set IPU1_DI0 clock to source from PLL5 and divide it by 3 */
+	reg = RD4(sc, CCM_CHSCCDR);
+	reg &= ~(CHSCCDR_IPU1_DI0_PRE_CLK_SEL_MASK |
+	    CHSCCDR_IPU1_DI0_PODF_MASK | CHSCCDR_IPU1_DI0_CLK_SEL_MASK);
+	reg |= (CHSCCDR_PODF_DIVIDE_BY_3 << CHSCCDR_IPU1_DI0_PODF_SHIFT);
+	reg |= (CHSCCDR_IPU_PRE_CLK_PLL5 << CHSCCDR_IPU1_DI0_PRE_CLK_SEL_SHIFT);
+	WR4(sc, CCM_CHSCCDR, reg);
+
+	reg |= (CHSCCDR_CLK_SEL_PREMUXED << CHSCCDR_IPU1_DI0_CLK_SEL_SHIFT);
+	WR4(sc, CCM_CHSCCDR, reg);
+}
+
+uint32_t
+imx_ccm_ipu_hz(void)
+{
+
+	return (455000000 / 3);
 }
 
 void
@@ -436,16 +499,6 @@ imx_ccm_hdmi_enable(void)
 	reg = RD4(sc, CCM_CCGR2);
 	reg |= CCGR2_HDMI_TX | CCGR2_HDMI_TX_ISFR;
 	WR4(sc, CCM_CCGR2, reg);
-
-	/* Set HDMI clock to 280MHz */
-	reg = RD4(sc, CCM_CHSCCDR);
-	reg &= ~(CHSCCDR_IPU1_DI0_PRE_CLK_SEL_MASK |
-	    CHSCCDR_IPU1_DI0_PODF_MASK | CHSCCDR_IPU1_DI0_CLK_SEL_MASK);
-	reg |= (CHSCCDR_PODF_DIVIDE_BY_3 << CHSCCDR_IPU1_DI0_PODF_SHIFT);
-	reg |= (CHSCCDR_IPU_PRE_CLK_540M_PFD << CHSCCDR_IPU1_DI0_PRE_CLK_SEL_SHIFT);
-	WR4(sc, CCM_CHSCCDR, reg);
-	reg |= (CHSCCDR_CLK_SEL_LDB_DI0 << CHSCCDR_IPU1_DI0_CLK_SEL_SHIFT);
-	WR4(sc, CCM_CHSCCDR, reg);
 }
 
 uint32_t
@@ -477,8 +530,5 @@ static driver_t ccm_driver = {
 	sizeof(struct ccm_softc)
 };
 
-static devclass_t ccm_devclass;
-
-EARLY_DRIVER_MODULE(ccm, simplebus, ccm_driver, ccm_devclass, 0, 0, 
+EARLY_DRIVER_MODULE(ccm, simplebus, ccm_driver, 0, 0, 
     BUS_PASS_CPU + BUS_PASS_ORDER_EARLY);
-

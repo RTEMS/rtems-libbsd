@@ -15,7 +15,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * $OpenBSD: if_urtwnreg.h,v 1.3 2010/11/16 18:02:59 damien Exp $
- * $FreeBSD$
  */
 
 #ifndef IF_RTWN_FW_H
@@ -52,7 +51,6 @@ struct r92c_fw_hdr {
 	uint32_t	reserved4;
 	uint32_t	reserved5;
 } __packed;
-
 
 int		rtwn_load_firmware(struct rtwn_softc *);
 

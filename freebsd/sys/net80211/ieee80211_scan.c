@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2002-2008 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -28,8 +28,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * IEEE 802.11 scanning support.
  */
@@ -41,12 +39,13 @@ __FBSDID("$FreeBSD$");
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/condvar.h>
- 
+
 #include <sys/socket.h>
 
 #include <net/if.h>
 #include <net/if_var.h>
 #include <net/if_media.h>
+#include <net/if_private.h>
 #include <net/ethernet.h>
 
 #include <net80211/ieee80211_var.h>
@@ -279,7 +278,8 @@ ieee80211_scan_update_locked(struct ieee80211vap *vap,
 	}
 }
 
-void
+#ifdef IEEE80211_DEBUG
+static void
 ieee80211_scan_dump_channels(const struct ieee80211_scan_state *ss)
 {
 	struct ieee80211com *ic = ss->ss_ic;
@@ -296,7 +296,6 @@ ieee80211_scan_dump_channels(const struct ieee80211_scan_state *ss)
 	}
 }
 
-#ifdef IEEE80211_DEBUG
 void
 ieee80211_scan_dump(struct ieee80211_scan_state *ss)
 {
@@ -516,7 +515,7 @@ ieee80211_scan_done(struct ieee80211vap *vap)
  * then we'll transmit a probe request.
  */
 void
-ieee80211_probe_curchan(struct ieee80211vap *vap, int force)
+ieee80211_probe_curchan(struct ieee80211vap *vap, bool force)
 {
 	struct ieee80211com *ic = vap->iv_ic;
 
@@ -609,7 +608,8 @@ ieee80211_scan_timeout(struct ieee80211com *ic)
  * Mark a scan cache entry after a successful associate.
  */
 void
-ieee80211_scan_assoc_success(struct ieee80211vap *vap, const uint8_t mac[])
+ieee80211_scan_assoc_success(struct ieee80211vap *vap,
+    const uint8_t mac[IEEE80211_ADDR_LEN])
 {
 	struct ieee80211_scan_state *ss = vap->iv_ic->ic_scan;
 
@@ -625,7 +625,7 @@ ieee80211_scan_assoc_success(struct ieee80211vap *vap, const uint8_t mac[])
  */
 void
 ieee80211_scan_assoc_fail(struct ieee80211vap *vap,
-	const uint8_t mac[], int reason)
+	const uint8_t mac[IEEE80211_ADDR_LEN], int reason)
 {
 	struct ieee80211_scan_state *ss = vap->iv_ic->ic_scan;
 

@@ -2,7 +2,6 @@
 
 /*	$OpenBSD: if_zyd.c,v 1.52 2007/02/11 00:08:04 jsg Exp $	*/
 /*	$NetBSD: if_zyd.c,v 1.7 2007/06/21 04:04:29 kiyohara Exp $	*/
-/*	$FreeBSD$	*/
 
 /*-
  * Copyright (c) 2006 by Damien Bergamini <damien.bergamini@free.fr>
@@ -22,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * ZyDAS ZD1211/ZD1211B USB WLAN driver.
  */
@@ -79,7 +76,8 @@ __FBSDID("$FreeBSD$");
 #ifdef USB_DEBUG
 static int zyd_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, zyd, CTLFLAG_RW, 0, "USB zyd");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, zyd, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB zyd");
 SYSCTL_INT(_hw_usb_zyd, OID_AUTO, debug, CTLFLAG_RWTUN, &zyd_debug, 0,
     "zyd debug level");
 
@@ -436,13 +434,12 @@ zyd_drain_mbufq(struct zyd_softc *sc)
 	}
 }
 
-
 static int
 zyd_detach(device_t dev)
 {
 	struct zyd_softc *sc = device_get_softc(dev);
 	struct ieee80211com *ic = &sc->sc_ic;
-	unsigned int x;
+	unsigned x;
 
 	/*
 	 * Prevent further allocations from RX/TX data
@@ -677,7 +674,6 @@ zyd_intr_read_callback(struct usb_xfer *xfer, usb_error_t error)
 					txs->status =
 					    IEEE80211_RATECTL_TX_SUCCESS;
 				}
-
 
 				ieee80211_ratectl_tx_complete(ni, txs);
 				ieee80211_free_node(ni);
@@ -1240,7 +1236,7 @@ zyd_al2230_bandedge6(struct zyd_rf *rf, struct ieee80211_channel *c)
 
 	if (chan == 1 || chan == 11)
 		r[0].val = 0x12;
-	
+
 	for (i = 0; i < nitems(r); i++)
 		zyd_write16_m(sc, r[i].reg, r[i].val);
 fail:
@@ -1972,49 +1968,48 @@ fail:
 	return (error);
 }
 
+static u_int
+zyd_hash_maddr(void *arg, struct sockaddr_dl *sdl, u_int cnt)
+{
+	uint32_t *hash = arg;
+	uint8_t v;
+
+	v = ((uint8_t *)LLADDR(sdl))[5] >> 2;
+	if (v < 32)
+		hash[0] |= 1 << v;
+	else
+		hash[1] |= 1 << (v - 32);
+
+	return (1);
+}
+
 static void
 zyd_set_multi(struct zyd_softc *sc)
 {
 	struct ieee80211com *ic = &sc->sc_ic;
-	uint32_t low, high;
+	uint32_t hash[2];
 	int error;
 
 	if ((sc->sc_flags & ZYD_FLAG_RUNNING) == 0)
 		return;
 
-	low = 0x00000000;
-	high = 0x80000000;
+	hash[0] = 0x00000000;
+	hash[1] = 0x80000000;
 
 	if (ic->ic_opmode == IEEE80211_M_MONITOR || ic->ic_allmulti > 0 ||
 	    ic->ic_promisc > 0) {
-		low = 0xffffffff;
-		high = 0xffffffff;
+		hash[0] = 0xffffffff;
+		hash[1] = 0xffffffff;
 	} else {
 		struct ieee80211vap *vap;
-		struct ifnet *ifp;
-		struct ifmultiaddr *ifma;
-		uint8_t v;
 
-		TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
-			ifp = vap->iv_ifp;
-			if_maddr_rlock(ifp);
-			CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
-				if (ifma->ifma_addr->sa_family != AF_LINK)
-					continue;
-				v = ((uint8_t *)LLADDR((struct sockaddr_dl *)
-				    ifma->ifma_addr))[5] >> 2;
-				if (v < 32)
-					low |= 1 << v;
-				else
-					high |= 1 << (v - 32);
-			}
-			if_maddr_runlock(ifp);
-		}
+		TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next)
+			if_foreach_llmaddr(vap->iv_ifp, zyd_hash_maddr, &hash);
 	}
 
 	/* reprogram multicast global hash table */
-	zyd_write32_m(sc, ZYD_MAC_GHTBL, low);
-	zyd_write32_m(sc, ZYD_MAC_GHTBH, high);
+	zyd_write32_m(sc, ZYD_MAC_GHTBL, hash[0]);
+	zyd_write32_m(sc, ZYD_MAC_GHTBH, hash[1]);
 fail:
 	if (error != 0)
 		device_printf(sc->sc_dev,
@@ -2914,9 +2909,7 @@ static driver_t zyd_driver = {
 	.size = sizeof(struct zyd_softc)
 };
 
-static devclass_t zyd_devclass;
-
-DRIVER_MODULE(zyd, uhub, zyd_driver, zyd_devclass, NULL, 0);
+DRIVER_MODULE(zyd, uhub, zyd_driver, NULL, NULL);
 MODULE_DEPEND(zyd, usb, 1, 1, 1);
 MODULE_DEPEND(zyd, wlan, 1, 1, 1);
 MODULE_VERSION(zyd, 1);

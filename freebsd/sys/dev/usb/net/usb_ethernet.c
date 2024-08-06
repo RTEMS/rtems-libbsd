@@ -1,8 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 Andrew Thompson (thompsa@FreeBSD.org)
  *
@@ -29,8 +28,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
@@ -62,7 +59,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/usb/usb_process.h>
 #include <dev/usb/net/usb_ethernet.h>
 
-static SYSCTL_NODE(_net, OID_AUTO, ue, CTLFLAG_RD, 0,
+static SYSCTL_NODE(_net, OID_AUTO, ue, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
     "USB Ethernet parameters");
 
 #define	UE_LOCK(_ue)		mtx_lock((_ue)->ue_mtx)
@@ -83,8 +80,8 @@ static usb_proc_callback_t ue_start_task;
 static usb_proc_callback_t ue_stop_task;
 
 static void	ue_init(void *);
-static void	ue_start(struct ifnet *);
-static int	ue_ifmedia_upd(struct ifnet *);
+static void	ue_start(if_t);
+static int	ue_ifmedia_upd(if_t);
 static void	ue_watchdog(void *);
 
 /*
@@ -93,7 +90,7 @@ static void	ue_watchdog(void *);
  * Else: device has been detached
  */
 uint8_t
-uether_pause(struct usb_ether *ue, unsigned int _ticks)
+uether_pause(struct usb_ether *ue, unsigned _ticks)
 {
 	if (usb_proc_is_gone(&ue->ue_tq)) {
 		/* nothing to do */
@@ -134,7 +131,7 @@ ue_queue_command(struct usb_ether *ue,
 		usb_proc_mwait(&ue->ue_tq, t0, t1);
 }
 
-struct ifnet *
+if_t 
 uether_getifp(struct usb_ether *ue)
 {
 	return (ue->ue_ifp);
@@ -209,7 +206,7 @@ ue_attach_post_task(struct usb_proc_msg *_task)
 	struct usb_ether_cfg_task *task =
 	    (struct usb_ether_cfg_task *)_task;
 	struct usb_ether *ue = task->ue;
-	struct ifnet *ifp;
+	if_t ifp;
 	int error;
 	char num[14];			/* sufficient for 32 bits */
 
@@ -221,41 +218,35 @@ ue_attach_post_task(struct usb_proc_msg *_task)
 	ue->ue_unit = alloc_unr(ueunit);
 	usb_callout_init_mtx(&ue->ue_watchdog, ue->ue_mtx, 0);
 	sysctl_ctx_init(&ue->ue_sysctl_ctx);
+	mbufq_init(&ue->ue_rxq, 0 /* unlimited length */);
 
 	error = 0;
 	CURVNET_SET_QUIET(vnet0);
 	ifp = if_alloc(IFT_ETHER);
-	if (ifp == NULL) {
-		device_printf(ue->ue_dev, "could not allocate ifnet\n");
-		goto fail;
-	}
-
-	ifp->if_softc = ue;
+	if_setsoftc(ifp, ue);
 	if_initname(ifp, "ue", ue->ue_unit);
 	if (ue->ue_methods->ue_attach_post_sub != NULL) {
 		ue->ue_ifp = ifp;
 		error = ue->ue_methods->ue_attach_post_sub(ue);
 	} else {
-		ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
+		if_setflags(ifp, IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST);
 		if (ue->ue_methods->ue_ioctl != NULL)
-			ifp->if_ioctl = ue->ue_methods->ue_ioctl;
+			if_setioctlfn(ifp, ue->ue_methods->ue_ioctl);
 		else
-			ifp->if_ioctl = uether_ioctl;
-		ifp->if_start = ue_start;
-		ifp->if_init = ue_init;
-		IFQ_SET_MAXLEN(&ifp->if_snd, ifqmaxlen);
-		ifp->if_snd.ifq_drv_maxlen = ifqmaxlen;
-		IFQ_SET_READY(&ifp->if_snd);
+			if_setioctlfn(ifp, uether_ioctl);
+		if_setstartfn(ifp, ue_start);
+		if_setinitfn(ifp, ue_init);
+		if_setsendqlen(ifp, ifqmaxlen);
+		if_setsendqready(ifp);
 		ue->ue_ifp = ifp;
 
 		if (ue->ue_methods->ue_mii_upd != NULL &&
 		    ue->ue_methods->ue_mii_sts != NULL) {
-			/* device_xxx() depends on this */
-			mtx_lock(&Giant);
+			bus_topo_lock();
 			error = mii_attach(ue->ue_dev, &ue->ue_miibus, ifp,
 			    ue_ifmedia_upd, ue->ue_methods->ue_mii_sts,
 			    BMSR_DEFCAPMASK, MII_PHY_ANY, MII_OFFSET_ANY, 0);
-			mtx_unlock(&Giant);
+			bus_topo_unlock();
 		}
 	}
 
@@ -267,18 +258,18 @@ ue_attach_post_task(struct usb_proc_msg *_task)
 	if_printf(ifp, "<USB Ethernet> on %s\n", device_get_nameunit(ue->ue_dev));
 	ether_ifattach(ifp, ue->ue_eaddr);
 	/* Tell upper layer we support VLAN oversized frames. */
-	if (ifp->if_capabilities & IFCAP_VLAN_MTU)
-		ifp->if_hdrlen = sizeof(struct ether_vlan_header);
+	if (if_getcapabilities(ifp) & IFCAP_VLAN_MTU)
+		if_setifheaderlen(ifp, sizeof(struct ether_vlan_header));
 
 	CURVNET_RESTORE();
 
 	snprintf(num, sizeof(num), "%u", ue->ue_unit);
 	ue->ue_sysctl_oid = SYSCTL_ADD_NODE(&ue->ue_sysctl_ctx,
 	    &SYSCTL_NODE_CHILDREN(_net, ue),
-	    OID_AUTO, num, CTLFLAG_RD, NULL, "");
+	    OID_AUTO, num, CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "");
 	SYSCTL_ADD_PROC(&ue->ue_sysctl_ctx,
-	    SYSCTL_CHILDREN(ue->ue_sysctl_oid), OID_AUTO,
-	    "%parent", CTLTYPE_STRING | CTLFLAG_RD, ue, 0,
+	    SYSCTL_CHILDREN(ue->ue_sysctl_oid), OID_AUTO, "%parent",
+	    CTLTYPE_STRING | CTLFLAG_RD | CTLFLAG_MPSAFE, ue, 0,
 	    ue_sysctl_parent, "A", "parent device");
 
 	UE_LOCK(ue);
@@ -286,6 +277,11 @@ ue_attach_post_task(struct usb_proc_msg *_task)
 
 fail:
 	CURVNET_RESTORE();
+
+	/* drain mbuf queue */
+	mbufq_drain(&ue->ue_rxq);
+
+	/* free unit */
 	free_unr(ueunit, ue->ue_unit);
 	if (ue->ue_ifp != NULL) {
 		if_free(ue->ue_ifp);
@@ -298,7 +294,7 @@ fail:
 void
 uether_ifdetach(struct usb_ether *ue)
 {
-	struct ifnet *ifp;
+	if_t ifp;
 
 	/* wait for any post attach or other command to complete */
 	usb_proc_drain(&ue->ue_tq);
@@ -307,30 +303,35 @@ uether_ifdetach(struct usb_ether *ue)
 	ifp = ue->ue_ifp;
 
 	if (ifp != NULL) {
-
 		/* we are not running any more */
 		UE_LOCK(ue);
-		ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+		if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
 		UE_UNLOCK(ue);
 
 		/* drain any callouts */
 		usb_callout_drain(&ue->ue_watchdog);
 
+		/*
+		 * Detach ethernet first to stop miibus calls from
+		 * user-space:
+		 */
+		ether_ifdetach(ifp);
+
 		/* detach miibus */
 		if (ue->ue_miibus != NULL) {
-			mtx_lock(&Giant);	/* device_xxx() depends on this */
+			bus_topo_lock();
 			device_delete_child(ue->ue_dev, ue->ue_miibus);
-			mtx_unlock(&Giant);
+			bus_topo_unlock();
 		}
-
-		/* detach ethernet */
-		ether_ifdetach(ifp);
 
 		/* free interface instance */
 		if_free(ifp);
 
 		/* free sysctl */
 		sysctl_ctx_free(&ue->ue_sysctl_ctx);
+
+		/* drain mbuf queue */
+		mbufq_drain(&ue->ue_rxq);
 
 		/* free unit */
 		free_unr(ueunit, ue->ue_unit);
@@ -371,13 +372,13 @@ ue_start_task(struct usb_proc_msg *_task)
 	struct usb_ether_cfg_task *task =
 	    (struct usb_ether_cfg_task *)_task;
 	struct usb_ether *ue = task->ue;
-	struct ifnet *ifp = ue->ue_ifp;
+	if_t ifp = ue->ue_ifp;
 
 	UE_LOCK_ASSERT(ue, MA_OWNED);
 
 	ue->ue_methods->ue_init(ue);
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 		return;
 
 	if (ue->ue_methods->ue_tick != NULL)
@@ -399,18 +400,18 @@ ue_stop_task(struct usb_proc_msg *_task)
 }
 
 void
-uether_start(struct ifnet *ifp)
+uether_start(if_t ifp)
 {
 
 	ue_start(ifp);
 }
 
 static void
-ue_start(struct ifnet *ifp)
+ue_start(if_t ifp)
 {
-	struct usb_ether *ue = ifp->if_softc;
+	struct usb_ether *ue = if_getsoftc(ifp);
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 		return;
 
 	UE_LOCK(ue);
@@ -439,16 +440,16 @@ ue_setmulti_task(struct usb_proc_msg *_task)
 }
 
 int
-uether_ifmedia_upd(struct ifnet *ifp)
+uether_ifmedia_upd(if_t ifp)
 {
 
 	return (ue_ifmedia_upd(ifp));
 }
 
 static int
-ue_ifmedia_upd(struct ifnet *ifp)
+ue_ifmedia_upd(if_t ifp)
 {
-	struct usb_ether *ue = ifp->if_softc;
+	struct usb_ether *ue = if_getsoftc(ifp);
 
 	/* Defer to process context */
 	UE_LOCK(ue);
@@ -466,7 +467,7 @@ ue_ifmedia_task(struct usb_proc_msg *_task)
 	struct usb_ether_cfg_task *task =
 	    (struct usb_ether_cfg_task *)_task;
 	struct usb_ether *ue = task->ue;
-	struct ifnet *ifp = ue->ue_ifp;
+	if_t ifp = ue->ue_ifp;
 
 	ue->ue_methods->ue_mii_upd(ifp);
 }
@@ -475,9 +476,9 @@ static void
 ue_watchdog(void *arg)
 {
 	struct usb_ether *ue = arg;
-	struct ifnet *ifp = ue->ue_ifp;
+	if_t ifp = ue->ue_ifp;
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 		return;
 
 	ue_queue_command(ue, ue_tick_task,
@@ -493,18 +494,18 @@ ue_tick_task(struct usb_proc_msg *_task)
 	struct usb_ether_cfg_task *task =
 	    (struct usb_ether_cfg_task *)_task;
 	struct usb_ether *ue = task->ue;
-	struct ifnet *ifp = ue->ue_ifp;
+	if_t ifp = ue->ue_ifp;
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 		return;
 
 	ue->ue_methods->ue_tick(ue);
 }
 
 int
-uether_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
+uether_ioctl(if_t ifp, u_long command, caddr_t data)
 {
-	struct usb_ether *ue = ifp->if_softc;
+	struct usb_ether *ue = if_getsoftc(ifp);
 	struct ifreq *ifr = (struct ifreq *)data;
 	struct mii_data *mii;
 	int error = 0;
@@ -512,8 +513,8 @@ uether_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 	switch (command) {
 	case SIOCSIFFLAGS:
 		UE_LOCK(ue);
-		if (ifp->if_flags & IFF_UP) {
-			if (ifp->if_drv_flags & IFF_DRV_RUNNING)
+		if (if_getflags(ifp) & IFF_UP) {
+			if (if_getdrvflags(ifp) & IFF_DRV_RUNNING)
 				ue_queue_command(ue, ue_promisc_task,
 				    &ue->ue_promisc_task[0].hdr, 
 				    &ue->ue_promisc_task[1].hdr);
@@ -588,9 +589,9 @@ uether_newbuf(void)
 
 int
 uether_rxmbuf(struct usb_ether *ue, struct mbuf *m, 
-    unsigned int len)
+    unsigned len)
 {
-	struct ifnet *ifp = ue->ue_ifp;
+	if_t ifp = ue->ue_ifp;
 
 	UE_LOCK_ASSERT(ue, MA_OWNED);
 
@@ -600,15 +601,15 @@ uether_rxmbuf(struct usb_ether *ue, struct mbuf *m,
 	m->m_pkthdr.len = m->m_len = len;
 
 	/* enqueue for later when the lock can be released */
-	_IF_ENQUEUE(&ue->ue_rxq, m);
+	(void)mbufq_enqueue(&ue->ue_rxq, m);
 	return (0);
 }
 
 int
 uether_rxbuf(struct usb_ether *ue, struct usb_page_cache *pc, 
-    unsigned int offset, unsigned int len)
+    unsigned offset, unsigned len)
 {
-	struct ifnet *ifp = ue->ue_ifp;
+	if_t ifp = ue->ue_ifp;
 	struct mbuf *m;
 
 	UE_LOCK_ASSERT(ue, MA_OWNED);
@@ -630,30 +631,29 @@ uether_rxbuf(struct usb_ether *ue, struct usb_page_cache *pc,
 	m->m_pkthdr.len = m->m_len = len;
 
 	/* enqueue for later when the lock can be released */
-	_IF_ENQUEUE(&ue->ue_rxq, m);
+	(void)mbufq_enqueue(&ue->ue_rxq, m);
 	return (0);
 }
 
 void
 uether_rxflush(struct usb_ether *ue)
 {
-	struct ifnet *ifp = ue->ue_ifp;
-	struct mbuf *m;
+	if_t ifp = ue->ue_ifp;
+	struct epoch_tracker et;
+	struct mbuf *m, *n;
 
 	UE_LOCK_ASSERT(ue, MA_OWNED);
 
-	for (;;) {
-		_IF_DEQUEUE(&ue->ue_rxq, m);
-		if (m == NULL)
-			break;
-
-		/*
-		 * The USB xfer has been resubmitted so its safe to unlock now.
-		 */
-		UE_UNLOCK(ue);
-		ifp->if_input(ifp, m);
-		UE_LOCK(ue);
+	n = mbufq_flush(&ue->ue_rxq);
+	UE_UNLOCK(ue);
+	NET_EPOCH_ENTER(et);
+	while ((m = n) != NULL) {
+		n = STAILQ_NEXT(m, m_stailqpkt);
+		m->m_nextpkt = NULL;
+		if_input(ifp, m);
 	}
+	NET_EPOCH_EXIT(et);
+	UE_LOCK(ue);
 }
 
 /*

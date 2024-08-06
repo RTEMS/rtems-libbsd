@@ -38,7 +38,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 
 #include <bsp.h>
 #include <sys/param.h>
@@ -227,7 +226,6 @@ static driver_t zynqmp_slcr_driver = {
 	zynqmp_slcr_methods,
 	sizeof(struct zynqmp_slcr_softc),
 };
-static devclass_t zynqmp_slcr_devclass;
 
-DRIVER_MODULE(zynqmp_slcr, nexus, zynqmp_slcr_driver, zynqmp_slcr_devclass, 0, 0);
+DRIVER_MODULE(zynqmp_slcr, nexus, zynqmp_slcr_driver, 0, 0);
 MODULE_VERSION(zynqmp_slcr, 1);

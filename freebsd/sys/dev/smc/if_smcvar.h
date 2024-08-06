@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Benno Rice.  All rights reserved.
  *
@@ -23,15 +23,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD$
- *
  */
 
 #ifndef _IF_SMCVAR_H_
 #define	_IF_SMCVAR_H_
 
 struct smc_softc {
-	struct ifnet		*smc_ifp;
+	if_t			smc_ifp;
 	device_t		smc_dev;
 	struct mtx		smc_mtx;
 	u_int			smc_chip;
@@ -53,7 +51,7 @@ struct smc_softc {
 	struct task		smc_tx;
 	struct mbuf		*smc_pending;
 	struct callout		smc_watchdog;
-	
+
 	/* MII support */
 	device_t		smc_miibus;
 	struct callout		smc_mii_tick_ch;
@@ -67,6 +65,8 @@ struct smc_softc {
 				    bus_addr_t, uint8_t *, bus_size_t);
 	void			*smc_read_arg;
 };
+
+DECLARE_CLASS(smc_driver);
 
 int	smc_probe(device_t);
 int	smc_attach(device_t);

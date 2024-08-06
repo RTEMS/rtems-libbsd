@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -58,7 +56,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/usb/rtwn_usb_tx.h>
 
 #include <dev/rtwn/rtl8192c/usb/r92cu_reg.h>
-
 
 static const struct usb_config rtwn_config_common[RTWN_N_TRANSFER] = {
 	[RTWN_BULK_RX] = {

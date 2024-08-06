@@ -1,8 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
@@ -103,7 +102,6 @@ usb_handle_request_callback(struct usb_xfer *xfer, usb_error_t error)
 		err = usb_handle_request(xfer);
 
 		if (err) {
-
 			if (err == USB_ERR_BAD_CONTEXT) {
 				/* we need to re-setup the control transfer */
 				usb_needs_explore(xfer->xroot->bus, 0);

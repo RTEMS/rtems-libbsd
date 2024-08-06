@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -60,7 +58,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8812a/r12a.h>
 #include <dev/rtwn/rtl8812a/r12a_reg.h>
 #include <dev/rtwn/rtl8812a/r12a_var.h>
-
 
 int
 r12a_ioctl_net(struct ieee80211com *ic, u_long cmd, void *data)
@@ -104,11 +101,11 @@ r12a_ioctl_net(struct ieee80211com *ic, u_long cmd, void *data)
 
 		IEEE80211_LOCK(ic);	/* XXX */
 		TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
-			struct ifnet *ifp = vap->iv_ifp;
+			if_t ifp = vap->iv_ifp;
 
-			ifp->if_capenable &=
-			    ~(IFCAP_RXCSUM | IFCAP_RXCSUM_IPV6);
-			ifp->if_capenable |= rxmask;
+			if_setcapenablebit(ifp, 0,
+			    IFCAP_RXCSUM | IFCAP_RXCSUM_IPV6);
+			if_setcapenablebit(ifp, rxmask, 0);
 		}
 		IEEE80211_UNLOCK(ic);
 		break;

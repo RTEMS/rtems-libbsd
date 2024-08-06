@@ -35,8 +35,6 @@ static char *sccsid2 = "@(#)svc_auth_unix.c 1.28 88/02/08 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)svc_auth_unix.c	2.3 88/08/01 4.0 RPCSRC";
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * svc_auth_unix.c
  * Handles UNIX flavor authentication parameters on the service side of rpc.
@@ -137,10 +135,8 @@ done:
  * Looks up longhand in a cache.
  */
 /*ARGSUSED*/
-enum auth_stat 
-_svcauth_short(rqst, msg)
-	struct svc_req *rqst;
-	struct rpc_msg *msg;
+enum auth_stat
+_svcauth_short(struct svc_req *rqst, struct rpc_msg *msg)
 {
 	return (AUTH_REJECTEDCRED);
 }

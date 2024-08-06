@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2019 Alexander Motin <mav@FreeBSD.org>
  *
@@ -31,8 +31,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 
 #include <stdio.h>
@@ -75,9 +73,10 @@ gnsid(const struct cmd *f, int argc, char *argv[])
 	int		fd;
 	uint32_t	nsid;
 
-	arg_parse(argc, argv, f);
+	if (arg_parse(argc, argv, f))
+		return;
 
-	open_dev(nsid_opt.dev, &fd, 1, 1);
+	open_dev(nsid_opt.dev, &fd, 0, 1);
 	get_nsid(fd, &path, &nsid);
 	close(fd);
 	printf("%s\t%u\n", path, nsid);

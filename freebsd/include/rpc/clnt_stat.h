@@ -1,4 +1,3 @@
-/*	$FreeBSD$ */
 /*
  * Copyright (c) 1986 - 1991, 1994, 1996, 1997 by Sun Microsystems, Inc.
  * All rights reserved.
@@ -73,8 +72,7 @@ enum clnt_stat {
 	RPC_STALERACHANDLE = 25,
 	RPC_CANTCONNECT = 26,		/* couldn't make connection (cots) */
 	RPC_XPRTFAILED = 27,		/* received discon from remote (cots) */
-	RPC_CANTCREATESTREAM = 28,	/* can't push rpc module (cots) */
-	_CLNT_STAT = 0xffffffff
+	RPC_CANTCREATESTREAM = 28	/* can't push rpc module (cots) */
 };
 
 #ifdef __cplusplus

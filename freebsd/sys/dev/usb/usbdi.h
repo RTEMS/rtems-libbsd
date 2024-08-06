@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 Andrew Thompson
  *
@@ -22,8 +22,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 #ifndef _USB_USBDI_H_
 #define _USB_USBDI_H_
@@ -88,7 +86,7 @@ typedef enum {	/* keep in sync with usb_errstr_table */
 #define	USB_NO_TIMEOUT 0
 #define	USB_DEFAULT_TIMEOUT 5000	/* 5000 ms = 5 seconds */
 
-#if defined(_KERNEL)
+#if defined(_KERNEL) || defined(_STANDALONE)
 /* typedefs */
 
 typedef void (usb_callback_t)(struct usb_xfer *, usb_error_t);
@@ -102,10 +100,9 @@ typedef int (usb_fifo_ioctl_t)(struct usb_fifo *fifo, u_long cmd, void *addr, in
 typedef void (usb_fifo_cmd_t)(struct usb_fifo *fifo);
 typedef void (usb_fifo_filter_t)(struct usb_fifo *fifo, struct usb_mbuf *m);
 
-
 /* USB events */
 #ifndef USB_GLOBAL_INCLUDE_FILE
-#include <sys/eventhandler.h>
+#include <sys/_eventhandler.h>
 #endif
 typedef void (*usb_dev_configured_t)(void *, struct usb_device *,
     struct usb_attach_arg *);
@@ -175,6 +172,9 @@ struct usb_endpoint {
 struct usb_interface {
 	struct usb_interface_descriptor *idesc;
 	device_t subdev;
+	/* Total number of alternate settings, from 1 to 256 */
+	uint16_t num_altsetting;
+	/* Current alternate interface index, from 0 to 255 */
 	uint8_t	alt_index;
 	uint8_t	parent_iface_index;
 
@@ -184,7 +184,6 @@ struct usb_interface {
 	struct usb_device *linux_udev;
 	void   *bsd_priv_sc;		/* device specific information */
 	char   *pnpinfo;		/* additional PnP-info for this interface */
-	uint8_t	num_altsetting;		/* number of alternate settings */
 	uint8_t	bsd_iface_index;
 };
 
@@ -217,6 +216,7 @@ struct usb_xfer_flags {
 					 * option only has effect for
 					 * ISOCHRONOUS transfers.
 					 */
+	uint8_t send_zlp:1;		/* send a zero length packet first */
 };
 
 /*
@@ -267,7 +267,6 @@ struct usb_config {
  * "usb_device_id".
  */
 struct usb_device_id {
-
 	/* Select which fields to match against */
 #if BYTE_ORDER == LITTLE_ENDIAN
 	uint16_t
@@ -605,6 +604,9 @@ uint8_t	usbd_get_interface_altindex(struct usb_interface *iface);
 usb_error_t usbd_set_alt_interface_index(struct usb_device *udev,
 	    uint8_t iface_index, uint8_t alt_index);
 uint32_t usbd_get_isoc_fps(struct usb_device *udev);
+uint32_t usbd_get_max_frame_length(const struct usb_endpoint_descriptor *,
+    const struct usb_endpoint_ss_comp_descriptor *,
+    enum usb_dev_speed);
 usb_error_t usbd_transfer_setup(struct usb_device *udev,
 	    const uint8_t *ifaces, struct usb_xfer **pxfer,
 	    const struct usb_config *setup_start, uint16_t n_setup,
@@ -656,6 +658,8 @@ void	usbd_xfer_set_frame_len(struct usb_xfer *xfer, usb_frcount_t frindex,
 	    usb_frlength_t len);
 void	usbd_xfer_set_timeout(struct usb_xfer *xfer, int timeout);
 void	usbd_xfer_set_frames(struct usb_xfer *xfer, usb_frcount_t n);
+void	usbd_xfer_set_zlp(struct usb_xfer *xfer);
+uint8_t	usbd_xfer_get_and_clr_zlp(struct usb_xfer *xfer);
 void	usbd_xfer_set_stall(struct usb_xfer *xfer);
 int	usbd_xfer_is_stalled(struct usb_xfer *xfer);
 void	usbd_xfer_set_flag(struct usb_xfer *xfer, int flag);
@@ -712,5 +716,5 @@ void	*usb_fifo_softc(struct usb_fifo *fifo);
 void	usb_fifo_set_close_zlp(struct usb_fifo *, uint8_t);
 void	usb_fifo_set_write_defrag(struct usb_fifo *, uint8_t);
 void	usb_fifo_free(struct usb_fifo *f);
-#endif /* _KERNEL */
-#endif /* _USB_USBDI_H_ */
+#endif	/* _KERNEL || _STANDALONE */
+#endif	/* _USB_USBDI_H_ */

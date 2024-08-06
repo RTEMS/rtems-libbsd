@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),
@@ -48,36 +50,46 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
+#include <sys/types.h>
+#include <sys/systm.h>
 #include <opencrypto/xform_enc.h>
 
-static	int aes_xts_setkey(u_int8_t **, u_int8_t *, int);
-static	void aes_xts_encrypt(caddr_t, u_int8_t *);
-static	void aes_xts_decrypt(caddr_t, u_int8_t *);
-static	void aes_xts_zerokey(u_int8_t **);
-static	void aes_xts_reinit(caddr_t, u_int8_t *);
+static	int aes_xts_setkey(void *, const uint8_t *, int);
+static	void aes_xts_encrypt(void *, const uint8_t *, uint8_t *);
+static	void aes_xts_decrypt(void *, const uint8_t *, uint8_t *);
+static	void aes_xts_encrypt_multi(void *, const uint8_t *, uint8_t *, size_t);
+static	void aes_xts_decrypt_multi(void *, const uint8_t *, uint8_t *, size_t);
+static	void aes_xts_reinit(void *, const uint8_t *, size_t);
 
 /* Encryption instances */
-struct enc_xform enc_xform_aes_xts = {
-	CRYPTO_AES_XTS, "AES-XTS",
-	AES_BLOCK_LEN, AES_XTS_IV_LEN, AES_XTS_MIN_KEY, AES_XTS_MAX_KEY,
-	aes_xts_encrypt,
-	aes_xts_decrypt,
-	aes_xts_setkey,
-	aes_xts_zerokey,
-	aes_xts_reinit
+const struct enc_xform enc_xform_aes_xts = {
+	.type = CRYPTO_AES_XTS,
+	.name = "AES-XTS",
+	.ctxsize = sizeof(struct aes_xts_ctx),
+	.blocksize = AES_BLOCK_LEN,
+	.ivsize = AES_XTS_IV_LEN,
+	.minkey = AES_XTS_MIN_KEY,
+	.maxkey = AES_XTS_MAX_KEY,
+	.setkey = aes_xts_setkey,
+	.reinit = aes_xts_reinit,
+	.encrypt = aes_xts_encrypt,
+	.decrypt = aes_xts_decrypt,
+	.encrypt_multi = aes_xts_encrypt_multi,
+	.decrypt_multi = aes_xts_decrypt_multi,
 };
 
 /*
  * Encryption wrapper routines.
  */
 static void
-aes_xts_reinit(caddr_t key, u_int8_t *iv)
+aes_xts_reinit(void *key, const uint8_t *iv, size_t ivlen)
 {
-	struct aes_xts_ctx *ctx = (struct aes_xts_ctx *)key;
-	u_int64_t blocknum;
+	struct aes_xts_ctx *ctx = key;
+	uint64_t blocknum;
 	u_int i;
+
+	KASSERT(ivlen == sizeof(blocknum),
+	    ("%s: invalid IV length", __func__));
 
 	/*
 	 * Prepare tweak as E_k2(IV). IV is specified as LE representation
@@ -95,70 +107,78 @@ aes_xts_reinit(caddr_t key, u_int8_t *iv)
 }
 
 static void
-aes_xts_crypt(struct aes_xts_ctx *ctx, u_int8_t *data, u_int do_encrypt)
+aes_xts_crypt(struct aes_xts_ctx *ctx, const uint8_t *in, uint8_t *out,
+    size_t len, bool do_encrypt)
 {
-	u_int8_t block[AES_XTS_BLOCKSIZE];
+	uint8_t block[AES_XTS_BLOCKSIZE];
 	u_int i, carry_in, carry_out;
 
-	for (i = 0; i < AES_XTS_BLOCKSIZE; i++)
-		block[i] = data[i] ^ ctx->tweak[i];
+	KASSERT(len % AES_XTS_BLOCKSIZE == 0, ("%s: invalid length", __func__));
+	while (len > 0) {
+		for (i = 0; i < AES_XTS_BLOCKSIZE; i++)
+			block[i] = in[i] ^ ctx->tweak[i];
 
-	if (do_encrypt)
-		rijndael_encrypt(&ctx->key1, block, data);
-	else
-		rijndael_decrypt(&ctx->key1, block, data);
+		if (do_encrypt)
+			rijndael_encrypt(&ctx->key1, block, out);
+		else
+			rijndael_decrypt(&ctx->key1, block, out);
 
-	for (i = 0; i < AES_XTS_BLOCKSIZE; i++)
-		data[i] ^= ctx->tweak[i];
+		for (i = 0; i < AES_XTS_BLOCKSIZE; i++)
+			out[i] ^= ctx->tweak[i];
 
-	/* Exponentiate tweak */
-	carry_in = 0;
-	for (i = 0; i < AES_XTS_BLOCKSIZE; i++) {
-		carry_out = ctx->tweak[i] & 0x80;
-		ctx->tweak[i] = (ctx->tweak[i] << 1) | (carry_in ? 1 : 0);
-		carry_in = carry_out;
+		/* Exponentiate tweak */
+		carry_in = 0;
+		for (i = 0; i < AES_XTS_BLOCKSIZE; i++) {
+			carry_out = ctx->tweak[i] & 0x80;
+			ctx->tweak[i] = (ctx->tweak[i] << 1) | (carry_in ? 1 : 0);
+			carry_in = carry_out;
+		}
+		if (carry_in)
+			ctx->tweak[0] ^= AES_XTS_ALPHA;
+
+		in += AES_XTS_BLOCKSIZE;
+		out += AES_XTS_BLOCKSIZE;
+		len -= AES_XTS_BLOCKSIZE;
 	}
-	if (carry_in)
-		ctx->tweak[0] ^= AES_XTS_ALPHA;
-	bzero(block, sizeof(block));
+	explicit_bzero(block, sizeof(block));
 }
 
 static void
-aes_xts_encrypt(caddr_t key, u_int8_t *data)
+aes_xts_encrypt(void *key, const uint8_t *in, uint8_t *out)
 {
-	aes_xts_crypt((struct aes_xts_ctx *)key, data, 1);
+	aes_xts_crypt(key, in, out, AES_XTS_BLOCKSIZE, true);
 }
 
 static void
-aes_xts_decrypt(caddr_t key, u_int8_t *data)
+aes_xts_decrypt(void *key, const uint8_t *in, uint8_t *out)
 {
-	aes_xts_crypt((struct aes_xts_ctx *)key, data, 0);
+	aes_xts_crypt(key, in, out, AES_XTS_BLOCKSIZE, false);
+}
+
+static void
+aes_xts_encrypt_multi(void *vctx, const uint8_t *in, uint8_t *out, size_t len)
+{
+	aes_xts_crypt(vctx, in, out, len, true);
+}
+
+static void
+aes_xts_decrypt_multi(void *vctx, const uint8_t *in, uint8_t *out, size_t len)
+{
+	aes_xts_crypt(vctx, in, out, len, false);
 }
 
 static int
-aes_xts_setkey(u_int8_t **sched, u_int8_t *key, int len)
+aes_xts_setkey(void *sched, const uint8_t *key, int len)
 {
 	struct aes_xts_ctx *ctx;
 
 	if (len != 32 && len != 64)
-		return EINVAL;
+		return (EINVAL);
 
-	*sched = KMALLOC(sizeof(struct aes_xts_ctx), M_CRYPTO_DATA,
-	    M_NOWAIT | M_ZERO);
-	if (*sched == NULL)
-		return ENOMEM;
-	ctx = (struct aes_xts_ctx *)*sched;
+	ctx = sched;
 
 	rijndael_set_key(&ctx->key1, key, len * 4);
 	rijndael_set_key(&ctx->key2, key + (len / 2), len * 4);
 
-	return 0;
-}
-
-static void
-aes_xts_zerokey(u_int8_t **sched)
-{
-	bzero(*sched, sizeof(struct aes_xts_ctx));
-	KFREE(*sched, M_CRYPTO_DATA);
-	*sched = NULL;
+	return (0);
 }

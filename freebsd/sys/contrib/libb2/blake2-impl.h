@@ -17,7 +17,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#ifndef __rtems__
 #include "config.h"
+#endif /* __rtems__ */
 
 #define BLAKE2_IMPL_CAT(x,y) x ## y
 #define BLAKE2_IMPL_EVAL(x,y)  BLAKE2_IMPL_CAT(x,y)

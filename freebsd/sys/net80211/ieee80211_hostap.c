@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -29,7 +29,6 @@
 
 #include <sys/cdefs.h>
 #ifdef __FreeBSD__
-__FBSDID("$FreeBSD$");
 #endif
 
 /*
@@ -55,6 +54,7 @@ __FBSDID("$FreeBSD$");
 #include <net/if_var.h>
 #include <net/if_media.h>
 #include <net/if_llc.h>
+#include <net/if_private.h>
 #include <net/ethernet.h>
 
 #include <net/bpf.h>
@@ -67,6 +67,7 @@ __FBSDID("$FreeBSD$");
 #endif
 #include <net80211/ieee80211_wds.h>
 #include <net80211/ieee80211_vht.h>
+#include <net80211/ieee80211_sta.h> /* for parse_wmeie */
 
 #define	IEEE80211_RATE2MBS(r)	(((r) & IEEE80211_RATE_VAL) / 2)
 
@@ -207,8 +208,9 @@ hostap_newstate(struct ieee80211vap *vap, enum ieee80211_state nstate, int arg)
 			 * state and the timeout routines check if the flag
 			 * is set before doing anything so this is sufficient.
 			 */
-			ic->ic_flags_ext &= ~IEEE80211_FEXT_NONERP_PR;
-			ic->ic_flags_ht &= ~IEEE80211_FHT_NONHT_PR;
+			vap->iv_flags_ext &= ~IEEE80211_FEXT_NONERP_PR;
+			vap->iv_flags_ht &= ~IEEE80211_FHT_NONHT_PR;
+			/* XXX TODO: schedule deferred update? */
 			/* fall thru... */
 		case IEEE80211_S_CAC:
 			/*
@@ -386,7 +388,7 @@ hostap_deliver_data(struct ieee80211vap *vap,
 		struct mbuf *mcopy = NULL;
 
 		if (m->m_flags & M_MCAST) {
-			mcopy = m_dup(m, M_NOWAIT);
+			mcopy = m_dup(m, IEEE80211_M_NOWAIT);
 			if (mcopy == NULL)
 				if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 			else
@@ -423,6 +425,8 @@ hostap_deliver_data(struct ieee80211vap *vap,
 			(void) ieee80211_vap_xmitpkt(vap, mcopy);
 	}
 	if (m != NULL) {
+		struct epoch_tracker et;
+
 		/*
 		 * Mark frame as coming from vap's interface.
 		 */
@@ -439,7 +443,9 @@ hostap_deliver_data(struct ieee80211vap *vap,
 			m->m_pkthdr.ether_vtag = ni->ni_vlan;
 			m->m_flags |= M_VLANTAG;
 		}
+		NET_EPOCH_ENTER(et);
 		ifp->if_input(ifp, m);
+		NET_EPOCH_EXIT(et);
 	}
 }
 
@@ -507,7 +513,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 		wh = mtod(m, struct ieee80211_frame *);
 		type = IEEE80211_FC0_TYPE_DATA;
 		dir = wh->i_fc[1] & IEEE80211_FC1_DIR_MASK;
-		subtype = IEEE80211_FC0_SUBTYPE_QOS;
+		subtype = IEEE80211_FC0_SUBTYPE_QOS_DATA;
 		hdrspace = ieee80211_hdrspace(ic, wh);	/* XXX optimize? */
 		goto resubmit_ampdu;
 	}
@@ -683,7 +689,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 		 * crypto cipher modules used to do delayed update
 		 * of replay sequence numbers.
 		 */
-		if (is_hw_decrypted || wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
+		if (is_hw_decrypted || IEEE80211_IS_PROTECTED(wh)) {
 			if ((vap->iv_flags & IEEE80211_F_PRIVACY) == 0) {
 				/*
 				 * Discard encrypted frames when privacy is off.
@@ -710,7 +716,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 		/*
 		 * Save QoS bits for use below--before we strip the header.
 		 */
-		if (subtype == IEEE80211_FC0_SUBTYPE_QOS)
+		if (subtype == IEEE80211_FC0_SUBTYPE_QOS_DATA)
 			qos = ieee80211_getqos(wh)[0];
 		else
 			qos = 0;
@@ -719,7 +725,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 		 * Next up, any fragmentation.
 		 */
 		if (!IEEE80211_IS_MULTICAST(wh->i_addr1)) {
-			m = ieee80211_defrag(ni, m, hdrspace);
+			m = ieee80211_defrag(ni, m, hdrspace, has_decrypted);
 			if (m == NULL) {
 				/* Fragment dropped or frame not complete yet */
 				goto out;
@@ -744,7 +750,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 		/*
 		 * Finally, strip the 802.11 header.
 		 */
-		m = ieee80211_decap(vap, m, hdrspace);
+		m = ieee80211_decap(vap, m, hdrspace, qos);
 		if (m == NULL) {
 			/* XXX mask bit to check for both */
 			/* don't count Null data frames as errors */
@@ -757,7 +763,10 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 			IEEE80211_NODE_STAT(ni, rx_decap);
 			goto err;
 		}
-		eh = mtod(m, struct ether_header *);
+		if (!(qos & IEEE80211_QOS_AMSDU))
+			eh = mtod(m, struct ether_header *);
+		else
+			eh = NULL;
 		if (!ieee80211_node_is_authorized(ni)) {
 			/*
 			 * Deny any non-PAE frames received prior to
@@ -767,11 +776,13 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 			 * the port is not marked authorized by the
 			 * authenticator until the handshake has completed.
 			 */
-			if (eh->ether_type != htons(ETHERTYPE_PAE)) {
+			if (eh == NULL ||
+			    eh->ether_type != htons(ETHERTYPE_PAE)) {
 				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
-				    eh->ether_shost, "data",
-				    "unauthorized port: ether type 0x%x len %u",
-				    eh->ether_type, m->m_pkthdr.len);
+				    ni->ni_macaddr, "data", "unauthorized or "
+				    "unknown port: ether type 0x%x len %u",
+				    eh == NULL ? -1 : eh->ether_type,
+				    m->m_pkthdr.len);
 				vap->iv_stats.is_rx_unauth++;
 				IEEE80211_NODE_STAT(ni, rx_unauth);
 				goto err;
@@ -784,7 +795,8 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 			if ((vap->iv_flags & IEEE80211_F_DROPUNENC) &&
 			    ((has_decrypted == 0) && (m->m_flags & M_WEP) == 0) &&
 			    (is_hw_decrypted == 0) &&
-			    eh->ether_type != htons(ETHERTYPE_PAE)) {
+			    (eh == NULL ||
+			     eh->ether_type != htons(ETHERTYPE_PAE))) {
 				/*
 				 * Drop unencrypted frames.
 				 */
@@ -843,7 +855,7 @@ hostap_input(struct ieee80211_node *ni, struct mbuf *m,
 			    ether_sprintf(wh->i_addr2), rssi);
 		}
 #endif
-		if (wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
+		if (IEEE80211_IS_PROTECTED(wh)) {
 			if (subtype != IEEE80211_FC0_SUBTYPE_AUTH) {
 				/*
 				 * Only shared key auth frames with a challenge
@@ -968,7 +980,7 @@ hostap_auth_open(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 		 */
 		IEEE80211_NOTE_MAC(vap,
 		    IEEE80211_MSG_AUTH | IEEE80211_MSG_ACL, ni->ni_macaddr,
-		    "%s", "station authentication defered (radius acl)");
+		    "%s", "station authentication deferred (radius acl)");
 		ieee80211_notify_node_auth(ni);
 	} else {
 		IEEE80211_SEND_MGMT(ni, IEEE80211_FC0_SUBTYPE_AUTH, seq + 1);
@@ -991,7 +1003,7 @@ hostap_auth_shared(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 {
 	struct ieee80211vap *vap = ni->ni_vap;
 	uint8_t *challenge;
-	int allocbs, estatus;
+	int estatus;
 
 	KASSERT(vap->iv_state == IEEE80211_S_RUN, ("state %d", vap->iv_state));
 
@@ -1064,17 +1076,26 @@ hostap_auth_shared(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 	}
 	switch (seq) {
 	case IEEE80211_AUTH_SHARED_REQUEST:
+	{
+#ifdef IEEE80211_DEBUG
+		bool allocbs;
+#endif
+
 		if (ni == vap->iv_bss) {
 			ni = ieee80211_dup_bss(vap, wh->i_addr2);
 			if (ni == NULL) {
 				/* NB: no way to return an error */
 				return;
 			}
+#ifdef IEEE80211_DEBUG
 			allocbs = 1;
+#endif
 		} else {
 			if ((ni->ni_flags & IEEE80211_NODE_AREF) == 0)
 				(void) ieee80211_ref_node(ni);
+#ifdef IEEE80211_DEBUG
 			allocbs = 0;
+#endif
 		}
 		/*
 		 * Mark the node as referenced to reflect that it's
@@ -1093,7 +1114,7 @@ hostap_auth_shared(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 			/* NB: don't return error so they rexmit */
 			return;
 		}
-		get_random_bytes(ni->ni_challenge,
+		net80211_get_random_bytes(ni->ni_challenge,
 			IEEE80211_CHALLENGE_LEN);
 		IEEE80211_NOTE(vap, IEEE80211_MSG_DEBUG | IEEE80211_MSG_AUTH,
 		    ni, "shared key %sauth request", allocbs ? "" : "re");
@@ -1109,11 +1130,12 @@ hostap_auth_shared(struct ieee80211_node *ni, struct ieee80211_frame *wh,
 			IEEE80211_NOTE_MAC(vap,
 			    IEEE80211_MSG_AUTH | IEEE80211_MSG_ACL,
 			    ni->ni_macaddr,
-			    "%s", "station authentication defered (radius acl)");
+			    "%s", "station authentication deferred (radius acl)");
 			ieee80211_notify_node_auth(ni);
 			return;
 		}
 		break;
+	}
 	case IEEE80211_AUTH_SHARED_RESPONSE:
 		if (ni == vap->iv_bss) {
 			IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_AUTH,
@@ -1637,8 +1659,8 @@ ieee80211_deliver_l2uf(struct ieee80211_node *ni)
 	struct mbuf *m;
 	struct l2_update_frame *l2uf;
 	struct ether_header *eh;
-	
-	m = m_gethdr(M_NOWAIT, MT_DATA);
+
+	m = m_gethdr(IEEE80211_M_NOWAIT, MT_DATA);
 	if (m == NULL) {
 		IEEE80211_NOTE(vap, IEEE80211_MSG_ASSOC, ni,
 		    "%s", "no mbuf for l2uf frame");
@@ -1652,14 +1674,14 @@ ieee80211_deliver_l2uf(struct ieee80211_node *ni)
 	/* src: associated STA */
 	IEEE80211_ADDR_COPY(eh->ether_shost, ni->ni_macaddr);
 	eh->ether_type = htons(sizeof(*l2uf) - sizeof(*eh));
-	
+
 	l2uf->dsap = 0;
 	l2uf->ssap = 0;
 	l2uf->control = 0xf5;
 	l2uf->xid[0] = 0x81;
 	l2uf->xid[1] = 0x80;
 	l2uf->xid[2] = 0x00;
-	
+
 	m->m_pkthdr.len = m->m_len = sizeof(*l2uf);
 	hostap_deliver_data(vap, ni, m);
 }
@@ -1796,7 +1818,7 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 				 * XXX check if the beacon we recv'd gives
 				 * us what we need and suppress the probe req
 				 */
-				ieee80211_probe_curchan(vap, 1);
+				ieee80211_probe_curchan(vap, true);
 				ic->ic_flags_ext &= ~IEEE80211_FEXT_PROBECHAN;
 			}
 			ieee80211_add_scan(vap, ic->ic_curchan, &scan, wh,
@@ -1813,10 +1835,13 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 		    scan.status == 0 &&			/* NB: on-channel */
 		    ((scan.erp & 0x100) == 0 ||		/* NB: no ERP, 11b sta*/
 		     (scan.erp & IEEE80211_ERP_NON_ERP_PRESENT))) {
-			ic->ic_lastnonerp = ticks;
-			ic->ic_flags_ext |= IEEE80211_FEXT_NONERP_PR;
-			if (ic->ic_protmode != IEEE80211_PROT_NONE &&
-			    (ic->ic_flags & IEEE80211_F_USEPROT) == 0) {
+			vap->iv_lastnonerp = ticks;
+			vap->iv_flags_ext |= IEEE80211_FEXT_NONERP_PR;
+			/*
+			 * XXX TODO: this may need to check all VAPs?
+			 */
+			if (vap->iv_protmode != IEEE80211_PROT_NONE &&
+			    (vap->iv_flags & IEEE80211_F_USEPROT) == 0) {
 				IEEE80211_NOTE_FRAME(vap,
 				    IEEE80211_MSG_ASSOC, wh,
 				    "non-ERP present on channel %d "
@@ -1824,8 +1849,8 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 				    "enable use of protection",
 				    ic->ic_curchan->ic_ieee,
 				    scan.erp, scan.chan);
-				ic->ic_flags |= IEEE80211_F_USEPROT;
-				ieee80211_notify_erp(ic);
+				vap->iv_flags |= IEEE80211_F_USEPROT;
+				ieee80211_vap_update_erp_protmode(vap);
 			}
 		}
 		/* 
@@ -1845,12 +1870,12 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 					break;
 			}
 			if (scan.htinfo == NULL) {
-				ieee80211_htprot_update(ic,
+				ieee80211_htprot_update(vap,
 				    IEEE80211_HTINFO_OPMODE_PROTOPT |
 				    IEEE80211_HTINFO_NONHT_PRESENT);
 			} else if (ishtmixed(scan.htinfo)) {
 				/* XXX? take NONHT_PRESENT from beacon? */
-				ieee80211_htprot_update(ic,
+				ieee80211_htprot_update(vap,
 				    IEEE80211_HTINFO_OPMODE_MIXED |
 				    IEEE80211_HTINFO_NONHT_PRESENT);
 			}
@@ -2106,12 +2131,12 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 		/* Validate VHT IEs */
 		if (vhtcap != NULL) {
 			IEEE80211_VERIFY_LENGTH(vhtcap[1],
-			    sizeof(struct ieee80211_ie_vhtcap) - 2,
+			    sizeof(struct ieee80211_vht_cap),
 			    return);
 		}
 		if (vhtinfo != NULL) {
 			IEEE80211_VERIFY_LENGTH(vhtinfo[1],
-			    sizeof(struct ieee80211_ie_vht_operation) - 2,
+			    sizeof(struct ieee80211_vht_operation),
 			    return);
 		}
 
@@ -2255,8 +2280,18 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 				 * Mark node as capable of QoS.
 				 */
 				ni->ni_flags |= IEEE80211_NODE_QOS;
+				if (ieee80211_parse_wmeie(wme, wh, ni) > 0) {
+					if (ni->ni_uapsd != 0)
+						ni->ni_flags |=
+						    IEEE80211_NODE_UAPSD;
+					else
+						ni->ni_flags &=
+						    ~IEEE80211_NODE_UAPSD;
+				}
 			} else
-				ni->ni_flags &= ~IEEE80211_NODE_QOS;
+				ni->ni_flags &=
+				    ~(IEEE80211_NODE_QOS |
+				      IEEE80211_NODE_UAPSD);
 #ifdef IEEE80211_SUPPORT_SUPERG
 			if (ath != NULL) {
 				setie(ath_ie, ath - sfrm);
@@ -2270,6 +2305,7 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 #undef setie
 		} else {
 			ni->ni_flags &= ~IEEE80211_NODE_QOS;
+			ni->ni_flags &= ~IEEE80211_NODE_UAPSD;
 			ni->ni_ath_flags = 0;
 		}
 		ieee80211_node_join(ni, resp);
@@ -2279,7 +2315,9 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 
 	case IEEE80211_FC0_SUBTYPE_DEAUTH:
 	case IEEE80211_FC0_SUBTYPE_DISASSOC: {
+#ifdef IEEE80211_DEBUG
 		uint16_t reason;
+#endif
 
 		if (vap->iv_state != IEEE80211_S_RUN ||
 		    /* NB: can happen when in promiscuous mode */
@@ -2292,7 +2330,9 @@ hostap_recv_mgmt(struct ieee80211_node *ni, struct mbuf *m0,
 		 *	[2] reason
 		 */
 		IEEE80211_VERIFY_LENGTH(efrm - frm, 2, return);
+#ifdef IEEE80211_DEBUG
 		reason = le16toh(*(uint16_t *)frm);
+#endif
 		if (subtype == IEEE80211_FC0_SUBTYPE_DEAUTH) {
 			vap->iv_stats.is_rx_deauth++;
 			IEEE80211_NODE_STAT(ni, rx_deauth);

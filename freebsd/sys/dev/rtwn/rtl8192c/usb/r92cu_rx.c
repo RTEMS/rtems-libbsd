@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -49,7 +47,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/if_rtwnvar.h>
 
 #include <dev/rtwn/rtl8192c/usb/r92cu.h>
-
 
 int
 r92cu_align_rx(int totlen, int len)

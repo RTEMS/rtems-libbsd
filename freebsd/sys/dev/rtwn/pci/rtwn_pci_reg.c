@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
@@ -51,7 +49,6 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/rtwn/pci/rtwn_pci_var.h>
 #include <dev/rtwn/pci/rtwn_pci_reg.h>
-
 
 int
 rtwn_pci_write_1(struct rtwn_softc *sc, uint16_t addr, uint8_t val)

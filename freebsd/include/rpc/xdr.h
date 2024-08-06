@@ -31,7 +31,6 @@
  *
  *	from: @(#)xdr.h 1.19 87/04/22 SMI
  *	from: @(#)xdr.h	2.2 88/07/29 4.0 RPCSRC
- * $FreeBSD$
  */
 
 /*
@@ -353,7 +352,7 @@ extern void   xdrrec_create(XDR *, u_int, u_int, void *,
 			    int (*)(void *, void *, int));
 
 /* make end of xdr record */
-extern bool_t xdrrec_endofrecord(XDR *, bool_t);
+extern bool_t xdrrec_endofrecord(XDR *, int);
 
 /* move to beginning of next record */
 extern bool_t xdrrec_skiprecord(XDR *);

@@ -26,8 +26,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #define PFIOC_USE_LATEST
 
 #include <sys/types.h>

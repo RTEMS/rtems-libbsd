@@ -4,18 +4,13 @@
 chacha-merged.c version 20080118
 D. J. Bernstein
 Public domain.
-
- $FreeBSD$
 */
 
 #ifndef CHACHA_H
 #define CHACHA_H
 
 #include <sys/types.h>
-
-struct chacha_ctx {
-	u_int input[16];
-};
+#include <crypto/chacha20/_chacha.h>
 
 #define CHACHA_MINKEYLEN 	16
 #define CHACHA_NONCELEN		8
@@ -23,16 +18,25 @@ struct chacha_ctx {
 #define CHACHA_STATELEN		(CHACHA_NONCELEN+CHACHA_CTRLEN)
 #define CHACHA_BLOCKLEN		64
 
-#ifdef _KERNEL
-#define LOCAL
-#else
+#ifdef CHACHA_EMBED
 #define LOCAL static
+#else
+#define LOCAL
+#endif
+
+#ifdef CHACHA_NONCE0_CTR128
+#define CHACHA_UNUSED __unused
+#else
+#define CHACHA_UNUSED
 #endif
 
 LOCAL void chacha_keysetup(struct chacha_ctx *x, const u_char *k, u_int kbits);
-LOCAL void chacha_ivsetup(struct chacha_ctx *x, const u_char *iv, const u_char *ctr);
+LOCAL void chacha_ivsetup(struct chacha_ctx *x, const u_char *iv CHACHA_UNUSED,
+    const u_char *ctr);
 LOCAL void chacha_encrypt_bytes(struct chacha_ctx *x, const u_char *m,
     u_char *c, u_int bytes);
+
+#undef CHACHA_UNUSED
 
 #endif	/* CHACHA_H */
 

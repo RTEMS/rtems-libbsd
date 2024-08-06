@@ -3,7 +3,7 @@
 /*	$NetBSD: mii_physubr.c,v 1.5 1999/08/03 19:41:49 drochner Exp $	*/
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1998, 1999, 2000, 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -35,8 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Subroutines common to all PHYs.
  */
@@ -620,11 +618,47 @@ mii_phy_dev_attach(device_t dev, u_int flags, const struct mii_phy_funcs *mpf,
 	sc->mii_capabilities = PHY_READ(sc, MII_BMSR) & sc->mii_capmask;
 	if (sc->mii_capabilities & BMSR_EXTSTAT)
 		sc->mii_extcapabilities = PHY_READ(sc, MII_EXTSR);
+
+	switch (sc->mii_maxspeed) {
+	case 100:
+		/*
+		 * This is a bit tricky.
+		 * If we have a 1G capable PHY, but we don't want to advertise
+		 * 1G capabilities we need to clear the GTCR register before
+		 * doing autonegotiation.
+		 * Clearing the register here is not enough since its value
+		 * can be restored after PHY_RESET is called.
+		 */
+		if ((sc->mii_extcapabilities &
+		    (EXTSR_1000THDX | EXTSR_1000TFDX)) != 0)
+			sc->mii_flags |= MIIF_HAVE_GTCR;
+
+		sc->mii_extcapabilities = 0;
+		break;
+	default:
+		device_printf(dev,
+		    "Ignoring unsupported max speed value of %d\n",
+		    sc->mii_maxspeed);
+	case 0:
+	case 1000:
+		break;
+	}
 	device_printf(dev, " ");
 	mii_phy_add_media(sc);
 	printf("\n");
 
 	MIIBUS_MEDIAINIT(sc->mii_dev);
+
+	/*
+	 * If maxspeed was specified we have to restart autonegotiation.
+	 * PHY might have attempted it and failed due to having mistakenly
+	 * advertising modes that we do not in fact support.
+	 */
+	if (sc->mii_maxspeed != 0) {
+		sc->mii_flags |= MIIF_FORCEANEG;
+		mii_phy_setmedia(sc);
+		sc->mii_flags &= ~MIIF_FORCEANEG;
+	}
 }
 
 /*

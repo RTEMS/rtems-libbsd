@@ -242,11 +242,6 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 		}
 	}
 
-#if defined(RTEMS_BSP_PCI_IO_REGION_BASE)
-	/*
-	 * FIXME: This is a quick and dirty hack.  Simply reserve resources of
-	 * this kind.  See also pci_reserve_map().
-	 */
 	if (start + count - end <= 1UL) {
 		res = rman_reserve_resource(rm, start, end, count, flags,
 		    child);
@@ -255,7 +250,6 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 			rman_set_bushandle(res, rman_get_start(res));
 		}
 	}
-#endif
 
 	return (res);
 }
@@ -450,7 +444,5 @@ static driver_t nexus_driver = {
 	.size = 0
 };
 
-static devclass_t nexus_devclass;
-
-EARLY_DRIVER_MODULE_ORDERED(nexus, root, nexus_driver, nexus_devclass, 0, 0,
+EARLY_DRIVER_MODULE_ORDERED(nexus, root, nexus_driver, 0, 0,
 	SI_ORDER_FIRST, BUS_PASS_BUS + BUS_PASS_ORDER_FIRST);

@@ -32,9 +32,9 @@ do this.  The individual steps are explained afterwards.
     sandbox="$PWD/sandbox"
     mkdir sandbox
     cd "$sandbox"
-    git clone git://git.rtems.org/rtems-source-builder.git
-    git clone git://git.rtems.org/rtems.git
-    git clone git://git.rtems.org/rtems-libbsd.git
+    git clone https://gitlab.rtems.org/rtems/tools/rtems-source-builder.git
+    git clone https://gitlab.rtems.org/rtems/rtos/rtems.git
+    git clone https://gitlab.rtems.org/rtems/pkg/rtems-libbsd.git
     cd "$sandbox"
     cd rtems-source-builder/rtems
     ../source-builder/sb-set-builder --prefix="$sandbox/rtems/6" 6/rtems-arm
@@ -67,9 +67,9 @@ do this.  The individual steps are explained afterwards.
    .. code-block:: none
 
        $ cd "$sandbox"
-       $ git clone git://git.rtems.org/rtems-source-builder.git
-       $ git clone git://git.rtems.org/rtems.git
-       $ git clone git://git.rtems.org/rtems-libbsd.git
+       $ git clone https://gitlab.rtems.org/rtems/tools/rtems-source-builder.git
+       $ git clone https://gitlab.rtems.org/rtems/rtos/rtems.git
+       $ git clone https://gitlab.rtems.org/rtems/pkg/rtems-libbsd.git
 
 3. Build and install the tools:
 
@@ -379,9 +379,7 @@ available through
 * `PFCTL(8) <http://www.freebsd.org/cgi/man.cgi?query=pfctl&sektion=8>`_: Control the packet filter (PF) device
 * `PING6(8) <http://www.freebsd.org/cgi/man.cgi?query=ping6&sektion=8>`_: Send ICMPv6 ECHO_REQUEST packets to network hosts
 * `PING(8) <http://www.freebsd.org/cgi/man.cgi?query=ping&sektion=8>`_: Send ICMP ECHO_REQUEST packets to network hosts
-* `RACOON(8) <http://www.freebsd.org/cgi/man.cgi?query=racoon&sektion=8>`_: IKE (ISAKMP/Oakley) key management daemon
 * `ROUTE(8) <http://www.freebsd.org/cgi/man.cgi?query=route&sektion=8>`_: Manually manipulate the routing tables
-* `SETKEY(8) <http://www.freebsd.org/cgi/man.cgi?query=setkey&sektion=8>`_: Manually manipulate the IPsec SA/SP database
 * `STTY(1) <http://www.freebsd.org/cgi/man.cgi?query=stty&sektion=1>`_: Set the options for a terminal device interface
 * `SYSCTL(8) <http://www.freebsd.org/cgi/man.cgi?query=sysctl&sektion=8>`_: Get or set kernel state
 * `TCPDUMP(1) <http://www.freebsd.org/cgi/man.cgi?query=tcpdump&sektion=1>`_: Dump traffic on a network
@@ -512,151 +510,6 @@ Known Restrictions
 
 * The control interface of ``wpa_supplicant`` most likely doesn't work. The wpa_cli
   application is not ported.
-
-IPSec
-=====
-
-The IPSec support is optional in LibBSD. It is disabled in the default build
-set. Please make sure to use a build set with ``netipsec = on``.
-
-Configuration
--------------
-
-To use IPSec the following configuration is necessary:
-
-.. code-block:: none
-
-    SYSINIT_MODULE_REFERENCE(if_gif);
-    SYSINIT_MODULE_REFERENCE(cryptodev);
-    RTEMS_BSD_RC_CONF_SYSINT(rc_conf_ipsec)
-    RTEMS_BSD_DEFINE_NEXUS_DEVICE(cryptosoft, 0, 0, NULL);
-
-Alternatively, you can use the ``RTEMS_BSD_CONFIG_IPSEC`` which also includes the
-rc.conf support for ipsec. It's still necessary to include a crypto device in
-your config (``cryptosoft`` in the above sample).
-
-The necessary initialization steps for a IPSec connection are similar to the
-steps on a FreeBSD-System. The example assumes the following setup:
-
-- RTEMS external IP: 192.168.10.1/24
-- RTEMS internal IP: 10.10.1.1/24
-- remote external IP: 192.168.10.10/24
-- remote internal IP: 172.24.0.1/24
-- shared key: "mysecretkey"
-
-With this the following steps are necessary:
-
-* Create a gif0 device:
-
-  .. code-block:: none
-
-      ifconfig gif0 create
-
-* Configure the gif0 device:
-
-  .. code-block:: none
-
-      ifconfig gif0 10.10.1.1 172.24.0.1
-      ifconfig gif0 tunnel 192.168.10.1 192.168.10.10
-
-* Add a route to the remote net via the remote IP:
-
-  .. code-block:: none
-
-      route add 172.24.0.0/24 172.24.0.1
-
-* Create a correct rule set in ``/etc/setkey.conf``:
-
-  .. code-block:: none
-
-      flush;
-      spdflush;
-      spdadd  10.10.1.0/24 172.24.0.0/24 any -P out ipsec esp/tunnel/192.168.10.1-192.168.10.10/use;
-      spdadd 172.24.0.0/24  10.10.1.0/24 any -P in  ipsec esp/tunnel/192.168.10.10-192.168.10.1/use;
-
-* Call ``setkey``:
-
-  .. code-block:: none
-
-      setkey -f /etc/setkey.conf
-
-* Create a correct configuration in ``/etc/racoon.conf``:
-
-  .. code-block:: none
-
-      path    pre_shared_key "/etc/racoon_psk.txt";
-      log     info;
-
-      padding # options are not to be changed
-      {
-              maximum_length                  20;
-              randomize                       off;
-              strict_check                    off;
-              exclusive_tail                  off;
-      }
-
-      listen  # address [port] that racoon will listen on
-      {
-              isakmp                          192.168.10.1[500];
-      }
-
-      remote 192.168.10.10 [500]
-      {
-              exchange_mode                   main;
-              my_identifier                   address 192.168.10.1;
-              peers_identifier                address 192.168.10.10;
-              proposal_check                  obey;
-              proposal {
-                      encryption_algorithm    3des;
-                      hash_algorithm          md5;
-                      authentication_method   pre_shared_key;
-                      lifetime                time 3600 sec;
-                      dh_group                2;
-              }
-      }
-
-      sainfo (address 10.10.1.0/24 any address 172.24.0.0/24 any)
-      {
-              pfs_group                       2;
-              lifetime                        time 28800 sec;
-              encryption_algorithm            3des;
-              authentication_algorithm        hmac_md5;
-              compression_algorithm           deflate;
-      }
-
-* Create a correct configuration in ``/etc/racoon_psk.txt``:
-
-  .. code-block:: none
-
-     192.168.10.10   mysecretkey
-
-* Start a ike-daemon (racoon):
-
-  .. code-block:: none
-
-      racoon -F -f /etc/racoon.conf
-----
-
-All commands can be called via the respective API functions. For racoon there is
-a ``rtems_bsd_racoon_daemon()`` function that forks of racoon as a task.
-
-Alternatively, IPSec can also be configured via rc.conf entries:
-
-.. code-block:: none
-
-      cloned_interfaces="gif0"
-      ifconfig_gif0="10.10.1.1 172.24.0.1 tunnel 192.168.10.1 192.168.10.10"
-      ike_enable="YES"
-      ike_program="racoon"
-      ike_flags="-F -f /etc/racoon.conf"
-      ike_priority="250"
-
-      ipsec_enable="YES"
-      ipsec_file="/etc/setkey.conf"
-
-ATTENTION: It is possible that the first packets slip through the tunnel without
-encryption (true for FreeBSD as well as RTEMS). You might want to set up a
-firewall rule to prevent that.
 
 Updating RTEMS Waf Support
 ==========================

@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_LIMITS_H_
@@ -75,13 +73,13 @@
 #define	SSIZE_MAX	__SSIZE_MAX	/* max value for an ssize_t */
 #endif
 
+#endif /* __rtems__ */
 #if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE
 #define	SIZE_T_MAX	__SIZE_T_MAX	/* max value for a size_t */
 
 #define	OFF_MAX		__OFF_MAX	/* max value for an off_t */
 #define	OFF_MIN		__OFF_MIN	/* min value for an off_t */
 #endif
-#endif /* __rtems__ */
 
 #if __BSD_VISIBLE
 #define	GID_MAX		UINT_MAX	/* max value for a gid_t */

@@ -38,8 +38,6 @@ static char sccsid[] = "@(#)cchar.c	8.5 (Berkeley) 4/2/94";
 #endif
 #endif /* not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
@@ -47,7 +45,6 @@ __FBSDID("$FreeBSD$");
 
 #include <err.h>
 #include <limits.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 

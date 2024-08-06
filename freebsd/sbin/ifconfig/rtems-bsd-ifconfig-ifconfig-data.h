@@ -2,6 +2,15 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-ifconfig-data.h"
 /* ifconfig.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char *descr);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char const *ifcap_bit_names[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static char ifname_to_print[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static int clearaddr);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static int doalias);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static int newaddr);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static int setaddr);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static int setmask);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static size_t descrlen);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct afswtch *afs);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct callback *callbacks);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct cmd *cmds);

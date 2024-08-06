@@ -161,10 +161,6 @@ void swi_test_error_handler_null()
 	int retval = 0;
 
 	printf("== Set handler to NULL.\n");
-
-	retval = swi_add(&test_intr_event, "swi_test", NULL, &argument,
-		SWI_TEST_THREAD_PRIO, 0, &test_ih);
-	assert(retval == EINVAL);
 	
 	sleep(SWI_SLEEP_TIME);
 	

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2012 Chelsio Communications, Inc.
  * All rights reserved.
@@ -29,22 +29,25 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
+#include <rtems/bsd/local/opt_inet6.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/types.h>
+#include <sys/eventhandler.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/sockopt.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/route.h>
+#include <net/route/nhop.h>
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
+#include <netinet/in_fib.h>
+#include <netinet6/in6_fib.h>
 #include <netinet/tcp.h>
 #include <netinet/tcp_offload.h>
 #define	TCPOUTFLAGS
@@ -62,7 +65,8 @@ tcp_offload_connect(struct socket *so, struct sockaddr *nam)
 {
 	struct ifnet *ifp;
 	struct toedev *tod;
-	struct rtentry *rt;
+	struct nhop_object *nh;
+	struct epoch_tracker et;
 	int error = EOPNOTSUPP;
 
 	INP_WLOCK_ASSERT(sotoinpcb(so));
@@ -72,13 +76,27 @@ tcp_offload_connect(struct socket *so, struct sockaddr *nam)
 	if (registered_toedevs == 0)
 		return (error);
 
-	rt = rtalloc1(nam, 0, 0);
-	if (rt)
-		RT_UNLOCK(rt);
+	NET_EPOCH_ENTER(et);
+	nh = NULL;
+#ifdef INET
+	if (nam->sa_family == AF_INET)
+		nh = fib4_lookup(0, ((struct sockaddr_in *)nam)->sin_addr,
+		    NHR_NONE, 0, 0);
+#endif
+#if defined(INET) && defined(INET6)
 	else
+#endif
+#ifdef INET6
+	if (nam->sa_family == AF_INET6)
+		nh = fib6_lookup(0, &((struct sockaddr_in6 *)nam)->sin6_addr,
+		    NHR_NONE, 0, 0);
+#endif
+	if (nh == NULL) {
+		NET_EPOCH_EXIT(et);
 		return (EHOSTUNREACH);
+	}
 
-	ifp = rt->rt_ifp;
+	ifp = nh->nh_ifp;
 
 	if (nam->sa_family == AF_INET && !(ifp->if_capenable & IFCAP_TOE4))
 		goto done;
@@ -87,9 +105,9 @@ tcp_offload_connect(struct socket *so, struct sockaddr *nam)
 
 	tod = TOEDEV(ifp);
 	if (tod != NULL)
-		error = tod->tod_connect(tod, so, rt, nam);
+		error = tod->tod_connect(tod, so, nh, nam);
 done:
-	RTFREE(rt);
+	NET_EPOCH_EXIT(et);
 	return (error);
 }
 
@@ -97,7 +115,7 @@ void
 tcp_offload_listen_start(struct tcpcb *tp)
 {
 
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	EVENTHANDLER_INVOKE(tcp_offload_listen_start, tp);
 }
@@ -106,7 +124,7 @@ void
 tcp_offload_listen_stop(struct tcpcb *tp)
 {
 
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	EVENTHANDLER_INVOKE(tcp_offload_listen_stop, tp);
 }
@@ -117,7 +135,7 @@ tcp_offload_input(struct tcpcb *tp, struct mbuf *m)
 	struct toedev *tod = tp->tod;
 
 	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	tod->tod_input(tod, tp, m);
 }
@@ -129,7 +147,7 @@ tcp_offload_output(struct tcpcb *tp)
 	int error, flags;
 
 	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	flags = tcp_outflags[tp->t_state];
 
@@ -153,7 +171,7 @@ tcp_offload_rcvd(struct tcpcb *tp)
 	struct toedev *tod = tp->tod;
 
 	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	tod->tod_rcvd(tod, tp);
 }
@@ -164,20 +182,32 @@ tcp_offload_ctloutput(struct tcpcb *tp, int sopt_dir, int sopt_name)
 	struct toedev *tod = tp->tod;
 
 	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	tod->tod_ctloutput(tod, tp, sopt_dir, sopt_name);
 }
 
 void
-tcp_offload_tcp_info(struct tcpcb *tp, struct tcp_info *ti)
+tcp_offload_tcp_info(const struct tcpcb *tp, struct tcp_info *ti)
 {
 	struct toedev *tod = tp->tod;
 
 	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_LOCK_ASSERT(tptoinpcb(tp));
 
 	tod->tod_tcp_info(tod, tp, ti);
+}
+
+int
+tcp_offload_alloc_tls_session(struct tcpcb *tp, struct ktls_session *tls,
+    int direction)
+{
+	struct toedev *tod = tp->tod;
+
+	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
+
+	return (tod->tod_alloc_tls_session(tod, tp, tls, direction));
 }
 
 void
@@ -186,7 +216,18 @@ tcp_offload_detach(struct tcpcb *tp)
 	struct toedev *tod = tp->tod;
 
 	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
-	INP_WLOCK_ASSERT(tp->t_inpcb);
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
 
 	tod->tod_pcb_detach(tod, tp);
+}
+
+void
+tcp_offload_pmtu_update(struct tcpcb *tp, tcp_seq seq, int mtu)
+{
+	struct toedev *tod = tp->tod;
+
+	KASSERT(tod != NULL, ("%s: tp->tod is NULL, tp %p", __func__, tp));
+	INP_WLOCK_ASSERT(tptoinpcb(tp));
+
+	tod->tod_pmtu_update(tod, tp, seq, mtu);
 }

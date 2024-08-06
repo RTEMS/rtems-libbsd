@@ -33,8 +33,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * PCI:PCI bridge support.
  */
@@ -44,8 +42,10 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/kernel.h>
+#include <sys/lock.h>
 #include <sys/malloc.h>
 #include <sys/module.h>
+#include <sys/mutex.h>
 #include <sys/pciio.h>
 #include <sys/rman.h>
 #include <sys/sysctl.h>
@@ -62,6 +62,15 @@ __FBSDID("$FreeBSD$");
 static int		pcib_probe(device_t dev);
 static int		pcib_suspend(device_t dev);
 static int		pcib_resume(device_t dev);
+
+static bus_child_present_t	pcib_child_present;
+static bus_alloc_resource_t	pcib_alloc_resource;
+#ifdef NEW_PCIB
+static bus_adjust_resource_t	pcib_adjust_resource;
+static bus_release_resource_t	pcib_release_resource;
+#endif
+static int		pcib_reset_child(device_t dev, device_t child, int flags);
+
 static int		pcib_power_for_sleep(device_t pcib, device_t dev,
 			    int *pstate);
 static int		pcib_ari_get_id(device_t pcib, device_t dev,
@@ -77,13 +86,12 @@ static int		pcib_ari_enabled(device_t pcib);
 static void		pcib_ari_decode_rid(device_t pcib, uint16_t rid,
 			    int *bus, int *slot, int *func);
 #ifdef PCI_HP
-static void		pcib_pcie_ab_timeout(void *arg);
-static void		pcib_pcie_cc_timeout(void *arg);
-static void		pcib_pcie_dll_timeout(void *arg);
+static void		pcib_pcie_ab_timeout(void *arg, int pending);
+static void		pcib_pcie_cc_timeout(void *arg, int pending);
+static void		pcib_pcie_dll_timeout(void *arg, int pending);
 #endif
 static int		pcib_request_feature_default(device_t pcib, device_t dev,
 			    enum pci_feature feature);
-static int		pcib_reset_child(device_t dev, device_t child, int flags);
 
 static device_method_t pcib_methods[] = {
     /* Device interface */
@@ -133,11 +141,8 @@ static device_method_t pcib_methods[] = {
     DEVMETHOD_END
 };
 
-static devclass_t pcib_devclass;
-
 DEFINE_CLASS_0(pcib, pcib_driver, pcib_methods, sizeof(struct pcib_softc));
-EARLY_DRIVER_MODULE(pcib, pci, pcib_driver, pcib_devclass, NULL, NULL,
-    BUS_PASS_BUS);
+EARLY_DRIVER_MODULE(pcib, pci, pcib_driver, NULL, NULL, BUS_PASS_BUS);
 
 #if defined(NEW_PCIB) || defined(PCI_HP)
 SYSCTL_DECL(_hw_pci);
@@ -149,6 +154,30 @@ SYSCTL_INT(_hw_pci, OID_AUTO, clear_pcib, CTLFLAG_RDTUN, &pci_clear_pcib, 0,
     "Clear firmware-assigned resources for PCI-PCI bridge I/O windows.");
 
 /*
+ * Get the corresponding window if this resource from a child device was
+ * sub-allocated from one of our window resource managers.
+ */
+static struct pcib_window *
+pcib_get_resource_window(struct pcib_softc *sc, int type, struct resource *r)
+{
+	switch (type) {
+	case SYS_RES_IOPORT:
+		if (rman_is_region_manager(r, &sc->io.rman))
+			return (&sc->io);
+		break;
+	case SYS_RES_MEMORY:
+		/* Prefetchable resources may live in either memory rman. */
+		if (rman_get_flags(r) & RF_PREFETCHABLE &&
+		    rman_is_region_manager(r, &sc->pmem.rman))
+			return (&sc->pmem);
+		if (rman_is_region_manager(r, &sc->mem.rman))
+			return (&sc->mem);
+		break;
+	}
+	return (NULL);
+}
+
+/*
  * Is a resource from a child device sub-allocated from one of our
  * resource managers?
  */
@@ -156,21 +185,11 @@ static int
 pcib_is_resource_managed(struct pcib_softc *sc, int type, struct resource *r)
 {
 
-	switch (type) {
 #ifdef PCI_RES_BUS
-	case PCI_RES_BUS:
+	if (type == PCI_RES_BUS)
 		return (rman_is_region_manager(r, &sc->bus.rman));
 #endif
-	case SYS_RES_IOPORT:
-		return (rman_is_region_manager(r, &sc->io.rman));
-	case SYS_RES_MEMORY:
-		/* Prefetchable resources may live in either memory rman. */
-		if (rman_get_flags(r) & RF_PREFETCHABLE &&
-		    rman_is_region_manager(r, &sc->pmem.rman))
-			return (1);
-		return (rman_is_region_manager(r, &sc->mem.rman));
-	}
-	return (0);
+	return (pcib_get_resource_window(sc, type, r) != NULL);
 }
 
 static int
@@ -925,6 +944,8 @@ SYSCTL_INT(_hw_pci, OID_AUTO, enable_pcie_hp, CTLFLAG_RDTUN,
     &pci_enable_pcie_hp, 0,
     "Enable support for native PCI-express HotPlug.");
 
+TASKQUEUE_DEFINE_THREAD(pci_hp);
+
 static void
 pcib_probe_hotplug(struct pcib_softc *sc)
 {
@@ -1011,8 +1032,8 @@ pcib_pcie_hotplug_command(struct pcib_softc *sc, uint16_t val, uint16_t mask)
 	    (ctl & new) & PCIEM_SLOT_CTL_CCIE) {
 		sc->flags |= PCIB_HOTPLUG_CMD_PENDING;
 		if (!cold)
-			callout_reset(&sc->pcie_cc_timer, hz,
-			    pcib_pcie_cc_timeout, sc);
+			taskqueue_enqueue_timeout(taskqueue_pci_hp,
+			    &sc->pcie_cc_task, hz);
 	}
 }
 
@@ -1027,7 +1048,7 @@ pcib_pcie_hotplug_command_completed(struct pcib_softc *sc)
 		device_printf(dev, "Command Completed\n");
 	if (!(sc->flags & PCIB_HOTPLUG_CMD_PENDING))
 		return;
-	callout_stop(&sc->pcie_cc_timer);
+	taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_cc_task, NULL);
 	sc->flags &= ~PCIB_HOTPLUG_CMD_PENDING;
 	wakeup(sc);
 }
@@ -1073,20 +1094,17 @@ pcib_hotplug_present(struct pcib_softc *sc)
 	if (!pcib_hotplug_inserted(sc))
 		return (0);
 
-	/*
-	 * Require the Electromechanical Interlock to be engaged if
-	 * present.
-	 */
-	if (sc->pcie_slot_cap & PCIEM_SLOT_CAP_EIP &&
-	    (sc->pcie_slot_sta & PCIEM_SLOT_STA_EIS) == 0)
-		return (0);
-
 	/* Require the Data Link Layer to be active. */
 	if (!(sc->pcie_link_sta & PCIEM_LINK_STA_DL_ACTIVE))
 		return (0);
 
 	return (-1);
 }
+
+static int pci_enable_pcie_ei = 0;
+SYSCTL_INT(_hw_pci, OID_AUTO, enable_pcie_ei, CTLFLAG_RWTUN,
+    &pci_enable_pcie_ei, 0,
+    "Enable support for PCI-express Electromechanical Interlock.");
 
 static void
 pcib_pcie_hotplug_update(struct pcib_softc *sc, uint16_t val, uint16_t mask,
@@ -1127,7 +1145,8 @@ pcib_pcie_hotplug_update(struct pcib_softc *sc, uint16_t val, uint16_t mask,
 	 * process of detaching), disable the Electromechanical
 	 * Interlock.
 	 */
-	if (sc->pcie_slot_cap & PCIEM_SLOT_CAP_EIP) {
+	if ((sc->pcie_slot_cap & PCIEM_SLOT_CAP_EIP) &&
+	    pci_enable_pcie_ei) {
 		mask |= PCIEM_SLOT_CTL_EIC;
 		ei_engaged = (sc->pcie_slot_sta & PCIEM_SLOT_STA_EIS) != 0;
 		if (card_inserted != ei_engaged)
@@ -1148,10 +1167,11 @@ pcib_pcie_hotplug_update(struct pcib_softc *sc, uint16_t val, uint16_t mask,
 			device_printf(sc->dev,
 			    "Data Link Layer inactive\n");
 		else
-			callout_reset(&sc->pcie_dll_timer, hz,
-			    pcib_pcie_dll_timeout, sc);
+			taskqueue_enqueue_timeout(taskqueue_pci_hp,
+			    &sc->pcie_dll_task, hz);
 	} else if (sc->pcie_link_sta & PCIEM_LINK_STA_DL_ACTIVE)
-		callout_stop(&sc->pcie_dll_timer);
+		taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_dll_task,
+		    NULL);
 
 	pcib_pcie_hotplug_command(sc, val, mask);
 
@@ -1162,7 +1182,7 @@ pcib_pcie_hotplug_update(struct pcib_softc *sc, uint16_t val, uint16_t mask,
 	 */
 	if (schedule_task &&
 	    (pcib_hotplug_present(sc) != 0) != (sc->child != NULL))
-		taskqueue_enqueue(taskqueue_thread, &sc->pcie_hp_task);
+		taskqueue_enqueue(taskqueue_pci_hp, &sc->pcie_hp_task);
 }
 
 static void
@@ -1174,6 +1194,7 @@ pcib_pcie_intr_hotplug(void *arg)
 
 	sc = arg;
 	dev = sc->dev;
+	PCIB_HP_LOCK(sc);
 	old_slot_sta = sc->pcie_slot_sta;
 	sc->pcie_slot_sta = pcie_read_config(dev, PCIER_SLOT_STA, 2);
 
@@ -1189,14 +1210,15 @@ pcib_pcie_intr_hotplug(void *arg)
 			device_printf(dev,
 			    "Attention Button Pressed: Detach Cancelled\n");
 			sc->flags &= ~PCIB_DETACH_PENDING;
-			callout_stop(&sc->pcie_ab_timer);
+			taskqueue_cancel_timeout(taskqueue_pci_hp,
+			    &sc->pcie_ab_task, NULL);
 		} else if (old_slot_sta & PCIEM_SLOT_STA_PDS) {
 			/* Only initiate detach sequence if device present. */
 			device_printf(dev,
 		    "Attention Button Pressed: Detaching in 5 seconds\n");
 			sc->flags |= PCIB_DETACH_PENDING;
-			callout_reset(&sc->pcie_ab_timer, 5 * hz,
-			    pcib_pcie_ab_timeout, sc);
+			taskqueue_enqueue_timeout(taskqueue_pci_hp,
+			    &sc->pcie_ab_task, 5 * hz);
 		}
 	}
 	if (sc->pcie_slot_sta & PCIEM_SLOT_STA_PFD)
@@ -1221,6 +1243,7 @@ pcib_pcie_intr_hotplug(void *arg)
 	}
 
 	pcib_pcie_hotplug_update(sc, 0, 0, true);
+	PCIB_HP_UNLOCK(sc);
 }
 
 static void
@@ -1230,7 +1253,7 @@ pcib_pcie_hotplug_task(void *context, int pending)
 	device_t dev;
 
 	sc = context;
-	mtx_lock(&Giant);
+	PCIB_HP_LOCK(sc);
 	dev = sc->dev;
 	if (pcib_hotplug_present(sc) != 0) {
 		if (sc->child == NULL) {
@@ -1243,57 +1266,51 @@ pcib_pcie_hotplug_task(void *context, int pending)
 				sc->child = NULL;
 		}
 	}
-	mtx_unlock(&Giant);
+	PCIB_HP_UNLOCK(sc);
 }
 
 static void
-pcib_pcie_ab_timeout(void *arg)
+pcib_pcie_ab_timeout(void *arg, int pending)
 {
-	struct pcib_softc *sc;
+	struct pcib_softc *sc = arg;
 
-	sc = arg;
-	mtx_assert(&Giant, MA_OWNED);
+	PCIB_HP_LOCK(sc);
 	if (sc->flags & PCIB_DETACH_PENDING) {
 		sc->flags |= PCIB_DETACHING;
 		sc->flags &= ~PCIB_DETACH_PENDING;
 		pcib_pcie_hotplug_update(sc, 0, 0, true);
 	}
+	PCIB_HP_UNLOCK(sc);
 }
 
 static void
-pcib_pcie_cc_timeout(void *arg)
+pcib_pcie_cc_timeout(void *arg, int pending)
 {
-	struct pcib_softc *sc;
-	device_t dev;
+	struct pcib_softc *sc = arg;
+	device_t dev = sc->dev;
 	uint16_t sta;
 
-	sc = arg;
-	dev = sc->dev;
-	mtx_assert(&Giant, MA_OWNED);
+	PCIB_HP_LOCK(sc);
 	sta = pcie_read_config(dev, PCIER_SLOT_STA, 2);
 	if (!(sta & PCIEM_SLOT_STA_CC)) {
-		device_printf(dev,
-		    "HotPlug Command Timed Out - forcing detach\n");
-		sc->flags &= ~(PCIB_HOTPLUG_CMD_PENDING | PCIB_DETACH_PENDING);
-		sc->flags |= PCIB_DETACHING;
-		pcib_pcie_hotplug_update(sc, 0, 0, true);
+		device_printf(dev, "HotPlug Command Timed Out\n");
+		sc->flags &= ~PCIB_HOTPLUG_CMD_PENDING;
 	} else {
 		device_printf(dev,
 	    "Missed HotPlug interrupt waiting for Command Completion\n");
 		pcib_pcie_intr_hotplug(sc);
 	}
+	PCIB_HP_UNLOCK(sc);
 }
 
 static void
-pcib_pcie_dll_timeout(void *arg)
+pcib_pcie_dll_timeout(void *arg, int pending)
 {
-	struct pcib_softc *sc;
-	device_t dev;
+	struct pcib_softc *sc = arg;
+	device_t dev = sc->dev;
 	uint16_t sta;
 
-	sc = arg;
-	dev = sc->dev;
-	mtx_assert(&Giant, MA_OWNED);
+	PCIB_HP_LOCK(sc);
 	sta = pcie_read_config(dev, PCIER_LINK_STA, 2);
 	if (!(sta & PCIEM_LINK_STA_DL_ACTIVE)) {
 		device_printf(dev,
@@ -1305,13 +1322,14 @@ pcib_pcie_dll_timeout(void *arg)
 		    "Missed HotPlug interrupt waiting for DLL Active\n");
 		pcib_pcie_intr_hotplug(sc);
 	}
+	PCIB_HP_UNLOCK(sc);
 }
 
 static int
 pcib_alloc_pcie_irq(struct pcib_softc *sc)
 {
 	device_t dev;
-	int count, error, rid;
+	int count, error, mem_rid, rid;
 
 	rid = -1;
 	dev = sc->dev;
@@ -1323,9 +1341,17 @@ pcib_alloc_pcie_irq(struct pcib_softc *sc)
 	 */
 	count = pci_msix_count(dev);
 	if (count == 1) {
-		error = pci_alloc_msix(dev, &count);
-		if (error == 0)
-			rid = 1;
+		mem_rid = pci_msix_table_bar(dev);
+		sc->pcie_mem = bus_alloc_resource_any(dev, SYS_RES_MEMORY,
+		    &mem_rid, RF_ACTIVE);
+		if (sc->pcie_mem == NULL) {
+			device_printf(dev,
+			    "Failed to allocate BAR for MSI-X table\n");
+		} else {
+			error = pci_alloc_msix(dev, &count);
+			if (error == 0)
+				rid = 1;
+		}
 	}
 
 	if (rid < 0 && pci_msi_count(dev) > 0) {
@@ -1339,7 +1365,7 @@ pcib_alloc_pcie_irq(struct pcib_softc *sc)
 		rid = 0;
 
 	sc->pcie_irq = bus_alloc_resource_any(dev, SYS_RES_IRQ, &rid,
-	    RF_ACTIVE);
+	    RF_ACTIVE | RF_SHAREABLE);
 	if (sc->pcie_irq == NULL) {
 		device_printf(dev,
 		    "Failed to allocate interrupt for PCI-e events\n");
@@ -1348,7 +1374,7 @@ pcib_alloc_pcie_irq(struct pcib_softc *sc)
 		return (ENXIO);
 	}
 
-	error = bus_setup_intr(dev, sc->pcie_irq, INTR_TYPE_MISC,
+	error = bus_setup_intr(dev, sc->pcie_irq, INTR_TYPE_MISC|INTR_MPSAFE,
 	    NULL, pcib_pcie_intr_hotplug, sc, &sc->pcie_ihand);
 	if (error) {
 		device_printf(dev, "Failed to setup PCI-e interrupt handler\n");
@@ -1373,7 +1399,12 @@ pcib_release_pcie_irq(struct pcib_softc *sc)
 	error = bus_free_resource(dev, SYS_RES_IRQ, sc->pcie_irq);
 	if (error)
 		return (error);
-	return (pci_release_msi(dev));
+	error = pci_release_msi(dev);
+	if (error)
+		return (error);
+	if (sc->pcie_mem != NULL)
+		error = bus_free_resource(dev, SYS_RES_MEMORY, sc->pcie_mem);
+	return (error);
 }
 
 static void
@@ -1383,10 +1414,14 @@ pcib_setup_hotplug(struct pcib_softc *sc)
 	uint16_t mask, val;
 
 	dev = sc->dev;
-	callout_init(&sc->pcie_ab_timer, 0);
-	callout_init(&sc->pcie_cc_timer, 0);
-	callout_init(&sc->pcie_dll_timer, 0);
 	TASK_INIT(&sc->pcie_hp_task, 0, pcib_pcie_hotplug_task, sc);
+	TIMEOUT_TASK_INIT(taskqueue_pci_hp, &sc->pcie_ab_task, 0,
+	    pcib_pcie_ab_timeout, sc);
+	TIMEOUT_TASK_INIT(taskqueue_pci_hp, &sc->pcie_cc_task, 0,
+	    pcib_pcie_cc_timeout, sc);
+	TIMEOUT_TASK_INIT(taskqueue_pci_hp, &sc->pcie_dll_task, 0,
+	    pcib_pcie_dll_timeout, sc);
+	sc->pcie_hp_lock = bus_topo_mtx();
 
 	/* Allocate IRQ. */
 	if (pcib_alloc_pcie_irq(sc) != 0)
@@ -1430,12 +1465,14 @@ pcib_detach_hotplug(struct pcib_softc *sc)
 	/* Disable the card in the slot and force it to detach. */
 	if (sc->flags & PCIB_DETACH_PENDING) {
 		sc->flags &= ~PCIB_DETACH_PENDING;
-		callout_stop(&sc->pcie_ab_timer);
+		taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_ab_task,
+		    NULL);
 	}
 	sc->flags |= PCIB_DETACHING;
 
 	if (sc->flags & PCIB_HOTPLUG_CMD_PENDING) {
-		callout_stop(&sc->pcie_cc_timer);
+		taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_cc_task,
+		    NULL);
 		tsleep(sc, 0, "hpcmd", hz);
 		sc->flags &= ~PCIB_HOTPLUG_CMD_PENDING;
 	}
@@ -1453,14 +1490,14 @@ pcib_detach_hotplug(struct pcib_softc *sc)
 	}
 
 	pcib_pcie_hotplug_update(sc, val, mask, false);
-	
+
 	error = pcib_release_pcie_irq(sc);
 	if (error)
 		return (error);
-	taskqueue_drain(taskqueue_thread, &sc->pcie_hp_task);
-	callout_drain(&sc->pcie_ab_timer);
-	callout_drain(&sc->pcie_cc_timer);
-	callout_drain(&sc->pcie_dll_timer);
+	taskqueue_drain(taskqueue_pci_hp, &sc->pcie_hp_task);
+	taskqueue_drain_timeout(taskqueue_pci_hp, &sc->pcie_ab_task);
+	taskqueue_drain_timeout(taskqueue_pci_hp, &sc->pcie_cc_task);
+	taskqueue_drain_timeout(taskqueue_pci_hp, &sc->pcie_dll_task);
 	return (0);
 }
 #endif
@@ -1794,6 +1831,12 @@ pcib_resume(device_t dev)
 {
 
 	pcib_cfg_restore(device_get_softc(dev));
+
+	/*
+	 * Restore the Command register only after restoring the windows.
+	 * The bridge should not be claiming random windows.
+	 */
+	pci_write_config(dev, PCIR_COMMAND, pci_get_cmdreg(dev), 2);
 	return (bus_generic_resume(dev));
 }
 
@@ -2238,7 +2281,7 @@ updatewin:
  * We have to trap resource allocation requests and ensure that the bridge
  * is set up to, or capable of handling them.
  */
-struct resource *
+static struct resource *
 pcib_alloc_resource(device_t dev, device_t child, int type, int *rid,
     rman_res_t start, rman_res_t end, rman_res_t count, u_int flags)
 {
@@ -2327,19 +2370,75 @@ pcib_alloc_resource(device_t dev, device_t child, int type, int *rid,
 	return (r);
 }
 
-int
+static int
 pcib_adjust_resource(device_t bus, device_t child, int type, struct resource *r,
     rman_res_t start, rman_res_t end)
 {
 	struct pcib_softc *sc;
+	struct pcib_window *w;
+	rman_res_t wmask;
+	int error;
 
 	sc = device_get_softc(bus);
-	if (pcib_is_resource_managed(sc, type, r))
-		return (rman_adjust_resource(r, start, end));
-	return (bus_generic_adjust_resource(bus, child, type, r, start, end));
+
+	/*
+	 * If the resource wasn't sub-allocated from one of our region
+	 * managers then just pass the request up.
+	 */
+	if (!pcib_is_resource_managed(sc, type, r))
+		return (bus_generic_adjust_resource(bus, child, type, r,
+		    start, end));
+
+#ifdef PCI_RES_BUS
+	if (type == PCI_RES_BUS) {
+		/*
+		 * If our bus range isn't big enough to grow the sub-allocation
+		 * then we need to grow our bus range. Any request that would
+		 * require us to decrease the start of our own bus range is
+		 * invalid, we can only extend the end; ignore such requests
+		 * and let rman_adjust_resource fail below.
+		 */
+		if (start >= sc->bus.sec && end > sc->bus.sub) {
+			error = pcib_grow_subbus(&sc->bus, end);
+			if (error != 0)
+				return (error);
+		}
+	} else
+#endif
+	{
+		/*
+		 * Resource is managed and not a secondary bus number, must
+		 * be from one of our windows.
+		 */
+		w = pcib_get_resource_window(sc, type, r);
+		KASSERT(w != NULL,
+		    ("%s: no window for resource (%#jx-%#jx) type %d",
+		    __func__, rman_get_start(r), rman_get_end(r), type));
+
+		/*
+		 * If our window isn't big enough to grow the sub-allocation
+		 * then we need to expand the window.
+		 */
+		if (start < w->base || end > w->limit) {
+			wmask = ((rman_res_t)1 << w->step) - 1;
+			error = pcib_expand_window(sc, w, type,
+			    MIN(start & ~wmask, w->base),
+			    MAX(end | wmask, w->limit));
+			if (error != 0)
+				return (error);
+			if (bootverbose)
+				device_printf(sc->dev,
+				    "grew %s window to %#jx-%#jx\n",
+				    w->name, (uintmax_t)w->base,
+				    (uintmax_t)w->limit);
+			pcib_write_windows(sc, w->mask);
+		}
+	}
+
+	return (rman_adjust_resource(r, start, end));
 }
 
-int
+static int
 pcib_release_resource(device_t dev, device_t child, int type, int rid,
     struct resource *r)
 {
@@ -2362,7 +2461,7 @@ pcib_release_resource(device_t dev, device_t child, int type, int rid,
  * We have to trap resource allocation requests and ensure that the bridge
  * is set up to, or capable of handling them.
  */
-struct resource *
+static struct resource *
 pcib_alloc_resource(device_t dev, device_t child, int type, int *rid,
     rman_res_t start, rman_res_t end, rman_res_t count, u_int flags)
 {
@@ -2536,7 +2635,6 @@ pcib_xlate_ari(device_t pcib, int bus, int *slot, int *func)
 		*func = PCIE_ARI_FUNC(ari_func);
 	}
 }
-
 
 static void
 pcib_enable_ari(struct pcib_softc *sc, uint32_t pcie_pos)

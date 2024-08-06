@@ -86,7 +86,7 @@ rtems_bsd_libio_iop_set_bsd_fd(struct thread *td, int fd, rtems_libio_t *iop,
 	int error;
 	FILEDESC_XLOCK(fdp);
 	if (fd < fdp->fd_nfiles) {
-		struct file *fp = fget_locked(fdp, fd);
+		struct file *fp = fget_noref(fdp, fd);
 		if (fp != NULL) {
 			rtems_bsd_libio_iop_set_bsd_file(iop, fp);
 			rtems_libio_iop_flags_set(iop,

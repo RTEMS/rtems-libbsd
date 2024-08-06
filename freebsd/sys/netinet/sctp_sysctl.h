@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifndef _NETINET_SCTP_SYSCTL_H_
 #define _NETINET_SCTP_SYSCTL_H_
 
@@ -106,7 +103,6 @@ struct sctp_sysctl {
 	uint32_t sctp_rttvar_eqret;
 	uint32_t sctp_steady_step;
 	uint32_t sctp_use_dccc_ecn;
-	uint32_t sctp_diag_info_code;
 #if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_log sctp_log;
 #endif
@@ -116,11 +112,11 @@ struct sctp_sysctl {
 	uint32_t sctp_buffer_splitting;
 	uint32_t sctp_initial_cwnd;
 	uint32_t sctp_blackhole;
+	uint32_t sctp_sendall_limit;
+	uint32_t sctp_diag_info_code;
+	uint32_t sctp_ootb_with_zero_cksum;
 #if defined(SCTP_DEBUG)
 	uint32_t sctp_debug_on;
-#endif
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
-	uint32_t sctp_output_unlocked;
 #endif
 };
 
@@ -146,7 +142,7 @@ struct sctp_sysctl {
 #define SCTPCTL_AUTOASCONF_DEFAULT	1
 
 /* autoasconf: Enable SCTP Auto-ASCONF */
-#define SCTPCTL_MULTIPLEASCONFS_DESC	"Enable SCTP Muliple-ASCONFs"
+#define SCTPCTL_MULTIPLEASCONFS_DESC	"Enable SCTP Multiple-ASCONFs"
 #define SCTPCTL_MULTIPLEASCONFS_MIN	0
 #define SCTPCTL_MULTIPLEASCONFS_MAX	1
 #define SCTPCTL_MULTIPLEASCONFS_DEFAULT	SCTP_DEFAULT_MULTIPLE_ASCONFS
@@ -216,7 +212,6 @@ struct sctp_sysctl {
 #define SCTPCTL_FRMAXBURST_MIN		0
 #define SCTPCTL_FRMAXBURST_MAX		0xFFFFFFFF
 #define SCTPCTL_FRMAXBURST_DEFAULT	SCTP_DEF_FRMAX_BURST
-
 
 /* maxchunks: Default max chunks on queue per asoc */
 #define SCTPCTL_MAXCHUNKS_DESC		"Default max chunks on queue per asoc"
@@ -320,10 +315,10 @@ struct sctp_sysctl {
 #define SCTPCTL_INIT_RTO_MAX_MAX	0xFFFFFFFF
 #define SCTPCTL_INIT_RTO_MAX_DEFAULT	SCTP_RTO_UPPER_BOUND
 
-/* valid_cookie_life: Default cookie lifetime in sec */
-#define SCTPCTL_VALID_COOKIE_LIFE_DESC	"Default cookie lifetime in seconds"
-#define SCTPCTL_VALID_COOKIE_LIFE_MIN	0
-#define SCTPCTL_VALID_COOKIE_LIFE_MAX	0xFFFFFFFF
+/* valid_cookie_life: Default cookie lifetime in ms */
+#define SCTPCTL_VALID_COOKIE_LIFE_DESC		"Default cookie lifetime in ms"
+#define SCTPCTL_VALID_COOKIE_LIFE_MIN		SCTP_MIN_COOKIE_LIFE
+#define SCTPCTL_VALID_COOKIE_LIFE_MAX		SCTP_MAX_COOKIE_LIFE
 #define SCTPCTL_VALID_COOKIE_LIFE_DEFAULT	SCTP_DEFAULT_COOKIE_LIFE
 
 /* init_rtx_max: Default maximum number of retransmission for INIT chunks */
@@ -538,10 +533,21 @@ struct sctp_sysctl {
 #define SCTPCTL_BLACKHOLE_MAX		2
 #define SCTPCTL_BLACKHOLE_DEFAULT	SCTPCTL_BLACKHOLE_MIN
 
+/* sendall_limit: Maximum message with SCTP_SENDALL */
+#define SCTPCTL_SENDALL_LIMIT_DESC	"Maximum size of a message send with SCTP_SENDALL"
+#define SCTPCTL_SENDALL_LIMIT_MIN	0
+#define SCTPCTL_SENDALL_LIMIT_MAX	0xFFFFFFFF
+#define SCTPCTL_SENDALL_LIMIT_DEFAULT	1432
+
 #define SCTPCTL_DIAG_INFO_CODE_DESC	"Diagnostic information error cause code"
 #define SCTPCTL_DIAG_INFO_CODE_MIN	0
 #define SCTPCTL_DIAG_INFO_CODE_MAX	65535
 #define SCTPCTL_DIAG_INFO_CODE_DEFAULT	0
+
+#define SCTPCTL_OOTB_WITH_ZERO_CKSUM_DESC	"Accept OOTB packets with zero checksum"
+#define SCTPCTL_OOTB_WITH_ZERO_CKSUM_MIN	0
+#define SCTPCTL_OOTB_WITH_ZERO_CKSUM_MAX	1
+#define SCTPCTL_OOTB_WITH_ZERO_CKSUM_DEFAULT	0
 
 #if defined(SCTP_DEBUG)
 /* debug: Configure debug output */
@@ -550,15 +556,6 @@ struct sctp_sysctl {
 #define SCTPCTL_DEBUG_MAX	0xFFFFFFFF
 #define SCTPCTL_DEBUG_DEFAULT	0
 #endif
-
-
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
-#define SCTPCTL_OUTPUT_UNLOCKED_DESC	"Unlock socket when sending packets down to IP"
-#define SCTPCTL_OUTPUT_UNLOCKED_MIN	0
-#define SCTPCTL_OUTPUT_UNLOCKED_MAX	1
-#define SCTPCTL_OUTPUT_UNLOCKED_DEFAULT	SCTPCTL_OUTPUT_UNLOCKED_MIN
-#endif
-
 
 #if defined(_KERNEL) || defined(__Userspace__)
 #if defined(SYSCTL_DECL)

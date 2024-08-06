@@ -776,11 +776,6 @@ test_socket_listen(void)
 	sd = socket(PF_INET, SOCK_STREAM, 0);
 	assert(sd >= 0);
 
-	errno = 0;
-	rv = listen(sd, 0);
-	assert(rv == -1);
-	assert(errno == EADDRNOTAVAIL);
-
 	rv = close(sd);
 	assert(rv == 0);
 

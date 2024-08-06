@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000 Paycounter, Inc.
  * Copyright (c) 2005 Robert N. M. Watson
@@ -31,8 +31,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #define ACCEPT_FILTER_MOD
 
 #include <rtems/bsd/local/opt_param.h>
@@ -64,7 +62,8 @@ MALLOC_DEFINE(M_ACCF, "accf", "accept filter data");
 
 static int unloadable = 0;
 
-SYSCTL_NODE(_net, OID_AUTO, accf, CTLFLAG_RW, 0, "Accept filters");
+SYSCTL_NODE(_net, OID_AUTO, accf, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "Accept filters");
 SYSCTL_INT(_net_accf, OID_AUTO, unloadable, CTLFLAG_RW, &unloadable, 0,
 	"Allow unload of accept filters (not recommended)");
 
@@ -173,7 +172,7 @@ accept_filt_getopt(struct socket *so, struct sockopt *sopt)
 	error = 0;
 	afap = malloc(sizeof(*afap), M_TEMP, M_WAITOK | M_ZERO);
 	SOCK_LOCK(so);
-	if ((so->so_options & SO_ACCEPTCONN) == 0) {
+	if (!SOLISTENING(so)) {
 		error = EINVAL;
 		goto out;
 	}
@@ -209,7 +208,7 @@ accept_filt_setopt(struct socket *so, struct sockopt *sopt)
 		int wakeup;
 
 		SOCK_LOCK(so);
-		if ((so->so_options & SO_ACCEPTCONN) == 0) {
+		if (!SOLISTENING(so)) {
 			SOCK_UNLOCK(so);
 			return (EINVAL);
 		}
@@ -279,8 +278,7 @@ accept_filt_setopt(struct socket *so, struct sockopt *sopt)
 	 * without first removing it.
 	 */
 	SOCK_LOCK(so);
-	if ((so->so_options & SO_ACCEPTCONN) == 0 ||
-	    so->sol_accept_filter != NULL) {
+	if (!SOLISTENING(so) || so->sol_accept_filter != NULL) {
 		error = EINVAL;
 		goto out;
 	}
@@ -300,6 +298,7 @@ accept_filt_setopt(struct socket *so, struct sockopt *sopt)
 	so->sol_accept_filter = afp;
 	so->sol_accept_filter_arg = accept_filter_arg;
 	so->sol_accept_filter_str = accept_filter_str;
+	accept_filter_str = NULL;
 	so->so_options |= SO_ACCEPTFILTER;
 out:
 	SOCK_UNLOCK(so);

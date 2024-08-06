@@ -2,3 +2,5 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-openssl-data.h"
 /* pkey.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char const *asn1_encoding_options[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char const *point_format_options[]);

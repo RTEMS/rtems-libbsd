@@ -1,7 +1,7 @@
 /*	$NetBSD: bus.h,v 1.12 1997/10/01 08:25:15 fvdl Exp $	*/
 
 /*-
- * SPDX-License-Identifier: (BSD-2-Clause-NetBSD AND BSD-4-Clause)
+ * SPDX-License-Identifier: (BSD-2-Clause AND BSD-4-Clause)
  *
  * Copyright (c) 1996, 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -62,12 +62,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* $FreeBSD$ */
 
 #ifndef _BUS_DMA_H_
 #define _BUS_DMA_H_
 
+#ifdef _KERNEL
 #include <sys/_bus_dma.h>
+#endif
 
 /*
  * Machine independent interface for mapping physical addresses to peripheral
@@ -115,6 +116,8 @@
 /* Forwards needed by prototypes below. */
 union ccb;
 struct bio;
+struct crypto_buffer;
+struct cryptop;
 struct mbuf;
 struct memdesc;
 struct pmap;
@@ -139,6 +142,7 @@ typedef struct bus_dma_segment {
 	bus_size_t	ds_len;		/* length of transfer */
 } bus_dma_segment_t;
 
+#ifdef _KERNEL
 /*
  * A function that returns 1 if the address cannot be accessed by
  * a device and 0 if it can be.
@@ -149,6 +153,11 @@ typedef int bus_dma_filter_t(void *, bus_addr_t);
  * Generic helper function for manipulating mutexes.
  */
 void busdma_lock_mutex(void *arg, bus_dma_lock_op_t op);
+
+/*
+ * Internal helper function used by tags that do not defer loads.
+ */
+void _busdma_dflt_lock(void *arg, bus_dma_lock_op_t op);
 
 /*
  * Allocate a device specific dma_tag encapsulating the constraints of
@@ -181,6 +190,83 @@ int bus_dma_tag_create(bus_dma_tag_t parent, bus_size_t alignment,
 		       void *filtfuncarg, bus_size_t maxsize, int nsegments,
 		       bus_size_t maxsegsz, int flags, bus_dma_lock_t *lockfunc,
 		       void *lockfuncarg, bus_dma_tag_t *dmat);
+
+/*
+ * Functions for creating and cloning tags via a template,
+ *
+ * bus_dma_template_t is made avaialble publicly so it can be allocated
+ * from the caller stack.  Its contents should be considered private, and
+ * should only be accessed via the documented APIs and macros
+ */
+typedef struct {
+	bus_dma_tag_t		parent;
+	bus_size_t		alignment;
+	bus_addr_t		boundary;
+	bus_addr_t		lowaddr;
+	bus_addr_t		highaddr;
+	bus_size_t		maxsize;
+	int			nsegments;
+	bus_size_t		maxsegsize;
+	int			flags;
+	bus_dma_lock_t		*lockfunc;
+	void			*lockfuncarg;
+	const char		*name;
+} bus_dma_template_t;
+
+/*
+ * These enum values should not be re-ordered.  BD_PARAM_INVALID is an
+ * invalid key and will trigger a panic.
+ */
+typedef enum {
+	BD_PARAM_INVALID	= 0,
+	BD_PARAM_PARENT		= 1,
+	BD_PARAM_ALIGNMENT	= 2,
+	BD_PARAM_BOUNDARY	= 3,
+	BD_PARAM_LOWADDR	= 4,
+	BD_PARAM_HIGHADDR	= 5,
+	BD_PARAM_MAXSIZE	= 6,
+	BD_PARAM_NSEGMENTS	= 7,
+	BD_PARAM_MAXSEGSIZE	= 8,
+	BD_PARAM_FLAGS		= 9,
+	BD_PARAM_LOCKFUNC	= 10,
+	BD_PARAM_LOCKFUNCARG	= 11,
+	BD_PARAM_NAME		= 12
+} bus_dma_param_key_t;
+
+/* These contents should also be considered private */
+typedef struct {
+	bus_dma_param_key_t	key;
+	union {
+		void *ptr;
+		vm_paddr_t pa;
+		uintmax_t num;
+	};
+} bus_dma_param_t;
+
+#define BD_PARENT(val)		{ BD_PARAM_PARENT, .ptr = val }
+#define BD_ALIGNMENT(val)	{ BD_PARAM_ALIGNMENT, .num = val }
+#define BD_BOUNDARY(val)	{ BD_PARAM_BOUNDARY, .num = val }
+#define BD_LOWADDR(val)		{ BD_PARAM_LOWADDR, .pa = val }
+#define BD_HIGHADDR(val)	{ BD_PARAM_HIGHADDR, .pa = val }
+#define BD_MAXSIZE(val)		{ BD_PARAM_MAXSIZE, .num = val }
+#define BD_NSEGMENTS(val)	{ BD_PARAM_NSEGMENTS, .num = val }
+#define BD_MAXSEGSIZE(val)	{ BD_PARAM_MAXSEGSIZE, .num = val }
+#define BD_FLAGS(val)		{ BD_PARAM_FLAGS, .num = val }
+#define BD_LOCKFUNC(val)	{ BD_PARAM_LOCKFUNC, .ptr = val }
+#define BD_LOCKFUNCARG(val)	{ BD_PARAM_LOCKFUNCARG, .ptr = val }
+#define BD_NAME(val)		{ BD_PARAM_NAME, .ptr = val }
+
+#define BUS_DMA_TEMPLATE_FILL(t, kv...) \
+do {					\
+	bus_dma_param_t pm[] = { kv };	\
+	bus_dma_template_fill(t, pm, howmany(sizeof(pm), sizeof(pm[0]))); \
+} while (0)
+
+void bus_dma_template_init(bus_dma_template_t *t, bus_dma_tag_t parent);
+int bus_dma_template_tag(bus_dma_template_t *t, bus_dma_tag_t *dmat);
+void bus_dma_template_clone(bus_dma_template_t *t, bus_dma_tag_t dmat);
+void bus_dma_template_fill(bus_dma_template_t *t, bus_dma_param_t *kv,
+    u_int count);
 
 /*
  * Set the memory domain to be used for allocations.
@@ -249,6 +335,17 @@ int bus_dmamap_load_bio(bus_dma_tag_t dmat, bus_dmamap_t map, struct bio *bio,
 			int flags);
 
 /*
+ * Like bus_dmamap_load but for crypto ops.
+ */
+int bus_dmamap_load_crp(bus_dma_tag_t dmat, bus_dmamap_t map,
+			struct cryptop *crp, bus_dmamap_callback_t *callback,
+			void *callback_arg, int flags);
+int bus_dmamap_load_crp_buffer(bus_dma_tag_t dmat, bus_dmamap_t map,
+			       struct crypto_buffer *cb,
+			       bus_dmamap_callback_t *callback,
+			       void *callback_arg, int flags);
+
+/*
  * Loads any memory descriptor.
  */
 int bus_dmamap_load_mem(bus_dma_tag_t dmat, bus_dmamap_t map,
@@ -308,5 +405,6 @@ BUS_DMAMAP_OP void bus_dmamap_sync(bus_dma_tag_t dmat, bus_dmamap_t dmamap, bus_
 BUS_DMAMAP_OP void bus_dmamap_unload(bus_dma_tag_t dmat, bus_dmamap_t dmamap);
 
 #undef BUS_DMAMAP_OP
+#endif /* _KERNEL */
 
 #endif /* _BUS_DMA_H_ */

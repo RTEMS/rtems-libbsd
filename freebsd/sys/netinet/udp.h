@@ -30,11 +30,12 @@
  * SUCH DAMAGE.
  *
  *	@(#)udp.h	8.1 (Berkeley) 6/10/93
- * $FreeBSD$
  */
 
 #ifndef _NETINET_UDP_H_
 #define	_NETINET_UDP_H_
+
+#include <sys/types.h>
 
 /*
  * UDP protocol header.
@@ -47,7 +48,7 @@ struct udphdr {
 	u_short	uh_sum;			/* udp checksum */
 };
 
-/* 
+/*
  * User-settable options (used with setsockopt).
  */
 #define	UDP_ENCAP			1

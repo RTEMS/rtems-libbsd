@@ -5,7 +5,7 @@
 #endif /* __rtems__ */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2003 Ryan McBride. All rights reserved.
  * Copyright (c) 2004 Max Laier. All rights reserved.
@@ -30,15 +30,15 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <sys/ioctl.h>
+#include <sys/nv.h>
 #include <sys/socket.h>
 
 #include <net/if.h>
@@ -60,166 +60,355 @@
 #include "rtems-bsd-ifconfig-ifpfsync-data.h"
 #endif /* __rtems__ */
 
-void setpfsync_syncdev(const char *, int, int, const struct afswtch *);
-void unsetpfsync_syncdev(const char *, int, int, const struct afswtch *);
-void setpfsync_syncpeer(const char *, int, int, const struct afswtch *);
-void unsetpfsync_syncpeer(const char *, int, int, const struct afswtch *);
-void setpfsync_syncpeer(const char *, int, int, const struct afswtch *);
-void setpfsync_maxupd(const char *, int, int, const struct afswtch *);
-void setpfsync_defer(const char *, int, int, const struct afswtch *);
-void pfsync_status(int);
-
-void
-setpfsync_syncdev(const char *val, int d, int s, const struct afswtch *rafp)
+static int
+pfsync_do_ioctl(if_ctx *ctx, uint cmd, nvlist_t **nvl)
 {
-	struct pfsyncreq preq;
+	void *data;
+	size_t nvlen;
+	struct ifreq ifr = {};
 
-	bzero((char *)&preq, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	data = nvlist_pack(*nvl, &nvlen);
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCGETPFSYNC");
+	ifr.ifr_cap_nv.buffer = malloc(IFR_CAP_NV_MAXBUFSIZE);
+	memcpy(ifr.ifr_cap_nv.buffer, data, nvlen);
+	ifr.ifr_cap_nv.buf_length = IFR_CAP_NV_MAXBUFSIZE;
+	ifr.ifr_cap_nv.length = nvlen;
+	free(data);
 
-	strlcpy(preq.pfsyncr_syncdev, val, sizeof(preq.pfsyncr_syncdev));
+	if (ioctl_ctx_ifr(ctx, cmd, &ifr) == -1) {
+		free(ifr.ifr_cap_nv.buffer);
+		return -1;
+	}
 
-	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCSETPFSYNC");
+	nvlist_destroy(*nvl);
+	*nvl = NULL;
+
+	*nvl = nvlist_unpack(ifr.ifr_cap_nv.buffer, ifr.ifr_cap_nv.length, 0);
+	if (*nvl == NULL) {
+		free(ifr.ifr_cap_nv.buffer);
+		return (EIO);
+	}
+
+	free(ifr.ifr_cap_nv.buffer);
+	return (errno);
 }
 
-/* ARGSUSED */
-void
-unsetpfsync_syncdev(const char *val, int d, int s, const struct afswtch *rafp)
+static nvlist_t *
+pfsync_sockaddr_to_syncpeer_nvlist(struct sockaddr_storage *sa)
 {
-	struct pfsyncreq preq;
+	nvlist_t *nvl;
 
-	bzero((char *)&preq, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	nvl = nvlist_create(0);
+	if (nvl == NULL) {
+		return (nvl);
+	}
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCGETPFSYNC");
+	switch (sa->ss_family) {
+#ifdef INET
+	case AF_INET: {
+		struct sockaddr_in *in = (struct sockaddr_in *)sa;
+		nvlist_add_number(nvl, "af", in->sin_family);
+		nvlist_add_binary(nvl, "address", in, sizeof(*in));
+		break;
+	}
+#endif
+#ifdef INET6
+	case AF_INET6: {
+		struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)sa;
+		nvlist_add_number(nvl, "af", in6->sin6_family);
+		nvlist_add_binary(nvl, "address", in6, sizeof(*in6));
+		break;
+	}
+#endif
+	default:
+		nvlist_add_number(nvl, "af", AF_UNSPEC);
+		nvlist_add_binary(nvl, "address", sa, sizeof(*sa));
+		break;
+	}
 
-	bzero((char *)&preq.pfsyncr_syncdev, sizeof(preq.pfsyncr_syncdev));
-
-	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCSETPFSYNC");
+	return (nvl);
 }
 
-/* ARGSUSED */
-void
-setpfsync_syncpeer(const char *val, int d, int s, const struct afswtch *rafp)
+static int
+pfsync_syncpeer_nvlist_to_sockaddr(const nvlist_t *nvl,
+    struct sockaddr_storage *sa)
 {
-	struct pfsyncreq preq;
-	struct addrinfo hints, *peerres;
+	int af;
+
+#if (!defined INET && !defined INET6)
+	(void)sa;
+#endif
+
+	if (!nvlist_exists_number(nvl, "af"))
+		return (EINVAL);
+	if (!nvlist_exists_binary(nvl, "address"))
+		return (EINVAL);
+
+	af = nvlist_get_number(nvl, "af");
+
+	switch (af) {
+#ifdef INET
+	case AF_INET: {
+		struct sockaddr_in *in = (struct sockaddr_in *)sa;
+		size_t len;
+		const void *addr = nvlist_get_binary(nvl, "address", &len);
+		in->sin_family = af;
+		if (len != sizeof(*in))
+			return (EINVAL);
+
+		memcpy(in, addr, sizeof(*in));
+		break;
+	}
+#endif
+#ifdef INET6
+	case AF_INET6: {
+		struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)sa;
+		size_t len;
+		const void *addr = nvlist_get_binary(nvl, "address", &len);
+		if (len != sizeof(*in6))
+			return (EINVAL);
+
+		memcpy(in6, addr, sizeof(*in6));
+		break;
+	}
+#endif
+	default:
+		return (EINVAL);
+	}
+
+	return (0);
+}
+
+static void
+setpfsync_syncdev(if_ctx *ctx, const char *val, int dummy __unused)
+{
+	nvlist_t *nvl = nvlist_create(0);
+
+	if (strlen(val) > IFNAMSIZ)
+		errx(1, "interface name %s is too long", val);
+
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
+
+	if (nvlist_exists_string(nvl, "syncdev"))
+		nvlist_free_string(nvl, "syncdev");
+
+	nvlist_add_string(nvl, "syncdev", val);
+
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
+}
+
+static void
+unsetpfsync_syncdev(if_ctx *ctx, const char *val __unused, int dummy __unused)
+{
+	nvlist_t *nvl = nvlist_create(0);
+
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
+
+	if (nvlist_exists_string(nvl, "syncdev"))
+		nvlist_free_string(nvl, "syncdev");
+
+	nvlist_add_string(nvl, "syncdev", "");
+
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
+}
+
+static void
+setpfsync_syncpeer(if_ctx *ctx, const char *val, int dummy __unused)
+{
+	struct addrinfo *peerres;
+	struct sockaddr_storage addr;
 	int ecode;
 
-	bzero((char *)&preq, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	nvlist_t *nvl = nvlist_create(0);
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCGETPFSYNC");
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
-
-	if ((ecode = getaddrinfo(val, NULL, &hints, &peerres)) != 0)
+	if ((ecode = getaddrinfo(val, NULL, NULL, &peerres)) != 0)
 		errx(1, "error in parsing address string: %s",
 		    gai_strerror(ecode));
 
-	if (peerres->ai_addr->sa_family != AF_INET)
-		errx(1, "only IPv4 addresses supported for the syncpeer");
+	switch (peerres->ai_family) {
+#ifdef INET
+	case AF_INET: {
+		struct sockaddr_in *sin = satosin(peerres->ai_addr);
 
-	preq.pfsyncr_syncpeer.s_addr = ((struct sockaddr_in *)
-	    peerres->ai_addr)->sin_addr.s_addr;
+		memcpy(&addr, sin, sizeof(*sin));
+		break;
+	}
+#endif
+#ifdef INET6
+	case AF_INET6: {
+		struct sockaddr_in6 *sin6 = satosin6(peerres->ai_addr);
 
-	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCSETPFSYNC");
+		memcpy(&addr, sin6, sizeof(*sin6));
+		break;
+	}
+#endif
+	default:
+		errx(1, "syncpeer address %s not supported", val);
+	}
+
+	if (nvlist_exists_nvlist(nvl, "syncpeer"))
+		nvlist_free_nvlist(nvl, "syncpeer");
+
+	nvlist_add_nvlist(nvl, "syncpeer",
+	    pfsync_sockaddr_to_syncpeer_nvlist(&addr));
+
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
+
+	nvlist_destroy(nvl);
 	freeaddrinfo(peerres);
 }
 
-/* ARGSUSED */
-void
-unsetpfsync_syncpeer(const char *val, int d, int s, const struct afswtch *rafp)
+static void
+unsetpfsync_syncpeer(if_ctx *ctx, const char *val __unused, int dummy __unused)
 {
-	struct pfsyncreq preq;
+	struct sockaddr_storage addr;
+	memset(&addr, 0, sizeof(addr));
 
-	bzero((char *)&preq, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	nvlist_t *nvl = nvlist_create(0);
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCGETPFSYNC");
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
 
-	preq.pfsyncr_syncpeer.s_addr = 0;
+	if (nvlist_exists_nvlist(nvl, "syncpeer"))
+		nvlist_free_nvlist(nvl, "syncpeer");
 
-	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCSETPFSYNC");
+	nvlist_add_nvlist(nvl, "syncpeer",
+	    pfsync_sockaddr_to_syncpeer_nvlist(&addr));
+
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
+
+	nvlist_destroy(nvl);
 }
 
-/* ARGSUSED */
-void
-setpfsync_maxupd(const char *val, int d, int s, const struct afswtch *rafp)
+static void
+setpfsync_maxupd(if_ctx *ctx, const char *val, int dummy __unused)
 {
-	struct pfsyncreq preq;
 	int maxupdates;
+	nvlist_t *nvl = nvlist_create(0);
 
 	maxupdates = atoi(val);
 	if ((maxupdates < 0) || (maxupdates > 255))
 		errx(1, "maxupd %s: out of range", val);
 
-	memset((char *)&preq, 0, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCGETPFSYNC");
+	nvlist_free_number(nvl, "maxupdates");
+	nvlist_add_number(nvl, "maxupdates", maxupdates);
 
-	preq.pfsyncr_maxupdates = maxupdates;
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
 
-	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCSETPFSYNC");
+	nvlist_destroy(nvl);
 }
 
-/* ARGSUSED */
-void
-setpfsync_defer(const char *val, int d, int s, const struct afswtch *rafp)
+static void
+setpfsync_defer(if_ctx *ctx, const char *val __unused, int d)
 {
-	struct pfsyncreq preq;
+	nvlist_t *nvl = nvlist_create(0);
 
-	memset((char *)&preq, 0, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCGETPFSYNC");
+	nvlist_free_number(nvl, "flags");
+	nvlist_add_number(nvl, "flags", d ? PFSYNCF_DEFER : 0);
 
-	preq.pfsyncr_defer = d;
-	if (ioctl(s, SIOCSETPFSYNC, (caddr_t)&ifr) == -1)
-		err(1, "SIOCSETPFSYNC");
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
+
+	nvlist_destroy(nvl);
 }
 
-void
-pfsync_status(int s)
+static void
+setpfsync_version(if_ctx *ctx, const char *val, int dummy __unused)
 {
-	struct pfsyncreq preq;
+	int version;
+	nvlist_t *nvl = nvlist_create(0);
 
-	bzero((char *)&preq, sizeof(struct pfsyncreq));
-	ifr.ifr_data = (caddr_t)&preq;
+	/* Don't verify, kernel knows which versions are supported.*/
+	version = atoi(val);
 
-	if (ioctl(s, SIOCGETPFSYNC, (caddr_t)&ifr) == -1)
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCGETPFSYNCNV");
+
+	nvlist_free_number(nvl, "version");
+	nvlist_add_number(nvl, "version", version);
+
+	if (pfsync_do_ioctl(ctx, SIOCSETPFSYNCNV, &nvl) == -1)
+		err(1, "SIOCSETPFSYNCNV");
+
+	nvlist_destroy(nvl);
+}
+
+static void
+pfsync_status(if_ctx *ctx)
+{
+	nvlist_t *nvl;
+	char syncdev[IFNAMSIZ];
+	char syncpeer_str[NI_MAXHOST];
+	struct sockaddr_storage syncpeer;
+	int maxupdates = 0;
+	int flags = 0;
+	int version;
+	int error;
+
+	nvl = nvlist_create(0);
+
+	if (pfsync_do_ioctl(ctx, SIOCGETPFSYNCNV, &nvl) == -1) {
+		nvlist_destroy(nvl);
 		return;
-
-	if (preq.pfsyncr_syncdev[0] != '\0' ||
-	    preq.pfsyncr_syncpeer.s_addr != htonl(INADDR_PFSYNC_GROUP))
-			printf("\t");
-
-	if (preq.pfsyncr_syncdev[0] != '\0')
-		printf("pfsync: syncdev: %s ", preq.pfsyncr_syncdev);
-	if (preq.pfsyncr_syncpeer.s_addr != htonl(INADDR_PFSYNC_GROUP))
-		printf("syncpeer: %s ", inet_ntoa(preq.pfsyncr_syncpeer));
-
-	if (preq.pfsyncr_syncdev[0] != '\0' ||
-	    preq.pfsyncr_syncpeer.s_addr != htonl(INADDR_PFSYNC_GROUP)) {
-		printf("maxupd: %d ", preq.pfsyncr_maxupdates);
-		printf("defer: %s\n", preq.pfsyncr_defer ? "on" : "off");
 	}
+
+	memset((char *)&syncdev, 0, IFNAMSIZ);
+	if (nvlist_exists_string(nvl, "syncdev"))
+		strlcpy(syncdev, nvlist_get_string(nvl, "syncdev"),
+		    IFNAMSIZ);
+	if (nvlist_exists_number(nvl, "maxupdates"))
+		maxupdates = nvlist_get_number(nvl, "maxupdates");
+	if (nvlist_exists_number(nvl, "version"))
+		version = nvlist_get_number(nvl, "version");
+	if (nvlist_exists_number(nvl, "flags"))
+		flags = nvlist_get_number(nvl, "flags");
+	if (nvlist_exists_nvlist(nvl, "syncpeer")) {
+		pfsync_syncpeer_nvlist_to_sockaddr(nvlist_get_nvlist(nvl,
+							     "syncpeer"),
+		    &syncpeer);
+	}
+
+	nvlist_destroy(nvl);
+
+	if (syncdev[0] != '\0' || syncpeer.ss_family != AF_UNSPEC)
+		printf("\t");
+
+	if (syncdev[0] != '\0')
+		printf("syncdev: %s ", syncdev);
+
+	if ((syncpeer.ss_family == AF_INET &&
+	    ((struct sockaddr_in *)&syncpeer)->sin_addr.s_addr !=
+	    htonl(INADDR_PFSYNC_GROUP)) || syncpeer.ss_family == AF_INET6) {
+
+		struct sockaddr *syncpeer_sa =
+		    (struct sockaddr *)&syncpeer;
+		if ((error = getnameinfo(syncpeer_sa, syncpeer_sa->sa_len,
+			 syncpeer_str, sizeof(syncpeer_str), NULL, 0,
+			 NI_NUMERICHOST)) != 0)
+			errx(1, "getnameinfo: %s", gai_strerror(error));
+		printf("syncpeer: %s ", syncpeer_str);
+	}
+
+	printf("maxupd: %d ", maxupdates);
+	printf("defer: %s ", (flags & PFSYNCF_DEFER) ? "on" : "off");
+	printf("version: %d\n", version);
+	printf("\tsyncok: %d\n", (flags & PFSYNCF_OK) ? 1 : 0);
 }
 
 static struct cmd pfsync_cmds[] = {
@@ -232,6 +421,7 @@ static struct cmd pfsync_cmds[] = {
 	DEF_CMD_ARG("maxupd",		setpfsync_maxupd),
 	DEF_CMD("defer",	1,	setpfsync_defer),
 	DEF_CMD("-defer",	0,	setpfsync_defer),
+	DEF_CMD_ARG("version",		setpfsync_version),
 };
 static struct afswtch af_pfsync = {
 	.af_name	= "af_pfsync",
@@ -246,9 +436,7 @@ void
 #endif /* __rtems__ */
 pfsync_ctor(void)
 {
-	int i;
-
-	for (i = 0; i < nitems(pfsync_cmds);  i++)
+	for (size_t i = 0; i < nitems(pfsync_cmds);  i++)
 		cmd_register(&pfsync_cmds[i]);
 	af_register(&af_pfsync);
 }

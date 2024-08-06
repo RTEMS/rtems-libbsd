@@ -3,4 +3,3 @@
 #include "rtems-bsd-openssl-data.h"
 /* ocsp.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char *prog);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int multi);

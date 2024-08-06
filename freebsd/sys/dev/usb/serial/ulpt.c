@@ -1,12 +1,10 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*	$NetBSD: ulpt.c,v 1.60 2003/10/04 21:19:50 augustss Exp $	*/
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1998, 2003 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -78,7 +76,8 @@ __FBSDID("$FreeBSD$");
 #ifdef USB_DEBUG
 static int ulpt_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, ulpt, CTLFLAG_RW, 0, "USB ulpt");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, ulpt, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB ulpt");
 SYSCTL_INT(_hw_usb_ulpt, OID_AUTO, debug, CTLFLAG_RWTUN,
     &ulpt_debug, 0, "Debug level");
 #endif
@@ -258,7 +257,6 @@ ulpt_read_callback(struct usb_xfer *xfer, usb_error_t error)
 	case USB_ST_TRANSFERRED:
 
 		if (actlen == 0) {
-
 			if (sc->sc_zlps == 4) {
 				/* enable BULK throttle */
 				usbd_xfer_set_interval(xfer, 500); /* ms */
@@ -422,7 +420,6 @@ ulpt_open(struct usb_fifo *fifo, int fflags)
 	/* we assume that open is a serial process */
 
 	if (sc->sc_fflags == 0) {
-
 		/* reset USB parallel port */
 
 		ulpt_reset(sc);
@@ -502,6 +499,13 @@ static const STRUCT_USB_HOST_ID ulpt_devs[] = {
 	{USB_IFACE_CLASS(UICLASS_PRINTER),
 	 USB_IFACE_SUBCLASS(UISUBCLASS_PRINTER),
 	 USB_IFACE_PROTOCOL(UIPROTO_PRINTER_1284)},
+
+	/* Epson printer */
+	{USB_VENDOR(USB_VENDOR_EPSON),
+	 USB_PRODUCT(USB_PRODUCT_EPSON_TMU220B),
+	 USB_IFACE_CLASS(UICLASS_VENDOR),
+	 USB_IFACE_SUBCLASS(UISUBCLASS_VENDOR),
+	 USB_IFACE_PROTOCOL(UIPROTO_PRINTER_BI)},
 };
 
 static int
@@ -558,8 +562,10 @@ ulpt_attach(device_t dev)
 				break;
 			} else {
 				alt_index++;
-				if ((id->bInterfaceClass == UICLASS_PRINTER) &&
-				    (id->bInterfaceSubClass == UISUBCLASS_PRINTER) &&
+				if ((id->bInterfaceClass == UICLASS_PRINTER ||
+				     id->bInterfaceClass == UICLASS_VENDOR) &&
+				    (id->bInterfaceSubClass == UISUBCLASS_PRINTER ||
+				     id->bInterfaceSubClass == UISUBCLASS_VENDOR) &&
 				    (id->bInterfaceProtocol == UIPROTO_PRINTER_BI)) {
 					goto found;
 				}
@@ -576,7 +582,6 @@ found:
 	    "config number: %d\n", alt_index);
 
 	if (alt_index) {
-
 		error = usbd_set_alt_interface_index
 		    (uaa->device, iface_index, alt_index);
 
@@ -691,7 +696,6 @@ static uint8_t
 ieee1284_compare(const char *a, const char *b)
 {
 	while (1) {
-
 		if (*b == 0) {
 			break;
 		}
@@ -745,8 +749,6 @@ ulpt_watchdog(void *arg)
 	    hz, &ulpt_watchdog, sc);
 }
 
-static devclass_t ulpt_devclass;
-
 static device_method_t ulpt_methods[] = {
 	DEVMETHOD(device_probe, ulpt_probe),
 	DEVMETHOD(device_attach, ulpt_attach),
@@ -760,7 +762,7 @@ static driver_t ulpt_driver = {
 	.size = sizeof(struct ulpt_softc),
 };
 
-DRIVER_MODULE(ulpt, uhub, ulpt_driver, ulpt_devclass, NULL, 0);
+DRIVER_MODULE(ulpt, uhub, ulpt_driver, NULL, NULL);
 MODULE_DEPEND(ulpt, usb, 1, 1, 1);
 MODULE_VERSION(ulpt, 1);
 USB_PNP_HOST_INFO(ulpt_devs);

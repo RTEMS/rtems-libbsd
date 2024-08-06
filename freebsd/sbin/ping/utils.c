@@ -50,10 +50,9 @@ static char sccsid[] = "@(#)ping.c	8.1 (Berkeley) 6/5/93";
 #endif /* not lint */
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <string.h>
 #ifdef __rtems__
+#include <signal.h>
 #include "rtems-bsd-ping-utils-data.h"
 #endif /* __rtems__ */
 

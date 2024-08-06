@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2003 Networks Associates Technology, Inc.
  * All rights reserved.
@@ -31,13 +31,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
- *
  * Macros which generate thread local storage handling code in NSS modules.
  */
 #ifndef _NSS_TLS_H_
 #define _NSS_TLS_H_
 
+#ifndef __rtems__
 #define NSS_TLS_HANDLING(name)					\
 static pthread_key_t name##_state_key;				\
 static	void	 name##_keyinit(void);				\
@@ -52,6 +51,48 @@ name##_keyinit(void)							\
 static int							\
 name##_getstate(struct name##_state **p)			\
 {								\
+	static struct name##_state st;				\
+	static pthread_once_t	keyinit = PTHREAD_ONCE_INIT;	\
+	int			rv;				\
+								\
+	if (!__isthreaded || _pthread_main_np() != 0) {		\
+		*p = &st;					\
+		return (0);					\
+	}							\
+	rv = _pthread_once(&keyinit, name##_keyinit);		\
+	if (rv != 0)						\
+		return (rv);					\
+	*p = _pthread_getspecific(name##_state_key);		\
+	if (*p != NULL)						\
+		return (0);					\
+	*p = calloc(1, sizeof(**p));				\
+	if (*p == NULL)						\
+		return (ENOMEM);				\
+	rv = _pthread_setspecific(name##_state_key, *p);	\
+	if (rv != 0) {						\
+		free(*p);					\
+		*p = NULL;					\
+	}							\
+	return (rv);						\
+}								\
+/* allow the macro invocation to end with a semicolon */	\
+struct _clashproof_bmVjdGFy
+#else /* __rtems__ */
+#define NSS_TLS_HANDLING(name)					\
+static pthread_key_t name##_state_key;				\
+static	void	 name##_keyinit(void);				\
+static	int	 name##_getstate(struct name##_state **);	\
+\
+static void								\
+name##_keyinit(void)							\
+{									\
+	(void)_pthread_key_create(&name##_state_key, name##_endstate);	\
+}									\
+\
+static int							\
+name##_getstate(struct name##_state **p)			\
+{								\
+	static struct name##_state st;				\
 	static pthread_once_t	keyinit = PTHREAD_ONCE_INIT;	\
 	int			rv;				\
 								\
@@ -73,5 +114,6 @@ name##_getstate(struct name##_state **p)			\
 }								\
 /* allow the macro invocation to end with a semicolon */	\
 struct _clashproof_bmVjdGFy
+#endif /* __rtems__ */
 
 #endif /* _NSS_TLS_H_ */

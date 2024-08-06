@@ -33,8 +33,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
@@ -65,6 +63,8 @@ __FBSDID("$FreeBSD$");
 #include <dev/ofw/ofw_bus_subr.h>
 #include <dev/xilinx/if_xaereg.h>
 #include <dev/xilinx/if_xaevar.h>
+
+#include <dev/xilinx/axidma.h>
 
 #include <rtems/bsd/local/miibus_if.h>
 
@@ -180,7 +180,7 @@ xae_xdma_tx_intr(void *arg, xdma_transfer_status_t *status)
 {
 	xdma_transfer_status_t st;
 	struct xae_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 	struct mbuf *m;
 	int err;
 
@@ -203,7 +203,7 @@ xae_xdma_tx_intr(void *arg, xdma_transfer_status_t *status)
 		m_freem(m);
 	}
 
-	ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+	if_setdrvflagbits(ifp, 0, IFF_DRV_OACTIVE);
 
 	XAE_UNLOCK(sc);
 
@@ -215,7 +215,7 @@ xae_xdma_rx_intr(void *arg, xdma_transfer_status_t *status)
 {
 	xdma_transfer_status_t st;
 	struct xae_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 	struct mbuf *m;
 	int err;
 	uint32_t cnt_processed;
@@ -245,7 +245,7 @@ xae_xdma_rx_intr(void *arg, xdma_transfer_status_t *status)
 		m->m_pkthdr.len = m->m_len = st.transferred;
 		m->m_pkthdr.rcvif = ifp;
 		XAE_UNLOCK(sc);
-		(*ifp->if_input)(ifp, m);
+		if_input(ifp, m);
 		XAE_LOCK(sc);
 	}
 
@@ -257,15 +257,12 @@ xae_xdma_rx_intr(void *arg, xdma_transfer_status_t *status)
 }
 
 static void
-xae_qflush(struct ifnet *ifp)
+xae_qflush(if_t ifp)
 {
-	struct xae_softc *sc;
-
-	sc = ifp->if_softc;
 }
 
 static int
-xae_transmit_locked(struct ifnet *ifp)
+xae_transmit_locked(if_t ifp)
 {
 	struct xae_softc *sc;
 	struct mbuf *m;
@@ -275,7 +272,7 @@ xae_transmit_locked(struct ifnet *ifp)
 
 	dprintf("%s\n", __func__);
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	br = sc->br;
 
 	enq = 0;
@@ -304,14 +301,14 @@ xae_transmit_locked(struct ifnet *ifp)
 }
 
 static int
-xae_transmit(struct ifnet *ifp, struct mbuf *m)
+xae_transmit(if_t ifp, struct mbuf *m)
 {
 	struct xae_softc *sc;
 	int error;
 
 	dprintf("%s\n", __func__);
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 
 	XAE_LOCK(sc);
 
@@ -321,7 +318,7 @@ xae_transmit(struct ifnet *ifp, struct mbuf *m)
 		return (error);
 	}
 
-	if ((ifp->if_drv_flags & (IFF_DRV_RUNNING | IFF_DRV_OACTIVE)) !=
+	if ((if_getdrvflags(ifp) & (IFF_DRV_RUNNING | IFF_DRV_OACTIVE)) !=
 	    IFF_DRV_RUNNING) {
 		XAE_UNLOCK(sc);
 		return (0);
@@ -342,13 +339,13 @@ xae_transmit(struct ifnet *ifp, struct mbuf *m)
 static void
 xae_stop_locked(struct xae_softc *sc)
 {
-	struct ifnet *ifp;
+	if_t ifp;
 	uint32_t reg;
 
 	XAE_ASSERT_LOCKED(sc);
 
 	ifp = sc->ifp;
-	ifp->if_drv_flags &= ~(IFF_DRV_RUNNING | IFF_DRV_OACTIVE);
+	if_setdrvflagbits(ifp, 0, (IFF_DRV_RUNNING | IFF_DRV_OACTIVE));
 
 	callout_stop(&sc->xae_callout);
 
@@ -387,7 +384,7 @@ xae_stat(struct xae_softc *sc, int counter_id)
 static void
 xae_harvest_stats(struct xae_softc *sc)
 {
-	struct ifnet *ifp;
+	if_t ifp;
 
 	ifp = sc->ifp;
 
@@ -415,7 +412,7 @@ static void
 xae_tick(void *arg)
 {
 	struct xae_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 	int link_was_up;
 
 	sc = arg;
@@ -424,7 +421,7 @@ xae_tick(void *arg)
 
 	ifp = sc->ifp;
 
-	if (!(ifp->if_drv_flags & IFF_DRV_RUNNING))
+	if (!(if_getdrvflags(ifp) & IFF_DRV_RUNNING))
 		return;
 
 	/* Gather stats from hardware counters. */
@@ -443,15 +440,15 @@ xae_tick(void *arg)
 static void
 xae_init_locked(struct xae_softc *sc)
 {
-	struct ifnet *ifp;
+	if_t ifp;
 
 	XAE_ASSERT_LOCKED(sc);
 
 	ifp = sc->ifp;
-	if (ifp->if_drv_flags & IFF_DRV_RUNNING)
+	if (if_getdrvflags(ifp) & IFF_DRV_RUNNING)
 		return;
 
-	ifp->if_drv_flags |= IFF_DRV_RUNNING;
+	if_setdrvflagbits(ifp, IFF_DRV_RUNNING, 0);
 
 	xae_setup_rxfilter(sc);
 
@@ -482,12 +479,12 @@ xae_init(void *arg)
 }
 
 static void
-xae_media_status(struct ifnet * ifp, struct ifmediareq *ifmr)
+xae_media_status(if_t  ifp, struct ifmediareq *ifmr)
 {
 	struct xae_softc *sc;
 	struct mii_data *mii;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	mii = sc->mii_softc;
 
 	XAE_LOCK(sc);
@@ -505,12 +502,12 @@ xae_media_change_locked(struct xae_softc *sc)
 }
 
 static int
-xae_media_change(struct ifnet * ifp)
+xae_media_change(if_t  ifp)
 {
 	struct xae_softc *sc;
 	int error;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 
 	XAE_LOCK(sc);
 	error = xae_media_change_locked(sc);
@@ -519,14 +516,40 @@ xae_media_change(struct ifnet * ifp)
 	return (error);
 }
 
+static u_int
+xae_write_maddr(void *arg, struct sockaddr_dl *sdl, u_int cnt)
+{
+	struct xae_softc *sc = arg;
+	uint32_t reg;
+	uint8_t *ma;
+
+	if (cnt >= XAE_MULTICAST_TABLE_SIZE)
+		return (1);
+
+	ma = LLADDR(sdl);
+
+	reg = READ4(sc, XAE_FFC) & 0xffffff00;
+	reg |= cnt;
+	WRITE4(sc, XAE_FFC, reg);
+
+	reg = (ma[0]);
+	reg |= (ma[1] << 8);
+	reg |= (ma[2] << 16);
+	reg |= (ma[3] << 24);
+	WRITE4(sc, XAE_FFV(0), reg);
+
+	reg = ma[4];
+	reg |= ma[5] << 8;
+	WRITE4(sc, XAE_FFV(1), reg);
+
+	return (1);
+}
+
 static void
 xae_setup_rxfilter(struct xae_softc *sc)
 {
-	struct ifmultiaddr *ifma;
-	struct ifnet *ifp;
+	if_t ifp;
 	uint32_t reg;
-	uint8_t *ma;
-	int i;
 
 	XAE_ASSERT_LOCKED(sc);
 
@@ -535,7 +558,7 @@ xae_setup_rxfilter(struct xae_softc *sc)
 	/*
 	 * Set the multicast (group) filter hash.
 	 */
-	if ((ifp->if_flags & (IFF_ALLMULTI | IFF_PROMISC)) != 0) {
+	if ((if_getflags(ifp) & (IFF_ALLMULTI | IFF_PROMISC)) != 0) {
 		reg = READ4(sc, XAE_FFC);
 		reg |= FFC_PM;
 		WRITE4(sc, XAE_FFC, reg);
@@ -544,33 +567,7 @@ xae_setup_rxfilter(struct xae_softc *sc)
 		reg &= ~FFC_PM;
 		WRITE4(sc, XAE_FFC, reg);
 
-		if_maddr_rlock(ifp);
-
-		i = 0;
-		CK_STAILQ_FOREACH(ifma, &sc->ifp->if_multiaddrs, ifma_link) {
-			if (ifma->ifma_addr->sa_family != AF_LINK)
-				continue;
-
-			if (i >= XAE_MULTICAST_TABLE_SIZE)
-				break;
-
-			ma = LLADDR((struct sockaddr_dl *)ifma->ifma_addr);
-
-			reg = READ4(sc, XAE_FFC) & 0xffffff00;
-			reg |= i++;
-			WRITE4(sc, XAE_FFC, reg);
-
-			reg = (ma[0]);
-			reg |= (ma[1] << 8);
-			reg |= (ma[2] << 16);
-			reg |= (ma[3] << 24);
-			WRITE4(sc, XAE_FFV(0), reg);
-
-			reg = ma[4];
-			reg |= ma[5] << 8;
-			WRITE4(sc, XAE_FFV(1), reg);
-		}
-		if_maddr_runlock(ifp);
+		if_foreach_llmaddr(ifp, xae_write_maddr, sc);
 	}
 
 	/*
@@ -588,23 +585,23 @@ xae_setup_rxfilter(struct xae_softc *sc)
 }
 
 static int
-xae_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
+xae_ioctl(if_t ifp, u_long cmd, caddr_t data)
 {
 	struct xae_softc *sc;
 	struct mii_data *mii;
 	struct ifreq *ifr;
 	int mask, error;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	ifr = (struct ifreq *)data;
 
 	error = 0;
 	switch (cmd) {
 	case SIOCSIFFLAGS:
 		XAE_LOCK(sc);
-		if (ifp->if_flags & IFF_UP) {
-			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
-				if ((ifp->if_flags ^ sc->if_flags) &
+		if (if_getflags(ifp) & IFF_UP) {
+			if (if_getdrvflags(ifp) & IFF_DRV_RUNNING) {
+				if ((if_getflags(ifp) ^ sc->if_flags) &
 				    (IFF_PROMISC | IFF_ALLMULTI))
 					xae_setup_rxfilter(sc);
 			} else {
@@ -612,15 +609,15 @@ xae_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 					xae_init_locked(sc);
 			}
 		} else {
-			if (ifp->if_drv_flags & IFF_DRV_RUNNING)
+			if (if_getdrvflags(ifp) & IFF_DRV_RUNNING)
 				xae_stop_locked(sc);
 		}
-		sc->if_flags = ifp->if_flags;
+		sc->if_flags = if_getflags(ifp);
 		XAE_UNLOCK(sc);
 		break;
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
-		if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
+		if (if_getdrvflags(ifp) & IFF_DRV_RUNNING) {
 			XAE_LOCK(sc);
 			xae_setup_rxfilter(sc);
 			XAE_UNLOCK(sc);
@@ -632,10 +629,10 @@ xae_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		error = ifmedia_ioctl(ifp, ifr, &mii->mii_media, cmd);
 		break;
 	case SIOCSIFCAP:
-		mask = ifp->if_capenable ^ ifr->ifr_reqcap;
+		mask = if_getcapenable(ifp) ^ ifr->ifr_reqcap;
 		if (mask & IFCAP_VLAN_MTU) {
 			/* No work to do except acknowledge the change took */
-			ifp->if_capenable ^= IFCAP_VLAN_MTU;
+			if_togglecapenable(ifp, IFCAP_VLAN_MTU);
 		}
 		break;
 
@@ -755,9 +752,6 @@ static void
 xae_phy_fixup(struct xae_softc *sc)
 {
 	uint32_t reg;
-	device_t dev;
-
-	dev = sc->dev;
 
 	do {
 		WRITE_TI_EREG(sc, DP83867_SGMIICTL1, SGMIICTL1_SGMII_6W);
@@ -784,6 +778,68 @@ xae_phy_fixup(struct xae_softc *sc)
 }
 
 static int
+get_xdma_std(struct xae_softc *sc)
+{
+
+	sc->xdma_tx = xdma_ofw_get(sc->dev, "tx");
+	if (sc->xdma_tx == NULL)
+		return (ENXIO);
+
+	sc->xdma_rx = xdma_ofw_get(sc->dev, "rx");
+	if (sc->xdma_rx == NULL) {
+		xdma_put(sc->xdma_tx);
+		return (ENXIO);
+	}
+
+	return (0);
+}
+
+static int
+get_xdma_axistream(struct xae_softc *sc)
+{
+	struct axidma_fdt_data *data;
+	device_t dma_dev;
+	phandle_t node;
+	pcell_t prop;
+	size_t len;
+
+	node = ofw_bus_get_node(sc->dev);
+	len = OF_getencprop(node, "axistream-connected", &prop, sizeof(prop));
+	if (len != sizeof(prop)) {
+		device_printf(sc->dev,
+		    "%s: Couldn't get axistream-connected prop.\n", __func__);
+		return (ENXIO);
+	}
+	dma_dev = OF_device_from_xref(prop);
+	if (dma_dev == NULL) {
+		device_printf(sc->dev, "Could not get DMA device by xref.\n");
+		return (ENXIO);
+	}
+
+	sc->xdma_tx = xdma_get(sc->dev, dma_dev);
+	if (sc->xdma_tx == NULL) {
+		device_printf(sc->dev, "Could not find DMA controller.\n");
+		return (ENXIO);
+	}
+	data = malloc(sizeof(struct axidma_fdt_data),
+	    M_DEVBUF, (M_WAITOK | M_ZERO));
+	data->id = AXIDMA_TX_CHAN;
+	sc->xdma_tx->data = data;
+
+	sc->xdma_rx = xdma_get(sc->dev, dma_dev);
+	if (sc->xdma_rx == NULL) {
+		device_printf(sc->dev, "Could not find DMA controller.\n");
+		return (ENXIO);
+	}
+	data = malloc(sizeof(struct axidma_fdt_data),
+	    M_DEVBUF, (M_WAITOK | M_ZERO));
+	data->id = AXIDMA_RX_CHAN;
+	sc->xdma_rx->data = data;
+
+	return (0);
+}
+
+static int
 setup_xdma(struct xae_softc *sc)
 {
 	device_t dev;
@@ -793,15 +849,16 @@ setup_xdma(struct xae_softc *sc)
 	dev = sc->dev;
 
 	/* Get xDMA controller */   
-	sc->xdma_tx = xdma_ofw_get(sc->dev, "tx");
-	if (sc->xdma_tx == NULL) {
-		device_printf(dev, "Could not find DMA controller.\n");
-		return (ENXIO);
+	error = get_xdma_std(sc);
+
+	if (error) {
+		device_printf(sc->dev,
+		    "Fallback to axistream-connected property\n");
+		error = get_xdma_axistream(sc);
 	}
 
-	sc->xdma_rx = xdma_ofw_get(sc->dev, "rx");
-	if (sc->xdma_rx == NULL) {
-		device_printf(dev, "Could not find DMA controller.\n");
+	if (error) {
+		device_printf(dev, "Could not find xDMA controllers.\n");
 		return (ENXIO);
 	}
 
@@ -813,7 +870,7 @@ setup_xdma(struct xae_softc *sc)
 	}
 
 	/* Setup interrupt handler. */
-	error = xdma_setup_intr(sc->xchan_tx,
+	error = xdma_setup_intr(sc->xchan_tx, 0,
 	    xae_xdma_tx_intr, sc, &sc->ih_tx);
 	if (error) {
 		device_printf(sc->dev,
@@ -829,7 +886,7 @@ setup_xdma(struct xae_softc *sc)
 	}
 
 	/* Setup interrupt handler. */
-	error = xdma_setup_intr(sc->xchan_rx,
+	error = xdma_setup_intr(sc->xchan_rx, XDMA_INTR_NET,
 	    xae_xdma_rx_intr, sc, &sc->ih_rx);
 	if (error) {
 		device_printf(sc->dev,
@@ -886,7 +943,7 @@ static int
 xae_attach(device_t dev)
 {
 	struct xae_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 	phandle_t node;
 	uint32_t reg;
 	int error;
@@ -945,23 +1002,17 @@ xae_attach(device_t dev)
 
 	/* Set up the ethernet interface. */
 	sc->ifp = ifp = if_alloc(IFT_ETHER);
-	if (ifp == NULL) {
-		device_printf(dev, "could not allocate ifp.\n");
-		return (ENXIO);
-	}
-
-	ifp->if_softc = sc;
+	if_setsoftc(ifp, sc);
 	if_initname(ifp, device_get_name(dev), device_get_unit(dev));
-	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-	ifp->if_capabilities = IFCAP_VLAN_MTU;
-	ifp->if_capenable = ifp->if_capabilities;
-	ifp->if_transmit = xae_transmit;
-	ifp->if_qflush = xae_qflush;
-	ifp->if_ioctl = xae_ioctl;
-	ifp->if_init = xae_init;
-	IFQ_SET_MAXLEN(&ifp->if_snd, TX_DESC_COUNT - 1);
-	ifp->if_snd.ifq_drv_maxlen = TX_DESC_COUNT - 1;
-	IFQ_SET_READY(&ifp->if_snd);
+	if_setflags(ifp, IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST);
+	if_setcapabilities(ifp, IFCAP_VLAN_MTU);
+	if_setcapenable(ifp, if_getcapabilities(ifp));
+	if_settransmitfn(ifp, xae_transmit);
+	if_setqflushfn(ifp, xae_qflush);
+	if_setioctlfn(ifp, xae_ioctl);
+	if_setinitfn(ifp, xae_init);
+	if_setsendqlen(ifp, TX_DESC_COUNT - 1);
+	if_setsendqready(ifp);
 
 	if (xae_get_phyaddr(node, &sc->phy_addr) != 0)
 		return (ENXIO);
@@ -995,7 +1046,7 @@ static int
 xae_detach(device_t dev)
 {
 	struct xae_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 
 	sc = device_get_softc(dev);
 
@@ -1089,7 +1140,6 @@ static device_method_t xae_methods[] = {
 	DEVMETHOD(miibus_readreg,	xae_miibus_read_reg),
 	DEVMETHOD(miibus_writereg,	xae_miibus_write_reg),
 	DEVMETHOD(miibus_statchg,	xae_miibus_statchg),
-
 	{ 0, 0 }
 };
 
@@ -1099,10 +1149,8 @@ driver_t xae_driver = {
 	sizeof(struct xae_softc),
 };
 
-static devclass_t xae_devclass;
-
-DRIVER_MODULE(xae, simplebus, xae_driver, xae_devclass, 0, 0);
-DRIVER_MODULE(miibus, xae, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(xae, simplebus, xae_driver, 0, 0);
+DRIVER_MODULE(miibus, xae, miibus_driver, 0, 0);
 
 MODULE_DEPEND(xae, ether, 1, 1, 1);
 MODULE_DEPEND(xae, miibus, 1, 1, 1);

@@ -35,8 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
@@ -56,6 +54,7 @@ __FBSDID("$FreeBSD$");
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/route.h>
 #include <net/vnet.h>
 
@@ -159,7 +158,7 @@ in6_gif_srcaddr(void *arg __unused, const struct sockaddr *sa, int event)
 	if (V_ipv6_hashtbl == NULL)
 		return;
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	sin = (const struct sockaddr_in6 *)sa;
 	CK_LIST_FOREACH(sc, &GIF_SRCHASH(&sin->sin6_addr), srchash) {
 		if (IN6_ARE_ADDR_EQUAL(&sc->gif_ip6hdr->ip6_src,
@@ -292,31 +291,16 @@ in6_gif_output(struct ifnet *ifp, struct mbuf *m, int proto, uint8_t ecn)
 {
 	struct gif_softc *sc = ifp->if_softc;
 	struct ip6_hdr *ip6;
-	int len;
 
 	/* prepend new IP header */
-	MPASS(in_epoch(net_epoch_preempt));
-	len = sizeof(struct ip6_hdr);
-#ifndef __NO_STRICT_ALIGNMENT
-	if (proto == IPPROTO_ETHERIP)
-		len += ETHERIP_ALIGN;
-#endif
-	M_PREPEND(m, len, M_NOWAIT);
+	NET_EPOCH_ASSERT();
+	M_PREPEND(m, sizeof(struct ip6_hdr), M_NOWAIT);
 	if (m == NULL)
 		return (ENOBUFS);
-#ifndef __NO_STRICT_ALIGNMENT
-	if (proto == IPPROTO_ETHERIP) {
-		len = mtod(m, vm_offset_t) & 3;
-		KASSERT(len == 0 || len == ETHERIP_ALIGN,
-		    ("in6_gif_output: unexpected misalignment"));
-		m->m_data += len;
-		m->m_len -= ETHERIP_ALIGN;
-	}
-#endif
 
 	ip6 = mtod(m, struct ip6_hdr *);
 	MPASS(sc->gif_family == AF_INET6);
-	bcopy(sc->gif_ip6hdr, ip6, sizeof(struct ip6_hdr));
+	memcpy(ip6, sc->gif_ip6hdr, sizeof(struct ip6_hdr));
 
 	ip6->ip6_flow  |= htonl((uint32_t)ecn << 20);
 	ip6->ip6_nxt	= proto;
@@ -337,7 +321,7 @@ in6_gif_input(struct mbuf *m, int off, int proto, void *arg)
 	struct ip6_hdr *ip6;
 	uint8_t ecn;
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	if (sc == NULL) {
 		m_freem(m);
 		IP6STAT_INC(ip6s_nogif);
@@ -346,7 +330,7 @@ in6_gif_input(struct mbuf *m, int off, int proto, void *arg)
 	gifp = GIF2IFP(sc);
 	if ((gifp->if_flags & IFF_UP) != 0) {
 		ip6 = mtod(m, struct ip6_hdr *);
-		ecn = (ntohl(ip6->ip6_flow) >> 20) & 0xff;
+		ecn = IPV6_TRAFFIC_CLASS(ip6);
 		m_adj(m, off);
 		gif_input(m, gifp, proto, ecn);
 	} else {
@@ -366,7 +350,7 @@ in6_gif_lookup(const struct mbuf *m, int off, int proto, void **arg)
 	if (V_ipv6_hashtbl == NULL)
 		return (0);
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	/*
 	 * NOTE: it is safe to iterate without any locking here, because softc
 	 * can be reclaimed only when we are not within net_epoch_preempt
@@ -404,13 +388,9 @@ done:
 		return (0);
 	/* ingress filters on outer source */
 	if ((GIF2IFP(sc)->if_flags & IFF_LINK2) == 0) {
-		struct nhop6_basic nh6;
-
-		if (fib6_lookup_nh_basic(sc->gif_fibnum, &ip6->ip6_src,
-		    ntohs(in6_getscope(&ip6->ip6_src)), 0, 0, &nh6) != 0)
-			return (0);
-
-		if (nh6.nh_ifp != m->m_pkthdr.rcvif)
+		if (fib6_check_urpf(sc->gif_fibnum, &ip6->ip6_src,
+		    ntohs(in6_getscope(&ip6->ip6_src)), NHR_NONE,
+		    m->m_pkthdr.rcvif) == 0)
 			return (0);
 	}
 	*arg = sc;

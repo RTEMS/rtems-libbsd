@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1994, Garrett Wollman
  *
@@ -26,9 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 
 #include "namespace.h"
 #include "reentrant.h"
@@ -179,7 +176,7 @@ host_id_func(char *buffer, size_t *buffer_size, va_list ap, void *cache_mdata)
 	res_options = statp->options & (RES_RECURSE | RES_DEFNAMES |
 	    RES_DNSRCH | RES_NOALIASES | RES_USE_INET6);
 
-	lookup_type = (enum nss_lookup_type)cache_mdata;
+	lookup_type = (enum nss_lookup_type)(uintptr_t)cache_mdata;
 	switch (lookup_type) {
 	case nss_lt_name:
 		str = va_arg(ap, char *);
@@ -260,17 +257,17 @@ static int
 host_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
     void *cache_mdata)
 {
-	char *str;
-	void *addr;
-	socklen_t len;
-	int type;
+	char *str __unused;
+	void *addr __unused;
+	socklen_t len __unused;
+	int type __unused;
 	struct hostent *ht;
 
 	struct hostent new_ht;
 	size_t desired_size, aliases_size, addr_size, size;
 	char *p, **iter;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(uintptr_t)cache_mdata) {
 	case nss_lt_name:
 		str = va_arg(ap, char *);
 		type = va_arg(ap, int);
@@ -366,10 +363,10 @@ static int
 host_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
     void *cache_mdata)
 {
-	char *str;
-	void *addr;
-	socklen_t len;
-	int type;
+	char *str __unused;
+	void *addr __unused;
+	socklen_t len __unused;
+	int type __unused;
 	struct hostent *ht;
 
 	char *p;
@@ -377,7 +374,7 @@ host_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 	char *orig_buf;
 	size_t orig_buf_size;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(uintptr_t)cache_mdata) {
 	case nss_lt_name:
 		str = va_arg(ap, char *);
 		type = va_arg(ap, int);

@@ -46,8 +46,11 @@
 #include <rtems/bsd/local/opt_inet6.h>
 #include <machine/rtems-bsd-version.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
 
 #include <stdio.h>
+
+#define _SC_CPUSET_SIZE 122
 
 #define O_CLOEXEC 0
 
@@ -79,6 +82,29 @@
 #define	SIZE_T_MAX SIZE_MAX
 
 #define	__libc_sigprocmask(a, b, c) sigprocmask(a, b, c)
+
+/* expat config */
+#define XML_GE 1
+#define XML_CONTEXT_BYTES 1024
+
+#define secure_getenv getenv
+
+#define CRYPTO_memcmp memcmp
+
+/* Here until _termios in newlib is updated */
+#define IUTF8   0x00004000
+/* Here until netdb in newlib is updated */
+#define EAI_ADDRFAMILY 1
+/* Here until socket in newlib is updated */
+#define AF_NETLINK 38
+
+#define WITHOUT_NETLINK 1
+
+typedef   __int64_t       kssize_t;
+typedef   __uint64_t      kpaddr_t;
+
+typedef register_t syscallarg_t;
+typedef max_align_t  __max_align_t;
 
 __BEGIN_DECLS
 

@@ -103,6 +103,7 @@ devfs_imfs_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
 			goto err;
 		}
 		fpop = td->td_fpop;
+		fp->f_data = cdev;
 		curthread->td_fpop = fp;
 		fp->f_cdevpriv = NULL;
 		error = dsw->d_open(cdev, oflag + 1, 0, td);

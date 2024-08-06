@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2017,	Jeffrey Roberson <jeff@freebsd.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_DOMAINSET_H_
@@ -43,7 +41,6 @@
 	    sizeof("::") + sizeof(__XSTRING(DOMAINSET_POLICY_MAX)) +	\
 	    sizeof(__XSTRING(MAXMEMDOM)))
 
-
 #define	DOMAINSET_CLR(n, p)		__BIT_CLR(DOMAINSET_SETSIZE, n, p)
 #define	DOMAINSET_COPY(f, t)		__BIT_COPY(DOMAINSET_SETSIZE, f, t)
 #define	DOMAINSET_ISSET(n, p)		__BIT_ISSET(DOMAINSET_SETSIZE, n, p)
@@ -57,8 +54,9 @@
 #define	DOMAINSET_OVERLAP(p, c)		__BIT_OVERLAP(DOMAINSET_SETSIZE, p, c)
 #define	DOMAINSET_CMP(p, c)		__BIT_CMP(DOMAINSET_SETSIZE, p, c)
 #define	DOMAINSET_OR(d, s)		__BIT_OR(DOMAINSET_SETSIZE, d, s)
+#define	DOMAINSET_ORNOT(d, s)		__BIT_ORNOT(DOMAINSET_SETSIZE, d, s)
 #define	DOMAINSET_AND(d, s)		__BIT_AND(DOMAINSET_SETSIZE, d, s)
-#define	DOMAINSET_NAND(d, s)		__BIT_NAND(DOMAINSET_SETSIZE, d, s)
+#define	DOMAINSET_ANDNOT(d, s)		__BIT_ANDNOT(DOMAINSET_SETSIZE, d, s)
 #define	DOMAINSET_CLR_ATOMIC(n, p)	__BIT_CLR_ATOMIC(DOMAINSET_SETSIZE, n, p)
 #define	DOMAINSET_SET_ATOMIC(n, p)	__BIT_SET_ATOMIC(DOMAINSET_SETSIZE, n, p)
 #define	DOMAINSET_SET_ATOMIC_ACQ(n, p)					\
@@ -69,9 +67,9 @@
 	    __BIT_COPY_STORE_REL(DOMAINSET_SETSIZE, f, t)
 #define	DOMAINSET_FFS(p)		__BIT_FFS(DOMAINSET_SETSIZE, p)
 #define	DOMAINSET_FLS(p)		__BIT_FLS(DOMAINSET_SETSIZE, p)
-#define	DOMAINSET_COUNT(p)		__BIT_COUNT(DOMAINSET_SETSIZE, p)
+#define	DOMAINSET_COUNT(p)		((int)__BIT_COUNT(DOMAINSET_SETSIZE, p))
 #define	DOMAINSET_FSET			__BITSET_FSET(_NDOMAINSETWORDS)
-#define	DOMAINSET_T_INITIALIZER		__BITSET_T_INITIALIZER
+#define	DOMAINSET_T_INITIALIZER(x)	__BITSET_T_INITIALIZER(x)
 
 #define	DOMAINSET_POLICY_INVALID	0
 #define	DOMAINSET_POLICY_ROUNDROBIN	1
@@ -96,6 +94,10 @@ struct domainset {
 	domainid_t	ds_order[MAXMEMDOM];  /* nth domain table. */
 };
 
+extern struct domainset domainset_firsttouch;
+#define	DOMAINSET_FT()		(&domainset_firsttouch)
+extern struct domainset domainset_interleave;
+#define	DOMAINSET_IL()		(&domainset_interleave)
 extern struct domainset domainset_fixed[MAXMEMDOM], domainset_prefer[MAXMEMDOM];
 #define	DOMAINSET_FIXED(domain)	(&domainset_fixed[(domain)])
 #define	DOMAINSET_PREF(domain)	(&domainset_prefer[(domain)])

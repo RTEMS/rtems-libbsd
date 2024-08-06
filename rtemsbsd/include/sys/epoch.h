@@ -32,8 +32,10 @@
 #define _SYS_EPOCH_H_
 
 #include <sys/cdefs.h>
+#include <sys/queue.h>
 #ifdef _KERNEL
 #include <sys/lock.h>
+#include <sys/_lock.h>
 #include <sys/_mutex.h>
 #include <sys/_sx.h>
 #include <sys/pcpu.h>
@@ -60,6 +62,8 @@ TAILQ_HEAD(epoch_tdlist, epoch_tracker);
 
 typedef struct ck_epoch_entry *epoch_context_t;
 #define	epoch_context ck_epoch_entry
+
+typedef	void epoch_callback_t(epoch_context_t);
 
 #ifdef _KERNEL
 #define	EPOCH_ALIGN CPU_CACHE_LINE_BYTES
@@ -115,13 +119,32 @@ void	epoch_exit_preempt(epoch_t epoch, epoch_tracker_t et);
 void	epoch_wait(epoch_t epoch);
 void	epoch_wait_preempt(epoch_t epoch);
 
-void	epoch_call(epoch_t epoch, epoch_context_t ctx,
-	    void (*callback) (epoch_context_t));
+void	epoch_call(epoch_t epoch, void (*callback) (epoch_context_t),
+	    epoch_context_t ctx);
 void	epoch_drain_callbacks(epoch_t epoch);
 
 int	_bsd_in_epoch(epoch_t epoch);
 #define	in_epoch(epoch) _bsd_in_epoch(epoch)
 #define	in_epoch_verbose(epoch, dump_onfail) _bsd_in_epoch(epoch)
+
+extern struct epoch _bsd_net_epoch_preempt;
+#define	net_epoch_preempt &_bsd_net_epoch_preempt
+extern struct epoch _bsd_net_epoch;
+#define	net_epoch &_bsd_net_epoch
+
+/*
+ * Globally recognized epochs in the FreeBSD kernel.
+ */
+/* Network preemptible epoch, declared in sys/net/if.c. */
+#define	NET_EPOCH_ENTER(et)	epoch_enter_preempt(net_epoch_preempt, &(et))
+#define	NET_EPOCH_EXIT(et)	epoch_exit_preempt(net_epoch_preempt, &(et))
+#define	NET_EPOCH_WAIT()	epoch_wait_preempt(net_epoch_preempt)
+#define	NET_EPOCH_CALL(f, c)	epoch_call(net_epoch_preempt, (f), (c))
+#define	NET_EPOCH_DRAIN_CALLBACKS() epoch_drain_callbacks(net_epoch_preempt)
+#define	NET_EPOCH_ASSERT()	MPASS(in_epoch(net_epoch_preempt))
+#define	NET_TASK_INIT(t, p, f, c) TASK_INIT_FLAGS(t, p, f, c, TASK_NETWORK)
+#define	NET_GROUPTASK_INIT(gtask, prio, func, ctx)			\
+	    GTASK_INIT(&(gtask)->gt_task, TASK_NETWORK, (prio), (func), (ctx))
 
 #endif /* _KERNEL */
 #endif /* _SYS_EPOCH_H_ */

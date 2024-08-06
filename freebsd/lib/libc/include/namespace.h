@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001 Daniel Eischen <deischen@FreeBSD.org>.
  * All rights reserved.
@@ -130,6 +130,7 @@
 #define		pthread_getaffinity_np		_pthread_getaffinity_np
 #define		pthread_getconcurrency		_pthread_getconcurrency
 #define		pthread_getcpuclockid		_pthread_getcpuclockid
+#define		pthread_getname_np		_pthread_getname_np
 #define		pthread_getprio			_pthread_getprio
 #define		pthread_getschedparam		_pthread_getschedparam
 #define		pthread_getspecific		_pthread_getspecific
@@ -183,6 +184,7 @@
 #define		pthread_setcancelstate		_pthread_setcancelstate
 #define		pthread_setcanceltype		_pthread_setcanceltype
 #define		pthread_setconcurrency		_pthread_setconcurrency
+#define		pthread_setname_np		_pthread_setname_np
 #define		pthread_setprio			_pthread_setprio
 #define		pthread_setschedparam		_pthread_setschedparam
 #define		pthread_setspecific		_pthread_setspecific
@@ -232,7 +234,7 @@
 #define		waitpid				_waitpid
 #define		write				_write
 #define		writev				_writev
-#endif /* __rtems__ */
+#else /* __rtems__ */
 
 #define _open				open
 #define _close				close
@@ -255,12 +257,12 @@
 #define _getpeername			getpeername
 #define _getprogname			getprogname
 #define _getsockname			getsockname
-#ifdef __rtems__
 #define _bind				bind
 #define _getsockopt			getsockopt
 #define _poll				poll
 #define _pthread_getspecific		pthread_getspecific
 #define _pthread_key_create		pthread_key_create
+#define _pthread_mutex_init		pthread_mutex_init
 #define _pthread_mutex_lock		pthread_mutex_lock
 #define _pthread_mutex_unlock		pthread_mutex_unlock
 #define _pthread_once			pthread_once

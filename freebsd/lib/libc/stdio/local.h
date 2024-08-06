@@ -8,7 +8,7 @@
  * Chris Torek.
  *
  * Copyright (c) 2011 The FreeBSD Foundation
- * All rights reserved.
+ *
  * Portions of this software were developed by David Chisnall
  * under sponsorship from the FreeBSD Foundation.
  *
@@ -37,7 +37,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)local.h	8.3 (Berkeley) 7/3/94
- * $FreeBSD$
  */
 
 #ifndef _STDIO_LOCAL_H
@@ -99,7 +98,7 @@ extern int	__sflags(const char *, int *);
 extern int	__ungetc(int, FILE *);
 #ifndef __rtems__
 extern wint_t	__ungetwc(wint_t, FILE *, locale_t);
-extern int	__vfprintf(FILE *, locale_t, const char *, __va_list);
+extern int	__vfprintf(FILE *, locale_t, int, const char *, __va_list);
 #endif /* __rtems__ */
 extern int	__vfscanf(FILE *, const char *, __va_list);
 #ifndef __rtems__

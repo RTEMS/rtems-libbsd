@@ -3,7 +3,7 @@
 /*-
  * Generic utility routines for the Common Access Method layer.
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
@@ -31,12 +31,11 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #ifdef _KERNEL
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/memdesc.h>
 #include <sys/sysctl.h>
 #else /* _KERNEL */
 #include <stdlib.h>
@@ -53,6 +52,7 @@ __FBSDID("$FreeBSD$");
 
 #ifdef _KERNEL
 #include <sys/libkern.h>
+#include <machine/bus.h>
 #include <cam/cam_queue.h>
 #include <cam/cam_xpt.h>
 
@@ -110,7 +110,8 @@ const struct cam_status_entry cam_status_table[] = {
 };
 
 #ifdef _KERNEL
-SYSCTL_NODE(_kern, OID_AUTO, cam, CTLFLAG_RD, 0, "CAM Subsystem");
+SYSCTL_NODE(_kern, OID_AUTO, cam, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
+    "CAM Subsystem");
 
 #ifndef CAM_DEFAULT_SORT_IO_QUEUES
 #define CAM_DEFAULT_SORT_IO_QUEUES 1
@@ -122,44 +123,25 @@ SYSCTL_INT(_kern_cam, OID_AUTO, sort_io_queues, CTLFLAG_RWTUN,
 #endif
 
 void
-cam_strvis(u_int8_t *dst, const u_int8_t *src, int srclen, int dstlen)
+cam_strvis(uint8_t *dst, const uint8_t *src, int srclen, int dstlen)
 {
-
-	/* Trim leading/trailing spaces, nulls. */
-	while (srclen > 0 && src[0] == ' ')
-		src++, srclen--;
-	while (srclen > 0
-	    && (src[srclen-1] == ' ' || src[srclen-1] == '\0'))
-		srclen--;
-
-	while (srclen > 0 && dstlen > 1) {
-		u_int8_t *cur_pos = dst;
-
-		if (*src < 0x20 || *src >= 0x80) {
-			/* SCSI-II Specifies that these should never occur. */
-			/* non-printable character */
-			if (dstlen > 4) {
-				*cur_pos++ = '\\';
-				*cur_pos++ = ((*src & 0300) >> 6) + '0';
-				*cur_pos++ = ((*src & 0070) >> 3) + '0';
-				*cur_pos++ = ((*src & 0007) >> 0) + '0';
-			} else {
-				*cur_pos++ = '?';
-			}
-		} else {
-			/* normal character */
-			*cur_pos++ = *src;
-		}
-		src++;
-		srclen--;
-		dstlen -= cur_pos - dst;
-		dst = cur_pos;
-	}
-	*dst = '\0';
+	cam_strvis_flag(dst, src, srclen, dstlen,
+	    CAM_STRVIS_FLAG_NONASCII_ESC);
 }
 
 void
-cam_strvis_sbuf(struct sbuf *sb, const u_int8_t *src, int srclen,
+cam_strvis_flag(uint8_t *dst, const uint8_t *src, int srclen, int dstlen,
+		uint32_t flags)
+{
+	struct sbuf sb;
+
+	sbuf_new(&sb, dst, dstlen, SBUF_FIXEDLEN);
+	cam_strvis_sbuf(&sb, src, srclen, flags);
+	sbuf_finish(&sb);
+}
+
+void
+cam_strvis_sbuf(struct sbuf *sb, const uint8_t *src, int srclen,
 		uint32_t flags)
 {
 
@@ -207,7 +189,6 @@ cam_strvis_sbuf(struct sbuf *sb, const u_int8_t *src, int srclen,
 	}
 }
 
-
 /*
  * Compare string with pattern, returning 0 on match.
  * Short pattern matches trailing blanks in name,
@@ -222,7 +203,7 @@ cam_strvis_sbuf(struct sbuf *sb, const u_int8_t *src, int srclen,
  * Each '*' generates recursion, so keep the number of * in check.
  */
 int
-cam_strmatch(const u_int8_t *str, const u_int8_t *pattern, int str_len)
+cam_strmatch(const uint8_t *str, const uint8_t *pattern, int str_len)
 {
 
 	while (*pattern != '\0' && str_len > 0) {  
@@ -330,7 +311,6 @@ camstatusentrycomp(const void *key, const void *member)
 
 	return (status - table_entry->status_code);
 }
-
 
 #ifndef __rtems__
 #ifdef _KERNEL
@@ -495,7 +475,6 @@ cam_error_string(struct cam_device *device, union ccb *ccb, char *str,
 			if ((proto_flags & CAM_ESF_PRINT_SENSE)
 			 && (ccb->csio.scsi_status == SCSI_STATUS_CHECK_COND)
 			 && (ccb->ccb_h.status & CAM_AUTOSNS_VALID)) {
-
 #ifdef _KERNEL
 				scsi_sense_sbuf(&ccb->csio, &sb,
 						SSS_FLAG_NONE);
@@ -595,4 +574,94 @@ cam_calc_geometry(struct ccb_calc_geometry *ccg, int extended)
 	ccg->cylinders = ccg->volume_size / secs_per_cylinder;
 	ccg->ccb_h.status = CAM_REQ_CMP;
 }
+
+#ifdef _KERNEL
+struct memdesc
+memdesc_ccb(union ccb *ccb)
+{
+	struct ccb_hdr *ccb_h;
+	void *data_ptr;
+	uint32_t dxfer_len;
+	uint16_t sglist_cnt;
+
+	ccb_h = &ccb->ccb_h;
+	switch (ccb_h->func_code) {
+	case XPT_SCSI_IO: {
+		struct ccb_scsiio *csio;
+
+		csio = &ccb->csio;
+		data_ptr = csio->data_ptr;
+		dxfer_len = csio->dxfer_len;
+		sglist_cnt = csio->sglist_cnt;
+		break;
+	}
+	case XPT_CONT_TARGET_IO: {
+		struct ccb_scsiio *ctio;
+
+		ctio = &ccb->ctio;
+		data_ptr = ctio->data_ptr;
+		dxfer_len = ctio->dxfer_len;
+		sglist_cnt = ctio->sglist_cnt;
+		break;
+	}
+	case XPT_ATA_IO: {
+		struct ccb_ataio *ataio;
+
+		ataio = &ccb->ataio;
+		data_ptr = ataio->data_ptr;
+		dxfer_len = ataio->dxfer_len;
+		sglist_cnt = 0;
+		break;
+	}
+	case XPT_NVME_IO:
+	case XPT_NVME_ADMIN: {
+		struct ccb_nvmeio *nvmeio;
+
+		nvmeio = &ccb->nvmeio;
+		data_ptr = nvmeio->data_ptr;
+		dxfer_len = nvmeio->dxfer_len;
+		sglist_cnt = nvmeio->sglist_cnt;
+		break;
+	}
+	default:
+		panic("%s: Unsupported func code %d", __func__,
+		    ccb_h->func_code);
+	}
+
+	switch ((ccb_h->flags & CAM_DATA_MASK)) {
+	case CAM_DATA_VADDR:
+		return (memdesc_vaddr(data_ptr, dxfer_len));
+	case CAM_DATA_PADDR:
+		return (memdesc_paddr((vm_paddr_t)(uintptr_t)data_ptr,
+		    dxfer_len));
+	case CAM_DATA_SG:
+		return (memdesc_vlist(data_ptr, sglist_cnt));
+	case CAM_DATA_SG_PADDR:
+		return (memdesc_plist(data_ptr, sglist_cnt));
+	case CAM_DATA_BIO:
+		return (memdesc_bio(data_ptr));
+	default:
+		panic("%s: flags 0x%X unimplemented", __func__, ccb_h->flags);
+	}
+}
+
+int
+bus_dmamap_load_ccb(bus_dma_tag_t dmat, bus_dmamap_t map, union ccb *ccb,
+		    bus_dmamap_callback_t *callback, void *callback_arg,
+		    int flags)
+{
+	struct ccb_hdr *ccb_h;
+	struct memdesc mem;
+
+	ccb_h = &ccb->ccb_h;
+	if ((ccb_h->flags & CAM_DIR_MASK) == CAM_DIR_NONE) {
+		callback(callback_arg, NULL, 0, 0);
+		return (0);
+	}
+
+	mem = memdesc_ccb(ccb);
+	return (bus_dmamap_load_mem(dmat, map, &mem, callback, callback_arg,
+	    flags));
+}
+#endif
 #endif /* __rtems__ */

@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <openssl/crypto.h>
 #include "internal/cryptlib.h"
-#include "bn_lcl.h"
+#include "bn_local.h"
 
 #if defined(BN_LLONG) || defined(BN_UMULT_HIGH)
 
@@ -383,25 +383,33 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
 #ifndef OPENSSL_SMALL_FOOTPRINT
     while (n & ~3) {
         t1 = a[0];
-        t2 = b[0];
-        r[0] = (t1 - t2 - c) & BN_MASK2;
-        if (t1 != t2)
-            c = (t1 < t2);
+        t2 = (t1 - c) & BN_MASK2;
+        c  = (t2 > t1);
+        t1 = b[0];
+        t1 = (t2 - t1) & BN_MASK2;
+        r[0] = t1;
+        c += (t1 > t2);
         t1 = a[1];
-        t2 = b[1];
-        r[1] = (t1 - t2 - c) & BN_MASK2;
-        if (t1 != t2)
-            c = (t1 < t2);
+        t2 = (t1 - c) & BN_MASK2;
+        c  = (t2 > t1);
+        t1 = b[1];
+        t1 = (t2 - t1) & BN_MASK2;
+        r[1] = t1;
+        c += (t1 > t2);
         t1 = a[2];
-        t2 = b[2];
-        r[2] = (t1 - t2 - c) & BN_MASK2;
-        if (t1 != t2)
-            c = (t1 < t2);
+        t2 = (t1 - c) & BN_MASK2;
+        c  = (t2 > t1);
+        t1 = b[2];
+        t1 = (t2 - t1) & BN_MASK2;
+        r[2] = t1;
+        c += (t1 > t2);
         t1 = a[3];
-        t2 = b[3];
-        r[3] = (t1 - t2 - c) & BN_MASK2;
-        if (t1 != t2)
-            c = (t1 < t2);
+        t2 = (t1 - c) & BN_MASK2;
+        c  = (t2 > t1);
+        t1 = b[3];
+        t1 = (t2 - t1) & BN_MASK2;
+        r[3] = t1;
+        c += (t1 > t2);
         a += 4;
         b += 4;
         r += 4;
@@ -410,10 +418,12 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
 #endif
     while (n) {
         t1 = a[0];
-        t2 = b[0];
-        r[0] = (t1 - t2 - c) & BN_MASK2;
-        if (t1 != t2)
-            c = (t1 < t2);
+        t2 = (t1 - c) & BN_MASK2;
+        c  = (t2 > t1);
+        t1 = b[0];
+        t1 = (t2 - t1) & BN_MASK2;
+        r[0] = t1;
+        c += (t1 > t2);
         a++;
         b++;
         r++;
@@ -448,7 +458,7 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         t += c0;                /* no carry */  \
         c0 = (BN_ULONG)Lw(t);                   \
         hi = (BN_ULONG)Hw(t);                   \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         } while(0)
 
 #  define mul_add_c2(a,b,c0,c1,c2)      do {    \
@@ -457,11 +467,11 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         BN_ULLONG tt = t+c0;    /* no carry */  \
         c0 = (BN_ULONG)Lw(tt);                  \
         hi = (BN_ULONG)Hw(tt);                  \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         t += c0;                /* no carry */  \
         c0 = (BN_ULONG)Lw(t);                   \
         hi = (BN_ULONG)Hw(t);                   \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         } while(0)
 
 #  define sqr_add_c(a,i,c0,c1,c2)       do {    \
@@ -470,7 +480,7 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         t += c0;                /* no carry */  \
         c0 = (BN_ULONG)Lw(t);                   \
         hi = (BN_ULONG)Hw(t);                   \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         } while(0)
 
 #  define sqr_add_c2(a,i,j,c0,c1,c2) \
@@ -485,26 +495,26 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         BN_ULONG ta = (a), tb = (b);            \
         BN_ULONG lo, hi;                        \
         BN_UMULT_LOHI(lo,hi,ta,tb);             \
-        c0 += lo; hi += (c0<lo)?1:0;            \
-        c1 += hi; c2 += (c1<hi)?1:0;            \
+        c0 += lo; hi += (c0<lo);                \
+        c1 += hi; c2 += (c1<hi);                \
         } while(0)
 
 #  define mul_add_c2(a,b,c0,c1,c2)      do {    \
         BN_ULONG ta = (a), tb = (b);            \
         BN_ULONG lo, hi, tt;                    \
         BN_UMULT_LOHI(lo,hi,ta,tb);             \
-        c0 += lo; tt = hi+((c0<lo)?1:0);        \
-        c1 += tt; c2 += (c1<tt)?1:0;            \
-        c0 += lo; hi += (c0<lo)?1:0;            \
-        c1 += hi; c2 += (c1<hi)?1:0;            \
+        c0 += lo; tt = hi + (c0<lo);            \
+        c1 += tt; c2 += (c1<tt);                \
+        c0 += lo; hi += (c0<lo);                \
+        c1 += hi; c2 += (c1<hi);                \
         } while(0)
 
 #  define sqr_add_c(a,i,c0,c1,c2)       do {    \
         BN_ULONG ta = (a)[i];                   \
         BN_ULONG lo, hi;                        \
         BN_UMULT_LOHI(lo,hi,ta,ta);             \
-        c0 += lo; hi += (c0<lo)?1:0;            \
-        c1 += hi; c2 += (c1<hi)?1:0;            \
+        c0 += lo; hi += (c0<lo);                \
+        c1 += hi; c2 += (c1<hi);                \
         } while(0)
 
 #  define sqr_add_c2(a,i,j,c0,c1,c2)    \
@@ -519,26 +529,26 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         BN_ULONG ta = (a), tb = (b);            \
         BN_ULONG lo = ta * tb;                  \
         BN_ULONG hi = BN_UMULT_HIGH(ta,tb);     \
-        c0 += lo; hi += (c0<lo)?1:0;            \
-        c1 += hi; c2 += (c1<hi)?1:0;            \
+        c0 += lo; hi += (c0<lo);                \
+        c1 += hi; c2 += (c1<hi);                \
         } while(0)
 
 #  define mul_add_c2(a,b,c0,c1,c2)      do {    \
         BN_ULONG ta = (a), tb = (b), tt;        \
         BN_ULONG lo = ta * tb;                  \
         BN_ULONG hi = BN_UMULT_HIGH(ta,tb);     \
-        c0 += lo; tt = hi + ((c0<lo)?1:0);      \
-        c1 += tt; c2 += (c1<tt)?1:0;            \
-        c0 += lo; hi += (c0<lo)?1:0;            \
-        c1 += hi; c2 += (c1<hi)?1:0;            \
+        c0 += lo; tt = hi + (c0<lo);            \
+        c1 += tt; c2 += (c1<tt);                \
+        c0 += lo; hi += (c0<lo);                \
+        c1 += hi; c2 += (c1<hi);                \
         } while(0)
 
 #  define sqr_add_c(a,i,c0,c1,c2)       do {    \
         BN_ULONG ta = (a)[i];                   \
         BN_ULONG lo = ta * ta;                  \
         BN_ULONG hi = BN_UMULT_HIGH(ta,ta);     \
-        c0 += lo; hi += (c0<lo)?1:0;            \
-        c1 += hi; c2 += (c1<hi)?1:0;            \
+        c0 += lo; hi += (c0<lo);                \
+        c1 += hi; c2 += (c1<hi);                \
         } while(0)
 
 #  define sqr_add_c2(a,i,j,c0,c1,c2)      \
@@ -553,8 +563,8 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         BN_ULONG lo = LBITS(a), hi = HBITS(a);  \
         BN_ULONG bl = LBITS(b), bh = HBITS(b);  \
         mul64(lo,hi,bl,bh);                     \
-        c0 = (c0+lo)&BN_MASK2; if (c0<lo) hi++; \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c0 = (c0+lo)&BN_MASK2; hi += (c0<lo);   \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         } while(0)
 
 #  define mul_add_c2(a,b,c0,c1,c2)      do {    \
@@ -563,17 +573,17 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
         BN_ULONG bl = LBITS(b), bh = HBITS(b);  \
         mul64(lo,hi,bl,bh);                     \
         tt = hi;                                \
-        c0 = (c0+lo)&BN_MASK2; if (c0<lo) tt++; \
-        c1 = (c1+tt)&BN_MASK2; if (c1<tt) c2++; \
-        c0 = (c0+lo)&BN_MASK2; if (c0<lo) hi++; \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c0 = (c0+lo)&BN_MASK2; tt += (c0<lo);   \
+        c1 = (c1+tt)&BN_MASK2; c2 += (c1<tt);   \
+        c0 = (c0+lo)&BN_MASK2; hi += (c0<lo);   \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         } while(0)
 
 #  define sqr_add_c(a,i,c0,c1,c2)       do {    \
         BN_ULONG lo, hi;                        \
         sqr64(lo,hi,(a)[i]);                    \
-        c0 = (c0+lo)&BN_MASK2; if (c0<lo) hi++; \
-        c1 = (c1+hi)&BN_MASK2; if (c1<hi) c2++; \
+        c0 = (c0+lo)&BN_MASK2; hi += (c0<lo);   \
+        c1 = (c1+hi)&BN_MASK2; c2 += (c1<hi);   \
         } while(0)
 
 #  define sqr_add_c2(a,i,j,c0,c1,c2) \

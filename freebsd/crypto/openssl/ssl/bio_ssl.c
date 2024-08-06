@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -16,7 +16,7 @@
 #include <openssl/crypto.h>
 #include "internal/bio.h"
 #include <openssl/err.h>
-#include "ssl_locl.h"
+#include "ssl_local.h"
 
 static int ssl_write(BIO *h, const char *buf, size_t size, size_t *written);
 static int ssl_read(BIO *b, char *buf, size_t size, size_t *readbytes);
@@ -60,7 +60,7 @@ static int ssl_new(BIO *bi)
     BIO_SSL *bs = OPENSSL_zalloc(sizeof(*bs));
 
     if (bs == NULL) {
-        BIOerr(BIO_F_SSL_NEW, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     BIO_set_init(bi, 0);
@@ -78,13 +78,12 @@ static int ssl_free(BIO *a)
     if (a == NULL)
         return 0;
     bs = BIO_get_data(a);
-    if (bs->ssl != NULL)
-        SSL_shutdown(bs->ssl);
     if (BIO_get_shutdown(a)) {
+        if (bs->ssl != NULL && !SSL_in_init(bs->ssl))
+            SSL_shutdown(bs->ssl);
         if (BIO_get_init(a))
             SSL_free(bs->ssl);
-        /* Clear all flags */
-        BIO_clear_flags(a, ~0);
+        BIO_clear_flags(a, ~0); /* Clear all flags */
         BIO_set_init(a, 0);
     }
     OPENSSL_free(bs);
@@ -286,6 +285,7 @@ static long ssl_ctrl(BIO *b, int cmd, long num, void *ptr)
             ssl_free(b);
             if (!ssl_new(b))
                 return 0;
+            bs = BIO_get_data(b);
         }
         BIO_set_shutdown(b, num);
         ssl = (SSL *)ptr;
@@ -452,6 +452,7 @@ BIO *BIO_new_ssl_connect(SSL_CTX *ctx)
         goto err;
     return ret;
  err:
+    BIO_free(ssl);
     BIO_free(con);
 #endif
     return NULL;

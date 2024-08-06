@@ -1135,8 +1135,6 @@ static driver_t dw_mmc_driver = {
 	sizeof(struct dw_mmc_softc)
 };
 
-static devclass_t dw_mmc_devclass;
-
-DRIVER_MODULE(dw_mmc, simplebus, dw_mmc_driver, dw_mmc_devclass, NULL, NULL);
-DRIVER_MODULE(mmc, dw_mmc, mmc_driver, mmc_devclass, NULL, NULL);
+DRIVER_MODULE(dw_mmc, simplebus, dw_mmc_driver, NULL, NULL);
+DRIVER_MODULE(mmc, dw_mmc, mmc_driver, NULL, NULL);
 MODULE_DEPEND(dw_mmc, mmc, 1, 1, 1);

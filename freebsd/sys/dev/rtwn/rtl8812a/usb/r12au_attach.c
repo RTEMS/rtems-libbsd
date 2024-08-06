@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -74,7 +72,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/rtl8812a/usb/r12au.h>
 #include <dev/rtwn/rtl8812a/usb/r12au_tx_desc.h>
 
-
 void	r12au_attach(struct rtwn_usb_softc *);
 
 static void
@@ -114,14 +111,14 @@ void
 r12a_vap_preattach(struct rtwn_softc *sc, struct ieee80211vap *vap)
 {
 	struct r12a_softc *rs = sc->sc_priv;
-	struct ifnet *ifp = vap->iv_ifp;
+	if_t ifp = vap->iv_ifp;
 
-	ifp->if_capabilities = IFCAP_RXCSUM | IFCAP_RXCSUM_IPV6;
+	if_setcapabilities(ifp, IFCAP_RXCSUM | IFCAP_RXCSUM_IPV6);
 	RTWN_LOCK(sc);
 	if (rs->rs_flags & R12A_RXCKSUM_EN)
-		ifp->if_capenable |= IFCAP_RXCSUM;
+		if_setcapenablebit(ifp, IFCAP_RXCSUM, 0);
 	if (rs->rs_flags & R12A_RXCKSUM6_EN)
-		ifp->if_capenable |= IFCAP_RXCSUM_IPV6;
+		if_setcapenablebit(ifp, IFCAP_RXCSUM_IPV6, 0);
 	RTWN_UNLOCK(sc);
 }
 

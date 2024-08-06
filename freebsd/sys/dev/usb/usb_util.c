@@ -1,10 +1,9 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
- * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2008-2022 Hans Petter Selasky
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,9 +75,7 @@ device_set_usb_desc(device_t dev)
 {
 	struct usb_attach_arg *uaa;
 	struct usb_device *udev;
-	struct usb_interface *iface;
 	char *temp_p;
-	usb_error_t err;
 	uint8_t do_unlock;
 
 	if (dev == NULL) {
@@ -91,33 +88,11 @@ device_set_usb_desc(device_t dev)
 		return;
 	}
 	udev = uaa->device;
-	iface = uaa->iface;
-
-	if ((iface == NULL) ||
-	    (iface->idesc == NULL) ||
-	    (iface->idesc->iInterface == 0)) {
-		err = USB_ERR_INVAL;
-	} else {
-		err = 0;
-	}
 
 	/* Protect scratch area */
 	do_unlock = usbd_ctrl_lock(udev);
-
 	temp_p = (char *)udev->scratch.data;
-
-	if (err == 0) {
-		/* try to get the interface string ! */
-		err = usbd_req_get_string_any(udev, NULL, temp_p,
-		    sizeof(udev->scratch.data),
-		    iface->idesc->iInterface);
-	}
-	if (err != 0) {
-		/* use default description */
-		usb_devinfo(udev, temp_p,
-		    sizeof(udev->scratch.data));
-	}
-
+	usb_devinfo(udev, temp_p, sizeof(udev->scratch.data));
 	if (do_unlock)
 		usbd_ctrl_unlock(udev);
 
@@ -225,3 +200,52 @@ usb_make_str_desc(void *ptr, uint16_t max_len, const char *s)
 	}
 	return (totlen);
 }
+
+/*------------------------------------------------------------------------*
+ *	usb_check_request - prevent damaging USB requests
+ *
+ * Return values:
+ * 0: Access allowed
+ * Else: No access
+ *------------------------------------------------------------------------*/
+#if USB_HAVE_UGEN
+int
+usb_check_request(struct usb_device *udev, struct usb_device_request *req)
+{
+	struct usb_endpoint *ep;
+	int error;
+
+	/*
+	 * Avoid requests that would damage the bus integrity:
+	 */
+	if (((req->bmRequestType == UT_WRITE_DEVICE) &&
+	    (req->bRequest == UR_SET_ADDRESS)) ||
+	    ((req->bmRequestType == UT_WRITE_DEVICE) &&
+	    (req->bRequest == UR_SET_CONFIG)) ||
+	    ((req->bmRequestType == UT_WRITE_INTERFACE) &&
+	    (req->bRequest == UR_SET_INTERFACE))) {
+		/*
+		 * These requests can be useful for testing USB drivers.
+		 */
+		error = priv_check(curthread, PRIV_DRIVER);
+		if (error)
+			return (error);
+	}
+
+	/*
+	 * Special case - handle clearing of stall
+	 */
+	if (req->bmRequestType == UT_WRITE_ENDPOINT) {
+		ep = usbd_get_ep_by_addr(udev, req->wIndex[0]);
+		if (ep == NULL)
+			return (EINVAL);
+		if ((req->bRequest == UR_CLEAR_FEATURE) &&
+		    (UGETW(req->wValue) == UF_ENDPOINT_HALT))
+			usbd_clear_data_toggle(udev, ep);
+	}
+
+	/* TODO: add more checks to verify the interface index */
+
+	return (0);
+}
+#endif

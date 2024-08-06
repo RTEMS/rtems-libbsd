@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1998 Doug Rabson
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _MACHINE_CPUFUNC_H_
@@ -108,7 +106,6 @@ mfctrl(void)
 	return (value);
 }
 
-
 static __inline void
 mtdec(register_t value)
 {
@@ -126,10 +123,10 @@ mfdec(void)
 	return (value);
 }
 
-static __inline register_t
+static __inline uint32_t
 mfpvr(void)
 {
-	register_t value;
+	uint32_t value;
 
 	__asm __volatile ("mfpvr %0" : "=r"(value));
 
@@ -164,6 +161,25 @@ mttb(u_quad_t time)
 	mtspr(TBR_TBWL, (uint32_t)(time & 0xffffffff));
 }
 
+static __inline register_t
+mffs(void)
+{
+	uint64_t value;
+
+	__asm __volatile ("mffs 0; stfd 0,0(%0)"
+			:: "b"(&value));
+
+	return ((register_t)value);
+}
+
+static __inline void
+mtfsf(uint64_t value)
+{
+
+	__asm __volatile ("lfd 0,0(%0); mtfsf 0xff,0"
+			:: "b"(&value));
+}
+
 static __inline void
 eieio(void)
 {
@@ -183,6 +199,34 @@ powerpc_sync(void)
 {
 
 	__asm __volatile ("sync" : : : "memory");
+}
+
+static __inline int
+cntlzd(uint64_t word)
+{
+	uint64_t result;
+	/* cntlzd %0, %1 */
+	__asm __volatile(".long 0x7c000074 |  (%1 << 21) | (%0 << 16)" :
+	    "=r"(result) : "r"(word));
+
+	return (int)result;
+}
+
+static __inline int
+cnttzd(uint64_t word)
+{
+	uint64_t result;
+	/* cnttzd %0, %1 */
+	__asm __volatile(".long 0x7c000474 |  (%1 << 21) | (%0 << 16)" :
+	    "=r"(result) : "r"(word));
+
+	return (int)result;
+}
+
+static __inline void
+ptesync(void)
+{
+	__asm __volatile("ptesync");
 }
 
 static __inline register_t
@@ -210,6 +254,43 @@ get_pcpu(void)
 	__asm __volatile("mfsprg %0, 0" : "=r"(ret));
 
 	return (ret);
+}
+
+/* "NOP" operations to signify priorities to the kernel. */
+static __inline void
+nop_prio_vlow(void)
+{
+	__asm __volatile("or 31,31,31");
+}
+
+static __inline void
+nop_prio_low(void)
+{
+	__asm __volatile("or 1,1,1");
+}
+
+static __inline void
+nop_prio_mlow(void)
+{
+	__asm __volatile("or 6,6,6");
+}
+
+static __inline void
+nop_prio_medium(void)
+{
+	__asm __volatile("or 2,2,2");
+}
+
+static __inline void
+nop_prio_mhigh(void)
+{
+	__asm __volatile("or 5,5,5");
+}
+
+static __inline void
+nop_prio_high(void)
+{
+	__asm __volatile("or 3,3,3");
 }
 
 #endif /* _KERNEL */

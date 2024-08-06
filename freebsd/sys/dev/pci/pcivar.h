@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
- * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
- * All rights reserved.
+ * Copyright 1997, Stefan Esser <se@freebsd.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,15 +24,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD$
- *
  */
 
 #ifndef _PCIVAR_H_
 #define	_PCIVAR_H_
 
 #include <sys/queue.h>
-#include <sys/eventhandler.h>
+#include <sys/_eventhandler.h>
 
 /* some PCI bus constants */
 #define	PCI_MAXMAPS_0	6	/* max. no. of memory/port maps */
@@ -126,6 +123,11 @@ struct pcicfg_msix {
     struct msix_vector *msix_vectors;	/* Array of allocated vectors. */
     struct resource *msix_table_res;	/* Resource containing vector table. */
     struct resource *msix_pba_res;	/* Resource containing PBA. */
+};
+
+struct pci_id_ofw_iommu {
+	uint32_t id;
+	uint32_t xref;
 };
 
 /* Interesting values for HyperTransport */
@@ -258,7 +260,15 @@ typedef struct {
 } pcih2cfgregs;
 
 extern uint32_t pci_numdevs;
+extern int pci_enable_aspm;
 
+/*
+ * The bitfield has to be stable and match the fields below (so that
+ * match_flag_vendor must be bit 0) so we have to do the endian dance. We can't
+ * use enums or #define constants because then the macros for subsetting matches
+ * wouldn't work. These tables are parsed by devmatch and others to connect
+ * modules with devices on the PCI bus.
+ */
 struct pci_device_table {
 #if BYTE_ORDER == LITTLE_ENDIAN
 	uint16_t
@@ -658,7 +668,8 @@ pci_child_added(device_t dev)
 device_t pci_find_bsf(uint8_t, uint8_t, uint8_t);
 device_t pci_find_dbsf(uint32_t, uint8_t, uint8_t, uint8_t);
 device_t pci_find_device(uint16_t, uint16_t);
-device_t pci_find_class(uint8_t cls, uint8_t subclass);
+device_t pci_find_class(uint8_t class, uint8_t subclass);
+device_t pci_find_class_from(uint8_t class, uint8_t subclass, device_t devfrom);
 
 /* Can be used by drivers to manage the MSI-X table. */
 int	pci_pending_msix(device_t dev, u_int index);
@@ -669,6 +680,7 @@ int	pci_msix_device_blacklisted(device_t dev);
 void	pci_ht_map_msi(device_t dev, uint64_t addr);
 
 device_t pci_find_pcie_root_port(device_t dev);
+int	pci_get_relaxed_ordering_enabled(device_t dev);
 int	pci_get_max_payload(device_t dev);
 int	pci_get_max_read_req(device_t dev);
 void	pci_restore_state(device_t dev);
@@ -679,20 +691,13 @@ uint32_t pcie_read_config(device_t dev, int reg, int width);
 void	pcie_write_config(device_t dev, int reg, uint32_t value, int width);
 uint32_t pcie_adjust_config(device_t dev, int reg, uint32_t mask,
 	    uint32_t value, int width);
+void	pcie_apei_error(device_t dev, int sev, uint8_t *aer);
 bool	pcie_flr(device_t dev, u_int max_delay, bool force);
 int	pcie_get_max_completion_timeout(device_t dev);
 bool	pcie_wait_for_pending_transactions(device_t dev, u_int max_delay);
 int	pcie_link_reset(device_t port, int pcie_location);
 
 void	pci_print_faulted_dev(void);
-
-#ifdef BUS_SPACE_MAXADDR
-#if (BUS_SPACE_MAXADDR > 0xFFFFFFFF)
-#define	PCI_DMA_BOUNDARY	0x100000000
-#else
-#define	PCI_DMA_BOUNDARY	0
-#endif
-#endif
 
 #endif	/* _SYS_BUS_H_ */
 
@@ -710,6 +715,8 @@ extern struct devlist	pci_devq;
 extern uint32_t	pci_generation;
 
 struct pci_map *pci_find_bar(device_t dev, int reg);
+struct pci_map *pci_first_bar(device_t dev);
+struct pci_map *pci_next_bar(struct pci_map *pm);
 int	pci_bar_enabled(device_t dev, struct pci_map *pm);
 struct pcicfg_vpd *pci_fetch_vpd_list(device_t dev);
 

@@ -33,9 +33,6 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)publickey.c 1.10 91/03/11 Copyr 1986 Sun Micro";
 #endif
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * publickey.c
  * Copyright (C) 1986, Sun Microsystems, Inc.

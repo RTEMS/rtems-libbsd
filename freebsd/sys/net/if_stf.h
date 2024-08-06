@@ -1,6 +1,3 @@
-/*	$FreeBSD$	*/
-/*	$KAME: if_stf.h,v 1.5 2001/10/12 10:09:17 keiichi Exp $	*/
-
 /*-
  * Copyright (C) 2000 WIDE Project.
  * All rights reserved.
@@ -33,6 +30,19 @@
 #ifndef _NET_IF_STF_H_
 #define _NET_IF_STF_H_
 
-void in_stf_input(struct mbuf *, int);
+#include <netinet/in.h>
+
+struct stfv4args {
+	struct in_addr srcv4_addr;	/* Our IPv4 src/WAN address */
+	struct in_addr braddr;		/* The border relay IPv4 address */
+	int v4_prefixlen;		/* The length of the IPv4 prefix. (I.e.
+					   the number of bits of the IPv4
+					   address not encoded in the IPv6
+					   address. */
+};
+
+#define STF6RD_SV4NET	1
+#define STF6RD_GV4NET	2
+#define STF6RD_SBR	3
 
 #endif /* _NET_IF_STF_H_ */

@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*	$OpenBSD: xform.c,v 1.16 2001/08/28 12:20:43 ben Exp $	*/
 /*-
  * The authors of this code are John Ioannidis (ji@tla.org),
@@ -48,17 +50,16 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
+#include <sys/types.h>
 #include <crypto/sha1.h>
 #include <opencrypto/xform_auth.h>
 
 static	void SHA1Init_int(void *);
-static	int SHA1Update_int(void *, const u_int8_t *, u_int16_t);
-static	void SHA1Final_int(u_int8_t *, void *);
+static	int SHA1Update_int(void *, const void *, u_int);
+static	void SHA1Final_int(uint8_t *, void *);
 
 /* Plain hash */
-struct auth_hash auth_hash_sha1 = {
+const struct auth_hash auth_hash_sha1 = {
 	.type = CRYPTO_SHA1,
 	.name = "SHA1",
 	.hashsize = SHA1_HASH_LEN,
@@ -70,25 +71,13 @@ struct auth_hash auth_hash_sha1 = {
 };
 
 /* Authentication instances */
-struct auth_hash auth_hash_hmac_sha1 = {
+const struct auth_hash auth_hash_hmac_sha1 = {
 	.type = CRYPTO_SHA1_HMAC,
 	.name = "HMAC-SHA1",
 	.keysize = SHA1_BLOCK_LEN,
 	.hashsize = SHA1_HASH_LEN,
 	.ctxsize = sizeof(SHA1_CTX),
 	.blocksize = SHA1_BLOCK_LEN,
-	.Init = SHA1Init_int,
-	.Update = SHA1Update_int,
-	.Final = SHA1Final_int,
-};
-
-struct auth_hash auth_hash_key_sha1 = {
-	.type = CRYPTO_SHA1_KPDK,
-	.name = "Keyed SHA1",
-	.keysize = 0,
-	.hashsize = SHA1_KPDK_HASH_LEN,
-	.ctxsize = sizeof(SHA1_CTX),
-	.blocksize = 0,
 	.Init = SHA1Init_int,
 	.Update = SHA1Update_int,
 	.Final = SHA1Final_int,
@@ -104,14 +93,14 @@ SHA1Init_int(void *ctx)
 }
 
 static int
-SHA1Update_int(void *ctx, const u_int8_t *buf, u_int16_t len)
+SHA1Update_int(void *ctx, const void *buf, u_int len)
 {
 	SHA1Update(ctx, buf, len);
 	return 0;
 }
 
 static void
-SHA1Final_int(u_int8_t *blk, void *ctx)
+SHA1Final_int(uint8_t *blk, void *ctx)
 {
 	SHA1Final(blk, ctx);
 }

@@ -34,9 +34,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
@@ -50,11 +47,17 @@ __FBSDID("$FreeBSD$");
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_asconf.h>
-#include <netinet/sctp_dtrace_declare.h>
+#include <netinet/sctp_kdtrace.h>
 
 #define SHIFT_MPTCP_MULTI_N 40
 #define SHIFT_MPTCP_MULTI_Z 16
 #define SHIFT_MPTCP_MULTI 8
+
+#ifdef KDTRACE_HOOKS
+#define __dtrace
+#else
+#define __dtrace __unused
+#endif
 
 static void
 sctp_enforce_cwnd_limit(struct sctp_association *assoc, struct sctp_nets *net)
@@ -159,7 +162,6 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 						    (uint64_t)net->mtu *
 						    (uint64_t)net->ssthresh) /
 						    (uint64_t)t_ssthresh);
-
 					}
 					if (asoc->sctp_cmt_on_off == SCTP_CMT_RPV2) {
 						uint32_t srtt;
@@ -251,12 +253,11 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 #define SCTP_INST_NEUTRAL 2	/* Neutral, no indication */
 #define SCTP_INST_GAINING 3	/* Gaining, step down possible */
 
-
 static int
 cc_bw_same(struct sctp_tcb *stcb, struct sctp_nets *net, uint64_t nbw,
     uint64_t rtt_offset, uint64_t vtag, uint8_t inst_ind)
 {
-	uint64_t oth, probepoint;
+	uint64_t oth __dtrace, probepoint __dtrace;
 
 	probepoint = (((uint64_t)net->cwnd) << 32);
 	if (net->rtt > net->cc_mod.rtcc.lbw_rtt + rtt_offset) {
@@ -391,7 +392,7 @@ static int
 cc_bw_decrease(struct sctp_tcb *stcb, struct sctp_nets *net, uint64_t nbw, uint64_t rtt_offset,
     uint64_t vtag, uint8_t inst_ind)
 {
-	uint64_t oth, probepoint;
+	uint64_t oth __dtrace, probepoint __dtrace;
 
 	/* Bandwidth decreased. */
 	probepoint = (((uint64_t)net->cwnd) << 32);
@@ -531,7 +532,7 @@ out_decision:
 static int
 cc_bw_increase(struct sctp_tcb *stcb, struct sctp_nets *net, uint64_t nbw, uint64_t vtag)
 {
-	uint64_t oth, probepoint;
+	uint64_t oth __dtrace, probepoint __dtrace;
 
 	/*
 	 * BW increased, so update and return 0, since all actions in our
@@ -575,7 +576,7 @@ static int
 cc_bw_limit(struct sctp_tcb *stcb, struct sctp_nets *net, uint64_t nbw)
 {
 	uint64_t bw_offset, rtt_offset;
-	uint64_t probepoint, rtt, vtag;
+	uint64_t probepoint __dtrace, rtt, vtag;
 	uint64_t bytes_for_this_rtt, inst_bw;
 	uint64_t div, inst_off;
 	int bw_shift;
@@ -688,8 +689,8 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
     int accum_moved, int reneged_all SCTP_UNUSED, int will_exit, int use_rtcc)
 {
 	struct sctp_nets *net;
-	int old_cwnd;
-	uint32_t t_ssthresh, t_cwnd, incr;
+	int old_cwnd __dtrace;
+	uint32_t t_ssthresh, incr;
 	uint64_t t_ucwnd_sbw;
 	uint64_t t_path_mptcp;
 	uint64_t mptcp_like_alpha;
@@ -698,7 +699,6 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 
 	/* MT FIXME: Don't compute this over and over again */
 	t_ssthresh = 0;
-	t_cwnd = 0;
 	t_ucwnd_sbw = 0;
 	t_path_mptcp = 0;
 	mptcp_like_alpha = 1;
@@ -708,7 +708,6 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 		max_path = 0;
 		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			t_ssthresh += net->ssthresh;
-			t_cwnd += net->cwnd;
 			/* lastsa>>3;  we don't need to devide ... */
 			srtt = net->lastsa;
 			if (srtt > 0) {
@@ -740,7 +739,6 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 	/* update cwnd and Early FR   */
 	/******************************/
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
-
 #ifdef JANA_CMT_FAST_RECOVERY
 		/*
 		 * CMT fast recovery code. Need to debug.
@@ -804,7 +802,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 					continue;
 				}
 			} else {
-				uint64_t vtag, probepoint;
+				uint64_t vtag __dtrace, probepoint __dtrace;
 
 				probepoint = (((uint64_t)net->cwnd) << 32);
 				probepoint |= ((0xa << 16) | 0);
@@ -1002,7 +1000,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 static void
 sctp_cwnd_update_exit_pf_common(struct sctp_tcb *stcb, struct sctp_nets *net)
 {
-	int old_cwnd;
+	int old_cwnd __dtrace;
 
 	old_cwnd = net->cwnd;
 	net->cwnd = net->mtu;
@@ -1012,7 +1010,6 @@ sctp_cwnd_update_exit_pf_common(struct sctp_tcb *stcb, struct sctp_nets *net)
 	SCTPDBG(SCTP_DEBUG_INDATA1, "Destination %p moved from PF to reachable with cwnd %d.\n",
 	    (void *)net, net->cwnd);
 }
-
 
 static void
 sctp_cwnd_update_after_timeout(struct sctp_tcb *stcb, struct sctp_nets *net)
@@ -1122,7 +1119,6 @@ sctp_cwnd_update_after_ecn_echo_common(struct sctp_tcb *stcb, struct sctp_nets *
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_MONITOR_ENABLE) {
 				sctp_log_cwnd(stcb, net, (net->cwnd - old_cwnd), SCTP_CWND_LOG_FROM_SAT);
 			}
-
 		}
 		SCTP_STAT_INCR(sctps_ecnereducedcwnd);
 	} else {
@@ -1320,9 +1316,7 @@ sctp_cwnd_update_rtcc_after_ecn_echo(struct sctp_tcb *stcb, struct sctp_nets *ne
 	sctp_cwnd_update_after_ecn_echo_common(stcb, net, in_window, num_pkt_lost, 1);
 }
 
-
-static
-void
+static void
 sctp_cwnd_update_rtcc_tsn_acknowledged(struct sctp_nets *net,
     struct sctp_tmit_chunk *tp1)
 {
@@ -1334,7 +1328,7 @@ sctp_cwnd_prepare_rtcc_net_for_sack(struct sctp_tcb *stcb SCTP_UNUSED,
     struct sctp_nets *net)
 {
 	if (net->cc_mod.rtcc.tls_needs_set > 0) {
-		/* We had a bw measurment going on */
+		/* We had a bw measurement going on */
 		struct timeval ltls;
 
 		SCTP_GETPTIME_TIMEVAL(&ltls);
@@ -1347,7 +1341,7 @@ static void
 sctp_cwnd_new_rtcc_transmission_begins(struct sctp_tcb *stcb,
     struct sctp_nets *net)
 {
-	uint64_t vtag, probepoint;
+	uint64_t vtag __dtrace, probepoint __dtrace;
 
 	if (net->cc_mod.rtcc.lbw) {
 		/* Clear the old bw.. we went to 0 in-flight */
@@ -1410,7 +1404,7 @@ static void
 sctp_set_rtcc_initial_cc_param(struct sctp_tcb *stcb,
     struct sctp_nets *net)
 {
-	uint64_t vtag, probepoint;
+	uint64_t vtag __dtrace, probepoint __dtrace;
 
 	sctp_set_initial_cc_param(stcb, net);
 	stcb->asoc.use_precise_time = 1;
@@ -1439,8 +1433,6 @@ sctp_set_rtcc_initial_cc_param(struct sctp_tcb *stcb,
 	net->cc_mod.rtcc.use_dccc_ecn = SCTP_BASE_SYSCTL(sctp_use_dccc_ecn);
 	net->cc_mod.rtcc.step_cnt = 0;
 	net->cc_mod.rtcc.last_step_state = 0;
-
-
 }
 
 static int
@@ -1765,7 +1757,6 @@ sctp_hs_cwnd_update_after_sack(struct sctp_tcb *stcb,
 	/* update cwnd and Early FR   */
 	/******************************/
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
-
 #ifdef JANA_CMT_FAST_RECOVERY
 		/*
 		 * CMT fast recovery code. Need to debug.
@@ -1850,7 +1841,6 @@ sctp_hs_cwnd_update_after_sack(struct sctp_tcb *stcb,
 	}
 }
 
-
 /*
  * H-TCP congestion control. The algorithm is detailed in:
  * R.N.Shorten, D.J.Leith:
@@ -1858,7 +1848,6 @@ sctp_hs_cwnd_update_after_sack(struct sctp_tcb *stcb,
  *   Proc. PFLDnet, Argonne, 2004.
  * http://www.hamilton.ie/net/htcp3.pdf
  */
-
 
 static int use_rtt_scaling = 1;
 static int use_bandwidth_switch = 1;
@@ -1878,7 +1867,7 @@ htcp_cong_time(struct htcp *ca)
 static inline uint32_t
 htcp_ccount(struct htcp *ca)
 {
-	return (htcp_cong_time(ca) / ca->minRTT);
+	return (ca->minRTT == 0 ? htcp_cong_time(ca) : htcp_cong_time(ca) / ca->minRTT);
 }
 
 static inline void
@@ -1916,7 +1905,7 @@ measure_rtt(struct sctp_nets *net)
 	if (net->fast_retran_ip == 0 && net->ssthresh < 0xFFFF && htcp_ccount(&net->cc_mod.htcp_ca) > 3) {
 		if (net->cc_mod.htcp_ca.maxRTT < net->cc_mod.htcp_ca.minRTT)
 			net->cc_mod.htcp_ca.maxRTT = net->cc_mod.htcp_ca.minRTT;
-		if (net->cc_mod.htcp_ca.maxRTT < srtt && srtt <= net->cc_mod.htcp_ca.maxRTT + MSEC_TO_TICKS(20))
+		if (net->cc_mod.htcp_ca.maxRTT < srtt && srtt <= net->cc_mod.htcp_ca.maxRTT + sctp_msecs_to_ticks(20))
 			net->cc_mod.htcp_ca.maxRTT = srtt;
 	}
 }
@@ -1977,7 +1966,7 @@ htcp_beta_update(struct htcp *ca, uint32_t minRTT, uint32_t maxRTT)
 		}
 	}
 
-	if (ca->modeswitch && minRTT > (uint32_t)MSEC_TO_TICKS(10) && maxRTT) {
+	if (ca->modeswitch && minRTT > sctp_msecs_to_ticks(10) && maxRTT) {
 		ca->beta = (minRTT << 7) / maxRTT;
 		if (ca->beta < BETA_MIN)
 			ca->beta = BETA_MIN;
@@ -2007,12 +1996,12 @@ htcp_alpha_update(struct htcp *ca)
 		scale = min(max(scale, 1U << 2), 10U << 3);	/* clamping ratio to
 								 * interval [0.5,10]<<3 */
 		factor = (factor << 3) / scale;
-		if (!factor)
+		if (factor != 0)
 			factor = 1;
 	}
 
 	ca->alpha = 2 * factor * ((1 << 7) - ca->beta);
-	if (!ca->alpha)
+	if (ca->alpha != 0)
 		ca->alpha = ALPHA_BASE;
 }
 
@@ -2053,7 +2042,7 @@ htcp_cong_avoid(struct sctp_tcb *stcb, struct sctp_nets *net)
 {
 	/*-
 	 * How to handle these functions?
-         *	if (!tcp_is_cwnd_limited(sk, in_flight)) RRS - good question.
+	 *	if (!tcp_is_cwnd_limited(sk, in_flight)) RRS - good question.
 	 *		return;
 	 */
 	if (net->cwnd <= net->ssthresh) {
@@ -2072,7 +2061,6 @@ htcp_cong_avoid(struct sctp_tcb *stcb, struct sctp_nets *net)
 					sctp_log_cwnd(stcb, net, net->net_ack,
 					    SCTP_CWND_LOG_FROM_SS);
 				}
-
 			}
 			sctp_enforce_cwnd_limit(&stcb->asoc, net);
 		} else {
@@ -2161,7 +2149,6 @@ sctp_htcp_cwnd_update_after_sack(struct sctp_tcb *stcb,
 	/* update cwnd and Early FR   */
 	/******************************/
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
-
 #ifdef JANA_CMT_FAST_RECOVERY
 		/*
 		 * CMT fast recovery code. Need to debug.

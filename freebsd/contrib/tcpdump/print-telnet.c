@@ -4,7 +4,7 @@
 #include <machine/rtems-bsd-program.h>
 #include "rtems-bsd-tcpdump-namespace.h"
 #endif /* __rtems__ */
-/*	$NetBSD: print-telnet.c,v 1.2 1999/10/11 12:40:12 sjg Exp $ 	*/
+/*	$NetBSD: print-telnet.c,v 1.2 1999/10/11 12:40:12 sjg Exp $	*/
 
 /*-
  * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
@@ -53,22 +53,17 @@
 
 /* \summary: Telnet option printer */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <config.h>
 
-#include <netdissect-stdinc.h>
+#include "netdissect-stdinc.h"
 
 #include <stdio.h>
 
 #include "netdissect.h"
+#include "extract.h"
 
-static const char tstr[] = " [|telnet]";
 
-#define TELCMDS
-#define TELOPTS
-
-/*	NetBSD: telnet.h,v 1.9 2001/06/11 01:50:50 wiz Exp 	*/
+/*	NetBSD: telnet.h,v 1.9 2001/06/11 01:50:50 wiz Exp	*/
 
 /*
  * Definitions for the TELNET protocol.
@@ -96,15 +91,11 @@ static const char tstr[] = " [|telnet]";
 
 #define SYNCH	242		/* for telfunc calls */
 
-#ifdef TELCMDS
 static const char *telcmds[] = {
 	"EOF", "SUSP", "ABORT", "EOR",
 	"SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", "EC",
 	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC", 0,
 };
-#else
-extern char *telcmds[];
-#endif
 
 #define	TELCMD_FIRST	xEOF
 #define	TELCMD_LAST	IAC
@@ -121,8 +112,8 @@ extern char *telcmds[];
 #define	TELOPT_STATUS	5	/* give status */
 #define	TELOPT_TM	6	/* timing mark */
 #define	TELOPT_RCTE	7	/* remote controlled transmission and echo */
-#define TELOPT_NAOL 	8	/* negotiate about output line width */
-#define TELOPT_NAOP 	9	/* negotiate about output page size */
+#define TELOPT_NAOL	8	/* negotiate about output line width */
+#define TELOPT_NAOP	9	/* negotiate about output page size */
 #define TELOPT_NAOCRD	10	/* negotiate about CR disposition */
 #define TELOPT_NAOHTS	11	/* negotiate about horizontal tabstops */
 #define TELOPT_NAOHTD	12	/* negotiate about horizontal tab disposition */
@@ -130,7 +121,7 @@ extern char *telcmds[];
 #define TELOPT_NAOVTS	14	/* negotiate about vertical tab stops */
 #define TELOPT_NAOVTD	15	/* negotiate about vertical tab disposition */
 #define TELOPT_NAOLFD	16	/* negotiate about output LF disposition */
-#define TELOPT_XASCII	17	/* extended ascic character set */
+#define TELOPT_XASCII	17	/* extended ascii character set */
 #define	TELOPT_LOGOUT	18	/* force logout */
 #define	TELOPT_BM	19	/* byte macro */
 #define	TELOPT_DET	20	/* data entry terminal */
@@ -157,7 +148,6 @@ extern char *telcmds[];
 
 
 #define	NTELOPTS	(1+TELOPT_NEW_ENVIRON)
-#ifdef TELOPTS
 static const char *telopts[NTELOPTS+1] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
@@ -175,7 +165,6 @@ static const char *telopts[NTELOPTS+1] = {
 #define	TELOPT_LAST	TELOPT_NEW_ENVIRON
 #define	TELOPT_OK(x)	((unsigned int)(x) <= TELOPT_LAST)
 #define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
-#endif
 
 /* sub-option qualifiers */
 #define	TELQUAL_IS	0	/* option is... */
@@ -402,8 +391,8 @@ telnet_parse(netdissect_options *ndo, const u_char *sp, u_int length, int print)
 	do { \
 		if (length < 1) \
 			goto pktend; \
-		ND_TCHECK(*sp); \
-		c = *sp++; \
+		c = GET_U_1(sp); \
+		sp++; \
 		length--; \
 	} while (0)
 
@@ -415,7 +404,7 @@ telnet_parse(netdissect_options *ndo, const u_char *sp, u_int length, int print)
 	FETCH(c, sp, length);
 	if (c == IAC) {		/* <IAC><IAC>! */
 		if (print)
-			ND_PRINT((ndo, "IAC IAC"));
+			ND_PRINT("IAC IAC");
 		goto done;
 	}
 
@@ -433,23 +422,21 @@ telnet_parse(netdissect_options *ndo, const u_char *sp, u_int length, int print)
 		FETCH(x, sp, length);
 		if (x >= 0 && x < NTELOPTS) {
 			if (print)
-				ND_PRINT((ndo, "%s %s", telcmds[i], telopts[x]));
+				ND_PRINT("%s %s", telcmds[i], telopts[x]);
 		} else {
 			if (print)
-				ND_PRINT((ndo, "%s %#x", telcmds[i], x));
+				ND_PRINT("%s %#x", telcmds[i], x);
 		}
 		if (c != SB)
 			break;
 		/* IAC SB .... IAC SE */
 		p = sp;
 		while (length > (u_int)(p + 1 - sp)) {
-			ND_TCHECK2(*p, 2);
-			if (p[0] == IAC && p[1] == SE)
+			if (GET_U_1(p) == IAC && GET_U_1(p + 1) == SE)
 				break;
 			p++;
 		}
-		ND_TCHECK(*p);
-		if (*p != IAC)
+		if (GET_U_1(p) != IAC)
 			goto pktend;
 
 		switch (x) {
@@ -458,54 +445,52 @@ telnet_parse(netdissect_options *ndo, const u_char *sp, u_int length, int print)
 				break;
 			FETCH(c, sp, length);
 			if (print)
-				ND_PRINT((ndo, " %s", STR_OR_ID(c, authcmd)));
+				ND_PRINT(" %s", STR_OR_ID(c, authcmd));
 			if (p <= sp)
 				break;
 			FETCH(c, sp, length);
 			if (print)
-				ND_PRINT((ndo, " %s", STR_OR_ID(c, authtype)));
+				ND_PRINT(" %s", STR_OR_ID(c, authtype));
 			break;
 		case TELOPT_ENCRYPT:
 			if (p <= sp)
 				break;
 			FETCH(c, sp, length);
 			if (print)
-				ND_PRINT((ndo, " %s", STR_OR_ID(c, enccmd)));
+				ND_PRINT(" %s", STR_OR_ID(c, enccmd));
 			if (p <= sp)
 				break;
 			FETCH(c, sp, length);
 			if (print)
-				ND_PRINT((ndo, " %s", STR_OR_ID(c, enctype)));
+				ND_PRINT(" %s", STR_OR_ID(c, enctype));
 			break;
 		default:
 			if (p <= sp)
 				break;
 			FETCH(c, sp, length);
 			if (print)
-				ND_PRINT((ndo, " %s", STR_OR_ID(c, cmds)));
+				ND_PRINT(" %s", STR_OR_ID(c, cmds));
 			break;
 		}
 		while (p > sp) {
 			FETCH(x, sp, length);
 			if (print)
-				ND_PRINT((ndo, " %#x", x));
+				ND_PRINT(" %#x", x);
 		}
 		/* terminating IAC SE */
 		if (print)
-			ND_PRINT((ndo, " SE"));
+			ND_PRINT(" SE");
 		sp += 2;
 		break;
 	default:
 		if (print)
-			ND_PRINT((ndo, "%s", telcmds[i]));
+			ND_PRINT("%s", telcmds[i]);
 		goto done;
 	}
 
 done:
-	return sp - osp;
+	return (int)(sp - osp);
 
-trunc:
-	ND_PRINT((ndo, "%s", tstr));
 pktend:
 	return -1;
 #undef FETCH
@@ -518,10 +503,10 @@ telnet_print(netdissect_options *ndo, const u_char *sp, u_int length)
 	const u_char *osp;
 	int l;
 
+	ndo->ndo_protocol = "telnet";
 	osp = sp;
 
-	ND_TCHECK(*sp);
-	while (length > 0 && *sp == IAC) {
+	while (length > 0 && GET_U_1(sp) == IAC) {
 		/*
 		 * Parse the Telnet command without printing it,
 		 * to determine its length.
@@ -535,31 +520,27 @@ telnet_print(netdissect_options *ndo, const u_char *sp, u_int length)
 		 */
 		if (ndo->ndo_Xflag && 2 < ndo->ndo_vflag) {
 			if (first)
-				ND_PRINT((ndo, "\nTelnet:"));
-			hex_print_with_offset(ndo, "\n", sp, l, sp - osp);
+				ND_PRINT("\nTelnet:");
+			hex_print_with_offset(ndo, "\n", sp, l, (u_int)(sp - osp));
 			if (l > 8)
-				ND_PRINT((ndo, "\n\t\t\t\t"));
+				ND_PRINT("\n\t\t\t\t");
 			else
-				ND_PRINT((ndo, "%*s\t", (8 - l) * 3, ""));
+				ND_PRINT("%*s\t", (8 - l) * 3, "");
 		} else
-			ND_PRINT((ndo, "%s", (first) ? " [telnet " : ", "));
+			ND_PRINT("%s", (first) ? " [telnet " : ", ");
 
 		(void)telnet_parse(ndo, sp, length, 1);
 		first = 0;
 
 		sp += l;
 		length -= l;
-		ND_TCHECK(*sp);
 	}
 	if (!first) {
 		if (ndo->ndo_Xflag && 2 < ndo->ndo_vflag)
-			ND_PRINT((ndo, "\n"));
+			ND_PRINT("\n");
 		else
-			ND_PRINT((ndo, "]"));
+			ND_PRINT("]");
 	}
-	return;
-trunc:
-	ND_PRINT((ndo, "%s", tstr));
 }
 #ifdef __rtems__
 #include "rtems-bsd-tcpdump-print-telnet-data.h"

@@ -100,8 +100,6 @@ static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
@@ -135,15 +133,11 @@ struct val2str {
 
 static struct val2str ipsec_ahnames[] = {
 	{ SADB_AALG_NONE, "none", },
-	{ SADB_AALG_MD5HMAC, "hmac-md5", },
 	{ SADB_AALG_SHA1HMAC, "hmac-sha1", },
-	{ SADB_X_AALG_MD5, "keyed-md5", },
-	{ SADB_X_AALG_SHA, "keyed-sha1", },
 	{ SADB_X_AALG_NULL, "null", },
 	{ SADB_X_AALG_SHA2_256, "hmac-sha2-256", },
 	{ SADB_X_AALG_SHA2_384, "hmac-sha2-384", },
 	{ SADB_X_AALG_SHA2_512, "hmac-sha2-512", },
-	{ SADB_X_AALG_RIPEMD160HMAC, "hmac-ripemd160", },
 	{ SADB_X_AALG_AES_XCBC_MAC, "aes-xcbc-mac", },
 	{ SADB_X_AALG_TCP_MD5, "tcp-md5", },
 	{ SADB_X_AALG_AES128GMAC, "aes-gmac-128", },
@@ -154,13 +148,8 @@ static struct val2str ipsec_ahnames[] = {
 
 static struct val2str ipsec_espnames[] = {
 	{ SADB_EALG_NONE, "none", },
-	{ SADB_EALG_DESCBC, "des-cbc", },
-	{ SADB_EALG_3DESCBC, "3des-cbc", },
 	{ SADB_EALG_NULL, "null", },
-	{ SADB_X_EALG_CAST128CBC, "cast128-cbc", },
-	{ SADB_X_EALG_BLOWFISHCBC, "blowfish-cbc", },
-	{ SADB_X_EALG_RIJNDAELCBC, "rijndael-cbc", },
-	{ SADB_X_EALG_CAMELLIACBC, "camellia-cbc", },
+	{ SADB_X_EALG_AESCBC, "aes-cbc", },
 	{ SADB_X_EALG_AESCTR, "aes-ctr", },
 	{ SADB_X_EALG_AESGCM16, "aes-gcm-16", },
 	{ SADB_X_EALG_AESGMAC, "aes-gmac", },
@@ -175,12 +164,10 @@ static struct val2str ipsec_compnames[] = {
 	{ -1, NULL },
 };
 
-static void print_ipsecstats(const struct ipsecstat *ipsecstat);
-
 static void
-print_ipsecstats(const struct ipsecstat *ipsecstat)
+print_ipsecstats(const char *tag, const struct ipsecstat *ipsecstat)
 {
-	xo_open_container("ipsec-statistics");
+	xo_open_container(tag);
 
 #define	p(f, m) if (ipsecstat->f || sflag <= 1) \
 	xo_emit(m, (uintmax_t)ipsecstat->f, plural(ipsecstat->f))
@@ -215,27 +202,30 @@ print_ipsecstats(const struct ipsecstat *ipsecstat)
 	    "{N:/mbuf%s inserted during makespace}\n");
 #undef p2
 #undef p
-	xo_close_container("ipsec-statistics");
+	xo_close_container(tag);
 }
 
 void
 ipsec_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 {
 	struct ipsecstat ipsecstat;
+	const char *tag;
 
 	if (strcmp(name, "ipsec6") == 0) {
 		if (fetch_stats("net.inet6.ipsec6.ipsecstats", off,&ipsecstat,
 				sizeof(ipsecstat), kread_counters) != 0)
 			return;
+		tag = "ipsec6-statistics";
 	} else {
 		if (fetch_stats("net.inet.ipsec.ipsecstats", off, &ipsecstat,
 				sizeof(ipsecstat), kread_counters) != 0)
 			return;
+		tag = "ipsec-statistics";
 	}
 
 	xo_emit("{T:/%s}:\n", name);
 
-	print_ipsecstats(&ipsecstat);
+	print_ipsecstats(tag, &ipsecstat);
 }
 
 
@@ -371,7 +361,7 @@ print_espstats(const struct espstat *espstat)
 	p(esps_input, "received-packets", "packet%s in");
 	p(esps_output, "sent-packets", "packet%s out");
 	p(esps_invalid, "dropped-bad-tdb", "packet%s dropped; invalid TDB");
-	p(esps_ibytes, "receieve-bytes", "byte%s in");
+	p(esps_ibytes, "receive-bytes", "byte%s in");
 	p(esps_obytes, "sent-bytes", "byte%s out");
 	p(esps_toobig, "dropped-too-large",
 	    "packet%s dropped; larger than IP_MAXPACKET");
@@ -422,10 +412,10 @@ print_ipcompstats(const struct ipcompstat *ipcompstat)
 	p(ipcomps_noxform, "dropped-no-transform",
 	    "packet%s dropped; no transform");
 	p(ipcomps_wrap, "replay-counter-wraps", "replay counter wrap%s");
-	p(ipcomps_input, "receieve-packets", "packet%s in");
+	p(ipcomps_input, "receive-packets", "packet%s in");
 	p(ipcomps_output, "sent-packets", "packet%s out");
 	p(ipcomps_invalid, "dropped-bad-tdb", "packet%s dropped; invalid TDB");
-	p(ipcomps_ibytes, "receieved-bytes", "byte%s in");
+	p(ipcomps_ibytes, "received-bytes", "byte%s in");
 	p(ipcomps_obytes, "sent-bytes", "byte%s out");
 	p(ipcomps_toobig, "dropped-too-large",
 	    "packet%s dropped; larger than IP_MAXPACKET");

@@ -4,10 +4,9 @@
  */
 
 #ifndef _CRYPT_H_RPCGEN
-#define _CRYPT_H_RPCGEN
+#define	_CRYPT_H_RPCGEN
 
 #include <rpc/rpc.h>
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,13 +15,13 @@ extern "C" {
 
 enum des_dir {
 	ENCRYPT_DES = 0,
-	DECRYPT_DES = 1,
+	DECRYPT_DES = 1
 };
 typedef enum des_dir des_dir;
 
 enum des_mode {
 	CBC_DES = 0,
-	ECB_DES = 1,
+	ECB_DES = 1
 };
 typedef enum des_mode des_mode;
 
@@ -48,37 +47,20 @@ struct desresp {
 };
 typedef struct desresp desresp;
 
-#define CRYPT_PROG 600100029
-#define CRYPT_VERS 1
+#define	CRYPT_PROG ((unsigned long)(600100029))
+#define	CRYPT_VERS ((unsigned long)(1))
 
-#if defined(__STDC__) || defined(__cplusplus)
-#define DES_CRYPT 1
+extern  void crypt_prog_1(struct svc_req *rqstp, SVCXPRT *transp);
+#define	DES_CRYPT ((unsigned long)(1))
 extern  desresp * des_crypt_1(desargs *, CLIENT *);
 extern  desresp * des_crypt_1_svc(desargs *, struct svc_req *);
-extern int crypt_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
-
-#else /* K&R C */
-#define DES_CRYPT 1
-extern  desresp * des_crypt_1();
-extern  desresp * des_crypt_1_svc();
-extern int crypt_prog_1_freeresult ();
-#endif /* K&R C */
+extern int crypt_prog_1_freeresult(SVCXPRT *, xdrproc_t, caddr_t);
 
 /* the xdr functions */
-
-#if defined(__STDC__) || defined(__cplusplus)
-extern  bool_t xdr_des_dir (XDR *, des_dir*);
-extern  bool_t xdr_des_mode (XDR *, des_mode*);
-extern  bool_t xdr_desargs (XDR *, desargs*);
-extern  bool_t xdr_desresp (XDR *, desresp*);
-
-#else /* K&R C */
-extern bool_t xdr_des_dir ();
-extern bool_t xdr_des_mode ();
-extern bool_t xdr_desargs ();
-extern bool_t xdr_desresp ();
-
-#endif /* K&R C */
+extern  bool_t xdr_des_dir(XDR *, des_dir*);
+extern  bool_t xdr_des_mode(XDR *, des_mode*);
+extern  bool_t xdr_desargs(XDR *, desargs*);
+extern  bool_t xdr_desresp(XDR *, desresp*);
 
 #ifdef __cplusplus
 }

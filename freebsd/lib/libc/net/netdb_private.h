@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2005 The FreeBSD Project.  All rights reserved.
  *
@@ -23,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NETDB_PRIVATE_H_
@@ -33,6 +31,7 @@
 #include <stdio.h>				/* XXX: for FILE */
 
 #define	NETDB_THREAD_ALLOC(name)					\
+static struct name name;						\
 static thread_key_t name##_key;						\
 static once_t name##_init_once = ONCE_INITIALIZER;			\
 static int name##_thr_keycreated = 0;					\
@@ -51,6 +50,8 @@ __##name##_init(void)							\
 {									\
 	struct name *he;						\
 									\
+	if (thr_main() != 0)						\
+		return (&name);						\
 	if (thr_once(&name##_init_once, name##_keycreate) != 0 ||	\
 	    !name##_thr_keycreated)					\
 		return (NULL);						\

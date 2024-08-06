@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2003 John Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef __X86_INTR_MACHDEP_H__
@@ -51,15 +48,11 @@
  * IRQ values returned by ACPI methods such as _CRS can be used
  * directly by the ACPI bus driver.
  *
- * MSI interrupts allocate a block of interrupts starting at either
- * the end of the I/O APIC range or 256, whichever is higher.  When
- * running under the Xen Hypervisor, an additional range of IRQ values
- * are available for binding to event channel events.  We use 256 as
- * the minimum IRQ value for MSI interrupts to attempt to leave 255
- * unused since 255 is used in PCI to indicate an invalid INTx IRQ.
+ * MSI interrupts allocate a block of interrupts starting at the end
+ * of the I/O APIC range.  When running under the Xen Hypervisor, an
+ * additional range of IRQ values are available for binding to event
+ * channel events.
  */
-#define	MINIMUM_MSI_INT	256
-
 extern u_int first_msi_irq;
 extern u_int num_io_irqs;
 extern u_int num_msi_irqs;
@@ -148,9 +141,6 @@ void	intr_add_cpu(u_int cpu);
 int	intr_add_handler(const char *name, int vector, driver_filter_t filter,
     driver_intr_t handler, void *arg, enum intr_type flags, void **cookiep,
     int domain);
-#ifdef SMP
-int	intr_bind(u_int vector, u_char cpu);
-#endif
 int	intr_config_intr(int vector, enum intr_trigger trig,
     enum intr_polarity pol);
 int	intr_describe(u_int vector, void *ih, const char *descr);

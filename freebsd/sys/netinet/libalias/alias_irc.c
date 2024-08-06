@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001 Charles Mott <cm@linktel.net>
  * All rights reserved.
@@ -29,8 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /* Alias_irc.c intercepts packages contain IRC CTCP commands, and
 	changes DCC commands to export a port on the aliasing host instead
 	of an aliased host.
@@ -93,13 +91,12 @@ char *newpacket;
 #define DBprintf(a)
 
 static void
-AliasHandleIrcOut(struct libalias *, struct ip *, struct alias_link *,	
-		  int maxpacketsize);
+AliasHandleIrcOut(struct libalias *, struct ip *, struct alias_link *,
+    int maxpacketsize);
 
 static int
 fingerprint(struct libalias *la, struct alias_data *ah)
 {
-
 	if (ah->dport == NULL || ah->lnk == NULL || ah->maxpktsize == 0)
 		return (-1);
 	if (ntohs(*ah->dport) == IRC_CONTROL_PORT_NUMBER_1
@@ -111,7 +108,6 @@ fingerprint(struct libalias *la, struct alias_data *ah)
 static int
 protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
-
 	newpacket = malloc(PKTSIZE);
 	if (newpacket) {
 		AliasHandleIrcOut(la, pip, ah->lnk, ah->maxpktsize);
@@ -162,7 +158,7 @@ moduledata_t alias_mod = {
 };
 
 /* Kernel module definition. */
-#ifdef	_KERNEL
+#ifdef _KERNEL
 DECLARE_MODULE(alias_irc, alias_mod, SI_SUB_DRIVERS, SI_ORDER_SECOND);
 MODULE_VERSION(alias_irc, 1);
 MODULE_DEPEND(alias_irc, libalias, 1, 1, 1);
@@ -183,7 +179,7 @@ AliasHandleIrcOut(struct libalias *la,
 	struct tcphdr *tc;
 	int i;			/* Iterator through the source */
 
-/* Calculate data length of TCP packet */
+	/* Calculate data length of TCP packet */
 	tc = (struct tcphdr *)ip_next(pip);
 	hlen = (pip->ip_hl + tc->th_off) << 2;
 	tlen = ntohs(pip->ip_len);
@@ -196,7 +192,7 @@ AliasHandleIrcOut(struct libalias *la,
 	if (dlen < (int)sizeof(":A!a@n.n PRIVMSG A :aDCC 1 1a") - 1)
 		return;
 
-/* Place string pointer at beginning of data */
+	/* Place string pointer at beginning of data */
 	sptr = (char *)pip;
 	sptr += hlen;
 	maxsize -= hlen;	/* We're interested in maximum size of
@@ -209,7 +205,7 @@ AliasHandleIrcOut(struct libalias *la,
 	}
 	return;			/* No CTCP commands in  */
 	/* Handle CTCP commands - the buffer may have to be copied */
-lFOUND_CTCP:
+	lFOUND_CTCP:
 	{
 		unsigned int copyat = i;
 		unsigned int iCopy = 0;	/* How much data have we written to
@@ -218,7 +214,7 @@ lFOUND_CTCP:
 		unsigned short org_port;	/* Original source port
 						 * address */
 
-lCTCP_START:
+	lCTCP_START:
 		if (i >= dlen || iCopy >= PKTSIZE)
 			goto lPACKET_DONE;
 		newpacket[iCopy++] = sptr[i++];	/* Copy the CTCP start
@@ -354,7 +350,6 @@ lCTCP_START:
 			struct alias_link *dcc_lnk;
 			struct in_addr destaddr;
 
-
 			true_port = htons(org_port);
 			true_addr.s_addr = htonl(org_addr);
 			destaddr.s_addr = 0;
@@ -419,7 +414,7 @@ lCTCP_START:
 		 * has been pushed.  Also used to copy the rest of a DCC,
 		 * after IP address and port has been handled
 		 */
-lBAD_CTCP:
+		lBAD_CTCP:
 		for (; i < dlen && iCopy < PKTSIZE; i++, iCopy++) {
 			newpacket[iCopy] = sptr[i];	/* Copy CTCP unchanged */
 			if (sptr[i] == '\001') {
@@ -428,7 +423,7 @@ lBAD_CTCP:
 		}
 		goto lPACKET_DONE;
 		/* Normal text */
-lNORMAL_TEXT:
+		lNORMAL_TEXT:
 		for (; i < dlen && iCopy < PKTSIZE; i++, iCopy++) {
 			newpacket[iCopy] = sptr[i];	/* Copy CTCP unchanged */
 			if (sptr[i] == '\001') {
@@ -436,16 +431,16 @@ lNORMAL_TEXT:
 			}
 		}
 		/* Handle the end of a packet */
-lPACKET_DONE:
+		lPACKET_DONE:
 		iCopy = iCopy > maxsize - copyat ? maxsize - copyat : iCopy;
 		memcpy(sptr + copyat, newpacket, iCopy);
 
-/* Save information regarding modified seq and ack numbers */
+		/* Save information regarding modified seq and ack numbers */
 		{
 			int delta;
 
 			SetAckModified(lnk);
-			tc = (struct tcphdr *)ip_next(pip);				
+			tc = (struct tcphdr *)ip_next(pip);
 			delta = GetDeltaSeqOut(tc->th_seq, lnk);
 			AddSeq(lnk, delta + copyat + iCopy - dlen, pip->ip_hl,
 			    pip->ip_len, tc->th_seq, tc->th_off);
@@ -466,7 +461,7 @@ lPACKET_DONE:
 		/* Compute TCP checksum for revised packet */
 		tc->th_sum = 0;
 #ifdef _KERNEL
-		tc->th_x2 = 1;
+		tc->th_x2 = (TH_RES1 >> 8);
 #else
 		tc->th_sum = TcpChecksum(pip);
 #endif
@@ -475,20 +470,20 @@ lPACKET_DONE:
 }
 
 /* Notes:
-	[Note 1]
-	The initial search will most often fail; it could be replaced with a 32-bit specific search.
-	Such a search would be done for 32-bit unsigned value V:
-	V ^= 0x01010101;				  (Search is for null bytes)
-	if( ((V-0x01010101)^V) & 0x80808080 ) {
+  [Note 1]
+  The initial search will most often fail; it could be replaced with a 32-bit specific search.
+  Such a search would be done for 32-bit unsigned value V:
+   V ^= 0x01010101;          (Search is for null bytes)
+   if( ((V-0x01010101)^V) & 0x80808080 ) {
      (found a null bytes which was a 01 byte)
-	}
-   To assert that the processor is 32-bits, do
+   }
+  To assert that the processor is 32-bits, do
    extern int ircdccar[32];        (32 bits)
    extern int ircdccar[CHAR_BIT*sizeof(unsigned int)];
-   which will generate a type-error on all but 32-bit machines.
+  which will generate a type-error on all but 32-bit machines.
 
-	[Note 2] This routine really ought to be replaced with one that
-	creates a transparent proxy on the aliasing host, to allow arbitrary
-	changes in the TCP stream.  This should not be too difficult given
-	this base;  I (ee) will try to do this some time later.
-	*/
+  [Note 2] This routine really ought to be replaced with one that
+  creates a transparent proxy on the aliasing host, to allow arbitrary
+  changes in the TCP stream.  This should not be too difficult given
+  this base;  I (ee) will try to do this some time later.
+*/

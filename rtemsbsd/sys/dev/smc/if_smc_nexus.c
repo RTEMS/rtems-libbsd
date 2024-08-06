@@ -83,9 +83,7 @@ static driver_t nexus_smc_driver = {
 	sizeof(struct smc_softc),
 };
 
-extern devclass_t smc_devclass;
-
-DRIVER_MODULE(smc, nexus, nexus_smc_driver, smc_devclass, 0, 0);
-DRIVER_MODULE(miibus, smc, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(smc, nexus, nexus_smc_driver, 0, 0);
+DRIVER_MODULE(miibus, smc, miibus_driver, 0, 0);
 MODULE_DEPEND(smc, ether, 1, 1, 1);
 MODULE_DEPEND(smc, miibus, 1, 1, 1);

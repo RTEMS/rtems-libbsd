@@ -38,8 +38,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifdef __rtems__
@@ -64,19 +62,19 @@
 #endif /* __rtems__ */
 
 static void
-maclabel_status(int s)
+maclabel_status(if_ctx *ctx)
 {
 	struct ifreq ifr;
 	mac_t label;
 	char *label_text;
 
 	memset(&ifr, 0, sizeof(ifr));
-	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, ctx->ifname, sizeof(ifr.ifr_name));
 
 	if (mac_prepare_ifnet_label(&label) == -1)
 		return;
 	ifr.ifr_ifru.ifru_data = (void *)label;
-	if (ioctl(s, SIOCGIFMAC, &ifr) == -1)
+	if (ioctl_ctx(ctx, SIOCGIFMAC, &ifr) == -1)
 		goto mac_free;
 
 	
@@ -92,7 +90,7 @@ mac_free:
 }
 
 static void
-setifmaclabel(const char *val, int d, int s, const struct afswtch *rafp)
+setifmaclabel(if_ctx *ctx, const char *val, int d __unused)
 {
 	struct ifreq ifr;
 	mac_t label;
@@ -104,10 +102,10 @@ setifmaclabel(const char *val, int d, int s, const struct afswtch *rafp)
 	}
 
 	memset(&ifr, 0, sizeof(ifr));
-	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, ctx->ifname, sizeof(ifr.ifr_name));
 	ifr.ifr_ifru.ifru_data = (void *)label;
 
-	error = ioctl(s, SIOCSIFMAC, &ifr);
+	error = ioctl(ctx->io_s, SIOCSIFMAC, &ifr);
 	mac_free(label);
 	if (error == -1)
 		perror("setifmac");

@@ -92,7 +92,7 @@ rtems_task Init(
   rtems_bsd_initialize();
 
   /* Let the callout timer allocate its resources */
-  sc = rtems_task_wake_after( 2 );
+  sc = rtems_task_wake_after( 20 );
   assert(sc == RTEMS_SUCCESSFUL);
 
 #if defined(TEST_WAIT_FOR_LINK)

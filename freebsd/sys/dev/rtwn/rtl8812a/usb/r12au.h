@@ -22,15 +22,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef RTL8812AU_H
 #define RTL8812AU_H
 
 #include <dev/rtwn/rtl8812a/r12a.h>
-
 
 /*
  * Function declarations.

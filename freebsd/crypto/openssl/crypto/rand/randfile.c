@@ -1,14 +1,24 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2019 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
+#if defined (__TANDEM) && defined (_SPT_MODEL_)
+/*
+ * These definitions have to come first in SPT due to scoping of the
+ * declarations in c99 associated with SPT use of stat.
+ */
+# include <sys/types.h>
+# include <sys/stat.h>
+#endif
+
+#include "e_os.h"
 #include "internal/cryptlib.h"
 
 #include <errno.h>
@@ -18,7 +28,6 @@
 
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
-#include <openssl/rand_drbg.h>
 #include <openssl/buffer.h>
 
 #ifdef OPENSSL_SYS_VMS
@@ -28,7 +37,7 @@
 #ifndef OPENSSL_NO_POSIX_IO
 # include <sys/stat.h>
 # include <fcntl.h>
-# ifdef _WIN32
+# if defined(_WIN32) && !defined(_WIN32_WCE)
 #  include <windows.h>
 #  include <io.h>
 #  define stat    _stat
@@ -97,15 +106,15 @@ int RAND_load_file(const char *file, long bytes)
         return 0;
 
     if ((in = openssl_fopen(file, "rb")) == NULL) {
-        RANDerr(RAND_F_RAND_LOAD_FILE, RAND_R_CANNOT_OPEN_FILE);
-        ERR_add_error_data(2, "Filename=", file);
+        ERR_raise_data(ERR_LIB_RAND, RAND_R_CANNOT_OPEN_FILE,
+                       "Filename=%s", file);
         return -1;
     }
 
 #ifndef OPENSSL_NO_POSIX_IO
     if (fstat(fileno(in), &sb) < 0) {
-        RANDerr(RAND_F_RAND_LOAD_FILE, RAND_R_INTERNAL_ERROR);
-        ERR_add_error_data(2, "Filename=", file);
+        ERR_raise_data(ERR_LIB_RAND, RAND_R_INTERNAL_ERROR,
+                       "Filename=%s", file);
         fclose(in);
         return -1;
     }
@@ -165,8 +174,7 @@ int RAND_load_file(const char *file, long bytes)
     OPENSSL_cleanse(buf, sizeof(buf));
     fclose(in);
     if (!RAND_status()) {
-        RANDerr(RAND_F_RAND_LOAD_FILE, RAND_R_RESEED_ERROR);
-        ERR_add_error_data(2, "Filename=", file);
+        ERR_raise_data(ERR_LIB_RAND, RAND_R_RESEED_ERROR, "Filename=%s", file);
         return -1;
     }
 
@@ -182,8 +190,8 @@ int RAND_write_file(const char *file)
     struct stat sb;
 
     if (stat(file, &sb) >= 0 && !S_ISREG(sb.st_mode)) {
-        RANDerr(RAND_F_RAND_WRITE_FILE, RAND_R_NOT_A_REGULAR_FILE);
-        ERR_add_error_data(2, "Filename=", file);
+        ERR_raise_data(ERR_LIB_RAND, RAND_R_NOT_A_REGULAR_FILE,
+                       "Filename=%s", file);
         return -1;
     }
 #endif
@@ -203,8 +211,16 @@ int RAND_write_file(const char *file)
          * should be restrictive from the start
          */
         int fd = open(file, O_WRONLY | O_CREAT | O_BINARY, 0600);
-        if (fd != -1)
+
+        if (fd != -1) {
             out = fdopen(fd, "wb");
+            if (out == NULL) {
+                close(fd);
+                ERR_raise_data(ERR_LIB_RAND, RAND_R_CANNOT_OPEN_FILE,
+                               "Filename=%s", file);
+                return -1;
+            }
+        }
     }
 #endif
 
@@ -232,8 +248,8 @@ int RAND_write_file(const char *file)
     if (out == NULL)
         out = openssl_fopen(file, "wb");
     if (out == NULL) {
-        RANDerr(RAND_F_RAND_WRITE_FILE, RAND_R_CANNOT_OPEN_FILE);
-        ERR_add_error_data(2, "Filename=", file);
+        ERR_raise_data(ERR_LIB_RAND, RAND_R_CANNOT_OPEN_FILE,
+                       "Filename=%s", file);
         return -1;
     }
 

@@ -1,8 +1,6 @@
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
- *
- * Created from $FreeBSD$
  */
 
 
@@ -17,12 +15,16 @@ struct vop_vector {
 	vop_mknod_t	*vop_mknod;
 	vop_open_t	*vop_open;
 	vop_close_t	*vop_close;
+	vop_fplookup_vexec_t	*vop_fplookup_vexec;
+	vop_fplookup_symlink_t	*vop_fplookup_symlink;
 	vop_access_t	*vop_access;
 	vop_accessx_t	*vop_accessx;
+	vop_stat_t	*vop_stat;
 	vop_getattr_t	*vop_getattr;
 	vop_setattr_t	*vop_setattr;
-	vop_markatime_t	*vop_markatime;
+	vop_mmapped_t	*vop_mmapped;
 	vop_read_t	*vop_read;
+	vop_read_pgcache_t	*vop_read_pgcache;
 	vop_write_t	*vop_write;
 	vop_ioctl_t	*vop_ioctl;
 	vop_poll_t	*vop_poll;
@@ -38,12 +40,14 @@ struct vop_vector {
 	vop_readdir_t	*vop_readdir;
 	vop_readlink_t	*vop_readlink;
 	vop_inactive_t	*vop_inactive;
+	vop_need_inactive_t	*vop_need_inactive;
 	vop_reclaim_t	*vop_reclaim;
 	vop_lock1_t	*vop_lock1;
 	vop_unlock_t	*vop_unlock;
 	vop_bmap_t	*vop_bmap;
 	vop_strategy_t	*vop_strategy;
 	vop_getwritemount_t	*vop_getwritemount;
+	vop_getlowvnode_t	*vop_getlowvnode;
 	vop_print_t	*vop_print;
 	vop_pathconf_t	*vop_pathconf;
 	vop_advlock_t	*vop_advlock;
@@ -73,12 +77,15 @@ struct vop_vector {
 	vop_is_text_t	*vop_is_text;
 	vop_set_text_t	*vop_set_text;
 	vop_unset_text_t	*vop_unset_text;
-	vop_get_writecount_t	*vop_get_writecount;
 	vop_add_writecount_t	*vop_add_writecount;
 	vop_fdatasync_t	*vop_fdatasync;
+	vop_copy_file_range_t	*vop_copy_file_range;
+	vop_vput_pair_t	*vop_vput_pair;
+	vop_deallocate_t	*vop_deallocate;
 	vop_spare1_t	*vop_spare1;
 	vop_spare2_t	*vop_spare2;
 	vop_spare3_t	*vop_spare3;
 	vop_spare4_t	*vop_spare4;
 	vop_spare5_t	*vop_spare5;
+	bool	registered;
 };

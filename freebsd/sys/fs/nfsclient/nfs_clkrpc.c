@@ -36,16 +36,15 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_kgssapi.h>
+#include <rtems/bsd/local/opt_kern_tls.h>
 
 #include <fs/nfs/nfsport.h>
 
 #include <rpc/rpc.h>
-#include <rpc/rpcsec_gss.h>
 #include <rpc/replay.h>
-
+#include <rpc/rpcsec_gss.h>
+#include <rpc/rpcsec_tls.h>
 
 NFSDLOCKMUTEX;
 
@@ -69,6 +68,9 @@ nfscb_program(struct svc_req *rqst, SVCXPRT *xprt)
 {
 	struct nfsrv_descript nd;
 	int cacherep, credflavor;
+#ifdef KERN_TLS
+	u_int maxlen;
+#endif
 
 	memset(&nd, 0, sizeof(nd));
 	if (rqst->rq_proc != NFSPROC_NULL &&
@@ -109,6 +111,13 @@ nfscb_program(struct svc_req *rqst, SVCXPRT *xprt)
 #ifdef MAC
 		mac_cred_associate_nfsd(nd.nd_cred);
 #endif
+#endif
+#ifdef KERN_TLS
+		if ((xprt->xp_tls & RPCTLS_FLAGS_HANDSHAKE) != 0 &&
+		    rpctls_getinfo(&maxlen, false, false)) {
+			nd.nd_flag |= ND_EXTPG;
+			nd.nd_maxextsiz = maxlen;
+		}
 #endif
 		cacherep = nfs_cbproc(&nd, rqst->rq_xid);
 	} else {
@@ -298,4 +307,3 @@ nfsrvd_cbinit(int terminating)
 		NFSD_LOCK();
 	}
 }
-

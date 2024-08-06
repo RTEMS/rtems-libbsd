@@ -23,14 +23,11 @@
 
 /* \summary: Session Initiation Protocol (SIP) printer */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <config.h>
 
-#include <netdissect-stdinc.h>
+#include "netdissect-stdinc.h"
 
 #include "netdissect.h"
-#include "extract.h"
 
 static const char *sipcmds[] = {
 	"ACK",
@@ -56,7 +53,8 @@ static const char *sipcmds[] = {
 void
 sip_print(netdissect_options *ndo, const u_char *pptr, u_int len)
 {
-	txtproto_print(ndo, pptr, len, "sip", sipcmds, RESP_CODE_SECOND_TOKEN);
+	ndo->ndo_protocol = "sip";
+	txtproto_print(ndo, pptr, len, sipcmds, RESP_CODE_SECOND_TOKEN);
 }
 #ifdef __rtems__
 #include "rtems-bsd-tcpdump-print-sip-data.h"

@@ -28,8 +28,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 /*
  * Copyright (c) 1986 - 1991 by Sun Microsystems, Inc.
@@ -77,7 +75,6 @@
 __BEGIN_DECLS
 #ifndef _KERNEL
 extern u_int __rpc_get_a_size(int);
-extern int __rpc_dtbsize(void);
 extern struct netconfig * __rpcgettp(int);
 extern  int  __rpc_get_default_domain(char **);
 

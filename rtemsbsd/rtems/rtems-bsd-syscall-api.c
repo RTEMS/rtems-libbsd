@@ -889,6 +889,7 @@ rtems_bsd_sysgen_open_node(
 	struct filedesc *fdp;
 	struct file *fp;
 	const bool creat = (oflag & O_CREAT) == O_CREAT;
+  struct pwd *pwd = pwd_get_smr();
 	struct vnode *cdir;
 	struct vnode *rdir;
 	const char *opath;
@@ -951,18 +952,18 @@ rtems_bsd_sysgen_open_node(
 		if (cdir == NULL || creat) {
 			cdir = rtems_bsd_libio_loc_to_vnode(&iop->pathinfo);
 		}
-		if (fdp->fd_cdir == NULL) {
+		if (pwd->pwd_cdir == NULL) {
 			cdir = rtems_bsd_libio_loc_to_vnode_dir(rootloc);
 		}
 	}
 
-	FILEDESC_XLOCK(fdp);
-	rdir = fdp->fd_cdir;
-	fdp->fd_cdir = cdir;
+	rdir = pwd->pwd_cdir;
+	vref(rdir);
+	vref(cdir);
+	pwd_chdir(td, cdir);
 	cdir = rdir;
-	rdir = fdp->fd_rdir;
-	fdp->fd_rdir = fdp->fd_cdir;
-	FILEDESC_XUNLOCK(fdp);
+	rdir = pwd->pwd_rdir;
+	pwd_chroot(td, pwd->pwd_cdir);
 
 	if (RTEMS_BSD_SYSCALL_TRACE) {
 		struct vnode* _vn = rtems_bsd_libio_loc_to_vnode(&iop->pathinfo);
@@ -972,15 +973,11 @@ rtems_bsd_sysgen_open_node(
 		       path, opath,
 		       _vn, creat ? 'c' : _vn ? (_vn->v_type == VDIR ? 'd' : 'r') : 'n',
 		       _dvn,  _dvn ? (_dvn->v_type == VDIR ? 'd' : 'r') : 'n',
-		       fdp->fd_cdir, oflag, mode, isdir ? "yes" : "no");
+		       pwd->pwd_cdir, oflag, mode, isdir ? "yes" : "no");
 	}
-
-	VREF(fdp->fd_cdir);
 
 	error = kern_openat(td, AT_FDCWD, RTEMS_DECONST(char *, opath),
 	    UIO_USERSPACE, oflag, mode);
-
-	vrele(fdp->fd_cdir);
 
 	if (error != 0) {
 		if (RTEMS_BSD_SYSCALL_TRACE) {
@@ -992,12 +989,12 @@ rtems_bsd_sysgen_open_node(
 
 	fd = td->td_retval[0];
 
+	pwd_chdir(td, cdir);
+	pwd_chroot(td, rdir);
 	FILEDESC_XLOCK(fdp);
-	fdp->fd_cdir = cdir;
-	fdp->fd_rdir = rdir;
 	if (fd < fdp->fd_nfiles) {
 		struct vnode *vn;
-		fp = fget_locked(fdp, fd);
+		fp = fget_noref(fdp, fd);
 		if (fp != NULL) {
 			vn = fp->f_vnode;
 		} else {
@@ -1326,8 +1323,8 @@ rtems_bsd_sysgen_vnstat(
 		error = EFAULT;
 	else {
 		if (VOP_LOCK(vp, LK_SHARED) == 0) {
-			error = vn_stat(vp, buf, td->td_ucred, NOCRED, td);
-			VOP_UNLOCK(vp, 0);
+			error = VOP_STAT(vp, buf, td->td_ucred, NULL);
+			VOP_UNLOCK(vp);
 		} else {
 			error = ENOLCK;
 		}
@@ -1367,11 +1364,11 @@ rtems_bsd_sysgen_fstat(
 	fdp = td->td_proc->p_fd;
 	FILEDESC_XLOCK(fdp);
 	if (fd < fdp->fd_nfiles) {
-		fp = fget_locked(fdp, fd);
+		fp = fget_noref(fdp, fd);
 	}
 	FILEDESC_XUNLOCK(fdp);
 	if (fp != NULL) {
-		error = fo_stat(fp, buf, NULL, td);
+		error = fo_stat(fp, buf, NULL);
 	} else {
 		error = EBADF;
 	}
@@ -1401,7 +1398,7 @@ rtems_bsd_sysgen_imfsfstat(
 	fdp = td->td_proc->p_fd;
 	FILEDESC_XLOCK(fdp);
 	for (fd = 0; fd < fdp->fd_nfiles; fd++) {
-		fp = fget_locked(fdp, fd);
+		fp = fget_noref(fdp, fd);
 		fd_so = fp->f_data;
 		if (so == fd_so) {
 			break;
@@ -1413,7 +1410,7 @@ rtems_bsd_sysgen_imfsfstat(
 		if (RTEMS_BSD_SYSCALL_TRACE) {
 			printf("bsd: sys: imfsfstat: %d\n", fd);
 		}
-		error = fo_stat(fp, buf, NULL, td);
+		error = fo_stat(fp, buf, NULL);
 	} else {
 		error = EBADF;
 	}

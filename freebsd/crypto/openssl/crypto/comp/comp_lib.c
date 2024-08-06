@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1998-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1998-2020 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -15,14 +15,14 @@
 #include <openssl/objects.h>
 #include <openssl/comp.h>
 #include <openssl/err.h>
-#include "comp_lcl.h"
+#include "comp_local.h"
 
 COMP_CTX *COMP_CTX_new(COMP_METHOD *meth)
 {
     COMP_CTX *ret;
 
     if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
-        COMPerr(COMP_F_COMP_CTX_NEW, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_COMP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     ret->meth = meth;

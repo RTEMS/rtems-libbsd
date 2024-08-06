@@ -29,9 +29,6 @@
  *	BSDI Id: if_indextoname.c,v 2.3 2000/04/17 22:38:05 dab Exp
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if_dl.h>
@@ -42,7 +39,7 @@ __FBSDID("$FreeBSD$");
 #include <errno.h>
 
 /*
- * From RFC 2533:
+ * From RFC 2553:
  *
  * The second function maps an interface index into its corresponding
  * name.
@@ -67,6 +64,11 @@ if_indextoname(unsigned int ifindex, char *ifname)
 {
 	struct ifaddrs *ifaddrs, *ifa;
 	int error = 0;
+
+	if (ifindex == 0) {
+		errno = ENXIO;
+		return(NULL);
+	}
 
 	if (getifaddrs(&ifaddrs) < 0)
 		return(NULL);	/* getifaddrs properly set errno */

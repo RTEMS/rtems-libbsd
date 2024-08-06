@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -59,7 +57,6 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/rtwn/rtl8812a/r12a.h>
 #include <dev/rtwn/rtl8812a/r12a_tx_desc.h>
-
 
 static int
 r12a_get_primary_channel(struct rtwn_softc *sc, struct ieee80211_channel *c)
@@ -426,7 +423,6 @@ r12a_fill_tx_desc_null(struct rtwn_softc *sc, void *buf, int is11b, int qos,
 	if (!qos) {
 		txd->txdw8 = htole32(R12A_TXDW8_HWSEQ_EN);
 		txd->txdw3 |= htole32(SM(R12A_TXDW3_SEQ_SEL, id));
-
 	}
 }
 

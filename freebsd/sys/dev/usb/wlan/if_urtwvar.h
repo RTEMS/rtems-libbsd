@@ -1,4 +1,3 @@
-/*	$FreeBSD$	*/
 
 /*-
  * Copyright (c) 2008 Weongyo Jeong <weongyo@FreeBSD.org>
@@ -82,7 +81,7 @@ struct urtw_tx_radiotap_header {
 	 (1 << IEEE80211_RADIOTAP_CHANNEL))
 
 struct urtw_stats {
-	unsigned int			txrates[12];
+	unsigned			txrates[12];
 };
 
 struct urtw_vap {

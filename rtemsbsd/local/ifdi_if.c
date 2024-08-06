@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -26,9 +26,7 @@
 #include <net/if_var.h>
 #include <net/if_media.h>
 #include <net/iflib.h>
-#include <net/if_clone.h>
-#include <net/if_dl.h>
-#include <net/if_types.h>
+#include <net/if_private.h>
 #include <rtems/bsd/local/ifdi_if.h>
 
 
@@ -36,18 +34,6 @@
 	static void
 	null_void_op(if_ctx_t _ctx __unused)
 	{
-	}
-
-	static int
-	null_knlist_add(if_ctx_t _ctx __unused, struct knote *_kn)
-	{
-	    return (0);
-	}
-
-	static int
-	null_knote_event(if_ctx_t _ctx __unused, struct knote *_kn, int _hint)
-	{
-	    return (0);
 	}
 
 	static void
@@ -59,12 +45,6 @@
 	null_int_op(if_ctx_t _ctx __unused)
 	{
 		return (0);
-	}
-
-	static int
-	null_int_int_op(if_ctx_t _ctx __unused, int arg0 __unused)
-	{
-		return (ENOTSUP);
 	}
 
 	static int
@@ -119,73 +99,26 @@
 		return (ENOTSUP);
 	}
 
-	static void
-	null_media_status(if_ctx_t ctx __unused, struct ifmediareq *ifmr)
+	static bool
+	null_needs_restart(if_ctx_t _ctx __unused, enum iflib_restart_event _event __unused)
 	{
-	    ifmr->ifm_status = IFM_AVALID | IFM_ACTIVE;
-	    ifmr->ifm_active = IFM_ETHER | IFM_25G_ACC | IFM_FDX;
+		return (false);
 	}
-
-	static int
-	null_cloneattach(if_ctx_t ctx __unused, struct if_clone *ifc __unused,
-			 const char *name __unused, caddr_t params __unused)
-	{
-	    return (0);
-	}
-
-	static void
-	null_rx_clset(if_ctx_t _ctx __unused, uint16_t _flid __unused,
-		      uint16_t _qid __unused, caddr_t *_sdcl __unused)
-	{
-	}
-	static void
-	null_object_info_get(if_ctx_t ctx __unused, void *data __unused, int size __unused)
-	{
-	}
-	static int
-	default_mac_set(if_ctx_t ctx, const uint8_t *mac)
-	{
-	    struct ifnet *ifp = iflib_get_ifp(ctx);
-	    struct sockaddr_dl *sdl;
-
-	    if (ifp && ifp->if_addr) {
-		sdl = (struct sockaddr_dl *)ifp->if_addr->ifa_addr;
-		MPASS(sdl->sdl_type == IFT_ETHER);
-		memcpy(LLADDR(sdl), mac, ETHER_ADDR_LEN);
-	    }
-	    return (0);
-	}
-
-struct kobjop_desc ifdi_knlist_add_desc = {
-	0, { &ifdi_knlist_add_desc, (kobjop_t)null_knlist_add }
-};
-
-struct kobjop_desc ifdi_knote_event_desc = {
-	0, { &ifdi_knote_event_desc, (kobjop_t)null_knote_event }
-};
-
-struct kobjop_desc ifdi_object_info_get_desc = {
-	0, { &ifdi_object_info_get_desc, (kobjop_t)null_object_info_get }
-};
 
 struct kobjop_desc ifdi_attach_pre_desc = {
-	0, { &ifdi_attach_pre_desc, (kobjop_t)null_int_op }
+	0, { &ifdi_attach_pre_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_attach_post_desc = {
-	0, { &ifdi_attach_post_desc, (kobjop_t)null_int_op }
+	0, { &ifdi_attach_post_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_reinit_pre_desc = {
-	0, { &ifdi_reinit_pre_desc, (kobjop_t)null_int_op }
+	0, { &ifdi_reinit_pre_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_reinit_post_desc = {
-	0, { &ifdi_reinit_post_desc, (kobjop_t)null_int_op }
-};
-
-struct kobjop_desc ifdi_cloneattach_desc = {
-	0, { &ifdi_cloneattach_desc, (kobjop_t)null_cloneattach }
+	0, { &ifdi_reinit_post_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_detach_desc = {
@@ -213,11 +146,7 @@ struct kobjop_desc ifdi_rx_queues_alloc_desc = {
 };
 
 struct kobjop_desc ifdi_queues_free_desc = {
-	0, { &ifdi_queues_free_desc, (kobjop_t)null_void_op }
-};
-
-struct kobjop_desc ifdi_rx_clset_desc = {
-	0, { &ifdi_rx_clset_desc, (kobjop_t)null_rx_clset }
+	0, { &ifdi_queues_free_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_init_desc = {
@@ -229,7 +158,7 @@ struct kobjop_desc ifdi_stop_desc = {
 };
 
 struct kobjop_desc ifdi_msix_intr_assign_desc = {
-	0, { &ifdi_msix_intr_assign_desc, (kobjop_t)null_int_int_op }
+	0, { &ifdi_msix_intr_assign_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_intr_enable_desc = {
@@ -252,16 +181,16 @@ struct kobjop_desc ifdi_link_intr_enable_desc = {
 	0, { &ifdi_link_intr_enable_desc, (kobjop_t)null_void_op }
 };
 
+struct kobjop_desc ifdi_admin_completion_handle_desc = {
+	0, { &ifdi_admin_completion_handle_desc, (kobjop_t)null_void_op }
+};
+
 struct kobjop_desc ifdi_multi_set_desc = {
 	0, { &ifdi_multi_set_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_mtu_set_desc = {
 	0, { &ifdi_mtu_set_desc, (kobjop_t)kobj_error_method }
-};
-
-struct kobjop_desc ifdi_mac_set_desc = {
-	0, { &ifdi_mac_set_desc, (kobjop_t)default_mac_set }
 };
 
 struct kobjop_desc ifdi_media_set_desc = {
@@ -297,11 +226,11 @@ struct kobjop_desc ifdi_update_admin_status_desc = {
 };
 
 struct kobjop_desc ifdi_media_status_desc = {
-	0, { &ifdi_media_status_desc, (kobjop_t)null_media_status }
+	0, { &ifdi_media_status_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_media_change_desc = {
-	0, { &ifdi_media_change_desc, (kobjop_t)null_int_op }
+	0, { &ifdi_media_change_desc, (kobjop_t)kobj_error_method }
 };
 
 struct kobjop_desc ifdi_get_counter_desc = {
@@ -332,10 +261,6 @@ struct kobjop_desc ifdi_watchdog_reset_desc = {
 	0, { &ifdi_watchdog_reset_desc, (kobjop_t)null_void_op }
 };
 
-struct kobjop_desc ifdi_watchdog_reset_queue_desc = {
-	0, { &ifdi_watchdog_reset_queue_desc, (kobjop_t)null_timer_op }
-};
-
 struct kobjop_desc ifdi_led_func_desc = {
 	0, { &ifdi_led_func_desc, (kobjop_t)null_led_func }
 };
@@ -354,5 +279,9 @@ struct kobjop_desc ifdi_sysctl_int_delay_desc = {
 
 struct kobjop_desc ifdi_debug_desc = {
 	0, { &ifdi_debug_desc, (kobjop_t)null_void_op }
+};
+
+struct kobjop_desc ifdi_needs_restart_desc = {
+	0, { &ifdi_needs_restart_desc, (kobjop_t)null_needs_restart }
 };
 

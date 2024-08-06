@@ -4,4 +4,5 @@
 /* req.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static CONF *addext_conf);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static CONF *req_conf);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char const *section);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int batch);

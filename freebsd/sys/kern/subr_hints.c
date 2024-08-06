@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000,2001 Peter Wemm <peter@FreeBSD.org>
  * All rights reserved.
@@ -29,10 +29,9 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/lock.h>
+#include <sys/kenv.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/mutex.h>
@@ -136,9 +135,9 @@ res_find(char **hintp_cookie, int *line, int *startln,
     const char **ret_resname, int *ret_resnamelen, const char **ret_value)
 {
 #ifndef __rtems__
-	int fbacklvl = FBACK_MDENV, i = 0, n = 0;
+	int fbacklvl = FBACK_MDENV, i = 0, n = 0, namelen;
 #else /* __rtems__ */
-	int n = 0;
+	int n = 0, namelen;
 #endif /* __rtems__ */
 	char r_name[32];
 	int r_unit;
@@ -148,7 +147,6 @@ res_find(char **hintp_cookie, int *line, int *startln,
 	char *hintp, *p;
 #ifndef __rtems__
 	bool dyn_used = false;
-
 
 	/*
 	 * We are expecting that the caller will pass us a hintp_cookie that
@@ -250,12 +248,16 @@ fallback:
 	}
 #endif /* __rtems__ */
 
+	if (name)
+		namelen = strlen(name);
 	cp = hintp;
 	while (cp) {
 		(*line)++;
 		if (strncmp(cp, "hint.", 5) != 0)
 			goto nexthint;
-		n = sscanf(cp, "hint.%32[^.].%d.%32[^=]=%127s", r_name, &r_unit,
+		if (name && strncmp(cp + 5, name, namelen) != 0)
+			goto nexthint;
+		n = sscanf(cp + 5, "%32[^.].%d.%32[^=]=%127s", r_name, &r_unit,
 		    r_resname, r_value);
 		if (n != 4) {
 			printf("CONFIG: invalid hint '%s'\n", cp);

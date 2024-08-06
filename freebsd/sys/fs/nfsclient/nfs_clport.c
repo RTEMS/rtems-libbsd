@@ -36,8 +36,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
@@ -55,6 +53,7 @@ __FBSDID("$FreeBSD$");
 #include <netinet/if_ether.h>
 #include <netinet6/ip6_var.h>
 #include <net/if_types.h>
+#include <net/route/nhop.h>
 
 #include <fs/nfsclient/nfs_kdtrace.h>
 
@@ -80,8 +79,9 @@ extern u_int32_t newnfs_true, newnfs_false, newnfs_xdrneg1;
 extern struct vop_vector newnfs_vnodeops;
 extern struct vop_vector newnfs_fifoops;
 extern uma_zone_t newnfsnode_zone;
-extern struct buf_ops buf_ops_newnfs;
-extern int ncl_pbuf_freecnt;
+#ifndef __rtems__
+extern uma_zone_t ncl_pbuf_zone;
+#endif /* __rtems__ */
 extern short nfsv4_cbport;
 extern int nfscl_enablecallb;
 extern int nfs_numnfscbd;
@@ -128,7 +128,7 @@ newnfs_vncmpf(struct vnode *vp, void *arg)
 int
 nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
     struct componentname *cnp, struct thread *td, struct nfsnode **npp,
-    void *stuff, int lkflags)
+    int lkflags)
 {
 	struct nfsnode *np, *dnp;
 	struct vnode *vp, *nvp;
@@ -141,6 +141,19 @@ nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
 	dnp = VTONFS(dvp);
 	*npp = NULL;
 
+	/*
+	 * If this is the mount point fh and NFSMNTP_FAKEROOT is set, replace
+	 * it with the fake fh.
+	 */
+	if ((nmp->nm_privflag & NFSMNTP_FAKEROOTFH) != 0 &&
+	    nmp->nm_fhsize > 0 && nmp->nm_fhsize == nfhp->nfh_len &&
+	    !NFSBCMP(nmp->nm_fh, nfhp->nfh_fh, nmp->nm_fhsize)) {
+		free(nfhp, M_NFSFH);
+		nfhp = malloc(sizeof(struct nfsfh) + NFSX_FHMAX + 1,
+		    M_NFSFH, M_WAITOK | M_ZERO);
+		nfhp->nfh_len = NFSX_FHMAX + 1;
+	}
+
 	hash = fnv_32_buf(nfhp->nfh_fh, nfhp->nfh_len, FNV1_32_INIT);
 
 	error = vfs_hash_get(mntp, hash, lkflags,
@@ -151,13 +164,13 @@ nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
 		 * get called on this vnode between when NFSVOPLOCK() drops
 		 * the VI_LOCK() and vget() acquires it again, so that it
 		 * hasn't yet had v_usecount incremented. If this were to
-		 * happen, the VI_DOOMED flag would be set, so check for
+		 * happen, the VIRF_DOOMED flag would be set, so check for
 		 * that here. Since we now have the v_usecount incremented,
-		 * we should be ok until we vrele() it, if the VI_DOOMED
+		 * we should be ok until we vrele() it, if the VIRF_DOOMED
 		 * flag isn't set now.
 		 */
 		VI_LOCK(nvp);
-		if ((nvp->v_iflag & VI_DOOMED)) {
+		if (VN_IS_DOOMED(nvp)) {
 			VI_UNLOCK(nvp);
 			vrele(nvp);
 			error = ENOENT;
@@ -225,7 +238,6 @@ nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
 	}
 	vp = nvp;
 	KASSERT(vp->v_bufobj.bo_bsize != 0, ("nfscl_nget: bo_bsize == 0"));
-	vp->v_bufobj.bo_ops = &buf_ops_newnfs;
 	vp->v_data = np;
 	np->n_vnode = vp;
 	/* 
@@ -246,21 +258,22 @@ nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
 	 * Are we getting the root? If so, make sure the vnode flags
 	 * are correct 
 	 */
-	if ((nfhp->nfh_len == nmp->nm_fhsize) &&
-	    !bcmp(nfhp->nfh_fh, nmp->nm_fh, nfhp->nfh_len)) {
+	if (nfhp->nfh_len == NFSX_FHMAX + 1 ||
+	    (nfhp->nfh_len == nmp->nm_fhsize &&
+	     !bcmp(nfhp->nfh_fh, nmp->nm_fh, nfhp->nfh_len))) {
 		if (vp->v_type == VNON)
 			vp->v_type = VDIR;
 		vp->v_vflag |= VV_ROOT;
 	}
 
 	vp->v_vflag |= VV_VMSIZEVNLOCK;
-	
+
 	np->n_fhp = nfhp;
 	/*
-	 * For NFSv4, we have to attach the directory file handle and
+	 * For NFSv4.0, we have to attach the directory file handle and
 	 * file name, so that Open Ops can be done later.
 	 */
-	if (nmp->nm_flag & NFSMNT_NFSV4) {
+	if (NFSHASNFSV4(nmp) && !NFSHASNFSV4N(nmp)) {
 		np->n_v4 = malloc(sizeof (struct nfsv4node)
 		    + dnp->n_fhp->nfh_len + cnp->cn_namelen - 1, M_NFSV4NODE,
 		    M_WAITOK);
@@ -291,6 +304,7 @@ nfscl_nget(struct mount *mntp, struct vnode *dvp, struct nfsfh *nfhp,
 		uma_zfree(newnfsnode_zone, np);
 		return (error);
 	}
+	vn_set_state(vp, VSTATE_CONSTRUCTED);
 	error = vfs_hash_insert(vp, hash, lkflags, 
 	    td, &nvp, newnfs_vncmpf, nfhp);
 	if (error)
@@ -342,7 +356,7 @@ nfscl_ngetreopen(struct mount *mntp, u_int8_t *fhp, int fhsize,
 	error = vfs_hash_get(mntp, hash, (LK_EXCLUSIVE | LK_NOWAIT), td, &nvp,
 	    newnfs_vncmpf, nfhp);
 	if (error == 0 && nvp != NULL) {
-		NFSVOPUNLOCK(nvp, 0);
+		NFSVOPUNLOCK(nvp);
 	} else if (error == EBUSY) {
 		/*
 		 * It is safe so long as a vflush() with
@@ -356,7 +370,7 @@ nfscl_ngetreopen(struct mount *mntp, u_int8_t *fhp, int fhsize,
 			vfs_hash_ref(mntp, hash, td, &nvp, newnfs_vncmpf, nfhp);
 			if (nvp == NULL) {
 				error = ENOENT;
-			} else if ((nvp->v_iflag & VI_DOOMED) != 0) {
+			} else if (VN_IS_DOOMED(nvp)) {
 				error = ENOENT;
 				vrele(nvp);
 			} else {
@@ -405,6 +419,29 @@ nfscl_warn_fileid(struct nfsmount *nmp, struct nfsvattr *oldnap,
 		    ncl_fileid_maxwarnings);
 }
 
+void
+ncl_copy_vattr(struct vattr *dst, struct vattr *src)
+{
+	dst->va_type = src->va_type;
+	dst->va_mode = src->va_mode;
+	dst->va_nlink = src->va_nlink;
+	dst->va_uid = src->va_uid;
+	dst->va_gid = src->va_gid;
+	dst->va_fsid = src->va_fsid;
+	dst->va_fileid = src->va_fileid;
+	dst->va_size = src->va_size;
+	dst->va_blocksize = src->va_blocksize;
+	dst->va_atime = src->va_atime;
+	dst->va_mtime = src->va_mtime;
+	dst->va_ctime = src->va_ctime;
+	dst->va_birthtime = src->va_birthtime;
+	dst->va_gen = src->va_gen;
+	dst->va_flags = src->va_flags;
+	dst->va_rdev = src->va_rdev;
+	dst->va_bytes = src->va_bytes;
+	dst->va_filerev = src->va_filerev;
+}
+
 /*
  * Load the attribute cache (that lives in the nfsnode entry) with
  * the attributes of the second argument and
@@ -415,7 +452,7 @@ nfscl_warn_fileid(struct nfsmount *nmp, struct nfsvattr *oldnap,
  */
 int
 nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
-    void *stuff, int writeattr, int dontshrink)
+    int writeattr, int dontshrink)
 {
 	struct vnode *vp = *vpp;
 	struct vattr *vap, *nvap = &nap->na_vattr, *vaper = nvaper;
@@ -423,6 +460,7 @@ nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
 	struct nfsmount *nmp;
 	struct timespec mtime_save;
 	int error, force_fid_err;
+	dev_t topfsid;
 
 	error = 0;
 
@@ -453,6 +491,7 @@ nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
 		np->n_vattr.na_size = nap->na_size;
 		np->n_vattr.na_mtime = nap->na_mtime;
 		np->n_vattr.na_ctime = nap->na_ctime;
+		np->n_vattr.na_btime = nap->na_btime;
 		np->n_vattr.na_fsid = nap->na_fsid;
 		np->n_vattr.na_mode = nap->na_mode;
 	} else {
@@ -476,9 +515,15 @@ nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
 		 * this reliably with Clang and .c files during parallel build.
 		 * A pcap revealed packet fragmentation and GETATTR RPC
 		 * responses with wholly wrong fileids.
+		 * For the case where the file handle is a fake one
+		 * generated via the "syskrb5" mount option and
+		 * the old fileid is 2, ignore the test, since this might
+		 * be replacing the fake attributes with correct ones.
 		 */
 		if ((np->n_vattr.na_fileid != 0 &&
-		     np->n_vattr.na_fileid != nap->na_fileid) ||
+		     np->n_vattr.na_fileid != nap->na_fileid &&
+		     (np->n_vattr.na_fileid != 2 || !NFSHASSYSKRB5(nmp) ||
+		      np->n_fhp->nfh_len != NFSX_FHMAX + 1)) ||
 		    force_fid_err) {
 			nfscl_warn_fileid(nmp, &np->n_vattr, nap);
 			error = EIDRM;
@@ -489,28 +534,30 @@ nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
 	}
 
 	/*
-	 * For NFSv4, if the node's fsid is not equal to the mount point's
-	 * fsid, return the low order 32bits of the node's fsid. This
-	 * allows getcwd(3) to work. There is a chance that the fsid might
-	 * be the same as a local fs, but since this is in an NFS mount
-	 * point, I don't think that will cause any problems?
+	 * For NFSv4, the server's export may be a tree of file systems
+	 * where a fileno is a unique value within each file system.
+	 * na_filesid[0,1] uniquely identify the server file system
+	 * and nm_fsid[0,1] is the value for the root file system mounted.
+	 * As such, the value of va_fsid generated by vn_fsid() represents
+	 * the root file system on the server and a different value for
+	 * va_fsid is needed for the other server file systems.  This
+	 * va_fsid is ideally unique for all of the server file systems,
+	 * so a 64bit hash on na_filesid[0,1] is calculated.
+	 * Although highly unlikely that the fnv_64_hash() will be
+	 * the same as the root, test for this case and recalculate the hash.
 	 */
+	vn_fsid(vp, vap);
 	if (NFSHASNFSV4(nmp) && NFSHASHASSETFSID(nmp) &&
 	    (nmp->nm_fsid[0] != np->n_vattr.na_filesid[0] ||
 	     nmp->nm_fsid[1] != np->n_vattr.na_filesid[1])) {
-		/*
-		 * va_fsid needs to be set to some value derived from
-		 * np->n_vattr.na_filesid that is not equal
-		 * vp->v_mount->mnt_stat.f_fsid[0], so that it changes
-		 * from the value used for the top level server volume
-		 * in the mounted subtree.
-		 */
-		vn_fsid(vp, vap);
-		if ((uint32_t)vap->va_fsid == np->n_vattr.na_filesid[0])
-			vap->va_fsid = hash32_buf(
-			    np->n_vattr.na_filesid, 2 * sizeof(uint64_t), 0);
-	} else
-		vn_fsid(vp, vap);
+		topfsid = vap->va_fsid;
+		vap->va_fsid = FNV1_64_INIT;
+		do {
+			vap->va_fsid = fnv_64_buf(np->n_vattr.na_filesid,
+			    sizeof(np->n_vattr.na_filesid), vap->va_fsid);
+		} while (vap->va_fsid == topfsid);
+	}
+
 	np->n_attrstamp = time_second;
 	if (vap->va_size != np->n_size) {
 		if (vap->va_type == VREG) {
@@ -560,7 +607,7 @@ nfscl_loadattrcache(struct vnode **vpp, struct nfsvattr *nap, void *nvaper,
 		KDTRACE_NFS_ATTRCACHE_FLUSH_DONE(vp);
 	}
 	if (vaper != NULL) {
-		NFSBCOPY((caddr_t)vap, (caddr_t)vaper, sizeof(*vap));
+		ncl_copy_vattr(vaper, vap);
 		if (np->n_flag & NCHG) {
 			if (np->n_flag & NACC)
 				vaper->va_atime = np->n_atim;
@@ -608,7 +655,8 @@ ncl_pager_setsize(struct vnode *vp, u_quad_t *nsizep)
 
 #ifndef __rtems__
 	if (object != NULL && nsize != object->un_pager.vnp.vnp_size) {
-		if (VOP_ISLOCKED(vp) == LK_EXCLUSIVE)
+		if (VOP_ISLOCKED(vp) == LK_EXCLUSIVE &&
+		    (curthread->td_pflags2 & TDP2_SBPAGES) == 0)
 			setnsize = true;
 		else
 			np->n_flag |= NVNSETSZSKIP;
@@ -782,7 +830,7 @@ nfscl_start_renewthread(struct nfsclclient *clp)
  */
 int
 nfscl_wcc_data(struct nfsrv_descript *nd, struct vnode *vp,
-    struct nfsvattr *nap, int *flagp, int *wccflagp, void *stuff)
+    struct nfsvattr *nap, int *flagp, int *wccflagp, uint64_t *repsizep)
 {
 	u_int32_t *tl;
 	struct nfsnode *np = VTONFS(vp);
@@ -805,7 +853,7 @@ nfscl_wcc_data(struct nfsrv_descript *nd, struct vnode *vp,
 				NFSUNLOCKNODE(np);
 			}
 		}
-		error = nfscl_postop_attr(nd, nap, flagp, stuff);
+		error = nfscl_postop_attr(nd, nap, flagp);
 		if (wccflagp != NULL && *flagp == 0)
 			*wccflagp = 0;
 	} else if ((nd->nd_flag & (ND_NOMOREDATA | ND_NFSV4 | ND_V4WCCATTR))
@@ -821,6 +869,8 @@ nfscl_wcc_data(struct nfsrv_descript *nd, struct vnode *vp,
 		NFSM_DISSECT(tl, u_int32_t *, 2 * NFSX_UNSIGNED);
 		if (*++tl)
 			nd->nd_flag |= ND_NOMOREDATA;
+		if (repsizep != NULL)
+			*repsizep = nfsva.na_size;
 		if (wccflagp != NULL &&
 		    nfsva.na_vattr.va_mtime.tv_sec != 0) {
 			NFSLOCKNODE(np);
@@ -839,8 +889,7 @@ nfsmout:
  * Get postop attributes.
  */
 int
-nfscl_postop_attr(struct nfsrv_descript *nd, struct nfsvattr *nap, int *retp,
-    void *stuff)
+nfscl_postop_attr(struct nfsrv_descript *nd, struct nfsvattr *nap, int *retp)
 {
 	u_int32_t *tl;
 	int error = 0;
@@ -882,7 +931,7 @@ nfsmout:
  */
 int
 nfscl_request(struct nfsrv_descript *nd, struct vnode *vp, NFSPROC_T *p,
-    struct ucred *cred, void *stuff)
+    struct ucred *cred)
 {
 	int ret, vers;
 	struct nfsmount *nmp;
@@ -999,7 +1048,7 @@ u_int8_t *
 nfscl_getmyip(struct nfsmount *nmp, struct in6_addr *paddr, int *isinet6p)
 {
 #if defined(INET6) || defined(INET)
-	int error, fibnum;
+	int fibnum;
 
 #ifndef __rtems__
 	fibnum = curthread->td_proc->p_fibnum;
@@ -1009,38 +1058,47 @@ nfscl_getmyip(struct nfsmount *nmp, struct in6_addr *paddr, int *isinet6p)
 #endif
 #ifdef INET
 	if (nmp->nm_nam->sa_family == AF_INET) {
+		struct epoch_tracker et;
+		struct nhop_object *nh;
 		struct sockaddr_in *sin;
-		struct nhop4_extended nh_ext;
+		struct in_addr addr = {};
 
 		sin = (struct sockaddr_in *)nmp->nm_nam;
+		NET_EPOCH_ENTER(et);
 		CURVNET_SET(CRED_TO_VNET(nmp->nm_sockreq.nr_cred));
-		error = fib4_lookup_nh_ext(fibnum, sin->sin_addr, 0, 0,
-		    &nh_ext);
-		CURVNET_RESTORE();
-		if (error != 0)
-			return (NULL);
-
-		if (IN_LOOPBACK(ntohl(nh_ext.nh_src.s_addr))) {
-			/* Ignore loopback addresses */
-			return (NULL);
+		nh = fib4_lookup(fibnum, sin->sin_addr, 0, NHR_NONE, 0);
+		if (nh != NULL) {
+			addr = IA_SIN(ifatoia(nh->nh_ifa))->sin_addr;
+			if (IN_LOOPBACK(ntohl(addr.s_addr))) {
+				/* Ignore loopback addresses */
+				nh = NULL;
+			}
 		}
+		CURVNET_RESTORE();
+		NET_EPOCH_EXIT(et);
 
+		if (nh == NULL)
+			return (NULL);
 		*isinet6p = 0;
-		*((struct in_addr *)paddr) = nh_ext.nh_src;
+		*((struct in_addr *)paddr) = addr;
 
 		return (u_int8_t *)paddr;
 	}
 #endif
 #ifdef INET6
 	if (nmp->nm_nam->sa_family == AF_INET6) {
+		struct epoch_tracker et;
 		struct sockaddr_in6 *sin6;
+		int error;
 
 		sin6 = (struct sockaddr_in6 *)nmp->nm_nam;
 
+		NET_EPOCH_ENTER(et);
 		CURVNET_SET(CRED_TO_VNET(nmp->nm_sockreq.nr_cred));
 		error = in6_selectsrc_addr(fibnum, &sin6->sin6_addr,
 		    sin6->sin6_scope_id, NULL, paddr, NULL);
 		CURVNET_RESTORE();
+		NET_EPOCH_EXIT(et);
 		if (error != 0)
 			return (NULL);
 
@@ -1072,7 +1130,6 @@ newnfs_copyincred(struct ucred *cr, struct nfscred *nfscr)
 		nfscr->nfsc_groups[i] = cr->cr_groups[i];
 }
 
-
 /*
  * Do any client specific initialization.
  */
@@ -1085,10 +1142,7 @@ nfscl_init(void)
 		return;
 	inited = 1;
 	nfscl_inited = 1;
-	ncl_pbuf_freecnt = nswbuf / 2 + 1;
-#ifdef __rtems__
-	ncl_pbuf_zone = pbuf_zsecond_create("nfspbuf", ncl_pbuf_freecnt);
-#endif /* __rtems__ */
+	ncl_pbuf_zone = pbuf_zsecond_create("nfspbuf", nswbuf / 2);
 }
 
 /*
@@ -1144,7 +1198,7 @@ nfscl_checksattr(struct vattr *vap, struct nfsvattr *nvap)
  * error should only be returned for the Open, Create and Setattr Ops.
  * As such, most calls can just pass in 0 for those arguments.
  */
-APPLESTATIC int
+int
 nfscl_maperr(struct thread *td, int error, uid_t uid, gid_t gid)
 {
 	struct proc *p;
@@ -1178,7 +1232,6 @@ nfscl_maperr(struct thread *td, int error, uid_t uid, gid_t gid)
 	case NFSERR_FHEXPIRED:
 	case NFSERR_RESOURCE:
 	case NFSERR_MOVED:
-	case NFSERR_NOFILEHANDLE:
 	case NFSERR_MINORVERMISMATCH:
 	case NFSERR_OLDSTATEID:
 	case NFSERR_BADSEQID:
@@ -1188,6 +1241,14 @@ nfscl_maperr(struct thread *td, int error, uid_t uid, gid_t gid)
 	case NFSERR_OPILLEGAL:
 		printf("nfsv4 client/server protocol prob err=%d\n",
 		    error);
+		return (EIO);
+	case NFSERR_NOFILEHANDLE:
+		printf("nfsv4 no file handle: usually means the file "
+		    "system is not exported on the NFSv4 server\n");
+		return (EIO);
+	case NFSERR_WRONGSEC:
+		tprintf(p, LOG_INFO, "NFSv4 error WrongSec: You probably need a"
+		    " Kerberos TGT\n");
 		return (EIO);
 	default:
 		tprintf(p, LOG_INFO, "nfsv4 err=%d\n", error);
@@ -1223,7 +1284,7 @@ nfscl_procdoesntexist(u_int8_t *own)
 	tl.cval[2] = *own++;
 	tl.cval[3] = *own++;
 	pid = tl.lval;
-	p = pfind_locked(pid);
+	p = pfind_any_locked(pid);
 	if (p == NULL)
 		return (1);
 	if (p->p_stats == NULL) {
@@ -1269,23 +1330,25 @@ nfssvc_nfscl(struct thread *td, struct nfssvc_args *uap)
 	struct mount *mp;
 	struct nfsmount *nmp;
 
+	NFSD_CURVNET_SET(NFSD_TD_TO_VNET(td));
 	if (uap->flag & NFSSVC_CBADDSOCK) {
 		error = copyin(uap->argp, (caddr_t)&nfscbdarg, sizeof(nfscbdarg));
 		if (error)
-			return (error);
+			goto out;
 		/*
 		 * Since we don't know what rights might be required,
 		 * pretend that we need them all. It is better to be too
 		 * careful than too reckless.
 		 */
 		error = fget(td, nfscbdarg.sock,
-		    cap_rights_init(&rights, CAP_SOCK_CLIENT), &fp);
+		    cap_rights_init_one(&rights, CAP_SOCK_CLIENT), &fp);
 		if (error)
-			return (error);
+			goto out;
 #ifndef __rtems__
 		if (fp->f_type != DTYPE_SOCKET) {
 			fdrop(fp, td);
-			return (EPERM);
+			error = EPERM;
+			goto out;
 		}
 #endif /* __rtems__ */
 		error = nfscbd_addsock(fp);
@@ -1295,12 +1358,14 @@ nfssvc_nfscl(struct thread *td, struct nfssvc_args *uap)
 			nfscl_enablecallb = 1;
 		}
 	} else if (uap->flag & NFSSVC_NFSCBD) {
-		if (uap->argp == NULL) 
-			return (EINVAL);
+		if (uap->argp == NULL) {
+			error = EINVAL;
+			goto out;
+		}
 		error = copyin(uap->argp, (caddr_t)&nfscbdarg2,
 		    sizeof(nfscbdarg2));
 		if (error)
-			return (error);
+			goto out;
 		error = nfscbd_nfsd(td, &nfscbdarg2);
 	} else if (uap->flag & NFSSVC_DUMPMNTOPTS) {
 		error = copyin(uap->argp, &dumpmntopts, sizeof(dumpmntopts));
@@ -1316,7 +1381,8 @@ nfssvc_nfscl(struct thread *td, struct nfssvc_args *uap)
 			error = EINVAL;
 		}
 		if (error == 0) {
-			buf = malloc(dumpmntopts.ndmnt_blen, M_TEMP, M_WAITOK);
+			buf = malloc(dumpmntopts.ndmnt_blen, M_TEMP, M_WAITOK |
+			    M_ZERO);
 			nfscl_retopts(VFSTONFS(nd.ni_vp->v_mount), buf,
 			    dumpmntopts.ndmnt_blen);
 			vput(nd.ni_vp);
@@ -1385,6 +1451,8 @@ nfssvc_nfscl(struct thread *td, struct nfssvc_args *uap)
 	} else {
 		error = EINVAL;
 	}
+out:
+	NFSD_CURVNET_RESTORE();
 	return (error);
 }
 
@@ -1426,6 +1494,7 @@ nfscl_modevent(module_t mod, int type, void *data)
 #if 0
 		ncl_call_invalcaches = NULL;
 		nfsd_call_nfscl = NULL;
+		uma_zdestroy(ncl_pbuf_zone);
 		/* and get rid of the mutexes */
 		mtx_destroy(&ncl_iod_mutex);
 		loaded = 0;
@@ -1444,6 +1513,14 @@ static moduledata_t nfscl_mod = {
 	nfscl_modevent,
 	NULL,
 };
+/*
+ * This is the main module declaration for the NFS client.  The
+ * nfscl_modevent() function is needed to ensure that the module
+ * cannot be unloaded, among other things.
+ * There is also a module declaration in sys/fs/nfsclient/nfs_clvfsops.c
+ * for the name "nfs" within the VFS_SET() macro that defines the "nfs"
+ * file system type.
+ */
 DECLARE_MODULE(nfscl, nfscl_mod, SI_SUB_VFS, SI_ORDER_FIRST);
 
 /* So that loader and kldload(2) can find us, wherever we are.. */
@@ -1451,5 +1528,4 @@ MODULE_VERSION(nfscl, 1);
 MODULE_DEPEND(nfscl, nfscommon, 1, 1, 1);
 MODULE_DEPEND(nfscl, krpc, 1, 1, 1);
 MODULE_DEPEND(nfscl, nfssvc, 1, 1, 1);
-MODULE_DEPEND(nfscl, nfslock, 1, 1, 1);
-
+MODULE_DEPEND(nfscl, xdr, 1, 1, 1);

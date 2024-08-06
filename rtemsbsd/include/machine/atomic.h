@@ -44,6 +44,7 @@
 #include <rtems.h>
 
 #ifdef RTEMS_SMP
+  typedef u_char uchar;
   #if defined(__cplusplus) \
     && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9))
     /*
@@ -119,18 +120,50 @@ rmb(void)
 #endif
 
 static inline int
-atomic_load_int(volatile int *p)
+atomic_load_int(volatile unsigned int *p)
 {
 	int tmp;
-	_ATOMIC_LOAD(int, p, memory_order_relaxed, false);
+	_ATOMIC_LOAD(uint, p, memory_order_relaxed, false);
 	return (tmp);
 }
 
 static inline int
-atomic_load_acq_int(volatile int *p)
+atomic_load_acq_int(volatile unsigned int *p)
 {
 	int tmp;
-	_ATOMIC_LOAD(int, p, memory_order_acquire, true);
+	_ATOMIC_LOAD(uint, p, memory_order_acquire, true);
+	return (tmp);
+}
+
+static inline short
+atomic_load_short(volatile unsigned short *p)
+{
+	short tmp;
+	_ATOMIC_LOAD(ushort, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline short
+atomic_load_acq_short(volatile unsigned short *p)
+{
+	short tmp;
+	_ATOMIC_LOAD(ushort, p, memory_order_acquire, true);
+	return (tmp);
+}
+
+static inline uint64_t
+atomic_load_64(volatile uint64_t *p)
+{
+	uint64_t tmp;
+	_ATOMIC_LOAD(uint_fast64_t, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline uint64_t
+atomic_load_acq_64(volatile uint64_t *p)
+{
+	uint64_t tmp;
+	_ATOMIC_LOAD(uint_fast64_t, p, memory_order_acquire, true);
 	return (tmp);
 }
 
@@ -150,19 +183,101 @@ atomic_load_acq_32(volatile uint32_t *p)
 	return (tmp);
 }
 
-static inline long
-atomic_load_long(volatile long *p)
+static inline uint16_t
+atomic_load_16(volatile uint16_t *p)
 {
-	long tmp;
-	_ATOMIC_LOAD(long, p, memory_order_relaxed, false);
+	uint16_t tmp;
+	_ATOMIC_LOAD(uint_least16_t, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline uint16_t
+atomic_load_acq_16(volatile uint16_t *p)
+{
+	uint16_t tmp;
+	_ATOMIC_LOAD(uint_least16_t, p, memory_order_acquire, true);
+	return (tmp);
+}
+
+static inline uint8_t
+atomic_load_8(volatile uint8_t *p)
+{
+	uint8_t tmp;
+	_ATOMIC_LOAD(uint_least8_t, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline uint8_t
+atomic_load_acq_8(volatile uint8_t *p)
+{
+	uint8_t tmp;
+	_ATOMIC_LOAD(uint_least8_t, p, memory_order_acquire, true);
 	return (tmp);
 }
 
 static inline long
-atomic_load_acq_long(volatile long *p)
+atomic_load_long(volatile unsigned long *p)
 {
 	long tmp;
-	_ATOMIC_LOAD(long, p, memory_order_acquire, true);
+	_ATOMIC_LOAD(ulong, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline long
+atomic_load_acq_long(volatile unsigned long *p)
+{
+	long tmp;
+	_ATOMIC_LOAD(ulong, p, memory_order_acquire, true);
+	return (tmp);
+}
+
+static inline char
+atomic_load_char(volatile unsigned char *p)
+{
+	char tmp;
+	_ATOMIC_LOAD(uchar, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline char
+atomic_load_acq_char(volatile unsigned char *p)
+{
+	char tmp;
+	_ATOMIC_LOAD(uchar, p, memory_order_acquire, true);
+	return (tmp);
+}
+
+static inline bool
+atomic_load_bool(volatile bool *p)
+{
+	bool tmp;
+	_ATOMIC_LOAD(bool, p, memory_order_relaxed, false);
+	return (tmp);
+}
+
+static inline bool
+atomic_load_acq_bool(volatile bool *p)
+{
+	bool tmp;
+	_ATOMIC_LOAD(bool, p, memory_order_acquire, true);
+	return (tmp);
+}
+
+static inline uintptr_t
+atomic_load_ptr(volatile uintptr_t *p)
+{
+	uintptr_t tmp;
+	/* XXX IPL32 ok with this? */
+	_ATOMIC_LOAD(uintptr_t, p, memory_order_relaxed, true);
+	return (tmp);
+}
+
+static inline uintptr_t
+atomic_load_acq_ptr(volatile uintptr_t *p)
+{
+	uintptr_t tmp;
+	/* XXX IPL32 ok with this? */
+	_ATOMIC_LOAD(uintptr_t, p, memory_order_release, true);
 	return (tmp);
 }
 
@@ -177,7 +292,7 @@ atomic_load_acq_long(volatile long *p)
 	q->store(std::mo)
 #elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
 #define _ATOMIC_STORE(T, p, v, mo, barrier) \
-	atomic_##T *q = (atomic_##T *)RTEMS_DEVOLATILE(T *, p); \
+	atomic_##T *q = (atomic_##T *)RTEMS_DEVOLATILE(T *,p); \
 	atomic_store_explicit(q, v, mo)
 #else
 #define _ATOMIC_STORE(T, p, v, mo, barrier) \
@@ -187,15 +302,21 @@ atomic_load_acq_long(volatile long *p)
 #endif
 
 static inline void
-atomic_store_int(volatile int *p, int v)
+atomic_store_int(volatile unsigned int *p, int v)
 {
-	_ATOMIC_STORE(int, p, v, memory_order_relaxed, false);
+	_ATOMIC_STORE(uint, p, v, memory_order_relaxed, false);
 }
 
 static inline void
-atomic_store_rel_int(volatile int *p, int v)
+atomic_store_rel_int(volatile unsigned int *p, int v)
 {
-	_ATOMIC_STORE(int, p, v, memory_order_release, true);
+	_ATOMIC_STORE(uint, p, v, memory_order_release, true);
+}
+
+static inline void
+atomic_store_32(volatile uint32_t *p, uint32_t v)
+{
+	_ATOMIC_STORE(uint_fast32_t, p, v, memory_order_relaxed, true);
 }
 
 static inline void
@@ -205,9 +326,70 @@ atomic_store_rel_32(volatile uint32_t *p, uint32_t v)
 }
 
 static inline void
-atomic_store_rel_long(volatile long *p, long v)
+atomic_store_64(volatile uint64_t *p, uint64_t v)
 {
-	_ATOMIC_STORE(long, p, v, memory_order_release, true);
+	_ATOMIC_STORE(uint_fast64_t, p, v, memory_order_relaxed, true);
+}
+
+static inline void
+atomic_store_rel_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_STORE(uint_fast64_t, p, v, memory_order_release, true);
+}
+
+static inline void
+atomic_store_long(volatile unsigned long *p, unsigned long v)
+{
+	_ATOMIC_STORE(ulong, p, v, memory_order_relaxed, true);
+}
+
+static inline void
+atomic_store_rel_long(volatile unsigned long *p, unsigned long v)
+{
+	_ATOMIC_STORE(ulong, p, v, memory_order_release, true);
+}
+
+static inline void
+atomic_store_short(volatile unsigned short *p, unsigned short v)
+{
+	_ATOMIC_STORE(ushort, p, v, memory_order_relaxed, true);
+}
+
+static inline void
+atomic_store_rel_short(volatile unsigned short *p, unsigned short v)
+{
+	_ATOMIC_STORE(ushort, p, v, memory_order_release, true);
+}
+
+static inline void
+atomic_store_char(volatile unsigned char *p, unsigned char v)
+{
+	_ATOMIC_STORE(uchar, p, v, memory_order_relaxed, true);
+}
+
+static inline void
+atomic_store_rel_char(volatile unsigned char *p, unsigned char v)
+{
+	_ATOMIC_STORE(uchar, p, v, memory_order_release, true);
+}
+
+static inline void
+atomic_store_bool(volatile bool *p, bool v)
+{
+	_ATOMIC_STORE(bool, p, v, memory_order_relaxed, true);
+}
+
+static inline void
+atomic_store_rel_bool(volatile bool *p, bool v)
+{
+	_ATOMIC_STORE(bool, p, v, memory_order_release, true);
+}
+
+static inline void
+atomic_store_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	/* XXX IPL32 ok with this? */
+	_ATOMIC_STORE(uintptr_t, p, v, memory_order_relaxed, true);
 }
 
 static inline void
@@ -239,21 +421,21 @@ atomic_store_rel_ptr(volatile uintptr_t *p, uintptr_t v)
 #endif
 
 static inline void
-atomic_add_int(volatile int *p, int v)
+atomic_add_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_ADD(int, p, v, memory_order_seq_cst);
+	_ATOMIC_ADD(uint, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_add_acq_int(volatile int *p, int v)
+atomic_add_acq_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_ADD(int, p, v, memory_order_acquire);
+	_ATOMIC_ADD(uint, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_add_rel_int(volatile int *p, int v)
+atomic_add_rel_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_ADD(int, p, v, memory_order_release);
+	_ATOMIC_ADD(uint, p, v, memory_order_release);
 }
 
 static inline void
@@ -275,21 +457,39 @@ atomic_add_rel_32(volatile uint32_t *p, uint32_t v)
 }
 
 static inline void
-atomic_add_long(volatile long *p, long v)
+atomic_add_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_ADD(long, p, v, memory_order_seq_cst);
+	_ATOMIC_ADD(ulong, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_add_acq_long(volatile long *p, long v)
+atomic_add_acq_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_ADD(long, p, v, memory_order_acquire);
+	_ATOMIC_ADD(ulong, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_add_rel_long(volatile long *p, long v)
+atomic_add_rel_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_ADD(long, p, v, memory_order_release);
+	_ATOMIC_ADD(ulong, p, v, memory_order_release);
+}
+
+static inline void
+atomic_add_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_ADD(uint_fast64_t, p, v, memory_order_seq_cst);
+}
+
+static inline void
+atomic_add_acq_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_ADD(uint_fast64_t, p, v, memory_order_acquire);
+}
+
+static inline void
+atomic_add_rel_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_ADD(uint_fast64_t, p, v, memory_order_release);
 }
 
 /*
@@ -314,21 +514,21 @@ atomic_add_rel_long(volatile long *p, long v)
 #endif
 
 static inline void
-atomic_subtract_int(volatile int *p, int v)
+atomic_subtract_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_SUB(int, p, v, memory_order_seq_cst);
+	_ATOMIC_SUB(uint, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_subtract_acq_int(volatile int *p, int v)
+atomic_subtract_acq_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_SUB(int, p, v, memory_order_acquire);
+	_ATOMIC_SUB(uint, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_subtract_rel_int(volatile int *p, int v)
+atomic_subtract_rel_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_SUB(int, p, v, memory_order_release);
+	_ATOMIC_SUB(uint, p, v, memory_order_release);
 }
 
 static inline void
@@ -350,21 +550,39 @@ atomic_subtract_rel_32(volatile uint32_t *p, uint32_t v)
 }
 
 static inline void
-atomic_subtract_long(volatile long *p, long v)
+atomic_subtract_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_SUB(long, p, v, memory_order_seq_cst);
+	_ATOMIC_SUB(ulong, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_subtract_acq_long(volatile long *p, long v)
+atomic_subtract_acq_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_SUB(long, p, v, memory_order_acquire);
+	_ATOMIC_SUB(ulong, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_subtract_rel_long(volatile long *p, long v)
+atomic_subtract_rel_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_SUB(long, p, v, memory_order_release);
+	_ATOMIC_SUB(ulong, p, v, memory_order_release);
+}
+
+static inline void
+atomic_subtract_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_SUB(uint_fast64_t, p, v, memory_order_seq_cst);
+}
+
+static inline void
+atomic_subtract_acq_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_SUB(uint_fast64_t, p, v, memory_order_acquire);
+}
+
+static inline void
+atomic_subtract_rel_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_SUB(uint_fast64_t, p, v, memory_order_release);
 }
 
 /*
@@ -389,21 +607,21 @@ atomic_subtract_rel_long(volatile long *p, long v)
 #endif
 
 static inline void
-atomic_set_int(volatile int *p, int v)
+atomic_set_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_SET(int, p, v, memory_order_seq_cst);
+	_ATOMIC_SET(uint, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_set_acq_int(volatile int *p, int v)
+atomic_set_acq_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_SET(int, p, v, memory_order_acquire);
+	_ATOMIC_SET(uint, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_set_rel_int(volatile int *p, int v)
+atomic_set_rel_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_SET(int, p, v, memory_order_release);
+	_ATOMIC_SET(uint, p, v, memory_order_release);
 }
 
 static inline void
@@ -425,21 +643,57 @@ atomic_set_rel_32(volatile uint32_t *p, uint32_t v)
 }
 
 static inline void
-atomic_set_long(volatile long *p, long v)
+atomic_set_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_SET(long, p, v, memory_order_seq_cst);
+	_ATOMIC_SET(ulong, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_set_acq_long(volatile long *p, long v)
+atomic_set_acq_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_SET(long, p, v, memory_order_acquire);
+	_ATOMIC_SET(ulong, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_set_rel_long(volatile long *p, long v)
+atomic_set_rel_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_SET(long, p, v, memory_order_release);
+	_ATOMIC_SET(ulong, p, v, memory_order_release);
+}
+
+static inline void
+atomic_set_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_SET(uint_fast64_t, p, v, memory_order_seq_cst);
+}
+
+static inline void
+atomic_set_acq_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_SET(uint_fast64_t, p, v, memory_order_acquire);
+}
+
+static inline void
+atomic_set_rel_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_SET(uint_fast64_t, p, v, memory_order_release);
+}
+
+static inline void
+atomic_set_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	_ATOMIC_SET(uintptr_t, p, v, memory_order_seq_cst);
+}
+
+static inline void
+atomic_set_acq_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	_ATOMIC_SET(uintptr_t, p, v, memory_order_acquire);
+}
+
+static inline void
+atomic_set_rel_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	_ATOMIC_SET(uintptr_t, p, v, memory_order_release);
 }
 
 /*
@@ -464,21 +718,21 @@ atomic_set_rel_long(volatile long *p, long v)
 #endif
 
 static inline void
-atomic_clear_int(volatile int *p, int v)
+atomic_clear_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_CLEAR(int, p, v, memory_order_seq_cst);
+	_ATOMIC_CLEAR(uint, p, v, memory_order_seq_cst);
 }
 
 static inline void
-atomic_clear_acq_int(volatile int *p, int v)
+atomic_clear_acq_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_CLEAR(int, p, v, memory_order_acquire);
+	_ATOMIC_CLEAR(uint, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_clear_rel_int(volatile int *p, int v)
+atomic_clear_rel_int(volatile unsigned int *p, unsigned int v)
 {
-	_ATOMIC_CLEAR(int, p, v, memory_order_release);
+	_ATOMIC_CLEAR(uint, p, v, memory_order_release);
 }
 
 static inline void
@@ -500,21 +754,57 @@ atomic_clear_rel_32(volatile uint32_t *p, uint32_t v)
 }
 
 static inline void
-atomic_clear_long(volatile long *p, long v)
+atomic_clear_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_CLEAR(long, p, v, memory_order_release);
+	_ATOMIC_CLEAR(ulong, p, v, memory_order_release);
 }
 
 static inline void
-atomic_clear_acq_long(volatile long *p, long v)
+atomic_clear_acq_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_CLEAR(long, p, v, memory_order_acquire);
+	_ATOMIC_CLEAR(ulong, p, v, memory_order_acquire);
 }
 
 static inline void
-atomic_clear_rel_long(volatile long *p, long v)
+atomic_clear_rel_long(volatile unsigned long *p, unsigned long v)
 {
-	_ATOMIC_CLEAR(long, p, v, memory_order_release);
+	_ATOMIC_CLEAR(ulong, p, v, memory_order_release);
+}
+
+static inline void
+atomic_clear_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_CLEAR(uint_fast64_t, p, v, memory_order_seq_cst);
+}
+
+static inline void
+atomic_clear_acq_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_CLEAR(uint_fast64_t, p, v, memory_order_acquire);
+}
+
+static inline void
+atomic_clear_rel_64(volatile uint64_t *p, uint64_t v)
+{
+	_ATOMIC_CLEAR(uint_fast64_t, p, v, memory_order_release);
+}
+
+static inline void
+atomic_clear_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	_ATOMIC_CLEAR(uintptr_t, p, v, memory_order_seq_cst);
+}
+
+static inline void
+atomic_clear_acq_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	_ATOMIC_CLEAR(uintptr_t, p, v, memory_order_acquire);
+}
+
+static inline void
+atomic_clear_rel_ptr(volatile uintptr_t *p, uintptr_t v)
+{
+	_ATOMIC_CLEAR(uintptr_t, p, v, memory_order_release);
 }
 
 /*
@@ -544,26 +834,26 @@ atomic_clear_rel_long(volatile long *p, long v)
 #endif
 
 static inline int
-atomic_cmpset_int(volatile int *p, int cmp, int set)
+atomic_cmpset_int(volatile unsigned int *p, unsigned int cmp, unsigned int set)
 {
 	int rv;
-	_ATOMIC_CMPSET(int, p, cmp, set, memory_order_seq_cst);
+	_ATOMIC_CMPSET(uint, p, cmp, set, memory_order_seq_cst);
 	return (rv);
 }
 
 static inline int
-atomic_cmpset_acq_int(volatile int *p, int cmp, int set)
+atomic_cmpset_acq_int(volatile unsigned int *p, unsigned int cmp, unsigned int set)
 {
 	int rv;
-	_ATOMIC_CMPSET(int, p, cmp, set, memory_order_acquire);
+	_ATOMIC_CMPSET(uint, p, cmp, set, memory_order_acquire);
 	return (rv);
 }
 
 static inline int
-atomic_cmpset_rel_int(volatile int *p, int cmp, int set)
+atomic_cmpset_rel_int(volatile unsigned int *p, unsigned int cmp, unsigned int set)
 {
 	int rv;
-	_ATOMIC_CMPSET(int, p, cmp, set, memory_order_release);
+	_ATOMIC_CMPSET(uint, p, cmp, set, memory_order_release);
 	return (rv);
 }
 
@@ -616,26 +906,50 @@ atomic_cmpset_rel_64(volatile uint64_t *p, uint64_t cmp, uint64_t set)
 }
 
 static inline int
-atomic_cmpset_long(volatile long *p, long cmp, long set)
+atomic_cmpset_16(volatile uint16_t *p, uint16_t cmp, uint16_t set)
 {
 	int rv;
-	_ATOMIC_CMPSET(long, p, cmp, set, memory_order_seq_cst);
+	_ATOMIC_CMPSET(uint_least16_t, p, cmp, set, memory_order_seq_cst);
 	return (rv);
 }
 
 static inline int
-atomic_cmpset_acq_long(volatile long *p, long cmp, long set)
+atomic_cmpset_acq_16(volatile uint16_t *p, uint16_t cmp, uint16_t set)
 {
 	int rv;
-	_ATOMIC_CMPSET(long, p, cmp, set, memory_order_acquire);
+	_ATOMIC_CMPSET(uint_least16_t, p, cmp, set, memory_order_acquire);
 	return (rv);
 }
 
 static inline int
-atomic_cmpset_rel_long(volatile long *p, long cmp, long set)
+atomic_cmpset_rel_16(volatile uint16_t *p, uint16_t cmp, uint16_t set)
 {
 	int rv;
-	_ATOMIC_CMPSET(long, p, cmp, set, memory_order_release);
+	_ATOMIC_CMPSET(uint_least16_t, p, cmp, set, memory_order_release);
+	return (rv);
+}
+
+static inline int
+atomic_cmpset_long(volatile unsigned long *p, unsigned long cmp, unsigned long set)
+{
+	int rv;
+	_ATOMIC_CMPSET(ulong, p, cmp, set, memory_order_seq_cst);
+	return (rv);
+}
+
+static inline int
+atomic_cmpset_acq_long(volatile unsigned long *p, unsigned long cmp, unsigned long set)
+{
+	int rv;
+	_ATOMIC_CMPSET(ulong, p, cmp, set, memory_order_acquire);
+	return (rv);
+}
+
+static inline int
+atomic_cmpset_rel_long(volatile unsigned long *p, unsigned long cmp, unsigned long set)
+{
+	int rv;
+	_ATOMIC_CMPSET(ulong, p, cmp, set, memory_order_release);
 	return (rv);
 }
 
@@ -693,26 +1007,50 @@ atomic_cmpset_rel_ptr(volatile uintptr_t *p, uintptr_t cmp, uintptr_t set)
 #endif
 
 static inline int
-atomic_fcmpset_int(volatile int *p, int *cmp, int set)
+atomic_fcmpset_int(volatile unsigned int *p, unsigned int *cmp, unsigned int set)
 {
 	int rv;
-	_ATOMIC_FCMPSET(int, p, cmp, set, memory_order_seq_cst);
+	_ATOMIC_FCMPSET(uint, p, cmp, set, memory_order_seq_cst);
 	return (rv);
 }
 
 static inline int
-atomic_fcmpset_acq_int(volatile int *p, int *cmp, int set)
+atomic_fcmpset_acq_int(volatile unsigned int *p, unsigned int *cmp, unsigned int set)
 {
 	int rv;
-	_ATOMIC_FCMPSET(int, p, cmp, set, memory_order_acquire);
+	_ATOMIC_FCMPSET(uint, p, cmp, set, memory_order_acquire);
 	return (rv);
 }
 
 static inline int
-atomic_fcmpset_rel_int(volatile int *p, int *cmp, int set)
+atomic_fcmpset_rel_int(volatile unsigned int *p, unsigned int *cmp, unsigned int set)
 {
 	int rv;
-	_ATOMIC_FCMPSET(int, p, cmp, set, memory_order_release);
+	_ATOMIC_FCMPSET(uint, p, cmp, set, memory_order_release);
+	return (rv);
+}
+
+static inline long
+atomic_fcmpset_long(volatile unsigned long *p, unsigned long *cmp, unsigned long set)
+{
+	long rv;
+	_ATOMIC_FCMPSET(ulong, p, cmp, set, memory_order_seq_cst);
+	return (rv);
+}
+
+static inline long
+atomic_fcmpset_acq_long(volatile unsigned long *p, unsigned long *cmp, unsigned long set)
+{
+	long rv;
+	_ATOMIC_FCMPSET(ulong, p, cmp, set, memory_order_acquire);
+	return (rv);
+}
+
+static inline long
+atomic_fcmpset_rel_long(volatile unsigned long *p, unsigned long *cmp, unsigned long set)
+{
+	long rv;
+	_ATOMIC_FCMPSET(ulong, p, cmp, set, memory_order_release);
 	return (rv);
 }
 
@@ -737,6 +1075,54 @@ atomic_fcmpset_rel_64(volatile uint64_t *p, uint64_t *cmp, uint64_t set)
 {
 	int rv;
 	_ATOMIC_FCMPSET(uint_least64_t, p, cmp, set, memory_order_release);
+	return (rv);
+}
+
+static inline int
+atomic_fcmpset_8(volatile uint8_t *p, uint8_t *cmp, uint8_t set)
+{
+	int rv;
+	_ATOMIC_FCMPSET(uint_least8_t, p, cmp, set, memory_order_seq_cst);
+	return (rv);
+}
+
+static inline int
+atomic_fcmpset_acq_8(volatile uint8_t *p, uint8_t *cmp, uint8_t set)
+{
+	int rv;
+	_ATOMIC_FCMPSET(uint_least8_t, p, cmp, set, memory_order_acquire);
+	return (rv);
+}
+
+static inline int
+atomic_fcmpset_rel_8(volatile uint8_t *p, uint8_t *cmp, uint8_t set)
+{
+	int rv;
+	_ATOMIC_FCMPSET(uint_least8_t, p, cmp, set, memory_order_release);
+	return (rv);
+}
+
+static inline int
+atomic_fcmpset_16(volatile uint16_t *p, uint16_t *cmp, uint16_t set)
+{
+	int rv;
+	_ATOMIC_FCMPSET(uint_least16_t, p, cmp, set, memory_order_seq_cst);
+	return (rv);
+}
+
+static inline int
+atomic_fcmpset_acq_16(volatile uint16_t *p, uint16_t *cmp, uint16_t set)
+{
+	int rv;
+	_ATOMIC_FCMPSET(uint_least16_t, p, cmp, set, memory_order_acquire);
+	return (rv);
+}
+
+static inline int
+atomic_fcmpset_rel_16(volatile uint16_t *p, uint16_t *cmp, uint16_t set)
+{
+	int rv;
+	_ATOMIC_FCMPSET(uint_least16_t, p, cmp, set, memory_order_release);
 	return (rv);
 }
 
@@ -788,10 +1174,10 @@ atomic_fcmpset_rel_ptr(volatile uintptr_t *p, uintptr_t *cmp, uintptr_t set)
 #endif
 
 static inline int
-atomic_fetchadd_int(volatile int *p, int v)
+atomic_fetchadd_int(volatile unsigned int *p, unsigned int v)
 {
 	int tmp;
-	_ATOMIC_FETCHADD(int, p, v, memory_order_seq_cst);
+	_ATOMIC_FETCHADD(uint, p, v, memory_order_seq_cst);
 	return (tmp);
 }
 
@@ -812,10 +1198,10 @@ atomic_fetchadd_64(volatile uint64_t *p, uint64_t v)
 }
 
 static inline long
-atomic_fetchadd_long(volatile long *p, long v)
+atomic_fetchadd_long(volatile unsigned long *p, unsigned long v)
 {
 	long tmp;
-	_ATOMIC_FETCHADD(long, p, v, memory_order_seq_cst);
+	_ATOMIC_FETCHADD(ulong, p, v, memory_order_seq_cst);
 	return (tmp);
 }
 
@@ -842,10 +1228,10 @@ atomic_fetchadd_long(volatile long *p, long v)
 #endif
 
 static inline int
-atomic_readandclear_int(volatile int *p)
+atomic_readandclear_int(volatile unsigned int *p)
 {
 	int tmp;
-	_ATOMIC_READANDCLEAR(int, p, memory_order_seq_cst);
+	_ATOMIC_READANDCLEAR(uint, p, memory_order_seq_cst);
 	return (tmp);
 }
 
@@ -858,10 +1244,10 @@ atomic_readandclear_32(volatile uint32_t *p)
 }
 
 static inline long
-atomic_readandclear_long(volatile long *p)
+atomic_readandclear_long(volatile unsigned long *p)
 {
 	long tmp;
-	_ATOMIC_READANDCLEAR(long, p, memory_order_seq_cst);
+	_ATOMIC_READANDCLEAR(ulong, p, memory_order_seq_cst);
 	return (tmp);
 }
 
@@ -920,5 +1306,10 @@ atomic_thread_fence_seq_cst(void)
 	RTEMS_COMPILER_MEMORY_BARRIER();
 #endif
 }
+
+#define	atomic_load_consume_ptr(p)	\
+    ((__typeof(*p)) atomic_load_acq_ptr((uintptr_t *)p))
+
+#define   atomic_interrupt_fence()        __compiler_membar()
 
 #endif /* _RTEMS_BSD_MACHINE_ATOMIC_H_ */

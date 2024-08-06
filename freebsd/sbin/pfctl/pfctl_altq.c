@@ -28,8 +28,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #define PFIOC_USE_LATEST
 #define _WANT_FREEBSD_BITSET
 
@@ -111,11 +109,7 @@ static int		 gsc_add_seg(struct gen_sc *, double, double, double,
 			     double);
 static double		 sc_x2y(struct service_curve *, double);
 
-#ifdef __FreeBSD__
-u_int64_t	getifspeed(int, char *);
-#else
 u_int32_t	 getifspeed(char *);
-#endif
 u_long		 getifmtu(char *);
 int		 eval_queue_opts(struct pf_altq *, struct node_queue_opt *,
 		     u_int64_t);
@@ -330,11 +324,7 @@ eval_pfaltq(struct pfctl *pf, struct pf_altq *pa, struct node_queue_bw *bw,
 	if (bw->bw_absolute > 0)
 		pa->ifbandwidth = bw->bw_absolute;
 	else
-#ifdef __FreeBSD__
-		if ((rate = getifspeed(pf->dev, pa->ifname)) == 0) {
-#else
 		if ((rate = getifspeed(pa->ifname)) == 0) {
-#endif
 			fprintf(stderr, "interface %s does not know its bandwidth, "
 			    "please specify an absolute bandwidth\n",
 			    pa->ifname);
@@ -885,7 +875,7 @@ eval_pfqueue_fairq(struct pfctl *pf __unused, struct pf_altq *pa,
 
 	opts = &pa->pq_u.fairq_opts;
 
-	if (pa->parent == NULL) {
+	if (parent == NULL) {
 		/* root queue */
 		opts->lssc_m1 = pa->ifbandwidth;
 		opts->lssc_m2 = pa->ifbandwidth;
@@ -1252,7 +1242,7 @@ rate2str(double rate)
 {
 	char		*buf;
 #ifndef __rtems__
-	static char	 r2sbuf[R2S_BUFS][RATESTR_MAX];  /* ring bufer */
+	static char	 r2sbuf[R2S_BUFS][RATESTR_MAX];  /* ring buffer */
 	static int	 idx = 0;
 #endif /* __rtems__ */
 	int		 i;
@@ -1273,26 +1263,6 @@ rate2str(double rate)
 	return (buf);
 }
 
-#ifdef __FreeBSD__
-/*
- * XXX
- * FreeBSD does not have SIOCGIFDATA.
- * To emulate this, DIOCGIFSPEED ioctl added to pf.
- */
-u_int64_t
-getifspeed(int pfdev, char *ifname)
-{
-	struct pf_ifspeed io;
-
-	bzero(&io, sizeof io);
-	if (strlcpy(io.ifname, ifname, IFNAMSIZ) >=
-	    sizeof(io.ifname)) 
-		errx(1, "getifspeed: strlcpy");
-	if (ioctl(pfdev, DIOCGIFSPEED, &io) == -1)
-		err(1, "DIOCGIFSPEED");
-	return (io.baudrate);
-}
-#else
 u_int32_t
 getifspeed(char *ifname)
 {
@@ -1310,7 +1280,6 @@ getifspeed(char *ifname)
 		err(1, "SIOCGIFDATA");
 	return ((u_int32_t)ifrdat.ifi_baudrate);
 }
-#endif
 
 u_long
 getifmtu(char *ifname)

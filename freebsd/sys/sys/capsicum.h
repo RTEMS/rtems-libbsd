@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008-2010, 2015 Robert N. M. Watson
  * Copyright (c) 2012 FreeBSD Foundation
@@ -31,8 +31,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -345,119 +343,103 @@ cap_rights_t *__cap_rights_clear(cap_rights_t *rights, ...);
 	__cap_rights_is_set(__VA_ARGS__, 0ULL)
 bool __cap_rights_is_set(const cap_rights_t *rights, ...);
 
+bool cap_rights_is_empty(const cap_rights_t *rights);
+
 bool cap_rights_is_valid(const cap_rights_t *rights);
 cap_rights_t *cap_rights_merge(cap_rights_t *dst, const cap_rights_t *src);
 cap_rights_t *cap_rights_remove(cap_rights_t *dst, const cap_rights_t *src);
+
+#ifdef _KERNEL
+/*
+ * We only support one size to reduce branching.
+ */
+_Static_assert(CAP_RIGHTS_VERSION == CAP_RIGHTS_VERSION_00,
+    "unsupported version of capsicum rights");
+
+#ifndef __rtems__
+#define cap_rights_init_zero(r) ({					\
+	cap_rights_t *_r = (r);						\
+	CAP_NONE(_r);							\
+	_r;								\
+})
+
+#define cap_rights_init_one(r, right) ({				\
+	CTASSERT(CAPRVER(right) == CAP_RIGHTS_VERSION);			\
+	cap_rights_t *_r = (r);						\
+	CAP_NONE(_r);							\
+	_r->cr_rights[CAPIDXBIT(right) - 1] |= right;			\
+	_r;								\
+})
+
+#define cap_rights_set_one(r, right) ({					\
+	CTASSERT(CAPRVER(right) == CAP_RIGHTS_VERSION);			\
+	cap_rights_t *_r = (r);						\
+	_r->cr_rights[CAPIDXBIT(right) - 1] |= right;			\
+	_r;								\
+})
+#else /* __rtems__ */
+#define cap_rights_init_zero(r) NULL
+#define cap_rights_init_one(r, right) NULL
+#define cap_rights_set_one(r, right) NULL
+#endif /* __rtems__ */
+
+/*
+ * Allow checking caps which are possibly getting modified at the same time.
+ * The caller is expected to determine whether the result is legitimate via
+ * other means, see fget_unlocked for an example.
+ */
+
+static inline bool
+cap_rights_contains_transient(const cap_rights_t *big, const cap_rights_t *little)
+{
+
+        if (__predict_true(
+            (big->cr_rights[0] & little->cr_rights[0]) == little->cr_rights[0] &&
+            (big->cr_rights[1] & little->cr_rights[1]) == little->cr_rights[1]))
+                return (true);
+        return (false);
+}
+
+#define cap_rights_contains cap_rights_contains_transient
+
+int cap_check_failed_notcapable(const cap_rights_t *havep,
+    const cap_rights_t *needp);
+
+static inline int
+cap_check_inline(const cap_rights_t *havep, const cap_rights_t *needp)
+{
+
+        if (__predict_false(!cap_rights_contains(havep, needp)))
+		return (cap_check_failed_notcapable(havep, needp));
+        return (0);
+}
+
+static inline int
+cap_check_inline_transient(const cap_rights_t *havep, const cap_rights_t *needp)
+{
+
+        if (__predict_false(!cap_rights_contains(havep, needp)))
+		return (1);
+        return (0);
+}
+#else
 bool cap_rights_contains(const cap_rights_t *big, const cap_rights_t *little);
-void __cap_rights_sysinit(void *arg);
+#endif
 
 __END_DECLS
-struct cap_rights_init_args {
-	cap_rights_t *cria_rights;
-	uint64_t cria_value1;
-	uint64_t cria_value2;
-	uint64_t cria_value3;
-	uint64_t cria_value4;
-	uint64_t cria_value5;
-};
-
-#define CAP_RIGHTS_SYSINIT0(name, rights)		   \
-		static struct cap_rights_init_args name##_args = { \
-			&(rights)										\
-		};																\
-		SYSINIT(name##_cap_rights_sysinit, SI_SUB_COPYRIGHT+1, SI_ORDER_ANY, \
-		    __cap_rights_sysinit, &name##_args);
-
-#define CAP_RIGHTS_SYSINIT1(name, rights, value1)		   \
-		static struct cap_rights_init_args name##_args = { \
-			&(rights),										\
-			(value1)										\
-		};																\
-		SYSINIT(name##_cap_rights_sysinit, SI_SUB_COPYRIGHT+1, SI_ORDER_ANY, \
-		    __cap_rights_sysinit, &name##_args);
-
-#define CAP_RIGHTS_SYSINIT2(name, rights, value1, value2)		   \
-		static struct cap_rights_init_args name##_args = { \
-			&(rights),										\
-			(value1),										\
-			(value2)													\
-		};																\
-		SYSINIT(name##_cap_rights_sysinit, SI_SUB_COPYRIGHT, SI_ORDER_ANY, \
-		    __cap_rights_sysinit, &name##_args);
-
-#define CAP_RIGHTS_SYSINIT3(name, rights, value1, value2, value3) \
-		static struct cap_rights_init_args name##_args = { \
-			&(rights),										\
-			(value1),										\
-			(value2),										\
-			(value3)													\
-		};																\
-		SYSINIT(name##_cap_rights_sysinit, SI_SUB_COPYRIGHT, SI_ORDER_ANY, \
-		    __cap_rights_sysinit, &name##_args);
-
-#define CAP_RIGHTS_SYSINIT4(name, rights, value1, value2, value3, value4)	\
-		static struct cap_rights_init_args name##_args = { \
-			&(rights),										\
-			(value1),										\
-			(value2),										\
-			(value3),										\
-			(value4)													\
-		};																\
-		SYSINIT(name##_cap_rights_sysinit, SI_SUB_COPYRIGHT, SI_ORDER_ANY, \
-		    __cap_rights_sysinit, &name##_args);
-
-#define CAP_RIGHTS_DEFINE1(name, value)								\
-	__read_mostly cap_rights_t name;					\
-	CAP_RIGHTS_SYSINIT1(name, name, value);
 
 #ifdef _KERNEL
 
 #include <sys/systm.h>
-extern cap_rights_t cap_accept_rights;
-extern cap_rights_t cap_bind_rights;
-extern cap_rights_t cap_connect_rights;
-extern cap_rights_t cap_event_rights;
-extern cap_rights_t cap_fchdir_rights;
-extern cap_rights_t cap_fchflags_rights;
-extern cap_rights_t cap_fchmod_rights;
-extern cap_rights_t cap_fchown_rights;
-extern cap_rights_t cap_fcntl_rights;
-extern cap_rights_t cap_fexecve_rights;
-extern cap_rights_t cap_flock_rights;
-extern cap_rights_t cap_fpathconf_rights;
-extern cap_rights_t cap_fstat_rights;
-extern cap_rights_t cap_fstatfs_rights;
-extern cap_rights_t cap_fsync_rights;
-extern cap_rights_t cap_ftruncate_rights;
-extern cap_rights_t cap_futimes_rights;
-extern cap_rights_t cap_getpeername_rights;
-extern cap_rights_t cap_getsockopt_rights;
-extern cap_rights_t cap_getsockname_rights;
-extern cap_rights_t cap_ioctl_rights;
-extern cap_rights_t cap_linkat_source_rights;
-extern cap_rights_t cap_linkat_target_rights;
-extern cap_rights_t cap_listen_rights;
-extern cap_rights_t cap_mkdirat_rights;
-extern cap_rights_t cap_mkfifoat_rights;
-extern cap_rights_t cap_mknodat_rights;
-extern cap_rights_t cap_mmap_rights;
-extern cap_rights_t cap_no_rights;
-extern cap_rights_t cap_pdgetpid_rights;
-extern cap_rights_t cap_pdkill_rights;
-extern cap_rights_t cap_pread_rights;
-extern cap_rights_t cap_pwrite_rights;
-extern cap_rights_t cap_read_rights;
-extern cap_rights_t cap_recv_rights;
-extern cap_rights_t cap_renameat_source_rights;
-extern cap_rights_t cap_renameat_target_rights;
-extern cap_rights_t cap_seek_rights;
-extern cap_rights_t cap_send_rights;
-extern cap_rights_t cap_send_connect_rights;
-extern cap_rights_t cap_setsockopt_rights;
-extern cap_rights_t cap_shutdown_rights;
-extern cap_rights_t cap_symlinkat_rights;
-extern cap_rights_t cap_unlinkat_rights;
-extern cap_rights_t cap_write_rights;
+#ifndef __rtems__
+#include <sys/ktrace.h>
+#endif /* __rtems__ */
+
+#ifdef KTRACE
+#define CAP_TRACING(td) KTRPOINT((td), KTR_CAPFAIL)
+#else
+#define CAP_TRACING(td) 0
+#endif
 
 #define IN_CAPABILITY_MODE(td) (((td)->td_ucred->cr_flags & CRED_FLAG_CAPMODE) != 0)
 
@@ -471,7 +453,7 @@ int	cap_check(const cap_rights_t *havep, const cap_rights_t *needp);
 /*
  * Convert capability rights into VM access flags.
  */
-u_char	cap_rights_to_vmprot(const cap_rights_t *havep);
+vm_prot_t	cap_rights_to_vmprot(const cap_rights_t *havep);
 
 /*
  * For the purposes of procstat(1) and similar tools, allow kern_descrip.c to

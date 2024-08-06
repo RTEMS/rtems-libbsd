@@ -8,8 +8,6 @@
  * this stuff is worth it, you can buy me a beer in return.   Poul-Henning Kamp
  * ----------------------------------------------------------------------------
  *
- * $FreeBSD$
- *
  */
 
 #ifndef _SYS_DISK_H_
@@ -19,12 +17,9 @@
 #include <sys/kerneldump.h>
 #include <sys/types.h>
 #include <sys/disk_zone.h>
+#include <sys/socket.h>
 
 #ifdef _KERNEL
-
-#ifndef _SYS_CONF_H_
-#include <sys/conf.h>	/* XXX: temporary to avoid breakage */
-#endif
 
 void disk_err(struct bio *bp, const char *what, int blkdone, int nl);
 
@@ -55,20 +50,6 @@ void disk_err(struct bio *bp, const char *what, int blkdone, int nl);
 	 * Get the firmwares notion of number of heads per cylinder.  This
 	 * value is mostly used for compatibility with various ill designed
 	 * disk label formats.  Don't use it unless you have to.
-	 */
-
-#define	DIOCSKERNELDUMP_FREEBSD11 _IOW('d', 133, u_int)
-	/*
-	 * Enable/Disable (the argument is boolean) the device for kernel
-	 * core dumps.
-	 */
-	
-#define	DIOCGFRONTSTUFF _IOR('d', 134, off_t)
-	/*
-	 * Many disk formats have some amount of space reserved at the
-	 * start of the disk to hold bootblocks, various disklabels and
-	 * similar stuff.  This ioctl returns the number of such bytes
-	 * which may apply to the device.
 	 */
 
 #define	DIOCGFLUSH _IO('d', 135)		/* Flush write cache */
@@ -143,19 +124,60 @@ struct diocgattr_arg {
 
 #define	DIOCZONECMD	_IOWR('d', 143, struct disk_zone_args)
 
+#ifndef WITHOUT_NETDUMP
+#include <net/if.h>
+#include <netinet/in.h>
+
+union kd_ip {
+	struct in_addr	in4;
+	struct in6_addr	in6;
+};
+
+/*
+ * Sentinel values for kda_index.
+ *
+ * If kda_index is KDA_REMOVE_ALL, all dump configurations are cleared.
+ *
+ * If kda_index is KDA_REMOVE_DEV, all dump configurations for the specified
+ * device are cleared.
+ *
+ * If kda_index is KDA_REMOVE, only the specified dump configuration for the
+ * given device is removed from the list of fallback dump configurations.
+ *
+ * If kda_index is KDA_APPEND, the dump configuration is added after all
+ * existing dump configurations.
+ *
+ * Otherwise, the new configuration is inserted into the fallback dump list at
+ * index 'kda_index'.
+ */
+#define	KDA_REMOVE		UINT8_MAX
+#define	KDA_REMOVE_ALL		(UINT8_MAX - 1)
+#define	KDA_REMOVE_DEV		(UINT8_MAX - 2)
+#define	KDA_APPEND		(UINT8_MAX - 3)
 #ifndef __rtems__
 struct diocskerneldump_arg {
-	uint8_t		 kda_enable;
+	uint8_t		 kda_index;
 	uint8_t		 kda_compression;
 	uint8_t		 kda_encryption;
 	uint8_t		 kda_key[KERNELDUMP_KEY_MAX_SIZE];
 	uint32_t	 kda_encryptedkeysize;
 	uint8_t		*kda_encryptedkey;
+	char		 kda_iface[IFNAMSIZ];
+	union kd_ip	 kda_server;
+	union kd_ip	 kda_client;
+	union kd_ip	 kda_gateway;
+	uint8_t		 kda_af;
 };
-#define	DIOCSKERNELDUMP _IOW('d', 144, struct diocskerneldump_arg)
+#define	DIOCSKERNELDUMP _IOW('d', 145, struct diocskerneldump_arg)
 	/*
 	 * Enable/Disable the device for kernel core dumps.
 	 */
 #endif /* __rtems__ */
+
+#define	DIOCGKERNELDUMP _IOWR('d', 146, struct diocskerneldump_arg)
+	/*
+	 * Get current kernel netdump configuration details for a given index.
+	 */
+#endif
 
 #endif /* _SYS_DISK_H_ */

@@ -48,18 +48,20 @@ static char sccsid[] = "@(#)route.c	8.6 (Berkeley) 4/28/95";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
 #include <machine/rtems-bsd-program.h>
 #include <machine/rtems-bsd-commands.h>
+#include "function.h"
 #endif /* __rtems__ */
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#ifdef JAIL
+#include <sys/jail.h>
+#endif
 #include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/queue.h>
@@ -75,6 +77,9 @@ __FBSDID("$FreeBSD$");
 #include <ctype.h>
 #include <err.h>
 #include <errno.h>
+#ifdef JAIL
+#include <jail.h>
+#endif
 #include <paths.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -105,22 +110,27 @@ static struct keytab {
 	{0, 0}
 };
 
+int	verbose, debugonly;
+#ifdef JAIL
+char * jail_name;
+#endif
 static struct sockaddr_storage so[RTAX_MAX];
 static int	pid, rtm_addrs;
-static int	s;
-static int	nflag, af, qflag, tflag;
-static int	verbose, aflen;
-static int	locking, lockrest, debugonly;
+static int	nflag, af, aflen, qflag, tflag;
+static int	locking, lockrest;
 static struct rt_metrics rt_metrics;
 static u_long  rtm_inits;
 static uid_t	uid;
 static int	defaultfib;
 static int	numfibs;
-static char	domain[MAXHOSTNAMELEN + 1];
-static bool	domain_initialized;
-static int	rtm_seq;
+static char	domain_storage[MAXHOSTNAMELEN + 1];
+static const char	*domain;
 static char	rt_line[NI_MAXHOST];
 static char	net_line[MAXHOSTNAMELEN + 1];
+
+#ifdef WITHOUT_NETLINK
+static int	s;
+static int	rtm_seq;
 
 #ifndef __rtems__
 static struct {
@@ -131,23 +141,31 @@ static struct m_rtmsg {
 	char	m_space[512];
 } m_rtmsg;
 
+static int	rtmsg_rtsock(int, int, int);
+static int	flushroutes_fib_rtsock(int);
+static void	monitor_rtsock(void);
+#else
+int		rtmsg_nl(int, int, int, int, struct sockaddr_storage *, struct rt_metrics *);
+int		flushroutes_fib_nl(int, int);
+void		monitor_nl(int);
+#endif
+
 static TAILQ_HEAD(fibl_head_t, fibl) fibl_head;
 
-static void	printb(int, const char *);
+void	printb(int, const char *);
 static void	flushroutes(int argc, char *argv[]);
 static int	flushroutes_fib(int);
-static int	getaddr(int, char *, struct hostent **, int);
+static int	getaddr(int, char *, int);
 static int	keyword(const char *);
 #ifdef INET
-static void	inet_makenetandmask(u_long, struct sockaddr_in *,
-		    struct sockaddr_in *, u_long);
+static void	inet_makemask(struct sockaddr_in *, u_long);
 #endif
 #ifdef INET6
 static int	inet6_makenetandmask(struct sockaddr_in6 *, const char *);
 #endif
 static void	interfaces(void);
 static void	monitor(int, char*[]);
-static const char	*netname(struct sockaddr *);
+const char	*netname(struct sockaddr *);
 static void	newroute(int, char **);
 static int	newroute_fib(int, char *, int);
 static void	pmsg_addrs(char *, int, size_t);
@@ -155,7 +173,7 @@ static void	pmsg_common(struct rt_msghdr *, size_t);
 static int	prefixlen(const char *);
 static void	print_getmsg(struct rt_msghdr *, int, int);
 static void	print_rtmsg(struct rt_msghdr *, size_t);
-static const char	*routename(struct sockaddr *);
+const char	*routename(struct sockaddr *);
 static int	rtmsg(int, int, int);
 static void	set_metric(char *, int);
 static int	set_sofib(int);
@@ -185,7 +203,7 @@ usage(const char *cp)
 {
 	if (cp != NULL)
 		warnx("bad keyword: %s", cp);
-	errx(EX_USAGE, "usage: route [-46dnqtv] command [[modifiers] args]");
+	errx(EX_USAGE, "usage: route [-j jail] [-46dnqtv] command [[modifiers] args]");
 	/* NOTREACHED */
 }
 
@@ -216,6 +234,9 @@ int
 main(int argc, char **argv)
 {
 	int ch;
+#ifdef JAIL
+	int jid;
+#endif
 	size_t len;
 #ifdef __rtems__
 	struct getopt_data getopt_data;
@@ -230,7 +251,7 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage(NULL);
 
-	while ((ch = getopt(argc, argv, "46nqdtv")) != -1)
+	while ((ch = getopt(argc, argv, "46nqdtvj:")) != -1)
 		switch(ch) {
 		case '4':
 #ifdef INET
@@ -263,6 +284,15 @@ main(int argc, char **argv)
 		case 'd':
 			debugonly = 1;
 			break;
+		case 'j':
+#ifdef JAIL
+			if (optarg == NULL)
+				usage(NULL);
+			jail_name = optarg;
+#else
+			errx(1, "Jail support is not compiled in");
+#endif
+			break;
 		case '?':
 		default:
 			usage(NULL);
@@ -272,12 +302,25 @@ main(int argc, char **argv)
 
 	pid = getpid();
 	uid = geteuid();
+
+#ifdef JAIL
+	if (jail_name != NULL) {
+		jid = jail_getid(jail_name);
+		if (jid == -1)
+			errx(1, "Jail not found");
+		if (jail_attach(jid) != 0)
+			errx(1, "Cannot attach to jail");
+	}
+#endif
+
+#ifdef WITHOUT_NETLINK
 	if (tflag)
 		s = open(_PATH_DEVNULL, O_WRONLY, 0);
 	else
 		s = socket(PF_ROUTE, SOCK_RAW, 0);
 	if (s < 0)
 		err(EX_OSERR, "socket");
+#endif
 
 	len = sizeof(numfibs);
 	if (sysctlbyname("net.fibs", (void *)&numfibs, &len, NULL, 0) == -1)
@@ -320,10 +363,14 @@ static int
 set_sofib(int fib)
 {
 
+#ifdef WITHOUT_NETLINK
 	if (fib < 0)
 		return (0);
 	return (setsockopt(s, SOL_SOCKET, SO_SETFIB, (void *)&fib,
 	    sizeof(fib)));
+#else
+	return (0);
+#endif
 }
 
 static int
@@ -451,7 +498,9 @@ flushroutes(int argc, char *argv[])
 
 	if (uid != 0 && !debugonly && !tflag)
 		errx(EX_NOPERM, "must be root to alter routing table");
+#ifdef WITHOUT_NETLINK
 	shutdown(s, SHUT_RD); /* Don't want to read back our messages */
+#endif
 
 	TAILQ_INIT(&fibl_head);
 	while (argc > 1) {
@@ -497,6 +546,17 @@ flushroutes(int argc, char *argv[])
 
 static int
 flushroutes_fib(int fib)
+{
+#ifdef WITHOUT_NETLINK
+	return (flushroutes_fib_rtsock(fib));
+#else
+	return (flushroutes_fib_nl(fib, af));
+#endif
+}
+
+#ifdef WITHOUT_NETLINK
+static int
+flushroutes_fib_rtsock(int fib)
 {
 	struct rt_msghdr *rtm;
 	size_t needed;
@@ -581,22 +641,25 @@ retry:
 	free(buf);
 	return (error);
 }
+#endif
 
-static const char *
+const char *
 routename(struct sockaddr *sa)
 {
 	struct sockaddr_dl *sdl;
 	const char *cp;
 	int n;
 
-	if (!domain_initialized) {
-		domain_initialized = true;
-		if (gethostname(domain, MAXHOSTNAMELEN) == 0 &&
-		    (cp = strchr(domain, '.'))) {
-			domain[MAXHOSTNAMELEN] = '\0';
-			(void)strcpy(domain, cp + 1);
-		} else
-			domain[0] = '\0';
+	if (domain == NULL) {
+		if (gethostname(domain_storage,
+		    sizeof(domain_storage) - 1) == 0 &&
+		    (cp = strchr(domain_storage, '.')) != NULL) {
+			domain_storage[sizeof(domain_storage) - 1] = '\0';
+			domain = cp + 1;
+		} else {
+			domain_storage[0] = '\0';
+			domain = domain_storage;
+		}
 	}
 
 	/* If the address is zero-filled, use "default". */
@@ -701,7 +764,7 @@ routename(struct sockaddr *sa)
  * Return the name of the network whose address is given.
  * The address is assumed to be that of a net, not a host.
  */
-static const char *
+const char *
 netname(struct sockaddr *sa)
 {
 	struct sockaddr_dl *sdl;
@@ -848,7 +911,6 @@ newroute(int argc, char **argv)
 #ifndef __rtems__
 	struct sigaction sa;
 #endif /* __rtems__ */
-	struct hostent *hp;
 	struct fibl *fl;
 	char *cmd;
 	const char *dest, *gateway, *errmsg;
@@ -860,7 +922,6 @@ newroute(int argc, char **argv)
 	gateway = NULL;
 	flags = RTF_STATIC;
 	nrflags = 0;
-	hp = NULL;
 	TAILQ_INIT(&fibl_head);
 
 #ifndef __rtems__
@@ -872,8 +933,10 @@ newroute(int argc, char **argv)
 #endif /* __rtems__ */
 
 	cmd = argv[0];
+#ifdef WITHOUT_NETLINK
 	if (*cmd != 'g' && *cmd != 's')
 		shutdown(s, SHUT_RD); /* Don't want to read back our messages */
+#endif
 	while (--argc > 0) {
 		if (**(++argv)== '-') {
 			switch (key = keyword(1 + *argv)) {
@@ -953,35 +1016,35 @@ newroute(int argc, char **argv)
 			case K_IFA:
 				if (!--argc)
 					usage(NULL);
-				getaddr(RTAX_IFA, *++argv, 0, nrflags);
+				getaddr(RTAX_IFA, *++argv, nrflags);
 				break;
 			case K_IFP:
 				if (!--argc)
 					usage(NULL);
-				getaddr(RTAX_IFP, *++argv, 0, nrflags);
+				getaddr(RTAX_IFP, *++argv, nrflags);
 				break;
 			case K_GENMASK:
 				if (!--argc)
 					usage(NULL);
-				getaddr(RTAX_GENMASK, *++argv, 0, nrflags);
+				getaddr(RTAX_GENMASK, *++argv, nrflags);
 				break;
 			case K_GATEWAY:
 				if (!--argc)
 					usage(NULL);
-				getaddr(RTAX_GATEWAY, *++argv, 0, nrflags);
+				getaddr(RTAX_GATEWAY, *++argv, nrflags);
 				gateway = *argv;
 				break;
 			case K_DST:
 				if (!--argc)
 					usage(NULL);
-				if (getaddr(RTAX_DST, *++argv, &hp, nrflags))
+				if (getaddr(RTAX_DST, *++argv, nrflags))
 					nrflags |= F_ISHOST;
 				dest = *argv;
 				break;
 			case K_NETMASK:
 				if (!--argc)
 					usage(NULL);
-				getaddr(RTAX_NETMASK, *++argv, 0, nrflags);
+				getaddr(RTAX_NETMASK, *++argv, nrflags);
 				/* FALLTHROUGH */
 			case K_NET:
 				nrflags |= F_FORCENET;
@@ -1016,13 +1079,13 @@ newroute(int argc, char **argv)
 		} else {
 			if ((rtm_addrs & RTA_DST) == 0) {
 				dest = *argv;
-				if (getaddr(RTAX_DST, *argv, &hp, nrflags))
+				if (getaddr(RTAX_DST, *argv, nrflags))
 					nrflags |= F_ISHOST;
 			} else if ((rtm_addrs & RTA_GATEWAY) == 0) {
 				gateway = *argv;
-				getaddr(RTAX_GATEWAY, *argv, &hp, nrflags);
+				getaddr(RTAX_GATEWAY, *argv, nrflags);
 			} else {
-				getaddr(RTAX_NETMASK, *argv, 0, nrflags);
+				getaddr(RTAX_NETMASK, *argv, nrflags);
 				nrflags |= F_FORCENET;
 			}
 		}
@@ -1172,40 +1235,15 @@ newroute_fib(int fib, char *cmd, int flags)
 
 #ifdef INET
 static void
-inet_makenetandmask(u_long net, struct sockaddr_in *sin,
-    struct sockaddr_in *sin_mask, u_long bits)
+inet_makemask(struct sockaddr_in *sin_mask, u_long bits)
 {
 	u_long mask = 0;
 
 	rtm_addrs |= RTA_NETMASK;
 
-	/*
-	 * MSB of net should be meaningful. 0/0 is exception.
-	 */
-	if (net > 0)
-		while ((net & 0xff000000) == 0)
-			net <<= 8;
-
-	/*
-	 * If no /xx was specified we must calculate the
-	 * CIDR address.
-	 */
-	if ((bits == 0) && (net != 0)) {
-		u_long i, j;
-
-		for(i = 0, j = 0xff; i < 4; i++)  {
-			if (net & j) {
-				break;
-			}
-			j <<= 8;
-		}
-		/* i holds the first non zero bit */
-		bits = 32 - (i*8);
-	}
 	if (bits != 0)
 		mask = 0xffffffff << (32 - bits);
 
-	sin->sin_addr.s_addr = htonl(net);
 	sin_mask->sin_addr.s_addr = htonl(mask);
 	sin_mask->sin_len = sizeof(struct sockaddr_in);
 	sin_mask->sin_family = AF_INET;
@@ -1239,14 +1277,12 @@ inet6_makenetandmask(struct sockaddr_in6 *sin6, const char *plen)
  * returning 1 if a host address, 0 if a network address.
  */
 static int
-getaddr(int idx, char *str, struct hostent **hpp, int nrflags)
+getaddr(int idx, char *str, int nrflags)
 {
 	struct sockaddr *sa;
 #if defined(INET)
 	struct sockaddr_in *sin;
 	struct hostent *hp;
-	struct netent *np;
-	u_long val;
 	char *q;
 #elif defined(INET6)
 	char *q;
@@ -1266,9 +1302,6 @@ getaddr(int idx, char *str, struct hostent **hpp, int nrflags)
 		aflen = sizeof(struct sockaddr_dl);
 #endif
 	}
-#ifndef INET
-	hpp = NULL;
-#endif
 	rtm_addrs |= (1 << idx);
 	sa = (struct sockaddr *)&so[idx];
 	sa->sa_family = af;
@@ -1320,7 +1353,7 @@ getaddr(int idx, char *str, struct hostent **hpp, int nrflags)
 		switch (idx) {
 		case RTAX_DST:
 			nrflags |= F_FORCENET;
-			getaddr(RTAX_NETMASK, str, 0, nrflags);
+			getaddr(RTAX_NETMASK, str, nrflags);
 			break;
 		}
 		return (0);
@@ -1367,43 +1400,43 @@ getaddr(int idx, char *str, struct hostent **hpp, int nrflags)
 
 #ifdef INET
 	sin = (struct sockaddr_in *)(void *)sa;
-	if (hpp == NULL)
-		hpp = &hp;
-	*hpp = NULL;
 
 	q = strchr(str,'/');
 	if (q != NULL && idx == RTAX_DST) {
+		/* A.B.C.D/NUM */
+		struct sockaddr_in *mask;
+		uint32_t mask_bits;
+
 		*q = '\0';
-		if ((val = inet_network(str)) != INADDR_NONE) {
-			inet_makenetandmask(val, sin,
-			    (struct sockaddr_in *)&so[RTAX_NETMASK],
-			    strtoul(q+1, 0, 0));
-			return (0);
-		}
-		*q = '/';
-	}
-	if ((idx != RTAX_DST || (nrflags & F_FORCENET) == 0) &&
-	    inet_aton(str, &sin->sin_addr)) {
-		val = sin->sin_addr.s_addr;
-		if (idx != RTAX_DST || nrflags & F_FORCEHOST ||
-		    inet_lnaof(sin->sin_addr) != INADDR_ANY)
-			return (1);
-		else {
-			val = ntohl(val);
-			goto netdone;
-		}
-	}
-	if (idx == RTAX_DST && (nrflags & F_FORCEHOST) == 0 &&
-	    ((val = inet_network(str)) != INADDR_NONE ||
-	    ((np = getnetbyname(str)) != NULL && (val = np->n_net) != 0))) {
-netdone:
-		inet_makenetandmask(val, sin,
-		    (struct sockaddr_in *)&so[RTAX_NETMASK], 0);
+		if (inet_aton(str, &sin->sin_addr) == 0)
+			errx(EX_NOHOST, "bad address: %s", str);
+
+		int masklen = strtol(q + 1, NULL, 10);
+		if (masklen < 0 || masklen > 32)
+			errx(EX_NOHOST, "bad mask length: %s", q + 1);
+
+		inet_makemask((struct sockaddr_in *)&so[RTAX_NETMASK],masklen);
+
+		/*
+		 * Check for bogus destination such as "10/8"; heuristic is
+		 * that there are bits set in the host part, and no dot
+		 * is present.
+		 */
+		mask = ((struct sockaddr_in *) &so[RTAX_NETMASK]);
+		mask_bits = ntohl(mask->sin_addr.s_addr);
+		if ((ntohl(sin->sin_addr.s_addr) & ~mask_bits) != 0 &&
+		    strchr(str, '.') == NULL)
+			errx(EX_NOHOST,
+			    "malformed address, bits set after mask;"
+			    " %s means %s",
+			    str, inet_ntoa(sin->sin_addr));
 		return (0);
 	}
+	if (inet_aton(str, &sin->sin_addr) != 0)
+		return (1);
+
 	hp = gethostbyname(str);
 	if (hp != NULL) {
-		*hpp = hp;
 		sin->sin_family = hp->h_addrtype;
 		memmove((char *)&sin->sin_addr, hp->h_addr,
 		    MIN((size_t)hp->h_length, sizeof(sin->sin_addr)));
@@ -1507,8 +1540,8 @@ retry2:
 static void
 monitor(int argc, char *argv[])
 {
-	int n, fib, error;
-	char msg[2048], *endptr;
+	int fib, error;
+	char *endptr;
 
 	fib = defaultfib;
 	while (argc > 1) {
@@ -1544,33 +1577,44 @@ monitor(int argc, char *argv[])
 		interfaces();
 		exit(0);
 	}
+#ifdef WITHOUT_NETLINK
+	monitor_rtsock();
+#else
+	monitor_nl(fib);
+#endif
+}
+
+#ifdef WITHOUT_NETLINK
+static void
+monitor_rtsock(void)
+{
+	char msg[2048];
+	int n;
+
+#ifdef SO_RERROR
+	n = 1;
+	if (setsockopt(s, SOL_SOCKET, SO_RERROR, &n, sizeof(n)) == -1)
+		warn("SO_RERROR");
+#endif
+
 	for (;;) {
 		time_t now;
-		n = read(s, msg, 2048);
+		n = read(s, msg, sizeof(msg));
+		if (n == -1) {
+			warn("read");
+			continue;
+		}
 		now = time(NULL);
 		(void)printf("\ngot message of size %d on %s", n, ctime(&now));
 		print_rtmsg((struct rt_msghdr *)(void *)msg, n);
 	}
 }
+#endif
 
 static int
 rtmsg(int cmd, int flags, int fib)
 {
-	int rlen;
-	char *cp = m_rtmsg.m_space;
-	int l;
-
-#define NEXTADDR(w, u)							\
-	if (rtm_addrs & (w)) {						\
-		l = SA_SIZE(&(u));					\
-		memmove(cp, (char *)&(u), l);				\
-		cp += l;						\
-		if (verbose)						\
-			sodump((struct sockaddr *)&(u), #w);		\
-	}
-
 	errno = 0;
-	memset(&m_rtmsg, 0, sizeof(m_rtmsg));
 	if (cmd == 'a')
 		cmd = RTM_ADD;
 	else if (cmd == 'c')
@@ -1586,6 +1630,33 @@ rtmsg(int cmd, int flags, int fib)
 		cmd = RTM_DELETE;
 		flags |= RTF_PINNED;
 	}
+#ifdef WITHOUT_NETLINK
+	return (rtmsg_rtsock(cmd, flags, fib));
+#else
+	errno = rtmsg_nl(cmd, flags, fib, rtm_addrs, so, &rt_metrics);
+	return (errno == 0 ? 0 : -1);
+#endif
+}
+
+#ifdef WITHOUT_NETLINK
+static int
+rtmsg_rtsock(int cmd, int flags, int fib)
+{
+	int rlen;
+	char *cp = m_rtmsg.m_space;
+	int l;
+
+	memset(&m_rtmsg, 0, sizeof(m_rtmsg));
+
+#define NEXTADDR(w, u)							\
+	if (rtm_addrs & (w)) {						\
+		l = SA_SIZE(&(u));					\
+		memmove(cp, (char *)&(u), l);				\
+		cp += l;						\
+		if (verbose)						\
+			sodump((struct sockaddr *)&(u), #w);		\
+	}
+
 #define rtm m_rtmsg.m_rtm
 	rtm.rtm_type = cmd;
 	rtm.rtm_flags = flags;
@@ -1647,6 +1718,7 @@ rtmsg(int cmd, int flags, int fib)
 #undef rtm
 	return (0);
 }
+#endif
 
 static const char *const msgtypes[] = {
 	"",
@@ -1673,7 +1745,7 @@ static const char *const msgtypes[] = {
 static const char metricnames[] =
     "\011weight\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire"
     "\1mtu";
-static const char routeflags[] =
+const char routeflags[] =
     "\1UP\2GATEWAY\3HOST\4REJECT\5DYNAMIC\6MODIFIED\7DONE"
     "\012XRESOLVE\013LLINFO\014STATIC\015BLACKHOLE"
     "\017PROTO2\020PROTO1\021PRCLONING\022WASCLONED\023PROTO3"
@@ -1914,7 +1986,7 @@ pmsg_addrs(char *cp, int addrs, size_t len)
 	(void)fflush(stdout);
 }
 
-static void
+void
 printb(int b, const char *str)
 {
 	int i;

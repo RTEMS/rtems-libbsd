@@ -1,16 +1,16 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2017 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
-#include "../ssl_locl.h"
-#include "record_locl.h"
+#include "../ssl_local.h"
+#include "record_local.h"
 
 void SSL3_BUFFER_set_data(SSL3_BUFFER *b, const unsigned char *d, size_t n)
 {
@@ -60,6 +60,11 @@ int ssl3_setup_read_buffer(SSL *s)
         if (ssl_allow_compression(s))
             len += SSL3_RT_MAX_COMPRESSED_OVERHEAD;
 #endif
+
+        /* Ensure our buffer is large enough to support all our pipelines */
+        if (s->max_pipelines > 1)
+            len *= s->max_pipelines;
+
         if (b->default_len > len)
             len = b->default_len;
         if ((p = OPENSSL_malloc(len)) == NULL) {
@@ -68,15 +73,13 @@ int ssl3_setup_read_buffer(SSL *s)
              * We assume we're so doomed that we won't even be able to send an
              * alert.
              */
-            SSLfatal(s, SSL_AD_NO_ALERT, SSL_F_SSL3_SETUP_READ_BUFFER,
-                     ERR_R_MALLOC_FAILURE);
+            SSLfatal(s, SSL_AD_NO_ALERT, ERR_R_MALLOC_FAILURE);
             return 0;
         }
         b->buf = p;
         b->len = len;
     }
 
-    RECORD_LAYER_set_packet(&s->rlayer, &(b->buf[0]));
     return 1;
 }
 
@@ -96,15 +99,20 @@ int ssl3_setup_write_buffer(SSL *s, size_t numwpipes, size_t len)
             headerlen = SSL3_RT_HEADER_LENGTH;
 
 #if defined(SSL3_ALIGN_PAYLOAD) && SSL3_ALIGN_PAYLOAD!=0
-        align = (-SSL3_RT_HEADER_LENGTH) & (SSL3_ALIGN_PAYLOAD - 1);
+        align = SSL3_ALIGN_PAYLOAD - 1;
 #endif
 
         len = ssl_get_max_send_fragment(s)
-            + SSL3_RT_SEND_MAX_ENCRYPTED_OVERHEAD + headerlen + align;
+            + SSL3_RT_SEND_MAX_ENCRYPTED_OVERHEAD + headerlen + align
+            + SSL_RT_MAX_CIPHER_BLOCK_SIZE /* Explicit IV allowance */;
 #ifndef OPENSSL_NO_COMP
         if (ssl_allow_compression(s))
             len += SSL3_RT_MAX_COMPRESSED_OVERHEAD;
 #endif
+        /*
+         * We don't need to add an allowance for eivlen here since empty
+         * fragments only occur when we don't have an explicit IV
+         */
         if (!(s->options & SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS))
             len += headerlen + align + SSL3_RT_SEND_MAX_ENCRYPTED_OVERHEAD;
     }
@@ -113,23 +121,26 @@ int ssl3_setup_write_buffer(SSL *s, size_t numwpipes, size_t len)
     for (currpipe = 0; currpipe < numwpipes; currpipe++) {
         SSL3_BUFFER *thiswb = &wb[currpipe];
 
-        if (thiswb->buf != NULL && thiswb->len != len) {
+        if (thiswb->len != len) {
             OPENSSL_free(thiswb->buf);
             thiswb->buf = NULL;         /* force reallocation */
         }
 
         if (thiswb->buf == NULL) {
-            p = OPENSSL_malloc(len);
-            if (p == NULL) {
-                s->rlayer.numwpipes = currpipe;
-                /*
-                 * We've got a malloc failure, and we're still initialising
-                 * buffers. We assume we're so doomed that we won't even be able
-                 * to send an alert.
-                 */
-                SSLfatal(s, SSL_AD_NO_ALERT,
-                         SSL_F_SSL3_SETUP_WRITE_BUFFER, ERR_R_MALLOC_FAILURE);
-                return 0;
+            if (s->wbio == NULL || !BIO_get_ktls_send(s->wbio)) {
+                p = OPENSSL_malloc(len);
+                if (p == NULL) {
+                    s->rlayer.numwpipes = currpipe;
+                    /*
+                     * We've got a malloc failure, and we're still initialising
+                     * buffers. We assume we're so doomed that we won't even be able
+                     * to send an alert.
+                     */
+                    SSLfatal(s, SSL_AD_NO_ALERT, ERR_R_MALLOC_FAILURE);
+                    return 0;
+                }
+            } else {
+                p = NULL;
             }
             memset(thiswb, 0, sizeof(SSL3_BUFFER));
             thiswb->buf = p;
@@ -162,7 +173,10 @@ int ssl3_release_write_buffer(SSL *s)
     while (pipes > 0) {
         wb = &RECORD_LAYER_get_wbuf(&s->rlayer)[pipes - 1];
 
-        OPENSSL_free(wb->buf);
+        if (SSL3_BUFFER_is_app_buffer(wb))
+            SSL3_BUFFER_set_app_buffer(wb, 0);
+        else
+            OPENSSL_free(wb->buf);
         wb->buf = NULL;
         pipes--;
     }
@@ -175,7 +189,11 @@ int ssl3_release_read_buffer(SSL *s)
     SSL3_BUFFER *b;
 
     b = RECORD_LAYER_get_rbuf(&s->rlayer);
+    if (s->options & SSL_OP_CLEANSE_PLAINTEXT)
+        OPENSSL_cleanse(b->buf, b->len);
     OPENSSL_free(b->buf);
     b->buf = NULL;
+    s->rlayer.packet = NULL;
+    s->rlayer.packet_length = 0;
     return 1;
 }

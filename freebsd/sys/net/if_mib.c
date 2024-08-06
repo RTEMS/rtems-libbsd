@@ -27,8 +27,6 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #include <sys/param.h>
@@ -40,6 +38,7 @@
 
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/if_mib.h>
 #include <net/vnet.h>
 
@@ -66,14 +65,6 @@
  * services stuff).
  */
 
-SYSCTL_DECL(_net_link_generic);
-static SYSCTL_NODE(_net_link_generic, IFMIB_SYSTEM, system, CTLFLAG_RW, 0,
-	    "Variables global to all interfaces");
-
-SYSCTL_INT(_net_link_generic_system, IFMIB_IFCOUNT, ifcount,
-	CTLFLAG_VNET | CTLFLAG_RD, &VNET_NAME(if_index), 0,
-	"Number of configured interfaces");
-
 static int
 sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 {
@@ -82,6 +73,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 	u_int namelen = arg2;
 	struct ifnet *ifp;
 	struct ifmibdata ifmd;
+	struct epoch_tracker et;
 	size_t dlen;
 	char *dbuf;
 
@@ -89,7 +81,9 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 		return EINVAL;
 	if (name[0] <= 0)
 		return (ENOENT);
+	NET_EPOCH_ENTER(et);
 	ifp = ifnet_byindex_ref(name[0]);
+	NET_EPOCH_EXIT(et);
 	if (ifp == NULL)
 		return (ENOENT);
 
@@ -120,10 +114,6 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 		error = SYSCTL_OUT(req, ifp->if_linkmib, ifp->if_linkmiblen);
 		if (error || !req->newptr)
 			goto out;
-
-		error = SYSCTL_IN(req, ifp->if_linkmib, ifp->if_linkmiblen);
-		if (error)
-			goto out;
 		break;
 
 	case IFDATA_DRIVERNAME:
@@ -149,6 +139,7 @@ out:
 	return error;
 }
 
-static SYSCTL_NODE(_net_link_generic, IFMIB_IFDATA, ifdata, CTLFLAG_RW,
-	    sysctl_ifdata, "Interface table");
-
+SYSCTL_DECL(_net_link_generic);
+static SYSCTL_NODE(_net_link_generic, IFMIB_IFDATA, ifdata,
+    CTLFLAG_RD | CTLFLAG_MPSAFE, sysctl_ifdata,
+    "Interface table");

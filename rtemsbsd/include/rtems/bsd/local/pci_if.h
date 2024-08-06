@@ -1,5 +1,5 @@
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -20,6 +20,7 @@ struct nvlist;
 enum pci_id_type {
     PCI_ID_RID,
     PCI_ID_MSI,
+    PCI_ID_OFW_IOMMU,
 };
 
 enum pci_feature {

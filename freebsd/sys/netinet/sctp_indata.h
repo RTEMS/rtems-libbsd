@@ -32,9 +32,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifndef _NETINET_SCTP_INDATA_H_
 #define _NETINET_SCTP_INDATA_H_
 
@@ -47,7 +44,6 @@ sctp_build_readq_entry(struct sctp_tcb *stcb,
     uint32_t context, uint16_t sid,
     uint32_t mid, uint8_t flags,
     struct mbuf *dm);
-
 
 #define sctp_build_readq_entry_mac(_ctl, in_it, context, net, tsn, ppid, sid, flags, dm, tfsn, mid) do { \
 	if (_ctl) { \
@@ -68,10 +64,11 @@ sctp_build_readq_entry(struct sctp_tcb *stcb,
 		(_ctl)->data = dm; \
 		(_ctl)->stcb = (in_it); \
 		(_ctl)->port_from = (in_it)->rport; \
+		if ((in_it)->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) { \
+			(_ctl)->do_not_ref_stcb = 1; \
+		}\
 	} \
 } while (0)
-
-
 
 struct mbuf *
 sctp_build_ctl_nchunk(struct sctp_inpcb *inp,

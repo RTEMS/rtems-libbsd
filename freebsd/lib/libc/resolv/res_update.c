@@ -29,9 +29,6 @@ static const char rcsid[] = "$Id: res_update.c,v 1.13 2005/04/27 04:56:43 sra Ex
  * &lt;viraj_bais@ccm.fm.intel.com>
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include "port_before.h"
 
 #include <sys/param.h>

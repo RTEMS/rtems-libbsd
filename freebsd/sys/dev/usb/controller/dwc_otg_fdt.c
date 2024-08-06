@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
- * Copyright (c) 2012 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2012 Hans Petter Selasky.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,8 +28,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
@@ -61,10 +59,9 @@ __FBSDID("$FreeBSD$");
 
 static device_probe_t dwc_otg_probe;
 
-static const struct ofw_compat_data compat_data[] = {
+static struct ofw_compat_data compat_data[] = {
 	{ "synopsys,designware-hs-otg2",	1 },
 	{ "snps,dwc2",				1 },
-	{ "snps,dwc-otg",			1 },
 	{ NULL,					0 }
 };
 
@@ -105,16 +102,11 @@ dwc_otg_attach(device_t dev)
 	int err;
 	int rid;
 
-	/* initialise some bus fields */
 	sc->sc_otg.sc_bus.parent = dev;
-	sc->sc_otg.sc_bus.devices = sc->sc_otg.sc_devices;
-	sc->sc_otg.sc_bus.devices_max = DWC_OTG_MAX_DEVICES;
-	sc->sc_otg.sc_bus.dma_bits = 32;
 
 	/* get USB mode, if any */
 	if (OF_getprop(ofw_bus_get_node(dev), "dr_mode",
 	    &usb_mode, sizeof(usb_mode)) > 0) {
-
 		/* ensure proper zero termination */
 		usb_mode[sizeof(usb_mode) - 1] = 0;
 
@@ -126,27 +118,14 @@ dwc_otg_attach(device_t dev)
 			device_printf(dev, "Invalid FDT dr_mode: %s\n",
 			    usb_mode);
 		}
-	} else {
-		sc->sc_otg.sc_mode = DWC_MODE_HOST;
 	}
 
-	/* get all DMA memory */
-	if (usb_bus_mem_alloc_all(&sc->sc_otg.sc_bus,
-	    USB_GET_DMA_TAG(dev), NULL)) {
-		return (ENOMEM);
-	}
 	rid = 0;
 	sc->sc_otg.sc_io_res =
 	    bus_alloc_resource_any(dev, SYS_RES_MEMORY, &rid, RF_ACTIVE);
 
-	if (!(sc->sc_otg.sc_io_res)) {
-		err = ENOMEM;
+	if (!(sc->sc_otg.sc_io_res))
 		goto error;
-	}
-	sc->sc_otg.sc_io_tag = rman_get_bustag(sc->sc_otg.sc_io_res);
-	sc->sc_otg.sc_io_hdl = rman_get_bushandle(sc->sc_otg.sc_io_res);
-	sc->sc_otg.sc_io_size = rman_get_size(sc->sc_otg.sc_io_res);
-
 
 	/*
 	 * brcm,bcm2708-usb FDT provides two interrupts, we need only the USB
@@ -168,21 +147,12 @@ dwc_otg_attach(device_t dev)
 	if (sc->sc_otg.sc_bus.bdev == NULL)
 		goto error;
 
-	device_set_ivars(sc->sc_otg.sc_bus.bdev, &sc->sc_otg.sc_bus);
-
-	err = bus_setup_intr(dev, sc->sc_otg.sc_irq_res, INTR_TYPE_TTY | INTR_MPSAFE,
-	    &dwc_otg_filter_interrupt, &dwc_otg_interrupt, sc, &sc->sc_otg.sc_intr_hdl);
-	if (err) {
-		sc->sc_otg.sc_intr_hdl = NULL;
-		goto error;
-	}
 	err = dwc_otg_init(&sc->sc_otg);
 	if (err == 0) {
 		err = device_probe_and_attach(sc->sc_otg.sc_bus.bdev);
 	}
 	if (err)
 		goto error;
-
 
 	return (0);
 
@@ -244,7 +214,5 @@ driver_t dwc_otg_driver = {
 	.size = sizeof(struct dwc_otg_fdt_softc),
 };
 
-static devclass_t dwc_otg_devclass;
-
-DRIVER_MODULE(dwcotg, simplebus, dwc_otg_driver, dwc_otg_devclass, 0, 0);
+DRIVER_MODULE(dwcotg, simplebus, dwc_otg_driver, 0, 0);
 MODULE_DEPEND(dwcotg, usb, 1, 1, 1);

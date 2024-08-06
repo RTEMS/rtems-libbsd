@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000 Doug Rabson
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_TASKQUEUE_H_
@@ -37,20 +35,12 @@
 
 #include <sys/queue.h>
 #include <sys/_task.h>
-#include <sys/_callout.h>
 #include <sys/_cpuset.h>
 
 struct taskqueue;
 struct taskqgroup;
 struct proc;
 struct thread;
-
-struct timeout_task {
-	struct taskqueue *q;
-	struct task t;
-	struct callout c;
-	int    f;
-};
 
 enum taskqueue_callback_type {
 	TASKQUEUE_CALLBACK_TYPE_INIT,
@@ -60,6 +50,10 @@ enum taskqueue_callback_type {
 #define	TASKQUEUE_CALLBACK_TYPE_MAX	TASKQUEUE_CALLBACK_TYPE_SHUTDOWN
 #define	TASKQUEUE_NUM_CALLBACKS		TASKQUEUE_CALLBACK_TYPE_MAX + 1
 #define	TASKQUEUE_NAMELEN		32
+
+/* taskqueue_enqueue flags */
+#define	TASKQUEUE_FAIL_IF_PENDING	(1 << 0)
+#define	TASKQUEUE_FAIL_IF_CANCELING	(1 << 1)
 
 typedef void (*taskqueue_callback_fn)(void *context);
 
@@ -82,6 +76,8 @@ int	taskqueue_start_threads_in_proc(struct taskqueue **tqp, int count,
 int	taskqueue_start_threads_cpuset(struct taskqueue **tqp, int count,
 	    int pri, cpuset_t *mask, const char *name, ...) __printflike(5, 6);
 int	taskqueue_enqueue(struct taskqueue *queue, struct task *task);
+int	taskqueue_enqueue_flags(struct taskqueue *queue, struct task *task,
+	    int flags);
 int	taskqueue_enqueue_timeout(struct taskqueue *queue,
 	    struct timeout_task *timeout_task, int ticks);
 int	taskqueue_enqueue_timeout_sbt(struct taskqueue *queue,
@@ -107,8 +103,7 @@ void	taskqueue_set_callback(struct taskqueue *queue,
 	    taskqueue_callback_fn callback, void *context);
 
 #define TASK_INITIALIZER(priority, func, context)	\
-	{ .ta_pending = 0,				\
-	  .ta_priority = (priority),			\
+	{ .ta_priority = (priority),			\
 	  .ta_func = (func),				\
 	  .ta_context = (context) }
 
@@ -121,18 +116,24 @@ void	taskqueue_thread_enqueue(void *context);
 /*
  * Initialise a task structure.
  */
-#define TASK_INIT(task, priority, func, context) do {	\
-	(task)->ta_pending = 0;				\
-	(task)->ta_priority = (priority);		\
-	(task)->ta_func = (func);			\
-	(task)->ta_context = (context);			\
+#define TASK_INIT_FLAGS(task, priority, func, context, flags) do {	\
+	(task)->ta_pending = 0;					\
+	(task)->ta_priority = (priority);			\
+	(task)->ta_flags = (flags);				\
+	(task)->ta_func = (func);				\
+	(task)->ta_context = (context);				\
 } while (0)
+
+#define TASK_INIT(t, p, f, c)	TASK_INIT_FLAGS(t, p, f, c, 0)
 
 void _timeout_task_init(struct taskqueue *queue,
 	    struct timeout_task *timeout_task, int priority, task_fn_t func,
 	    void *context);
-#define	TIMEOUT_TASK_INIT(queue, timeout_task, priority, func, context) \
-	_timeout_task_init(queue, timeout_task, priority, func, context);
+#define	TIMEOUT_TASK_INIT(queue, timeout_task, priority, func, context)	do { \
+	_Static_assert((priority) >= 0 && (priority) <= 255,	\
+	    "struct task priority is 8 bit in size");           \
+	_timeout_task_init(queue, timeout_task, priority, func, context); \
+} while (0)
 
 /*
  * Declare a reference to a taskqueue.
@@ -186,7 +187,7 @@ SYSINIT(taskqueue_##name, SI_SUB_TASKQ, SI_ORDER_SECOND,		\
 struct __hack
 #define TASKQUEUE_FAST_DEFINE_THREAD(name)				\
 TASKQUEUE_FAST_DEFINE(name, taskqueue_thread_enqueue,			\
-	&taskqueue_##name, taskqueue_start_threads(&taskqueue_##name	\
+	&taskqueue_##name, taskqueue_start_threads(&taskqueue_##name,	\
 	1, PWAIT, "%s taskq", #name))
 
 /*

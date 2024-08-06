@@ -31,7 +31,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)slcompress.c	8.2 (Berkeley) 4/16/94
- * $FreeBSD$
  */
 
 /*
@@ -88,7 +87,6 @@ sl_compress_init(struct slcompress *comp, int max_state)
 	comp->last_xmit = 255;
 	comp->flags = SLF_TOSS;
 }
-
 
 /* ENCODE encodes a number that is known to be non-zero.  ENCODEZ
  * checks for zero (since zero has to be encoded in the long, 3 byte
@@ -311,7 +309,6 @@ sl_compress_tcp(struct mbuf *m, struct ip *ip, struct slcompress *comp,
 	}
 
 	switch(changes) {
-
 	case 0:
 		/*
 		 * Nothing changed. If this packet contains data and the
@@ -409,7 +406,6 @@ uncompressed:
 	return (TYPE_UNCOMPRESSED_TCP);
 }
 
-
 int
 sl_uncompress_tcp(u_char **bufp, int len, u_int type, struct slcompress *comp)
 {
@@ -467,7 +463,6 @@ sl_uncompress_tcp_core(u_char *buf, int buflen, int total_len, u_int type,
 	u_int vjlen;
 
 	switch (type) {
-
 	case TYPE_UNCOMPRESSED_TCP:
 		ip = (struct ip *) buf;
 		if (ip->ip_p >= MAX_STATES)

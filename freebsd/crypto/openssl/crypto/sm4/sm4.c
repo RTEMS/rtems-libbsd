@@ -1,18 +1,18 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2017 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2017-2021 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright 2017 Ribose Inc. All Rights Reserved.
  * Ported from Ribose contributions from Botan.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
 #include <openssl/e_os2.h>
-#include "internal/sm4.h"
+#include "crypto/sm4.h"
 
 static const uint8_t SM4_S[256] = {
     0xD6, 0x90, 0xE9, 0xFE, 0xCC, 0xE1, 0x3D, 0xB7, 0x16, 0xB6, 0x14, 0xC2,
@@ -131,7 +131,7 @@ static ossl_inline uint32_t SM4_T(uint32_t X)
            rotl(SM4_SBOX_T[(uint8_t)X], 8);
 }
 
-int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
+int ossl_sm4_set_key(const uint8_t *key, SM4_KEY *ks)
 {
     /*
      * Family Key
@@ -186,7 +186,7 @@ int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
          B3 ^= F(B0 ^ B1 ^ B2 ^ ks->rk[k3]); \
       } while(0)
 
-void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+void ossl_sm4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
 {
     uint32_t B0 = load_u32_be(in, 0);
     uint32_t B1 = load_u32_be(in, 1);
@@ -212,7 +212,7 @@ void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
     store_u32_be(B0, out + 12);
 }
 
-void SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+void ossl_sm4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
 {
     uint32_t B0 = load_u32_be(in, 0);
     uint32_t B1 = load_u32_be(in, 1);

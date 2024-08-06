@@ -35,9 +35,6 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char *sccsid = "@(#)getrpcent.c 1.14 91/03/11 Copyr 1984 Sun Micro";
 #endif
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Copyright (c) 1984 by Sun Microsystems, Inc.
  */
@@ -229,7 +226,7 @@ files_rpcent(void *retval, void *mdata, va_list ap)
 	int stayopen;
 	enum nss_lookup_type how;
 
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(uintptr_t)mdata;
 	switch (how)
 	{
 	case nss_lt_name:
@@ -349,7 +346,7 @@ files_setrpcent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata)
+	switch ((enum constants)(uintptr_t)mdata)
 	{
 	case SETRPCENT:
 		f = va_arg(ap,int);
@@ -409,7 +406,7 @@ nis_rpcent(void *retval, void *mdata, va_list ap)
 	enum nss_lookup_type	how;
 	int	no_name_active;
 
-	how = (enum nss_lookup_type)mdata;
+	how = (enum nss_lookup_type)(uintptr_t)mdata;
 	switch (how)
 	{
 	case nss_lt_name:
@@ -586,7 +583,7 @@ nis_setrpcent(void *retval, void *mdata, va_list ap)
 	if (rv != 0)
 		return (NS_UNAVAIL);
 
-	switch ((enum constants)mdata)
+	switch ((enum constants)(uintptr_t)mdata)
 	{
 	case SETRPCENT:
 	case ENDRPCENT:
@@ -613,7 +610,7 @@ rpc_id_func(char *buffer, size_t *buffer_size, va_list ap, void *cache_mdata)
 	enum nss_lookup_type lookup_type;
 	int res = NS_UNAVAIL;
 
-	lookup_type = (enum nss_lookup_type)cache_mdata;
+	lookup_type = (enum nss_lookup_type)(uintptr_t)cache_mdata;
 	switch (lookup_type) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
@@ -659,18 +656,18 @@ static int
 rpc_marshal_func(char *buffer, size_t *buffer_size, void *retval, va_list ap,
     void *cache_mdata)
 {
-	char *name;
-	int num;
+	char *name __unused;
+	int num __unused;
 	struct rpcent *rpc;
-	char *orig_buf;
-	size_t orig_buf_size;
+	char *orig_buf __unused;
+	size_t orig_buf_size __unused;
 
 	struct rpcent new_rpc;
 	size_t desired_size, size, aliases_size;
 	char *p;
 	char **alias;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(uintptr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		break;
@@ -746,8 +743,8 @@ static int
 rpc_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
     void *cache_mdata)
 {
-	char *name;
-	int num;
+	char *name __unused;
+	int num __unused;
 	struct rpcent *rpc;
 	char *orig_buf;
 	size_t orig_buf_size;
@@ -756,7 +753,7 @@ rpc_unmarshal_func(char *buffer, size_t buffer_size, void *retval, va_list ap,
 	char *p;
 	char **alias;
 
-	switch ((enum nss_lookup_type)cache_mdata) {
+	switch ((enum nss_lookup_type)(uintptr_t)cache_mdata) {
 	case nss_lt_name:
 		name = va_arg(ap, char *);
 		break;

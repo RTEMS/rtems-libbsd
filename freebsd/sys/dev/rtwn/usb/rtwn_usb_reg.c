@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
@@ -59,7 +57,6 @@ static int	rtwn_usb_read_region_1(struct rtwn_softc *,
 
 /* USB Requests. */
 #define R92C_REQ_REGS		0x05
-
 
 static int
 rtwn_do_request(struct rtwn_softc *sc, struct usb_device_request *req,

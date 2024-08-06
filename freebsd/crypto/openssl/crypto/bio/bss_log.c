@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1999-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1999-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "bio_lcl.h"
+#include "bio_local.h"
 #include "internal/cryptlib.h"
 
 #if defined(OPENSSL_SYS_WINCE)
@@ -89,7 +89,6 @@ static void xcloselog(BIO *bp);
 static const BIO_METHOD methods_slg = {
     BIO_TYPE_MEM,
     "syslog",
-    /* TODO: Convert to new style write function */
     bwrite_conv,
     slg_write,
     NULL,                      /* slg_write_old,    */
@@ -198,8 +197,10 @@ static int slg_write(BIO *b, const char *in, int inl)
         /* The default */
     };
 
+    if (inl < 0)
+        return 0;
     if ((buf = OPENSSL_malloc(inl + 1)) == NULL) {
-        BIOerr(BIO_F_SLG_WRITE, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     memcpy(buf, in, inl);

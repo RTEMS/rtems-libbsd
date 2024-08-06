@@ -30,8 +30,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * This code implements a system driver for legacy systems that do not
  * support ACPI or when ACPI support is not present in the kernel.
@@ -93,7 +91,6 @@ static device_method_t legacy_methods[] = {
 	DEVMETHOD(bus_deactivate_resource, bus_generic_deactivate_resource),
 	DEVMETHOD(bus_setup_intr,	bus_generic_setup_intr),
 	DEVMETHOD(bus_teardown_intr,	bus_generic_teardown_intr),
-
 	{ 0, 0 }
 };
 
@@ -102,9 +99,8 @@ static driver_t legacy_driver = {
 	legacy_methods,
 	1,			/* no softc */
 };
-static devclass_t legacy_devclass;
 
-DRIVER_MODULE(legacy, nexus, legacy_driver, legacy_devclass, 0, 0);
+DRIVER_MODULE(legacy, nexus, legacy_driver, 0, 0);
 
 static int
 legacy_probe(device_t dev)
@@ -131,23 +127,23 @@ legacy_pci_cfgregopen(device_t dev)
 		return;
 
 	/* Check for supported chipsets */
-	vid = pci_cfgregread(0, 0, 0, PCIR_VENDOR, 2);
-	did = pci_cfgregread(0, 0, 0, PCIR_DEVICE, 2);
+	vid = pci_cfgregread(0, 0, 0, 0, PCIR_VENDOR, 2);
+	did = pci_cfgregread(0, 0, 0, 0, PCIR_DEVICE, 2);
 	switch (vid) {
 	case 0x8086:
 		switch (did) {
 		case 0x3590:
 		case 0x3592:
 			/* Intel 7520 or 7320 */
-			pciebar = pci_cfgregread(0, 0, 0, 0xce, 2) << 16;
-			pcie_cfgregopen(pciebar, 0, 255);
+			pciebar = pci_cfgregread(0, 0, 0, 0, 0xce, 2) << 16;
+			pcie_cfgregopen(pciebar, 0, 0, 255);
 			break;
 		case 0x2580:
 		case 0x2584:
 		case 0x2590:
 			/* Intel 915, 925, or 915GM */
-			pciebar = pci_cfgregread(0, 0, 0, 0x48, 4);
-			pcie_cfgregopen(pciebar, 0, 255);
+			pciebar = pci_cfgregread(0, 0, 0, 0, 0x48, 4);
+			pcie_cfgregopen(pciebar, 0, 0, 255);
 			break;
 		}
 	}
@@ -175,8 +171,7 @@ legacy_attach(device_t dev)
 	bus_generic_attach(dev);
 
 	/*
-	 * If we didn't see ISA on a pci bridge, create some
-	 * connection points now so they show up "on motherboard".
+	 * If we didn't see ISA on a PCI bridge, add a top-level bus.
 	 */
 	if (!devclass_get_device(devclass_find("isa"), 0)) {
 		child = BUS_ADD_CHILD(dev, 0, "isa", 0);
@@ -197,7 +192,7 @@ legacy_print_child(device_t bus, device_t child)
 	retval += bus_print_child_header(bus, child);
 	if (atdev->lg_pcibus != -1)
 		retval += printf(" pcibus %d", atdev->lg_pcibus);
-	retval += printf(" on motherboard\n");	/* XXX "motherboard", ick */
+	retval += printf("\n");
 
 	return (retval);
 }
@@ -249,7 +244,6 @@ legacy_read_ivar(device_t dev, device_t child, int which, uintptr_t *result)
 	}
 	return 0;
 }
-	
 
 static int
 legacy_write_ivar(device_t dev, device_t child, int which, uintptr_t value)
@@ -321,8 +315,8 @@ static driver_t cpu_driver = {
 	cpu_methods,
 	1,		/* no softc */
 };
-static devclass_t cpu_devclass;
-DRIVER_MODULE(cpu, legacy, cpu_driver, cpu_devclass, 0, 0);
+
+DRIVER_MODULE(cpu, legacy, cpu_driver, 0, 0);
 
 static void
 cpu_identify(driver_t *driver, device_t parent)

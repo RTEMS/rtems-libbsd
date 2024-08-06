@@ -3,7 +3,7 @@
 /*	$NetBSD: bridgestp.c,v 1.5 2003/11/28 08:56:48 keihan Exp $	*/
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2000 Jason L. Wright (jason@thought.net)
  * Copyright (c) 2006 Andrew Thompson (thompsa@FreeBSD.org)
@@ -39,8 +39,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
@@ -57,6 +55,7 @@ __FBSDID("$FreeBSD$");
 
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #include <net/if_llc.h>
@@ -156,6 +155,8 @@ static void	bstp_reinit(struct bstp_state *);
 static void
 bstp_transmit(struct bstp_state *bs, struct bstp_port *bp)
 {
+	NET_EPOCH_ASSERT();
+
 	if (bs->bs_running == 0)
 		return;
 
@@ -348,6 +349,7 @@ bstp_send_bpdu(struct bstp_state *bs, struct bstp_port *bp,
 	struct ether_header *eh;
 
 	BSTP_LOCK_ASSERT(bs);
+	NET_EPOCH_ASSERT();
 
 	ifp = bp->bp_ifp;
 
@@ -596,6 +598,23 @@ bstp_received_bpdu(struct bstp_state *bs, struct bstp_port *bp,
 			return;
 	}
 
+	/* range checks */
+	if (cu->cu_message_age >= cu->cu_max_age) {
+		return;
+	}
+	if (cu->cu_max_age < BSTP_MIN_MAX_AGE ||
+	    cu->cu_max_age > BSTP_MAX_MAX_AGE) {
+		return;
+	}
+	if (cu->cu_forward_delay < BSTP_MIN_FORWARD_DELAY ||
+	    cu->cu_forward_delay > BSTP_MAX_FORWARD_DELAY) {
+		return;
+	}
+	if (cu->cu_hello_time < BSTP_MIN_HELLO_TIME ||
+	    cu->cu_hello_time > BSTP_MAX_HELLO_TIME) {
+		return;
+	}
+
 	type = bstp_pdu_rcvtype(bp, cu);
 
 	switch (type) {
@@ -834,7 +853,6 @@ bstp_assign_roles(struct bstp_state *bs)
 		bp->bp_desg_fdelay = bs->bs_root_fdelay;
 		bp->bp_desg_htime = bs->bs_bridge_htime;
 
-
 		switch (bp->bp_infois) {
 		case BSTP_INFO_DISABLED:
 			bstp_set_port_role(bp, BSTP_ROLE_DISABLED);
@@ -926,6 +944,8 @@ bstp_update_state(struct bstp_state *bs, struct bstp_port *bp)
 static void
 bstp_update_roles(struct bstp_state *bs, struct bstp_port *bp)
 {
+	NET_EPOCH_ASSERT();
+
 	switch (bp->bp_role) {
 	case BSTP_ROLE_DISABLED:
 		/* Clear any flags if set */
@@ -1865,6 +1885,7 @@ bstp_disable_port(struct bstp_state *bs, struct bstp_port *bp)
 static void
 bstp_tick(void *arg)
 {
+	struct epoch_tracker et;
 	struct bstp_state *bs = arg;
 	struct bstp_port *bp;
 
@@ -1873,6 +1894,7 @@ bstp_tick(void *arg)
 	if (bs->bs_running == 0)
 		return;
 
+	NET_EPOCH_ENTER(et);
 	CURVNET_SET(bs->bs_vnet);
 
 	/* poll link events on interfaces that do not support linkstate */
@@ -1911,6 +1933,7 @@ bstp_tick(void *arg)
 	}
 
 	CURVNET_RESTORE();
+	NET_EPOCH_EXIT(et);
 
 	callout_reset(&bs->bs_bstpcallout, hz, bstp_tick, bs);
 }
@@ -2024,6 +2047,7 @@ bstp_same_bridgeid(uint64_t id1, uint64_t id2)
 void
 bstp_reinit(struct bstp_state *bs)
 {
+	struct epoch_tracker et;
 	struct bstp_port *bp;
 	struct ifnet *ifp, *mif;
 	u_char *e_addr;
@@ -2044,9 +2068,9 @@ bstp_reinit(struct bstp_state *bs)
 	 * from is part of this bridge, so we can have more than one independent
 	 * bridges in the same STP domain.
 	 */
-	IFNET_RLOCK_NOSLEEP();
+	NET_EPOCH_ENTER(et);
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
-		if (ifp->if_type != IFT_ETHER)
+		if (ifp->if_type != IFT_ETHER && ifp->if_type != IFT_L2VLAN)
 			continue;	/* Not Ethernet */
 
 		if (ifp->if_bridge != bridgeptr)
@@ -2064,7 +2088,7 @@ bstp_reinit(struct bstp_state *bs)
 			continue;
 		}
 	}
-	IFNET_RUNLOCK_NOSLEEP();
+	NET_EPOCH_EXIT(et);
 	if (mif == NULL)
 		goto disablestp;
 
@@ -2231,9 +2255,11 @@ bstp_enable(struct bstp_port *bp)
 	struct ifnet *ifp = bp->bp_ifp;
 
 	KASSERT(bp->bp_active == 0, ("already a bstp member"));
+	NET_EPOCH_ASSERT(); /* Because bstp_update_roles() causes traffic. */
 
 	switch (ifp->if_type) {
 		case IFT_ETHER:	/* These can do spanning tree. */
+		case IFT_L2VLAN:
 			break;
 		default:
 			/* Nothing else can. */

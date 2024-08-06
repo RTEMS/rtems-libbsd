@@ -32,12 +32,8 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifndef _NETINET_SCTP_CONSTANTS_H_
 #define _NETINET_SCTP_CONSTANTS_H_
-
 
 /* IANA assigned port number for SCTP over UDP encapsulation */
 #define SCTP_OVER_UDP_TUNNELING_PORT 9899
@@ -87,12 +83,10 @@ __FBSDID("$FreeBSD$");
 /* #define SCTP_AUDITING_ENABLED 1 used for debug/auditing */
 #define SCTP_AUDIT_SIZE 256
 
-
 #define SCTP_KTRHEAD_NAME "sctp_iterator"
 #define SCTP_KTHREAD_PAGES 0
 
 #define SCTP_MCORE_NAME "sctp_core_worker"
-
 
 /* If you support Multi-VRF how big to
  * make the initial array of VRF's to.
@@ -263,7 +257,6 @@ __FBSDID("$FreeBSD$");
 
 #define SCTP_LOCK_UNKNOWN 2
 
-
 /* number of associations by default for zone allocation */
 #define SCTP_MAX_NUM_OF_ASOC	40000
 /* how many addresses per assoc remote and local */
@@ -388,7 +381,6 @@ __FBSDID("$FreeBSD$");
 #define IS_SCTP_CONTROL(a) (((a)->chunk_type != SCTP_DATA) && ((a)->chunk_type != SCTP_IDATA))
 #define IS_SCTP_DATA(a) (((a)->chunk_type == SCTP_DATA) || ((a)->chunk_type == SCTP_IDATA))
 
-
 /* SCTP parameter types */
 /*************0x0000 series*************/
 #define SCTP_HEARTBEAT_INFO		0x0001
@@ -415,7 +407,7 @@ __FBSDID("$FreeBSD$");
 
 /*************0x8000 series*************/
 #define SCTP_ECN_CAPABLE		0x8000
-
+#define SCTP_ZERO_CHECKSUM_ACCEPTABLE	0x8001
 /* RFC 4895 */
 #define SCTP_RANDOM			0x8002
 #define SCTP_CHUNK_LIST			0x8003
@@ -449,7 +441,6 @@ __FBSDID("$FreeBSD$");
 
 /* mask to get sticky */
 #define SCTP_STICKY_OPTIONS_MASK	0x0c
-
 
 /*
  * SCTP states for internal state machine
@@ -543,19 +534,16 @@ __FBSDID("$FreeBSD$");
 #define SCTP_TIMER_TYPE_ASCONF		10
 #define SCTP_TIMER_TYPE_SHUTDOWNGUARD	11
 #define SCTP_TIMER_TYPE_AUTOCLOSE	12
-#define SCTP_TIMER_TYPE_EVENTWAKE	13
-#define SCTP_TIMER_TYPE_STRRESET        14
-#define SCTP_TIMER_TYPE_INPKILL         15
-#define SCTP_TIMER_TYPE_ASOCKILL        16
-#define SCTP_TIMER_TYPE_ADDR_WQ         17
-#define SCTP_TIMER_TYPE_PRIM_DELETED    18
+#define SCTP_TIMER_TYPE_STRRESET	13
+#define SCTP_TIMER_TYPE_INPKILL		14
+#define SCTP_TIMER_TYPE_ASOCKILL	15
+#define SCTP_TIMER_TYPE_ADDR_WQ		16
+#define SCTP_TIMER_TYPE_PRIM_DELETED	17
 /* add new timers here - and increment LAST */
-#define SCTP_TIMER_TYPE_LAST            19
+#define SCTP_TIMER_TYPE_LAST		18
 
 #define SCTP_IS_TIMER_TYPE_VALID(t)	(((t) > SCTP_TIMER_TYPE_NONE) && \
 					 ((t) < SCTP_TIMER_TYPE_LAST))
-
-
 
 /* max number of TSN's dup'd that I will hold */
 #define SCTP_MAX_DUP_TSNS	20
@@ -576,17 +564,6 @@ __FBSDID("$FreeBSD$");
  * not get impacted by the lower bandwidth sending a bunch of 1 byte chunks
  */
 #define SCTP_ASOC_MAX_CHUNKS_ON_QUEUE 512
-
-
-/* The conversion from time to ticks and vice versa is done by rounding
- * upwards. This way we can test in the code the time to be positive and
- * know that this corresponds to a positive number of ticks.
- */
-#define MSEC_TO_TICKS(x) ((hz == 1000) ? x : ((((x) * hz) + 999) / 1000))
-#define TICKS_TO_MSEC(x) ((hz == 1000) ? x : ((((x) * 1000) + (hz - 1)) / hz))
-
-#define SEC_TO_TICKS(x) ((x) * hz)
-#define TICKS_TO_SEC(x) (((x) + (hz - 1)) / hz)
 
 /*
  * Basically the minimum amount of time before I do a early FR. Making this
@@ -616,8 +593,7 @@ __FBSDID("$FreeBSD$");
 
 #define SCTP_RTO_UPPER_BOUND	(60000)	/* 60 sec in ms */
 #define SCTP_RTO_LOWER_BOUND	(1000)	/* 1 sec is ms */
-#define SCTP_RTO_INITIAL	(3000)	/* 3 sec in ms */
-
+#define SCTP_RTO_INITIAL	(1000)	/* 1 sec in ms */
 
 #define SCTP_INP_KILL_TIMEOUT 20	/* number of ms to retry kill of inpcb */
 #define SCTP_ASOC_KILL_TIMEOUT 10	/* number of ms to retry kill of inpcb */
@@ -628,7 +604,6 @@ __FBSDID("$FreeBSD$");
 #define SCTP_DEF_PATH_PF_THRESHOLD	SCTP_DEF_MAX_PATH_RTX
 
 #define SCTP_DEF_PMTU_RAISE_SEC	600	/* 10 min between raise attempts */
-
 
 /* How many streams I request initially by default */
 #define SCTP_OSTREAM_INITIAL 10
@@ -695,8 +670,6 @@ __FBSDID("$FreeBSD$");
 /* amount peer is obligated to have in rwnd or I will abort */
 #define SCTP_MIN_RWND	1500
 
-#define SCTP_DEFAULT_MAXSEGMENT 65535
-
 #define SCTP_CHUNK_BUFFER_SIZE	512
 #define SCTP_PARAM_BUFFER_SIZE	512
 
@@ -707,7 +680,6 @@ __FBSDID("$FreeBSD$");
 
 #define SCTP_NUMBER_OF_SECRETS	8	/* or 8 * 4 = 32 octets */
 #define SCTP_SECRET_SIZE	32	/* number of octets in a 256 bits */
-
 
 /*
  * SCTP upper layer notifications
@@ -734,11 +706,14 @@ __FBSDID("$FreeBSD$");
 #define SCTP_NOTIFY_STR_RESET_FAILED_IN         20
 #define SCTP_NOTIFY_STR_RESET_DENIED_OUT        21
 #define SCTP_NOTIFY_STR_RESET_DENIED_IN         22
-#define SCTP_NOTIFY_AUTH_NEW_KEY                23
-#define SCTP_NOTIFY_AUTH_FREE_KEY               24
-#define SCTP_NOTIFY_NO_PEER_AUTH                25
-#define SCTP_NOTIFY_SENDER_DRY                  26
-#define SCTP_NOTIFY_REMOTE_ERROR                27
+#define SCTP_NOTIFY_STR_RESET_ADD               23
+#define SCTP_NOTIFY_STR_RESET_TSN               24
+#define SCTP_NOTIFY_AUTH_NEW_KEY                25
+#define SCTP_NOTIFY_AUTH_FREE_KEY               26
+#define SCTP_NOTIFY_NO_PEER_AUTH                27
+#define SCTP_NOTIFY_SENDER_DRY                  28
+#define SCTP_NOTIFY_REMOTE_ERROR                29
+#define SCTP_NOTIFY_ASSOC_TIMEDOUT              30
 
 /* This is the value for messages that are NOT completely
  * copied down where we will start to split the message.
@@ -767,9 +742,8 @@ __FBSDID("$FreeBSD$");
 #define SCTP_FROM_SCTP_ASCONF       0x80000000
 #define SCTP_FROM_SCTP_OUTPUT       0x90000000
 #define SCTP_FROM_SCTP_PEELOFF      0xa0000000
-#define SCTP_FROM_SCTP_PANDA        0xb0000000
-#define SCTP_FROM_SCTP_SYSCTL       0xc0000000
-#define SCTP_FROM_SCTP_CC_FUNCTIONS 0xd0000000
+#define SCTP_FROM_SCTP_SYSCTL       0xb0000000
+#define SCTP_FROM_SCTP_CC_FUNCTIONS 0xc0000000
 
 /* Location ID's */
 #define SCTP_LOC_1  0x00000001
@@ -807,7 +781,8 @@ __FBSDID("$FreeBSD$");
 #define SCTP_LOC_33 0x00000021
 #define SCTP_LOC_34 0x00000022
 #define SCTP_LOC_35 0x00000023
-
+#define SCTP_LOC_36 0x00000024
+#define SCTP_LOC_37 0x00000025
 
 /* Free assoc codes */
 #define SCTP_NORMAL_PROC      0
@@ -826,7 +801,6 @@ __FBSDID("$FreeBSD$");
 
 #define SCTP_DONOT_SETSCOPE 0
 #define SCTP_DO_SETSCOPE 1
-
 
 /* This value determines the default for when
  * we try to add more on the send queue., if
@@ -905,7 +879,6 @@ __FBSDID("$FreeBSD$");
 					} \
                   } while (0)
 
-
 #define SCTP_RETRAN_DONE -1
 #define SCTP_RETRAN_EXIT -2
 
@@ -956,11 +929,10 @@ __FBSDID("$FreeBSD$");
 
 /*-
  * defines for socket lock states.
- * Used by __APPLE__ and SCTP_SO_LOCK_TESTING
+ * Used by __APPLE__
  */
 #define SCTP_SO_LOCKED		1
 #define SCTP_SO_NOT_LOCKED	0
-
 
 /*-
  * For address locks, do we hold the lock?
@@ -986,7 +958,6 @@ __FBSDID("$FreeBSD$");
 /* Maximum size of optval for IPPROTO_SCTP level socket options. */
 #define SCTP_SOCKET_OPTION_LIMIT (64 * 1024)
 
-
 #if defined(_KERNEL)
 #define SCTP_GETTIME_TIMEVAL(x) (getmicrouptime(x))
 #define SCTP_GETPTIME_TIMEVAL(x) (microuptime(x))
@@ -996,7 +967,7 @@ __FBSDID("$FreeBSD$");
 #define sctp_sowwakeup(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \
-		inp->sctp_flags |= SCTP_PCB_FLAGS_WAKEOUTPUT; \
+		sctp_pcb_add_flags(inp, SCTP_PCB_FLAGS_WAKEOUTPUT); \
 	} else { \
 		sowwakeup(so); \
 	} \
@@ -1005,8 +976,8 @@ do { \
 #define sctp_sowwakeup_locked(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \
-                SOCKBUF_UNLOCK(&((so)->so_snd)); \
-		inp->sctp_flags |= SCTP_PCB_FLAGS_WAKEOUTPUT; \
+		sctp_pcb_add_flags(inp, SCTP_PCB_FLAGS_WAKEOUTPUT); \
+		SOCKBUF_UNLOCK(&((so)->so_snd)); \
 	} else { \
 		sowwakeup_locked(so); \
 	} \
@@ -1015,7 +986,7 @@ do { \
 #define sctp_sorwakeup(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \
-		inp->sctp_flags |= SCTP_PCB_FLAGS_WAKEINPUT; \
+		sctp_pcb_add_flags(inp, SCTP_PCB_FLAGS_WAKEINPUT); \
 	} else { \
 		sorwakeup(so); \
 	} \
@@ -1024,8 +995,8 @@ do { \
 #define sctp_sorwakeup_locked(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \
-		inp->sctp_flags |= SCTP_PCB_FLAGS_WAKEINPUT; \
-                SOCKBUF_UNLOCK(&((so)->so_rcv)); \
+		sctp_pcb_add_flags(inp, SCTP_PCB_FLAGS_WAKEINPUT); \
+		SOCKBUF_UNLOCK(&((so)->so_rcv)); \
 	} else { \
 		sorwakeup_locked(so); \
 	} \

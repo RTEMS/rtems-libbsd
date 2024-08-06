@@ -37,7 +37,6 @@
  *
  * @(#)rm_class.c  1.48     97/12/05 SMI
  * $KAME: altq_rmclass.c,v 1.19 2005/04/13 03:44:25 suz Exp $
- * $FreeBSD$
  */
 #include <rtems/bsd/local/opt_altq.h>
 #include <rtems/bsd/local/opt_inet.h>
@@ -51,17 +50,10 @@
 #include <sys/systm.h>
 #include <sys/errno.h>
 #include <sys/time.h>
-#ifdef ALTQ3_COMPAT
-#include <sys/kernel.h>
-#endif
 
 #include <net/if.h>
 #include <net/if_var.h>
-#ifdef ALTQ3_COMPAT
-#include <netinet/in.h>
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#endif
+#include <net/if_private.h>
 
 #include <net/altq/if_altq.h>
 #include <net/altq/altq.h>
@@ -74,7 +66,6 @@
 /*
  * Local Macros
  */
-
 #define	reset_cutoff(ifd)	{ ifd->cutoff_ = RM_MAXDEPTH; }
 
 /*
@@ -97,7 +88,7 @@ static mbuf_t	*_rmc_pollq(rm_class_t *);
 static int	rmc_under_limit(struct rm_class *, struct timeval *);
 static void	rmc_tl_satisfied(struct rm_ifdat *, struct timeval *);
 static void	rmc_drop_action(struct rm_class *);
-static void	rmc_restart(struct rm_class *);
+static void	rmc_restart(void *);
 static void	rmc_root_overlimit(struct rm_class *, struct rm_class *);
 
 #define	BORROW_OFFTIME
@@ -661,7 +652,6 @@ rmc_delete_class(struct rm_ifdat *ifd, struct rm_class *cl)
 	free(cl->q_, M_DEVBUF);
 	free(cl, M_DEVBUF);
 }
-
 
 /*
  * void
@@ -1460,13 +1450,8 @@ void rmc_dropall(struct rm_class *cl)
 	}
 }
 
-#if (__FreeBSD_version > 300000)
-/* hzto() is removed from FreeBSD-3.0 */
-static int hzto(struct timeval *);
-
 static int
-hzto(tv)
-	struct timeval *tv;
+hzto(struct timeval *tv)
 {
 	struct timeval t2;
 
@@ -1475,7 +1460,6 @@ hzto(tv)
 	t2.tv_usec = tv->tv_usec - t2.tv_usec;
 	return (tvtohz(&t2));
 }
-#endif /* __FreeBSD_version > 300000 */
 
 /*
  * void
@@ -1540,8 +1524,7 @@ rmc_delay_action(struct rm_class *cl, struct rm_class *borrow)
 			t = hzto(&cl->undertime_);
 		} else
 			t = 2;
-		CALLOUT_RESET(&cl->callout_, t,
-			      (timeout_t *)rmc_restart, (caddr_t)cl);
+		CALLOUT_RESET(&cl->callout_, t, rmc_restart, cl);
 	}
 }
 
@@ -1563,13 +1546,17 @@ rmc_delay_action(struct rm_class *cl, struct rm_class *borrow)
  */
 
 static void
-rmc_restart(struct rm_class *cl)
+rmc_restart(void *arg)
 {
+	struct rm_class *cl = arg;
 	struct rm_ifdat	*ifd = cl->ifdat_;
+	struct epoch_tracker et;
 	int		 s;
 
 	s = splnet();
+	NET_EPOCH_ENTER(et);
 	IFQ_LOCK(ifd->ifq_);
+	CURVNET_SET(ifd->ifq_->altq_ifp->if_vnet);
 	if (cl->sleeping_) {
 		cl->sleeping_ = 0;
 		cl->undertime_.tv_sec = 0;
@@ -1579,7 +1566,9 @@ rmc_restart(struct rm_class *cl)
 			(ifd->restart)(ifd->ifq_);
 		}
 	}
+	CURVNET_RESTORE();
 	IFQ_UNLOCK(ifd->ifq_);
+	NET_EPOCH_EXIT(et);
 	splx(s);
 }
 

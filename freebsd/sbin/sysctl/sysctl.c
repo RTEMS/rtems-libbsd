@@ -35,20 +35,7 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
-static const char copyright[] =
-"@(#) Copyright (c) 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)from: sysctl.c	8.1 (Berkeley) 6/6/93";
-#endif
-static const char rcsid[] =
-  "$FreeBSD$";
-#endif /* not lint */
-
+#include <sys/cdefs.h>
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
@@ -94,12 +81,13 @@ static const char *conffile;
 
 static int	aflag, bflag, Bflag, dflag, eflag, hflag, iflag;
 static int	Nflag, nflag, oflag, qflag, tflag, Tflag, Wflag, xflag;
+static bool	Fflag, lflag;
 
 static int	oidfmt(int *, int, char *, u_int *);
 static int	parsefile(const char *);
 static int	parse(const char *, int);
-static int	show_var(int *, int);
-static int	sysctl_all(int *oid, int len);
+static int	show_var(int *, int, bool);
+static int	sysctl_all(int *, int);
 static int	name2oid(const char *, int *);
 
 static int	strIKtoi(const char *, char **, const char *);
@@ -151,8 +139,8 @@ usage(void)
 {
 
 	(void)fprintf(stderr, "%s\n%s\n",
-	    "usage: sysctl [-bdehiNnoqTtWx] [ -B <bufsize> ] [-f filename] name[=value] ...",
-	    "       sysctl [-bdehNnoqTtWx] [ -B <bufsize> ] -a");
+	    "usage: sysctl [-bdeFhilNnoqTtWx] [ -B <bufsize> ] [-f filename] name[=value] ...",
+	    "       sysctl [-bdeFhlNnoqTtWx] [ -B <bufsize> ] -a");
 	exit(1);
 }
 
@@ -198,7 +186,7 @@ main(int argc, char **argv)
 	setbuf(stdout,0);
 	setbuf(stderr,0);
 
-	while ((ch = getopt(argc, argv, "AabB:def:hiNnoqtTwWxX")) != -1) {
+	while ((ch = getopt(argc, argv, "AabB:def:FhilNnoqtTwWxX")) != -1) {
 		switch (ch) {
 		case 'A':
 			/* compatibility */
@@ -222,11 +210,17 @@ main(int argc, char **argv)
 		case 'f':
 			conffile = optarg;
 			break;
+		case 'F':
+			Fflag = true;
+			break;
 		case 'h':
 			hflag = 1;
 			break;
 		case 'i':
 			iflag = 1;
+			break;
+		case 'l':
+			lflag = true;
 			break;
 		case 'N':
 			Nflag = 1;
@@ -267,14 +261,15 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (Nflag && nflag)
+	/* Nflag is name only and doesn't make sense to combine with these */
+	/* TODO: few other combinations do not make sense but come back later */
+	if (Nflag && (lflag || nflag))
 		usage();
 	if (aflag && argc == 0)
-		exit(sysctl_all(0, 0));
+		exit(sysctl_all(NULL, 0));
 	if (argc == 0 && conffile == NULL)
 		usage();
 
-	warncount = 0;
 	if (conffile != NULL)
 		warncount += parsefile(conffile);
 
@@ -404,13 +399,13 @@ parse_numeric(const char *newvalstr, const char *fmt, u_int kind,
 static int
 parse(const char *string, int lineno)
 {
-	int len, i, j;
+	int len, i, j, save_errno;
 	const void *newval;
 	char *newvalstr = NULL;
 	void *newbuf;
 	size_t newsize = Bflag;
 	int mib[CTL_MAXNAME];
-	char *cp, *bufp, buf[BUFSIZ], fmt[BUFSIZ], line[BUFSIZ];
+	char *cp, *bufp, *buf, fmt[BUFSIZ], line[BUFSIZ];
 	u_int kind;
 
 	if (lineno)
@@ -418,11 +413,14 @@ parse(const char *string, int lineno)
 	else
 		line[0] = '\0';
 
-	cp = buf;
-	if (snprintf(buf, BUFSIZ, "%s", string) >= BUFSIZ) {
-		warnx("oid too long: '%s'%s", string, line);
-		return (1);
-	}
+	/*
+	 * Split the string into name and value.
+	 *
+	 * Either = or : may be used as the delimiter.
+	 * Whitespace surrounding the delimiter is trimmed.
+	 * Quotes around the value are stripped.
+	 */
+	cp = buf = strdup(string);
 	bufp = strsep(&cp, "=:");
 	if (cp != NULL) {
 		/* Tflag just lists tunables, do not allow assignment */
@@ -430,6 +428,7 @@ parse(const char *string, int lineno)
 			warnx("Can't set variables when using -T or -W");
 			usage();
 		}
+		/* Trim whitespace before the value. */
 		while (isspace(*cp))
 			cp++;
 		/* Strip a pair of " or ' if any. */
@@ -443,149 +442,171 @@ parse(const char *string, int lineno)
 		newvalstr = cp;
 		newsize = strlen(cp);
 	}
-	/* Trim spaces */
+	/* Trim whitespace after the name. */
 	cp = bufp + strlen(bufp) - 1;
 	while (cp >= bufp && isspace((int)*cp)) {
 		*cp = '\0';
 		cp--;
 	}
-	len = name2oid(bufp, mib);
 
+	/*
+	 * Check the name is a useable oid.
+	 */
+	len = name2oid(bufp, mib);
 	if (len < 0) {
-		if (iflag)
+		if (iflag) {
+			free(buf);
 			return (0);
-		if (qflag)
-			return (1);
-		else {
+		}
+		if (!qflag) {
 			if (errno == ENOENT) {
 				warnx("unknown oid '%s'%s", bufp, line);
 			} else {
 				warn("unknown oid '%s'%s", bufp, line);
 			}
-			return (1);
 		}
+		free(buf);
+		return (1);
 	}
 
 	if (oidfmt(mib, len, fmt, &kind)) {
 		warn("couldn't find format of oid '%s'%s", bufp, line);
+		free(buf);
 		if (iflag)
 			return (1);
 		else
 			exit(1);
 	}
 
+	/*
+	 * We have a useable oid to work with.  If there is no value given,
+	 * show the node and its children.  Otherwise, set the new value.
+	 */
 	if (newvalstr == NULL || dflag) {
+		free(buf);
 		if ((kind & CTLTYPE) == CTLTYPE_NODE) {
 			if (dflag) {
-				i = show_var(mib, len);
+				i = show_var(mib, len, false);
 				if (!i && !bflag)
 					putchar('\n');
 			}
 			sysctl_all(mib, len);
 		} else {
-			i = show_var(mib, len);
+			i = show_var(mib, len, false);
 			if (!i && !bflag)
 				putchar('\n');
 		}
-	} else {
-		if ((kind & CTLTYPE) == CTLTYPE_NODE) {
-			warnx("oid '%s' isn't a leaf node%s", bufp, line);
-			return (1);
-		}
-
-		if (!(kind & CTLFLAG_WR)) {
-			if (kind & CTLFLAG_TUN) {
-				warnx("oid '%s' is a read only tunable%s", bufp, line);
-				warnx("Tunable values are set in /boot/loader.conf");
-			} else
-				warnx("oid '%s' is read only%s", bufp, line);
-			return (1);
-		}
-
-		switch (kind & CTLTYPE) {
-		case CTLTYPE_INT:
-		case CTLTYPE_UINT:
-		case CTLTYPE_LONG:
-		case CTLTYPE_ULONG:
-		case CTLTYPE_S8:
-		case CTLTYPE_S16:
-		case CTLTYPE_S32:
-		case CTLTYPE_S64:
-		case CTLTYPE_U8:
-		case CTLTYPE_U16:
-		case CTLTYPE_U32:
-		case CTLTYPE_U64:
-			if (strlen(newvalstr) == 0) {
-				warnx("empty numeric value");
-				return (1);
-			}
-			/* FALLTHROUGH */
-		case CTLTYPE_STRING:
-			break;
-		default:
-			warnx("oid '%s' is type %d,"
-				" cannot set that%s", bufp,
-				kind & CTLTYPE, line);
-			return (1);
-		}
-
-		newbuf = NULL;
-
-		switch (kind & CTLTYPE) {
-		case CTLTYPE_STRING:
-			newval = newvalstr;
-			break;
-		default:
-			newsize = 0;
-			while ((cp = strsep(&newvalstr, " ,")) != NULL) {
-				if (*cp == '\0')
-					continue;
-				if (!parse_numeric(cp, fmt, kind, &newbuf,
-				    &newsize)) {
-					warnx("invalid %s '%s'%s",
-					    ctl_typename[kind & CTLTYPE],
-					    cp, line);
-					free(newbuf);
-					return (1);
-				}
-			}
-			newval = newbuf;
-			break;
-		}
-
-		i = show_var(mib, len);
-		if (sysctl(mib, len, 0, 0, newval, newsize) == -1) {
-			free(newbuf);
-			if (!i && !bflag)
-				putchar('\n');
-			switch (errno) {
-			case EOPNOTSUPP:
-				warnx("%s: value is not available%s",
-					string, line);
-				return (1);
-			case ENOTDIR:
-				warnx("%s: specification is incomplete%s",
-					string, line);
-				return (1);
-			case ENOMEM:
-				warnx("%s: type is unknown to this program%s",
-					string, line);
-				return (1);
-			default:
-				warn("%s%s", string, line);
-				return (1);
-			}
-		}
-		free(newbuf);
-		if (!bflag)
-			printf(" -> ");
-		i = nflag;
-		nflag = 1;
-		j = show_var(mib, len);
-		if (!j && !bflag)
-			putchar('\n');
-		nflag = i;
+		return (0);
 	}
+
+	/*
+	 * We have a new value to set.  Check its validity and parse if numeric.
+	 */
+	if ((kind & CTLTYPE) == CTLTYPE_NODE) {
+		warnx("oid '%s' isn't a leaf node%s", bufp, line);
+		free(buf);
+		return (1);
+	}
+
+	if (!(kind & CTLFLAG_WR)) {
+		if (kind & CTLFLAG_TUN) {
+			warnx("oid '%s' is a read only tunable%s", bufp, line);
+			warnx("Tunable values are set in /boot/loader.conf");
+		} else
+			warnx("oid '%s' is read only%s", bufp, line);
+		free(buf);
+		return (1);
+	}
+
+	switch (kind & CTLTYPE) {
+	case CTLTYPE_INT:
+	case CTLTYPE_UINT:
+	case CTLTYPE_LONG:
+	case CTLTYPE_ULONG:
+	case CTLTYPE_S8:
+	case CTLTYPE_S16:
+	case CTLTYPE_S32:
+	case CTLTYPE_S64:
+	case CTLTYPE_U8:
+	case CTLTYPE_U16:
+	case CTLTYPE_U32:
+	case CTLTYPE_U64:
+		if (strlen(newvalstr) == 0) {
+			warnx("empty numeric value");
+			free(buf);
+			return (1);
+		}
+		/* FALLTHROUGH */
+	case CTLTYPE_STRING:
+		break;
+	default:
+		warnx("oid '%s' is type %d, cannot set that%s",
+		    bufp, kind & CTLTYPE, line);
+		free(buf);
+		return (1);
+	}
+
+	newbuf = NULL;
+
+	switch (kind & CTLTYPE) {
+	case CTLTYPE_STRING:
+		newval = newvalstr;
+		break;
+	default:
+		newsize = 0;
+		while ((cp = strsep(&newvalstr, " ,")) != NULL) {
+			if (*cp == '\0')
+				continue;
+			if (!parse_numeric(cp, fmt, kind, &newbuf, &newsize)) {
+				warnx("invalid %s '%s'%s",
+				    ctl_typename[kind & CTLTYPE], cp, line);
+				free(newbuf);
+				free(buf);
+				return (1);
+			}
+		}
+		newval = newbuf;
+		break;
+	}
+
+	/*
+	 * Show the current value, then set and show the new value.
+	 */
+	i = show_var(mib, len, false);
+	if (sysctl(mib, len, 0, 0, newval, newsize) == -1) {
+		save_errno = errno;
+		free(newbuf);
+		free(buf);
+		if (!i && !bflag)
+			putchar('\n');
+		switch (save_errno) {
+		case EOPNOTSUPP:
+			warnx("%s: value is not available%s",
+			    string, line);
+			return (1);
+		case ENOTDIR:
+			warnx("%s: specification is incomplete%s",
+			    string, line);
+			return (1);
+		case ENOMEM:
+			warnx("%s: type is unknown to this program%s",
+			    string, line);
+			return (1);
+		default:
+			warnc(save_errno, "%s%s", string, line);
+			return (1);
+		}
+	}
+	free(newbuf);
+	free(buf);
+	if (!bflag)
+		printf(" -> ");
+	i = nflag;
+	nflag = 1;
+	j = show_var(mib, len, false);
+	if (!j && !bflag)
+		putchar('\n');
+	nflag = i;
 
 	return (0);
 }
@@ -748,6 +769,29 @@ S_input_id(size_t l2, void *p)
 	return (0);
 }
 
+static int
+S_pagesizes(size_t l2, void *p)
+{
+	char buf[256];
+	u_long *ps;
+	size_t l;
+	int i;
+
+	l = snprintf(buf, sizeof(buf), "{ ");
+	ps = p;
+	for (i = 0; i * sizeof(*ps) < l2 && ps[i] != 0 && l < sizeof(buf);
+	    i++) {
+		l += snprintf(&buf[l], sizeof(buf) - l,
+		    "%s%lu", i == 0 ? "" : ", ", ps[i]);
+	}
+	if (l < sizeof(buf))
+		(void)snprintf(&buf[l], sizeof(buf) - l, " }");
+
+	printf("%s", buf);
+
+	return (0);
+}
+
 #ifdef __amd64__
 static int
 S_efi_map(size_t l2, void *p)
@@ -807,8 +851,8 @@ S_efi_map(size_t l2, void *p)
 			type = types[map->md_type];
 		if (type == NULL)
 			type = "<INVALID>";
-		printf("\n%23s %012jx %12p %08jx ", type,
-		    (uintmax_t)map->md_phys, map->md_virt,
+		printf("\n%23s %012jx %012jx %08jx ", type,
+		    (uintmax_t)map->md_phys, (uintmax_t)map->md_virt,
 		    (uintmax_t)map->md_pages);
 		if (map->md_attr & EFI_MD_ATTR_UC)
 			printf("UC ");
@@ -928,8 +972,8 @@ name2oid(const char *name, int *oidp)
 	int i;
 	size_t j;
 
-	oid[0] = 0;
-	oid[1] = 3;
+	oid[0] = CTL_SYSCTL;
+	oid[1] = CTL_SYSCTL_NAME2OID;
 
 	j = CTL_MAXNAME * sizeof(int);
 	i = sysctl(oid, 2, oidp, &j, name, strlen(name));
@@ -947,8 +991,8 @@ oidfmt(int *oid, int len, char *fmt, u_int *kind)
 	int i;
 	size_t j;
 
-	qoid[0] = 0;
-	qoid[1] = 4;
+	qoid[0] = CTL_SYSCTL;
+	qoid[1] = CTL_SYSCTL_OIDFMT;
 	memcpy(qoid + 2, oid, len * sizeof(int));
 
 	j = sizeof(buf);
@@ -965,6 +1009,57 @@ oidfmt(int *oid, int len, char *fmt, u_int *kind)
 }
 
 /*
+ * This displays a combination of name, type, format, and/or description.
+ *
+ * Returns zero if anything was actually output.
+ * Returns one if there is an error.
+ */
+static int
+show_info(char *name, const char *sep, int ctltype, char *fmt, int *qoid, int nlen)
+{
+	u_char buf[BUFSIZ];
+	const char *prntype;
+	int error = 0, i;
+	size_t j;
+
+	if (!nflag)
+		printf("%s%s", name, sep);
+	if (tflag) {
+		if (ctl_typename[ctltype] != NULL)
+			prntype = ctl_typename[ctltype];
+		else {
+			prntype = "unknown";
+			error++;
+		}
+		if (Fflag || dflag)
+			printf("%s%s", prntype, sep);
+		else
+			fputs(prntype, stdout);
+	}
+	if (Fflag) {
+		if (!isprint(fmt[0])) /* Few codes doesn't have formats */
+			fmt = "";
+		if (dflag)
+			printf("%s%s", fmt, sep);
+		else
+			fputs(fmt, stdout);
+	}
+	if (!dflag)
+		return (error);
+
+	qoid[1] = CTL_SYSCTL_OIDDESCR;
+	bzero(buf, BUFSIZ);
+	j = sizeof(buf);
+	i = sysctl(qoid, nlen + 2, buf, &j, 0, 0);
+	if (i < 0) {
+		putchar('\n');
+		return (1);
+	}
+	fputs(buf, stdout);
+	return (error);
+}
+
+/*
  * This formats and outputs the value of one variable
  *
  * Returns zero if anything was actually output.
@@ -972,11 +1067,12 @@ oidfmt(int *oid, int len, char *fmt, u_int *kind)
  * Return minus one if we had errors.
  */
 static int
-show_var(int *oid, int nlen)
+show_var(int *oid, int nlen, bool honor_skip)
 {
-	u_char buf[BUFSIZ], *val, *oval, *p;
+	static int skip_len = 0, skip_oid[CTL_MAXNAME];
+	u_char *val, *oval, *p;
 	char name[BUFSIZ], fmt[BUFSIZ];
-	const char *sep, *sep1, *prntype;
+	const char *sep, *sep1;
 	int qoid[CTL_MAXNAME+2];
 	uintmax_t umv;
 	intmax_t mv;
@@ -991,13 +1087,11 @@ show_var(int *oid, int nlen)
 	/* Silence GCC. */
 	umv = mv = intlen = 0;
 
-	bzero(buf, BUFSIZ);
 	bzero(fmt, BUFSIZ);
 	bzero(name, BUFSIZ);
-	qoid[0] = 0;
+	qoid[0] = CTL_SYSCTL;
+	qoid[1] = CTL_SYSCTL_NAME;
 	memcpy(qoid + 2, oid, nlen * sizeof(int));
-
-	qoid[1] = 1;
 	j = sizeof(name);
 	i = sysctl(qoid, nlen + 2, name, &j, 0, 0);
 	if (i || !j)
@@ -1006,11 +1100,11 @@ show_var(int *oid, int nlen)
 	oidfmt(oid, nlen, fmt, &kind);
 	/* if Wflag then only list sysctls that are writeable and not stats. */
 	if (Wflag && ((kind & CTLFLAG_WR) == 0 || (kind & CTLFLAG_STATS) != 0))
-		return 1;
+		return (1);
 
 	/* if Tflag then only list sysctls that are tuneables. */
 	if (Tflag && (kind & CTLFLAG_TUN) == 0)
-		return 1;
+		return (1);
 
 	if (Nflag) {
 		printf("%s", name);
@@ -1023,24 +1117,24 @@ show_var(int *oid, int nlen)
 		sep = ": ";
 
 	ctltype = (kind & CTLTYPE);
-	if (tflag || dflag) {
-		if (!nflag)
-			printf("%s%s", name, sep);
-        	if (ctl_typename[ctltype] != NULL)
-            		prntype = ctl_typename[ctltype];
-        	else
-            		prntype = "unknown";
-		if (tflag && dflag)
-			printf("%s%s", prntype, sep);
-		else if (tflag) {
-			printf("%s", prntype);
-			return (0);
-		}
-		qoid[1] = 5;
-		j = sizeof(buf);
-		i = sysctl(qoid, nlen + 2, buf, &j, 0, 0);
-		printf("%s", buf);
-		return (0);
+	if (tflag || Fflag || dflag)
+		return show_info(name, sep, ctltype, fmt, qoid, nlen);
+
+	/* keep track of encountered skip nodes, ignoring descendants */
+	if ((skip_len == 0 || skip_len >= nlen * (int)sizeof(int)) &&
+	    (kind & CTLFLAG_SKIP) != 0) {
+		/* Save this oid so we can skip descendants. */
+		skip_len = nlen * sizeof(int);
+		memcpy(skip_oid, oid, skip_len);
+	}
+
+	/* bail before fetching the value if we're honoring skip */
+	if (honor_skip) {
+		if (0 < skip_len && skip_len <= nlen * (int)sizeof(int) &&
+		    memcmp(skip_oid, oid, skip_len) == 0)
+			return (1);
+		/* Not a skip node or descendant of a skip node. */
+		skip_len = 0;
 	}
 
 	/* don't fetch opaques that we don't know how to print */
@@ -1059,6 +1153,8 @@ show_var(int *oid, int nlen)
 			func = S_vmtotal;
 		else if (strcmp(fmt, "S,input_id") == 0)
 			func = S_input_id;
+		else if (strcmp(fmt, "S,pagesizes") == 0)
+			func = S_pagesizes;
 #ifdef __amd64__
 		else if (strcmp(fmt, "S,efi_map_header") == 0)
 			func = S_efi_map;
@@ -1113,6 +1209,8 @@ show_var(int *oid, int nlen)
 	case CTLTYPE_STRING:
 		if (!nflag)
 			printf("%s%s", name, sep);
+		if (lflag)
+			printf("%zd%s", len, sep);
 		printf("%.*s", (int)len, p);
 		free(oval);
 		return (0);
@@ -1131,6 +1229,8 @@ show_var(int *oid, int nlen)
 	case CTLTYPE_U64:
 		if (!nflag)
 			printf("%s%s", name, sep);
+		if (lflag)
+			printf("%zd%s", len, sep);
 		hexlen = 2 + (intlen * CHAR_BIT + 3) / 4;
 		sep1 = "";
 		while (len >= intlen) {
@@ -1201,6 +1301,8 @@ show_var(int *oid, int nlen)
 		if (func) {
 			if (!nflag)
 				printf("%s%s", name, sep);
+			if (lflag)
+				printf("%zd%s", len, sep);
 			i = (*func)(len, p);
 			free(oval);
 			return (i);
@@ -1213,6 +1315,8 @@ show_var(int *oid, int nlen)
 		}
 		if (!nflag)
 			printf("%s%s", name, sep);
+		if (lflag)
+			printf("%zd%s", len, sep);
 		printf("Format:%s Length:%zu Dump:0x", fmt, len);
 		while (len-- && (xflag || p < val + 16))
 			printf("%02x", *p++);
@@ -1232,14 +1336,15 @@ sysctl_all(int *oid, int len)
 	int i, j;
 	size_t l1, l2;
 
-	name1[0] = 0;
-	name1[1] = 2;
+	name1[0] = CTL_SYSCTL;
+	name1[1] = (oid != NULL || Nflag || dflag || tflag) ?
+	    CTL_SYSCTL_NEXTNOSKIP : CTL_SYSCTL_NEXT;
 	l1 = 2;
 	if (len) {
-		memcpy(name1+2, oid, len * sizeof(int));
+		memcpy(name1 + 2, oid, len * sizeof(int));
 		l1 += len;
 	} else {
-		name1[2] = 1;
+		name1[2] = CTL_KERN;
 		l1++;
 	}
 	for (;;) {
@@ -1257,15 +1362,14 @@ sysctl_all(int *oid, int len)
 		if (len < 0 || l2 < (unsigned int)len)
 			return (0);
 
-		for (i = 0; i < len; i++)
-			if (name2[i] != oid[i])
-				return (0);
+		if (memcmp(name2, oid, len * sizeof(int)) != 0)
+			return (0);
 
-		i = show_var(name2, l2);
+		i = show_var(name2, l2, true);
 		if (!i && !bflag)
 			putchar('\n');
 
-		memcpy(name1+2, name2, l2 * sizeof(int));
+		memcpy(name1 + 2, name2, l2 * sizeof(int));
 		l1 = 2 + l2;
 	}
 }

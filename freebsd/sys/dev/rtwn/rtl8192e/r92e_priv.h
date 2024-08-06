@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef R92E_PRIV_H
@@ -60,7 +58,6 @@ static const struct rtwn_mac_prog rtl8192eu_mac[] = {
 	{ 0x703, 0x87 }, { 0x708, 0x21 }, { 0x709, 0x43 }, { 0x70a, 0x65 },
 	{ 0x70b, 0x87 }
 };
-
 
 /*
  * Baseband initialization values.
@@ -146,7 +143,6 @@ static const struct rtwn_bb_prog rtl8192eu_bb[] = {
 		NULL
 	}
 };
-
 
 static const uint32_t rtl8192eu_agc_vals[] = {
 	0xfb000001, 0xfb010001, 0xfb020001, 0xfb030001, 0xfb040001,

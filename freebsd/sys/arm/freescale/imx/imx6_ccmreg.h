@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Ian Lepore <ian@freebsd.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef	IMX6_CCMREG_H
@@ -64,9 +62,12 @@
 #define	  CHSCCDR_IPU1_DI0_PODF_SHIFT		  3
 #define	  CHSCCDR_IPU1_DI0_CLK_SEL_MASK		  (0x7)
 #define	  CHSCCDR_IPU1_DI0_CLK_SEL_SHIFT	  0
+#define	  CHSCCDR_CLK_SEL_PREMUXED		  0
 #define	  CHSCCDR_CLK_SEL_LDB_DI0		  3
 #define	  CHSCCDR_PODF_DIVIDE_BY_3		  2
+#define	  CHSCCDR_PODF_DIVIDE_BY_1		  0
 #define	  CHSCCDR_IPU_PRE_CLK_540M_PFD		  5
+#define	  CHSCCDR_IPU_PRE_CLK_PLL5		  2
 #define	CCM_CSCDR2				0x038
 #define	CCM_CLPCR				0x054
 #define	  CCM_CLPCR_LPM_MASK			  0x03
@@ -138,7 +139,20 @@
 #define	  CCGR6_USDHC3				  (0x3 << 6)
 #define	  CCGR6_USDHC4				  (0x3 << 8)
 #define	CCM_CMEOR				0x088
-	
+
+#define	CCM_ANALOG_PLL_VIDEO			0x000040a0
+#define	  CCM_ANALOG_PLL_VIDEO_LOCK		  (1u << 31)
+#define	  CCM_ANALOG_PLL_VIDEO_BYPASS		  (1u << 16)
+#define	  CCM_ANALOG_PLL_VIDEO_ENABLE		  (1u << 13)
+#define	  CCM_ANALOG_PLL_VIDEO_POWERDOWN	  (1u << 12)
+#define	  CCM_ANALOG_PLL_VIDEO_POST_DIV_SELECT_MASK	(3u << 19)
+#define	  CCM_ANALOG_PLL_VIDEO_POST_DIV_2	(1u << 19)
+#define	  CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK	(0x7f << 0)
+#define	  CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT	0
+
+#define	CCM_ANALOG_PLL_VIDEO_NUM		0x000040b0
+#define	CCM_ANALOG_PLL_VIDEO_DENOM		0x000040c0
+
 #define	CCM_ANALOG_PLL_ENET			0x000040e0
 #define	  CCM_ANALOG_PLL_ENET_LOCK		  (1u << 31)
 #define	  CCM_ANALOG_PLL_ENET_ENABLE_100M	  (1u << 20)  /* SATA */

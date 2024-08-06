@@ -133,6 +133,15 @@ _bsd_free(void *addr, struct malloc_type *mtp)
 	free(addr);
 }
 
+#undef zfree
+
+void
+_bsd_zfree(void *addr, struct malloc_type *mtp)
+{
+
+	free(addr);
+}
+
 #undef strdup
 
 char *

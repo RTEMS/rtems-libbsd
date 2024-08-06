@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -40,10 +38,6 @@
 #ifndef _MACHINE_CPUFUNC_H_
 #define	_MACHINE_CPUFUNC_H_
 
-#ifndef _SYS_CDEFS_H_
-#error this file needs sys/cdefs.h as a prerequisite
-#endif
-
 struct region_descriptor;
 
 #define readb(va)	(*(volatile uint8_t *) (va))
@@ -54,15 +48,11 @@ struct region_descriptor;
 #define writew(va, d)	(*(volatile uint16_t *) (va) = (d))
 #define writel(va, d)	(*(volatile uint32_t *) (va) = (d))
 
-#if defined(__GNUCLIKE_ASM) && defined(__CC_SUPPORTS___INLINE)
-
-#ifndef __rtems__
 static __inline void
 breakpoint(void)
 {
 	__asm __volatile("int $3");
 }
-#endif
 
 static __inline __pure2 u_int
 bsfl(u_int mask)
@@ -106,7 +96,6 @@ clts(void)
 static __inline void
 disable_intr(void)
 {
-
 	__asm __volatile("cli" : : : "memory");
 }
 
@@ -155,14 +144,12 @@ cpuid_count(u_int ax, u_int cx, u_int *p)
 static __inline void
 enable_intr(void)
 {
-
 	__asm __volatile("sti");
 }
 
 static __inline void
 cpu_monitor(const void *addr, u_long extensions, u_int hints)
 {
-
 	__asm __volatile("monitor"
 	    : : "a" (addr), "c" (extensions), "d" (hints));
 }
@@ -170,78 +157,26 @@ cpu_monitor(const void *addr, u_long extensions, u_int hints)
 static __inline void
 cpu_mwait(u_long extensions, u_int hints)
 {
-
 	__asm __volatile("mwait" : : "a" (hints), "c" (extensions));
 }
 
 static __inline void
 lfence(void)
 {
-
 	__asm __volatile("lfence" : : : "memory");
 }
 
 static __inline void
 mfence(void)
 {
-
 	__asm __volatile("mfence" : : : "memory");
 }
 
 static __inline void
 sfence(void)
 {
-
 	__asm __volatile("sfence" : : : "memory");
 }
-
-#ifdef _KERNEL
-
-#ifndef __rtems__
-#define	HAVE_INLINE_FFS
-
-static __inline __pure2 int
-ffs(int mask)
-{
-	/*
-	 * Note that gcc-2's builtin ffs would be used if we didn't declare
-	 * this inline or turn off the builtin.  The builtin is faster but
-	 * broken in gcc-2.4.5 and slower but working in gcc-2.5 and later
-	 * versions.
-	 */
-	 return (mask == 0 ? mask : (int)bsfl((u_int)mask) + 1);
-}
-
-#define	HAVE_INLINE_FFSL
-
-static __inline __pure2 int
-ffsl(long mask)
-{
-	return (ffs((int)mask));
-}
-
-#define	HAVE_INLINE_FLS
-#endif /* __rtems__ */
-
-#ifndef __rtems__
-static __inline __pure2 int
-fls(int mask)
-{
-	return (mask == 0 ? mask : (int)bsrl((u_int)mask) + 1);
-}
-#endif
-
-#define	HAVE_INLINE_FLSL
-
-#ifndef __rtems__
-static __inline __pure2 int
-flsl(long mask)
-{
-	return (fls((int)mask));
-}
-#endif /* __rtems__ */
-
-#endif /* _KERNEL */
 
 static __inline void
 halt(void)
@@ -403,11 +338,34 @@ rdtsc(void)
 }
 
 static __inline uint64_t
+rdtsc_ordered_lfence(void)
+{
+	lfence();
+	return (rdtsc());
+}
+
+static __inline uint64_t
+rdtsc_ordered_mfence(void)
+{
+	mfence();
+	return (rdtsc());
+}
+
+static __inline uint64_t
 rdtscp(void)
 {
 	uint64_t rv;
 
 	__asm __volatile("rdtscp" : "=A" (rv) : : "ecx");
+	return (rv);
+}
+
+static __inline uint64_t
+rdtscp_aux(uint32_t *aux)
+{
+	uint64_t rv;
+
+	__asm __volatile("rdtscp" : "=A" (rv), "=c" (*aux));
 	return (rv);
 }
 
@@ -417,6 +375,15 @@ rdtsc32(void)
 	uint32_t rv;
 
 	__asm __volatile("rdtsc" : "=a" (rv) : : "edx");
+	return (rv);
+}
+
+static __inline uint32_t
+rdtscp32(void)
+{
+	uint32_t rv;
+
+	__asm __volatile("rdtscp" : "=a" (rv) : : "ecx", "edx");
 	return (rv);
 }
 
@@ -718,7 +685,6 @@ write_cyrix_reg(u_char reg, u_char data)
 	outb(0x23, data);
 }
 
-#ifndef __rtems__
 static __inline register_t
 intr_disable(void)
 {
@@ -734,7 +700,6 @@ intr_restore(register_t eflags)
 {
 	write_eflags(eflags);
 }
-#endif /* __rtems__ */
 
 static __inline uint32_t
 rdpkru(void)
@@ -751,80 +716,6 @@ wrpkru(uint32_t mask)
 
 	__asm __volatile("wrpkru" :  : "a" (mask),  "c" (0), "d" (0));
 }
-
-#else /* !(__GNUCLIKE_ASM && __CC_SUPPORTS___INLINE) */
-
-#ifndef __rtems__
-int	breakpoint(void);
-#endif
-u_int	bsfl(u_int mask);
-u_int	bsrl(u_int mask);
-void	clflush(u_long addr);
-void	clts(void);
-void	cpuid_count(u_int ax, u_int cx, u_int *p);
-void	disable_intr(void);
-void	do_cpuid(u_int ax, u_int *p);
-void	enable_intr(void);
-void	halt(void);
-void	ia32_pause(void);
-u_char	inb(u_int port);
-u_int	inl(u_int port);
-void	insb(u_int port, void *addr, size_t count);
-void	insl(u_int port, void *addr, size_t count);
-void	insw(u_int port, void *addr, size_t count);
-register_t	intr_disable(void);
-void	intr_restore(register_t ef);
-void	invd(void);
-void	invlpg(u_int addr);
-void	invltlb(void);
-u_short	inw(u_int port);
-void	lidt(struct region_descriptor *addr);
-void	lldt(u_short sel);
-void	load_cr0(u_int cr0);
-void	load_cr3(u_int cr3);
-void	load_cr4(u_int cr4);
-void	load_dr0(u_int dr0);
-void	load_dr1(u_int dr1);
-void	load_dr2(u_int dr2);
-void	load_dr3(u_int dr3);
-void	load_dr6(u_int dr6);
-void	load_dr7(u_int dr7);
-void	load_fs(u_short sel);
-void	load_gs(u_short sel);
-void	ltr(u_short sel);
-void	outb(u_int port, u_char data);
-void	outl(u_int port, u_int data);
-void	outsb(u_int port, const void *addr, size_t count);
-void	outsl(u_int port, const void *addr, size_t count);
-void	outsw(u_int port, const void *addr, size_t count);
-void	outw(u_int port, u_short data);
-u_int	rcr0(void);
-u_int	rcr2(void);
-u_int	rcr3(void);
-u_int	rcr4(void);
-uint64_t rdmsr(u_int msr);
-uint64_t rdpmc(u_int pmc);
-u_int	rdr0(void);
-u_int	rdr1(void);
-u_int	rdr2(void);
-u_int	rdr3(void);
-u_int	rdr6(void);
-u_int	rdr7(void);
-uint64_t rdtsc(void);
-u_char	read_cyrix_reg(u_char reg);
-u_int	read_eflags(void);
-u_int	rfs(void);
-uint64_t rgdt(void);
-u_int	rgs(void);
-uint64_t ridt(void);
-u_short	rldt(void);
-u_short	rtr(void);
-void	wbinvd(void);
-void	write_cyrix_reg(u_char reg, u_char data);
-void	write_eflags(u_int ef);
-void	wrmsr(u_int msr, uint64_t newval);
-
-#endif	/* __GNUCLIKE_ASM && __CC_SUPPORTS___INLINE */
 
 void    reset_dbregs(void);
 

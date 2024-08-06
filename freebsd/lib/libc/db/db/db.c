@@ -34,9 +34,6 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)db.c	8.4 (Berkeley) 2/21/94";
 #endif /* LIBC_SCCS and not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/types.h>
 
 #include <errno.h>
@@ -50,6 +47,12 @@ static int __dberr(void);
 
 #ifndef O_CLOEXEC
 #define O_CLOEXEC 0
+#endif
+#ifndef O_EXLOCK
+#define O_EXLOCK 0
+#endif
+#ifndef O_SHLOCK
+#define O_SHLOCK 0
 #endif
 
 DB *

@@ -44,9 +44,6 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)rpc_soc.c 1.41 89/05/02 Copyr 1988 Sun Micro";
 #endif
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #ifdef PORTMAP
 /*
  * rpc_soc.c
@@ -122,11 +119,11 @@ clnt_com_create(struct sockaddr_in *raddr, rpcprog_t prog, rpcvers_t vers, int *
 		proto = strcmp(tp, "udp") == 0 ? IPPROTO_UDP : IPPROTO_TCP;
 		sport = pmap_getport(raddr, (u_long)prog, (u_long)vers,
 		    proto);
+		mutex_lock(&rpcsoc_lock);	/* pmap_getport is recursive */
 		if (sport == 0) {
 			goto err;
 		}
 		raddr->sin_port = htons(sport);
-		mutex_lock(&rpcsoc_lock);	/* pmap_getport is recursive */
 	}
 
 	/* Transform sockaddr_in to netbuf */

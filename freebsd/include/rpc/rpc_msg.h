@@ -31,7 +31,6 @@
  *
  *	from: @(#)rpc_msg.h 1.7 86/07/16 SMI
  *	from: @(#)rpc_msg.h	2.1 88/07/29 4.0 RPCSRC
- * $FreeBSD$
  */
 
 /*
@@ -49,20 +48,18 @@
 
 /*
  * Bottom up definition of an rpc message.
- * NOTE: call and reply use the same overall stuct but
+ * NOTE: call and reply use the same overall struct but
  * different parts of unions within it.
  */
 
 enum msg_type {
 	CALL=0,
-	REPLY=1,
-	_MSG_TYPE = 0xffffffff
+	REPLY=1
 };
 
 enum reply_stat {
 	MSG_ACCEPTED=0,
-	MSG_DENIED=1,
-	_REPLY_STAT = 0xffffffff
+	MSG_DENIED=1
 };
 
 enum accept_stat {
@@ -71,14 +68,12 @@ enum accept_stat {
 	PROG_MISMATCH=2,
 	PROC_UNAVAIL=3,
 	GARBAGE_ARGS=4,
-	SYSTEM_ERR=5,
-	_ACCEPT_STAT = 0xffffffff
+	SYSTEM_ERR=5
 };
 
 enum reject_stat {
 	RPC_MISMATCH=0,
-	AUTH_ERROR=1,
-	_REJECT_STAT = 0xffffffff
+	AUTH_ERROR=1
 };
 
 /*

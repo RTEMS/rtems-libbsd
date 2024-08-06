@@ -2,7 +2,6 @@
 
 /*
  * Taken from http://burtleburtle.net/bob/c/lookup3.c
- * $FreeBSD$
  */
 
 #include <sys/hash.h>
@@ -243,7 +242,7 @@ uint32_t jenkins_hash( const void *key, size_t length, uint32_t initval)
      * rest of the string.  Every machine with memory protection I've seen
      * does it on word boundaries, so is OK with this.  But VALGRIND will
      * still catch it and complain.  The masking trick does make the hash
-     * noticably faster for short strings (like English words).
+     * noticeably faster for short strings (like English words).
      */
 
     switch(length)
@@ -396,7 +395,7 @@ uint32_t jenkins_hash( const void *key, size_t length, uint32_t initval)
      * rest of the string.  Every machine with memory protection I've seen
      * does it on word boundaries, so is OK with this.  But VALGRIND will
      * still catch it and complain.  The masking trick does make the hash
-     * noticably faster for short strings (like English words).
+     * noticeably faster for short strings (like English words).
      */
 
     switch(length)

@@ -319,6 +319,8 @@ original FreeBSD code.
   ``Note:`` the script ``userspace-header-gen.py`` depends on pyelftools. It can be
   installed using pip:
   ``pip install --user pyelftools``
+  ``Note:`` when updating the openssl app the .o files from the lib directory need to be
+  included too
 * If you regenerated files that have already been generated, you may have to
   remove RTEMS-specific names from the namespace. The defaults (linker set names
   and rtems_bsd_program_.*) should already be filtered.

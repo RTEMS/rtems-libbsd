@@ -4,8 +4,6 @@
  *
  * This is an implementation of the algorithms posted above.
  * This file is placed in the public domain by Peter Wemm.
- *
- * $FreeBSD$
  */
 #ifndef _SYS_FNV_HASH_H_
 #define	_SYS_FNV_HASH_H_
@@ -44,7 +42,6 @@ fnv_32_str(const char *str, Fnv32_t hval)
 	return hval;
 }
 
-#ifndef __rtems__
 static __inline Fnv64_t
 fnv_64_buf(const void *buf, size_t len, Fnv64_t hval)
 {
@@ -57,6 +54,7 @@ fnv_64_buf(const void *buf, size_t len, Fnv64_t hval)
 	return hval;
 }
 
+#ifndef __rtems__
 static __inline Fnv64_t
 fnv_64_str(const char *str, Fnv64_t hval)
 {

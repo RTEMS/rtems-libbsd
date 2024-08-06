@@ -40,12 +40,18 @@
 
 int
 rtems_bsdnet_rtrequest(int req, struct sockaddr *dst, struct sockaddr *gateway,
-    struct sockaddr *netmask, int flags, struct rtentry **net_nrt)
+    struct sockaddr *netmask, int flags, struct rib_cmd_info **rc)
 {
 	int error;
+  struct rt_addrinfo info;
 
-	error = rtrequest_fib(req, dst, gateway, netmask, flags, net_nrt,
-	    BSD_DEFAULT_FIB);
+  bzero((void *)&info, sizeof(info));
+  info.rti_flags = flags;
+  info.rti_info[RTAX_DST] = dst;
+  info.rti_info[RTAX_GATEWAY] = gateway;
+  info.rti_info[RTAX_NETMASK] = netmask;
+
+  error = rib_action(RT_DEFAULT_FIB, RTM_ADD, &info, rc);
 	if (error != 0) {
 		errno = error;
 

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2002-2009 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -28,8 +28,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * IEEE 802.11 station scanning support.
  */
@@ -1278,6 +1276,8 @@ sta_pick_bss(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 		 * handle notification that this has completed.
 		 */
 		ss->ss_flags &= ~IEEE80211_SCAN_NOPICK;
+		IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+		    "%s: nopick; return 1\n", __func__);
 		return 1;
 	}
 	/*
@@ -1287,7 +1287,9 @@ sta_pick_bss(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 	/* NB: unlocked read should be ok */
 	if (TAILQ_FIRST(&st->st_entry) == NULL) {
 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
-			"%s: no scan candidate\n", __func__);
+			"%s: no scan candidate, join=%d, return 0\n",
+			__func__,
+			!! (ss->ss_flags & IEEE80211_SCAN_NOJOIN));
 		if (ss->ss_flags & IEEE80211_SCAN_NOJOIN)
 			return 0;
 notfound:
@@ -1312,6 +1314,8 @@ notfound:
 		chan = demote11b(vap, chan);
 	if (!ieee80211_sta_join(vap, chan, &selbs->base))
 		goto notfound;
+	IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+	    "%s: terminate scan; return 1\n", __func__);
 	return 1;				/* terminate scan */
 }
 
@@ -1552,7 +1556,7 @@ static int
 adhoc_start(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 {
 	struct sta_table *st = ss->ss_priv;
-	
+
 	makescanlist(ss, vap, adhocScanTable);
 
 	if (ss->ss_mindwell == 0)
@@ -1678,7 +1682,7 @@ notfound:
 				chan = ieee80211_ht_adjust_channel(ic,
 				    chan, vap->iv_flags_ht);
 				chan = ieee80211_vht_adjust_channel(ic,
-				    chan, vap->iv_flags_vht);
+				    chan, vap->iv_vht_flags);
 				ieee80211_create_ibss(vap, chan);
 				return 1;
 			}
@@ -1711,7 +1715,7 @@ notfound:
 	chan = ieee80211_ht_adjust_channel(ic,
 	    chan, vap->iv_flags_ht);
 	chan = ieee80211_vht_adjust_channel(ic,
-	    chan, vap->iv_flags_vht);
+	    chan, vap->iv_vht_flags);
 	if (!ieee80211_sta_join(vap, chan, &selbs->base))
 		goto notfound;
 	return 1;				/* terminate scan */
@@ -1864,7 +1868,7 @@ ap_end(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 		return 1;
 	}
 	chan = ieee80211_ht_adjust_channel(ic, bestchan, vap->iv_flags_ht);
-	chan = ieee80211_vht_adjust_channel(ic, chan, vap->iv_flags_vht);
+	chan = ieee80211_vht_adjust_channel(ic, chan, vap->iv_vht_flags);
 	ieee80211_create_ibss(vap, chan);
 
 	return 1;
@@ -1944,7 +1948,7 @@ notfound:
 					chan = ieee80211_ht_adjust_channel(ic,
 					    chan, vap->iv_flags_ht);
 					chan = ieee80211_vht_adjust_channel(ic,
-					    chan, vap->iv_flags_vht);
+					    chan, vap->iv_vht_flags);
 					}
 			} else
 				chan = vap->iv_des_chan;

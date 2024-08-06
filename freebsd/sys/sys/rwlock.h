@@ -1,8 +1,7 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006 John Baldwin <jhb@FreeBSD.org>
- * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,8 +23,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_RWLOCK_H_
@@ -108,23 +105,25 @@
 
 #ifndef __rtems__
 /* Acquire a write lock. */
-#define	__rw_wlock(rw, tid, file, line) do {				\
+#define	__rw_wlock(rw, tid, file, line) __extension__ ({		\
 	uintptr_t _tid = (uintptr_t)(tid);				\
 	uintptr_t _v = RW_UNLOCKED;					\
 									\
 	if (__predict_false(LOCKSTAT_PROFILE_ENABLED(rw__acquire) ||	\
 	    !_rw_write_lock_fetch((rw), &_v, _tid)))			\
 		_rw_wlock_hard((rw), _v, (file), (line));		\
-} while (0)
+	(void)0; /* ensure void type for expression */			\
+})
 
 /* Release a write lock. */
-#define	__rw_wunlock(rw, tid, file, line) do {				\
+#define	__rw_wunlock(rw, tid, file, line) __extension__ ({		\
 	uintptr_t _v = (uintptr_t)(tid);				\
 									\
 	if (__predict_false(LOCKSTAT_PROFILE_ENABLED(rw__release) ||	\
 	    !_rw_write_unlock_fetch((rw), &_v)))			\
 		_rw_wunlock_hard((rw), _v, (file), (line));		\
-} while (0)
+	(void)0; /* ensure void type for expression */			\
+})
 #endif /* __rtems__ */
 
 /*
@@ -238,7 +237,6 @@ void	_rw_assert(const struct rwlock *rw, int what, const char *file,
 #endif
 #endif /* __rtems__ */
 
-
 /*
  * Public interface for lock operations.
  */
@@ -261,12 +259,13 @@ void	_rw_assert(const struct rwlock *rw, int what, const char *file,
 #define	rw_try_upgrade(rw)	_rw_try_upgrade((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_try_wlock(rw)	_rw_try_wlock((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_downgrade(rw)	_rw_downgrade((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_unlock(rw)	do {						\
+#define	rw_unlock(rw)	__extension__ ({				\
 	if (rw_wowned(rw))						\
 		rw_wunlock(rw);						\
 	else								\
 		rw_runlock(rw);						\
-} while (0)
+	(void)0; /* ensure void type for expression */			\
+})
 #define	rw_sleep(chan, rw, pri, wmesg, timo)				\
 	_sleep((chan), &(rw)->lock_object, (pri), (wmesg),		\
 	    tick_sbt * (timo), 0, C_HARDCLOCK)

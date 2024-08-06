@@ -1,12 +1,6 @@
-/* $FreeBSD$ */
-
 /*
  * THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.
- *
- * generated from:
- *	FreeBSD
  */
-/*$NetBSD: miidevs,v 1.105 2011/11/25 23:28:14 jakllsch Exp $*/
 
 /*-
  * Copyright (c) 1998, 1999 The NetBSD Foundation, Inc.
@@ -40,7 +34,7 @@
 
 /*
  * List of known MII OUIs.
- * For a complete list see http://standards.ieee.org/regauth/oui/
+ * For a complete list see http://standards-oui.ieee.org/
  *
  * XXX Vendors do obviously not agree how OUIs (24 bit) are mapped
  * to the 22 bits available in the id registers.
@@ -70,6 +64,7 @@
 #define	MII_OUI_LEVEL1	0x00207b	/* Level 1 */
 #define	MII_OUI_MARVELL	0x005043	/* Marvell Semiconductor */
 #define	MII_OUI_MICREL	0x0010a1	/* Micrel */
+#define	MII_OUI_MOTORCOMM	0x000000	/* Motorcomm */
 #define	MII_OUI_MYSON	0x00c0b4	/* Myson Technology */
 #define	MII_OUI_NATSEMI	0x080017	/* National Semiconductor */
 #define	MII_OUI_PMCSIERRA	0x00e004	/* PMC-Sierra */
@@ -117,6 +112,7 @@
 #define	MII_OUI_xxPMCSIERRA2	0x009057	/* PMC-Sierra */
 #define	MII_OUI_xxREALTEK	0x000732	/* RealTek Semicondctor */
 #define	MII_OUI_yyREALTEK	0x000004	/* RealTek Semicondctor */
+#define	MII_OUI_xxTI	0x100014	/* Texas Instruments */
 
 /*
  * List of known models.  Grouped by oui.
@@ -259,6 +255,10 @@
 #define	MII_STR_BROADCOM2_BCM5761	"BCM5761 10/100/1000baseT PHY"
 #define	MII_MODEL_BROADCOM2_BCM5709S	0x003f
 #define	MII_STR_BROADCOM2_BCM5709S	"BCM5709S/5720S 1000/2500baseSX PHY"
+#define	MII_MODEL_BROADCOM3_BCM54618SE	0x000d
+#define	MII_STR_BROADCOM3_BCM54618SE	"BCM54618SE 10/100/1000BASE-T PHY"
+#define	MII_MODEL_BROADCOM3_BCM54616S	0x0011
+#define	MII_STR_BROADCOM3_BCM54616S	"BCM54616S 10/100/1000BASE-T PHY"
 #define	MII_MODEL_BROADCOM3_BCM57780	0x0019
 #define	MII_STR_BROADCOM3_BCM57780	"BCM57780 1000BASE-T media interface"
 #define	MII_MODEL_BROADCOM3_BCM5717C	0x0020
@@ -269,6 +269,8 @@
 #define	MII_STR_BROADCOM3_BCM57765	"BCM57765 1000BASE-T media interface"
 #define	MII_MODEL_BROADCOM3_BCM5720C	0x0036
 #define	MII_STR_BROADCOM3_BCM5720C	"BCM5720C 1000BASE-T media interface"
+#define	MII_MODEL_BROADCOM4_BCM54213PE	0x000a
+#define	MII_STR_BROADCOM4_BCM54213PE	"BCM54213PE 1000BASE-T media interface"
 #define	MII_MODEL_BROADCOM4_BCM5725C	0x0038
 #define	MII_STR_BROADCOM4_BCM5725C	"BCM5725C 1000BASE-T media interface"
 #define	MII_MODEL_xxBROADCOM_ALT1_BCM5906	0x0004
@@ -291,6 +293,8 @@
 #define	MII_STR_xxCICADA_CS8244	"Cicada CS8244 10/100/1000TX PHY"
 #define	MII_MODEL_xxVITESSE_VSC8601	0x0002
 #define	MII_STR_xxVITESSE_VSC8601	"Vitesse VSC8601 10/100/1000TX PHY"
+#define	MII_MODEL_xxVITESSE_VSC8641	0x0003
+#define	MII_STR_xxVITESSE_VSC8641	"Vitesse VSC8641 10/100/1000TX PHY"
 
 /* Davicom Semiconductor PHYs */
 /* AMD Am79C873 seems to be a relabeled DM9101 */
@@ -397,6 +401,8 @@
 #define	MII_STR_xxMARVELL_E1111	"Marvell 88E1111 Gigabit PHY"
 #define	MII_MODEL_xxMARVELL_E1145	0x000d
 #define	MII_STR_xxMARVELL_E1145	"Marvell 88E1145 Quad Gigabit PHY"
+#define	MII_MODEL_xxMARVELL_E1512	0x001d
+#define	MII_STR_xxMARVELL_E1512	"Marvell 88E1512 Gigabit PHY"
 #define	MII_MODEL_xxMARVELL_E1116	0x0021
 #define	MII_STR_xxMARVELL_E1116	"Marvell 88E1116 Gigabit PHY"
 #define	MII_MODEL_xxMARVELL_E1116R	0x0024
@@ -429,6 +435,10 @@
 #define	MII_STR_MICREL_KSZ9021	"Micrel KSZ9021 10/100/1000 PHY"
 #define	MII_MODEL_MICREL_KSZ9031	0x0022
 #define	MII_STR_MICREL_KSZ9031	"Micrel KSZ9031 10/100/1000 PHY"
+
+/* Motorcomm PHYs */
+#define	MII_MODEL_MOTORCOMM_YT8511	0x010a
+#define	MII_STR_MOTORCOMM_YT8511	"Motorcomm YT8511 10/100/1000 PHY"
 
 /* Myson Technology PHYs */
 #define	MII_MODEL_xxMYSON_MTD972	0x0000
@@ -471,6 +481,8 @@
 /* RDC Semiconductor PHYs */
 #define	MII_MODEL_RDC_R6040	0x0003
 #define	MII_STR_RDC_R6040	"R6040 10/100 media interface"
+#define	MII_MODEL_RDC_R6040_2	0x0005
+#define	MII_STR_RDC_R6040_2	"R6040 10/100 media interface"
 
 /* RealTek Semicondctor PHYs */
 #define	MII_MODEL_yyREALTEK_RTL8201L	0x0020
@@ -505,6 +517,10 @@
 #define	MII_STR_TI_100VGPMI	"ThunderLAN 100VG-AnyLan media interface"
 #define	MII_MODEL_TI_TNETE2101	0x0003
 #define	MII_STR_TI_TNETE2101	"TNETE2101 media interface"
+#define	MII_MODEL_xxTI_DP83867	0x0023
+#define	MII_STR_xxTI_DP83867	"High Immunity 10/100/1000 PHY"
+#define	MII_MODEL_xxTI_DP83822	0x0024
+#define	MII_STR_xxTI_DP83822	"High Immunity 10/100 PHY"
 
 /* TDK Semiconductor PHYs */
 #define	MII_MODEL_xxTSC_78Q2120	0x0014
@@ -515,8 +531,10 @@
 /* Vitesse Semiconductor (now Microsemi) */
 #define	MII_MODEL_xxVITESSE_VSC8501	0x0013
 #define	MII_STR_xxVITESSE_VSC8501	"Vitesse VSC8501 10/100/1000TX PHY"
-#define	MII_MODEL_xxVITESSE_VSC8641	0x0003
-#define	MII_STR_xxVITESSE_VSC8641	"Vitesse VSC8641 10/100/1000TX PHY"
+#define	MII_MODEL_xxVITESSE_VSC8504	0x000c
+#define	MII_STR_xxVITESSE_VSC8504	"Vitesse VSC8504 10/100/1000TX PHY"
+#define	MII_MODEL_xxVITESSE_VSC8514	0x0027
+#define	MII_STR_xxVITESSE_VSC8514	"Vitesse VSC8514 10/100/1000TX PHY"
 
 /* XaQti Corp. PHYs */
 #define	MII_MODEL_xxXAQTI_XMACII	0x0000

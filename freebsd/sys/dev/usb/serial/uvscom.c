@@ -3,10 +3,8 @@
 /*	$NetBSD: usb/uvscom.c,v 1.1 2002/03/19 15:08:42 augustss Exp $	*/
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2001-2003, 2005 Shunsuke Akiyama <akiyama@jp.FreeBSD.org>.
  * All rights reserved.
@@ -74,7 +72,8 @@ __FBSDID("$FreeBSD$");
 #ifdef USB_DEBUG
 static int uvscom_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, uvscom, CTLFLAG_RW, 0, "USB uvscom");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, uvscom, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB uvscom");
 SYSCTL_INT(_hw_usb_uvscom, OID_AUTO, debug, CTLFLAG_RWTUN,
     &uvscom_debug, 0, "Debug level");
 #endif
@@ -193,7 +192,6 @@ static uint16_t	uvscom_cfg_read_status(struct uvscom_softc *);
 static void	uvscom_poll(struct ucom_softc *ucom);
 
 static const struct usb_config uvscom_config[UVSCOM_N_TRANSFER] = {
-
 	[UVSCOM_BULK_DT_WR] = {
 		.type = UE_BULK,
 		.endpoint = UE_ADDR_ANY,
@@ -260,15 +258,13 @@ static device_method_t uvscom_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t uvscom_devclass;
-
 static driver_t uvscom_driver = {
 	.name = "uvscom",
 	.methods = uvscom_methods,
 	.size = sizeof(struct uvscom_softc),
 };
 
-DRIVER_MODULE(uvscom, uhub, uvscom_driver, uvscom_devclass, NULL, 0);
+DRIVER_MODULE(uvscom, uhub, uvscom_driver, NULL, NULL);
 MODULE_DEPEND(uvscom, ucom, 1, 1, 1);
 MODULE_DEPEND(uvscom, usb, 1, 1, 1);
 MODULE_VERSION(uvscom, UVSCOM_MODVER);
@@ -396,7 +392,6 @@ tr_setup:
 		pc = usbd_xfer_get_frame(xfer, 0);
 		if (ucom_get_data(&sc->sc_ucom, pc, 0,
 		    UVSCOM_BULK_BUF_SIZE, &actlen)) {
-
 			usbd_xfer_set_frame_len(xfer, 0, actlen);
 			usbd_transfer_submit(xfer);
 		}
@@ -455,7 +450,6 @@ uvscom_intr_callback(struct usb_xfer *xfer, usb_error_t error)
 	switch (USB_GET_STATE(xfer)) {
 	case USB_ST_TRANSFERRED:
 		if (actlen >= 2) {
-
 			pc = usbd_xfer_get_frame(xfer, 0);
 			usbd_copy_out(pc, 0, buf, sizeof(buf));
 

@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 EMC Corp.
  * Copyright (c) 2011 Jeffrey Roberson <jeff@freebsd.org>
@@ -26,16 +26,26 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _SYS_PCTRIE_H_
 #define _SYS_PCTRIE_H_
 
 #include <sys/_pctrie.h>
+#include <sys/_smr.h>
 
 #ifdef _KERNEL
+
+#define	PCTRIE_DEFINE_SMR(name, type, field, allocfn, freefn, smr)	\
+    PCTRIE_DEFINE(name, type, field, allocfn, freefn)			\
+									\
+static __inline struct type *						\
+name##_PCTRIE_LOOKUP_UNLOCKED(struct pctrie *ptree, uint64_t key)	\
+{									\
+									\
+	return name##_PCTRIE_VAL2PTR(pctrie_lookup_unlocked(ptree,	\
+	    key, (smr)));						\
+}									\
 
 #define	PCTRIE_DEFINE(name, type, field, allocfn, freefn)		\
 									\
@@ -66,19 +76,28 @@ name##_PCTRIE_PTR2VAL(struct type *ptr)					\
 static __inline int							\
 name##_PCTRIE_INSERT(struct pctrie *ptree, struct type *ptr)		\
 {									\
+	struct pctrie_node *parent;					\
+	void *parentp;							\
+	uint64_t *val = name##_PCTRIE_PTR2VAL(ptr);			\
 									\
-	return pctrie_insert(ptree, name##_PCTRIE_PTR2VAL(ptr),		\
-	    allocfn);							\
+	parentp = pctrie_insert_lookup(ptree, val);			\
+	if (parentp == NULL)						\
+		return (0);						\
+	parent = allocfn(ptree);					\
+	if (parent == NULL)						\
+		return (ENOMEM);					\
+	pctrie_insert_node(parentp, parent, val);			\
+	return (0);							\
 }									\
 									\
-static __inline struct type *						\
+static __inline __unused struct type *					\
 name##_PCTRIE_LOOKUP(struct pctrie *ptree, uint64_t key)		\
 {									\
 									\
 	return name##_PCTRIE_VAL2PTR(pctrie_lookup(ptree, key));	\
 }									\
 									\
-static __inline __unused struct type *						\
+static __inline __unused struct type *					\
 name##_PCTRIE_LOOKUP_LE(struct pctrie *ptree, uint64_t key)		\
 {									\
 									\
@@ -95,45 +114,88 @@ name##_PCTRIE_LOOKUP_GE(struct pctrie *ptree, uint64_t key)		\
 static __inline __unused void						\
 name##_PCTRIE_RECLAIM(struct pctrie *ptree)				\
 {									\
+	struct pctrie_node *freenode, *node;				\
 									\
-	pctrie_reclaim_allnodes(ptree, freefn);				\
+	for (freenode = pctrie_reclaim_begin(&node, ptree);		\
+	    freenode != NULL;						\
+	    freenode = pctrie_reclaim_resume(&node))			\
+		freefn(ptree, freenode);				\
 }									\
 									\
-static __inline void							\
-name##_PCTRIE_REMOVE(struct pctrie *ptree, uint64_t key)		\
+static __inline __unused struct type *					\
+name##_PCTRIE_REPLACE(struct pctrie *ptree, struct type *ptr)		\
 {									\
 									\
-	pctrie_remove(ptree, key, freefn);				\
+	return name##_PCTRIE_VAL2PTR(					\
+	    pctrie_replace(ptree, name##_PCTRIE_PTR2VAL(ptr)));		\
+}									\
+									\
+static __inline __unused void						\
+name##_PCTRIE_REMOVE(struct pctrie *ptree, uint64_t key)		\
+{									\
+	uint64_t *val;							\
+	struct pctrie_node *freenode;					\
+									\
+	val = pctrie_remove_lookup(ptree, key, &freenode);		\
+	if (val == NULL)						\
+		panic("%s: key not found", __func__);			\
+	if (freenode != NULL)						\
+		freefn(ptree, freenode);				\
+}									\
+									\
+static __inline __unused struct type *					\
+name##_PCTRIE_REMOVE_LOOKUP(struct pctrie *ptree, uint64_t key)		\
+{									\
+	uint64_t *val;							\
+	struct pctrie_node *freenode;					\
+									\
+	val = pctrie_remove_lookup(ptree, key, &freenode);		\
+	if (freenode != NULL)						\
+		freefn(ptree, freenode);				\
+	return name##_PCTRIE_VAL2PTR(val);				\
 }
 
-typedef	void	*(*pctrie_alloc_t)(struct pctrie *ptree);
-typedef	void 	(*pctrie_free_t)(struct pctrie *ptree, void *node);
-
-int		pctrie_insert(struct pctrie *ptree, uint64_t *val, 
-		    pctrie_alloc_t allocfn);
+void		*pctrie_insert_lookup(struct pctrie *ptree, uint64_t *val);
+void		pctrie_insert_node(void *parentp,
+		    struct pctrie_node *parent, uint64_t *val);
 uint64_t	*pctrie_lookup(struct pctrie *ptree, uint64_t key);
 uint64_t	*pctrie_lookup_ge(struct pctrie *ptree, uint64_t key);
 uint64_t	*pctrie_lookup_le(struct pctrie *ptree, uint64_t key);
-void		pctrie_reclaim_allnodes(struct pctrie *ptree,
-		    pctrie_free_t freefn);
-void		pctrie_remove(struct pctrie *ptree, uint64_t key,
-		    pctrie_free_t freefn);
+uint64_t	*pctrie_lookup_unlocked(struct pctrie *ptree, uint64_t key,
+		    smr_t smr);
+struct pctrie_node *pctrie_reclaim_begin(struct pctrie_node **pnode,
+		    struct pctrie *ptree);
+struct pctrie_node *pctrie_reclaim_resume(struct pctrie_node **pnode);
+uint64_t	*pctrie_remove_lookup(struct pctrie *ptree, uint64_t index,
+		    struct pctrie_node **killnode);
+uint64_t	*pctrie_replace(struct pctrie *ptree, uint64_t *newval);
 size_t		pctrie_node_size(void);
 int		pctrie_zone_init(void *mem, int size, int flags);
+
+/*
+ * Each search path in the trie terminates at a leaf, which is a pointer to a
+ * value marked with a set 1-bit.  A leaf may be associated with a null pointer
+ * to indicate no value there.
+ */
+#define	PCTRIE_ISLEAF	0x1
+#define PCTRIE_NULL (struct pctrie_node *)PCTRIE_ISLEAF
 
 static __inline void
 pctrie_init(struct pctrie *ptree)
 {
-
-	ptree->pt_root = 0;
+	ptree->pt_root = PCTRIE_NULL;
 }
 
-static __inline boolean_t
+static __inline bool
 pctrie_is_empty(struct pctrie *ptree)
 {
-
-	return (ptree->pt_root == 0);
+	return (ptree->pt_root == PCTRIE_NULL);
 }
+
+/* Set of all flag bits stored in node pointers. */
+#define	PCTRIE_FLAGS	(PCTRIE_ISLEAF)
+/* Minimum align parameter for uma_zcreate. */
+#define	PCTRIE_PAD	PCTRIE_FLAGS
 
 /*
  * These widths should allow the pointers to a node's children to fit within

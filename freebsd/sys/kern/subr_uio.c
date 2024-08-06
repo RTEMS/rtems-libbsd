@@ -44,8 +44,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -229,6 +227,8 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 	    ("uiomove: mode"));
 	KASSERT(uio->uio_segflg != UIO_USERSPACE || uio->uio_td == curthread,
 	    ("uiomove proc"));
+	KASSERT(uio->uio_resid >= 0,
+	    ("%s: uio %p resid underflow", __func__, uio));
 
 	if (uio->uio_segflg == UIO_USERSPACE) {
 		newflags = TDP_DEADLKTREAT;
@@ -248,6 +248,9 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 #endif /* __rtems__ */
 
 	while (n > 0 && uio->uio_resid) {
+		KASSERT(uio->uio_iovcnt > 0,
+		    ("%s: uio %p iovcnt underflow", __func__, uio));
+
 		iov = uio->uio_iov;
 		cnt = iov->iov_len;
 		if (cnt == 0) {
@@ -259,7 +262,6 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 			cnt = n;
 
 		switch (uio->uio_segflg) {
-
 		case UIO_USERSPACE:
 #ifndef __rtems__
 			maybe_yield();
@@ -341,7 +343,6 @@ again:
 		goto again;
 	}
 	switch (uio->uio_segflg) {
-
 	case UIO_USERSPACE:
 		if (subyte(iov->iov_base, c) < 0)
 			return (EFAULT);
@@ -361,44 +362,6 @@ again:
 	uio->uio_offset++;
 	return (0);
 }
-
-int
-copyinfrom(const void * __restrict src, void * __restrict dst, size_t len,
-    int seg)
-{
-	int error = 0;
-
-	switch (seg) {
-	case UIO_USERSPACE:
-		error = copyin(src, dst, len);
-		break;
-	case UIO_SYSSPACE:
-		bcopy(src, dst, len);
-		break;
-	default:
-		panic("copyinfrom: bad seg %d\n", seg);
-	}
-	return (error);
-}
-
-int
-copyinstrfrom(const void * __restrict src, void * __restrict dst, size_t len,
-    size_t * __restrict copied, int seg)
-{
-	int error = 0;
-
-	switch (seg) {
-	case UIO_USERSPACE:
-		error = copyinstr(src, dst, len, copied);
-		break;
-	case UIO_SYSSPACE:
-		error = copystr(src, dst, len, copied);
-		break;
-	default:
-		panic("copyinstrfrom: bad seg %d\n", seg);
-	}
-	return (error);
-}
 #endif /* __rtems__ */
 
 int
@@ -409,7 +372,7 @@ copyiniov(const struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
 	*iov = NULL;
 	if (iovcnt > UIO_MAXIOV)
 		return (error);
-	iovlen = iovcnt * sizeof (struct iovec);
+	iovlen = iovcnt * sizeof(struct iovec);
 	*iov = malloc(iovlen, M_IOV, M_WAITOK);
 	error = copyin(iovp, *iov, iovlen);
 	if (error) {
@@ -431,22 +394,21 @@ copyinuio(const struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 	*uiop = NULL;
 	if (iovcnt > UIO_MAXIOV)
 		return (EINVAL);
-	iovlen = iovcnt * sizeof (struct iovec);
-	uio = malloc(iovlen + sizeof *uio, M_IOV, M_WAITOK);
-	iov = (struct iovec *)(uio + 1);
+	iovlen = iovcnt * sizeof(struct iovec);
+	uio = allocuio(iovcnt);
+	iov = uio->uio_iov;
 	error = copyin(iovp, iov, iovlen);
-	if (error) {
-		free(uio, M_IOV);
+	if (error != 0) {
+		freeuio(uio);
 		return (error);
 	}
-	uio->uio_iov = iov;
 	uio->uio_iovcnt = iovcnt;
 	uio->uio_segflg = UIO_USERSPACE;
 	uio->uio_offset = -1;
 	uio->uio_resid = 0;
 	for (i = 0; i < iovcnt; i++) {
 		if (iov->iov_len > IOSIZE_MAX - uio->uio_resid) {
-			free(uio, M_IOV);
+			freeuio(uio);
 			return (EINVAL);
 		}
 		uio->uio_resid += iov->iov_len;
@@ -457,15 +419,38 @@ copyinuio(const struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 }
 
 struct uio *
-cloneuio(struct uio *uiop)
+allocuio(u_int iovcnt)
 {
 	struct uio *uio;
 	int iovlen;
 
-	iovlen = uiop->uio_iovcnt * sizeof (struct iovec);
-	uio = malloc(iovlen + sizeof *uio, M_IOV, M_WAITOK);
-	*uio = *uiop;
+	KASSERT(iovcnt <= UIO_MAXIOV,
+	    ("Requested %u iovecs exceed UIO_MAXIOV", iovcnt));
+	iovlen = iovcnt * sizeof(struct iovec);
+	uio = malloc(iovlen + sizeof(*uio), M_IOV, M_WAITOK);
 	uio->uio_iov = (struct iovec *)(uio + 1);
+
+	return (uio);
+}
+
+void
+freeuio(struct uio *uio)
+{
+	free(uio, M_IOV);
+}
+
+struct uio *
+cloneuio(struct uio *uiop)
+{
+	struct iovec *iov;
+	struct uio *uio;
+	int iovlen;
+
+	iovlen = uiop->uio_iovcnt * sizeof(struct iovec);
+	uio = allocuio(uiop->uio_iovcnt);
+	iov = uio->uio_iov;
+	*uio = *uiop;
+	uio->uio_iov = iov;
 	bcopy(uiop->uio_iov, uio->uio_iov, iovlen);
 	return (uio);
 }
@@ -520,77 +505,6 @@ copyout_unmap(struct thread *td, vm_offset_t addr, size_t sz)
 	return (0);
 }
 
-#ifdef NO_FUEWORD
-/*
- * XXXKIB The temporal implementation of fue*() functions which do not
- * handle usermode -1 properly, mixing it with the fault code.  Keep
- * this until MD code is written.  Currently sparc64 does not have a
- * proper implementation.
- */
-
-int
-fueword(volatile const void *base, long *val)
-{
-	long res;
-
-	res = fuword(base);
-	if (res == -1)
-		return (-1);
-	*val = res;
-	return (0);
-}
-
-int
-fueword32(volatile const void *base, int32_t *val)
-{
-	int32_t res;
-
-	res = fuword32(base);
-	if (res == -1)
-		return (-1);
-	*val = res;
-	return (0);
-}
-
-#ifdef _LP64
-int
-fueword64(volatile const void *base, int64_t *val)
-{
-	int64_t res;
-
-	res = fuword64(base);
-	if (res == -1)
-		return (-1);
-	*val = res;
-	return (0);
-}
-#endif
-
-int
-casueword32(volatile uint32_t *base, uint32_t oldval, uint32_t *oldvalp,
-    uint32_t newval)
-{
-	int32_t ov;
-
-	ov = casuword32(base, oldval, newval);
-	if (ov == -1)
-		return (-1);
-	*oldvalp = ov;
-	return (0);
-}
-
-int
-casueword(volatile u_long *p, u_long oldval, u_long *oldvalp, u_long newval)
-{
-	u_long ov;
-
-	ov = casuword(p, oldval, newval);
-	if (ov == -1)
-		return (-1);
-	*oldvalp = ov;
-	return (0);
-}
-#else /* NO_FUEWORD */
 int32_t
 fuword32(volatile const void *addr)
 {
@@ -642,6 +556,4 @@ casuword(volatile u_long *addr, u_long old, u_long new)
 	rv = casueword(addr, old, &val, new);
 	return (rv == -1 ? -1 : val);
 }
-
-#endif /* NO_FUEWORD */
 #endif /* __rtems__ */

@@ -3,7 +3,7 @@
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * Copyright (c) 2001 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2001 Dag-Erling Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_pseudofs.h>
 
 #include <sys/param.h>
@@ -53,7 +51,7 @@ __FBSDID("$FreeBSD$");
 
 static MALLOC_DEFINE(M_PFSNODES, "pfs_nodes", "pseudofs nodes");
 
-SYSCTL_NODE(_vfs, OID_AUTO, pfs, CTLFLAG_RW, 0,
+SYSCTL_NODE(_vfs, OID_AUTO, pfs, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "pseudofs");
 
 #ifdef PSEUDOFS_TRACE
@@ -74,18 +72,20 @@ pfs_alloc_node_flags(struct pfs_info *pi, const char *name, pfs_type_t type, int
 {
 	struct pfs_node *pn;
 	int malloc_flags;
+	size_t len;
 
-	KASSERT(strlen(name) < PFS_NAMELEN,
+	len = strlen(name);
+	KASSERT(len < PFS_NAMELEN,
 	    ("%s(): node name is too long", __func__));
 	if (flags & PFS_NOWAIT)
 		malloc_flags = M_NOWAIT | M_ZERO;
 	else
 		malloc_flags = M_WAITOK | M_ZERO;
-	pn = malloc(sizeof *pn, M_PFSNODES, malloc_flags);
+	pn = malloc(sizeof(*pn) + len + 1, M_PFSNODES, malloc_flags);
 	if (pn == NULL)
 		return (NULL);
 	mtx_init(&pn->pn_mutex, "pfs_node", NULL, MTX_DEF | MTX_DUPOK);
-	strlcpy(pn->pn_name, name, sizeof pn->pn_name);
+	memcpy(pn->pn_name, name, len);
 	pn->pn_type = type;
 	pn->pn_info = pi;
 	return (pn);
@@ -137,10 +137,21 @@ pfs_add_node(struct pfs_node *parent, struct pfs_node *pn)
 	pfs_fileno_alloc(pn);
 
 	pfs_lock(parent);
-	pn->pn_next = parent->pn_nodes;
 	if ((parent->pn_flags & PFS_PROCDEP) != 0)
 		pn->pn_flags |= PFS_PROCDEP;
-	parent->pn_nodes = pn;
+	if (parent->pn_nodes == NULL) {
+		KASSERT(parent->pn_last_node == NULL,
+		    ("%s(): pn_last_node not NULL", __func__));
+		parent->pn_nodes = pn;
+		parent->pn_last_node = pn;
+	} else {
+		KASSERT(parent->pn_last_node != NULL,
+		    ("%s(): pn_last_node is NULL", __func__));
+		KASSERT(parent->pn_last_node->pn_next == NULL,
+		    ("%s(): pn_last_node->pn_next not NULL", __func__));
+		parent->pn_last_node->pn_next = pn;
+		parent->pn_last_node = pn;
+	}
 	pfs_unlock(parent);
 }
 
@@ -150,7 +161,7 @@ pfs_add_node(struct pfs_node *parent, struct pfs_node *pn)
 static void
 pfs_detach_node(struct pfs_node *pn)
 {
-	struct pfs_node *parent = pn->pn_parent;
+	struct pfs_node *node, *parent = pn->pn_parent;
 	struct pfs_node **iter;
 
 	KASSERT(parent != NULL, ("%s(): node has no parent", __func__));
@@ -158,6 +169,16 @@ pfs_detach_node(struct pfs_node *pn)
 	    ("%s(): parent has different pn_info", __func__));
 
 	pfs_lock(parent);
+	if (pn == parent->pn_last_node) {
+		if (pn == pn->pn_nodes) {
+			parent->pn_last_node = NULL;
+		} else {
+			for (node = parent->pn_nodes;
+			    node->pn_next != pn; node = node->pn_next)
+				continue;
+			parent->pn_last_node = node;
+		}
+	}
 	iter = &parent->pn_nodes;
 	while (*iter != NULL) {
 		if (*iter == pn) {
@@ -349,6 +370,7 @@ pfs_mount(struct pfs_info *pi, struct mount *mp)
 
 	MNT_ILOCK(mp);
 	mp->mnt_flag |= MNT_LOCAL;
+	mp->mnt_kern_flag |= MNTK_NOMSYNC;
 	MNT_IUNLOCK(mp);
 	mp->mnt_data = pi;
 	vfs_getnewfsid(mp);
@@ -357,10 +379,10 @@ pfs_mount(struct pfs_info *pi, struct mount *mp)
 	vfs_mountedfrom(mp, pi->pi_name);
 	sbp->f_bsize = PAGE_SIZE;
 	sbp->f_iosize = PAGE_SIZE;
-	sbp->f_blocks = 1;
-	sbp->f_bfree = 0;
-	sbp->f_bavail = 0;
-	sbp->f_files = 1;
+	sbp->f_blocks = 2;
+	sbp->f_bfree = 2;
+	sbp->f_bavail = 2;
+	sbp->f_files = 0;
 	sbp->f_ffree = 0;
 
 	return (0);

@@ -1,6 +1,5 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/*	$FreeBSD$	*/
 
 /*-
  * Copyright (c) 2005-2007 Damien Bergamini <damien.bergamini@free.fr>
@@ -22,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*-
  * Ralink Technology RT2501USB/RT2601USB chipset driver
  * http://www.ralinktech.com.tw/
@@ -82,7 +79,8 @@ __FBSDID("$FreeBSD$");
 #ifdef USB_DEBUG
 static int rum_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, rum, CTLFLAG_RW, 0, "USB rum");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, rum, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB rum");
 SYSCTL_INT(_hw_usb_rum, OID_AUTO, debug, CTLFLAG_RWTUN, &rum_debug, 0,
     "Debug level");
 #endif
@@ -723,10 +721,12 @@ rum_vap_delete(struct ieee80211vap *vap)
 	struct rum_vap *rvp = RUM_VAP(vap);
 	struct ieee80211com *ic = vap->iv_ic;
 	struct rum_softc *sc = ic->ic_softc;
+	int i;
 
 	/* Put vap into INIT state. */
 	ieee80211_new_state(vap, IEEE80211_S_INIT, -1);
-	ieee80211_draintask(ic, &vap->iv_nstate_task);
+	for (i = 0; i < NET80211_IV_NSTATE_NUM; i++)
+		ieee80211_draintask(ic, &vap->iv_nstate_task[i]);
 
 	RUM_LOCK(sc);
 	/* Cancel any unfinished Tx. */
@@ -1077,7 +1077,7 @@ rum_bulk_write_callback(struct usb_xfer *xfer, usb_error_t error)
 	struct rum_tx_data *data;
 	struct mbuf *m;
 	struct usb_page_cache *pc;
-	unsigned int len;
+	unsigned len;
 	int actlen, sumlen;
 
 	usbd_xfer_status(xfer, &actlen, &sumlen, NULL, NULL);
@@ -2488,7 +2488,7 @@ rum_read_eeprom(struct rum_softc *sc)
 static int
 rum_bbp_wakeup(struct rum_softc *sc)
 {
-	unsigned int ntries;
+	unsigned ntries;
 
 	for (ntries = 0; ntries < 100; ntries++) {
 		if (rum_read(sc, RT2573_MAC_CSR12) & 8)
@@ -3292,9 +3292,7 @@ static driver_t rum_driver = {
 	.size = sizeof(struct rum_softc),
 };
 
-static devclass_t rum_devclass;
-
-DRIVER_MODULE(rum, uhub, rum_driver, rum_devclass, NULL, 0);
+DRIVER_MODULE(rum, uhub, rum_driver, NULL, NULL);
 MODULE_DEPEND(rum, wlan, 1, 1, 1);
 MODULE_DEPEND(rum, usb, 1, 1, 1);
 MODULE_VERSION(rum, 1);

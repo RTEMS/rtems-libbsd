@@ -28,8 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef	_DEV_XILINX_IF_XAEVAR_H_
@@ -51,7 +49,7 @@ struct xae_softc {
 	uint8_t			macaddr[ETHER_ADDR_LEN];
 	device_t		miibus;
 	struct mii_data *	mii_softc;
-	struct ifnet		*ifp;
+	if_t			ifp;
 	int			if_flags;
 	struct mtx		mtx;
 	void *			intr_cookie;

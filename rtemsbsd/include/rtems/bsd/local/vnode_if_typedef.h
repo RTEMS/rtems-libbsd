@@ -1,8 +1,6 @@
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
- *
- * Created from $FreeBSD$
  */
 
 
@@ -30,11 +28,20 @@ typedef int vop_open_t(struct vop_open_args *);
 struct vop_close_args;
 typedef int vop_close_t(struct vop_close_args *);
 
+struct vop_fplookup_vexec_args;
+typedef int vop_fplookup_vexec_t(struct vop_fplookup_vexec_args *);
+
+struct vop_fplookup_symlink_args;
+typedef int vop_fplookup_symlink_t(struct vop_fplookup_symlink_args *);
+
 struct vop_access_args;
 typedef int vop_access_t(struct vop_access_args *);
 
 struct vop_accessx_args;
 typedef int vop_accessx_t(struct vop_accessx_args *);
+
+struct vop_stat_args;
+typedef int vop_stat_t(struct vop_stat_args *);
 
 struct vop_getattr_args;
 typedef int vop_getattr_t(struct vop_getattr_args *);
@@ -42,11 +49,14 @@ typedef int vop_getattr_t(struct vop_getattr_args *);
 struct vop_setattr_args;
 typedef int vop_setattr_t(struct vop_setattr_args *);
 
-struct vop_markatime_args;
-typedef int vop_markatime_t(struct vop_markatime_args *);
+struct vop_mmapped_args;
+typedef int vop_mmapped_t(struct vop_mmapped_args *);
 
 struct vop_read_args;
 typedef int vop_read_t(struct vop_read_args *);
+
+struct vop_read_pgcache_args;
+typedef int vop_read_pgcache_t(struct vop_read_pgcache_args *);
 
 struct vop_write_args;
 typedef int vop_write_t(struct vop_write_args *);
@@ -93,6 +103,9 @@ typedef int vop_readlink_t(struct vop_readlink_args *);
 struct vop_inactive_args;
 typedef int vop_inactive_t(struct vop_inactive_args *);
 
+struct vop_need_inactive_args;
+typedef int vop_need_inactive_t(struct vop_need_inactive_args *);
+
 struct vop_reclaim_args;
 typedef int vop_reclaim_t(struct vop_reclaim_args *);
 
@@ -110,6 +123,9 @@ typedef int vop_strategy_t(struct vop_strategy_args *);
 
 struct vop_getwritemount_args;
 typedef int vop_getwritemount_t(struct vop_getwritemount_args *);
+
+struct vop_getlowvnode_args;
+typedef int vop_getlowvnode_t(struct vop_getlowvnode_args *);
 
 struct vop_print_args;
 typedef int vop_print_t(struct vop_print_args *);
@@ -198,14 +214,20 @@ typedef int vop_set_text_t(struct vop_set_text_args *);
 struct vop_unset_text_args;
 typedef int vop_unset_text_t(struct vop_unset_text_args *);
 
-struct vop_get_writecount_args;
-typedef int vop_get_writecount_t(struct vop_get_writecount_args *);
-
 struct vop_add_writecount_args;
 typedef int vop_add_writecount_t(struct vop_add_writecount_args *);
 
 struct vop_fdatasync_args;
 typedef int vop_fdatasync_t(struct vop_fdatasync_args *);
+
+struct vop_copy_file_range_args;
+typedef int vop_copy_file_range_t(struct vop_copy_file_range_args *);
+
+struct vop_vput_pair_args;
+typedef int vop_vput_pair_t(struct vop_vput_pair_args *);
+
+struct vop_deallocate_args;
+typedef int vop_deallocate_t(struct vop_deallocate_args *);
 
 struct vop_spare1_args;
 typedef int vop_spare1_t(struct vop_spare1_args *);

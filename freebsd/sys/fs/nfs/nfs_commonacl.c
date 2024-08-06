@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 Rick Macklem, University of Guelph
  * All rights reserved.
@@ -30,23 +30,19 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
-#ifndef APPLEKEXT
 #include <fs/nfs/nfsport.h>
 
 extern int nfsrv_useacl;
-#endif
 
 static int nfsrv_acemasktoperm(u_int32_t acetype, u_int32_t mask, int owner,
-    enum vtype type, acl_perm_t *permp);
+    __enum_uint8(vtype) type, acl_perm_t *permp);
 
 /*
  * Handle xdr for an ace.
  */
-APPLESTATIC int
+int
 nfsrv_dissectace(struct nfsrv_descript *nd, struct acl_entry *acep,
-    int *aceerrp, int *acesizep, NFSPROC_T *p)
+    bool server, int *aceerrp, int *acesizep, NFSPROC_T *p)
 {
 	u_int32_t *tl;
 	int len, gotid = 0, owner = 0, error = 0, aceerr = 0;
@@ -62,7 +58,11 @@ nfsrv_dissectace(struct nfsrv_descript *nd, struct acl_entry *acep,
 	flag = fxdr_unsigned(u_int32_t, *tl++);
 	mask = fxdr_unsigned(u_int32_t, *tl++);
 	len = fxdr_unsigned(int, *tl);
-	if (len < 0) {
+	/*
+	 * The RFCs do not specify a limit to the length of the "who", but
+	 * NFSV4_OPAQUELIMIT (1024) should be sufficient.
+	 */
+	if (len < 0 || len > NFSV4_OPAQUELIMIT) {
 		error = NFSERR_BADXDR;
 		goto nfsmout;
 	} else if (len == 0) {
@@ -105,12 +105,12 @@ nfsrv_dissectace(struct nfsrv_descript *nd, struct acl_entry *acep,
 	if (gotid == 0) {
 		if (flag & NFSV4ACE_IDENTIFIERGROUP) {
 			acep->ae_tag = ACL_GROUP;
-			aceerr = nfsv4_strtogid(nd, name, len, &gid, p);
+			aceerr = nfsv4_strtogid(nd, name, len, &gid);
 			if (aceerr == 0)
 				acep->ae_id = (uid_t)gid;
 		} else {
 			acep->ae_tag = ACL_USER;
-			aceerr = nfsv4_strtouid(nd, name, len, &uid, p);
+			aceerr = nfsv4_strtouid(nd, name, len, &uid);
 			if (aceerr == 0)
 				acep->ae_id = uid;
 		}
@@ -154,9 +154,9 @@ nfsrv_dissectace(struct nfsrv_descript *nd, struct acl_entry *acep,
 			acep->ae_entry_type = ACL_ENTRY_TYPE_ALLOW;
 		else if (acetype == NFSV4ACE_DENIEDTYPE)
 			acep->ae_entry_type = ACL_ENTRY_TYPE_DENY;
-		else if (acetype == NFSV4ACE_AUDITTYPE)
+		else if (!server && acetype == NFSV4ACE_AUDITTYPE)
 			acep->ae_entry_type = ACL_ENTRY_TYPE_AUDIT;
-		else if (acetype == NFSV4ACE_ALARMTYPE)
+		else if (!server && acetype == NFSV4ACE_ALARMTYPE)
 			acep->ae_entry_type = ACL_ENTRY_TYPE_ALARM;
 		else
 			aceerr = NFSERR_ATTRNOTSUPP;
@@ -188,7 +188,7 @@ nfsmout:
  */
 static int
 nfsrv_acemasktoperm(u_int32_t acetype, u_int32_t mask, int owner,
-    enum vtype type, acl_perm_t *permp)
+    __enum_uint8(vtype) type, acl_perm_t *permp)
 {
 	acl_perm_t perm = 0x0;
 	int error = 0;
@@ -278,14 +278,14 @@ out:
 
 /* local functions */
 static int nfsrv_buildace(struct nfsrv_descript *, u_char *, int,
-    enum vtype, int, int, struct acl_entry *);
+    __enum_uint8(vtype), int, int, struct acl_entry *);
 
 /*
  * This function builds an NFS ace.
  */
 static int
 nfsrv_buildace(struct nfsrv_descript *nd, u_char *name, int namelen,
-    enum vtype type, int group, int owner, struct acl_entry *ace)
+    __enum_uint8(vtype) type, int group, int owner, struct acl_entry *ace)
 {
 	u_int32_t *tl, aceflag = 0x0, acemask = 0x0, acetype;
 	int full_len;
@@ -392,8 +392,8 @@ nfsrv_buildace(struct nfsrv_descript *nd, u_char *name, int namelen,
 /*
  * Build an NFSv4 ACL.
  */
-APPLESTATIC int
-nfsrv_buildacl(struct nfsrv_descript *nd, NFSACL_T *aclp, enum vtype type,
+int
+nfsrv_buildacl(struct nfsrv_descript *nd, NFSACL_T *aclp, __enum_uint8(vtype) type,
     NFSPROC_T *p)
 {
 	int i, entrycnt = 0, retlen;
@@ -426,7 +426,7 @@ nfsrv_buildacl(struct nfsrv_descript *nd, NFSACL_T *aclp, enum vtype type,
 		case ACL_USER:
 			name = namestr;
 			nfsv4_uidtostr(aclp->acl_entry[i].ae_id, &name,
-			    &namelen, p);
+			    &namelen);
 			if (name != namestr)
 				malloced = 1;
 			break;
@@ -434,7 +434,7 @@ nfsrv_buildacl(struct nfsrv_descript *nd, NFSACL_T *aclp, enum vtype type,
 			isgroup = 1;
 			name = namestr;
 			nfsv4_gidtostr((gid_t)aclp->acl_entry[i].ae_id, &name,
-			    &namelen, p);
+			    &namelen);
 			if (name != namestr)
 				malloced = 1;
 			break;
@@ -455,7 +455,7 @@ nfsrv_buildacl(struct nfsrv_descript *nd, NFSACL_T *aclp, enum vtype type,
  * Compare two NFSv4 acls.
  * Return 0 if they are the same, 1 if not the same.
  */
-APPLESTATIC int
+int
 nfsrv_compareacl(NFSACL_T *aclp1, NFSACL_T *aclp2)
 {
 	int i;

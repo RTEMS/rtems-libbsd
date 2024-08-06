@@ -152,7 +152,11 @@ ck_stack_batch_pop_upmc(struct ck_stack *target)
 {
 	struct ck_stack_entry *entry;
 
+#ifndef __rtems__
+	entry = ck_pr_fas_ptr(&target->head, NULL);
+#else /* __rtems__ */
 	entry = (struct ck_stack_entry *)ck_pr_fas_ptr(&target->head, NULL);
+#endif /* __rtems__ */
 	ck_pr_fence_load();
 	return entry;
 }
@@ -276,7 +280,11 @@ ck_stack_push_mpnc(struct ck_stack *target, struct ck_stack_entry *entry)
 
 	entry->next = NULL;
 	ck_pr_fence_store_atomic();
+#ifndef __rtems__
+	stack = ck_pr_fas_ptr(&target->head, entry);
+#else /* __rtems__ */
 	stack = (struct ck_stack_entry *)ck_pr_fas_ptr(&target->head, entry);
+#endif /* __rtems__ */
 	ck_pr_store_ptr(&entry->next, stack);
 	ck_pr_fence_store();
 

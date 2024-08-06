@@ -37,8 +37,6 @@
 
 /* #pragma ident	"@(#)rpc_generic.c	1.17	94/04/24 SMI" */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * rpc_generic.c, Miscl routines for RPC.
  *
@@ -64,14 +62,16 @@ __FBSDID("$FreeBSD$");
 #include <rpc/rpc.h>
 #include <rpc/nettype.h>
 #include <rpc/rpcsec_gss.h>
+#include <rpc/rpcsec_tls.h>
 
 #include <rpc/rpc_com.h>
+#include <rpc/krpc.h>
+
+#include <vm/vm.h>
+#include <vm/pmap.h>
+#include <vm/vm_param.h>
 
 extern	u_long sb_max_adj;	/* not defined in socketvar.h */
-
-#if __FreeBSD_version < 700000
-#define strrchr rindex
-#endif
 
 /* Provide an entry point hook for the rpcsec_gss module. */
 struct rpc_gss_entries	rpc_gss_entries;
@@ -146,8 +146,7 @@ __rpc_get_t_size(int af, int proto, int size)
  * Find the appropriate address buffer size
  */
 u_int
-__rpc_get_a_size(af)
-	int af;
+__rpc_get_a_size(int af)
 {
 	switch (af) {
 	case AF_INET:
@@ -195,7 +194,7 @@ __rpc_socket2sockinfo(struct socket *so, struct __rpc_sockinfo *sip)
 	int error;
 
 	CURVNET_SET(so->so_vnet);
-	error = so->so_proto->pr_usrreqs->pru_sockaddr(so, &sa);
+	error = so->so_proto->pr_sockaddr(so, &sa);
 	CURVNET_RESTORE();
 	if (error)
 		return 0;
@@ -309,7 +308,7 @@ __rpc_taddr2uaddr_af(int af, const struct netbuf *nbuf)
 	struct sockaddr_in6 *sin6;
 	char namebuf6[INET6_ADDRSTRLEN];
 #endif
-	u_int16_t port;
+	uint16_t port;
 
 	sbuf_new(&sb, NULL, 0, SBUF_AUTOEXTEND);
 
@@ -567,8 +566,7 @@ __rpc_getconfip(const char *nettype)
  * unset, i.e. iterate over all visible entries in netconfig.
  */
 void *
-__rpc_setconf(nettype)
-	const char *nettype;
+__rpc_setconf(const char *nettype)
 {
 	struct handle *handle;
 
@@ -688,8 +686,7 @@ __rpc_getconf(void *vhandle)
 }
 
 void
-__rpc_endconf(vhandle)
-	void * vhandle;
+__rpc_endconf(void *vhandle)
 {
 	struct handle *handle;
 
@@ -708,7 +705,7 @@ __rpc_sockisbound(struct socket *so)
 	int error, bound;
 
 	CURVNET_SET(so->so_vnet);
-	error = so->so_proto->pr_usrreqs->pru_sockaddr(so, &sa);
+	error = so->so_proto->pr_sockaddr(so, &sa);
 	CURVNET_RESTORE();
 	if (error)
 		return (0);
@@ -793,12 +790,12 @@ bindresvport(struct socket *so, struct sockaddr *sa)
 #endif
 	struct sockopt opt;
 	int proto, portrange, portlow;
-	u_int16_t *portp;
+	uint16_t *portp;
 	socklen_t salen;
 
 	if (sa == NULL) {
 		CURVNET_SET(so->so_vnet);
-		error = so->so_proto->pr_usrreqs->pru_sockaddr(so, &sa);
+		error = so->so_proto->pr_sockaddr(so, &sa);
 		CURVNET_RESTORE();
 		if (error)
 			return (error);
@@ -871,13 +868,115 @@ out:
 }
 
 /*
+ * Make sure an mbuf list is made up entirely of ext_pgs mbufs.
+ * This is needed for sosend() when KERN_TLS is being used.
+ * (There might also be a performance improvement for certain
+ *  network interfaces that handle ext_pgs mbufs efficiently.)
+ * It expects at least one non-ext_pgs mbuf followed by zero
+ * or more ext_pgs mbufs.  It does not handle the case where
+ * non-ext_pgs mbuf(s) follow ext_pgs ones.
+ * It also performs sanity checks on the resultant list.
+ * The "mp" argument list is consumed.
+ * The "maxextsiz" argument is the upper bound on the data
+ * size for each mbuf (usually 16K for KERN_TLS).
+ */
+struct mbuf *
+_rpc_copym_into_ext_pgs(struct mbuf *mp, int maxextsiz)
+{
+	struct mbuf *m, *m2, *m3, *mhead;
+	int tlen;
+
+	KASSERT((mp->m_flags & (M_EXT | M_EXTPG)) !=
+	    (M_EXT | M_EXTPG), ("_rpc_copym_into_ext_pgs:"
+	    " first mbuf is an ext_pgs"));
+	/*
+	 * Find the last non-ext_pgs mbuf and the total
+	 * length of the non-ext_pgs mbuf(s).
+	 * The first mbuf must always be a non-ext_pgs
+	 * mbuf.
+	 */
+	tlen = mp->m_len;
+	m2 = mp;
+	for (m = mp->m_next; m != NULL; m = m->m_next) {
+		if ((m->m_flags & M_EXTPG) != 0)
+			break;
+		tlen += m->m_len;
+		m2 = m;
+	}
+
+	/*
+	 * Copy the non-ext_pgs mbuf(s) into an ext_pgs
+	 * mbuf list.
+	 */
+	m2->m_next = NULL;
+	mhead = mb_mapped_to_unmapped(mp, tlen, maxextsiz,
+	    M_WAITOK, &m2);
+
+	/*
+	 * Link the ext_pgs list onto the newly copied
+	 * list and free up the non-ext_pgs mbuf(s).
+	 */
+	m2->m_next = m;
+	m_freem(mp);
+
+	/*
+	 * Sanity check the resultant mbuf list.  Check for and
+	 * remove any 0 length mbufs in the list, since the
+	 * KERN_TLS code does not expect any 0 length mbuf(s)
+	 * in the list.
+	 */
+	m3 = NULL;
+	m2 = mhead;
+	tlen = 0;
+	while (m2 != NULL) {
+		KASSERT(m2->m_len >= 0, ("_rpc_copym_into_ext_pgs:"
+		    " negative m_len"));
+		KASSERT((m2->m_flags & (M_EXT | M_EXTPG)) ==
+		    (M_EXT | M_EXTPG), ("_rpc_copym_into_ext_pgs:"
+			    " non-nomap mbuf in list"));
+		if (m2->m_len == 0) {
+			if (m3 != NULL)
+				m3->m_next = m2->m_next;
+			else
+				m = m2->m_next;
+			m2->m_next = NULL;
+			m_free(m2);
+			if (m3 != NULL)
+				m2 = m3->m_next;
+			else
+				m2 = m;
+		} else {
+			MBUF_EXT_PGS_ASSERT_SANITY(m2);
+			m3 = m2;
+			tlen += m2->m_len;
+			m2 = m2->m_next;
+		}
+	}
+	return (mhead);
+}
+
+/*
  * Kernel module glue
  */
 static int
 krpc_modevent(module_t mod, int type, void *data)
 {
+	int error = 0;
 
-	return (0);
+	switch (type) {
+	case MOD_LOAD:
+		error = rpctls_init();
+		break;
+	case MOD_UNLOAD:
+		/*
+		 * Cannot be unloaded, since the rpctlssd or rpctlscd daemons
+		 * might be performing a rpctls syscall.
+		 */
+		/* FALLTHROUGH */
+	default:
+		error = EOPNOTSUPP;
+	}
+	return (error);
 }
 static moduledata_t krpc_mod = {
 	"krpc",
@@ -888,3 +987,4 @@ DECLARE_MODULE(krpc, krpc_mod, SI_SUB_VFS, SI_ORDER_ANY);
 
 /* So that loader and kldload(2) can find us, wherever we are.. */
 MODULE_VERSION(krpc, 1);
+MODULE_DEPEND(krpc, xdr, 1, 1, 1);

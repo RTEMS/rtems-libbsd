@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2010-2012 Semihalf
  * Copyright (c) 2012 The FreeBSD Foundation
@@ -34,8 +34,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * EHCI driver for Freescale i.MX SoCs which incorporate the USBOH3 controller.
  */
@@ -215,10 +213,9 @@ static int
 imx_usbmisc_attach(device_t dev)
 {
 	struct imx_usbmisc_softc *sc;
-	int err, rid;
+	int rid;
 
 	sc = device_get_softc(dev);
-	err = 0;
 
 	/* Allocate bus_space resources. */
 	rid = 0;
@@ -249,15 +246,13 @@ static driver_t imx_usbmisc_driver = {
 	sizeof(struct imx_usbmisc_softc)
 };
 
-static devclass_t imx_usbmisc_devclass;
-
 /*
  * This driver needs to start before the ehci driver, but later than the usual
  * "special" drivers like clocks and cpu.  Ehci starts at DEFAULT so
  * DEFAULT-1000 seems good.
  */
 EARLY_DRIVER_MODULE(imx_usbmisc, simplebus, imx_usbmisc_driver,
-    imx_usbmisc_devclass, 0, 0, BUS_PASS_DEFAULT - 1000);
+    0, 0, BUS_PASS_DEFAULT - 1000);
 
 /*-----------------------------------------------------------------------------
  * imx_ehci driver...
@@ -583,7 +578,5 @@ static driver_t ehci_driver = {
 	sizeof(struct imx_ehci_softc)
 };
 
-static devclass_t ehci_devclass;
-
-DRIVER_MODULE(ehci, simplebus, ehci_driver, ehci_devclass, 0, 0);
-MODULE_DEPEND(ehci, usb, 1, 1, 1);
+DRIVER_MODULE(imx_ehci, simplebus, ehci_driver, 0, 0);
+MODULE_DEPEND(imx_ehci, usb, 1, 1, 1);

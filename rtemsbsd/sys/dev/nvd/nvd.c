@@ -296,7 +296,7 @@ nvd_new_disk(struct nvme_namespace *ns, void *arg)
 	TAILQ_INSERT_TAIL(&ctrlr->disk_head, ndisk, ctrlr_tailq);
 	mtx_unlock(&nvd_lock);
 
-	min_page_size = ndisk->ns->ctrlr->min_page_size;
+	min_page_size = ndisk->ns->ctrlr->page_size;
 	block_size = nvme_ns_get_sector_size(ns);
 
 	if (block_size < min_page_size) {

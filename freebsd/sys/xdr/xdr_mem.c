@@ -36,8 +36,6 @@ static char *sccsid2 = "@(#)xdr_mem.c 1.19 87/08/11 Copyr 1984 Sun Micro";
 static char *sccsid = "@(#)xdr_mem.c	2.1 88/07/29 4.0 RPCSRC";
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * xdr_mem.h, XDR implementation using memory buffers.
  *
@@ -69,7 +67,7 @@ static bool_t xdrmem_setpos(XDR *, u_int);
 static int32_t *xdrmem_inline_aligned(XDR *, u_int);
 static int32_t *xdrmem_inline_unaligned(XDR *, u_int);
 static bool_t xdrmem_control(XDR *xdrs, int request, void *info);
-	
+
 static const struct	xdr_ops xdrmem_ops_aligned = {
 	xdrmem_getlong_aligned,
 	xdrmem_putlong_aligned,
@@ -123,7 +121,7 @@ xdrmem_getlong_aligned(XDR *xdrs, long *lp)
 	if (xdrs->x_handy < sizeof(int32_t))
 		return (FALSE);
 	xdrs->x_handy -= sizeof(int32_t);
-	*lp = ntohl(*(u_int32_t *)xdrs->x_private);
+	*lp = ntohl(*(uint32_t *)xdrs->x_private);
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
 	return (TRUE);
 }
@@ -135,7 +133,7 @@ xdrmem_putlong_aligned(XDR *xdrs, const long *lp)
 	if (xdrs->x_handy < sizeof(int32_t))
 		return (FALSE);
 	xdrs->x_handy -= sizeof(int32_t);
-	*(u_int32_t *)xdrs->x_private = htonl((u_int32_t)*lp);
+	*(uint32_t *)xdrs->x_private = htonl((uint32_t)*lp);
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
 	return (TRUE);
 }
@@ -143,7 +141,7 @@ xdrmem_putlong_aligned(XDR *xdrs, const long *lp)
 static bool_t
 xdrmem_getlong_unaligned(XDR *xdrs, long *lp)
 {
-	u_int32_t l;
+	uint32_t l;
 
 	if (xdrs->x_handy < sizeof(int32_t))
 		return (FALSE);
@@ -157,12 +155,12 @@ xdrmem_getlong_unaligned(XDR *xdrs, long *lp)
 static bool_t
 xdrmem_putlong_unaligned(XDR *xdrs, const long *lp)
 {
-	u_int32_t l;
+	uint32_t l;
 
 	if (xdrs->x_handy < sizeof(int32_t))
 		return (FALSE);
 	xdrs->x_handy -= sizeof(int32_t);
-	l = htonl((u_int32_t)*lp);
+	l = htonl((uint32_t)*lp);
 	memmove(xdrs->x_private, &l, sizeof(int32_t));
 	xdrs->x_private = (char *)xdrs->x_private + sizeof(int32_t);
 	return (TRUE);
@@ -242,7 +240,6 @@ xdrmem_control(XDR *xdrs, int request, void *info)
 	int len;
 
 	switch (request) {
-
 	case XDR_GET_BYTES_AVAIL:
 		xptr = (xdr_bytesrec *)info;
 		xptr->xc_is_last_record = TRUE;
@@ -271,7 +268,6 @@ xdrmem_control(XDR *xdrs, int request, void *info)
 		xdrs->x_handy -= len;
 		xdrs->x_private = (char *)xdrs->x_private + len;
 		return (TRUE);
-
 	}
 	return (FALSE);
 }

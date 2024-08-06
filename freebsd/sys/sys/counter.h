@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2012 Gleb Smirnoff <glebius@FreeBSD.org>
  * All rights reserved.
@@ -24,8 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef __SYS_COUNTER_H__
@@ -73,6 +71,19 @@ struct counter_rate {
 };
 
 int64_t	counter_ratecheck(struct counter_rate *, int64_t);
+
+#define	COUNTER_U64_SYSINIT(c)					\
+	SYSINIT(c##_counter_sysinit, SI_SUB_COUNTER,		\
+	    SI_ORDER_ANY, counter_u64_sysinit, &c);		\
+	SYSUNINIT(c##_counter_sysuninit, SI_SUB_COUNTER,	\
+	    SI_ORDER_ANY, counter_u64_sysuninit, &c)
+
+#define	COUNTER_U64_DEFINE_EARLY(c)				\
+	counter_u64_t __read_mostly c = EARLY_COUNTER;		\
+	COUNTER_U64_SYSINIT(c)
+
+void counter_u64_sysinit(void *);
+void counter_u64_sysuninit(void *);
 
 #endif	/* _KERNEL */
 #endif	/* ! __SYS_COUNTER_H__ */

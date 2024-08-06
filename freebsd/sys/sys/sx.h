@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2007 Attilio Rao <attilio@freebsd.org>
  * Copyright (c) 2001 Jason Evans <jasone@freebsd.org>
@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef	_SYS_SX_H_
@@ -290,12 +288,13 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 	(((sx)->sx_lock & ~(SX_LOCK_FLAGMASK & ~SX_LOCK_SHARED)) ==	\
 	    (uintptr_t)curthread)
 
-#define	sx_unlock_(sx, file, line) do {					\
+#define	sx_unlock_(sx, file, line) __extension__ ({			\
 	if (sx_xlocked(sx))						\
 		sx_xunlock_(sx, file, line);				\
 	else								\
 		sx_sunlock_(sx, file, line);				\
-} while (0)
+	(void)0; /* ensure void type for expression */			\
+})
 
 #define	sx_unlock(sx)	sx_unlock_((sx), LOCK_FILE, LOCK_LINE)
 #else /* __rtems__ */
@@ -318,7 +317,6 @@ int sx_xlocked(struct sx *sx);
 #define	SX_NOPROFILE		0x02
 #define	SX_NOWITNESS		0x04
 #define	SX_QUIET		0x08
-#define	SX_NOADAPTIVE		0x10
 #define	SX_RECURSE		0x20
 #define	SX_NEW			0x40
 
@@ -345,5 +343,27 @@ int sx_xlocked(struct sx *sx);
 #endif
 
 #endif /* _KERNEL */
+
+#ifdef _STANDALONE
+/* since we have no threads in the boot loader, trivially implement no-op version */
+#define sx_xlock(s) (1)
+#define sx_try_xlock(s) (1)
+#define sx_xunlock(s) (1)
+#define SX_DUPOK 0
+#define SX_NEW 0
+#define SX_NOWITNESS 0
+
+static __inline void
+sx_init_flags(struct sx *sx, const char *description, int opts)
+{
+
+}
+
+static __inline void
+sx_destroy(struct sx *sx)
+{
+
+}
+#endif /* _STANDALONE */
 
 #endif /* !_SYS_SX_H_ */

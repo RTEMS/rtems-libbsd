@@ -187,6 +187,11 @@
 #define	RFPPWAIT	(1<<31)	/* parent sleeps until child exits (vfork) */
 #define	RFKERNELONLY	(RFSTOPPED | RFHIGHPID | RFPPWAIT)
 
+/*
+ * close_range() options.
+ */
+#define	CLOSE_RANGE_CLOEXEC	(1<<2)
+
 #endif /* __BSD_VISIBLE */
 
 #endif /* !_RTEMS_BSD_SYS_UNISTD_H_ */

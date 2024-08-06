@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -129,7 +127,6 @@ r92e_get_txpower(struct rtwn_softc *sc, int chain, struct ieee80211_channel *c,
 		min_mcs = RTWN_RIDX_HT_MCS(i * 8);
 		for (ridx = min_mcs; ridx <= max_mcs; ridx++)
 			power[ridx] += pwr_diff;
-
 	}
 
 	/* Apply max limit. */

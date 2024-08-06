@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -44,7 +42,6 @@
 /*
  * Driver data and defines.
  */
-#define	RX_MAX_PACKET	0x7ff
 #ifndef __rtems__
 #define	RX_DESC_COUNT	1024
 #else /* __rtems__ */
@@ -56,35 +53,40 @@
 #else /* __rtems__ */
 #define	TX_DESC_COUNT	256
 #endif /* __rtems__ */
+#define	TX_MAP_COUNT	TX_DESC_COUNT
 #define	TX_DESC_SIZE	(sizeof(struct dwc_hwdesc) * TX_DESC_COUNT)
-#define	TX_MAX_DMA_SEGS	8	/* maximum segs in a tx mbuf dma */
+#define	TX_MAP_MAX_SEGS	32
+#ifdef __rtems__
+#define TX_MAX_DMA_SEGS 8 /* maximum segs in a tx mbuf dma */
+#endif /* __rtems__ */
 
 struct dwc_bufmap {
 #ifndef __rtems__
 	bus_dmamap_t		map;
 #endif /* __rtems__ */
 	struct mbuf		*mbuf;
+	/* Only used for TX descirptors */
+	int			last_desc_idx;
 };
 
 struct dwc_softc {
 	struct resource		*res[2];
-	bus_space_tag_t		bst;
-	bus_space_handle_t	bsh;
 	device_t		dev;
 	int			mactype;
 	int			mii_clk;
 	device_t		miibus;
 	struct mii_data *	mii_softc;
-	struct ifnet		*ifp;
+	if_t			ifp;
 	int			if_flags;
 	struct mtx		mtx;
 	void *			intr_cookie;
 	struct callout		dwc_callout;
-	boolean_t		link_is_up;
-	boolean_t		is_attached;
-	boolean_t		is_detaching;
+	bool			link_is_up;
+	bool			is_attached;
+	bool			is_detaching;
 	int			tx_watchdog_count;
 	int			stats_harvest_count;
+	int			phy_mode;
 
 	/* RX */
 	bus_dma_tag_t		rxdesc_tag;
@@ -106,9 +108,12 @@ struct dwc_softc {
 	bus_dma_tag_t		txbuf_tag;
 #endif /* __rtems__ */
 	struct dwc_bufmap	txbuf_map[TX_DESC_COUNT];
-	uint32_t		tx_idx_head;
-	uint32_t		tx_idx_tail;
-	int			txcount;
+	uint32_t		tx_desc_head;
+	uint32_t		tx_desc_tail;
+	uint32_t		tx_map_head;
+	uint32_t		tx_map_tail;
+	int			tx_desccount;
+	int			tx_mapcount;
 };
 
 #endif	/* __IF_DWCVAR_H__ */

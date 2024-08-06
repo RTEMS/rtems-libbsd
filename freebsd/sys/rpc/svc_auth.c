@@ -40,8 +40,6 @@
 static char sccsid[] = "@(#)svc_auth.c 1.26 89/02/07 Copyr 1984 Sun Micro";
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * svc_auth.c, Server-side rpc authenticator interface.
  *
@@ -50,18 +48,20 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
+#include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/jail.h>
 #include <sys/ucred.h>
 
 #include <rpc/rpc.h>
+#include <rpc/rpcsec_tls.h>
 
 static enum auth_stat (*_svcauth_rpcsec_gss)(struct svc_req *,
     struct rpc_msg *) = NULL;
 static int (*_svcauth_rpcsec_gss_getcred)(struct svc_req *,
     struct ucred **, int *);
 
-static struct svc_auth_ops svc_auth_null_ops;
+static const struct svc_auth_ops svc_auth_null_ops;
 
 /*
  * The call rpc message, msg has been obtained from the wire.  The msg contains
@@ -71,7 +71,7 @@ static struct svc_auth_ops svc_auth_null_ops;
  * set rqst->rq_xprt->verf to the appropriate response verifier;
  * sets rqst->rq_client_cred to the "cooked" form of the credentials.
  *
- * NB: rqst->rq_cxprt->verf must be pre-alloctaed;
+ * NB: rqst->rq_cxprt->verf must be pre-allocated;
  * its length is set appropriately.
  *
  * The caller still owns and is responsible for msg->u.cmb.cred and
@@ -96,15 +96,24 @@ _authenticate(struct svc_req *rqst, struct rpc_msg *msg)
 		dummy = _svcauth_null(rqst, msg);
 		return (dummy);
 	case AUTH_SYS:
+		if ((rqst->rq_xprt->xp_tls & RPCTLS_FLAGS_DISABLED) != 0)
+			return (AUTH_REJECTEDCRED);
 		dummy = _svcauth_unix(rqst, msg);
 		return (dummy);
 	case AUTH_SHORT:
+		if ((rqst->rq_xprt->xp_tls & RPCTLS_FLAGS_DISABLED) != 0)
+			return (AUTH_REJECTEDCRED);
 		dummy = _svcauth_short(rqst, msg);
 		return (dummy);
 	case RPCSEC_GSS:
+		if ((rqst->rq_xprt->xp_tls & RPCTLS_FLAGS_DISABLED) != 0)
+			return (AUTH_REJECTEDCRED);
 		if (!_svcauth_rpcsec_gss)
 			return (AUTH_REJECTEDCRED);
 		dummy = _svcauth_rpcsec_gss(rqst, msg);
+		return (dummy);
+	case AUTH_TLS:
+		dummy = _svcauth_rpcsec_tls(rqst, msg);
 		return (dummy);
 	default:
 		break;
@@ -137,10 +146,10 @@ svcauth_null_release(SVCAUTH *auth)
 
 }
 
-static struct svc_auth_ops svc_auth_null_ops = {
-	svcauth_null_wrap,
-	svcauth_null_unwrap,
-	svcauth_null_release,
+static const struct svc_auth_ops svc_auth_null_ops = {
+	.svc_ah_wrap = svcauth_null_wrap,
+	.svc_ah_unwrap = svcauth_null_unwrap,
+	.svc_ah_release = svcauth_null_release,
 };
 
 /*ARGSUSED*/
@@ -171,10 +180,31 @@ svc_getcred(struct svc_req *rqst, struct ucred **crp, int *flavorp)
 	struct ucred *cr = NULL;
 	int flavor;
 	struct xucred *xcr;
+	SVCXPRT *xprt = rqst->rq_xprt;
 
 	flavor = rqst->rq_cred.oa_flavor;
 	if (flavorp)
 		*flavorp = flavor;
+
+	/*
+	 * If there are credentials acquired via a TLS
+	 * certificate for this TCP connection, use those
+	 * instead of what is in the RPC header.
+	 */
+	if ((xprt->xp_tls & (RPCTLS_FLAGS_CERTUSER |
+	    RPCTLS_FLAGS_DISABLED)) == RPCTLS_FLAGS_CERTUSER &&
+	    flavor == AUTH_UNIX) {
+		cr = crget();
+		cr->cr_uid = cr->cr_ruid = cr->cr_svuid = xprt->xp_uid;
+		crsetgroups(cr, xprt->xp_ngrps, xprt->xp_gidp);
+		cr->cr_rgid = cr->cr_svgid = xprt->xp_gidp[0];
+#ifndef __rtems__
+		cr->cr_prison = curthread->td_ucred->cr_prison;
+		prison_hold(cr->cr_prison);
+#endif /* __rtems__ */
+		*crp = cr;
+		return (TRUE);
+	}
 
 	switch (flavor) {
 	case AUTH_UNIX:
@@ -184,7 +214,7 @@ svc_getcred(struct svc_req *rqst, struct ucred **crp, int *flavorp)
 		crsetgroups(cr, xcr->cr_ngroups, xcr->cr_groups);
 		cr->cr_rgid = cr->cr_svgid = cr->cr_groups[0];
 #ifndef __rtems__
-		cr->cr_prison = &prison0;
+		cr->cr_prison = curthread->td_ucred->cr_prison;
 		prison_hold(cr->cr_prison);
 #endif /* __rtems__ */
 		*crp = cr;

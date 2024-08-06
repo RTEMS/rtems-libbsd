@@ -2,23 +2,23 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-openssl-data.h"
 /* speed.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static AES_KEY aes_ks1);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static AES_KEY aes_ks2);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static AES_KEY aes_ks3);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static DES_key_schedule sch);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static DES_key_schedule sch2);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static DES_key_schedule sch3);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static EVP_MD const *evp_md);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static OPT_PAIR ecdsa_choices[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static OPT_PAIR eddsa_choices[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static RC4_KEY rc4_ks);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char *evp_cmac_name);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char *evp_hmac_name);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char *evp_mac_ciphername);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char *evp_mac_mdname);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char const *evp_md_name);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static char const *names[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double dsa_results[][2]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double ecdh_results[][1]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double ecdsa_results[][2]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double eddsa_results[][2]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double ffdh_results[][1]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double results[][6]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double rsa_results[][2]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static double sm2_results[][2]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int algindex);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int const *lengths);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int decrypt);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int mr);
@@ -29,9 +29,9 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int dsa_c[][2]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int ecdh_c[][1]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int ecdsa_c[][2]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int eddsa_c[][2]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int ffdh_c[][1]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int rsa_c[][2]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int save_count);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static unsigned char DES_iv[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static long int sm2_c[][2]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static unsigned char dsa1024_g[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static unsigned char dsa1024_p[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static unsigned char dsa1024_priv[]);

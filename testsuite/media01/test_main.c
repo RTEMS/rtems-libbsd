@@ -225,13 +225,7 @@ early_initialization(void)
   #define SHELL_WPA_SUPPLICANT_COMMANDS
 #endif
 
-#ifdef RTEMS_BSD_MODULE_NETIPSEC
-  #define SHELL_NETIPSEC_COMMANDS \
-    &rtems_shell_RACOON_Command, \
-    &rtems_shell_SETKEY_Command,
-#else
-  #define SHELL_NETIPSEC_COMMANDS
-#endif
+#define SHELL_NETIPSEC_COMMANDS
 
 #define CONFIGURE_SHELL_USER_COMMANDS \
   SHELL_WPA_SUPPLICANT_COMMANDS \

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright 2010, Gleb Smirnoff <glebius@FreeBSD.org>
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -67,7 +65,8 @@
 #ifdef USB_DEBUG
 static int uep_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, uep, CTLFLAG_RW, 0, "USB uep");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, uep, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB uep");
 SYSCTL_INT(_hw_usb_uep, OID_AUTO, debug, CTLFLAG_RWTUN,
     &uep_debug, 0, "Debug level");
 #endif
@@ -178,7 +177,7 @@ get_pkt_len(u_char *buf)
 static void
 uep_process_pkt(struct uep_softc *sc, u_char *buf)
 {
-	int32_t x, y;
+	int32_t x __usbdebug_used, y __usbdebug_used;
 #ifdef EVDEV_SUPPORT
 	int touch;
 #endif
@@ -268,7 +267,7 @@ uep_intr_callback(struct usb_xfer *xfer, usb_error_t error)
 			memcpy(sc->buf + sc->buf_len, buf, res);
 			uep_process_pkt(sc, sc->buf);
 			sc->buf_len = 0;
- 
+
 			p = buf + res;
 			len -= res;
 		} else
@@ -382,8 +381,8 @@ uep_attach(device_t dev)
 	evdev_support_event(sc->evdev, EV_ABS);
 	evdev_support_event(sc->evdev, EV_KEY);
 	evdev_support_key(sc->evdev, BTN_TOUCH);
-	evdev_support_abs(sc->evdev, ABS_X, 0, 0, UEP_MAX_X, 0, 0, 0);
-	evdev_support_abs(sc->evdev, ABS_Y, 0, 0, UEP_MAX_Y, 0, 0, 0);
+	evdev_support_abs(sc->evdev, ABS_X, 0, UEP_MAX_X, 0, 0, 0);
+	evdev_support_abs(sc->evdev, ABS_Y, 0, UEP_MAX_Y, 0, 0, 0);
 
 	error = evdev_register_mtx(sc->evdev, &sc->mtx);
 	if (error) {
@@ -518,8 +517,6 @@ uep_close(struct usb_fifo *fifo, int fflags)
 }
 #endif /* !EVDEV_SUPPORT */
 
-static devclass_t uep_devclass;
-
 static device_method_t uep_methods[] = {
 	DEVMETHOD(device_probe, uep_probe),
        	DEVMETHOD(device_attach, uep_attach),
@@ -533,7 +530,7 @@ static driver_t uep_driver = {
 	.size = sizeof(struct uep_softc),
 };
 
-DRIVER_MODULE(uep, uhub, uep_driver, uep_devclass, NULL, NULL);
+DRIVER_MODULE(uep, uhub, uep_driver, NULL, NULL);
 MODULE_DEPEND(uep, usb, 1, 1, 1);
 #ifdef EVDEV_SUPPORT
 MODULE_DEPEND(uep, evdev, 1, 1, 1);

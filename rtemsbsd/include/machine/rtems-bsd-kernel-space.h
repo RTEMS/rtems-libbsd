@@ -62,6 +62,16 @@ extern "C" {
 #define	__GLOBL1(sym)	__asm__(".globl " #sym)
 #define	__GLOBL(sym)	__GLOBL1(sym)
 
+#define PHYS_TO_VM_PAGE(p) (p)
+#define PHYS_TO_DMAP(p) (p)
+#define VM_PAGE_TO_PHYS(p) (p)
+#define vm_page_unwire_noq(pg) (0)
+#define vnode_pager_clean_sync(vp) (0)
+#define sigallowstop(prev) (0)
+
+#define NETLINK 1
+#define NETLINK_MODULE 1
+
 #define O_CLOEXEC 0
 
 /* FIXME: end: Update Newlib */
@@ -94,6 +104,10 @@ extern "C" {
 #define __LINUX_ERRNO_EXTENSIONS__ 1
 
 #define __FreeBSD__ 1
+
+/* TI sysc */
+#define SYSC_OMAP4_SOFTRESET            (1 << 0)
+#define SYSC_OMAP2_SOFTRESET            (1 << 1)
 
 /* General define to activate BSD kernel parts */
 #define _KERNEL 1
@@ -167,7 +181,12 @@ void rtems_bsd_assert_func(const char *file, int line, const char *func, const c
 #define EBADRPC         72
 #define EPROGMISMATCH   75
 #define EAUTH           80
+#define ENOATTR         87
 #define ENOTCAPABLE     93
+
+/* From sys/unistd.h */
+/* From OpenSolaris, used by SEEK_DATA/SEEK_HOLE. */
+#define	_PC_MIN_HOLE_SIZE	21
 
 #define	EDOOFUS __ELASTERROR
 
@@ -179,6 +198,10 @@ typedef unsigned short  ushort;         /* Sys V compatibility */
 typedef unsigned int    uint;           /* Sys V compatibility */
 
 typedef __UINT64_TYPE__ uoff_t;
+
+typedef register_t syscallarg_t;
+typedef max_align_t  __max_align_t;
+typedef struct clk *clk_t;
 
 #define __LLONG_MAX __LONG_LONG_MAX__
 #define __OFF_MAX   __LLONG_MAX
@@ -196,9 +219,111 @@ typedef __UINT64_TYPE__ uoff_t;
 #define _PC_INF_PRESENT         62
 #define _PC_MAC_PRESENT         63
 #define _PC_ACL_NFS4            64
+#define _PC_DEALLOC_PRESENT     65
 
 #define FFLAGS(oflags)  ((oflags) + 1)
 #define OFLAGS(fflags)  ((fflags) - 1)
+
+#define PMAP_HAS_DMAP 0
+#define       VM_LOW_MBUFS    0x04
+#define   EINTEGRITY      97              /* Integrity check failed */
+
+/* From sys/fcntl.h in FreeBSD 14 */
+/*
+ * Space control offset/length description
+ */
+struct spacectl_range {
+	off_t	r_offset;	/* starting offset */
+	off_t	r_len;	/* length */
+};
+
+#define SPACECTL_DEALLOC  1       /* deallocate space */
+
+#define SPACECTL_F_SUPPORTED      0
+
+#define O_PATH              0x00400000  /* fd is only a path */
+#define AT_RESOLVE_BENEATH  0x2000      /* Do not allow name resolution 
+                                           to walk out of dirfd */
+#define AT_EMPTY_PATH       0x4000      /* Operate on dirfs if path if empty */
+#define O_RESOLVE_BENEATH   0x00800000  /* Do not allow name resolution to walk
+                                           out of cwd */
+#define O_EMPTY_PATH  0x02000000
+#define F_FIRSTOPEN 0x200   /* First right to advlock file */
+#define O_DSYNC   0x01000000  /* POSIX data sync */
+#define FEXEC   O_EXEC
+/* Only for O_PATH files which passed ACCESS FREAD check on open */
+#define FKQALLOWED          O_RESOLVE_BENEATH
+/*
+ * Magic value that specify that corresponding file descriptor to filename
+ * is unknown and sanitary check should be omitted in the funlinkat() and
+ * similar syscalls.
+ */
+#define FD_NONE             -200
+
+#define SRQ_HOLD        0x0020          /* Return holding original td lock */
+
+#ifdef  KTRACE
+#define __ktrace_used
+#else
+#define __ktrace_used __unused
+#endif
+
+/* Here until time in newlib is updated */
+#define timespecvalid_interval(tsp) ((tsp)->tv_sec >= 0 &&    \
+        (tsp)->tv_nsec >= 0 && (tsp)->tv_nsec < 1000000000L)
+/* Here until poll in newlib is updated */
+#define ECAPMODE 94 /* Not permitted in capability mode */
+#define	POLLRDHUP	0x4000		/* half shut down */
+/* Here until _termios in newlib is updated */
+#define IUTF8   0x00004000
+/* Here until socket in newlib is updated */
+#define PF_DIVERT 44
+#define AF_NETLINK 38
+#define PF_NETLINK AF_NETLINK
+#define SO_SPLICE 0x1023    /* splice data to other socket */
+/* Here until queue in newlib is updated */
+#define LIST_REMOVE_HEAD(head, field)					\
+	LIST_REMOVE(LIST_FIRST(head), field)
+
+/*
+ * Structure used for manipulating splice option.
+ */
+struct splice {
+	int	sp_fd;			/* drain socket file descriptor */
+	off_t	sp_max;			/* if set, maximum bytes to splice */
+	struct timeval sp_idle;		/* idle timeout */
+};
+/* Here until in6 in newlib is updated */
+#if __BSD_VISIBLE
+/*
+ * s6_addr is the only in6_addr element specified in RFCs 2553 and 3493,
+ * also in POSIX 1003.1-2017.  The following three definitions were not
+ * exposed to user programs in FreeBSD before 14.1, or in other BSDs,
+ * and are thus less portable than s6_addr.
+ */
+#define s6_addr8  __u6_addr.__u6_addr8
+#define s6_addr16 __u6_addr.__u6_addr16
+#define s6_addr32 __u6_addr.__u6_addr32
+#endif
+/* Here until dirent in newlib is updated */
+/*
+ * The _GENERIC_DIRSIZ macro gives the minimum record length which will hold
+ * the directory entry.  This returns the amount of space in struct dirent
+ * without the d_name field, plus enough space for the name with a terminating
+ * null byte (dp->d_namlen+1), rounded up to a 8 byte boundary.
+ *
+ * XXX although this macro is in the implementation namespace, it requires
+ * a manifest constant that is not.
+ */
+#define	_GENERIC_DIRLEN(namlen)					\
+	((__offsetof(struct dirent, d_name) + (namlen) + 1 + 7) & ~7)
+#define	_GENERIC_DIRSIZ(dp)	_GENERIC_DIRLEN((dp)->d_namlen)
+#define	_GENERIC_MINDIRSIZ	_GENERIC_DIRLEN(1) /* Name must not be empty */
+#define	_GENERIC_MAXDIRSIZ	_GENERIC_DIRLEN(MAXNAMLEN)
+
+#define	GENERIC_DIRSIZ(dp)	_GENERIC_DIRSIZ(dp)
+#define	GENERIC_MINDIRSIZ	_GENERIC_MINDIRSIZ
+#define	GENERIC_MAXDIRSIZ	_GENERIC_MAXDIRSIZ
 
 #define buffer_arena NULL
 extern struct vmem *rtems_bsd_transient_arena;
@@ -206,7 +331,7 @@ extern struct vmem *rtems_bsd_transient_arena;
 
 struct uma_zone;
 extern struct uma_zone* ncl_pbuf_zone;
-struct uma_zone* pbuf_zsecond_create(char *name, int max);
+struct uma_zone* pbuf_zsecond_create(const char *name, int max);
 
 /*
  * Device dev_t handling
@@ -237,6 +362,11 @@ dev_t rtems_bsd__makedev(int _M, int _m);
 #define SIGISMEMBER(set, signo) (0)
 
 /*
+ * From signalvar.h
+ */
+#define sigdeferstop(sig) (0)
+
+/*
  * Special knote status bit to indicate the kn_fp is an iop.
  */
 #define KN_FP_IS_IOP       0x10000000
@@ -254,6 +384,21 @@ void dirent_terminate(struct dirent *dp);
  * https://reviews.freebsd.org/D32954
  */
 #define	NEW_PCIB 1
+
+/*
+ * From sys/sys/types.h
+ */
+#if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 13))
+#define __enum_uint8_decl(name)	enum enum_ ## name ## _uint8 : uint8_t
+#define __enum_uint8(name)	enum enum_ ## name ## _uint8
+#else
+/*
+ * Note: there is no real size checking here, but the code below can be
+ * removed once we require GCC 13.
+ */
+#define __enum_uint8_decl(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
+#define __enum_uint8(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
+#endif
 
 #ifdef __cplusplus
 }

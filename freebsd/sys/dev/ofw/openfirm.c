@@ -60,8 +60,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_platform.h>
 
 #include <sys/param.h>
@@ -837,7 +835,7 @@ OF_release(void *virt, size_t size)
 
 /* Suspend and drop back to the Open Firmware interface. */
 void
-OF_enter()
+OF_enter(void)
 {
 
 	if (ofw_def_impl == NULL)
@@ -848,7 +846,7 @@ OF_enter()
 
 /* Shut down and drop back to the Open Firmware interface. */
 void
-OF_exit()
+OF_exit(void)
 {
 
 	if (ofw_def_impl == NULL)

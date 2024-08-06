@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2012-2013 Intel Corporation
  * All rights reserved.
@@ -32,18 +32,19 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
+#include <libutil.h>
 #include <paths.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <unistd.h>
 
 #include "nvmecontrol.h"
@@ -55,10 +56,27 @@ __FBSDID("$FreeBSD$");
 
 static cmd_fn_t devlist;
 
+static struct options {
+	bool	human;
+} opt = {
+	.human = false,
+};
+
+static const struct opts devlist_opts[] = {
+#define OPT(l, s, t, opt, addr, desc) { l, s, t, &opt.addr, desc }
+	OPT("human", 'h', arg_none, opt, human,
+	    "Show human readable disk size"),
+	{ NULL, 0, arg_none, NULL, NULL }
+};
+#undef OPT
+
 static struct cmd devlist_cmd = {
 	.name = "devlist",
 	.fn = devlist,
-	.descr = "List NVMe controllers and namespaces"
+	.descr = "List NVMe controllers and namespaces",
+	.ctx_size = sizeof(opt),
+	.opts = devlist_opts,
+	.args = NULL,
 };
 
 CMD_COMMAND(devlist_cmd);
@@ -70,10 +88,8 @@ ns_get_sector_size(struct nvme_namespace_data *nsdata)
 {
 	uint8_t flbas_fmt, lbads;
 
-	flbas_fmt = (nsdata->flbas >> NVME_NS_DATA_FLBAS_FORMAT_SHIFT) &
-		NVME_NS_DATA_FLBAS_FORMAT_MASK;
-	lbads = (nsdata->lbaf[flbas_fmt] >> NVME_NS_DATA_LBAF_LBADS_SHIFT) &
-		NVME_NS_DATA_LBAF_LBADS_MASK;
+	flbas_fmt = NVMEV(NVME_NS_DATA_FLBAS_FORMAT, nsdata->flbas);
+	lbads = NVMEV(NVME_NS_DATA_LBAF_LBADS, nsdata->lbaf[flbas_fmt]);
 
 	return (1 << lbads);
 }
@@ -85,7 +101,9 @@ devlist(const struct cmd *f, int argc, char *argv[])
 	struct nvme_namespace_data	nsdata;
 	char				name[64];
 	uint8_t				mn[64];
+	uint8_t				buf[7];
 	uint32_t			i;
+	uint64_t			size;
 	int				ctrlr, fd, found, ret;
 
 	if (arg_parse(argc, argv, f))
@@ -107,28 +125,36 @@ devlist(const struct cmd *f, int argc, char *argv[])
 			continue;
 
 		found++;
-		read_controller_data(fd, &cdata);
+		if (read_controller_data(fd, &cdata))
+			continue;
 		nvme_strvis(mn, cdata.mn, sizeof(mn), NVME_MODEL_NUMBER_LENGTH);
 		printf("%6s: %s\n", name, mn);
 
 		for (i = 0; i < cdata.nn; i++) {
-			read_namespace_data(fd, i + 1, &nsdata);
+			if (read_namespace_data(fd, i + 1, &nsdata))
+				continue;
 			if (nsdata.nsze == 0)
 				continue;
 			sprintf(name, "%s%d%s%d", NVME_CTRLR_PREFIX, ctrlr,
 			    NVME_NS_PREFIX, i + 1);
-			printf("  %10s (%lldMB)\n",
-				name,
-				nsdata.nsze *
-				(long long)ns_get_sector_size(&nsdata) /
-				1024 / 1024);
+			size = nsdata.nsze * (uint64_t)ns_get_sector_size(&nsdata);
+			if (opt.human) {
+				humanize_number(buf, sizeof(buf), size, "B",
+				    HN_AUTOSCALE, HN_B | HN_NOSPACE | HN_DECIMAL);
+				printf("  %10s (%s)\n", name, buf);
+
+			} else {
+				printf("  %10s (%juMB)\n", name, (uintmax_t)size / 1024 / 1024);
+			}
 		}
 
 		close(fd);
 	}
 
-	if (found == 0)
+	if (found == 0) {
 		printf("No NVMe controllers found.\n");
+		exit(EX_UNAVAILABLE);
+	}
 
-	exit(1);
+	exit(0);
 }

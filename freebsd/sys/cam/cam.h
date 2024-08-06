@@ -1,7 +1,7 @@
 /*-
  * Data structures and definitions for the CAM system.
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _CAM_CAM_H
@@ -38,10 +36,13 @@
 #endif
 
 #include <sys/cdefs.h>
+#ifndef _KERNEL
+#include <stdbool.h>
+#endif
 
 typedef u_int path_id_t;
 typedef u_int target_id_t;
-typedef u_int64_t lun_id_t;
+typedef uint64_t lun_id_t;
 
 #define	CAM_XPT_PATH_ID	((path_id_t)~0)
 #define	CAM_BUS_WILDCARD ((path_id_t)~0)
@@ -49,10 +50,10 @@ typedef u_int64_t lun_id_t;
 #define	CAM_LUN_WILDCARD (~(u_int)0)
 
 #define CAM_EXTLUN_BYTE_SWIZZLE(lun) (	\
-	((((u_int64_t)lun) & 0xffff000000000000L) >> 48) | \
-	((((u_int64_t)lun) & 0x0000ffff00000000L) >> 16) | \
-	((((u_int64_t)lun) & 0x00000000ffff0000L) << 16) | \
-	((((u_int64_t)lun) & 0x000000000000ffffL) << 48))
+	((((uint64_t)lun) & 0xffff000000000000L) >> 48) | \
+	((((uint64_t)lun) & 0x0000ffff00000000L) >> 16) | \
+	((((uint64_t)lun) & 0x00000000ffff0000L) << 16) | \
+	((((uint64_t)lun) & 0x000000000000ffffL) << 48))
 
 /*
  * Maximum length for a CAM CDB.  
@@ -83,19 +84,20 @@ typedef enum {
  * the queue giving round robin per priority level scheduling.
  */
 typedef struct {
-	u_int32_t priority;
+	uint32_t priority;
 #define CAM_PRIORITY_HOST	((CAM_RL_HOST << 8) + 0x80)
 #define CAM_PRIORITY_BUS	((CAM_RL_BUS << 8) + 0x80)
 #define CAM_PRIORITY_XPT	((CAM_RL_XPT << 8) + 0x80)
 #define CAM_PRIORITY_DEV	((CAM_RL_DEV << 8) + 0x80)
 #define CAM_PRIORITY_OOB	(CAM_RL_DEV << 8)
 #define CAM_PRIORITY_NORMAL	((CAM_RL_NORMAL << 8) + 0x80)
-#define CAM_PRIORITY_NONE	(u_int32_t)-1
-	u_int32_t generation;
+#define CAM_PRIORITY_NONE	(uint32_t)-1
+	uint32_t generation;
 	int       index;
 #define CAM_UNQUEUED_INDEX	-1
-#define CAM_ACTIVE_INDEX	-2	
-#define CAM_DONEQ_INDEX		-3	
+#define CAM_ACTIVE_INDEX	-2
+#define CAM_DONEQ_INDEX		-3
+#define CAM_ASYNC_INDEX		-4
 #define CAM_EXTRAQ_INDEX	INT_MAX
 } cam_pinfo;
 
@@ -236,7 +238,12 @@ typedef enum {
 	CAM_REQ_SOFTTIMEOUT	= 0x1f,
 
 	/*
-	 * 0x20 - 0x32 are unassigned
+	 * NVME error, look at errro code in CCB
+	 */
+	CAM_NVME_STATUS_ERROR	= 0x20,
+
+	/*
+	 * 0x21 - 0x32 are unassigned
 	 */
 
 	/* Initiator Detected Error */
@@ -278,7 +285,6 @@ typedef enum {
 	/* SCSI Bus Busy */
 	CAM_SCSI_BUSY		= 0x3f,
 
-
 	/*
 	 * Flags
 	 */
@@ -304,7 +310,7 @@ typedef enum {
 	/*
 	 * Target Specific Adjunct Status
 	 */
-	
+
 	/* sent sense with status */
 	CAM_SENT_SENSE		= 0x40000000
 } cam_status;
@@ -377,11 +383,13 @@ typedef int (cam_quirkmatch_t)(caddr_t, caddr_t);
 caddr_t	cam_quirkmatch(caddr_t target, caddr_t quirk_table, int num_entries,
 		       int entry_size, cam_quirkmatch_t *comp_func);
 
-void	cam_strvis(u_int8_t *dst, const u_int8_t *src, int srclen, int dstlen);
-void	cam_strvis_sbuf(struct sbuf *sb, const u_int8_t *src, int srclen,
+void	cam_strvis(uint8_t *dst, const uint8_t *src, int srclen, int dstlen);
+void	cam_strvis_flag(uint8_t *dst, const uint8_t *src, int srclen,
+			int dstlen, uint32_t flags);
+void	cam_strvis_sbuf(struct sbuf *sb, const uint8_t *src, int srclen,
 			uint32_t flags);
 
-int	cam_strmatch(const u_int8_t *str, const u_int8_t *pattern, int str_len);
+int	cam_strmatch(const uint8_t *str, const uint8_t *pattern, int str_len);
 const struct cam_status_entry*
 	cam_fetch_status_entry(cam_status status);
 #ifdef _KERNEL
@@ -403,11 +411,9 @@ void	cam_error_print(struct cam_device *device, union ccb *ccb,
 __END_DECLS
 
 #ifdef _KERNEL
-static __inline void cam_init_pinfo(cam_pinfo *pinfo);
-
 static __inline void cam_init_pinfo(cam_pinfo *pinfo)
 {
-	pinfo->priority = CAM_PRIORITY_NONE;	
+	pinfo->priority = CAM_PRIORITY_NONE;
 	pinfo->index = CAM_UNQUEUED_INDEX;
 }
 #endif

@@ -21,4 +21,5 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ieee80211_regdomain 
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ieee80211_roamparams_req roamparams);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ieee80211_txparams_req txparams);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ieee80211req_chaninfo *chaninfo);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmediareq *global_ifmr);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_ifconfig, static struct ifmediareq *ifmr);

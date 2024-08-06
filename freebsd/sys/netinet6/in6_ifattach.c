@@ -34,8 +34,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -52,6 +50,7 @@ __FBSDID("$FreeBSD$");
 #include <net/if.h>
 #include <net/if_var.h>
 #include <net/if_dl.h>
+#include <net/if_private.h>
 #include <net/if_types.h>
 #include <net/route.h>
 #include <net/vnet.h>
@@ -254,7 +253,8 @@ in6_get_hw_ifid(struct ifnet *ifp, struct in6_addr *in6)
 	static u_int8_t allone[8] =
 		{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-	IF_ADDR_RLOCK(ifp);
+	NET_EPOCH_ASSERT();
+
 	CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa->ifa_addr->sa_family != AF_LINK)
 			continue;
@@ -266,12 +266,10 @@ in6_get_hw_ifid(struct ifnet *ifp, struct in6_addr *in6)
 
 		goto found;
 	}
-	IF_ADDR_RUNLOCK(ifp);
 
 	return -1;
 
 found:
-	IF_ADDR_LOCK_ASSERT(ifp);
 	addr = LLADDR(sdl);
 	addrlen = sdl->sdl_alen;
 
@@ -288,24 +286,18 @@ found:
 			addrlen = 8;
 
 		/* look at IEEE802/EUI64 only */
-		if (addrlen != 8 && addrlen != 6) {
-			IF_ADDR_RUNLOCK(ifp);
+		if (addrlen != 8 && addrlen != 6)
 			return -1;
-		}
 
 		/*
 		 * check for invalid MAC address - on bsdi, we see it a lot
 		 * since wildboar configures all-zero MAC on pccard before
 		 * card insertion.
 		 */
-		if (bcmp(addr, allzero, addrlen) == 0) {
-			IF_ADDR_RUNLOCK(ifp);
+		if (bcmp(addr, allzero, addrlen) == 0)
 			return -1;
-		}
-		if (bcmp(addr, allone, addrlen) == 0) {
-			IF_ADDR_RUNLOCK(ifp);
+		if (bcmp(addr, allone, addrlen) == 0)
 			return -1;
-		}
 
 		/* make EUI64 address */
 		if (addrlen == 8)
@@ -330,27 +322,21 @@ found:
 		 * identifier source (can be renumbered).
 		 * we don't do this.
 		 */
-		IF_ADDR_RUNLOCK(ifp);
 		return -1;
 
 	case IFT_INFINIBAND:
-		if (addrlen != 20) {
-			IF_ADDR_RUNLOCK(ifp);
+		if (addrlen != 20)
 			return -1;
-		}
 		bcopy(addr + 12, &in6->s6_addr[8], 8);
 		break;
 
 	default:
-		IF_ADDR_RUNLOCK(ifp);
 		return -1;
 	}
 
 	/* sanity check: g bit must not indicate "group" */
-	if (EUI64_GROUP(in6)) {
-		IF_ADDR_RUNLOCK(ifp);
+	if (EUI64_GROUP(in6))
 		return -1;
-	}
 
 	/* convert EUI64 into IPv6 interface identifier */
 	EUI64_TO_IFID(in6);
@@ -360,12 +346,9 @@ found:
 	 * subnet router anycast
 	 */
 	if ((in6->s6_addr[8] & ~(EUI64_GBIT | EUI64_UBIT)) == 0x00 &&
-	    bcmp(&in6->s6_addr[9], allzero, 7) == 0) {
-		IF_ADDR_RUNLOCK(ifp);
+	    bcmp(&in6->s6_addr[9], allzero, 7) == 0)
 		return -1;
-	}
 
-	IF_ADDR_RUNLOCK(ifp);
 	return 0;
 }
 
@@ -382,6 +365,8 @@ get_ifid(struct ifnet *ifp0, struct ifnet *altifp,
 {
 	struct ifnet *ifp;
 
+	NET_EPOCH_ASSERT();
+
 	/* first, try to get it from the interface itself */
 	if (in6_get_hw_ifid(ifp0, in6) == 0) {
 		nd6log((LOG_DEBUG, "%s: got interface identifier from itself\n",
@@ -397,7 +382,6 @@ get_ifid(struct ifnet *ifp0, struct ifnet *altifp,
 	}
 
 	/* next, try to get it from some other hardware interface */
-	IFNET_RLOCK_NOSLEEP();
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if (ifp == ifp0)
 			continue;
@@ -412,11 +396,9 @@ get_ifid(struct ifnet *ifp0, struct ifnet *altifp,
 			nd6log((LOG_DEBUG,
 			    "%s: borrow interface identifier from %s\n",
 			    if_name(ifp0), if_name(ifp)));
-			IFNET_RUNLOCK_NOSLEEP();
 			goto success;
 		}
 	}
-	IFNET_RUNLOCK_NOSLEEP();
 
 	/* last resort: get from random number source */
 	if (get_rand_ifid(ifp, in6) == 0) {
@@ -446,6 +428,7 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 	struct in6_ifaddr *ia;
 	struct in6_aliasreq ifra;
 	struct nd_prefixctl pr0;
+	struct epoch_tracker et;
 	struct nd_prefix *pr;
 	int error;
 
@@ -460,7 +443,10 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 		ifra.ifra_addr.sin6_addr.s6_addr32[2] = 0;
 		ifra.ifra_addr.sin6_addr.s6_addr32[3] = htonl(1);
 	} else {
-		if (get_ifid(ifp, altifp, &ifra.ifra_addr.sin6_addr) != 0) {
+		NET_EPOCH_ENTER(et);
+		error = get_ifid(ifp, altifp, &ifra.ifra_addr.sin6_addr);
+		NET_EPOCH_EXIT(et);
+		if (error != 0) {
 			nd6log((LOG_ERR,
 			    "%s: no ifid available\n", if_name(ifp)));
 			return (-1);
@@ -495,7 +481,9 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 		return (-1);
 	}
 
+	NET_EPOCH_ENTER(et);
 	ia = in6ifa_ifpforlinklocal(ifp, 0);
+	NET_EPOCH_EXIT(et);
 	if (ia == NULL) {
 		/*
 		 * Another thread removed the address that we just added.
@@ -537,8 +525,11 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 	 * valid with referring to the old link-local address.
 	 */
 	if ((pr = nd6_prefix_lookup(&pr0)) == NULL) {
-		if ((error = nd6_prelist_add(&pr0, NULL, NULL)) != 0)
+		if ((error = nd6_prelist_add(&pr0, NULL, &pr)) != 0)
 			return (error);
+		/* Reference prefix */
+		ia->ia6_ndpr = pr;
+		pr->ndpr_addrcnt++;
 	} else
 		nd6_prefix_rele(pr);
 
@@ -731,11 +722,9 @@ in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 		/*
 		 * check that loopback address doesn't exist yet.
 		 */
-		ia = in6ifa_ifwithaddr(&in6addr_loopback, 0);
+		ia = in6ifa_ifwithaddr(&in6addr_loopback, 0, false);
 		if (ia == NULL)
 			in6_ifattach_loopback(ifp);
-		else
-			ifa_free(&ia->ia_ifa);
 	}
 
 	/*
@@ -743,7 +732,11 @@ in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 	 */
 	if (!(ND_IFINFO(ifp)->flags & ND6_IFF_IFDISABLED) &&
 	    ND_IFINFO(ifp)->flags & ND6_IFF_AUTO_LINKLOCAL) {
+		struct epoch_tracker et;
+
+		NET_EPOCH_ENTER(et);
 		ia = in6ifa_ifpforlinklocal(ifp, 0);
+		NET_EPOCH_EXIT(et);
 		if (ia == NULL)
 			in6_ifattach_linklocal(ifp, altifp);
 		else
@@ -844,6 +837,7 @@ void
 in6_tmpaddrtimer(void *arg)
 {
 	CURVNET_SET((struct vnet *) arg);
+	struct epoch_tracker et;
 	struct nd_ifinfo *ndi;
 	u_int8_t nullbuf[8];
 	struct ifnet *ifp;
@@ -853,6 +847,7 @@ in6_tmpaddrtimer(void *arg)
 	    V_ip6_temp_regen_advance) * hz, in6_tmpaddrtimer, curvnet);
 
 	bzero(nullbuf, sizeof(nullbuf));
+	NET_EPOCH_ENTER(et);
 	CK_STAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if (ifp->if_afdata[AF_INET6] == NULL)
 			continue;
@@ -866,7 +861,7 @@ in6_tmpaddrtimer(void *arg)
 			    ndi->randomseed1, ndi->randomid);
 		}
 	}
-
+	NET_EPOCH_EXIT(et);
 	CURVNET_RESTORE();
 }
 
@@ -888,7 +883,7 @@ in6_purgemaddrs(struct ifnet *ifp)
 	 * completed before returning. Else we risk accessing a freed
 	 * ifnet structure pointer.
 	 */
-	in6m_release_wait();
+	in6m_release_wait(NULL);
 }
 
 void
@@ -903,7 +898,7 @@ in6_ifattach_init(void *dummy)
 {
 
 	/* Timer for regeneranation of temporary addresses randomize ID. */
-	callout_init(&V_in6_tmpaddrtimer_ch, 0);
+	callout_init(&V_in6_tmpaddrtimer_ch, 1);
 	callout_reset(&V_in6_tmpaddrtimer_ch,
 	    (V_ip6_temp_preferred_lifetime - V_ip6_desync_factor -
 	    V_ip6_temp_regen_advance) * hz,

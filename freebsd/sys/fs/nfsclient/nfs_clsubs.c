@@ -37,8 +37,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * These functions support the macros and help fiddle mbuf chains for
  * the nfs op functions. They do things like create the rpc header and
@@ -58,7 +56,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/malloc.h>
-#include <sys/sysent.h>
 #ifndef __rtems__
 #include <sys/syscall.h>
 #endif /* __rtems__ */
@@ -122,6 +119,7 @@ ncl_uninit(struct vfsconf *vfsp)
 #endif
 }
 
+/* Returns with NFSLOCKNODE() held. */
 void 
 ncl_dircookie_lock(struct nfsnode *np)
 {
@@ -129,7 +127,6 @@ ncl_dircookie_lock(struct nfsnode *np)
 	while (np->n_flag & NDIRCOOKIELK)
 		(void) msleep(&np->n_flag, &np->n_mtx, PZERO, "nfsdirlk", 0);
 	np->n_flag |= NDIRCOOKIELK;
-	NFSUNLOCKNODE(np);
 }
 
 void 
@@ -191,11 +188,11 @@ ncl_getattrcache(struct vnode *vp, struct vattr *vaper)
 	int timeo, mustflush;
 	u_quad_t nsize;
 	bool setnsize;
-	
+
 	np = VTONFS(vp);
 	vap = &np->n_vattr.na_vattr;
 	nmp = VFSTONFS(vp->v_mount);
-	mustflush = nfscl_mustflush(vp);	/* must be before mtx_lock() */
+	mustflush = nfscl_nodeleg(vp, 0);	/* must be before mtx_lock() */
 	NFSLOCKNODE(np);
 	/* XXX n_mtime doesn't seem to be updated on a miss-and-reload */
 	timeo = (time_second - np->n_mtime.tv_sec) / 10;
@@ -228,8 +225,8 @@ ncl_getattrcache(struct vnode *vp, struct vattr *vaper)
 		    (time_second - np->n_attrstamp), timeo);
 #endif
 
-	if ((time_second - np->n_attrstamp) >= timeo &&
-	    (mustflush != 0 || np->n_attrstamp == 0)) {
+	if (mustflush != 0 && (np->n_attrstamp == 0 ||
+	    time_second - np->n_attrstamp >= timeo)) {
 		nfsstatsv1.attrcache_misses++;
 		NFSUNLOCKNODE(np);
 		KDTRACE_NFS_ATTRCACHE_GET_MISS(vp);
@@ -279,7 +276,7 @@ ncl_getcookie(struct nfsnode *np, off_t off, int add)
 	struct nfsdmap *dp, *dp2;
 	int pos;
 	nfsuint64 *retval = NULL;
-	
+
 	pos = (uoff_t)off / NFS_DIRBLKSIZ;
 	if (pos == 0 || off < 0) {
 		KASSERT(!add, ("nfs getcookie add at <= 0"));
@@ -336,6 +333,7 @@ ncl_invaldir(struct vnode *vp)
 	KASSERT(vp->v_type == VDIR, ("nfs: invaldir not dir"));
 	ncl_dircookie_lock(np);
 	np->n_direofoffset = 0;
+	NFSUNLOCKNODE(np);
 	np->n_cookieverf.nfsuquad[0] = 0;
 	np->n_cookieverf.nfsuquad[1] = 0;
 	if (LIST_FIRST(&np->n_cookies))
@@ -394,4 +392,3 @@ ncl_init(struct vfsconf *vfsp)
 
 	return (0);
 }
-

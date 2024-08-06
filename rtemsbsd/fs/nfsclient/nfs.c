@@ -798,17 +798,18 @@ nfs_trymount(
 	if (error == 0) {
 		struct nameidata nd;
 		vhold(rootvnode);
+		vrefact(rootvnode);
 		NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE,
-		    fspath, rootvnode, td);
+		    fspath, rootvnode);
 		error = namei(&nd);
 		if (error == 0) {
 			rtems_bsd_libio_loc_set_vnode(
 			    &mt_entry->mt_fs_root->location, nd.ni_vp);
 			rtems_bsd_vfs_clonenode(
 			    &mt_entry->mt_fs_root->location);
-			NDFREE(&nd, NDF_NO_VP_RELE);
+			NDFREE_PNBUF(&nd);
 		} else {
-			NDFREE(&nd, 0);
+			NDFREE_PNBUF(&nd);
 			rtems_bsd_libio_loc_set_vnode(
 			    &mt_entry->mt_fs_root->location, NULL);
 			rtems_bsd_vfs_freenode(

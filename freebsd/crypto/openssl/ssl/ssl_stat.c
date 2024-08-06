@@ -1,17 +1,17 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2017 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright 2005 Nokia. All rights reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
 
 #include <stdio.h>
-#include "ssl_locl.h"
+#include "ssl_local.h"
 
 const char *SSL_state_string_long(const SSL *s)
 {
@@ -139,9 +139,9 @@ const char *SSL_state_string(const SSL *s)
     case TLS_ST_CW_NEXT_PROTO:
         return "TWNP";
     case TLS_ST_BEFORE:
-        return "PINIT ";
+        return "PINIT";
     case TLS_ST_OK:
-        return "SSLOK ";
+        return "SSLOK";
     case TLS_ST_CW_CLNT_HELLO:
         return "TWCH";
     case TLS_ST_CR_SRVR_HELLO:
@@ -203,7 +203,7 @@ const char *SSL_state_string(const SSL *s)
     case TLS_ST_CR_CERT_VRFY:
         return "TRSCV";
     case TLS_ST_SW_CERT_VRFY:
-        return "TRSCV";
+        return "TWSCV";
     case TLS_ST_CR_HELLO_REQ:
         return "TRHR";
     case TLS_ST_SW_KEY_UPDATE:
@@ -223,7 +223,7 @@ const char *SSL_state_string(const SSL *s)
     case TLS_ST_SR_END_OF_EARLY_DATA:
         return "TWEOED";
     default:
-        return "UNKWN ";
+        return "UNKWN";
     }
 }
 

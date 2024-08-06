@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -54,7 +52,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/if_rtwn_fw.h>
 
 #include <dev/rtwn/rtl8192c/r92c_reg.h>
-
 
 #ifndef RTWN_WITHOUT_UCODE
 static int

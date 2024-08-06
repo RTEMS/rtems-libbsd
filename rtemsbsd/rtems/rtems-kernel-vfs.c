@@ -185,7 +185,7 @@ rtems_bsd_vfs_vnode_componentname(struct componentname *cnd, struct vnode *vp,
 	name[namemax] = '\0';
 	namelen = namemax;
 	tvp = vp;
-	error = vn_vptocnp(&tvp, cred, name, &namelen);
+	error = vn_vptocnp(&tvp, name, &namelen);
 	if (error == 0) {
 		name = &name[namelen];
 		namelen = namemax - namelen;
@@ -218,6 +218,7 @@ rtems_bsd_vfs_eval_token(rtems_filesystem_eval_path_context_t *ctx, void *arg,
 	struct vnode *dvp;
 	struct vnode *cdir;
 	struct vnode *rdir;
+  struct pwd *pwd;
 	char ntoken[NAME_MAX + 1];
 	u_long op = LOOKUP;
 	u_long flags = 0;
@@ -276,18 +277,18 @@ rtems_bsd_vfs_eval_token(rtems_filesystem_eval_path_context_t *ctx, void *arg,
 
 	flags |= WANTPARENT;
 
-	FILEDESC_XLOCK(fdp);
-	rdir = fdp->fd_rdir;
-	cdir = fdp->fd_cdir;
-	fdp->fd_rdir = rootvnode;
-	fdp->fd_cdir = *vpp;
+	pwd = pwd_get_smr();
+	rdir = pwd->pwd_rdir;
+	cdir = pwd->pwd_cdir;
+	vref(cdir);
+	pwd_chroot(curthread, rootvnode);
+	pwd_chdir(curthread, *vpp);
 	vref(*vpp);
-	FILEDESC_XUNLOCK(fdp);
 
 	bcopy(token, ntoken, tokenlen);
 	ntoken[tokenlen] = '\0';
 
-	NDINIT_ATVP(&nd, op, flags, UIO_USERSPACE, ntoken, *vpp, td);
+	NDINIT_ATVP(&nd, op, flags, UIO_USERSPACE, ntoken, *vpp);
 	error = namei(&nd);
 
 	if (RTEMS_BSD_VFS_TRACE) {
@@ -299,15 +300,13 @@ rtems_bsd_vfs_eval_token(rtems_filesystem_eval_path_context_t *ctx, void *arg,
 	}
 
 	if (error != 0) {
-		NDFREE(&nd, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&nd);
 		rtems_filesystem_eval_path_error(ctx, error);
 		return RTEMS_FILESYSTEM_EVAL_PATH_GENERIC_DONE;
 	}
 
-	FILEDESC_XLOCK(fdp);
-	fdp->fd_rdir = rdir;
-	fdp->fd_cdir = cdir;
-	FILEDESC_XUNLOCK(fdp);
+	pwd_chroot(curthread, rdir);
+	pwd_chdir(curthread, cdir);
 
 	/*
 	 * If there is no more path and this is the last token and the lookup
@@ -321,7 +320,10 @@ rtems_bsd_vfs_eval_token(rtems_filesystem_eval_path_context_t *ctx, void *arg,
 
 	*vpp = nd.ni_vp;
 
-	NDFREE(&nd, 0);
+	NDFREE_PNBUF(&nd);
+	if (nd.ni_vp != NULL) {
+		vrele(nd.ni_vp);
+	}
 
 	if (*vpp == rtems_bsd_libio_loc_to_vnode(rootloc)) {
 		if (RTEMS_BSD_VFS_TRACE) {
@@ -470,7 +472,7 @@ rtems_bsd_vfs_link(const rtems_filesystem_location_info_t *targetdirloc,
 	rtems_bsd_vfs_componentname(
 	    &cn, LOOKUP, RTEMS_DECONST(char *, name), namelen, td->td_ucred);
 	error = VOP_LINK(tdvp, svp, &cn);
-	VOP_UNLOCK(tdvp, 0);
+	VOP_UNLOCK(tdvp);
 out:
 	return rtems_bsd_error_to_status_and_errno(error);
 }
@@ -580,6 +582,7 @@ rtems_bsd_vfs_mknod(const rtems_filesystem_location_info_t *parentloc,
 	struct thread *td = curthread;
 	struct filedesc *fdp = td->td_proc->p_fd;
 	struct vnode *vn = rtems_bsd_libio_loc_to_vnode(parentloc);
+  struct pwd *pwd = pwd_get_smr();
 	char *path = RTEMS_DECONST(char *, name);
 	int error;
 
@@ -603,7 +606,7 @@ rtems_bsd_vfs_mknod(const rtems_filesystem_location_info_t *parentloc,
 		    type, name, namelen, mode, dev, vn);
 	}
 
-	fdp->fd_cdir = vn;
+	pwd_chdir(curthread, vn);
 
 	switch (mode & S_IFMT) {
 	case S_IFREG:
@@ -709,6 +712,7 @@ rtems_bsd_vfs_symlink(const rtems_filesystem_location_info_t *targetdirloc,
 	struct filedesc *fdp;
 	struct mount *mp;
 	struct vnode *tdvp = rtems_bsd_libio_loc_to_vnode(targetdirloc);
+  struct pwd *pwd = pwd_get_smr();
 	struct vattr vattr;
 	struct nameidata nd;
 	int error;
@@ -723,18 +727,19 @@ rtems_bsd_vfs_symlink(const rtems_filesystem_location_info_t *targetdirloc,
 		return rtems_bsd_error_to_status_and_errno(ENOMEM);
 	}
 	fdp = td->td_proc->p_fd;
-	fdp->fd_cdir = tdvp;
+	pwd_chdir(curthread, tdvp);
+
 restart:
 	bwillwrite();
 	NDINIT_ATRIGHTS(&nd, CREATE,
-	    LOCKPARENT | SAVENAME | AUDITVNODE1 | NOCACHE, UIO_SYSSPACE, name,
-	    AT_FDCWD, &cap_symlinkat_rights, td);
+	    LOCKPARENT | AUDITVNODE1 | NOCACHE, UIO_SYSSPACE, name,
+	    AT_FDCWD, &cap_symlinkat_rights);
 	error = namei(&nd);
 	if (error != 0) {
 		goto out;
 	}
 	if (nd.ni_vp != NULL) {
-		NDFREE(&nd, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&nd);
 		if (nd.ni_vp == nd.ni_dvp)
 			vrele(nd.ni_dvp);
 		else
@@ -745,7 +750,7 @@ restart:
 	}
 	error = vn_start_write(nd.ni_dvp, &mp, V_NOWAIT);
 	if (error != 0) {
-		NDFREE(&nd, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&nd);
 		vput(nd.ni_dvp);
 		error = vn_start_write(NULL, &mp, V_XSLEEP | PCATCH);
 		if (error != 0) {
@@ -754,13 +759,13 @@ restart:
 		goto restart;
 	}
 	VATTR_NULL(&vattr);
-	vattr.va_mode = ACCESSPERMS & ~td->td_proc->p_fd->fd_cmask;
+	vattr.va_mode = ACCESSPERMS & ~td->td_proc->p_pd->pd_cmask;
 	error = VOP_SYMLINK(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr,
 	    RTEMS_DECONST(char *, target));
 	if (error != 0) {
 		goto out;
 	}
-	NDFREE(&nd, NDF_ONLY_PNBUF);
+	NDFREE_PNBUF(&nd);
 	vput(nd.ni_dvp);
 	vn_finished_write(mp);
 out:
@@ -802,7 +807,7 @@ rtems_bsd_vfs_readlink(
 	error = VOP_READLINK(vp, &auio, td->td_ucred);
 	td->td_retval[0] = bufsize - auio.uio_resid;
 out:
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp);
 	return rtems_bsd_error_to_status_and_errno(error);
 }
 
@@ -850,16 +855,16 @@ rtems_bsd_vfs_rename(const rtems_filesystem_location_info_t *oldparentloc,
 	}
 again:
 	bwillwrite();
-	NDINIT_ATVP(&fromnd, DELETE, WANTPARENT | SAVESTART | AUDITVNODE1,
-	    UIO_SYSSPACE, cn.cn_nameptr, olddvp, td);
+	NDINIT_ATVP(&fromnd, DELETE, WANTPARENT | AUDITVNODE1,
+	    UIO_SYSSPACE, cn.cn_nameptr, olddvp);
 	error = namei(&fromnd);
 	if (error != 0) {
 		goto out2;
 	}
 	fvp = fromnd.ni_vp;
 	NDINIT_ATVP(&tond, RENAME,
-	    LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART | AUDITVNODE2,
-	    UIO_SYSSPACE, name, newdvp, td);
+	    LOCKPARENT | LOCKLEAF | NOCACHE | AUDITVNODE2,
+	    UIO_SYSSPACE, name, newdvp);
 	if (fromnd.ni_vp->v_type == VDIR)
 		tond.ni_cnd.cn_flags |= WILLBEDIR;
 	error = namei(&tond);
@@ -867,7 +872,7 @@ again:
 		/* Translate error code for rename("dir1", "dir2/."). */
 		if (error == EISDIR && fvp->v_type == VDIR)
 			error = EINVAL;
-		NDFREE(&fromnd, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&fromnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 		goto out1;
@@ -876,8 +881,8 @@ again:
 	tvp = tond.ni_vp;
 	error = vn_start_write(fvp, &mp, V_NOWAIT);
 	if (error != 0) {
-		NDFREE(&fromnd, NDF_ONLY_PNBUF);
-		NDFREE(&tond, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&fromnd);
+		NDFREE_PNBUF(&tond);
 		if (tvp != NULL)
 			vput(tvp);
 		if (tdvp == tvp)
@@ -911,11 +916,11 @@ out:
 	if (error == 0) {
 		error = VOP_RENAME(fromnd.ni_dvp, fromnd.ni_vp, &fromnd.ni_cnd,
 		    tond.ni_dvp, tond.ni_vp, &tond.ni_cnd);
-		NDFREE(&fromnd, NDF_ONLY_PNBUF);
-		NDFREE(&tond, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&fromnd);
+		NDFREE_PNBUF(&tond);
 	} else {
-		NDFREE(&fromnd, NDF_ONLY_PNBUF);
-		NDFREE(&tond, NDF_ONLY_PNBUF);
+		NDFREE_PNBUF(&fromnd);
+		NDFREE_PNBUF(&tond);
 		if (tvp != NULL)
 			vput(tvp);
 		if (tdvp == tvp)

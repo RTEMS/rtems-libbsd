@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 Robert N. M. Watson
  * All rights reserved.
@@ -36,14 +36,13 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 
 static int
 ifdead_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *sa,
@@ -111,21 +110,21 @@ ifdead_snd_tag_alloc(struct ifnet *ifp, union if_snd_tag_alloc_params *params,
 	return (EOPNOTSUPP);
 }
 
-static int
-ifdead_snd_tag_modify(struct m_snd_tag *pmt, union if_snd_tag_modify_params *params)
-{
-	return (EOPNOTSUPP);
-}
-
-static int
-ifdead_snd_tag_query(struct m_snd_tag *pmt, union if_snd_tag_query_params *params)
-{
-	return (EOPNOTSUPP);
-}
-
 static void
-ifdead_snd_tag_free(struct m_snd_tag *pmt)
+ifdead_ratelimit_query(struct ifnet *ifp __unused,
+      struct if_ratelimit_query_results *q)
 {
+	/*
+	 * This guy does not support
+	 * this interface. Not sure
+	 * why we would specify a
+	 * flag on the interface
+	 * that says we do.
+	 */
+	q->rate_table = NULL;
+	q->flags = RT_NOSUPPORT;
+	q->max_flows = 0;
+	q->number_of_rates = 0;
 }
 
 void
@@ -141,7 +140,5 @@ if_dead(struct ifnet *ifp)
 	ifp->if_transmit = ifdead_transmit;
 	ifp->if_get_counter = ifdead_get_counter;
 	ifp->if_snd_tag_alloc = ifdead_snd_tag_alloc;
-	ifp->if_snd_tag_modify = ifdead_snd_tag_modify;
-	ifp->if_snd_tag_query = ifdead_snd_tag_query;
-	ifp->if_snd_tag_free = ifdead_snd_tag_free;
+	ifp->if_ratelimit_query = ifdead_ratelimit_query;
 }

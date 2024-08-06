@@ -1,11 +1,11 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   opencrypto/cryptodev_if.m
+ *   freebsd-org/sys/opencrypto/cryptodev_if.m
  * with
  *   makeobjops.awk
  *
@@ -27,6 +27,10 @@ static int null_freesession(device_t dev,
 	return 0;
 }
 
+struct kobjop_desc cryptodev_probesession_desc = {
+	0, { &cryptodev_probesession_desc, (kobjop_t)kobj_error_method }
+};
+
 struct kobjop_desc cryptodev_newsession_desc = {
 	0, { &cryptodev_newsession_desc, (kobjop_t)kobj_error_method }
 };
@@ -37,9 +41,5 @@ struct kobjop_desc cryptodev_freesession_desc = {
 
 struct kobjop_desc cryptodev_process_desc = {
 	0, { &cryptodev_process_desc, (kobjop_t)kobj_error_method }
-};
-
-struct kobjop_desc cryptodev_kprocess_desc = {
-	0, { &cryptodev_kprocess_desc, (kobjop_t)kobj_error_method }
 };
 

@@ -237,20 +237,20 @@ test_ping6(void)
 	rtems_resource_snapshot snapshot;
 	int exit_code;
 	char *ping6[] = {
-		"ping6",
-		"-c",
+		"ping",
+		"-c6",
 		"1",
 		"::1",
 		NULL
 	};
 
-	exit_code = rtems_bsd_command_ping6(ARGC(ping6), ping6);
+	exit_code = rtems_bsd_command_ping(ARGC(ping6), ping6);
 	assert(exit_code == EXIT_SUCCESS);
 
 	epoch_cleanup();
 	rtems_resource_snapshot_take(&snapshot);
 
-	exit_code = rtems_bsd_command_ping6(ARGC(ping6), ping6);
+	exit_code = rtems_bsd_command_ping(ARGC(ping6), ping6);
 	assert(exit_code == EXIT_SUCCESS);
 
 	epoch_cleanup();

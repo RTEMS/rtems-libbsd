@@ -12,17 +12,10 @@
 #ifdef __rtems__
 #include "rtems-bsd-netstat-nl_symbols-data.h"
 #endif /* __rtems__ */
-#ifndef __rtems__
-const struct nlist nl[] = {
-#else /* __rtems__ */
-/* This is not as constant as it seems. The call to kresolve_list(..) in main.c
- * might change something. */
 struct nlist nl[] = {
-#endif /* __rtems__ */
 	{ .n_name = "_ahstat" },
 	{ .n_name = "_arpstat" },
 	{ .n_name = "_carpstats" },
-	{ .n_name = "_divcbinfo" },
 	{ .n_name = "_espstat" },
 	{ .n_name = "_icmp6stat" },
 	{ .n_name = "_icmpstat" },
@@ -51,19 +44,16 @@ struct nlist nl[] = {
 	{ .n_name = "_nws_count" },
 	{ .n_name = "_pfkeystat" },
 	{ .n_name = "_pfsyncstats" },
+	{ .n_name = "_pflowstats" },
 	{ .n_name = "_pim6stat" },
 	{ .n_name = "_pimstat" },
 	{ .n_name = "_rip6stat" },
-	{ .n_name = "_ripcbinfo" },
 	{ .n_name = "_rtree" },
 	{ .n_name = "_rtstat" },
-	{ .n_name = "_rttrash" },
 	{ .n_name = "_sctpstat" },
 	{ .n_name = "_sfstat" },
-	{ .n_name = "_tcbinfo" },
 	{ .n_name = "_tcpstat" },
 	{ .n_name = "_tcps_states" },
-	{ .n_name = "_udbinfo" },
 	{ .n_name = "_udpstat" },
 	{ .n_name = "_unp_count" },
 	{ .n_name = "_unp_dhead" },

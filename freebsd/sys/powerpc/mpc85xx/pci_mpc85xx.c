@@ -38,8 +38,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ktr.h>
@@ -144,7 +142,8 @@ __FBSDID("$FreeBSD$");
 
 #define	DEVFN(b, s, f)	((b << 16) | (s << 8) | f)
 
-#define	FSL_NUM_MSIS		256	/* 8 registers of 32 bits (8 hardware IRQs) */
+#define	FSL_NUM_MSIS	256	/* 8 registers of 32 bits (8 hardware IRQs) */
+#define	PCI_SLOT_FIRST	0x1	/* used to be 0x11 but qemu-ppce500 starts from 0x1 */
 
 struct fsl_pcib_softc {
 	struct ofw_pci_softc pci_sc;
@@ -263,12 +262,9 @@ static device_method_t fsl_pcib_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t fsl_pcib_devclass;
-
 DEFINE_CLASS_1(pcib, fsl_pcib_driver, fsl_pcib_methods,
-    sizeof(struct fsl_pcib_softc), ofw_pci_driver);
-EARLY_DRIVER_MODULE(pcib, ofwbus, fsl_pcib_driver, fsl_pcib_devclass, 0, 0,
-    BUS_PASS_BUS);
+    sizeof(struct fsl_pcib_softc), ofw_pcib_driver);
+EARLY_DRIVER_MODULE(pcib, ofwbus, fsl_pcib_driver, 0, 0, BUS_PASS_BUS);
 
 static void
 fsl_pcib_err_intr(void *v)
@@ -309,7 +305,9 @@ fsl_pcib_probe(device_t dev)
 	    ofw_bus_is_compatible(dev, "fsl,mpc8540-pcie") ||
 	    ofw_bus_is_compatible(dev, "fsl,mpc8548-pcie") ||
 	    ofw_bus_is_compatible(dev, "fsl,p5020-pcie") ||
+	    ofw_bus_is_compatible(dev, "fsl,p5040-pcie") ||
 	    ofw_bus_is_compatible(dev, "fsl,qoriq-pcie-v2.2") ||
+	    ofw_bus_is_compatible(dev, "fsl,qoriq-pcie-v2.4") ||
 	    ofw_bus_is_compatible(dev, "fsl,qoriq-pcie")))
 		return (ENXIO);
 
@@ -323,7 +321,7 @@ fsl_pcib_attach(device_t dev)
 	struct fsl_pcib_softc *sc;
 	phandle_t node;
 	uint32_t cfgreg, brctl, ipreg;
-	int error, rid;
+	int do_reset, error, rid;
 	uint8_t ltssm, capptr;
 
 	sc = device_get_softc(dev);
@@ -369,7 +367,7 @@ fsl_pcib_attach(device_t dev)
 	 * Initialize generic OF PCI interface (ranges, etc.)
 	 */
 
-	error = ofw_pci_init(dev);
+	error = ofw_pcib_init(dev);
 	if (error)
 		return (error);
 
@@ -385,17 +383,21 @@ fsl_pcib_attach(device_t dev)
 	fsl_pcib_cfgwrite(sc, 0, 0, 0, PCIR_COMMAND, cfgreg, 2);
 
 #ifndef __rtems__
-	/* Reset the bus.  Needed for Radeon video cards. */
-	brctl = fsl_pcib_read_config(sc->sc_dev, 0, 0, 0,
-	    PCIR_BRIDGECTL_1, 1);
-	brctl |= PCIB_BCR_SECBUS_RESET;
-	fsl_pcib_write_config(sc->sc_dev, 0, 0, 0,
-	    PCIR_BRIDGECTL_1, brctl, 1);
-	DELAY(100000);
-	brctl &= ~PCIB_BCR_SECBUS_RESET;
-	fsl_pcib_write_config(sc->sc_dev, 0, 0, 0,
-	    PCIR_BRIDGECTL_1, brctl, 1);
-	DELAY(100000);
+	do_reset = 0;
+	resource_int_value("pcib", device_get_unit(dev), "reset", &do_reset);
+	if (do_reset) {
+		/* Reset the bus.  Needed for Radeon video cards. */
+		brctl = fsl_pcib_read_config(sc->sc_dev, 0, 0, 0,
+		    PCIR_BRIDGECTL_1, 1);
+		brctl |= PCIB_BCR_SECBUS_RESET;
+		fsl_pcib_write_config(sc->sc_dev, 0, 0, 0,
+		    PCIR_BRIDGECTL_1, brctl, 1);
+		DELAY(100000);
+		brctl &= ~PCIB_BCR_SECBUS_RESET;
+		fsl_pcib_write_config(sc->sc_dev, 0, 0, 0,
+		    PCIR_BRIDGECTL_1, brctl, 1);
+		DELAY(100000);
+	}
 #endif /* __rtems__ */
 
 	if (sc->sc_pcie) {
@@ -439,7 +441,9 @@ fsl_pcib_attach(device_t dev)
 		return (ENXIO);
 	}
 
-	return (ofw_pci_attach(dev));
+	fsl_pcib_err_init(dev);
+
+	return (ofw_pcib_attach(dev));
 
 err:
 	return (ENXIO);
@@ -566,11 +570,10 @@ fsl_pcib_read_config(device_t dev, u_int bus, u_int slot, u_int func,
     u_int reg, int bytes)
 {
 	struct fsl_pcib_softc *sc = device_get_softc(dev);
-	u_int devfn;
 
-	if (bus == sc->sc_busnr && !sc->sc_pcie && slot < 10)
+	if (bus == sc->sc_busnr && !sc->sc_pcie &&
+	    slot < PCI_SLOT_FIRST)
 		return (~0);
-	devfn = DEVFN(bus, slot, func);
 
 	return (fsl_pcib_cfgread(sc, bus, slot, func, reg, bytes));
 }
@@ -581,7 +584,8 @@ fsl_pcib_write_config(device_t dev, u_int bus, u_int slot, u_int func,
 {
 	struct fsl_pcib_softc *sc = device_get_softc(dev);
 
-	if (bus == sc->sc_busnr && !sc->sc_pcie && slot < 10)
+	if (bus == sc->sc_busnr && !sc->sc_pcie &&
+	    slot < PCI_SLOT_FIRST)
 		return;
 	fsl_pcib_cfgwrite(sc, bus, slot, func, reg, val, bytes);
 }
@@ -640,7 +644,6 @@ fsl_pcib_outbound(struct fsl_pcib_softc *sc, int wnd, int res, uint64_t start,
 	bus_space_write_4(sc->sc_bst, sc->sc_bsh, REG_POWBAR(wnd), bar);
 	bus_space_write_4(sc->sc_bst, sc->sc_bsh, REG_POWAR(wnd), attr);
 }
-
 
 static void
 fsl_pcib_err_init(device_t dev)
@@ -792,11 +795,9 @@ static int fsl_pcib_alloc_msi(device_t dev, device_t child,
     int count, int maxcount, int *irqs)
 {
 #ifndef __rtems__
-	struct fsl_pcib_softc *sc;
 	vmem_addr_t start;
 	int err, i;
 
-	sc = device_get_softc(dev);
 	if (msi_vmem == NULL)
 		return (ENODEV);
 
@@ -818,14 +819,10 @@ static int fsl_pcib_alloc_msi(device_t dev, device_t child,
 static int fsl_pcib_release_msi(device_t dev, device_t child,
     int count, int *irqs)
 {
-#ifndef __rtems__
 	if (msi_vmem == NULL)
 		return (ENODEV);
 
 	vmem_xfree(msi_vmem, irqs[0], count);
-#else /* __rtems__ */
-	BSD_ASSERT(0);
-#endif /* __rtems__ */
 	return (0);
 }
 
@@ -855,9 +852,19 @@ static int fsl_pcib_map_msi(device_t dev, device_t child,
 	*data = (irq & 255);
 	*addr = ccsrbar_pa + mp->target;
 
+static int fsl_pcib_release_msi(device_t dev, device_t child,
+    int count, int *irqs)
+{
+#ifndef __rtems__
+	if (msi_vmem == NULL)
+		return (ENODEV);
+
+	vmem_xfree(msi_vmem, irqs[0], count);
+#else /* __rtems__ */
+	BSD_ASSERT(0);
+#endif /* __rtems__ */
 	return (0);
 }
-
 
 /*
  * Linux device trees put the msi@<x> as children of the SoC, with ranges based
@@ -984,13 +991,11 @@ static device_method_t fsl_msi_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t fsl_msi_devclass;
-
 static driver_t fsl_msi_driver = {
 	"fsl_msi",
 	fsl_msi_methods,
 	sizeof(struct fsl_msi_softc)
 };
 
-EARLY_DRIVER_MODULE(fsl_msi, simplebus, fsl_msi_driver, fsl_msi_devclass, 0, 0,
+EARLY_DRIVER_MODULE(fsl_msi, simplebus, fsl_msi_driver, 0, 0,
     BUS_PASS_INTERRUPT + 1);

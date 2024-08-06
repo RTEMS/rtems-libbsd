@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2012-2014 Intel Corporation
  * All rights reserved.
@@ -29,8 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/conf.h>
@@ -51,21 +49,14 @@ struct nvme_consumer {
 struct nvme_consumer nvme_consumer[NVME_MAX_CONSUMERS];
 #define	INVALID_CONSUMER_ID	0xFFFF
 
-uma_zone_t	nvme_request_zone;
 int32_t		nvme_retry_count;
 
-
 MALLOC_DEFINE(M_NVME, "nvme", "nvme(4) memory allocations");
-
-devclass_t nvme_devclass;
 
 static void
 nvme_init(void)
 {
 	uint32_t	i;
-
-	nvme_request_zone = uma_zcreate("nvme_request",
-	    sizeof(struct nvme_request), NULL, NULL, NULL, NULL, 0, 0);
 
 	for (i = 0; i < NVME_MAX_CONSUMERS; i++)
 		nvme_consumer[i].id = INVALID_CONSUMER_ID;
@@ -77,7 +68,6 @@ SYSINIT(nvme_register, SI_SUB_DRIVERS, SI_ORDER_SECOND, nvme_init, NULL);
 static void
 nvme_uninit(void)
 {
-	uma_zdestroy(nvme_request_zone);
 }
 
 SYSUNINIT(nvme_unregister, SI_SUB_DRIVERS, SI_ORDER_SECOND, nvme_uninit, NULL);
@@ -92,39 +82,6 @@ nvme_shutdown(device_t dev)
 	nvme_ctrlr_shutdown(ctrlr);
 
 	return (0);
-}
-
-void
-nvme_dump_command(struct nvme_command *cmd)
-{
-
-	printf(
-"opc:%x f:%x cid:%x nsid:%x r2:%x r3:%x mptr:%jx prp1:%jx prp2:%jx cdw:%x %x %x %x %x %x\n",
-	    cmd->opc, cmd->fuse, cmd->cid, le32toh(cmd->nsid),
-	    cmd->rsvd2, cmd->rsvd3,
-	    (uintmax_t)le64toh(cmd->mptr), (uintmax_t)le64toh(cmd->prp1), (uintmax_t)le64toh(cmd->prp2),
-	    le32toh(cmd->cdw10), le32toh(cmd->cdw11), le32toh(cmd->cdw12),
-	    le32toh(cmd->cdw13), le32toh(cmd->cdw14), le32toh(cmd->cdw15));
-}
-
-void
-nvme_dump_completion(struct nvme_completion *cpl)
-{
-	uint8_t p, sc, sct, m, dnr;
-	uint16_t status;
-
-	status = le16toh(cpl->status);
-
-	p = NVME_STATUS_GET_P(status);
-	sc = NVME_STATUS_GET_SC(status);
-	sct = NVME_STATUS_GET_SCT(status);
-	m = NVME_STATUS_GET_M(status);
-	dnr = NVME_STATUS_GET_DNR(status);
-
-	printf("cdw0:%08x sqhd:%04x sqid:%04x "
-	    "cid:%04x p:%x sc:%02x sct:%x m:%x dnr:%x\n",
-	    le32toh(cpl->cdw0), le16toh(cpl->sqhd), le16toh(cpl->sqid),
-	    cpl->cid, p, sc, sct, m, dnr);
 }
 
 int
@@ -142,15 +99,18 @@ nvme_attach(device_t dev)
 	ctrlr->config_hook.ich_func = nvme_ctrlr_start_config_hook;
 	ctrlr->config_hook.ich_arg = ctrlr;
 
-	config_intrhook_establish(&ctrlr->config_hook);
+	if (config_intrhook_establish(&ctrlr->config_hook) != 0)
+		return (ENOMEM);
 
 	return (0);
 }
 
 int
-nvme_detach (device_t dev)
+nvme_detach(device_t dev)
 {
 	struct nvme_controller	*ctrlr = DEVICE2SOFTC(dev);
+
+	config_intrhook_drain(&ctrlr->config_hook);
 
 	nvme_ctrlr_destruct(ctrlr, dev);
 	return (0);
@@ -185,8 +145,10 @@ nvme_notify(struct nvme_consumer *cons,
 	ctrlr->cons_cookie[cons->id] = ctrlr_cookie;
 
 	/* ctrlr_fn has failed.  Nothing to notify here any more. */
-	if (ctrlr_cookie == NULL)
+	if (ctrlr_cookie == NULL) {
+		(void)atomic_cmpset_32(&ctrlr->notification_sent, 1, 0);
 		return;
+	}
 
 	if (ctrlr->is_failed) {
 		ctrlr->cons_cookie[cons->id] = NULL;
@@ -227,7 +189,7 @@ nvme_notify_new_consumer(struct nvme_consumer *cons)
 	struct nvme_controller	*ctrlr;
 	int			dev_idx, devcount;
 
-	if (devclass_get_devices(nvme_devclass, &devlist, &devcount))
+	if (devclass_get_devices(devclass_find("nvme"), &devlist, &devcount))
 		return;
 
 	for (dev_idx = 0; dev_idx < devcount; dev_idx++) {
@@ -289,13 +251,18 @@ void
 nvme_notify_ns(struct nvme_controller *ctrlr, int nsid)
 {
 	struct nvme_consumer	*cons;
-	struct nvme_namespace	*ns = &ctrlr->ns[nsid - 1];
+	struct nvme_namespace	*ns;
 	void			*ctrlr_cookie;
 	uint32_t		i;
+
+	KASSERT(nsid <= NVME_MAX_NAMESPACES,
+	    ("%s: Namespace notification to nsid %d exceeds range\n",
+		device_get_nameunit(ctrlr->dev), nsid));
 
 	if (!ctrlr->is_initialized)
 		return;
 
+	ns = &ctrlr->ns[nsid - 1];
 	for (i = 0; i < NVME_MAX_CONSUMERS; i++) {
 		cons = &nvme_consumer[i];
 		if (cons->id != INVALID_CONSUMER_ID && cons->ns_fn != NULL &&

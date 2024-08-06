@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2007-2008 Sam Leffler, Errno Consulting
  * All rights reserved.
@@ -29,7 +29,6 @@
 
 #include <sys/cdefs.h>
 #ifdef __FreeBSD__
-__FBSDID("$FreeBSD$");
 #endif
 
 /*
@@ -55,6 +54,7 @@ __FBSDID("$FreeBSD$");
 #include <net/if_var.h>
 #include <net/if_media.h>
 #include <net/if_llc.h>
+#include <net/if_private.h>
 #include <net/ethernet.h>
 
 #include <net/bpf.h>
@@ -181,8 +181,7 @@ ieee80211_create_wds(struct ieee80211vap *vap, struct ieee80211_channel *chan)
 			/*
 			 * Committed to new node, setup state.
 			 */
-			obss = vap->iv_bss;
-			vap->iv_bss = ni;
+			obss = vap->iv_update_bss(vap, ni);
 			ni->ni_wdsvap = vap;
 		}
 		IEEE80211_NODE_UNLOCK(nt);
@@ -203,8 +202,7 @@ ieee80211_create_wds(struct ieee80211vap *vap, struct ieee80211_channel *chan)
 		 */
 		ni = ieee80211_node_create_wds(vap, vap->iv_des_bssid, chan);
 		if (ni != NULL) {
-			obss = vap->iv_bss;
-			vap->iv_bss = ieee80211_ref_node(ni);
+			obss = vap->iv_update_bss(vap, ieee80211_ref_node(ni));
 			ni->ni_flags |= IEEE80211_NODE_AREF;
 			if (obss != NULL)
 				ieee80211_free_node(obss);
@@ -261,7 +259,7 @@ ieee80211_dwds_mcast(struct ieee80211vap *vap0, struct mbuf *m)
 		/*
 		 * Duplicate the frame and send it.
 		 */
-		mcopy = m_copypacket(m, M_NOWAIT);
+		mcopy = m_copypacket(m, IEEE80211_M_NOWAIT);
 		if (mcopy == NULL) {
 			if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
 			/* XXX stat + msg */
@@ -301,6 +299,7 @@ ieee80211_dwds_mcast(struct ieee80211vap *vap0, struct mbuf *m)
 			continue;
 		}
 		mcopy->m_flags |= M_MCAST;
+		MPASS((mcopy->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0);
 		mcopy->m_pkthdr.rcvif = (void *) ni;
 
 		err = ieee80211_parent_xmitpkt(ic, mcopy);
@@ -334,6 +333,7 @@ ieee80211_dwds_discover(struct ieee80211_node *ni, struct mbuf *m)
 	 * XXX handle overflow?
 	 * XXX per/vap beacon interval?
 	 */
+	MPASS((m->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0);
 	m->m_pkthdr.rcvif = (void *)(uintptr_t)
 	    ieee80211_mac_hash(ic, ni->ni_macaddr);
 	(void) ieee80211_ageq_append(&ic->ic_stageq, m,
@@ -444,7 +444,7 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 		wh = mtod(m, struct ieee80211_frame *);
 		type = IEEE80211_FC0_TYPE_DATA;
 		dir = wh->i_fc[1] & IEEE80211_FC1_DIR_MASK;
-		subtype = IEEE80211_FC0_SUBTYPE_QOS;
+		subtype = IEEE80211_FC0_SUBTYPE_QOS_DATA;
 		hdrspace = ieee80211_hdrspace(ic, wh);	/* XXX optimize? */
 		goto resubmit_ampdu;
 	}
@@ -558,7 +558,7 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 		 * crypto cipher modules used to do delayed update
 		 * of replay sequence numbers.
 		 */
-		if (is_hw_decrypted || wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
+		if (is_hw_decrypted || IEEE80211_IS_PROTECTED(wh)) {
 			if ((vap->iv_flags & IEEE80211_F_PRIVACY) == 0) {
 				/*
 				 * Discard encrypted frames when privacy is off.
@@ -585,7 +585,7 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 		/*
 		 * Save QoS bits for use below--before we strip the header.
 		 */
-		if (subtype == IEEE80211_FC0_SUBTYPE_QOS)
+		if (subtype == IEEE80211_FC0_SUBTYPE_QOS_DATA)
 			qos = ieee80211_getqos(wh)[0];
 		else
 			qos = 0;
@@ -594,7 +594,7 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 		 * Next up, any fragmentation.
 		 */
 		if (!IEEE80211_IS_MULTICAST(wh->i_addr1)) {
-			m = ieee80211_defrag(ni, m, hdrspace);
+			m = ieee80211_defrag(ni, m, hdrspace, has_decrypted);
 			if (m == NULL) {
 				/* Fragment dropped or frame not complete yet */
 				goto out;
@@ -621,7 +621,7 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 		/*
 		 * Finally, strip the 802.11 header.
 		 */
-		m = ieee80211_decap(vap, m, hdrspace);
+		m = ieee80211_decap(vap, m, hdrspace, qos);
 		if (m == NULL) {
 			/* XXX mask bit to check for both */
 			/* don't count Null data frames as errors */
@@ -634,7 +634,10 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 			IEEE80211_NODE_STAT(ni, rx_decap);
 			goto err;
 		}
-		eh = mtod(m, struct ether_header *);
+		if (!(qos & IEEE80211_QOS_AMSDU))
+			eh = mtod(m, struct ether_header *);
+		else
+			eh = NULL;
 		if (!ieee80211_node_is_authorized(ni)) {
 			/*
 			 * Deny any non-PAE frames received prior to
@@ -644,11 +647,13 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 			 * the port is not marked authorized by the
 			 * authenticator until the handshake has completed.
 			 */
-			if (eh->ether_type != htons(ETHERTYPE_PAE)) {
+			if (eh == NULL ||
+			    eh->ether_type != htons(ETHERTYPE_PAE)) {
 				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
-				    eh->ether_shost, "data",
-				    "unauthorized port: ether type 0x%x len %u",
-				    eh->ether_type, m->m_pkthdr.len);
+				    ni->ni_macaddr, "data", "unauthorized or "
+				    "unknown port: ether type 0x%x len %u",
+				    eh == NULL ? -1 : eh->ether_type,
+				    m->m_pkthdr.len);
 				vap->iv_stats.is_rx_unauth++;
 				IEEE80211_NODE_STAT(ni, rx_unauth);
 				goto err;
@@ -661,7 +666,8 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 			if ((vap->iv_flags & IEEE80211_F_DROPUNENC) &&
 			    ((has_decrypted == 0) && (m->m_flags & M_WEP) == 0) &&
 			    (is_hw_decrypted == 0) &&
-			    eh->ether_type != htons(ETHERTYPE_PAE)) {
+			    (eh == NULL ||
+			     eh->ether_type != htons(ETHERTYPE_PAE))) {
 				/*
 				 * Drop unencrypted frames.
 				 */
@@ -708,7 +714,7 @@ wds_input(struct ieee80211_node *ni, struct mbuf *m,
 			    ether_sprintf(wh->i_addr2), rssi);
 		}
 #endif
-		if (wh->i_fc[1] & IEEE80211_FC1_PROTECTED) {
+		if (IEEE80211_IS_PROTECTED(wh)) {
 			IEEE80211_DISCARD(vap, IEEE80211_MSG_INPUT,
 			    wh, NULL, "%s", "WEP set but not permitted");
 			vap->iv_stats.is_rx_mgtdiscard++; /* XXX */

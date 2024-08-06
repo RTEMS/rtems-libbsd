@@ -1,10 +1,10 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2006 Bernd Walter.  All rights reserved.
- * Copyright (c) 2006 M. Warner Losh.  All rights reserved.
+ * Copyright (c) 2006 M. Warner Losh <imp@FreeBSD.org>
  * Copyright (c) 2017 Marius Strobl <marius@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -67,6 +65,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/mutex.h>
 #include <sys/bus.h>
 #include <sys/endian.h>
+#include <sys/sbuf.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
 
@@ -132,11 +131,11 @@ static const struct mmc_quirk mmc_quirks[] = {
 	 */
 	{ 0x70, MMC_QUIRK_OID_ANY,	"V10008", MMC_QUIRK_BROKEN_TRIM },
 	{ 0x70, MMC_QUIRK_OID_ANY,	"V10016", MMC_QUIRK_BROKEN_TRIM },
-
 	{ 0x0, 0x0, NULL, 0x0 }
 };
 
-static SYSCTL_NODE(_hw, OID_AUTO, mmc, CTLFLAG_RD, NULL, "mmc driver");
+static SYSCTL_NODE(_hw, OID_AUTO, mmc, CTLFLAG_RD | CTLFLAG_MPSAFE, NULL,
+    "mmc driver");
 
 static int mmc_debug;
 SYSCTL_INT(_hw_mmc, OID_AUTO, debug, CTLFLAG_RWTUN, &mmc_debug, 0,
@@ -145,8 +144,7 @@ SYSCTL_INT(_hw_mmc, OID_AUTO, debug, CTLFLAG_RWTUN, &mmc_debug, 0,
 /* bus entry points */
 static int mmc_acquire_bus(device_t busdev, device_t dev);
 static int mmc_attach(device_t dev);
-static int mmc_child_location_str(device_t dev, device_t child, char *buf,
-    size_t buflen);
+static int mmc_child_location(device_t dev, device_t child, struct sbuf *sb);
 static int mmc_detach(device_t dev);
 static int mmc_probe(device_t dev);
 static int mmc_read_ivar(device_t bus, device_t child, int which,
@@ -273,6 +271,7 @@ mmc_detach(device_t dev)
 	struct mmc_softc *sc = device_get_softc(dev);
 	int err;
 
+	config_intrhook_drain(&sc->config_intrhook);
 	err = mmc_delete_cards(sc, true);
 	if (err != 0)
 		return (err);
@@ -413,7 +412,6 @@ static int
 mmc_release_bus(device_t busdev, device_t dev)
 {
 	struct mmc_softc *sc;
-	int err;
 
 	sc = device_get_softc(busdev);
 
@@ -422,14 +420,9 @@ mmc_release_bus(device_t busdev, device_t dev)
 		panic("mmc: releasing unowned bus.");
 	if (sc->owner != dev)
 		panic("mmc: you don't own the bus.  game over.");
-	MMC_UNLOCK(sc);
-	err = MMCBR_RELEASE_HOST(device_get_parent(busdev), busdev);
-	if (err)
-		return (err);
-	MMC_LOCK(sc);
 	sc->owner = NULL;
 	MMC_UNLOCK(sc);
-	return (0);
+	return (MMCBR_RELEASE_HOST(device_get_parent(busdev), busdev));
 }
 
 static uint32_t
@@ -1562,9 +1555,11 @@ mmc_host_timing(device_t dev, enum mmc_bus_timing timing)
 	case bus_timing_mmc_ddr52:
 		return (HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_DDR52));
 	case bus_timing_mmc_hs200:
-		return (HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS200));
+		return (HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS200_120) ||
+			HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS200_180));
 	case bus_timing_mmc_hs400:
-		return (HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS400));
+		return (HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS400_120) ||
+			HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS400_180));
 	case bus_timing_mmc_hs400es:
 		return (HOST_TIMING_CAP(host_caps, MMC_CAP_MMC_HS400 |
 		    MMC_CAP_MMC_ENH_STROBE));
@@ -1939,7 +1934,7 @@ child_common:
 			if (child != NULL) {
 				device_set_ivars(child, ivar);
 				sc->child_list = realloc(sc->child_list,
-				    sizeof(device_t) * sc->child_count + 1,
+				    sizeof(device_t) * (sc->child_count + 1),
 				    M_DEVBUF, M_WAITOK);
 				sc->child_list[sc->child_count++] = child;
 			} else
@@ -2254,6 +2249,15 @@ clock:
 		mmcbr_set_clock(dev, max_dtr);
 		mmcbr_update_ios(dev);
 
+		/*
+		 * Don't call into the bridge driver for timings definitely
+		 * not requiring tuning.  Note that it's up to the upper
+		 * layer to actually execute tuning otherwise.
+		 */
+		if (timing <= bus_timing_uhs_sdr25 ||
+		    timing == bus_timing_mmc_ddr52)
+			goto power_class;
+
 		if (mmcbr_tune(dev, hs400) != 0) {
 			device_printf(dev, "Card at relative address %d "
 			    "failed to execute initial tuning\n", rca);
@@ -2289,10 +2293,8 @@ mmc_switch_to_hs400(struct mmc_softc *sc, struct mmc_ivars *ivar,
 {
 	device_t dev;
 	int err;
-	uint16_t rca;
 
 	dev = sc->dev;
-	rca = ivar->rca;
 
 	/*
 	 * Both clock and timing must be set as appropriate for high speed
@@ -2332,10 +2334,8 @@ mmc_switch_to_hs200(struct mmc_softc *sc, struct mmc_ivars *ivar,
 {
 	device_t dev;
 	int err;
-	uint16_t rca;
 
 	dev = sc->dev;
-	rca = ivar->rca;
 
 	/*
 	 * Both clock and timing must initially be set as appropriate for
@@ -2555,11 +2555,10 @@ mmc_delayed_attach(void *xsc)
 }
 
 static int
-mmc_child_location_str(device_t dev, device_t child, char *buf,
-    size_t buflen)
+mmc_child_location(device_t dev, device_t child, struct sbuf *sb)
 {
 
-	snprintf(buf, buflen, "rca=0x%04x", mmc_get_rca(child));
+	sbuf_printf(sb, "rca=0x%04x", mmc_get_rca(child));
 	return (0);
 }
 
@@ -2574,7 +2573,7 @@ static device_method_t mmc_methods[] = {
 	/* Bus interface */
 	DEVMETHOD(bus_read_ivar, mmc_read_ivar),
 	DEVMETHOD(bus_write_ivar, mmc_write_ivar),
-	DEVMETHOD(bus_child_location_str, mmc_child_location_str),
+	DEVMETHOD(bus_child_location, mmc_child_location),
 
 	/* MMC Bus interface */
 	DEVMETHOD(mmcbus_retune_pause, mmc_retune_pause),
@@ -2591,6 +2590,5 @@ driver_t mmc_driver = {
 	mmc_methods,
 	sizeof(struct mmc_softc),
 };
-devclass_t mmc_devclass;
 
 MODULE_VERSION(mmc, MMC_VERSION);

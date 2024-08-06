@@ -1,8 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
@@ -88,7 +87,8 @@ static void	usb_attach_sub(device_t, struct usb_bus *);
 #ifdef USB_DEBUG
 static int usb_ctrl_debug = 0;
 
-static SYSCTL_NODE(_hw_usb, OID_AUTO, ctrl, CTLFLAG_RW, 0, "USB controller");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, ctrl, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB controller");
 SYSCTL_INT(_hw_usb_ctrl, OID_AUTO, debug, CTLFLAG_RWTUN, &usb_ctrl_debug, 0,
     "Debug level");
 #endif
@@ -99,7 +99,6 @@ SYSCTL_INT(_hw_usb, OID_AUTO, no_boot_wait, CTLFLAG_RDTUN, &usb_no_boot_wait, 0,
     "No USB device enumerate waiting at boot.");
 #endif
 
-#ifndef __rtems__
 static int usb_no_suspend_wait = 0;
 SYSCTL_INT(_hw_usb, OID_AUTO, no_suspend_wait, CTLFLAG_RWTUN,
     &usb_no_suspend_wait, 0, "No USB device waiting at system suspend.");
@@ -107,9 +106,6 @@ SYSCTL_INT(_hw_usb, OID_AUTO, no_suspend_wait, CTLFLAG_RWTUN,
 static int usb_no_shutdown_wait = 0;
 SYSCTL_INT(_hw_usb, OID_AUTO, no_shutdown_wait, CTLFLAG_RWTUN,
     &usb_no_shutdown_wait, 0, "No USB device waiting at system shutdown.");
-#endif /* __rtems__ */
-
-static devclass_t usb_devclass;
 
 static device_method_t usb_methods[] = {
 	DEVMETHOD(device_probe, usb_probe),
@@ -129,19 +125,18 @@ static driver_t usb_driver = {
 };
 
 /* Host Only Drivers */
-DRIVER_MODULE(usbus, ohci, usb_driver, usb_devclass, 0, 0);
-DRIVER_MODULE(usbus, uhci, usb_driver, usb_devclass, 0, 0);
-DRIVER_MODULE(usbus, ehci, usb_driver, usb_devclass, 0, 0);
-DRIVER_MODULE(usbus, xhci, usb_driver, usb_devclass, 0, 0);
+DRIVER_MODULE(usbus, ohci, usb_driver, 0, 0);
+DRIVER_MODULE(usbus, uhci, usb_driver, 0, 0);
+DRIVER_MODULE(usbus, ehci, usb_driver, 0, 0);
+DRIVER_MODULE(usbus, xhci, usb_driver, 0, 0);
 
 /* Device Only Drivers */
-DRIVER_MODULE(usbus, musbotg, usb_driver, usb_devclass, 0, 0);
-DRIVER_MODULE(usbus, uss820dci, usb_driver, usb_devclass, 0, 0);
-DRIVER_MODULE(usbus, octusb, usb_driver, usb_devclass, 0, 0);
+DRIVER_MODULE(usbus, musbotg, usb_driver, 0, 0);
+DRIVER_MODULE(usbus, uss820dci, usb_driver, 0, 0);
+DRIVER_MODULE(usbus, octusb, usb_driver, 0, 0);
 
 /* Dual Mode Drivers */
-DRIVER_MODULE(usbus, dwcotg, usb_driver, usb_devclass, 0, 0);
-DRIVER_MODULE(usbus, saf1761otg, usb_driver, usb_devclass, 0, 0);
+DRIVER_MODULE(usbus, dwcotg, usb_driver, 0, 0);
 
 /*------------------------------------------------------------------------*
  *	usb_probe
@@ -159,13 +154,11 @@ usb_probe(device_t dev)
 static void
 usb_root_mount_rel(struct usb_bus *bus)
 {
-#ifndef __rtems__
 	if (bus->bus_roothold != NULL) {
 		DPRINTF("Releasing root mount hold %p\n", bus->bus_roothold);
 		root_mount_rel(bus->bus_roothold);
 		bus->bus_roothold = NULL;
 	}
-#endif /* __rtems__ */
 }
 #endif
 
@@ -190,7 +183,6 @@ usb_attach(device_t dev)
 		bus->bus_roothold = root_mount_hold(device_get_nameunit(dev));
 	}
 #endif
-
 	usb_attach_sub(dev, bus);
 
 	return (0);			/* return success */
@@ -275,13 +267,11 @@ usb_suspend(device_t dev)
 	USB_BUS_LOCK(bus);
 	usb_proc_msignal(USB_BUS_EXPLORE_PROC(bus),
 	    &bus->suspend_msg[0], &bus->suspend_msg[1]);
-#ifndef __rtems__
 	if (usb_no_suspend_wait == 0) {
 		/* wait for suspend callback to be executed */
 		usb_proc_mwait(USB_BUS_EXPLORE_PROC(bus),
 		    &bus->suspend_msg[0], &bus->suspend_msg[1]);
 	}
-#endif /* __rtems__ */
 	USB_BUS_UNLOCK(bus);
 
 	return (0);
@@ -350,7 +340,6 @@ usb_shutdown(device_t dev)
 	DPRINTF("%s: Controller shutdown\n", device_get_nameunit(bus->bdev));
 
 	USB_BUS_LOCK(bus);
-#ifndef __rtems__
 	usb_proc_msignal(USB_BUS_EXPLORE_PROC(bus),
 	    &bus->shutdown_msg[0], &bus->shutdown_msg[1]);
 	if (usb_no_shutdown_wait == 0) {
@@ -358,7 +347,6 @@ usb_shutdown(device_t dev)
 		usb_proc_mwait(USB_BUS_EXPLORE_PROC(bus),
 		    &bus->shutdown_msg[0], &bus->shutdown_msg[1]);
 	}
-#endif /* __rtems__ */
 	USB_BUS_UNLOCK(bus);
 
 	DPRINTF("%s: Controller shutdown complete\n",
@@ -391,7 +379,6 @@ usb_bus_explore(struct usb_proc_msg *pm)
 	}
 
 	if (udev != NULL && udev->hub != NULL) {
-
 		if (bus->do_probe) {
 			bus->do_probe = 0;
 			bus->driver_added_refcount++;
@@ -427,6 +414,9 @@ usb_bus_explore(struct usb_proc_msg *pm)
 #if USB_HAVE_ROOT_MOUNT_HOLD
 	usb_root_mount_rel(bus);
 #endif
+
+	/* Nice the enumeration a bit, to avoid looping too fast. */
+	usb_pause_mtx(&bus->bus_mtx, USB_MS_TO_TICKS(usb_enum_nice_time));
 }
 
 /*------------------------------------------------------------------------*
@@ -449,9 +439,9 @@ usb_bus_detach(struct usb_proc_msg *pm)
 	USB_BUS_UNLOCK(bus);
 
 	/* detach children first */
-	mtx_lock(&Giant);
+	bus_topo_lock();
 	bus_generic_detach(dev);
-	mtx_unlock(&Giant);
+	bus_topo_unlock();
 
 	/*
 	 * Free USB device and all subdevices, if any.
@@ -666,7 +656,6 @@ usb_bus_cleanup(struct usb_proc_msg *pm)
 	bus = ((struct usb_bus_msg *)pm)->bus;
 
 	while ((pd = LIST_FIRST(&bus->pd_cleanup_list)) != NULL) {
-
 		LIST_REMOVE(pd, pd_next);
 		USB_BUS_UNLOCK(bus);
 
@@ -815,10 +804,10 @@ usb_bus_attach(struct usb_proc_msg *pm)
 static void
 usb_attach_sub(device_t dev, struct usb_bus *bus)
 {
-	mtx_lock(&Giant);
+	bus_topo_lock();
 	if (usb_devclass_ptr == NULL)
 		usb_devclass_ptr = devclass_find("usbus");
-	mtx_unlock(&Giant);
+	bus_topo_unlock();
 
 #if USB_HAVE_PF
 	usbpf_attach(bus);

@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -64,20 +62,14 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/usb/rtwn_usb_reg.h>
 #include <dev/rtwn/usb/rtwn_usb_tx.h>
 
-#ifdef __rtems__
-#include <machine/rtems-bsd-cache.h>
-#endif /* __rtems__ */
-
 static struct rtwn_data * _rtwn_usb_getbuf(struct rtwn_usb_softc *);
 static struct rtwn_data * rtwn_usb_getbuf(struct rtwn_usb_softc *);
 static void		rtwn_usb_txeof(struct rtwn_usb_softc *,
 			    struct rtwn_data *, int);
 
-
 static const uint8_t wme2qid[] =
 	{ RTWN_BULK_TX_BE, RTWN_BULK_TX_BK,
 	  RTWN_BULK_TX_VI, RTWN_BULK_TX_VO };
-
 
 static struct rtwn_data *
 _rtwn_usb_getbuf(struct rtwn_usb_softc *uc)
@@ -174,9 +166,6 @@ tr_setup:
 		if (data->ni == NULL && RTWN_CHIP_HAS_BCNQ1(sc))
 			rtwn_switch_bcnq(sc, data->id);
 		usbd_xfer_set_frame_data(xfer, 0, data->buf, data->buflen);
-#if defined(__rtems__) && defined(CPU_DATA_CACHE_ALIGNMENT)
-		usbd_xfer_frame_allow_cache_line_blow_up(xfer, 0);
-#endif /* __rtems__ */
 		usbd_transfer_submit(xfer);
 		if (sc->sc_ratectl != RTWN_RATECTL_NET80211)
 			sc->sc_tx_n_active++;

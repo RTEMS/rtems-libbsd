@@ -162,5 +162,5 @@ driver_t dwc_otg_driver = {
 
 static devclass_t dwc_otg_devclass;
 
-DRIVER_MODULE(dwcotg, nexus, dwc_otg_driver, dwc_otg_devclass, 0, 0);
+DRIVER_MODULE(dwcotg, nexus, dwc_otg_driver, 0, 0);
 MODULE_DEPEND(dwcotg, usb, 1, 1, 1);

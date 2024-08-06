@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 Robert N. M. Watson
  * All rights reserved.
@@ -33,8 +33,6 @@
 
 #ifndef __rtems__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/conf.h>
@@ -543,9 +541,8 @@ dtnfsclient_load(void *dummy)
 	    (dtrace_nfsclient_nfs23_done_probe_func_t)dtrace_probe;
 }
 
-
 static int
-dtnfsclient_unload()
+dtnfsclient_unload(void)
 {
 
 	dtrace_nfscl_nfs234_start_probe = NULL;

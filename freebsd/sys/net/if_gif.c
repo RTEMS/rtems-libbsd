@@ -35,8 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
@@ -62,6 +60,7 @@ __FBSDID("$FreeBSD$");
 
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/if_clone.h>
 #include <net/if_types.h>
 #include <net/netisr.h>
@@ -106,6 +105,9 @@ void	(*ng_gif_input_orphan_p)(struct ifnet *ifp, struct mbuf *m, int af);
 void	(*ng_gif_attach_p)(struct ifnet *ifp);
 void	(*ng_gif_detach_p)(struct ifnet *ifp);
 
+#ifdef VIMAGE
+static void	gif_reassign(struct ifnet *, struct vnet *, char *);
+#endif
 static void	gif_delete_tunnel(struct gif_softc *);
 static int	gif_ioctl(struct ifnet *, u_long, caddr_t);
 static int	gif_transmit(struct ifnet *, struct mbuf *);
@@ -116,7 +118,7 @@ VNET_DEFINE_STATIC(struct if_clone *, gif_cloner);
 #define	V_gif_cloner	VNET(gif_cloner)
 
 SYSCTL_DECL(_net_link);
-static SYSCTL_NODE(_net_link, IFT_GIF, gif, CTLFLAG_RW, 0,
+static SYSCTL_NODE(_net_link, IFT_GIF, gif, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "Generic Tunnel Interface");
 #ifndef MAX_GIF_NEST
 /*
@@ -156,6 +158,9 @@ gif_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	GIF2IFP(sc)->if_transmit = gif_transmit;
 	GIF2IFP(sc)->if_qflush = gif_qflush;
 	GIF2IFP(sc)->if_output = gif_output;
+#ifdef VIMAGE
+	GIF2IFP(sc)->if_reassign = gif_reassign;
+#endif
 	GIF2IFP(sc)->if_capabilities |= IFCAP_LINKSTATE;
 	GIF2IFP(sc)->if_capenable |= IFCAP_LINKSTATE;
 	if_attach(GIF2IFP(sc));
@@ -165,6 +170,21 @@ gif_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 
 	return (0);
 }
+
+#ifdef VIMAGE
+static void
+gif_reassign(struct ifnet *ifp, struct vnet *new_vnet __unused,
+    char *unused __unused)
+{
+	struct gif_softc *sc;
+
+	sx_xlock(&gif_ioctl_sx);
+	sc = ifp->if_softc;
+	if (sc != NULL)
+		gif_delete_tunnel(sc);
+	sx_xunlock(&gif_ioctl_sx);
+}
+#endif /* VIMAGE */
 
 static void
 gif_clone_destroy(struct ifnet *ifp)
@@ -199,7 +219,7 @@ vnet_gif_init(const void *unused __unused)
 	in6_gif_init();
 #endif
 }
-VNET_SYSINIT(vnet_gif_init, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_ANY,
+VNET_SYSINIT(vnet_gif_init, SI_SUB_PSEUDO, SI_ORDER_ANY,
     vnet_gif_init, NULL);
 
 static void
@@ -214,7 +234,7 @@ vnet_gif_uninit(const void *unused __unused)
 	in6_gif_uninit();
 #endif
 }
-VNET_SYSUNINIT(vnet_gif_uninit, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_ANY,
+VNET_SYSUNINIT(vnet_gif_uninit, SI_SUB_PSEUDO, SI_ORDER_ANY,
     vnet_gif_uninit, NULL);
 
 static int
@@ -278,7 +298,7 @@ gif_transmit(struct ifnet *ifp, struct mbuf *m)
 	uint8_t proto, ecn;
 	int error;
 
-	GIF_RLOCK();
+	NET_EPOCH_ASSERT();
 #ifdef MAC
 	error = mac_ifnet_check_transmit(ifp, m);
 	if (error) {
@@ -376,7 +396,6 @@ gif_transmit(struct ifnet *ifp, struct mbuf *m)
 err:
 	if (error)
 		if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
-	GIF_RUNLOCK();
 	return (error);
 }
 
@@ -386,17 +405,20 @@ gif_qflush(struct ifnet *ifp __unused)
 
 }
 
-
 int
 gif_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 	struct route *ro)
 {
 	uint32_t af;
 
-	if (dst->sa_family == AF_UNSPEC)
-		bcopy(dst->sa_data, &af, sizeof(af));
+	KASSERT(ifp->if_bridge == NULL,
+	    ("%s: unexpectedly called with bridge attached", __func__));
+
+	/* BPF writes need to be handled specially. */
+	if (dst->sa_family == AF_UNSPEC || dst->sa_family == pseudo_AF_HDRCMPLT)
+		memcpy(&af, dst->sa_data, sizeof(af));
 	else
-		af = dst->sa_family;
+		af = RO_GET_FAMILY(ro, dst);
 	/*
 	 * Now save the af in the inbound pkt csum data, this is a cheat since
 	 * we are using the inbound csum_data field to carry the af over to
@@ -420,6 +442,8 @@ gif_input(struct mbuf *m, struct ifnet *ifp, int proto, uint8_t ecn)
 	struct ether_header *eh;
 	struct ifnet *oldifp;
 	int isr, n, af;
+
+	NET_EPOCH_ASSERT();
 
 	if (ifp == NULL) {
 		/* just in case */
@@ -525,7 +549,8 @@ gif_input(struct mbuf *m, struct ifnet *ifp, int proto, uint8_t ecn)
 			m_freem(m);
 			goto drop;
 		}
-		m_adj(m, sizeof(struct etherip_header));
+
+		m_adj_decap(m, sizeof(struct etherip_header));
 
 		m->m_flags &= ~(M_BCAST|M_MCAST);
 		m->m_pkthdr.rcvif = ifp;
@@ -705,4 +730,3 @@ gif_delete_tunnel(struct gif_softc *sc)
 	GIF2IFP(sc)->if_drv_flags &= ~IFF_DRV_RUNNING;
 	if_link_state_change(GIF2IFP(sc), LINK_STATE_DOWN);
 }
-

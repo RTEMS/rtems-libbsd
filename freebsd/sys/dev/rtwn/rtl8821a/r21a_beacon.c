@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -60,7 +58,6 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/rtwn/rtl8821a/r21a.h>
 #include <dev/rtwn/rtl8821a/r21a_reg.h>
-
 
 void
 r21a_beacon_init(struct rtwn_softc *sc, void *buf, int id)

@@ -1,8 +1,6 @@
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
- *
- * Created from $FreeBSD$
  */
 
 extern struct vnodeop_desc vop_default_desc;
@@ -25,7 +23,15 @@ static __inline int VOP_ISLOCKED(
 
 	a.a_gen.a_desc = &vop_islocked_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_islocked(&a));
+	else
+		return (VOP_ISLOCKED_APV(vp->v_op, &a));
+#else
 	return (VOP_ISLOCKED_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_lookup_args {
@@ -51,7 +57,15 @@ static __inline int VOP_LOOKUP(
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (dvp->v_op->vop_lookup(&a));
+	else
+		return (VOP_LOOKUP_APV(dvp->v_op, &a));
+#else
 	return (VOP_LOOKUP_APV(dvp->v_op, &a));
+#endif
 }
 
 struct vop_cachedlookup_args {
@@ -77,7 +91,15 @@ static __inline int VOP_CACHEDLOOKUP(
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (dvp->v_op->vop_cachedlookup(&a));
+	else
+		return (VOP_CACHEDLOOKUP_APV(dvp->v_op, &a));
+#else
 	return (VOP_CACHEDLOOKUP_APV(dvp->v_op, &a));
+#endif
 }
 
 struct vop_create_args {
@@ -225,6 +247,68 @@ static __inline int VOP_CLOSE(
 	return (VOP_CLOSE_APV(vp->v_op, &a));
 }
 
+struct vop_fplookup_vexec_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	struct ucred *a_cred;
+};
+
+extern struct vnodeop_desc vop_fplookup_vexec_desc;
+
+int VOP_FPLOOKUP_VEXEC_AP(struct vop_fplookup_vexec_args *);
+int VOP_FPLOOKUP_VEXEC_APV(struct vop_vector *vop, struct vop_fplookup_vexec_args *);
+
+static __inline int VOP_FPLOOKUP_VEXEC(
+	struct vnode *vp,
+	struct ucred *cred)
+{
+	struct vop_fplookup_vexec_args a;
+
+	a.a_gen.a_desc = &vop_fplookup_vexec_desc;
+	a.a_vp = vp;
+	a.a_cred = cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_fplookup_vexec(&a));
+	else
+		return (VOP_FPLOOKUP_VEXEC_APV(vp->v_op, &a));
+#else
+	return (VOP_FPLOOKUP_VEXEC_APV(vp->v_op, &a));
+#endif
+}
+
+struct vop_fplookup_symlink_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	struct cache_fpl *a_fpl;
+};
+
+extern struct vnodeop_desc vop_fplookup_symlink_desc;
+
+int VOP_FPLOOKUP_SYMLINK_AP(struct vop_fplookup_symlink_args *);
+int VOP_FPLOOKUP_SYMLINK_APV(struct vop_vector *vop, struct vop_fplookup_symlink_args *);
+
+static __inline int VOP_FPLOOKUP_SYMLINK(
+	struct vnode *vp,
+	struct cache_fpl *fpl)
+{
+	struct vop_fplookup_symlink_args a;
+
+	a.a_gen.a_desc = &vop_fplookup_symlink_desc;
+	a.a_vp = vp;
+	a.a_fpl = fpl;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_fplookup_symlink(&a));
+	else
+		return (VOP_FPLOOKUP_SYMLINK_APV(vp->v_op, &a));
+#else
+	return (VOP_FPLOOKUP_SYMLINK_APV(vp->v_op, &a));
+#endif
+}
+
 struct vop_access_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
@@ -251,7 +335,15 @@ static __inline int VOP_ACCESS(
 	a.a_accmode = accmode;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_access(&a));
+	else
+		return (VOP_ACCESS_APV(vp->v_op, &a));
+#else
 	return (VOP_ACCESS_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_accessx_args {
@@ -280,7 +372,52 @@ static __inline int VOP_ACCESSX(
 	a.a_accmode = accmode;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_accessx(&a));
+	else
+		return (VOP_ACCESSX_APV(vp->v_op, &a));
+#else
 	return (VOP_ACCESSX_APV(vp->v_op, &a));
+#endif
+}
+
+struct vop_stat_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	struct stat *a_sb;
+	struct ucred *a_active_cred;
+	struct ucred *a_file_cred;
+};
+
+extern struct vnodeop_desc vop_stat_desc;
+
+int VOP_STAT_AP(struct vop_stat_args *);
+int VOP_STAT_APV(struct vop_vector *vop, struct vop_stat_args *);
+
+static __inline int VOP_STAT(
+	struct vnode *vp,
+	struct stat *sb,
+	struct ucred *active_cred,
+	struct ucred *file_cred)
+{
+	struct vop_stat_args a;
+
+	a.a_gen.a_desc = &vop_stat_desc;
+	a.a_vp = vp;
+	a.a_sb = sb;
+	a.a_active_cred = active_cred;
+	a.a_file_cred = file_cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_stat(&a));
+	else
+		return (VOP_STAT_APV(vp->v_op, &a));
+#else
+	return (VOP_STAT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_getattr_args {
@@ -306,7 +443,15 @@ static __inline int VOP_GETATTR(
 	a.a_vp = vp;
 	a.a_vap = vap;
 	a.a_cred = cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getattr(&a));
+	else
+		return (VOP_GETATTR_APV(vp->v_op, &a));
+#else
 	return (VOP_GETATTR_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_setattr_args {
@@ -335,24 +480,32 @@ static __inline int VOP_SETATTR(
 	return (VOP_SETATTR_APV(vp->v_op, &a));
 }
 
-struct vop_markatime_args {
+struct vop_mmapped_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 };
 
-extern struct vnodeop_desc vop_markatime_desc;
+extern struct vnodeop_desc vop_mmapped_desc;
 
-int VOP_MARKATIME_AP(struct vop_markatime_args *);
-int VOP_MARKATIME_APV(struct vop_vector *vop, struct vop_markatime_args *);
+int VOP_MMAPPED_AP(struct vop_mmapped_args *);
+int VOP_MMAPPED_APV(struct vop_vector *vop, struct vop_mmapped_args *);
 
-static __inline int VOP_MARKATIME(
+static __inline int VOP_MMAPPED(
 	struct vnode *vp)
 {
-	struct vop_markatime_args a;
+	struct vop_mmapped_args a;
 
-	a.a_gen.a_desc = &vop_markatime_desc;
+	a.a_gen.a_desc = &vop_mmapped_desc;
 	a.a_vp = vp;
-	return (VOP_MARKATIME_APV(vp->v_op, &a));
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_mmapped(&a));
+	else
+		return (VOP_MMAPPED_APV(vp->v_op, &a));
+#else
+	return (VOP_MMAPPED_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_read_args {
@@ -382,6 +535,35 @@ static __inline int VOP_READ(
 	a.a_ioflag = ioflag;
 	a.a_cred = cred;
 	return (VOP_READ_APV(vp->v_op, &a));
+}
+
+struct vop_read_pgcache_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	struct uio *a_uio;
+	int a_ioflag;
+	struct ucred *a_cred;
+};
+
+extern struct vnodeop_desc vop_read_pgcache_desc;
+
+int VOP_READ_PGCACHE_AP(struct vop_read_pgcache_args *);
+int VOP_READ_PGCACHE_APV(struct vop_vector *vop, struct vop_read_pgcache_args *);
+
+static __inline int VOP_READ_PGCACHE(
+	struct vnode *vp,
+	struct uio *uio,
+	int ioflag,
+	struct ucred *cred)
+{
+	struct vop_read_pgcache_args a;
+
+	a.a_gen.a_desc = &vop_read_pgcache_desc;
+	a.a_vp = vp;
+	a.a_uio = uio;
+	a.a_ioflag = ioflag;
+	a.a_cred = cred;
+	return (VOP_READ_PGCACHE_APV(vp->v_op, &a));
 }
 
 struct vop_write_args {
@@ -445,7 +627,15 @@ static __inline int VOP_IOCTL(
 	a.a_fflag = fflag;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_ioctl(&a));
+	else
+		return (VOP_IOCTL_APV(vp->v_op, &a));
+#else
 	return (VOP_IOCTL_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_poll_args {
@@ -474,7 +664,15 @@ static __inline int VOP_POLL(
 	a.a_events = events;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_poll(&a));
+	else
+		return (VOP_POLL_APV(vp->v_op, &a));
+#else
 	return (VOP_POLL_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_kqfilter_args {
@@ -497,7 +695,15 @@ static __inline int VOP_KQFILTER(
 	a.a_gen.a_desc = &vop_kqfilter_desc;
 	a.a_vp = vp;
 	a.a_kn = kn;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_kqfilter(&a));
+	else
+		return (VOP_KQFILTER_APV(vp->v_op, &a));
+#else
 	return (VOP_KQFILTER_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_revoke_args {
@@ -520,7 +726,15 @@ static __inline int VOP_REVOKE(
 	a.a_gen.a_desc = &vop_revoke_desc;
 	a.a_vp = vp;
 	a.a_flags = flags;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_revoke(&a));
+	else
+		return (VOP_REVOKE_APV(vp->v_op, &a));
+#else
 	return (VOP_REVOKE_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_fsync_args {
@@ -697,7 +911,7 @@ struct vop_symlink_args {
 	struct vnode **a_vpp;
 	struct componentname *a_cnp;
 	struct vattr *a_vap;
-	char *a_target;
+	const char *a_target;
 };
 
 extern struct vnodeop_desc vop_symlink_desc;
@@ -710,7 +924,7 @@ static __inline int VOP_SYMLINK(
 	struct vnode **vpp,
 	struct componentname *cnp,
 	struct vattr *vap,
-	char *target)
+	const char *target)
 {
 	struct vop_symlink_args a;
 
@@ -730,7 +944,7 @@ struct vop_readdir_args {
 	struct ucred *a_cred;
 	int *a_eofflag;
 	int *a_ncookies;
-	u_long **a_cookies;
+	uint64_t **a_cookies;
 };
 
 extern struct vnodeop_desc vop_readdir_desc;
@@ -744,7 +958,7 @@ static __inline int VOP_READDIR(
 	struct ucred *cred,
 	int *eofflag,
 	int *ncookies,
-	u_long **cookies)
+	uint64_t **cookies)
 {
 	struct vop_readdir_args a;
 
@@ -781,13 +995,20 @@ static __inline int VOP_READLINK(
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_cred = cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_readlink(&a));
+	else
+		return (VOP_READLINK_APV(vp->v_op, &a));
+#else
 	return (VOP_READLINK_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_inactive_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	struct thread *a_td;
 };
 
 extern struct vnodeop_desc vop_inactive_desc;
@@ -796,21 +1017,54 @@ int VOP_INACTIVE_AP(struct vop_inactive_args *);
 int VOP_INACTIVE_APV(struct vop_vector *vop, struct vop_inactive_args *);
 
 static __inline int VOP_INACTIVE(
-	struct vnode *vp,
-	struct thread *td)
+	struct vnode *vp)
 {
 	struct vop_inactive_args a;
 
 	a.a_gen.a_desc = &vop_inactive_desc;
 	a.a_vp = vp;
-	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_inactive(&a));
+	else
+		return (VOP_INACTIVE_APV(vp->v_op, &a));
+#else
 	return (VOP_INACTIVE_APV(vp->v_op, &a));
+#endif
+}
+
+struct vop_need_inactive_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+};
+
+extern struct vnodeop_desc vop_need_inactive_desc;
+
+int VOP_NEED_INACTIVE_AP(struct vop_need_inactive_args *);
+int VOP_NEED_INACTIVE_APV(struct vop_vector *vop, struct vop_need_inactive_args *);
+
+static __inline int VOP_NEED_INACTIVE(
+	struct vnode *vp)
+{
+	struct vop_need_inactive_args a;
+
+	a.a_gen.a_desc = &vop_need_inactive_desc;
+	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_need_inactive(&a));
+	else
+		return (VOP_NEED_INACTIVE_APV(vp->v_op, &a));
+#else
+	return (VOP_NEED_INACTIVE_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_reclaim_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	struct thread *a_td;
 };
 
 extern struct vnodeop_desc vop_reclaim_desc;
@@ -819,14 +1073,12 @@ int VOP_RECLAIM_AP(struct vop_reclaim_args *);
 int VOP_RECLAIM_APV(struct vop_vector *vop, struct vop_reclaim_args *);
 
 static __inline int VOP_RECLAIM(
-	struct vnode *vp,
-	struct thread *td)
+	struct vnode *vp)
 {
 	struct vop_reclaim_args a;
 
 	a.a_gen.a_desc = &vop_reclaim_desc;
 	a.a_vp = vp;
-	a.a_td = td;
 	return (VOP_RECLAIM_APV(vp->v_op, &a));
 }
 
@@ -834,7 +1086,7 @@ struct vop_lock1_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	int a_flags;
-	char *a_file;
+	const char *a_file;
 	int a_line;
 };
 
@@ -846,7 +1098,7 @@ int VOP_LOCK1_APV(struct vop_vector *vop, struct vop_lock1_args *);
 static __inline int VOP_LOCK1(
 	struct vnode *vp,
 	int flags,
-	char *file,
+	const char *file,
 	int line)
 {
 	struct vop_lock1_args a;
@@ -856,13 +1108,20 @@ static __inline int VOP_LOCK1(
 	a.a_flags = flags;
 	a.a_file = file;
 	a.a_line = line;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_lock1(&a));
+	else
+		return (VOP_LOCK1_APV(vp->v_op, &a));
+#else
 	return (VOP_LOCK1_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_unlock_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	int a_flags;
 };
 
 extern struct vnodeop_desc vop_unlock_desc;
@@ -871,15 +1130,21 @@ int VOP_UNLOCK_AP(struct vop_unlock_args *);
 int VOP_UNLOCK_APV(struct vop_vector *vop, struct vop_unlock_args *);
 
 static __inline int VOP_UNLOCK(
-	struct vnode *vp,
-	int flags)
+	struct vnode *vp)
 {
 	struct vop_unlock_args a;
 
 	a.a_gen.a_desc = &vop_unlock_desc;
 	a.a_vp = vp;
-	a.a_flags = flags;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_unlock(&a));
+	else
+		return (VOP_UNLOCK_APV(vp->v_op, &a));
+#else
 	return (VOP_UNLOCK_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_bmap_args {
@@ -914,7 +1179,15 @@ static __inline int VOP_BMAP(
 	a.a_bnp = bnp;
 	a.a_runp = runp;
 	a.a_runb = runb;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_bmap(&a));
+	else
+		return (VOP_BMAP_APV(vp->v_op, &a));
+#else
 	return (VOP_BMAP_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_strategy_args {
@@ -937,7 +1210,15 @@ static __inline int VOP_STRATEGY(
 	a.a_gen.a_desc = &vop_strategy_desc;
 	a.a_vp = vp;
 	a.a_bp = bp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_strategy(&a));
+	else
+		return (VOP_STRATEGY_APV(vp->v_op, &a));
+#else
 	return (VOP_STRATEGY_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_getwritemount_args {
@@ -960,7 +1241,49 @@ static __inline int VOP_GETWRITEMOUNT(
 	a.a_gen.a_desc = &vop_getwritemount_desc;
 	a.a_vp = vp;
 	a.a_mpp = mpp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getwritemount(&a));
+	else
+		return (VOP_GETWRITEMOUNT_APV(vp->v_op, &a));
+#else
 	return (VOP_GETWRITEMOUNT_APV(vp->v_op, &a));
+#endif
+}
+
+struct vop_getlowvnode_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	struct vnode **a_vplp;
+	int a_flags;
+};
+
+extern struct vnodeop_desc vop_getlowvnode_desc;
+
+int VOP_GETLOWVNODE_AP(struct vop_getlowvnode_args *);
+int VOP_GETLOWVNODE_APV(struct vop_vector *vop, struct vop_getlowvnode_args *);
+
+static __inline int VOP_GETLOWVNODE(
+	struct vnode *vp,
+	struct vnode **vplp,
+	int flags)
+{
+	struct vop_getlowvnode_args a;
+
+	a.a_gen.a_desc = &vop_getlowvnode_desc;
+	a.a_vp = vp;
+	a.a_vplp = vplp;
+	a.a_flags = flags;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getlowvnode(&a));
+	else
+		return (VOP_GETLOWVNODE_APV(vp->v_op, &a));
+#else
+	return (VOP_GETLOWVNODE_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_print_args {
@@ -980,7 +1303,15 @@ static __inline int VOP_PRINT(
 
 	a.a_gen.a_desc = &vop_print_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_print(&a));
+	else
+		return (VOP_PRINT_APV(vp->v_op, &a));
+#else
 	return (VOP_PRINT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_pathconf_args {
@@ -1006,7 +1337,15 @@ static __inline int VOP_PATHCONF(
 	a.a_vp = vp;
 	a.a_name = name;
 	a.a_retval = retval;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_pathconf(&a));
+	else
+		return (VOP_PATHCONF_APV(vp->v_op, &a));
+#else
 	return (VOP_PATHCONF_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_advlock_args {
@@ -1038,7 +1377,15 @@ static __inline int VOP_ADVLOCK(
 	a.a_op = op;
 	a.a_fl = fl;
 	a.a_flags = flags;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_advlock(&a));
+	else
+		return (VOP_ADVLOCK_APV(vp->v_op, &a));
+#else
 	return (VOP_ADVLOCK_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_advlockasync_args {
@@ -1076,7 +1423,15 @@ static __inline int VOP_ADVLOCKASYNC(
 	a.a_flags = flags;
 	a.a_task = task;
 	a.a_cookiep = cookiep;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_advlockasync(&a));
+	else
+		return (VOP_ADVLOCKASYNC_APV(vp->v_op, &a));
+#else
 	return (VOP_ADVLOCKASYNC_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_advlockpurge_args {
@@ -1096,7 +1451,15 @@ static __inline int VOP_ADVLOCKPURGE(
 
 	a.a_gen.a_desc = &vop_advlockpurge_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_advlockpurge(&a));
+	else
+		return (VOP_ADVLOCKPURGE_APV(vp->v_op, &a));
+#else
 	return (VOP_ADVLOCKPURGE_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_reallocblks_args {
@@ -1119,7 +1482,15 @@ static __inline int VOP_REALLOCBLKS(
 	a.a_gen.a_desc = &vop_reallocblks_desc;
 	a.a_vp = vp;
 	a.a_buflist = buflist;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_reallocblks(&a));
+	else
+		return (VOP_REALLOCBLKS_APV(vp->v_op, &a));
+#else
 	return (VOP_REALLOCBLKS_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_getpages_args {
@@ -1151,7 +1522,15 @@ static __inline int VOP_GETPAGES(
 	a.a_count = count;
 	a.a_rbehind = rbehind;
 	a.a_rahead = rahead;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getpages(&a));
+	else
+		return (VOP_GETPAGES_APV(vp->v_op, &a));
+#else
 	return (VOP_GETPAGES_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_getpages_async_args {
@@ -1189,7 +1568,15 @@ static __inline int VOP_GETPAGES_ASYNC(
 	a.a_rahead = rahead;
 	a.a_iodone = iodone;
 	a.a_arg = arg;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getpages_async(&a));
+	else
+		return (VOP_GETPAGES_ASYNC_APV(vp->v_op, &a));
+#else
 	return (VOP_GETPAGES_ASYNC_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_putpages_args {
@@ -1221,7 +1608,15 @@ static __inline int VOP_PUTPAGES(
 	a.a_count = count;
 	a.a_sync = sync;
 	a.a_rtvals = rtvals;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_putpages(&a));
+	else
+		return (VOP_PUTPAGES_APV(vp->v_op, &a));
+#else
 	return (VOP_PUTPAGES_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_getacl_args {
@@ -1253,7 +1648,15 @@ static __inline int VOP_GETACL(
 	a.a_aclp = aclp;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getacl(&a));
+	else
+		return (VOP_GETACL_APV(vp->v_op, &a));
+#else
 	return (VOP_GETACL_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_setacl_args {
@@ -1317,7 +1720,15 @@ static __inline int VOP_ACLCHECK(
 	a.a_aclp = aclp;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_aclcheck(&a));
+	else
+		return (VOP_ACLCHECK_APV(vp->v_op, &a));
+#else
 	return (VOP_ACLCHECK_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_closeextattr_args {
@@ -1346,7 +1757,15 @@ static __inline int VOP_CLOSEEXTATTR(
 	a.a_commit = commit;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_closeextattr(&a));
+	else
+		return (VOP_CLOSEEXTATTR_APV(vp->v_op, &a));
+#else
 	return (VOP_CLOSEEXTATTR_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_getextattr_args {
@@ -1384,7 +1803,15 @@ static __inline int VOP_GETEXTATTR(
 	a.a_size = size;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getextattr(&a));
+	else
+		return (VOP_GETEXTATTR_APV(vp->v_op, &a));
+#else
 	return (VOP_GETEXTATTR_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_listextattr_args {
@@ -1419,7 +1846,15 @@ static __inline int VOP_LISTEXTATTR(
 	a.a_size = size;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_listextattr(&a));
+	else
+		return (VOP_LISTEXTATTR_APV(vp->v_op, &a));
+#else
 	return (VOP_LISTEXTATTR_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_openextattr_args {
@@ -1445,7 +1880,15 @@ static __inline int VOP_OPENEXTATTR(
 	a.a_vp = vp;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_openextattr(&a));
+	else
+		return (VOP_OPENEXTATTR_APV(vp->v_op, &a));
+#else
 	return (VOP_OPENEXTATTR_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_deleteextattr_args {
@@ -1541,7 +1984,15 @@ static __inline int VOP_SETLABEL(
 	a.a_label = label;
 	a.a_cred = cred;
 	a.a_td = td;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_setlabel(&a));
+	else
+		return (VOP_SETLABEL_APV(vp->v_op, &a));
+#else
 	return (VOP_SETLABEL_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_vptofh_args {
@@ -1564,16 +2015,23 @@ static __inline int VOP_VPTOFH(
 	a.a_gen.a_desc = &vop_vptofh_desc;
 	a.a_vp = vp;
 	a.a_fhp = fhp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_vptofh(&a));
+	else
+		return (VOP_VPTOFH_APV(vp->v_op, &a));
+#else
 	return (VOP_VPTOFH_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_vptocnp_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct vnode **a_vpp;
-	struct ucred *a_cred;
 	char *a_buf;
-	int *a_buflen;
+	size_t *a_buflen;
 };
 
 extern struct vnodeop_desc vop_vptocnp_desc;
@@ -1584,19 +2042,25 @@ int VOP_VPTOCNP_APV(struct vop_vector *vop, struct vop_vptocnp_args *);
 static __inline int VOP_VPTOCNP(
 	struct vnode *vp,
 	struct vnode **vpp,
-	struct ucred *cred,
 	char *buf,
-	int *buflen)
+	size_t *buflen)
 {
 	struct vop_vptocnp_args a;
 
 	a.a_gen.a_desc = &vop_vptocnp_desc;
 	a.a_vp = vp;
 	a.a_vpp = vpp;
-	a.a_cred = cred;
 	a.a_buf = buf;
 	a.a_buflen = buflen;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_vptocnp(&a));
+	else
+		return (VOP_VPTOCNP_APV(vp->v_op, &a));
+#else
 	return (VOP_VPTOCNP_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_allocate_args {
@@ -1604,6 +2068,8 @@ struct vop_allocate_args {
 	struct vnode *a_vp;
 	off_t *a_offset;
 	off_t *a_len;
+	int a_ioflag;
+	struct ucred *a_cred;
 };
 
 extern struct vnodeop_desc vop_allocate_desc;
@@ -1614,7 +2080,9 @@ int VOP_ALLOCATE_APV(struct vop_vector *vop, struct vop_allocate_args *);
 static __inline int VOP_ALLOCATE(
 	struct vnode *vp,
 	off_t *offset,
-	off_t *len)
+	off_t *len,
+	int ioflag,
+	struct ucred *cred)
 {
 	struct vop_allocate_args a;
 
@@ -1622,7 +2090,17 @@ static __inline int VOP_ALLOCATE(
 	a.a_vp = vp;
 	a.a_offset = offset;
 	a.a_len = len;
+	a.a_ioflag = ioflag;
+	a.a_cred = cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_allocate(&a));
+	else
+		return (VOP_ALLOCATE_APV(vp->v_op, &a));
+#else
 	return (VOP_ALLOCATE_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_advise_args {
@@ -1651,7 +2129,15 @@ static __inline int VOP_ADVISE(
 	a.a_start = start;
 	a.a_end = end;
 	a.a_advice = advice;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_advise(&a));
+	else
+		return (VOP_ADVISE_APV(vp->v_op, &a));
+#else
 	return (VOP_ADVISE_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_unp_bind_args {
@@ -1674,7 +2160,15 @@ static __inline int VOP_UNP_BIND(
 	a.a_gen.a_desc = &vop_unp_bind_desc;
 	a.a_vp = vp;
 	a.a_unpcb = unpcb;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_unp_bind(&a));
+	else
+		return (VOP_UNP_BIND_APV(vp->v_op, &a));
+#else
 	return (VOP_UNP_BIND_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_unp_connect_args {
@@ -1697,7 +2191,15 @@ static __inline int VOP_UNP_CONNECT(
 	a.a_gen.a_desc = &vop_unp_connect_desc;
 	a.a_vp = vp;
 	a.a_unpcb = unpcb;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_unp_connect(&a));
+	else
+		return (VOP_UNP_CONNECT_APV(vp->v_op, &a));
+#else
 	return (VOP_UNP_CONNECT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_unp_detach_args {
@@ -1717,7 +2219,15 @@ static __inline int VOP_UNP_DETACH(
 
 	a.a_gen.a_desc = &vop_unp_detach_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_unp_detach(&a));
+	else
+		return (VOP_UNP_DETACH_APV(vp->v_op, &a));
+#else
 	return (VOP_UNP_DETACH_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_is_text_args {
@@ -1737,7 +2247,15 @@ static __inline int VOP_IS_TEXT(
 
 	a.a_gen.a_desc = &vop_is_text_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_is_text(&a));
+	else
+		return (VOP_IS_TEXT_APV(vp->v_op, &a));
+#else
 	return (VOP_IS_TEXT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_set_text_args {
@@ -1757,7 +2275,15 @@ static __inline int VOP_SET_TEXT(
 
 	a.a_gen.a_desc = &vop_set_text_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_set_text(&a));
+	else
+		return (VOP_SET_TEXT_APV(vp->v_op, &a));
+#else
 	return (VOP_SET_TEXT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_unset_text_args {
@@ -1777,30 +2303,15 @@ static __inline int VOP_UNSET_TEXT(
 
 	a.a_gen.a_desc = &vop_unset_text_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_unset_text(&a));
+	else
+		return (VOP_UNSET_TEXT_APV(vp->v_op, &a));
+#else
 	return (VOP_UNSET_TEXT_APV(vp->v_op, &a));
-}
-
-struct vop_get_writecount_args {
-	struct vop_generic_args a_gen;
-	struct vnode *a_vp;
-	int *a_writecount;
-};
-
-extern struct vnodeop_desc vop_get_writecount_desc;
-
-int VOP_GET_WRITECOUNT_AP(struct vop_get_writecount_args *);
-int VOP_GET_WRITECOUNT_APV(struct vop_vector *vop, struct vop_get_writecount_args *);
-
-static __inline int VOP_GET_WRITECOUNT(
-	struct vnode *vp,
-	int *writecount)
-{
-	struct vop_get_writecount_args a;
-
-	a.a_gen.a_desc = &vop_get_writecount_desc;
-	a.a_vp = vp;
-	a.a_writecount = writecount;
-	return (VOP_GET_WRITECOUNT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_add_writecount_args {
@@ -1823,7 +2334,15 @@ static __inline int VOP_ADD_WRITECOUNT(
 	a.a_gen.a_desc = &vop_add_writecount_desc;
 	a.a_vp = vp;
 	a.a_inc = inc;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_add_writecount(&a));
+	else
+		return (VOP_ADD_WRITECOUNT_APV(vp->v_op, &a));
+#else
 	return (VOP_ADD_WRITECOUNT_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_fdatasync_args {
@@ -1849,6 +2368,135 @@ static __inline int VOP_FDATASYNC(
 	return (VOP_FDATASYNC_APV(vp->v_op, &a));
 }
 
+struct vop_copy_file_range_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_invp;
+	off_t *a_inoffp;
+	struct vnode *a_outvp;
+	off_t *a_outoffp;
+	size_t *a_lenp;
+	unsigned int a_flags;
+	struct ucred *a_incred;
+	struct ucred *a_outcred;
+	struct thread *a_fsizetd;
+};
+
+extern struct vnodeop_desc vop_copy_file_range_desc;
+
+int VOP_COPY_FILE_RANGE_AP(struct vop_copy_file_range_args *);
+int VOP_COPY_FILE_RANGE_APV(struct vop_vector *vop, struct vop_copy_file_range_args *);
+
+static __inline int VOP_COPY_FILE_RANGE(
+	struct vnode *invp,
+	off_t *inoffp,
+	struct vnode *outvp,
+	off_t *outoffp,
+	size_t *lenp,
+	unsigned int flags,
+	struct ucred *incred,
+	struct ucred *outcred,
+	struct thread *fsizetd)
+{
+	struct vop_copy_file_range_args a;
+
+	a.a_gen.a_desc = &vop_copy_file_range_desc;
+	a.a_invp = invp;
+	a.a_inoffp = inoffp;
+	a.a_outvp = outvp;
+	a.a_outoffp = outoffp;
+	a.a_lenp = lenp;
+	a.a_flags = flags;
+	a.a_incred = incred;
+	a.a_outcred = outcred;
+	a.a_fsizetd = fsizetd;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (invp->v_op->vop_copy_file_range(&a));
+	else
+		return (VOP_COPY_FILE_RANGE_APV(invp->v_op, &a));
+#else
+	return (VOP_COPY_FILE_RANGE_APV(invp->v_op, &a));
+#endif
+}
+
+struct vop_vput_pair_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_dvp;
+	struct vnode **a_vpp;
+	bool a_unlock_vp;
+};
+
+extern struct vnodeop_desc vop_vput_pair_desc;
+
+int VOP_VPUT_PAIR_AP(struct vop_vput_pair_args *);
+int VOP_VPUT_PAIR_APV(struct vop_vector *vop, struct vop_vput_pair_args *);
+
+static __inline int VOP_VPUT_PAIR(
+	struct vnode *dvp,
+	struct vnode **vpp,
+	bool unlock_vp)
+{
+	struct vop_vput_pair_args a;
+
+	a.a_gen.a_desc = &vop_vput_pair_desc;
+	a.a_dvp = dvp;
+	a.a_vpp = vpp;
+	a.a_unlock_vp = unlock_vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (dvp->v_op->vop_vput_pair(&a));
+	else
+		return (VOP_VPUT_PAIR_APV(dvp->v_op, &a));
+#else
+	return (VOP_VPUT_PAIR_APV(dvp->v_op, &a));
+#endif
+}
+
+struct vop_deallocate_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	off_t *a_offset;
+	off_t *a_len;
+	int a_flags;
+	int a_ioflag;
+	struct ucred *a_cred;
+};
+
+extern struct vnodeop_desc vop_deallocate_desc;
+
+int VOP_DEALLOCATE_AP(struct vop_deallocate_args *);
+int VOP_DEALLOCATE_APV(struct vop_vector *vop, struct vop_deallocate_args *);
+
+static __inline int VOP_DEALLOCATE(
+	struct vnode *vp,
+	off_t *offset,
+	off_t *len,
+	int flags,
+	int ioflag,
+	struct ucred *cred)
+{
+	struct vop_deallocate_args a;
+
+	a.a_gen.a_desc = &vop_deallocate_desc;
+	a.a_vp = vp;
+	a.a_offset = offset;
+	a.a_len = len;
+	a.a_flags = flags;
+	a.a_ioflag = ioflag;
+	a.a_cred = cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_deallocate(&a));
+	else
+		return (VOP_DEALLOCATE_APV(vp->v_op, &a));
+#else
+	return (VOP_DEALLOCATE_APV(vp->v_op, &a));
+#endif
+}
+
 struct vop_spare1_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
@@ -1866,7 +2514,15 @@ static __inline int VOP_SPARE1(
 
 	a.a_gen.a_desc = &vop_spare1_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_spare1(&a));
+	else
+		return (VOP_SPARE1_APV(vp->v_op, &a));
+#else
 	return (VOP_SPARE1_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_spare2_args {
@@ -1886,7 +2542,15 @@ static __inline int VOP_SPARE2(
 
 	a.a_gen.a_desc = &vop_spare2_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_spare2(&a));
+	else
+		return (VOP_SPARE2_APV(vp->v_op, &a));
+#else
 	return (VOP_SPARE2_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_spare3_args {
@@ -1906,7 +2570,15 @@ static __inline int VOP_SPARE3(
 
 	a.a_gen.a_desc = &vop_spare3_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_spare3(&a));
+	else
+		return (VOP_SPARE3_APV(vp->v_op, &a));
+#else
 	return (VOP_SPARE3_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_spare4_args {
@@ -1926,7 +2598,15 @@ static __inline int VOP_SPARE4(
 
 	a.a_gen.a_desc = &vop_spare4_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_spare4(&a));
+	else
+		return (VOP_SPARE4_APV(vp->v_op, &a));
+#else
 	return (VOP_SPARE4_APV(vp->v_op, &a));
+#endif
 }
 
 struct vop_spare5_args {
@@ -1946,6 +2626,15 @@ static __inline int VOP_SPARE5(
 
 	a.a_gen.a_desc = &vop_spare5_desc;
 	a.a_vp = vp;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_spare5(&a));
+	else
+		return (VOP_SPARE5_APV(vp->v_op, &a));
+#else
 	return (VOP_SPARE5_APV(vp->v_op, &a));
+#endif
 }
 
+void vfs_vector_op_register(struct vop_vector *orig_vop);

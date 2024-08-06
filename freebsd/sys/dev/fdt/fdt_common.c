@@ -1,10 +1,9 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009-2014 The FreeBSD Foundation
- * All rights reserved.
  *
  * This software was developed by Andrew Turner under sponsorship from
  * the FreeBSD Foundation.
@@ -34,8 +33,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -65,7 +62,8 @@ __FBSDID("$FreeBSD$");
 #define FDT_REG_CELLS	4
 #define FDT_RANGES_SIZE 48
 
-SYSCTL_NODE(_hw, OID_AUTO, fdt, CTLFLAG_RD, 0, "Flattened Device Tree");
+SYSCTL_NODE(_hw, OID_AUTO, fdt, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
+    "Flattened Device Tree");
 
 vm_paddr_t fdt_immr_pa;
 vm_offset_t fdt_immr_va;

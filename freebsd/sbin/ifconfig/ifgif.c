@@ -5,7 +5,7 @@
 #endif /* __rtems__ */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009 Hiroki Sato.  All rights reserved.
  *
@@ -30,11 +30,6 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#ifndef lint
-static const char rcsid[] =
-  "$FreeBSD$";
-#endif
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
@@ -67,15 +62,13 @@ static const char rcsid[] =
 
 #define	GIFBITS	"\020\2IGNORE_SOURCE"
 
-static void	gif_status(int);
-
 static void
-gif_status(int s)
+gif_status(if_ctx *ctx)
 {
 	int opts;
+	struct ifreq ifr = { .ifr_data = (caddr_t)&opts };
 
-	ifr.ifr_data = (caddr_t)&opts;
-	if (ioctl(s, GIFGOPTS, &ifr) == -1)
+	if (ioctl_ctx_ifr(ctx, GIFGOPTS, &ifr) == -1)
 		return;
 	if (opts == 0)
 		return;
@@ -84,12 +77,12 @@ gif_status(int s)
 }
 
 static void
-setgifopts(const char *val, int d, int s, const struct afswtch *afp)
+setgifopts(if_ctx *ctx, const char *val __unused, int d)
 {
 	int opts;
+	struct ifreq ifr = { .ifr_data = (caddr_t)&opts };
 
-	ifr.ifr_data = (caddr_t)&opts;
-	if (ioctl(s, GIFGOPTS, &ifr) == -1) {
+	if (ioctl_ctx_ifr(ctx, GIFGOPTS, &ifr) == -1) {
 		warn("ioctl(GIFGOPTS)");
 		return;
 	}
@@ -99,7 +92,7 @@ setgifopts(const char *val, int d, int s, const struct afswtch *afp)
 	else
 		opts |= d;
 
-	if (ioctl(s, GIFSOPTS, &ifr) == -1) {
+	if (ioctl_ctx(ctx, GIFSOPTS, &ifr) == -1) {
 		warn("ioctl(GIFSOPTS)");
 		return;
 	}

@@ -29,9 +29,6 @@
  *	needed to deal with TCP connections.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include "namespace.h"
 #include <stdio.h>
 #include <syslog.h>

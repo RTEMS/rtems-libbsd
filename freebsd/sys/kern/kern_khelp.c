@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2010,2013 Lawrence Stewart <lstewart@freebsd.org>
  * Copyright (c) 2010 The FreeBSD Foundation
@@ -39,8 +39,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/hhook.h>
@@ -258,7 +256,7 @@ khelp_get_id(char *hname)
 }
 
 int
-khelp_add_hhook(struct hookinfo *hki, uint32_t flags)
+khelp_add_hhook(const struct hookinfo *hki, uint32_t flags)
 {
 	int error;
 
@@ -272,7 +270,7 @@ khelp_add_hhook(struct hookinfo *hki, uint32_t flags)
 }
 
 int
-khelp_remove_hhook(struct hookinfo *hki)
+khelp_remove_hhook(const struct hookinfo *hki)
 {
 	int error;
 
@@ -336,10 +334,6 @@ khelp_modevent(module_t mod, int event_type, void *data)
 			kmd->helper->h_zone = uma_zcreate(kmd->name,
 			    kmd->uma_zsize, kmd->umactor, kmd->umadtor, NULL,
 			    NULL, 0, 0);
-			if (kmd->helper->h_zone == NULL) {
-				error = ENOMEM;
-				break;
-			}
 		}
 		strlcpy(kmd->helper->h_name, kmd->name, HELPER_NAME_MAXLEN);
 		kmd->helper->h_hooks = kmd->hooks;
@@ -362,7 +356,7 @@ khelp_modevent(module_t mod, int event_type, void *data)
 		} else if (error == ENOENT)
 			/* Do nothing and allow unload if helper not in list. */
 			error = 0;
-		else if (error == EBUSY)
+		else if (error == EBUSY && event_type != MOD_SHUTDOWN)
 			printf("Khelp module \"%s\" can't unload until its "
 			    "refcount drops from %d to 0.\n", kmd->name,
 			    kmd->helper->h_refcount);

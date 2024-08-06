@@ -40,6 +40,7 @@
 #ifndef _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSINIT_H_
 #define _RTEMS_BSD_MACHINE_RTEMS_BSD_SYSINIT_H_
 
+#include <stdint.h>
 #include <sys/cdefs.h>
 #include <sys/queue.h>
 #include <sys/kernel.h>

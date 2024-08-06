@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2012 Damjan Marion <dmarion@Freebsd.org>
  * Copyright (c) 2016 Rubicon Communications, LLC (Netgate)
@@ -49,8 +49,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_cpsw.h>
 
 #include <sys/param.h>
@@ -76,7 +74,8 @@ __FBSDID("$FreeBSD$");
 #include <net/if_media.h>
 #include <net/if_types.h>
 
-#include <arm/ti/ti_scm.h>
+#include <dev/extres/syscon/syscon.h>
+#include <rtems/bsd/local/syscon_if.h>
 #include <arm/ti/am335x/am335x_scm.h>
 
 #include <dev/mii/mii.h>
@@ -86,7 +85,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/ofw/ofw_bus_subr.h>
 
 #include <dev/fdt/fdt_common.h>
- 
+
 #ifdef CPSW_ETHERSWITCH
 #include <dev/etherswitch/etherswitch.h>
 #include <rtems/bsd/local/etherswitch_if.h>
@@ -118,7 +117,7 @@ static int cpsw_suspend(device_t);
 static int cpsw_resume(device_t);
 
 /* Ioctl. */
-static int cpswp_ioctl(struct ifnet *, u_long command, caddr_t data);
+static int cpswp_ioctl(if_t, u_long command, caddr_t data);
 
 static int cpswp_miibus_readreg(device_t, int phy, int reg);
 static int cpswp_miibus_writereg(device_t, int phy, int reg, int value);
@@ -128,7 +127,7 @@ static void cpswp_miibus_statchg(device_t);
 static void cpsw_intr_rx(void *arg);
 static struct mbuf *cpsw_rx_dequeue(struct cpsw_softc *);
 static void cpsw_rx_enqueue(struct cpsw_softc *);
-static void cpswp_start(struct ifnet *);
+static void cpswp_start(if_t);
 static void cpsw_intr_tx(void *);
 static void cpswp_tx_enqueue(struct cpswp_softc *);
 static int cpsw_tx_dequeue(struct cpsw_softc *);
@@ -137,8 +136,8 @@ static int cpsw_tx_dequeue(struct cpsw_softc *);
 static void cpsw_intr_rx_thresh(void *);
 static void cpsw_intr_misc(void *);
 static void cpswp_tick(void *);
-static void cpswp_ifmedia_sts(struct ifnet *, struct ifmediareq *);
-static int cpswp_ifmedia_upd(struct ifnet *);
+static void cpswp_ifmedia_sts(if_t, struct ifmediareq *);
+static int cpswp_ifmedia_upd(if_t);
 static void cpsw_tx_watchdog(void *);
 
 /* ALE support */
@@ -210,9 +209,7 @@ static driver_t cpsw_driver = {
 	sizeof(struct cpsw_softc),
 };
 
-static devclass_t cpsw_devclass;
-
-DRIVER_MODULE(cpswss, simplebus, cpsw_driver, cpsw_devclass, 0, 0);
+DRIVER_MODULE(cpswss, simplebus, cpsw_driver, 0, 0);
 
 /* Port/Slave resources. */
 static device_method_t cpswp_methods[] = {
@@ -233,15 +230,13 @@ static driver_t cpswp_driver = {
 	sizeof(struct cpswp_softc),
 };
 
-static devclass_t cpswp_devclass;
-
 #ifdef CPSW_ETHERSWITCH
-DRIVER_MODULE(etherswitch, cpswss, etherswitch_driver, etherswitch_devclass, 0, 0);
+DRIVER_MODULE(etherswitch, cpswss, etherswitch_driver, 0, 0);
 MODULE_DEPEND(cpswss, etherswitch, 1, 1, 1);
 #endif
 
-DRIVER_MODULE(cpsw, cpswss, cpswp_driver, cpswp_devclass, 0, 0);
-DRIVER_MODULE(miibus, cpsw, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(cpsw, cpswss, cpswp_driver, 0, 0);
+DRIVER_MODULE(miibus, cpsw, miibus_driver, 0, 0);
 MODULE_DEPEND(cpsw, ether, 1, 1, 1);
 MODULE_DEPEND(cpsw, miibus, 1, 1, 1);
 
@@ -536,7 +531,7 @@ cpsw_add_slots(struct cpsw_softc *sc, struct cpsw_queue *queue, int requested)
 static void
 cpsw_free_slot(struct cpsw_softc *sc, struct cpsw_slot *slot)
 {
-	int error;
+	int error __diagused;
 
 	if (slot->dmamap) {
 		if (slot->mbuf)
@@ -1007,10 +1002,12 @@ static int
 cpswp_attach(device_t dev)
 {
 	int error;
-	struct ifnet *ifp;
+	if_t ifp;
 	struct cpswp_softc *sc;
 	uint32_t reg;
 	uint8_t mac_addr[ETHER_ADDR_LEN];
+	phandle_t opp_table;
+	struct syscon *syscon;
 
 	sc = device_get_softc(dev);
 	sc->dev = dev;
@@ -1035,34 +1032,47 @@ cpswp_attach(device_t dev)
 
 	/* Allocate network interface */
 	ifp = sc->ifp = if_alloc(IFT_ETHER);
-	if (ifp == NULL) {
+	if_initname(ifp, device_get_name(sc->dev), sc->unit);
+	if_setsoftc(ifp, sc);
+	if_setflags(ifp, IFF_SIMPLEX | IFF_MULTICAST | IFF_BROADCAST);
+
+	if_setcapenable(ifp, if_getcapabilities(ifp));
+
+	if_setinitfn(ifp, cpswp_init);
+	if_setstartfn(ifp, cpswp_start);
+	if_setioctlfn(ifp, cpswp_ioctl);
+
+	if_setsendqlen(ifp, sc->swsc->tx.queue_slots);
+	if_setsendqready(ifp);
+
+	/* FIXME: For now; Go and kidnap syscon from opp-table */
+	/* ti,cpsw actually have an optional syscon reference but only for am33xx?? */
+	opp_table = OF_finddevice("/opp-table");
+	if (opp_table == -1) {
+		device_printf(dev, "Cant find /opp-table\n");
+		cpswp_detach(dev);
+		return (ENXIO);
+	}
+	if (!OF_hasprop(opp_table, "syscon")) {
+		device_printf(dev, "/opp-table doesnt have required syscon property\n");
+		cpswp_detach(dev);
+		return (ENXIO);
+	}
+	if (syscon_get_by_ofw_property(dev, opp_table, "syscon", &syscon) != 0) {
+		device_printf(dev, "Failed to get syscon\n");
 		cpswp_detach(dev);
 		return (ENXIO);
 	}
 
-	if_initname(ifp, device_get_name(sc->dev), sc->unit);
-	ifp->if_softc = sc;
-	ifp->if_flags = IFF_SIMPLEX | IFF_MULTICAST | IFF_BROADCAST;
-	ifp->if_capabilities = IFCAP_VLAN_MTU | IFCAP_HWCSUM; //FIXME VLAN?
-	ifp->if_capenable = ifp->if_capabilities;
-
-	ifp->if_init = cpswp_init;
-	ifp->if_start = cpswp_start;
-	ifp->if_ioctl = cpswp_ioctl;
-
-	ifp->if_snd.ifq_drv_maxlen = sc->swsc->tx.queue_slots;
-	IFQ_SET_MAXLEN(&ifp->if_snd, ifp->if_snd.ifq_drv_maxlen);
-	IFQ_SET_READY(&ifp->if_snd);
-
 	/* Get high part of MAC address from control module (mac_id[0|1]_hi) */
-	ti_scm_reg_read_4(SCM_MAC_ID0_HI + sc->unit * 8, &reg);
+	reg = SYSCON_READ_4(syscon, SCM_MAC_ID0_HI + sc->unit * 8);
 	mac_addr[0] = reg & 0xFF;
 	mac_addr[1] = (reg >>  8) & 0xFF;
 	mac_addr[2] = (reg >> 16) & 0xFF;
 	mac_addr[3] = (reg >> 24) & 0xFF;
 
 	/* Get low part of MAC address from control module (mac_id[0|1]_lo) */
-	ti_scm_reg_read_4(SCM_MAC_ID0_LO + sc->unit * 8, &reg);
+	reg = SYSCON_READ_4(syscon, SCM_MAC_ID0_LO + sc->unit * 8);
 	mac_addr[4] = reg & 0xFF;
 	mac_addr[5] = (reg >>  8) & 0xFF;
 
@@ -1118,7 +1128,7 @@ static int
 cpsw_ports_down(struct cpsw_softc *sc)
 {
 	struct cpswp_softc *psc;
-	struct ifnet *ifp1, *ifp2;
+	if_t ifp1, ifp2;
 
 	if (!sc->dualemac)
 		return (1);
@@ -1126,7 +1136,7 @@ cpsw_ports_down(struct cpsw_softc *sc)
 	ifp1 = psc->ifp;
 	psc = device_get_softc(sc->port[1].dev);
 	ifp2 = psc->ifp;
-	if ((ifp1->if_flags & IFF_UP) == 0 && (ifp2->if_flags & IFF_UP) == 0)
+	if ((if_getflags(ifp1) & IFF_UP) == 0 && (if_getflags(ifp2) & IFF_UP) == 0)
 		return (1);
 
 	return (0);
@@ -1150,13 +1160,13 @@ cpswp_init_locked(void *arg)
 	int i;
 #endif
 	struct cpswp_softc *sc = arg;
-	struct ifnet *ifp;
+	if_t ifp;
 	uint32_t reg;
 
 	CPSW_DEBUGF(sc->swsc, (""));
 	CPSW_PORT_LOCK_ASSERT(sc);
 	ifp = sc->ifp;
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0)
 		return;
 
 	getbinuptime(&sc->init_uptime);
@@ -1204,8 +1214,8 @@ cpswp_init_locked(void *arg)
 
 	mii_mediachg(sc->mii);
 	callout_reset(&sc->mii_callout, hz, cpswp_tick, sc);
-	ifp->if_drv_flags |= IFF_DRV_RUNNING;
-	ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+	if_setdrvflagbits(ifp, IFF_DRV_RUNNING, 0);
+	if_setdrvflagbits(ifp, 0, IFF_DRV_OACTIVE);
 }
 
 static int
@@ -1281,19 +1291,19 @@ cpsw_tx_teardown(struct cpsw_softc *sc)
 static void
 cpswp_stop_locked(struct cpswp_softc *sc)
 {
-	struct ifnet *ifp;
+	if_t ifp;
 	uint32_t reg;
 
 	ifp = sc->ifp;
 	CPSW_DEBUGF(sc->swsc, (""));
 	CPSW_PORT_LOCK_ASSERT(sc);
 
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0)
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0)
 		return;
 
 	/* Disable interface */
-	ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
-	ifp->if_drv_flags |= IFF_DRV_OACTIVE;
+	if_setdrvflagbits(ifp, 0, IFF_DRV_RUNNING);
+	if_setdrvflagbits(ifp, IFF_DRV_OACTIVE, 0);
 
 	/* Stop ticker */
 	callout_stop(&sc->mii_callout);
@@ -1388,7 +1398,7 @@ cpsw_set_allmulti(struct cpswp_softc *sc, int set)
 }
 
 static int
-cpswp_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
+cpswp_ioctl(if_t ifp, u_long command, caddr_t data)
 {
 	struct cpswp_softc *sc;
 	struct ifreq *ifr;
@@ -1396,45 +1406,45 @@ cpswp_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 	uint32_t changed;
 
 	error = 0;
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	ifr = (struct ifreq *)data;
 
 	switch (command) {
 	case SIOCSIFCAP:
-		changed = ifp->if_capenable ^ ifr->ifr_reqcap;
+		changed = if_getcapenable(ifp) ^ ifr->ifr_reqcap;
 		if (changed & IFCAP_HWCSUM) {
 			if ((ifr->ifr_reqcap & changed) & IFCAP_HWCSUM)
-				ifp->if_capenable |= IFCAP_HWCSUM;
+				if_setcapenablebit(ifp, IFCAP_HWCSUM, 0);
 			else
-				ifp->if_capenable &= ~IFCAP_HWCSUM;
+				if_setcapenablebit(ifp, 0, IFCAP_HWCSUM);
 		}
 		error = 0;
 		break;
 	case SIOCSIFFLAGS:
 		CPSW_PORT_LOCK(sc);
-		if (ifp->if_flags & IFF_UP) {
-			if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
-				changed = ifp->if_flags ^ sc->if_flags;
+		if (if_getflags(ifp) & IFF_UP) {
+			if (if_getdrvflags(ifp) & IFF_DRV_RUNNING) {
+				changed = if_getflags(ifp) ^ sc->if_flags;
 				CPSW_DEBUGF(sc->swsc,
 				    ("SIOCSIFFLAGS: UP & RUNNING (changed=0x%x)",
 				    changed));
 				if (changed & IFF_PROMISC)
 					cpsw_set_promisc(sc,
-					    ifp->if_flags & IFF_PROMISC);
+					    if_getflags(ifp) & IFF_PROMISC);
 				if (changed & IFF_ALLMULTI)
 					cpsw_set_allmulti(sc,
-					    ifp->if_flags & IFF_ALLMULTI);
+					    if_getflags(ifp) & IFF_ALLMULTI);
 			} else {
 				CPSW_DEBUGF(sc->swsc,
 				    ("SIOCSIFFLAGS: starting up"));
 				cpswp_init_locked(sc);
 			}
-		} else if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
+		} else if (if_getdrvflags(ifp) & IFF_DRV_RUNNING) {
 			CPSW_DEBUGF(sc->swsc, ("SIOCSIFFLAGS: shutting down"));
 			cpswp_stop_locked(sc);
 		}
 
-		sc->if_flags = ifp->if_flags;
+		sc->if_flags = if_getflags(ifp);
 		CPSW_PORT_UNLOCK(sc);
 		break;
 	case SIOCADDMULTI:
@@ -1571,7 +1581,7 @@ static void
 cpsw_intr_rx(void *arg)
 {
 	struct cpsw_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 	struct mbuf *received, *next;
 
 	sc = (struct cpsw_softc *)arg;
@@ -1590,7 +1600,7 @@ cpsw_intr_rx(void *arg)
 		next = received->m_nextpkt;
 		received->m_nextpkt = NULL;
 		ifp = received->m_pkthdr.rcvif;
-		(*ifp->if_input)(ifp, received);
+		if_input(ifp, received);
 		if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 		received = next;
 	}
@@ -1673,7 +1683,7 @@ cpsw_rx_dequeue(struct cpsw_softc *sc)
 			nsegs = 0;
 		}
 
-		if ((psc->ifp->if_capenable & IFCAP_RXCSUM) != 0) {
+		if ((if_getcapenable(psc->ifp) & IFCAP_RXCSUM) != 0) {
 			/* check for valid CRC by looking into pkt_err[5:4] */
 			if ((bd.flags &
 			    (CPDMA_BD_SOP | CPDMA_BD_PKT_ERR_MASK)) ==
@@ -1701,7 +1711,7 @@ cpsw_rx_dequeue(struct cpsw_softc *sc)
 			if (bootverbose)
 				printf(
 				    "%s: %s: discanding fragment packet w/o header\n",
-				    __func__, psc->ifp->if_xname);
+				    __func__, if_name(psc->ifp));
 			m_freem(m);
 			continue;
 		} else {
@@ -1811,12 +1821,12 @@ cpsw_rx_enqueue(struct cpsw_softc *sc)
 }
 
 static void
-cpswp_start(struct ifnet *ifp)
+cpswp_start(if_t ifp)
 {
 	struct cpswp_softc *sc;
 
-	sc = ifp->if_softc;
-	if ((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0 ||
+	sc = if_getsoftc(ifp);
+	if ((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0 ||
 	    sc->swsc->tx.running == 0) {
 		return;
 	}
@@ -1854,7 +1864,7 @@ cpswp_tx_enqueue(struct cpswp_softc *sc)
 	first_new_slot = NULL;
 	last_old_slot = STAILQ_LAST(&sc->swsc->tx.active, cpsw_slot, next);
 	while ((slot = STAILQ_FIRST(&sc->swsc->tx.avail)) != NULL) {
-		IF_DEQUEUE(&sc->ifp->if_snd, m0);
+		m0 = if_dequeue(sc->ifp);
 		if (m0 == NULL)
 			break;
 
@@ -1880,7 +1890,7 @@ cpswp_tx_enqueue(struct cpswp_softc *sc)
 			} else {
 				CPSW_DEBUGF(sc->swsc,
 				    ("Requeueing defragmented packet"));
-				IF_PREPEND(&sc->ifp->if_snd, m0);
+				if_sendq_prepend(sc->ifp, m0);
 			}
 			slot->mbuf = NULL;
 			continue;
@@ -2080,7 +2090,7 @@ static void
 cpsw_intr_rx_thresh(void *arg)
 {
 	struct cpsw_softc *sc;
-	struct ifnet *ifp;
+	if_t ifp;
 	struct mbuf *received, *next;
 
 	sc = (struct cpsw_softc *)arg;
@@ -2094,7 +2104,7 @@ cpsw_intr_rx_thresh(void *arg)
 		next = received->m_nextpkt;
 		received->m_nextpkt = NULL;
 		ifp = received->m_pkthdr.rcvif;
-		(*ifp->if_input)(ifp, received);
+		if_input(ifp, received);
 		if_inc_counter(ifp, IFCOUNTER_IPACKETS, 1);
 		received = next;
 	}
@@ -2229,12 +2239,12 @@ cpswp_tick(void *msc)
 }
 
 static void
-cpswp_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
+cpswp_ifmedia_sts(if_t ifp, struct ifmediareq *ifmr)
 {
 	struct cpswp_softc *sc;
 	struct mii_data *mii;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	CPSW_DEBUGF(sc->swsc, (""));
 	CPSW_PORT_LOCK(sc);
 
@@ -2247,11 +2257,11 @@ cpswp_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 }
 
 static int
-cpswp_ifmedia_upd(struct ifnet *ifp)
+cpswp_ifmedia_upd(if_t ifp)
 {
 	struct cpswp_softc *sc;
 
-	sc = ifp->if_softc;
+	sc = if_getsoftc(ifp);
 	CPSW_DEBUGF(sc->swsc, (""));
 	CPSW_PORT_LOCK(sc);
 	mii_mediachg(sc->mii);
@@ -2448,12 +2458,27 @@ cpsw_ale_dump_table(struct cpsw_softc *sc) {
 	printf("\n");
 }
 
+static u_int
+cpswp_set_maddr(void *arg, struct sockaddr_dl *sdl, u_int cnt)
+{
+	struct cpswp_softc *sc = arg;
+	uint32_t portmask;
+
+	if (sc->swsc->dualemac)
+		portmask = 1 << (sc->unit + 1) | 1 << 0;
+	else
+		portmask = 7;
+
+	cpsw_ale_mc_entry_set(sc->swsc, portmask, sc->vlan, LLADDR(sdl));
+
+	return (1);
+}
+
 static int
 cpswp_ale_update_addresses(struct cpswp_softc *sc, int purge)
 {
 	uint8_t *mac;
 	uint32_t ale_entry[3], ale_type, portmask;
-	struct ifmultiaddr *ifma;
 
 	if (sc->swsc->dualemac) {
 		ale_type = ALE_TYPE_VLAN_ADDR << 28 | sc->vlan << 16;
@@ -2468,8 +2493,7 @@ cpswp_ale_update_addresses(struct cpswp_softc *sc, int purge)
 	 * For simplicity, keep this entry at table index 0 for port 1 and
 	 * at index 2 for port 2 in the ALE.
 	 */
-        if_addr_rlock(sc->ifp);
-	mac = LLADDR((struct sockaddr_dl *)sc->ifp->if_addr->ifa_addr);
+	mac = LLADDR((struct sockaddr_dl *)if_getifaddr(sc->ifp)->ifa_addr);
 	ale_entry[0] = mac[2] << 24 | mac[3] << 16 | mac[4] << 8 | mac[5];
 	ale_entry[1] = ale_type | mac[0] << 8 | mac[1]; /* addr entry + mac */
 	ale_entry[2] = 0; /* port = 0 */
@@ -2480,7 +2504,6 @@ cpswp_ale_update_addresses(struct cpswp_softc *sc, int purge)
 	    mac[3] << 24 | mac[2] << 16 | mac[1] << 8 | mac[0]);
 	cpsw_write_4(sc->swsc, CPSW_PORT_P_SA_LO(sc->unit + 1),
 	    mac[5] << 8 | mac[4]);
-        if_addr_runlock(sc->ifp);
 
 	/* Keep the broadcast address at table entry 1 (or 3). */
 	ale_entry[0] = 0xffffffff; /* Lower 32 bits of MAC */
@@ -2495,14 +2518,7 @@ cpswp_ale_update_addresses(struct cpswp_softc *sc, int purge)
 		cpsw_ale_remove_all_mc_entries(sc->swsc);
 
         /* Set other multicast addrs desired. */
-        if_maddr_rlock(sc->ifp);
-        CK_STAILQ_FOREACH(ifma, &sc->ifp->if_multiaddrs, ifma_link) {
-                if (ifma->ifma_addr->sa_family != AF_LINK)
-                        continue;
-		cpsw_ale_mc_entry_set(sc->swsc, portmask, sc->vlan,
-		    LLADDR((struct sockaddr_dl *)ifma->ifma_addr));
-        }
-        if_maddr_runlock(sc->ifp);
+	if_foreach_llmaddr(sc->ifp, cpswp_set_maddr, sc);
 
 	return (0);
 }
@@ -2667,7 +2683,7 @@ cpsw_stat_uptime(SYSCTL_HANDLER_ARGS)
 
 	swsc = arg1;
 	sc = device_get_softc(swsc->port[arg2].dev);
-	if (sc->ifp->if_drv_flags & IFF_DRV_RUNNING) {
+	if (if_getdrvflags(sc->ifp) & IFF_DRV_RUNNING) {
 		getbinuptime(&t);
 		bintime_sub(&t, &sc->init_uptime);
 		result = t.sec;
@@ -2742,15 +2758,17 @@ cpsw_add_sysctls(struct cpsw_softc *sc)
 	    CTLFLAG_RW, &sc->debug, 0, "Enable switch debug messages");
 
 	SYSCTL_ADD_PROC(ctx, parent, OID_AUTO, "attachedSecs",
-	    CTLTYPE_UINT | CTLFLAG_RD, sc, 0, cpsw_stat_attached, "IU",
+	    CTLTYPE_UINT | CTLFLAG_RD | CTLFLAG_NEEDGIANT,
+	    sc, 0, cpsw_stat_attached, "IU",
 	    "Time since driver attach");
 
 	SYSCTL_ADD_PROC(ctx, parent, OID_AUTO, "intr_coalesce_us",
-	    CTLTYPE_UINT | CTLFLAG_RW, sc, 0, cpsw_intr_coalesce, "IU",
+	    CTLTYPE_UINT | CTLFLAG_RW | CTLFLAG_NEEDGIANT,
+	    sc, 0, cpsw_intr_coalesce, "IU",
 	    "minimum time between interrupts");
 
 	node = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "ports",
-	    CTLFLAG_RD, NULL, "CPSW Ports Statistics");
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "CPSW Ports Statistics");
 	ports_parent = SYSCTL_CHILDREN(node);
 	for (i = 0; i < CPSW_PORTS; i++) {
 		if (!sc->dualemac && i != sc->active_slave)
@@ -2758,38 +2776,39 @@ cpsw_add_sysctls(struct cpsw_softc *sc)
 		port[0] = '0' + i;
 		port[1] = '\0';
 		node = SYSCTL_ADD_NODE(ctx, ports_parent, OID_AUTO,
-		    port, CTLFLAG_RD, NULL, "CPSW Port Statistics");
+		    port, CTLFLAG_RD | CTLFLAG_MPSAFE, NULL,
+		    "CPSW Port Statistics");
 		port_parent = SYSCTL_CHILDREN(node);
 		SYSCTL_ADD_PROC(ctx, port_parent, OID_AUTO, "uptime",
-		    CTLTYPE_UINT | CTLFLAG_RD, sc, i,
+		    CTLTYPE_UINT | CTLFLAG_RD | CTLFLAG_NEEDGIANT, sc, i,
 		    cpsw_stat_uptime, "IU", "Seconds since driver init");
 	}
 
 	stats_node = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "stats",
-				     CTLFLAG_RD, NULL, "CPSW Statistics");
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "CPSW Statistics");
 	stats_parent = SYSCTL_CHILDREN(stats_node);
 	for (i = 0; i < CPSW_SYSCTL_COUNT; ++i) {
 		SYSCTL_ADD_PROC(ctx, stats_parent, i,
 				cpsw_stat_sysctls[i].oid,
-				CTLTYPE_U64 | CTLFLAG_RD, sc, 0,
-				cpsw_stats_sysctl, "IU",
+				CTLTYPE_U64 | CTLFLAG_RD | CTLFLAG_NEEDGIANT,
+				sc, 0, cpsw_stats_sysctl, "IU",
 				cpsw_stat_sysctls[i].oid);
 	}
 
 	queue_node = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "queue",
-	    CTLFLAG_RD, NULL, "CPSW Queue Statistics");
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "CPSW Queue Statistics");
 	queue_parent = SYSCTL_CHILDREN(queue_node);
 
 	node = SYSCTL_ADD_NODE(ctx, queue_parent, OID_AUTO, "tx",
-	    CTLFLAG_RD, NULL, "TX Queue Statistics");
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "TX Queue Statistics");
 	cpsw_add_queue_sysctls(ctx, node, &sc->tx);
 
 	node = SYSCTL_ADD_NODE(ctx, queue_parent, OID_AUTO, "rx",
-	    CTLFLAG_RD, NULL, "RX Queue Statistics");
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "RX Queue Statistics");
 	cpsw_add_queue_sysctls(ctx, node, &sc->rx);
 
 	node = SYSCTL_ADD_NODE(ctx, parent, OID_AUTO, "watchdog",
-	    CTLFLAG_RD, NULL, "Watchdog Statistics");
+	    CTLFLAG_RD | CTLFLAG_MPSAFE, NULL, "Watchdog Statistics");
 	cpsw_add_watchdog_sysctls(ctx, node, sc);
 }
 

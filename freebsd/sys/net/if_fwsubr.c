@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #include <rtems/bsd/local/opt_inet.h>
@@ -48,6 +46,7 @@
 
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/netisr.h>
 #include <net/route.h>
 #include <net/if_llc.h>
@@ -96,6 +95,7 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 #if defined(INET) || defined(INET6)
 	int is_gw = 0;
 #endif
+	int af = RO_GET_FAMILY(ro, dst);
 
 #ifdef MAC
 	error = mac_ifnet_check_transmit(ifp, m);
@@ -139,6 +139,26 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 		destfw = NULL;
 	}
 
+	switch (af) {
+#ifdef INET
+	case AF_INET:
+		type = ETHERTYPE_IP;
+		break;
+	case AF_ARP:
+		type = ETHERTYPE_ARP;
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		type = ETHERTYPE_IPV6;
+		break;
+#endif
+	default:
+		if_printf(ifp, "can't handle af%d\n", af);
+		error = EAFNOSUPPORT;
+		goto bad;
+	}
+
 	switch (dst->sa_family) {
 #ifdef INET
 	case AF_INET:
@@ -153,7 +173,6 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 			if (error)
 				return (error == EWOULDBLOCK ? 0 : error);
 		}
-		type = ETHERTYPE_IP;
 		break;
 
 	case AF_ARP:
@@ -161,7 +180,6 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 		struct arphdr *ah;
 		ah = mtod(m, struct arphdr *);
 		ah->ar_hrd = htons(ARPHRD_IEEE1394);
-		type = ETHERTYPE_ARP;
 		if (unicast)
 			*destfw = *(struct fw_hwaddr *) ar_tha(ah);
 
@@ -178,12 +196,11 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *dst,
 #ifdef INET6
 	case AF_INET6:
 		if (unicast) {
-			error = nd6_resolve(fc->fc_ifp, is_gw, m, dst,
-			    (u_char *) destfw, NULL, NULL);
+			error = nd6_resolve(fc->fc_ifp, LLE_SF(af, is_gw), m,
+			    dst, (u_char *) destfw, NULL, NULL);
 			if (error)
 				return (error == EWOULDBLOCK ? 0 : error);
 		}
-		type = ETHERTYPE_IPV6;
 		break;
 #endif
 
@@ -636,7 +653,9 @@ firewire_input(struct ifnet *ifp, struct mbuf *m, uint16_t src)
 	}
 
 	M_SETFIB(m, ifp->if_fib);
+	CURVNET_SET_QUIET(ifp->if_vnet);
 	netisr_dispatch(isr, m);
+	CURVNET_RESTORE();
 }
 
 int

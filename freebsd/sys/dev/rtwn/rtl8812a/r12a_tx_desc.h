@@ -22,8 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef R12A_TX_DESC_H
@@ -129,7 +127,6 @@ struct r12a_tx_desc {
 #define R12A_TXDW9_SEQ_M	0x00fff000
 #define R12A_TXDW9_SEQ_S	12
 } __packed __attribute__((aligned(4)));
-
 
 /* Rate adaptation modes. */
 #define R12A_RAID_11BGN_2_40	0

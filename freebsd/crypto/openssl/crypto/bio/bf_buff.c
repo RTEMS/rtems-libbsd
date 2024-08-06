@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include "bio_lcl.h"
+#include "bio_local.h"
 #include "internal/cryptlib.h"
 
 static int buffer_write(BIO *h, const char *buf, int num);
@@ -27,10 +27,8 @@ static long buffer_callback_ctrl(BIO *h, int cmd, BIO_info_cb *fp);
 static const BIO_METHOD methods_buffer = {
     BIO_TYPE_BUFFER,
     "buffer",
-    /* TODO: Convert to new style write function */
     bwrite_conv,
     buffer_write,
-    /* TODO: Convert to new style read function */
     bread_conv,
     buffer_read,
     buffer_puts,
@@ -291,7 +289,9 @@ static long buffer_ctrl(BIO *b, int cmd, long num, void *ptr)
         break;
     case BIO_C_SET_BUFF_READ_DATA:
         if (num > ctx->ibuf_size) {
-            p1 = OPENSSL_malloc((int)num);
+            if (num <= 0)
+                return 0;
+            p1 = OPENSSL_malloc((size_t)num);
             if (p1 == NULL)
                 goto malloc_error;
             OPENSSL_free(ctx->ibuf);
@@ -320,12 +320,14 @@ static long buffer_ctrl(BIO *b, int cmd, long num, void *ptr)
         p1 = ctx->ibuf;
         p2 = ctx->obuf;
         if ((ibs > DEFAULT_BUFFER_SIZE) && (ibs != ctx->ibuf_size)) {
-            p1 = OPENSSL_malloc((int)num);
+            if (num <= 0)
+                return 0;
+            p1 = OPENSSL_malloc((size_t)num);
             if (p1 == NULL)
                 goto malloc_error;
         }
         if ((obs > DEFAULT_BUFFER_SIZE) && (obs != ctx->obuf_size)) {
-            p2 = OPENSSL_malloc((int)num);
+            p2 = OPENSSL_malloc((size_t)num);
             if (p2 == NULL) {
                 if (p1 != ctx->ibuf)
                     OPENSSL_free(p1);
@@ -383,8 +385,8 @@ static long buffer_ctrl(BIO *b, int cmd, long num, void *ptr)
         break;
     case BIO_CTRL_DUP:
         dbio = (BIO *)ptr;
-        if (!BIO_set_read_buffer_size(dbio, ctx->ibuf_size) ||
-            !BIO_set_write_buffer_size(dbio, ctx->obuf_size))
+        if (BIO_set_read_buffer_size(dbio, ctx->ibuf_size) <= 0 ||
+            BIO_set_write_buffer_size(dbio, ctx->obuf_size) <= 0)
             ret = 0;
         break;
     case BIO_CTRL_PEEK:
@@ -406,22 +408,15 @@ static long buffer_ctrl(BIO *b, int cmd, long num, void *ptr)
     }
     return ret;
  malloc_error:
-    BIOerr(BIO_F_BUFFER_CTRL, ERR_R_MALLOC_FAILURE);
+    ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
 static long buffer_callback_ctrl(BIO *b, int cmd, BIO_info_cb *fp)
 {
-    long ret = 1;
-
     if (b->next_bio == NULL)
         return 0;
-    switch (cmd) {
-    default:
-        ret = BIO_callback_ctrl(b->next_bio, cmd, fp);
-        break;
-    }
-    return ret;
+    return BIO_callback_ctrl(b->next_bio, cmd, fp);
 }
 
 static int buffer_gets(BIO *b, char *buf, int size)

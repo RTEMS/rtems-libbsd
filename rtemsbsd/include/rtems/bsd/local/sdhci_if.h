@@ -1,5 +1,5 @@
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -223,6 +223,36 @@ static __inline void SDHCI_SET_UHS_TIMING(device_t brdev,
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_set_uhs_timing);
 	((sdhci_set_uhs_timing_t *) _m)(brdev, slot);
+}
+
+/** @brief Unique descriptor for the SDHCI_SET_CLOCK() method */
+extern struct kobjop_desc sdhci_set_clock_desc;
+/** @brief A function implementing the SDHCI_SET_CLOCK() method */
+typedef int sdhci_set_clock_t(device_t brdev, struct sdhci_slot *slot,
+                              int clock);
+
+static __inline int SDHCI_SET_CLOCK(device_t brdev, struct sdhci_slot *slot,
+                                    int clock)
+{
+	kobjop_t _m;
+	int rc;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_set_clock);
+	rc = ((sdhci_set_clock_t *) _m)(brdev, slot, clock);
+	return (rc);
+}
+
+/** @brief Unique descriptor for the SDHCI_RESET() method */
+extern struct kobjop_desc sdhci_reset_desc;
+/** @brief A function implementing the SDHCI_RESET() method */
+typedef void sdhci_reset_t(device_t brdev, struct sdhci_slot *slot,
+                           uint8_t mask);
+
+static __inline void SDHCI_RESET(device_t brdev, struct sdhci_slot *slot,
+                                 uint8_t mask)
+{
+	kobjop_t _m;
+	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_reset);
+	((sdhci_reset_t *) _m)(brdev, slot, mask);
 }
 
 #endif /* _sdhci_if_h_ */

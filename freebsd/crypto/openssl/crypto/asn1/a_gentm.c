@@ -1,9 +1,9 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 1995-2017 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the OpenSSL license (the "License").  You may not use
+ * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
@@ -17,15 +17,19 @@
 #include <time.h>
 #include "internal/cryptlib.h"
 #include <openssl/asn1.h>
-#include "asn1_locl.h"
+#include "asn1_local.h"
+#include <openssl/asn1t.h>
+
+IMPLEMENT_ASN1_DUP_FUNCTION(ASN1_GENERALIZEDTIME)
 
 /* This is the primary function used to parse ASN1_GENERALIZEDTIME */
-int asn1_generalizedtime_to_tm(struct tm *tm, const ASN1_GENERALIZEDTIME *d)
+static int asn1_generalizedtime_to_tm(struct tm *tm,
+                                      const ASN1_GENERALIZEDTIME *d)
 {
-    /* wrapper around asn1_time_to_tm */
+    /* wrapper around ossl_asn1_time_to_tm */
     if (d->type != V_ASN1_GENERALIZEDTIME)
         return 0;
-    return asn1_time_to_tm(tm, d);
+    return ossl_asn1_time_to_tm(tm, d);
 }
 
 int ASN1_GENERALIZEDTIME_check(const ASN1_GENERALIZEDTIME *d)
@@ -73,7 +77,7 @@ ASN1_GENERALIZEDTIME *ASN1_GENERALIZEDTIME_adj(ASN1_GENERALIZEDTIME *s,
             return NULL;
     }
 
-    return asn1_time_from_tm(s, ts, V_ASN1_GENERALIZEDTIME);
+    return ossl_asn1_time_from_tm(s, ts, V_ASN1_GENERALIZEDTIME);
 }
 
 int ASN1_GENERALIZEDTIME_print(BIO *bp, const ASN1_GENERALIZEDTIME *tm)

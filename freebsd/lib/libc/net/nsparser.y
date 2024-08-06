@@ -2,7 +2,7 @@
 /*	$NetBSD: nsparser.y,v 1.3 1999/01/25 00:16:18 lukem Exp $	*/
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997, 1998, 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -31,9 +31,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 
 #include "namespace.h"
 #define _NS_PRIVATE
@@ -151,9 +148,9 @@ _nsaddsrctomap(const char *elem)
 {
 	int		i, lineno;
 	extern int	_nsyylineno;
-	extern char  	_nsyytext[];
+	extern char *	_nsyytext;
 
-	lineno = _nsyylineno - (_nsyytext[0] == '\n' ? 1 : 0);
+	lineno = _nsyylineno - (*_nsyytext == '\n' ? 1 : 0);
 	if (curdbt.srclistsize > 0) {
 		if (((strcasecmp(elem, NSSRC_COMPAT) == 0) &&
 		    (strcasecmp(curdbt.srclist[0].name, NSSRC_CACHE) != 0)) ||

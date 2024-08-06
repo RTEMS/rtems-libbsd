@@ -29,12 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _PFCTL_H_
 #define _PFCTL_H_
+
+#include <libpfctl.h>
+
+struct pfctl;
 
 enum pfctl_show { PFCTL_SHOW_RULES, PFCTL_SHOW_LABELS, PFCTL_SHOW_NOTHING };
 
@@ -118,8 +120,8 @@ char		*rate2str(double);
 
 void	 print_addr(struct pf_addr_wrap *, sa_family_t, int);
 void	 print_host(struct pf_addr *, u_int16_t p, sa_family_t, int);
-void	 print_seq(struct pfsync_state_peer *);
-void	 print_state(struct pfsync_state *, int);
+void	 print_seq(struct pfctl_state_peer *);
+void	 print_state(struct pfctl_state *, int);
 int	 unmask(struct pf_addr *, sa_family_t);
 
 int	 pfctl_cmdline_symset(char *);
@@ -127,5 +129,26 @@ int	 pfctl_add_trans(struct pfr_buffer *, int, const char *);
 u_int32_t
 	 pfctl_get_ticket(struct pfr_buffer *, int, const char *);
 int	 pfctl_trans(int, struct pfr_buffer *, u_long, int);
+
+int	 pf_get_ruleset_number(u_int8_t);
+void	 pf_init_ruleset(struct pfctl_ruleset *);
+int	 pfctl_anchor_setup(struct pfctl_rule *,
+	    const struct pfctl_ruleset *, const char *);
+void	 pf_remove_if_empty_ruleset(struct pfctl_ruleset *);
+struct pfctl_ruleset	*pf_find_ruleset(const char *);
+struct pfctl_ruleset	*pf_find_or_create_ruleset(const char *);
+void			 pf_init_eth_ruleset(struct pfctl_eth_ruleset *);
+int			 pfctl_eth_anchor_setup(struct pfctl *,
+			    struct pfctl_eth_rule *,
+			    const struct pfctl_eth_ruleset *, const char *);
+struct pfctl_eth_ruleset	*pf_find_or_create_eth_ruleset(const char *);
+void			 pf_remove_if_empty_eth_ruleset(
+			    struct pfctl_eth_ruleset *);
+
+#ifndef __rtems__
+void		 expand_label(char *, size_t, struct pfctl_rule *);
+#endif /* __rtems__ */
+
+const char *pfctl_proto2name(int);
 
 #endif /* _PFCTL_H_ */

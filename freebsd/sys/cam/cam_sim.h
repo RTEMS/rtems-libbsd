@@ -1,7 +1,7 @@
 /*-
  * Data structures and definitions for SCSI Interface Modules (SIMs).
  *
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997 Justin T. Gibbs.
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _CAM_CAM_SIM_H
@@ -55,14 +53,23 @@ struct cam_devq;
 typedef void (*sim_action_func)(struct cam_sim *sim, union ccb *ccb);
 typedef void (*sim_poll_func)(struct cam_sim *sim);
 
-struct cam_devq * cam_simq_alloc(u_int32_t max_sim_transactions);
+struct cam_devq * cam_simq_alloc(uint32_t max_sim_transactions);
 void		  cam_simq_free(struct cam_devq *devq);
 
 struct cam_sim *  cam_sim_alloc(sim_action_func sim_action,
 				sim_poll_func sim_poll,
 				const char *sim_name,
 				void *softc,
-				u_int32_t unit,
+				uint32_t unit,
+				struct mtx *mtx,
+				int max_dev_transactions,
+				int max_tagged_dev_transactions,
+				struct cam_devq *queue);
+struct cam_sim *  cam_sim_alloc_dev(sim_action_func sim_action,
+				sim_poll_func sim_poll,
+				const char *sim_name,
+				void *softc,
+				device_t dev,
 				struct mtx *mtx,
 				int max_dev_transactions,
 				int max_tagged_dev_transactions,
@@ -72,20 +79,7 @@ void		  cam_sim_hold(struct cam_sim *sim);
 void		  cam_sim_release(struct cam_sim *sim);
 
 /* Optional sim attributes may be set with these. */
-void	cam_sim_set_path(struct cam_sim *sim, u_int32_t path_id);
-
-
-
-/* Convenience routines for accessing sim attributes. */
-static __inline u_int32_t    cam_sim_path(struct cam_sim *sim);
-static __inline const char * cam_sim_name(struct cam_sim *sim);
-static __inline void *	     cam_sim_softc(struct cam_sim *sim);
-static __inline u_int32_t    cam_sim_unit(struct cam_sim *sim);
-#ifndef __rtems__
-static __inline u_int32_t    cam_sim_bus(struct cam_sim *sim);
-#endif /* __rtems__ */
-
-
+void	cam_sim_set_path(struct cam_sim *sim, uint32_t path_id);
 
 /* Generically useful offsets into the sim private area */
 #define spriv_ptr0 sim_priv.entries[0].ptr
@@ -130,34 +124,27 @@ struct cam_sim {
 	void			*softc;
 	struct mtx		*mtx;
 #ifndef __rtems__
-	TAILQ_HEAD(, ccb_hdr)	sim_doneq;
 	TAILQ_ENTRY(cam_sim)	links;
-	u_int32_t		path_id;/* The Boot device may set this to 0? */
+	uint32_t		path_id;/* The Boot device may set this to 0? */
 #else /* __rtems__ */
 	char			*disk;
 	enum bsd_sim_state	state;
 	struct cv		state_changed;
 	union ccb		ccb;
 #endif /* __rtems__ */
-	u_int32_t		unit_number;
+	uint32_t		unit_number;
 #ifndef __rtems__
-	u_int32_t		bus_id;
+	uint32_t		bus_id;
 	int			max_tagged_dev_openings;
 	int			max_dev_openings;
-	u_int32_t		flags;
-#define	CAM_SIM_REL_TIMEOUT_PENDING	0x01
-#define	CAM_SIM_MPSAFE			0x02
-	struct callout		callout;
+	uint32_t		flags;
 	struct cam_devq 	*devq;	/* Device Queue to use for this SIM */
 	int			refcount; /* References to the SIM. */
 #endif /* __rtems__ */
 };
 
-#define CAM_SIM_LOCK(sim)	mtx_lock((sim)->mtx)
-#define CAM_SIM_UNLOCK(sim)	mtx_unlock((sim)->mtx)
-
-static __inline u_int32_t
-cam_sim_path(struct cam_sim *sim)
+static __inline uint32_t
+cam_sim_path(const struct cam_sim *sim)
 {
 #ifndef __rtems__
 	return (sim->path_id);
@@ -167,30 +154,36 @@ cam_sim_path(struct cam_sim *sim)
 }
 
 static __inline const char *
-cam_sim_name(struct cam_sim *sim)
+cam_sim_name(const struct cam_sim *sim)
 {
 	return (sim->sim_name);
 }
 
 static __inline void *
-cam_sim_softc(struct cam_sim *sim)
+cam_sim_softc(const struct cam_sim *sim)
 {
 	return (sim->softc);
 }
 
-static __inline u_int32_t
-cam_sim_unit(struct cam_sim *sim)
+static __inline uint32_t
+cam_sim_unit(const struct cam_sim *sim)
 {
 	return (sim->unit_number);
 }
 
 #ifndef __rtems__
-static __inline u_int32_t
-cam_sim_bus(struct cam_sim *sim)
+static __inline uint32_t
+cam_sim_bus(const struct cam_sim *sim)
 {
 	return (sim->bus_id);
 }
 #endif /* __rtems__ */
+
+static __inline bool
+cam_sim_pollable(const struct cam_sim *sim)
+{
+	return (sim->sim_poll != NULL);
+}
 
 #endif /* _KERNEL */
 #endif /* _CAM_CAM_SIM_H */

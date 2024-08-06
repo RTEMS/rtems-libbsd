@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Isilon Inc http://www.isilon.com/
  * Authors: Doug Rabson <dfr@rabson.org>
@@ -30,8 +30,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -47,9 +45,12 @@ __FBSDID("$FreeBSD$");
 #include <sys/time.h>
 #include <sys/uio.h>
 
+#include <netinet/tcp.h>
+
 #include <rpc/rpc.h>
 #include <rpc/rpc_com.h>
 #include <rpc/krpc.h>
+#include <rpc/rpcsec_tls.h>
 
 static enum clnt_stat clnt_reconnect_call(CLIENT *, struct rpc_callextra *,
     rpcproc_t, struct mbuf *, struct mbuf **, struct timeval);
@@ -60,7 +61,7 @@ static bool_t clnt_reconnect_control(CLIENT *, u_int, void *);
 static void clnt_reconnect_close(CLIENT *);
 static void clnt_reconnect_destroy(CLIENT *);
 
-static struct clnt_ops clnt_reconnect_ops = {
+static const struct clnt_ops clnt_reconnect_ops = {
 	.cl_call =	clnt_reconnect_call,
 	.cl_abort =	clnt_reconnect_abort,
 	.cl_geterr =	clnt_reconnect_geterr,
@@ -110,6 +111,10 @@ clnt_reconnect_create(
 	rc->rc_closed = FALSE;
 	rc->rc_ucred = crdup(curthread->td_ucred);
 	rc->rc_client = NULL;
+	rc->rc_tls = false;
+	rc->rc_tlscertname = NULL;
+	rc->rc_reconcall = NULL;
+	rc->rc_reconarg = NULL;
 
 	cl->cl_refs = 1;
 	cl->cl_ops = &clnt_reconnect_ops;
@@ -131,6 +136,8 @@ clnt_reconnect_connect(CLIENT *cl)
 	int one = 1;
 	struct ucred *oldcred;
 	CLIENT *newclient = NULL;
+	uint64_t ssl[3];
+	uint32_t reterr;
 
 	mtx_lock(&rc->rc_lock);
 	while (rc->rc_connecting) {
@@ -195,6 +202,30 @@ clnt_reconnect_connect(CLIENT *cl)
 		newclient = clnt_vc_create(so,
 		    (struct sockaddr *) &rc->rc_addr, rc->rc_prog, rc->rc_vers,
 		    rc->rc_sendsz, rc->rc_recvsz, rc->rc_intr);
+		if (rc->rc_tls && newclient != NULL) {
+			stat = rpctls_connect(newclient, rc->rc_tlscertname, so,
+			    ssl, &reterr);
+			if (stat != RPC_SUCCESS || reterr != RPCTLSERR_OK) {
+				if (stat == RPC_SUCCESS)
+					stat = RPC_FAILED;
+				stat = rpc_createerr.cf_stat = stat;
+				rpc_createerr.cf_error.re_errno = 0;
+				CLNT_CLOSE(newclient);
+				CLNT_RELEASE(newclient);
+				newclient = NULL;
+				td->td_ucred = oldcred;
+				goto out;
+			}
+		}
+		if (newclient != NULL) {
+			int optval = 1;
+
+			(void)so_setsockopt(so, IPPROTO_TCP, TCP_USE_DDP,
+			    &optval, sizeof(optval));
+		}
+		if (newclient != NULL && rc->rc_reconcall != NULL)
+			(*rc->rc_reconcall)(newclient, rc->rc_reconarg,
+			    rc->rc_ucred);
 	}
 	td->td_ucred = oldcred;
 
@@ -211,6 +242,8 @@ clnt_reconnect_connect(CLIENT *cl)
 	CLNT_CONTROL(newclient, CLSET_RETRY_TIMEOUT, &rc->rc_retry);
 	CLNT_CONTROL(newclient, CLSET_WAITCHAN, rc->rc_waitchan);
 	CLNT_CONTROL(newclient, CLSET_INTERRUPTIBLE, &rc->rc_intr);
+	if (rc->rc_tls)
+		CLNT_CONTROL(newclient, CLSET_TLS, ssl);
 	if (rc->rc_backchannel != NULL)
 		CLNT_CONTROL(newclient, CLSET_BACKCHANNEL, rc->rc_backchannel);
 	stat = RPC_SUCCESS;
@@ -387,6 +420,8 @@ clnt_reconnect_control(CLIENT *cl, u_int request, void *info)
 {
 	struct rc_data *rc = (struct rc_data *)cl->cl_private;
 	SVCXPRT *xprt;
+	size_t slen;
+	struct rpc_reconupcall *upcp;
 
 	if (info == NULL) {
 		return (FALSE);
@@ -474,6 +509,30 @@ clnt_reconnect_control(CLIENT *cl, u_int request, void *info)
 		rc->rc_backchannel = info;
 		break;
 
+	case CLSET_TLS:
+		rc->rc_tls = true;
+		break;
+
+	case CLSET_TLSCERTNAME:
+		slen = strlen(info) + 1;
+		/*
+		 * tlscertname with "key.pem" appended to it forms a file
+		 * name.  As such, the maximum allowable strlen(info) is
+		 * NAME_MAX - 7. However, "slen" includes the nul termination
+		 * byte so it can be up to NAME_MAX - 6.
+		 */
+		if (slen <= 1 || slen > NAME_MAX - 6)
+			return (FALSE);
+		rc->rc_tlscertname = mem_alloc(slen);
+		strlcpy(rc->rc_tlscertname, info, slen);
+		break;
+
+	case CLSET_RECONUPCALL:
+		upcp = (struct rpc_reconupcall *)info;
+		rc->rc_reconcall = upcp->call;
+		rc->rc_reconarg = upcp->arg;
+		break;
+
 	default:
 		return (FALSE);
 	}
@@ -516,11 +575,15 @@ clnt_reconnect_destroy(CLIENT *cl)
 		CLNT_DESTROY(rc->rc_client);
 	if (rc->rc_backchannel) {
 		xprt = (SVCXPRT *)rc->rc_backchannel;
+		KASSERT(xprt->xp_socket == NULL,
+		    ("clnt_reconnect_destroy: xp_socket not NULL"));
 		xprt_unregister(xprt);
 		SVC_RELEASE(xprt);
 	}
 	crfree(rc->rc_ucred);
 	mtx_destroy(&rc->rc_lock);
+	mem_free(rc->rc_tlscertname, 0);	/* 0 ok, since arg. ignored. */
+	mem_free(rc->rc_reconarg, 0);
 	mem_free(rc, sizeof(*rc));
 	mem_free(cl, sizeof (CLIENT));
 }

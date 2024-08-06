@@ -34,7 +34,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)callout.h	8.2 (Berkeley) 1/21/94
- * $FreeBSD$
  */
 
 #ifndef _SYS_CALLOUT_H_
@@ -48,11 +47,9 @@
 #define	CALLOUT_MPSAFE		0x0008 /* deprecated */
 #define	CALLOUT_RETURNUNLOCKED	0x0010 /* handler returns with mtx unlocked */
 #define	CALLOUT_SHAREDLOCK	0x0020 /* callout lock held in shared mode */
-#ifndef __rtems__
 #define	CALLOUT_DFRMIGRATION	0x0040 /* callout in deferred migration mode */
 #define	CALLOUT_PROCESSED	0x0080 /* callout in wheel or processing list? */
 #define	CALLOUT_DIRECT 		0x0100 /* allow exec from hw int context */
-#endif /* __rtems__ */
 
 #define	C_DIRECT_EXEC		0x0001 /* direct execution of callout */
 #define	C_PRELBITS		7
@@ -64,14 +61,8 @@
 #define	C_PRECALC		0x0400 /* event time is pre-calculated. */
 #define	C_CATCH			0x0800 /* catch signals, used by pause_sbt(9) */
 
-struct callout_handle {
-	struct callout *callout;
-};
-
 /* Flags for callout_stop_safe() */
 #define	CS_DRAIN		0x0001 /* callout_drain(), wait allowed */
-#define	CS_EXECUTING		0x0002 /* Positive return value indicates that
-					  the callout was executing */
 
 #ifdef _KERNEL
 /* 
@@ -98,9 +89,14 @@ void	_callout_init_lock(struct callout *, struct lock_object *, int);
 #define	callout_init_mtx(c, mtx, flags)					\
 	_callout_init_lock((c), ((mtx) != NULL) ? &(mtx)->lock_object :	\
 	    NULL, (flags))
+#ifndef __rtems__
 #define	callout_init_rm(c, rm, flags)					\
 	_callout_init_lock((c), ((rm) != NULL) ? &(rm)->lock_object : 	\
 	    NULL, (flags))
+#else /* __rtems__ */
+#define	callout_init_rm(c, rm, flags)					\
+	_callout_init_lock((c), NULL, (flags))
+#endif /* __rtems__ */
 #define	callout_init_rw(c, rw, flags)					\
 	_callout_init_lock((c), ((rw) != NULL) ? &(rw)->lock_object :	\
 	   NULL, (flags))
@@ -112,15 +108,9 @@ int	callout_reset_sbt_on(struct callout *, sbintime_t, sbintime_t,
 #define	callout_reset_sbt_curcpu(c, sbt, pr, fn, arg, flags)		\
     callout_reset_sbt_on((c), (sbt), (pr), (fn), (arg), PCPU_GET(cpuid),\
         (flags))
-#ifndef __rtems__
 #define	callout_reset_on(c, to_ticks, fn, arg, cpu)			\
     callout_reset_sbt_on((c), tick_sbt * (to_ticks), 0, (fn), (arg),	\
         (cpu), C_HARDCLOCK)
-#else /* __rtems__ */
-#define	callout_reset_on(c, to_ticks, fn, arg, cpu)			\
-    callout_reset_sbt_on((c), tick_sbt * (to_ticks), 0, (fn), (arg),	\
-        -1, C_HARDCLOCK)
-#endif /* __rtems__ */
 #define	callout_reset(c, on_tick, fn, arg)				\
     callout_reset_on((c), (on_tick), (fn), (arg), -1)
 #define	callout_reset_curcpu(c, on_tick, fn, arg)			\

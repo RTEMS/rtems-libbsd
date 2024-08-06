@@ -239,7 +239,6 @@ static driver_t versal_slcr_driver = {
 	versal_slcr_methods,
 	sizeof(struct versal_slcr_softc),
 };
-static devclass_t versal_slcr_devclass;
 
-DRIVER_MODULE(versal_slcr, nexus, versal_slcr_driver, versal_slcr_devclass, 0, 0);
+DRIVER_MODULE(versal_slcr, nexus, versal_slcr_driver, 0, 0);
 MODULE_VERSION(versal_slcr, 1);

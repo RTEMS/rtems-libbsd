@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1997, Stefan Esser <se@freebsd.org>
  * All rights reserved.
@@ -29,8 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_cpu.h>
 
 #include <sys/param.h>
@@ -67,7 +65,7 @@ uint32_t
 legacy_pcib_read_config(device_t dev, u_int bus, u_int slot, u_int func,
 			u_int reg, int bytes)
 {
-	return(pci_cfgregread(bus, slot, func, reg, bytes));
+	return(pci_cfgregread(0, bus, slot, func, reg, bytes));
 }
 
 /* write configuration space register */
@@ -76,7 +74,7 @@ void
 legacy_pcib_write_config(device_t dev, u_int bus, u_int slot, u_int func,
 			 u_int reg, uint32_t data, int bytes)
 {
-	pci_cfgregwrite(bus, slot, func, reg, data, bytes);
+	pci_cfgregwrite(0, bus, slot, func, reg, data, bytes);
 }
 
 /* route interrupt */
@@ -399,7 +397,6 @@ legacy_pcib_identify(driver_t *driver, device_t parent)
 		devclass_get_device(pci_devclass, 0))
 		return;
 
-
 	bus = 0;
  retry:
 	for (slot = 0; slot <= PCI_SLOTMAX; slot++) {
@@ -491,11 +488,13 @@ legacy_pcib_identify(driver_t *driver, device_t parent)
 	 * Note that pci_cfgregopen() thinks we have PCI devices..
 	 */
 	if (!found) {
+#ifndef NO_LEGACY_PCIB
 		if (bootverbose)
 			printf(
 	"legacy_pcib_identify: no bridge found, adding pcib0 anyway\n");
 		child = BUS_ADD_CHILD(parent, 100, "pcib", 0);
 		legacy_set_pcibus(child, 0);
+#endif
 	}
 }
 
@@ -513,11 +512,9 @@ legacy_pcib_attach(device_t dev)
 {
 #ifdef __HAVE_PIR
 	device_t pir;
-#endif
 	int bus;
 
 	bus = pcib_get_bus(dev);
-#ifdef __HAVE_PIR
 	/*
 	 * Look for a PCI BIOS interrupt routing table as that will be
 	 * our method of routing interrupts if we have one.
@@ -672,11 +669,8 @@ static device_method_t legacy_pcib_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t hostb_devclass;
-
 DEFINE_CLASS_0(pcib, legacy_pcib_driver, legacy_pcib_methods, 1);
-DRIVER_MODULE(pcib, legacy, legacy_pcib_driver, hostb_devclass, 0, 0);
-
+DRIVER_MODULE(pcib, legacy, legacy_pcib_driver, 0, 0);
 
 #ifndef __rtems__
 /*
@@ -721,10 +715,8 @@ static device_method_t pcibus_pnp_methods[] = {
 	{ 0, 0 }
 };
 
-static devclass_t pcibus_pnp_devclass;
-
 DEFINE_CLASS_0(pcibus_pnp, pcibus_pnp_driver, pcibus_pnp_methods, 1);
-DRIVER_MODULE(pcibus_pnp, isa, pcibus_pnp_driver, pcibus_pnp_devclass, 0, 0);
+DRIVER_MODULE(pcibus_pnp, isa, pcibus_pnp_driver, 0, 0);
 #endif /* __rtems__ */
 
 #ifdef __HAVE_PIR
@@ -741,15 +733,12 @@ static device_method_t pcibios_pcib_pci_methods[] = {
 
 	/* pcib interface */
 	DEVMETHOD(pcib_route_interrupt,	legacy_pcib_route_interrupt),
-
 	{0, 0}
 };
 
-static devclass_t pcib_devclass;
-
 DEFINE_CLASS_1(pcib, pcibios_pcib_driver, pcibios_pcib_pci_methods,
     sizeof(struct pcib_softc), pcib_driver);
-DRIVER_MODULE(pcibios_pcib, pci, pcibios_pcib_driver, pcib_devclass, 0, 0);
+DRIVER_MODULE(pcibios_pcib, pci, pcibios_pcib_driver, 0, 0);
 ISA_PNP_INFO(pcibus_pnp_ids);
 
 static int

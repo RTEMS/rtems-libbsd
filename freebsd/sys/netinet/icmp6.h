@@ -1,4 +1,3 @@
-/*	$FreeBSD$	*/
 /*	$KAME: icmp6.h,v 1.46 2001/04/27 15:09:48 itojun Exp $	*/
 
 /*-
@@ -244,6 +243,10 @@ struct nd_router_advert {	/* router advertisement */
 #define ND_RA_FLAG_RTPREF_LOW	0x18 /* 00011000 */
 #define ND_RA_FLAG_RTPREF_RSV	0x10 /* 00010000 */
 
+#ifdef EXPERIMENTAL
+#define	ND_RA_FLAG_IPV6_ONLY	0x02 /* draft-ietf-6man-ipv6only-flag */
+#endif
+
 #define nd_ra_router_lifetime	nd_ra_hdr.icmp6_data16[1]
 
 struct nd_neighbor_solicit {	/* neighbor solicitation */
@@ -340,7 +343,7 @@ struct nd_opt_mtu {		/* MTU option */
 #define	ND_OPT_NONCE_LEN	((1 * 8) - 2)
 #if ((ND_OPT_NONCE_LEN + 2) % 8) != 0
 #error "(ND_OPT_NONCE_LEN + 2) must be a multiple of 8."
-#endif 
+#endif
 struct nd_opt_nonce {		/* nonce option */
 	u_int8_t	nd_opt_nonce_type;
 	u_int8_t	nd_opt_nonce_len;
@@ -598,12 +601,13 @@ struct icmp6stat {
 	uint64_t icp6s_tooshort;	/* packet < sizeof(struct icmp6_hdr) */
 	uint64_t icp6s_checksum;	/* bad checksum */
 	uint64_t icp6s_badlen;		/* calculated bound mismatch */
+	uint64_t icp6s_dropped;		/* # of packets dropped waiting for a resolution */
 	/*
 	 * number of responses: this member is inherited from netinet code, but
 	 * for netinet6 code, it is already available in icp6s_outhist[].
 	 */
 	uint64_t icp6s_reflect;
-	uint64_t icp6s_inhist[256];	
+	uint64_t icp6s_inhist[256];
 	uint64_t icp6s_nd_toomanyopt;	/* too many ND options */
 	struct icmp6errstat icp6s_outerrhist;
 #define icp6s_odst_unreach_noroute \
@@ -631,10 +635,20 @@ struct icmp6stat {
 	uint64_t icp6s_badrs;		/* bad router solicitation */
 	uint64_t icp6s_badra;		/* bad router advertisement */
 	uint64_t icp6s_badredirect;	/* bad redirect message */
+	uint64_t icp6s_overflowdefrtr;	/* Too many default routers. */
+	uint64_t icp6s_overflowprfx;	/* Too many prefixes. */
+	uint64_t icp6s_overflownndp;	/* Too many neighbour entries. */
+	uint64_t icp6s_overflowredirect;/* Too many redirects. */
+	uint64_t icp6s_invlhlim;	/* Invalid hop limit. */
+	uint64_t icp6s_spare[32];
 };
 
 #ifdef _KERNEL
 #include <sys/counter.h>
+
+#ifdef SYSCTL_DECL
+SYSCTL_DECL(_net_inet6_icmp6);
+#endif
 
 VNET_PCPUSTAT_DECLARE(struct icmp6stat, icmp6stat);
 /*
@@ -683,24 +697,21 @@ void	kmod_icmp6stat_inc(int statnum);
 #define ICMPV6CTL_NODEINFO_OLDMCPREFIX	25
 #define ICMPV6CTL_MAXID		26
 
-#define RTF_PROBEMTU	RTF_PROTO1
-
 #ifdef _KERNEL
 # ifdef __STDC__
-struct	rtentry;
+struct	nhop_object;
 struct	rttimer;
 struct	in6_multi;
 # endif
 void	icmp6_paramerror(struct mbuf *, int);
+int	icmp6_errmap(const struct icmp6_hdr *);
 void	icmp6_error(struct mbuf *, int, int, int);
 void	icmp6_error2(struct mbuf *, int, int, int, struct ifnet *);
 int	icmp6_input(struct mbuf **, int *, int);
-void	icmp6_fasttimo(void);
-void	icmp6_slowtimo(void);
-void	icmp6_reflect(struct mbuf *, size_t);
 void	icmp6_prepare(struct mbuf *);
 void	icmp6_redirect_input(struct mbuf *, int);
-void	icmp6_redirect_output(struct mbuf *, struct rtentry *);
+void	icmp6_redirect_output(struct mbuf *, struct nhop_object *);
+int	icmp6_ratelimit(const struct in6_addr *, const int, const int);
 
 struct	ip6ctlparam;
 void	icmp6_mtudisc_update(struct ip6ctlparam *, int);
@@ -766,12 +777,6 @@ do { \
 			 break; \
 		} \
 } while (/*CONSTCOND*/ 0)
-
-VNET_DECLARE(int, icmp6_rediraccept);	/* accept/process redirects */
-VNET_DECLARE(int, icmp6_redirtimeout);	/* cache time for redirect routes */
-
-#define	V_icmp6_rediraccept	VNET(icmp6_rediraccept)
-#define	V_icmp6_redirtimeout	VNET(icmp6_redirtimeout)
 
 #define ICMP6_NODEINFO_FQDNOK		0x1
 #define ICMP6_NODEINFO_NODEADDROK	0x2

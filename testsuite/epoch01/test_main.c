@@ -272,7 +272,7 @@ test_enter_list_op_exit_body(rtems_test_parallel_context *base, void *arg,
 		epoch_exit(e);
 
 		if (rm != NULL) {
-			epoch_call(e, &rm->ec, test_list_callback);
+			epoch_call(e, test_list_callback, &rm->ec);
 			epoch_wait(e);
 		}
 	}
@@ -349,7 +349,7 @@ test_enter_list_op_exit_preempt_body(rtems_test_parallel_context *base,
 		epoch_exit_preempt(e, &et);
 
 		if (rm != NULL) {
-			epoch_call(e, &rm->ec, test_list_callback);
+			epoch_call(e, test_list_callback, &rm->ec);
 			epoch_wait_preempt(e);
 		}
 	}
@@ -394,7 +394,7 @@ test_enter_list_op_exit_drain_body(rtems_test_parallel_context *base,
 		epoch_exit(e);
 
 		if (rm != NULL) {
-			epoch_call(e, &rm->ec, test_list_callback);
+			epoch_call(e, test_list_callback, &rm->ec);
 			epoch_drain_callbacks(e);
 		}
 	}

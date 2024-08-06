@@ -53,7 +53,7 @@ GENERATED += $(LOCAL_INC)/regnode_if.h
 GENERATED += $(LOCAL_SRC)/regnode_if.c
 GENERATED += rtemsbsd/include/machine/rtems-bsd-regdomain.h
 GENERATED += rtemsbsd/rtems/rtems-bsd-regdomain.c
-GENERATED += freebsd/contrib/libpcap/pcap_version.h
+#GENERATED += freebsd/contrib/libpcap/pcap_version.h
 
 YACC_GENERATED =
 LEX_GENERATED =
@@ -89,197 +89,195 @@ program-header:
 	cd freebsd/usr.bin/netstat && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.bin/netstat/*.o -p netstat
 	cd freebsd/usr.sbin/arp && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.sbin/arp/*.o -p arp
 	cd freebsd/usr.sbin/ifmcstat && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/freebsd/usr.sbin/ifmcstat/*.o -p ifmcstat
-	cd ipsec-tools/src/racoon && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/ipsec-tools/src/racoon/*.o -p racoon
-	cd ipsec-tools/src/setkey && $(BASE)/userspace-header-gen.py $(BUILD_BSP)/ipsec-tools/src/setkey/*.o -p setkey
 
 $(LOCAL_INC)/usbdevs.h: $(FREEBSD_SRC)/sys/dev/usb/usbdevs
-	awk -f $(TOOLS)/usbdevs2h.awk $< -h
+	awk -f $(TOOLS)/usbdevs2h.awk $> -h
 	mv usbdevs.h $@
 
 $(LOCAL_INC)/usbdevs_data.h: $(FREEBSD_SRC)/sys/dev/usb/usbdevs
-	awk -f $(TOOLS)/usbdevs2h.awk $< -d
+	awk -f $(TOOLS)/usbdevs2h.awk $> -d
 	mv usbdevs_data.h $@
 
 $(LOCAL_INC)/cryptodev_if.h: $(FREEBSD_SRC)/sys/opencrypto/cryptodev_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv cryptodev_if.h $@
 
 $(LOCAL_SRC)/cryptodev_if.c: $(FREEBSD_SRC)/sys/opencrypto/cryptodev_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv cryptodev_if.c $@
 
 $(LOCAL_INC)/usb_if.h: $(FREEBSD_SRC)/sys/dev/usb/usb_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv usb_if.h $@
 
 $(LOCAL_SRC)/usb_if.c: $(FREEBSD_SRC)/sys/dev/usb/usb_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv usb_if.c $@
 
 $(LOCAL_INC)/bus_if.h: $(FREEBSD_SRC)/sys/kern/bus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv bus_if.h $@
 
 $(LOCAL_SRC)/bus_if.c: $(FREEBSD_SRC)/sys/kern/bus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv bus_if.c $@
 
 $(LOCAL_INC)/device_if.h: $(FREEBSD_SRC)/sys/kern/device_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv device_if.h $@
 
 $(LOCAL_SRC)/device_if.c: $(FREEBSD_SRC)/sys/kern/device_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv device_if.c $@
 
 $(LOCAL_INC)/ifdi_if.h: $(FREEBSD_SRC)/sys/net/ifdi_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv ifdi_if.h $@
 
 $(LOCAL_SRC)/ifdi_if.c: $(FREEBSD_SRC)/sys/net/ifdi_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv ifdi_if.c $@
 
 $(LOCAL_INC)/miidevs.h: $(FREEBSD_SRC)/sys/dev/mii/miidevs
-	awk -f $(TOOLS)/miidevs2h.awk $<
+	awk -f $(TOOLS)/miidevs2h.awk $>
 	mv miidevs.h $@
 
 $(LOCAL_INC)/miibus_if.h: $(FREEBSD_SRC)/sys/dev/mii/miibus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv miibus_if.h $@
 
 $(LOCAL_SRC)/miibus_if.c: $(FREEBSD_SRC)/sys/dev/mii/miibus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv miibus_if.c $@
 
 $(LOCAL_INC)/pci_if.h: $(FREEBSD_SRC)/sys/dev/pci/pci_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv pci_if.h $@
 
 $(LOCAL_SRC)/pci_if.c: $(FREEBSD_SRC)/sys/dev/pci/pci_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv pci_if.c $@
 
 $(LOCAL_INC)/pcib_if.h: $(FREEBSD_SRC)/sys/dev/pci/pcib_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv pcib_if.h $@
 
 $(LOCAL_SRC)/pcib_if.c: $(FREEBSD_SRC)/sys/dev/pci/pcib_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv pcib_if.c $@
 
 $(LOCAL_INC)/pic_if.h: $(FREEBSD_SRC)/sys/powerpc/powerpc/pic_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv pic_if.h $@
 
 $(LOCAL_SRC)/pic_if.c: $(FREEBSD_SRC)/sys/powerpc/powerpc/pic_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv pic_if.c $@
 
 $(LOCAL_INC)/mmcbus_if.h: $(FREEBSD_SRC)/sys/dev/mmc/mmcbus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv mmcbus_if.h $@
 
 $(LOCAL_SRC)/mmcbus_if.c: $(FREEBSD_SRC)/sys/dev/mmc/mmcbus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv mmcbus_if.c $@
 
 $(LOCAL_INC)/mmcbr_if.h: $(FREEBSD_SRC)/sys/dev/mmc/mmcbr_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv mmcbr_if.h $@
 
 $(LOCAL_SRC)/mmcbr_if.c: $(FREEBSD_SRC)/sys/dev/mmc/mmcbr_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv mmcbr_if.c $@
 
 $(LOCAL_INC)/ofw_if.h: $(FREEBSD_SRC)/sys/dev/ofw/ofw_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv ofw_if.h $@
 
 $(LOCAL_SRC)/ofw_if.c: $(FREEBSD_SRC)/sys/dev/ofw/ofw_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv ofw_if.c $@
 
 $(LOCAL_INC)/ofw_bus_if.h: $(FREEBSD_SRC)/sys/dev/ofw/ofw_bus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv ofw_bus_if.h $@
 
 $(LOCAL_SRC)/ofw_bus_if.c: $(FREEBSD_SRC)/sys/dev/ofw/ofw_bus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv ofw_bus_if.c $@
 
 $(LOCAL_INC)/if_dwc_if.h: $(FREEBSD_SRC)/sys/dev/dwc/if_dwc_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv if_dwc_if.h $@
 
 $(LOCAL_SRC)/if_dwc_if.c: $(FREEBSD_SRC)/sys/dev/dwc/if_dwc_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv if_dwc_if.c $@
 
 $(LOCAL_INC)/gpio_if.h: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv gpio_if.h $@
 
 $(LOCAL_INC)/gpiobus_if.h: $(FREEBSD_SRC)/sys/dev/gpio/gpiobus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv gpiobus_if.h $@
 
 $(LOCAL_SRC)/gpiobus_if.c: $(FREEBSD_SRC)/sys/dev/gpio/gpiobus_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
-	sed -i gpiobus_if.c \
+	awk -f $(TOOLS)/makeobjops.awk $> -c
+	#sed -i gpiobus_if.c \
 	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
 	    -e 's|#include "gpiobus_if.h"|#include <rtems/bsd/local/gpiobus_if.h>|'
 	mv gpiobus_if.c $@
 
 $(LOCAL_INC)/sdhci_if.h: $(FREEBSD_SRC)/sys/dev/sdhci/sdhci_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv sdhci_if.h $@
 
 $(LOCAL_SRC)/sdhci_if.c: $(FREEBSD_SRC)/sys/dev/sdhci/sdhci_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
-	sed -i sdhci_if.c \
+	awk -f $(TOOLS)/makeobjops.awk $> -c
+	#sed -i sdhci_if.c \
 	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
 	    -e 's|#include "sdhci_if.h"|#include <rtems/bsd/local/sdhci_if.h>|'
 	mv sdhci_if.c $@
 
 $(LOCAL_SRC)/gpio_if.c: $(FREEBSD_SRC)/sys/dev/gpio/gpio_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
+	awk -f $(TOOLS)/makeobjops.awk $> -c
 	mv gpio_if.c $@
 
 $(LOCAL_INC)/regnode_if.h: $(FREEBSD_SRC)/sys/dev/extres/regulator/regnode_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv regnode_if.h $@
 
 $(LOCAL_SRC)/regnode_if.c: $(FREEBSD_SRC)/sys/dev/extres/regulator/regnode_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
-	sed -i regnode_if.c \
+	awk -f $(TOOLS)/makeobjops.awk $> -c
+	#sed -i regnode_if.c \
 	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
 	    -e 's|#include "regnode_if.h"|#include <rtems/bsd/local/regnode_if.h>|'
 	mv regnode_if.c $@
 
 $(LOCAL_INC)/regdev_if.h: $(FREEBSD_SRC)/sys/dev/extres/regulator/regdev_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -h
+	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv regdev_if.h $@
 
 $(LOCAL_SRC)/regdev_if.c: $(FREEBSD_SRC)/sys/dev/extres/regulator/regdev_if.m
-	awk -f $(TOOLS)/makeobjops.awk $< -c
-	sed -i regdev_if.c \
+	awk -f $(TOOLS)/makeobjops.awk $> -c
+	#sed -i regdev_if.c \
 	    -e '1 i\#include <machine/rtems-bsd-kernel-space.h>\n' \
 	    -e 's|#include "regdev_if.h"|#include <rtems/bsd/local/regdev_if.h>|'
 	mv regdev_if.c $@
 
 $(LOCAL_SRC)/rtwn-rtl8192cfwT.c: $(FREEBSD_SRC)/sys/contrib/dev/rtwn/rtwn-rtl8192cfwT.fw.uu
-	uudecode -o /dev/stdout $< | python firmware-gen.py \
+	uudecode -o /dev/stdout $> | python firmware-gen.py \
 	    -l "$(FREEBSD_SRC)/sys/contrib/dev/rtwn/LICENSE" \
 	    rtwn-rtl8192cfwT - $@
 
 $(LOCAL_SRC)/rtwn-rtl8188eufw.c: $(FREEBSD_SRC)/sys/contrib/dev/rtwn/rtwn-rtl8188eufw.fw.uu
-	uudecode -o /dev/stdout $< | python firmware-gen.py \
+	uudecode -o /dev/stdout $> | python firmware-gen.py \
 	    -l "$(FREEBSD_SRC)/sys/contrib/dev/rtwn/LICENSE" \
 	    rtwn-rtl8188eufw - $@
 
 $(LOCAL_SRC)/runfw.c: $(FREEBSD_SRC)/sys/contrib/dev/run/rt2870.fw.uu
-	uudecode -o /dev/stdout $< | python firmware-gen.py \
+	uudecode -o /dev/stdout $> | python firmware-gen.py \
 	    -l "$(FREEBSD_SRC)/sys/contrib/dev/run/LICENSE" \
 	    runfw - $@
 
@@ -292,7 +290,7 @@ freebsd/usr.bin/netstat/nl_symbols.c: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbo
 	    } \
 	    !/^\#/ { printf("\t{ .n_name = \"%s\" },\n", $$2); } \
 	    END { print "\t{ .n_name = NULL },\n};" } \
-	    ' < $< > $@ || rm -f $@
+	    ' < $> > $@ || rm -f $@
 
 freebsd/usr.bin/netstat/nl_defs.h: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
 	awk '\
@@ -302,16 +300,13 @@ freebsd/usr.bin/netstat/nl_defs.h: $(FREEBSD_SRC)/usr.bin/netstat/nlist_symbols
 		i = 0; \
 	    } \
 	    !/^\#/ { printf("\#define\tN%s\t%s\n", toupper($$2), i++); }' \
-	    < $< > $@ || rm -f $@
+	    < $> > $@ || rm -f $@
 
 rtemsbsd/include/machine/rtems-bsd-regdomain.h: $(FREEBSD_SRC)/lib/lib80211/regdomain.xml
-	rtems-bin2c -H $< $@
+	rtems-bin2c -H $> $@
 
 rtemsbsd/rtems/rtems-bsd-regdomain.c: $(FREEBSD_SRC)/lib/lib80211/regdomain.xml
-	rtems-bin2c -C $< $@
-
-freebsd/contrib/libpcap/pcap_version.h: freebsd-org/contrib/libpcap/VERSION
-	freebsd-org/contrib/libpcap/gen_version_header.sh $< freebsd-org/contrib/libpcap/pcap_version.h.in $@
+	rtems-bin2c -C $> $@
 
 freebsd/lib/libc/net/nsparser.h: freebsd/lib/libc/net/nsparser.c
 

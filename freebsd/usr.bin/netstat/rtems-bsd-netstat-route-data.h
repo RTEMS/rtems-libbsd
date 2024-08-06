@@ -2,7 +2,6 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-netstat-data.h"
 /* route.c */
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int ifmap_size);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_dst);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_expire);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_flags);
@@ -10,5 +9,6 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_gw);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_if);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_mtu);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static int wid_pksent);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static size_t ifmap_size);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static struct ifmap_entry *ifmap);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_netstat, static struct timespec uptime);

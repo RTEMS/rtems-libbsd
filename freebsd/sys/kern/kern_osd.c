@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2007 Pawel Jakub Dawidek <pjd@FreeBSD.org>
  * All rights reserved.
@@ -29,8 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
@@ -116,7 +114,7 @@ osd_register(u_int type, osd_destructor_t destructor, osd_method_t *methods)
 	for (i = 0; i < osdm[type].osd_ntslots; i++) {
 		if (osdm[type].osd_destructors[i] == NULL) {
 			OSD_DEBUG("Unused slot found (type=%u, slot=%u).",
-			    type, i);
+			    type, i + 1);
 			break;
 		}
 	}
@@ -158,10 +156,11 @@ osd_deregister(u_int type, u_int slot)
 
 	KASSERT(type >= OSD_FIRST && type <= OSD_LAST, ("Invalid type."));
 	KASSERT(slot > 0, ("Invalid slot."));
-	KASSERT(osdm[type].osd_destructors[slot - 1] != NULL, ("Unused slot."));
 
 	sx_xlock(&osdm[type].osd_module_lock);
 	rm_wlock(&osdm[type].osd_object_lock);
+	KASSERT(osdm[type].osd_destructors[slot - 1] != NULL, ("Unused slot."));
+
 	/*
 	 * Free all OSD for the given slot.
 	 */
@@ -169,32 +168,18 @@ osd_deregister(u_int type, u_int slot)
 	LIST_FOREACH_SAFE(osd, &osdm[type].osd_list, osd_next, tosd)
 		do_osd_del(type, osd, slot, 1);
 	mtx_unlock(&osdm[type].osd_list_lock);
+
 	/*
-	 * Set destructor to NULL to free the slot.
+	 * Set destructor to NULL to free the slot.  We don't bother actually
+	 * freeing any memory here because we'll gracefully reuse any freed
+	 * slots, and reallocating the arrays as a smaller chunk of memory isn't
+	 * actually guaranteed to succeed.  As such, we'll err on the side of
+	 * caution and just leave it be since these are generally modestly sized
+	 * allocations.
 	 */
 	osdm[type].osd_destructors[slot - 1] = NULL;
-	if (slot == osdm[type].osd_ntslots) {
-		osdm[type].osd_ntslots--;
-		osdm[type].osd_destructors = realloc(osdm[type].osd_destructors,
-		    sizeof(osd_destructor_t) * osdm[type].osd_ntslots, M_OSD,
-		    M_NOWAIT | M_ZERO);
-		if (osdm[type].osd_nmethods != 0)
-			osdm[type].osd_methods = realloc(osdm[type].osd_methods,
-			    sizeof(osd_method_t) * osdm[type].osd_ntslots *
-			    osdm[type].osd_nmethods, M_OSD, M_NOWAIT | M_ZERO);
-		/*
-		 * We always reallocate to smaller size, so we assume it will
-		 * always succeed.
-		 */
-		KASSERT(osdm[type].osd_destructors != NULL &&
-		    (osdm[type].osd_nmethods == 0 ||
-		     osdm[type].osd_methods != NULL), ("realloc() failed"));
-		OSD_DEBUG("Deregistration of the last slot (type=%u, slot=%u).",
-		    type, slot);
-	} else {
-		OSD_DEBUG("Slot deregistration (type=%u, slot=%u).",
-		    type, slot);
-	}
+	OSD_DEBUG("Slot deregistration (type=%u, slot=%u).", type, slot);
+
 	rm_wunlock(&osdm[type].osd_object_lock);
 	sx_xunlock(&osdm[type].osd_module_lock);
 }
@@ -224,9 +209,10 @@ osd_set_reserved(u_int type, struct osd *osd, u_int slot, void **rsv,
 
 	KASSERT(type >= OSD_FIRST && type <= OSD_LAST, ("Invalid type."));
 	KASSERT(slot > 0, ("Invalid slot."));
-	KASSERT(osdm[type].osd_destructors[slot - 1] != NULL, ("Unused slot."));
 
 	rm_rlock(&osdm[type].osd_object_lock, &tracker);
+	KASSERT(osdm[type].osd_destructors[slot - 1] != NULL, ("Unused slot."));
+
 	if (slot > osd->osd_nslots) {
 		void **newptr;
 
@@ -302,9 +288,10 @@ osd_get(u_int type, struct osd *osd, u_int slot)
 
 	KASSERT(type >= OSD_FIRST && type <= OSD_LAST, ("Invalid type."));
 	KASSERT(slot > 0, ("Invalid slot."));
-	KASSERT(osdm[type].osd_destructors[slot - 1] != NULL, ("Unused slot."));
 
 	rm_rlock(&osdm[type].osd_object_lock, &tracker);
+	KASSERT(osdm[type].osd_destructors[slot - 1] != NULL, ("Unused slot."));
+
 	if (slot > osd->osd_nslots) {
 		value = NULL;
 		OSD_DEBUG("Slot doesn't exist (type=%u, slot=%u).", type, slot);
@@ -395,6 +382,9 @@ osd_call(u_int type, u_int method, void *obj, void *data)
 	error = 0;
 	sx_slock(&osdm[type].osd_module_lock);
 	for (i = 0; i < osdm[type].osd_ntslots; i++) {
+		/* Hole in the slot map; avoid dereferencing. */
+		if (osdm[type].osd_destructors[i] == NULL)
+			continue;
 		methodfun = osdm[type].osd_methods[i * osdm[type].osd_nmethods +
 		    method];
 		if (methodfun != NULL && (error = methodfun(obj, data)) != 0)

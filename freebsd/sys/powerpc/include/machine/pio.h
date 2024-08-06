@@ -32,7 +32,6 @@
  *
  *	$NetBSD: pio.h,v 1.1 1998/05/15 10:15:54 tsubai Exp $
  *	$OpenBSD: pio.h,v 1.1 1997/10/13 10:53:47 pefo Exp $
- * $FreeBSD$
  */
 
 #ifndef _MACHINE_PIO_H_
@@ -177,7 +176,6 @@ __inlrb(volatile u_int32_t *a)
 #define	in16rb(a)	inwrb(a)
 #define	inlrb(a)	(__inlrb((volatile u_int32_t *)(a)))
 #define	in32rb(a)	inlrb(a)
-
 
 static __inline void
 __outsb(volatile u_int8_t *a, const u_int8_t *s, size_t c)

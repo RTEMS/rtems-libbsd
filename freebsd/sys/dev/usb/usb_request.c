@@ -1,12 +1,11 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1998 The NetBSD Foundation, Inc. All rights reserved.
  * Copyright (c) 1998 Lennart Augustsson. All rights reserved.
- * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2008-2020 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -276,7 +275,6 @@ tr_setup:
 			ep = ep_first;	/* endpoint wrapped around */
 		if (ep->edesc &&
 		    ep->is_stalled) {
-
 			/* setup a clear-stall packet */
 
 			req.bmRequestType = UT_WRITE_ENDPOINT;
@@ -316,6 +314,16 @@ tr_setup:
 		 */
 		if (usb_no_cs_fail)
 			goto tr_transferred;
+
+		/*
+		 * Some non-compliant USB devices do not implement the
+		 * clear endpoint halt feature. Silently ignore such
+		 * devices, when they at least respond correctly
+		 * passing up a valid STALL PID packet.
+		 */
+		if (error == USB_ERR_STALLED)
+			goto tr_transferred;
+
 		if (udev->clear_stall_errors == USB_CS_RESET_LIMIT)
 			goto tr_setup;
 
@@ -723,7 +731,8 @@ done:
 	case USB_ERR_CANCELLED:
 		break;
 	default:
-		DPRINTF("I/O error - waiting a bit for TT cleanup\n");
+		DPRINTF("error=%s - waiting a bit for TT cleanup\n",
+		    usbd_errstr(err));
 		usb_pause_mtx(mtx, hz / 16);
 		break;
 	}
@@ -1004,7 +1013,6 @@ usbd_req_get_desc(struct usb_device *udev,
 	USETW(req.wIndex, id);
 
 	while (1) {
-
 		if ((min_len < 2) || (max_len < 2)) {
 			err = USB_ERR_INVAL;
 			goto done;
@@ -1012,7 +1020,7 @@ usbd_req_get_desc(struct usb_device *udev,
 		USETW(req.wLength, min_len);
 
 		err = usbd_do_request_flags(udev, mtx, &req,
-		    desc, 0, NULL, 500 /* ms */);
+		    desc, 0, NULL, 1000 /* ms */);
 
 		if (err != 0 && err != USB_ERR_TIMEOUT &&
 		    min_len != max_len) {
@@ -1023,7 +1031,7 @@ usbd_req_get_desc(struct usb_device *udev,
 			USETW(req.wLength, max_len);
 
 			err = usbd_do_request_flags(udev, mtx, &req,
-			    desc, USB_SHORT_XFER_OK, NULL, 500 /* ms */);
+			    desc, USB_SHORT_XFER_OK, NULL, 1000 /* ms */);
 
 			if (err == 0) {
 				/* verify length */
@@ -1052,7 +1060,6 @@ usbd_req_get_desc(struct usb_device *udev,
 		}
 
 		if (min_len == max_len) {
-
 			/* enforce correct length */
 			if ((buf[0] > min_len) && (actlen == NULL))
 				buf[0] = min_len;
@@ -1440,6 +1447,7 @@ usbd_req_set_alt_interface_no(struct usb_device *udev, struct mtx *mtx,
 {
 	struct usb_interface *iface = usbd_get_iface(udev, iface_index);
 	struct usb_device_request req;
+	usb_error_t err;
 
 	if ((iface == NULL) || (iface->idesc == NULL))
 		return (USB_ERR_INVAL);
@@ -1451,7 +1459,17 @@ usbd_req_set_alt_interface_no(struct usb_device *udev, struct mtx *mtx,
 	req.wIndex[0] = iface->idesc->bInterfaceNumber;
 	req.wIndex[1] = 0;
 	USETW(req.wLength, 0);
-	return (usbd_do_request(udev, mtx, &req, 0));
+	err = usbd_do_request(udev, mtx, &req, 0);
+	if (err == USB_ERR_STALLED && iface->num_altsetting == 1) {
+		/*
+		 * The USB specification chapter 9.4.10 says that USB
+		 * devices having only one alternate setting are
+		 * allowed to STALL this request. Ignore this failure.
+		 */
+		err = 0;
+		DPRINTF("Setting default alternate number failed. (ignored)\n");
+	}
+	return (err);
 }
 
 /*------------------------------------------------------------------------*
@@ -1977,9 +1995,23 @@ usbd_setup_device_desc(struct usb_device *udev, struct mtx *mtx)
 		/* get partial device descriptor, some devices crash on this */
 		err = usbd_req_get_desc(udev, mtx, NULL, &udev->ddesc,
 		    USB_MAX_IPACKET, USB_MAX_IPACKET, 0, UDESC_DEVICE, 0, 0);
-		if (err != 0)
-			break;
-
+		if (err != 0) {
+			DPRINTF("Trying fallback for getting the USB device descriptor\n");
+			/* try 8 bytes bMaxPacketSize */
+			udev->ddesc.bMaxPacketSize = 8;
+			/* get full device descriptor */
+			err = usbd_req_get_device_desc(udev, mtx, &udev->ddesc);
+			if (err == 0)
+				break;
+			/* try 16 bytes bMaxPacketSize */
+			udev->ddesc.bMaxPacketSize = 16;
+			/* get full device descriptor */
+			err = usbd_req_get_device_desc(udev, mtx, &udev->ddesc);
+			if (err == 0)
+				break;
+			/* try 32/64 bytes bMaxPacketSize */
+			udev->ddesc.bMaxPacketSize = 32;
+		}
 		/* get the full device descriptor */
 		err = usbd_req_get_device_desc(udev, mtx, &udev->ddesc);
 		break;
@@ -2313,4 +2345,3 @@ usbd_req_set_lpm_info(struct usb_device *udev, struct mtx *mtx,
 	}
 	return (err);
 }
-

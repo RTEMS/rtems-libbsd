@@ -1,10 +1,8 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2003 Scott Long
  * All rights reserved.
@@ -161,7 +159,6 @@ static void	umct_stop_write(struct ucom_softc *);
 static void	umct_poll(struct ucom_softc *ucom);
 
 static const struct usb_config umct_config[UMCT_N_TRANSFER] = {
-
 	[UMCT_BULK_DT_WR] = {
 		.type = UE_BULK,
 		.endpoint = UE_ADDR_ANY,
@@ -222,15 +219,13 @@ static device_method_t umct_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t umct_devclass;
-
 static driver_t umct_driver = {
 	.name = "umct",
 	.methods = umct_methods,
 	.size = sizeof(struct umct_softc),
 };
 
-DRIVER_MODULE(umct, uhub, umct_driver, umct_devclass, NULL, 0);
+DRIVER_MODULE(umct, uhub, umct_driver, NULL, NULL);
 MODULE_DEPEND(umct, ucom, 1, 1, 1);
 MODULE_DEPEND(umct, usb, 1, 1, 1);
 MODULE_VERSION(umct, 1);
@@ -288,7 +283,6 @@ umct_attach(device_t dev)
 	 */
 	maxp = usbd_xfer_max_framelen(sc->sc_xfer[UMCT_BULK_DT_RD]);
 	if (maxp == 0x2) {
-
 		/* guessed wrong - switch around endpoints */
 
 		struct usb_xfer *temp = sc->sc_xfer[UMCT_INTR_DT_RD];
@@ -482,7 +476,8 @@ static uint8_t
 umct_calc_baud(uint32_t baud)
 {
 	switch (baud) {
-		case B300:return (0x1);
+	case B300:
+		return (0x1);
 	case B600:
 		return (0x2);
 	case B1200:
@@ -631,7 +626,6 @@ tr_setup:
 		pc = usbd_xfer_get_frame(xfer, 0);
 		if (ucom_get_data(&sc->sc_ucom, pc, 0,
 		    sc->sc_obufsize, &actlen)) {
-
 			usbd_xfer_set_frame_len(xfer, 0, actlen);
 			usbd_transfer_submit(xfer);
 		}

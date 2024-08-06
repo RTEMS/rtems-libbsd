@@ -41,7 +41,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	if (password == NULL) {
 		wpa_printf(MSG_INFO, "EAP-MD5: Password not configured");
 		eap_sm_request_password(sm);
-		ret->ignore = TRUE;
+		ret->ignore = true;
 		return NULL;
 	}
 
@@ -49,7 +49,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	if (pos == NULL || len == 0) {
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid frame (pos=%p len=%lu)",
 			   pos, (unsigned long) len);
-		ret->ignore = TRUE;
+		ret->ignore = true;
 		return NULL;
 	}
 
@@ -62,10 +62,10 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid challenge "
 			   "(challenge_len=%lu len=%lu)",
 			   (unsigned long) challenge_len, (unsigned long) len);
-		ret->ignore = TRUE;
+		ret->ignore = true;
 		return NULL;
 	}
-	ret->ignore = FALSE;
+	ret->ignore = false;
 	challenge = pos;
 	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Challenge",
 		    challenge, challenge_len);
@@ -73,7 +73,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	wpa_printf(MSG_DEBUG, "EAP-MD5: Generating Challenge Response");
 	ret->methodState = METHOD_DONE;
 	ret->decision = DECISION_COND_SUCC;
-	ret->allowNotifications = TRUE;
+	ret->allowNotifications = true;
 
 	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + CHAP_MD5_LEN,
 			     EAP_CODE_RESPONSE, eap_get_id(reqData));
@@ -91,7 +91,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	if (chap_md5(id, password, password_len, challenge, challenge_len,
 		     rpos)) {
 		wpa_printf(MSG_INFO, "EAP-MD5: CHAP MD5 operation failed");
-		ret->ignore = TRUE;
+		ret->ignore = true;
 		wpabuf_free(resp);
 		return NULL;
 	}

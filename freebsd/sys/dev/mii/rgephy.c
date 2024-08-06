@@ -35,8 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 /*
  * Driver for the RealTek 8169S/8110S/8211B/8211C internal 10/100/1000 PHY.
  */
@@ -77,15 +75,13 @@ static device_method_t rgephy_methods[] = {
 	DEVMETHOD_END
 };
 
-static devclass_t rgephy_devclass;
-
 static driver_t rgephy_driver = {
 	"rgephy",
 	rgephy_methods,
 	sizeof(struct mii_softc)
 };
 
-DRIVER_MODULE(rgephy, miibus, rgephy_driver, rgephy_devclass, 0, 0);
+DRIVER_MODULE(rgephy, miibus, rgephy_driver, 0, 0);
 
 static int	rgephy_service(struct mii_softc *, struct mii_data *, int);
 static void	rgephy_status(struct mii_softc *);

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2012-2013 Intel Corporation
  * All rights reserved.
@@ -32,8 +32,6 @@
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/ioccom.h>
 
@@ -42,6 +40,7 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <unistd.h>
 
 #include "nvmecontrol.h"
@@ -53,7 +52,7 @@ static struct options {
 };
 
 static const struct args args[] = {
-	{ arg_string, &opt.dev, "controller-id" },
+	{ arg_string, &opt.dev, "controller-id|namespace-id" },
 	{ arg_none, NULL, NULL },
 };
 
@@ -61,12 +60,21 @@ static void
 reset(const struct cmd *f, int argc, char *argv[])
 {
 	int	fd;
+	char	*path;
+	uint32_t nsid;
 
-	arg_parse(argc, argv, f);
+	if (arg_parse(argc, argv, f))
+		return;
 	open_dev(opt.dev, &fd, 1, 1);
+	get_nsid(fd, &path, &nsid);
+	if (nsid != 0) {
+		close(fd);
+		open_dev(path, &fd, 1, 1);
+	}
+	free(path);
 
 	if (ioctl(fd, NVME_RESET_CONTROLLER) < 0)
-		err(1, "reset request to %s failed", argv[optind]);
+		err(EX_IOERR, "reset request to %s failed", opt.dev);
 
 	exit(0);
 }

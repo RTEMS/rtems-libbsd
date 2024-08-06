@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Nathan Whitehorn
  * All rights reserved.
@@ -29,7 +29,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/module.h>
@@ -48,7 +47,6 @@ __FBSDID("$FreeBSD$");
  * Bus interface.
  */
 static int		simplebus_probe(device_t dev);
-static int		simplebus_attach(device_t dev);
 static struct resource *simplebus_alloc_resource(device_t, device_t, int,
     int *, rman_res_t, rman_res_t, rman_res_t, u_int);
 static void		simplebus_probe_nomatch(device_t bus, device_t child);
@@ -57,6 +55,10 @@ static device_t		simplebus_add_child(device_t dev, u_int order,
     const char *name, int unit);
 static struct resource_list *simplebus_get_resource_list(device_t bus,
     device_t child);
+
+static ssize_t		simplebus_get_property(device_t bus, device_t child,
+    const char *propname, void *propvalue, size_t size,
+    device_property_type_t type);
 /*
  * ofw_bus interface
  */
@@ -70,7 +72,7 @@ static device_method_t	simplebus_methods[] = {
 	/* Device interface */
 	DEVMETHOD(device_probe,		simplebus_probe),
 	DEVMETHOD(device_attach,	simplebus_attach),
-	DEVMETHOD(device_detach,	bus_generic_detach),
+	DEVMETHOD(device_detach,	simplebus_detach),
 	DEVMETHOD(device_shutdown,	bus_generic_shutdown),
 	DEVMETHOD(device_suspend,	bus_generic_suspend),
 	DEVMETHOD(device_resume,	bus_generic_resume),
@@ -90,8 +92,10 @@ static device_method_t	simplebus_methods[] = {
 	DEVMETHOD(bus_adjust_resource,	bus_generic_adjust_resource),
 	DEVMETHOD(bus_set_resource,	bus_generic_rl_set_resource),
 	DEVMETHOD(bus_get_resource,	bus_generic_rl_get_resource),
-	DEVMETHOD(bus_child_pnpinfo_str, ofw_bus_gen_child_pnpinfo_str),
+	DEVMETHOD(bus_child_pnpinfo,	ofw_bus_gen_child_pnpinfo),
 	DEVMETHOD(bus_get_resource_list, simplebus_get_resource_list),
+	DEVMETHOD(bus_get_property,	simplebus_get_property),
+	DEVMETHOD(bus_get_device_path,  ofw_bus_gen_get_device_path),
 
 	/* ofw_bus interface */
 	DEVMETHOD(ofw_bus_get_devinfo,	simplebus_get_devinfo),
@@ -107,17 +111,25 @@ static device_method_t	simplebus_methods[] = {
 DEFINE_CLASS_0(simplebus, simplebus_driver, simplebus_methods,
     sizeof(struct simplebus_softc));
 
-static devclass_t simplebus_devclass;
-EARLY_DRIVER_MODULE(simplebus, ofwbus, simplebus_driver, simplebus_devclass,
-    0, 0, BUS_PASS_BUS);
-EARLY_DRIVER_MODULE(simplebus, simplebus, simplebus_driver, simplebus_devclass,
-    0, 0, BUS_PASS_BUS + BUS_PASS_ORDER_MIDDLE);
+EARLY_DRIVER_MODULE(simplebus, ofwbus, simplebus_driver, 0, 0, BUS_PASS_BUS);
+EARLY_DRIVER_MODULE(simplebus, simplebus, simplebus_driver, 0, 0,
+    BUS_PASS_BUS + BUS_PASS_ORDER_MIDDLE);
 
 static int
 simplebus_probe(device_t dev)
 {
  
 	if (!ofw_bus_status_okay(dev))
+		return (ENXIO);
+	/*
+	 * XXX We should attach only to pure' compatible = "simple-bus"',
+	 * without any other compatible string.
+	 * For now, filter only know cases:
+	 * "syscon", "simple-bus"; is handled by fdt/syscon driver
+	 * "simple-mfd", "simple-bus"; is handled by fdt/simple-mfd driver
+	 */
+	if (ofw_bus_is_compatible(dev, "syscon") ||
+	    ofw_bus_is_compatible(dev, "simple-mfd"))
 		return (ENXIO);
 
 	/*
@@ -136,15 +148,16 @@ simplebus_probe(device_t dev)
 	return (BUS_PROBE_GENERIC);
 }
 
-static int
-simplebus_attach(device_t dev)
+int
+simplebus_attach_impl(device_t dev)
 {
 	struct		simplebus_softc *sc;
 	phandle_t	node;
 
 	sc = device_get_softc(dev);
 	simplebus_init(dev, 0);
-	if (simplebus_fill_ranges(sc->node, sc) < 0) {
+	if ((sc->flags & SB_FLAG_NO_RANGES) == 0 &&
+	    simplebus_fill_ranges(sc->node, sc) < 0) {
 		device_printf(dev, "could not get ranges\n");
 		return (ENXIO);
 	}
@@ -156,7 +169,32 @@ simplebus_attach(device_t dev)
 
 	for (node = OF_child(sc->node); node > 0; node = OF_peer(node))
 		simplebus_add_device(dev, node, 0, NULL, -1, NULL);
+
+	return (0);
+}
+
+int
+simplebus_attach(device_t dev)
+{
+	int	rv;
+
+	rv = simplebus_attach_impl(dev);
+	if (rv != 0)
+		return (rv);
+
 	return (bus_generic_attach(dev));
+}
+
+int
+simplebus_detach(device_t dev)
+{
+	struct		simplebus_softc *sc;
+
+	sc = device_get_softc(dev);
+	if (sc->ranges != NULL)
+		free(sc->ranges, M_DEVBUF);
+
+	return (bus_generic_detach(dev));
 }
 
 void
@@ -315,6 +353,75 @@ simplebus_get_resource_list(device_t bus __unused, device_t child)
 	if (ndi == NULL)
 		return (NULL);
 	return (&ndi->rl);
+}
+
+static ssize_t
+simplebus_get_property(device_t bus, device_t child, const char *propname,
+    void *propvalue, size_t size, device_property_type_t type)
+{
+	phandle_t node, xref;
+	ssize_t ret, i;
+	uint32_t *buffer;
+	uint64_t val;
+
+	switch (type) {
+	case DEVICE_PROP_ANY:
+	case DEVICE_PROP_BUFFER:
+	case DEVICE_PROP_UINT32:
+	case DEVICE_PROP_UINT64:
+	case DEVICE_PROP_HANDLE:
+		break;
+	default:
+		return (-1);
+	}
+
+	node = ofw_bus_get_node(child);
+	if (propvalue == NULL || size == 0)
+		return (OF_getproplen(node, propname));
+
+	/*
+	 * Integer values are stored in BE format.
+	 * If caller declared that the underlying property type is uint32_t
+	 * we need to do the conversion to match host endianness.
+	 */
+	if (type == DEVICE_PROP_UINT32)
+		return (OF_getencprop(node, propname, propvalue, size));
+
+	/*
+	 * uint64_t also requires endianness handling.
+	 * In FDT every 8 byte value is stored using two uint32_t variables
+	 * in BE format. Now, since the upper bits are stored as the first
+	 * of the pair, both halves require swapping.
+	 */
+	 if (type == DEVICE_PROP_UINT64) {
+		ret = OF_getencprop(node, propname, propvalue, size);
+		if (ret <= 0) {
+			return (ret);
+		}
+
+		buffer = (uint32_t *)propvalue;
+
+		for (i = 0; i < size / 4; i += 2) {
+			val = (uint64_t)buffer[i] << 32 | buffer[i + 1];
+			((uint64_t *)buffer)[i / 2] = val;
+		}
+		return (ret);
+	}
+
+	if (type == DEVICE_PROP_HANDLE) {
+		if (size < sizeof(node))
+			return (-1);
+		ret = OF_getencprop(node, propname, &xref, sizeof(xref));
+		if (ret <= 0)
+			return (ret);
+
+		node = OF_node_from_xref(xref);
+		if (propvalue != NULL)
+			*(uint32_t *)propvalue = node;
+		return (ret);
+	}
+
+	return (OF_getprop(node, propname, propvalue, size));
 }
 
 static struct resource *

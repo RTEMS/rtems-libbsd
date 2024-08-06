@@ -12,15 +12,12 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * $FreeBSD$
  */
 
 #ifndef IF_RTWN_RX_H
 #define IF_RTWN_RX_H
 
 #define	RTWN_NOISE_FLOOR	-95
-
 
 void	rtwn_get_rates(struct rtwn_softc *, const struct ieee80211_rateset *,
 	    const struct ieee80211_htrateset *, uint32_t *, int *, int);

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1999-2006, 2016-2017 Robert N. M. Watson
  * All rights reserved.
@@ -42,8 +42,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/sysproto.h>
@@ -59,7 +57,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/file.h>
 #include <sys/filedesc.h>
 #include <sys/proc.h>
-#include <sys/sysent.h>
 #include <sys/acl.h>
 
 #include <security/audit/audit.h>
@@ -68,7 +65,6 @@ __FBSDID("$FreeBSD$");
 CTASSERT(ACL_MAX_ENTRIES >= OLDACL_MAX_ENTRIES);
 
 MALLOC_DEFINE(M_ACL, "acl", "Access Control Lists");
-
 
 static int	kern___acl_aclcheck_path(struct thread *td, const char *path,
 		    acl_type_t type, struct acl *aclp, int follow);
@@ -92,7 +88,7 @@ acl_copy_oldacl_into_acl(const struct oldacl *source, struct acl *dest)
 
 	if (source->acl_cnt < 0 || source->acl_cnt > OLDACL_MAX_ENTRIES)
 		return (EINVAL);
-	
+
 	bzero(dest, sizeof(*dest));
 
 	dest->acl_cnt = source->acl_cnt;
@@ -152,7 +148,7 @@ acl_copyin(const void *user_acl, struct acl *kernel_acl, acl_type_t type)
 		error = copyin(user_acl, &old, sizeof(old));
 		if (error != 0)
 			break;
-		acl_copy_oldacl_into_acl(&old, kernel_acl);
+		error = acl_copy_oldacl_into_acl(&old, kernel_acl);
 		break;
 
 	default:
@@ -240,7 +236,7 @@ vacl_set_acl(struct thread *td, struct vnode *vp, acl_type_t type,
 	error = acl_copyin(aclp, inkernelacl, type);
 	if (error != 0)
 		goto out;
-	error = vn_start_write(vp, &mp, V_WAIT | PCATCH);
+	error = vn_start_write(vp, &mp, V_WAIT | V_PCATCH);
 	if (error != 0)
 		goto out;
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
@@ -255,7 +251,7 @@ vacl_set_acl(struct thread *td, struct vnode *vp, acl_type_t type,
 #ifdef MAC
 out_unlock:
 #endif
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp);
 	vn_finished_write(mp);
 out:
 	acl_free(inkernelacl);
@@ -287,7 +283,7 @@ vacl_get_acl(struct thread *td, struct vnode *vp, acl_type_t type,
 #ifdef MAC
 out:
 #endif
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp);
 	if (error == 0)
 		error = acl_copyout(inkernelacl, aclp, type);
 	acl_free(inkernelacl);
@@ -304,7 +300,7 @@ vacl_delete(struct thread *td, struct vnode *vp, acl_type_t type)
 	int error;
 
 	AUDIT_ARG_VALUE(type);
-	error = vn_start_write(vp, &mp, V_WAIT | PCATCH);
+	error = vn_start_write(vp, &mp, V_WAIT | V_PCATCH);
 	if (error != 0)
 		return (error);
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
@@ -318,7 +314,7 @@ vacl_delete(struct thread *td, struct vnode *vp, acl_type_t type)
 #ifdef MAC
 out:
 #endif
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp);
 	vn_finished_write(mp);
 	return (error);
 }
@@ -380,11 +376,12 @@ kern___acl_get_path(struct thread *td, const char *path, acl_type_t type,
 	struct nameidata nd;
 	int error;
 
-	NDINIT(&nd, LOOKUP, follow | AUDITVNODE1, UIO_USERSPACE, path, td);
+	NDINIT(&nd, LOOKUP, follow | AUDITVNODE1, UIO_USERSPACE, path);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_get_acl(td, nd.ni_vp, type, aclp);
-		NDFREE(&nd, 0);
+		vrele(nd.ni_vp);
+		NDFREE_PNBUF(&nd);
 	}
 	return (error);
 }
@@ -418,11 +415,12 @@ kern___acl_set_path(struct thread *td, const char *path,
 	struct nameidata nd;
 	int error;
 
-	NDINIT(&nd, LOOKUP, follow | AUDITVNODE1, UIO_USERSPACE, path, td);
+	NDINIT(&nd, LOOKUP, follow | AUDITVNODE1, UIO_USERSPACE, path);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_set_acl(td, nd.ni_vp, type, aclp);
-		NDFREE(&nd, 0);
+		vrele(nd.ni_vp);
+		NDFREE_PNBUF(&nd);
 	}
 	return (error);
 }
@@ -438,8 +436,8 @@ sys___acl_get_fd(struct thread *td, struct __acl_get_fd_args *uap)
 	int error;
 
 	AUDIT_ARG_FD(uap->filedes);
-	error = getvnode(td, uap->filedes,
-	    cap_rights_init(&rights, CAP_ACL_GET), &fp);
+	error = getvnode_path(td, uap->filedes,
+	    cap_rights_init_one(&rights, CAP_ACL_GET), &fp);
 	if (error == 0) {
 		error = vacl_get_acl(td, fp->f_vnode, uap->type, uap->aclp);
 		fdrop(fp, td);
@@ -459,7 +457,7 @@ sys___acl_set_fd(struct thread *td, struct __acl_set_fd_args *uap)
 
 	AUDIT_ARG_FD(uap->filedes);
 	error = getvnode(td, uap->filedes,
-	    cap_rights_init(&rights, CAP_ACL_SET), &fp);
+	    cap_rights_init_one(&rights, CAP_ACL_SET), &fp);
 	if (error == 0) {
 		error = vacl_set_acl(td, fp->f_vnode, uap->type, uap->aclp);
 		fdrop(fp, td);
@@ -494,11 +492,12 @@ kern___acl_delete_path(struct thread *td, const char *path,
 	struct nameidata nd;
 	int error;
 
-	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path, td);
+	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_delete(td, nd.ni_vp, type);
-		NDFREE(&nd, 0);
+		vrele(nd.ni_vp);
+		NDFREE_PNBUF(&nd);
 	}
 	return (error);
 }
@@ -515,7 +514,7 @@ sys___acl_delete_fd(struct thread *td, struct __acl_delete_fd_args *uap)
 
 	AUDIT_ARG_FD(uap->filedes);
 	error = getvnode(td, uap->filedes,
-	    cap_rights_init(&rights, CAP_ACL_DELETE), &fp);
+	    cap_rights_init_one(&rights, CAP_ACL_DELETE), &fp);
 	if (error == 0) {
 		error = vacl_delete(td, fp->f_vnode, uap->type);
 		fdrop(fp, td);
@@ -551,11 +550,11 @@ kern___acl_aclcheck_path(struct thread *td, const char *path, acl_type_t type,
 	struct nameidata nd;
 	int error;
 
-	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path, td);
+	NDINIT(&nd, LOOKUP, follow, UIO_USERSPACE, path);
 	error = namei(&nd);
 	if (error == 0) {
 		error = vacl_aclcheck(td, nd.ni_vp, type, aclp);
-		NDFREE(&nd, 0);
+		NDFREE_PNBUF(&nd);
 	}
 	return (error);
 }
@@ -571,8 +570,8 @@ sys___acl_aclcheck_fd(struct thread *td, struct __acl_aclcheck_fd_args *uap)
 	int error;
 
 	AUDIT_ARG_FD(uap->filedes);
-	error = getvnode(td, uap->filedes,
-	    cap_rights_init(&rights, CAP_ACL_CHECK), &fp);
+	error = getvnode_path(td, uap->filedes,
+	    cap_rights_init_one(&rights, CAP_ACL_CHECK), &fp);
 	if (error == 0) {
 		error = vacl_aclcheck(td, fp->f_vnode, uap->type, uap->aclp);
 		fdrop(fp, td);

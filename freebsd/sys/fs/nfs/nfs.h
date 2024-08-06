@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _NFS_NFS_H_
@@ -50,7 +48,7 @@
 #define	NFS_MAXRCVTIMEO	60		/* 1 minute in seconds */
 #define	NFS_MINIDEMTIMEO (5 * NFS_HZ)	/* Min timeout for non-idempotent ops*/
 #define	NFS_MAXREXMIT	100		/* Stop counting after this many */
-#define	NFSV4_CALLBACKTIMEO (2 * NFS_HZ) /* Timeout in ticks */
+#define	NFSV4_CALLBACKTIMEO 800		/* Timeout in msec */
 #define	NFSV4_CALLBACKRETRY 5		/* Number of retries before failure */
 #define	NFSV4_SLOTS	64		/* Number of slots, fore channel */
 #define	NFSV4_CBSLOTS	8		/* Number of slots, back channel */
@@ -144,6 +142,13 @@
 #define	NFS_READDIRBLKSIZ	DIRBLKSIZ	/* Minimal nm_readdirsize */
 
 /*
+ * The NFSv4 RFCs do not define an upper limit on the length of Owner and
+ * OwnerGroup strings.  Since FreeBSD handles a group name > 1024bytes in
+ * length, set a generous sanity limit of 10Kbytes.
+ */
+#define	NFSV4_MAXOWNERGROUPLEN	(10 * 1024)
+
+/*
  * Oddballs
  */
 #define	NFS_CMPFH(n, f, s) 						\
@@ -156,7 +161,7 @@
 	(t).tv_sec = time.tv_sec; (t).tv_nsec = 1000 * time.tv_usec; } while (0)
 #define	NFS_SRVMAXDATA(n) 						\
 		(((n)->nd_flag & (ND_NFSV3 | ND_NFSV4)) ? 		\
-		 NFS_SRVMAXIO : NFS_V2MAXDATA)
+		 nfs_srvmaxio : NFS_V2MAXDATA)
 #define	NFS64BITSSET	0xffffffffffffffffull
 #define	NFS64BITSMINUS1	0xfffffffffffffffeull
 
@@ -335,6 +340,9 @@ struct nfsreferral {
 #define	LCL_NFSV41		0x00020000
 #define	LCL_DONEBINDCONN	0x00040000
 #define	LCL_RECLAIMONEFS	0x00080000
+#define	LCL_NFSV42		0x00100000
+#define	LCL_TLSCB		0x00200000
+#define	LCL_MACHCRED		0x00400000
 
 #define	LCL_GSS		LCL_KERBV	/* Or of all mechs */
 
@@ -431,6 +439,8 @@ typedef struct {
 		(b)->bits[1] &= ~NFSATTRBIT_NFSV41_1;			\
 		(b)->bits[2] &= ~NFSATTRBIT_NFSV41_2;			\
 	}								\
+	if (((n)->nd_flag & ND_NFSV42) == 0)				\
+		(b)->bits[2] &= ~NFSATTRBIT_NFSV42_2;			\
 } while (0)
 
 #define	NFSISSET_ATTRBIT(b, p)	((b)->bits[(p) / 32] & (1 << ((p) % 32)))
@@ -457,6 +467,8 @@ typedef struct {
 		(b)->bits[1] &= ~NFSATTRBIT_NFSV41_1;			\
 		(b)->bits[2] &= ~NFSATTRBIT_NFSV41_2;			\
 	}								\
+	if (((n)->nd_flag & ND_NFSV42) == 0)				\
+		(b)->bits[2] &= ~NFSATTRBIT_NFSV42_2;			\
 } while (0)
 
 #define	NFSCLRNOTSETABLE_ATTRBIT(b, n) do { 				\
@@ -465,6 +477,8 @@ typedef struct {
 	(b)->bits[2] &= NFSATTRBIT_SETABLE2;				\
 	if (((n)->nd_flag & ND_NFSV41) == 0)				\
 		(b)->bits[2] &= ~NFSATTRBIT_NFSV41_2;			\
+	if (((n)->nd_flag & ND_NFSV42) == 0)				\
+		(b)->bits[2] &= ~NFSATTRBIT_NFSV42_2;			\
 } while (0)
 
 #define	NFSNONZERO_ATTRBIT(b)	((b)->bits[0] || (b)->bits[1] || (b)->bits[2])
@@ -507,6 +521,13 @@ typedef struct {
 	(b)->bits[2] = NFSGETATTRBIT_STATFS2;				\
 } while (0)
 
+#define	NFSROOTFS_GETATTRBIT(b)	do { 					\
+	(b)->bits[0] = NFSGETATTRBIT_STATFS0 | NFSATTRBIT_GETATTR0 |	\
+	    NFSATTRBM_LEASETIME;					\
+	(b)->bits[1] = NFSGETATTRBIT_STATFS1 | NFSATTRBIT_GETATTR1;	\
+	(b)->bits[2] = NFSGETATTRBIT_STATFS2 | NFSATTRBIT_GETATTR2;	\
+} while (0)
+
 #define	NFSISSETSTATFS_ATTRBIT(b) 					\
 		(((b)->bits[0] & NFSATTRBIT_STATFS0) || 		\
 		 ((b)->bits[1] & NFSATTRBIT_STATFS1) ||			\
@@ -529,6 +550,34 @@ typedef struct {
 	(b)->bits[1] = NFSATTRBIT_REFERRAL1;				\
 	(b)->bits[2] = NFSATTRBIT_REFERRAL2;				\
 } while (0)
+
+/*
+ * Here is the definition of the operation bits array and macros that
+ * manipulate it.
+ * THE MACROS MUST BE MANUALLY MODIFIED IF NFSOPBIT_MAXWORDS CHANGES!!
+ * It is (NFSV42_NOPS + 31) / 32.
+ */
+#define	NFSOPBIT_MAXWORDS	3
+
+typedef struct {
+	uint32_t bits[NFSOPBIT_MAXWORDS];
+} nfsopbit_t;
+
+#define	NFSZERO_OPBIT(b) do {						\
+	(b)->bits[0] = 0;						\
+	(b)->bits[1] = 0;						\
+	(b)->bits[2] = 0;						\
+} while (0)
+
+#define	NFSSET_OPBIT(t, f) do {						\
+	(t)->bits[0] = (f)->bits[0];			 		\
+	(t)->bits[1] = (f)->bits[1];					\
+	(t)->bits[2] = (f)->bits[2];					\
+} while (0)
+
+#define	NFSISSET_OPBIT(b, p)	((b)->bits[(p) / 32] & (1 << ((p) % 32)))
+#define	NFSSETBIT_OPBIT(b, p)	((b)->bits[(p) / 32] |= (1 << ((p) % 32)))
+#define	NFSCLRBIT_OPBIT(b, p)	((b)->bits[(p) / 32] &= ~(1 << ((p) % 32)))
 
 /*
  * Store uid, gid creds that were used when the stateid was acquired.
@@ -571,7 +620,6 @@ struct uio; struct buf; struct vattr; struct nameidata;	/* XXX */
 		((e) != EINTR && (e) != ERESTART && (e) != EWOULDBLOCK && \
 		((s) & PR_CONNREQUIRED) == 0)
 
-
 /*
  * This structure holds socket information for a connection. Used by the
  * client and the server for callbacks.
@@ -588,6 +636,7 @@ struct nfssockreq {
 	u_int32_t	nr_vers;
 	struct __rpc_client *nr_client;
 	AUTH		*nr_auth;
+	char		nr_srvprinc[1];
 };
 
 /*
@@ -631,10 +680,10 @@ struct nfsgss_mechlist {
  * This structure is used by the server for describing each request.
  */
 struct nfsrv_descript {
-	mbuf_t			nd_mrep;	/* Request mbuf list */
-	mbuf_t			nd_md;		/* Current dissect mbuf */
-	mbuf_t			nd_mreq;	/* Reply mbuf list */
-	mbuf_t			nd_mb;		/* Current build mbuf */
+	struct mbuf		*nd_mrep;	/* Request mbuf list */
+	struct mbuf		*nd_md;		/* Current dissect mbuf */
+	struct mbuf		*nd_mreq;	/* Reply mbuf list */
+	struct mbuf		*nd_mb;		/* Current build mbuf */
 	NFSSOCKADDR_T		nd_nam;		/* and socket addr */
 	NFSSOCKADDR_T		nd_nam2;	/* return socket addr */
 	caddr_t			nd_dpos;	/* Current dissect pos */
@@ -661,6 +710,12 @@ struct nfsrv_descript {
 	uint32_t		*nd_sequence;	/* Sequence Op. ptr */
 	nfsv4stateid_t		nd_curstateid;	/* Current StateID */
 	nfsv4stateid_t		nd_savedcurstateid; /* Saved Current StateID */
+	uint32_t		nd_maxreq;	/* Max. request (session). */
+	uint32_t		nd_maxresp;	/* Max. reply (session). */
+	int			nd_bextpg;	/* Current ext_pgs page */
+	int			nd_bextpgsiz;	/* Bytes left in page */
+	int			nd_maxextsiz;	/* Max ext_pgs mbuf size */
+	nfsopbit_t		nd_allowops;	/* Allowed ops ND_MACHCRED */
 };
 
 #define	nd_princlen	nd_gssnamelen
@@ -701,6 +756,16 @@ struct nfsrv_descript {
 #define	ND_CURSTATEID		0x80000000
 #define	ND_SAVEDCURSTATEID	0x100000000
 #define	ND_HASSLOTID		0x200000000
+#define	ND_NFSV42		0x400000000
+#define	ND_EXTPG		0x800000000
+#define	ND_TLS			0x1000000000
+#define	ND_TLSCERT		0x2000000000
+#define	ND_TLSCERTUSER		0x4000000000
+#define	ND_EXTLS		0x8000000000
+#define	ND_EXTLSCERT		0x10000000000
+#define	ND_EXTLSCERTUSER	0x20000000000
+#define	ND_ERELOOKUP		0x40000000000
+#define	ND_MACHCRED		0x80000000000
 
 /*
  * ND_GSS should be the "or" of all GSS type authentications.

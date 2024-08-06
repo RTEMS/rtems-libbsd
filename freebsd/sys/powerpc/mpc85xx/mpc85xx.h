@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2008 Semihalf, Rafal Jaworowski
  * Copyright 2006 by Juniper Networks.
@@ -25,8 +25,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _MPC85XX_H_
@@ -79,8 +77,6 @@ extern vm_size_t		ccsrbar_size;
 #define	OCP85XX_LAWSR_85XX(n)	(CCSRBAR_VA + 0xc10 + 0x10 * (n))
 #define	OCP85XX_LAWSR(n)	(mpc85xx_is_qoriq() ? OCP85XX_LAWSR_QORIQ(n) : \
 				 OCP85XX_LAWSR_85XX(n))
-#define	OCP85XX_LAWBAR_P20XX(n)	(CCSRBAR_VA + 0xc08 + 0x20 * (n))
-#define	OCP85XX_LAWAR(n)	(CCSRBAR_VA + 0xc10 + 0x20 * (n))
 
 /* Attribute register */
 #define	OCP85XX_ENA_MASK	0x80000000

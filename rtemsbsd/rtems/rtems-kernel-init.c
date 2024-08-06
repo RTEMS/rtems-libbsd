@@ -74,7 +74,10 @@ SYSINIT_REFERENCE(configure1);
 SYSINIT_REFERENCE(module);
 SYSINIT_REFERENCE(kobj);
 SYSINIT_REFERENCE(linker_kernel);
+SYSINIT_REFERENCE(genl_load_all);
+SYSINIT_REFERENCE(rtnl_load);
 SYSINIT_MODULE_REFERENCE(rootbus);
+SYSINIT_MODULE_REFERENCE(netlink);
 SYSINIT_DRIVER_REFERENCE(nexus, root);
 
 RTEMS_BSD_DEFINE_SET(kbddriver_set, const keyboard_driver_t *);
@@ -112,7 +115,7 @@ int maxfilesperproc;
 int ngroups_max;
 int unmapped_buf_allowed;
 caddr_t unmapped_base;
-long maxbcache;
+u_long maxbcache;
 int bio_transient_maxcnt;
 struct sx allproc_lock;
 struct vmem *rtems_bsd_transient_arena;
@@ -166,7 +169,8 @@ proc0_init(void *dummy)
 	newcred->cr_ruidinfo = uifind(0);
 	p->p_ucred = newcred;
 	p->p_pid = getpid();
-	p->p_fd = fdinit(NULL, false);
+	p->p_pd = pdinit(NULL, false);
+	p->p_fd = fdinit();
 	p->p_fdtol = NULL;
 	rtems_sysvec.sv_flags = SV_ABI_FREEBSD;
 #ifdef __LP64__

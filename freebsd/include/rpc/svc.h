@@ -31,7 +31,6 @@
  *
  *	from: @(#)svc.h 1.35 88/12/17 SMI
  *	from: @(#)svc.h      1.27    94/04/25 SMI
- * $FreeBSD$
  */
 
 /*
@@ -83,8 +82,7 @@
 enum xprt_stat {
 	XPRT_DIED,
 	XPRT_MOREREQS,
-	XPRT_IDLE,
-	_XPRT_STAT = 0xffffffff
+	XPRT_IDLE
 };
 
 /*
@@ -166,6 +164,10 @@ struct svc_req {
  *  Approved way of getting address of caller
  */
 #define svc_getrpccaller(x) (&(x)->xp_rtaddr)
+/*
+ *  Approved way of getting address of callee
+ */
+#define svc_getrpccallee(x) (&(x)->xp_ltaddr)
 
 /*
  * Operations defined on an SVCXPRT handle

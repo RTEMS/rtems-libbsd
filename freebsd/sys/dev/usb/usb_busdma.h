@@ -1,6 +1,5 @@
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
@@ -40,11 +39,7 @@
 
 #define	USB_PAGE_SIZE PAGE_SIZE		/* use system PAGE_SIZE */
 
-#if (__FreeBSD_version >= 700020)
 #define	USB_GET_DMA_TAG(dev) bus_get_dma_tag(dev)
-#else
-#define	USB_GET_DMA_TAG(dev) NULL	/* XXX */
-#endif
 
 /* structure prototypes */
 
@@ -87,7 +82,6 @@ struct usb_page_search {
  * memory allocation.
  */
 struct usb_page_cache {
-
 #if USB_HAVE_BUSDMA
 	bus_dma_tag_t tag;
 	bus_dmamap_t map;
@@ -102,6 +96,7 @@ struct usb_page_cache {
 					 * from the memory. Else write. */
 	uint8_t	ismultiseg:1;		/* set if we can have multiple
 					 * segments */
+	uint8_t isloaded:1;		/* Set if map is currently loaded. */
 #ifdef __rtems__
 	uint8_t dma_do_cache_line_blow_up:1;
 					/* set if it is OK to align the buffer

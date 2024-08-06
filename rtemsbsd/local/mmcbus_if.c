@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
@@ -16,9 +16,8 @@
 #include <sys/queue.h>
 #include <sys/kernel.h>
 #include <sys/kobj.h>
-#include <sys/bus.h>
+#include <sys/types.h>
 #include <dev/mmc/mmcreg.h>
-#include <dev/mmc/bridge.h>
 #include <rtems/bsd/local/mmcbus_if.h>
 
 struct kobjop_desc mmcbus_retune_pause_desc = {

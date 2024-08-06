@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2009, Nathan Whitehorn <nwhitehorn@FreeBSD.org>
  * Copyright (c) 2013, Luiz Otavio O Souza <loos@FreeBSD.org>
@@ -31,8 +31,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
@@ -203,7 +201,8 @@ ofw_gpiobus_register_provider(device_t provider)
 	phandle_t node;
 
 	node = ofw_bus_get_node(provider);
-	OF_device_register_xref(OF_xref_from_node(node), provider);
+	if (node != -1)
+		OF_device_register_xref(OF_xref_from_node(node), provider);
 }
 
 void
@@ -212,7 +211,8 @@ ofw_gpiobus_unregister_provider(device_t provider)
 	phandle_t node;
 
 	node = ofw_bus_get_node(provider);
-	OF_device_register_xref(OF_xref_from_node(node), NULL);
+	if (node != -1)
+		OF_device_register_xref(OF_xref_from_node(node), NULL);
 }
 
 static struct ofw_gpiobus_devinfo *
@@ -497,7 +497,7 @@ static device_method_t ofw_gpiobus_methods[] = {
 	DEVMETHOD(device_attach,	ofw_gpiobus_attach),
 
 	/* Bus interface */
-	DEVMETHOD(bus_child_pnpinfo_str,	ofw_bus_gen_child_pnpinfo_str),
+	DEVMETHOD(bus_child_pnpinfo,	ofw_bus_gen_child_pnpinfo),
 	DEVMETHOD(bus_add_child,	ofw_gpiobus_add_child),
 
 	/* ofw_bus interface */
@@ -511,12 +511,9 @@ static device_method_t ofw_gpiobus_methods[] = {
 	DEVMETHOD_END
 };
 
-devclass_t ofwgpiobus_devclass;
-
 DEFINE_CLASS_1(gpiobus, ofw_gpiobus_driver, ofw_gpiobus_methods,
     sizeof(struct gpiobus_softc), gpiobus_driver);
-EARLY_DRIVER_MODULE(ofw_gpiobus, gpio, ofw_gpiobus_driver, ofwgpiobus_devclass,
-    0, 0, BUS_PASS_BUS);
+EARLY_DRIVER_MODULE(ofw_gpiobus, gpio, ofw_gpiobus_driver, 0, 0, BUS_PASS_BUS);
 MODULE_VERSION(ofw_gpiobus, 1);
 MODULE_DEPEND(ofw_gpiobus, gpiobus, 1, 1, 1);
 #endif /* __rtems__ && FDT */

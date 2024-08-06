@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2013 Thomas Skibo
  * All rights reserved.
@@ -26,8 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -39,8 +37,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #ifdef __rtems__
@@ -90,7 +86,8 @@ extern void (*zynq7_cpu_reset);
 
 #define ZYNQ_DEFAULT_PS_CLK_FREQUENCY	33333333	/* 33.3 Mhz */
 
-SYSCTL_NODE(_hw, OID_AUTO, zynq, CTLFLAG_RD, 0, "Xilinx Zynq-7000");
+SYSCTL_NODE(_hw, OID_AUTO, zynq, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
+    "Xilinx Zynq-7000");
 
 static char zynq_bootmode[64];
 SYSCTL_STRING(_hw_zynq, OID_AUTO, bootmode, CTLFLAG_RD, zynq_bootmode, 0,
@@ -731,11 +728,10 @@ static driver_t zy7_slcr_driver = {
 	zy7_slcr_methods,
 	sizeof(struct zy7_slcr_softc),
 };
-static devclass_t zy7_slcr_devclass;
 
 #ifndef __rtems__
-DRIVER_MODULE(zy7_slcr, simplebus, zy7_slcr_driver, zy7_slcr_devclass, 0, 0);
+DRIVER_MODULE(zy7_slcr, simplebus, zy7_slcr_driver, 0, 0);
 #else /* __rtems__ */
-DRIVER_MODULE(zy7_slcr, nexus, zy7_slcr_driver, zy7_slcr_devclass, 0, 0);
+DRIVER_MODULE(zy7_slcr, nexus, zy7_slcr_driver, 0, 0);
 #endif /* __rtems__ */
 MODULE_VERSION(zy7_slcr, 1);

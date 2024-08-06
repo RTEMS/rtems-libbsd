@@ -35,8 +35,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
@@ -55,6 +53,7 @@ __FBSDID("$FreeBSD$");
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/route.h>
 #include <net/vnet.h>
 
@@ -154,7 +153,7 @@ in_gif_srcaddr(void *arg __unused, const struct sockaddr *sa,
 	if (V_ipv4_hashtbl == NULL)
 		return;
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	sin = (const struct sockaddr_in *)sa;
 	CK_LIST_FOREACH(sc, &GIF_SRCHASH(sin->sin_addr.s_addr), srchash) {
 		if (sc->gif_iphdr->ip_src.s_addr != sin->sin_addr.s_addr)
@@ -198,6 +197,7 @@ int
 in_gif_ioctl(struct gif_softc *sc, u_long cmd, caddr_t data)
 {
 	struct ifreq *ifr = (struct ifreq *)data;
+	struct epoch_tracker et;
 	struct sockaddr_in *dst, *src;
 	struct ip *ip;
 	int error;
@@ -247,7 +247,9 @@ in_gif_ioctl(struct gif_softc *sc, u_long cmd, caddr_t data)
 		sc->gif_family = AF_INET;
 		sc->gif_iphdr = ip;
 		in_gif_attach(sc);
+		NET_EPOCH_ENTER(et);
 		in_gif_set_running(sc);
+		NET_EPOCH_EXIT(et);
 		break;
 	case SIOCGIFPSRCADDR:
 	case SIOCGIFPDSTADDR:
@@ -274,31 +276,16 @@ in_gif_output(struct ifnet *ifp, struct mbuf *m, int proto, uint8_t ecn)
 {
 	struct gif_softc *sc = ifp->if_softc;
 	struct ip *ip;
-	int len;
 
 	/* prepend new IP header */
-	MPASS(in_epoch(net_epoch_preempt));
-	len = sizeof(struct ip);
-#ifndef __NO_STRICT_ALIGNMENT
-	if (proto == IPPROTO_ETHERIP)
-		len += ETHERIP_ALIGN;
-#endif
-	M_PREPEND(m, len, M_NOWAIT);
+	NET_EPOCH_ASSERT();
+	M_PREPEND(m, sizeof(struct ip), M_NOWAIT);
 	if (m == NULL)
 		return (ENOBUFS);
-#ifndef __NO_STRICT_ALIGNMENT
-	if (proto == IPPROTO_ETHERIP) {
-		len = mtod(m, vm_offset_t) & 3;
-		KASSERT(len == 0 || len == ETHERIP_ALIGN,
-		    ("in_gif_output: unexpected misalignment"));
-		m->m_data += len;
-		m->m_len -= ETHERIP_ALIGN;
-	}
-#endif
 	ip = mtod(m, struct ip *);
 
 	MPASS(sc->gif_family == AF_INET);
-	bcopy(sc->gif_iphdr, ip, sizeof(struct ip));
+	memcpy(ip, sc->gif_iphdr, sizeof(struct ip));
 	ip->ip_p = proto;
 	/* version will be set in ip_output() */
 	ip->ip_ttl = V_ip_gif_ttl;
@@ -316,7 +303,7 @@ in_gif_input(struct mbuf *m, int off, int proto, void *arg)
 	struct ip *ip;
 	uint8_t ecn;
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	if (sc == NULL) {
 		m_freem(m);
 		KMOD_IPSTAT_INC(ips_nogif);
@@ -345,7 +332,7 @@ in_gif_lookup(const struct mbuf *m, int off, int proto, void **arg)
 	if (V_ipv4_hashtbl == NULL)
 		return (0);
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	ip = mtod(m, const struct ip *);
 	/*
 	 * NOTE: it is safe to iterate without any locking here, because softc
@@ -381,13 +368,8 @@ done:
 		return (0);
 	/* ingress filters on outer source */
 	if ((GIF2IFP(sc)->if_flags & IFF_LINK2) == 0) {
-		struct nhop4_basic nh4;
-		struct in_addr dst;
-
-		dst = ip->ip_src;
-		if (fib4_lookup_nh_basic(sc->gif_fibnum, dst, 0, 0, &nh4) != 0)
-			return (0);
-		if (nh4.nh_ifp != m->m_pkthdr.rcvif)
+		if (fib4_check_urpf(sc->gif_fibnum, ip->ip_src, 0, NHR_NONE,
+					m->m_pkthdr.rcvif) == 0)
 			return (0);
 	}
 	*arg = sc;
@@ -465,4 +447,3 @@ in_gif_uninit(void)
 		gif_hashdestroy(V_ipv4_srchashtbl);
 	}
 }
-

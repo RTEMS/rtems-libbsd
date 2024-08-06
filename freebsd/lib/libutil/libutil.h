@@ -34,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _LIBUTIL_H_
@@ -98,6 +96,8 @@ int	flopen(const char *_path, int _flags, ...);
 int	flopenat(int _dirfd, const char *_path, int _flags, ...);
 int	forkpty(int *_amaster, char *_name,
 	    struct termios *_termp, struct winsize *_winp);
+const char *
+	getlocalbase(void);
 void	hexdump(const void *_ptr, int _length, const char *_hdr, int _flags);
 int	humanize_number(char *_buf, size_t _len, int64_t _number,
 	    const char *_suffix, int _scale, int _flags);
@@ -107,6 +107,8 @@ struct kinfo_vmentry *
 	kinfo_getvmmap(pid_t _pid, int *_cntp);
 struct kinfo_vmobject *
 	kinfo_getvmobject(int *_cntp);
+struct kinfo_vmobject *
+	kinfo_getswapvmobject(int *_cntp);
 struct kinfo_proc *
 	kinfo_getallproc(int *_cntp);
 struct kinfo_proc *
@@ -118,6 +120,7 @@ int	openpty(int *_amaster, int *_aslave, char *_name,
 	    struct termios *_termp, struct winsize *_winp);
 int	pidfile_close(struct pidfh *_pfh);
 int	pidfile_fileno(const struct pidfh *_pfh);
+int	pidfile_signal(const char *pathp, int sig, pid_t *pidptr);
 struct pidfh *
 	pidfile_open(const char *_path, mode_t _mode, pid_t *_pidptr);
 int	pidfile_remove(struct pidfh *_pfh);
@@ -203,6 +206,14 @@ const char *
 int	quota_read(struct quotafile *_qf, struct dqblk *_dqb, int _id);
 int	quota_write_limits(struct quotafile *_qf, struct dqblk *_dqb, int _id);
 int	quota_write_usage(struct quotafile *_qf, struct dqblk *_dqb, int _id);
+#endif
+
+#ifdef _SYS_CPUSET_H_
+int	cpuset_parselist(const char *list, cpuset_t *mask);
+#define CPUSET_PARSE_OK			0
+#define CPUSET_PARSE_GETAFFINITY	-1
+#define CPUSET_PARSE_ERROR		-2
+#define CPUSET_PARSE_INVALID_CPU	-3
 #endif
 
 __END_DECLS

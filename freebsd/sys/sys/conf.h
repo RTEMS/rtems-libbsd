@@ -36,17 +36,21 @@
  * SUCH DAMAGE.
  *
  *	@(#)conf.h	8.5 (Berkeley) 1/9/95
- * $FreeBSD$
  */
 
 #ifndef _SYS_CONF_H_
 #define	_SYS_CONF_H_
 
 #ifdef _KERNEL
-#include <sys/eventhandler.h>
+#include <sys/_eventhandler.h>
 #else
 #include <sys/queue.h>
 #endif
+
+#ifdef __rtems__
+#include <machine/types.h>
+#include <sys/param.h>
+#endif /* __rtems__ */
 
 struct snapdata;
 struct devfs_dirent;
@@ -146,12 +150,10 @@ typedef void d_purge_t(struct cdev *dev);
 typedef int dumper_t(
 	void *_priv,		/* Private to the driver. */
 	void *_virtual,		/* Virtual (mapped) address. */
-	vm_offset_t _physical,	/* Physical address of virtual. */
 	off_t _offset,		/* Byte-offset to write at. */
 	size_t _length);	/* Number of bytes to dump. */
-typedef int dumper_start_t(struct dumperinfo *di);
-typedef int dumper_hdr_t(struct dumperinfo *di, struct kerneldumpheader *kdh,
-    void *key, uint32_t keylen);
+typedef int dumper_start_t(struct dumperinfo *di, void *key, uint32_t keysize);
+typedef int dumper_hdr_t(struct dumperinfo *di, struct kerneldumpheader *kdh);
 
 #endif /* _KERNEL */
 
@@ -163,6 +165,25 @@ typedef int dumper_hdr_t(struct dumperinfo *di, struct kerneldumpheader *kdh,
 #define	D_TTY	0x0004
 #define	D_MEM	0x0008	/* /dev/(k)mem */
 
+/* Defined uid and gid values. */
+#define		UID_ROOT	0
+#define		UID_BIN		3
+#define		UID_UUCP	66
+#define		UID_NOBODY	65534
+
+#define		GID_WHEEL	0
+#define		GID_KMEM	2
+#define		GID_TTY		4
+#define		GID_OPERATOR	5
+#define		GID_BIN		7
+#define		GID_GAMES	13
+#define		GID_VIDEO	44
+#define		GID_RT_PRIO	47
+#define		GID_ID_PRIO	48
+#define		GID_DIALER	68
+#define		GID_NOGROUP	65533
+#define		GID_NOBODY	65534
+
 #ifdef _KERNEL
 
 #define	D_TYPEMASK	0xffff
@@ -172,6 +193,7 @@ typedef int dumper_hdr_t(struct dumperinfo *di, struct kerneldumpheader *kdh,
  */
 #define	D_TRACKCLOSE	0x00080000	/* track all closes */
 #define	D_MMAP_ANON	0x00100000	/* special treatment in vm_mmap.c */
+#define	D_GIANTOK	0x00200000	/* suppress warning about using Giant */
 #define	D_NEEDGIANT	0x00400000	/* driver want Giant */
 #define	D_NEEDMINOR	0x00800000	/* driver uses clone_create() */
 
@@ -182,7 +204,8 @@ typedef int dumper_hdr_t(struct dumperinfo *di, struct kerneldumpheader *kdh,
 #define	D_VERSION_01	0x17032005	/* Add d_uid,gid,mode & kind */
 #define	D_VERSION_02	0x28042009	/* Add d_mmap_single */
 #define	D_VERSION_03	0x17122009	/* d_mmap takes memattr,vm_ooffset_t */
-#define	D_VERSION	D_VERSION_03
+#define	D_VERSION_04	0x5c48c353	/* SPECNAMELEN bumped to MAXNAMLEN */
+#define	D_VERSION	D_VERSION_04
 
 /*
  * Flags used for internal housekeeping
@@ -208,21 +231,21 @@ struct cdevsw {
 #ifndef __rtems__
 	d_mmap_t		*d_mmap;
 	d_strategy_t		*d_strategy;
-	dumper_t		*d_dump;
+	void			*d_spare0;
 #endif /* __rtems__ */
 	d_kqfilter_t		*d_kqfilter;
 #ifndef __rtems__
 	d_purge_t		*d_purge;
 	d_mmap_single_t		*d_mmap_single;
 
-	int32_t			d_spare0[3];
-	void			*d_spare1[3];
+	int32_t			d_spare1[3];
+	void			*d_spare2[3];
 
 #endif /* __rtems__ */
 	/* These fields should not be messed with by drivers */
 	LIST_HEAD(, cdev)	d_devs;
 #ifndef __rtems__
-	int			d_spare2;
+	int			d_spare3;
 #endif /* __rtems__ */
 	union {
 		struct cdevsw		*gianttrick;
@@ -278,14 +301,12 @@ struct make_dev_args {
 void make_dev_args_init_impl(struct make_dev_args *_args, size_t _sz);
 #define	make_dev_args_init(a) \
     make_dev_args_init_impl((a), sizeof(struct make_dev_args))
-	
-int	count_dev(struct cdev *_dev);
+
 void	delist_dev(struct cdev *_dev);
 void	destroy_dev(struct cdev *_dev);
 int	destroy_dev_sched(struct cdev *dev);
 int	destroy_dev_sched_cb(struct cdev *dev, void (*cb)(void *), void *arg);
 void	destroy_dev_drain(struct cdevsw *csw);
-void	drain_dev_clone_events(void);
 struct cdevsw *dev_refthread(struct cdev *_dev, int *_ref);
 struct cdevsw *devvn_refthread(struct vnode *vp, struct cdev **devp, int *_ref);
 void	dev_relthread(struct cdev *_dev, int _ref);
@@ -329,25 +350,11 @@ typedef void d_priv_dtor_t(void *data);
 int	devfs_get_cdevpriv(void **datap);
 int	devfs_set_cdevpriv(void *priv, d_priv_dtor_t *dtr);
 void	devfs_clear_cdevpriv(void);
+int	devfs_foreach_cdevpriv(struct cdev *dev,
+	    int (*cb)(void *data, void *arg), void *arg);
 
 ino_t	devfs_alloc_cdp_inode(void);
 void	devfs_free_cdp_inode(ino_t ino);
-
-#define		UID_ROOT	0
-#define		UID_BIN		3
-#define		UID_UUCP	66
-#define		UID_NOBODY	65534
-
-#define		GID_WHEEL	0
-#define		GID_KMEM	2
-#define		GID_TTY		4
-#define		GID_OPERATOR	5
-#define		GID_BIN		7
-#define		GID_GAMES	13
-#define		GID_VIDEO	44
-#define		GID_DIALER	68
-#define		GID_NOGROUP	65533
-#define		GID_NOBODY	65534
 
 typedef void (*dev_clone_fn)(void *arg, struct ucred *cred, char *name,
 	    int namelen, struct cdev **result);
@@ -375,6 +382,10 @@ struct dumperinfo {
 	off_t	origdumpoff;	/* Starting dump offset. */
 	struct kerneldumpcrypto	*kdcrypto; /* Kernel dump crypto. */
 	struct kerneldumpcomp *kdcomp; /* Kernel dump compression. */
+
+	TAILQ_ENTRY(dumperinfo)	di_next;
+
+	char			di_devname[];
 };
 
 #ifndef __rtems__
@@ -383,18 +394,40 @@ extern int dumping;		/* system is dumping */
 #define	dumping 0
 #endif /* __rtems__ */
 
+/*
+ * Save registers for later extraction from a kernel dump.
+ *
+ * This must be inlined into the caller, which in turn must be the function that
+ * calls (mini)dumpsys().  Otherwise, the saved frame pointer will reference a
+ * stack frame that may be clobbered by subsequent function calls.
+ */
+#define	dump_savectx() do {		\
+	extern struct pcb dumppcb;	\
+	extern lwpid_t dumptid;		\
+					\
+	savectx(&dumppcb);		\
+	dumptid = curthread->td_tid;	\
+} while (0)
+
 int doadump(boolean_t);
-int set_dumper(struct dumperinfo *di, const char *devname, struct thread *td,
-    uint8_t compression, uint8_t encryption, const uint8_t *key,
-    uint32_t encryptedkeysize, const uint8_t *encryptedkey);
-int clear_dumper(struct thread *td);
+struct diocskerneldump_arg;
+int dumper_create(const struct dumperinfo *di_template, const char *devname,
+    const struct diocskerneldump_arg *kda, struct dumperinfo **dip);
+void dumper_destroy(struct dumperinfo *di);
+int dumper_insert(const struct dumperinfo *di_template, const char *devname,
+    const struct diocskerneldump_arg *kda);
+int dumper_remove(const char *devname, const struct diocskerneldump_arg *kda);
+
+/* For ddb(4)-time use only. */
+void dumper_ddb_insert(struct dumperinfo *);
+void dumper_ddb_remove(struct dumperinfo *);
 
 int dump_start(struct dumperinfo *di, struct kerneldumpheader *kdh);
-int dump_append(struct dumperinfo *, void *, vm_offset_t, size_t);
-int dump_write(struct dumperinfo *, void *, vm_offset_t, off_t, size_t);
+int dump_append(struct dumperinfo *, void *, size_t);
+int dump_write(struct dumperinfo *, void *, off_t, size_t);
 int dump_finish(struct dumperinfo *di, struct kerneldumpheader *kdh);
 void dump_init_header(const struct dumperinfo *di, struct kerneldumpheader *kdh,
-    char *magic, uint32_t archver, uint64_t dumplen);
+    const char *magic, uint32_t archver, uint64_t dumplen);
 
 #endif /* _KERNEL */
 

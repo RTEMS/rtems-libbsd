@@ -27,8 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -61,7 +59,6 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/rtwn/rtl8821a/usb/r21au.h>
 #include <dev/rtwn/rtl8821a/usb/r21au_reg.h>
-
 
 #define R21AU_RADAR_CHECK_PERIOD	(2 * hz)
 

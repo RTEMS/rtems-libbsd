@@ -2,3 +2,4 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-openssl-data.h"
 /* dsaparam.c */
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_openssl, static int verbose);

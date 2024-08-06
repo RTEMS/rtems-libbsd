@@ -3,6 +3,6 @@
 #include "rtems-bsd-tcpdump-data.h"
 /* print-rx.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static char const *voltype[]);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int rx_cache_hint);
-RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static int rx_cache_next);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static struct rx_cache_entry rx_cache[]);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static uint32_t rx_cache_hint);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_tcpdump, static uint32_t rx_cache_next);

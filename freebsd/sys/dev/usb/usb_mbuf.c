@@ -1,8 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/* $FreeBSD$ */
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2008 Hans Petter Selasky. All rights reserved.
  *
@@ -76,19 +75,13 @@ usb_alloc_mbufs(struct malloc_type *type, struct usb_ifqueue *ifq,
 	block_size += ((-block_size) & (USB_HOST_ALIGN - 1));
 
 	if (nblocks && block_size) {
-
 		alloc_size = (block_size + sizeof(struct usb_mbuf)) * nblocks;
 
 		free_ptr = malloc(alloc_size, type, M_WAITOK | M_ZERO);
-
-		if (free_ptr == NULL) {
-			goto done;
-		}
 		m_ptr = free_ptr;
 		data_ptr = (void *)(m_ptr + nblocks);
 
 		while (nblocks--) {
-
 			m_ptr->cur_data_ptr =
 			    m_ptr->min_data_ptr = data_ptr;
 
@@ -101,6 +94,5 @@ usb_alloc_mbufs(struct malloc_type *type, struct usb_ifqueue *ifq,
 			data_ptr += block_size;
 		}
 	}
-done:
 	return (free_ptr);
 }

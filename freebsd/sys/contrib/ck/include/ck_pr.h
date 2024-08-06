@@ -34,7 +34,20 @@
 #include <ck_stdint.h>
 #include <ck_stdbool.h>
 
-#ifndef CK_USE_CC_BUILTINS
+/*
+ * Default to using builtins for clang analyzer, coverity, and sparse:
+ * inline assembly is often too opaque for useful analysis.  Override
+ * the defaults by defining CK_USE_CC_BUILTINS=0 or 1.
+ */
+#if !defined(CK_USE_CC_BUILTINS)
+#if defined(__clang_analyzer__) || defined(__COVERITY__) || defined(__CHECKER__)
+#define CK_USE_CC_BUILTINS 1
+#else
+#define CK_USE_CC_BUILTINS 0
+#endif
+#endif
+
+#if !CK_USE_CC_BUILTINS
 #if defined(__x86_64__)
 #include "gcc/x86_64/ck_pr.h"
 #elif defined(__x86__)
@@ -48,13 +61,7 @@
 #elif defined(__ppc__)
 #include "gcc/ppc/ck_pr.h"
 #elif defined(__arm__)
-#if __ARM_ARCH >= 6
 #include "gcc/arm/ck_pr.h"
-#else
-#ifndef __rtems__
-#include "gcc/arm/ck_pr_armv4.h"
-#endif /* __rtems__ */
-#endif
 #elif defined(__aarch64__)
 #include "gcc/aarch64/ck_pr.h"
 #elif !defined(__GNUC__)

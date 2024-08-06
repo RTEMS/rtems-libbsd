@@ -126,8 +126,6 @@ static device_method_t lpc_pwr_methods[] = {
 	{ 0, 0 }
 };
 
-static devclass_t lpc_pwr_devclass;
-
 static driver_t lpc_pwr_driver = {
 	"pwr",
 	lpc_pwr_methods,
@@ -137,5 +135,5 @@ static driver_t lpc_pwr_driver = {
 #ifndef __rtems__
 DRIVER_MODULE(pwr, simplebus, lpc_pwr_driver, lpc_pwr_devclass, 0, 0);
 #else /* __rtems__ */
-DRIVER_MODULE(pwr, nexus, lpc_pwr_driver, lpc_pwr_devclass, 0, 0);
+DRIVER_MODULE(pwr, nexus, lpc_pwr_driver, 0, 0);
 #endif /* __rtems__ */

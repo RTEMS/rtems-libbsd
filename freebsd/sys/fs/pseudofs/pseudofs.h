@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * Copyright (c) 2001 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2001 Dag-Erling Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *      $FreeBSD$
  */
 
 #ifndef _PSEUDOFS_H_INCLUDED
@@ -54,11 +52,7 @@ struct vnode;
  */
 #define PFS_NAMELEN		128
 #define PFS_FSNAMELEN		16	/* equal to MFSNAMELEN */
-#ifndef __rtems__
 #define PFS_DELEN		(offsetof(struct dirent, d_name) + PFS_NAMELEN)
-#else /* __rtems__ */
-#define PFS_DELEN		(offsetof(struct dirent, d_name) + PFS_NAMELEN + 2)
-#endif /* __rtems__ */
 
 typedef enum {
 	pfstype_none = 0,
@@ -82,6 +76,7 @@ typedef enum {
 #define PFS_RAW		(PFS_RAWRD|PFS_RAWWR)
 #define PFS_PROCDEP	0x0010	/* process-dependent */
 #define PFS_NOWAIT	0x0020 /* allow malloc to fail */
+#define PFS_AUTODRAIN	0x0040	/* sbuf_print can sleep to drain */
 
 /*
  * Data structures
@@ -222,7 +217,6 @@ struct pfs_info {
  * is not enforcable by WITNESS.
  */
 struct pfs_node {
-	char			 pn_name[PFS_NAMELEN];
 	pfs_type_t		 pn_type;
 	int			 pn_flags;
 	struct mtx		 pn_mutex;
@@ -241,7 +235,9 @@ struct pfs_node {
 
 	struct pfs_node		*pn_parent;		/* (o) */
 	struct pfs_node		*pn_nodes;		/* (o) */
+	struct pfs_node		*pn_last_node;		/* (o) */
 	struct pfs_node		*pn_next;		/* (p) */
+	char			 pn_name[];		/* Keep it last */
 };
 
 /*

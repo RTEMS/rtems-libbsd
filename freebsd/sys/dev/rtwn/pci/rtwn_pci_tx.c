@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -58,7 +56,6 @@ __FBSDID("$FreeBSD$");
 #include <dev/rtwn/pci/rtwn_pci_tx.h>
 
 #include <dev/rtwn/rtl8192c/pci/r92ce_reg.h>
-
 
 static struct mbuf *
 rtwn_mbuf_defrag(struct mbuf *m0, int how)

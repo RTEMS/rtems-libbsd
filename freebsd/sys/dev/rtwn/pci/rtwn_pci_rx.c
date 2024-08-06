@@ -21,8 +21,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_wlan.h>
 
 #include <sys/param.h>
@@ -57,7 +55,6 @@ __FBSDID("$FreeBSD$");
 
 #include <dev/rtwn/pci/rtwn_pci_var.h>
 #include <dev/rtwn/pci/rtwn_pci_rx.h>
-
 
 void
 rtwn_pci_dma_map_addr(void *arg, bus_dma_segment_t *segs, int nsegs,

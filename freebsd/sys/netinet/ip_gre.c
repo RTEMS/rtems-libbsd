@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-NetBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * Copyright (c) 2014, 2018 Andrey V. Elsukov <ae@FreeBSD.org>
@@ -37,8 +37,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <rtems/bsd/local/opt_inet.h>
 #include <rtems/bsd/local/opt_inet6.h>
 
@@ -57,6 +55,7 @@ __FBSDID("$FreeBSD$");
 
 #include <net/if.h>
 #include <net/if_var.h>
+#include <net/if_private.h>
 #include <net/vnet.h>
 
 #include <netinet/in.h>
@@ -164,7 +163,7 @@ in_gre_lookup(const struct mbuf *m, int off, int proto, void **arg)
 	if (V_ipv4_hashtbl == NULL)
 		return (0);
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	ip = mtod(m, const struct ip *);
 	CK_LIST_FOREACH(sc, &GRE_HASH(ip->ip_dst.s_addr,
 	    ip->ip_src.s_addr), chain) {
@@ -212,7 +211,7 @@ in_gre_srcaddr(void *arg __unused, const struct sockaddr *sa,
 	if (V_ipv4_hashtbl == NULL)
 		return;
 
-	MPASS(in_epoch(net_epoch_preempt));
+	NET_EPOCH_ASSERT();
 	sin = (const struct sockaddr_in *)sa;
 	CK_LIST_FOREACH(sc, &GRE_SRCHASH(sin->sin_addr.s_addr), srchash) {
 		if (sc->gre_oip.ip_src.s_addr != sin->sin_addr.s_addr)
@@ -221,29 +220,15 @@ in_gre_srcaddr(void *arg __unused, const struct sockaddr *sa,
 	}
 }
 
-static void
+static bool
 in_gre_udp_input(struct mbuf *m, int off, struct inpcb *inp,
     const struct sockaddr *sa, void *ctx)
 {
-	struct epoch_tracker et;
 	struct gre_socket *gs;
 	struct gre_softc *sc;
 	in_addr_t dst;
 
-	NET_EPOCH_ENTER_ET(et);
-	/*
-	 * udp_append() holds reference to inp, it is safe to check
-	 * inp_flags2 without INP_RLOCK().
-	 * If socket was closed before we have entered NET_EPOCH section,
-	 * INP_FREED flag should be set. Otherwise it should be safe to
-	 * make access to ctx data, because gre_so will be freed by
-	 * gre_sofree() via epoch_call().
-	 */
-	if (__predict_false(inp->inp_flags2 & INP_FREED)) {
-		NET_EPOCH_EXIT_ET(et);
-		m_freem(m);
-		return;
-	}
+	NET_EPOCH_ASSERT();
 
 	gs = (struct gre_socket *)ctx;
 	dst = ((const struct sockaddr_in *)sa)->sin_addr.s_addr;
@@ -253,11 +238,11 @@ in_gre_udp_input(struct mbuf *m, int off, struct inpcb *inp,
 	}
 	if (sc != NULL && (GRE2IFP(sc)->if_flags & IFF_UP) != 0){
 		gre_input(m, off + sizeof(struct udphdr), IPPROTO_UDP, sc);
-		NET_EPOCH_EXIT_ET(et);
-		return;
+		return (true);
 	}
 	m_freem(m);
-	NET_EPOCH_EXIT_ET(et);
+
+	return (true);
 }
 
 static int
@@ -274,7 +259,7 @@ in_gre_setup_socket(struct gre_softc *sc)
 	 * NOTE: we are protected with gre_ioctl_sx lock.
 	 *
 	 * First check that socket is already configured.
-	 * If so, check that source addres was not changed.
+	 * If so, check that source address was not changed.
 	 * If address is different, check that there are no other tunnels
 	 * and close socket.
 	 */
@@ -286,8 +271,7 @@ in_gre_setup_socket(struct gre_softc *sc)
 			if (CK_LIST_EMPTY(&gs->list)) {
 				CK_LIST_REMOVE(gs, chain);
 				soclose(gs->so);
-				epoch_call(net_epoch_preempt, &gs->epoch_ctx,
-				    gre_sofree);
+				NET_EPOCH_CALL(gre_sofree, &gs->epoch_ctx);
 			}
 			gs = sc->gre_so = NULL;
 		}
@@ -366,6 +350,7 @@ fail:
 static int
 in_gre_attach(struct gre_softc *sc)
 {
+	struct epoch_tracker et;
 	struct grehdr *gh;
 	int error;
 
@@ -400,7 +385,9 @@ in_gre_attach(struct gre_softc *sc)
 	    sc, srchash);
 
 	/* Set IFF_DRV_RUNNING if interface is ready */
+	NET_EPOCH_ENTER(et);
 	in_gre_set_running(sc);
+	NET_EPOCH_EXIT(et);
 	return (0);
 }
 

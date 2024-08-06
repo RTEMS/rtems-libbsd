@@ -1,11 +1,11 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*
- * This file is produced automatically.
+ * This file is @generated automatically.
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   dev/mii/miibus_if.m
+ *   freebsd-org/sys/dev/mii/miibus_if.m
  * with
  *   makeobjops.awk
  *

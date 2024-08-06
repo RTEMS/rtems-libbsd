@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2014 Rohit Grover
  * All rights reserved.
@@ -61,8 +61,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/stdint.h>
 #include <sys/stddef.h>
 #include <sys/param.h>
@@ -80,6 +78,8 @@ __FBSDID("$FreeBSD$");
 #include <sys/file.h>
 #include <sys/selinfo.h>
 #include <sys/poll.h>
+
+#include <dev/hid/hid.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
@@ -172,7 +172,8 @@ __FBSDID("$FreeBSD$");
 /* end of driver specific options */
 
 /* Tunables */
-static SYSCTL_NODE(_hw_usb, OID_AUTO, atp, CTLFLAG_RW, 0, "USB ATP");
+static SYSCTL_NODE(_hw_usb, OID_AUTO, atp, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
+    "USB ATP");
 
 #ifdef USB_DEBUG
 enum atp_log_level {
@@ -198,9 +199,11 @@ SYSCTL_UINT(_hw_usb_atp, OID_AUTO, double_tap_threshold, CTLFLAG_RWTUN,
 
 static u_int atp_mickeys_scale_factor = ATP_SCALE_FACTOR;
 static int atp_sysctl_scale_factor_handler(SYSCTL_HANDLER_ARGS);
-SYSCTL_PROC(_hw_usb_atp, OID_AUTO, scale_factor, CTLTYPE_UINT | CTLFLAG_RWTUN,
+SYSCTL_PROC(_hw_usb_atp, OID_AUTO, scale_factor,
+    CTLTYPE_UINT | CTLFLAG_RWTUN | CTLFLAG_MPSAFE,
     &atp_mickeys_scale_factor, sizeof(atp_mickeys_scale_factor),
-    atp_sysctl_scale_factor_handler, "IU", "movement scale factor");
+    atp_sysctl_scale_factor_handler, "IU",
+    "movement scale factor");
 
 static u_int atp_small_movement_threshold = ATP_SMALL_MOVEMENT_THRESHOLD;
 SYSCTL_UINT(_hw_usb_atp, OID_AUTO, small_movement, CTLFLAG_RWTUN,
@@ -510,7 +513,6 @@ static const struct wsp_dev_params wsp_dev_params[WELLSPRING_PRODUCT_MAX] = {
 		.finger_data_offset  = WSP_TYPE3_FINGER_DATA_OFFSET,
 	},
 };
-
 #define ATP_DEV(v,p,i) { USB_VPI(USB_VENDOR_##v, USB_PRODUCT_##v##_##p, i) }
 
 /* TODO: STRUCT_USB_HOST_ID */
@@ -733,7 +735,6 @@ typedef enum interface_mode {
 	RAW_SENSOR_MODE = (uint8_t)0x01,
 	HID_MODE        = (uint8_t)0x08
 } interface_mode;
-
 
 /*
  * function prototypes
@@ -1415,7 +1416,6 @@ fg_match_strokes_against_pspans(struct atp_softc *sc, atp_axis axis,
 			if (fg_match_stroke_component(
 			    &strokep->components[axis], &pspans[i],
 			    strokep->type)) {
-
 				/* There is a match. */
 				strokep->components[axis].matched = true;
 
@@ -1552,7 +1552,6 @@ fg_update_strokes(struct atp_softc *sc, fg_pspan *pspans_x,
 
 	/* Update the state of strokes based on the above pspan matches. */
 	TAILQ_FOREACH_SAFE(strokep, &sc->sc_stroke_used, entry, strokep_next) {
-
 		if (strokep->components[X].matched &&
 		    strokep->components[Y].matched) {
 			strokep->matched = true;
@@ -1636,7 +1635,8 @@ fg_update_strokes(struct atp_softc *sc, fg_pspan *pspans_x,
  * Return true if any movement is detected.
  */
 static boolean_t
-wsp_update_strokes(struct atp_softc *sc, wsp_finger_t *fingers, u_int n_fingers)
+wsp_update_strokes(struct atp_softc *sc, wsp_finger_t fingers[WSP_MAX_FINGERS],
+    u_int n_fingers)
 {
 	boolean_t movement = false;
 	atp_stroke_t *strokep_next;
@@ -2016,9 +2016,7 @@ atp_reap_sibling_zombies(void *arg)
 	u_int8_t n_touches_reaped = 0;
 	u_int8_t n_slides_reaped = 0;
 	u_int8_t n_horizontal_scrolls = 0;
-	u_int8_t n_vertical_scrolls = 0;
 	int horizontal_scroll = 0;
-	int vertical_scroll = 0;
 	atp_stroke_t *strokep;
 	atp_stroke_t *strokep_next;
 
@@ -2036,9 +2034,6 @@ atp_reap_sibling_zombies(void *arg)
 			if (atp_is_horizontal_scroll(strokep)) {
 				n_horizontal_scrolls++;
 				horizontal_scroll += strokep->cum_movement_x;
-			} else if (atp_is_vertical_scroll(strokep)) {
-				n_vertical_scrolls++;
-				vertical_scroll +=  strokep->cum_movement_y;
 			}
 		}
 
@@ -2176,11 +2171,11 @@ atp_probe(device_t self)
 
 	if ((usbd_lookup_id_by_uaa(fg_devs, sizeof(fg_devs), uaa)) == 0)
 		return ((uaa->info.bInterfaceProtocol == UIPROTO_MOUSE) ?
-			0 : ENXIO);
+			BUS_PROBE_DEFAULT : ENXIO);
 
 	if ((usbd_lookup_id_by_uaa(wsp_devs, sizeof(wsp_devs), uaa)) == 0)
 		if (uaa->info.bIfaceIndex == WELLSPRING_INTERFACE_INDEX)
-			return (0);
+			return (BUS_PROBE_DEFAULT);
 
 	return (ENXIO);
 }
@@ -2207,7 +2202,7 @@ atp_attach(device_t dev)
 		return (ENXIO);
 
 	/* Get HID report descriptor length */
-	sc->sc_expected_sensor_data_len = hid_report_size(descriptor_ptr,
+	sc->sc_expected_sensor_data_len = hid_report_size_max(descriptor_ptr,
 	    descriptor_len, hid_input, NULL);
 	free(descriptor_ptr, M_TEMP);
 
@@ -2218,6 +2213,9 @@ atp_attach(device_t dev)
 		return (ENXIO);
 	}
 
+	di = USB_GET_DRIVER_INFO(uaa);
+	sc->sc_family = DECODE_FAMILY_FROM_DRIVER_INFO(di);
+
 	/*
 	 * By default the touchpad behaves like an HID device, sending
 	 * packets with reportID = 2. Such reports contain only
@@ -2226,17 +2224,18 @@ atp_attach(device_t dev)
 	 * sensors. The device input mode can be switched from HID
 	 * reports to raw sensor data using vendor-specific USB
 	 * control commands.
+	 * FOUNTAIN devices will give an error when trying to switch
+	 * input mode, so we skip this command
 	 */
-	if ((err = atp_set_device_mode(sc, RAW_SENSOR_MODE)) != 0) {
+	if ((sc->sc_family == TRACKPAD_FAMILY_FOUNTAIN_GEYSER) &&
+		(DECODE_PRODUCT_FROM_DRIVER_INFO(di) == FOUNTAIN))
+		DPRINTF("device mode switch skipped: Fountain device\n");
+	else if ((err = atp_set_device_mode(sc, RAW_SENSOR_MODE)) != 0) {
 		DPRINTF("failed to set mode to 'RAW_SENSOR' (%d)\n", err);
 		return (ENXIO);
 	}
 
 	mtx_init(&sc->sc_mutex, "atpmtx", NULL, MTX_DEF | MTX_RECURSE);
-
-	di = USB_GET_DRIVER_INFO(uaa);
-
-	sc->sc_family = DECODE_FAMILY_FROM_DRIVER_INFO(di);
 
 	switch(sc->sc_family) {
 	case TRACKPAD_FAMILY_FOUNTAIN_GEYSER:
@@ -2362,7 +2361,6 @@ atp_intr(struct usb_xfer *xfer, usb_error_t error)
 
 		if (sc->sc_status.flags & (MOUSE_POSCHANGED |
 		    MOUSE_STDBUTTONSCHANGED)) {
-
 			atp_stroke_t *strokep;
 			u_int8_t n_movements = 0;
 			int dx = 0;
@@ -2615,8 +2613,6 @@ atp_sysctl_scale_factor_handler(SYSCTL_HANDLER_ARGS)
 	return (0);
 }
 
-static devclass_t atp_devclass;
-
 static device_method_t atp_methods[] = {
 	DEVMETHOD(device_probe,  atp_probe),
 	DEVMETHOD(device_attach, atp_attach),
@@ -2631,8 +2627,9 @@ static driver_t atp_driver = {
 	.size    = sizeof(struct atp_softc)
 };
 
-DRIVER_MODULE(atp, uhub, atp_driver, atp_devclass, NULL, 0);
+DRIVER_MODULE(atp, uhub, atp_driver, NULL, NULL);
 MODULE_DEPEND(atp, usb, 1, 1, 1);
+MODULE_DEPEND(atp, hid, 1, 1, 1);
 MODULE_VERSION(atp, 1);
 USB_PNP_HOST_INFO(fg_devs);
 USB_PNP_HOST_INFO(wsp_devs);

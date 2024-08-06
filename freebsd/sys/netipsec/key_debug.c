@@ -1,6 +1,5 @@
 #include <machine/rtems-bsd-kernel-space.h>
 
-/*	$FreeBSD$	*/
 /*	$KAME: key_debug.c,v 1.26 2001/06/27 10:46:50 sakane Exp $	*/
 
 /*-
@@ -164,7 +163,6 @@ kdebug_sadb_exttype(uint16_t type)
 #undef EXT_NAME
 #undef X_NAME
 }
-
 
 /* %%%: about struct sadb_msg */
 void
@@ -811,12 +809,15 @@ kdebug_secreplay(struct secreplay *rpl)
 {
 	int len, l;
 
+	SECREPLAY_LOCK(rpl);
+
 	IPSEC_ASSERT(rpl != NULL, ("null rpl"));
-	printf(" secreplay{ count=%u bitmap_size=%u wsize=%u seq=%u lastseq=%u",
-	    rpl->count, rpl->bitmap_size, rpl->wsize, rpl->seq, rpl->lastseq);
+	printf(" secreplay{ count=%lu bitmap_size=%u wsize=%u last=%lu",
+	    rpl->count, rpl->bitmap_size, rpl->wsize, rpl->last);
 
 	if (rpl->bitmap == NULL) {
 		printf("  }\n");
+		SECREPLAY_UNLOCK(rpl);
 		return;
 	}
 
@@ -826,6 +827,7 @@ kdebug_secreplay(struct secreplay *rpl)
 			printf("%u", (((rpl->bitmap)[len] >> l) & 1) ? 1 : 0);
 	}
 	printf("    }\n");
+	SECREPLAY_UNLOCK(rpl);
 }
 #endif /* IPSEC_DEBUG */
 
@@ -881,9 +883,11 @@ kdebug_secasv(struct secasvar *sav)
 		kdebug_secnatt(sav->natt);
 	if (sav->replay != NULL) {
 		KEYDBG(DUMP,
-		    SECASVAR_LOCK(sav);
+		    SECASVAR_RLOCK_TRACKER;
+
+		    SECASVAR_RLOCK(sav);
 		    kdebug_secreplay(sav->replay);
-		    SECASVAR_UNLOCK(sav));
+		    SECASVAR_RUNLOCK(sav));
 	}
 	printf("}\n");
 }
@@ -919,9 +923,9 @@ void
 kdebug_mbuf(const struct mbuf *m0)
 {
 	const struct mbuf *m = m0;
-	int i, j;
+	int i;
 
-	for (j = 0; m; m = m->m_next) {
+	for (; m; m = m->m_next) {
 		kdebug_mbufhdr(m);
 		printf("  m_data:\n");
 		for (i = 0; i < m->m_len; i++) {
@@ -930,7 +934,6 @@ kdebug_mbuf(const struct mbuf *m0)
 			if (i % 4 == 0)
 				printf(" ");
 			printf("%02x", mtod(m, const u_char *)[i]);
-			j++;
 		}
 		printf("\n");
 	}
@@ -1031,7 +1034,6 @@ ipsec_bindump(caddr_t buf, int len)
 
 	return;
 }
-
 
 void
 ipsec_hexdump(caddr_t buf, int len)

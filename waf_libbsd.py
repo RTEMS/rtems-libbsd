@@ -275,7 +275,7 @@ class Builder(builder.ModuleManager):
         # Network test configuration
         #
         if not os.path.exists(bld.env.NET_CONFIG):
-            bld.fatal('network configuraiton \'%s\' not found' %
+            bld.fatal('network configuration \'%s\' not found' %
                       (bld.env.NET_CONFIG))
         tags = [
             'NET_CFG_INTERFACE_0', 'NET_CFG_SELF_IP', 'NET_CFG_NETMASK',
@@ -284,7 +284,7 @@ class Builder(builder.ModuleManager):
         try:
             net_cfg_lines = open(bld.env.NET_CONFIG).readlines()
         except:
-            bld.fatal('network configuraiton \'%s\' read failed' %
+            bld.fatal('network configuration \'%s\' read failed' %
                       (bld.env.NET_CONFIG))
         lc = 0
         sed = 'sed '
@@ -293,7 +293,7 @@ class Builder(builder.ModuleManager):
             if l.strip().startswith('NET_CFG_'):
                 ls = l.split('=')
                 if len(ls) != 2:
-                    bld.fatal('network configuraiton \'%s\' ' + \
+                    bld.fatal('network configuration \'%s\' ' + \
                               'parse error: %d: %s' % (bld.env.NET_CONFIG, lc, l))
                 lhs = ls[0].strip()
                 rhs = ls[1].strip()

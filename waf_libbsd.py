@@ -286,7 +286,7 @@ class Builder(builder.ModuleManager):
         # Network test configuration
         #
         if not os.path.exists(bld.env.NET_CONFIG):
-            bld.fatal('network configuraiton \'%s\' not found' %
+            bld.fatal('network configuration \'%s\' not found' %
                       (bld.env.NET_CONFIG))
         net_cfg = {
             'NET_CFG_INTERFACE_0': { 'mandatory': True,  },
@@ -304,7 +304,7 @@ class Builder(builder.ModuleManager):
         try:
             config_inc_lines = open(config_inc.abspath()).readlines()
         except:
-            bld.fatal('network configuraiton \'%s\' read failed' %
+            bld.fatal('network configuration \'%s\' read failed' %
                       (config_inc.abspath()))
         for l in config_inc_lines:
             if l.strip().startswith('NET_CFG_'):
@@ -317,7 +317,7 @@ class Builder(builder.ModuleManager):
         try:
             net_cfg_lines = open(bld.env.NET_CONFIG).readlines()
         except:
-            bld.fatal('network configuraiton \'%s\' read failed' %
+            bld.fatal('network configuration \'%s\' read failed' %
                       (bld.env.NET_CONFIG))
         lc = 0
         for l in net_cfg_lines:
@@ -325,7 +325,7 @@ class Builder(builder.ModuleManager):
             if l.strip().startswith('NET_CFG_'):
                 ls = l.split('=', 1)
                 if len(ls) != 2:
-                    bld.fatal('network configuraiton \'%s\' ' + \
+                    bld.fatal('network configuration \'%s\' ' + \
                               'parse error: %d: %s' % (bld.env.NET_CONFIG, lc, l))
                 lhs = ls[0].strip()
                 rhs = ls[1].strip()
@@ -334,7 +334,7 @@ class Builder(builder.ModuleManager):
         for tag in net_cfg:
             if 'value' not in net_cfg[tag]:
                 if net_cfg[tag]['mandatory']:
-                    bld.fatal('network configuraiton \'%s\' ' + \
+                    bld.fatal('network configuration \'%s\' ' + \
                               'entry not found: %s' % (bld.env.NET_CONFIG, tag))
                 net_cfg[tag]['value'] = net_cfg[tag]['default']
         updated = True

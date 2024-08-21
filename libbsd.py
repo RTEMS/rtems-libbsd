@@ -130,6 +130,7 @@ _defaults = {
     [('rtemsbsd/include',                       '**/*.h',                          ''),
      ('rtemsbsd/@CPU@/include',                 '**/*.h',                          ''),
      ('freebsd/include',                        '**/*.h',                          ''),
+     ('freebsd/lib/libmemstat',                 'memstat.h',                       ''),
      ('freebsd/sys/bsm',                        '**/*.h',                          'bsm'),
      ('freebsd/sys/cam',                        '**/*.h',                          'cam'),
      ('freebsd/sys/contrib/ck/include',         '**/*.h',                          ''),

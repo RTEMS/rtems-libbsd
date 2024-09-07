@@ -227,7 +227,11 @@ Init(rtems_task_argument arg)
 	sc = rtems_shell_init(
 		"SHLL",
 		32 * 1024,
+#ifdef DEFAULT_NETWORK_SHELL_PRIORITY
+		DEFAULT_NETWORK_SHELL_PRIORITY,
+#else
 		1,
+#endif
 		CONSOLE_DEVICE_NAME,
 		false,
 		false,

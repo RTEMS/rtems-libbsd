@@ -45,8 +45,17 @@ test_main(void)
 	rtems_task_exit();
 }
 
+/*
+ * Improve the timing fidelity
+ */
+#define CONFIGURE_MICROSECONDS_PER_TICK 1000
+
+/*
+ * Make the shell priority lower than the networking threads
+ */
+#define DEFAULT_NETWORK_SHELL_PRIORITY 150
+
 #define SHELL_TTCP_COMMAND_ENABLE
-#define DEFAULT_NETWORK_DHCPCD_ENABLE
 #define DEFAULT_NETWORK_SHELL
 
 #include <rtems/bsd/test/default-network-init.h>

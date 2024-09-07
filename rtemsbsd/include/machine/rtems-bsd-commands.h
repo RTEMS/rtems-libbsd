@@ -84,7 +84,7 @@ int rtems_bsd_command_setkey(int argc, char **argv);
 
 int rtems_bsd_command_openssl(int argc, char **argv);
 
-int rtems_shell_main_ttcp(int argc, char **argv);
+int rtems_shell_main_nuttcp(int argc, char **argv);
 
 __END_DECLS
 

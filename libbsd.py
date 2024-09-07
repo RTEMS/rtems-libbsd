@@ -315,7 +315,7 @@ class rtems(builder.Module):
                 'pppd/upap.c',
                 'pppd/utils.c',
                 'telnetd/telnetd-service.c',
-                'ttcp/ttcp.c',
+                'ttcp/nuttcp.c',
             ],
             mm.generator['source']()
         )

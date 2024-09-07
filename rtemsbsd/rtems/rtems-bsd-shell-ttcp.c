@@ -30,10 +30,10 @@
 #include <machine/rtems-bsd-commands.h>
 
 rtems_shell_cmd_t rtems_shell_TTCP_Command = {
-  "ttcp",                                           /* name */
-  "ttcp -h                     # to get help",      /* usage */
+  "nuttcp",                                         /* name */
+  "nuttcp -h                   # to get help",      /* usage */
   "net",                                            /* topic */
-  rtems_shell_main_ttcp,                            /* command */
+  rtems_shell_main_nuttcp,                          /* command */
   NULL,                                             /* alias */
   NULL                                              /* next */
 };

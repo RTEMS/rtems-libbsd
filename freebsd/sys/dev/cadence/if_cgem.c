@@ -1224,6 +1224,19 @@ cgem_reset(struct cgem_softc *sc)
 #ifndef __rtems__
 	WR4(sc, CGEM_NET_CFG, 0);
 #else
+	/* Determine data bus width from design configuration register. */
+	switch (RD4(sc, CGEM_DESIGN_CFG1) &
+	    CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_MASK) {
+	case CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_64:
+		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_64;
+		break;
+	case CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_128:
+		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_128;
+		break;
+	default:
+		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_32;
+	}
+
 	WR4(sc, CGEM_NET_CFG, sc->net_cfg_shadow);
 #endif
 	WR4(sc, CGEM_NET_CTRL, CGEM_NET_CTRL_CLR_STAT_REGS);
@@ -1241,19 +1254,6 @@ cgem_reset(struct cgem_softc *sc)
 	    CGEM_NET_CFG_DBUS_WIDTH_32 |
 	    CGEM_NET_CFG_MDC_CLK_DIV_64);
 #else
-	/* Determine data bus width from design configuration register. */
-	switch (RD4(sc, CGEM_DESIGN_CFG1) &
-	    CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_MASK) {
-	case CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_64:
-		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_64;
-		break;
-	case CGEM_DESIGN_CFG1_DMA_BUS_WIDTH_128:
-		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_128;
-		break;
-	default:
-		sc->net_cfg_shadow = CGEM_NET_CFG_DBUS_WIDTH_32;
-	}
-
 #ifdef CGEM64
 	sc->net_cfg_shadow |= CGEM_NET_CFG_MDC_CLK_DIV_48;
 #else

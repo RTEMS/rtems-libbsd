@@ -66,10 +66,14 @@
 
 #include <bsp.h>
 
-#ifdef LIBBSP_ARM_STM32H7_BSP_H
+#if defined(LIBBSP_ARM_STM32H7_BSP_H) || defined(LIBBSP_ARM_STM32U5_BSP_H)
 
+#if defined(LIBBSP_ARM_STM32H7_BSP_H)
 #include <stm32h7/hal.h>
 #include <stm32h7/memory.h>
+#elif defined(LIBBSP_ARM_STM32U5_BSP_H)
+#include <stm32u5/hal.h>
+#endif
 
 #include <bsp/st-sdmmc-config.h>
 
@@ -153,6 +157,7 @@ struct st_sdmmc_softc {
 
 void st_sdmmc_idma_txrx(struct st_sdmmc_softc *sc, void *buf)
 {
+#if defined(LIBBSP_ARM_STM32H7_BSP_H)
 	BSD_ASSERT(
 	    (buf >= (void*) stm32h7_memory_sdram_1_begin &&
 	     buf  < (void*) stm32h7_memory_sdram_1_end) ||
@@ -163,6 +168,14 @@ void st_sdmmc_idma_txrx(struct st_sdmmc_softc *sc, void *buf)
 	    (buf >= (void*) stm32h7_memory_quadspi_begin &&
 	     buf  < (void*) stm32h7_memory_quadspi_end));
 	sc->sdmmc->IDMABASE0 = (uintptr_t) buf;
+#elif defined(LIBBSP_ARM_STM32U5_BSP_H)
+	BSD_ASSERT(
+	    (buf >= (void*) stm32u5_memory_octospi_1_begin &&
+	     buf  < (void*) stm32u5_memory_octospi_1_end) ||
+	    (buf >= (void*) stm32u5_memory_int_sram_begin &&
+	     buf  < (void*) stm32u5_memory_int_sram_end));
+	sc->sdmmc->IDMABASER = (uintptr_t) buf;
+#endif
 	sc->sdmmc->IDMACTRL = SDMMC_IDMA_IDMAEN;
 }
 
@@ -198,7 +211,11 @@ st_sdmmc_intr(void *arg)
 static int
 st_sdmmc_probe(device_t dev)
 {
+#if defined(LIBBSP_ARM_STM32H7_BSP_H)
 	device_set_desc(dev, "STM32H7xx SDMMC Host");
+#elif defined(LIBBSP_ARM_STM32U5_BSP_H)
+	device_set_desc(dev, "STM32U5xx SDMMC Host");
+#endif
 	return (0);
 }
 
@@ -343,6 +360,7 @@ st_sdmmc_attach(device_t dev)
 			device_printf(dev, "could not allocate dma buffer\n");
 			error = ENOMEM;
 		}
+#if defined(LIBBSP_ARM_STM32H7_BSP_H)
 		BSD_ASSERT(
 		    ((void*) sc->dmabuf >= (void*) stm32h7_memory_sram_axi_begin &&
 		     (void*) sc->dmabuf < (void*) stm32h7_memory_sram_axi_end) ||
@@ -352,6 +370,13 @@ st_sdmmc_attach(device_t dev)
 		     (void*) sc->dmabuf < (void*) stm32h7_memory_sdram_2_end) ||
 		    ((void*) sc->dmabuf >= (void*) stm32h7_memory_quadspi_begin &&
 		     (void*) sc->dmabuf < (void*) stm32h7_memory_quadspi_end));
+#elif defined(LIBBSP_ARM_STM32U5_BSP_H)
+		BSD_ASSERT(
+		    ((void*) sc->dmabuf >= (void*) stm32u5_memory_octospi_1_begin &&
+		     (void*) sc->dmabuf < (void*) stm32u5_memory_octospi_1_end) ||
+		    ((void*) sc->dmabuf >= (void*) stm32u5_memory_int_sram_begin &&
+		     (void*) sc->dmabuf < (void*) stm32u5_memory_int_sram_end));
+#endif
 	}
 
 	if (error == 0) {
@@ -602,7 +627,11 @@ st_sdmmc_cmd_do(struct st_sdmmc_softc *sc, struct mmc_command *cmd)
 		}
 		st_sdmmc_idma_txrx(sc, data);
 
+#if defined(LIBBSP_ARM_STM32U5_BSP_H
+		sc->sdmmc->DTIMER = 0xFFFFFFF;
+#else /* !LIBBSD_ARM_STM32U5_BSP_H */
 		sc->sdmmc->DTIMER = 0xFFFFFFFF;
+#endif /* !LIBBSP_ARM_STM32U5_BSP_H */
 		sc->sdmmc->DLEN = xferlen;
 		sc->sdmmc->DCTRL = dctrl;
 
@@ -854,4 +883,4 @@ DRIVER_MODULE(st_sdmmc, nexus, st_sdmmc_driver, NULL, NULL);
 DRIVER_MODULE(mmc, st_sdmmc, mmc_driver, NULL, NULL);
 MODULE_DEPEND(st_sdmmc, mmc, 1, 1, 1);
 
-#endif /* LIBBSP_ARM_STM32H7_BSP_H */
+#endif /* LIBBSP_ARM_STM32H7_BSP_H || LIBBSP_ARM_STM32U5_BSP_H  */

@@ -27,7 +27,7 @@
 
 #include <bsp.h>
 
-#ifdef LIBBSP_ARM_STM32H7_BSP_H
+#if defined(LIBBSP_ARM_STM32H7_BSP_H) || defined(LIBBSP_ARM_STM32U5_BSP_H)
 
 #include <bsp/st-sdmmc-config.h>
 #include <dev/mmc/mmcreg.h>
@@ -49,4 +49,4 @@ st_sdmmc_get_config(uintptr_t sdmmc_base, struct st_sdmmc_config *cfg)
 	}
 }
 
-#endif /* LIBBSP_ARM_STM32H7_BSP_H */
+#endif /* LIBBSP_ARM_STM32H7_BSP_H || LIBBSP_ARM_STM32U5_BSP_H */

@@ -30,7 +30,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#if defined(LIBBSP_ARM_STM32H7_BSP_H)
 #include <stm32h7/hal.h>
+#elif defined(LIBBSP_ARM_STM32U5_BSP_H)
+#include <stm32u5/hal.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1589,8 +1589,10 @@ main(int argc, char **argv)
 			eloop_timeout_add_sec(i, handle_exit_timeout, NULL);
 		}
 	}
+#ifndef __rtems__
 	free_options(if_options);
 	if_options = NULL;
+#endif /* __rtems__ */
 
 	sort_interfaces();
 	TAILQ_FOREACH(ifp, ifaces, next) {
@@ -1598,6 +1600,10 @@ main(int argc, char **argv)
 	}
 
 	eloop_start(&dhcpcd_sigset);
+#ifdef __rtems__
+	free_options(if_options);
+	if_options = NULL;
+#endif /* __rtems__ */
 	exit(EXIT_SUCCESS);
 }
 #ifdef __rtems__

@@ -142,7 +142,6 @@ _defaults = {
      ('freebsd/contrib/libpcap',                '*.h',                             ''),
      ('freebsd/contrib/libpcap/pcap',           '*.h',                             'pcap'),
      ('freebsd/crypto/openssl/include/openssl', '**/*.h',                          'openssl'),
-     ('freebsd/sys/rpc',                        '**/*.h',                          'rpc'),
      ('freebsd/sys/sys',                        '**/*.h',                          'sys'),
      ('freebsd/sys/vm',                         '**/*.h',                          'vm'),
      ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),

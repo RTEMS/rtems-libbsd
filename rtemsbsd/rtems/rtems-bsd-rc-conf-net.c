@@ -79,6 +79,16 @@ show_result(const char* label, int r)
 }
 
 /*
+ * Show interface message for the interface list
+ */
+static void
+show_interface_msg(const char* text)
+{
+  fprintf(stdout, "%s ", text);
+  fflush(stdout);
+}
+
+/*
  * cloned_interfaces
  *
  * eg cloned_interfaces="vlan0 bridge0 tap1 tap2"
@@ -228,7 +238,6 @@ load_create_args(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 
 /*
  * ifconfig_show
-
  */
 static int
 ifconfig_show(const char* ifname)
@@ -259,11 +268,6 @@ ifconfig_(rtems_bsd_rc_conf* rc_conf,
   int               arg;
   int               ifconfig_argc = 0;
   int               r;
-
-  for (arg = 1; arg < argc; ++arg) {
-    if (strcasecmp(argv[arg], "NOAUTO") == 0)
-      return 0;
-  }
 
   args = calloc(argc + opt_argc + 3, sizeof(char*));
   if (args == NULL) {
@@ -432,35 +436,6 @@ defaultrouter(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa, bool 
 }
 
 static int
-list_interfaces(const char* msg, struct ifaddrs* ifap)
-{
-  struct ifaddrs* ifa;
-
-  fprintf(stdout, msg);
-
-  /*
-   * Always have lo0 first.
-   */
-
-  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-    if (strcasecmp("lo0", ifa->ifa_name) == 0) {
-      fprintf(stdout, "%s ", ifa->ifa_name);
-      break;
-    }
-  }
-
-  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-    if (strcasecmp("lo0", ifa->ifa_name) != 0) {
-      fprintf(stdout, "%s ", ifa->ifa_name);
-    }
-  }
-
-  fprintf(stdout, "\b.\n");
-
-  return 0;
-}
-
-static int
 show_interfaces(struct ifaddrs* ifap)
 {
   struct ifaddrs* ifa;
@@ -494,6 +469,9 @@ setup_lo0(rtems_bsd_rc_conf* rc_conf, struct ifaddrs* ifap)
       const char* lo0_argv[] = {
         "ifconfig_lo0", "inet", "127.0.0.1", "netmask", "255.0.0.0", NULL
       };
+
+      show_interface_msg("lo0");
+
       show_result("lo0",
                   ifconfig_(rc_conf, "lo0",
                             5, lo0_argv,
@@ -523,29 +501,38 @@ setup_interfaces(rtems_bsd_rc_conf*           rc_conf,
       snprintf(iface, sizeof(iface), "ifconfig_%s", ifa->ifa_name);
       r = rtems_bsd_rc_conf_find(rc_conf, iface, aa);
       if (r == 0) {
-        if (dhcp_check(aa)) {
-          *dhcp = true;
+        int arg;
+        for (arg = 1; arg < aa->argc; ++arg) {
+          if (strcasecmp(aa->argv[arg], "NOAUTO") == 0)
+            r = 1;
         }
-        /*
-         * A DHCP ifconfig can have other options we need to set on the
-         * interface.
-         */
-        show_result(iface, ifconfig_(rc_conf, ifa->ifa_name,
-                                     aa->argc, aa->argv,
-                                     0, NULL,
-                                     true));
-      }
-      snprintf(iface, sizeof(iface), "ifconfig_%s_alias[0-9]+", ifa->ifa_name);
-      if (r == 0) {
-        r = rtems_bsd_rc_conf_find(rc_conf, iface, aa);
-        while (r == 0) {
-          const char* alias_argv[] = { "alias", NULL };
-          show_result(iface,
-                      ifconfig_(rc_conf, ifa->ifa_name,
-                                aa->argc, aa->argv,
-                                1, alias_argv,
-                                false));
-          r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
+        if (r == 0) {
+          show_interface_msg(ifa->ifa_name);
+          if (dhcp_check(aa)) {
+            *dhcp = true;
+          }
+          /*
+           * A DHCP ifconfig can have other options we need to set on
+           * the interface.
+           */
+          show_result(iface, ifconfig_(rc_conf, ifa->ifa_name,
+                                       aa->argc, aa->argv,
+                                       0, NULL,
+                                       true));
+        }
+        snprintf(iface, sizeof(iface),
+                 "ifconfig_%s_alias[0-9]+", ifa->ifa_name);
+        if (r == 0) {
+          r = rtems_bsd_rc_conf_find(rc_conf, iface, aa);
+          while (r == 0) {
+            const char* alias_argv[] = { "alias", NULL };
+            show_result(iface,
+                        ifconfig_(rc_conf, ifa->ifa_name,
+                                  aa->argc, aa->argv,
+                                  1, alias_argv,
+                                  false));
+            r = rtems_bsd_rc_conf_find_next(rc_conf, aa);
+          }
         }
       }
     }
@@ -754,10 +741,12 @@ interfaces(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
     return -1;
   }
 
-  list_interfaces("Starting network: ", ifap);
+  show_interface_msg("Starting network: ");
   show_result("lo0", setup_lo0(rc_conf, ifap));
   show_result("ifaces", setup_interfaces(rc_conf, aa, ifap, &dhcp));
   show_result("vlans", setup_vlans(rc_conf, aa, ifap, &dhcp));
+  show_interface_msg("\b.\n");
+
   show_interfaces(ifap);
 
   if (dhcp)

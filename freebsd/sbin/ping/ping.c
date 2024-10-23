@@ -374,6 +374,8 @@ main(int argc, char *const *argv)
 
 #ifndef __rtems__
 	alarmtimeout = df = preload = tos = 0;
+#else
+	df = preload = tos = 0;
 #endif /* __rtems__ */
 
 	outpack = outpackhdr + sizeof(struct ip);

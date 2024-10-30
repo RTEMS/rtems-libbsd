@@ -13,6 +13,7 @@ RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int dev);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern int loadopt);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern struct pfctl_anchor pf_main_anchor);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern struct pfctl_eth_anchor pf_eth_main_anchor);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, extern struct pfctl_handle *pfh);
 /* pfctl_altq.c */
 /* pfctl_optimize.c */
 /* pfctl_osfp.c */

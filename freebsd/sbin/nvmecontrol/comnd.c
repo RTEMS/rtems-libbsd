@@ -32,7 +32,6 @@
 #include <getopt.h>
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/ioccom.h>
 

@@ -30,11 +30,6 @@
  * SUCH DAMAGE.
  */
 
-#ifndef RPC_HDR
-%#include <sys/cdefs.h>
-%__FBSDID("$FreeBSD$");
-#endif
-
 /*
  * This protocol definition exists because of the U.S. government and
  * its stupid export laws. We can't export DES code from the United

@@ -330,4 +330,9 @@ EVENTHANDLER_DECLARE(rt_addrmsg, rt_addrmsg_fn);
 EVENTHANDLER_DECLARE(_bsd_rt_addrmsg, rt_addrmsg_fn);
 #endif /* __rtems__ */
 
+/* Kernel environment variable change event */
+typedef void (*env_change_fn)(void *, const char *);
+EVENTHANDLER_DECLARE(setenv, env_change_fn);
+EVENTHANDLER_DECLARE(unsetenv, env_change_fn);
+
 #endif /* _SYS_EVENTHANDLER_H_ */

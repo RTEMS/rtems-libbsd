@@ -32,8 +32,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)uipc_socket.c	8.3 (Berkeley) 4/15/94
  */
 
 /*
@@ -99,9 +97,9 @@
  *
  * NOTE: With regard to VNETs the general rule is that callers do not set
  * curvnet. Exceptions to this rule include soabort(), sodisconnect(),
- * sofree() (and with that sorele(), sotryfree()), as well as sonewconn()
- * and sorflush(), which are usually called from a pre-set VNET context.
- * sopoll() currently does not need a VNET context to be set.
+ * sofree(), sorele(), sonewconn() and sorflush(), which are usually called
+ * from a pre-set VNET context.  sopoll() currently does not need a VNET
+ * context to be set.
  */
 
 #include <sys/cdefs.h>
@@ -157,6 +155,7 @@
 #include <net/vnet.h>
 
 #include <security/mac/mac_framework.h>
+#include <security/mac/mac_internal.h>
 
 #include <vm/uma.h>
 
@@ -189,7 +188,6 @@ static int	filt_soread(struct knote *kn, long hint);
 static void	filt_sowdetach(struct knote *kn);
 static int	filt_sowrite(struct knote *kn, long hint);
 static int	filt_soempty(struct knote *kn, long hint);
-static int inline hhook_run_socket(struct socket *so, void *hctx, int32_t h_id);
 fo_kqfilter_t	soo_kqfilter;
 
 static struct filterops soread_filtops = {
@@ -218,8 +216,11 @@ MALLOC_DEFINE(M_PCB, "pcb", "protocol control block");
 	    ("%s:%d curvnet is NULL, so=%p", __func__, __LINE__, (so)));
 
 #ifndef __rtems__
+#ifdef SOCKET_HHOOK
 VNET_DEFINE(struct hhook_head *, socket_hhh[HHOOK_SOCKET_LAST + 1]);
 #define	V_socket_hhh		VNET(socket_hhh)
+static inline int hhook_run_socket(struct socket *, void *, int32_t);
+#endif
 #endif /* __rtems__ */
 
 #ifdef COMPAT_FREEBSD32
@@ -302,14 +303,12 @@ SYSCTL_NODE(_kern, KERN_IPC, ipc, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
 static uma_zone_t socket_zone;
 int	maxsockets;
 
-#ifndef __rtems__
 static void
 socket_zone_change(void *tag)
 {
 
 	maxsockets = uma_zone_set_max(socket_zone, maxsockets);
 }
-#endif /* __rtems__ */
 
 static int splice_init_state;
 static struct sx splice_init_lock;
@@ -678,7 +677,20 @@ closing:
 	}
 }
 
-#ifndef __rtems__
+static void
+socket_init(void *tag)
+{
+
+	socket_zone = uma_zcreate("socket", sizeof(struct socket), NULL, NULL,
+	    NULL, NULL, UMA_ALIGN_PTR, 0);
+	maxsockets = uma_zone_set_max(socket_zone, maxsockets);
+	uma_zone_set_warning(socket_zone, "kern.ipc.maxsockets limit reached");
+	EVENTHANDLER_REGISTER(maxsockets_change, socket_zone_change, NULL,
+	    EVENTHANDLER_PRI_FIRST);
+}
+SYSINIT(socket, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, socket_init, NULL);
+
+#ifdef SOCKET_HHOOK
 static void
 socket_hhook_register(int subtype)
 {
@@ -696,22 +708,6 @@ socket_hhook_deregister(int subtype)
 	if (hhook_head_deregister(V_socket_hhh[subtype]) != 0)
 		printf("%s: WARNING: unable to deregister hook\n", __func__);
 }
-#endif /* __rtems__ */
-
-static void
-socket_init(void *tag)
-{
-
-	socket_zone = uma_zcreate("socket", sizeof(struct socket), NULL, NULL,
-	    NULL, NULL, UMA_ALIGN_PTR, 0);
-	maxsockets = uma_zone_set_max(socket_zone, maxsockets);
-	uma_zone_set_warning(socket_zone, "kern.ipc.maxsockets limit reached");
-#ifndef __rtems__
-	EVENTHANDLER_REGISTER(maxsockets_change, socket_zone_change, NULL,
-	    EVENTHANDLER_PRI_FIRST);
-#endif /* __rtems__ */
-}
-SYSINIT(socket, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, socket_init, NULL);
 
 #ifndef __rtems__
 static void
@@ -737,6 +733,7 @@ socket_vnet_uninit(const void *unused __unused)
 VNET_SYSUNINIT(socket_vnet_uninit, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY,
     socket_vnet_uninit, NULL);
 #endif /* __rtems__ */
+#endif	/* SOCKET_HHOOK */
 
 /*
  * Initialise maxsockets.  This SYSINIT must be run after
@@ -835,12 +832,14 @@ soalloc(struct vnet *vnet)
 	    __func__, __LINE__, so));
 	so->so_vnet = vnet;
 #endif
+#ifdef SOCKET_HHOOK
 	/* We shouldn't need the so_global_mtx */
 	if (hhook_run_socket(so, NULL, HHOOK_SOCKET_CREATE)) {
 		/* Do we need more comprehensive error returns? */
 		uma_zfree(socket_zone, so);
 		return (NULL);
 	}
+#endif
 	mtx_lock(&so_global_mtx);
 	so->so_gencnt = ++so_gencnt;
 	++numopensockets;
@@ -876,7 +875,9 @@ sodealloc(struct socket *so)
 #ifdef MAC
 	mac_socket_destroy(so);
 #endif
+#ifdef SOCKET_HHOOK
 	hhook_run_socket(so, NULL, HHOOK_SOCKET_CLOSE);
+#endif
 
 	khelp_destroy_osd(&so->osd);
 	if (SOLISTENING(so)) {
@@ -1183,14 +1184,27 @@ solisten_clone(struct socket *head)
 	 * including those completely irrelevant to a new born socket.  For
 	 * compatibility with older versions we will inherit a list of
 	 * meaningful options.
+	 * The crucial bit to inherit is SO_ACCEPTFILTER.  We need it present
+	 * in the child socket for soisconnected() promoting socket from the
+	 * incomplete queue to complete.  It will be cleared before the child
+	 * gets available to accept(2).
 	 */
-	so->so_options = head->so_options & (SO_KEEPALIVE | SO_DONTROUTE |
-	    SO_LINGER | SO_OOBINLINE | SO_NOSIGPIPE);
+	so->so_options = head->so_options & (SO_ACCEPTFILTER | SO_KEEPALIVE |
+	    SO_DONTROUTE | SO_LINGER | SO_OOBINLINE | SO_NOSIGPIPE);
 	so->so_linger = head->so_linger;
 	so->so_state = head->so_state;
 	so->so_fibnum = head->so_fibnum;
 	so->so_proto = head->so_proto;
 	so->so_cred = crhold(head->so_cred);
+#ifdef SOCKET_HHOOK
+	if (V_socket_hhh[HHOOK_SOCKET_NEWCONN]->hhh_nhooks > 0) {
+		if (hhook_run_socket(so, head, HHOOK_SOCKET_NEWCONN)) {
+			sodealloc(so);
+			log(LOG_DEBUG, "%s: hhook run failed\n", __func__);
+			return (NULL);
+		}
+	}
+#endif
 #ifdef MAC
 	mac_socket_newconn(head, so);
 #endif
@@ -1219,7 +1233,7 @@ solisten_clone(struct socket *head)
 	return (so);
 }
 
-/* Connstatus may be 0, or SS_ISCONFIRMING, or SS_ISCONNECTED. */
+/* Connstatus may be 0 or SS_ISCONNECTED. */
 struct socket *
 sonewconn(struct socket *head, int connstatus)
 {
@@ -1494,8 +1508,14 @@ solisten_proto(struct socket *so, int backlog)
 	sbrcv_timeo = so->so_rcv.sb_timeo;
 	sbsnd_timeo = so->so_snd.sb_timeo;
 
-	sbdestroy(so, SO_SND);
-	sbdestroy(so, SO_RCV);
+#ifdef MAC
+	mac_socketpeer_label_free(so->so_peerlabel);
+#endif
+
+	if (!(so->so_proto->pr_flags & PR_SOCKBUF)) {
+		sbdestroy(so, SO_SND);
+		sbdestroy(so, SO_RCV);
+	}
 
 #ifdef INVARIANTS
 	bzero(&so->so_rcv,
@@ -1851,10 +1871,6 @@ sofree(struct socket *so)
 		so->so_dtor(so);
 
 	VNET_SO_ASSERT(so);
-	if ((pr->pr_flags & PR_RIGHTS) && !SOLISTENING(so)) {
-		MPASS(pr->pr_domain->dom_dispose != NULL);
-		(*pr->pr_domain->dom_dispose)(so);
-	}
 	if (pr->pr_detach != NULL)
 		pr->pr_detach(so);
 
@@ -1998,13 +2014,52 @@ soabort(struct socket *so)
 }
 
 int
-soaccept(struct socket *so, struct sockaddr **nam)
+soaccept(struct socket *so, struct sockaddr *sa)
 {
+#ifdef INVARIANTS
+	u_char len = sa->sa_len;
+#endif
 	int error;
 
 	CURVNET_SET(so->so_vnet);
-	error = so->so_proto->pr_accept(so, nam);
+	error = so->so_proto->pr_accept(so, sa);
+	KASSERT(sa->sa_len <= len,
+	    ("%s: protocol %p sockaddr overflow", __func__, so->so_proto));
 	CURVNET_RESTORE();
+	return (error);
+}
+
+int
+sopeeraddr(struct socket *so, struct sockaddr *sa)
+{
+#ifdef INVARIANTS
+	u_char len = sa->sa_len;
+#endif
+	int error;
+
+	CURVNET_SET(so->so_vnet);
+	error = so->so_proto->pr_peeraddr(so, sa);
+	KASSERT(sa->sa_len <= len,
+	    ("%s: protocol %p sockaddr overflow", __func__, so->so_proto));
+	CURVNET_RESTORE();
+
+	return (error);
+}
+
+int
+sosockaddr(struct socket *so, struct sockaddr *sa)
+{
+#ifdef INVARIANTS
+	u_char len = sa->sa_len;
+#endif
+	int error;
+
+	CURVNET_SET(so->so_vnet);
+	error = so->so_proto->pr_sockaddr(so, sa);
+	KASSERT(sa->sa_len <= len,
+	    ("%s: protocol %p sockaddr overflow", __func__, so->so_proto));
+	CURVNET_RESTORE();
+
 	return (error);
 }
 
@@ -2133,8 +2188,7 @@ sosend_dgram(struct socket *so, struct sockaddr *addr, struct uio *uio,
 		 */
 		if ((so->so_proto->pr_flags & PR_CONNREQUIRED) &&
 		    (so->so_proto->pr_flags & PR_IMPLOPCL) == 0) {
-			if ((so->so_state & SS_ISCONFIRMING) == 0 &&
-			    !(resid == 0 && clen != 0)) {
+			if (!(resid == 0 && clen != 0)) {
 				SOCKBUF_UNLOCK(&so->so_snd);
 				error = ENOTCONN;
 				goto out;
@@ -2343,8 +2397,7 @@ restart:
 			 */
 			if ((so->so_proto->pr_flags & PR_CONNREQUIRED) &&
 			    (so->so_proto->pr_flags & PR_IMPLOPCL) == 0) {
-				if ((so->so_state & SS_ISCONFIRMING) == 0 &&
-				    !(resid == 0 && clen != 0)) {
+				if (!(resid == 0 && clen != 0)) {
 					SOCKBUF_UNLOCK(&so->so_snd);
 					error = ENOTCONN;
 					goto out;
@@ -3177,11 +3230,6 @@ soreceive_generic(struct socket *so, struct sockaddr **psa, struct uio *uio,
 	}
 	if (mp != NULL)
 		*mp = NULL;
-	if ((so->so_proto->pr_flags & PR_WANTRCVD) &&
-	    (so->so_state & SS_ISCONFIRMING) && uio->uio_resid) {
-		VNET_SO_ASSERT(so);
-		so->so_proto->pr_rcvd(so, 0);
-	}
 
 	error = SOCK_IO_RECV_LOCK(so, SBLOCKWAIT(flags));
 	if (error)
@@ -3542,13 +3590,10 @@ soreceive_dgram(struct socket *so, struct sockaddr **psa, struct uio *uio,
 		    ("m->m_type == %d", m->m_type));
 		if (psa != NULL)
 			*psa = sodupsockaddr(mtod(m, struct sockaddr *),
-			    M_NOWAIT);
+			    M_WAITOK);
 		m = m_free(m);
 	}
-	if (m == NULL) {
-		/* XXXRW: Can this happen? */
-		return (0);
-	}
+	KASSERT(m, ("%s: no data or control after soname", __func__));
 
 	/*
 	 * Packet to copyout() is now in 'm' and it is disconnected from the
@@ -3628,68 +3673,23 @@ soreceive(struct socket *so, struct sockaddr **psa, struct uio *uio,
 }
 
 int
-soshutdown(struct socket *so, int how)
+soshutdown(struct socket *so, enum shutdown_how how)
 {
-	struct protosw *pr;
-	int error, soerror_enotconn;
-
-	if (!(how == SHUT_RD || how == SHUT_WR || how == SHUT_RDWR))
-		return (EINVAL);
-
-	soerror_enotconn = 0;
-	SOCK_LOCK(so);
-	if ((so->so_state &
-	    (SS_ISCONNECTED | SS_ISCONNECTING | SS_ISDISCONNECTING)) == 0) {
-		/*
-		 * POSIX mandates us to return ENOTCONN when shutdown(2) is
-		 * invoked on a datagram sockets, however historically we would
-		 * actually tear socket down. This is known to be leveraged by
-		 * some applications to unblock process waiting in recvXXX(2)
-		 * by other process that it shares that socket with. Try to meet
-		 * both backward-compatibility and POSIX requirements by forcing
-		 * ENOTCONN but still asking protocol to perform pru_shutdown().
-		 */
-		if (so->so_type != SOCK_DGRAM && !SOLISTENING(so)) {
-			SOCK_UNLOCK(so);
-			return (ENOTCONN);
-		}
-		soerror_enotconn = 1;
-	}
-
-	if (SOLISTENING(so)) {
-		if (how != SHUT_WR) {
-			so->so_error = ECONNABORTED;
-			solisten_wakeup(so);	/* unlocks so */
-		} else {
-			SOCK_UNLOCK(so);
-		}
-		goto done;
-	}
-	SOCK_UNLOCK(so);
+	int error;
 
 	CURVNET_SET(so->so_vnet);
-	pr = so->so_proto;
-	if (pr->pr_flush != NULL)
-		pr->pr_flush(so, how);
-	if (how != SHUT_WR)
-		sorflush(so);
-	if (how != SHUT_RD) {
-		error = pr->pr_shutdown(so);
-		wakeup(&so->so_timeo);
-		CURVNET_RESTORE();
-		return ((error == 0 && soerror_enotconn) ? ENOTCONN : error);
-	}
-	wakeup(&so->so_timeo);
+	error = so->so_proto->pr_shutdown(so, how);
 	CURVNET_RESTORE();
 
-done:
-	return (soerror_enotconn ? ENOTCONN : 0);
+	return (error);
 }
 
+/*
+ * Used by several pr_shutdown implementations that use generic socket buffers.
+ */
 void
 sorflush(struct socket *so)
 {
-	struct protosw *pr;
 	int error;
 
 	VNET_SO_ASSERT(so);
@@ -3699,6 +3699,12 @@ sorflush(struct socket *so)
 	 * a lock against other simultaneous readers before clearing the
 	 * socket buffer.  Don't let our acquire be interrupted by a signal
 	 * despite any existing socket disposition on interruptable waiting.
+	 *
+	 * The SOCK_IO_RECV_LOCK() is important here as there some pr_soreceive
+	 * methods that read the top of the socket buffer without acquisition
+	 * of the socket buffer mutex, assuming that top of the buffer
+	 * exclusively belongs to the read(2) syscall.  This is handy when
+	 * performing MSG_PEEK.
 	 */
 	socantrcvmore(so);
 
@@ -3709,22 +3715,17 @@ sorflush(struct socket *so)
 		return;
 	}
 
-	pr = so->so_proto;
-	if (pr->pr_flags & PR_RIGHTS) {
-		MPASS(pr->pr_domain->dom_dispose != NULL);
-		(*pr->pr_domain->dom_dispose)(so);
-	} else {
-		sbrelease(so, SO_RCV);
-		SOCK_IO_RECV_UNLOCK(so);
-	}
+	sbrelease(so, SO_RCV);
+	SOCK_IO_RECV_UNLOCK(so);
 
 }
 
+#ifdef SOCKET_HHOOK
 /*
  * Wrapper for Socket established helper hook.
  * Parameters: socket, context of the hook point, hook id.
  */
-static int inline
+static inline int
 hhook_run_socket(struct socket *so, void *hctx, int32_t h_id)
 {
 #ifndef __rtems__
@@ -3745,6 +3746,7 @@ hhook_run_socket(struct socket *so, void *hctx, int32_t h_id)
 	return (0);
 #endif /* __rtems__ */
 }
+#endif
 
 /*
  * Perhaps this routine, and sooptcopyout(), below, ought to come in an
@@ -4030,10 +4032,12 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 		}
 		default:
 #ifndef __rtems__
+#ifdef SOCKET_HHOOK
 			if (V_socket_hhh[HHOOK_SOCKET_OPT]->hhh_nhooks > 0)
 				error = hhook_run_socket(so, sopt,
 				    HHOOK_SOCKET_OPT);
 			else
+#endif
 #endif /* __rtems__ */
 				error = ENOPROTOOPT;
 			break;
@@ -4155,23 +4159,31 @@ integer:
 			goto integer;
 
 		case SO_SNDBUF:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_sbsnd_hiwat :
 			    so->so_snd.sb_hiwat;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_RCVBUF:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_sbrcv_hiwat :
 			    so->so_rcv.sb_hiwat;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_SNDLOWAT:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_sbsnd_lowat :
 			    so->so_snd.sb_lowat;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_RCVLOWAT:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_sbrcv_lowat :
 			    so->so_rcv.sb_lowat;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_SNDTIMEO:
@@ -4205,7 +4217,7 @@ integer:
 			    so, &extmac);
 			if (error)
 				goto bad;
-			error = sooptcopyout(sopt, &extmac, sizeof extmac);
+			/* Don't copy out extmac, it is unchanged. */
 #else
 			error = EOPNOTSUPP;
 #endif
@@ -4221,22 +4233,28 @@ integer:
 			    sopt->sopt_td->td_ucred, so, &extmac);
 			if (error)
 				goto bad;
-			error = sooptcopyout(sopt, &extmac, sizeof extmac);
+			/* Don't copy out extmac, it is unchanged. */
 #else
 			error = EOPNOTSUPP;
 #endif
 			break;
 
 		case SO_LISTENQLIMIT:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_qlimit : 0;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_LISTENQLEN:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_qlen : 0;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_LISTENINCQLEN:
+			SOCK_LOCK(so);
 			optval = SOLISTENING(so) ? so->sol_incqlen : 0;
+			SOCK_UNLOCK(so);
 			goto integer;
 
 		case SO_TS_CLOCK:
@@ -4276,10 +4294,12 @@ integer:
 
 		default:
 #ifndef __rtems__
+#ifdef SOCKET_HHOOK
 			if (V_socket_hhh[HHOOK_SOCKET_OPT]->hhh_nhooks > 0)
 				error = hhook_run_socket(so, sopt,
 				    HHOOK_SOCKET_OPT);
 			else
+#endif
 #endif /* __rtems__ */
 				error = ENOPROTOOPT;
 			break;
@@ -4580,8 +4600,12 @@ filt_soread(struct knote *kn, long hint)
 	} else if (sbavail(&so->so_rcv) >= so->so_rcv.sb_lowat)
 		return (1);
 
+#ifdef SOCKET_HHOOK
 	/* This hook returning non-zero indicates an event, not error */
 	return (hhook_run_socket(so, NULL, HHOOK_FILT_SOREAD));
+#else
+	return (0);
+#endif
 }
 
 static void
@@ -4610,7 +4634,9 @@ filt_sowrite(struct knote *kn, long hint)
 	SOCK_SENDBUF_LOCK_ASSERT(so);
 	kn->kn_data = sbspace(&so->so_snd);
 
+#ifdef SOCKET_HHOOK
 	hhook_run_socket(so, kn, HHOOK_FILT_SOWRITE);
+#endif
 
 	if (so->so_snd.sb_state & SBS_CANTSENDMORE) {
 		kn->kn_flags |= EV_EOF;
@@ -4707,7 +4733,7 @@ soisconnected(struct socket *so)
 	bool last __diagused;
 
 	SOCK_LOCK(so);
-	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING|SS_ISCONFIRMING);
+	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
 
 	if (so->so_qstate == SQ_INCOMP) {
@@ -5076,34 +5102,6 @@ sotoxsocket(struct socket *so, struct xsocket *xso)
 	SOCK_UNLOCK(so);
 }
 
-struct sockbuf *
-so_sockbuf_rcv(struct socket *so)
-{
-
-	return (&so->so_rcv);
-}
-
-struct sockbuf *
-so_sockbuf_snd(struct socket *so)
-{
-
-	return (&so->so_snd);
-}
-
-int
-so_state_get(const struct socket *so)
-{
-
-	return (so->so_state);
-}
-
-void
-so_state_set(struct socket *so, int val)
-{
-
-	so->so_state = val;
-}
-
 int
 so_options_get(const struct socket *so)
 {
@@ -5130,77 +5128,4 @@ so_error_set(struct socket *so, int val)
 {
 
 	so->so_error = val;
-}
-
-int
-so_linger_get(const struct socket *so)
-{
-
-	return (so->so_linger);
-}
-
-void
-so_linger_set(struct socket *so, int val)
-{
-
-	KASSERT(val >= 0 && val <= USHRT_MAX && val <= (INT_MAX / hz),
-	    ("%s: val %d out of range", __func__, val));
-
-	so->so_linger = val;
-}
-
-struct protosw *
-so_protosw_get(const struct socket *so)
-{
-
-	return (so->so_proto);
-}
-
-void
-so_protosw_set(struct socket *so, struct protosw *val)
-{
-
-	so->so_proto = val;
-}
-
-void
-so_sorwakeup(struct socket *so)
-{
-
-	sorwakeup(so);
-}
-
-void
-so_sowwakeup(struct socket *so)
-{
-
-	sowwakeup(so);
-}
-
-void
-so_sorwakeup_locked(struct socket *so)
-{
-
-	sorwakeup_locked(so);
-}
-
-void
-so_sowwakeup_locked(struct socket *so)
-{
-
-	sowwakeup_locked(so);
-}
-
-void
-so_lock(struct socket *so)
-{
-
-	SOCK_LOCK(so);
-}
-
-void
-so_unlock(struct socket *so)
-{
-
-	SOCK_UNLOCK(so);
 }

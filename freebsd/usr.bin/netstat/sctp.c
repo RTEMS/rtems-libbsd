@@ -37,16 +37,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char sccsid[] = "@(#)sctp.c	0.1 (Berkeley) 4/18/2007";
-#endif /* not lint */
-#endif
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/types.h>
@@ -60,7 +53,6 @@ static char sccsid[] = "@(#)sctp.c	0.1 (Berkeley) 4/18/2007";
 #include <netinet/sctp_constants.h>
 #include <arpa/inet.h>
 
-#include <err.h>
 #include <errno.h>
 #include <libutil.h>
 #include <netdb.h>
@@ -730,7 +722,7 @@ sctp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 	    "secret\n");
 	p(sctps_timopathmtu, "\t\t{:pmtu-timer/%ju} "
 	    "{N:/PMTU timer%s fired}\n");
-	p(sctps_timoshutdownack, "\t\t{:shutdown-timer/%ju} "
+	p(sctps_timoshutdownack, "\t\t{:shutdown-ack-timer/%ju} "
 	    "{N:/shutdown ack timer%s fired}\n");
 	p(sctps_timoshutdownguard, "\t\t{:shutdown-guard-timer/%ju} "
 	    "{N:/shutdown guard timer%s fired}\n");

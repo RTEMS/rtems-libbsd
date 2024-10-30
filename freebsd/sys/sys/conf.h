@@ -34,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)conf.h	8.5 (Berkeley) 1/9/95
  */
 
 #ifndef _SYS_CONF_H_
@@ -390,8 +388,10 @@ struct dumperinfo {
 
 #ifndef __rtems__
 extern int dumping;		/* system is dumping */
+extern bool dumped_core;	/* system successfully dumped kernel core */
 #else /* __rtems__ */
 #define	dumping 0
+#define	dumped_core 0
 #endif /* __rtems__ */
 
 /*

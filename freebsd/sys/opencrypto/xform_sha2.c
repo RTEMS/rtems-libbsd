@@ -49,7 +49,6 @@
  * PURPOSE.
  */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <crypto/sha2/sha224.h>
 #include <crypto/sha2/sha256.h>

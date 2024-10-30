@@ -29,7 +29,6 @@
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_kbd.h>
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/devctl.h>

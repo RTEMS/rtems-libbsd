@@ -35,8 +35,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)kern_sysctl.c	8.4 (Berkeley) 4/14/94
  */
 
 #include <sys/cdefs.h>
@@ -64,6 +62,8 @@
 #ifdef __rtems__
 #include <rtems/bsd/modules.h>
 #endif /* __rtems__ */
+
+#include <vm/vm_param.h>
 
 SYSCTL_ROOT_NODE(0, sysctl, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "Sysctl internal magic");
@@ -258,7 +258,11 @@ SYSCTL_PROC(_hw, HW_USERMEM, usermem,
 SYSCTL_LONG(_hw, OID_AUTO, availpages, CTLFLAG_RD, &physmem, 0,
     "Amount of physical memory (in pages)");
 
-u_long pagesizes[MAXPAGESIZES] = { PAGE_SIZE };
+#if VM_NRESERVLEVEL > 0
+_Static_assert(MAXPAGESIZES > VM_NRESERVLEVEL, "MAXPAGESIZES is too small");
+#endif
+
+u_long __read_mostly pagesizes[MAXPAGESIZES] = { PAGE_SIZE };
 
 static int
 sysctl_hw_pagesizes(SYSCTL_HANDLER_ARGS)
@@ -700,6 +704,10 @@ FEATURE(compat_freebsd12, "Compatible with FreeBSD 12");
 FEATURE(compat_freebsd13, "Compatible with FreeBSD 13");
 #endif
 
+#ifdef COMPAT_FREEBSD14
+FEATURE(compat_freebsd14, "Compatible with FreeBSD 14");
+#endif
+
 /*
  * This is really cheating.  These actually live in the libc, something
  * which I'm not quite sure is a good idea anyway, but in order for
@@ -788,6 +796,10 @@ sysctl_kern_pid_max(SYSCTL_HANDLER_ARGS)
 SYSCTL_PROC(_kern, OID_AUTO, pid_max, CTLTYPE_INT |
     CTLFLAG_RWTUN | CTLFLAG_NOFETCH | CTLFLAG_MPSAFE,
     0, 0, sysctl_kern_pid_max, "I", "Maximum allowed pid");
+
+SYSCTL_INT(_kern, OID_AUTO, pid_max_limit, CTLFLAG_RD,
+    SYSCTL_NULL_INT_PTR, PID_MAX,
+    "Maximum allowed pid (kern.pid_max) top limit");
 
 #include <sys/bio.h>
 #include <sys/buf.h>

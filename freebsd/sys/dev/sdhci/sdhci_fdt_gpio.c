@@ -30,9 +30,6 @@
  * for card detect and write protect, and uses FDT data to describe those pins.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/gpio.h>

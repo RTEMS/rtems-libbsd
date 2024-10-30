@@ -527,6 +527,29 @@ snl_attr_get_flag(struct snl_state *ss __unused, struct nlattr *nla, const void 
 }
 
 static inline bool
+snl_attr_get_bytes(struct snl_state *ss __unused, struct nlattr *nla, const void *arg,
+    void *target)
+{
+	if ((size_t)NLA_DATA_LEN(nla) != (size_t)arg)
+		return (false);
+
+	memcpy(target, NLA_DATA_CONST(nla), (size_t)arg);
+
+	return (true);
+}
+
+static inline bool
+snl_attr_get_bool(struct snl_state *ss __unused, struct nlattr *nla,
+    const void *arg __unused, void *target)
+{
+	if (NLA_DATA_LEN(nla) == sizeof(bool)) {
+		*((bool *)target) = *((const bool *)NLA_DATA_CONST(nla));
+		return (true);
+	}
+	return (false);
+}
+
+static inline bool
 snl_attr_get_uint8(struct snl_state *ss __unused, struct nlattr *nla,
     const void *arg __unused, void *target)
 {
@@ -1134,6 +1157,12 @@ snl_add_msg_attr_raw(struct snl_writer *nw, const struct nlattr *nla_src)
 	assert(attr_len >= 0);
 
 	return (snl_add_msg_attr(nw, nla_src->nla_type, attr_len, (const void *)(nla_src + 1)));
+}
+
+static inline bool
+snl_add_msg_attr_bool(struct snl_writer *nw, int attrtype, bool value)
+{
+	return (snl_add_msg_attr(nw, attrtype, sizeof(bool), &value));
 }
 
 static inline bool

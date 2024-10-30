@@ -31,17 +31,6 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char const copyright[] =
-"@(#) Copyright (c) 1988, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)hostname.c	8.1 (Berkeley) 5/31/93";
-#endif /* not lint */
-#endif
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
@@ -59,7 +48,6 @@ static char sccsid[] = "@(#)hostname.c	8.1 (Berkeley) 5/31/93";
 #include <machine/rtems-bsd-commands.h>
 #include <rtems/mdns.h>
 #endif /* __rtems__ */
-#include <sys/cdefs.h>
 #include <sys/param.h>
 
 #include <err.h>

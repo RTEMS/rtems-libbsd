@@ -29,11 +29,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)uipc_domain.c	8.2 (Berkeley) 10/18/93
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/protosw.h>
@@ -58,7 +55,7 @@ static struct mtx dom_mtx;		/* domain list lock */
 MTX_SYSINIT(domain, &dom_mtx, "domain list", MTX_DEF);
 
 static int
-pr_accept_notsupp(struct socket *so, struct sockaddr **nam)
+pr_accept_notsupp(struct socket *so, struct sockaddr *sa)
 {
 	return (EOPNOTSUPP);
 }
@@ -121,7 +118,7 @@ pr_listen_notsupp(struct socket *so, int backlog, struct thread *td)
 }
 
 static int
-pr_peeraddr_notsupp(struct socket *so, struct sockaddr **nam)
+pr_peeraddr_notsupp(struct socket *so, struct sockaddr *nam)
 {
 	return (EOPNOTSUPP);
 }
@@ -156,13 +153,13 @@ pr_ready_notsupp(struct socket *so, struct mbuf *m, int count)
 }
 
 static int
-pr_shutdown_notsupp(struct socket *so)
+pr_shutdown_notsupp(struct socket *so, enum shutdown_how how)
 {
 	return (EOPNOTSUPP);
 }
 
 static int
-pr_sockaddr_notsupp(struct socket *so, struct sockaddr **nam)
+pr_sockaddr_notsupp(struct socket *so, struct sockaddr *nam)
 {
 	return (EOPNOTSUPP);
 }

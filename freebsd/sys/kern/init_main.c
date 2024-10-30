@@ -41,11 +41,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)init_main.c	8.9 (Berkeley) 1/21/94
  */
 
-#include <sys/cdefs.h>
 #include <rtems/bsd/local/opt_ddb.h>
 #include <rtems/bsd/local/opt_kdb.h>
 #include <rtems/bsd/local/opt_init_path.h>
@@ -279,7 +276,6 @@ symbol_name(vm_offset_t va, db_strategy_t strategy)
 void
 mi_startup(void)
 {
-
 	struct sysinit *sip;
 	int last;
 #if defined(VERBOSE_SYSINIT)
@@ -369,10 +365,12 @@ mi_startup(void)
 
 #ifndef __rtems__
 	/*
-	 * Now hand over this thread to swapper.
+	 * We can't free our thread structure since it is statically allocated.
+	 * Just sleep forever.  This thread could be repurposed for something if
+	 * the need arises.
 	 */
-	swapper();
-	/* NOTREACHED*/
+	for (;;)
+		tsleep(__builtin_frame_address(0), PNOLOCK, "parked", 0);
 #endif /* __rtems__ */
 }
 
@@ -591,7 +589,7 @@ proc0_init(void *dummy __unused)
 	curthread->td_ucred = NULL;
 	newcred->cr_prison = &prison0;
 	newcred->cr_users++; /* avoid assertion failure */
-	proc_set_cred_init(p, newcred);
+	p->p_ucred = crcowget(newcred);
 	newcred->cr_users--;
 	crfree(newcred);
 #ifdef AUDIT

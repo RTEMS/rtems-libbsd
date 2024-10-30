@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)vnode.h	8.7 (Berkeley) 2/4/94
  */
 
 #ifndef _SYS_VNODE_H_
@@ -847,18 +845,15 @@ void	vn_seqc_write_end(struct vnode *vp);
 
 #ifndef __rtems__
 #define	vn_rangelock_unlock(vp, cookie)					\
-	rangelock_unlock(&(vp)->v_rl, (cookie), VI_MTX(vp))
-#define	vn_rangelock_unlock_range(vp, cookie, start, end)		\
-	rangelock_unlock_range(&(vp)->v_rl, (cookie), (start), (end), 	\
-	    VI_MTX(vp))
+	rangelock_unlock(&(vp)->v_rl, (cookie))
 #define	vn_rangelock_rlock(vp, start, end)				\
-	rangelock_rlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
+	rangelock_rlock(&(vp)->v_rl, (start), (end))
 #define	vn_rangelock_tryrlock(vp, start, end)				\
-	rangelock_tryrlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
+	rangelock_tryrlock(&(vp)->v_rl, (start), (end))
 #define	vn_rangelock_wlock(vp, start, end)				\
-	rangelock_wlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
+	rangelock_wlock(&(vp)->v_rl, (start), (end))
 #define	vn_rangelock_trywlock(vp, start, end)				\
-	rangelock_trywlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
+	rangelock_trywlock(&(vp)->v_rl, (start), (end))
 #else /* __rtems__ */
 #define	vn_rangelock_unlock(vp, cookie)
 #define	vn_rangelock_unlock_range(vp, cookie, start, end)
@@ -1115,7 +1110,14 @@ vrefcnt(struct vnode *vp)
 	vref(vp);							\
 } while (0)
 
+/*
+ * The caller doesn't know the file size and vnode_create_vobject() should
+ * determine the size on its own.
+ */
+#define	VNODE_NO_SIZE	((off_t)-1)
+
 int vnode_create_vobject(struct vnode *vp, off_t size, struct thread *td);
+int vnode_create_disk_vobject(struct vnode *vp, off_t size, struct thread *td);
 void vnode_destroy_vobject(struct vnode *vp);
 
 extern struct vop_vector fifo_specops;

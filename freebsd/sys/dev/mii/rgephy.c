@@ -95,6 +95,7 @@ static void	rgephy_disable_eee(struct mii_softc *);
 static const struct mii_phydesc rgephys[] = {
 	MII_PHY_DESC(REALTEK, RTL8169S),
 	MII_PHY_DESC(REALTEK, RTL8251),
+	MII_PHY_DESC(REALTEK, RTL8211FVD),
 	MII_PHY_END
 };
 
@@ -285,7 +286,7 @@ rgephy_linkup(struct mii_softc *sc)
 	linkup = 0;
 	if ((sc->mii_flags & MIIF_PHYPRIV0) == 0 &&
 	    sc->mii_mpd_rev >= RGEPHY_8211B) {
-		if (sc->mii_mpd_rev == RGEPHY_8211F) {
+		if (sc->mii_mpd_rev >= RGEPHY_8211F) {
 			reg = PHY_READ(sc, RGEPHY_F_MII_SSR);
 			if (reg & RGEPHY_F_SSR_LINK)
 				linkup++;
@@ -340,7 +341,7 @@ rgephy_status(struct mii_softc *sc)
 
 	if ((sc->mii_flags & MIIF_PHYPRIV0) == 0 &&
 	    sc->mii_mpd_rev >= RGEPHY_8211B) {
-		if (sc->mii_mpd_rev == RGEPHY_8211F) {
+		if (sc->mii_mpd_rev >= RGEPHY_8211F) {
 			ssr = PHY_READ(sc, RGEPHY_F_MII_SSR);
 			switch (ssr & RGEPHY_F_SSR_SPD_MASK) {
 			case RGEPHY_F_SSR_S1000:
@@ -525,6 +526,7 @@ rgephy_reset(struct mii_softc *sc)
 
 	switch (sc->mii_mpd_rev) {
 	case RGEPHY_8211F:
+	case RGEPHY_8211FVD:
 		pcr = PHY_READ(sc, RGEPHY_F_MII_PCR1);
 		pcr &= ~(RGEPHY_F_PCR1_MDI_MM | RGEPHY_F_PCR1_ALDPS_EN);
 		PHY_WRITE(sc, RGEPHY_F_MII_PCR1, pcr);

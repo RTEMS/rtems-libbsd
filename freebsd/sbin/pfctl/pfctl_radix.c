@@ -38,7 +38,6 @@
  *
  */
 
-#include <sys/cdefs.h>
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */

@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)rtsock.c	8.7 (Berkeley) 10/12/95
  */
 #include <rtems/bsd/local/opt_ddb.h>
 #include <rtems/bsd/local/opt_route.h>
@@ -464,10 +462,22 @@ rts_disconnect(struct socket *so)
 }
 
 static int
-rts_shutdown(struct socket *so)
+rts_shutdown(struct socket *so, enum shutdown_how how)
 {
+	/*
+	 * Note: route socket marks itself as connected through its lifetime.
+	 */
+	switch (how) {
+	case SHUT_RD:
+		sorflush(so);
+		break;
+	case SHUT_RDWR:
+		sorflush(so);
+		/* FALLTHROUGH */
+	case SHUT_WR:
+		socantsendmore(so);
+	}
 
-	socantsendmore(so);
 	return (0);
 }
 

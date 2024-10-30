@@ -39,11 +39,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)kern_subr.c	8.3 (Berkeley) 1/21/94
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -266,19 +263,27 @@ uiomove_faultflag(void *cp, int n, struct uio *uio, int nofault)
 #ifndef __rtems__
 			maybe_yield();
 #endif /* __rtems__ */
-			if (uio->uio_rw == UIO_READ)
+			switch (uio->uio_rw) {
+			case UIO_READ:
 				error = copyout(cp, iov->iov_base, cnt);
-			else
+				break;
+			case UIO_WRITE:
 				error = copyin(iov->iov_base, cp, cnt);
+				break;
+			}
 			if (error)
 				goto out;
 			break;
 
 		case UIO_SYSSPACE:
-			if (uio->uio_rw == UIO_READ)
+			switch (uio->uio_rw) {
+			case UIO_READ:
 				bcopy(cp, iov->iov_base, cnt);
-			else
+				break;
+			case UIO_WRITE:
 				bcopy(iov->iov_base, cp, cnt);
+				break;
+			}
 			break;
 		case UIO_NOCOPY:
 			break;

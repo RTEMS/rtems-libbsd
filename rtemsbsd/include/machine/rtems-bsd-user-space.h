@@ -97,8 +97,20 @@
 #define EAI_ADDRFAMILY 1
 /* Here until socket in newlib is updated */
 #define AF_NETLINK 38
+/* From sys/sys/ssp.h */
+#define __ssp_real(fun)             fun
 
 #define WITHOUT_NETLINK 1
+
+/* From sys/sys/_types.h */
+/* Types for sys/acl.h */
+typedef __uint32_t	__acl_tag_t;
+typedef __uint32_t	__acl_perm_t;
+typedef __uint16_t	__acl_entry_type_t;
+typedef __uint16_t	__acl_flag_t;
+typedef __uint32_t	__acl_type_t;
+typedef __uint32_t	*__acl_permset_t;
+typedef __uint16_t	*__acl_flagset_t;
 
 typedef   __int64_t       kssize_t;
 typedef   __uint64_t      kpaddr_t;

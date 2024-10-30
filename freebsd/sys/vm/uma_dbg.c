@@ -55,18 +55,24 @@
 #include <vm/uma_dbg.h>
 #include <vm/memguard.h>
 
+#ifndef __rtems__
+#include <machine/stack.h>
+#endif /* __rtems__ */
+
 static const u_long uma_junk = (u_long)0xdeadc0dedeadc0de;
 
 /*
  * Checks an item to make sure it hasn't been overwritten since it was freed,
  * prior to subsequent reallocation.
  *
- * Complies with standard ctor arg/return
+ * Complies with standard ctor arg/return.  arg should be zone pointer or NULL.
  */
 int
 trash_ctor(void *mem, int size, void *arg, int flags)
 {
+	struct uma_zone *zone = arg;
 	u_long *p = mem, *e;
+	int off;
 
 #ifdef DEBUG_MEMGUARD
 	if (is_memguard_addr(mem))
@@ -75,11 +81,15 @@ trash_ctor(void *mem, int size, void *arg, int flags)
 
 	e = p + size / sizeof(*p);
 	for (; p < e; p++) {
-		if (__predict_true(*p == uma_junk))
-			continue;
-		panic("Memory modified after free %p(%d) val=%lx @ %p\n",
-		    mem, size, *p, p);
+		if (__predict_false(*p != uma_junk))
+			goto dopanic;
 	}
+	return (0);
+
+dopanic:
+	off = (uintptr_t)p - (uintptr_t)mem;
+	panic("Memory modified after free %p (%d, %s) + %d = %lx\n",
+	    mem, size, zone ? zone->uz_name : "", off,  *p);
 	return (0);
 }
 
@@ -87,7 +97,6 @@ trash_ctor(void *mem, int size, void *arg, int flags)
  * Fills an item with predictable garbage
  *
  * Complies with standard dtor arg/return
- *
  */
 void
 trash_dtor(void *mem, int size, void *arg)
@@ -108,7 +117,6 @@ trash_dtor(void *mem, int size, void *arg)
  * Fills an item with predictable garbage
  *
  * Complies with standard init arg/return
- *
  */
 int
 trash_init(void *mem, int size, int flags)
@@ -118,10 +126,10 @@ trash_init(void *mem, int size, int flags)
 }
 
 /*
- * Checks an item to make sure it hasn't been overwritten since it was freed.
+ * Checks an item to make sure it hasn't been overwritten since it was freed,
+ * prior to freeing it back to available memory.
  *
  * Complies with standard fini arg/return
- *
  */
 void
 trash_fini(void *mem, int size)
@@ -129,11 +137,19 @@ trash_fini(void *mem, int size)
 	(void)trash_ctor(mem, size, NULL, 0);
 }
 
+/*
+ * Checks an item to make sure it hasn't been overwritten since it was freed,
+ * prior to subsequent reallocation.
+ *
+ * Complies with standard ctor arg/return.  arg should be zone pointer or NULL.
+ */
 int
 mtrash_ctor(void *mem, int size, void *arg, int flags)
 {
-	struct malloc_type **ksp;
+	struct uma_zone *zone = arg;
 	u_long *p = mem, *e;
+	struct malloc_type **ksp;
+	int off, osize = size;
 
 #ifdef DEBUG_MEMGUARD
 	if (is_memguard_addr(mem))
@@ -141,17 +157,35 @@ mtrash_ctor(void *mem, int size, void *arg, int flags)
 #endif
 
 	size -= sizeof(struct malloc_type *);
-	ksp = (struct malloc_type **)mem;
-	ksp += size / sizeof(struct malloc_type *);
 
 	e = p + size / sizeof(*p);
 	for (; p < e; p++) {
-		if (__predict_true(*p == uma_junk))
-			continue;
-		printf("Memory modified after free %p(%d) val=%lx @ %p\n",
-		    mem, size, *p, p);
-		panic("Most recently used by %s\n", (*ksp == NULL)?
-		    "none" : (*ksp)->ks_shortdesc);
+		if (__predict_false(*p != uma_junk))
+			goto dopanic;
+	}
+	return (0);
+
+dopanic:
+	off = (uintptr_t)p - (uintptr_t)mem;
+	ksp = (struct malloc_type **)mem;
+	ksp += size / sizeof(struct malloc_type *);
+	if (*ksp != NULL
+#ifdef INKERNEL
+	    && INKERNEL((uintptr_t)*ksp)
+#endif
+	    ) {
+		/*
+		 * If *ksp is corrupted we may be unable to panic clean,
+		 * so print what we have reliably while we still can.
+		 */
+		printf("Memory modified after free %p (%d, %s, %p) + %d = %lx\n",
+		    mem, osize, zone ? zone->uz_name : "", *ksp, off, *p);
+		panic("Memory modified after free %p (%d, %s, %s) + %d = %lx\n",
+		    mem, osize, zone ? zone->uz_name : "", (*ksp)->ks_shortdesc,
+		    off, *p);
+	} else {
+		panic("Memory modified after free %p (%d, %s, %p) + %d = %lx\n",
+		    mem, osize, zone ? zone->uz_name : "", *ksp, off, *p);
 	}
 	return (0);
 }
@@ -160,7 +194,6 @@ mtrash_ctor(void *mem, int size, void *arg, int flags)
  * Fills an item with predictable garbage
  *
  * Complies with standard dtor arg/return
- *
  */
 void
 mtrash_dtor(void *mem, int size, void *arg)
@@ -183,7 +216,6 @@ mtrash_dtor(void *mem, int size, void *arg)
  * Fills an item with predictable garbage
  *
  * Complies with standard init arg/return
- *
  */
 int
 mtrash_init(void *mem, int size, int flags)
@@ -208,7 +240,6 @@ mtrash_init(void *mem, int size, int flags)
  * prior to freeing it back to available memory.
  *
  * Complies with standard fini arg/return
- *
  */
 void
 mtrash_fini(void *mem, int size)

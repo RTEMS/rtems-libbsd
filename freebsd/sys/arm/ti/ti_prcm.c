@@ -34,16 +34,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * Power, Reset and Clock Management Module
- *
- * This is a very simple driver wrapper around the PRCM set of registers in
- * the OMAP3 chip. It allows you to turn on and off things like the functional
- * and interface clocks to the various on-chip modules.
- *
- */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+/* Based on sys/arm/ti/am335x/am335x_prcm.c */
 
 #include <sys/param.h>
 #include <sys/systm.h>

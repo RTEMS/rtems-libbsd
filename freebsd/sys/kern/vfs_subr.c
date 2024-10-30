@@ -34,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)vfs_subr.c	8.31 (Berkeley) 5/26/95
  */
 
 /*
@@ -554,6 +552,42 @@ buf_trie_free(struct pctrie *ptree, void *node)
 }
 PCTRIE_DEFINE_SMR(BUF, buf, b_lblkno, buf_trie_alloc, buf_trie_free,
     buf_trie_smr);
+
+/*
+ * Lookup the next element greater than or equal to lblkno, accounting for the
+ * fact that, for pctries, negative values are greater than nonnegative ones.
+ */
+static struct buf *
+buf_lookup_ge(struct bufv *bv, daddr_t lblkno)
+{
+	struct buf *bp;
+
+	bp = BUF_PCTRIE_LOOKUP_GE(&bv->bv_root, lblkno);
+	if (bp == NULL && lblkno < 0)
+		bp = BUF_PCTRIE_LOOKUP_GE(&bv->bv_root, 0);
+	if (bp != NULL && bp->b_lblkno < lblkno)
+		bp = NULL;
+	return (bp);
+}
+
+/*
+ * Insert bp, and find the next element smaller than bp, accounting for the fact
+ * that, for pctries, negative values are greater than nonnegative ones.
+ */
+static int
+buf_insert_lookup_le(struct bufv *bv, struct buf *bp, struct buf **n)
+{
+	int error;
+
+	error = BUF_PCTRIE_INSERT_LOOKUP_LE(&bv->bv_root, bp, n);
+	if (error != EEXIST) {
+		if (*n == NULL && bp->b_lblkno >= 0)
+			*n = BUF_PCTRIE_LOOKUP_LE(&bv->bv_root, ~0L);
+		if (*n != NULL && (*n)->b_lblkno >= bp->b_lblkno)
+			*n = NULL;
+	}
+	return (error);
+}
 
 /*
  * Initialize the vnode management data structures.
@@ -1265,7 +1299,7 @@ restart:
 		 * If it's been deconstructed already, it's still
 		 * referenced, or it exceeds the trigger, skip it.
 		 * Also skip free vnodes.  We are trying to make space
-		 * to expand the free list, not reduce it.
+		 * for more free vnodes, not reduce their count.
 		 */
 		if (vp->v_usecount > 0 || vp->v_holdcnt == 0 ||
 		    (!reclaim_nc_src && !LIST_EMPTY(&vp->v_cache_src)))
@@ -1370,7 +1404,7 @@ SYSCTL_INT(_vfs_vnode_vnlru, OID_AUTO, max_free_per_call, CTLFLAG_RW,
     "limit on vnode free requests per call to the vnlru_free routine");
 
 /*
- * Attempt to reduce the free list by the requested amount.
+ * Attempt to recycle requested amount of free vnodes.
  */
 static int
 vnlru_free_impl(int count, struct vfsops *mnt_op, struct vnode *mvp, bool isvnlru)
@@ -1557,7 +1591,7 @@ static int vnlruproc_sig;
 static u_long vnlruproc_kicks;
 
 SYSCTL_ULONG(_vfs_vnode_vnlru, OID_AUTO, kicks, CTLFLAG_RD, &vnlruproc_kicks, 0,
-    "Number of times vnlru got woken up due to vnode shortage");
+    "Number of times vnlru awakened due to vnode shortage");
 
 #define VNLRU_COUNT_SLOP 100
 
@@ -1822,7 +1856,7 @@ vnlru_proc(void)
 		/*
 		 * If numvnodes is too large (due to desiredvnodes being
 		 * adjusted using its sysctl, or emergency growth), first
-		 * try to reduce it by discarding from the free list.
+		 * try to reduce it by discarding free vnodes.
 		 */
 		if (rnumvnodes > desiredvnodes + 10) {
 			vnlru_free_locked_vnlru(rnumvnodes - desiredvnodes);
@@ -1833,7 +1867,7 @@ vnlru_proc(void)
 		 * Sleep if the vnode cache is in a good state.  This is
 		 * when it is not over-full and has space for about a 4%
 		 * or 9% expansion (by growing its size or inexcessively
-		 * reducing its free list).  Otherwise, try to reclaim
+		 * reducing free vnode count).  Otherwise, try to reclaim
 		 * space for a 10% expansion.
 		 */
 		if (vstir && force == 0) {
@@ -1923,10 +1957,7 @@ SYSINIT(vnlru, SI_SUB_KTHREAD_UPDATE, SI_ORDER_FIRST, kproc_start,
  */
 
 /*
- * Try to recycle a freed vnode.  We abort if anyone picks up a reference
- * before we actually vgone().  This function must be called with the vnode
- * held to prevent the vnode from being returned to the free list midway
- * through vgone().
+ * Try to recycle a freed vnode.
  */
 static int
 vtryrecycle(struct vnode *vp, bool isvnlru)
@@ -2041,14 +2072,10 @@ vn_alloc_hard(struct mount *mp, u_long rnumvnodes, bool bumped)
 	}
 
 	/*
-	 * Grow the vnode cache if it will not be above its target max
-	 * after growing.  Otherwise, if the free list is nonempty, try
-	 * to reclaim 1 item from it before growing the cache (possibly
-	 * above its target max if the reclamation failed or is delayed).
-	 * Otherwise, wait for some space.  In all cases, schedule
-	 * vnlru_proc() if we are getting short of space.  The watermarks
-	 * should be chosen so that we never wait or even reclaim from
-	 * the free list to below its target minimum.
+	 * Grow the vnode cache if it will not be above its target max after
+	 * growing.  Otherwise, if there is at least one free vnode, try to
+	 * reclaim 1 item from it before growing the cache (possibly above its
+	 * target max if the reclamation failed or is delayed).
 	 */
 	if (vnlru_free_locked_direct(1) > 0)
 		goto alloc;
@@ -2103,7 +2130,7 @@ vn_free(struct vnode *vp)
 }
 
 /*
- * Return the next vnode from the free list.
+ * Allocate a new vnode.
  */
 int
 getnewvnode(const char *tag, struct mount *mp, struct vop_vector *vops,
@@ -2249,10 +2276,6 @@ freevnode(struct vnode *vp)
 	VNASSERT(bo->bo_dirty.bv_cnt == 0, vp, ("dirtybufcnt not 0"));
 	VNASSERT(pctrie_is_empty(&bo->bo_dirty.bv_root), vp,
 	    ("dirty blk trie not empty"));
-#ifndef __rtems__
-	VNASSERT(TAILQ_EMPTY(&vp->v_rl.rl_waiters), vp,
-	    ("Dangling rangelock waiters"));
-#endif /* __rtems__ */
 	VNASSERT((vp->v_iflag & (VI_DOINGINACT | VI_OWEINACT)) == 0, vp,
 	    ("Leaked inactivation"));
 	VI_UNLOCK(vp);
@@ -2568,9 +2591,8 @@ bnoreuselist(struct bufv *bufv, struct bufobj *bo, daddr_t startn, daddr_t endn)
 
 	for (lblkno = startn;;) {
 again:
-		bp = BUF_PCTRIE_LOOKUP_GE(&bufv->bv_root, lblkno);
-		if (bp == NULL || bp->b_lblkno >= endn ||
-		    bp->b_lblkno < startn)
+		bp = buf_lookup_ge(bufv, lblkno);
+		if (bp == NULL || bp->b_lblkno >= endn)
 			break;
 		error = BUF_TIMELOCK(bp, LK_EXCLUSIVE | LK_SLEEPFAIL |
 		    LK_INTERLOCK, BO_LOCKPTR(bo), "brlsfl", 0, 0);
@@ -2697,17 +2719,24 @@ static int
 v_inval_buf_range_locked(struct vnode *vp, struct bufobj *bo,
     daddr_t startlbn, daddr_t endlbn)
 {
+	struct bufv *bv;
 	struct buf *bp, *nbp;
-	bool anyfreed;
+	uint8_t anyfreed;
+	bool clean;
 
 	ASSERT_VOP_LOCKED(vp, "v_inval_buf_range_locked");
 	ASSERT_BO_LOCKED(bo);
 
+	anyfreed = 1;
+	clean = true;
 	do {
-		anyfreed = false;
-		TAILQ_FOREACH_SAFE(bp, &bo->bo_clean.bv_hd, b_bobufs, nbp) {
-			if (bp->b_lblkno < startlbn || bp->b_lblkno >= endlbn)
-				continue;
+		bv = clean ? &bo->bo_clean : &bo->bo_dirty;
+		bp = buf_lookup_ge(bv, startlbn);
+		if (bp == NULL)
+			continue;
+		TAILQ_FOREACH_FROM_SAFE(bp, &bv->bv_hd, b_bobufs, nbp) {
+			if (bp->b_lblkno >= endlbn)
+				break;
 			if (BUF_LOCK(bp,
 			    LK_EXCLUSIVE | LK_SLEEPFAIL | LK_INTERLOCK,
 			    BO_LOCKPTR(bo)) == ENOLCK) {
@@ -2719,39 +2748,17 @@ v_inval_buf_range_locked(struct vnode *vp, struct bufobj *bo,
 			bp->b_flags |= B_INVAL | B_RELBUF;
 			bp->b_flags &= ~B_ASYNC;
 			brelse(bp);
-			anyfreed = true;
+			anyfreed = 2;
 
 			BO_LOCK(bo);
 			if (nbp != NULL &&
-			    (((nbp->b_xflags & BX_VNCLEAN) == 0) ||
+			    (((nbp->b_xflags &
+			    (clean ? BX_VNCLEAN : BX_VNDIRTY)) == 0) ||
 			    nbp->b_vp != vp ||
-			    (nbp->b_flags & B_DELWRI) != 0))
+			    (nbp->b_flags & B_DELWRI) == (clean? B_DELWRI: 0)))
 				return (EAGAIN);
 		}
-
-		TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
-			if (bp->b_lblkno < startlbn || bp->b_lblkno >= endlbn)
-				continue;
-			if (BUF_LOCK(bp,
-			    LK_EXCLUSIVE | LK_SLEEPFAIL | LK_INTERLOCK,
-			    BO_LOCKPTR(bo)) == ENOLCK) {
-				BO_LOCK(bo);
-				return (EAGAIN);
-			}
-			bremfree(bp);
-			bp->b_flags |= B_INVAL | B_RELBUF;
-			bp->b_flags &= ~B_ASYNC;
-			brelse(bp);
-			anyfreed = true;
-
-			BO_LOCK(bo);
-			if (nbp != NULL &&
-			    (((nbp->b_xflags & BX_VNDIRTY) == 0) ||
-			    (nbp->b_vp != vp) ||
-			    (nbp->b_flags & B_DELWRI) == 0))
-				return (EAGAIN);
-		}
-	} while (anyfreed);
+	} while (clean = !clean, anyfreed-- > 0);
 	return (0);
 }
 
@@ -2780,12 +2787,12 @@ buf_vlist_remove(struct buf *bp)
 }
 
 /*
- * Add the buffer to the sorted clean or dirty block list.
- *
- * NOTE: xflags is passed as a constant, optimizing this inline function!
+ * Add the buffer to the sorted clean or dirty block list.  Return zero on
+ * success, EEXIST if a buffer with this identity already exists, or another
+ * error on allocation failure.
  */
-static void
-buf_vlist_add(struct buf *bp, struct bufobj *bo, b_xflags_t xflags)
+static inline int
+buf_vlist_find_or_add(struct buf *bp, struct bufobj *bo, b_xflags_t xflags)
 {
 	struct bufv *bv;
 	struct buf *n;
@@ -2796,30 +2803,67 @@ buf_vlist_add(struct buf *bp, struct bufobj *bo, b_xflags_t xflags)
 	    ("buf_vlist_add: bo %p does not allow bufs", bo));
 	KASSERT((xflags & BX_VNDIRTY) == 0 || (bo->bo_flag & BO_DEAD) == 0,
 	    ("dead bo %p", bo));
-	KASSERT((bp->b_xflags & (BX_VNDIRTY|BX_VNCLEAN)) == 0,
-	    ("buf_vlist_add: Buf %p has existing xflags %d", bp, bp->b_xflags));
-	bp->b_xflags |= xflags;
+	KASSERT((bp->b_xflags & (BX_VNDIRTY | BX_VNCLEAN)) == xflags,
+	    ("buf_vlist_add: b_xflags %#x not set on bp %p", xflags, bp));
+
 	if (xflags & BX_VNDIRTY)
 		bv = &bo->bo_dirty;
 	else
 		bv = &bo->bo_clean;
 
-	/*
-	 * Keep the list ordered.  Optimize empty list insertion.  Assume
-	 * we tend to grow at the tail so lookup_le should usually be cheaper
-	 * than _ge. 
-	 */
-	if (bv->bv_cnt == 0 ||
-	    bp->b_lblkno > TAILQ_LAST(&bv->bv_hd, buflists)->b_lblkno)
-		TAILQ_INSERT_TAIL(&bv->bv_hd, bp, b_bobufs);
-	else if ((n = BUF_PCTRIE_LOOKUP_LE(&bv->bv_root, bp->b_lblkno)) == NULL)
+	error = buf_insert_lookup_le(bv, bp, &n);
+	if (n == NULL) {
+		KASSERT(error != EEXIST,
+		    ("buf_vlist_add: EEXIST but no existing buf found: bp %p",
+		    bp));
+	} else {
+		KASSERT(n->b_lblkno <= bp->b_lblkno,
+		    ("buf_vlist_add: out of order insert/lookup: bp %p n %p",
+		    bp, n));
+		KASSERT((n->b_lblkno == bp->b_lblkno) == (error == EEXIST),
+		    ("buf_vlist_add: inconsistent result for existing buf: "
+		    "error %d bp %p n %p", error, bp, n));
+	}
+	if (error != 0)
+		return (error);
+
+	/* Keep the list ordered. */
+	if (n == NULL) {
+		KASSERT(TAILQ_EMPTY(&bv->bv_hd) ||
+		    bp->b_lblkno < TAILQ_FIRST(&bv->bv_hd)->b_lblkno,
+		    ("buf_vlist_add: queue order: "
+		    "%p should be before first %p",
+		    bp, TAILQ_FIRST(&bv->bv_hd)));
 		TAILQ_INSERT_HEAD(&bv->bv_hd, bp, b_bobufs);
-	else
+	} else {
+		KASSERT(TAILQ_NEXT(n, b_bobufs) == NULL ||
+		    bp->b_lblkno < TAILQ_NEXT(n, b_bobufs)->b_lblkno,
+		    ("buf_vlist_add: queue order: "
+		    "%p should be before next %p",
+		    bp, TAILQ_NEXT(n, b_bobufs)));
 		TAILQ_INSERT_AFTER(&bv->bv_hd, n, bp, b_bobufs);
-	error = BUF_PCTRIE_INSERT(&bv->bv_root, bp);
-	if (error)
-		panic("buf_vlist_add:  Preallocated nodes insufficient.");
+	}
+
 	bv->bv_cnt++;
+	return (0);
+}
+
+/*
+ * Add the buffer to the sorted clean or dirty block list.
+ *
+ * NOTE: xflags is passed as a constant, optimizing this inline function!
+ */
+static void
+buf_vlist_add(struct buf *bp, struct bufobj *bo, b_xflags_t xflags)
+{
+	int error;
+
+	KASSERT((bp->b_xflags & (BX_VNDIRTY | BX_VNCLEAN)) == 0,
+	    ("buf_vlist_add: Buf %p has existing xflags %d", bp, bp->b_xflags));
+	bp->b_xflags |= xflags;
+	error = buf_vlist_find_or_add(bp, bo, xflags);
+	if (error)
+		panic("buf_vlist_add: error=%d", error);
 }
 
 /*
@@ -2858,26 +2902,42 @@ gbincore_unlocked(struct bufobj *bo, daddr_t lblkno)
 /*
  * Associate a buffer with a vnode.
  */
-void
+int
 bgetvp(struct vnode *vp, struct buf *bp)
 {
 	struct bufobj *bo;
+	int error;
 
 	bo = &vp->v_bufobj;
-	ASSERT_BO_WLOCKED(bo);
+	ASSERT_BO_UNLOCKED(bo);
 	VNASSERT(bp->b_vp == NULL, bp->b_vp, ("bgetvp: not free"));
 
 	CTR3(KTR_BUF, "bgetvp(%p) vp %p flags %X", bp, vp, bp->b_flags);
 	VNASSERT((bp->b_xflags & (BX_VNDIRTY|BX_VNCLEAN)) == 0, vp,
 	    ("bgetvp: bp already attached! %p", bp));
 
-	vhold(vp);
+	/*
+	 * Add the buf to the vnode's clean list unless we lost a race and find
+	 * an existing buf in either dirty or clean.
+	 */
 	bp->b_vp = vp;
 	bp->b_bufobj = bo;
-	/*
-	 * Insert onto list for new vnode.
-	 */
-	buf_vlist_add(bp, bo, BX_VNCLEAN);
+	bp->b_xflags |= BX_VNCLEAN;
+	error = EEXIST;
+	BO_LOCK(bo);
+	if (BUF_PCTRIE_LOOKUP(&bo->bo_dirty.bv_root, bp->b_lblkno) == NULL)
+		error = buf_vlist_find_or_add(bp, bo, BX_VNCLEAN);
+	BO_UNLOCK(bo);
+	if (__predict_true(error == 0)) {
+		vhold(vp);
+		return (0);
+	}
+	if (error != EEXIST)
+		panic("bgetvp: buf_vlist_add error: %d", error);
+	bp->b_vp = NULL;
+	bp->b_bufobj = NULL;
+	bp->b_xflags &= ~BX_VNCLEAN;
+	return (error);
 }
 
 /*
@@ -3243,6 +3303,16 @@ reassignbuf(struct buf *bp)
 	    bp, bp->b_vp, bp->b_flags);
 
 	BO_LOCK(bo);
+	if ((bo->bo_flag & BO_NONSTERILE) == 0) {
+		/*
+		 * Coordinate with getblk's unlocked lookup.  Make
+		 * BO_NONSTERILE visible before the first reassignbuf produces
+		 * any side effect.  This could be outside the bo lock if we
+		 * used a separate atomic flag field.
+		 */
+		bo->bo_flag |= BO_NONSTERILE;
+		atomic_thread_fence_rel();
+	}
 	buf_vlist_remove(bp);
 
 	/*
@@ -3307,16 +3377,10 @@ v_init_counters(struct vnode *vp)
 }
 
 /*
- * Grab a particular vnode from the free list, increment its
- * reference count and lock it.  VIRF_DOOMED is set if the vnode
- * is being destroyed.  Only callers who specify LK_RETRY will
- * see doomed vnodes.  If inactive processing was delayed in
- * vput try to do it here.
+ * Get a usecount on a vnode.
  *
- * usecount is manipulated using atomics without holding any locks.
- *
- * holdcnt can be manipulated using atomics without holding any locks,
- * except when transitioning 1<->0, in which case the interlock is held.
+ * vget and vget_finish may fail to lock the vnode if they lose a race against
+ * it being doomed. LK_RETRY can be passed in flags to lock it anyway.
  *
  * Consumers which don't guarantee liveness of the vnode can use SMR to
  * try to get a reference. Note this operation can fail since the vnode
@@ -3983,9 +4047,9 @@ vdbatch_dequeue(struct vnode *vp)
 }
 
 /*
- * Drop the hold count of the vnode.  If this is the last reference to
- * the vnode we place it on the free list unless it has been vgone'd
- * (marked VIRF_DOOMED) in which case we will free it.
+ * Drop the hold count of the vnode.
+ *
+ * It will only get freed if this is the last hold *and* it has been vgone'd.
  *
  * Because the vnode vm object keeps a hold reference on the vnode if
  * there is at least one resident non-cached page, the vnode cannot
@@ -4030,7 +4094,7 @@ vdrop(struct vnode *vp)
 	vdropl(vp);
 }
 
-static void __always_inline
+static __always_inline void
 vdropl_impl(struct vnode *vp, bool enqueue)
 {
 
@@ -4298,7 +4362,7 @@ loop:
 }
 
 /*
- * Recycle an unused vnode to the front of the free list.
+ * Recycle an unused vnode.
  */
 int
 vrecycle(struct vnode *vp)

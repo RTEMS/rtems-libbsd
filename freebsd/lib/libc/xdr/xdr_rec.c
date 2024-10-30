@@ -35,10 +35,6 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint) 
-static char *sccsid2 = "@(#)xdr_rec.c 1.21 87/08/11 Copyr 1984 Sun Micro";
-static char *sccsid = "@(#)xdr_rec.c	2.2 88/08/01 4.0 RPCSRC";
-#endif
 /*
  * xdr_rec.c, Implements TCP/IP based XDR streams with a "record marking"
  * layer above tcp (for rpc's use).
@@ -492,7 +488,7 @@ xdrrec_eof(XDR *xdrs)
  * The client must tell the package when an end-of-record has occurred.
  * The second parameters tells whether the record should be flushed to the
  * (output) tcp stream.  (This let's the package support batched or
- * pipelined procedure calls.)  TRUE => immmediate flush to tcp connection.
+ * pipelined procedure calls.)  TRUE => immediate flush to tcp connection.
  */
 bool_t
 xdrrec_endofrecord(XDR *xdrs, bool_t sendnow)

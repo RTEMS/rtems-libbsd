@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)ucred.h	8.4 (Berkeley) 1/9/95
  */
 
 #ifndef _SYS_UCRED_H_
@@ -149,7 +147,6 @@ struct ucred	*crcopysafe(struct proc *p, struct ucred *cr);
 struct ucred	*crdup(struct ucred *cr);
 void	crextend(struct ucred *cr, int n);
 #ifndef __rtems__
-void	proc_set_cred_init(struct proc *p, struct ucred *cr);
 void	proc_set_cred(struct proc *p, struct ucred *cr);
 void	proc_unset_cred(struct proc *p);
 #endif /* __rtems__ */

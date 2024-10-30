@@ -71,20 +71,6 @@
  * SUCH DAMAGE.
  */
 
-#if defined(__rtems__) && defined(INET6)
-#if 0
-#ifndef lint
-static const char copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)ping.c	8.1 (Berkeley) 6/5/93";
-#endif /* not lint */
-#endif
-
-#include <sys/cdefs.h>
 /*
  * Using the InterNet Control Message Protocol (ICMP) "ECHO" facility,
  * measure round-trip-delays and packet loss across network paths.
@@ -108,6 +94,7 @@ static char sccsid[] = "@(#)ping.c	8.1 (Berkeley) 6/5/93";
  * network attached to 1 or more interfaces)
  */
 
+#if defined(__rtems__) && defined(INET6)
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>

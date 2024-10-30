@@ -60,8 +60,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)ip_icmp.c	8.2 (Berkeley) 1/4/94
  */
 
 #include <sys/cdefs.h>
@@ -386,7 +384,7 @@ icmp6_error(struct mbuf *m, int type, int code, int param)
 	icmp6->icmp6_code = code;
 	icmp6->icmp6_pptr = htonl((u_int32_t)param);
 
-	ICMP6STAT_INC(icp6s_outhist[type]);
+	ICMP6STAT_INC2(icp6s_outhist, type);
 	NET_EPOCH_ENTER(et);
 	icmp6_reflect(m, sizeof(struct ip6_hdr)); /* header order: IPv6 - ICMPv6 */
 	NET_EPOCH_EXIT(et);
@@ -511,7 +509,7 @@ icmp6_input(struct mbuf **mp, int *offp, int proto)
 		goto freeit;
 	}
 
-	ICMP6STAT_INC(icp6s_inhist[icmp6->icmp6_type]);
+	ICMP6STAT_INC2(icp6s_inhist, icmp6->icmp6_type);
 	icmp6_ifstat_inc(ifp, ifs6_in_msg);
 	if (icmp6->icmp6_type < ICMP6_INFOMSG_MASK)
 		icmp6_ifstat_inc(ifp, ifs6_in_error);
@@ -616,7 +614,7 @@ icmp6_input(struct mbuf **mp, int *offp, int proto)
 			nicmp6->icmp6_type = ICMP6_ECHO_REPLY;
 			nicmp6->icmp6_code = 0;
 			ICMP6STAT_INC(icp6s_reflect);
-			ICMP6STAT_INC(icp6s_outhist[ICMP6_ECHO_REPLY]);
+			ICMP6STAT_INC2(icp6s_outhist, ICMP6_ECHO_REPLY);
 			icmp6_reflect(n, noff);
 		}
 		break;
@@ -754,7 +752,7 @@ icmp6_input(struct mbuf **mp, int *offp, int proto)
 		}
 		if (n) {
 			ICMP6STAT_INC(icp6s_reflect);
-			ICMP6STAT_INC(icp6s_outhist[ICMP6_WRUREPLY]);
+			ICMP6STAT_INC2(icp6s_outhist, ICMP6_WRUREPLY);
 			icmp6_reflect(n, noff);
 		}
 		break;
@@ -2658,7 +2656,7 @@ noredhdropt:;
 		icmp6_ifstat_inc(outif, ifs6_out_msg);
 		icmp6_ifstat_inc(outif, ifs6_out_redirect);
 	}
-	ICMP6STAT_INC(icp6s_outhist[ND_REDIRECT]);
+	ICMP6STAT_INC2(icp6s_outhist, ND_REDIRECT);
 
 	return;
 
@@ -2693,7 +2691,7 @@ icmp6_ctloutput(struct socket *so, struct sockopt *sopt)
 	}
 
 	switch (op) {
-	case PRCO_SETOPT:
+	case SOPT_SET:
 		switch (optname) {
 		case ICMP6_FILTER:
 		    {
@@ -2718,7 +2716,7 @@ icmp6_ctloutput(struct socket *so, struct sockopt *sopt)
 		}
 		break;
 
-	case PRCO_GETOPT:
+	case SOPT_GET:
 		switch (optname) {
 		case ICMP6_FILTER:
 		    {

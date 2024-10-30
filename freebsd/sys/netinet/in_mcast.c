@@ -36,7 +36,6 @@
  * IPv4 multicast socket, group, and socket option processing module.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>

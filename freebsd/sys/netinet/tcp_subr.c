@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)tcp_subr.c	8.2 (Berkeley) 5/24/95
  */
 
 #ifdef __rtems__
@@ -147,58 +145,6 @@ VNET_DEFINE(int, tcp_mssdflt) = TCP_MSS;
 VNET_DEFINE(int, tcp_v6mssdflt) = TCP6_MSS;
 #endif
 
-#ifdef TCP_SAD_DETECTION
-/*  Sack attack detection thresholds and such */
-SYSCTL_NODE(_net_inet_tcp, OID_AUTO, sack_attack,
-    CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
-    "Sack Attack detection thresholds");
-int32_t tcp_force_detection = 0;
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, force_detection,
-    CTLFLAG_RW,
-    &tcp_force_detection, 0,
-    "Do we force detection even if the INP has it off?");
-int32_t tcp_sad_limit = 10000;
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, limit,
-    CTLFLAG_RW,
-    &tcp_sad_limit, 10000,
-    "If SaD is enabled, what is the limit to sendmap entries (0 = unlimited)?");
-int32_t tcp_sack_to_ack_thresh = 700;	/* 70 % */
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, sack_to_ack_thresh,
-    CTLFLAG_RW,
-    &tcp_sack_to_ack_thresh, 700,
-    "Percentage of sacks to acks we must see above (10.1 percent is 101)?");
-int32_t tcp_sack_to_move_thresh = 600;	/* 60 % */
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, move_thresh,
-    CTLFLAG_RW,
-    &tcp_sack_to_move_thresh, 600,
-    "Percentage of sack moves we must see above (10.1 percent is 101)");
-int32_t tcp_restoral_thresh = 450;	/* 45 % (sack:2:ack -25%) (mv:ratio -15%) **/
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, restore_thresh,
-    CTLFLAG_RW,
-    &tcp_restoral_thresh, 450,
-    "Percentage of sack to ack percentage we must see below to restore(10.1 percent is 101)");
-int32_t tcp_sad_decay_val = 800;
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, decay_per,
-    CTLFLAG_RW,
-    &tcp_sad_decay_val, 800,
-    "The decay percentage (10.1 percent equals 101 )");
-int32_t tcp_map_minimum = 500;
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, nummaps,
-    CTLFLAG_RW,
-    &tcp_map_minimum, 500,
-    "Number of Map enteries before we start detection");
-int32_t tcp_sad_pacing_interval = 2000;
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, sad_pacing_int,
-    CTLFLAG_RW,
-    &tcp_sad_pacing_interval, 2000,
-    "What is the minimum pacing interval for a classified attacker?");
-
-int32_t tcp_sad_low_pps = 100;
-SYSCTL_INT(_net_inet_tcp_sack_attack, OID_AUTO, sad_low_pps,
-    CTLFLAG_RW,
-    &tcp_sad_low_pps, 100,
-    "What is the input pps that below which we do not decay?");
-#endif
 VNET_DEFINE(uint32_t, tcp_ack_war_time_window) = 1000;
 SYSCTL_UINT(_net_inet_tcp, OID_AUTO, ack_war_timewindow,
     CTLFLAG_VNET | CTLFLAG_RW, &VNET_NAME(tcp_ack_war_time_window), 0,
@@ -293,17 +239,28 @@ SYSCTL_INT(_net_inet_tcp, OID_AUTO, ts_offset_per_conn, CTLFLAG_VNET | CTLFLAG_R
 static volatile uint32_t number_of_tcp_connections_pacing = 0;
 static uint32_t shadow_num_connections = 0;
 static counter_u64_t tcp_pacing_failures;
+static counter_u64_t tcp_dgp_failures;
+static uint32_t shadow_tcp_pacing_dgp = 0;
+static volatile uint32_t number_of_dgp_connections = 0;
 
 static int tcp_pacing_limit = 10000;
 SYSCTL_INT(_net_inet_tcp, OID_AUTO, pacing_limit, CTLFLAG_RW,
     &tcp_pacing_limit, 1000,
     "If the TCP stack does pacing, is there a limit (-1 = no, 0 = no pacing N = number of connections)");
 
+static int tcp_dgp_limit = -1;
+SYSCTL_INT(_net_inet_tcp, OID_AUTO, dgp_limit, CTLFLAG_RW,
+    &tcp_dgp_limit, -1,
+    "If the TCP stack does DGP, is there a limit (-1 = no, 0 = no dgp N = number of connections)");
+
 SYSCTL_UINT(_net_inet_tcp, OID_AUTO, pacing_count, CTLFLAG_RD,
     &shadow_num_connections, 0, "Number of TCP connections being paced");
 
 SYSCTL_COUNTER_U64(_net_inet_tcp, OID_AUTO, pacing_failures, CTLFLAG_RD,
     &tcp_pacing_failures, "Number of times we failed to enable pacing to avoid exceeding the limit");
+
+SYSCTL_COUNTER_U64(_net_inet_tcp, OID_AUTO, dgp_failures, CTLFLAG_RD,
+    &tcp_dgp_failures, "Number of times we failed to enable dgp to avoid exceeding the limit");
 
 static int	tcp_log_debug = 0;
 SYSCTL_INT(_net_inet_tcp, OID_AUTO, log_debug, CTLFLAG_RW,
@@ -1584,6 +1541,7 @@ tcp_init(void *arg __unused)
 	tcp_uncomp_total = counter_u64_alloc(M_WAITOK);
 	tcp_bad_csums = counter_u64_alloc(M_WAITOK);
 	tcp_pacing_failures = counter_u64_alloc(M_WAITOK);
+	tcp_dgp_failures = counter_u64_alloc(M_WAITOK);
 #ifdef TCPPCAP
 	tcp_pcap_init();
 #endif
@@ -1794,6 +1752,7 @@ tcpip_maketemplate(struct inpcb *inp)
  *
  * NOTE: If m != NULL, then th must point to *inside* the mbuf.
  */
+
 void
 tcp_respond(struct tcpcb *tp, void *ipgen, struct tcphdr *th, struct mbuf *m,
     tcp_seq ack, tcp_seq seq, uint16_t flags)
@@ -2288,8 +2247,7 @@ tcp_newtcpcb(struct inpcb *inp, struct tcpcb *listening_tcb)
 	bzero(&tp->t_start_zero, t_zero_size);
 
 	/* Initialise cc_var struct for this tcpcb. */
-	tp->t_ccv.type = IPPROTO_TCP;
-	tp->t_ccv.ccvc.tcp = tp;
+	tp->t_ccv.tp = tp;
 	rw_rlock(&tcp_function_lock);
 	if (listening_tcb != NULL) {
 		INP_LOCK_ASSERT(tptoinpcb(listening_tcb));
@@ -2307,11 +2265,20 @@ tcp_newtcpcb(struct inpcb *inp, struct tcpcb *listening_tcb)
 	KASSERT((tp->t_fb->tfb_flags & TCP_FUNC_BEING_REMOVED) == 0,
 	    ("tcp_newtcpcb: using TFB being removed"));
 	rw_runlock(&tcp_function_lock);
-	/*
-	 * Use the current system default CC algorithm.
-	 */
-	cc_attach(tp, CC_DEFAULT_ALGO());
-
+	CC_LIST_RLOCK();
+	if (listening_tcb != NULL) {
+		if (CC_ALGO(listening_tcb)->flags & CC_MODULE_BEING_REMOVED) {
+			CC_LIST_RUNLOCK();
+			if (tp->t_fb->tfb_tcp_fb_fini)
+				(*tp->t_fb->tfb_tcp_fb_fini)(tp, 1);
+			refcount_release(&tp->t_fb->tfb_refcnt);
+			return (NULL);
+		}
+		CC_ALGO(tp) = CC_ALGO(listening_tcb);
+	} else
+		CC_ALGO(tp) = CC_DEFAULT_ALGO();
+	cc_refer(CC_ALGO(tp));
+	CC_LIST_RUNLOCK();
 	if (CC_ALGO(tp)->cb_init != NULL)
 		if (CC_ALGO(tp)->cb_init(&tp->t_ccv, NULL) > 0) {
 			cc_detach(tp);
@@ -2348,7 +2315,8 @@ tcp_newtcpcb(struct inpcb *inp, struct tcpcb *listening_tcb)
 	tp->t_hpts_cpu = HPTS_CPU_NONE;
 	tp->t_lro_cpu = HPTS_CPU_NONE;
 
-	callout_init_rw(&tp->t_callout, &inp->inp_lock, CALLOUT_RETURNUNLOCKED);
+	callout_init_rw(&tp->t_callout, &inp->inp_lock,
+	    CALLOUT_TRYLOCK | CALLOUT_RETURNUNLOCKED);
 	for (int i = 0; i < TT_N; i++)
 		tp->t_timers[i] = SBT_MAX;
 
@@ -2461,8 +2429,8 @@ tcp_discardcb(struct tcpcb *tp)
 #endif
 
 	INP_WLOCK_ASSERT(inp);
-
-	tcp_timer_stop(tp);
+	MPASS(!callout_active(&tp->t_callout));
+	MPASS(TAILQ_EMPTY(&tp->snd_holes));
 
 	/* free the reassembly queue, if any */
 	tcp_reass_flush(tp);
@@ -2472,9 +2440,6 @@ tcp_discardcb(struct tcpcb *tp)
 	if (tp->t_flags & TF_TOE)
 		tcp_offload_detach(tp);
 #endif
-
-	tcp_free_sackholes(tp);
-
 #ifdef TCPPCAP
 	/* Free the TCP PCAP queues. */
 	tcp_pcap_drain(&(tp->t_inpkts));
@@ -2602,6 +2567,7 @@ tcp_close(struct tcpcb *tp)
 		tcp_fastopen_decrement_counter(tp->t_tfo_pending);
 		tp->t_tfo_pending = NULL;
 	}
+	tcp_timer_stop(tp);
 	if (tp->t_fb->tfb_tcp_timer_stop_all != NULL)
 		tp->t_fb->tfb_tcp_timer_stop_all(tp);
 	in_pcbdrop(inp);
@@ -2609,6 +2575,7 @@ tcp_close(struct tcpcb *tp)
 	if (tp->t_state != TCPS_CLOSED)
 		tcp_state_change(tp, TCPS_CLOSED);
 	KASSERT(inp->inp_socket != NULL, ("tcp_close: inp_socket NULL"));
+	tcp_free_sackholes(tp);
 	soisdisconnected(so);
 	if (inp->inp_flags & INP_SOCKREF) {
 		inp->inp_flags &= ~INP_SOCKREF;
@@ -3348,7 +3315,7 @@ tcp_drop_syn_sent(struct inpcb *inp, int errno)
 	if (tp->t_state != TCPS_SYN_SENT)
 		return (inp);
 
-	if (IS_FASTOPEN(tp->t_flags))
+	if (tp->t_flags & TF_FASTOPEN)
 		tcp_fastopen_disable_path(tp);
 
 	tp = tcp_drop(tp, errno);
@@ -3387,8 +3354,19 @@ tcp_mtudisc(struct inpcb *inp, int mtuoffer)
 	so = inp->inp_socket;
 	SOCKBUF_LOCK(&so->so_snd);
 	/* If the mss is larger than the socket buffer, decrease the mss. */
-	if (so->so_snd.sb_hiwat < tp->t_maxseg)
+	if (so->so_snd.sb_hiwat < tp->t_maxseg) {
 		tp->t_maxseg = so->so_snd.sb_hiwat;
+		if (tp->t_maxseg < V_tcp_mssdflt) {
+			/*
+			 * The MSS is so small we should not process incoming
+			 * SACK's since we are subject to attack in such a
+			 * case.
+			 */
+			tp->t_flags2 |= TF2_PROC_SACK_PROHIBIT;
+		} else {
+			tp->t_flags2 &= ~TF2_PROC_SACK_PROHIBIT;
+		}
+	}
 	SOCKBUF_UNLOCK(&so->so_snd);
 
 	TCPSTAT_INC(tcps_mturesent);
@@ -3445,6 +3423,9 @@ tcp_maxmtu(struct in_conninfo *inc, struct tcp_ifcap *cap)
 				cap->tsomax = ifp->if_hw_tsomax;
 				cap->tsomaxsegcount = ifp->if_hw_tsomaxsegcount;
 				cap->tsomaxsegsize = ifp->if_hw_tsomaxsegsize;
+				/* XXXKIB IFCAP2_IPSEC_OFFLOAD_TSO */
+				cap->ipsec_tso =  (ifp->if_capenable2 &
+				    IFCAP2_BIT(IFCAP2_IPSEC_OFFLOAD)) != 0;
 			}
 		}
 	}
@@ -3484,6 +3465,7 @@ tcp_maxmtu6(struct in_conninfo *inc, struct tcp_ifcap *cap)
 				cap->tsomax = ifp->if_hw_tsomax;
 				cap->tsomaxsegcount = ifp->if_hw_tsomaxsegcount;
 				cap->tsomaxsegsize = ifp->if_hw_tsomaxsegsize;
+				cap->ipsec_tso = false; /* XXXKIB */
 			}
 		}
 	}
@@ -3521,8 +3503,19 @@ tcp6_use_min_mtu(struct tcpcb *tp)
 
 		opt = inp->in6p_outputopts;
 		if (opt != NULL && opt->ip6po_minmtu == IP6PO_MINMTU_ALL &&
-		    tp->t_maxseg > TCP6_MSS)
+		    tp->t_maxseg > TCP6_MSS) {
 			tp->t_maxseg = TCP6_MSS;
+			if (tp->t_maxseg < V_tcp_mssdflt) {
+				/*
+				 * The MSS is so small we should not process incoming
+				 * SACK's since we are subject to attack in such a
+				 * case.
+				 */
+				tp->t_flags2 |= TF2_PROC_SACK_PROHIBIT;
+			} else {
+				tp->t_flags2 &= ~TF2_PROC_SACK_PROHIBIT;
+			}
+		}
 	}
 }
 #endif /* INET6 */
@@ -3574,7 +3567,6 @@ tcp_maxseg(const struct tcpcb *tp)
 		if (tp->t_flags & TF_SACK_PERMIT)
 			optlen += PADTCPOLEN(TCPOLEN_SACK_PERMITTED);
 	}
-#undef PAD
 	optlen = min(optlen, TCP_MAXOLEN);
 	return (tp->t_maxseg - optlen);
 }
@@ -3596,7 +3588,6 @@ tcp_fixed_maxseg(const struct tcpcb *tp)
 	 * for cc modules to figure out what the modulo of the
 	 * cwnd should be.
 	 */
-#define	PAD(len)	((((len) / 4) + !!((len) % 4)) * 4)
 	if (TCPS_HAVEESTABLISHED(tp->t_state)) {
 		if (tp->t_flags & TF_RCVD_TSTMP)
 			optlen = TCPOLEN_TSTAMP_APPA;
@@ -3604,23 +3595,22 @@ tcp_fixed_maxseg(const struct tcpcb *tp)
 			optlen = 0;
 #if defined(IPSEC_SUPPORT) || defined(TCP_SIGNATURE)
 		if (tp->t_flags & TF_SIGNATURE)
-			optlen += PAD(TCPOLEN_SIGNATURE);
+			optlen += PADTCPOLEN(TCPOLEN_SIGNATURE);
 #endif
 	} else {
 		if (tp->t_flags & TF_REQ_TSTMP)
 			optlen = TCPOLEN_TSTAMP_APPA;
 		else
-			optlen = PAD(TCPOLEN_MAXSEG);
+			optlen = PADTCPOLEN(TCPOLEN_MAXSEG);
 		if (tp->t_flags & TF_REQ_SCALE)
-			optlen += PAD(TCPOLEN_WINDOW);
+			optlen += PADTCPOLEN(TCPOLEN_WINDOW);
 #if defined(IPSEC_SUPPORT) || defined(TCP_SIGNATURE)
 		if (tp->t_flags & TF_SIGNATURE)
-			optlen += PAD(TCPOLEN_SIGNATURE);
+			optlen += PADTCPOLEN(TCPOLEN_SIGNATURE);
 #endif
 		if (tp->t_flags & TF_SACK_PERMIT)
-			optlen += PAD(TCPOLEN_SACK_PERMITTED);
+			optlen += PADTCPOLEN(TCPOLEN_SACK_PERMITTED);
 	}
-#undef PAD
 	optlen = min(optlen, TCP_MAXOLEN);
 	return (tp->t_maxseg - optlen);
 }
@@ -4047,13 +4037,6 @@ tcp_inptoxtp(const struct inpcb *inp, struct xtcpcb *xt)
 
 	xt->xt_len = sizeof(struct xtcpcb);
 	in_pcbtoxinpcb(inp, &xt->xt_inp);
-	/*
-	 * TCP doesn't use inp_ppcb pointer, we embed inpcb into tcpcb.
-	 * Fixup the pointer that in_pcbtoxinpcb() has set.  When printing
-	 * TCP netstat(1) used to use this pointer, so this fixup needs to
-	 * stay for stable/14.
-	 */
-	xt->xt_inp.inp_ppcb = (uintptr_t)tp;
 }
 
 void
@@ -4098,6 +4081,43 @@ tcp_can_enable_pacing(void)
 		counter_u64_add(tcp_pacing_failures, 1);
 		return (0);
 	}
+}
+
+int
+tcp_incr_dgp_pacing_cnt(void)
+{
+	if ((tcp_dgp_limit == -1) ||
+	    (tcp_dgp_limit > number_of_dgp_connections)) {
+		atomic_fetchadd_int(&number_of_dgp_connections, 1);
+		shadow_tcp_pacing_dgp = number_of_dgp_connections;
+		return (1);
+	} else {
+		counter_u64_add(tcp_dgp_failures, 1);
+		return (0);
+	}
+}
+
+static uint8_t tcp_dgp_warning = 0;
+
+void
+tcp_dec_dgp_pacing_cnt(void)
+{
+	uint32_t ret;
+
+	ret = atomic_fetchadd_int(&number_of_dgp_connections, -1);
+	shadow_tcp_pacing_dgp = number_of_dgp_connections;
+	KASSERT(ret != 0, ("number_of_dgp_connections -1 would cause wrap?"));
+	if (ret == 0) {
+		if (tcp_dgp_limit != -1) {
+			printf("Warning all DGP is now disabled, count decrements invalidly!\n");
+			tcp_dgp_limit = 0;
+			tcp_dgp_warning = 1;
+		} else if (tcp_dgp_warning == 0) {
+			printf("Warning DGP pacing is invalid, invalid decrement\n");
+			tcp_dgp_warning = 1;
+		}
+	}
+
 }
 
 static uint8_t tcp_pacing_warning = 0;
@@ -4619,7 +4639,7 @@ tcp_req_alloc_req_full(struct tcpcb *tp, struct tcp_snd_req *req, uint64_t ts, i
 	if (tp->t_tcpreq_req) {
 		for (i = 0, allocated = 0; i < MAX_TCP_TRK_REQ; i++) {
 			fil = &tp->t_tcpreq_info[i];
-			if (fil->flags != TCP_TRK_TRACK_FLG_USED)
+			if ((fil->flags & TCP_TRK_TRACK_FLG_USED) == 0)
 				continue;
 			if ((fil->timestamp == req->timestamp) &&
 			    (fil->start == req->start) &&
@@ -4651,6 +4671,7 @@ tcp_req_alloc_req_full(struct tcpcb *tp, struct tcp_snd_req *req, uint64_t ts, i
 			allocated = 1;
 			fil->flags = TCP_TRK_TRACK_FLG_USED;
 			fil->timestamp = req->timestamp;
+			fil->playout_ms = req->playout_ms;
 			fil->localtime = ts;
 			fil->start = req->start;
 			if (req->flags & TCP_LOG_HTTPD_RANGE_END) {
@@ -4667,7 +4688,10 @@ tcp_req_alloc_req_full(struct tcpcb *tp, struct tcp_snd_req *req, uint64_t ts, i
 			fil->sbcc_at_s = tptosocket(tp)->so_snd.sb_ccc;
 			fil->start_seq = tp->snd_una +
 			    tptosocket(tp)->so_snd.sb_ccc;
-			fil->end_seq = (fil->start_seq + ((uint32_t)(fil->end - fil->start)));
+			if (req->flags & TCP_LOG_HTTPD_RANGE_END)
+				fil->end_seq = (fil->start_seq + ((uint32_t)(fil->end - fil->start)));
+			else
+				fil->end_seq = 0;
 			if (tptosocket(tp)->so_snd.sb_tls_info) {
 				/*
 				 * This session is doing TLS. Take a swag guess

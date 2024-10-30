@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)socketvar.h	8.3 (Berkeley) 2/19/95
  */
 
 #ifndef _SYS_SOCKETVAR_H_
@@ -239,7 +237,7 @@ struct socket {
 #define	SS_ISDISCONNECTING	0x0008	/* in process of disconnecting */
 #define	SS_NBIO			0x0100	/* non-blocking ops */
 #define	SS_ASYNC		0x0200	/* async i/o notify */
-#define	SS_ISCONFIRMING		0x0400	/* deciding to accept connection req */
+/* was	SS_ISCONFIRMING		0x0400	*/
 #define	SS_ISDISCONNECTED	0x2000	/* socket disconnected from peer */
 
 #ifdef _KERNEL
@@ -343,16 +341,14 @@ soeventmtx(struct socket *so, const sb_which which)
 	soiolock((so), &(so)->so_snd_sx, (flags))
 #define	SOCK_IO_SEND_UNLOCK(so)						\
 	soiounlock(&(so)->so_snd_sx)
-#define	SOCK_IO_SEND_OWNED(so)	sx_xlocked(&(so)->so_snd_sx)
 #define	SOCK_IO_SEND_ASSERT_LOCKED(so)					\
-	sx_assert(&(so)->so_snd_sx, SA_XLOCKED)
+	sx_assert(&(so)->so_snd_sx, SA_LOCKED)
 #define	SOCK_IO_RECV_LOCK(so, flags)					\
 	soiolock((so), &(so)->so_rcv_sx, (flags))
 #define	SOCK_IO_RECV_UNLOCK(so)						\
 	soiounlock(&(so)->so_rcv_sx)
-#define	SOCK_IO_RECV_OWNED(so)	sx_xlocked(&(so)->so_rcv_sx)
 #define	SOCK_IO_RECV_ASSERT_LOCKED(so)					\
-	sx_assert(&(so)->so_rcv_sx, SA_XLOCKED)
+	sx_assert(&(so)->so_rcv_sx, SA_LOCKED)
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
@@ -459,7 +455,8 @@ MALLOC_DECLARE(M_SONAME);
 #define HHOOK_FILT_SOREAD		4
 #define HHOOK_FILT_SOWRITE		5
 #define HHOOK_SOCKET_CLOSE		6
-#define HHOOK_SOCKET_LAST		HHOOK_SOCKET_CLOSE
+#define HHOOK_SOCKET_NEWCONN		7
+#define HHOOK_SOCKET_LAST		HHOOK_SOCKET_NEWCONN
 
 struct socket_hhook_data {
 	struct socket	*so;
@@ -479,6 +476,7 @@ struct mbuf;
 struct sockaddr;
 struct ucred;
 struct uio;
+enum shutdown_how;
 
 /* Return values for socket upcalls. */
 #define	SU_OK		0
@@ -496,7 +494,9 @@ int	getsock_cap(struct thread *td, int fd, cap_rights_t *rightsp,
 int	getsock(struct thread *td, int fd, cap_rights_t *rightsp,
 	    struct file **fpp);
 void	soabort(struct socket *so);
-int	soaccept(struct socket *so, struct sockaddr **nam);
+int	soaccept(struct socket *so, struct sockaddr *sa);
+int	sopeeraddr(struct socket *so, struct sockaddr *sa);
+int	sosockaddr(struct socket *so, struct sockaddr *sa);
 void	soaio_enqueue(struct task *task);
 void	soaio_rcv(void *context, int pending);
 void	soaio_snd(void *context, int pending);
@@ -557,7 +557,7 @@ int	sosend_dgram(struct socket *so, struct sockaddr *addr,
 int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
-int	soshutdown(struct socket *so, int how);
+int	soshutdown(struct socket *so, enum shutdown_how);
 void	soupcall_clear(struct socket *, sb_which);
 void	soupcall_set(struct socket *, sb_which, so_upcall_t, void *);
 void	solisten_upcall_set(struct socket *, so_upcall_t, void *);

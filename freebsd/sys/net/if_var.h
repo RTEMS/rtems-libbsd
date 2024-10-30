@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	From: @(#)if.h	8.1 (Berkeley) 6/10/93
  */
 
 #ifndef	_NET_IF_VAR_H_
@@ -133,6 +131,25 @@ typedef void (*if_qflush_fn_t)(if_t);
 typedef int (*if_transmit_fn_t)(if_t, struct mbuf *);
 typedef	uint64_t (*if_get_counter_t)(if_t, ift_counter);
 typedef	void (*if_reassign_fn_t)(if_t, struct vnet *, char *);
+typedef int (*if_spdadd_fn_t)(if_t ifp, void *sp, void *inp, void **priv);
+typedef int (*if_spddel_fn_t)(if_t ifp, void *sp, void *priv);
+typedef int (*if_sa_newkey_fn_t)(if_t ifp, void *sav, u_int drv_spi,
+    void **privp);
+typedef int (*if_sa_deinstall_fn_t)(if_t ifp, u_int drv_spi, void *priv);
+struct seclifetime;
+#define	IF_SA_CNT_UPD	0x80000000
+enum IF_SA_CNT_WHICH {
+	IF_SA_CNT_IFP_HW_VAL = 1,
+	IF_SA_CNT_TOTAL_SW_VAL,
+	IF_SA_CNT_TOTAL_HW_VAL,
+	IF_SA_CNT_IFP_HW_UPD = IF_SA_CNT_IFP_HW_VAL | IF_SA_CNT_UPD,
+	IF_SA_CNT_TOTAL_SW_UPD = IF_SA_CNT_TOTAL_SW_VAL | IF_SA_CNT_UPD,
+	IF_SA_CNT_TOTAL_HW_UPD = IF_SA_CNT_TOTAL_HW_VAL | IF_SA_CNT_UPD,
+};
+typedef int (*if_sa_cnt_fn_t)(if_t ifp, void *sa,
+    uint32_t drv_spi, void *priv, struct seclifetime *lt);
+typedef int (*if_ipsec_hwassist_fn_t)(if_t ifp, void *sav,
+    u_int drv_spi,void *priv);
 
 struct ifnet_hw_tsomax {
 	u_int	tsomaxbytes;	/* TSO total burst length limit in bytes */
@@ -639,8 +656,6 @@ int if_vlantrunkinuse(if_t ifp);
 caddr_t if_getlladdr(const if_t ifp);
 struct vnet *if_getvnet(const if_t ifp);
 void *if_gethandle(u_char);
-void if_bpfmtap(if_t ifp, struct mbuf *m);
-void if_etherbpfmtap(if_t ifp, struct mbuf *m);
 void if_vlancap(if_t ifp);
 int if_transmit(if_t ifp, struct mbuf *m);
 void if_init(if_t ifp, void *ctx);
@@ -712,6 +727,20 @@ void if_setsndtagallocfn(if_t ifp, if_snd_tag_alloc_t);
 void if_setdebugnet_methods(if_t, struct debugnet_methods *);
 void if_setreassignfn(if_t ifp, if_reassign_fn_t);
 void if_setratelimitqueryfn(if_t ifp, if_ratelimit_query_t);
+
+/*
+ * NB: The interface is not yet stable, drivers implementing IPSEC
+ * offload need to be prepared to adapt to changes.
+ */
+struct if_ipsec_accel_methods {
+	if_spdadd_fn_t		if_spdadd;
+	if_spddel_fn_t		if_spddel;
+	if_sa_newkey_fn_t	if_sa_newkey;
+	if_sa_deinstall_fn_t	if_sa_deinstall;
+	if_sa_cnt_fn_t		if_sa_cnt;
+	if_ipsec_hwassist_fn_t	if_hwassist;
+};
+void if_setipsec_accel_methods(if_t ifp, const struct if_ipsec_accel_methods *);
 
 /* TSO */
 void if_hw_tsomax_common(if_t ifp, struct ifnet_hw_tsomax *);

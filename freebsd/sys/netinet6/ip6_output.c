@@ -60,8 +60,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)ip_output.c	8.3 (Berkeley) 1/21/94
  */
 
 #include <sys/cdefs.h>
@@ -163,14 +161,12 @@ static int copypktopts(struct ip6_pktopts *, struct ip6_pktopts *, int);
  */
 #define	MAKE_EXTHDR(hp, mp, _ol)					\
     do {								\
-	if (hp) {							\
-		struct ip6_ext *eh = (struct ip6_ext *)(hp);		\
-		error = ip6_copyexthdr((mp), (caddr_t)(hp),		\
-		    ((eh)->ip6e_len + 1) << 3);				\
-		if (error)						\
-			goto freehdrs;					\
-		(_ol) += (*(mp))->m_len;				\
-	}								\
+	struct ip6_ext *eh = (struct ip6_ext *)(hp);		\
+	error = ip6_copyexthdr((mp), (caddr_t)(hp),		\
+	    ((eh)->ip6e_len + 1) << 3);				\
+	if (error)						\
+		goto freehdrs;					\
+	(_ol) += (*(mp))->m_len;				\
     } while (/*CONSTCOND*/ 0)
 
 /*
@@ -435,6 +431,7 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 	uint32_t fibnum;
 	struct m_tag *fwd_tag = NULL;
 	uint32_t id;
+	uint32_t optvalid;
 
 	NET_EPOCH_ASSERT();
 
@@ -453,27 +450,6 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 		m->m_pkthdr.numa_domain = inp->inp_numa_domain;
 #endif
 	}
-
-#if defined(IPSEC) || defined(IPSEC_SUPPORT)
-	/*
-	 * IPSec checking which handles several cases.
-	 * FAST IPSEC: We re-injected the packet.
-	 * XXX: need scope argument.
-	 */
-	if (IPSEC_ENABLED(ipv6)) {
-		m = mb_unmapped_to_ext(m);
-		if (m == NULL) {
-			IP6STAT_INC(ip6s_odropped);
-			error = ENOBUFS;
-			goto bad;
-		}
-		if ((error = IPSEC_OUTPUT(ipv6, m, inp)) != 0) {
-			if (error == EINPROGRESS)
-				error = 0;
-			goto done;
-		}
-	}
-#endif /* IPSEC */
 
 	/* Source address validation. */
 	ip6 = mtod(m, struct ip6_hdr *);
@@ -495,14 +471,17 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 	 * Keep the length of the unfragmentable part for fragmentation.
 	 */
 	bzero(&exthdrs, sizeof(exthdrs));
-	optlen = 0;
+	optlen = optvalid = 0;
 	unfragpartlen = sizeof(struct ip6_hdr);
 	if (opt) {
+		optvalid = opt->ip6po_valid;
+
 		/* Hop-by-Hop options header. */
-		MAKE_EXTHDR(opt->ip6po_hbh, &exthdrs.ip6e_hbh, optlen);
+		if ((optvalid & IP6PO_VALID_HBH) != 0)
+			MAKE_EXTHDR(opt->ip6po_hbh, &exthdrs.ip6e_hbh, optlen);
 
 		/* Destination options header (1st part). */
-		if (opt->ip6po_rthdr) {
+		if ((optvalid & IP6PO_VALID_RHINFO) != 0) {
 #ifndef RTHDR_SUPPORT_IMPLEMENTED
 			/*
 			 * If there is a routing header, discard the packet
@@ -528,11 +507,13 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 			 * options, which might automatically be inserted in
 			 * the kernel.
 			 */
-			MAKE_EXTHDR(opt->ip6po_dest1, &exthdrs.ip6e_dest1,
-			    optlen);
+			if ((optvalid & IP6PO_VALID_DEST1) != 0)
+				MAKE_EXTHDR(opt->ip6po_dest1, &exthdrs.ip6e_dest1,
+				    optlen);
 		}
 		/* Routing header. */
-		MAKE_EXTHDR(opt->ip6po_rthdr, &exthdrs.ip6e_rthdr, optlen);
+		if ((optvalid & IP6PO_VALID_RHINFO) != 0)
+			MAKE_EXTHDR(opt->ip6po_rthdr, &exthdrs.ip6e_rthdr, optlen);
 
 		unfragpartlen += optlen;
 
@@ -542,7 +523,8 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 		 */
 
 		/* Destination options header (2nd part). */
-		MAKE_EXTHDR(opt->ip6po_dest2, &exthdrs.ip6e_dest2, optlen);
+		if ((optvalid & IP6PO_VALID_DEST2) != 0)
+			MAKE_EXTHDR(opt->ip6po_dest2, &exthdrs.ip6e_dest2, optlen);
 	}
 
 	/*
@@ -631,7 +613,7 @@ ip6_output(struct mbuf *m0, struct ip6_pktopts *opt,
 
 	/* Route packet. */
 	ro_pmtu = ro;
-	if (opt && opt->ip6po_rthdr)
+	if ((optvalid & IP6PO_VALID_RHINFO) != 0)
 		ro = &opt->ip6po_route;
 	if (ro != NULL)
 		dst = (struct sockaddr_in6 *)&ro->ro_dst;
@@ -645,7 +627,7 @@ again:
 	 * Do not override if a non-zero value is already set.
 	 * We check the diffserv field and the ECN field separately.
 	 */
-	if (opt && opt->ip6po_tclass >= 0) {
+	if ((optvalid & IP6PO_VALID_TC) != 0){
 		int mask = 0;
 
 		if (IPV6_DSCP(ip6) == 0)
@@ -657,7 +639,7 @@ again:
 	}
 
 	/* Fill in or override the hop limit field, if necessary. */
-	if (opt && opt->ip6po_hlim != -1)
+	if ((optvalid & IP6PO_VALID_HLIM) != 0)
 		ip6->ip6_hlim = opt->ip6po_hlim & 0xff;
 	else if (IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst)) {
 		if (im6o != NULL)
@@ -805,6 +787,27 @@ nonh6lookup:
 	KASSERT((ifp != NULL), ("output interface must not be NULL"));
 	KASSERT((origifp != NULL), ("output address interface must not be NULL"));
 
+#if defined(IPSEC) || defined(IPSEC_SUPPORT)
+	/*
+	 * IPSec checking which handles several cases.
+	 * FAST IPSEC: We re-injected the packet.
+	 * XXX: need scope argument.
+	 */
+	if (IPSEC_ENABLED(ipv6)) {
+		m = mb_unmapped_to_ext(m);
+		if (m == NULL) {
+			IP6STAT_INC(ip6s_odropped);
+			error = ENOBUFS;
+			goto bad;
+		}
+		if ((error = IPSEC_OUTPUT(ipv6, ifp, m, inp, mtu)) != 0) {
+			if (error == EINPROGRESS)
+				error = 0;
+			goto done;
+		}
+	}
+#endif /* IPSEC */
+
 	if ((flags & IPV6_FORWARDING) == 0) {
 		/* XXX: the FORWARDING flag can be set for mrouting. */
 		in6_ifstat_inc(ifp, ifs6_out_request);
@@ -859,7 +862,7 @@ nonh6lookup:
 	/* All scope ID checks are successful. */
 
 	if (nh && !IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst)) {
-		if (opt && opt->ip6po_nextroute.ro_nh) {
+		if ((optvalid & IP6PO_VALID_NHINFO) != 0) {
 			/*
 			 * The nexthop is explicitly specified by the
 			 * application.  We assume the next hop is an IPv6
@@ -2652,10 +2655,14 @@ ip6_clearpktopts(struct ip6_pktopts *pktopt, int optname)
 			free(pktopt->ip6po_pktinfo, M_IP6OPT);
 		pktopt->ip6po_pktinfo = NULL;
 	}
-	if (optname == -1 || optname == IPV6_HOPLIMIT)
+	if (optname == -1 || optname == IPV6_HOPLIMIT) {
 		pktopt->ip6po_hlim = -1;
-	if (optname == -1 || optname == IPV6_TCLASS)
+		pktopt->ip6po_valid &= ~IP6PO_VALID_HLIM;
+	}
+	if (optname == -1 || optname == IPV6_TCLASS) {
 		pktopt->ip6po_tclass = -1;
+		pktopt->ip6po_valid &= ~IP6PO_VALID_TC;
+	}
 	if (optname == -1 || optname == IPV6_NEXTHOP) {
 		if (pktopt->ip6po_nextroute.ro_nh) {
 			NH_FREE(pktopt->ip6po_nextroute.ro_nh);
@@ -2664,16 +2671,19 @@ ip6_clearpktopts(struct ip6_pktopts *pktopt, int optname)
 		if (pktopt->ip6po_nexthop)
 			free(pktopt->ip6po_nexthop, M_IP6OPT);
 		pktopt->ip6po_nexthop = NULL;
+		pktopt->ip6po_valid &= ~IP6PO_VALID_NHINFO;
 	}
 	if (optname == -1 || optname == IPV6_HOPOPTS) {
 		if (pktopt->ip6po_hbh)
 			free(pktopt->ip6po_hbh, M_IP6OPT);
 		pktopt->ip6po_hbh = NULL;
+		pktopt->ip6po_valid &= ~IP6PO_VALID_HBH;
 	}
 	if (optname == -1 || optname == IPV6_RTHDRDSTOPTS) {
 		if (pktopt->ip6po_dest1)
 			free(pktopt->ip6po_dest1, M_IP6OPT);
 		pktopt->ip6po_dest1 = NULL;
+		pktopt->ip6po_valid &= ~IP6PO_VALID_DEST1;
 	}
 	if (optname == -1 || optname == IPV6_RTHDR) {
 		if (pktopt->ip6po_rhinfo.ip6po_rhi_rthdr)
@@ -2683,11 +2693,13 @@ ip6_clearpktopts(struct ip6_pktopts *pktopt, int optname)
 			NH_FREE(pktopt->ip6po_route.ro_nh);
 			pktopt->ip6po_route.ro_nh = NULL;
 		}
+		pktopt->ip6po_valid &= ~IP6PO_VALID_RHINFO;
 	}
 	if (optname == -1 || optname == IPV6_DSTOPTS) {
 		if (pktopt->ip6po_dest2)
 			free(pktopt->ip6po_dest2, M_IP6OPT);
 		pktopt->ip6po_dest2 = NULL;
+		pktopt->ip6po_valid &= ~IP6PO_VALID_DEST2;
 	}
 }
 
@@ -2734,6 +2746,7 @@ copypktopts(struct ip6_pktopts *dst, struct ip6_pktopts *src, int canwait)
 	PKTOPT_EXTHDRCPY(ip6po_dest1);
 	PKTOPT_EXTHDRCPY(ip6po_dest2);
 	PKTOPT_EXTHDRCPY(ip6po_rthdr); /* not copy the cached route */
+	dst->ip6po_valid = src->ip6po_valid;
 	return (0);
 
   bad:
@@ -2963,6 +2976,7 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 				return (ENOBUFS);
 		}
 		bcopy(pktinfo, opt->ip6po_pktinfo, sizeof(*pktinfo));
+		opt->ip6po_valid |= IP6PO_VALID_PKTINFO;
 		break;
 	}
 
@@ -2985,6 +2999,7 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 			return (EINVAL);
 
 		opt->ip6po_hlim = *hlimp;
+		opt->ip6po_valid |= IP6PO_VALID_HLIM;
 		break;
 	}
 
@@ -2999,6 +3014,7 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 			return (EINVAL);
 
 		opt->ip6po_tclass = tclass;
+		opt->ip6po_valid |= IP6PO_VALID_TC;
 		break;
 	}
 
@@ -3049,6 +3065,7 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 		if (opt->ip6po_nexthop == NULL)
 			return (ENOBUFS);
 		bcopy(buf, opt->ip6po_nexthop, *buf);
+		opt->ip6po_valid |= IP6PO_VALID_NHINFO;
 		break;
 
 	case IPV6_2292HOPOPTS:
@@ -3087,6 +3104,7 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 		if (opt->ip6po_hbh == NULL)
 			return (ENOBUFS);
 		bcopy(hbh, opt->ip6po_hbh, hbhlen);
+		opt->ip6po_valid |= IP6PO_VALID_HBH;
 
 		break;
 	}
@@ -3154,6 +3172,10 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 		if (*newdest == NULL)
 			return (ENOBUFS);
 		bcopy(dest, *newdest, destlen);
+		if (newdest == &opt->ip6po_dest1)
+			opt->ip6po_valid |= IP6PO_VALID_DEST1;
+		else
+			opt->ip6po_valid |= IP6PO_VALID_DEST2;
 
 		break;
 	}
@@ -3196,6 +3218,7 @@ ip6_setpktopt(int optname, u_char *buf, int len, struct ip6_pktopts *opt,
 		if (opt->ip6po_rthdr == NULL)
 			return (ENOBUFS);
 		bcopy(rth, opt->ip6po_rthdr, rthlen);
+		opt->ip6po_valid |= IP6PO_VALID_RHINFO;
 
 		break;
 	}

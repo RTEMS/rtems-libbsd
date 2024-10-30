@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)file.h	8.3 (Berkeley) 1/9/95
  */
 
 #ifndef _SYS_FILE_H_
@@ -156,7 +154,7 @@ struct fileops {
 	fo_fallocate_t	*fo_fallocate;
 	fo_fspacectl_t	*fo_fspacectl;
 	fo_cmp_t	*fo_cmp;
-	fo_spare_t	*fo_spares[7];	/* Spare slots */
+	fo_spare_t	*fo_spares[8];	/* Spare slots */
 	fo_flags_t	fo_flags;	/* DFLAG_* below */
 };
 

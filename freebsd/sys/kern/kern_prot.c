@@ -37,8 +37,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)kern_prot.c	8.6 (Berkeley) 1/21/94
  */
 
 /*
@@ -83,6 +81,8 @@
 #include <sys/syscallsubr.h>
 #endif /* __rtems__ */
 #include <sys/sysctl.h>
+
+#include <vm/uma.h>
 
 #ifdef REGRESSION
 FEATURE(regression,
@@ -2255,17 +2255,6 @@ cru2xt(struct thread *td, struct xucred *xcr)
 }
 
 #ifndef __rtems__
-/*
- * Set initial process credentials.
- * Callers are responsible for providing the reference for provided credentials.
- */
-void
-proc_set_cred_init(struct proc *p, struct ucred *newcred)
-{
-
-	p->p_ucred = crcowget(newcred);
-}
-
 /*
  * Change process credentials.
  * Callers are responsible for providing the reference for passed credentials

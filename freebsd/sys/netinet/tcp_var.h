@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)tcp_var.h	8.4 (Berkeley) 5/24/95
  */
 
 #ifndef _NETINET_TCP_VAR_H_
@@ -130,6 +128,8 @@ struct sackhint {
 	uint32_t	recover_fs;	/* Flight Size at the start of Loss recovery */
 	uint32_t	prr_delivered;	/* Total bytes delivered using PRR */
 	uint32_t	prr_out;	/* Bytes sent during IN_RECOVERY */
+	int32_t		hole_bytes;	/* current number of bytes in scoreboard holes */
+	int32_t		lost_bytes;	/* number of rfc6675 IsLost() bytes */
 };
 
 #define SEGQ_EMPTY(tp) TAILQ_EMPTY(&(tp)->t_segq)
@@ -141,7 +141,8 @@ STAILQ_HEAD(tcp_log_stailq, tcp_log_mem);
 #define TCP_TRK_TRACK_FLG_OPEN  0x02	/* End is not valid (open range request) */
 #define TCP_TRK_TRACK_FLG_SEQV  0x04	/* We had a sendfile that touched it  */
 #define TCP_TRK_TRACK_FLG_COMP  0x08	/* Sendfile as placed the last bits (range req only) */
-#define TCP_TRK_TRACK_FLG_FSND	 0x10	/* First send has been done into the seq space */
+#define TCP_TRK_TRACK_FLG_FSND	0x10	/* First send has been done into the seq space */
+#define TCP_TRK_TRACK_FLG_LSND	0x20	/* We were able to set the Last Sent */
 #define MAX_TCP_TRK_REQ 5		/* Max we will have at once */
 
 struct tcp_sendfile_track {
@@ -154,11 +155,14 @@ struct tcp_sendfile_track {
 	uint64_t cspr;		/* Client suggested pace rate */
 	uint64_t sent_at_fs;	/* What was t_sndbytes as we begun sending */
 	uint64_t rxt_at_fs;	/* What was t_snd_rxt_bytes as we begun sending */
+	uint64_t sent_at_ls;	/* Sent value at the last send */
+	uint64_t rxt_at_ls;	/* Retransmit value at the last send */
 	tcp_seq start_seq;	/* First TCP Seq assigned */
 	tcp_seq end_seq;	/* If range req last seq */
 	uint32_t flags;		/* Type of request open etc */
 	uint32_t sbcc_at_s;	/* When we allocate what is the sb_cc */
 	uint32_t hint_maxseg;	/* Client hinted maxseg */
+	uint32_t playout_ms;	/* Client playout ms */
 	uint32_t hybrid_flags;	/* Hybrid flags on this request */
 };
 
@@ -544,16 +548,6 @@ typedef enum {
 #define	TCP_FUNC_DEFAULT_OK	0x04   	/* Can be used as default */
 
 /**
- * If defining the optional tcp_timers, in the
- * tfb_tcp_timer_stop call you must use the
- * callout_async_drain() function with the
- * tcp_timer_discard callback. You should check
- * the return of callout_async_drain() and if 0
- * increment tt_draincnt. Since the timer sub-system
- * does not know your callbacks you must provide a
- * stop_all function that loops through and calls
- * tcp_timer_stop() with each of your defined timers.
- *
  * tfb_tcp_handoff_ok is a mandatory function allowing
  * to query a stack, if it can take over a tcpcb.
  * You return 0 to say you can take over and run your stack,
@@ -639,6 +633,8 @@ struct tcp_function_block {
 	void	(*tfb_switch_failed)(struct tcpcb *);
 	bool	(*tfb_early_wake_check)(struct tcpcb *);
 	int     (*tfb_compute_pipe)(struct tcpcb *tp);
+	int     (*tfb_stack_info)(struct tcpcb *tp, struct stack_specific_info *);
+	void	(*tfb_inherit)(struct tcpcb *tp, struct inpcb *h_inp);
 	volatile uint32_t tfb_refcnt;
 	uint32_t  tfb_flags;
 	uint8_t	tfb_id;
@@ -807,7 +803,7 @@ tcp_packets_this_ack(struct tcpcb *tp, tcp_seq ack)
 #define	TF_TSO		0x01000000	/* TSO enabled on this connection */
 #define	TF_TOE		0x02000000	/* this connection is offloaded */
 #define	TF_CLOSED	0x04000000	/* close(2) called on socket */
-#define	TF_UNUSED1	0x08000000	/* unused */
+#define TF_SENTSYN      0x08000000      /* At least one syn has been sent */
 #define	TF_LRD		0x10000000	/* Lost Retransmission Detection */
 #define	TF_CONGRECOVERY	0x20000000	/* congestion recovery mode */
 #define	TF_WASCRECOVERY	0x40000000	/* was in congestion recovery */
@@ -824,14 +820,6 @@ tcp_packets_this_ack(struct tcpcb *tp, tcp_seq ack)
 #define	IN_RECOVERY(t_flags) (t_flags & (TF_CONGRECOVERY | TF_FASTRECOVERY))
 #define	ENTER_RECOVERY(t_flags) t_flags |= (TF_CONGRECOVERY | TF_FASTRECOVERY)
 #define	EXIT_RECOVERY(t_flags) t_flags &= ~(TF_CONGRECOVERY | TF_FASTRECOVERY)
-
-#if defined(_KERNEL)
-#if !defined(TCP_RFC7413)
-#define	IS_FASTOPEN(t_flags)		(false)
-#else
-#define	IS_FASTOPEN(t_flags)		(t_flags & TF_FASTOPEN)
-#endif
-#endif
 
 #define	BYTES_THIS_ACK(tp, th)	(th->th_ack - tp->snd_una)
 
@@ -864,6 +852,8 @@ tcp_packets_this_ack(struct tcpcb *tp, tcp_seq ack)
 #define	TF2_MBUF_QUEUE_READY	0x00020000 /* Inputs can be queued */
 #define	TF2_DONT_SACK_QUEUE	0x00040000 /* Don't wake on sack */
 #define	TF2_CANNOT_DO_ECN	0x00080000 /* The stack does not do ECN */
+#define	TF2_PROC_SACK_PROHIBIT	0x00100000 /* Due to small MSS size do not process sack's */
+#define	TF2_IPSEC_TSO		0x00200000 /* IPSEC + TSO supported */
 #define	TF2_NO_ISS_CHECK	0x00400000 /* Don't check SEG.ACK against ISS */
 
 /*
@@ -909,17 +899,6 @@ struct hc_metrics_lite {	/* must stay in sync with hc_metrics */
 	uint32_t	rmx_cwnd;	/* congestion window */
 	uint32_t	rmx_sendpipe;   /* outbound delay-bandwidth product */
 	uint32_t	rmx_recvpipe;   /* inbound delay-bandwidth product */
-};
-
-/*
- * Used by tcp_maxmtu() to communicate interface specific features
- * and limits at the time of connection setup.
- */
-struct tcp_ifcap {
-	int	ifcap;
-	u_int	tsomax;
-	u_int	tsomaxsegcount;
-	u_int	tsomaxsegsize;
 };
 
 #ifndef _NETINET_IN_PCB_H_
@@ -1059,6 +1038,7 @@ struct	tcpstat {
 	/* SACK related stats */
 	uint64_t tcps_sack_recovery_episode; /* SACK recovery episodes */
 	uint64_t tcps_sack_rexmits;	    /* SACK rexmit segments   */
+	uint64_t tcps_sack_rexmits_tso;	    /* SACK rexmit TSO chunks */
 	uint64_t tcps_sack_rexmit_bytes;    /* SACK rexmit bytes      */
 	uint64_t tcps_sack_rcv_blocks;	    /* SACK blocks (options) received */
 	uint64_t tcps_sack_send_blocks;	    /* SACK blocks (options) sent     */
@@ -1120,31 +1100,39 @@ struct	tcpstat {
 	uint64_t tcps_rcvghostack;	/* received ACK for data never sent */
 	uint64_t tcps_rcvacktooold;	/* received ACK for data too long ago */
 
-	uint64_t _pad[2];		/* 2 TBD placeholder for STABLE */
+
+	uint64_t _pad[1];		/* 1 TBD placeholder for STABLE */
 };
 
 #define	tcps_rcvmemdrop	tcps_rcvreassfull	/* compat */
 
 #ifdef _KERNEL
-#define	TI_UNLOCKED	1
-#define	TI_RLOCKED	2
 #include <sys/counter.h>
+#include <netinet/in_kdtrace.h>
 
 VNET_PCPUSTAT_DECLARE(struct tcpstat, tcpstat);	/* tcp statistics */
 /*
  * In-kernel consumers can use these accessor macros directly to update
  * stats.
  */
-#define	TCPSTAT_ADD(name, val)	\
-    VNET_PCPUSTAT_ADD(struct tcpstat, tcpstat, name, (val))
+#define TCPSTAT_ADD(name, val)                                           \
+	do {                                                             \
+		MIB_SDT_PROBE1(tcp, count, name, (val));                 \
+		VNET_PCPUSTAT_ADD(struct tcpstat, tcpstat, name, (val)); \
+	} while (0)
 #define	TCPSTAT_INC(name)	TCPSTAT_ADD(name, 1)
 
 /*
  * Kernel module consumers must use this accessor macro.
  */
 void	kmod_tcpstat_add(int statnum, int val);
-#define	KMOD_TCPSTAT_ADD(name, val)					\
-    kmod_tcpstat_add(offsetof(struct tcpstat, name) / sizeof(uint64_t), val)
+#define KMOD_TCPSTAT_ADD(name, val)                               \
+	do {                                                      \
+		MIB_SDT_PROBE1(tcp, count, name, (val));          \
+		kmod_tcpstat_add(offsetof(struct tcpstat, name) / \
+			sizeof(uint64_t),                         \
+		    val);                                         \
+	} while (0)
 #define	KMOD_TCPSTAT_INC(name)	KMOD_TCPSTAT_ADD(name, 1)
 
 /*
@@ -1317,6 +1305,7 @@ VNET_DECLARE(int, tcp_retries);
 VNET_DECLARE(int, tcp_sack_globalholes);
 VNET_DECLARE(int, tcp_sack_globalmaxholes);
 VNET_DECLARE(int, tcp_sack_maxholes);
+VNET_DECLARE(int, tcp_sack_tso);
 VNET_DECLARE(int, tcp_sc_rst_sock_fail);
 VNET_DECLARE(int, tcp_sendspace);
 VNET_DECLARE(int, tcp_udp_tunneling_overhead);
@@ -1366,6 +1355,7 @@ VNET_DECLARE(struct inpcbinfo, tcbinfo);
 #define	V_tcp_sack_globalholes		VNET(tcp_sack_globalholes)
 #define	V_tcp_sack_globalmaxholes	VNET(tcp_sack_globalmaxholes)
 #define	V_tcp_sack_maxholes		VNET(tcp_sack_maxholes)
+#define	V_tcp_sack_tso			VNET(tcp_sack_tso)
 #define	V_tcp_sc_rst_sock_fail		VNET(tcp_sc_rst_sock_fail)
 #define	V_tcp_sendspace			VNET(tcp_sendspace)
 #define	V_tcp_udp_tunneling_overhead	VNET(tcp_udp_tunneling_overhead)
@@ -1447,24 +1437,23 @@ extern counter_u64_t tcp_comp_total;
 extern counter_u64_t tcp_uncomp_total;
 extern counter_u64_t tcp_bad_csums;
 
-#ifdef TCP_SAD_DETECTION
-/* Various SACK attack thresholds */
-extern int32_t tcp_force_detection;
-extern int32_t tcp_sad_limit;
-extern int32_t tcp_sack_to_ack_thresh;
-extern int32_t tcp_sack_to_move_thresh;
-extern int32_t tcp_restoral_thresh;
-extern int32_t tcp_sad_decay_val;
-extern int32_t tcp_sad_pacing_interval;
-extern int32_t tcp_sad_low_pps;
-extern int32_t tcp_map_minimum;
-extern int32_t tcp_attack_on_turns_on_logging;
-#endif
 extern uint32_t tcp_ack_war_time_window;
 extern uint32_t tcp_ack_war_cnt;
 
+/*
+ * Used by tcp_maxmtu() to communicate interface specific features
+ * and limits at the time of connection setup.
+ */
+struct tcp_ifcap {
+	int	ifcap;
+	u_int	tsomax;
+	u_int	tsomaxsegcount;
+	u_int	tsomaxsegsize;
+	bool	ipsec_tso;
+};
 uint32_t tcp_maxmtu(struct in_conninfo *, struct tcp_ifcap *);
 uint32_t tcp_maxmtu6(struct in_conninfo *, struct tcp_ifcap *);
+
 void	 tcp6_use_min_mtu(struct tcpcb *);
 u_int	 tcp_maxseg(const struct tcpcb *);
 u_int	 tcp_fixed_maxseg(const struct tcpcb *);
@@ -1513,14 +1502,17 @@ sackstatus_t
 	 tcp_sack_doack(struct tcpcb *, struct tcpopt *, tcp_seq);
 int	 tcp_dsack_block_exists(struct tcpcb *);
 void	 tcp_update_dsack_list(struct tcpcb *, tcp_seq, tcp_seq);
-void	 tcp_update_sack_list(struct tcpcb *tp, tcp_seq rcv_laststart, tcp_seq rcv_lastend);
+void	 tcp_update_sack_list(struct tcpcb *tp, tcp_seq rcv_laststart,
+	    tcp_seq rcv_lastend);
 void	 tcp_clean_dsack_blocks(struct tcpcb *tp);
 void	 tcp_clean_sackreport(struct tcpcb *tp);
 int	 tcp_sack_adjust(struct tcpcb *tp);
 struct sackhole *tcp_sack_output(struct tcpcb *tp, int *sack_bytes_rexmt);
-void	 tcp_do_prr_ack(struct tcpcb *, struct tcphdr *, struct tcpopt *, sackstatus_t);
+void	 tcp_do_prr_ack(struct tcpcb *, struct tcphdr *, struct tcpopt *,
+	    sackstatus_t, u_int *);
 void	 tcp_lost_retransmission(struct tcpcb *, struct tcphdr *);
-void	 tcp_sack_partialack(struct tcpcb *, struct tcphdr *);
+void	 tcp_sack_partialack(struct tcpcb *, struct tcphdr *, u_int *);
+void	 tcp_resend_sackholes(struct tcpcb *tp);
 void	 tcp_free_sackholes(struct tcpcb *tp);
 void	 tcp_sack_lost_retransmission(struct tcpcb *, struct tcphdr *);
 int	 tcp_newreno(struct tcpcb *, struct tcphdr *);
@@ -1530,6 +1522,8 @@ void	 tcp_sndbuf_autoscale(struct tcpcb *, struct socket *, uint32_t);
 int	 tcp_stats_sample_rollthedice(struct tcpcb *tp, void *seed_bytes,
     size_t seed_len);
 int tcp_can_enable_pacing(void);
+int tcp_incr_dgp_pacing_cnt(void);
+void tcp_dec_dgp_pacing_cnt(void);
 void tcp_decrement_paced_conn(void);
 void tcp_change_time_units(struct tcpcb *, int);
 void tcp_handle_orphaned_packets(struct tcpcb *);
@@ -1597,19 +1591,6 @@ tcp_fields_to_net(struct tcphdr *th)
 	th->th_ack = htonl(th->th_ack);
 	th->th_win = htons(th->th_win);
 	th->th_urp = htons(th->th_urp);
-}
-
-static inline uint16_t
-tcp_get_flags(const struct tcphdr *th)
-{
-        return (((uint16_t)th->th_x2 << 8) | th->th_flags);
-}
-
-static inline void
-tcp_set_flags(struct tcphdr *th, uint16_t flags)
-{
-        th->th_x2    = (flags >> 8) & 0x0f;
-        th->th_flags = flags & 0xff;
 }
 #endif /* _KERNEL */
 

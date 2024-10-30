@@ -63,8 +63,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)igmp.c	8.1 (Berkeley) 7/19/93
  */
 
 #include <sys/cdefs.h>
@@ -3137,7 +3135,7 @@ mld_dispatch_packet(struct mbuf *m)
 		CTR3(KTR_MLD, "%s: ip6_output(%p) = %d", __func__, m0, error);
 		goto out;
 	}
-	ICMP6STAT_INC(icp6s_outhist[type]);
+	ICMP6STAT_INC2(icp6s_outhist, type);
 	if (oifp != NULL) {
 		icmp6_ifstat_inc(oifp, ifs6_out_msg);
 		switch (type) {

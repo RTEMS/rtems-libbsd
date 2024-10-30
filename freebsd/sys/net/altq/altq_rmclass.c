@@ -34,8 +34,6 @@
  *
  * LBL code modified by speer@eng.sun.com, May 1977.
  * For questions and/or comments, please send mail to cbq@ee.lbl.gov
- *
- * @(#)rm_class.c  1.48     97/12/05 SMI
  * $KAME: altq_rmclass.c,v 1.19 2005/04/13 03:44:25 suz Exp $
  */
 #include <rtems/bsd/local/opt_altq.h>

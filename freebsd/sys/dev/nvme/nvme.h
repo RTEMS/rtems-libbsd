@@ -50,6 +50,8 @@
 #define	NVME_IO_TEST			_IOWR('n', 100, struct nvme_io_test)
 #define	NVME_BIO_TEST			_IOWR('n', 101, struct nvme_io_test)
 
+/* NB: Fabrics-specific ioctls defined in nvmf.h start at 200. */
+
 /*
  * Macros to deal with NVME revisions, as defined VS register
  */
@@ -217,6 +219,11 @@
 
 /* Command field definitions */
 
+enum nvme_fuse {
+	NVME_FUSE_NORMAL				= 0x0,
+	NVME_FUSE_FIRST					= 0x1,
+	NVME_FUSE_SECOND				= 0x2
+};
 #define NVME_CMD_FUSE_SHIFT				(0)
 #define NVME_CMD_FUSE_MASK				(0x3)
 
@@ -396,9 +403,24 @@ enum nvme_psdt {
 /* per namespace smart/health log page */
 #define NVME_CTRLR_DATA_LPA_NS_SMART_SHIFT		(0)
 #define NVME_CTRLR_DATA_LPA_NS_SMART_MASK		(0x1)
+/* Commands Supported and Effects log page */
+#define NVME_CTRLR_DATA_LPA_CMD_EFFECTS_SHIFT		(1)
+#define NVME_CTRLR_DATA_LPA_CMD_EFFECTS_MASK		(0x1)
 /* extended data for Get Log Page command */
 #define NVME_CTRLR_DATA_LPA_EXT_DATA_SHIFT		(2)
 #define NVME_CTRLR_DATA_LPA_EXT_DATA_MASK		(0x1)
+/* telemetry */
+#define NVME_CTRLR_DATA_LPA_TELEMETRY_SHIFT		(3)
+#define NVME_CTRLR_DATA_LPA_TELEMETRY_MASK		(0x1)
+/* persistent event */
+#define NVME_CTRLR_DATA_LPA_PERSISTENT_EVENT_SHIFT	(4)
+#define NVME_CTRLR_DATA_LPA_PERSISTENT_EVENT_MASK	(0x1)
+/* Supported log pages, etc */
+#define NVME_CTRLR_DATA_LPA_LOG_PAGES_PAGE_SHIFT	(5)
+#define NVME_CTRLR_DATA_LPA_LOG_PAGES_PAGE_MASK		(0x1)
+/* Data Area 4 for Telemetry */
+#define NVME_CTRLR_DATA_LPA_DA4_TELEMETRY_SHIFT		(6)
+#define NVME_CTRLR_DATA_LPA_DA4_TELEMETRY_MASK		(0x1)
 
 /** AVSCC - admin vendor specific command configuration */
 /* admin vendor specific commands use spec format */
@@ -629,10 +651,19 @@ enum nvme_critical_warning_state {
 	NVME_CRIT_WARN_ST_DEVICE_RELIABILITY		= 0x4,
 	NVME_CRIT_WARN_ST_READ_ONLY			= 0x8,
 	NVME_CRIT_WARN_ST_VOLATILE_MEMORY_BACKUP	= 0x10,
+	NVME_CRIT_WARN_ST_PERSISTENT_MEMORY_REGION	= 0x20,
 };
-#define NVME_CRIT_WARN_ST_RESERVED_MASK			(0xE0)
-#define	NVME_ASYNC_EVENT_NS_ATTRIBUTE			(0x100)
-#define	NVME_ASYNC_EVENT_FW_ACTIVATE			(0x200)
+#define NVME_CRIT_WARN_ST_RESERVED_MASK			(0xC0)
+#define	NVME_ASYNC_EVENT_NS_ATTRIBUTE			(1U << 8)
+#define	NVME_ASYNC_EVENT_FW_ACTIVATE			(1U << 9)
+#define	NVME_ASYNC_EVENT_TELEMETRY_LOG			(1U << 10)
+#define	NVME_ASYNC_EVENT_ASYM_NS_ACC			(1U << 11)
+#define	NVME_ASYNC_EVENT_PRED_LAT_DELTA			(1U << 12)
+#define	NVME_ASYNC_EVENT_LBA_STATUS			(1U << 13)
+#define	NVME_ASYNC_EVENT_ENDURANCE_DELTA		(1U << 14)
+#define	NVME_ASYNC_EVENT_NVM_SHUTDOWN			(1U << 15)
+#define	NVME_ASYNC_EVENT_ZONE_DELTA			(1U << 27)
+#define	NVME_ASYNC_EVENT_DISCOVERY_DELTA		(1U << 31)
 
 /* slot for current FW */
 #define NVME_FIRMWARE_PAGE_AFI_SLOT_SHIFT		(0)
@@ -831,7 +862,7 @@ struct nvme_command {
 	uint32_t cdw13;		/* command-specific */
 	uint32_t cdw14;		/* command-specific */
 	uint32_t cdw15;		/* command-specific */
-};
+} __aligned(8);
 
 _Static_assert(sizeof(struct nvme_command) == 16 * 4, "bad size for nvme_command");
 
@@ -1600,7 +1631,7 @@ struct nvme_health_information_page {
 	uint32_t		ttftmt2;
 
 	uint8_t			reserved2[280];
-} __packed __aligned(4);
+} __packed __aligned(8);
 
 _Static_assert(sizeof(struct nvme_health_information_page) == 512, "bad size for nvme_health_information_page");
 
@@ -1650,6 +1681,30 @@ struct nvme_device_self_test_page {
 
 _Static_assert(sizeof(struct nvme_device_self_test_page) == 564,
     "bad size for nvme_device_self_test_page");
+
+/*
+ * Header structure for both host initiated telemetry (page 7) and controller
+ * initiated telemetry (page 8).
+ */
+struct nvme_telemetry_log_page {
+	uint8_t			identifier;
+	uint8_t			rsvd[4];
+	uint8_t			oui[3];
+	uint16_t		da1_last;
+	uint16_t		da2_last;
+	uint16_t		da3_last;
+	uint8_t			rsvd2[2];
+	uint32_t		da4_last;
+	uint8_t			rsvd3[361];
+	uint8_t			hi_gen;
+	uint8_t			ci_avail;
+	uint8_t			ci_gen;
+	uint8_t			reason[128];
+	/* Blocks of telemetry data follow */
+} __packed __aligned(4);
+
+_Static_assert(sizeof(struct nvme_telemetry_log_page) == 512,
+    "bad size for nvme_telemetry_log");
 
 struct nvme_discovery_log_entry {
 	uint8_t			trtype;
@@ -1891,6 +1946,7 @@ struct thread;
 struct nvme_namespace;
 struct nvme_controller;
 struct nvme_consumer;
+struct nvme_passthru_cmd;
 
 typedef void (*nvme_cb_fn_t)(void *, const struct nvme_completion *);
 
@@ -1909,6 +1965,11 @@ int	nvme_ctrlr_passthrough_cmd(struct nvme_controller *ctrlr,
 				   struct nvme_pt_command *pt,
 				   uint32_t nsid, int is_user_buffer,
 				   int is_admin_cmd);
+
+int	nvme_ctrlr_linux_passthru_cmd(struct nvme_controller *ctrlr,
+				      struct nvme_passthru_cmd *npc,
+				      uint32_t nsid, bool is_user,
+				      bool is_admin);
 
 /* Admin functions */
 void	nvme_ctrlr_cmd_set_feature(struct nvme_controller *ctrlr,

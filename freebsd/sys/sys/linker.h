@@ -29,6 +29,8 @@
 #ifndef _SYS_LINKER_H_
 #define _SYS_LINKER_H_
 
+#include <sys/param.h>
+
 #ifdef _KERNEL
 
 #include <machine/elf.h>
@@ -129,6 +131,12 @@ typedef int linker_predicate_t(linker_file_t, void *);
  * The "file" for the kernel.
  */
 extern linker_file_t	linker_kernel_file;
+
+/*
+ * Special symbol which will be replaced by a reference to the linker_file_t
+ * of the module it is used in.
+ */
+extern linker_file_t __this_linker_file;
 
 /*
  * Obtain a reference to a module, loading it if required.
@@ -326,6 +334,9 @@ typedef struct linker_ctf {
 } linker_ctf_t;
 
 int	linker_ctf_get(linker_file_t, linker_ctf_t *);
+int linker_ctf_lookup_sym_ddb(const char *symname, c_linker_sym_t *sym,
+    linker_ctf_t *lc);
+int linker_ctf_lookup_typename_ddb(linker_ctf_t *lc, const char *typename);
 
 int elf_cpu_load_file(linker_file_t);
 int elf_cpu_unload_file(linker_file_t);

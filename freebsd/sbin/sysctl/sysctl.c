@@ -35,7 +35,6 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>

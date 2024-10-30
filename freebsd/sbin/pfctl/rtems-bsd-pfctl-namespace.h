@@ -22,6 +22,7 @@
 #define expand_skip_interface _bsd_pfctl_expand_skip_interface
 #define filter_consistent _bsd_pfctl_filter_consistent
 #define findeol _bsd_pfctl_findeol
+#define freehostlist _bsd_pfctl_freehostlist
 #define getservice _bsd_pfctl_getservice
 #define invalid_redirect _bsd_pfctl_invalid_redirect
 #define kw_casecmp _bsd_pfctl_kw_casecmp
@@ -116,6 +117,8 @@
 #define pfctl_adjust_skip_ifaces _bsd_pfctl_pfctl_adjust_skip_ifaces
 #define pfctl_append_eth_rule _bsd_pfctl_pfctl_append_eth_rule
 #define pfctl_append_rule _bsd_pfctl_pfctl_append_rule
+#define pfctl_apply_limit _bsd_pfctl_pfctl_apply_limit
+#define pfctl_apply_timeout _bsd_pfctl_pfctl_apply_timeout
 #define pfctl_cfg_syncookies _bsd_pfctl_pfctl_cfg_syncookies
 #define pfctl_check_skip_ifaces _bsd_pfctl_pfctl_check_skip_ifaces
 #define pfctl_clear_altq _bsd_pfctl_pfctl_clear_altq
@@ -126,6 +129,7 @@
 #define pfctl_clear_stats _bsd_pfctl_pfctl_clear_stats
 #define pfctl_debug _bsd_pfctl_pfctl_debug
 #define pfctl_disable _bsd_pfctl_pfctl_disable
+#define pfctl_do_set_debug _bsd_pfctl_pfctl_do_set_debug
 #define pfctl_enable _bsd_pfctl_pfctl_enable
 #define pfctl_eth_ruleset_trans _bsd_pfctl_pfctl_eth_ruleset_trans
 #define pfctl_flush_eth_rules _bsd_pfctl_pfctl_flush_eth_rules
@@ -160,15 +164,13 @@
 #define pfctl_proto2name _bsd_pfctl_pfctl_proto2name
 #define pfctl_rules _bsd_pfctl_pfctl_rules
 #define pfctl_ruleset_trans _bsd_pfctl_pfctl_ruleset_trans
-#define pfctl_set_debug _bsd_pfctl_pfctl_set_debug
 #define pfctl_set_hostid _bsd_pfctl_pfctl_set_hostid
 #define pfctl_set_interface_flags _bsd_pfctl_pfctl_set_interface_flags
-#define pfctl_set_limit _bsd_pfctl_pfctl_set_limit
 #define pfctl_set_logif _bsd_pfctl_pfctl_set_logif
 #define pfctl_set_optimization _bsd_pfctl_pfctl_set_optimization
 #define pfctl_set_reassembly _bsd_pfctl_pfctl_set_reassembly
-#define pfctl_set_timeout _bsd_pfctl_pfctl_set_timeout
 #define pfctl_show_anchors _bsd_pfctl_pfctl_show_anchors
+#define pfctl_show_creators _bsd_pfctl_pfctl_show_creators
 #define pfctl_show_eth_anchors _bsd_pfctl_pfctl_show_eth_anchors
 #define pfctl_show_eth_rules _bsd_pfctl_pfctl_show_eth_rules
 #define pfctl_show_limits _bsd_pfctl_pfctl_show_limits
@@ -180,6 +182,7 @@
 #define pfctl_show_status _bsd_pfctl_pfctl_show_status
 #define pfctl_show_timeouts _bsd_pfctl_pfctl_show_timeouts
 #define pfctl_test_altqsupport _bsd_pfctl_pfctl_test_altqsupport
+#define pfh _bsd_pfctl_pfh
 #define usage _bsd_pfctl_usage
 /* pfctl_altq.c */
 #define check_commit_altq _bsd_pfctl_check_commit_altq

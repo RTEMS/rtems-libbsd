@@ -255,8 +255,7 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 }
 
 static int
-nexus_release_resource(device_t bus, device_t child, int type, int rid,
-    struct resource *res)
+nexus_release_resource(device_t bus, device_t child, struct resource *res)
 {
 	return (rman_release_resource(res));
 }

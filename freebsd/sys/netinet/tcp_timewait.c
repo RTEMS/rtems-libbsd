@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)tcp_subr.c	8.2 (Berkeley) 5/24/95
  */
 
 #include <sys/cdefs.h>
@@ -123,6 +121,7 @@ tcp_twstart(struct tcpcb *tp)
 	    "(inp->inp_flags & INP_DROPPED) != 0"));
 
 	tcp_state_change(tp, TCPS_TIME_WAIT);
+	tcp_free_sackholes(tp);
 	soisdisconnected(inp->inp_socket);
 
 	if (tp->t_flags & TF_ACKNOW)

@@ -281,6 +281,17 @@ struct spacectl_range {
 #define AF_NETLINK 38
 #define PF_NETLINK AF_NETLINK
 #define SO_SPLICE 0x1023    /* splice data to other socket */
+/*
+ * howto arguments for shutdown(2), specified by Posix.1g.
+ */
+enum shutdown_how {
+        SHUT_RD = 0,            /* shut down the reading side */
+#define SHUT_RD         SHUT_RD
+        SHUT_WR,                /* shut down the writing side */
+#define SHUT_WR         SHUT_WR
+        SHUT_RDWR               /* shut down both sides */
+#define SHUT_RDWR       SHUT_RDWR
+};
 /* Here until queue in newlib is updated */
 #define LIST_REMOVE_HEAD(head, field)					\
 	LIST_REMOVE(LIST_FIRST(head), field)
@@ -399,6 +410,19 @@ void dirent_terminate(struct dirent *dp);
 #define __enum_uint8_decl(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
 #define __enum_uint8(name)	enum __attribute__((packed)) enum_ ## name ## _uint8
 #endif
+
+/* From sys/sys/_types.h */
+/* Types for sys/acl.h */
+typedef __uint32_t	__acl_tag_t;
+typedef __uint32_t	__acl_perm_t;
+typedef __uint16_t	__acl_entry_type_t;
+typedef __uint16_t	__acl_flag_t;
+typedef __uint32_t	__acl_type_t;
+typedef __uint32_t	*__acl_permset_t;
+typedef __uint16_t	*__acl_flagset_t;
+
+/* From sys/sys/ssp.h */
+#define __ssp_real(fun)             fun
 
 #ifdef __cplusplus
 }

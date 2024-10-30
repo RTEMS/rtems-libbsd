@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)if_ethersubr.c	8.1 (Berkeley) 6/10/93
  */
 
 #include <rtems/bsd/local/opt_inet.h>
@@ -592,16 +590,6 @@ ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 	 */
 	ETHER_BPF_MTAP(ifp, m);
 
-	/*
-	 * If the CRC is still on the packet, trim it off. We do this once
-	 * and once only in case we are re-entered. Nothing else on the
-	 * Ethernet receive path expects to see the FCS.
-	 */
-	if (m->m_flags & M_HASFCS) {
-		m_adj(m, -ETHER_CRC_LEN);
-		m->m_flags &= ~M_HASFCS;
-	}
-
 	if (!(ifp->if_capenable & IFCAP_HWSTATS))
 		if_inc_counter(ifp, IFCOUNTER_IBYTES, m->m_pkthdr.len);
 
@@ -882,7 +870,7 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 	/* Do not grab PROMISC frames in case we are re-entered. */
 	if (PFIL_HOOKED_IN(V_link_pfil_head) && !(m->m_flags & M_PROMISC)) {
 		i = pfil_mbuf_in(V_link_pfil_head, &m, ifp, NULL);
-		if (i != 0 || m == NULL)
+		if (i != PFIL_PASS)
 			return;
 	}
 

@@ -1,6 +1,5 @@
 #include <machine/rtems-bsd-user-space.h>
-
-/* 628e24d4966bedbd4800f6ed128d06d29703765b4bce12d3b7f099f90f842fc9 (2.6.0+)
+/* ba4cdf9bdb534f355a9def4c9e25d20ee8e72f95b0a4d930be52e563f5080196 (2.6.3+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -40,7 +39,8 @@
    Copyright (c) 2022      Jann Horn <jannh@google.com>
    Copyright (c) 2022      Sean McBride <sean@rogue-research.com>
    Copyright (c) 2023      Owain Davies <owaind@bath.edu>
-   Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2023-2024 Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2024      Berkay Eren Ürün <berkay.ueruen@siemens.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -214,7 +214,7 @@ typedef char ICHAR;
 #endif
 
 /* Round up n to be a multiple of sz, where sz is a power of 2. */
-#define ROUND_UP(n, sz) (((n) + ((sz)-1)) & ~((sz)-1))
+#define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
 
 /* Do safe (NULL-aware) pointer arithmetic */
 #define EXPAT_SAFE_PTR_DIFF(p, q) (((p) && (q)) ? ((p) - (q)) : 0)
@@ -252,7 +252,7 @@ static void copy_salt_to_sipkey(XML_Parser parser, struct sipkey *key);
    it odd, since odd numbers are always relative prime to a power of 2.
 */
 #define SECOND_HASH(hash, mask, power)                                         \
-  ((((hash) & ~(mask)) >> ((power)-1)) & ((mask) >> 2))
+  ((((hash) & ~(mask)) >> ((power) - 1)) & ((mask) >> 2))
 #define PROBE_STEP(hash, mask, power)                                          \
   ((unsigned char)((SECOND_HASH(hash, mask, power)) | 1))
 
@@ -298,7 +298,7 @@ typedef struct {
    The name of the element is stored in both the document and API
    encodings.  The memory buffer 'buf' is a separately-allocated
    memory area which stores the name.  During the XML_Parse()/
-   XMLParseBuffer() when the element is open, the memory for the 'raw'
+   XML_ParseBuffer() when the element is open, the memory for the 'raw'
    version of the name (in the document encoding) is shared with the
    document buffer.  If the element is open across calls to
    XML_Parse()/XML_ParseBuffer(), the buffer is re-allocated to
@@ -633,8 +633,14 @@ static unsigned long getDebugLevel(const char *variableName,
        ? 0                                                                     \
        : ((*((pool)->ptr)++ = c), 1))
 
-XML_Bool g_reparseDeferralEnabledDefault = XML_TRUE; // write ONLY in runtests.c
-unsigned int g_parseAttempts = 0;                    // used for testing only
+#if ! defined(XML_TESTING)
+const
+#endif
+    XML_Bool g_reparseDeferralEnabledDefault
+    = XML_TRUE; // write ONLY in runtests.c
+#if defined(XML_TESTING)
+unsigned int g_bytesScanned = 0; // used for testing only
+#endif
 
 struct XML_ParserStruct {
   /* The first member must be m_userData so that the XML_GetUserData
@@ -1021,7 +1027,9 @@ callProcessor(XML_Parser parser, const char *start, const char *end,
       return XML_ERROR_NONE;
     }
   }
-  g_parseAttempts += 1;
+#if defined(XML_TESTING)
+  g_bytesScanned += (unsigned)have_now;
+#endif
   const enum XML_Error ret = parser->m_processor(parser, start, end, endPtr);
   if (ret == XML_ERROR_NONE) {
     // if we consumed nothing, remember what we had on this parse attempt.
@@ -2034,6 +2042,12 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal) {
 
   if (parser == NULL)
     return XML_STATUS_ERROR;
+
+  if (len < 0) {
+    parser->m_errorCode = XML_ERROR_INVALID_ARGUMENT;
+    return XML_STATUS_ERROR;
+  }
+
   switch (parser->m_parsingStatus.parsing) {
   case XML_SUSPENDED:
     parser->m_errorCode = XML_ERROR_SUSPENDED;
@@ -5842,18 +5856,17 @@ processInternalEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl) {
   /* Set a safe default value in case 'next' does not get set */
   next = textStart;
 
-#ifdef XML_DTD
   if (entity->is_param) {
     int tok
         = XmlPrologTok(parser->m_internalEncoding, textStart, textEnd, &next);
     result = doProlog(parser, parser->m_internalEncoding, textStart, textEnd,
                       tok, next, &next, XML_FALSE, XML_FALSE,
                       XML_ACCOUNT_ENTITY_EXPANSION);
-  } else
-#endif /* XML_DTD */
+  } else {
     result = doContent(parser, parser->m_tagLevel, parser->m_internalEncoding,
                        textStart, textEnd, &next, XML_FALSE,
                        XML_ACCOUNT_ENTITY_EXPANSION);
+  }
 
   if (result == XML_ERROR_NONE) {
     if (textEnd != next && parser->m_parsingStatus.parsing == XML_SUSPENDED) {
@@ -5890,18 +5903,17 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
   /* Set a safe default value in case 'next' does not get set */
   next = textStart;
 
-#ifdef XML_DTD
   if (entity->is_param) {
     int tok
         = XmlPrologTok(parser->m_internalEncoding, textStart, textEnd, &next);
     result = doProlog(parser, parser->m_internalEncoding, textStart, textEnd,
                       tok, next, &next, XML_FALSE, XML_TRUE,
                       XML_ACCOUNT_ENTITY_EXPANSION);
-  } else
-#endif /* XML_DTD */
+  } else {
     result = doContent(parser, openEntity->startTagLevel,
                        parser->m_internalEncoding, textStart, textEnd, &next,
                        XML_FALSE, XML_ACCOUNT_ENTITY_EXPANSION);
+  }
 
   if (result != XML_ERROR_NONE)
     return result;
@@ -5928,7 +5940,6 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
     return XML_ERROR_NONE;
   }
 
-#ifdef XML_DTD
   if (entity->is_param) {
     int tok;
     parser->m_processor = prologProcessor;
@@ -5936,9 +5947,7 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
     return doProlog(parser, parser->m_encoding, s, end, tok, next, nextPtr,
                     (XML_Bool)! parser->m_parsingStatus.finalBuffer, XML_TRUE,
                     XML_ACCOUNT_DIRECT);
-  } else
-#endif /* XML_DTD */
-  {
+  } else {
     parser->m_processor = contentProcessor;
     /* see externalEntityContentProcessor vs contentProcessor */
     result = doContent(parser, parser->m_parentParser ? 1 : 0,
@@ -6236,7 +6245,7 @@ storeEntityValue(XML_Parser parser, const ENCODING *enc,
           dtd->keepProcessing = dtd->standalone;
           goto endEntityValue;
         }
-        if (entity->open) {
+        if (entity->open || (entity == parser->m_declEntity)) {
           if (enc == parser->m_encoding)
             parser->m_eventPtr = entityTextPtr;
           result = XML_ERROR_RECURSIVE_ENTITY_REF;
@@ -7012,6 +7021,16 @@ dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
     if (! newE)
       return 0;
     if (oldE->nDefaultAtts) {
+      /* Detect and prevent integer overflow.
+       * The preprocessor guard addresses the "always false" warning
+       * from -Wtype-limits on platforms where
+       * sizeof(int) < sizeof(size_t), e.g. on x86_64. */
+#if UINT_MAX >= SIZE_MAX
+      if ((size_t)oldE->nDefaultAtts
+          > ((size_t)(-1) / sizeof(DEFAULT_ATTRIBUTE))) {
+        return 0;
+      }
+#endif
       newE->defaultAtts
           = ms->malloc_fcn(oldE->nDefaultAtts * sizeof(DEFAULT_ATTRIBUTE));
       if (! newE->defaultAtts) {
@@ -7554,6 +7573,15 @@ nextScaffoldPart(XML_Parser parser) {
   int next;
 
   if (! dtd->scaffIndex) {
+    /* Detect and prevent integer overflow.
+     * The preprocessor guard addresses the "always false" warning
+     * from -Wtype-limits on platforms where
+     * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
+#if UINT_MAX >= SIZE_MAX
+    if (parser->m_groupSize > ((size_t)(-1) / sizeof(int))) {
+      return -1;
+    }
+#endif
     dtd->scaffIndex = (int *)MALLOC(parser, parser->m_groupSize * sizeof(int));
     if (! dtd->scaffIndex)
       return -1;
@@ -7783,6 +7811,8 @@ copyString(const XML_Char *s, const XML_Memory_Handling_Suite *memsuite) {
 
 static float
 accountingGetCurrentAmplification(XML_Parser rootParser) {
+  //                                          1.........1.........12 => 22
+  const size_t lenOfShortestInclude = sizeof("<!ENTITY a SYSTEM 'b'>") - 1;
   const XmlBigCount countBytesOutput
       = rootParser->m_accounting.countBytesDirect
         + rootParser->m_accounting.countBytesIndirect;
@@ -7790,7 +7820,9 @@ accountingGetCurrentAmplification(XML_Parser rootParser) {
       = rootParser->m_accounting.countBytesDirect
             ? (countBytesOutput
                / (float)(rootParser->m_accounting.countBytesDirect))
-            : 1.0f;
+            : ((lenOfShortestInclude
+                + rootParser->m_accounting.countBytesIndirect)
+               / (float)lenOfShortestInclude);
   assert(! rootParser->m_parentParser);
   return amplificationFactor;
 }

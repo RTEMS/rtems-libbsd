@@ -27,10 +27,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#ifdef __FreeBSD__
-#endif
-
 /*
  * IEEE 802.11 IBSS mode support.
  */

@@ -36,12 +36,36 @@
 #ifdef _KERNEL
 #ifndef __rtems__
 extern const char *panicstr;	/* panic message */
-extern bool panicked;
-#define	KERNEL_PANICKED()	__predict_false(panicked)
+#define	KERNEL_PANICKED()	__predict_false(panicstr != NULL)
 #else /* __rtems__ */
 #define panicstr NULL
 #define	KERNEL_PANICKED() (false)
 #endif /* __rtems__ */
+
+/*
+ * Trap accesses going through a pointer.
+ *
+ * Sample usage: you have a struct with numerous fields and by API contract
+ * only some of them get populated, even if the implementation temporary writes
+ * to them. You can use DEBUG_POISON_POINTER so that the consumer which should
+ * no be looking at the field gets caught.
+ *
+ * DEBUG_POISON_POINTER(obj->ptr);
+ * ....
+ * if (obj->ptr->field) // traps
+ */
+#ifdef	INVARIANTS
+
+extern caddr_t poisoned_buf;
+#define DEBUG_POISON_POINTER_VALUE poisoned_buf
+
+#define DEBUG_POISON_POINTER(x) ({				\
+	x = (void *)(DEBUG_POISON_POINTER_VALUE);		\
+})
+
+#else
+#define DEBUG_POISON_POINTER(x)
+#endif
 
 #ifdef	INVARIANTS		/* The option is always available */
 #define	VNASSERT(exp, vp, msg) do {					\

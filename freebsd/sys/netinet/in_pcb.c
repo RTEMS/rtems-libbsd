@@ -36,8 +36,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)in_pcb.c	8.4 (Berkeley) 5/24/95
  */
 
 #ifdef __rtems__
@@ -1785,12 +1783,16 @@ in_pcbfree(struct inpcb *inp)
 #ifdef INET
 	if (inp->inp_options)
 		(void)m_free(inp->inp_options);
+	DEBUG_POISON_POINTER(inp->inp_options);
 	imo = inp->inp_moptions;
+	DEBUG_POISON_POINTER(inp->inp_moptions);
 #endif
 #ifdef INET6
 	if (inp->inp_vflag & INP_IPV6PROTO) {
 		ip6_freepcbopts(inp->in6p_outputopts);
+		DEBUG_POISON_POINTER(inp->in6p_outputopts);
 		im6o = inp->in6p_moptions;
+		DEBUG_POISON_POINTER(inp->in6p_moptions);
 	} else
 		im6o = NULL;
 #endif
@@ -1830,17 +1832,13 @@ inpcb_fini(void *mem, int size)
  * in_pcbdetach().
  *
  * XXXRW: Possibly in_pcbdrop() should also prevent future notifications by
- * in_pcbnotifyall() and in_pcbpurgeif0()?
+ * in_pcbpurgeif0()?
  */
 void
 in_pcbdrop(struct inpcb *inp)
 {
 
 	INP_WLOCK_ASSERT(inp);
-#ifdef INVARIANTS
-	if (inp->inp_socket != NULL && inp->inp_ppcb != NULL)
-		MPASS(inp->inp_refcount > 1);
-#endif
 
 	inp->inp_flags |= INP_DROPPED;
 	if (inp->inp_flags & INP_INHASHLIST)
@@ -1851,83 +1849,40 @@ in_pcbdrop(struct inpcb *inp)
 /*
  * Common routines to return the socket addresses associated with inpcbs.
  */
-struct sockaddr *
-in_sockaddr(in_port_t port, struct in_addr *addr_p)
-{
-	struct sockaddr_in *sin;
-
-	sin = malloc(sizeof *sin, M_SONAME,
-		M_WAITOK | M_ZERO);
-	sin->sin_family = AF_INET;
-	sin->sin_len = sizeof(*sin);
-	sin->sin_addr = *addr_p;
-	sin->sin_port = port;
-
-	return (struct sockaddr *)sin;
-}
-
 int
-in_getsockaddr(struct socket *so, struct sockaddr **nam)
+in_getsockaddr(struct socket *so, struct sockaddr *sa)
 {
 	struct inpcb *inp;
-	struct in_addr addr;
-	in_port_t port;
 
 	inp = sotoinpcb(so);
 	KASSERT(inp != NULL, ("in_getsockaddr: inp == NULL"));
 
-	INP_RLOCK(inp);
-	port = inp->inp_lport;
-	addr = inp->inp_laddr;
-	INP_RUNLOCK(inp);
+	*(struct sockaddr_in *)sa = (struct sockaddr_in ){
+		.sin_len = sizeof(struct sockaddr_in),
+		.sin_family = AF_INET,
+		.sin_port = inp->inp_lport,
+		.sin_addr = inp->inp_laddr,
+	};
 
-	*nam = in_sockaddr(port, &addr);
-	return 0;
+	return (0);
 }
 
 int
-in_getpeeraddr(struct socket *so, struct sockaddr **nam)
+in_getpeeraddr(struct socket *so, struct sockaddr *sa)
 {
 	struct inpcb *inp;
-	struct in_addr addr;
-	in_port_t port;
 
 	inp = sotoinpcb(so);
 	KASSERT(inp != NULL, ("in_getpeeraddr: inp == NULL"));
 
-	INP_RLOCK(inp);
-	port = inp->inp_fport;
-	addr = inp->inp_faddr;
-	INP_RUNLOCK(inp);
+	*(struct sockaddr_in *)sa = (struct sockaddr_in ){
+		.sin_len = sizeof(struct sockaddr_in),
+		.sin_family = AF_INET,
+		.sin_port = inp->inp_fport,
+		.sin_addr = inp->inp_faddr,
+	};
 
-	*nam = in_sockaddr(port, &addr);
-	return 0;
-}
-
-void
-in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr faddr, int errno,
-    struct inpcb *(*notify)(struct inpcb *, int))
-{
-	struct inpcb *inp, *inp_temp;
-
-	INP_INFO_WLOCK(pcbinfo);
-	CK_LIST_FOREACH_SAFE(inp, &pcbinfo->ipi_listhead, inp_list, inp_temp) {
-		INP_WLOCK(inp);
-#ifdef INET6
-		if ((inp->inp_vflag & INP_IPV4) == 0) {
-			INP_WUNLOCK(inp);
-			continue;
-		}
-#endif
-		if (inp->inp_faddr.s_addr != faddr.s_addr ||
-		    inp->inp_socket == NULL) {
-			INP_WUNLOCK(inp);
-			continue;
-		}
-		if ((*notify)(inp, errno))
-			INP_WUNLOCK(inp);
-	}
-	INP_INFO_WUNLOCK(pcbinfo);
+	return (0);
 }
 
 static bool
@@ -2912,28 +2867,6 @@ inp_inpcbtosocket(struct inpcb *inp)
 	return (inp->inp_socket);
 }
 
-struct tcpcb *
-inp_inpcbtotcpcb(struct inpcb *inp)
-{
-
-	INP_WLOCK_ASSERT(inp);
-	return ((struct tcpcb *)inp->inp_ppcb);
-}
-
-int
-inp_ip_tos_get(const struct inpcb *inp)
-{
-
-	return (inp->inp_ip_tos);
-}
-
-void
-inp_ip_tos_set(struct inpcb *inp, int val)
-{
-
-	inp->inp_ip_tos = val;
-}
-
 void
 inp_4tuple_get(struct inpcb *inp, uint32_t *laddr, uint16_t *lp,
     uint32_t *faddr, uint16_t *fp)
@@ -2944,13 +2877,6 @@ inp_4tuple_get(struct inpcb *inp, uint32_t *laddr, uint16_t *lp,
 	*faddr = inp->inp_faddr.s_addr;
 	*lp = inp->inp_lport;
 	*fp = inp->inp_fport;
-}
-
-struct inpcb *
-so_sotoinpcb(struct socket *so)
-{
-
-	return (sotoinpcb(so));
 }
 
 /*
@@ -2971,7 +2897,6 @@ in_pcbtoxinpcb(const struct inpcb *inp, struct xinpcb *xi)
 		sotoxsocket(inp->inp_socket, &xi->xi_socket);
 	bcopy(&inp->inp_inc, &xi->inp_inc, sizeof(struct in_conninfo));
 	xi->inp_gencnt = inp->inp_gencnt;
-	xi->inp_ppcb = (uintptr_t)inp->inp_ppcb;
 	xi->inp_flow = inp->inp_flow;
 	xi->inp_flowid = inp->inp_flowid;
 	xi->inp_flowtype = inp->inp_flowtype;
@@ -3255,10 +3180,6 @@ db_print_inpcb(struct inpcb *inp, const char *name, int indent)
 	db_printf("inp_flow: 0x%x\n", inp->inp_flow);
 
 	db_print_inconninfo(&inp->inp_inc, "inp_conninfo", indent);
-
-	db_print_indent(indent);
-	db_printf("inp_ppcb: %p   inp_pcbinfo: %p   inp_socket: %p\n",
-	    inp->inp_ppcb, inp->inp_pcbinfo, inp->inp_socket);
 
 	db_print_indent(indent);
 	db_printf("inp_label: %p   inp_flags: 0x%x (",

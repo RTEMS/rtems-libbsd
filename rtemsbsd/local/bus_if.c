@@ -5,7 +5,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   freebsd-org/sys/kern/bus_if.m
+ *   sys/kern/bus_if.m
  * with
  *   makeobjops.awk
  *

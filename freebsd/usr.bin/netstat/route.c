@@ -35,12 +35,6 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char sccsid[] = "From: @(#)route.c	8.6 (Berkeley) 4/28/95";
-#endif /* not lint */
-#endif
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
@@ -78,7 +72,6 @@ static char sccsid[] = "From: @(#)route.c	8.6 (Berkeley) 4/28/95";
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
-#include <err.h>
 #include <libxo/xo.h>
 #include "netstat.h"
 #include "common.h"
@@ -152,7 +145,7 @@ routepr(int fibnum, int af)
 	if (sysctlbyname("net.fibs", &numfibs, &intsize, NULL, 0) == -1)
 		numfibs = 1;
 	if (fibnum < 0 || fibnum > numfibs - 1)
-		errx(EX_USAGE, "%d: invalid fib", fibnum);
+		xo_errx(EX_USAGE, "%d: invalid fib", fibnum);
 	/*
 	 * Since kernel & userland use different timebase
 	 * (time_uptime vs time_second) and we are reading kernel memory
@@ -160,7 +153,7 @@ routepr(int fibnum, int af)
 	 */
 #ifndef __rtems__
 	if (clock_gettime(CLOCK_UPTIME, &uptime) < 0)
-		err(EX_OSERR, "clock_gettime() failed");
+		xo_err(EX_OSERR, "clock_gettime() failed");
 #else /* __rtems__ */
 	rtems_clock_get_uptime(&uptime);
 #endif /* __rtems__ */
@@ -291,12 +284,12 @@ p_rtable_sysctl(int fibnum, int af)
 	mib[5] = 0;
 	mib[6] = fibnum;
 	if (sysctl(mib, nitems(mib), NULL, &needed, NULL, 0) < 0)
-		err(EX_OSERR, "sysctl: net.route.0.%d.dump.%d estimate", af,
+		xo_err(EX_OSERR, "sysctl: net.route.0.%d.dump.%d estimate", af,
 		    fibnum);
 	if ((buf = malloc(needed)) == NULL)
-		errx(2, "malloc(%lu)", (unsigned long)needed);
+		xo_errx(EX_OSERR, "malloc(%lu)", (unsigned long)needed);
 	if (sysctl(mib, nitems(mib), buf, &needed, NULL, 0) < 0)
-		err(1, "sysctl: net.route.0.%d.dump.%d", af, fibnum);
+		xo_err(EX_OSERR, "sysctl: net.route.0.%d.dump.%d", af, fibnum);
 	lim  = buf + needed;
 	xo_open_container("route-table");
 	xo_open_list("rt-family");
@@ -737,13 +730,11 @@ void
 rt_stats(void)
 {
 	struct rtstat rtstat;
-	u_long rtsaddr;
 
-	if ((rtsaddr = nl[N_RTSTAT].n_value) == 0) {
-		xo_emit("{W:rtstat: symbol not in namelist}\n");
+	if (fetch_stats("net.route.stats", nl[N_RTSTAT].n_value, &rtstat,
+	    sizeof(rtstat), kread_counters) != 0)
 		return;
-	}
-	kread_counters(rtsaddr, (char *)&rtstat, sizeof (rtstat));
+
 	xo_emit("{T:routing}:\n");
 
 #define	p(f, m) if (rtstat.f || sflag <= 1) \

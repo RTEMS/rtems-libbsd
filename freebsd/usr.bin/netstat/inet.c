@@ -33,16 +33,9 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
-#endif /* not lint */
-#endif
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/domain.h>
@@ -79,7 +72,6 @@ static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
 #include <netinet/udp_var.h>
 
 #include <arpa/inet.h>
-#include <err.h>
 #include <errno.h>
 #include <libutil.h>
 #include <netdb.h>
@@ -816,11 +808,13 @@ tcp_stats(u_long off, const char *name, int af1 __unused, int proto __unused)
 
 	p(tcps_sack_recovery_episode, "\t{:recovery-episodes/%ju} "
 	    "{N:/SACK recovery episode%s}\n");
- 	p(tcps_sack_rexmits, "\t{:segment-retransmits/%ju} "
+	p(tcps_sack_rexmits, "\t{:segment-retransmits/%ju} "
 	    "{N:/segment rexmit%s in SACK recovery episodes}\n");
- 	p(tcps_sack_rexmit_bytes, "\t{:byte-retransmits/%ju} "
+	p(tcps_sack_rexmits_tso, "\t{:tso-chunk-retransmits/%ju} "
+	    "{N:/tso chunk rexmit%s in SACK recovery episodes}\n");
+	p(tcps_sack_rexmit_bytes, "\t{:byte-retransmits/%ju} "
 	    "{N:/byte rexmit%s in SACK recovery episodes}\n");
- 	p(tcps_sack_rcv_blocks, "\t{:received-blocks/%ju} "
+	p(tcps_sack_rcv_blocks, "\t{:received-blocks/%ju} "
 	    "{N:/SACK option%s (SACK blocks) received}\n");
 	p(tcps_sack_send_blocks, "\t{:sent-option-blocks/%ju} "
 	    "{N:/SACK option%s (SACK blocks) sent}\n");

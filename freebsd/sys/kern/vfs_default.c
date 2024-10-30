@@ -9,8 +9,6 @@
  * This code is derived from software contributed
  * to Berkeley by John Heidemann of the UCLA Ficus project.
  *
- * Source: * @(#)i405_init.c 2.10 92/04/27 UCLA Ficus project
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -36,7 +34,6 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bio.h>
@@ -1288,7 +1285,7 @@ vop_stdunset_text(struct vop_unset_text_args *ap)
 	__assert_unreachable();
 }
 
-static int __always_inline
+static __always_inline int
 vop_stdadd_writecount_impl(struct vop_add_writecount_args *ap, bool handle_msync)
 {
 	struct vnode *vp;

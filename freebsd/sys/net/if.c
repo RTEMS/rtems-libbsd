@@ -30,8 +30,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)if.c	8.5 (Berkeley) 1/9/95
  */
 
 #include <rtems/bsd/local/opt_bpf.h>
@@ -842,6 +840,7 @@ if_attach_internal(struct ifnet *ifp, bool vmove)
 	MPASS(ifindex_table[ifp->if_index].ife_ifnet == ifp);
 
 #ifdef VIMAGE
+	CURVNET_ASSERT_SET();
 	ifp->if_vnet = curvnet;
 	if (ifp->if_home_vnet == NULL)
 		ifp->if_home_vnet = curvnet;
@@ -1049,12 +1048,10 @@ if_purgeaddrs(struct ifnet *ifp)
 #ifdef INET
 		/* XXX: Ugly!! ad hoc just for INET */
 		if (ifa->ifa_addr->sa_family == AF_INET) {
-			struct ifaliasreq ifr;
+			struct ifreq ifr;
 
 			bzero(&ifr, sizeof(ifr));
-			ifr.ifra_addr = *ifa->ifa_addr;
-			if (ifa->ifa_dstaddr)
-				ifr.ifra_broadaddr = *ifa->ifa_dstaddr;
+			ifr.ifr_addr = *ifa->ifa_addr;
 			if (in_control(NULL, SIOCDIFADDR, (caddr_t)&ifr, ifp,
 			    NULL) == 0)
 				continue;
@@ -2404,6 +2401,7 @@ const struct ifcap_nv_bit_name ifcap_nv_bit_names[] = {
 const struct ifcap_nv_bit_name ifcap2_nv_bit_names[] = {
 	CAP2NV(RXTLS4),
 	CAP2NV(RXTLS6),
+	CAP2NV(IPSEC_OFFLOAD),
 	{0, NULL}
 };
 #undef CAPNV
@@ -4926,18 +4924,6 @@ if_gethandle(u_char type)
 }
 
 void
-if_bpfmtap(if_t ifp, struct mbuf *m)
-{
-	BPF_MTAP(ifp, m);
-}
-
-void
-if_etherbpfmtap(if_t ifp, struct mbuf *m)
-{
-	ETHER_BPF_MTAP(ifp, m);
-}
-
-void
 if_vlancap(if_t ifp)
 {
 	VLAN_CAPABILITIES(ifp);
@@ -5197,6 +5183,12 @@ void *
 if_getl2com(if_t ifp)
 {
 	return (ifp->if_l2com);
+}
+
+void
+if_setipsec_accel_methods(if_t ifp, const struct if_ipsec_accel_methods *m)
+{
+	ifp->if_ipsec_accel_m = m;
 }
 
 #ifdef DDB

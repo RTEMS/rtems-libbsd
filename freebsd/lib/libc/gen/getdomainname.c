@@ -31,18 +31,17 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__SCCSID("@(#)gethostname.c	8.1 (Berkeley) 6/4/93");
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
 #include <unistd.h>
+#include <ssp/ssp.h>
 
 int
 #ifndef __rtems__
-getdomainname(char *name, int namelen)
+__ssp_real(getdomainname)(char *name, int namelen)
 #else /* __rtems__ */
-getdomainname(char *name, size_t namelen)
+__ssp_real(getdomainname)(char *name, size_t namelen)
 #endif /* __rtems__ */
 {
 	int mib[2];

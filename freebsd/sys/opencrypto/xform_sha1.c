@@ -49,7 +49,6 @@
  * PURPOSE.
  */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <crypto/sha1.h>
 #include <opencrypto/xform_auth.h>

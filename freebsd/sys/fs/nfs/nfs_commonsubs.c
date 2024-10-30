@@ -612,8 +612,18 @@ nfscl_fillsattr(struct nfsrv_descript *nd, struct vattr *vap,
 		break;
 	case ND_NFSV4:
 		NFSZERO_ATTRBIT(&attrbits);
-		if (vap->va_mode != (mode_t)VNOVAL)
-			NFSSETBIT_ATTRBIT(&attrbits, NFSATTRBIT_MODE);
+		np = NULL;
+		if (strcmp(vp->v_mount->mnt_vfc->vfc_name, "nfs") == 0)
+			np = VTONFS(vp);
+		if (vap->va_mode != (mode_t)VNOVAL) {
+			if ((flags & NFSSATTR_NEWFILE) != 0 && np != NULL &&
+			    NFSISSET_ATTRBIT(&np->n_vattr.na_suppattr,
+			    NFSATTRBIT_MODEUMASK))
+				NFSSETBIT_ATTRBIT(&attrbits,
+				    NFSATTRBIT_MODEUMASK);
+			else
+				NFSSETBIT_ATTRBIT(&attrbits, NFSATTRBIT_MODE);
+		}
 		if ((flags & NFSSATTR_FULL) && vap->va_uid != (uid_t)VNOVAL)
 			NFSSETBIT_ATTRBIT(&attrbits, NFSATTRBIT_OWNER);
 		if ((flags & NFSSATTR_FULL) && vap->va_gid != (gid_t)VNOVAL)
@@ -624,18 +634,14 @@ nfscl_fillsattr(struct nfsrv_descript *nd, struct vattr *vap,
 			NFSSETBIT_ATTRBIT(&attrbits, NFSATTRBIT_TIMEACCESSSET);
 		if (vap->va_mtime.tv_sec != VNOVAL)
 			NFSSETBIT_ATTRBIT(&attrbits, NFSATTRBIT_TIMEMODIFYSET);
-		if (vap->va_birthtime.tv_sec != VNOVAL &&
-		    strcmp(vp->v_mount->mnt_vfc->vfc_name, "nfs") == 0) {
-			/*
-			 * We can only test for support of TimeCreate if
-			 * the "vp" argument is for an NFS vnode.
-			 */
-			np = VTONFS(vp);
-			if (NFSISSET_ATTRBIT(&np->n_vattr.na_suppattr,
-			    NFSATTRBIT_TIMECREATE))
-				NFSSETBIT_ATTRBIT(&attrbits,
-				    NFSATTRBIT_TIMECREATE);
-		}
+		/*
+		 * We can only test for support of TimeCreate if
+		 * the "vp" argument is for an NFS vnode.
+		 */
+		if (vap->va_birthtime.tv_sec != VNOVAL && np != NULL &&
+		    NFSISSET_ATTRBIT(&np->n_vattr.na_suppattr,
+		    NFSATTRBIT_TIMECREATE))
+			NFSSETBIT_ATTRBIT(&attrbits, NFSATTRBIT_TIMECREATE);
 		(void) nfsv4_fillattr(nd, vp->v_mount, vp, NULL, vap, NULL, 0,
 		    &attrbits, NULL, NULL, 0, 0, 0, 0, (uint64_t)0, NULL);
 		break;
@@ -681,17 +687,13 @@ nfsm_mbufuio(struct nfsrv_descript *nd, struct uio *uiop, int siz)
 				    ("len %d, corrupted mbuf?", len));
 			}
 			xfer = (left > len) ? len : left;
-#ifdef notdef
-			/* Not Yet.. */
-			if (uiop->uio_iov->iov_op != NULL)
-				(*(uiop->uio_iov->iov_op))
-				(mbufcp, uiocp, xfer);
-			else
-#endif
 			if (uiop->uio_segflg == UIO_SYSSPACE)
 				NFSBCOPY(mbufcp, uiocp, xfer);
-			else
-				copyout(mbufcp, uiocp, xfer);
+			else {
+				error = copyout(mbufcp, uiocp, xfer);
+				if (error != 0)
+					goto out;
+			}
 			left -= xfer;
 			len -= xfer;
 			mbufcp += xfer;
@@ -3116,6 +3118,18 @@ nfsv4_fillattr(struct nfsrv_descript *nd, struct mount *mp, vnode_t vp,
 				*tl = newnfs_false;
 			retnum += NFSX_UNSIGNED;
 			break;
+		case NFSATTRBIT_MODEUMASK:
+			NFSM_BUILD(tl, uint32_t *, 2 * NFSX_UNSIGNED);
+			/*
+			 * Since FreeBSD applies the umask above the VFS/VOP,
+			 * there is no umask to handle here.  If FreeBSD
+			 * moves handling of umask to below the VFS/VOP,
+			 * this could change.
+			 */
+			*tl++ = vtonfsv34_mode(vap->va_mode);
+			*tl = 0;
+			retnum += 2 * NFSX_UNSIGNED;
+			break;
 		default:
 			printf("EEK! Bad V4 attribute bitpos=%d\n", bitpos);
 		}
@@ -3426,7 +3440,7 @@ tryagain:
 		/*
 		 * If an '@' is found and the domain name matches, search for
 		 * the name with dns stripped off.
-		 * Mixed case alpahbetics will match for the domain name, but
+		 * Mixed case alphabetics will match for the domain name, but
 		 * all upper case will not.
 		 */
 		if (cnt == 0 && i < len && i > 0 &&

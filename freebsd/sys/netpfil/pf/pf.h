@@ -129,6 +129,7 @@ enum	{ PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL,
 	  PF_ADDR_RANGE };
 #define PF_POOL_TYPEMASK	0x0f
 #define PF_POOL_STICKYADDR	0x20
+#define PF_POOL_ENDPI		0x40
 #define	PF_WSCALE_FLAG		0x80
 #define	PF_WSCALE_MASK		0x0f
 
@@ -136,6 +137,7 @@ enum	{ PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL,
 #define	PF_LOG_ALL		0x02
 #define	PF_LOG_SOCKET_LOOKUP	0x04
 #define	PF_LOG_FORCE		0x08
+#define	PF_LOG_MATCHES		0x10
 
 /* Reasons code for passing/dropping a packet */
 #define PFRES_MATCH	0		/* Explicit match of a rule */
@@ -489,8 +491,8 @@ struct pf_rule {
 #define PF_SKIP_AF		2
 #define PF_SKIP_PROTO		3
 #define PF_SKIP_SRC_ADDR	4
-#define PF_SKIP_SRC_PORT	5
-#define PF_SKIP_DST_ADDR	6
+#define PF_SKIP_DST_ADDR	5
+#define PF_SKIP_SRC_PORT	6
 #define PF_SKIP_DST_PORT	7
 #define PF_SKIP_COUNT		8
 	union pf_rule_ptr	 skip[PF_SKIP_COUNT];
@@ -614,6 +616,7 @@ struct pf_rule {
 #define	PFRULE_SET_TOS		0x00002000
 #define	PFRULE_IFBOUND		0x00010000 /* if-bound */
 #define	PFRULE_STATESLOPPY	0x00020000 /* sloppy state tracking */
+#define	PFRULE_PFLOW		0x00040000
 
 #ifdef _KERNEL
 #define	PFRULE_REFS		0x0080	/* rule has references */
@@ -626,7 +629,7 @@ struct pf_rule {
 /* pf_state->state_flags, pf_rule_actions->flags, pf_krule->scrub_flags */
 #define	PFSTATE_ALLOWOPTS	0x0001
 #define	PFSTATE_SLOPPY		0x0002
-/*  was	PFSTATE_PFLOW		0x0004 */
+#define	PFSTATE_PFLOW		0x0004
 #define	PFSTATE_NOSYNC		0x0008
 #define	PFSTATE_ACK		0x0010
 #define	PFSTATE_NODF		0x0020

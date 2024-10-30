@@ -61,6 +61,7 @@
 static void	assert_rw(const struct lock_object *lock, int what);
 static void	lock_rw(struct lock_object *lock, uintptr_t how);
 static uintptr_t unlock_rw(struct lock_object *lock);
+static int trylock_rw(struct lock_object *lock, uintptr_t how);
 
 struct lock_class lock_class_rw = {
 	.lc_name = "rw",
@@ -68,6 +69,7 @@ struct lock_class lock_class_rw = {
 	.lc_assert = assert_rw,
 	.lc_lock = lock_rw,
 	.lc_unlock = unlock_rw,
+	.lc_trylock = trylock_rw,
 };
 
 #define	rw_wowner(rw) rtems_bsd_mutex_owner(&(rw)->lock_object)
@@ -94,6 +96,14 @@ unlock_rw(struct lock_object *lock)
 
 	rw_unlock((struct rwlock *)lock);
 	return (0);
+}
+
+int
+trylock_rw(struct lock_object *lock, uintptr_t how)
+{
+	struct rwlock *rw = (struct rwlock*)lock;
+
+	return (rtems_bsd_mutex_trylock(&rw->lock_object));
 }
 
 void

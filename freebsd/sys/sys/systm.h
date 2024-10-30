@@ -32,8 +32,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)systm.h	8.7 (Berkeley) 3/29/95
  */
 
 #ifndef _SYS_SYSTM_H_
@@ -102,7 +100,7 @@ extern u_long maxphys;		/* max raw I/O transfer size */
  */
 enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN, VM_GUEST_HV,
 		VM_GUEST_VMWARE, VM_GUEST_KVM, VM_GUEST_BHYVE, VM_GUEST_VBOX,
-		VM_GUEST_PARALLELS, VM_GUEST_NVMM, VM_LAST };
+		VM_GUEST_PARALLELS, VM_GUEST_NVMM, VM_GUEST_LAST };
 
 #endif /* KERNEL */
 
@@ -122,6 +120,8 @@ struct ucred;
 #include <sys/pcpu.h>		/* curthread */
 #include <sys/kpilite.h>
 
+extern bool scheduler_stopped;
+
 /*
  * If we have already panic'd and this is the thread that called
  * panic(), then don't block on any mutexes but silently succeed.
@@ -129,14 +129,10 @@ struct ucred;
  * going to run the thread that holds any lock we need.
  */
 #ifndef __rtems__
-#define	SCHEDULER_STOPPED_TD(td)  ({					\
-	MPASS((td) == curthread);					\
-	__predict_false((td)->td_stopsched);				\
-})
+#define	SCHEDULER_STOPPED()	__predict_false(scheduler_stopped)
 #else /* __rtems__ */
-#define SCHEDULER_STOPPED_TD(td) 0
+#define SCHEDULER_STOPPED() (0)
 #endif /* __rtems__ */
-#define	SCHEDULER_STOPPED() SCHEDULER_STOPPED_TD(curthread)
 
 extern const int osreldate;
 
@@ -249,6 +245,16 @@ critical_exit(void)
 #ifdef  EARLY_PRINTF
 typedef void early_putc_t(int ch);
 extern early_putc_t *early_putc;
+#define	CHECK_EARLY_PRINTF(x)	\
+    __CONCAT(early_printf_, EARLY_PRINTF) == __CONCAT(early_printf_, x)
+#define	early_printf_1		1
+#define	early_printf_mvebu	2
+#define	early_printf_ns8250	3
+#define	early_printf_pl011	4
+#define	early_printf_snps	5
+#define	early_printf_sbi	6
+#else
+#define	CHECK_EARLY_PRINTF(x)	0
 #endif
 int	kvprintf(char const *, void (*)(int, void*), void *, int,
 	    __va_list) __printflike(1, 0);
@@ -353,17 +359,18 @@ void	*memmove_early(void * _Nonnull dest, const void * _Nonnull src, size_t n);
 	((__r >= __len) ? ENAMETOOLONG : 0);			\
 })
 
-int	copyinstr(const void * __restrict udaddr,
-	    void * _Nonnull __restrict kaddr, size_t len,
-	    size_t * __restrict lencopied);
-int	copyin(const void * __restrict udaddr,
-	    void * _Nonnull __restrict kaddr, size_t len);
-int	copyin_nofault(const void * __restrict udaddr,
-	    void * _Nonnull __restrict kaddr, size_t len);
-int	copyout(const void * _Nonnull __restrict kaddr,
-	    void * __restrict udaddr, size_t len);
-int	copyout_nofault(const void * _Nonnull __restrict kaddr,
-	    void * __restrict udaddr, size_t len);
+int __result_use_check copyinstr(const void * __restrict udaddr,
+    void * _Nonnull __restrict kaddr, size_t len,
+    size_t * __restrict lencopied);
+int __result_use_check copyin(const void * __restrict udaddr,
+    void * _Nonnull __restrict kaddr, size_t len);
+int __result_use_check copyin_nofault(const void * __restrict udaddr,
+    void * _Nonnull __restrict kaddr, size_t len);
+int __result_use_or_ignore_check copyout(const void * _Nonnull __restrict kaddr,
+    void * __restrict udaddr, size_t len);
+int __result_use_or_ignore_check copyout_nofault(
+    const void * _Nonnull __restrict kaddr, void * __restrict udaddr,
+    size_t len);
 
 #ifdef SAN_NEEDS_INTERCEPTORS
 int	SAN_INTERCEPTOR(copyin)(const void *, void *, size_t);
@@ -492,7 +499,7 @@ fuword64(const void *base)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	fueword(const void *base, long *val);
+int __result_use_check fueword(volatile const void *base, long *val);
 #else /* __rtems__ */
 static inline int
 fueword(volatile const void *base, long *val)
@@ -503,7 +510,7 @@ fueword(volatile const void *base, long *val)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	fueword32(const void *base, int32_t *val);
+int __result_use_check fueword32(volatile const void *base, int32_t *val);
 #else /* __rtems__ */
 static inline int
 fueword32(volatile const void *base, int32_t *val)
@@ -514,7 +521,7 @@ fueword32(volatile const void *base, int32_t *val)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	fueword64(const void *base, int64_t *val);
+int __result_use_check fueword64(volatile const void *base, int64_t *val);
 #else /* __rtems__ */
 static inline int
 fueword64(volatile const void *base, int64_t *val)
@@ -525,7 +532,7 @@ fueword64(volatile const void *base, int64_t *val)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	subyte(volatile void *base, int byte);
+int __result_use_or_ignore_check subyte(volatile void *base, int byte);
 #else /* __rtems__ */
 static inline int
 subyte(void *base, int byte)
@@ -536,7 +543,7 @@ subyte(void *base, int byte)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	suword(volatile void *base, long word);
+int __result_use_or_ignore_check suword(volatile void *base, long word);
 #else /* __rtems__ */
 static inline int
 suword(void *base, long byte)
@@ -547,7 +554,7 @@ suword(void *base, long byte)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	suword16(volatile void *base, int word);
+int __result_use_or_ignore_check suword16(volatile void *base, int word);
 #else /* __rtems__ */
 static inline int
 suword16(void *base, int byte)
@@ -558,7 +565,7 @@ suword16(void *base, int byte)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	suword32(volatile void *base, int32_t word);
+int __result_use_or_ignore_check suword32(volatile void *base, int32_t word);
 #else /* __rtems__ */
 static inline int
 suword32(void *base, int32_t byte)
@@ -569,7 +576,7 @@ suword32(void *base, int32_t byte)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	suword64(volatile void *base, int64_t word);
+int __result_use_or_ignore_check suword64(volatile void *base, int64_t word);
 #else /* __rtems__ */
 static inline int
 suword64(void *base, int64_t byte)

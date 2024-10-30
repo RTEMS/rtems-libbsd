@@ -28,7 +28,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/eventhandler.h>
@@ -427,9 +426,7 @@ firmware_get_flags(const char *imagename, uint32_t flags)
 		fwli.flags = flags;
 		TASK_INIT(&fwload_task, 0, loadimage, (void *)&fwli);
 		taskqueue_enqueue(firmware_tq, &fwload_task);
-		PHOLD(curproc);
 		msleep((void *)&fwli, &firmware_mtx, 0, "fwload", 0);
-		PRELE(curproc);
 	}
 	/*
 	 * After attempting to load the module, see if the image is registered.

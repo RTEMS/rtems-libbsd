@@ -36,12 +36,6 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char sccsid[] = "@(#)inet6.c	8.4 (Berkeley) 4/20/94";
-#endif /* not lint */
-#endif
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
@@ -69,7 +63,6 @@ static char sccsid[] = "@(#)inet6.c	8.4 (Berkeley) 4/20/94";
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include <err.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>

@@ -32,16 +32,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char *sccsid2 = "@(#)svc_tcp.c 1.21 87/08/11 Copyr 1984 Sun Micro";
-static char *sccsid = "@(#)svc_tcp.c	2.2 88/08/01 4.0 RPCSRC";
-#endif
 #include <sys/cdefs.h>
 /*
  * svc_vc.c, Server side for Connection Oriented based RPC. 
  *
  * Actually implements two flavors of transporter -
- * a tcp rendezvouser (a listner and connection establisher)
+ * a tcp rendezvouser (a listener and connection establisher)
  * and a record/tcp stream.
  */
 
@@ -212,19 +208,17 @@ svc_vc_create(SVCPOOL *pool, struct socket *so, size_t sendsize,
     size_t recvsize)
 {
 	SVCXPRT *xprt;
-	struct sockaddr* sa;
 	int error;
 
 	SOCK_LOCK(so);
 	if (so->so_state & (SS_ISCONNECTED|SS_ISDISCONNECTED)) {
+		struct sockaddr_storage ss = { .ss_len = sizeof(ss) };
+
 		SOCK_UNLOCK(so);
-		CURVNET_SET(so->so_vnet);
-		error = so->so_proto->pr_peeraddr(so, &sa);
-		CURVNET_RESTORE();
+		error = sopeeraddr(so, (struct sockaddr *)&ss);
 		if (error)
 			return (NULL);
-		xprt = svc_vc_create_conn(pool, so, sa);
-		free(sa, M_SONAME);
+		xprt = svc_vc_create_conn(pool, so, (struct sockaddr *)&ss);
 		return (xprt);
 	}
 	SOCK_UNLOCK(so);
@@ -237,15 +231,11 @@ svc_vc_create(SVCPOOL *pool, struct socket *so, size_t sendsize,
 	xprt->xp_p2 = NULL;
 	xprt->xp_ops = &svc_vc_rendezvous_ops;
 
-	CURVNET_SET(so->so_vnet);
-	error = so->so_proto->pr_sockaddr(so, &sa);
-	CURVNET_RESTORE();
+	xprt->xp_ltaddr.ss_len = sizeof(xprt->xp_ltaddr);
+	error = sosockaddr(so, (struct sockaddr *)&xprt->xp_ltaddr);
 	if (error) {
 		goto cleanup_svc_vc_create;
 	}
-
-	memcpy(&xprt->xp_ltaddr, sa, sa->sa_len);
-	free(sa, M_SONAME);
 
 	xprt_register(xprt);
 
@@ -273,7 +263,6 @@ svc_vc_create_conn(SVCPOOL *pool, struct socket *so, struct sockaddr *raddr)
 {
 	SVCXPRT *xprt;
 	struct cf_conn *cd;
-	struct sockaddr* sa = NULL;
 	struct sockopt opt;
 	int one = 1;
 	int error;
@@ -321,21 +310,17 @@ svc_vc_create_conn(SVCPOOL *pool, struct socket *so, struct sockaddr *raddr)
 
 	memcpy(&xprt->xp_rtaddr, raddr, raddr->sa_len);
 
-	CURVNET_SET(so->so_vnet);
-	error = so->so_proto->pr_sockaddr(so, &sa);
-	CURVNET_RESTORE();
+	xprt->xp_ltaddr.ss_len = sizeof(xprt->xp_ltaddr);
+	error = sosockaddr(so, (struct sockaddr *)&xprt->xp_ltaddr);
 	if (error)
 		goto cleanup_svc_vc_create;
 
-	memcpy(&xprt->xp_ltaddr, sa, sa->sa_len);
-	free(sa, M_SONAME);
-
 	xprt_register(xprt);
 
-	SOCKBUF_LOCK(&so->so_rcv);
+	SOCK_RECVBUF_LOCK(so);
 	xprt->xp_upcallset = 1;
 	soupcall_set(so, SO_RCV, svc_vc_soupcall, xprt);
-	SOCKBUF_UNLOCK(&so->so_rcv);
+	SOCK_RECVBUF_UNLOCK(so);
 
 	/*
 	 * Throw the transport into the active list in case it already
@@ -426,7 +411,7 @@ svc_vc_rendezvous_recv(SVCXPRT *xprt, struct rpc_msg *msg,
     struct sockaddr **addrp, struct mbuf **mp)
 {
 	struct socket *so = NULL;
-	struct sockaddr *sa = NULL;
+	struct sockaddr_storage ss = { .ss_len = sizeof(ss) };
 	int error;
 	SVCXPRT *new_xprt;
 
@@ -470,15 +455,12 @@ svc_vc_rendezvous_recv(SVCXPRT *xprt, struct rpc_msg *msg,
 
 	sx_xunlock(&xprt->xp_lock);
 
-	sa = NULL;
-	error = soaccept(so, &sa);
+	error = soaccept(so, (struct sockaddr *)&ss);
 
 	if (error) {
 		/*
 		 * XXX not sure if I need to call sofree or soclose here.
 		 */
-		if (sa)
-			free(sa, M_SONAME);
 		return (FALSE);
 	}
 
@@ -486,14 +468,13 @@ svc_vc_rendezvous_recv(SVCXPRT *xprt, struct rpc_msg *msg,
 	 * svc_vc_create_conn will call xprt_register - we don't need
 	 * to do anything with the new connection except derefence it.
 	 */
-	new_xprt = svc_vc_create_conn(xprt->xp_pool, so, sa);
+	new_xprt = svc_vc_create_conn(xprt->xp_pool, so,
+	    (struct sockaddr *)&ss);
 	if (!new_xprt) {
 		soclose(so);
 	} else {
 		SVC_RELEASE(new_xprt);
 	}
-
-	free(sa, M_SONAME);
 
 	return (FALSE); /* there is never an rpc msg to be processed */
 }
@@ -558,13 +539,13 @@ svc_vc_destroy(SVCXPRT *xprt)
 	struct cf_conn *cd = (struct cf_conn *)xprt->xp_p1;
 	CLIENT *cl = (CLIENT *)xprt->xp_p2;
 
-	SOCKBUF_LOCK(&xprt->xp_socket->so_rcv);
+	SOCK_RECVBUF_LOCK(xprt->xp_socket);
 	if (xprt->xp_upcallset) {
 		xprt->xp_upcallset = 0;
 		if (xprt->xp_socket->so_rcv.sb_upcall != NULL)
 			soupcall_clear(xprt->xp_socket, SO_RCV);
 	}
-	SOCKBUF_UNLOCK(&xprt->xp_socket->so_rcv);
+	SOCK_RECVBUF_UNLOCK(xprt->xp_socket);
 
 	if (cl != NULL)
 		CLNT_RELEASE(cl);
@@ -801,10 +782,10 @@ svc_vc_recv(SVCXPRT *xprt, struct rpc_msg *msg,
 			/* Check for next request in a pending queue. */
 			svc_vc_process_pending(xprt);
 			if (cd->mreq == NULL || cd->resid != 0) {
-				SOCKBUF_LOCK(&so->so_rcv);
+				SOCK_RECVBUF_LOCK(so);
 				if (!soreadable(so))
 					xprt_inactive_self(xprt);
-				SOCKBUF_UNLOCK(&so->so_rcv);
+				SOCK_RECVBUF_UNLOCK(so);
 			}
 
 			sx_xunlock(&xprt->xp_lock);
@@ -855,10 +836,10 @@ tryagain:
 			 * after our call to soreceive fails with
 			 * EWOULDBLOCK.
 			 */
-			SOCKBUF_LOCK(&so->so_rcv);
+			SOCK_RECVBUF_LOCK(so);
 			if (!soreadable(so))
 				xprt_inactive_self(xprt);
-			SOCKBUF_UNLOCK(&so->so_rcv);
+			SOCK_RECVBUF_UNLOCK(so);
 			sx_xunlock(&xprt->xp_lock);
 			return (FALSE);
 		}
@@ -898,12 +879,12 @@ tryagain:
 
 		if (error) {
 			KRPC_CURVNET_RESTORE();
-			SOCKBUF_LOCK(&so->so_rcv);
+			SOCK_RECVBUF_LOCK(so);
 			if (xprt->xp_upcallset) {
 				xprt->xp_upcallset = 0;
 				soupcall_clear(so, SO_RCV);
 			}
-			SOCKBUF_UNLOCK(&so->so_rcv);
+			SOCK_RECVBUF_UNLOCK(so);
 			xprt_inactive_self(xprt);
 			cd->strm_stat = XPRT_DIED;
 			sx_xunlock(&xprt->xp_lock);

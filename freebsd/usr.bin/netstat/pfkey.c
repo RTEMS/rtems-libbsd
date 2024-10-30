@@ -65,16 +65,9 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char sccsid[] = "@(#)inet.c	8.5 (Berkeley) 5/24/95";
-#endif /* not lint */
-#endif
-
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>

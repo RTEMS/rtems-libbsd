@@ -1861,6 +1861,9 @@ keg_alloc_slab(uma_keg_t keg, uma_zone_t zone, int domain, int flags,
 	if (keg->uk_flags & UMA_ZONE_NODUMP)
 		aflags |= M_NODUMP;
 
+	if (keg->uk_flags & UMA_ZONE_NOFREE)
+		aflags |= M_NEVERFREED;
+
 	/* zone is passed for legacy reasons. */
 	size = keg->uk_ppera * PAGE_SIZE;
 	mem = keg->uk_allocf(zone, size, domain, &sflags, aflags);
@@ -1961,8 +1964,7 @@ startup_alloc(uma_zone_t zone, vm_size_t bytes, int domain, uint8_t *pflag,
 
 	pa = VM_PAGE_TO_PHYS(m);
 	for (i = 0; i < pages; i++, pa += PAGE_SIZE) {
-#if defined(__aarch64__) || defined(__amd64__) || \
-    defined(__riscv) || defined(__powerpc64__)
+#if MINIDUMP_PAGE_TRACKING && MINIDUMP_STARTUP_PAGE_TRACKING
 		if ((wait & M_NODUMP) == 0)
 			dump_add_page(pa);
 #endif
@@ -1989,8 +1991,7 @@ startup_free(void *mem, vm_size_t bytes)
 	if (va >= bootstart && va + bytes <= bootmem)
 		pmap_remove(kernel_pmap, va, va + bytes);
 	for (; bytes != 0; bytes -= PAGE_SIZE, m++) {
-#if defined(__aarch64__) || defined(__amd64__) || \
-    defined(__riscv) || defined(__powerpc64__)
+#if MINIDUMP_PAGE_TRACKING && MINIDUMP_STARTUP_PAGE_TRACKING
 		dump_drop_page(VM_PAGE_TO_PHYS(m));
 #endif
 		vm_page_unwire_noq(m);
@@ -2158,6 +2159,28 @@ contig_alloc(uma_zone_t zone, vm_size_t bytes, int domain, uint8_t *pflag,
 }
 #endif /* __rtems__ */
 
+#if defined(UMA_USE_DMAP) && !defined(UMA_MD_SMALL_ALLOC)
+void *
+uma_small_alloc(uma_zone_t zone, vm_size_t bytes, int domain, uint8_t *flags,
+    int wait)
+{
+	vm_page_t m;
+	vm_paddr_t pa;
+	void *va;
+
+	*flags = UMA_SLAB_PRIV;
+	m = vm_page_alloc_noobj_domain(domain,
+	    malloc2vm_flags(wait) | VM_ALLOC_WIRED);
+	if (m == NULL)
+		return (NULL);
+	pa = m->phys_addr;
+	if ((wait & M_NODUMP) == 0)
+		dump_add_page(pa);
+	va = (void *)PHYS_TO_DMAP(pa);
+	return (va);
+}
+#endif
+
 /*
  * Frees a number of pages to the system
  *
@@ -2228,6 +2251,21 @@ pcpu_page_free(void *mem, vm_size_t size, uint8_t flags)
 	kva_free(sva, size);
 }
 #endif /* __rtems__ */
+
+#if defined(UMA_USE_DMAP) && !defined(UMA_MD_SMALL_ALLOC)
+void
+uma_small_free(void *mem, vm_size_t size, uint8_t flags)
+{
+	vm_page_t m;
+	vm_paddr_t pa;
+
+	pa = DMAP_TO_PHYS((vm_offset_t)mem);
+	dump_drop_page(pa);
+	m = PHYS_TO_VM_PAGE(pa);
+	vm_page_unwire_noq(m);
+	vm_page_free(m);
+}
+#endif
 
 /*
  * Zero fill initializer
@@ -2579,7 +2617,7 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	 * If we haven't booted yet we need allocations to go through the
 	 * startup cache until the vm is ready.
 	 */
-#ifdef UMA_MD_SMALL_ALLOC
+#ifdef UMA_USE_DMAP
 	if (keg->uk_ppera == 1)
 		keg->uk_allocf = uma_small_alloc;
 	else
@@ -2594,7 +2632,7 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 #endif /* __rtems__ */
 		keg->uk_allocf = page_alloc;
 #ifndef __rtems__
-#ifdef UMA_MD_SMALL_ALLOC
+#ifdef UMA_USE_DMAP
 	if (keg->uk_ppera == 1)
 		keg->uk_freef = uma_small_free;
 	else
@@ -3271,7 +3309,7 @@ uma_startup1(vm_offset_t virtual_avail)
 	smr_init();
 }
 
-#ifndef UMA_MD_SMALL_ALLOC
+#ifndef UMA_USE_DMAP
 extern void vm_radix_reserve_kva(void);
 #endif
 
@@ -3292,7 +3330,7 @@ uma_startup2(void)
 		vm_map_unlock(kernel_map);
 	}
 
-#ifndef UMA_MD_SMALL_ALLOC
+#ifndef UMA_USE_DMAP
 	/* Set up radix zone to use noobj_alloc. */
 	vm_radix_reserve_kva();
 #endif
@@ -3599,7 +3637,7 @@ item_ctor(uma_zone_t zone, int uz_flags, int size, void *udata, int flags,
 	skipdbg = uma_dbg_zskip(zone, item);
 	if (!skipdbg && (uz_flags & UMA_ZFLAG_TRASH) != 0 &&
 	    zone->uz_ctor != trash_ctor)
-		trash_ctor(item, size, udata, flags);
+		trash_ctor(item, size, zone, flags);
 #endif
 
 	/* Check flags before loading ctor pointer. */
@@ -3643,7 +3681,7 @@ item_dtor(uma_zone_t zone, void *item, int size, void *udata,
 #ifdef INVARIANTS
 		if (!skipdbg && (zone->uz_flags & UMA_ZFLAG_TRASH) != 0 &&
 		    zone->uz_dtor != trash_dtor)
-			trash_dtor(item, size, udata);
+			trash_dtor(item, size, zone);
 #endif
 	}
 	kasan_mark_item_invalid(zone, item);
@@ -5373,7 +5411,7 @@ uma_zone_reserve_kva(uma_zone_t zone, int count)
 
 	pages = howmany(count, keg->uk_ipers) * keg->uk_ppera;
 
-#ifdef UMA_MD_SMALL_ALLOC
+#ifdef UMA_USE_DMAP
 	if (keg->uk_ppera > 1) {
 #else
 	if (1) {
@@ -5388,7 +5426,7 @@ uma_zone_reserve_kva(uma_zone_t zone, int count)
 	keg->uk_kva = kva;
 	keg->uk_offset = 0;
 	zone->uz_max_items = pages * keg->uk_ipers;
-#ifdef UMA_MD_SMALL_ALLOC
+#ifdef UMA_USE_DMAP
 	keg->uk_allocf = (keg->uk_ppera > 1) ? noobj_alloc : uma_small_alloc;
 #else
 	keg->uk_allocf = noobj_alloc;

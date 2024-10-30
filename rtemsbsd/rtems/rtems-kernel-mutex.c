@@ -56,6 +56,7 @@ rtems_mutex _bsd_mutexlist_lock = RTEMS_MUTEX_INITIALIZER("mmutexlist");
 static void	assert_mtx(const struct lock_object *lock, int what);
 static void	lock_mtx(struct lock_object *lock, uintptr_t how);
 static uintptr_t unlock_mtx(struct lock_object *lock);
+static int trylock_mtx(struct lock_object *lock);
 
 /*
  * Lock classes for sleep and spin mutexes.
@@ -66,6 +67,7 @@ struct lock_class lock_class_mtx_sleep = {
 	.lc_assert = assert_mtx,
 	.lc_lock = lock_mtx,
 	.lc_unlock = unlock_mtx,
+	.lc_trylock = trylock_mtx,
 };
 
 struct lock_class lock_class_mtx_spin = {
@@ -74,6 +76,7 @@ struct lock_class lock_class_mtx_spin = {
 	.lc_assert = assert_mtx,
 	.lc_lock = lock_mtx,
 	.lc_unlock = unlock_mtx,
+	.lc_trylock = trylock_mtx,
 };
 
 struct mtx Giant;
@@ -98,6 +101,13 @@ unlock_mtx(struct lock_object *lock)
 
 	mtx_unlock((struct mtx *)lock);
 	return (0);
+}
+
+int
+trylock_mtx(struct lock_object *lock)
+{
+
+	return (mtx_trylock((struct mtx *)lock));
 }
 
 void

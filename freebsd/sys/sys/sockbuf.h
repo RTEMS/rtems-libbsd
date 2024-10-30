@@ -27,8 +27,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)socketvar.h	8.3 (Berkeley) 2/19/95
  */
 #ifndef _SYS_SOCKBUF_H_
 #define _SYS_SOCKBUF_H_
@@ -166,6 +164,12 @@ struct sockbuf {
 			u_int uxdg_cc;
 			u_int uxdg_ctl;
 			u_int uxdg_mbcnt;
+		};
+		/*
+		 * Netlink socket.
+		 */
+		struct {
+			TAILQ_HEAD(, nl_buf)	nl_queue;
 		};
 	};
 };

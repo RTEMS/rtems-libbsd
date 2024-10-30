@@ -41,7 +41,6 @@
  * Type-specific routines go into subr_acl_<type>.c.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/sysproto.h>

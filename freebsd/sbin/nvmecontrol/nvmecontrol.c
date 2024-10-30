@@ -33,7 +33,6 @@
 #include <machine/rtems-bsd-commands.h>
 #include <pthread.h>
 #endif /* __rtems__ */
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/ioccom.h>
 #include <sys/stat.h>

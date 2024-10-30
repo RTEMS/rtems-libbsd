@@ -384,7 +384,7 @@ run_pfctl(int argc, char *argv[], int expected_result)
 	snapshot2.workspace_info.Free.largest = 0;
 	snapshot.heap_info.Free.largest = 0;
 	snapshot2.heap_info.Free.largest = 0;
-	assert(exit_code == EXIT_SUCCESS ||
+	assert(exit_code == expected_result ||
 	    rtems_resource_snapshot_equal(&snapshot, &snapshot2));
 }
 

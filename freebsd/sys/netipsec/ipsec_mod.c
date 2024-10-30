@@ -30,7 +30,6 @@
 #include <rtems/bsd/local/opt_inet6.h>
 #include <rtems/bsd/local/opt_ipsec.h>
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -87,6 +86,8 @@ static const struct ipsec_methods ipv6_methods = {
 	.check_policy = ipsec6_in_reject,
 	.ctlinput = ipsec6_ctlinput,
 	.hdrsize = ipsec_hdrsiz_inpcb,
+	.udp_input = udp_ipsec_input,
+	.udp_pcbctl = udp_ipsec_pcbctl,
 };
 #ifndef KLD_MODULE
 static const struct ipsec_support ipv6_ipsec = {

@@ -22,7 +22,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/cdefs.h>
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
@@ -272,8 +271,8 @@ static const char *skip_comparitors_names[PF_SKIP_COUNT];
     { "af", PF_SKIP_AF, skip_cmp_af },			\
     { "proto", PF_SKIP_PROTO, skip_cmp_proto },		\
     { "saddr", PF_SKIP_SRC_ADDR, skip_cmp_src_addr },	\
-    { "sport", PF_SKIP_SRC_PORT, skip_cmp_src_port },	\
     { "daddr", PF_SKIP_DST_ADDR, skip_cmp_dst_addr },	\
+    { "sport", PF_SKIP_SRC_PORT, skip_cmp_src_port },	\
     { "dport", PF_SKIP_DST_PORT, skip_cmp_dst_port }	\
 }
 
@@ -912,7 +911,7 @@ load_feedback_profile(struct pfctl *pf, struct superblocks *superblocks)
 	TAILQ_INIT(&queue);
 	TAILQ_INIT(&prof_superblocks);
 
-	if (pfctl_get_rules_info(pf->dev, &rules, PF_PASS, "")) {
+	if (pfctl_get_rules_info_h(pf->h, &rules, PF_PASS, "")) {
 		warn("DIOCGETRULES");
 		return (1);
 	}
@@ -926,7 +925,7 @@ load_feedback_profile(struct pfctl *pf, struct superblocks *superblocks)
 			return (1);
 		}
 
-		if (pfctl_get_rule(pf->dev, nr, rules.ticket, "", PF_PASS,
+		if (pfctl_get_rule_h(pf->h, nr, rules.ticket, "", PF_PASS,
 		    &rule, anchor_call)) {
 			warn("DIOCGETRULENV");
 			return (1);

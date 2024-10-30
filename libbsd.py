@@ -90,6 +90,7 @@ _defaults = {
                  'freebsd/lib/libc/isc/include',
                  'freebsd/lib/libc/resolv',
                  'freebsd/lib/libifconfig',
+                 'freebsd/lib/libsys',
                  'freebsd/lib/libutil',
                  'freebsd/lib/libkvm',
                  'freebsd/lib/libmemstat',
@@ -389,7 +390,7 @@ class base(builder.Module):
                 'sys/contrib/ck/include/gcc/x86_64/ck_pr.h',
                 'sys/contrib/ck/include/gcc/x86/ck_f_pr.h',
                 'sys/contrib/ck/include/gcc/x86/ck_pr.h',
-                'sys/dev/extres/clk/clk.h',
+                'sys/dev/clk/clk.h',
                 'sys/fs/devfs/devfs_int.h',
                 'sys/fs/pseudofs/pseudofs.h',
                 'sys/fs/pseudofs/pseudofs_internal.h',
@@ -525,7 +526,7 @@ class base(builder.Module):
         self.addKernelSpaceSourceFiles(
             [
                 'sys/contrib/ck/src/ck_epoch.c',
-                'sys/dev/extres/clk/clk.c',
+                'sys/dev/clk/clk.c',
                 'sys/fs/deadfs/dead_vnops.c',
                 'sys/kern/init_main.c',
                 'sys/kern/kern_condvar.c',
@@ -1502,6 +1503,8 @@ class dev_net(builder.Module):
                 'sys/dev/tsec/if_tsec_fdt.c',
                 'sys/dev/cadence/if_cgem.c',
                 'sys/dev/dwc/if_dwc.c',
+                'sys/dev/dwc/dwc1000_core.c',
+                'sys/dev/dwc/dwc1000_dma.c',
                 'sys/arm/xilinx/zy7_slcr.c',
             ],
             mm.generator['source']()
@@ -2609,6 +2612,7 @@ class pf(builder.Module):
                 'sys/netpfil/pf/pf_ioctl.c',
                 'sys/netpfil/pf/pf_lb.c',
                 'sys/netpfil/pf/pf_norm.c',
+                'sys/netpfil/pf/pf_nl.c',
                 'sys/netpfil/pf/pf_nv.c',
                 'sys/netpfil/pf/pf_osfp.c',
                 'sys/netpfil/pf/pf_ruleset.c',

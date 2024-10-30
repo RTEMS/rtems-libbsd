@@ -82,4 +82,9 @@ test_main(void)
 
 #define CONFIGURE_MAXIMUM_DRIVERS 32
 
+
+#define CONFIGURE_FILESYSTEM_NFS
+
+#define CONFIGURE_SHELL_COMMANDS_ALL
+
 #include <rtems/bsd/test/default-network-init.h>

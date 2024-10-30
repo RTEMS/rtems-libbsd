@@ -3,7 +3,7 @@
  * Do not modify anything in here by hand.
  *
  * Created from source file
- *   freebsd-org/sys/kern/bus_if.m
+ *   sys/kern/bus_if.m
  * with
  *   makeobjops.awk
  *
@@ -325,8 +325,8 @@ static __inline struct resource * BUS_ALLOC_RESOURCE(device_t _dev,
 /** @brief Unique descriptor for the BUS_ACTIVATE_RESOURCE() method */
 extern struct kobjop_desc bus_activate_resource_desc;
 /** @brief A function implementing the BUS_ACTIVATE_RESOURCE() method */
-typedef int bus_activate_resource_t(device_t _dev, device_t _child, int _type,
-                                    int _rid, struct resource *_r);
+typedef int bus_activate_resource_t(device_t _dev, device_t _child,
+                                    struct resource *_r);
 /**
  * @brief Activate a resource
  *
@@ -337,26 +337,23 @@ typedef int bus_activate_resource_t(device_t _dev, device_t _child, int _type,
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
- * @param _type		the type of resource
- * @param _rid		the resource identifier
  * @param _r		the resource to activate
  */
 
 static __inline int BUS_ACTIVATE_RESOURCE(device_t _dev, device_t _child,
-                                          int _type, int _rid,
                                           struct resource *_r)
 {
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_activate_resource);
-	rc = ((bus_activate_resource_t *) _m)(_dev, _child, _type, _rid, _r);
+	rc = ((bus_activate_resource_t *) _m)(_dev, _child, _r);
 	return (rc);
 }
 
 /** @brief Unique descriptor for the BUS_MAP_RESOURCE() method */
 extern struct kobjop_desc bus_map_resource_desc;
 /** @brief A function implementing the BUS_MAP_RESOURCE() method */
-typedef int bus_map_resource_t(device_t _dev, device_t _child, int _type,
+typedef int bus_map_resource_t(device_t _dev, device_t _child,
                                struct resource *_r,
                                struct resource_map_request *_args,
                                struct resource_map *_map);
@@ -369,13 +366,12 @@ typedef int bus_map_resource_t(device_t _dev, device_t _child, int _type,
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
- * @param _type		the type of resource
  * @param _r		the resource to map
  * @param _args		optional attributes of the mapping
  * @param _map		the mapping
  */
 
-static __inline int BUS_MAP_RESOURCE(device_t _dev, device_t _child, int _type,
+static __inline int BUS_MAP_RESOURCE(device_t _dev, device_t _child,
                                      struct resource *_r,
                                      struct resource_map_request *_args,
                                      struct resource_map *_map)
@@ -383,14 +379,14 @@ static __inline int BUS_MAP_RESOURCE(device_t _dev, device_t _child, int _type,
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_map_resource);
-	rc = ((bus_map_resource_t *) _m)(_dev, _child, _type, _r, _args, _map);
+	rc = ((bus_map_resource_t *) _m)(_dev, _child, _r, _args, _map);
 	return (rc);
 }
 
 /** @brief Unique descriptor for the BUS_UNMAP_RESOURCE() method */
 extern struct kobjop_desc bus_unmap_resource_desc;
 /** @brief A function implementing the BUS_UNMAP_RESOURCE() method */
-typedef int bus_unmap_resource_t(device_t _dev, device_t _child, int _type,
+typedef int bus_unmap_resource_t(device_t _dev, device_t _child,
                                  struct resource *_r,
                                  struct resource_map *_map);
 /**
@@ -402,27 +398,26 @@ typedef int bus_unmap_resource_t(device_t _dev, device_t _child, int _type,
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
- * @param _type		the type of resource
  * @param _r		the resource
  * @param _map		the mapping to release
  */
 
 static __inline int BUS_UNMAP_RESOURCE(device_t _dev, device_t _child,
-                                       int _type, struct resource *_r,
+                                       struct resource *_r,
                                        struct resource_map *_map)
 {
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_unmap_resource);
-	rc = ((bus_unmap_resource_t *) _m)(_dev, _child, _type, _r, _map);
+	rc = ((bus_unmap_resource_t *) _m)(_dev, _child, _r, _map);
 	return (rc);
 }
 
 /** @brief Unique descriptor for the BUS_DEACTIVATE_RESOURCE() method */
 extern struct kobjop_desc bus_deactivate_resource_desc;
 /** @brief A function implementing the BUS_DEACTIVATE_RESOURCE() method */
-typedef int bus_deactivate_resource_t(device_t _dev, device_t _child, int _type,
-                                      int _rid, struct resource *_r);
+typedef int bus_deactivate_resource_t(device_t _dev, device_t _child,
+                                      struct resource *_r);
 /**
  * @brief Deactivate a resource
  *
@@ -431,26 +426,23 @@ typedef int bus_deactivate_resource_t(device_t _dev, device_t _child, int _type,
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
- * @param _type		the type of resource
- * @param _rid		the resource identifier
  * @param _r		the resource to deactivate
  */
 
 static __inline int BUS_DEACTIVATE_RESOURCE(device_t _dev, device_t _child,
-                                            int _type, int _rid,
                                             struct resource *_r)
 {
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_deactivate_resource);
-	rc = ((bus_deactivate_resource_t *) _m)(_dev, _child, _type, _rid, _r);
+	rc = ((bus_deactivate_resource_t *) _m)(_dev, _child, _r);
 	return (rc);
 }
 
 /** @brief Unique descriptor for the BUS_ADJUST_RESOURCE() method */
 extern struct kobjop_desc bus_adjust_resource_desc;
 /** @brief A function implementing the BUS_ADJUST_RESOURCE() method */
-typedef int bus_adjust_resource_t(device_t _dev, device_t _child, int _type,
+typedef int bus_adjust_resource_t(device_t _dev, device_t _child,
                                   struct resource *_res, rman_res_t _start,
                                   rman_res_t _end);
 /**
@@ -463,20 +455,19 @@ typedef int bus_adjust_resource_t(device_t _dev, device_t _child, int _type,
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
- * @param _type		the type of resource
  * @param _res		the resource to adjust
  * @param _start	the new starting address of the resource range
  * @param _end		the new ending address of the resource range
  */
 
 static __inline int BUS_ADJUST_RESOURCE(device_t _dev, device_t _child,
-                                        int _type, struct resource *_res,
+                                        struct resource *_res,
                                         rman_res_t _start, rman_res_t _end)
 {
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_adjust_resource);
-	rc = ((bus_adjust_resource_t *) _m)(_dev, _child, _type, _res, _start, _end);
+	rc = ((bus_adjust_resource_t *) _m)(_dev, _child, _res, _start, _end);
 	return (rc);
 }
 
@@ -512,8 +503,8 @@ static __inline int BUS_TRANSLATE_RESOURCE(device_t _dev, int _type,
 /** @brief Unique descriptor for the BUS_RELEASE_RESOURCE() method */
 extern struct kobjop_desc bus_release_resource_desc;
 /** @brief A function implementing the BUS_RELEASE_RESOURCE() method */
-typedef int bus_release_resource_t(device_t _dev, device_t _child, int _type,
-                                   int _rid, struct resource *_res);
+typedef int bus_release_resource_t(device_t _dev, device_t _child,
+                                   struct resource *_res);
 /**
  * @brief Release a resource
  *
@@ -523,19 +514,16 @@ typedef int bus_release_resource_t(device_t _dev, device_t _child, int _type,
  *
  * @param _dev		the parent device of @p _child
  * @param _child	the device which allocated the resource
- * @param _type		the type of resource
- * @param _rid		the resource identifier
  * @param _r		the resource to release
  */
 
 static __inline int BUS_RELEASE_RESOURCE(device_t _dev, device_t _child,
-                                         int _type, int _rid,
                                          struct resource *_res)
 {
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_release_resource);
-	rc = ((bus_release_resource_t *) _m)(_dev, _child, _type, _rid, _res);
+	rc = ((bus_release_resource_t *) _m)(_dev, _child, _res);
 	return (rc);
 }
 

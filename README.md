@@ -288,11 +288,17 @@ provided by LibBSD to suppress all output.
 
 ## Branches
 
-master
+main
 
-> This branch is intended for the RTEMS master which tracks the FreeBSD
-  master branch.  This branch must be used for libbsd development.  Back
-  ports to the 6-freebsd-12 are allowed.
+> This branch is intended for the RTEMS development which currently tracks the
+  FreeBSD stable/14 branch.  This branch must be used for libbsd development.
+  This will be moved to 6-freebsd-14 when main gets updated to follow current.
+
+6-freebsd-13
+
+> This is a maintainance branch which contains the historical contents of main
+  before main was updated to Freebsd 14. This branch is kept for record keeping
+  purposes.
 
 6-freebsd-12
 

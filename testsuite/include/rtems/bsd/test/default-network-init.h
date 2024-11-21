@@ -57,6 +57,8 @@
 #define DEFAULT_NETWORK_NO_STATIC_IFCONFIG
 #endif
 
+#include <bsp.h>
+
 #ifndef DEFAULT_NETWORK_NO_STATIC_IFCONFIG
 #include <rtems/bsd/test/network-config.h>
 #endif
@@ -283,6 +285,8 @@ Init(rtems_task_argument arg)
 #define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (64 * 1024 * 1024)
 #elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
 #define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (32 * 1024 * 1024)
+#elif defined(LIBBSP_AARCH64_XILINX_ZYNQMP_BSP_H)
+#define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (16 * 1024 * 1024)
 #endif
 
 #define RTEMS_BSD_CONFIG_NET_PF_UNIX

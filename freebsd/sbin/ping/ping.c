@@ -93,6 +93,7 @@
 #ifdef __rtems__
 #define __need_getopt_newlib
 #include <getopt.h>
+#include <machine/rtems-bsd-program.h>
 #include <rtems/libio_.h>
 #include "rtems-bsd-ping-ping-data.h"
 #endif /* __rtems__ */
@@ -186,6 +187,8 @@ static int send_len;
 static long nmissedmax;		/* max value of ntransmitted - nreceived - 1 */
 #ifndef __rtems__
 static long npackets;		/* max packets to transmit */
+#else /* __rtems__ */
+static long npackets = 3;	/* max packets to transmit */
 #endif /* __rtems__ */
 static long snpackets;			/* max packets to transmit in one sweep */
 static long sntransmitted;	/* # of packets we sent in this sweep */

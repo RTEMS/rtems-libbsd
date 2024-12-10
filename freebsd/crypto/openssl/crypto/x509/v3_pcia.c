@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-user-space.h>
+
 /*
  * Copyright 2004-2016 The OpenSSL Project Authors. All Rights Reserved.
  *

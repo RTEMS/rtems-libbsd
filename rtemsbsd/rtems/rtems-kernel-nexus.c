@@ -388,10 +388,14 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 		ra = ni->arg;
 	}
 
-	sc = rtems_interrupt_server_handler_install(RTEMS_ID_NONE,
-	    rman_get_start(res), device_get_nameunit(child),
-	    RTEMS_INTERRUPT_SHARED, rh, ra);
-	err = sc == RTEMS_SUCCESSFUL ? 0 : EINVAL;
+	sc = rtems_interrupt_server_handler_remove(RTEMS_ID_NONE,
+	    rman_get_start(res), rh, ra);
+
+	err = EINVAL;
+	if (sc == RTEMS_SUCCESSFUL) {
+		free(cookie, M_TEMP);
+		err = 0;
+	}
 #else
 	err = EINVAL;
 #endif

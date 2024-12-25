@@ -1,3 +1,4 @@
+#include <machine/rtems-bsd-user-space.h>
 /*	$KAME: pfkey.c,v 1.46 2003/08/26 03:37:06 itojun Exp $	*/
 
 /*-

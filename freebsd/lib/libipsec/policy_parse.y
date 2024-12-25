@@ -51,6 +51,9 @@
  */
 
 %{
+#ifdef __rtems__
+#include <machine/rtems-bsd-user-space.h>
+#endif /* __rtems__ */
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -397,6 +400,10 @@ policy_parse(const char *msg, int msglen)
 
 	error = yyparse();	/* it must be set errcode. */
 	__policy__strbuffer__free__();
+#ifdef __rtems__
+	/* This frees the p_src and p_dst buffers. */
+	policy_parse_request_init();
+#endif /* __rtems__ */
 
 	if (error) {
 		if (pbuf != NULL)

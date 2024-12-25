@@ -1,3 +1,7 @@
+#include <machine/rtems-bsd-user-space.h>
+#ifdef __rtems__
+#define ipsec_hexdump _bsd_ipsec_hexdump
+#endif /* __rtems__ */
 /*	$KAME: pfkey_dump.c,v 1.45 2003/09/08 10:14:56 itojun Exp $	*/
 
 /*-

@@ -91,6 +91,7 @@ _defaults = {
                  'freebsd/lib/libc/resolv',
                  'freebsd/lib/libifconfig',
                  'freebsd/lib/libsys',
+                 'freebsd/lib/libipsec',
                  'freebsd/lib/libutil',
                  'freebsd/lib/libkvm',
                  'freebsd/lib/libmemstat',
@@ -343,6 +344,19 @@ class rtems(builder.Module):
                                           mm.generator['convert'](),
                                           mm.generator['convert'](),
                                           mm.generator['yacc']('_nsyy', 'nsparser.h')))
+        libipsec_cflags = ['-D__FreeBSD__=1']
+        self.addFile(mm.generator['file']('user',
+                                          'lib/libipsec/policy_token.l',
+                                          mm.generator['freebsd-path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['lex']('__libipsecyy', 'policy_parse.c',libipsec_cflags,build=True)))
+        self.addFile(mm.generator['file']('user',
+                                          'lib/libipsec/policy_parse.y',
+                                          mm.generator['freebsd-path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['yacc']('__libipsecyy', 'y.tab.h',libipsec_cflags,build=True)))
 
 
 #
@@ -3188,6 +3202,8 @@ class user_space(builder.Module):
                 'lib/libc/resolv/res_debug.h',
                 'lib/libc/resolv/res_private.h',
                 'lib/libc/stdio/local.h',
+                'lib/libipsec/ipsec_strerror.h',
+                'lib/libipsec/libpfkey.h',
                 'lib/libkvm/kvm.h',
                 'lib/libmemstat/memstat.h',
                 'lib/libmemstat/memstat_internal.h',
@@ -3277,6 +3293,11 @@ class user_space(builder.Module):
                 'lib/libifconfig/libifconfig_media.c',
                 'lib/libifconfig/libifconfig_sfp.c',
                 'lib/libifconfig/libifconfig_sfp_tables.c',
+                'lib/libipsec/ipsec_dump_policy.c',
+                'lib/libipsec/ipsec_get_policylen.c',
+                'lib/libipsec/ipsec_strerror.c',
+                'lib/libipsec/pfkey_dump.c',
+                'lib/libipsec/pfkey.c',
                 'lib/lib80211/lib80211_ioctl.c',
                 'lib/lib80211/lib80211_regdomain.c',
                 'lib/libc/gen/err.c',

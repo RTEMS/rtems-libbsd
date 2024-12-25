@@ -32,6 +32,9 @@
  */
 
 %{
+#ifdef __rtems__
+#include <machine/rtems-bsd-user-space.h>
+#endif /* __rtems__ */
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>

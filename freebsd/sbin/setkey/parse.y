@@ -59,6 +59,7 @@
 #define ATOX(c) \
   (isdigit(c) ? (c - '0') : (isupper(c) ? (c - 'A' + 10) : (c - 'a' + 10)))
 
+#ifndef __rtems__
 u_int32_t p_spi;
 u_int p_ext, p_alg_enc, p_alg_auth, p_replay, p_mode;
 u_int32_t p_reqid;
@@ -71,6 +72,20 @@ int p_natt_sport, p_natt_dport;
 int p_natt_fraglen;
 bool esn;
 vchar_t p_hwif;
+#else /* __rtems__ */
+static u_int32_t p_spi;
+static u_int p_ext, p_alg_enc, p_alg_auth, p_replay, p_mode;
+static u_int32_t p_reqid;
+static u_int p_key_enc_len, p_key_auth_len;
+static caddr_t p_key_enc, p_key_auth;
+static time_t p_lt_hard, p_lt_soft;
+static u_int p_natt_type;
+static struct addrinfo *p_natt_oai, *p_natt_oar;
+static int p_natt_sport, p_natt_dport;
+static int p_natt_fraglen;
+static bool esn;
+static vchar_t p_hwif;
+#endif /* __rtems__ */
 
 static int p_aiflags = 0, p_aifamily = PF_UNSPEC;
 
@@ -1160,7 +1175,11 @@ setkeymsg_add(unsigned type, unsigned satype, struct addrinfo *srcs,
 	m_sa.sadb_sa_exttype = SADB_EXT_SA;
 	m_sa.sadb_sa_spi = htonl(p_spi);
 	m_sa.sadb_sa_replay = p_replay > UINT8_MAX ? UINT8_MAX: p_replay;
+#ifdef __rtems__
+	m_sa.sadb_sa_state = 1;
+#else /* __rtems__ */
 	m_sa.sadb_sa_state = 0;
+#endif /* __rtems__ */
 	m_sa.sadb_sa_auth = p_alg_auth;
 	m_sa.sadb_sa_encrypt = p_alg_enc;
 	m_sa.sadb_sa_flags = p_ext;

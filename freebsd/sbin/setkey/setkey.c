@@ -1,3 +1,11 @@
+#include <machine/rtems-bsd-user-space.h>
+
+#ifdef __rtems__
+#include <machine/rtems-bsd-program.h>
+#include "rtems-bsd-setkey-namespace.h"
+#define kdebug_sadb _bsd_kdebug_sadb
+#endif /* __rtems__ */
+
 /*	$KAME: setkey.c,v 1.28 2003/06/27 07:15:45 itojun Exp $	*/
 
 /*-
@@ -31,6 +39,12 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-commands.h>
+#include <rtems/linkersets.h>
+#endif /* __rtems__ */
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/linker.h>
@@ -57,7 +71,9 @@
 #include "libpfkey.h"
 
 void usage(void);
+#ifndef __rtems__
 int main(int, char **);
+#endif /* __rtems__ */
 int get_supported(void);
 void sendkeyshort(u_int, uint8_t);
 void promisc(void);
@@ -68,7 +84,9 @@ void shortdump_hdr(void);
 void shortdump(struct sadb_msg *);
 static void printdate(void);
 static int32_t gmt2local(time_t);
+#ifndef __rtems__
 static int modload(const char *name);
+#endif /* __rtems__ */
 
 #define MODE_SCRIPT	1
 #define MODE_CMDDUMP	2
@@ -105,6 +123,7 @@ usage(void)
 	exit(1);
 }
 
+#ifndef __rtems__
 static int
 modload(const char *name)
 {
@@ -115,12 +134,45 @@ modload(const char *name)
 	}
 	return 1;
 }
+#endif /* __rtems__*/
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_setkey, char);
+
+int
+rtems_bsd_command_setkey(int argc, char *argv[])
+{
+	int exit_code;
+	void *data_begin;
+	size_t data_size;
+
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_setkey);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_setkey);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("setkey",
+	    main, argc, argv, data_begin, data_size);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
 
 int
 main(int ac, char **av)
 {
 	FILE *fp = stdin;
 	int c;
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	if (ac == 1) {
 		usage();
@@ -192,8 +244,9 @@ main(int ac, char **av)
 			/*NOTREACHED*/
 		}
 	}
-
+#ifndef __rtems__
 	modload("ipsec");
+#endif /* __rtems__ */
 	so = pfkey_open();
 	if (so < 0) {
 		perror("pfkey_open");
@@ -661,3 +714,6 @@ gmt2local(time_t t)
 
 	return (dt);
 }
+#ifdef __rtems__
+#include "rtems-bsd-setkey-setkey-data.h"
+#endif /* __rtems__ */

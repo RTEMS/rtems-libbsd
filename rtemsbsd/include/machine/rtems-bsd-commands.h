@@ -74,6 +74,8 @@ int rtems_bsd_command_vmstat(int argc, char **argv);
 
 int rtems_bsd_command_wlanstats(int argc, char **argv);
 
+int rtems_bsd_command_setkey(int argc, char **argv);
+
 int rtems_bsd_command_stty(int argc, char **argv);
 
 int rtems_bsd_command_openssl(int argc, char **argv);

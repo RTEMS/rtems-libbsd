@@ -92,6 +92,7 @@ _defaults = {
                  'freebsd/lib/libifconfig',
                  'freebsd/lib/libsys',
                  'freebsd/lib/libipsec',
+                 'freebsd/sbin/setkey',
                  'freebsd/lib/libutil',
                  'freebsd/lib/libkvm',
                  'freebsd/lib/libmemstat',
@@ -294,6 +295,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-shell-pfctl.c',
                 'rtems/rtems-bsd-shell-ping.c',
                 'rtems/rtems-bsd-shell-route.c',
+                'rtems/rtems-bsd-shell-setkey.c',
                 'rtems/rtems-bsd-shell-stty.c',
                 'rtems/rtems-bsd-shell-sysctl.c',
                 'rtems/rtems-bsd-shell-tcpdump.c',
@@ -3215,7 +3217,8 @@ class user_space(builder.Module):
                 'sbin/dhclient/tree.h',
                 'sbin/ifconfig/ifconfig.h',
                 'sbin/ping/utils.h',
-                'usr.bin/netstat/netstat.h'
+                'usr.bin/netstat/netstat.h',
+                "sbin/setkey/vchar.h"
             ]
         )
         self.addFile(mm.generator['file']('user',
@@ -3231,6 +3234,26 @@ class user_space(builder.Module):
                                           mm.generator['convert'](),
                                           mm.generator['yacc']('pfctly',
                                                                'parse.h')))
+
+        self.addFile(mm.generator['file']('user',
+                                          'sbin/setkey/token.l',
+                                          mm.generator['freebsd-path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['lex']('setkeyyy',
+                                                              'token.c',
+                                                              build=False
+                                                              )))
+        self.addFile(mm.generator['file']('user',
+                                          'sbin/setkey/parse.y',
+                                          mm.generator['freebsd-path'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['convert'](),
+                                          mm.generator['yacc']('setkeyyy',
+                                                               'y.tab.h',
+                                                               build=False
+                                                               )))
+
         self.addUserSpaceSourceFiles(
             [
                 'lib/libc/db/btree/bt_close.c',
@@ -3437,6 +3460,9 @@ class user_space(builder.Module):
                 'sbin/ping/main.c',
                 'sbin/route/route.c',
                 #'sbin/route/route_netlink.c',
+                'sbin/setkey/setkey.c',
+                'sbin/setkey/parse_wrapper.c',
+                'sbin/setkey/token_wrapper.c',
                 'sbin/sysctl/sysctl.c',
                 'usr.bin/netstat/bpf.c',
                 'usr.bin/netstat/common.c',

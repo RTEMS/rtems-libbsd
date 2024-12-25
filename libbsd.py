@@ -5913,6 +5913,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('swi01', ['init', 'swi_test']))
         #self.addTest(mm.generator['test']('timeout01', ['init', 'timeout_test']))
         self.addTest(mm.generator['test']('init01', ['test_main']))
+        self.addTest(mm.generator['test']('ipsec01', ['test_main']))
         self.addTest(mm.generator['test']('thread01', ['test_main']))
         self.addTest(mm.generator['test']('mutex01', ['test_main']))
         self.addTest(mm.generator['test']('condvar01', ['test_main']))

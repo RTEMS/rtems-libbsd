@@ -32,9 +32,9 @@ do this.  The individual steps are explained afterwards.
 sandbox="$PWD/sandbox"
 mkdir sandbox
 cd "$sandbox"
-git clone git://git.rtems.org/rtems-source-builder.git
-git clone git://git.rtems.org/rtems.git
-git clone git://git.rtems.org/rtems-libbsd.git
+git clone https://gitlab.rtems.org/rtems/tools/rtems-source-builder.git
+git clone https://gitlab.rtems.org/rtems/rtos/rtems.git
+git clone https://gitlab.rtems.org/rtems/pkg/rtems-libbsd.git
 cd "$sandbox"
 cd rtems-source-builder/rtems
 ../source-builder/sb-set-builder --prefix="$sandbox/rtems/5" 5/rtems-arm
@@ -74,9 +74,9 @@ $ mkdir sandbox
 
 ```
 $ cd "$sandbox"
-$ git clone git://git.rtems.org/rtems-source-builder.git
-$ git clone git://git.rtems.org/rtems.git
-$ git clone git://git.rtems.org/rtems-libbsd.git
+$ git clone https://gitlab.rtems.org/rtems/tools/rtems-source-builder.git
+$ git clone https://gitlab.rtems.org/rtems/rtos/rtems.git
+$ git clone https://gitlab.rtems.org/rtems/pkg/rtems-libbsd.git
 ```
 
 3. Build and install the tools:

@@ -152,6 +152,7 @@ _defaults = {
      ('freebsd/sys/sys',                        '**/*.h',                          'sys'),
      ('freebsd/sys/vm',                         '**/*.h',                          'vm'),
      ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),
+     ('freebsd/sys/dev/ofw',                    '**/*.h',                          'dev/ofw'),
      ('freebsd/sys/dev/pci',                    '**/*.h',                          'dev/pci'),
      ('freebsd/sys/dev/nvme',                   '**/*.h',                          'dev/nvme'),
      ('freebsd/sys/@CPU@/include',              '**/*.h',                          ''),

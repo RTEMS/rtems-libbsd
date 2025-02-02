@@ -277,6 +277,9 @@ main(int ac, char **av)
 		usage();
 		/*NOTREACHED*/
 	}
+#ifdef __rtems__
+	close(so);
+#endif /* __rtems__ */
 
 	exit(0);
 }

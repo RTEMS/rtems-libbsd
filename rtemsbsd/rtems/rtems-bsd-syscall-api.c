@@ -641,7 +641,10 @@ sendmsg(int socket, const struct msghdr *message, int flags)
 	ua.flags = flags;
 	error = sys_sendmsg(td, &ua);
 	rtems_bsd_libio_iop_drop(socket);
-	return rtems_bsd_error_to_status_and_errno(error);
+	if (error != 0) {
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	return td->td_retval[0];
 }
 
 int

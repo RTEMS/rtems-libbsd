@@ -15,6 +15,7 @@
 #include <rtems/test-info.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/iface.h>
 
 static void default_wait_for_link_up( const char *name )
 {

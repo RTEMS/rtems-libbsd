@@ -1536,10 +1536,11 @@ selscan(struct thread *td, fd_mask **ibits, fd_mask **obits, int nfd)
 #ifdef __rtems__
 			}
 #endif /* __rtems__ */
-			selfdalloc(td, (void *)(uintptr_t)fd);
 #ifndef __rtems__
+			selfdalloc(td, (void *)(uintptr_t)fd);
 			ev = fo_poll(fp, flags, td->td_ucred, td);
 #else /* __rtems__ */
+			selfdalloc(td, (void *)(uintptr_t)fd_tmp);
 			ev = rtems_bsd_libio_fo_poll(fd, fp,
 						     selflags(ibits, idx, bit),
 						     td->td_ucred, td);

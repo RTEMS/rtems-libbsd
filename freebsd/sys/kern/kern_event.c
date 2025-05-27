@@ -1600,10 +1600,14 @@ findkn:
 			if (ffd < 0)
 				error = EBADF;
 			else {
-				if (iop == NULL)
+				if (iop == NULL) {
 					error = fget(td, ffd, &cap_event_rights, &fp);
-				else
+					if (!error) {
+						rtems_bsd_libio_iop_drop(kev->ident);
+					}
+				} else {
 					fp = NULL;
+				}
 			}
 		}
 #endif /* __rtems__ */
@@ -1710,7 +1714,7 @@ findkn:
 		}
 #ifdef __rtems__
 		if (iop != NULL) {
-			rtems_libio_iop_drop(iop);
+			rtems_bsd_libio_iop_drop(iop);
 			iop = NULL;
 		}
 #endif /* __rtems__ */

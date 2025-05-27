@@ -253,20 +253,27 @@ rtems_bsd_libio_iop_hold(int fd, rtems_libio_t **iopp)
 			*iopp = NULL;
 		}
 	}
-	if (RTEMS_BSD_DESCRIP_TRACE)
-		printf("bsd: iop: hold: fd=%d ffd=%d refs=%d iop=%p by %p\n",
-		    fd, ffd, flags >> 12, iop, __builtin_return_address(0));
+	if (RTEMS_BSD_DESCRIP_TRACE) {
+		if (iopp != NULL) {
+			printf("bsd: iop: hold: fd=%d ffd=%d refs=%d iop=%p iopp=%p by %p\n",
+			    fd, ffd, flags >> 12, iop, *iopp, __builtin_return_address(0));
+		} else {
+			printf("bsd: iop: hold: fd=%d ffd=%d refs=%d iop=%p iopp=NA lb=%d by %p\n",
+			    fd, ffd, flags >> 12, iop, __builtin_return_address(0));
+		}
+	}
 	return ffd;
 }
 
 static inline int
 rtems_bsd_libio_iop_drop(int fd)
 {
+	rtems_libio_t *iop = rtems_libio_iop(fd);
 	if (RTEMS_BSD_DESCRIP_TRACE)
-		printf("bsd: iop: drop: fd=%d refs=%d by %p\n", fd,
-		    rtems_libio_iop(fd)->flags >> 12,
+		printf("bsd: iop: drop: fd=%d refs=%d iop=%p by %p\n", fd,
+		    rtems_libio_iop(fd)->flags >> 12, iop,
 		    __builtin_return_address(0));
-	rtems_libio_iop_drop(rtems_libio_iop(fd));
+	rtems_libio_iop_drop(iop);
 	return 0;
 }
 

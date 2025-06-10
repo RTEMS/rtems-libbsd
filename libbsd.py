@@ -187,6 +187,7 @@ class rtems(builder.Module):
                 'local/pcib_if.c',
                 'local/pci_if.c',
                 'local/pic_if.c',
+                'local/syscon_if.c',
                 'local/xdma_if.c',
                 'local/usb_if.c',
                 'local/mmcbus_if.c',
@@ -393,6 +394,7 @@ class base(builder.Module):
                 'sys/contrib/ck/include/gcc/x86/ck_f_pr.h',
                 'sys/contrib/ck/include/gcc/x86/ck_pr.h',
                 'sys/dev/clk/clk.h',
+                'sys/dev/extres/syscon/syscon.h',
                 'sys/fs/devfs/devfs_int.h',
                 'sys/fs/pseudofs/pseudofs.h',
                 'sys/fs/pseudofs/pseudofs_internal.h',
@@ -529,6 +531,7 @@ class base(builder.Module):
             [
                 'sys/contrib/ck/src/ck_epoch.c',
                 'sys/dev/clk/clk.c',
+                'sys/dev/extres/syscon/syscon.c',
                 'sys/fs/deadfs/dead_vnops.c',
                 'sys/kern/init_main.c',
                 'sys/kern/kern_condvar.c',

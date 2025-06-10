@@ -1044,6 +1044,9 @@ test_kqueue_close(test_context *ctx)
 	assert(rv == 0);
 	assert(st.st_mode == (S_IFSOCK | cansend));
 
+	rv = close(cfd);
+	assert(rv == 0);
+
 	rv = close(kq);
 	assert(rv == 0);
 }

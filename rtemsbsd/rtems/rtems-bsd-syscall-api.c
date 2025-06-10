@@ -201,6 +201,7 @@ accept(int socket, struct sockaddr *__restrict address,
 		kern_close(td, afd);
 		return rtems_bsd_error_to_status_and_errno(ENFILE);
 	}
+	rtems_bsd_libio_iop_set_close_busy(iop);
 	error = rtems_bsd_libio_iop_set_bsd_fd(
 	    td, afd, iop, &rtems_bsd_sysgen_nodeops);
 	if (error != 0) {
@@ -363,6 +364,7 @@ kqueue(void)
 	if (iop == NULL) {
 		return rtems_bsd_error_to_status_and_errno(ENFILE);
 	}
+	rtems_bsd_libio_iop_set_close_busy(iop);
 	error = sys_kqueue(td, &ua);
 	if (error != 0) {
 		goto out;
@@ -730,6 +732,7 @@ socket(int domain, int type, int protocol)
 	if (iop == NULL) {
 		return rtems_bsd_error_to_status_and_errno(ENFILE);
 	}
+	rtems_bsd_libio_iop_set_close_busy(iop);
 	ua.domain = domain;
 	ua.type = type;
 	ua.protocol = protocol;
@@ -771,11 +774,13 @@ socketpair(int domain, int type, int protocol, int *socket_vector)
 	if (iop[0] == NULL) {
 		return rtems_bsd_error_to_status_and_errno(ENFILE);
 	}
+	rtems_bsd_libio_iop_set_close_busy(iop[0]);
 	iop[1] = rtems_bsd_libio_iop_allocate();
 	if (iop[1] == NULL) {
 		rtems_bsd_libio_iop_free(iop[0]);
 		return rtems_bsd_error_to_status_and_errno(ENFILE);
 	}
+	rtems_bsd_libio_iop_set_close_busy(iop[1]);
 	ua.domain = domain;
 	ua.type = type;
 	ua.protocol = protocol;
@@ -904,6 +909,8 @@ rtems_bsd_sysgen_open_node(
 		}
 		return rtems_bsd_error_to_status_and_errno(ENOMEM);
 	}
+
+	rtems_bsd_libio_iop_set_close_busy(iop);
 
 	fdp = td->td_proc->p_fd;
 

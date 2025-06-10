@@ -63,6 +63,12 @@ static int inline rtems_bsd_error_to_status_and_errno(int error)
 	}
 }
 
+static inline void
+rtems_bsd_libio_iop_set_close_busy(rtems_libio_t *iop)
+{
+	iop->flags |= LIBIO_FLAGS_CLOSE_BUSY;
+}
+
 static inline uint32_t
 rtems_bsd_libio_fflag_to_flags(u_int fflag)
 {

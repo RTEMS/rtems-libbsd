@@ -176,6 +176,7 @@ class rtems(builder.Module):
             [
                 'fs/rootfs/rootfs.c',
                 'local/bus_if.c',
+                'local/clknode_if.c',
                 'local/cryptodev_if.c',
                 'local/device_if.c',
                 'local/ifdi_if.c',

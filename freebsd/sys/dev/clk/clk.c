@@ -59,10 +59,6 @@ struct clk;
 struct clknodenode;
 struct clkdom;
 
-#ifdef __rtems__
-struct kobjop_desc clknode_set_gate_desc;
-#endif /* __rtems__ */
-
 typedef TAILQ_HEAD(clknode_list, clknode) clknode_list_t;
 typedef TAILQ_HEAD(clkdom_list, clkdom) clkdom_list_t;
 

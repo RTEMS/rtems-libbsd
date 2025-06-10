@@ -1,3 +1,5 @@
+#include <machine/rtems-bsd-kernel-space.h>
+
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -33,7 +35,11 @@
  */
 
 #include <sys/cdefs.h>
+#ifdef __rtems__
+#include <rtems/bsd/local/opt_platform.h>
+#else
 #include "opt_platform.h"
+#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -54,7 +60,11 @@
 #include <dev/ofw/ofw_bus_subr.h>
 #endif
 
+#ifdef __rtems__
+#include <rtems/bsd/local/syscon_if.h>
+#else
 #include "syscon_if.h"
+#endif
 #include "syscon.h"
 
 /*

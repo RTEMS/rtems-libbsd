@@ -1913,7 +1913,5 @@ driver_t fman_port_driver = {
 	.methods = fman_port_methods
 };
 
-static devclass_t fman_port_devclass;
-
-DRIVER_MODULE(fman_port, fman_mac, fman_port_driver, fman_port_devclass, 0, 0);
+DRIVER_MODULE(fman_port, fman_mac, fman_port_driver, 0, 0);
 #endif /* __rtems__ */

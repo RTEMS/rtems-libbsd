@@ -638,7 +638,5 @@ driver_t dpaa_ml_driver = {
 	.methods = dpaa_ml_methods
 };
 
-static devclass_t dpaa_ml_devclass;
-
-DRIVER_MODULE(dpaa_ml, nexus, dpaa_ml_driver, dpaa_ml_devclass, 0, 0);
+DRIVER_MODULE(dpaa_ml, nexus, dpaa_ml_driver, 0, 0);
 #endif /* __rtems__ */

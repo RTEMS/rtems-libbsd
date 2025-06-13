@@ -3208,7 +3208,5 @@ driver_t fman_driver = {
 	.size = sizeof(struct fman_softc),
 };
 
-static devclass_t fman_devclass;
-
-DRIVER_MODULE(fman, nexus, fman_driver, fman_devclass, 0, 0);
+DRIVER_MODULE(fman, nexus, fman_driver, 0, 0);
 #endif /* __rtems__ */

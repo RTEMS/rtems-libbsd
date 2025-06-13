@@ -48,11 +48,13 @@ struct region_descriptor;
 #define writew(va, d)	(*(volatile uint16_t *) (va) = (d))
 #define writel(va, d)	(*(volatile uint32_t *) (va) = (d))
 
+#ifndef __rtems__
 static __inline void
 breakpoint(void)
 {
 	__asm __volatile("int $3");
 }
+#endif
 
 static __inline __pure2 u_int
 bsfl(u_int mask)

@@ -415,9 +415,7 @@ static driver_t lpc_tsc_driver = {
 	sizeof(struct lpc_tsc_softc),
 };
 
-static devclass_t lpc_tsc_devclass;
-
-DRIVER_MODULE(lpctsc, nexus, lpc_tsc_driver, lpc_tsc_devclass, 0, 0);
+DRIVER_MODULE(lpctsc, nexus, lpc_tsc_driver, 0, 0);
 MODULE_DEPEND(lpctsc, evdev, 1, 1, 1);
 
 #endif /* defined(LIBBSP_ARM_LPC32XX_BSP_H) */

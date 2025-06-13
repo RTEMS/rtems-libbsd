@@ -500,9 +500,7 @@ static driver_t lpc_ohci_driver = {
 	sizeof(struct ohci_softc),
 };
 
-static devclass_t lpc_ohci_devclass;
-
-DRIVER_MODULE(ohci, nexus, lpc_ohci_driver, lpc_ohci_devclass, 0, 0);
+DRIVER_MODULE(ohci, nexus, lpc_ohci_driver, 0, 0);
 MODULE_DEPEND(ohci, usb, 1, 1, 1);
 
 #endif /* defined(LIBBSP_ARM_LPC32XX_BSP_H) */

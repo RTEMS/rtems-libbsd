@@ -924,10 +924,8 @@ static driver_t mve_nexus_driver = {
 	sizeof( struct mve_enet_softc )
 };
 
-static devclass_t mve_devclass;
-
-DRIVER_MODULE(mve, nexus, mve_nexus_driver, mve_devclass, 0, 0);
-DRIVER_MODULE(miibus, mve, miibus_driver,   miibus_devclass, 0, 0);
+DRIVER_MODULE(mve, nexus, mve_nexus_driver, 0, 0);
+DRIVER_MODULE(miibus, mve, miibus_driver, 0, 0);
 
 MODULE_DEPEND(mve, nexus, 1, 1, 1);
 MODULE_DEPEND(mve, ether, 1, 1, 1);

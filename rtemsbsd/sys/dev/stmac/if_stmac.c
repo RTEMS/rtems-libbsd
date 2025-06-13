@@ -997,10 +997,8 @@ driver_t stmac_driver = {
 	sizeof(struct stmac_softc)
 };
 
-static devclass_t stmac_devclass;
-
-DRIVER_MODULE(stmac, nexus, stmac_driver, stmac_devclass, 0, 0);
-DRIVER_MODULE(miibus, stmac, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(stmac, nexus, stmac_driver, 0, 0);
+DRIVER_MODULE(miibus, stmac, miibus_driver, 0, 0);
 
 MODULE_DEPEND(stmac, ether, 1, 1, 1);
 MODULE_DEPEND(stmac, miibus, 1, 1, 1);

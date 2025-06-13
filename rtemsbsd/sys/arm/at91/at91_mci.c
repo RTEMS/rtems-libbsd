@@ -1693,21 +1693,17 @@ static driver_t at91_mci_driver = {
 	sizeof(struct at91_mci_softc),
 };
 
-static devclass_t at91_mci_devclass;
-
 #ifndef __rtems__
 #ifdef FDT
-DRIVER_MODULE(at91_mci, simplebus, at91_mci_driver, at91_mci_devclass, NULL,
-    NULL);
+DRIVER_MODULE(at91_mci, simplebus, at91_mci_driver, NULL, NULL);
 #else
-DRIVER_MODULE(at91_mci, atmelarm, at91_mci_driver, at91_mci_devclass, NULL,
-    NULL);
+DRIVER_MODULE(at91_mci, atmelarm, at91_mci_driver, NULL, NULL);
 #endif
 
 MMC_DECLARE_BRIDGE(at91_mci);
 #else /* __rtems__ */
-DRIVER_MODULE(at91_mci, nexus, at91_mci_driver, at91_mci_devclass, NULL, NULL);
+DRIVER_MODULE(at91_mci, nexus, at91_mci_driver, NULL, NULL);
 #endif /* __rtems__ */
-DRIVER_MODULE(mmc, at91_mci, mmc_driver, mmc_devclass, NULL, NULL);
+DRIVER_MODULE(mmc, at91_mci, mmc_driver, NULL, NULL);
 MODULE_DEPEND(at91_mci, mmc, 1, 1, 1);
 #endif /* __rtems__ && LIBBSP_ARM_ATSAM_BSP_H */

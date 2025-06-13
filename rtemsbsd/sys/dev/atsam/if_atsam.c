@@ -1654,11 +1654,10 @@ static driver_t if_atsam_nexus_driver = {
 	sizeof(struct if_atsam_softc)
 };
 
-static devclass_t if_atsam_devclass;
-DRIVER_MODULE(if_atsam, nexus, if_atsam_nexus_driver, if_atsam_devclass, 0, 0);
+DRIVER_MODULE(if_atsam, nexus, if_atsam_nexus_driver, 0, 0);
 MODULE_DEPEND(if_atsam, nexus, 1, 1, 1);
 MODULE_DEPEND(if_atsam, ether, 1, 1, 1);
 MODULE_DEPEND(if_atsam, miibus, 1, 1, 1);
-DRIVER_MODULE(miibus, if_atsam, miibus_driver, miibus_devclass, NULL, NULL);
+DRIVER_MODULE(miibus, if_atsam, miibus_driver, NULL, NULL);
 
 #endif /* LIBBSP_ARM_ATSAM_BSP_H */

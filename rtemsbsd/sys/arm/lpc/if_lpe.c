@@ -1761,8 +1761,7 @@ static driver_t lpe_nexus_driver = {
   sizeof(lpc_eth_driver_entry)
 };
 
-static devclass_t lpe_devclass;
-DRIVER_MODULE(lpe, nexus, lpe_nexus_driver, lpe_devclass, 0, 0);
+DRIVER_MODULE(lpe, nexus, lpe_nexus_driver, 0, 0);
 MODULE_DEPEND(lpe, nexus, 1, 1, 1);
 MODULE_DEPEND(lpe, ether, 1, 1, 1);
 

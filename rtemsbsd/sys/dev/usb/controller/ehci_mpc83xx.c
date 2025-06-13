@@ -306,9 +306,7 @@ static driver_t ehci_driver = {
 	.size = sizeof(struct ehci_softc)
 };
 
-static devclass_t ehci_devclass;
-
-DRIVER_MODULE(ehci, nexus, ehci_driver, ehci_devclass, 0, 0);
+DRIVER_MODULE(ehci, nexus, ehci_driver, 0, 0);
 MODULE_DEPEND(ehci, usb, 1, 1, 1);
 
 #endif /* defined(__GEN83xx_BSP_h) || defined(LIBBSP_POWERPC_QORIQ_BSP_H) */

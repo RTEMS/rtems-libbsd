@@ -139,7 +139,5 @@ static driver_t tsi148_driver = {
 	sizeof(struct tsi148),
 };
 
-static devclass_t tsi148_devclass;
-
-DRIVER_MODULE(tsi148, pci, tsi148_driver, tsi148_devclass, NULL, 0);
+DRIVER_MODULE(tsi148, pci, tsi148_driver, NULL, 0);
 #endif /* LIBBSP_POWERPC_QORIQ_BSP_H */

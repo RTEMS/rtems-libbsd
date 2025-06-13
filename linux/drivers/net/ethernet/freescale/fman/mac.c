@@ -1186,10 +1186,8 @@ driver_t fman_mac_driver = {
 	.size = sizeof(struct fman_mac_softc)
 };
 
-static devclass_t fman_mac_devclass;
-
-DRIVER_MODULE(fman_mac, fman, fman_mac_driver, fman_mac_devclass, 0, 0);
-DRIVER_MODULE(miibus, fman_mac, miibus_driver, miibus_devclass, 0, 0);
+DRIVER_MODULE(fman_mac, fman, fman_mac_driver, 0, 0);
+DRIVER_MODULE(miibus, fman_mac, miibus_driver, 0, 0);
 
 MODULE_DEPEND(fman_mac, ether, 1, 1, 1);
 MODULE_DEPEND(fman_mac, miibus, 1, 1, 1);

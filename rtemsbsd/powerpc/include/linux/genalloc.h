@@ -84,15 +84,21 @@ static inline daddr_t
 gen_pool_alloc(struct gen_pool *gp, size_t size)
 {
 	int chunks;
+	int count = 0;
 	daddr_t blkno; 
 
 	chunks = (size + (1 << gp->gen_chunk_shift) - 1) >> gp->gen_chunk_shift;
 	mtx_lock(&gp->gen_lock);
-	blkno = blist_alloc(gp->gen_list, chunks);
+	blkno = blist_alloc(gp->gen_list, &count, chunks);
 	mtx_unlock(&gp->gen_lock);
 
 	if (blkno == SWAPBLK_NONE)
 		return (0);
+
+	if (count != chunks) {
+		blist_free(gp->gen_list, blkno, count);
+		return 0;
+	}
 
 	return (gp->gen_base + ((1 << gp->gen_chunk_shift) * blkno));
 }

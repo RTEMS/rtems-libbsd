@@ -215,12 +215,21 @@ CTASSERT(sizeof(struct m_ext) == 160);
 CTASSERT(offsetof(struct mbuf, m_dat) == 24);
 CTASSERT(sizeof(struct pkthdr) == 56);
 #if defined(__powerpc__) && defined(BOOKE)
+#if defined(__rtems__)
+#if defined(__powerpc64__)
 /* PowerPC booke has 64-bit physical pointers. */
 CTASSERT(sizeof(struct m_ext) == 176);
 #else
 CTASSERT(sizeof(struct m_ext) == 172);
 #endif
+#else /* __rtems__ */
+CTASSERT(sizeof(struct m_ext) == 172);
+#endif /* __rtems__ */
+#else
+CTASSERT(sizeof(struct m_ext) == 172);
 #endif
+#endif
+
 
 /*
  * Assert that the queue(3) macros produce code of the same size as an old

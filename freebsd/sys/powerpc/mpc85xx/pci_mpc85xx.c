@@ -819,10 +819,14 @@ static int fsl_pcib_alloc_msi(device_t dev, device_t child,
 static int fsl_pcib_release_msi(device_t dev, device_t child,
     int count, int *irqs)
 {
+#ifndef __rtems__
 	if (msi_vmem == NULL)
 		return (ENODEV);
 
 	vmem_xfree(msi_vmem, irqs[0], count);
+#else /* __rtems__ */
+	BSD_ASSERT(0);
+#endif /* __rtems__ */
 	return (0);
 }
 
@@ -852,17 +856,6 @@ static int fsl_pcib_map_msi(device_t dev, device_t child,
 	*data = (irq & 255);
 	*addr = ccsrbar_pa + mp->target;
 
-static int fsl_pcib_release_msi(device_t dev, device_t child,
-    int count, int *irqs)
-{
-#ifndef __rtems__
-	if (msi_vmem == NULL)
-		return (ENODEV);
-
-	vmem_xfree(msi_vmem, irqs[0], count);
-#else /* __rtems__ */
-	BSD_ASSERT(0);
-#endif /* __rtems__ */
 	return (0);
 }
 

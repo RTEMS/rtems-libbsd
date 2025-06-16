@@ -343,13 +343,19 @@ mve_stop(struct mve_enet_softc *sc)
 	if_setdrvflagbits(sc->ifp, 0, (IFF_DRV_OACTIVE | IFF_DRV_RUNNING));
 }
 
+static u_int
+mve_set_filter_on(void *arg, struct sockaddr_dl *sdl, u_int cnt)
+{
+	struct mve_enet_softc* sc = arg;
+	BSP_mve_mcast_filter_accept_add(sc->mp, LLADDR(sdl));
+	return 1;
+}
+
 static void
 mve_set_filters(struct ifnet *ifp)
 {
 struct mve_enet_softc *sc = (struct mve_enet_softc*) if_getsoftc( ifp );
 int                   iff = if_getflags(ifp);
-struct ifmultiaddr   *ifma;
-unsigned char        *lladdr;
 
 	BSP_mve_promisc_set( sc->mp, !!(iff & IFF_PROMISC));
 
@@ -358,21 +364,7 @@ unsigned char        *lladdr;
 	} else {
 		BSP_mve_mcast_filter_clear( sc->mp );
 
-		if_maddr_rlock( ifp );
-
-		CK_STAILQ_FOREACH( ifma, &ifp->if_multiaddrs, ifma_link ) {
-
-			if ( ifma->ifma_addr->sa_family != AF_LINK ) {
-				continue;
-			}
-
-			lladdr = LLADDR((struct sockaddr_dl *) ifma->ifma_addr);
-
-			BSP_mve_mcast_filter_accept_add( sc->mp, lladdr );
-
-		}
-
-		if_maddr_runlock( ifp );
+		if_foreach_llmaddr(sc->ifp, mve_set_filter_on, sc);
 	}
 }
 

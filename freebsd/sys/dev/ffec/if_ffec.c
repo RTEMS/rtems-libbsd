@@ -1516,7 +1516,7 @@ ffec_detach(device_t dev)
 		bus_release_resource(dev, SYS_RES_MEMORY, 0, sc->mem_res);
 
 #ifdef __rtems__
-	mtx_destory(&sc->mtx);
+	mtx_destroy(&sc->mtx);
 #endif /* __rtems__ */
 	FFEC_LOCK_DESTROY(sc);
 	return (0);
@@ -1905,7 +1905,7 @@ ffec_attach(device_t dev)
 		phynum = MII_PHY_ANY;
 	}
 #else /* __rtems__ */
-F_device_register_xref(OF_xref_from_node(ofw_node), dev);
+	OF_device_register_xref(OF_xref_from_node(ofw_node), dev);
 	if (ffec_get_phy_information(sc, ofw_node, dev, &phynum) != 0) {
 		phynum = MII_PHY_ANY;
 	}

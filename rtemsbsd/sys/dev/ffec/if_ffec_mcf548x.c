@@ -1577,8 +1577,7 @@ static driver_t fec_nexus_driver = {
 	sizeof(struct mcf548x_enet_struct)
 };
 
-static devclass_t fec_devclass;
-DRIVER_MODULE(fec, nexus, fec_nexus_driver, fec_devclass, 0, 0);
+DRIVER_MODULE(fec, nexus, fec_nexus_driver, 0, 0);
 MODULE_DEPEND(fec, nexus, 1, 1, 1);
 MODULE_DEPEND(fec, ether, 1, 1, 1);
 

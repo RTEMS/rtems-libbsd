@@ -850,10 +850,8 @@ static driver_t st_sdmmc_driver = {
 	sizeof(struct st_sdmmc_softc)
 };
 
-static devclass_t st_sdmmc_devclass;
-
-DRIVER_MODULE(st_sdmmc, nexus, st_sdmmc_driver, st_sdmmc_devclass, NULL, NULL);
-DRIVER_MODULE(mmc, st_sdmmc, mmc_driver, mmc_devclass, NULL, NULL);
+DRIVER_MODULE(st_sdmmc, nexus, st_sdmmc_driver, NULL, NULL);
+DRIVER_MODULE(mmc, st_sdmmc, mmc_driver, NULL, NULL);
 MODULE_DEPEND(st_sdmmc, mmc, 1, 1, 1);
 
 #endif /* LIBBSP_ARM_STM32H7_BSP_H */

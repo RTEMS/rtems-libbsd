@@ -297,10 +297,8 @@ static driver_t imx_rtems_gpio_driver = {
 	imx_rtems_gpio_methods,
 	sizeof(struct imx_rtems_gpio_softc),
 };
-static devclass_t imx_rtems_gpio_devclass;
 
 EARLY_DRIVER_MODULE(imx_rtems_gpio, simplebus, imx_rtems_gpio_driver,
-    imx_rtems_gpio_devclass, NULL, NULL,
-    BUS_PASS_RESOURCE + BUS_PASS_ORDER_MIDDLE);
+    NULL, NULL, BUS_PASS_RESOURCE + BUS_PASS_ORDER_MIDDLE);
 
 #endif /* LIBBSP_ARM_IMX_BSP_H */

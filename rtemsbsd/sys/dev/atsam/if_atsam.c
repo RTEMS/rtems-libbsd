@@ -996,6 +996,7 @@ static void
 if_atsam_setup_rxfilter(struct if_atsam_softc *sc)
 {
 	struct ifnet *ifp;
+	struct epoch_tracker et;
 	struct ifmultiaddr *ifma;
 	uint64_t mhash;
 	Gmac *pHw;
@@ -1014,14 +1015,15 @@ if_atsam_setup_rxfilter(struct if_atsam_softc *sc)
 		mhash = 0xffffffffffffffffLLU;
 	else {
 		mhash = 0;
-		if_maddr_rlock(ifp);
+
+		NET_EPOCH_ENTER(et);
 		CK_STAILQ_FOREACH(ifma, &sc->ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_LINK)
 				continue;
 			mhash |= 1LLU << if_atsam_get_hash_index(
 			    LLADDR((struct sockaddr_dl *) ifma->ifma_addr));
 		}
-		if_maddr_runlock(ifp);
+		NET_EPOCH_EXIT(et);
 	}
 
 	pHw->GMAC_HRB = (uint32_t)mhash;

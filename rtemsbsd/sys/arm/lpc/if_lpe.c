@@ -1412,6 +1412,7 @@ static void lpc_eth_interface_init(void *arg)
 static void lpc_eth_setup_rxfilter(lpc_eth_driver_entry *e)
 {
   struct ifnet *ifp = e->ifp;
+  struct epoch_tracker et;
 
   lpc_eth_enable_promiscous_mode((ifp->if_flags & IFF_PROMISC) != 0);
 
@@ -1424,7 +1425,7 @@ static void lpc_eth_setup_rxfilter(lpc_eth_driver_entry *e)
     lpc_eth->hashfilterl = 0x0;
     lpc_eth->hashfilterh = 0x0;
 
-    if_maddr_rlock(ifp);
+    NET_EPOCH_ENTER(et);
     CK_STAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
       uint32_t crc;
       uint32_t index;
@@ -1445,7 +1446,7 @@ static void lpc_eth_setup_rxfilter(lpc_eth_driver_entry *e)
         lpc_eth->hashfilterh |= 1U << (index - 32);
       }
     }
-    if_maddr_runlock(ifp);
+    NET_EPOCH_EXIT(et);
   }
 }
 

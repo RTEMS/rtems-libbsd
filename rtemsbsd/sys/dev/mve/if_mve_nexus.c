@@ -350,6 +350,7 @@ struct mve_enet_softc *sc = (struct mve_enet_softc*) if_getsoftc( ifp );
 int                   iff = if_getflags(ifp);
 struct ifmultiaddr   *ifma;
 unsigned char        *lladdr;
+struct epoch_tracker  et;
 
 	BSP_mve_promisc_set( sc->mp, !!(iff & IFF_PROMISC));
 
@@ -358,7 +359,7 @@ unsigned char        *lladdr;
 	} else {
 		BSP_mve_mcast_filter_clear( sc->mp );
 
-		if_maddr_rlock( ifp );
+		NET_EPOCH_ENTER(et);
 
 		CK_STAILQ_FOREACH( ifma, &ifp->if_multiaddrs, ifma_link ) {
 
@@ -372,7 +373,7 @@ unsigned char        *lladdr;
 
 		}
 
-		if_maddr_runlock( ifp );
+		NET_EPOCH_EXIT(et);
 	}
 }
 

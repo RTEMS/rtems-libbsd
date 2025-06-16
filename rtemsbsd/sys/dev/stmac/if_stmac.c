@@ -346,6 +346,7 @@ stmac_rx_setup_filter(struct stmac_softc *sc)
 	uint32_t macpfr;
 	uint64_t machtr;
 	const uint8_t *eaddr;
+	struct epoch_tracker et;
 
 	ifp = sc->ifp;
 
@@ -358,7 +359,7 @@ stmac_rx_setup_filter(struct stmac_softc *sc)
 	if ((ifp->if_flags & IFF_ALLMULTI) != 0) {
 		machtr = ~machtr;
 	} else {
-		if_maddr_rlock(ifp);
+		NET_EPOCH_ENTER(et);
 		CK_STAILQ_FOREACH(ifma, &sc->ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_LINK) {
 				continue;
@@ -367,7 +368,7 @@ stmac_rx_setup_filter(struct stmac_softc *sc)
 			eaddr = LLADDR((struct sockaddr_dl *)ifma->ifma_addr);
 			machtr |= stmac_hash_bit(eaddr);
 		}
-		if_maddr_runlock(ifp);
+		NET_EPOCH_EXIT(et);
 	}
 
 	regs = sc->heth.Instance;

@@ -217,12 +217,6 @@ mult_frac(uintmax_t x, uintmax_t multiplier, uintmax_t divisor)
 	return ((q * multiplier) + ((r * multiplier) / divisor));
 }
 
-static inline int64_t
-abs64(int64_t x)
-{
-	return (x < 0 ? -x : x);
-}
-
 #define	cpu_relax() RTEMS_COMPILER_MEMORY_BARRIER()
 
 #define	udelay(x) DELAY(x)

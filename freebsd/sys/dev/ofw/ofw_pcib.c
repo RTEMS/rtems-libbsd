@@ -602,6 +602,7 @@ ofw_pcib_activate_resource(device_t bus, device_t child, int type, int rid,
 	return (rman_activate_resource(res));
 }
 
+#ifndef __rtems__
 #ifdef __powerpc__
 static bus_space_tag_t
 ofw_pcib_bus_get_bus_tag(device_t bus, device_t child)
@@ -610,6 +611,7 @@ ofw_pcib_bus_get_bus_tag(device_t bus, device_t child)
 	return (&bs_le_tag);
 }
 #endif
+#endif // __rtems__
 
 static int
 ofw_pcib_deactivate_resource(device_t bus, device_t child, int type, int rid,

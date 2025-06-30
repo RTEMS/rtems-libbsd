@@ -1054,7 +1054,7 @@ tsec_ifmedia_sts(if_t ifp, struct ifmediareq *ifmr)
 
 #ifdef __rtems__
 	if (sc->tsec_mii == NULL)
-		return (0);
+		return;
 #endif /* __rtems__ */
 	TSEC_TRANSMIT_LOCK(sc);
 

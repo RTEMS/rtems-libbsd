@@ -150,7 +150,7 @@ xrefinfo_init(void *unsed)
 
 #ifdef __rtems__
 	if (OF_init(__DECONST(void *, bsp_fdt_get())) != 0)
-		return (ENXIO);
+		return;
 #endif /* __rtems__ */
 	/*
 	 * There is no locking during this init because it runs much earlier

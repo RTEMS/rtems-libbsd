@@ -57,7 +57,7 @@ int rtems_bsd_vfs_chown(
     const rtems_filesystem_location_info_t *loc, uid_t owner, gid_t group);
 int rtems_bsd_vfs_clonenode(rtems_filesystem_location_info_t *loc);
 void rtems_bsd_vfs_freenode(const rtems_filesystem_location_info_t *loc);
-int rtems_bsd_vfs_mount(rtems_filesystem_mount_table_entry_t *mt_entry);
+int rtems_bsd_vfs_mount(rtems_filesystem_mount_table_entry_t *mt_entry, const void *arg);
 int rtems_bsd_vfs_fsmount_me(
     rtems_filesystem_mount_table_entry_t *mt_entry, const void *data);
 int rtems_bsd_vfs_unmount(rtems_filesystem_mount_table_entry_t *mt_entry);
@@ -67,7 +67,7 @@ int rtems_bsd_vfs_mknod(const rtems_filesystem_location_info_t *parentloc,
 int rtems_bsd_vfs_rmnod(const rtems_filesystem_location_info_t *parentloc,
     const rtems_filesystem_location_info_t *loc);
 int rtems_bsd_vfs_utimens(
-    const rtems_filesystem_location_info_t *loc, time_t actime, time_t modtime);
+    const rtems_filesystem_location_info_t *loc, struct timespec *times);
 int rtems_bsd_vfs_symlink(const rtems_filesystem_location_info_t *parentloc,
     const char *name, size_t namelen, const char *target);
 ssize_t rtems_bsd_vfs_readlink(

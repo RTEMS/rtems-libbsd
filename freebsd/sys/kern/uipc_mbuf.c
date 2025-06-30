@@ -1795,11 +1795,12 @@ mb_free_mext_pgs(struct mbuf *m)
 
 	M_ASSERTEXTPG(m);
 	for (int i = 0; i < m->m_epg_npgs; i++) {
-		pg = PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
 #ifndef __rtems__
+		pg = PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
 		vm_page_unwire_noq(pg);
 		vm_page_free(pg);
 #else /* __rtems__*/
+		pg = (void*)PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
 		rtems_bsd_page_free(pg);
 #endif /* __rtems__ */
 	}
@@ -1881,7 +1882,11 @@ retry_page:
 				}
 #endif /* __rtems__ */
 			}
+#ifndef __rtems__
 			mb->m_epg_pa[i] = VM_PAGE_TO_PHYS(pg_array[i]);
+#else /* __rtems__ */
+			mb->m_epg_pa[i] = (uintptr_t)VM_PAGE_TO_PHYS(pg_array[i]);
+#endif /* __rtems__ */
 			mb->m_epg_npgs++;
 		}
 		mb->m_epg_last_len = length - PAGE_SIZE * (mb->m_epg_npgs - 1);
@@ -2009,9 +2014,11 @@ m_unmapped_uiomove(const struct mbuf *m, int m_off, struct uio *uio, int len)
 		off = 0;
 		seglen = min(seglen, len);
 		len -= seglen;
-		pg = PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
 #ifndef __rtems__
+		pg = PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
 		error = uiomove_fromphys(&pg, segoff, seglen, uio);
+#else /* __rtems__ */
+		pg = (void*)PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
 #endif /* __rtems__ */
 		pgoff = 0;
 	};

@@ -67,7 +67,7 @@ usb_mouse_read_task(rtems_task_argument arg)
 {
 	rtems_status_code sc;
 	struct usb_test_message msg;
-	uint32_t size;
+	size_t size;
 	int bytes;
 
 	rtask_active = true;
@@ -111,7 +111,7 @@ usb_mouse_open_task(rtems_task_argument arg)
 {
 	rtems_status_code sc;
 	struct usb_test_message msg;
-	uint32_t size;
+	size_t size;
 	int fd;
 
 	fd = -2;

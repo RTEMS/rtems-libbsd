@@ -44,7 +44,7 @@ static MALLOC_DEFINE(M_VMEM, "vmem", "VMEM buffers");
 int
 vmem_alloc(vmem_t *vm, vmem_size_t size, int flags, vmem_addr_t *addrp)
 {
-	*addrp = malloc(size, M_VMEM, M_WAITOK);
+	*addrp = (uintptr_t)malloc(size, M_VMEM, M_WAITOK);
 	return 0;
 }
 

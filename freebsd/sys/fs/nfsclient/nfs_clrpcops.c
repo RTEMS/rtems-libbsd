@@ -9495,7 +9495,8 @@ nfsm_split(struct mbuf *mp, uint64_t xfer)
 		    VM_ALLOC_WIRED);
 		m2->m_epg_pa[0] = VM_PAGE_TO_PHYS(pg);
 #else /* __rtems__ */
-    m2->m_epg_pa[0] = rtems_bsd_page_alloc(PAGE_SIZE, M_WAITOK | M_NODUMP);
+		m2->m_epg_pa[0] = (uintptr_t)rtems_bsd_page_alloc(
+		    PAGE_SIZE, M_WAITOK | M_NODUMP);
 #endif /* __rtems__ */
 		m2->m_epg_npgs = 1;
 

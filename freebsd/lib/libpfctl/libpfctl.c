@@ -501,7 +501,11 @@ pfctl_nv_add_uid(nvlist_t *nvparent, const char *name,
 static void
 pf_nvrule_uid_to_rule_uid(const nvlist_t *nvl, struct pf_rule_uid *uid)
 {
+#ifndef __rtems__
 	pf_nvuint_32_array(nvl, "uid", 2, uid->uid, NULL);
+#else /* __rtems__ */
+	pf_nvuint_16_array(nvl, "uid", 2, uid->uid, NULL);
+#endif /* __rtems__ */
 	uid->op = nvlist_get_number(nvl, "op");
 }
 

@@ -1916,7 +1916,7 @@ int rtems_timer_setitimer(
 
 int rtems_timer_signal(int sig, sig_t func) {
   if (sig != SIGALRM && sig != SIGINT) {
-    return signal(sig, func);
+    return (intptr_t)signal(sig, func);
   }
   return 0;
 }
@@ -1995,7 +1995,7 @@ static int rtems_timer_worker_start(void) {
 
   timer_worker_running = 1;
 
-  sc = rtems_task_start(timer_worker_id, rtems_timer_worker, NULL);
+  sc = rtems_task_start(timer_worker_id, rtems_timer_worker, (uintptr_t)NULL);
   if (sc != RTEMS_SUCCESSFUL) {
     printf("error: cannot start timer worker thread: %s\n", rtems_status_text(sc));
     rtems_task_delete(timer_worker_id);

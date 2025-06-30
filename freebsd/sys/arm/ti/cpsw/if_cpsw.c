@@ -1790,7 +1790,7 @@ cpsw_rx_enqueue(struct cpsw_softc *sc)
 		bd.flags = CPDMA_BD_OWNER;
 #ifdef __rtems__
 		rtems_cache_invalidate_multiple_data_lines(
-		    seg->ds_addr, bd.buflen);
+		    (void*)seg->ds_addr, bd.buflen);
 #endif /* __rtems__ */
 		cpsw_cpdma_write_bd(sc, slot, &bd);
 		++added;

@@ -98,10 +98,18 @@ vnet_nl_ctl_init(void)
 
 	NL_GLOBAL_LOCK();
 
+#ifndef __rtems__
 	struct nl_control *tmp = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *tmp = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 
 	if (tmp == NULL) {
+#ifndef __rtems__
 		atomic_store_ptr(&V_nl_ctl, ctl);
+#else /* __rtems__ */
+		atomic_store_ptr((void*)&V_nl_ctl, (uintptr_t)ctl);
+#endif /* __rtems__ */
 		CK_LIST_INSERT_HEAD(&vnets_head, ctl, ctl_next);
 		NL_LOG(LOG_DEBUG2, "VNET %p init done, inserted %p into global list",
 		    curvnet, ctl);
@@ -124,8 +132,13 @@ vnet_nl_ctl_destroy(const void *unused __unused)
 	/* Assume at the time all of the processes / sockets are dead */
 
 	NL_GLOBAL_LOCK();
+#ifndef __rtems__
 	ctl = atomic_load_ptr(&V_nl_ctl);
 	atomic_store_ptr(&V_nl_ctl, NULL);
+#else /* __rtems__ */
+	ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+	atomic_store_ptr((uintptr_t*)&V_nl_ctl, (uintptr_t)NULL);
+#endif /* __rtems__ */
 	if (ctl != NULL) {
 		NL_LOG(LOG_DEBUG2, "Removing %p from global list", ctl);
 		CK_LIST_REMOVE(ctl, ctl_next);

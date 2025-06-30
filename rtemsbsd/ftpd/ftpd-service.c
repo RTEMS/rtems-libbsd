@@ -89,7 +89,7 @@ ftpd_service(rtems_bsd_rc_conf* rc_conf)
         while (true) {
           int c;
 
-          c = getopt_r(aa->argc, aa->argv, "p:C:P:I:R:LA:v", &data);
+          c = getopt_r(aa->argc, (char * const *)aa->argv, "p:C:P:I:R:LA:v", &data);
           if (c == -1)
             break;
 

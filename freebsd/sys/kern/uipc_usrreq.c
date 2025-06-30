@@ -603,7 +603,7 @@ VOP_UNP_DETACH_rtems(IMFS_generic_t *vp)
 	vp->context = NULL;
 }
 #undef VOP_UNP_DETACH
-#define VOP_UNP_DETACH VOP_UNP_DETACH_rtems
+#define VOP_UNP_DETACH(x) VOP_UNP_DETACH_rtems((IMFS_generic_t*)(x))
 #endif /* __rtems__ */
 static int
 uipc_bindat(int fd, struct socket *so, struct sockaddr *nam, struct thread *td)

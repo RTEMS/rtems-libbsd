@@ -559,6 +559,11 @@ struct	resource *bus_alloc_resource(device_t dev, int type, int *rid,
 				     rman_res_t start, rman_res_t end,
 				     rman_res_t count, u_int flags);
 int	bus_activate_resource(device_t dev, struct resource *r);
+#ifdef __rtems__
+#undef bus_deactivate_resource
+#undef bus_map_resource
+#undef bus_unmap_resource
+#endif /* __rtems__ */
 int	bus_deactivate_resource(device_t dev, struct resource *r);
 int	bus_map_resource(device_t dev, struct resource *r,
 			 struct resource_map_request *args,

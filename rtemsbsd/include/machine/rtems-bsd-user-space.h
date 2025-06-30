@@ -48,6 +48,9 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
+/* for asprintf */
+#define __GNU_VISIBLE 1
+
 #include <stdio.h>
 
 #define _SC_CPUSET_SIZE 122

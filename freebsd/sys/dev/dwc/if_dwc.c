@@ -548,12 +548,14 @@ dwc_attach(device_t dev)
 		return (error);
 	}
 
+#ifndef __rtems__
 	/* Enable main clock */
 	if ((error = dwc_clock_init(sc)) != 0)
 		return (error);
 	/* De-assert main reset */
 	if ((error = dwc_reset_deassert(sc)) != 0)
 		return (error);
+#endif /* __rtems__ */
 
 	if (IF_DWC_INIT(dev) != 0)
 		return (ENXIO);

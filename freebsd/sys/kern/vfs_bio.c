@@ -57,6 +57,8 @@
 #include <sys/counter.h>
 #ifndef __rtems__
 #include <sys/devicestat.h>
+#else /* __rtems__ */
+void devstat_end_transaction_bio(struct devstat *ds, const struct bio *bp);
 #endif /* __rtems__ */
 #include <sys/eventhandler.h>
 #include <sys/fail.h>
@@ -95,6 +97,8 @@
 #include <vm/vm_map.h>
 #ifndef __rtems__
 #include <vm/swap_pager.h>
+#else /* __rtems__ */
+#include <vm/pmap.h>
 #endif /* __rtems__ */
 #include <rtems/bsd/local/opt_swap.h>
 

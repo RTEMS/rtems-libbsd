@@ -52,6 +52,9 @@
 
 #include "namespace.h"
 #include <sys/types.h>
+#ifdef __rtems__
+#include <sys/unistd.h>
+#endif /* __rtems__  */
 
 #include <netinet/in.h>
 

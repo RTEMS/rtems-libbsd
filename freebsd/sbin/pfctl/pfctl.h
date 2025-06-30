@@ -146,9 +146,7 @@ struct pfctl_eth_ruleset	*pf_find_or_create_eth_ruleset(const char *);
 void			 pf_remove_if_empty_eth_ruleset(
 			    struct pfctl_eth_ruleset *);
 
-#ifndef __rtems__
 void		 expand_label(char *, size_t, struct pfctl_rule *);
-#endif /* __rtems__ */
 
 const char *pfctl_proto2name(int);
 

@@ -1,4 +1,5 @@
 #include <machine/rtems-bsd-user-space.h>
+#include <machine/rtems-bsd-program.h>
 
 /*	$OpenBSD: dhclient.c,v 1.63 2005/02/06 17:10:13 krw Exp $	*/
 
@@ -538,7 +539,9 @@ main(int argc, char *argv[])
 
 	endpwent();
 
+#ifndef __rtems__
 	setproctitle("%s", ifi->name);
+#endif /* __rtems__ */
 
 	/* setgroups(2) is not permitted in capability mode. */
 	if (setgroups(1, &pw->pw_gid) != 0)
@@ -2488,6 +2491,9 @@ dhcp_option_ev_name(char *buf, size_t buflen, struct option *option)
 	return 1;
 }
 
+#ifdef __rtems__
+int daemonfd(int chdirfd, int nullfd);
+#endif /* __rtems__ */
 void
 go_daemon(void)
 {
@@ -2866,7 +2872,9 @@ fork_privchld(int fd, int fd2)
 		return (0);
 	}
 
+#ifndef __rtems__
 	setproctitle("%s [priv]", ifi->name);
+#endif /* __rtems__ */
 
 	setsid();
 	dup2(nullfd, STDIN_FILENO);

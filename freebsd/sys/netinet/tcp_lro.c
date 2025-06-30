@@ -80,6 +80,38 @@
 
 #include <machine/in_cksum.h>
 
+#ifdef __rtems__
+/* Pulled from FreeBSD sys/time.h which conflicts with Newlib sys/time.h */
+#define	__common_powers_of_two(a, b) \
+	((~(a) & ((a) - 1) & ~(b) & ((b) - 1)) + 1)
+
+static __inline uint64_t
+__utime64_scale32_floor(uint64_t x, uint32_t factor, uint32_t divisor)
+{
+	const uint64_t rem = x % divisor;
+
+	return (x / divisor * factor + (rem * factor) / divisor);
+}
+
+static __inline uint64_t
+__utime64_scale64_floor(uint64_t x, uint64_t factor, uint64_t divisor)
+{
+	const uint64_t gcd = __common_powers_of_two(factor, divisor);
+
+	return (__utime64_scale32_floor(x, factor / gcd, divisor / gcd));
+}
+
+static __inline uint64_t
+bintime2ns(const struct bintime *_bt)
+{
+	uint64_t ret;
+
+	ret = (uint64_t)(_bt->sec) * (uint64_t)1000000000;
+	ret += __utime64_scale64_floor(
+	    _bt->frac, 1000000000, 1ULL << 32) >> 32;
+	return (ret);
+}
+#endif /* __rtems__ */
 static MALLOC_DEFINE(M_LRO, "LRO", "LRO control structures");
 
 static void	tcp_lro_rx_done(struct lro_ctrl *lc);

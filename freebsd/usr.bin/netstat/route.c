@@ -37,6 +37,7 @@
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <err.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 #include <sys/param.h>

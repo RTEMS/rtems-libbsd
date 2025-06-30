@@ -156,10 +156,8 @@ struct ucred	*crget(void);
 struct ucred	*crhold(struct ucred *cr);
 struct ucred	*crcowget(struct ucred *cr);
 void	crcowfree(struct thread *td);
-#ifndef __rtems__
 void	cru2x(struct ucred *cr, struct xucred *xcr);
 void	cru2xt(struct thread *td, struct xucred *xcr);
-#endif /* __rtems__ */
 void	crsetgroups(struct ucred *cr, int n, gid_t *groups);
 bool	groupmember(gid_t gid, struct ucred *cred);
 bool	realgroupmember(gid_t gid, struct ucred *cred);

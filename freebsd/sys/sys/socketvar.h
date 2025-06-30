@@ -485,10 +485,8 @@ enum shutdown_how;
 /*
  * From uipc_socket and friends
  */
-#ifndef __rtems__
 int	getsockaddr(struct sockaddr **namp, const struct sockaddr *uaddr,
 	    size_t len);
-#endif /* __rtems__ */
 int	getsock_cap(struct thread *td, int fd, cap_rights_t *rightsp,
 	    struct file **fpp, struct filecaps *havecaps);
 int	getsock(struct thread *td, int fd, cap_rights_t *rightsp,

@@ -1,10 +1,9 @@
-/*
- * Copyright (c) 2014 embedded brains GmbH. All rights reserved.
+/*-
+ * SPDX-License-Identifier: BSD-2-Clause
  *
- *  Dornierstr. 4
- *  82178 Puchheim
- *  Germany
- *  <rtems@embedded-brains.de>
+ * Copyright (c) 2014 Roger Pau Monné <roger.pau@citrix.com>
+ * All rights reserved.
+ * Copyright (c) 2018 Netflix, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -28,37 +27,16 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/rtems-bsd-kernel-space.h>
+#ifndef _SYS_BOOT_H_
+#define _SYS_BOOT_H_
 
-#include <rtems/rtems_bsdnet.h>
+#define PATH_KERNEL	"/boot/kernel/kernel"
 
-#include <sys/socket.h>
+int boot_env_to_howto(void);
+void boot_howto_to_env(int howto);
+int boot_parse_arg(const char *v);
+int boot_parse_cmdline_delim(char *cmdline, const char *delim);
+int boot_parse_cmdline(char *cmdline);
+int boot_parse_args(int argc, char *argv[]);
 
-#include <net/route.h>
-#include <net/route/route_ctl.h>
-
-#include <errno.h>
-#include <strings.h>
-
-int
-rtems_bsdnet_rtrequest(int req, struct sockaddr *dst, struct sockaddr *gateway,
-    struct sockaddr *netmask, int flags, struct rib_cmd_info **rc)
-{
-	int error;
-  struct rt_addrinfo info;
-
-  bzero((void *)&info, sizeof(info));
-  info.rti_flags = flags;
-  info.rti_info[RTAX_DST] = dst;
-  info.rti_info[RTAX_GATEWAY] = gateway;
-  info.rti_info[RTAX_NETMASK] = netmask;
-
-  error = rib_action(RT_DEFAULT_FIB, RTM_ADD, &info, *rc);
-	if (error != 0) {
-		errno = error;
-
-		return (-1);
-	} else {
-		return (0);
-	}
-}
+#endif /* !_SYS_BOOT_H_ */

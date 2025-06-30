@@ -100,9 +100,7 @@
 #include <vm/vm_map.h>
 #include <vm/vm_page.h>
 #include <vm/vm_kern.h>
-#ifndef __rtems__
 #include <vm/vnode_pager.h>
-#endif /* __rtems__ */
 #include <vm/uma.h>
 
 #if defined(DEBUG_VFS_LOCKS) && (!defined(INVARIANTS) || !defined(WITNESS))

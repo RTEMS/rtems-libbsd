@@ -74,9 +74,7 @@
 #include <vm/pmap.h>
 #include <vm/vm_map.h>
 #include <vm/vm_object.h>
-#ifndef __rtems__
 #include <vm/vnode_pager.h>
-#endif /* __rtems__ */
 #include <vm/uma.h>
 #include <sys/aio.h>
 

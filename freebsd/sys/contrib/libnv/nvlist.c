@@ -32,6 +32,7 @@
 #ifdef __rtems__
 #ifdef _KERNEL
 #include <machine/rtems-bsd-kernel-space.h>
+#define _VA_LIST_DECLARED
 #else /* _KERNEL */
 #include <machine/rtems-bsd-user-space.h>
 #include <machine/rtems-bsd-program.h>

@@ -13,4 +13,6 @@
 #define UOFF_TO_IDX(off) OFF_TO_IDX(off)
 #define OBJ_MAX_SIZE    (OFF_TO_IDX(UINT64_MAX) + 1)
 
+bool vm_object_mightbedirty(vm_object_t object);
+
 #endif

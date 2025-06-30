@@ -54,6 +54,7 @@
 #include <machine/rtems-bsd-vfs.h>
 
 #include <errno.h>
+#include <rtems/bspIo.h>
 #include <rtems/imfs.h>
 #include <rtems/libio.h>
 #include <rtems/seterr.h>

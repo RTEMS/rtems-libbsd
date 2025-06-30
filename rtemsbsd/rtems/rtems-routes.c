@@ -29,7 +29,9 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include <net/if.h>
 #include <net/route.h>

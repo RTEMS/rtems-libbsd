@@ -410,11 +410,9 @@ int	pfctl_get_rule(int dev, uint32_t nr, uint32_t ticket,
 int	pfctl_get_clear_rule(int dev, uint32_t nr, uint32_t ticket,
 	    const char *anchor, uint32_t ruleset, struct pfctl_rule *rule,
 	    char *anchor_call, bool clear);
-#ifndef __rtems__
 int	pfctl_add_rule(int dev, const struct pfctl_rule *r,
 	    const char *anchor, const char *anchor_call, uint32_t ticket,
 	    uint32_t pool_ticket);
-#endif /* __rtems__ */
 int	pfctl_set_keepcounters(int dev, bool keep);
 int	pfctl_get_states(int dev, struct pfctl_states *states);
 void	pfctl_free_states(struct pfctl_states *states);

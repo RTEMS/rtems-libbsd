@@ -1739,8 +1739,10 @@ dwc_attach(device_t dev)
 	if (IF_DWC_INIT(dev) != 0)
 		return (ENXIO);
 
+#ifndef __rtems__
 	if (dwc_clock_init(dev) != 0)
 		return (ENXIO);
+#endif /* __rtems__ */
 
 	if (bus_alloc_resources(dev, dwc_spec, sc->res)) {
 		device_printf(dev, "could not allocate resources\n");

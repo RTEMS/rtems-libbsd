@@ -52,6 +52,7 @@
 #include <ifaddrs.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 struct rtems_bsd_arp_processor_context {
 	int fd;

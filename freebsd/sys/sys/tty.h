@@ -40,6 +40,9 @@
 #include <sys/selinfo.h>
 #include <sys/_termios.h>
 #include <sys/ttycom.h>
+#ifdef __rtems__
+#include <sys/kassert.h>
+#endif /* __rtems__ */
 #include <sys/ttyqueue.h>
 
 struct cdev;

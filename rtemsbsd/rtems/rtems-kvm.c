@@ -4,6 +4,7 @@
 #include <kvm.h>
 #include <nlist.h>
 #include <assert.h>
+#include <string.h>
 
 #include "kvm_private.h"
 

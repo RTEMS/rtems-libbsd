@@ -249,6 +249,8 @@
 
 #define _sigprocmask			sigprocmask
 
+#define _accept				accept
+#define _nanosleep			nanosleep
 #define _recvfrom			recvfrom
 #define _sendto				sendto
 #define _setsockopt			setsockopt
@@ -258,7 +260,10 @@
 #define _getprogname			getprogname
 #define _getsockname			getsockname
 #define _bind				bind
+#define _err				err
 #define _getsockopt			getsockopt
+#define _listen				listen
+#define _nsdispatch			nsdispatch
 #define _poll				poll
 #define _pthread_getspecific		pthread_getspecific
 #define _pthread_key_create		pthread_key_create
@@ -270,6 +275,10 @@
 #define _pthread_rwlock_unlock		pthread_rwlock_unlock
 #define _pthread_rwlock_wrlock		pthread_rwlock_wrlock
 #define _pthread_setspecific		pthread_setspecific
+#define _recvmsg			recvmsg
+#define _select				select
+#define _sendmsg			sendmsg
+#define _warn				warn
 #endif /* __rtems__ */
 
 #endif /* _NAMESPACE_H_ */

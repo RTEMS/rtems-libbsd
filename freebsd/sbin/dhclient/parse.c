@@ -433,6 +433,9 @@ convert_num(unsigned char *buf, char *str, unsigned base, int size)
 		}
 }
 
+#ifdef __rtems__
+time_t timegm (struct tm* time_ptr);
+#endif /* __rtems__ */
 /*
  * date :== NUMBER NUMBER SLASH NUMBER SLASH NUMBER
  *		NUMBER COLON NUMBER COLON NUMBER SEMI

@@ -73,6 +73,16 @@ static int __icheckhost(const struct sockaddr *, socklen_t, const char *);
 
 char paddr[NI_MAXHOST];
 
+#ifdef __rtems__
+/* These are present in the FreeBSD version of unistd.h */
+int rcmd_af(char **ahost, int inport, const char *locuser, const char *remuser,
+    const char *cmd, int *fd2p, int af);
+int rcmdsh(char **ahost, int inport, const char *locuser, const char *remuser,
+    const char *cmd, const char *rshprog);
+int rresvport_af(int *alport, int family);
+int iruserok_sa(const void *ra, int rlen, int superuser, const char *ruser,
+    const char *luser);
+#endif /* __rtems__ */
 int
 rcmd(char **ahost, int rport, const char *locuser, const char *remuser,
     const char *cmd, int *fd2p)

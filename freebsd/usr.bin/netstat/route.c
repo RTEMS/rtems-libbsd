@@ -43,6 +43,7 @@ static char sccsid[] = "From: @(#)route.c	8.6 (Berkeley) 4/28/95";
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <err.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 #include <sys/param.h>

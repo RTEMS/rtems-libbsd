@@ -56,6 +56,9 @@ static char *sccsid = "@(#)xdr_rec.c	2.2 88/08/01 4.0 RPCSRC";
 
 #include "namespace.h"
 #include <sys/types.h>
+#ifdef __rtems__
+#include <sys/unistd.h>
+#endif /* __rtems__  */
 
 #include <netinet/in.h>
 

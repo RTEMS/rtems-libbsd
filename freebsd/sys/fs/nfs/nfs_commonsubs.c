@@ -1,4 +1,5 @@
 #include <machine/rtems-bsd-kernel-space.h>
+#include <machine/rtems-bsd-page.h>
 
 /*-
  * SPDX-License-Identifier: BSD-3-Clause

@@ -53,8 +53,13 @@
 #include <sys/time.h>
 #include <sys/vnode.h>
 
+#include <netconfig.h>
 #include <rpc/rpc.h>
+#include <rpc/rpcb_prot.h>
+typedef struct rpcblist rpcblist;
+#include <rpc/rpcb_clnt.h>
 
+#include <err.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>

@@ -71,6 +71,9 @@ in_cksum_update(struct ip *ip)
 #endif
 #endif
 
+#ifdef __rtems__
+u_int do_cksum(const void *, int);
+#endif /* __rtems__ */
 #ifdef _KERNEL
 #if defined(IPVERSION) && (IPVERSION == 4)
 u_int in_cksum_hdr(const struct ip *ip);

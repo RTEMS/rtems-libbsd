@@ -49,6 +49,7 @@
 #include <rtems/test-info.h>
 #include <rtems/stackchk.h>
 #include <rtems/bsd/bsd.h>
+#include <rtems/bsd/iface.h>
 #include <rtems/bsd/modules.h>
 #include <rtems/dhcpcd.h>
 

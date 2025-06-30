@@ -877,7 +877,7 @@ mveth_enable_irqs(struct mveth_private *mp, uint32_t mask)
 {
 rtems_interrupt_level l;
 uint32_t val;
-	rtems_interrupt_disable(l);
+	rtems_interrupt_local_disable(l);
 
 	val  = MV_READ(MV643XX_ETH_INTERRUPT_ENBL_R(mp->port_num));
 	val  = (val | mask | MV643XX_ETH_IRQ_EXT_ENA) & mp->irq_mask;
@@ -888,7 +888,7 @@ uint32_t val;
 	val  = (val | mask) & mp->xirq_mask;
 	MV_WRITE(MV643XX_ETH_INTERRUPT_EXTEND_ENBL_R(mp->port_num), val);
 
-	rtems_interrupt_enable(l);
+	rtems_interrupt_local_enable(l);
 }
 
 static inline uint32_t
@@ -896,7 +896,7 @@ mveth_disable_irqs(struct mveth_private *mp, uint32_t mask)
 {
 rtems_interrupt_level l;
 uint32_t val,xval,tmp;
-	rtems_interrupt_disable(l);
+	rtems_interrupt_local_disable(l);
 
 	val  = MV_READ(MV643XX_ETH_INTERRUPT_ENBL_R(mp->port_num));
 	tmp  = ( (val & ~mask) | MV643XX_ETH_IRQ_EXT_ENA ) & mp->irq_mask;
@@ -906,7 +906,7 @@ uint32_t val,xval,tmp;
 	tmp  = (xval & ~mask) & mp->xirq_mask;
 	MV_WRITE(MV643XX_ETH_INTERRUPT_EXTEND_ENBL_R(mp->port_num), tmp);
 
-	rtems_interrupt_enable(l);
+	rtems_interrupt_local_enable(l);
 
 	return (val | xval);
 }

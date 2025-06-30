@@ -420,6 +420,11 @@ void	tdsignal(struct thread *td, int sig);
 void	trapsignal(struct thread *td, ksiginfo_t *ksi);
 
 #endif /* _KERNEL */
+#else /* __rtems__ */
+#define	ksiginfo_init(ksi)			\
+do {						\
+	bzero(ksi, sizeof(ksiginfo_t));		\
+} while (0)
 #endif /* __rtems__ */
 #ifdef __rtems__
 #ifdef _KERNEL

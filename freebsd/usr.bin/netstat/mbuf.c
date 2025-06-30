@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)mbuf.c	8.1 (Berkeley) 6/6/93";
 
 #ifdef __rtems__
 #include <machine/rtems-bsd-program.h>
+#include <err.h>
 #endif /* __rtems__ */
 #include <sys/cdefs.h>
 #include <sys/param.h>

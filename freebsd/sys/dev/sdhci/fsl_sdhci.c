@@ -64,6 +64,11 @@ uint32_t imx_ccm_sdhci_hz(void);
 #endif /* __rtems__ */
 #endif
 
+#ifdef __rtems__
+#ifdef __aarch64__
+uint32_t imx_ccm_sdhci_hz(void);
+#endif /* __aarch64__ */
+#endif /* __rtems__ */
 #ifdef __powerpc__
 #ifndef __rtems__
 #include <powerpc/mpc85xx/mpc85xx.h>

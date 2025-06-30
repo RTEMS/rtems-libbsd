@@ -141,4 +141,8 @@ static __inline int XDMA_CHANNEL_CONTROL(device_t dev,
 	return (rc);
 }
 
+void pmap_kremove_device(vm_offset_t, vm_size_t);
+void pmap_kenter_device(vm_offset_t, vm_size_t, vm_paddr_t);
+#define vtophys(x) (x)
+
 #endif /* _xdma_if_h_ */

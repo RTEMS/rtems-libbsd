@@ -54,6 +54,9 @@
 #include <netinet/udp.h>
 #include <sys/eventhandler.h>
 
+#ifdef __rtems__
+#include <sys/ucred.h>
+#endif /* __rtems__ */
 extern const struct sctp_cc_functions sctp_cc_functions[];
 extern const struct sctp_ss_functions sctp_ss_functions[];
 

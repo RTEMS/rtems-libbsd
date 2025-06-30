@@ -64,6 +64,7 @@
 #include <vm/uma_dbg.h>
 #ifdef __rtems__
 #include <rtems/bsd/bsd.h>
+#include <machine/rtems-bsd-page.h>
 #endif /* __rtems__ */
 
 _Static_assert(MJUMPAGESIZE > MCLBYTES,

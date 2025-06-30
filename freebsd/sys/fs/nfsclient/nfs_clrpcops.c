@@ -48,6 +48,8 @@
 #include "opt_inet6.h"
 #else /* __rtems__ */
 #include <rtems/bsd/local/opt_inet6.h>
+#include <rtems/version.h>
+#include <machine/rtems-bsd-page.h>
 #endif /* __rtems__ */
 
 #include <fs/nfs/nfsport.h>

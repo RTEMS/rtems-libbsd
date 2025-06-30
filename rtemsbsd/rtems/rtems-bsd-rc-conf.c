@@ -34,12 +34,14 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <regex.h>
 
 #include <syslog.h>
 
 #include <rtems.h>
+#include <rtems/bsd/bsd.h>
 #include <rtems/chain.h>
 
 #include <machine/rtems-bsd-rc-conf.h>

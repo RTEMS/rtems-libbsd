@@ -78,6 +78,7 @@
 #ifdef __rtems__
 #include <rtems/score/thread.h>
 #include <sys/epoch.h>
+#include <sched.h>
 #endif /* __rtems__ */
 
 /*

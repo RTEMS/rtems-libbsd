@@ -35,6 +35,7 @@
 #include <errno.h>
 #ifdef __rtems__
 #define __need_getopt_newlib
+#define __XSI_VISIBLE 1
 #endif /* __rtems__ */
 #include <getopt.h>
 #include <limits.h>

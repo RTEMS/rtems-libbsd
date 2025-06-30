@@ -166,9 +166,9 @@ if_ppp_enqueue(struct ifqueue *ifq, struct mbuf *m)
 {
 	rtems_interrupt_level level;
 
-	rtems_interrupt_disable(level);
+	rtems_interrupt_local_disable(level);
 	_IF_ENQUEUE(ifq, m);
-	rtems_interrupt_enable(level);
+	rtems_interrupt_local_enable(level);
 }
 
 static inline struct mbuf *
@@ -177,9 +177,9 @@ if_ppp_dequeue(struct ifqueue *ifq)
 	struct mbuf *m;
 	rtems_interrupt_level level;
 
-	rtems_interrupt_disable(level);
+	rtems_interrupt_local_disable(level);
 	_IF_DEQUEUE(ifq, m);
-	rtems_interrupt_enable(level);
+	rtems_interrupt_local_enable(level);
 
 	return m;
 }

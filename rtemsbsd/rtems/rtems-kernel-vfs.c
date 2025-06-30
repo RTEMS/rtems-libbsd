@@ -519,8 +519,9 @@ rtems_bsd_vfs_chown(
 }
 
 int
-rtems_bsd_vfs_mount(rtems_filesystem_mount_table_entry_t *mt_entry)
+rtems_bsd_vfs_mount(rtems_filesystem_mount_table_entry_t *mt_entry, const void *arg)
 {
+	(void)arg;
 	int error;
 	if (RTEMS_BSD_VFS_TRACE) {
 		printf("bsd: vfs: mount\n");
@@ -695,8 +696,9 @@ out:
 
 int
 rtems_bsd_vfs_utimens(
-    const rtems_filesystem_location_info_t *loc, time_t actime, time_t modtime)
+    const rtems_filesystem_location_info_t *loc, struct timespec *times)
 {
+	(void)times;
 	int error;
 	if (RTEMS_BSD_VFS_TRACE) {
 		printf("bsd: vfs: utimens\n");

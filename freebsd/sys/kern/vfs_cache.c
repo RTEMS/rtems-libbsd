@@ -1657,7 +1657,11 @@ cache_zap_locked(struct namecache *ncp)
 		SDT_PROBE3(vfs, namecache, zap, done, dvp, ncp->nc_name, vp);
 		TAILQ_REMOVE(&vp->v_cache_dst, ncp, nc_dst);
 		if (ncp == vp->v_cache_dd) {
+#ifndef __rtems__
 			atomic_store_ptr(&vp->v_cache_dd, NULL);
+#else /* __rtems__ */
+			atomic_store_ptr((uintptr_t*)&vp->v_cache_dd, (uintptr_t)NULL);
+#endif /* __rtems__ */
 		}
 	} else {
 		SDT_PROBE2(vfs, namecache, zap_negative, done, dvp, ncp->nc_name);
@@ -1665,7 +1669,11 @@ cache_zap_locked(struct namecache *ncp)
 	}
 	if (ncp->nc_flag & NCF_ISDOTDOT) {
 		if (ncp == dvp->v_cache_dd) {
+#ifndef __rtems__
 			atomic_store_ptr(&dvp->v_cache_dd, NULL);
+#else /* __rtems__ */
+			atomic_store_ptr((uintptr_t*)&dvp->v_cache_dd, (uintptr_t)NULL);
+#endif /* __rtems__ */
 		}
 	} else {
 		LIST_REMOVE(ncp, nc_src);
@@ -1851,7 +1859,11 @@ retry_dotdot:
 				mtx_unlock(dvlp2);
 			cache_free(ncp);
 		} else {
+#ifndef __rtems__
 			atomic_store_ptr(&dvp->v_cache_dd, NULL);
+#else /* __rtems__ */
+			atomic_store_ptr((uintptr_t*)&dvp->v_cache_dd, (uintptr_t)NULL);
+#endif /* __rtems__ */
 			mtx_unlock(dvlp);
 			if (dvlp2 != NULL)
 				mtx_unlock(dvlp2);
@@ -2467,7 +2479,11 @@ cache_enter_dotdot_prep(struct vnode *dvp, struct vnode *vp,
 	uint32_t hash;
 	int len;
 
+#ifndef __rtems__
 	if (atomic_load_ptr(&dvp->v_cache_dd) == NULL)
+#else /* __rtems__ */
+	if (atomic_load_ptr((uintptr_t *)&dvp->v_cache_dd) == NULL)
+#endif /* __rtems__ */
 		return;
 	len = cnp->cn_namelen;
 	cache_celockstate_init(&cel);
@@ -2480,7 +2496,11 @@ cache_enter_dotdot_prep(struct vnode *dvp, struct vnode *vp,
 	} else {
 		ncp = NULL;
 	}
+#ifndef __rtems__
 	atomic_store_ptr(&dvp->v_cache_dd, NULL);
+#else /* __rtems__ */
+	atomic_store_ptr((uintptr_t*)&dvp->v_cache_dd, (uintptr_t)NULL);
+#endif /* __rtems__ */
 	cache_enter_unlock(&cel);
 	if (ncp != NULL)
 		cache_free(ncp);
@@ -2626,7 +2646,11 @@ cache_enter_time(struct vnode *dvp, struct vnode *vp, struct componentname *cnp,
 		KASSERT(vp == NULL || vp->v_type == VDIR,
 		    ("wrong vnode type %p", vp));
 		atomic_thread_fence_rel();
+#ifndef __rtems__
 		atomic_store_ptr(&dvp->v_cache_dd, ncp);
+#else /* __rtems__ */
+		atomic_store_ptr((uintptr_t*)&dvp->v_cache_dd, (uintptr_t)ncp);
+#endif /* __rtems__ */
 	}
 
 	if (vp != NULL) {
@@ -2643,10 +2667,18 @@ cache_enter_time(struct vnode *dvp, struct vnode *vp, struct componentname *cnp,
 					ndd = NULL;
 			}
 			atomic_thread_fence_rel();
+#ifndef __rtems__
 			atomic_store_ptr(&vp->v_cache_dd, ncp);
+#else /* __rtems__ */
+			atomic_store_ptr((uintptr_t*)&vp->v_cache_dd, (uintptr_t)ncp);
+#endif /* __rtems__ */
 		} else if (vp->v_type != VDIR) {
 			if (vp->v_cache_dd != NULL) {
+#ifndef __rtems__
 				atomic_store_ptr(&vp->v_cache_dd, NULL);
+#else /* __rtems__ */
+				atomic_store_ptr((uintptr_t*)&vp->v_cache_dd, (uintptr_t)NULL);
+#endif /* __rtems__ */
 			}
 		}
 	}
@@ -2841,7 +2873,11 @@ cache_changesize_set_temp(struct nchashhead *temptbl, u_long temphash)
 	 * At this point everyone sees the updated hash value, but they still
 	 * see the old table.
 	 */
+#ifndef __rtems__
 	atomic_store_ptr(&nchashtbl, temptbl);
+#else /* __rtems__ */
+	atomic_store_ptr((uintptr_t*)&nchashtbl, (uintptr_t)temptbl);
+#endif /* __rtems__ */
 	atomic_thread_fence_rel();
 	vfs_smr_synchronize();
 	/*
@@ -2864,7 +2900,11 @@ cache_changesize_set_new(struct nchashhead *new_tbl, u_long new_hash)
 	 * Change the pointer first. This wont result in out of bounds access
 	 * since the temporary table is guaranteed to be smaller.
 	 */
+#ifndef __rtems__
 	atomic_store_ptr(&nchashtbl, new_tbl);
+#else /* __rtems__ */
+	atomic_store_ptr((uintptr_t*)&nchashtbl, (uintptr_t)new_tbl);
+#endif /* __rtems__ */
 	atomic_thread_fence_rel();
 	vfs_smr_synchronize();
 	/*
@@ -2980,7 +3020,11 @@ cache_has_entries(struct vnode *vp)
 {
 
 	if (LIST_EMPTY(&vp->v_cache_src) && TAILQ_EMPTY(&vp->v_cache_dst) &&
+#ifndef __rtems__
 	    atomic_load_ptr(&vp->v_cache_dd) == NULL)
+#else /* __rtems__ */
+	    atomic_load_ptr((uintptr_t*)&vp->v_cache_dd) == NULL)
+#endif /* __rtems__ */
 		return (false);
 	return (true);
 }
@@ -3640,12 +3684,20 @@ vn_fullpath_any_smr(struct vnode *vp, struct vnode *rdir, char *buf,
 		i++;
 #endif
 		if ((vp->v_vflag & VV_ROOT) != 0) {
+#ifndef __rtems__
 			mp = atomic_load_ptr(&vp->v_mount);
+#else /* __rtems__ */
+			mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mount);
+#endif /* __rtems__ */
 			if (mp == NULL) {
 				cache_rev_failed(&reason);
 				goto out_abort;
 			}
+#ifndef __rtems__
 			tvp = atomic_load_ptr(&mp->mnt_vnodecovered);
+#else /* __rtems__ */
+			tvp = (void*)atomic_load_ptr((uintptr_t*)&mp->mnt_vnodecovered);
+#endif /* __rtems__ */
 			tvp_seqc = vn_seqc_read_any(tvp);
 			if (seqc_in_modify(tvp_seqc)) {
 				cache_rev_failed(&reason);
@@ -3691,7 +3743,11 @@ vn_fullpath_any_smr(struct vnode *vp, struct vnode *rdir, char *buf,
 		/*
 		 * Acquire fence provided by vn_seqc_read_any above.
 		 */
+#ifndef __rtems__
 		if (__predict_false(atomic_load_ptr(&vp->v_cache_dd) != ncp)) {
+#else /* __rtems__ */
+		if (__predict_false(atomic_load_ptr((uintptr_t*)&vp->v_cache_dd) != ncp)) {
+#endif /* __rtems__ */
 			cache_rev_failed(&reason);
 			goto out_abort;
 		}
@@ -4737,7 +4793,11 @@ cache_fplookup_final_modifying(struct cache_fpl *fpl)
 		return (cache_fpl_partial(fpl));
 	}
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&dvp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&dvp->v_mount);
+#endif /* __rtems__ */
 	if (__predict_false(mp == NULL)) {
 		return (cache_fpl_aborted(fpl));
 	}
@@ -5348,7 +5408,11 @@ cache_fplookup_dotdot(struct cache_fpl *fpl)
 	/*
 	 * Acquire fence provided by vn_seqc_read_any above.
 	 */
+#ifndef __rtems__
 	if (__predict_false(atomic_load_ptr(&dvp->v_cache_dd) != ncp)) {
+#else /* __rtems__ */
+	if (__predict_false(atomic_load_ptr((uintptr_t*)&dvp->v_cache_dd) != ncp)) {
+#endif /* __rtems__ */
 		return (cache_fpl_aborted(fpl));
 	}
 
@@ -5476,7 +5540,11 @@ cache_fplookup_symlink(struct cache_fpl *fpl)
 		}
 	}
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&dvp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&dvp->v_mount);
+#endif /* __rtems__ */
 	if (__predict_false(mp == NULL)) {
 		return (cache_fpl_aborted(fpl));
 	}
@@ -5516,7 +5584,11 @@ cache_fplookup_symlink(struct cache_fpl *fpl)
 		 * to a filesystem which can do lockless lookup, but the absolute
 		 * symlink can be wandering off to one which does not.
 		 */
+#ifndef __rtems__
 		mp = atomic_load_ptr(&fpl->dvp->v_mount);
+#else /* __rtems__ */
+		mp = (void*)atomic_load_ptr((uintptr_t*)&fpl->dvp->v_mount);
+#endif /* __rtems__ */
 		if (__predict_false(mp == NULL)) {
 			return (cache_fpl_aborted(fpl));
 		}
@@ -5566,7 +5638,11 @@ cache_fplookup_next(struct cache_fpl *fpl)
 		return (cache_fplookup_noentry(fpl));
 	}
 
+#ifndef __rtems__
 	tvp = atomic_load_ptr(&ncp->nc_vp);
+#else /* __rtems__ */
+	tvp = (void*)atomic_load_ptr((uintptr_t*)&ncp->nc_vp);
+#endif /* __rtems__ */
 	nc_flag = atomic_load_char(&ncp->nc_flag);
 	if ((nc_flag & NCF_NEGATIVE) != 0) {
 		return (cache_fplookup_neg(fpl, ncp, hash));
@@ -5632,7 +5708,11 @@ cache_fplookup_climb_mount(struct cache_fpl *fpl)
 	vp_seqc = fpl->tvp_seqc;
 
 	VNPASS(vp->v_type == VDIR || vp->v_type == VREG || vp->v_type == VBAD, vp);
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mountedhere);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mountedhere);
+#endif /* __rtems__ */
 	if (__predict_false(mp == NULL)) {
 		return (0);
 	}
@@ -5654,7 +5734,11 @@ cache_fplookup_climb_mount(struct cache_fpl *fpl)
 			vfs_op_thread_exit_crit(mp, mpcpu);
 			return (cache_fpl_partial(fpl));
 		}
+#ifndef __rtems__
 		vp = atomic_load_ptr(&mp->mnt_rootvnode);
+#else /* __rtems__ */
+		vp = (void*)atomic_load_ptr((uintptr_t*)&mp->mnt_rootvnode);
+#endif /* __rtems__ */
 		if (vp == NULL) {
 			vfs_op_thread_exit_crit(mp, mpcpu);
 			return (cache_fpl_partial(fpl));
@@ -5666,7 +5750,11 @@ cache_fplookup_climb_mount(struct cache_fpl *fpl)
 		}
 		prev_mp = mp;
 		prev_mpcpu = mpcpu;
+#ifndef __rtems__
 		mp = atomic_load_ptr(&vp->v_mountedhere);
+#else /* __rtems__ */
+		mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mountedhere);
+#endif /* __rtems__ */
 		if (mp == NULL)
 			break;
 	}
@@ -5689,7 +5777,11 @@ cache_fplookup_cross_mount(struct cache_fpl *fpl)
 	vp_seqc = fpl->tvp_seqc;
 
 	VNPASS(vp->v_type == VDIR || vp->v_type == VREG || vp->v_type == VBAD, vp);
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mountedhere);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mountedhere);
+#endif /* __rtems__ */
 	if (__predict_false(mp == NULL)) {
 		return (0);
 	}
@@ -5705,7 +5797,11 @@ cache_fplookup_cross_mount(struct cache_fpl *fpl)
 		vfs_op_thread_exit_crit(mp, mpcpu);
 		return (cache_fpl_partial(fpl));
 	}
+#ifndef __rtems__
 	vp = atomic_load_ptr(&mp->mnt_rootvnode);
+#else /* __rtems__ */
+	vp = (void*)atomic_load_ptr((uintptr_t*)&mp->mnt_rootvnode);
+#endif /* __rtems__ */
 	if (__predict_false(vp == NULL)) {
 		vfs_op_thread_exit_crit(mp, mpcpu);
 		return (cache_fpl_partial(fpl));
@@ -5715,7 +5811,11 @@ cache_fplookup_cross_mount(struct cache_fpl *fpl)
 	if (seqc_in_modify(vp_seqc)) {
 		return (cache_fpl_partial(fpl));
 	}
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mountedhere);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mountedhere);
+#endif /* __rtems__ */
 	if (__predict_false(mp != NULL)) {
 		/*
 		 * There are possibly more mount points on top.
@@ -6195,7 +6295,11 @@ cache_fplookup_impl(struct vnode *dvp, struct cache_fpl *fpl)
 	fpl->dvp = dvp;
 	fpl->dvp_seqc = vn_seqc_read_notmodify(fpl->dvp);
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&dvp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&dvp->v_mount);
+#endif /* __rtems__ */
 	if (__predict_false(mp == NULL || !cache_fplookup_mp_supported(mp))) {
 		return (cache_fpl_aborted(fpl));
 	}

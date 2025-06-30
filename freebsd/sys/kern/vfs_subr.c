@@ -1308,11 +1308,13 @@ restart:
 		if (vp->v_type == VBAD || vp->v_type == VNON)
 			goto next_iter;
 
-		object = atomic_load_ptr(&vp->v_object);
 #ifndef __rtems__
+		object = atomic_load_ptr(&vp->v_object);
 		if (object == NULL || object->resident_page_count > trigger) {
 			goto next_iter;
 		}
+#else /* __rtems__ */
+		object = (void*)atomic_load_ptr((uintptr_t*)&vp->v_object);
 #endif /* __rtems__ */
 
 		/*
@@ -4415,7 +4417,11 @@ vfs_notify_upper(struct vnode *vp, enum vfs_notify_upper_type event)
 	struct mount *mp;
 	struct mount_upper_node *ump;
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mount);
+#endif /* __rtems__ */
 	if (mp == NULL)
 		return;
 	if (TAILQ_EMPTY(&mp->mnt_notify))
@@ -6989,7 +6995,11 @@ vfs_cache_root(struct mount *mp, int flags, struct vnode **vpp)
 
 	if (!vfs_op_thread_enter(mp, mpcpu))
 		return (vfs_cache_root_fallback(mp, flags, vpp));
+#ifndef __rtems__
 	vp = atomic_load_ptr(&mp->mnt_rootvnode);
+#else /* __rtems__ */
+	vp = (void*)atomic_load_ptr((uintptr_t*)&mp->mnt_rootvnode);
+#endif /* __rtems__ */
 	if (vp == NULL || VN_IS_DOOMED(vp)) {
 		vfs_op_thread_exit(mp, mpcpu);
 		return (vfs_cache_root_fallback(mp, flags, vpp));

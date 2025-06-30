@@ -74,10 +74,17 @@ struct {								\
  * external mechanism.  'ex' should contain an assert that the
  * external mechanism is held.  i.e. mtx_owned()
  */
+#ifndef __rtems__
 #define	smr_serialized_load(p, ex) ({					\
 	SMR_ASSERT(ex, "smr_serialized_load");				\
 	(__typeof((p)->__ptr))atomic_load_ptr(&(p)->__ptr);		\
 })
+#else /* __rtems__ */
+#define	smr_serialized_load(p, ex) ({					\
+	SMR_ASSERT(ex, "smr_serialized_load");				\
+	(__typeof((p)->__ptr))atomic_load_ptr((uintptr_t*)&(p)->__ptr);		\
+})
+#endif /* __rtems__ */
 
 /*
  * Store 'v' to an SMR protected pointer while serialized by an
@@ -114,10 +121,17 @@ struct {								\
  * such as in the destructor callback or when the caller guarantees other
  * synchronization.
  */
+#ifndef __rtems__
 #define	smr_unserialized_load(p, ex) ({					\
 	SMR_ASSERT(ex, "smr_unserialized_load");			\
 	(__typeof((p)->__ptr))atomic_load_ptr(&(p)->__ptr);		\
 })
+#else /* __rtems__ */
+#define	smr_unserialized_load(p, ex) ({					\
+	SMR_ASSERT(ex, "smr_unserialized_load");			\
+	(__typeof((p)->__ptr))atomic_load_ptr((uintptr_t*)&(p)->__ptr);		\
+})
+#endif /* __rtems__ */
 
 /*
  * Store to an SMR protected pointer when no serialiation is required

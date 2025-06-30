@@ -159,7 +159,7 @@ void	__rw_assert(const volatile uintptr_t *c, int what, const char *file,
 	    int line);
 #endif
 #else /* __rtems__ */
-#define	rw_init(rw, n) rw_init_flags(rw, n, 0)
+#define	rw_init(rw, n) rw_init_flags((struct rwlock *)(rw), n, 0)
 void	rw_init_flags(struct rwlock *rw, const char *name, int opts);
 void	rw_destroy(struct rwlock *rw);
 void	rw_sysinit(void *arg);
@@ -245,16 +245,26 @@ void	_rw_assert(const struct rwlock *rw, int what, const char *file,
 #error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/rwlock.h>
 #endif
 #if LOCK_DEBUG > 0 || defined(RWLOCK_NOINLINE)
+#ifndef __rtems__
 #define	rw_wlock(rw)		_rw_wlock((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_wunlock(rw)		_rw_wunlock((rw), LOCK_FILE, LOCK_LINE)
+#else /* __rtems__ */
+#define	rw_wlock(rw)		_rw_wlock((struct rwlock *)(rw), LOCK_FILE, LOCK_LINE)
+#define	rw_wunlock(rw)		_rw_wunlock((struct rwlock *)(rw), LOCK_FILE, LOCK_LINE)
+#endif /* __rtems__ */
 #else
 #define	rw_wlock(rw)							\
 	__rw_wlock((rw), curthread, LOCK_FILE, LOCK_LINE)
 #define	rw_wunlock(rw)							\
 	__rw_wunlock((rw), curthread, LOCK_FILE, LOCK_LINE)
 #endif
+#ifndef __rtems__
 #define	rw_rlock(rw)		_rw_rlock((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_runlock(rw)		_rw_runlock((rw), LOCK_FILE, LOCK_LINE)
+#else /* __rtems__ */
+#define	rw_rlock(rw)		_rw_rlock((struct rwlock *)(rw), LOCK_FILE, LOCK_LINE)
+#define	rw_runlock(rw)		_rw_runlock((struct rwlock *)(rw), LOCK_FILE, LOCK_LINE)
+#endif /* __rtems__ */
 #define	rw_try_rlock(rw)	_rw_try_rlock((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_try_upgrade(rw)	_rw_try_upgrade((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_try_wlock(rw)	_rw_try_wlock((rw), LOCK_FILE, LOCK_LINE)

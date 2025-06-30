@@ -447,7 +447,11 @@ pf_nvrule_uid_to_rule_uid(const nvlist_t *nvl, struct pf_rule_uid *uid)
 
 	bzero(uid, sizeof(*uid));
 
+#ifndef __rtems__
 	PFNV_CHK(pf_nvuint32_array(nvl, "uid", uid->uid, 2, NULL));
+#else /* __rtems__ */
+	PFNV_CHK(pf_nvuint16_array(nvl, "uid", uid->uid, 2, NULL));
+#endif /* __rtems__ */
 	PFNV_CHK(pf_nvuint8(nvl, "op", &uid->op));
 
 	PFNV_CHK(pf_validate_op(uid->op));
@@ -465,7 +469,11 @@ pf_rule_uid_to_nvrule_uid(const struct pf_rule_uid *uid)
 	if (nvl == NULL)
 		return (NULL);
 
+#ifndef __rtems__
 	pf_uint32_array_nv(nvl, "uid", uid->uid, 2);
+#else /* __rtems__ */
+	pf_uint16_array_nv(nvl, "uid", uid->uid, 2);
+#endif /* __rtems__ */
 	nvlist_add_number(nvl, "op", uid->op);
 
 	return (nvl);
@@ -580,7 +588,11 @@ pf_nvrule_to_krule(const nvlist_t *nvl, struct pf_krule *rule)
 	PFNV_CHK(pf_nvuint32(nvl, "max_src_conn_rate.seconds",
 	    &rule->max_src_conn_rate.seconds));
 	PFNV_CHK(pf_nvuint32(nvl, "prob", &rule->prob));
+#ifndef __rtems__
 	PFNV_CHK(pf_nvuint32(nvl, "cuid", &rule->cuid));
+#else /* __rtems__ */
+	PFNV_CHK(pf_nvuint16(nvl, "cuid", &rule->cuid));
+#endif /* __rtems__ */
 	PFNV_CHK(pf_nvuint32(nvl, "cpid", &rule->cpid));
 
 	PFNV_CHK(pf_nvuint16(nvl, "return_icmp", &rule->return_icmp));

@@ -222,7 +222,11 @@ nl_send_group(struct nl_writer *nw)
 
 	nw->buf = NULL;
 
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	if (__predict_false(ctl == NULL)) {
 		/*
 		 * Can be the case when notification is sent within VNET
@@ -340,7 +344,11 @@ nl_pru_attach(struct socket *so, int proto, struct thread *td)
 	    nl_get_proto_name(proto));
 
 	/* Create per-VNET state on first socket init */
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	if (ctl == NULL)
 		ctl = vnet_nl_ctl_init();
 	KASSERT(V_nl_ctl != NULL, ("nl_attach: vnet_sock_init() failed"));
@@ -386,7 +394,11 @@ nl_pru_attach(struct socket *so, int proto, struct thread *td)
 static int
 nl_pru_bind(struct socket *so, struct sockaddr *sa, struct thread *td)
 {
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	struct nlpcb *nlp = sotonlpcb(so);
 	struct sockaddr_nl *snl = (struct sockaddr_nl *)sa;
 	int error;
@@ -413,7 +425,11 @@ nl_pru_bind(struct socket *so, struct sockaddr *sa, struct thread *td)
 static int
 nl_assign_port(struct nlpcb *nlp, uint32_t port_id)
 {
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	struct sockaddr_nl snl = {
 		.nl_pid = port_id,
 	};
@@ -438,7 +454,11 @@ nl_assign_port(struct nlpcb *nlp, uint32_t port_id)
 static int
 nl_autobind_port(struct nlpcb *nlp, uint32_t candidate_id)
 {
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	uint32_t port_id = candidate_id;
 	NLCTL_TRACKER;
 	bool exist;
@@ -502,7 +522,11 @@ destroy_nlpcb_epoch(epoch_context_t ctx)
 static void
 nl_close(struct socket *so)
 {
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	MPASS(sotonlpcb(so) != NULL);
 	struct nlpcb *nlp;
 	struct nl_buf *nb;
@@ -867,7 +891,11 @@ nl_getoptflag(int sopt_name)
 static int
 nl_ctloutput(struct socket *so, struct sockopt *sopt)
 {
+#ifndef __rtems__
 	struct nl_control *ctl = atomic_load_ptr(&V_nl_ctl);
+#else /* __rtems__ */
+	struct nl_control *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_nl_ctl);
+#endif /* __rtems__ */
 	struct nlpcb *nlp = sotonlpcb(so);
 	uint32_t flag;
 	int optval, error = 0;

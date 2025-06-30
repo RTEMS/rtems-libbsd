@@ -182,18 +182,19 @@ rtems_bsd_vfs_vnode_componentname(struct componentname *cnd, struct vnode *vp,
 	const u_int namemax = namelen - 1;
 	char *namep;
 	int error;
+	size_t sznamelen = namelen;
 	name[namemax] = '\0';
 	namelen = namemax;
 	tvp = vp;
-	error = vn_vptocnp(&tvp, name, &namelen);
+	error = vn_vptocnp(&tvp, name, &sznamelen);
 	if (error == 0) {
-		name = &name[namelen];
-		namelen = namemax - namelen;
+		name = &name[sznamelen];
+		sznamelen = namemax - sznamelen;
 	} else {
 		name = NULL;
-		namelen = 0;
+		sznamelen = 0;
 	}
-	rtems_bsd_vfs_componentname(cnd, nameiop, name, namelen, cred);
+	rtems_bsd_vfs_componentname(cnd, nameiop, name, sznamelen, cred);
 	return error;
 }
 

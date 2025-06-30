@@ -1012,7 +1012,11 @@ _mb_unmapped_to_ext(struct mbuf *m)
 		seglen = min(seglen, len);
 		len -= seglen;
 
+#ifndef __rtems__
 		pg = PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
+#else /* __rtems__ */
+		pg = (void*)(uintptr_t)PHYS_TO_VM_PAGE(m->m_epg_pa[i]);
+#endif /* __rtems__ */
 		m_new = m_get(M_NOWAIT, MT_DATA);
 		if (m_new == NULL)
 			goto fail;
@@ -1751,7 +1755,11 @@ mb_alloc_ext_plus_pages(int len, int how)
 #endif /* __rtems__ */
 			}
 		} while (pg == NULL);
+#ifndef __rtems__
 		m->m_epg_pa[i] = VM_PAGE_TO_PHYS(pg);
+#else /* __rtems__ */
+		m->m_epg_pa[i] = (uintptr_t)VM_PAGE_TO_PHYS(pg);
+#endif /* __rtems__ */
 	}
 	m->m_epg_npgs = npgs;
 	return (m);

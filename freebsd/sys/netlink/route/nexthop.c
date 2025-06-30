@@ -155,7 +155,11 @@ struct nhop_object *
 nl_find_nhop(uint32_t fibnum, int family, uint32_t uidx,
     int nh_flags, int *perror)
 {
+#ifndef __rtems__
 	struct unhop_ctl *ctl = atomic_load_ptr(&V_un_ctl);
+#else /* __rtems__ */
+	struct unhop_ctl *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_un_ctl);
+#endif /* __rtems__ */
         UN_TRACKER;
 
 	if (__predict_false(ctl == NULL))
@@ -625,7 +629,11 @@ vnet_init_unhops(void)
                 free(ctl, M_NETLINK);
 	}
 
+#ifndef __rtems__
 	if (atomic_load_ptr(&V_un_ctl) == NULL)
+#else /* __rtems__ */
+	if (atomic_load_ptr((uintptr_t*)&V_un_ctl) == NULL)
+#endif /* __rtems__ */
 		return (false);
 
 	NL_LOG(LOG_NOTICE, "UNHOPS init done");
@@ -636,7 +644,11 @@ vnet_init_unhops(void)
 static void
 vnet_destroy_unhops(const void *unused __unused)
 {
+#ifndef __rtems__
 	struct unhop_ctl *ctl = atomic_load_ptr(&V_un_ctl);
+#else /* __rtems__ */
+	struct unhop_ctl *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_un_ctl);
+#endif /* __rtems__ */
 	struct user_nhop *unhop, *tmp;
 
 	if (ctl == NULL)
@@ -967,7 +979,11 @@ static int
 rtnl_handle_delnhop(struct nlmsghdr *hdr, struct nlpcb *nlp,
     struct nl_pstate *npt)
 {
+#ifndef __rtems__
 	struct unhop_ctl *ctl = atomic_load_ptr(&V_un_ctl);
+#else /* __rtems__ */
+	struct unhop_ctl *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_un_ctl);
+#endif /* __rtems__ */
 	int error;
 
 	if (__predict_false(ctl == NULL))
@@ -1024,7 +1040,11 @@ rtnl_handle_getnhop(struct nlmsghdr *hdr, struct nlpcb *nlp,
 	};
 
 	if (attrs.nha_id != 0) {
+#ifndef __rtems__
 		struct unhop_ctl *ctl = atomic_load_ptr(&V_un_ctl);
+#else /* __rtems__ */
+		struct unhop_ctl *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_un_ctl);
+#endif /* __rtems__ */
 		struct user_nhop key = { .un_idx = attrs.nha_id };
 
 		if (__predict_false(ctl == NULL))
@@ -1072,7 +1092,11 @@ rtnl_handle_getnhop(struct nlmsghdr *hdr, struct nlpcb *nlp,
 		}
 		nhops_iter_stop(&iter);
 	} else {
+#ifndef __rtems__
 		struct unhop_ctl *ctl = atomic_load_ptr(&V_un_ctl);
+#else /* __rtems__ */
+		struct unhop_ctl *ctl = (void*)atomic_load_ptr((uintptr_t*)&V_un_ctl);
+#endif /* __rtems__ */
 
 		if (__predict_false(ctl == NULL))
 			return (ESRCH);

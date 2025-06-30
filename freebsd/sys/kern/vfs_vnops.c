@@ -961,7 +961,11 @@ get_write_ioflag(struct file *fp)
 
 	ioflag = 0;
 	vp = fp->f_vnode;
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mount);
+#endif /* __rtems__ */
 
 	if ((fp->f_flag & O_DIRECT) != 0)
 		ioflag |= IO_DIRECT;

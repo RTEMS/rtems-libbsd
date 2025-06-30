@@ -290,7 +290,11 @@ osd_get_unlocked(u_int type, struct osd *osd, u_int slot)
 		value = NULL;
 		OSD_DEBUG("Slot doesn't exist (type=%u, slot=%u).", type, slot);
 	} else {
+#ifndef __rtems__
 		value = atomic_load_ptr(&osd->osd_slots[slot - 1]);
+#else /* __rtems__ */
+		value = (void*)atomic_load_ptr((uintptr_t*)&osd->osd_slots[slot - 1]);
+#endif /* __rtems__ */
 		OSD_DEBUG("Returning slot value (type=%u, slot=%u, value=%p).",
 		    type, slot, value);
 	}

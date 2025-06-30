@@ -56,7 +56,7 @@ rtems_mutex _bsd_mutexlist_lock = RTEMS_MUTEX_INITIALIZER("mmutexlist");
 static void	assert_mtx(const struct lock_object *lock, int what);
 static void	lock_mtx(struct lock_object *lock, uintptr_t how);
 static uintptr_t unlock_mtx(struct lock_object *lock);
-static int trylock_mtx(struct lock_object *lock);
+static int trylock_mtx(struct lock_object *lock, uintptr_t unused);
 
 /*
  * Lock classes for sleep and spin mutexes.
@@ -104,9 +104,9 @@ unlock_mtx(struct lock_object *lock)
 }
 
 int
-trylock_mtx(struct lock_object *lock)
+trylock_mtx(struct lock_object *lock, uintptr_t unused)
 {
-
+	(void)unused;
 	return (mtx_trylock((struct mtx *)lock));
 }
 
@@ -183,7 +183,7 @@ _mtx_assert(struct mtx *m, int what, const char *file, int line)
 
 int mtx_owner(struct mtx *m)
 {
-	return (rtems_bsd_mutex_owner(&m->lock_object));
+	return (intptr_t)(rtems_bsd_mutex_owner(&m->lock_object));
 }
 
 int mtx_owned(struct mtx *m)

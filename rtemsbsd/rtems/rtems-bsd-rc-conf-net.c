@@ -703,7 +703,7 @@ run_dhcp(rtems_bsd_rc_conf* rc_conf, rtems_bsd_rc_conf_argc_argv* aa)
 
   if (r == 0 && dd->argc_argv->argc > 0) {
     dd->config.argc = dd->argc_argv->argc;
-    dd->config.argv = dd->argc_argv->argv;
+    dd->config.argv = (char **)dd->argc_argv->argv;
   }
 
   dd->config.prepare = dhcpcd_prepare;

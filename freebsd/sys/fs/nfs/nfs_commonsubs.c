@@ -5140,10 +5140,11 @@ nfsm_add_ext_pgs(struct mbuf *m, int maxextsiz, int *bextpg)
 #ifndef __rtems__
 		pg = vm_page_alloc_noobj(VM_ALLOC_WAITOK | VM_ALLOC_NODUMP |
 		    VM_ALLOC_WIRED);
+		m->m_epg_pa[m->m_epg_npgs] = VM_PAGE_TO_PHYS(pg);
 #else /* __rtems__ */
 		pg = rtems_bsd_page_alloc(PAGE_SIZE, M_WAITOK | M_NODUMP);
+		m->m_epg_pa[m->m_epg_npgs] = (uintptr_t)VM_PAGE_TO_PHYS(pg);
 #endif /* __rtems__ */
-		m->m_epg_pa[m->m_epg_npgs] = VM_PAGE_TO_PHYS(pg);
 		*bextpg = m->m_epg_npgs;
 		m->m_epg_npgs++;
 		m->m_epg_last_len = 0;

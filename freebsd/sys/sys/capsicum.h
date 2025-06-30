@@ -73,7 +73,11 @@
 /* Allows for openat(O_RDONLY), read(2), readv(2). */
 #define	CAP_READ		CAPRIGHT(0, 0x0000000000000001ULL)
 /* Allows for openat(O_WRONLY | O_APPEND), write(2), writev(2). */
+#ifndef __rtems__
 #define	CAP_WRITE		CAPRIGHT(0, 0x0000000000000002ULL)
+#else /* __rtems__ */
+#define	CAP_WRITE		(void*)(uintptr_t)CAPRIGHT(0, 0x0000000000000002ULL)
+#endif /* __rtems__ */
 /* Allows for lseek(fd, 0, SEEK_CUR). */
 #define	CAP_SEEK_TELL		CAPRIGHT(0, 0x0000000000000004ULL)
 /* Allows for lseek(2). */

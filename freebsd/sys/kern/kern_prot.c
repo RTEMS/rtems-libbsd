@@ -2114,7 +2114,7 @@ crfree(struct ucred *cr)
 {
 #ifdef __rtems__
     if (cr == NULL) {
-        return (cr);
+        return;
     }
 #endif /* __rtems__ */
 #ifndef __rtems__

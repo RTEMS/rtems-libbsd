@@ -498,7 +498,11 @@ vfs_ref_from_vp(struct vnode *vp)
 	struct mount *mp;
 	struct mount_pcpu *mpcpu;
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mount);
+#endif /* __rtems__ */
 	if (__predict_false(mp == NULL)) {
 		return (mp);
 	}
@@ -558,7 +562,11 @@ vfs_register_upper_from_vp(struct vnode *vp, struct mount *ump,
 {
 	struct mount *mp;
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&vp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&vp->v_mount);
+#endif /* __rtems__ */
 	if (mp == NULL)
 		return (NULL);
 	MNT_ILOCK(mp);

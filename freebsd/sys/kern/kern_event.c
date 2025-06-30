@@ -1714,7 +1714,7 @@ findkn:
 		}
 #ifdef __rtems__
 		if (iop != NULL) {
-			rtems_bsd_libio_iop_drop(iop);
+			rtems_bsd_libio_iop_drop(kev->ident);
 			iop = NULL;
 		}
 #endif /* __rtems__ */

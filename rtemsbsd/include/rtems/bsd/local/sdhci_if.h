@@ -26,7 +26,7 @@ static __inline uint8_t SDHCI_READ_1(device_t brdev, struct sdhci_slot *slot,
 	kobjop_t _m;
 	uint8_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_1);
-	rc = ((sdhci_read_1_t *) _m)(brdev, slot, off);
+	rc = ((sdhci_read_1_t *) _m)(brdev, (void*)slot, off);
 	return (rc);
 }
 
@@ -42,7 +42,7 @@ static __inline uint16_t SDHCI_READ_2(device_t brdev, struct sdhci_slot *slot,
 	kobjop_t _m;
 	uint16_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_2);
-	rc = ((sdhci_read_2_t *) _m)(brdev, slot, off);
+	rc = ((sdhci_read_2_t *) _m)(brdev, (void*)slot, off);
 	return (rc);
 }
 
@@ -58,7 +58,7 @@ static __inline uint32_t SDHCI_READ_4(device_t brdev, struct sdhci_slot *slot,
 	kobjop_t _m;
 	uint32_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_4);
-	rc = ((sdhci_read_4_t *) _m)(brdev, slot, off);
+	rc = ((sdhci_read_4_t *) _m)(brdev, (void*)slot, off);
 	return (rc);
 }
 
@@ -75,7 +75,7 @@ static __inline void SDHCI_READ_MULTI_4(device_t brdev, struct sdhci_slot *slot,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_read_multi_4);
-	((sdhci_read_multi_4_t *) _m)(brdev, slot, off, data, count);
+	((sdhci_read_multi_4_t *) _m)(brdev, (void*)slot, off, data, count);
 }
 
 /** @brief Unique descriptor for the SDHCI_WRITE_1() method */
@@ -89,7 +89,7 @@ static __inline void SDHCI_WRITE_1(device_t brdev, struct sdhci_slot *slot,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_write_1);
-	((sdhci_write_1_t *) _m)(brdev, slot, off, val);
+	((sdhci_write_1_t *) _m)(brdev, (void*)slot, off, val);
 }
 
 /** @brief Unique descriptor for the SDHCI_WRITE_2() method */
@@ -103,7 +103,7 @@ static __inline void SDHCI_WRITE_2(device_t brdev, struct sdhci_slot *slot,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_write_2);
-	((sdhci_write_2_t *) _m)(brdev, slot, off, val);
+	((sdhci_write_2_t *) _m)(brdev, (void*)slot, off, val);
 }
 
 /** @brief Unique descriptor for the SDHCI_WRITE_4() method */
@@ -117,7 +117,7 @@ static __inline void SDHCI_WRITE_4(device_t brdev, struct sdhci_slot *slot,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_write_4);
-	((sdhci_write_4_t *) _m)(brdev, slot, off, val);
+	((sdhci_write_4_t *) _m)(brdev, (void*)slot, off, val);
 }
 
 /** @brief Unique descriptor for the SDHCI_WRITE_MULTI_4() method */
@@ -134,7 +134,7 @@ static __inline void SDHCI_WRITE_MULTI_4(device_t brdev,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_write_multi_4);
-	((sdhci_write_multi_4_t *) _m)(brdev, slot, off, data, count);
+	((sdhci_write_multi_4_t *) _m)(brdev, (void*)slot, off, data, count);
 }
 
 /** @brief Unique descriptor for the SDHCI_PLATFORM_WILL_HANDLE() method */
@@ -149,7 +149,7 @@ static __inline int SDHCI_PLATFORM_WILL_HANDLE(device_t brdev,
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_platform_will_handle);
-	rc = ((sdhci_platform_will_handle_t *) _m)(brdev, slot);
+	rc = ((sdhci_platform_will_handle_t *) _m)(brdev, (void*)slot);
 	return (rc);
 }
 
@@ -166,7 +166,7 @@ static __inline void SDHCI_PLATFORM_START_TRANSFER(device_t brdev,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_platform_start_transfer);
-	((sdhci_platform_start_transfer_t *) _m)(brdev, slot, intmask);
+	((sdhci_platform_start_transfer_t *) _m)(brdev, (void*)slot, intmask);
 }
 
 /** @brief Unique descriptor for the SDHCI_PLATFORM_FINISH_TRANSFER() method */
@@ -180,7 +180,7 @@ static __inline void SDHCI_PLATFORM_FINISH_TRANSFER(device_t brdev,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_platform_finish_transfer);
-	((sdhci_platform_finish_transfer_t *) _m)(brdev, slot);
+	((sdhci_platform_finish_transfer_t *) _m)(brdev, (void*)slot);
 }
 
 /** @brief Unique descriptor for the SDHCI_MIN_FREQ() method */
@@ -193,7 +193,7 @@ static __inline uint32_t SDHCI_MIN_FREQ(device_t brdev, struct sdhci_slot *slot)
 	kobjop_t _m;
 	uint32_t rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_min_freq);
-	rc = ((sdhci_min_freq_t *) _m)(brdev, slot);
+	rc = ((sdhci_min_freq_t *) _m)(brdev, (void*)slot);
 	return (rc);
 }
 
@@ -208,7 +208,7 @@ static __inline bool SDHCI_GET_CARD_PRESENT(device_t brdev,
 	kobjop_t _m;
 	bool rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_get_card_present);
-	rc = ((sdhci_get_card_present_t *) _m)(brdev, slot);
+	rc = ((sdhci_get_card_present_t *) _m)(brdev, (void*)slot);
 	return (rc);
 }
 
@@ -222,7 +222,7 @@ static __inline void SDHCI_SET_UHS_TIMING(device_t brdev,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_set_uhs_timing);
-	((sdhci_set_uhs_timing_t *) _m)(brdev, slot);
+	((sdhci_set_uhs_timing_t *) _m)(brdev, (void*)slot);
 }
 
 /** @brief Unique descriptor for the SDHCI_SET_CLOCK() method */
@@ -237,7 +237,7 @@ static __inline int SDHCI_SET_CLOCK(device_t brdev, struct sdhci_slot *slot,
 	kobjop_t _m;
 	int rc;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_set_clock);
-	rc = ((sdhci_set_clock_t *) _m)(brdev, slot, clock);
+	rc = ((sdhci_set_clock_t *) _m)(brdev, (void*)slot, clock);
 	return (rc);
 }
 
@@ -252,7 +252,7 @@ static __inline void SDHCI_RESET(device_t brdev, struct sdhci_slot *slot,
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,sdhci_reset);
-	((sdhci_reset_t *) _m)(brdev, slot, mask);
+	((sdhci_reset_t *) _m)(brdev, (void*)slot, mask);
 }
 
 #endif /* _sdhci_if_h_ */

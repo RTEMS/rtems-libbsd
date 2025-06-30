@@ -835,7 +835,11 @@ vfs_lookup_degenerate(struct nameidata *ndp, struct vnode *dp, int wantparent)
 
 	cnp->cn_flags |= ISLASTCN;
 
+#ifndef __rtems__
 	mp = atomic_load_ptr(&dp->v_mount);
+#else /* __rtems__ */
+	mp = (void*)atomic_load_ptr((uintptr_t*)&dp->v_mount);
+#endif /* __rtems__ */
 	if (needs_exclusive_leaf(mp, cnp->cn_flags)) {
 		cnp->cn_lkflags &= ~LK_SHARED;
 		cnp->cn_lkflags |= LK_EXCLUSIVE;

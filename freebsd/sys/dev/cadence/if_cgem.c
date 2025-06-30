@@ -1693,7 +1693,7 @@ cgem_mediachange(struct cgem_softc *sc,	struct mii_data *mii)
 #ifndef __rtems__
 		if (clk_set_freq(sc->clk_pclk, ref_clk_freq, 0))
 #else /* __rtems__ */
-		if (cgem_set_ref_clk(sc->clk_pclk, ref_clk_freq))
+		if (cgem_set_ref_clk((intptr_t)sc->clk_pclk, ref_clk_freq))
 #endif /* __rtems__ */
 			device_printf(sc->dev, "could not set ref clk to %d\n",
 			    ref_clk_freq);

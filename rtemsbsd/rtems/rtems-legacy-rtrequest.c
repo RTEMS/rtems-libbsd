@@ -51,7 +51,7 @@ rtems_bsdnet_rtrequest(int req, struct sockaddr *dst, struct sockaddr *gateway,
   info.rti_info[RTAX_GATEWAY] = gateway;
   info.rti_info[RTAX_NETMASK] = netmask;
 
-  error = rib_action(RT_DEFAULT_FIB, RTM_ADD, &info, rc);
+  error = rib_action(RT_DEFAULT_FIB, RTM_ADD, &info, *rc);
 	if (error != 0) {
 		errno = error;
 

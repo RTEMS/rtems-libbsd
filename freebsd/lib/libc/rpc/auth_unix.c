@@ -186,7 +186,11 @@ authunix_create_default(void)
 	char machname[MAXHOSTNAMELEN + 1];
 	uid_t uid;
 	gid_t gid;
+#ifndef __rtems__
 	gid_t *gids;
+#else /* __rtems__ */
+	u_int *gids;
+#endif
 
 #ifndef __rtems__	
 	ngids_max = sysconf(_SC_NGROUPS_MAX) + 1;

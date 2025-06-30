@@ -1790,7 +1790,7 @@ pollrescan(struct thread *td)
 #ifndef __rtems__
 		fd->revents = fo_poll(fp, fd->events, td->td_ucred, td);
 #else /* __rtems__ */
-		fd->revents = rtems_bsd_libio_fo_poll(fd, fp, fd->events, td->td_ucred, td);
+		fd->revents = rtems_bsd_libio_fo_poll((intptr_t)fd, fp, fd->events, td->td_ucred, td);
 #endif /* __rtems__ */
 		if (only_user)
 			fput_only_user(fdp, fp);

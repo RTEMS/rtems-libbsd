@@ -5707,11 +5707,14 @@ DB_SHOW_COMMAND_FLAGS(lockedbufs, lockedbufs, DB_CMD_MEMSAFE)
 	for (i = 0; i < nbuf; i++) {
 		bp = nbufp(i);
 		if (BUF_ISLOCKED(bp)) {
+#ifndef __rtems__
 			db_show_buffer((uintptr_t)bp, 1, 0, NULL);
 			db_printf("\n");
-#ifndef __rtems__
 			if (db_pager_quit)
 				break;
+#else /* __rtems__ */
+			db_show_buffer((void*)(uintptr_t)bp, 1, 0, NULL);
+			db_printf("\n");
 #endif /* __rtems__ */
 		}
 	}
@@ -5729,12 +5732,20 @@ DB_SHOW_COMMAND(vnodebufs, db_show_vnodebufs)
 	vp = (struct vnode *)addr;
 	db_printf("Clean buffers:\n");
 	TAILQ_FOREACH(bp, &vp->v_bufobj.bo_clean.bv_hd, b_bobufs) {
+#ifndef __rtems__
 		db_show_buffer((uintptr_t)bp, 1, 0, NULL);
+#else /* __rtems__ */
+		db_show_buffer((void*)(uintptr_t)bp, 1, 0, NULL);
+#endif /* __rtems__ */
 		db_printf("\n");
 	}
 	db_printf("Dirty buffers:\n");
 	TAILQ_FOREACH(bp, &vp->v_bufobj.bo_dirty.bv_hd, b_bobufs) {
+#ifndef __rtems__
 		db_show_buffer((uintptr_t)bp, 1, 0, NULL);
+#else /* __rtems__ */
+		db_show_buffer((void*)(uintptr_t)bp, 1, 0, NULL);
+#endif /* __rtems__ */
 		db_printf("\n");
 	}
 }

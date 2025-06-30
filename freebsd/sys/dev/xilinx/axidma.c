@@ -383,7 +383,7 @@ axidma_desc_alloc(struct axidma_softc *sc, struct xdma_channel *xchan,
 	pmap_kenter_device(chan->mem_vaddr, chan->mem_size, chan->mem_paddr);
 #else /* __rtems__ */
 	/* Align DMA descriptors */
-	chan->mem_vaddr = calloc(1, chan->mem_size + AXIDMA_DESCRIPTOR_ALIGNMENT - 1);
+	chan->mem_vaddr = (uintptr_t)calloc(1, chan->mem_size + AXIDMA_DESCRIPTOR_ALIGNMENT - 1);
 	chan->mem_vaddr = ((uintptr_t)chan->mem_vaddr +
 		AXIDMA_DESCRIPTOR_ALIGNMENT - 1) & ~0x3F;
 	chan->mem_paddr = chan->mem_vaddr;

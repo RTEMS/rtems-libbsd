@@ -2307,7 +2307,11 @@ fdhold(struct proc *p)
 	struct filedesc *fdp;
 
 	PROC_LOCK_ASSERT(p, MA_OWNED);
+#ifndef __rtems__
 	fdp = atomic_load_ptr(&p->p_fd);
+#else /* __rtems__ */
+	fdp = (void*)atomic_load_ptr((uintptr_t*)&p->p_fd);
+#endif /* __rtems__ */
 	if (fdp != NULL)
 		refcount_acquire(&fdp->fd_holdcnt);
 	return (fdp);
@@ -2319,7 +2323,11 @@ pdhold(struct proc *p)
 	struct pwddesc *pdp;
 
 	PROC_LOCK_ASSERT(p, MA_OWNED);
+#ifndef __rtems__
 	pdp = atomic_load_ptr(&p->p_pd);
+#else /* __rtems__ */
+	pdp = (void*)atomic_load_ptr((uintptr_t*)&p->p_pd);
+#endif /* __rtems__ */
 	if (pdp != NULL)
 		refcount_acquire(&pdp->pd_refcount);
 	return (pdp);
@@ -3281,7 +3289,11 @@ fget_unlocked_seq(struct thread *td, int fd, cap_rights_t *needrightsp,
 		if (__predict_false(fp == NULL))
 			return (EBADF);
 		if (__predict_false(!refcount_acquire_if_not_zero(&fp->f_count))) {
+#ifndef __rtems__
 			fdt = atomic_load_ptr(&fdp->fd_files);
+#else /* __rtems__ */
+			fdt = (void*)atomic_load_ptr((uintptr_t*)&fdp->fd_files);
+#endif /* __rtems__ */
 			continue;
 		}
 		/*

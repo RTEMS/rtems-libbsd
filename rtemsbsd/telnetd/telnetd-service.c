@@ -119,7 +119,7 @@ telnetd_service(rtems_bsd_rc_conf* rc_conf)
         while (true) {
           int c;
 
-          c = getopt_r(aa->argc, aa->argv, "C:P:Lv", &data);
+          c = getopt_r(aa->argc, (char * const *)aa->argv, "C:P:Lv", &data);
           if (c == -1)
             break;
 

@@ -214,7 +214,6 @@ class rtems(builder.Module):
                 'rtems/rtems-kernel-dev.c',
                 'rtems/rtems-kernel-dirent.c',
                 'rtems/rtems-kernel-epoch.c',
-                'rtems/rtems-kernel-get-file.c',
                 'rtems/rtems-kernel-init.c',
                 'rtems/rtems-kernel-irqs.c',
                 'rtems/rtems-kernel-jail.c',

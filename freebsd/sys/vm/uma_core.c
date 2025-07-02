@@ -5559,6 +5559,7 @@ uma_reclaim_worker(void *arg __unused)
 }
 
 /* See uma.h */
+void
 uma_zone_reclaim(uma_zone_t zone, int req)
 {
 	uma_zone_reclaim_domain(zone, req, UMA_ANYDOMAIN);

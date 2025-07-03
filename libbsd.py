@@ -4705,7 +4705,6 @@ class crypto_openssl(builder.Module):
                                     '-DOPENSSL_NO_MD2=1',
                                     '-DOPENSSL_NO_SM2=1',
                                     '-DOPENSSL_NO_RC5=1',
-                                    '-DOPENSSL_NO_RFC3779=1',
                                     '-DOPENSSL_NO_SCTP=1',
                                     '-DOPENSSL_NO_SSL2=1',
                                     '-DOPENSSL_NO_SSL_TRACE=1',

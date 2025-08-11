@@ -82,6 +82,9 @@ int	listen(int, int);
 
 int	poll(struct pollfd _pfd[], nfds_t _nfds, int _timeout);
 
+int	ppoll(struct pollfd _pfd[], nfds_t _nfds, const struct timespec *_timeout,
+	const sigset_t *_sigmask);
+
 ssize_t	recvfrom(int, void *, size_t, int, struct sockaddr * __restrict, socklen_t * __restrict);
 
 ssize_t	recvmsg(int, struct msghdr *, int);

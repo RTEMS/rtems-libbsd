@@ -1650,7 +1650,6 @@ kern_poll_kfds(struct thread *td, struct pollfd *kfds, u_int nfds,
 	return (error);
 }
 
-#ifndef __rtems__
 int
 sys_ppoll(struct thread *td, struct ppoll_args *uap)
 {
@@ -1674,7 +1673,6 @@ sys_ppoll(struct thread *td, struct ppoll_args *uap)
 		ssp = NULL;
 	return (kern_poll(td, uap->fds, uap->nfds, tsp, ssp));
 }
-#endif /* __rtems__ */
 
 /*
  * ufds points to an array in user space.

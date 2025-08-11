@@ -7121,6 +7121,7 @@
 #define	sys_openat _bsd_sys_openat
 #define	sys_pipe2 _bsd_sys_pipe2
 #define	sys_poll _bsd_sys_poll
+#define	sys_ppoll _bsd_sys_ppoll
 #define	sys_posix_fallocate _bsd_sys_posix_fallocate
 #define	sys_pselect _bsd_sys_pselect
 #define	sys_read _bsd_sys_read

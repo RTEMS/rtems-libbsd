@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * The following system calls are tested: select(), pselect(), poll(), kqueue() and pipe().
+ * The following system calls are tested: select(), pselect(), poll(), ppoll(), kqueue() and pipe().
  */
 
 /*
@@ -61,7 +61,7 @@
 #include <rtems/libcsupport.h>
 #include <rtems.h>
 
-#define TEST_NAME "LIBBSD SELECT AND POLL AND KQUEUE AND PIPE 1"
+#define TEST_NAME "LIBBSD SELECT, POLL, PPOLL, KQUEUE AND PIPE 1"
 
 #define PRIO_MASTER 1
 
@@ -765,6 +765,110 @@ test_poll_close(test_context *ctx)
 }
 
 static void
+test_ppoll_timeout(test_context *ctx)
+{
+	static const short events[] = {
+		POLLIN,
+		POLLPRI,
+		POLLOUT,
+		POLLRDNORM,
+		POLLWRNORM,
+		POLLRDBAND,
+		POLLWRBAND
+	};
+
+	struct timespec timeout = {
+		.tv_sec = 0,
+		.tv_nsec = 100000000
+	};
+	struct pollfd pfd = {
+		.fd = ctx->lfd
+	};
+	size_t i;
+
+	puts("test ppoll timeout");
+
+	for (i = 0; i < nitems(events); ++i) {
+		int rv;
+
+		pfd.events = events[i];
+		pfd.revents = 0;
+
+		rv = ppoll(&pfd, 1, &timeout, NULL);
+		assert(rv == 0);
+	}
+}
+
+static void
+test_ppoll_sigmask(test_context *ctx)
+{
+	struct pollfd pfd = {
+		.fd = ctx->lfd,
+		.events = POLLIN
+	};
+	struct timespec timeout = {
+		.tv_sec = 0,
+		.tv_nsec = 100000000
+	};
+	sigset_t mask;
+	int rv;
+
+	puts("test ppoll sigmask");
+
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGPIPE);
+
+	rv = ppoll(&pfd, 1, &timeout, &mask);
+
+	assert(rv == 0);
+}
+
+static void
+test_ppoll_connect(test_context *ctx)
+{
+	int lfd = ctx->lfd;
+	int afd = ctx->afd;
+	struct pollfd pfd = {
+		.fd = lfd,
+		.events = POLLIN
+	};
+	struct timespec timeout = {
+		.tv_sec = 1,
+		.tv_nsec = 0
+	};
+	int rv;
+
+	puts("test ppoll connect");
+
+	if (afd >= 0) {
+		ctx->afd = -1;
+
+		rv = close(afd);
+		assert(rv == 0);
+	}
+
+	send_events(ctx, EVENT_CONNECT);
+
+	set_non_blocking(lfd, 1);
+
+	errno = 0;
+	afd = accept(lfd, NULL, NULL);
+	assert(afd == -1);
+	assert(errno == EAGAIN);
+
+	set_non_blocking(lfd, 0);
+
+	rv = ppoll(&pfd, 1, &timeout, NULL);
+	assert(rv == 1);
+	assert(pfd.revents == POLLIN);
+
+	afd = accept(lfd, NULL, NULL);
+	assert(afd >= 0);
+
+	ctx->afd = afd;
+}
+
+static void
 test_kqueue_timer(bool do_resource_check)
 {
 	rtems_resource_snapshot snapshot;
@@ -1120,6 +1224,10 @@ test_main(void)
 	test_poll_read(ctx);
 	test_poll_write(ctx);
 	test_poll_close(ctx);
+
+	test_ppoll_timeout(ctx);
+	test_ppoll_sigmask(ctx);
+	test_ppoll_connect(ctx);
 
 	test_kqueue_timer(false);
 	test_kqueue_timer(true);

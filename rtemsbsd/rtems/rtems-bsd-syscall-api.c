@@ -471,6 +471,36 @@ poll(struct pollfd fds[], nfds_t nfds, int timeout)
 }
 
 int
+ppoll(struct pollfd fds[], nfds_t nfds, const struct timespec *timeout,
+	 const sigset_t *sigmask)
+{
+	struct thread *td = rtems_bsd_get_curthread_or_null();
+	struct ppoll_args ua;
+	int error;
+
+	if (RTEMS_BSD_SYSCALL_TRACE) {
+		printf("bsd: sys: ppoll: %d\n", nfds);
+	}
+	if (td == NULL) {
+		return rtems_bsd_error_to_status_and_errno(ENOMEM);
+	}
+
+	/*
+	 * Pass libio descriptors through as libio and bsd descriptors
+	 * can be in the list at the same time.
+	 */
+	ua.fds = &fds[0];
+	ua.nfds = nfds;
+	ua.ts = timeout;
+	ua.set = sigmask;
+	error = sys_ppoll(td, &ua);
+	if (error != 0) {
+		return rtems_bsd_error_to_status_and_errno(error);
+	}
+	return td->td_retval[0];
+}
+
+int
 pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds,
     const struct timespec *timeout, const sigset_t *set)
 {

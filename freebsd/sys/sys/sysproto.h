@@ -1733,12 +1733,14 @@ struct procctl_args {
 	char com_l_[PADL_(int)]; int com; char com_r_[PADR_(int)];
 	char data_l_[PADL_(void *)]; void * data; char data_r_[PADR_(void *)];
 };
+#endif /* __rtems__ */
 struct ppoll_args {
 	char fds_l_[PADL_(struct pollfd *)]; struct pollfd * fds; char fds_r_[PADR_(struct pollfd *)];
 	char nfds_l_[PADL_(u_int)]; u_int nfds; char nfds_r_[PADR_(u_int)];
 	char ts_l_[PADL_(const struct timespec *)]; const struct timespec * ts; char ts_r_[PADR_(const struct timespec *)];
 	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
 };
+#ifndef __rtems__
 struct futimens_args {
 	char fd_l_[PADL_(int)]; int fd; char fd_r_[PADR_(int)];
 	char times_l_[PADL_(const struct timespec *)]; const struct timespec * times; char times_r_[PADR_(const struct timespec *)];
@@ -2363,7 +2365,9 @@ int	sys_accept4(struct thread *, struct accept4_args *);
 int	sys_pipe2(struct thread *, struct pipe2_args *);
 int	sys_aio_mlock(struct thread *, struct aio_mlock_args *);
 int	sys_procctl(struct thread *, struct procctl_args *);
+#endif /* __rtems__ */
 int	sys_ppoll(struct thread *, struct ppoll_args *);
+#ifndef __rtems__
 int	sys_futimens(struct thread *, struct futimens_args *);
 int	sys_utimensat(struct thread *, struct utimensat_args *);
 int	sys_fdatasync(struct thread *, struct fdatasync_args *);

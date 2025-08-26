@@ -151,9 +151,9 @@ _defaults = {
      ('freebsd/sys/sys',                        '**/*.h',                          'sys'),
      ('freebsd/sys/vm',                         '**/*.h',                          'vm'),
      ('freebsd/sys/dev/mii',                    '**/*.h',                          'dev/mii'),
+     ('freebsd/sys/dev/nvme',                   '**/*.h',                          'dev/nvme'),
      ('freebsd/sys/dev/ofw',                    '**/*.h',                          'dev/ofw'),
      ('freebsd/sys/dev/pci',                    '**/*.h',                          'dev/pci'),
-     ('freebsd/sys/dev/nvme',                   '**/*.h',                          'dev/nvme'),
      ('freebsd/sys/@CPU@/include',              '**/*.h',                          ''),
      ('linux/include',                          '**/*.h',                          ''),
      ('mDNSResponder/mDNSCore',                 'mDNSDebug.h',                     ''),
@@ -721,18 +721,20 @@ class mmc(builder.Module):
                 'sys/dev/mmc/mmc_subr.h',
                 'sys/dev/mmc/mmcvar.h',
                 'sys/sys/watchdog.h',
+                'rtems/mmcsd.h',
             ]
         )
         self.addKernelSpaceSourceFiles(
             [
                 'sys/dev/mmc/mmc.c',
-                'sys/dev/mmc/mmcsd.c',
                 'sys/dev/mmc/mmc_subr.c',
+                'sys/dev/mmc/mmcsd.c',
             ],
             mm.generator['source']()
         )
         self.addRTEMSKernelSourceFiles(
             [
+                'sys/dev/mmc/mmcsd.c',
                 'sys/arm/at91/at91_mci.c',
             ],
             mm.generator['source']()

@@ -10,6 +10,37 @@ To build this package you need a current RTEMS tool set for your architecture,
 and a recent RTEMS kernel for your BSP installed. If you already have this, you
 can skip to step 5 of the build procedure.
 
+## Branches
+
+| Branch            | RTEMS Version     | FreeBSD Version       | Development | Active |
+| ----------------- | ----------------- | --------------------- | ----------- | ------ |
+| `main`            | `main`            | `CURRENT`             | FreeBSD     | Yes    |
+| `7-freebsd-14`    | `main`            | `stable/14` `9679df8` | Yes         | Yes    |
+| `6-freebsd-14`    | `6`               | `stable/14` `9679df8` | No          | Yes    |
+| `6-freebsd-12`    | `6`               | `stable/12` `c6c89ab` | No          | No     |
+| `6-freebsd-13`    | `6`               | `5d85e12`             | No          | No     |
+| `5-freebsd-12`    | `5`               | `stable/12` `0d1c391` | No          | No     |
+| `5`               | `5`               | `6b0307a`             | No          | No     |
+| `freebsd-9.3`     | `4.12`            | `99a648a9`            | No          | No     |
+| `4.11`            | `4.11`            | `99a648a9`            | No          | No     |
+
+### Update process
+
+`main` and the development branch will get FreeBSD updates. `main` will follow
+`CURRENT` on FreeBSD. The development branch will get updated in line with the
+latest minor release of the FreeBSD version to ensure stability. When a major
+release of FreeBSD occurs two new branches will be created. One with the
+development version of RTEMS and the major FreeBSD release and one with the
+latest release of RTEMS and the major release of the FreeBSD. The branch with
+the development version of RTEMS will become the development branch.
+
+Updates are completed by using `git merge-file`. This takes a common ancestor
+file and merges two divergent files. We use the FreeBSD commit that the branch
+is based off (`freebsd-org`) as the common ancestor and then the files in
+`freebsd` and a separate clone of the FreeBSD repo at the commit we want to
+migrate to as the two divergent versions. Details can be found in
+`CONTRIBUTING.md`
+
 ## Building and Installing LibBSD
 
 The following instructions show you how to build and install the RTEMS Tool
@@ -285,48 +316,6 @@ int my_vprintf_handler(int level, const char *fmt, va_list ap) {
 
 As a special case, you can set the `rtems_bsd_vprintf_handler_mute(...)`
 provided by LibBSD to suppress all output.
-
-## Branches
-
-main
-
-> This branch is intended for the RTEMS development which currently tracks the
-  FreeBSD stable/14 branch.  This branch must be used for libbsd development.
-  This will be moved to 6-freebsd-14 when main gets updated to follow current.
-
-6-freebsd-13
-
-> This is a maintainance branch which contains the historical contents of main
-  before main was updated to Freebsd 14. This branch is kept for record keeping
-  purposes.
-
-6-freebsd-12
-
-> This branch is intended for RTEMS 6 which tracks the FreeBSD stable/12
-  branch.  This branch is maintained and regular updates from FreeBSD are
-  planned.  It is recommended for production systems.
-
-5-freebsd-12
-
-> This branch belongs to the RTEMS 5 release. It is based on FreeBSD
-  stable/12 branch. It is recommended for production systems that use
-  RTEMS 5.
-
-5
-
-> This branch belongs to the RTEMS 5 release. It is based on a FreeBSD
-  development version.  This branch is unmaintained.  Use 5-freebsd-12 for
-  RTEMS 5.
-
-freebsd-9.3
-
-> Is the branch for some RTEMS version with a FreeBSD 9.3 baseline.  This
-  branch is unmaintained.  It is recommended to update to RTEMS 5 or 6.
-
-4.11
-
-> Is the branch for the RTEMS 4.11 release series.  This branch is
-  unmaintained.  It is recommended to update to RTEMS 5 or 6.
 
 ## Features
 

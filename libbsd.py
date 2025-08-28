@@ -1671,6 +1671,7 @@ class dev_nic_e1000(builder.Module):
                 'sys/dev/e1000/em_txrx.c',
                 'sys/dev/e1000/if_em.c',
                 'sys/dev/e1000/igb_txrx.c',
+                'sys/dev/e1000/e1000_base.c',
             ],
             mm.generator['source']()
         )

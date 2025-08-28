@@ -575,6 +575,7 @@ class base(builder.Module):
                 'sys/kern/subr_sleepqueue.c',
                 'sys/kern/subr_smr.c',
                 'sys/kern/subr_taskqueue.c',
+                'sys/kern/subr_trap.c',
                 'sys/kern/subr_uio.c',
                 'sys/kern/subr_unit.c',
                 'sys/kern/sys_generic.c',

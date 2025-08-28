@@ -306,6 +306,7 @@
 #define pfr_buf_load _bsd_pfctl_pfr_buf_load
 #define pfr_buf_next _bsd_pfctl_pfr_buf_next
 #define pfr_clr_addrs _bsd_pfctl_pfr_clr_addrs
+#define pfr_clr_astats _bsd_pfctl_pfr_clr_astats
 #define pfr_clr_tables _bsd_pfctl_pfr_clr_tables
 #define pfr_clr_tstats _bsd_pfctl_pfr_clr_tstats
 #define pfr_del_addrs _bsd_pfctl_pfr_del_addrs

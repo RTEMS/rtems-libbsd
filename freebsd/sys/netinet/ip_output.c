@@ -671,17 +671,25 @@ again:
 sendit:
 #if defined(IPSEC) || defined(IPSEC_SUPPORT)
 	if (IPSEC_ENABLED(ipv4)) {
-		m = mb_unmapped_to_ext(m);
-		if (m == NULL) {
-			IPSTAT_INC(ips_odropped);
-			error = ENOBUFS;
-			goto bad;
+		struct mbuf *m1;
+
+		error = mb_unmapped_to_ext(m, &m1);
+		if (error != 0) {
+			if (error == ENOMEM) {
+				IPSTAT_INC(ips_odropped);
+				error = ENOBUFS;
+				goto bad;
+			}
+			/* XXXKIB */
+			goto no_ipsec;
 		}
+		m = m1;
 		if ((error = IPSEC_OUTPUT(ipv4, m, inp)) != 0) {
 			if (error == EINPROGRESS)
 				error = 0;
 			goto done;
 		}
+no_ipsec:;
 	}
 	/*
 	 * Check if there was a route for this packet; return error if not.
@@ -735,11 +743,20 @@ sendit:
 
 	/* Ensure the packet data is mapped if the interface requires it. */
 	if ((ifp->if_capenable & IFCAP_MEXTPG) == 0) {
-		m = mb_unmapped_to_ext(m);
-		if (m == NULL) {
+		struct mbuf *m1;
+
+		error = mb_unmapped_to_ext(m, &m1);
+		if (error != 0) {
+			if (error == EINVAL) {
+				if_printf(ifp, "TLS packet\n");
+				/* XXXKIB */
+			} else if (error == ENOMEM) {
+				error = ENOBUFS;
+			}
 			IPSTAT_INC(ips_odropped);
-			error = ENOBUFS;
-			goto bad;
+			goto done;
+		} else {
+			m = m1;
 		}
 	}
 
@@ -845,7 +862,7 @@ sendit:
 
 done:
 	return (error);
- bad:
+bad:
 	m_freem(m);
 	goto done;
 }
@@ -1085,10 +1102,22 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 		    sopt->sopt_dir == SOPT_SET) {
 			switch (sopt->sopt_name) {
 			case SO_SETFIB:
+				error = sooptcopyin(sopt, &optval,
+				    sizeof(optval), sizeof(optval));
+				if (error != 0)
+					break;
+
 				INP_WLOCK(inp);
-				inp->inp_inc.inc_fibnum = so->so_fibnum;
+				if ((inp->inp_flags & INP_BOUNDFIB) != 0 &&
+				    optval != so->so_fibnum) {
+					INP_WUNLOCK(inp);
+					error = EISCONN;
+					break;
+				}
+				error = sosetfib(inp->inp_socket, optval);
+				if (error == 0)
+					inp->inp_inc.inc_fibnum = optval;
 				INP_WUNLOCK(inp);
-				error = 0;
 				break;
 			case SO_MAX_PACING_RATE:
 #ifdef RATELIMIT

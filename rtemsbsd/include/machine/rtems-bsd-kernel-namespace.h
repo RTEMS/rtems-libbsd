@@ -112,6 +112,7 @@
 #define	M_BPFJIT _bsd_M_BPFJIT
 #define	M_CAMSIM _bsd_M_CAMSIM
 #define	M_CC_MEM _bsd_M_CC_MEM
+#define	M_CLOCK _bsd_M_CLOCK
 #define	M_CRYPTO_DATA _bsd_M_CRYPTO_DATA
 #define	M_DEVBUF _bsd_M_DEVBUF
 #define	M_EVDEV _bsd_M_EVDEV
@@ -182,6 +183,7 @@
 #define	M_SELFD _bsd_M_SELFD
 #define	M_SONAME _bsd_M_SONAME
 #define	M_STATFS _bsd_M_STATFS
+#define	M_SYSCON _bsd_M_SYSCON
 #define	M_TAP _bsd_M_TAP
 #define	M_TCPFUNCTIONS _bsd_M_TCPFUNCTIONS
 #define	M_TCPLOG _bsd_M_TCPLOG
@@ -381,6 +383,17 @@
 #define	_falloc_noinstall _bsd__falloc_noinstall
 #define	_fdrop _bsd__fdrop
 #define	_finstall _bsd__finstall
+#define	_gone_in _bsd__gone_in
+#define	_gone_in_dev _bsd__gone_in_dev
+#define	_ieee80211_find_node _bsd__ieee80211_find_node
+#define	_ieee80211_find_node_locked _bsd__ieee80211_find_node_locked
+#define	_ieee80211_find_rxnode _bsd__ieee80211_find_rxnode
+#define	_ieee80211_find_rxnode_withkey _bsd__ieee80211_find_rxnode_withkey
+#define	_ieee80211_find_txnode _bsd__ieee80211_find_txnode
+#define	_ieee80211_find_vap_node _bsd__ieee80211_find_vap_node
+#define	_ieee80211_find_vap_node_locked _bsd__ieee80211_find_vap_node_locked
+#define	_ieee80211_free_node _bsd__ieee80211_free_node
+#define	_ieee80211_ref_node _bsd__ieee80211_ref_node
 #define	_kevent _bsd__kevent
 #define	_libmd_SHA224_Final _bsd__libmd_SHA224_Final
 #define	_libmd_SHA224_Init _bsd__libmd_SHA224_Init
@@ -872,6 +885,7 @@
 #define	bpf_mtap2 _bsd_bpf_mtap2
 #define	bpf_mtap2_if _bsd_bpf_mtap2_if
 #define	bpf_mtap_if _bsd_bpf_mtap_if
+#define	bpf_peers_present_if _bsd_bpf_peers_present_if
 #define	bpf_tap _bsd_bpf_tap
 #define	bpf_tap_if _bsd_bpf_tap_if
 #define	bpfattach _bsd_bpfattach
@@ -939,9 +953,12 @@
 #define	bufwrite _bsd_bufwrite
 #define	bundirty _bsd_bundirty
 #define	bus_activate_resource _bsd_bus_activate_resource
+#define	bus_activate_resource_new _bsd_bus_activate_resource_new
 #define	bus_adjust_resource _bsd_bus_adjust_resource
+#define	bus_adjust_resource_new _bsd_bus_adjust_resource_new
 #define	bus_alloc_resource _bsd_bus_alloc_resource
 #define	bus_alloc_resources _bsd_bus_alloc_resources
+#define	bus_attach_children _bsd_bus_attach_children
 #define	bus_bind_intr _bsd_bus_bind_intr
 #define	bus_child_location _bsd_bus_child_location
 #define	bus_child_location_str _bsd_bus_child_location_str
@@ -952,9 +969,11 @@
 #define	bus_data_generation_check _bsd_bus_data_generation_check
 #define	bus_data_generation_update _bsd_bus_data_generation_update
 #define	bus_deactivate_resource _bsd_bus_deactivate_resource
+#define	bus_deactivate_resource_new _bsd_bus_deactivate_resource_new
 #define	bus_delayed_attach_children _bsd_bus_delayed_attach_children
 #define	bus_delete_resource _bsd_bus_delete_resource
 #define	bus_describe_intr _bsd_bus_describe_intr
+#define	bus_detach_children _bsd_bus_detach_children
 #define	bus_dma_tag_create _bsd_bus_dma_tag_create
 #define	bus_dma_tag_destroy _bsd_bus_dma_tag_destroy
 #define	bus_dmamap_create _bsd_bus_dmamap_create
@@ -1027,12 +1046,15 @@
 #define	bus_get_resource_start _bsd_bus_get_resource_start
 #define	bus_helper_reset_post _bsd_bus_helper_reset_post
 #define	bus_helper_reset_prepare _bsd_bus_helper_reset_prepare
+#define	bus_identify_children _bsd_bus_identify_children
 #define	bus_map_resource _bsd_bus_map_resource
+#define	bus_map_resource_new _bsd_bus_map_resource_new
 #define	bus_null_rescan _bsd_bus_null_rescan
 #define	bus_print_child_domain _bsd_bus_print_child_domain
 #define	bus_print_child_footer _bsd_bus_print_child_footer
 #define	bus_print_child_header _bsd_bus_print_child_header
 #define	bus_release_resource _bsd_bus_release_resource
+#define	bus_release_resource_new _bsd_bus_release_resource_new
 #define	bus_release_resources _bsd_bus_release_resources
 #define	bus_resume_intr _bsd_bus_resume_intr
 #define	bus_set_pass _bsd_bus_set_pass
@@ -1046,6 +1068,7 @@
 #define	bus_topo_unlock _bsd_bus_topo_unlock
 #define	bus_translate_resource _bsd_bus_translate_resource
 #define	bus_unmap_resource _bsd_bus_unmap_resource
+#define	bus_unmap_resource_new _bsd_bus_unmap_resource_new
 #define	busdma_lock_mutex _bsd_busdma_lock_mutex
 #define	bwait _bsd_bwait
 #define	bwillwrite _bsd_bwillwrite
@@ -1198,7 +1221,54 @@
 #define	clean_unrhdr _bsd_clean_unrhdr
 #define	clean_unrhdrl _bsd_clean_unrhdrl
 #define	clear_unrhdr _bsd_clear_unrhdr
+#define	clk_disable _bsd_clk_disable
+#define	clk_enable _bsd_clk_enable
+#define	clk_get_by_id _bsd_clk_get_by_id
+#define	clk_get_by_name _bsd_clk_get_by_name
+#define	clk_get_by_ofw_index _bsd_clk_get_by_ofw_index
+#define	clk_get_by_ofw_index_prop _bsd_clk_get_by_ofw_index_prop
+#define	clk_get_by_ofw_name _bsd_clk_get_by_ofw_name
+#define	clk_get_freq _bsd_clk_get_freq
+#define	clk_get_name _bsd_clk_get_name
+#define	clk_get_parent _bsd_clk_get_parent
 #define	clk_intr_event _bsd_clk_intr_event
+#define	clk_parse_ofw_clk_name _bsd_clk_parse_ofw_clk_name
+#define	clk_parse_ofw_out_names _bsd_clk_parse_ofw_out_names
+#define	clk_release _bsd_clk_release
+#define	clk_set_assigned _bsd_clk_set_assigned
+#define	clk_set_freq _bsd_clk_set_freq
+#define	clk_set_parent_by_clk _bsd_clk_set_parent_by_clk
+#define	clk_stop _bsd_clk_stop
+#define	clk_test_freq _bsd_clk_test_freq
+#define	clkdom_create _bsd_clkdom_create
+#define	clkdom_dump _bsd_clkdom_dump
+#define	clkdom_finit _bsd_clkdom_finit
+#define	clkdom_get_by_dev _bsd_clkdom_get_by_dev
+#define	clkdom_set_ofw_mapper _bsd_clkdom_set_ofw_mapper
+#define	clkdom_unlock _bsd_clkdom_unlock
+#define	clkdom_xlock _bsd_clkdom_xlock
+#define	clknode_class _bsd_clknode_class
+#define	clknode_create _bsd_clknode_create
+#define	clknode_disable _bsd_clknode_disable
+#define	clknode_enable _bsd_clknode_enable
+#define	clknode_find_by_id _bsd_clknode_find_by_id
+#define	clknode_find_by_name _bsd_clknode_find_by_name
+#define	clknode_get_device _bsd_clknode_get_device
+#define	clknode_get_flags _bsd_clknode_get_flags
+#define	clknode_get_freq _bsd_clknode_get_freq
+#define	clknode_get_name _bsd_clknode_get_name
+#define	clknode_get_parent _bsd_clknode_get_parent
+#define	clknode_get_parent_idx _bsd_clknode_get_parent_idx
+#define	clknode_get_parent_names _bsd_clknode_get_parent_names
+#define	clknode_get_parents_num _bsd_clknode_get_parents_num
+#define	clknode_get_softc _bsd_clknode_get_softc
+#define	clknode_init_parent_idx _bsd_clknode_init_parent_idx
+#define	clknode_register _bsd_clknode_register
+#define	clknode_set_freq _bsd_clknode_set_freq
+#define	clknode_set_parent_by_idx _bsd_clknode_set_parent_by_idx
+#define	clknode_set_parent_by_name _bsd_clknode_set_parent_by_name
+#define	clknode_stop _bsd_clknode_stop
+#define	clknode_test_freq _bsd_clknode_test_freq
 #define	clnt_bck_call _bsd_clnt_bck_call
 #define	clnt_bck_create _bsd_clnt_bck_create
 #define	clnt_bck_svccall _bsd_clnt_bck_svccall
@@ -1273,6 +1343,7 @@
 #define	crget _bsd_crget
 #define	crhold _bsd_crhold
 #define	crsetgroups _bsd_crsetgroups
+#define	crsetgroups_fallback _bsd_crsetgroups_fallback
 #define	cru2x _bsd_cru2x
 #define	cru2xt _bsd_cru2xt
 #define	crypto_apply _bsd_crypto_apply
@@ -1453,6 +1524,8 @@
 #define	device_attach _bsd_device_attach
 #define	device_busy _bsd_device_busy
 #define	device_claim_softc _bsd_device_claim_softc
+#define	device_clear_prop _bsd_device_clear_prop
+#define	device_clear_prop_alldev _bsd_device_clear_prop_alldev
 #define	device_delete_child _bsd_device_delete_child
 #define	device_delete_children _bsd_device_delete_children
 #define	device_detach _bsd_device_detach
@@ -1469,6 +1542,7 @@
 #define	device_get_name _bsd_device_get_name
 #define	device_get_nameunit _bsd_device_get_nameunit
 #define	device_get_parent _bsd_device_get_parent
+#define	device_get_prop _bsd_device_get_prop
 #define	device_get_property _bsd_device_get_property
 #define	device_get_softc _bsd_device_get_softc
 #define	device_get_state _bsd_device_get_state
@@ -1500,6 +1574,7 @@
 #define	device_set_driver _bsd_device_set_driver
 #define	device_set_flags _bsd_device_set_flags
 #define	device_set_ivars _bsd_device_set_ivars
+#define	device_set_prop _bsd_device_set_prop
 #define	device_set_softc _bsd_device_set_softc
 #define	device_set_unit _bsd_device_set_unit
 #define	device_set_usb_desc _bsd_device_set_usb_desc
@@ -1811,6 +1886,7 @@
 #define	e1000_update_nvm_checksum _bsd_e1000_update_nvm_checksum
 #define	e1000_update_nvm_checksum_generic _bsd_e1000_update_nvm_checksum_generic
 #define	e1000_update_nvm_checksum_i210 _bsd_e1000_update_nvm_checksum_i210
+#define	e1000_use_pause_delay _bsd_e1000_use_pause_delay
 #define	e1000_valid_led_default_generic _bsd_e1000_valid_led_default_generic
 #define	e1000_validate_mdi_setting _bsd_e1000_validate_mdi_setting
 #define	e1000_validate_mdi_setting_crossover_generic _bsd_e1000_validate_mdi_setting_crossover_generic
@@ -2068,6 +2144,7 @@
 #define	fget_only_user _bsd_fget_only_user
 #define	fget_read _bsd_fget_read
 #define	fget_remote _bsd_fget_remote
+#define	fget_remote_foreach _bsd_fget_remote_foreach
 #define	fget_unlocked _bsd_fget_unlocked
 #define	fget_write _bsd_fget_write
 #define	fgetvp _bsd_fgetvp
@@ -2132,6 +2209,7 @@
 #define	firmware_unregister _bsd_firmware_unregister
 #define	first_handler _bsd_first_handler
 #define	foffset_lock _bsd_foffset_lock
+#define	foffset_lock_pair _bsd_foffset_lock_pair
 #define	foffset_lock_uio _bsd_foffset_lock_uio
 #define	foffset_unlock _bsd_foffset_unlock
 #define	foffset_unlock_uio _bsd_foffset_unlock_uio
@@ -2200,12 +2278,15 @@
 #define	gpio_pin_setflags _bsd_gpio_pin_setflags
 #define	gpiobus_acquire_pin _bsd_gpiobus_acquire_pin
 #define	gpiobus_alloc_ivars _bsd_gpiobus_alloc_ivars
+#define	gpiobus_attach _bsd_gpiobus_attach
 #define	gpiobus_attach_bus _bsd_gpiobus_attach_bus
+#define	gpiobus_detach _bsd_gpiobus_detach
 #define	gpiobus_detach_bus _bsd_gpiobus_detach_bus
 #define	gpiobus_devclass _bsd_gpiobus_devclass
 #define	gpiobus_driver _bsd_gpiobus_driver
 #define	gpiobus_free_ivars _bsd_gpiobus_free_ivars
 #define	gpiobus_init_softc _bsd_gpiobus_init_softc
+#define	gpiobus_read_ivar _bsd_gpiobus_read_ivar
 #define	gpiobus_release_pin _bsd_gpiobus_release_pin
 #define	gre_hashdestroy _bsd_gre_hashdestroy
 #define	gre_hashinit _bsd_gre_hashinit
@@ -2213,6 +2294,7 @@
 #define	gre_sofree _bsd_gre_sofree
 #define	gre_update_hdr _bsd_gre_update_hdr
 #define	gre_update_udphdr _bsd_gre_update_udphdr
+#define	group_is_supplementary _bsd_group_is_supplementary
 #define	groupmember _bsd_groupmember
 #define	grouptask_block _bsd_grouptask_block
 #define	grouptask_unblock _bsd_grouptask_unblock
@@ -2312,6 +2394,7 @@
 #define	ieee80211_aclator_unregister _bsd_ieee80211_aclator_unregister
 #define	ieee80211_add_callback _bsd_ieee80211_add_callback
 #define	ieee80211_add_channel _bsd_ieee80211_add_channel
+#define	ieee80211_add_channel_cbw _bsd_ieee80211_add_channel_cbw
 #define	ieee80211_add_channel_ht40 _bsd_ieee80211_add_channel_ht40
 #define	ieee80211_add_channel_list_2ghz _bsd_ieee80211_add_channel_list_2ghz
 #define	ieee80211_add_channel_list_5ghz _bsd_ieee80211_add_channel_list_5ghz
@@ -2335,6 +2418,7 @@
 #define	ieee80211_add_ssid _bsd_ieee80211_add_ssid
 #define	ieee80211_add_toa_params _bsd_ieee80211_add_toa_params
 #define	ieee80211_add_vhtcap _bsd_ieee80211_add_vhtcap
+#define	ieee80211_add_vhtcap_ch _bsd_ieee80211_add_vhtcap_ch
 #define	ieee80211_add_vhtinfo _bsd_ieee80211_add_vhtinfo
 #define	ieee80211_add_wme_info _bsd_ieee80211_add_wme_info
 #define	ieee80211_add_wpa _bsd_ieee80211_add_wpa
@@ -2407,6 +2491,8 @@
 #define	ieee80211_crypto_register _bsd_ieee80211_crypto_register
 #define	ieee80211_crypto_reload_keys _bsd_ieee80211_crypto_reload_keys
 #define	ieee80211_crypto_set_deftxkey _bsd_ieee80211_crypto_set_deftxkey
+#define	ieee80211_crypto_set_supported_hardware_ciphers _bsd_ieee80211_crypto_set_supported_hardware_ciphers
+#define	ieee80211_crypto_set_supported_software_ciphers _bsd_ieee80211_crypto_set_supported_software_ciphers
 #define	ieee80211_crypto_setkey _bsd_ieee80211_crypto_setkey
 #define	ieee80211_crypto_unregister _bsd_ieee80211_crypto_unregister
 #define	ieee80211_crypto_vattach _bsd_ieee80211_crypto_vattach
@@ -2461,6 +2547,7 @@
 #define	ieee80211_get_suphtrates _bsd_ieee80211_get_suphtrates
 #define	ieee80211_get_suprates _bsd_ieee80211_get_suprates
 #define	ieee80211_get_toa_params _bsd_ieee80211_get_toa_params
+#define	ieee80211_get_vap_ifname _bsd_ieee80211_get_vap_ifname
 #define	ieee80211_get_xmit_params _bsd_ieee80211_get_xmit_params
 #define	ieee80211_getcapinfo _bsd_ieee80211_getcapinfo
 #define	ieee80211_getmgtframe _bsd_ieee80211_getmgtframe
@@ -2486,6 +2573,7 @@
 #define	ieee80211_ht_vattach _bsd_ieee80211_ht_vattach
 #define	ieee80211_ht_vdetach _bsd_ieee80211_ht_vdetach
 #define	ieee80211_ht_wds_init _bsd_ieee80211_ht_wds_init
+#define	ieee80211_htinfo_notify _bsd_ieee80211_htinfo_notify
 #define	ieee80211_htprot_update _bsd_ieee80211_htprot_update
 #define	ieee80211_htrates _bsd_ieee80211_htrates
 #define	ieee80211_ibss_merge _bsd_ieee80211_ibss_merge
@@ -2564,6 +2652,8 @@
 #define	ieee80211_notify_country _bsd_ieee80211_notify_country
 #define	ieee80211_notify_csa _bsd_ieee80211_notify_csa
 #define	ieee80211_notify_erp _bsd_ieee80211_notify_erp
+#define	ieee80211_notify_erp_locked _bsd_ieee80211_notify_erp_locked
+#define	ieee80211_notify_ifnet_change _bsd_ieee80211_notify_ifnet_change
 #define	ieee80211_notify_michael_failure _bsd_ieee80211_notify_michael_failure
 #define	ieee80211_notify_node_auth _bsd_ieee80211_notify_node_auth
 #define	ieee80211_notify_node_deauth _bsd_ieee80211_notify_node_deauth
@@ -2585,6 +2675,7 @@
 #define	ieee80211_parse_meshid _bsd_ieee80211_parse_meshid
 #define	ieee80211_parse_vhtcap _bsd_ieee80211_parse_vhtcap
 #define	ieee80211_parse_vhtopmode _bsd_ieee80211_parse_vhtopmode
+#define	ieee80211_parse_wmeie _bsd_ieee80211_parse_wmeie
 #define	ieee80211_parse_wmeparams _bsd_ieee80211_parse_wmeparams
 #define	ieee80211_phymode_name _bsd_ieee80211_phymode_name
 #define	ieee80211_plcp2rate _bsd_ieee80211_plcp2rate
@@ -2594,7 +2685,12 @@
 #define	ieee80211_power_vattach _bsd_ieee80211_power_vattach
 #define	ieee80211_power_vdetach _bsd_ieee80211_power_vdetach
 #define	ieee80211_print_essid _bsd_ieee80211_print_essid
+#define	ieee80211_priv_check_create_vap _bsd_ieee80211_priv_check_create_vap
+#define	ieee80211_priv_check_vap_getkey _bsd_ieee80211_priv_check_vap_getkey
+#define	ieee80211_priv_check_vap_manage _bsd_ieee80211_priv_check_vap_manage
+#define	ieee80211_priv_check_vap_setmac _bsd_ieee80211_priv_check_vap_setmac
 #define	ieee80211_probe_curchan _bsd_ieee80211_probe_curchan
+#define	ieee80211_probereq_ie _bsd_ieee80211_probereq_ie
 #define	ieee80211_process_callback _bsd_ieee80211_process_callback
 #define	ieee80211_promisc _bsd_ieee80211_promisc
 #define	ieee80211_proto_attach _bsd_ieee80211_proto_attach
@@ -2664,7 +2760,9 @@
 #define	ieee80211_send_probereq _bsd_ieee80211_send_probereq
 #define	ieee80211_send_proberesp _bsd_ieee80211_send_proberesp
 #define	ieee80211_send_setup _bsd_ieee80211_send_setup
+#define	ieee80211_set_hardware_ciphers _bsd_ieee80211_set_hardware_ciphers
 #define	ieee80211_set_shortslottime _bsd_ieee80211_set_shortslottime
+#define	ieee80211_set_software_ciphers _bsd_ieee80211_set_software_ciphers
 #define	ieee80211_setbasicrates _bsd_ieee80211_setbasicrates
 #define	ieee80211_setcurchan _bsd_ieee80211_setcurchan
 #define	ieee80211_setmode _bsd_ieee80211_setmode
@@ -2710,8 +2808,13 @@
 #define	ieee80211_vap_detach _bsd_ieee80211_vap_detach
 #define	ieee80211_vap_pkt_send_dest _bsd_ieee80211_vap_pkt_send_dest
 #define	ieee80211_vap_qflush _bsd_ieee80211_vap_qflush
+#define	ieee80211_vap_reset_erp _bsd_ieee80211_vap_reset_erp
+#define	ieee80211_vap_set_shortslottime _bsd_ieee80211_vap_set_shortslottime
 #define	ieee80211_vap_setup _bsd_ieee80211_vap_setup
 #define	ieee80211_vap_transmit _bsd_ieee80211_vap_transmit
+#define	ieee80211_vap_update_erp_protmode _bsd_ieee80211_vap_update_erp_protmode
+#define	ieee80211_vap_update_ht_protmode _bsd_ieee80211_vap_update_ht_protmode
+#define	ieee80211_vap_update_preamble _bsd_ieee80211_vap_update_preamble
 #define	ieee80211_vap_xmitpkt _bsd_ieee80211_vap_xmitpkt
 #define	ieee80211_vht_adjust_channel _bsd_ieee80211_vht_adjust_channel
 #define	ieee80211_vht_announce _bsd_ieee80211_vht_announce
@@ -2968,6 +3071,8 @@
 #define	iflib_admin_intr_deferred _bsd_iflib_admin_intr_deferred
 #define	iflib_config_gtask_deinit _bsd_iflib_config_gtask_deinit
 #define	iflib_config_gtask_init _bsd_iflib_config_gtask_init
+#define	iflib_config_task_enqueue _bsd_iflib_config_task_enqueue
+#define	iflib_config_task_init _bsd_iflib_config_task_init
 #define	iflib_ctx_lock_get _bsd_iflib_ctx_lock_get
 #define	iflib_device_attach _bsd_iflib_device_attach
 #define	iflib_device_deregister _bsd_iflib_device_deregister
@@ -3101,6 +3206,7 @@
 #define	in6_are_prefix_equal _bsd_in6_are_prefix_equal
 #define	in6_cksum _bsd_in6_cksum
 #define	in6_cksum_partial _bsd_in6_cksum_partial
+#define	in6_cksum_partial_l2 _bsd_in6_cksum_partial_l2
 #define	in6_cksum_pseudo _bsd_in6_cksum_pseudo
 #define	in6_clearscope _bsd_in6_clearscope
 #define	in6_control _bsd_in6_control
@@ -3386,6 +3492,7 @@
 #define	ip4_esp_trans_deflev _bsd_ip4_esp_trans_deflev
 #define	ip4_ipsec_dfbit _bsd_ip4_ipsec_dfbit
 #define	ip4_ipsec_ecn _bsd_ip4_ipsec_ecn
+#define	ip4_ipsec_min_pmtu _bsd_ip4_ipsec_min_pmtu
 #define	ip6_accept_rtadv _bsd_ip6_accept_rtadv
 #define	ip6_ah_net_deflev _bsd_ip6_ah_net_deflev
 #define	ip6_ah_trans_deflev _bsd_ip6_ah_trans_deflev
@@ -3571,8 +3678,10 @@
 #define	ipreass_slowtimo _bsd_ipreass_slowtimo
 #define	ipreass_vnet_init _bsd_ipreass_vnet_init
 #define	ipsec4_capability _bsd_ipsec4_capability
+#define	ipsec4_check_pmtu _bsd_ipsec4_check_pmtu
 #define	ipsec4_checkpolicy _bsd_ipsec4_checkpolicy
 #define	ipsec4_common_input_cb _bsd_ipsec4_common_input_cb
+#define	ipsec4_ctlinput _bsd_ipsec4_ctlinput
 #define	ipsec4_forward _bsd_ipsec4_forward
 #define	ipsec4_in_reject _bsd_ipsec4_in_reject
 #define	ipsec4_input _bsd_ipsec4_input
@@ -3582,8 +3691,10 @@
 #define	ipsec4_setsockaddrs _bsd_ipsec4_setsockaddrs
 #define	ipsec4stat _bsd_ipsec4stat
 #define	ipsec6_capability _bsd_ipsec6_capability
+#define	ipsec6_check_pmtu _bsd_ipsec6_check_pmtu
 #define	ipsec6_checkpolicy _bsd_ipsec6_checkpolicy
 #define	ipsec6_common_input_cb _bsd_ipsec6_common_input_cb
+#define	ipsec6_ctlinput _bsd_ipsec6_ctlinput
 #define	ipsec6_forward _bsd_ipsec6_forward
 #define	ipsec6_in_reject _bsd_ipsec6_in_reject
 #define	ipsec6_input _bsd_ipsec6_input
@@ -3601,6 +3712,7 @@
 #define	ipsec_delisr _bsd_ipsec_delisr
 #define	ipsec_get_reqlevel _bsd_ipsec_get_reqlevel
 #define	ipsec_hdrsiz_inpcb _bsd_ipsec_hdrsiz_inpcb
+#define	ipsec_hdrsiz_internal _bsd_ipsec_hdrsiz_internal
 #define	ipsec_hexdump _bsd_ipsec_hexdump
 #define	ipsec_hhh_in _bsd_ipsec_hhh_in
 #define	ipsec_hhh_out _bsd_ipsec_hhh_out
@@ -3697,6 +3809,7 @@
 #define	kern_poll_kfds _bsd_kern_poll_kfds
 #define	kern_poll_maxfds _bsd_kern_poll_maxfds
 #define	kern_posix_fallocate _bsd_kern_posix_fallocate
+#define	kern_proc_kqueues_out _bsd_kern_proc_kqueues_out
 #define	kern_pselect _bsd_kern_pselect
 #define	kern_readlinkat _bsd_kern_readlinkat
 #define	kern_readv _bsd_kern_readv
@@ -3736,6 +3849,7 @@
 #define	key_freesp _bsd_key_freesp
 #define	key_getspgen _bsd_key_getspgen
 #define	key_havesp _bsd_key_havesp
+#define	key_havesp_any _bsd_key_havesp_any
 #define	key_init _bsd_key_init
 #define	key_msg2sp _bsd_key_msg2sp
 #define	key_newreqid _bsd_key_newreqid
@@ -3960,6 +4074,7 @@
 #define	m_fixhdr _bsd_m_fixhdr
 #define	m_free_raw _bsd_m_free_raw
 #define	m_freem _bsd_m_freem
+#define	m_freemp _bsd_m_freemp
 #define	m_get2 _bsd_m_get2
 #define	m_get3 _bsd_m_get3
 #define	m_getjcl _bsd_m_getjcl
@@ -4236,6 +4351,7 @@
 #define	nd6_try_set_entry_addr _bsd_nd6_try_set_entry_addr
 #define	nd_defrouter _bsd_nd_defrouter
 #define	nd_prefix _bsd_nd_prefix
+#define	net80211_get_random_bytes _bsd_net80211_get_random_bytes
 #define	netisr_clearqdrops _bsd_netisr_clearqdrops
 #define	netisr_dispatch _bsd_netisr_dispatch
 #define	netisr_dispatch_src _bsd_netisr_dispatch_src
@@ -4304,6 +4420,7 @@
 #define	nfs_pub _bsd_nfs_pub
 #define	nfs_reclaim_p _bsd_nfs_reclaim_p
 #define	nfs_req_mutex _bsd_nfs_req_mutex
+#define	nfs_resetslots _bsd_nfs_resetslots
 #define	nfs_slock_mutex _bsd_nfs_slock_mutex
 #define	nfs_sockl_mutex _bsd_nfs_sockl_mutex
 #define	nfs_srvmaxio _bsd_nfs_srvmaxio
@@ -5020,6 +5137,7 @@
 #define	osd_exit _bsd_osd_exit
 #define	osd_free_reserved _bsd_osd_free_reserved
 #define	osd_get _bsd_osd_get
+#define	osd_get_unlocked _bsd_osd_get_unlocked
 #define	osd_register _bsd_osd_register
 #define	osd_reserve _bsd_osd_reserve
 #define	osd_set _bsd_osd_set
@@ -5037,6 +5155,7 @@
 #define	pci_add_children _bsd_pci_add_children
 #define	pci_add_resources _bsd_pci_add_resources
 #define	pci_add_resources_ea _bsd_pci_add_resources_ea
+#define	pci_adjust_resource _bsd_pci_adjust_resource
 #define	pci_alloc_devinfo_method _bsd_pci_alloc_devinfo_method
 #define	pci_alloc_msi_method _bsd_pci_alloc_msi_method
 #define	pci_alloc_msix_method _bsd_pci_alloc_msix_method
@@ -5058,6 +5177,7 @@
 #define	pci_child_location_str_method _bsd_pci_child_location_str_method
 #define	pci_child_pnpinfo_method _bsd_pci_child_pnpinfo_method
 #define	pci_child_pnpinfo_str_method _bsd_pci_child_pnpinfo_str_method
+#define	pci_clear_pme _bsd_pci_clear_pme
 #define	pci_deactivate_resource _bsd_pci_deactivate_resource
 #define	pci_delete_resource _bsd_pci_delete_resource
 #define	pci_detach _bsd_pci_detach
@@ -5067,8 +5187,10 @@
 #define	pci_disable_msi_method _bsd_pci_disable_msi_method
 #define	pci_do_power_resume _bsd_pci_do_power_resume
 #define	pci_do_power_suspend _bsd_pci_do_power_suspend
+#define	pci_domain_activate_bus _bsd_pci_domain_activate_bus
 #define	pci_domain_adjust_bus _bsd_pci_domain_adjust_bus
 #define	pci_domain_alloc_bus _bsd_pci_domain_alloc_bus
+#define	pci_domain_deactivate_bus _bsd_pci_domain_deactivate_bus
 #define	pci_domain_release_bus _bsd_pci_domain_release_bus
 #define	pci_driver _bsd_pci_driver
 #define	pci_driver_added _bsd_pci_driver_added
@@ -5078,6 +5200,7 @@
 #define	pci_enable_io_method _bsd_pci_enable_io_method
 #define	pci_enable_msi_method _bsd_pci_enable_msi_method
 #define	pci_enable_msix_method _bsd_pci_enable_msix_method
+#define	pci_enable_pme _bsd_pci_enable_pme
 #define	pci_fetch_vpd_list _bsd_pci_fetch_vpd_list
 #define	pci_find_bar _bsd_pci_find_bar
 #define	pci_find_bsf _bsd_pci_find_bsf
@@ -5104,7 +5227,9 @@
 #define	pci_get_resource_list _bsd_pci_get_resource_list
 #define	pci_get_vpd_ident_method _bsd_pci_get_vpd_ident_method
 #define	pci_get_vpd_readonly_method _bsd_pci_get_vpd_readonly_method
+#define	pci_has_pm _bsd_pci_has_pm
 #define	pci_ht_map_msi _bsd_pci_ht_map_msi
+#define	pci_map_resource _bsd_pci_map_resource
 #define	pci_mapsize _bsd_pci_mapsize
 #define	pci_match_device _bsd_pci_match_device
 #define	pci_msi_count_method _bsd_pci_msi_count_method
@@ -5139,6 +5264,7 @@
 #define	pci_setup_intr _bsd_pci_setup_intr
 #define	pci_suspend_child _bsd_pci_suspend_child
 #define	pci_teardown_intr _bsd_pci_teardown_intr
+#define	pci_unmap_resource _bsd_pci_unmap_resource
 #define	pci_write_config_method _bsd_pci_write_config_method
 #define	pci_write_ivar _bsd_pci_write_ivar
 #define	pcib_alloc_msi _bsd_pcib_alloc_msi
@@ -5291,6 +5417,8 @@
 #define	pf_get_wscale _bsd_pf_get_wscale
 #define	pf_hashmask _bsd_pf_hashmask
 #define	pf_hashseed _bsd_pf_hashseed
+#define	pf_icmp_mapping _bsd_pf_icmp_mapping
+#define	pf_icmp_state_lookup _bsd_pf_icmp_state_lookup
 #define	pf_idhash _bsd_pf_idhash
 #define	pf_init_keth _bsd_pf_init_keth
 #define	pf_init_kruleset _bsd_pf_init_kruleset
@@ -5962,6 +6090,8 @@
 #define	reassignbuf _bsd_reassignbuf
 #define	refcount_release_last _bsd_refcount_release_last
 #define	refcount_sleep _bsd_refcount_sleep
+#define	regdev_default_ofw_map _bsd_regdev_default_ofw_map
+#define	regfix_driver _bsd_regfix_driver
 #define	register_tcp_functions _bsd_register_tcp_functions
 #define	register_tcp_functions_as_name _bsd_register_tcp_functions_as_name
 #define	register_tcp_functions_as_names _bsd_register_tcp_functions_as_names
@@ -5975,6 +6105,7 @@
 #define	regnode_get_device _bsd_regnode_get_device
 #define	regnode_get_flags _bsd_regnode_get_flags
 #define	regnode_get_name _bsd_regnode_get_name
+#define	regnode_get_ofw_node _bsd_regnode_get_ofw_node
 #define	regnode_get_parent _bsd_regnode_get_parent
 #define	regnode_get_parent_name _bsd_regnode_get_parent_name
 #define	regnode_get_softc _bsd_regnode_get_softc
@@ -5994,8 +6125,10 @@
 #define	regulator_enable _bsd_regulator_enable
 #define	regulator_get_by_id _bsd_regulator_get_by_id
 #define	regulator_get_by_name _bsd_regulator_get_by_name
+#define	regulator_get_by_ofw_property _bsd_regulator_get_by_ofw_property
 #define	regulator_get_name _bsd_regulator_get_name
 #define	regulator_get_voltage _bsd_regulator_get_voltage
+#define	regulator_parse_ofw_stdparam _bsd_regulator_parse_ofw_stdparam
 #define	regulator_range_sel8_to_volt _bsd_regulator_range_sel8_to_volt
 #define	regulator_range_volt_to_sel8 _bsd_regulator_range_volt_to_sel8
 #define	regulator_release _bsd_regulator_release
@@ -6088,6 +6221,7 @@
 #define	rip6_protosw _bsd_rip6_protosw
 #define	rip6_usrreqs _bsd_rip6_usrreqs
 #define	rip6stat _bsd_rip6stat
+#define	rip_bind_all_fibs _bsd_rip_bind_all_fibs
 #define	rip_ctlinput _bsd_rip_ctlinput
 #define	rip_ctloutput _bsd_rip_ctloutput
 #define	rip_init _bsd_rip_init
@@ -6114,6 +6248,7 @@
 #define	rman_get_rid _bsd_rman_get_rid
 #define	rman_get_size _bsd_rman_get_size
 #define	rman_get_start _bsd_rman_get_start
+#define	rman_get_type _bsd_rman_get_type
 #define	rman_get_virtual _bsd_rman_get_virtual
 #define	rman_head _bsd_rman_head
 #define	rman_init _bsd_rman_init
@@ -6133,6 +6268,7 @@
 #define	rman_set_mapping _bsd_rman_set_mapping
 #define	rman_set_rid _bsd_rman_set_rid
 #define	rman_set_start _bsd_rman_set_start
+#define	rman_set_type _bsd_rman_set_type
 #define	rman_set_virtual _bsd_rman_set_virtual
 #define	rn4_mpath_inithead _bsd_rn4_mpath_inithead
 #define	rn6_mpath_inithead _bsd_rn6_mpath_inithead
@@ -6317,6 +6453,7 @@
 #define	rtwn_usb_write_4 _bsd_rtwn_usb_write_4
 #define	rtwn_usb_write_region_1 _bsd_rtwn_usb_write_region_1
 #define	run_debug _bsd_run_debug
+#define	runningbufclaim _bsd_runningbufclaim
 #define	runningbufspace _bsd_runningbufspace
 #define	runningbufwakeup _bsd_runningbufwakeup
 #define	rw_destroy _bsd_rw_destroy
@@ -6894,6 +7031,7 @@
 #define	so_sototcpcb _bsd_so_sototcpcb
 #define	so_sowwakeup _bsd_so_sowwakeup
 #define	so_sowwakeup_locked _bsd_so_sowwakeup_locked
+#define	so_splice_dispatch _bsd_so_splice_dispatch
 #define	so_state_get _bsd_so_state_get
 #define	so_state_set _bsd_so_state_set
 #define	so_unlock _bsd_so_unlock
@@ -6962,6 +7100,7 @@
 #define	sosend _bsd_sosend
 #define	sosend_dgram _bsd_sosend_dgram
 #define	sosend_generic _bsd_sosend_generic
+#define	sosetfib _bsd_sosetfib
 #define	sosetopt _bsd_sosetopt
 #define	soshutdown _bsd_soshutdown
 #define	sotoxsocket _bsd_sotoxsocket
@@ -7151,10 +7290,20 @@
 #define	sys_unmount _bsd_sys_unmount
 #define	sys_write _bsd_sys_write
 #define	sys_writev _bsd_sys_writev
+#define	syscon_class _bsd_syscon_class
+#define	syscon_create _bsd_syscon_create
+#define	syscon_create_ofw_node _bsd_syscon_create_ofw_node
+#define	syscon_get_by_ofw_node _bsd_syscon_get_by_ofw_node
+#define	syscon_get_by_ofw_property _bsd_syscon_get_by_ofw_property
+#define	syscon_get_ofw_node _bsd_syscon_get_ofw_node
+#define	syscon_get_softc _bsd_syscon_get_softc
+#define	syscon_register _bsd_syscon_register
+#define	syscon_unregister _bsd_syscon_unregister
 #define	sysctl___debug _bsd_sysctl___debug
 #define	sysctl___dev _bsd_sysctl___dev
 #define	sysctl___hw _bsd_sysctl___hw
 #define	sysctl___hw_bus _bsd_sysctl___hw_bus
+#define	sysctl___hw_clock _bsd_sysctl___hw_clock
 #define	sysctl___hw_fdt _bsd_sysctl___hw_fdt
 #define	sysctl___hw_hid _bsd_sysctl___hw_hid
 #define	sysctl___hw_nvme _bsd_sysctl___hw_nvme
@@ -7208,6 +7357,7 @@
 #define	sysctl___net_inet_tcp_sack _bsd_sysctl___net_inet_tcp_sack
 #define	sysctl___net_inet_udp _bsd_sysctl___net_inet_udp
 #define	sysctl___net_key _bsd_sysctl___net_key
+#define	sysctl___net_key_spdcache _bsd_sysctl___net_key_spdcache
 #define	sysctl___net_link _bsd_sysctl___net_link
 #define	sysctl___net_link_ether _bsd_sysctl___net_link_ether
 #define	sysctl___net_link_generic _bsd_sysctl___net_link_generic
@@ -7331,6 +7481,7 @@
 #define	tcp_autosndbuf_max _bsd_tcp_autosndbuf_max
 #define	tcp_backoff _bsd_tcp_backoff
 #define	tcp_bad_csums _bsd_tcp_bad_csums
+#define	tcp_bind_all_fibs _bsd_tcp_bind_all_fibs
 #define	tcp_can_enable_pacing _bsd_tcp_can_enable_pacing
 #define	tcp_ccalgounload _bsd_tcp_ccalgounload
 #define	tcp_change_time_units _bsd_tcp_change_time_units
@@ -7408,6 +7559,7 @@
 #define	tcp_inptoxtp _bsd_tcp_inptoxtp
 #define	tcp_input _bsd_tcp_input
 #define	tcp_input_with_port _bsd_tcp_input_with_port
+#define	tcp_insecure_ack _bsd_tcp_insecure_ack
 #define	tcp_insecure_rst _bsd_tcp_insecure_rst
 #define	tcp_insecure_syn _bsd_tcp_insecure_syn
 #define	tcp_ipsec_support _bsd_tcp_ipsec_support
@@ -7485,6 +7637,7 @@
 #define	tcp_sack_output _bsd_tcp_sack_output
 #define	tcp_sack_partialack _bsd_tcp_sack_partialack
 #define	tcp_sc_rst_sock_fail _bsd_tcp_sc_rst_sock_fail
+#define	tcp_send_challenge_ack _bsd_tcp_send_challenge_ack
 #define	tcp_sendbuf_auto_lowat _bsd_tcp_sendbuf_auto_lowat
 #define	tcp_sendspace _bsd_tcp_sendspace
 #define	tcp_setpersist _bsd_tcp_setpersist
@@ -7546,6 +7699,7 @@
 #define	ti_prcm_clk_set_source _bsd_ti_prcm_clk_set_source
 #define	ti_prcm_clk_set_source_freq _bsd_ti_prcm_clk_set_source_freq
 #define	ti_prcm_clk_valid _bsd_ti_prcm_clk_valid
+#define	ti_scm_driver _bsd_ti_scm_driver
 #define	ti_scm_reg_read_4 _bsd_ti_scm_reg_read_4
 #define	ti_scm_reg_write_4 _bsd_ti_scm_reg_write_4
 #define	ti_sysc_clock_disable _bsd_ti_sysc_clock_disable
@@ -7671,6 +7825,7 @@
 #define	udp6_tun_socket _bsd_udp6_tun_socket
 #define	udp6_usrreqs _bsd_udp6_usrreqs
 #define	udp_abort _bsd_udp_abort
+#define	udp_bind_all_fibs _bsd_udp_bind_all_fibs
 #define	udp_blackhole _bsd_udp_blackhole
 #define	udp_blackhole_local _bsd_udp_blackhole_local
 #define	udp_cksum _bsd_udp_cksum
@@ -7911,6 +8066,7 @@
 #define	usb_proc_is_gone _bsd_usb_proc_is_gone
 #define	usb_proc_msignal _bsd_usb_proc_msignal
 #define	usb_proc_mwait _bsd_usb_proc_mwait
+#define	usb_proc_mwait_sig _bsd_usb_proc_mwait_sig
 #define	usb_proc_rewakeup _bsd_usb_proc_rewakeup
 #define	usb_quirk_ioctl_p _bsd_usb_quirk_ioctl_p
 #define	usb_quirk_unload _bsd_usb_quirk_unload
@@ -8213,6 +8369,7 @@
 #define	vhold _bsd_vhold
 #define	vhold_smr _bsd_vhold_smr
 #define	vholdnz _bsd_vholdnz
+#define	vht160_chan_ranges _bsd_vht160_chan_ranges
 #define	vht80_chan_ranges _bsd_vht80_chan_ranges
 #define	vid_allocate _bsd_vid_allocate
 #define	vid_configure _bsd_vid_configure
@@ -8436,6 +8593,7 @@
 #define	xchan_bank_init _bsd_xchan_bank_init
 #define	xchan_bank_put _bsd_xchan_bank_put
 #define	xchan_seg_done _bsd_xchan_seg_done
+#define	xchan_set_memory _bsd_xchan_set_memory
 #define	xchan_sglist_alloc _bsd_xchan_sglist_alloc
 #define	xchan_sglist_free _bsd_xchan_sglist_free
 #define	xdma_callback _bsd_xdma_callback
@@ -8448,10 +8606,14 @@
 #define	xdma_enqueue _bsd_xdma_enqueue
 #define	xdma_enqueue_mbuf _bsd_xdma_enqueue_mbuf
 #define	xdma_get _bsd_xdma_get
+#define	xdma_get_memory _bsd_xdma_get_memory
+#define	xdma_handle_mem_node _bsd_xdma_handle_mem_node
 #define	xdma_mbuf_chain_count _bsd_xdma_mbuf_chain_count
 #define	xdma_mbuf_defrag _bsd_xdma_mbuf_defrag
+#define	xdma_ofw_get _bsd_xdma_ofw_get
 #define	xdma_prep_sg _bsd_xdma_prep_sg
 #define	xdma_put _bsd_xdma_put
+#define	xdma_put_memory _bsd_xdma_put_memory
 #define	xdma_queue_submit _bsd_xdma_queue_submit
 #define	xdma_queue_submit_sg _bsd_xdma_queue_submit_sg
 #define	xdma_request _bsd_xdma_request

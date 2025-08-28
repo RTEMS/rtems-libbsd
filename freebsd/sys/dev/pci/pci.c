@@ -98,6 +98,18 @@
 	(((cfg)->hdrtype == PCIM_HDRTYPE_NORMAL && reg == PCIR_BIOS) ||	\
 	 ((cfg)->hdrtype == PCIM_HDRTYPE_BRIDGE && reg == PCIR_BIOS_1))
 
+static device_probe_t	pci_probe;
+
+static bus_reset_post_t pci_reset_post;
+static bus_reset_prepare_t pci_reset_prepare;
+static bus_reset_child_t pci_reset_child;
+#ifndef __rtems__
+static bus_hint_device_unit_t pci_hint_device_unit;
+#endif /* __rtems__ */
+static bus_remap_intr_t pci_remap_intr_method;
+
+static pci_get_id_t	pci_get_id_method;
+
 static int		pci_has_quirk(uint32_t devid, int quirk);
 static pci_addr_t	pci_mapbase(uint64_t mapreg);
 static const char	*pci_maptype(uint64_t mapreg);
@@ -113,7 +125,6 @@ static void		pci_assign_interrupt(device_t bus, device_t dev,
 			    int force_route);
 static int		pci_add_map(device_t bus, device_t dev, int reg,
 			    struct resource_list *rl, int force, int prefetch);
-static int		pci_probe(device_t dev);
 static void		pci_load_vendor_data(void);
 static int		pci_describe_parse_line(char **ptr, int *vendor,
 			    int *device, char **desc);
@@ -135,19 +146,6 @@ static int		pci_msi_blacklisted(void);
 static int		pci_msix_blacklisted(void);
 static void		pci_resume_msi(device_t dev);
 static void		pci_resume_msix(device_t dev);
-static int		pci_remap_intr_method(device_t bus, device_t dev,
-			    u_int irq);
-#ifndef __rtems__
-static void		pci_hint_device_unit(device_t acdev, device_t child,
-			    const char *name, int *unitp);
-#endif /* __rtems__ */
-static int		pci_reset_post(device_t dev, device_t child);
-static int		pci_reset_prepare(device_t dev, device_t child);
-static int		pci_reset_child(device_t dev, device_t child,
-			    int flags);
-
-static int		pci_get_id_method(device_t dev, device_t child,
-			    enum pci_id_type type, uintptr_t *rid);
 static struct pci_devinfo * pci_fill_devinfo(device_t pcib, device_t bus, int d,
     int b, int s, int f, uint16_t vid, uint16_t did);
 
@@ -178,10 +176,12 @@ static device_method_t pci_methods[] = {
 	DEVMETHOD(bus_get_resource,	bus_generic_rl_get_resource),
 	DEVMETHOD(bus_delete_resource,	pci_delete_resource),
 	DEVMETHOD(bus_alloc_resource,	pci_alloc_resource),
-	DEVMETHOD(bus_adjust_resource,	bus_generic_adjust_resource),
+	DEVMETHOD(bus_adjust_resource,	pci_adjust_resource),
 	DEVMETHOD(bus_release_resource,	pci_release_resource),
 	DEVMETHOD(bus_activate_resource, pci_activate_resource),
 	DEVMETHOD(bus_deactivate_resource, pci_deactivate_resource),
+	DEVMETHOD(bus_map_resource,	pci_map_resource),
+	DEVMETHOD(bus_unmap_resource,	pci_unmap_resource),
 	DEVMETHOD(bus_child_deleted,	pci_child_deleted),
 	DEVMETHOD(bus_child_detached,	pci_child_detached),
 	DEVMETHOD(bus_child_pnpinfo,	pci_child_pnpinfo_method),
@@ -423,7 +423,15 @@ static int pci_enable_ari = 1;
 SYSCTL_INT(_hw_pci, OID_AUTO, enable_ari, CTLFLAG_RDTUN, &pci_enable_ari,
     0, "Enable support for PCIe Alternative RID Interpretation");
 
+/*
+ * Some x86 firmware only enables PCIe hotplug if we claim to support aspm,
+ * however enabling it breaks some arm64 firmware as it powers off devices.
+ */
+#if defined(__i386__) || defined(__amd64__)
 int pci_enable_aspm = 1;
+#else
+int pci_enable_aspm = 0;
+#endif
 SYSCTL_INT(_hw_pci, OID_AUTO, enable_aspm, CTLFLAG_RDTUN, &pci_enable_aspm,
     0, "Enable support for PCIe Active State Power Management");
 
@@ -436,6 +444,10 @@ static bool pci_enable_mps_tune = true;
 SYSCTL_BOOL(_hw_pci, OID_AUTO, enable_mps_tune, CTLFLAG_RWTUN,
     &pci_enable_mps_tune, 1,
     "Enable tuning of MPS(maximum payload size)." );
+
+static bool pci_intx_reroute = true;
+SYSCTL_BOOL(_hw_pci, OID_AUTO, intx_reroute, CTLFLAG_RWTUN,
+    &pci_intx_reroute, 0, "Re-route INTx interrupts when scanning devices");
 
 static int
 pci_has_quirk(uint32_t devid, int quirk)
@@ -939,14 +951,10 @@ pci_read_cap(device_t pcib, pcicfgregs *cfg)
 		case PCIY_MSI:		/* PCI MSI */
 			cfg->msi.msi_location = ptr;
 			cfg->msi.msi_ctrl = REG(ptr + PCIR_MSI_CTRL, 2);
-			cfg->msi.msi_msgnum = 1 << ((cfg->msi.msi_ctrl &
-						     PCIM_MSICTRL_MMC_MASK)>>1);
 			break;
 		case PCIY_MSIX:		/* PCI MSI-X */
 			cfg->msix.msix_location = ptr;
 			cfg->msix.msix_ctrl = REG(ptr + PCIR_MSIX_CTRL, 2);
-			cfg->msix.msix_msgnum = (cfg->msix.msix_ctrl &
-			    PCIM_MSIXCTRL_TABLE_SIZE) + 1;
 			val = REG(ptr + PCIR_MSIX_TABLE, 4);
 			cfg->msix.msix_table_bar = PCIR_BAR(val &
 			    PCIM_MSIX_BIR_MASK);
@@ -1198,7 +1206,7 @@ vpd_read_elem_data(struct vpd_readstate *vrs, char keyword[2], char **value, int
 	int len;
 
 	len = vpd_read_elem_head(vrs, keyword);
-	if (len > maxlen)
+	if (len < 0 || len > maxlen)
 		return (-1);
 	*value = vpd_read_value(vrs, len);
 
@@ -1219,7 +1227,7 @@ vpd_fixup_cksum(struct vpd_readstate *vrs, char *rvstring, int len)
 }
 
 /* fetch one read-only element and return size of heading + data */
-static size_t
+static int
 next_vpd_ro_elem(struct vpd_readstate *vrs, int maxsize)
 {
 	struct pcicfg_vpd *vpd;
@@ -1253,7 +1261,7 @@ next_vpd_ro_elem(struct vpd_readstate *vrs, int maxsize)
 }
 
 /* fetch one writable element and return size of heading + data */
-static size_t
+static int
 next_vpd_rw_elem(struct vpd_readstate *vrs, int maxsize)
 {
 	struct pcicfg_vpd *vpd;
@@ -1527,6 +1535,7 @@ pci_find_cap_method(device_t dev, device_t child, int capability,
 	pcicfgregs *cfg = &dinfo->cfg;
 	uint32_t status;
 	uint8_t ptr;
+	int cnt;
 
 	/*
 	 * Check the CAP_LIST bit of the PCI status register first.
@@ -1553,9 +1562,11 @@ pci_find_cap_method(device_t dev, device_t child, int capability,
 	ptr = pci_read_config(child, ptr, 1);
 
 	/*
-	 * Traverse the capabilities list.
+	 * Traverse the capabilities list.  Limit by total theoretical
+	 * maximum number of caps: capability needs at least id and
+	 * next registers, and any type X header cannot contain caps.
 	 */
-	while (ptr != 0) {
+	for (cnt = 0; ptr != 0 && cnt < (PCIE_REGMAX - 0x40) / 2; cnt++) {
 		if (pci_read_config(child, ptr + PCICAP_ID, 1) == capability) {
 			if (capreg != NULL)
 				*capreg = ptr;
@@ -1718,7 +1729,7 @@ pci_mask_msix(device_t dev, u_int index)
 	struct pcicfg_msix *msix = &dinfo->cfg.msix;
 	uint32_t offset, val;
 
-	KASSERT(msix->msix_msgnum > index, ("bogus index"));
+	KASSERT(PCI_MSIX_MSGNUM(msix->msix_ctrl) > index, ("bogus index"));
 	offset = msix->msix_table_offset + index * 16 + 12;
 	val = bus_read_4(msix->msix_table_res, offset);
 	val |= PCIM_MSIX_VCTRL_MASK;
@@ -1737,7 +1748,7 @@ pci_unmask_msix(device_t dev, u_int index)
 	struct pcicfg_msix *msix = &dinfo->cfg.msix;
 	uint32_t offset, val;
 
-	KASSERT(msix->msix_table_len > index, ("bogus index"));
+	KASSERT(PCI_MSIX_MSGNUM(msix->msix_ctrl) > index, ("bogus index"));
 	offset = msix->msix_table_offset + index * 16 + 12;
 	val = bus_read_4(msix->msix_table_res, offset);
 	val &= ~PCIM_MSIX_VCTRL_MASK;
@@ -1774,11 +1785,13 @@ pci_resume_msix(device_t dev)
 	struct pcicfg_msix *msix = &dinfo->cfg.msix;
 	struct msix_table_entry *mte;
 	struct msix_vector *mv;
-	int i;
+	u_int i, msgnum;
 
 	if (msix->msix_alloc > 0) {
+		msgnum = PCI_MSIX_MSGNUM(msix->msix_ctrl);
+
 		/* First, mask all vectors. */
-		for (i = 0; i < msix->msix_msgnum; i++)
+		for (i = 0; i < msgnum; i++)
 			pci_mask_msix(dev, i);
 
 		/* Second, program any messages with at least one handler. */
@@ -1807,10 +1820,12 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	pcicfgregs *cfg = &dinfo->cfg;
 	struct resource_list_entry *rle;
-	int actual, error, i, irq, max;
+	u_int actual, i, max;
+	int error, irq;
+	uint16_t ctrl, msgnum;
 
 	/* Don't let count == 0 get us into trouble. */
-	if (*count == 0)
+	if (*count < 1)
 		return (EINVAL);
 
 	/* If rid 0 is allocated, then fail. */
@@ -1846,11 +1861,14 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 	}
 	cfg->msix.msix_pba_res = rle->res;
 
+	ctrl = pci_read_config(child, cfg->msix.msix_location + PCIR_MSIX_CTRL,
+	    2);
+	msgnum = PCI_MSIX_MSGNUM(ctrl);
 	if (bootverbose)
 		device_printf(child,
 		    "attempting to allocate %d MSI-X vectors (%d supported)\n",
-		    *count, cfg->msix.msix_msgnum);
-	max = min(*count, cfg->msix.msix_msgnum);
+		    *count, msgnum);
+	max = min(*count, msgnum);
 	for (i = 0; i < max; i++) {
 		/* Allocate a message. */
 		error = PCIB_ALLOC_MSIX(device_get_parent(dev), child, &irq);
@@ -1870,7 +1888,7 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 			device_printf(child, "using IRQ %ju for MSI-X\n",
 			    rle->start);
 		else {
-			int run;
+			bool run;
 
 			/*
 			 * Be fancy and try to print contiguous runs of
@@ -1879,14 +1897,14 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 			 */
 			device_printf(child, "using IRQs %ju", rle->start);
 			irq = rle->start;
-			run = 0;
+			run = false;
 			for (i = 1; i < actual; i++) {
 				rle = resource_list_find(&dinfo->resources,
 				    SYS_RES_IRQ, i + 1);
 
 				/* Still in a run? */
 				if (rle->start == irq + 1) {
-					run = 1;
+					run = true;
 					irq++;
 					continue;
 				}
@@ -1894,7 +1912,7 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 				/* Finish previous range. */
 				if (run) {
 					printf("-%d", irq);
-					run = 0;
+					run = false;
 				}
 
 				/* Start new range. */
@@ -1910,14 +1928,14 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 	}
 
 	/* Mask all vectors. */
-	for (i = 0; i < cfg->msix.msix_msgnum; i++)
+	for (i = 0; i < msgnum; i++)
 		pci_mask_msix(child, i);
 
 	/* Allocate and initialize vector data and virtual table. */
-	cfg->msix.msix_vectors = malloc(sizeof(struct msix_vector) * actual,
+	cfg->msix.msix_vectors = mallocarray(actual, sizeof(struct msix_vector),
 	    M_DEVBUF, M_WAITOK | M_ZERO);
-	cfg->msix.msix_table = malloc(sizeof(struct msix_table_entry) * actual,
-	    M_DEVBUF, M_WAITOK | M_ZERO);
+	cfg->msix.msix_table = mallocarray(actual,
+	    sizeof(struct msix_table_entry), M_DEVBUF, M_WAITOK | M_ZERO);
 	for (i = 0; i < actual; i++) {
 		rle = resource_list_find(&dinfo->resources, SYS_RES_IRQ, i + 1);
 		cfg->msix.msix_vectors[i].mv_irq = rle->start;
@@ -1925,9 +1943,10 @@ pci_alloc_msix_method(device_t dev, device_t child, int *count)
 	}
 
 	/* Update control register to enable MSI-X. */
-	cfg->msix.msix_ctrl |= PCIM_MSIXCTRL_MSIX_ENABLE;
+	ctrl |= PCIM_MSIXCTRL_MSIX_ENABLE;
 	pci_write_config(child, cfg->msix.msix_location + PCIR_MSIX_CTRL,
-	    cfg->msix.msix_ctrl, 2);
+	    ctrl, 2);
+	cfg->msix.msix_ctrl = ctrl;
 
 	/* Update counts of alloc'd messages. */
 	cfg->msix.msix_alloc = actual;
@@ -1982,14 +2001,15 @@ pci_remap_msix_method(device_t dev, device_t child, int count,
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	struct pcicfg_msix *msix = &dinfo->cfg.msix;
 	struct resource_list_entry *rle;
-	int i, irq, j, *used;
+	u_int i, irq, j;
+	bool *used;
 
 	/*
 	 * Have to have at least one message in the table but the
 	 * table can't be bigger than the actual MSI-X table in the
 	 * device.
 	 */
-	if (count == 0 || count > msix->msix_msgnum)
+	if (count < 1 || count > PCI_MSIX_MSGNUM(msix->msix_ctrl))
 		return (EINVAL);
 
 	/* Sanity check the vectors. */
@@ -2002,17 +2022,17 @@ pci_remap_msix_method(device_t dev, device_t child, int count,
 	 * It's a big pain to support it, and it doesn't really make
 	 * sense anyway.  Also, at least one vector must be used.
 	 */
-	used = malloc(sizeof(int) * msix->msix_alloc, M_DEVBUF, M_WAITOK |
+	used = mallocarray(msix->msix_alloc, sizeof(*used), M_DEVBUF, M_WAITOK |
 	    M_ZERO);
 	for (i = 0; i < count; i++)
 		if (vectors[i] != 0)
-			used[vectors[i] - 1] = 1;
+			used[vectors[i] - 1] = true;
 	for (i = 0; i < msix->msix_alloc - 1; i++)
-		if (used[i] == 0 && used[i + 1] == 1) {
+		if (!used[i] && used[i + 1]) {
 			free(used, M_DEVBUF);
 			return (EINVAL);
 		}
-	if (used[0] != 1) {
+	if (!used[0]) {
 		free(used, M_DEVBUF);
 		return (EINVAL);
 	}
@@ -2045,7 +2065,7 @@ pci_remap_msix_method(device_t dev, device_t child, int count,
 	 * used.
 	 */
 	free(msix->msix_table, M_DEVBUF);
-	msix->msix_table = malloc(sizeof(struct msix_table_entry) * count,
+	msix->msix_table = mallocarray(count, sizeof(struct msix_table_entry),
 	    M_DEVBUF, M_WAITOK | M_ZERO);
 	for (i = 0; i < count; i++)
 		msix->msix_table[i].mte_vector = vectors[i];
@@ -2053,15 +2073,15 @@ pci_remap_msix_method(device_t dev, device_t child, int count,
 
 	/* Free any unused IRQs and resize the vectors array if necessary. */
 	j = msix->msix_alloc - 1;
-	if (used[j] == 0) {
+	if (!used[j]) {
 		struct msix_vector *vec;
 
-		while (used[j] == 0) {
+		while (!used[j]) {
 			PCIB_RELEASE_MSIX(device_get_parent(dev), child,
 			    msix->msix_vectors[j].mv_irq);
 			j--;
 		}
-		vec = malloc(sizeof(struct msix_vector) * (j + 1), M_DEVBUF,
+		vec = mallocarray(j + 1, sizeof(struct msix_vector), M_DEVBUF,
 		    M_WAITOK);
 		bcopy(msix->msix_vectors, vec, sizeof(struct msix_vector) *
 		    (j + 1));
@@ -2103,7 +2123,7 @@ pci_release_msix(device_t dev, device_t child)
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	struct pcicfg_msix *msix = &dinfo->cfg.msix;
 	struct resource_list_entry *rle;
-	int i;
+	u_int i;
 
 	/* Do we have any messages to release? */
 	if (msix->msix_alloc == 0)
@@ -2155,9 +2175,13 @@ pci_msix_count_method(device_t dev, device_t child)
 {
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	struct pcicfg_msix *msix = &dinfo->cfg.msix;
+	uint16_t ctrl;
 
-	if (pci_do_msix && msix->msix_location != 0)
-		return (msix->msix_msgnum);
+	if (pci_do_msix && msix->msix_location != 0) {
+		ctrl = pci_read_config(child, msix->msix_location +
+		    PCIR_MSI_CTRL, 2);
+		return (PCI_MSIX_MSGNUM(ctrl));
+	}
 	return (0);
 }
 
@@ -2424,7 +2448,8 @@ pci_remap_intr_method(device_t bus, device_t dev, u_int irq)
 	struct msix_vector *mv;
 	uint64_t addr;
 	uint32_t data;
-	int error, i, j;
+	u_int i, j;
+	int error;
 
 	/*
 	 * Handle MSI first.  We try to find this IRQ among our list
@@ -2589,11 +2614,12 @@ pci_alloc_msi_method(device_t dev, device_t child, int *count)
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	pcicfgregs *cfg = &dinfo->cfg;
 	struct resource_list_entry *rle;
-	int actual, error, i, irqs[32];
-	uint16_t ctrl;
+	u_int actual, i;
+	int error, irqs[32];
+	uint16_t ctrl, msgnum;
 
 	/* Don't let count == 0 get us into trouble. */
-	if (*count == 0)
+	if (*count < 1)
 		return (EINVAL);
 
 	/* If rid 0 is allocated, then fail. */
@@ -2613,13 +2639,15 @@ pci_alloc_msi_method(device_t dev, device_t child, int *count)
 	if (cfg->msi.msi_location == 0 || !pci_do_msi)
 		return (ENODEV);
 
+	ctrl = pci_read_config(child, cfg->msi.msi_location + PCIR_MSI_CTRL, 2);
+	msgnum = PCI_MSI_MSGNUM(ctrl);
 	if (bootverbose)
 		device_printf(child,
-		    "attempting to allocate %d MSI vectors (%d supported)\n",
-		    *count, cfg->msi.msi_msgnum);
+		    "attempting to allocate %d MSI vectors (%u supported)\n",
+		    *count, msgnum);
 
 	/* Don't ask for more than the device supports. */
-	actual = min(*count, cfg->msi.msi_msgnum);
+	actual = min(*count, msgnum);
 
 	/* Don't ask for more than 32 messages. */
 	actual = min(actual, 32);
@@ -2654,7 +2682,7 @@ pci_alloc_msi_method(device_t dev, device_t child, int *count)
 		if (actual == 1)
 			device_printf(child, "using IRQ %d for MSI\n", irqs[0]);
 		else {
-			int run;
+			bool run;
 
 			/*
 			 * Be fancy and try to print contiguous runs
@@ -2662,18 +2690,18 @@ pci_alloc_msi_method(device_t dev, device_t child, int *count)
 			 * we are in a range.
 			 */
 			device_printf(child, "using IRQs %d", irqs[0]);
-			run = 0;
+			run = false;
 			for (i = 1; i < actual; i++) {
 				/* Still in a run? */
 				if (irqs[i] == irqs[i - 1] + 1) {
-					run = 1;
+					run = true;
 					continue;
 				}
 
 				/* Finish previous range. */
 				if (run) {
 					printf("-%d", irqs[i - 1]);
-					run = 0;
+					run = false;
 				}
 
 				/* Start new range. */
@@ -2688,7 +2716,6 @@ pci_alloc_msi_method(device_t dev, device_t child, int *count)
 	}
 
 	/* Update control register with actual count. */
-	ctrl = cfg->msi.msi_ctrl;
 	ctrl &= ~PCIM_MSICTRL_MME_MASK;
 	ctrl |= (ffs(actual) - 1) << 4;
 	cfg->msi.msi_ctrl = ctrl;
@@ -2708,7 +2735,8 @@ pci_release_msi_method(device_t dev, device_t child)
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	struct pcicfg_msi *msi = &dinfo->cfg.msi;
 	struct resource_list_entry *rle;
-	int error, i, irqs[32];
+	u_int i, irqs[32];
+	int error;
 
 	/* Try MSI-X first. */
 	error = pci_release_msix(dev, child);
@@ -2761,9 +2789,13 @@ pci_msi_count_method(device_t dev, device_t child)
 {
 	struct pci_devinfo *dinfo = device_get_ivars(child);
 	struct pcicfg_msi *msi = &dinfo->cfg.msi;
+	uint16_t ctrl;
 
-	if (pci_do_msi && msi->msi_location != 0)
-		return (msi->msi_msgnum);
+	if (pci_do_msi && msi->msi_location != 0) {
+		ctrl = pci_read_config(child, msi->msi_location + PCIR_MSI_CTRL,
+		    2);
+		return (PCI_MSI_MSGNUM(ctrl));
+	}
 	return (0);
 }
 
@@ -2903,6 +2935,46 @@ pci_get_powerstate_method(device_t dev, device_t child)
 	return (result);
 }
 
+/* Clear any active PME# and disable PME# generation. */
+void
+pci_clear_pme(device_t dev)
+{
+	struct pci_devinfo *dinfo = device_get_ivars(dev);
+	pcicfgregs *cfg = &dinfo->cfg;
+	uint16_t status;
+
+	if (cfg->pp.pp_cap != 0) {
+		status = pci_read_config(dev, dinfo->cfg.pp.pp_status, 2);
+		status &= ~PCIM_PSTAT_PMEENABLE;
+		status |= PCIM_PSTAT_PME;
+		pci_write_config(dev, dinfo->cfg.pp.pp_status, status, 2);
+	}
+}
+
+/* Clear any active PME# and enable PME# generation. */
+void
+pci_enable_pme(device_t dev)
+{
+	struct pci_devinfo *dinfo = device_get_ivars(dev);
+	pcicfgregs *cfg = &dinfo->cfg;
+	uint16_t status;
+
+	if (cfg->pp.pp_cap != 0) {
+		status = pci_read_config(dev, dinfo->cfg.pp.pp_status, 2);
+		status |= PCIM_PSTAT_PME | PCIM_PSTAT_PMEENABLE;
+		pci_write_config(dev, dinfo->cfg.pp.pp_status, status, 2);
+	}
+}
+
+bool
+pci_has_pm(device_t dev)
+{
+	struct pci_devinfo *dinfo = device_get_ivars(dev);
+	pcicfgregs *cfg = &dinfo->cfg;
+
+	return (cfg->pp.pp_cap != 0);
+}
+
 /*
  * Some convenience functions for PCI device drivers.
  */
@@ -3017,19 +3089,21 @@ pci_print_verbose(struct pci_devinfo *dinfo)
 			    status & PCIM_PSTAT_DMASK);
 		}
 		if (cfg->msi.msi_location) {
-			int ctrl;
+			uint16_t ctrl, msgnum;
 
 			ctrl = cfg->msi.msi_ctrl;
+			msgnum = PCI_MSI_MSGNUM(ctrl);
 			printf("\tMSI supports %d message%s%s%s\n",
-			    cfg->msi.msi_msgnum,
-			    (cfg->msi.msi_msgnum == 1) ? "" : "s",
+			    msgnum, (msgnum == 1) ? "" : "s",
 			    (ctrl & PCIM_MSICTRL_64BIT) ? ", 64 bit" : "",
 			    (ctrl & PCIM_MSICTRL_VECTOR) ? ", vector masks":"");
 		}
 		if (cfg->msix.msix_location) {
+			uint16_t msgnum;
+
+			msgnum = PCI_MSIX_MSGNUM(cfg->msix.msix_ctrl);
 			printf("\tMSI-X supports %d message%s ",
-			    cfg->msix.msix_msgnum,
-			    (cfg->msix.msix_msgnum == 1) ? "" : "s");
+			    msgnum, (msgnum == 1) ? "" : "s");
 			if (cfg->msix.msix_table_bar == cfg->msix.msix_pba_bar)
 				printf("in map 0x%x\n",
 				    cfg->msix.msix_table_bar);
@@ -4108,7 +4182,8 @@ pci_add_resources(device_t bus, device_t dev, int force, uint32_t prefetchmask)
 		if (q->devid == devid && q->type == PCI_QUIRK_MAP_REG)
 			pci_add_map(bus, dev, q->arg1, rl, force, 0);
 
-	if (cfg->intpin > 0 && PCI_INTERRUPT_VALID(cfg->intline)) {
+	if (cfg->intpin > 0 && PCI_INTERRUPT_VALID(cfg->intline) &&
+	    pci_intx_reroute) {
 #ifdef __PCI_REROUTE_INTERRUPT
 		/*
 		 * Try to re-route interrupts. Sometimes the BIOS or
@@ -4455,6 +4530,7 @@ pci_add_child(device_t bus, struct pci_devinfo *dinfo)
 	resource_list_init(&dinfo->resources);
 	pci_cfg_save(dev, dinfo, 0);
 	pci_cfg_restore(dev, dinfo);
+	pci_clear_pme(dev);
 	pci_print_verbose(dinfo);
 	pci_add_resources(bus, dev, 0, 0);
 	if (pci_enable_mps_tune)
@@ -4656,6 +4732,7 @@ pci_resume_child(device_t dev, device_t child)
 
 	dinfo = device_get_ivars(child);
 	pci_cfg_restore(child, dinfo);
+	pci_clear_pme(child);
 	if (!device_is_attached(child))
 		pci_cfg_save(child, dinfo, 1);
 
@@ -5730,23 +5807,43 @@ pci_activate_resource(device_t dev, device_t child, int type, int rid,
 	struct pci_devinfo *dinfo;
 	int error;
 
-	error = bus_generic_activate_resource(dev, child, type, rid, r);
+	if (device_get_parent(child) != dev)
+		return (bus_generic_activate_resource(dev, child, type, rid,
+		    r));
+
+	dinfo = device_get_ivars(child);
+#ifdef PCI_IOV
+	if (dinfo->cfg.flags & PCICFG_VF) {
+		switch (rman_get_type(r)) {
+		/* VFs can't have I/O BARs. */
+		case SYS_RES_IOPORT:
+			error = EINVAL;
+			break;
+		case SYS_RES_MEMORY:
+			error = pci_vf_activate_mem_resource(dev, child, r);
+			break;
+		default:
+			error = bus_generic_activate_resource(dev, child, type,
+			    rid, r);
+			break;
+		}
+	} else
+#endif
+		error = bus_generic_activate_resource(dev, child, type, rid, r);
 	if (error)
 		return (error);
 
+	/* Device ROMs need their decoding explicitly enabled. */
+	if (type == SYS_RES_MEMORY && PCIR_IS_BIOS(&dinfo->cfg, rid))
+		pci_write_bar(child, pci_find_bar(child, rid),
+		    rman_get_start(r) | PCIM_BIOS_ENABLE);
+
 	/* Enable decoding in the command register when activating BARs. */
-	if (device_get_parent(child) == dev) {
-		/* Device ROMs need their decoding explicitly enabled. */
-		dinfo = device_get_ivars(child);
-		if (type == SYS_RES_MEMORY && PCIR_IS_BIOS(&dinfo->cfg, rid))
-			pci_write_bar(child, pci_find_bar(child, rid),
-			    rman_get_start(r) | PCIM_BIOS_ENABLE);
-		switch (type) {
-		case SYS_RES_IOPORT:
-		case SYS_RES_MEMORY:
-			error = PCI_ENABLE_IO(dev, child, type);
-			break;
-		}
+	switch (type) {
+	case SYS_RES_IOPORT:
+	case SYS_RES_MEMORY:
+		error = PCI_ENABLE_IO(dev, child, type);
+		break;
 	}
 	return (error);
 }
@@ -5758,18 +5855,123 @@ pci_deactivate_resource(device_t dev, device_t child, int type,
 	struct pci_devinfo *dinfo;
 	int error;
 
-	error = bus_generic_deactivate_resource(dev, child, type, rid, r);
+	if (device_get_parent(child) != dev)
+		return (bus_generic_deactivate_resource(dev, child, type, rid,
+		    r));
+
+	dinfo = device_get_ivars(child);
+#ifdef PCI_IOV
+	if (dinfo->cfg.flags & PCICFG_VF) {
+		switch (rman_get_type(r)) {
+		/* VFs can't have I/O BARs. */
+		case SYS_RES_IOPORT:
+			error = EINVAL;
+			break;
+		case SYS_RES_MEMORY:
+			error = pci_vf_deactivate_mem_resource(dev, child, r);
+			break;
+		default:
+			error = bus_generic_deactivate_resource(dev, child,
+			    type, rid, r);
+			break;
+		}
+	} else
+#endif
+		error = bus_generic_deactivate_resource(dev, child, type, rid,
+		    r);
 	if (error)
 		return (error);
 
 	/* Disable decoding for device ROMs. */
-	if (device_get_parent(child) == dev) {
-		dinfo = device_get_ivars(child);
-		if (type == SYS_RES_MEMORY && PCIR_IS_BIOS(&dinfo->cfg, rid))
-			pci_write_bar(child, pci_find_bar(child, rid),
-			    rman_get_start(r));
-	}
+	if (type == SYS_RES_MEMORY && PCIR_IS_BIOS(&dinfo->cfg, rid))
+		pci_write_bar(child, pci_find_bar(child, rid),
+		    rman_get_start(r));
 	return (0);
+}
+
+int
+pci_adjust_resource(device_t dev, device_t child, int type, struct resource *r,
+    rman_res_t start, rman_res_t end)
+{
+#ifdef PCI_IOV
+	struct pci_devinfo *dinfo;
+
+	if (device_get_parent(child) != dev)
+		return (bus_generic_adjust_resource(dev, child, type, r, start,
+		    end));
+
+	dinfo = device_get_ivars(child);
+	if (dinfo->cfg.flags & PCICFG_VF) {
+		switch (rman_get_type(r)) {
+		/* VFs can't have I/O BARs. */
+		case SYS_RES_IOPORT:
+			return (EINVAL);
+		case SYS_RES_MEMORY:
+			return (pci_vf_adjust_mem_resource(dev, child, r,
+			    start, end));
+		}
+
+		/* Fall through for other types of resource allocations. */
+	}
+#endif
+
+	return (bus_generic_adjust_resource(dev, child, type, r, start, end));
+}
+
+int
+pci_map_resource(device_t dev, device_t child, int type, struct resource *r,
+    struct resource_map_request *argsp, struct resource_map *map)
+{
+#ifdef PCI_IOV
+	struct pci_devinfo *dinfo;
+
+	if (device_get_parent(child) != dev)
+		return (bus_generic_map_resource(dev, child, type, r, argsp,
+		    map));
+
+	dinfo = device_get_ivars(child);
+	if (dinfo->cfg.flags & PCICFG_VF) {
+		switch (rman_get_type(r)) {
+		/* VFs can't have I/O BARs. */
+		case SYS_RES_IOPORT:
+			return (EINVAL);
+		case SYS_RES_MEMORY:
+			return (pci_vf_map_mem_resource(dev, child, r, argsp,
+			    map));
+		}
+
+		/* Fall through for other types of resource allocations. */
+	}
+#endif
+
+	return (bus_generic_map_resource(dev, child, type, r, argsp, map));
+}
+
+int
+pci_unmap_resource(device_t dev, device_t child, int type, struct resource *r,
+    struct resource_map *map)
+{
+#ifdef PCI_IOV
+	struct pci_devinfo *dinfo;
+
+	if (device_get_parent(child) != dev)
+		return (bus_generic_unmap_resource(dev, child, type, r, map));
+
+	dinfo = device_get_ivars(child);
+	if (dinfo->cfg.flags & PCICFG_VF) {
+		switch (rman_get_type(r)) {
+		/* VFs can't have I/O BARs. */
+		case SYS_RES_IOPORT:
+			return (EINVAL);
+		case SYS_RES_MEMORY:
+			return (pci_vf_unmap_mem_resource(dev, child, r, map));
+		}
+
+		/* Fall through for other types of resource allocations. */
+	}
+#endif
+
+	return (bus_generic_unmap_resource(dev, child, type, r, map));
 }
 
 void

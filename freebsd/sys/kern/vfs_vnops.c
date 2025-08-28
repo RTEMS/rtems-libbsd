@@ -112,7 +112,7 @@ static fo_mmap_t	vn_mmap;
 static fo_fallocate_t	vn_fallocate;
 static fo_fspacectl_t	vn_fspacectl;
 
-struct 	fileops vnops = {
+const struct fileops vnops = {
 	.fo_read = vn_io_fault,
 	.fo_write = vn_io_fault,
 	.fo_truncate = vn_truncate,
@@ -915,6 +915,26 @@ foffset_read(struct file *fp)
 #endif
 
 void
+foffset_lock_pair(struct file *fp1, off_t *off1p, struct file *fp2, off_t *off2p,
+    int flags)
+{
+	KASSERT(fp1 != fp2, ("foffset_lock_pair: fp1 == fp2"));
+
+	/* Lock in a consistent order to avoid deadlock. */
+	if ((uintptr_t)fp1 > (uintptr_t)fp2) {
+		struct file *tmpfp;
+		off_t *tmpoffp;
+
+		tmpfp = fp1, fp1 = fp2, fp2 = tmpfp;
+		tmpoffp = off1p, off1p = off2p, off2p = tmpoffp;
+	}
+	if (fp1 != NULL)
+		*off1p = foffset_lock(fp1, flags);
+	if (fp2 != NULL)
+		*off2p = foffset_lock(fp2, flags);
+}
+
+void
 foffset_lock_uio(struct file *fp, struct uio *uio, int flags)
 {
 
@@ -1293,12 +1313,15 @@ vn_io_fault_doio(struct vn_io_fault_args *args, struct uio *uio,
 		    uio, args->cred, args->flags, td);
 		break;
 	case VN_IO_FAULT_VOP:
-		if (uio->uio_rw == UIO_READ) {
+		switch (uio->uio_rw) {
+		case UIO_READ:
 			error = VOP_READ(args->args.vop_args.vp, uio,
 			    args->flags, args->cred);
-		} else if (uio->uio_rw == UIO_WRITE) {
+			break;
+		case UIO_WRITE:
 			error = VOP_WRITE(args->args.vop_args.vp, uio,
 			    args->flags, args->cred);
+			break;
 		}
 		break;
 	default:

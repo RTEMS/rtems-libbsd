@@ -113,6 +113,11 @@
  * Per RFC 3828, July, 2004.
  */
 
+VNET_DEFINE(int, udp_bind_all_fibs) = 1;
+SYSCTL_INT(_net_inet_udp, OID_AUTO, bind_all_fibs, CTLFLAG_VNET | CTLFLAG_RDTUN,
+    &VNET_NAME(udp_bind_all_fibs), 0,
+    "Bound sockets receive traffic from all FIBs");
+
 /*
  * BSD 4.2 defaulted the udp checksum to be off.  Turning off udp checksums
  * removes the only data integrity mechanism for packets and malformed
@@ -367,9 +372,11 @@ udp_multi_input(struct mbuf *m, int proto, struct sockaddr_in *udp_in)
 #endif
 	struct inpcb *inp;
 	struct mbuf *n;
-	int appends = 0;
+	int appends = 0, fib;
 
 	MPASS(ip->ip_hl == sizeof(struct ip) >> 2);
+
+	fib = M_GETFIB(m);
 
 	while ((inp = inp_next(&inpi)) != NULL) {
 		/*
@@ -378,6 +385,14 @@ udp_multi_input(struct mbuf *m, int proto, struct sockaddr_in *udp_in)
 		 * before, we should probably recheck now that the
 		 * inpcb lock is held.
 		 */
+
+		if (V_udp_bind_all_fibs == 0 && fib != inp->inp_inc.inc_fibnum)
+			/*
+			 * Sockets bound to a specific FIB can only receive
+			 * packets from that FIB.
+			 */
+			continue;
+
 		/*
 		 * Handle socket delivery policy for any-source
 		 * and source-specific multicast. [RFC3678]
@@ -461,7 +476,7 @@ udp_input(struct mbuf **mp, int *offp, int proto)
 	struct sockaddr_in udp_in[2];
 	struct mbuf *m;
 	struct m_tag *fwd_tag;
-	int cscov_partial, iphlen;
+	int cscov_partial, iphlen, lookupflags;
 
 	m = *mp;
 	iphlen = *offp;
@@ -552,12 +567,12 @@ udp_input(struct mbuf **mp, int *offp, int proto)
 			char b[offsetof(struct ipovly, ih_src)];
 			struct ipovly *ipov = (struct ipovly *)ip;
 
-			bcopy(ipov, b, sizeof(b));
+			memcpy(b, ipov, sizeof(b));
 			bzero(ipov, sizeof(ipov->ih_x1));
 			ipov->ih_len = (proto == IPPROTO_UDP) ?
 			    uh->uh_ulen : htons(ip_len);
 			uh_sum = in_cksum(m, len + sizeof (struct ip));
-			bcopy(b, ipov, sizeof(b));
+			memcpy(ipov, b, sizeof(b));
 		}
 		if (uh_sum) {
 			UDPSTAT_INC(udps_badsum);
@@ -583,7 +598,11 @@ udp_input(struct mbuf **mp, int *offp, int proto)
 
 	/*
 	 * Locate pcb for datagram.
-	 *
+	 */
+	lookupflags = INPLOOKUP_RLOCKPCB |
+	    (V_udp_bind_all_fibs ? 0 : INPLOOKUP_FIB);
+
+	/*
 	 * Grab info from PACKET_TAG_IPFORWARD tag prepended to the chain.
 	 */
 	if ((m->m_flags & M_IP_NEXTHOP) &&
@@ -597,7 +616,7 @@ udp_input(struct mbuf **mp, int *offp, int proto)
 		 * Already got one like this?
 		 */
 		inp = in_pcblookup_mbuf(pcbinfo, ip->ip_src, uh->uh_sport,
-		    ip->ip_dst, uh->uh_dport, INPLOOKUP_RLOCKPCB, ifp, m);
+		    ip->ip_dst, uh->uh_dport, lookupflags, ifp, m);
 		if (!inp) {
 			/*
 			 * It's new.  Try to find the ambushing socket.
@@ -607,8 +626,8 @@ udp_input(struct mbuf **mp, int *offp, int proto)
 			inp = in_pcblookup(pcbinfo, ip->ip_src,
 			    uh->uh_sport, next_hop->sin_addr,
 			    next_hop->sin_port ? htons(next_hop->sin_port) :
-			    uh->uh_dport, INPLOOKUP_WILDCARD |
-			    INPLOOKUP_RLOCKPCB, ifp);
+			    uh->uh_dport, INPLOOKUP_WILDCARD | lookupflags,
+			    ifp);
 		}
 		/* Remove the tag from the packet. We don't need it anymore. */
 		m_tag_delete(m, fwd_tag);
@@ -616,7 +635,7 @@ udp_input(struct mbuf **mp, int *offp, int proto)
 	} else
 		inp = in_pcblookup_mbuf(pcbinfo, ip->ip_src, uh->uh_sport,
 		    ip->ip_dst, uh->uh_dport, INPLOOKUP_WILDCARD |
-		    INPLOOKUP_RLOCKPCB, ifp, m);
+		    lookupflags, ifp, m);
 	if (inp == NULL) {
 		if (V_udp_log_in_vain) {
 			char src[INET_ADDRSTRLEN];
@@ -833,6 +852,8 @@ udp_getcred(SYSCTL_HANDLER_ARGS)
 	struct inpcb *inp;
 	int error;
 
+	if (req->newptr == NULL)
+		return (EINVAL);
 	error = priv_check(req->td, PRIV_NETINET_GETCRED);
 	if (error)
 		return (error);
@@ -1003,6 +1024,8 @@ udp_v4mapped_pktinfo(struct cmsghdr *cm, struct sockaddr_in * src,
 	struct in6_pktinfo *pktinfo;
 	struct in_addr ia;
 
+	NET_EPOCH_ASSERT();
+
 	if ((flags & PRUS_IPV6) == 0)
 		return (0);
 
@@ -1024,18 +1047,14 @@ udp_v4mapped_pktinfo(struct cmsghdr *cm, struct sockaddr_in * src,
 
 	/* Validate the interface index if specified. */
 	if (pktinfo->ipi6_ifindex) {
-		struct epoch_tracker et;
-
-		NET_EPOCH_ENTER(et);
 		ifp = ifnet_byindex(pktinfo->ipi6_ifindex);
-		NET_EPOCH_EXIT(et);	/* XXXGL: unsafe ifp */
 		if (ifp == NULL)
 			return (ENXIO);
 	} else
 		ifp = NULL;
 	if (ifp != NULL && !IN6_IS_ADDR_UNSPECIFIED(&pktinfo->ipi6_addr)) {
 		ia.s_addr = pktinfo->ipi6_addr.s6_addr32[3];
-		if (in_ifhasaddr(ifp, ia) == 0)
+		if (!in_ifhasaddr(ifp, ia))
 			return (EADDRNOTAVAIL);
 	}
 
@@ -1225,7 +1244,7 @@ udp_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
 		}
 		INP_HASH_WLOCK(pcbinfo);
 		error = in_pcbbind_setup(inp, &src, &laddr.s_addr, &lport,
-		    td->td_ucred);
+		    V_udp_bind_all_fibs ? 0 : INPBIND_FIB, td->td_ucred);
 		INP_HASH_WUNLOCK(pcbinfo);
 		if ((flags & PRUS_IPV6) != 0)
 			inp->inp_vflag = vflagsav;
@@ -1574,7 +1593,8 @@ udp_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 
 	INP_WLOCK(inp);
 	INP_HASH_WLOCK(pcbinfo);
-	error = in_pcbbind(inp, sinp, td->td_ucred);
+	error = in_pcbbind(inp, sinp, V_udp_bind_all_fibs ? 0 : INPBIND_FIB,
+	    td->td_ucred);
 	INP_HASH_WUNLOCK(pcbinfo);
 	INP_WUNLOCK(inp);
 	return (error);

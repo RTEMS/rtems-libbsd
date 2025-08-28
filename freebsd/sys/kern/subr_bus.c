@@ -53,8 +53,12 @@
 #include <sys/smp.h>
 #include <sys/sysctl.h>
 #include <sys/systm.h>
+#include <sys/taskqueue.h>
 #include <sys/bus.h>
 #include <sys/cpuset.h>
+#ifdef INTRNG
+#include <sys/intr.h>
+#endif
 
 #include <net/vnet.h>
 
@@ -118,6 +122,8 @@ struct device_prop_elm {
 	device_prop_dtr_t dtr;
 	LIST_ENTRY(device_prop_elm) link;
 };
+
+TASKQUEUE_DEFINE_THREAD(bus);
 
 static void device_destroy_props(device_t dev);
 
@@ -1537,11 +1543,14 @@ device_delete_child(device_t dev, device_t child)
 
 	PDEBUG(("%s from %s", DEVICENAME(child), DEVICENAME(dev)));
 
-	/* detach parent before deleting children, if any */
+	/*
+	 * Detach child.  Ideally this cleans up any grandchild
+	 * devices.
+	 */
 	if ((error = device_detach(child)) != 0)
 		return (error);
 
-	/* remove children second */
+	/* Delete any grandchildren left after detach. */
 	while ((grandchild = TAILQ_FIRST(&child->children)) != NULL) {
 		error = device_delete_child(child, grandchild);
 		if (error)
@@ -2604,7 +2613,13 @@ device_attach(device_t dev)
 
 #ifndef __rtems__
 	if (resource_disabled(dev->driver->name, dev->unit)) {
+		/*
+		 * Mostly detach the device, but leave it attached to
+		 * the devclass to reserve the name and unit.
+		 */
 		device_disable(dev);
+		(void)device_set_driver(dev, NULL);
+		dev->state = DS_NOTPRESENT;
 		if (bootverbose)
 			 device_printf(dev, "disabled via hints entry\n");
 		return (ENXIO);
@@ -2623,6 +2638,7 @@ device_attach(device_t dev)
 	if ((error = DEVICE_ATTACH(dev)) != 0) {
 		printf("device_attach: %s%d attach returned %d\n",
 		    dev->driver->name, dev->unit, error);
+		BUS_CHILD_DETACHED(dev->parent, dev);
 		if (disable_failed_devs) {
 			/*
 			 * When the user has asked to disable failed devices, we
@@ -3432,6 +3448,22 @@ bus_generic_add_child(device_t dev, u_int order, const char *name, int unit)
 int
 bus_generic_probe(device_t dev)
 {
+	bus_identify_children(dev);
+	return (0);
+}
+
+/**
+ * @brief Ask drivers to add child devices of the given device.
+ *
+ * This function allows drivers for child devices of a bus to identify
+ * child devices and add them as children of the given device.  NB:
+ * The driver for @param dev must implement the BUS_ADD_CHILD method.
+ *
+ * @param dev		the parent device
+ */
+void
+bus_identify_children(device_t dev)
+{
 	devclass_t dc = dev->devclass;
 	driverlink_t dl;
 
@@ -3449,8 +3481,6 @@ bus_generic_probe(device_t dev)
 			continue;
 		DEVICE_IDENTIFY(dl->driver, dev);
 	}
-
-	return (0);
 }
 
 /**
@@ -3463,13 +3493,28 @@ bus_generic_probe(device_t dev)
 int
 bus_generic_attach(device_t dev)
 {
+	bus_attach_children(dev);
+	return (0);
+}
+
+/**
+ * @brief Probe and attach all children of the given device
+ *
+ * This function attempts to attach a device driver to each unattached
+ * child of the given device using device_probe_and_attach().  If an
+ * individual child fails to attach this function continues attaching
+ * other children.
+ *
+ * @param dev		the parent device
+ */
+void
+bus_attach_children(device_t dev)
+{
 	device_t child;
 
 	TAILQ_FOREACH(child, &dev->children, link) {
 		device_probe_and_attach(child);
 	}
-
-	return (0);
 }
 
 /**
@@ -3483,7 +3528,7 @@ int
 bus_delayed_attach_children(device_t dev)
 {
 	/* Probe and attach the bus children when interrupts are available */
-	config_intrhook_oneshot((ich_func_t)bus_generic_attach, dev);
+	config_intrhook_oneshot((ich_func_t)bus_attach_children, dev);
 
 	return (0);
 }
@@ -3498,11 +3543,34 @@ bus_delayed_attach_children(device_t dev)
 int
 bus_generic_detach(device_t dev)
 {
-	device_t child;
 	int error;
 
-	if (dev->state != DS_ATTACHED)
-		return (EBUSY);
+	error = bus_detach_children(dev);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+/**
+ * @brief Detach drivers from all children of a device
+ *
+ * This function attempts to detach a device driver from each attached
+ * child of the given device using device_detach().  If an individual
+ * child fails to detach this function stops and returns an error.
+ * NB: Children that were successfully detached are not re-attached if
+ * an error occurs.
+ *
+ * @param dev		the parent device
+ *
+ * @retval 0		success
+ * @retval non-zero	a device would not detach
+ */
+int
+bus_detach_children(device_t dev)
+{
+	device_t child;
+	int error;
 
 	/*
 	 * Detach children in the reverse order.
@@ -4338,6 +4406,7 @@ bus_generic_rman_alloc_resource(device_t dev, device_t child, int type,
 	if (r == NULL)
 		return (NULL);
 	rman_set_rid(r, *rid);
+	rman_set_type(r, type);
 
 	if (flags & RF_ACTIVE) {
 		if (bus_activate_resource(child, type, *rid, r) != 0) {
@@ -4410,12 +4479,12 @@ bus_generic_rman_activate_resource(device_t dev, device_t child, int type,
     int rid, struct resource *r)
 {
 	struct resource_map map;
-#ifdef INVARIANTS_XXX
+#ifdef INVARIANTS
 	struct rman *rm;
 #endif
 	int error;
 
-#ifdef INVARIANTS_XXX
+#ifdef INVARIANTS
 	rm = BUS_GET_RMAN(dev, type, rman_get_flags(r));
 	KASSERT(rman_is_region_manager(r, rm),
 	    ("%s: rman %p doesn't match for resource %p", __func__, rm, r));
@@ -4425,17 +4494,26 @@ bus_generic_rman_activate_resource(device_t dev, device_t child, int type,
 	if (error != 0)
 		return (error);
 
-	if ((rman_get_flags(r) & RF_UNMAPPED) == 0 &&
-	    (type == SYS_RES_MEMORY || type == SYS_RES_IOPORT)) {
-		error = BUS_MAP_RESOURCE(dev, child, type, r, NULL, &map);
-		if (error != 0) {
-			rman_deactivate_resource(r);
-			return (error);
-		}
+	switch (type) {
+	case SYS_RES_IOPORT:
+	case SYS_RES_MEMORY:
+		if ((rman_get_flags(r) & RF_UNMAPPED) == 0) {
+			error = BUS_MAP_RESOURCE(dev, child, type, r, NULL, &map);
+			if (error != 0)
+				break;
 
-		rman_set_mapping(r, &map);
+			rman_set_mapping(r, &map);
+		}
+		break;
+#ifdef INTRNG
+	case SYS_RES_IRQ:
+		error = intr_activate_irq(child, r);
+		break;
+#endif
 	}
-	return (0);
+	if (error != 0)
+		rman_deactivate_resource(r);
+	return (error);
 }
 
 /**
@@ -4449,12 +4527,12 @@ bus_generic_rman_deactivate_resource(device_t dev, device_t child, int type,
     int rid, struct resource *r)
 {
 	struct resource_map map;
-#ifdef INVARIANTS_XXX
+#ifdef INVARIANTS
 	struct rman *rm;
 #endif
 	int error;
 
-#ifdef INVARIANTS_XXX
+#ifdef INVARIANTS
 	rm = BUS_GET_RMAN(dev, type, rman_get_flags(r));
 	KASSERT(rman_is_region_manager(r, rm),
 	    ("%s: rman %p doesn't match for resource %p", __func__, rm, r));
@@ -4464,10 +4542,19 @@ bus_generic_rman_deactivate_resource(device_t dev, device_t child, int type,
 	if (error != 0)
 		return (error);
 
-	if ((rman_get_flags(r) & RF_UNMAPPED) == 0 &&
-	    (type == SYS_RES_MEMORY || type == SYS_RES_IOPORT)) {
-		rman_get_mapping(r, &map);
-		BUS_UNMAP_RESOURCE(dev, child, type, r, &map);
+	switch (type) {
+	case SYS_RES_IOPORT:
+	case SYS_RES_MEMORY:
+		if ((rman_get_flags(r) & RF_UNMAPPED) == 0) {
+			rman_get_mapping(r, &map);
+			BUS_UNMAP_RESOURCE(dev, child, type, r, &map);
+		}
+		break;
+#ifdef INTRNG
+	case SYS_RES_IRQ:
+		intr_deactivate_irq(child, r);
+		break;
+#endif
 	}
 	return (0);
 }
@@ -4632,6 +4719,13 @@ bus_adjust_resource(device_t dev, int type, struct resource *r, rman_res_t start
 	return (BUS_ADJUST_RESOURCE(dev->parent, dev, type, r, start, end));
 }
 
+int
+bus_adjust_resource_new(device_t dev, struct resource *r, rman_res_t start,
+    rman_res_t end)
+{
+	return (bus_adjust_resource(dev, rman_get_type(r), r, start, end));
+}
+
 /**
  * @brief Wrapper function for BUS_TRANSLATE_RESOURCE().
  *
@@ -4661,6 +4755,13 @@ bus_activate_resource(device_t dev, int type, int rid, struct resource *r)
 	return (BUS_ACTIVATE_RESOURCE(dev->parent, dev, type, rid, r));
 }
 
+int
+bus_activate_resource_new(device_t dev, struct resource *r)
+{
+	return (bus_activate_resource(dev, rman_get_type(r), rman_get_rid(r),
+	    r));
+}
+
 /**
  * @brief Wrapper function for BUS_DEACTIVATE_RESOURCE().
  *
@@ -4673,6 +4774,13 @@ bus_deactivate_resource(device_t dev, int type, int rid, struct resource *r)
 	if (dev->parent == NULL)
 		return (EINVAL);
 	return (BUS_DEACTIVATE_RESOURCE(dev->parent, dev, type, rid, r));
+}
+
+int
+bus_deactivate_resource_new(device_t dev, struct resource *r)
+{
+	return (bus_deactivate_resource(dev, rman_get_type(r), rman_get_rid(r),
+	    r));
 }
 
 /**
@@ -4690,6 +4798,13 @@ bus_map_resource(device_t dev, int type, struct resource *r,
 	return (BUS_MAP_RESOURCE(dev->parent, dev, type, r, args, map));
 }
 
+int
+bus_map_resource_new(device_t dev, struct resource *r,
+    struct resource_map_request *args, struct resource_map *map)
+{
+	return (bus_map_resource(dev, rman_get_type(r), r, args, map));
+}
+
 /**
  * @brief Wrapper function for BUS_UNMAP_RESOURCE().
  *
@@ -4703,6 +4818,13 @@ bus_unmap_resource(device_t dev, int type, struct resource *r,
 	if (dev->parent == NULL)
 		return (EINVAL);
 	return (BUS_UNMAP_RESOURCE(dev->parent, dev, type, r, map));
+}
+
+int
+bus_unmap_resource_new(device_t dev, struct resource *r,
+    struct resource_map *map)
+{
+	return (bus_unmap_resource(dev, rman_get_type(r), r, map));
 }
 
 /**
@@ -4720,6 +4842,13 @@ bus_release_resource(device_t dev, int type, int rid, struct resource *r)
 		return (EINVAL);
 	rv = BUS_RELEASE_RESOURCE(dev->parent, dev, type, rid, r);
 	return (rv);
+}
+
+int
+bus_release_resource_new(device_t dev, struct resource *r)
+{
+	return (bus_release_resource(dev, rman_get_type(r), rman_get_rid(r),
+	    r));
 }
 
 /**
@@ -5750,17 +5879,20 @@ devctl2_ioctl(struct cdev *cdev, u_long cmd, caddr_t data, int fflag,
 		 * attach the device rather than doing a full probe.
 		 */
 		device_enable(dev);
-		if (device_is_alive(dev)) {
+		if (dev->devclass != NULL) {
 			/*
 			 * If the device was disabled via a hint, clear
 			 * the hint.
 			 */
-			if (resource_disabled(dev->driver->name, dev->unit))
-				resource_unset_value(dev->driver->name,
+			if (resource_disabled(dev->devclass->name, dev->unit))
+				resource_unset_value(dev->devclass->name,
 				    dev->unit, "disabled");
-			error = device_attach(dev);
-		} else
-			error = device_probe_and_attach(dev);
+
+			/* Allow any drivers to rebid. */
+			if (!(dev->flags & DF_FIXEDCLASS))
+				devclass_delete_device(dev->devclass, dev);
+		}
+		error = device_probe_and_attach(dev);
 		break;
 	case DEV_DISABLE:
 		if (!device_is_enabled(dev)) {

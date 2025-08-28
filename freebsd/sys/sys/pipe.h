@@ -53,7 +53,7 @@
  */
 extern long	maxpipekva;
 #ifndef __rtems__
-extern struct	fileops pipeops;
+extern const struct fileops pipeops;
 #endif /* __rtems__ */
 #endif
 

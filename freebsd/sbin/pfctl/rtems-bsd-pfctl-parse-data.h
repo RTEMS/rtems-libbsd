@@ -2,7 +2,7 @@
 #include <rtems/linkersets.h>
 #include "rtems-bsd-pfctl-data.h"
 /* parse.c */
-/* RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static YYSTACKDATA yystack); */
+/*RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static YYSTACKDATA yystack);*/
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char *parsebuf);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static char pushback_buffer[]);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_pfctl, static int blockpolicy);

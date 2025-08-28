@@ -37,8 +37,8 @@
 static char sccsid[] = "@(#)cchar.c	8.5 (Berkeley) 4/2/94";
 #endif
 #endif /* not lint */
-#include <sys/cdefs.h>
 #ifdef __rtems__
+#include <sys/cdefs.h>
 #include <machine/rtems-bsd-program.h>
 #endif /* __rtems__ */
 #include <sys/types.h>

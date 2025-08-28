@@ -1,6 +1,4 @@
 #include <machine/rtems-bsd-kernel-space.h>
-
-#include <sys/cdefs.h>
 /*	$NetBSD: ulpt.c,v 1.60 2003/10/04 21:19:50 augustss Exp $	*/
 
 /*-

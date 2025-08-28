@@ -239,7 +239,7 @@ static int carp_demote_adj_sysctl(SYSCTL_HANDLER_ARGS);
 SYSCTL_NODE(_net_inet, IPPROTO_CARP, carp, CTLFLAG_RW | CTLFLAG_MPSAFE, 0,
     "CARP");
 SYSCTL_PROC(_net_inet_carp, OID_AUTO, allow,
-    CTLFLAG_VNET | CTLTYPE_INT | CTLFLAG_RWTUN | CTLFLAG_MPSAFE,
+    CTLFLAG_VNET | CTLTYPE_INT | CTLFLAG_RWTUN | CTLFLAG_NOFETCH | CTLFLAG_MPSAFE,
     &VNET_NAME(carp_allow), 0, carp_allow_sysctl, "I",
     "Accept incoming CARP packets");
 SYSCTL_PROC(_net_inet_carp, OID_AUTO, dscp,
@@ -348,7 +348,7 @@ static void	carp_ifa_delroute(struct ifaddr *);
 static void	carp_send_ad_all(void *, int);
 static void	carp_demote_adj(int, char *);
 
-static LIST_HEAD(, carp_softc) carp_list;
+static LIST_HEAD(, carp_softc) carp_list = LIST_HEAD_INITIALIZER(carp_list);
 static struct mtx carp_mtx;
 static struct sx carp_sx;
 static struct task carp_sendall_task =
@@ -724,7 +724,7 @@ carp_input_c(struct mbuf *m, struct carp_header *ch, sa_family_t af, int ttl)
 	sc = ifa->ifa_carp;
 	CARP_LOCK(sc);
 	if (ifa->ifa_addr->sa_family == AF_INET) {
-		multicast = IN_MULTICAST(sc->sc_carpaddr.s_addr);
+		multicast = IN_MULTICAST(ntohl(sc->sc_carpaddr.s_addr));
 	} else {
 		multicast = IN6_IS_ADDR_MULTICAST(&sc->sc_carpaddr6);
 	}
@@ -990,7 +990,7 @@ carp_send_ad_locked(struct carp_softc *sc)
 		m->m_pkthdr.rcvif = NULL;
 		m->m_len = len;
 		M_ALIGN(m, m->m_len);
-		if (IN_MULTICAST(sc->sc_carpaddr.s_addr))
+		if (IN_MULTICAST(ntohl(sc->sc_carpaddr.s_addr)))
 			m->m_flags |= M_MCAST;
 		ip = mtod(m, struct ip *);
 		ip->ip_v = IPVERSION;
@@ -2527,7 +2527,6 @@ carp_mod_load(void)
 
 	mtx_init(&carp_mtx, "carp_mtx", NULL, MTX_DEF);
 	sx_init(&carp_sx, "carp_sx");
-	LIST_INIT(&carp_list);
 	carp_get_vhid_p = carp_get_vhid;
 	carp_forus_p = carp_forus;
 	carp_output_p = carp_output;

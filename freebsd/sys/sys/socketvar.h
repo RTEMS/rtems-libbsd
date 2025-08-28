@@ -82,6 +82,7 @@ struct so_splice {
 	struct mtx mtx;
 	unsigned int wq_index;
 	enum so_splice_state {
+		SPLICE_INIT,	/* embryonic state, don't queue work yet */
 		SPLICE_IDLE,	/* waiting for work to arrive */
 		SPLICE_QUEUED,	/* a wakeup has queued some work */
 		SPLICE_RUNNING,	/* currently transferring data */
@@ -555,6 +556,7 @@ int	sosend_dgram(struct socket *so, struct sockaddr *addr,
 int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
+int	sosetfib(struct socket *so, int fibnum);
 int	soshutdown(struct socket *so, int how);
 void	soupcall_clear(struct socket *, sb_which);
 void	soupcall_set(struct socket *, sb_which, so_upcall_t, void *);
@@ -619,7 +621,8 @@ struct xsocket {
 	uint32_t	so_qlimit;
 	pid_t		so_pgid;
 	uid_t		so_uid;
-	int32_t		so_spare32[8];
+	int32_t		so_fibnum;
+	int32_t		so_spare32[7];
 	int16_t		so_type;
 	int16_t		so_options;
 	int16_t		so_linger;

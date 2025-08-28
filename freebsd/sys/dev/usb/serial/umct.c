@@ -1,6 +1,4 @@
 #include <machine/rtems-bsd-kernel-space.h>
-
-#include <sys/cdefs.h>
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *

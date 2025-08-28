@@ -1,5 +1,4 @@
 #include <machine/rtems-bsd-kernel-space.h>
-
 /*
  * This file is @generated automatically.
  * Do not modify anything in here by hand.
@@ -23,10 +22,7 @@
 #include <sys/taskqueue.h>
 #include <machine/bus.h>
 #include <dev/mmc/bridge.h>
-#include <rtems/bsd/local/sdhci_if.h>
-#ifdef __rtems__
 #include <dev/sdhci/sdhci.h>
-#endif /* __rtems__ */
 
 static int
 null_set_clock(device_t brdev __unused,
@@ -42,6 +38,8 @@ null_set_uhs_timing(device_t brdev __unused,
 {
 
 }
+
+#include <rtems/bsd/local/sdhci_if.h>
 
 struct kobjop_desc sdhci_read_1_desc = {
 	0, { &sdhci_read_1_desc, (kobjop_t)kobj_error_method }

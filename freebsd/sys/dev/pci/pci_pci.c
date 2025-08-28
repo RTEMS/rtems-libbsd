@@ -68,6 +68,10 @@ static bus_alloc_resource_t	pcib_alloc_resource;
 #ifdef NEW_PCIB
 static bus_adjust_resource_t	pcib_adjust_resource;
 static bus_release_resource_t	pcib_release_resource;
+static bus_activate_resource_t	pcib_activate_resource;
+static bus_deactivate_resource_t pcib_deactivate_resource;
+static bus_map_resource_t	pcib_map_resource;
+static bus_unmap_resource_t	pcib_unmap_resource;
 #endif
 static int		pcib_reset_child(device_t dev, device_t child, int flags);
 
@@ -110,12 +114,16 @@ static device_method_t pcib_methods[] = {
 #ifdef NEW_PCIB
     DEVMETHOD(bus_adjust_resource,	pcib_adjust_resource),
     DEVMETHOD(bus_release_resource,	pcib_release_resource),
+    DEVMETHOD(bus_activate_resource,	pcib_activate_resource),
+    DEVMETHOD(bus_deactivate_resource,	pcib_deactivate_resource),
+    DEVMETHOD(bus_map_resource,		pcib_map_resource),
+    DEVMETHOD(bus_unmap_resource,	pcib_unmap_resource),
 #else
     DEVMETHOD(bus_adjust_resource,	bus_generic_adjust_resource),
     DEVMETHOD(bus_release_resource,	bus_generic_release_resource),
-#endif
     DEVMETHOD(bus_activate_resource,	bus_generic_activate_resource),
     DEVMETHOD(bus_deactivate_resource,	bus_generic_deactivate_resource),
+#endif
     DEVMETHOD(bus_setup_intr,		bus_generic_setup_intr),
     DEVMETHOD(bus_teardown_intr,	bus_generic_teardown_intr),
     DEVMETHOD(bus_reset_child,		pcib_reset_child),
@@ -158,9 +166,9 @@ SYSCTL_INT(_hw_pci, OID_AUTO, clear_pcib, CTLFLAG_RDTUN, &pci_clear_pcib, 0,
  * sub-allocated from one of our window resource managers.
  */
 static struct pcib_window *
-pcib_get_resource_window(struct pcib_softc *sc, int type, struct resource *r)
+pcib_get_resource_window(struct pcib_softc *sc, struct resource *r)
 {
-	switch (type) {
+	switch (rman_get_type(r)) {
 	case SYS_RES_IOPORT:
 		if (rman_is_region_manager(r, &sc->io.rman))
 			return (&sc->io);
@@ -182,14 +190,14 @@ pcib_get_resource_window(struct pcib_softc *sc, int type, struct resource *r)
  * resource managers?
  */
 static int
-pcib_is_resource_managed(struct pcib_softc *sc, int type, struct resource *r)
+pcib_is_resource_managed(struct pcib_softc *sc, struct resource *r)
 {
 
 #ifdef PCI_RES_BUS
-	if (type == PCI_RES_BUS)
+	if (rman_get_type(r) == PCI_RES_BUS)
 		return (rman_is_region_manager(r, &sc->bus.rman));
 #endif
-	return (pcib_get_resource_window(sc, type, r) != NULL);
+	return (pcib_get_resource_window(sc, r) != NULL);
 }
 
 static int
@@ -383,7 +391,7 @@ alloc_ranges(rman_res_t start, rman_res_t end, void *arg)
 		device_printf(as->sc->dev,
 		    "allocating non-ISA range %#jx-%#jx\n", start, end);
 	as->res[as->count] = bus_alloc_resource(as->sc->dev, SYS_RES_IOPORT,
-	    &rid, start, end, end - start + 1, 0);
+	    &rid, start, end, end - start + 1, RF_ACTIVE | RF_UNMAPPED);
 	if (as->res[as->count] == NULL)
 		as->error = ENXIO;
 	else
@@ -456,7 +464,7 @@ pcib_alloc_window(struct pcib_softc *sc, struct pcib_window *w, int type,
 	else {
 		rid = w->reg;
 		res = bus_alloc_resource(sc->dev, type, &rid, w->base, w->limit,
-		    w->limit - w->base + 1, flags);
+		    w->limit - w->base + 1, flags | RF_ACTIVE | RF_UNMAPPED);
 		if (res != NULL)
 			pcib_add_window_resources(w, &res, 1);
 	}
@@ -656,14 +664,14 @@ pcib_setup_secbus(device_t dev, struct pcib_secbus *bus, int min_count)
 	 */
 	rid = 0;
 	bus->res = bus_alloc_resource_anywhere(dev, PCI_RES_BUS, &rid,
-	    min_count, 0);
+	    min_count, RF_ACTIVE);
 	if (bus->res == NULL) {
 		/*
 		 * Fall back to just allocating a range of a single bus
 		 * number.
 		 */
 		bus->res = bus_alloc_resource_anywhere(dev, PCI_RES_BUS, &rid,
-		    1, 0);
+		    1, RF_ACTIVE);
 	} else if (rman_get_size(bus->res) < min_count)
 		/*
 		 * Attempt to grow the existing range to satisfy the
@@ -721,6 +729,7 @@ pcib_suballoc_bus(struct pcib_secbus *bus, device_t child, int *rid,
 		    rman_get_start(res), rman_get_end(res), *rid,
 		    pcib_child_name(child));
 	rman_set_rid(res, *rid);
+	rman_set_type(res, PCI_RES_BUS);
 	return (res);
 }
 
@@ -944,7 +953,10 @@ SYSCTL_INT(_hw_pci, OID_AUTO, enable_pcie_hp, CTLFLAG_RDTUN,
     &pci_enable_pcie_hp, 0,
     "Enable support for native PCI-express HotPlug.");
 
-TASKQUEUE_DEFINE_THREAD(pci_hp);
+static sbintime_t pcie_hp_detach_timeout = 5 * SBT_1S;
+SYSCTL_SBINTIME_MSEC(_hw_pci, OID_AUTO, pcie_hp_detach_timeout, CTLFLAG_RWTUN,
+    &pcie_hp_detach_timeout,
+    "Attention Button delay for PCI-express Eject.");
 
 static void
 pcib_probe_hotplug(struct pcib_softc *sc)
@@ -1032,7 +1044,7 @@ pcib_pcie_hotplug_command(struct pcib_softc *sc, uint16_t val, uint16_t mask)
 	    (ctl & new) & PCIEM_SLOT_CTL_CCIE) {
 		sc->flags |= PCIB_HOTPLUG_CMD_PENDING;
 		if (!cold)
-			taskqueue_enqueue_timeout(taskqueue_pci_hp,
+			taskqueue_enqueue_timeout(taskqueue_bus,
 			    &sc->pcie_cc_task, hz);
 	}
 }
@@ -1048,7 +1060,7 @@ pcib_pcie_hotplug_command_completed(struct pcib_softc *sc)
 		device_printf(dev, "Command Completed\n");
 	if (!(sc->flags & PCIB_HOTPLUG_CMD_PENDING))
 		return;
-	taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_cc_task, NULL);
+	taskqueue_cancel_timeout(taskqueue_bus, &sc->pcie_cc_task, NULL);
 	sc->flags &= ~PCIB_HOTPLUG_CMD_PENDING;
 	wakeup(sc);
 }
@@ -1071,7 +1083,8 @@ pcib_hotplug_inserted(struct pcib_softc *sc)
 		return (false);
 
 	/* A power fault implicitly turns off power to the slot. */
-	if (sc->pcie_slot_sta & PCIEM_SLOT_STA_PFD)
+	if (sc->pcie_slot_cap & PCIEM_SLOT_CAP_PCP &&
+	    sc->pcie_slot_sta & PCIEM_SLOT_STA_PFD)
 		return (false);
 
 	/* If the MRL is disengaged, the slot is powered off. */
@@ -1167,10 +1180,10 @@ pcib_pcie_hotplug_update(struct pcib_softc *sc, uint16_t val, uint16_t mask,
 			device_printf(sc->dev,
 			    "Data Link Layer inactive\n");
 		else
-			taskqueue_enqueue_timeout(taskqueue_pci_hp,
+			taskqueue_enqueue_timeout(taskqueue_bus,
 			    &sc->pcie_dll_task, hz);
 	} else if (sc->pcie_link_sta & PCIEM_LINK_STA_DL_ACTIVE)
-		taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_dll_task,
+		taskqueue_cancel_timeout(taskqueue_bus, &sc->pcie_dll_task,
 		    NULL);
 
 	pcib_pcie_hotplug_command(sc, val, mask);
@@ -1182,7 +1195,7 @@ pcib_pcie_hotplug_update(struct pcib_softc *sc, uint16_t val, uint16_t mask,
 	 */
 	if (schedule_task &&
 	    (pcib_hotplug_present(sc) != 0) != (sc->child != NULL))
-		taskqueue_enqueue(taskqueue_pci_hp, &sc->pcie_hp_task);
+		taskqueue_enqueue(taskqueue_bus, &sc->pcie_hp_task);
 }
 
 static void
@@ -1210,15 +1223,21 @@ pcib_pcie_intr_hotplug(void *arg)
 			device_printf(dev,
 			    "Attention Button Pressed: Detach Cancelled\n");
 			sc->flags &= ~PCIB_DETACH_PENDING;
-			taskqueue_cancel_timeout(taskqueue_pci_hp,
+			taskqueue_cancel_timeout(taskqueue_bus,
 			    &sc->pcie_ab_task, NULL);
 		} else if (old_slot_sta & PCIEM_SLOT_STA_PDS) {
 			/* Only initiate detach sequence if device present. */
-			device_printf(dev,
-		    "Attention Button Pressed: Detaching in 5 seconds\n");
-			sc->flags |= PCIB_DETACH_PENDING;
-			taskqueue_enqueue_timeout(taskqueue_pci_hp,
-			    &sc->pcie_ab_task, 5 * hz);
+			if (pcie_hp_detach_timeout != 0) {
+				device_printf(dev,
+			    "Attention Button Pressed: Detaching in %ld ms\n",
+			    (long)(pcie_hp_detach_timeout / SBT_1MS));
+				sc->flags |= PCIB_DETACH_PENDING;
+				taskqueue_enqueue_timeout_sbt(taskqueue_bus,
+				    &sc->pcie_ab_task, pcie_hp_detach_timeout,
+				    SBT_1S, 0);
+			} else {
+				sc->flags |= PCIB_DETACHING;
+			}
 		}
 	}
 	if (sc->pcie_slot_sta & PCIEM_SLOT_STA_PFD)
@@ -1415,11 +1434,11 @@ pcib_setup_hotplug(struct pcib_softc *sc)
 
 	dev = sc->dev;
 	TASK_INIT(&sc->pcie_hp_task, 0, pcib_pcie_hotplug_task, sc);
-	TIMEOUT_TASK_INIT(taskqueue_pci_hp, &sc->pcie_ab_task, 0,
+	TIMEOUT_TASK_INIT(taskqueue_bus, &sc->pcie_ab_task, 0,
 	    pcib_pcie_ab_timeout, sc);
-	TIMEOUT_TASK_INIT(taskqueue_pci_hp, &sc->pcie_cc_task, 0,
+	TIMEOUT_TASK_INIT(taskqueue_bus, &sc->pcie_cc_task, 0,
 	    pcib_pcie_cc_timeout, sc);
-	TIMEOUT_TASK_INIT(taskqueue_pci_hp, &sc->pcie_dll_task, 0,
+	TIMEOUT_TASK_INIT(taskqueue_bus, &sc->pcie_dll_task, 0,
 	    pcib_pcie_dll_timeout, sc);
 	sc->pcie_hp_lock = bus_topo_mtx();
 
@@ -1432,6 +1451,7 @@ pcib_setup_hotplug(struct pcib_softc *sc)
 
 	/* Clear any events previously pending. */
 	pcie_write_config(dev, PCIER_SLOT_STA, sc->pcie_slot_sta, 2);
+	sc->pcie_slot_sta = pcie_read_config(dev, PCIER_SLOT_STA, 2);
 
 	/* Enable HotPlug events. */
 	mask = PCIEM_SLOT_CTL_DLLSCE | PCIEM_SLOT_CTL_HPIE |
@@ -1465,13 +1485,13 @@ pcib_detach_hotplug(struct pcib_softc *sc)
 	/* Disable the card in the slot and force it to detach. */
 	if (sc->flags & PCIB_DETACH_PENDING) {
 		sc->flags &= ~PCIB_DETACH_PENDING;
-		taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_ab_task,
+		taskqueue_cancel_timeout(taskqueue_bus, &sc->pcie_ab_task,
 		    NULL);
 	}
 	sc->flags |= PCIB_DETACHING;
 
 	if (sc->flags & PCIB_HOTPLUG_CMD_PENDING) {
-		taskqueue_cancel_timeout(taskqueue_pci_hp, &sc->pcie_cc_task,
+		taskqueue_cancel_timeout(taskqueue_bus, &sc->pcie_cc_task,
 		    NULL);
 		tsleep(sc, 0, "hpcmd", hz);
 		sc->flags &= ~PCIB_HOTPLUG_CMD_PENDING;
@@ -1494,10 +1514,10 @@ pcib_detach_hotplug(struct pcib_softc *sc)
 	error = pcib_release_pcie_irq(sc);
 	if (error)
 		return (error);
-	taskqueue_drain(taskqueue_pci_hp, &sc->pcie_hp_task);
-	taskqueue_drain_timeout(taskqueue_pci_hp, &sc->pcie_ab_task);
-	taskqueue_drain_timeout(taskqueue_pci_hp, &sc->pcie_cc_task);
-	taskqueue_drain_timeout(taskqueue_pci_hp, &sc->pcie_dll_task);
+	taskqueue_drain(taskqueue_bus, &sc->pcie_hp_task);
+	taskqueue_drain_timeout(taskqueue_bus, &sc->pcie_ab_task);
+	taskqueue_drain_timeout(taskqueue_bus, &sc->pcie_cc_task);
+	taskqueue_drain_timeout(taskqueue_bus, &sc->pcie_dll_task);
 	return (0);
 }
 #endif
@@ -1926,12 +1946,8 @@ pcib_suballoc_resource(struct pcib_softc *sc, struct pcib_window *w,
 		    w->name, rman_get_start(res), rman_get_end(res), *rid,
 		    pcib_child_name(child));
 	rman_set_rid(res, *rid);
+	rman_set_type(res, type);
 
-	/*
-	 * If the resource should be active, pass that request up the
-	 * tree.  This assumes the parent drivers can handle
-	 * activating sub-allocated resources.
-	 */
 	if (flags & RF_ACTIVE) {
 		if (bus_activate_resource(child, type, *rid, res) != 0) {
 			rman_release_resource(res);
@@ -2005,7 +2021,7 @@ pcib_alloc_new_window(struct pcib_softc *sc, struct pcib_window *w, int type,
 	count = roundup2(count, (rman_res_t)1 << w->step);
 	rid = w->reg;
 	res = bus_alloc_resource(sc->dev, type, &rid, start, end, count,
-	    flags & ~RF_ACTIVE);
+	    flags | RF_ACTIVE | RF_UNMAPPED);
 	if (res == NULL)
 		return (ENOSPC);
 	pcib_add_window_resources(w, &res, 1);
@@ -2385,7 +2401,7 @@ pcib_adjust_resource(device_t bus, device_t child, int type, struct resource *r,
 	 * If the resource wasn't sub-allocated from one of our region
 	 * managers then just pass the request up.
 	 */
-	if (!pcib_is_resource_managed(sc, type, r))
+	if (!pcib_is_resource_managed(sc, r))
 		return (bus_generic_adjust_resource(bus, child, type, r,
 		    start, end));
 
@@ -2410,7 +2426,7 @@ pcib_adjust_resource(device_t bus, device_t child, int type, struct resource *r,
 		 * Resource is managed and not a secondary bus number, must
 		 * be from one of our windows.
 		 */
-		w = pcib_get_resource_window(sc, type, r);
+		w = pcib_get_resource_window(sc, r);
 		KASSERT(w != NULL,
 		    ("%s: no window for resource (%#jx-%#jx) type %d",
 		    __func__, rman_get_start(r), rman_get_end(r), type));
@@ -2446,7 +2462,7 @@ pcib_release_resource(device_t dev, device_t child, int type, int rid,
 	int error;
 
 	sc = device_get_softc(dev);
-	if (pcib_is_resource_managed(sc, type, r)) {
+	if (pcib_is_resource_managed(sc, r)) {
 		if (rman_get_flags(r) & RF_ACTIVE) {
 			error = bus_deactivate_resource(child, type, rid, r);
 			if (error)
@@ -2455,6 +2471,122 @@ pcib_release_resource(device_t dev, device_t child, int type, int rid,
 		return (rman_release_resource(r));
 	}
 	return (bus_generic_release_resource(dev, child, type, rid, r));
+}
+
+static int
+pcib_activate_resource(device_t dev, device_t child, int type, int rid,
+    struct resource *r)
+{
+	struct pcib_softc *sc = device_get_softc(dev);
+	struct resource_map map;
+	int error;
+
+	if (!pcib_is_resource_managed(sc, r))
+		return (bus_generic_activate_resource(dev, child, type, rid,
+		    r));
+
+	error = rman_activate_resource(r);
+	if (error != 0)
+		return (error);
+
+	if ((rman_get_flags(r) & RF_UNMAPPED) == 0 &&
+	    (type == SYS_RES_MEMORY || type == SYS_RES_IOPORT)) {
+		error = BUS_MAP_RESOURCE(dev, child, type, r, NULL, &map);
+		if (error != 0) {
+			rman_deactivate_resource(r);
+			return (error);
+		}
+
+		rman_set_mapping(r, &map);
+	}
+	return (0);
+}
+
+static int
+pcib_deactivate_resource(device_t dev, device_t child, int type, int rid,
+    struct resource *r)
+{
+	struct pcib_softc *sc = device_get_softc(dev);
+	struct resource_map map;
+	int error;
+
+	if (!pcib_is_resource_managed(sc, r))
+		return (bus_generic_deactivate_resource(dev, child, type, rid,
+		    r));
+
+	error = rman_deactivate_resource(r);
+	if (error != 0)
+		return (error);
+
+	if ((rman_get_flags(r) & RF_UNMAPPED) == 0 &&
+	    (type == SYS_RES_MEMORY || type == SYS_RES_IOPORT)) {
+		rman_get_mapping(r, &map);
+		BUS_UNMAP_RESOURCE(dev, child, type, r, &map);
+	}
+	return (0);
+}
+
+static struct resource *
+pcib_find_parent_resource(struct pcib_window *w, struct resource *r)
+{
+	for (int i = 0; i < w->count; i++) {
+		if (rman_get_start(w->res[i]) <= rman_get_start(r) &&
+		    rman_get_end(w->res[i]) >= rman_get_end(r))
+			return (w->res[i]);
+	}
+	return (NULL);
+}
+
+static int
+pcib_map_resource(device_t dev, device_t child, int type, struct resource *r,
+    struct resource_map_request *argsp, struct resource_map *map)
+{
+	struct pcib_softc *sc = device_get_softc(dev);
+	struct resource_map_request args;
+	struct pcib_window *w;
+	struct resource *pres;
+	rman_res_t length, start;
+	int error;
+
+	w = pcib_get_resource_window(sc, r);
+	if (w == NULL)
+		return (bus_generic_map_resource(dev, child, type, r, argsp,
+		    map));
+
+	/* Resources must be active to be mapped. */
+	if (!(rman_get_flags(r) & RF_ACTIVE))
+		return (ENXIO);
+
+	resource_init_map_request(&args);
+	error = resource_validate_map_request(r, argsp, &args, &start, &length);
+	if (error)
+		return (error);
+
+	pres = pcib_find_parent_resource(w, r);
+	if (pres == NULL)
+		return (ENOENT);
+
+	args.offset = start - rman_get_start(pres);
+	args.length = length;
+	return (bus_map_resource(dev, pres, &args, map));
+}
+
+static int
+pcib_unmap_resource(device_t dev, device_t child, int type, struct resource *r,
+    struct resource_map *map)
+{
+	struct pcib_softc *sc = device_get_softc(dev);
+	struct pcib_window *w;
+	struct resource *pres;
+
+	w = pcib_get_resource_window(sc, r);
+	if (w == NULL)
+		return (bus_generic_unmap_resource(dev, child, type, r, map));
+
+	pres = pcib_find_parent_resource(w, r);
+	if (pres == NULL)
+		return (ENOENT);
+	return (bus_unmap_resource(dev, pres, map));
 }
 #else
 /*

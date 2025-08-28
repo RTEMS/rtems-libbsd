@@ -45,10 +45,6 @@
 #define setifcap _bsd_ifconfig_setifcap
 #define setifcapnv _bsd_ifconfig_setifcapnv
 #define tunnel_status _bsd_ifconfig_tunnel_status
-/* ifconfig_netlink.c */
-#define if_nametoindex_nl _bsd_ifconfig_if_nametoindex_nl
-#define ifconfig_nl _bsd_ifconfig_ifconfig_nl
-#define list_interfaces_nl _bsd_ifconfig_list_interfaces_nl
 /* ifgif.c */
 #define gif_ctor _bsd_ifconfig_gif_ctor
 /* ifgre.c */

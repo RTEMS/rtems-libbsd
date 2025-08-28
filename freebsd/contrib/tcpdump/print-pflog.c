@@ -126,8 +126,8 @@ pflog_print(netdissect_options *ndo, const struct pfloghdr *hdr)
 
 	ND_PRINT("%s", tok2str(pf_reasons, "unkn(%u)", GET_U_1(hdr->reason)));
 
-	if (GET_BE_U_4(hdr->uid) != UID_MAX)
-		ND_PRINT(" [uid %u]", (unsigned)GET_BE_U_4(hdr->uid));
+	if (GET_HE_U_4(hdr->uid) != UID_MAX)
+		ND_PRINT(" [uid %u]", GET_HE_U_4(hdr->uid));
 
 	if (ridentifier != 0)
 		ND_PRINT(" [ridentifier %u]", ridentifier);
@@ -219,13 +219,6 @@ trunc:
 	nd_print_trunc(ndo);
 	ndo->ndo_ll_hdr_len += hdrlen;
 }
-
-/*
- * Local Variables:
- * c-style: whitesmith
- * c-basic-offset: 8
- * End:
- */
 #ifdef __rtems__
 #include "rtems-bsd-tcpdump-print-pflog-data.h"
 #endif /* __rtems__ */

@@ -1,7 +1,7 @@
 #include <machine/rtems-bsd-user-space.h>
 
 /*
- * Copyright 2016-2018 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -130,7 +130,45 @@ static ossl_inline int io_getevents(aio_context_t ctx, long min, long max,
                                struct io_event *events,
                                struct timespec *timeout)
 {
-    return syscall(__NR_io_getevents, ctx, min, max, events, timeout);
+#if defined(__NR_io_pgetevents_time64)
+    /* Check if we are a 32-bit architecture with a 64-bit time_t */
+    if (sizeof(*timeout) != sizeof(struct __timespec32)) {
+        int ret = syscall(__NR_io_pgetevents_time64, ctx, min, max, events,
+                          timeout, NULL);
+        if (ret == 0 || errno != ENOSYS)
+            return ret;
+    }
+#endif
+
+#if defined(__NR_io_getevents)
+    if (sizeof(*timeout) == sizeof(struct __timespec32))
+        /*
+         * time_t matches our architecture length, we can just use
+         * __NR_io_getevents
+         */
+        return syscall(__NR_io_getevents, ctx, min, max, events, timeout);
+    else {
+        /*
+         * We don't have __NR_io_pgetevents_time64, but we are using a
+         * 64-bit time_t on a 32-bit architecture. If we can fit the
+         * timeout value in a 32-bit time_t, then let's do that
+         * and then use the __NR_io_getevents syscall.
+         */
+        if (timeout && timeout->tv_sec == (long)timeout->tv_sec) {
+            struct __timespec32 ts32;
+
+            ts32.tv_sec = (__kernel_long_t) timeout->tv_sec;
+            ts32.tv_nsec = (__kernel_long_t) timeout->tv_nsec;
+
+            return syscall(__NR_io_getevents, ctx, min, max, events, &ts32);
+        } else {
+            return syscall(__NR_io_getevents, ctx, min, max, events, NULL);
+        }
+    }
+#endif
+
+    errno = ENOSYS;
+    return -1;
 }
 
 static void afalg_waitfd_cleanup(ASYNC_WAIT_CTX *ctx, const void *key,

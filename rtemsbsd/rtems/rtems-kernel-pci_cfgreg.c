@@ -96,6 +96,12 @@ pci_cfgregread(int bus, int slot, int func, int reg, int bytes)
 #endif
 }
 
+uint32_t
+pci_cfgregread_domain(int domain, int bus, int slot, int func, int reg, int bytes)
+{
+  return pci_cfgregread(bus, slot, func, reg, bytes);
+}
+
 /*
  * Write configuration space register
  */
@@ -119,4 +125,10 @@ pci_cfgregwrite(int bus, int slot, int func, int reg, u_int32_t data, int bytes)
       break;
   }
 #endif
+}
+
+void
+pci_cfgregwrite_domain(int domain, int bus, int slot, int func, int reg, u_int32_t data, int bytes)
+{
+  pci_cfgregwrite(bus, slot, func, reg, data, bytes);
 }

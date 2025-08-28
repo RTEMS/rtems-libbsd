@@ -178,7 +178,6 @@ pfil_mem_common(pfil_chain_t *pch, void *mem, u_int len, int flags,
 	return (rv);
 }
 
-#ifndef __rtems__
 int
 pfil_mem_in(struct pfil_head *head, void *mem, u_int len, struct ifnet *ifp,
     struct mbuf **m)
@@ -186,7 +185,6 @@ pfil_mem_in(struct pfil_head *head, void *mem, u_int len, struct ifnet *ifp,
 
 	return (pfil_mem_common(&head->head_in, mem, len, PFIL_IN, ifp, m));
 }
-#endif /* __rtems__ */
 
 int
 pfil_mem_out(struct pfil_head *head, void *mem, u_int len, struct ifnet *ifp,

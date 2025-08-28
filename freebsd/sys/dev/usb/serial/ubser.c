@@ -66,7 +66,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 /*
  * BWCT serial adapter driver
  */

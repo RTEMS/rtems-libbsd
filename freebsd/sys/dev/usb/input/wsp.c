@@ -28,7 +28,6 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <rtems/bsd/local/opt_evdev.h>
 
 #include <sys/param.h>

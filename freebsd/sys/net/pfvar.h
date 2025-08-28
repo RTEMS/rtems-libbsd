@@ -673,7 +673,6 @@ struct pf_keth_ruleset {
 		int			 open;
 		uint32_t		 ticket;
 	} active, inactive;
-	struct epoch_context	 epoch_ctx;
 	struct vnet		*vnet;
 	struct pf_keth_anchor	*anchor;
 };
@@ -1564,8 +1563,10 @@ struct pf_pdesc {
 	struct pf_krule	*nat_rule;	/* nat/rdr rule applied to packet */
 	struct pf_addr	*src;		/* src address */
 	struct pf_addr	*dst;		/* dst address */
-	u_int16_t *sport;
-	u_int16_t *dport;
+	struct pf_addr	 osrc;
+	struct pf_addr	 odst;
+	u_int16_t	*sport;
+	u_int16_t	*dport;
 	struct pf_mtag	*pf_mtag;
 	struct pf_rule_actions	act;
 
@@ -1598,6 +1599,7 @@ struct pf_pdesc {
 #define PFDESC_SCTP_ADD_IP	0x1000
 	u_int16_t	 sctp_flags;
 	u_int32_t	 sctp_initiate_tag;
+	struct pf_krule	*related_rule;
 
 	struct pf_sctp_multihome_jobs	sctp_multihome_jobs;
 };
@@ -2123,7 +2125,8 @@ VNET_DECLARE(struct pf_idhash *, pf_idhash);
 VNET_DECLARE(struct pf_srchash *, pf_srchash);
 #define	V_pf_srchash	VNET(pf_srchash)
 
-#define PF_IDHASH(s)	(be64toh((s)->id) % (V_pf_hashmask + 1))
+#define	PF_IDHASHID(id)	(be64toh(id) % (V_pf_hashmask + 1))
+#define	PF_IDHASH(s)	PF_IDHASHID((s)->id)
 
 VNET_DECLARE(void *, pf_swi_cookie);
 #define V_pf_swi_cookie	VNET(pf_swi_cookie)
@@ -2516,11 +2519,12 @@ u_short			 pf_map_addr(u_int8_t, struct pf_krule *,
 			    struct pf_addr *, struct pf_addr *,
 			    struct pfi_kkif **nkif, struct pf_addr *,
 			    struct pf_ksrc_node **);
-struct pf_krule		*pf_get_translation(struct pf_pdesc *, struct mbuf *,
+u_short			 pf_get_translation(struct pf_pdesc *, struct mbuf *,
 			    int, struct pfi_kkif *, struct pf_ksrc_node **,
 			    struct pf_state_key **, struct pf_state_key **,
 			    struct pf_addr *, struct pf_addr *,
-			    uint16_t, uint16_t, struct pf_kanchor_stackframe *);
+			    uint16_t, uint16_t, struct pf_kanchor_stackframe *,
+			    struct pf_krule **);
 
 struct pf_state_key	*pf_state_key_setup(struct pf_pdesc *, struct mbuf *, int,
 			    struct pf_addr *, struct pf_addr *, u_int16_t, u_int16_t);

@@ -61,7 +61,8 @@ struct {								\
 #ifndef __rtems__
 #define	smr_entered_load(p, smr) ({					\
 	SMR_ASSERT(SMR_ENTERED((smr)), "smr_entered_load");		\
-	(__typeof((p)->__ptr))atomic_load_acq_ptr((uintptr_t *)&(p)->__ptr); \
+	(__typeof((p)->__ptr))atomic_load_acq_ptr(			\
+	    (const uintptr_t *)&(p)->__ptr);				\
 })
 #else /* __rtems__ */
 #define	smr_entered_load(p, smr) ({					\
@@ -77,7 +78,8 @@ struct {								\
 #ifndef __rtems__
 #define	smr_serialized_load(p, ex) ({					\
 	SMR_ASSERT(ex, "smr_serialized_load");				\
-	(__typeof((p)->__ptr))atomic_load_ptr(&(p)->__ptr);		\
+	(__typeof((p)->__ptr))atomic_load_ptr(				\
+	    (const uintptr_t *)&(p)->__ptr);				\
 })
 #else /* __rtems__ */
 #define	smr_serialized_load(p, ex) ({					\

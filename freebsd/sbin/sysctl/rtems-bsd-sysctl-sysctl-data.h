@@ -3,6 +3,8 @@
 #include "rtems-bsd-sysctl-data.h"
 /* sysctl.c */
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static _Bool Fflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static _Bool Jflag);
+RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static _Bool Vflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static _Bool lflag);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static char const *conffile);
 RTEMS_LINKER_RWSET_CONTENT(bsd_prog_sysctl, static char const *ctl_typename[]);

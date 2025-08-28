@@ -281,6 +281,8 @@ struct spacectl_range {
 #define AF_NETLINK 38
 #define PF_NETLINK AF_NETLINK
 #define SO_SPLICE 0x1023    /* splice data to other socket */
+#define	SO_FIB		0x1014		/* get or set socket FIB */
+#define	SO_SETFIB	SO_FIB		/* backward compat alias */
 /* Here until queue in newlib is updated */
 #define LIST_REMOVE_HEAD(head, field)					\
 	LIST_REMOVE(LIST_FIRST(head), field)

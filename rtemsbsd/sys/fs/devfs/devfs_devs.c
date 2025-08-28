@@ -94,6 +94,7 @@ devfs_imfs_open(rtems_libio_t *iop, const char *path, int oflag, mode_t mode)
 		rtems_libio_iop_hold(iop);
 		rtems_bsd_libio_iop_set_bsd_descriptor(iop, fd);
 		rtems_bsd_libio_iop_set_bsd_file(iop, fp);
+		rtems_bsd_libio_iop_set_close_busy(iop);
 		if (cdev->si_flags & SI_ALIAS) {
 			cdev = cdev->si_parent;
 		}
@@ -121,8 +122,6 @@ err:
 	if (td != NULL && fp != NULL) {
 		if (error != 0)
 			fdclose(td, fp, fd);
-		else
-			fdrop(fp, td);
 	}
 	return rtems_bsd_error_to_status_and_errno(error);
 }
@@ -151,6 +150,7 @@ devfs_imfs_close(rtems_libio_t *iop)
 			error = EBADF;
 			goto err;
 		}
+		fdrop(fp, td);
 		dsw = dev_refthread(cdev, &ref);
 		if (dsw == NULL) {
 			error = ENXIO;

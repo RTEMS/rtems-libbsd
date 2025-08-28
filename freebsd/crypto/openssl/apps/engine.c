@@ -7,7 +7,7 @@
 #include "apps.h"
 #endif /* __rtems__ */
 /*
- * Copyright 2000-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2000-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -360,10 +360,12 @@ int engine_main(int argc, char **argv)
             test_avail++;
             break;
         case OPT_PRE:
-            sk_OPENSSL_STRING_push(pre_cmds, opt_arg());
+            if (sk_OPENSSL_STRING_push(pre_cmds, opt_arg()) <= 0)
+                goto end;
             break;
         case OPT_POST:
-            sk_OPENSSL_STRING_push(post_cmds, opt_arg());
+            if (sk_OPENSSL_STRING_push(post_cmds, opt_arg()) <= 0)
+                goto end;
             break;
         }
     }

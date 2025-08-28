@@ -64,7 +64,7 @@
 
 /*
  * Taken from FreeBSD-14. This is the _KERNEL defined fragments of
- * sys/sys/time.h.
+ * sys/netinet6/in6.h.
  */
 
 #define IN6MASK0	{{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
@@ -85,6 +85,9 @@ extern const struct in6_addr in6mask64;
 extern const struct in6_addr in6mask96;
 extern const struct in6_addr in6mask128;
 
+/*
+ * Macros started with IPV6_ADDR is KAME local
+ */
 #if _BYTE_ORDER == _BIG_ENDIAN
 #define IPV6_ADDR_INT32_ONE	1
 #define IPV6_ADDR_INT32_TWO	2
@@ -164,6 +167,8 @@ extern const struct in6_addr in6mask128;
 #define IPV6_2292RTHDR		24 /* bool; routing header */
 #define IPV6_2292PKTOPTIONS	25 /* buf/cmsghdr; set/get IPv6 options */
 
+#define IPV6_BINDV6ONLY		IPV6_V6ONLY
+
 #define IPV6_RECVRTHDRDSTOPTS	41 /* bool; recv dst option before rthdr */
 
 struct cmsghdr;
@@ -171,6 +176,8 @@ struct ip6_hdr;
 
 int	in6_cksum(struct mbuf *, uint8_t, uint32_t, uint32_t);
 int	in6_cksum_partial(struct mbuf *, uint8_t, uint32_t, uint32_t, uint32_t);
+int	in6_cksum_partial_l2(struct mbuf *m, uint8_t nxt, uint32_t off_l3,
+	    uint32_t off_l4, uint32_t len, uint32_t cov);
 int	in6_cksum_pseudo(struct ip6_hdr *, uint32_t, uint8_t, uint16_t);
 
 int	in6_localaddr(struct in6_addr *);
@@ -184,9 +191,9 @@ extern void in6_if_up(struct ifnet *);
 struct sockaddr;
 
 void	in6_sin6_2_sin(struct sockaddr_in *sin,
-			    struct sockaddr_in6 *sin6);
-void	in6_sin_2_v4mapsin6(struct sockaddr_in *sin,
-				 struct sockaddr_in6 *sin6);
+	    const struct sockaddr_in6 *sin6);
+void	in6_sin_2_v4mapsin6(const struct sockaddr_in *sin,
+	    struct sockaddr_in6 *sin6);
 void	in6_sin6_2_sin_in_sock(struct sockaddr *nam);
 void	in6_sin_2_v4mapsin6_in_sock(struct sockaddr **nam);
 extern void addrsel_policy_init(void);

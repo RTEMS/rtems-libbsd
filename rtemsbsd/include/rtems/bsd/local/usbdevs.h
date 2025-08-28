@@ -1144,10 +1144,38 @@
 #define	USB_PRODUCT_APPLE_IMAC_KBD	0x0201		/* USB iMac Keyboard */
 #define	USB_PRODUCT_APPLE_KBD	0x0202		/* USB Keyboard M2452 */
 #define	USB_PRODUCT_APPLE_EXT_KBD	0x020c		/* Apple Extended USB Keyboard */
+/* PowerBooks Feb 2005, iBooks G4 */
+#define	USB_PRODUCT_APPLE_FOUNTAIN_ANSI	0x020e		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_FOUNTAIN_ISO	0x020f		/* Apple Internal Keyboard/Trackpad */
+/* 17 inch PowerBook */
+#define	USB_PRODUCT_APPLE_GEYSER_17	0x020d		/* Apple Internal Keyboard/Trackpad */
+/* PowerBooks Oct 2005 */
+#define	USB_PRODUCT_APPLE_GEYSER_ANSI	0x0214		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER_ISO	0x0215		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER_JIS	0x0216		/* Apple Internal Keyboard/Trackpad */
+/* Core Duo MacBook & MacBook Pro */
+#define	USB_PRODUCT_APPLE_GEYSER3_ANSI	0x0217		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER3_ISO	0x0218		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER3_JIS	0x0219		/* Apple Internal Keyboard/Trackpad */
+/* Core2 Duo MacBook & MacBook Pro */
+#define	USB_PRODUCT_APPLE_GEYSER4_ANSI	0x021a		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER4_ISO	0x021b		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER4_JIS	0x021c		/* Apple Internal Keyboard/Trackpad */
+/* External */
+#define	USB_PRODUCT_APPLE_ALU_MINI_ANSI	0x021d		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_MINI_ISO	0x021e		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_MINI_JIS	0x021f		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_ANSI	0x0220		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_ISO	0x0221		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_JIS	0x0222		/* Apple Keyboard/Trackpad */
 /* MacbookAir, aka wellspring */
 #define	USB_PRODUCT_APPLE_WELLSPRING_ANSI	0x0223		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING_ISO	0x0224		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING_JIS	0x0225		/* Apple Internal Keyboard/Trackpad */
+/* Core2 Duo MacBook3,1 */
+#define	USB_PRODUCT_APPLE_GEYSER4_HF_ANSI	0x0229		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER4_HF_ISO	0x022a		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_GEYSER4_HF_JIS	0x022b		/* Apple Internal Keyboard/Trackpad */
 /* MacbookProPenryn, aka wellspring2 */
 #define	USB_PRODUCT_APPLE_WELLSPRING2_ANSI	0x0230		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING2_ISO	0x0231		/* Apple Internal Keyboard/Trackpad */
@@ -1176,6 +1204,10 @@
 #define	USB_PRODUCT_APPLE_WELLSPRING6_ANSI	0x024c		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING6_ISO	0x024d		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING6_JIS	0x024e		/* Apple Internal Keyboard/Trackpad */
+/* External */
+#define	USB_PRODUCT_APPLE_ALU_REVB_ANSI	0x024f		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_REVB_ISO	0x0250		/* Apple Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_ALU_REVB_JIS	0x0251		/* Apple Keyboard/Trackpad */
 /* Macbook8,2 (unibody) */
 #define	USB_PRODUCT_APPLE_WELLSPRING5A_ANSI	0x0252		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING5A_ISO	0x0253		/* Apple Internal Keyboard/Trackpad */
@@ -1196,6 +1228,16 @@
 #define	USB_PRODUCT_APPLE_WELLSPRING9_ANSI	0x0272		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING9_ISO	0x0273		/* Apple Internal Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_WELLSPRING9_JIS	0x0274		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J140K	0x027a		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J132	0x027b		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J680	0x027c		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J213	0x027d		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J214K	0x027e		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J223	0x027f		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J230K	0x0280		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_WELLSPRINGT2_J152F	0x0340		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_MAGIC_KEYBOARD_2021	0x029c		/* Apple Internal Keyboard/Trackpad */
+#define	USB_PRODUCT_APPLE_MAGIC_KEYBOARD_FINGERPRINT_2021	0x029a		/* Apple Keyboard/Trackpad */
 #define	USB_PRODUCT_APPLE_MAGIC_TRACKPAD2	0x0265		/* Apple Magic Trackpad 2 */
 #define	USB_PRODUCT_APPLE_MOUSE	0x0301		/* Mouse M4848 */
 #define	USB_PRODUCT_APPLE_OPTMOUSE	0x0302		/* Optical mouse */
@@ -1422,8 +1464,26 @@
 #define	USB_PRODUCT_BILLIONTON_USB2AR	0x90ff		/* USB2AR Ethernet */
 
 /* Brainboxes Limited products */
+#define	USB_PRODUCT_BRAINBOXES_US101	0x1011		/* US-101 USB2Serial 1xRS232 */
+#define	USB_PRODUCT_BRAINBOXES_US159	0x1021		/* US-159 USB2Serial 1xRS232 */
+#define	USB_PRODUCT_BRAINBOXES_US235	0x1017		/* US-235 USB2Serial 1xRS232 */
 #define	USB_PRODUCT_BRAINBOXES_US257	0x5001		/* US-257 USB2Serial 2xRS232 */
 #define	USB_PRODUCT_BRAINBOXES_US25701	0x5002		/* US-25701 USB2Serial 2xRS232 */
+#define	USB_PRODUCT_BRAINBOXES_US279_12	0x2021		/* US-279 USB2Serial 8xRS232 (Port 1 and 2) */
+#define	USB_PRODUCT_BRAINBOXES_US279_34	0x2022		/* US-279 USB2Serial 8xRS232 (Port 3 and 4) */
+#define	USB_PRODUCT_BRAINBOXES_US279_56	0x2023		/* US-279 USB2Serial 8xRS232 (Port 5 and 6) */
+#define	USB_PRODUCT_BRAINBOXES_US279_78	0x2024		/* US-279 USB2Serial 8xRS232 (Port 7 and 8) */
+#define	USB_PRODUCT_BRAINBOXES_US313	0x6001		/* US-313 USB2Serial 2xRS422/485 */
+#define	USB_PRODUCT_BRAINBOXES_US320	0x1019		/* US-320 USB2Serial 1xRS422/485 */
+#define	USB_PRODUCT_BRAINBOXES_US324	0x1013		/* US-324 USB2Serial 1xRS422/485 */
+#define	USB_PRODUCT_BRAINBOXES_US346_12	0x3011		/* US-346 USB2Serial 4xRS422/485 (Port 1 and 2) */
+#define	USB_PRODUCT_BRAINBOXES_US346_34	0x3012		/* US-346 USB2Serial 4xRS422/485 (Port 3 and 4) */
+#define	USB_PRODUCT_BRAINBOXES_US701_12	0x2011		/* US-701 USB2Serial 4xRS232 (Port 1 and 2) */
+#define	USB_PRODUCT_BRAINBOXES_US701_34	0x2012		/* US-701 USB2Serial 4xRS232 (Port 3 and 4) */
+#define	USB_PRODUCT_BRAINBOXES_US842_12	0x8001		/* US-842 USB2Serial 8xRS-422/485 (Port 1 and 2) */
+#define	USB_PRODUCT_BRAINBOXES_US842_34	0x8002		/* US-842 USB2Serial 8xRS-422/485 (Port 3 and 4) */
+#define	USB_PRODUCT_BRAINBOXES_US842_56	0x8003		/* US-842 USB2Serial 8xRS-422/485 (Port 5 and 6) */
+#define	USB_PRODUCT_BRAINBOXES_US842_78	0x8004		/* US-842 USB2Serial 8xRS-422/485 (Port 7 and 8) */
 
 /* Broadcom products */
 #define	USB_PRODUCT_BROADCOM_BCM2033	0x2033		/* BCM2033 Bluetooth USB dongle */
@@ -1887,6 +1947,7 @@
 #define	USB_PRODUCT_ELECOM_LDUSBTX2	0x400b		/* LD-USB/TX */
 #define	USB_PRODUCT_ELECOM_WDB433SU2M2	0x400f		/* WDB-433SU2M2 */
 #define	USB_PRODUCT_ELECOM_LDUSB20	0x4010		/* LD-USB20 */
+#define	USB_PRODUCT_ELECOM_EDCQUA3C	0x4017		/* EDC-QUA3C */
 #define	USB_PRODUCT_ELECOM_UCSGT	0x5003		/* UC-SGT */
 #define	USB_PRODUCT_ELECOM_UCSGT0	0x5004		/* UC-SGT */
 #define	USB_PRODUCT_ELECOM_LDUSBTX3	0xabc1		/* LD-USB/TX */
@@ -4773,6 +4834,7 @@
 #define	USB_PRODUCT_TOSHIBA_TRANSMEMORY	0x6545		/* USB ThumbDrive */
 
 /* TP-Link products */
+#define	USB_PRODUCT_TPLINK_RTL8192CU	0x0100		/* RTL8192CU */
 #define	USB_PRODUCT_TPLINK_T4U	0x0101		/* Archer T4U */
 #define	USB_PRODUCT_TPLINK_WN821NV5	0x0107		/* TL-WN821N v5 */
 #define	USB_PRODUCT_TPLINK_WN822NV4	0x0108		/* TL-WN822N v4 */

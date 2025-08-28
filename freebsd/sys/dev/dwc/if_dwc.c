@@ -207,9 +207,6 @@ struct dwc_hash_maddr_ctx {
  */
 #define	DWC_DESC_RING_ALIGN	2048
 
-#define	DWC_CKSUM_ASSIST	(CSUM_IP | CSUM_TCP | CSUM_UDP | \
-				 CSUM_TCP_IPV6 | CSUM_UDP_IPV6)
-
 static struct resource_spec dwc_spec[] = {
 	{ SYS_RES_MEMORY,	0,	RF_ACTIVE },
 	{ SYS_RES_IRQ,		0,	RF_ACTIVE },
@@ -728,7 +725,7 @@ dwc_setup_txbuf(struct dwc_softc *sc, int idx, struct mbuf **mp)
 	error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, sc->txbuf_map[idx].map,
 	    *mp, segs, &nsegs, 0);
 #else /* __rtems__ */
-  error = dwc_get_segs_for_tx(m, segs, &nsegs);
+	error = dwc_get_segs_for_tx(m, segs, &nsegs);
 #endif /* __rtems__ */
 	if (error == EFBIG) {
 		/*
@@ -745,7 +742,7 @@ dwc_setup_txbuf(struct dwc_softc *sc, int idx, struct mbuf **mp)
 		error = bus_dmamap_load_mbuf_sg(sc->txbuf_tag, sc->txbuf_map[idx].map,
 		    *mp, segs, &nsegs, 0);
 #else /* __rtems__ */
-  error = dwc_get_segs_for_tx(m, segs, &nsegs);
+		error = dwc_get_segs_for_tx(m, segs, &nsegs);
 #endif /* __rtems__ */
 	}
 	if (error != 0)
@@ -1847,14 +1844,6 @@ dwc_attach(device_t dev)
 		return (ENXIO);
 	}
 	sc->mii_softc = device_get_softc(sc->miibus);
-
-	/* Setup interrupt handler. */
-	error = bus_setup_intr(dev, sc->res[1], INTR_TYPE_NET | INTR_MPSAFE,
-	    NULL, dwc_intr, sc, &sc->intr_cookie);
-	if (error != 0) {
-		device_printf(dev, "could not setup interrupt handler.\n");
-		return (ENXIO);
-	}
 
 	/* All ready to run, attach the ethernet interface. */
 	ether_ifattach(ifp, macaddr);

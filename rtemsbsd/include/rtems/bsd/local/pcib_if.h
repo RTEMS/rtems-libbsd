@@ -256,5 +256,4 @@ static __inline int PCIB_REQUEST_FEATURE(device_t pcib, device_t dev,
 	return (rc);
 }
 
-void pmap_unmapdev(void *, vm_size_t);
 #endif /* _pcib_if_h_ */

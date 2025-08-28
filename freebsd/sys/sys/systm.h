@@ -52,6 +52,7 @@
 #endif /* __rtems__ */
 
 __NULLABILITY_PRAGMA_PUSH
+
 #ifdef _KERNEL
 #ifndef __rtems__
 extern int cold;		/* nonzero if we are doing a cold boot */
@@ -492,7 +493,7 @@ fuword64(const void *base)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	fueword(const void *base, long *val);
+int	fueword(volatile const void *base, long *val);
 #else /* __rtems__ */
 static inline int
 fueword(volatile const void *base, long *val)
@@ -503,7 +504,7 @@ fueword(volatile const void *base, long *val)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	fueword32(const void *base, int32_t *val);
+int	fueword32(volatile const void *base, int32_t *val);
 #else /* __rtems__ */
 static inline int
 fueword32(volatile const void *base, int32_t *val)
@@ -514,7 +515,7 @@ fueword32(volatile const void *base, int32_t *val)
 }
 #endif /* __rtems__ */
 #ifndef __rtems__
-int	fueword64(const void *base, int64_t *val);
+int	fueword64(volatile const void *base, int64_t *val);
 #else /* __rtems__ */
 static inline int
 fueword64(volatile const void *base, int64_t *val)

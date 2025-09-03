@@ -135,6 +135,7 @@ rtems_bsd_mmcsd_disk_read_write(struct mmcsd_part *part, rtems_blkdev_request *b
 		data.data = sg->buffer;
 		data.mrq = &req;
 		data.len = transfer_bytes;
+		data.block_count = 0;
 
 		MMCBUS_WAIT_FOR_REQUEST(device_get_parent(dev), dev,
 		    &req);

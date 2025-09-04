@@ -321,7 +321,6 @@ class rtems(builder.Module):
                 'pppd/sys-rtems.c',
                 'pppd/upap.c',
                 'pppd/utils.c',
-                'telnetd/telnetd-service.c',
                 'ttcp/nuttcp.c',
             ],
             mm.generator['source']()
@@ -5831,8 +5830,7 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('ttcpshell01', ['test_main'], netTest = True, runTest = False))
         self.addTest(mm.generator['test']('epoch01', ['test_main'], extraLibs = ['rtemstest']))
         self.addTest(mm.generator['test']('nfs01', ['test_main'],
-                                          netTest = True, modules = ['nfsv2', 'fs_nfsclient'],
-                                          extraLibs = ['telnetd']))
+                                          netTest = True, modules = ['nfsv2', 'fs_nfsclient']))
         self.addTest(mm.generator['test']('foobarclient', ['test_main'],
                                           runTest = False, netTest = True))
         self.addTest(mm.generator['test']('foobarserver', ['test_main'],
@@ -5843,9 +5841,6 @@ class tests(builder.Module):
                                           runTest = False, netTest = True))
         self.addTest(mm.generator['test']('arphole', ['test_main'],
                                           runTest = False, netTest = True))
-        self.addTest(mm.generator['test']('telnetd01', ['test_main'],
-                                          runTest = False, netTest = True,
-                                          extraLibs = ['telnetd']))
         self.addTest(mm.generator['test']('unix01', ['test_main']))
         self.addTest(mm.generator['test']('ftpd01', ['test_main'],
                                           netTest = True,
@@ -5873,27 +5868,26 @@ class tests(builder.Module):
         self.addTest(mm.generator['test']('mutex01', ['test_main']))
         self.addTest(mm.generator['test']('condvar01', ['test_main']))
         self.addTest(mm.generator['test']('ppp01', ['test_main'], runTest = False,
-                                          extraLibs = ['ftpd', 'telnetd']))
+                                          extraLibs = ['ftpd']))
         self.addTest(mm.generator['test']('zerocopy01', ['test_main'],
-                                          runTest = False, netTest = True,
-                                          extraLibs = ['telnetd']))
+                                          runTest = False, netTest = True))
         self.addTest(mm.generator['test']('smp01', ['test_main'], extraLibs = ['rtemstest']))
         self.addTest(mm.generator['test']('media01', ['test_main', 'pattern-test'],
                                           runTest = False,
-                                          extraLibs = ['tftpfs', 'ftpd', 'telnetd']))
+                                          extraLibs = ['tftpfs', 'ftpd']))
         self.addTest(mm.generator['test']('mcast01', ['test_main']))
         self.addTest(mm.generator['test']('vlan01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('lagg01', ['test_main'], netTest = True))
         self.addTest(mm.generator['test']('log01', ['test_main']))
         self.addTest(mm.generator['test']('rcconf01', ['test_main']))
         self.addTest(mm.generator['test']('rcconf02', ['test_main'],
-                                          extraLibs = ['ftpd', 'telnetd']))
+                                          extraLibs = ['ftpd']))
         self.addTest(mm.generator['test']('cdev01', ['test_main', 'test_cdev']))
         self.addTest(mm.generator['test']('pf01', ['test_main'],
-                                          extraLibs = ['ftpd', 'telnetd']))
+                                          extraLibs = ['ftpd']))
         self.addTest(mm.generator['test']('pf02', ['test_main'],
                                           runTest = False,
-                                          extraLibs = ['ftpd', 'telnetd']))
+                                          extraLibs = ['ftpd']))
         self.addTest(mm.generator['test']('termios', ['test_main',
                                                       'test_termios_driver',
                                                       'test_termios_utilities']))

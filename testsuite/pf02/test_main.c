@@ -42,7 +42,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <rtems/telnetd.h>
 #include <rtems/ftpd.h>
 #include <rtems/shell.h>
 
@@ -127,30 +126,6 @@ prepare_files()
 	}
 }
 
-static void
-telnet_shell(char *name, void *arg)
-{
-	rtems_shell_env_t env;
-
-	rtems_shell_dup_current_env(&env);
-
-	env.devname = name;
-	env.taskname = "TLNT";
-	env.login_check = NULL;
-	env.forever = false;
-
-	rtems_shell_main_loop(&env);
-}
-
-rtems_telnetd_config_table rtems_telnetd_config = {
-	.command = telnet_shell,
-	.arg = NULL,
-	.priority = 0,
-	.stack_size = 0,
-	.login_check = NULL,
-	.keep_stdio = false
-};
-
 struct rtems_ftpd_configuration rtems_ftpd_configuration = {
 	.priority = 100,
 	.max_hook_filesize = 0,
@@ -170,9 +145,6 @@ test_main(void)
 	rtems_shell_env_t env;
 
 	prepare_files();
-
-	sc = rtems_telnetd_initialize();
-	assert(sc == RTEMS_SUCCESSFUL);
 
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);

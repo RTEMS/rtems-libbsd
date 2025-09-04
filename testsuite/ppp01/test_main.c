@@ -56,7 +56,6 @@
 
 #include <rtems.h>
 #include <rtems/bsd/bsd.h>
-#include <rtems/telnetd.h>
 #include <rtems/ftpd.h>
 #include <rtems/rtemspppd.h>
 
@@ -141,9 +140,6 @@ ipup_hook(void)
 
 		first = false;
 
-		sc = rtems_telnetd_initialize();
-		assert(sc == RTEMS_SUCCESSFUL);
-
 		rv = rtems_initialize_ftpd();
 		assert(rv == 0);
 	}
@@ -205,30 +201,6 @@ ifconfig_ppp0(void)
 	exit_code = rtems_bsd_command_ifconfig(RTEMS_BSD_ARGC(ifcfg), ifcfg);
 	assert(exit_code == EX_OK);
 }
-
-static void
-telnet_shell(char *name, void *arg)
-{
-	rtems_shell_env_t env;
-
-	rtems_shell_dup_current_env(&env);
-
-	env.devname = name;
-	env.taskname = "TLNT";
-	env.login_check = NULL;
-	env.forever = false;
-
-	rtems_shell_main_loop(&env);
-}
-
-rtems_telnetd_config_table rtems_telnetd_config = {
-	.command = telnet_shell,
-	.arg = NULL,
-	.priority = 0,
-	.stack_size = 0,
-	.login_check = NULL,
-	.keep_stdio = false
-};
 
 struct rtems_ftpd_configuration rtems_ftpd_configuration = {
 	/* FTPD task priority */

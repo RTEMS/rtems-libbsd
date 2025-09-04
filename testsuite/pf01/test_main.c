@@ -52,7 +52,6 @@
 
 #include <rtems/libcsupport.h>
 #include <rtems/shell.h>
-#include <rtems/telnetd.h>
 #include <rtems/ftpd.h>
 
 #define TEST_NAME "LIBBSD PF 1"

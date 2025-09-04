@@ -2,8 +2,6 @@
  * @file
  *
  * @brief Zerocopy test.
- *
- * Telnet daemon (telnetd) is initilized.
  */
 
 /*
@@ -60,7 +58,6 @@
 
 #include <rtems.h>
 #include <rtems/shell.h>
-#include <rtems/telnetd.h>
 #include <rtems/bsd/zerocopy.h>
 #include <rtems/bsd/test/network-config.h>
 
@@ -186,39 +183,12 @@ network_flood_task(rtems_task_argument arg)
 }
 
 static void
-telnet_shell(char *name, void *arg)
-{
-	rtems_shell_env_t env;
-
-	rtems_shell_dup_current_env(&env);
-
-	env.devname = name;
-	env.taskname = "TLNT";
-	env.login_check = NULL;
-	env.forever = false;
-
-	rtems_shell_main_loop(&env);
-}
-
-rtems_telnetd_config_table rtems_telnetd_config = {
-	.command = telnet_shell,
-	.arg = NULL,
-	.priority = 2,
-	.stack_size = 0,
-	.login_check = NULL,
-	.keep_stdio = false
-};
-
-static void
 test_main(void)
 {
 	struct buffer_control *bc = &buffer_control;
 	rtems_status_code sc;
 	rtems_id id;
 	size_t i;
-
-	sc = rtems_telnetd_initialize();
-	assert(sc == RTEMS_SUCCESSFUL);
 
 	SLIST_INIT(&bc->free_list);
 

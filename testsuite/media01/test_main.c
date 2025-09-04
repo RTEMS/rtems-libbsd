@@ -3,7 +3,7 @@
  *
  * @brief Code used to test the Media Manager.
  *
- * Telnet daemon (telnetd) and FTP daemon (ftpd) are started. Events are recorded.
+ * FTP daemon (ftpd) is started. Events are recorded.
  */
 
 /*
@@ -51,7 +51,6 @@
 #include <rtems/record.h>
 #include <rtems/recordserver.h>
 #include <rtems/shell.h>
-#include <rtems/telnetd.h>
 
 #include "pattern-test.h"
 
@@ -121,30 +120,6 @@ media_listener(rtems_media_event event, rtems_media_state state,
 }
 
 static void
-telnet_shell(char *name, void *arg)
-{
-	rtems_shell_env_t env;
-
-	rtems_shell_dup_current_env(&env);
-
-	env.devname = name;
-	env.taskname = "TLNT";
-	env.login_check = NULL;
-	env.forever = false;
-
-	rtems_shell_main_loop(&env);
-}
-
-rtems_telnetd_config_table rtems_telnetd_config = {
-	.command = telnet_shell,
-	.arg = NULL,
-	.priority = 0,
-	.stack_size = 0,
-	.login_check = NULL,
-	.keep_stdio = false
-};
-
-static void
 test_main(void)
 {
 	int rv;
@@ -154,9 +129,6 @@ test_main(void)
 	    rtems_scheduler_get_processor_maximum());
 	rv = rtems_initialize_ftpd();
 	assert(rv == 0);
-
-	sc = rtems_telnetd_initialize();
-	assert(sc == RTEMS_SUCCESSFUL);
 
 	sc = rtems_record_start_server(1, 1234, 1);
 	assert(sc == RTEMS_SUCCESSFUL);

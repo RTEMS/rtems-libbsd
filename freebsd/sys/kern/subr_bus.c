@@ -2831,13 +2831,14 @@ device_set_unit(device_t dev, int unit)
  * the size of the structure they are using to identify the structure
  * layout.
  */
-#ifndef __rtems__
 void
 resource_init_map_request_impl(struct resource_map_request *args, size_t sz)
 {
 	bzero(args, sz);
 	args->size = sz;
+#ifndef __rtems__
 	args->memattr = VM_MEMATTR_DEVICE;
+#endif
 }
 
 /**
@@ -2882,7 +2883,6 @@ resource_validate_map_request(struct resource *r,
 	*startp = start;
 	return (0);
 }
-#endif /* __rtems__ */
 
 /**
  * @brief Initialise a resource list.

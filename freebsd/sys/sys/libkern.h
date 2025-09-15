@@ -274,9 +274,11 @@ ilog2_long_long(long long n)
     __builtin_clzll(n))
 
 #define	ilog2(n) (__builtin_constant_p(n) ? ilog2_const(n) : ilog2_var(n))
+#ifndef __rtems__
 #define	rounddown_pow_of_two(n)	((__typeof(n))1 << ilog2(n))
 #define order_base_2(n) ilog2(2*(n)-1)
 #define	roundup_pow_of_two(n)	((__typeof(n))1 << order_base_2(n))
+#endif /* __rtems__ */
 
 #define	bitcount64(x)	__bitcount64((uint64_t)(x))
 #define	bitcount32(x)	__bitcount32((uint32_t)(x))

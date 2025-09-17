@@ -876,7 +876,11 @@ pf_commit_eth(uint32_t ticket, const char *anchor)
 	pf_eth_calc_skip_steps(rs->inactive.rules);
 
 	rules = rs->active.rules;
+#ifndef __rtems__
 	atomic_store_ptr(&rs->active.rules, rs->inactive.rules);
+#else /* __rtems__ */
+	atomic_store_ptr((volatile uintptr_t*) &rs->active.rules, (uintptr_t) rs->inactive.rules);
+#endif /* __rtems__ */
 	rs->inactive.rules = rules;
 	rs->inactive.ticket = rs->active.ticket;
 

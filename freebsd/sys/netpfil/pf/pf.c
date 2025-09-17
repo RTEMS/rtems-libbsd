@@ -4484,7 +4484,11 @@ pf_test_eth_rule(int dir, struct pfi_kkif *kif, struct mbuf **m0)
 	PF_RULES_RLOCK();
 
 	ruleset = V_pf_keth;
+#ifndef __rtems__
 	rules = atomic_load_ptr(&ruleset->active.rules);
+#else /* __rtems__ */
+	rules = (void*) atomic_load_ptr((volatile uintptr_t*) &ruleset->active.rules);
+#endif /* __rtems__ */
 	for (r = TAILQ_FIRST(rules), rm = NULL; r != NULL;) {
 		counter_u64_add(r->evaluations, 1);
 		SDT_PROBE2(pf, eth, test_rule, test, r->nr, r);

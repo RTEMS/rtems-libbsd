@@ -3050,7 +3050,11 @@ fget_remote_foreach(struct thread *td, struct proc *p,
 
 	FILEDESC_SLOCK(fdp);
 	if (refcount_load(&fdp->fd_refcnt) != 0) {
+#ifndef __rtems__
 		fdt = atomic_load_ptr(&fdp->fd_files);
+#else /* __rtems__ */
+		fdt = (void*) atomic_load_ptr((volatile uintptr_t*) &fdp->fd_files);
+#endif /* __rtems__ */
 		highfd = fdt->fdt_nfiles - 1;
 		FILEDESC_SUNLOCK(fdp);
 	} else {

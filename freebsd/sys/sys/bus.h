@@ -630,29 +630,65 @@ int	bus_release_resource_new(device_t dev, struct resource *r);
 
 #define	_BUS_API_MACRO(_1, _2, _3, _4, _5, NAME, ...)	NAME
 
+#ifndef __rtems__
 #define	bus_adjust_resource(...)					\
 	_BUS_API_MACRO(__VA_ARGS__, bus_adjust_resource,		\
 	    bus_adjust_resource_new)(__VA_ARGS__)
+#else /* __rtems__ */
+#define	bus_adjust_resource(...)					\
+	_BUS_API_MACRO(__VA_ARGS__, _bsd_bus_adjust_resource,		\
+	    bus_adjust_resource_new)(__VA_ARGS__)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #define	bus_activate_resource(...)					\
 	_BUS_API_MACRO(__VA_ARGS__, INVALID, bus_activate_resource,	\
 	    INVALID, bus_activate_resource_new)(__VA_ARGS__)
+#else /* __rtems__ */
+#define	bus_activate_resource(...)					\
+	_BUS_API_MACRO(__VA_ARGS__, INVALID, _bsd_bus_activate_resource,	\
+	    INVALID, bus_activate_resource_new)(__VA_ARGS__)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #define	bus_deactivate_resource(...)					\
 	_BUS_API_MACRO(__VA_ARGS__, INVALID, bus_deactivate_resource,	\
 	    INVALID, bus_deactivate_resource_new)(__VA_ARGS__)
+#else /* __rtems__ */
+#define	bus_deactivate_resource(...)					\
+	_BUS_API_MACRO(__VA_ARGS__, INVALID, _bsd_bus_deactivate_resource,	\
+	    INVALID, bus_deactivate_resource_new)(__VA_ARGS__)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #define	bus_map_resource(...)						\
 	_BUS_API_MACRO(__VA_ARGS__, bus_map_resource,			\
 	    bus_map_resource_new)(__VA_ARGS__)
+#else /* __rtems__ */
+#define	bus_map_resource(...)						\
+	_BUS_API_MACRO(__VA_ARGS__, _bsd_bus_map_resource,		\
+	    bus_map_resource_new)(__VA_ARGS__)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #define	bus_unmap_resource(...)						\
 	_BUS_API_MACRO(__VA_ARGS__, INVALID, bus_unmap_resource,	\
 	    bus_unmap_resource_new)(__VA_ARGS__)
+#else /* __rtems__ */
+#define	bus_unmap_resource(...)						\
+	_BUS_API_MACRO(__VA_ARGS__, INVALID, _bsd_bus_unmap_resource,	\
+	    bus_unmap_resource_new)(__VA_ARGS__)
+#endif /* __rtems__ */
 
+#ifndef __rtems__
 #define	bus_release_resource(...)					\
 	_BUS_API_MACRO(__VA_ARGS__, INVALID, bus_release_resource,	\
 	    INVALID, bus_release_resource_new)(__VA_ARGS__)
+#else /* __rtems__ */
+#define	bus_release_resource(...)					\
+	_BUS_API_MACRO(__VA_ARGS__, INVALID, _bsd_bus_release_resource,	\
+	    INVALID, bus_release_resource_new)(__VA_ARGS__)
+#endif /* __rtems__ */
 
 /*
  * Access functions for device.

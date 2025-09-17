@@ -40,7 +40,7 @@
 #include <rtems/media.h>
 #include <rtems/mmcsd.h>
 
-static void rtems_mmcsd_static_attach();
+static void rtems_mmcsd_static_attach(struct mmcsd_part*);
 
 rtems_mmcsd_attach_hookfunction rtems_mmcsd_attach_fp =
 	rtems_mmcsd_static_attach;

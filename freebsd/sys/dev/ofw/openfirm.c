@@ -149,7 +149,9 @@ xrefinfo_init(void *unsed)
 {
 
 #ifdef __rtems__
+#ifdef RTEMS_BSP_FDT
 	if (OF_init(__DECONST(void *, bsp_fdt_get())) != 0)
+#endif /* RTEMS_BSP_FDT */
 		return;
 #endif /* __rtems__ */
 	/*

@@ -1911,7 +1911,7 @@ cgem_probe(device_t dev)
 {
 
 #ifdef __rtems__
-#ifdef FDT
+#ifdef RTEMS_BSP_FDT
 	if (bsp_fdt_get()) {
 #else
 	if (0) {

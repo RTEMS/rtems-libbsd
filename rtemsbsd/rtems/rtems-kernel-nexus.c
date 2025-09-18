@@ -408,8 +408,11 @@ static int
 nexus_ofw_map_intr(device_t dev, device_t child, phandle_t iparent, int icells,
     pcell_t *intr)
 {
-
+#ifdef RTEMS_BSP_FDT
 	return ((int)bsp_fdt_map_intr(intr, (size_t)icells));
+#else /* RTEMS_BSP_FDT */
+	return -1;
+#endif
 }
 #endif /* FDT */
 

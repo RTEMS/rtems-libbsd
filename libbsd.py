@@ -42,7 +42,7 @@ _defaults = {
     #
     # Global defines, added to the build of all files
     #
-    'defines': [],
+    'defines': ['FDT=1'],
 
     #
     # Compile flags

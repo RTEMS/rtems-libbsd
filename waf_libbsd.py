@@ -46,7 +46,6 @@ import builder
 
 import rtems_waf.rtems as rtems
 
-
 BUILDSET_DIR = builder.BUILDSET_DIR
 BUILDSET_DEFAULT = builder.BUILDSET_DEFAULT
 
@@ -57,15 +56,18 @@ if windows:
 else:
     host_shell = ''
 
+
 def _add_flags_if_not_present(current_flags, addional_flags):
     for flag in addional_flags:
         if flag not in current_flags:
             current_flags.append(flag)
 
+
 #
 # The waf builder for libbsd.
 #
 class Builder(builder.ModuleManager):
+
     def __init__(self, trace=False):
         super(Builder, self).__init__()
         self.trace = trace
@@ -88,6 +90,7 @@ class Builder(builder.ModuleManager):
         return sources
 
     def generate(self, rtems_version):
+
         def _dataInsert(data, cpu, space, frag):
             #
             # The default handler returns None. Skip it.
@@ -291,15 +294,29 @@ class Builder(builder.ModuleManager):
             bld.fatal('network configuration \'%s\' not found' %
                       (bld.env.NET_CONFIG))
         net_cfg = {
-            'NET_CFG_INTERFACE_0': { 'mandatory': True,  },
-            'NET_CFG_SELF_IP': { 'mandatory': True },
-            'NET_CFG_NETMASK': { 'mandatory': True },
-            'NET_CFG_PEER_IP': { 'mandatory': True },
-            'NET_CFG_GATEWAY_IP': { 'manditory': True },
-            'NET_CFG_NFS_MOUNT_PATH': { 'mandatory': False,
-                                        'default': '@NET_CFG_PEER_IP@/rtems' },
-            'NET_CFG_NFS_MOUNT_OPTIONS': { 'mandatory': False,
-                                           'default': 'nfsv4,minorversion=1' }
+            'NET_CFG_INTERFACE_0': {
+                'mandatory': True,
+            },
+            'NET_CFG_SELF_IP': {
+                'mandatory': True
+            },
+            'NET_CFG_NETMASK': {
+                'mandatory': True
+            },
+            'NET_CFG_PEER_IP': {
+                'mandatory': True
+            },
+            'NET_CFG_GATEWAY_IP': {
+                'manditory': True
+            },
+            'NET_CFG_NFS_MOUNT_PATH': {
+                'mandatory': False,
+                'default': '@NET_CFG_PEER_IP@/rtems'
+            },
+            'NET_CFG_NFS_MOUNT_OPTIONS': {
+                'mandatory': False,
+                'default': 'nfsv4,minorversion=1'
+            }
         }
         tags = list(net_cfg.keys())
         config_inc = bld.path.find_node('config.inc')
@@ -618,9 +635,9 @@ class Builder(builder.ModuleManager):
                     start_dir = bld.path.find_dir(hp)
                     if start_dir != None:
                         bld.install_files("${PREFIX}/" + ipath,
-                                        start_dir.ant_glob(headers[1]),
-                                        cwd=start_dir,
-                                        relative_trick=True)
+                                          start_dir.ant_glob(headers[1]),
+                                          cwd=start_dir,
+                                          relative_trick=True)
 
         bld.install_files(os.path.join("${PREFIX}", arch_inc_path,
                                        module_header_path),

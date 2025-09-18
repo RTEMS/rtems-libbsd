@@ -57,6 +57,19 @@ import waf_libbsd
 builders = {}
 
 
+def check_bsp_for_fdt(conf, arch_bsp):
+    fragment = [
+        '#include <bsp.h>', '#ifndef BSP_FDT_IS_SUPPORTED',
+        '  #error BSP does not support FDT', '#endif'
+    ]
+    rtems.check_cc(conf,
+                   fragment=rtems.test_application(fragment),
+                   define_name='RTEMS_BSP_FDT',
+                   execute=False,
+                   msg='Checking if BSP supports FDT',
+                   mandatory=False)
+
+
 def update_builders(ctx, buildset_opt):
     global builders
     builders = {}
@@ -170,6 +183,7 @@ def options(opt):
 
 
 def bsp_configure(conf, arch_bsp):
+    conf.check(header_name="bsp.h", features="c")
     conf.check(header_name="dlfcn.h", features="c")
     conf.check(header_name="rtems/pci.h", features="c", mandatory=False)
     if rtems.check_networking(conf):
@@ -177,6 +191,7 @@ def bsp_configure(conf, arch_bsp):
             "RTEMS kernel contains the old network support;" \
             " configure RTEMS with --disable-networking"
         )
+    check_bsp_for_fdt(conf, arch_bsp)
     env = conf.env.derive()
     for builder in builders:
         ab = conf.env.RTEMS_ARCH_BSP

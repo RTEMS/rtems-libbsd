@@ -47,6 +47,7 @@ struct rtems_bsd_iface {
 	char name[IFNAMSIZ];
 	int unit;
 	struct in_addr address;
+	struct in_addr netmask;
 	size_t hw_len;
 	uint8_t hw_address[16];
 	struct ifreq ifr;

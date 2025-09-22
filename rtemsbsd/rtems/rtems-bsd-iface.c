@@ -84,13 +84,16 @@ rtems_bsd_iface_get(const char *name, struct rtems_bsd_iface *iface)
 			memcpy(iface->hw_address, LLADDR(sa), sa->sdl_alen);
 		} else if (ifa->ifa_addr->sa_family == AF_INET) {
 			struct sockaddr_in sa;
+			struct sockaddr_in sm;
 			memcpy(&sa, ifa->ifa_addr, sizeof(sa));
+			memcpy(&sm, ifa->ifa_netmask, sizeof(sm));
 			if (sa.sin_addr.s_addr == htonl(INADDR_LOOPBACK))
 				continue;
 			strlcpy(iface->ifr.ifr_name, ifa->ifa_name, IFNAMSIZ);
 			memcpy(&iface->ifr.ifr_addr, ifa->ifa_addr,
 			    ifa->ifa_addr->sa_len);
 			iface->address = sa.sin_addr;
+			iface->netmask = sm.sin_addr;
 		}
 
 	}

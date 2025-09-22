@@ -87,7 +87,11 @@ static ihandle_t stdout;
 #ifndef __rtems__
 static ofw_def_t	*ofw_def_impl = NULL;
 #else /* __rtems__ */
+#ifdef RTEMS_BSP_FDT
 #define	ofw_def_impl (&ofw_fdt)
+#else /* RTEMS_BSP_FDT */
+static ofw_def_t	*ofw_def_impl = NULL;
+#endif /* RTEMS_BSP_FDT */
 #endif /* __rtems__ */
 static ofw_t		ofw_obj;
 static struct ofw_kobj	ofw_kernel_obj;

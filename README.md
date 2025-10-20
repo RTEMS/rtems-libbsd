@@ -12,17 +12,17 @@ can skip to step 5 of the build procedure.
 
 ## Branches
 
-| Branch            | RTEMS Version     | FreeBSD Version       | Development | Active |
-| ----------------- | ----------------- | --------------------- | ----------- | ------ |
-| `main`            | `main`            | `CURRENT`             | FreeBSD     | Yes    |
-| `7-freebsd-14`    | `main`            | `stable/14` `9679df8` | Yes         | Yes    |
-| `6-freebsd-14`    | `6`               | `stable/14` `9679df8` | No          | Yes    |
-| `6-freebsd-12`    | `6`               | `stable/12` `c6c89ab` | No          | No     |
-| `6-freebsd-13`    | `6`               | `5d85e12`             | No          | No     |
-| `5-freebsd-12`    | `5`               | `stable/12` `0d1c391` | No          | No     |
-| `5`               | `5`               | `6b0307a`             | No          | No     |
-| `freebsd-9.3`     | `4.12`            | `99a648a9`            | No          | No     |
-| `4.11`            | `4.11`            | `99a648a9`            | No          | No     |
+| Branch            | RTEMS Version     | FreeBSD Version         | Development | Active |
+| ----------------- | ----------------- | ----------------------- | ----------- | ------ |
+| `main`            | `main`            | `CURRENT` `f377a0c7`    | FreeBSD     | Yes    |
+| `7-freebsd-14`    | `main`            | `releng/14.3` `5982521` | Yes         | Yes    |
+| `6-freebsd-14`    | `6`               | `releng/14.3` `5982521` | No          | Yes    |
+| `6-freebsd-12`    | `6`               | `stable/12` `c6c89ab`   | No          | No     |
+| `6-freebsd-13`    | `6`               | `5d85e12`               | No          | No     |
+| `5-freebsd-12`    | `5`               | `stable/12` `0d1c391`   | No          | No     |
+| `5`               | `5`               | `6b0307a`               | No          | No     |
+| `freebsd-9.3`     | `4.12`            | `99a648a9`              | No          | No     |
+| `4.11`            | `4.11`            | `99a648a9`              | No          | No     |
 
 ### Update process
 

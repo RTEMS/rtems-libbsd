@@ -52,4 +52,8 @@
   /* With cache, coherency support in hardware */
 #endif
 
+#if defined(LIBBSP_AARCH64_RASPBERRYPI_4_BSP_H)
+  #define CPU_DATA_CACHE_ALIGNMENT 64
+#endif
+
 #endif /* _RTEMS_BSD_MACHINE_RTEMS_BSD_CACHE_H_ */

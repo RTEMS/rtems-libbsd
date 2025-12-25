@@ -1181,7 +1181,7 @@ gen_encap(struct gen_softc *sc, struct mbuf **mp)
 		    GENET_TX_DESC_STATUS_BUFLEN_SHIFT;
 
 #ifdef __rtems__        
-		rtems_cache_flush_multiple_data_lines(segs[i].ds_addr, segs[i].ds_len);
+		rtems_cache_flush_multiple_data_lines((void*)segs[i].ds_addr, segs[i].ds_len);
 #endif /* __rtems__ */
 		WR4(sc, GENET_TX_DESC_ADDRESS_LO(index),
 		    (uint32_t)segs[i].ds_addr);
@@ -1546,7 +1546,7 @@ gen_mapbuf_rx(struct gen_softc *sc, struct rx_queue *q, int index,
 	q->entries[index].mbuf = m;
 
 #ifdef __rtems__
-	rtems_cache_invalidate_multiple_data_lines(seg.ds_addr, seg.ds_len);
+	rtems_cache_invalidate_multiple_data_lines((void*)seg.ds_addr, seg.ds_len);
 #endif /* __rtems__ */
 	WR4(sc, GENET_RX_DESC_ADDRESS_LO(index), (uint32_t)seg.ds_addr);
 	WR4(sc, GENET_RX_DESC_ADDRESS_HI(index), (uint32_t)(seg.ds_addr >> 32));

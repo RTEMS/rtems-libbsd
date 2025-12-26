@@ -304,6 +304,9 @@ brgphy_attach(device_t dev)
 			    IFM_MAKEWORD(IFM_ETHER, IFM_2500_SX, IFM_FDX,
 			    sc->mii_inst), 0, NULL);
 			printf("2500baseSX-FDX, ");
+#ifdef __rtems__
+		}
+#else /* __rtems__ */
 		} else if ((bsc->serdes_flags & BRGPHY_5708S) && bce_sc &&
 		    (detect_hs21(bce_sc) != 0)) {
 			/*
@@ -318,6 +321,7 @@ brgphy_attach(device_t dev)
 			printf("auto-neg workaround, ");
 			bsc->serdes_flags |= BRGPHY_NOANWAIT;
 		}
+#endif /* __rtems__ */
 		ifmedia_add(&sc->mii_pdata->mii_media, IFM_MAKEWORD(IFM_ETHER,
 		    IFM_AUTO, 0, sc->mii_inst), 0, NULL);
 		printf("auto\n");

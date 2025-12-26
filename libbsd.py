@@ -1485,6 +1485,7 @@ class dev_net(builder.Module):
                 'sys/net/if_var.h',
                 'sys/net/vnet.h',
                 'sys/net/mp_ring.h',
+                'sys/arm64/broadcom/genet/if_genetreg.h',
                 #'sys/net/iflib_private.h',
             ]
         )
@@ -1509,6 +1510,7 @@ class dev_net(builder.Module):
                 'sys/dev/cadence/if_cgem.c',
                 'sys/dev/dwc/if_dwc.c',
                 'sys/arm/xilinx/zy7_slcr.c',
+                'sys/arm64/broadcom/genet/if_genet.c',
             ],
             mm.generator['source']()
         )

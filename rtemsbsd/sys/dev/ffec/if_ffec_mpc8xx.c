@@ -82,6 +82,7 @@
 #include <dev/mii/miivar.h>
 
 #include <rtems/bsd/local/miibus_if.h>
+#include <rtems/rtems_mii_ioctl.h>
 
 #include <bsp/irq.h>
 #include <rtems/bsd/bsd.h>
@@ -89,7 +90,6 @@
 /* FIXME */
 rtems_id
 rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg);
-#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
 
 /*
  * Number of interfaces supported by this driver

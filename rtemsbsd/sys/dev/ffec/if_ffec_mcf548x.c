@@ -81,7 +81,6 @@
 rtems_id
 rtems_bsdnet_newproc (char *name, int stacksize, void(*entry)(void *), void *arg);
 #define rtems_panic panic
-#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
 
 static void mcf548x_fec_watchdog(void *arg);
 

@@ -60,6 +60,9 @@ extern "C" {
 
 #if defined(_KERNEL) || defined(KERNEL) || \
     defined(__KERNEL) || defined(__KERNEL__)
+
+#define SIO_RTEMS_SHOW_STATS _IO('i', 250)
+
 /* mdio routines to be provided by driver */
 
 /* read mii register 'reg' at 'phy' (-1 meaning any/currently active)

@@ -67,7 +67,7 @@ bus_dmamap_load_mbuf(bus_dma_tag_t dmat, bus_dmamap_t map,
 	error = 0;
 	if (m0->m_pkthdr.len <= dmat->maxsize) {
 		int first = 1;
-		bus_addr_t lastaddr = 0;
+		vm_offset_t lastaddr = 0;
 		struct mbuf *m;
 		if ((flags & BUS_DMA_LOAD_MBUF) != 0) {
 			map->flags |= DMAMAP_CACHE_ALIGNED;
@@ -110,7 +110,7 @@ bus_dmamap_load_mbuf_sg(bus_dma_tag_t dmat, bus_dmamap_t map,
 	error = 0;
 	if (m0->m_pkthdr.len <= dmat->maxsize) {
 		int first = 1;
-		bus_addr_t lastaddr = 0;
+		vm_offset_t lastaddr = 0;
 		struct mbuf *m;
 
 		for (m = m0; m != NULL && error == 0; m = m->m_next) {

@@ -2710,6 +2710,7 @@ class rpc_user(builder.Module):
                 'include/rpc/auth_kerb.h',
                 'include/rpc/auth_des.h',
                 'include/rpc/rpcb_clnt.h',
+                'include/rpc/rpcb_prot.h',
                 'include/rpc/rpc.h',
                 'include/rpc/des.h',
                 'include/rpc/des_crypt.h',

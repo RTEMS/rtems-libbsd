@@ -25,6 +25,8 @@
  * SUCH DAMAGE.
  */
 
+#include <string.h>
+
 #include <rtems/netcmds-config.h>
 #include <machine/rtems-bsd-commands.h>
 #include <assert.h>
@@ -62,19 +64,19 @@ int rtems_bsd_command_wpa_supplicant_fork(int argc, char **argv)
 	rtems_id id;
 	int i;
 
-	struct myparams *params = malloc(sizeof(struct myparams));
+	struct myparams *params = (struct myparams*)malloc(sizeof(struct myparams));
 	if (params == NULL)
-		return NULL;
+		return -1;
 
 	params->argc = argc;
-	params->argv = malloc((argc + 1) * sizeof(argv[0]));
+	params->argv = (char**)malloc((argc + 1) * sizeof(argv[0]));
 	if (params->argv == NULL)
-		return NULL;
+		return -1;
 
 	for (i = 0; i < argc; i++) {
 		params->argv[i] = strdup(argv[i]);
 		if (params->argv[i] == NULL)
-			return NULL;
+			return -1;
 	}
 	params->argv[argc] = NULL;
 
@@ -88,8 +90,9 @@ int rtems_bsd_command_wpa_supplicant_fork(int argc, char **argv)
 	);
 	assert(sc == RTEMS_SUCCESSFUL);
 
-	sc = rtems_task_start(id, new_wpa_supplicant_task, params);
+	sc = rtems_task_start(id, new_wpa_supplicant_task, (rtems_task_argument)params);
 	assert(sc == RTEMS_SUCCESSFUL);
+	return sc;
 }
 
 rtems_shell_cmd_t rtems_shell_WPA_SUPPLICANT_FORK_Command = {

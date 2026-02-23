@@ -32,7 +32,7 @@
 #ifndef __PCI_HOST_GENERIC_H_
 #define	__PCI_HOST_GENERIC_H_
 
-#include "pci_if.h"
+#include <rtems/bsd/local/pcib_if.h>
 
 /* Assembling ECAM Configuration Address */
 #define	PCIE_BUS_SHIFT		20

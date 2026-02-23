@@ -1,3 +1,4 @@
+#include <machine/rtems-bsd-kernel-space.h>
 /*-
  * Copyright (c) 2015, 2020 Ruslan Bukin <br@bsdpad.com>
  * Copyright (c) 2014 The FreeBSD Foundation
@@ -31,7 +32,7 @@
 /* Generic ECAM PCIe driver */
 
 #include <sys/cdefs.h>
-#include "opt_platform.h"
+#include <rtems/bsd/local/opt_platform.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -50,7 +51,7 @@
 #include <machine/bus.h>
 #include <machine/intr.h>
 
-#include "pcib_if.h"
+#include <rtems/bsd/local/pcib_if.h>
 
 #if defined(VM_MEMATTR_DEVICE_NP)
 #define	PCI_UNMAPPED
@@ -96,6 +97,7 @@ pci_host_generic_core_attach(device_t dev)
 	sc = device_get_softc(dev);
 	sc->dev = dev;
 
+#ifndef __rtems__
 	/* Create the parent DMA tag to pass down the coherent flag */
 	error = bus_dma_tag_create(bus_get_dma_tag(dev), /* parent */
 	    1, 0,				/* alignment, bounds */
@@ -117,6 +119,7 @@ pci_host_generic_core_attach(device_t dev)
 	 */
 	if (bus_get_domain(dev, &domain) == 0)
 		(void)bus_dma_tag_set_domain(sc->dmat, domain);
+#endif /* __rtems__ */
 
 	if ((sc->quirks & PCIE_CUSTOM_CONFIG_SPACE_QUIRK) == 0) {
 		rid = 0;
@@ -538,9 +541,15 @@ pci_host_generic_core_alloc_resource(device_t dev, device_t child, int type,
 		break;
 	}
 	if (res == NULL) {
+#ifndef __rtems__
 		device_printf(dev, "%s FAIL: type=%d, rid=%d, "
 		    "start=%016jx, end=%016jx, count=%016jx, flags=%x\n",
 		    __func__, type, *rid, start, end, count, flags);
+#else /* __rtems__ */
+		device_printf(dev, "pci_host_generic_core_alloc_resource FAIL: type=%d, "
+		    "rid=%d, start=%016jx, end=%016jx, count=%016jx, flags=%x\n",
+		    type, *rid, start, end, count, flags);
+#endif /* __rtems__ */
 	}
 	return (res);
 }

@@ -1,3 +1,4 @@
+#include <machine/rtems-bsd-kernel-space.h>
 /*-
  * Copyright (c) 2015 Ruslan Bukin <br@bsdpad.com>
  * Copyright (c) 2014,2016 The FreeBSD Foundation
@@ -34,7 +35,7 @@
 /* Generic ECAM PCIe driver FDT attachment */
 
 #include <sys/cdefs.h>
-#include "opt_platform.h"
+#include <rtems/bsd/local/opt_platform.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -61,7 +62,7 @@
 
 #include <machine/intr.h>
 
-#include "pcib_if.h"
+#include <rtems/bsd/local/pcib_if.h>
 
 #define	SPACE_CODE_SHIFT	24
 #define	SPACE_CODE_MASK		0x3

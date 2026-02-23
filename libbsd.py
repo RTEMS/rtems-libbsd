@@ -188,6 +188,7 @@ class rtems(builder.Module):
                 'local/ofw_if.c',
                 'local/pcib_if.c',
                 'local/pci_if.c',
+                'local/msi_if.c',
                 'local/syscon_if.c',
                 'local/xdma_if.c',
                 'local/usb_if.c',
@@ -3077,20 +3078,24 @@ class pci(builder.Module):
         mm = self.manager
         self.addKernelSpaceSourceFiles(
             [
-                'sys/dev/pci/pcib_support.c',
+                'sys/dev/ofw/ofw_pcib.c',
                 'sys/dev/pci/pci.c',
+                'sys/dev/pci/pci_host_generic.c',
+                'sys/dev/pci/pci_host_generic_fdt.c',
                 'sys/dev/pci/pci_pci.c',
                 'sys/dev/pci/pci_subr.c',
                 'sys/dev/pci/pci_user.c',
-                'sys/dev/ofw/ofw_pcib.c',
+                'sys/dev/pci/pcib_support.c',
             ],
             mm.generator['source']()
         )
         self.addKernelSpaceHeaderFiles(
             [
                 'sys/dev/ofw/ofwpci.h',
-                'sys/dev/pci/pcib_private.h',
+                'sys/dev/pci/pci_host_generic.h',
+                'sys/dev/pci/pci_host_generic_fdt.h',
                 'sys/dev/pci/pci_private.h',
+                'sys/dev/pci/pcib_private.h',
                 'sys/dev/pci/pcireg.h',
                 'sys/dev/pci/pcivar.h',
                 'sys/dev/pci/pcivar.h',
@@ -3112,6 +3117,7 @@ class pci(builder.Module):
                 'sys/powerpc/include/platformvar.h',
                 'sys/powerpc/include/hid.h',
                 'sys/powerpc/include/pio.h',
+                'sys/dev/xilinx/xlnx_nwl_pcib.h',
             ]
         )
         self.addCPUDependentFreeBSDSourceFiles(
@@ -3136,6 +3142,13 @@ class pci(builder.Module):
             [ 'powerpc' ],
             [
                 'sys/powerpc/platform_mpc85xx.c',
+            ],
+            mm.generator['source']()
+        )
+        self.addCPUDependentRTEMSSourceFiles(
+            [ 'aarch64' ],
+            [
+                'sys/dev/xilinx/xlnx_nwl_pcib.c',
             ],
             mm.generator['source']()
         )

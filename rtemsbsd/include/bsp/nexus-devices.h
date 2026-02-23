@@ -124,6 +124,11 @@ RTEMS_BSD_DRIVER_MMC;
 
 SYSINIT_DRIVER_REFERENCE(rtems_pic, simplebus);
 
+#ifdef RTEMS_BSD_MODULE_PCI
+SYSINIT_DRIVER_REFERENCE(xlnx_nwl_pcib, simplebus);
+#endif
+RTEMS_BSD_DRIVER_PCI_NVME;
+
 #elif defined(LIBBSP_AARCH64_XILINX_VERSAL_BSP_H)
 
 #include <bsp/irq.h>

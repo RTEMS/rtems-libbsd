@@ -289,6 +289,7 @@ class rtems(builder.Module):
                 'rtems/rtems-bsd-shell-ifmcstat.c',
                 'rtems/rtems-bsd-shell-netstat.c',
                 'rtems/rtems-bsd-shell-nvmecontrol.c',
+                'rtems/rtems-bsd-shell-pciconf.c',
                 'rtems/rtems-bsd-shell-pfctl.c',
                 'rtems/rtems-bsd-shell-ping.c',
                 'rtems/rtems-bsd-shell-route.c',
@@ -3441,6 +3442,9 @@ class user_space(builder.Module):
                 #'usr.sbin/arp/arp_netlink.c',
                 'usr.sbin/ifmcstat/ifmcstat.c',
                 'usr.sbin/ifmcstat/printb.c',
+                'usr.sbin/pciconf/pciconf.c',
+                'usr.sbin/pciconf/cap.c',
+                'usr.sbin/pciconf/err.c',
             ],
             mm.generator['source'](['-DINET'])
         )

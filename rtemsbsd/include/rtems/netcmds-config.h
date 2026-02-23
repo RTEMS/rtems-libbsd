@@ -24,6 +24,8 @@ extern "C" {
 
 extern rtems_shell_cmd_t rtems_shell_ARP_Command;
 
+extern rtems_shell_cmd_t rtems_shell_PCICONF_Command;
+
 extern rtems_shell_cmd_t rtems_shell_PFCTL_Command;
 
 extern rtems_shell_cmd_t rtems_shell_PING_Command;

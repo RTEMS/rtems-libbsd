@@ -1,3 +1,8 @@
+#include <machine/rtems-bsd-user-space.h>
+
+#ifdef __rtems__
+#include "rtems-bsd-pciconf-namespace.h"
+#endif /* __rtems__ */
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -29,6 +34,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 
 #include <sys/types.h>
 
@@ -1188,10 +1200,18 @@ ecap_acs(int fd, struct pci_conf *p, uint16_t ptr, uint8_t ver)
 	}
 }
 
+#ifndef __rtems__
 static struct {
 	uint16_t id;
 	const char *name;
 } ecap_names[] = {
+#else /* __rtems__ */
+static struct ecap_names_struct {
+	uint16_t id;
+	const char *name;
+};
+static struct ecap_names_struct ecap_names[] = {
+#endif /* __rtems__ */
 	{ PCIZ_AER, "AER" },
 	{ PCIZ_VC, "Virtual Channel" },
 	{ PCIZ_SERNUM, "Device Serial Number" },
@@ -1346,3 +1366,6 @@ pcie_find_cap(int fd, struct pci_conf *p, uint16_t id)
 	}
 	return (0);
 }
+#ifdef __rtems__
+#include "rtems-bsd-pciconf-cap-data.h"
+#endif /* __rtems__ */

@@ -1,3 +1,8 @@
+#include <machine/rtems-bsd-user-space.h>
+
+#ifdef __rtems__
+#include "rtems-bsd-pciconf-namespace.h"
+#endif /* __rtems__ */
 /*
  * Copyright 1996 Massachusetts Institute of Technology
  *
@@ -26,6 +31,14 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <rtems/linkersets.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 
 #include <sys/types.h>
 #include <sys/fcntl.h>
@@ -65,14 +78,18 @@ struct pci_vendor_info
     char				*desc;
 };
 
+#ifndef __rtems__
 static TAILQ_HEAD(,pci_vendor_info)	pci_vendors;
+#endif /* __rtems__ */
 
 static struct pcisel getsel(const char *str);
 static void list_bridge(int fd, struct pci_conf *p);
 static void list_bars(int fd, struct pci_conf *p);
 static void list_devs(const char *name, int verbose, int bars, int bridge,
     int caps, int errors, int vpd, int listmode);
+#ifndef __rtems__
 static void list_verbose(struct pci_conf *p);
+#endif /* __rtems__ */
 static void list_vpd(int fd, struct pci_conf *p);
 static const char *guess_class(struct pci_conf *p);
 static const char *guess_subclass(struct pci_conf *p);
@@ -99,12 +116,46 @@ usage(void)
 	exit(1);
 }
 
+#ifdef __rtems__
+static int main(int argc, char *argv[]);
+
+RTEMS_LINKER_RWSET(bsd_prog_pciconf, char);
+
+int
+rtems_bsd_command_pciconf(int argc, char *argv[])
+{
+	int exit_code;
+	void *data_begin;
+	size_t data_size;
+
+	data_begin = RTEMS_LINKER_SET_BEGIN(bsd_prog_pciconf);
+	data_size = RTEMS_LINKER_SET_SIZE(bsd_prog_pciconf);
+
+	rtems_bsd_program_lock();
+	exit_code = rtems_bsd_program_call_main_with_data_restore("pciconf",
+	    main, argc, argv, data_begin, data_size);
+	rtems_bsd_program_unlock();
+
+	return exit_code;
+}
+#endif /* __rtems__ */
+
 int
 main(int argc, char **argv)
 {
 	int c, width;
 	int listmode, readmode, writemode, attachedmode, dumpbarmode;
 	int bars, bridge, caps, errors, verbose, vpd;
+
+#ifdef __rtems__
+	struct getopt_data getopt_data;
+	memset(&getopt_data, 0, sizeof(getopt_data));
+#define optind getopt_data.optind
+#define optarg getopt_data.optarg
+#define opterr getopt_data.opterr
+#define optopt getopt_data.optopt
+#define getopt(argc, argv, opt) getopt_r(argc, argv, "+" opt, &getopt_data)
+#endif /* __rtems__ */
 
 	listmode = readmode = writemode = attachedmode = dumpbarmode = 0;
 	bars = bridge = caps = errors = verbose = vpd= 0;
@@ -287,7 +338,9 @@ list_devs(const char *name, int verbose, int bars, int bridge, int caps,
 				    p->pc_vendor, p->pc_device,
 				    p->pc_subvendor, p->pc_subdevice);
 			if (verbose)
+#ifndef __rtems__
 				list_verbose(p);
+#endif /* __rtems__ */
 			if (bars)
 				list_bars(fd, p);
 			if (bridge)
@@ -552,6 +605,7 @@ print_bar(int fd, struct pci_conf *p, const char *label, uint16_t bar_offset)
 	    bar.pbi_enabled ? "enabled" : "disabled");
 }
 
+#ifndef __rtems__
 static void
 list_verbose(struct pci_conf *p)
 {
@@ -580,6 +634,7 @@ list_verbose(struct pci_conf *p)
 	if ((dp = guess_subclass(p)) != NULL)
 		printf("    subclass   = %s\n", dp);
 }
+#endif /* __rtems__ */
 
 static void
 list_vpd(int fd, struct pci_conf *p)
@@ -641,12 +696,22 @@ list_vpd(int fd, struct pci_conf *p)
 /*
  * This is a direct cut-and-paste from the table in sys/dev/pci/pci.c.
  */
+#ifndef __rtems__
 static struct
 {
 	int	class;
 	int	subclass;
 	const char *desc;
 } pci_nomatch_tab[] = {
+#else /* __rtems__ */
+static struct pci_nomatch_tab_struct
+{
+	int	class;
+	int	subclass;
+	const char *desc;
+};
+static struct pci_nomatch_tab_struct pci_nomatch_tab[] = {
+#endif /* __rtems__ */
 	{PCIC_OLD,		-1,			"old"},
 	{PCIC_OLD,		PCIS_OLD_NONVGA,	"non-VGA display device"},
 	{PCIC_OLD,		PCIS_OLD_VGA,		"VGA-compatible display device"},
@@ -794,6 +859,7 @@ guess_subclass(struct pci_conf *p)
 static int
 load_vendors(void)
 {
+#ifndef __rtems__
 	const char *dbf;
 	FILE *db;
 	struct pci_vendor_info *cv;
@@ -888,6 +954,9 @@ load_vendors(void)
 	fclose(db);
 
 	return(error);
+#else /* __rtems__ */
+	return 1;
+#endif /*__rtems__ */
 }
 
 uint32_t
@@ -1121,7 +1190,11 @@ dump_bar(const char *name, const char *reg, const char *bar_start,
 	if (*reg == '\0' || *el != '\0')
 		errx(1, "Invalid bar specification %s", reg);
 	pbm.pbm_flags = 0;
+#ifndef __rtems__
 	pbm.pbm_memattr = VM_MEMATTR_DEVICE;
+#else /* __rtems__ */
+	pbm.pbm_memattr = 0;
+#endif /* __rtems__ */
 
 	fd = open(_PATH_DEVPCI, O_RDWR, 0);
 	if (fd < 0)
@@ -1201,3 +1274,6 @@ dump_bar(const char *name, const char *reg, const char *bar_start,
 	munmap((void *)pbm.pbm_map_base, pbm.pbm_map_length);
 	close(fd);
 }
+#ifdef __rtems__
+#include "rtems-bsd-pciconf-pciconf-data.h"
+#endif /* __rtems__ */

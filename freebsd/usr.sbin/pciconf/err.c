@@ -1,3 +1,8 @@
+#include <machine/rtems-bsd-user-space.h>
+
+#ifdef __rtems__
+#include "rtems-bsd-pciconf-namespace.h"
+#endif /* __rtems__ */
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -26,6 +31,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#ifdef __rtems__
+#define __need_getopt_newlib
+#include <getopt.h>
+#include <machine/rtems-bsd-program.h>
+#include <machine/rtems-bsd-commands.h>
+#endif /* __rtems__ */
 
 #include <sys/param.h>
 #include <sys/pciio.h>
@@ -168,3 +180,6 @@ list_errors(int fd, struct pci_conf *p)
 	mask = read_config(fd, &p->pc_sel, aer + PCIR_AER_COR_STATUS, 4);
 	print_bits("Corrected", aer_cor, mask);
 }
+#ifdef __rtems__
+#include "rtems-bsd-pciconf-err-data.h"
+#endif /* __rtems__ */

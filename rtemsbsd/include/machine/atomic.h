@@ -289,7 +289,7 @@ atomic_load_acq_ptr(volatile uintptr_t *p)
 #define _ATOMIC_STORE(T, p, v, mo, barrier) \
 	std::atomic_##T *q = \
 	    reinterpret_cast<std::atomic_##T *>(const_cast<T *>(p)); \
-	q->store(std::mo)
+	q->store(v, std::mo)
 #elif defined(_RTEMS_BSD_MACHINE_ATOMIC_USE_STDATOMIC)
 #define _ATOMIC_STORE(T, p, v, mo, barrier) \
 	atomic_##T *q = (atomic_##T *)RTEMS_DEVOLATILE(T *,p); \

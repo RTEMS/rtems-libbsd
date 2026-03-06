@@ -84,6 +84,5 @@ static driver_t nexus_smc_driver = {
 };
 
 DRIVER_MODULE(smc, nexus, nexus_smc_driver, 0, 0);
-DRIVER_MODULE(miibus, smc, miibus_driver, 0, 0);
 MODULE_DEPEND(smc, ether, 1, 1, 1);
 MODULE_DEPEND(smc, miibus, 1, 1, 1);

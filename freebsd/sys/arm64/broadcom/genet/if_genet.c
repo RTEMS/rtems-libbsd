@@ -585,7 +585,11 @@ gen_bus_dma_init(struct gen_softc *sc)
 	error = bus_dma_tag_create(
 	    bus_get_dma_tag(dev),	/* Parent tag */
 	    4, 0,			/* alignment, boundary */
+#ifdef BUS_SPACE_MAXADDR_40BIT
 	    BUS_SPACE_MAXADDR_40BIT,	/* lowaddr */
+#else /* no BUS_SPACE_MAXADDR_40BIT */
+	    BUS_SPACE_MAXADDR_32BIT,	/* lowaddr */
+#endif /* no BUS_SPACE_MAXADDR_40BIT */
 	    BUS_SPACE_MAXADDR,		/* highaddr */
 	    NULL, NULL,			/* filter, filterarg */
 	    MCLBYTES, TX_MAX_SEGS,	/* maxsize, nsegs */
@@ -610,7 +614,11 @@ gen_bus_dma_init(struct gen_softc *sc)
 	error = bus_dma_tag_create(
 	    bus_get_dma_tag(dev),	/* Parent tag */
 	    4, 0,			/* alignment, boundary */
+#ifdef BUS_SPACE_MAXADDR_40BIT
 	    BUS_SPACE_MAXADDR_40BIT,	/* lowaddr */
+#else /* no BUS_SPACE_MAXADDR_40BIT */
+	    BUS_SPACE_MAXADDR_32BIT,	/* lowaddr */
+#endif /* no BUS_SPACE_MAXADDR_40BIT */
 	    BUS_SPACE_MAXADDR,		/* highaddr */
 	    NULL, NULL,			/* filter, filterarg */
 	    MCLBYTES, 1,		/* maxsize, nsegs */

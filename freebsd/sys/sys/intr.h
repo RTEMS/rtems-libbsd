@@ -42,6 +42,9 @@ enum intr_map_data_type {
 	INTR_MAP_DATA_FDT,
 	INTR_MAP_DATA_GPIO,
 	INTR_MAP_DATA_MSI,
+#ifdef __rtems__
+	INTR_MAP_DATA_RTEMS,
+#endif /* __rtems__ */
 
 	/* Placeholders for platform specific types */
 	INTR_MAP_DATA_PLAT_1 = 1000,
@@ -60,6 +63,13 @@ struct intr_map_data_msi {
 	struct intr_map_data	hdr;
 	struct intr_irqsrc 	*isrc;
 };
+
+#ifdef __rtems__
+struct intr_map_data_rtems {
+	struct intr_map_data	hdr;
+	u_int	irq;
+};
+#endif /* __rtems__ */
 
 #ifdef notyet
 #define	INTR_SOLO	INTR_MD1

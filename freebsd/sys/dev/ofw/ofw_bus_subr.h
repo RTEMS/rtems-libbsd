@@ -58,9 +58,6 @@ struct ofw_compat_data {
 struct intr_map_data_fdt {
 	struct intr_map_data	hdr;
 	phandle_t		iparent;
-#ifdef __rtems__
-	const char* nameunit;
-#endif /* __rtems__ */
 	u_int			ncells;
 	pcell_t			cells[];
 };

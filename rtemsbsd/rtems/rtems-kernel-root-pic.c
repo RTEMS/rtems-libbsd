@@ -57,8 +57,8 @@ struct rtems_pic_softc {
 
 struct rtems_pic_irqsrc {
     struct intr_irqsrc isrc;
+    rtems_interrupt_entry rie;
     u_int irq;
-    const char* nameunit;
     bool allocated;
     device_t dev;
 };
@@ -110,6 +110,7 @@ static void rtems_pic_intr_handler(void* arg) {
     isrc = (struct rtems_pic_irqsrc*)arg;
     sc = device_get_softc(isrc->dev);
 
+    rtems_interrupt_vector_disable(isrc->irq);
     if (intr_isrc_dispatch(&isrc->isrc, NULL) != 0) {
         device_printf(sc->dev, "disabled irq %u: stray\n", isrc->irq);
     }
@@ -149,9 +150,11 @@ static void rtems_pic_enable_intr(device_t dev,
     rtems_status_code sc;
     struct rtems_pic_irqsrc* rtems_isrc = (struct rtems_pic_irqsrc*)isrc;
 
-    sc = rtems_interrupt_server_handler_install(RTEMS_ID_NONE,
-        rtems_isrc->irq, rtems_isrc->nameunit,
-        RTEMS_INTERRUPT_SHARED, rtems_pic_intr_handler, isrc);
+    sc = rtems_interrupt_entry_install(
+        rtems_isrc->irq,
+        RTEMS_INTERRUPT_SHARED,
+        &rtems_isrc->rie
+    );
     if (sc != RTEMS_SUCCESSFUL) {
         return;
     }
@@ -165,6 +168,7 @@ static int rtems_pic_map_intr(device_t dev, struct intr_map_data *data,
 #ifdef FDT
     struct intr_map_data_fdt* daf;
 #endif /* FDT */
+    struct intr_map_data_rtems* dar;
 
     sc = device_get_softc(dev);
 
@@ -172,7 +176,10 @@ static int rtems_pic_map_intr(device_t dev, struct intr_map_data *data,
     case INTR_MAP_DATA_FDT:
         daf = (struct intr_map_data_fdt*)data;
         irq = ((int)bsp_fdt_map_intr(daf->cells, daf->ncells));
-        nameunit = daf->nameunit;
+        break;
+    case INTR_MAP_DATA_RTEMS:
+        dar = (struct intr_map_data_rtems*)data;
+        irq = dar->irq;
         break;
     default:
         return -1;
@@ -181,7 +188,6 @@ static int rtems_pic_map_intr(device_t dev, struct intr_map_data *data,
     if (sc->isrcs[irq].allocated) {
        return EBUSY;
     }
-    sc->isrcs[irq].nameunit = nameunit;
     sc->isrcs[irq].allocated = true;
     *isrcp = (struct intr_irqsrc*)(&sc->isrcs[irq]);
 
@@ -190,6 +196,15 @@ static int rtems_pic_map_intr(device_t dev, struct intr_map_data *data,
 
 static int rtems_pic_setup_intr(device_t dev, struct intr_irqsrc *isrc,
     struct resource* res, struct intr_map_data* data) {
+    struct rtems_pic_irqsrc* rtems_isrc = (struct rtems_pic_irqsrc*)isrc;
+
+    rtems_interrupt_entry_initialize(
+        &rtems_isrc->rie,
+        rtems_pic_intr_handler,
+        rtems_isrc,
+        device_get_nameunit(rman_get_device(res))
+    );
+
     return 0;
 }
 
@@ -204,6 +219,10 @@ static void rtems_pic_post_filter(device_t dev,
 
 static void rtems_pic_post_ithread(device_t dev,
     struct intr_irqsrc *isrc) {
+    struct rtems_pic_irqsrc* risrc;
+
+    risrc = (struct rtems_pic_irqsrc*)isrc;
+    rtems_interrupt_vector_enable(risrc->irq);
 }
 
 static void rtems_pic_pre_ithread(device_t dev,

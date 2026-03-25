@@ -64,7 +64,6 @@
 #include <machine/md_var.h>
 #else /* __rtems__ */
   #include <machine/rtems-bsd-thread.h>
-  #define RTEMSBSD_SWI_WAKEUP_EVENT RTEMS_EVENT_31
   #include <rtems/score/threadimpl.h>
 #endif /* __rtems__ */
 #include <machine/smp.h>
@@ -688,7 +687,14 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 			ie->ie_thread = it;
 			it->it_event = ie;
 			ithread_update(it);
+#ifndef __rtems__
 			wakeup(ie);
+#else /* __rtems__ */
+			rtems_status_code sc = rtems_event_system_send(
+			    rtems_bsd_get_task_id(it->it_thread),
+			    RTEMS_EVENT_SYSTEM_SERVER);
+			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+#endif /* __rtems__ */
 		}
 	}
 
@@ -710,7 +716,6 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 	return (0);
 }
 
-#ifndef __rtems__
 /*
  * Append a description preceded by a ':' to the name of the specified
  * interrupt handler.
@@ -765,7 +770,6 @@ intr_event_describe_handler(struct intr_event *ie, void *cookie,
 	mtx_unlock(&ie->ie_lock);
 	return (0);
 }
-#endif /* __rtems__ */
 
 /*
  * Return the ie_source field from the intr_event an intr_handler is
@@ -1013,13 +1017,13 @@ intr_event_schedule_thread(struct intr_event *ie, struct trapframe *frame)
 	 * If any of the handlers for this ithread claim to be good
 	 * sources of entropy, then gather some.
 	 */
+#ifndef __rtems__
 	if (ie->ie_hflags & IH_ENTROPY) {
 		entropy.event = (uintptr_t)ie;
 		entropy.td = ctd;
 		random_harvest_queue(&entropy, sizeof(entropy), RANDOM_INTERRUPT);
 	}
 
-#ifndef __rtems__
 	KASSERT(td->td_proc != NULL, ("ithread %s has no process", ie->ie_name));
 #endif /* __rtems__ */
 
@@ -1057,10 +1061,7 @@ intr_event_schedule_thread(struct intr_event *ie, struct trapframe *frame)
 		thread_unlock(td);
 	}
 #else /* __rtems__ */
-	/* Send event to wake the thread up.
-	 * TODO: eventually replace event by a better mechanism
-	 */
-	rtems_status_code sc = rtems_event_send(rtems_bsd_get_task_id(td), RTEMSBSD_SWI_WAKEUP_EVENT);
+	rtems_status_code sc = rtems_event_system_send(rtems_bsd_get_task_id(td), RTEMS_EVENT_SYSTEM_SERVER);
 	BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
 #endif /* __rtems__ */
 
@@ -1301,6 +1302,15 @@ ithread_loop(void *arg)
 	int epoch_count;
 	bool needs_epoch;
 
+#ifdef __rtems__
+	rtems_event_set event_out;
+	rtems_status_code sc = rtems_event_system_receive(
+		RTEMS_EVENT_SYSTEM_SERVER,
+		RTEMS_WAIT | RTEMS_EVENT_ALL,
+		RTEMS_NO_TIMEOUT,
+		&event_out);
+#endif /* __rtems__ */
+
 	td = curthread;
 	p = td->td_proc;
 	ithd = (struct intr_thread *)arg;
@@ -1371,16 +1381,14 @@ ithread_loop(void *arg)
 			ie->ie_count = 0;
 			mi_switch(SW_VOL | SWT_IWAIT);
 #else /* __rtems__ */
-			/* wait for wakeup event
-			 * TODO: eventually replace event by a better mechanism
-			 */
 			rtems_event_set event_out;
-			rtems_status_code sc = rtems_event_receive(
-				RTEMSBSD_SWI_WAKEUP_EVENT,
+			rtems_status_code sc = rtems_event_system_receive(
+				RTEMS_EVENT_SYSTEM_SERVER,
 				RTEMS_WAIT | RTEMS_EVENT_ALL,
 				RTEMS_NO_TIMEOUT,
 				&event_out);
 			BSD_ASSERT(sc == RTEMS_SUCCESSFUL);
+			ie->ie_count = 0;
 #endif /* __rtems__ */
 		} else if ((ithd->it_flags & IT_WAIT) != 0) {
 			ithd->it_flags &= ~IT_WAIT;
@@ -1407,12 +1415,16 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 {
 	struct intr_handler *ih;
 	struct trapframe *oldframe;
+#ifndef __rtems__
 	struct thread *td;
+#endif /* __rtems__ */
 	int phase;
 	int ret;
 	bool filter, thread;
 
+#ifndef __rtems__
 	td = curthread;
+#endif /* __rtems__ */
 
 #ifdef KSTACK_USAGE_PROF
 	intr_prof_stack_use(td, frame);
@@ -1428,7 +1440,9 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	 * with a NULL argument, then we pass it a pointer to
 	 * a trapframe as its argument.
 	 */
+#ifndef __rtems__
 	td->td_intr_nesting_level++;
+#endif /* __rtems__ */
 	filter = false;
 	thread = false;
 	ret = 0;
@@ -1522,7 +1536,9 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 		KASSERT(error == 0, ("bad stray interrupt"));
 	}
 	critical_exit();
+#ifndef __rtems__
 	td->td_intr_nesting_level--;
+#endif /* __rtems__ */
 #ifdef notyet
 	/* The interrupt is not aknowledged by any filter and has no ithread. */
 	if (!thread && !filter)

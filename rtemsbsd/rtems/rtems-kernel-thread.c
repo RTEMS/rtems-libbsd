@@ -186,6 +186,8 @@ rtems_bsd_threads_init_early(void *arg)
 {
 	rtems_id ext_id;
 	rtems_status_code sc;
+	Chain_Control *chain = &rtems_bsd_thread_delay_start_chain;
+	Chain_Node *node;
 
 	(void) arg;
 
@@ -199,15 +201,6 @@ rtems_bsd_threads_init_early(void *arg)
 	}
 
 	rtems_bsd_extension_index = rtems_object_id_get_index(ext_id);
-}
-
-static void
-rtems_bsd_threads_init_late(void *arg)
-{
-	Chain_Control *chain = &rtems_bsd_thread_delay_start_chain;
-	Chain_Node *node;
-
-	(void) arg;
 
 	while ((node = _Chain_Get_unprotected(chain)) != NULL) {
 		Thread_Control *thread = (Thread_Control *) node;
@@ -224,9 +217,6 @@ rtems_bsd_threads_init_late(void *arg)
 
 SYSINIT(rtems_bsd_threads_early, SI_SUB_TUNABLES, SI_ORDER_ANY,
     rtems_bsd_threads_init_early, NULL);
-
-SYSINIT(rtems_bsd_threads_late, SI_SUB_LAST, SI_ORDER_ANY,
-    rtems_bsd_threads_init_late, NULL);
 
 static int
 rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
@@ -264,6 +254,10 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 		strlcpy(td->td_name, name, sizeof(td->td_name));
 #endif
 
+		if (td_ptr != NULL) {
+			*td_ptr = td;
+		}
+
 		if (rtems_bsd_thread_ready_to_start) {
 			sc = rtems_task_start(task_id, (rtems_task_entry) func,
 			    (rtems_task_argument) arg);
@@ -276,10 +270,6 @@ rtems_bsd_thread_start(struct thread **td_ptr, void (*func)(void *), void *arg,
 			_Chain_Append_unprotected(
 			    &rtems_bsd_thread_delay_start_chain,
 			    &thread->Object.Node);
-		}
-
-		if (td_ptr != NULL) {
-			*td_ptr = td;
 		}
 	} else {
 		eno = ENOMEM;
@@ -353,7 +343,7 @@ kproc_kthread_add(void (*func)(void *), void *arg, struct proc **procptr, struct
 	va_list ap;
 
 	va_start(ap, fmt);
-	eno = rtems_bsd_thread_start(tdptr, func, arg, flags, pages, fmt, ap);
+	eno = rtems_bsd_thread_start(tdptr, func, arg, flags, pages, procname, ap);
 	va_end(ap);
 
 	return eno;

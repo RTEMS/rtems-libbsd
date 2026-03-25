@@ -49,6 +49,9 @@
 #include <sys/rman.h>
 #include <sys/malloc.h>
 #include <machine/bus.h>
+#ifdef INTRNG
+#include <sys/intr.h>
+#endif /* INTRNG */
 
 #include <rtems/bsd/local/opt_platform.h>
 
@@ -200,6 +203,10 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 	struct rman *rm;
 	const rtems_bsd_device *nd;
 	rman_res_t base = RTEMS_BSP_PCI_MEM_REGION_BASE;
+#ifdef INTRNG
+	struct intr_map_data_rtems *irq_data;
+	phandle_t rpic_xref;
+#endif /* INTRNG */
 
 	switch (type) {
 	case SYS_RES_MEMORY:
@@ -229,16 +236,45 @@ nexus_alloc_resource(device_t bus, device_t child, int type, int *rid,
 		name = device_get_name(child);
 		if (name != NULL && strcmp(name, nd->name) == 0
 		    && device_get_unit(child) == nd->unit) {
-			if (nexus_get_start(nd, type, &start)) {
-				res = rman_reserve_resource(rm, start, end,
-				    count, flags, child);
-				if (res != NULL) {
-					rman_set_rid(res, *rid);
-					rman_set_bushandle(res,
-					    rman_get_start(res) + base);
+#ifdef INTRNG
+			if (type == SYS_RES_IRQ) {
+				if (!nexus_get_start(nd, type, &start)) {
+					rman_release_resource(res);
+					return (NULL);
 				}
-			};
-
+				irq_data = (struct intr_map_data_rtems *)intr_alloc_map_data(
+						INTR_MAP_DATA_RTEMS, sizeof(struct intr_map_data_rtems), M_WAITOK | M_ZERO);
+				irq_data->irq = start;
+				rpic_xref = OF_xref_from_node(ofw_bus_get_node(intr_irq_root_dev));
+				start = intr_map_irq(NULL, rpic_xref, (struct intr_map_data *)irq_data);
+				res = rman_reserve_resource(rm, start, end,
+						count, flags, child);
+				if (res == NULL) {
+					return (res);
+				}
+				rman_set_rid(res, *rid);
+				rman_set_bushandle(res,
+						rman_get_start(res) + base);
+				if (flags & RF_ACTIVE) {
+					if (bus_activate_resource(child, type, *rid, res) != 0) {
+						rman_release_resource(res);
+						return (NULL);
+					}
+				}
+			} else {
+#endif /* INTRNG */
+				if (nexus_get_start(nd, type, &start)) {
+					res = rman_reserve_resource(rm, start, end,
+							count, flags, child);
+					if (res != NULL) {
+						rman_set_rid(res, *rid);
+						rman_set_bushandle(res,
+								rman_get_start(res) + base);
+					}
+				}
+#ifdef INTRNG
+			}
+#endif /* INTRNG */
 			return (res);
 		}
 	}
@@ -448,6 +484,16 @@ nexus_teardown_intr(device_t dev, device_t child, struct resource *res,
 	return (err);
 }
 
+#ifdef INTRNG
+static int
+nexus_describe_intr(device_t dev, device_t child, struct resource *irq,
+    void *cookie, const char *descr)
+{
+
+	return (intr_describe_irq(child, irq, cookie, descr));
+}
+#endif /* INTRNG */
+
 #ifdef FDT
 static int
 nexus_ofw_map_intr(device_t dev, device_t child, phandle_t iparent, int icells,
@@ -464,7 +510,6 @@ nexus_ofw_map_intr(device_t dev, device_t child, phandle_t iparent, int icells,
 	    INTR_MAP_DATA_FDT, len, M_WAITOK | M_ZERO);
 	fdt_data->iparent = iparent;
 	fdt_data->ncells = icells;
-	fdt_data->nameunit = device_get_nameunit(child);
 	memcpy(fdt_data->cells, intr, icells * sizeof(pcell_t));
 	irq = intr_map_irq(NULL, iparent, (struct intr_map_data *)fdt_data);
 	return (irq);
@@ -499,6 +544,9 @@ static device_method_t nexus_methods[] = {
 	DEVMETHOD(bus_unmap_resource, nexus_unmap_resource),
 	DEVMETHOD(bus_setup_intr, nexus_setup_intr),
 	DEVMETHOD(bus_teardown_intr, nexus_teardown_intr),
+#ifdef INTRNG
+	DEVMETHOD(bus_describe_intr, nexus_describe_intr),
+#endif /* INTRNG */
 
 #ifdef FDT
 	/* OFW interface */

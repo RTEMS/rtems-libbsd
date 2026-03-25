@@ -48,6 +48,8 @@ rtems_bsd_get_task_priority(const char *name)
 		return (96);
 	} else if (strcmp(name, "TIME") == 0) {
 		return (98);
+	} else if (strcmp(name, "intr") == 0) {
+		return (96);
 	} else {
 		return (100);
 	}

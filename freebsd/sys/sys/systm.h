@@ -110,10 +110,16 @@ enum VM_GUEST { VM_GUEST_NO = 0, VM_GUEST_VM, VM_GUEST_XEN, VM_GUEST_HV,
 /*
  * Align variables.
  */
+#ifndef __rtems__
 #define	__read_mostly		__section(".data.read_mostly")
 #define	__read_frequently	__section(".data.read_frequently")
 #define	__exclusive_cache_line	__aligned(CACHE_LINE_SIZE) \
 				    __section(".data.exclusive_cache_line")
+#else /* __rtems__ */
+#define __read_mostly
+#define __read_frequently
+#define __exclusive_cache_line
+#endif /* __rtems__ */
 #if defined(_STANDALONE)
 struct ucred;
 #endif

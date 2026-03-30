@@ -1504,6 +1504,19 @@ MvEthTxDesc d;
 
 /* PUBLIC LOW-LEVEL DRIVER ACCESS */
 
+int
+BSP_mve_probe( int unit )
+{
+	/* this driver only support the version 3 of the device found on
+	 * MVME6100 boards */
+	if ( unit >= 0 && unit < MV643XXETH_NUM_DRIVER_SLOTS ) {
+		if ( MV_64360 == BSP_getDiscoveryVersion(0) ) {
+			return 0;
+		}
+	}
+	return -1;
+}
+
 struct mveth_private *
 BSP_mve_create(
 	int		 unit,

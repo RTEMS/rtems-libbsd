@@ -126,9 +126,11 @@ static device_method_t	ofw_pcib_methods[] = {
 	DEVMETHOD(bus_map_resource,	ofw_pcib_map_resource),
 	DEVMETHOD(bus_unmap_resource,	ofw_pcib_unmap_resource),
 	DEVMETHOD(bus_translate_resource,	ofw_pcib_translate_resource),
+#ifndef __rtems__
 #ifdef __powerpc__
 	DEVMETHOD(bus_get_bus_tag,	ofw_pcib_bus_get_bus_tag),
 #endif
+#endif /* __rtems__ */
 
 	/* pcib interface */
 	DEVMETHOD(pcib_maxslots,	ofw_pcib_maxslots),

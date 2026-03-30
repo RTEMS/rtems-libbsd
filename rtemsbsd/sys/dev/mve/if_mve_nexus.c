@@ -225,15 +225,13 @@ static int
 mve_probe(device_t dev)
 {
 	int unit = device_get_unit(dev);
-	int err;
+	int err = BUS_PROBE_DEFAULT;
 
 #ifdef MVETH_DEBUG
 	printk(DRVNAME": mve_probe (entering)\n");
 #endif
 
-	if ( unit >= 0 && unit < MV643XXETH_NUM_DRIVER_SLOTS ) {
-		err = BUS_PROBE_DEFAULT;
-	} else {
+	if ( BSP_mve_probe( unit ) < 0 ) {
 		err = ENXIO;
 	}
 

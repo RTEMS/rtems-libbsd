@@ -72,6 +72,9 @@ extern "C" {
 
 struct mveth_private;
 
+/* Probe interface. */
+int BSP_mve_probe( int unit );
+
 /* Create interface.
  * Allocates resources for descriptor rings and sets up the driver software structure.
  *

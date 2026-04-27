@@ -763,35 +763,6 @@ int
 BSP_mve_dring_nonsync(struct mveth_private *mp);
 
 static void mveth_isr(rtems_irq_hdl_param unit);
-static void noop(const rtems_irq_connect_data *unused)  {}
-static int  noop1(const rtems_irq_connect_data *unused) { return 0; }
-
-static rtems_irq_connect_data irq_data[MAX_NUM_SLOTS] = {
-	{
-		BSP_IRQ_ETH0,
-		0,
-		(rtems_irq_hdl_param)0,
-		noop,
-		noop,
-		noop1
-	},
-	{
-		BSP_IRQ_ETH1,
-		0,
-		(rtems_irq_hdl_param)1,
-		noop,
-		noop,
-		noop1
-	},
-	{
-		BSP_IRQ_ETH2,
-		0,
-		(rtems_irq_hdl_param)2,
-		noop,
-		noop,
-		noop1
-	},
-};
 
 /* LOW LEVEL SUPPORT ROUTINES */
 
@@ -967,7 +938,7 @@ register uint32_t rval;
 		return rval;
 }
 
-static void mveth_isr(rtems_irq_hdl_param arg)
+static void mveth_isr(void* arg)
 {
 struct mveth_private *mp   = (struct mveth_private*) arg;
 
@@ -1534,7 +1505,7 @@ BSP_mve_create(
 )
 {
 struct mveth_private *mp;
-int                  InstallISRSuccessful;
+rtems_status_code sc;
 
 	if ( unit <= 0 || unit > MV643XXETH_NUM_DRIVER_SLOTS ) {
 		printk(DRVNAME": Bad unit number %i; must be 1..%i\n", unit, MV643XXETH_NUM_DRIVER_SLOTS);
@@ -1593,10 +1564,10 @@ int                  InstallISRSuccessful;
 	BSP_mve_stop_hw(mp);
 
 	if ( irq_mask ) {
-		irq_data[mp->port_num].hdl    = mveth_isr;
-		irq_data[mp->port_num].handle = (rtems_irq_hdl_param)mp;
-		InstallISRSuccessful = BSP_install_rtems_irq_handler( &irq_data[mp->port_num] );
-		assert( InstallISRSuccessful );
+		sc = rtems_interrupt_handler_install(
+			BSP_IRQ_ETH0 + mp->port_num, "mve", RTEMS_INTERRUPT_SHARED,
+			(rtems_interrupt_handler) mveth_isr, (void*) mp->port_num);
+		assert( sc == RTEMS_SUCCESSFUL );
 	}
 
 	if ( rx_ring_size < 0 )
@@ -1682,7 +1653,11 @@ BSP_mve_detach(struct mveth_private *mp)
 {
 	BSP_mve_stop_hw(mp);
 	if ( mp->irq_mask || mp->xirq_mask ) {
-		if ( !BSP_remove_rtems_irq_handler( &irq_data[mp->port_num] ) )
+		rtems_status_code sc;
+		sc = rtems_interrupt_handler_remove(
+			BSP_IRQ_ETH0 + mp->port_num, (rtems_interrupt_handler) mveth_isr,
+			(void*) mp->port_num);
+		if (sc != RTEMS_SUCCESSFUL)
 			return -1;
 	}
 	free( (void*)mp->ring_area );

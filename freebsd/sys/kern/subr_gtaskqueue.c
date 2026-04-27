@@ -709,9 +709,9 @@ taskqgroup_attach(struct taskqgroup *qgroup, struct grouptask *gtask,
 			    __func__, gtask->gt_name, error);
 	} else
 #else /* __rtems__ */
-#ifndef __i386__
+#if !defined(__i386__) && !defined(__powerpc__)
 	BSD_ASSERT(irq == -1);
-#endif /* __i386__ */
+#endif /* __i386__ && __powerpc__ */
 #endif /* __rtems__ */
 		mtx_unlock(&qgroup->tqg_lock);
 }

@@ -177,7 +177,7 @@ _rw_downgrade(struct rwlock *rw, const char *file, int line)
 	/* Nothing to do */
 }
 
-#ifdef INVARIANT_SUPPORT
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
 /*
  * In the non-WITNESS case, rw_assert() can only detect that at least
  * *some* thread owns an rlock, but it cannot guarantee that *this*

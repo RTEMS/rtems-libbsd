@@ -163,7 +163,7 @@ sx_try_downgrade_(struct sx *sx, const char *file, int line)
 	return (1);
 }
 
-#ifdef INVARIANT_SUPPORT
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
 /*
  * In the non-WITNESS case, sx_assert() can only detect that at least
  * *some* thread owns an slock, but it cannot guarantee that *this*

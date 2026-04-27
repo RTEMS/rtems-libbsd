@@ -140,7 +140,7 @@ _mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line)
 /*
  * The backing function for the INVARIANTS-enabled mtx_assert()
  */
-#ifdef INVARIANT_SUPPORT
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
 void
 _mtx_assert(struct mtx *m, int what, const char *file, int line)
 {

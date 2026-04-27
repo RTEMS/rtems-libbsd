@@ -142,6 +142,12 @@ legacy_pcib_is_host_bridge(int bus, int slot, int func,
 			  uint32_t id, uint8_t class, uint8_t subclass,
 			  uint8_t *busnum)
 {
+#ifdef __rtems__
+#ifndef __i386__
+#define _rtems_udef_i386_
+#endif
+#define __i386__
+#endif /* __rtems__ */
 #ifdef __i386__
 	const char *s = NULL;
 	static uint8_t pxb[4];	/* hack for 450nx */
@@ -352,6 +358,12 @@ legacy_pcib_is_host_bridge(int bus, int slot, int func,
 	case 0x884910e0:
 		s = "Integrated Micro Solutions VL Bridge";
 		break;
+#ifdef __rtems__
+	case 0x643011ab:
+		s = "Marvell Host to PCI Bridge";
+		*busnum = bus;
+		break;
+#endif /* __rtems__ */
 
 	default:
 		if (class == PCIC_BRIDGE && subclass == PCIS_BRIDGE_HOST)
@@ -369,6 +381,12 @@ legacy_pcib_is_host_bridge(int bus, int slot, int func,
 	return s;
 #endif
 }
+#ifdef __rtems__
+#ifdef _rtems_udef_i386_
+#undef __i386__
+#undef _rtems_udef_i386_
+#endif
+#endif /* __rtems__ */
 
 /*
  * Scan the first pci bus for host-pci bridges and add pcib instances
@@ -477,7 +495,13 @@ legacy_pcib_identify(driver_t *driver, device_t parent)
 				found_orion = 1;
 		}
 	}
+
+#ifndef __rtems__
 	if (found824xx && bus == 0) {
+#else /* __rtems__ */
+	/* MVME5500 legacy bus is 2 so we need to scan up to that */
+	if (bus <= 1) {
+#endif /* __rtems__ */
 		bus++;
 		goto retry;
 	}

@@ -58,6 +58,10 @@
 static void assert_lockmgr(const struct lock_object *lock, int how);
 static void lock_lockmgr(struct lock_object *lock, uintptr_t how);
 static uintptr_t unlock_lockmgr(struct lock_object *lock);
+#ifdef KDTRACE_HOOKS
+static int      owner_lockmgr(const struct lock_object *lock,
+                    struct thread **owner);
+#endif
 
 #define lockmgr_xlocked(lk)    \
 	rtems_bsd_mutex_owned( \
@@ -97,6 +101,15 @@ unlock_lockmgr(struct lock_object *lock)
 {
 	panic("lockmgr locks do not support sleep interlocking: unlock");
 }
+
+#ifdef KDTRACE_HOOKS
+static int
+owner_lockmgr(const struct lock_object *lock, struct thread **owner)
+{
+
+        panic("lockmgr locks do not support owner inquiring");
+}
+#endif
 
 static struct thread *
 lockmgr_xholder(const struct lock *lk)

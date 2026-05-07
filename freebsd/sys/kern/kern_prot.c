@@ -113,7 +113,9 @@ static inline void
 groups_check_positive_len(int ngrp)
 {
 	MPASS2(ngrp >= 0, "negative number of groups");
+#ifndef __rtems__
 	MPASS2(ngrp != 0, "at least one group expected (effective GID)");
+#endif /* __rtems__ */
 }
 static inline void
 groups_check_max_len(int ngrp)

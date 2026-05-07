@@ -374,7 +374,8 @@ Init(rtems_task_argument arg)
   &rtems_shell_IFCONFIG_Command, \
   &rtems_shell_TCPDUMP_Command, \
   &rtems_shell_SYSCTL_Command, \
-  &rtems_shell_VMSTAT_Command
+  &rtems_shell_VMSTAT_Command, \
+  &rtems_shell_LTRACE_Command
 
 #ifndef CONFIGURE_SHELL_COMMANDS_ALL
 #define CONFIGURE_SHELL_COMMAND_CPUINFO

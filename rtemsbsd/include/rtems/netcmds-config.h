@@ -61,6 +61,8 @@ extern rtems_shell_cmd_t rtems_shell_OPENSSL_Command;
 
 extern rtems_shell_cmd_t rtems_shell_NVMECONTROL_Command;
 
+extern rtems_shell_cmd_t rtems_shell_LTRACE_Command;
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

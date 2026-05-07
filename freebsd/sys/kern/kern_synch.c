@@ -101,10 +101,10 @@ SYSCTL_INT(_kern, OID_AUTO, fscale, CTLFLAG_RD, SYSCTL_NULL_INT_PTR, FSCALE,
     "Fixed-point scale factor used for calculating load average values");
 
 static void	loadav(void *arg);
+#endif /* __rtems__ */
 
 SDT_PROVIDER_DECLARE(sched);
 SDT_PROBE_DEFINE(sched, , , preempt);
-#endif /* __rtems__ */
 
 static void
 sleepinit(void *unused)

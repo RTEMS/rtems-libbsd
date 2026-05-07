@@ -296,15 +296,19 @@ provided by LibBSD to suppress all output.
 Branches
 ========
 
-master
-    This branch is intended for the RTEMS master which tracks the FreeBSD
-    master branch.  This branch must be used for libbsd development.  Back
-    ports to the 6-freebsd-12 are allowed.
+main
+    This branch is intended for RTEMS ``main`` which tracks the FreeBSD
+    ``CURRENT`` branch.  This branch must be used for libbsd development.  Back
+    ports to the [67]-freebsd-14 are allowed.
+
+7-freebsd-14
+    This branch is a stable branch for use with RTEMS 7.
+
+6-freebsd-14
+    This branch is the stavble branch for produciton with RTEMS 6.
 
 6-freebsd-12
-    This branch is intended for RTEMS 6 which tracks the FreeBSD stable/12
-    branch.  This branch is maintained and regular updates from FreeBSD are
-    planned.  It is recommended for production systems.
+    This branch is deprecated and not to be used.
 
 5-freebsd-12
     This branch belongs to the RTEMS 5 release. It is based on FreeBSD
@@ -587,6 +591,9 @@ invariants
 
 invariant_support
     Support for Invariants (needed with invariants)
+
+kdtrace_hooks
+    Support to enable FreeBSD KDTRACE probes and ``ltrace`` command.
 
 rtems_bsd_descrip_trace
     RTEMS BSD descriptor maping trace

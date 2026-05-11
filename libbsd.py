@@ -3106,6 +3106,7 @@ class pci(builder.Module):
         self.addRTEMSKernelSourceFiles(
             [
                 'local/msi_if.c',
+                'rtems/rtems-bsd-iodev-pci.c',
             ],
             mm.generator['source']()
         )

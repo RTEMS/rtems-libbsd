@@ -592,6 +592,14 @@ extern "C" {
     SYSINIT_DRIVER_REFERENCE(nvme, pci);
 #endif /* RTEMS_BSD_DRIVER_PCI_NVME */
 
+/*
+ * iodev PCI Driver
+ */
+#if !defined(RTEMS_BSD_DRIVER_PCI_IODEV_PCI)
+  #define RTEMS_BSD_DRIVER_PCI_PCI_IODEV        \
+    SYSINIT_DRIVER_REFERENCE(pci_iodev, pci);
+#endif /* RTEMS_BSD_DRIVER_PCI_IOSPACE_PCI */
+
 /**
  ** MMI Physical Layer Support.
  **/

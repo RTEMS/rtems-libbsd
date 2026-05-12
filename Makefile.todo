@@ -34,6 +34,8 @@ GENERATED += $(LOCAL_INC)/pci_if.h
 GENERATED += $(LOCAL_SRC)/pci_if.c
 GENERATED += $(LOCAL_INC)/pcib_if.h
 GENERATED += $(LOCAL_SRC)/pcib_if.c
+GENERATED += $(LOCAL_INC)/msi_if.h
+GENERATED += $(LOCAL_SRC)/msi_if.c
 GENERATED += $(LOCAL_INC)/pic_if.h
 GENERATED += $(LOCAL_SRC)/pic_if.c
 GENERATED += $(LOCAL_INC)/mmcbr_if.h
@@ -161,6 +163,14 @@ $(LOCAL_SRC)/pci_if.c: $(FREEBSD_SRC)/sys/dev/pci/pci_if.m
 $(LOCAL_INC)/pcib_if.h: $(FREEBSD_SRC)/sys/dev/pci/pcib_if.m
 	awk -f $(TOOLS)/makeobjops.awk $> -h
 	mv pcib_if.h $@
+
+$(LOCAL_SRC)/msi_if.c: $(FREEBSD_SRC)/sys/kern/msi_if.m
+	awk -f $(TOOLS)/makeobjops.awk $> -c
+	mv msi_if.c $@
+
+$(LOCAL_SRC)/msi_if.h: $(FREEBSD_SRC)/sys/kern/msi_if.m
+	awk -f $(TOOLS)/makeobjops.awk $> -h
+	mv msi_if.h $@
 
 $(LOCAL_SRC)/pcib_if.c: $(FREEBSD_SRC)/sys/dev/pci/pcib_if.m
 	awk -f $(TOOLS)/makeobjops.awk $> -c

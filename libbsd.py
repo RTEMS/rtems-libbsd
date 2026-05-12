@@ -3073,6 +3073,12 @@ class pci(builder.Module):
                 'sys/powerpc/mpc85xx/mpc85xx.h',
             ]
         )
+        self.addRTEMSKernelSourceFiles(
+            [
+                'local/msi_if.c',
+            ],
+            mm.generator['source']()
+        )
         self.addCPUDependentFreeBSDHeaderFiles(
             [
                 'sys/i386/include/_bus.h',

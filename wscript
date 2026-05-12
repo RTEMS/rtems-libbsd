@@ -110,7 +110,7 @@ def bsp_init(ctx, env, contexts):
     # Transform the commands to per build variant commands
     commands = []
     for cmd in waflib.Options.commands:
-        if cmd.startswith(('build', 'clean', 'install')):
+        if cmd.startswith(('build', 'clean', 'install', 'uninstall')):
             for builder in builders:
                 commands += [str(cmd + '-' + builder)]
         else:

@@ -182,9 +182,8 @@ rtems_bsd_vfs_vnode_componentname(struct componentname *cnd, struct vnode *vp,
 	const u_int namemax = namelen - 1;
 	char *namep;
 	int error;
-	size_t sznamelen = namelen;
+	size_t sznamelen = namemax;
 	name[namemax] = '\0';
-	namelen = namemax;
 	tvp = vp;
 	error = vn_vptocnp(&tvp, name, &sznamelen);
 	if (error == 0) {
@@ -281,6 +280,7 @@ rtems_bsd_vfs_eval_token(rtems_filesystem_eval_path_context_t *ctx, void *arg,
 	pwd = pwd_get_smr();
 	rdir = pwd->pwd_rdir;
 	cdir = pwd->pwd_cdir;
+	vref(rdir);
 	vref(cdir);
 	pwd_chroot(curthread, rootvnode);
 	pwd_chdir(curthread, *vpp);
@@ -584,7 +584,7 @@ rtems_bsd_vfs_mknod(const rtems_filesystem_location_info_t *parentloc,
 	struct thread *td = curthread;
 	struct filedesc *fdp = td->td_proc->p_fd;
 	struct vnode *vn = rtems_bsd_libio_loc_to_vnode(parentloc);
-  struct pwd *pwd = pwd_get_smr();
+	struct pwd *pwd;
 	char *path = RTEMS_DECONST(char *, name);
 	int error;
 
@@ -608,6 +608,8 @@ rtems_bsd_vfs_mknod(const rtems_filesystem_location_info_t *parentloc,
 		    type, name, namelen, mode, dev, vn);
 	}
 
+	pwd = pwd_get_smr();
+	vref(pwd->pwd_cdir);
 	pwd_chdir(curthread, vn);
 
 	switch (mode & S_IFMT) {
@@ -715,7 +717,7 @@ rtems_bsd_vfs_symlink(const rtems_filesystem_location_info_t *targetdirloc,
 	struct filedesc *fdp;
 	struct mount *mp;
 	struct vnode *tdvp = rtems_bsd_libio_loc_to_vnode(targetdirloc);
-  struct pwd *pwd = pwd_get_smr();
+	struct pwd *pwd;
 	struct vattr vattr;
 	struct nameidata nd;
 	int error;
@@ -730,6 +732,8 @@ rtems_bsd_vfs_symlink(const rtems_filesystem_location_info_t *targetdirloc,
 		return rtems_bsd_error_to_status_and_errno(ENOMEM);
 	}
 	fdp = td->td_proc->p_fd;
+	pwd = pwd_get_smr();
+	vref(pwd->pwd_cdir);
 	pwd_chdir(curthread, tdvp);
 
 restart:
